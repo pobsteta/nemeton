@@ -1,6 +1,6 @@
 # Plan de développement — RECONFORT, 3ᵉ méthode de suivi sanitaire
 
-**Statut** : Draft (paperwork avant code)
+**Statut** : Draft — §10 tranché sur dépôt amont (clone `main` 25198c9), L0 levé, prêt pour L1
 **Date** : 2026-06-10
 **Cible** : `nemeton` v0.68.0 (cœur) + `nemetonshiny` (app, release suivante)
 **Étend** : spec 008 (suivi sanitaire) — ajoute une 3ᵉ méthode au triptyque
@@ -28,24 +28,29 @@ dominante de chaque UGF. Les trois pipelines alimentent **la même table
 `alert`** avec un `alert_type` discriminant supplémentaire :
 `reconfort_dieback`.
 
-### 1.1 Caractérisation technique de RECONFORT (état des connaissances)
+### 1.1 Caractérisation technique de RECONFORT (vérifiée sur le dépôt)
 
-Synthèse des publications CESBIO / Revue Forestière Française / GEODES-CNES
-(références §11). **À confirmer sur le dépôt Framagit** — voir questions
-ouvertes §10.
+Confirmé sur le clone Framagit (`main` 25198c9, voir §10). Référence :
+Mouret et al. 2023, *IEEE JSTARS*, doi:10.1109/JSTARS.2023.3332420.
 
 - **Algorithme** : classification supervisée **Random Forest** (≈ 80 % de
   bonne classification sur zones d'apprentissage, ≈ −5 % sur zones non vues
-  → robuste à l'échelle régionale).
-- **Variables d'entrée** : séries temporelles sur **2 années consécutives**
-  de deux indices Sentinel-2 complémentaires :
+  → robuste à l'échelle régionale). Implémenté via **Shark/OTB** dans la
+  chaîne IOTA² (4 modèles `.txt` versionnés, §10 Q3).
+- **Variables d'entrée** : séries temporelles **interpolées IOTA²** sur
+  **2 années consécutives** (modèle `v3`) ou **1,5 an** janv.→mai
+  (`v3_early_may`), de deux indices Sentinel-2 complémentaires calculés
+  dans `iota2/external_features/custom_index.py` (§10 Q2) :
   - **CRswir** (continuum removal SWIR) — teneur en eau du couvert (le signal
     discriminant : faible contenu en eau l'été = dépérissement) ;
   - **CRre** (continuum removal red-edge) — teneur en chlorophylle.
 - **Données** : Sentinel-2 niveau **2A**, chaîne de traitement **IOTA²**
-  (CESBIO, Python) pour un calcul opérationnel et reproductible.
-- **Sorties** : carte raster de classification du dépérissement (sain /
-  dépérissant, possiblement par stades), mise à jour annuelle.
+  (CESBIO, Python, conda obligatoire) pour un calcul opérationnel et
+  reproductible. Téléchargement S2 via `pygeodes` (GEODES/CNES).
+- **Sorties** : raster de classification (1 sain / 2 dépérissant / 3 très
+  dépérissant pour chêne et châtaignier ; 1 / 2 pour pin) + carte de
+  probabilité, dont est dérivé un **score continu** (§10 Q6), mise à jour
+  annuelle. Masque essence appliqué **en aval** (OSO feuillus par défaut).
 - **Essences ciblées** : chêne (étendu châtaignier + pin sylvestre).
 - **Pré-requis supervisé** : un **modèle RF entraîné** (≠ FORDEAD qui s'auto-
   calibre par pixel). C'est la différence structurante — voir §3.4 et §10.
@@ -62,10 +67,17 @@ Identique au pattern FORDEAD (spec 008 §3.1) :
 - **`nemetonshiny`** (app) : 3ᵉ mode dans `mod_monitoring`, bannières,
   leaflet, plotly, génération QField. Aucune logique métier côté app.
 
-Frontière R/Python : un environnement virtuel reticulate **dédié**
-`~/.virtualenvs/nemeton-reconfort/` (isolé de `nemeton-fordead` car deps
-distinctes : scikit-learn / IOTA² vs fordead). Licence amont **contenue à
-la frontière reticulate** (appel runtime, pas de linking) — voir §10 Q1.
+Frontière R/Python : un environnement **conda/mamba dédié**
+`nemeton-reconfort` (isolé de `nemeton-fordead` car deps distinctes :
+IOTA² + Shark/OTB vs fordead). RECONFORT impose conda (`mamba install
+iota2 -c iota2 -c iota2-deps`, python 3.9–3.11, `pygeodes` en pip) — ce
+n'est **pas** un `requirements.txt` pip ; reticulate pointe sur le python
+de cet env (`reticulate::use_condaenv()`). Voir §10 Q5.
+
+**Licence amont Apache-2.0** (permissive, sans copyleft) : code et
+modèles redistribuables avec attribution, **glue Python vendorisable**
+dans `inst/python/`. Pas de confinement « frontière reticulate » de type
+GPL-3 (contrairement à fordead) — voir §10 Q1.
 
 ---
 
@@ -94,11 +106,18 @@ différente de FORDEAD :
 |----------|--------|------|
 | FAST | B04, B08, B12 | NDVI/NBR |
 | FORDEAD | B02, B04, B05, B8A, B11, B12 | CRSWIR + masques |
-| **RECONFORT** | **B02, B04, B05, B06, B07, B8A, B11, B12** | CRre (B05/B06/B07 red-edge) + CRswir (B8A/B11/B12) + masques nuages |
-| Union des 3 | B02, B04, B05, B06, B07, B08, B8A, B11, B12 | cache mutualisé, `skip_cached` ne re-fetche que le manquant |
+| **RECONFORT** | **B04, B05, B06, B8A, B11, B12** | CRre (B04/B05/B06) + CRswir (B8A/B11/B12) ; **ni B02 ni B07** (§10 Q2) |
+| Union des 3 | B02, B04, B05, B06, B08, B8A, B11, B12 | cache mutualisé, `skip_cached` ne re-fetche que le manquant |
 
-**Nouvelle constante exportée** `RECONFORT_BANDS` (parallèle à `FORDEAD_BANDS`).
-La liste exacte des red-edge dépend de la définition CRre du dépôt → §10 Q2.
+**Nouvelle constante exportée** (vérifiée dans `custom_index.py`, §10 Q2) :
+
+```r
+RECONFORT_BANDS <- c("B04", "B05", "B06", "B8A", "B11", "B12")
+# λ (nm) : B04=665, B05=704, B06=741, B8A=865, B11=1610, B12=2190
+```
+
+Note : RECONFORT calcule ses indices sur la **série interpolée IOTA²**, pas
+sur les COG bruts ; le cache S2 ne sert qu'à alimenter IOTA² en entrée.
 
 ### 3.3 Flux du pipeline
 
@@ -121,7 +140,8 @@ La liste exacte des red-edge dépend de la définition CRre du dépôt → §10 
         │
         ▼  PHASE 4 — postprocess (R)
    raster classes -> patches 8-connexité -> centroïdes POINT
-   probabilité RF -> confidence_class / stress_index
+   score continu RECONFORT (1001 + (−P1 + P2 + 2·P3))/30, borné ~1..100,
+     0 = no-data -> stress_index ; classe RF -> confidence_class
    INSERT alert (alert_type = 'reconfort_dieback')
         │
         ▼  PHASE 5 — persist (optionnel)
@@ -133,13 +153,13 @@ La liste exacte des red-edge dépend de la définition CRre du dépôt → §10 
 | Fichier | Rôle | Modèle existant |
 |---------|------|-----------------|
 | `R/reconfort_pipeline.R` | `run_reconfort_dieback(con, zone_id, cache_dir, dates_obs, model = NULL, ...)` orchestration end-to-end | `R/fordead_pipeline.R` |
-| `R/reconfort_python.R` | `.ensure_reconfort_python()`, `.use_reconfort_env()` — venv reticulate, deps figées | `R/fordead_python.R` |
-| `R/reconfort_postprocess.R` | rasters classes → alertes ; `RECONFORT_CONFIDENCE_WEIGHTS` | `R/fordead_postprocess.R` |
+| `R/reconfort_python.R` | `.ensure_reconfort_python()`, `.use_reconfort_env()` — env **conda** IOTA² (pas un venv pip), `use_condaenv()` | `R/fordead_python.R` |
+| `R/reconfort_model.R` | `ensure_reconfort_model(version, cache_dir)` — **téléchargement à la demande** + checksum + cache, fallback chemin utilisateur (§10 Q3) | (nouveau) |
+| `R/reconfort_postprocess.R` | rasters classes + score continu → alertes ; `RECONFORT_CONFIDENCE_WEIGHTS` | `R/fordead_postprocess.R` |
 | `R/reconfort_validity.R` | `check_reconfort_validity(aoi, units)`, `load_reconfort_validity_zones()`, `RECONFORT_VALIDITY_DEPARTMENTS`, `RECONFORT_VALIDITY_SPECIES` | `R/fordead_validity.R` |
-| `inst/python/reconfort_requirements.txt` | deps Python figées (scikit-learn, rasterio, numpy, etc. ± IOTA²) | `inst/python/requirements.txt` |
-| `inst/extdata/reconfort_validity_zones.geojson` | région Centre-Val de Loire (6 départements : 18, 28, 36, 37, 41, 45) | `fordead_validity_zones.geojson` |
+| `inst/python/reconfort/` | glue Python **vendorisée** (Apache-2.0 : `custom_index.py`, génération cfg, masquage/score) ; **pas** de `requirements.txt` (conda, §10 Q5) | (vendor amont) |
+| `inst/extdata/reconfort_validity_zones.geojson` | région Centre-Val de Loire (6 départements : 18, 28, 36, 37, 41, 45) — **avertit, ne bloque pas** (§10 Q6) | `fordead_validity_zones.geojson` |
 | `data-raw/build_reconfort_validity_zones.R` | génération du GeoJSON depuis ADMIN-EXPRESS | `data-raw/build_fordead_validity_zones.R` |
-| `inst/extdata/reconfort.model/` | **modèle RF pré-entraîné** (si redistribuable — §10 Q1/Q3) | (nouveau) |
 
 ### 3.5 Garde-fous (parallèles aux G1-G5 de spec 008)
 
@@ -150,7 +170,11 @@ La liste exacte des red-edge dépend de la définition CRre du dépôt → §10 
   `disturbance_type` enrichi (cf. §3.6).
 - **G3 — bannières validité** : `check_reconfort_validity()` →
   `geo_valid` (intersection Centre-Val de Loire > 50 %) + `species_valid`
-  (≥ X % chêne/châtaignier/pin sylvestre selon BD Forêt v2).
+  (≥ X % chêne/châtaignier/pin sylvestre selon BD Forêt v2). **La bannière
+  avertit, ne bloque pas** : le code amont ne pose aucun verrou géo (son
+  exemple tourne hors CVL, FD Saint-Gobain dans l'Aisne — §10 Q6). La
+  séparation feuillus/résineux se fait par **masque externe** (OSO feuillus
+  par défaut), appliqué en aval, **pas** par le RF lui-même.
 - **G4 — validation terrain** : workflow QField réutilisé, schéma de saisie
   feuillus (stades de dépérissement chêne adaptés du protocole DSF feuillus).
 - **G5 — contribution indicateur** : pondération par la confiance RF (§4).
@@ -194,7 +218,8 @@ changement de la signature radar — R5 reste une colonne 0-100.
 
 > Alternative écartée (R6 séparé) : documentée pour traçabilité, mais
 > introduit une asymétrie résineux/feuillus dans le radar que rien ne
-> justifie côté métier. **Décision à valider — §10 Q4.**
+> justifie côté métier. **Décision tranchée (R5 unifié, routé par essence)
+> — §10 Q4.**
 
 ---
 
@@ -202,15 +227,17 @@ changement de la signature radar — R5 reste une colonne 0-100.
 
 - **Migration `0005_reconfort.sql`** (additive, rétrocompatible) : aucune
   nouvelle colonne nécessaire si on réutilise `confidence_class` +
-  `stress_index` ; on ajoute seulement, si besoin, un index sur
-  `alert_type = 'reconfort_dieback'`. `alert_type` reste libre (pas de CHECK).
-  → vérifier que `0002_fordead.sql` suffit ; sinon ajouter `rf_proba DOUBLE`.
+  `stress_index` (alimenté par le score continu RECONFORT, §10 Q6) ; on
+  ajoute seulement, si besoin, un index sur `alert_type = 'reconfort_dieback'`.
+  `alert_type` reste libre (pas de CHECK). → vérifier que `0002_fordead.sql`
+  suffit ; sinon ajouter `rf_proba DOUBLE`.
 - **NDP** : nouveau flag `health_reconfort` dans `detect_ndp()` (parallèle à
   `health_fordead`). Le niveau NDP et la confiance φ restent inchangés.
 - **`inst/datasources/FR.json`** : entrée `reconfort_anomalies`
-  (`method: "reconfort"`, `validity_zones: "reconfort_validity_zones.geojson"`,
+  (`method: "reconfort"`, `crs: "EPSG:2154"`,
+  `validity_zones: "reconfort_validity_zones.geojson"`,
   `validity_species: ["CHE","CHT","PS"]`, `ndp_flag: "health_reconfort"`,
-  licence amont à renseigner après §10 Q1).
+  `license: "Apache-2.0"` — code et modèles amont, §10 Q1/Q3).
 
 ---
 
@@ -265,53 +292,111 @@ table familles R5) à mettre à jour à la livraison.
 
 ## 9. Découpage en livraisons (séquencé)
 
+**L0 levé** : les 6 questions §10 sont tranchées (licence Apache-2.0,
+indices figés, modèles redistribuables, IOTA² obligatoire, validité). Plus
+aucun prérequis bloquant amont — le développement peut démarrer sur L1.
+L2 est scindé en **L2a (fetch-modèle)** et **L2b (pipeline-conda)** : le
+téléchargement+checksum du modèle est indépendant et testable seul, alors
+que le pipeline IOTA²/conda est la brique la plus lourde et la plus risquée.
+
 | Lot | Contenu | Version | Bloquant |
 |-----|---------|---------|----------|
-| **L0** | Spec validée + questions §10 tranchées (licence, modèle, indices) | — | **prérequis** |
 | **L1** | `reconfort_validity.R` + GeoJSON Centre-Val de Loire + datasource + NDP flag (pas de Python) | v0.68.0 | non |
-| **L2** | `reconfort_python.R` + venv + `reconfort_pipeline.R` (phases 0-3) + tests mockés | v0.69.0 | L0 Q1/Q3 |
-| **L3** | `reconfort_postprocess.R` → table `alert` + migration `0005` + fusion G2 3-voies | v0.70.0 | L2 |
-| **L4** | R5 unifié (routage par essence) + tests indicateur étendus | v0.71.0 | L3 |
-| **L5** | Persistance features (parité diagnostic pixel) + `read_reconfort_pixel_series()` | v0.72.0 | L3 |
+| **L2a** | `reconfort_model.R` : téléchargement à la demande + checksum + cache + fallback chemin utilisateur (pas d'IOTA²) | v0.69.0 | non |
+| **L2b** | `reconfort_python.R` (env conda IOTA²) + glue vendorisée `inst/python/reconfort/` + `reconfort_pipeline.R` (phases 0-3) + tests mockés | v0.70.0 | L2a |
+| **L3** | `reconfort_postprocess.R` (score continu) → table `alert` + migration `0005` + fusion G2 3-voies | v0.71.0 | L2b |
+| **L4** | R5 unifié (routage par essence) + tests indicateur étendus | v0.72.0 | L3 |
+| **L5** | Persistance features (parité diagnostic pixel) + `read_reconfort_pixel_series()` | v0.73.0 | L3 |
 | **L6** | App `nemetonshiny` : 3ᵉ mode, bannières, plotly, QField feuillus | release app | L4 |
 
 Chaque lot fonctionnel suit les *Consignes de release* de CLAUDE.md
 (DESCRIPTION + NEWS.md + tag + release + PLAN.md). L1 seul est doc/data →
-patch ; L2-L5 sont `feat:` → minor.
+patch ; L2a–L5 sont `feat:` → minor.
 
 ---
 
-## 10. Questions ouvertes (à trancher avant L2 — bloquantes)
+## 10. Faits vérifiés sur le dépôt amont (questions tranchées)
 
-Le dépôt Framagit a renvoyé 403 en accès anonyme ; ces points doivent être
-confirmés depuis le code source / le README réel ou auprès de F. Mouret.
+Le dépôt a été cloné et lu — `git clone https://framagit.org/fl.mouret/reconfort.git`
+(`main` 25198c9). Les 6 questions ouvertes de la version précédente sont
+désormais **tranchées**. Aucune n'est plus bloquante (L0 levé, §9).
 
-1. **Q1 — Licence amont de RECONFORT.** Déterminante pour la stratégie
-   « contenue à la frontière reticulate » (comme GPL-3 de fordead) et la
-   redistribution. À lire dans `LICENSE` du dépôt. *Sans réponse, ne pas
-   embarquer de code/modèle.*
-2. **Q2 — Définition exacte de CRswir / CRre** (bandes red-edge précises,
-   formules continuum-removal) → fige `RECONFORT_BANDS`.
-3. **Q3 — Modèle RF : pré-entraîné redistribuable ?** Le cœur du sujet
-   supervisé. Trois cas :
-   (a) modèle CVL livré et redistribuable → on l'embarque (`inst/extdata/`) ;
-   (b) modèle non redistribuable → l'utilisateur fournit le `.model` ;
-   (c) pas de modèle, seulement le code d'entraînement → scope bien plus large
-   (hors v0.68.x, aligné sur le hors-scope « pas de fine-tuning » de spec 008).
-4. **Q4 — R5 unifié vs R6 séparé** (§4). Recommandation : R5 unifié.
-5. **Q5 — Dépendance IOTA²** : requise (lourde, orientée chaîne) ou un
-   extracteur de features autonome suffit-il ? Impacte la taille du venv et
-   la faisabilité d'un appel pixel-wise léger.
-6. **Q6 — Zones/essences de validité** : confirmer les 6 départements CVL et
-   les codes essences (chêne CHE, châtaignier CHT, pin sylvestre PS) vs la
-   nomenclature BD Forêt v2 utilisée dans le projet.
+1. **Q1 — Licence : Apache-2.0** (`LICENSE.md`). Permissive, sans copyleft
+   → code **et** modèles redistribuables avec attribution ; glue Python
+   **vendorisable** dans `inst/python/`. Pas de confinement « frontière
+   reticulate » de type GPL-3 (contrairement à fordead).
+
+2. **Q2 — CRswir / CRre** : formules de production lues dans
+   `iota2/external_features/custom_index.py` (**sans offset additif** ; la
+   variante CRre avec `1.1 +` y est commentée, donc non utilisée).
+
+   ```
+   CRswir = B11 / [ B8A + (1610 − 865) · (B12 − B8A) / (2190 − 865) ]
+   CRre   = B5  / [ B4  + ( 704 − 665) · (B6  − B4 ) / ( 741 − 665) ]
+   ```
+
+   → `RECONFORT_BANDS <- c("B04","B05","B06","B8A","B11","B12")`
+   (**ni B02 ni B07**). λ (nm) : B04=665, B05=704, B06=741, B8A=865,
+   B11=1610, B12=2190. Indices calculés sur la **série interpolée IOTA²**.
+
+3. **Q3 — Modèles RF : livrés ET redistribuables, mais inembarquables.**
+   4 modèles Shark/OTB versionnés dans `models/` :
+
+   | Modèle | Cible | Classes | Taille |
+   |--------|-------|---------|--------|
+   | `v3` | chêne (2 ans) | 3 | 197 Mo |
+   | `v3_early_may` | chêne (1,5 an, janv.→mai) | 3 | 197 Mo |
+   | `v3_chestnut` | châtaignier | 3 | 14 Mo |
+   | `v3_pine` | pin sylvestre | 2 | 5,7 Mo |
+
+   Taille totale → **pas** dans `inst/extdata/`. Stratégie =
+   **téléchargement à la demande + checksum + cache**, fallback chemin
+   utilisateur (`R/reconfort_model.R`, lot L2a). Le code d'entraînement
+   `train_new_model/` est **hors-scope** (aligné sur le hors-scope « pas de
+   fine-tuning » de spec 008).
+
+4. **Q4 — R5 unifié** (décision interne nemeton, §4), routé par essence
+   dominante. **Confirmé.** Pas de R6 séparé.
+
+5. **Q5 — IOTA² obligatoire.** `run_map_production_reconfort.py` invoque
+   `Iota2.py` en **subprocess ×2** (sampling part 1, classification part 2),
+   branche les indices via `external_features`, applique le modèle via
+   **OTB/Shark**. Environnement **conda** (`mamba install iota2 -c iota2
+   -c iota2-deps`, python 3.9–3.11, `pygeodes` en pip) — **pas** un
+   `requirements.txt` pip. Un extracteur de features autonome (appel
+   pixel-wise léger) relève de la **R&D à part, non validée** → hors-scope
+   v0.68.x.
+
+6. **Q6 — Validité.** Les 6 départements CVL (18 / 28 / 36 / 37 / 41 / 45)
+   sont le domaine calibré, **mais aucun verrou géo n'existe dans le code**
+   (l'exemple fourni tourne sur la FD Saint-Gobain, Aisne, **hors CVL**) →
+   la bannière G3 **avertit, ne bloque pas**. La séparation des essences se
+   fait par **masque externe** (OSO feuillus 2021 par défaut), **pas** par le
+   RF. Classes : 1 sain / 2 dépérissant / 3 très dépérissant (chêne,
+   châtaignier) ; 1 / 2 (pin). Étiquette d'entraînement `dep_cor`, seuil
+   %D+ via `DEPERIS_pe`. **Score continu** dérivé de la carte de probabilité
+   (`mask_and_compress_rasters.py::compute_continuous_score`) :
+
+   ```
+   score = (1001 + (−P1 + P2 + 2·P3)) / 30      # borné ~1..100, 0 = no-data
+   #         P1=proba sain, P2=dépérissant, P3=très dépérissant
+   ```
+
+   1 = sain, 100 = très dépérissant. **CRS EPSG:2154** (Lambert-93).
 
 ---
 
 ## 11. Références
 
+- **Référence primaire** : F. Mouret, D. Morin, H. Martin, M. Planells,
+  C. Vincent-Barbaroux, « Toward an Operational Monitoring of Oak Dieback
+  With Multispectral Satellite Time Series: A Case Study in Centre-Val De
+  Loire Region of France », *IEEE J-STARS*, 2023,
+  doi:10.1109/JSTARS.2023.3332420.
 - F. Mouret et al. — projet RECONFORT, dépôt :
-  https://framagit.org/fl.mouret/reconfort
+  https://framagit.org/fl.mouret/reconfort (clone vérifié `main` 25198c9,
+  licence Apache-2.0 ; programme SYCOMORE, Université d'Orléans / CESBIO /
+  UT3 Paul Sabatier, financement Région Centre-Val de Loire)
 - CESBIO / Séries Temporelles — « Une nouvelle méthode opérationnelle pour
   surveiller le dépérissement des chênes en région Centre-Val de Loire »
 - GEODES-CNES — « Détection du dépérissement forestier par IA à partir de

@@ -6,10 +6,12 @@
 # ==============================================================================
 
 test_that(".twi_cache environment exists", {
+  skip_if_not_installed("terra")
   expect_true(exists(".twi_cache", envir = asNamespace("nemeton")))
 })
 
 test_that(".wind_cache environment exists", {
+  skip_if_not_installed("terra")
   expect_true(exists(".wind_cache", envir = asNamespace("nemeton")))
 })
 
@@ -18,6 +20,7 @@ test_that(".wind_cache environment exists", {
 # ==============================================================================
 
 test_that("get_nasapower_wind returns default when nasapower not available", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("mockr")
 
@@ -42,6 +45,7 @@ test_that("get_nasapower_wind returns default when nasapower not available", {
 })
 
 test_that("get_nasapower_wind uses in-memory cache", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Clear wind cache first
@@ -147,6 +151,7 @@ test_that("calculate_twi_terra computes TWI correctly", {
 # ==============================================================================
 
 test_that("indicateur_c1_biomasse returns expected structure", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -166,6 +171,7 @@ test_that("indicateur_c1_biomasse returns expected structure", {
 })
 
 test_that("indicateur_c2_ndvi returns expected structure", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -182,6 +188,7 @@ test_that("indicateur_c2_ndvi returns expected structure", {
 })
 
 test_that("indicateur_w1_reseau returns expected structure", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 3)
@@ -197,6 +204,7 @@ test_that("indicateur_w1_reseau returns expected structure", {
 })
 
 test_that("indicateur_w2_zones_humides returns expected structure", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 3)
@@ -212,6 +220,7 @@ test_that("indicateur_w2_zones_humides returns expected structure", {
 })
 
 test_that("indicateur_f1_fertilite returns expected structure", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 3)
@@ -227,6 +236,7 @@ test_that("indicateur_f1_fertilite returns expected structure", {
 })
 
 test_that("indicateur_f2_erosion returns expected structure", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 3)
@@ -242,6 +252,7 @@ test_that("indicateur_f2_erosion returns expected structure", {
 })
 
 test_that("indicateur_l2_fragmentation returns expected structure", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -258,6 +269,7 @@ test_that("indicateur_l2_fragmentation returns expected structure", {
 })
 
 test_that("indicateur_l1_sylvosphere returns expected structure", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -278,21 +290,25 @@ test_that("indicateur_l1_sylvosphere returns expected structure", {
 # ==============================================================================
 
 test_that("indicateur_a1_couverture is an alias function", {
+  skip_if_not_installed("terra")
   expect_true(exists("indicateur_a1_couverture", envir = asNamespace("nemeton")))
   expect_type(nemeton:::indicateur_a1_couverture, "closure")
 })
 
 test_that("indicateur_f1_fertilite is an alias function", {
+  skip_if_not_installed("terra")
   expect_true(exists("indicateur_f1_fertilite", envir = asNamespace("nemeton")))
   expect_type(nemeton:::indicateur_f1_fertilite, "closure")
 })
 
 test_that("indicateur_f2_erosion is an alias function", {
+  skip_if_not_installed("terra")
   expect_true(exists("indicateur_f2_erosion", envir = asNamespace("nemeton")))
   expect_type(nemeton:::indicateur_f2_erosion, "closure")
 })
 
 test_that("indicateur_l1_sylvosphere_ratio is an alias function", {
+  skip_if_not_installed("terra")
   expect_true(exists("indicateur_l1_sylvosphere_ratio", envir = asNamespace("nemeton")))
   expect_type(nemeton:::indicateur_l1_sylvosphere_ratio, "closure")
 })
@@ -302,6 +318,7 @@ test_that("indicateur_l1_sylvosphere_ratio is an alias function", {
 # ==============================================================================
 
 test_that("extract_fertility_from_raster handles missing layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -318,6 +335,7 @@ test_that("extract_fertility_from_raster handles missing layers", {
 })
 
 test_that("extract_fertility_from_vector handles missing layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 3)
@@ -337,6 +355,7 @@ test_that("extract_fertility_from_vector handles missing layers", {
 # ==============================================================================
 
 test_that("indicateur_s3_population exists and is callable", {
+  skip_if_not_installed("terra")
   expect_true(exists("indicateur_s3_population", envir = asNamespace("nemeton")))
 
   skip_if_not_installed("sf")
@@ -371,6 +390,7 @@ test_that("indicateur_s3_population exists and is callable", {
 # ==============================================================================
 
 test_that("indicateur_c1_biomasse uses allometric model with inventory data", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   units$species <- c("Quercus", "Fagus", "Pinus")
@@ -384,6 +404,7 @@ test_that("indicateur_c1_biomasse uses allometric model with inventory data", {
 })
 
 test_that("indicateur_c1_biomasse returns NA without any data source", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   # No species/age/density, no layers
@@ -393,6 +414,7 @@ test_that("indicateur_c1_biomasse returns NA without any data source", {
 })
 
 test_that("indicateur_c1_biomasse validates sf input", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton::indicateur_c1_biomasse(data.frame(x = 1)),
     "units must be an sf object"
@@ -404,6 +426,7 @@ test_that("indicateur_c1_biomasse validates sf input", {
 # ==============================================================================
 
 test_that("indicateur_l1_sylvosphere uses shape index fallback", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   # No layers -> uses shape index fallback
@@ -413,6 +436,7 @@ test_that("indicateur_l1_sylvosphere uses shape index fallback", {
 })
 
 test_that("indicateur_l1_sylvosphere validates empty units", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   empty_units <- units[0, ]
@@ -454,6 +478,7 @@ make_mock_layers <- function(rasters = list(), vectors = list(), cache_dir = NUL
 # ==============================================================================
 
 test_that("indicateur_c1_biomasse LiDAR MNH path", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -477,6 +502,7 @@ test_that("indicateur_c1_biomasse LiDAR MNH path", {
 # ==============================================================================
 
 test_that("indicateur_c1_biomasse NDVI fallback path", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -500,6 +526,7 @@ test_that("indicateur_c1_biomasse NDVI fallback path", {
 # ==============================================================================
 
 test_that("indicateur_c1_biomasse BD Foret path", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -552,6 +579,7 @@ test_that("indicateur_c1_biomasse BD Foret path", {
 # ==============================================================================
 
 test_that("indicateur_l2_fragmentation with landcover layer", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -571,6 +599,7 @@ test_that("indicateur_l2_fragmentation with landcover layer", {
 })
 
 test_that("indicateur_l2_fragmentation without layers uses shape fallback", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 3)
@@ -582,6 +611,7 @@ test_that("indicateur_l2_fragmentation without layers uses shape fallback", {
 })
 
 test_that("indicateur_l2_fragmentation validates sf input", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton:::indicateur_l2_fragmentation(data.frame(x = 1)),
     "sf"
@@ -593,6 +623,7 @@ test_that("indicateur_l2_fragmentation validates sf input", {
 # ==============================================================================
 
 test_that("indicateur_w2_zones_humides with water_surfaces vector", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -626,6 +657,7 @@ test_that("indicateur_w2_zones_humides with water_surfaces vector", {
 })
 
 test_that("indicateur_w2_zones_humides validates sf input", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton:::indicateur_w2_zones_humides(data.frame(x = 1), layers = list()),
     "sf"
@@ -633,6 +665,7 @@ test_that("indicateur_w2_zones_humides validates sf input", {
 })
 
 test_that("indicateur_w2_zones_humides validates nemeton_layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 1)
   expect_error(
@@ -646,6 +679,7 @@ test_that("indicateur_w2_zones_humides validates nemeton_layers", {
 # ==============================================================================
 
 test_that("indicateur_w1_reseau with mock watercourses", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 2)
@@ -673,6 +707,7 @@ test_that("indicateur_w1_reseau with mock watercourses", {
 })
 
 test_that("indicateur_w1_reseau validates sf input", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton:::indicateur_w1_reseau(data.frame(x = 1), layers = list()),
     "sf"
@@ -680,6 +715,7 @@ test_that("indicateur_w1_reseau validates sf input", {
 })
 
 test_that("indicateur_w1_reseau validates nemeton_layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 1)
   expect_error(
@@ -693,6 +729,7 @@ test_that("indicateur_w1_reseau validates nemeton_layers", {
 # ==============================================================================
 
 test_that("indicateur_f2_erosion computes TWI + slope", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -723,6 +760,7 @@ test_that("indicateur_f2_erosion computes TWI + slope", {
 })
 
 test_that("indicateur_f2_erosion validates sf input", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton:::indicateur_f2_erosion(data.frame(x = 1), layers = list()),
     "sf"
@@ -730,6 +768,7 @@ test_that("indicateur_f2_erosion validates sf input", {
 })
 
 test_that("indicateur_f2_erosion validates nemeton_layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 1)
   expect_error(
@@ -750,6 +789,7 @@ test_that("indicateur_f2_erosion validates nemeton_layers", {
 # ==============================================================================
 
 test_that("extract_fertility_from_vector with overlapping soil polygons", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 2)
@@ -781,6 +821,7 @@ test_that("extract_fertility_from_vector with overlapping soil polygons", {
 })
 
 test_that("extract_fertility_from_vector errors on missing column", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 1)
@@ -808,6 +849,7 @@ test_that("extract_fertility_from_vector errors on missing column", {
 })
 
 test_that("extract_fertility_from_vector returns 0 for non-overlapping", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 1)
@@ -839,6 +881,7 @@ test_that("extract_fertility_from_vector returns 0 for non-overlapping", {
 # ==============================================================================
 
 test_that("extract_fertility_from_raster with uniform values", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -855,6 +898,7 @@ test_that("extract_fertility_from_raster with uniform values", {
 })
 
 test_that("extract_fertility_from_raster with varying values", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -935,6 +979,7 @@ test_that("calculate_twi_grass requires fasterRaster package", {
 # ==============================================================================
 
 test_that("indicateur_l1_sylvosphere shape index fallback scores", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 3)
@@ -946,6 +991,7 @@ test_that("indicateur_l1_sylvosphere shape index fallback scores", {
 })
 
 test_that("indicateur_l1_sylvosphere with landcover (no landscapemetrics)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -975,6 +1021,7 @@ test_that("indicateur_l1_sylvosphere with landcover (no landscapemetrics)", {
 # ==============================================================================
 
 test_that("indicateur_w1_reseau computes proximity bonus for distant parcels", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 1)
@@ -1006,6 +1053,7 @@ test_that("indicateur_w1_reseau computes proximity bonus for distant parcels", {
 # ==============================================================================
 
 test_that("get_nasapower_wind loads from file cache", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Clear in-memory cache
@@ -1035,6 +1083,7 @@ test_that("get_nasapower_wind loads from file cache", {
 # ==============================================================================
 
 test_that("indicateur_c2_ndvi validates sf input", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton:::indicateur_c2_ndvi(data.frame(x = 1), layers = list()),
     "sf"
@@ -1042,6 +1091,7 @@ test_that("indicateur_c2_ndvi validates sf input", {
 })
 
 test_that("indicateur_c2_ndvi validates nemeton_layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 1)
   expect_error(
@@ -1051,6 +1101,7 @@ test_that("indicateur_c2_ndvi validates nemeton_layers", {
 })
 
 test_that("indicateur_c2_ndvi with valid NDVI layer", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -1067,6 +1118,7 @@ test_that("indicateur_c2_ndvi with valid NDVI layer", {
 })
 
 test_that("indicateur_c2_ndvi warns on trend parameter", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -1087,6 +1139,7 @@ test_that("indicateur_c2_ndvi warns on trend parameter", {
 # ==============================================================================
 
 test_that("indicateur_w3_humidite validates sf input", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton:::indicateur_w3_humidite(data.frame(x = 1), layers = list()),
     "sf"
@@ -1094,6 +1147,7 @@ test_that("indicateur_w3_humidite validates sf input", {
 })
 
 test_that("indicateur_w3_humidite validates nemeton_layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 1)
   expect_error(
@@ -1103,6 +1157,7 @@ test_that("indicateur_w3_humidite validates nemeton_layers", {
 })
 
 test_that("indicateur_w3_humidite computes from DEM", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -1123,6 +1178,7 @@ test_that("indicateur_w3_humidite computes from DEM", {
 })
 
 test_that("indicateur_w3_humidite uses d8 method", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -1146,6 +1202,7 @@ test_that("indicateur_w3_humidite uses d8 method", {
 # ==============================================================================
 
 test_that("indicateur_f1_fertilite validates sf input", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton:::indicateur_f1_fertilite(data.frame(x = 1), layers = list()),
     "sf"
@@ -1153,6 +1210,7 @@ test_that("indicateur_f1_fertilite validates sf input", {
 })
 
 test_that("indicateur_f1_fertilite validates nemeton_layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 1)
   expect_error(
@@ -1162,6 +1220,7 @@ test_that("indicateur_f1_fertilite validates nemeton_layers", {
 })
 
 test_that("indicateur_f1_fertilite with raster soil layer", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -1178,6 +1237,7 @@ test_that("indicateur_f1_fertilite with raster soil layer", {
 })
 
 test_that("indicateur_f1_fertilite with vector soil layer", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 2)
@@ -1248,11 +1308,13 @@ test_that("calculate_twi_terra handles steep terrain", {
 # ==============================================================================
 
 test_that("indicateur_n3_naturalite exists and is callable", {
+  skip_if_not_installed("terra")
   expect_true(exists("indicateur_n3_naturalite", envir = asNamespace("nemeton")))
   expect_type(nemeton:::indicateur_n3_naturalite, "closure")
 })
 
 test_that("indicateur_n3_naturalite delegates to composite", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   result <- tryCatch(
@@ -1269,6 +1331,7 @@ test_that("indicateur_n3_naturalite delegates to composite", {
 # ==============================================================================
 
 test_that("indicateur_l1_sylvosphere_ratio delegates to indicateur_l1_sylvosphere", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   result1 <- nemeton:::indicateur_l1_sylvosphere(units, layers = NULL)
@@ -1286,6 +1349,7 @@ test_that("indicateur_l1_sylvosphere_ratio delegates to indicateur_l1_sylvospher
 # ==============================================================================
 
 test_that("calculate_twi_terra: returns valid SpatRaster from gradient DEM", {
+  skip_if_not_installed("terra")
   dem <- terra::rast(nrows = 20, ncols = 20,
                      xmin = 800000, xmax = 801000,
                      ymin = 6500000, ymax = 6501000,
@@ -1305,6 +1369,7 @@ test_that("calculate_twi_terra: returns valid SpatRaster from gradient DEM", {
 })
 
 test_that("calculate_twi_terra: flat DEM produces valid output", {
+  skip_if_not_installed("terra")
   dem <- terra::rast(nrows = 15, ncols = 15,
                      xmin = 800000, xmax = 800750,
                      ymin = 6500000, ymax = 6500750,
@@ -1323,6 +1388,7 @@ test_that("calculate_twi_terra: flat DEM produces valid output", {
 })
 
 test_that("calculate_twi_terra: steep gradient DEM produces lower TWI", {
+  skip_if_not_installed("terra")
   dem <- terra::rast(nrows = 20, ncols = 20,
                      xmin = 800000, xmax = 802000,
                      ymin = 6500000, ymax = 6502000,
@@ -1340,6 +1406,7 @@ test_that("calculate_twi_terra: steep gradient DEM produces lower TWI", {
 })
 
 test_that("calculate_twi_terra: dimensions preserved", {
+  skip_if_not_installed("terra")
   dem <- terra::rast(nrows = 10, ncols = 10,
                      xmin = 800000, xmax = 801000,
                      ymin = 6500000, ymax = 6501000,
@@ -1356,6 +1423,7 @@ test_that("calculate_twi_terra: dimensions preserved", {
 # ==============================================================================
 
 test_that("indicateur_c1_biomasse: Path 1 (inventory) with multiple species", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 4)
   units$species <- c("Quercus", "Fagus", "Pinus", "Abies")
   units$age <- c(100, 80, 50, 60)
@@ -1369,6 +1437,7 @@ test_that("indicateur_c1_biomasse: Path 1 (inventory) with multiple species", {
 })
 
 test_that("indicateur_c1_biomasse: Path 1 with custom column names", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   units$sp <- c("Quercus", "Fagus")
   units$stand_age <- c(70, 90)
@@ -1386,6 +1455,7 @@ test_that("indicateur_c1_biomasse: Path 1 with custom column names", {
 })
 
 test_that("indicateur_c1_biomasse: Path 4 (NDVI fallback) returns biomass scaled from NDVI", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
 
   ndvi <- create_test_raster(values = "random", res = 10)
@@ -1400,6 +1470,7 @@ test_that("indicateur_c1_biomasse: Path 4 (NDVI fallback) returns biomass scaled
 })
 
 test_that("indicateur_c1_biomasse: last resort returns NA when no data", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   layers <- create_test_layers(rasters = list())
   result <- nemeton::indicateur_c1_biomasse(units, layers = layers)
@@ -1408,6 +1479,7 @@ test_that("indicateur_c1_biomasse: last resort returns NA when no data", {
 })
 
 test_that("indicateur_c1_biomasse: NULL layers returns NA", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   result <- nemeton::indicateur_c1_biomasse(units, layers = NULL)
   expect_length(result, 2)
@@ -1415,6 +1487,7 @@ test_that("indicateur_c1_biomasse: NULL layers returns NA", {
 })
 
 test_that("indicateur_c1_biomasse: non-sf input errors", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton::indicateur_c1_biomasse(data.frame(x = 1)),
     "units must be an sf object"
@@ -1422,6 +1495,7 @@ test_that("indicateur_c1_biomasse: non-sf input errors", {
 })
 
 test_that("indicateur_c1_biomasse: list input errors", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton::indicateur_c1_biomasse(list(a = 1)),
     "units must be an sf object"
@@ -1429,6 +1503,7 @@ test_that("indicateur_c1_biomasse: list input errors", {
 })
 
 test_that("indicateur_c1_biomasse: LiDAR MNH path produces positive values", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   mnh <- create_test_raster(values = "random", res = 10)
   terra::values(mnh) <- runif(terra::ncell(mnh), 5, 25)
@@ -1445,6 +1520,7 @@ test_that("indicateur_c1_biomasse: LiDAR MNH path produces positive values", {
 # ==============================================================================
 
 test_that("indicateur_c2_ndvi: valid NDVI raster extraction", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   ndvi <- create_test_raster(values = "random", res = 10)
   terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.2, 0.85)
@@ -1457,6 +1533,7 @@ test_that("indicateur_c2_ndvi: valid NDVI raster extraction", {
 })
 
 test_that("indicateur_c2_ndvi: trend = TRUE warns not implemented", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   ndvi <- create_test_raster(values = "random", res = 10)
   terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.1, 0.9)
@@ -1471,6 +1548,7 @@ test_that("indicateur_c2_ndvi: trend = TRUE warns not implemented", {
 })
 
 test_that("indicateur_c2_ndvi: non-sf input errors", {
+  skip_if_not_installed("terra")
   layers <- create_test_layers(rasters = list(ndvi = create_test_raster()))
   expect_error(
     nemeton:::indicateur_c2_ndvi(data.frame(x = 1), layers),
@@ -1479,6 +1557,7 @@ test_that("indicateur_c2_ndvi: non-sf input errors", {
 })
 
 test_that("indicateur_c2_ndvi: non-nemeton_layers errors", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   expect_error(
     nemeton:::indicateur_c2_ndvi(units, layers = list(rasters = list())),
@@ -1487,6 +1566,7 @@ test_that("indicateur_c2_ndvi: non-nemeton_layers errors", {
 })
 
 test_that("indicateur_c2_ndvi: missing NDVI layer errors", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   layers <- create_test_layers(rasters = list(dem = create_test_raster()))
   expect_error(
@@ -1496,6 +1576,7 @@ test_that("indicateur_c2_ndvi: missing NDVI layer errors", {
 })
 
 test_that("indicateur_c2_ndvi: custom ndvi_layer name works", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   ndvi <- create_test_raster(values = "random", res = 10)
   terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.2, 0.7)
@@ -1511,6 +1592,7 @@ test_that("indicateur_c2_ndvi: custom ndvi_layer name works", {
 # ==============================================================================
 
 test_that("indicateur_w1_reseau: watercourse crossing parcel yields positive density", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   bbox <- sf::st_bbox(units)
 
@@ -1532,6 +1614,7 @@ test_that("indicateur_w1_reseau: watercourse crossing parcel yields positive den
 })
 
 test_that("indicateur_w1_reseau: no crossing but within proximity yields bonus", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   bbox <- sf::st_bbox(units)
 
@@ -1553,6 +1636,7 @@ test_that("indicateur_w1_reseau: no crossing but within proximity yields bonus",
 })
 
 test_that("indicateur_w1_reseau: stream far away (>500m) yields zero proximity", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   bbox <- sf::st_bbox(units)
 
@@ -1574,6 +1658,7 @@ test_that("indicateur_w1_reseau: stream far away (>500m) yields zero proximity",
 })
 
 test_that("indicateur_w1_reseau: non-sf input errors", {
+  skip_if_not_installed("terra")
   layers <- create_test_layers(vectors = list(water_network = create_test_vector()))
   expect_error(
     nemeton:::indicateur_w1_reseau(data.frame(x = 1), layers),
@@ -1582,6 +1667,7 @@ test_that("indicateur_w1_reseau: non-sf input errors", {
 })
 
 test_that("indicateur_w1_reseau: non-nemeton_layers errors", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   expect_error(
     nemeton:::indicateur_w1_reseau(units, list()),
@@ -1590,6 +1676,7 @@ test_that("indicateur_w1_reseau: non-nemeton_layers errors", {
 })
 
 test_that("indicateur_w1_reseau: missing watercourse layer returns 0", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   layers <- create_test_layers(vectors = list())
   # The real indicateur_w1_reseau warns and returns 0 instead of erroring
@@ -1600,6 +1687,7 @@ test_that("indicateur_w1_reseau: missing watercourse layer returns 0", {
 })
 
 test_that("indicateur_w1_reseau: buffer parameter increases capture area", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   bbox <- sf::st_bbox(units)
 
@@ -1628,6 +1716,7 @@ test_that("indicateur_w1_reseau: buffer parameter increases capture area", {
 # ==============================================================================
 
 test_that("indicateur_w2_zones_humides: TWI source (DEM -> TWI -> wetland fraction)", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   dem <- create_test_raster(values = "random", res = 10)
   # Create a gradient DEM
@@ -1646,6 +1735,7 @@ test_that("indicateur_w2_zones_humides: TWI source (DEM -> TWI -> wetland fracti
 })
 
 test_that("indicateur_w2_zones_humides: no data returns NA", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   layers <- create_test_layers(rasters = list(), vectors = list())
   result <- nemeton:::indicateur_w2_zones_humides(units, layers)
@@ -1654,6 +1744,7 @@ test_that("indicateur_w2_zones_humides: no data returns NA", {
 })
 
 test_that("indicateur_w2_zones_humides: non-sf input errors", {
+  skip_if_not_installed("terra")
   layers <- create_test_layers()
   expect_error(
     nemeton:::indicateur_w2_zones_humides(data.frame(x = 1), layers),
@@ -1662,6 +1753,7 @@ test_that("indicateur_w2_zones_humides: non-sf input errors", {
 })
 
 test_that("indicateur_w2_zones_humides: non-nemeton_layers errors", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   expect_error(
     nemeton:::indicateur_w2_zones_humides(units, list()),
@@ -1670,6 +1762,7 @@ test_that("indicateur_w2_zones_humides: non-nemeton_layers errors", {
 })
 
 test_that("indicateur_w2_zones_humides: water_surfaces vector source", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   bbox <- sf::st_bbox(units)
 
@@ -1702,6 +1795,7 @@ test_that("indicateur_w2_zones_humides: water_surfaces vector source", {
 # ==============================================================================
 
 test_that("indicateur_w3_humidite: with DEM returns TWI mean values", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   dem <- create_test_raster(values = "random", res = 10)
   vals <- matrix(
@@ -1717,6 +1811,7 @@ test_that("indicateur_w3_humidite: with DEM returns TWI mean values", {
 })
 
 test_that("indicateur_w3_humidite: method = 'd8' calls calculate_twi_terra directly", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   dem <- create_test_raster(values = "random", res = 10)
   vals <- matrix(
@@ -1733,6 +1828,7 @@ test_that("indicateur_w3_humidite: method = 'd8' calls calculate_twi_terra direc
 })
 
 test_that("indicateur_w3_humidite: no DEM errors", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   layers <- create_test_layers(rasters = list())
   expect_error(
@@ -1742,6 +1838,7 @@ test_that("indicateur_w3_humidite: no DEM errors", {
 })
 
 test_that("indicateur_w3_humidite: non-sf input errors", {
+  skip_if_not_installed("terra")
   layers <- create_test_layers(rasters = list(dem = create_test_raster()))
   expect_error(
     nemeton:::indicateur_w3_humidite(data.frame(x = 1), layers),
@@ -1750,6 +1847,7 @@ test_that("indicateur_w3_humidite: non-sf input errors", {
 })
 
 test_that("indicateur_w3_humidite: non-nemeton_layers errors", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   expect_error(
     nemeton:::indicateur_w3_humidite(units, list()),
@@ -1758,6 +1856,7 @@ test_that("indicateur_w3_humidite: non-nemeton_layers errors", {
 })
 
 test_that("indicateur_w3_humidite: method = 'auto' produces same structure as 'd8'", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   dem <- create_test_raster(values = "random", res = 10)
   vals <- matrix(
@@ -1778,6 +1877,7 @@ test_that("indicateur_w3_humidite: method = 'auto' produces same structure as 'd
 # ==============================================================================
 
 test_that("indicateur_f2_erosion: with DEM computes TWI+slope composite", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster(values = "random", res = 10)
   vals <- matrix(
@@ -1798,6 +1898,7 @@ test_that("indicateur_f2_erosion: with DEM computes TWI+slope composite", {
 })
 
 test_that("indicateur_f2_erosion: no DEM errors", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   layers <- create_test_layers(rasters = list())
   expect_error(
@@ -1807,6 +1908,7 @@ test_that("indicateur_f2_erosion: no DEM errors", {
 })
 
 test_that("indicateur_f2_erosion: non-sf input errors", {
+  skip_if_not_installed("terra")
   layers <- create_test_layers(rasters = list(dem = create_test_raster()))
   expect_error(
     nemeton:::indicateur_f2_erosion(data.frame(x = 1), layers),
@@ -1815,6 +1917,7 @@ test_that("indicateur_f2_erosion: non-sf input errors", {
 })
 
 test_that("indicateur_f2_erosion: non-nemeton_layers errors", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   expect_error(
     nemeton:::indicateur_f2_erosion(units, list()),
@@ -1823,6 +1926,7 @@ test_that("indicateur_f2_erosion: non-nemeton_layers errors", {
 })
 
 test_that("indicateur_f2_erosion: LiDAR MNT preferred over regular DEM", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   dem <- create_test_raster(values = "random", res = 10)
   terra::values(dem) <- seq(200, 500, length.out = terra::ncell(dem))
@@ -1841,6 +1945,7 @@ test_that("indicateur_f2_erosion: LiDAR MNT preferred over regular DEM", {
 # ==============================================================================
 
 test_that("indicateur_l2_fragmentation: geometry component (shape index)", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   # No layers -> only geometry + exposure components
   result <- nemeton:::indicateur_l2_fragmentation(units, layers = NULL)
@@ -1850,6 +1955,7 @@ test_that("indicateur_l2_fragmentation: geometry component (shape index)", {
 })
 
 test_that("indicateur_l2_fragmentation: no landcover yields neutral contrast", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   # Empty layers (has class but no landcover raster)
   layers <- create_test_layers(rasters = list())
@@ -1860,6 +1966,7 @@ test_that("indicateur_l2_fragmentation: no landcover yields neutral contrast", {
 })
 
 test_that("indicateur_l2_fragmentation: with landcover raster computes contrast", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   lc <- create_test_raster(values = "constant", res = 10)
   # Mix of OSO classes (forest: 16-18, agriculture: 21-23, built-up: 25-28)
@@ -1874,6 +1981,7 @@ test_that("indicateur_l2_fragmentation: with landcover raster computes contrast"
 })
 
 test_that("indicateur_l2_fragmentation: non-sf input errors", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton:::indicateur_l2_fragmentation(data.frame(x = 1)),
     "sf"
@@ -1881,6 +1989,7 @@ test_that("indicateur_l2_fragmentation: non-sf input errors", {
 })
 
 test_that("indicateur_l2_fragmentation: forest_cover fallback for landcover", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   lc <- create_test_raster(values = "constant", res = 10)
   vals <- sample(c(16, 17, 25, 30), terra::ncell(lc), replace = TRUE)
@@ -1894,6 +2003,7 @@ test_that("indicateur_l2_fragmentation: forest_cover fallback for landcover", {
 })
 
 test_that("indicateur_l2_fragmentation: single unit works", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   result <- nemeton:::indicateur_l2_fragmentation(units, layers = NULL)
   expect_length(result, 1)
@@ -1906,6 +2016,7 @@ test_that("indicateur_l2_fragmentation: single unit works", {
 # ==============================================================================
 
 test_that("get_nasapower_wind: cache miss, nasapower not installed returns default_dir", {
+  skip_if_not_installed("terra")
   # Clear in-memory cache
   wind_cache <- get(".wind_cache", envir = asNamespace("nemeton"))
   rm(list = ls(wind_cache), envir = wind_cache)
@@ -1928,6 +2039,7 @@ test_that("get_nasapower_wind: cache miss, nasapower not installed returns defau
 })
 
 test_that("get_nasapower_wind: file cache hit returns cached value", {
+  skip_if_not_installed("terra")
   # Clear in-memory cache
   wind_cache <- get(".wind_cache", envir = asNamespace("nemeton"))
   rm(list = ls(wind_cache), envir = wind_cache)
@@ -1949,6 +2061,7 @@ test_that("get_nasapower_wind: file cache hit returns cached value", {
 })
 
 test_that("get_nasapower_wind: memory cache hit returns cached value", {
+  skip_if_not_installed("terra")
   # Clear in-memory cache
   wind_cache <- get(".wind_cache", envir = asNamespace("nemeton"))
   rm(list = ls(wind_cache), envir = wind_cache)
@@ -1975,6 +2088,7 @@ test_that("get_nasapower_wind: memory cache hit returns cached value", {
 })
 
 test_that("get_nasapower_wind: custom default_dir is respected", {
+  skip_if_not_installed("terra")
   wind_cache <- get(".wind_cache", envir = asNamespace("nemeton"))
   rm(list = ls(wind_cache), envir = wind_cache)
 
@@ -1999,6 +2113,7 @@ test_that("get_nasapower_wind: custom default_dir is respected", {
 # ==============================================================================
 
 test_that("get_or_compute_twi: no cache computes TWI", {
+  skip_if_not_installed("terra")
   # Clear the TWI cache
   twi_cache <- get(".twi_cache", envir = asNamespace("nemeton"))
   rm(list = ls(twi_cache), envir = twi_cache)
@@ -2023,6 +2138,7 @@ test_that("get_or_compute_twi: no cache computes TWI", {
 })
 
 test_that("get_or_compute_twi: memory cache hit returns cached", {
+  skip_if_not_installed("terra")
   # Clear the TWI cache
   twi_cache <- get(".twi_cache", envir = asNamespace("nemeton"))
   rm(list = ls(twi_cache), envir = twi_cache)
@@ -2055,6 +2171,7 @@ test_that("get_or_compute_twi: memory cache hit returns cached", {
 })
 
 test_that("get_or_compute_twi: file cache hit returns cached", {
+  skip_if_not_installed("terra")
   # Clear the TWI cache
   twi_cache <- get(".twi_cache", envir = asNamespace("nemeton"))
   rm(list = ls(twi_cache), envir = twi_cache)
@@ -2087,6 +2204,7 @@ test_that("get_or_compute_twi: file cache hit returns cached", {
 # ==============================================================================
 
 test_that("extract_fertility_from_raster: uniform values yield neutral 50", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   soil <- create_test_raster(values = "constant", res = 10)
   terra::values(soil) <- 5
@@ -2099,6 +2217,7 @@ test_that("extract_fertility_from_raster: uniform values yield neutral 50", {
 })
 
 test_that("extract_fertility_from_raster: gradient values produce range 0-100", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   soil <- create_test_raster(values = "random", res = 10)
   terra::values(soil) <- seq(1, 10, length.out = terra::ncell(soil))
@@ -2111,6 +2230,7 @@ test_that("extract_fertility_from_raster: gradient values produce range 0-100", 
 })
 
 test_that("extract_fertility_from_vector: overlapping polygons with fertility", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   bbox <- sf::st_bbox(units)
 
@@ -2138,6 +2258,7 @@ test_that("extract_fertility_from_vector: overlapping polygons with fertility", 
 })
 
 test_that("extract_fertility_from_vector: missing fertility column errors", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   bbox <- sf::st_bbox(units)
   soil_poly <- sf::st_polygon(list(matrix(
@@ -2161,6 +2282,7 @@ test_that("extract_fertility_from_vector: missing fertility column errors", {
 })
 
 test_that("extract_fertility_from_vector: non-overlapping returns NA-like", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
 
   # Polygon far away from units
@@ -2180,6 +2302,7 @@ test_that("extract_fertility_from_vector: non-overlapping returns NA-like", {
 })
 
 test_that("extract_fertility_from_vector: multiple soil polygons area-weighted", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   bbox <- sf::st_bbox(units)
 
@@ -2219,6 +2342,7 @@ test_that("extract_fertility_from_vector: multiple soil polygons area-weighted",
 # ==============================================================================
 
 test_that("indicateur_c1_biomasse: Path 1 returns values proportional to density", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   units$species <- c("Quercus", "Quercus")
   units$age <- c(80, 80)
@@ -2231,6 +2355,7 @@ test_that("indicateur_c1_biomasse: Path 1 returns values proportional to density
 })
 
 test_that("indicateur_w1_reseau: crossing stream gives full proximity bonus", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   bbox <- sf::st_bbox(units)
 
@@ -2253,6 +2378,7 @@ test_that("indicateur_w1_reseau: crossing stream gives full proximity bonus", {
 })
 
 test_that("indicateur_l2_fragmentation: returns scores in [0, 100] for irregular parcels", {
+  skip_if_not_installed("terra")
   # Create irregular polygon
   poly <- sf::st_polygon(list(matrix(
     c(566450, 6615200,
@@ -2275,6 +2401,7 @@ test_that("indicateur_l2_fragmentation: returns scores in [0, 100] for irregular
 })
 
 test_that("indicateur_w3_humidite: consistent results between calls with cache", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   dem <- create_test_raster(values = "random", res = 10)
   vals <- matrix(
@@ -2290,6 +2417,7 @@ test_that("indicateur_w3_humidite: consistent results between calls with cache",
 })
 
 test_that("indicateur_f2_erosion: gentle slope produces higher fertility score", {
+  skip_if_not_installed("terra")
   # Gentle slope DEM
   units <- create_test_units(n_features = 1)
   dem <- create_test_raster(values = "random", res = 10)
@@ -2302,6 +2430,7 @@ test_that("indicateur_f2_erosion: gentle slope produces higher fertility score",
 })
 
 test_that("indicateur_c2_ndvi: returns values between 0 and 1 for valid NDVI", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   ndvi <- create_test_raster(values = "random", res = 10)
   terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.2, 0.9)
@@ -2316,6 +2445,7 @@ test_that("indicateur_c2_ndvi: returns values between 0 and 1 for valid NDVI", {
 })
 
 test_that("get_or_compute_twi: different DEMs produce different cache keys", {
+  skip_if_not_installed("terra")
   twi_cache <- get(".twi_cache", envir = asNamespace("nemeton"))
   rm(list = ls(twi_cache), envir = twi_cache)
 
@@ -2348,6 +2478,7 @@ test_that("get_or_compute_twi: different DEMs produce different cache keys", {
 })
 
 test_that("calculate_twi_terra: NaN and Inf values are handled", {
+  skip_if_not_installed("terra")
   dem <- terra::rast(nrows = 10, ncols = 10,
                      xmin = 800000, xmax = 801000,
                      ymin = 6500000, ymax = 6501000,
@@ -2373,6 +2504,7 @@ test_that("calculate_twi_terra: NaN and Inf values are handled", {
 # ==============================================================================
 
 test_that("cec_to_fertility_score maps SoilGrids x10 values onto [0,100]", {
+  skip_if_not_installed("terra")
   # Raw 0 cmol(c)/kg × 10 → 0 ; 300 (= 30 cmol(c)/kg) → 100 ; 600 → capped 100
   expect_equal(cec_to_fertility_score(0), 0)
   expect_equal(cec_to_fertility_score(300), 100)
@@ -2383,6 +2515,7 @@ test_that("cec_to_fertility_score maps SoilGrids x10 values onto [0,100]", {
 })
 
 test_that("indicateur_f1_fertilite(source='soilgrids') wires the loader", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
 
@@ -2408,6 +2541,7 @@ test_that("indicateur_f1_fertilite(source='soilgrids') wires the loader", {
 })
 
 test_that("indicateur_f1_fertilite(source='soilgrids') ignores layers arg", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
 
@@ -2460,6 +2594,7 @@ make_layers_with_rrp <- function(rrp) {
 }
 
 test_that("read_uts_fertility_table loads the shipped CSV", {
+  skip_if_not_installed("terra")
   tbl <- read_uts_fertility_table()
   expect_s3_class(tbl, "data.frame")
   expect_true("rpf_code" %in% names(tbl))
@@ -2468,6 +2603,7 @@ test_that("read_uts_fertility_table loads the shipped CSV", {
 })
 
 test_that("source='gissol' returns the UTS score when a unit sits entirely in one polygon", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   rrp <- make_synthetic_rrp()
   layers <- make_layers_with_rrp(rrp)
@@ -2485,6 +2621,7 @@ test_that("source='gissol' returns the UTS score when a unit sits entirely in on
 })
 
 test_that("source='gissol' area-weights when a unit straddles two UTS", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   rrp <- make_synthetic_rrp()
   layers <- make_layers_with_rrp(rrp)
@@ -2502,6 +2639,7 @@ test_that("source='gissol' area-weights when a unit straddles two UTS", {
 })
 
 test_that("source='gissol' returns NA for units outside any RRP polygon", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   rrp <- make_synthetic_rrp()
   layers <- make_layers_with_rrp(rrp)
@@ -2518,6 +2656,7 @@ test_that("source='gissol' returns NA for units outside any RRP polygon", {
 })
 
 test_that("source='gissol' warns and drops unknown AFES codes", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   rrp <- sf::st_sf(
     rpf_code = c("CAL_PRO", "NOT_IN_TABLE"),
@@ -2545,6 +2684,7 @@ test_that("source='gissol' warns and drops unknown AFES codes", {
 })
 
 test_that("source='gissol' honours a custom rpf_code_col", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   rrp <- make_synthetic_rrp()
   names(rrp)[names(rrp) == "rpf_code"] <- "UTSDom"
@@ -2564,6 +2704,7 @@ test_that("source='gissol' honours a custom rpf_code_col", {
 })
 
 test_that("source='gissol' errors clearly when the column is missing", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   rrp <- make_synthetic_rrp()
   names(rrp)[names(rrp) == "rpf_code"] <- "weird_name"
@@ -2581,6 +2722,7 @@ test_that("source='gissol' errors clearly when the column is missing", {
 })
 
 test_that("source='gissol' reprojects RRP when CRSes differ", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   # RRP in WGS84, unit in Lambert-93 — must not error, must return score
   rrp_wgs <- make_synthetic_rrp(crs = 4326)
@@ -2606,6 +2748,7 @@ test_that("source='gissol' reprojects RRP when CRSes differ", {
 # ==============================================================================
 
 test_that("indicateur_c2_ndvi FAPAR mode returns per-unit mean FAPAR", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -2621,6 +2764,7 @@ test_that("indicateur_c2_ndvi FAPAR mode returns per-unit mean FAPAR", {
 })
 
 test_that("indicateur_c2_ndvi FAPAR mode rejects a non-raster fapar", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 2)
@@ -2635,6 +2779,7 @@ test_that("indicateur_c2_ndvi FAPAR mode rejects a non-raster fapar", {
 # ==============================================================================
 
 test_that("texture_to_fertility_score favours loam over sand and clay", {
+  skip_if_not_installed("terra")
   loam <- texture_to_fertility_score(20, 40, 40)
   clay <- texture_to_fertility_score(90, 5, 5)
   sand <- texture_to_fertility_score(5, 5, 90)
@@ -2644,6 +2789,7 @@ test_that("texture_to_fertility_score favours loam over sand and clay", {
 })
 
 test_that("texture_to_fertility_score penalises coarse elements", {
+  skip_if_not_installed("terra")
   base <- texture_to_fertility_score(20, 40, 40)
   stony <- texture_to_fertility_score(20, 40, 40, coarse_elements = 50)
   expect_lt(stony, base)
@@ -2651,12 +2797,14 @@ test_that("texture_to_fertility_score penalises coarse elements", {
 })
 
 test_that("texture_to_fertility_score is unit-agnostic for the triplet", {
+  skip_if_not_installed("terra")
   pct <- texture_to_fertility_score(20, 40, 40)
   gkg <- texture_to_fertility_score(200, 400, 400)
   expect_equal(pct, gkg, tolerance = 1e-6)
 })
 
 test_that("texture_to_erosion_resistance: clay resists, silt erodes", {
+  skip_if_not_installed("terra")
   clay <- texture_to_erosion_resistance(90, 5, 5)
   silt <- texture_to_erosion_resistance(5, 90, 5)
   expect_gt(clay, silt)
@@ -2664,6 +2812,7 @@ test_that("texture_to_erosion_resistance: clay resists, silt erodes", {
 })
 
 test_that("indicateur_f1_fertilite theia_soil mode returns 0-100 scores", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -2687,6 +2836,7 @@ test_that("indicateur_f1_fertilite theia_soil mode returns 0-100 scores", {
 })
 
 test_that("indicateur_f1_fertilite theia_soil mode requires texture", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 2)
@@ -2697,6 +2847,7 @@ test_that("indicateur_f1_fertilite theia_soil mode requires texture", {
 })
 
 test_that("indicateur_f2_erosion accepts a Theia theia_soil texture", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -2734,6 +2885,7 @@ test_that("indicateur_f2_erosion accepts a Theia theia_soil texture", {
 # ==============================================================================
 
 test_that("indicateur_w2_zones_humides adds Theia water-occurrence coverage", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -2752,6 +2904,7 @@ test_that("indicateur_w2_zones_humides adds Theia water-occurrence coverage", {
 })
 
 test_that("indicateur_w2_zones_humides rejects a non-raster water_occurrence", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 2)

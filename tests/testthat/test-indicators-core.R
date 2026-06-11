@@ -9,6 +9,7 @@
 # ══════════════════════════════════════════════════════════════════
 
 test_that("list_indicators returns all 31 indicator names by default", {
+  skip_if_not_installed("terra")
   indicators <- list_indicators()
 
   expect_type(indicators, "character")
@@ -49,6 +50,7 @@ test_that("list_indicators returns all 31 indicator names by default", {
 })
 
 test_that("list_indicators returns details data.frame when requested", {
+  skip_if_not_installed("terra")
   details <- list_indicators(return_type = "details")
 
   expect_s3_class(details, "data.frame")
@@ -61,6 +63,7 @@ test_that("list_indicators returns details data.frame when requested", {
 })
 
 test_that("list_indicators details contain correct family codes", {
+  skip_if_not_installed("terra")
   details <- list_indicators(return_type = "details")
 
   # Verify the 12 family codes exist
@@ -84,6 +87,7 @@ test_that("list_indicators details contain correct family codes", {
 # ══════════════════════════════════════════════════════════════════
 
 test_that("list_indicators filters by category = 'biophysical'", {
+  skip_if_not_installed("terra")
   biophysical <- list_indicators(category = "biophysical")
 
   expect_true("indicateur_c1_biomasse" %in% biophysical)
@@ -99,6 +103,7 @@ test_that("list_indicators filters by category = 'biophysical'", {
 })
 
 test_that("list_indicators filters by category = 'risk'", {
+  skip_if_not_installed("terra")
   risk <- list_indicators(category = "risk")
 
   expect_length(risk, 4)
@@ -110,6 +115,7 @@ test_that("list_indicators filters by category = 'risk'", {
 })
 
 test_that("list_indicators filters by category = 'social'", {
+  skip_if_not_installed("terra")
   social <- list_indicators(category = "social")
 
   expect_length(social, 3)
@@ -120,6 +126,7 @@ test_that("list_indicators filters by category = 'social'", {
 })
 
 test_that("list_indicators filters by category = 'landscape'", {
+  skip_if_not_installed("terra")
   landscape <- list_indicators(category = "landscape")
 
   expect_length(landscape, 2)
@@ -129,6 +136,7 @@ test_that("list_indicators filters by category = 'landscape'", {
 })
 
 test_that("list_indicators filters by category = 'temporal'", {
+  skip_if_not_installed("terra")
   temporal <- list_indicators(category = "temporal")
 
   expect_length(temporal, 2)
@@ -137,6 +145,7 @@ test_that("list_indicators filters by category = 'temporal'", {
 })
 
 test_that("list_indicators filters by category = 'productive'", {
+  skip_if_not_installed("terra")
   productive <- list_indicators(category = "productive")
 
   expect_length(productive, 3)
@@ -146,6 +155,7 @@ test_that("list_indicators filters by category = 'productive'", {
 })
 
 test_that("list_indicators filters by category = 'energy'", {
+  skip_if_not_installed("terra")
   energy <- list_indicators(category = "energy")
 
   expect_length(energy, 2)
@@ -154,6 +164,7 @@ test_that("list_indicators filters by category = 'energy'", {
 })
 
 test_that("list_indicators filters by category = 'naturalness'", {
+  skip_if_not_installed("terra")
   naturalness <- list_indicators(category = "naturalness")
 
   expect_length(naturalness, 3)
@@ -163,6 +174,7 @@ test_that("list_indicators filters by category = 'naturalness'", {
 })
 
 test_that("list_indicators with unknown category returns empty", {
+  skip_if_not_installed("terra")
   result <- list_indicators(category = "nonexistent_category")
 
   expect_type(result, "character")
@@ -170,6 +182,7 @@ test_that("list_indicators with unknown category returns empty", {
 })
 
 test_that("list_indicators details with category filter returns filtered data.frame", {
+  skip_if_not_installed("terra")
   details <- list_indicators(category = "risk", return_type = "details")
 
   expect_s3_class(details, "data.frame")
@@ -180,6 +193,7 @@ test_that("list_indicators details with category filter returns filtered data.fr
 })
 
 test_that("list_indicators return_type uses match.arg", {
+  skip_if_not_installed("terra")
   # Invalid return_type should error via match.arg
   expect_error(
     list_indicators(return_type = "invalid"),
@@ -188,6 +202,7 @@ test_that("list_indicators return_type uses match.arg", {
 })
 
 test_that("list_indicators details descriptions are non-empty", {
+  skip_if_not_installed("terra")
   details <- list_indicators(return_type = "details")
 
   expect_true(all(nchar(details$description) > 0))
@@ -195,6 +210,7 @@ test_that("list_indicators details descriptions are non-empty", {
 })
 
 test_that("list_indicators names match across return types", {
+  skip_if_not_installed("terra")
   names_only <- list_indicators()
   details <- list_indicators(return_type = "details")
 
@@ -206,6 +222,7 @@ test_that("list_indicators names match across return types", {
 # ══════════════════════════════════════════════════════════════════
 
 test_that("nemeton_compute rejects non-sf units", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton_compute(data.frame(x = 1:3), NULL),
     "must be an.*sf.*object"
@@ -228,6 +245,7 @@ test_that("nemeton_compute rejects non-sf units", {
 })
 
 test_that("nemeton_compute rejects non-nemeton_layers layers", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
 
   expect_error(
@@ -247,6 +265,7 @@ test_that("nemeton_compute rejects non-nemeton_layers layers", {
 })
 
 test_that("nemeton_compute rejects parallel = TRUE in MVP", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
@@ -262,6 +281,7 @@ test_that("nemeton_compute rejects parallel = TRUE in MVP", {
 # ══════════════════════════════════════════════════════════════════
 
 test_that("nemeton_compute warns on unknown indicators and skips them", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
@@ -282,6 +302,7 @@ test_that("nemeton_compute warns on unknown indicators and skips them", {
 })
 
 test_that("nemeton_compute warns on multiple unknown indicators", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
@@ -299,6 +320,7 @@ test_that("nemeton_compute warns on multiple unknown indicators", {
 })
 
 test_that("nemeton_compute errors when ALL indicators are invalid", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
@@ -317,6 +339,7 @@ test_that("nemeton_compute errors when ALL indicators are invalid", {
 # ══════════════════════════════════════════════════════════════════
 
 test_that("nemeton_compute expands 'all' to full indicator list", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
 
@@ -352,6 +375,7 @@ test_that("nemeton_compute expands 'all' to full indicator list", {
 # ══════════════════════════════════════════════════════════════════
 
 test_that("nemeton_compute calculates indicateur_c1_biomasse successfully", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 3))
   units$species <- c("Quercus", "Fagus", "Pinus")
   units$age <- c(80, 60, 40)
@@ -374,6 +398,7 @@ test_that("nemeton_compute calculates indicateur_c1_biomasse successfully", {
 })
 
 test_that("nemeton_compute handles failing indicators gracefully (sets NA)", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
 
@@ -392,6 +417,7 @@ test_that("nemeton_compute handles failing indicators gracefully (sets NA)", {
 })
 
 test_that("nemeton_compute computes multiple indicators at once", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
 
@@ -422,6 +448,7 @@ test_that("nemeton_compute computes multiple indicators at once", {
 # ══════════════════════════════════════════════════════════════════
 
 test_that("nemeton_compute preprocesses layers when preprocess = TRUE", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
@@ -436,6 +463,7 @@ test_that("nemeton_compute preprocesses layers when preprocess = TRUE", {
 })
 
 test_that("nemeton_compute skips preprocessing when preprocess = FALSE", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
@@ -450,6 +478,7 @@ test_that("nemeton_compute skips preprocessing when preprocess = FALSE", {
 # ══════════════════════════════════════════════════════════════════
 
 test_that("nemeton_compute attaches metadata to result", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   units$species <- c("Quercus", "Fagus", "Pinus")
   units$age <- c(80, 60, 40)
@@ -471,6 +500,7 @@ test_that("nemeton_compute attaches metadata to result", {
 })
 
 test_that("nemeton_compute preserves original metadata from units", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   # Set original metadata
   attr(units, "metadata") <- list(source = "test_data", created = "2025-01-01")
@@ -490,6 +520,7 @@ test_that("nemeton_compute preserves original metadata from units", {
 })
 
 test_that("nemeton_compute metadata tracks failed indicators correctly", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
 
@@ -517,6 +548,7 @@ test_that("nemeton_compute metadata tracks failed indicators correctly", {
 # ══════════════════════════════════════════════════════════════════
 
 test_that("nemeton_compute preserves original unit columns", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   units$custom_col <- c("A", "B", "C")
   units$numeric_col <- c(10.5, 20.3, 30.7)
@@ -537,6 +569,7 @@ test_that("nemeton_compute preserves original unit columns", {
 # ══════════════════════════════════════════════════════════════════
 
 test_that("nemeton_compute shows progress messages when progress = TRUE", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
@@ -548,6 +581,7 @@ test_that("nemeton_compute shows progress messages when progress = TRUE", {
 })
 
 test_that("nemeton_compute works with progress = FALSE", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
@@ -568,6 +602,7 @@ test_that("nemeton_compute works with progress = FALSE", {
 # ══════════════════════════════════════════════════════════════════
 
 test_that("compute_indicator dispatches to correct indicator function", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   units$species <- c("Quercus", "Fagus", "Pinus")
   units$age <- c(80, 60, 40)
@@ -583,6 +618,7 @@ test_that("compute_indicator dispatches to correct indicator function", {
 })
 
 test_that("compute_indicator errors on unknown indicator name", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
@@ -594,6 +630,7 @@ test_that("compute_indicator errors on unknown indicator name", {
 })
 
 test_that("compute_indicator handles risk indicators that return sf with R-columns", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 3))
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(
@@ -612,6 +649,7 @@ test_that("compute_indicator handles risk indicators that return sf with R-colum
 })
 
 test_that("compute_indicator handles indicateur_r2_tempete indicator", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 3))
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(
@@ -627,6 +665,7 @@ test_that("compute_indicator handles indicateur_r2_tempete indicator", {
 })
 
 test_that("compute_indicator handles indicateur_r3_secheresse indicator", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 3))
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(
@@ -642,6 +681,7 @@ test_that("compute_indicator handles indicateur_r3_secheresse indicator", {
 })
 
 test_that("compute_indicator handles indicateur_r4_abroutissement indicator", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 3))
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(
@@ -661,6 +701,7 @@ test_that("compute_indicator handles indicateur_r4_abroutissement indicator", {
 # ══════════════════════════════════════════════════════════════════
 
 test_that("compute_indicator col_map maps indicateur_r1_feu to R1", {
+  skip_if_not_installed("terra")
   # Verify the col_map extracts the R1 column from sf returned by indicateur_r1_feu
   units <- nemeton_units(create_test_units(n_features = 2))
 
@@ -680,6 +721,7 @@ test_that("compute_indicator col_map maps indicateur_r1_feu to R1", {
 })
 
 test_that("compute_indicator returns numeric vector for non-sf indicators", {
+  skip_if_not_installed("terra")
   # indicateur_c1_biomasse should return a numeric vector, not an sf
   units <- nemeton_units(create_test_units(n_features = 3))
   units$species <- c("Quercus", "Fagus", "Pinus")
@@ -700,6 +742,7 @@ test_that("compute_indicator returns numeric vector for non-sf indicators", {
 # ══════════════════════════════════════════════════════════════════
 
 test_that("nemeton_compute works with single-feature units", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 1))
   units$species <- "Quercus"
   units$age <- 80
@@ -720,6 +763,7 @@ test_that("nemeton_compute works with single-feature units", {
 })
 
 test_that("nemeton_compute passes extra arguments through ...", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(
@@ -739,6 +783,7 @@ test_that("nemeton_compute passes extra arguments through ...", {
 })
 
 test_that("nemeton_compute result is still an sf object", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
@@ -751,6 +796,7 @@ test_that("nemeton_compute result is still an sf object", {
 })
 
 test_that("nemeton_compute with layers having both rasters and vectors tracks layers_used", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
 
@@ -768,6 +814,7 @@ test_that("nemeton_compute with layers having both rasters and vectors tracks la
 })
 
 test_that("nemeton_compute accepts raw sf (not nemeton_units) as units input", {
+  skip_if_not_installed("terra")
   # nemeton_compute only checks inherits(units, "sf"), not "nemeton_units"
   raw_sf <- create_test_units()
   temp_files <- create_temp_test_files()
@@ -780,6 +827,7 @@ test_that("nemeton_compute accepts raw sf (not nemeton_units) as units input", {
 })
 
 test_that("nemeton_compute with indicators = vector of length 1 (not 'all')", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
@@ -800,6 +848,7 @@ test_that("nemeton_compute with indicators = vector of length 1 (not 'all')", {
 # ==============================================================================
 
 test_that("get_global_cache_dir returns path string", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_global_cache_dir()
   expect_type(result, "character")
   expect_true(nchar(result) > 0)

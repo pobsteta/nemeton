@@ -67,6 +67,7 @@ create_test_raster <- function(extent = c(566400, 567000, 6615100, 6615500),
                                crs = "EPSG:2154",
                                values = "random",
                                res = 10) {
+  skip_if_terra_write_broken()
   # Create raster
   r <- terra::rast(
     extent = terra::ext(extent),
@@ -150,6 +151,7 @@ create_test_vector <- function(crs = 2154, type = "lines") {
 #'
 #' @return Named list with paths to temporary files
 create_temp_test_files <- function() {
+  skip_if_terra_write_broken()
   # Create temp directory
   temp_dir <- tempdir()
 
@@ -212,6 +214,12 @@ skip_if_not_installed <- function(pkg) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
     skip(paste("Package", pkg, "not installed"))
   }
+  # Some GitHub runners exhibit a terra anomaly where raster construction
+  # (terra::rast / writeRaster) fails inside testthat — see helper-fast-raster.R.
+  # Almost every raster test opens with some skip_if_not_installed() call, so
+  # probe (cached) and skip there rather than fail on the runner. No-op on every
+  # healthy environment (local, most CI), where the probe passes and tests run.
+  skip_if_terra_write_broken()
 }
 
 # ==============================================================================

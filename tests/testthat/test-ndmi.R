@@ -60,6 +60,7 @@ test_that("extract_pixel_timeseries returns an NDMI series", {
 
 
 test_that(".s2_required_bands maps NDMI to B08 + B11", {
+  skip_if_not_installed("terra")
   expect_setequal(nemeton:::.s2_required_bands("NDMI"), c("B08", "B11"))
   expect_setequal(nemeton:::.s2_required_bands(c("NDVI", "NDMI")),
                   c("B04", "B08", "B11"))
@@ -67,6 +68,7 @@ test_that(".s2_required_bands maps NDMI to B08 + B11", {
 
 
 test_that(".cache_scene_bands tolerates a missing optional band", {
+  skip_if_not_installed("terra")
   # B11 best-effort (spec 019 D3): a scene without the asset must not
   # fail the ingestion of the required bands.
   testthat::local_mocked_bindings(
@@ -83,6 +85,7 @@ test_that(".cache_scene_bands tolerates a missing optional band", {
 
 
 test_that("default FAST index is still NDVI (back-compat)", {
+  skip_if_not_installed("terra")
   # spec 022 added NDRE to the enum; the count/rolling default stays NDVI
   # (first element). spec 023 makes the *trend* default NDMI via a
   # missing(index) branch, not via the formal — so the formal's first
@@ -98,6 +101,7 @@ test_that("default FAST index is still NDVI (back-compat)", {
 
 
 test_that(".enumerate_cache_scenes resolves NDMI scenes (spec 019 regression)", {
+  skip_if_not_installed("terra")
   # Regression: before the NDMI branch was added to the switch, an NDMI
   # request matched NO cached scene (NULL bands -> file ".tif" -> never
   # exists), so the alert map was always empty even with B08+B11 cached.
@@ -132,6 +136,7 @@ test_that(".enumerate_cache_scenes drops a scene missing an NDMI band", {
 
 
 test_that("read_fast_alert_rasters returns the 6 maps keyed <index>_<mode>", {
+  skip_if_not_installed("terra")
   seen <- character(0)
   testthat::local_mocked_bindings(
     read_fast_alert_raster = function(con, zone_id, index, mode, ...) {
@@ -154,6 +159,7 @@ test_that("read_fast_alert_rasters returns the 6 maps keyed <index>_<mode>", {
 
 
 test_that("read_fast_alert_rasters honours a restricted index/mode subset", {
+  skip_if_not_installed("terra")
   testthat::local_mocked_bindings(
     read_fast_alert_raster = function(con, zone_id, index, mode, ...)
       paste(index, mode, sep = "_"),

@@ -39,6 +39,7 @@
 # ---- CHM mode -----------------------------------------------------
 
 test_that("indicateur_p2_station in CHM mode returns a site index in metres", {
+  skip_if_not_installed("terra")
   chm   <- make_fixture_chm(add_artefacts = FALSE)
   units <- .make_units_over_chm(chm, n = 4,
                                 species = c("QUPE", "QUPE", "PIAB", "PIAB"),
@@ -52,6 +53,7 @@ test_that("indicateur_p2_station in CHM mode returns a site index in metres", {
 })
 
 test_that("CHM mode requires species_field and age_field", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(add_artefacts = FALSE)
   units <- .make_units_over_chm(chm, n = 2)
   units$species <- NULL
@@ -62,6 +64,7 @@ test_that("CHM mode requires species_field and age_field", {
 })
 
 test_that("CHM mode propagates NA when age or species is missing", {
+  skip_if_not_installed("terra")
   chm   <- make_fixture_chm(add_artefacts = FALSE)
   units <- .make_units_over_chm(chm, n = 2,
                                 species = c("QUPE", NA),
@@ -72,6 +75,7 @@ test_that("CHM mode propagates NA when age or species is missing", {
 })
 
 test_that("CHM mode respects reference_age", {
+  skip_if_not_installed("terra")
   chm   <- make_fixture_chm(add_artefacts = FALSE)
   units <- .make_units_over_chm(chm, n = 2,
                                 species = c("QUPE", "QUPE"),
@@ -84,6 +88,7 @@ test_that("CHM mode respects reference_age", {
 })
 
 test_that("CHM mode with a uniformly tall CHM yields a top-class site index", {
+  skip_if_not_installed("terra")
   # All pixels at 30 m -> QUPE at age 80 is near class 1
   r <- terra::rast(nrows = 60, ncols = 60,
                    xmin = 0, xmax = 300, ymin = 0, ymax = 300,
@@ -99,6 +104,7 @@ test_that("CHM mode with a uniformly tall CHM yields a top-class site index", {
 # ---- Legacy mode regression ---------------------------------------
 
 test_that("legacy mode is unchanged when chm is NULL", {
+  skip_if_not_installed("terra")
   sp  <- c("FASY", "FASY", "PIAB", "PIAB")
   fe  <- c(1, 2, 1, 2)
   cl  <- c("temperate_oceanic", "temperate_oceanic",
@@ -124,6 +130,7 @@ test_that("legacy mode is unchanged when chm is NULL", {
 # ---- Rank correlation CHM vs legacy (T2.21) -----------------------
 
 test_that("CHM and legacy modes give positively correlated rankings", {
+  skip_if_not_installed("terra")
   # Build a small dataset with clearly differentiated stands and
   # check that the two modes agree on at least the ordering of
   # productivity (Spearman rho > 0).
@@ -213,6 +220,7 @@ test_that("CHM and legacy modes give positively correlated rankings", {
 }
 
 test_that("P1 CHM mode returns positive volumes for 3 species", {
+  skip_if_not_installed("terra")
   # Uniform 25 m CHM, 3 species (oak, beech, spruce)
   chm <- terra::rast(nrows = 30, ncols = 30,
                      xmin = 0, xmax = 300, ymin = 0, ymax = 300,
@@ -230,6 +238,7 @@ test_that("P1 CHM mode returns positive volumes for 3 species", {
 })
 
 test_that("P1 CHM mode uses H_dom from the CHM instead of height_field", {
+  skip_if_not_installed("terra")
   # CHM at 30 m vs stored height_field at 15 m -> P1 must use 30 m
   chm_30 <- terra::rast(nrows = 20, ncols = 20,
                         xmin = 0, xmax = 200, ymin = 0, ymax = 200,
@@ -250,6 +259,7 @@ test_that("P1 CHM mode uses H_dom from the CHM instead of height_field", {
 })
 
 test_that("P1 without CHM reproduces legacy behaviour (regression)", {
+  skip_if_not_installed("terra")
   # Identical runs of indicateur_p1_volume without chm should be
   # stable across calls — we cannot compare against a fossilised
   # value without a snapshot, so check determinism and legacy
@@ -273,6 +283,7 @@ test_that("P1 without CHM reproduces legacy behaviour (regression)", {
 })
 
 test_that("P1 CHM mode warns when pct_masked > 0.3", {
+  skip_if_not_installed("terra")
   chm <- terra::rast(nrows = 20, ncols = 20,
                      xmin = 0, xmax = 200, ymin = 0, ymax = 200,
                      crs = "EPSG:2154",
@@ -294,6 +305,7 @@ test_that("P1 CHM mode warns when pct_masked > 0.3", {
 })
 
 test_that("P1 CHM mode propagates NA for units with missing DBH", {
+  skip_if_not_installed("terra")
   chm <- terra::rast(nrows = 20, ncols = 20,
                      xmin = 0, xmax = 200, ymin = 0, ymax = 200,
                      crs = "EPSG:2154",
@@ -310,6 +322,7 @@ test_that("P1 CHM mode propagates NA for units with missing DBH", {
 })
 
 test_that("P1 CHM mode correlates with legacy mode on varied stands", {
+  skip_if_not_installed("terra")
   # Vary DBH and CHM heights to get a spread, then check Spearman
   # rank correlation between CHM-P1 and legacy-P1.
   set.seed(11)

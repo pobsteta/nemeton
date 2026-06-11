@@ -4,6 +4,7 @@
 # ---- unit: input validation ------------------------------------------
 
 test_that("read_fast_alert_raster rejects bad zone_id", {
+  skip_if_not_installed("terra")
   expect_error(
     read_fast_alert_raster(structure(list(), class = c("FakeConn", "DBIConnection")),
                            c(1L, 2L),
@@ -14,6 +15,7 @@ test_that("read_fast_alert_raster rejects bad zone_id", {
 })
 
 test_that("read_fast_alert_raster rejects a bad threshold", {
+  skip_if_not_installed("terra")
   con <- structure(list(), class = c("FakeConn", "DBIConnection"))
   expect_error(
     read_fast_alert_raster(con, 1L, threshold = -0.1,
@@ -30,6 +32,7 @@ test_that("read_fast_alert_raster rejects a bad threshold", {
 })
 
 test_that("read_fast_alert_raster rejects a bad index", {
+  skip_if_not_installed("terra")
   con <- structure(list(), class = c("FakeConn", "DBIConnection"))
   expect_error(
     read_fast_alert_raster(con, 1L, index = "EVI",
@@ -40,6 +43,7 @@ test_that("read_fast_alert_raster rejects a bad index", {
 })
 
 test_that("read_fast_alert_raster rejects bad date range", {
+  skip_if_not_installed("terra")
   con <- structure(list(), class = c("FakeConn", "DBIConnection"))
   expect_error(
     read_fast_alert_raster(con, 1L,
@@ -56,6 +60,7 @@ test_that("read_fast_alert_raster rejects bad date range", {
 })
 
 test_that("read_fast_alert_raster rejects missing cache_dir", {
+  skip_if_not_installed("terra")
   con <- structure(list(), class = c("FakeConn", "DBIConnection"))
   expect_error(
     read_fast_alert_raster(con, 1L,
@@ -66,6 +71,7 @@ test_that("read_fast_alert_raster rejects missing cache_dir", {
 })
 
 test_that("rolling mode rejects bad window_days", {
+  skip_if_not_installed("terra")
   con <- structure(list(), class = c("FakeConn", "DBIConnection"))
   expect_error(
     read_fast_alert_raster(con, 1L,
@@ -105,6 +111,7 @@ test_that(".enumerate_cache_scenes selects by index bands and date window", {
 })
 
 test_that("read_fast_alert_raster(index=NDVI) needs no B12; index=NBR needs B12", {
+  skip_if_terra_write_broken()
   skip_if_not_installed("terra")
   cache <- withr::local_tempdir()
   # A single scene with only B04 + B08 (NDVI-renderable, NOT NBR).
@@ -136,6 +143,7 @@ test_that("read_fast_alert_raster(index=NDVI) needs no B12; index=NBR needs B12"
 # ---- spec 017 D6: content-addressed result cache ---------------------
 
 test_that(".fast_raster_hash is deterministic and input-sensitive", {
+  skip_if_not_installed("terra")
   h <- function(...) nemeton:::.fast_raster_hash(...)
   base <- h(c("b", "a"), "NDVI", 0.4, "count", 30L, "2025-01-01", "2025-12-31", NA)
   # scene order does not matter (sorted inside)
@@ -173,6 +181,7 @@ test_that(".fast_raster_hash is deterministic and input-sensitive", {
 }
 
 test_that("read_fast_alert_raster persists + serves a content-addressed COG", {
+  skip_if_terra_write_broken()
   skip_if_not_installed("terra")
   cache  <- withr::local_tempdir()
   rcache <- withr::local_tempdir()
@@ -208,6 +217,7 @@ test_that("read_fast_alert_raster persists + serves a content-addressed COG", {
 # ---- verbose, deterministic cache filename (.fast_raster_filename) ---
 
 test_that(".fast_raster_filename has the documented verbose format", {
+  skip_if_not_installed("terra")
   fn <- nemeton:::.fast_raster_filename(
     "NBR", "count", 0.30, "2025-05-23", "2026-05-23", 30L,
     "fd9ca32a4c778e475955448b4c00c8c6")
@@ -216,6 +226,7 @@ test_that(".fast_raster_filename has the documented verbose format", {
 })
 
 test_that(".fast_raster_filename is deterministic (same inputs -> same name)", {
+  skip_if_not_installed("terra")
   a <- nemeton:::.fast_raster_filename("NDMI", "rolling", 0.30,
                                        "2025-01-01", "2026-01-01", 15L, "8e2a01ffdeadbeef")
   b <- nemeton:::.fast_raster_filename("NDMI", "rolling", 0.30,
@@ -225,6 +236,7 @@ test_that(".fast_raster_filename is deterministic (same inputs -> same name)", {
 })
 
 test_that(".fast_raster_filename discriminates threshold / window / hash", {
+  skip_if_not_installed("terra")
   base <- list("NBR", "count", 0.30, "2025-05-23", "2026-05-23", 30L, "aaaaaaaa0000")
   fn   <- function(l) do.call(nemeton:::.fast_raster_filename, l)
   thr  <- base; thr[[3]]  <- 0.45
@@ -236,6 +248,7 @@ test_that(".fast_raster_filename discriminates threshold / window / hash", {
 })
 
 test_that(".fast_raster_filename normalises index/mode case", {
+  skip_if_not_installed("terra")
   expect_match(
     nemeton:::.fast_raster_filename("ndvi", "COUNT", 0.4,
                                     "2025-05-23", "2026-05-23", 30L, "00ff00ff"),
@@ -243,6 +256,7 @@ test_that(".fast_raster_filename normalises index/mode case", {
 })
 
 test_that("read_fast_alert_raster(cache_result = FALSE) writes nothing", {
+  skip_if_terra_write_broken()
   skip_if_not_installed("terra")
   cache  <- withr::local_tempdir()
   rcache <- withr::local_tempdir()
@@ -257,6 +271,7 @@ test_that("read_fast_alert_raster(cache_result = FALSE) writes nothing", {
 })
 
 test_that("read_fast_alert_raster(parallel = TRUE) matches sequential (spec 017 D4)", {
+  skip_if_terra_write_broken()
   skip_if_not_installed("terra")
   skip_if_not_installed("furrr")
   skip_if_not_installed("future")
@@ -295,6 +310,7 @@ make_synthetic_stack <- function(values_per_layer, dates) {
 }
 
 test_that(".compute_alert_count counts per-pixel dates in alert (mono-index)", {
+  skip_if_not_installed("terra")
   # 4x4 pixels, 3 dates. Pixel (1,1) below threshold on dates 1 and 3.
   # Pixel (1,2) below threshold on date 2 only. Others well above.
   layers <- list(
@@ -313,6 +329,7 @@ test_that(".compute_alert_count counts per-pixel dates in alert (mono-index)", {
 })
 
 test_that(".compute_alert_count is bounded by the number of dates", {
+  skip_if_not_installed("terra")
   stk <- make_synthetic_stack(list(matrix(0, 4, 4), matrix(0, 4, 4)),
                               as.Date(c("2025-06-01", "2025-06-10")))
   out <- .compute_alert_count(stk, threshold = 0.4)
@@ -321,6 +338,7 @@ test_that(".compute_alert_count is bounded by the number of dates", {
 
 
 test_that(".compute_alert_rolling returns deficit magnitude on trailing window", {
+  skip_if_not_installed("terra")
   # 3 dates, window = 15 days. Only dates 2 & 3 fall in trailing window.
   layers <- list(
     matrix(0.10, 4, 4),  # date 1 (outside window)
@@ -337,6 +355,7 @@ test_that(".compute_alert_rolling returns deficit magnitude on trailing window",
 
 
 test_that(".compute_alert_rolling returns NULL when no scene in window", {
+  skip_if_not_installed("terra")
   stk <- make_synthetic_stack(list(matrix(0.5, 4, 4)), as.Date("2025-01-01"))
   out <- .compute_alert_rolling(stk, threshold = 0.40,
                                 window_days = 15L, date_to = as.Date("2025-12-01"))
@@ -345,6 +364,7 @@ test_that(".compute_alert_rolling returns NULL when no scene in window", {
 
 
 test_that(".compute_alert_rolling deficit = 0 when the mean is above threshold", {
+  skip_if_not_installed("terra")
   stk <- make_synthetic_stack(list(matrix(0.60, 4, 4), matrix(0.60, 4, 4)),
                               as.Date(c("2025-06-10", "2025-06-20")))
   out <- .compute_alert_rolling(stk, threshold = 0.40,
@@ -356,6 +376,7 @@ test_that(".compute_alert_rolling deficit = 0 when the mean is above threshold",
 # ---- multi-tile AOI coverage (cache-only, no DB) ---------------------
 
 test_that("read_fast_alert_raster covers the full multi-tile AOI (per-tile mosaic)", {
+  skip_if_terra_write_broken()
   # spec 010 / v0.52.x regression — an AOI straddling two overlapping
   # MGRS tiles (villards on T31TFM narrow ⊂ T31TGM wide) must render the
   # WHOLE AOI, not just the overlap strip. The per-tile grouping +
@@ -422,6 +443,7 @@ test_that("read_fast_alert_raster covers the full multi-tile AOI (per-tile mosai
 # ---- integration: smoke test against the real villards DB ------------
 
 test_that("end-to-end smoke test against villards (count mode)", {
+  skip_if_not_installed("terra")
   # Opportunistic — only runs if the cache + DB happen to be on disk.
   cache <- "/home/pascal/.local/share/nemeton/projects/20260520_212017_btfe/cache/layers/sentinel2"
   if (!dir.exists(cache)) testthat::skip("villards cache not present on this machine")

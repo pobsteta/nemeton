@@ -131,6 +131,7 @@ test_that("max_slope constraint reduces the candidate frame", {
 # ------------------------------------------------------------
 
 test_that("create_sampling_plan rejects non-sf zones and non-positive n_base", {
+  skip_if_not_installed("terra")
   expect_error(
     create_sampling_plan(data.frame(x = 1), n_base = 5),
     "must be an sf"
@@ -147,6 +148,7 @@ test_that("create_sampling_plan rejects non-sf zones and non-positive n_base", {
 # ------------------------------------------------------------
 
 test_that("create_sampling_plan sizes n_base from (target_error, cv)", {
+  skip_if_not_installed("terra")
   plan <- create_sampling_plan(
     make_zone(),
     target_error = 0.10,
@@ -169,6 +171,7 @@ test_that("create_sampling_plan sizes n_base from (target_error, cv)", {
 
 
 test_that("create_sampling_plan errors when target_error is set without cv", {
+  skip_if_not_installed("terra")
   expect_error(
     create_sampling_plan(make_zone(), target_error = 0.10),
     "cv.*must be provided"
@@ -177,6 +180,7 @@ test_that("create_sampling_plan errors when target_error is set without cv", {
 
 
 test_that("Base plots are reordered into a sensible walking tour", {
+  skip_if_not_installed("terra")
   # Draw on a wide rectangle so the TSP has something to untangle.
   set.seed(1)
   zone <- sf::st_sf(geometry = sf::st_sfc(
@@ -210,6 +214,7 @@ test_that("Base plots are reordered into a sensible walking tour", {
 
 
 test_that("TSP helper returns a permutation of 1:n and starts at SE", {
+  skip_if_not_installed("terra")
   set.seed(2)
   coords <- cbind(runif(10, 0, 1000), runif(10, 0, 1000))
   tour <- nemeton:::.tsp_tour(coords)
@@ -220,6 +225,7 @@ test_that("TSP helper returns a permutation of 1:n and starts at SE", {
 
 
 test_that("TSP fallback is reachable and also correct", {
+  skip_if_not_installed("terra")
   set.seed(3)
   coords <- cbind(runif(8, 0, 1000), runif(8, 0, 1000))
   start <- which.max(coords[, 1] - coords[, 2])
@@ -230,6 +236,7 @@ test_that("TSP fallback is reachable and also correct", {
 
 
 test_that("create_sampling_plan errors when neither n_base nor target_error is given", {
+  skip_if_not_installed("terra")
   expect_error(
     create_sampling_plan(make_zone()),
     "Either.*n_base.*target_error"
@@ -242,6 +249,7 @@ test_that("create_sampling_plan errors when neither n_base nor target_error is g
 # ------------------------------------------------------------
 
 test_that(".allocate_per_stratum honors min_per_stratum and caps at counts", {
+  skip_if_not_installed("terra")
   counts <- c(A = 50, B = 50, C = 1)
   alloc  <- nemeton:::.allocate_per_stratum(counts, n_main = 20,
                                             min_per_stratum = 2)
@@ -257,6 +265,7 @@ test_that(".allocate_per_stratum honors min_per_stratum and caps at counts", {
 # ------------------------------------------------------------
 
 test_that(".fit_stratum drops topo first when 3D combo is too thin", {
+  skip_if_not_installed("terra")
   # 3D stratum: 2 height × 2 type × 2 topo = up to 8 bins. We design the
   # data so the 3D combo has at least one singleton stratum (too thin),
   # but the 2D combo (height × type) has enough candidates everywhere.
@@ -277,6 +286,7 @@ test_that(".fit_stratum drops topo first when 3D combo is too thin", {
 
 
 test_that(".fit_stratum degrades to 1D (height) when 2D still too thin", {
+  skip_if_not_installed("terra")
   # Design: a rare type combination that makes every 2D (h × type) bucket
   # thin, but the 1D height stratification is fine.
   frame <- data.frame(
@@ -293,6 +303,7 @@ test_that(".fit_stratum degrades to 1D (height) when 2D still too thin", {
 
 
 test_that(".fit_stratum returns NULL when even 1D is too thin", {
+  skip_if_not_installed("terra")
   # Only 2 candidates in one stratum, but the allocation + over is 3+.
   frame <- data.frame(
     strat_height = c(rep("H1", 30), "H2", "H2"),
@@ -340,6 +351,7 @@ test_that("create_sampling_plan warns when the frame is too small", {
 
 
 test_that(".fit_stratum skips combos that degenerate to a single stratum", {
+  skip_if_not_installed("terra")
   frame <- data.frame(
     strat_height = rep("H1", 20),      # constant
     strat_type   = rep(c("FEU", "CON"), each = 10),

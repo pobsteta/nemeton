@@ -178,6 +178,7 @@ test_that(".prewarm_fast_alerts does nothing when cancelled at entry", {
 # ---- input validation on the public entry point ---------------------
 
 test_that("prewarm_alerts = TRUE requires cache_dir and a result cache dir", {
+  skip_if_not_installed("terra")
   con <- structure(list(), class = c("FakeConn", "DBIConnection"))
   # No cache_dir.
   expect_error(

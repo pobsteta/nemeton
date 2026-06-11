@@ -135,6 +135,7 @@ make_fake_fordead_2x_module <- function(fail_at = NULL) {
 # ---- argument validation ---------------------------------------------
 
 test_that("rejects non-DBI con", {
+  skip_if_not_installed("terra")
   skip_if_no_sf()
   expect_error(
     run_fordead_dieback(con = "not-con", zone_id = 1L,
@@ -144,6 +145,7 @@ test_that("rejects non-DBI con", {
 })
 
 test_that("rejects NA zone_id", {
+  skip_if_not_installed("terra")
   skip_if_no_sf()
   expect_error(
     run_fordead_dieback(con = make_fake_con(), zone_id = NA_integer_,
@@ -153,6 +155,7 @@ test_that("rejects NA zone_id", {
 })
 
 test_that("rejects multi-value zone_id", {
+  skip_if_not_installed("terra")
   skip_if_no_sf()
   expect_error(
     run_fordead_dieback(con = make_fake_con(), zone_id = c(1L, 2L),
@@ -162,6 +165,7 @@ test_that("rejects multi-value zone_id", {
 })
 
 test_that("rejects empty cache_dir", {
+  skip_if_not_installed("terra")
   skip_if_no_sf()
   expect_error(
     run_fordead_dieback(con = make_fake_con(), zone_id = 1L,
@@ -171,6 +175,7 @@ test_that("rejects empty cache_dir", {
 })
 
 test_that("rejects unknown vegetation_index", {
+  skip_if_not_installed("terra")
   skip_if_no_sf()
   expect_error(
     run_fordead_dieback(con = make_fake_con(), zone_id = 1L,
@@ -181,6 +186,7 @@ test_that("rejects unknown vegetation_index", {
 })
 
 test_that("rejects threshold_anomaly out of [0.05, 0.50]", {
+  skip_if_not_installed("terra")
   skip_if_no_sf()
   expect_error(
     run_fordead_dieback(con = make_fake_con(), zone_id = 1L,
@@ -197,6 +203,7 @@ test_that("rejects threshold_anomaly out of [0.05, 0.50]", {
 })
 
 test_that("rejects non-chronological dates_training", {
+  skip_if_not_installed("terra")
   skip_if_no_sf()
   expect_error(
     run_fordead_dieback(con = make_fake_con(), zone_id = 1L,
@@ -207,6 +214,7 @@ test_that("rejects non-chronological dates_training", {
 })
 
 test_that("rejects dates_monitoring starting before dates_training", {
+  skip_if_not_installed("terra")
   skip_if_no_sf()
   expect_error(
     run_fordead_dieback(con = make_fake_con(), zone_id = 1L,
@@ -221,6 +229,7 @@ test_that("rejects dates_monitoring starting before dates_training", {
 # ---- successful orchestration ----------------------------------------
 
 test_that("runs the 6 phases in order on the success path", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
 
   fk <- make_fake_fordead_2x_module()
@@ -255,6 +264,7 @@ test_that("runs the 6 phases in order on the success path", {
 # ---- cooperative cancellation ----------------------------------------
 
 test_that("cooperative cancel stops the run after fit, before predict", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
 
   flag <- withr::local_tempfile(fileext = ".flag")
@@ -305,6 +315,7 @@ test_that("cooperative cancel stops the run after fit, before predict", {
 })
 
 test_that("a stale cancel flag at entry is ignored; the FORDEAD run completes", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
 
   flag <- withr::local_tempfile(fileext = ".flag")
@@ -331,6 +342,7 @@ test_that("a stale cancel flag at entry is ignored; the FORDEAD run completes", 
 
 
 test_that("model bundle persist is best-effort: a failure warns, run succeeds", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
 
   fk <- make_fake_fordead_2x_module()
@@ -365,6 +377,7 @@ test_that("model bundle persist is best-effort: a failure warns, run succeeds", 
 
 
 test_that("persist phase writes the categorical dieback mask to mask_cache_dir", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
   skip_if_not_installed("terra")
 
@@ -410,6 +423,7 @@ test_that("persist phase writes the categorical dieback mask to mask_cache_dir",
 })
 
 test_that("mask_cache_dir defaults to the 'fordead' sibling of cache_dir", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
   skip_if_not_installed("terra")
 
@@ -444,6 +458,7 @@ test_that("mask_cache_dir defaults to the 'fordead' sibling of cache_dir", {
 })
 
 test_that("keep_output = TRUE runs FORDEAD inside the project cache", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
   skip_if_not_installed("terra")
 
@@ -473,6 +488,7 @@ test_that("keep_output = TRUE runs FORDEAD inside the project cache", {
 })
 
 test_that("propagates Python errors as status='error' with message", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
 
   fk <- make_fake_fordead_2x_module(fail_at = "fit")
@@ -498,6 +514,7 @@ test_that("propagates Python errors as status='error' with message", {
 
 
 test_that("aborts when no scene falls in the training window (v0.25.7)", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
 
   # Scenes only in 2025-2026, default training window is 2016-2017.
@@ -531,6 +548,7 @@ test_that("aborts when no scene falls in the training window (v0.25.7)", {
 
 
 test_that("aborts when no scene falls in the monitoring window (v0.25.7)", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
 
   # Scenes only in 2016, default monitoring window starts 2018.
@@ -563,6 +581,7 @@ test_that("aborts when no scene falls in the monitoring window (v0.25.7)", {
 
 
 test_that("aborts when ingest returns 0 scenes", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
 
   fk <- make_fake_fordead_2x_module()
@@ -590,6 +609,7 @@ test_that("aborts when ingest returns 0 scenes", {
 # ---- progress_callback wiring ----------------------------------------
 
 test_that("progress_callback receives ordered fordead:* events for all 6 phases", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
 
   events <- list()
@@ -641,6 +661,7 @@ test_that("progress_callback receives ordered fordead:* events for all 6 phases"
 
 
 test_that("ingest phase propagates s2:* events verbatim to the user callback", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
 
   events <- list()
@@ -689,6 +710,7 @@ test_that("ingest phase propagates s2:* events verbatim to the user callback", {
 
 
 test_that("persist phase runs always (con/zone_id required)", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
 
   fk <- make_fake_fordead_2x_module()
@@ -722,6 +744,7 @@ test_that("persist phase runs always (con/zone_id required)", {
 
 
 test_that("progress_callback receives a 'fordead:error' event on failure", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
 
   events <- list()
@@ -759,6 +782,7 @@ test_that("progress_callback receives a 'fordead:error' event on failure", {
 
 
 test_that("a buggy progress_callback does not abort the pipeline", {
+  skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
 
   buggy_cb <- function(payload) {
@@ -792,6 +816,7 @@ test_that("a buggy progress_callback does not abort the pipeline", {
 # ---- FORDEAD_BANDS constant ------------------------------------------
 
 test_that("FORDEAD_BANDS lists the six bands required by CRSWIR + masks", {
+  skip_if_not_installed("terra")
   expect_type(FORDEAD_BANDS, "character")
   expect_length(FORDEAD_BANDS, 6L)
   expect_setequal(FORDEAD_BANDS,
@@ -802,6 +827,7 @@ test_that("FORDEAD_BANDS lists the six bands required by CRSWIR + masks", {
 # ---- empty-result shape ----------------------------------------------
 
 test_that(".empty_fordead_result has the documented shape", {
+  skip_if_not_installed("terra")
   res <- nemeton:::.empty_fordead_result(
     output_dir = "/tmp/x", python_env = "env",
     status = "error", duration_sec = 1.5, message = "oops"

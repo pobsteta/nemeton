@@ -10,6 +10,7 @@ library(terra)
 # ==============================================================================
 
 test_that("indicateur_r1_feu calculates fallback risk correctly", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("nemeton")
 
   # Load demo data
@@ -42,6 +43,7 @@ test_that("indicateur_r1_feu calculates fallback risk correctly", {
 })
 
 test_that("indicateur_r1_feu handles missing climate data gracefully", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
   units$species <- rep("Quercus", 3)
@@ -56,12 +58,14 @@ test_that("indicateur_r1_feu handles missing climate data gracefully", {
 })
 
 test_that("indicateur_r1_feu returns NA without DEM", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   result <- indicateur_r1_feu(units)
   expect_true(all(is.na(result$R1)))
 })
 
 test_that("indicateur_r1_feu accepts bdforet parameter", {
+  skip_if_not_installed("terra")
   # Verify the function signature accepts bdforet (even if fireexposuR not installed)
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster()
@@ -81,6 +85,7 @@ test_that("indicateur_r1_feu accepts bdforet parameter", {
 # ==============================================================================
 
 test_that("indicateur_r2_tempete calculates vulnerability with DEM", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   dem <- create_test_raster()
 
@@ -94,6 +99,7 @@ test_that("indicateur_r2_tempete calculates vulnerability with DEM", {
 })
 
 test_that("indicateur_r2_tempete returns NA without DEM", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
 
   result <- indicateur_r2_tempete(units)
@@ -101,6 +107,7 @@ test_that("indicateur_r2_tempete returns NA without DEM", {
 })
 
 test_that("indicateur_r2_tempete simplified signature (no height/density)", {
+  skip_if_not_installed("terra")
   # Verify the signature: units, dem, layers plus the CHM
   # arguments added in spec 005 phase 4.
   fm <- names(formals(indicateur_r2_tempete))
@@ -112,6 +119,7 @@ test_that("indicateur_r2_tempete simplified signature (no height/density)", {
 })
 
 test_that("indicateur_r2_tempete with demo data", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("nemeton")
 
   data(massif_demo_units, package = "nemeton")
@@ -131,6 +139,7 @@ test_that("indicateur_r2_tempete with demo data", {
 # ==============================================================================
 
 test_that("indicateur_r3_secheresse calculates stress with DEM", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   dem <- create_test_raster()
 
@@ -144,6 +153,7 @@ test_that("indicateur_r3_secheresse calculates stress with DEM", {
 })
 
 test_that("indicateur_r3_secheresse returns NA without DEM", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
 
   result <- indicateur_r3_secheresse(units)
@@ -151,6 +161,7 @@ test_that("indicateur_r3_secheresse returns NA without DEM", {
 })
 
 test_that("indicateur_r3_secheresse simplified signature", {
+  skip_if_not_installed("terra")
   # Verify the new signature: units, layers, dem, climate_data
   params <- names(formals(indicateur_r3_secheresse))
   expect_true(all(c("units", "layers", "dem", "climate_data") %in% params))
@@ -161,6 +172,7 @@ test_that("indicateur_r3_secheresse simplified signature", {
 })
 
 test_that("indicateur_r3_secheresse accepts climate_data", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster()
 
@@ -185,6 +197,7 @@ test_that("indicateur_r3_secheresse accepts climate_data", {
 })
 
 test_that("indicateur_r3_secheresse with demo data", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("nemeton")
 
   data(massif_demo_units, package = "nemeton")
@@ -204,6 +217,7 @@ test_that("indicateur_r3_secheresse with demo data", {
 # ==============================================================================
 
 test_that("R family workflow: R1-R3 -> normalize -> famille_risque composite", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("nemeton")
 
   data(massif_demo_units, package = "nemeton")
@@ -239,6 +253,7 @@ test_that("R family workflow: R1-R3 -> normalize -> famille_risque composite", {
 # ==============================================================================
 
 test_that("indicateur_r4_abroutissement calculates composite risk correctly", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
@@ -255,6 +270,7 @@ test_that("indicateur_r4_abroutissement calculates composite risk correctly", {
 })
 
 test_that("indicateur_r4_abroutissement simplified signature (tuto 03)", {
+  skip_if_not_installed("terra")
   # Verify the new signature: units, layers, bdforet, game_density, edge_buffer
   params <- names(formals(indicateur_r4_abroutissement))
   expect_true(all(c("units", "layers", "bdforet", "game_density", "edge_buffer") %in% params))
@@ -266,6 +282,7 @@ test_that("indicateur_r4_abroutissement simplified signature (tuto 03)", {
 })
 
 test_that("indicateur_r4_abroutissement uses BD Foret for palatability", {
+  skip_if_not_installed("terra")
   # Create test units and a mock BD Foret sf
   units <- create_test_units(n_features = 3)
 
@@ -282,6 +299,7 @@ test_that("indicateur_r4_abroutissement uses BD Foret for palatability", {
 })
 
 test_that("indicateur_r4_abroutissement calculates edge exposure", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -292,6 +310,7 @@ test_that("indicateur_r4_abroutissement calculates edge exposure", {
 })
 
 test_that("indicateur_r4_abroutissement uses game density raster when provided", {
+  skip_if_not_installed("terra")
   # Use test units that match raster extent
   units <- create_test_units(n_features = 3)
 
@@ -308,6 +327,7 @@ test_that("indicateur_r4_abroutissement uses game density raster when provided",
 })
 
 test_that("indicateur_r4_abroutissement defaults to 50 without layers", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -320,6 +340,7 @@ test_that("indicateur_r4_abroutissement defaults to 50 without layers", {
 })
 
 test_that("indicateur_r4_abroutissement uses fixed weights from tuto 03", {
+  skip_if_not_installed("terra")
   # With default data, R4 should be computed with fixed weights
   # palatability(50)*0.35 + vulnerability(50)*0.30 + edge*0.20 + density(50)*0.15
   units <- create_test_units(n_features = 2)
@@ -337,6 +358,7 @@ test_that("indicateur_r4_abroutissement uses fixed weights from tuto 03", {
 # ==============================================================================
 
 test_that("indicateur_r1_feu handles units outside raster extent gracefully", {
+  skip_if_not_installed("terra")
   # Create units outside the standard test raster extent
   offset_units <- create_test_units(n_features = 2)
   sf::st_geometry(offset_units) <- sf::st_geometry(offset_units) + c(10000, 10000)
@@ -358,6 +380,7 @@ test_that("indicateur_r1_feu handles units outside raster extent gracefully", {
 })
 
 test_that("R indicators validate sf input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_r1_feu(data.frame(x = 1:3), dem = create_test_raster()),
     "must be an.*sf.*object"
@@ -386,6 +409,7 @@ test_that("R indicators validate sf input", {
 # --- R1: indicateur_r1_feu additional coverage ---
 
 test_that("indicateur_r1_feu fallback path without species field", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster()
 
@@ -398,6 +422,7 @@ test_that("indicateur_r1_feu fallback path without species field", {
 })
 
 test_that("indicateur_r1_feu with DEM but no bdforet exercises fallback method", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   units$species <- c("Pinus", "Quercus", "Fagus")
   dem <- create_test_raster()
@@ -417,6 +442,7 @@ test_that("indicateur_r1_feu with DEM but no bdforet exercises fallback method",
 })
 
 test_that("indicateur_r1_feu weight redistribution when no climate", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   units$species <- c("Pinus", "Quercus")
   dem <- create_test_raster()
@@ -438,6 +464,7 @@ test_that("indicateur_r1_feu weight redistribution when no climate", {
 # --- R2: indicateur_r2_tempete additional coverage ---
 
 test_that("indicateur_r2_tempete exercises terrain fallback (no microclima)", {
+  skip_if_not_installed("terra")
   # This test exercises the fallback branch with aspect, slope, TRI
   units <- create_test_units(n_features = 4)
 
@@ -460,6 +487,7 @@ test_that("indicateur_r2_tempete exercises terrain fallback (no microclima)", {
 })
 
 test_that("indicateur_r2_tempete with constant DEM (TRI max = 0 edge case)", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
 
   # Flat DEM -> TRI max will be 0 or very small
@@ -475,6 +503,7 @@ test_that("indicateur_r2_tempete with constant DEM (TRI max = 0 edge case)", {
 # --- R3: indicateur_r3_secheresse additional coverage ---
 
 test_that("indicateur_r3_secheresse with SPEI package exercises climate component", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("SPEI")
 
   units <- create_test_units(n_features = 3)
@@ -490,6 +519,7 @@ test_that("indicateur_r3_secheresse with SPEI package exercises climate componen
 })
 
 test_that("indicateur_r3_secheresse with provided climate_data and SPEI", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("SPEI")
 
   units <- create_test_units(n_features = 3)
@@ -520,6 +550,7 @@ test_that("indicateur_r3_secheresse with provided climate_data and SPEI", {
 })
 
 test_that("indicateur_r3_secheresse topographic component with varied DEM", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
 
   # Create DEM with varying terrain for aspect/slope/TWI variation
@@ -549,6 +580,7 @@ test_that("indicateur_r3_secheresse topographic component with varied DEM", {
 # --- R4: indicateur_r4_abroutissement additional coverage ---
 
 test_that("indicateur_r4_abroutissement exercises all default components", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
 
   # No bdforet, no layers, no game_density -> all defaults
@@ -565,6 +597,7 @@ test_that("indicateur_r4_abroutissement exercises all default components", {
 })
 
 test_that("indicateur_r4_abroutissement with bdforet lacking essence column", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
 
   # BD Foret without any recognized essence column
@@ -587,6 +620,7 @@ test_that("indicateur_r4_abroutissement with bdforet lacking essence column", {
 })
 
 test_that("indicateur_r4_abroutissement edge exposure with small polygons", {
+  skip_if_not_installed("terra")
   # Very small polygons where buffer might collapse entirely
   units <- create_test_units(n_features = 2)
 
@@ -599,6 +633,7 @@ test_that("indicateur_r4_abroutissement edge exposure with small polygons", {
 })
 
 test_that("indicateur_r4_abroutissement with bdforet and valid essence column", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
 
   # BD Foret with recognized 'essence' column
@@ -629,6 +664,7 @@ test_that("indicateur_r4_abroutissement with bdforet and valid essence column", 
 # --- R1: indicateur_r1_feu batch8 tests ---
 
 test_that("R1 with DEM computes fallback slope-based fire risk", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster(values = seq(100, 500, length.out = 2400))
 
@@ -638,12 +674,14 @@ test_that("R1 with DEM computes fallback slope-based fire risk", {
 })
 
 test_that("R1 with NULL DEM returns NA", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   result <- nemeton::indicateur_r1_feu(units, dem = NULL)
   expect_true(all(is.na(result$R1)))
 })
 
 test_that("R1 with species field uses species flammability", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   units$species <- c("Pinus pinaster", "Fagus sylvatica", "Quercus suber")
   dem <- create_test_raster(values = seq(100, 500, length.out = 2400))
@@ -653,6 +691,7 @@ test_that("R1 with species field uses species flammability", {
 })
 
 test_that("R1 with NDVI proxy when no species field", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster(values = seq(100, 300, length.out = 2400))
   ndvi <- create_test_raster(values = "random")
@@ -666,6 +705,7 @@ test_that("R1 with NDVI proxy when no species field", {
 })
 
 test_that("R1 with climate data uses climate factor", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster(values = seq(100, 300, length.out = 2400))
   temp <- create_test_raster(values = "constant")
@@ -681,6 +721,7 @@ test_that("R1 with climate data uses climate factor", {
 # --- R2: indicateur_r2_tempete batch8 tests ---
 
 test_that("R2 with DEM computes terrain-based storm risk", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster(values = seq(100, 600, length.out = 2400))
 
@@ -690,12 +731,14 @@ test_that("R2 with DEM computes terrain-based storm risk", {
 })
 
 test_that("R2 with NULL DEM returns NA", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   result <- nemeton::indicateur_r2_tempete(units, dem = NULL)
   expect_true(all(is.na(result$R2)))
 })
 
 test_that("R2 from layers extracts DEM", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster(values = seq(100, 600, length.out = 2400))
 
@@ -710,6 +753,7 @@ test_that("R2 from layers extracts DEM", {
 # --- R3: indicateur_r3_secheresse batch8 tests ---
 
 test_that("R3 with DEM computes drought risk", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster(values = seq(100, 400, length.out = 2400))
 
@@ -719,6 +763,7 @@ test_that("R3 with DEM computes drought risk", {
 })
 
 test_that("R3 from layers extracts DEM", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster(values = seq(100, 400, length.out = 2400))
 
@@ -730,6 +775,7 @@ test_that("R3 from layers extracts DEM", {
 })
 
 test_that("R3 without DEM returns NA", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   result <- nemeton::indicateur_r3_secheresse(units, dem = NULL)
   expect_true(all(is.na(result$R3)))
@@ -738,6 +784,7 @@ test_that("R3 without DEM returns NA", {
 # --- R4: indicateur_r4_abroutissement batch8 tests ---
 
 test_that("R4 with bdforet computes browsing pressure", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   bdforet <- sf::st_sf(
     code_tfv = c("FF1-00", "FF2G61"),
@@ -758,6 +805,7 @@ test_that("R4 with bdforet computes browsing pressure", {
 })
 
 test_that("R4 without bdforet returns fallback", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   result <- nemeton::indicateur_r4_abroutissement(units, bdforet = NULL)
   expect_true("R4" %in% names(result))
@@ -766,6 +814,7 @@ test_that("R4 without bdforet returns fallback", {
 })
 
 test_that("R4 with edge_buffer parameter", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   bdforet <- sf::st_sf(
     code_tfv = "FF1-00",
@@ -786,6 +835,7 @@ test_that("R4 with edge_buffer parameter", {
 # ==============================================================================
 
 test_that("indicateur_r1_feu returns R1 with fallback method", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -799,6 +849,7 @@ test_that("indicateur_r1_feu returns R1 with fallback method", {
 })
 
 test_that("indicateur_r1_feu with species data", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -812,6 +863,7 @@ test_that("indicateur_r1_feu with species data", {
 })
 
 test_that("indicateur_r2_tempete returns R2", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -824,6 +876,7 @@ test_that("indicateur_r2_tempete returns R2", {
 })
 
 test_that("indicateur_r2_tempete without DEM returns defaults", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
 
@@ -833,6 +886,7 @@ test_that("indicateur_r2_tempete without DEM returns defaults", {
 })
 
 test_that("indicateur_r3_secheresse returns R3", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
 
@@ -842,6 +896,7 @@ test_that("indicateur_r3_secheresse returns R3", {
 })
 
 test_that("indicateur_r3_secheresse with DEM for topographic modulation", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -854,6 +909,7 @@ test_that("indicateur_r3_secheresse with DEM for topographic modulation", {
 })
 
 test_that("indicateur_r4_abroutissement returns R4", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
 
@@ -863,6 +919,7 @@ test_that("indicateur_r4_abroutissement returns R4", {
 })
 
 test_that("indicateur_r4_abroutissement with species palatability", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   units$essence <- c("Quercus", "Fagus", "Pinus")
@@ -893,6 +950,7 @@ local_mock_wind <- function(env = parent.frame()) {
 }
 
 test_that("R2 CHM mode boosts vulnerability on tall conifer stands", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("withr")
   local_mock_wind()
 
@@ -937,6 +995,7 @@ test_that("R2 CHM mode boosts vulnerability on tall conifer stands", {
 })
 
 test_that("R2 CHM mode: at equal H, conifers are more vulnerable than broadleaves", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("withr")
   local_mock_wind()
 
@@ -969,6 +1028,7 @@ test_that("R2 CHM mode: at equal H, conifers are more vulnerable than broadleave
 })
 
 test_that("R2 CHM mode preserves backward compatibility without chm", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("withr")
   local_mock_wind()
 
@@ -990,6 +1050,7 @@ test_that("R2 CHM mode preserves backward compatibility without chm", {
 })
 
 test_that("R2 CHM mode rejects a non-SpatRaster chm", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("withr")
   local_mock_wind()
   dem <- terra::rast(nrows = 20, ncols = 20,
@@ -1012,6 +1073,7 @@ test_that("R2 CHM mode rejects a non-SpatRaster chm", {
 # ==============================================================================
 
 test_that("indicateur_r3_secheresse snow attenuates drought stress", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -1038,6 +1100,7 @@ test_that("indicateur_r3_secheresse snow attenuates drought stress", {
 })
 
 test_that("indicateur_r3_secheresse rejects a non-raster snow", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -1056,6 +1119,7 @@ test_that("indicateur_r3_secheresse rejects a non-raster snow", {
 # ==============================================================================
 
 test_that("indicateur_r3_secheresse soil moisture attenuates drought stress", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -1080,6 +1144,7 @@ test_that("indicateur_r3_secheresse soil moisture attenuates drought stress", {
 })
 
 test_that("indicateur_r3_secheresse rejects a non-raster soil_moisture", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 

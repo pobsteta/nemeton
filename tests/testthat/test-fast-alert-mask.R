@@ -5,6 +5,7 @@
 # ---- unit: read_fast_alert_mask --------------------------------------
 
 test_that("read_fast_alert_mask returns NULL when cache_dir is missing", {
+  skip_if_not_installed("terra")
   expect_null(read_fast_alert_mask(NULL, 1L, cache_dir = NULL))
   expect_null(read_fast_alert_mask(NULL, 1L, cache_dir = ""))
   expect_null(read_fast_alert_mask(NULL, 1L,
@@ -12,16 +13,19 @@ test_that("read_fast_alert_mask returns NULL when cache_dir is missing", {
 })
 
 test_that("read_fast_alert_mask returns NULL when zone dir is missing", {
+  skip_if_not_installed("terra")
   td <- withr::local_tempdir()
   expect_null(read_fast_alert_mask(NULL, 1L, cache_dir = td))
 })
 
 test_that("read_fast_alert_mask rejects bad zone_id", {
+  skip_if_not_installed("terra")
   expect_error(read_fast_alert_mask(NULL, c(1L, 2L), cache_dir = tempdir()),
                regexp = "single non-NA integer")
 })
 
 test_that("read_fast_alert_mask returns the most recent file by default", {
+  skip_if_terra_write_broken()
   td <- withr::local_tempdir()
   zone_dir <- file.path(td, "zone_1")
   dir.create(zone_dir, recursive = TRUE)
@@ -51,6 +55,7 @@ test_that("read_fast_alert_mask returns the most recent file by default", {
 })
 
 test_that("read_fast_alert_mask returns NULL when no matching file", {
+  skip_if_terra_write_broken()
   td <- withr::local_tempdir()
   zone_dir <- file.path(td, "zone_1")
   dir.create(zone_dir, recursive = TRUE)
@@ -67,6 +72,7 @@ test_that("read_fast_alert_mask returns NULL when no matching file", {
 # ---- unit: compute_fast_alert_mask input validation ------------------
 
 test_that("compute_fast_alert_mask validates inputs", {
+  skip_if_not_installed("terra")
   fake_con <- structure(list(), class = c("FakeConn", "DBIConnection"))
   expect_error(
     compute_fast_alert_mask(fake_con, c(1L, 2L),
@@ -126,6 +132,7 @@ test_that("0-4 classify tolerates tied quartile breaks (degenerate)", {
 # ---- integration: end-to-end compute + read --------------------------
 
 test_that("compute_fast_alert_mask + read round-trip on villards", {
+  skip_if_not_installed("terra")
   cache <- "/home/pascal/.local/share/nemeton/projects/20260520_212017_btfe/cache/layers/sentinel2"
   if (!dir.exists(cache)) testthat::skip("villards cache not present on this machine")
   skip_if_no_timescaledb()
@@ -174,6 +181,7 @@ test_that("compute_fast_alert_mask + read round-trip on villards", {
 }
 
 test_that(".fast_alert_mask_gc keeps the newest `keep` masks (LRU)", {
+  skip_if_not_installed("terra")
   d <- withr::local_tempdir()
   .write_dummy_masks(d, 25L)
   nemeton:::.fast_alert_mask_gc(d, keep = 20L)
@@ -185,6 +193,7 @@ test_that(".fast_alert_mask_gc keeps the newest `keep` masks (LRU)", {
 })
 
 test_that(".fast_alert_mask_gc is a no-op at or under `keep`", {
+  skip_if_not_installed("terra")
   d <- withr::local_tempdir()
   .write_dummy_masks(d, 10L)
   nemeton:::.fast_alert_mask_gc(d, keep = 20L)
@@ -192,6 +201,7 @@ test_that(".fast_alert_mask_gc is a no-op at or under `keep`", {
 })
 
 test_that(".fast_alert_mask_gc never touches continuous COGs (shared dir)", {
+  skip_if_not_installed("terra")
   # validation-sampling case: masks (`fast_alert_*`) and continuous
   # (`fast_<INDEX>_*`) live in the same `fast_sampling/zone_<id>` dir.
   d <- withr::local_tempdir()
@@ -205,6 +215,7 @@ test_that(".fast_alert_mask_gc never touches continuous COGs (shared dir)", {
 })
 
 test_that(".fast_raster_gc never touches 0-4 masks (shared dir)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("withr")
   d <- withr::local_tempdir()
   # 22 continuous COGs + 3 masks in the same dir.

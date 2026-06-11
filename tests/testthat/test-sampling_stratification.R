@@ -13,6 +13,7 @@
 
 skip_if_no_terra <- function() {
   testthat::skip_if_not_installed("terra")
+  skip_if_terra_write_broken()
 }
 skip_if_no_sf <- function() {
   testthat::skip_if_not_installed("sf")
@@ -130,6 +131,7 @@ test_that("create_sampling_plan() aborts when CHM filter leaves pool < n_base", 
 # ---- 4. Regression guard: no stratification ---------------------------
 
 test_that("create_sampling_plan() unchanged when chm = NULL and mnt = NULL", {
+  skip_if_not_installed("terra")
   skip_if_no_sf()
   aoi <- .make_aoi()
 

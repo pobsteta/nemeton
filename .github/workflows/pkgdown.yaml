@@ -54,7 +54,10 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, local::.
+          # rsconnect : requis par pkgdown::package_tutorials() pour découvrir
+          # les tutoriels learnr de inst/tutorials/ (sinon « The package
+          # rsconnect is required to find published tutorials »).
+          extra-packages: any::pkgdown, any::rsconnect, local::.
           needs: website
 
       - name: Build site
@@ -62,7 +65,10 @@ jobs:
         shell: Rscript {0}
 
       - name: Deploy to GitHub pages 🚀
-        if: github.event_name != 'pull_request'
+        # Deploy only on push to main / published release — never on a
+        # pull_request or a manual workflow_dispatch (which build-only, so the
+        # site can be validated from a branch without publishing it).
+        if: github.event_name == 'push' || github.event_name == 'release'
         uses: JamesIves/github-pages-deploy-action@v4.5.0
         with:
           clean: false

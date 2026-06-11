@@ -68,6 +68,7 @@ make_fordead <- function(units, coverage_per_unit) {
 # Tests --------------------------------------------------------------
 
 test_that("R5 = NA + skipped_no_fordead when no FORDEAD results given", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 3L)
   out <- indicateur_r5_deperissement(u)
   expect_true(all(is.na(out$R5)))
@@ -76,6 +77,7 @@ test_that("R5 = NA + skipped_no_fordead when no FORDEAD results given", {
 })
 
 test_that("R5 = NA when fordead_results$alerts_sf is empty", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 2L)
   fr <- list(alerts_sf = make_fordead(u, list(NULL, NULL))$alerts_sf)
   out <- indicateur_r5_deperissement(u, fr)
@@ -84,6 +86,7 @@ test_that("R5 = NA when fordead_results$alerts_sf is empty", {
 })
 
 test_that("mono-class 50% coverage of class 3-forte gives R5 = 41 (0.82 * 0.5)", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 1L)
   fr <- make_fordead(u, list(list(list(class = "3-forte", frac = 0.5))))
   out <- indicateur_r5_deperissement(u, fr)
@@ -93,6 +96,7 @@ test_that("mono-class 50% coverage of class 3-forte gives R5 = 41 (0.82 * 0.5)",
 })
 
 test_that("multi-class coverage adds up linearly (3-forte + 4-sol-nu)", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 1L)
   fr <- make_fordead(u, list(list(
     list(class = "3-forte", frac = 0.3),
@@ -104,6 +108,7 @@ test_that("multi-class coverage adds up linearly (3-forte + 4-sol-nu)", {
 })
 
 test_that("non-conifer unit (Quercus) → skipped_no_resineux", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 1L, species = "Quercus petraea")
   fr <- make_fordead(u, list(list(list(class = "3-forte", frac = 0.5))))
   out <- indicateur_r5_deperissement(u, fr)
@@ -112,6 +117,7 @@ test_that("non-conifer unit (Quercus) → skipped_no_resineux", {
 })
 
 test_that("classes 1-faible / 2-moyenne are excluded by default (G1)", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 1L)
   fr <- make_fordead(u, list(list(
     list(class = "1-faible", frac = 0.5),
@@ -123,6 +129,7 @@ test_that("classes 1-faible / 2-moyenne are excluded by default (G1)", {
 })
 
 test_that("include_low_classes = TRUE pulls in 1-faible / 2-moyenne", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 1L)
   fr <- make_fordead(u, list(list(
     list(class = "1-faible", frac = 0.5),
@@ -134,6 +141,7 @@ test_that("include_low_classes = TRUE pulls in 1-faible / 2-moyenne", {
 })
 
 test_that("R5 is capped at 100", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 1L)
   # huge cluster that more than fills the unit
   fr <- make_fordead(u, list(list(list(class = "3-forte", frac = 5))))
@@ -142,6 +150,7 @@ test_that("R5 is capped at 100", {
 })
 
 test_that("clusters outside the unit do not contribute", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 2L)
   # First unit has a cluster, second one is clean.
   fr <- make_fordead(u, list(
@@ -155,6 +164,7 @@ test_that("clusters outside the unit do not contribute", {
 })
 
 test_that("custom resineux_col overrides species detection", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 2L, species = "Quercus")
   u$pct_resineux <- c(0.8, 0.1)
   fr <- make_fordead(u, list(
@@ -170,6 +180,7 @@ test_that("custom resineux_col overrides species detection", {
 })
 
 test_that("custom resineux_col is clamped to [0, 1]", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 1L, species = "Quercus")
   u$pct_resineux <- 5  # nonsense value
   fr <- make_fordead(u, list(list(list(class = "3-forte", frac = 0.5))))
@@ -179,6 +190,7 @@ test_that("custom resineux_col is clamped to [0, 1]", {
 })
 
 test_that("min_resineux threshold is honoured", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 2L, species = "Quercus")
   u$pct_resineux <- c(0.4, 0.2)
   fr <- make_fordead(u, list(
@@ -194,6 +206,7 @@ test_that("min_resineux threshold is honoured", {
 })
 
 test_that("custom weights override the default ONF/DSF table", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 1L)
   fr <- make_fordead(u, list(list(list(class = "3-forte", frac = 0.5))))
   custom <- c("3-forte" = 1, "4-sol-nu" = 1)
@@ -203,6 +216,7 @@ test_that("custom weights override the default ONF/DSF table", {
 })
 
 test_that("empty units returns an empty sf with R5/r5_status columns", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 1L)[0L, ]
   out <- indicateur_r5_deperissement(u)
   expect_equal(nrow(out), 0L)
@@ -210,11 +224,13 @@ test_that("empty units returns an empty sf with R5/r5_status columns", {
 })
 
 test_that("non-sf units raises a typed error", {
+  skip_if_not_installed("terra")
   expect_error(indicateur_r5_deperissement(list(a = 1)),
                "must be an sf")
 })
 
 test_that("missing required column on alerts_sf raises a typed error", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 1L)
   fr <- list(alerts_sf = sf::st_sf(
     cluster_id = 1L,
@@ -225,6 +241,7 @@ test_that("missing required column on alerts_sf raises a typed error", {
 })
 
 test_that("R5 is picked up by create_family_index() under the R family", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 2L)
   u$R1 <- c(50, 60)
   u$R2 <- c(70, 30)
@@ -245,6 +262,7 @@ test_that("R5 is picked up by create_family_index() under the R family", {
 })
 
 test_that("R5 NA values do not poison family aggregation when other R indicators exist", {
+  skip_if_not_installed("terra")
   u <- make_units(n = 1L, species = "Quercus")
   u$R1 <- 50; u$R2 <- 70; u$R3 <- 40; u$R4 <- 60
   out <- indicateur_r5_deperissement(u)  # NA + skipped_no_fordead

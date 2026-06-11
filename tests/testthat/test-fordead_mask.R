@@ -7,6 +7,7 @@
 
 skip_if_no_terra <- function() {
   testthat::skip_if_not_installed("terra")
+  skip_if_terra_write_broken()
 }
 
 make_fake_con <- function() {
@@ -29,11 +30,13 @@ make_fake_con <- function() {
 
 
 test_that("returns NULL when cache_dir is NULL", {
+  skip_if_not_installed("terra")
   expect_null(read_fordead_dieback_mask(con = make_fake_con(), zone_id = 1L))
 })
 
 
 test_that("returns NULL when cache_dir doesn't exist", {
+  skip_if_not_installed("terra")
   expect_null(
     read_fordead_dieback_mask(make_fake_con(), zone_id = 1L,
                               cache_dir = "/no/such/path")
@@ -130,6 +133,7 @@ test_that("returns NULL when the explicit run_id does not exist", {
 
 
 test_that("rejects NA zone_id", {
+  skip_if_not_installed("terra")
   expect_error(
     read_fordead_dieback_mask(make_fake_con(), zone_id = NA,
                               cache_dir = "/tmp"),

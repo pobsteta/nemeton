@@ -10,6 +10,7 @@ library(terra)
 # ==============================================================================
 
 test_that("indicateur_a1_couverture calculates buffer coverage correctly", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("nemeton")
 
   # Load demo data
@@ -37,6 +38,7 @@ test_that("indicateur_a1_couverture calculates buffer coverage correctly", {
 })
 
 test_that("indicateur_a1_couverture handles different buffer radii", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -56,6 +58,7 @@ test_that("indicateur_a1_couverture handles different buffer radii", {
 })
 
 test_that("indicateur_a1_couverture filters forest classes correctly", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 
@@ -76,6 +79,7 @@ test_that("indicateur_a1_couverture filters forest classes correctly", {
 # ==============================================================================
 
 test_that("indicateur_a2_qualite_air uses direct method when ATMO data available", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("nemeton")
 
   data(massif_demo_units, package = "nemeton")
@@ -109,6 +113,7 @@ test_that("indicateur_a2_qualite_air uses direct method when ATMO data available
 })
 
 test_that("indicateur_a2_qualite_air uses proxy method when ATMO data unavailable", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -140,6 +145,7 @@ test_that("indicateur_a2_qualite_air uses proxy method when ATMO data unavailabl
 })
 
 test_that("indicateur_a2_qualite_air auto-detects method", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 
@@ -166,6 +172,7 @@ test_that("indicateur_a2_qualite_air auto-detects method", {
 })
 
 test_that("indicateur_a2_qualite_air handles missing data gracefully", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 
@@ -181,6 +188,7 @@ test_that("indicateur_a2_qualite_air handles missing data gracefully", {
 # ==============================================================================
 
 test_that("A family workflow: A1-A2 → normalize → famille_air composite", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("nemeton")
 
   data(massif_demo_units, package = "nemeton")
@@ -224,6 +232,7 @@ test_that("A family workflow: A1-A2 → normalize → famille_air composite", {
 # ==============================================================================
 
 test_that("indicateur_a1_couverture validates input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_a1_couverture(data.frame(x = 1:3)),
     "must be an.*sf.*object"
@@ -231,6 +240,7 @@ test_that("indicateur_a1_couverture validates input", {
 })
 
 test_that("indicateur_a1_couverture handles missing land_cover", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -241,6 +251,7 @@ test_that("indicateur_a1_couverture handles missing land_cover", {
 })
 
 test_that("indicateur_a1_couverture works with custom forest classes", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 
@@ -258,6 +269,7 @@ test_that("indicateur_a1_couverture works with custom forest classes", {
 })
 
 test_that("indicateur_a2_qualite_air validates input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_a2_qualite_air(data.frame(x = 1:3)),
     "must be an.*sf.*object"
@@ -265,6 +277,7 @@ test_that("indicateur_a2_qualite_air validates input", {
 })
 
 test_that("indicateur_a2_qualite_air handles empty ATMO data", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 
@@ -291,6 +304,7 @@ test_that("indicateur_a2_qualite_air handles empty ATMO data", {
 # ==============================================================================
 
 test_that("indicateur_a2_qualite_air handles road_type field name fallback", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -320,6 +334,7 @@ test_that("indicateur_a2_qualite_air handles road_type field name fallback", {
 })
 
 test_that("indicateur_a2_qualite_air handles unknown road field name gracefully", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 
@@ -351,6 +366,7 @@ test_that("indicateur_a2_qualite_air handles unknown road field name gracefully"
 # ==============================================================================
 
 test_that("indicateur_a1_couverture returns A1 with landcover raster", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -364,6 +380,7 @@ test_that("indicateur_a1_couverture returns A1 with landcover raster", {
 })
 
 test_that("indicateur_a1_couverture with custom forest_classes", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -380,6 +397,7 @@ test_that("indicateur_a1_couverture with custom forest_classes", {
 })
 
 test_that("indicateur_a1_couverture with custom buffer_radius", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -395,6 +413,7 @@ test_that("indicateur_a1_couverture with custom buffer_radius", {
 })
 
 test_that("indicateur_a2_qualite_air returns A2 with proxy method", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   roads <- create_test_vector(type = "lines")
@@ -405,6 +424,7 @@ test_that("indicateur_a2_qualite_air returns A2 with proxy method", {
 })
 
 test_that("indicateur_a2_qualite_air without roads returns default", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
 
@@ -418,6 +438,7 @@ test_that("indicateur_a2_qualite_air without roads returns default", {
 # ==============================================================================
 
 test_that("indicateur_a1_couverture FVC mode returns A1 in 0-100", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -432,6 +453,7 @@ test_that("indicateur_a1_couverture FVC mode returns A1 in 0-100", {
 })
 
 test_that("indicateur_a1_couverture FVC mode ignores a NULL land_cover", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -446,6 +468,7 @@ test_that("indicateur_a1_couverture FVC mode ignores a NULL land_cover", {
 })
 
 test_that("indicateur_a1_couverture rejects a non-raster fvc", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 2)

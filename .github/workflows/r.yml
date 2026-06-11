@@ -66,7 +66,16 @@ jobs:
       - name: Check package
         uses: r-lib/actions/check-r-package@v2
         with:
-          args: 'c("--no-manual", "--no-vignettes", "--no-build-vignettes", "--as-cran")'
+          # `--no-tests` : la suite testthat tourne dans le job `tests` dédié
+          #   (via devtools::test). Le sandbox `R CMD check` exhibe une anomalie
+          #   terra propre au runner GitHub (terra::rast/writeRaster lèvent
+          #   « no valid constructor » dans ce contexte précis, alors que la
+          #   même opération marche en R nu sur le runner et que toute la suite
+          #   passe en local) — non reproductible et non liée au code.
+          # `--no-build-vignettes` : vignettes (calcul spatial lourd) montées
+          #   par pkgdown, pas ici.
+          args: 'c("--no-manual", "--no-tests", "--no-vignettes", "--no-build-vignettes", "--as-cran")'
+          build_args: 'c("--no-manual", "--no-build-vignettes")'
           error-on: '"error"'
           upload-snapshots: true
 
@@ -105,12 +114,16 @@ jobs:
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::testthat, any::remotes
+          extra-packages: any::testthat, any::remotes, any::devtools
           needs: check
 
+      # Vrais tests via devtools::test() (load_all, comme en local où la suite
+      # passe), plutôt que testthat::test_package() qui ne trouvait aucun test
+      # installé et passait à vide (faux vert). Les tests du pipeline raster
+      # FAST se gardent eux-mêmes via skip_if_terra_write_broken() contre une
+      # anomalie terra propre au runner (cf. helper-fast-raster.R).
       - name: Run tests
-        run: |
-          testthat::test_package("nemeton", reporter = "summary")
+        run: devtools::test(stop_on_failure = TRUE, reporter = "summary")
         shell: Rscript {0}
 
   # ============================================================

@@ -162,6 +162,7 @@ test_that("read_s2_band_stack: terra::time() is correctly set", {
 })
 
 test_that("read_s2_band_stack: validates scenes_df shape", {
+  skip_if_not_installed("terra")
   cache <- withr::local_tempdir()
 
   expect_error(read_s2_band_stack(cache, list(), "B04"),
@@ -269,6 +270,7 @@ test_that("build_index_stack(NBR): incomplete scene (no B12) is skipped, never w
 })
 
 test_that("build_index_stack: repeated call with incomplete cache emits no warning (dedupe)", {
+  skip_if_not_installed("terra")
   # Regression: the old `cli_warn` fired on every reactive evaluation
   # (~12x per app load → 12 identical console lines for villards).
   skip_if_not_installed("terra")
@@ -304,6 +306,7 @@ write_scene_ext <- function(cache, sid, xmin, xmax, ymin, ymax,
 }
 
 test_that("build_index_stack: stacks to the UNION of extents, padding NA (v0.52.x)", {
+  skip_if_not_installed("terra")
   # spec 010 / v0.52.x — an AOI straddling two overlapping MGRS tiles
   # yields a WIDE scene (covers the whole AOI) and a NARROW scene
   # (covers only the overlap strip ⊂ WIDE). The old behaviour cropped
@@ -338,6 +341,7 @@ test_that("build_index_stack: stacks to the UNION of extents, padding NA (v0.52.
 })
 
 test_that("build_index_stack: independent dates each keep their own layer over the union", {
+  skip_if_not_installed("terra")
   # 4 scenes = 2 dates x 2 tiles (each date has a narrow + a wide
   # scene). The per-date mosaic is the app consumer's job; the core
   # builder must return all 4 layers over the union extent with the
@@ -368,6 +372,7 @@ test_that("build_index_stack: independent dates each keep their own layer over t
 })
 
 test_that("build_index_stack: layers in different CRS are reprojected then unioned", {
+  skip_if_not_installed("terra")
   # Rare multi-zone AOI (two UTM zones at a zone border). The reference
   # layer (first by date) fixes the output CRS; the other is
   # reprojected onto it before the union, so the stack still covers

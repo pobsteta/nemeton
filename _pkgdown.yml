@@ -270,6 +270,123 @@ reference:
     - indicators-productive
     - indicators-social
 
+  - title: "Suivi sanitaire, monitoring et autres fonctions"
+    desc: >
+      Pipelines FORDEAD/FAST, zones de monitoring, validation terrain,
+      corpus de connaissances, helpers CHM / echantillonnage et utilitaires.
+    contents:
+    - aggregate_plot_metrics
+    - attach_field_data_to_units
+    - bai_drift_factor
+    - bdforet_v2_mapping
+    - build_index_stack
+    - build_knowledge_corpus
+    - build_project_monitoring_zones
+    - cec_to_fertility_score
+    - charru_bai_drift_table
+    - charru_selfthinning_table
+    - check_fordead_validity
+    - classify_disturbance
+    - compute_dtm_chm_from_laz
+    - compute_fast_alert_mask
+    - compute_sample_size
+    - create_monitoring_zone
+    - create_qgis_project
+    - create_sampling_plan
+    - create_validation_sampling_plan
+    - cv_from_bdforet
+    - cv_lookup
+    - cv_typology
+    - db
+    - db_connect
+    - db_disconnect
+    - db_migrate
+    - delete_knowledge_document
+    - diagnose_s2_cache
+    - embed_query
+    - enable_rag
+    - enrich_parcels_bdforet
+    - estimate_dq_from_hdom
+    - estimate_synthetic_inventory
+    - extract_pixel_timeseries
+    - field_schema
+    - find_zone_by_project
+    - find_zones_by_project
+    - fordead_alert_mask
+    - FORDEAD_BANDS
+    - FORDEAD_CLASSES
+    - FORDEAD_CONFIDENCE_WEIGHTS
+    - fordead_pipeline
+    - fordead_pixel_series
+    - fordead_postprocess
+    - fordead_python
+    - FORDEAD_VALIDITY_DEPARTMENTS
+    - FORDEAD_VALIDITY_SPECIES
+    - format_citations
+    - generate_health_validation_plots
+    - get_arbre_schema
+    - get_datasource_product
+    - get_health_validation_schema
+    - get_ndp_augmented
+    - get_placette_schema
+    - h_to_dq_params
+    - HEALTH_VALIDATION_CAUSES
+    - HEALTH_VALIDATION_STADES
+    - import_qgis_gpkg
+    - indicateur_r5_deperissement
+    - ingest_health_validation
+    - ingest_knowledge_document
+    - ingest_knowledge_reference
+    - ingest_s2_raw_bands_to_cache
+    - ingest_sentinel2_timeseries
+    - knowledge_manifest_path
+    - knowledge_manifest_vocab
+    - knowledge-corpus
+    - list_alerts
+    - list_knowledge_documents
+    - load_fordead_validity_zones
+    - load_raster_source
+    - load_theia_source
+    - monitoring_ingest
+    - n_max_selfthinning
+    - probe_ign_lidar_tile
+    - probe_ign_lidar_tiles
+    - prune_orphan_zone_caches
+    - qgis_export
+    - qgis_import
+    - rag
+    - read_fast_alert_mask
+    - read_fast_alert_raster
+    - read_fast_alert_rasters
+    - read_fordead_dieback_mask
+    - read_fordead_pixel_series
+    - read_knowledge_manifest
+    - read_s2_band_raster
+    - read_s2_band_stack
+    - read_uts_fertility_table
+    - register_monitoring_zone
+    - resolve_project_layers
+    - resolve_theia_assets
+    - retrieve_knowledge
+    - run_fordead_dieback
+    - sampling_plan
+    - schema_to_df
+    - sentinel2_stac
+    - site_index_reference_points
+    - stac_get_item
+    - stac_search_items
+    - stac_search_s2
+    - tag_field_data_sources
+    - texture_to_erosion_resistance
+    - texture_to_fertility_score
+    - theia_configure_s3
+    - theia_signed_href
+    - theia_stac
+    - units_add_species_from_raster
+    - validate_field_data
+    - validate_knowledge_manifest
+    - write_knowledge_manifest
+
 authors:
   Pascal Obstetar:
     href: https://github.com/pobsteta

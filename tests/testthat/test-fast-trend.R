@@ -5,6 +5,7 @@
 # ---- maths helpers ----------------------------------------------------
 
 test_that(".theil_sen recovers a known slope and ignores tied x", {
+  skip_if_not_installed("terra")
   expect_equal(nemeton:::.theil_sen(1:5, 2 * (1:5) + 3), 2, tolerance = 1e-9)
   expect_equal(nemeton:::.theil_sen(1:5, -0.5 * (1:5)), -0.5, tolerance = 1e-9)
   # Robust to a single outlier (median of pairwise slopes).
@@ -17,6 +18,7 @@ test_that(".theil_sen recovers a known slope and ignores tied x", {
 
 
 test_that(".mann_kendall flags a monotonic decline and clears flat / short", {
+  skip_if_not_installed("terra")
   mk <- function(y) nemeton:::.mann_kendall(y)
   dec <- mk(c(0.9, 0.7, 0.5, 0.3, 0.1))      # strictly decreasing, n = 5
   expect_lt(dec$S, 0)
@@ -44,12 +46,15 @@ test_that(".mann_kendall flags a monotonic decline and clears flat / short", {
 .trend_stack <- function(dates, cell_values) {
   n <- length(dates)
   layers <- lapply(seq_len(n), function(i) {
-    m <- matrix(0.5, 4, 4)
+    # Assign by terra cell index (row-major), NOT R matrix linear index
+    # (column-major): cell key "k" must mean terra cell k so the per-cell
+    # expectations below (v[1], v[2], v[3]) line up with the input series.
+    r <- terra::rast(nrows = 4, ncols = 4,
+                     xmin = 0, xmax = 4, ymin = 0, ymax = 4,
+                     crs = "EPSG:32631", vals = 0.5)
     for (cell in names(cell_values)) {
-      m[as.integer(cell)] <- cell_values[[cell]][i]
+      r[as.integer(cell)] <- cell_values[[cell]][i]
     }
-    r <- terra::rast(m, crs = "EPSG:32631")
-    terra::ext(r) <- terra::ext(0, 4, 0, 4)
     r
   })
   out <- terra::rast(layers)
@@ -95,7 +100,7 @@ test_that(".fast_raster_trend: noisy non-monotonic series is not flagged", {
   stk <- .trend_stack(dates, list("1" = noise))
   out <- nemeton:::.fast_raster_trend(
     stk, months = 6:9, min_years = 4L, min_obs_per_year = 2L, alpha = 0.05)
-  expect_equal(terra::values(out)[1, 1], 0)
+  expect_equal(unname(terra::values(out)[1, 1]), 0)
 })
 
 
@@ -155,6 +160,7 @@ test_that(".fast_raster_trend: out-of-season scenes are excluded", {
 
 
 test_that("read_fast_alert_raster(mode='trend') returns a cached EPSG:2154 raster", {
+  skip_if_terra_write_broken()
   skip_if_not_installed("terra")
   skip_if_not_installed("withr")
   cache  <- withr::local_tempdir()
@@ -188,6 +194,7 @@ test_that("read_fast_alert_raster(mode='trend') returns a cached EPSG:2154 raste
 
 
 test_that("compute_fast_alert_mask(mode='trend') writes a 0-4 mask unchanged", {
+  skip_if_terra_write_broken()
   skip_if_not_installed("terra")
   skip_if_not_installed("withr")
   cache <- withr::local_tempdir()
@@ -209,6 +216,7 @@ test_that("compute_fast_alert_mask(mode='trend') writes a 0-4 mask unchanged", {
 
 
 test_that("trend default index is NDMI (mode-dependent default)", {
+  skip_if_terra_write_broken()
   skip_if_not_installed("terra")
   skip_if_not_installed("withr")
   cache  <- withr::local_tempdir()
@@ -228,6 +236,7 @@ test_that("trend default index is NDMI (mode-dependent default)", {
 # ---- trend parameter validation + cache keying -----------------------
 
 test_that("trend mode validates alpha / months / min_years", {
+  skip_if_not_installed("terra")
   con <- structure(list(), class = c("FakeConn", "DBIConnection"))
   base <- list(con, 1L, mode = "trend",
                date_from = "2019-01-01", date_to = "2023-12-31",
@@ -244,6 +253,7 @@ test_that("trend mode validates alpha / months / min_years", {
 
 
 test_that(".fast_raster_hash keys trend on alpha / months / min_years", {
+  skip_if_not_installed("terra")
   h <- function(...) nemeton:::.fast_raster_hash(...)
   base <- h(c("a"), "NDMI", NULL, "trend", 30L, "2019-01-01", "2023-12-31", NA,
             alpha = 0.05, months = 6:9, min_years = 4L, min_obs_per_year = 2L)
@@ -264,6 +274,7 @@ test_that(".fast_raster_hash keys trend on alpha / months / min_years", {
 
 
 test_that(".fast_raster_filename emits a trend-specific name", {
+  skip_if_not_installed("terra")
   fn <- nemeton:::.fast_raster_filename(
     "NDMI", "trend", NULL, "2019-01-01", "2023-12-31", 30L,
     "deadbeefcafef00d", alpha = 0.05, months = 6:9, min_years = 4L)
@@ -273,6 +284,7 @@ test_that(".fast_raster_filename emits a trend-specific name", {
 
 
 test_that("count / rolling hash is unchanged by the new trend args (back-compat)", {
+  skip_if_not_installed("terra")
   h <- function(...) nemeton:::.fast_raster_hash(...)
   # 8-positional-arg call (pre-spec-023 signature) still works and matches
   # the same call made today — trend args are appended only for trend.

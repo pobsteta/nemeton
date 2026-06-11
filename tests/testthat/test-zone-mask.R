@@ -14,6 +14,7 @@ test_that(".apply_zone_mask is a no-op when zone_polygon is NULL", {
 
 
 test_that(".apply_zone_mask is a no-op when raster is not a SpatRaster", {
+  skip_if_not_installed("terra")
   expect_equal(nemeton:::.apply_zone_mask(42, NULL), 42)
   expect_equal(nemeton:::.apply_zone_mask("not a raster",
                                           sf::st_sfc(sf::st_point(c(0,0)),
@@ -68,6 +69,7 @@ test_that(".apply_zone_mask reprojects the polygon to the raster CRS", {
 
 
 test_that("read_fast_alert_raster(apply_zone_mask = FALSE) skips mask", {
+  skip_if_not_installed("terra")
   # Smoke test against villards if local cache + DB present.
   cache <- "/home/pascal/.local/share/nemeton/projects/20260520_212017_btfe/cache/layers/sentinel2"
   if (!dir.exists(cache)) testthat::skip("villards cache not present")

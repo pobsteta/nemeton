@@ -9,6 +9,7 @@ library(sf)
 # ==============================================================================
 
 test_that("indicateur_t1_anciennete returns numeric vector 0-150 range", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
   units$age <- NULL  # Remove pre-existing age field
@@ -23,6 +24,7 @@ test_that("indicateur_t1_anciennete returns numeric vector 0-150 range", {
 })
 
 test_that("indicateur_t1_anciennete uses direct age field as fallback", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
   units$age <- c(25, 75, 150, 200, 300)
@@ -36,6 +38,7 @@ test_that("indicateur_t1_anciennete uses direct age field as fallback", {
 })
 
 test_that("indicateur_t1_anciennete calculates from establishment year", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
   units$planted <- c(1850, 1950, 2000)
@@ -53,6 +56,7 @@ test_that("indicateur_t1_anciennete calculates from establishment year", {
 })
 
 test_that("indicateur_t1_anciennete with BD Forêt data", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -72,6 +76,7 @@ test_that("indicateur_t1_anciennete with BD Forêt data", {
 })
 
 test_that("indicateur_t1_anciennete BD Forêt uses area-weighted average", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1, ]
 
@@ -95,6 +100,7 @@ test_that("indicateur_t1_anciennete BD Forêt uses area-weighted average", {
 })
 
 test_that("indicateur_t1_anciennete handles NA values in age field", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:4, ]
   units$age <- c(50, NA, 100, NA)
@@ -110,6 +116,7 @@ test_that("indicateur_t1_anciennete handles NA values in age field", {
 })
 
 test_that("indicateur_t1_anciennete validates inputs", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_t1_anciennete(data.frame(x = 1:3)),
     "must be.*sf"
@@ -117,6 +124,7 @@ test_that("indicateur_t1_anciennete validates inputs", {
 })
 
 test_that("indicateur_t1_anciennete NDVI fallback with layers", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   layers <- massif_demo_layers()
   units <- massif_demo_units[1:3, ]
@@ -137,6 +145,7 @@ test_that("indicateur_t1_anciennete NDVI fallback with layers", {
 # ==============================================================================
 
 test_that("indicateur_t2_changement returns numeric vector 0-100", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
@@ -149,6 +158,7 @@ test_that("indicateur_t2_changement returns numeric vector 0-100", {
 })
 
 test_that("indicateur_t2_changement uses N2 column as proxy", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
   units$N2 <- c(10, 30, 50, 70, 90)
@@ -161,6 +171,7 @@ test_that("indicateur_t2_changement uses N2 column as proxy", {
 })
 
 test_that("indicateur_t2_changement uses N2_anciennete column", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
   units$N2_anciennete <- c(20, 60, 95)
@@ -171,6 +182,7 @@ test_that("indicateur_t2_changement uses N2_anciennete column", {
 })
 
 test_that("indicateur_t2_changement falls back to T1 capped at 100", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:4, ]
   # Remove N2 columns so T1 fallback is used
@@ -190,6 +202,7 @@ test_that("indicateur_t2_changement falls back to T1 capped at 100", {
 })
 
 test_that("indicateur_t2_changement uses T1 column from units", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
   # Remove N2 so T1 fallback is used
@@ -204,6 +217,7 @@ test_that("indicateur_t2_changement uses T1 column from units", {
 })
 
 test_that("indicateur_t2_changement validates inputs", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_t2_changement(data.frame(x = 1:3)),
     "must be.*sf"
@@ -215,6 +229,7 @@ test_that("indicateur_t2_changement validates inputs", {
 # ==============================================================================
 
 test_that("T1 and T2 work together", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
@@ -233,6 +248,7 @@ test_that("T1 and T2 work together", {
 })
 
 test_that(".estimate_age_tfv maps vegetation types correctly", {
+  skip_if_not_installed("terra")
   tfv <- c(
     "Forêt fermée de feuillus purs",
     "Futaie de conifères",
@@ -263,6 +279,7 @@ test_that(".estimate_age_tfv maps vegetation types correctly", {
 # --- .estimate_age_tfv: more TFV string patterns ---
 
 test_that(".estimate_age_tfv handles varied French forest type strings", {
+  skip_if_not_installed("terra")
   ages <- nemeton:::.estimate_age_tfv(c(
     "For\u00eat ferm\u00e9e de feuillus purs",
     "Futaie de feuillus",
@@ -289,6 +306,7 @@ test_that(".estimate_age_tfv handles varied French forest type strings", {
 })
 
 test_that(".estimate_age_tfv handles case-insensitive matching", {
+  skip_if_not_installed("terra")
   ages <- nemeton:::.estimate_age_tfv(c(
     "FORET FERMEE DE FEUILLUS",
     "FUTAIE DE CONIFERES",
@@ -307,6 +325,7 @@ test_that(".estimate_age_tfv handles case-insensitive matching", {
 })
 
 test_that(".estimate_age_tfv handles NA and empty strings", {
+  skip_if_not_installed("terra")
   ages <- nemeton:::.estimate_age_tfv(c(NA, "", "Unknown", "  "))
 
   # NA input -> tolower(NA) is NA, grepl returns FALSE for NA -> default 50
@@ -317,6 +336,7 @@ test_that(".estimate_age_tfv handles NA and empty strings", {
 })
 
 test_that(".estimate_age_tfv handles single-element vector", {
+  skip_if_not_installed("terra")
   expect_equal(nemeton:::.estimate_age_tfv("Peupleraie"), 20)
   expect_equal(nemeton:::.estimate_age_tfv("Taillis"), 45)
   expect_equal(nemeton:::.estimate_age_tfv("xyz"), 50)
@@ -325,6 +345,7 @@ test_that(".estimate_age_tfv handles single-element vector", {
 # --- T1: indicateur_t1_anciennete ---
 
 test_that("T1 with establishment_year and auto current_year", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 2)
   test_units$planting_year <- c(1900, 2000)
 
@@ -343,6 +364,7 @@ test_that("T1 with establishment_year and auto current_year", {
 })
 
 test_that("T1 with explicit current_year for establishment_year", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 3)
   test_units$yr <- c(1850, 1950, 2010)
 
@@ -357,6 +379,7 @@ test_that("T1 with explicit current_year for establishment_year", {
 })
 
 test_that("T1 BD Foret with CODE_TFV field name", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 2)
 
   # Create BD Foret with CODE_TFV field (not just TFV)
@@ -377,6 +400,7 @@ test_that("T1 BD Foret with CODE_TFV field name", {
 })
 
 test_that("T1 BD Foret with lib_fv field name", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 2)
 
   bdforet <- sf::st_sf(
@@ -392,6 +416,7 @@ test_that("T1 BD Foret with lib_fv field name", {
 })
 
 test_that("T1 BD Foret with ESSENCE field name", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 1)
 
   bdforet <- sf::st_sf(
@@ -409,6 +434,7 @@ test_that("T1 BD Foret with ESSENCE field name", {
 })
 
 test_that("T1 BD Foret with no recognized TFV field returns default 50", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 2)
 
   # bdforet with unrecognized field names
@@ -429,6 +455,7 @@ test_that("T1 BD Foret with no recognized TFV field returns default 50", {
 })
 
 test_that("T1 BD Foret with CRS mismatch triggers transform", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 2)
 
   bdforet_2154 <- sf::st_sf(
@@ -449,6 +476,7 @@ test_that("T1 BD Foret with CRS mismatch triggers transform", {
 })
 
 test_that("T1 BD Foret with empty sf (0 rows) falls through to age field", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 2)
   test_units$age <- c(80, 120)
 
@@ -464,6 +492,7 @@ test_that("T1 BD Foret with empty sf (0 rows) falls through to age field", {
 })
 
 test_that("T1 BD Foret intersection with 0-area result uses default 50", {
+  skip_if_not_installed("terra")
   # This tests the total_area == 0 branch (line 123-124)
   test_units <- create_test_units(n_features = 1)
 
@@ -487,6 +516,7 @@ test_that("T1 BD Foret intersection with 0-area result uses default 50", {
 })
 
 test_that("T1 priority chain: age_field takes precedence over establishment_year", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 2)
   test_units$age <- c(100, 200)
   test_units$planted <- c(1900, 1800)
@@ -502,6 +532,7 @@ test_that("T1 priority chain: age_field takes precedence over establishment_year
 })
 
 test_that("T1 falls through to default 50 when no data at all", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 3)
 
   result <- nemeton::indicateur_t1_anciennete(
@@ -516,6 +547,7 @@ test_that("T1 falls through to default 50 when no data at all", {
 })
 
 test_that("T1 resolves bdforet from nemeton_layers", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 2)
 
   bdforet_sf <- sf::st_sf(
@@ -544,6 +576,7 @@ test_that("T1 resolves bdforet from nemeton_layers", {
 # --- T2: indicateur_t2_changement ---
 
 test_that("T2 uses N2_anciennet column (truncated name variant)", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 3)
   test_units$N2_anciennet <- c(30, 70, 110)
 
@@ -554,6 +587,7 @@ test_that("T2 uses N2_anciennet column (truncated name variant)", {
 })
 
 test_that("T2 with N2 column containing values > 100 are capped", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 3)
   test_units$N2 <- c(-5, 50, 150)
 
@@ -564,6 +598,7 @@ test_that("T2 with N2 column containing values > 100 are capped", {
 })
 
 test_that("T2 fallback to t1_values with NA values replaced by 50", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 4)
   # No N2 columns
   t1 <- c(30, NA, 120, NA)
@@ -575,6 +610,7 @@ test_that("T2 fallback to t1_values with NA values replaced by 50", {
 })
 
 test_that("T2 with T1 column in units (not t1_values argument)", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 3)
   test_units$T1 <- c(25, NA, 90)
 
@@ -585,6 +621,7 @@ test_that("T2 with T1 column in units (not t1_values argument)", {
 })
 
 test_that("T2 default 50 when no N2 or T1 available", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 5)
 
   result <- nemeton::indicateur_t2_changement(test_units)
@@ -595,6 +632,7 @@ test_that("T2 default 50 when no N2 or T1 available", {
 })
 
 test_that("T2 t1_values wrong length is ignored, falls through", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 3)
 
   # t1_values has wrong length (2 instead of 3) -> not used
@@ -605,6 +643,7 @@ test_that("T2 t1_values wrong length is ignored, falls through", {
 })
 
 test_that("T2 t1_values non-numeric is ignored", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 2)
 
   # t1_values is character -> not numeric -> not used
@@ -615,6 +654,7 @@ test_that("T2 t1_values non-numeric is ignored", {
 })
 
 test_that("T2 N2_anciennete takes priority over N2", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 2)
   test_units$N2_anciennete <- c(85, 95)
   test_units$N2 <- c(30, 40)
@@ -626,6 +666,7 @@ test_that("T2 N2_anciennete takes priority over N2", {
 })
 
 test_that("T2 priority: N2 column over T1 column", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 2)
   test_units$N2 <- c(60, 80)
   test_units$T1 <- c(30, 40)
@@ -637,6 +678,7 @@ test_that("T2 priority: N2 column over T1 column", {
 })
 
 test_that("T2 priority: t1_values argument over T1 column", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 2)
   test_units$T1 <- c(30, 40)
 
@@ -647,6 +689,7 @@ test_that("T2 priority: t1_values argument over T1 column", {
 })
 
 test_that("T2 with layers parameter (interface consistency)", {
+  skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 2)
   test_units$N2 <- c(45, 75)
 
@@ -666,6 +709,7 @@ test_that("T2 with layers parameter (interface consistency)", {
 })
 
 test_that("T2 validates sf input", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton::indicateur_t2_changement(data.frame(x = 1:3)),
     "must be.*sf"

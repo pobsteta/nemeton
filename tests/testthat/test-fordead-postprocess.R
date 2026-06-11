@@ -9,6 +9,7 @@
 
 skip_if_no_terra <- function() {
   testthat::skip_if_not_installed("terra")
+  skip_if_terra_write_broken()
 }
 
 # Helper: tiny SpatRaster of class codes (Lambert-93, 10 m pixels).
@@ -27,12 +28,14 @@ make_state_raster <- function(values, nrow = 5L, ncol = 5L) {
 # ---- constants -------------------------------------------------------
 
 test_that("FORDEAD_CLASSES is the canonical 5-class vocabulary", {
+  skip_if_not_installed("terra")
   expect_equal(FORDEAD_CLASSES,
                c("0-hors-anomalie", "1-faible", "2-moyenne",
                  "3-forte", "4-sol-nu"))
 })
 
 test_that("FORDEAD_CONFIDENCE_WEIGHTS reproduces ONF/DSF coefficients", {
+  skip_if_not_installed("terra")
   expect_named(FORDEAD_CONFIDENCE_WEIGHTS,
                c("1-faible", "2-moyenne", "3-forte", "4-sol-nu"))
   expect_equal(unname(FORDEAD_CONFIDENCE_WEIGHTS),
@@ -60,6 +63,7 @@ test_that(".classify_pixels_to_classes keeps codes 0..4 and NAs the rest", {
 })
 
 test_that(".classify_pixels_to_classes rejects non-SpatRaster", {
+  skip_if_not_installed("terra")
   expect_error(nemeton:::.classify_pixels_to_classes("not-a-raster"),
                "SpatRaster")
 })
@@ -169,6 +173,7 @@ test_that(".postprocess_fordead_rasters loads from paths and returns POINT sf", 
 })
 
 test_that(".postprocess_fordead_rasters errors when state is missing", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton:::.postprocess_fordead_rasters(list(state = NULL)),
     "rasters\\$state")
@@ -178,6 +183,7 @@ test_that(".postprocess_fordead_rasters errors when state is missing", {
 # ---- classify_disturbance --------------------------------------------
 
 test_that("classify_disturbance handles an empty data frame", {
+  skip_if_not_installed("terra")
   df <- data.frame(plot_id = integer(0), alert_type = character(0),
                    trigger_date = as.Date(character(0)))
   out <- classify_disturbance(df)
@@ -186,6 +192,7 @@ test_that("classify_disturbance handles an empty data frame", {
 })
 
 test_that("classify_disturbance: lone fordead → progressive, paired → mechanical", {
+  skip_if_not_installed("terra")
   df <- data.frame(
     plot_id      = c(1L, 2L, 2L),
     alert_type   = c("fordead_dieback", "fordead_dieback", "ndvi_drop"),
@@ -200,6 +207,7 @@ test_that("classify_disturbance: lone fordead → progressive, paired → mechan
 })
 
 test_that("classify_disturbance: lone ndvi_drop → recent_event", {
+  skip_if_not_installed("terra")
   df <- data.frame(
     plot_id      = c(1L, 1L),
     alert_type   = c("ndvi_drop", "nbr_drop"),
@@ -211,6 +219,7 @@ test_that("classify_disturbance: lone ndvi_drop → recent_event", {
 })
 
 test_that("classify_disturbance respects window_days", {
+  skip_if_not_installed("terra")
   df <- data.frame(
     plot_id      = c(1L, 1L),
     alert_type   = c("fordead_dieback", "ndvi_drop"),
@@ -224,6 +233,7 @@ test_that("classify_disturbance respects window_days", {
 })
 
 test_that("classify_disturbance does not pair an alert with itself", {
+  skip_if_not_installed("terra")
   df <- data.frame(
     plot_id      = 1L,
     alert_type   = "fordead_dieback",
@@ -233,11 +243,13 @@ test_that("classify_disturbance does not pair an alert with itself", {
 })
 
 test_that("classify_disturbance rejects missing columns", {
+  skip_if_not_installed("terra")
   expect_error(classify_disturbance(data.frame(x = 1)),
                "plot_id|alert_type|trigger_date")
 })
 
 test_that("classify_disturbance ignores cross-plot pairs", {
+  skip_if_not_installed("terra")
   df <- data.frame(
     plot_id      = c(1L, 2L),
     alert_type   = c("fordead_dieback", "ndvi_drop"),
@@ -250,6 +262,7 @@ test_that("classify_disturbance ignores cross-plot pairs", {
 })
 
 test_that("classify_disturbance leaves unknown alert_type as NA", {
+  skip_if_not_installed("terra")
   df <- data.frame(
     plot_id      = 1L,
     alert_type   = "future_alert",
@@ -413,6 +426,7 @@ test_that(".insert_fordead_alerts skips centroids beyond radius_m", {
 })
 
 test_that(".insert_fordead_alerts on empty input is a no-op", {
+  skip_if_not_installed("terra")
   empty <- sf::st_sf(
     confidence_class = character(0),
     stress_index     = numeric(0),

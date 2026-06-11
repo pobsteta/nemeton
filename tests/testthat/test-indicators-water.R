@@ -10,6 +10,7 @@
 # ==============================================================================
 
 test_that("indicateur_w1_reseau calculates stream density within parcels", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -30,6 +31,7 @@ test_that("indicateur_w1_reseau calculates stream density within parcels", {
 })
 
 test_that("indicateur_w1_reseau with buffer expands search area", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -46,6 +48,7 @@ test_that("indicateur_w1_reseau with buffer expands search area", {
 })
 
 test_that("indicateur_w1_reseau handles parcels with no watercourses", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -60,6 +63,7 @@ test_that("indicateur_w1_reseau handles parcels with no watercourses", {
 })
 
 test_that("indicateur_w1_reseau returns 0 when watercourse layer missing", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -75,6 +79,7 @@ test_that("indicateur_w1_reseau returns 0 when watercourse layer missing", {
 })
 
 test_that("indicateur_w1_reseau validates inputs", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -96,6 +101,7 @@ test_that("indicateur_w1_reseau validates inputs", {
 # ==============================================================================
 
 test_that("indicateur_w2_zones_humides calculates wetland percentage from landcover", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -120,6 +126,7 @@ test_that("indicateur_w2_zones_humides calculates wetland percentage from landco
 })
 
 test_that("indicateur_w2_zones_humides handles multiple wetland codes", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -138,6 +145,7 @@ test_that("indicateur_w2_zones_humides handles multiple wetland codes", {
 })
 
 test_that("indicateur_w2_zones_humides returns 0 when no wetlands present", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -156,6 +164,7 @@ test_that("indicateur_w2_zones_humides returns 0 when no wetlands present", {
 })
 
 test_that("indicateur_w2_zones_humides handles nonexistent wetland layer gracefully", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -168,6 +177,7 @@ test_that("indicateur_w2_zones_humides handles nonexistent wetland layer gracefu
 })
 
 test_that("indicateur_w2_zones_humides with NULL wetland_values uses TWI or vector fallback", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -180,6 +190,7 @@ test_that("indicateur_w2_zones_humides with NULL wetland_values uses TWI or vect
 })
 
 test_that("indicateur_w2_zones_humides validates inputs", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -201,6 +212,7 @@ test_that("indicateur_w2_zones_humides validates inputs", {
 # ==============================================================================
 
 test_that("indicateur_w3_humidite calculates TWI from DEM", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -223,6 +235,7 @@ test_that("indicateur_w3_humidite calculates TWI from DEM", {
 })
 
 test_that("indicateur_w3_humidite with explicit d8 method", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -239,6 +252,7 @@ test_that("indicateur_w3_humidite with explicit d8 method", {
 })
 
 test_that("indicateur_w3_humidite shows higher values in depressions", {
+  skip_if_not_installed("terra")
   # This is a qualitative test - TWI should reflect terrain wetness
   # Lower elevation parcels or flatter areas should generally have higher TWI
 
@@ -261,6 +275,7 @@ test_that("indicateur_w3_humidite shows higher values in depressions", {
 })
 
 test_that("indicateur_w3_humidite still works with nonexistent dem_layer (falls back to lidar_mnt/dem)", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -274,6 +289,7 @@ test_that("indicateur_w3_humidite still works with nonexistent dem_layer (falls 
 })
 
 test_that("indicateur_w3_humidite validates method parameter", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -287,6 +303,7 @@ test_that("indicateur_w3_humidite validates method parameter", {
 })
 
 test_that("indicateur_w3_humidite validates inputs", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -308,6 +325,7 @@ test_that("indicateur_w3_humidite validates inputs", {
 # ==============================================================================
 
 test_that("All three water indicators work together", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -333,6 +351,7 @@ test_that("All three water indicators work together", {
 })
 
 test_that("Water indicators can be added to units dataframe", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 

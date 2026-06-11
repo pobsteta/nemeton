@@ -6,21 +6,25 @@
 # ==============================================================================
 
 test_that("generate_ids produces correct format", {
+  skip_if_not_installed("terra")
   ids <- nemeton:::generate_ids(3)
   expect_equal(ids, c("unit_001", "unit_002", "unit_003"))
 })
 
 test_that("generate_ids respects custom prefix", {
+  skip_if_not_installed("terra")
   ids <- nemeton:::generate_ids(2, prefix = "parcel_")
   expect_equal(ids, c("parcel_001", "parcel_002"))
 })
 
 test_that("generate_ids handles n=1", {
+  skip_if_not_installed("terra")
   ids <- nemeton:::generate_ids(1)
   expect_equal(ids, "unit_001")
 })
 
 test_that("generate_ids handles large n with zero-padding", {
+  skip_if_not_installed("terra")
   ids <- nemeton:::generate_ids(5)
   expect_length(ids, 5)
   expect_equal(ids, c("unit_001", "unit_002", "unit_003", "unit_004", "unit_005"))
@@ -29,6 +33,7 @@ test_that("generate_ids handles large n with zero-padding", {
 })
 
 test_that("generate_ids with empty prefix", {
+  skip_if_not_installed("terra")
   ids <- nemeton:::generate_ids(2, prefix = "")
   expect_equal(ids, c("001", "002"))
 })
@@ -38,6 +43,7 @@ test_that("generate_ids with empty prefix", {
 # ==============================================================================
 
 test_that("detect_indicator_family extracts family code", {
+  skip_if_not_installed("terra")
   expect_equal(nemeton:::detect_indicator_family("C1"), "C")
   expect_equal(nemeton:::detect_indicator_family("B3"), "B")
   expect_equal(nemeton:::detect_indicator_family("W2"), "W")
@@ -47,6 +53,7 @@ test_that("detect_indicator_family extracts family code", {
 })
 
 test_that("detect_indicator_family returns NA for non-indicator names", {
+  skip_if_not_installed("terra")
   expect_true(is.na(nemeton:::detect_indicator_family("indicateur_c1_biomasse")))
   expect_true(is.na(nemeton:::detect_indicator_family("unknown")))
   expect_true(is.na(nemeton:::detect_indicator_family("abc")))
@@ -56,6 +63,7 @@ test_that("detect_indicator_family returns NA for non-indicator names", {
 })
 
 test_that("detect_indicator_family requires uppercase letter + digit", {
+  skip_if_not_installed("terra")
   # lowercase letter + digit should not match
   expect_true(is.na(nemeton:::detect_indicator_family("c1")))
   # letter without digit should not match
@@ -68,49 +76,58 @@ test_that("detect_indicator_family requires uppercase letter + digit", {
 # ==============================================================================
 
 test_that("calculate_shannon_h computes correct diversity", {
+  skip_if_not_installed("terra")
   # Equal proportions (4 classes): H = log(4) ~= 1.386
   result <- nemeton:::calculate_shannon_h(c(0.25, 0.25, 0.25, 0.25))
   expect_equal(result, log(4), tolerance = 1e-10)
 })
 
 test_that("calculate_shannon_h returns 0 for single category", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_shannon_h(c(1.0))
   expect_equal(result, 0)
 })
 
 test_that("calculate_shannon_h returns NA for empty/all-NA input", {
+  skip_if_not_installed("terra")
   expect_true(is.na(nemeton:::calculate_shannon_h(c())))
   expect_true(is.na(nemeton:::calculate_shannon_h(c(NA, NA))))
 })
 
 test_that("calculate_shannon_h handles zeros", {
+  skip_if_not_installed("terra")
   # Should ignore zeros
   result <- nemeton:::calculate_shannon_h(c(0.5, 0.5, 0, 0))
   expect_equal(result, log(2), tolerance = 1e-10)
 })
 
 test_that("calculate_shannon_h normalizes proportions", {
+  skip_if_not_installed("terra")
   # Not summing to 1 should still work
   result <- nemeton:::calculate_shannon_h(c(1, 1, 1, 1))
   expect_equal(result, log(4), tolerance = 1e-10)
 })
 
 test_that("calculate_shannon_h supports custom base", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_shannon_h(c(0.5, 0.5), base = 2)
   expect_equal(result, 1, tolerance = 1e-10)  # log2(2) = 1
 })
 
 test_that("calculate_shannon_h returns NA for all-zero input", {
+  skip_if_not_installed("terra")
   all_zeros <- c(0, 0, 0)
   expect_true(is.na(nemeton:::calculate_shannon_h(all_zeros)))
 })
 
 test_that("calculate_shannon_h handles mixed zeros and NAs", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_shannon_h(c(0.5, NA, 0.5, 0, NA))
   expect_equal(result, log(2), tolerance = 1e-10)
 })
 
 test_that("calculate_shannon_h with unequal proportions", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_shannon_h(c(0.9, 0.1))
   # H = -(0.9*log(0.9) + 0.1*log(0.1))
   expected <- -(0.9 * log(0.9) + 0.1 * log(0.1))
@@ -146,11 +163,13 @@ test_that("get_crs extracts CRS from SpatRaster", {
 })
 
 test_that("get_crs returns NA for unknown object type", {
+  skip_if_not_installed("terra")
   crs <- nemeton:::get_crs(data.frame(x = 1))
   expect_true(is.na(crs))
 })
 
 test_that("get_crs returns NA for basic list", {
+  skip_if_not_installed("terra")
   crs <- nemeton:::get_crs(list(a = 1, b = 2))
   expect_true(is.na(crs))
 })
@@ -218,6 +237,7 @@ test_that("validate_sf passes for valid sf object", {
 })
 
 test_that("validate_sf rejects non-sf object", {
+  skip_if_not_installed("terra")
   expect_error(nemeton:::validate_sf(data.frame(x = 1)), "sf")
 })
 
@@ -370,6 +390,7 @@ test_that("get_osm_bbox returns 4-element named vector in WGS84", {
 })
 
 test_that("get_osm_bbox validates sf input", {
+  skip_if_not_installed("terra")
   expect_error(nemeton:::get_osm_bbox(data.frame(x = 1)), "sf")
 })
 
@@ -405,6 +426,7 @@ test_that("get_osm_bbox works with WGS84 input", {
 # ==============================================================================
 
 test_that("get_species_flammability returns scores for known species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_flammability(c("Pinus", "Quercus"))
   expect_type(result, "double")
   expect_length(result, 2)
@@ -414,16 +436,19 @@ test_that("get_species_flammability returns scores for known species", {
 })
 
 test_that("get_species_flammability returns default 50 for unknown species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_flammability("UnknownSpecies123")
   expect_equal(result, 50)
 })
 
 test_that("get_species_flammability handles NA", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_flammability(NA_character_)
   expect_true(is.na(result))
 })
 
 test_that("get_species_flammability is vectorized", {
+  skip_if_not_installed("terra")
   species <- c("Pinus", "Fagus", "Quercus")
   scores <- nemeton:::get_species_flammability(species)
   expect_length(scores, 3)
@@ -431,6 +456,7 @@ test_that("get_species_flammability is vectorized", {
 })
 
 test_that("get_species_flammability handles mixed NA and valid species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_flammability(c("Pinus", NA, "Fagus"))
   expect_length(result, 3)
   expect_false(is.na(result[1]))
@@ -443,6 +469,7 @@ test_that("get_species_flammability handles mixed NA and valid species", {
 # ==============================================================================
 
 test_that("get_species_drought_sensitivity returns scores for known species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_drought_sensitivity(c("Fagus", "Pinus"))
   expect_type(result, "double")
   expect_length(result, 2)
@@ -450,16 +477,19 @@ test_that("get_species_drought_sensitivity returns scores for known species", {
 })
 
 test_that("get_species_drought_sensitivity returns default 50 for unknown species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_drought_sensitivity("UnknownSpecies123")
   expect_equal(result, 50)
 })
 
 test_that("get_species_drought_sensitivity handles NA", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_drought_sensitivity(NA_character_)
   expect_true(is.na(result))
 })
 
 test_that("get_species_drought_sensitivity is vectorized", {
+  skip_if_not_installed("terra")
   species <- c("Fagus", "Quercus", "Pinus")
   scores <- nemeton:::get_species_drought_sensitivity(species)
   expect_length(scores, 3)
@@ -467,6 +497,7 @@ test_that("get_species_drought_sensitivity is vectorized", {
 })
 
 test_that("get_species_drought_sensitivity handles mixed NA and valid", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_drought_sensitivity(c("Fagus", NA, "Pinus"))
   expect_length(result, 3)
   expect_false(is.na(result[1]))
@@ -479,6 +510,7 @@ test_that("get_species_drought_sensitivity handles mixed NA and valid", {
 # ==============================================================================
 
 test_that("get_species_palatability returns scores for known species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability(c("quercus", "pinus"))
   expect_type(result, "double")
   expect_length(result, 2)
@@ -488,16 +520,19 @@ test_that("get_species_palatability returns scores for known species", {
 })
 
 test_that("get_species_palatability returns default 50 for unknown species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("unknownspecies123")
   expect_equal(result, 50)
 })
 
 test_that("get_species_palatability handles NA", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability(NA_character_)
   expect_true(is.na(result))
 })
 
 test_that("get_species_palatability handles vector input with mixed NA", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability(c("quercus", NA, "picea"))
   expect_length(result, 3)
   expect_true(result[1] > 60)
@@ -506,6 +541,7 @@ test_that("get_species_palatability handles vector input with mixed NA", {
 })
 
 test_that("get_species_palatability handles French species names", {
+  skip_if_not_installed("terra")
   chene_score <- nemeton:::get_species_palatability("chene")
   expect_true(chene_score > 70)
 
@@ -517,6 +553,7 @@ test_that("get_species_palatability handles French species names", {
 })
 
 test_that("get_species_palatability handles English species names", {
+  skip_if_not_installed("terra")
   oak_score <- nemeton:::get_species_palatability("oak")
   expect_true(oak_score > 70)
 
@@ -525,6 +562,7 @@ test_that("get_species_palatability handles English species names", {
 })
 
 test_that("get_species_palatability is case-insensitive", {
+  skip_if_not_installed("terra")
   lower <- nemeton:::get_species_palatability("quercus")
   upper <- nemeton:::get_species_palatability("Quercus")
   mixed <- nemeton:::get_species_palatability("QUERCUS")
@@ -538,6 +576,7 @@ test_that("get_species_palatability is case-insensitive", {
 # ==============================================================================
 
 test_that("calculate_allometric_biomass returns numeric values", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_allometric_biomass(
     c("Quercus", "Fagus", "Pinus"),
     c(80, 60, 40),
@@ -549,6 +588,7 @@ test_that("calculate_allometric_biomass returns numeric values", {
 })
 
 test_that("calculate_allometric_biomass handles NA species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_allometric_biomass(
     c("Quercus", NA),
     c(80, 60),
@@ -559,6 +599,7 @@ test_that("calculate_allometric_biomass handles NA species", {
 })
 
 test_that("calculate_allometric_biomass handles NA age", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_allometric_biomass(
     c("Quercus", "Pinus"),
     c(80, NA),
@@ -569,6 +610,7 @@ test_that("calculate_allometric_biomass handles NA age", {
 })
 
 test_that("calculate_allometric_biomass handles NA density", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_allometric_biomass(
     c("Quercus", "Pinus"),
     c(80, 60),
@@ -579,6 +621,7 @@ test_that("calculate_allometric_biomass handles NA density", {
 })
 
 test_that("calculate_allometric_biomass uses generic fallback for unknown species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_allometric_biomass("UnknownSpecies", 50, 0.5)
   expect_type(result, "double")
   expect_length(result, 1)
@@ -586,6 +629,7 @@ test_that("calculate_allometric_biomass uses generic fallback for unknown specie
 })
 
 test_that("calculate_allometric_biomass is case insensitive", {
+  skip_if_not_installed("terra")
   result1 <- nemeton:::calculate_allometric_biomass("Quercus", 50, 0.7)
   result2 <- nemeton:::calculate_allometric_biomass("quercus", 50, 0.7)
   expect_equal(result1, result2)
@@ -596,6 +640,7 @@ test_that("calculate_allometric_biomass is case insensitive", {
 # ==============================================================================
 
 test_that("get_allometric_coefficients returns complete coefficient set", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_allometric_coefficients("Quercus")
   expect_type(result, "list")
   expect_true(all(c("a", "b", "c") %in% names(result)))
@@ -605,12 +650,14 @@ test_that("get_allometric_coefficients returns complete coefficient set", {
 })
 
 test_that("get_allometric_coefficients falls back to Generic", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_allometric_coefficients("UnknownSpecies123")
   expect_type(result, "list")
   expect_true("a" %in% names(result))
 })
 
 test_that("get_allometric_coefficients is case-insensitive", {
+  skip_if_not_installed("terra")
   result1 <- nemeton:::get_allometric_coefficients("Fagus")
   result2 <- nemeton:::get_allometric_coefficients("fagus")
   result3 <- nemeton:::get_allometric_coefficients("FAGUS")
@@ -623,10 +670,12 @@ test_that("get_allometric_coefficients is case-insensitive", {
 # ==============================================================================
 
 test_that("message_nemeton outputs message", {
+  skip_if_not_installed("terra")
   expect_output(nemeton:::message_nemeton("test message"), "test message")
 })
 
 test_that("message_nemeton supports glue interpolation", {
+  skip_if_not_installed("terra")
   expect_output(
     nemeton:::message_nemeton("Processing {3} units"),
     "Processing 3 units"
@@ -634,6 +683,7 @@ test_that("message_nemeton supports glue interpolation", {
 })
 
 test_that("message_nemeton handles multi-part messages", {
+  skip_if_not_installed("terra")
   expect_output(
     nemeton:::message_nemeton("part1", " part2"),
     "part1 part2"
@@ -645,17 +695,20 @@ test_that("message_nemeton handles multi-part messages", {
 # ==============================================================================
 
 test_that("smart_map works in sequential mode", {
+  skip_if_not_installed("terra")
   result <- nemeton:::smart_map(1:5, function(x) x * 2, threshold = 100, .type = "dbl")
   expect_equal(result, c(2, 4, 6, 8, 10))
 })
 
 test_that("smart_map returns list by default", {
+  skip_if_not_installed("terra")
   result <- nemeton:::smart_map(1:3, function(x) x * 2, threshold = 100)
   expect_type(result, "list")
   expect_length(result, 3)
 })
 
 test_that("smart_map validates complexity", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton:::smart_map(1:3, identity, complexity = "invalid"),
     "Invalid"
@@ -663,6 +716,7 @@ test_that("smart_map validates complexity", {
 })
 
 test_that("smart_map supports chr type", {
+  skip_if_not_installed("terra")
   result <- nemeton:::smart_map(
     1:3, function(x) paste0("item_", x),
     threshold = 100, .type = "chr"
@@ -672,6 +726,7 @@ test_that("smart_map supports chr type", {
 })
 
 test_that("smart_map supports lgl type", {
+  skip_if_not_installed("terra")
   result <- nemeton:::smart_map(
     1:4, function(x) x > 2,
     threshold = 100, .type = "lgl"
@@ -681,6 +736,7 @@ test_that("smart_map supports lgl type", {
 })
 
 test_that("smart_map supports int type", {
+  skip_if_not_installed("terra")
   result <- nemeton:::smart_map(
     1:3, function(x) as.integer(x * 10),
     threshold = 100, .type = "int"
@@ -690,6 +746,7 @@ test_that("smart_map supports int type", {
 })
 
 test_that("smart_map uses correct threshold from complexity", {
+  skip_if_not_installed("terra")
   # Very low complexity should have high threshold (2000)
   expect_message(
     nemeton:::smart_map(1:10, function(x) x, complexity = "very_low"),
@@ -704,6 +761,7 @@ test_that("smart_map uses correct threshold from complexity", {
 })
 
 test_that("smart_map respects explicit threshold override", {
+  skip_if_not_installed("terra")
   expect_message(
     nemeton:::smart_map(1:5, function(x) x, threshold = 10),
     "below threshold 10"
@@ -711,6 +769,7 @@ test_that("smart_map respects explicit threshold override", {
 })
 
 test_that("smart_map handles empty input", {
+  skip_if_not_installed("terra")
   result <- nemeton:::smart_map(list(), function(x) x, threshold = 100)
   expect_length(result, 0)
 })
@@ -720,6 +779,7 @@ test_that("smart_map handles empty input", {
 # ==============================================================================
 
 test_that("smart_map_sf validates sf input", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton:::smart_map_sf(data.frame(x = 1), function(i, data) i),
     "sf"
@@ -756,11 +816,13 @@ test_that("smart_map_sf returns list by default", {
 # ==============================================================================
 
 test_that("resolve_raster_layer returns NULL for non-nemeton_layers", {
+  skip_if_not_installed("terra")
   result <- nemeton:::resolve_raster_layer(list(rasters = list()), "dem")
   expect_null(result)
 })
 
 test_that("resolve_raster_layer returns NULL for missing layer name", {
+  skip_if_not_installed("terra")
   layers <- structure(
     list(rasters = list(), vectors = list()),
     class = "nemeton_layers"
@@ -814,6 +876,7 @@ test_that("resolve_raster_layer resolves lazy-load list from file path", {
 })
 
 test_that("resolve_raster_layer returns NULL for NULL entry", {
+  skip_if_not_installed("terra")
   layers <- structure(
     list(rasters = list(dem = NULL), vectors = list()),
     class = "nemeton_layers"
@@ -827,11 +890,13 @@ test_that("resolve_raster_layer returns NULL for NULL entry", {
 # ==============================================================================
 
 test_that("resolve_vector_layer returns NULL for non-nemeton_layers", {
+  skip_if_not_installed("terra")
   result <- nemeton:::resolve_vector_layer(list(vectors = list()), "roads")
   expect_null(result)
 })
 
 test_that("resolve_vector_layer returns NULL for missing layer name", {
+  skip_if_not_installed("terra")
   layers <- structure(
     list(rasters = list(), vectors = list()),
     class = "nemeton_layers"
@@ -885,6 +950,7 @@ test_that("resolve_vector_layer resolves lazy-load list from file path", {
 })
 
 test_that("resolve_vector_layer returns NULL for NULL entry", {
+  skip_if_not_installed("terra")
   layers <- structure(
     list(rasters = list(), vectors = list(roads = NULL)),
     class = "nemeton_layers"
@@ -898,6 +964,7 @@ test_that("resolve_vector_layer returns NULL for NULL entry", {
 # ==============================================================================
 
 test_that("get_dem_raster returns NULL for non-nemeton_layers", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_dem_raster(list())
   expect_null(result)
 })
@@ -937,6 +1004,7 @@ test_that("get_dem_raster falls back to dem when lidar_mnt missing", {
 })
 
 test_that("get_dem_raster returns NULL when no DEM available", {
+  skip_if_not_installed("terra")
   layers <- structure(
     list(rasters = list(ndvi = create_test_raster()), vectors = list()),
     class = "nemeton_layers"
@@ -950,16 +1018,19 @@ test_that("get_dem_raster returns NULL when no DEM available", {
 # ==============================================================================
 
 test_that("map_essence_to_species maps oak variants", {
+  skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species(c("Ch\u00eane sessile", "Chene pubescent"))
   expect_true(all(result == "Quercus"))
 })
 
 test_that("map_essence_to_species maps beech variants", {
+  skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species(c("H\u00eatre", "Hetre commun"))
   expect_true(all(result == "Fagus"))
 })
 
 test_that("map_essence_to_species maps pine and fir", {
+  skip_if_not_installed("terra")
   # pine matches on "pin"
   result_pin <- nemeton:::map_essence_to_species("Pin maritime")
   expect_equal(result_pin, "Pinus")
@@ -969,16 +1040,19 @@ test_that("map_essence_to_species maps pine and fir", {
 })
 
 test_that("map_essence_to_species returns Generic for unknown species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species("Arbuste inconnu")
   expect_equal(result, "Generic")
 })
 
 test_that("map_essence_to_species handles NA", {
+  skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species(NA)
   expect_true(is.na(result))
 })
 
 test_that("map_essence_to_species is vectorized", {
+  skip_if_not_installed("terra")
   input <- c("Ch\u00eane", "H\u00eatre", NA, "Douglas", "Autre espece")
   result <- nemeton:::map_essence_to_species(input)
   expect_length(result, 5)
@@ -1091,6 +1165,7 @@ test_that("enrich_parcels_bdforet handles CRS mismatch between parcels and bdfor
 # ==============================================================================
 
 test_that("lookup_ifn_equation returns NULL for missing table", {
+  skip_if_not_installed("terra")
   result <- suppressWarnings(nemeton:::lookup_ifn_equation("UNKNOWN_CODE_XYZ"))
   expect_true(is.null(result))
 })
@@ -1100,6 +1175,7 @@ test_that("lookup_ifn_equation returns NULL for missing table", {
 # ==============================================================================
 
 test_that("lookup_species_threshold returns NA for missing table", {
+  skip_if_not_installed("terra")
   result <- suppressWarnings(
     nemeton:::lookup_species_threshold("UNKNOWN_CODE", "density_kg_m3", "nonexistent_table")
   )
@@ -1111,6 +1187,7 @@ test_that("lookup_species_threshold returns NA for missing table", {
 # ==============================================================================
 
 test_that("lookup_ademe_factor handles missing table or values", {
+  skip_if_not_installed("terra")
   result <- suppressWarnings(
     nemeton:::lookup_ademe_factor("nonexistent_material_type_xyz", "nonexistent_scenario")
   )
@@ -1122,6 +1199,7 @@ test_that("lookup_ademe_factor handles missing table or values", {
 # ==============================================================================
 
 test_that(".smart_map_thresholds has expected complexity levels", {
+  skip_if_not_installed("terra")
   thresholds <- nemeton:::.smart_map_thresholds
   expect_type(thresholds, "list")
   expect_true(all(c("very_low", "low", "medium", "high", "very_high") %in% names(thresholds)))
@@ -1141,6 +1219,7 @@ test_that(".smart_map_thresholds has expected complexity levels", {
 # ==============================================================================
 
 test_that("smart_map falls back to sequential when furrr is not available", {
+  skip_if_not_installed("terra")
   # Use a large threshold so even many elements stay sequential
   result <- suppressMessages(
     nemeton:::smart_map(1:5, function(x) x * 3, threshold = 1, .type = "dbl")
@@ -1151,6 +1230,7 @@ test_that("smart_map falls back to sequential when furrr is not available", {
 })
 
 test_that("smart_map with furrr unavailable uses sequential fallback message", {
+  skip_if_not_installed("terra")
   skip_if(requireNamespace("furrr", quietly = TRUE) &&
             requireNamespace("future", quietly = TRUE),
           "furrr is available, cannot test fallback message")
@@ -1163,6 +1243,7 @@ test_that("smart_map with furrr unavailable uses sequential fallback message", {
 })
 
 test_that("smart_map sequential path with progress=TRUE and .type='dbl'", {
+  skip_if_not_installed("terra")
   # Triggers the progress+type coercion path (lines 175-188)
   result <- suppressMessages(
     nemeton:::smart_map(1:5, function(x) x * 2.5, threshold = 100,
@@ -1172,6 +1253,7 @@ test_that("smart_map sequential path with progress=TRUE and .type='dbl'", {
 })
 
 test_that("smart_map sequential path with progress=TRUE and .type='chr'", {
+  skip_if_not_installed("terra")
   result <- suppressMessages(
     nemeton:::smart_map(1:3, function(x) paste0("v", x), threshold = 100,
                         progress = TRUE, .type = "chr")
@@ -1180,6 +1262,7 @@ test_that("smart_map sequential path with progress=TRUE and .type='chr'", {
 })
 
 test_that("smart_map sequential path with progress=TRUE and .type='lgl'", {
+  skip_if_not_installed("terra")
   result <- suppressMessages(
     nemeton:::smart_map(1:4, function(x) x > 2, threshold = 100,
                         progress = TRUE, .type = "lgl")
@@ -1188,6 +1271,7 @@ test_that("smart_map sequential path with progress=TRUE and .type='lgl'", {
 })
 
 test_that("smart_map sequential path with progress=TRUE and .type='int'", {
+  skip_if_not_installed("terra")
   result <- suppressMessages(
     nemeton:::smart_map(1:3, function(x) as.integer(x * 10), threshold = 100,
                         progress = TRUE, .type = "int")
@@ -1196,6 +1280,7 @@ test_that("smart_map sequential path with progress=TRUE and .type='int'", {
 })
 
 test_that("smart_map sequential path with progress=TRUE and .type='list'", {
+  skip_if_not_installed("terra")
   result <- suppressMessages(
     nemeton:::smart_map(1:3, function(x) list(val = x), threshold = 100,
                         progress = TRUE, .type = "list")
@@ -1206,6 +1291,7 @@ test_that("smart_map sequential path with progress=TRUE and .type='list'", {
 })
 
 test_that("smart_map with all complexity levels resolves thresholds", {
+  skip_if_not_installed("terra")
   levels <- c("very_low", "low", "medium", "high", "very_high")
   for (lvl in levels) {
     result <- suppressMessages(
@@ -1216,6 +1302,7 @@ test_that("smart_map with all complexity levels resolves thresholds", {
 })
 
 test_that("smart_map defaults workers and progress when NULL", {
+  skip_if_not_installed("terra")
   # Workers default to min(4, detectCores()-1), progress default to n>50
   result <- suppressMessages(
     nemeton:::smart_map(1:3, function(x) x + 1, threshold = 100, .type = "dbl")
@@ -1224,6 +1311,7 @@ test_that("smart_map defaults workers and progress when NULL", {
 })
 
 test_that("smart_map passes extra arguments to fn via ...", {
+  skip_if_not_installed("terra")
   add_val <- function(x, offset) x + offset
   result <- suppressMessages(
     nemeton:::smart_map(1:3, add_val, offset = 10, threshold = 100, .type = "dbl")
@@ -1317,6 +1405,7 @@ test_that("get_osm_bbox skips buffer when CRS is EPSG:4326", {
 # ==============================================================================
 
 test_that("lookup_ifn_equation returns parameters for known species code", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_ifn_equation("FASY")
   expect_type(result, "list")
   expect_true("a" %in% names(result))
@@ -1327,34 +1416,40 @@ test_that("lookup_ifn_equation returns parameters for known species code", {
 })
 
 test_that("lookup_ifn_equation is case-insensitive via toupper", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_ifn_equation("fasy")
   expect_type(result, "list")
   expect_equal(result$species_code, "FASY")
 })
 
 test_that("lookup_ifn_equation returns NULL for unknown species without fallback", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_ifn_equation("ZZZZ")
   expect_null(result)
 })
 
 test_that("lookup_ifn_equation uses broadleaf genus fallback", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_ifn_equation("ZZZZ", fallback_genus = "broadleaf")
   expect_type(result, "list")
   expect_equal(result$species_code, "BROADLEAF_GENUS")
 })
 
 test_that("lookup_ifn_equation uses conifer genus fallback", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_ifn_equation("ZZZZ", fallback_genus = "conifer")
   expect_type(result, "list")
   expect_equal(result$species_code, "CONIFER_GENUS")
 })
 
 test_that("lookup_ifn_equation with invalid fallback_genus returns NULL", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_ifn_equation("ZZZZ", fallback_genus = "invalid_type")
   expect_null(result)
 })
 
 test_that("lookup_ifn_equation returns NULL when CSV file path is empty", {
+  skip_if_not_installed("terra")
   # Test the early-return path when system.file returns ""
   # We cannot easily mock base::system.file, but we can verify the path
   # exists and test the function with a direct call that exercises the code.
@@ -1372,29 +1467,34 @@ test_that("lookup_ifn_equation returns NULL when CSV file path is empty", {
 # ==============================================================================
 
 test_that("lookup_species_threshold returns value for known species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_species_threshold("FASY", "density_kg_m3")
   expect_type(result, "integer")
   expect_equal(result, 680)
 })
 
 test_that("lookup_species_threshold returns carbon_content_fraction", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_species_threshold("QUPE", "carbon_content_fraction")
   expect_equal(result, 0.5)
 })
 
 test_that("lookup_species_threshold falls back to BROADLEAF_GENUS", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_species_threshold("UNKNOWN_CODE_XYZ", "density_kg_m3")
   expect_type(result, "integer")
   expect_equal(result, 620)  # BROADLEAF_GENUS density
 })
 
 test_that("lookup_species_threshold returns NA for missing parameter", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_species_threshold("FASY", "nonexistent_param")
   # Parameter not in columns => fallback also doesn't have it => NA
   expect_true(is.na(result))
 })
 
 test_that("lookup_species_threshold returns NA when CSV not found", {
+  skip_if_not_installed("terra")
   # Use a nonexistent table_name so system.file returns ""
   expect_warning(
     result <- nemeton:::lookup_species_threshold("FASY", "density_kg_m3",
@@ -1405,6 +1505,7 @@ test_that("lookup_species_threshold returns NA when CSV not found", {
 })
 
 test_that("lookup_species_threshold with custom table_name", {
+  skip_if_not_installed("terra")
   # Using wood_density table explicitly
   result <- nemeton:::lookup_species_threshold("PIAB", "density_kg_m3", "wood_density")
   expect_equal(result, 450)
@@ -1415,6 +1516,7 @@ test_that("lookup_species_threshold with custom table_name", {
 # ==============================================================================
 
 test_that("lookup_ademe_factor returns factor for known material_type + scenario", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_ademe_factor("wood_energy", "vs_natural_gas")
   expect_type(result, "list")
   expect_equal(result$material_type, "wood_energy")
@@ -1423,28 +1525,33 @@ test_that("lookup_ademe_factor returns factor for known material_type + scenario
 })
 
 test_that("lookup_ademe_factor returns first match when scenario is NULL", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_ademe_factor("wood_energy")
   expect_type(result, "list")
   expect_equal(result$material_type, "wood_energy")
 })
 
 test_that("lookup_ademe_factor returns NULL for unknown material_type", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_ademe_factor("totally_unknown_material")
   expect_null(result)
 })
 
 test_that("lookup_ademe_factor returns NULL for unknown scenario", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_ademe_factor("wood_energy", "vs_unknown_scenario")
   expect_null(result)
 })
 
 test_that("lookup_ademe_factor returns factor for wood_construction vs_concrete", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_ademe_factor("wood_construction", "vs_concrete")
   expect_type(result, "list")
   expect_equal(result$emission_factor_kgCO2eq_per_unit, 1.140)
 })
 
 test_that("lookup_ademe_factor returns NULL when material and scenario not found", {
+  skip_if_not_installed("terra")
   # Test the early-return NULL path when no matching rows exist
   result <- nemeton:::lookup_ademe_factor("completely_unknown_material_xyz")
   expect_null(result)
@@ -1588,27 +1695,32 @@ test_that("enrich_parcels_bdforet with lib_fv column name", {
 # ==============================================================================
 
 test_that("map_essence_to_species maps epicea", {
+  skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species("Epicea commun")
   expect_equal(result, "Pinus")
 })
 
 test_that("map_essence_to_species handles empty string", {
+  skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species("")
   expect_equal(result, "Generic")
 })
 
 test_that("map_essence_to_species handles vector with all NAs", {
+  skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species(c(NA, NA))
   expect_true(all(is.na(result)))
   expect_length(result, 2)
 })
 
 test_that("map_essence_to_species maps mixed case correctly", {
+  skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species("CHENE SESSILE")
   expect_equal(result, "Quercus")
 })
 
 test_that("map_essence_to_species maps all recognized patterns", {
+  skip_if_not_installed("terra")
   # Test all recognized species patterns
   essences <- c(
     "Ch\u00eane sessile",     # chene -> Quercus
@@ -1628,6 +1740,7 @@ test_that("map_essence_to_species maps all recognized patterns", {
 # ==============================================================================
 
 test_that("smart_map progress=TRUE path with .type='dbl' uses purrr::map + conversion", {
+  skip_if_not_installed("terra")
   # Forces progress=TRUE, sequential (below threshold), and .type != "list"
 
   # This hits the progress branch at line 175 and the dbl coercion at line 182
@@ -1642,6 +1755,7 @@ test_that("smart_map progress=TRUE path with .type='dbl' uses purrr::map + conve
 })
 
 test_that("smart_map progress=TRUE path with .type='chr' uses purrr::map + conversion", {
+  skip_if_not_installed("terra")
   result <- suppressMessages(
     nemeton:::smart_map(
       c("a", "b", "c"), function(x) paste0(x, "!"),
@@ -1653,6 +1767,7 @@ test_that("smart_map progress=TRUE path with .type='chr' uses purrr::map + conve
 })
 
 test_that("smart_map progress=TRUE path with .type='lgl' uses purrr::map + conversion", {
+  skip_if_not_installed("terra")
   result <- suppressMessages(
     nemeton:::smart_map(
       1:4, function(x) x %% 2 == 0,
@@ -1664,6 +1779,7 @@ test_that("smart_map progress=TRUE path with .type='lgl' uses purrr::map + conve
 })
 
 test_that("smart_map progress=TRUE path with .type='int' uses purrr::map + conversion", {
+  skip_if_not_installed("terra")
   result <- suppressMessages(
     nemeton:::smart_map(
       1:3, function(x) as.integer(x * 100),
@@ -1675,6 +1791,7 @@ test_that("smart_map progress=TRUE path with .type='int' uses purrr::map + conve
 })
 
 test_that("smart_map progress=TRUE path with .type='list' skips conversion", {
+  skip_if_not_installed("terra")
   result <- suppressMessages(
     nemeton:::smart_map(
       1:2, function(x) list(val = x),
@@ -1691,6 +1808,7 @@ test_that("smart_map progress=TRUE path with .type='list' skips conversion", {
 # ==============================================================================
 
 test_that("smart_map progress=FALSE uses map_fn directly without wrapping", {
+  skip_if_not_installed("terra")
   result <- suppressMessages(
     nemeton:::smart_map(
       1:3, function(x) x^2,
@@ -1701,6 +1819,7 @@ test_that("smart_map progress=FALSE uses map_fn directly without wrapping", {
 })
 
 test_that("smart_map progress=FALSE uses map_fn for chr type", {
+  skip_if_not_installed("terra")
   result <- suppressMessages(
     nemeton:::smart_map(
       letters[1:3], function(x) toupper(x),
@@ -1711,6 +1830,7 @@ test_that("smart_map progress=FALSE uses map_fn for chr type", {
 })
 
 test_that("smart_map progress=FALSE uses map_fn for lgl type", {
+  skip_if_not_installed("terra")
   result <- suppressMessages(
     nemeton:::smart_map(
       c(1, 2, 3), function(x) x > 1,
@@ -1721,6 +1841,7 @@ test_that("smart_map progress=FALSE uses map_fn for lgl type", {
 })
 
 test_that("smart_map progress=FALSE uses map_fn for int type", {
+  skip_if_not_installed("terra")
   result <- suppressMessages(
     nemeton:::smart_map(
       1:3, function(x) as.integer(x + 5),
@@ -1735,6 +1856,7 @@ test_that("smart_map progress=FALSE uses map_fn for int type", {
 # ==============================================================================
 
 test_that("smart_map auto-sets progress=FALSE for small n (n <= 50)", {
+  skip_if_not_installed("terra")
   # n=3 < 50 => progress should default to FALSE, no wrapping
   result <- suppressMessages(
     nemeton:::smart_map(1:3, function(x) x * 10, threshold = 1000, .type = "dbl")
@@ -1747,6 +1869,7 @@ test_that("smart_map auto-sets progress=FALSE for small n (n <= 50)", {
 # ==============================================================================
 
 test_that("smart_map uses very_high complexity threshold correctly", {
+  skip_if_not_installed("terra")
   expect_message(
     nemeton:::smart_map(1:3, function(x) x, complexity = "very_high"),
     "below threshold 20"
@@ -1754,6 +1877,7 @@ test_that("smart_map uses very_high complexity threshold correctly", {
 })
 
 test_that("smart_map uses low complexity threshold correctly", {
+  skip_if_not_installed("terra")
   expect_message(
     nemeton:::smart_map(1:3, function(x) x, complexity = "low"),
     "below threshold 1000"
@@ -1761,6 +1885,7 @@ test_that("smart_map uses low complexity threshold correctly", {
 })
 
 test_that("smart_map uses medium complexity threshold correctly", {
+  skip_if_not_installed("terra")
   expect_message(
     nemeton:::smart_map(1:3, function(x) x, complexity = "medium"),
     "below threshold 200"
@@ -1768,6 +1893,7 @@ test_that("smart_map uses medium complexity threshold correctly", {
 })
 
 test_that("smart_map error on invalid complexity value is informative", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton:::smart_map(1:3, identity, complexity = "extreme"),
     "Invalid"
@@ -1779,6 +1905,7 @@ test_that("smart_map error on invalid complexity value is informative", {
 # ==============================================================================
 
 test_that("smart_map prints 'below threshold' when n <= threshold", {
+  skip_if_not_installed("terra")
   expect_message(
     nemeton:::smart_map(1:5, identity, threshold = 10),
     "below threshold 10"
@@ -1786,6 +1913,7 @@ test_that("smart_map prints 'below threshold' when n <= threshold", {
 })
 
 test_that("smart_map prints 'furrr not available' when furrr not available and n > threshold", {
+  skip_if_not_installed("terra")
   skip_if(
     requireNamespace("furrr", quietly = TRUE) &&
       requireNamespace("future", quietly = TRUE),
@@ -1802,6 +1930,7 @@ test_that("smart_map prints 'furrr not available' when furrr not available and n
 # ==============================================================================
 
 test_that("smart_map passes ... args in sequential/non-progress mode", {
+  skip_if_not_installed("terra")
   mult <- function(x, factor) x * factor
   result <- suppressMessages(
     nemeton:::smart_map(1:3, mult, factor = 5, threshold = 1000,
@@ -1811,6 +1940,7 @@ test_that("smart_map passes ... args in sequential/non-progress mode", {
 })
 
 test_that("smart_map passes ... args in progress=TRUE mode", {
+  skip_if_not_installed("terra")
   mult <- function(x, factor) x * factor
   result <- suppressMessages(
     nemeton:::smart_map(1:3, mult, factor = 7, threshold = 1000,
@@ -1871,6 +2001,7 @@ test_that("smart_map_sf respects complexity parameter", {
 # ==============================================================================
 
 test_that("get_species_flammability partial match for subspecies", {
+  skip_if_not_installed("terra")
   # "Pinus sylvestris" is in the lookup. Querying just part should
   # hit the partial grep match if the exact match fails.
   result <- nemeton:::get_species_flammability("Pinus sylvestris")
@@ -1878,6 +2009,7 @@ test_that("get_species_flammability partial match for subspecies", {
 })
 
 test_that("get_species_flammability case-insensitive match", {
+  skip_if_not_installed("terra")
   result_lower <- nemeton:::get_species_flammability("pinus")
   result_upper <- nemeton:::get_species_flammability("PINUS")
   expect_equal(result_lower, result_upper)
@@ -1885,37 +2017,44 @@ test_that("get_species_flammability case-insensitive match", {
 })
 
 test_that("get_species_flammability partial match for genus in species name", {
+  skip_if_not_installed("terra")
   # "Quercus ilex" is in the lookup
   result <- nemeton:::get_species_flammability("Quercus ilex")
   expect_true(result >= 0 && result <= 100)
 })
 
 test_that("get_species_flammability returns low score for Fagus", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_flammability("Fagus")
   expect_equal(result, 20) # Low flammability
 })
 
 test_that("get_species_flammability returns low score for Betula", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_flammability("Betula")
   expect_equal(result, 20)
 })
 
 test_that("get_species_flammability returns medium score for Castanea", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_flammability("Castanea")
   expect_equal(result, 50)
 })
 
 test_that("get_species_flammability with Eucalyptus (high)", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_flammability("Eucalyptus")
   expect_equal(result, 80)
 })
 
 test_that("get_species_flammability with Mixed label", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_flammability("Mixed")
   expect_equal(result, 50)
 })
 
 test_that("get_species_flammability all-NA vector", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_flammability(c(NA, NA, NA))
   expect_true(all(is.na(result)))
   expect_length(result, 3)
@@ -1926,43 +2065,51 @@ test_that("get_species_flammability all-NA vector", {
 # ==============================================================================
 
 test_that("get_species_drought_sensitivity partial match for subspecies", {
+  skip_if_not_installed("terra")
   # "Fagus sylvatica" is in the lookup
   result <- nemeton:::get_species_drought_sensitivity("Fagus sylvatica")
   expect_equal(result, 80) # High sensitivity
 })
 
 test_that("get_species_drought_sensitivity case-insensitive", {
+  skip_if_not_installed("terra")
   result_lower <- nemeton:::get_species_drought_sensitivity("fagus")
   result_upper <- nemeton:::get_species_drought_sensitivity("FAGUS")
   expect_equal(result_lower, result_upper)
 })
 
 test_that("get_species_drought_sensitivity low sensitivity species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_drought_sensitivity("Quercus ilex")
   expect_equal(result, 20) # Low sensitivity (Mediterranean)
 })
 
 test_that("get_species_drought_sensitivity intermediate species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_drought_sensitivity("Castanea")
   expect_equal(result, 50) # Intermediate
 })
 
 test_that("get_species_drought_sensitivity for Abies", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_drought_sensitivity("Abies")
   expect_equal(result, 80)
 })
 
 test_that("get_species_drought_sensitivity for Mixed label", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_drought_sensitivity("Mixed")
   expect_equal(result, 50) # Intermediate
 })
 
 test_that("get_species_drought_sensitivity for Cedrus (low)", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_drought_sensitivity("Cedrus")
   expect_equal(result, 20)
 })
 
 test_that("get_species_drought_sensitivity all-NA input", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_drought_sensitivity(c(NA, NA))
   expect_true(all(is.na(result)))
   expect_length(result, 2)
@@ -1973,6 +2120,7 @@ test_that("get_species_drought_sensitivity all-NA input", {
 # ==============================================================================
 
 test_that("get_species_palatability reverse partial match for compound names", {
+  skip_if_not_installed("terra")
   # "quercus" is in the lookup. A species string containing "quercus" as
   # substring should trigger the reverse partial match at line 823.
   result <- nemeton:::get_species_palatability("grand quercus robur")
@@ -1981,6 +2129,7 @@ test_that("get_species_palatability reverse partial match for compound names", {
 })
 
 test_that("get_species_palatability reverse partial match for 'pin maritime'", {
+  skip_if_not_installed("terra")
   # "pin" is in the lookup. "pin maritime" should match via either
   # partial (grep input in lookup) or reverse partial
   result <- nemeton:::get_species_palatability("pin maritime")
@@ -1988,91 +2137,109 @@ test_that("get_species_palatability reverse partial match for 'pin maritime'", {
 })
 
 test_that("get_species_palatability handles 'douglas' species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("douglas")
   expect_equal(result, 32)
 })
 
 test_that("get_species_palatability handles 'robinier' species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("robinier")
   expect_equal(result, 10) # Very low
 })
 
 test_that("get_species_palatability handles 'tilleul' species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("tilleul")
   expect_equal(result, 65)
 })
 
 test_that("get_species_palatability handles 'aulne' species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("aulne")
   expect_equal(result, 48)
 })
 
 test_that("get_species_palatability handles 'bouleau' species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("bouleau")
   expect_equal(result, 55)
 })
 
 test_that("get_species_palatability handles 'peuplier' species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("peuplier")
   expect_equal(result, 50)
 })
 
 test_that("get_species_palatability handles 'saule' species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("saule")
   expect_equal(result, 52)
 })
 
 test_that("get_species_palatability handles 'charme' species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("charme")
   expect_equal(result, 72)
 })
 
 test_that("get_species_palatability handles 'sorbier' species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("sorbier")
   expect_equal(result, 68)
 })
 
 test_that("get_species_palatability handles 'chataignier' species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("chataignier")
   expect_equal(result, 80)
 })
 
 test_that("get_species_palatability handles 'frene' species (French for ash)", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("frene")
   expect_equal(result, 85)
 })
 
 test_that("get_species_palatability handles 'erable' species (French for maple)", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("erable")
   expect_equal(result, 88)
 })
 
 test_that("get_species_palatability handles 'sapin' species (French for fir)", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("sapin")
   expect_equal(result, 85)
 })
 
 test_that("get_species_palatability handles 'meleze' species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("meleze")
   expect_equal(result, 35)
 })
 
 test_that("get_species_palatability handles 'pseudotsuga' species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("pseudotsuga")
   expect_equal(result, 32)
 })
 
 test_that("get_species_palatability handles 'acacia' species (= robinia)", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("acacia")
   expect_equal(result, 10)
 })
 
 test_that("get_species_palatability default 50 for truly unknown species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_palatability("zygopetalum tropical")
   expect_equal(result, 50)
 })
 
 test_that("get_species_palatability vectorized with multiple categories", {
+  skip_if_not_installed("terra")
   species <- c("quercus", "picea", "betula", "pinus", "unknown_xyz", NA)
   result <- nemeton:::get_species_palatability(species)
   expect_length(result, 6)
@@ -2089,22 +2256,26 @@ test_that("get_species_palatability vectorized with multiple categories", {
 # ==============================================================================
 
 test_that("calculate_shannon_h with 2 equal proportions", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_shannon_h(c(0.5, 0.5))
   expect_equal(result, log(2), tolerance = 1e-10)
 })
 
 test_that("calculate_shannon_h with 3 equal proportions", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_shannon_h(c(1/3, 1/3, 1/3))
   expect_equal(result, log(3), tolerance = 1e-10)
 })
 
 test_that("calculate_shannon_h with base=10", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_shannon_h(c(0.5, 0.5), base = 10)
   expected <- log10(2)
   expect_equal(result, expected, tolerance = 1e-10)
 })
 
 test_that("calculate_shannon_h with very skewed distribution", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_shannon_h(c(0.99, 0.01))
   # Should be close to 0 (low diversity)
   expect_true(result < 0.1)
@@ -2112,12 +2283,14 @@ test_that("calculate_shannon_h with very skewed distribution", {
 })
 
 test_that("calculate_shannon_h with unnormalized counts", {
+  skip_if_not_installed("terra")
   # Counts that don't sum to 1; function normalizes internally
   result <- nemeton:::calculate_shannon_h(c(100, 100, 100))
   expect_equal(result, log(3), tolerance = 1e-10)
 })
 
 test_that("calculate_shannon_h with single zero and rest valid", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_shannon_h(c(0.5, 0, 0.5))
   expect_equal(result, log(2), tolerance = 1e-10)
 })
@@ -2127,6 +2300,7 @@ test_that("calculate_shannon_h with single zero and rest valid", {
 # ==============================================================================
 
 test_that("calculate_allometric_biomass for all known species", {
+  skip_if_not_installed("terra")
   known_species <- c("Quercus", "Fagus", "Pinus", "Abies", "Picea",
                      "Castanea", "Fraxinus", "Acer", "Betula", "Populus")
   ages <- rep(50, length(known_species))
@@ -2139,6 +2313,7 @@ test_that("calculate_allometric_biomass for all known species", {
 })
 
 test_that("calculate_allometric_biomass with all NA inputs", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_allometric_biomass(
     c(NA, NA), c(NA, NA), c(NA, NA)
   )
@@ -2146,18 +2321,21 @@ test_that("calculate_allometric_biomass with all NA inputs", {
 })
 
 test_that("calculate_allometric_biomass with zero age produces zero biomass", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_allometric_biomass("Quercus", 0, 0.7)
   # 0^b = 0 for b > 0, so biomass = 0
   expect_equal(result, 0)
 })
 
 test_that("calculate_allometric_biomass with zero density produces zero biomass", {
+  skip_if_not_installed("terra")
   result <- nemeton:::calculate_allometric_biomass("Quercus", 50, 0)
   # density^c = 0^c = 0 for c > 0
   expect_equal(result, 0)
 })
 
 test_that("calculate_allometric_biomass varies by species", {
+  skip_if_not_installed("terra")
   result_quercus <- nemeton:::calculate_allometric_biomass("Quercus", 80, 0.7)
   result_fagus <- nemeton:::calculate_allometric_biomass("Fagus", 80, 0.7)
   # Different coefficients => different results
@@ -2165,12 +2343,14 @@ test_that("calculate_allometric_biomass varies by species", {
 })
 
 test_that("calculate_allometric_biomass increases with age", {
+  skip_if_not_installed("terra")
   result_young <- nemeton:::calculate_allometric_biomass("Quercus", 20, 0.7)
   result_old <- nemeton:::calculate_allometric_biomass("Quercus", 100, 0.7)
   expect_true(result_old > result_young)
 })
 
 test_that("calculate_allometric_biomass increases with density", {
+  skip_if_not_installed("terra")
   result_sparse <- nemeton:::calculate_allometric_biomass("Fagus", 60, 0.3)
   result_dense <- nemeton:::calculate_allometric_biomass("Fagus", 60, 0.9)
   expect_true(result_dense > result_sparse)
@@ -2277,32 +2457,38 @@ test_that("enrich_parcels_bdforet returns all-NA when intersection is empty", {
 # ==============================================================================
 
 test_that("map_essence_to_species handles unicode chene", {
+  skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species("ch\u00eane p\u00e9doncul\u00e9")
   expect_equal(result, "Quercus")
 })
 
 test_that("map_essence_to_species handles unicode hetre", {
+  skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species("h\u00eatre pourpre")
   expect_equal(result, "Fagus")
 })
 
 test_that("map_essence_to_species handles epicea pattern", {
+  skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species("epicea commun")
   expect_equal(result, "Pinus") # epicea matches the pin/epicea pattern
 })
 
 test_that("map_essence_to_species handles douglas pattern", {
+  skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species("Douglas vert mature")
   expect_equal(result, "Abies")
 })
 
 test_that("map_essence_to_species single NA input", {
+  skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species(NA_character_)
   expect_true(is.na(result))
   expect_length(result, 1)
 })
 
 test_that("map_essence_to_species vector of all unknown", {
+  skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species(c("Bambou", "Palmier"))
   expect_equal(result, c("Generic", "Generic"))
 })
@@ -2312,6 +2498,7 @@ test_that("map_essence_to_species vector of all unknown", {
 # ==============================================================================
 
 test_that("resolve_raster_layer returns NULL for lazy-load list with nonexistent path", {
+  skip_if_not_installed("terra")
   layers <- structure(
     list(
       rasters = list(dem = list(
@@ -2328,6 +2515,7 @@ test_that("resolve_raster_layer returns NULL for lazy-load list with nonexistent
 })
 
 test_that("resolve_raster_layer returns NULL for lazy-load list with empty path string", {
+  skip_if_not_installed("terra")
   layers <- structure(
     list(
       rasters = list(dem = list(
@@ -2344,6 +2532,7 @@ test_that("resolve_raster_layer returns NULL for lazy-load list with empty path 
 })
 
 test_that("resolve_raster_layer returns NULL for lazy-load list with non-SpatRaster object", {
+  skip_if_not_installed("terra")
   layers <- structure(
     list(
       rasters = list(dem = list(
@@ -2360,6 +2549,7 @@ test_that("resolve_raster_layer returns NULL for lazy-load list with non-SpatRas
 })
 
 test_that("resolve_raster_layer handles entry that is a simple list without SpatRaster", {
+  skip_if_not_installed("terra")
   layers <- structure(
     list(
       rasters = list(ndvi = list(value = 42)),
@@ -2376,6 +2566,7 @@ test_that("resolve_raster_layer handles entry that is a simple list without Spat
 # ==============================================================================
 
 test_that("resolve_vector_layer returns NULL for lazy-load with nonexistent path", {
+  skip_if_not_installed("terra")
   layers <- structure(
     list(
       rasters = list(),
@@ -2392,6 +2583,7 @@ test_that("resolve_vector_layer returns NULL for lazy-load with nonexistent path
 })
 
 test_that("resolve_vector_layer returns NULL for lazy-load with empty path", {
+  skip_if_not_installed("terra")
   layers <- structure(
     list(
       rasters = list(),
@@ -2408,6 +2600,7 @@ test_that("resolve_vector_layer returns NULL for lazy-load with empty path", {
 })
 
 test_that("resolve_vector_layer returns NULL for lazy-load with non-sf object", {
+  skip_if_not_installed("terra")
   layers <- structure(
     list(
       rasters = list(),
@@ -2424,6 +2617,7 @@ test_that("resolve_vector_layer returns NULL for lazy-load with non-sf object", 
 })
 
 test_that("resolve_vector_layer handles entry that is a simple list without sf", {
+  skip_if_not_installed("terra")
   layers <- structure(
     list(
       rasters = list(),
@@ -2460,6 +2654,7 @@ test_that("get_dem_raster with lazy-loaded lidar_mnt", {
 })
 
 test_that("get_dem_raster returns NULL when both lidar_mnt and dem are missing", {
+  skip_if_not_installed("terra")
   layers <- structure(
     list(rasters = list(biomass = NULL), vectors = list()),
     class = "nemeton_layers"
@@ -2579,6 +2774,7 @@ test_that("as_pure_sf removes nemeton_units class from multi-class object", {
 # ==============================================================================
 
 test_that("message_nemeton handles raw message without glue syntax", {
+  skip_if_not_installed("terra")
   expect_output(
     nemeton:::message_nemeton("Simple plain message"),
     "Simple plain message"
@@ -2586,6 +2782,7 @@ test_that("message_nemeton handles raw message without glue syntax", {
 })
 
 test_that("message_nemeton handles message with cli-like braces gracefully", {
+  skip_if_not_installed("terra")
   # This triggers the glue error path: {.cls sf} is not valid glue syntax
   # and should fall back to raw message
   expect_output(
@@ -2595,6 +2792,7 @@ test_that("message_nemeton handles message with cli-like braces gracefully", {
 })
 
 test_that("message_nemeton concatenates multiple parts", {
+  skip_if_not_installed("terra")
   expect_output(
     nemeton:::message_nemeton("Step ", "1", " of ", "3"),
     "Step 1 of 3"
@@ -2606,12 +2804,14 @@ test_that("message_nemeton concatenates multiple parts", {
 # ==============================================================================
 
 test_that("get_allometric_coefficients returns distinct values for distinct species", {
+  skip_if_not_installed("terra")
   coef_q <- nemeton:::get_allometric_coefficients("Quercus")
   coef_p <- nemeton:::get_allometric_coefficients("Picea")
   expect_false(coef_q$a == coef_p$a)
 })
 
 test_that("get_allometric_coefficients Castanea returns valid coefficients", {
+  skip_if_not_installed("terra")
   coef <- nemeton:::get_allometric_coefficients("Castanea")
   expect_true(coef$a > 0)
   expect_true(coef$b > 0)
@@ -2619,6 +2819,7 @@ test_that("get_allometric_coefficients Castanea returns valid coefficients", {
 })
 
 test_that("get_allometric_coefficients Populus returns valid coefficients", {
+  skip_if_not_installed("terra")
   coef <- nemeton:::get_allometric_coefficients("Populus")
   expect_true(coef$a > 0)
   expect_true(coef$b > 0)
@@ -2626,6 +2827,7 @@ test_that("get_allometric_coefficients Populus returns valid coefficients", {
 })
 
 test_that("get_allometric_coefficients Generic fallback has source 'Default'", {
+  skip_if_not_installed("terra")
   coef <- nemeton:::get_allometric_coefficients("totally_unknown_tree")
   expect_equal(coef$source, "Default")
   expect_equal(coef$citation, "Package Default")
@@ -2667,18 +2869,22 @@ test_that("validate_sf with require_crs=FALSE and no CRS does not error on CRS",
 # ==============================================================================
 
 test_that("detect_indicator_family with two-letter prefix returns NA", {
+  skip_if_not_installed("terra")
   expect_true(is.na(nemeton:::detect_indicator_family("AB1")))
 })
 
 test_that("detect_indicator_family with digit-only string returns NA", {
+  skip_if_not_installed("terra")
   expect_true(is.na(nemeton:::detect_indicator_family("123")))
 })
 
 test_that("detect_indicator_family with single uppercase letter returns NA", {
+  skip_if_not_installed("terra")
   expect_true(is.na(nemeton:::detect_indicator_family("A")))
 })
 
 test_that("detect_indicator_family with empty string returns NA", {
+  skip_if_not_installed("terra")
   expect_true(is.na(nemeton:::detect_indicator_family("")))
 })
 
@@ -2715,6 +2921,7 @@ test_that("safe_extract aligns CRS when polygon and raster differ", {
 # ==============================================================================
 
 test_that("generate_ids with large n has correct padding", {
+  skip_if_not_installed("terra")
   ids <- nemeton:::generate_ids(100)
   expect_length(ids, 100)
   expect_equal(ids[1], "unit_001")
@@ -2722,6 +2929,7 @@ test_that("generate_ids with large n has correct padding", {
 })
 
 test_that("generate_ids with n=0 returns empty vector", {
+  skip_if_not_installed("terra")
   ids <- nemeton:::generate_ids(0)
   expect_length(ids, 0)
 })
@@ -2731,6 +2939,7 @@ test_that("generate_ids with n=0 returns empty vector", {
 # ==============================================================================
 
 test_that("lookup_ifn_equation loads multiple known species", {
+  skip_if_not_installed("terra")
   known_codes <- c("FASY", "QUPE", "PIAB", "ABAL")
   for (code in known_codes) {
     result <- nemeton:::lookup_ifn_equation(code)
@@ -2746,6 +2955,7 @@ test_that("lookup_ifn_equation loads multiple known species", {
 # ==============================================================================
 
 test_that("lookup_species_threshold carbon_content_fraction for multiple species", {
+  skip_if_not_installed("terra")
   for (code in c("FASY", "PIAB", "QUPE")) {
     result <- nemeton:::lookup_species_threshold(code, "carbon_content_fraction")
     if (!is.na(result)) {
@@ -2755,6 +2965,7 @@ test_that("lookup_species_threshold carbon_content_fraction for multiple species
 })
 
 test_that("lookup_species_threshold with default table_name (wood_density)", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_species_threshold("FASY")
   expect_true(!is.na(result))
   expect_true(result > 0)
@@ -2765,6 +2976,7 @@ test_that("lookup_species_threshold with default table_name (wood_density)", {
 # ==============================================================================
 
 test_that("lookup_ademe_factor with scenario=NULL returns first row for material_type", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_ademe_factor("wood_construction")
   if (!is.null(result)) {
     expect_type(result, "list")
@@ -2773,6 +2985,7 @@ test_that("lookup_ademe_factor with scenario=NULL returns first row for material
 })
 
 test_that("lookup_ademe_factor for fuelwood_extraction", {
+  skip_if_not_installed("terra")
   result <- nemeton:::lookup_ademe_factor("fuelwood_extraction")
   if (!is.null(result)) {
     expect_type(result, "list")
@@ -2786,6 +2999,7 @@ test_that("lookup_ademe_factor for fuelwood_extraction", {
 # --- resolve_vector_layer() ---
 
 test_that("resolve_vector_layer returns sf object directly", {
+  skip_if_not_installed("terra")
   sf_obj <- create_test_units(n_features = 3)
   layers <- structure(list(vectors = list(parcels = sf_obj)), class = "nemeton_layers")
   result <- nemeton:::resolve_vector_layer(layers, "parcels")
@@ -2796,6 +3010,7 @@ test_that("resolve_vector_layer returns sf object directly", {
 # --- resolve_raster_layer() ---
 
 test_that("resolve_raster_layer handles lazy-load list with no path", {
+  skip_if_not_installed("terra")
   entry <- list(object = NULL, loaded = FALSE, path = "")
   layers <- structure(list(rasters = list(dem = entry)), class = "nemeton_layers")
   result <- nemeton:::resolve_raster_layer(layers, "dem")
@@ -2805,6 +3020,7 @@ test_that("resolve_raster_layer handles lazy-load list with no path", {
 # --- detect_indicator_family() ---
 
 test_that("detect_indicator_family returns NA for non-indicator", {
+  skip_if_not_installed("terra")
   expect_true(is.na(nemeton:::detect_indicator_family("carbon")))
   expect_true(is.na(nemeton:::detect_indicator_family("famille_carbone")))
 })
@@ -2812,12 +3028,14 @@ test_that("detect_indicator_family returns NA for non-indicator", {
 # --- get_species_flammability() ---
 
 test_that("get_species_flammability returns scores", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_flammability("Pinus")
   expect_true(is.numeric(result))
   expect_true(result >= 0 && result <= 100)
 })
 
 test_that("get_species_flammability returns 50 for unknown species", {
+  skip_if_not_installed("terra")
   result <- nemeton:::get_species_flammability("UnknownSpeciesXYZ")
   expect_equal(result, 50)
 })

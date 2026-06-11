@@ -16,6 +16,7 @@ library(terra)
 #   final <- create_family_index(normalized, ...)
 
 test_that("v0.3.0 workflow maintains backward compatibility with v0.2.0", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("nemeton")
 
   data(massif_demo_units, package = "nemeton")
@@ -47,6 +48,7 @@ test_that("v0.3.0 workflow maintains backward compatibility with v0.2.0", {
 })
 
 test_that("v0.3.0 workflow handles partial indicator sets gracefully", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 

@@ -1,4 +1,5 @@
 test_that("harmonize_crs reprojects rasters to target CRS", {
+  skip_if_not_installed("terra")
   temp_files <- create_temp_test_files()
 
   # Create layers in Lambert 93
@@ -22,6 +23,7 @@ test_that("harmonize_crs reprojects rasters to target CRS", {
 })
 
 test_that("harmonize_crs reprojects vectors to target CRS", {
+  skip_if_not_installed("terra")
   temp_files <- create_temp_test_files()
 
   # Create layers
@@ -43,6 +45,7 @@ test_that("harmonize_crs reprojects vectors to target CRS", {
 })
 
 test_that("harmonize_crs handles already-matching CRS", {
+  skip_if_not_installed("terra")
   temp_files <- create_temp_test_files()
 
   layers <- nemeton_layers(
@@ -59,6 +62,7 @@ test_that("harmonize_crs handles already-matching CRS", {
 })
 
 test_that("harmonize_crs requires nemeton_layers object", {
+  skip_if_not_installed("terra")
   expect_error(
     harmonize_crs(list(), sf::st_crs(2154)),
     "must be a.*nemeton_layers.*object"
@@ -66,6 +70,7 @@ test_that("harmonize_crs requires nemeton_layers object", {
 })
 
 test_that("crop_to_units crops rasters to unit extent", {
+  skip_if_not_installed("terra")
   # Create units and layers
   units <- nemeton_units(create_test_units(n_features = 1))
   temp_files <- create_temp_test_files()
@@ -93,6 +98,7 @@ test_that("crop_to_units crops rasters to unit extent", {
 })
 
 test_that("crop_to_units crops vectors to unit extent", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 1))
   temp_files <- create_temp_test_files()
 
@@ -108,6 +114,7 @@ test_that("crop_to_units crops vectors to unit extent", {
 })
 
 test_that("crop_to_units applies buffer correctly", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 1))
   temp_files <- create_temp_test_files()
 
@@ -132,6 +139,7 @@ test_that("crop_to_units applies buffer correctly", {
 })
 
 test_that("crop_to_units requires valid inputs", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 1))
 
   # Non-nemeton_layers object
@@ -151,6 +159,7 @@ test_that("crop_to_units requires valid inputs", {
 })
 
 test_that("mask_to_units masks rasters to unit geometries", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 1))
   temp_files <- create_temp_test_files()
 
@@ -169,6 +178,7 @@ test_that("mask_to_units masks rasters to unit geometries", {
 })
 
 test_that("mask_to_units only affects rasters", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 1))
   temp_files <- create_temp_test_files()
 
@@ -184,6 +194,7 @@ test_that("mask_to_units only affects rasters", {
 })
 
 test_that("mask_to_units requires valid inputs", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 1))
 
   expect_error(

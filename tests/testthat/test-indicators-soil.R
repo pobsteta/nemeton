@@ -13,6 +13,7 @@
 # ==============================================================================
 
 test_that("indicateur_f1_fertilite extracts fertility from raster", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -41,6 +42,7 @@ test_that("indicateur_f1_fertilite extracts fertility from raster", {
 # This test was removed as it was a placeholder
 
 test_that("indicateur_f1_fertilite with custom fertility mapping", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -60,6 +62,7 @@ test_that("indicateur_f1_fertilite with custom fertility mapping", {
 })
 
 test_that("indicateur_f1_fertilite errors when soil layer missing", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -72,6 +75,7 @@ test_that("indicateur_f1_fertilite errors when soil layer missing", {
 })
 
 test_that("indicateur_f1_fertilite validates inputs", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -93,6 +97,7 @@ test_that("indicateur_f1_fertilite validates inputs", {
 # ==============================================================================
 
 test_that("indicateur_f2_erosion calculates fertility from TWI and slope", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -116,6 +121,7 @@ test_that("indicateur_f2_erosion calculates fertility from TWI and slope", {
 })
 
 test_that("indicateur_f2_erosion produces higher values on flat wet areas", {
+  skip_if_not_installed("terra")
   # Flat areas with high TWI should have higher fertility
 
   data(massif_demo_units)
@@ -136,6 +142,7 @@ test_that("indicateur_f2_erosion produces higher values on flat wet areas", {
 })
 
 test_that("indicateur_f2_erosion still works with nonexistent dem_layer (falls back to lidar_mnt/dem)", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -149,6 +156,7 @@ test_that("indicateur_f2_erosion still works with nonexistent dem_layer (falls b
 })
 
 test_that("indicateur_f2_erosion validates inputs", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -170,6 +178,7 @@ test_that("indicateur_f2_erosion validates inputs", {
 # ==============================================================================
 
 test_that("Both soil indicators work together", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -198,6 +207,7 @@ test_that("Both soil indicators work together", {
 # ==============================================================================
 
 test_that("indicateur_f2_erosion computes RUSLE erosion risk (F1)", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 

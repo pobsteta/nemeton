@@ -7,6 +7,7 @@
 # ==============================================================================
 
 test_that("create_family_index aggregates indicators by family", {
+  skip_if_not_installed("terra")
   # Use clean test units without pre-existing indicator columns
   units <- create_test_units(n_features = 5)
   units$C1 <- c(50, 60, 55, 65, 70) # Carbon biomass
@@ -29,6 +30,7 @@ test_that("create_family_index aggregates indicators by family", {
 })
 
 test_that("create_family_index supports custom weights per indicator", {
+  skip_if_not_installed("terra")
   # Use clean test units without pre-existing indicator columns
   units <- create_test_units(n_features = 3)
   units$C1 <- c(50, 60, 55)
@@ -50,6 +52,7 @@ test_that("create_family_index supports custom weights per indicator", {
 })
 
 test_that("create_family_index handles partial families", {
+  skip_if_not_installed("terra")
   # Use clean test units without pre-existing indicator columns
   units <- create_test_units(n_features = 3)
 
@@ -66,6 +69,7 @@ test_that("create_family_index handles partial families", {
 })
 
 test_that("create_family_index detects family from indicator names", {
+  skip_if_not_installed("terra")
   # Use clean test units without pre-existing indicator columns
   units <- create_test_units(n_features = 2)
   units$C1_biomass <- c(50, 60) # Alternative naming
@@ -79,6 +83,7 @@ test_that("create_family_index detects family from indicator names", {
 })
 
 test_that("create_family_index supports different aggregation methods", {
+  skip_if_not_installed("terra")
   # Use clean test units without pre-existing indicator columns
   units <- create_test_units(n_features = 3)
   units$C1 <- c(50, 60, 55)
@@ -98,6 +103,7 @@ test_that("create_family_index supports different aggregation methods", {
 })
 
 test_that("create_family_index handles NA values appropriately", {
+  skip_if_not_installed("terra")
   # Use clean test units without pre-existing indicator columns
   units <- create_test_units(n_features = 3)
   units$C1 <- c(50, NA, 55)
@@ -116,6 +122,7 @@ test_that("create_family_index handles NA values appropriately", {
 })
 
 test_that("create_family_index validates inputs", {
+  skip_if_not_installed("terra")
   # Invalid data
   expect_error(
     create_family_index(data.frame(x = 1:3)),
@@ -135,6 +142,7 @@ test_that("create_family_index validates inputs", {
 # ==============================================================================
 
 test_that("normalize_indicators recognizes family prefixes", {
+  skip_if_not_installed("terra")
   # Use clean test units without pre-existing indicator columns
   units <- create_test_units(n_features = 5)
   units$C1 <- c(50, 60, 55, 65, 70)
@@ -151,6 +159,7 @@ test_that("normalize_indicators recognizes family prefixes", {
 })
 
 test_that("normalize_indicators can normalize by family", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:3, ]
@@ -173,6 +182,7 @@ test_that("normalize_indicators can normalize by family", {
 })
 
 test_that("normalize_indicators maintains backward compatibility", {
+  skip_if_not_installed("terra")
   # v0.1.0 style: no family prefixes
   data(massif_demo_units)
 
@@ -196,6 +206,7 @@ test_that("normalize_indicators maintains backward compatibility", {
 # ==============================================================================
 
 test_that("nemeton_radar supports multi-family mode", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:3, ]
@@ -215,6 +226,7 @@ test_that("nemeton_radar supports multi-family mode", {
 })
 
 test_that("nemeton_radar handles 4-12 family axes dynamically", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:2, ]
@@ -236,6 +248,7 @@ test_that("nemeton_radar handles 4-12 family axes dynamically", {
 })
 
 test_that("nemeton_radar maintains backward compatibility with indicator mode", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -254,6 +267,7 @@ test_that("nemeton_radar maintains backward compatibility with indicator mode", 
 })
 
 test_that("nemeton_radar validates mode parameter", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:2, ]
@@ -271,6 +285,7 @@ test_that("nemeton_radar validates mode parameter", {
 # ==============================================================================
 
 test_that("Complete multi-family workflow works end-to-end", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   # Setup multi-family indicators
@@ -304,6 +319,7 @@ test_that("Complete multi-family workflow works end-to-end", {
 })
 
 test_that("Family system preserves original indicator columns", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:3, ]
@@ -322,6 +338,7 @@ test_that("Family system preserves original indicator columns", {
 })
 
 test_that("Family system works with temporal datasets", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   # Create temporal dataset with family indicators
@@ -354,6 +371,7 @@ test_that("Family system works with temporal datasets", {
 })
 
 test_that("Family detection works with all family codes", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:2, ]
@@ -383,6 +401,7 @@ test_that("Family detection works with all family codes", {
 # ==============================================================================
 
 test_that("create_family_index handles B (Biodiversity) family correctly", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:5, ]
@@ -399,6 +418,7 @@ test_that("create_family_index handles B (Biodiversity) family correctly", {
 })
 
 test_that("create_family_index handles R (Risk/Resilience) family correctly", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:5, ]
@@ -414,6 +434,7 @@ test_that("create_family_index handles R (Risk/Resilience) family correctly", {
 })
 
 test_that("create_family_index handles T (Temporal) family correctly", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:5, ]
@@ -428,6 +449,7 @@ test_that("create_family_index handles T (Temporal) family correctly", {
 })
 
 test_that("create_family_index handles A (Air quality) family correctly", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:5, ]
@@ -442,6 +464,7 @@ test_that("create_family_index handles A (Air quality) family correctly", {
 })
 
 test_that("create_family_index handles mixed v0.2.0 and v0.3.0 families", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:5, ]
@@ -466,6 +489,7 @@ test_that("create_family_index handles mixed v0.2.0 and v0.3.0 families", {
 })
 
 test_that("create_family_index auto-detects all 9 implemented families (v0.3.0)", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:3, ]
@@ -495,6 +519,7 @@ test_that("create_family_index auto-detects all 9 implemented families (v0.3.0)"
 })
 
 test_that("create_family_index aggregation methods work for new families", {
+  skip_if_not_installed("terra")
   # Use clean test units without pre-existing indicator columns
   units <- create_test_units(n_features = 3)
   units$B1 <- c(20, 40, 60)
@@ -516,6 +541,7 @@ test_that("create_family_index aggregation methods work for new families", {
 })
 
 test_that("create_family_index supports custom weights for new families", {
+  skip_if_not_installed("terra")
   # Use clean test units without pre-existing indicator columns
   units <- create_test_units(n_features = 2)
   units$R1 <- c(50, 60)
@@ -539,6 +565,7 @@ test_that("create_family_index supports custom weights for new families", {
 # ==============================================================================
 
 test_that("create_family_index uses harmonic mean method", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   units$C1 <- c(40, 80)
   units$C2 <- c(60, 90)
@@ -552,6 +579,7 @@ test_that("create_family_index uses harmonic mean method", {
 })
 
 test_that("create_family_index warns when weights don't match all indicators", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   units$C1 <- c(50, 60)
   units$C2 <- c(70, 80)
@@ -568,6 +596,7 @@ test_that("create_family_index warns when weights don't match all indicators", {
 })
 
 test_that("create_family_index prefers _norm columns when available", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   units$C1 <- c(500, 600)  # Raw values
   units$C1_norm <- c(50, 60)  # Normalized values
@@ -581,6 +610,7 @@ test_that("create_family_index prefers _norm columns when available", {
 })
 
 test_that("get_family_name returns family names", {
+  skip_if_not_installed("terra")
   # Test family name lookups - check that non-empty strings are returned
   expect_type(get_family_name("C"), "character")
   expect_true(nchar(get_family_name("C")) > 0)
@@ -594,6 +624,7 @@ test_that("get_family_name returns family names", {
 })
 
 test_that("get_family_name handles invalid codes", {
+  skip_if_not_installed("terra")
   # Invalid codes should return something (might be the code itself or Unknown)
   result_x <- get_family_name("X")
   result_zzz <- get_family_name("ZZZ")
@@ -603,6 +634,7 @@ test_that("get_family_name handles invalid codes", {
 })
 
 test_that("detect_indicator_family extracts family from various patterns", {
+  skip_if_not_installed("terra")
   # Standard patterns
   expect_equal(detect_indicator_family("C1"), "C")
   expect_equal(detect_indicator_family("B3"), "B")

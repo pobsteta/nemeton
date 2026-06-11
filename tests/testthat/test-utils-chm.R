@@ -3,6 +3,7 @@
 # ---- fixture self-check ----
 
 test_that("make_fixture_chm returns a valid SpatRaster", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 100, res_m = 1.5)
   expect_s4_class(chm, "SpatRaster")
   expect_equal(terra::crs(chm, describe = TRUE)$code, "2154")
@@ -12,11 +13,13 @@ test_that("make_fixture_chm returns a valid SpatRaster", {
 })
 
 test_that("make_fixture_chm with add_artefacts produces > 50 m pixels", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 100, res_m = 1.5, add_artefacts = TRUE)
   expect_true(any(terra::values(chm) > 50, na.rm = TRUE))
 })
 
 test_that("make_fixture_chm without artefacts keeps range [5, 35]", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60, res_m = 1.5, add_artefacts = FALSE)
   vals <- terra::values(chm)
   vals <- vals[!is.na(vals)]
@@ -25,6 +28,7 @@ test_that("make_fixture_chm without artefacts keeps range [5, 35]", {
 })
 
 test_that("make_fixture_chm(write_cog=TRUE) writes a COG file", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60, res_m = 1.5, write_cog = TRUE)
   src <- terra::sources(chm)
   expect_true(file.exists(src))
@@ -36,15 +40,18 @@ test_that("make_fixture_chm(write_cog=TRUE) writes a COG file", {
 # ---- sanitize_chm input validation ----
 
 test_that("sanitize_chm errors on non-SpatRaster chm", {
+  skip_if_not_installed("terra")
   expect_error(sanitize_chm(1:10), "SpatRaster")
 })
 
 test_that("sanitize_chm errors on non-SpatRaster ndvi", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60)
   expect_error(sanitize_chm(chm, ndvi = 1:10), "SpatRaster")
 })
 
 test_that("sanitize_chm errors on non-SpatRaster slope", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60)
   expect_error(sanitize_chm(chm, slope = 1:10), "SpatRaster")
 })
@@ -52,6 +59,7 @@ test_that("sanitize_chm errors on non-SpatRaster slope", {
 # ---- range step (always applied) ----
 
 test_that("sanitize_chm clamps above max_height", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60, add_artefacts = TRUE)
   res <- sanitize_chm(chm, max_height = 50)
   vals <- terra::values(res$chm_clean)
@@ -60,6 +68,7 @@ test_that("sanitize_chm clamps above max_height", {
 })
 
 test_that("sanitize_chm clamps negative heights", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60)
   # Injecter une valeur negative
   terra::values(chm)[1] <- -5
@@ -69,6 +78,7 @@ test_that("sanitize_chm clamps negative heights", {
 })
 
 test_that("sanitize_chm without masks returns non-empty result", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60)
   res <- sanitize_chm(chm)
   expect_type(res, "list")
@@ -80,6 +90,7 @@ test_that("sanitize_chm without masks returns non-empty result", {
 # ---- forest mask ----
 
 test_that("sanitize_chm applies forest mask (SpatRaster)", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60, add_artefacts = FALSE)
   masks <- make_fixture_masks(chm)
   res <- sanitize_chm(chm, forest_mask = masks$forest_mask)
@@ -88,6 +99,7 @@ test_that("sanitize_chm applies forest mask (SpatRaster)", {
 })
 
 test_that("sanitize_chm errors on invalid forest_mask class", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60)
   expect_error(sanitize_chm(chm, forest_mask = list(foo = 1)),
                "SpatRaster or sf")
@@ -96,6 +108,7 @@ test_that("sanitize_chm errors on invalid forest_mask class", {
 # ---- buildings / water ----
 
 test_that("sanitize_chm masks buildings polygons", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60, add_artefacts = FALSE)
   masks <- make_fixture_masks(chm)
   res <- sanitize_chm(chm, buildings = masks$buildings)
@@ -104,6 +117,7 @@ test_that("sanitize_chm masks buildings polygons", {
 })
 
 test_that("sanitize_chm masks water polygons", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60, add_artefacts = FALSE)
   masks <- make_fixture_masks(chm)
   res <- sanitize_chm(chm, water = masks$water)
@@ -111,6 +125,7 @@ test_that("sanitize_chm masks water polygons", {
 })
 
 test_that("sanitize_chm errors on non-sf buildings", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60)
   expect_error(sanitize_chm(chm, buildings = list()), "sf")
 })
@@ -118,6 +133,7 @@ test_that("sanitize_chm errors on non-sf buildings", {
 # ---- NDVI threshold ----
 
 test_that("sanitize_chm applies NDVI threshold", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60, add_artefacts = FALSE)
   ndvi <- make_fixture_ndvi(chm)
   res <- sanitize_chm(chm, ndvi = ndvi, ndvi_threshold = 0.3)
@@ -126,6 +142,7 @@ test_that("sanitize_chm applies NDVI threshold", {
 })
 
 test_that("sanitize_chm respects ndvi_threshold ordering", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60, add_artefacts = FALSE)
   ndvi <- make_fixture_ndvi(chm)
   # Un seuil plus haut masque plus de pixels qu'un seuil plus bas
@@ -137,6 +154,7 @@ test_that("sanitize_chm respects ndvi_threshold ordering", {
 # ---- slope step ----
 
 test_that("sanitize_chm applies slope step", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60, add_artefacts = FALSE)
   slope <- make_fixture_slope(chm)
   res <- sanitize_chm(chm, slope = slope)
@@ -146,6 +164,7 @@ test_that("sanitize_chm applies slope step", {
 # ---- pct_masked warning ----
 
 test_that("sanitize_chm warns if pct_masked > 0.5", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60, add_artefacts = FALSE)
   # Masque foret tres restrictif : un seul pixel foret
   forest_mask <- terra::rast(chm)
@@ -159,6 +178,7 @@ test_that("sanitize_chm warns if pct_masked > 0.5", {
 })
 
 test_that("sanitize_chm skips forest step when mask covers too little", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60, add_artefacts = FALSE)
   forest_mask <- terra::rast(chm)
   terra::values(forest_mask) <- 0L
@@ -173,6 +193,7 @@ test_that("sanitize_chm skips forest step when mask covers too little", {
 # ---- ordering and step list ----
 
 test_that("sanitize_chm runs all steps in declared order", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60, add_artefacts = FALSE)
   masks <- make_fixture_masks(chm)
   ndvi <- make_fixture_ndvi(chm)
@@ -190,12 +211,14 @@ test_that("sanitize_chm runs all steps in declared order", {
 })
 
 test_that("sanitize_chm pct_masked is 0 on an already valid CHM", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60, add_artefacts = FALSE)
   res <- sanitize_chm(chm)
   expect_lte(res$pct_masked, 0.001)
 })
 
 test_that("sanitize_chm returns SpatRaster with same CRS", {
+  skip_if_not_installed("terra")
   chm <- make_fixture_chm(size_m = 60)
   res <- sanitize_chm(chm)
   expect_equal(terra::crs(res$chm_clean, describe = TRUE)$code, "2154")
@@ -205,6 +228,7 @@ test_that("sanitize_chm returns SpatRaster with same CRS", {
 # ---- extract_h_dom edge cases (T0.2 coverage top-up) ---------
 
 test_that("extract_h_dom rejects non-SpatRaster chm", {
+  skip_if_not_installed("terra")
   poly <- sf::st_polygon(list(rbind(c(0,0), c(10,0), c(10,10),
                                     c(0,10), c(0,0))))
   units <- sf::st_sf(geometry = sf::st_sfc(poly, crs = 2154))
@@ -213,6 +237,7 @@ test_that("extract_h_dom rejects non-SpatRaster chm", {
 })
 
 test_that("extract_h_dom rejects non-sf units", {
+  skip_if_not_installed("terra")
   chm <- terra::rast(nrows = 10, ncols = 10,
                      xmin = 0, xmax = 100, ymin = 0, ymax = 100,
                      crs = "EPSG:2154",
@@ -222,6 +247,7 @@ test_that("extract_h_dom rejects non-sf units", {
 })
 
 test_that("extract_h_dom rejects invalid percentile", {
+  skip_if_not_installed("terra")
   chm <- terra::rast(nrows = 10, ncols = 10,
                      xmin = 0, xmax = 100, ymin = 0, ymax = 100,
                      crs = "EPSG:2154",
@@ -238,6 +264,7 @@ test_that("extract_h_dom rejects invalid percentile", {
 })
 
 test_that("extract_h_dom returns NA when fewer than min_pixels", {
+  skip_if_not_installed("terra")
   chm <- terra::rast(nrows = 100, ncols = 100,
                      xmin = 0, xmax = 1000, ymin = 0, ymax = 1000,
                      crs = "EPSG:2154",

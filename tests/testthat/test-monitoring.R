@@ -10,6 +10,7 @@
 # ---- pure helpers ----------------------------------------------------
 
 test_that(".empty_ingest_summary returns the canonical shape", {
+  skip_if_not_installed("terra")
   out <- nemeton:::.empty_ingest_summary()
   expect_s3_class(out, "data.frame")
   expect_named(out, c("n_scenes", "n_scenes_cached",
@@ -22,6 +23,7 @@ test_that(".empty_ingest_summary returns the canonical shape", {
 })
 
 test_that("register_monitoring_zone rejects non-sf zone_polygon", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("DBI")
   skip_if_not_installed("RPostgres")
   placettes <- sf::st_sf(
@@ -34,6 +36,7 @@ test_that("register_monitoring_zone rejects non-sf zone_polygon", {
 })
 
 test_that("register_monitoring_zone rejects placettes without plot_id", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("DBI")
   skip_if_not_installed("RPostgres")
   pol <- sf::st_as_sfc(
@@ -526,6 +529,7 @@ test_that("skip_cached = FALSE forces a re-fetch even when COGs are cached", {
 })
 
 test_that(".s2_required_bands maps indices to the COG bands they need", {
+  skip_if_not_installed("terra")
   expect_setequal(nemeton:::.s2_required_bands("NDVI"), c("B04", "B08"))
   expect_setequal(nemeton:::.s2_required_bands("NBR"),  c("B08", "B12"))
   expect_setequal(nemeton:::.s2_required_bands(c("NDVI", "NBR")),
@@ -533,6 +537,7 @@ test_that(".s2_required_bands maps indices to the COG bands they need", {
 })
 
 test_that(".scene_cogs_cached is FALSE without a cache dir and TRUE once all bands exist", {
+  skip_if_not_installed("terra")
   expect_false(nemeton:::.scene_cogs_cached(NULL, "S2_X", c("B04", "B08")))
   expect_false(nemeton:::.scene_cogs_cached("", "S2_X", c("B04", "B08")))
   cache <- withr::local_tempdir()
@@ -552,6 +557,7 @@ test_that(".scene_cogs_cached is FALSE without a cache dir and TRUE once all ban
 # ---- S2 COG band cache (v0.21.4) -------------------------------------
 
 test_that(".ext_contains is a strict bbox-containment predicate", {
+  skip_if_not_installed("terra")
   outer <- c(0, 100, 0, 100)
   expect_true(nemeton:::.ext_contains(outer, c(10, 90, 10, 90)))
   expect_true(nemeton:::.ext_contains(outer, c(0, 100, 0, 100)))
@@ -562,6 +568,7 @@ test_that(".ext_contains is a strict bbox-containment predicate", {
 })
 
 test_that(".ext_contains accepts terra::ext SpatExtent objects (S4)", {
+  skip_if_not_installed("terra")
   # Regression for v0.21.8 — every cache-hit used to error out with
   # "cannot coerce type 'S4' to vector of type 'double'" because the
   # old implementation did `c(outer[1], …)` on an S4 SpatExtent.
@@ -580,6 +587,7 @@ test_that(".ext_contains accepts terra::ext SpatExtent objects (S4)", {
 })
 
 test_that(".ext_contains tolerance argument absorbs sub-pixel jitter (v0.47.3)", {
+  skip_if_not_installed("terra")
   # spec « solution A » — at the cache-hit call site we pass
   # `tolerance = max(terra::res(r_cached))` so a sub-pixel mismatch
   # between the cached extent and the AOI does not trigger a
@@ -613,6 +621,7 @@ test_that(".ext_contains tolerance argument absorbs sub-pixel jitter (v0.47.3)",
 
 
 test_that(".snap_ext_to_grid floors xmin/ymin, ceils xmax/ymax (v0.48.1)", {
+  skip_if_not_installed("terra")
   # 10 m grid (S2 B04/B08)
   expect_equal(nemeton:::.snap_ext_to_grid(c(709356.7, 709802.3,
                                              5143468.1, 5145481.9), 10),
@@ -629,6 +638,7 @@ test_that(".snap_ext_to_grid floors xmin/ymin, ceils xmax/ymax (v0.48.1)", {
 
 
 test_that(".ext_contains_at_grid: identical extents → ok (v0.48.1)", {
+  skip_if_not_installed("terra")
   ext <- c(709360, 709800, 5143470, 5145480)
   cont <- nemeton:::.ext_contains_at_grid(ext, ext, res = 10)
   expect_true(cont$ok)
@@ -638,6 +648,7 @@ test_that(".ext_contains_at_grid: identical extents → ok (v0.48.1)", {
 
 
 test_that(".ext_contains_at_grid: sub-pixel jitter is absorbed (v0.48.1)", {
+  skip_if_not_installed("terra")
   # cached on the grid
   cached <- c(709360, 709800, 5143470, 5145480)
   # needed shifted by a tiny amount that still snaps to the SAME grid
@@ -649,6 +660,7 @@ test_that(".ext_contains_at_grid: sub-pixel jitter is absorbed (v0.48.1)", {
 
 
 test_that(".ext_contains_at_grid: 2-pixel overshoot in xmax → STALE (v0.48.1)", {
+  skip_if_not_installed("terra")
   cached <- c(709360, 709800, 5143470, 5145480)
   # needed.xmax = 709825 → snaps to 709830 → outer + tol = 709810
   # → 709830 > 709810 → STALE on xmax
@@ -708,12 +720,14 @@ test_that(".s2_tile_ext_memoize caches per-tile native extent (v0.48.3)", {
 
 
 test_that(".s2_tile_ext_memoize returns NULL on bad tile_code (v0.48.3)", {
+  skip_if_not_installed("terra")
   expect_null(nemeton:::.s2_tile_ext_memoize("", "x"))
   expect_null(nemeton:::.s2_tile_ext_memoize(NA_character_, "x"))
 })
 
 
 test_that(".cache_skip_validation honours the env var (v0.48.1)", {
+  skip_if_not_installed("terra")
   withr::with_envvar(c(NEMETON_S2_CACHE_SKIP_VALIDATION = ""), {
     expect_false(nemeton:::.cache_skip_validation())
   })
@@ -742,6 +756,7 @@ test_that(".ext_as_numeric returns (xmin, xmax, ymin, ymax) for both shapes", {
 })
 
 test_that(".s2_band_cache_path sanitises scene_id and does NOT create the dir", {
+  skip_if_not_installed("terra")
   cache <- withr::local_tempdir()
   out <- nemeton:::.s2_band_cache_path(cache, "S2A:MSIL2A/2024 06 01", "B04")
   expect_type(out, "character")
@@ -914,6 +929,7 @@ test_that(".get_s2_band_raster: stale cache (extent too small) is overwritten", 
 # ---- diagnose_s2_cache + debug log gating (v0.21.7) -----------------
 
 test_that(".s2_cache_debug_enabled honours NEMETON_S2_CACHE_DEBUG", {
+  skip_if_not_installed("terra")
   withr::with_envvar(c(NEMETON_S2_CACHE_DEBUG = ""), {
     expect_false(nemeton:::.s2_cache_debug_enabled())
   })
@@ -929,6 +945,7 @@ test_that(".s2_cache_debug_enabled honours NEMETON_S2_CACHE_DEBUG", {
 })
 
 test_that(".s2_cache_log is silent unless NEMETON_S2_CACHE_DEBUG is on", {
+  skip_if_not_installed("terra")
   withr::with_envvar(c(NEMETON_S2_CACHE_DEBUG = "FALSE"), {
     expect_silent(nemeton:::.s2_cache_log("anything"))
   })
@@ -938,6 +955,7 @@ test_that(".s2_cache_log is silent unless NEMETON_S2_CACHE_DEBUG is on", {
 })
 
 test_that("diagnose_s2_cache reports a missing cache cleanly", {
+  skip_if_not_installed("terra")
   out <- diagnose_s2_cache("/nonexistent/path", verbose = FALSE)
   expect_equal(out$n_scenes, 0L)
   expect_equal(out$n_populated, 0L)
@@ -945,12 +963,14 @@ test_that("diagnose_s2_cache reports a missing cache cleanly", {
 })
 
 test_that("diagnose_s2_cache reports an empty cache cleanly", {
+  skip_if_not_installed("terra")
   cache <- withr::local_tempdir()
   out <- diagnose_s2_cache(cache, verbose = FALSE)
   expect_equal(out$n_scenes, 0L)
 })
 
 test_that("diagnose_s2_cache distinguishes populated vs empty scene dirs", {
+  skip_if_not_installed("terra")
   cache <- withr::local_tempdir()
   # Populated scene
   dir.create(file.path(cache, "S2_OK"))
@@ -968,6 +988,7 @@ test_that("diagnose_s2_cache distinguishes populated vs empty scene dirs", {
 })
 
 test_that("diagnose_s2_cache prints a cli summary when verbose = TRUE", {
+  skip_if_not_installed("terra")
   cache <- withr::local_tempdir()
   dir.create(file.path(cache, "S2_X"))
   writeLines("fake", file.path(cache, "S2_X", "B04.tif"))

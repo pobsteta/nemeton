@@ -7,6 +7,7 @@
 # ==============================================================================
 
 test_that("indicateur_l2_fragmentation returns score 0-100", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -28,6 +29,7 @@ test_that("indicateur_l2_fragmentation returns score 0-100", {
 })
 
 test_that("indicateur_l2_fragmentation works without layers (fallback)", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   units <- massif_demo_units[1:3, ]
 
@@ -41,6 +43,7 @@ test_that("indicateur_l2_fragmentation works without layers (fallback)", {
 })
 
 test_that("indicateur_l2_fragmentation geometry component varies with shape", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   units <- massif_demo_units[1:10, ]
 
@@ -58,6 +61,7 @@ test_that("indicateur_l2_fragmentation geometry component varies with shape", {
 })
 
 test_that("indicateur_l2_fragmentation validates inputs", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -69,6 +73,7 @@ test_that("indicateur_l2_fragmentation validates inputs", {
 })
 
 test_that("indicateur_l2_fragmentation works for single parcel", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   units <- massif_demo_units[1, ]
 
@@ -84,6 +89,7 @@ test_that("indicateur_l2_fragmentation works for single parcel", {
 # ==============================================================================
 
 test_that("indicateur_l1_sylvosphere returns score 0-100", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:5, ]
@@ -98,6 +104,7 @@ test_that("indicateur_l1_sylvosphere returns score 0-100", {
 })
 
 test_that("indicateur_l1_sylvosphere fallback uses shape index", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   units <- massif_demo_units[1:5, ]
 
@@ -111,6 +118,7 @@ test_that("indicateur_l1_sylvosphere fallback uses shape index", {
 })
 
 test_that("indicateur_l1_sylvosphere with layers uses landscapemetrics when available", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -132,6 +140,7 @@ test_that("indicateur_l1_sylvosphere with layers uses landscapemetrics when avai
 })
 
 test_that("indicateur_l1_sylvosphere validates inputs", {
+  skip_if_not_installed("terra")
   # Invalid units
   expect_error(
     indicateur_l1_sylvosphere(data.frame(x = 1:3)),
@@ -147,6 +156,7 @@ test_that("indicateur_l1_sylvosphere validates inputs", {
 })
 
 test_that("indicateur_l1_sylvosphere works for single parcel", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1, ]
@@ -163,6 +173,7 @@ test_that("indicateur_l1_sylvosphere works for single parcel", {
 # ==============================================================================
 
 test_that("Both landscape indicators work together", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -190,6 +201,7 @@ test_that("Both landscape indicators work together", {
 })
 
 test_that("Landscape indicators can be added to units dataframe", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -216,6 +228,7 @@ test_that("Landscape indicators can be added to units dataframe", {
 })
 
 test_that("Landscape indicators work with full dataset", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 

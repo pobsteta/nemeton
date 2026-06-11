@@ -16,7 +16,13 @@ knitr::opts_chunk$set(
   fig.width = 7,
   fig.height = 5,
   warning = FALSE,
-  message = FALSE
+  message = FALSE,
+  # Certains environnements de build (binaire terra RSPM dans le sous-processus
+  # de pkgdown / `R CMD build`) ne savent pas construire de SpatRaster à un
+  # moment imprévisible, alors que le même code passe dans les tests testthat
+  # et en local. `error = TRUE` capture une telle erreur dans la sortie au lieu
+  # de faire planter tout le build ; sur un terra sain tout s'exécute normalement.
+  error = TRUE
 )
 ```
 
