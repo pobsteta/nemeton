@@ -1,3 +1,27 @@
+# nemeton 0.71.0 (2026-06-11)
+
+### Added — RECONFORT, téléchargement du modèle RF (spec 021, lot L2a)
+
+Deuxième lot RECONFORT : récupération à la demande du modèle Random Forest
+(Shark/OTB) calibré, sans IOTA² ni Python. Les 4 modèles amont
+(`model_1_seed_0.txt`, Apache-2.0) pèsent 5,7–197 Mo — redistribuables mais
+inembarquables — donc **téléchargés à la demande, vérifiés par checksum et
+mis en cache**.
+
+- `R/reconfort_model.R` : `ensure_reconfort_model(version, cache_dir,
+  local_path, ...)` — résout dans l'ordre (1) un fichier local fourni
+  (`local_path`, p. ex. un clone amont), (2) le cache vérifié, (3) le
+  téléchargement depuis le dépôt amont. Vérification taille + MD5 via
+  `tools::md5sum()` (aucune dépendance ajoutée).
+- `RECONFORT_MODELS` : registre des 4 versions (`v3` / `v3_early_may` chêne
+  3 cl., `v3_chestnut` 3 cl., `v3_pine` 2 cl.) avec espèce, taille et MD5.
+- `reconfort_model_info(version)` : accesseur du registre.
+- URL amont surchargeable via `options(nemeton.reconfort_model_base_url)`.
+- 10 tests (`test-reconfort-model.R`, téléchargement mocké) + fetch réel du
+  modèle pin (5,7 Mo) vérifié end-to-end. Le code d'entraînement amont
+  (`train_new_model/`) reste hors-scope.
+
+
 # nemeton 0.70.0 (2026-06-11)
 
 ### Added — RECONFORT, domaine de validité (spec 021, lot L1)
