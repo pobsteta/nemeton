@@ -1,3 +1,34 @@
+# nemeton 0.70.0 (2026-06-11)
+
+### Added — RECONFORT, domaine de validité (spec 021, lot L1)
+
+Premier lot de l'intégration **RECONFORT** (Mouret et al. 2023, Apache-2.0)
+— 3ᵉ méthode de suivi sanitaire, dédiée au **dépérissement des feuillus**
+(chêne, châtaignier, pin sylvestre) en région Centre-Val de Loire, en
+complément de FORDEAD (résineux) et FAST. Ce lot livre uniquement le
+**domaine de validité** (garde-fou G3), sans Python :
+
+- `R/reconfort_validity.R` : `check_reconfort_validity(aoi, units, ...)`,
+  `load_reconfort_validity_zones()`, et les constantes
+  `RECONFORT_VALIDITY_DEPARTMENTS` (18/28/36/37/41/45) et
+  `RECONFORT_VALIDITY_SPECIES` (CHE/CHT/PS). Détection d'essences feuillus
+  (chêne *Quercus*, châtaignier *Castanea*, pin sylvestre *Pinus
+  sylvestris* — pin maritime/noir exclus), réutilise le fallback BD Forêt V2
+  de FORDEAD.
+- `inst/extdata/reconfort_validity_zones.geojson` : 6 départements CVL
+  (~39 150 km², EPSG:4326, simplifié 100 m) + `data-raw/build_*.R`.
+- **Différence avec FORDEAD** : le contrôle est **advisory, pas bloquant**
+  (`advisory = TRUE` dans le résultat) — RECONFORT n'a aucun verrou
+  géographique en amont (l'exemple amont tourne hors CVL), donc l'app
+  avertit sans empêcher le diagnostic.
+- 18 tests (`test-reconfort-validity.R`, `test-reconfort-validity-zones.R`).
+
+> Note : le flag NDP `health_reconfort` et la datasource `reconfort_anomalies`
+> prévus au plan §5 sont **reportés** — ils supposaient une parité FORDEAD
+> (`health_fordead` / `fordead_anomalies`) qui n'a jamais existé et ne
+> s'inscrit pas dans la sémantique actuelle d'`augmented` de `detect_ndp()`.
+
+
 # nemeton 0.69.2 (2026-06-11)
 
 ### Fixed — `.fast_raster_trend()` plantait sur une année mono-scène (spec 023)

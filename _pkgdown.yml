@@ -270,6 +270,16 @@ reference:
     - indicators-productive
     - indicators-social
 
+  - title: "Suivi sanitaire feuillus — RECONFORT (spec 021)"
+    desc: >
+      Domaine de validite de la methode RECONFORT (dieback feuillus,
+      Centre-Val de Loire). Garde-fou G3 : avertit, ne bloque pas.
+    contents:
+    - RECONFORT_VALIDITY_DEPARTMENTS
+    - RECONFORT_VALIDITY_SPECIES
+    - load_reconfort_validity_zones
+    - check_reconfort_validity
+
   - title: "Suivi sanitaire, monitoring et autres fonctions"
     desc: >
       Pipelines FORDEAD/FAST, zones de monitoring, validation terrain,

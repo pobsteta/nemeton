@@ -301,7 +301,7 @@ que le pipeline IOTA²/conda est la brique la plus lourde et la plus risquée.
 
 | Lot | Contenu | Version | Bloquant |
 |-----|---------|---------|----------|
-| **L1** | `reconfort_validity.R` + GeoJSON Centre-Val de Loire + datasource + NDP flag (pas de Python) | v0.68.0 | non |
+| ✅ **L1** | `reconfort_validity.R` + GeoJSON 6 dép. CVL + tests (pas de Python) — **livré v0.70.0** (2026-06-11). NDP flag / datasource **reportés** : pas de précédent FORDEAD, ne s'inscrivent pas dans la sémantique `augmented` de `detect_ndp()`. | **v0.70.0** | non |
 | **L2a** | `reconfort_model.R` : téléchargement à la demande + checksum + cache + fallback chemin utilisateur (pas d'IOTA²) | v0.69.0 | non |
 | **L2b** | `reconfort_python.R` (env conda IOTA²) + glue vendorisée `inst/python/reconfort/` + `reconfort_pipeline.R` (phases 0-3) + tests mockés | v0.70.0 | L2a |
 | **L3** | `reconfort_postprocess.R` (score continu) → table `alert` + migration `0005` + fusion G2 3-voies | v0.71.0 | L2b |

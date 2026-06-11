@@ -90,6 +90,35 @@ puis retirés de ce repo (suivi désormais côté app).
 
 ---
 
+# Chantier en cours — RECONFORT : suivi sanitaire feuillus (spec 021, ADR-013 A4)
+
+**Cadré** : 2026-06-10 (paperwork : `specs/021-suivi-sanitaire-reconfort/`
+plan.md + spec.md ; ADR-013 amendement A4 dans `nemetonplateform`).
+**Objectif** : ajouter **RECONFORT** (Mouret et al. 2023, Apache-2.0) comme
+3ᵉ méthode de suivi sanitaire — diagnostic du **dépérissement des feuillus**
+(chêne/châtaignier/pin sylvestre, Centre-Val de Loire) via Random Forest
+supervisé sur indices CRswir/CRre (chaîne IOTA²), en complément de FORDEAD
+(résineux) et FAST. R5 unifié routé par essence.
+
+## Avancement du chantier
+
+| État | Lot | Contenu | Release |
+|------|-----|---------|---------|
+| ✅ | **L1** | Domaine de validité (`reconfort_validity.R`, GeoJSON 6 dép. CVL, tests) — garde-fou G3 advisory | **v0.70.0** (2026-06-11) |
+| ⬜ | **L2a** | `reconfort_model.R` : fetch modèle RF à la demande + checksum + cache | — |
+| ⬜ | **L2b** | `reconfort_python.R` (env conda IOTA²) + glue vendorisée + pipeline phases 0-3 | — |
+| ⬜ | **L3** | `reconfort_postprocess.R` (score continu) → table `alert` + migration `0005` + fusion G2 3-voies | — |
+| ⬜ | **L4** | R5 unifié (routage par essence) + tests indicateur étendus | — |
+| ⬜ | **L5** | Persistance features (parité diagnostic pixel) + `read_reconfort_pixel_series()` | — |
+| ⬜ | **L6** | App `nemetonshiny` : 3ᵉ mode, bannières, plotly, QField feuillus | release app |
+
+**Reporté** (vs plan §5) : flag NDP `health_reconfort` + datasource
+`reconfort_anomalies` — supposaient une parité FORDEAD inexistante. **Prochaine
+étape : L2a** (téléchargement du modèle RF). Détail des faits amont vérifiés :
+`specs/021-suivi-sanitaire-reconfort/plan.md` §10.
+
+---
+
 # Chantier clos (côté cœur) — Diagnostic pixel CRSWIR (spec 008 §14, ADR-013 A3)
 
 > **L1 + L2 livrés** (v0.42.0 / v0.43.0). Seul **L3** (modal plotly,
@@ -406,6 +435,32 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-06-11 — RECONFORT L1 : domaine de validité feuillus (spec 021, cœur)
+
+Release **v0.70.0**. **Démarrage de l'implémentation RECONFORT** (3ᵉ méthode
+de suivi sanitaire, dépérissement des feuillus en Centre-Val de Loire ;
+paperwork spec 021 + ADR-013 A4 livré le 2026-06-10). **Lot L1** (domaine de
+validité, garde-fou G3, sans Python) :
+
+- `R/reconfort_validity.R` — `check_reconfort_validity(aoi, units, ...)`,
+  `load_reconfort_validity_zones()`, constantes `RECONFORT_VALIDITY_DEPARTMENTS`
+  (18/28/36/37/41/45) et `RECONFORT_VALIDITY_SPECIES` (CHE/CHT/PS). Calqué sur
+  `R/fordead_validity.R` ; matchers feuillus `.is_chene` / `.is_chataignier`
+  / `.is_pin_sylvestre` (pin maritime/noir exclus) ; réutilise
+  `.pick_species_column()` + fallback BD Forêt V2 partagés avec FORDEAD.
+- `inst/extdata/reconfort_validity_zones.geojson` (6 dép. CVL, ~39 150 km²,
+  EPSG:4326, simplifié 100 m) + `data-raw/build_reconfort_validity_zones.R`
+  (même mirror IGN ADMIN-EXPRESS que FORDEAD).
+- **Différence FORDEAD** : contrôle **advisory, pas bloquant**
+  (`advisory = TRUE`) — RECONFORT n'a aucun verrou géo amont (l'exemple amont
+  tourne hors CVL). L'app avertira sans empêcher le diagnostic.
+- 4 exports (NAMESPACE + 4 `.Rd` écrits à la main, **sans `document()`**),
+  section pkgdown dédiée, 18 tests (`test-reconfort-validity*.R`, 62 PASS).
+- **Reporté** (vs plan §5) : flag NDP `health_reconfort` + datasource
+  `reconfort_anomalies` — ils supposaient une parité FORDEAD
+  (`health_fordead`/`fordead_anomalies`) inexistante et hors sémantique
+  `augmented` de `detect_ndp()`. Suite : **L2a** (fetch-modèle).
 
 ### 2026-06-11 — Notification DB persistante jusqu'à l'overlay carte (app)
 
