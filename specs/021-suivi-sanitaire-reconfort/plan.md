@@ -303,7 +303,7 @@ que le pipeline IOTA²/conda est la brique la plus lourde et la plus risquée.
 |-----|---------|---------|----------|
 | ✅ **L1** | `reconfort_validity.R` + GeoJSON 6 dép. CVL + tests (pas de Python) — **livré v0.70.0** (2026-06-11). NDP flag / datasource **reportés** : pas de précédent FORDEAD, ne s'inscrivent pas dans la sémantique `augmented` de `detect_ndp()`. | **v0.70.0** | non |
 | ✅ **L2a** | `reconfort_model.R` : `ensure_reconfort_model()` + registre `RECONFORT_MODELS` (4 versions, MD5) + fallback `local_path` (pas d'IOTA²) — **livré v0.71.0** (2026-06-11). MD5/URL validés par fetch réel du modèle pin. | **v0.71.0** | non |
-| **L2b** | `reconfort_python.R` (env conda IOTA²) + glue vendorisée `inst/python/reconfort/` + `reconfort_pipeline.R` (phases 0-3) + tests mockés | v0.70.0 | L2a |
+| **L2b** | Scindé (cf. `L2b-cadrage.md`) en **L2b.1** fondations (env conda + glue + `RECONFORT_BANDS`) — ✅ **v0.72.0** ; **L2b.2** ingest IOTA²-natif (AOI→tuile + pygeodes) ; **L2b.3** `run_reconfort_dieback()` orchestration | v0.72.0+ | L2a |
 | **L3** | `reconfort_postprocess.R` (score continu) → table `alert` + migration `0005` + fusion G2 3-voies | v0.71.0 | L2b |
 | **L4** | R5 unifié (routage par essence) + tests indicateur étendus | v0.72.0 | L3 |
 | **L5** | Persistance features (parité diagnostic pixel) + `read_reconfort_pixel_series()` | v0.73.0 | L3 |
