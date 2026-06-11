@@ -1,3 +1,27 @@
+# nemeton 0.73.0 (2026-06-11)
+
+### Added — RECONFORT, ingestion S2 IOTA²-native (spec 021, lot L2b.2)
+
+Acquisition des scènes Sentinel-2 dans le layout attendu par IOTA²
+(décision de cadrage D1 : pas de réutilisation du cache COG FAST).
+
+- `reconfort_aoi_tiles(aoi)` : résout la/les **tuile(s) MGRS** Sentinel-2
+  couvrant une AOI à partir d'une **grille embarquée** (`inst/extdata/
+  s2_mgrs_tiles_fr.geojson`, 188 tuiles France métropolitaine) — sans
+  réseau. `data-raw/build_s2_mgrs_tiles_fr.R` la régénère depuis la grille
+  ESA globale.
+- `reconfort_ingest_s2(aoi|tiles, date_from, date_to, s2_root, …)` :
+  télécharge les archives MUSCATE L2A depuis **GEODES** (via `pygeodes`)
+  puis les dézippe vers `<s2_root>/extracted/<tile>/`. Pilote les scripts
+  amont **vendorisés** (`run_geodes_download.py`,
+  `run_process_downloaded_images.py` + `utils/`) en **subprocess conda**.
+  Compte GEODES via `options(nemeton.geodes_config)` (défaut : le data dir
+  utilisateur). nemeton n'embarque **aucune clé**.
+- Heavy + **opt-in** (compte GEODES + dizaines de Go de S2), **jamais en
+  CI**. 12 tests (téléchargement mocké, `reconfort_aoi_tiles` validé sur la
+  grille réelle : Loiret → `T31UDP`, CVL → 14 tuiles).
+
+
 # nemeton 0.72.0 (2026-06-11)
 
 ### Added — RECONFORT, fondations Python/IOTA² (spec 021, lot L2b.1)

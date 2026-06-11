@@ -107,7 +107,7 @@ supervisé sur indices CRswir/CRre (chaîne IOTA²), en complément de FORDEAD
 | ✅ | **L1** | Domaine de validité (`reconfort_validity.R`, GeoJSON 6 dép. CVL, tests) — garde-fou G3 advisory | **v0.70.0** (2026-06-11) |
 | ✅ | **L2a** | `reconfort_model.R` : `ensure_reconfort_model()` + registre `RECONFORT_MODELS` + fallback `local_path` (fetch à la demande + checksum MD5 + cache) | **v0.71.0** (2026-06-11) |
 | ✅ | **L2b.1** | `reconfort_python.R` (env conda IOTA² locate+validate) + `RECONFORT_BANDS` + glue vendorisée `custom_index.py` + NOTICE | **v0.72.0** (2026-06-11) |
-| ⬜ | **L2b.2** | Ingest IOTA²-natif : AOI→tuile MGRS + wrapper pygeodes download + process/unzip | — |
+| ✅ | **L2b.2** | Ingest IOTA²-natif : `reconfort_aoi_tiles()` (grille MGRS embarquée) + `reconfort_ingest_s2()` (pygeodes download + unzip) + scripts vendorisés | **v0.73.0** (2026-06-11) |
 | ⬜ | **L2b.3** | `reconfort_pipeline.R::run_reconfort_dieback()` : orchestration env→model→ingest→IOTA²→score | — |
 | ⬜ | **L3** | `reconfort_postprocess.R` (score continu) → table `alert` + migration `0005` + fusion G2 3-voies | — |
 | ⬜ | **L4** | R5 unifié (routage par essence) + tests indicateur étendus | — |
@@ -117,8 +117,9 @@ supervisé sur indices CRswir/CRre (chaîne IOTA²), en complément de FORDEAD
 **Reporté** (vs plan §5) : flag NDP `health_reconfort` + datasource
 `reconfort_anomalies` — supposaient une parité FORDEAD inexistante. **L2b
 cadré** (`L2b-cadrage.md` : ingest IOTA²-natif, env conda locate+validate, glue
-complète) et **scindé** en L2b.1/.2/.3. **Prochaine étape : L2b.2** (ingest
-AOI→tuile + pygeodes). Faits amont vérifiés : `…/plan.md` §10.
+complète) et **scindé** en L2b.1/.2/.3. **Prochaine étape : L2b.3**
+(`run_reconfort_dieback()` : orchestration env→model→ingest→IOTA²→score).
+Faits amont vérifiés : `…/plan.md` §10.
 
 ---
 
@@ -442,6 +443,30 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-06-11 — RECONFORT L2b.2 : ingestion S2 IOTA²-native (spec 021, cœur)
+
+Release **v0.73.0**. **L2b.2** — acquisition Sentinel-2 dans le layout IOTA²
+(décision D1 : pas de réutilisation du cache COG FAST).
+
+- **Grille MGRS embarquée** : `inst/extdata/s2_mgrs_tiles_fr.geojson`
+  (188 tuiles France métropolitaine, 61 ko, clippée depuis la grille ESA
+  globale via `data-raw/build_s2_mgrs_tiles_fr.R`). `reconfort_aoi_tiles(aoi)`
+  intersecte l'AOI → tuile(s) MGRS (sans réseau). Validé : Loiret → `T31UDP`
+  (conforme aux configs amont), CVL entière → 14 tuiles.
+- `reconfort_ingest_s2(aoi|tiles, dates, s2_root, …)` : génère un `.cfg`
+  (`key=<littéral python>`, helper `.reconfort_write_cfg`), télécharge les
+  archives MUSCATE L2A via **GEODES/pygeodes** puis dézippe vers
+  `<s2_root>/extracted/<tile>/`. Pilote les scripts amont **vendorisés**
+  (`run_geodes_download.py`, `run_process_downloaded_images.py` +
+  `utils/utils.py`) en subprocess conda (`.reconfort_run_py`, cwd = glue dir
+  pour résoudre `from utils.utils`). Compte GEODES via
+  `options(nemeton.geodes_config)` (défaut data dir utilisateur), **aucune
+  clé embarquée**.
+- Heavy + opt-in (compte GEODES + dizaines de Go), **jamais en CI**.
+  2 exports (`reconfort_aoi_tiles`, `reconfort_ingest_s2`) + `.Rd` à la main,
+  section pkgdown. 12 tests (download mocké, grille réelle), 0 régression
+  (144 reconfort PASS). Suite : **L2b.3** (`run_reconfort_dieback()`).
 
 ### 2026-06-11 — RECONFORT L2b.1 : fondations Python/IOTA² (spec 021, cœur)
 

@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.73.0] - 2026-06-11
+
+### Added
+
+- RECONFORT IOTA²-native S2 ingestion (spec 021, lot L2b.2):
+  `reconfort_aoi_tiles()` resolves the Sentinel-2 MGRS tile(s) covering an
+  AOI from a bundled France grid (`inst/extdata/s2_mgrs_tiles_fr.geojson`,
+  188 tiles, no network); `reconfort_ingest_s2()` downloads MUSCATE L2A from
+  GEODES (`pygeodes`) and unzips into the IOTA² layout, driving the vendored
+  upstream scripts via a conda subprocess. GEODES config via
+  `options(nemeton.geodes_config)`. Heavy/opt-in, never in CI.
+
 ## [0.72.0] - 2026-06-11
 
 ### Added
