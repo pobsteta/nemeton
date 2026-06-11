@@ -12,6 +12,20 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.71.0\] - 2026-06-11
+
+### Added
+
+- RECONFORT model fetch (spec 021, lot L2a):
+  [`ensure_reconfort_model()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_model.md)
+  downloads the calibrated Random-Forest model on demand (5.7–197 MB,
+  Apache-2.0), verifies size + MD5, and caches it; `local_path`
+  short-circuits to a copy already on disk. `RECONFORT_MODELS` registry
+  (4 versions) +
+  [`reconfort_model_info()`](https://pobsteta.github.io/nemeton/reference/reconfort_model_info.md).
+  No IOTA²/Python in this lot; upstream training code is out of scope.
+  Base URL overridable via `options(nemeton.reconfort_model_base_url)`.
+
 ## \[0.70.0\] - 2026-06-11
 
 ### Added

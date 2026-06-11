@@ -118,7 +118,7 @@ FORDEAD (résineux) et FAST. R5 unifié routé par essence.
 | État | Lot | Contenu | Release |
 |----|----|----|----|
 | ✅ | **L1** | Domaine de validité (`reconfort_validity.R`, GeoJSON 6 dép. CVL, tests) — garde-fou G3 advisory | **v0.70.0** (2026-06-11) |
-| ⬜ | **L2a** | `reconfort_model.R` : fetch modèle RF à la demande + checksum + cache | — |
+| ✅ | **L2a** | `reconfort_model.R` : [`ensure_reconfort_model()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_model.md) + registre `RECONFORT_MODELS` + fallback `local_path` (fetch à la demande + checksum MD5 + cache) | **v0.71.0** (2026-06-11) |
 | ⬜ | **L2b** | `reconfort_python.R` (env conda IOTA²) + glue vendorisée + pipeline phases 0-3 | — |
 | ⬜ | **L3** | `reconfort_postprocess.R` (score continu) → table `alert` + migration `0005` + fusion G2 3-voies | — |
 | ⬜ | **L4** | R5 unifié (routage par essence) + tests indicateur étendus | — |
@@ -127,9 +127,9 @@ FORDEAD (résineux) et FAST. R5 unifié routé par essence.
 
 **Reporté** (vs plan §5) : flag NDP `health_reconfort` + datasource
 `reconfort_anomalies` — supposaient une parité FORDEAD inexistante.
-**Prochaine étape : L2a** (téléchargement du modèle RF). Détail des
-faits amont vérifiés : `specs/021-suivi-sanitaire-reconfort/plan.md`
-§10.
+**Prochaine étape : L2b** (env conda IOTA² + glue vendorisée + pipeline
+phases 0-3). Détail des faits amont vérifiés :
+`specs/021-suivi-sanitaire-reconfort/plan.md` §10.
 
 ------------------------------------------------------------------------
 
@@ -698,6 +698,33 @@ cœur).
 ------------------------------------------------------------------------
 
 ## Journal
+
+### 2026-06-11 — RECONFORT L2a : fetch du modèle RF (spec 021, cœur)
+
+Release **v0.71.0**. **Lot L2a** (téléchargement du modèle Random
+Forest, sans IOTA² ni Python). Les 4 modèles Shark/OTB amont
+(`model_1_seed_0.txt`, Apache-2.0) pèsent 5,7–197 Mo → inembarquables →
+**fetch à la demande + checksum + cache**.
+
+- `R/reconfort_model.R` —
+  `ensure_reconfort_model(version, cache_dir, local_path, url, force, verify, quiet)`
+  : résout (1) `local_path` (copie déjà sur disque, p. ex. clone
+  amont), (2) cache vérifié, (3) téléchargement amont. Vérif taille +
+  **MD5** via [`tools::md5sum()`](https://rdrr.io/r/tools/md5sum.html)
+  (aucune dépendance ajoutée). `download.file` (déjà importé) mockable
+  en test.
+- `RECONFORT_MODELS` : registre des 4 versions (espèce, classes, taille,
+  MD5).
+  [`reconfort_model_info()`](https://pobsteta.github.io/nemeton/reference/reconfort_model_info.md)
+  : accesseur. URL surchargeable via
+  `options(nemeton.reconfort_model_base_url)`.
+- MD5/URL **validés par un fetch réel** du modèle pin (5,7 Mo) :
+  download + vérif + cache + cache-hit OK. 10 tests mockés
+  (`test-reconfort-model.R`, 42 assertions). 3 exports (NAMESPACE +
+  `.Rd` à la main), section pkgdown.
+- Code d’entraînement amont (`train_new_model/`) hors-scope. Suite :
+  **L2b** (env conda IOTA² + glue Python vendorisée + pipeline phases
+  0-3).
 
 ### 2026-06-11 — RECONFORT L1 : domaine de validité feuillus (spec 021, cœur)
 

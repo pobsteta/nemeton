@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.70.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.71.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,9 +39,24 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/v0.70.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.71.0" id="nemeton-0710-2026-06-11">nemeton 0.71.0 (2026-06-11)<a class="anchor" aria-label="anchor" href="#nemeton-0710-2026-06-11"></a></h2>
+<div class="section level4">
+<h4 id="added--reconfort-téléchargement-du-modèle-rf-spec-lot-l2a-0-71-0">Added — RECONFORT, téléchargement du modèle RF (spec 021, lot L2a)<a class="anchor" aria-label="anchor" href="#added--reconfort-t%C3%A9l%C3%A9chargement-du-mod%C3%A8le-rf-spec-lot-l2a-0-71-0"></a></h4>
+<p>Deuxième lot RECONFORT : récupération à la demande du modèle Random Forest (Shark/OTB) calibré, sans IOTA² ni Python. Les 4 modèles amont (<code>model_1_seed_0.txt</code>, Apache-2.0) pèsent 5,7–197 Mo — redistribuables mais inembarquables — donc <strong>téléchargés à la demande, vérifiés par checksum et mis en cache</strong>.</p>
+<ul><li>
+<code>R/reconfort_model.R</code> : <code>ensure_reconfort_model(version, cache_dir, local_path, ...)</code> — résout dans l’ordre (1) un fichier local fourni (<code>local_path</code>, p. ex. un clone amont), (2) le cache vérifié, (3) le téléchargement depuis le dépôt amont. Vérification taille + MD5 via <code><a href="https://rdrr.io/r/tools/md5sum.html" class="external-link">tools::md5sum()</a></code> (aucune dépendance ajoutée).</li>
+<li>
+<code>RECONFORT_MODELS</code> : registre des 4 versions (<code>v3</code> / <code>v3_early_may</code> chêne 3 cl., <code>v3_chestnut</code> 3 cl., <code>v3_pine</code> 2 cl.) avec espèce, taille et MD5.</li>
+<li>
+<code>reconfort_model_info(version)</code> : accesseur du registre.</li>
+<li>URL amont surchargeable via <code>options(nemeton.reconfort_model_base_url)</code>.</li>
+<li>10 tests (<code>test-reconfort-model.R</code>, téléchargement mocké) + fetch réel du modèle pin (5,7 Mo) vérifié end-to-end. Le code d’entraînement amont (<code>train_new_model/</code>) reste hors-scope.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.70.0" id="nemeton-0700-2026-06-11">nemeton 0.70.0 (2026-06-11)<a class="anchor" aria-label="anchor" href="#nemeton-0700-2026-06-11"></a></h2>
 <div class="section level4">

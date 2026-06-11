@@ -377,6 +377,12 @@ Centre-Val de Loire). Garde-fou G3 : avertit, ne bloque pas.
   : Load the RECONFORT validity zones layer
 - [`check_reconfort_validity()`](https://pobsteta.github.io/nemeton/reference/check_reconfort_validity.md)
   : Check whether an AOI lies within the RECONFORT calibration domain
+- [`RECONFORT_MODELS`](https://pobsteta.github.io/nemeton/reference/RECONFORT_MODELS.md)
+  : RECONFORT Random-Forest model registry
+- [`reconfort_model_info()`](https://pobsteta.github.io/nemeton/reference/reconfort_model_info.md)
+  : Look up a RECONFORT model registry entry
+- [`ensure_reconfort_model()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_model.md)
+  : Fetch (and cache) a RECONFORT Random-Forest model
 
 ## Suivi sanitaire, monitoring et autres fonctions
 

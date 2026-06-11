@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.70.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.71.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,7 +39,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="logo.svg" class="logo" alt=""><h1>PLAN — Walking Skeleton &amp; chantier en cours (cœur nemeton)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/v0.70.0/PLAN.md" class="external-link"><code>PLAN.md</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/PLAN.md" class="external-link"><code>PLAN.md</code></a></small>
     </div>
 
 
@@ -178,11 +178,12 @@
 <td>Domaine de validité (<code>reconfort_validity.R</code>, GeoJSON 6 dép. CVL, tests) — garde-fou G3 advisory</td>
 <td>
 <strong>v0.70.0</strong> (2026-06-11)</td>
-</tr><tr><td>⬜</td>
+</tr><tr><td>✅</td>
 <td><strong>L2a</strong></td>
 <td>
-<code>reconfort_model.R</code> : fetch modèle RF à la demande + checksum + cache</td>
-<td>—</td>
+<code>reconfort_model.R</code> : <code><a href="reference/ensure_reconfort_model.html">ensure_reconfort_model()</a></code> + registre <code>RECONFORT_MODELS</code> + fallback <code>local_path</code> (fetch à la demande + checksum MD5 + cache)</td>
+<td>
+<strong>v0.71.0</strong> (2026-06-11)</td>
 </tr><tr><td>⬜</td>
 <td><strong>L2b</strong></td>
 <td>
@@ -206,7 +207,7 @@
 <td><strong>L6</strong></td>
 <td>App <code>nemetonshiny</code> : 3ᵉ mode, bannières, plotly, QField feuillus</td>
 <td>release app</td>
-</tr></tbody></table><p><strong>Reporté</strong> (vs plan §5) : flag NDP <code>health_reconfort</code> + datasource <code>reconfort_anomalies</code> — supposaient une parité FORDEAD inexistante. <strong>Prochaine étape : L2a</strong> (téléchargement du modèle RF). Détail des faits amont vérifiés : <code>specs/021-suivi-sanitaire-reconfort/plan.md</code> §10.</p>
+</tr></tbody></table><p><strong>Reporté</strong> (vs plan §5) : flag NDP <code>health_reconfort</code> + datasource <code>reconfort_anomalies</code> — supposaient une parité FORDEAD inexistante. <strong>Prochaine étape : L2b</strong> (env conda IOTA² + glue vendorisée + pipeline phases 0-3). Détail des faits amont vérifiés : <code>specs/021-suivi-sanitaire-reconfort/plan.md</code> §10.</p>
 <hr></div>
 </div>
 <div class="section level1">
@@ -500,6 +501,16 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-06-11--reconfort-l2a--fetch-du-modèle-rf-spec-021-cœur">2026-06-11 — RECONFORT L2a : fetch du modèle RF (spec 021, cœur)<a class="anchor" aria-label="anchor" href="#id_2026-06-11--reconfort-l2a--fetch-du-mod%C3%A8le-rf-spec-021-c%C5%93ur"></a></h3>
+<p>Release <strong>v0.71.0</strong>. <strong>Lot L2a</strong> (téléchargement du modèle Random Forest, sans IOTA² ni Python). Les 4 modèles Shark/OTB amont (<code>model_1_seed_0.txt</code>, Apache-2.0) pèsent 5,7–197 Mo → inembarquables → <strong>fetch à la demande + checksum + cache</strong>.</p>
+<ul><li>
+<code>R/reconfort_model.R</code> — <code>ensure_reconfort_model(version, cache_dir, local_path, url, force, verify, quiet)</code> : résout (1) <code>local_path</code> (copie déjà sur disque, p. ex. clone amont), (2) cache vérifié, (3) téléchargement amont. Vérif taille + <strong>MD5</strong> via <code><a href="https://rdrr.io/r/tools/md5sum.html" class="external-link">tools::md5sum()</a></code> (aucune dépendance ajoutée). <code>download.file</code> (déjà importé) mockable en test.</li>
+<li>
+<code>RECONFORT_MODELS</code> : registre des 4 versions (espèce, classes, taille, MD5). <code><a href="reference/reconfort_model_info.html">reconfort_model_info()</a></code> : accesseur. URL surchargeable via <code>options(nemeton.reconfort_model_base_url)</code>.</li>
+<li>MD5/URL <strong>validés par un fetch réel</strong> du modèle pin (5,7 Mo) : download + vérif + cache + cache-hit OK. 10 tests mockés (<code>test-reconfort-model.R</code>, 42 assertions). 3 exports (NAMESPACE + <code>.Rd</code> à la main), section pkgdown.</li>
+<li>Code d’entraînement amont (<code>train_new_model/</code>) hors-scope. Suite : <strong>L2b</strong> (env conda IOTA² + glue Python vendorisée + pipeline phases 0-3).</li>
+</ul></div>
 <div class="section level3">
 <h3 id="id_2026-06-11--reconfort-l1--domaine-de-validité-feuillus-spec-021-cœur">2026-06-11 — RECONFORT L1 : domaine de validité feuillus (spec 021, cœur)<a class="anchor" aria-label="anchor" href="#id_2026-06-11--reconfort-l1--domaine-de-validit%C3%A9-feuillus-spec-021-c%C5%93ur"></a></h3>
 <p>Release <strong>v0.70.0</strong>. <strong>Démarrage de l’implémentation RECONFORT</strong> (3ᵉ méthode de suivi sanitaire, dépérissement des feuillus en Centre-Val de Loire ; paperwork spec 021 + ADR-013 A4 livré le 2026-06-10). <strong>Lot L1</strong> (domaine de validité, garde-fou G3, sans Python) :</p>
