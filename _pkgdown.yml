@@ -282,6 +282,7 @@ reference:
     - RECONFORT_MODELS
     - reconfort_model_info
     - ensure_reconfort_model
+    - RECONFORT_BANDS
 
   - title: "Suivi sanitaire, monitoring et autres fonctions"
     desc: >

@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.72.0] - 2026-06-11
+
+### Added
+
+- RECONFORT Python/IOTA² foundations (spec 021, lot L2b.1):
+  `.ensure_reconfort_python()` locates and validates the conda IOTA²
+  environment (`nemeton-reconfort`, never bootstrapped — cadrage D2);
+  `RECONFORT_BANDS` (B04/B05/B06/B8A/B11/B12); vendored
+  `inst/python/reconfort/custom_index.py` (CRswir/CRre indices, Apache-2.0,
+  attributed in `inst/NOTICE`). No real run yet (pipeline in L2b.2/L2b.3).
+
 ## [0.71.0] - 2026-06-11
 
 ### Added

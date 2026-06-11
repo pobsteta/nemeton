@@ -141,6 +141,23 @@ Each cited chunk surfaced in an AI perspective carries its source
 document's attribution back to the user; the manifest's `license`
 and `notes` columns are the audit trail.
 
+RECONFORT oak-dieback models and Python glue
+--------------------------------------------
+Reference: Mouret, F., Morin, D., Martin, H., Planells, M.,
+           Vincent-Barbaroux, C. (2023). "Toward an Operational
+           Monitoring of Oak Dieback With Multispectral Satellite Time
+           Series: A Case Study in Centre-Val De Loire Region of
+           France." IEEE J-STARS. doi:10.1109/JSTARS.2023.3332420
+Source   : https://framagit.org/fl.mouret/reconfort (branch main,
+           commit 25198c9)
+License  : Apache-2.0
+Usage    : Random-Forest dieback models (fetched on demand by
+           `ensure_reconfort_model()`, spec 021 L2a) and Python glue
+           vendored under `inst/python/reconfort/` (CRswir/CRre
+           continuum-removal indices, spec 021 L2b). SYCOMORE
+           programme, Université d'Orléans / CESBIO, funded by the
+           Région Centre-Val de Loire.
+
 Third-party attributions in source code
 ---------------------------------------
 All data-source metadata (URLs, providers, licenses) are declared in

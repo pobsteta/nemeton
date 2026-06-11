@@ -1,3 +1,27 @@
+# nemeton 0.72.0 (2026-06-11)
+
+### Added — RECONFORT, fondations Python/IOTA² (spec 021, lot L2b.1)
+
+Premier sous-lot de l'intégration du pipeline RECONFORT : helpers
+d'environnement + bandes + glue vendorisée. Aucune exécution réelle ici
+(le pipeline vient en L2b.2/L2b.3).
+
+- `R/reconfort_python.R` : `.ensure_reconfort_python()` (interne) **localise
+  et valide** l'environnement **conda** IOTA² (défaut `nemeton-reconfort`,
+  surchargeable par `options(nemeton.reconfort_conda_env)`) — vérifie que
+  `iota2` et `pygeodes` sont importables, **sans jamais le créer** (cadrage
+  D2 : l'utilisateur l'installe via la procédure amont). Abort typé avec les
+  instructions d'install si absent.
+- `RECONFORT_BANDS` (`B04/B05/B06/B8A/B11/B12`) : bandes des indices
+  CRswir/CRre (parallèle à `FORDEAD_BANDS`).
+- Glue Python **vendorisée** `inst/python/reconfort/custom_index.py`
+  (indices CRswir/CRre, Apache-2.0, attribuée dans `inst/NOTICE`). La glue
+  d'orchestration (download GEODES, cfg IOTA², score) sera vendorisée en
+  L2b.2/L2b.3 où elle est câblée.
+- 7 tests (`test-reconfort-python.R`, reticulate mocké). Cadrage complet :
+  `specs/021-suivi-sanitaire-reconfort/L2b-cadrage.md`.
+
+
 # nemeton 0.71.0 (2026-06-11)
 
 ### Added — RECONFORT, téléchargement du modèle RF (spec 021, lot L2a)
