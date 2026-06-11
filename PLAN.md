@@ -264,6 +264,18 @@ Du moins au plus invasif :
 
 **État au 2026-05-15 (post-v0.22.1)** : 4 fonctions API publiques exposent le cache S2 pixel-par-pixel pour permettre la construction côté app d'une carte interactive NDVI/NBR avec time series au clic. Spec 010 close côté cœur. Patch **v0.22.1** ajoute un refresh proactif du SAS token PC avant chaque FETCH pour éliminer le 403/retry systématique observé sur les runs > 30 min. Implémentation côté `nemetonshiny` à venir (sous-onglet *Carte pixel* dans `mod_monitoring` — repo séparé).
 
+## Épaississements app — Restore projet & affichage carte (pour mémoire, `nemetonshiny`)
+
+> Hors-scope cœur (cf. *Scope* en tête) — releases app récentes touchant le
+> chargement de projet et l'overlay carte, listées ici pour traçabilité.
+
+- [x] Restore projet instantané : cache disque de la géométrie commune
+      (app — nemetonshiny@6778e84, v0.74.0)
+- [x] Déblocage CI nemetonshiny : lasR via Remotes + réparation tests
+      pré-existants (app — nemetonshiny@8b10862, v0.74.1)
+- [x] Notification sync PostGIS persistante jusqu'à l'overlay carte
+      (app — nemetonshiny@32b1c8e, v0.75.0)
+
 ---
 
 # Chantier précédent — Durcissement ingestion S2 / cadrage E7
@@ -394,6 +406,54 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-06-11 — Notification DB persistante jusqu'à l'overlay carte (app)
+
+Livraison **app** : `nemetonshiny@32b1c8e` — release **v0.75.0**
+(cycle dev 0.74.1.9000 → v0.75.0).
+
+À l'ouverture d'un projet synchronisé PostGIS, la notification « Projet
+synchronisé avec la base PostGIS » (bas à droite) passait en
+`duration = 5` et pouvait disparaître **avant** l'apparition de l'overlay
+carte « Affichage des parcelles… », laissant un trou de feedback. Elle
+devient persistante (`duration = NULL`, id `db_sync_notif`) et `mod_map`
+la retire dès que l'overlay de chargement prend le relais
+(`show_map_loading`). Filets : `later()` 12 s + chemin commune invalide.
+Périmètre : 100 % `nemetonshiny` — aucun changement cœur.
+
+### 2026-06-10 — Déblocage CI nemetonshiny (lasR + tests) (app)
+
+Livraison **app** : `nemetonshiny@8b10862` — release **v0.74.1**
+(cycle dev 0.74.0.9000 → v0.74.1).
+
+Le CI app était rouge **depuis v0.73.0** : `lasR` (Suggests, hébergé sur
+r-universe `r-lidar`, absent du CRAN) n'était pas résolu par `pak`, faisant
+échouer tous les jobs à l'étape « Install R dependencies » — le vrai
+message (`Can't find package called lasR`) était masqué par des
+« dependency conflict » génériques. Fix : ajout de `r-lidar/lasR` à
+`Remotes:`. Une fois l'install débloquée, R-CMD-check a atteint la suite et
+révélé **6 tests pré-existants** cassés/obsolètes (tous côté test, code
+applicatif correct) : `mod_rag_admin` testServer ×3 (`ignoreInit` mangé par
+`testServer` + mock à promesse non forcée bloquant la souscription
+réactive), `mod_monitoring`/`mod_monitoring_pixel_map` ×3 (attente
+`NDVI,NBR` vs câblage `NDVI,NBR,NDMI` depuis v0.71.0). Un smoke E2E
+shinytest2 (`mod_rag_admin-e2e`, jamais exécuté en CI auparavant) reste
+**quarantiné** (`skip()` + FIXME) — interaction modale/tab-lazy à creuser
+avec un env navigateur stable. Périmètre : 100 % `nemetonshiny`.
+
+### 2026-06-10 — Restore projet instantané : cache géométrie commune (app)
+
+Livraison **app** : `nemetonshiny@6778e84` — release **v0.74.0**
+(cycle dev 0.73.1.9000 → v0.74.0).
+
+La frontière de la commune est désormais persistée au save du projet
+(`data/commune.gpkg`) et réinjectée **synchroniquement** au chargement, en
+même temps que les parcelles. La carte se rend immédiatement, sans attendre
+la `restore_task` asynchrone (worker `future::multisession` + rechargement
+de `nemeton` dans le worker + 2 appels séquentiels à `geo.api.gouv.fr`). La
+tâche async ne sert plus qu'à peupler la liste déroulante des communes ; les
+projets *legacy* sans cache retombent sur l'ancien chemin asynchrone.
+Périmètre : 100 % `nemetonshiny` — aucun changement cœur `nemeton`.
 
 - **2026-06-11** — Release **v0.69.2** (fixed — **`.fast_raster_trend()` mono-couche**, spec 023). La CI lasR/lidaRtRee enfin verte (PR #40) a fait tourner pour la première fois les chemins terra du mode `trend` (v0.69.0) et révélé un bug réel : une année à une seule scène in-season produit un `SpatRaster` 1 couche sur lequel `terra::app(sub, fun)` lève « number of values returned by 'fun' is not appropriate ». Corrigé par primitives cell-wise robustes (`nlyr - countNA` + `terra::median`) ; régression `test-fast-trend.R` (+ 2 bugs de test : mapping cellule terra row-major vs indice matriciel R, scalaire nommé). **Paperwork RECONFORT (spec 021)** livré en parallèle : `plan.md` (6 questions §10 tranchées sur le dépôt amont vérifié `fl.mouret/reconfort`, clone `main` 25198c9) + `spec.md` (parité spec 008) + amendement **ADR-013 A4** (suivi sanitaire multi-méthodes, dans `nemetonplateform`, branche `claude/adr-013-a4-reconfort`). **Durcissement CI** (préexistant, sans rapport métier) : job `tests` → `devtools::test()` réel (l'ancien `test_package()` ne trouvait aucun test installé = faux vert) ; `R-CMD-check --no-tests`/`--no-build-vignettes` ; `pkgdown` + `rsconnect` + 111 topics ajoutés à l'index de référence ; vignette `getting-started` en `error = TRUE`. Surtout : **garde-fou par capacité** `skip_if_terra_write_broken()` contre une anomalie terra **propre au runner GitHub** (terra::rast/writeRaster lèvent « no valid constructor » dans le contexte testthat/vignette, irreproductible en local où toute la suite passe — PASS 7381) : les tests raster **skippent** sur ce runner, **tournent en entier** ailleurs. CI complète (R-CMD-check + tests + coverage + pkgdown) **verte** sur le commit final.
 
