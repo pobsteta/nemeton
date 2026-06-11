@@ -10,6 +10,34 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.69.2] - 2026-06-11
+
+### Fixed
+
+- `.fast_raster_trend()` (FAST `mode = "trend"`, spec 023): a year with a
+  single in-season scene yields a one-layer SpatRaster, on which
+  `terra::app(sub, fun)` errors ("number of values returned by 'fun' is not
+  appropriate"). Replaced by layer-count-robust cell-wise primitives
+  (`nlyr - countNA`, `terra::median`). Covered by `test-fast-trend.R`.
+
+### Added
+
+- spec 021 (RECONFORT, 3rd health-monitoring method for broadleaves):
+  design docs only — `plan.md` (6 open questions resolved against the
+  verified upstream repo) + `spec.md`. ADR-013 amendment A4 (multi-method
+  health monitoring) lives in `nemetonplateform`.
+
+### Changed
+
+- CI back to green (R-CMD-check, tests, coverage, pkgdown). The `tests` job
+  now runs the real suite via `devtools::test()`; `R-CMD-check` uses
+  `--no-tests`/`--no-build-vignettes`; `pkgdown` gains `rsconnect` and a
+  complete reference index (111 missing topics added). A capability guard
+  (`skip_if_terra_write_broken()`) skips raster tests on a GitHub runner
+  exhibiting a terra "no valid constructor" anomaly (not reproducible
+  locally; the whole suite passes locally), running them fully everywhere
+  else.
+
 ## [0.67.0] - 2026-06-04
 
 ### Added

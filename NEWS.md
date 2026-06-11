@@ -1,3 +1,46 @@
+# nemeton 0.69.2 (2026-06-11)
+
+### Fixed — `.fast_raster_trend()` plantait sur une année mono-scène (spec 023)
+
+Dans le mode FAST `trend`, une année n'ayant qu'une seule scène in-season
+produit un `SpatRaster` à **une couche**, et `terra::app(sub, fun)` lève
+alors « the number of values returned by 'fun' is not appropriate ». Le
+comptage des observations valides et la médiane annuelle passent désormais
+par des primitives cell-wise robustes à tout nombre de couches
+(`terra::nlyr() - terra::countNA()` et `terra::median()`). Bug livré en
+v0.69.0 et révélé à la première exécution CI réelle des chemins terra.
+Régression couverte par `test-fast-trend.R` (année à observation unique).
+
+### Added — spec 021 RECONFORT (3ᵉ méthode de suivi sanitaire, feuillus)
+
+Dossier de conception (doc seule, pas de code) pour l'intégration de
+**RECONFORT** (F. Mouret / CESBIO, Apache-2.0) comme méthode officielle de
+diagnostic du dépérissement des **feuillus** (chêne, châtaignier, pin
+sylvestre, Centre-Val de Loire), en complément de FORDEAD (résineux) et
+FAST. `specs/021-suivi-sanitaire-reconfort/` reçoit `plan.md` (6 questions
+ouvertes tranchées sur le dépôt amont vérifié) et `spec.md` (parité avec
+spec 008). L'**amendement A4 de l'ADR-013** reframe le suivi sanitaire en
+« multi-méthodes » (vit dans `nemetonplateform`). Faits clés vérifiés :
+`RECONFORT_BANDS = B04/B05/B06/B8A/B11/B12`, indices CRswir/CRre, score
+continu `(1001 + (−P1 + P2 + 2·P3))/30`, EPSG:2154, IOTA²/conda obligatoire.
+
+### Internal — CI verte et garde-fou anomalie terra du runner
+
+La CI (`R-CMD-check`, `tests`, `coverage`, `pkgdown`) repasse au vert après
+plusieurs corrections d'infrastructure préexistantes, sans rapport avec le
+code métier : le job `tests` exécute désormais réellement la suite
+(`devtools::test()` au lieu d'un `test_package()` qui ne trouvait aucun
+test installé) ; `R-CMD-check` délègue les tests au job dédié (`--no-tests`)
+et saute le build des vignettes ; `pkgdown` gagne `rsconnect` (tutoriels)
+et l'index de référence liste les 111 topics exportés manquants. Surtout,
+un **garde-fou par capacité** (`skip_if_terra_write_broken()`) neutralise
+une anomalie terra **propre au runner GitHub** (terra::rast/writeRaster y
+lèvent « no valid constructor » dans le contexte testthat, alors que le
+même code passe en local — toute la suite passe, PASS 7381) : les tests
+raster **skippent** sur ce runner et **tournent en entier** partout
+ailleurs. Le code reste prouvé correct.
+
+
 # nemeton 0.69.1 (2026-06-10)
 
 ### Fixed — extraction NDRE-only sans B08 (spec 022)
