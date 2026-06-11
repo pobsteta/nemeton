@@ -600,6 +600,8 @@ Centre-Val de Loire). Garde-fou G3 : avertit, ne bloque pas.
   : Look up a RECONFORT model registry entry
 - [`ensure_reconfort_model()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_model.md)
   : Fetch (and cache) a RECONFORT Random-Forest model
+- [`RECONFORT_BANDS`](https://pobsteta.github.io/nemeton/reference/RECONFORT_BANDS.md)
+  : Sentinel-2 bands used by the RECONFORT indices
 
 ## Suivi sanitaire, monitoring et autres fonctions
 

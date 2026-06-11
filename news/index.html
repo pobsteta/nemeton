@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.71.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.72.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,20 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.72.0" id="nemeton-0720-2026-06-11">nemeton 0.72.0 (2026-06-11)<a class="anchor" aria-label="anchor" href="#nemeton-0720-2026-06-11"></a></h2>
+<div class="section level4">
+<h4 id="added--reconfort-fondations-pythoniota²-spec-lot-l2b1-0-72-0">Added — RECONFORT, fondations Python/IOTA² (spec 021, lot L2b.1)<a class="anchor" aria-label="anchor" href="#added--reconfort-fondations-pythoniota%C2%B2-spec-lot-l2b1-0-72-0"></a></h4>
+<p>Premier sous-lot de l’intégration du pipeline RECONFORT : helpers d’environnement + bandes + glue vendorisée. Aucune exécution réelle ici (le pipeline vient en L2b.2/L2b.3).</p>
+<ul><li>
+<code>R/reconfort_python.R</code> : <code>.ensure_reconfort_python()</code> (interne) <strong>localise et valide</strong> l’environnement <strong>conda</strong> IOTA² (défaut <code>nemeton-reconfort</code>, surchargeable par <code>options(nemeton.reconfort_conda_env)</code>) — vérifie que <code>iota2</code> et <code>pygeodes</code> sont importables, <strong>sans jamais le créer</strong> (cadrage D2 : l’utilisateur l’installe via la procédure amont). Abort typé avec les instructions d’install si absent.</li>
+<li>
+<code>RECONFORT_BANDS</code> (<code>B04/B05/B06/B8A/B11/B12</code>) : bandes des indices CRswir/CRre (parallèle à <code>FORDEAD_BANDS</code>).</li>
+<li>Glue Python <strong>vendorisée</strong> <code>inst/python/reconfort/custom_index.py</code> (indices CRswir/CRre, Apache-2.0, attribuée dans <code>inst/NOTICE</code>). La glue d’orchestration (download GEODES, cfg IOTA², score) sera vendorisée en L2b.2/L2b.3 où elle est câblée.</li>
+<li>La validation des modules (<code>iota2</code>, <code>pygeodes</code>) passe par un <strong>subprocess</strong> (<code>conda run -n &lt;env&gt; python -c import …</code>), représentatif de l’usage IOTA² (piloté par subprocess) et robuste au quirk d’init unique de reticulate et aux effets de bord d’import (bannière OTB). Le binaire <code>conda</code> est préféré à <code>mamba</code> (dont reticulate mal-parse la sortie sur miniforge).</li>
+<li>9 tests mockés (<code>test-reconfort-python.R</code>) <strong>+ validation end-to-end contre un env conda réel</strong> (<code>iota2</code> + <code>pygeodes</code> OK). Cadrage complet : <code>specs/021-suivi-sanitaire-reconfort/L2b-cadrage.md</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.71.0" id="nemeton-0710-2026-06-11">nemeton 0.71.0 (2026-06-11)<a class="anchor" aria-label="anchor" href="#nemeton-0710-2026-06-11"></a></h2>
 <div class="section level4">

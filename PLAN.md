@@ -119,7 +119,9 @@ FORDEAD (résineux) et FAST. R5 unifié routé par essence.
 |----|----|----|----|
 | ✅ | **L1** | Domaine de validité (`reconfort_validity.R`, GeoJSON 6 dép. CVL, tests) — garde-fou G3 advisory | **v0.70.0** (2026-06-11) |
 | ✅ | **L2a** | `reconfort_model.R` : [`ensure_reconfort_model()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_model.md) + registre `RECONFORT_MODELS` + fallback `local_path` (fetch à la demande + checksum MD5 + cache) | **v0.71.0** (2026-06-11) |
-| ⬜ | **L2b** | `reconfort_python.R` (env conda IOTA²) + glue vendorisée + pipeline phases 0-3 | — |
+| ✅ | **L2b.1** | `reconfort_python.R` (env conda IOTA² locate+validate) + `RECONFORT_BANDS` + glue vendorisée `custom_index.py` + NOTICE | **v0.72.0** (2026-06-11) |
+| ⬜ | **L2b.2** | Ingest IOTA²-natif : AOI→tuile MGRS + wrapper pygeodes download + process/unzip | — |
+| ⬜ | **L2b.3** | `reconfort_pipeline.R::run_reconfort_dieback()` : orchestration env→model→ingest→IOTA²→score | — |
 | ⬜ | **L3** | `reconfort_postprocess.R` (score continu) → table `alert` + migration `0005` + fusion G2 3-voies | — |
 | ⬜ | **L4** | R5 unifié (routage par essence) + tests indicateur étendus | — |
 | ⬜ | **L5** | Persistance features (parité diagnostic pixel) + `read_reconfort_pixel_series()` | — |
@@ -127,9 +129,10 @@ FORDEAD (résineux) et FAST. R5 unifié routé par essence.
 
 **Reporté** (vs plan §5) : flag NDP `health_reconfort` + datasource
 `reconfort_anomalies` — supposaient une parité FORDEAD inexistante.
-**Prochaine étape : L2b** (env conda IOTA² + glue vendorisée + pipeline
-phases 0-3). Détail des faits amont vérifiés :
-`specs/021-suivi-sanitaire-reconfort/plan.md` §10.
+**L2b cadré** (`L2b-cadrage.md` : ingest IOTA²-natif, env conda
+locate+validate, glue complète) et **scindé** en L2b.1/.2/.3.
+**Prochaine étape : L2b.2** (ingest AOI→tuile + pygeodes). Faits amont
+vérifiés : `…/plan.md` §10.
 
 ------------------------------------------------------------------------
 
@@ -704,6 +707,30 @@ cœur).
 ------------------------------------------------------------------------
 
 ## Journal
+
+### 2026-06-11 — RECONFORT L2b.1 : fondations Python/IOTA² (spec 021, cœur)
+
+Release **v0.72.0**. **L2b cadré** (`L2b-cadrage.md`) puis **scindé** en
+L2b.1/.2/.3 — décisions : ingest **IOTA²-natif** (GEODES), env conda
+**localisé+validé** (l’utilisateur l’installe, D2), glue **vendorisée
+complète**. **L2b.1** (fondations, sans exécution réelle) :
+
+- `R/reconfort_python.R` — `.ensure_reconfort_python()` localise+valide
+  l’env conda `nemeton-reconfort` (surchargeable
+  `options(nemeton.reconfort_conda_env)`), vérifie `iota2`+`pygeodes`
+  importables, **ne crée jamais** l’env (abort typé avec instructions
+  amont si absent). `RECONFORT_BANDS` (B04/B05/B06/B8A/B11/B12).
+- Glue vendorisée `inst/python/reconfort/custom_index.py` (CRswir/CRre,
+  Apache-2.0, attribuée `inst/NOTICE`). Orchestration
+  (download/cfg/score) vendorisée plus tard (L2b.2/.3).
+- 7 tests (reticulate mocké). 1 export (`RECONFORT_BANDS`) + helpers
+  internes.
+- **NB install env** : `mamba install iota2` bute sur un conflit solveur
+  amont (iota2 récent tire `pytorch-cuda`, channel pytorch/nvidia absent
+  ; pin python 3.9 en conflit). Conforme à D2 — l’install est finicky et
+  reste à la charge de l’utilisateur (cf. procédure + docs.iota2.net).
+  L2b.1 n’en dépend pas (mocké). Suite : **L2b.2** (ingest AOI→tuile +
+  pygeodes).
 
 ### 2026-06-11 — RECONFORT L2a : fetch du modèle RF (spec 021, cœur)
 

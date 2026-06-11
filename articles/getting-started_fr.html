@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.71.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.72.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -372,13 +372,25 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <span>  <span class="va">layers</span>,</span>
 <span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"indicateur_c2_ndvi"</span>, <span class="st">"indicateur_w3_humidite"</span>, <span class="st">"indicateur_l2_fragmentation"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> no valid constructor available for the argument list</span></span>
 <span></span>
 <span><span class="co"># Vue d'ensemble</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">results</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"indicateur_c2_ndvi"</span>, <span class="st">"indicateur_w3_humidite"</span>, <span class="st">"indicateur_l2_fragmentation"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'results' not found</span></span></code></pre></div>
+<span><span class="co">#&gt;  indicateur_c2_ndvi indicateur_w3_humidite indicateur_l2_fragmentation</span></span>
+<span><span class="co">#&gt;  Min.   : NA        Min.   :4.551          Min.   :34.20              </span></span>
+<span><span class="co">#&gt;  1st Qu.: NA        1st Qu.:4.698          1st Qu.:35.40              </span></span>
+<span><span class="co">#&gt;  Median : NA        Median :4.766          Median :35.80              </span></span>
+<span><span class="co">#&gt;  Mean   :NaN        Mean   :4.745          Mean   :35.97              </span></span>
+<span><span class="co">#&gt;  3rd Qu.: NA        3rd Qu.:4.798          3rd Qu.:36.42              </span></span>
+<span><span class="co">#&gt;  Max.   : NA        Max.   :4.887          Max.   :38.30              </span></span>
+<span><span class="co">#&gt;  NAs    :20                                                           </span></span>
+<span><span class="co">#&gt;           geometry </span></span>
+<span><span class="co">#&gt;  POLYGON      :20  </span></span>
+<span><span class="co">#&gt;  epsg:2154    : 0  </span></span>
+<span><span class="co">#&gt;  +proj=lcc ...: 0  </span></span>
+<span><span class="co">#&gt;                    </span></span>
+<span><span class="co">#&gt;                    </span></span>
+<span><span class="co">#&gt;                    </span></span>
+<span><span class="co">#&gt; </span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -393,23 +405,21 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"indicateur_c2_ndvi"</span>, <span class="st">"indicateur_w3_humidite"</span>, <span class="st">"indicateur_l2_fragmentation"</span><span class="op">)</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"minmax"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'results' not found</span></span>
 <span></span>
 <span><span class="co"># Comparer avant/après</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nAvant normalisation (carbone NDVI):\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Avant normalisation (carbone NDVI):</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">results</span><span class="op">$</span><span class="va">indicateur_c2_ndvi</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'results' not found</span></span>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.     NAs </span></span>
+<span><span class="co">#&gt;      NA      NA      NA     NaN      NA      NA      20</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nAprès normalisation (carbone NDVI):\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Après normalisation (carbone NDVI):</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">normalized</span><span class="op">$</span><span class="va">indicateur_c2_ndvi_norm</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'normalized' not found</span></span></code></pre></div>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.     NAs </span></span>
+<span><span class="co">#&gt;      NA      NA      NA     NaN      NA      NA      20</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="méthodes-de-normalisation">Méthodes de normalisation<a class="anchor" aria-label="anchor" href="#m%C3%A9thodes-de-normalisation"></a>
 </h3>
@@ -420,17 +430,13 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <span>  indicators <span class="op">=</span> <span class="st">"indicateur_c2_ndvi"</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"zscore"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'results' not found</span></span>
 <span></span>
 <span><span class="co"># Quantiles (distribution uniforme)</span></span>
 <span><span class="va">norm_quantile</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/normalize_indicators.html">normalize_indicators</a></span><span class="op">(</span></span>
 <span>  <span class="va">results</span>,</span>
 <span>  indicators <span class="op">=</span> <span class="st">"indicateur_c2_ndvi"</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"quantile"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'results' not found</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -444,13 +450,21 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"indicateur_c2_ndvi_norm"</span>, <span class="st">"indicateur_w3_humidite_norm"</span>, <span class="st">"indicateur_l2_fragmentation_norm"</span><span class="op">)</span>,</span>
 <span>  name <span class="op">=</span> <span class="st">"ecosystem_health"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'normalized' not found</span></span>
 <span></span>
 <span><span class="co"># Afficher les résultats</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">composite</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"parcel_id"</span>, <span class="st">"forest_type"</span>, <span class="st">"ecosystem_health"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'composite' not found</span></span></code></pre></div>
+<span><span class="co">#&gt; Simple feature collection with 6 features and 3 fields</span></span>
+<span><span class="co">#&gt; Geometry type: POLYGON</span></span>
+<span><span class="co">#&gt; Dimension:     XY</span></span>
+<span><span class="co">#&gt; Bounding box:  xmin: 698041.8 ymin: 6499388 xmax: 702507.7 ymax: 6504159</span></span>
+<span><span class="co">#&gt; Projected CRS: RGF93 v1 / Lambert-93</span></span>
+<span><span class="co">#&gt;   parcel_id      forest_type ecosystem_health                       geometry</span></span>
+<span><span class="co">#&gt; 1       P01     Futaie mixte         50.17527 POLYGON ((698299.9 6499928,...</span></span>
+<span><span class="co">#&gt; 2       P02 Futaie résineuse         36.11224 POLYGON ((701702.2 6500418,...</span></span>
+<span><span class="co">#&gt; 3       P03  Futaie feuillue         62.13934 POLYGON ((702240.4 6500270,...</span></span>
+<span><span class="co">#&gt; 4       P04  Futaie feuillue         39.52632 POLYGON ((700641.3 6504129,...</span></span>
+<span><span class="co">#&gt; 5       P05 Futaie résineuse         44.58606 POLYGON ((699268.2 6500307,...</span></span>
+<span><span class="co">#&gt; 6       P06 Futaie résineuse         18.11143 POLYGON ((699943.5 6499421,...</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="agrégation-pondérée">Agrégation pondérée<a class="anchor" aria-label="anchor" href="#agr%C3%A9gation-pond%C3%A9r%C3%A9e"></a>
 </h3>
@@ -461,9 +475,7 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"indicateur_c2_ndvi_norm"</span>, <span class="st">"indicateur_l2_fragmentation_norm"</span>, <span class="st">"indicateur_w3_humidite_norm"</span><span class="op">)</span>,</span>
 <span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.3</span>, <span class="fl">0.2</span><span class="op">)</span>,</span>
 <span>  name <span class="op">=</span> <span class="st">"conservation_index"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'normalized' not found</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="méthodes-dagrégation">Méthodes d’agrégation<a class="anchor" aria-label="anchor" href="#m%C3%A9thodes-dagr%C3%A9gation"></a>
@@ -476,8 +488,6 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <span>  aggregation <span class="op">=</span> <span class="st">"geometric_mean"</span>,</span>
 <span>  name <span class="op">=</span> <span class="st">"water_carbon_index"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'normalized' not found</span></span>
 <span></span>
 <span><span class="co"># Minimum (approche conservatrice, facteur limitant)</span></span>
 <span><span class="va">composite_min</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_composite_index.html">create_composite_index</a></span><span class="op">(</span></span>
@@ -485,9 +495,7 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"indicateur_c2_ndvi_norm"</span>, <span class="st">"indicateur_w3_humidite_norm"</span><span class="op">)</span>,</span>
 <span>  aggregation <span class="op">=</span> <span class="st">"min"</span>,</span>
 <span>  name <span class="op">=</span> <span class="st">"minimum_performance"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'normalized' not found</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -502,9 +510,12 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <span>  indicators <span class="op">=</span> <span class="st">"ecosystem_health"</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"Indice de santé écosystémique"</span>,</span>
 <span>  legend_title <span class="op">=</span> <span class="st">"Score (0-100)"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'composite' not found</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="getting-started_fr_files/figure-html/unnamed-chunk-13-1.png" class="r-plt" alt="Carte de l'indice de santé écosystémique" width="672"><p class="caption">
+Carte de l’indice de santé écosystémique
+</p>
+</div>
 </div>
 <div class="section level3">
 <h3 id="cartes-multiples-facettes">Cartes multiples (facettes)<a class="anchor" aria-label="anchor" href="#cartes-multiples-facettes"></a>
@@ -517,9 +528,12 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <span>  facet <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"Comparaison carbone vs eau"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'normalized' not found</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="getting-started_fr_files/figure-html/unnamed-chunk-14-1.png" class="r-plt" alt="Comparaison carbone vs eau" width="960"><p class="caption">
+Comparaison carbone vs eau
+</p>
+</div>
 </div>
 <div class="section level3">
 <h3 id="graphique-radar">Graphique radar<a class="anchor" aria-label="anchor" href="#graphique-radar"></a>
@@ -530,9 +544,12 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <span>  unit_id <span class="op">=</span> <span class="st">"P01"</span>,</span>
 <span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"indicateur_c2_ndvi_norm"</span>, <span class="st">"indicateur_w3_humidite_norm"</span>, <span class="st">"indicateur_l2_fragmentation_norm"</span><span class="op">)</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"Profil multi-indicateurs - Parcelle P01"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'normalized' not found</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="getting-started_fr_files/figure-html/unnamed-chunk-15-1.png" class="r-plt" alt="Profil écosystémique - Parcelle P01" width="672"><p class="caption">
+Profil écosystémique - Parcelle P01
+</p>
+</div>
 </div>
 </div>
 <div class="section level2">
@@ -552,8 +569,6 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <span>    <span class="st">"indicateur_c2_ndvi"</span>, <span class="st">"indicateur_w3_humidite"</span>, <span class="st">"indicateur_l2_fragmentation"</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> no valid constructor available for the argument list</span></span>
 <span></span>
 <span><span class="co"># 3. Normaliser (0-100)</span></span>
 <span><span class="va">normalized</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/normalize_indicators.html">normalize_indicators</a></span><span class="op">(</span></span>
@@ -563,8 +578,6 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <span>  <span class="op">)</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"minmax"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'results' not found</span></span>
 <span></span>
 <span><span class="co"># 4. Créer un indice composite</span></span>
 <span><span class="va">composite</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_composite_index.html">create_composite_index</a></span><span class="op">(</span></span>
@@ -573,8 +586,6 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.4</span>, <span class="fl">0.4</span>, <span class="fl">0.2</span><span class="op">)</span>,</span>
 <span>  name <span class="op">=</span> <span class="st">"forest_quality"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'normalized' not found</span></span>
 <span></span>
 <span><span class="co"># 5. Visualiser</span></span>
 <span><span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span></span>
@@ -582,9 +593,8 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <span>  indicators <span class="op">=</span> <span class="st">"forest_quality"</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"Indice de qualité forestière"</span>,</span>
 <span>  legend_title <span class="op">=</span> <span class="st">"Score (0-100)"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'composite' not found</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
+<p><img src="getting-started_fr_files/figure-html/unnamed-chunk-16-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level2">
 <h2 id="analyses-avancées">Analyses avancées<a class="anchor" aria-label="anchor" href="#analyses-avanc%C3%A9es"></a>
@@ -611,17 +621,13 @@ MNT, occupation du sol, richesse spécifique - <strong>Vecteurs</strong>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Sélectionner uniquement les futaies feuillues</span></span>
 <span><span class="va">broadleaf</span> <span class="op">&lt;-</span> <span class="va">normalized</span><span class="op">[</span><span class="va">normalized</span><span class="op">$</span><span class="va">forest_type</span> <span class="op">==</span> <span class="st">"Futaie feuillue"</span>, <span class="op">]</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'normalized' not found</span></span>
 <span></span>
 <span><span class="co"># Créer un indice spécifique</span></span>
 <span><span class="va">broadleaf_index</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_composite_index.html">create_composite_index</a></span><span class="op">(</span></span>
 <span>  <span class="va">broadleaf</span>,</span>
 <span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"indicateur_c2_ndvi_norm"</span>, <span class="st">"indicateur_w3_humidite_norm"</span><span class="op">)</span>,</span>
 <span>  name <span class="op">=</span> <span class="st">"broadleaf_quality"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> object 'broadleaf' not found</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -701,31 +707,37 @@ familles</li>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] ggplot2_4.0.3  nemeton_0.71.0</span></span>
+<span><span class="co">#&gt; [1] ggplot2_4.0.3  nemeton_0.72.0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#&gt;  [1] omnibus_1.2.15       rappdirs_0.3.4       sass_0.4.10         </span></span>
-<span><span class="co">#&gt;  [4] generics_0.1.4       xml2_1.5.2           class_7.3-23        </span></span>
-<span><span class="co">#&gt;  [7] KernSmooth_2.23-26   lattice_0.22-9       digest_0.6.39       </span></span>
-<span><span class="co">#&gt; [10] magrittr_2.0.5       evaluate_1.0.5       grid_4.6.0          </span></span>
-<span><span class="co">#&gt; [13] RColorBrewer_1.1-3   fastmap_1.2.0        jsonlite_2.0.0      </span></span>
-<span><span class="co">#&gt; [16] e1071_1.7-17         DBI_1.3.0            fasterRaster_8.4.1.2</span></span>
-<span><span class="co">#&gt; [19] scales_1.4.0         codetools_0.2-20     textshaping_1.0.5   </span></span>
-<span><span class="co">#&gt; [22] jquerylib_0.1.4      cli_3.6.6            rgrass_0.5-3        </span></span>
-<span><span class="co">#&gt; [25] rlang_1.2.0          units_1.0-1          withr_3.0.2         </span></span>
-<span><span class="co">#&gt; [28] cachem_1.1.0         yaml_2.3.12          otel_0.2.0          </span></span>
-<span><span class="co">#&gt; [31] raster_3.6-32        tools_4.6.0          dplyr_1.2.1         </span></span>
-<span><span class="co">#&gt; [34] exactextractr_0.10.1 vctrs_0.7.3          R6_2.6.1            </span></span>
-<span><span class="co">#&gt; [37] proxy_0.4-29         lifecycle_1.0.5      classInt_0.4-11     </span></span>
-<span><span class="co">#&gt; [40] fs_2.1.0             htmlwidgets_1.6.4    ragg_1.5.2          </span></span>
-<span><span class="co">#&gt; [43] pkgconfig_2.0.3      desc_1.4.3           pkgdown_2.2.0       </span></span>
-<span><span class="co">#&gt; [46] terra_1.9-27         bslib_0.11.0         pillar_1.11.1       </span></span>
-<span><span class="co">#&gt; [49] gtable_0.3.6         data.table_1.18.4    glue_1.8.1          </span></span>
-<span><span class="co">#&gt; [52] Rcpp_1.1.1-1.1       sf_1.1-1             systemfonts_1.3.2   </span></span>
-<span><span class="co">#&gt; [55] xfun_0.58            tibble_3.3.1         tidyselect_1.2.1    </span></span>
-<span><span class="co">#&gt; [58] knitr_1.51           farver_2.1.2         htmltools_0.5.9     </span></span>
-<span><span class="co">#&gt; [61] rmarkdown_2.31       compiler_4.6.0       S7_0.2.2            </span></span>
-<span><span class="co">#&gt; [64] sp_2.2-1</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] gtable_0.3.6         xfun_0.58            bslib_0.11.0        </span></span>
+<span><span class="co">#&gt;  [4] raster_3.6-32        htmlwidgets_1.6.4    lattice_0.22-9      </span></span>
+<span><span class="co">#&gt;  [7] tzdb_0.5.0           fasterRaster_8.4.1.2 vctrs_0.7.3         </span></span>
+<span><span class="co">#&gt; [10] tools_4.6.0          generics_0.1.4       parallel_4.6.0      </span></span>
+<span><span class="co">#&gt; [13] curl_7.1.0           tibble_3.3.1         proxy_0.4-29        </span></span>
+<span><span class="co">#&gt; [16] pkgconfig_2.0.3      KernSmooth_2.23-26   data.table_1.18.4   </span></span>
+<span><span class="co">#&gt; [19] RColorBrewer_1.1-3   S7_0.2.2             desc_1.4.3          </span></span>
+<span><span class="co">#&gt; [22] lifecycle_1.0.5      compiler_4.6.0       farver_2.1.2        </span></span>
+<span><span class="co">#&gt; [25] textshaping_1.0.5    terra_1.9-27         nasapower_4.3.0     </span></span>
+<span><span class="co">#&gt; [28] codetools_0.2-20     htmltools_0.5.9      class_7.3-23        </span></span>
+<span><span class="co">#&gt; [31] sass_0.4.10          yaml_2.3.12          tidyr_1.3.2         </span></span>
+<span><span class="co">#&gt; [34] crayon_1.5.3         pillar_1.11.1        pkgdown_2.2.0       </span></span>
+<span><span class="co">#&gt; [37] exactextractr_0.10.1 jquerylib_0.1.4      classInt_0.4-11     </span></span>
+<span><span class="co">#&gt; [40] cachem_1.1.0         tidyselect_1.2.1     digest_0.6.39       </span></span>
+<span><span class="co">#&gt; [43] purrr_1.2.2          sf_1.1-1             dplyr_1.2.1         </span></span>
+<span><span class="co">#&gt; [46] labeling_0.4.3       fastmap_1.2.0        grid_4.6.0          </span></span>
+<span><span class="co">#&gt; [49] cli_3.6.6            magrittr_2.0.5       omnibus_1.2.15      </span></span>
+<span><span class="co">#&gt; [52] triebeard_0.4.1      crul_1.6.0           e1071_1.7-17        </span></span>
+<span><span class="co">#&gt; [55] readr_2.2.0          withr_3.0.2          scales_1.4.0        </span></span>
+<span><span class="co">#&gt; [58] rappdirs_0.3.4       bit64_4.8.2          sp_2.2-1            </span></span>
+<span><span class="co">#&gt; [61] rmarkdown_2.31       bit_4.6.0            otel_0.2.0          </span></span>
+<span><span class="co">#&gt; [64] ragg_1.5.2           hms_1.1.4            evaluate_1.0.5      </span></span>
+<span><span class="co">#&gt; [67] knitr_1.51           viridisLite_0.4.3    rlang_1.2.0         </span></span>
+<span><span class="co">#&gt; [70] urltools_1.7.3.1     Rcpp_1.1.1-1.1       glue_1.8.1          </span></span>
+<span><span class="co">#&gt; [73] DBI_1.3.0            httpcode_0.3.0       xml2_1.5.2          </span></span>
+<span><span class="co">#&gt; [76] vroom_1.7.1          jsonlite_2.0.0       R6_2.6.1            </span></span>
+<span><span class="co">#&gt; [79] systemfonts_1.3.2    fs_2.1.0             units_1.0-1         </span></span>
+<span><span class="co">#&gt; [82] rgrass_0.5-3</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
