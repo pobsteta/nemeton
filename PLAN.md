@@ -310,6 +310,21 @@ token PC avant chaque FETCH pour éliminer le 403/retry systématique
 observé sur les runs \> 30 min. Implémentation côté `nemetonshiny` à
 venir (sous-onglet *Carte pixel* dans `mod_monitoring` — repo séparé).
 
+## Épaississements app — Restore projet & affichage carte (pour mémoire, `nemetonshiny`)
+
+> Hors-scope cœur (cf. *Scope* en tête) — releases app récentes touchant
+> le chargement de projet et l’overlay carte, listées ici pour
+> traçabilité.
+
+Restore projet instantané : cache disque de la géométrie commune (app —
+<nemetonshiny@6778e84>, v0.74.0)
+
+Déblocage CI nemetonshiny : lasR via Remotes + réparation tests
+pré-existants (app — <nemetonshiny@8b10862>, v0.74.1)
+
+Notification sync PostGIS persistante jusqu’à l’overlay carte (app —
+<nemetonshiny@32b1c8e>, v0.75.0)
+
 ------------------------------------------------------------------------
 
 # Chantier précédent — Durcissement ingestion S2 / cadrage E7
@@ -652,6 +667,57 @@ cœur).
 ------------------------------------------------------------------------
 
 ## Journal
+
+### 2026-06-11 — Notification DB persistante jusqu’à l’overlay carte (app)
+
+Livraison **app** : `nemetonshiny@32b1c8e` — release **v0.75.0** (cycle
+dev 0.74.1.9000 → v0.75.0).
+
+À l’ouverture d’un projet synchronisé PostGIS, la notification « Projet
+synchronisé avec la base PostGIS » (bas à droite) passait en
+`duration = 5` et pouvait disparaître **avant** l’apparition de
+l’overlay carte « Affichage des parcelles… », laissant un trou de
+feedback. Elle devient persistante (`duration = NULL`, id
+`db_sync_notif`) et `mod_map` la retire dès que l’overlay de chargement
+prend le relais (`show_map_loading`). Filets : `later()` 12 s + chemin
+commune invalide. Périmètre : 100 % `nemetonshiny` — aucun changement
+cœur.
+
+### 2026-06-10 — Déblocage CI nemetonshiny (lasR + tests) (app)
+
+Livraison **app** : `nemetonshiny@8b10862` — release **v0.74.1** (cycle
+dev 0.74.0.9000 → v0.74.1).
+
+Le CI app était rouge **depuis v0.73.0** : `lasR` (Suggests, hébergé sur
+r-universe `r-lidar`, absent du CRAN) n’était pas résolu par `pak`,
+faisant échouer tous les jobs à l’étape « Install R dependencies » — le
+vrai message (`Can't find package called lasR`) était masqué par des «
+dependency conflict » génériques. Fix : ajout de `r-lidar/lasR` à
+`Remotes:`. Une fois l’install débloquée, R-CMD-check a atteint la suite
+et révélé **6 tests pré-existants** cassés/obsolètes (tous côté test,
+code applicatif correct) : `mod_rag_admin` testServer ×3 (`ignoreInit`
+mangé par `testServer` + mock à promesse non forcée bloquant la
+souscription réactive), `mod_monitoring`/`mod_monitoring_pixel_map` ×3
+(attente `NDVI,NBR` vs câblage `NDVI,NBR,NDMI` depuis v0.71.0). Un smoke
+E2E shinytest2 (`mod_rag_admin-e2e`, jamais exécuté en CI auparavant)
+reste **quarantiné** (`skip()` + FIXME) — interaction modale/tab-lazy à
+creuser avec un env navigateur stable. Périmètre : 100 % `nemetonshiny`.
+
+### 2026-06-10 — Restore projet instantané : cache géométrie commune (app)
+
+Livraison **app** : `nemetonshiny@6778e84` — release **v0.74.0** (cycle
+dev 0.73.1.9000 → v0.74.0).
+
+La frontière de la commune est désormais persistée au save du projet
+(`data/commune.gpkg`) et réinjectée **synchroniquement** au chargement,
+en même temps que les parcelles. La carte se rend immédiatement, sans
+attendre la `restore_task` asynchrone (worker
+[`future::multisession`](https://future.futureverse.org/reference/multisession.html) +
+rechargement de `nemeton` dans le worker + 2 appels séquentiels à
+`geo.api.gouv.fr`). La tâche async ne sert plus qu’à peupler la liste
+déroulante des communes ; les projets *legacy* sans cache retombent sur
+l’ancien chemin asynchrone. Périmètre : 100 % `nemetonshiny` — aucun
+changement cœur `nemeton`.
 
 - **2026-06-11** — Release **v0.69.2** (fixed — **`.fast_raster_trend()`
   mono-couche**, spec 023). La CI lasR/lidaRtRee enfin verte (PR \#40) a
