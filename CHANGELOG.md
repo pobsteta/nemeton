@@ -12,6 +12,28 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.70.0\] - 2026-06-11
+
+### Added
+
+- RECONFORT validity domain (spec 021, lot L1):
+  [`check_reconfort_validity()`](https://pobsteta.github.io/nemeton/reference/check_reconfort_validity.md),
+  [`load_reconfort_validity_zones()`](https://pobsteta.github.io/nemeton/reference/load_reconfort_validity_zones.md),
+  `RECONFORT_VALIDITY_DEPARTMENTS` (6 Centre-Val de Loire departments)
+  and `RECONFORT_VALIDITY_SPECIES` (oak CHE / chestnut CHT / Scots pine
+  PS). Ships `inst/extdata/reconfort_validity_zones.geojson` + the
+  `data-raw/` build script. G3 guard-rail is **advisory, not blocking**
+  (`advisory = TRUE`): RECONFORT has no upstream geographic lock. No
+  Python in this lot.
+
+### Deferred
+
+- The `health_reconfort` NDP flag and `reconfort_anomalies` datasource
+  (spec 021 §5) are postponed: they assumed a FORDEAD parity
+  (`health_fordead` / `fordead_anomalies`) that never existed and does
+  not fit the current `augmented` semantics of
+  [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md).
+
 ## \[0.69.2\] - 2026-06-11
 
 ### Fixed

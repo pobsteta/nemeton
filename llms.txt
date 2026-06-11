@@ -581,6 +581,20 @@ Package-level and internal documentation pages
 - [`indicators-social`](https://pobsteta.github.io/nemeton/reference/indicators-social.md)
   : Social & Recreational Services Indicators (Family S)
 
+## Suivi sanitaire feuillus — RECONFORT (spec 021)
+
+Domaine de validite de la methode RECONFORT (dieback feuillus,
+Centre-Val de Loire). Garde-fou G3 : avertit, ne bloque pas.
+
+- [`RECONFORT_VALIDITY_DEPARTMENTS`](https://pobsteta.github.io/nemeton/reference/RECONFORT_VALIDITY_DEPARTMENTS.md)
+  : Department codes covered by the RECONFORT calibration validity zone
+- [`RECONFORT_VALIDITY_SPECIES`](https://pobsteta.github.io/nemeton/reference/RECONFORT_VALIDITY_SPECIES.md)
+  : Tree species considered valid by the RECONFORT calibration
+- [`load_reconfort_validity_zones()`](https://pobsteta.github.io/nemeton/reference/load_reconfort_validity_zones.md)
+  : Load the RECONFORT validity zones layer
+- [`check_reconfort_validity()`](https://pobsteta.github.io/nemeton/reference/check_reconfort_validity.md)
+  : Check whether an AOI lies within the RECONFORT calibration domain
+
 ## Suivi sanitaire, monitoring et autres fonctions
 
 Pipelines FORDEAD/FAST, zones de monitoring, validation terrain, corpus

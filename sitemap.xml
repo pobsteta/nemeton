@@ -31,6 +31,8 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/HEALTH_VALIDATION_CAUSES.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/HEALTH_VALIDATION_STADES.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/NDP_LEVELS.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_VALIDITY_DEPARTMENTS.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_VALIDITY_SPECIES.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/aggregate_plot_metrics.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/attach_field_data_to_units.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/bai_drift_factor.html</loc></url>
@@ -44,6 +46,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/charru_bai_drift_table.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/charru_selfthinning_table.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/check_fordead_validity.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/check_reconfort_validity.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/classify_disturbance.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/cluster_parcels.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/compute_dtm_chm_from_laz.html</loc></url>
@@ -215,6 +218,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/list_species_regions.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/load_fordead_validity_zones.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/load_raster_source.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/load_reconfort_validity_zones.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/load_theia_source.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/map_bdforet_essence.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/map_oso_class.html</loc></url>

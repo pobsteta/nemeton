@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.69.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.70.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,9 +39,26 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/v0.70.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.70.0" id="nemeton-0700-2026-06-11">nemeton 0.70.0 (2026-06-11)<a class="anchor" aria-label="anchor" href="#nemeton-0700-2026-06-11"></a></h2>
+<div class="section level4">
+<h4 id="added--reconfort-domaine-de-validité-spec-lot-l1-0-70-0">Added — RECONFORT, domaine de validité (spec 021, lot L1)<a class="anchor" aria-label="anchor" href="#added--reconfort-domaine-de-validit%C3%A9-spec-lot-l1-0-70-0"></a></h4>
+<p>Premier lot de l’intégration <strong>RECONFORT</strong> (Mouret et al. 2023, Apache-2.0) — 3ᵉ méthode de suivi sanitaire, dédiée au <strong>dépérissement des feuillus</strong> (chêne, châtaignier, pin sylvestre) en région Centre-Val de Loire, en complément de FORDEAD (résineux) et FAST. Ce lot livre uniquement le <strong>domaine de validité</strong> (garde-fou G3), sans Python :</p>
+<ul><li>
+<code>R/reconfort_validity.R</code> : <code>check_reconfort_validity(aoi, units, ...)</code>, <code><a href="../reference/load_reconfort_validity_zones.html">load_reconfort_validity_zones()</a></code>, et les constantes <code>RECONFORT_VALIDITY_DEPARTMENTS</code> (18/28/36/37/41/45) et <code>RECONFORT_VALIDITY_SPECIES</code> (CHE/CHT/PS). Détection d’essences feuillus (chêne <em>Quercus</em>, châtaignier <em>Castanea</em>, pin sylvestre <em>Pinus sylvestris</em> — pin maritime/noir exclus), réutilise le fallback BD Forêt V2 de FORDEAD.</li>
+<li>
+<code>inst/extdata/reconfort_validity_zones.geojson</code> : 6 départements CVL (~39 150 km², EPSG:4326, simplifié 100 m) + <code>data-raw/build_*.R</code>.</li>
+<li>
+<strong>Différence avec FORDEAD</strong> : le contrôle est <strong>advisory, pas bloquant</strong> (<code>advisory = TRUE</code> dans le résultat) — RECONFORT n’a aucun verrou géographique en amont (l’exemple amont tourne hors CVL), donc l’app avertit sans empêcher le diagnostic.</li>
+<li>18 tests (<code>test-reconfort-validity.R</code>, <code>test-reconfort-validity-zones.R</code>).</li>
+</ul><blockquote>
+<p>Note : le flag NDP <code>health_reconfort</code> et la datasource <code>reconfort_anomalies</code> prévus au plan §5 sont <strong>reportés</strong> — ils supposaient une parité FORDEAD (<code>health_fordead</code> / <code>fordead_anomalies</code>) qui n’a jamais existé et ne s’inscrit pas dans la sémantique actuelle d’<code>augmented</code> de <code><a href="../reference/detect_ndp.html">detect_ndp()</a></code>.</p>
+</blockquote>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.69.2" id="nemeton-0692-2026-06-11">nemeton 0.69.2 (2026-06-11)<a class="anchor" aria-label="anchor" href="#nemeton-0692-2026-06-11"></a></h2>
 <div class="section level4">
