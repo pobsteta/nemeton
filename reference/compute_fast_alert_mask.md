@@ -1,0 +1,149 @@
+# Compute and persist a FAST alert mask on the 0-4 categorical scale
+
+Builds a discretised \*\*0-4 categorical\*\* SpatRaster of FAST alerts
+from the continuous output of \[read_fast_alert_raster()\] (spec 013)
+and \*\*persists it to disk\*\* so that downstream consumers (validation
+sampling, app reactives) can read it back via \[read_fast_alert_mask()\]
+without recomputing.
+
+## Usage
+
+``` r
+compute_fast_alert_mask(
+  con,
+  zone_id,
+  index = c("NDVI", "NBR", "NDMI", "NDRE"),
+  threshold = NULL,
+  date_from,
+  date_to,
+  mode = c("count", "rolling", "trend"),
+  window_days = 30L,
+  months = 6:9,
+  min_years = 4L,
+  min_obs_per_year = 2L,
+  alpha = 0.05,
+  cache_dir,
+  mask_cache_dir = NULL,
+  breaks = NULL,
+  apply_zone_mask = TRUE,
+  mask_polygon = NULL,
+  cache_result = TRUE,
+  result_cache_dir = NULL,
+  parallel = FALSE
+)
+```
+
+## Arguments
+
+- con:
+
+  A \`DBIConnection\`. Passed to \[read_fast_alert_raster()\].
+
+- zone_id:
+
+  Integer scalar.
+
+- index:
+
+  Character scalar \`"NDVI"\`, \`"NBR"\`, \`"NDMI"\` or \`"NDRE"\` — the
+  single index the alert map is built from (spec 017 / 019 / 022).
+  Default is mode-dependent when omitted: \`"NDVI"\` for count /
+  rolling, \`"NDMI"\` for trend (mirror of
+  \[read_fast_alert_raster()\]).
+
+- threshold:
+
+  Numeric in \`(0, 1)\` or \`NULL\`. Passed through to
+  \[read_fast_alert_raster()\]; \`NULL\` resolves per \`index\` (NDVI
+  0.40, NBR/NDMI/NDRE 0.30). Ignored when \`mode = "trend"\`.
+
+- date_from, date_to:
+
+  Date (or character \`"YYYY-MM-DD"\`) bounding the analysis window.
+
+- mode:
+
+  One of \`"count"\`, \`"rolling"\` or \`"trend"\` (spec 023). Default
+  \`"count"\`.
+
+- window_days:
+
+  Integer. Trailing window length, used in \`"rolling"\` mode. Default
+  \`30L\`.
+
+- months, min_years, min_obs_per_year, alpha:
+
+  Trend-mode parameters (spec 023), passed through to
+  \[read_fast_alert_raster()\]. Seasonal month window (default \`6:9\`),
+  minimum valid composite years (\`4L\`), minimum clear observations per
+  year (\`2L\`), and Mann-Kendall significance level (\`0.05\`). Ignored
+  in count / rolling mode.
+
+- cache_dir:
+
+  Path to the S2 COG cache.
+
+- mask_cache_dir:
+
+  Path to the FAST mask cache root. The mask is written under
+  \`\<mask_cache_dir\>/zone\_\<id\>/fast_alert\_\<ts\>.tif\`. Defaults
+  to a \`fast/\` sibling of \`cache_dir\` (i.e.
+  \`\<project\>/cache/layers/fast/\`). Masks are timestamped (one file
+  per call); at most \`getOption("nemeton.fast_mask_keep", 20)\` are
+  kept per zone (LRU by mtime), so the directory does not grow
+  unbounded.
+
+- breaks:
+
+  Numeric vector of break points to discretise the continuous alert
+  raster into the 0-4 scale. \*\*5 cut points\*\* are expected (defines
+  bins \`(-Inf, b1\], (b1, b2\], ..., (b4, Inf\]\`). When \`NULL\`
+  (default, spec 017) the breaks are computed as \*\*quartiles of the
+  strictly-positive pixels\*\*: class 0 = no alert (value 0), classes
+  1-4 = the quartile bins \`c(0, q25, q50, q75, Inf)\` of pixels with at
+  least one alert. This adaptive scheme applies to \*\*all\*\* modes
+  (\`"count"\`, \`"rolling"\`, \`"trend"\`) — for trend the
+  strictly-positive pixels are the significant-decline magnitudes.
+  Degenerate distributions (tied quantiles) collapse to fewer occupied
+  classes rather than erroring; an all-zero raster maps entirely to
+  class 0.
+
+- cache_result, result_cache_dir:
+
+  Passed through to \[read_fast_alert_raster()\] (spec 017 D6): whether
+  to persist the underlying continuous raster as a content-addressed
+  COG, and where.
+
+- parallel:
+
+  Passed through to \[read_fast_alert_raster()\] (spec 017 D4): optional
+  multi-core per-scene raster compute via furrr.
+
+## Value
+
+Invisibly, the absolute path to the persisted TIF, or \`NULL\` if
+\[read_fast_alert_raster()\] returned \`NULL\` (no scene in the window
+or empty cache).
+
+## Details
+
+The 0-4 scale is \*\*aligned with the FORDEAD \`dieback_mask\`\*\* so
+that \[fordead_alert_mask()\] and \[create_validation_sampling_plan()\]
+consume FAST and FORDEAD rasters uniformly.
+
+Default discretisation (in \`mode = "count"\`):
+
+\| Pixel value (alert days) \| Class \| \|—\|—\| \| 0 \| 0 — pas
+d'alerte \| \| 1-2 \| 1 — trace \| \| 3-5 \| 2 — moyenne \| \| 6-10 \| 3
+— forte \| \| \> 10 \| 4 — très forte \|
+
+Pass a custom \`breaks\` to override (e.g. percentile-based for \`mode =
+"rolling"\` where the value is a continuous deficit magnitude with no
+natural bin sizes).
+
+## See also
+
+\[read_fast_alert_mask()\] (the strict reader, mirror of
+\[read_fordead_dieback_mask()\]), \[read_fast_alert_raster()\] (the
+continuous live compute), \[fordead_alert_mask()\] (the cell selector
+that consumes the persisted 0-4 mask).

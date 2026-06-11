@@ -1,0 +1,258 @@
+# Ingest a Sentinel-2 time series for the plots of a monitoring zone
+
+Searches Sentinel-2 L2A scenes (CDSE then PC fallback) and downloads the
+COG bands required for the requested indices (B04 / B08 for NDVI, B08 /
+B12 for NBR) into the on-disk band cache. Since spec 017 the FAST
+diagnostic is computed per-pixel straight from this COG cache by
+\[read_fast_alert_raster()\], so this pipeline no longer derives any
+per-plot observation nor writes to the database — the \`obs_pixel\`
+table was dropped in v0.58.0. It is purely a cache-priming step,
+independent of the validation sampling plan (placettes).
+
+## Usage
+
+``` r
+ingest_sentinel2_timeseries(
+  con,
+  zone_id,
+  start,
+  end,
+  bands = c("NDVI", "NBR"),
+  max_cloud = 20,
+  skip_cached = TRUE,
+  cache_dir = NULL,
+  progress_callback = NULL,
+  cancel_path = NULL,
+  prewarm_alerts = FALSE,
+  prewarm_mask_cache_dir = NULL
+)
+```
+
+## Arguments
+
+- con:
+
+  A \`DBIConnection\`.
+
+- zone_id:
+
+  Integer. Existing zone in \`monitoring_zone\`.
+
+- start, end:
+
+  Date or character \`"YYYY-MM-DD"\`.
+
+- bands:
+
+  Character vector. Subset of \`c("NDVI", "NBR", "NDMI", "NDRE")\`. B11
+  (needed by NDMI) is also cached best-effort on every ingest (spec 019
+  D3), so NDMI works on future scenes without requesting it. \`"NDRE"\`
+  (spec 022) caches the red-edge bands B05 + B8A; request it explicitly
+  when you want the FAST trend mode or the NDRE pixel diagnostic.
+
+- max_cloud:
+
+  Numeric. Maximum scene cloud cover (percent). Default 20.
+
+- skip_cached:
+
+  Logical. When \`TRUE\` (default), skip every scene whose required band
+  COGs are all already present under \`cache_dir\`, so re-runs avoid
+  redundant HTTP traffic. Has no effect when \`cache_dir\` is \`NULL\`
+  (there is no on-disk cache to consult). Set \`FALSE\` to force a
+  re-fetch of every scene.
+
+- cache_dir:
+
+  Optional path to a directory under which cropped band rasters are
+  persisted as tiled GeoTIFF (COG-compatible layout) at
+  \`\<cache_dir\>/\<scene_id\>/\<band\>.tif\`. On a cache hit the band
+  is read locally (no HTTP); on a miss it is fetched via VSI, cropped,
+  and written to the cache atomically. Cache write failures only warn —
+  the pipeline continues with the in-memory raster. Cache reuse is
+  \*extent-aware\*: a cached file whose bounding box no longer covers
+  the requested plots is silently overwritten. Default \`NULL\` (no
+  on-disk cache, v0.21.3 behaviour). Combine with \`skip_cached =
+  FALSE\` to force re-extraction from cached COGs without touching the
+  network.
+
+  Recommended layout for callers (e.g. \`nemetonshiny\`):
+  \`\<project\>/cache/layers/sentinel2/\`, matching the
+  \`\<project\>/cache/layers/\<layer\>\` convention (with \`\<layer\>\`
+  one of \`lidar_mnh\`, \`lidar_mnt\`, \`lidar_nuage\`, etc.) already
+  used by \`detect_ndp_from_cache()\`. The \`cache/\` subtree is for
+  derived, regeneratable artefacts and should be in \`.gitignore\`; do
+  not use \`\<project\>/data/\` which is reserved for user-owned project
+  data.
+
+  **Priming the cache.** Since v0.58.0 the COG band cache is the single
+  cache layer: \`skip_cached\` and \`cache_dir\` act on the same on-disk
+  store. A scene is skipped when all its required band COGs already
+  exist under \`cache_dir\`; \`skip_cached = FALSE\` forces a re-fetch
+  even on a cache hit (e.g. to repair a truncated download).
+
+- progress_callback:
+
+  Optional function called at each step of the ingestion to allow
+  callers (e.g. \`nemetonshiny\`) to report download progress to the
+  user. Receives a single named list argument with at least \`current\`
+  (a short phase key, see below) and, when meaningful, \`completed\` and
+  \`total\` (numeric units). Phases emitted, in order:
+
+  \`s2:search\`
+
+  :   Before the STAC query — payload includes \`start\`, \`end\`,
+      \`n_plots\`, \`bands\`.
+
+  \`s2:search_done\`
+
+  :   After STAC — payload includes \`total\` (number of scenes found)
+      and \`bands\`.
+
+  \`s2:cache_lookup\`
+
+  :   After the COG cache scan (only when \`skip_cached = TRUE\`) —
+      payload includes \`n_cached\` (scenes whose required band COGs are
+      already on disk and will be skipped) and \`n_to_process\` (scenes
+      that will hit the network).
+
+  \`s2:scene_cached\`
+
+  :   For each scene skipped thanks to the cache — payload includes
+      \`completed = i - 1L\`, \`total\`, \`scene_id\`, \`obs_date\`,
+      \`cloud_pct\`, \`source\`.
+
+  \`s2:scene\`
+
+  :   Before processing each non-cached scene — payload includes
+      \`completed = i - 1L\`, \`total\`, plus \`scene_id\`,
+      \`obs_date\`, \`cloud_pct\`, \`source\`.
+
+  \`s2:scene_skipped\`
+
+  :   When a scene fails extraction — payload adds \`error_message\` to
+      the \`s2:scene\` shape.
+
+  \`s2:band_cached\`
+
+  :   Per-band hit on the local COG cache (only when \`cache_dir\` is
+      set) — payload: \`scene_id\`, \`band\`, \`path\`.
+
+  \`s2:band_fetched\`
+
+  :   Per-band miss → VSI fetch + write to the cache (only when
+      \`cache_dir\` is set) — payload: \`scene_id\`, \`band\`, \`path\`.
+
+  \`s2:pc_token_refreshed\`
+
+  :   The Planetary Computer SAS token expired between STAC search and
+      band read; the band open was retried with a fresh token — payload:
+      \`scene_id\`, \`band\`, \`collection\`.
+
+  \`s2:band_fetch_retry\`
+
+  :   Transient network error (DNS, timeout, connection refused, 5xx) on
+      a band fetch; sleeping and retrying — payload: \`scene_id\`,
+      \`band\`, \`attempt\`, \`max_tries\`, \`retry_in_sec\`,
+      \`error_message\`. Override the max-attempts budget with the
+      \`NEMETON_S2_MAX_TRIES\` env var (default 3).
+
+  \`s2:band_fetch_failed\`
+
+  :   \`terra::rast(href)\` raised an unrecoverable error (after the PC
+      token refresh path and transient-network retries if applicable) —
+      payload: \`scene_id\`, \`band\`, \`href\`, \`error_message\`. The
+      scene is then skipped at scene level (\`s2:scene_skipped\`).
+
+  \`s2:cancelled\`
+
+  :   Cooperative cancellation was requested (see \`cancel_path\`) —
+      payload includes \`tile_index\` (the 1-based index of the scene
+      that would have been processed next) and \`n_total\`. Emitted just
+      before the loop breaks.
+
+  \`s2:complete\`
+
+  :   After the loop — payload includes \`completed = total\`,
+      \`total\`, \`n_scenes_cached\`.
+
+  \`fast_prewarm:\<index\>\_\<mode\>\`
+
+  :   (spec 018, only when \`prewarm_alerts = TRUE\`) emitted at the
+      start / end of each of the six pre-computed FAST maps (3 indices x
+      2 modes, spec 019). The bare key signals "started", a \`\_done\`
+      suffix "map ready", a \`\_failed\` suffix "skipped" (with
+      \`error_message\`). Every event carries \`index\` and \`mode\` so
+      the caller can localise the toast.
+
+  The callback is invoked synchronously inside the calling thread.
+  Default \`NULL\` (silent — no callback emitted).
+
+- cancel_path:
+
+  Optional character path to a cooperative cancellation flag file. When
+  \`NULL\` (default) no polling happens and behaviour is identical to
+  before. When a path is given, the worker checks
+  \`file.exists(cancel_path)\` between tiles; if the file appears
+  mid-run the loop exits cleanly after the current tile, leaving every
+  already-inserted tile committed (each tile owns its own transaction),
+  and the returned summary carries \`status = "cancelled"\`. A flag
+  already present at entry is ignored as a stale leftover — the caller
+  must delete it before each call.
+
+- prewarm_alerts:
+
+  Logical (spec 018). When \`TRUE\`, after a successful ingestion the
+  worker chains on six \[read_fast_alert_raster()\] calls —
+  \`NDVI\`/\`NBR\`/\`NDMI\` × \`count\`/\`rolling\` (spec 019), default
+  threshold (0.40 NDVI / 0.30 NBR / 0.30 NDMI) and \`window_days = 30\`
+  — so the six usual FAST alert maps land in the D6 result cache and the
+  app's FAST tab is instant on first visit. Each combination is
+  independent: a failure on one (e.g. no B12 scene for \`NBR\`, no B11
+  for \`NDMI\`) warns and is skipped, never aborting the others. The
+  pre-warm polls \`cancel_path\` between combinations. Default \`FALSE\`
+  (no extra work, identical to the historical behaviour). A cancelled
+  ingestion never starts the pre-warm.
+
+- prewarm_mask_cache_dir:
+
+  Character path, \*\*required when \`prewarm_alerts = TRUE\`\*\*. Root
+  of the FAST alert result (D6) cache, forwarded to
+  \[read_fast_alert_raster()\] as \`result_cache_dir\`; COGs land under
+  \`\<dir\>/zone\_\<id\>/fast\_\<INDEX\>\_\<MODE\>\_thr\<threshold\>\_
+  \<from\>\_\<to\>\_w\<window\>\_\<hash8\>.tif\`. Point it at
+  \`\<project\>/cache/layers/fast_alert\`. Ignored when \`prewarm_alerts
+  = FALSE\`.
+
+## Value
+
+A one-row \`data.frame\` summarising the ingestion: number of scenes
+considered (\`n_scenes\`), scenes skipped thanks to the COG cache
+(\`n_scenes_cached\`), plots used for the zone AOI fallback
+(\`n_plots\`), bands (\`bands\`), and \`status\` (\`"success"\` or
+\`"cancelled"\`).
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# Typical wiring from nemetonshiny's monitoring worker.
+cache <- file.path(project_path, "cache", "layers", "sentinel2")
+
+# First run to prime the COG cache (no DB write since v0.58.0).
+ingest_sentinel2_timeseries(
+  con, zone_id, "2020-01-01", "2025-12-31",
+  bands       = c("NDVI", "NBR"),
+  skip_cached = FALSE,                 # force a re-fetch
+  cache_dir   = cache
+)
+
+# Subsequent runs: skip_cached short-circuits at the DB level,
+# cache_dir only kicks in when a genuine re-extraction is needed.
+ingest_sentinel2_timeseries(
+  con, zone_id, "2026-01-01", "2026-06-30",
+  bands     = c("NDVI", "NBR"),
+  cache_dir = cache                    # skip_cached defaults to TRUE
+)
+} # }
+```

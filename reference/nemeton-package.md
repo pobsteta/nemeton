@@ -81,6 +81,7 @@ See the vignettes for comprehensive guides:
 
 ## Quick Example
 
+
     library(nemeton)
 
     # Load demo data
@@ -226,6 +227,8 @@ families representing key dimensions of forest functioning.
 
 Useful links:
 
+- <https://pobsteta.github.io/nemeton/>
+
 - <https://github.com/pobsteta/nemeton>
 
 - Report bugs at <https://github.com/pobsteta/nemeton/issues>
@@ -261,3 +264,7 @@ Useful links:
 ## Author
 
 **Maintainer**: Pascal Obstétar <pascal.obstetar@gmail.com>
+
+Authors:
+
+- Pascal Obstétar <pascal.obstetar@gmail.com>

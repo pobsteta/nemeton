@@ -1,0 +1,54 @@
+# List alerts of a zone with G1 default filtering
+
+Default behaviour applies garde-fou G1: returns only the trustworthy
+classes 3-forte and 4-sol-nu (rolling-window alerts have no
+\`confidence_class\`, so they pass through).
+
+## Usage
+
+``` r
+list_alerts(
+  con,
+  zone_id,
+  classes = c("3-forte", "4-sol-nu"),
+  validation_status = NULL,
+  period = NULL
+)
+```
+
+## Arguments
+
+- con:
+
+  A \`DBIConnection\`.
+
+- zone_id:
+
+  Integer. Monitoring zone.
+
+- classes:
+
+  Character vector of \`confidence_class\` values to include. Default
+  \`c("3-forte", "4-sol-nu")\`. Use \`NULL\` to include everything
+  (including alerts without a class, i.e. the rolling-window ones).
+
+- validation_status:
+
+  Character vector or \`NULL\`. Filter on \`alert.validation_status\`.
+  \`NULL\` (default) returns every status.
+
+- period:
+
+  A length-2 Date / character vector or \`NULL\`. Filter on
+  \`trigger_date\`. \`NULL\` (default) returns every date.
+
+## Value
+
+An sf POINT layer (CRS WGS84) ready to be drawn on a leaflet map. Empty
+sf when no alert matches.
+
+## Details
+
+Pass \`classes = NULL\` to disable the class filter (useful for the UI
+when the user explicitly opts in to lower-confidence alerts, with a
+banner — the UI is in charge of warning the user).

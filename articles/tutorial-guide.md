@@ -11,6 +11,7 @@ calculer les 32 indicateurs forestiers des 12 familles nemeton.
 ### Installation des packages
 
 ``` r
+
 # Packages de base
 install.packages(c("sf", "terra", "ggplot2", "dplyr"))
 
@@ -39,22 +40,23 @@ remotes::install_github("pobsteta/nemeton")
 
 ### Vue d’ensemble
 
-| \#  | Tutoriel            | Durée   | Indicateurs                            | Description                                        |
-|-----|---------------------|---------|----------------------------------------|----------------------------------------------------|
-| 1   | `01-acquisition`    | 45 min  | \-                                     | Acquisition des données géographiques (IGN, LiDAR) |
-| 2   | `02-lidar`          | 60 min  | C1, P1, P3, A1, E1, E2                 | Traitement LiDAR et métriques forestières          |
-| 3   | `03-terrain`        | 40 min  | W1-W3, R1-R4, S1-S3, P2, F1            | Indicateurs terrain (12)                           |
-| 4   | `04-ecological`     | 40 min  | B1-B3, L1-L3, C2, T1-T2, A2, F2, N1-N3 | Indicateurs écologiques (14)                       |
-| 5   | `05-complete`       | 40 min  | \-                                     | Assemblage, normalisation, I_nemeton               |
-| 6   | `06-analysis`       | 50 min  | \-                                     | Analyse multi-critères et export                   |
-| 7   | `07-lidar-advanced` | 90 min  | \-                                     | LiDAR avancé (LAScatalog, lasR, lidaRtRee, ABA)    |
-| 8   | `08-coregistration` | 130 min | \-                                     | Recalage placettes terrain/LiDAR                   |
+| \# | Tutoriel | Durée | Indicateurs | Description |
+|----|----|----|----|----|
+| 1 | `01-acquisition` | 45 min | \- | Acquisition des données géographiques (IGN, LiDAR) |
+| 2 | `02-lidar` | 60 min | C1, P1, P3, A1, E1, E2 | Traitement LiDAR et métriques forestières |
+| 3 | `03-terrain` | 40 min | W1-W3, R1-R4, S1-S3, P2, F1 | Indicateurs terrain (12) |
+| 4 | `04-ecological` | 40 min | B1-B3, L1-L3, C2, T1-T2, A2, F2, N1-N3 | Indicateurs écologiques (14) |
+| 5 | `05-complete` | 40 min | \- | Assemblage, normalisation, I_nemeton |
+| 6 | `06-analysis` | 50 min | \- | Analyse multi-critères et export |
+| 7 | `07-lidar-advanced` | 90 min | \- | LiDAR avancé (LAScatalog, lasR, lidaRtRee, ABA) |
+| 8 | `08-coregistration` | 130 min | \- | Recalage placettes terrain/LiDAR |
 
 **Durée totale estimée** : 8-9 heures
 
 ### Lancer un tutoriel
 
 ``` r
+
 # Lister les tutoriels disponibles
 learnr::available_tutorials("nemeton")
 
@@ -187,6 +189,7 @@ avec arbres et nuages LiDAR.
 Les données sont stockées dans un répertoire persistant :
 
 ``` r
+
 # Localisation du cache
 rappdirs::user_data_dir("nemeton")
 ```
@@ -198,6 +201,7 @@ rappdirs::user_data_dir("nemeton")
 ### Nettoyer le cache
 
 ``` r
+
 cache_dir <- rappdirs::user_data_dir("nemeton")
 unlink(file.path(cache_dir, "tutorial_data"), recursive = TRUE)
 ```
@@ -224,6 +228,7 @@ unlink(file.path(cache_dir, "tutorial_data"), recursive = TRUE)
 ### “Tutorial not found”
 
 ``` r
+
 # Vérifier l'installation
 packageVersion("nemeton")
 
@@ -239,6 +244,7 @@ utilisera les données de démonstration si disponibles.
 ### “Out of memory” (LiDAR)
 
 ``` r
+
 # Augmenter la mémoire
 options(future.globals.maxSize = +Inf)
 ```

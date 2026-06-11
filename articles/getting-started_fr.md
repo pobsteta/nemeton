@@ -17,11 +17,13 @@ Cette vignette démontre le workflow complet avec le jeu de données
 ## Installation
 
 ``` r
+
 # Depuis GitHub
 remotes::install_github("pobsteta/nemeton")
 ```
 
 ``` r
+
 library(nemeton)
 library(ggplot2)
 ```
@@ -32,6 +34,7 @@ Le package inclut un jeu de données synthétique (`massif_demo`)
 représentant une zone de 5km × 5km avec 20 parcelles forestières.
 
 ``` r
+
 # Charger les parcelles forestières
 data(massif_demo_units)
 
@@ -209,6 +212,7 @@ table(massif_demo_units$forest_type)
 ```
 
 ``` r
+
 ggplot(massif_demo_units) +
   geom_sf(aes(fill = forest_type)) +
   theme_minimal() +
@@ -230,6 +234,7 @@ Utilisez
 pour charger tous les rasters et vecteurs associés :
 
 ``` r
+
 layers <- massif_demo_layers()
 print(layers)
 #> 
@@ -256,6 +261,7 @@ sol, richesse spécifique - **Vecteurs** : réseau routier, cours d’eau
 ### Indicateurs individuels
 
 ``` r
+
 # Carbone (via NDVI)
 carbon <- nemeton_compute(
   massif_demo_units,
@@ -289,31 +295,20 @@ head(carbon[, c("parcel_id", "forest_type", "indicateur_c2_ndvi")])
 ### Indicateurs multiples simultanés
 
 ``` r
+
 # Calculer 3 indicateurs en une fois
 results <- nemeton_compute(
   massif_demo_units,
   layers,
   indicators = c("indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_l2_fragmentation")
 )
+#> Error:
+#> ! no valid constructor available for the argument list
 
 # Vue d'ensemble
 summary(results[, c("indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_l2_fragmentation")])
-#>  indicateur_c2_ndvi indicateur_w3_humidite indicateur_l2_fragmentation
-#>  Min.   : NA        Min.   :4.551          Min.   :34.20              
-#>  1st Qu.: NA        1st Qu.:4.698          1st Qu.:35.40              
-#>  Median : NA        Median :4.766          Median :35.80              
-#>  Mean   :NaN        Mean   :4.745          Mean   :35.97              
-#>  3rd Qu.: NA        3rd Qu.:4.798          3rd Qu.:36.42              
-#>  Max.   : NA        Max.   :4.887          Max.   :38.30              
-#>  NA's   :20                                                           
-#>           geometry 
-#>  POLYGON      :20  
-#>  epsg:2154    : 0  
-#>  +proj=lcc ...: 0  
-#>                    
-#>                    
-#>                    
-#> 
+#> Error:
+#> ! object 'results' not found
 ```
 
 ## Normalisation
@@ -321,38 +316,44 @@ summary(results[, c("indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_
 Normalisez les indicateurs pour les rendre comparables (échelle 0-100) :
 
 ``` r
+
 # Normalisation min-max
 normalized <- normalize_indicators(
   results,
   indicators = c("indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_l2_fragmentation"),
   method = "minmax"
 )
+#> Error:
+#> ! object 'results' not found
 
 # Comparer avant/après
 cat("\nAvant normalisation (carbone NDVI):\n")
 #> 
 #> Avant normalisation (carbone NDVI):
 summary(results$indicateur_c2_ndvi)
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-#>      NA      NA      NA     NaN      NA      NA      20
+#> Error:
+#> ! object 'results' not found
 
 cat("\nAprès normalisation (carbone NDVI):\n")
 #> 
 #> Après normalisation (carbone NDVI):
 summary(normalized$indicateur_c2_ndvi_norm)
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-#>      NA      NA      NA     NaN      NA      NA      20
+#> Error:
+#> ! object 'normalized' not found
 ```
 
 ### Méthodes de normalisation
 
 ``` r
+
 # z-score (distribution normale centrée-réduite)
 norm_zscore <- normalize_indicators(
   results,
   indicators = "indicateur_c2_ndvi",
   method = "zscore"
 )
+#> Error:
+#> ! object 'results' not found
 
 # Quantiles (distribution uniforme)
 norm_quantile <- normalize_indicators(
@@ -360,6 +361,8 @@ norm_quantile <- normalize_indicators(
   indicators = "indicateur_c2_ndvi",
   method = "quantile"
 )
+#> Error:
+#> ! object 'results' not found
 ```
 
 ## Agrégation en indices composites
@@ -367,32 +370,26 @@ norm_quantile <- normalize_indicators(
 Combinez plusieurs indicateurs en un indice unique :
 
 ``` r
+
 # Indice composite avec poids égaux
 composite <- create_composite_index(
   normalized,
   indicators = c("indicateur_c2_ndvi_norm", "indicateur_w3_humidite_norm", "indicateur_l2_fragmentation_norm"),
   name = "ecosystem_health"
 )
+#> Error:
+#> ! object 'normalized' not found
 
 # Afficher les résultats
 head(composite[, c("parcel_id", "forest_type", "ecosystem_health")])
-#> Simple feature collection with 6 features and 3 fields
-#> Geometry type: POLYGON
-#> Dimension:     XY
-#> Bounding box:  xmin: 698041.8 ymin: 6499388 xmax: 702507.7 ymax: 6504159
-#> Projected CRS: RGF93 v1 / Lambert-93
-#>   parcel_id      forest_type ecosystem_health                       geometry
-#> 1       P01     Futaie mixte         50.17527 POLYGON ((698299.9 6499928,...
-#> 2       P02 Futaie résineuse         36.11224 POLYGON ((701702.2 6500418,...
-#> 3       P03  Futaie feuillue         62.13934 POLYGON ((702240.4 6500270,...
-#> 4       P04  Futaie feuillue         39.52632 POLYGON ((700641.3 6504129,...
-#> 5       P05 Futaie résineuse         44.58606 POLYGON ((699268.2 6500307,...
-#> 6       P06 Futaie résineuse         18.11143 POLYGON ((699943.5 6499421,...
+#> Error:
+#> ! object 'composite' not found
 ```
 
 ### Agrégation pondérée
 
 ``` r
+
 # Poids personnalisés (carbone 50%, paysage 30%, eau 20%)
 composite_weighted <- create_composite_index(
   normalized,
@@ -400,11 +397,14 @@ composite_weighted <- create_composite_index(
   weights = c(0.5, 0.3, 0.2),
   name = "conservation_index"
 )
+#> Error:
+#> ! object 'normalized' not found
 ```
 
 ### Méthodes d’agrégation
 
 ``` r
+
 # Moyenne géométrique (effets multiplicatifs)
 composite_geom <- create_composite_index(
   normalized,
@@ -412,6 +412,8 @@ composite_geom <- create_composite_index(
   aggregation = "geometric_mean",
   name = "water_carbon_index"
 )
+#> Error:
+#> ! object 'normalized' not found
 
 # Minimum (approche conservatrice, facteur limitant)
 composite_min <- create_composite_index(
@@ -420,6 +422,8 @@ composite_min <- create_composite_index(
   aggregation = "min",
   name = "minimum_performance"
 )
+#> Error:
+#> ! object 'normalized' not found
 ```
 
 ## Visualisation
@@ -427,22 +431,21 @@ composite_min <- create_composite_index(
 ### Cartes thématiques
 
 ``` r
+
 plot_indicators_map(
   composite,
   indicators = "ecosystem_health",
   title = "Indice de santé écosystémique",
   legend_title = "Score (0-100)"
 )
+#> Error:
+#> ! object 'composite' not found
 ```
-
-![Carte de l'indice de santé
-écosystémique](getting-started_fr_files/figure-html/unnamed-chunk-13-1.png)
-
-Carte de l’indice de santé écosystémique
 
 ### Cartes multiples (facettes)
 
 ``` r
+
 plot_indicators_map(
   normalized,
   indicators = c("indicateur_c2_ndvi_norm", "indicateur_w3_humidite_norm"),
@@ -451,34 +454,30 @@ plot_indicators_map(
   ncol = 2,
   title = "Comparaison carbone vs eau"
 )
+#> Error:
+#> ! object 'normalized' not found
 ```
-
-![Comparaison carbone vs
-eau](getting-started_fr_files/figure-html/unnamed-chunk-14-1.png)
-
-Comparaison carbone vs eau
 
 ### Graphique radar
 
 ``` r
+
 nemeton_radar(
   normalized,
   unit_id = "P01",
   indicators = c("indicateur_c2_ndvi_norm", "indicateur_w3_humidite_norm", "indicateur_l2_fragmentation_norm"),
   title = "Profil multi-indicateurs - Parcelle P01"
 )
+#> Error:
+#> ! object 'normalized' not found
 ```
-
-![Profil écosystémique - Parcelle
-P01](getting-started_fr_files/figure-html/unnamed-chunk-15-1.png)
-
-Profil écosystémique - Parcelle P01
 
 ## Workflow complet
 
 Voici un exemple de workflow complet de bout en bout :
 
 ``` r
+
 # 1. Charger les données
 data(massif_demo_units)
 layers <- massif_demo_layers()
@@ -491,6 +490,8 @@ results <- nemeton_compute(
     "indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_l2_fragmentation"
   )
 )
+#> Error:
+#> ! no valid constructor available for the argument list
 
 # 3. Normaliser (0-100)
 normalized <- normalize_indicators(
@@ -500,6 +501,8 @@ normalized <- normalize_indicators(
   ),
   method = "minmax"
 )
+#> Error:
+#> ! object 'results' not found
 
 # 4. Créer un indice composite
 composite <- create_composite_index(
@@ -508,6 +511,8 @@ composite <- create_composite_index(
   weights = c(0.4, 0.4, 0.2),
   name = "forest_quality"
 )
+#> Error:
+#> ! object 'normalized' not found
 
 # 5. Visualiser
 plot_indicators_map(
@@ -516,9 +521,9 @@ plot_indicators_map(
   title = "Indice de qualité forestière",
   legend_title = "Score (0-100)"
 )
+#> Error:
+#> ! object 'composite' not found
 ```
-
-![](getting-started_fr_files/figure-html/unnamed-chunk-16-1.png)
 
 ## Analyses avancées
 
@@ -527,6 +532,7 @@ plot_indicators_map(
 Pour les indicateurs où une valeur faible est souhaitable :
 
 ``` r
+
 # Exemple: inverser un indicateur
 # (Utilisé pour les indicateurs où une valeur faible est souhaitable)
 normalized_inv <- invert_indicator(
@@ -542,8 +548,11 @@ head(normalized_inv[, c("parcel_id", "indicateur_w3_humidite_norm", "indicateur_
 ### Filtrage et sous-ensembles
 
 ``` r
+
 # Sélectionner uniquement les futaies feuillues
 broadleaf <- normalized[normalized$forest_type == "Futaie feuillue", ]
+#> Error:
+#> ! object 'normalized' not found
 
 # Créer un indice spécifique
 broadleaf_index <- create_composite_index(
@@ -551,6 +560,8 @@ broadleaf_index <- create_composite_index(
   indicators = c("indicateur_c2_ndvi_norm", "indicateur_w3_humidite_norm"),
   name = "broadleaf_quality"
 )
+#> Error:
+#> ! object 'broadleaf' not found
 ```
 
 ## Internationalisation
@@ -558,6 +569,7 @@ broadleaf_index <- create_composite_index(
 Le package supporte le français et l’anglais :
 
 ``` r
+
 # Définir la langue
 nemeton_set_language("fr") # Français
 # nemeton_set_language("en")  # English
@@ -568,6 +580,7 @@ nemeton_set_language("fr") # Français
 ## Export des résultats
 
 ``` r
+
 # Export en GeoPackage
 sf::st_write(composite, "results/forest_quality.gpkg")
 
@@ -599,8 +612,9 @@ write.csv(results_table, "results/forest_quality.csv", row.names = FALSE)
 ## Session Info
 
 ``` r
+
 sessionInfo()
-#> R version 4.5.3 (2026-03-11)
+#> R version 4.6.0 (2026-04-24)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.4 LTS
 #> 
@@ -621,35 +635,29 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.2       nemeton_0.15.1.9000
+#> [1] ggplot2_4.0.3  nemeton_0.69.2
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] gtable_0.3.6         xfun_0.57            bslib_0.10.0        
-#>  [4] raster_3.6-32        htmlwidgets_1.6.4    lattice_0.22-9      
-#>  [7] tzdb_0.5.0           fasterRaster_8.4.1.1 vctrs_0.7.3         
-#> [10] tools_4.5.3          generics_0.1.4       parallel_4.5.3      
-#> [13] curl_7.0.0           tibble_3.3.1         proxy_0.4-29        
-#> [16] pkgconfig_2.0.3      KernSmooth_2.23-26   data.table_1.18.2.1 
-#> [19] RColorBrewer_1.1-3   S7_0.2.1             desc_1.4.3          
-#> [22] lifecycle_1.0.5      compiler_4.5.3       farver_2.1.2        
-#> [25] textshaping_1.0.5    terra_1.9-11         nasapower_4.2.5     
-#> [28] codetools_0.2-20     htmltools_0.5.9      class_7.3-23        
-#> [31] sass_0.4.10          yaml_2.3.12          tidyr_1.3.2         
-#> [34] crayon_1.5.3         pillar_1.11.1        pkgdown_2.2.0       
-#> [37] exactextractr_0.10.1 jquerylib_0.1.4      classInt_0.4-11     
-#> [40] cachem_1.1.0         tidyselect_1.2.1     digest_0.6.39       
-#> [43] purrr_1.2.2          sf_1.1-0             dplyr_1.2.1         
-#> [46] labeling_0.4.3       fastmap_1.2.0        grid_4.5.3          
-#> [49] cli_3.6.6            magrittr_2.0.5       omnibus_1.2.15      
-#> [52] triebeard_0.4.1      crul_1.6.0           e1071_1.7-17        
-#> [55] readr_2.2.0          withr_3.0.2          scales_1.4.0        
-#> [58] rappdirs_0.3.4       bit64_4.6.0-1        sp_2.2-1            
-#> [61] rmarkdown_2.31       bit_4.6.0            otel_0.2.0          
-#> [64] ragg_1.5.2           hms_1.1.4            evaluate_1.0.5      
-#> [67] knitr_1.51           viridisLite_0.4.3    rlang_1.2.0         
-#> [70] urltools_1.7.3.1     Rcpp_1.1.1           glue_1.8.0          
-#> [73] DBI_1.3.0            httpcode_0.3.0       xml2_1.5.2          
-#> [76] vroom_1.7.1          jsonlite_2.0.0       R6_2.6.1            
-#> [79] systemfonts_1.3.2    fs_2.0.1             units_1.0-1         
-#> [82] rgrass_0.5-3
+#>  [1] omnibus_1.2.15       rappdirs_0.3.4       sass_0.4.10         
+#>  [4] generics_0.1.4       xml2_1.5.2           class_7.3-23        
+#>  [7] KernSmooth_2.23-26   lattice_0.22-9       digest_0.6.39       
+#> [10] magrittr_2.0.5       evaluate_1.0.5       grid_4.6.0          
+#> [13] RColorBrewer_1.1-3   fastmap_1.2.0        jsonlite_2.0.0      
+#> [16] e1071_1.7-17         DBI_1.3.0            fasterRaster_8.4.1.2
+#> [19] scales_1.4.0         codetools_0.2-20     textshaping_1.0.5   
+#> [22] jquerylib_0.1.4      cli_3.6.6            rgrass_0.5-3        
+#> [25] rlang_1.2.0          units_1.0-1          withr_3.0.2         
+#> [28] cachem_1.1.0         yaml_2.3.12          otel_0.2.0          
+#> [31] raster_3.6-32        tools_4.6.0          dplyr_1.2.1         
+#> [34] exactextractr_0.10.1 vctrs_0.7.3          R6_2.6.1            
+#> [37] proxy_0.4-29         lifecycle_1.0.5      classInt_0.4-11     
+#> [40] fs_2.1.0             htmlwidgets_1.6.4    ragg_1.5.2          
+#> [43] pkgconfig_2.0.3      desc_1.4.3           pkgdown_2.2.0       
+#> [46] terra_1.9-27         bslib_0.11.0         pillar_1.11.1       
+#> [49] gtable_0.3.6         data.table_1.18.4    glue_1.8.1          
+#> [52] Rcpp_1.1.1-1.1       sf_1.1-1             systemfonts_1.3.2   
+#> [55] xfun_0.58            tibble_3.3.1         tidyselect_1.2.1    
+#> [58] knitr_1.51           farver_2.1.2         htmltools_0.5.9     
+#> [61] rmarkdown_2.31       compiler_4.6.0       S7_0.2.2            
+#> [64] sp_2.2-1
 ```

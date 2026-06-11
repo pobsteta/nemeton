@@ -10,7 +10,7 @@ biophysiques multi-famille** pour la gestion forestiere durable.
 ## Architecture (ADR-009)
 
     nemeton (ce repo)       -> Package coeur R (MIT). 31 indicateurs, 12 familles, NDP, radar.
-    nemetonShiny            -> Application Shiny (EUPL v1.2). Interface web interactive.
+    nemetonshiny            -> Application Shiny (EUPL v1.2). Interface web interactive.
     tree_sat_nemeton        -> Classification d'essences Sentinel-1/2. NDP 0. MIT.
     maestro_nemeton         -> Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
 
@@ -19,20 +19,20 @@ biophysiques multi-famille** pour la gestion forestiere durable.
 **12 familles d’indicateurs** avec 31 sous-indicateurs (convention NMT)
 :
 
-| Code  | Famille               | Indicateurs                                                     |
-|-------|-----------------------|-----------------------------------------------------------------|
-| **B** | Biodiversite          | indicateur_b1_protection, b2_structure, b3_connectivite         |
-| **C** | Carbone & Vitalite    | indicateur_c1_biomasse, c2_ndvi                                 |
-| **W** | Eau & Regulation      | indicateur_w1_reseau, w2_zones_humides, w3_humidite             |
-| **A** | Air & Microclimat     | indicateur_a1_couverture, a2_qualite_air                        |
-| **F** | Fertilite Sols        | indicateur_f1_fertilite, f2_erosion                             |
-| **L** | Paysage               | indicateur_l1_sylvosphere, l2_fragmentation                     |
-| **T** | Temporel              | indicateur_t1_anciennete, t2_changement                         |
-| **R** | Risques & Resilience  | indicateur_r1_feu, r2_tempete, r3_secheresse, r4_abroutissement |
-| **S** | Social & Usages       | indicateur_s1_routes, s2_bati, s3_population                    |
-| **P** | Production & Economie | indicateur_p1_volume, p2_station, p3_qualite_bois               |
-| **E** | Energie & Climat      | indicateur_e1_bois_energie, e2_evitement                        |
-| **N** | Naturalite            | indicateur_n1_distance, n2_continuite, n3_naturalite            |
+| Code | Famille | Indicateurs |
+|----|----|----|
+| **B** | Biodiversite | indicateur_b1_protection, b2_structure, b3_connectivite |
+| **C** | Carbone & Vitalite | indicateur_c1_biomasse, c2_ndvi |
+| **W** | Eau & Regulation | indicateur_w1_reseau, w2_zones_humides, w3_humidite |
+| **A** | Air & Microclimat | indicateur_a1_couverture, a2_qualite_air |
+| **F** | Fertilite Sols | indicateur_f1_fertilite, f2_erosion |
+| **L** | Paysage | indicateur_l1_sylvosphere, l2_fragmentation |
+| **T** | Temporel | indicateur_t1_anciennete, t2_changement |
+| **R** | Risques & Resilience | indicateur_r1_feu, r2_tempete, r3_secheresse, r4_abroutissement |
+| **S** | Social & Usages | indicateur_s1_routes, s2_bati, s3_population |
+| **P** | Production & Economie | indicateur_p1_volume, p2_station, p3_qualite_bois |
+| **E** | Energie & Climat | indicateur_e1_bois_energie, e2_evitement |
+| **N** | Naturalite | indicateur_n1_distance, n2_continuite, n3_naturalite |
 
 **Systeme NDP** (Niveau De Precision) : ponderation Fibonacci
 (1,1,2,3,5), confiance phi.
@@ -45,6 +45,7 @@ correlations.
 ## Installation
 
 ``` r
+
 # install.packages("remotes")
 remotes::install_github("pobsteta/nemeton")
 ```
@@ -54,6 +55,7 @@ remotes::install_github("pobsteta/nemeton")
 ## Quick Start
 
 ``` r
+
 library(nemeton)
 
 # Charger le dataset de demonstration (20 parcelles, 12 familles)
@@ -75,16 +77,70 @@ get_data_source("dem", "FR")       # config MNT IGN
 list_countries()                   # c("EU", "FR")
 ```
 
-## Application Interactive (nemetonShiny)
+## NDP augmente : integration Open-Canopy (v0.16.0, spec 005)
+
+Depuis la v0.16.0, nemeton exploite des Canopy Height Models (CHM)
+produits par le package amont
+[`opencanopy`](https://github.com/pobsteta/opencanopynemeton) pour
+affiner cinq indicateurs (P1 volume, P2 station, C1 biomasse, B2
+structure, R2 tempete) a partir de l’ortho IGN, sans besoin de LiDAR.
+L’ADR-011 amende le systeme NDP avec un flag vectoriel `augmented` qui
+preserve la confiance phi Fibonacci globale.
+
+Exemple end-to-end :
+
+``` r
+
+library(nemeton)
+
+# 1. Produire un CHM depuis une AOI (package separe)
+# chm <- opencanopy::pipeline_aoi_to_chm(aoi, format = "COG")
+
+# 2. Nettoyer le CHM (5 etapes : foret, bati, eau, NDVI, pente)
+clean <- sanitize_chm(chm,
+                     forest_mask = bd_foret,
+                     buildings   = bd_topo_batiments,
+                     water       = bd_carthage,
+                     ndvi        = ndvi)
+# clean$pct_masked, clean$steps_applied
+
+# 3. Detecter le NDP augmente
+attr(units, "chm_source") <- "opencanopy"
+res_ndp <- detect_ndp(units)
+res_ndp$augmented   # "height_ml"
+
+# 4. Calculer les indicateurs en mode CHM
+units <- indicateur_p2_station(units, chm = clean$chm_clean)   # H0 en metres
+units <- indicateur_p1_volume(units,  chm = clean$chm_clean,
+                              pct_masked = clean$pct_masked)    # m3/ha
+units <- indicateur_c1_biomasse(units, chm = clean$chm_clean)   # tC/ha
+units <- indicateur_b2_structure(units, chm = clean$chm_clean)  # 0-100
+units <- indicateur_r2_tempete(units, dem = dem,
+                               chm = clean$chm_clean)           # 0-100
+
+# 5. Voir la liste des essences couvertes par les courbes de station
+list_site_index_species()
+```
+
+Les courbes de hauteur dominante (Duplat & Tran-Ha 1997 et publications
+connexes) sont tabulees dans `inst/extdata/site_index_curves.csv`. Leur
+redistribution est autorisee par M. Tran-Ha (communication personnelle,
+avril 2026 ; voir `inst/NOTICE`).
+
+Vignette dediee : [Indicateurs P1/P2/C1/B2/R2 via CHM
+Open-Canopy](https://pobsteta.github.io/nemeton/articles/site-index-open-canopy_fr.html).
+
+## Application Interactive (nemetonshiny)
 
 L’application Shiny est dans un package separe :
 
 ``` r
+
 # Installer l'application
-remotes::install_github("pobsteta/nemeton_shiny")
+remotes::install_github("pobsteta/nemetonshiny")
 
 # Lancer
-nemetonShiny::run_app(language = "fr")
+nemetonshiny::run_app(language = "fr")
 ```
 
 L’application permet de :
@@ -98,11 +154,12 @@ L’application permet de :
 - S’authentifier via OAuth2/OIDC (Keycloak, AgentConnect)
 
 Repository :
-[pobsteta/nemeton_shiny](https://github.com/pobsteta/nemeton_shiny)
+[pobsteta/nemetonshiny](https://github.com/pobsteta/nemetonshiny)
 
 ## Workflow avec vos donnees
 
 ``` r
+
 library(nemeton)
 library(sf)
 
@@ -134,6 +191,7 @@ Site pkgdown :
 [pobsteta.github.io/nemeton](https://pobsteta.github.io/nemeton/)
 
 ``` r
+
 ?nemeton_compute
 ?create_family_index
 ?ndp_table
@@ -145,8 +203,8 @@ Site pkgdown :
 MIT - Voir [LICENSE](https://pobsteta.github.io/nemeton/LICENSE)
 
 L’application Shiny
-([nemetonShiny](https://github.com/pobsteta/nemeton_shiny)) est sous
-EUPL v1.2.
+([nemetonshiny](https://github.com/pobsteta/nemetonshiny)) est sous EUPL
+v1.2.
 
 ## Citation
 

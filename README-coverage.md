@@ -103,13 +103,13 @@ docker run -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
 
 Éditez le haut du script :
 
-| Variable             | Défaut | Description                                       |
-|----------------------|--------|---------------------------------------------------|
-| `TARGET_COVERAGE`    | `80`   | Taux cible (%)                                    |
-| `MAX_ITERATIONS`     | `60`   | Nombre max de boucles                             |
-| `MAX_TURNS_PER_ITER` | `50`   | Tours Claude Code par itération                   |
-| `SLEEP_BETWEEN`      | `10`   | Pause entre itérations (sec)                      |
-| `MAX_STAGNATION`     | `3`    | Itérations sans progrès avant de changer de cible |
+| Variable | Défaut | Description |
+|----|----|----|
+| `TARGET_COVERAGE` | `80` | Taux cible (%) |
+| `MAX_ITERATIONS` | `60` | Nombre max de boucles |
+| `MAX_TURNS_PER_ITER` | `50` | Tours Claude Code par itération |
+| `SLEEP_BETWEEN` | `10` | Pause entre itérations (sec) |
+| `MAX_STAGNATION` | `3` | Itérations sans progrès avant de changer de cible |
 
 ## Comment ça marche
 
@@ -142,11 +142,11 @@ docker run -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
 
 ## Point important : covr et Shiny
 
-| Méthode de test                                                                          | Contribue à covr ? | Quand l’utiliser                        |
-|------------------------------------------------------------------------------------------|--------------------|-----------------------------------------|
-| `test_that()` + fonctions R                                                              | ✅ Oui             | Toujours — fonctions pures              |
-| `testServer()`                                                                           | ✅ Oui             | Toujours — logique serveur des modules  |
-| [`shinytest2::AppDriver`](https://rstudio.github.io/shinytest2/reference/AppDriver.html) | ❌ Non\*           | Tests E2E, intégration, interactions UI |
+| Méthode de test | Contribue à covr ? | Quand l’utiliser |
+|----|----|----|
+| `test_that()` + fonctions R | ✅ Oui | Toujours — fonctions pures |
+| `testServer()` | ✅ Oui | Toujours — logique serveur des modules |
+| `shinytest2::AppDriver` | ❌ Non\* | Tests E2E, intégration, interactions UI |
 
 \* AppDriver lance l’app dans un processus séparé, hors instrumentation
 covr. Le script privilégie `testServer()` pour maximiser la couverture
@@ -195,20 +195,20 @@ git merge feat/auto-coverage-boost
 
 ## Dépannage
 
-| Problème                                                                                 | Solution                                               |
-|------------------------------------------------------------------------------------------|--------------------------------------------------------|
+| Problème | Solution |
+|----|----|
 | [`covr::package_coverage()`](http://covr.r-lib.org/reference/package_coverage.md) échoue | `Rscript -e 'devtools::check()'` pour voir les erreurs |
-| shinytest2 : “Chrome not found”                                                          | `export CHROMOTE_CHROME=/usr/bin/chromium`             |
-| Tests existants cassés                                                                   | Le script ne devrait jamais modifier R/ — vérifier     |
-| Stagnation prolongée                                                                     | Le script change automatiquement de cible              |
-| Rate limiting Claude                                                                     | Augmenter `SLEEP_BETWEEN` à 30-60                      |
-| Couverture ne bouge pas                                                                  | Vérifier que les tests sont dans `tests/testthat/`     |
-| `testServer()` échoue sur un module                                                      | Le module a peut-être des dépendances non mockées      |
+| shinytest2 : “Chrome not found” | `export CHROMOTE_CHROME=/usr/bin/chromium` |
+| Tests existants cassés | Le script ne devrait jamais modifier R/ — vérifier |
+| Stagnation prolongée | Le script change automatiquement de cible |
+| Rate limiting Claude | Augmenter `SLEEP_BETWEEN` à 30-60 |
+| Couverture ne bouge pas | Vérifier que les tests sont dans `tests/testthat/` |
+| `testServer()` échoue sur un module | Le module a peut-être des dépendances non mockées |
 
 ## Fichiers fournis
 
-| Fichier                    | Destination                | Rôle                                         |
-|----------------------------|----------------------------|----------------------------------------------|
-| `nemeton-coverage-loop.sh` | Racine du projet           | Boucle autonome principale                   |
+| Fichier | Destination | Rôle |
+|----|----|----|
+| `nemeton-coverage-loop.sh` | Racine du projet | Boucle autonome principale |
 | `CLAUDE-tests-addendum.md` | Fusionner dans `CLAUDE.md` | Conventions de test R/Shiny pour Claude Code |
-| `README-coverage.md`       | Pour vous (référence)      | Ce guide                                     |
+| `README-coverage.md` | Pour vous (référence) | Ce guide |

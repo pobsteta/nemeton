@@ -7,7 +7,15 @@ is unavailable.
 ## Usage
 
 ``` r
-indicateur_r2_tempete(units, dem = NULL, layers = NULL)
+indicateur_r2_tempete(
+  units,
+  dem = NULL,
+  layers = NULL,
+  chm = NULL,
+  species_field = "species",
+  h_dom_percentile = 0.9,
+  h_reference = 30
+)
 ```
 
 ## Arguments
@@ -24,6 +32,26 @@ indicateur_r2_tempete(units, dem = NULL, layers = NULL)
 
   A nemeton_layers object. Used to extract DEM if `dem` is NULL.
 
+- chm:
+
+  Optional `SpatRaster` of canopy heights in metres. When supplied,
+  activates CHM mode (spec 005 phase 4).
+
+- species_field:
+
+  Character. Column of `units` holding the species code. Used only in
+  CHM mode. Default `"species"`.
+
+- h_dom_percentile:
+
+  Numeric in `[0, 1]`. Percentile of CHM pixels used for dominant
+  height. Default `0.9`.
+
+- h_reference:
+
+  Numeric. Reference height (metres) at which the canopy-vulnerability
+  factor equals the species baseline. Default `30`.
+
 ## Value
 
 The input sf object with added column:
@@ -31,6 +59,13 @@ The input sf object with added column:
 - R2: Storm vulnerability (0-100). Higher = more vulnerable.
 
 ## Details
+
+When a Canopy Height Model is supplied (spec 005 phase 4), the base
+terrain score is modulated by a canopy-vulnerability factor
+`f(H_CHM, species)`: tall stands are more vulnerable than short ones,
+and at equal height conifers are more vulnerable than broadleaves
+(straighter trunks, shallower roots). The modulation is multiplicative
+and clamped to `[0, 100]`.
 
 \*\*Primary method\*\* (requires microclima): Uses
 `microclima::windcoef()` to compute wind shelter coefficient from the

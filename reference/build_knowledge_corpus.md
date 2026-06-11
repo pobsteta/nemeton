@@ -1,0 +1,90 @@
+# Build (or grow) the RAG knowledge base from the manifest
+
+Iterates over the manifest and ingests every eligible document into the
+knowledge base, applying the same license gate (D5), eligibility and
+idempotency rules as \`data-raw/build_knowledge_corpus.R\` — which is
+now a thin wrapper over this function. Unlike the script it is a plain,
+blocking R function returning a structured report, so an application can
+drive it asynchronously and render progress.
+
+## Usage
+
+``` r
+build_knowledge_corpus(
+  con = NULL,
+  manifest = read_knowledge_manifest(),
+  provider = c("mistral", "openai", "voyage"),
+  include_to_confirm = FALSE,
+  fresh = FALSE,
+  dry_run = FALSE,
+  pdf_dir = NULL,
+  api_key = NULL,
+  progress = NULL
+)
+```
+
+## Arguments
+
+- con:
+
+  A \`DBIConnection\` (\[db_connect()\]). May be \`NULL\` only when
+  \`dry_run = TRUE\`. The RAG schema is enabled if needed.
+
+- manifest:
+
+  A data.frame (\[read_knowledge_manifest()\]).
+
+- provider:
+
+  Embedding provider, one of \`"mistral"\` (default), \`"openai"\`,
+  \`"voyage"\`.
+
+- include_to_confirm:
+
+  Logical. Also ingest \`to_confirm\` rows. Use only after personally
+  clearing their licenses. Default \`FALSE\`.
+
+- fresh:
+
+  Logical. Delete every existing document first. Default \`FALSE\`.
+
+- dry_run:
+
+  Logical. Parse and plan only — no DB connection, no embedding API
+  calls. Default \`FALSE\`.
+
+- pdf_dir:
+
+  Directory for downloaded PDFs. Default a per-user cache dir under
+  \[tools::R_user_dir()\].
+
+- api_key:
+
+  Optional embedding API key (else the provider's environment variable).
+
+- progress:
+
+  Optional callback \`function(i, n, row, report_row)\` invoked after
+  each manifest row, for progress reporting.
+
+## Value
+
+A data.frame report, one row per manifest row, with columns \`doc_id\`,
+\`action\` (\`"ingested"\`, \`"skipped"\`, \`"error"\`, or \`"planned"\`
+in a dry run), \`reason\`, \`mode\`, \`n_chunks\`, \`document_id\`,
+\`duration_sec\`.
+
+## Details
+
+A row is eligible when its \`ingest_strategy\` is known and its
+\`status\` is \`cleared\` (or \`to_confirm\` when \`include_to_confirm =
+TRUE\`). \`full\` rows ingest their body via
+\[ingest_knowledge_document()\]; \`abstract_only\` / \`link_only\` rows
+ingest a reference-only chunk via \[ingest_knowledge_reference()\].
+Documents whose \`title\` is already in the base are skipped (idempotent
+re-runs).
+
+## See also
+
+\[read_knowledge_manifest()\], \[ingest_knowledge_document()\],
+\[ingest_knowledge_reference()\], \[list_knowledge_documents()\].

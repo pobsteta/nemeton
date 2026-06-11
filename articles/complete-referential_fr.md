@@ -9,31 +9,33 @@ l’ensemble du référentiel avec le jeu de données `massif_demo_units`.
 
 ### Les 12 Familles
 
-| Code  | Famille                 | Indicateurs                                           | Nb     |
-|-------|-------------------------|-------------------------------------------------------|--------|
-| **C** | Carbone & Vitalité      | C1 (biomasse), C2 (NDVI)                              | 2      |
-| **B** | Biodiversité            | B1 (protection), B2 (structure), B3 (connectivité)    | 3      |
-| **W** | Eau                     | W1 (réseau hydro), W2 (zones humides), W3 (TWI)       | 3      |
-| **A** | Air & Microclimat       | A1 (couverture), A2 (qualité air)                     | 2      |
-| **F** | Fertilité des Sols      | F1 (fertilité), F2 (érosion)                          | 2      |
-| **L** | Paysage                 | L1 (fragmentation), L2 (lisière), L3 (TVB)            | 3      |
-| **T** | Temps & Dynamique       | T1 (ancienneté), T2 (changements)                     | 2      |
-| **R** | Risques & Résilience    | R1 (incendie), R2 (tempête), R3 (stress), R4 (gibier) | 4      |
-| **S** | Social & Usages         | S1 (sentiers), S2 (accessibilité), S3 (proximité)     | 3      |
-| **P** | Production & Économie   | P1 (volume), P2 (productivité), P3 (qualité)          | 3      |
-| **E** | Énergie & Climat        | E1 (bois-énergie), E2 (évitement CO2)                 | 2      |
-| **N** | Naturalité & Wilderness | N1 (distance infra), N2 (continuité), N3 (composite)  | 3      |
-|       | **Total**               |                                                       | **32** |
+| Code | Famille | Indicateurs | Nb |
+|----|----|----|----|
+| **C** | Carbone & Vitalité | C1 (biomasse), C2 (NDVI) | 2 |
+| **B** | Biodiversité | B1 (protection), B2 (structure), B3 (connectivité) | 3 |
+| **W** | Eau | W1 (réseau hydro), W2 (zones humides), W3 (TWI) | 3 |
+| **A** | Air & Microclimat | A1 (couverture), A2 (qualité air) | 2 |
+| **F** | Fertilité des Sols | F1 (fertilité), F2 (érosion) | 2 |
+| **L** | Paysage | L1 (fragmentation), L2 (lisière), L3 (TVB) | 3 |
+| **T** | Temps & Dynamique | T1 (ancienneté), T2 (changements) | 2 |
+| **R** | Risques & Résilience | R1 (incendie), R2 (tempête), R3 (stress), R4 (gibier) | 4 |
+| **S** | Social & Usages | S1 (sentiers), S2 (accessibilité), S3 (proximité) | 3 |
+| **P** | Production & Économie | P1 (volume), P2 (productivité), P3 (qualité) | 3 |
+| **E** | Énergie & Climat | E1 (bois-énergie), E2 (évitement CO2) | 2 |
+| **N** | Naturalité & Wilderness | N1 (distance infra), N2 (continuité), N3 (composite) | 3 |
+|  | **Total** |  | **32** |
 
 ## Chargement des Données
 
 ``` r
+
 library(nemeton)
 library(ggplot2)
 library(dplyr)
 ```
 
 ``` r
+
 # Le jeu de données de démonstration
 data(massif_demo_units)
 
@@ -187,6 +189,7 @@ Le système de famille permet d’agréger les indicateurs individuels en
 indices synthétiques par famille :
 
 ``` r
+
 # Créer tous les indices de famille (12 familles)
 # create_family_index() détecte automatiquement toutes les familles par préfixe
 result <- create_family_index(massif_demo_units)
@@ -225,6 +228,7 @@ Le radar 12-axes permet de visualiser le profil complet d’une parcelle
 sur l’ensemble des 12 familles :
 
 ``` r
+
 # Radar pour la parcelle 1 (toutes les 12 familles)
 nemeton_radar(
   result,
@@ -240,6 +244,7 @@ nemeton_radar(
 ### Matrice de Corrélation
 
 ``` r
+
 # Calculer les corrélations entre toutes les familles
 families_all <- c(
   "famille_carbone", "famille_biodiversite", "famille_eau", "famille_air",
@@ -261,6 +266,7 @@ Identifier les parcelles qui excellent simultanément sur plusieurs
 familles :
 
 ``` r
+
 # Hotspots pour conservation (C, B, N)
 hotspots_conservation <- identify_hotspots(
   result,
@@ -305,6 +311,7 @@ table(hotspots_social$is_hotspot)
 ### Familles S, P, E, N
 
 ``` r
+
 # Visualiser les nouvelles familles S, P, E, N
 library(patchwork)
 
@@ -340,6 +347,7 @@ p_naturalness <- ggplot(result) +
 ### Toutes les Familles
 
 ``` r
+
 # Créer une facette pour toutes les 12 familles
 result_long <- result |>
   sf::st_drop_geometry() |>
@@ -388,6 +396,7 @@ ggplot(result_long) +
 ## Normalisation et Indice Composite
 
 ``` r
+
 # Normaliser tous les indicateurs
 result_norm <- normalize_indicators(
   result,
@@ -421,6 +430,7 @@ ggplot(result_composite) +
 ## Comparaison de Scénarios
 
 ``` r
+
 # Créer différents indices pour différents objectifs de gestion
 
 # Scénario 1: Conservation intégrale

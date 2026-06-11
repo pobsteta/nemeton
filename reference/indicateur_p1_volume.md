@@ -14,7 +14,11 @@ indicateur_p1_volume(
   density_field = "density",
   method = c("ifn_tarif", "allometric"),
   column_name = "P1",
-  lang = "en"
+  lang = "en",
+  chm = NULL,
+  h_dom_percentile = 0.9,
+  pct_masked = NULL,
+  use_climate_drift = FALSE
 )
 ```
 
@@ -57,11 +61,44 @@ indicateur_p1_volume(
 
   Character. Message language. Default "en".
 
+- chm:
+
+  Optional `SpatRaster` of canopy heights in metres. When supplied,
+  activates CHM mode (spec 005 phase 3). Heights are taken from the CHM
+  (per-unit 90th percentile) instead of `height_field` or the Näslund
+  approximation.
+
+- h_dom_percentile:
+
+  Numeric in `[0, 1]`. Percentile of CHM pixels used to derive dominant
+  height per unit. Default `0.9`. Ignored when `chm` is `NULL`.
+
+- pct_masked:
+
+  Numeric in `[0, 1]` or `NULL`. Optionally, the fraction of the CHM
+  that was masked by
+  [`sanitize_chm`](https://pobsteta.github.io/nemeton/reference/sanitize_chm.md)
+  upstream. When supplied and greater than `0.3`, a warning is emitted:
+  a heavily-masked CHM is unreliable for volume estimation.
+
+- use_climate_drift:
+
+  Logical. When `TRUE`, the estimated volume is scaled by the
+  per-species climate-driven BAI drift factor (Charru et al. 2017, see
+  [`charru_bai_drift`](https://pobsteta.github.io/nemeton/reference/charru_bai_drift.md)).
+  Default `FALSE` (raw synthetic-inventory volume).
+
 ## Value
 
 sf object with added column: P1 (standing volume in m3/ha)
 
 ## Details
+
+In CHM mode (spec 005 phase 3), the height fed to the IFN tarif is the
+dominant height extracted from a Canopy Height Model (see
+[`extract_h_dom`](https://pobsteta.github.io/nemeton/reference/extract_h_dom.md))
+rather than the rough Näslund approximation used by default when
+`height` is absent. This typically improves the P1 RMSE by 20 to 40 %.
 
 \*\*Calculation\*\* (IFN tarif method):
 
@@ -71,12 +108,19 @@ sf object with added column: P1 (standing volume in m3/ha)
 
 - Scale by tree density: `P1 = V_individual x density_stems_ha`
 
+\*\*Height source priority\*\*:
+
+1.  `chm` (CHM mode), when supplied;
+
+2.  `height_field` column in `units`, if present;
+
+3.  Näslund approximation `H = 1.3 + 0.65 * DBH` as a last-resort
+    fallback.
+
 \*\*Species Fallback\*\*: If species code not found in IFN tables, uses
-genus-level equations:
-
-- Broadleaf species -\> BROADLEAF_GENUS equation
-
-- Conifer species -\> CONIFER_GENUS equation
+genus-level equations — `BROADLEAF_GENUS` for non-conifers,
+`CONIFER_GENUS` for conifers (see internal
+[`is_conifer()`](https://pobsteta.github.io/nemeton/reference/is_conifer.md)).
 
 \*\*Data Requirements\*\*:
 

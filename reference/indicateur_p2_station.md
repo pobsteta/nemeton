@@ -1,8 +1,18 @@
 # P2: Site Productivity Index Indicator
 
-Calculates a site productivity index combining soil fertility, climate
-suitability, and species-specific growth potential using reference
-productivity tables.
+Calculates a site productivity index in one of two modes:
+
+1.  **CHM mode** (spec 005 phase 2) — when a Canopy Height Model is
+    supplied via `chm`, the function extracts a dominant height per unit
+    and converts it into a site index \\H_0\\ at `reference_age` using
+    [`compute_site_index`](https://pobsteta.github.io/nemeton/reference/compute_site_index.md).
+    The output is a dominant height in metres.
+
+2.  **Legacy mode** — when `chm` is `NULL` (default, preserves
+    pre-spec-005 behaviour), the function combines soil fertility,
+    climate suitability and species-specific growth potential using
+    reference productivity tables. The output is an annual increment in
+    \\m^3/ha/yr\\.
 
 ## Usage
 
@@ -14,7 +24,11 @@ indicateur_p2_station(
   climate_field = "climate",
   productivity_table = NULL,
   column_name = "P2",
-  lang = "en"
+  lang = "en",
+  chm = NULL,
+  age_field = "age",
+  reference_age = 50,
+  h_dom_percentile = 0.9
 )
 ```
 
@@ -50,11 +64,42 @@ indicateur_p2_station(
 
   Character. Message language. Default "en".
 
+- chm:
+
+  Optional `SpatRaster` of canopy heights in metres. When supplied,
+  activates CHM mode (spec 005 phase 2). Typically the `chm_clean`
+  component returned by
+  [`sanitize_chm`](https://pobsteta.github.io/nemeton/reference/sanitize_chm.md).
+
+- age_field:
+
+  Character. Column name containing stand age (years). Used in CHM mode.
+  Default `"age"`.
+
+- reference_age:
+
+  Numeric. Reference age at which the site index is returned in CHM
+  mode. Default `50`.
+
+- h_dom_percentile:
+
+  Numeric in `[0, 1]`. Percentile of CHM pixels used to derive dominant
+  height per unit. Default `0.9`.
+
 ## Value
 
-sf object with added column: P2 (annual increment in m3/ha/yr)
+sf object with one added column:
+
+- Legacy mode: `P2` = annual increment (m3/ha/yr).
+
+- CHM mode: `P2` = site index \\H_0\\ (m) at `reference_age`.
 
 ## Details
+
+The two modes answer the same forestry question (how productive is this
+site?) but in different units. Downstream callers should use
+[`compute_general_index_mixed`](https://pobsteta.github.io/nemeton/reference/compute_general_index_mixed.md)
+or a mode-aware normalization when mixing units.
 
 \*\*Calculation\*\*:
 

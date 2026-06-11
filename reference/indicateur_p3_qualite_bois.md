@@ -14,7 +14,8 @@ indicateur_p3_qualite_bois(
   species_field = "species",
   weights = c(form = 0.4, diameter = 0.4, defects = 0.2),
   column_name = "P3",
-  lang = "en"
+  lang = "en",
+  chm = NULL
 )
 ```
 
@@ -56,6 +57,12 @@ indicateur_p3_qualite_bois(
 - lang:
 
   Character. Message language. Default "en".
+
+- chm:
+
+  Optional \`terra::SpatRaster\` canopy height model (spec 005). Passed
+  to \`ensure_inventory_fields()\` to auto-fill \`dbh\` from the CHM
+  when the diameter field is missing. Default \`NULL\`.
 
 ## Value
 

@@ -9,6 +9,7 @@ de code R, directement depuis un navigateur web.
 ## Lancement de l’application
 
 ``` r
+
 library(nemeton)
 run_app()
 ```
@@ -93,6 +94,7 @@ sélecteur de langue dans la barre de navigation.
 Pour utiliser l’analyse IA, configurez une clé API :
 
 ``` r
+
 # Anthropic (Claude)
 Sys.setenv(ANTHROPIC_API_KEY = "votre-clé")
 
@@ -123,6 +125,7 @@ forestière avec des couleurs accessibles (palette viridis).
 ### L’application ne démarre pas
 
 ``` r
+
 # Vérifier les dépendances
 install.packages(c("shiny", "bslib", "leaflet", "sf"))
 ```
@@ -135,6 +138,7 @@ WFS de l’IGN et de l’INPN.
 ### Le PDF ne se génère pas
 
 ``` r
+
 # Installer Quarto pour des rapports de qualité
 # https://quarto.org/docs/get-started/
 

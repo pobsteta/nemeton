@@ -3,17 +3,18 @@
 ## Identité du projet
 
 Néméton est une plateforme d’analyse forestière systémique développée
-par Pascal Obstetar à titre personnel. Elle calcule 31 indicateurs
-organisés en 12 familles, les affiche sur un radar, et génère des
+par Pascal Obstetar à titre personnel. Elle calcule **31 indicateurs**
+(32 avec R5 dépérissement quand FORDEAD a tourné, cf. spec 008)
+organisés en **12 familles**, les affiche sur un radar, et génère des
 perspectives IA adaptées à 15 profils d’acteurs de la filière
 forêt-bois. Le nom vient du gaulois *nemeton* (sanctuaire en forêt).
 
 Le package R `nemeton` (v0.15.1.9000) est le **cœur métier** :
 indicateurs, familles, NDP, normalisation, visualisation. Depuis v0.15.0
 (ADR-009), l’application Shiny/golem a été extraite dans un package
-séparé `nemetonShiny` (repo distinct). Ce repo-ci ne contient donc PLUS
+séparé `nemetonshiny` (repo distinct). Ce repo-ci ne contient donc PLUS
 de modules Shiny, profils experts ni fichiers i18n — ils vivent dans
-`nemetonShiny`.
+`nemetonshiny`.
 
 ## Convention NMT (Néméton Naming Convention)
 
@@ -34,32 +35,36 @@ fonctionne.
 
 ## Architecture (packages, ADR-009)
 
-    nemeton (ce repo)     → Package cœur. 31 indicateurs, 12 familles, NDP, normalisation, viz. MIT.
-    nemetonShiny          → App Shiny/golem : UI, modules, i18n, profils experts, LLM, OAuth2. MIT.
-    tree_sat_nemeton      → Classification d'essences par Sentinel-1/2. NDP 0. MIT.
-    maestro_nemeton       → Classification d'essences par MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
-    platform_nemeton      → Documentation plateforme, ADR, glossaire. EUPL v1.2.
+    nemeton (ce repo)     → Package cœur. 31 indicateurs, 12 familles, NDP, normalisation, viz.
+    nemetonshiny          → App Shiny/golem : UI, modules, i18n, profils experts, LLM, OAuth2.
+    tree_sat_nemeton      → Classification d'essences par Sentinel-1/2. NDP 0.
+    maestro_nemeton       → Classification d'essences par MAESTRO ViT (ortho+MNT). NDP 1+.
+    platform_nemeton      → Documentation plateforme, ADR, glossaire.
+
+La licence de chaque repo est portée par son propre fichier `LICENSE`
+(la règle de CLAUDE.md n’est pas la source de vérité pour les licences —
+chaque package a la sienne, potentiellement différente).
 
 Règle : les dépendances vont toujours vers nemeton (cœur). Jamais
-d’inverse. `nemetonShiny` dépend de `nemeton` (120+ fonctions exportées,
+d’inverse. `nemetonshiny` dépend de `nemeton` (120+ fonctions exportées,
 commit `720a433`).
 
 ## Les 12 familles d’indicateurs
 
-| Code | Famille               | Indicateurs                                                  |
-|------|-----------------------|--------------------------------------------------------------|
-| B    | Biodiversité          | B1 (protection), B2 (structure), B3 (connectivité)           |
-| C    | Carbone & Vitalité    | C1 (biomasse), C2 (NDVI)                                     |
-| W    | Eau & Régulation      | W1 (réseau hydro), W2 (zones humides), W3 (TWI)              |
-| A    | Air & Microclimat     | A1 (couverture arborée), A2 (qualité air)                    |
-| F    | Fertilité des sols    | F1 (fertilité), F2 (érosion)                                 |
-| L    | Paysage               | L1 (sylvosphère), L2 (fragmentation)                         |
-| T    | Dynamique temporelle  | T1 (ancienneté), T2 (changement)                             |
-| R    | Risques & Résilience  | R1 (feu), R2 (tempête), R3 (sécheresse), R4 (abroutissement) |
-| S    | Social & Usages       | S1 (routes), S2 (bâti), S3 (population)                      |
-| P    | Production & Économie | P1 (volume bois), P2 (station), P3 (qualité bois)            |
-| E    | Énergie & Climat      | E1 (bois-énergie), E2 (évitement carbone)                    |
-| N    | Naturalité            | N1 (distance infra), N2 (continuité), N3 (composite)         |
+| Code | Famille | Indicateurs |
+|----|----|----|
+| B | Biodiversité | B1 (protection), B2 (structure), B3 (connectivité) |
+| C | Carbone & Vitalité | C1 (biomasse), C2 (NDVI) |
+| W | Eau & Régulation | W1 (réseau hydro), W2 (zones humides), W3 (TWI) |
+| A | Air & Microclimat | A1 (couverture arborée), A2 (qualité air) |
+| F | Fertilité des sols | F1 (fertilité), F2 (érosion) |
+| L | Paysage | L1 (sylvosphère), L2 (fragmentation) |
+| T | Dynamique temporelle | T1 (ancienneté), T2 (changement) |
+| R | Risques & Résilience | R1 (feu), R2 (tempête), R3 (sécheresse), R4 (abroutissement), R5 (dépérissement, FORDEAD-conditionné — spec 008) |
+| S | Social & Usages | S1 (routes), S2 (bâti), S3 (population) |
+| P | Production & Économie | P1 (volume bois), P2 (station), P3 (qualité bois) |
+| E | Énergie & Climat | E1 (bois-énergie), E2 (évitement carbone) |
+| N | Naturalité | N1 (distance infra), N2 (continuité), N3 (composite) |
 
 ## Système NDP (Niveau De Précision) — ADR-011
 
@@ -67,13 +72,13 @@ Le NDP mesure la QUALITÉ des données d’entrée, PAS le nombre de familles
 calculées. Les 12 familles sont toujours calculées, mais avec une
 précision croissante.
 
-| NDP | Clé             | Nom         | Fibonacci | Confiance φ | Sources                                 |
-|-----|-----------------|-------------|-----------|-------------|-----------------------------------------|
-| 0   | ndp_decouverte  | Découverte  | 1         | 8.3%        | Sentinel-2, WorldClim, BD TOPO, MNT 25m |
-| 1   | ndp_observation | Observation | 1         | 16.7%       | \+ IGN RGE ALTI, BD ORTHO, LiDAR HD     |
-| 2   | ndp_exploration | Exploration | 2         | 33.3%       | \+ Drone RGB, LiDAR drone               |
-| 3   | ndp_diagnostic  | Diagnostic  | 3         | 58.3%       | \+ Inventaire terrain complet           |
-| 4   | ndp_jumeau      | Jumeau      | 5         | 100%        | \+ Scanner terrestre, modèle 3D         |
+| NDP | Clé | Nom | Fibonacci | Confiance φ | Sources |
+|----|----|----|----|----|----|
+| 0 | ndp_decouverte | Découverte | 1 | 8.3% | Sentinel-2, WorldClim, BD TOPO, MNT 25m |
+| 1 | ndp_observation | Observation | 1 | 16.7% | \+ IGN RGE ALTI, BD ORTHO, LiDAR HD |
+| 2 | ndp_exploration | Exploration | 2 | 33.3% | \+ Drone RGB, LiDAR drone |
+| 3 | ndp_diagnostic | Diagnostic | 3 | 58.3% | \+ Inventaire terrain complet |
+| 4 | ndp_jumeau | Jumeau | 5 | 100% | \+ Scanner terrestre, modèle 3D |
 
 **Pondération Fibonacci** : l’indice général est une moyenne pondérée
 des familles, où le poids est le nombre de Fibonacci associé au NDP.
@@ -104,12 +109,12 @@ niveaux -
 : indice pondéré Fibonacci -
 [`compute_general_index_mixed()`](https://pobsteta.github.io/nemeton/reference/compute_general_index_mixed.md)
 : indice avec NDP mixte par indicateur - `ndp_badge()`,
-`ndp_progress_bar()` : widgets HTML — **déplacés dans `nemetonShiny`**
+`ndp_progress_bar()` : widgets HTML — **déplacés dans `nemetonshiny`**
 (commit 64ba7b1)
 
 Le score global, calculé côté cœur via
 [`compute_general_index()`](https://pobsteta.github.io/nemeton/reference/compute_general_index.md),
-est consommé par `mod_synthesis.R` dans `nemetonShiny` (au lieu d’un
+est consommé par `mod_synthesis.R` dans `nemetonshiny` (au lieu d’un
 simple [`mean()`](https://rdrr.io/r/base/mean.html)).
 
 ## Les profils d’acteurs (cible : 15, livrés : 13)
@@ -132,11 +137,11 @@ simple [`mean()`](https://rdrr.io/r/base/mean.html)).
 | Citoyen                  | profil_citoyen             | S, L, A               |
 | Investisseur             | profil_investisseur        | C, P, E               |
 
-Les profils experts sont définis dans `nemetonShiny/inst/experts/*.yml`
+Les profils experts sont définis dans `nemetonshiny/inst/experts/*.yml`
 avec des prompts bilingues FR/EN (E3 livré, commit 1b32943 — 13 profils
 sur les 15 listés ci-dessus).
 
-## 6 Bounded Contexts (DDD)
+## 7 Bounded Contexts (DDD)
 
 1.  **Inventaire** (contexte_inventaire) : collecte et validation des
     données terrain et satellite
@@ -144,63 +149,102 @@ sur les 15 listés ci-dessus).
     indicateurs, 12 familles, radar, Fibonacci
 3.  **Cartographie** (contexte_cartographie) : classification
     d’essences, cartes, LiDAR, satellite
-4.  **Aide à la décision** (contexte_aide_decision) : perspectives IA,
+4.  **Santé** (contexte_sante) : pipelines de détection sanitaire —
+    rolling-window NDVI/NBR (surveillance rapide) et FORDEAD via
+    reticulate (diagnostic), fusion des deux signaux, indicateur R5,
+    workflow QField de validation. Voir spec 008 et ADR-013.
+5.  **Aide à la décision** (contexte_aide_decision) : perspectives IA,
     interprétation par profil
-5.  **Utilisateurs** (contexte_utilisateurs) : authentification,
+6.  **Utilisateurs** (contexte_utilisateurs) : authentification,
     profils, droits, partage
-6.  **Interopérabilité** (contexte_interoperabilite) : export IFN,
+7.  **Interopérabilité** (contexte_interoperabilite) : export IFN,
     GroundForest, QField, OGC
 
 ## ADR (Architecture Decision Records)
 
-11 ADR documentés dans
-`platform_nemeton/docs/ADR-001-010_Nemeton_i18n.odt` :
+ADR documentés dans `platform_nemeton/docs/` :
 
-| ADR | Décision                                                                                  |
-|-----|-------------------------------------------------------------------------------------------|
-| 001 | R/Shiny (golem), migration Plumber+Vue.js si \>50 users simultanés                        |
-| 002 | GeoPackage (terrain) + PostGIS (plateforme) + S3 (rasters/LiDAR en COPC)                  |
-| 003 | OVHcloud (principal) + Scaleway GPU L4 (ponctuel)                                         |
-| 004 | Mistral API (souveraineté FR), migration self-hosted possible                             |
-| 005 | OAuth2/OIDC via AgentConnect → Keycloak fédéré pour l’Europe                              |
-| 006 | EUPL v1.2 (plateforme) + MIT (packages R) + CC-BY 4.0 (données)                           |
-| 007 | Pipeline NDP : TreeSatAI (NDP 0) → PureForest (NDP 1) → local (NDP 2+)                    |
-| 008 | OGC, ETRS89/EPSG:3035 paneuropéen, INSPIRE, sources par pays                              |
-| 009 | 4 packages (nemeton, tree_sat, maestro, nemeton.app)                                      |
-| 010 | Docker Compose + GitHub Actions CI/CD, 12-factor app                                      |
-| 011 | Nombre d’or : pondération Fibonacci, confiance φ, suite 1-1-2-3-5                         |
+| ADR | Décision |
+|----|----|
+| 001 | R/Shiny (golem), migration Plumber+Vue.js si \>50 users simultanés |
+| 002 | GeoPackage (terrain) + PostGIS (plateforme) + S3 (rasters/LiDAR en COPC) |
+| 003 | OVHcloud (principal) + Scaleway GPU L4 (ponctuel) |
+| 004 | Mistral API (souveraineté FR), migration self-hosted possible |
+| 005 | OAuth2/OIDC via AgentConnect → Keycloak fédéré pour l’Europe |
+| 006 | EUPL v1.2 (plateforme) + MIT (packages R) + CC-BY 4.0 (données) |
+| 007 | Pipeline NDP : TreeSatAI (NDP 0) → PureForest (NDP 1) → local (NDP 2+) |
+| 008 | OGC, ETRS89/EPSG:3035 paneuropéen, INSPIRE, sources par pays |
+| 009 | 4 packages (nemeton, tree_sat, maestro, nemeton.app) |
+| 010 | Docker Compose + GitHub Actions CI/CD, 12-factor app |
+| 011 | Nombre d’or : pondération Fibonacci, confiance φ, suite 1-1-2-3-5 |
 | 012 | Extensions PG futures : TimescaleDB (monitoring continu) + pgvector (RAG perspectives IA) |
+| 013 | **Suivi sanitaire** : FORDEAD via reticulate (CRSWIR + harmonique, GPL-3) en méthode officielle, hybridé avec rolling-window E6.a, 5 garde-fous applicatifs G1-G5 issus du rapport ONF/DSF 2024 |
 
 ## Walking Skeleton — Épaississements
 
-Le squelette initial est DÉJÀ DEBOUT (l’app fonctionne de bout en bout).
-Les quatre premiers épaississements sont livrés ; prochain chantier =
-Épaississement 5 (intégrations NDP ≥ 1) :
+Le squelette initial est DÉJÀ DEBOUT (l’app fonctionne de bout en bout)
+et s’épaissit par vagues numérotées (E1, E2, …). La séquence des
+épaississements et leur état d’avancement courant vivent dans
+**`PLAN.md`** à la racine — c’est la *single source of truth*. Cette
+section ne reproduit plus la table pour éviter la dérive (cf. *Consignes
+de release*, étape 8).
 
-    ✅ Squelette initial     : CSV/cadastre → indicateurs → radar → perspective IA
-    ✅ Épaississement 1      : 12 familles complètes, 31 indicateurs
-    ✅ Épaississement 2      : Cartographie (Leaflet, parcelles cadastrales)
-    ✅ Épaississement 3      : Multi-acteurs — 13 profils experts YAML (commit 1b32943)
-    ✅ Épaississement 4      : Authentification OAuth2/OIDC via shinyOAuth (commit 3e07c60)
-    ⬜ Épaississement 5      : Intégrations et NDP (tree_sat, maestro, QField)
-    ⬜ Épaississement 6      : Monitoring forestier continu (TimescaleDB + alertes Sentinel-2, ADR-012)
-    ⬜ Épaississement 7      : RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012)
+Note : certains épaississements sont implémentés côté `nemetonshiny`
+(profils experts, OAuth2, modules UI) et ne sont pas visibles depuis ce
+repo. `PLAN.md` indique chaque fois quel package porte la livraison.
 
-Note : E3 et E4 sont implémentés dans `nemetonShiny` (profils YAML dans
-`inst/experts/`, module OAuth2). Ils ne sont pas visibles depuis ce
-repo.
+## NDP augmenté et intégration Open-Canopy (spec 005, v0.16.0)
+
+Depuis la v0.16.0 (spec 005), `nemeton` consomme des Canopy Height
+Models (CHM) produits par le package amont `opencanopy`
+(pobsteta/opencanopynemeton). L’intégration suit l’ADR-011 amendé :
+
+- **Flag vectoriel `augmented`** dans le résultat de
+  [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md).
+  Valeurs reconnues : `"height_ml"` (CHM ML d’Open-Canopy),
+  `"species_ml"`, `"texture_ml"`. Le niveau NDP et la confiance φ
+  Fibonacci globale restent inchangés : la granularité ML est exploitée
+  par
+  [`compute_general_index_mixed()`](https://pobsteta.github.io/nemeton/reference/compute_general_index_mixed.md).
+- **Pipeline de nettoyage**
+  `sanitize_chm(chm, forest_mask, buildings, water, ndvi, slope, max_height, ndvi_threshold)`
+  en 5 étapes, retourne `list(chm_clean, pct_masked, steps_applied)`.
+- **Extraction H_dom** : `extract_h_dom(chm, units, percentile = 0.9)`.
+- **Indice de station** :
+  `compute_site_index(H_dom, age, species, reference_age)` via courbes
+  Duplat & Tran-Ha 1997 dans `inst/extdata/site_index_curves.csv`
+  (autorisation explicite de M. Tran-Ha, avril 2026).
+- **Indicateurs compatibles CHM** (argument `chm = NULL` sur chacun) :
+  - [`indicateur_p1_volume()`](https://pobsteta.github.io/nemeton/reference/indicateur_p1_volume.md)
+    — tarif IFN avec H du CHM.
+  - [`indicateur_p2_station()`](https://pobsteta.github.io/nemeton/reference/indicateur_p2_station.md)
+    — site index H₀ via courbes Duplat.
+  - [`indicateur_c1_biomasse()`](https://pobsteta.github.io/nemeton/reference/indicateur_c1_biomasse.md)
+    — biomasse via V(D, H) × ρ × BEF × C_frac.
+  - [`indicateur_b2_structure()`](https://pobsteta.github.io/nemeton/reference/indicateur_b2_structure.md)
+    — composante CV(CHM) (poids 0.2 par défaut).
+  - [`indicateur_r2_tempete()`](https://pobsteta.github.io/nemeton/reference/indicateur_r2_tempete.md)
+    — modulation par vulnérabilité f(H, espèce).
+- **Source de données** `chm_opencanopy` déclarée dans
+  `inst/datasources/FR.json` (format COG, CRS EPSG:2154, licence double
+  IGN BD ORTHO + Open-Canopy).
+
+Tous les indicateurs restent strictement rétrocompatibles : quand `chm`
+est `NULL`, le comportement v0.15.x est préservé.
 
 ## Internationalisation (i18n)
 
-L’i18n vit dans `nemetonShiny` depuis v0.15.0. Pour mémoire :
+L’i18n vit dans `nemetonshiny` depuis v0.15.0. Pour mémoire :
 
-- L’interface utilise `shiny.i18n` via le système `get_i18n(lang)` /
-  `i18n$t("clé")`
-- Fichiers de traduction dans `nemetonShiny/inst/app/i18n/fr.json` (274+
-  clés) et `en.json`
+- L’interface utilise `get_i18n(lang)` / `i18n$t("clé")` (implémentation
+  maison, pas `shiny.i18n`)
+- Source unique des traductions : liste `TRANSLATIONS` dans
+  `nemetonshiny/R/utils_i18n.R` (358+ clés, FR/EN). Une helper
+  `export_translations_json()` permet un export JSON ponctuel pour les
+  traducteurs.
 - Les textes affichés passent TOUJOURS par i18n, jamais en littéral
   français
-- Les prompts LLM sont bilingues (`nemetonShiny/inst/experts/*.yml`
+- Les prompts LLM sont bilingues (`nemetonshiny/inst/experts/*.yml`
   contiennent FR et EN)
 - Prévu pour l’extension européenne : DE, ES, IT à ajouter
   ultérieurement
@@ -216,19 +260,19 @@ Cœur (ce repo) : - **R \>= 4.1.0** - **sf**, **terra**,
 **tidyr**, **glue**, **cli**, **rlang** - **testthat** (edition 3) pour
 les tests
 
-App Shiny (`nemetonShiny`) — pour mémoire : - **golem** pour la
+App Shiny (`nemetonshiny`) — pour mémoire : - **golem** pour la
 structuration Shiny - **bslib** (Bootstrap 5) pour le layout -
 **leaflet** pour la cartographie - **plotly** (optionnel) / **fmsb**
 pour le radar - **ellmer** pour l’intégration LLM multi-provider
 (Anthropic, Mistral, OpenAI) - **shinyOAuth** pour l’authentification
-(ADR-005) - **shiny.i18n** pour l’internationalisation - **shinytest2**
-pour les tests E2E
+(ADR-005) - **i18n maison** (`utils_i18n.R`, liste `TRANSLATIONS`
+FR/EN) - **shinytest2** pour les tests E2E
 
 ## Commandes de référence
 
 ``` bash
-# Lancer l'application (nécessite le package nemetonShiny installé)
-Rscript -e 'nemetonShiny::run_app()'
+# Lancer l'application (nécessite le package nemetonshiny installé)
+Rscript -e 'nemetonshiny::run_app()'
 
 # Lancer tous les tests
 Rscript -e 'devtools::test()'
@@ -262,9 +306,46 @@ Rscript -e 'cat(covr::percent_coverage(covr::package_coverage(quiet=TRUE)))'
 - Framework : testthat edition 3
 - Nommage : `test-{module}.R`
 - `testServer()` pour les modules Shiny (contribue à covr)
-- [`shinytest2::AppDriver`](https://rstudio.github.io/shinytest2/reference/AppDriver.html)
-  pour les tests E2E (ne contribue pas à covr)
+- `shinytest2::AppDriver` pour les tests E2E (ne contribue pas à covr)
 - `on.exit(app$stop())` obligatoire après chaque AppDriver\$new()
+
+### DB de test isolée — `NEMETON_DB_URL_TEST` (v0.54.0)
+
+Les tests d’intégration (`tests/testthat/test-monitoring.R`,
+`test-read_obs_pixel.R`, `test-project-zone-binding.R`, etc.)
+**DROP-CASCADE** les tables monitoring entre chaque cas via
+`helper-monitoring.R::with_clean_db()`. Pour éviter l’écrasement d’une
+DB de production (incidents villards 2026-05-25 et 2026-05-31), tout
+accès DB d’intégration passe par `.guard_test_db()` +
+`.test_db_connect()`, qui **exigent** `NEMETON_DB_URL_TEST` :
+
+1.  non défini → tests d’intégration **skip** (pas fail) ;
+2.  égal à `NEMETON_DB_URL` → **skip** (copier-coller de la prod) ;
+3.  base contenant des tables applicatives
+    (`projects`/`users`/`parcels`) → **skip** (c’est la vraie base, pas
+    une base jetable — seule couche qui rattrape le cas « TEST pointe
+    sur la prod alors que `NEMETON_DB_URL` est vide »).
+
+Override (CI sur base jetable uniquement) :
+`NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE`.
+
+Setup local (`.Renviron`, cf. `.Renviron.example`) :
+
+``` bash
+NEMETON_DB_URL=postgresql://nemeton@127.0.0.1:5432/nemeton          # prod / app
+NEMETON_DB_URL_TEST=postgresql://nemeton@127.0.0.1:5432/nemeton_test # dédiée, jetable
+```
+
+Création de la base jetable :
+
+``` bash
+createdb -U nemeton -h 127.0.0.1 nemeton_test
+psql -U nemeton -h 127.0.0.1 -d nemeton_test \
+  -c "CREATE EXTENSION IF NOT EXISTS timescaledb; CREATE EXTENSION IF NOT EXISTS postgis;"
+```
+
+Sans `NEMETON_DB_URL_TEST`, `devtools::test()` reste **vert** (les tests
+d’intégration sont *skipped*, comptés dans la sortie testthat).
 
 ### Données de test
 
@@ -276,7 +357,9 @@ Rscript -e 'cat(covr::percent_coverage(covr::package_coverage(quiet=TRUE)))'
 
 ## Fichiers clés (cœur, ce repo)
 
-    R/ndp.R                       → Système NDP, Fibonacci, confiance φ
+    R/ndp.R                       → Système NDP, Fibonacci, confiance φ, flag `augmented`
+    R/utils-chm.R                 → sanitize_chm(), extract_h_dom() (spec 005)
+    R/site_index.R                → compute_site_index() + courbes Duplat & Tran-Ha (spec 005)
     R/family-system.R             → Agrégation des indicateurs en familles
     R/indicators-*.R              → Calcul des 31 indicateurs (air, biodiversity, energy,
                                      naturalness, productive, risk, social, temporal, core, families)
@@ -291,9 +374,10 @@ Rscript -e 'cat(covr::percent_coverage(covr::package_coverage(quiet=TRUE)))'
     R/i18n.R                      → Squelette i18n côté cœur (messages R uniquement)
     inst/tutorials/               → Tutoriels pédagogiques (acquisition, LiDAR, ABA, etc.)
     inst/extdata/aba.model/       → Modèle ABA (Area-Based Approach) + données LiDAR d'exemple
+    inst/extdata/site_index_curves.csv → Courbes de hauteur dominante par essence/classe (spec 005)
     inst/datasources/             → Définitions des sources de données (NDP)
 
-## Fichiers clés (app, repo `nemetonShiny`)
+## Fichiers clés (app, repo `nemetonshiny`)
 
     R/mod_synthesis.R             → Synthèse : score global, radar, AI
     R/mod_home.R                  → Sélection cadastrale, carte
@@ -304,17 +388,63 @@ Rscript -e 'cat(covr::percent_coverage(covr::package_coverage(quiet=TRUE)))'
     R/app_ui.R / R/app_server.R   → UI + server principaux
     R/run_app.R                   → Point d'entrée de l'application
     inst/experts/*.yml            → 13 profils experts pour les perspectives IA (E3)
-    inst/app/i18n/*.json          → Traductions FR/EN
+    R/utils_i18n.R                → Traductions FR/EN (liste TRANSLATIONS, source unique)
+
+# Consignes de release pour ce projet
+
+À chaque push qui modifie le code fonctionnel (hors doc pure, hors CI),
+Claude doit :
+
+1.  Déterminer le type de changement selon Conventional Commits (feat: /
+    fix: / BREAKING CHANGE:) → bump semver correspondant (minor / patch
+    / major).
+
+2.  Mettre à jour le numéro de version dans :
+
+    - DESCRIPTION (champ Version) \[projet R\]
+    - NEWS.md (ajouter une entrée datée)
+    - CITATION.cff si présent
+
+3.  Créer un tag git annoté : git tag -a vX.Y.Z -m “Release X.Y.Z”
+
+4.  Pousser le tag : git push origin vX.Y.Z
+
+5.  Créer la release GitHub via gh : gh release create vX.Y.Z
+    –generate-notes
+
+6.  Vérifier que les badges du README pointent vers la bonne version et
+    la dernière release (badges shields.io, R-CMD-check, codecov…).
+
+7.  Si le CHANGELOG.md existe, ajouter la section \[X.Y.Z\] - YYYY-MM-DD
+    avec les catégories Added / Changed / Fixed / Removed.
+
+8.  Mettre à jour `PLAN.md` à la racine : cocher la case du
+    sous-chantier livré, ajouter une entrée datée au journal, et — si
+    l’épaississement change d’état — mettre à jour la table
+    d’avancement. `PLAN.md` est la source unique de vérité pour le
+    walking skeleton (CLAUDE.md ne duplique plus la table). Ne jamais
+    clore un chantier dans `PLAN.md` sans qu’une release correspondante
+    ait été poussée.
+
+## Règles de cohérence
+
+- La version dans DESCRIPTION, le tag git et la release GitHub doivent
+  être strictement identiques.
+- Ne jamais pousser un tag sans avoir d’abord mis à jour DESCRIPTION et
+  NEWS.md.
+- Vérifier que la page de documentation est aussi à jour de la version
+  et de ses tags.
+- Toujours demander confirmation avant un bump majeur.
 
 ## Règles strictes
 
 1.  Le code métier (indicateurs, familles, NDP) reste dans le package
-    `nemeton` (ce repo), JAMAIS dans `nemetonShiny`
-2.  `nemetonShiny` est de la présentation : il appelle les fonctions
+    `nemeton` (ce repo), JAMAIS dans `nemetonshiny`
+2.  `nemetonshiny` est de la présentation : il appelle les fonctions
     exportées par `nemeton`
 3.  Aucune logique métier dans `server.R` / `ui.R` / `mod_*.R` de
-    `nemetonShiny`
-4.  Dans `nemetonShiny`, les textes UI passent par `i18n$t("clé")`,
+    `nemetonshiny`
+4.  Dans `nemetonshiny`, les textes UI passent par `i18n$t("clé")`,
     jamais en littéral
 5.  Chaque nouvelle fonction exportée (côté cœur) a un test dans
     `tests/testthat/`
@@ -322,4 +452,8 @@ Rscript -e 'cat(covr::percent_coverage(covr::package_coverage(quiet=TRUE)))'
     (ADR-002)
 7.  Le NDP mesure la qualité des données, pas la complétude de l’analyse
 8.  Pas de dépendance inverse : `nemeton` n’importe JAMAIS
-    `nemetonShiny`
+    `nemetonshiny`
+9.  Quand je travaille sur une tâche longue, maintiens un fichier
+    PLAN.md à la racine avec l’état actuel, les décisions prises, et la
+    prochaine étape
+10. Mets-le à jour à chaque étape terminée

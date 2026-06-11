@@ -8,6 +8,7 @@ vignette explique comment utiliser le système d’internationalisation
 (i18n).
 
 ``` r
+
 library(nemeton)
 ```
 
@@ -25,6 +26,7 @@ library(nemeton)
 Par défaut, le package détecte la langue du système :
 
 ``` r
+
 # Afficher la langue actuelle
 Sys.getenv("LANG")
 #> [1] "C.UTF-8"
@@ -37,6 +39,7 @@ Utilisez
 pour définir explicitement la langue :
 
 ``` r
+
 # Passer en français
 nemeton_set_language("fr")
 
@@ -47,6 +50,7 @@ nemeton_set_language("en")
 ### Vérifier la langue active
 
 ``` r
+
 # La langue est stockée dans une option
 getOption("nemeton.lang")
 # [1] "fr"  ou "en"
@@ -60,6 +64,7 @@ la langue définie.
 ### Exemple en français
 
 ``` r
+
 nemeton_set_language("fr")
 
 # Erreur si données manquantes
@@ -70,6 +75,7 @@ nemeton_compute(NULL, NULL, "indicateur_c1_biomasse")
 ### Example in English
 
 ``` r
+
 nemeton_set_language("en")
 
 # Error with missing data
@@ -89,6 +95,7 @@ Le système i18n couvre :
 ## Noms de familles bilingues
 
 ``` r
+
 # En français
 nemeton_set_language("fr")
 get_family_name("C")
@@ -111,6 +118,7 @@ get_family_name("W")
 La langue définie reste active pour toute la session R :
 
 ``` r
+
 # Définir le français au début du script
 nemeton_set_language("fr")
 
@@ -128,6 +136,7 @@ La documentation des fonctions (help) est en **anglais** (standard R),
 avec des exemples en français dans les vignettes.
 
 ``` r
+
 ?nemeton_compute
 ?plot_indicators_map
 ```
@@ -150,6 +159,7 @@ Le système i18n utilise des fichiers de traduction dans `R/i18n.R`.
 ### Structure des messages
 
 ``` r
+
 # Exemple de structure interne
 messages <- list(
   fr = list(
@@ -177,6 +187,7 @@ Pour contribuer une nouvelle langue :
 ## Exemple complet bilingue
 
 ``` r
+
 # ===== VERSION FRANÇAISE =====
 nemeton_set_language("fr")
 
@@ -245,8 +256,9 @@ de rapports multilingues
 ## Session Info
 
 ``` r
+
 sessionInfo()
-#> R version 4.5.3 (2026-03-11)
+#> R version 4.6.0 (2026-04-24)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.4 LTS
 #> 
@@ -267,18 +279,17 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] nemeton_0.15.1.9000
+#> [1] nemeton_0.69.2
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] terra_1.9-11       cli_3.6.6          knitr_1.51         rlang_1.2.0       
-#>  [5] xfun_0.57          KernSmooth_2.23-26 otel_0.2.0         DBI_1.3.0         
-#>  [9] textshaping_1.0.5  sf_1.1-0           jsonlite_2.0.0     glue_1.8.0        
+#>  [1] terra_1.9-27       cli_3.6.6          knitr_1.51         rlang_1.2.0       
+#>  [5] xfun_0.58          KernSmooth_2.23-26 otel_0.2.0         DBI_1.3.0         
+#>  [9] textshaping_1.0.5  sf_1.1-1           jsonlite_2.0.0     glue_1.8.1        
 #> [13] e1071_1.7-17       htmltools_0.5.9    ragg_1.5.2         sass_0.4.10       
-#> [17] rmarkdown_2.31     grid_4.5.3         classInt_0.4-11    evaluate_1.0.5    
+#> [17] rmarkdown_2.31     grid_4.6.0         classInt_0.4-11    evaluate_1.0.5    
 #> [21] jquerylib_0.1.4    fastmap_1.2.0      yaml_2.3.12        lifecycle_1.0.5   
-#> [25] compiler_4.5.3     codetools_0.2-20   fs_2.0.1           Rcpp_1.1.1        
+#> [25] compiler_4.6.0     codetools_0.2-20   fs_2.1.0           Rcpp_1.1.1-1.1    
 #> [29] htmlwidgets_1.6.4  systemfonts_1.3.2  digest_0.6.39      R6_2.6.1          
-#> [33] class_7.3-23       magrittr_2.0.5     bslib_0.10.0       proxy_0.4-29      
-#> [37] tools_4.5.3        units_1.0-1        pkgdown_2.2.0      cachem_1.1.0      
-#> [41] desc_1.4.3
+#> [33] class_7.3-23       bslib_0.11.0       proxy_0.4-29       tools_4.6.0       
+#> [37] units_1.0-1        pkgdown_2.2.0      cachem_1.1.0       desc_1.4.3
 ```

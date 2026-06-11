@@ -7,7 +7,16 @@ topographic-only assessment when SPEI is unavailable.
 ## Usage
 
 ``` r
-indicateur_r3_secheresse(units, layers = NULL, dem = NULL, climate_data = NULL)
+indicateur_r3_secheresse(
+  units,
+  layers = NULL,
+  dem = NULL,
+  climate_data = NULL,
+  snow = NULL,
+  snow_relief_strength = 0.3,
+  soil_moisture = NULL,
+  sm_relief_strength = 0.3
+)
 ```
 
 ## Arguments
@@ -29,6 +38,35 @@ indicateur_r3_secheresse(units, layers = NULL, dem = NULL, climate_data = NULL)
   Optional list with `precip` (monthly precipitation vector in mm) and
   `temp` (list with `tmin` and `tmax` monthly vectors in degrees C). If
   NULL, uses simulated data.
+
+- snow:
+
+  Optional `SpatRaster` of snow-cover duration in days per year (the
+  Theia `theia_snow` `snow_cover_duration` product, loaded via
+  [`load_raster_source`](https://pobsteta.github.io/nemeton/reference/load_raster_source.md)).
+  When supplied, the snowpack acts as a seasonal water reserve that
+  attenuates drought stress — see Details. Units with no snow coverage
+  are left unchanged. Default `NULL`.
+
+- snow_relief_strength:
+
+  Numeric in `[0, 1]`. Maximum fractional reduction of R3 applied when
+  the snow-cover duration reaches the 180-day (6-month) reference.
+  Default `0.3`. Ignored when `snow` is `NULL`.
+
+- soil_moisture:
+
+  Optional `SpatRaster` of surface soil moisture in \\m^3/m^3\\ (the
+  Theia `theia_soil_moisture` product, loaded via
+  [`load_raster_source`](https://pobsteta.github.io/nemeton/reference/load_raster_source.md)).
+  When supplied, moist soil attenuates drought stress — see Details.
+  Default `NULL`.
+
+- sm_relief_strength:
+
+  Numeric in `[0, 1]`. Maximum fractional reduction of R3 applied when
+  the soil moisture reaches the \\0.3\\m^3/m^3\\ field-capacity
+  reference. Default `0.3`. Ignored when `soil_moisture` is `NULL`.
 
 ## Value
 
@@ -54,6 +92,19 @@ is computed with the Hargreaves method. R3_climat = (-SPEI_recent + 2) /
 topo_risk = 0.4\*aspect_risk + 0.3\*slope_risk + 0.3\*twi_risk
 
 R3 = (0.6 \* climate + 0.4 \* topo) \* 100
+
+\*\*Snow attenuation\*\* (Theia `theia_snow`, optional): when `snow` is
+supplied, the per-unit mean snow-cover duration is rescaled to a 0-1
+relief factor against a 180-day reference, and R3 is multiplied by
+`1 - snow_relief_strength * relief`. A forest with a long-lasting
+snowpack carries a meltwater reserve into the growing season and is
+therefore less drought-stressed.
+
+\*\*Soil-moisture attenuation\*\* (Theia `theia_soil_moisture`,
+optional): when `soil_moisture` is supplied, the per-unit mean surface
+soil moisture is rescaled to a 0-1 relief factor against the
+\\0.3\\m^3/m^3\\ field-capacity reference, and R3 is multiplied by
+`1 - sm_relief_strength * relief`. Moist soil buffers drought stress.
 
 ## See also
 

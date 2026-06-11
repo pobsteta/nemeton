@@ -1,0 +1,202 @@
+# FAST alert raster at native S2 pixel resolution (spec 013)
+
+Computes a single-band raster of FAST alerts for a monitoring zone,
+built from the cached Sentinel-2 NDVI / NBR layers produced by
+\[ingest_sentinel2_timeseries()\]. Two semantics are supported, selected
+via \`mode\`:
+
+## Usage
+
+``` r
+read_fast_alert_raster(
+  con,
+  zone_id,
+  index = c("NDVI", "NBR", "NDMI", "NDRE"),
+  threshold = NULL,
+  date_from,
+  date_to,
+  mode = c("count", "rolling", "trend"),
+  window_days = 30L,
+  months = 6:9,
+  min_years = 4L,
+  min_obs_per_year = 2L,
+  alpha = 0.05,
+  cache_dir,
+  apply_zone_mask = TRUE,
+  mask_polygon = NULL,
+  cache_result = TRUE,
+  result_cache_dir = NULL,
+  parallel = FALSE
+)
+```
+
+## Arguments
+
+- con:
+
+  A \`DBIConnection\`. Used only to resolve the UGF zone polygon for the
+  optional mask (spec 016) — \*\*not\*\* for scene enumeration (spec
+  017: scenes come from the COG cache, so the diagnostic is independent
+  of \`obs_pixel\` / placettes).
+
+- zone_id:
+
+  Integer scalar. Existing zone in \`monitoring_zone\`.
+
+- index:
+
+  Character scalar. The single spectral index the alert map is built
+  from: \`"NDVI"\`, \`"NBR"\`, \`"NDMI"\` (moisture, spec 019) or
+  \`"NDRE"\` (red-edge, spec 022). The default is \*\*mode-dependent\*\*
+  when \`index\` is not supplied: \`"NDVI"\` for \`count\` / \`rolling\`
+  (back-compat), \`"NDMI"\` for \`trend\` (moisture decouples first
+  under chronic stress). Spec 017 (v0.55.0) dropped the previous "NDVI
+  OR NBR" combination — the map is mono-index.
+
+- threshold:
+
+  Numeric scalar in \`(0, 1)\`, or \`NULL\`. Alert if the chosen
+  \`index\` is strictly below this value. When \`NULL\` (default) it
+  resolves to \`0.40\` for \`"NDVI"\` and \`0.30\` otherwise (\`"NBR"\`,
+  \`"NDMI"\`, \`"NDRE"\`). \*\*Ignored when \`mode = "trend"\`\*\* (the
+  trend paradigm is relative, not threshold-based).
+
+- date_from, date_to:
+
+  Date (or character \`"YYYY-MM-DD"\`) bounding the analysis window.
+
+- mode:
+
+  Character scalar. One of \`"count"\`, \`"rolling"\` or \`"trend"\`
+  (spec 023). Default \`"count"\`.
+
+- window_days:
+
+  Integer scalar. Length of the trailing window in calendar days for
+  \`mode = "rolling"\`. Ignored in \`"count"\` / \`"trend"\` mode.
+  Default 30.
+
+- months:
+
+  Integer vector in \`1:12\`. Trend mode only: the seasonal window kept
+  for the yearly composite. Default \`6:9\` (summer, when water stress
+  is most legible).
+
+- min_years:
+
+  Integer scalar. Trend mode only: minimum number of valid composite
+  years a pixel needs, else it is \`NA\`. Default \`4\`.
+
+- min_obs_per_year:
+
+  Integer scalar. Trend mode only: minimum number of clear observations
+  a pixel needs within a year for that year's median to count (else that
+  year is \`NA\` for the pixel). Default \`2\`.
+
+- alpha:
+
+  Numeric scalar in \`(0, 1)\`. Trend mode only: the Mann-Kendall
+  two-sided significance level above which a pixel's decline is treated
+  as noise (output \`0\`). Default \`0.05\`.
+
+- cache_dir:
+
+  Character scalar. Path to the COG cache root (typically
+  \`\<project\>/cache/layers/sentinel2\`). Must exist.
+
+- cache_result:
+
+  Logical. When \`TRUE\` (default, spec 017 D6) the continuous result
+  raster is persisted as a content-addressed COG and a subsequent call
+  with the same inputs is served instantly from disk (zero recompute). A
+  new scene in \`cache_dir\`, any parameter change, or a zone
+  re-registration changes the content hash and triggers a fresh compute.
+  \`FALSE\` disables the persistence entirely.
+
+- result_cache_dir:
+
+  Character scalar or \`NULL\`. Root of the result COG cache. When
+  \`NULL\` (default) it is \`file.path(dirname(cache_dir),
+  "fast_raster")\`; COGs land under \`\<result_cache_dir\>/zone\_\<id\>/
+  fast\_\<INDEX\>\_\<MODE\>\_thr\<threshold\>\_\<from\>\_\<to\>\_w\<window\>\_\<hash8\>.tif\`
+  (verbose, deterministic — same parameters yield the same name, so the
+  cache hit is preserved). At most
+  \`getOption("nemeton.fast_raster_keep", 20)\` COGs are kept per zone.
+
+- parallel:
+
+  Logical (spec 017 D4). Passed to \[build_index_stack()\]: when
+  \`TRUE\` and furrr is installed, the per-scene raster compute fans
+  across cores (set a \`future::plan()\` first). Default \`FALSE\`;
+  results are identical to sequential.
+
+## Value
+
+A \`terra::SpatRaster\` (single layer, EPSG:2154) when at least one
+usable scene is found, or \`NULL\` when no scene matches. The layer name
+is \`alert_count\` or \`alert_deficit\` depending on \`mode\`; attribute
+\`mode\` carries the mode, \`index\` the spectral index, and \`cached =
+TRUE\` is set when the raster was read from the result cache.
+
+## Details
+
+\* \*\*\`"count"\`\*\* — for each pixel, the integer number of dates
+within \`\[date_from, date_to\]\` where \`NDVI \< threshold_ndvi\`
+\*\*or\*\* \`NBR \< threshold_nbr\`. Sensitive to brief stress events;
+to unmasked cloud noise — mitigated by the \`max_cloud\` filter already
+applied at ingestion. \* \*\*\`"rolling"\`\*\* — continuous deficit
+magnitude over the most recent \`window_days\`. For each pixel, computes
+\`mean(NDVI)\` and \`mean(NBR)\` on the trailing window, then returns
+\`max(deficit_ndvi, deficit_nbr)\` where \`deficit_x = max(0,
+threshold_x - mean_x)\`. Value 0 = pixel not in alert, value \> 0 =
+magnitude of the alert. Robust to brief noise, but insensitive to short
+shocks. \* \*\*\`"trend"\`\*\* — multi-year monotonic decline (spec
+023). A \*relative\* paradigm: each pixel is its own baseline, no
+absolute \`threshold\`. Builds a seasonal yearly composite (median of
+the \`months\` window per year, dropping years with fewer than
+\`min_obs_per_year\` clear observations), requires at least
+\`min_years\` valid years, then fits a Theil-Sen slope and a
+Mann-Kendall significance test per pixel. Returns \`abs(slope)\` where
+the slope is negative \*\*and\*\* the Mann-Kendall p-value is below
+\`alpha\`, otherwise \`0\`; pixels with too few valid years are \`NA\`.
+The output is the same kind of continuous raster as the other modes
+(\`0\` = no alert, \`\> 0\` = magnitude), so
+\[compute_fast_alert_mask()\] discretises it unchanged — Mann-Kendall
+plays the gate that the absolute threshold plays for count / rolling.
+Built for chronic dieback (slow multi-year decline, e.g. broadleaf oak /
+beech) that the short-horizon modes cannot see.
+
+The raster is computed in the native Sentinel-2 CRS (typically
+EPSG:32631 for tiles T31xxx) for numerical accuracy, then \*\*projected
+to EPSG:2154 (Lambert-93)\*\* before being returned, to stay consistent
+with the rest of the project. Use \[terra::project()\] downstream if a
+different output CRS is needed.
+
+Source data: this function reads from the on-disk COG cache populated by
+\[ingest_sentinel2_timeseries()\] (or \[ingest_s2_raw_bands_to_cache()\]
+on the FORDEAD path). The list of scenes to process is enumerated
+directly from the cache directory and filtered by \`(date_from,
+date_to)\` (spec 017), so the diagnostic is fully independent of any
+per-placette table.
+
+## See also
+
+\[build_index_stack()\] (the underlying index stack builder, spec 010),
+\[.get_zone_aoi()\] (the shared AOI resolver, spec 012),
+\[compute_fast_alert_mask()\] (the 0-4 quartile discretiser).
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+  con <- db_connect(Sys.getenv("NEMETON_DB_URL"))
+  on.exit(db_disconnect(con), add = TRUE)
+  r <- read_fast_alert_raster(
+    con, zone_id = 1L,
+    date_from  = "2025-05-23",
+    date_to    = "2026-05-23",
+    mode       = "count",
+    cache_dir  = "/proj/cache/layers/sentinel2")
+  terra::plot(r)
+} # }
+```

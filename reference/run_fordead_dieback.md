@@ -1,0 +1,285 @@
+# Run the FORDEAD dieback detection pipeline on a monitoring zone
+
+Orchestrates fordead 2.x via reticulate. The pipeline derives its AOI
+from \`monitoring_zone.zone_wkt\`, ensures the Sentinel-2 COG cache
+contains every required band (\[FORDEAD_BANDS\]), assembles a STAC
+\`ItemCollection\` over local hrefs, and runs FORDEAD \`fit()\` +
+\`predict()\` on top. Six phases :
+
+## Usage
+
+``` r
+run_fordead_dieback(
+  con,
+  zone_id,
+  cache_dir,
+  dates_training = c("2018-01-01", "2020-12-31"),
+  dates_monitoring = c(as.character(seq(Sys.Date(), by = "-18 months", length.out =
+    2)[2]), as.character(Sys.Date())),
+  vegetation_index = "CRSWIR",
+  threshold_anomaly = 0.16,
+  max_cloud = 20,
+  output_dir = tempfile("fordead_"),
+  mask_cache_dir = NULL,
+  keep_output = FALSE,
+  python_env = NULL,
+  min_pixels = 5L,
+  connectivity = 8L,
+  verbose = TRUE,
+  progress_callback = NULL,
+  cancel_path = NULL
+)
+```
+
+## Arguments
+
+- con:
+
+  A \`DBIConnection\`. Used to resolve the AOI (from
+  \`monitoring_zone.zone_wkt\`) and, in the \`persist\` phase, to insert
+  FORDEAD centroids into the \`alert\` table.
+
+- zone_id:
+
+  Integer or character. Identifier of an existing row in
+  \`monitoring_zone\`.
+
+- cache_dir:
+
+  Character(1). Root of the COG cache, typically
+  \`\<project\>/cache/layers/sentinel2\`. Created if absent. Shared with
+  \[ingest_sentinel2_timeseries()\] (FAST pipeline) so already-cached
+  bands are reused on repeat runs.
+
+- dates_training:
+
+  Length-2 character vector defining the training window. Default
+  \`c("2018-01-01", "2020-12-31")\` — a 2-year calibrated baseline
+  (ADR-013) anchored on the start of Sentinel-2 dense coverage,
+  sufficient to fit the harmonic model without polluting the baseline
+  with recent disturbances.
+
+- dates_monitoring:
+
+  Length-2 character vector defining the monitoring window. The end may
+  be \`NA_character\_\` to mean "open / latest". Default is a rolling
+  18-month window ending today, i.e. \`c(as.character(seq(Sys.Date(), by
+  = "-18 months", length.out = 2)\[2\]), as.character(Sys.Date()))\`.
+  The 18-month span is long enough to capture a full vegetation cycle
+  plus the early stages of a slow dieback, and short enough to keep the
+  diagnostic actionable.
+
+- vegetation_index:
+
+  One of \`"CRSWIR"\`, \`"NDVI"\`, \`"NDWI"\`. Default \`"CRSWIR"\`.
+
+- threshold_anomaly:
+
+  Numeric in \`\[0.05, 0.50\]\`. Default \`0.16\` (calibrated).
+
+- max_cloud:
+
+  Numeric. Maximum scene cloud cover ( the phase-0 STAC search. Default
+  20.
+
+- output_dir:
+
+  Character. Where FORDEAD writes its full raster working set (≈1000+
+  GeoTIFFs: \`ANOMALY\_\*\`, \`CRSWIR\`, \`PREDICTION\`, masks, …).
+  Defaults to a fresh \`tempfile("fordead\_")\`, which is wiped when the
+  session ends. See \`keep_output\` to retain the working set in the
+  project cache instead.
+
+- mask_cache_dir:
+
+  Character or \`NULL\`. Root of the FORDEAD persistent cache where the
+  categorical 0-4 dieback mask is written (one small GeoTIFF per run).
+  When \`NULL\` (default), it is derived as the sibling of
+  \`cache_dir\`: \`file.path(dirname(cache_dir), "fordead")\` — i.e.
+  \`\<project\>/cache/layers/fordead\` for the conventional layout. The
+  mask is saved as
+  \`\<mask_cache_dir\>/zone\_\<zone_id\>/dieback_mask\_\<YYYYMMDDTHHMMSS\>.tif\`,
+  the exact path \[read_fordead_dieback_mask()\] looks up.
+
+- keep_output:
+
+  Logical. When \`TRUE\` and \`output_dir\` is left at its default,
+  FORDEAD runs directly inside the project cache
+  (\`\<mask_cache_dir\>/zone\_\<zone_id\>/run\_\<YYYYMMDDTHHMMSS\>/\`)
+  so the full raster working set survives the session — useful to re-run
+  \`postprocess\` with different \`min_pixels\` / \`connectivity\`
+  without re-\`fit\`/\`predict\`. Default \`FALSE\` (working set in a
+  temporary directory). Ignored when \`output_dir\` is supplied
+  explicitly. The categorical dieback mask is persisted regardless of
+  this flag.
+
+- python_env:
+
+  Character. Virtualenv name. Defaults to
+  \`Sys.getenv("NEMETON_FORDEAD_ENV", "nemeton-fordead")\`.
+
+- min_pixels:
+
+  Integer. Minimum FORDEAD patch size (in pixels) to be considered an
+  alert. Default 5.
+
+- connectivity:
+
+  Integer 4 or 8. Default 8.
+
+- verbose:
+
+  Logical. Print progress via \`cli\`. Default \`TRUE\`.
+
+- progress_callback:
+
+  Optional function called at each phase of the pipeline. Receives a
+  single named list with \`current\` (event key) and, when meaningful,
+  \`completed\`, \`total\`, \`phase_name\`. Phases emitted, in order:
+  \`"ingest"\`, \`"stac_assembly"\`, \`"fit"\`, \`"predict"\`,
+  \`"postprocess"\`, \`"persist"\`. During \`"ingest"\` the \`s2:\*\`
+  events from \[ingest_s2_raw_bands_to_cache()\] also pass through
+  verbatim (search / scene / band_cached / band_fetched / complete).
+  Exceptions raised inside the callback are swallowed so a buggy UI
+  never aborts the pipeline. Default \`NULL\` (silent).
+
+- cancel_path:
+
+  Optional character path to a cooperative cancellation flag file. When
+  \`NULL\` (default) no polling happens. When a path is given, the
+  worker checks \`file.exists(cancel_path)\` at each phase boundary
+  (after ingest, fit, predict); if the file appears the current phase is
+  allowed to finish, then the pipeline exits with \`status =
+  "cancelled"\` and a \`phase\` field naming the phase reached. The
+  Python subprocess is \*\*not\*\* force-killed (reticulate has no
+  reliable interrupt). A flag already present at entry is ignored as a
+  stale leftover — the caller must delete it before each call. A
+  \`fordead:cancelled\` progress event is emitted.
+
+## Value
+
+A list with the following fields:
+
+- status:
+
+  \`"success"\`, \`"cancelled"\`, or \`"error"\`.
+
+- message:
+
+  Optional human-readable message.
+
+- phase:
+
+  Present only on a \`"cancelled"\` result — the phase (\`"ingest"\`,
+  \`"fit"\`, \`"predict"\`) after which the run stopped.
+
+- output_dir:
+
+  Path where FORDEAD wrote its rasters.
+
+- zone_id:
+
+  The zone id that was processed.
+
+- n_scenes:
+
+  Number of scenes considered.
+
+- rasters:
+
+  Named list of GeoTIFF paths (\`state\`, \`first_dieback_date\`,
+  \`stress_index\`, \`dieback_mask\`, \`model_dir\`). \`dieback_mask\`
+  is the persisted categorical 0-4 raster under \`mask_cache_dir\` (or
+  \`NA_character\_\` when the mask could not be written). \`model_dir\`
+  is the diagnostic bundle directory \`model\_\<run_id\>/\` (spec 008
+  §14.3), or \`NA_character\_\` when the bundle could not be written.
+
+- alerts_sf:
+
+  An sf POINT layer of FORDEAD cluster centroids (in EPSG:2154), or
+  \`NULL\` when no anomaly was detected.
+
+- n_alerts_inserted:
+
+  Integer.
+
+- duration_sec:
+
+  Wall-clock duration in seconds.
+
+- python_env:
+
+  The virtualenv that was used.
+
+- fordead_version:
+
+  The Python \`fordead\` package version.
+
+## Details
+
+1.  \*\*ingest\*\* (\[ingest_s2_raw_bands_to_cache()\]) — partial-
+    coverage-aware download of missing raw bands into \`cache_dir\`.
+    Re-uses bands already cached by \[ingest_sentinel2_timeseries()\]
+    (FAST pipeline) so a zone with FAST already run skips the three
+    shared bands (B04, B12) and only fetches the four FORDEAD- specific
+    ones (B02, B05, B8A, B11). Propagates \`s2:\*\` events verbatim to
+    the user's \`progress_callback\`.
+
+2.  \*\*STAC assembly\*\* (\[.build_stac_collection_for_aoi()\]) — walk
+    \`cache_dir\`, build a \`pystac.Item\` per scene with band assets
+    pointing at local COGs. Hrefs are local paths, so PC SAS expiry
+    during long runs is a non-issue.
+
+3.  \*\*fit\*\* — \`FordeadProcess.fit()\` trains the per-pixel harmonic
+    model on the training window.
+
+4.  \*\*predict\*\* — \`FordeadProcess.predict()\` produces
+    \`ANOMALY_CONFIRMED\` / \`ANOMALY_INDEX\` /
+    \`CONSECUTIVE_DETECTIONS\` /\`STOP_CONFIRMED\` rasters under
+    \`\<output_dir\>/\<LAYER\>/\`.
+
+5.  \*\*postprocess\*\* (\[.postprocess_fordead_rasters()\] reused) —
+    derive a 0-4 confidence-class raster from the 2.x layers, run
+    \`terra::patches()\` 8-neighbour, build cluster centroids with
+    \`confidence_class\`, \`stress_index\`, \`trigger_date\`,
+    \`n_pixels\`.
+
+6.  \*\*persist\*\* — write the categorical 0-4 dieback mask and the
+    diagnostic bundle (\`model\_\<run_id\>/\`: harmonic coefficients,
+    masked CRSWIR stack, first-anomaly date, \`run_meta.json\` — spec
+    008 §14.3) to the project cache, then snap centroids to the nearest
+    registered plot of the zone and insert them via
+    \[.insert_fordead_alerts()\] (idempotent \`ON CONFLICT DO
+    NOTHING\`).
+
+Calibration is frozen on the ONF/DSF reference values (Bernard &
+Doridant 2024) and not exposed to the end user — see ADR-013 for the
+rationale. The fordead 2.x defaults match these values out of the box
+(cf. spec 008 §12.6).
+
+## Breaking changes since v0.23.0
+
+The signature is now \`(con, zone_id, cache_dir, ...)\`. Arguments
+\`aoi\`, \`scenes_df\` and \`forest_mask\` were removed (see spec 008
+§13.2). Migrate callers by switching from supplying an explicit AOI +
+scenes_df to passing the \`DBIConnection\` + zone id that the pipeline
+uses to derive both internally.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+res <- run_fordead_dieback(
+  con              = con,
+  zone_id          = 1L,
+  cache_dir        = file.path(project_dir, "cache/layers/sentinel2"),
+  dates_training   = c("2018-01-01", "2020-12-31"),
+  dates_monitoring = c(
+    as.character(seq(Sys.Date(), by = "-18 months", length.out = 2)[2]),
+    as.character(Sys.Date())
+  )
+)
+res$status
+res$rasters
+} # }
+```

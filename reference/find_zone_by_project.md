@@ -1,0 +1,42 @@
+# Find the monitoring zone bound to a project UUID
+
+Looks up \`monitoring_zone.project_uuid\` and returns the matching zone
+id, or \`integer(0)\` if no zone is bound to that project. Available
+since spec 011 (migration \`0003_project_uuid\`).
+
+## Usage
+
+``` r
+find_zone_by_project(con, project_uuid)
+```
+
+## Arguments
+
+- con:
+
+  A \`DBIConnection\` returned by \[db_connect()\].
+
+- project_uuid:
+
+  Non-empty character scalar. Opaque project identifier as previously
+  passed to \[register_monitoring_zone()\].
+
+## Value
+
+An integer of length 1 (the zone id) when found, or \`integer(0)\` when
+no zone matches.
+
+## Details
+
+This is the stable lookup path used by \`nemetonshiny\` to re-hydrate a
+project's monitoring zone when the project metadata does not (or no
+longer) carry \`monitoring_zone_id\` (e.g. project moved across
+machines, metadata wiped, or zone registered before the field existed).
+The function deliberately does \*\*not\*\* fall back to a name-based
+lookup: matching by \`name\` was the legacy convention, brittle
+(duplicates, renames) and we want callers to migrate to the UUID
+binding.
+
+## See also
+
+\[register_monitoring_zone()\] for the writer side of the binding.

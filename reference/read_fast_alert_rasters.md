@@ -1,0 +1,135 @@
+# Build the full FAST alert raster set (3 indices x 2 modes, spec 019)
+
+Convenience wrapper over \[read_fast_alert_raster()\] that builds the
+complete FAST diagnostic in a single call: the three spectral indices
+(\`NDVI\`, \`NBR\`, \`NDMI\`) each in both semantics (\`count\` and
+\`rolling\`) — up to six rasters. Every element is produced exactly as a
+direct \[read_fast_alert_raster()\] call would be, sharing the same COG
+cache, content-addressed result cache and zone mask, so a revisit of any
+one map stays instant (spec 017 D6).
+
+## Usage
+
+``` r
+read_fast_alert_rasters(
+  con,
+  zone_id,
+  date_from,
+  date_to,
+  indices = c("NDVI", "NBR", "NDMI"),
+  modes = c("count", "rolling"),
+  threshold = NULL,
+  window_days = 30L,
+  cache_dir,
+  apply_zone_mask = TRUE,
+  mask_polygon = NULL,
+  cache_result = TRUE,
+  result_cache_dir = NULL,
+  parallel = FALSE
+)
+```
+
+## Arguments
+
+- con:
+
+  A \`DBIConnection\`. Used only to resolve the UGF zone polygon for the
+  optional mask (spec 016) — \*\*not\*\* for scene enumeration (spec
+  017: scenes come from the COG cache, so the diagnostic is independent
+  of \`obs_pixel\` / placettes).
+
+- zone_id:
+
+  Integer scalar. Existing zone in \`monitoring_zone\`.
+
+- date_from, date_to:
+
+  Date (or character \`"YYYY-MM-DD"\`) bounding the analysis window.
+
+- indices:
+
+  Character vector, subset of \`c("NDVI", "NBR", "NDMI")\`. Default: all
+  three.
+
+- modes:
+
+  Character vector, subset of \`c("count", "rolling")\`. Default: both.
+
+- threshold:
+
+  Numeric scalar in \`(0, 1)\` applied to every requested index, or
+  \`NULL\` (default) to let each index resolve its own default (\`0.40\`
+  for NDVI, \`0.30\` for NBR / NDMI). Pass \`NULL\` unless you
+  deliberately want one shared cut-off across indices.
+
+- window_days:
+
+  Integer scalar. Length of the trailing window in calendar days for
+  \`mode = "rolling"\`. Ignored in \`"count"\` / \`"trend"\` mode.
+  Default 30.
+
+- cache_dir:
+
+  Character scalar. Path to the COG cache root (typically
+  \`\<project\>/cache/layers/sentinel2\`). Must exist.
+
+- cache_result:
+
+  Logical. When \`TRUE\` (default, spec 017 D6) the continuous result
+  raster is persisted as a content-addressed COG and a subsequent call
+  with the same inputs is served instantly from disk (zero recompute). A
+  new scene in \`cache_dir\`, any parameter change, or a zone
+  re-registration changes the content hash and triggers a fresh compute.
+  \`FALSE\` disables the persistence entirely.
+
+- result_cache_dir:
+
+  Character scalar or \`NULL\`. Root of the result COG cache. When
+  \`NULL\` (default) it is \`file.path(dirname(cache_dir),
+  "fast_raster")\`; COGs land under \`\<result_cache_dir\>/zone\_\<id\>/
+  fast\_\<INDEX\>\_\<MODE\>\_thr\<threshold\>\_\<from\>\_\<to\>\_w\<window\>\_\<hash8\>.tif\`
+  (verbose, deterministic — same parameters yield the same name, so the
+  cache hit is preserved). At most
+  \`getOption("nemeton.fast_raster_keep", 20)\` COGs are kept per zone.
+
+- parallel:
+
+  Logical (spec 017 D4). Passed to \[build_index_stack()\]: when
+  \`TRUE\` and furrr is installed, the per-scene raster compute fans
+  across cores (set a \`future::plan()\` first). Default \`FALSE\`;
+  results are identical to sequential.
+
+## Value
+
+A named \`list\` of length \`length(indices) \* length(modes)\` (six by
+default), keyed \`"\<index\>\_\<mode\>"\` (e.g. \`"NDMI_rolling"\`).
+Each element is a \`terra::SpatRaster\` (EPSG:2154) or \`NULL\` when no
+cached scene matched for that index in the window.
+
+## Details
+
+The bands each index needs are cached by
+\[ingest_sentinel2_timeseries()\] (B11 for NDMI is cached best-effort,
+spec 019 D3). A map whose index has no cached scene carrying its bands
+in the window is returned as \`NULL\` rather than dropping the slot, so
+the result always has a stable shape.
+
+## See also
+
+\[read_fast_alert_raster()\] (the per-map builder),
+\[compute_fast_alert_mask()\] (0-4 quartile discretiser).
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+  con <- db_connect(Sys.getenv("NEMETON_DB_URL"))
+  on.exit(db_disconnect(con), add = TRUE)
+  maps <- read_fast_alert_rasters(
+    con, zone_id = 1L,
+    date_from = "2025-05-23", date_to = "2026-05-23",
+    cache_dir = "/proj/cache/layers/sentinel2")
+  names(maps)             # "NDVI_count" ... "NDMI_rolling"
+  terra::plot(maps$NDMI_rolling)
+} # }
+```

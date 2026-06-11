@@ -1,0 +1,23 @@
+# Climate-driven BAI drift (Charru et al. 2017)
+
+Per-species relative changes in stand basal area increment (BAI) over
+1980-2007, from Charru M., Seynave I., Herve J.-C., Bertrand R. and
+Bontemps J.-D. (2017), "Recent growth changes in Western European
+forests are driven by climate warming and structured across tree species
+climatic habitats", Annals of Forest Science 74:33 (HAL hal-01573238).
+
+## Details
+
+The 8 species studied span four climatic habitats (mountain, generalist,
+temperate lowland, Mediterranean) and show BAI trends ranging from about
+-28 percent (P. halepensis, Mediterranean) to about +25 percent (P.
+abies, mountain) over the 25-year window. Modern stands therefore grow
+at different rates than the historical baselines encoded in classic
+yield tables. For nemeton this is informational in Phase 2: it does NOT
+auto-correct P1 / P3 / E1 outputs. Callers that want a modern volume can
+multiply by `bai_drift_factor(species)`; callers studying retrospective
+productivity may prefer the raw synthetic inventory.
+
+The values are central estimates read from Fig. 4a of the paper and are
+therefore approximate (about 0.05 in relative units). They should not be
+over-interpreted beyond their first digit.

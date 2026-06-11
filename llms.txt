@@ -10,7 +10,7 @@ biophysiques multi-famille** pour la gestion forestiere durable.
 ## Architecture (ADR-009)
 
     nemeton (ce repo)       -> Package coeur R (MIT). 31 indicateurs, 12 familles, NDP, radar.
-    nemetonShiny            -> Application Shiny (EUPL v1.2). Interface web interactive.
+    nemetonshiny            -> Application Shiny (EUPL v1.2). Interface web interactive.
     tree_sat_nemeton        -> Classification d'essences Sentinel-1/2. NDP 0. MIT.
     maestro_nemeton         -> Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
 
@@ -19,20 +19,20 @@ biophysiques multi-famille** pour la gestion forestiere durable.
 **12 familles d’indicateurs** avec 31 sous-indicateurs (convention NMT)
 :
 
-| Code  | Famille               | Indicateurs                                                     |
-|-------|-----------------------|-----------------------------------------------------------------|
-| **B** | Biodiversite          | indicateur_b1_protection, b2_structure, b3_connectivite         |
-| **C** | Carbone & Vitalite    | indicateur_c1_biomasse, c2_ndvi                                 |
-| **W** | Eau & Regulation      | indicateur_w1_reseau, w2_zones_humides, w3_humidite             |
-| **A** | Air & Microclimat     | indicateur_a1_couverture, a2_qualite_air                        |
-| **F** | Fertilite Sols        | indicateur_f1_fertilite, f2_erosion                             |
-| **L** | Paysage               | indicateur_l1_sylvosphere, l2_fragmentation                     |
-| **T** | Temporel              | indicateur_t1_anciennete, t2_changement                         |
-| **R** | Risques & Resilience  | indicateur_r1_feu, r2_tempete, r3_secheresse, r4_abroutissement |
-| **S** | Social & Usages       | indicateur_s1_routes, s2_bati, s3_population                    |
-| **P** | Production & Economie | indicateur_p1_volume, p2_station, p3_qualite_bois               |
-| **E** | Energie & Climat      | indicateur_e1_bois_energie, e2_evitement                        |
-| **N** | Naturalite            | indicateur_n1_distance, n2_continuite, n3_naturalite            |
+| Code | Famille | Indicateurs |
+|----|----|----|
+| **B** | Biodiversite | indicateur_b1_protection, b2_structure, b3_connectivite |
+| **C** | Carbone & Vitalite | indicateur_c1_biomasse, c2_ndvi |
+| **W** | Eau & Regulation | indicateur_w1_reseau, w2_zones_humides, w3_humidite |
+| **A** | Air & Microclimat | indicateur_a1_couverture, a2_qualite_air |
+| **F** | Fertilite Sols | indicateur_f1_fertilite, f2_erosion |
+| **L** | Paysage | indicateur_l1_sylvosphere, l2_fragmentation |
+| **T** | Temporel | indicateur_t1_anciennete, t2_changement |
+| **R** | Risques & Resilience | indicateur_r1_feu, r2_tempete, r3_secheresse, r4_abroutissement |
+| **S** | Social & Usages | indicateur_s1_routes, s2_bati, s3_population |
+| **P** | Production & Economie | indicateur_p1_volume, p2_station, p3_qualite_bois |
+| **E** | Energie & Climat | indicateur_e1_bois_energie, e2_evitement |
+| **N** | Naturalite | indicateur_n1_distance, n2_continuite, n3_naturalite |
 
 **Systeme NDP** (Niveau De Precision) : ponderation Fibonacci
 (1,1,2,3,5), confiance phi.
@@ -45,6 +45,7 @@ correlations.
 ## Installation
 
 ``` r
+
 # install.packages("remotes")
 remotes::install_github("pobsteta/nemeton")
 ```
@@ -54,6 +55,7 @@ remotes::install_github("pobsteta/nemeton")
 ## Quick Start
 
 ``` r
+
 library(nemeton)
 
 # Charger le dataset de demonstration (20 parcelles, 12 familles)
@@ -75,16 +77,70 @@ get_data_source("dem", "FR")       # config MNT IGN
 list_countries()                   # c("EU", "FR")
 ```
 
-## Application Interactive (nemetonShiny)
+## NDP augmente : integration Open-Canopy (v0.16.0, spec 005)
+
+Depuis la v0.16.0, nemeton exploite des Canopy Height Models (CHM)
+produits par le package amont
+[`opencanopy`](https://github.com/pobsteta/opencanopynemeton) pour
+affiner cinq indicateurs (P1 volume, P2 station, C1 biomasse, B2
+structure, R2 tempete) a partir de l’ortho IGN, sans besoin de LiDAR.
+L’ADR-011 amende le systeme NDP avec un flag vectoriel `augmented` qui
+preserve la confiance phi Fibonacci globale.
+
+Exemple end-to-end :
+
+``` r
+
+library(nemeton)
+
+# 1. Produire un CHM depuis une AOI (package separe)
+# chm <- opencanopy::pipeline_aoi_to_chm(aoi, format = "COG")
+
+# 2. Nettoyer le CHM (5 etapes : foret, bati, eau, NDVI, pente)
+clean <- sanitize_chm(chm,
+                     forest_mask = bd_foret,
+                     buildings   = bd_topo_batiments,
+                     water       = bd_carthage,
+                     ndvi        = ndvi)
+# clean$pct_masked, clean$steps_applied
+
+# 3. Detecter le NDP augmente
+attr(units, "chm_source") <- "opencanopy"
+res_ndp <- detect_ndp(units)
+res_ndp$augmented   # "height_ml"
+
+# 4. Calculer les indicateurs en mode CHM
+units <- indicateur_p2_station(units, chm = clean$chm_clean)   # H0 en metres
+units <- indicateur_p1_volume(units,  chm = clean$chm_clean,
+                              pct_masked = clean$pct_masked)    # m3/ha
+units <- indicateur_c1_biomasse(units, chm = clean$chm_clean)   # tC/ha
+units <- indicateur_b2_structure(units, chm = clean$chm_clean)  # 0-100
+units <- indicateur_r2_tempete(units, dem = dem,
+                               chm = clean$chm_clean)           # 0-100
+
+# 5. Voir la liste des essences couvertes par les courbes de station
+list_site_index_species()
+```
+
+Les courbes de hauteur dominante (Duplat & Tran-Ha 1997 et publications
+connexes) sont tabulees dans `inst/extdata/site_index_curves.csv`. Leur
+redistribution est autorisee par M. Tran-Ha (communication personnelle,
+avril 2026 ; voir `inst/NOTICE`).
+
+Vignette dediee : [Indicateurs P1/P2/C1/B2/R2 via CHM
+Open-Canopy](https://pobsteta.github.io/nemeton/articles/site-index-open-canopy_fr.html).
+
+## Application Interactive (nemetonshiny)
 
 L’application Shiny est dans un package separe :
 
 ``` r
+
 # Installer l'application
-remotes::install_github("pobsteta/nemeton_shiny")
+remotes::install_github("pobsteta/nemetonshiny")
 
 # Lancer
-nemetonShiny::run_app(language = "fr")
+nemetonshiny::run_app(language = "fr")
 ```
 
 L’application permet de :
@@ -98,11 +154,12 @@ L’application permet de :
 - S’authentifier via OAuth2/OIDC (Keycloak, AgentConnect)
 
 Repository :
-[pobsteta/nemeton_shiny](https://github.com/pobsteta/nemeton_shiny)
+[pobsteta/nemetonshiny](https://github.com/pobsteta/nemetonshiny)
 
 ## Workflow avec vos donnees
 
 ``` r
+
 library(nemeton)
 library(sf)
 
@@ -134,6 +191,7 @@ Site pkgdown :
 [pobsteta.github.io/nemeton](https://pobsteta.github.io/nemeton/)
 
 ``` r
+
 ?nemeton_compute
 ?create_family_index
 ?ndp_table
@@ -145,8 +203,8 @@ Site pkgdown :
 MIT - Voir [LICENSE](https://pobsteta.github.io/nemeton/LICENSE)
 
 L’application Shiny
-([nemetonShiny](https://github.com/pobsteta/nemeton_shiny)) est sous
-EUPL v1.2.
+([nemetonshiny](https://github.com/pobsteta/nemetonshiny)) est sous EUPL
+v1.2.
 
 ## Citation
 
@@ -309,6 +367,22 @@ Distance infrastructures, continuite forestiere et indice wilderness
 - [`indicateur_n3_naturalite()`](https://pobsteta.github.io/nemeton/reference/indicateur_n3_naturalite.md)
   : N3: Composite Naturalness Index
 
+## CHM et indice de station (spec 005)
+
+Nettoyage d’un Canopy Height Model et estimation de l’indice de station
+H0
+
+- [`sanitize_chm()`](https://pobsteta.github.io/nemeton/reference/sanitize_chm.md)
+  : Sanitize a Canopy Height Model raster
+- [`extract_h_dom()`](https://pobsteta.github.io/nemeton/reference/extract_h_dom.md)
+  : Extract dominant height from a CHM for a set of spatial units
+- [`compute_site_index()`](https://pobsteta.github.io/nemeton/reference/compute_site_index.md)
+  : Estimate the site index from a dominant height and a stand age
+- [`list_site_index_species()`](https://pobsteta.github.io/nemeton/reference/list_site_index_species.md)
+  : List species covered by the site-index curves
+- [`read_site_index_curves()`](https://pobsteta.github.io/nemeton/reference/read_site_index_curves.md)
+  : Read the site-index reference curves
+
 ## Systeme NDP (Niveau De Precision)
 
 Ponderation Fibonacci et confiance phi
@@ -328,7 +402,7 @@ Ponderation Fibonacci et confiance phi
 - [`compute_general_index_mixed()`](https://pobsteta.github.io/nemeton/reference/compute_general_index_mixed.md)
   : Compute general index with mixed NDP per indicator
 - [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)
-  : Detect NDP level from data
+  : Detect NDP level and ML augmentation from data
 
 ## Configuration essences (ADR-007)
 
@@ -438,9 +512,9 @@ Support multi-langues
 
 ## Application Shiny
 
-L’application interactive est dans le package separe nemetonShiny.
-Installez-le avec remotes::install_github(“pobsteta/nemeton_shiny”) puis
-lancez nemetonShiny::run_app(language = “fr”).
+L’application interactive est dans le package separe nemetonshiny.
+Installez-le avec remotes::install_github(“pobsteta/nemetonshiny”) puis
+lancez nemetonshiny::run_app(language = “fr”).
 
 ## Methodes S3
 
@@ -507,6 +581,356 @@ Package-level and internal documentation pages
 - [`indicators-social`](https://pobsteta.github.io/nemeton/reference/indicators-social.md)
   : Social & Recreational Services Indicators (Family S)
 
+## Suivi sanitaire, monitoring et autres fonctions
+
+Pipelines FORDEAD/FAST, zones de monitoring, validation terrain, corpus
+de connaissances, helpers CHM / echantillonnage et utilitaires.
+
+- [`aggregate_plot_metrics()`](https://pobsteta.github.io/nemeton/reference/aggregate_plot_metrics.md)
+  : Compute per-plot aggregates from field data
+
+- [`attach_field_data_to_units()`](https://pobsteta.github.io/nemeton/reference/attach_field_data_to_units.md)
+  : Attach per-plot field aggregates to a units sf
+
+- [`bai_drift_factor()`](https://pobsteta.github.io/nemeton/reference/bai_drift_factor.md)
+  : Species BAI drift factor (Charru 2017)
+
+- [`bdforet_v2_mapping()`](https://pobsteta.github.io/nemeton/reference/bdforet_v2_mapping.md)
+  : BD Forêt v2 -\> CV context mapping
+
+- [`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md)
+  : Build a multi-temporal NDVI or NBR stack from cached Sentinel-2
+  bands
+
+- [`build_knowledge_corpus()`](https://pobsteta.github.io/nemeton/reference/build_knowledge_corpus.md)
+  : Build (or grow) the RAG knowledge base from the manifest
+
+- [`build_project_monitoring_zones()`](https://pobsteta.github.io/nemeton/reference/build_project_monitoring_zones.md)
+  : Build a project's monitoring zones from UGF x BD Forêt v2 strata
+
+- [`cec_to_fertility_score()`](https://pobsteta.github.io/nemeton/reference/cec_to_fertility_score.md)
+  : Map SoilGrids CEC values to a 0-100 fertility score
+
+- [`charru_bai_drift_table()`](https://pobsteta.github.io/nemeton/reference/charru_bai_drift_table.md)
+  : Charru 2017 BAI drift lookup table
+
+- [`charru_selfthinning_table()`](https://pobsteta.github.io/nemeton/reference/charru_selfthinning_table.md)
+  : Charru 2012 self-thinning coefficients table
+
+- [`check_fordead_validity()`](https://pobsteta.github.io/nemeton/reference/check_fordead_validity.md)
+  : Check whether an AOI lies within the FORDEAD calibration domain
+
+- [`classify_disturbance()`](https://pobsteta.github.io/nemeton/reference/classify_disturbance.md)
+  : Tag each alert with the disturbance type it most likely reflects
+  (G2)
+
+- [`compute_dtm_chm_from_laz()`](https://pobsteta.github.io/nemeton/reference/compute_dtm_chm_from_laz.md)
+  : Derive DTM and CHM rasters from IGN LiDAR HD point clouds
+
+- [`compute_fast_alert_mask()`](https://pobsteta.github.io/nemeton/reference/compute_fast_alert_mask.md)
+  : Compute and persist a FAST alert mask on the 0-4 categorical scale
+
+- [`compute_sample_size()`](https://pobsteta.github.io/nemeton/reference/compute_sample_size.md)
+  : Sample size for a target relative error and a given CV
+
+- [`create_monitoring_zone()`](https://pobsteta.github.io/nemeton/reference/create_monitoring_zone.md)
+  : Create a monitoring zone (geometry only, no placettes)
+
+- [`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
+  [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
+  : Create a QGIS project from a sampling plan
+
+- [`create_sampling_plan()`](https://pobsteta.github.io/nemeton/reference/create_sampling_plan.md)
+  : Generate a forest sampling plan (GRTS with graceful fallback)
+
+- [`create_validation_sampling_plan()`](https://pobsteta.github.io/nemeton/reference/create_validation_sampling_plan.md)
+  : Create a validation sampling plan over an alert raster (spec 014 A3)
+
+- [`cv_from_bdforet()`](https://pobsteta.github.io/nemeton/reference/cv_from_bdforet.md)
+  : Compute an area-weighted CV from a BD Forêt v2 coverage
+
+- [`cv_lookup()`](https://pobsteta.github.io/nemeton/reference/cv_lookup.md)
+  : Read a CV value from the typology table
+
+- [`cv_typology()`](https://pobsteta.github.io/nemeton/reference/cv_typology.md)
+  : CV typology reference table
+
+- [`db`](https://pobsteta.github.io/nemeton/reference/db.md) : Database
+  Connection and Migration Helpers (E6 monitoring)
+
+- [`db_connect()`](https://pobsteta.github.io/nemeton/reference/db_connect.md)
+  : Connect to the monitoring database
+
+- [`db_disconnect()`](https://pobsteta.github.io/nemeton/reference/db_disconnect.md)
+  : Disconnect from the monitoring database
+
+- [`db_migrate()`](https://pobsteta.github.io/nemeton/reference/db_migrate.md)
+  : Apply pending SQL migrations
+
+- [`delete_knowledge_document()`](https://pobsteta.github.io/nemeton/reference/delete_knowledge_document.md)
+  : Delete a document and its chunks from the knowledge base
+
+- [`diagnose_s2_cache()`](https://pobsteta.github.io/nemeton/reference/diagnose_s2_cache.md)
+  : Diagnose an S2 band cache directory
+
+- [`embed_query()`](https://pobsteta.github.io/nemeton/reference/embed_query.md)
+  : Embed a query string into a numeric vector
+
+- [`enable_rag()`](https://pobsteta.github.io/nemeton/reference/enable_rag.md)
+  : Enable the RAG knowledge base schema (opt-in migration)
+
+- [`enrich_parcels_bdforet()`](https://pobsteta.github.io/nemeton/reference/enrich_parcels_bdforet.md)
+  : Enrich Parcels with BD Forêt V2 Data
+
+- [`estimate_dq_from_hdom()`](https://pobsteta.github.io/nemeton/reference/estimate_dq_from_hdom.md)
+  : Estimate a quadratic mean diameter from dominant height
+
+- [`estimate_synthetic_inventory()`](https://pobsteta.github.io/nemeton/reference/estimate_synthetic_inventory.md)
+  : Estimate a synthetic stand inventory per unit
+
+- [`extract_pixel_timeseries()`](https://pobsteta.github.io/nemeton/reference/extract_pixel_timeseries.md)
+  : Extract a per-pixel NDVI / NBR time series at one geographic point
+
+- [`field_schema`](https://pobsteta.github.io/nemeton/reference/field_schema.md)
+  : Field Data Schema for QField Integration
+
+- [`find_zone_by_project()`](https://pobsteta.github.io/nemeton/reference/find_zone_by_project.md)
+  : Find the monitoring zone bound to a project UUID
+
+- [`find_zones_by_project()`](https://pobsteta.github.io/nemeton/reference/find_zones_by_project.md)
+  : List the monitoring zones bound to a project UUID
+
+- [`fordead_alert_mask()`](https://pobsteta.github.io/nemeton/reference/fordead_alert_mask.md)
+  : Extract an alert mask from a categorical 0-4 raster (spec 014 A1)
+
+- [`FORDEAD_BANDS`](https://pobsteta.github.io/nemeton/reference/FORDEAD_BANDS.md)
+  : Sentinel-2 bands required by FORDEAD 2.x
+
+- [`FORDEAD_CLASSES`](https://pobsteta.github.io/nemeton/reference/FORDEAD_CLASSES.md)
+  : Canonical ordered FORDEAD anomaly classes
+
+- [`FORDEAD_CONFIDENCE_WEIGHTS`](https://pobsteta.github.io/nemeton/reference/FORDEAD_CONFIDENCE_WEIGHTS.md)
+  : Confidence weights from the ONF/DSF FORDEAD validation report
+
+- [`fordead_pipeline`](https://pobsteta.github.io/nemeton/reference/fordead_pipeline.md)
+  : FORDEAD Dieback Detection Pipeline (E6.c.1, spec 008)
+
+- [`fordead_pixel_series`](https://pobsteta.github.io/nemeton/reference/fordead_pixel_series.md)
+  : FORDEAD pixel CRSWIR diagnostic (spec 008 section 14.4, L2)
+
+- [`fordead_postprocess`](https://pobsteta.github.io/nemeton/reference/fordead_postprocess.md)
+  : FORDEAD Post-Processing: Rasters to Alert Clusters (E6.c.2, spec
+  008)
+
+- [`fordead_python`](https://pobsteta.github.io/nemeton/reference/fordead_python.md)
+  : FORDEAD Python Environment Helpers (E6.c.1, spec 008)
+
+- [`FORDEAD_VALIDITY_DEPARTMENTS`](https://pobsteta.github.io/nemeton/reference/FORDEAD_VALIDITY_DEPARTMENTS.md)
+  : Department codes covered by the FORDEAD calibration validity zone
+
+- [`FORDEAD_VALIDITY_SPECIES`](https://pobsteta.github.io/nemeton/reference/FORDEAD_VALIDITY_SPECIES.md)
+  : Conifer species considered valid by the FORDEAD calibration
+
+- [`format_citations()`](https://pobsteta.github.io/nemeton/reference/format_citations.md)
+  : Format retrieved chunks as a citation block
+
+- [`generate_health_validation_plots()`](https://pobsteta.github.io/nemeton/reference/generate_health_validation_plots.md)
+  : Draw a stratified sample of alerts to be validated in the field
+
+- [`get_arbre_schema()`](https://pobsteta.github.io/nemeton/reference/get_arbre_schema.md)
+  : Get the arbre layer schema
+
+- [`get_datasource_product()`](https://pobsteta.github.io/nemeton/reference/get_datasource_product.md)
+  : Get a sub-product of a multi-product datasource
+
+- [`get_health_validation_schema()`](https://pobsteta.github.io/nemeton/reference/get_health_validation_schema.md)
+  : QGIS form schema for the health-validation \`placette\` layer
+
+- [`get_ndp_augmented()`](https://pobsteta.github.io/nemeton/reference/get_ndp_augmented.md)
+  : Extract augmentation flags from a detect_ndp() result
+
+- [`get_placette_schema()`](https://pobsteta.github.io/nemeton/reference/get_placette_schema.md)
+  : Get the placette layer schema
+
+- [`h_to_dq_params()`](https://pobsteta.github.io/nemeton/reference/h_to_dq_params.md)
+  : H_dom -\> D_g calibration table (IFN / Charru)
+
+- [`HEALTH_VALIDATION_CAUSES`](https://pobsteta.github.io/nemeton/reference/HEALTH_VALIDATION_CAUSES.md)
+  : Free-form causes proposed in the QGIS form
+
+- [`HEALTH_VALIDATION_STADES`](https://pobsteta.github.io/nemeton/reference/HEALTH_VALIDATION_STADES.md)
+  : DSF-aligned dieback stages used by the terrain validation form
+
+- [`import_qgis_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)
+  [`import_qfield_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)
+  : Read placettes + arbres layers from a field-returned GPKG
+
+- [`indicateur_r5_deperissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_r5_deperissement.md)
+  : Compute the R5 dieback indicator
+
+- [`ingest_health_validation()`](https://pobsteta.github.io/nemeton/reference/ingest_health_validation.md)
+  : Ingest a health-validation GPKG and update \`alert\` rows
+
+- [`ingest_knowledge_document()`](https://pobsteta.github.io/nemeton/reference/ingest_knowledge_document.md)
+  : Ingest a document into the RAG knowledge base
+
+- [`ingest_knowledge_reference()`](https://pobsteta.github.io/nemeton/reference/ingest_knowledge_reference.md)
+  : Ingest a reference-only document into the RAG knowledge base
+
+- [`ingest_s2_raw_bands_to_cache()`](https://pobsteta.github.io/nemeton/reference/ingest_s2_raw_bands_to_cache.md)
+  : Populate the Sentinel-2 COG cache with raw bands (no DB writes)
+
+- [`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md)
+  : Ingest a Sentinel-2 time series for the plots of a monitoring zone
+
+- [`knowledge_manifest_path()`](https://pobsteta.github.io/nemeton/reference/knowledge_manifest_path.md)
+  : Resolve the path to the knowledge-corpus manifest
+
+- [`knowledge_manifest_vocab()`](https://pobsteta.github.io/nemeton/reference/knowledge_manifest_vocab.md)
+  : Controlled vocabularies for the knowledge-corpus manifest
+
+- [`knowledge-corpus`](https://pobsteta.github.io/nemeton/reference/knowledge-corpus.md)
+  : Knowledge-corpus manifest and ingestion orchestration (spec 009.2)
+
+- [`list_alerts()`](https://pobsteta.github.io/nemeton/reference/list_alerts.md)
+  : List alerts of a zone with G1 default filtering
+
+- [`list_knowledge_documents()`](https://pobsteta.github.io/nemeton/reference/list_knowledge_documents.md)
+  : List the documents in the RAG knowledge base
+
+- [`load_fordead_validity_zones()`](https://pobsteta.github.io/nemeton/reference/load_fordead_validity_zones.md)
+  : Load the FORDEAD validity zones layer
+
+- [`load_raster_source()`](https://pobsteta.github.io/nemeton/reference/load_raster_source.md)
+  : Load a raster datasource as a SpatRaster
+
+- [`load_theia_source()`](https://pobsteta.github.io/nemeton/reference/load_theia_source.md)
+  : Load a THEIA datasource as a SpatRaster
+
+- [`monitoring_ingest`](https://pobsteta.github.io/nemeton/reference/monitoring_ingest.md)
+  : Sentinel-2 Time Series Ingestion (E6 monitoring)
+
+- [`n_max_selfthinning()`](https://pobsteta.github.io/nemeton/reference/n_max_selfthinning.md)
+  : Maximum stand density under self-thinning (Charru 2012)
+
+- [`probe_ign_lidar_tile()`](https://pobsteta.github.io/nemeton/reference/probe_ign_lidar_tile.md)
+  : Probe an IGN LiDAR HD tile URL to diagnose download failures
+
+- [`probe_ign_lidar_tiles()`](https://pobsteta.github.io/nemeton/reference/probe_ign_lidar_tiles.md)
+  : Batch-probe a vector of IGN LiDAR HD tile URLs
+
+- [`prune_orphan_zone_caches()`](https://pobsteta.github.io/nemeton/reference/prune_orphan_zone_caches.md)
+  : Remove cache directories of monitoring zones that no longer exist
+
+- [`qgis_export`](https://pobsteta.github.io/nemeton/reference/qgis_export.md)
+  : QGIS Project Export
+
+- [`qgis_import`](https://pobsteta.github.io/nemeton/reference/qgis_import.md)
+  : QGIS Project Import and Aggregation
+
+- [`rag`](https://pobsteta.github.io/nemeton/reference/rag.md) : RAG
+  knowledge base for AI perspectives (E7 / spec 009)
+
+- [`read_fast_alert_mask()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_mask.md)
+  : Read the most recent FAST alert mask for a monitoring zone
+
+- [`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md)
+  : FAST alert raster at native S2 pixel resolution (spec 013)
+
+- [`read_fast_alert_rasters()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_rasters.md)
+  : Build the full FAST alert raster set (3 indices x 2 modes, spec 019)
+
+- [`read_fordead_dieback_mask()`](https://pobsteta.github.io/nemeton/reference/read_fordead_dieback_mask.md)
+  : Read the FORDEAD dieback classified raster for a zone
+
+- [`read_fordead_pixel_series()`](https://pobsteta.github.io/nemeton/reference/read_fordead_pixel_series.md)
+  : Read the FORDEAD CRSWIR pixel diagnostic series
+
+- [`read_knowledge_manifest()`](https://pobsteta.github.io/nemeton/reference/read_knowledge_manifest.md)
+  : Read the knowledge-corpus manifest
+
+- [`read_s2_band_raster()`](https://pobsteta.github.io/nemeton/reference/read_s2_band_raster.md)
+  : Read a single cached Sentinel-2 band as a SpatRaster
+
+- [`read_s2_band_stack()`](https://pobsteta.github.io/nemeton/reference/read_s2_band_stack.md)
+  : Read a multi-temporal stack for one Sentinel-2 band
+
+- [`read_uts_fertility_table()`](https://pobsteta.github.io/nemeton/reference/read_uts_fertility_table.md)
+  : Read the UTS → fertility crosswalk shipped with the package
+
+- [`register_monitoring_zone()`](https://pobsteta.github.io/nemeton/reference/register_monitoring_zone.md)
+  : Register a monitoring zone and its plots in the database
+
+- [`resolve_project_dem()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)
+  [`resolve_project_chm()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)
+  : Discover the best available DEM / CHM raster in a Nemeton project
+
+- [`resolve_theia_assets()`](https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.md)
+  :
+
+  Looks up a Theia datasource declared in
+  `inst/datasources/<country>.json` and returns the matching asset paths
+  normalised to `/vsis3/` so that GDAL reads the objects directly from
+  the S3 store (call `theia_configure_s3` once first to authenticate).
+
+- [`retrieve_knowledge()`](https://pobsteta.github.io/nemeton/reference/retrieve_knowledge.md)
+  : Retrieve the most relevant knowledge chunks for a query
+
+- [`run_fordead_dieback()`](https://pobsteta.github.io/nemeton/reference/run_fordead_dieback.md)
+  : Run the FORDEAD dieback detection pipeline on a monitoring zone
+
+- [`sampling_plan`](https://pobsteta.github.io/nemeton/reference/sampling_plan.md)
+  : Sampling Plan Generator (GRTS + stratification)
+
+- [`schema_to_df()`](https://pobsteta.github.io/nemeton/reference/schema_to_df.md)
+  : Convert a schema to a tidy data.frame
+
+- [`stac_search_s2_cdse()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
+  [`stac_search_s2_pc()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
+  : Sentinel-2 STAC Search Helpers (E6 monitoring)
+
+- [`site_index_reference_points()`](https://pobsteta.github.io/nemeton/reference/site_index_reference_points.md)
+  : Published calibration points for the site-index curves
+
+- [`stac_get_item()`](https://pobsteta.github.io/nemeton/reference/stac_get_item.md)
+  : Fetch a single STAC item by id
+
+- [`stac_search_items()`](https://pobsteta.github.io/nemeton/reference/stac_search_items.md)
+  : Search a STAC API for items
+
+- [`stac_search_s2()`](https://pobsteta.github.io/nemeton/reference/stac_search_s2.md)
+  : Search Sentinel-2 L2A scenes via STAC
+
+- [`tag_field_data_sources()`](https://pobsteta.github.io/nemeton/reference/tag_field_data_sources.md)
+  : Tag an sf object with field-data NDP attributes
+
+- [`texture_to_erosion_resistance()`](https://pobsteta.github.io/nemeton/reference/texture_to_erosion_resistance.md)
+  : Map soil texture to a 0-100 erosion-resistance score
+
+- [`texture_to_fertility_score()`](https://pobsteta.github.io/nemeton/reference/texture_to_fertility_score.md)
+  : Map soil texture to a 0-100 fertility score
+
+- [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
+  : Configure GDAL for authenticated THEIA S3 reads
+
+- [`theia_signed_href()`](https://pobsteta.github.io/nemeton/reference/theia_signed_href.md)
+  : Resolve a signed THEIA asset URL via the teledetection SDK
+
+- [`theia_stac`](https://pobsteta.github.io/nemeton/reference/theia_stac.md)
+  : THEIA STAC resolver
+
+- [`units_add_species_from_raster()`](https://pobsteta.github.io/nemeton/reference/units_add_species_from_raster.md)
+  : Add a dominant-species column from a classification raster
+
+- [`validate_field_data()`](https://pobsteta.github.io/nemeton/reference/validate_field_data.md)
+  : Validate field data against placette + arbre schemas
+
+- [`validate_knowledge_manifest()`](https://pobsteta.github.io/nemeton/reference/validate_knowledge_manifest.md)
+  : Validate the knowledge-corpus manifest
+
+- [`write_knowledge_manifest()`](https://pobsteta.github.io/nemeton/reference/write_knowledge_manifest.md)
+  : Write the knowledge-corpus manifest
+
 # Articles
 
 ### All vignettes
@@ -515,6 +939,8 @@ Package-level and internal documentation pages
   Climatiques](https://pobsteta.github.io/nemeton/articles/biodiversity-resilience_fr.md):
 - [Référentiel Complet 12
   Familles](https://pobsteta.github.io/nemeton/articles/complete-referential_fr.md):
+- [F1 Fertilité — trois sources, trois
+  compromis](https://pobsteta.github.io/nemeton/articles/f1-three-sources_fr.md):
 - [Démarrage rapide avec
   nemeton](https://pobsteta.github.io/nemeton/articles/getting-started_fr.md):
 - [Familles d'indicateurs - Référentiel
@@ -525,6 +951,8 @@ Package-level and internal documentation pages
   Multi-Critères](https://pobsteta.github.io/nemeton/articles/multi-criteria-optimization_fr.md):
 - [Guide de l'Application
   nemetonApp](https://pobsteta.github.io/nemeton/articles/nemetonapp-guide_fr.md):
+- [Indicateurs P1, P2, C1, B2, R2 via un CHM
+  Open-Canopy](https://pobsteta.github.io/nemeton/articles/site-index-open-canopy_fr.md):
 - [Analyse temporelle - Suivi
   multi-périodes](https://pobsteta.github.io/nemeton/articles/temporal-analysis_fr.md):
 - [Guide des Tutoriels Interactifs

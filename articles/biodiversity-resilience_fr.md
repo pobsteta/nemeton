@@ -9,6 +9,7 @@ l’utilisation des **10 indicateurs** (B1-B3, R1-R3, T1-T2, A1-A2) et
 leur intégration dans des workflows multi-familles.
 
 ``` r
+
 library(nemeton)
 library(sf)
 library(ggplot2)
@@ -21,6 +22,7 @@ Nous utilisons les données `massif_demo_units` avec quelques attributs
 synthétiques pour illustrer les nouveaux indicateurs.
 
 ``` r
+
 # Charger les données de démonstration
 data(massif_demo_units)
 units <- massif_demo_units[1:10, ]
@@ -72,6 +74,7 @@ L’indicateur **B1** calcule le pourcentage de surface en zones de
 protection.
 
 ``` r
+
 result <- indicateur_b1_protection(
   units,
   protected_areas = protected_areas
@@ -91,6 +94,7 @@ L’indicateur **B2** mesure la diversité de Shannon à travers les
 strates, âges et essences.
 
 ``` r
+
 result <- indicateur_b2_structure(
   result,
   strata_field = "strata",
@@ -110,6 +114,7 @@ summary(result$B2)
 L’indicateur **B3** évalue la proximité aux corridors écologiques.
 
 ``` r
+
 # B3 utilise la BD Forêt pour calculer la connectivité
 # Sans données réelles, la fonction retourne une valeur par défaut
 result <- indicateur_b3_connectivite(
@@ -138,6 +143,7 @@ et
 avec des données DEM, climatiques et BD Forêt.*
 
 ``` r
+
 # Simulation des indicateurs de risque
 # (Dans un cas réel, utiliser les fonctions avec DEM et données climatiques)
 set.seed(43)
@@ -178,6 +184,7 @@ summary(result[, c("R1", "R2", "R3", "R4")])
 L’indicateur **T1** mesure l’âge des peuplements.
 
 ``` r
+
 # Utiliser les âges déjà définis
 result$T1 <- result$age # Directement l'âge en années
 summary(result$T1)
@@ -192,6 +199,7 @@ L’indicateur **T2** détecte les transformations. *Note: Utiliser
 avec des rasters Corine Land Cover multi-dates pour un usage réel.*
 
 ``` r
+
 # Simulation de taux de changement (%/an)
 set.seed(44)
 result$T2 <- runif(10, 0, 25)
@@ -212,6 +220,7 @@ L’indicateur **A1** mesure le % de couverture arborée dans un buffer de
 avec un raster de végétation pour un usage réel.*
 
 ``` r
+
 # Simulation de couverture dans buffer 1km
 set.seed(45)
 result$A1 <- runif(10, 40, 95)
@@ -227,6 +236,7 @@ L’indicateur **A2** évalue la qualité de l’air. *Note: Utiliser
 avec des données ATMO ou sources de pollution pour un usage réel.*
 
 ``` r
+
 # Simulation d'indice qualité air
 set.seed(46)
 result$A2 <- runif(10, 55, 95)
@@ -242,6 +252,7 @@ summary(result$A2)
 Normalisons tous les indicateurs et créons les indices par famille.
 
 ``` r
+
 # Normaliser tous les nouveaux indicateurs
 result_norm <- normalize_indicators(
   result,
@@ -275,6 +286,7 @@ result_norm |>
 Pour les risques, utilisons la méthode **“min”** (pire cas) :
 
 ``` r
+
 # Agrégation conservative pour la famille Risques
 result_risk_min <- create_family_index(
   result_norm,
@@ -311,6 +323,7 @@ comparison
 Visualisons le profil écosystémique d’une parcelle avec les 4 familles :
 
 ``` r
+
 # Radar pour une parcelle (4 familles)
 nemeton_radar(
   result_norm,
@@ -328,6 +341,7 @@ Pour voir l’ensemble des services écosystémiques, ajoutons aussi les
 autres familles :
 
 ``` r
+
 # Ajouter quelques indicateurs des familles existantes pour démonstration
 result_norm$C1 <- runif(10, 40, 90) # Carbon biomass
 result_norm$W1 <- runif(10, 30, 80) # Water network
@@ -350,6 +364,7 @@ result_complete <- create_family_index(
 ```
 
 ``` r
+
 # Radar complet : 8 familles
 nemeton_radar(
   result_complete,
@@ -367,6 +382,7 @@ nemeton_radar(
 parcelles simultanément :
 
 ``` r
+
 # Comparer 3 parcelles sur le même radar
 nemeton_radar(
   result_complete,
@@ -388,6 +404,7 @@ biodiversité (famille B) mais forte vulnérabilité (famille R).
 Identifier les forêts anciennes à haute valeur écologique :
 
 ``` r
+
 hotspots_bio <- result_complete |>
   filter(famille_biodiversite > 60, T1 > 100) |>
   arrange(desc(famille_biodiversite))
@@ -411,6 +428,7 @@ if (nrow(hotspots_bio) > 0) {
 Détecter les parcelles cumulant plusieurs risques :
 
 ``` r
+
 multi_risques <- result_complete |>
   mutate(
     nb_risques = (R1_norm > 60) + (R2_norm > 60) + (R3_norm > 60) + (R4_norm > 60)
@@ -440,6 +458,7 @@ if (nrow(multi_risques) > 0) {
 Évaluer le potentiel de régulation climatique :
 
 ``` r
+
 services_climat <- result_complete |>
   filter(A1 > 70, A2 > 70) |>
   arrange(desc(famille_air))
@@ -462,6 +481,7 @@ if (nrow(services_climat) > 0) {
 Visualisons les indices composites pour les nouvelles familles :
 
 ``` r
+
 library(patchwork)
 
 p_bio <- plot_indicators_map(result_complete,
@@ -491,6 +511,7 @@ p_air <- plot_indicators_map(result_complete,
 Vue d’ensemble des indicateurs calculés :
 
 ``` r
+
 # Résumé des indicateurs
 summary_table <- result_complete |>
   st_drop_geometry() |>

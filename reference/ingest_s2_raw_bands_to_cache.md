@@ -1,0 +1,120 @@
+# Populate the Sentinel-2 COG cache with raw bands (no DB writes)
+
+Companion of \[ingest_sentinel2_timeseries()\] for callers that need raw
+Sentinel-2 bands (e.g. \`c("B02", "B04", "B05", "B8A", "B11", "B12")\`
+for FORDEAD CRSWIR + masks) rather than the derived NDVI / NBR indices.
+Searches STAC, then for each scene x band calls the same cache-aware
+fetcher used by the FAST pipeline (\[.get_s2_band_raster()\]), so:
+
+## Usage
+
+``` r
+ingest_s2_raw_bands_to_cache(
+  con,
+  zone_id,
+  bands,
+  start,
+  end,
+  cache_dir,
+  max_cloud = 20,
+  progress_callback = NULL
+)
+```
+
+## Arguments
+
+- con:
+
+  A \`DBIConnection\`.
+
+- zone_id:
+
+  Integer. Existing zone in \`monitoring_zone\`.
+
+- bands:
+
+  Character vector of raw band codes – the letter \`B\` followed by one
+  or two digits and an optional trailing \`A\` (e.g. \`c("B02", "B04",
+  "B8A", "B12")\`). At least one band required.
+
+- start, end:
+
+  Date or character \`"YYYY-MM-DD"\`.
+
+- cache_dir:
+
+  Character(1). Root of the COG cache, typically
+  \`\<project\>/cache/layers/sentinel2\`. Created if absent. Required.
+
+- max_cloud:
+
+  Numeric. Maximum scene cloud cover (percent). Default 20.
+
+- progress_callback:
+
+  Optional. \`function(payload)\` receiving \`s2:\*\` event lists.
+
+## Value
+
+A list with:
+
+- scenes_df:
+
+  \`data.frame\` (\`scene_id\`, \`obs_date\`, \`cloud_pct\`, \`source\`)
+  of all scenes processed (regardless of cache state).
+
+- n_scenes:
+
+  Integer. Total scenes returned by STAC.
+
+- n_bands_fetched:
+
+  Integer. Bands actually downloaded over the network.
+
+- n_bands_cached:
+
+  Integer. Bands served from disk.
+
+- n_scenes_skipped:
+
+  Integer. Scenes that failed entirely.
+
+When STAC returns nothing, \`scenes_df\` is a 0-row data.frame with the
+same columns.
+
+## Details
+
+\- \*\*cache-hit\*\*: zero HTTP traffic, band returned from disk; -
+\*\*cache-miss\*\*: one GET via VSI to Planetary Computer / CDSE, then
+written atomically to \`\<cache_dir\>/\<safe_scene_id\>/\<band\>.tif\`.
+
+Does \*\*not\*\* write anything to the database (no \`obs_pixel\` rows
+produced). The DB connection is only used to resolve the AOI of the
+monitoring zone.
+
+Emits the same \`s2:\*\` events as \[ingest_sentinel2_timeseries()\]
+through \`progress_callback\`: \`search\`, \`search_done\`, \`scene\`,
+\`band_cached\`, \`band_fetched\`, \`scene_skipped\`, \`complete\`.
+
+## See also
+
+\[ingest_sentinel2_timeseries()\] for the FAST pipeline that builds NDVI
+/ NBR indices and writes them to \`obs_pixel\`.
+
+\[FORDEAD_BANDS\] for the canonical list of FORDEAD bands.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+res <- ingest_s2_raw_bands_to_cache(
+  con       = con,
+  zone_id   = 1L,
+  bands     = FORDEAD_BANDS,
+  start     = "2016-01-01",
+  end       = as.character(Sys.Date()),
+  cache_dir = file.path(project_dir, "cache/layers/sentinel2")
+)
+nrow(res$scenes_df)   # number of scenes available
+} # }
+```

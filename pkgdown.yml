@@ -1,17 +1,19 @@
-pandoc: 3.1.11
+pandoc: 3.8.3
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   biodiversity-resilience_fr: biodiversity-resilience_fr.html
   complete-referential_fr: complete-referential_fr.html
+  f1-three-sources_fr: f1-three-sources_fr.html
   getting-started_fr: getting-started_fr.html
   indicator-families_fr: indicator-families_fr.html
   internationalization: internationalization.html
   multi-criteria-optimization_fr: multi-criteria-optimization_fr.html
   nemetonapp-guide_fr: nemetonapp-guide_fr.html
+  site-index-open-canopy_fr: site-index-open-canopy_fr.html
   temporal-analysis_fr: temporal-analysis_fr.html
   tutorial-guide: tutorial-guide.html
-last_built: 2026-04-17T10:20Z
+last_built: 2026-06-11T02:04Z
 urls:
   reference: https://pobsteta.github.io/nemeton/reference
   article: https://pobsteta.github.io/nemeton/articles

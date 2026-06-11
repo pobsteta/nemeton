@@ -14,7 +14,8 @@ indicateur_e1_bois_energie(
   residue_fraction = 0.3,
   coppice_area_field = NULL,
   column_name = "E1",
-  lang = "en"
+  lang = "en",
+  chm = NULL
 )
 ```
 
@@ -54,6 +55,12 @@ indicateur_e1_bois_energie(
 - lang:
 
   Character. Message language. Default "en".
+
+- chm:
+
+  Optional \`terra::SpatRaster\` canopy height model (spec 005). When
+  supplied and \`volume_field\` is absent, standing volume is
+  auto-estimated by running P1 internally. Default \`NULL\`.
 
 ## Value
 

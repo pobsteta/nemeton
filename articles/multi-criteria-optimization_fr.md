@@ -17,6 +17,7 @@ package `nemeton` :
 3.  **Trade-off Analysis** : Visualiser les compromis entre objectifs
 
 ``` r
+
 library(nemeton)
 library(ggplot2)
 library(dplyr)
@@ -77,6 +78,7 @@ nécessite de dégrader au moins un autre.
 ### Identifier les Parcelles Pareto-Optimales
 
 ``` r
+
 # Exemple 1: Maximiser Carbon (C), Biodiversité (B), et Production (P)
 result_pareto <- identify_pareto_optimal(
   massif_demo_units,
@@ -109,6 +111,7 @@ result_pareto |>
 ### Visualisation Spatiale
 
 ``` r
+
 # Cartographier les parcelles Pareto-optimales
 ggplot(result_pareto) +
   geom_sf(aes(fill = is_optimal), color = "white", size = 0.5) +
@@ -126,6 +129,7 @@ ggplot(result_pareto) +
 ### Objectifs Mixtes (Maximisation + Minimisation)
 
 ``` r
+
 # Exemple 2: Maximiser C et B, Minimiser Risque incendie (R1)
 result_mixed <- identify_pareto_optimal(
   massif_demo_units,
@@ -164,6 +168,7 @@ Le clustering K-means regroupe les parcelles ayant des profils
 similaires sur plusieurs familles d’indicateurs.
 
 ``` r
+
 # Clustering avec k=3 prédéfini
 result_kmeans <- cluster_parcels(
   massif_demo_units,
@@ -190,6 +195,7 @@ print(profiles)
 ### Visualisation des Clusters
 
 ``` r
+
 # Carte des clusters
 ggplot(result_kmeans) +
   geom_sf(aes(fill = factor(cluster)), color = "white", size = 0.5) +
@@ -206,6 +212,7 @@ Utiliser l’analyse de silhouette pour trouver automatiquement le nombre
 optimal de clusters :
 
 ``` r
+
 # Laisser l'algorithme déterminer k optimal
 result_auto <- cluster_parcels(
   massif_demo_units,
@@ -245,6 +252,7 @@ abline(v = optimal_k, col = "red", lty = 2)
 Alternative au K-means utilisant la méthode de Ward :
 
 ``` r
+
 # Clustering hiérarchique
 result_hclust <- cluster_parcels(
   massif_demo_units,
@@ -269,6 +277,7 @@ table(comparison)
 ### Interprétation des Clusters
 
 ``` r
+
 # Analyser les profils des clusters
 profiles_kmeans <- attr(result_kmeans, "cluster_profile")
 
@@ -322,6 +331,7 @@ Les trade-off plots révèlent les relations (synergies ou compromis)
 entre paires de services écosystémiques.
 
 ``` r
+
 # Trade-off entre Carbone et Biodiversité
 plot_tradeoff(
   massif_demo_units,
@@ -344,6 +354,7 @@ plot_tradeoff(
 ### Trade-off avec Dimension Supplémentaire (Couleur)
 
 ``` r
+
 # Ajouter une 3ème dimension (Production) via la couleur
 plot_tradeoff(
   massif_demo_units,
@@ -364,6 +375,7 @@ Combiner trade-off plot avec l’analyse de Pareto pour identifier
 visuellement les meilleures solutions :
 
 ``` r
+
 # D'abord identifier les parcelles Pareto-optimales
 pareto_result <- identify_pareto_optimal(
   massif_demo_units,
@@ -393,6 +405,7 @@ représentent les meilleures combinaisons possibles de C et B.
 Analyser plusieurs paires d’objectifs simultanément :
 
 ``` r
+
 library(patchwork)
 
 # Créer une matrice de trade-off plots
@@ -426,6 +439,7 @@ p6 <- plot_tradeoff(massif_demo_units, "famille_biodiversite", "famille_naturali
 Identifier des parcelles spécifiques sur le trade-off plot :
 
 ``` r
+
 # Ajouter des labels pour les parcelles Pareto-optimales
 plot_tradeoff(
   pareto_result,
@@ -450,6 +464,7 @@ intégrale maximisant simultanément la biodiversité, le carbone, et la
 naturalité.
 
 ``` r
+
 # Étape 1: Analyse de Pareto sur les 3 objectifs
 conservation_pareto <- identify_pareto_optimal(
   massif_demo_units,
@@ -489,6 +504,7 @@ top5 |>
 ### Visualisation de la Sélection
 
 ``` r
+
 # Cartographier les 5 parcelles sélectionnées
 conservation_pareto <- conservation_pareto |>
   mutate(
@@ -511,6 +527,7 @@ ggplot(conservation_pareto) +
 ### Trade-off Plot de la Sélection
 
 ``` r
+
 # Visualiser les parcelles sélectionnées sur le trade-off B-C
 plot_tradeoff(
   conservation_pareto,
@@ -534,6 +551,7 @@ Créer un **zonage** de 4 types de gestion basé sur les profils
 multi-familles des parcelles.
 
 ``` r
+
 # Clustering sur 8 familles représentatives
 zonage <- cluster_parcels(
   massif_demo_units,
@@ -583,6 +601,7 @@ table(zonage$zone_name)
 ### Carte du Zonage
 
 ``` r
+
 ggplot(zonage) +
   geom_sf(aes(fill = zone_name), color = "white", size = 0.8) +
   scale_fill_viridis_d(name = "Type de Gestion") +
@@ -596,6 +615,7 @@ ggplot(zonage) +
 ### Statistiques par Zone
 
 ``` r
+
 # Résumer les caractéristiques de chaque zone
 zonage |>
   sf::st_drop_geometry() |>

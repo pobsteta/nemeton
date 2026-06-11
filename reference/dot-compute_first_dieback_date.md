@@ -1,0 +1,34 @@
+# Derive first-dieback-date raster from the ANOMALY_CONFIRMED stack
+
+Stacks every
+\`\<output_dir\>/ANOMALY_CONFIRMED/fordead\_\<YYYYMMDD\>\_ANOMALY_CONFIRMED.tif\`
+chronologically and calls \`fordead.utils.backward_start(arr)\` to
+compute, per pixel, the \*\*first date\*\* at which the anomaly status
+became \`1\`. Returns the result as a \`SpatRaster\` whose values are
+days since \`1970-01-01\` (FORDEAD convention, compatible with the 1.x
+layout expected by \[.cluster_to_centroids()\]).
+
+## Usage
+
+``` r
+.compute_first_dieback_date(output_dir, fd_utils)
+```
+
+## Arguments
+
+- output_dir:
+
+  Character(1). Root FordeadProcess output dir.
+
+- fd_utils:
+
+  Python \`fordead.utils\` module (as imported via
+  \`reticulate::import("fordead.utils", convert = FALSE)\`). Passing it
+  in (rather than re-importing) lets callers share one Python binding
+  and keeps this helper testable.
+
+## Value
+
+A \`terra::SpatRaster\` in memory, or \`NULL\` when no
+\`ANOMALY_CONFIRMED\` layer is found on disk (degraded case — the
+pipeline reports it but doesn't abort).

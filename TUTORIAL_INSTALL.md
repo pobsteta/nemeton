@@ -13,6 +13,7 @@ interactifs nemeton.
 ## Installation Rapide
 
 ``` r
+
 # 1. Packages de base
 install.packages(c("sf", "terra", "ggplot2", "dplyr", "tidyr"))
 
@@ -32,6 +33,7 @@ learnr::available_tutorials("nemeton")
 ### 1. Packages de Base (Obligatoires)
 
 ``` r
+
 install.packages(c(
   "sf",        # Données spatiales vectorielles
 
@@ -46,6 +48,7 @@ install.packages(c(
 ### 2. Packages Tutoriels (Obligatoires)
 
 ``` r
+
 install.packages(c(
   "learnr",    # Tutoriels interactifs
   "gradethis", # Validation des exercices
@@ -56,12 +59,14 @@ install.packages(c(
 ### 3. Packages Acquisition IGN (Tutorial 01)
 
 ``` r
+
 install.packages("happign")  # API IGN
 ```
 
 ### 4. Packages LiDAR (Tutorial 02)
 
 ``` r
+
 install.packages(c(
   "lidR",          # Traitement LiDAR
   "future"         # Traitement parallèle
@@ -71,6 +76,7 @@ install.packages(c(
 ### 5. Packages LiDAR Avancé (Tutorial 07)
 
 ``` r
+
 # lasR depuis r-universe (pipelines C++ ultra-rapides)
 install.packages("lasR", repos = "https://r-lidar.r-universe.dev")
 
@@ -84,6 +90,7 @@ install.packages(c("future", "future.apply"))
 ### 6. Packages Analyse (Tutorial 06)
 
 ``` r
+
 install.packages(c(
   "leaflet",    # Cartes interactives
   "corrplot",   # Matrices de corrélation
@@ -95,6 +102,7 @@ install.packages(c(
 ### 7. Packages Échantillonnage et TSP (Tutorial 09)
 
 ``` r
+
 install.packages(c(
   "spsurvey",          # Échantillonnage GRTS
   "BalancedSampling",  # Fallback LPM2
@@ -106,6 +114,7 @@ install.packages(c(
 ### 8. Package nemeton
 
 ``` r
+
 # Depuis GitHub (dernière version)
 remotes::install_github("pobsteta/nemeton")
 
@@ -116,6 +125,7 @@ remotes::install_github("pobsteta/nemeton", dependencies = TRUE)
 ## Vérification de l’Installation
 
 ``` r
+
 # Script de vérification complet
 check_nemeton_tutorials <- function() {
 
@@ -184,6 +194,7 @@ check_nemeton_tutorials()
 ### Méthode 1 : Depuis RStudio
 
 ``` r
+
 # Lister les tutoriels
 learnr::available_tutorials("nemeton")
 
@@ -194,6 +205,7 @@ learnr::run_tutorial("01-acquisition", package = "nemeton")
 ### Méthode 2 : Ordre recommandé
 
 ``` r
+
 # Suivre l'ordre pour une progression logique
 learnr::run_tutorial("01-acquisition", package = "nemeton")    # 45 min
 learnr::run_tutorial("02-lidar", package = "nemeton")          # 60 min
@@ -217,6 +229,7 @@ Les données téléchargées sont stockées dans :
 | Windows | `%LOCALAPPDATA%/nemeton/nemeton/tutorial_data/`        |
 
 ``` r
+
 # Afficher le chemin du cache
 rappdirs::user_data_dir("nemeton")
 
@@ -230,6 +243,7 @@ unlink(file.path(cache_dir, "tutorial_data"), recursive = TRUE)
 ### Erreur : “Tutorial not found”
 
 ``` r
+
 # Réinstaller nemeton
 remotes::install_github("pobsteta/nemeton", force = TRUE)
 ```
@@ -243,6 +257,7 @@ remotes::install_github("pobsteta/nemeton", force = TRUE)
 ### Erreur : “Out of memory” (LiDAR)
 
 ``` r
+
 # Augmenter la limite mémoire
 options(future.globals.maxSize = +Inf)
 
@@ -257,6 +272,7 @@ nécessaire (les données sont en cache après le premier téléchargement).
 ### Erreur : “Package ‘xxx’ not available”
 
 ``` r
+
 # Mettre à jour les dépôts CRAN
 options(repos = c(CRAN = "https://cloud.r-project.org"))
 

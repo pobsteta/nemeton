@@ -1,0 +1,80 @@
+# Check whether an AOI lies within the FORDEAD calibration domain
+
+Implements guard-rail G3 (spec 008): an AOI is "valid" for FORDEAD if
+(i) it intersects the five validated departments by more than
+\`threshold_geo\` of its area and (ii) the user-provided forest units
+are dominated by spruce + fir at more than \`threshold_species\` of
+their cumulated area.
+
+## Usage
+
+``` r
+check_fordead_validity(
+  aoi,
+  units = NULL,
+  bdforet = NULL,
+  layers = NULL,
+  threshold_geo = 0.5,
+  threshold_species = 0.7,
+  min_resineux = 0.3
+)
+```
+
+## Arguments
+
+- aoi:
+
+  An \`sf\` polygon (any CRS); the project area of interest.
+
+- units:
+
+  Optional \`sf\` of forest management units. Must carry a species label
+  column (one of \`essence_dominante\`, \`essence\`, \`species_label\`,
+  \`species\`, \`essence_principale\`). When \`NULL\`, the species check
+  is skipped (\`species_valid = NA\`). When \`units\` has no species
+  column, the function falls back to deriving it from BD Forêt V2 if
+  either \`bdforet\` or \`layers\` is provided (see below).
+
+- bdforet:
+
+  Optional \`sf\` of BD Forêt V2 polygons (formation végétale layer,
+  IGN). Used as a species fallback when \`units\` carries no
+  recognisable species column. Each unit's dominant essence is derived
+  by area-weighted intersection via \[enrich_parcels_bdforet()\].
+  Ignored when \`units\` already carries a species column.
+
+- layers:
+
+  Optional \`nemeton_layers\` object. When \`bdforet\` is \`NULL\`, the
+  function attempts to resolve a \`"bdforet"\` vector layer from
+  \`layers\` (\`resolve_vector_layer(layers, "bdforet")\`) and uses it
+  as the fallback species source. Convenient when the caller already
+  holds a project-wide layer registry.
+
+- threshold_geo:
+
+  Minimum fraction of \`aoi\` area that must fall inside the validity
+  zones. Default \`0.5\`.
+
+- threshold_species:
+
+  Minimum fraction of \`units\` area that must be Norway spruce + silver
+  fir. Default \`0.7\` (consistent with the ONF/DSF 2024 calibration
+  sample).
+
+- min_resineux:
+
+  Minimum per-unit conifer share to use the FORDEAD output for that unit
+  when computing R5 (\`R/indicators-deperissement.R\`). Reserved here
+  for API parity — \`check_fordead_validity()\` itself does not filter
+  by it and only echoes it back in the result.
+
+## Value
+
+A list with elements: \* \`geo_valid\` (logical),
+\`geo_intersection_pct\` (numeric, fraction of AOI area inside the
+validity zones), \`geo_dept_codes\` (character vector of department
+codes intersected, possibly empty); \* \`species_valid\` (logical or
+\`NA\`), \`species_resineux_pct\`, \`species_epc_pct\`,
+\`species_sap_pct\` (numeric or \`NA\`); \* \`overall_valid\` (logical)
+— \`geo_valid && (species_valid

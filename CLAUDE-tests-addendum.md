@@ -36,17 +36,18 @@ Rscript -e 'covr::report(covr::package_coverage())'
 
 ## Conventions de nommage des tests
 
-| Fichier source   | Fichier de test (unitaire)               | Fichier de test (E2E Shiny)           |
-|------------------|------------------------------------------|---------------------------------------|
-| `R/indicators.R` | `tests/testthat/test-indicators.R`       | —                                     |
-| `R/mod_radar.R`  | `tests/testthat/test-mod_radar-server.R` | `tests/testthat/test-mod_radar-e2e.R` |
-| `R/app_server.R` | `tests/testthat/test-app_server.R`       | `tests/testthat/test-app-e2e.R`       |
+| Fichier source | Fichier de test (unitaire) | Fichier de test (E2E Shiny) |
+|----|----|----|
+| `R/indicators.R` | `tests/testthat/test-indicators.R` | — |
+| `R/mod_radar.R` | `tests/testthat/test-mod_radar-server.R` | `tests/testthat/test-mod_radar-e2e.R` |
+| `R/app_server.R` | `tests/testthat/test-app_server.R` | `tests/testthat/test-app-e2e.R` |
 
 ## Stratégie de test par type de code
 
 ### Fonctions R pures (indicateurs, calculs, normalisation)
 
 ``` r
+
 test_that("calculate_carbon_index() retourne les bonnes valeurs", {
   data(massif_demo_units, package = "nemeton")
   result <- calculate_carbon_index(massif_demo_units)
@@ -69,6 +70,7 @@ test_that("calculate_carbon_index() refuse les entrées invalides", {
 ### Fonctions spatiales (sf, terra)
 
 ``` r
+
 test_that("nemeton_units() crée des unités spatiales", {
   withr::with_tempdir({
     # Créer un geopackage minimal pour le test
@@ -94,6 +96,7 @@ test_that("nemeton_units() crée des unités spatiales", {
 ### Modules Shiny — testServer() (PRIORITAIRE pour covr)
 
 ``` r
+
 # testServer() exécute le code serveur du module dans le même processus R
 # → le code EST instrumenté par covr → CONTRIBUE à la couverture
 
@@ -124,6 +127,7 @@ test_that("mod_radar_server gère les données vides", {
 ### Modules Shiny — shinytest2 AppDriver (E2E, complémentaire)
 
 ``` r
+
 # AppDriver lance l'app dans un processus R SÉPARÉ
 # → le code n'est PAS instrumenté par covr (ne contribue PAS directement à la couverture)
 # → MAIS teste l'intégration UI + Server + interactions utilisateur
@@ -168,6 +172,7 @@ test_that("mod_radar E2E : l'utilisateur peut changer de mode", {
 ### App complète
 
 ``` r
+
 test_that("L'app nemeton démarre et affiche les contrôles", {
   skip_on_cran()
   skip_if_not_installed("shinytest2")
@@ -211,6 +216,6 @@ test_that("L'app nemeton démarre et affiche les contrôles", {
 1.  **NE JAMAIS modifier** R/, inst/, man/, data/, src/, NAMESPACE
 2.  **DESCRIPTION** : modifiable uniquement pour Suggests
 3.  **Pas de tests triviaux** — chaque test vérifie un comportement réel
-4.  \*\*on.exit(app$stop{()})**obligatoireaprèschaqueAppDriver$new()
+4.  \*\*on.exit(app$`stop())** obligatoire après chaque AppDriver`$new()
 5.  **skip_on_cran()** obligatoire avant tout test shinytest2
 6.  **Vérifier que les 2987+ tests existants passent** avant de commiter

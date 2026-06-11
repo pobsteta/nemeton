@@ -1,0 +1,63 @@
+# Ingest a reference-only document into the RAG knowledge base
+
+For documents whose full text cannot be redistributed (paywalled papers,
+all-rights-reserved reports), spec 009.1 §5 stores only a citable
+reference: the assistant can cite « Author, year, title, doi:… » without
+ever holding the protected body. This is the \`link_only\` /
+\`abstract_only\` counterpart of \[ingest_knowledge_document()\].
+
+## Usage
+
+``` r
+ingest_knowledge_reference(
+  con,
+  metadata = list(),
+  abstract = NULL,
+  embed_provider = c("mistral", "openai", "voyage"),
+  api_key = NULL
+)
+```
+
+## Arguments
+
+- con:
+
+  A \`DBIConnection\`. RAG schema must be enabled (\[enable_rag()\]).
+
+- metadata:
+
+  Named list, same fields as \[ingest_knowledge_document()\]. \`title\`
+  is required; \`author\`, \`pub_date\`, \`publisher\`, \`source_url\`,
+  \`license\`, \`family_codes\`, \`profile_codes\` feed the citation and
+  the hybrid retrieval filter.
+
+- abstract:
+
+  Character scalar or \`NULL\`. When supplied, the abstract becomes the
+  chunk body (\`abstract_only\`); otherwise a reference-only chunk is
+  stored (\`link_only\`).
+
+- embed_provider, api_key:
+
+  See \[ingest_knowledge_document()\].
+
+## Value
+
+Invisibly, the list returned by \[ingest_knowledge_document()\]
+(\`document_id\`, \`n_chunks = 1\`, \`n_tokens_est\`, \`duration_sec\`)
+plus \`ingestion_mode\`.
+
+## Details
+
+A single chunk is built and embedded: a compact bibliographic citation,
+followed by the \`abstract\` when one is supplied (\`ingestion_mode =
+"abstract_only"\`) or a "full text not redistributed" notice otherwise
+(\`ingestion_mode = "link_only"\`). The chosen mode is recorded under
+\`metadata.ingestion_mode\` (the JSON \`metadata\` column — no schema
+change), so a corpus can be audited for which documents are full-text
+versus reference-only.
+
+## See also
+
+\[ingest_knowledge_document()\] (full-text ingestion),
+\[retrieve_knowledge()\], \[format_citations()\].

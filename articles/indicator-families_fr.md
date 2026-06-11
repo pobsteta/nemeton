@@ -9,6 +9,7 @@ vignette présente le référentiel complet et démontre l’utilisation du
 système de familles.
 
 ``` r
+
 library(nemeton)
 library(ggplot2)
 library(dplyr)
@@ -19,20 +20,20 @@ library(sf)
 
 ### Vue d’ensemble
 
-| Code  | Famille             | Description                               | Nb indicateurs |
-|-------|---------------------|-------------------------------------------|----------------|
-| **C** | Carbone & Vitalité  | Stock carbone et santé végétation         | 2              |
-| **B** | Biodiversité        | Diversité structurelle et habitats        | 3              |
-| **W** | Eau                 | Régulation hydrique                       | 3              |
-| **A** | Air & Microclimat   | Qualité de l’air et régulation climatique | 2              |
-| **F** | Fertilité des sols  | Qualité pédologique et érosion            | 2              |
-| **L** | Landscape (Paysage) | Structure et connectivité paysagère       | 3              |
-| **T** | Temps & Dynamique   | Ancienneté et trajectoires                | 2              |
-| **R** | Risques             | Vulnérabilité aux perturbations           | 3              |
-| **S** | Social & Usages     | Accessibilité et services récréatifs      | 3              |
-| **P** | Production          | Productivité forestière                   | 3              |
-| **E** | Énergie             | Potentiel énergétique et climat           | 2              |
-| **N** | Naturalité          | Degré de naturalité                       | 3              |
+| Code | Famille | Description | Nb indicateurs |
+|----|----|----|----|
+| **C** | Carbone & Vitalité | Stock carbone et santé végétation | 2 |
+| **B** | Biodiversité | Diversité structurelle et habitats | 3 |
+| **W** | Eau | Régulation hydrique | 3 |
+| **A** | Air & Microclimat | Qualité de l’air et régulation climatique | 2 |
+| **F** | Fertilité des sols | Qualité pédologique et érosion | 2 |
+| **L** | Landscape (Paysage) | Structure et connectivité paysagère | 3 |
+| **T** | Temps & Dynamique | Ancienneté et trajectoires | 2 |
+| **R** | Risques | Vulnérabilité aux perturbations | 3 |
+| **S** | Social & Usages | Accessibilité et services récréatifs | 3 |
+| **P** | Production | Productivité forestière | 3 |
+| **E** | Énergie | Potentiel énergétique et climat | 2 |
+| **N** | Naturalité | Degré de naturalité | 3 |
 
 ## Données de démonstration avec 12 familles
 
@@ -40,6 +41,7 @@ Pour cette vignette, nous créons un jeu de données complet avec tous les
 indicateurs des 12 familles.
 
 ``` r
+
 # Charger les données de base
 data(massif_demo_units)
 
@@ -113,6 +115,7 @@ cat("Dataset avec", n, "parcelles et 29 indicateurs\n")
 ### Famille C : Carbone & Vitalité
 
 ``` r
+
 ggplot(demo_data |> st_drop_geometry()) +
   geom_point(aes(x = C1, y = C2, color = forest_type), size = 3, alpha = 0.7) +
   labs(
@@ -133,6 +136,7 @@ ggplot(demo_data |> st_drop_geometry()) +
 ### Famille W : Eau
 
 ``` r
+
 library(tidyr)
 
 demo_data |>
@@ -163,6 +167,7 @@ d’accumulation d’eau
 ### Famille B : Biodiversité
 
 ``` r
+
 ggplot(demo_data) +
   geom_sf(aes(fill = B2), color = "white", linewidth = 0.3) +
   scale_fill_viridis_c(name = "Shannon\n(diversité)", option = "D") +
@@ -179,6 +184,7 @@ ggplot(demo_data) +
 ### Famille R : Risques
 
 ``` r
+
 demo_data |>
   st_drop_geometry() |>
   select(parcel_id, R1, R2, R3, R4) |>
@@ -205,6 +211,7 @@ Risques cumulés (≥2 indicateurs élevés) : Priorité gestion préventive
 Normalisons les indicateurs pour les rendre comparables (échelle 0-100).
 
 ``` r
+
 # Indicateurs à normaliser
 indicators_to_norm <- c("C1", "C2", "B2", "B3", "W1", "W2", "W3",
                          "A1", "A2", "S1", "S2", "P1", "P2", "P3",
@@ -254,6 +261,7 @@ cat("Indicateurs normalisés créés\n")
 Créons des indices agrégés pour chaque famille.
 
 ``` r
+
 # Calculer les indices de famille
 demo_norm$famille_carbone <- (demo_norm$C1_norm + demo_norm$C2_norm) / 2
 demo_norm$famille_biodiversite <- (demo_norm$B1_norm + demo_norm$B2_norm + demo_norm$B3_norm) / 3
@@ -304,6 +312,7 @@ avec `mode = "family"` permet de visualiser le profil complet d’une
 parcelle sur les 12 familles :
 
 ``` r
+
 # Radar pour une parcelle (mode famille)
 nemeton_radar(
   demo_norm,
@@ -318,6 +327,7 @@ nemeton_radar(
 ### Comparaison de plusieurs parcelles
 
 ``` r
+
 # Comparer plusieurs parcelles sur le même radar
 nemeton_radar(
   demo_norm,
@@ -332,6 +342,7 @@ nemeton_radar(
 ### Cartes des scores de famille
 
 ``` r
+
 # Préparer les données pour les cartes
 map_data <- demo_norm |>
   select(parcel_id, famille_carbone, famille_biodiversite, famille_eau, famille_production, geometry) |>
@@ -370,6 +381,7 @@ ggplot(map_data) +
 ### Matrice de corrélations
 
 ``` r
+
 # Extraire les scores de famille
 family_scores <- demo_norm |>
   st_drop_geometry() |>
@@ -416,6 +428,7 @@ Conflits/trade-offs - **Corrélation faible (blanc)** : Indépendance
 ### Scatter plot des synergies/conflits
 
 ``` r
+
 ggplot(demo_norm |> st_drop_geometry(), aes(x = famille_carbone, y = famille_biodiversite)) +
   geom_point(aes(color = famille_production, size = famille_naturalite), alpha = 0.7) +
   geom_smooth(method = "lm", se = TRUE, color = "gray40", linetype = "dashed") +
@@ -435,6 +448,7 @@ ggplot(demo_norm |> st_drop_geometry(), aes(x = famille_carbone, y = famille_bio
 ## Identification de hotspots multi-services
 
 ``` r
+
 # Identifier les parcelles excellentes sur plusieurs familles
 threshold <- 60  # Top 40%
 
@@ -474,6 +488,7 @@ ggplot(demo_norm) +
 ### Statistiques des hotspots
 
 ``` r
+
 hotspot_stats <- demo_norm |>
   st_drop_geometry() |>
   group_by(hotspot_count) |>
@@ -499,6 +514,7 @@ hotspot_stats
 ## Indice global multi-famille
 
 ``` r
+
 # Créer un indice global pondéré
 demo_norm <- demo_norm |>
   mutate(
@@ -541,6 +557,7 @@ ggplot(demo_norm) +
 ### Distribution de l’indice global
 
 ``` r
+
 ggplot(demo_norm |> st_drop_geometry(), aes(x = ecosystem_index)) +
   geom_histogram(bins = 10, fill = "#2E7D32", alpha = 0.7, color = "white") +
   geom_vline(
@@ -598,8 +615,9 @@ ggplot(demo_norm |> st_drop_geometry(), aes(x = ecosystem_index)) +
 ## Session Info
 
 ``` r
+
 sessionInfo()
-#> R version 4.5.3 (2026-03-11)
+#> R version 4.6.0 (2026-04-24)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.4 LTS
 #> 
@@ -620,24 +638,23 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] tidyr_1.3.2         sf_1.1-0            dplyr_1.2.1        
-#> [4] ggplot2_4.0.2       nemeton_0.15.1.9000
+#> [1] tidyr_1.3.2    sf_1.1-1       dplyr_1.2.1    ggplot2_4.0.3  nemeton_0.69.2
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] utf8_1.2.6         sass_0.4.10        generics_0.1.4     class_7.3-23      
 #>  [5] KernSmooth_2.23-26 lattice_0.22-9     digest_0.6.39      magrittr_2.0.5    
-#>  [9] evaluate_1.0.5     grid_4.5.3         RColorBrewer_1.1-3 fastmap_1.2.0     
-#> [13] Matrix_1.7-4       jsonlite_2.0.0     e1071_1.7-17       DBI_1.3.0         
+#>  [9] evaluate_1.0.5     grid_4.6.0         RColorBrewer_1.1-3 fastmap_1.2.0     
+#> [13] Matrix_1.7-5       jsonlite_2.0.0     e1071_1.7-17       DBI_1.3.0         
 #> [17] mgcv_1.9-4         purrr_1.2.2        viridisLite_0.4.3  scales_1.4.0      
 #> [21] codetools_0.2-20   textshaping_1.0.5  jquerylib_0.1.4    cli_3.6.6         
-#> [25] rlang_1.2.0        units_1.0-1        splines_4.5.3      withr_3.0.2       
-#> [29] cachem_1.1.0       yaml_2.3.12        otel_0.2.0         tools_4.5.3       
+#> [25] rlang_1.2.0        units_1.0-1        splines_4.6.0      withr_3.0.2       
+#> [29] cachem_1.1.0       yaml_2.3.12        otel_0.2.0         tools_4.6.0       
 #> [33] vctrs_0.7.3        R6_2.6.1           proxy_0.4-29       lifecycle_1.0.5   
-#> [37] classInt_0.4-11    fs_2.0.1           htmlwidgets_1.6.4  ragg_1.5.2        
-#> [41] pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.0      terra_1.9-11      
-#> [45] bslib_0.10.0       pillar_1.11.1      gtable_0.3.6       glue_1.8.0        
-#> [49] Rcpp_1.1.1         systemfonts_1.3.2  xfun_0.57          tibble_3.3.1      
-#> [53] tidyselect_1.2.1   knitr_1.51         farver_2.1.2       nlme_3.1-168      
-#> [57] htmltools_0.5.9    rmarkdown_2.31     labeling_0.4.3     compiler_4.5.3    
-#> [61] S7_0.2.1
+#> [37] classInt_0.4-11    fs_2.1.0           htmlwidgets_1.6.4  ragg_1.5.2        
+#> [41] pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.0      terra_1.9-27      
+#> [45] bslib_0.11.0       pillar_1.11.1      gtable_0.3.6       glue_1.8.1        
+#> [49] Rcpp_1.1.1-1.1     systemfonts_1.3.2  xfun_0.58          tibble_3.3.1      
+#> [53] tidyselect_1.2.1   knitr_1.51         farver_2.1.2       nlme_3.1-169      
+#> [57] htmltools_0.5.9    rmarkdown_2.31     labeling_0.4.3     compiler_4.6.0    
+#> [61] S7_0.2.2
 ```

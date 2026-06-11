@@ -1,0 +1,105 @@
+# Build a multi-temporal NDVI or NBR stack from cached Sentinel-2 bands
+
+For each scene in \`scenes_df\`, opens the required cached bands and
+computes the requested spectral index pixel-wise:
+
+## Usage
+
+``` r
+build_index_stack(
+  cache_dir,
+  scenes_df,
+  index = c("NDVI", "NBR", "NDMI", "NDRE"),
+  mask_polygon = NULL,
+  parallel = FALSE
+)
+```
+
+## Arguments
+
+- cache_dir:
+
+  Character(1). Path to the S2 cache root.
+
+- scenes_df:
+
+  See \[read_s2_band_stack()\].
+
+- index:
+
+  Character(1). One of \`"NDVI"\` (default), \`"NBR"\`, \`"NDMI"\` or
+  \`"NDRE"\` (red-edge, spec 022).
+
+- mask_polygon:
+
+  Optional \`sf\`/\`sfc\` polygon. When supplied, pixels outside it
+  become NA on every layer.
+
+- parallel:
+
+  Logical (spec 017 D4). When \`TRUE\` and furrr is installed, the
+  per-scene index computation runs in \`furrr::future_map()\` (set a
+  \`future::plan()\` first); workers return \`terra::wrap()\`-ed rasters
+  that the main process unwraps. Default \`FALSE\` (sequential,
+  identical results). Falls back to sequential if furrr is absent.
+
+## Value
+
+A multi-layer \[terra::SpatRaster\] in source CRS at 10 m, values in
+\`\[-1, 1\]\` (NAs preserved), layers named by \`obs_date\` with
+\`terra::time()\` set, and an \`"index"\` attribute carrying the chosen
+index name. \`NULL\` if no scene survives.
+
+## Details
+
+\* \*\*NDVI\*\* = (B08 − B04) / (B08 + B04) — proxy of vegetation vigour
+\* \*\*NBR\*\* = (B08 − B12) / (B08 + B12) — proxy of vegetation /
+burned-area discrimination. \* \*\*NDMI\*\* = (B08 − B11) / (B08 + B11)
+— vegetation moisture proxy (drops under water stress). B11 is natively
+20 m, so it is resampled to the B08 10 m grid like B12. \* \*\*NDRE\*\*
+= (B8A − B05) / (B8A + B05) — red-edge proxy of chlorophyll content, an
+early marker of canopy stress (spec 022). Both B8A and B05 are natively
+20 m and share the same grid, so the index is computed at 20 m without
+resampling.
+
+B12 (NBR) is natively 20 m, so it is resampled to the B08 10 m grid via
+\[terra::resample()\] with \`method = "bilinear"\`.
+
+Scenes with incomplete cached bands (missing B04, B08, B12 for NBR, B11
+for NDMI, or B05 / B8A for NDRE) are skipped silently with a single
+aggregated warning. For NDRE specifically, a cache that holds \*\*no\*\*
+scene with both red-edge bands aborts up front (internal
+\`.assert_cache_has_bands()\` guard) rather than returning a silent
+all-NA raster. NAs propagate naturally through the arithmetic: a NA in
+any source pixel yields NA in the index.
+
+## Why arithmetic alone is enough
+
+Sentinel-2 L2A reflectances are non-negative, so \`(a − b) / (a + b)\`
+stays in \`\[-1, 1\]\` mathematically. No \`clamp()\` needed.
+
+## Note on B12 resampling
+
+\`extract_pixel_timeseries()\` deliberately does \*\*not\*\* resample
+B12 — for a single-point extraction the natively 20 m pixel containing
+the click is what the user wants. So \`build_index_stack()\` at point
+\`(x, y)\` may differ from \`extract_pixel_timeseries()\` at the same
+\`(x, y)\` by a sub-pixel amount when \`index = "NBR"\`. This is
+documented and intentional.
+
+## See also
+
+\[read_s2_band_stack()\], \[extract_pixel_timeseries()\].
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+  cache <- "/proj/cache/layers/sentinel2"
+  scenes <- data.frame(
+    scene_id = "S2A_MSIL2A_20250610T103031_R108_T31TGM",
+    obs_date = as.Date("2025-06-10"))
+  ndvi_stack <- build_index_stack(cache, scenes, "NDVI")
+  terra::plot(ndvi_stack[[1]])
+} # }
+```

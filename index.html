@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="favicon.ico">
 <link rel="manifest" href="site.webmanifest">
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="nemeton - Analyse Systemique Forestiere">
 <meta name="description" content="Package R coeur pour l'analyse multi-famille des services ecosystemiques forestiers. 31 indicateurs, 12 familles, systeme NDP (Fibonacci), 11 essences par region. Methode Nemeton.
@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.69.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +49,7 @@
     <li><a class="dropdown-item" href="articles/complete-referential_fr.html">Referentiel complet 12 familles</a></li>
     <li><a class="dropdown-item" href="articles/multi-criteria-optimization_fr.html">Optimisation multi-criteres</a></li>
     <li><a class="dropdown-item" href="articles/biodiversity-resilience-v030_fr.html">Biodiversite et resilience</a></li>
+    <li><a class="dropdown-item" href="articles/site-index-open-canopy_fr.html">Indicateurs P1/P2/C1/B2/R2 via CHM Open-Canopy</a></li>
     <li><a class="dropdown-item" href="articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
   </ul>
 </li>
@@ -81,7 +82,7 @@
 <h2 id="architecture-adr-009">Architecture (ADR-009)<a class="anchor" aria-label="anchor" href="#architecture-adr-009"></a>
 </h2>
 <pre><code>nemeton (ce repo)       -&gt; Package coeur R (MIT). 31 indicateurs, 12 familles, NDP, radar.
-nemetonShiny            -&gt; Application Shiny (EUPL v1.2). Interface web interactive.
+nemetonshiny            -&gt; Application Shiny (EUPL v1.2). Interface web interactive.
 tree_sat_nemeton        -&gt; Classification d'essences Sentinel-1/2. NDP 0. MIT.
 maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.</code></pre>
 </div>
@@ -95,68 +96,68 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <col width="32%">
 <col width="46%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th>Code</th>
 <th>Famille</th>
 <th>Indicateurs</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><strong>B</strong></td>
 <td>Biodiversite</td>
 <td>indicateur_b1_protection, b2_structure, b3_connectivite</td>
 </tr>
-<tr class="even">
+<tr>
 <td><strong>C</strong></td>
 <td>Carbone &amp; Vitalite</td>
 <td>indicateur_c1_biomasse, c2_ndvi</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><strong>W</strong></td>
 <td>Eau &amp; Regulation</td>
 <td>indicateur_w1_reseau, w2_zones_humides, w3_humidite</td>
 </tr>
-<tr class="even">
+<tr>
 <td><strong>A</strong></td>
 <td>Air &amp; Microclimat</td>
 <td>indicateur_a1_couverture, a2_qualite_air</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><strong>F</strong></td>
 <td>Fertilite Sols</td>
 <td>indicateur_f1_fertilite, f2_erosion</td>
 </tr>
-<tr class="even">
+<tr>
 <td><strong>L</strong></td>
 <td>Paysage</td>
 <td>indicateur_l1_sylvosphere, l2_fragmentation</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><strong>T</strong></td>
 <td>Temporel</td>
 <td>indicateur_t1_anciennete, t2_changement</td>
 </tr>
-<tr class="even">
+<tr>
 <td><strong>R</strong></td>
 <td>Risques &amp; Resilience</td>
 <td>indicateur_r1_feu, r2_tempete, r3_secheresse, r4_abroutissement</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><strong>S</strong></td>
 <td>Social &amp; Usages</td>
 <td>indicateur_s1_routes, s2_bati, s3_population</td>
 </tr>
-<tr class="even">
+<tr>
 <td><strong>P</strong></td>
 <td>Production &amp; Economie</td>
 <td>indicateur_p1_volume, p2_station, p3_qualite_bois</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><strong>E</strong></td>
 <td>Energie &amp; Climat</td>
 <td>indicateur_e1_bois_energie, e2_evitement</td>
 </tr>
-<tr class="even">
+<tr>
 <td><strong>N</strong></td>
 <td>Naturalite</td>
 <td>indicateur_n1_distance, n2_continuite, n3_naturalite</td>
@@ -200,15 +201,53 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <span><span class="fu"><a href="reference/list_countries.html">list_countries</a></span><span class="op">(</span><span class="op">)</span>                   <span class="co"># c("EU", "FR")</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="application-interactive-nemetonshiny">Application Interactive (nemetonShiny)<a class="anchor" aria-label="anchor" href="#application-interactive-nemetonshiny"></a>
+<h2 id="ndp-augmente--integration-open-canopy-v0160-spec-005">NDP augmente : integration Open-Canopy (v0.16.0, spec 005)<a class="anchor" aria-label="anchor" href="#ndp-augmente--integration-open-canopy-v0160-spec-005"></a>
+</h2>
+<p>Depuis la v0.16.0, nemeton exploite des Canopy Height Models (CHM) produits par le package amont <a href="https://github.com/pobsteta/opencanopynemeton" class="external-link"><code>opencanopy</code></a> pour affiner cinq indicateurs (P1 volume, P2 station, C1 biomasse, B2 structure, R2 tempete) a partir de l’ortho IGN, sans besoin de LiDAR. L’ADR-011 amende le systeme NDP avec un flag vectoriel <code>augmented</code> qui preserve la confiance phi Fibonacci globale.</p>
+<p>Exemple end-to-end :</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pobsteta.github.io/nemeton/">nemeton</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 1. Produire un CHM depuis une AOI (package separe)</span></span>
+<span><span class="co"># chm &lt;- opencanopy::pipeline_aoi_to_chm(aoi, format = "COG")</span></span>
+<span></span>
+<span><span class="co"># 2. Nettoyer le CHM (5 etapes : foret, bati, eau, NDVI, pente)</span></span>
+<span><span class="va">clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sanitize_chm.html">sanitize_chm</a></span><span class="op">(</span><span class="va">chm</span>,</span>
+<span>                     forest_mask <span class="op">=</span> <span class="va">bd_foret</span>,</span>
+<span>                     buildings   <span class="op">=</span> <span class="va">bd_topo_batiments</span>,</span>
+<span>                     water       <span class="op">=</span> <span class="va">bd_carthage</span>,</span>
+<span>                     ndvi        <span class="op">=</span> <span class="va">ndvi</span><span class="op">)</span></span>
+<span><span class="co"># clean$pct_masked, clean$steps_applied</span></span>
+<span></span>
+<span><span class="co"># 3. Detecter le NDP augmente</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">units</span>, <span class="st">"chm_source"</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"opencanopy"</span></span>
+<span><span class="va">res_ndp</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/detect_ndp.html">detect_ndp</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span></span>
+<span><span class="va">res_ndp</span><span class="op">$</span><span class="va">augmented</span>   <span class="co"># "height_ml"</span></span>
+<span></span>
+<span><span class="co"># 4. Calculer les indicateurs en mode CHM</span></span>
+<span><span class="va">units</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicateur_p2_station.html">indicateur_p2_station</a></span><span class="op">(</span><span class="va">units</span>, chm <span class="op">=</span> <span class="va">clean</span><span class="op">$</span><span class="va">chm_clean</span><span class="op">)</span>   <span class="co"># H0 en metres</span></span>
+<span><span class="va">units</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicateur_p1_volume.html">indicateur_p1_volume</a></span><span class="op">(</span><span class="va">units</span>,  chm <span class="op">=</span> <span class="va">clean</span><span class="op">$</span><span class="va">chm_clean</span>,</span>
+<span>                              pct_masked <span class="op">=</span> <span class="va">clean</span><span class="op">$</span><span class="va">pct_masked</span><span class="op">)</span>    <span class="co"># m3/ha</span></span>
+<span><span class="va">units</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicateur_c1_biomasse.html">indicateur_c1_biomasse</a></span><span class="op">(</span><span class="va">units</span>, chm <span class="op">=</span> <span class="va">clean</span><span class="op">$</span><span class="va">chm_clean</span><span class="op">)</span>   <span class="co"># tC/ha</span></span>
+<span><span class="va">units</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicateur_b2_structure.html">indicateur_b2_structure</a></span><span class="op">(</span><span class="va">units</span>, chm <span class="op">=</span> <span class="va">clean</span><span class="op">$</span><span class="va">chm_clean</span><span class="op">)</span>  <span class="co"># 0-100</span></span>
+<span><span class="va">units</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicateur_r2_tempete.html">indicateur_r2_tempete</a></span><span class="op">(</span><span class="va">units</span>, dem <span class="op">=</span> <span class="va">dem</span>,</span>
+<span>                               chm <span class="op">=</span> <span class="va">clean</span><span class="op">$</span><span class="va">chm_clean</span><span class="op">)</span>           <span class="co"># 0-100</span></span>
+<span></span>
+<span><span class="co"># 5. Voir la liste des essences couvertes par les courbes de station</span></span>
+<span><span class="fu"><a href="reference/list_site_index_species.html">list_site_index_species</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>Les courbes de hauteur dominante (Duplat &amp; Tran-Ha 1997 et publications connexes) sont tabulees dans <code>inst/extdata/site_index_curves.csv</code>. Leur redistribution est autorisee par M. Tran-Ha (communication personnelle, avril 2026 ; voir <code>inst/NOTICE</code>).</p>
+<p>Vignette dediee : <a href="https://pobsteta.github.io/nemeton/articles/site-index-open-canopy_fr.html">Indicateurs P1/P2/C1/B2/R2 via CHM Open-Canopy</a>.</p>
+</div>
+<div class="section level2">
+<h2 id="application-interactive-nemetonshiny">Application Interactive (nemetonshiny)<a class="anchor" aria-label="anchor" href="#application-interactive-nemetonshiny"></a>
 </h2>
 <p>L’application Shiny est dans un package separe :</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Installer l'application</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"pobsteta/nemeton_shiny"</span><span class="op">)</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"pobsteta/nemetonshiny"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Lancer</span></span>
-<span><span class="fu">nemetonShiny</span><span class="fu">::</span><span class="fu">run_app</span><span class="op">(</span>language <span class="op">=</span> <span class="st">"fr"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">nemetonshiny</span><span class="fu">::</span><span class="fu">run_app</span><span class="op">(</span>language <span class="op">=</span> <span class="st">"fr"</span><span class="op">)</span></span></code></pre></div>
 <p>L’application permet de :</p>
 <ul>
 <li>Rechercher et selectionner des parcelles cadastrales par commune</li>
@@ -219,12 +258,12 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <li>Synchroniser avec PostGIS (Clever Cloud)</li>
 <li>S’authentifier via OAuth2/OIDC (Keycloak, AgentConnect)</li>
 </ul>
-<p>Repository : <a href="https://github.com/pobsteta/nemeton_shiny" class="external-link">pobsteta/nemeton_shiny</a></p>
+<p>Repository : <a href="https://github.com/pobsteta/nemetonshiny" class="external-link">pobsteta/nemetonshiny</a></p>
 </div>
 <div class="section level2">
 <h2 id="workflow-avec-vos-donnees">Workflow avec vos donnees<a class="anchor" aria-label="anchor" href="#workflow-avec-vos-donnees"></a>
 </h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pobsteta.github.io/nemeton/">nemeton</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
 <span></span>
@@ -253,7 +292,7 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
 </h2>
 <p>Site pkgdown : <a href="https://pobsteta.github.io/nemeton/">pobsteta.github.io/nemeton</a></p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="op">?</span><span class="va">nemeton_compute</span></span>
 <span><span class="op">?</span><span class="va">create_family_index</span></span>
 <span><span class="op">?</span><span class="va">ndp_table</span></span>
@@ -263,7 +302,7 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <h2 id="licence">Licence<a class="anchor" aria-label="anchor" href="#licence"></a>
 </h2>
 <p>MIT - Voir <a href="LICENSE">LICENSE</a></p>
-<p>L’application Shiny (<a href="https://github.com/pobsteta/nemeton_shiny" class="external-link">nemetonShiny</a>) est sous EUPL v1.2.</p>
+<p>L’application Shiny (<a href="https://github.com/pobsteta/nemetonshiny" class="external-link">nemetonshiny</a>) est sous EUPL v1.2.</p>
 </div>
 <div class="section level2">
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
@@ -280,7 +319,7 @@ R package version 0.15.0. https://github.com/pobsteta/nemeton</code></pre>
 <li><a href="https://github.com/pobsteta/nemeton/" class="external-link">Browse source code</a></li>
 <li><a href="https://github.com/pobsteta/nemeton/issues" class="external-link">Report a bug</a></li>
 <li><a href="https://github.com/pobsteta/nemeton" class="external-link">Voir sur GitHub</a></li>
-<li><a href="https://github.com/pobsteta/nemeton_shiny" class="external-link">Application Shiny (nemetonShiny)</a></li>
+<li><a href="https://github.com/pobsteta/nemetonshiny" class="external-link">Application Shiny (nemetonshiny)</a></li>
 </ul>
 </div>
 
@@ -311,7 +350,7 @@ R package version 0.15.0. https://github.com/pobsteta/nemeton</code></pre>
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
 <li><a href="https://github.com/pobsteta/nemeton/actions/workflows/r.yml" class="external-link"><img src="https://github.com/pobsteta/nemeton/actions/workflows/r.yml/badge.svg" alt="R-CMD-check"></a></li>
-<li><a href="https://github.com/pobsteta/nemeton" class="external-link"><img src="https://img.shields.io/badge/version-0.15.1-blue.svg?logo=github" alt="Version"></a></li>
+<li><a href="https://github.com/pobsteta/nemeton/releases/tag/v0.69.2" class="external-link"><img src="https://img.shields.io/badge/version-0.69.2-blue.svg?logo=github" alt="Version"></a></li>
 <li><a href="https://pobsteta.github.io/nemeton/"><img src="https://github.com/pobsteta/nemeton/actions/workflows/pkgdown.yaml/badge.svg" alt="pkgdown"></a></li>
 <li><a href="https://codecov.io/gh/pobsteta/nemeton" class="external-link"><img src="https://codecov.io/gh/pobsteta/nemeton/graph/badge.svg" alt="codecov"></a></li>
 <li><a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-blue.svg?logo=opensourceinitiative" alt="License: MIT"></a></li>

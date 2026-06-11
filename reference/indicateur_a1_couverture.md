@@ -8,9 +8,10 @@ to assess local air quality and microclimate regulation potential.
 ``` r
 indicateur_a1_couverture(
   units,
-  land_cover,
+  land_cover = NULL,
   forest_classes = c(16, 17, 18),
-  buffer_radius = 1000
+  buffer_radius = 1000,
+  fvc = NULL
 )
 ```
 
@@ -22,7 +23,8 @@ indicateur_a1_couverture(
 
 - land_cover:
 
-  A SpatRaster with land cover classification.
+  A SpatRaster with land cover classification. Required in legacy mode;
+  may be `NULL` when `fvc` is supplied.
 
 - forest_classes:
 
@@ -33,6 +35,15 @@ indicateur_a1_couverture(
 
   Numeric. Buffer radius in meters. Default 1000.
 
+- fvc:
+
+  Optional `SpatRaster` of Fractional Vegetation Cover in `[0, 1]`
+  (typically the Theia `s2_biophysical` FVC product, loaded via
+  [`load_raster_source`](https://pobsteta.github.io/nemeton/reference/load_raster_source.md)).
+  When supplied, activates FVC mode: A1 is the per-buffer mean FVC
+  rescaled to a 0-100 percentage, and `land_cover` is ignored. The
+  raster is expected in the CRS of `units`.
+
 ## Value
 
 The input sf object with added column:
@@ -41,7 +52,11 @@ The input sf object with added column:
 
 ## Details
 
-\*\*Formula\*\*: A1 = (forest_area_in_buffer / total_buffer_area) × 100
+\*\*Formula\*\* (legacy mode): A1 = (forest_area_in_buffer /
+total_buffer_area) × 100
+
+\*\*FVC mode\*\* (Theia `s2_biophysical`, phase 3a): A1 = mean(FVC) ×
+100 over the buffer.
 
 \*\*Interpretation\*\*:
 
