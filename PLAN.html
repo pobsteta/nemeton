@@ -351,6 +351,8 @@
 <ul class="task-list"><li><label><input type="checkbox" checked>Restore projet instantané : cache disque de la géométrie commune (app — <a href="mailto:nemetonshiny@6778e84" class="email">nemetonshiny@6778e84</a>, v0.74.0)</label></li>
 <li><label><input type="checkbox" checked>Déblocage CI nemetonshiny : lasR via Remotes + réparation tests pré-existants (app — <a href="mailto:nemetonshiny@8b10862" class="email">nemetonshiny@8b10862</a>, v0.74.1)</label></li>
 <li><label><input type="checkbox" checked>Notification sync PostGIS persistante jusqu’à l’overlay carte (app — <a href="mailto:nemetonshiny@32b1c8e" class="email">nemetonshiny@32b1c8e</a>, v0.75.0)</label></li>
+<li><label><input type="checkbox" checked>Backfill géométrie commune des projets legacy (lazy + migration) (app — <a href="mailto:nemetonshiny@e9b5e69" class="email">nemetonshiny@e9b5e69</a>, v0.75.1)</label></li>
+<li><label><input type="checkbox" checked>Chargement projet : build_index_stack hors du chemin critique (app — <a href="mailto:nemetonshiny@d9bc73f" class="email">nemetonshiny@d9bc73f</a>, v0.75.2)</label></li>
 </ul><hr></div>
 </div>
 <div class="section level1">
@@ -524,6 +526,16 @@
 <li>
 <strong>Reporté</strong> (vs plan §5) : flag NDP <code>health_reconfort</code> + datasource <code>reconfort_anomalies</code> — ils supposaient une parité FORDEAD (<code>health_fordead</code>/<code>fordead_anomalies</code>) inexistante et hors sémantique <code>augmented</code> de <code><a href="reference/detect_ndp.html">detect_ndp()</a></code>. Suite : <strong>L2a</strong> (fetch-modèle).</li>
 </ul></div>
+<div class="section level3">
+<h3 id="id_2026-06-11--chargement-projet--build_index_stack-hors-du-chemin-critique-app">2026-06-11 — Chargement projet : build_index_stack hors du chemin critique (app)<a class="anchor" aria-label="anchor" href="#id_2026-06-11--chargement-projet--build_index_stack-hors-du-chemin-critique-app"></a></h3>
+<p>Livraison <strong>app</strong> : <code>nemetonshiny@d9bc73f</code> — release <strong>v0.75.2</strong> (cycle dev 0.75.1.9000 → v0.75.2).</p>
+<p>Diagnostic mesuré (instrumentation du handler) : ouvrir un projet depuis l’Accueil prenait ~17 s à froid. Ni <code>load_project</code> (0.6 s) ni l’hydratation <code>monitoring_zone_id</code> (0.1 s) n’étaient en cause — le coût venait de <code><a href="reference/build_index_stack.html">nemeton::build_index_stack</a></code> (scan de centaines de scènes Sentinel-2) appelé par la carte pixel du Suivi. Ses outputs étant <code>suspendWhenHidden = FALSE</code> (v0.46.3), la reactive <code>pixel_stack_r</code> se recalculait à chaque changement de projet, même hors onglet Suivi, bloquant l’event loop. Fix : <code>req(app_state$active_main_tab == "monitoring")</code> dans <code>pixel_stack_r</code> ; le scan ne tourne plus qu’à l’ouverture du Suivi. Chargement mesuré ~2-3 s après fix. Périmètre : 100 % <code>nemetonshiny</code> — <code>build_index_stack</code> seulement appelé, pas modifié.</p>
+</div>
+<div class="section level3">
+<h3 id="id_2026-06-11--backfill-géométrie-commune-des-projets-legacy-app">2026-06-11 — Backfill géométrie commune des projets legacy (app)<a class="anchor" aria-label="anchor" href="#id_2026-06-11--backfill-g%C3%A9om%C3%A9trie-commune-des-projets-legacy-app"></a></h3>
+<p>Livraison <strong>app</strong> : <code>nemetonshiny@e9b5e69</code> — release <strong>v0.75.1</strong> (cycle dev 0.75.0.9000 → v0.75.1).</p>
+<p>Le cache <code>data/commune.gpkg</code> (v0.74.0) n’existait que pour les projets sauvegardés depuis. Les projets legacy re-téléchargeaient le contour à chaque ouverture (chemin async lent). Backfill paresseux dans <code>mod_search</code> (result handler de <code>restore_task</code>) : le contour récupéré est persisté → prochain chargement instantané. Plus un helper one-shot <code>backfill_all_commune_geometries()</code> (migration de tous les projets en une passe). Périmètre : 100 % <code>nemetonshiny</code>.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-06-11--notification-db-persistante-jusquà-loverlay-carte-app">2026-06-11 — Notification DB persistante jusqu’à l’overlay carte (app)<a class="anchor" aria-label="anchor" href="#id_2026-06-11--notification-db-persistante-jusqu%C3%A0-loverlay-carte-app"></a></h3>
 <p>Livraison <strong>app</strong> : <code>nemetonshiny@32b1c8e</code> — release <strong>v0.75.0</strong> (cycle dev 0.74.1.9000 → v0.75.0).</p>

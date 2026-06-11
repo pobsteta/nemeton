@@ -356,6 +356,12 @@ pré-existants (app — <nemetonshiny@8b10862>, v0.74.1)
 Notification sync PostGIS persistante jusqu’à l’overlay carte (app —
 <nemetonshiny@32b1c8e>, v0.75.0)
 
+Backfill géométrie commune des projets legacy (lazy + migration) (app —
+<nemetonshiny@e9b5e69>, v0.75.1)
+
+Chargement projet : build_index_stack hors du chemin critique (app —
+<nemetonshiny@d9bc73f>, v0.75.2)
+
 ------------------------------------------------------------------------
 
 # Chantier précédent — Durcissement ingestion S2 / cadrage E7
@@ -758,6 +764,38 @@ Loire ; paperwork spec 021 + ADR-013 A4 livré le 2026-06-10). **Lot L1**
   `augmented` de
   [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md).
   Suite : **L2a** (fetch-modèle).
+
+### 2026-06-11 — Chargement projet : build_index_stack hors du chemin critique (app)
+
+Livraison **app** : `nemetonshiny@d9bc73f` — release **v0.75.2** (cycle
+dev 0.75.1.9000 → v0.75.2).
+
+Diagnostic mesuré (instrumentation du handler) : ouvrir un projet depuis
+l’Accueil prenait ~17 s à froid. Ni `load_project` (0.6 s) ni
+l’hydratation `monitoring_zone_id` (0.1 s) n’étaient en cause — le coût
+venait de
+[`nemeton::build_index_stack`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md)
+(scan de centaines de scènes Sentinel-2) appelé par la carte pixel du
+Suivi. Ses outputs étant `suspendWhenHidden = FALSE` (v0.46.3), la
+reactive `pixel_stack_r` se recalculait à chaque changement de projet,
+même hors onglet Suivi, bloquant l’event loop. Fix :
+`req(app_state$active_main_tab == "monitoring")` dans `pixel_stack_r` ;
+le scan ne tourne plus qu’à l’ouverture du Suivi. Chargement mesuré ~2-3
+s après fix. Périmètre : 100 % `nemetonshiny` — `build_index_stack`
+seulement appelé, pas modifié.
+
+### 2026-06-11 — Backfill géométrie commune des projets legacy (app)
+
+Livraison **app** : `nemetonshiny@e9b5e69` — release **v0.75.1** (cycle
+dev 0.75.0.9000 → v0.75.1).
+
+Le cache `data/commune.gpkg` (v0.74.0) n’existait que pour les projets
+sauvegardés depuis. Les projets legacy re-téléchargeaient le contour à
+chaque ouverture (chemin async lent). Backfill paresseux dans
+`mod_search` (result handler de `restore_task`) : le contour récupéré
+est persisté → prochain chargement instantané. Plus un helper one-shot
+`backfill_all_commune_geometries()` (migration de tous les projets en
+une passe). Périmètre : 100 % `nemetonshiny`.
 
 ### 2026-06-11 — Notification DB persistante jusqu’à l’overlay carte (app)
 
