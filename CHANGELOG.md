@@ -20,7 +20,9 @@ For a narrative, per-feature description of each release, see
   188 tiles, no network); `reconfort_ingest_s2()` downloads MUSCATE L2A from
   GEODES (`pygeodes`) and unzips into the IOTA² layout, driving the vendored
   upstream scripts via a conda subprocess. GEODES config via
-  `options(nemeton.geodes_config)`. Heavy/opt-in, never in CI.
+  `options(nemeton.geodes_config)`. `reconfort_ingest_s2()` writes a per-run
+  pygeodes config whose `download_dir` matches the per-tile `zip_path`, so
+  the download and unzip steps agree on the path. Heavy/opt-in, never in CI.
 
 ## [0.72.0] - 2026-06-11
 

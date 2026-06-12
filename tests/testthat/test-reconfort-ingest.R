@@ -80,6 +80,9 @@ test_that("reconfort_ingest_s2 orchestrates download+process per tile (mocked)",
     .ensure_reconfort_python = function(...) "test-env",
     .reconfort_conda_binary  = function() "/opt/conda/bin/conda",
     .reconfort_geodes_config = function(path = NULL) "/tmp/geodes.json",
+    .reconfort_account_with_download_dir = function(account, download_dir) {
+      file.path(download_dir, ".pygeodes-config.json")
+    },
     .reconfort_run_py = function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
       calls[[length(calls) + 1L]] <<- basename(script)
       0L
@@ -104,6 +107,9 @@ test_that("reconfort_ingest_s2 aborts when a subprocess fails (mocked)", {
     .ensure_reconfort_python = function(...) "test-env",
     .reconfort_conda_binary  = function() "/opt/conda/bin/conda",
     .reconfort_geodes_config = function(path = NULL) "/tmp/geodes.json",
+    .reconfort_account_with_download_dir = function(account, download_dir) {
+      file.path(download_dir, ".pygeodes-config.json")
+    },
     .reconfort_run_py = function(...) 1L   # non-zero exit
   )
   expect_error(
@@ -112,6 +118,25 @@ test_that("reconfort_ingest_s2 aborts when a subprocess fails (mocked)", {
                         s2_root = withr::local_tempdir(), quiet = TRUE),
     "download failed"
   )
+})
+
+test_that(".reconfort_account_with_download_dir overrides download_dir, keeps key", {
+  dir  <- withr::local_tempdir()
+  acct <- file.path(dir, "pygeodes-config.json")
+  jsonlite::write_json(
+    list(api_key = "SECRET", download_dir = "~/elsewhere/", checksum_error = TRUE),
+    acct, auto_unbox = TRUE)
+  zip_dir <- file.path(dir, "zip", "T31UDP")
+  dir.create(zip_dir, recursive = TRUE)
+
+  out <- .reconfort_account_with_download_dir(acct, zip_dir)
+  expect_true(file.exists(out))
+  conf <- jsonlite::read_json(out, simplifyVector = TRUE)
+  # download_dir now points at the per-tile zip dir (trailing slash).
+  expect_equal(conf$download_dir, paste0(normalizePath(zip_dir), "/"))
+  # api_key and other fields survive the copy untouched.
+  expect_equal(conf$api_key, "SECRET")
+  expect_true(conf$checksum_error)
 })
 
 test_that("reconfort_ingest_s2 needs aoi or tiles", {

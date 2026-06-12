@@ -130,6 +130,24 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 }
 
 
+# Materialise a per-run pygeodes account config whose `download_dir`
+# points at `download_dir` (the per-tile zip dir). The upstream
+# `run_geodes_download.py` calls `geodes.download_item_archive(item)`,
+# which downloads to the pygeodes Config's `download_dir` — NOT to the
+# cfg's `zip_path` that `run_process_downloaded_images.py` later globs.
+# Without this override the two steps disagree on the path and the
+# unzip finds nothing. We copy the user's JSON (api_key et al. intact),
+# swap `download_dir`, and write it next to the tile's zip dir. Never
+# logged. Returns the new config path.
+.reconfort_account_with_download_dir <- function(account, download_dir) {
+  conf <- jsonlite::read_json(account, simplifyVector = TRUE)
+  conf$download_dir <- paste0(normalizePath(download_dir, mustWork = FALSE), "/")
+  out <- file.path(download_dir, ".pygeodes-config.json")
+  jsonlite::write_json(conf, out, auto_unbox = TRUE, pretty = TRUE)
+  out
+}
+
+
 # Run a vendored RECONFORT python script in the conda env, from the
 # glue dir so its `from utils.utils import ...` resolves. Returns the
 # exit status (0 = success). Separated out so tests can mock it.
@@ -192,10 +210,14 @@ reconfort_ingest_s2 <- function(aoi = NULL, tiles = NULL,
     dir.create(zip_dir, recursive = TRUE, showWarnings = FALSE)
     dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
+    # Force pygeodes to download into zip_dir so the unzip step finds
+    # the archives there (see .reconfort_account_with_download_dir).
+    account_run <- .reconfort_account_with_download_dir(account, zip_dir)
+
     cfg <- tempfile(fileext = ".cfg")
     .reconfort_write_cfg(cfg, list(
       tile                       = c(bare, tile),  # query both forms
-      path_to_cfg_geodes_account = account,
+      path_to_cfg_geodes_account = account_run,
       s2_collection              = s2_collection,
       start                      = date_from,
       end                        = date_to,

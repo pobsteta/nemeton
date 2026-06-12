@@ -17,9 +17,16 @@ Acquisition des scènes Sentinel-2 dans le layout attendu par IOTA²
   `run_process_downloaded_images.py` + `utils/`) en **subprocess conda**.
   Compte GEODES via `options(nemeton.geodes_config)` (défaut : le data dir
   utilisateur). nemeton n'embarque **aucune clé**.
+- **Cohérence du chemin de téléchargement** : `download_item_archive()`
+  (pygeodes) écrit dans le `download_dir` de la config GEODES, alors que
+  l'étape de dézippage cherche dans `zip_path`. `reconfort_ingest_s2()`
+  génère donc une **copie par-run** de la config pygeodes dont
+  `download_dir` pointe sur le `zip_path` de la tuile (clé API et autres
+  champs préservés, jamais loggés) — sans quoi le dézippage ne trouve rien.
 - Heavy + **opt-in** (compte GEODES + dizaines de Go de S2), **jamais en
-  CI**. 12 tests (téléchargement mocké, `reconfort_aoi_tiles` validé sur la
-  grille réelle : Loiret → `T31UDP`, CVL → 14 tuiles).
+  CI**. 13 tests (téléchargement mocké, override `download_dir` vérifié,
+  `reconfort_aoi_tiles` validé sur la grille réelle : Loiret → `T31UDP`,
+  CVL → 14 tuiles).
 
 
 # nemeton 0.72.0 (2026-06-11)
