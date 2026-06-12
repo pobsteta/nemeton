@@ -10,6 +10,24 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.74.1] - 2026-06-12
+
+### Fixed
+
+- `build_project_monitoring_zones(..., replace = TRUE)` no longer fails with
+  `FOREIGN KEY constraint failed` when re-building a project whose zones
+  already own child rows (validation plots, FORDEAD alerts) on the **SQLite**
+  backend. Root cause: the SQLite schema (`0001_init.sql`) had dropped the
+  `ON DELETE CASCADE` clauses that the PostgreSQL schema carries on
+  `plot.zone_id → monitoring_zone(id)` and `alert.plot_id → plot(id)`, so the
+  upsert's `DELETE FROM monitoring_zone` was blocked under
+  `PRAGMA foreign_keys = ON`. New migration `0006_zone_cascade` rebuilds
+  `plot` and `alert` with `ON DELETE CASCADE` on SQLite (canonical
+  CREATE/INSERT…SELECT/DROP/RENAME under `PRAGMA defer_foreign_keys = ON`);
+  the PG counterpart guarantees the cascade idempotently. Existing
+  `monitoring.sqlite` files migrate automatically on the next `db_migrate()`,
+  preserving existing `plot`/`alert` rows.
+
 ## [0.74.0] - 2026-06-12
 
 ### Added

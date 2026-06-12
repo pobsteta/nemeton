@@ -42,6 +42,33 @@ inspirer un épaississement.
 
 ---
 
+# Correctifs de production (hors chantier)
+
+**Journal** — *2026-06-12* (**v0.74.1**) : **fix `FOREIGN KEY constraint
+failed` au re-build des zones de suivi (backend SQLite)**. Symptôme remonté
+depuis `nemetonshiny` (Windows local = SQLite) :
+`build_project_monitoring_zones(con, …, replace = TRUE)` réussissait sur une
+base vierge mais échouait au **re-clic** sur un projet dont les zones
+portaient déjà des lignes enfants (placettes de validation, alertes
+FORDEAD). **Cause** : divergence de schéma PG↔SQLite — la variante SQLite
+(`0001_init.sql`) avait retiré les `ON DELETE CASCADE` que porte PostgreSQL
+sur `plot.zone_id → monitoring_zone(id)` et `alert.plot_id → plot(id)` ;
+`db_connect()` activant `PRAGMA foreign_keys = ON`, le
+`DELETE FROM monitoring_zone` de l'upsert D5 était bloqué par les enfants.
+**Correctif (option A)** : migration `0006_zone_cascade` rebâtissant `plot`
+et `alert` avec `ON DELETE CASCADE` côté SQLite (procédure canonique sous
+`PRAGMA defer_foreign_keys = ON`, compatible avec la transaction unique de
+`db_migrate()`) ; contrepartie PG idempotente. Bases existantes migrées au
+prochain `db_migrate()` sans perte de données. Tests :
+`test-zone-cascade.R` (cascade SQLite, préservation des lignes au rebuild,
+re-build du builder réel + idempotence, parité PG) + assertions 0005/0006
+dans `test-db.R`. **App** : aucun changement requis — `nemetonshiny`
+(release v0.76.0) consomme déjà `build_project_monitoring_zones()` et tire
+le fix via `Remotes: pobsteta/nemeton@*release`. *(R indisponible dans
+l'environnement de dev : validation déléguée à la CI R-CMD-check.)*
+
+---
+
 # Chantier en cours — E7 : corpus de connaissances RAG (spec 009 / 009.1, ADR-012)
 
 **Cadré** : 2026-05-29 (décisions D1-D5). **Cible cœur** : la prochaine

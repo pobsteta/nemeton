@@ -1,3 +1,33 @@
+# nemeton 0.74.1 (2026-06-12)
+
+### Fixed — `FOREIGN KEY constraint failed` au re-build des zones (backend SQLite)
+
+`build_project_monitoring_zones(..., replace = TRUE)` échouait avec
+`FOREIGN KEY constraint failed` lors du **re-build** d'un projet dont les
+zones possédaient déjà des lignes enfants (placettes de validation,
+alertes FORDEAD) — symptôme remonté depuis `nemetonshiny` sur le backend
+**SQLite** local (Windows). La première génération sur une base vierge
+réussissait ; seul le re-clic cassait.
+
+- **Cause** : divergence de schéma PG↔SQLite. La variante PostgreSQL
+  (`pg/0001_init.sql`) porte `plot.zone_id → monitoring_zone(id)
+  ON DELETE CASCADE` et `alert.plot_id → plot(id) ON DELETE CASCADE`, mais
+  la variante SQLite (`0001_init.sql`) avait délibérément retiré ces
+  clauses `CASCADE`. Comme `db_connect()` active `PRAGMA foreign_keys =
+  ON`, le `DELETE FROM monitoring_zone WHERE project_uuid = ?` de l'upsert
+  D5 était bloqué par les lignes `plot`/`alert` enfants.
+- **Correctif** : nouvelle migration **`0006_zone_cascade`** qui rebâtit
+  `plot` et `alert` avec `ON DELETE CASCADE` côté SQLite (procédure
+  canonique CREATE/INSERT…SELECT/DROP/RENAME sous
+  `PRAGMA defer_foreign_keys = ON`, compatible avec la transaction unique
+  de `db_migrate()`). La contrepartie PG `pg/0006_zone_cascade` garantit
+  le cascade idempotemment. Les bases `monitoring.sqlite` existantes sont
+  migrées automatiquement au prochain `db_migrate()`, sans perte des
+  lignes `plot`/`alert` existantes.
+- Côté app : aucun changement requis — `nemetonshiny` (v0.76.0) consomme
+  déjà `build_project_monitoring_zones()` et bénéficie du fix dès que le
+  `Remotes: pobsteta/nemeton@*release` tire cette version.
+
 # nemeton 0.74.0 (2026-06-12)
 
 ### Added — RECONFORT, orchestration end-to-end (spec 021, lot L2b.3)

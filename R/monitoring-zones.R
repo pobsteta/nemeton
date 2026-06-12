@@ -147,9 +147,13 @@ find_zones_by_project <- function(con, project_uuid) {
              stringsAsFactors = FALSE)
 }
 
-# Delete every monitoring zone bound to `project_uuid` (and, via the
-# `plot.zone_id ON DELETE CASCADE` FK, their placettes). Used by the D5
-# upsert path. No-op when the project has no zone.
+# Delete every monitoring zone bound to `project_uuid`. The
+# `plot.zone_id` / `alert.plot_id` ON DELETE CASCADE FKs (PG since
+# 0001, SQLite since migration 0006) propagate the delete to any plots
+# and alerts the zones own, so a re-build of an already-populated project
+# no longer trips "FOREIGN KEY constraint failed" under
+# PRAGMA foreign_keys = ON. Used by the D5 upsert path; no-op when the
+# project has no zone.
 .delete_project_zones <- function(con, project_uuid) {
   .db_execute(con,
     "DELETE FROM monitoring_zone WHERE project_uuid = $1",
