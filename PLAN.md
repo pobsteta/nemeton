@@ -730,9 +730,30 @@ IOTA² (décision D1 : pas de réutilisation du cache COG FAST).
   **aucune clé embarquée**.
 - Heavy + opt-in (compte GEODES + dizaines de Go), **jamais en CI**. 2
   exports (`reconfort_aoi_tiles`, `reconfort_ingest_s2`) + `.Rd` à la
-  main, section pkgdown. 12 tests (download mocké, grille réelle), 0
-  régression (144 reconfort PASS). Suite : **L2b.3**
+  main, section pkgdown. 14 tests (download mocké, grille réelle), 0
+  régression (151 reconfort PASS). Suite : **L2b.3**
   (`run_reconfort_dieback()`).
+- **Smoke réel** (`data-raw/smoke_reconfort_ingest.R`, 1 tuile T31UDP,
+  fenêtre 2026-05-08..13) joué avant merge — a fait remonter **3 bugs**,
+  tous corrigés et repliés dans v0.73.0 (mêmes PR/tag) : (1)
+  **collection GEODES** — l’id d’exemple amont
+  `MUSCATE_SENTINEL2_SENTINEL2_L2A` n’existe pas (HTTP 400) ; défaut →
+  `THEIA_REFLECTANCE_SENTINEL2_L2A`. (2) **chemin download/unzip** —
+  `download_item_archive()` écrit dans le `download_dir` de la config
+  pygeodes, pas dans le `zip_path` que le dézippage lit ; → config
+  pygeodes **par-run** avec `download_dir = <s2_root>/zip/<tile>` (cache
+  projet fourni par l’appelant, **même convention que le `cache_dir` de
+  FORDEAD**, jamais `/tmp`), et comme elle porte la clé API elle vit
+  dans un **tempfile mode 600** hors cache, effacé après chaque
+  tuile. (3) **erreurs réseau avalées** — le téléchargeur amont
+  enveloppe chaque item dans un `except` nu qui sort en 0 ; une coupure
+  (`ChunkedEncodingError` sur l’archive de ~2 Go) passait pour un succès
+  à 0 scène → **garde-fous de post-condition** (≥1 archive après
+  download, ≥1 dossier de scène après unzip, sinon abort). Plomberie
+  validée bout-en-bout (env conda, résolution tuile, recherche GEODES =
+  1 scène, config par-run, streaming réel des octets : 1,5 Go tirés
+  avant coupure réseau sur les 2 Go — seul reliquat = fiabilité réseau
+  du transfert, hors nemeton).
 
 ### 2026-06-11 — RECONFORT L2b.1 : fondations Python/IOTA² (spec 021, cœur)
 
