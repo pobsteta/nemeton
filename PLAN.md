@@ -55,17 +55,22 @@ FORDEAD). **Cause** : divergence de schéma PG↔SQLite — la variante SQLite
 sur `plot.zone_id → monitoring_zone(id)` et `alert.plot_id → plot(id)` ;
 `db_connect()` activant `PRAGMA foreign_keys = ON`, le
 `DELETE FROM monitoring_zone` de l'upsert D5 était bloqué par les enfants.
-**Correctif (option A)** : migration `0006_zone_cascade` rebâtissant `plot`
-et `alert` avec `ON DELETE CASCADE` côté SQLite (procédure canonique sous
-`PRAGMA defer_foreign_keys = ON`, compatible avec la transaction unique de
-`db_migrate()`) ; contrepartie PG idempotente. Bases existantes migrées au
-prochain `db_migrate()` sans perte de données. Tests :
-`test-zone-cascade.R` (cascade SQLite, préservation des lignes au rebuild,
-re-build du builder réel + idempotence, parité PG) + assertions 0005/0006
-dans `test-db.R`. **App** : aucun changement requis — `nemetonshiny`
-(release v0.76.0) consomme déjà `build_project_monitoring_zones()` et tire
-le fix via `Remotes: pobsteta/nemeton@*release`. *(R indisponible dans
-l'environnement de dev : validation déléguée à la CI R-CMD-check.)*
+**Correctif (option B)** : `.delete_project_zones()` supprime la chaîne
+explicitement, **enfant d'abord** (`alert` → `plot` → `monitoring_zone`),
+dans une seule transaction — portable PG/SQLite. **Option A écartée** :
+l'option initiale (migration `0006_zone_cascade` rebâtissant les tables
+avec `ON DELETE CASCADE`) a été prise en défaut par la revue Codex (P1) et
+la CI — sous la transaction unique de `db_migrate()`, `PRAGMA
+foreign_keys` est un no-op et `defer_foreign_keys` ne lève pas la violation
+différée laissée par le `DROP TABLE` du parent ; le COMMIT échouait
+précisément sur les bases peuplées. Migrations 0006 retirées. Tests :
+`test-zone-cascade.R` réécrit (suppression directe de la chaîne sans
+dépendance sf/terra, scoping par `project_uuid`, no-op/idempotence, re-build
+du builder réel, parité PG). **App** : aucun changement requis —
+`nemetonshiny` (release v0.76.0) consomme déjà
+`build_project_monitoring_zones()` et tire le fix via `Remotes:
+pobsteta/nemeton@*release`. *(R indisponible en local : validation déléguée
+à la CI R-CMD-check.)*
 
 ---
 

@@ -16,14 +16,15 @@ réussissait ; seul le re-clic cassait.
   clauses `CASCADE`. Comme `db_connect()` active `PRAGMA foreign_keys =
   ON`, le `DELETE FROM monitoring_zone WHERE project_uuid = ?` de l'upsert
   D5 était bloqué par les lignes `plot`/`alert` enfants.
-- **Correctif** : nouvelle migration **`0006_zone_cascade`** qui rebâtit
-  `plot` et `alert` avec `ON DELETE CASCADE` côté SQLite (procédure
-  canonique CREATE/INSERT…SELECT/DROP/RENAME sous
-  `PRAGMA defer_foreign_keys = ON`, compatible avec la transaction unique
-  de `db_migrate()`). La contrepartie PG `pg/0006_zone_cascade` garantit
-  le cascade idempotemment. Les bases `monitoring.sqlite` existantes sont
-  migrées automatiquement au prochain `db_migrate()`, sans perte des
-  lignes `plot`/`alert` existantes.
+- **Correctif** : `.delete_project_zones()` supprime désormais la chaîne
+  **explicitement, enfant d'abord** (`alert` → `plot` →
+  `monitoring_zone`), dans une seule transaction — portable sur les deux
+  backends (sur PostgreSQL les suppressions d'enfants font simplement
+  doublon avec le cascade). Pas de migration de schéma : ajouter le
+  cascade côté SQLite imposerait un *rebuild* de tables, incompatible avec
+  la transaction unique de `db_migrate()` (`PRAGMA foreign_keys` est un
+  no-op en transaction, et `defer_foreign_keys` ne lève pas la violation
+  différée laissée par le `DROP TABLE` du parent).
 - Côté app : aucun changement requis — `nemetonshiny` (v0.76.0) consomme
   déjà `build_project_monitoring_zones()` et bénéficie du fix dès que le
   `Remotes: pobsteta/nemeton@*release` tire cette version.

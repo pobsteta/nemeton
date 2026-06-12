@@ -209,7 +209,6 @@ test_that("db_migrate applies the SQLite migrations on a fresh file", {
     expect_true("0003_project_uuid" %in% applied)
     expect_true("0004_drop_obs_pixel" %in% applied)
     expect_true("0005_multi_zone_per_project" %in% applied)
-    expect_true("0006_zone_cascade" %in% applied)
 
     for (tbl in c("monitoring_zone", "plot", "alert",
                   "schema_migration")) {
