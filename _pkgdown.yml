@@ -283,6 +283,8 @@ reference:
     - reconfort_model_info
     - ensure_reconfort_model
     - RECONFORT_BANDS
+    - reconfort_aoi_tiles
+    - reconfort_ingest_s2
 
   - title: "Suivi sanitaire, monitoring et autres fonctions"
     desc: >
