@@ -23,6 +23,25 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 ---
 
+# Veille — projets externes susceptibles d'intéresser `nemeton`
+
+Sources à passer en revue régulièrement pour identifier des logiciels,
+services ou outils thématiques (forêt, végétation, télédétection) qui
+pourraient devenir des dépendances amont, des sources de données NDP, ou
+inspirer un épaississement.
+
+| Source | URL | À surveiller |
+|--------|-----|--------------|
+| Theia / DATA TERRA — logiciels, services et outils thématiques | <https://www.theia-land.fr/blog/product/services-logiciels-et-outils-thematiques/#Logiciel> | Nouveaux produits/outils forêt-végétation-télédétection à intégrer comme sources de données (cf. chantier « Sources Theia ») ou comme briques amont. *Reliquat connu côté `nemeton` : MUSCATE, LST Thermocity, W1.* |
+
+> **À faire** : parcourir la page ci-dessus, recenser les logiciels/outils
+> pertinents et, pour chacun, décider s'il devient une source de données
+> (déclaration dans `inst/datasources/`), une dépendance amont, ou une
+> simple piste. La page renvoie un 403 aux robots — consultation manuelle
+> nécessaire.
+
+---
+
 # Chantier en cours — E7 : corpus de connaissances RAG (spec 009 / 009.1, ADR-012)
 
 **Cadré** : 2026-05-29 (décisions D1-D5). **Cible cœur** : la prochaine
