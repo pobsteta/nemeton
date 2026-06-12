@@ -23,6 +23,57 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 ---
 
+# Veille — projets externes susceptibles d'intéresser `nemeton`
+
+Sources à passer en revue régulièrement pour identifier des logiciels,
+services ou outils thématiques (forêt, végétation, télédétection) qui
+pourraient devenir des dépendances amont, des sources de données NDP, ou
+inspirer un épaississement.
+
+| Source | URL | À surveiller |
+|--------|-----|--------------|
+| Theia / DATA TERRA — logiciels, services et outils thématiques | <https://www.theia-land.fr/blog/product/services-logiciels-et-outils-thematiques/#Logiciel> | Nouveaux produits/outils forêt-végétation-télédétection à intégrer comme sources de données (cf. chantier « Sources Theia ») ou comme briques amont. *Reliquat connu côté `nemeton` : MUSCATE, LST Thermocity, W1.* |
+
+> **À faire** : parcourir la page ci-dessus, recenser les logiciels/outils
+> pertinents et, pour chacun, décider s'il devient une source de données
+> (déclaration dans `inst/datasources/`), une dépendance amont, ou une
+> simple piste. La page renvoie un 403 aux robots — consultation manuelle
+> nécessaire.
+
+---
+
+# Correctifs de production (hors chantier)
+
+**Journal** — *2026-06-12* (**v0.74.1**) : **fix `FOREIGN KEY constraint
+failed` au re-build des zones de suivi (backend SQLite)**. Symptôme remonté
+depuis `nemetonshiny` (Windows local = SQLite) :
+`build_project_monitoring_zones(con, …, replace = TRUE)` réussissait sur une
+base vierge mais échouait au **re-clic** sur un projet dont les zones
+portaient déjà des lignes enfants (placettes de validation, alertes
+FORDEAD). **Cause** : divergence de schéma PG↔SQLite — la variante SQLite
+(`0001_init.sql`) avait retiré les `ON DELETE CASCADE` que porte PostgreSQL
+sur `plot.zone_id → monitoring_zone(id)` et `alert.plot_id → plot(id)` ;
+`db_connect()` activant `PRAGMA foreign_keys = ON`, le
+`DELETE FROM monitoring_zone` de l'upsert D5 était bloqué par les enfants.
+**Correctif (option B)** : `.delete_project_zones()` supprime la chaîne
+explicitement, **enfant d'abord** (`alert` → `plot` → `monitoring_zone`),
+dans une seule transaction — portable PG/SQLite. **Option A écartée** :
+l'option initiale (migration `0006_zone_cascade` rebâtissant les tables
+avec `ON DELETE CASCADE`) a été prise en défaut par la revue Codex (P1) et
+la CI — sous la transaction unique de `db_migrate()`, `PRAGMA
+foreign_keys` est un no-op et `defer_foreign_keys` ne lève pas la violation
+différée laissée par le `DROP TABLE` du parent ; le COMMIT échouait
+précisément sur les bases peuplées. Migrations 0006 retirées. Tests :
+`test-zone-cascade.R` réécrit (suppression directe de la chaîne sans
+dépendance sf/terra, scoping par `project_uuid`, no-op/idempotence, re-build
+du builder réel, parité PG). **App** : aucun changement requis —
+`nemetonshiny` (release v0.76.0) consomme déjà
+`build_project_monitoring_zones()` et tire le fix via `Remotes:
+pobsteta/nemeton@*release`. *(R indisponible en local : validation déléguée
+à la CI R-CMD-check.)*
+
+---
+
 # Chantier en cours — E7 : corpus de connaissances RAG (spec 009 / 009.1, ADR-012)
 
 **Cadré** : 2026-05-29 (décisions D1-D5). **Cible cœur** : la prochaine

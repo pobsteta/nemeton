@@ -147,13 +147,36 @@ find_zones_by_project <- function(con, project_uuid) {
              stringsAsFactors = FALSE)
 }
 
-# Delete every monitoring zone bound to `project_uuid` (and, via the
-# `plot.zone_id ON DELETE CASCADE` FK, their placettes). Used by the D5
-# upsert path. No-op when the project has no zone.
+# Delete every monitoring zone bound to `project_uuid`, together with the
+# plots and alerts those zones own. PostgreSQL declares ON DELETE CASCADE
+# on the `plot.zone_id` / `alert.plot_id` FKs, but the local SQLite schema
+# deliberately omits it (see sqlite/0001_init.sql header), so under
+# `PRAGMA foreign_keys = ON` (set by db_connect()) a bare
+# `DELETE FROM monitoring_zone` trips "FOREIGN KEY constraint failed" as
+# soon as a zone owns child rows — i.e. on the re-build of an
+# already-populated project. We therefore delete the chain explicitly,
+# child-first, in a single transaction: portable across both backends
+# (on PG the extra child deletes are simply redundant with the cascade).
+# Used by the D5 upsert path; no-op when the project has no zone.
 .delete_project_zones <- function(con, project_uuid) {
-  .db_execute(con,
-    "DELETE FROM monitoring_zone WHERE project_uuid = $1",
-    params = list(project_uuid))
+  DBI::dbWithTransaction(con, {
+    # 1. alerts attached to the project's plots (deepest child first)
+    .db_execute(con, paste0(
+      "DELETE FROM alert WHERE plot_id IN (",
+      "SELECT p.id FROM plot p ",
+      "JOIN monitoring_zone z ON z.id = p.zone_id ",
+      "WHERE z.project_uuid = $1)"),
+      params = list(project_uuid))
+    # 2. plots of the project's zones
+    .db_execute(con, paste0(
+      "DELETE FROM plot WHERE zone_id IN (",
+      "SELECT id FROM monitoring_zone WHERE project_uuid = $1)"),
+      params = list(project_uuid))
+    # 3. the zones themselves
+    .db_execute(con,
+      "DELETE FROM monitoring_zone WHERE project_uuid = $1",
+      params = list(project_uuid))
+  })
   invisible(NULL)
 }
 
