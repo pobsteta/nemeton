@@ -285,6 +285,9 @@ reference:
     - RECONFORT_BANDS
     - reconfort_aoi_tiles
     - reconfort_ingest_s2
+    - RECONFORT_OSO_MASK
+    - ensure_reconfort_oso_mask
+    - run_reconfort_dieback
 
   - title: "Suivi sanitaire, monitoring et autres fonctions"
     desc: >

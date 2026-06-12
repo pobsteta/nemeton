@@ -108,7 +108,7 @@ supervisé sur indices CRswir/CRre (chaîne IOTA²), en complément de FORDEAD
 | ✅ | **L2a** | `reconfort_model.R` : `ensure_reconfort_model()` + registre `RECONFORT_MODELS` + fallback `local_path` (fetch à la demande + checksum MD5 + cache) | **v0.71.0** (2026-06-11) |
 | ✅ | **L2b.1** | `reconfort_python.R` (env conda IOTA² locate+validate) + `RECONFORT_BANDS` + glue vendorisée `custom_index.py` + NOTICE | **v0.72.0** (2026-06-11) |
 | ✅ | **L2b.2** | Ingest IOTA²-natif : `reconfort_aoi_tiles()` (grille MGRS embarquée) + `reconfort_ingest_s2()` (pygeodes download + unzip) + scripts vendorisés | **v0.73.0** (2026-06-11) |
-| ⬜ | **L2b.3** | `reconfort_pipeline.R::run_reconfort_dieback()` : orchestration env→model→ingest→IOTA²→score | — |
+| ✅ | **L2b.3** | `reconfort_pipeline.R::run_reconfort_dieback()` : orchestration env→model→masque→tuile→ingest→IOTA² ×2+score, staging par-run, `ensure_reconfort_oso_mask()` + glue map-production vendorisée | **v0.74.0** (2026-06-12) |
 | ⬜ | **L3** | `reconfort_postprocess.R` (score continu) → table `alert` + migration `0005` + fusion G2 3-voies | — |
 | ⬜ | **L4** | R5 unifié (routage par essence) + tests indicateur étendus | — |
 | ⬜ | **L5** | Persistance features (parité diagnostic pixel) + `read_reconfort_pixel_series()` | — |
@@ -117,9 +117,10 @@ supervisé sur indices CRswir/CRre (chaîne IOTA²), en complément de FORDEAD
 **Reporté** (vs plan §5) : flag NDP `health_reconfort` + datasource
 `reconfort_anomalies` — supposaient une parité FORDEAD inexistante. **L2b
 cadré** (`L2b-cadrage.md` : ingest IOTA²-natif, env conda locate+validate, glue
-complète) et **scindé** en L2b.1/.2/.3. **Prochaine étape : L2b.3**
-(`run_reconfort_dieback()` : orchestration env→model→ingest→IOTA²→score).
-Faits amont vérifiés : `…/plan.md` §10.
+complète) et **scindé** en L2b.1/.2/.3 — **les trois livrés**. **Prochaine
+étape : L3** (`reconfort_postprocess.R` : rasters → table `alert`, centroïdes,
+`confidence_class`, `stress_index` = score continu, migration `0005`, fusion
+G2 3-voies). Faits amont vérifiés : `…/plan.md` §10.
 
 ---
 
@@ -443,6 +444,51 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-06-12 — RECONFORT L2b.3 : orchestration end-to-end (spec 021, cœur)
+
+Release **v0.74.0**. **L2b.3** — `run_reconfort_dieback()` relie L1/L2a/
+L2b.1/L2b.2 en un run complet : env conda → modèle RF → masque feuillus →
+AOI→tuile(s) MGRS → ingest S2 → **map-production IOTA²** (sampling +
+classification ×2 + masque OSO + score continu).
+
+- **`run_reconfort_dieback(con, zone_id, cache_dir, …)`** : 8 phases (env,
+  model, mask, tiles, ingest, stage, mapprod, collect) avec `progress_callback`
+  (préfixe `reconfort:`). Sorties EPSG:2154 : `Classif_Seed_0.tif`,
+  `ProbabilityMap_seed_0.tif`, `Final_continuous_score_masked<year>.tif`
+  (`(1001 + (−P1 + P2 + 2·P3))/30`) + `run_meta.json`. Post-process → table
+  `alert` reste **L3**.
+- **Staging par-run** (clé) : les scripts amont font `os.chdir` vers leur
+  propre dossier et y écrivent `results/` + `generated_config_files/`. Pour
+  garder le package installé en lecture seule, chaque run stage une copie de
+  travail sous `<cache_dir>/reconfort/run_z<id>_S2<year>/` : glue vendorisée
+  (scripts + sous-arbre `iota2/`) + modèle dans `models/<v_model>/` + masque
+  dans `masks/` + **vue S2 partitionnée par année** (`S2_data/<year>/<tile>` en
+  liens symboliques vers les dossiers `extracted/` de L2b.2, car IOTA² veut
+  `s2_path/<year>/<tile>/`). cfg map-production écrit avec `.reconfort_write_cfg`.
+- **`ensure_reconfort_oso_mask()` + `RECONFORT_OSO_MASK`** : masque feuillus
+  OSO 2021 (~54 Mo, MD5 `ea87e929…`) **téléchargé à la demande** + checksum +
+  cache + fallback `local_path`, calqué sur `ensure_reconfort_model()` (L2a).
+  `binary_mask` : `NULL`→OSO, chemin→custom, `FALSE`→pas de masque. Le masque
+  est toujours stagé à `masks/mask_oso_deciduous_compress.tif` et
+  `path_to_binary_mask` laissé vide → classif **et** proba utilisent le même
+  masque (le script amont hardcode ce chemin pour la proba).
+- **Glue map-production vendorisée** (Apache-2.0) :
+  `run_map_production_reconfort.py`, `mask_and_compress_rasters.py`, les 2
+  générateurs de cfg IOTA², et le sous-arbre `iota2/` (config, nomenclature,
+  `external_features/custom_index.py` — **déplacé** de la racine glue à son
+  chemin canonique —, `vector_db/random_points.*`). Modèles (413 Mo) + masque
+  (54 Mo) hors package (fetch à la demande).
+- **Garde-fou** : le driver amont ne teste pas le code retour du subprocess
+  Iota2 (`subprocess.run` sans `check`) → un échec RAM/scheduler/données passe
+  en exit 0. Le pipeline **abort** si le raster de score continu n'a pas été
+  produit (parité avec les garde-fous L2b.2).
+- Lourd + **opt-in** (env conda + GEODES + dizaines de Go + OTB/Shark batch),
+  **jamais en CI**. 3 exports (`run_reconfort_dieback`,
+  `ensure_reconfort_oso_mask`, `RECONFORT_OSO_MASK`) + `.Rd` à la main, section
+  pkgdown, NOTICE. **24 tests mockés** (orchestration 8 phases, cfg masquage
+  on/off, garde-fous score/exit, staging S2 année/tuile + glue), suite reconfort
+  **182 assertions / 0 échec**. Suite : **L3** (postprocess → alertes).
 
 ### 2026-06-11 — RECONFORT L2b.2 : ingestion S2 IOTA²-native (spec 021, cœur)
 

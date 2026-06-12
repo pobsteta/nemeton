@@ -44,10 +44,12 @@ test_that(".reconfort_default_env defaults and respects the option/env var", {
   expect_equal(nemeton:::.reconfort_default_env(), "my-env")
 })
 
-test_that(".reconfort_glue_dir resolves and ships custom_index.py", {
+test_that(".reconfort_glue_dir resolves and ships the IOTA2 glue", {
   d <- nemeton:::.reconfort_glue_dir()
   expect_true(dir.exists(d))
-  expect_true(file.exists(file.path(d, "custom_index.py")))
+  # custom_index.py lives at the path the IOTA2 cfg references.
+  expect_true(file.exists(file.path(d, "iota2", "external_features", "custom_index.py")))
+  expect_true(file.exists(file.path(d, "run_map_production_reconfort.py")))
 })
 
 test_that(".reconfort_conda_binary prefers `conda` over a `mamba` sibling", {
