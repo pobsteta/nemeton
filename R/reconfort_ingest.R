@@ -131,19 +131,25 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 
 
 # Materialise a per-run pygeodes account config whose `download_dir`
-# points at `download_dir` (the per-tile zip dir). The upstream
-# `run_geodes_download.py` calls `geodes.download_item_archive(item)`,
-# which downloads to the pygeodes Config's `download_dir` — NOT to the
-# cfg's `zip_path` that `run_process_downloaded_images.py` later globs.
-# Without this override the two steps disagree on the path and the
-# unzip finds nothing. We copy the user's JSON (api_key et al. intact),
-# swap `download_dir`, and write it next to the tile's zip dir. Never
-# logged. Returns the new config path.
+# points at `download_dir` (the per-tile zip dir, inside the project
+# cache `s2_root` — same caller-supplied convention as FORDEAD's
+# `cache_dir`). The upstream `run_geodes_download.py` calls
+# `geodes.download_item_archive(item)`, which downloads to the pygeodes
+# Config's `download_dir` — NOT to the cfg's `zip_path` that
+# `run_process_downloaded_images.py` later globs. Without this override
+# the two steps disagree on the path and the unzip finds nothing.
+#
+# The config carries the GEODES api_key, so — unlike the downloaded data
+# — it must NOT live in the project cache. We copy the user's JSON
+# (api_key et al. intact), swap only `download_dir`, and write it to a
+# private tempfile (mode 600). Never logged. The caller unlinks it once
+# the tile is done. Returns the tempfile path.
 .reconfort_account_with_download_dir <- function(account, download_dir) {
   conf <- jsonlite::read_json(account, simplifyVector = TRUE)
   conf$download_dir <- paste0(normalizePath(download_dir, mustWork = FALSE), "/")
-  out <- file.path(download_dir, ".pygeodes-config.json")
+  out <- tempfile("pygeodes-config-", fileext = ".json")
   jsonlite::write_json(conf, out, auto_unbox = TRUE, pretty = TRUE)
+  Sys.chmod(out, mode = "0600")
   out
 }
 
@@ -179,7 +185,10 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 #' @param s2_root Root directory for the S2 data (zip + extracted).
 #' @param geodes_config Path to `pygeodes-config.json` (see
 #'   [.reconfort_geodes_config]). Default resolves the option / user dir.
-#' @param s2_collection GEODES collection. Default the MUSCATE S2 L2A.
+#' @param s2_collection GEODES collection id. Default
+#'   `"THEIA_REFLECTANCE_SENTINEL2_L2A"` — the THEIA/MUSCATE Sentinel-2
+#'   surface-reflectance L2A products. (The bare `MUSCATE_*` name from the
+#'   upstream RECONFORT example is not a valid GEODES id and 400s.)
 #' @param quiet Suppress progress + subprocess output. Default `FALSE`.
 #'
 #' @return Invisibly, a list: `tiles`, `s2_root`, and `extracted` (the
@@ -189,7 +198,7 @@ reconfort_ingest_s2 <- function(aoi = NULL, tiles = NULL,
                                 date_from, date_to,
                                 s2_root,
                                 geodes_config = NULL,
-                                s2_collection = "MUSCATE_SENTINEL2_SENTINEL2_L2A",
+                                s2_collection = "THEIA_REFLECTANCE_SENTINEL2_L2A",
                                 quiet = FALSE) {
   if (is.null(tiles)) {
     if (is.null(aoi)) cli::cli_abort("Provide either {.arg aoi} or {.arg tiles}.")
@@ -212,7 +221,9 @@ reconfort_ingest_s2 <- function(aoi = NULL, tiles = NULL,
 
     # Force pygeodes to download into zip_dir so the unzip step finds
     # the archives there (see .reconfort_account_with_download_dir).
+    # Holds the api_key -> private tempfile, wiped at end of iteration.
     account_run <- .reconfort_account_with_download_dir(account, zip_dir)
+    on.exit(unlink(account_run, force = TRUE), add = TRUE)
 
     cfg <- tempfile(fileext = ".cfg")
     .reconfort_write_cfg(cfg, list(
@@ -232,12 +243,34 @@ reconfort_ingest_s2 <- function(aoi = NULL, tiles = NULL,
     if (!identical(as.integer(st1), 0L)) {
       cli::cli_abort("S2 download failed for tile {.val {tile}} (exit {st1}).")
     }
+    # The upstream downloader wraps each item in a bare `except` that
+    # prints "Error downloading image" and still exits 0 — a dropped
+    # connection on a multi-GB archive (ChunkedEncodingError) thus looks
+    # like success. Verify an archive actually landed before trusting it.
+    zips <- list.files(zip_dir, pattern = "(?i)SENTINEL.*\\.zip$", full.names = TRUE)
+    if (length(zips) == 0L) {
+      cli::cli_abort(c(
+        "S2 download produced no archive for tile {.val {tile}}.",
+        i = "The upstream downloader swallows network errors; a single THEIA L2A archive is ~2 GB and the GEODES connection may have dropped.",
+        i = "Check connectivity to {.url https://geodes-portal.cnes.fr/} and re-run; partial files in {.path {zip_dir}} can be deleted first."
+      ))
+    }
+
     st2 <- .reconfort_run_py(conda_bin, env,
                              file.path(glue, "run_process_downloaded_images.py"),
                              cfg, glue, quiet = quiet)
     if (!identical(as.integer(st2), 0L)) {
       cli::cli_abort("S2 unzip failed for tile {.val {tile}} (exit {st2}).")
     }
+    scenes <- list.dirs(out_dir, recursive = FALSE)
+    if (length(scenes) == 0L) {
+      cli::cli_abort(c(
+        "S2 unzip produced no scene folder for tile {.val {tile}} in {.path {out_dir}}.",
+        i = "The {length(zips)} archive{?s} in {.path {zip_dir}} may be truncated (incomplete download)."
+      ))
+    }
+    if (!quiet) cli::cli_alert_success(
+      "RECONFORT: tile {.val {tile}} — {length(zips)} archive{?s}, {length(scenes)} scene{?s}.")
     extracted <- c(extracted, out_dir)
   }
 

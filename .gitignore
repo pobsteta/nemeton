@@ -56,3 +56,7 @@ data-raw/references/*.pdf
 # is enough to reconstitute the corpus via data-raw/build_knowledge_corpus.R
 data-raw/knowledge_pdfs/
 data-raw/knowledge_corpus.sqlite*
+
+# Python bytecode (vendored RECONFORT glue)
+__pycache__/
+*.pyc

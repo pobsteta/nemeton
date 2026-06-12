@@ -11,7 +11,7 @@ reconfort_ingest_s2(
   date_to,
   s2_root,
   geodes_config = NULL,
-  s2_collection = "MUSCATE_SENTINEL2_SENTINEL2_L2A",
+  s2_collection = "THEIA_REFLECTANCE_SENTINEL2_L2A",
   quiet = FALSE
 )
 }
@@ -29,7 +29,10 @@ two full years.}
 \item{geodes_config}{Path to `pygeodes-config.json`. Default resolves
 `options(nemeton.geodes_config)` then the per-user nemeton data dir.}
 
-\item{s2_collection}{GEODES collection. Default the MUSCATE S2 L2A.}
+\item{s2_collection}{GEODES collection id. Default
+`"THEIA_REFLECTANCE_SENTINEL2_L2A"` — the THEIA/MUSCATE Sentinel-2
+surface-reflectance L2A products. (The bare `MUSCATE_*` name from the
+upstream RECONFORT example is not a valid GEODES id and 400s.)}
 
 \item{quiet}{Suppress progress + subprocess output. Default `FALSE`.}
 }

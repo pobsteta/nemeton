@@ -83,8 +83,19 @@ test_that("reconfort_ingest_s2 orchestrates download+process per tile (mocked)",
     .reconfort_account_with_download_dir = function(account, download_dir) {
       file.path(download_dir, ".pygeodes-config.json")
     },
+    # A faithful mock: download drops a .zip in zip_path, process drops
+    # a scene folder in out_dir — so the post-conditions are satisfied.
     .reconfort_run_py = function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
       calls[[length(calls) + 1L]] <<- basename(script)
+      kv <- readLines(cfg)
+      getv <- function(k) sub(paste0("^", k, "='?([^']*)'?$"), "\\1",
+                              grep(paste0("^", k, "="), kv, value = TRUE))
+      if (basename(script) == "run_geodes_download.py") {
+        file.create(file.path(getv("zip_path"), "SENTINEL2C_test_T31UDP.zip"))
+      } else {
+        dir.create(file.path(getv("out_dir"), "SENTINEL2C_test_scene"),
+                   recursive = TRUE, showWarnings = FALSE)
+      }
       0L
     }
   )
@@ -100,6 +111,53 @@ test_that("reconfort_ingest_s2 orchestrates download+process per tile (mocked)",
   # 2 scripts (download then process) per tile, in order.
   expect_equal(calls, rep(c("run_geodes_download.py",
                             "run_process_downloaded_images.py"), 2L))
+})
+
+test_that("reconfort_ingest_s2 aborts when download yields no archive (exit 0)", {
+  # The upstream downloader swallows a broken connection and still exits
+  # 0; the post-condition must catch the empty zip dir.
+  testthat::local_mocked_bindings(
+    .ensure_reconfort_python = function(...) "test-env",
+    .reconfort_conda_binary  = function() "/opt/conda/bin/conda",
+    .reconfort_geodes_config = function(path = NULL) "/tmp/geodes.json",
+    .reconfort_account_with_download_dir = function(account, download_dir) {
+      file.path(download_dir, ".pygeodes-config.json")
+    },
+    .reconfort_run_py = function(...) 0L   # "success" but writes nothing
+  )
+  expect_error(
+    reconfort_ingest_s2(tiles = "T31UDP", date_from = "2021-01-01",
+                        date_to = "2022-12-31",
+                        s2_root = withr::local_tempdir(), quiet = TRUE),
+    "no archive"
+  )
+})
+
+test_that("reconfort_ingest_s2 aborts when unzip yields no scene (exit 0)", {
+  testthat::local_mocked_bindings(
+    .ensure_reconfort_python = function(...) "test-env",
+    .reconfort_conda_binary  = function() "/opt/conda/bin/conda",
+    .reconfort_geodes_config = function(path = NULL) "/tmp/geodes.json",
+    .reconfort_account_with_download_dir = function(account, download_dir) {
+      file.path(download_dir, ".pygeodes-config.json")
+    },
+    # Download drops a zip (post-cond 1 ok) but process extracts nothing.
+    .reconfort_run_py = function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
+      if (basename(script) == "run_geodes_download.py") {
+        kv <- readLines(cfg)
+        zp <- sub("^zip_path='?([^']*)'?$", "\\1",
+                  grep("^zip_path=", kv, value = TRUE))
+        file.create(file.path(zp, "SENTINEL2C_test.zip"))
+      }
+      0L
+    }
+  )
+  expect_error(
+    reconfort_ingest_s2(tiles = "T31UDP", date_from = "2021-01-01",
+                        date_to = "2022-12-31",
+                        s2_root = withr::local_tempdir(), quiet = TRUE),
+    "no scene folder"
+  )
 })
 
 test_that("reconfort_ingest_s2 aborts when a subprocess fails (mocked)", {
@@ -131,12 +189,16 @@ test_that(".reconfort_account_with_download_dir overrides download_dir, keeps ke
 
   out <- .reconfort_account_with_download_dir(acct, zip_dir)
   expect_true(file.exists(out))
+  # The secret config lives outside the project cache (a tempfile), so
+  # the api_key never lands in the downloaded-data tree.
+  expect_false(startsWith(normalizePath(out), normalizePath(dir)))
   conf <- jsonlite::read_json(out, simplifyVector = TRUE)
   # download_dir now points at the per-tile zip dir (trailing slash).
   expect_equal(conf$download_dir, paste0(normalizePath(zip_dir), "/"))
   # api_key and other fields survive the copy untouched.
   expect_equal(conf$api_key, "SECRET")
   expect_true(conf$checksum_error)
+  unlink(out, force = TRUE)
 })
 
 test_that("reconfort_ingest_s2 needs aoi or tiles", {

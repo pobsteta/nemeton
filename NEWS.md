@@ -17,16 +17,34 @@ Acquisition des scènes Sentinel-2 dans le layout attendu par IOTA²
   `run_process_downloaded_images.py` + `utils/`) en **subprocess conda**.
   Compte GEODES via `options(nemeton.geodes_config)` (défaut : le data dir
   utilisateur). nemeton n'embarque **aucune clé**.
+- **Collection GEODES corrigée** (validée par smoke réel) : l'identifiant
+  d'exemple amont `MUSCATE_SENTINEL2_SENTINEL2_L2A` n'existe pas côté GEODES
+  (HTTP 400). Le défaut est désormais `THEIA_REFLECTANCE_SENTINEL2_L2A`
+  (produits THEIA/MUSCATE de réflectance S2 L2A).
 - **Cohérence du chemin de téléchargement** : `download_item_archive()`
   (pygeodes) écrit dans le `download_dir` de la config GEODES, alors que
   l'étape de dézippage cherche dans `zip_path`. `reconfort_ingest_s2()`
   génère donc une **copie par-run** de la config pygeodes dont
-  `download_dir` pointe sur le `zip_path` de la tuile (clé API et autres
-  champs préservés, jamais loggés) — sans quoi le dézippage ne trouve rien.
+  `download_dir` pointe sur le `zip_path` de la tuile (= `<s2_root>/zip/
+  <tile>/`, dans le cache projet fourni par l'appelant — même convention que
+  le `cache_dir` de FORDEAD ; jamais `/tmp`). Cette copie porte la clé API :
+  elle est écrite dans un **tempfile privé (mode 600)**, hors du cache projet,
+  et effacée en fin de tuile. nemeton n'écrit **jamais** de secret dans le cache.
+- **Garde-fous de post-condition** : le téléchargeur amont enveloppe chaque
+  item dans un `except` nu qui imprime « Error downloading image » et **sort
+  quand même en 0** — une coupure réseau sur une archive multi-Go
+  (`ChunkedEncodingError`) ressemblait donc à un succès. `reconfort_ingest_s2()`
+  vérifie désormais qu'au moins une archive a atterri dans `zip_path` après
+  le download, et au moins un dossier de scène dans `out_dir` après le
+  dézippage ; sinon **abort** explicite (connectivité GEODES, fichier
+  tronqué).
 - Heavy + **opt-in** (compte GEODES + dizaines de Go de S2), **jamais en
-  CI**. 13 tests (téléchargement mocké, override `download_dir` vérifié,
-  `reconfort_aoi_tiles` validé sur la grille réelle : Loiret → `T31UDP`,
-  CVL → 14 tuiles).
+  CI**. 14 tests (téléchargement mocké, override `download_dir` hors cache,
+  garde-fous archive/scène manquante, `reconfort_aoi_tiles` validé sur la
+  grille réelle : Loiret → `T31UDP`, CVL → 14 tuiles). **Smoke réel** validé
+  (`data-raw/smoke_reconfort_ingest.R`) : env conda, résolution de tuile,
+  recherche GEODES (1 scène), config par-run et streaming réel des octets
+  confirmés bout-en-bout.
 
 
 # nemeton 0.72.0 (2026-06-11)

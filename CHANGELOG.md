@@ -20,9 +20,17 @@ For a narrative, per-feature description of each release, see
   188 tiles, no network); `reconfort_ingest_s2()` downloads MUSCATE L2A from
   GEODES (`pygeodes`) and unzips into the IOTA² layout, driving the vendored
   upstream scripts via a conda subprocess. GEODES config via
-  `options(nemeton.geodes_config)`. `reconfort_ingest_s2()` writes a per-run
-  pygeodes config whose `download_dir` matches the per-tile `zip_path`, so
-  the download and unzip steps agree on the path. Heavy/opt-in, never in CI.
+  `options(nemeton.geodes_config)`. Default collection
+  `THEIA_REFLECTANCE_SENTINEL2_L2A` (the upstream `MUSCATE_*` example id
+  400s on GEODES; confirmed by a real smoke). `reconfort_ingest_s2()` writes
+  a per-run pygeodes config whose `download_dir` matches the per-tile
+  `zip_path` (in the caller-supplied project cache, like FORDEAD's
+  `cache_dir`), so download and unzip agree on the path; that copy carries
+  the api_key so it lives in a private mode-600 tempfile, never in the cache,
+  wiped after each tile. Post-condition guards abort when the (error-swallowing,
+  exit-0) upstream downloader leaves `zip_path` empty or the unzip produces no
+  scene folder. Heavy/opt-in, never in CI; end-to-end plumbing validated by a
+  real smoke (`data-raw/smoke_reconfort_ingest.R`).
 
 ## [0.72.0] - 2026-06-11
 
