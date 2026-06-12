@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.73.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.74.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,26 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.74.0" id="nemeton-0740-2026-06-12">nemeton 0.74.0 (2026-06-12)<a class="anchor" aria-label="anchor" href="#nemeton-0740-2026-06-12"></a></h2>
+<div class="section level4">
+<h4 id="added--reconfort-orchestration-end-to-end-spec-lot-l2b3-0-74-0">Added — RECONFORT, orchestration end-to-end (spec 021, lot L2b.3)<a class="anchor" aria-label="anchor" href="#added--reconfort-orchestration-end-to-end-spec-lot-l2b3-0-74-0"></a></h4>
+<p>Dernier sous-lot de l’intégration IOTA² : <code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> relie L1/L2a/L2b.1/L2b.2 en un run complet (env → modèle → masque → tuile → ingest S2 → IOTA² ×2 + RF + masque OSO + score continu).</p>
+<ul><li>
+<strong><code>run_reconfort_dieback(con, zone_id, cache_dir, …)</code></strong> : oriente le run pour une zone de monitoring — valide l’env conda ([<code>.ensure_reconfort_python</code>]), récupère le modèle RF (<code><a href="../reference/ensure_reconfort_model.html">ensure_reconfort_model()</a></code>) et le masque feuillus (<code><a href="../reference/ensure_reconfort_oso_mask.html">ensure_reconfort_oso_mask()</a></code>), résout l’AOI → tuile(s) MGRS, ingère les scènes S2, puis pilote la <strong>map-production IOTA²</strong> vendorisée. Produit les rasters <code>Classif</code> / <code>ProbabilityMap</code> / <strong>score continu</strong> (EPSG:2154, <code>(1001 + (−P1 + P2 + 2·P3))/30</code>) + un <code>run_meta.json</code>. <strong>8 phases</strong> avec <code>progress_callback</code> pour câblage app.</li>
+<li>
+<strong>Staging par-run</strong> : les scripts amont font <code>chdir</code> vers leur propre dossier et y écrivent <code>results/</code>. Pour garder le package installé en lecture seule, chaque run <strong>stage une copie de travail</strong> de la glue vendorisée (scripts + sous-arbre <code>iota2/</code> + modèle + masque + vue S2 partitionnée par année en liens symboliques) sous <code>cache_dir</code> (même convention que le <code>cache_dir</code> de FORDEAD) et s’exécute depuis là.</li>
+<li>
+<strong><code><a href="../reference/ensure_reconfort_oso_mask.html">ensure_reconfort_oso_mask()</a></code></strong> + <strong><code>RECONFORT_OSO_MASK</code></strong> : le masque feuillus OSO 2021 (~54 Mo) est <strong>téléchargé à la demande</strong> + checksum (MD5)
+<ul><li>cache + fallback <code>local_path</code> (masque personnalisé), comme les modèles RF (L2a). <code>binary_mask = NULL</code> → OSO ; un chemin → masque custom ; <code>FALSE</code> → pas de masque (score depuis la proba brute).</li>
+</ul></li>
+<li>
+<strong>Glue map-production vendorisée</strong> (Apache-2.0, <code>inst/python/reconfort/</code>) : <code>run_map_production_reconfort.py</code>, <code>mask_and_compress_rasters.py</code>, les deux générateurs de cfg IOTA², et le sous-arbre <code>iota2/</code> (config, nomenclature, <code>external_features/custom_index.py</code> — déplacé à son chemin canonique —, <code>vector_db/random_points.*</code>).</li>
+<li>
+<strong>Garde-fou de post-condition</strong> : le driver amont ne vérifie pas le code de retour du subprocess IOTA² ; le pipeline <strong>abort</strong> si le raster de score continu n’a pas été produit (échec silencieux RAM/scheduler/données).</li>
+<li>Lourd + <strong>opt-in</strong> : un run réel nécessite l’env conda + compte GEODES + dizaines de Go de S2 + exécution OTB/Shark (batch), <strong>jamais en CI</strong>. Le post-process → table <code>alert</code> reste <strong>L3</strong>. 3 exports + <code>.Rd</code> à la main, section pkgdown. 24 tests mockés (orchestration, cfg, masquage on/off, garde-fous, staging), 0 régression (suite reconfort verte).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.73.0" id="nemeton-0730-2026-06-11">nemeton 0.73.0 (2026-06-11)<a class="anchor" aria-label="anchor" href="#nemeton-0730-2026-06-11"></a></h2>
 <div class="section level4">

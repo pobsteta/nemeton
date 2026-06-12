@@ -33,6 +33,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/NDP_LEVELS.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_BANDS.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_MODELS.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_OSO_MASK.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_VALIDITY_DEPARTMENTS.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_VALIDITY_SPECIES.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/aggregate_plot_metrics.html</loc></url>
@@ -123,6 +124,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/enrich_parcels_bdforet.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ensure_inventory_fields.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ensure_reconfort_model.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/ensure_reconfort_oso_mask.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/estimate_dq_from_hdom.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/estimate_synthetic_inventory.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/extract_h_dom.html</loc></url>
@@ -275,6 +277,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/retrieve_knowledge.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/run_fordead_dieback.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/sample_size.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/sampling_plan.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/sanitize_chm.html</loc></url>

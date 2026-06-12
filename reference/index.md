@@ -389,6 +389,12 @@ Centre-Val de Loire). Garde-fou G3 : avertit, ne bloque pas.
   : Sentinel-2 MGRS tile(s) covering an AOI
 - [`reconfort_ingest_s2()`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md)
   : Acquire Sentinel-2 scenes for an AOI into the IOTA² layout
+- [`RECONFORT_OSO_MASK`](https://pobsteta.github.io/nemeton/reference/RECONFORT_OSO_MASK.md)
+  : RECONFORT deciduous (OSO 2021) binary mask registry entry
+- [`ensure_reconfort_oso_mask()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_oso_mask.md)
+  : Fetch (and cache) the RECONFORT deciduous (OSO) binary mask
+- [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+  : Run the RECONFORT broadleaf-dieback map production end-to-end
 
 ## Suivi sanitaire, monitoring et autres fonctions
 

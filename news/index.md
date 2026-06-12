@@ -1,5 +1,54 @@
 # Changelog
 
+## nemeton 0.74.0 (2026-06-12)
+
+#### Added — RECONFORT, orchestration end-to-end (spec 021, lot L2b.3)
+
+Dernier sous-lot de l’intégration IOTA² :
+[`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+relie L1/L2a/L2b.1/L2b.2 en un run complet (env → modèle → masque →
+tuile → ingest S2 → IOTA² ×2 + RF + masque OSO + score continu).
+
+- **`run_reconfort_dieback(con, zone_id, cache_dir, …)`** : oriente le
+  run pour une zone de monitoring — valide l’env conda
+  (\[`.ensure_reconfort_python`\]), récupère le modèle RF
+  ([`ensure_reconfort_model()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_model.md))
+  et le masque feuillus
+  ([`ensure_reconfort_oso_mask()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_oso_mask.md)),
+  résout l’AOI → tuile(s) MGRS, ingère les scènes S2, puis pilote la
+  **map-production IOTA²** vendorisée. Produit les rasters `Classif` /
+  `ProbabilityMap` / **score continu** (EPSG:2154,
+  `(1001 + (−P1 + P2 + 2·P3))/30`) + un `run_meta.json`. **8 phases**
+  avec `progress_callback` pour câblage app.
+- **Staging par-run** : les scripts amont font `chdir` vers leur propre
+  dossier et y écrivent `results/`. Pour garder le package installé en
+  lecture seule, chaque run **stage une copie de travail** de la glue
+  vendorisée (scripts + sous-arbre `iota2/` + modèle + masque + vue S2
+  partitionnée par année en liens symboliques) sous `cache_dir` (même
+  convention que le `cache_dir` de FORDEAD) et s’exécute depuis là.
+- **[`ensure_reconfort_oso_mask()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_oso_mask.md)** +
+  **`RECONFORT_OSO_MASK`** : le masque feuillus OSO 2021 (~54 Mo) est
+  **téléchargé à la demande** + checksum (MD5)
+  - cache + fallback `local_path` (masque personnalisé), comme les
+    modèles RF (L2a). `binary_mask = NULL` → OSO ; un chemin → masque
+    custom ; `FALSE` → pas de masque (score depuis la proba brute).
+- **Glue map-production vendorisée** (Apache-2.0,
+  `inst/python/reconfort/`) : `run_map_production_reconfort.py`,
+  `mask_and_compress_rasters.py`, les deux générateurs de cfg IOTA², et
+  le sous-arbre `iota2/` (config, nomenclature,
+  `external_features/custom_index.py` — déplacé à son chemin canonique
+  —, `vector_db/random_points.*`).
+- **Garde-fou de post-condition** : le driver amont ne vérifie pas le
+  code de retour du subprocess IOTA² ; le pipeline **abort** si le
+  raster de score continu n’a pas été produit (échec silencieux
+  RAM/scheduler/données).
+- Lourd + **opt-in** : un run réel nécessite l’env conda + compte
+  GEODES + dizaines de Go de S2 + exécution OTB/Shark (batch), **jamais
+  en CI**. Le post-process → table `alert` reste **L3**. 3 exports +
+  `.Rd` à la main, section pkgdown. 24 tests mockés (orchestration, cfg,
+  masquage on/off, garde-fous, staging), 0 régression (suite reconfort
+  verte).
+
 ## nemeton 0.73.0 (2026-06-11)
 
 #### Added — RECONFORT, ingestion S2 IOTA²-native (spec 021, lot L2b.2)

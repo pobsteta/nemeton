@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.73.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.74.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -195,11 +195,12 @@
 <td>Ingest IOTA²-natif : <code><a href="reference/reconfort_aoi_tiles.html">reconfort_aoi_tiles()</a></code> (grille MGRS embarquée) + <code><a href="reference/reconfort_ingest_s2.html">reconfort_ingest_s2()</a></code> (pygeodes download + unzip) + scripts vendorisés</td>
 <td>
 <strong>v0.73.0</strong> (2026-06-11)</td>
-</tr><tr><td>⬜</td>
+</tr><tr><td>✅</td>
 <td><strong>L2b.3</strong></td>
 <td>
-<code>reconfort_pipeline.R::run_reconfort_dieback()</code> : orchestration env→model→ingest→IOTA²→score</td>
-<td>—</td>
+<code>reconfort_pipeline.R::run_reconfort_dieback()</code> : orchestration env→model→masque→tuile→ingest→IOTA² ×2+score, staging par-run, <code><a href="reference/ensure_reconfort_oso_mask.html">ensure_reconfort_oso_mask()</a></code> + glue map-production vendorisée</td>
+<td>
+<strong>v0.74.0</strong> (2026-06-12)</td>
 </tr><tr><td>⬜</td>
 <td><strong>L3</strong></td>
 <td>
@@ -218,7 +219,7 @@
 <td><strong>L6</strong></td>
 <td>App <code>nemetonshiny</code> : 3ᵉ mode, bannières, plotly, QField feuillus</td>
 <td>release app</td>
-</tr></tbody></table><p><strong>Reporté</strong> (vs plan §5) : flag NDP <code>health_reconfort</code> + datasource <code>reconfort_anomalies</code> — supposaient une parité FORDEAD inexistante. <strong>L2b cadré</strong> (<code>L2b-cadrage.md</code> : ingest IOTA²-natif, env conda locate+validate, glue complète) et <strong>scindé</strong> en L2b.1/.2/.3. <strong>Prochaine étape : L2b.3</strong> (<code>run_reconfort_dieback()</code> : orchestration env→model→ingest→IOTA²→score). Faits amont vérifiés : <code>…/plan.md</code> §10.</p>
+</tr></tbody></table><p><strong>Reporté</strong> (vs plan §5) : flag NDP <code>health_reconfort</code> + datasource <code>reconfort_anomalies</code> — supposaient une parité FORDEAD inexistante. <strong>L2b cadré</strong> (<code>L2b-cadrage.md</code> : ingest IOTA²-natif, env conda locate+validate, glue complète) et <strong>scindé</strong> en L2b.1/.2/.3 — <strong>les trois livrés</strong>. <strong>Prochaine étape : L3</strong> (<code>reconfort_postprocess.R</code> : rasters → table <code>alert</code>, centroïdes, <code>confidence_class</code>, <code>stress_index</code> = score continu, migration <code>0005</code>, fusion G2 3-voies). Faits amont vérifiés : <code>…/plan.md</code> §10.</p>
 <hr></div>
 </div>
 <div class="section level1">
@@ -515,13 +516,28 @@
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
 <div class="section level3">
+<h3 id="id_2026-06-12--reconfort-l2b3--orchestration-end-to-end-spec-021-cœur">2026-06-12 — RECONFORT L2b.3 : orchestration end-to-end (spec 021, cœur)<a class="anchor" aria-label="anchor" href="#id_2026-06-12--reconfort-l2b3--orchestration-end-to-end-spec-021-c%C5%93ur"></a></h3>
+<p>Release <strong>v0.74.0</strong>. <strong>L2b.3</strong> — <code><a href="reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> relie L1/L2a/ L2b.1/L2b.2 en un run complet : env conda → modèle RF → masque feuillus → AOI→tuile(s) MGRS → ingest S2 → <strong>map-production IOTA²</strong> (sampling + classification ×2 + masque OSO + score continu).</p>
+<ul><li>
+<strong><code>run_reconfort_dieback(con, zone_id, cache_dir, …)</code></strong> : 8 phases (env, model, mask, tiles, ingest, stage, mapprod, collect) avec <code>progress_callback</code> (préfixe <code>reconfort:</code>). Sorties EPSG:2154 : <code>Classif_Seed_0.tif</code>, <code>ProbabilityMap_seed_0.tif</code>, <code>Final_continuous_score_masked&lt;year&gt;.tif</code> (<code>(1001 + (−P1 + P2 + 2·P3))/30</code>) + <code>run_meta.json</code>. Post-process → table <code>alert</code> reste <strong>L3</strong>.</li>
+<li>
+<strong>Staging par-run</strong> (clé) : les scripts amont font <code>os.chdir</code> vers leur propre dossier et y écrivent <code>results/</code> + <code>generated_config_files/</code>. Pour garder le package installé en lecture seule, chaque run stage une copie de travail sous <code>&lt;cache_dir&gt;/reconfort/run_z&lt;id&gt;_S2&lt;year&gt;/</code> : glue vendorisée (scripts + sous-arbre <code>iota2/</code>) + modèle dans <code>models/&lt;v_model&gt;/</code> + masque dans <code>masks/</code> + <strong>vue S2 partitionnée par année</strong> (<code>S2_data/&lt;year&gt;/&lt;tile&gt;</code> en liens symboliques vers les dossiers <code>extracted/</code> de L2b.2, car IOTA² veut <code>s2_path/&lt;year&gt;/&lt;tile&gt;/</code>). cfg map-production écrit avec <code>.reconfort_write_cfg</code>.</li>
+<li>
+<strong><code><a href="reference/ensure_reconfort_oso_mask.html">ensure_reconfort_oso_mask()</a></code> + <code>RECONFORT_OSO_MASK</code></strong> : masque feuillus OSO 2021 (~54 Mo, MD5 <code>ea87e929…</code>) <strong>téléchargé à la demande</strong> + checksum + cache + fallback <code>local_path</code>, calqué sur <code><a href="reference/ensure_reconfort_model.html">ensure_reconfort_model()</a></code> (L2a). <code>binary_mask</code> : <code>NULL</code>→OSO, chemin→custom, <code>FALSE</code>→pas de masque. Le masque est toujours stagé à <code>masks/mask_oso_deciduous_compress.tif</code> et <code>path_to_binary_mask</code> laissé vide → classif <strong>et</strong> proba utilisent le même masque (le script amont hardcode ce chemin pour la proba).</li>
+<li>
+<strong>Glue map-production vendorisée</strong> (Apache-2.0) : <code>run_map_production_reconfort.py</code>, <code>mask_and_compress_rasters.py</code>, les 2 générateurs de cfg IOTA², et le sous-arbre <code>iota2/</code> (config, nomenclature, <code>external_features/custom_index.py</code> — <strong>déplacé</strong> de la racine glue à son chemin canonique —, <code>vector_db/random_points.*</code>). Modèles (413 Mo) + masque (54 Mo) hors package (fetch à la demande).</li>
+<li>
+<strong>Garde-fou</strong> : le driver amont ne teste pas le code retour du subprocess Iota2 (<code>subprocess.run</code> sans <code>check</code>) → un échec RAM/scheduler/données passe en exit 0. Le pipeline <strong>abort</strong> si le raster de score continu n’a pas été produit (parité avec les garde-fous L2b.2).</li>
+<li>Lourd + <strong>opt-in</strong> (env conda + GEODES + dizaines de Go + OTB/Shark batch), <strong>jamais en CI</strong>. 3 exports (<code>run_reconfort_dieback</code>, <code>ensure_reconfort_oso_mask</code>, <code>RECONFORT_OSO_MASK</code>) + <code>.Rd</code> à la main, section pkgdown, NOTICE. <strong>24 tests mockés</strong> (orchestration 8 phases, cfg masquage on/off, garde-fous score/exit, staging S2 année/tuile + glue), suite reconfort <strong>182 assertions / 0 échec</strong>. Suite : <strong>L3</strong> (postprocess → alertes).</li>
+</ul></div>
+<div class="section level3">
 <h3 id="id_2026-06-11--reconfort-l2b2--ingestion-s2-iota²-native-spec-021-cœur">2026-06-11 — RECONFORT L2b.2 : ingestion S2 IOTA²-native (spec 021, cœur)<a class="anchor" aria-label="anchor" href="#id_2026-06-11--reconfort-l2b2--ingestion-s2-iota%C2%B2-native-spec-021-c%C5%93ur"></a></h3>
 <p>Release <strong>v0.73.0</strong>. <strong>L2b.2</strong> — acquisition Sentinel-2 dans le layout IOTA² (décision D1 : pas de réutilisation du cache COG FAST).</p>
 <ul><li>
 <strong>Grille MGRS embarquée</strong> : <code>inst/extdata/s2_mgrs_tiles_fr.geojson</code> (188 tuiles France métropolitaine, 61 ko, clippée depuis la grille ESA globale via <code>data-raw/build_s2_mgrs_tiles_fr.R</code>). <code>reconfort_aoi_tiles(aoi)</code> intersecte l’AOI → tuile(s) MGRS (sans réseau). Validé : Loiret → <code>T31UDP</code> (conforme aux configs amont), CVL entière → 14 tuiles.</li>
 <li>
 <code>reconfort_ingest_s2(aoi|tiles, dates, s2_root, …)</code> : génère un <code>.cfg</code> (<code>key=&lt;littéral python&gt;</code>, helper <code>.reconfort_write_cfg</code>), télécharge les archives MUSCATE L2A via <strong>GEODES/pygeodes</strong> puis dézippe vers <code>&lt;s2_root&gt;/extracted/&lt;tile&gt;/</code>. Pilote les scripts amont <strong>vendorisés</strong> (<code>run_geodes_download.py</code>, <code>run_process_downloaded_images.py</code> + <code>utils/utils.py</code>) en subprocess conda (<code>.reconfort_run_py</code>, cwd = glue dir pour résoudre <code>from utils.utils</code>). Compte GEODES via <code>options(nemeton.geodes_config)</code> (défaut data dir utilisateur), <strong>aucune clé embarquée</strong>.</li>
-<li>Heavy + opt-in (compte GEODES + dizaines de Go), <strong>jamais en CI</strong>. 2 exports (<code>reconfort_aoi_tiles</code>, <code>reconfort_ingest_s2</code>) + <code>.Rd</code> à la main, section pkgdown. 14 tests (download mocké, grille réelle), 0 régression (151 reconfort PASS). Suite : <strong>L2b.3</strong> (<code>run_reconfort_dieback()</code>).</li>
+<li>Heavy + opt-in (compte GEODES + dizaines de Go), <strong>jamais en CI</strong>. 2 exports (<code>reconfort_aoi_tiles</code>, <code>reconfort_ingest_s2</code>) + <code>.Rd</code> à la main, section pkgdown. 14 tests (download mocké, grille réelle), 0 régression (151 reconfort PASS). Suite : <strong>L2b.3</strong> (<code><a href="reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code>).</li>
 <li>
 <strong>Smoke réel</strong> (<code>data-raw/smoke_reconfort_ingest.R</code>, 1 tuile T31UDP, fenêtre 2026-05-08..13) joué avant merge — a fait remonter <strong>3 bugs</strong>, tous corrigés et repliés dans v0.73.0 (mêmes PR/tag) : (1) <strong>collection GEODES</strong> — l’id d’exemple amont <code>MUSCATE_SENTINEL2_SENTINEL2_L2A</code> n’existe pas (HTTP 400) ; défaut → <code>THEIA_REFLECTANCE_SENTINEL2_L2A</code>. (2) <strong>chemin download/unzip</strong> — <code>download_item_archive()</code> écrit dans le <code>download_dir</code> de la config pygeodes, pas dans le <code>zip_path</code> que le dézippage lit ; → config pygeodes <strong>par-run</strong> avec <code>download_dir = &lt;s2_root&gt;/zip/&lt;tile&gt;</code> (cache projet fourni par l’appelant, <strong>même convention que le <code>cache_dir</code> de FORDEAD</strong>, jamais <code>/tmp</code>), et comme elle porte la clé API elle vit dans un <strong>tempfile mode 600</strong> hors cache, effacé après chaque tuile. (3) <strong>erreurs réseau avalées</strong> — le téléchargeur amont enveloppe chaque item dans un <code>except</code> nu qui sort en 0 ; une coupure (<code>ChunkedEncodingError</code> sur l’archive de ~2 Go) passait pour un succès à 0 scène → <strong>garde-fous de post-condition</strong> (≥1 archive après download, ≥1 dossier de scène après unzip, sinon abort). Plomberie validée bout-en-bout (env conda, résolution tuile, recherche GEODES = 1 scène, config par-run, streaming réel des octets : 1,5 Go tirés avant coupure réseau sur les 2 Go — seul reliquat = fiabilité réseau du transfert, hors nemeton).</li>
 </ul></div>

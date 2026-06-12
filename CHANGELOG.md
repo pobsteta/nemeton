@@ -12,6 +12,39 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.74.0\] - 2026-06-12
+
+### Added
+
+- RECONFORT end-to-end orchestration (spec 021, lot L2b.3):
+  `run_reconfort_dieback(con, zone_id, cache_dir, …)` chains env → model
+  → mask → tile → S2 ingest → vendored IOTA² map-production (sampling +
+  classification ×2 + OSO masking + continuous score), producing the
+  classification / probability / continuous-score rasters (EPSG:2154)
+  and a `run_meta.json`. Each run stages a writable copy of the vendored
+  glue (scripts + `iota2/` subtree + model + mask + year-partitioned S2
+  symlinks) under `cache_dir`, keeping the installed package read-only.
+  8 phases with a `progress_callback`. A post-condition guard aborts
+  when the IOTA² subprocess (whose return code the upstream driver
+  ignores) produces no continuous-score raster.
+- [`ensure_reconfort_oso_mask()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_oso_mask.md) +
+  `RECONFORT_OSO_MASK`: the OSO 2021 deciduous mask (~54 MB) is fetched
+  on demand, MD5-verified and cached, with a `local_path` fallback
+  (custom mask) — mirroring the RF model fetch (L2a). `binary_mask`
+  control: `NULL` → OSO, a path → custom, `FALSE` → unmasked.
+- Vendored map-production glue (Apache-2.0):
+  `run_map_production_reconfort.py`, `mask_and_compress_rasters.py`, the
+  two IOTA² cfg generators, and the static `iota2/` inputs (config,
+  nomenclature, `external_features/custom_index.py` moved to its
+  canonical path, `vector_db/random_points.*`).
+
+### Notes
+
+- A real run needs the `nemeton-reconfort` conda env + a GEODES
+  account + tens of GB of S2 + OTB/Shark batch execution — opt-in, never
+  in CI; unit tests mock every external step. The post-process → `alert`
+  table stays in lot L3.
+
 ## \[0.73.0\] - 2026-06-11
 
 ### Added
