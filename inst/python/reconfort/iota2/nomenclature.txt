@@ -1,0 +1,3 @@
+sains:1
+deperissant:2
+tres deperissant:3

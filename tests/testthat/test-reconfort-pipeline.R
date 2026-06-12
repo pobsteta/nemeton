@@ -1,0 +1,174 @@
+# Tests for run_reconfort_dieback() orchestration (lot L2b.3). Every
+# external step (conda env, model/mask fetch, S2 ingest, IOTA2
+# subprocess) is mocked — no Python, no network, no GB of S2.
+
+# A throwaway DBIConnection just to satisfy con validation. tiles= is
+# always passed so .get_zone_aoi() is never reached.
+local_con <- function(env = parent.frame()) {
+  testthat::skip_if_not_installed("RSQLite")
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con), envir = env)
+  con
+}
+
+# Install mocks where .reconfort_run_py fabricates the IOTA2 final
+# rasters so output collection succeeds. `write_score` toggles whether
+# the continuous-score raster is produced (to exercise the guard).
+mock_pipeline <- function(calls_env, write_score = TRUE, exit = 0L) {
+  bindings <- list(
+    .ensure_reconfort_python = function(...) "test-env",
+    .reconfort_conda_binary  = function() "/opt/conda/bin/conda",
+    ensure_reconfort_model   = function(version, cache_dir = NULL, quiet = FALSE) {
+      d <- withr::local_tempdir(.local_envir = calls_env$env)
+      p <- file.path(d, "model_1_seed_0.txt"); writeLines("model", p); p
+    },
+    ensure_reconfort_oso_mask = function(...) {
+      d <- withr::local_tempdir(.local_envir = calls_env$env)
+      p <- file.path(d, RECONFORT_OSO_MASK$file); writeLines("mask", p); p
+    },
+    reconfort_ingest_s2 = function(tiles, date_from, date_to, s2_root,
+                                   geodes_config = NULL, quiet = FALSE) {
+      ex <- file.path(s2_root, "extracted", tiles)
+      for (e in ex) dir.create(e, recursive = TRUE, showWarnings = FALSE)
+      calls_env$ingest <- TRUE
+      list(tiles = tiles, s2_root = s2_root, extracted = ex)
+    },
+    .reconfort_run_py = function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
+      calls_env$cfg <- readLines(cfg)
+      calls_env$script <- basename(script)
+      if (identical(as.integer(exit), 0L)) {
+        kv <- calls_env$cfg
+        getv <- function(k) sub(paste0("^", k, "='?([^']*)'?$"), "\\1",
+                                grep(paste0("^", k, "="), kv, value = TRUE))
+        label <- getv("label"); year <- getv("S2_year")
+        final <- file.path(workdir, "results",
+                           sprintf("iota2_results_classif_labels-%s-S2_%s", label, year),
+                           "final")
+        dir.create(final, recursive = TRUE, showWarnings = FALSE)
+        writeLines("x", file.path(final, "Classif_Seed_0.tif"))
+        writeLines("x", file.path(final, "ProbabilityMap_seed_0.tif"))
+        if (write_score) {
+          writeLines("x", file.path(final, sprintf("Final_continuous_score_masked%s.tif", year)))
+        }
+      }
+      as.integer(exit)
+    }
+  )
+  # Bind the mocks to the *test's* environment so they survive past this
+  # helper's own frame (otherwise local_mocked_bindings would undo them
+  # the moment mock_pipeline returns).
+  do.call(testthat::local_mocked_bindings, c(bindings, list(.env = calls_env$env)))
+}
+
+test_that("run_reconfort_dieback orchestrates the phases and collects outputs", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+
+  phases <- character(0)
+  res <- run_reconfort_dieback(
+    con = con, zone_id = 7L, cache_dir = cache,
+    s2_year = 2024L, tiles = "T31UDP", quiet = TRUE,
+    progress_callback = function(p) {
+      if (identical(p$current, "reconfort:phase")) phases[[length(phases) + 1L]] <<- p$phase_name
+    })
+
+  expect_equal(res$status, "completed")
+  expect_equal(res$tiles, "T31UDP")
+  expect_equal(res$species, "CHE")              # v3 -> oak
+  expect_true(file.exists(res$rasters$continuous_score))
+  expect_true(file.exists(res$meta))            # run_meta.json written
+  expect_true(calls$ingest)
+  expect_identical(calls$script, "run_map_production_reconfort.py")
+  # all 8 phases fired, in order
+  expect_equal(phases, c("env","model","mask","tiles","ingest","stage","mapprod","collect"))
+})
+
+test_that("run_reconfort_dieback writes a cfg with masking on by default", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+
+  run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                        s2_year = 2024L, tiles = "T31UDP", quiet = TRUE)
+  cfg <- calls$cfg
+  expect_true(any(grepl("^v_model='v3'", cfg)))
+  expect_true(any(grepl("^list_tiles='T31UDP'", cfg)))
+  expect_true(any(grepl("^mask_final_maps='True'", cfg)))
+  expect_true(any(grepl("^S2_year='2024'", cfg)))
+})
+
+test_that("run_reconfort_dieback with binary_mask = FALSE disables masking", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+
+  run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                        s2_year = 2024L, tiles = "T31UDP",
+                        binary_mask = FALSE, quiet = TRUE)
+  expect_true(any(grepl("^mask_final_maps='False'", calls$cfg)))
+  # no mask staged
+  wd <- file.path(cache, "reconfort", "run_z1_S22024")
+  expect_false(file.exists(file.path(wd, "masks", RECONFORT_OSO_MASK$file)))
+})
+
+test_that("run_reconfort_dieback aborts when no continuous score is produced", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls, write_score = FALSE)
+
+  expect_error(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2024L, tiles = "T31UDP", quiet = TRUE),
+    "continuous-score"
+  )
+})
+
+test_that("run_reconfort_dieback aborts on a non-zero map-production exit", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls, exit = 1L)
+
+  expect_error(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2024L, tiles = "T31UDP", quiet = TRUE),
+    "map production failed"
+  )
+})
+
+test_that("run_reconfort_dieback validates con and v_model", {
+  expect_error(
+    run_reconfort_dieback(con = list(), zone_id = 1L, cache_dir = tempdir(),
+                          tiles = "T31UDP"),
+    "DBIConnection"
+  )
+  con <- local_con()
+  expect_error(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = tempdir(),
+                          v_model = "nope", tiles = "T31UDP"),
+    "Unknown RECONFORT model"
+  )
+})
+
+test_that(".reconfort_stage_s2_layout builds the year/tile view", {
+  wd <- withr::local_tempdir()
+  ex1 <- file.path(wd, "ex", "T31UDP"); dir.create(ex1, recursive = TRUE)
+  writeLines("scene", file.path(ex1, "marker.txt"))
+  root <- nemeton:::.reconfort_stage_s2_layout(wd, 2024L, "T31UDP", ex1)
+  linked <- file.path(root, "2024", "T31UDP")
+  expect_true(dir.exists(linked))
+  expect_true(file.exists(file.path(linked, "marker.txt")))
+})
+
+test_that(".reconfort_stage_workdir copies the vendored glue", {
+  wd <- withr::local_tempdir()
+  glue <- nemeton:::.reconfort_glue_dir()
+  nemeton:::.reconfort_stage_workdir(wd, glue)
+  expect_true(file.exists(file.path(wd, "run_map_production_reconfort.py")))
+  expect_true(file.exists(file.path(wd, "iota2", "external_features", "custom_index.py")))
+})

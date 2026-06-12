@@ -14,9 +14,10 @@ calibrated model's expectations.
 ## Currently vendored
 
 Lot **L2b.1** (indices):
-- `custom_index.py` — IOTA² `external_features` hooks computing the two
-  RECONFORT continuum-removal indices (CRswir, CRre) on the gap-filled
-  Sentinel-2 series. Self-contained (numpy only).
+- `iota2/external_features/custom_index.py` — IOTA² `external_features`
+  hooks computing the two RECONFORT continuum-removal indices (CRswir,
+  CRre) on the gap-filled Sentinel-2 series. Self-contained (numpy only).
+  Lives at the path the IOTA² cfg references.
 
 Lot **L2b.2** (S2 acquisition), driven by `R/reconfort_ingest.R`:
 - `run_geodes_download.py` — downloads MUSCATE L2A archives from GEODES
@@ -26,9 +27,19 @@ Lot **L2b.2** (S2 acquisition), driven by `R/reconfort_ingest.R`:
 - `utils/utils.py` (+ `utils/__init__.py`) — `load_config_variable()`, the
   `.cfg` reader both scripts use.
 
-## Deferred to L2b.3
+Lot **L2b.3** (map production), driven by `R/reconfort_pipeline.R`:
+- `run_map_production_reconfort.py` — generates the two IOTA² cfg files,
+  runs `Iota2.py` twice (sampling, then classification), copies the RF
+  model in, then masks + computes the continuous score.
+- `mask_and_compress_rasters.py` — `mask_rasters()` (OSO broadleaf mask)
+  and `compute_continuous_score()` (`(1001 + (-P1 + P2 + 2*P3))/30`).
+- `utils/generate_cfg_file_classif_part1_sampling_2y_nov_test_1tile.py`
+  and `..._part2_classification_...py` — the IOTA² cfg templates.
+- `iota2/` — static IOTA² inputs: `colorFile.txt`, `nomenclature.txt`,
+  `config/iota2_resources.cfg`, `external_features/custom_index.py`,
+  `vector_db/random_points.*` (1 dummy ground-truth point per class).
 
-The map-production glue (`run_map_production_reconfort.py`,
-`utils/generate_cfg_*`, `mask_and_compress_rasters.py`: IOTA² ×2 + RF +
-mask + continuous score) will be vendored alongside the code that drives
-it (`R/reconfort_pipeline.R`).
+`R/reconfort_pipeline.R` stages a writable working copy of this tree per
+run (the upstream scripts chdir to their own dir and write `results/`
+there). The ~54 MB OSO mask and the RF models are fetched on demand
+(`ensure_reconfort_oso_mask()`, `ensure_reconfort_model()`), not bundled.

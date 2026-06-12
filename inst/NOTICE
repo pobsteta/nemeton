@@ -151,12 +151,16 @@ Reference: Mouret, F., Morin, D., Martin, H., Planells, M.,
 Source   : https://framagit.org/fl.mouret/reconfort (branch main,
            commit 25198c9)
 License  : Apache-2.0
-Usage    : Random-Forest dieback models (fetched on demand by
-           `ensure_reconfort_model()`, spec 021 L2a) and Python glue
-           vendored under `inst/python/reconfort/` (CRswir/CRre
-           continuum-removal indices, spec 021 L2b). SYCOMORE
-           programme, Université d'Orléans / CESBIO, funded by the
-           Région Centre-Val de Loire.
+Usage    : Random-Forest dieback models and the OSO 2021 deciduous
+           mask (fetched on demand by `ensure_reconfort_model()` /
+           `ensure_reconfort_oso_mask()`, spec 021 L2a/L2b.3) and the
+           Python map-production glue vendored under
+           `inst/python/reconfort/` (CRswir/CRre continuum-removal
+           indices, GEODES download, IOTA² cfg generators, masking and
+           continuous-score computation, plus the static IOTA² inputs
+           under `iota2/`; spec 021 L2b.1–L2b.3). SYCOMORE programme,
+           Université d'Orléans / CESBIO, funded by the Région
+           Centre-Val de Loire.
 
 Third-party attributions in source code
 ---------------------------------------
