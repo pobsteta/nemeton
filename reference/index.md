@@ -385,6 +385,10 @@ Centre-Val de Loire). Garde-fou G3 : avertit, ne bloque pas.
   : Fetch (and cache) a RECONFORT Random-Forest model
 - [`RECONFORT_BANDS`](https://pobsteta.github.io/nemeton/reference/RECONFORT_BANDS.md)
   : Sentinel-2 bands used by the RECONFORT indices
+- [`reconfort_aoi_tiles()`](https://pobsteta.github.io/nemeton/reference/reconfort_aoi_tiles.md)
+  : Sentinel-2 MGRS tile(s) covering an AOI
+- [`reconfort_ingest_s2()`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md)
+  : Acquire Sentinel-2 scenes for an AOI into the IOTA² layout
 
 ## Suivi sanitaire, monitoring et autres fonctions
 

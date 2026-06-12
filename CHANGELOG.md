@@ -12,6 +12,32 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.73.0\] - 2026-06-11
+
+### Added
+
+- RECONFORT IOTA²-native S2 ingestion (spec 021, lot L2b.2):
+  [`reconfort_aoi_tiles()`](https://pobsteta.github.io/nemeton/reference/reconfort_aoi_tiles.md)
+  resolves the Sentinel-2 MGRS tile(s) covering an AOI from a bundled
+  France grid (`inst/extdata/s2_mgrs_tiles_fr.geojson`, 188 tiles, no
+  network);
+  [`reconfort_ingest_s2()`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md)
+  downloads MUSCATE L2A from GEODES (`pygeodes`) and unzips into the
+  IOTA² layout, driving the vendored upstream scripts via a conda
+  subprocess. GEODES config via `options(nemeton.geodes_config)`.
+  Default collection `THEIA_REFLECTANCE_SENTINEL2_L2A` (the upstream
+  `MUSCATE_*` example id 400s on GEODES; confirmed by a real smoke).
+  [`reconfort_ingest_s2()`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md)
+  writes a per-run pygeodes config whose `download_dir` matches the
+  per-tile `zip_path` (in the caller-supplied project cache, like
+  FORDEAD’s `cache_dir`), so download and unzip agree on the path; that
+  copy carries the api_key so it lives in a private mode-600 tempfile,
+  never in the cache, wiped after each tile. Post-condition guards abort
+  when the (error-swallowing, exit-0) upstream downloader leaves
+  `zip_path` empty or the unzip produces no scene folder. Heavy/opt-in,
+  never in CI; end-to-end plumbing validated by a real smoke
+  (`data-raw/smoke_reconfort_ingest.R`).
+
 ## \[0.72.0\] - 2026-06-11
 
 ### Added

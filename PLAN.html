@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.72.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.73.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,7 +39,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="logo.svg" class="logo" alt=""><h1>PLAN — Walking Skeleton &amp; chantier en cours (cœur nemeton)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/v0.72.0/PLAN.md" class="external-link"><code>PLAN.md</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/PLAN.md" class="external-link"><code>PLAN.md</code></a></small>
     </div>
 
 
@@ -190,10 +190,11 @@
 <code>reconfort_python.R</code> (env conda IOTA² locate+validate) + <code>RECONFORT_BANDS</code> + glue vendorisée <code>custom_index.py</code> + NOTICE</td>
 <td>
 <strong>v0.72.0</strong> (2026-06-11)</td>
-</tr><tr><td>⬜</td>
+</tr><tr><td>✅</td>
 <td><strong>L2b.2</strong></td>
-<td>Ingest IOTA²-natif : AOI→tuile MGRS + wrapper pygeodes download + process/unzip</td>
-<td>—</td>
+<td>Ingest IOTA²-natif : <code><a href="reference/reconfort_aoi_tiles.html">reconfort_aoi_tiles()</a></code> (grille MGRS embarquée) + <code><a href="reference/reconfort_ingest_s2.html">reconfort_ingest_s2()</a></code> (pygeodes download + unzip) + scripts vendorisés</td>
+<td>
+<strong>v0.73.0</strong> (2026-06-11)</td>
 </tr><tr><td>⬜</td>
 <td><strong>L2b.3</strong></td>
 <td>
@@ -217,7 +218,7 @@
 <td><strong>L6</strong></td>
 <td>App <code>nemetonshiny</code> : 3ᵉ mode, bannières, plotly, QField feuillus</td>
 <td>release app</td>
-</tr></tbody></table><p><strong>Reporté</strong> (vs plan §5) : flag NDP <code>health_reconfort</code> + datasource <code>reconfort_anomalies</code> — supposaient une parité FORDEAD inexistante. <strong>L2b cadré</strong> (<code>L2b-cadrage.md</code> : ingest IOTA²-natif, env conda locate+validate, glue complète) et <strong>scindé</strong> en L2b.1/.2/.3. <strong>Prochaine étape : L2b.2</strong> (ingest AOI→tuile + pygeodes). Faits amont vérifiés : <code>…/plan.md</code> §10.</p>
+</tr></tbody></table><p><strong>Reporté</strong> (vs plan §5) : flag NDP <code>health_reconfort</code> + datasource <code>reconfort_anomalies</code> — supposaient une parité FORDEAD inexistante. <strong>L2b cadré</strong> (<code>L2b-cadrage.md</code> : ingest IOTA²-natif, env conda locate+validate, glue complète) et <strong>scindé</strong> en L2b.1/.2/.3. <strong>Prochaine étape : L2b.3</strong> (<code>run_reconfort_dieback()</code> : orchestration env→model→ingest→IOTA²→score). Faits amont vérifiés : <code>…/plan.md</code> §10.</p>
 <hr></div>
 </div>
 <div class="section level1">
@@ -513,6 +514,15 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-06-11--reconfort-l2b2--ingestion-s2-iota²-native-spec-021-cœur">2026-06-11 — RECONFORT L2b.2 : ingestion S2 IOTA²-native (spec 021, cœur)<a class="anchor" aria-label="anchor" href="#id_2026-06-11--reconfort-l2b2--ingestion-s2-iota%C2%B2-native-spec-021-c%C5%93ur"></a></h3>
+<p>Release <strong>v0.73.0</strong>. <strong>L2b.2</strong> — acquisition Sentinel-2 dans le layout IOTA² (décision D1 : pas de réutilisation du cache COG FAST).</p>
+<ul><li>
+<strong>Grille MGRS embarquée</strong> : <code>inst/extdata/s2_mgrs_tiles_fr.geojson</code> (188 tuiles France métropolitaine, 61 ko, clippée depuis la grille ESA globale via <code>data-raw/build_s2_mgrs_tiles_fr.R</code>). <code>reconfort_aoi_tiles(aoi)</code> intersecte l’AOI → tuile(s) MGRS (sans réseau). Validé : Loiret → <code>T31UDP</code> (conforme aux configs amont), CVL entière → 14 tuiles.</li>
+<li>
+<code>reconfort_ingest_s2(aoi|tiles, dates, s2_root, …)</code> : génère un <code>.cfg</code> (<code>key=&lt;littéral python&gt;</code>, helper <code>.reconfort_write_cfg</code>), télécharge les archives MUSCATE L2A via <strong>GEODES/pygeodes</strong> puis dézippe vers <code>&lt;s2_root&gt;/extracted/&lt;tile&gt;/</code>. Pilote les scripts amont <strong>vendorisés</strong> (<code>run_geodes_download.py</code>, <code>run_process_downloaded_images.py</code> + <code>utils/utils.py</code>) en subprocess conda (<code>.reconfort_run_py</code>, cwd = glue dir pour résoudre <code>from utils.utils</code>). Compte GEODES via <code>options(nemeton.geodes_config)</code> (défaut data dir utilisateur), <strong>aucune clé embarquée</strong>.</li>
+<li>Heavy + opt-in (compte GEODES + dizaines de Go), <strong>jamais en CI</strong>. 2 exports (<code>reconfort_aoi_tiles</code>, <code>reconfort_ingest_s2</code>) + <code>.Rd</code> à la main, section pkgdown. 12 tests (download mocké, grille réelle), 0 régression (144 reconfort PASS). Suite : <strong>L2b.3</strong> (<code>run_reconfort_dieback()</code>).</li>
+</ul></div>
 <div class="section level3">
 <h3 id="id_2026-06-11--reconfort-l2b1--fondations-pythoniota²-spec-021-cœur">2026-06-11 — RECONFORT L2b.1 : fondations Python/IOTA² (spec 021, cœur)<a class="anchor" aria-label="anchor" href="#id_2026-06-11--reconfort-l2b1--fondations-pythoniota%C2%B2-spec-021-c%C5%93ur"></a></h3>
 <p>Release <strong>v0.72.0</strong>. <strong>L2b cadré</strong> (<code>L2b-cadrage.md</code>) puis <strong>scindé</strong> en L2b.1/.2/.3 — décisions : ingest <strong>IOTA²-natif</strong> (GEODES), env conda <strong>localisé+validé</strong> (l’utilisateur l’installe, D2), glue <strong>vendorisée complète</strong>. <strong>L2b.1</strong> (fondations, sans exécution réelle) :</p>
