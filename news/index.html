@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.74.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.74.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,9 +39,21 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/v0.74.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.74.1" id="nemeton-0741-2026-06-12">nemeton 0.74.1 (2026-06-12)<a class="anchor" aria-label="anchor" href="#nemeton-0741-2026-06-12"></a></h2>
+<div class="section level4">
+<h4 id="fixed--foreign-key-constraint-failed-au-re-build-des-zones-backend-sqlite-0-74-1">Fixed — <code>FOREIGN KEY constraint failed</code> au re-build des zones (backend SQLite)<a class="anchor" aria-label="anchor" href="#fixed--foreign-key-constraint-failed-au-re-build-des-zones-backend-sqlite-0-74-1"></a></h4>
+<p><code>build_project_monitoring_zones(..., replace = TRUE)</code> échouait avec <code>FOREIGN KEY constraint failed</code> lors du <strong>re-build</strong> d’un projet dont les zones possédaient déjà des lignes enfants (placettes de validation, alertes FORDEAD) — symptôme remonté depuis <code>nemetonshiny</code> sur le backend <strong>SQLite</strong> local (Windows). La première génération sur une base vierge réussissait ; seul le re-clic cassait.</p>
+<ul><li>
+<strong>Cause</strong> : divergence de schéma PG↔︎SQLite. La variante PostgreSQL (<code>pg/0001_init.sql</code>) porte <code>plot.zone_id → monitoring_zone(id) ON DELETE CASCADE</code> et <code>alert.plot_id → plot(id) ON DELETE CASCADE</code>, mais la variante SQLite (<code>0001_init.sql</code>) avait délibérément retiré ces clauses <code>CASCADE</code>. Comme <code><a href="../reference/db_connect.html">db_connect()</a></code> active <code>PRAGMA foreign_keys = ON</code>, le <code>DELETE FROM monitoring_zone WHERE project_uuid = ?</code> de l’upsert D5 était bloqué par les lignes <code>plot</code>/<code>alert</code> enfants.</li>
+<li>
+<strong>Correctif</strong> : <code>.delete_project_zones()</code> supprime désormais la chaîne <strong>explicitement, enfant d’abord</strong> (<code>alert</code> → <code>plot</code> → <code>monitoring_zone</code>), dans une seule transaction — portable sur les deux backends (sur PostgreSQL les suppressions d’enfants font simplement doublon avec le cascade). Pas de migration de schéma : ajouter le cascade côté SQLite imposerait un <em>rebuild</em> de tables, incompatible avec la transaction unique de <code><a href="../reference/db_migrate.html">db_migrate()</a></code> (<code>PRAGMA foreign_keys</code> est un no-op en transaction, et <code>defer_foreign_keys</code> ne lève pas la violation différée laissée par le <code>DROP TABLE</code> du parent).</li>
+<li>Côté app : aucun changement requis — <code>nemetonshiny</code> (v0.76.0) consomme déjà <code><a href="../reference/build_project_monitoring_zones.html">build_project_monitoring_zones()</a></code> et bénéficie du fix dès que le <code>Remotes: pobsteta/nemeton@*release</code> tire cette version.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.74.0" id="nemeton-0740-2026-06-12">nemeton 0.74.0 (2026-06-12)<a class="anchor" aria-label="anchor" href="#nemeton-0740-2026-06-12"></a></h2>
 <div class="section level4">

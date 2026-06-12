@@ -12,6 +12,28 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.74.1\] - 2026-06-12
+
+### Fixed
+
+- `build_project_monitoring_zones(..., replace = TRUE)` no longer fails
+  with `FOREIGN KEY constraint failed` when re-building a project whose
+  zones already own child rows (validation plots, FORDEAD alerts) on the
+  **SQLite** backend. Root cause: the SQLite schema (`0001_init.sql`)
+  had dropped the `ON DELETE CASCADE` clauses that the PostgreSQL schema
+  carries on `plot.zone_id → monitoring_zone(id)` and
+  `alert.plot_id → plot(id)`, so the upsert’s
+  `DELETE FROM monitoring_zone` was blocked under
+  `PRAGMA foreign_keys = ON`. `.delete_project_zones()` now deletes the
+  chain explicitly, child-first (`alert` → `plot` → `monitoring_zone`),
+  in a single transaction — portable across both backends. No schema
+  migration: adding the cascade on SQLite would require a table rebuild,
+  incompatible with
+  [`db_migrate()`](https://pobsteta.github.io/nemeton/reference/db_migrate.md)’s
+  single wrapping transaction (`PRAGMA foreign_keys` is a no-op inside a
+  transaction, and `defer_foreign_keys` does not clear the deferred
+  violation left by the parent `DROP TABLE`).
+
 ## \[0.74.0\] - 2026-06-12
 
 ### Added

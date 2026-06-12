@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.74.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.74.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,7 +39,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="logo.svg" class="logo" alt=""><h1>PLAN — Walking Skeleton &amp; chantier en cours (cœur nemeton)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/v0.74.0/PLAN.md" class="external-link"><code>PLAN.md</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/PLAN.md" class="external-link"><code>PLAN.md</code></a></small>
     </div>
 
 
@@ -105,6 +105,25 @@
 </tr></tbody></table><p>Légende : ✅ livré · 🟨 en cours · ⬜ à venir.</p>
 <hr></div>
 </div>
+<div class="section level1">
+<h1 id="veille--projets-externes-susceptibles-dintéresser-nemeton">Veille — projets externes susceptibles d’intéresser <code>nemeton</code>
+<a class="anchor" aria-label="anchor" href="#veille--projets-externes-susceptibles-dint%C3%A9resser-nemeton"></a></h1>
+<p>Sources à passer en revue régulièrement pour identifier des logiciels, services ou outils thématiques (forêt, végétation, télédétection) qui pourraient devenir des dépendances amont, des sources de données NDP, ou inspirer un épaississement.</p>
+<table class="table"><colgroup><col width="29%"><col width="18%"><col width="51%"></colgroup><thead><tr><th>Source</th>
+<th>URL</th>
+<th>À surveiller</th>
+</tr></thead><tbody><tr><td>Theia / DATA TERRA — logiciels, services et outils thématiques</td>
+<td><a href="https://www.theia-land.fr/blog/product/services-logiciels-et-outils-thematiques/#Logiciel" class="external-link uri">https://www.theia-land.fr/blog/product/services-logiciels-et-outils-thematiques/#Logiciel</a></td>
+<td>Nouveaux produits/outils forêt-végétation-télédétection à intégrer comme sources de données (cf. chantier « Sources Theia ») ou comme briques amont. <em>Reliquat connu côté <code>nemeton</code> : MUSCATE, LST Thermocity, W1.</em>
+</td>
+</tr></tbody></table><blockquote>
+<p><strong>À faire</strong> : parcourir la page ci-dessus, recenser les logiciels/outils pertinents et, pour chacun, décider s’il devient une source de données (déclaration dans <code>inst/datasources/</code>), une dépendance amont, ou une simple piste. La page renvoie un 403 aux robots — consultation manuelle nécessaire.</p>
+</blockquote>
+<hr></div>
+<div class="section level1">
+<h1 id="correctifs-de-production-hors-chantier">Correctifs de production (hors chantier)<a class="anchor" aria-label="anchor" href="#correctifs-de-production-hors-chantier"></a></h1>
+<p><strong>Journal</strong> — <em>2026-06-12</em> (<strong>v0.74.1</strong>) : <strong>fix <code>FOREIGN KEY constraint failed</code> au re-build des zones de suivi (backend SQLite)</strong>. Symptôme remonté depuis <code>nemetonshiny</code> (Windows local = SQLite) : <code>build_project_monitoring_zones(con, …, replace = TRUE)</code> réussissait sur une base vierge mais échouait au <strong>re-clic</strong> sur un projet dont les zones portaient déjà des lignes enfants (placettes de validation, alertes FORDEAD). <strong>Cause</strong> : divergence de schéma PG↔︎SQLite — la variante SQLite (<code>0001_init.sql</code>) avait retiré les <code>ON DELETE CASCADE</code> que porte PostgreSQL sur <code>plot.zone_id → monitoring_zone(id)</code> et <code>alert.plot_id → plot(id)</code> ; <code><a href="reference/db_connect.html">db_connect()</a></code> activant <code>PRAGMA foreign_keys = ON</code>, le <code>DELETE FROM monitoring_zone</code> de l’upsert D5 était bloqué par les enfants. <strong>Correctif (option B)</strong> : <code>.delete_project_zones()</code> supprime la chaîne explicitement, <strong>enfant d’abord</strong> (<code>alert</code> → <code>plot</code> → <code>monitoring_zone</code>), dans une seule transaction — portable PG/SQLite. <strong>Option A écartée</strong> : l’option initiale (migration <code>0006_zone_cascade</code> rebâtissant les tables avec <code>ON DELETE CASCADE</code>) a été prise en défaut par la revue Codex (P1) et la CI — sous la transaction unique de <code><a href="reference/db_migrate.html">db_migrate()</a></code>, <code>PRAGMA foreign_keys</code> est un no-op et <code>defer_foreign_keys</code> ne lève pas la violation différée laissée par le <code>DROP TABLE</code> du parent ; le COMMIT échouait précisément sur les bases peuplées. Migrations 0006 retirées. Tests : <code>test-zone-cascade.R</code> réécrit (suppression directe de la chaîne sans dépendance sf/terra, scoping par <code>project_uuid</code>, no-op/idempotence, re-build du builder réel, parité PG). <strong>App</strong> : aucun changement requis — <code>nemetonshiny</code> (release v0.76.0) consomme déjà <code><a href="reference/build_project_monitoring_zones.html">build_project_monitoring_zones()</a></code> et tire le fix via <code>Remotes: pobsteta/nemeton@*release</code>. <em>(R indisponible en local : validation déléguée à la CI R-CMD-check.)</em></p>
+<hr></div>
 <div class="section level1">
 <h1 id="chantier-en-cours--e7--corpus-de-connaissances-rag-spec-009--0091-adr-012">Chantier en cours — E7 : corpus de connaissances RAG (spec 009 / 009.1, ADR-012)<a class="anchor" aria-label="anchor" href="#chantier-en-cours--e7--corpus-de-connaissances-rag-spec-009--0091-adr-012"></a></h1>
 <p><strong>Cadré</strong> : 2026-05-29 (décisions D1-D5). <strong>Cible cœur</strong> : la prochaine release qui livre le corpus (machinerie déjà à <code>v0.52.0</code>). <strong>Objectif</strong> : clore E7 — la <em>machinerie</em> RAG est livrée (v0.52.0, 7 fonctions exportées, schéma opt-in <code>knowledge_*</code>, dual-backend pgvector/cosinus), il reste à <strong>alimenter</strong> et <strong>brancher</strong> la base de connaissances forestière pour que les perspectives IA soient effectivement citées-sourcées.</p>
