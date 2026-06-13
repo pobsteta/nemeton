@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -421,25 +421,36 @@ R/utils_i18n.R                → Traductions FR/EN (liste TRANSLATIONS, source 
 </div>
 <div class="section level1">
 <h1 id="consignes-de-release-pour-ce-projet">Consignes de release pour ce projet<a class="anchor" aria-label="anchor" href="#consignes-de-release-pour-ce-projet"></a></h1>
+<p><strong>Le tag et la release GitHub sont AUTOMATISÉS</strong> par <code>.github/workflows/release.yml</code> : au push sur <code>main</code>, il lit <code>Version:</code> dans DESCRIPTION et, si c’est une version <strong>stable <code>X.Y.Z</code></strong> dont le tag <code>vX.Y.Z</code> n’existe pas encore, crée le tag annoté + la release GitHub (<code>--generate-notes</code>). <strong>Ne plus faire <code>git tag</code> / <code>git push origin vX.Y.Z</code> / <code>gh release create</code> à la main.</strong></p>
 <p>À chaque push qui modifie le code fonctionnel (hors doc pure, hors CI), Claude doit :</p>
 <ol style="list-style-type: decimal"><li><p>Déterminer le type de changement selon Conventional Commits (feat: / fix: / BREAKING CHANGE:) → bump semver correspondant (minor / patch / major).</p></li>
 <li>
-<p>Mettre à jour le numéro de version dans :</p>
-<ul><li>DESCRIPTION (champ Version) [projet R]</li>
-<li>NEWS.md (ajouter une entrée datée)</li>
-<li>CITATION.cff si présent</li>
+<p>Mettre à jour la version, de façon <strong>cohérente</strong> dans les trois fichiers (le job CI <code>version-consistency</code> de <code>r.yml</code> échoue sinon) :</p>
+<ul><li>DESCRIPTION (champ Version) → la version stable <code>X.Y.Z</code> de la release</li>
+<li>NEWS.md (entrée datée <code># nemeton X.Y.Z (YYYY-MM-DD)</code>)</li>
+<li>CITATION.cff (<code>version:</code> + <code>date-released:</code>)</li>
 </ul></li>
-<li><p>Créer un tag git annoté : git tag -a vX.Y.Z -m “Release X.Y.Z”</p></li>
-<li><p>Pousser le tag : git push origin vX.Y.Z</p></li>
-<li><p>Créer la release GitHub via gh : gh release create vX.Y.Z –generate-notes</p></li>
-<li><p>Vérifier que les badges du README pointent vers la bonne version et la dernière release (badges shields.io, R-CMD-check, codecov…).</p></li>
-<li><p>Si le CHANGELOG.md existe, ajouter la section [X.Y.Z] - YYYY-MM-DD avec les catégories Added / Changed / Fixed / Removed.</p></li>
-<li><p>Mettre à jour <code>PLAN.md</code> à la racine : cocher la case du sous-chantier livré, ajouter une entrée datée au journal, et — si l’épaississement change d’état — mettre à jour la table d’avancement. <code>PLAN.md</code> est la source unique de vérité pour le walking skeleton (CLAUDE.md ne duplique plus la table). Ne jamais clore un chantier dans <code>PLAN.md</code> sans qu’une release correspondante ait été poussée.</p></li>
+<li><p>Si CHANGELOG.md existe, ajouter la section <code>[X.Y.Z] - YYYY-MM-DD</code> (Added / Changed / Fixed / Removed).</p></li>
+<li><p>Mettre à jour <code>PLAN.md</code> (journal daté ; table d’avancement si l’état change). Source unique de vérité du walking skeleton. Ne jamais clore un chantier sans release correspondante.</p></li>
+<li><p>Ouvrir une PR vers <code>main</code> et la merger → <code>release.yml</code> pose le tag + la release. <strong>Rien d’autre à faire</strong> : le badge version du README est dynamique (<code>img.shields.io/github/v/release</code>) et se met à jour seul.</p></li>
+<li><p><strong>Repasser en cycle dev</strong> : juste après la release, bumper DESCRIPTION en version de dev <code>X.Y.Z.9000</code> (cf. <em>Cycle de développement</em> ci-dessous).</p></li>
 </ol><div class="section level2">
+<h2 id="cycle-de-développement-versions-9000">Cycle de développement (versions <code>.9000</code>)<a class="anchor" aria-label="anchor" href="#cycle-de-d%C3%A9veloppement-versions-9000"></a></h2>
+<p>Entre deux releases, <code>DESCRIPTION</code> porte une version de <strong>dév</strong> <code>X.Y.Z.9000</code> (4 composantes). Convention :</p>
+<ul><li>
+<strong>État publié sur <code>main</code></strong> : DESCRIPTION = <code>X.Y.Z</code> stable, tag <code>vX.Y.Z</code> posé par le CI.</li>
+<li>
+<strong>Démarrage du cycle dev</strong> : bumper DESCRIPTION → <code>X.Y.Z.9000</code>. NEWS.md et CITATION.cff <strong>restent</strong> sur <code>X.Y.Z</code> (la dernière release).</li>
+<li>
+<strong>Pendant le dev</strong> : DESCRIPTION reste <code>X.Y.Z.9000</code>.</li>
+<li>
+<strong>Release suivante</strong> : poser une version stable <code>X.Y.(Z+1)</code> (ou <code>X.(Y+1).0</code>, etc.) dans DESCRIPTION <strong>et</strong> NEWS <strong>et</strong> CITATION, merger.</li>
+</ul><p><code>release.yml</code> <strong>ignore</strong> les versions <code>.9000+</code> (gate « stable only »), et le garde-fou <code>version-consistency</code> <strong>saute</strong> quand DESCRIPTION est en cycle dev (il ne compare DESCRIPTION = NEWS = CITATION que pour une version stable <code>X.Y.Z</code>). Un push de cycle dev ne déclenche donc ni release ni échec CI.</p>
+</div>
+<div class="section level2">
 <h2 id="règles-de-cohérence">Règles de cohérence<a class="anchor" aria-label="anchor" href="#r%C3%A8gles-de-coh%C3%A9rence"></a></h2>
-<ul><li>La version dans DESCRIPTION, le tag git et la release GitHub doivent être strictement identiques.</li>
-<li>Ne jamais pousser un tag sans avoir d’abord mis à jour DESCRIPTION et NEWS.md.</li>
-<li>Vérifier que la page de documentation est aussi à jour de la version et de ses tags.</li>
+<ul><li>Pour une version <strong>stable</strong>, DESCRIPTION = tête de NEWS.md = CITATION.cff (vérifié en CI par <code>version-consistency</code>). Le tag et la release sont ensuite posés automatiquement et donc identiques par construction.</li>
+<li>Vérifier que la page de documentation (pkgdown) est à jour — elle rend le README (badge dynamique) et lit la version de DESCRIPTION.</li>
 <li>Toujours demander confirmation avant un bump majeur.</li>
 </ul></div>
 <div class="section level2">
