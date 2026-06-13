@@ -26,6 +26,10 @@ jobs:
       - name: DESCRIPTION = NEWS.md = CITATION.cff
         run: |
           desc=$(awk '/^Version:/{print $2; exit}' DESCRIPTION)
+          if ! [[ "$desc" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Cycle dev ($desc) — garde-fou de cohérence sauté."
+            exit 0
+          fi
           news=$(grep -m1 -oE '[0-9]+\.[0-9]+\.[0-9]+' NEWS.md)
           cff=$(grep -m1 -E '^version:' CITATION.cff | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
           echo "DESCRIPTION=$desc  NEWS=$news  CITATION=$cff"

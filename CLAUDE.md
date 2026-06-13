@@ -316,6 +316,13 @@ R/utils_i18n.R                → Traductions FR/EN (liste TRANSLATIONS, source 
 
 # Consignes de release pour ce projet
 
+**Le tag et la release GitHub sont AUTOMATISÉS** par
+`.github/workflows/release.yml` : au push sur `main`, il lit `Version:`
+dans DESCRIPTION et, si c'est une version **stable `X.Y.Z`** dont le tag
+`vX.Y.Z` n'existe pas encore, crée le tag annoté + la release GitHub
+(`--generate-notes`). **Ne plus faire `git tag` / `git push origin vX.Y.Z`
+/ `gh release create` à la main.**
+
 À chaque push qui modifie le code fonctionnel (hors doc pure, hors CI),
 Claude doit :
 
@@ -323,37 +330,52 @@ Claude doit :
    (feat: / fix: / BREAKING CHANGE:) → bump semver correspondant
    (minor / patch / major).
 
-2. Mettre à jour le numéro de version dans :
-   - DESCRIPTION (champ Version)  [projet R]
-   - NEWS.md (ajouter une entrée datée)
-   - CITATION.cff si présent
+2. Mettre à jour la version, de façon **cohérente** dans les trois
+   fichiers (le job CI `version-consistency` de `r.yml` échoue sinon) :
+   - DESCRIPTION (champ Version) → la version stable `X.Y.Z` de la release
+   - NEWS.md (entrée datée `# nemeton X.Y.Z (YYYY-MM-DD)`)
+   - CITATION.cff (`version:` + `date-released:`)
 
-3. Créer un tag git annoté : git tag -a vX.Y.Z -m "Release X.Y.Z"
+3. Si CHANGELOG.md existe, ajouter la section `[X.Y.Z] - YYYY-MM-DD`
+   (Added / Changed / Fixed / Removed).
 
-4. Pousser le tag : git push origin vX.Y.Z
+4. Mettre à jour `PLAN.md` (journal daté ; table d'avancement si l'état
+   change). Source unique de vérité du walking skeleton. Ne jamais clore
+   un chantier sans release correspondante.
 
-5. Créer la release GitHub via gh :
-   gh release create vX.Y.Z --generate-notes
+5. Ouvrir une PR vers `main` et la merger → `release.yml` pose le tag +
+   la release. **Rien d'autre à faire** : le badge version du README est
+   dynamique (`img.shields.io/github/v/release`) et se met à jour seul.
 
-6. Vérifier que les badges du README pointent vers la bonne version
-   et la dernière release (badges shields.io, R-CMD-check, codecov…).
+6. **Repasser en cycle dev** : juste après la release, bumper DESCRIPTION
+   en version de dev `X.Y.Z.9000` (cf. *Cycle de développement* ci-dessous).
 
-7. Si le CHANGELOG.md existe, ajouter la section [X.Y.Z] - YYYY-MM-DD
-   avec les catégories Added / Changed / Fixed / Removed.
+## Cycle de développement (versions `.9000`)
 
-8. Mettre à jour `PLAN.md` à la racine : cocher la case du sous-chantier
-   livré, ajouter une entrée datée au journal, et — si l'épaississement
-   change d'état — mettre à jour la table d'avancement. `PLAN.md` est la
-   source unique de vérité pour le walking skeleton (CLAUDE.md ne
-   duplique plus la table). Ne jamais clore un chantier dans `PLAN.md`
-   sans qu'une release correspondante ait été poussée.
+Entre deux releases, `DESCRIPTION` porte une version de **dév**
+`X.Y.Z.9000` (4 composantes). Convention :
+
+- **État publié sur `main`** : DESCRIPTION = `X.Y.Z` stable, tag `vX.Y.Z`
+  posé par le CI.
+- **Démarrage du cycle dev** : bumper DESCRIPTION → `X.Y.Z.9000`. NEWS.md
+  et CITATION.cff **restent** sur `X.Y.Z` (la dernière release).
+- **Pendant le dev** : DESCRIPTION reste `X.Y.Z.9000`.
+- **Release suivante** : poser une version stable `X.Y.(Z+1)` (ou
+  `X.(Y+1).0`, etc.) dans DESCRIPTION **et** NEWS **et** CITATION, merger.
+
+`release.yml` **ignore** les versions `.9000+` (gate « stable only »), et
+le garde-fou `version-consistency` **saute** quand DESCRIPTION est en
+cycle dev (il ne compare DESCRIPTION = NEWS = CITATION que pour une
+version stable `X.Y.Z`). Un push de cycle dev ne déclenche donc ni
+release ni échec CI.
 
 ## Règles de cohérence
 
-- La version dans DESCRIPTION, le tag git et la release GitHub doivent
-  être strictement identiques.
-- Ne jamais pousser un tag sans avoir d'abord mis à jour DESCRIPTION et NEWS.md.
-- Vérifier que la page de documentation est aussi à jour de la version et de ses tags.
+- Pour une version **stable**, DESCRIPTION = tête de NEWS.md = CITATION.cff
+  (vérifié en CI par `version-consistency`). Le tag et la release sont
+  ensuite posés automatiquement et donc identiques par construction.
+- Vérifier que la page de documentation (pkgdown) est à jour — elle rend
+  le README (badge dynamique) et lit la version de DESCRIPTION.
 - Toujours demander confirmation avant un bump majeur.
 
 ## Règles strictes
