@@ -1,3 +1,17 @@
+# nemeton 0.76.2 (2026-06-13)
+
+### Changed — corpus RAG : 4 papiers scannés OCRisés → texte intégral
+
+Les 4 PDF BILJOU scannés (Bréda 1993/2002/2008, Granier 1996), repassés en
+référence en v0.76.1 faute de couche texte, sont désormais **OCRisés**
+(`tesseract` fra+eng via conda, 300 dpi) → ré-ingérés en **texte intégral**.
+Corpus prod : **60 docs en texte intégral / 81** (6 120 chunks, 0 embedding
+manquant) — le maximum (les 21 références restantes n'ont aucun contenu
+disponible : portails, payants sans PDF, ouvrages non hébergés).
+
+Le texte OCR (`data-raw/references/biljou/ocr/*.md`) est **gitignoré** (papiers
+copyright). Script de reproduction : `data-raw/ocr_biljou_scans.sh`.
+
 # nemeton 0.76.1 (2026-06-13)
 
 ### Fixed — corpus RAG : 4 PDF BILJOU scannés → `link_only`
