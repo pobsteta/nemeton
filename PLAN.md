@@ -549,6 +549,19 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-06-13 — `reset_knowledge_manifest()` : fix copie writable figée (E7, cœur, v0.79.0)
+
+Bug remonté : l'onglet RAG de `nemetonshiny` listait encore les 12 tutos
+retirés en v0.75.0. Cause : `knowledge_manifest_path(writable=TRUE)` copie la
+seed **une seule fois** (`overwrite=FALSE`) puis ne la rafraîchit jamais — la
+copie user-data (`~/.local/share/R/nemeton/knowledge_corpus.csv`) était figée
+sur l'ancien manifest (39 docs/10 tutos) alors que seed/installé/prod sont à 81
+docs/0 tuto. Copie locale rafraîchie à la main, **et** correctif durable :
+nouvelle fonction exportée **`reset_knowledge_manifest(confirm=TRUE)`** (réint
+explicite de la copie writable depuis la seed) à câbler à un bouton
+« Réinitialiser depuis le corpus du package » côté app (brief fourni). Tests
+`test-knowledge-manifest-api.R` 35 ✔. `.Rd`+NAMESPACE à la main.
+
 ### 2026-06-13 — RECONFORT L4 : R5 unifié routé par essence (spec 021, cœur, v0.78.0)
 
 `indicateur_r5_deperissement()` gagne `reconfort_results` + `weights_reconfort`

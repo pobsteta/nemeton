@@ -1,3 +1,16 @@
+# nemeton 0.79.0 (2026-06-13)
+
+### Added — `reset_knowledge_manifest()` (corpus RAG)
+
+Nouvelle fonction exportée qui **ré-écrase la copie writable du manifest**
+(celle éditée depuis l'app, `knowledge_manifest_path(writable = TRUE)`) avec
+la seed du package installé. La copie writable est créée **une seule fois** et
+jamais rafraîchie (pour préserver les éditions faites dans l'app), si bien
+qu'une copie ancienne continuait de lister des documents que le package ne
+livre plus (p. ex. les tutoriels retirés en v0.75.0). À câbler à un bouton
+« Réinitialiser depuis le corpus du package » dans l'onglet RAG de
+`nemetonshiny`. Garde-fou : `confirm = TRUE` obligatoire.
+
 # nemeton 0.78.0 (2026-06-13)
 
 ### Added — R5 dépérissement unifié, routé par essence (spec 021, lot L4)

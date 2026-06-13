@@ -151,6 +151,34 @@ test_that("knowledge_manifest_path(writable) seeds the project copy", {
   })
 })
 
+test_that("reset_knowledge_manifest() needs confirm = TRUE", {
+  expect_error(reset_knowledge_manifest(confirm = FALSE), "confirm")
+})
+
+test_that("reset_knowledge_manifest() refreshes a stale writable copy", {
+  skip_if_not_installed("withr")
+  withr::with_tempdir({
+    dest <- file.path(getwd(), "writable_manifest.csv")
+    withr::with_envvar(c(NEMETON_KNOWLEDGE_MANIFEST = dest), {
+      # A stale writable copy with a doc the packaged seed no longer ships.
+      writeLines(c(
+        paste(readLines(knowledge_manifest_path(), n = 1)),   # header
+        'tuto_99,"Stale tutorial",X,nemeton,2020-01-01,fr,manual,,MIT,TRUE,C,chercheur,full,x.Rmd,cleared,stale'
+      ), dest)
+      expect_equal(nrow(read_knowledge_manifest(dest)), 1L)
+      expect_true(any(grepl("tuto_99", readLines(dest))))
+
+      out <- reset_knowledge_manifest()
+      expect_identical(out, dest)
+      # now equals the packaged seed: same rows, no stale doc
+      seed <- read_knowledge_manifest(knowledge_manifest_path())
+      after <- read_knowledge_manifest(dest)
+      expect_equal(nrow(after), nrow(seed))
+      expect_false(any(grepl("tuto_99", readLines(dest))))
+    })
+  })
+})
+
 test_that("knowledge_manifest_path() returns the packaged seed", {
   p <- knowledge_manifest_path()
   expect_true(file.exists(p))

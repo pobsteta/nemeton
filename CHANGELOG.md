@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.79.0] - 2026-06-13
+
+### Added
+
+- `reset_knowledge_manifest(confirm = TRUE)`: overwrites the writable
+  project manifest copy with the packaged seed. The writable copy is created
+  once and never auto-refreshed, so a stale copy kept listing documents the
+  package no longer ships (e.g. the tutorials removed in 0.75.0). Meant to back
+  a "reset to packaged corpus" action in the nemetonshiny RAG admin tab.
+
 ## [0.78.0] - 2026-06-13
 
 ### Added
