@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.75.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.75.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,9 +39,23 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/v0.75.2/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/v0.75.3/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.75.3" id="nemeton-0753-2026-06-13">nemeton 0.75.3 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0753-2026-06-13"></a></h2>
+<div class="section level4">
+<h4 id="changed--corpus-rag--références-passent-en-texte-intégral-0-75-3">Changed — corpus RAG : 3 références passent en texte intégral<a class="anchor" aria-label="anchor" href="#changed--corpus-rag--r%C3%A9f%C3%A9rences-passent-en-texte-int%C3%A9gral-0-75-3"></a></h4>
+<p>Récupération de PDF open-access (hors hôtes Cloudflare) pour 3 docs qui étaient en <code>link_only</code>, désormais ingérés en <strong>texte intégral</strong> (<code>full</code>) :</p>
+<ul><li>
+<strong>Duplat &amp; Tran-Ha 1997</strong> (croissance hauteur chêne) — EDP afs-journal.</li>
+<li>
+<strong>Larrieu — IBP</strong> (guide CNPF v3.2) — cnpf.fr.</li>
+<li>
+<strong>Stratégie UE pour les forêts COM(2021) 572</strong> — EUR-Lex.</li>
+</ul><p>Manifest : <strong>14 docs full-text + 67 références</strong> (81/81). Les PDF non récupérables (Monnet via MDPI/HAL Cloudflare, portails OFB/ONF/CNPF, paywall) restent <code>link_only</code> ; <code>data-raw/references/README.md</code> consigne les liens directs pour récupération manuelle.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.75.2" id="nemeton-0752-2026-06-13">nemeton 0.75.2 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0752-2026-06-13"></a></h2>
 <div class="section level4">

@@ -1,5 +1,23 @@
 # Changelog
 
+## nemeton 0.75.3 (2026-06-13)
+
+#### Changed — corpus RAG : 3 références passent en texte intégral
+
+Récupération de PDF open-access (hors hôtes Cloudflare) pour 3 docs qui
+étaient en `link_only`, désormais ingérés en **texte intégral** (`full`)
+:
+
+- **Duplat & Tran-Ha 1997** (croissance hauteur chêne) — EDP
+  afs-journal.
+- **Larrieu — IBP** (guide CNPF v3.2) — cnpf.fr.
+- **Stratégie UE pour les forêts COM(2021) 572** — EUR-Lex.
+
+Manifest : **14 docs full-text + 67 références** (81/81). Les PDF non
+récupérables (Monnet via MDPI/HAL Cloudflare, portails OFB/ONF/CNPF,
+paywall) restent `link_only` ; `data-raw/references/README.md` consigne
+les liens directs pour récupération manuelle.
+
 ## nemeton 0.75.2 (2026-06-13)
 
 #### Changed — corpus RAG : les 21 docs sans source entrent au corpus
