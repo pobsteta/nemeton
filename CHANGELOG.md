@@ -10,6 +10,24 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.75.4] - 2026-06-13
+
+### Changed
+
+- RAG corpus: 44 BILJOU reference papers (+ user-deposited Monnet & Peiffer)
+  wired to full-text from the PDFs hosted by INRAE on the BILJOU portal
+  (`appgeodb.nancy.inrae.fr/biljou/pdf/`). Ex-`copyright` rows retagged
+  `license=HAL` (open archive, non-commercial), consistent with Bontemps/Charru.
+  Also fills 2 institutional gaps (Bréthes 1997 soils, Badeau RENECOFOR
+  feasibility "Livre Jaune"). Manifest: 60 full-text + 21 references (81/81,
+  0 skipped). Remaining references: 4 non-BILJOU copyright papers, unhosted
+  books (Quae/Biotope/AFORCE), EFI (dead links), portal-only docs.
+
+### Added
+
+- `data-raw/wire_biljou_pdfs.R` (filename → doc_id mapping). `.gitignore`
+  extended to `data-raw/references/**/*.pdf` for the `biljou/` subfolder.
+
 ## [0.75.3] - 2026-06-13
 
 ### Changed
