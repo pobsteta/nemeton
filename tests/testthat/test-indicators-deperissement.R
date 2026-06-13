@@ -107,13 +107,13 @@ test_that("multi-class coverage adds up linearly (3-forte + 4-sol-nu)", {
   expect_equal(out$R5, 38.6, tolerance = 1e-6)
 })
 
-test_that("non-conifer unit (Quercus) → skipped_no_resineux", {
+test_that("oak unit routes to RECONFORT → skipped_no_reconfort when no run", {
   skip_if_not_installed("terra")
   u <- make_units(n = 1L, species = "Quercus petraea")
   fr <- make_fordead(u, list(list(list(class = "3-forte", frac = 0.5))))
-  out <- indicateur_r5_deperissement(u, fr)
+  out <- indicateur_r5_deperissement(u, fr)   # oak -> reconfort, none given
   expect_true(is.na(out$R5))
-  expect_equal(out$r5_status, "skipped_no_resineux")
+  expect_equal(out$r5_status, "skipped_no_reconfort")
 })
 
 test_that("classes 1-faible / 2-moyenne are excluded by default (G1)", {
@@ -174,7 +174,7 @@ test_that("custom resineux_col overrides species detection", {
   out <- indicateur_r5_deperissement(u, fr,
                                      resineux_col = "pct_resineux")
   expect_equal(out$r5_status,
-               c("calculated", "skipped_no_resineux"))
+               c("calculated", "skipped_no_method"))
   expect_equal(out$R5[1], 41, tolerance = 1e-6)
   expect_true(is.na(out$R5[2]))
 })
@@ -202,7 +202,7 @@ test_that("min_resineux threshold is honoured", {
                                      resineux_col = "pct_resineux",
                                      min_resineux = 0.3)
   expect_equal(out$r5_status,
-               c("calculated", "skipped_no_resineux"))
+               c("calculated", "skipped_no_method"))
 })
 
 test_that("custom weights override the default ONF/DSF table", {
@@ -259,6 +259,62 @@ test_that("R5 is picked up by create_family_index() under the R family", {
   # and lies in [0, 100].
   expect_true(all(out$famille_risque >= 0 & out$famille_risque <= 100,
                   na.rm = TRUE))
+})
+
+# ---- L4: species routing (RECONFORT vs FORDEAD) ----------------------
+
+test_that("oak unit + RECONFORT run → calculated_reconfort", {
+  skip_if_not_installed("terra")
+  u  <- make_units(n = 1L, species = "Quercus petraea")
+  rr <- make_fordead(u, list(list(list(class = "3-tres-deperissant", frac = 0.5))))
+  out <- indicateur_r5_deperissement(u, reconfort_results = rr)
+  expect_equal(out$r5_status, "calculated_reconfort")
+  expect_equal(out$R5, 40, tolerance = 1e-6)        # 0.80 * 0.5
+})
+
+test_that("Scots pine routes to RECONFORT (PS)", {
+  skip_if_not_installed("terra")
+  u  <- make_units(n = 1L, species = "PS")
+  rr <- make_fordead(u, list(list(list(class = "2-deperissant", frac = 0.5))))
+  out <- indicateur_r5_deperissement(u, reconfort_results = rr)
+  expect_equal(out$r5_status, "calculated_reconfort")
+  expect_equal(out$R5, 25, tolerance = 1e-6)        # 0.50 * 0.5 (flat default)
+})
+
+test_that("mixed zone routes EPC→FORDEAD and oak→RECONFORT", {
+  skip_if_not_installed("terra")
+  u  <- make_units(n = 2L, species = c("EPC", "Quercus petraea"))
+  fr <- make_fordead(u, list(list(list(class = "3-forte", frac = 0.5)), NULL))
+  rr <- make_fordead(u, list(NULL, list(list(class = "3-tres-deperissant", frac = 0.5))))
+  out <- indicateur_r5_deperissement(u, fordead_results = fr,
+                                     reconfort_results = rr)
+  expect_equal(out$r5_status, c("calculated", "calculated_reconfort"))
+  expect_equal(out$R5[1], 41, tolerance = 1e-6)     # FORDEAD 0.82 * 0.5
+  expect_equal(out$R5[2], 40, tolerance = 1e-6)     # RECONFORT 0.80 * 0.5
+})
+
+test_that("species matching no method → skipped_no_method", {
+  skip_if_not_installed("terra")
+  u  <- make_units(n = 1L, species = "Fagus sylvatica")   # beech: neither
+  fr <- make_fordead(u, list(list(list(class = "3-forte", frac = 0.5))))
+  rr <- make_fordead(u, list(list(list(class = "3-tres-deperissant", frac = 0.5))))
+  out <- indicateur_r5_deperissement(u, fordead_results = fr,
+                                     reconfort_results = rr)
+  expect_true(is.na(out$R5))
+  expect_equal(out$r5_status, "skipped_no_method")
+})
+
+test_that("feuillus_col forces RECONFORT routing over species", {
+  skip_if_not_installed("terra")
+  u <- make_units(n = 2L, species = "EPC")              # would be FORDEAD
+  u$pct_feuillus <- c(0.8, 0.1)
+  rr <- make_fordead(u, list(
+    list(list(class = "3-tres-deperissant", frac = 0.5)),
+    list(list(class = "3-tres-deperissant", frac = 0.5))))
+  out <- indicateur_r5_deperissement(u, reconfort_results = rr,
+                                     feuillus_col = "pct_feuillus")
+  expect_equal(out$r5_status, c("calculated_reconfort", "skipped_no_method"))
+  expect_equal(out$R5[1], 40, tolerance = 1e-6)
 })
 
 test_that("R5 NA values do not poison family aggregation when other R indicators exist", {

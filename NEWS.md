@@ -1,3 +1,24 @@
+# nemeton 0.78.0 (2026-06-13)
+
+### Added — R5 dépérissement unifié, routé par essence (spec 021, lot L4)
+
+`indicateur_r5_deperissement()` accepte désormais `reconfort_results` (+
+`weights_reconfort`, `min_feuillus`, `feuillus_col`) et **route chaque UGF
+vers la méthode calibrée pour son essence dominante** :
+
+- chêne / châtaignier / pin sylvestre → score via **RECONFORT** ;
+- épicéa / sapin → score via **FORDEAD** (comportement inchangé) ;
+- essence hors méthode → `R5 = NA`, statut `skipped_no_method`.
+
+`r5_status` s'enrichit de `calculated_reconfort`, `skipped_no_reconfort`,
+`skipped_no_method` (l'ancien `skipped_no_resineux` disparaît au profit de ce
+vocabulaire unifié). Un `resineux_col` / `feuillus_col` explicite épingle la
+méthode. R5 reste une colonne 0-100 (aucun changement de signature radar). Les
+poids RECONFORT par défaut sont **provisoires** (sous-ensemble dépérissant de
+`RECONFORT_CONFIDENCE_WEIGHTS`, à caler sur la matrice de confusion amont).
+
+Suite : L5 (persistance features + `read_reconfort_pixel_series()`).
+
 # nemeton 0.77.0 (2026-06-13)
 
 ### Added — RECONFORT post-process : rasters → table `alert` (spec 021, lot L3)
