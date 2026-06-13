@@ -111,6 +111,19 @@ ingested full-text by the RAG corpus build. PDFs gitignored; download to
   COM(2021) 572.* → `Strategie_foret_UE_2021_COM572.pdf`
   <https://eur-lex.europa.eu/resource.html?uri=cellar:0d918e07-e610-11eb-a1a5-01aa75ed71a1.0012.02/DOC_1&format=PDF>
 
+### BILJOU-hosted reference PDFs (`biljou/` subfolder)
+
+The BILJOU tool (INRAE Nancy) hosts the PDFs of its cited bibliography on its
+own portal. ~50 of them are reachable with `curl` and feed the full-text
+corpus (`license=HAL`, open-archive hosting). Reconstitute:
+
+1. The PDF hrefs are listed on the 11 fiches under
+   `https://appgeodb.nancy.inrae.fr/biljou/pdf/<name>` — grep the fiches for
+   `href="…\.pdf"` and download into `data-raw/references/biljou/`.
+2. Run `Rscript data-raw/wire_biljou_pdfs.R` — it maps each BILJOU filename to
+   its `doc_id`, sets `local_path`, flips the row to `full` and retags
+   ex-`copyright` rows to `HAL`.
+
 ### Open-access PDFs to fetch manually (anti-bot blocks scripted download)
 
 These refs are open access but their host (`hal.science` Cloudflare, MDPI)
