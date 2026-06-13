@@ -80,6 +80,32 @@ stochastic frontier for PIAB from Seynave 2005, etc.); this
 requires non-linear mixed-effects fits over IFN microdata and is
 out of scope of a single documentation pass.
 
+## Knowledge corpus — BILJOU institutional sources (`build_knowledge_corpus.R`)
+
+Cleared institutional reports cited by the BILJOU tool (INRAE Nancy) and
+ingested full-text by the RAG corpus build. PDFs gitignored; download to
+`data-raw/references/` under the filename used in `knowledge_corpus_v1.csv`
+(`local_path`):
+
+- **Ulrich E., Lelong N., Lanier M., Schneider (1995).** *Interception des
+  pluies en forêt — sous-réseau CATAENAT de RENECOFOR.* ONF, Bulletin
+  technique n°30. → `Ulrich_et_al_1995.pdf`
+  <https://appgeodb.nancy.inrae.fr/biljou/pdf/Ulrich_et_al_1995.pdf>
+- **Badeau V. & Bréda N. (2008).** *Modélisation du bilan hydrique : étape
+  clé.* RDV techniques hors-série n°4, ONF. → `Badeau_Breda_2008_RENECOFOR.pdf`
+  <https://appgeodb.nancy.inrae.fr/biljou/pdf/Badeau_Br%C3%A9da_2008_RENECOFOR.pdf>
+- **Allen R.G., Pereira L.S., Raes D., Smith M. (1998).** *Crop
+  evapotranspiration — FAO Irrigation and Drainage Paper 56.* FAO, Rome.
+  → `FAO56_x0490e.pdf` (official: <https://www.fao.org/3/x0490e/x0490e00.htm>;
+  single-PDF copies available from public mirrors).
+
+Other cleared institutional refs without a public full-text PDF (reference
+only, `source_url` in the manifest): Badeau & Ulrich 2008 and Peiffer et al.
+2008 ([HAL hal-02813279](https://hal.inrae.fr/hal-02813279),
+[HAL hal-03758947](https://hal.inrae.fr/hal-03758947)); EFI WSCTU n°1
+([efi.int](https://efi.int/publications-bank/wsctu)); Bréthes & Ulrich 1997
+(no public digital edition).
+
 ## H_dom → D_g allometry (NDP 1 synthetic inventory)
 
 The per-species power-law parameters used by

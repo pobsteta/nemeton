@@ -1,3 +1,29 @@
+# nemeton 0.75.0 (2026-06-13)
+
+### Changed — corpus de connaissances RAG (E7) : recentrage sources externes
+
+Curation du manifest `inst/extdata/knowledge_corpus_v1.csv` (spec 009/009.1).
+
+- **Retrait de l'amorçage interne** : les 12 documents internes MIT (10
+  tutoriels `inst/tutorials/*` + specs 005/008) sont sortis du manifest.
+  Le corpus s'appuie désormais sur des sources externes citables plutôt que
+  sur la documentation du package elle-même.
+- **+54 références BILJOU** : intégration de toutes les références citées par
+  l'outil BILJOU (INRAE Nancy, modèle de bilan hydrique forestier ;
+  11 fiches pédagogiques). Familles principales `W` (eau/régulation), `R3`
+  (sécheresse), `C` (vitalité/LAI), `F` (sols), `T` (phénologie). Par défaut
+  prudent (gel licence D5) : `status=to_confirm`, `ingest_strategy=abstract_only`,
+  `license=copyright` — jamais en full-text avant arbitrage.
+- **8 rapports institutionnels passés en `cleared`** : ONF/RENECOFOR
+  (`LO-Etalab`), FAO Irrigation & Drainage Paper 56 (`CC-BY-NC`), EFI
+  *What Science Can Tell Us* n°1 (`CC-BY`). URLs publiques renseignées
+  (HAL, FAO, EFI, PDF hébergés par BILJOU) ; 3 PDF directement ingérables
+  ajoutés au plan de build (full-text : 7 → 10 PDF).
+
+Le manifest passe de 39 à **81 docs** (31 `cleared` + 50 `to_confirm`).
+Scripts de provenance reproductibles sous `data-raw/` (`add_biljou_refs.R`,
+`clear_biljou_institutional.R`, `url_biljou_institutional.R`).
+
 # nemeton 0.74.0 (2026-06-12)
 
 ### Added — RECONFORT, orchestration end-to-end (spec 021, lot L2b.3)
