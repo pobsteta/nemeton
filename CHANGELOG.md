@@ -12,6 +12,21 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.76.1\] - 2026-06-13
+
+### Fixed
+
+- RAG corpus: 4 BILJOU PDFs are scanned images with no text layer
+  (`pdf_text` → 0 chars) and failed full-text ingestion. Set to
+  `link_only` (citable references) → prod corpus 81/81, 0 errors (56
+  full-text + 25 references, 6033 chunks). OCR would be required for
+  full-text.
+
+### Added
+
+- `data-raw/fill_corpus_prod.sh`: incremental (non-FRESH) prod corpus
+  build to complete a partial run without re-ingesting everything.
+
 ## \[0.76.0\] - 2026-06-13
 
 ### Added
@@ -268,13 +283,14 @@ concise, categorised trail.
 ### Changed
 
 - CI back to green (R-CMD-check, tests, coverage, pkgdown). The `tests`
-  job now runs the real suite via `devtools::test()`; `R-CMD-check` uses
-  `--no-tests`/`--no-build-vignettes`; `pkgdown` gains `rsconnect` and a
-  complete reference index (111 missing topics added). A capability
-  guard (`skip_if_terra_write_broken()`) skips raster tests on a GitHub
-  runner exhibiting a terra “no valid constructor” anomaly (not
-  reproducible locally; the whole suite passes locally), running them
-  fully everywhere else.
+  job now runs the real suite via
+  [`devtools::test()`](https://devtools.r-lib.org/reference/test.html);
+  `R-CMD-check` uses `--no-tests`/`--no-build-vignettes`; `pkgdown`
+  gains `rsconnect` and a complete reference index (111 missing topics
+  added). A capability guard (`skip_if_terra_write_broken()`) skips
+  raster tests on a GitHub runner exhibiting a terra “no valid
+  constructor” anomaly (not reproducible locally; the whole suite passes
+  locally), running them fully everywhere else.
 
 ## \[0.67.0\] - 2026-06-04
 

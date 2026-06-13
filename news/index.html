@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.76.1" id="nemeton-0761-2026-06-13">nemeton 0.76.1 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0761-2026-06-13"></a></h2>
+<div class="section level4">
+<h4 id="fixed--corpus-rag--pdf-biljou-scannés--link_only-0-76-1">Fixed — corpus RAG : 4 PDF BILJOU scannés → <code>link_only</code>
+<a class="anchor" aria-label="anchor" href="#fixed--corpus-rag--pdf-biljou-scann%C3%A9s--link_only-0-76-1"></a></h4>
+<p>Quatre PDF hébergés par BILJOU (Bréda 1993 <em>water transfer</em>, Granier 1996 <em>sapflow</em>, Bréda 2002 <em>réservoir sols</em>, Bréda 2008 <em>pompe biologique</em>) sont des <strong>images scannées sans couche texte</strong> (<code>pdf_text</code> → 0 caractère) : ils échouaient à l’ingestion full-text. Repassés en <code>ingest_strategy=link_only</code> (références citables) → corpus prod <strong>81/81, 0 erreur</strong> (56 texte intégral + 25 références, 6 033 chunks). OCR requis pour les passer un jour en texte intégral. Ajout du script <code>data-raw/fill_corpus_prod.sh</code> (build prod <strong>incrémental</strong> non-FRESH, pour compléter un build partiel sans tout réécraser).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.76.0" id="nemeton-0760-2026-06-13">nemeton 0.76.0 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0760-2026-06-13"></a></h2>
 <div class="section level4">
@@ -221,7 +229,7 @@
 </div>
 <div class="section level4">
 <h4 id="internal--ci-verte-et-garde-fou-anomalie-terra-du-runner-0-69-2">Internal — CI verte et garde-fou anomalie terra du runner<a class="anchor" aria-label="anchor" href="#internal--ci-verte-et-garde-fou-anomalie-terra-du-runner-0-69-2"></a></h4>
-<p>La CI (<code>R-CMD-check</code>, <code>tests</code>, <code>coverage</code>, <code>pkgdown</code>) repasse au vert après plusieurs corrections d’infrastructure préexistantes, sans rapport avec le code métier : le job <code>tests</code> exécute désormais réellement la suite (<code>devtools::test()</code> au lieu d’un <code>test_package()</code> qui ne trouvait aucun test installé) ; <code>R-CMD-check</code> délègue les tests au job dédié (<code>--no-tests</code>) et saute le build des vignettes ; <code>pkgdown</code> gagne <code>rsconnect</code> (tutoriels) et l’index de référence liste les 111 topics exportés manquants. Surtout, un <strong>garde-fou par capacité</strong> (<code>skip_if_terra_write_broken()</code>) neutralise une anomalie terra <strong>propre au runner GitHub</strong> (terra::rast/writeRaster y lèvent « no valid constructor » dans le contexte testthat, alors que le même code passe en local — toute la suite passe, PASS 7381) : les tests raster <strong>skippent</strong> sur ce runner et <strong>tournent en entier</strong> partout ailleurs. Le code reste prouvé correct.</p>
+<p>La CI (<code>R-CMD-check</code>, <code>tests</code>, <code>coverage</code>, <code>pkgdown</code>) repasse au vert après plusieurs corrections d’infrastructure préexistantes, sans rapport avec le code métier : le job <code>tests</code> exécute désormais réellement la suite (<code><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">devtools::test()</a></code> au lieu d’un <code>test_package()</code> qui ne trouvait aucun test installé) ; <code>R-CMD-check</code> délègue les tests au job dédié (<code>--no-tests</code>) et saute le build des vignettes ; <code>pkgdown</code> gagne <code>rsconnect</code> (tutoriels) et l’index de référence liste les 111 topics exportés manquants. Surtout, un <strong>garde-fou par capacité</strong> (<code>skip_if_terra_write_broken()</code>) neutralise une anomalie terra <strong>propre au runner GitHub</strong> (terra::rast/writeRaster y lèvent « no valid constructor » dans le contexte testthat, alors que le même code passe en local — toute la suite passe, PASS 7381) : les tests raster <strong>skippent</strong> sur ce runner et <strong>tournent en entier</strong> partout ailleurs. Le code reste prouvé correct.</p>
 </div>
 </div>
     <div class="section level2">
@@ -459,7 +467,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 </ul><p>Fichiers <code>R/read_obs_pixel.R</code>, <code>R/fast_alerts.R</code>, <code>R/alerts.R</code> et leurs <code>man/*.Rd</code> supprimés ; exports retirés du <code>NAMESPACE</code>. Les helpers internes associés partent avec (<code>.empty_obs_pixel()</code>, <code>.coerce_obs_date()</code>, <code>.empty_fast_alerts()</code>, <code>.coerce_alert_date()</code>). La table <code>alert</code> reste en place : elle est toujours alimentée par le post-traitement FORDEAD (<code><a href="../reference/list_alerts.html">list_alerts()</a></code> la lit).</p>
 <p><strong>Simplification du schéma</strong> : le <code>CREATE TABLE obs_pixel</code> (+ <code>create_hypertable</code> PG) est retiré des migrations <code>0001_init.sql</code> (PG + SQLite) — les <strong>nouvelles</strong> bases ne créent plus jamais la table. La migration <code>0004_drop_obs_pixel.sql</code> est conservée pour les bases <strong>existantes</strong> (DROP idempotent ; no-op sur une base neuve).</p>
 <p><strong>Breaking</strong> pour tout appel direct aux trois fonctions retirées (elles émettaient déjà un <code>cli_warn</code> de dépréciation en v0.58.0). Côté app : <code>nemetonshiny@v0.52.16</code> ne les consomme plus → aucun impact.</p>
-<p><strong>Tests</strong> : <code>test-obs_pixel-deprecation.R</code> supprimé (fonctions parties) ; <code>test-db.R</code> vérifie l’absence de <code>obs_pixel</code> après migration sur une base neuve (PG + SQLite) ; suites <code>obs_pixel</code> legacy déjà retirées en v0.58.0. <strong>NON TESTÉ EN CI ICI</strong> (pas de R) — rejouer sur les deux backends + <code>devtools::document()</code> (les <code>man/*.Rd</code> ont été ajustés à la main).</p>
+<p><strong>Tests</strong> : <code>test-obs_pixel-deprecation.R</code> supprimé (fonctions parties) ; <code>test-db.R</code> vérifie l’absence de <code>obs_pixel</code> après migration sur une base neuve (PG + SQLite) ; suites <code>obs_pixel</code> legacy déjà retirées en v0.58.0. <strong>NON TESTÉ EN CI ICI</strong> (pas de R) — rejouer sur les deux backends + <code><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">devtools::document()</a></code> (les <code>man/*.Rd</code> ont été ajustés à la main).</p>
 </div>
 </div>
     <div class="section level2">
@@ -483,7 +491,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 </ul></li>
 <li>Helpers internes retirés : <code>.insert_obs_pixel()</code>, <code>.find_cached_obs_dates()</code> ; <code>.extract_scene_obs()</code> remplacé par <code>.cache_scene_bands()</code> (cache des bandes COG uniquement) + helpers <code>.s2_required_bands()</code> / <code>.scene_cogs_cached()</code>.</li>
 </ul><p><strong>Non breaking côté app</strong> (<code>nemetonshiny@v0.52.16</code> ne lit plus <code>obs_pixel</code>, aucun bump <code>Imports</code> requis) ; <strong>breaking pour quiconque appelle directement</strong> <code>read_obs_pixel()</code> / <code>list_fast_alerts_for_zone()</code> / <code>detect_alerts()</code> (dépréquation + warning maintenant, retrait v0.60.0).</p>
-<p><strong>Tests</strong> : <code>test-monitoring.R</code> réécrit (amorçage cache COG + skip COG-based, plus aucune assertion <code>obs_pixel</code> / <code>n_obs_inserted</code>) ; <code>test-db.R</code> vérifie que <code>0004</code> supprime <code>obs_pixel</code> (PG + SQLite, idempotent) ; <code>test-ingest-cancel.R</code> assertion partielle sur le cache COG ; <code>test-obs_pixel-deprecation.R</code> (nouveau) couvre les 3 avertissements. Suites supprimées : <code>test-read_obs_pixel.R</code>, <code>test-fast_alerts.R</code>, <code>test-alerts.R</code>, <code>test-insert-obs-pixel-sqlite.R</code> (toutes adossées à <code>obs_pixel</code>). <strong>NON TESTÉ EN CI ICI</strong> (pas de R dans l’environnement) — à rejouer sur machine avec R sur les <strong>deux backends</strong> (Postgres + SQLite) via <code>NEMETON_DB_URL_TEST</code> (rappel v0.54.0), et <code>devtools::document()</code> à exécuter (les <code>man/*.Rd</code> ont été mis à jour à la main).</p>
+<p><strong>Tests</strong> : <code>test-monitoring.R</code> réécrit (amorçage cache COG + skip COG-based, plus aucune assertion <code>obs_pixel</code> / <code>n_obs_inserted</code>) ; <code>test-db.R</code> vérifie que <code>0004</code> supprime <code>obs_pixel</code> (PG + SQLite, idempotent) ; <code>test-ingest-cancel.R</code> assertion partielle sur le cache COG ; <code>test-obs_pixel-deprecation.R</code> (nouveau) couvre les 3 avertissements. Suites supprimées : <code>test-read_obs_pixel.R</code>, <code>test-fast_alerts.R</code>, <code>test-alerts.R</code>, <code>test-insert-obs-pixel-sqlite.R</code> (toutes adossées à <code>obs_pixel</code>). <strong>NON TESTÉ EN CI ICI</strong> (pas de R dans l’environnement) — à rejouer sur machine avec R sur les <strong>deux backends</strong> (Postgres + SQLite) via <code>NEMETON_DB_URL_TEST</code> (rappel v0.54.0), et <code><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">devtools::document()</a></code> à exécuter (les <code>man/*.Rd</code> ont été mis à jour à la main).</p>
 </div>
 </div>
     <div class="section level2">
@@ -564,7 +572,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 </ol></li>
 <li>Nouveau <code>tests/testthat/test-helper-guards.R</code> (4 tests offline du garde-fou). Nouveau <code>.Renviron.example</code>. Section dédiée ajoutée à <code>CLAUDE.md</code> (setup <code>nemeton_test</code>).</li>
 <li>
-<strong>Breaking côté setup dev</strong> : <code>devtools::test()</code> exige maintenant un <code>NEMETON_DB_URL_TEST</code> dédié pour faire tourner les tests d’intégration. Sans lui, ils sont skippés (la suite reste verte). Aucun changement d’API publique — rien à faire côté <code>nemetonshiny</code>.</li>
+<strong>Breaking côté setup dev</strong> : <code><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">devtools::test()</a></code> exige maintenant un <code>NEMETON_DB_URL_TEST</code> dédié pour faire tourner les tests d’intégration. Sans lui, ils sont skippés (la suite reste verte). Aucun changement d’API publique — rien à faire côté <code>nemetonshiny</code>.</li>
 </ul></div>
 </div>
     <div class="section level2">
@@ -928,7 +936,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 <h2 class="pkg-version" data-toc-text="0.43.1" id="nemeton-0431-2026-05-22">nemeton 0.43.1 (2026-05-22)<a class="anchor" aria-label="anchor" href="#nemeton-0431-2026-05-22"></a></h2>
 <div class="section level4">
 <h4 id="fixed--r-cmd-check-debt-cleanup-0-43-1">Fixed — <code>R CMD check</code> debt cleanup<a class="anchor" aria-label="anchor" href="#fixed--r-cmd-check-debt-cleanup-0-43-1"></a></h4>
-<p>Maintenance release that clears the accumulated <code>devtools::check()</code> warnings and notes (no functional change):</p>
+<p>Maintenance release that clears the accumulated <code><a href="https://devtools.r-lib.org/reference/check.html" class="external-link">devtools::check()</a></code> warnings and notes (no functional change):</p>
 <ul><li>
 <strong>Corrupt Rd files</strong> — <code>man/ingest_s2_raw_bands_to_cache.Rd</code> and <code>man/ingest_sentinel2_timeseries.Rd</code> were stale, hand-edited artefacts (unbalanced braces from an unescaped <code>%</code>, unknown <code>\item</code> macros). Regenerated cleanly from roxygen; the <code>@param max_cloud</code> text now says “percent” instead of “(%)”.</li>
 <li>
@@ -4245,7 +4253,7 @@ docker compose up -d timescaledb</code></pre>
 <div class="section level3">
 <h3 id="roadmap-to-v010-0-1-0">Roadmap to v0.1.0<a class="anchor" aria-label="anchor" href="#roadmap-to-v010-0-1-0"></a></h3>
 <ul class="task-list"><li><label><input type="checkbox">Fix test fixtures</label></li>
-<li><label><input type="checkbox">Verify <code>devtools::check()</code> passes</label></li>
+<li><label><input type="checkbox">Verify <code><a href="https://devtools.r-lib.org/reference/check.html" class="external-link">devtools::check()</a></code> passes</label></li>
 <li><label><input type="checkbox">Measure test coverage (target: ≥70%)</label></li>
 <li><label><input type="checkbox">Optional: Implement <code><a href="../reference/nemeton_radar.html">nemeton_radar()</a></code> (P3)</label></li>
 </ul></div>
