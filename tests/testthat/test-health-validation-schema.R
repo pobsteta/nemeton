@@ -103,3 +103,45 @@ test_that("stade-to-status mapping reflects the spec", {
   expect_true(is.na(nemeton:::.health_stade_to_status(NA)$status))
   expect_true(is.na(nemeton:::.health_stade_to_status("")$status))
 })
+
+
+# ---- RECONFORT (broadleaf) method, spec 021 G4 -----------------------
+
+test_that("get_health_validation_schema(method='reconfort') uses feuillus vocab", {
+  schema <- get_health_validation_schema(method = "reconfort")
+  stade <- Filter(function(f) f$name == "stade_deperissement", schema)[[1]]
+  cause <- Filter(function(f) f$name == "cause", schema)[[1]]
+  expect_setequal(stade$domain, HEALTH_VALIDATION_STADES_FEUILLUS)
+  expect_setequal(cause$domain, HEALTH_VALIDATION_CAUSES_FEUILLUS)
+  cc <- Filter(function(f) f$name == "confidence_class", schema)[[1]]
+  expect_match(cc$label, "RECONFORT")
+})
+
+test_that("default method stays FORDEAD (backward compatible)", {
+  schema <- get_health_validation_schema()
+  stade <- Filter(function(f) f$name == "stade_deperissement", schema)[[1]]
+  expect_setequal(stade$domain, HEALTH_VALIDATION_STADES)
+})
+
+test_that("HEALTH_VALIDATION_STADES_FEUILLUS covers the DSF symptom axes", {
+  expect_true(all(c("sain", "defoliation", "mortalite_branches",
+                    "descente_cime", "mort") %in%
+                  HEALTH_VALIDATION_STADES_FEUILLUS))
+  expect_false("scolyte_vert" %in% HEALTH_VALIDATION_STADES_FEUILLUS)
+  expect_false("scolyte" %in% HEALTH_VALIDATION_CAUSES_FEUILLUS)
+})
+
+test_that(".health_stade_to_status routes coupe_rase by method", {
+  # RECONFORT: a clearcut is a false positive of dieback whatever the class
+  expect_equal(nemeton:::.health_stade_to_status("coupe_rase",
+                 "3-tres-deperissant", method = "reconfort")$status,
+               "false_positive")
+  # FORDEAD high-confidence clearcut stays confirmed (unchanged)
+  expect_equal(nemeton:::.health_stade_to_status("coupe_rase",
+                 "3-forte", method = "fordead")$status, "confirmed")
+  # broadleaf dieback stages confirm
+  expect_equal(nemeton:::.health_stade_to_status("descente_cime", NA,
+                 method = "reconfort")$status, "confirmed")
+  expect_equal(nemeton:::.health_stade_to_status("sain", NA,
+                 method = "reconfort")$status, "false_positive")
+})

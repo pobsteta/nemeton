@@ -10,6 +10,19 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.81.0] - 2026-06-13
+
+### Added
+
+- Broadleaf QField terrain-validation schema (spec 021 G4, support for L6):
+  `get_health_validation_schema(method = c("fordead", "reconfort"))` serves a
+  broadleaf dieback vocabulary in `reconfort` mode
+  (`HEALTH_VALIDATION_STADES_FEUILLUS` / `HEALTH_VALIDATION_CAUSES_FEUILLUS`).
+  The stage→status mapping routes by method (a clearcut on a `reconfort_dieback`
+  alert is a `false_positive`); `ingest_health_validation()` detects the method
+  from `alert.alert_type`. `fordead` mode unchanged. DEPERIS stage vocabulary
+  provisional.
+
 ## [0.80.0] - 2026-06-13
 
 ### Added

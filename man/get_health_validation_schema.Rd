@@ -4,7 +4,11 @@
 \alias{get_health_validation_schema}
 \title{QGIS form schema for the health-validation `placette` layer}
 \usage{
-get_health_validation_schema(region = "BFC", lang = "fr")
+get_health_validation_schema(
+  region = "BFC",
+  lang = "fr",
+  method = c("fordead", "reconfort")
+)
 }
 \arguments{
 \item{region}{Character. Species region, used to populate the
@@ -12,6 +16,10 @@ get_health_validation_schema(region = "BFC", lang = "fr")
 
 \item{lang}{Character. Language for species labels. Default
 `"fr"`.}
+
+\item{method}{Character. `"fordead"` (default, conifer / scolyte
+vocabulary) or `"reconfort"` (broadleaf dieback vocabulary,
+\code{\link{HEALTH_VALIDATION_STADES_FEUILLUS}} — spec 021 G4).}
 }
 \value{
 A list of field descriptors (see `R/field_schema.R`).

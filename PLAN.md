@@ -549,6 +549,18 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-06-13 — RECONFORT G4 : schéma QField feuillus (spec 021, cœur, v0.81.0)
+
+Support cœur de la brique QField du lot **L6** (app). `get_health_validation_schema(method=)`
+sert un vocabulaire feuillus en mode `reconfort` (`HEALTH_VALIDATION_STADES_FEUILLUS`
+= sain/défoliation/mortalité branches/descente cime/mort/coupe ;
+`HEALTH_VALIDATION_CAUSES_FEUILLUS` sans scolyte). Mapping `stade → status`
+routé par méthode (coupe sur `reconfort_dieback` → `false_positive`),
+`ingest_health_validation()` détecte la méthode via `alert_type`. Mode
+`fordead` inchangé (rétrocompatible). Tests `test-health-validation-schema.R`
+46 ✔, ingest 29 ✔. `.Rd`+NAMESPACE à la main. **Réserve** : vocabulaire DEPERIS
+exact à confirmer. **Cœur RECONFORT désormais complet pour L6** (L1→L5 + G4).
+
 ### 2026-06-13 — RECONFORT L5 : persistance features + diagnostic pixel (spec 021, cœur, v0.80.0)
 
 **Décision option B** (recalcul depuis le S2 ingéré, vs extraction des
