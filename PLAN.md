@@ -203,7 +203,7 @@ supervisé sur indices CRswir/CRre (chaîne IOTA²), en complément de FORDEAD
 | ✅ | **L2b.2** | Ingest IOTA²-natif : `reconfort_aoi_tiles()` (grille MGRS embarquée) + `reconfort_ingest_s2()` (pygeodes download + unzip) + scripts vendorisés | **v0.73.0** (2026-06-11) |
 | ✅ | **L2b.3** | `reconfort_pipeline.R::run_reconfort_dieback()` : orchestration env→model→masque→tuile→ingest→IOTA² ×2+score, staging par-run, `ensure_reconfort_oso_mask()` + glue map-production vendorisée | **v0.74.0** (2026-06-12) |
 | ✅ | **L3** | `reconfort_postprocess.R` (rasters → table `alert`, centroïdes, `confidence_class`, `stress_index` = score continu) + migration **`0006`** + `classify_disturbance()` 3-voies (`method_overlap`) + phase `postprocess` dans `run_reconfort_dieback()` | **v0.77.0** (2026-06-13) |
-| ⬜ | **L4** | R5 unifié (routage par essence) + tests indicateur étendus | — |
+| ✅ | **L4** | R5 unifié routé par essence : `indicateur_r5_deperissement(reconfort_results=)`, RECONFORT (chêne/châtaignier/pin sylvestre) vs FORDEAD (épicéa/sapin), statuts `calculated_reconfort`/`skipped_no_reconfort`/`skipped_no_method`, helpers `.resolve_reconfort_share`/`.r5_prepare_alerts`/`.r5_score` | **v0.78.0** (2026-06-13) |
 | ⬜ | **L5** | Persistance features (parité diagnostic pixel) + `read_reconfort_pixel_series()` | — |
 | ⬜ | **L6** | App `nemetonshiny` : 3ᵉ mode, bannières, plotly, QField feuillus | release app |
 
@@ -548,6 +548,24 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-06-13 — RECONFORT L4 : R5 unifié routé par essence (spec 021, cœur, v0.78.0)
+
+`indicateur_r5_deperissement()` gagne `reconfort_results` + `weights_reconfort`
++ `min_feuillus` + `feuillus_col`. **Routage par UGF** (spec 021 §4) : essence
+∈ RECONFORT (chêne/châtaignier/pin sylvestre) → score via RECONFORT ; ∈ FORDEAD
+(épicéa/sapin) → FORDEAD ; sinon `skipped_no_method`. Un `*_col` explicite
+épingle la méthode. Statuts : `calculated` (FORDEAD), `calculated_reconfort`,
+`skipped_no_fordead`/`skipped_no_reconfort`/`skipped_no_method`. Refactor :
+helpers `.resolve_reconfort_share()` (miroir `.resolve_resineux_share`),
+`.r5_prepare_alerts()` (validation + filtre classes + CRS), `.r5_score()`
+(score d'une UGF, réutilisé 2 méthodes) — math FORDEAD préservée à l'identique.
+Poids RECONFORT par défaut = sous-ensemble dépérissant de
+`RECONFORT_CONFIDENCE_WEIGHTS$CHE` (**provisoire**). Tests
+`test-indicators-deperissement.R` 42 ✔ (6 cas routage neufs : chêne, pin,
+zone mixte EPC+chêne, essence inconnue, `feuillus_col` ; 3 assertions adaptées
+au vocabulaire unifié), familles 304 ✔. `.Rd`+roxygen à la main. Suite : **L5**
+(persistance features + `read_reconfort_pixel_series()`).
 
 ### 2026-06-13 — RECONFORT L3 : postprocess rasters → table `alert` (spec 021, cœur, v0.77.0)
 

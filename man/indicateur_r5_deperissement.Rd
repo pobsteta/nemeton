@@ -2,15 +2,19 @@
 % Please edit documentation in R/indicators-deperissement.R
 \name{indicateur_r5_deperissement}
 \alias{indicateur_r5_deperissement}
-\title{Compute the R5 dieback indicator}
+\title{Compute the R5 dieback indicator (unified FORDEAD / RECONFORT)}
 \usage{
 indicateur_r5_deperissement(
   units,
   fordead_results = NULL,
+  reconfort_results = NULL,
   weights = FORDEAD_CONFIDENCE_WEIGHTS,
+  weights_reconfort = RECONFORT_CONFIDENCE_WEIGHTS$CHE[-1L],
   min_resineux = 0.3,
+  min_feuillus = 0.3,
   include_low_classes = FALSE,
-  resineux_col = NULL
+  resineux_col = NULL,
+  feuillus_col = NULL
 )
 }
 \arguments{
@@ -18,47 +22,56 @@ indicateur_r5_deperissement(
 least a species column (one of `essence_dominante`,
 `essence`, `species_label`, `species`, `essence_principale`).}
 
-\item{fordead_results}{The list returned by
-[run_fordead_dieback()]. Only `fordead_results$alerts_sf`
-is consumed here. `NULL` (default) means R5 is set to NA
-for every unit with status `"skipped_no_fordead"`.}
+\item{fordead_results}{The list returned by [run_fordead_dieback()]
+(only `$alerts_sf` is consumed). Used for **conifer** units
+(spruce / fir).}
 
-\item{weights}{Named numeric vector. Per-class weights used
-to combine the cluster surfaces. Default
-[`FORDEAD_CONFIDENCE_WEIGHTS`].}
+\item{reconfort_results}{The list returned by
+[run_reconfort_dieback()] (only `$alerts_sf` is consumed). Used for
+**oak / chestnut / Scots pine** units (spec 021 L4).}
 
-\item{min_resineux}{Numeric in `[0, 1]`. Minimum spruce + fir
-share required to compute R5 on a unit. Below this
-threshold, R5 is `NA` with status `"skipped_no_resineux"`.
-Default 0.3.}
+\item{weights}{Named numeric vector. Per-class FORDEAD weights.
+Default [`FORDEAD_CONFIDENCE_WEIGHTS`].}
 
-\item{include_low_classes}{Logical. When `FALSE` (default),
-only classes `3-forte` and `4-sol-nu` are considered (G1).}
+\item{weights_reconfort}{Named numeric vector. Per-class RECONFORT
+weights (dieback classes). Default = the oak subset of
+[`RECONFORT_CONFIDENCE_WEIGHTS`] (provisional, see that object).}
 
-\item{resineux_col}{Optional character. Name of a column on
-`units` carrying a per-unit conifer share in `[0, 1]`. When
-absent, the share is derived from the dominant species
-column via [`.is_epicea()`] / [`.is_sapin_pectine()`]
-(then 1 if the unit is dominated by spruce or fir, else 0).}
+\item{min_resineux}{Numeric in `[0, 1]`. Minimum conifer share to
+route a unit to FORDEAD. Default 0.3.}
+
+\item{min_feuillus}{Numeric in `[0, 1]`. Minimum oak/chestnut/Scots-pine
+share to route a unit to RECONFORT. Default 0.3.}
+
+\item{include_low_classes}{Logical. When `FALSE` (default), only
+FORDEAD classes `3-forte` and `4-sol-nu` are considered (G1).}
+
+\item{resineux_col}{Optional character. Column carrying a per-unit
+conifer share in `[0, 1]`; pins the unit to the FORDEAD method.}
+
+\item{feuillus_col}{Optional character. Column carrying a per-unit
+oak/chestnut/Scots-pine share in `[0, 1]`; pins the unit to the
+RECONFORT method.}
 }
 \value{
-The input `units` with two added columns: `R5`
-  (numeric, 0-100, NA where skipped) and `r5_status`
-  (character).
+The input `units` with two added columns: `R5` (numeric, 0-100, NA
+where skipped) and `r5_status` (character).
 }
 \description{
 Adds an `R5` column (0-100 score, higher = more dieback) and a
-diagnostic `r5_status` column (`"calculated"`,
-`"skipped_no_resineux"`, `"skipped_no_fordead"`) to the input
-forest units. The score is the confidence-weighted fraction of
-the unit area covered by FORDEAD anomaly clusters, capped at
-1 and rescaled to 0-100 to align with the rest of the radar.
+diagnostic `r5_status` column to the input forest units. R5 is the
+confidence-weighted fraction of the unit area covered by dieback
+clusters, capped at 1 and rescaled to 0-100.
 }
 \details{
-By default, only classes `3-forte` and `4-sol-nu` contribute
-(G1 in spec 008 — classes 1-faible and 2-moyenne carry
-50% / 33% false-positive rates per the ONF/DSF 2024 report).
-Set `include_low_classes = TRUE` to include them, in which
-case the per-class weights from `FORDEAD_CONFIDENCE_WEIGHTS`
-apply.
+**Routing by dominant species (spec 021 §4)**: each unit is scored by
+the method calibrated for its species — RECONFORT for oak / chestnut /
+Scots pine, FORDEAD for spruce / fir. `r5_status` is one of
+`"calculated"` (FORDEAD), `"calculated_reconfort"` (RECONFORT),
+`"skipped_no_fordead"` / `"skipped_no_reconfort"` (method applies but
+its run is missing), or `"skipped_no_method"` (species matches neither).
+
+By default, only the trustworthy classes contribute (G1): FORDEAD
+`3-forte` / `4-sol-nu` (set `include_low_classes = TRUE` to add the
+low classes) and RECONFORT [`RECONFORT_ALERT_CLASSES`].
 }

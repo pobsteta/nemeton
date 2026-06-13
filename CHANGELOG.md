@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.78.0] - 2026-06-13
+
+### Added
+
+- Unified R5 dieback indicator with per-species routing (spec 021, lot L4):
+  `indicateur_r5_deperissement()` gains `reconfort_results` (+ `weights_reconfort`,
+  `min_feuillus`, `feuillus_col`) and routes each unit to the method calibrated
+  for its dominant species — RECONFORT (oak/chestnut/Scots pine) vs FORDEAD
+  (spruce/fir), else `skipped_no_method`. New statuses `calculated_reconfort`,
+  `skipped_no_reconfort`, `skipped_no_method` (replacing `skipped_no_resineux`).
+  R5 stays a 0-100 column. Default RECONFORT weights are provisional.
+
 ## [0.77.0] - 2026-06-13
 
 ### Added
