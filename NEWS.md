@@ -1,3 +1,20 @@
+# nemeton 0.81.0 (2026-06-13)
+
+### Added — schéma de validation terrain QField feuillus (spec 021 G4, support L6)
+
+`get_health_validation_schema()` gagne un argument **`method =
+c("fordead", "reconfort")`** : en mode `reconfort` il sert un vocabulaire de
+**dépérissement feuillus** (`HEALTH_VALIDATION_STADES_FEUILLUS` : sain,
+défoliation, mortalité de branches, descente de cime, mort, coupe rase ;
+causes `HEALTH_VALIDATION_CAUSES_FEUILLUS` sans scolyte). Le mapping
+`stade → validation_status` route par méthode (une coupe rase sur une alerte
+`reconfort_dieback` = `false_positive`), et `ingest_health_validation()`
+détecte la méthode via `alert.alert_type`. Le mode `fordead` est inchangé
+(rétrocompatible). Débloque la brique QField du lot L6 côté `nemetonshiny`.
+
+**Réserve** : les stades feuillus suivent les axes nommés du spec (DEPERIS)
+mais le vocabulaire DEPERIS exact reste **à confirmer** (flaggé).
+
 # nemeton 0.80.0 (2026-06-13)
 
 ### Added — RECONFORT diagnostic pixel : persistance features CRswir/CRre (spec 021, lot L5)

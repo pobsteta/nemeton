@@ -56,12 +56,55 @@ HEALTH_VALIDATION_CAUSES <- c(
 )
 
 
+#' DSF-aligned **broadleaf** dieback stages (RECONFORT, spec 021 G4)
+#'
+#' Terrain-validation vocabulary for the RECONFORT method (oak /
+#' chestnut / Scots pine), the broadleaf counterpart of
+#' [`HEALTH_VALIDATION_STADES`]. Graded along the symptom axes named in
+#' spec 021 §7 (défoliation, mortalité de branches, descente de cime),
+#' adapted from the DSF **DEPERIS** protocol.
+#'
+#' **PROVISIONAL** — the exact DEPERIS stage labels/levels are not yet
+#' pinned in the spec; these codes follow its named symptoms and the
+#' RECONFORT 3-class output and should be reconciled with the upstream
+#' DEPERIS reference before field deployment.
+#'
+#' @export
+HEALTH_VALIDATION_STADES_FEUILLUS <- c(
+  "sain",
+  "defoliation",          # défoliation du houppier
+  "mortalite_branches",   # mortalité de branches
+  "descente_cime",        # descente de cime (avancé)
+  "mort",                 # arbre mort
+  "coupe_rase"
+)
+
+
+#' Free-form causes proposed in the **broadleaf** validation form
+#'
+#' RECONFORT counterpart of [`HEALTH_VALIDATION_CAUSES`] (no `scolyte`,
+#' which is a conifer pest).
+#'
+#' @export
+HEALTH_VALIDATION_CAUSES_FEUILLUS <- c(
+  "secheresse",
+  "deperissement_chronique",
+  "defoliateur",          # insecte défoliateur
+  "pathogene",            # champignon / maladie
+  "coupe",
+  "chablis",
+  "phenologie",
+  "autre"
+)
+
+
 # Internal: maps a DSF stage code + the FORDEAD initial confidence
 # class to (validation_status, validation_cause). The Coupe_rase
 # rule is class-dependent because the rapport ONF/DSF 2024
 # explicitly notes that 1-faible and 2-moyenne tend to false-flag
 # clearcuts as dieback.
-.health_stade_to_status <- function(stade, confidence_class = NA_character_) {
+.health_stade_to_status <- function(stade, confidence_class = NA_character_,
+                                    method = "fordead") {
   stade  <- tolower(as.character(stade))
   cls    <- as.character(confidence_class)
   status <- NA_character_
@@ -76,7 +119,11 @@ HEALTH_VALIDATION_CAUSES <- c(
     cause  <- "sain_terrain"
   } else if (stade == "coupe_rase") {
     cause <- "coupe_terrain"
-    if (!is.na(cls) && cls %in% c("1-faible", "2-moyenne")) {
+    if (identical(method, "reconfort")) {
+      # A clearcut is a real change but not progressive broadleaf dieback,
+      # so a RECONFORT dieback alert on a cut is a false positive.
+      status <- "false_positive"
+    } else if (!is.na(cls) && cls %in% c("1-faible", "2-moyenne")) {
       status <- "false_positive"
     } else {
       status <- "confirmed"
@@ -108,11 +155,20 @@ HEALTH_VALIDATION_CAUSES <- c(
 #'   `essence_dominante` value-map. Default `"BFC"`.
 #' @param lang Character. Language for species labels. Default
 #'   `"fr"`.
+#' @param method Character. `"fordead"` (default, conifer / scolyte
+#'   vocabulary) or `"reconfort"` (broadleaf dieback vocabulary,
+#'   [`HEALTH_VALIDATION_STADES_FEUILLUS`] — spec 021 G4).
 #'
 #' @return A list of field descriptors (see `R/field_schema.R`).
 #'
 #' @export
-get_health_validation_schema <- function(region = "BFC", lang = "fr") {
+get_health_validation_schema <- function(region = "BFC", lang = "fr",
+                                         method = c("fordead", "reconfort")) {
+  method <- match.arg(method)
+  is_reconfort <- identical(method, "reconfort")
+  stades <- if (is_reconfort) HEALTH_VALIDATION_STADES_FEUILLUS else HEALTH_VALIDATION_STADES
+  causes <- if (is_reconfort) HEALTH_VALIDATION_CAUSES_FEUILLUS else HEALTH_VALIDATION_CAUSES
+  class_label <- if (is_reconfort) "RECONFORT class (initial)" else "FORDEAD class (initial)"
   species_df <- tryCatch(
     list_species_classes(region = region, lang = lang),
     error = function(e) {
@@ -131,14 +187,14 @@ get_health_validation_schema <- function(region = "BFC", lang = "fr") {
     .field("alert_id",           "integer",   "text",
            label = "Alert ID (DB)"),
     .field("confidence_class",   "character", "text",
-           label = "FORDEAD class (initial)"),
+           label = class_label),
     .field("stade_deperissement", "character", "value_map",
            label = "Stade de deperissement",
-           domain = HEALTH_VALIDATION_STADES,
+           domain = stades,
            required = TRUE),
     .field("cause",              "character", "value_map",
            label = "Cause observee",
-           domain = HEALTH_VALIDATION_CAUSES),
+           domain = causes),
     .field("taux_couvert",       "double",    "range",
            label = "Taux de couvert (%)",
            min = 0, max = 100),
@@ -367,7 +423,7 @@ ingest_health_validation <- function(con,
   # Pull every alert of this zone (id + geometry only). Snap is in
   # metres so we project everything to Lambert-93.
   alerts_q <- .db_get_query(con,
-    "SELECT a.id, a.confidence_class, p.geom_wkt
+    "SELECT a.id, a.confidence_class, a.alert_type, p.geom_wkt
        FROM alert a
        JOIN plot p ON p.id = a.plot_id
       WHERE p.zone_id = $1",
@@ -418,7 +474,12 @@ ingest_health_validation <- function(con,
 
     alert_id <- as.integer(alerts_sf$id[j])
     cls      <- alerts_sf$confidence_class[j]
-    map      <- .health_stade_to_status(stade, cls)
+    # Route the stage→status mapping by the matched alert's method
+    # (RECONFORT alerts use the broadleaf coupe_rase rule).
+    a_method <- if (!is.null(alerts_sf$alert_type) &&
+                    identical(as.character(alerts_sf$alert_type[j]),
+                              "reconfort_dieback")) "reconfort" else "fordead"
+    map      <- .health_stade_to_status(stade, cls, method = a_method)
     status   <- map$status
 
     obs_by <- validated_by
