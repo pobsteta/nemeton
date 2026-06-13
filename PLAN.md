@@ -17,7 +17,7 @@
 | ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). **Backend monitoring local** (Bug #2 verrou fichier) : DuckDB → SQLite/WAL → **v0.50.0** ; fix warning → **v0.50.1** ; retrait DuckDB → **v0.51.0** (2026-05-28) ; fix UPSERT SQLite `near "DO"` à l'ingestion S2 → **v0.55.1** ; audit complet UPSERT SQLite (db_migrate no-target + FORDEAD/alerts `INSERT…SELECT`) → **v0.55.2** (2026-06-01). **FAST 100 % pur raster** : retrait de l'insertion `obs_pixel` dans `ingest_sentinel2_timeseries()` (amorçage cache COG seul), `DROP TABLE obs_pixel` (migration 0004), dépréciation `read_obs_pixel()`/`list_fast_alerts_for_zone()`/`detect_alerts()` → **v0.58.0** (2026-06-02) ; **retrait définitif des 3 fonctions + `CREATE TABLE obs_pixel` ôté des migrations 0001** → **v0.60.0** (2026-06-02, Phase B). Côté app : `nemetonshiny@v0.49.0`→`v0.50.0` ; consommateur `obs_pixel` retiré dès `nemetonshiny@v0.52.16`. **Indice NDMI** ajouté au FAST (spec 019, `(B08−B11)/(B08+B11)`, humidité ; défaut NDVI conservé, B11 cachée best-effort) → **v0.64.0** (2026-06-03) ; UI NDMI côté `nemetonshiny` à câbler (brief fourni). **Fix régression spec 019** : `.enumerate_cache_scenes()` n'avait pas de branche NDMI → cartes d'alerte NDMI toujours vides malgré B08+B11 en cache ; + nouvel orchestrateur `read_fast_alert_rasters()` (les 6 cartes = 3 indices × 2 modes en un appel) → **v0.65.0** (2026-06-03). |
 | ✅ | **Carte pixel** *(hors-skeleton, entre E6 et E7)* | API publique cœur pour exposer le cache S2 pixel-par-pixel (10 m natif) + extraction time-series à un clic. Spec 010. Débloque le sous-onglet *Carte pixel* dans `nemetonshiny` (séparé). | 4 fonctions exportées (`read_s2_band_raster`, `read_s2_band_stack`, `build_index_stack`, `extract_pixel_timeseries`) — release **v0.22.0** (2026-05-15). |
 | ✅ | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d'indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d'essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a → **v0.29.0** ; phase 1b → **v0.30.0** ; phase 2 (loaders) → **v0.31.0** ; phase 3a (`s2_biophysical` → C2/A1) → **v0.32.0** ; phase 3b (`theia_soil` → F1/F2) → **v0.33.0** ; phase 3c (`theia_snow` → R3) → **v0.34.0** ; phase 3d (`theia_water`/`theia_soil_moisture`/`theia_species`) → **v0.35.0** ; FORMSpoT câblé via l'interface CHM → **v0.35.2** ; résolveur STAC Theia → **v0.36.0** ; endpoint corrigé + FORMSpoT vérifié → **v0.37.0** ; auth S3 `/vsis3/` → **v0.38.0** ; ciblage par année → **v0.39.0** ; credentials S3 corrigés → **v0.39.1** ; signature SDK teledetection (`theia_signed_href`) → **v0.40.0** — chaîne validée en réel. Reliquat : MUSCATE, LST, W1. |
-| 🟨 | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | **Machinerie livrée** → **v0.52.0** (2026-05-29) : 7 fonctions exportées (`enable_rag`, `ingest_knowledge_document`, `embed_query`, `retrieve_knowledge`, `list_knowledge_documents`, `delete_knowledge_document`, `format_citations`), schéma opt-in `knowledge_document`/`knowledge_chunk`, dual-backend pgvector `<=>` (PG) / cosinus R (SQLite). Spec 009 codée. **Reliquat** : corpus (spec fille 009.1 — décisions D1-D5 actées le 2026-05-29) + wiring `nemetonshiny`. |
+| ✅ | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | **Machinerie** → **v0.52.0** : 7 fonctions exportées (`enable_rag`, `ingest_knowledge_document`, `embed_query`, `retrieve_knowledge`, `list_knowledge_documents`, `delete_knowledge_document`, `format_citations`), schéma opt-in `knowledge_*`, dual-backend pgvector `<=>` (PG) / cosinus R (SQLite). **Corpus** (spec 009.1) : API admin (v0.63.0), curation v0.75.0→v0.76.2 → **déployé en prod : 81 docs, 60 texte intégral, 6 120 chunks, 0 embedding manquant** (dont 4 papiers scannés OCRisés). **Wiring app** : perspectives IA sourcées (`nemetonshiny`). **Clos 2026-06-13.** |
 
 Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
@@ -74,15 +74,16 @@ pobsteta/nemeton@*release`. *(R indisponible en local : validation déléguée
 
 ---
 
-# Chantier en cours — E7 : corpus de connaissances RAG (spec 009 / 009.1, ADR-012)
+# Chantier CLOS — E7 : corpus de connaissances RAG (spec 009 / 009.1, ADR-012)
 
-**Cadré** : 2026-05-29 (décisions D1-D5). **Cible cœur** : la prochaine
-release qui livre le corpus (machinerie déjà à `v0.52.0`).
-**Objectif** : clore E7 — la *machinerie* RAG est livrée (v0.52.0,
-7 fonctions exportées, schéma opt-in `knowledge_*`, dual-backend
-pgvector/cosinus), il reste à **alimenter** et **brancher** la base de
-connaissances forestière pour que les perspectives IA soient
-effectivement citées-sourcées.
+> **Clos le 2026-06-13.** Machinerie (v0.52.0), corpus **déployé en prod**
+> (81 docs, 60 texte intégral, 6 120 chunks, 0 embedding manquant) et wiring
+> app (perspectives IA sourcées) livrés. Objectif atteint : les perspectives
+> IA sont effectivement citées-sourcées.
+
+**Cadré** : 2026-05-29 (décisions D1-D5). Machinerie RAG livrée v0.52.0
+(7 fonctions exportées, schéma opt-in `knowledge_*`, dual-backend
+pgvector/cosinus), puis corpus alimenté/branché.
 
 ## Avancement du chantier
 
@@ -91,30 +92,24 @@ effectivement citées-sourcées.
 | ✅ | Machinerie RAG (`enable_rag()`, ingestion, retrieval, citations) | cœur | v0.52.0 (2026-05-29) |
 | ✅ | Manifest (39 docs) + pipeline `build_knowledge_corpus.R` | cœur | (commités) |
 | ✅ | Validation manifest (`test-knowledge-corpus-manifest.R`) + `inst/NOTICE` corpus + fix cohérence D5 | cœur | v0.61.1 (2026-06-02) |
-| 🟨 | **Arbitrage licences** — Bernard&Doridant + revue SET → `cleared` (v0.61.2) ; 4 papiers copyright restent `to_confirm` (abstract/lien-seul à câbler) | cœur | v0.61.2 (2026-06-02) |
+| ✅ | **Arbitrage licences** — résolu : override D5 (v0.75.1) → 81 docs `cleared` ; copyright en `abstract_only`/`link_only`, scans OCRisés en `HAL` | cœur | v0.61.2 → v0.76.2 |
 | ✅ | Ingestion référence seule (`ingest_knowledge_reference()`, link_only/abstract_only) + câblage pipeline | cœur | v0.62.0 (2026-06-02) |
 | ✅ | **API administration corpus** (manifest éditable + import) — `knowledge_manifest_vocab/path`, `read/validate/write_knowledge_manifest`, `build_knowledge_corpus()` ; débloque l'onglet RAG des paramètres app (spec 009.2) | cœur | v0.63.0 (2026-06-03) |
-| 🟨 | **Build corpus réel** — embeddings via clé API (action locale `data-raw/`) | cœur | local |
+| ✅ | **Build corpus réel** — pgvector prod peuplé via Mistral (`build_corpus_prod.sh` FRESH + `fill_corpus_prod.sh` incrémental) : **81 docs, 60 texte intégral, 6 120 chunks** | cœur | prod 2026-06-13 |
 | ✅ | **Onglet RAG** (paramètres) — éditeur manifest + import via l'API 009.2 | `nemetonshiny` | nemetonshiny@8c6696b (v0.62.0, 2026-06-03) |
-| ⬜ | **Wiring** — injection chunks dans le prompt LLM + bloc UI « Sources » | `nemetonshiny` | app |
+| ✅ | **Wiring** — injection chunks dans le prompt LLM + bloc UI « Sources » (`retrieve_knowledge` + `format_citations`) | `nemetonshiny` | app (livré) |
 
-**Machinerie cœur — close** : machinerie RAG (v0.52.0), manifest +
-pipeline + validation + NOTICE (v0.61.1), arbitrage licences (v0.61.2 —
-4 papiers copyright laissés `to_confirm`), ingestion référence seule
-`link_only`/`abstract_only` (v0.62.0), **API administration corpus**
-(v0.63.0 — spec 009.2 : manifest éditable + `build_knowledge_corpus()`,
-l'orchestration n'est plus enfermée dans `data-raw/`). **Reliquat
-détaillé** :
-1. **Build du corpus réel** — `Rscript data-raw/build_knowledge_corpus.R`
-   avec une clé API d'embedding (Mistral par défaut) → peuple le pgvector
-   prod. Action locale, pas un livrable de code.
-2. **Wiring `nemetonshiny`** — injection des chunks dans le prompt LLM +
-   bloc UI « Sources » via `retrieve_knowledge()` + `format_citations()`
-   (hors repo cœur).
-3. *(optionnel)* lever le statut `to_confirm` des 4 papiers copyright si
-   tu valides leur référence (D5) — ils s'ingéreront alors en `link_only`.
-
-*(L'onglet RAG `nemetonshiny` est livré — cf. journal 2026-06-03.)*
+**E7 clos (2026-06-13)** — tout livré : machinerie (v0.52.0), API
+administration corpus (v0.63.0), corpus curé et **déployé en prod**
+(81 docs, 60 texte intégral, 6 120 chunks, 0 embedding manquant ; sources
+externes citables, 4 scans OCRisés), wiring `nemetonshiny` (perspectives
+IA sourcées : `retrieve_knowledge()` + `format_citations()` + bloc UI
+« Sources », onglet admin RAG). Outils de (re)build prod :
+`data-raw/build_corpus_prod.sh` (FRESH), `fill_corpus_prod.sh`
+(incrémental), `ocr_biljou_scans.sh` (OCR). **Enrichissement futur
+possible** (hors E7) : ajouter d'autres sources au manifest, lever les
+21 références restantes vers du texte intégral si des PDF deviennent
+disponibles.
 
 **Journal** — *2026-06-13* : **curation du corpus (v0.75.0)**. Manifest
 recentré sur des sources externes citables : retrait des 12 docs internes
