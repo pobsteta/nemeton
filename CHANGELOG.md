@@ -10,6 +10,24 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.75.0] - 2026-06-13
+
+### Changed
+
+- RAG knowledge corpus (E7) curation of `inst/extdata/knowledge_corpus_v1.csv`
+  (spec 009/009.1): removed the 12 internal MIT seed docs (tutorials +
+  specs 005/008); added 54 references cited by the BILJOU tool (INRAE Nancy,
+  forest water-balance model) under the conservative D5 license gate
+  (`to_confirm` / `abstract_only` / `copyright`); promoted 8 institutional
+  reports to `cleared` (ONF/RENECOFOR `LO-Etalab`, FAO paper 56 `CC-BY-NC`,
+  EFI WSCTU n°1 `CC-BY`) with public source URLs. Manifest 39 → 81 docs
+  (31 cleared / 50 to_confirm); full-text build plan 7 → 10 PDFs.
+
+### Added
+
+- `data-raw/{add_biljou_refs,clear_biljou_institutional,url_biljou_institutional}.R`
+  — reproducible provenance scripts for the corpus curation above.
+
 ## [0.74.1] - 2026-06-12
 
 ### Fixed

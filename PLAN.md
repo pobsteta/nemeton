@@ -116,6 +116,18 @@ détaillé** :
 
 *(L'onglet RAG `nemetonshiny` est livré — cf. journal 2026-06-03.)*
 
+**Journal** — *2026-06-13* : **curation du corpus (v0.75.0)**. Manifest
+recentré sur des sources externes citables : retrait des 12 docs internes
+MIT (tutoriels + specs 005/008) ; ajout des **54 références citées par
+l'outil BILJOU** (INRAE Nancy, bilan hydrique — 11 fiches), toutes en
+`to_confirm`/`abstract_only`/`copyright` (gel D5) ; **8 rapports
+institutionnels passés en `cleared`** (ONF/RENECOFOR `LO-Etalab`, FAO 56
+`CC-BY-NC`, EFI WSCTU n°1 `CC-BY`) avec URLs publiques ; 3 PDF récupérés
+(Ulrich 1995, Badeau&Bréda 2008, FAO 56) → plan full-text 7 → 10. Manifest
+39 → **81 docs** (31 cleared / 50 to_confirm). Scripts de provenance sous
+`data-raw/`. Tests manifest verts (20 + 29). Build prod réel non rejoué
+(reliquat « Build corpus réel » toujours 🟨).
+
 **Journal** — *2026-06-03* : livré l'API d'administration du corpus
 (spec 009.2, v0.63.0). Refactor : la logique « manifest → base » de
 `data-raw/build_knowledge_corpus.R` est promue en 6 fonctions exportées
