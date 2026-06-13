@@ -228,10 +228,11 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
   label   <- paste0("z", zone_id)
   workdir <- output_dir %||%
     file.path(cache_dir, "reconfort", sprintf("run_z%s_S2%s", zone_id, s2_year))
+  run_id  <- format(Sys.time(), "%Y%m%dT%H%M%S")
 
   # --- progress plumbing ------------------------------------------
   phases <- c("env", "model", "mask", "tiles", "ingest", "stage", "mapprod",
-              "collect", "postprocess")
+              "collect", "postprocess", "persist")
   emit <- function(payload) {
     if (is.null(progress_callback)) return(invisible(NULL))
     tryCatch(progress_callback(payload), error = function(e) invisible(NULL))
@@ -353,15 +354,42 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       NA_integer_
     })
 
+    # PHASE 10 — persist CRswir/CRre features for the pixel diagnostic
+    # (L5, spec 021). Best-effort, recomputed from the ingested S2
+    # (option B). Skips quietly if no scene is enumerable so a heavy run
+    # is never discarded over a diagnostic detail. Bundle lands at
+    # <cache_dir>/zone_<id>/run_<run_id>/ for read_reconfort_pixel_series().
+    begin("persist")
+    features_bundle <- tryCatch({
+      scenes <- .enumerate_reconfort_s2_scenes(file.path(workdir, "S2_data"))
+      if (!length(scenes)) {
+        cli::cli_warn("RECONFORT persist: no S2 scene enumerable under {.path {file.path(workdir, 'S2_data')}} — pixel diagnostic skipped.")
+        NA_character_
+      } else {
+        stacks <- .build_reconfort_feature_stacks(scenes)
+        bdir <- file.path(cache_dir, sprintf("zone_%s", zone_id),
+                          sprintf("run_%s", run_id))
+        .write_reconfort_features_bundle(bdir, stacks, run_meta = list(
+          zone_id = zone_id, run_id = run_id, species = info$species,
+          v_model = v_model, n_classes = info$n_classes,
+          date_from = date_from, date_to = date_to))
+        bdir
+      }
+    }, error = function(e) {
+      cli::cli_warn("RECONFORT persist (features bundle) failed: {conditionMessage(e)}")
+      NA_character_
+    })
+
     elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
     meta <- list(
       tool = "reconfort", status = "completed",
-      zone_id = zone_id, tiles = tiles, s2_year = s2_year,
+      zone_id = zone_id, run_id = run_id, tiles = tiles, s2_year = s2_year,
       date_from = date_from, date_to = date_to,
       v_model = v_model, species = info$species, n_classes = info$n_classes,
       masked = do_mask, mask = if (do_mask) mask_path else NA_character_,
       env = env, scheduler_type = scheduler_type,
-      rasters = rasters, n_alerts = n_alerts, elapsed_sec = elapsed,
+      rasters = rasters, n_alerts = n_alerts,
+      features_bundle = features_bundle, elapsed_sec = elapsed,
       generated_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z")
     )
     meta_path <- .reconfort_write_run_meta(
@@ -372,9 +400,10 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     emit(list(current = "reconfort:complete", zone_id = zone_id,
               completed = length(phases), total = length(phases)))
 
-    list(status = "completed", zone_id = zone_id, tiles = tiles,
-         s2_year = s2_year, v_model = v_model, species = info$species,
-         workdir = workdir, rasters = rasters, n_alerts = n_alerts,
+    list(status = "completed", zone_id = zone_id, run_id = run_id,
+         tiles = tiles, s2_year = s2_year, v_model = v_model,
+         species = info$species, workdir = workdir, rasters = rasters,
+         n_alerts = n_alerts, features_bundle = features_bundle,
          meta = meta_path, elapsed_sec = elapsed)
   },
   error = function(e) {

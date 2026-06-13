@@ -1,0 +1,199 @@
+#' RECONFORT feature persistence: CRswir / CRre stacks (L5, spec 021)
+#'
+#' @description
+#' Write side of the RECONFORT pixel diagnostic (parity with the FORDEAD
+#' diagnostic bundle, spec 008 §14). The `persist` phase of
+#' [run_reconfort_dieback()] recomputes the two vegetation indices used
+#' by the RF model — **CRswir** (canopy water) and **CRre** (chlorophyll)
+#' — per Sentinel-2 acquisition date from the ingested bands, and stores
+#' them as dated multi-band rasters so [read_reconfort_pixel_series()]
+#' can plot the observed series at a clicked pixel.
+#'
+#' Option B (spec 021 L5 decision): the indices are **recomputed from the
+#' ingested S2** with the production formulas (§4.1), not extracted from
+#' IOTA² intermediates. This is self-contained and deterministic; it
+#' yields the *observed* (not interpolated) series, which is the honest
+#' signal for a per-pixel diagnostic plot.
+#'
+#' @name reconfort_outputs
+NULL
+
+
+# Sentinel-2 central wavelengths (nm) used by the continuum-removal
+# indices (spec 021 §4.1): B04=665, B05=704, B06=741, B8A=865,
+# B11=1610, B12=2190.
+
+#' Continuum-removal SWIR index (canopy water)
+#'
+#' `CRswir = B11 / [ B8A + (1610-865) * (B12-B8A) / (2190-865) ]`
+#' (spec 021 §4.1, production formula, no additive offset). Works on
+#' numeric vectors or `terra::SpatRaster`s (terra arithmetic).
+#'
+#' @param b8a,b11,b12 NIR-narrow / SWIR1 / SWIR2 reflectances.
+#' @return CRswir (same type as the inputs).
+#' @keywords internal
+.reconfort_crswir <- function(b8a, b11, b12) {
+  b11 / (b8a + (1610 - 865) * (b12 - b8a) / (2190 - 865))
+}
+
+#' Continuum-removal red-edge index (chlorophyll)
+#'
+#' `CRre = B5 / [ B4 + (704-665) * (B6-B4) / (741-665) ]`
+#' (spec 021 §4.1).
+#'
+#' @param b4,b5,b6 Red / red-edge-1 / red-edge-2 reflectances.
+#' @return CRre (same type as the inputs).
+#' @keywords internal
+.reconfort_crre <- function(b4, b5, b6) {
+  b5 / (b4 + (704 - 665) * (b6 - b4) / (741 - 665))
+}
+
+
+# THEIA/MUSCATE SCL-like cloud & shadow classes to mask out, when an SCL
+# band is supplied (Sen2Cor classes: 3 shadow, 8/9 cloud med/high,
+# 10 cirrus, 11 snow). Best-effort: if no SCL is available the raw index
+# is kept.
+.RECONFORT_SCL_MASK_CLASSES <- c(3L, 8L, 9L, 10L, 11L)
+
+
+#' Build the CRswir / CRre dated stacks from per-date S2 scenes
+#'
+#' Pure function of the inputs (testable without IOTA² / a real run).
+#' Each scene is a named list with the six reconfort bands as
+#' `terra::SpatRaster`s (or readable paths) plus an optional `scl` band
+#' and an `obs_date`. Returns the two multi-band stacks, one band per
+#' date, with `terra::time()` and `YYYY-MM-DD` layer names set.
+#'
+#' @param scenes A list; each element is
+#'   `list(obs_date = <Date>, B04=, B05=, B06=, B8A=, B11=, B12=,
+#'   scl = NULL)`. Bands are `SpatRaster`s or single file paths.
+#' @return `list(crswir = <SpatRaster>, crre = <SpatRaster>,
+#'   dates = <Date>)`, or `NULL` when `scenes` is empty.
+#' @keywords internal
+.build_reconfort_feature_stacks <- function(scenes) {
+  if (!length(scenes)) return(NULL)
+  load_one <- function(x) {
+    if (is.null(x)) return(NULL)
+    if (inherits(x, "SpatRaster")) x else terra::rast(x)
+  }
+  dates <- as.Date(vapply(scenes, function(s) as.character(s$obs_date),
+                          character(1)))
+  ord   <- order(dates)
+  scenes <- scenes[ord]; dates <- dates[ord]
+
+  crswir_layers <- vector("list", length(scenes))
+  crre_layers   <- vector("list", length(scenes))
+  for (i in seq_along(scenes)) {
+    s   <- scenes[[i]]
+    b4  <- load_one(s$B04); b5 <- load_one(s$B05); b6 <- load_one(s$B06)
+    b8a <- load_one(s$B8A); b11 <- load_one(s$B11); b12 <- load_one(s$B12)
+    cw <- .reconfort_crswir(b8a, b11, b12)
+    cr <- .reconfort_crre(b4, b5, b6)
+    scl <- load_one(s$scl)
+    if (!is.null(scl)) {
+      keep <- !(terra::values(scl) %in% .RECONFORT_SCL_MASK_CLASSES)
+      cw <- terra::setValues(cw, ifelse(keep, terra::values(cw), NA))
+      cr <- terra::setValues(cr, ifelse(keep, terra::values(cr), NA))
+    }
+    crswir_layers[[i]] <- cw
+    crre_layers[[i]]   <- cr
+  }
+  crswir <- terra::rast(crswir_layers)
+  crre   <- terra::rast(crre_layers)
+  names(crswir) <- names(crre) <- format(dates, "%Y-%m-%d")
+  terra::time(crswir) <- dates
+  terra::time(crre)   <- dates
+  list(crswir = crswir, crre = crre, dates = dates)
+}
+
+
+#' Write a RECONFORT feature bundle to disk
+#'
+#' Persists `crswir_stack.tif`, `crre_stack.tif` and `run_meta.json`
+#' under `bundle_dir`, mirroring [.write_fordead_model_bundle()].
+#' Best-effort: returns the bundle dir invisibly.
+#'
+#' @param bundle_dir Target directory (created if absent).
+#' @param stacks The list returned by [.build_reconfort_feature_stacks()].
+#' @param run_meta Named list of provenance metadata.
+#' @return `bundle_dir` (invisibly), or `NULL` when `stacks` is `NULL`.
+#' @keywords internal
+.write_reconfort_features_bundle <- function(bundle_dir, stacks,
+                                             run_meta = list()) {
+  if (is.null(stacks)) return(NULL)
+  if (!dir.exists(bundle_dir)) {
+    dir.create(bundle_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+  terra::writeRaster(stacks$crswir, file.path(bundle_dir, "crswir_stack.tif"),
+                     overwrite = TRUE)
+  terra::writeRaster(stacks$crre, file.path(bundle_dir, "crre_stack.tif"),
+                     overwrite = TRUE)
+  meta <- utils::modifyList(
+    list(tool = "reconfort_features",
+         n_dates = length(stacks$dates),
+         date_min = as.character(min(stacks$dates)),
+         date_max = as.character(max(stacks$dates))),
+    run_meta)
+  jsonlite::write_json(meta, file.path(bundle_dir, "run_meta.json"),
+                       auto_unbox = TRUE, pretty = TRUE)
+  invisible(bundle_dir)
+}
+
+
+#' Enumerate ingested Sentinel-2 scenes for RECONFORT (best-effort)
+#'
+#' Walks the ingested S2 root (THEIA/MUSCATE L2A layout produced by
+#' [reconfort_ingest_s2()]) and groups the per-date FRE band files into
+#' the scene list consumed by [.build_reconfort_feature_stacks()].
+#'
+#' **Layout assumption — validate on a real run.** Band files are
+#' matched by the `*_FRE_B<band>.tif` THEIA convention and the
+#' acquisition date by the leading `..._YYYYMMDD-...` token. If the real
+#' MUSCATE naming differs, this returns an empty list and the `persist`
+#' phase skips (best-effort) — the run is never harmed.
+#'
+#' @param s2_root Directory holding the ingested S2 (recursive search).
+#' @return A list of scenes (possibly empty).
+#' @keywords internal
+.enumerate_reconfort_s2_scenes <- function(s2_root) {
+  if (is.null(s2_root) || !nzchar(s2_root) || !dir.exists(s2_root)) {
+    return(list())
+  }
+  bands <- c("B04", "B05", "B06", "B8A", "B11", "B12")
+  # THEIA/MUSCATE FRE bands; names use single-digit B4/B5/B6 (not zero
+  # padded) and B8A/B11/B12 — match leniently and canonicalise.
+  files <- list.files(s2_root, pattern = "FRE_B[0-9]+A?\\.tif$",
+                      recursive = TRUE, full.names = TRUE,
+                      ignore.case = TRUE)
+  if (!length(files)) return(list())
+  date_chr <- function(f) {
+    m <- regmatches(basename(f), regexpr("[0-9]{8}", basename(f)))
+    if (length(m)) m else NA_character_
+  }
+  band_of <- function(f) {
+    m <- regmatches(basename(f), regexpr("FRE_B[0-9]+A?", basename(f),
+                                         ignore.case = TRUE))
+    if (!length(m)) return(NA_character_)
+    tok <- toupper(sub("FRE_B", "", m))            # "4", "8A", "11", ...
+    if (grepl("^[0-9]$", tok)) tok <- paste0("0", tok)   # B4 -> B04
+    paste0("B", tok)
+  }
+  df <- data.frame(path = files,
+                   date = vapply(files, date_chr, character(1)),
+                   band = vapply(files, band_of, character(1)),
+                   stringsAsFactors = FALSE)
+  df <- df[!is.na(df$date) & df$band %in% bands, , drop = FALSE]
+  scenes <- list()
+  for (dch in sort(unique(df$date))) {
+    sub <- df[df$date == dch, , drop = FALSE]
+    if (!all(bands %in% sub$band)) next            # require all six bands
+    bset <- stats::setNames(
+      lapply(bands, function(b) sub$path[match(b, sub$band)]), bands)
+    scl <- list.files(s2_root, pattern = sprintf("%s.*_SCL.*\\.tif$", dch),
+                      recursive = TRUE, full.names = TRUE, ignore.case = TRUE)
+    bset$scl <- if (length(scl)) scl[1L] else NULL
+    bset$obs_date <- as.Date(dch, format = "%Y%m%d")
+    scenes[[length(scenes) + 1L]] <- bset
+  }
+  scenes
+}

@@ -1,3 +1,23 @@
+# nemeton 0.80.0 (2026-06-13)
+
+### Added — RECONFORT diagnostic pixel : persistance features CRswir/CRre (spec 021, lot L5)
+
+Parité avec le diagnostic pixel FORDEAD. `R/reconfort_outputs.R` recalcule
+**CRswir** (eau) et **CRre** (chlorophylle) par date depuis le S2 ingéré
+(formules de production §4.1, option B) et les persiste en stacks datés.
+`R/reconfort_pixel_series.R` expose **`read_reconfort_pixel_series(con,
+zone_id, xy, crs, run_id, cache_dir)`** qui renvoie les séries observées
+CRswir/CRre d'un pixel cliqué — **sans reticulate** (pas de modèle harmonique
+à reconstruire, contrairement à FORDEAD). Une phase `persist` (best-effort) +
+un `run_id` sont câblés dans `run_reconfort_dieback()` (le bundle atterrit sous
+`<cache_dir>/zone_<id>/run_<run_id>/`).
+
+**Réserve** : l'énumération des scènes S2 (`.enumerate_reconfort_s2_scenes`,
+nommage THEIA/MUSCATE) n'est **pas validable sans un vrai run IOTA²** — elle est
+best-effort et n'altère jamais le run (skip + avertissement si rien trouvé).
+
+Suite : L6 (app `nemetonshiny`).
+
 # nemeton 0.79.0 (2026-06-13)
 
 ### Added — `reset_knowledge_manifest()` (corpus RAG)
