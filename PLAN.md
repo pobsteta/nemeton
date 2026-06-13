@@ -146,6 +146,14 @@ Larrieu). PDF open-access HAL/MDPI/EUR-Lex non scriptables (mur anti-bot) :
 URLs fichier consignées dans `data-raw/references/README.md` pour récupération
 manuelle. Prod à resynchroniser (60 → 81 docs).
 
+**Journal** — *2026-06-13* : **3 références → texte intégral (v0.75.3)**.
+PDF open-access récupérés (hors Cloudflare) : Duplat 1997 (EDP afs-journal),
+IBP/Larrieu (guide CNPF v3.2), Stratégie UE COM(2021)572 (EUR-Lex). Manifest
+**14 full-text + 67 références** (81/81, 4 PDF présents sur disque). Non
+récupérables (Monnet MDPI/HAL Cloudflare, portails OFB/ONF/CNPF, paywall)
+restent `link_only` (liens directs dans le README). Prod toujours à
+resynchroniser (60 → 81, dont 14 texte intégral).
+
 **Journal** — *2026-06-03* : livré l'API d'administration du corpus
 (spec 009.2, v0.63.0). Refactor : la logique « manifest → base » de
 `data-raw/build_knowledge_corpus.R` est promue en 6 fonctions exportées
