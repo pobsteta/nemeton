@@ -411,6 +411,12 @@ Du moins au plus invasif :
       (app — nemetonshiny@e9b5e69, v0.75.1)
 - [x] Chargement projet : build_index_stack hors du chemin critique
       (app — nemetonshiny@d9bc73f, v0.75.2)
+- [x] Chargement projet récent : skip connexion DB monitoring
+      (`.has_monitoring_zone_id()`) + `ug_build_sf()` différé via `later()`
+      — garde-fous #1 + #3 (app — nemetonshiny@f9cd7b1, v0.78.0)
+- [x] Chargement projet récent : `connect_timeout = 2L` sur la connexion
+      monitoring — garde-fou #2, consomme cœur v0.76.0
+      (app — nemetonshiny@d6149b5, v0.79.0)
 
 ---
 
@@ -556,15 +562,28 @@ badge version dynamique `github/v/release` (#53), garde-fou CI
 `version-consistency` DESCRIPTION=NEWS=CITATION (#54), port du workflow
 `release.yml` auto-tag/release depuis DESCRIPTION (#55).
 
-### 2026-06-13 — Chargement projet récent : retrait des blocages synchrones (app)
+### 2026-06-13 — Chargement projet récent : retrait de 2 blocages synchrones (app)
 
-`nemetonshiny@f9cd7b1` (v0.78.0). Le chargement d'un projet récent retire **2
-blocages synchrones** : (1) la connexion DB monitoring est désormais gardée par
-`.has_monitoring_zone_id()` (plus de connexion systématique au démarrage) ;
-(2) `ug_build_sf()` est extrait en `attach_indicators_sf()`, et
-`load_project(build_indicators_sf = )` diffère ce calcul via `later()`. Reste à
-livrer côté cœur le `connect_timeout` de `db_connect()` (fait ci-dessus,
-v0.76.0) que l'app passera à `2L` pour le chemin interactif.
+`nemetonshiny@f9cd7b1` (v0.78.0). Retrait de **deux blocages synchrones** du
+chemin critique (avant rendu des parcelles). **(1)** Connexion à la base
+monitoring (`mod_home`) gardée par le prédicat `.has_monitoring_zone_id()` :
+plus de round-trip (connexion TCP + migration schéma) quand
+`monitoring_zone_id` est déjà dans `metadata.json`. **(3)** `ug_build_sf()`
+(`st_union` par UGF, 0,5–3 s) extrait en `attach_indicators_sf()` + paramètre
+`load_project(build_indicators_sf = )`, différé via `later()` hors du rendu
+carte.
+
+### 2026-06-13 — Chargement projet récent : `connect_timeout` borné (app, garde-fou #2)
+
+`nemetonshiny@d6149b5` (v0.79.0). Clôt le **3ᵉ garde-fou (#2)** :
+`get_monitoring_db_connection()` borne la phase de connexion Postgres via
+`connect_timeout = 2L`, forwardé à `nemeton::db_connect()` par le wrapper
+rétro-compatible `.nemeton_db_connect()` (introspection des `formals`).
+Consomme `nemeton::db_connect(connect_timeout=)` exposé côté cœur en
+**v0.76.0** (`feat(db)`). Plancher `Imports: nemeton` inchangé (consommation
+opportuniste), ordre cœur → app respecté. **Les 3 garde-fous du chargement
+projet récent sont désormais livrés : #1 skip DB, #2 connect_timeout, #3
+`ug_build_sf` différé.**
 
 ### 2026-06-12 — RECONFORT L2b.3 : orchestration end-to-end (spec 021, cœur)
 
