@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.75.3] - 2026-06-13
+
+### Changed
+
+- RAG corpus: retrieved open-access PDFs (non-Cloudflare hosts) for 3 docs,
+  flipped from `link_only` to full-text `full`: Duplat & Tran-Ha 1997
+  (EDP afs-journal), Larrieu IBP guide (CNPF v3.2), EU Forest Strategy
+  COM(2021) 572 (EUR-Lex). Manifest: 14 full-text + 67 references (81/81).
+  Non-retrievable PDFs (Monnet via MDPI/HAL Cloudflare, OFB/ONF/CNPF portals,
+  paywalls) stay `link_only`; direct links recorded in the references README.
+
 ## [0.75.2] - 2026-06-13
 
 ### Changed

@@ -101,19 +101,26 @@ ingested full-text by the RAG corpus build. PDFs gitignored; download to
 - **IPCC (2019).** *2019 Refinement to the 2006 IPCC Guidelines — Vol. 4,
   Ch. 4 Forest Land.* → `IPCC_2019_V4_Ch04_ForestLand.pdf`
   <https://www.ipcc-nggip.iges.or.jp/public/2019rf/pdf/4_Volume4/19R_V4_Ch04_Forest%20Land.pdf>
+- **Duplat P. & Tran-Ha M. (1997).** *Croissance en hauteur dominante du
+  chêne sessile.* Ann. Sci. For. 54(7). → `Duplat_TranHa_1997.pdf`
+  <https://www.afs-journal.org/articles/forest/pdf/1997/07/AFS_0003-4312_1997_54_7_ART0003.pdf> (EDP open archive)
+- **Larrieu et al. — IBP.** *Indice de Biodiversité Potentielle, guide CNPF
+  v3.2.* → `Larrieu_IBP_CNPF_v3.pdf`
+  <https://www.cnpf.fr/sites/socle/files/2026-04/IBP_FR_v3_2_260202.pdf>
+- **Commission européenne (2021).** *Stratégie de l'UE pour les forêts —
+  COM(2021) 572.* → `Strategie_foret_UE_2021_COM572.pdf`
+  <https://eur-lex.europa.eu/resource.html?uri=cellar:0d918e07-e610-11eb-a1a5-01aa75ed71a1.0012.02/DOC_1&format=PDF>
 
 ### Open-access PDFs to fetch manually (anti-bot blocks scripted download)
 
-These refs are open access but `hal.science` (Cloudflare), MDPI, EUR-Lex and
-the OFB/ONF/CNPF portals serve a JS/anti-bot wall to `curl`. Download with a
-browser into `data-raw/references/` and set `local_path` + flip the row to
-`full` to ingest the full text (currently ingested as `link_only` references):
+These refs are open access but their host (`hal.science` Cloudflare, MDPI)
+serves a JS/anti-bot wall to `curl`. Download with a browser into
+`data-raw/references/`, set `local_path` and flip the row to `full` to ingest
+the full text (currently ingested as `link_only` references):
 
-- **Duplat & Tran-Ha (1997)** — <https://hal.science/hal-00883174/file/hal-00883174.pdf>
-- **Monnet & Mermin (2014)**, *Forests* 5(9) — <https://hal.science/hal-01086012/file/gr2014-pub00041769.pdf>
-- **Larrieu et al. (2018)**, IBP / RFF — <https://hal.science/hal-03449570/file/727_748_LARRRIEU.pdf>
-- **Strategie forêts UE COM(2021) 572** — EUR-Lex PDF (`…/TXT/PDF/?uri=CELEX:52021DC0572`)
-- **OFB CT88 / CT82** — <https://ct88.espaces-naturels.fr/> · <https://ct82.espaces-naturels.fr/>
+- **Monnet & Mermin (2014)**, *Forests* 5(9):2307-2326, DOI 10.3390/f5092307
+  — <https://www.mdpi.com/1999-4907/5/9/2307/pdf> · <https://hal.science/hal-01086012>
+- **OFB CT88 / CT82** (web-books, no single PDF) — <https://ct88.espaces-naturels.fr/> · <https://ct82.espaces-naturels.fr/>
 
 Other cleared institutional refs without a public full-text PDF (reference
 only, `source_url` in the manifest): Badeau & Ulrich 2008 and Peiffer et al.
