@@ -98,6 +98,22 @@ ingested full-text by the RAG corpus build. PDFs gitignored; download to
   evapotranspiration — FAO Irrigation and Drainage Paper 56.* FAO, Rome.
   → `FAO56_x0490e.pdf` (official: <https://www.fao.org/3/x0490e/x0490e00.htm>;
   single-PDF copies available from public mirrors).
+- **IPCC (2019).** *2019 Refinement to the 2006 IPCC Guidelines — Vol. 4,
+  Ch. 4 Forest Land.* → `IPCC_2019_V4_Ch04_ForestLand.pdf`
+  <https://www.ipcc-nggip.iges.or.jp/public/2019rf/pdf/4_Volume4/19R_V4_Ch04_Forest%20Land.pdf>
+
+### Open-access PDFs to fetch manually (anti-bot blocks scripted download)
+
+These refs are open access but `hal.science` (Cloudflare), MDPI, EUR-Lex and
+the OFB/ONF/CNPF portals serve a JS/anti-bot wall to `curl`. Download with a
+browser into `data-raw/references/` and set `local_path` + flip the row to
+`full` to ingest the full text (currently ingested as `link_only` references):
+
+- **Duplat & Tran-Ha (1997)** — <https://hal.science/hal-00883174/file/hal-00883174.pdf>
+- **Monnet & Mermin (2014)**, *Forests* 5(9) — <https://hal.science/hal-01086012/file/gr2014-pub00041769.pdf>
+- **Larrieu et al. (2018)**, IBP / RFF — <https://hal.science/hal-03449570/file/727_748_LARRRIEU.pdf>
+- **Strategie forêts UE COM(2021) 572** — EUR-Lex PDF (`…/TXT/PDF/?uri=CELEX:52021DC0572`)
+- **OFB CT88 / CT82** — <https://ct88.espaces-naturels.fr/> · <https://ct82.espaces-naturels.fr/>
 
 Other cleared institutional refs without a public full-text PDF (reference
 only, `source_url` in the manifest): Badeau & Ulrich 2008 and Peiffer et al.
