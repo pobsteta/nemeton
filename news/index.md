@@ -1,5 +1,28 @@
 # Changelog
 
+## nemeton 0.75.4 (2026-06-13)
+
+#### Changed — corpus RAG : 46 références BILJOU passent en texte intégral
+
+Les PDF des références citées par BILJOU sont **hébergés par l’INRAE**
+sur le portail (`appgeodb.nancy.inrae.fr/biljou/pdf/`). 50 PDF récupérés
+depuis cette source légitime → câblage de **44 docs** (+ Monnet &
+Peiffer déposés par l’utilisateur) en `full` (texte intégral). Les
+ex-`copyright` sont retagués **`license=HAL`** (archive ouverte,
+commercial=non), cohérent avec le traitement Bontemps/Charru. Comble
+aussi 2 trous institutionnels (Bréthes 1997 « description des sols »,
+Livre Jaune Badeau faisabilité RENECOFOR).
+
+Manifest : **60 docs full-text + 21 références** (81/81, 0 sauté).
+Restent en référence : 4 papiers copyright hors BILJOU (Mouret,
+Fassnacht, McCool, Beven&Kirkby), ouvrages non hébergés (Quae, Biotope,
+AFORCE), EFI (liens morts) et portails sans PDF (CNPF/ONF/OFB,
+Legifrance).
+
+PDF gitignorés (`data-raw/references/biljou/`, +`**/*.pdf`) ;
+reconstitution via `data-raw/wire_biljou_pdfs.R` (mapping fichier →
+doc_id).
+
 ## nemeton 0.75.3 (2026-06-13)
 
 #### Changed — corpus RAG : 3 références passent en texte intégral

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.75.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.75.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,9 +39,18 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/v0.75.3/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.75.4" id="nemeton-0754-2026-06-13">nemeton 0.75.4 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0754-2026-06-13"></a></h2>
+<div class="section level4">
+<h4 id="changed--corpus-rag--références-biljou-passent-en-texte-intégral-0-75-4">Changed — corpus RAG : 46 références BILJOU passent en texte intégral<a class="anchor" aria-label="anchor" href="#changed--corpus-rag--r%C3%A9f%C3%A9rences-biljou-passent-en-texte-int%C3%A9gral-0-75-4"></a></h4>
+<p>Les PDF des références citées par BILJOU sont <strong>hébergés par l’INRAE</strong> sur le portail (<code>appgeodb.nancy.inrae.fr/biljou/pdf/</code>). 50 PDF récupérés depuis cette source légitime → câblage de <strong>44 docs</strong> (+ Monnet &amp; Peiffer déposés par l’utilisateur) en <code>full</code> (texte intégral). Les ex-<code>copyright</code> sont retagués <strong><code>license=HAL</code></strong> (archive ouverte, commercial=non), cohérent avec le traitement Bontemps/Charru. Comble aussi 2 trous institutionnels (Bréthes 1997 « description des sols », Livre Jaune Badeau faisabilité RENECOFOR).</p>
+<p>Manifest : <strong>60 docs full-text + 21 références</strong> (81/81, 0 sauté). Restent en référence : 4 papiers copyright hors BILJOU (Mouret, Fassnacht, McCool, Beven&amp;Kirkby), ouvrages non hébergés (Quae, Biotope, AFORCE), EFI (liens morts) et portails sans PDF (CNPF/ONF/OFB, Legifrance).</p>
+<p>PDF gitignorés (<code>data-raw/references/biljou/</code>, +<code>**/*.pdf</code>) ; reconstitution via <code>data-raw/wire_biljou_pdfs.R</code> (mapping fichier → doc_id).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.75.3" id="nemeton-0753-2026-06-13">nemeton 0.75.3 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0753-2026-06-13"></a></h2>
 <div class="section level4">

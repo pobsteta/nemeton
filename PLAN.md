@@ -170,6 +170,16 @@ Cloudflare, portails OFB/ONF/CNPF, paywall) restent `link_only` (liens
 directs dans le README). Prod toujours à resynchroniser (60 → 81, dont
 14 texte intégral).
 
+**Journal** — *2026-06-13* : **46 réfs BILJOU → texte intégral
+(v0.75.4)**. PDF hébergés par l’INRAE sur le portail BILJOU
+(`/biljou/pdf/`) : 50 récupérés → 44 docs câblés `full` (+ Monnet &
+Peiffer déposés), ex-`copyright` retagués `license=HAL`. Comble 2 trous
+institutionnels (Bréthes 1997, Livre Jaune Badeau faisabilité). Manifest
+**60 full-text + 21 références** (81/81, 0 sauté). PDF gitignorés
+(`biljou/`, `**/*.pdf`), reconstitution via
+`data-raw/wire_biljou_pdfs.R`. Prod à resynchroniser (60 → 81, dont 60
+texte intégral) — gros build (≈ +6000 chunks attendus).
+
 **Journal** — *2026-06-03* : livré l’API d’administration du corpus
 (spec 009.2, v0.63.0). Refactor : la logique « manifest → base » de
 `data-raw/build_knowledge_corpus.R` est promue en 6 fonctions exportées
