@@ -824,6 +824,17 @@ cœur).
 
 ## Journal
 
+### 2026-06-13 — Corpus RAG : 4 papiers scannés OCRisés → texte intégral (cœur, v0.76.2)
+
+Les 4 PDF BILJOU scannés (link_only en v0.76.1) sont **OCRisés**
+(`tesseract` fra+eng via conda `ocr`, 300 dpi →
+`data-raw/references/biljou/ocr/*.md` gitignorés) et ré-ingérés en
+`full`. Prod : **60 texte intégral / 81, 6 120 chunks, 0 erreur** —
+maximum atteignable (21 références = aucun contenu dispo : portails,
+payants, ouvrages non hébergés). Script `data-raw/ocr_biljou_scans.sh`.
+Ingestion ciblée : suppression des 4 docs ref en base +
+`fill_corpus_prod.sh`.
+
 ### 2026-06-13 — Corpus RAG : prod synchronisé + 4 PDF scannés → link_only (cœur, v0.76.1)
 
 Build prod FRESH des 81 docs (manifest BILJOU full-text v0.75.4) : **56

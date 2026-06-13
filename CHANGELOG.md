@@ -12,6 +12,21 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.76.2\] - 2026-06-13
+
+### Changed
+
+- RAG corpus: the 4 scanned BILJOU papers (Bréda 1993/2002/2008, Granier
+  1996), demoted to `link_only` in 0.76.1, are now OCR’d (`tesseract`
+  fra+eng, 300 dpi) and re-ingested as full-text. Prod corpus: 60
+  full-text / 81 (6120 chunks). OCR text
+  (`data-raw/references/biljou/ocr/*.md`) is gitignored (copyright).
+
+### Added
+
+- `data-raw/ocr_biljou_scans.sh`: reproduces the OCR of the scanned
+  PDFs.
+
 ## \[0.76.1\] - 2026-06-13
 
 ### Fixed

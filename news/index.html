@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.76.2" id="nemeton-0762-2026-06-13">nemeton 0.76.2 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0762-2026-06-13"></a></h2>
+<div class="section level4">
+<h4 id="changed--corpus-rag--papiers-scannés-ocrisés--texte-intégral-0-76-2">Changed — corpus RAG : 4 papiers scannés OCRisés → texte intégral<a class="anchor" aria-label="anchor" href="#changed--corpus-rag--papiers-scann%C3%A9s-ocris%C3%A9s--texte-int%C3%A9gral-0-76-2"></a></h4>
+<p>Les 4 PDF BILJOU scannés (Bréda 1993/2002/2008, Granier 1996), repassés en référence en v0.76.1 faute de couche texte, sont désormais <strong>OCRisés</strong> (<code>tesseract</code> fra+eng via conda, 300 dpi) → ré-ingérés en <strong>texte intégral</strong>. Corpus prod : <strong>60 docs en texte intégral / 81</strong> (6 120 chunks, 0 embedding manquant) — le maximum (les 21 références restantes n’ont aucun contenu disponible : portails, payants sans PDF, ouvrages non hébergés).</p>
+<p>Le texte OCR (<code>data-raw/references/biljou/ocr/*.md</code>) est <strong>gitignoré</strong> (papiers copyright). Script de reproduction : <code>data-raw/ocr_biljou_scans.sh</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.76.1" id="nemeton-0761-2026-06-13">nemeton 0.76.1 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0761-2026-06-13"></a></h2>
 <div class="section level4">

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -541,6 +541,10 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-06-13--corpus-rag--4-papiers-scannés-ocrisés--texte-intégral-cœur-v0762">2026-06-13 — Corpus RAG : 4 papiers scannés OCRisés → texte intégral (cœur, v0.76.2)<a class="anchor" aria-label="anchor" href="#id_2026-06-13--corpus-rag--4-papiers-scann%C3%A9s-ocris%C3%A9s--texte-int%C3%A9gral-c%C5%93ur-v0762"></a></h3>
+<p>Les 4 PDF BILJOU scannés (link_only en v0.76.1) sont <strong>OCRisés</strong> (<code>tesseract</code> fra+eng via conda <code>ocr</code>, 300 dpi → <code>data-raw/references/biljou/ocr/*.md</code> gitignorés) et ré-ingérés en <code>full</code>. Prod : <strong>60 texte intégral / 81, 6 120 chunks, 0 erreur</strong> — maximum atteignable (21 références = aucun contenu dispo : portails, payants, ouvrages non hébergés). Script <code>data-raw/ocr_biljou_scans.sh</code>. Ingestion ciblée : suppression des 4 docs ref en base + <code>fill_corpus_prod.sh</code>.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-06-13--corpus-rag--prod-synchronisé--4-pdf-scannés--link_only-cœur-v0761">2026-06-13 — Corpus RAG : prod synchronisé + 4 PDF scannés → link_only (cœur, v0.76.1)<a class="anchor" aria-label="anchor" href="#id_2026-06-13--corpus-rag--prod-synchronis%C3%A9--4-pdf-scann%C3%A9s--link_only-c%C5%93ur-v0761"></a></h3>
 <p>Build prod FRESH des 81 docs (manifest BILJOU full-text v0.75.4) : <strong>56 texte intégral + 25 références, 6 033 chunks, 0 embedding manquant</strong>. 4 PDF BILJOU (Bréda 1993/2002/2008, Granier 1996) sont des <strong>scans sans couche texte</strong> (<code>pdf_text</code> → 0 car.) → échouaient en full-text → repassés <code>link_only</code> (corpus <strong>81/81, 0 erreur</strong>). Ajout <code>data-raw/fill_corpus_prod.sh</code> (build incrémental non-FRESH). OCR requis pour full-texter les 4 scans.</p>
