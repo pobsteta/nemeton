@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.75.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.75.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,9 +39,18 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/v0.75.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.75.1" id="nemeton-0751-2026-06-13">nemeton 0.75.1 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0751-2026-06-13"></a></h2>
+<div class="section level4">
+<h4 id="changed--corpus-rag--levée-du-gel-d5-sur-lensemble-du-manifest-0-75-1">Changed — corpus RAG : levée du gel D5 sur l’ensemble du manifest<a class="anchor" aria-label="anchor" href="#changed--corpus-rag--lev%C3%A9e-du-gel-d5-sur-lensemble-du-manifest-0-75-1"></a></h4>
+<p>Décision Pascal : les <strong>50 références <code>to_confirm</code></strong> (BILJOU + 4 papiers copyright) passent en <strong><code>cleared</code></strong> (override D5). Toutes étant en <code>ingest_strategy=abstract_only</code>, elles entrent au corpus comme <strong>références citables</strong> (<code>link_only</code> — titre/citation embeddés, pas de texte intégral de documents copyright). Manifest : <strong>81 cleared / 0 to_confirm</strong>.</p>
+<p>Build prod rejoué (FRESH) : pgvector synchronisé → <strong>60 documents</strong> ingérés (10 texte intégral + 50 références), 2 354 chunks, 0 embedding manquant ; les 12 docs internes retirés en v0.75.0 sont bien absents. <strong>21 sautés</strong> : docs <code>cleared</code>/<code>full</code> sans PDF attaché (institutionnels/normatifs bien licenciés — backlog d’enrichissement, conservés en <code>full</code> pour ingestion texte intégral dès qu’une source est jointe).</p>
+<p>Ajouts <code>data-raw/</code> : <code>clear_all_to_confirm.R</code> (flip reproductible) + <code>build_corpus_prod.sh</code> (wrapper FRESH vers le pgvector prod).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.75.0" id="nemeton-0750-2026-06-13">nemeton 0.75.0 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0750-2026-06-13"></a></h2>
 <div class="section level4">

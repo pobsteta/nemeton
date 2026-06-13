@@ -12,6 +12,24 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.75.1\] - 2026-06-13
+
+### Changed
+
+- RAG corpus: lifted the D5 license gate across the whole manifest — the
+  50 `to_confirm` rows (BILJOU + 4 copyright papers) are now `cleared`
+  (explicit override). All being `abstract_only`, they ingest as citable
+  references (`link_only`), not full text. Manifest: 81 cleared / 0
+  to_confirm. Prod pgvector re-synced (FRESH): 60 docs (10 full-text +
+  50 references), 2354 chunks, 0 missing embeddings; 21 skipped (cleared
+  `full` without an attached PDF — kept `full` for later full-text
+  ingestion).
+
+### Added
+
+- `data-raw/clear_all_to_confirm.R` (reproducible status flip) and
+  `data-raw/build_corpus_prod.sh` (FRESH prod-corpus rebuild wrapper).
+
 ## \[0.75.0\] - 2026-06-13
 
 ### Changed

@@ -141,6 +141,16 @@ to_confirm). Scripts de provenance sous `data-raw/`. Tests manifest
 verts (20 + 29). Build prod réel non rejoué (reliquat « Build corpus
 réel » toujours 🟨).
 
+**Journal** — *2026-06-13* : **levée du gel D5 + synchro prod
+(v0.75.1)**. Les 50 `to_confirm` passent en `cleared` (override Pascal)
+→ manifest **81 cleared / 0 to_confirm** ; toutes en `abstract_only`
+donc ingérées en références `link_only`. **Build prod FRESH rejoué**
+(`build_corpus_prod.sh`) : pgvector synchronisé → **60 docs** (10 texte
+intégral + 50 références), **2 354 chunks, 0 embedding manquant**, 12
+tutos internes absents, 0 erreur. 21 sautés = `cleared`/`full` sans PDF
+(backlog d’enrichissement, gardés en `full`). Le reliquat « Build corpus
+réel » 🟨 est donc **résolu** côté prod.
+
 **Journal** — *2026-06-03* : livré l’API d’administration du corpus
 (spec 009.2, v0.63.0). Refactor : la logique « manifest → base » de
 `data-raw/build_knowledge_corpus.R` est promue en 6 fonctions exportées
