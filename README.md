@@ -203,7 +203,8 @@ L'application Shiny ([nemetonshiny](https://github.com/pobsteta/nemetonshiny)) e
 
 ```
 Obstetar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton Method.
-R package version 0.15.0. https://github.com/pobsteta/nemeton
+https://github.com/pobsteta/nemeton — version : voir CITATION.cff ou la
+derniere release (https://github.com/pobsteta/nemeton/releases/latest).
 ```
 
 ---
