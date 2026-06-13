@@ -24,6 +24,37 @@ Le manifest passe de 39 à **81 docs** (31 `cleared` + 50 `to_confirm`).
 Scripts de provenance reproductibles sous `data-raw/` (`add_biljou_refs.R`,
 `clear_biljou_institutional.R`, `url_biljou_institutional.R`).
 
+# nemeton 0.74.1 (2026-06-12)
+
+### Fixed — `FOREIGN KEY constraint failed` au re-build des zones (backend SQLite)
+
+`build_project_monitoring_zones(..., replace = TRUE)` échouait avec
+`FOREIGN KEY constraint failed` lors du **re-build** d'un projet dont les
+zones possédaient déjà des lignes enfants (placettes de validation,
+alertes FORDEAD) — symptôme remonté depuis `nemetonshiny` sur le backend
+**SQLite** local (Windows). La première génération sur une base vierge
+réussissait ; seul le re-clic cassait.
+
+- **Cause** : divergence de schéma PG↔SQLite. La variante PostgreSQL
+  (`pg/0001_init.sql`) porte `plot.zone_id → monitoring_zone(id)
+  ON DELETE CASCADE` et `alert.plot_id → plot(id) ON DELETE CASCADE`, mais
+  la variante SQLite (`0001_init.sql`) avait délibérément retiré ces
+  clauses `CASCADE`. Comme `db_connect()` active `PRAGMA foreign_keys =
+  ON`, le `DELETE FROM monitoring_zone WHERE project_uuid = ?` de l'upsert
+  D5 était bloqué par les lignes `plot`/`alert` enfants.
+- **Correctif** : `.delete_project_zones()` supprime désormais la chaîne
+  **explicitement, enfant d'abord** (`alert` → `plot` →
+  `monitoring_zone`), dans une seule transaction — portable sur les deux
+  backends (sur PostgreSQL les suppressions d'enfants font simplement
+  doublon avec le cascade). Pas de migration de schéma : ajouter le
+  cascade côté SQLite imposerait un *rebuild* de tables, incompatible avec
+  la transaction unique de `db_migrate()` (`PRAGMA foreign_keys` est un
+  no-op en transaction, et `defer_foreign_keys` ne lève pas la violation
+  différée laissée par le `DROP TABLE` du parent).
+- Côté app : aucun changement requis — `nemetonshiny` (v0.76.0) consomme
+  déjà `build_project_monitoring_zones()` et bénéficie du fix dès que le
+  `Remotes: pobsteta/nemeton@*release` tire cette version.
+
 # nemeton 0.74.0 (2026-06-12)
 
 ### Added — RECONFORT, orchestration end-to-end (spec 021, lot L2b.3)
