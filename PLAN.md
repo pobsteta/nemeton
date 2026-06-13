@@ -137,6 +137,15 @@ pgvector synchronisé → **60 docs** (10 texte intégral + 50 références),
 21 sautés = `cleared`/`full` sans PDF (backlog d'enrichissement, gardés en
 `full`). Le reliquat « Build corpus réel » 🟨 est donc **résolu** côté prod.
 
+**Journal** — *2026-06-13* : **les 21 sautés entrent au corpus (v0.75.2)**.
+IPCC 2019 (Vol.4 Ch.4 Forest Land) PDF récupéré → `full` ; les 20 autres →
+`link_only` (références citables). **Manifest 81/81 ingérables, 0 sauté**
+(11 texte intégral + 70 références). Métadonnée Monnet&Mermin 2014 corrigée
+(*Forests* 5(9), pas *Remote Sensing*), `source_url` HAL ajoutés (Duplat,
+Larrieu). PDF open-access HAL/MDPI/EUR-Lex non scriptables (mur anti-bot) :
+URLs fichier consignées dans `data-raw/references/README.md` pour récupération
+manuelle. Prod à resynchroniser (60 → 81 docs).
+
 **Journal** — *2026-06-03* : livré l'API d'administration du corpus
 (spec 009.2, v0.63.0). Refactor : la logique « manifest → base » de
 `data-raw/build_knowledge_corpus.R` est promue en 6 fonctions exportées
