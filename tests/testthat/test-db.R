@@ -154,6 +154,47 @@ test_that("db_connect read_only must be a single logical", {
 })
 
 
+# ---- connect_timeout argument ----------------------------------------
+
+test_that("db_connect exposes connect_timeout in its formals (default 10L)", {
+  expect_true("connect_timeout" %in% names(formals(db_connect)))
+  expect_identical(eval(formals(db_connect)$connect_timeout), 10L)
+})
+
+test_that("db_connect connect_timeout must be a single positive number", {
+  expect_error(db_connect("sqlite:///tmp/x.sqlite", connect_timeout = NA),
+               "positive")
+  expect_error(db_connect("sqlite:///tmp/x.sqlite", connect_timeout = 0),
+               "positive")
+  expect_error(db_connect("sqlite:///tmp/x.sqlite", connect_timeout = "fast"),
+               "positive")
+})
+
+test_that("connect_timeout is a no-op for the SQLite backend", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempfile("dbf", fileext = ".sqlite", {
+    con <- db_connect(paste0("sqlite:///", dbf), connect_timeout = 1L)
+    on.exit(db_disconnect(con), add = TRUE)
+    expect_s4_class(con, "SQLiteConnection")
+    expect_true(DBI::dbIsValid(con))
+  })
+})
+
+test_that("connect_timeout bounds the wait on an unreachable Postgres host", {
+  skip_on_ci()                       # needs ~2 s of real TCP wait
+  skip_if_not_installed("RPostgres")
+  # 10.255.255.1 is non-routable: the TCP connect blocks until libpq's
+  # connect_timeout fires, so a 2 s budget must fail in well under 5 s
+  # (vs the multi-minute default OS timeout).
+  elapsed <- system.time(
+    expect_error(
+      db_connect("postgresql://x:x@10.255.255.1:5432/x", connect_timeout = 2L)
+    )
+  )[["elapsed"]]
+  expect_lt(elapsed, 5)
+})
+
+
 # ---- SQLite local backend (WAL) --------------------------------------
 #
 # SQLite tests use a per-test temp file, always fresh, no external

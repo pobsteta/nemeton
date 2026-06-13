@@ -124,6 +124,11 @@ NULL
 #'   file must already exist and its parent directory is *not* created.
 #'   For **PostgreSQL** the flag is a no-op (it manages concurrent
 #'   readers and writers natively).
+#' @param connect_timeout Positive number of seconds bounding the
+#'   connection attempt. Passed to libpq as the `connect_timeout`
+#'   parameter for the **PostgreSQL** backend (caps the hang on an
+#'   unreachable host); **ignored** for the SQLite file backend.
+#'   Defaults to `10L`.
 #'
 #' @details
 #' **SQLite is the local backend.** Opened in WAL (write-ahead logging)
@@ -155,7 +160,8 @@ NULL
 #'
 #' @export
 db_connect <- function(url = Sys.getenv("NEMETON_DB_URL"),
-                       read_only = FALSE) {
+                       read_only = FALSE,
+                       connect_timeout = 10L) {
   if (!nzchar(url)) {
     cli::cli_abort(c(
       "No database URL provided.",
@@ -167,6 +173,10 @@ db_connect <- function(url = Sys.getenv("NEMETON_DB_URL"),
   if (!is.logical(read_only) || length(read_only) != 1L || is.na(read_only)) {
     cli::cli_abort("{.arg read_only} must be a single {.code TRUE}/{.code FALSE}.")
   }
+  if (!is.numeric(connect_timeout) || length(connect_timeout) != 1L ||
+      is.na(connect_timeout) || connect_timeout <= 0) {
+    cli::cli_abort("{.arg connect_timeout} must be a single positive number of seconds.")
+  }
   driver <- .detect_driver(url)
   .assert_db_pkgs(driver)
   switch(driver,
@@ -175,13 +185,17 @@ db_connect <- function(url = Sys.getenv("NEMETON_DB_URL"),
       # `read_only` is intentionally ignored for Postgres: it manages
       # concurrent readers/writers natively, there is no file lock to
       # work around.
+      # `connect_timeout` is a libpq connection parameter (seconds): it
+      # bounds the wait when the Postgres host is unreachable instead of
+      # hanging on the default OS TCP timeout.
       DBI::dbConnect(
         RPostgres::Postgres(),
-        host     = parts$host,
-        port     = parts$port,
-        dbname   = parts$dbname,
-        user     = parts$user,
-        password = parts$password
+        host            = parts$host,
+        port            = parts$port,
+        dbname          = parts$dbname,
+        user            = parts$user,
+        password        = parts$password,
+        connect_timeout = as.integer(connect_timeout)
       )
     },
     sqlite = {
