@@ -543,6 +543,29 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-06-13 — `db_connect(connect_timeout=)` + parité CI nemetonshiny↔nemeton (cœur)
+
+Release **v0.76.0** (feat). `db_connect(url, read_only, connect_timeout = 10L)` :
+le paramètre est passé à libpq (`connect_timeout`, secondes) sur la branche
+PostgreSQL pour **borner le gel** sur un hôte injoignable ; ignoré côté SQLite.
+Consommé ensuite par `nemetonshiny::get_monitoring_db_connection()` qui passera
+`connect_timeout = 2L` sur le chemin d'hydratation interactif. Tests `test-db.R`
+(formals + défaut, validation, no-op SQLite, `skip_on_ci` connexion vers
+`10.255.255.1` qui échoue en < 5 s). **Parité d'outillage avec nemetonshiny** :
+badge version dynamique `github/v/release` (#53), garde-fou CI
+`version-consistency` DESCRIPTION=NEWS=CITATION (#54), port du workflow
+`release.yml` auto-tag/release depuis DESCRIPTION (#55).
+
+### 2026-06-13 — Chargement projet récent : retrait des blocages synchrones (app)
+
+`nemetonshiny@f9cd7b1` (v0.78.0). Le chargement d'un projet récent retire **2
+blocages synchrones** : (1) la connexion DB monitoring est désormais gardée par
+`.has_monitoring_zone_id()` (plus de connexion systématique au démarrage) ;
+(2) `ug_build_sf()` est extrait en `attach_indicators_sf()`, et
+`load_project(build_indicators_sf = )` diffère ce calcul via `later()`. Reste à
+livrer côté cœur le `connect_timeout` de `db_connect()` (fait ci-dessus,
+v0.76.0) que l'app passera à `2L` pour le chemin interactif.
+
 ### 2026-06-12 — RECONFORT L2b.3 : orchestration end-to-end (spec 021, cœur)
 
 Release **v0.74.0**. **L2b.3** — `run_reconfort_dieback()` relie L1/L2a/

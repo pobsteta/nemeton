@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.76.0] - 2026-06-13
+
+### Added
+
+- `db_connect(url, read_only, connect_timeout = 10L)`: bounds the connection
+  attempt. Passed to libpq (`connect_timeout`, seconds) on the PostgreSQL
+  backend to cap the hang on an unreachable host; ignored for SQLite.
+
+### Internal
+
+- Tooling parity with `nemetonshiny`: dynamic version badge
+  (`github/v/release`), `version-consistency` CI guard (DESCRIPTION = NEWS =
+  CITATION), and a `release.yml` workflow (auto tag + GitHub release from
+  `DESCRIPTION` on push to `main`).
+
 ## [0.75.4] - 2026-06-13
 
 ### Changed

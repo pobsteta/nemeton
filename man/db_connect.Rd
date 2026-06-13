@@ -4,7 +4,11 @@
 \alias{db_connect}
 \title{Connect to the monitoring database}
 \usage{
-db_connect(url = Sys.getenv("NEMETON_DB_URL"), read_only = FALSE)
+db_connect(
+  url = Sys.getenv("NEMETON_DB_URL"),
+  read_only = FALSE,
+  connect_timeout = 10L
+)
 }
 \arguments{
 \item{url}{Character. Connection URL. Two schemes are
@@ -26,6 +30,12 @@ Defaults to `FALSE`. Relevant only for the SQLite file backend; the
 file must already exist and its parent directory is *not* created.
 For **PostgreSQL** the flag is a no-op (it manages concurrent
 readers and writers natively).}
+
+\item{connect_timeout}{Positive number of seconds bounding the
+connection attempt. Passed to libpq as the `connect_timeout`
+parameter for the **PostgreSQL** backend (caps the hang on an
+unreachable host); **ignored** for the SQLite file backend.
+Defaults to `10L`.}
 }
 \value{
 A `DBIConnection`.
