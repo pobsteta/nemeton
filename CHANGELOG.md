@@ -12,6 +12,26 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.75.2\] - 2026-06-13
+
+### Changed
+
+- RAG corpus: the 21 `cleared`/`full` rows without an attached PDF
+  (previously skipped at build) now all ingest. IPCC 2019 (Vol.4 Ch.4
+  Forest Land) PDF retrieved → `full`; the other 20 → `link_only`
+  citable references. Manifest: 81/81 ingestible, 0 skipped (11
+  full-text + 70 references).
+- Fixed `monnet_mermin_2014` metadata (it is *Forests* 5(9):2307-2326,
+  DOI 10.3390/f5092307, open on HAL — was wrongly *Remote Sensing
+  6(8)*); added open HAL `source_url` for `duplat_tranha_1997` and
+  `larrieu_2018_ibp`.
+
+### Added
+
+- `data-raw/link_only_skipped.R` (reproducible) and a manual-download
+  section in `data-raw/references/README.md` for the OA PDFs behind
+  anti-bot walls.
+
 ## \[0.75.1\] - 2026-06-13
 
 ### Changed

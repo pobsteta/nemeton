@@ -7,7 +7,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/pobsteta/nemeton/blob/v0.75.1/inst/CITATION)
+[`inst/CITATION`](https://github.com/pobsteta/nemeton/blob/v0.75.2/inst/CITATION)
 
 Obstetar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton
 Method. R package version 0.14.0. https://github.com/pobsteta/nemeton

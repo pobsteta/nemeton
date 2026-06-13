@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.75.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.75.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,9 +39,22 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/v0.75.1/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/v0.75.2/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.75.2" id="nemeton-0752-2026-06-13">nemeton 0.75.2 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0752-2026-06-13"></a></h2>
+<div class="section level4">
+<h4 id="changed--corpus-rag--les-docs-sans-source-entrent-au-corpus-0-75-2">Changed — corpus RAG : les 21 docs sans source entrent au corpus<a class="anchor" aria-label="anchor" href="#changed--corpus-rag--les-docs-sans-source-entrent-au-corpus-0-75-2"></a></h4>
+<p>Les 21 documents <code>cleared</code>/<code>full</code> sans PDF (qui étaient <em>sautés</em> au build) sont désormais tous ingérables :</p>
+<ul><li>
+<strong>IPCC 2019 (Vol.4 Ch.4 Forest Land)</strong> : PDF récupéré → <code>full</code> (texte intégral), <code>local_path</code> renseigné.</li>
+<li>
+<strong>20 autres</strong> (RENECOFOR/HAL, EFI, code forestier, EUR-Lex, CNPF/ONF/OFB, Duplat, Larrieu, Monnet, Forrester, Bernard&amp;Doridant…) → <strong><code>link_only</code></strong> : ingérés comme <strong>références citables</strong> (citation embeddée, pas de texte intégral). Manifest : <strong>81/81 ingérables, 0 sauté</strong> (11 texte intégral + 70 références).</li>
+</ul><p>Métadonnée corrigée : <strong>Monnet &amp; Mermin 2014</strong> était mal référencé (était <em>Remote Sensing 6(8)</em> → en réalité <em>Forests</em> 5(9):2307-2326, DOI <code>10.3390/f5092307</code>, HAL open) ; <code>source_url</code> HAL ajoutés pour Duplat et Larrieu. <code>data-raw/references/README.md</code> liste les PDF open-access à récupérer manuellement (HAL/MDPI/EUR-Lex servent un mur anti-bot au scraping).</p>
+<p>Script <code>data-raw/link_only_skipped.R</code> (reproductible).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.75.1" id="nemeton-0751-2026-06-13">nemeton 0.75.1 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0751-2026-06-13"></a></h2>
 <div class="section level4">

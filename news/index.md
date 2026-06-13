@@ -1,5 +1,29 @@
 # Changelog
 
+## nemeton 0.75.2 (2026-06-13)
+
+#### Changed — corpus RAG : les 21 docs sans source entrent au corpus
+
+Les 21 documents `cleared`/`full` sans PDF (qui étaient *sautés* au
+build) sont désormais tous ingérables :
+
+- **IPCC 2019 (Vol.4 Ch.4 Forest Land)** : PDF récupéré → `full` (texte
+  intégral), `local_path` renseigné.
+- **20 autres** (RENECOFOR/HAL, EFI, code forestier, EUR-Lex,
+  CNPF/ONF/OFB, Duplat, Larrieu, Monnet, Forrester, Bernard&Doridant…) →
+  **`link_only`** : ingérés comme **références citables** (citation
+  embeddée, pas de texte intégral). Manifest : **81/81 ingérables, 0
+  sauté** (11 texte intégral + 70 références).
+
+Métadonnée corrigée : **Monnet & Mermin 2014** était mal référencé
+(était *Remote Sensing 6(8)* → en réalité *Forests* 5(9):2307-2326, DOI
+`10.3390/f5092307`, HAL open) ; `source_url` HAL ajoutés pour Duplat et
+Larrieu. `data-raw/references/README.md` liste les PDF open-access à
+récupérer manuellement (HAL/MDPI/EUR-Lex servent un mur anti-bot au
+scraping).
+
+Script `data-raw/link_only_skipped.R` (reproductible).
+
 ## nemeton 0.75.1 (2026-06-13)
 
 #### Changed — corpus RAG : levée du gel D5 sur l’ensemble du manifest
