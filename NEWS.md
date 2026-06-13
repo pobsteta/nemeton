@@ -1,3 +1,33 @@
+# nemeton 0.77.0 (2026-06-13)
+
+### Added — RECONFORT post-process : rasters → table `alert` (spec 021, lot L3)
+
+`R/reconfort_postprocess.R` transforme les sorties de
+`run_reconfort_dieback()` en alertes `reconfort_dieback` :
+
+- **Reclassif + clustering** : `.classify_pixels_to_reconfort_classes()`
+  (codes RF 1..n → labels [`RECONFORT_CLASSES`], masqué = NA),
+  `.cluster_reconfort_pixels()` (patches 8-connexité sur les classes
+  dépérissantes, drop sous `min_pixels`).
+- **Centroïdes** : `.postprocess_reconfort_rasters()` — score continu
+  `(1001 + (−P1 + P2 + 2·P3))/30` en `stress_index`, `trigger_date` = date du
+  run, classe RF en `confidence_class`.
+- **Insertion** : `.insert_reconfort_alerts()` — UPSERT idempotent (PG +
+  SQLite), snap au plot le plus proche.
+- **Fusion G2 à 3 voies** : `classify_disturbance()` gère désormais FAST +
+  FORDEAD + RECONFORT (`recent_event` / `progressive` / `mechanical`) et
+  ajoute un drapeau **`method_overlap`** (FORDEAD ∩ RECONFORT, ne pas
+  double-compter).
+- **Migration `0006`** (PG + SQLite) : index sur `alert(alert_type)`.
+- **Orchestration** : phase `postprocess` (best-effort) câblée dans
+  `run_reconfort_dieback()` ; `n_alerts` ajouté au retour.
+
+Exports : `RECONFORT_CLASSES`, `RECONFORT_CONFIDENCE_WEIGHTS`,
+`RECONFORT_ALERT_CLASSES`. **Réserve** : les poids de confiance sont
+**provisoires** (à caler sur la matrice de confusion Mouret et al. 2023, cf.
+spec 021 §5/G1 — flaggé dans le code). Suite : L4 (R5 unifié, routage par
+essence).
+
 # nemeton 0.76.2 (2026-06-13)
 
 ### Changed — corpus RAG : 4 papiers scannés OCRisés → texte intégral

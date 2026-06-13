@@ -10,6 +10,20 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.77.0] - 2026-06-13
+
+### Added
+
+- RECONFORT post-process (spec 021, lot L3): `R/reconfort_postprocess.R`
+  turns `run_reconfort_dieback()` rasters into `reconfort_dieback` alerts
+  (reclassify → 8-connectivity patches → centroids, continuous score as
+  `stress_index`). `classify_disturbance()` extended to 3 methods
+  (FAST + FORDEAD + RECONFORT) with a `method_overlap` flag. Migration `0006`
+  (index on `alert(alert_type)`, PG + SQLite). A best-effort `postprocess`
+  phase is wired into `run_reconfort_dieback()`. New exports
+  `RECONFORT_CLASSES`, `RECONFORT_CONFIDENCE_WEIGHTS`, `RECONFORT_ALERT_CLASSES`
+  (confidence weights are provisional, pending the upstream confusion matrix).
+
 ## [0.76.2] - 2026-06-13
 
 ### Changed

@@ -230,7 +230,8 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     file.path(cache_dir, "reconfort", sprintf("run_z%s_S2%s", zone_id, s2_year))
 
   # --- progress plumbing ------------------------------------------
-  phases <- c("env", "model", "mask", "tiles", "ingest", "stage", "mapprod", "collect")
+  phases <- c("env", "model", "mask", "tiles", "ingest", "stage", "mapprod",
+              "collect", "postprocess")
   emit <- function(payload) {
     if (is.null(progress_callback)) return(invisible(NULL))
     tryCatch(progress_callback(payload), error = function(e) invisible(NULL))
@@ -333,6 +334,25 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       ))
     }
 
+    # PHASE 9 — postprocess: rasters → table `alert` (L3, spec 021) ---
+    # Best-effort: a real run may legitimately produce zero dieback
+    # patch, and we never want an alert-insertion glitch to discard a
+    # multi-hour IOTA2 run. Failures warn and set `n_alerts = NA`.
+    begin("postprocess")
+    classif_for_alerts <- if (!is.na(rasters$classif_masked))
+      rasters$classif_masked else rasters$classif
+    trigger_date <- tryCatch(as.Date(date_to), error = function(e) Sys.Date())
+    n_alerts <- tryCatch({
+      alerts_sf <- .postprocess_reconfort_rasters(
+        list(classif = classif_for_alerts,
+             continuous_score = rasters$continuous_score),
+        species = info$species, trigger_date = trigger_date)
+      .insert_reconfort_alerts(con, alerts_sf, zone_id = zone_id)
+    }, error = function(e) {
+      cli::cli_warn("RECONFORT post-process (alert insertion) failed: {conditionMessage(e)}")
+      NA_integer_
+    })
+
     elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
     meta <- list(
       tool = "reconfort", status = "completed",
@@ -341,7 +361,7 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       v_model = v_model, species = info$species, n_classes = info$n_classes,
       masked = do_mask, mask = if (do_mask) mask_path else NA_character_,
       env = env, scheduler_type = scheduler_type,
-      rasters = rasters, elapsed_sec = elapsed,
+      rasters = rasters, n_alerts = n_alerts, elapsed_sec = elapsed,
       generated_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z")
     )
     meta_path <- .reconfort_write_run_meta(
@@ -354,8 +374,8 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
 
     list(status = "completed", zone_id = zone_id, tiles = tiles,
          s2_year = s2_year, v_model = v_model, species = info$species,
-         workdir = workdir, rasters = rasters, meta = meta_path,
-         elapsed_sec = elapsed)
+         workdir = workdir, rasters = rasters, n_alerts = n_alerts,
+         meta = meta_path, elapsed_sec = elapsed)
   },
   error = function(e) {
     emit(list(current = "reconfort:error", zone_id = zone_id,

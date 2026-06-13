@@ -81,8 +81,8 @@ test_that("run_reconfort_dieback orchestrates the phases and collects outputs", 
   expect_true(file.exists(res$meta))            # run_meta.json written
   expect_true(calls$ingest)
   expect_identical(calls$script, "run_map_production_reconfort.py")
-  # all 8 phases fired, in order
-  expect_equal(phases, c("env","model","mask","tiles","ingest","stage","mapprod","collect"))
+  # all 9 phases fired, in order (postprocess added in L3, spec 021)
+  expect_equal(phases, c("env","model","mask","tiles","ingest","stage","mapprod","collect","postprocess"))
 })
 
 test_that("run_reconfort_dieback writes a cfg with masking on by default", {
