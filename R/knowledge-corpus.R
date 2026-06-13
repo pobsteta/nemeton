@@ -134,6 +134,45 @@ knowledge_manifest_path <- function(writable = FALSE) {
 }
 
 
+#' Reset the writable knowledge manifest to the packaged corpus
+#'
+#' Overwrites the writable project copy of the manifest (the one edited
+#' from the application, returned by `knowledge_manifest_path(writable =
+#' TRUE)`) with the seed bundled in the installed package.
+#'
+#' The writable copy is created **once** and never auto-refreshed, so
+#' that edits made from the app survive package updates (spec 009.2 D1).
+#' The flip side is that a copy created against an old corpus keeps
+#' listing documents the package no longer ships. Call this to pull the
+#' current packaged corpus explicitly — typically wired to a
+#' "reset to packaged corpus" action in the RAG admin tab.
+#'
+#' @param confirm Logical. Must be `TRUE` (default) to proceed; the
+#'   parameter exists so the caller passes an explicit user
+#'   confirmation before discarding the writable copy.
+#'
+#' @return The path to the refreshed writable manifest (invisibly).
+#'
+#' @seealso [knowledge_manifest_path()], [read_knowledge_manifest()].
+#' @export
+reset_knowledge_manifest <- function(confirm = TRUE) {
+  if (!isTRUE(confirm)) {
+    cli::cli_abort(c(
+      "{.fn reset_knowledge_manifest} overwrites the writable manifest copy.",
+      "i" = "Call with {.code confirm = TRUE} to proceed."
+    ))
+  }
+  seed <- .knowledge_seed_path()
+  dest <- knowledge_manifest_path(writable = TRUE)
+  if (!file.copy(seed, dest, overwrite = TRUE)) {
+    cli::cli_abort("Failed to refresh the writable manifest at {.path {dest}}.")
+  }
+  cli::cli_alert_success(
+    "Knowledge manifest reset to the packaged corpus at {.path {dest}}.")
+  invisible(dest)
+}
+
+
 # ---- Read / write ----------------------------------------------------
 
 #' Read the knowledge-corpus manifest
