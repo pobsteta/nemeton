@@ -61,3 +61,4 @@ data-raw/knowledge_corpus.sqlite*
 # Python bytecode (vendored RECONFORT glue)
 __pycache__/
 *.pyc
+data-raw/references/biljou/ocr/
