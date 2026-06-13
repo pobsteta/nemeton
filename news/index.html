@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.74.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.75.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,9 +39,23 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/v0.74.1/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.75.0" id="nemeton-0750-2026-06-13">nemeton 0.75.0 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0750-2026-06-13"></a></h2>
+<div class="section level4">
+<h4 id="changed--corpus-de-connaissances-rag-e7--recentrage-sources-externes-0-75-0">Changed — corpus de connaissances RAG (E7) : recentrage sources externes<a class="anchor" aria-label="anchor" href="#changed--corpus-de-connaissances-rag-e7--recentrage-sources-externes-0-75-0"></a></h4>
+<p>Curation du manifest <code>inst/extdata/knowledge_corpus_v1.csv</code> (spec 009/009.1).</p>
+<ul><li>
+<strong>Retrait de l’amorçage interne</strong> : les 12 documents internes MIT (10 tutoriels <code>inst/tutorials/*</code> + specs 005/008) sont sortis du manifest. Le corpus s’appuie désormais sur des sources externes citables plutôt que sur la documentation du package elle-même.</li>
+<li>
+<strong>+54 références BILJOU</strong> : intégration de toutes les références citées par l’outil BILJOU (INRAE Nancy, modèle de bilan hydrique forestier ; 11 fiches pédagogiques). Familles principales <code>W</code> (eau/régulation), <code>R3</code> (sécheresse), <code>C</code> (vitalité/LAI), <code>F</code> (sols), <code>T</code> (phénologie). Par défaut prudent (gel licence D5) : <code>status=to_confirm</code>, <code>ingest_strategy=abstract_only</code>, <code>license=copyright</code> — jamais en full-text avant arbitrage.</li>
+<li>
+<strong>8 rapports institutionnels passés en <code>cleared</code></strong> : ONF/RENECOFOR (<code>LO-Etalab</code>), FAO Irrigation &amp; Drainage Paper 56 (<code>CC-BY-NC</code>), EFI <em>What Science Can Tell Us</em> n°1 (<code>CC-BY</code>). URLs publiques renseignées (HAL, FAO, EFI, PDF hébergés par BILJOU) ; 3 PDF directement ingérables ajoutés au plan de build (full-text : 7 → 10 PDF).</li>
+</ul><p>Le manifest passe de 39 à <strong>81 docs</strong> (31 <code>cleared</code> + 50 <code>to_confirm</code>). Scripts de provenance reproductibles sous <code>data-raw/</code> (<code>add_biljou_refs.R</code>, <code>clear_biljou_institutional.R</code>, <code>url_biljou_institutional.R</code>).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.74.1" id="nemeton-0741-2026-06-12">nemeton 0.74.1 (2026-06-12)<a class="anchor" aria-label="anchor" href="#nemeton-0741-2026-06-12"></a></h2>
 <div class="section level4">
