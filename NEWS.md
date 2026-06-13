@@ -1,3 +1,16 @@
+# nemeton 0.76.1 (2026-06-13)
+
+### Fixed — corpus RAG : 4 PDF BILJOU scannés → `link_only`
+
+Quatre PDF hébergés par BILJOU (Bréda 1993 *water transfer*, Granier 1996
+*sapflow*, Bréda 2002 *réservoir sols*, Bréda 2008 *pompe biologique*) sont
+des **images scannées sans couche texte** (`pdf_text` → 0 caractère) : ils
+échouaient à l'ingestion full-text. Repassés en `ingest_strategy=link_only`
+(références citables) → corpus prod **81/81, 0 erreur** (56 texte intégral +
+25 références, 6 033 chunks). OCR requis pour les passer un jour en texte
+intégral. Ajout du script `data-raw/fill_corpus_prod.sh` (build prod
+**incrémental** non-FRESH, pour compléter un build partiel sans tout réécraser).
+
 # nemeton 0.76.0 (2026-06-13)
 
 ### Added — `db_connect(connect_timeout = )`

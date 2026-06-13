@@ -10,6 +10,20 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.76.1] - 2026-06-13
+
+### Fixed
+
+- RAG corpus: 4 BILJOU PDFs are scanned images with no text layer
+  (`pdf_text` → 0 chars) and failed full-text ingestion. Set to `link_only`
+  (citable references) → prod corpus 81/81, 0 errors (56 full-text + 25
+  references, 6033 chunks). OCR would be required for full-text.
+
+### Added
+
+- `data-raw/fill_corpus_prod.sh`: incremental (non-FRESH) prod corpus build to
+  complete a partial run without re-ingesting everything.
+
 ## [0.76.0] - 2026-06-13
 
 ### Added

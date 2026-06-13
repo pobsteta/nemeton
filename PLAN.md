@@ -549,6 +549,15 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-06-13 — Corpus RAG : prod synchronisé + 4 PDF scannés → link_only (cœur, v0.76.1)
+
+Build prod FRESH des 81 docs (manifest BILJOU full-text v0.75.4) : **56 texte
+intégral + 25 références, 6 033 chunks, 0 embedding manquant**. 4 PDF BILJOU
+(Bréda 1993/2002/2008, Granier 1996) sont des **scans sans couche texte**
+(`pdf_text` → 0 car.) → échouaient en full-text → repassés `link_only`
+(corpus **81/81, 0 erreur**). Ajout `data-raw/fill_corpus_prod.sh` (build
+incrémental non-FRESH). OCR requis pour full-texter les 4 scans.
+
 ### 2026-06-13 — `db_connect(connect_timeout=)` + parité CI nemetonshiny↔nemeton (cœur)
 
 Release **v0.76.0** (feat). `db_connect(url, read_only, connect_timeout = 10L)` :
