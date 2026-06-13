@@ -1,3 +1,23 @@
+# nemeton 0.75.1 (2026-06-13)
+
+### Changed — corpus RAG : levée du gel D5 sur l'ensemble du manifest
+
+Décision Pascal : les **50 références `to_confirm`** (BILJOU + 4 papiers
+copyright) passent en **`cleared`** (override D5). Toutes étant en
+`ingest_strategy=abstract_only`, elles entrent au corpus comme **références
+citables** (`link_only` — titre/citation embeddés, pas de texte intégral de
+documents copyright). Manifest : **81 cleared / 0 to_confirm**.
+
+Build prod rejoué (FRESH) : pgvector synchronisé → **60 documents** ingérés
+(10 texte intégral + 50 références), 2 354 chunks, 0 embedding manquant ;
+les 12 docs internes retirés en v0.75.0 sont bien absents. **21 sautés** :
+docs `cleared`/`full` sans PDF attaché (institutionnels/normatifs bien
+licenciés — backlog d'enrichissement, conservés en `full` pour ingestion
+texte intégral dès qu'une source est jointe).
+
+Ajouts `data-raw/` : `clear_all_to_confirm.R` (flip reproductible) +
+`build_corpus_prod.sh` (wrapper FRESH vers le pgvector prod).
+
 # nemeton 0.75.0 (2026-06-13)
 
 ### Changed — corpus de connaissances RAG (E7) : recentrage sources externes
