@@ -202,7 +202,7 @@ supervisé sur indices CRswir/CRre (chaîne IOTA²), en complément de FORDEAD
 | ✅ | **L2b.1** | `reconfort_python.R` (env conda IOTA² locate+validate) + `RECONFORT_BANDS` + glue vendorisée `custom_index.py` + NOTICE | **v0.72.0** (2026-06-11) |
 | ✅ | **L2b.2** | Ingest IOTA²-natif : `reconfort_aoi_tiles()` (grille MGRS embarquée) + `reconfort_ingest_s2()` (pygeodes download + unzip) + scripts vendorisés | **v0.73.0** (2026-06-11) |
 | ✅ | **L2b.3** | `reconfort_pipeline.R::run_reconfort_dieback()` : orchestration env→model→masque→tuile→ingest→IOTA² ×2+score, staging par-run, `ensure_reconfort_oso_mask()` + glue map-production vendorisée | **v0.74.0** (2026-06-12) |
-| ⬜ | **L3** | `reconfort_postprocess.R` (score continu) → table `alert` + migration `0005` + fusion G2 3-voies | — |
+| ✅ | **L3** | `reconfort_postprocess.R` (rasters → table `alert`, centroïdes, `confidence_class`, `stress_index` = score continu) + migration **`0006`** + `classify_disturbance()` 3-voies (`method_overlap`) + phase `postprocess` dans `run_reconfort_dieback()` | **v0.77.0** (2026-06-13) |
 | ⬜ | **L4** | R5 unifié (routage par essence) + tests indicateur étendus | — |
 | ⬜ | **L5** | Persistance features (parité diagnostic pixel) + `read_reconfort_pixel_series()` | — |
 | ⬜ | **L6** | App `nemetonshiny` : 3ᵉ mode, bannières, plotly, QField feuillus | release app |
@@ -210,10 +210,15 @@ supervisé sur indices CRswir/CRre (chaîne IOTA²), en complément de FORDEAD
 **Reporté** (vs plan §5) : flag NDP `health_reconfort` + datasource
 `reconfort_anomalies` — supposaient une parité FORDEAD inexistante. **L2b
 cadré** (`L2b-cadrage.md` : ingest IOTA²-natif, env conda locate+validate, glue
-complète) et **scindé** en L2b.1/.2/.3 — **les trois livrés**. **Prochaine
-étape : L3** (`reconfort_postprocess.R` : rasters → table `alert`, centroïdes,
-`confidence_class`, `stress_index` = score continu, migration `0005`, fusion
-G2 3-voies). Faits amont vérifiés : `…/plan.md` §10.
+complète) et **scindé** en L2b.1/.2/.3 — **les trois livrés**. **L3 livré**
+(v0.77.0) : `reconfort_postprocess.R` (reclassif → patches 8-connexité →
+centroïdes POINT, score continu en `stress_index`), migration **`0006`**
+(numéro réel — `0005` pris par spec 020 multi-zone), `classify_disturbance()`
+étendu à 3 voies + drapeau `method_overlap`, phase `postprocess` (best-effort)
+dans `run_reconfort_dieback()`. **Réserve** : `RECONFORT_CONFIDENCE_WEIGHTS`
+posés en **provisoire** (à caler sur la matrice de confusion Mouret et al.
+2023 — flaggé dans le code). **Prochaine étape : L4** (R5 unifié, routage par
+essence). Faits amont vérifiés : `…/plan.md` §10.
 
 ---
 
@@ -543,6 +548,26 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-06-13 — RECONFORT L3 : postprocess rasters → table `alert` (spec 021, cœur, v0.77.0)
+
+`R/reconfort_postprocess.R` : `.classify_pixels_to_reconfort_classes()`
+(codes 1..n → labels `RECONFORT_CLASSES`, masqué=0 → NA),
+`.cluster_reconfort_pixels()` (patches 8-connexité sur classes dépérissantes
+≥2, drop < `min_pixels`), `.postprocess_reconfort_rasters()` (réutilise
+`.cluster_to_centroids()` ; score continu → `stress_index` ; `trigger_date` =
+date du run), `.insert_reconfort_alerts()` (`alert_type='reconfort_dieback'`,
+UPSERT idempotent PG+SQLite). `classify_disturbance()` **étendu 3 voies** :
+FAST seul → recent_event ; FORDEAD/RECONFORT seul → progressive ;
+diag+FAST → mechanical ; FORDEAD+RECONFORT → progressive + `method_overlap`.
+Migration **`0006`** (index `alert_type`, PG+SQLite). Phase `postprocess`
+(best-effort) câblée dans `run_reconfort_dieback()` (8→9 phases, `n_alerts`
+au retour). Exports : `RECONFORT_CLASSES`/`_CONFIDENCE_WEIGHTS`/`_ALERT_CLASSES`
+(NAMESPACE + `.Rd` à la main, pas de `document()`). Tests :
+`test-reconfort-postprocess.R` 50 ✔ (dont insert+migration DB),
+pipeline 22 ✔, fordead-postprocess 56 ✔, db 98 ✔. **Réserve** : poids de
+confiance **provisoires** (matrice de confusion Mouret 2023 à transcrire).
+Suite : **L4** (R5 unifié, routage par essence).
 
 ### 2026-06-13 — Corpus RAG : 4 papiers scannés OCRisés → texte intégral (cœur, v0.76.2)
 

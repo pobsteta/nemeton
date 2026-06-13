@@ -424,20 +424,30 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 
 #' Tag each alert with the disturbance type it most likely reflects (G2)
 #'
-#' Cross-references FORDEAD alerts with the rolling-window NDVI/NBR
-#' alerts on the same plot. Adds a `disturbance_type` column:
+#' Garde-fou G2, extended to **three methods** since spec 021 (L3):
+#' FAST (rolling-window `ndvi_drop` / `nbr_drop`) plus the two
+#' diagnostic methods `fordead_dieback` (resineux) and
+#' `reconfort_dieback` (feuillus). Cross-references alerts on the same
+#' plot within `± window_days` and adds a `disturbance_type` column
+#' (+ a `method_overlap` flag):
 #'
 #' \itemize{
-#'   \item `"mechanical"` — FORDEAD alert with a `ndvi_drop` /
-#'     `nbr_drop` companion within `± window_days`. Likely a
-#'     clear-cut, chablis or fire scar.
-#'   \item `"progressive"` — Lone FORDEAD alert. Likely
-#'     scolyte / drought-driven dieback.
-#'   \item `"recent_event"` — Lone NDVI/NBR drop without any
-#'     FORDEAD echo. Recent perturbation, no confirmed dieback.
-#'   \item `NA_character_` — NDVI/NBR drop already paired with a
-#'     FORDEAD alert (the FORDEAD row carries the verdict).
+#'   \item `"mechanical"` — a diagnostic alert (FORDEAD **or**
+#'     RECONFORT) with a FAST (`ndvi_drop` / `nbr_drop`) companion.
+#'     Likely a clear-cut, chablis or fire scar.
+#'   \item `"progressive"` — a lone diagnostic alert (FORDEAD or
+#'     RECONFORT) without a FAST companion. Likely scolyte /
+#'     drought-driven dieback.
+#'   \item `"recent_event"` — a lone FAST drop without any diagnostic
+#'     echo. Recent perturbation, no confirmed dieback.
+#'   \item `NA_character_` — a FAST drop already paired with a
+#'     diagnostic alert (the diagnostic row carries the verdict).
 #' }
+#'
+#' `method_overlap` is `TRUE` on a diagnostic alert when **both**
+#' FORDEAD and RECONFORT fired on the same plot/window (mixed
+#' broadleaf/conifer fringe): the type stays `"progressive"` but the
+#' flag says "signal seen by two methods — do not double-count".
 #'
 #' Computed in pure R: cost is O(n²) on a few thousand alerts max,
 #' so we deliberately don't push it to SQL.
@@ -448,12 +458,14 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 #' @param window_days Integer. Half-width of the join window in
 #'   days. Default 30.
 #'
-#' @return The input enriched with a `disturbance_type` column.
+#' @return The input enriched with a `disturbance_type` column and a
+#'   logical `method_overlap` column.
 #'
 #' @export
 classify_disturbance <- function(alerts_df, window_days = 30L) {
   if (is.null(alerts_df) || !nrow(alerts_df)) {
     alerts_df$disturbance_type <- character(0)
+    alerts_df$method_overlap   <- logical(0)
     return(alerts_df)
   }
   required <- c("plot_id", "alert_type", "trigger_date")
@@ -466,26 +478,36 @@ classify_disturbance <- function(alerts_df, window_days = 30L) {
     cli::cli_abort("{.arg window_days} must be a non-negative integer.")
   }
 
-  td <- as.Date(alerts_df$trigger_date)
+  td  <- as.Date(alerts_df$trigger_date)
   pid <- alerts_df$plot_id
   at  <- alerts_df$alert_type
 
-  out <- vapply(seq_len(nrow(alerts_df)), function(i) {
-    same_plot <- pid == pid[i]
-    in_window <- abs(as.numeric(td - td[i])) <= win
+  fast_types       <- c("ndvi_drop", "nbr_drop")
+  diagnostic_types <- c("fordead_dieback", "reconfort_dieback")
+
+  res <- lapply(seq_len(nrow(alerts_df)), function(i) {
+    same_plot  <- pid == pid[i]
+    in_window  <- abs(as.numeric(td - td[i])) <= win
     candidates <- same_plot & in_window
     candidates[i] <- FALSE  # don't pair with self
 
-    if (identical(at[i], "fordead_dieback")) {
-      if (any(candidates & at %in% c("ndvi_drop", "nbr_drop"))) "mechanical"
-      else "progressive"
-    } else if (at[i] %in% c("ndvi_drop", "nbr_drop")) {
-      if (any(candidates & at == "fordead_dieback")) NA_character_
-      else "recent_event"
-    } else NA_character_
-  }, character(1))
+    if (at[i] %in% diagnostic_types) {
+      has_fast  <- any(candidates & at %in% fast_types)
+      other_dx  <- setdiff(diagnostic_types, at[i])
+      has_other <- any(candidates & at %in% other_dx)
+      list(type = if (has_fast) "mechanical" else "progressive",
+           overlap = has_other)
+    } else if (at[i] %in% fast_types) {
+      has_dx <- any(candidates & at %in% diagnostic_types)
+      list(type = if (has_dx) NA_character_ else "recent_event",
+           overlap = FALSE)
+    } else {
+      list(type = NA_character_, overlap = FALSE)
+    }
+  })
 
-  alerts_df$disturbance_type <- out
+  alerts_df$disturbance_type <- vapply(res, `[[`, character(1), "type")
+  alerts_df$method_overlap   <- vapply(res, `[[`, logical(1), "overlap")
   alerts_df
 }
 
