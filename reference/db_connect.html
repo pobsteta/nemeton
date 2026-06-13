@@ -11,7 +11,7 @@ connection. Use [db_disconnect()] to close it."><meta property="og:image" conten
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.75.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,7 +55,11 @@ connection. Use [db_disconnect()] to close it.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">db_connect</span><span class="op">(</span>url <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"NEMETON_DB_URL"</span><span class="op">)</span>, read_only <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">db_connect</span><span class="op">(</span></span>
+<span>  url <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"NEMETON_DB_URL"</span><span class="op">)</span>,</span>
+<span>  read_only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  connect_timeout <span class="op">=</span> <span class="fl">10L</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -83,6 +87,14 @@ Defaults to `FALSE`. Relevant only for the SQLite file backend; the
 file must already exist and its parent directory is *not* created.
 For **PostgreSQL** the flag is a no-op (it manages concurrent
 readers and writers natively).</p></dd>
+
+
+<dt id="arg-connect-timeout">connect_timeout<a class="anchor" aria-label="anchor" href="#arg-connect-timeout"></a></dt>
+<dd><p>Positive number of seconds bounding the
+connection attempt. Passed to libpq as the `connect_timeout`
+parameter for the **PostgreSQL** backend (caps the hang on an
+unreachable host); **ignored** for the SQLite file backend.
+Defaults to `10L`.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.75.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -539,6 +539,14 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-06-13--db_connectconnect_timeout--parité-ci-nemetonshinynemeton-cœur">2026-06-13 — <code>db_connect(connect_timeout=)</code> + parité CI nemetonshiny↔︎nemeton (cœur)<a class="anchor" aria-label="anchor" href="#id_2026-06-13--db_connectconnect_timeout--parit%C3%A9-ci-nemetonshinynemeton-c%C5%93ur"></a></h3>
+<p>Release <strong>v0.76.0</strong> (feat). <code>db_connect(url, read_only, connect_timeout = 10L)</code> : le paramètre est passé à libpq (<code>connect_timeout</code>, secondes) sur la branche PostgreSQL pour <strong>borner le gel</strong> sur un hôte injoignable ; ignoré côté SQLite. Consommé ensuite par <code>nemetonshiny::get_monitoring_db_connection()</code> qui passera <code>connect_timeout = 2L</code> sur le chemin d’hydratation interactif. Tests <code>test-db.R</code> (formals + défaut, validation, no-op SQLite, <code>skip_on_ci</code> connexion vers <code>10.255.255.1</code> qui échoue en &lt; 5 s). <strong>Parité d’outillage avec nemetonshiny</strong> : badge version dynamique <code>github/v/release</code> (#53), garde-fou CI <code>version-consistency</code> DESCRIPTION=NEWS=CITATION (#54), port du workflow <code>release.yml</code> auto-tag/release depuis DESCRIPTION (#55).</p>
+</div>
+<div class="section level3">
+<h3 id="id_2026-06-13--chargement-projet-récent--retrait-des-blocages-synchrones-app">2026-06-13 — Chargement projet récent : retrait des blocages synchrones (app)<a class="anchor" aria-label="anchor" href="#id_2026-06-13--chargement-projet-r%C3%A9cent--retrait-des-blocages-synchrones-app"></a></h3>
+<p><code>nemetonshiny@f9cd7b1</code> (v0.78.0). Le chargement d’un projet récent retire <strong>2 blocages synchrones</strong> : (1) la connexion DB monitoring est désormais gardée par <code>.has_monitoring_zone_id()</code> (plus de connexion systématique au démarrage) ; (2) <code>ug_build_sf()</code> est extrait en <code>attach_indicators_sf()</code>, et <code>load_project(build_indicators_sf = )</code> diffère ce calcul via <code>later()</code>. Reste à livrer côté cœur le <code>connect_timeout</code> de <code><a href="reference/db_connect.html">db_connect()</a></code> (fait ci-dessus, v0.76.0) que l’app passera à <code>2L</code> pour le chemin interactif.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-06-12--reconfort-l2b3--orchestration-end-to-end-spec-021-cœur">2026-06-12 — RECONFORT L2b.3 : orchestration end-to-end (spec 021, cœur)<a class="anchor" aria-label="anchor" href="#id_2026-06-12--reconfort-l2b3--orchestration-end-to-end-spec-021-c%C5%93ur"></a></h3>
 <p>Release <strong>v0.74.0</strong>. <strong>L2b.3</strong> — <code><a href="reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> relie L1/L2a/ L2b.1/L2b.2 en un run complet : env conda → modèle RF → masque feuillus → AOI→tuile(s) MGRS → ingest S2 → <strong>map-production IOTA²</strong> (sampling + classification ×2 + masque OSO + score continu).</p>

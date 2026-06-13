@@ -1,5 +1,24 @@
 # Changelog
 
+## nemeton 0.76.0 (2026-06-13)
+
+#### Added — `db_connect(connect_timeout = )`
+
+`db_connect(url, read_only, connect_timeout = 10L)` accepte un délai de
+connexion. Sur la branche **PostgreSQL**, il est passé à libpq
+(`connect_timeout`, en secondes) pour **borner le gel** quand l’hôte est
+injoignable, au lieu d’attendre le timeout TCP par défaut de l’OS. Sur
+la branche **SQLite**, le paramètre est ignoré (no-op). Consommé par
+`nemetonshiny::get_monitoring_db_connection()` qui passe
+`connect_timeout = 2L` sur le chemin d’hydratation interactif.
+
+#### Internal
+
+- Parité d’outillage avec `nemetonshiny` : badge version dynamique
+  (`github/v/release`), garde-fou CI `version-consistency` (DESCRIPTION
+  = NEWS = CITATION), et workflow `release.yml` (auto-tag + release
+  GitHub depuis `DESCRIPTION` au push sur `main`).
+
 ## nemeton 0.75.4 (2026-06-13)
 
 #### Changed — corpus RAG : 46 références BILJOU passent en texte intégral

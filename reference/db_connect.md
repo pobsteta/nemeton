@@ -7,7 +7,11 @@ argument), inspects its scheme, and opens the matching connection. Use
 ## Usage
 
 ``` r
-db_connect(url = Sys.getenv("NEMETON_DB_URL"), read_only = FALSE)
+db_connect(
+  url = Sys.getenv("NEMETON_DB_URL"),
+  read_only = FALSE,
+  connect_timeout = 10L
+)
 ```
 
 ## Arguments
@@ -33,6 +37,13 @@ db_connect(url = Sys.getenv("NEMETON_DB_URL"), read_only = FALSE)
   and its parent directory is \*not\* created. For \*\*PostgreSQL\*\*
   the flag is a no-op (it manages concurrent readers and writers
   natively).
+
+- connect_timeout:
+
+  Positive number of seconds bounding the connection attempt. Passed to
+  libpq as the \`connect_timeout\` parameter for the \*\*PostgreSQL\*\*
+  backend (caps the hang on an unreachable host); \*\*ignored\*\* for
+  the SQLite file backend. Defaults to \`10L\`.
 
 ## Value
 

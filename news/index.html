@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.75.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,18 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.76.0" id="nemeton-0760-2026-06-13">nemeton 0.76.0 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0760-2026-06-13"></a></h2>
+<div class="section level4">
+<h4 id="added--db_connectconnect_timeout---0-76-0">Added — <code>db_connect(connect_timeout = )</code>
+<a class="anchor" aria-label="anchor" href="#added--db_connectconnect_timeout---0-76-0"></a></h4>
+<p><code>db_connect(url, read_only, connect_timeout = 10L)</code> accepte un délai de connexion. Sur la branche <strong>PostgreSQL</strong>, il est passé à libpq (<code>connect_timeout</code>, en secondes) pour <strong>borner le gel</strong> quand l’hôte est injoignable, au lieu d’attendre le timeout TCP par défaut de l’OS. Sur la branche <strong>SQLite</strong>, le paramètre est ignoré (no-op). Consommé par <code>nemetonshiny::get_monitoring_db_connection()</code> qui passe <code>connect_timeout = 2L</code> sur le chemin d’hydratation interactif.</p>
+</div>
+<div class="section level4">
+<h4 id="internal-0-76-0">Internal<a class="anchor" aria-label="anchor" href="#internal-0-76-0"></a></h4>
+<ul><li>Parité d’outillage avec <code>nemetonshiny</code> : badge version dynamique (<code>github/v/release</code>), garde-fou CI <code>version-consistency</code> (DESCRIPTION = NEWS = CITATION), et workflow <code>release.yml</code> (auto-tag + release GitHub depuis <code>DESCRIPTION</code> au push sur <code>main</code>).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.75.4" id="nemeton-0754-2026-06-13">nemeton 0.75.4 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0754-2026-06-13"></a></h2>
 <div class="section level4">
