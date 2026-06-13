@@ -204,7 +204,7 @@ supervisé sur indices CRswir/CRre (chaîne IOTA²), en complément de FORDEAD
 | ✅ | **L2b.3** | `reconfort_pipeline.R::run_reconfort_dieback()` : orchestration env→model→masque→tuile→ingest→IOTA² ×2+score, staging par-run, `ensure_reconfort_oso_mask()` + glue map-production vendorisée | **v0.74.0** (2026-06-12) |
 | ✅ | **L3** | `reconfort_postprocess.R` (rasters → table `alert`, centroïdes, `confidence_class`, `stress_index` = score continu) + migration **`0006`** + `classify_disturbance()` 3-voies (`method_overlap`) + phase `postprocess` dans `run_reconfort_dieback()` | **v0.77.0** (2026-06-13) |
 | ✅ | **L4** | R5 unifié routé par essence : `indicateur_r5_deperissement(reconfort_results=)`, RECONFORT (chêne/châtaignier/pin sylvestre) vs FORDEAD (épicéa/sapin), statuts `calculated_reconfort`/`skipped_no_reconfort`/`skipped_no_method`, helpers `.resolve_reconfort_share`/`.r5_prepare_alerts`/`.r5_score` | **v0.78.0** (2026-06-13) |
-| ⬜ | **L5** | Persistance features (parité diagnostic pixel) + `read_reconfort_pixel_series()` | — |
+| ✅ | **L5** | Persistance features CRswir/CRre (option B : recalcul depuis le S2 ingéré) — `reconfort_outputs.R` (formules, stacks datés, bundle) + phase `persist` dans `run_reconfort_dieback()` + `read_reconfort_pixel_series()` (lecteur, sans reticulate) | **v0.80.0** (2026-06-13) |
 | ⬜ | **L6** | App `nemetonshiny` : 3ᵉ mode, bannières, plotly, QField feuillus | release app |
 
 **Reporté** (vs plan §5) : flag NDP `health_reconfort` + datasource
@@ -548,6 +548,25 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-06-13 — RECONFORT L5 : persistance features + diagnostic pixel (spec 021, cœur, v0.80.0)
+
+**Décision option B** (recalcul depuis le S2 ingéré, vs extraction des
+intermédiaires IOTA² au layout inconnu). `R/reconfort_outputs.R` :
+`.reconfort_crswir`/`.reconfort_crre` (formules §4.1, pures), 
+`.build_reconfort_feature_stacks` (scènes datées → stacks CRswir/CRre,
+masquage SCL optionnel), `.write_reconfort_features_bundle`,
+`.enumerate_reconfort_s2_scenes` (best-effort, nommage THEIA/MUSCATE FRE
+B4/B8A/B11 — **layout à valider sur run réel**). `R/reconfort_pixel_series.R` :
+`read_reconfort_pixel_series(con, zone_id, xy, crs, run_id, cache_dir)` —
+lecteur **sans reticulate** (séries observées, pas de modèle harmonique),
+NULL gracieux. Phase `persist` (best-effort) + `run_id` câblés dans
+`run_reconfort_dieback()` (9→10 phases, bundle
+`<cache_dir>/zone_<id>/run_<run_id>/`, `features_bundle` au retour). Tests
+`test-reconfort-pixel-series.R` 27 ✔ (formules, build, round-trip bundle,
+NULL, locate, enumerate), suite reconfort **259 ✔**. `.Rd`+NAMESPACE à la
+main. **Réserve** : énumération S2 (layout MUSCATE) non validable sans run
+réel — best-effort, n'altère jamais le run. Suite : **L6** (app `nemetonshiny`).
 
 ### 2026-06-13 — `reset_knowledge_manifest()` : fix copie writable figée (E7, cœur, v0.79.0)
 

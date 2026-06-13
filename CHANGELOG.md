@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.80.0] - 2026-06-13
+
+### Added
+
+- RECONFORT pixel diagnostic (spec 021, lot L5): `R/reconfort_outputs.R`
+  recomputes CRswir/CRre per date from the ingested S2 (option B) and persists
+  dated stacks; `read_reconfort_pixel_series()` returns the observed CRswir/CRre
+  series at a clicked pixel (no reticulate — no harmonic model). A best-effort
+  `persist` phase + a `run_id` are wired into `run_reconfort_dieback()`. The S2
+  scene enumeration (THEIA/MUSCATE naming) is best-effort, pending validation
+  against a real IOTA² run.
+
 ## [0.79.0] - 2026-06-13
 
 ### Added
