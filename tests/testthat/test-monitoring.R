@@ -136,20 +136,24 @@ test_that("register_monitoring_zone keeps plot rows unique within a zone", {
 
 # ---- integration: ingest_sentinel2_timeseries -----------------------
 
-test_that("ingest_sentinel2_timeseries warns when zone has no plots", {
+test_that("ingest_sentinel2_timeseries warns when zone has neither zone_wkt nor plots", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
+    # spec 017 — ingestion is placette-independent: the AOI is the zone's
+    # `zone_wkt`. A zone with a valid WKT but no plot now PROCEEDS (covered
+    # in test-aoi-alignment.R). Only a zone with NEITHER a usable WKT NOR a
+    # registered plot is rejected — an empty `zone_wkt` makes
+    # `.get_zone_aoi()` fail, and with 0 plot there is no fallback bbox.
     DBI::dbExecute(con,
-      "INSERT INTO monitoring_zone (name, zone_wkt) VALUES
-       ('Empty', 'POLYGON((4 47,5 47,5 48,4 48,4 47))')")
+      "INSERT INTO monitoring_zone (name, zone_wkt) VALUES ('Empty', '')")
     zid <- DBI::dbGetQuery(con,
       "SELECT id FROM monitoring_zone WHERE name = 'Empty'")$id
 
     expect_warning(
       out <- ingest_sentinel2_timeseries(con, zid,
                                          "2025-06-01", "2025-06-30"),
-      "No plots registered"
+      "neither a usable.*nor any registered plot"
     )
     expect_equal(out$n_scenes, 0L)
     expect_equal(out$n_plots, 0L)

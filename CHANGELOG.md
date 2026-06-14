@@ -10,6 +10,20 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.83.3] - 2026-06-14
+
+### Fixed
+
+- `ingest_sentinel2_timeseries()` and `ingest_s2_raw_bands_to_cache()` no
+  longer require registered plots (spec 017). The S2 ingest is a
+  placette-independent cache-priming step driven by the zone's `zone_wkt`
+  AOI, yet both paths still aborted with "No plots registered" — which broke
+  cache priming for every zone created by `create_monitoring_zone()` /
+  `build_project_monitoring_zones()` (geometry-only, no placettes, the app's
+  default since spec 017). They now resolve the zone AOI first and only fall
+  back to the per-plot bbox when `zone_wkt` is absent; a zone with neither is
+  still rejected. Regression covered by `test-aoi-alignment.R`.
+
 ## [0.83.2] - 2026-06-14
 
 ### Fixed

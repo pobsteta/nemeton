@@ -100,9 +100,30 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
   }
 
   plots <- .fetch_plots_sf(con, zone_id)
-  if (!nrow(plots)) {
-    cli::cli_warn("No plots registered for zone_id {.val {zone_id}}.")
-    return(.empty_raw_ingest_summary())
+
+  # spec 012 / 017 — share the AOI semantics with FAST: the STAC bbox and
+  # the COG crop come from `monitoring_zone.zone_wkt`, NOT from the
+  # per-plot bbox, so a FORDEAD pre-fetch warms the FAST cache and vice
+  # versa. This ingest is placette-independent: resolve the zone AOI
+  # first and only require plots for the LEGACY bbox fallback (a zone with
+  # no usable `zone_wkt`). Mirror of the guard in
+  # `ingest_sentinel2_timeseries()` — a placette-less but registered zone
+  # must still prime the cache.
+  aoi_zone <- tryCatch(.get_zone_aoi(con, zone_id), error = function(e) NULL)
+  if (is.null(aoi_zone)) {
+    if (!nrow(plots)) {
+      cli::cli_warn(c(
+        "Zone {.val {zone_id}} has neither a usable {.field zone_wkt} nor any registered plot.",
+        i = "Re-register the zone via {.fn register_monitoring_zone} first."
+      ))
+      return(.empty_raw_ingest_summary())
+    }
+    cli::cli_warn(c(
+      "Zone {.val {zone_id}} has no usable {.field zone_wkt}; falling back to per-plot bbox (legacy behaviour).",
+      i = "Re-register the zone via {.fn register_monitoring_zone} so FAST and FORDEAD share the same cache."
+    ))
+    aoi_zone <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(plots)),
+                          crs = sf::st_crs(plots))
   }
 
   emit(list(current = "s2:search",
@@ -111,19 +132,6 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
             n_plots = nrow(plots),
             bands   = bands))
 
-  # spec 012 — share the AOI semantics with FAST: STAC bbox + COG crop
-  # come from `monitoring_zone.zone_wkt`, not from the per-plot bbox.
-  # Same cache key as FAST → a FORDEAD pre-fetch warms the FAST cache
-  # and vice versa.
-  aoi_zone <- tryCatch(.get_zone_aoi(con, zone_id), error = function(e) NULL)
-  if (is.null(aoi_zone)) {
-    cli::cli_warn(c(
-      "Zone {.val {zone_id}} has no usable {.field zone_wkt}; falling back to per-plot bbox (legacy behaviour).",
-      i = "Re-register the zone via {.fn register_monitoring_zone} so FAST and FORDEAD share the same cache."
-    ))
-    aoi_zone <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(plots)),
-                          crs = sf::st_crs(plots))
-  }
   bbox <- sf::st_as_sfc(sf::st_bbox(sf::st_transform(aoi_zone, 4326)))
   scenes <- stac_search_s2(bbox, start, end, max_cloud = max_cloud)
   if (!nrow(scenes)) {

@@ -221,3 +221,56 @@ test_that("FAST falls back to per-plot bbox when zone_wkt is empty", {
     expect_false(is.null(captured_bbox))
   })
 })
+
+
+test_that("ingest proceeds for a zone with zone_wkt but NO plots (spec 017)", {
+  # spec 017 — ingestion is placette-independent: the AOI comes from
+  # `zone_wkt`. A zone registered with a WKT but no validation plot must
+  # still prime the cache (regression: it used to abort with a misleading
+  # "No plots registered", so the FAST diagnostic could never ingest the
+  # scenes for a placette-less zone once the window exceeded the cache).
+  skip_if_no_timescaledb()
+  with_clean_db(function(con) {
+    db_migrate(con)
+    pol <- sf::st_as_sfc(sf::st_bbox(
+      c(xmin = 900000, ymin = 6600000,
+        xmax = 910000, ymax = 6610000),
+      crs = 2154))
+    placettes <- sf::st_sf(
+      plot_id  = "P01",
+      geometry = sf::st_sfc(sf::st_point(c(901000, 6601000)), crs = 2154))
+    zid <- register_monitoring_zone(con, "ZNoPlot", pol, placettes,
+                                    project_uuid = "spec017-noplot")
+    # Drop every plot: the zone keeps its valid zone_wkt but has 0 plot.
+    DBI::dbExecute(con, "DELETE FROM plot WHERE zone_id = $1",
+                   params = list(zid))
+    expect_equal(nrow(.fetch_plots_sf(con, zid)), 0L)
+
+    captured_bbox <- NULL
+    testthat::local_mocked_bindings(
+      stac_search_s2 = function(bbox, start, end, ...) {
+        captured_bbox <<- bbox
+        fake_scenes(dates = as.Date("2025-06-10"), cloud = 5)
+      },
+      .cache_scene_bands = function(scene, req_bands, crop_aoi = NULL,
+                                    cache_dir = NULL, emit = NULL) {
+        length(req_bands)
+      }
+    )
+
+    # No abort, no "No plots registered" warn — the STAC search runs and
+    # the bbox comes from the zone WKT (not a per-plot bbox, which would
+    # be impossible with 0 plot).
+    suppressWarnings(
+      ingest_sentinel2_timeseries(
+        con, zone_id = zid,
+        start = "2025-06-01", end = "2025-06-30",
+        bands = "NDVI", skip_cached = FALSE)
+    )
+    expect_false(is.null(captured_bbox))
+    bb_used <- sf::st_bbox(captured_bbox)
+    bb_zone <- sf::st_bbox(sf::st_transform(
+      sf::st_sf(geometry = pol, crs = 2154), 4326))
+    expect_equal(as.numeric(bb_used), as.numeric(bb_zone), tolerance = 1e-6)
+  })
+})
