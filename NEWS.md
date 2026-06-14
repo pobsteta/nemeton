@@ -1,3 +1,26 @@
+# nemeton 0.83.3 (2026-06-14)
+
+### Fixed — ingestion S2 placette-indépendante (spec 017)
+
+`ingest_sentinel2_timeseries()` et `ingest_s2_raw_bands_to_cache()`
+**exigeaient à tort des placettes** (`plot`) et abandonnaient avec
+« No plots registered for zone_id … » alors que, depuis la spec 017,
+l'ingestion est un simple amorçage de cache piloté par l'étendue de la
+zone (`zone_wkt`) et le diagnostic FAST/FORDEAD est calculé **par pixel**,
+indépendamment des placettes (`obs_pixel` supprimé en v0.58.0). Or l'app
+crée les zones de suivi comme des **géométries pures sans placette**
+(`create_monitoring_zone()` / `build_project_monitoring_zones()`, « geometry
+only, no placettes ») : **toute zone créée depuis la spec 017 ne pouvait
+donc pas amorcer son cache** — bug masqué tant que le cache restait chaud,
+révélé dès qu'on étendait la fenêtre au-delà des scènes déjà cachées.
+
+Les deux fonctions résolvent désormais l'AOI de la zone **d'abord** et ne
+consultent les placettes que pour le **fallback bbox legacy** (zone sans
+`zone_wkt`). Une zone correctement enregistrée mais sans placette amorce
+son cache normalement ; seule une zone sans `zone_wkt` **ni** placette est
+rejetée. Couvert par `test-aoi-alignment.R` (zone `zone_wkt` sans placette
+→ l'ingestion procède, bbox issu du WKT).
+
 # nemeton 0.83.2 (2026-06-14)
 
 ### Fixed — `.assert_cache_has_bands()` : pluralisation cli ambiguë (spec 022)

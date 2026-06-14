@@ -549,6 +549,23 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-06-14 — Fix : ingestion S2 placette-indépendante (spec 017, cœur, v0.83.3)
+
+Bug latent révélé par le passage du début FAST à 2017 (app) : les deux ingests
+(`ingest_sentinel2_timeseries`, `ingest_s2_raw_bands_to_cache`) **exigeaient des
+placettes** (garde-fou « No plots registered ») alors que depuis spec 017
+l'ingestion est un amorçage de cache piloté par `zone_wkt` et le diagnostic est
+per-pixel (placette-indépendant, `obs_pixel` supprimé en v0.58.0). Or l'app crée
+les zones **sans placette** (`create_monitoring_zone`/`build_project_monitoring_zones`,
+« geometry only »). Conséquence : toute zone créée depuis spec 017 ne pouvait
+pas amorcer son cache — masqué tant que le cache était chaud, révélé dès que la
+fenêtre dépassait les scènes cachées (« Aucune scène S2 + No plots registered for
+zone_id 5 »). Fix : résoudre l'AOI **d'abord**, placettes seulement pour le
+fallback bbox legacy (zone sans `zone_wkt`). Nouveau test `test-aoi-alignment.R`
+(zone WKT sans placette → ingestion procède) + test « no plots » repurposé sur la
+branche « ni WKT ni placette ». Suite aoi-alignment verte ; 4 échecs résiduels
+`skip_cached`/`cache_dir` **préexistants** (baseline, sandbox, hors périmètre).
+
 ### 2026-06-14 — ADR-014 (draft) : cube spatio-temporel pour le `trend` régional (doc pure)
 
 Rédigé `specs/024-cube-spatiotemporel-trend/ADR-014_Cube_spatiotemporel_trend.md`

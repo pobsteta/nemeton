@@ -336,9 +336,35 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   cancelled <- .make_cancel_checker(cancel_path)
 
   plots <- .fetch_plots_sf(con, zone_id)
-  if (!nrow(plots)) {
-    cli::cli_warn("No plots registered for zone_id {.val {zone_id}}. Use {.fn register_monitoring_zone} first.")
-    return(.empty_ingest_summary())
+
+  # spec 012 / 017 — the STAC search bbox AND the COG crop are driven by
+  # `monitoring_zone.zone_wkt` (the UGF envelope registered by the app),
+  # NOT by the per-plot bbox. Ingestion is a pure cache-priming step that
+  # the per-pixel FAST diagnostic ([read_fast_alert_raster()]) reads back
+  # straight from the COG cache, so it is **independent of the placettes**:
+  # a zone properly registered with a `zone_wkt` but no validation plot is
+  # legitimate. We therefore resolve the zone AOI first and only require
+  # plots for the LEGACY bbox fallback (a zone that has no usable
+  # `zone_wkt` — typically created by a script that bypassed
+  # `register_monitoring_zone()`). Before this, a placette-less but
+  # correctly-registered zone aborted with a misleading "No plots
+  # registered" and could never prime its cache — e.g. as soon as the
+  # requested window extended beyond the already-cached scenes.
+  aoi_zone <- tryCatch(.get_zone_aoi(con, zone_id), error = function(e) NULL)
+  if (is.null(aoi_zone)) {
+    if (!nrow(plots)) {
+      cli::cli_warn(c(
+        "Zone {.val {zone_id}} has neither a usable {.field zone_wkt} nor any registered plot.",
+        i = "Re-register the zone via {.fn register_monitoring_zone} first."
+      ))
+      return(.empty_ingest_summary())
+    }
+    cli::cli_warn(c(
+      "Zone {.val {zone_id}} has no usable {.field zone_wkt}; falling back to per-plot bbox (legacy behaviour).",
+      i = "Re-register the zone via {.fn register_monitoring_zone} so FAST and FORDEAD share the same cache."
+    ))
+    aoi_zone <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(plots)),
+                          crs = sf::st_crs(plots))
   }
 
   emit(list(current = "s2:search",
@@ -347,22 +373,6 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
             n_plots = nrow(plots),
             bands   = bands))
 
-  # spec 012 — the STAC search bbox AND the COG crop are driven by
-  # `monitoring_zone.zone_wkt` (the UGF envelope registered by the
-  # app), not by the per-plot bbox. This is what makes the on-disk S2
-  # cache shareable between FAST and FORDEAD: both pipelines now ask
-  # the COG for the same crop. Fallback to the plot bbox (v0.43.x
-  # behaviour) when the zone has no WKT — typically a zone created by
-  # a script that bypassed `register_monitoring_zone()`.
-  aoi_zone <- tryCatch(.get_zone_aoi(con, zone_id), error = function(e) NULL)
-  if (is.null(aoi_zone)) {
-    cli::cli_warn(c(
-      "Zone {.val {zone_id}} has no usable {.field zone_wkt}; falling back to per-plot bbox (legacy behaviour).",
-      i = "Re-register the zone via {.fn register_monitoring_zone} so FAST and FORDEAD share the same cache."
-    ))
-    aoi_zone <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(plots)),
-                          crs = sf::st_crs(plots))
-  }
   bbox <- sf::st_as_sfc(sf::st_bbox(sf::st_transform(aoi_zone, 4326)))
   scenes <- stac_search_s2(bbox, start, end, max_cloud = max_cloud)
   if (!nrow(scenes)) {
