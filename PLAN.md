@@ -549,6 +549,35 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-06-14 — Fix tests : mocks `.cache_scene_bands` réalignés (`optional_bands`, spec 019)
+
+6 tests d'intégration (`test-monitoring.R` ×4, `test-ingest-cancel.R` ×2)
+échouaient **en local** : les mocks de `.cache_scene_bands` n'acceptaient pas
+l'argument `optional_bands` (B11 cachée best-effort, spec 019 D3) que la prod
+passe désormais. L'appel mocké levait « unused argument », avalé par le
+`tryCatch` d'ingestion → toutes les scènes silencieusement skippées (compteurs à
+0, répertoires COG non créés). Invisible en CI (tests *skipped* faute de
+`NEMETON_DB_URL_TEST`). Trois mocks réalignés (`.make_caching_mock`, `fake_cache`
+×2) avec `optional_bands = NULL, ...` + création des bandes optionnelles.
+Suites monitoring/aoi/ingest/health/reconfort-ingest 335 ✔, 0 fail.
+
+### 2026-06-14 — `nemetonshiny@315a7409` (v0.84.0) : perf chargement projet — sync PostGIS async (app)
+
+`nemetonshiny@315a7409` (v0.84.0) : perf chargement projet — dernier maillon
+synchrone retiré du chemin critique. La synchronisation PostGIS best-effort
+(`db_sync_project` : connexion + `st_write` parcelles + `dbWriteTable`
+indicateurs) tournait dans un callback `later::later(0.5)` — donc sur le THREAD
+PRINCIPAL R — et gelait l'event loop Shiny juste après le 1ᵉʳ flush carte
+(overlay/`fitBounds`/sélection bloqués), d'où le délai ressenti entre « Connected
+to PostgreSQL » et l'affichage des parcelles. Fix : nouveau
+`db_sync_project_async()` exécutant le sync dans un worker `future` (hors thread
+principal, dispatch ~0 ms), miroir des runs FORDEAD/RECONFORT (reload paquet +
+replay env DB côté worker, dont `POSTGRESQL_ADDON_*`) ; fallback `later()` si
+`future`/`promises` absents. Aucun changement cœur. Clôt le chantier
+perf-chargement côté app (v0.78.0 skip DB inutile + `ug_build_sf` différé ;
+v0.79.0 `connect_timeout` ; v0.79.1 fix contexte réactif + gating toast ;
+v0.84.0 sync async).
+
 ### 2026-06-14 — Fix : ingestion S2 placette-indépendante (spec 017, cœur, v0.83.3)
 
 Bug latent révélé par le passage du début FAST à 2017 (app) : les deux ingests
