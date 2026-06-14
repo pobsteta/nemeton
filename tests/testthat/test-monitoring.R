@@ -394,9 +394,15 @@ test_that("ingest_sentinel2_timeseries emits search_done when STAC silent", {
 # and "writes" the required band COGs to the cache (empty placeholder
 # files) so a subsequent run finds them and skips the scene.
 .make_caching_mock <- function(counter_env) {
-  function(scene, req_bands, crop_aoi = NULL, cache_dir = NULL, emit = NULL) {
+  # `optional_bands` (spec 019 D3 — B11 cached best-effort) and `...` keep
+  # the mock signature in sync with the real `.cache_scene_bands()`: a
+  # missing arg would make the production call (which passes
+  # `optional_bands = "B11"`) raise "unused argument", be swallowed by the
+  # ingest tryCatch, and silently skip every scene.
+  function(scene, req_bands, crop_aoi = NULL, cache_dir = NULL, emit = NULL,
+           optional_bands = NULL, ...) {
     counter_env$n <- counter_env$n + 1L
-    for (b in req_bands) {
+    for (b in unique(c(req_bands, optional_bands))) {
       p <- nemeton:::.s2_band_cache_path(cache_dir, scene$scene_id, b)
       dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
       file.create(p)
@@ -1239,8 +1245,14 @@ test_that("ingest_sentinel2_timeseries forwards cache_dir to .cache_scene_bands"
     zid <- register_monitoring_zone(con, "Zforward", pol, placettes)
 
     seen_cache_dir <- NA_character_
+    # `optional_bands` / `...` keep the mock in sync with the real
+    # `.cache_scene_bands()` signature (spec 019 D3) — without them the
+    # production `optional_bands = "B11"` call would raise "unused
+    # argument", be swallowed by the ingest tryCatch, and the scene would
+    # be skipped before `cache_dir` is ever recorded.
     fake_cache <- function(scene, req_bands, crop_aoi = NULL,
-                           cache_dir = NULL, emit = NULL) {
+                           cache_dir = NULL, emit = NULL,
+                           optional_bands = NULL, ...) {
       seen_cache_dir <<- if (is.null(cache_dir)) NA_character_ else cache_dir
       length(req_bands)
     }

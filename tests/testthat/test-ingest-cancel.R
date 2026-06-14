@@ -76,9 +76,16 @@ test_that("ingest_sentinel2_timeseries cancels mid-run and commits the processed
       cloud = c(5, 8, 3))
 
     cache <- withr::local_tempdir()
+    # `optional_bands` / `...` keep the mock signature in sync with the
+    # real `.cache_scene_bands()` (spec 019 D3 caches B11 best-effort):
+    # without them the production `optional_bands = "B11"` call raises
+    # "unused argument", is swallowed by the ingest tryCatch, and the
+    # scene is skipped — so no COG dir is written and the cancel assertion
+    # (2 committed tiles) fails with 0.
     fake_cache <- function(scene, req_bands, crop_aoi = NULL,
-                           cache_dir = NULL, emit = NULL) {
-      for (b in req_bands) {
+                           cache_dir = NULL, emit = NULL,
+                           optional_bands = NULL, ...) {
+      for (b in unique(c(req_bands, optional_bands))) {
         p <- nemeton:::.s2_band_cache_path(cache_dir, scene$scene_id, b)
         dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
         file.create(p)
