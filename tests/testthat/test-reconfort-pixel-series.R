@@ -166,3 +166,50 @@ test_that(".enumerate_reconfort_s2_scenes on a missing root returns empty", {
   expect_equal(length(nemeton:::.enumerate_reconfort_s2_scenes("/no/such/dir")),
                0L)
 })
+
+
+# ---- read_reconfort_alert_mask (Option A, validation sampling) --------
+
+write_class_mask <- function(cache_dir, zone_id, run_id, values) {
+  zdir <- file.path(cache_dir, sprintf("zone_%d", zone_id))
+  dir.create(zdir, recursive = TRUE, showWarnings = FALSE)
+  r <- band_raster(0L)              # 5x5 EPSG:2154
+  terra::values(r) <- values
+  terra::writeRaster(r, file.path(zdir, sprintf("reconfort_mask_%s.tif", run_id)),
+                     overwrite = TRUE)
+}
+
+test_that("read_reconfort_alert_mask reads the latest categorical mask", {
+  skip_if_no_terra()
+  cache <- withr::local_tempdir()
+  write_class_mask(cache, 1L, "20240601T000000", rep(1L, 25L))
+  write_class_mask(cache, 1L, "20240801T000000",
+                   c(rep(1L, 20L), 2L, 2L, 3L, 3L, 3L))   # latest
+  r <- read_reconfort_alert_mask(NULL, 1L, cache_dir = cache,
+                                 apply_zone_mask = FALSE)
+  expect_s4_class(r, "SpatRaster")
+  expect_setequal(unique(terra::values(r)[, 1]), c(1L, 2L, 3L))
+})
+
+test_that("read_reconfort_alert_mask honours an explicit run_id", {
+  skip_if_no_terra()
+  cache <- withr::local_tempdir()
+  write_class_mask(cache, 1L, "20240601T000000", rep(2L, 25L))
+  write_class_mask(cache, 1L, "20240801T000000", rep(3L, 25L))
+  r <- read_reconfort_alert_mask(NULL, 1L, run_id = "20240601T000000",
+                                 cache_dir = cache, apply_zone_mask = FALSE)
+  expect_equal(unique(terra::values(r)[, 1]), 2L)
+})
+
+test_that("read_reconfort_alert_mask returns NULL gracefully", {
+  skip_if_no_terra()
+  cache <- withr::local_tempdir()
+  expect_null(read_reconfort_alert_mask(NULL, 1L, cache_dir = cache,
+                                        apply_zone_mask = FALSE))   # no zone dir
+  expect_null(read_reconfort_alert_mask(NULL, 1L, cache_dir = "",
+                                        apply_zone_mask = FALSE))
+  write_class_mask(cache, 1L, "20240601T000000", rep(1L, 25L))
+  expect_null(read_reconfort_alert_mask(NULL, 1L, run_id = "nope",
+                                        cache_dir = cache, apply_zone_mask = FALSE))
+  expect_error(read_reconfort_alert_mask(NULL, NA, cache_dir = cache), "zone_id")
+})
