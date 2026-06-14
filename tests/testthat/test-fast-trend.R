@@ -131,6 +131,85 @@ test_that(".fast_raster_trend: out-of-season scenes are excluded", {
 })
 
 
+test_that(".fast_raster_trend: a significant INCREASE is never flagged", {
+  skip_if_not_installed("terra")
+  # The negative-slope gate must reject greening (significant *positive*
+  # trend) — the symmetric blind spot of a decline detector.
+  yrs   <- 2019:2023
+  dates <- as.Date(unlist(lapply(yrs, function(y)
+    c(sprintf("%d-07-15", y), sprintf("%d-08-15", y)))))
+  inc_vals <- rep(c(0.1, 0.3, 0.5, 0.7, 0.9), each = 2)   # strict greening
+  stk <- .trend_stack(dates, list("1" = inc_vals))
+  out <- nemeton:::.fast_raster_trend(
+    stk, months = 6:9, min_years = 4L, min_obs_per_year = 2L, alpha = 0.05)
+  expect_equal(unname(terra::values(out)[1, 1]), 0)       # increase -> 0
+})
+
+
+test_that("trend NA-data pixels survive the 0-4 discretisation as NA (not 0)", {
+  skip_if_not_installed("terra")
+  # A pixel with too few valid years is NA at the continuous stage; it must
+  # stay NA — not collapse to class 0 — through the quartile classify that
+  # compute_fast_alert_mask() applies (no-data != no-alert).
+  yrs   <- 2019:2023
+  dates <- as.Date(unlist(lapply(yrs, function(y)
+    c(sprintf("%d-07-15", y), sprintf("%d-08-15", y)))))
+  dec_vals   <- rep(c(0.9, 0.7, 0.5, 0.3, 0.1), each = 2)   # cell 1 declines
+  short_vals <- c(0.8, 0.8, rep(NA_real_, 8))               # cell 3: 1 year
+  stk  <- .trend_stack(dates, list("1" = dec_vals, "3" = short_vals))
+  cont <- nemeton:::.fast_raster_trend(
+    stk, months = 6:9, min_years = 4L, min_obs_per_year = 2L, alpha = 0.05)
+
+  brk <- nemeton:::.fast_alert_quartile_breaks(cont)
+  rcl <- matrix(c(-Inf, brk[1L], 0, brk[1L], brk[2L], 1, brk[2L], brk[3L], 2,
+                  brk[3L], brk[4L], 3, brk[4L], brk[5L], 4), ncol = 3, byrow = TRUE)
+  mask <- terra::classify(cont, rcl, include.lowest = TRUE, right = TRUE)
+  v <- terra::values(mask)[, 1]
+  expect_true(is.na(v[3]))      # insufficient data -> NA, never class 0
+  expect_gte(v[1], 1L)          # the declining pixel is an alert class
+})
+
+
+test_that(".trend_fit_cells matches the per-cell Theil-Sen / Mann-Kendall path", {
+  skip_if_not_installed("terra")
+  yrs <- 2017:2023
+  # Rows exercising: clean decline, greening, flat (full ties), partial
+  # ties, heterogeneous NA coverage, and a sub-min_years row.
+  M <- rbind(
+    c(0.90, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30),  # decline
+    c(0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90),  # greening
+    rep(0.55, 7),                                  # flat (all tied)
+    c(0.80, 0.80, 0.70, 0.65, 0.60, 0.55, 0.50),  # partial tie at start
+    c(0.90, NA,   0.70, NA,   0.50, 0.40, 0.30),  # heterogeneous NA
+    c(0.90, 0.80, NA,   NA,   NA,   NA,   NA)      # 2 valid years (< min)
+  )
+  present <- !is.na(M)
+  alpha <- 0.05; min_years <- 4L
+
+  # Reference: the documented per-cell helpers, one row at a time.
+  ref <- vapply(seq_len(nrow(M)), function(i) {
+    v <- M[i, ]; ok <- !is.na(v)
+    if (sum(ok) < min_years) return(NA_real_)
+    sl <- nemeton:::.theil_sen(yrs[ok], v[ok])
+    if (is.na(sl)) return(NA_real_)
+    pv <- nemeton:::.mann_kendall(v[ok])$p
+    if (!is.na(pv) && sl < 0 && pv < alpha) abs(sl) else 0
+  }, numeric(1))
+
+  # Vectorised path runs only on the candidate (>= min_years) rows.
+  cand <- which(rowSums(present) >= min_years)
+  got  <- rep(NA_real_, nrow(M))
+  got[cand] <- nemeton:::.trend_fit_cells(
+    M[cand, , drop = FALSE], present[cand, , drop = FALSE], yrs, alpha)
+
+  expect_equal(got, ref, tolerance = 1e-9)
+  expect_gt(got[1], 0)            # decline flagged
+  expect_equal(got[2], 0)        # greening not flagged
+  expect_equal(got[3], 0)        # flat not flagged
+  expect_true(is.na(got[6]))     # too few years -> NA
+})
+
+
 # ---- read_fast_alert_raster + compute_fast_alert_mask (mode=trend) ----
 
 # Write a synthetic NDMI cache: 2 summer scenes per year for `years`, with

@@ -70,8 +70,13 @@ year's median to count (else that year is `NA` for the pixel).
 Default `2`.}
 
 \item{alpha}{Numeric scalar in `(0, 1)`. Trend mode only: the
-Mann-Kendall two-sided significance level above which a pixel's
-decline is treated as noise (output `0`). Default `0.05`.}
+Mann-Kendall significance level. A pixel is flagged only when its
+Mann-Kendall \strong{two-sided} p-value is below `alpha` \strong{and} its
+Theil-Sen slope is negative. Because that negative-slope gate keeps
+a single tail, the \strong{effective false-positive rate for a declared
+decline is `alpha / 2`} — the default `0.05` is a 2.5\% one-sided
+risk. Pixels above the threshold are treated as noise (output `0`).
+Default `0.05`.}
 
 \item{cache_dir}{Character scalar. Path to the COG cache root
 (typically `<project>/cache/layers/sentinel2`). Must exist.}

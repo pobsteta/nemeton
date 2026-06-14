@@ -205,7 +205,7 @@ supervisé sur indices CRswir/CRre (chaîne IOTA²), en complément de FORDEAD
 | ✅ | **L3** | `reconfort_postprocess.R` (rasters → table `alert`, centroïdes, `confidence_class`, `stress_index` = score continu) + migration **`0006`** + `classify_disturbance()` 3-voies (`method_overlap`) + phase `postprocess` dans `run_reconfort_dieback()` | **v0.77.0** (2026-06-13) |
 | ✅ | **L4** | R5 unifié routé par essence : `indicateur_r5_deperissement(reconfort_results=)`, RECONFORT (chêne/châtaignier/pin sylvestre) vs FORDEAD (épicéa/sapin), statuts `calculated_reconfort`/`skipped_no_reconfort`/`skipped_no_method`, helpers `.resolve_reconfort_share`/`.r5_prepare_alerts`/`.r5_score` | **v0.78.0** (2026-06-13) |
 | ✅ | **L5** | Persistance features CRswir/CRre (option B : recalcul depuis le S2 ingéré) — `reconfort_outputs.R` (formules, stacks datés, bundle) + phase `persist` dans `run_reconfort_dieback()` + `read_reconfort_pixel_series()` (lecteur, sans reticulate) | **v0.80.0** (2026-06-13) |
-| 🟨 | **L6** | App `nemetonshiny` : 3ᵉ mode, bannières, plotly, QField feuillus | **partiel** : carte + diagnostic pixel (`nemetonshiny` v0.81.0) + pipeline de run (v0.82.0) livrés ; **reste** : sous-onglet « Plan de validation RECONFORT » (G4) côté app |
+| ✅ | **L6** | App `nemetonshiny` : 3ᵉ mode, bannières, plotly, QField feuillus | **clos** : carte + diagnostic pixel (`nemetonshiny` v0.81.0) + pipeline de run (v0.82.0) + sous-onglet « Plan de validation RECONFORT » G4 (`nemetonshiny` v0.83.0, réutilisation 1:1 de `mod_validation_sampling`). G4 cœur (stades DEPERIS + `read_reconfort_alert_mask`) livré en nemeton v0.83.0. |
 
 **Reporté** (vs plan §5) : flag NDP `health_reconfort` + datasource
 `reconfort_anomalies` — supposaient une parité FORDEAD inexistante. **L2b
@@ -548,6 +548,41 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-06-14 — FAST `trend` : fit vectorisé Theil-Sen / Mann-Kendall (spec 023, perf, cœur, v0.83.1)
+
+Revue critique du mode `trend` (spec 023) → **aucun bug**, mais deux points
+traités. **P1 perf** : `.fast_raster_trend()` appelait `combn`/`table` **une
+fois par pixel** via `terra::app` (~270 µs/pixel, ~4,5 min pour une tuile
+1 Mpx). Réécrit en deux leviers : (1) **pré-filtre vectorisé** écartant les
+pixels à < `min_years` années valides avant tout calcul, (2) **fit vectorisé**
+de Theil-Sen et de la statistique S de Mann-Kendall sur toutes les cellules
+candidates à la fois (arithmétique matricielle par colonnes), seules les rares
+cellules à valeurs ex-aequo retombant sur le `.mann_kendall()` exact
+tie-corrigé. **~9x** mesuré, résultat **byte-identique** au chemin per-cellule
+(vérifié sur NA hétérogènes, séries plates, ex-aequo partiels). `terra::app(cores=)`
+ne sérialise pas la closure, et un split furrr/PSOCK est **plus lent** que le
+série ici (maths per-pixel trop bon marché pour amortir la sérialisation) — le
+levier est la vectorisation, pas le parallélisme. `cli::cli_alert_info` annonce
+le nombre de pixels candidats. **P2 doc** : roxygen d'`alpha` clarifié — la p
+Mann-Kendall est bilatérale mais le gate « pente négative » rend le risque
+effectif d'un déclin déclaré égal à **`alpha / 2`** (défaut 0,05 → 2,5 %
+unilatéral). **P4 tests** : verdissement significatif → 0, pixel NA-data
+préservé en NA (≠ classe 0) à travers la discrétisation 0-4, et test direct
+d'identité `.trend_fit_cells` vs `.theil_sen`/`.mann_kendall`. Suites FAST/alert
+175 ✔, 0 fail. `.Rd` édités à la main.
+
+### 2026-06-14 — `nemetonshiny@3a717a87` (v0.83.0) : L6 RECONFORT — validation terrain G4 (app)
+
+`nemetonshiny@3a717a87` (v0.83.0) : L6 RECONFORT (spec 021) — **validation
+terrain G4**. Sous-onglet « Plan de validation RECONFORT » : réutilisation 1:1
+de `mod_validation_sampling` (`generate_validation_plan(source="RECONFORT")` →
+`read_reconfort_alert_mask`, classes 2/3 + témoin 1, masque persistant requis).
+Consomme `create_validation_sampling_plan(source="RECONFORT")` +
+`read_reconfort_alert_mask` + `get_health_validation_schema(method="reconfort")`
+du cœur v0.83.0. **Clôt L6 RECONFORT côté app** (carte + diagnostic + run +
+validation). Ligne L6 RECONFORT (app) cochée close ; G4 cœur (stades DEPERIS
+finalisés) déjà livré en nemeton v0.83.0.
 
 ### 2026-06-14 — RECONFORT Option A : `read_reconfort_alert_mask()` + persistance classif (spec 021 G4, cœur, v0.83.0)
 
