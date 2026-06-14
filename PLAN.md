@@ -549,6 +549,18 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-06-14 — ADR-014 (draft) : cube spatio-temporel pour le `trend` régional (doc pure)
+
+Rédigé `specs/024-cube-spatiotemporel-trend/ADR-014_Cube_spatiotemporel_trend.md`
+(statut **Proposé**, à porter vers `nemetonplateform/docs/` comme l'ADR-013).
+Décision : **conserver terra (Option A)** tant que le `trend` reste à l'échelle
+UGF mono-/bi-tuile ; **basculer vers l'hybride (Option D : composite via
+`gdalcubes` + fit vectorisé `.trend_fit_cells`)** dès qu'un seuil est franchi
+(emprise > ~2-3 tuiles MGRS / hors-RAM, carte régionale EPSG:3035 ADR-008, ou
+biais de recouvrement P3 devenu métier-significatif). Options B (gdalcubes
+bout-en-bout) **rejetée** (perd l'acquis vectorisé), C (`stars`) en réserve.
+Pas de bump (doc pure).
+
 ### 2026-06-14 — Fix garde-fou NDRE (cli) + doc P3 recouvrement tuiles (spec 022/023, cœur, v0.83.2)
 
 Deux suites de la revue `trend`. **Bug pré-existant** : `.assert_cache_has_bands()`
