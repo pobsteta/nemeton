@@ -10,6 +10,23 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.82.0] - 2026-06-14
+
+### Changed
+
+- Broadleaf terrain-validation vocabulary `HEALTH_VALIDATION_STADES_FEUILLUS`
+  finalised against the real DSF DEPERIS protocol (MB + MR criteria, A–F
+  notation, > 50 % crown-damage threshold): sain / deperissement_faible /
+  deperissement_marque / deperissement_grave / mort / coupe_rase. "PROVISIONAL"
+  note removed.
+
+### Added
+
+- `create_validation_sampling_plan(source = ...)` accepts `"RECONFORT"` (the
+  function samples any single-layer categorical raster; the caller passes the
+  RECONFORT class raster with `classes = c(2, 3)`, `control_classes = c(1)`).
+  Unblocks the nemetonshiny "RECONFORT validation plan" sub-tab (L6 / G4).
+
 ## [0.81.0] - 2026-06-13
 
 ### Added

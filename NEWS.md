@@ -1,3 +1,25 @@
+# nemeton 0.82.0 (2026-06-14)
+
+### Changed — validation terrain feuillus : vocabulaire DEPERIS finalisé (spec 021 G4)
+
+`HEALTH_VALIDATION_STADES_FEUILLUS` est calé sur le **protocole DSF DEPERIS**
+réel (critères mortalité de branches MB + manque de ramification MR, notation
+A–F, seuil **> 50 %** d'atteinte du houppier) : `sain` /
+`deperissement_faible` / `deperissement_marque` / `deperissement_grave` /
+`mort` / `coupe_rase`. La mention « PROVISIONAL » est retirée.
+
+### Added
+
+- `create_validation_sampling_plan(source = …)` accepte désormais
+  **`"RECONFORT"`** (en plus de `"FORDEAD"`/`"FAST"`). La fonction échantillonne
+  n'importe quel raster catégoriel mono-couche ; pour RECONFORT l'appelant
+  passe le raster de classes feuillus (1 sain / 2 dépérissant / 3
+  très-dépérissant) avec `classes = c(2, 3)`, `control_classes = c(1)`.
+
+Débloque le sous-onglet « Plan de validation RECONFORT » côté `nemetonshiny`
+(lot L6 / G4). Reste **optionnel** (Option A, à trancher métier) :
+`read_reconfort_alert_mask()` pour des placettes témoins raster.
+
 # nemeton 0.81.0 (2026-06-13)
 
 ### Added — schéma de validation terrain QField feuillus (spec 021 G4, support L6)

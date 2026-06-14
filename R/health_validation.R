@@ -56,26 +56,36 @@ HEALTH_VALIDATION_CAUSES <- c(
 )
 
 
-#' DSF-aligned **broadleaf** dieback stages (RECONFORT, spec 021 G4)
+#' DSF DEPERIS broadleaf dieback stages (RECONFORT, spec 021 G4)
 #'
 #' Terrain-validation vocabulary for the RECONFORT method (oak /
 #' chestnut / Scots pine), the broadleaf counterpart of
-#' [`HEALTH_VALIDATION_STADES`]. Graded along the symptom axes named in
-#' spec 021 §7 (défoliation, mortalité de branches, descente de cime),
-#' adapted from the DSF **DEPERIS** protocol.
+#' [`HEALTH_VALIDATION_STADES`]. Graded on the DSF **DEPERIS** protocol
+#' (Nageleisen / Département de la Santé des Forêts), whose two
+#' permanent symptomatological criteria on broadleaves are **mortalité
+#' de branches (MB)** and **manque de ramification (MR)**, combined into
+#' an overall crown-damage percentage. Severity bands map onto the
+#' DEPERIS A–F notation, the **> 50 % crown damage** threshold (DEPERIS
+#' D/E/F) separating "marqué"/"grave" from "faible":
 #'
-#' **PROVISIONAL** — the exact DEPERIS stage labels/levels are not yet
-#' pinned in the spec; these codes follow its named symptoms and the
-#' RECONFORT 3-class output and should be reconciled with the upstream
-#' DEPERIS reference before field deployment.
+#' \itemize{
+#'   \item `sain` — DEPERIS A (no significant damage).
+#'   \item `deperissement_faible` — DEPERIS B–C (crown damage ≤ 50 %).
+#'   \item `deperissement_marque` — DEPERIS D (crown damage > 50 %).
+#'   \item `deperissement_grave` — DEPERIS E–F (severe, crown dieback).
+#'   \item `mort` — dead tree.
+#'   \item `coupe_rase` — clearcut (not progressive dieback).
+#' }
+#'
+#' The exact A–F percentage cut-offs follow the DSF DEPERIS field guide.
 #'
 #' @export
 HEALTH_VALIDATION_STADES_FEUILLUS <- c(
   "sain",
-  "defoliation",          # défoliation du houppier
-  "mortalite_branches",   # mortalité de branches
-  "descente_cime",        # descente de cime (avancé)
-  "mort",                 # arbre mort
+  "deperissement_faible",   # DEPERIS B-C, atteinte houppier <= 50 %
+  "deperissement_marque",   # DEPERIS D, atteinte > 50 %
+  "deperissement_grave",    # DEPERIS E-F, atteinte sévère / descente de cime
+  "mort",
   "coupe_rase"
 )
 

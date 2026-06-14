@@ -123,9 +123,9 @@ test_that("default method stays FORDEAD (backward compatible)", {
   expect_setequal(stade$domain, HEALTH_VALIDATION_STADES)
 })
 
-test_that("HEALTH_VALIDATION_STADES_FEUILLUS covers the DSF symptom axes", {
-  expect_true(all(c("sain", "defoliation", "mortalite_branches",
-                    "descente_cime", "mort") %in%
+test_that("HEALTH_VALIDATION_STADES_FEUILLUS uses the DEPERIS severity grades", {
+  expect_true(all(c("sain", "deperissement_faible", "deperissement_marque",
+                    "deperissement_grave", "mort", "coupe_rase") %in%
                   HEALTH_VALIDATION_STADES_FEUILLUS))
   expect_false("scolyte_vert" %in% HEALTH_VALIDATION_STADES_FEUILLUS)
   expect_false("scolyte" %in% HEALTH_VALIDATION_CAUSES_FEUILLUS)
@@ -139,8 +139,10 @@ test_that(".health_stade_to_status routes coupe_rase by method", {
   # FORDEAD high-confidence clearcut stays confirmed (unchanged)
   expect_equal(nemeton:::.health_stade_to_status("coupe_rase",
                  "3-forte", method = "fordead")$status, "confirmed")
-  # broadleaf dieback stages confirm
-  expect_equal(nemeton:::.health_stade_to_status("descente_cime", NA,
+  # broadleaf DEPERIS dieback grades confirm
+  expect_equal(nemeton:::.health_stade_to_status("deperissement_grave", NA,
+                 method = "reconfort")$status, "confirmed")
+  expect_equal(nemeton:::.health_stade_to_status("deperissement_faible", NA,
                  method = "reconfort")$status, "confirmed")
   expect_equal(nemeton:::.health_stade_to_status("sain", NA,
                  method = "reconfort")$status, "false_positive")

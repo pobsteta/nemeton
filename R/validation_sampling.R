@@ -37,9 +37,13 @@
 #'   validation draw. Default `c(3L, 4L)`.
 #' @param buffer_m Numeric in metres. Optional dilation around alert
 #'   cells before drawing (cf. [fordead_alert_mask()]). Default `0`.
-#' @param source Character. Tag stored on every row (`"FORDEAD"` or
-#'   `"FAST"`) so the field crew knows which pipeline raised the
-#'   alert. Default `"FORDEAD"`.
+#' @param source Character. Tag stored on every row (`"FORDEAD"`,
+#'   `"FAST"` or `"RECONFORT"`) so the field crew knows which pipeline
+#'   raised the alert. Default `"FORDEAD"`. The function samples any
+#'   single-layer categorical `alert_raster` by `classes`; for
+#'   `"RECONFORT"` the caller passes the broadleaf class raster (codes
+#'   1 sain / 2 dépérissant / 3 très-dépérissant) with
+#'   `classes = c(2, 3)`, `control_classes = c(1)`.
 #' @param seed Integer or `NULL`. When non-`NULL`, makes the GRTS draw
 #'   reproducible.
 #'
@@ -90,7 +94,7 @@ create_validation_sampling_plan <- function(zone,
                                             classes         = c(3L, 4L),
                                             control_classes = c(0L),
                                             buffer_m        = 0,
-                                            source          = c("FORDEAD", "FAST"),
+                                            source          = c("FORDEAD", "FAST", "RECONFORT"),
                                             seed            = NULL) {
   source <- match.arg(source)
   if (!requireNamespace("terra", quietly = TRUE)) {
