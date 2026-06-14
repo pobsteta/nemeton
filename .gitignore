@@ -62,3 +62,7 @@ data-raw/knowledge_corpus.sqlite*
 __pycache__/
 *.pyc
 data-raw/references/biljou/ocr/
+
+# testthat failure artifacts (snapshots-on-failure)
+tests/testthat/_problems/
+tests/testthat/testthat-problems.rds
