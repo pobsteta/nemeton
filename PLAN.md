@@ -549,6 +549,23 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-06-14 — RECONFORT Option A : `read_reconfort_alert_mask()` + persistance classif (spec 021 G4, cœur, v0.83.0)
+
+Parité **raster** complète avec FORDEAD pour la validation terrain (décision
+métier : placettes témoins exigées). `read_reconfort_alert_mask(con, zone_id,
+run_id, cache_dir, apply_zone_mask, mask_polygon)` — **miroir exact** de
+`read_fordead_dieback_mask()` : lit `<cache_dir>/zone_<id>/reconfort_mask_<run_id>.tif`
+(raster catégoriel 1 sain / 2 dépérissant / 3 très-dépérissant), re-masque à
+l'AOI zone. La phase `persist` de `run_reconfort_dieback()` écrit désormais ce
+masque plat (copie de `Final_Classif_masked`), best-effort. L'app peut donc
+réutiliser **1:1** `mod_validation_sampling` avec `source="RECONFORT"`
+(`create_validation_sampling_plan`, classes `c(2,3)`, témoins `c(1)`) →
+**mêmes onglets / même workflow que FORDEAD** (distribution classes, témoins,
+auto-relax, GRTS, export QGIS/QField). Tests `test-reconfort-pixel-series.R`
+34 ✔ (mask : latest/run_id/NULL gracieux), suite reconfort 293 ✔, sampling
+27 ✔. NAMESPACE + `.Rd` à la main. **Cœur RECONFORT G4 complet (Option A)** —
+reste le sous-onglet app « Plan de validation RECONFORT » (brief fourni).
+
 ### 2026-06-13 — RECONFORT G4 : vocabulaire DEPERIS finalisé + source RECONFORT (spec 021, cœur, v0.82.0)
 
 Finalisation du support G4 feuillus. `HEALTH_VALIDATION_STADES_FEUILLUS` calé
@@ -563,9 +580,7 @@ passe le raster de classes RECONFORT avec `classes=c(2,3)`, témoins `c(1)`).
 **Constat archi** : `get_health_validation_schema()` n'est appelé par aucune
 fonction cœur → le routage du formulaire `method="reconfort"` est **côté app**.
 Tests : schema 47 ✔, sampling 27 ✔ (cas RECONFORT neuf), ingest 29 ✔. `.Rd`
-à la main. **Réserve restante (Option A)** : `read_reconfort_alert_mask()` +
-persistance du raster classé — **à trancher avec le référent métier**
-(placettes témoins raster vs tirage vectoriel `generate_health_validation_plots`).
+à la main. **Réserve Option A levée en v0.83.0** (cf. entrée ci-dessous).
 
 ### 2026-06-13 — `nemetonshiny@567e6987` (v0.82.0) : L6 RECONFORT — lancement de run (app)
 

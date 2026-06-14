@@ -10,6 +10,19 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.83.0] - 2026-06-14
+
+### Added
+
+- `read_reconfort_alert_mask(con, zone_id, run_id, cache_dir, ...)`: the
+  RECONFORT mirror of `read_fordead_dieback_mask()`, returning the categorical
+  class raster (1 sain / 2 dépérissant / 3 très-dépérissant) of the latest run.
+  `run_reconfort_dieback()`'s `persist` phase now writes that flat mask
+  (`<cache_dir>/zone_<id>/reconfort_mask_<run_id>.tif`, best-effort). Lets
+  nemetonshiny reuse its raster validation-sampling module 1:1 with
+  `create_validation_sampling_plan(source = "RECONFORT")` (full FORDEAD parity,
+  control plots included). Closes the core side of G4 (Option A).
+
 ## [0.82.0] - 2026-06-14
 
 ### Changed

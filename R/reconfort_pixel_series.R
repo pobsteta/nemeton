@@ -148,3 +148,77 @@ read_reconfort_pixel_series <- function(con, zone_id, xy, crs = 4326,
   attr(df, "dans_zone_validite") <- dans_zone_validite
   df
 }
+
+
+#' Read the RECONFORT broadleaf-classification raster for a zone
+#'
+#' Returns the **categorical** class raster produced by
+#' [run_reconfort_dieback()] for the given monitoring zone. Values:
+#' `1 = sain`, `2 = dépérissant`, `3 = très dépérissant`, `0`/`NA`
+#' outside the broadleaf mask. The RECONFORT mirror of
+#' [read_fordead_dieback_mask()] — it feeds
+#' [create_validation_sampling_plan()] (`source = "RECONFORT"`,
+#' `classes = c(2, 3)`, `control_classes = c(1)`) so the broadleaf
+#' validation plan reuses the same raster sampling machinery as FORDEAD.
+#'
+#' Looks up `<cache_dir>/zone_<zone_id>/reconfort_mask_<run_id>.tif`
+#' (written by the `persist` phase of [run_reconfort_dieback()]); when
+#' `run_id` is `NULL` the most recent file (lexicographic, hence
+#' chronological on the `YYYYMMDDTHHMMSS` suffix) is returned.
+#'
+#' @param con A `DBI` connection or `NULL`. Used (when not `NULL`) to
+#'   re-mask the raster to the zone AOI, like
+#'   [read_fordead_dieback_mask()].
+#' @param zone_id Integer. `monitoring_zone.id`.
+#' @param run_id Optional character/integer. Explicit run selector.
+#' @param cache_dir Character(1). Root of the RECONFORT cache,
+#'   typically `<project>/cache/layers/reconfort`. Required.
+#' @param apply_zone_mask Logical. Re-mask to the UGF zone AOI. Default
+#'   `TRUE`.
+#' @param mask_polygon Optional `sf`/`sfc` polygon overriding the AOI.
+#'
+#' @return A single-band `terra::SpatRaster`, or `NULL` when no mask is
+#'   available.
+#'
+#' @seealso [read_fordead_dieback_mask()], [run_reconfort_dieback()].
+#' @export
+read_reconfort_alert_mask <- function(con,
+                                      zone_id,
+                                      run_id          = NULL,
+                                      cache_dir       = NULL,
+                                      apply_zone_mask = TRUE,
+                                      mask_polygon    = NULL) {
+  if (length(zone_id) != 1L || is.na(zone_id) ||
+      !is.finite(suppressWarnings(as.numeric(zone_id)))) {
+    stop("`zone_id` must be a single non-NA integer.", call. = FALSE)
+  }
+  zid <- as.integer(zone_id)
+  if (is.null(cache_dir) || !nzchar(cache_dir) || !dir.exists(cache_dir)) {
+    return(NULL)
+  }
+  if (!requireNamespace("terra", quietly = TRUE)) {
+    stop("Package `terra` required.", call. = FALSE)
+  }
+  zone_dir <- file.path(cache_dir, sprintf("zone_%d", zid))
+  if (!dir.exists(zone_dir)) return(NULL)
+
+  out <- if (!is.null(run_id)) {
+    fp <- file.path(zone_dir, sprintf("reconfort_mask_%s.tif", as.character(run_id)))
+    if (!file.exists(fp)) return(NULL)
+    terra::rast(fp)
+  } else {
+    files <- list.files(zone_dir,
+                        pattern = "^reconfort_mask_[A-Za-z0-9._-]+\\.tif$",
+                        full.names = TRUE)
+    if (!length(files)) return(NULL)
+    terra::rast(sort(files)[length(files)])
+  }
+
+  if (isTRUE(apply_zone_mask)) {
+    poly <- mask_polygon %||%
+      (if (!is.null(con)) tryCatch(.get_zone_aoi(con, zid),
+                                   error = function(e) NULL) else NULL)
+    out <- .apply_zone_mask(out, poly)
+  }
+  out
+}

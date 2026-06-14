@@ -360,6 +360,21 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     # is never discarded over a diagnostic detail. Bundle lands at
     # <cache_dir>/zone_<id>/run_<run_id>/ for read_reconfort_pixel_series().
     begin("persist")
+    # Persist the classified raster as the flat zone mask consumed by
+    # read_reconfort_alert_mask() / create_validation_sampling_plan()
+    # (source = "RECONFORT") — the RECONFORT mirror of FORDEAD's
+    # dieback_mask. Best-effort.
+    tryCatch({
+      if (!is.na(classif_for_alerts) && file.exists(classif_for_alerts)) {
+        zdir <- file.path(cache_dir, sprintf("zone_%s", zone_id))
+        if (!dir.exists(zdir)) dir.create(zdir, recursive = TRUE, showWarnings = FALSE)
+        file.copy(classif_for_alerts,
+                  file.path(zdir, sprintf("reconfort_mask_%s.tif", run_id)),
+                  overwrite = TRUE)
+      }
+    }, error = function(e)
+      cli::cli_warn("RECONFORT persist (class mask) failed: {conditionMessage(e)}"))
+
     features_bundle <- tryCatch({
       scenes <- .enumerate_reconfort_s2_scenes(file.path(workdir, "S2_data"))
       if (!length(scenes)) {

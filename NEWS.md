@@ -1,3 +1,19 @@
+# nemeton 0.83.0 (2026-06-14)
+
+### Added — `read_reconfort_alert_mask()` : parité raster validation (spec 021 G4, Option A)
+
+`read_reconfort_alert_mask(con, zone_id, run_id, cache_dir, …)` renvoie le
+raster catégoriel des classes RECONFORT (`1 sain / 2 dépérissant / 3
+très-dépérissant`) du dernier run — **miroir exact** de
+`read_fordead_dieback_mask()`. La phase `persist` de `run_reconfort_dieback()`
+écrit ce masque plat (`<cache_dir>/zone_<id>/reconfort_mask_<run_id>.tif`,
+best-effort). Permet à `nemetonshiny` de **réutiliser 1:1** son module de
+plan de validation (`create_validation_sampling_plan(source = "RECONFORT")`,
+`classes = c(2, 3)`, `control_classes = c(1)`) → **mêmes onglets, mêmes
+placettes témoins et même workflow QGIS/QField que FORDEAD**. Clôt le support
+cœur de G4 (Option A). Reste côté app : le sous-onglet « Plan de validation
+RECONFORT ».
+
 # nemeton 0.82.0 (2026-06-14)
 
 ### Changed — validation terrain feuillus : vocabulaire DEPERIS finalisé (spec 021 G4)
