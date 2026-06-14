@@ -204,3 +204,36 @@ test_that("create_validation_sampling_plan is reproducible with seed", {
   # Same geometries in same order (post-TSP).
   expect_equal(sf::st_coordinates(p1), sf::st_coordinates(p2))
 })
+
+
+# ---- RECONFORT broadleaf source (spec 021 G4) ------------------------
+
+# 20x20 reconfort class raster: 1 sain (majority), 2 deperissant, 3 tres.
+make_reconfort_raster_20x20 <- function(crs = "EPSG:2154") {
+  m <- matrix(1L, 20, 20)
+  m[9:10, 9:10] <- 3L
+  m[8:11, 8:11][m[8:11, 8:11] == 1L] <- 2L
+  r <- terra::rast(m, crs = crs)
+  terra::ext(r) <- terra::ext(0, 200, 0, 200)
+  r
+}
+
+test_that("create_validation_sampling_plan accepts source = 'RECONFORT'", {
+  skip_if_not_installed("terra")
+  testthat::skip_if_not_installed("spsurvey")
+  r <- make_reconfort_raster_20x20()
+  zone <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 0, ymin = 0, xmax = 200, ymax = 200), crs = 2154)))
+
+  plan <- create_validation_sampling_plan(
+    zone, r,
+    n_validation = 6L, n_control = 3L,
+    classes = c(2L, 3L), control_classes = c(1L),
+    source = "RECONFORT", seed = 7L)
+
+  expect_s3_class(plan, "sf")
+  expect_true(all(plan$source == "RECONFORT"))
+  expect_true(all(plan$alert_class[plan$type == "Temoin"] == 1L))
+  expect_true(all(plan$alert_class[plan$type == "Validation"] %in% c(2L, 3L)))
+  expect_true(all(plan$classes == "2,3"))
+})

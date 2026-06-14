@@ -205,7 +205,7 @@ supervisé sur indices CRswir/CRre (chaîne IOTA²), en complément de FORDEAD
 | ✅ | **L3** | `reconfort_postprocess.R` (rasters → table `alert`, centroïdes, `confidence_class`, `stress_index` = score continu) + migration **`0006`** + `classify_disturbance()` 3-voies (`method_overlap`) + phase `postprocess` dans `run_reconfort_dieback()` | **v0.77.0** (2026-06-13) |
 | ✅ | **L4** | R5 unifié routé par essence : `indicateur_r5_deperissement(reconfort_results=)`, RECONFORT (chêne/châtaignier/pin sylvestre) vs FORDEAD (épicéa/sapin), statuts `calculated_reconfort`/`skipped_no_reconfort`/`skipped_no_method`, helpers `.resolve_reconfort_share`/`.r5_prepare_alerts`/`.r5_score` | **v0.78.0** (2026-06-13) |
 | ✅ | **L5** | Persistance features CRswir/CRre (option B : recalcul depuis le S2 ingéré) — `reconfort_outputs.R` (formules, stacks datés, bundle) + phase `persist` dans `run_reconfort_dieback()` + `read_reconfort_pixel_series()` (lecteur, sans reticulate) | **v0.80.0** (2026-06-13) |
-| ⬜ | **L6** | App `nemetonshiny` : 3ᵉ mode, bannières, plotly, QField feuillus | release app |
+| 🟨 | **L6** | App `nemetonshiny` : 3ᵉ mode, bannières, plotly, QField feuillus | **partiel** : carte + diagnostic pixel (`nemetonshiny` v0.81.0) + pipeline de run (v0.82.0) livrés ; **reste** : sous-onglet « Plan de validation RECONFORT » (G4) côté app |
 
 **Reporté** (vs plan §5) : flag NDP `health_reconfort` + datasource
 `reconfort_anomalies` — supposaient une parité FORDEAD inexistante. **L2b
@@ -548,6 +548,45 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-06-13 — RECONFORT G4 : vocabulaire DEPERIS finalisé + source RECONFORT (spec 021, cœur, v0.82.0)
+
+Finalisation du support G4 feuillus. `HEALTH_VALIDATION_STADES_FEUILLUS` calé
+sur le **vrai protocole DSF DEPERIS** (Nageleisen — critères mortalité de
+branches MB + manque de ramification MR, notation A–F, seuil **> 50 %**
+d'atteinte du houppier) : `sain` / `deperissement_faible` (A–C, ≤50%) /
+`deperissement_marque` (D, >50%) / `deperissement_grave` (E–F) / `mort` /
+`coupe_rase`. Mention « PROVISIONAL » **retirée** du roxygen. `source`
+de `create_validation_sampling_plan()` accepte désormais **`"RECONFORT"`**
+(tag ; la fonction échantillonne n'importe quel raster catégoriel — l'app
+passe le raster de classes RECONFORT avec `classes=c(2,3)`, témoins `c(1)`).
+**Constat archi** : `get_health_validation_schema()` n'est appelé par aucune
+fonction cœur → le routage du formulaire `method="reconfort"` est **côté app**.
+Tests : schema 47 ✔, sampling 27 ✔ (cas RECONFORT neuf), ingest 29 ✔. `.Rd`
+à la main. **Réserve restante (Option A)** : `read_reconfort_alert_mask()` +
+persistance du raster classé — **à trancher avec le référent métier**
+(placettes témoins raster vs tirage vectoriel `generate_health_validation_plots`).
+
+### 2026-06-13 — `nemetonshiny@567e6987` (v0.82.0) : L6 RECONFORT — lancement de run (app)
+
+`run_reconfort_async()` (ExtendedTask + `future_promise` autour de
+`nemeton::run_reconfort_dieback`), câblage parent (invoke, reactivePoll,
+dispatcher `.reconfort_handle_progress_event` pour
+`reconfort:start|phase|complete|error` — 10 phases, observer de résultat +
+`reconfort_refresh`, cross-lock FAST/FORDEAD, force-unlock). Sans conda
+IOTA²/GEODES/OTB : échec propre (toast), carte + diagnostic restent
+fonctionnels (Limite #1 spec 021).
+
+### 2026-06-13 — `nemetonshiny@02dfffd1` (v0.81.0) : L6 RECONFORT — consultation (app)
+
+Nouveau module `mod_monitoring_reconfort_map` : carte Leaflet des alertes
+feuillus (`list_alerts` filtré `RECONFORT_ALERT_CLASSES`), popup
+`confidence_class` + `stress_index` ; bannière validité G3 advisory
+(`check_reconfort_validity`, non bloquante) ; clic → diagnostic pixel
+(`read_reconfort_pixel_series`) modal plotly 2 traces CRswir/CRre (pas de
+prédiction harmonique). 3ᵉ mode du Suivi sanitaire + sous-onglet « Carte
+RECONFORT » lazy. Plancher `Imports: nemeton (>= 0.80.0)`. **Reste G4** :
+sous-onglet « Plan de validation RECONFORT » (app), après ce support cœur.
 
 ### 2026-06-13 — RECONFORT G4 : schéma QField feuillus (spec 021, cœur, v0.81.0)
 
