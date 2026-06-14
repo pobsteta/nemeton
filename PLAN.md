@@ -549,6 +549,20 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-06-14 — Fix garde-fou NDRE (cli) + doc P3 recouvrement tuiles (spec 022/023, cœur, v0.83.2)
+
+Deux suites de la revue `trend`. **Bug pré-existant** : `.assert_cache_has_bands()`
+(garde-fou NDRE, spec 022) plantait sur cli récent — « Multiple quantities for
+pluralization » quand les **deux** bandes red-edge (B05+B8A) manquaient (le
+`{?s}` interpolait `missing` *et* `cache_dir`, longueurs différentes). Corrigé
+par `{cli::qty(missing)}` ; `test-ndre.R` repasse au vert (passait en CI,
+échouait en local sur cli plus strict). **P3 doc** : documenté le biais
+`mosaic(fun="max")` sur les liserés de tuiles MGRS en mode `trend` (chaque
+tuile ajuste sa pente sur son propre jeu de scènes, `max` garde la plus forte
+magnitude de déclin dans le recouvrement ~10 km — biais haut borné, conservateur
+pour la détection ; mono-tuile non concernée). roxygen + `.Rd` + commentaire
+inline. Suites pixel/ndre/ndmi/fast/alert 348 ✔, 0 fail.
+
 ### 2026-06-14 — FAST `trend` : fit vectorisé Theil-Sen / Mann-Kendall (spec 023, perf, cœur, v0.83.1)
 
 Revue critique du mode `trend` (spec 023) → **aucun bug**, mais deux points

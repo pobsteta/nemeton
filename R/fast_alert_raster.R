@@ -33,6 +33,16 @@
 #'   rolling. Built for chronic dieback (slow multi-year decline, e.g.
 #'   broadleaf oak / beech) that the short-horizon modes cannot see.
 #'
+#' **Tile-overlap caveat (trend).** When an AOI straddles MGRS tiles, the
+#' slope is fitted independently per tile (each from that tile's own scene
+#' set) and the per-tile rasters are combined with `mosaic(fun = "max")`,
+#' as for `count` / `rolling`. In the ~10 km overlap strip the two tiles
+#' can yield slightly different slopes (different acquisition dates), and
+#' `max` keeps the **larger decline magnitude** — a mild high bias on those
+#' seams. It is bounded (a single tile's estimate, never a sum) and
+#' conservative for *detection*; treat the magnitude on tile boundaries as
+#' an upper bound. A single-tile AOI is unaffected.
+#'
 #' The raster is computed in the native Sentinel-2 CRS (typically
 #' EPSG:32631 for tiles T31xxx) for numerical accuracy, then
 #' **projected to EPSG:2154 (Lambert-93)** before being returned, to stay
@@ -334,6 +344,12 @@ read_fast_alert_raster <- function(con, zone_id,
     cli::cli_alert_info("No usable per-tile {.field {index}} stack for zone {.val {zid}}.")
     return(NULL)
   }
+  # `fun = "max"` over tile overlaps: for count/rolling it avoids
+  # double-counting the shared overlap dates; for trend it keeps the
+  # larger of two independently-fitted slope magnitudes on the seam (a
+  # mild, bounded high bias — see the "Tile-overlap caveat" in the
+  # roxygen). A `mean` would smooth the seam but blur genuine within-strip
+  # differences; `max` is kept for cross-mode consistency.
   out <- if (length(per_tile) == 1L) per_tile[[1L]] else
     do.call(terra::mosaic, c(per_tile, list(fun = "max")))
 

@@ -1,3 +1,24 @@
+# nemeton 0.83.2 (2026-06-14)
+
+### Fixed — `.assert_cache_has_bands()` : pluralisation cli ambiguë (spec 022)
+
+Le garde-fou NDRE (`extract_pixel_timeseries()` / `build_index_stack()` quand
+le cache n'a jamais ingéré B05 / B8A) plantait sur `cli` récent avec « Multiple
+quantities for pluralization » : le message interpolait deux vecteurs de
+longueurs différentes (`missing` et `cache_dir`) avec un `{?s}` non lié. La
+quantité de pluriel est désormais épinglée par `{cli::qty(missing)}`, si bien
+que l'abandon affiche correctement « band B05 » (1 manquante) ou « bands B05,
+B8A » (2 manquantes). Régression couverte par `test-ndre.R`.
+
+### Documentation — FAST `trend` : biais de recouvrement de tuiles (spec 023)
+
+Documenté le comportement de `mosaic(fun = "max")` sur les liserés de tuiles
+MGRS en mode `trend` : chaque tuile ajuste sa pente depuis son propre jeu de
+scènes, et `max` retient la plus forte magnitude de déclin dans la bande de
+recouvrement (~10 km) — un léger biais haut, borné et conservateur pour la
+*détection*. Une AOI mono-tuile n'est pas concernée. (roxygen + commentaire
+inline ; cohérent avec `count` / `rolling`.)
+
 # nemeton 0.83.1 (2026-06-14)
 
 ### Changed — FAST `trend` : fit vectorisé Theil-Sen / Mann-Kendall (spec 023, perf)
