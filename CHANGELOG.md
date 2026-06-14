@@ -10,6 +10,24 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.83.1] - 2026-06-14
+
+### Changed
+
+- FAST `trend` mode (spec 023): `.fast_raster_trend()` now fits Theil-Sen /
+  Mann-Kendall with a vectorised pre-filter + matrix-wide computation instead
+  of a per-pixel `terra::app` callback (~9× faster, byte-identical output).
+  Rare tied-value pixels fall back to the exact tie-corrected `.mann_kendall()`.
+  `terra::app(cores=)` and a furrr/PSOCK split were both measured slower than
+  serial here, so the lever is vectorisation, not parallelism. A
+  `cli::cli_alert_info` reports the candidate-pixel count.
+
+### Documentation
+
+- Clarified the `alpha` parameter for trend mode: the Mann-Kendall p-value is
+  two-sided, but the negative-slope gate makes the effective false-positive
+  rate for a declared decline `alpha / 2` (default `0.05` = 2.5% one-sided).
+
 ## [0.83.0] - 2026-06-14
 
 ### Added

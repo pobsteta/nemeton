@@ -43,7 +43,9 @@
 #'   (spec 023), passed through to [read_fast_alert_raster()]. Seasonal
 #'   month window (default `6:9`), minimum valid composite years
 #'   (`4L`), minimum clear observations per year (`2L`), and Mann-Kendall
-#'   significance level (`0.05`). Ignored in count / rolling mode.
+#'   significance level (`0.05`; two-sided, but the negative-slope gate
+#'   makes the effective decline risk `alpha / 2` — see
+#'   [read_fast_alert_raster()]). Ignored in count / rolling mode.
 #' @param cache_dir Path to the S2 COG cache.
 #' @param mask_cache_dir Path to the FAST mask cache root. The mask is
 #'   written under `<mask_cache_dir>/zone_<id>/fast_alert_<ts>.tif`.

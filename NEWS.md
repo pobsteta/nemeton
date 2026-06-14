@@ -1,3 +1,35 @@
+# nemeton 0.83.1 (2026-06-14)
+
+### Changed — FAST `trend` : fit vectorisé Theil-Sen / Mann-Kendall (spec 023, perf)
+
+Le mode FAST `trend` calculait la pente Theil-Sen et le test de Mann-Kendall
+**pixel par pixel** via un callback `terra::app` (`combn`/`table` appelés une
+fois par cellule : ~270 µs/pixel, ~4,5 min pour une tuile 1 Mpx).
+`.fast_raster_trend()` est réécrit en deux leviers, à résultat **identique** :
+
+- **Pré-filtre vectorisé** : les pixels à moins de `min_years` années valides
+  sont écartés avant tout calcul (gain proportionnel à la rareté du masque
+  forestier).
+- **Fit vectorisé** : la pente Theil-Sen et la statistique S de Mann-Kendall
+  sont calculées sur **toutes** les cellules candidates à la fois par
+  arithmétique matricielle ; seules les rares cellules à valeurs ex-aequo
+  retombent sur le `.mann_kendall()` exact (variance tie-corrigée). **~9×**
+  plus rapide, sortie byte-identique au chemin per-cellule (NA hétérogènes,
+  séries plates, ex-aequo partiels vérifiés). `cli::cli_alert_info` annonce le
+  nombre de pixels candidats.
+
+`terra::app(cores=)` ne peut pas sérialiser la closure et un découpage
+furrr/PSOCK s'est révélé **plus lent** que le série (maths per-pixel trop bon
+marché pour amortir la sérialisation) : le levier retenu est la vectorisation,
+pas le parallélisme. Aucun changement de comportement ni d'API.
+
+### Documentation
+
+- `alpha` (mode `trend`) clarifié : la p Mann-Kendall est **bilatérale** mais
+  le gate « pente négative » ne retient qu'une queue, si bien que le risque
+  effectif de faux positif pour un déclin déclaré vaut **`alpha / 2`** (le
+  défaut `0.05` correspond à un risque unilatéral de 2,5 %).
+
 # nemeton 0.83.0 (2026-06-14)
 
 ### Added — `read_reconfort_alert_mask()` : parité raster validation (spec 021 G4, Option A)
