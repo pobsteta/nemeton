@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.83.2] - 2026-06-14
+
+### Fixed
+
+- `.assert_cache_has_bands()` (NDRE guard, spec 022): pinned the cli
+  pluralisation quantity with `{cli::qty(missing)}` so the abort no longer
+  fails with "Multiple quantities for pluralization" when both red-edge bands
+  (B05 + B8A) are missing. Covered by `test-ndre.R`.
+
+### Documentation
+
+- FAST `trend` (spec 023): documented the `mosaic(fun = "max")` tile-overlap
+  behaviour — per-tile slopes combined by max keep the larger decline magnitude
+  on MGRS seams (a bounded, conservative high bias; single-tile AOIs unaffected).
+
 ## [0.83.1] - 2026-06-14
 
 ### Changed

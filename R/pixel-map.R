@@ -627,9 +627,13 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
   }, logical(1))
   missing <- bands[!present]
   if (length(missing)) {
+    # `{qty(missing)}` pins the pluralisation quantity to `missing`: the
+    # message interpolates two vectors of differing length (`missing` and
+    # the length-1 `cache_dir`), so a bare `{?s}` is ambiguous and recent
+    # cli aborts with "Multiple quantities for pluralization".
     cli::cli_abort(c(
-      "No cached scene carries the band{?s} {.field {missing}} under \\
-       {.path {cache_dir}}.",
+      "No cached scene carries the {cli::qty(missing)}band{?s} {.field {missing}} \\
+       under {.path {cache_dir}}.",
       i = "These bands feed the requested index but were never ingested.",
       i = "Re-run {.fn ingest_sentinel2_timeseries} with the index that \\
            needs them (e.g. {.code bands = \"NDRE\"} for B05 / B8A)."
