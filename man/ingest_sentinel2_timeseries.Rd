@@ -121,11 +121,13 @@ Phases emitted, in order:
     `completed = total`, `total`, `n_scenes_cached`.}
   \item{`fast_prewarm:<index>_<mode>`}{(spec 018, only when
     `prewarm_alerts = TRUE`) emitted at the start / end of each of
-    the six pre-computed FAST maps (3 indices x 2 modes, spec 019).
-    The bare key signals "started",
+    the eight pre-computed FAST maps: `{NDVI, NBR, NDMI} x
+    {count, rolling}` (spec 019) plus `{NDMI, NDRE} x {trend}`
+    (spec 023). The bare key signals "started",
     a `_done` suffix "map ready", a `_failed` suffix "skipped"
     (with `error_message`). Every event carries `index` and `mode`
-    so the caller can localise the toast.}
+    so the caller can localise the toast (e.g.
+    `fast_prewarm:NDMI_trend_done`, `fast_prewarm:NDRE_trend_failed`).}
 }
 The callback is invoked synchronously inside the calling thread.
 Default `NULL` (silent — no callback emitted).}
@@ -141,14 +143,22 @@ own transaction), and the returned summary carries
 as a stale leftover — the caller must delete it before each call.}
 
 \item{prewarm_alerts}{Logical (spec 018). When `TRUE`, after a
-successful ingestion the worker chains on six
-[read_fast_alert_raster()] calls — `NDVI`/`NBR`/`NDMI` ×
-`count`/`rolling` (spec 019), default threshold (0.40 NDVI /
-0.30 NBR / 0.30 NDMI) and `window_days = 30` — so the six usual
-FAST alert maps land in the D6 result cache and
-the app's FAST tab is instant on first visit. Each combination is
-independent: a failure on one (e.g. no B12 scene for `NBR`, no B11
-for `NDMI`) warns and is skipped, never aborting the others. The pre-warm polls
+successful ingestion the worker chains on eight
+[read_fast_alert_raster()] calls so the usual FAST alert maps land
+in the D6 result cache and the app's FAST tab is instant on first
+visit:
+\itemize{
+  \item `NDVI`/`NBR`/`NDMI` × `count`/`rolling` (spec 019), default
+    threshold (0.40 NDVI / 0.30 NBR / 0.30 NDMI) and
+    `window_days = 30`;
+  \item `NDMI`/`NDRE` × `trend` (spec 023) — chronic broadleaf
+    decline, warmed with the core trend defaults `months = 6:9`,
+    `min_obs_per_year = 2`, `min_years = 4`, `alpha = 0.05`
+    (`threshold`/`window_days` are not used in trend mode).
+}
+Each combination is independent: a failure on one (e.g. no B12 scene
+for `NBR`, no B11 for `NDMI`, no B05/B8A red-edge for `NDRE` trend)
+warns and is skipped, never aborting the others. The pre-warm polls
 `cancel_path` between combinations. Default `FALSE` (no extra work,
 identical to the historical behaviour). A cancelled ingestion never
 starts the pre-warm.}

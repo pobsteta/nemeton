@@ -549,6 +549,30 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-06-15 — Release v0.84.0 (added — pré-chauffage FAST `trend`, spec 023, cœur)
+
+`.prewarm_fast_alerts()` (déclenché par `ingest_sentinel2_timeseries(prewarm_alerts
+= TRUE)`) pré-calcule désormais **8 combos** au lieu de 6 : aux 6 historiques
+`{NDVI, NBR, NDMI} × {count, rolling}` (spec 019) s'ajoutent **2 combos trend**
+`{NDMI, NDRE} × {trend}` (spec 023). Rationale : `trend` cible le dépérissement
+chronique feuillus → indices pertinents = NDMI (B11) + NDRE (B05/B8A) ; NDVI/NBR
+restent count/rolling. Le warm `trend` utilise les défauts cœur `months=6:9`,
+`min_obs_per_year=2`, `min_years=4`, `alpha=0.05` (mêmes valeurs que
+`read_fast_alert_raster`) ; `threshold`/`window_days` non passés. COG sous le même
+schéma `<prewarm_mask_cache_dir>/zone_<id>/` que les autres combos. Best-effort :
+`*_trend` ne tourne que si les bandes red-edge (B05+B8A) / B11 sont en cache, sinon
+**skip** sans faire échouer l'ingestion (comme les scènes sans href). Nouveaux
+events `fast_prewarm:{NDMI,NDRE}_trend{,_done,_failed}` au format existant ;
+`fast_prewarm:complete`/`:cancelled` inchangés. Tests `test-prewarm-fast-alerts.R` :
+« the eight combinations » (8 COG + events trend, back-compat des 6 noms
+count/rolling), cas red-edge absent (NDRE trend skippé sans erreur, NDMI trend
+rendu), per-combination failure étendu aux 2 combos trend. **Non vérifié en local**
+(R/terra indisponibles dans le sandbox) : `devtools::document()` (`.Rd`
+mis à jour manuellement), `devtools::test()` à rejouer en CI. **Débloque** le
+câblage `nemetonshiny` : radio 3 modes, indice NDMI par défaut en trend, `bands +=
+"NDRE"`, params trend en sidebar conditionnelle, mapping toast `fast_prewarm:*_trend`,
+bump app **0.85.0** + plancher `Imports: nemeton (>= 0.84.0)`.
+
 ### 2026-06-14 — Fix tests : mocks `.cache_scene_bands` réalignés (`optional_bands`, spec 019)
 
 6 tests d'intégration (`test-monitoring.R` ×4, `test-ingest-cancel.R` ×2)

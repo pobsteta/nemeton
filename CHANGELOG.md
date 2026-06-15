@@ -10,6 +10,24 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.84.0] - 2026-06-15
+
+### Added
+
+- `ingest_sentinel2_timeseries(prewarm_alerts = TRUE)` now pre-warms **8**
+  FAST alert maps instead of 6: the historical `{NDVI, NBR, NDMI} ×
+  {count, rolling}` (spec 019) plus two **trend** combos `{NDMI, NDRE} ×
+  {trend}` (spec 023). Trend targets chronic broadleaf decline, whose
+  relevant signals are moisture (NDMI, B11) and red-edge (NDRE, B05/B8A);
+  NDVI/NBR stay count/rolling only. The trend warm uses the core defaults
+  `months = 6:9`, `min_obs_per_year = 2`, `min_years = 4`, `alpha = 0.05`
+  (`threshold`/`window_days` unused in trend). It is best-effort: a zone
+  whose cache lacks the red-edge (B05/B8A) or B11 bands is skipped without
+  failing the ingestion. New progress events
+  `fast_prewarm:{NDMI,NDRE}_trend{,_done,_failed}` mirror the existing
+  format; `fast_prewarm:complete` / `:cancelled` unchanged. Unblocks the
+  3-mode selector wiring in `nemetonshiny`.
+
 ## [0.83.3] - 2026-06-14
 
 ### Fixed

@@ -209,11 +209,13 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'       `completed = total`, `total`, `n_scenes_cached`.}
 #'     \item{`fast_prewarm:<index>_<mode>`}{(spec 018, only when
 #'       `prewarm_alerts = TRUE`) emitted at the start / end of each of
-#'       the six pre-computed FAST maps (3 indices x 2 modes, spec 019).
-#'       The bare key signals "started",
+#'       the eight pre-computed FAST maps: `{NDVI, NBR, NDMI} x
+#'       {count, rolling}` (spec 019) plus `{NDMI, NDRE} x {trend}`
+#'       (spec 023). The bare key signals "started",
 #'       a `_done` suffix "map ready", a `_failed` suffix "skipped"
 #'       (with `error_message`). Every event carries `index` and `mode`
-#'       so the caller can localise the toast.}
+#'       so the caller can localise the toast (e.g.
+#'       `fast_prewarm:NDMI_trend_done`, `fast_prewarm:NDRE_trend_failed`).}
 #'   }
 #'   The callback is invoked synchronously inside the calling thread.
 #'   Default `NULL` (silent — no callback emitted).
@@ -227,14 +229,22 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'   `status = "cancelled"`. A flag already present at entry is ignored
 #'   as a stale leftover — the caller must delete it before each call.
 #' @param prewarm_alerts Logical (spec 018). When `TRUE`, after a
-#'   successful ingestion the worker chains on six
-#'   [read_fast_alert_raster()] calls — `NDVI`/`NBR`/`NDMI` ×
-#'   `count`/`rolling` (spec 019), default threshold (0.40 NDVI /
-#'   0.30 NBR / 0.30 NDMI) and `window_days = 30` — so the six usual
-#'   FAST alert maps land in the D6 result cache and
-#'   the app's FAST tab is instant on first visit. Each combination is
-#'   independent: a failure on one (e.g. no B12 scene for `NBR`, no B11
-#'   for `NDMI`) warns and is skipped, never aborting the others. The pre-warm polls
+#'   successful ingestion the worker chains on eight
+#'   [read_fast_alert_raster()] calls so the usual FAST alert maps land
+#'   in the D6 result cache and the app's FAST tab is instant on first
+#'   visit:
+#'   \itemize{
+#'     \item `NDVI`/`NBR`/`NDMI` × `count`/`rolling` (spec 019), default
+#'       threshold (0.40 NDVI / 0.30 NBR / 0.30 NDMI) and
+#'       `window_days = 30`;
+#'     \item `NDMI`/`NDRE` × `trend` (spec 023) — chronic broadleaf
+#'       decline, warmed with the core trend defaults `months = 6:9`,
+#'       `min_obs_per_year = 2`, `min_years = 4`, `alpha = 0.05`
+#'       (`threshold`/`window_days` are not used in trend mode).
+#'   }
+#'   Each combination is independent: a failure on one (e.g. no B12 scene
+#'   for `NBR`, no B11 for `NDMI`, no B05/B8A red-edge for `NDRE` trend)
+#'   warns and is skipped, never aborting the others. The pre-warm polls
 #'   `cancel_path` between combinations. Default `FALSE` (no extra work,
 #'   identical to the historical behaviour). A cancelled ingestion never
 #'   starts the pre-warm.
@@ -477,8 +487,9 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
             total           = as.integer(total_scenes),
             n_scenes_cached = as.integer(total_cached)))
 
-  # spec 018 — opt-in pre-computation of the 4 usual FAST alert maps
-  # (NDVI/NBR × count/rolling). Runs only on the success path: a
+  # spec 018 — opt-in pre-computation of the 8 usual FAST alert maps
+  # ({NDVI,NBR,NDMI} × count/rolling + {NDMI,NDRE} × trend, spec 023).
+  # Runs only on the success path: a
   # cancelled ingestion returned above, so we never start a long
   # pre-warm the user just asked to stop. The helper polls `cancel_path`
   # between combinations, so a cancel arriving during pre-warm still
@@ -518,15 +529,19 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   .ingest_summary(0L, 0L, 0L, "", status = "success")
 }
 
-# spec 018 — pre-compute the 4 usual FAST alert maps at the end of an
+# spec 018 — pre-compute the usual FAST alert maps at the end of an
 # ingestion so the app's FAST tab is instant on first visit (no 5-30 s
 # wait on each NDVI<->NBR / count<->rolling switch). Each combination is
 # content-addressed and persisted by `read_fast_alert_raster()` (D6 cache)
 # under `<result_cache_dir>/zone_<id>/fast_<INDEX>_<MODE>_thr<threshold>_
-# <from>_<to>_w<window>_<hash8>.tif`.
+# <from>_<to>_w<window>_<hash8>.tif` (count/rolling) or
+# `fast_<INDEX>_trend_a<alpha>_m<months>_y<years>_<from>_<to>_<hash8>.tif`
+# (trend, spec 023).
 #
-# Robustness: the four combinations are independent. A failure on one
-# (e.g. a zone whose cache has no B12 scene, so NBR has no usable scene)
+# Eight combinations (spec 023): {NDVI, NBR, NDMI} x {count, rolling} plus
+# {NDMI, NDRE} x {trend}. Robustness: every combination is independent. A
+# failure on one (e.g. a zone whose cache has no B12 scene, so NBR has no
+# usable scene; or no B05/B8A red-edge, so NDRE trend is unrenderable)
 # warns and is skipped, NEVER aborting the others — a partial pre-warm is
 # strictly better than none, and the missing combinations are simply
 # recomputed lazily on first visit. Cooperative cancellation is polled
@@ -535,10 +550,12 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 #
 # `emit` / `cancelled` are the closures already built by the caller
 # (`ingest_sentinel2_timeseries()`), so the stale-flag semantics and the
-# no-op-when-NULL progress behaviour are shared verbatim. Threshold is
-# left NULL (core defaults: 0.40 NDVI / 0.30 NBR) and `window_days` is the
-# standard 30 — a caller with custom values gets a cache miss and a lazy
-# recompute on visit, an accepted limitation (~90% keep the defaults).
+# no-op-when-NULL progress behaviour are shared verbatim. For count/rolling
+# `threshold` is left NULL (core defaults: 0.40 NDVI / 0.30 NBR) and
+# `window_days` is the standard 30; trend warms with the core defaults
+# `months = 6:9`, `min_obs_per_year = 2`, `min_years = 4`, `alpha = 0.05`.
+# A caller with custom values gets a cache miss and a lazy recompute on
+# visit, an accepted limitation (~90% keep the defaults).
 #
 # Progress contract — one event per combination, all carrying
 # `index` / `mode` so the app can build a localized toast:
@@ -553,10 +570,20 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   # the app is a cache hit, not a cold compute. NDMI with no B11 in the
   # cache is handled by the soft-skip path below (read_fast_alert_raster
   # returns NULL), exactly like NBR with no B12.
-  combos <- expand.grid(
-    index = c("NDVI", "NBR", "NDMI"),
-    mode  = c("count", "rolling"),
-    stringsAsFactors = FALSE)
+  #
+  # spec 023 — two extra `trend` combos, {NDMI, NDRE} x {trend}, bringing
+  # the total to 8. Trend targets chronic broadleaf decline, where the
+  # relevant signals are moisture (NDMI / B11) and red-edge (NDRE /
+  # B05+B8A); NDVI/NBR stay count/rolling only. A zone whose cache lacks
+  # B11 (NDMI) or B05+B8A (NDRE) is soft-skipped exactly like NBR with no
+  # B12 — best-effort, never aborting the ingestion.
+  combos <- rbind(
+    expand.grid(index = c("NDVI", "NBR", "NDMI"),
+                mode  = c("count", "rolling"),
+                stringsAsFactors = FALSE),
+    data.frame(index = c("NDMI", "NDRE"),
+               mode  = "trend",
+               stringsAsFactors = FALSE))
 
   for (i in seq_len(nrow(combos))) {
     if (cancelled()) break
@@ -567,18 +594,38 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 
     err_msg <- NULL
     res <- tryCatch(
-      read_fast_alert_raster(
-        con,
-        zone_id          = zone_id,
-        index            = idx,
-        threshold        = NULL,        # core defaults: 0.40 NDVI / 0.30 NBR
-        date_from        = date_from,
-        date_to          = date_to,
-        mode             = mode,
-        window_days      = 30L,
-        cache_dir        = cache_dir,
-        cache_result     = TRUE,
-        result_cache_dir = result_cache_dir),
+      if (mode == "trend") {
+        # spec 023 — trend ignores threshold/window_days; warm with the
+        # same core defaults `read_fast_alert_raster()` uses, so the app's
+        # first trend selection (NDMI default, NDRE alt) is a cache hit.
+        read_fast_alert_raster(
+          con,
+          zone_id          = zone_id,
+          index            = idx,
+          date_from        = date_from,
+          date_to          = date_to,
+          mode             = "trend",
+          months           = 6:9,
+          min_obs_per_year = 2L,
+          min_years        = 4L,
+          alpha            = 0.05,
+          cache_dir        = cache_dir,
+          cache_result     = TRUE,
+          result_cache_dir = result_cache_dir)
+      } else {
+        read_fast_alert_raster(
+          con,
+          zone_id          = zone_id,
+          index            = idx,
+          threshold        = NULL,      # core defaults: 0.40 NDVI / 0.30 NBR
+          date_from        = date_from,
+          date_to          = date_to,
+          mode             = mode,
+          window_days      = 30L,
+          cache_dir        = cache_dir,
+          cache_result     = TRUE,
+          result_cache_dir = result_cache_dir)
+      },
       error = function(e) {
         err_msg <<- conditionMessage(e)
         NULL
