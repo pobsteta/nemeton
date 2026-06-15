@@ -613,6 +613,16 @@ Centre-Val de Loire). Garde-fou G3 : avertit, ne bloque pas.
   : Fetch (and cache) the RECONFORT deciduous (OSO) binary mask
 - [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
   : Run the RECONFORT broadleaf-dieback map production end-to-end
+- [`RECONFORT_CLASSES`](https://pobsteta.github.io/nemeton/reference/RECONFORT_CLASSES.md)
+  : Canonical RECONFORT classes by target species
+- [`RECONFORT_ALERT_CLASSES`](https://pobsteta.github.io/nemeton/reference/RECONFORT_ALERT_CLASSES.md)
+  : Default trustworthy RECONFORT classes for garde-fou G1
+- [`RECONFORT_CONFIDENCE_WEIGHTS`](https://pobsteta.github.io/nemeton/reference/RECONFORT_CONFIDENCE_WEIGHTS.md)
+  : Provisional RECONFORT confidence weights (garde-fou G1)
+- [`read_reconfort_pixel_series()`](https://pobsteta.github.io/nemeton/reference/read_reconfort_pixel_series.md)
+  : Read the RECONFORT CRswir/CRre pixel diagnostic series
+- [`read_reconfort_alert_mask()`](https://pobsteta.github.io/nemeton/reference/read_reconfort_alert_mask.md)
+  : Read the RECONFORT broadleaf-classification raster for a zone
 
 ## Suivi sanitaire, monitoring et autres fonctions
 
@@ -791,15 +801,23 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`HEALTH_VALIDATION_CAUSES`](https://pobsteta.github.io/nemeton/reference/HEALTH_VALIDATION_CAUSES.md)
   : Free-form causes proposed in the QGIS form
 
+- [`HEALTH_VALIDATION_CAUSES_FEUILLUS`](https://pobsteta.github.io/nemeton/reference/HEALTH_VALIDATION_CAUSES_FEUILLUS.md)
+  :
+
+  Free-form causes proposed in the **broadleaf** validation form
+
 - [`HEALTH_VALIDATION_STADES`](https://pobsteta.github.io/nemeton/reference/HEALTH_VALIDATION_STADES.md)
   : DSF-aligned dieback stages used by the terrain validation form
+
+- [`HEALTH_VALIDATION_STADES_FEUILLUS`](https://pobsteta.github.io/nemeton/reference/HEALTH_VALIDATION_STADES_FEUILLUS.md)
+  : DSF DEPERIS broadleaf dieback stages (RECONFORT, spec 021 G4)
 
 - [`import_qgis_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)
   [`import_qfield_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)
   : Read placettes + arbres layers from a field-returned GPKG
 
 - [`indicateur_r5_deperissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_r5_deperissement.md)
-  : Compute the R5 dieback indicator
+  : Compute the R5 dieback indicator (unified FORDEAD / RECONFORT)
 
 - [`ingest_health_validation()`](https://pobsteta.github.io/nemeton/reference/ingest_health_validation.md)
   : Ingest a health-validation GPKG and update \`alert\` rows
@@ -871,7 +889,7 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
   : FAST alert raster at native S2 pixel resolution (spec 013)
 
 - [`read_fast_alert_rasters()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_rasters.md)
-  : Build the full FAST alert raster set (3 indices x 2 modes, spec 019)
+  : Build the full FAST alert raster set (indices x modes)
 
 - [`read_fordead_dieback_mask()`](https://pobsteta.github.io/nemeton/reference/read_fordead_dieback_mask.md)
   : Read the FORDEAD dieback classified raster for a zone
@@ -893,6 +911,9 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 
 - [`register_monitoring_zone()`](https://pobsteta.github.io/nemeton/reference/register_monitoring_zone.md)
   : Register a monitoring zone and its plots in the database
+
+- [`reset_knowledge_manifest()`](https://pobsteta.github.io/nemeton/reference/reset_knowledge_manifest.md)
+  : Reset the writable knowledge manifest to the packaged corpus
 
 - [`resolve_project_dem()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)
   [`resolve_project_chm()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)

@@ -44,11 +44,16 @@ ingest_sentinel2_timeseries(
 
 - bands:
 
-  Character vector. Subset of \`c("NDVI", "NBR", "NDMI", "NDRE")\`. B11
-  (needed by NDMI) is also cached best-effort on every ingest (spec 019
-  D3), so NDMI works on future scenes without requesting it. \`"NDRE"\`
-  (spec 022) caches the red-edge bands B05 + B8A; request it explicitly
-  when you want the FAST trend mode or the NDRE pixel diagnostic.
+  Character vector. Subset of \`c("NDVI", "NBR", "NDMI", "NDRE")\`
+  naming the indices the caller explicitly wants (their required bands
+  are always fetched). On top of those, the bands of the other FAST
+  indices are cached \*\*best-effort on every ingest\*\* so that all
+  four FAST indices are renderable on future scenes without
+  re-ingesting: B11 for NDMI (spec 019 D3) and B05 + B8A for NDRE (spec
+  022 red-edge, spec 023). B05 / B8A / B11 are standard 20 m S2 L2A
+  assets present on every scene, so this systematically primes NDMI and
+  NDRE — including the FAST \`trend\` maps — at the cost of three extra
+  cropped band COGs per scene.
 
 - max_cloud:
 
@@ -179,11 +184,14 @@ ingest_sentinel2_timeseries(
   \`fast_prewarm:\<index\>\_\<mode\>\`
 
   :   (spec 018, only when \`prewarm_alerts = TRUE\`) emitted at the
-      start / end of each of the six pre-computed FAST maps (3 indices x
-      2 modes, spec 019). The bare key signals "started", a \`\_done\`
+      start / end of each of the eight pre-computed FAST maps: \`NDVI,
+      NBR, NDMI x count, rolling\` (spec 019) plus \`NDMI, NDRE x
+      trend\` (spec 023). The bare key signals "started", a \`\_done\`
       suffix "map ready", a \`\_failed\` suffix "skipped" (with
       \`error_message\`). Every event carries \`index\` and \`mode\` so
-      the caller can localise the toast.
+      the caller can localise the toast (e.g.
+      \`fast_prewarm:NDMI_trend_done\`,
+      \`fast_prewarm:NDRE_trend_failed\`).
 
   The callback is invoked synchronously inside the calling thread.
   Default \`NULL\` (silent — no callback emitted).
@@ -203,15 +211,24 @@ ingest_sentinel2_timeseries(
 - prewarm_alerts:
 
   Logical (spec 018). When \`TRUE\`, after a successful ingestion the
-  worker chains on six \[read_fast_alert_raster()\] calls —
-  \`NDVI\`/\`NBR\`/\`NDMI\` × \`count\`/\`rolling\` (spec 019), default
-  threshold (0.40 NDVI / 0.30 NBR / 0.30 NDMI) and \`window_days = 30\`
-  — so the six usual FAST alert maps land in the D6 result cache and the
-  app's FAST tab is instant on first visit. Each combination is
-  independent: a failure on one (e.g. no B12 scene for \`NBR\`, no B11
-  for \`NDMI\`) warns and is skipped, never aborting the others. The
-  pre-warm polls \`cancel_path\` between combinations. Default \`FALSE\`
-  (no extra work, identical to the historical behaviour). A cancelled
+  worker chains on eight \[read_fast_alert_raster()\] calls so the usual
+  FAST alert maps land in the D6 result cache and the app's FAST tab is
+  instant on first visit:
+
+  - \`NDVI\`/\`NBR\`/\`NDMI\` × \`count\`/\`rolling\` (spec 019),
+    default threshold (0.40 NDVI / 0.30 NBR / 0.30 NDMI) and
+    \`window_days = 30\`;
+
+  - \`NDMI\`/\`NDRE\` × \`trend\` (spec 023) — chronic broadleaf
+    decline, warmed with the core trend defaults \`months = 6:9\`,
+    \`min_obs_per_year = 2\`, \`min_years = 4\`, \`alpha = 0.05\`
+    (\`threshold\`/\`window_days\` are not used in trend mode).
+
+  Each combination is independent: a failure on one (e.g. no B12 scene
+  for \`NBR\`, no B11 for \`NDMI\`, no B05/B8A red-edge for \`NDRE\`
+  trend) warns and is skipped, never aborting the others. The pre-warm
+  polls \`cancel_path\` between combinations. Default \`FALSE\` (no
+  extra work, identical to the historical behaviour). A cancelled
   ingestion never starts the pre-warm.
 
 - prewarm_mask_cache_dir:

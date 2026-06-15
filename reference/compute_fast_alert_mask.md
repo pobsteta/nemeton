@@ -76,8 +76,10 @@ compute_fast_alert_mask(
   Trend-mode parameters (spec 023), passed through to
   \[read_fast_alert_raster()\]. Seasonal month window (default \`6:9\`),
   minimum valid composite years (\`4L\`), minimum clear observations per
-  year (\`2L\`), and Mann-Kendall significance level (\`0.05\`). Ignored
-  in count / rolling mode.
+  year (\`2L\`), and Mann-Kendall significance level (\`0.05\`;
+  two-sided, but the negative-slope gate makes the effective decline
+  risk \`alpha / 2\` — see \[read_fast_alert_raster()\]). Ignored in
+  count / rolling mode.
 
 - cache_dir:
 

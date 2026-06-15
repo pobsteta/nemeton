@@ -12,6 +12,219 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.85.0\] - 2026-06-15
+
+### Added
+
+- [`read_fast_alert_rasters()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_rasters.md)
+  now covers the `trend` mode (spec 023). The wrapper’s defaults become
+  `c("NDVI","NBR","NDMI","NDRE")` × `c("count","rolling","trend")` and
+  it builds only the meaningful combinations (8 by default): `trend` on
+  `NDMI`/`NDRE`, `count`/`rolling` on `NDVI`/`NBR`/`NDMI` — a
+  nonsensical pair such as `NDVI_trend` or `NDRE_count` is silently
+  skipped. Trend parameters (`months`, `min_years`, `min_obs_per_year`,
+  `alpha`) are exposed and forwarded. (The end-of-ingest pre-warm gained
+  the same trend combos in 0.84.0.)
+- [`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md)
+  now caches the red-edge bands B05 + B8A best-effort on every ingest
+  (like B11 for NDMI), even with the default `bands = c("NDVI", "NBR")`,
+  so all four FAST indices — NDVI/NBR/NDMI/NDRE, including the trend
+  maps — are always renderable without re-ingesting or passing
+  `bands = "NDRE"`. This removes the `NDRE_trend` pre-warm soft-skip on
+  fresh ingests at the source.
+
+### Changed
+
+- New shared internal predicate `.fast_alert_combo_ok()` /
+  `.fast_alert_combos()` enumerates the valid `(index, mode)` pairs once
+  for the wrapper. Count / rolling cache hashes are byte-identical (no
+  recompute of existing COGs).
+
+## \[0.84.0\] - 2026-06-15
+
+### Added
+
+- `ingest_sentinel2_timeseries(prewarm_alerts = TRUE)` now pre-warms
+  **8** FAST alert maps instead of 6: the historical
+  `{NDVI, NBR, NDMI} × {count, rolling}` (spec 019) plus two **trend**
+  combos `{NDMI, NDRE} × {trend}` (spec 023). Trend targets chronic
+  broadleaf decline, whose relevant signals are moisture (NDMI, B11) and
+  red-edge (NDRE, B05/B8A); NDVI/NBR stay count/rolling only. The trend
+  warm uses the core defaults `months = 6:9`, `min_obs_per_year = 2`,
+  `min_years = 4`, `alpha = 0.05` (`threshold`/`window_days` unused in
+  trend). It is best-effort: a zone whose cache lacks the red-edge
+  (B05/B8A) or B11 bands is skipped without failing the ingestion. New
+  progress events `fast_prewarm:{NDMI,NDRE}_trend{,_done,_failed}`
+  mirror the existing format; `fast_prewarm:complete` / `:cancelled`
+  unchanged. Unblocks the 3-mode selector wiring in `nemetonshiny`.
+
+## \[0.83.3\] - 2026-06-14
+
+### Fixed
+
+- [`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md)
+  and
+  [`ingest_s2_raw_bands_to_cache()`](https://pobsteta.github.io/nemeton/reference/ingest_s2_raw_bands_to_cache.md)
+  no longer require registered plots (spec 017). The S2 ingest is a
+  placette-independent cache-priming step driven by the zone’s
+  `zone_wkt` AOI, yet both paths still aborted with “No plots
+  registered” — which broke cache priming for every zone created by
+  [`create_monitoring_zone()`](https://pobsteta.github.io/nemeton/reference/create_monitoring_zone.md)
+  /
+  [`build_project_monitoring_zones()`](https://pobsteta.github.io/nemeton/reference/build_project_monitoring_zones.md)
+  (geometry-only, no placettes, the app’s default since spec 017). They
+  now resolve the zone AOI first and only fall back to the per-plot bbox
+  when `zone_wkt` is absent; a zone with neither is still rejected.
+  Regression covered by `test-aoi-alignment.R`.
+
+## \[0.83.2\] - 2026-06-14
+
+### Fixed
+
+- `.assert_cache_has_bands()` (NDRE guard, spec 022): pinned the cli
+  pluralisation quantity with `{cli::qty(missing)}` so the abort no
+  longer fails with “Multiple quantities for pluralization” when both
+  red-edge bands (B05 + B8A) are missing. Covered by `test-ndre.R`.
+
+### Documentation
+
+- FAST `trend` (spec 023): documented the `mosaic(fun = "max")`
+  tile-overlap behaviour — per-tile slopes combined by max keep the
+  larger decline magnitude on MGRS seams (a bounded, conservative high
+  bias; single-tile AOIs unaffected).
+
+## \[0.83.1\] - 2026-06-14
+
+### Changed
+
+- FAST `trend` mode (spec 023): `.fast_raster_trend()` now fits
+  Theil-Sen / Mann-Kendall with a vectorised pre-filter + matrix-wide
+  computation instead of a per-pixel
+  [`terra::app`](https://rspatial.github.io/terra/reference/app.html)
+  callback (~9× faster, byte-identical output). Rare tied-value pixels
+  fall back to the exact tie-corrected `.mann_kendall()`.
+  `terra::app(cores=)` and a furrr/PSOCK split were both measured slower
+  than serial here, so the lever is vectorisation, not parallelism. A
+  [`cli::cli_alert_info`](https://cli.r-lib.org/reference/cli_alert.html)
+  reports the candidate-pixel count.
+
+### Documentation
+
+- Clarified the `alpha` parameter for trend mode: the Mann-Kendall
+  p-value is two-sided, but the negative-slope gate makes the effective
+  false-positive rate for a declared decline `alpha / 2` (default `0.05`
+  = 2.5% one-sided).
+
+## \[0.83.0\] - 2026-06-14
+
+### Added
+
+- `read_reconfort_alert_mask(con, zone_id, run_id, cache_dir, ...)`: the
+  RECONFORT mirror of
+  [`read_fordead_dieback_mask()`](https://pobsteta.github.io/nemeton/reference/read_fordead_dieback_mask.md),
+  returning the categorical class raster (1 sain / 2 dépérissant / 3
+  très-dépérissant) of the latest run.
+  [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)’s
+  `persist` phase now writes that flat mask
+  (`<cache_dir>/zone_<id>/reconfort_mask_<run_id>.tif`, best-effort).
+  Lets nemetonshiny reuse its raster validation-sampling module 1:1 with
+  `create_validation_sampling_plan(source = "RECONFORT")` (full FORDEAD
+  parity, control plots included). Closes the core side of G4 (Option
+  A).
+
+## \[0.82.0\] - 2026-06-14
+
+### Changed
+
+- Broadleaf terrain-validation vocabulary
+  `HEALTH_VALIDATION_STADES_FEUILLUS` finalised against the real DSF
+  DEPERIS protocol (MB + MR criteria, A–F notation, \> 50 % crown-damage
+  threshold): sain / deperissement_faible / deperissement_marque /
+  deperissement_grave / mort / coupe_rase. “PROVISIONAL” note removed.
+
+### Added
+
+- `create_validation_sampling_plan(source = ...)` accepts `"RECONFORT"`
+  (the function samples any single-layer categorical raster; the caller
+  passes the RECONFORT class raster with `classes = c(2, 3)`,
+  `control_classes = c(1)`). Unblocks the nemetonshiny “RECONFORT
+  validation plan” sub-tab (L6 / G4).
+
+## \[0.81.0\] - 2026-06-13
+
+### Added
+
+- Broadleaf QField terrain-validation schema (spec 021 G4, support for
+  L6):
+  `get_health_validation_schema(method = c("fordead", "reconfort"))`
+  serves a broadleaf dieback vocabulary in `reconfort` mode
+  (`HEALTH_VALIDATION_STADES_FEUILLUS` /
+  `HEALTH_VALIDATION_CAUSES_FEUILLUS`). The stage→status mapping routes
+  by method (a clearcut on a `reconfort_dieback` alert is a
+  `false_positive`);
+  [`ingest_health_validation()`](https://pobsteta.github.io/nemeton/reference/ingest_health_validation.md)
+  detects the method from `alert.alert_type`. `fordead` mode unchanged.
+  DEPERIS stage vocabulary provisional.
+
+## \[0.80.0\] - 2026-06-13
+
+### Added
+
+- RECONFORT pixel diagnostic (spec 021, lot L5): `R/reconfort_outputs.R`
+  recomputes CRswir/CRre per date from the ingested S2 (option B) and
+  persists dated stacks;
+  [`read_reconfort_pixel_series()`](https://pobsteta.github.io/nemeton/reference/read_reconfort_pixel_series.md)
+  returns the observed CRswir/CRre series at a clicked pixel (no
+  reticulate — no harmonic model). A best-effort `persist` phase + a
+  `run_id` are wired into
+  [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md).
+  The S2 scene enumeration (THEIA/MUSCATE naming) is best-effort,
+  pending validation against a real IOTA² run.
+
+## \[0.79.0\] - 2026-06-13
+
+### Added
+
+- `reset_knowledge_manifest(confirm = TRUE)`: overwrites the writable
+  project manifest copy with the packaged seed. The writable copy is
+  created once and never auto-refreshed, so a stale copy kept listing
+  documents the package no longer ships (e.g. the tutorials removed in
+  0.75.0). Meant to back a “reset to packaged corpus” action in the
+  nemetonshiny RAG admin tab.
+
+## \[0.78.0\] - 2026-06-13
+
+### Added
+
+- Unified R5 dieback indicator with per-species routing (spec 021, lot
+  L4):
+  [`indicateur_r5_deperissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_r5_deperissement.md)
+  gains `reconfort_results` (+ `weights_reconfort`, `min_feuillus`,
+  `feuillus_col`) and routes each unit to the method calibrated for its
+  dominant species — RECONFORT (oak/chestnut/Scots pine) vs FORDEAD
+  (spruce/fir), else `skipped_no_method`. New statuses
+  `calculated_reconfort`, `skipped_no_reconfort`, `skipped_no_method`
+  (replacing `skipped_no_resineux`). R5 stays a 0-100 column. Default
+  RECONFORT weights are provisional.
+
+## \[0.77.0\] - 2026-06-13
+
+### Added
+
+- RECONFORT post-process (spec 021, lot L3): `R/reconfort_postprocess.R`
+  turns
+  [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+  rasters into `reconfort_dieback` alerts (reclassify → 8-connectivity
+  patches → centroids, continuous score as `stress_index`).
+  [`classify_disturbance()`](https://pobsteta.github.io/nemeton/reference/classify_disturbance.md)
+  extended to 3 methods (FAST + FORDEAD + RECONFORT) with a
+  `method_overlap` flag. Migration `0006` (index on `alert(alert_type)`,
+  PG + SQLite). A best-effort `postprocess` phase is wired into
+  [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md).
+  New exports `RECONFORT_CLASSES`, `RECONFORT_CONFIDENCE_WEIGHTS`,
+  `RECONFORT_ALERT_CLASSES` (confidence weights are provisional, pending
+  the upstream confusion matrix).
+
 ## \[0.76.2\] - 2026-06-13
 
 ### Changed

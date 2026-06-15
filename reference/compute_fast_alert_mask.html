@@ -15,7 +15,7 @@ and **persists it to disk** so that downstream consumers
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.85.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -130,7 +130,9 @@ Default `"count"`.</p></dd>
 (spec 023), passed through to [read_fast_alert_raster()]. Seasonal
 month window (default `6:9`), minimum valid composite years
 (`4L`), minimum clear observations per year (`2L`), and Mann-Kendall
-significance level (`0.05`). Ignored in count / rolling mode.</p></dd>
+significance level (`0.05`; two-sided, but the negative-slope gate
+makes the effective decline risk `alpha / 2` — see
+[read_fast_alert_raster()]). Ignored in count / rolling mode.</p></dd>
 
 
 <dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>

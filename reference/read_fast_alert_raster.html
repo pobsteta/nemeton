@@ -13,7 +13,7 @@ via `mode`:"><meta property="og:image" content="https://pobsteta.github.io/nemet
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.85.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -149,8 +149,13 @@ Default `2`.</p></dd>
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
 <dd><p>Numeric scalar in `(0, 1)`. Trend mode only: the
-Mann-Kendall two-sided significance level above which a pixel's
-decline is treated as noise (output `0`). Default `0.05`.</p></dd>
+Mann-Kendall significance level. A pixel is flagged only when its
+Mann-Kendall <strong>two-sided</strong> p-value is below `alpha` <strong>and</strong> its
+Theil-Sen slope is negative. Because that negative-slope gate keeps
+a single tail, the <strong>effective false-positive rate for a declared
+decline is `alpha / 2`</strong> — the default `0.05` is a 2.5% one-sided
+risk. Pixels above the threshold are treated as noise (output `0`).
+Default `0.05`.</p></dd>
 
 
 <dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>
@@ -222,6 +227,15 @@ compute fans across cores (set a `future::plan()` first). Default
   plays the gate that the absolute threshold plays for count /
   rolling. Built for chronic dieback (slow multi-year decline, e.g.
   broadleaf oak / beech) that the short-horizon modes cannot see.</p>
+<p><strong>Tile-overlap caveat (trend).</strong> When an AOI straddles MGRS tiles, the
+slope is fitted independently per tile (each from that tile's own scene
+set) and the per-tile rasters are combined with `mosaic(fun = "max")`,
+as for `count` / `rolling`. In the ~10 km overlap strip the two tiles
+can yield slightly different slopes (different acquisition dates), and
+`max` keeps the <strong>larger decline magnitude</strong> — a mild high bias on those
+seams. It is bounded (a single tile's estimate, never a sum) and
+conservative for <em>detection</em>; treat the magnitude on tile boundaries as
+an upper bound. A single-tile AOI is unaffected.</p>
 <p>The raster is computed in the native Sentinel-2 CRS (typically
 EPSG:32631 for tiles T31xxx) for numerical accuracy, then
 **projected to EPSG:2154 (Lambert-93)** before being returned, to stay

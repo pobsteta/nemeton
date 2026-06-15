@@ -12,7 +12,11 @@ changes.
 ## Usage
 
 ``` r
-get_health_validation_schema(region = "BFC", lang = "fr")
+get_health_validation_schema(
+  region = "BFC",
+  lang = "fr",
+  method = c("fordead", "reconfort")
+)
 ```
 
 ## Arguments
@@ -25,6 +29,13 @@ get_health_validation_schema(region = "BFC", lang = "fr")
 - lang:
 
   Character. Language for species labels. Default \`"fr"\`.
+
+- method:
+
+  Character. \`"fordead"\` (default, conifer / scolyte vocabulary) or
+  \`"reconfort"\` (broadleaf dieback vocabulary,
+  [`HEALTH_VALIDATION_STADES_FEUILLUS`](https://pobsteta.github.io/nemeton/reference/HEALTH_VALIDATION_STADES_FEUILLUS.md)
+  — spec 021 G4).
 
 ## Value
 

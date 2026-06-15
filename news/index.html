@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.85.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,137 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.85.0" id="nemeton-0850-2026-06-15">nemeton 0.85.0 (2026-06-15)<a class="anchor" aria-label="anchor" href="#nemeton-0850-2026-06-15"></a></h2>
+<div class="section level4">
+<h4 id="added--wrapper-fast-étendu-au-trend--red-edge-systématique-spec-0-85-0">Added — wrapper FAST étendu au <code>trend</code> + red-edge systématique (spec 023)<a class="anchor" aria-label="anchor" href="#added--wrapper-fast-%C3%A9tendu-au-trend--red-edge-syst%C3%A9matique-spec-0-85-0"></a></h4>
+<p>Complète la v0.84.0 (qui avait étendu la <strong>pré-chauffe</strong> <code>.prewarm_fast_alerts()</code> au <code>trend</code> NDMI/NDRE) sur deux axes que la pré-chauffe seule ne couvrait pas :</p>
+<ul><li><p><strong>Wrapper <code><a href="../reference/read_fast_alert_rasters.html">read_fast_alert_rasters()</a></code> étendu au <code>trend</code>.</strong> Ses défauts passent à <code>c("NDVI","NBR","NDMI","NDRE")</code> × <code>c("count","rolling","trend")</code> → <strong>8 cartes</strong>. Seules les combinaisons sensées sont construites : <code>trend</code> réservé aux indices humidité/red-edge (<code>NDMI</code>, <code>NDRE</code>), <code>count</code>/<code>rolling</code> aux indices large bande (<code>NDVI</code>, <code>NBR</code>, <code>NDMI</code>) — une paire absurde (<code>NDVI_trend</code>, <code>NDRE_count</code>) est silencieusement ignorée. Les paramètres trend (<code>months</code>, <code>min_years</code>, <code>min_obs_per_year</code>, <code>alpha</code>) sont exposés et transmis. Nouveau prédicat interne <code>.fast_alert_combo_ok()</code> / <code>.fast_alert_combos()</code> énumérant les paires valides.</p></li>
+<li><p><strong>Red-edge systématique.</strong> <code><a href="../reference/ingest_sentinel2_timeseries.html">ingest_sentinel2_timeseries()</a></code> cache désormais B05 + B8A <strong>best-effort sur chaque ingestion</strong> (comme B11 pour NDMI, spec 019 D3), même avec le défaut <code>bands = c("NDVI","NBR")</code>. Les quatre indices FAST (NDVI/NBR/NDMI/NDRE) — y compris les cartes <code>trend</code> — sont donc <strong>toujours calculables</strong>, sans ré-ingestion ni <code>bands = "NDRE"</code> explicite. B05/B8A sont des bandes 20 m standard de toute scène S2 L2A : le best-effort aboutit en pratique toujours (coût : ~3 COG croppés de plus par scène), ce qui supprime à la source le soft-skip <code>NDRE_trend</code> de la pré-chauffe sur les ingestions fraîches.</p></li>
+</ul><p>Tests : <code>test-ndmi.R</code> (wrapper 8 cartes, sous-ensemble, paires absurdes écartées), <code>test-ndre.R</code> (ingest cache B05/B8A best-effort).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.84.0" id="nemeton-0840-2026-06-15">nemeton 0.84.0 (2026-06-15)<a class="anchor" aria-label="anchor" href="#nemeton-0840-2026-06-15"></a></h2>
+<div class="section level4">
+<h4 id="added--pré-chauffage-fast-trend-spec-0-84-0">Added — pré-chauffage FAST <code>trend</code> (spec 023)<a class="anchor" aria-label="anchor" href="#added--pr%C3%A9-chauffage-fast-trend-spec-0-84-0"></a></h4>
+<p><code>ingest_sentinel2_timeseries(prewarm_alerts = TRUE)</code> pré-calcule désormais <strong>8 cartes FAST</strong> au lieu de 6 : aux 6 combos historiques <code>{NDVI, NBR, NDMI} × {count, rolling}</code> (spec 019) s’ajoutent <strong>2 combos <code>trend</code></strong> <code>{NDMI, NDRE} × {trend}</code> (spec 023). Le mode <code>trend</code> cible le dépérissement chronique des feuillus, dont les signaux pertinents sont l’humidité (NDMI, B11) et le red-edge (NDRE, B05/B8A) ; NDVI/NBR restent <code>count</code>/<code>rolling</code> uniquement.</p>
+<p>Le pré-chauffage <code>trend</code> utilise les défauts cœur <code>months = 6:9</code>, <code>min_obs_per_year = 2</code>, <code>min_years = 4</code>, <code>alpha = 0.05</code> (identiques à <code><a href="../reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code>) ; <code>threshold</code>/<code>window_days</code> ne sont pas employés en <code>trend</code>. Les COG <code>trend</code> atterrissent sous le même schéma <code>&lt;prewarm_mask_cache_dir&gt;/zone_&lt;id&gt;/</code> que les autres combos.</p>
+<p>Le warm <code>*_trend</code> est <strong>best-effort</strong> : il ne tourne que si les bandes requises sont en cache (B11 pour NDMI, B05+B8A pour NDRE) et, à défaut, est sauté sans faire échouer l’ingestion — comme les scènes sans href. Les événements de progression <code>fast_prewarm:NDMI_trend{,_done,_failed}</code> et <code>fast_prewarm:NDRE_trend{,_done,_failed}</code> sont émis au même format que l’existant (<code>fast_prewarm:complete</code> / <code>:cancelled</code> inchangés). Débloque le câblage du sélecteur 3 modes côté <code>nemetonshiny</code>.</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.83.3" id="nemeton-0833-2026-06-14">nemeton 0.83.3 (2026-06-14)<a class="anchor" aria-label="anchor" href="#nemeton-0833-2026-06-14"></a></h2>
+<div class="section level4">
+<h4 id="fixed--ingestion-s2-placette-indépendante-spec-0-83-3">Fixed — ingestion S2 placette-indépendante (spec 017)<a class="anchor" aria-label="anchor" href="#fixed--ingestion-s2-placette-ind%C3%A9pendante-spec-0-83-3"></a></h4>
+<p><code><a href="../reference/ingest_sentinel2_timeseries.html">ingest_sentinel2_timeseries()</a></code> et <code><a href="../reference/ingest_s2_raw_bands_to_cache.html">ingest_s2_raw_bands_to_cache()</a></code> <strong>exigeaient à tort des placettes</strong> (<code>plot</code>) et abandonnaient avec « No plots registered for zone_id … » alors que, depuis la spec 017, l’ingestion est un simple amorçage de cache piloté par l’étendue de la zone (<code>zone_wkt</code>) et le diagnostic FAST/FORDEAD est calculé <strong>par pixel</strong>, indépendamment des placettes (<code>obs_pixel</code> supprimé en v0.58.0). Or l’app crée les zones de suivi comme des <strong>géométries pures sans placette</strong> (<code><a href="../reference/create_monitoring_zone.html">create_monitoring_zone()</a></code> / <code><a href="../reference/build_project_monitoring_zones.html">build_project_monitoring_zones()</a></code>, « geometry only, no placettes ») : <strong>toute zone créée depuis la spec 017 ne pouvait donc pas amorcer son cache</strong> — bug masqué tant que le cache restait chaud, révélé dès qu’on étendait la fenêtre au-delà des scènes déjà cachées.</p>
+<p>Les deux fonctions résolvent désormais l’AOI de la zone <strong>d’abord</strong> et ne consultent les placettes que pour le <strong>fallback bbox legacy</strong> (zone sans <code>zone_wkt</code>). Une zone correctement enregistrée mais sans placette amorce son cache normalement ; seule une zone sans <code>zone_wkt</code> <strong>ni</strong> placette est rejetée. Couvert par <code>test-aoi-alignment.R</code> (zone <code>zone_wkt</code> sans placette → l’ingestion procède, bbox issu du WKT).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.83.2" id="nemeton-0832-2026-06-14">nemeton 0.83.2 (2026-06-14)<a class="anchor" aria-label="anchor" href="#nemeton-0832-2026-06-14"></a></h2>
+<div class="section level4">
+<h4 id="fixed--assert_cache_has_bands--pluralisation-cli-ambiguë-spec-0-83-2">Fixed — <code>.assert_cache_has_bands()</code> : pluralisation cli ambiguë (spec 022)<a class="anchor" aria-label="anchor" href="#fixed--assert_cache_has_bands--pluralisation-cli-ambigu%C3%AB-spec-0-83-2"></a></h4>
+<p>Le garde-fou NDRE (<code><a href="../reference/extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code> / <code><a href="../reference/build_index_stack.html">build_index_stack()</a></code> quand le cache n’a jamais ingéré B05 / B8A) plantait sur <code>cli</code> récent avec « Multiple quantities for pluralization » : le message interpolait deux vecteurs de longueurs différentes (<code>missing</code> et <code>cache_dir</code>) avec un <code>{?s}</code> non lié. La quantité de pluriel est désormais épinglée par <code>{cli::qty(missing)}</code>, si bien que l’abandon affiche correctement « band B05 » (1 manquante) ou « bands B05, B8A » (2 manquantes). Régression couverte par <code>test-ndre.R</code>.</p>
+</div>
+<div class="section level4">
+<h4 id="documentation--fast-trend--biais-de-recouvrement-de-tuiles-spec-0-83-2">Documentation — FAST <code>trend</code> : biais de recouvrement de tuiles (spec 023)<a class="anchor" aria-label="anchor" href="#documentation--fast-trend--biais-de-recouvrement-de-tuiles-spec-0-83-2"></a></h4>
+<p>Documenté le comportement de <code>mosaic(fun = "max")</code> sur les liserés de tuiles MGRS en mode <code>trend</code> : chaque tuile ajuste sa pente depuis son propre jeu de scènes, et <code>max</code> retient la plus forte magnitude de déclin dans la bande de recouvrement (~10 km) — un léger biais haut, borné et conservateur pour la <em>détection</em>. Une AOI mono-tuile n’est pas concernée. (roxygen + commentaire inline ; cohérent avec <code>count</code> / <code>rolling</code>.)</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.83.1" id="nemeton-0831-2026-06-14">nemeton 0.83.1 (2026-06-14)<a class="anchor" aria-label="anchor" href="#nemeton-0831-2026-06-14"></a></h2>
+<div class="section level4">
+<h4 id="changed--fast-trend--fit-vectorisé-theil-sen--mann-kendall-spec-perf-0-83-1">Changed — FAST <code>trend</code> : fit vectorisé Theil-Sen / Mann-Kendall (spec 023, perf)<a class="anchor" aria-label="anchor" href="#changed--fast-trend--fit-vectoris%C3%A9-theil-sen--mann-kendall-spec-perf-0-83-1"></a></h4>
+<p>Le mode FAST <code>trend</code> calculait la pente Theil-Sen et le test de Mann-Kendall <strong>pixel par pixel</strong> via un callback <code><a href="https://rspatial.github.io/terra/reference/app.html" class="external-link">terra::app</a></code> (<code>combn</code>/<code>table</code> appelés une fois par cellule : ~270 µs/pixel, ~4,5 min pour une tuile 1 Mpx). <code>.fast_raster_trend()</code> est réécrit en deux leviers, à résultat <strong>identique</strong> :</p>
+<ul><li>
+<strong>Pré-filtre vectorisé</strong> : les pixels à moins de <code>min_years</code> années valides sont écartés avant tout calcul (gain proportionnel à la rareté du masque forestier).</li>
+<li>
+<strong>Fit vectorisé</strong> : la pente Theil-Sen et la statistique S de Mann-Kendall sont calculées sur <strong>toutes</strong> les cellules candidates à la fois par arithmétique matricielle ; seules les rares cellules à valeurs ex-aequo retombent sur le <code>.mann_kendall()</code> exact (variance tie-corrigée). <strong>~9×</strong> plus rapide, sortie byte-identique au chemin per-cellule (NA hétérogènes, séries plates, ex-aequo partiels vérifiés). <code><a href="https://cli.r-lib.org/reference/cli_alert.html" class="external-link">cli::cli_alert_info</a></code> annonce le nombre de pixels candidats.</li>
+</ul><p><code>terra::app(cores=)</code> ne peut pas sérialiser la closure et un découpage furrr/PSOCK s’est révélé <strong>plus lent</strong> que le série (maths per-pixel trop bon marché pour amortir la sérialisation) : le levier retenu est la vectorisation, pas le parallélisme. Aucun changement de comportement ni d’API.</p>
+</div>
+<div class="section level4">
+<h4 id="documentation-0-83-1">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-83-1"></a></h4>
+<ul><li>
+<code>alpha</code> (mode <code>trend</code>) clarifié : la p Mann-Kendall est <strong>bilatérale</strong> mais le gate « pente négative » ne retient qu’une queue, si bien que le risque effectif de faux positif pour un déclin déclaré vaut <strong><code>alpha / 2</code></strong> (le défaut <code>0.05</code> correspond à un risque unilatéral de 2,5 %).</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.83.0" id="nemeton-0830-2026-06-14">nemeton 0.83.0 (2026-06-14)<a class="anchor" aria-label="anchor" href="#nemeton-0830-2026-06-14"></a></h2>
+<div class="section level4">
+<h4 id="added--read_reconfort_alert_mask--parité-raster-validation-spec-g4-option-a-0-83-0">Added — <code>read_reconfort_alert_mask()</code> : parité raster validation (spec 021 G4, Option A)<a class="anchor" aria-label="anchor" href="#added--read_reconfort_alert_mask--parit%C3%A9-raster-validation-spec-g4-option-a-0-83-0"></a></h4>
+<p><code>read_reconfort_alert_mask(con, zone_id, run_id, cache_dir, …)</code> renvoie le raster catégoriel des classes RECONFORT (<code>1 sain / 2 dépérissant / 3 très-dépérissant</code>) du dernier run — <strong>miroir exact</strong> de <code><a href="../reference/read_fordead_dieback_mask.html">read_fordead_dieback_mask()</a></code>. La phase <code>persist</code> de <code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> écrit ce masque plat (<code>&lt;cache_dir&gt;/zone_&lt;id&gt;/reconfort_mask_&lt;run_id&gt;.tif</code>, best-effort). Permet à <code>nemetonshiny</code> de <strong>réutiliser 1:1</strong> son module de plan de validation (<code>create_validation_sampling_plan(source = "RECONFORT")</code>, <code>classes = c(2, 3)</code>, <code>control_classes = c(1)</code>) → <strong>mêmes onglets, mêmes placettes témoins et même workflow QGIS/QField que FORDEAD</strong>. Clôt le support cœur de G4 (Option A). Reste côté app : le sous-onglet « Plan de validation RECONFORT ».</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.82.0" id="nemeton-0820-2026-06-14">nemeton 0.82.0 (2026-06-14)<a class="anchor" aria-label="anchor" href="#nemeton-0820-2026-06-14"></a></h2>
+<div class="section level4">
+<h4 id="changed--validation-terrain-feuillus--vocabulaire-deperis-finalisé-spec-g4-0-82-0">Changed — validation terrain feuillus : vocabulaire DEPERIS finalisé (spec 021 G4)<a class="anchor" aria-label="anchor" href="#changed--validation-terrain-feuillus--vocabulaire-deperis-finalis%C3%A9-spec-g4-0-82-0"></a></h4>
+<p><code>HEALTH_VALIDATION_STADES_FEUILLUS</code> est calé sur le <strong>protocole DSF DEPERIS</strong> réel (critères mortalité de branches MB + manque de ramification MR, notation A–F, seuil <strong>&gt; 50 %</strong> d’atteinte du houppier) : <code>sain</code> / <code>deperissement_faible</code> / <code>deperissement_marque</code> / <code>deperissement_grave</code> / <code>mort</code> / <code>coupe_rase</code>. La mention « PROVISIONAL » est retirée.</p>
+</div>
+<div class="section level4">
+<h4 id="added-0-82-0">Added<a class="anchor" aria-label="anchor" href="#added-0-82-0"></a></h4>
+<ul><li>
+<code>create_validation_sampling_plan(source = …)</code> accepte désormais <strong><code>"RECONFORT"</code></strong> (en plus de <code>"FORDEAD"</code>/<code>"FAST"</code>). La fonction échantillonne n’importe quel raster catégoriel mono-couche ; pour RECONFORT l’appelant passe le raster de classes feuillus (1 sain / 2 dépérissant / 3 très-dépérissant) avec <code>classes = c(2, 3)</code>, <code>control_classes = c(1)</code>.</li>
+</ul><p>Débloque le sous-onglet « Plan de validation RECONFORT » côté <code>nemetonshiny</code> (lot L6 / G4). Reste <strong>optionnel</strong> (Option A, à trancher métier) : <code><a href="../reference/read_reconfort_alert_mask.html">read_reconfort_alert_mask()</a></code> pour des placettes témoins raster.</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.81.0" id="nemeton-0810-2026-06-13">nemeton 0.81.0 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0810-2026-06-13"></a></h2>
+<div class="section level4">
+<h4 id="added--schéma-de-validation-terrain-qfield-feuillus-spec-g4-support-l6-0-81-0">Added — schéma de validation terrain QField feuillus (spec 021 G4, support L6)<a class="anchor" aria-label="anchor" href="#added--sch%C3%A9ma-de-validation-terrain-qfield-feuillus-spec-g4-support-l6-0-81-0"></a></h4>
+<p><code><a href="../reference/get_health_validation_schema.html">get_health_validation_schema()</a></code> gagne un argument <strong><code>method = c("fordead", "reconfort")</code></strong> : en mode <code>reconfort</code> il sert un vocabulaire de <strong>dépérissement feuillus</strong> (<code>HEALTH_VALIDATION_STADES_FEUILLUS</code> : sain, défoliation, mortalité de branches, descente de cime, mort, coupe rase ; causes <code>HEALTH_VALIDATION_CAUSES_FEUILLUS</code> sans scolyte). Le mapping <code>stade → validation_status</code> route par méthode (une coupe rase sur une alerte <code>reconfort_dieback</code> = <code>false_positive</code>), et <code><a href="../reference/ingest_health_validation.html">ingest_health_validation()</a></code> détecte la méthode via <code>alert.alert_type</code>. Le mode <code>fordead</code> est inchangé (rétrocompatible). Débloque la brique QField du lot L6 côté <code>nemetonshiny</code>.</p>
+<p><strong>Réserve</strong> : les stades feuillus suivent les axes nommés du spec (DEPERIS) mais le vocabulaire DEPERIS exact reste <strong>à confirmer</strong> (flaggé).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.80.0" id="nemeton-0800-2026-06-13">nemeton 0.80.0 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0800-2026-06-13"></a></h2>
+<div class="section level4">
+<h4 id="added--reconfort-diagnostic-pixel--persistance-features-crswircrre-spec-lot-l5-0-80-0">Added — RECONFORT diagnostic pixel : persistance features CRswir/CRre (spec 021, lot L5)<a class="anchor" aria-label="anchor" href="#added--reconfort-diagnostic-pixel--persistance-features-crswircrre-spec-lot-l5-0-80-0"></a></h4>
+<p>Parité avec le diagnostic pixel FORDEAD. <code>R/reconfort_outputs.R</code> recalcule <strong>CRswir</strong> (eau) et <strong>CRre</strong> (chlorophylle) par date depuis le S2 ingéré (formules de production §4.1, option B) et les persiste en stacks datés. <code>R/reconfort_pixel_series.R</code> expose <strong><code>read_reconfort_pixel_series(con, zone_id, xy, crs, run_id, cache_dir)</code></strong> qui renvoie les séries observées CRswir/CRre d’un pixel cliqué — <strong>sans reticulate</strong> (pas de modèle harmonique à reconstruire, contrairement à FORDEAD). Une phase <code>persist</code> (best-effort) + un <code>run_id</code> sont câblés dans <code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> (le bundle atterrit sous <code>&lt;cache_dir&gt;/zone_&lt;id&gt;/run_&lt;run_id&gt;/</code>).</p>
+<p><strong>Réserve</strong> : l’énumération des scènes S2 (<code>.enumerate_reconfort_s2_scenes</code>, nommage THEIA/MUSCATE) n’est <strong>pas validable sans un vrai run IOTA²</strong> — elle est best-effort et n’altère jamais le run (skip + avertissement si rien trouvé).</p>
+<p>Suite : L6 (app <code>nemetonshiny</code>).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.79.0" id="nemeton-0790-2026-06-13">nemeton 0.79.0 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0790-2026-06-13"></a></h2>
+<div class="section level4">
+<h4 id="added--reset_knowledge_manifest-corpus-rag-0-79-0">Added — <code>reset_knowledge_manifest()</code> (corpus RAG)<a class="anchor" aria-label="anchor" href="#added--reset_knowledge_manifest-corpus-rag-0-79-0"></a></h4>
+<p>Nouvelle fonction exportée qui <strong>ré-écrase la copie writable du manifest</strong> (celle éditée depuis l’app, <code>knowledge_manifest_path(writable = TRUE)</code>) avec la seed du package installé. La copie writable est créée <strong>une seule fois</strong> et jamais rafraîchie (pour préserver les éditions faites dans l’app), si bien qu’une copie ancienne continuait de lister des documents que le package ne livre plus (p. ex. les tutoriels retirés en v0.75.0). À câbler à un bouton « Réinitialiser depuis le corpus du package » dans l’onglet RAG de <code>nemetonshiny</code>. Garde-fou : <code>confirm = TRUE</code> obligatoire.</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.78.0" id="nemeton-0780-2026-06-13">nemeton 0.78.0 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0780-2026-06-13"></a></h2>
+<div class="section level4">
+<h4 id="added--r5-dépérissement-unifié-routé-par-essence-spec-lot-l4-0-78-0">Added — R5 dépérissement unifié, routé par essence (spec 021, lot L4)<a class="anchor" aria-label="anchor" href="#added--r5-d%C3%A9p%C3%A9rissement-unifi%C3%A9-rout%C3%A9-par-essence-spec-lot-l4-0-78-0"></a></h4>
+<p><code><a href="../reference/indicateur_r5_deperissement.html">indicateur_r5_deperissement()</a></code> accepte désormais <code>reconfort_results</code> (+ <code>weights_reconfort</code>, <code>min_feuillus</code>, <code>feuillus_col</code>) et <strong>route chaque UGF vers la méthode calibrée pour son essence dominante</strong> :</p>
+<ul><li>chêne / châtaignier / pin sylvestre → score via <strong>RECONFORT</strong> ;</li>
+<li>épicéa / sapin → score via <strong>FORDEAD</strong> (comportement inchangé) ;</li>
+<li>essence hors méthode → <code>R5 = NA</code>, statut <code>skipped_no_method</code>.</li>
+</ul><p><code>r5_status</code> s’enrichit de <code>calculated_reconfort</code>, <code>skipped_no_reconfort</code>, <code>skipped_no_method</code> (l’ancien <code>skipped_no_resineux</code> disparaît au profit de ce vocabulaire unifié). Un <code>resineux_col</code> / <code>feuillus_col</code> explicite épingle la méthode. R5 reste une colonne 0-100 (aucun changement de signature radar). Les poids RECONFORT par défaut sont <strong>provisoires</strong> (sous-ensemble dépérissant de <code>RECONFORT_CONFIDENCE_WEIGHTS</code>, à caler sur la matrice de confusion amont).</p>
+<p>Suite : L5 (persistance features + <code><a href="../reference/read_reconfort_pixel_series.html">read_reconfort_pixel_series()</a></code>).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.77.0" id="nemeton-0770-2026-06-13">nemeton 0.77.0 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0770-2026-06-13"></a></h2>
+<div class="section level4">
+<h4 id="added--reconfort-post-process--rasters--table-alert-spec-lot-l3-0-77-0">Added — RECONFORT post-process : rasters → table <code>alert</code> (spec 021, lot L3)<a class="anchor" aria-label="anchor" href="#added--reconfort-post-process--rasters--table-alert-spec-lot-l3-0-77-0"></a></h4>
+<p><code>R/reconfort_postprocess.R</code> transforme les sorties de <code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> en alertes <code>reconfort_dieback</code> :</p>
+<ul><li>
+<strong>Reclassif + clustering</strong> : <code>.classify_pixels_to_reconfort_classes()</code> (codes RF 1..n → labels [<code>RECONFORT_CLASSES</code>], masqué = NA), <code>.cluster_reconfort_pixels()</code> (patches 8-connexité sur les classes dépérissantes, drop sous <code>min_pixels</code>).</li>
+<li>
+<strong>Centroïdes</strong> : <code>.postprocess_reconfort_rasters()</code> — score continu <code>(1001 + (−P1 + P2 + 2·P3))/30</code> en <code>stress_index</code>, <code>trigger_date</code> = date du run, classe RF en <code>confidence_class</code>.</li>
+<li>
+<strong>Insertion</strong> : <code>.insert_reconfort_alerts()</code> — UPSERT idempotent (PG + SQLite), snap au plot le plus proche.</li>
+<li>
+<strong>Fusion G2 à 3 voies</strong> : <code><a href="../reference/classify_disturbance.html">classify_disturbance()</a></code> gère désormais FAST + FORDEAD + RECONFORT (<code>recent_event</code> / <code>progressive</code> / <code>mechanical</code>) et ajoute un drapeau <strong><code>method_overlap</code></strong> (FORDEAD ∩ RECONFORT, ne pas double-compter).</li>
+<li>
+<strong>Migration <code>0006</code></strong> (PG + SQLite) : index sur <code>alert(alert_type)</code>.</li>
+<li>
+<strong>Orchestration</strong> : phase <code>postprocess</code> (best-effort) câblée dans <code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> ; <code>n_alerts</code> ajouté au retour.</li>
+</ul><p>Exports : <code>RECONFORT_CLASSES</code>, <code>RECONFORT_CONFIDENCE_WEIGHTS</code>, <code>RECONFORT_ALERT_CLASSES</code>. <strong>Réserve</strong> : les poids de confiance sont <strong>provisoires</strong> (à caler sur la matrice de confusion Mouret et al. 2023, cf. spec 021 §5/G1 — flaggé dans le code). Suite : L4 (R5 unifié, routage par essence).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.76.2" id="nemeton-0762-2026-06-13">nemeton 0.76.2 (2026-06-13)<a class="anchor" aria-label="anchor" href="#nemeton-0762-2026-06-13"></a></h2>
 <div class="section level4">

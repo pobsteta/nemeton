@@ -96,8 +96,12 @@ read_fast_alert_raster(
 - alpha:
 
   Numeric scalar in \`(0, 1)\`. Trend mode only: the Mann-Kendall
-  two-sided significance level above which a pixel's decline is treated
-  as noise (output \`0\`). Default \`0.05\`.
+  significance level. A pixel is flagged only when its Mann-Kendall
+  **two-sided** p-value is below \`alpha\` **and** its Theil-Sen slope
+  is negative. Because that negative-slope gate keeps a single tail, the
+  **effective false-positive rate for a declared decline is \`alpha /
+  2\`** — the default \`0.05\` is a 2.5% one-sided risk. Pixels above
+  the threshold are treated as noise (output \`0\`). Default \`0.05\`.
 
 - cache_dir:
 
@@ -165,6 +169,16 @@ The output is the same kind of continuous raster as the other modes
 plays the gate that the absolute threshold plays for count / rolling.
 Built for chronic dieback (slow multi-year decline, e.g. broadleaf oak /
 beech) that the short-horizon modes cannot see.
+
+**Tile-overlap caveat (trend).** When an AOI straddles MGRS tiles, the
+slope is fitted independently per tile (each from that tile's own scene
+set) and the per-tile rasters are combined with \`mosaic(fun = "max")\`,
+as for \`count\` / \`rolling\`. In the ~10 km overlap strip the two
+tiles can yield slightly different slopes (different acquisition dates),
+and \`max\` keeps the **larger decline magnitude** — a mild high bias on
+those seams. It is bounded (a single tile's estimate, never a sum) and
+conservative for *detection*; treat the magnitude on tile boundaries as
+an upper bound. A single-tile AOI is unaffected.
 
 The raster is computed in the native Sentinel-2 CRS (typically
 EPSG:32631 for tiles T31xxx) for numerical accuracy, then \*\*projected

@@ -24,7 +24,7 @@ chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 | ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). **Backend monitoring local** (Bug \#2 verrou fichier) : DuckDB → SQLite/WAL → **v0.50.0** ; fix warning → **v0.50.1** ; retrait DuckDB → **v0.51.0** (2026-05-28) ; fix UPSERT SQLite `near "DO"` à l’ingestion S2 → **v0.55.1** ; audit complet UPSERT SQLite (db_migrate no-target + FORDEAD/alerts `INSERT…SELECT`) → **v0.55.2** (2026-06-01). **FAST 100 % pur raster** : retrait de l’insertion `obs_pixel` dans [`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md) (amorçage cache COG seul), `DROP TABLE obs_pixel` (migration 0004), dépréciation `read_obs_pixel()`/`list_fast_alerts_for_zone()`/`detect_alerts()` → **v0.58.0** (2026-06-02) ; **retrait définitif des 3 fonctions + `CREATE TABLE obs_pixel` ôté des migrations 0001** → **v0.60.0** (2026-06-02, Phase B). Côté app : `nemetonshiny@v0.49.0`→`v0.50.0` ; consommateur `obs_pixel` retiré dès `nemetonshiny@v0.52.16`. **Indice NDMI** ajouté au FAST (spec 019, `(B08−B11)/(B08+B11)`, humidité ; défaut NDVI conservé, B11 cachée best-effort) → **v0.64.0** (2026-06-03) ; UI NDMI côté `nemetonshiny` à câbler (brief fourni). **Fix régression spec 019** : `.enumerate_cache_scenes()` n’avait pas de branche NDMI → cartes d’alerte NDMI toujours vides malgré B08+B11 en cache ; + nouvel orchestrateur [`read_fast_alert_rasters()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_rasters.md) (les 6 cartes = 3 indices × 2 modes en un appel) → **v0.65.0** (2026-06-03). |
 | ✅ | **Carte pixel** *(hors-skeleton, entre E6 et E7)* | API publique cœur pour exposer le cache S2 pixel-par-pixel (10 m natif) + extraction time-series à un clic. Spec 010. Débloque le sous-onglet *Carte pixel* dans `nemetonshiny` (séparé). | 4 fonctions exportées (`read_s2_band_raster`, `read_s2_band_stack`, `build_index_stack`, `extract_pixel_timeseries`) — release **v0.22.0** (2026-05-15). |
 | ✅ | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d’indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d’essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a → **v0.29.0** ; phase 1b → **v0.30.0** ; phase 2 (loaders) → **v0.31.0** ; phase 3a (`s2_biophysical` → C2/A1) → **v0.32.0** ; phase 3b (`theia_soil` → F1/F2) → **v0.33.0** ; phase 3c (`theia_snow` → R3) → **v0.34.0** ; phase 3d (`theia_water`/`theia_soil_moisture`/`theia_species`) → **v0.35.0** ; FORMSpoT câblé via l’interface CHM → **v0.35.2** ; résolveur STAC Theia → **v0.36.0** ; endpoint corrigé + FORMSpoT vérifié → **v0.37.0** ; auth S3 `/vsis3/` → **v0.38.0** ; ciblage par année → **v0.39.0** ; credentials S3 corrigés → **v0.39.1** ; signature SDK teledetection (`theia_signed_href`) → **v0.40.0** — chaîne validée en réel. Reliquat : MUSCATE, LST, W1. |
-| 🟨 | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | **Machinerie livrée** → **v0.52.0** (2026-05-29) : 7 fonctions exportées (`enable_rag`, `ingest_knowledge_document`, `embed_query`, `retrieve_knowledge`, `list_knowledge_documents`, `delete_knowledge_document`, `format_citations`), schéma opt-in `knowledge_document`/`knowledge_chunk`, dual-backend pgvector `<=>` (PG) / cosinus R (SQLite). Spec 009 codée. **Reliquat** : corpus (spec fille 009.1 — décisions D1-D5 actées le 2026-05-29) + wiring `nemetonshiny`. |
+| ✅ | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | **Machinerie** → **v0.52.0** : 7 fonctions exportées (`enable_rag`, `ingest_knowledge_document`, `embed_query`, `retrieve_knowledge`, `list_knowledge_documents`, `delete_knowledge_document`, `format_citations`), schéma opt-in `knowledge_*`, dual-backend pgvector `<=>` (PG) / cosinus R (SQLite). **Corpus** (spec 009.1) : API admin (v0.63.0), curation v0.75.0→v0.76.2 → **déployé en prod : 81 docs, 60 texte intégral, 6 120 chunks, 0 embedding manquant** (dont 4 papiers scannés OCRisés). **Wiring app** : perspectives IA sourcées (`nemetonshiny`). **Clos 2026-06-13.** |
 
 Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
@@ -84,15 +84,16 @@ indisponible en local : validation déléguée à la CI R-CMD-check.)*
 
 ------------------------------------------------------------------------
 
-# Chantier en cours — E7 : corpus de connaissances RAG (spec 009 / 009.1, ADR-012)
+# Chantier CLOS — E7 : corpus de connaissances RAG (spec 009 / 009.1, ADR-012)
 
-**Cadré** : 2026-05-29 (décisions D1-D5). **Cible cœur** : la prochaine
-release qui livre le corpus (machinerie déjà à `v0.52.0`). **Objectif**
-: clore E7 — la *machinerie* RAG est livrée (v0.52.0, 7 fonctions
-exportées, schéma opt-in `knowledge_*`, dual-backend pgvector/cosinus),
-il reste à **alimenter** et **brancher** la base de connaissances
-forestière pour que les perspectives IA soient effectivement
-citées-sourcées.
+> **Clos le 2026-06-13.** Machinerie (v0.52.0), corpus **déployé en
+> prod** (81 docs, 60 texte intégral, 6 120 chunks, 0 embedding
+> manquant) et wiring app (perspectives IA sourcées) livrés. Objectif
+> atteint : les perspectives IA sont effectivement citées-sourcées.
+
+**Cadré** : 2026-05-29 (décisions D1-D5). Machinerie RAG livrée v0.52.0
+(7 fonctions exportées, schéma opt-in `knowledge_*`, dual-backend
+pgvector/cosinus), puis corpus alimenté/branché.
 
 ## Avancement du chantier
 
@@ -101,32 +102,26 @@ citées-sourcées.
 | ✅ | Machinerie RAG ([`enable_rag()`](https://pobsteta.github.io/nemeton/reference/enable_rag.md), ingestion, retrieval, citations) | cœur | v0.52.0 (2026-05-29) |
 | ✅ | Manifest (39 docs) + pipeline `build_knowledge_corpus.R` | cœur | (commités) |
 | ✅ | Validation manifest (`test-knowledge-corpus-manifest.R`) + `inst/NOTICE` corpus + fix cohérence D5 | cœur | v0.61.1 (2026-06-02) |
-| 🟨 | **Arbitrage licences** — Bernard&Doridant + revue SET → `cleared` (v0.61.2) ; 4 papiers copyright restent `to_confirm` (abstract/lien-seul à câbler) | cœur | v0.61.2 (2026-06-02) |
+| ✅ | **Arbitrage licences** — résolu : override D5 (v0.75.1) → 81 docs `cleared` ; copyright en `abstract_only`/`link_only`, scans OCRisés en `HAL` | cœur | v0.61.2 → v0.76.2 |
 | ✅ | Ingestion référence seule ([`ingest_knowledge_reference()`](https://pobsteta.github.io/nemeton/reference/ingest_knowledge_reference.md), link_only/abstract_only) + câblage pipeline | cœur | v0.62.0 (2026-06-02) |
 | ✅ | **API administration corpus** (manifest éditable + import) — `knowledge_manifest_vocab/path`, `read/validate/write_knowledge_manifest`, [`build_knowledge_corpus()`](https://pobsteta.github.io/nemeton/reference/build_knowledge_corpus.md) ; débloque l’onglet RAG des paramètres app (spec 009.2) | cœur | v0.63.0 (2026-06-03) |
-| 🟨 | **Build corpus réel** — embeddings via clé API (action locale `data-raw/`) | cœur | local |
+| ✅ | **Build corpus réel** — pgvector prod peuplé via Mistral (`build_corpus_prod.sh` FRESH + `fill_corpus_prod.sh` incrémental) : **81 docs, 60 texte intégral, 6 120 chunks** | cœur | prod 2026-06-13 |
 | ✅ | **Onglet RAG** (paramètres) — éditeur manifest + import via l’API 009.2 | `nemetonshiny` | <nemetonshiny@8c6696b> (v0.62.0, 2026-06-03) |
-| ⬜ | **Wiring** — injection chunks dans le prompt LLM + bloc UI « Sources » | `nemetonshiny` | app |
+| ✅ | **Wiring** — injection chunks dans le prompt LLM + bloc UI « Sources » (`retrieve_knowledge` + `format_citations`) | `nemetonshiny` | app (livré) |
 
-**Machinerie cœur — close** : machinerie RAG (v0.52.0), manifest +
-pipeline + validation + NOTICE (v0.61.1), arbitrage licences (v0.61.2 —
-4 papiers copyright laissés `to_confirm`), ingestion référence seule
-`link_only`/`abstract_only` (v0.62.0), **API administration corpus**
-(v0.63.0 — spec 009.2 : manifest éditable +
-[`build_knowledge_corpus()`](https://pobsteta.github.io/nemeton/reference/build_knowledge_corpus.md),
-l’orchestration n’est plus enfermée dans `data-raw/`). **Reliquat
-détaillé** : 1. **Build du corpus réel** —
-`Rscript data-raw/build_knowledge_corpus.R` avec une clé API d’embedding
-(Mistral par défaut) → peuple le pgvector prod. Action locale, pas un
-livrable de code. 2. **Wiring `nemetonshiny`** — injection des chunks
-dans le prompt LLM + bloc UI « Sources » via
+**E7 clos (2026-06-13)** — tout livré : machinerie (v0.52.0), API
+administration corpus (v0.63.0), corpus curé et **déployé en prod** (81
+docs, 60 texte intégral, 6 120 chunks, 0 embedding manquant ; sources
+externes citables, 4 scans OCRisés), wiring `nemetonshiny` (perspectives
+IA sourcées :
 [`retrieve_knowledge()`](https://pobsteta.github.io/nemeton/reference/retrieve_knowledge.md) +
-[`format_citations()`](https://pobsteta.github.io/nemeton/reference/format_citations.md)
-(hors repo cœur). 3. *(optionnel)* lever le statut `to_confirm` des 4
-papiers copyright si tu valides leur référence (D5) — ils s’ingéreront
-alors en `link_only`.
-
-*(L’onglet RAG `nemetonshiny` est livré — cf. journal 2026-06-03.)*
+[`format_citations()`](https://pobsteta.github.io/nemeton/reference/format_citations.md) +
+bloc UI « Sources », onglet admin RAG). Outils de (re)build prod :
+`data-raw/build_corpus_prod.sh` (FRESH), `fill_corpus_prod.sh`
+(incrémental), `ocr_biljou_scans.sh` (OCR). **Enrichissement futur
+possible** (hors E7) : ajouter d’autres sources au manifest, lever les
+21 références restantes vers du texte intégral si des PDF deviennent
+disponibles.
 
 **Journal** — *2026-06-13* : **curation du corpus (v0.75.0)**. Manifest
 recentré sur des sources externes citables : retrait des 12 docs
@@ -228,19 +223,27 @@ FORDEAD (résineux) et FAST. R5 unifié routé par essence.
 | ✅ | **L2b.1** | `reconfort_python.R` (env conda IOTA² locate+validate) + `RECONFORT_BANDS` + glue vendorisée `custom_index.py` + NOTICE | **v0.72.0** (2026-06-11) |
 | ✅ | **L2b.2** | Ingest IOTA²-natif : [`reconfort_aoi_tiles()`](https://pobsteta.github.io/nemeton/reference/reconfort_aoi_tiles.md) (grille MGRS embarquée) + [`reconfort_ingest_s2()`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md) (pygeodes download + unzip) + scripts vendorisés | **v0.73.0** (2026-06-11) |
 | ✅ | **L2b.3** | `reconfort_pipeline.R::run_reconfort_dieback()` : orchestration env→model→masque→tuile→ingest→IOTA² ×2+score, staging par-run, [`ensure_reconfort_oso_mask()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_oso_mask.md) + glue map-production vendorisée | **v0.74.0** (2026-06-12) |
-| ⬜ | **L3** | `reconfort_postprocess.R` (score continu) → table `alert` + migration `0005` + fusion G2 3-voies | — |
-| ⬜ | **L4** | R5 unifié (routage par essence) + tests indicateur étendus | — |
-| ⬜ | **L5** | Persistance features (parité diagnostic pixel) + `read_reconfort_pixel_series()` | — |
-| ⬜ | **L6** | App `nemetonshiny` : 3ᵉ mode, bannières, plotly, QField feuillus | release app |
+| ✅ | **L3** | `reconfort_postprocess.R` (rasters → table `alert`, centroïdes, `confidence_class`, `stress_index` = score continu) + migration **`0006`** + [`classify_disturbance()`](https://pobsteta.github.io/nemeton/reference/classify_disturbance.md) 3-voies (`method_overlap`) + phase `postprocess` dans [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md) | **v0.77.0** (2026-06-13) |
+| ✅ | **L4** | R5 unifié routé par essence : `indicateur_r5_deperissement(reconfort_results=)`, RECONFORT (chêne/châtaignier/pin sylvestre) vs FORDEAD (épicéa/sapin), statuts `calculated_reconfort`/`skipped_no_reconfort`/`skipped_no_method`, helpers `.resolve_reconfort_share`/`.r5_prepare_alerts`/`.r5_score` | **v0.78.0** (2026-06-13) |
+| ✅ | **L5** | Persistance features CRswir/CRre (option B : recalcul depuis le S2 ingéré) — `reconfort_outputs.R` (formules, stacks datés, bundle) + phase `persist` dans [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md) + [`read_reconfort_pixel_series()`](https://pobsteta.github.io/nemeton/reference/read_reconfort_pixel_series.md) (lecteur, sans reticulate) | **v0.80.0** (2026-06-13) |
+| ✅ | **L6** | App `nemetonshiny` : 3ᵉ mode, bannières, plotly, QField feuillus | **clos** : carte + diagnostic pixel (`nemetonshiny` v0.81.0) + pipeline de run (v0.82.0) + sous-onglet « Plan de validation RECONFORT » G4 (`nemetonshiny` v0.83.0, réutilisation 1:1 de `mod_validation_sampling`). G4 cœur (stades DEPERIS + `read_reconfort_alert_mask`) livré en nemeton v0.83.0. |
 
 **Reporté** (vs plan §5) : flag NDP `health_reconfort` + datasource
 `reconfort_anomalies` — supposaient une parité FORDEAD inexistante.
 **L2b cadré** (`L2b-cadrage.md` : ingest IOTA²-natif, env conda
 locate+validate, glue complète) et **scindé** en L2b.1/.2/.3 — **les
-trois livrés**. **Prochaine étape : L3** (`reconfort_postprocess.R` :
-rasters → table `alert`, centroïdes, `confidence_class`, `stress_index`
-= score continu, migration `0005`, fusion G2 3-voies). Faits amont
-vérifiés : `…/plan.md` §10.
+trois livrés**. **L3 livré** (v0.77.0) : `reconfort_postprocess.R`
+(reclassif → patches 8-connexité → centroïdes POINT, score continu en
+`stress_index`), migration **`0006`** (numéro réel — `0005` pris par
+spec 020 multi-zone),
+[`classify_disturbance()`](https://pobsteta.github.io/nemeton/reference/classify_disturbance.md)
+étendu à 3 voies + drapeau `method_overlap`, phase `postprocess`
+(best-effort) dans
+[`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md).
+**Réserve** : `RECONFORT_CONFIDENCE_WEIGHTS` posés en **provisoire** (à
+caler sur la matrice de confusion Mouret et al. 2023 — flaggé dans le
+code). **Prochaine étape : L4** (R5 unifié, routage par essence). Faits
+amont vérifiés : `…/plan.md` §10.
 
 ------------------------------------------------------------------------
 
@@ -823,6 +826,354 @@ cœur).
 ------------------------------------------------------------------------
 
 ## Journal
+
+### 2026-06-15 — FAST : wrapper étendu au `trend` + red-edge systématique (spec 023, cœur, v0.85.0)
+
+Complément à la v0.84.0 (pré-chauffe `trend`, PR \#75 mergée en
+parallèle par une autre session). Demande de Pascal : « l’ensemble des
+indices doivent être systématiquement calculés en mode FAST
+(NDMI/NDVI/NBR **et** NDRE) ». La v0.84.0 ne couvrait que la
+**pré-chauffe** ; ce cycle ajoute les deux pièces manquantes. **Livré**
+: (1) **wrapper**
+[`read_fast_alert_rasters()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_rasters.md)
+étendu au `trend` — défauts `c("NDVI","NBR","NDMI","NDRE")` ×
+`c("count","rolling","trend")` → **8 cartes**, paires absurdes
+(NDVI_trend, NDRE_count) écartées, params trend
+(`months`/`min_years`/`min_obs_per_year`/`alpha`) exposés ; prédicat
+interne `.fast_alert_combo_ok()` / `.fast_alert_combos()` énumérant les
+paires valides. (2) **red-edge systématique** —
+[`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md)
+cache B05 + B8A **best-effort sur chaque ingestion** (comme B11, spec
+019 D3), même avec le défaut `bands = c("NDVI","NBR")` → les 4 indices
+FAST toujours calculables sans `bands = "NDRE"`. B05/B8A étant des
+bandes 20 m standard de toute scène S2 L2A, le best-effort aboutit
+toujours → supprime à la source le soft-skip `NDRE_trend` de la
+pré-chauffe sur les ingestions fraîches (le gating de \#75 reste un
+filet de sécurité pour les caches legacy). **Reconciliation \#75** : ma
+branche (basée sur l’ancien `main`) avait dupliqué la pré-chauffe et
+visé 0.84.0 ; rebase sur `main`, on **conserve la pré-chauffe rbind de
+\#75** (déjà testée) et on ne garde que le delta net (wrapper + red-edge
+systématique), bump **0.85.0**. Doc à la main
+(`man/read_fast_alert_rasters.Rd`,
+`man/ingest_sentinel2_timeseries.Rd`). Tests **verts** (terra local) :
+`test-ndmi.R` (wrapper 8 cartes, sous-ensemble, paires absurdes),
+`test-ndre.R` (ingest cache B05/B8A best-effort),
+`test-prewarm-fast-alerts.R` / `test-fast-alert-raster.R` /
+`test-fast-trend.R` / `test-monitoring.R` inchangés et verts.
+
+### 2026-06-15 — Release v0.84.0 (added — pré-chauffage FAST `trend`, spec 023, cœur)
+
+`.prewarm_fast_alerts()` (déclenché par
+`ingest_sentinel2_timeseries(prewarm_alerts = TRUE)`) pré-calcule
+désormais **8 combos** au lieu de 6 : aux 6 historiques
+`{NDVI, NBR, NDMI} × {count, rolling}` (spec 019) s’ajoutent **2 combos
+trend** `{NDMI, NDRE} × {trend}` (spec 023). Rationale : `trend` cible
+le dépérissement chronique feuillus → indices pertinents = NDMI (B11) +
+NDRE (B05/B8A) ; NDVI/NBR restent count/rolling. Le warm `trend` utilise
+les défauts cœur `months=6:9`, `min_obs_per_year=2`, `min_years=4`,
+`alpha=0.05` (mêmes valeurs que `read_fast_alert_raster`) ;
+`threshold`/`window_days` non passés. COG sous le même schéma
+`<prewarm_mask_cache_dir>/zone_<id>/` que les autres combos. Best-effort
+: `*_trend` ne tourne que si les bandes red-edge (B05+B8A) / B11 sont en
+cache, sinon **skip** sans faire échouer l’ingestion (comme les scènes
+sans href). Nouveaux events
+`fast_prewarm:{NDMI,NDRE}_trend{,_done,_failed}` au format existant ;
+`fast_prewarm:complete`/`:cancelled` inchangés. Tests
+`test-prewarm-fast-alerts.R` : « the eight combinations » (8 COG +
+events trend, back-compat des 6 noms count/rolling), cas red-edge absent
+(NDRE trend skippé sans erreur, NDMI trend rendu), per-combination
+failure étendu aux 2 combos trend. **Débloque** le câblage
+`nemetonshiny` : radio 3 modes, indice NDMI par défaut en trend,
+`bands += "NDRE"`, params trend en sidebar conditionnelle, mapping toast
+`fast_prewarm:*_trend`, bump app **0.85.0** + plancher
+`Imports: nemeton (>= 0.84.0)`.
+
+### 2026-06-14 — Fix tests : mocks `.cache_scene_bands` réalignés (`optional_bands`, spec 019)
+
+6 tests d’intégration (`test-monitoring.R` ×4, `test-ingest-cancel.R`
+×2) échouaient **en local** : les mocks de `.cache_scene_bands`
+n’acceptaient pas l’argument `optional_bands` (B11 cachée best-effort,
+spec 019 D3) que la prod passe désormais. L’appel mocké levait « unused
+argument », avalé par le `tryCatch` d’ingestion → toutes les scènes
+silencieusement skippées (compteurs à 0, répertoires COG non créés).
+Invisible en CI (tests *skipped* faute de `NEMETON_DB_URL_TEST`). Trois
+mocks réalignés (`.make_caching_mock`, `fake_cache` ×2) avec
+`optional_bands = NULL, ...` + création des bandes optionnelles. Suites
+monitoring/aoi/ingest/health/reconfort-ingest 335 ✔, 0 fail.
+
+### 2026-06-14 — `nemetonshiny@315a7409` (v0.84.0) : perf chargement projet — sync PostGIS async (app)
+
+`nemetonshiny@315a7409` (v0.84.0) : perf chargement projet — dernier
+maillon synchrone retiré du chemin critique. La synchronisation PostGIS
+best-effort (`db_sync_project` : connexion + `st_write` parcelles +
+`dbWriteTable` indicateurs) tournait dans un callback
+`later::later(0.5)` — donc sur le THREAD PRINCIPAL R — et gelait l’event
+loop Shiny juste après le 1ᵉʳ flush carte (overlay/`fitBounds`/sélection
+bloqués), d’où le délai ressenti entre « Connected to PostgreSQL » et
+l’affichage des parcelles. Fix : nouveau `db_sync_project_async()`
+exécutant le sync dans un worker `future` (hors thread principal,
+dispatch ~0 ms), miroir des runs FORDEAD/RECONFORT (reload paquet +
+replay env DB côté worker, dont `POSTGRESQL_ADDON_*`) ; fallback
+`later()` si `future`/`promises` absents. Aucun changement cœur. Clôt le
+chantier perf-chargement côté app (v0.78.0 skip DB inutile +
+`ug_build_sf` différé ; v0.79.0 `connect_timeout` ; v0.79.1 fix contexte
+réactif + gating toast ; v0.84.0 sync async).
+
+### 2026-06-14 — Fix : ingestion S2 placette-indépendante (spec 017, cœur, v0.83.3)
+
+Bug latent révélé par le passage du début FAST à 2017 (app) : les deux
+ingests (`ingest_sentinel2_timeseries`, `ingest_s2_raw_bands_to_cache`)
+**exigeaient des placettes** (garde-fou « No plots registered ») alors
+que depuis spec 017 l’ingestion est un amorçage de cache piloté par
+`zone_wkt` et le diagnostic est per-pixel (placette-indépendant,
+`obs_pixel` supprimé en v0.58.0). Or l’app crée les zones **sans
+placette** (`create_monitoring_zone`/`build_project_monitoring_zones`, «
+geometry only »). Conséquence : toute zone créée depuis spec 017 ne
+pouvait pas amorcer son cache — masqué tant que le cache était chaud,
+révélé dès que la fenêtre dépassait les scènes cachées (« Aucune scène
+S2 + No plots registered for zone_id 5 »). Fix : résoudre l’AOI
+**d’abord**, placettes seulement pour le fallback bbox legacy (zone sans
+`zone_wkt`). Nouveau test `test-aoi-alignment.R` (zone WKT sans placette
+→ ingestion procède) + test « no plots » repurposé sur la branche « ni
+WKT ni placette ». Suite aoi-alignment verte ; 4 échecs résiduels
+`skip_cached`/`cache_dir` **préexistants** (baseline, sandbox, hors
+périmètre).
+
+### 2026-06-14 — ADR-014 (draft) : cube spatio-temporel pour le `trend` régional (doc pure)
+
+Rédigé
+`specs/024-cube-spatiotemporel-trend/ADR-014_Cube_spatiotemporel_trend.md`
+(statut **Proposé**, à porter vers `nemetonplateform/docs/` comme
+l’ADR-013). Décision : **conserver terra (Option A)** tant que le
+`trend` reste à l’échelle UGF mono-/bi-tuile ; **basculer vers l’hybride
+(Option D : composite via `gdalcubes` + fit vectorisé
+`.trend_fit_cells`)** dès qu’un seuil est franchi (emprise \> ~2-3
+tuiles MGRS / hors-RAM, carte régionale EPSG:3035 ADR-008, ou biais de
+recouvrement P3 devenu métier-significatif). Options B (gdalcubes
+bout-en-bout) **rejetée** (perd l’acquis vectorisé), C (`stars`) en
+réserve. Pas de bump (doc pure).
+
+### 2026-06-14 — Fix garde-fou NDRE (cli) + doc P3 recouvrement tuiles (spec 022/023, cœur, v0.83.2)
+
+Deux suites de la revue `trend`. **Bug pré-existant** :
+`.assert_cache_has_bands()` (garde-fou NDRE, spec 022) plantait sur cli
+récent — « Multiple quantities for pluralization » quand les **deux**
+bandes red-edge (B05+B8A) manquaient (le `{?s}` interpolait `missing`
+*et* `cache_dir`, longueurs différentes). Corrigé par
+`{cli::qty(missing)}` ; `test-ndre.R` repasse au vert (passait en CI,
+échouait en local sur cli plus strict). **P3 doc** : documenté le biais
+`mosaic(fun="max")` sur les liserés de tuiles MGRS en mode `trend`
+(chaque tuile ajuste sa pente sur son propre jeu de scènes, `max` garde
+la plus forte magnitude de déclin dans le recouvrement ~10 km — biais
+haut borné, conservateur pour la détection ; mono-tuile non concernée).
+roxygen + `.Rd` + commentaire inline. Suites pixel/ndre/ndmi/fast/alert
+348 ✔, 0 fail.
+
+### 2026-06-14 — FAST `trend` : fit vectorisé Theil-Sen / Mann-Kendall (spec 023, perf, cœur, v0.83.1)
+
+Revue critique du mode `trend` (spec 023) → **aucun bug**, mais deux
+points traités. **P1 perf** : `.fast_raster_trend()` appelait
+`combn`/`table` **une fois par pixel** via
+[`terra::app`](https://rspatial.github.io/terra/reference/app.html)
+(~270 µs/pixel, ~4,5 min pour une tuile 1 Mpx). Réécrit en deux leviers
+: (1) **pré-filtre vectorisé** écartant les pixels à \< `min_years`
+années valides avant tout calcul, (2) **fit vectorisé** de Theil-Sen et
+de la statistique S de Mann-Kendall sur toutes les cellules candidates à
+la fois (arithmétique matricielle par colonnes), seules les rares
+cellules à valeurs ex-aequo retombant sur le `.mann_kendall()` exact
+tie-corrigé. **~9x** mesuré, résultat **byte-identique** au chemin
+per-cellule (vérifié sur NA hétérogènes, séries plates, ex-aequo
+partiels). `terra::app(cores=)` ne sérialise pas la closure, et un split
+furrr/PSOCK est **plus lent** que le série ici (maths per-pixel trop bon
+marché pour amortir la sérialisation) — le levier est la vectorisation,
+pas le parallélisme.
+[`cli::cli_alert_info`](https://cli.r-lib.org/reference/cli_alert.html)
+annonce le nombre de pixels candidats. **P2 doc** : roxygen d’`alpha`
+clarifié — la p Mann-Kendall est bilatérale mais le gate « pente
+négative » rend le risque effectif d’un déclin déclaré égal à
+**`alpha / 2`** (défaut 0,05 → 2,5 % unilatéral). **P4 tests** :
+verdissement significatif → 0, pixel NA-data préservé en NA (≠ classe 0)
+à travers la discrétisation 0-4, et test direct d’identité
+`.trend_fit_cells` vs `.theil_sen`/`.mann_kendall`. Suites FAST/alert
+175 ✔, 0 fail. `.Rd` édités à la main.
+
+### 2026-06-14 — `nemetonshiny@3a717a87` (v0.83.0) : L6 RECONFORT — validation terrain G4 (app)
+
+`nemetonshiny@3a717a87` (v0.83.0) : L6 RECONFORT (spec 021) —
+**validation terrain G4**. Sous-onglet « Plan de validation RECONFORT »
+: réutilisation 1:1 de `mod_validation_sampling`
+(`generate_validation_plan(source="RECONFORT")` →
+`read_reconfort_alert_mask`, classes 2/3 + témoin 1, masque persistant
+requis). Consomme
+`create_validation_sampling_plan(source="RECONFORT")` +
+`read_reconfort_alert_mask` +
+`get_health_validation_schema(method="reconfort")` du cœur v0.83.0.
+**Clôt L6 RECONFORT côté app** (carte + diagnostic + run + validation).
+Ligne L6 RECONFORT (app) cochée close ; G4 cœur (stades DEPERIS
+finalisés) déjà livré en nemeton v0.83.0.
+
+### 2026-06-14 — RECONFORT Option A : `read_reconfort_alert_mask()` + persistance classif (spec 021 G4, cœur, v0.83.0)
+
+Parité **raster** complète avec FORDEAD pour la validation terrain
+(décision métier : placettes témoins exigées).
+`read_reconfort_alert_mask(con, zone_id, run_id, cache_dir, apply_zone_mask, mask_polygon)`
+— **miroir exact** de
+[`read_fordead_dieback_mask()`](https://pobsteta.github.io/nemeton/reference/read_fordead_dieback_mask.md)
+: lit `<cache_dir>/zone_<id>/reconfort_mask_<run_id>.tif` (raster
+catégoriel 1 sain / 2 dépérissant / 3 très-dépérissant), re-masque à
+l’AOI zone. La phase `persist` de
+[`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+écrit désormais ce masque plat (copie de `Final_Classif_masked`),
+best-effort. L’app peut donc réutiliser **1:1**
+`mod_validation_sampling` avec `source="RECONFORT"`
+(`create_validation_sampling_plan`, classes `c(2,3)`, témoins `c(1)`) →
+**mêmes onglets / même workflow que FORDEAD** (distribution classes,
+témoins, auto-relax, GRTS, export QGIS/QField). Tests
+`test-reconfort-pixel-series.R` 34 ✔ (mask : latest/run_id/NULL
+gracieux), suite reconfort 293 ✔, sampling 27 ✔. NAMESPACE + `.Rd` à la
+main. **Cœur RECONFORT G4 complet (Option A)** — reste le sous-onglet
+app « Plan de validation RECONFORT » (brief fourni).
+
+### 2026-06-13 — RECONFORT G4 : vocabulaire DEPERIS finalisé + source RECONFORT (spec 021, cœur, v0.82.0)
+
+Finalisation du support G4 feuillus. `HEALTH_VALIDATION_STADES_FEUILLUS`
+calé sur le **vrai protocole DSF DEPERIS** (Nageleisen — critères
+mortalité de branches MB + manque de ramification MR, notation A–F,
+seuil **\> 50 %** d’atteinte du houppier) : `sain` /
+`deperissement_faible` (A–C, ≤50%) / `deperissement_marque` (D, \>50%) /
+`deperissement_grave` (E–F) / `mort` / `coupe_rase`. Mention «
+PROVISIONAL » **retirée** du roxygen. `source` de
+[`create_validation_sampling_plan()`](https://pobsteta.github.io/nemeton/reference/create_validation_sampling_plan.md)
+accepte désormais **`"RECONFORT"`** (tag ; la fonction échantillonne
+n’importe quel raster catégoriel — l’app passe le raster de classes
+RECONFORT avec `classes=c(2,3)`, témoins `c(1)`). **Constat archi** :
+[`get_health_validation_schema()`](https://pobsteta.github.io/nemeton/reference/get_health_validation_schema.md)
+n’est appelé par aucune fonction cœur → le routage du formulaire
+`method="reconfort"` est **côté app**. Tests : schema 47 ✔, sampling 27
+✔ (cas RECONFORT neuf), ingest 29 ✔. `.Rd` à la main. **Réserve Option A
+levée en v0.83.0** (cf. entrée ci-dessous).
+
+### 2026-06-13 — `nemetonshiny@567e6987` (v0.82.0) : L6 RECONFORT — lancement de run (app)
+
+`run_reconfort_async()` (ExtendedTask + `future_promise` autour de
+[`nemeton::run_reconfort_dieback`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)),
+câblage parent (invoke, reactivePoll, dispatcher
+`.reconfort_handle_progress_event` pour
+`reconfort:start|phase|complete|error` — 10 phases, observer de
+résultat + `reconfort_refresh`, cross-lock FAST/FORDEAD, force-unlock).
+Sans conda IOTA²/GEODES/OTB : échec propre (toast), carte + diagnostic
+restent fonctionnels (Limite \#1 spec 021).
+
+### 2026-06-13 — `nemetonshiny@02dfffd1` (v0.81.0) : L6 RECONFORT — consultation (app)
+
+Nouveau module `mod_monitoring_reconfort_map` : carte Leaflet des
+alertes feuillus (`list_alerts` filtré `RECONFORT_ALERT_CLASSES`), popup
+`confidence_class` + `stress_index` ; bannière validité G3 advisory
+(`check_reconfort_validity`, non bloquante) ; clic → diagnostic pixel
+(`read_reconfort_pixel_series`) modal plotly 2 traces CRswir/CRre (pas
+de prédiction harmonique). 3ᵉ mode du Suivi sanitaire + sous-onglet «
+Carte RECONFORT » lazy. Plancher `Imports: nemeton (>= 0.80.0)`. **Reste
+G4** : sous-onglet « Plan de validation RECONFORT » (app), après ce
+support cœur.
+
+### 2026-06-13 — RECONFORT G4 : schéma QField feuillus (spec 021, cœur, v0.81.0)
+
+Support cœur de la brique QField du lot **L6** (app).
+`get_health_validation_schema(method=)` sert un vocabulaire feuillus en
+mode `reconfort` (`HEALTH_VALIDATION_STADES_FEUILLUS` =
+sain/défoliation/mortalité branches/descente cime/mort/coupe ;
+`HEALTH_VALIDATION_CAUSES_FEUILLUS` sans scolyte). Mapping
+`stade → status` routé par méthode (coupe sur `reconfort_dieback` →
+`false_positive`),
+[`ingest_health_validation()`](https://pobsteta.github.io/nemeton/reference/ingest_health_validation.md)
+détecte la méthode via `alert_type`. Mode `fordead` inchangé
+(rétrocompatible). Tests `test-health-validation-schema.R` 46 ✔, ingest
+29 ✔. `.Rd`+NAMESPACE à la main. **Réserve** : vocabulaire DEPERIS exact
+à confirmer. **Cœur RECONFORT désormais complet pour L6** (L1→L5 + G4).
+
+### 2026-06-13 — RECONFORT L5 : persistance features + diagnostic pixel (spec 021, cœur, v0.80.0)
+
+**Décision option B** (recalcul depuis le S2 ingéré, vs extraction des
+intermédiaires IOTA² au layout inconnu). `R/reconfort_outputs.R` :
+`.reconfort_crswir`/`.reconfort_crre` (formules §4.1, pures),
+`.build_reconfort_feature_stacks` (scènes datées → stacks CRswir/CRre,
+masquage SCL optionnel), `.write_reconfort_features_bundle`,
+`.enumerate_reconfort_s2_scenes` (best-effort, nommage THEIA/MUSCATE FRE
+B4/B8A/B11 — **layout à valider sur run réel**).
+`R/reconfort_pixel_series.R` :
+`read_reconfort_pixel_series(con, zone_id, xy, crs, run_id, cache_dir)`
+— lecteur **sans reticulate** (séries observées, pas de modèle
+harmonique), NULL gracieux. Phase `persist` (best-effort) + `run_id`
+câblés dans
+[`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+(9→10 phases, bundle `<cache_dir>/zone_<id>/run_<run_id>/`,
+`features_bundle` au retour). Tests `test-reconfort-pixel-series.R` 27 ✔
+(formules, build, round-trip bundle, NULL, locate, enumerate), suite
+reconfort **259 ✔**. `.Rd`+NAMESPACE à la main. **Réserve** :
+énumération S2 (layout MUSCATE) non validable sans run réel —
+best-effort, n’altère jamais le run. Suite : **L6** (app
+`nemetonshiny`).
+
+### 2026-06-13 — `reset_knowledge_manifest()` : fix copie writable figée (E7, cœur, v0.79.0)
+
+Bug remonté : l’onglet RAG de `nemetonshiny` listait encore les 12 tutos
+retirés en v0.75.0. Cause : `knowledge_manifest_path(writable=TRUE)`
+copie la seed **une seule fois** (`overwrite=FALSE`) puis ne la
+rafraîchit jamais — la copie user-data
+(`~/.local/share/R/nemeton/knowledge_corpus.csv`) était figée sur
+l’ancien manifest (39 docs/10 tutos) alors que seed/installé/prod sont à
+81 docs/0 tuto. Copie locale rafraîchie à la main, **et** correctif
+durable : nouvelle fonction exportée
+**`reset_knowledge_manifest(confirm=TRUE)`** (réint explicite de la
+copie writable depuis la seed) à câbler à un bouton « Réinitialiser
+depuis le corpus du package » côté app (brief fourni). Tests
+`test-knowledge-manifest-api.R` 35 ✔. `.Rd`+NAMESPACE à la main.
+
+### 2026-06-13 — RECONFORT L4 : R5 unifié routé par essence (spec 021, cœur, v0.78.0)
+
+[`indicateur_r5_deperissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_r5_deperissement.md)
+gagne `reconfort_results` + `weights_reconfort` + `min_feuillus` +
+`feuillus_col`. **Routage par UGF** (spec 021 §4) : essence ∈ RECONFORT
+(chêne/châtaignier/pin sylvestre) → score via RECONFORT ; ∈ FORDEAD
+(épicéa/sapin) → FORDEAD ; sinon `skipped_no_method`. Un `*_col`
+explicite épingle la méthode. Statuts : `calculated` (FORDEAD),
+`calculated_reconfort`,
+`skipped_no_fordead`/`skipped_no_reconfort`/`skipped_no_method`.
+Refactor : helpers `.resolve_reconfort_share()` (miroir
+`.resolve_resineux_share`), `.r5_prepare_alerts()` (validation + filtre
+classes + CRS), `.r5_score()` (score d’une UGF, réutilisé 2 méthodes) —
+math FORDEAD préservée à l’identique. Poids RECONFORT par défaut =
+sous-ensemble dépérissant de `RECONFORT_CONFIDENCE_WEIGHTS$CHE`
+(**provisoire**). Tests `test-indicators-deperissement.R` 42 ✔ (6 cas
+routage neufs : chêne, pin, zone mixte EPC+chêne, essence inconnue,
+`feuillus_col` ; 3 assertions adaptées au vocabulaire unifié), familles
+304 ✔. `.Rd`+roxygen à la main. Suite : **L5** (persistance features +
+[`read_reconfort_pixel_series()`](https://pobsteta.github.io/nemeton/reference/read_reconfort_pixel_series.md)).
+
+### 2026-06-13 — RECONFORT L3 : postprocess rasters → table `alert` (spec 021, cœur, v0.77.0)
+
+`R/reconfort_postprocess.R` : `.classify_pixels_to_reconfort_classes()`
+(codes 1..n → labels `RECONFORT_CLASSES`, masqué=0 → NA),
+`.cluster_reconfort_pixels()` (patches 8-connexité sur classes
+dépérissantes ≥2, drop \< `min_pixels`),
+`.postprocess_reconfort_rasters()` (réutilise
+[`.cluster_to_centroids()`](https://pobsteta.github.io/nemeton/reference/dot-cluster_to_centroids.md)
+; score continu → `stress_index` ; `trigger_date` = date du run),
+`.insert_reconfort_alerts()` (`alert_type='reconfort_dieback'`, UPSERT
+idempotent PG+SQLite).
+[`classify_disturbance()`](https://pobsteta.github.io/nemeton/reference/classify_disturbance.md)
+**étendu 3 voies** : FAST seul → recent_event ; FORDEAD/RECONFORT seul →
+progressive ; diag+FAST → mechanical ; FORDEAD+RECONFORT → progressive +
+`method_overlap`. Migration **`0006`** (index `alert_type`, PG+SQLite).
+Phase `postprocess` (best-effort) câblée dans
+[`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+(8→9 phases, `n_alerts` au retour). Exports :
+`RECONFORT_CLASSES`/`_CONFIDENCE_WEIGHTS`/`_ALERT_CLASSES` (NAMESPACE +
+`.Rd` à la main, pas de `document()`). Tests :
+`test-reconfort-postprocess.R` 50 ✔ (dont insert+migration DB), pipeline
+22 ✔, fordead-postprocess 56 ✔, db 98 ✔. **Réserve** : poids de
+confiance **provisoires** (matrice de confusion Mouret 2023 à
+transcrire). Suite : **L4** (R5 unifié, routage par essence).
 
 ### 2026-06-13 — Corpus RAG : 4 papiers scannés OCRisés → texte intégral (cœur, v0.76.2)
 

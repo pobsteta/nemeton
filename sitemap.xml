@@ -29,9 +29,14 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/FORDEAD_VALIDITY_DEPARTMENTS.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/FORDEAD_VALIDITY_SPECIES.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/HEALTH_VALIDATION_CAUSES.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/HEALTH_VALIDATION_CAUSES_FEUILLUS.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/HEALTH_VALIDATION_STADES.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/HEALTH_VALIDATION_STADES_FEUILLUS.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/NDP_LEVELS.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_ALERT_CLASSES.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_BANDS.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_CLASSES.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_CONFIDENCE_WEIGHTS.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_MODELS.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_OSO_MASK.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_VALIDITY_DEPARTMENTS.html</loc></url>
@@ -264,6 +269,8 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_fordead_dieback_mask.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_fordead_pixel_series.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_knowledge_manifest.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/read_reconfort_alert_mask.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/read_reconfort_pixel_series.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_s2_band_raster.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_s2_band_stack.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_site_index_curves.html</loc></url>
@@ -272,6 +279,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_model_info.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/register_monitoring_zone.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/reset_knowledge_manifest.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/resolve_project_layers.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/resolve_species_code.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.html</loc></url>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.76.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.85.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -1161,6 +1161,41 @@
 
         </dt>
         <dd>Run the RECONFORT broadleaf-dieback map production end-to-end</dd>
+
+        <dt>
+
+          <code><a href="RECONFORT_CLASSES.html">RECONFORT_CLASSES</a></code>
+
+        </dt>
+        <dd>Canonical RECONFORT classes by target species</dd>
+
+        <dt>
+
+          <code><a href="RECONFORT_ALERT_CLASSES.html">RECONFORT_ALERT_CLASSES</a></code>
+
+        </dt>
+        <dd>Default trustworthy RECONFORT classes for garde-fou G1</dd>
+
+        <dt>
+
+          <code><a href="RECONFORT_CONFIDENCE_WEIGHTS.html">RECONFORT_CONFIDENCE_WEIGHTS</a></code>
+
+        </dt>
+        <dd>Provisional RECONFORT confidence weights (garde-fou G1)</dd>
+
+        <dt>
+
+          <code><a href="read_reconfort_pixel_series.html">read_reconfort_pixel_series()</a></code>
+
+        </dt>
+        <dd>Read the RECONFORT CRswir/CRre pixel diagnostic series</dd>
+
+        <dt>
+
+          <code><a href="read_reconfort_alert_mask.html">read_reconfort_alert_mask()</a></code>
+
+        </dt>
+        <dd>Read the RECONFORT broadleaf-classification raster for a zone</dd>
       </dl></div><div class="section level2">
       <h2 id="suivi-sanitaire-monitoring-et-autres-fonctions">Suivi sanitaire, monitoring et autres fonctions<a class="anchor" aria-label="anchor" href="#suivi-sanitaire-monitoring-et-autres-fonctions"></a></h2>
 
@@ -1565,10 +1600,24 @@
 
         <dt>
 
+          <code><a href="HEALTH_VALIDATION_CAUSES_FEUILLUS.html">HEALTH_VALIDATION_CAUSES_FEUILLUS</a></code>
+
+        </dt>
+        <dd>Free-form causes proposed in the <strong>broadleaf</strong> validation form</dd>
+
+        <dt>
+
           <code><a href="HEALTH_VALIDATION_STADES.html">HEALTH_VALIDATION_STADES</a></code>
 
         </dt>
         <dd>DSF-aligned dieback stages used by the terrain validation form</dd>
+
+        <dt>
+
+          <code><a href="HEALTH_VALIDATION_STADES_FEUILLUS.html">HEALTH_VALIDATION_STADES_FEUILLUS</a></code>
+
+        </dt>
+        <dd>DSF DEPERIS broadleaf dieback stages (RECONFORT, spec 021 G4)</dd>
 
         <dt>
 
@@ -1582,7 +1631,7 @@
           <code><a href="indicateur_r5_deperissement.html">indicateur_r5_deperissement()</a></code>
 
         </dt>
-        <dd>Compute the R5 dieback indicator</dd>
+        <dd>Compute the R5 dieback indicator (unified FORDEAD / RECONFORT)</dd>
 
         <dt>
 
@@ -1750,7 +1799,7 @@
           <code><a href="read_fast_alert_rasters.html">read_fast_alert_rasters()</a></code>
 
         </dt>
-        <dd>Build the full FAST alert raster set (3 indices x 2 modes, spec 019)</dd>
+        <dd>Build the full FAST alert raster set (indices x modes)</dd>
 
         <dt>
 
@@ -1800,6 +1849,13 @@
 
         </dt>
         <dd>Register a monitoring zone and its plots in the database</dd>
+
+        <dt>
+
+          <code><a href="reset_knowledge_manifest.html">reset_knowledge_manifest()</a></code>
+
+        </dt>
+        <dd>Reset the writable knowledge manifest to the packaged corpus</dd>
 
         <dt>
 
