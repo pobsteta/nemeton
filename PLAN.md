@@ -14,7 +14,7 @@
 | ✅ | E3 | Multi-acteurs — 13 profils experts YAML | n/a (app) |
 | ✅ | E4 | Authentification OAuth2/OIDC | n/a (app) |
 | ✅ | E5 | Intégrations & NDP — Open-Canopy CHM (spec 005) + QField export/ingest + sizing échantillon + flag `height_lidar` | v0.16.0 → v0.19.12 |
-| ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). **Backend monitoring local** (Bug #2 verrou fichier) : DuckDB → SQLite/WAL → **v0.50.0** ; fix warning → **v0.50.1** ; retrait DuckDB → **v0.51.0** (2026-05-28) ; fix UPSERT SQLite `near "DO"` à l'ingestion S2 → **v0.55.1** ; audit complet UPSERT SQLite (db_migrate no-target + FORDEAD/alerts `INSERT…SELECT`) → **v0.55.2** (2026-06-01). **FAST 100 % pur raster** : retrait de l'insertion `obs_pixel` dans `ingest_sentinel2_timeseries()` (amorçage cache COG seul), `DROP TABLE obs_pixel` (migration 0004), dépréciation `read_obs_pixel()`/`list_fast_alerts_for_zone()`/`detect_alerts()` → **v0.58.0** (2026-06-02) ; **retrait définitif des 3 fonctions + `CREATE TABLE obs_pixel` ôté des migrations 0001** → **v0.60.0** (2026-06-02, Phase B). Côté app : `nemetonshiny@v0.49.0`→`v0.50.0` ; consommateur `obs_pixel` retiré dès `nemetonshiny@v0.52.16`. **Indice NDMI** ajouté au FAST (spec 019, `(B08−B11)/(B08+B11)`, humidité ; défaut NDVI conservé, B11 cachée best-effort) → **v0.64.0** (2026-06-03) ; UI NDMI côté `nemetonshiny` à câbler (brief fourni). **Fix régression spec 019** : `.enumerate_cache_scenes()` n'avait pas de branche NDMI → cartes d'alerte NDMI toujours vides malgré B08+B11 en cache ; + nouvel orchestrateur `read_fast_alert_rasters()` (les 6 cartes = 3 indices × 2 modes en un appel) → **v0.65.0** (2026-06-03). |
+| ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). **Backend monitoring local** (Bug #2 verrou fichier) : DuckDB → SQLite/WAL → **v0.50.0** ; fix warning → **v0.50.1** ; retrait DuckDB → **v0.51.0** (2026-05-28) ; fix UPSERT SQLite `near "DO"` à l'ingestion S2 → **v0.55.1** ; audit complet UPSERT SQLite (db_migrate no-target + FORDEAD/alerts `INSERT…SELECT`) → **v0.55.2** (2026-06-01). **FAST 100 % pur raster** : retrait de l'insertion `obs_pixel` dans `ingest_sentinel2_timeseries()` (amorçage cache COG seul), `DROP TABLE obs_pixel` (migration 0004), dépréciation `read_obs_pixel()`/`list_fast_alerts_for_zone()`/`detect_alerts()` → **v0.58.0** (2026-06-02) ; **retrait définitif des 3 fonctions + `CREATE TABLE obs_pixel` ôté des migrations 0001** → **v0.60.0** (2026-06-02, Phase B). Côté app : `nemetonshiny@v0.49.0`→`v0.50.0` ; consommateur `obs_pixel` retiré dès `nemetonshiny@v0.52.16`. **Indice NDMI** ajouté au FAST (spec 019, `(B08−B11)/(B08+B11)`, humidité ; défaut NDVI conservé, B11 cachée best-effort) → **v0.64.0** (2026-06-03) ; UI NDMI côté `nemetonshiny` à câbler (brief fourni). **Fix régression spec 019** : `.enumerate_cache_scenes()` n'avait pas de branche NDMI → cartes d'alerte NDMI toujours vides malgré B08+B11 en cache ; + nouvel orchestrateur `read_fast_alert_rasters()` (les 6 cartes = 3 indices × 2 modes en un appel) → **v0.65.0** (2026-06-03). **Indice NDRE** (red-edge B05+B8A, spec 022) ajouté au FAST : `count`/`rolling`/`trend` côté cœur via `match.arg` mode-agnostique → acquis **v0.83.x/v0.84.0** ; pré-chauffage `{NDMI,NDRE} × trend` → **v0.84.0** (spec 023). Exposition UI NDRE en `count` (Fréquence) + `rolling` (Intensité) côté app → `nemetonshiny@v0.85.2` (2026-06-15) — **aucune release cœur** (capacité cœur préexistante, cf. journal 2026-06-15). |
 | ✅ | **Carte pixel** *(hors-skeleton, entre E6 et E7)* | API publique cœur pour exposer le cache S2 pixel-par-pixel (10 m natif) + extraction time-series à un clic. Spec 010. Débloque le sous-onglet *Carte pixel* dans `nemetonshiny` (séparé). | 4 fonctions exportées (`read_s2_band_raster`, `read_s2_band_stack`, `build_index_stack`, `extract_pixel_timeseries`) — release **v0.22.0** (2026-05-15). |
 | ✅ | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d'indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d'essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a → **v0.29.0** ; phase 1b → **v0.30.0** ; phase 2 (loaders) → **v0.31.0** ; phase 3a (`s2_biophysical` → C2/A1) → **v0.32.0** ; phase 3b (`theia_soil` → F1/F2) → **v0.33.0** ; phase 3c (`theia_snow` → R3) → **v0.34.0** ; phase 3d (`theia_water`/`theia_soil_moisture`/`theia_species`) → **v0.35.0** ; FORMSpoT câblé via l'interface CHM → **v0.35.2** ; résolveur STAC Theia → **v0.36.0** ; endpoint corrigé + FORMSpoT vérifié → **v0.37.0** ; auth S3 `/vsis3/` → **v0.38.0** ; ciblage par année → **v0.39.0** ; credentials S3 corrigés → **v0.39.1** ; signature SDK teledetection (`theia_signed_href`) → **v0.40.0** — chaîne validée en réel. Reliquat : MUSCATE, LST, W1. |
 | ✅ | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | **Machinerie** → **v0.52.0** : 7 fonctions exportées (`enable_rag`, `ingest_knowledge_document`, `embed_query`, `retrieve_knowledge`, `list_knowledge_documents`, `delete_knowledge_document`, `format_citations`), schéma opt-in `knowledge_*`, dual-backend pgvector `<=>` (PG) / cosinus R (SQLite). **Corpus** (spec 009.1) : API admin (v0.63.0), curation v0.75.0→v0.76.2 → **déployé en prod : 81 docs, 60 texte intégral, 6 120 chunks, 0 embedding manquant** (dont 4 papiers scannés OCRisés). **Wiring app** : perspectives IA sourcées (`nemetonshiny`). **Clos 2026-06-13.** |
@@ -548,6 +548,35 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-06-15 — Alertes FAST : NDRE exposé en `count` (Fréquence) + `rolling` (Intensité) — **aucune release cœur**
+
+L'app `nemetonshiny` a publié la release **v0.85.2** (commit `591c3b6`,
+cycle dev repassé en `0.85.2.9000`, commit `b4feb45`) qui ajoute l'indice
+**NDRE** (red-edge `(B8A−B05)/(B8A+B05)`) aux modes `count` (Fréquence) et
+`rolling` (Intensité) du sous-onglet « Alertes FAST » du Suivi sanitaire —
+NDRE n'y était jusque-là exposé qu'en mode `trend`. Côté app : nouveau
+slider `threshold_ndre` (défaut 0.20), `.fast_index_choices()` count/rolling
+→ `c(NDMI, NDVI, NBR, NDRE)`, clé i18n `monitoring_threshold_ndre` (FR/EN),
+seuil résolu via `switch(idx, NDRE = th$ndre %||% th$ndmi %||% th$ndvi, …)`.
+
+**Vérification cœur (Tâche 1) → rien à faire, aucune release cœur requise.**
+`compute_fast_alert_mask()` et `read_fast_alert_raster()` acceptent déjà
+`index = "NDRE"` **quel que soit le mode** : le `match.arg(index,
+c("NDVI","NBR","NDMI","NDRE"))` (R/fast_alert_mask.R:109,
+R/fast_alert_raster.R:168) est indépendant du `mode`, sans whitelist
+conditionnée. Le seuil par défaut NDRE résout en `0.30` (`else 0.30`,
+R/fast_alert_raster.R:186) et borde sous `threshold` comme les autres
+indices ; `.enumerate_cache_scenes()` mappe `NDRE → c("B05","B8A")`
+(R/fast_alert_raster.R:593) pour les trois modes ; `.compute_alert_count()`
+/ `.compute_alert_rolling()` sont agnostiques de l'indice (`stack <
+threshold`). Le support mode-agnostique NDRE était déjà acquis aux
+v0.83.x/v0.84.0 (spec 022/023) ; la v0.85.2 app ne fait qu'exposer une
+capacité cœur préexistante. *Note : seule `read_fast_alert_rasters()`
+(wrapper batch pluriel) restreint `indices` à `c("NDVI","NBR","NDMI")`,
+mais l'app appelle `compute_fast_alert_mask(index="NDRE", …)` directement —
+sans incidence.* Aucun bump cœur ; l'app suit `@*release`, rien à
+re-bumper côté app.
 
 ### 2026-06-15 — Release v0.84.0 (added — pré-chauffage FAST `trend`, spec 023, cœur)
 
