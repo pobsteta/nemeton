@@ -2,17 +2,21 @@
 % Please edit documentation in R/fast_alert_raster.R
 \name{read_fast_alert_rasters}
 \alias{read_fast_alert_rasters}
-\title{Build the full FAST alert raster set (3 indices x 2 modes, spec 019)}
+\title{Build the full FAST alert raster set (indices x modes)}
 \usage{
 read_fast_alert_rasters(
   con,
   zone_id,
   date_from,
   date_to,
-  indices = c("NDVI", "NBR", "NDMI"),
-  modes = c("count", "rolling"),
+  indices = c("NDVI", "NBR", "NDMI", "NDRE"),
+  modes = c("count", "rolling", "trend"),
   threshold = NULL,
   window_days = 30L,
+  months = 6:9,
+  min_years = 4L,
+  min_obs_per_year = 2L,
+  alpha = 0.05,
   cache_dir,
   apply_zone_mask = TRUE,
   mask_polygon = NULL,
@@ -32,23 +36,50 @@ diagnostic is independent of `obs_pixel` / placettes).}
 \item{date_from, date_to}{Date (or character `"YYYY-MM-DD"`) bounding
 the analysis window.}
 
-\item{indices}{Character vector, subset of `c("NDVI", "NBR", "NDMI")`.
-Default: all three.}
+\item{indices}{Character vector, subset of
+`c("NDVI", "NBR", "NDMI", "NDRE")`. Default: all four.}
 
-\item{modes}{Character vector, subset of `c("count", "rolling")`.
-Default: both.}
+\item{modes}{Character vector, subset of
+`c("count", "rolling", "trend")`. Default: all three.}
 
 \item{threshold}{Numeric scalar in `(0, 1)` applied to every requested
-index, or `NULL` (default) to let each index resolve its own default
-(`0.40` for NDVI, `0.30` for NBR / NDMI). Pass `NULL` unless you
-deliberately want one shared cut-off across indices.}
+index (ignored in `trend` mode), or `NULL` (default) to let each index
+resolve its own default (`0.40` for NDVI, `0.30` for NBR / NDMI). Pass
+`NULL` unless you deliberately want one shared cut-off across indices.}
 
 \item{window_days}{Integer scalar. Length of the trailing window in
 calendar days for `mode = "rolling"`. Ignored in `"count"` /
 `"trend"` mode. Default 30.}
 
+\item{months}{Integer vector in `1:12`. Trend mode only: the seasonal
+window kept for the yearly composite. Default `6:9` (summer, when
+water stress is most legible).}
+
+\item{min_years}{Integer scalar. Trend mode only: minimum number of
+valid composite years a pixel needs, else it is `NA`. Default `4`.}
+
+\item{min_obs_per_year}{Integer scalar. Trend mode only: minimum
+number of clear observations a pixel needs within a year for that
+year's median to count (else that year is `NA` for the pixel).
+Default `2`.}
+
+\item{alpha}{Numeric scalar in `(0, 1)`. Trend mode only: the
+Mann-Kendall significance level. A pixel is flagged only when its
+Mann-Kendall \strong{two-sided} p-value is below `alpha` \strong{and} its
+Theil-Sen slope is negative. Because that negative-slope gate keeps
+a single tail, the \strong{effective false-positive rate for a declared
+decline is `alpha / 2`} — the default `0.05` is a 2.5\% one-sided
+risk. Pixels above the threshold are treated as noise (output `0`).
+Default `0.05`.}
+
 \item{cache_dir}{Character scalar. Path to the COG cache root
 (typically `<project>/cache/layers/sentinel2`). Must exist.}
+
+\item{apply_zone_mask}{Logical. When `TRUE` (default) pixels outside
+the UGF zone polygon are set to `NA` (spec 016).}
+
+\item{mask_polygon}{An `sf` / `sfc` polygon overriding the zone mask,
+or `NULL` (default) to resolve it from `con` / `zone_id`.}
 
 \item{cache_result}{Logical. When `TRUE` (default, spec 017 D6) the
 continuous result raster is persisted as a content-addressed COG
@@ -71,24 +102,30 @@ compute fans across cores (set a `future::plan()` first). Default
 `FALSE`; results are identical to sequential.}
 }
 \value{
-A named `list` of length `length(indices) * length(modes)`
-  (six by default), keyed `"<index>_<mode>"` (e.g. `"NDMI_rolling"`).
-  Each element is a `terra::SpatRaster` (EPSG:2154) or `NULL` when no
-  cached scene matched for that index in the window.
+A named `list` keyed `"<index>_<mode>"` (e.g. `"NDMI_trend"`),
+  one element per valid combination (eight by default). Each element is a
+  `terra::SpatRaster` (EPSG:2154) or `NULL` when no cached scene matched
+  for that index in the window.
 }
 \description{
 Convenience wrapper over [read_fast_alert_raster()] that builds the
-complete FAST diagnostic in a single call: the three spectral indices
-(`NDVI`, `NBR`, `NDMI`) each in both semantics (`count` and
-`rolling`) — up to six rasters. Every element is produced exactly as a
-direct [read_fast_alert_raster()] call would be, sharing the same COG
-cache, content-addressed result cache and zone mask, so a revisit of
-any one map stays instant (spec 017 D6).
+complete FAST diagnostic in a single call. By default it produces the
+six per-date / trailing-window maps (`NDVI`, `NBR`, `NDMI` each in
+`count` and `rolling`) plus the two multi-year trend maps (`NDMI_trend`
+and `NDRE_trend`, ADR-014). Only the meaningful `(index, mode)`
+combinations are built: `trend` is restricted to the moisture / red-edge
+indices (`NDMI`, `NDRE`), and `count` / `rolling` to the broadband
+indices (`NDVI`, `NBR`, `NDMI`) — a request for an unsupported pair such
+as `NDVI_trend` or `NDRE_count` is silently skipped. Every element is
+produced exactly as a direct [read_fast_alert_raster()] call would be,
+sharing the same COG cache, content-addressed result cache and zone
+mask, so a revisit of any one map stays instant (spec 017 D6).
 }
 \details{
 The bands each index needs are cached by [ingest_sentinel2_timeseries()]
-(B11 for NDMI is cached best-effort, spec 019 D3). A map whose index has
-no cached scene carrying its bands in the window is returned as `NULL`
+(B11 for NDMI is cached best-effort, spec 019 D3; B05 / B8A for NDRE only
+when `bands = "NDRE"` is requested, spec 022). A map whose index has no
+cached scene carrying its bands in the window is returned as `NULL`
 rather than dropping the slot, so the result always has a stable shape.
 }
 \examples{
@@ -99,8 +136,8 @@ rather than dropping the slot, so the result always has a stable shape.
     con, zone_id = 1L,
     date_from = "2025-05-23", date_to = "2026-05-23",
     cache_dir = "/proj/cache/layers/sentinel2")
-  names(maps)             # "NDVI_count" ... "NDMI_rolling"
-  terra::plot(maps$NDMI_rolling)
+  names(maps)             # "NDVI_count" ... "NDMI_trend" "NDRE_trend"
+  terra::plot(maps$NDMI_trend)
 }
 
 }

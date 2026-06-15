@@ -384,35 +384,69 @@ read_fast_alert_raster <- function(con, zone_id,
 }
 
 
-#' Build the full FAST alert raster set (3 indices x 2 modes, spec 019)
+# spec 023 — which `(index, mode)` pairs are a meaningful FAST alert map.
+# `count` / `rolling` are the per-date / trailing-window paradigms, defined
+# for the broadband indices (`NDVI`, `NBR`, `NDMI`) but NOT the red-edge
+# `NDRE` (opt-in, only ingested for the chronic-decline use case). `trend`
+# is the multi-year seasonal paradigm (ADR-014), meaningful only on the
+# moisture / red-edge indices that decouple first under chronic stress
+# (`NDMI`, `NDRE`). The wrapper and the prewarm both enumerate through this
+# single predicate so they can never drift apart.
+.fast_alert_combo_ok <- function(index, mode) {
+  if (identical(mode, "trend")) index %in% c("NDMI", "NDRE")
+  else index %in% c("NDVI", "NBR", "NDMI")
+}
+
+# Cartesian product of `indices` x `modes` restricted to the valid
+# combinations above, returned as a data.frame in a deterministic canonical
+# order (`NDVI`, `NBR`, `NDMI`, `NDRE`) x (`count`, `rolling`, `trend`) so
+# the default call yields NDVI/NBR/NDMI count+rolling, then NDMI_trend, then
+# NDRE_trend.
+.fast_alert_combos <- function(indices, modes) {
+  g <- expand.grid(index = indices, mode = modes,
+                   stringsAsFactors = FALSE, KEEP.OUT.ATTRS = FALSE)
+  ok <- mapply(.fast_alert_combo_ok, g$index, g$mode)
+  g  <- g[ok, , drop = FALSE]
+  g[order(match(g$index, c("NDVI", "NBR", "NDMI", "NDRE")),
+          match(g$mode,  c("count", "rolling", "trend"))), , drop = FALSE]
+}
+
+
+#' Build the full FAST alert raster set (indices x modes)
 #'
 #' Convenience wrapper over [read_fast_alert_raster()] that builds the
-#' complete FAST diagnostic in a single call: the three spectral indices
-#' (`NDVI`, `NBR`, `NDMI`) each in both semantics (`count` and
-#' `rolling`) — up to six rasters. Every element is produced exactly as a
-#' direct [read_fast_alert_raster()] call would be, sharing the same COG
-#' cache, content-addressed result cache and zone mask, so a revisit of
-#' any one map stays instant (spec 017 D6).
+#' complete FAST diagnostic in a single call. By default it produces the
+#' six per-date / trailing-window maps (`NDVI`, `NBR`, `NDMI` each in
+#' `count` and `rolling`) plus the two multi-year trend maps (`NDMI_trend`
+#' and `NDRE_trend`, ADR-014). Only the meaningful `(index, mode)`
+#' combinations are built: `trend` is restricted to the moisture / red-edge
+#' indices (`NDMI`, `NDRE`), and `count` / `rolling` to the broadband
+#' indices (`NDVI`, `NBR`, `NDMI`) — a request for an unsupported pair such
+#' as `NDVI_trend` or `NDRE_count` is silently skipped. Every element is
+#' produced exactly as a direct [read_fast_alert_raster()] call would be,
+#' sharing the same COG cache, content-addressed result cache and zone
+#' mask, so a revisit of any one map stays instant (spec 017 D6).
 #'
 #' The bands each index needs are cached by [ingest_sentinel2_timeseries()]
-#' (B11 for NDMI is cached best-effort, spec 019 D3). A map whose index has
-#' no cached scene carrying its bands in the window is returned as `NULL`
+#' (B11 for NDMI is cached best-effort, spec 019 D3; B05 / B8A for NDRE only
+#' when `bands = "NDRE"` is requested, spec 022). A map whose index has no
+#' cached scene carrying its bands in the window is returned as `NULL`
 #' rather than dropping the slot, so the result always has a stable shape.
 #'
 #' @inheritParams read_fast_alert_raster
-#' @param indices Character vector, subset of `c("NDVI", "NBR", "NDMI")`.
-#'   Default: all three.
-#' @param modes Character vector, subset of `c("count", "rolling")`.
-#'   Default: both.
+#' @param indices Character vector, subset of
+#'   `c("NDVI", "NBR", "NDMI", "NDRE")`. Default: all four.
+#' @param modes Character vector, subset of
+#'   `c("count", "rolling", "trend")`. Default: all three.
 #' @param threshold Numeric scalar in `(0, 1)` applied to every requested
-#'   index, or `NULL` (default) to let each index resolve its own default
-#'   (`0.40` for NDVI, `0.30` for NBR / NDMI). Pass `NULL` unless you
-#'   deliberately want one shared cut-off across indices.
+#'   index (ignored in `trend` mode), or `NULL` (default) to let each index
+#'   resolve its own default (`0.40` for NDVI, `0.30` for NBR / NDMI). Pass
+#'   `NULL` unless you deliberately want one shared cut-off across indices.
 #'
-#' @return A named `list` of length `length(indices) * length(modes)`
-#'   (six by default), keyed `"<index>_<mode>"` (e.g. `"NDMI_rolling"`).
-#'   Each element is a `terra::SpatRaster` (EPSG:2154) or `NULL` when no
-#'   cached scene matched for that index in the window.
+#' @return A named `list` keyed `"<index>_<mode>"` (e.g. `"NDMI_trend"`),
+#'   one element per valid combination (eight by default). Each element is a
+#'   `terra::SpatRaster` (EPSG:2154) or `NULL` when no cached scene matched
+#'   for that index in the window.
 #'
 #' @seealso [read_fast_alert_raster()] (the per-map builder),
 #'   [compute_fast_alert_mask()] (0-4 quartile discretiser).
@@ -425,45 +459,56 @@ read_fast_alert_raster <- function(con, zone_id,
 #'     con, zone_id = 1L,
 #'     date_from = "2025-05-23", date_to = "2026-05-23",
 #'     cache_dir = "/proj/cache/layers/sentinel2")
-#'   names(maps)             # "NDVI_count" ... "NDMI_rolling"
-#'   terra::plot(maps$NDMI_rolling)
+#'   names(maps)             # "NDVI_count" ... "NDMI_trend" "NDRE_trend"
+#'   terra::plot(maps$NDMI_trend)
 #' }
 #'
 #' @export
 read_fast_alert_rasters <- function(con, zone_id,
                                     date_from, date_to,
-                                    indices     = c("NDVI", "NBR", "NDMI"),
-                                    modes       = c("count", "rolling"),
+                                    indices     = c("NDVI", "NBR", "NDMI", "NDRE"),
+                                    modes       = c("count", "rolling", "trend"),
                                     threshold   = NULL,
                                     window_days = 30L,
+                                    months           = 6:9,
+                                    min_years        = 4L,
+                                    min_obs_per_year = 2L,
+                                    alpha            = 0.05,
                                     cache_dir,
                                     apply_zone_mask  = TRUE,
                                     mask_polygon     = NULL,
                                     cache_result     = TRUE,
                                     result_cache_dir = NULL,
                                     parallel         = FALSE) {
-  indices <- match.arg(indices, c("NDVI", "NBR", "NDMI"), several.ok = TRUE)
-  modes   <- match.arg(modes, c("count", "rolling"), several.ok = TRUE)
+  indices <- match.arg(indices, c("NDVI", "NBR", "NDMI", "NDRE"),
+                       several.ok = TRUE)
+  modes   <- match.arg(modes, c("count", "rolling", "trend"),
+                       several.ok = TRUE)
 
+  combos <- .fast_alert_combos(indices, modes)
   out <- list()
-  for (idx in indices) {
-    for (md in modes) {
-      key <- paste(idx, md, sep = "_")
-      out[[key]] <- read_fast_alert_raster(
-        con, zone_id,
-        index            = idx,
-        threshold        = threshold,
-        date_from        = date_from,
-        date_to          = date_to,
-        mode             = md,
-        window_days      = window_days,
-        cache_dir        = cache_dir,
-        apply_zone_mask  = apply_zone_mask,
-        mask_polygon     = mask_polygon,
-        cache_result     = cache_result,
-        result_cache_dir = result_cache_dir,
-        parallel         = parallel)
-    }
+  for (i in seq_len(nrow(combos))) {
+    idx <- combos$index[i]
+    md  <- combos$mode[i]
+    key <- paste(idx, md, sep = "_")
+    out[[key]] <- read_fast_alert_raster(
+      con, zone_id,
+      index            = idx,
+      threshold        = threshold,
+      date_from        = date_from,
+      date_to          = date_to,
+      mode             = md,
+      window_days      = window_days,
+      months           = months,
+      min_years        = min_years,
+      min_obs_per_year = min_obs_per_year,
+      alpha            = alpha,
+      cache_dir        = cache_dir,
+      apply_zone_mask  = apply_zone_mask,
+      mask_polygon     = mask_polygon,
+      cache_result     = cache_result,
+      result_cache_dir = result_cache_dir,
+      parallel         = parallel)
   }
   out
 }

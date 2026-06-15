@@ -549,6 +549,33 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-06-15 — FAST : wrapper étendu au `trend` + red-edge systématique (spec 023, cœur, v0.85.0)
+
+Complément à la v0.84.0 (pré-chauffe `trend`, PR #75 mergée en parallèle par
+une autre session). Demande de Pascal : « l'ensemble des indices doivent être
+systématiquement calculés en mode FAST (NDMI/NDVI/NBR **et** NDRE) ». La
+v0.84.0 ne couvrait que la **pré-chauffe** ; ce cycle ajoute les deux pièces
+manquantes. **Livré** : (1) **wrapper** `read_fast_alert_rasters()` étendu au
+`trend` — défauts `c("NDVI","NBR","NDMI","NDRE")` × `c("count","rolling","trend")`
+→ **8 cartes**, paires absurdes (NDVI_trend, NDRE_count) écartées, params trend
+(`months`/`min_years`/`min_obs_per_year`/`alpha`) exposés ; prédicat interne
+`.fast_alert_combo_ok()` / `.fast_alert_combos()` énumérant les paires valides.
+(2) **red-edge systématique** — `ingest_sentinel2_timeseries()` cache B05 + B8A
+**best-effort sur chaque ingestion** (comme B11, spec 019 D3), même avec le
+défaut `bands = c("NDVI","NBR")` → les 4 indices FAST toujours calculables sans
+`bands = "NDRE"`. B05/B8A étant des bandes 20 m standard de toute scène S2 L2A,
+le best-effort aboutit toujours → supprime à la source le soft-skip `NDRE_trend`
+de la pré-chauffe sur les ingestions fraîches (le gating de #75 reste un filet
+de sécurité pour les caches legacy). **Reconciliation #75** : ma branche
+(basée sur l'ancien `main`) avait dupliqué la pré-chauffe et visé 0.84.0 ;
+rebase sur `main`, on **conserve la pré-chauffe rbind de #75** (déjà testée) et
+on ne garde que le delta net (wrapper + red-edge systématique), bump **0.85.0**.
+Doc à la main (`man/read_fast_alert_rasters.Rd`, `man/ingest_sentinel2_timeseries.Rd`).
+Tests **verts** (terra local) : `test-ndmi.R` (wrapper 8 cartes, sous-ensemble,
+paires absurdes), `test-ndre.R` (ingest cache B05/B8A best-effort),
+`test-prewarm-fast-alerts.R` / `test-fast-alert-raster.R` / `test-fast-trend.R` /
+`test-monitoring.R` inchangés et verts.
+
 ### 2026-06-15 — Release v0.84.0 (added — pré-chauffage FAST `trend`, spec 023, cœur)
 
 `.prewarm_fast_alerts()` (déclenché par `ingest_sentinel2_timeseries(prewarm_alerts
@@ -566,9 +593,7 @@ events `fast_prewarm:{NDMI,NDRE}_trend{,_done,_failed}` au format existant ;
 `fast_prewarm:complete`/`:cancelled` inchangés. Tests `test-prewarm-fast-alerts.R` :
 « the eight combinations » (8 COG + events trend, back-compat des 6 noms
 count/rolling), cas red-edge absent (NDRE trend skippé sans erreur, NDMI trend
-rendu), per-combination failure étendu aux 2 combos trend. **Non vérifié en local**
-(R/terra indisponibles dans le sandbox) : `devtools::document()` (`.Rd`
-mis à jour manuellement), `devtools::test()` à rejouer en CI. **Débloque** le
+rendu), per-combination failure étendu aux 2 combos trend. **Débloque** le
 câblage `nemetonshiny` : radio 3 modes, indice NDMI par défaut en trend, `bands +=
 "NDRE"`, params trend en sidebar conditionnelle, mapping toast `fast_prewarm:*_trend`,
 bump app **0.85.0** + plancher `Imports: nemeton (>= 0.84.0)`.

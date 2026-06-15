@@ -27,11 +27,15 @@ ingest_sentinel2_timeseries(
 \item{start, end}{Date or character `"YYYY-MM-DD"`.}
 
 \item{bands}{Character vector. Subset of
-`c("NDVI", "NBR", "NDMI", "NDRE")`. B11 (needed by NDMI) is also
-cached best-effort on every ingest (spec 019 D3), so NDMI works on
-future scenes without requesting it. `"NDRE"` (spec 022) caches the
-red-edge bands B05 + B8A; request it explicitly when you want the
-FAST trend mode or the NDRE pixel diagnostic.}
+`c("NDVI", "NBR", "NDMI", "NDRE")` naming the indices the caller
+explicitly wants (their required bands are always fetched). On top of
+those, the bands of the other FAST indices are cached **best-effort on
+every ingest** so that all four FAST indices are renderable on future
+scenes without re-ingesting: B11 for NDMI (spec 019 D3) and B05 + B8A
+for NDRE (spec 022 red-edge, spec 023). B05 / B8A / B11 are standard
+20 m S2 L2A assets present on every scene, so this systematically
+primes NDMI and NDRE — including the FAST `trend` maps — at the cost of
+three extra cropped band COGs per scene.}
 
 \item{max_cloud}{Numeric. Maximum scene cloud cover (percent). Default 20.}
 

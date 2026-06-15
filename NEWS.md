@@ -1,3 +1,33 @@
+# nemeton 0.85.0 (2026-06-15)
+
+### Added — wrapper FAST étendu au `trend` + red-edge systématique (spec 023)
+
+Complète la v0.84.0 (qui avait étendu la **pré-chauffe** `.prewarm_fast_alerts()`
+au `trend` NDMI/NDRE) sur deux axes que la pré-chauffe seule ne couvrait pas :
+
+- **Wrapper `read_fast_alert_rasters()` étendu au `trend`.** Ses défauts
+  passent à `c("NDVI","NBR","NDMI","NDRE")` × `c("count","rolling","trend")`
+  → **8 cartes**. Seules les combinaisons sensées sont construites : `trend`
+  réservé aux indices humidité/red-edge (`NDMI`, `NDRE`), `count`/`rolling`
+  aux indices large bande (`NDVI`, `NBR`, `NDMI`) — une paire absurde
+  (`NDVI_trend`, `NDRE_count`) est silencieusement ignorée. Les paramètres
+  trend (`months`, `min_years`, `min_obs_per_year`, `alpha`) sont exposés et
+  transmis. Nouveau prédicat interne `.fast_alert_combo_ok()` /
+  `.fast_alert_combos()` énumérant les paires valides.
+
+- **Red-edge systématique.** `ingest_sentinel2_timeseries()` cache désormais
+  B05 + B8A **best-effort sur chaque ingestion** (comme B11 pour NDMI, spec
+  019 D3), même avec le défaut `bands = c("NDVI","NBR")`. Les quatre indices
+  FAST (NDVI/NBR/NDMI/NDRE) — y compris les cartes `trend` — sont donc
+  **toujours calculables**, sans ré-ingestion ni `bands = "NDRE"` explicite.
+  B05/B8A sont des bandes 20 m standard de toute scène S2 L2A : le
+  best-effort aboutit en pratique toujours (coût : ~3 COG croppés de plus par
+  scène), ce qui supprime à la source le soft-skip `NDRE_trend` de la
+  pré-chauffe sur les ingestions fraîches.
+
+Tests : `test-ndmi.R` (wrapper 8 cartes, sous-ensemble, paires absurdes
+écartées), `test-ndre.R` (ingest cache B05/B8A best-effort).
+
 # nemeton 0.84.0 (2026-06-15)
 
 ### Added — pré-chauffage FAST `trend` (spec 023)
