@@ -1,3 +1,29 @@
+# nemeton 0.84.0 (2026-06-15)
+
+### Added — pré-chauffage FAST `trend` (spec 023)
+
+`ingest_sentinel2_timeseries(prewarm_alerts = TRUE)` pré-calcule désormais
+**8 cartes FAST** au lieu de 6 : aux 6 combos historiques
+`{NDVI, NBR, NDMI} × {count, rolling}` (spec 019) s'ajoutent **2 combos
+`trend`** `{NDMI, NDRE} × {trend}` (spec 023). Le mode `trend` cible le
+dépérissement chronique des feuillus, dont les signaux pertinents sont
+l'humidité (NDMI, B11) et le red-edge (NDRE, B05/B8A) ; NDVI/NBR restent
+`count`/`rolling` uniquement.
+
+Le pré-chauffage `trend` utilise les défauts cœur `months = 6:9`,
+`min_obs_per_year = 2`, `min_years = 4`, `alpha = 0.05` (identiques à
+`read_fast_alert_raster()`) ; `threshold`/`window_days` ne sont pas
+employés en `trend`. Les COG `trend` atterrissent sous le même schéma
+`<prewarm_mask_cache_dir>/zone_<id>/` que les autres combos.
+
+Le warm `*_trend` est **best-effort** : il ne tourne que si les bandes
+requises sont en cache (B11 pour NDMI, B05+B8A pour NDRE) et, à défaut, est
+sauté sans faire échouer l'ingestion — comme les scènes sans href. Les
+événements de progression `fast_prewarm:NDMI_trend{,_done,_failed}` et
+`fast_prewarm:NDRE_trend{,_done,_failed}` sont émis au même format que
+l'existant (`fast_prewarm:complete` / `:cancelled` inchangés). Débloque le
+câblage du sélecteur 3 modes côté `nemetonshiny`.
+
 # nemeton 0.83.3 (2026-06-14)
 
 ### Fixed — ingestion S2 placette-indépendante (spec 017)
