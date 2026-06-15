@@ -38,6 +38,40 @@ test_that("read_s2_band_raster accepts B05 and B8A", {
 })
 
 
+test_that("ingest caches B05/B8A best-effort so NDRE is systematic (spec 023)", {
+  skip_if_not_installed("sf")
+  # spec 023 — every FAST index (NDVI/NBR/NDMI/NDRE) must be renderable on
+  # future scenes without re-ingesting, so the red-edge bands B05/B8A are
+  # cached best-effort on every ingest alongside B11 — even with the default
+  # `bands = c("NDVI", "NBR")`. Capture the `optional_bands` the ingest
+  # forwards to `.cache_scene_bands` and assert the red-edge pair is there.
+  plots <- sf::st_sf(
+    id = 1L, plot_id = "P01", plot_type = "circle", radius_m = 10,
+    geometry = sf::st_sfc(sf::st_point(c(4.5, 47.5)), crs = 4326))
+  aoi <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 4, ymin = 47, xmax = 5, ymax = 48), crs = 4326)))
+
+  seen_opt <- NULL
+  testthat::local_mocked_bindings(
+    .fetch_plots_sf    = function(con, zone_id) plots,
+    .get_zone_aoi      = function(con, zone_id) aoi,
+    stac_search_s2     = function(...) fake_scenes(
+      dates = as.Date("2025-05-30"), cloud = 5),
+    .cache_scene_bands = function(scene, req_bands, crop_aoi = NULL,
+                                  cache_dir = NULL, emit = NULL,
+                                  optional_bands = character(0), ...) {
+      seen_opt <<- optional_bands
+      length(req_bands)
+    })
+  suppressMessages(ingest_sentinel2_timeseries(
+    structure(list(), class = c("FakeConn", "DBIConnection")),
+    1L, "2025-05-01", "2025-06-01",
+    bands = c("NDVI", "NBR"), cache_dir = withr::local_tempdir()))
+
+  expect_true(all(c("B11", "B05", "B8A") %in% seen_opt))
+})
+
+
 test_that("build_index_stack computes NDRE = (B8A - B05)/(B8A + B05)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("withr")

@@ -10,6 +10,32 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.85.0] - 2026-06-15
+
+### Added
+
+- `read_fast_alert_rasters()` now covers the `trend` mode (spec 023). The
+  wrapper's defaults become `c("NDVI","NBR","NDMI","NDRE")` ×
+  `c("count","rolling","trend")` and it builds only the meaningful
+  combinations (8 by default): `trend` on `NDMI`/`NDRE`, `count`/`rolling`
+  on `NDVI`/`NBR`/`NDMI` — a nonsensical pair such as `NDVI_trend` or
+  `NDRE_count` is silently skipped. Trend parameters (`months`, `min_years`,
+  `min_obs_per_year`, `alpha`) are exposed and forwarded. (The end-of-ingest
+  pre-warm gained the same trend combos in 0.84.0.)
+- `ingest_sentinel2_timeseries()` now caches the red-edge bands B05 + B8A
+  best-effort on every ingest (like B11 for NDMI), even with the default
+  `bands = c("NDVI", "NBR")`, so all four FAST indices — NDVI/NBR/NDMI/NDRE,
+  including the trend maps — are always renderable without re-ingesting or
+  passing `bands = "NDRE"`. This removes the `NDRE_trend` pre-warm soft-skip
+  on fresh ingests at the source.
+
+### Changed
+
+- New shared internal predicate `.fast_alert_combo_ok()` /
+  `.fast_alert_combos()` enumerates the valid `(index, mode)` pairs once for
+  the wrapper. Count / rolling cache hashes are byte-identical (no recompute
+  of existing COGs).
+
 ## [0.84.0] - 2026-06-15
 
 ### Added

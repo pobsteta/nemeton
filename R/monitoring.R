@@ -119,11 +119,15 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #' @param zone_id Integer. Existing zone in `monitoring_zone`.
 #' @param start,end Date or character `"YYYY-MM-DD"`.
 #' @param bands Character vector. Subset of
-#'   `c("NDVI", "NBR", "NDMI", "NDRE")`. B11 (needed by NDMI) is also
-#'   cached best-effort on every ingest (spec 019 D3), so NDMI works on
-#'   future scenes without requesting it. `"NDRE"` (spec 022) caches the
-#'   red-edge bands B05 + B8A; request it explicitly when you want the
-#'   FAST trend mode or the NDRE pixel diagnostic.
+#'   `c("NDVI", "NBR", "NDMI", "NDRE")` naming the indices the caller
+#'   explicitly wants (their required bands are always fetched). On top of
+#'   those, the bands of the other FAST indices are cached **best-effort on
+#'   every ingest** so that all four FAST indices are renderable on future
+#'   scenes without re-ingesting: B11 for NDMI (spec 019 D3) and B05 + B8A
+#'   for NDRE (spec 022 red-edge, spec 023). B05 / B8A / B11 are standard
+#'   20 m S2 L2A assets present on every scene, so this systematically
+#'   primes NDMI and NDRE — including the FAST `trend` maps — at the cost of
+#'   three extra cropped band COGs per scene.
 #' @param max_cloud Numeric. Maximum scene cloud cover (percent). Default 20.
 #' @param skip_cached Logical. When `TRUE` (default), skip every scene
 #'   whose required band COGs are all already present under `cache_dir`,
@@ -450,11 +454,15 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
               cloud_pct = sc$cloud_pct,
               source    = sc$source))
     tryCatch(
-      # spec 019 D3 — cache B11 systematically (best-effort) so NDMI is
-      # available on future ingests without an explicit `bands = "NDMI"`.
+      # spec 023 — cache the FAST index bands systematically (best-effort)
+      # so ALL four FAST indices (NDVI/NBR/NDMI/NDRE) are renderable on
+      # future ingests without an explicit `bands = ...`: B11 for NDMI
+      # (spec 019 D3), B05 + B8A for NDRE (spec 022, red-edge). B05/B8A are
+      # standard 20 m S2 L2A assets present on every scene, so the
+      # best-effort fetch effectively always lands them.
       .cache_scene_bands(sc, req_bands, crop_aoi = aoi_zone,
                          cache_dir = cache_dir, emit = emit,
-                         optional_bands = "B11"),
+                         optional_bands = c("B11", "B05", "B8A")),
       error = function(e) {
         cli::cli_warn("Scene {.val {sc$scene_id}} skipped: {conditionMessage(e)}")
         emit(list(current       = "s2:scene_skipped",
@@ -574,9 +582,11 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   # spec 023 — two extra `trend` combos, {NDMI, NDRE} x {trend}, bringing
   # the total to 8. Trend targets chronic broadleaf decline, where the
   # relevant signals are moisture (NDMI / B11) and red-edge (NDRE /
-  # B05+B8A); NDVI/NBR stay count/rolling only. A zone whose cache lacks
-  # B11 (NDMI) or B05+B8A (NDRE) is soft-skipped exactly like NBR with no
-  # B12 — best-effort, never aborting the ingestion.
+  # B05+B8A); NDVI/NBR stay count/rolling only. Since red-edge is now cached
+  # best-effort on every ingest (`.cache_scene_bands(optional_bands = ...)`),
+  # a fresh cache renders NDRE_trend; a LEGACY cache that predates spec 023
+  # (no B05/B8A) is soft-skipped exactly like NBR with no B12 — best-effort,
+  # never aborting the ingestion.
   combos <- rbind(
     expand.grid(index = c("NDVI", "NBR", "NDMI"),
                 mode  = c("count", "rolling"),
@@ -815,10 +825,11 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   for (band in req_bands) {
     .get_s2_band_raster(scene, band, crop_aoi, cache_dir, emit)
   }
-  # spec 019 D3 — best-effort bands (e.g. B11 for NDMI): cache them when
-  # the scene exposes them, but never fail the ingestion of the required
-  # bands if a scene lacks the asset (`.get_s2_band_raster()` aborts on a
-  # missing/empty href, so each optional band is tried independently).
+  # spec 019 D3 / spec 023 — best-effort bands (B11 for NDMI, B05 + B8A for
+  # NDRE): cache them when the scene exposes them, but never fail the
+  # ingestion of the required bands if a scene lacks the asset
+  # (`.get_s2_band_raster()` aborts on a missing/empty href, so each
+  # optional band is tried independently).
   n_opt <- 0L
   for (band in setdiff(optional_bands, req_bands)) {
     ok <- tryCatch({

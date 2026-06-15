@@ -135,7 +135,7 @@ test_that(".enumerate_cache_scenes drops a scene missing an NDMI band", {
 })
 
 
-test_that("read_fast_alert_rasters returns the 6 maps keyed <index>_<mode>", {
+test_that("read_fast_alert_rasters returns the 8 maps keyed <index>_<mode>", {
   skip_if_not_installed("terra")
   seen <- character(0)
   testthat::local_mocked_bindings(
@@ -148,13 +148,15 @@ test_that("read_fast_alert_rasters returns the 6 maps keyed <index>_<mode>", {
     con = NULL, zone_id = 1L,
     date_from = "2026-01-01", date_to = "2026-02-01",
     cache_dir = "/tmp/unused")
-  expect_length(maps, 6L)
+  # spec 023 — six per-date / trailing maps + NDMI_trend + NDRE_trend.
+  # NDVI/NBR have no trend (count/rolling only); NDRE only trend.
+  expect_length(maps, 8L)
   expect_setequal(
     names(maps),
     c("NDVI_count", "NDVI_rolling", "NBR_count", "NBR_rolling",
-      "NDMI_count", "NDMI_rolling"))
-  expect_identical(maps[["NDMI_rolling"]], "NDMI_rolling")
-  expect_length(seen, 6L)            # each (index, mode) built exactly once
+      "NDMI_count", "NDMI_rolling", "NDMI_trend", "NDRE_trend"))
+  expect_identical(maps[["NDMI_trend"]], "NDMI_trend")
+  expect_length(seen, 8L)            # each valid (index, mode) built once
 })
 
 
@@ -169,4 +171,22 @@ test_that("read_fast_alert_rasters honours a restricted index/mode subset", {
     date_from = "2026-01-01", date_to = "2026-02-01",
     indices = "NDMI", modes = "rolling", cache_dir = "/tmp/unused")
   expect_identical(names(maps), "NDMI_rolling")
+})
+
+
+test_that("read_fast_alert_rasters drops nonsensical (index, mode) pairs", {
+  skip_if_not_installed("terra")
+  testthat::local_mocked_bindings(
+    read_fast_alert_raster = function(con, zone_id, index, mode, ...)
+      paste(index, mode, sep = "_"),
+    .package = "nemeton")
+  # trend is meaningful only on NDMI / NDRE; count/rolling only on the
+  # broadband indices -> NDVI_trend and NDRE_count are silently skipped.
+  maps <- read_fast_alert_rasters(
+    con = NULL, zone_id = 1L,
+    date_from = "2026-01-01", date_to = "2026-02-01",
+    indices = c("NDVI", "NDMI", "NDRE"), modes = c("count", "trend"),
+    cache_dir = "/tmp/unused")
+  expect_setequal(names(maps),
+                  c("NDVI_count", "NDMI_count", "NDMI_trend", "NDRE_trend"))
 })

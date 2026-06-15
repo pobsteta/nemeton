@@ -91,10 +91,13 @@ test_that(".prewarm_fast_alerts precomputes the 8 combinations", {
   events <- list()
   emit <- function(p) events[[length(events) + 1L]] <<- p
 
+  # `date_to` lands in summer (Aug) so the 30-day rolling window catches the
+  # last cached scene (Aug 15) — a December `date_to` would leave rolling
+  # empty and soft-skip the three rolling combos.
   suppressMessages(
     nemeton:::.prewarm_fast_alerts(
       con, zone_id = 1L,
-      date_from = "2019-01-01", date_to = "2023-12-31",
+      date_from = "2019-01-01", date_to = "2023-08-31",
       cache_dir = cache, result_cache_dir = rcache,
       emit = emit, cancelled = .never_cancel))
 
@@ -165,7 +168,7 @@ test_that(".prewarm_fast_alerts skips NDRE trend when red-edge is absent", {
     suppressMessages(
       nemeton:::.prewarm_fast_alerts(
         con, zone_id = 1L,
-        date_from = "2019-01-01", date_to = "2023-12-31",
+        date_from = "2019-01-01", date_to = "2023-08-31",
         cache_dir = cache, result_cache_dir = rcache,
         emit = emit, cancelled = .never_cancel)),
     "FAST prewarm NDRE/trend")
