@@ -288,6 +288,11 @@ reference:
     - RECONFORT_OSO_MASK
     - ensure_reconfort_oso_mask
     - run_reconfort_dieback
+    - RECONFORT_CLASSES
+    - RECONFORT_ALERT_CLASSES
+    - RECONFORT_CONFIDENCE_WEIGHTS
+    - read_reconfort_alert_mask
+    - read_reconfort_pixel_series
 
   - title: "Suivi sanitaire, monitoring et autres fonctions"
     desc: >
@@ -350,7 +355,9 @@ reference:
     - get_placette_schema
     - h_to_dq_params
     - HEALTH_VALIDATION_CAUSES
+    - HEALTH_VALIDATION_CAUSES_FEUILLUS
     - HEALTH_VALIDATION_STADES
+    - HEALTH_VALIDATION_STADES_FEUILLUS
     - import_qgis_gpkg
     - indicateur_r5_deperissement
     - ingest_health_validation
@@ -380,6 +387,7 @@ reference:
     - read_fordead_dieback_mask
     - read_fordead_pixel_series
     - read_knowledge_manifest
+    - reset_knowledge_manifest
     - read_s2_band_raster
     - read_s2_band_stack
     - read_uts_fertility_table
