@@ -827,6 +827,37 @@ cœur).
 
 ## Journal
 
+### 2026-06-16 — Added : `extract_trend_series()` — trajectoire annuelle pour le graphe d’onset (spec 023, cœur, v0.86.0)
+
+Suite à l’échange sur « comment sont calculées les alertes NDRE-trend et
+quel graphe montrerait *à partir de quand* elles arrivent ». Constat :
+le mode `trend` réduit chaque pixel à **une seule pente** → la carte ne
+porte aucune information d’onset ; l’info temporelle est dans les
+**composites annuels** que `.fast_raster_trend()` construit puis jette.
+**Livré** : helper exporté
+`extract_trend_series(con, zone_id, index="NDRE", date_from, date_to, cache_dir, months=6:9, min_years=4, min_obs_per_year=2, alpha=0.05, apply_zone_mask, mask_polygon, parallel)`
+qui ressort la **série annuelle de composites estivaux au niveau
+zone** + le fit Theil-Sen / Mann-Kendall. Implémentation : factorisation
+du composite annuel dans `.trend_yearly_composite()` (partagé avec
+`.fast_raster_trend()`, refactor pur → 49 tests trend inchangés), puis
+par-tuile composite → masque UGF (poly reprojeté en CRS natif) → moyenne
+spatiale + comptage `notNA` via
+[`terra::global`](https://rspatial.github.io/terra/reference/global.html),
+combinaison multi-tuiles en **moyenne pondérée par pixels valides** par
+année (pas de mosaïque CRS : on agrège des scalaires). Fit :
+`.theil_sen` + `.mann_kendall` sur la série `(année, valeur)`, intercept
+= `median(y - pente·x)`, `significant` = pente\<0 & p\<alpha, `alert` =
+`abs(pente)` si significatif (= magnitude que `compute_fast_alert_mask`
+discrétise). Retour
+`list(series[year,n_scenes,value,fitted], fit, index, months, alpha)` —
+`series` directement traçable (points + droite). Conçu pour le graphe «
+trajectoire NDRE + tendance » côté `nemetonshiny` (graphe \#1
+recommandé). Doc à la main (`man/extract_trend_series.Rd`, NAMESPACE).
+Tests `test-extract-trend-series.R` (22) : déclin NDRE monotone
+significatif (alert==abs(slope), p\<0.05, fitted décroissant), fit NULL
+sous min_years, NULL hors saison, validation des entrées. Suites
+voisines vertes (fast-trend 49, fast-alert-raster 56, ndre 20).
+
 ### 2026-06-16 — Fix : mosaic multi-tuiles NDRE 20 m (`resolution does not match`, spec 023, cœur, v0.85.1)
 
 Bug remonté en prod (zones 5/6/7, cache `…/20260517_103553_vyso`, NDRE

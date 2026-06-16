@@ -516,6 +516,10 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`extract_pixel_timeseries()`](https://pobsteta.github.io/nemeton/reference/extract_pixel_timeseries.md)
   : Extract a per-pixel NDVI / NBR time series at one geographic point
 
+- [`extract_trend_series()`](https://pobsteta.github.io/nemeton/reference/extract_trend_series.md)
+  : Zone-level trend trajectory (yearly composite series + Theil-Sen
+  fit)
+
 - [`field_schema`](https://pobsteta.github.io/nemeton/reference/field_schema.md)
   : Field Data Schema for QField Integration
 

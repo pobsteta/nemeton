@@ -1,5 +1,38 @@
 # Changelog
 
+## nemeton 0.86.0 (2026-06-16)
+
+#### Added — `extract_trend_series()` : trajectoire annuelle pour le graphe « à partir de quand »
+
+Le mode `trend` (`read_fast_alert_raster(mode = "trend")`) réduit
+l’historique de chaque pixel à **une seule pente** : la carte ne dit
+donc pas *quand* le déclin commence.
+`extract_trend_series(con, zone_id, index = "NDRE", …)` ressort la
+**série des composites annuels estivaux** au niveau de la zone + le fit
+Theil-Sen / Mann-Kendall, pour tracer la trajectoire et lire l’année où
+l’indice décroche.
+
+Pour chaque année de la fenêtre, les scènes en saison (`months = 6:9`)
+sont réduites à un composite médian par pixel (année écartée si \<
+`min_obs_per_year` observations claires), masquées à l’UGF, puis
+moyennées spatialement en une valeur. La série `(année, valeur)` est
+ajustée avec **le même** Theil-Sen + Mann-Kendall que la carte applique
+par pixel (helper factorisé `.trend_yearly_composite()` partagé avec
+`.fast_raster_trend()`), si bien que la trajectoire de zone et la carte
+concordent par construction. Les AOI multi-tuiles sont combinées en
+moyenne pondérée par le nombre de pixels valides.
+
+Retour : `list(series, fit, index, months, alpha)` où `series` est un
+`data.frame` `year / n_scenes / value / fitted` (un point + la droite
+Theil-Sen prêts à tracer) et `fit` porte `slope`, `intercept`,
+`p_value`, `tau`, `n_years`, `significant` (pente \< 0 **et** p \<
+alpha) et `alert` (`abs(pente)` si significatif, sinon 0 — la magnitude
+que la carte discrétise en classes 1-4), ou `NULL` sous `min_years`
+années valides. Conçu pour alimenter le graphe « trajectoire NDRE +
+droite de tendance » côté `nemetonshiny`. Tests :
+`test-extract-trend-series.R` (déclin NDRE significatif, fit NULL sous
+le seuil d’années, NULL hors saison, validation).
+
 ## nemeton 0.85.1 (2026-06-16)
 
 #### Fixed — mosaic multi-tuiles NDRE 20 m (`[mosaic] resolution does not match`)

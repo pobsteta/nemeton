@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.85.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.86.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.86.0" id="nemeton-0860-2026-06-16">nemeton 0.86.0 (2026-06-16)<a class="anchor" aria-label="anchor" href="#nemeton-0860-2026-06-16"></a></h2>
+<div class="section level4">
+<h4 id="added--extract_trend_series--trajectoire-annuelle-pour-le-graphe--à-partir-de-quand--0-86-0">Added — <code>extract_trend_series()</code> : trajectoire annuelle pour le graphe « à partir de quand »<a class="anchor" aria-label="anchor" href="#added--extract_trend_series--trajectoire-annuelle-pour-le-graphe--%C3%A0-partir-de-quand--0-86-0"></a></h4>
+<p>Le mode <code>trend</code> (<code>read_fast_alert_raster(mode = "trend")</code>) réduit l’historique de chaque pixel à <strong>une seule pente</strong> : la carte ne dit donc pas <em>quand</em> le déclin commence. <code>extract_trend_series(con, zone_id, index = "NDRE", …)</code> ressort la <strong>série des composites annuels estivaux</strong> au niveau de la zone + le fit Theil-Sen / Mann-Kendall, pour tracer la trajectoire et lire l’année où l’indice décroche.</p>
+<p>Pour chaque année de la fenêtre, les scènes en saison (<code>months = 6:9</code>) sont réduites à un composite médian par pixel (année écartée si &lt; <code>min_obs_per_year</code> observations claires), masquées à l’UGF, puis moyennées spatialement en une valeur. La série <code>(année, valeur)</code> est ajustée avec <strong>le même</strong> Theil-Sen + Mann-Kendall que la carte applique par pixel (helper factorisé <code>.trend_yearly_composite()</code> partagé avec <code>.fast_raster_trend()</code>), si bien que la trajectoire de zone et la carte concordent par construction. Les AOI multi-tuiles sont combinées en moyenne pondérée par le nombre de pixels valides.</p>
+<p>Retour : <code>list(series, fit, index, months, alpha)</code> où <code>series</code> est un <code>data.frame</code> <code>year / n_scenes / value / fitted</code> (un point + la droite Theil-Sen prêts à tracer) et <code>fit</code> porte <code>slope</code>, <code>intercept</code>, <code>p_value</code>, <code>tau</code>, <code>n_years</code>, <code>significant</code> (pente &lt; 0 <strong>et</strong> p &lt; alpha) et <code>alert</code> (<code>abs(pente)</code> si significatif, sinon 0 — la magnitude que la carte discrétise en classes 1-4), ou <code>NULL</code> sous <code>min_years</code> années valides. Conçu pour alimenter le graphe « trajectoire NDRE + droite de tendance » côté <code>nemetonshiny</code>. Tests : <code>test-extract-trend-series.R</code> (déclin NDRE significatif, fit NULL sous le seuil d’années, NULL hors saison, validation).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.85.1" id="nemeton-0851-2026-06-16">nemeton 0.85.1 (2026-06-16)<a class="anchor" aria-label="anchor" href="#nemeton-0851-2026-06-16"></a></h2>
 <div class="section level4">
