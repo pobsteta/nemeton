@@ -827,6 +827,38 @@ cœur).
 
 ## Journal
 
+### 2026-06-16 — Added : `extract_pixel_trend()` — diagnostic trend au pixel cliqué (spec 023, cœur, v0.87.0)
+
+Brief CŒUR transmis depuis la session `nemetonshiny` (parité avec
+`read_reconfort_pixel_series`, mais signature `cache_dir`/`scenes_df`
+retenue — l’app a déjà les deux et ça **contourne le bug multi-tuiles**
+v0.85.1). Besoin : le graphe « pourquoi ce pixel a cette couleur » →
+équivalent **par pixel** du raster trend. **Livré** :
+`extract_pixel_trend(cache_dir, scenes_df, xy, crs=4326, index="NDRE", months=6:9, min_years=4, min_obs_per_year=2, alpha=0.05, zone_polygon, warn_outside_zone)`.
+Algo : (1) série brute par scène au point via
+[`extract_pixel_timeseries()`](https://pobsteta.github.io/nemeton/reference/extract_pixel_timeseries.md)
+(extraction scène par scène, pas de mosaïque → immunisé
+`[mosaic] resolution does not match`) ; (2) composite **identique** au
+raster (filtre `months`, médiane/an des valeurs claires, année \<
+`min_obs_per_year` → NA) ; (3) fit via le **helper partagé**
+`.trend_fit_one()` (`.theil_sen` + `.mann_kendall`, intercept
+`median(y-pente·x)`) — extrait pour être appelé par
+`extract_pixel_trend` ET `extract_trend_series` (refactorisé) et
+cohérent avec `.trend_fit_cells()` vectorisé du raster ; (4)
+`alert_value` = `abs(pente)` si déclin significatif, `0` sinon, **`NA`
+sous `min_years`** (NA-masqué comme le raster). Retour
+`list(index, composites[year,value], n_years, theil_sen_slope/intercept, mann_kendall_p/tau, significant_decline, alert_value, enough_years)`.
+Classe 0-4 **non** renvoyée (quartiles zone-wide → l’app lit la classe
+dans le raster mask au pixel). Doc à la main
+(`man/extract_pixel_trend.Rd`, NAMESPACE). Tests
+`test-extract-pixel-trend.R` (déclin significatif, série plate→0, \<
+min_years→NA, hors saison→NULL, **non- régression croisée
+pixel==raster** : `alert_value == read_fast_alert_raster( mode="trend")`
+au pixel, fixture spatialement constante). Suites voisines vertes
+(extract-trend-series 22, fast-trend 49, fast-alert-raster 56, pixel-map
+69). Ordre cœur→app : release <nemeton@v0.87.0> → l’app consomme via
+`@*release`.
+
 ### 2026-06-16 — Added : `extract_trend_series()` — trajectoire annuelle pour le graphe d’onset (spec 023, cœur, v0.86.0)
 
 Suite à l’échange sur « comment sont calculées les alertes NDRE-trend et

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.86.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.87.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.87.0" id="nemeton-0870-2026-06-16">nemeton 0.87.0 (2026-06-16)<a class="anchor" aria-label="anchor" href="#nemeton-0870-2026-06-16"></a></h2>
+<div class="section level4">
+<h4 id="added--extract_pixel_trend--diagnostic-trend-au-pixel-cliqué-0-87-0">Added — <code>extract_pixel_trend()</code> : diagnostic trend au pixel cliqué<a class="anchor" aria-label="anchor" href="#added--extract_pixel_trend--diagnostic-trend-au-pixel-cliqu%C3%A9-0-87-0"></a></h4>
+<p>Complément <strong>par pixel</strong> de <code><a href="../reference/extract_trend_series.html">extract_trend_series()</a></code> (v0.86.0, niveau zone). Pour un point <code>xy</code>, renvoie la <strong>série des composites annuels estivaux</strong> de l’indice + le résultat Theil-Sen / Mann-Kendall, <strong>strictement cohérent</strong> avec <code>read_fast_alert_raster(mode = "trend")</code> au même pixel : c’est ce qui alimente le graphe « pourquoi <em>ce</em> pixel a <em>cette</em> couleur » (points compositaires, droite de déclin, significativité derrière la classe de sévérité).</p>
+<p>La série brute par scène est lue via <code><a href="../reference/extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code> (extraction <strong>scène par scène</strong> au point, <strong>pas</strong> de mosaïque zone-wide → immunisé contre le bug multi-tuiles <code>[mosaic] resolution does not match</code>), puis compositée exactement comme le raster (médiane estivale par année, année écartée sous <code>min_obs_per_year</code>) et ajustée avec le <strong>même</strong> Theil-Sen / Mann-Kendall. <code>alert_value</code> égale donc la valeur pré-quartile du raster <strong>cellule pour cellule</strong> (test de non-régression croisé : <code>extract_pixel_trend(xy)$alert_value == read_fast_alert_raster(mode="trend")</code> au pixel).</p>
+<p>Retour : <code>list(index, composites[year,value], n_years, theil_sen_slope, theil_sen_intercept, mann_kendall_p, mann_kendall_tau, significant_decline, alert_value, enough_years)</code>. <code>alert_value</code> = <code>abs(pente)</code> si déclin significatif, <code>0</code> sinon, <code>NA</code> sous <code>min_years</code> (NA-masqué comme la carte). La classe 0-4 n’est PAS renvoyée (bornes quartiles zone-wide → l’app la lit dans le raster mask). Refactor : moteur de fit factorisé dans le helper interne partagé <code>.trend_fit_one()</code>, appelé par <code><a href="../reference/extract_pixel_trend.html">extract_pixel_trend()</a></code>, <code><a href="../reference/extract_trend_series.html">extract_trend_series()</a></code> et cohérent avec <code>.trend_fit_cells()</code> (vectorisé) — garantie pixel == zone == raster. Tests : <code>test-extract-pixel-trend.R</code> (déclin significatif, série plate, &lt; min_years → NA, hors saison → NULL, cohérence croisée pixel/raster).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.86.0" id="nemeton-0860-2026-06-16">nemeton 0.86.0 (2026-06-16)<a class="anchor" aria-label="anchor" href="#nemeton-0860-2026-06-16"></a></h2>
 <div class="section level4">
