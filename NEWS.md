@@ -1,3 +1,35 @@
+# nemeton 0.87.0 (2026-06-16)
+
+### Added — `extract_pixel_trend()` : diagnostic trend au pixel cliqué
+
+Complément **par pixel** de `extract_trend_series()` (v0.86.0, niveau zone).
+Pour un point `xy`, renvoie la **série des composites annuels estivaux** de
+l'indice + le résultat Theil-Sen / Mann-Kendall, **strictement cohérent** avec
+`read_fast_alert_raster(mode = "trend")` au même pixel : c'est ce qui alimente
+le graphe « pourquoi *ce* pixel a *cette* couleur » (points compositaires,
+droite de déclin, significativité derrière la classe de sévérité).
+
+La série brute par scène est lue via `extract_pixel_timeseries()` (extraction
+**scène par scène** au point, **pas** de mosaïque zone-wide → immunisé contre
+le bug multi-tuiles `[mosaic] resolution does not match`), puis compositée
+exactement comme le raster (médiane estivale par année, année écartée sous
+`min_obs_per_year`) et ajustée avec le **même** Theil-Sen / Mann-Kendall.
+`alert_value` égale donc la valeur pré-quartile du raster **cellule pour
+cellule** (test de non-régression croisé : `extract_pixel_trend(xy)$alert_value
+== read_fast_alert_raster(mode="trend")` au pixel).
+
+Retour : `list(index, composites[year,value], n_years, theil_sen_slope,
+theil_sen_intercept, mann_kendall_p, mann_kendall_tau, significant_decline,
+alert_value, enough_years)`. `alert_value` = `abs(pente)` si déclin
+significatif, `0` sinon, `NA` sous `min_years` (NA-masqué comme la carte). La
+classe 0-4 n'est PAS renvoyée (bornes quartiles zone-wide → l'app la lit dans
+le raster mask). Refactor : moteur de fit factorisé dans le helper interne
+partagé `.trend_fit_one()`, appelé par `extract_pixel_trend()`,
+`extract_trend_series()` et cohérent avec `.trend_fit_cells()` (vectorisé) —
+garantie pixel == zone == raster. Tests : `test-extract-pixel-trend.R` (déclin
+significatif, série plate, < min_years → NA, hors saison → NULL, cohérence
+croisée pixel/raster).
+
 # nemeton 0.86.0 (2026-06-16)
 
 ### Added — `extract_trend_series()` : trajectoire annuelle pour le graphe « à partir de quand »

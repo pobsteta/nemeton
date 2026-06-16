@@ -10,6 +10,28 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.87.0] - 2026-06-16
+
+### Added
+
+- `extract_pixel_trend()` — the per-pixel counterpart of the FAST trend
+  raster. For a point `xy` it returns the yearly seasonal composite series
+  plus the Theil-Sen / Mann-Kendall result, strictly consistent with
+  `read_fast_alert_raster(mode = "trend")` at the same pixel (cross-checked
+  in tests). Reads the raw per-scene series via `extract_pixel_timeseries()`
+  (scene-by-scene, no zone-wide mosaic — immune to the multi-tile resolution
+  bug). Returns `composites`, `n_years`, `theil_sen_slope/intercept`,
+  `mann_kendall_p/tau`, `significant_decline`, `alert_value` (`abs(slope)` if
+  significant, `0` if not, `NA` below `min_years`) and `enough_years`. Drives
+  the "why this pixel has this colour" graph in `nemetonshiny`.
+
+### Changed
+
+- Factored the scalar Theil-Sen / Mann-Kendall fit into the shared internal
+  `.trend_fit_one()`, now used by `extract_pixel_trend()` and
+  `extract_trend_series()` (consistent with the vectorised `.trend_fit_cells()`
+  the raster uses) so pixel, zone and raster never diverge.
+
 ## [0.86.0] - 2026-06-16
 
 ### Added
