@@ -1,3 +1,27 @@
+# nemeton 0.85.1 (2026-06-16)
+
+### Fixed — mosaic multi-tuiles NDRE 20 m (`[mosaic] resolution does not match`)
+
+`compute_fast_alert_mask()` / `read_fast_alert_raster()` échouaient avec
+`[mosaic] resolution does not match` pour `index = "NDRE"` (et tout indice
+20 m) lorsque la zone chevauche **plusieurs tuiles MGRS** (ex. T31TFM +
+T31TGM). Cause : chaque raster d'alerte par-tuile était projeté vers
+EPSG:2154 **indépendamment** (`terra::project(rn, "EPSG:2154")` sans grille
+cible), terra dérivant alors une résolution de sortie propre à l'étendue de
+chaque tuile. Deux tuiles natives 20 m (bandes B8A/B05 du NDRE) tombaient
+sur des résolutions très légèrement différentes → `terra::mosaic()` refusait
+de les fusionner. Le NDVI/NDMI 10 m ne reproduisait pas le bug (les tuiles
+arrondissaient par chance à la même résolution).
+
+Nouveau helper interne `.mosaic_per_tile()` : avant la mosaïque, les rasters
+par-tuile sont **rééchantillonnés sur une grille EPSG:2154 commune** (la
+résolution de la première tuile, étendue union snappée sur des multiples de
+cette résolution, même origine), de sorte que la mosaïque est bien définie
+quelle que soit la dérive de projection inter-tuiles. Aucun changement pour
+les zones mono-tuile ni pour les indices 10 m. Régression :
+`test-fast-alert-raster.R` (snap de deux tuiles à résolutions 20 / 20,05 que
+`terra::mosaic()` rejetait, mosaïque OK à résolution unique + étendue union).
+
 # nemeton 0.85.0 (2026-06-15)
 
 ### Added — wrapper FAST étendu au `trend` + red-edge systématique (spec 023)
