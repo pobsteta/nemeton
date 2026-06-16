@@ -468,6 +468,11 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`create_sampling_plan()`](https://pobsteta.github.io/nemeton/reference/create_sampling_plan.md)
   : Generate a forest sampling plan (GRTS with graceful fallback)
 
+- [`create_trend_sanitary_plan()`](https://pobsteta.github.io/nemeton/reference/create_trend_sanitary_plan.md)
+  :
+
+  Create a SANITARY plot plan on the multi-year `trend` (spec 025)
+
 - [`create_validation_sampling_plan()`](https://pobsteta.github.io/nemeton/reference/create_validation_sampling_plan.md)
   : Create a validation sampling plan over an alert raster (spec 014 A3)
 

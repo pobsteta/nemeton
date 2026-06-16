@@ -12,6 +12,22 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.88.0\] - 2026-06-16
+
+### Added
+
+- [`create_trend_sanitary_plan()`](https://pobsteta.github.io/nemeton/reference/create_trend_sanitary_plan.md)
+  — a standalone **sanitary** plot plan drawn on the FAST `trend` raster
+  (default NDRE) with a continuous-probability GRTS weighted by the
+  decline magnitude (`|slope|`, via `spsurvey aux_var`). Optional
+  control plots on stable cells. Distinct from the terrain/inventory
+  plots: it never reads the `plot` table and computes **no TSP tour** —
+  plots are ordered by descending severity (`S01` = steepest). Returns
+  an `sf` POINT (`plot_id`, `type` Sanitaire/Temoin, `alert_value`,
+  `index`, `source = "FAST_TREND"`, `seed`; no `visit_order`). Typed
+  `nemeton_empty_alert_mask` error when no significant decline. New
+  internal `.draw_grts_continuous()`. Spec 025.
+
 ## \[0.87.0\] - 2026-06-16
 
 ### Added

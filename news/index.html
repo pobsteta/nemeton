@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.87.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.88.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,16 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.88.0" id="nemeton-0880-2026-06-16">nemeton 0.88.0 (2026-06-16)<a class="anchor" aria-label="anchor" href="#nemeton-0880-2026-06-16"></a></h2>
+<div class="section level4">
+<h4 id="added--create_trend_sanitary_plan--placettes-sanitaires-sur-le-trend-spec-0-88-0">Added — <code>create_trend_sanitary_plan()</code> : placettes sanitaires sur le <code>trend</code> (spec 025)<a class="anchor" aria-label="anchor" href="#added--create_trend_sanitary_plan--placettes-sanitaires-sur-le-trend-spec-0-88-0"></a></h4>
+<p>Tirage de <strong>placettes sanitaires</strong> sur le raster <code>trend</code> d’un indice (défaut NDRE), avec un <strong>GRTS à probabilité d’inclusion continue</strong> pondérée par la <strong>magnitude du déclin</strong> (<code>|pente|</code> Theil-Sen, NDRE/an) via <code>spsurvey::grts(…, aux_var)</code> : plus le déclin chronique est marqué, plus la probabilité de sélection est forte. Placettes témoins optionnelles tirées en équiprobable sur les cellules <strong>stables</strong> (<code>trend == 0</code>).</p>
+<p><strong>Distinct du plan terrain</strong> : ce plan est <strong>autonome</strong>, <strong>sans aucun rapport</strong> avec les placettes terrain / d’inventaire (<code>plot</code>, <code>create_sampling_plan</code>, <code>create_validation_sampling_plan</code>). Il ne lit jamais la table <code>plot</code> et <strong>ne calcule pas de tournée TSP</strong> — les placettes sont renvoyées triées par <strong>sévérité de déclin décroissante</strong> (<code>S01</code> = plus fort), pas par un parcours de marche.</p>
+<p>Contrairement à <code><a href="../reference/create_validation_sampling_plan.html">create_validation_sampling_plan()</a></code> (qui discrétise un masque 0-4 et pondère par classe), on pondère par le <code>|pente|</code> <strong>brut</strong> : un pixel à 0.04 NDRE/an est prioritaire sur un 0.012 même dans la même classe quartile. Le raster trend est lu via <code>read_fast_alert_raster(mode = "trend")</code> (scène par scène par tuile puis mosaïque sur grille commune → immunisé contre le bug multi-tuiles, v0.85.1), masque UGF déjà appliqué.</p>
+<p>Sortie <code>sf</code> POINT : <code>plot_id</code> (<code>S##</code>/<code>T##</code>), <code>type</code> (<code>"Sanitaire"</code>/<code>"Temoin"</code>), <code>alert_value</code> (<code>|pente|</code> au pixel, <code>0</code> témoin), <code>index</code>, <code>source = "FAST_TREND"</code>, <code>seed</code> — <strong>sans <code>visit_order</code></strong>. Erreur typée <code>nemeton_empty_alert_mask</code> quand aucune cellule en déclin significatif. Helper interne <code>.draw_grts_continuous()</code> (GRTS <code>aux_var</code>). <code>alert_value</code> au pixel == <code>extract_pixel_trend(xy)$alert_value</code> == valeur pré-quartile du raster. Tests : <code>test-trend-sanitary-plan.R</code> (déclin pondéré, tri décroissant, témoins stables, reproductibilité seed, <code>n_control=0</code>, erreurs typées).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.87.0" id="nemeton-0870-2026-06-16">nemeton 0.87.0 (2026-06-16)<a class="anchor" aria-label="anchor" href="#nemeton-0870-2026-06-16"></a></h2>
 <div class="section level4">
