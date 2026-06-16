@@ -68,7 +68,8 @@ test_that("create_trend_sanitary_plan returns Sanitaire + Temoin, no TSP", {
   plan <- suppressMessages(create_trend_sanitary_plan(
     .fake_con(), zone_id = 1L, index = "NDRE",
     date_from = "2017-01-01", date_to = "2024-12-31",
-    cache_dir = ".", n_plots = 10L, n_control = 5L, seed = 42L))
+    cache_dir = ".", n_plots = 10L, n_control = 5L, seed = 42L,
+    apply_zone_mask = FALSE))
 
   expect_s3_class(plan, "sf")
   # No TSP / terrain coupling.
@@ -101,10 +102,10 @@ test_that("create_trend_sanitary_plan is reproducible with a seed", {
     .package = "nemeton")
   p1 <- suppressMessages(create_trend_sanitary_plan(
     .fake_con(), 1L, "2017-01-01", "2024-12-31", cache_dir = ".",
-    n_plots = 8L, n_control = 3L, seed = 99L))
+    n_plots = 8L, n_control = 3L, seed = 99L, apply_zone_mask = FALSE))
   p2 <- suppressMessages(create_trend_sanitary_plan(
     .fake_con(), 1L, "2017-01-01", "2024-12-31", cache_dir = ".",
-    n_plots = 8L, n_control = 3L, seed = 99L))
+    n_plots = 8L, n_control = 3L, seed = 99L, apply_zone_mask = FALSE))
   expect_equal(sf::st_coordinates(p1), sf::st_coordinates(p2))
 })
 
@@ -121,7 +122,7 @@ test_that("create_trend_sanitary_plan errors typed when no decline", {
     .package = "nemeton")
   expect_error(
     create_trend_sanitary_plan(.fake_con(), 1L, "2017-01-01", "2024-12-31",
-                               cache_dir = ".", n_plots = 5L),
+                               cache_dir = ".", n_plots = 5L, apply_zone_mask = FALSE),
     class = "nemeton_empty_alert_mask")
 })
 
@@ -133,7 +134,7 @@ test_that("create_trend_sanitary_plan errors typed when raster is NULL", {
     .package = "nemeton")
   expect_error(
     create_trend_sanitary_plan(.fake_con(), 1L, "2017-01-01", "2024-12-31",
-                               cache_dir = ".", n_plots = 5L),
+                               cache_dir = ".", n_plots = 5L, apply_zone_mask = FALSE),
     class = "nemeton_empty_alert_mask")
 })
 
@@ -146,6 +147,39 @@ test_that("create_trend_sanitary_plan: n_control = 0 -> sanitary only", {
     .package = "nemeton")
   plan <- suppressMessages(create_trend_sanitary_plan(
     .fake_con(), 1L, "2017-01-01", "2024-12-31", cache_dir = ".",
-    n_plots = 6L, n_control = 0L, seed = 1L))
+    n_plots = 6L, n_control = 0L, seed = 1L, apply_zone_mask = FALSE))
   expect_setequal(unique(plan$type), "Sanitaire")
+})
+
+
+# ---- the plan MUST stay inside the zone ------------------------------
+
+test_that("create_trend_sanitary_plan refuses to draw without a zone mask", {
+  skip_if_not_installed("terra")
+  # apply_zone_mask = TRUE (default) but the FakeConn cannot resolve the zone
+  # polygon -> typed error instead of a silent full-tile draw. (read_fast_
+  # alert_raster is never reached, so no mock is needed.)
+  expect_error(
+    create_trend_sanitary_plan(.fake_con(), 1L, "2017-01-01", "2024-12-31",
+                               cache_dir = ".", n_plots = 5L),
+    class = "nemeton_zone_mask_unresolved")
+})
+
+
+test_that("create_trend_sanitary_plan accepts an explicit mask_polygon", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  skip_if_not_installed("spsurvey")
+  # An explicit mask_polygon satisfies the "must stay in zone" guard without
+  # any DB round-trip (the path the app should use).
+  poly <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 0, ymin = 0, xmax = 200, ymax = 200), crs = 2154)))
+  testthat::local_mocked_bindings(
+    read_fast_alert_raster = function(con, zone_id, ...) make_trend_raster(),
+    .package = "nemeton")
+  plan <- suppressMessages(create_trend_sanitary_plan(
+    .fake_con(), 1L, "2017-01-01", "2024-12-31", cache_dir = ".",
+    n_plots = 5L, n_control = 2L, mask_polygon = poly, seed = 1L))
+  expect_s3_class(plan, "sf")
+  expect_true(any(plan$type == "Sanitaire"))
 })

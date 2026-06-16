@@ -257,7 +257,13 @@ create_validation_sampling_plan <- function(zone,
 #'   identical in meaning and default to [read_fast_alert_raster()]
 #'   `mode = "trend"`.
 #' @param apply_zone_mask,mask_polygon UGF mask, forwarded to
-#'   [read_fast_alert_raster()].
+#'   [read_fast_alert_raster()]. When `apply_zone_mask = TRUE` (default) the
+#'   plan **must** stay inside the zone: the polygon is resolved up front
+#'   (from `mask_polygon`, else `con` / `zone_id`) and the function aborts
+#'   with a typed `nemeton_zone_mask_unresolved` error if it cannot be
+#'   obtained — it never falls back to sampling the full S2 tile. Pass
+#'   `mask_polygon` explicitly (the zone `sf` you already hold) to skip the
+#'   DB round-trip.
 #' @param seed Integer or `NULL`. Makes the GRTS draw reproducible.
 #'
 #' @return An `sf` POINT object in EPSG:2154 with columns `plot_id`
@@ -316,7 +322,26 @@ create_trend_sanitary_plan <- function(con, zone_id,
     set.seed(as.integer(seed))
   }
 
-  # --- 1. Continuous trend raster (|slope| if significant, 0 stable, NA few)
+  # --- 1. Resolve the UGF mask up front and REQUIRE it --------------------
+  # A sanitary plan must stay inside the monitoring zone. `read_fast_alert_
+  # raster()` silently returns an UNMASKED, full-tile raster when the zone
+  # polygon can't be resolved (`.apply_zone_mask(r, NULL)` is a no-op), which
+  # would make GRTS scatter plots across the whole S2 tile (~100 km) instead
+  # of the UGF. Resolve the polygon here and abort loudly if missing, rather
+  # than drawing a tile-wide plan.
+  if (isTRUE(apply_zone_mask)) {
+    mask_polygon <- mask_polygon %||% tryCatch(
+      .get_zone_aoi(con, zone_id), error = function(e) NULL)
+    if (is.null(mask_polygon)) {
+      cli::cli_abort(
+        c("Could not resolve the UGF mask polygon for zone {.val {zone_id}}.",
+          i = "A sanitary plan must stay inside the zone; refusing to sample the full tile.",
+          i = "Pass {.arg mask_polygon} explicitly, or check the zone geometry ({.field zone_wkt})."),
+        class = "nemeton_zone_mask_unresolved")
+    }
+  }
+
+  # --- 2. Continuous trend raster (|slope| if significant, 0 stable, NA few)
   cont <- read_fast_alert_raster(
     con, zone_id, index = index, date_from = date_from, date_to = date_to,
     mode = "trend", months = months, min_years = min_years,
@@ -330,7 +355,7 @@ create_trend_sanitary_plan <- function(con, zone_id,
       class = "nemeton_empty_alert_mask")
   }
 
-  # --- 2. Significant-decline priority (value > 0), weighted by |slope| ----
+  # --- 3. Significant-decline priority (value > 0), weighted by |slope| ----
   priority  <- terra::ifel(cont > 0, cont, NA_real_)
   n_decline <- sum(!is.na(terra::values(priority)))
   if (n_decline == 0L) {
@@ -340,7 +365,7 @@ create_trend_sanitary_plan <- function(con, zone_id,
       class = "nemeton_empty_alert_mask")
   }
 
-  # --- 3. Continuous-probability GRTS for the sanitary plots ---------------
+  # --- 4. Continuous-probability GRTS for the sanitary plots ---------------
   sanitary_pts <- .draw_grts_continuous(priority, n_plots, seed = seed)
   if (is.null(sanitary_pts) || nrow(sanitary_pts) == 0L) {
     cli::cli_abort(
@@ -349,7 +374,7 @@ create_trend_sanitary_plan <- function(con, zone_id,
       class = "nemeton_empty_alert_mask")
   }
 
-  # --- 4. Equiprobable controls on the STABLE cells (trend == 0) -----------
+  # --- 5. Equiprobable controls on the STABLE cells (trend == 0) -----------
   control_pts <- if (n_control > 0L) {
     stable <- terra::ifel(cont == 0, 0, NA_real_)
     if (sum(!is.na(terra::values(stable))) == 0L) {
@@ -362,7 +387,7 @@ create_trend_sanitary_plan <- function(con, zone_id,
     }
   } else NULL
 
-  # --- 5. Assemble — sanitary first, by DESCENDING severity (no TSP) -------
+  # --- 6. Assemble — sanitary first, by DESCENDING severity (no TSP) -------
   sanitary_pts <- sanitary_pts[order(-sanitary_pts$alert_value), , drop = FALSE]
   sanitary_pts$plot_id <- sprintf("S%02d", seq_len(nrow(sanitary_pts)))
   sanitary_pts$type    <- "Sanitaire"

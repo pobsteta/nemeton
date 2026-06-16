@@ -10,6 +10,19 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.88.1] - 2026-06-16
+
+### Fixed
+
+- `create_trend_sanitary_plan()` no longer scatters plots across the whole S2
+  tile when the UGF mask can't be resolved. `read_fast_alert_raster()` returns
+  an unmasked full-tile raster on a NULL zone polygon (a no-op mask), so the
+  GRTS draw ran tile-wide instead of inside the zone. The function now resolves
+  the polygon up front (from `mask_polygon`, else `con`/`zone_id`) and aborts
+  with a typed `nemeton_zone_mask_unresolved` error if it cannot — never a
+  silent tile-wide draw. Pass `mask_polygon` explicitly to skip the DB lookup
+  and guarantee containment.
+
 ## [0.88.0] - 2026-06-16
 
 ### Added
