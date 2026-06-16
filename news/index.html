@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.88.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.88.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.88.1" id="nemeton-0881-2026-06-16">nemeton 0.88.1 (2026-06-16)<a class="anchor" aria-label="anchor" href="#nemeton-0881-2026-06-16"></a></h2>
+<div class="section level4">
+<h4 id="fixed--create_trend_sanitary_plan-tirait-hors-de-la-zone-de-suivi-0-88-1">Fixed — <code>create_trend_sanitary_plan()</code> tirait hors de la zone de suivi<a class="anchor" aria-label="anchor" href="#fixed--create_trend_sanitary_plan-tirait-hors-de-la-zone-de-suivi-0-88-1"></a></h4>
+<p>Quand le polygone UGF ne pouvait pas être résolu, <code><a href="../reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> renvoie le raster trend <strong>pleine tuile non masqué</strong> (<code>.apply_zone_mask(r, NULL)</code> est un no-op), et le tirage GRTS dispersait alors les placettes sanitaires <strong>sur toute la tuile Sentinel-2 (~100 km)</strong> au lieu de l’UGF — avec des <code>alert_value</code> quasi nuls (pixels marginaux pris partout). Pour un plan d’échantillonnage, ce repli silencieux est dangereux.</p>
+<p><code><a href="../reference/create_trend_sanitary_plan.html">create_trend_sanitary_plan()</a></code> <strong>exige</strong> désormais le masque : le polygone est résolu en amont (depuis <code>mask_polygon</code>, sinon <code>con</code>/<code>zone_id</code>) et la fonction <strong>échoue clairement</strong> avec une erreur typée <code>nemeton_zone_mask_unresolved</code> si le masque est introuvable, au lieu de tirer sur la tuile entière. Recommandé : passer <code>mask_polygon</code> explicitement (le <code>sf</code> de la zone déjà disponible côté app) pour éviter l’aller-retour DB <strong>et</strong> garantir le confinement à la zone. Tests : <code>test-trend-sanitary-plan.R</code> (refus sans masque résoluble, acceptation d’un <code>mask_polygon</code> explicite).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.88.0" id="nemeton-0880-2026-06-16">nemeton 0.88.0 (2026-06-16)<a class="anchor" aria-label="anchor" href="#nemeton-0880-2026-06-16"></a></h2>
 <div class="section level4">

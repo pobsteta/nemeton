@@ -827,6 +827,31 @@ cœur).
 
 ## Journal
 
+### 2026-06-16 — Fix : `create_trend_sanitary_plan()` tirait hors de la zone (spec 025, cœur, v0.88.1)
+
+Bug remonté en prod (app, écran « Plan de validation FAST ») : les
+placettes sanitaires apparaissent **dispersées sur toute la tuile S2
+(~100 km)**, pas dans l’UGF (petit polygone), avec `alert_value` ≈
+0.0001. **Cause** : quand le polygone UGF n’est pas résolu
+(`poly = NULL`), `.apply_zone_mask(r, NULL)` est un **no-op** →
+`read_fast_alert_raster(mode="trend")` renvoie le raster **pleine tuile
+non masqué** → `create_trend_sanitary_plan` tire GRTS partout. Pour un
+plan d’échantillonnage, ce repli silencieux est inacceptable. **Fix** :
+la fonction **résout le masque en amont**
+(`mask_polygon %||% .get_zone_aoi(con, zone_id)`) et **abort** avec
+l’erreur typée `nemeton_zone_mask_unresolved` si introuvable, au lieu de
+tirer sur la tuile ; le polygone résolu est passé explicitement à
+`read_fast_alert_raster`. Recommandation app : passer
+`mask_polygon = <zone sf>` (déjà disponible — la zone est dessinée) →
+confinement garanti, pas d’aller- retour DB. Tests : refus sans masque
+résoluble (`nemeton_zone_mask_unresolved`), acceptation d’un
+`mask_polygon` explicite ; appels mockés passés en
+`apply_zone_mask = FALSE`. Suite `test-trend-sanitary-plan.R` 26 verte.
+Doc + spec 025 amendées. **Note connexe** (non corrigée ici) :
+`alert_value` minuscule = significativité Mann-Kendall très sensible sur
+séries longues — à recalibrer si besoin une fois le masque correct (les
+`|pente|` intra-zone seront plus parlants).
+
 ### 2026-06-16 — Added : `create_trend_sanitary_plan()` — placettes sanitaires sur le trend (spec 025, cœur, v0.88.0)
 
 Demande : calculer le plan de validation **sur le trend NDRE** avec

@@ -1,5 +1,28 @@
 # Changelog
 
+## nemeton 0.88.1 (2026-06-16)
+
+#### Fixed — `create_trend_sanitary_plan()` tirait hors de la zone de suivi
+
+Quand le polygone UGF ne pouvait pas être résolu,
+[`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md)
+renvoie le raster trend **pleine tuile non masqué**
+(`.apply_zone_mask(r, NULL)` est un no-op), et le tirage GRTS dispersait
+alors les placettes sanitaires **sur toute la tuile Sentinel-2 (~100
+km)** au lieu de l’UGF — avec des `alert_value` quasi nuls (pixels
+marginaux pris partout). Pour un plan d’échantillonnage, ce repli
+silencieux est dangereux.
+
+[`create_trend_sanitary_plan()`](https://pobsteta.github.io/nemeton/reference/create_trend_sanitary_plan.md)
+**exige** désormais le masque : le polygone est résolu en amont (depuis
+`mask_polygon`, sinon `con`/`zone_id`) et la fonction **échoue
+clairement** avec une erreur typée `nemeton_zone_mask_unresolved` si le
+masque est introuvable, au lieu de tirer sur la tuile entière.
+Recommandé : passer `mask_polygon` explicitement (le `sf` de la zone
+déjà disponible côté app) pour éviter l’aller-retour DB **et** garantir
+le confinement à la zone. Tests : `test-trend-sanitary-plan.R` (refus
+sans masque résoluble, acceptation d’un `mask_polygon` explicite).
+
 ## nemeton 0.88.0 (2026-06-16)
 
 #### Added — `create_trend_sanitary_plan()` : placettes sanitaires sur le `trend` (spec 025)
