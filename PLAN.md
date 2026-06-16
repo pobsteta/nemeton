@@ -549,6 +549,37 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-06-16 — Added : `create_trend_sanitary_plan()` — placettes sanitaires sur le trend (spec 025, cœur, v0.88.0)
+
+Demande : calculer le plan de validation **sur le trend NDRE** avec GRTS,
+**mais** — précision de Pascal en cours de route — ce sont des **placettes
+SANITAIRES autonomes**, **aucun rapport avec les placettes terrain**, et **pas
+de TSP**. Paperwork-first : spec 025 rédigée (`specs/025-trend-validation-
+sampling/spec.md`) avant code. **Livré** : `create_trend_sanitary_plan(con,
+zone_id, date_from, date_to, cache_dir, index="NDRE", n_plots=20, n_control=5,
+months=6:9, min_years=4, min_obs_per_year=2, alpha=0.05, apply_zone_mask,
+mask_polygon, seed)`. Méthode : (1) raster trend continu via
+`read_fast_alert_raster(mode="trend")` (NULL → erreur typée
+`nemeton_empty_alert_mask`) ; (2) cellules `value>0` = candidats sanitaires
+pondérés par `|pente|` ; (3) **GRTS à probabilité continue** `spsurvey::grts(…,
+aux_var="alert_value")` (nouveau helper `.draw_grts_continuous()`) — l'inclusion
+suit la magnitude brute du déclin, pas une classe quartile ; (4) témoins
+équiprobables sur cellules stables `value==0` (`.draw_grts_equiprobable`
+réutilisé ; NA = années insuffisantes, exclu) ; (5) assemblage **trié par
+sévérité décroissante** (`S01`=plus fort), **sans tournée TSP**, sans toucher la
+table `plot`. Sortie `sf` : `plot_id` (`S##`/`T##`), `type`
+(`Sanitaire`/`Temoin`), `alert_value`, `index`, `source="FAST_TREND"`, `seed` —
+**pas** d'`visit_order`. Cohérence : `alert_value` == `extract_pixel_trend(xy)
+$alert_value` == valeur pré-quartile du raster (même `|pente|` partout). Doc à la
+main (`man/create_trend_sanitary_plan.Rd`, NAMESPACE, `_pkgdown.yml`). Tests
+`test-trend-sanitary-plan.R` (23) : helper GRTS continu sur cellules >0, plan
+Sanitaire+Temoin (pas de `visit_order`, tri décroissant, S01 max, témoins=0),
+repro seed, `n_control=0`, erreurs typées (pas de déclin / raster NULL).
+Validation terrain (spec 014) **inchangée** (27 verts). Côté app : sélecteur
+indice trend + bouton « plan sanitaire » → `create_trend_sanitary_plan`,
+affichage carte des `S##`/`T##` (couleur ∝ `alert_value`), plancher
+`nemeton (>= 0.88.0)`.
+
 ### 2026-06-16 — Added : `extract_pixel_trend()` — diagnostic trend au pixel cliqué (spec 023, cœur, v0.87.0)
 
 Brief CŒUR transmis depuis la session `nemetonshiny` (parité avec

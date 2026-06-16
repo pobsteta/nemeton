@@ -1,3 +1,37 @@
+# nemeton 0.88.0 (2026-06-16)
+
+### Added — `create_trend_sanitary_plan()` : placettes sanitaires sur le `trend` (spec 025)
+
+Tirage de **placettes sanitaires** sur le raster `trend` d'un indice (défaut
+NDRE), avec un **GRTS à probabilité d'inclusion continue** pondérée par la
+**magnitude du déclin** (`|pente|` Theil-Sen, NDRE/an) via `spsurvey::grts(…,
+aux_var)` : plus le déclin chronique est marqué, plus la probabilité de
+sélection est forte. Placettes témoins optionnelles tirées en équiprobable sur
+les cellules **stables** (`trend == 0`).
+
+**Distinct du plan terrain** : ce plan est **autonome**, **sans aucun rapport**
+avec les placettes terrain / d'inventaire (`plot`, `create_sampling_plan`,
+`create_validation_sampling_plan`). Il ne lit jamais la table `plot` et **ne
+calcule pas de tournée TSP** — les placettes sont renvoyées triées par
+**sévérité de déclin décroissante** (`S01` = plus fort), pas par un parcours de
+marche.
+
+Contrairement à `create_validation_sampling_plan()` (qui discrétise un masque
+0-4 et pondère par classe), on pondère par le `|pente|` **brut** : un pixel à
+0.04 NDRE/an est prioritaire sur un 0.012 même dans la même classe quartile. Le
+raster trend est lu via `read_fast_alert_raster(mode = "trend")` (scène par
+scène par tuile puis mosaïque sur grille commune → immunisé contre le bug
+multi-tuiles, v0.85.1), masque UGF déjà appliqué.
+
+Sortie `sf` POINT : `plot_id` (`S##`/`T##`), `type` (`"Sanitaire"`/`"Temoin"`),
+`alert_value` (`|pente|` au pixel, `0` témoin), `index`, `source =
+"FAST_TREND"`, `seed` — **sans `visit_order`**. Erreur typée
+`nemeton_empty_alert_mask` quand aucune cellule en déclin significatif. Helper
+interne `.draw_grts_continuous()` (GRTS `aux_var`). `alert_value` au pixel ==
+`extract_pixel_trend(xy)$alert_value` == valeur pré-quartile du raster. Tests :
+`test-trend-sanitary-plan.R` (déclin pondéré, tri décroissant, témoins stables,
+reproductibilité seed, `n_control=0`, erreurs typées).
+
 # nemeton 0.87.0 (2026-06-16)
 
 ### Added — `extract_pixel_trend()` : diagnostic trend au pixel cliqué
