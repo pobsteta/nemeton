@@ -218,6 +218,173 @@ create_validation_sampling_plan <- function(zone,
 }
 
 
+#' Create a SANITARY plot plan on the multi-year `trend` (spec 025)
+#'
+#' Draws **placettes sanitaires** over the FAST `trend` raster of a
+#' spectral index (default NDRE), weighting inclusion by the **continuous**
+#' decline magnitude (`|slope|`, NDRE/yr) via an unequal-probability GRTS —
+#' the steeper the chronic decline, the higher the inclusion probability.
+#' Optional control plots are drawn on the **stable** cells.
+#'
+#' This is a **standalone sanitary plan**: it has **no relationship** with
+#' the terrain / inventory plots (`plot` table, [create_sampling_plan()],
+#' [create_validation_sampling_plan()]). It never reads the `plot` table and,
+#' unlike the terrain validation plan, it does **not** compute a TSP walking
+#' tour — the sanitary plots are returned ordered by **descending decline
+#' severity** (`S01` = steepest), not by a field-campaign route.
+#'
+#' Unlike [create_validation_sampling_plan()] (which discretises any 0-4 mask
+#' and weights by class), this weights by the raw `|slope|`, so a pixel
+#' declining at 0.04 NDRE/yr is prioritised over one at 0.012 even if both
+#' land in the same quartile class. The trend raster is read via
+#' [read_fast_alert_raster()] `mode = "trend"` (scene-by-scene per tile then a
+#' common-grid mosaic — immune to the multi-tile resolution bug), with the UGF
+#' mask already applied.
+#'
+#' @param con A `DBIConnection`. Used **only** to resolve the UGF zone
+#'   polygon (the mask) — never for plot / inventory data.
+#' @param zone_id Integer scalar. Existing zone in `monitoring_zone`.
+#' @param date_from,date_to Date or character `"YYYY-MM-DD"` bounding the
+#'   trend window (typically several years).
+#' @param cache_dir Character scalar. COG cache root (must exist).
+#' @param index One of `"NDRE"` (default), `"NDMI"`, `"NDVI"`, `"NBR"`.
+#' @param n_plots Integer. Target number of sanitary plots on the declining
+#'   cells. Default `20L`. **Target only** (GRTS may return fewer on a small
+#'   frame).
+#' @param n_control Integer. Target number of control plots on the stable
+#'   cells (`trend == 0`). Default `5L`; `0` to skip.
+#' @param months,min_years,min_obs_per_year,alpha Trend parameters,
+#'   identical in meaning and default to [read_fast_alert_raster()]
+#'   `mode = "trend"`.
+#' @param apply_zone_mask,mask_polygon UGF mask, forwarded to
+#'   [read_fast_alert_raster()].
+#' @param seed Integer or `NULL`. Makes the GRTS draw reproducible.
+#'
+#' @return An `sf` POINT object in EPSG:2154 with columns `plot_id`
+#'   (`S01…` sanitary, `T01…` control), `type` (`"Sanitaire"` / `"Temoin"`),
+#'   `alert_value` (the `|slope|` at the plot; `0` for controls), `index`,
+#'   `source` (`"FAST_TREND"`) and `seed`. Sanitary plots come first, ordered
+#'   by descending `alert_value`. **No `visit_order` column** (no TSP).
+#'
+#' @section Edge case — nothing to validate:
+#' When the trend raster is empty (no in-season scene / too few years) or
+#' holds no significant decline (every cell `0` or `NA`), the function raises
+#' a typed `nemeton_empty_alert_mask` error so the app can render a clean
+#' \dQuote{Aucun déclin significatif} message.
+#'
+#' @seealso [read_fast_alert_raster()] (`mode = "trend"`),
+#'   [extract_pixel_trend()] (the per-pixel diagnostic behind `alert_value`),
+#'   [create_validation_sampling_plan()] (the separate terrain plan).
+#'
+#' @examples
+#' \dontrun{
+#'   con <- db_connect(Sys.getenv("NEMETON_DB_URL"))
+#'   on.exit(db_disconnect(con), add = TRUE)
+#'   plan <- create_trend_sanitary_plan(
+#'     con, zone_id = 1L, index = "NDRE",
+#'     date_from = "2017-01-01", date_to = "2024-12-31",
+#'     cache_dir = "/proj/cache/layers/sentinel2",
+#'     n_plots = 20L, n_control = 5L, seed = 42L)
+#'   table(plan$type)
+#' }
+#'
+#' @export
+create_trend_sanitary_plan <- function(con, zone_id,
+                                       date_from, date_to, cache_dir,
+                                       index = c("NDRE", "NDMI", "NDVI", "NBR"),
+                                       n_plots          = 20L,
+                                       n_control        = 5L,
+                                       months           = 6:9,
+                                       min_years        = 4L,
+                                       min_obs_per_year = 2L,
+                                       alpha            = 0.05,
+                                       apply_zone_mask  = TRUE,
+                                       mask_polygon     = NULL,
+                                       seed             = NULL) {
+  index <- match.arg(index)
+  if (!requireNamespace("terra", quietly = TRUE)) {
+    cli::cli_abort("Package {.pkg terra} required.")
+  }
+  n_plots   <- as.integer(n_plots)
+  n_control <- as.integer(n_control)
+  if (n_plots < 1L)   cli::cli_abort("{.arg n_plots} must be >= 1.")
+  if (n_control < 0L) cli::cli_abort("{.arg n_control} must be >= 0.")
+  if (!is.null(seed)) {
+    if (!is.numeric(seed) || length(seed) != 1L || is.na(seed)) {
+      cli::cli_abort("{.arg seed} must be a single integer or NULL.")
+    }
+    set.seed(as.integer(seed))
+  }
+
+  # --- 1. Continuous trend raster (|slope| if significant, 0 stable, NA few)
+  cont <- read_fast_alert_raster(
+    con, zone_id, index = index, date_from = date_from, date_to = date_to,
+    mode = "trend", months = months, min_years = min_years,
+    min_obs_per_year = min_obs_per_year, alpha = alpha, cache_dir = cache_dir,
+    apply_zone_mask = apply_zone_mask, mask_polygon = mask_polygon,
+    cache_result = FALSE)
+  if (is.null(cont)) {
+    cli::cli_abort(
+      c("No usable {.field {index}} trend raster for zone {.val {zone_id}}.",
+        i = "No in-season scene in the window, or fewer than {min_years} valid years."),
+      class = "nemeton_empty_alert_mask")
+  }
+
+  # --- 2. Significant-decline priority (value > 0), weighted by |slope| ----
+  priority  <- terra::ifel(cont > 0, cont, NA_real_)
+  n_decline <- sum(!is.na(terra::values(priority)))
+  if (n_decline == 0L) {
+    cli::cli_abort(
+      c("No significant {.field {index}} decline in zone {.val {zone_id}}.",
+        i = "Every pixel is stable (trend value 0) or has too few years (NA)."),
+      class = "nemeton_empty_alert_mask")
+  }
+
+  # --- 3. Continuous-probability GRTS for the sanitary plots ---------------
+  sanitary_pts <- .draw_grts_continuous(priority, n_plots, seed = seed)
+  if (is.null(sanitary_pts) || nrow(sanitary_pts) == 0L) {
+    cli::cli_abort(
+      c("Failed to draw any sanitary plot from the {.field {index}} trend.",
+        i = "Check that {.pkg spsurvey} is installed and the decline mask has enough cells."),
+      class = "nemeton_empty_alert_mask")
+  }
+
+  # --- 4. Equiprobable controls on the STABLE cells (trend == 0) -----------
+  control_pts <- if (n_control > 0L) {
+    stable <- terra::ifel(cont == 0, 0, NA_real_)
+    if (sum(!is.na(terra::values(stable))) == 0L) {
+      cli::cli_warn(c(
+        "No stable (trend value 0) cell to draw controls from in zone {.val {zone_id}}.",
+        i = "Skipping {n_control} control plot{?s}."))
+      NULL
+    } else {
+      .draw_grts_equiprobable(stable, n_control, seed = seed)
+    }
+  } else NULL
+
+  # --- 5. Assemble — sanitary first, by DESCENDING severity (no TSP) -------
+  sanitary_pts <- sanitary_pts[order(-sanitary_pts$alert_value), , drop = FALSE]
+  sanitary_pts$plot_id <- sprintf("S%02d", seq_len(nrow(sanitary_pts)))
+  sanitary_pts$type    <- "Sanitaire"
+  keep <- c("plot_id", "type", "alert_value", "geometry")
+
+  if (!is.null(control_pts) && nrow(control_pts) > 0L) {
+    control_pts$plot_id     <- sprintf("T%02d", seq_len(nrow(control_pts)))
+    control_pts$type        <- "Temoin"
+    control_pts$alert_value <- 0
+    plan <- rbind(sanitary_pts[, keep], control_pts[, keep])
+  } else {
+    plan <- sanitary_pts[, keep]
+  }
+
+  plan$index  <- index
+  plan$source <- "FAST_TREND"
+  plan$seed   <- if (is.null(seed)) NA_integer_ else as.integer(seed)
+  plan[, c("plot_id", "type", "alert_value", "index", "source", "seed",
+           "geometry"), drop = FALSE]
+}
+
+
 # ---- internal helpers ------------------------------------------------
 
 # Draw `n` points with inclusion probability proportional to the cell
@@ -295,6 +462,52 @@ create_validation_sampling_plan <- function(zone,
   # Keep only what we need; alert_class comes from caty back-mapped to int.
   sites$alert_class <- as.integer(sites$caty)
   sites[, c("alert_class", "geometry"), drop = FALSE]
+}
+
+
+# spec 025 — draw `n` points with inclusion probability proportional to the
+# CONTINUOUS cell value (`|slope|`) of `priority_raster` (NA = excluded), via
+# spsurvey's unequal-probability `aux_var`. Counterpart of
+# `.draw_grts_weighted()` (which bins to discrete classes first): here the
+# raw magnitude drives inclusion, so the steepest declines are favoured
+# proportionally — without losing resolution to quartile classes. Returns an
+# `sf` POINT in the raster CRS with the `alert_value` column preserved.
+.draw_grts_continuous <- function(priority_raster, n, seed = NULL) {
+  if (!requireNamespace("spsurvey", quietly = TRUE)) {
+    cli::cli_abort(c(
+      "Package {.pkg spsurvey} required for continuous-probability GRTS.",
+      i = "Install with {.code install.packages(\"spsurvey\")}."
+    ))
+  }
+  pts <- terra::as.points(priority_raster, values = TRUE, na.rm = TRUE)
+  pts_sf <- sf::st_as_sf(pts)
+  names(pts_sf)[1L] <- "alert_value"
+  pts_sf$alert_value <- as.numeric(pts_sf$alert_value)
+  if (nrow(pts_sf) == 0L) return(NULL)
+  n <- min(as.integer(n), nrow(pts_sf))
+
+  out <- NULL
+  log_capture <- character(0)
+  tryCatch({
+    log_capture <- utils::capture.output({
+      # `aux_var` = the continuous decline magnitude -> inclusion probability
+      # proportional to it (spsurvey normalises internally). Values are
+      # strictly positive by construction (priority = trend > 0).
+      out <- suppressMessages(spsurvey::grts(
+        sframe = pts_sf, n_base = n, aux_var = "alert_value"))
+    })
+  }, error = function(e) {
+    cli::cli_warn(c(
+      "spsurvey::grts (continuous) failed: {.val {conditionMessage(e)}}.",
+      i = "stdout: {.val {paste(log_capture, collapse = ' | ')}}"
+    ))
+  })
+  if (is.null(out)) return(NULL)
+
+  sites <- out$sites_base
+  if (is.null(sites) || nrow(sites) == 0L) return(NULL)
+  sites$alert_value <- as.numeric(sites$alert_value)
+  sites[, c("alert_value", "geometry"), drop = FALSE]
 }
 
 

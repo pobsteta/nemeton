@@ -317,6 +317,7 @@ reference:
     - create_monitoring_zone
     - create_qgis_project
     - create_sampling_plan
+    - create_trend_sanitary_plan
     - create_validation_sampling_plan
     - cv_from_bdforet
     - cv_lookup
