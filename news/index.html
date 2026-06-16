@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.85.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.85.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.85.1" id="nemeton-0851-2026-06-16">nemeton 0.85.1 (2026-06-16)<a class="anchor" aria-label="anchor" href="#nemeton-0851-2026-06-16"></a></h2>
+<div class="section level4">
+<h4 id="fixed--mosaic-multi-tuiles-ndre-m-mosaic-resolution-does-not-match-0-85-1">Fixed — mosaic multi-tuiles NDRE 20 m (<code>[mosaic] resolution does not match</code>)<a class="anchor" aria-label="anchor" href="#fixed--mosaic-multi-tuiles-ndre-m-mosaic-resolution-does-not-match-0-85-1"></a></h4>
+<p><code><a href="../reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> / <code><a href="../reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> échouaient avec <code>[mosaic] resolution does not match</code> pour <code>index = "NDRE"</code> (et tout indice 20 m) lorsque la zone chevauche <strong>plusieurs tuiles MGRS</strong> (ex. T31TFM + T31TGM). Cause : chaque raster d’alerte par-tuile était projeté vers EPSG:2154 <strong>indépendamment</strong> (<code>terra::project(rn, "EPSG:2154")</code> sans grille cible), terra dérivant alors une résolution de sortie propre à l’étendue de chaque tuile. Deux tuiles natives 20 m (bandes B8A/B05 du NDRE) tombaient sur des résolutions très légèrement différentes → <code><a href="https://rspatial.github.io/terra/reference/mosaic.html" class="external-link">terra::mosaic()</a></code> refusait de les fusionner. Le NDVI/NDMI 10 m ne reproduisait pas le bug (les tuiles arrondissaient par chance à la même résolution).</p>
+<p>Nouveau helper interne <code>.mosaic_per_tile()</code> : avant la mosaïque, les rasters par-tuile sont <strong>rééchantillonnés sur une grille EPSG:2154 commune</strong> (la résolution de la première tuile, étendue union snappée sur des multiples de cette résolution, même origine), de sorte que la mosaïque est bien définie quelle que soit la dérive de projection inter-tuiles. Aucun changement pour les zones mono-tuile ni pour les indices 10 m. Régression : <code>test-fast-alert-raster.R</code> (snap de deux tuiles à résolutions 20 / 20,05 que <code><a href="https://rspatial.github.io/terra/reference/mosaic.html" class="external-link">terra::mosaic()</a></code> rejetait, mosaïque OK à résolution unique + étendue union).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.85.0" id="nemeton-0850-2026-06-15">nemeton 0.85.0 (2026-06-15)<a class="anchor" aria-label="anchor" href="#nemeton-0850-2026-06-15"></a></h2>
 <div class="section level4">

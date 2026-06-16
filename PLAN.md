@@ -827,6 +827,41 @@ cœur).
 
 ## Journal
 
+### 2026-06-16 — Fix : mosaic multi-tuiles NDRE 20 m (`resolution does not match`, spec 023, cœur, v0.85.1)
+
+Bug remonté en prod (zones 5/6/7, cache `…/20260517_103553_vyso`, NDRE
+trend, 2017→2024) :
+`compute_fast_alert_mask(index="NDRE", mode="trend")` plante avec
+`[mosaic] resolution does not match` quand la zone chevauche **2 tuiles
+MGRS** (T31TFM + T31TGM), bandes B05/B8A en cache à 20 m. **Cause** :
+dans le chemin multi-tuiles de
+[`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md),
+chaque raster d’alerte par-tuile est projeté vers EPSG:2154
+**indépendamment** (`terra::project(rn, "EPSG:2154")` sans grille cible)
+→ terra dérive une résolution de sortie propre à l’étendue de chaque
+tuile ; deux tuiles 20 m tombent sur des résolutions très légèrement
+différentes et
+[`terra::mosaic()`](https://rspatial.github.io/terra/reference/mosaic.html)
+refuse de fusionner. Le 10 m (NDVI/NDMI) ne reproduisait pas (arrondi
+par chance à la même résolution → mosaïque combinée réussie). **Fix** :
+nouveau helper interne `.mosaic_per_tile(rasters, method)` qui
+**rééchantillonne toutes les tuiles sur une grille EPSG:2154 commune**
+(résolution de la 1ʳᵉ tuile, étendue union **snappée** sur des multiples
+de cette résolution — `terra::rast(ext, resolution=)` triche sinon la
+résolution pour diviser un extent quelconque, ré-introduisant la dérive
+— puis
+[`terra::resample()`](https://rspatial.github.io/terra/reference/resample.html)
+méthode mode-dépendante) avant `mosaic(fun="max")`. Mono- tuile et
+indices 10 m **inchangés**. Régression `test-fast-alert-raster.R` : deux
+tuiles EPSG:2154 à résolutions 20 / 20,05 que
+[`terra::mosaic()`](https://rspatial.github.io/terra/reference/mosaic.html)
+rejette (`expect_error`) → helper rend une mosaïque à résolution unique
+20, étendue union, valeurs des deux tuiles préservées. **Drive-by** :
+durci le skip du smoke-test villards (DB joignable mais schéma absent →
+**skip** au lieu d’**error**). Tests verts (terra local) :
+fast-alert-raster 56 (+1 skip), fast-trend 49, ndre 20, ndmi 20, prewarm
+31.
+
 ### 2026-06-15 — FAST : wrapper étendu au `trend` + red-edge systématique (spec 023, cœur, v0.85.0)
 
 Complément à la v0.84.0 (pré-chauffe `trend`, PR \#75 mergée en

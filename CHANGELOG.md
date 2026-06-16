@@ -12,6 +12,25 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.85.1\] - 2026-06-16
+
+### Fixed
+
+- [`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md)
+  /
+  [`compute_fast_alert_mask()`](https://pobsteta.github.io/nemeton/reference/compute_fast_alert_mask.md)
+  no longer abort with `[mosaic] resolution does not match` for 20 m
+  indices (NDRE) when the zone straddles several MGRS tiles (T31TFM +
+  T31TGM). Per-tile alert rasters were projected to EPSG:2154
+  independently, so terra picked a per-tile output resolution and two 20
+  m tiles drifted apart; the new internal helper `.mosaic_per_tile()`
+  resamples every tile onto one common EPSG:2154 grid (first tile’s
+  resolution, snapped union extent) before mosaicking. Single- tile
+  zones and 10 m indices are unaffected.
+- Hardened the opportunistic villards smoke test in
+  `test-fast-alert-raster.R` to skip (instead of error) when a reachable
+  DB lacks the nemeton schema.
+
 ## \[0.85.0\] - 2026-06-15
 
 ### Added

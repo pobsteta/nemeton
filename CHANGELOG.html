@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.85.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.85.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,6 +51,15 @@
 <h2 id="unreleased"><a href="https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD" class="external-link">Unreleased</a><a class="anchor" aria-label="anchor" href="#unreleased"></a></h2>
 </div>
 <div class="section level2">
+<h2 id="id_0851---2026-06-16">[0.85.1] - 2026-06-16<a class="anchor" aria-label="anchor" href="#id_0851---2026-06-16"></a></h2>
+<div class="section level3">
+<h3 id="fixed">Fixed<a class="anchor" aria-label="anchor" href="#fixed"></a></h3>
+<ul><li>
+<code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> / <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> no longer abort with <code>[mosaic] resolution does not match</code> for 20 m indices (NDRE) when the zone straddles several MGRS tiles (T31TFM + T31TGM). Per-tile alert rasters were projected to EPSG:2154 independently, so terra picked a per-tile output resolution and two 20 m tiles drifted apart; the new internal helper <code>.mosaic_per_tile()</code> resamples every tile onto one common EPSG:2154 grid (first tile’s resolution, snapped union extent) before mosaicking. Single- tile zones and 10 m indices are unaffected.</li>
+<li>Hardened the opportunistic villards smoke test in <code>test-fast-alert-raster.R</code> to skip (instead of error) when a reachable DB lacks the nemeton schema.</li>
+</ul></div>
+</div>
+<div class="section level2">
 <h2 id="id_0850---2026-06-15">[0.85.0] - 2026-06-15<a class="anchor" aria-label="anchor" href="#id_0850---2026-06-15"></a></h2>
 <div class="section level3">
 <h3 id="added">Added<a class="anchor" aria-label="anchor" href="#added"></a></h3>
@@ -75,7 +84,7 @@
 <div class="section level2">
 <h2 id="id_0833---2026-06-14">[0.83.3] - 2026-06-14<a class="anchor" aria-label="anchor" href="#id_0833---2026-06-14"></a></h2>
 <div class="section level3">
-<h3 id="fixed">Fixed<a class="anchor" aria-label="anchor" href="#fixed"></a></h3>
+<h3 id="fixed-1">Fixed<a class="anchor" aria-label="anchor" href="#fixed-1"></a></h3>
 <ul><li>
 <code><a href="reference/ingest_sentinel2_timeseries.html">ingest_sentinel2_timeseries()</a></code> and <code><a href="reference/ingest_s2_raw_bands_to_cache.html">ingest_s2_raw_bands_to_cache()</a></code> no longer require registered plots (spec 017). The S2 ingest is a placette-independent cache-priming step driven by the zone’s <code>zone_wkt</code> AOI, yet both paths still aborted with “No plots registered” — which broke cache priming for every zone created by <code><a href="reference/create_monitoring_zone.html">create_monitoring_zone()</a></code> / <code><a href="reference/build_project_monitoring_zones.html">build_project_monitoring_zones()</a></code> (geometry-only, no placettes, the app’s default since spec 017). They now resolve the zone AOI first and only fall back to the per-plot bbox when <code>zone_wkt</code> is absent; a zone with neither is still rejected. Regression covered by <code>test-aoi-alignment.R</code>.</li>
 </ul></div>
@@ -83,7 +92,7 @@
 <div class="section level2">
 <h2 id="id_0832---2026-06-14">[0.83.2] - 2026-06-14<a class="anchor" aria-label="anchor" href="#id_0832---2026-06-14"></a></h2>
 <div class="section level3">
-<h3 id="fixed-1">Fixed<a class="anchor" aria-label="anchor" href="#fixed-1"></a></h3>
+<h3 id="fixed-2">Fixed<a class="anchor" aria-label="anchor" href="#fixed-2"></a></h3>
 <ul><li>
 <code>.assert_cache_has_bands()</code> (NDRE guard, spec 022): pinned the cli pluralisation quantity with <code>{cli::qty(missing)}</code> so the abort no longer fails with “Multiple quantities for pluralization” when both red-edge bands (B05 + B8A) are missing. Covered by <code>test-ndre.R</code>.</li>
 </ul></div>
@@ -174,7 +183,7 @@
 <div class="section level2">
 <h2 id="id_0761---2026-06-13">[0.76.1] - 2026-06-13<a class="anchor" aria-label="anchor" href="#id_0761---2026-06-13"></a></h2>
 <div class="section level3">
-<h3 id="fixed-2">Fixed<a class="anchor" aria-label="anchor" href="#fixed-2"></a></h3>
+<h3 id="fixed-3">Fixed<a class="anchor" aria-label="anchor" href="#fixed-3"></a></h3>
 <ul><li>RAG corpus: 4 BILJOU PDFs are scanned images with no text layer (<code>pdf_text</code> → 0 chars) and failed full-text ingestion. Set to <code>link_only</code> (citable references) → prod corpus 81/81, 0 errors (56 full-text + 25 references, 6033 chunks). OCR would be required for full-text.</li>
 </ul></div>
 <div class="section level3">
@@ -254,7 +263,7 @@
 <div class="section level2">
 <h2 id="id_0741---2026-06-12">[0.74.1] - 2026-06-12<a class="anchor" aria-label="anchor" href="#id_0741---2026-06-12"></a></h2>
 <div class="section level3">
-<h3 id="fixed-3">Fixed<a class="anchor" aria-label="anchor" href="#fixed-3"></a></h3>
+<h3 id="fixed-4">Fixed<a class="anchor" aria-label="anchor" href="#fixed-4"></a></h3>
 <ul><li>
 <code>build_project_monitoring_zones(..., replace = TRUE)</code> no longer fails with <code>FOREIGN KEY constraint failed</code> when re-building a project whose zones already own child rows (validation plots, FORDEAD alerts) on the <strong>SQLite</strong> backend. Root cause: the SQLite schema (<code>0001_init.sql</code>) had dropped the <code>ON DELETE CASCADE</code> clauses that the PostgreSQL schema carries on <code>plot.zone_id → monitoring_zone(id)</code> and <code>alert.plot_id → plot(id)</code>, so the upsert’s <code>DELETE FROM monitoring_zone</code> was blocked under <code>PRAGMA foreign_keys = ON</code>. <code>.delete_project_zones()</code> now deletes the chain explicitly, child-first (<code>alert</code> → <code>plot</code> → <code>monitoring_zone</code>), in a single transaction — portable across both backends. No schema migration: adding the cascade on SQLite would require a table rebuild, incompatible with <code><a href="reference/db_migrate.html">db_migrate()</a></code>’s single wrapping transaction (<code>PRAGMA foreign_keys</code> is a no-op inside a transaction, and <code>defer_foreign_keys</code> does not clear the deferred violation left by the parent <code>DROP TABLE</code>).</li>
 </ul></div>
@@ -308,7 +317,7 @@
 <div class="section level2">
 <h2 id="id_0692---2026-06-11">[0.69.2] - 2026-06-11<a class="anchor" aria-label="anchor" href="#id_0692---2026-06-11"></a></h2>
 <div class="section level3">
-<h3 id="fixed-4">Fixed<a class="anchor" aria-label="anchor" href="#fixed-4"></a></h3>
+<h3 id="fixed-5">Fixed<a class="anchor" aria-label="anchor" href="#fixed-5"></a></h3>
 <ul><li>
 <code>.fast_raster_trend()</code> (FAST <code>mode = "trend"</code>, spec 023): a year with a single in-season scene yields a one-layer SpatRaster, on which <code>terra::app(sub, fun)</code> errors (“number of values returned by ‘fun’ is not appropriate”). Replaced by layer-count-robust cell-wise primitives (<code>nlyr - countNA</code>, <code><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">terra::median</a></code>). Covered by <code>test-fast-trend.R</code>.</li>
 </ul></div>
@@ -337,7 +346,7 @@
 <li>Migration 0005 (pg + sqlite): <code>monitoring_zone</code> uniqueness relaxed from <code>project_uuid</code> to <code>(project_uuid, name)</code> — N zones per project.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="fixed-5">Fixed<a class="anchor" aria-label="anchor" href="#fixed-5"></a></h3>
+<h3 id="fixed-6">Fixed<a class="anchor" aria-label="anchor" href="#fixed-6"></a></h3>
 <ul><li>
 <code>register_monitoring_zone(project_uuid = …)</code> fetched the inserted zone id by <code>project_uuid</code> alone, which could return the wrong id under the spec-020 multi-zone model. Now keyed by <code>(project_uuid, name)</code>.</li>
 </ul></div>
@@ -349,7 +358,7 @@
 <ul><li>LRU GC for the FAST 0-4 mask cache: <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> writes a timestamped <code>fast_alert_&lt;ts&gt;.tif</code> per call, so the mask directory grew unbounded. <code>.fast_alert_mask_gc()</code> now keeps at most <code>getOption("nemeton.fast_mask_keep", 20)</code> masks per zone (LRU by mtime), mirroring <code>.fast_raster_gc()</code> for the continuous COGs.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="fixed-6">Fixed<a class="anchor" aria-label="anchor" href="#fixed-6"></a></h3>
+<h3 id="fixed-7">Fixed<a class="anchor" aria-label="anchor" href="#fixed-7"></a></h3>
 <ul><li>The continuous-cache GC no longer deletes 0-4 masks. <code>.fast_raster_gc()</code> matched <code>^fast_.*\.tif$</code>, which caught <code>fast_alert_*</code> masks when <code>result_cache_dir == mask_cache_dir</code> (validation sampling on <code>fast_sampling/</code>). Tightened to <code>^fast_[A-Z].*\.tif$</code> (continuous <code>fast_NDVI_</code>/<code>fast_NBR_</code>/<code>fast_NDMI_</code> only), so the two caches are GC’d independently.</li>
 </ul></div>
 </div>
@@ -363,7 +372,7 @@
 <div class="section level2">
 <h2 id="id_0651---2026-06-03">[0.65.1] - 2026-06-03<a class="anchor" aria-label="anchor" href="#id_0651---2026-06-03"></a></h2>
 <div class="section level3">
-<h3 id="fixed-7">Fixed<a class="anchor" aria-label="anchor" href="#fixed-7"></a></h3>
+<h3 id="fixed-8">Fixed<a class="anchor" aria-label="anchor" href="#fixed-8"></a></h3>
 <ul><li>
 <code>.prewarm_fast_alerts()</code> now pre-warms the 6 FAST combinations (NDVI/NBR/NDMI × count/rolling) instead of 4, matching the public <code><a href="reference/read_fast_alert_rasters.html">read_fast_alert_rasters()</a></code> orchestrator. NDMI was added in 0.65.0 but the prewarm loop still skipped it, so the first NDMI selection in the app paid a cold compute instead of a D6 cache hit. A scene without B11 (NDMI) takes the existing best-effort skip path (warn + <code>_failed</code> event), like NBR without B12. No API change.</li>
 </ul></div>
@@ -376,7 +385,7 @@
 <code><a href="reference/read_fast_alert_rasters.html">read_fast_alert_rasters()</a></code>: convenience orchestrator that builds the full FAST diagnostic in one call — the three indices (NDVI, NBR, NDMI) in both modes (count, rolling), i.e. up to six rasters. Returns a named list keyed <code>"&lt;index&gt;_&lt;mode&gt;"</code>; each map shares the COG cache, the content-addressed result cache (spec 017 D6) and the zone mask. Missing index → <code>NULL</code> slot (stable shape). <code>indices</code>/<code>modes</code> restrict the set.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="fixed-8">Fixed<a class="anchor" aria-label="anchor" href="#fixed-8"></a></h3>
+<h3 id="fixed-9">Fixed<a class="anchor" aria-label="anchor" href="#fixed-9"></a></h3>
 <ul><li>NDMI FAST alert maps were never produced: <code>.enumerate_cache_scenes()</code> had no <code>NDMI</code> branch in its <code>index</code> switch, so an NDMI request matched zero cached scenes and <code>read_fast_alert_raster(index = "NDMI")</code> / <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> always returned <code>NULL</code> despite B08 + B11 being cached. The switch now maps <code>NDMI -&gt; B08 + B11</code> and aborts on an unknown index instead of failing silently (spec 019 regression).</li>
 </ul></div>
 </div>
@@ -427,7 +436,7 @@
 <div class="section level2">
 <h2 id="id_0611---2026-06-02">[0.61.1] - 2026-06-02<a class="anchor" aria-label="anchor" href="#id_0611---2026-06-02"></a></h2>
 <div class="section level3">
-<h3 id="fixed-9">Fixed<a class="anchor" aria-label="anchor" href="#fixed-9"></a></h3>
+<h3 id="fixed-10">Fixed<a class="anchor" aria-label="anchor" href="#fixed-10"></a></h3>
 <ul><li>RAG corpus manifest (<code>inst/extdata/knowledge_corpus_v1.csv</code>): the <code>set_revue_foret_croissance_climat</code> row was <code>status = cleared</code> while its <code>license</code> was the literal <code>to-confirm</code> placeholder, which would have let <code>build_knowledge_corpus.R</code> ingest it despite an unconfirmed license (contrary to spec 009.1 D5). Status reset to <code>to_confirm</code>.</li>
 </ul></div>
 <div class="section level3">
@@ -493,7 +502,7 @@
 <div class="section level2">
 <h2 id="id_0552---2026-06-01">[0.55.2] - 2026-06-01<a class="anchor" aria-label="anchor" href="#id_0552---2026-06-01"></a></h2>
 <div class="section level3">
-<h3 id="fixed-10">Fixed<a class="anchor" aria-label="anchor" href="#fixed-10"></a></h3>
+<h3 id="fixed-11">Fixed<a class="anchor" aria-label="anchor" href="#fixed-11"></a></h3>
 <ul><li>
 <code><a href="reference/db_migrate.html">db_migrate()</a></code> : <code>INSERT INTO schema_migration … ON CONFLICT DO NOTHING</code> (sans colonne cible) n’est valide que sur SQLite ≥ 3.35.0 ; routage par backend vers <code>INSERT OR IGNORE</code> sur SQLite (no-op sous PostgreSQL).</li>
 <li>
@@ -504,7 +513,7 @@
 <div class="section level2">
 <h2 id="id_0551---2026-06-01">[0.55.1] - 2026-06-01<a class="anchor" aria-label="anchor" href="#id_0551---2026-06-01"></a></h2>
 <div class="section level3">
-<h3 id="fixed-11">Fixed<a class="anchor" aria-label="anchor" href="#fixed-11"></a></h3>
+<h3 id="fixed-12">Fixed<a class="anchor" aria-label="anchor" href="#fixed-12"></a></h3>
 <ul><li>
 <code>.insert_obs_pixel()</code> : correction d’une erreur fatale <code>near "DO": syntax error</code> sur le backend SQLite local. L’<code>INSERT … SELECT … ON CONFLICT … DO NOTHING</code> souffrait de l’ambiguïté d’analyse UPSERT/jointure de SQLite ; ajout d’une clause <code>WHERE 1=1</code> sur le <code>SELECT</code> pour lever l’ambiguïté (no-op sous PostgreSQL). Test de non-régression SQLite ajouté. ## [0.55.0] - 2026-05-31</li>
 </ul></div>
@@ -555,7 +564,7 @@
 <div class="section level2">
 <h2 id="id_0521---2026-05-30">[0.52.1] - 2026-05-30<a class="anchor" aria-label="anchor" href="#id_0521---2026-05-30"></a></h2>
 <div class="section level3">
-<h3 id="fixed-12">Fixed<a class="anchor" aria-label="anchor" href="#fixed-12"></a></h3>
+<h3 id="fixed-13">Fixed<a class="anchor" aria-label="anchor" href="#fixed-13"></a></h3>
 <ul><li>
 <code><a href="reference/build_index_stack.html">build_index_stack()</a></code> now aligns per-scene layers onto the <strong>union</strong> of their extents (NA-padding via <code><a href="https://rspatial.github.io/terra/reference/extend.html" class="external-link">terra::extend()</a></code>) instead of cropping to the intersection. Fixes multi-tile MGRS AOIs (e.g. villards on T31TFM ⊂ T31TGM) where the pixel NDVI/NBR map was silently trimmed to the narrowest tile’s strip.</li>
 <li>Multi-CRS guard in <code><a href="reference/build_index_stack.html">build_index_stack()</a></code>: layers in a different CRS are reprojected onto the first layer’s CRS before the union; non-coinciding grids fall back to a single <code><a href="https://rspatial.github.io/terra/reference/resample.html" class="external-link">terra::resample()</a></code> onto the widest layer.</li>
@@ -622,7 +631,7 @@
 <div class="section level2">
 <h2 id="id_0483---2026-05-27">[0.48.3] - 2026-05-27<a class="anchor" aria-label="anchor" href="#id_0483---2026-05-27"></a></h2>
 <div class="section level3">
-<h3 id="fixed-13">Fixed<a class="anchor" aria-label="anchor" href="#fixed-13"></a></h3>
+<h3 id="fixed-14">Fixed<a class="anchor" aria-label="anchor" href="#fixed-14"></a></h3>
 <ul><li>Cache S2 : memoize the COG tile native extent per MGRS code in a session-scoped environment. The tile-aware second chance introduced in v0.48.2 was paying ~10-25 s per band per scene for the GET range that reads the COG header, even though all bands of all dates of the same MGRS tile share the same native extent. Villards full re-validation drops from ~1 h to ~50 s.</li>
 </ul></div>
 <div class="section level3">
@@ -633,14 +642,14 @@
 <div class="section level2">
 <h2 id="id_0482---2026-05-27">[0.48.2] - 2026-05-27<a class="anchor" aria-label="anchor" href="#id_0482---2026-05-27"></a></h2>
 <div class="section level3">
-<h3 id="fixed-14">Fixed<a class="anchor" aria-label="anchor" href="#fixed-14"></a></h3>
+<h3 id="fixed-15">Fixed<a class="anchor" aria-label="anchor" href="#fixed-15"></a></h3>
 <ul><li>Cache S2 predicate gains a tile-aware second chance : when the snap-to-grid check (v0.48.1) says STALE, the COG header is read lazily (<code>terra::rast(href)</code>, ~1 s, no pixel decode) to obtain the tile’s native extent, <code>needed_ext</code> is clipped to that extent, and the predicate is retried. Fires CACHE-HIT when the cached file is the legitimate clip of the AOI to the MGRS tile boundary (the common case on multi-tile AOIs like villards spanning T31TFM + T31TGM). Eliminates the residual “fake STALE” after v0.48.1’s snap-to-grid.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0481---2026-05-27">[0.48.1] - 2026-05-27<a class="anchor" aria-label="anchor" href="#id_0481---2026-05-27"></a></h2>
 <div class="section level3">
-<h3 id="fixed-15">Fixed<a class="anchor" aria-label="anchor" href="#fixed-15"></a></h3>
+<h3 id="fixed-16">Fixed<a class="anchor" aria-label="anchor" href="#fixed-16"></a></h3>
 <ul><li>Cache S2 validation predicate switches from raw-float <code>.ext_contains(tol = 40m)</code> to pixel-grid-aware <code>.ext_contains_at_grid(res, tol_pixels = 1)</code>. Snaps both extents to the COG’s pixel grid before comparison → sub-pixel jitter from <code>sf::st_transform(zone_polygon, raster_crs)</code> is eliminated at the source. Resolves villards CACHE-STALE storm (~6 h ingest → ~30 s on a warm cache).</li>
 <li>New ENV bypass <code>NEMETON_S2_CACHE_SKIP_VALIDATION</code> (<code>"TRUE"</code> or <code>"1"</code>) — emergency escape hatch to trust every cached file blindly.</li>
 <li>Diagnostic log on CACHE-STALE now shows snapped extents + signed per-side margin (<code>delta_m</code>) for quick triage.</li>
@@ -662,7 +671,7 @@
 <div class="section level2">
 <h2 id="id_0475---2026-05-26">[0.47.5] - 2026-05-26<a class="anchor" aria-label="anchor" href="#id_0475---2026-05-26"></a></h2>
 <div class="section level3">
-<h3 id="fixed-16">Fixed<a class="anchor" aria-label="anchor" href="#fixed-16"></a></h3>
+<h3 id="fixed-17">Fixed<a class="anchor" aria-label="anchor" href="#fixed-17"></a></h3>
 <ul><li>
 <code><a href="reference/build_index_stack.html">build_index_stack()</a></code> (spec 010) now computes the intersection of per-scene extents and crops each layer to that common extent before <code>terra::rast(layers)</code>. Fixes <code>[rast] extents do not match</code> triggered by mixed-vintage cache files (different AOI snapping across app sessions). Returns <code>NULL</code> with a warn if no overlap. Unblocks Carte FAST, Alertes FAST, FAST validation sampling.</li>
 </ul></div>
@@ -670,14 +679,14 @@
 <div class="section level2">
 <h2 id="id_0474---2026-05-25">[0.47.4] - 2026-05-25<a class="anchor" aria-label="anchor" href="#id_0474---2026-05-25"></a></h2>
 <div class="section level3">
-<h3 id="fixed-17">Fixed<a class="anchor" aria-label="anchor" href="#fixed-17"></a></h3>
+<h3 id="fixed-18">Fixed<a class="anchor" aria-label="anchor" href="#fixed-18"></a></h3>
 <ul><li>Bump cache-hit tolerance from <code>1 * max(res)</code> (10/20 m) to <code>4 * max(res)</code> (40/80 m). 1-pixel tolerance still triggered CACHE-STALE on villards because previous-session cache files were written for a slightly different <code>sf::st_union(parcels)</code> polygon.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0473---2026-05-25">[0.47.3] - 2026-05-25<a class="anchor" aria-label="anchor" href="#id_0473---2026-05-25"></a></h2>
 <div class="section level3">
-<h3 id="fixed-18">Fixed<a class="anchor" aria-label="anchor" href="#fixed-18"></a></h3>
+<h3 id="fixed-19">Fixed<a class="anchor" aria-label="anchor" href="#fixed-19"></a></h3>
 <ul><li>
 <code>.ext_contains(outer, inner, tolerance = 0)</code> gains a <code>tolerance</code> argument (CRS units). The cache-hit lookup in <code>.get_s2_band_raster()</code> now passes <code>tolerance = max(terra::res(r_cached))</code> so a sub-pixel mismatch between the cached extent and the AOI doesn’t trigger a CACHE-STALE. Closes the villards CACHE-STALE storm — projected refetch from ~4 h to ~10-30 min. Strict (<code>tolerance = 0</code>) default for back-compat.</li>
 <li>
@@ -687,7 +696,7 @@
 <div class="section level2">
 <h2 id="id_0472---2026-05-25">[0.47.2] - 2026-05-25<a class="anchor" aria-label="anchor" href="#id_0472---2026-05-25"></a></h2>
 <div class="section level3">
-<h3 id="fixed-19">Fixed<a class="anchor" aria-label="anchor" href="#fixed-19"></a></h3>
+<h3 id="fixed-20">Fixed<a class="anchor" aria-label="anchor" href="#fixed-20"></a></h3>
 <ul><li>
 <code>tests/testthat/helper-monitoring.R::with_clean_db()</code> now refuses to run when <code>NEMETON_DB_URL_TEST</code> is unset or equal to <code>NEMETON_DB_URL</code> (the helper’s <code>reset_schema()</code> would otherwise wipe the user’s production monitoring data). Override via <code>NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE</code> for CI on an empty DB. Closes the gap that destroyed villards on 2026-05-25.</li>
 </ul></div>
@@ -695,7 +704,7 @@
 <div class="section level2">
 <h2 id="id_0471---2026-05-25">[0.47.1] - 2026-05-25<a class="anchor" aria-label="anchor" href="#id_0471---2026-05-25"></a></h2>
 <div class="section level3">
-<h3 id="fixed-20">Fixed<a class="anchor" aria-label="anchor" href="#fixed-20"></a></h3>
+<h3 id="fixed-21">Fixed<a class="anchor" aria-label="anchor" href="#fixed-21"></a></h3>
 <ul><li>
 <code><a href="reference/dot-fordead_is_installed.html">.fordead_is_installed()</a></code> and <code><a href="reference/dot-ensure_fordead_python.html">.ensure_fordead_python()</a></code> swap <code><a href="https://cli.r-lib.org/reference/cli_alert.html" class="external-link">cli::cli_alert_warning()</a></code> / <code><a href="https://cli.r-lib.org/reference/cli_alert.html" class="external-link">cli::cli_alert_info()</a></code> for <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_warn()</a></code> / <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_inform()</a></code> so the emitted warning / message condition is catchable by <code>expect_warning()</code> / <code>expect_message()</code> (the <code>_alert_*</code> family is cosmetic only). No user-visible change.</li>
 <li>
@@ -759,7 +768,7 @@
 <div class="section level2">
 <h2 id="id_0432---2026-05-23">[0.43.2] - 2026-05-23<a class="anchor" aria-label="anchor" href="#id_0432---2026-05-23"></a></h2>
 <div class="section level3">
-<h3 id="fixed-21">Fixed<a class="anchor" aria-label="anchor" href="#fixed-21"></a></h3>
+<h3 id="fixed-22">Fixed<a class="anchor" aria-label="anchor" href="#fixed-22"></a></h3>
 <ul><li>
 <code><a href="reference/dot-same_path.html">.same_path()</a></code> (<code>R/fordead_python.R</code>) collapses <code>/./</code>, duplicate slashes and a trailing slash before comparing — <code>normalizePath(mustWork = FALSE)</code> leaves non-existent paths untouched, so the identity test produced false negatives whenever one input had a redundant segment.</li>
 <li>
@@ -773,7 +782,7 @@
 <div class="section level2">
 <h2 id="id_0412---2026-05-20">[0.41.2] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0412---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="fixed-22">Fixed<a class="anchor" aria-label="anchor" href="#fixed-22"></a></h3>
+<h3 id="fixed-23">Fixed<a class="anchor" aria-label="anchor" href="#fixed-23"></a></h3>
 <ul><li>Sentinel-2 STAC searches returned ESA reprocessing duplicates (the same acquisition republished under a new processing baseline) as distinct scenes — doubling the cache footprint (~14 % of scenes on a real zone) and feeding FORDEAD two items with the same <code>datetime</code>. <code><a href="reference/stac_search_s2.html">stac_search_s2()</a></code> and <code><a href="reference/dot-build_stac_collection_for_aoi.html">.build_stac_collection_for_aoi()</a></code> now collapse such duplicates by acquisition identity (mission + sensing time + orbit + MGRS tile), keeping the latest baseline.</li>
 </ul></div>
 <div class="section level3">
@@ -784,7 +793,7 @@
 <div class="section level2">
 <h2 id="id_0411---2026-05-20">[0.41.1] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0411---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="fixed-23">Fixed<a class="anchor" aria-label="anchor" href="#fixed-23"></a></h3>
+<h3 id="fixed-24">Fixed<a class="anchor" aria-label="anchor" href="#fixed-24"></a></h3>
 <ul><li>FORDEAD version probe read the <code>fordead.version</code> <em>attribute</em> (a function, not a string), so the installed version never matched the pin and <code>pip install --upgrade</code> ran on every <code><a href="reference/run_fordead_dieback.html">run_fordead_dieback()</a></code> call. <code><a href="reference/dot-fordead_python_version.html">.fordead_python_version()</a></code> now reads <code>importlib.metadata.version("fordead")</code>; the pipeline start banner reuses the same probe, so <code>fordead_version</code> is reported correctly instead of <code>NA</code>.</li>
 </ul></div>
 <div class="section level3">
@@ -805,7 +814,7 @@
 <div class="section level2">
 <h2 id="id_0391---2026-05-20">[0.39.1] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0391---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="fixed-24">Fixed<a class="anchor" aria-label="anchor" href="#fixed-24"></a></h3>
+<h3 id="fixed-25">Fixed<a class="anchor" aria-label="anchor" href="#fixed-25"></a></h3>
 <ul><li>
 <code><a href="reference/theia_configure_s3.html">theia_configure_s3()</a></code> reads <code>TLD_ACCESS_KEY</code> / <code>TLD_SECRET_KEY</code> (the THEIA API-key pair) instead of <code>THEIA_S3_*</code>, and the S3 region is <code>sm1</code> (not <code>us-east-1</code>). GDAL <code>/vsis3/</code> reads the THEIA assets directly — no Python SDK needed.</li>
 </ul></div>
@@ -852,7 +861,7 @@
 <div class="section level2">
 <h2 id="id_0361---2026-05-20">[0.36.1] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0361---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="fixed-25">Fixed<a class="anchor" aria-label="anchor" href="#fixed-25"></a></h3>
+<h3 id="fixed-26">Fixed<a class="anchor" aria-label="anchor" href="#fixed-26"></a></h3>
 <ul><li>
 <code>services.theia_stac.url</code> set to the verified THEIA MTD STAC API root; <code>forms_t</code> gains <code>stac_collection: "forms-t"</code>.</li>
 <li>Theia STAC resolver <code>"to confirm"</code> guard now uses a substring match, correctly rejecting the <code>"to confirm at the Theia catalogue"</code> placeholders.</li>
@@ -876,7 +885,7 @@
 <div class="section level2">
 <h2 id="id_0351---2026-05-20">[0.35.1] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0351---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="fixed-26">Fixed<a class="anchor" aria-label="anchor" href="#fixed-26"></a></h3>
+<h3 id="fixed-27">Fixed<a class="anchor" aria-label="anchor" href="#fixed-27"></a></h3>
 <ul><li>
 <code>formspot</code> datasource entry: FORMSpoT is confirmed published as the THEIA STAC collection <code>FORMSpoT</code>; the entry now carries the verified <code>stac_catalog</code> / <code>stac_collection</code> fields instead of the provisional preprint-stage note.</li>
 </ul></div>
@@ -948,7 +957,7 @@
 <div class="section level2">
 <h2 id="id_0211---2026-05-12">[0.21.1] - 2026-05-12<a class="anchor" aria-label="anchor" href="#id_0211---2026-05-12"></a></h2>
 <div class="section level3">
-<h3 id="fixed-27">Fixed<a class="anchor" aria-label="anchor" href="#fixed-27"></a></h3>
+<h3 id="fixed-28">Fixed<a class="anchor" aria-label="anchor" href="#fixed-28"></a></h3>
 <ul><li>DuckDB migration <code>0001_init.sql</code> rejected by the parser on <code>GENERATED ALWAYS AS IDENTITY</code> and <code>ON DELETE CASCADE</code>. Replaced with explicit <code>CREATE SEQUENCE</code> + <code>DEFAULT nextval(...)</code> and dropped the cascade actions from FK clauses. Fixes the “Base de suivi non configurée” error on first launch of <code>nemetonshiny</code> with a local DuckDB backend.</li>
 </ul></div>
 </div>
@@ -988,7 +997,7 @@
 <h2 id="id_0197---2026-04-24">
 <a href="https://github.com/pobsteta/nemeton/compare/v0.19.6...v0.19.7" class="external-link">0.19.7</a> - 2026-04-24<a class="anchor" aria-label="anchor" href="#id_0197---2026-04-24"></a></h2>
 <div class="section level3">
-<h3 id="fixed-28">Fixed<a class="anchor" aria-label="anchor" href="#fixed-28"></a></h3>
+<h3 id="fixed-29">Fixed<a class="anchor" aria-label="anchor" href="#fixed-29"></a></h3>
 <ul><li>
 <code>.compute_forest_cover()</code> now aligns its vectorised output using a carried <code>.fc_id</code> column instead of <code><a href="https://rdrr.io/r/base/row.names.html" class="external-link">row.names()</a></code>, which some sf versions rewrite on intersection. Fixes silent “all-zero” forest cover leading to empty candidate sets in <code><a href="reference/create_sampling_plan.html">create_sampling_plan()</a></code>.</li>
 </ul></div>
@@ -1015,7 +1024,7 @@
 <h2 id="id_0194---2026-04-24">
 <a href="https://github.com/pobsteta/nemeton/compare/v0.19.3...v0.19.4" class="external-link">0.19.4</a> - 2026-04-24<a class="anchor" aria-label="anchor" href="#id_0194---2026-04-24"></a></h2>
 <div class="section level3">
-<h3 id="fixed-29">Fixed<a class="anchor" aria-label="anchor" href="#fixed-29"></a></h3>
+<h3 id="fixed-30">Fixed<a class="anchor" aria-label="anchor" href="#fixed-30"></a></h3>
 <ul><li>
 <code><a href="reference/create_sampling_plan.html">create_sampling_plan()</a></code> no longer floods the console with sf’s “attribute variables are assumed to be spatially constant” warning (one per candidate × polygon). <code>.compute_forest_cover()</code> now sets <code><a href="https://r-spatial.github.io/sf/reference/st_agr.html" class="external-link">sf::st_agr()</a></code> to <code>"constant"</code> and wraps <code>st_intersection()</code> in <code><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings()</a></code>.</li>
 </ul></div>
@@ -1028,7 +1037,7 @@
 <ul><li>Flip every BD Forêt v2 TFV row in <code>inst/extdata/bdforet_v2_mapping.csv</code> from <code>confidence = "ambiguous"</code> to <code>"clear"</code> (9 rows touched). The secondary candidate stays in <code>alt_context_key</code> for reference.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="fixed-30">Fixed<a class="anchor" aria-label="anchor" href="#fixed-30"></a></h3>
+<h3 id="fixed-31">Fixed<a class="anchor" aria-label="anchor" href="#fixed-31"></a></h3>
 <ul><li>
 <code><a href="reference/cv_from_bdforet.html">cv_from_bdforet()</a></code> no longer reports non-forest codes (FF0, FO0, LA4, LA6) as <code>$unmapped</code> — these are explicitly mapped to <code>NA</code> and are silently excluded from the CV. Only codes truly absent from the mapping are surfaced as unmapped.</li>
 </ul></div>
@@ -1045,7 +1054,7 @@
 <h2 id="id_0191---2026-04-24">
 <a href="https://github.com/pobsteta/nemeton/compare/v0.19.0...v0.19.1" class="external-link">0.19.1</a> - 2026-04-24<a class="anchor" aria-label="anchor" href="#id_0191---2026-04-24"></a></h2>
 <div class="section level3">
-<h3 id="fixed-31">Fixed<a class="anchor" aria-label="anchor" href="#fixed-31"></a></h3>
+<h3 id="fixed-32">Fixed<a class="anchor" aria-label="anchor" href="#fixed-32"></a></h3>
 <ul><li>
 <code><a href="reference/create_sampling_plan.html">create_sampling_plan()</a></code> now assigns <code>visit_order</code> from a real nearest-neighbor + 2-opt walking tour (start = south-easternmost Base plot) instead of from the draw order. The polyline drawn by the Shiny map is no longer a zig-zag across the AOI.</li>
 </ul></div>
@@ -1082,7 +1091,7 @@
 <li>File renames: <code>R/qfield_export.R</code> → <code>R/qgis_export.R</code>, <code>R/qfield_import.R</code> → <code>R/qgis_import.R</code>, tests renamed accordingly. The exported function names (<code>create_qfield_project</code>, <code>import_qfield_gpkg</code>) are unchanged.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="fixed-32">Fixed<a class="anchor" aria-label="anchor" href="#fixed-32"></a></h3>
+<h3 id="fixed-33">Fixed<a class="anchor" aria-label="anchor" href="#fixed-33"></a></h3>
 <ul><li>
 <code><a href="reference/cv_from_bdforet.html">cv_from_bdforet()</a></code> normalizes incoming TFV values (trim, dashify separators, uppercase) before the lookup, so inputs like <code>FF2_64_64</code> or <code>" ff2-64-64 "</code> resolve to <code>FF2-64-64</code> as expected.</li>
 </ul></div>
