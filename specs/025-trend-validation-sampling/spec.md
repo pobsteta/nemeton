@@ -105,6 +105,12 @@ Les placettes sanitaires sont ordonnées par `alert_value` **décroissant**
 
 ## 5. Garde-fous
 
+- **Masque exigé (v0.88.1)** : un plan d'échantillonnage **doit** rester dans
+  l'UGF. `.apply_zone_mask(r, NULL)` est un no-op → sans polygone, le raster
+  trend est pleine tuile et le tirage GRTS dispersé sur ~100 km. Le polygone
+  est donc résolu **en amont** (`mask_polygon`, sinon `con`/`zone_id`) et la
+  fonction **abort** (`nemeton_zone_mask_unresolved`) s'il est introuvable —
+  jamais de repli sur la tuile. L'app passe `mask_polygon` explicitement.
 - `read_fast_alert_raster` renvoie `NULL` (aucune scène / hors saison) →
   erreur typée `nemeton_empty_alert_mask` (l'app affiche « rien à valider »).
 - Aucun déclin significatif (`value > 0` vide) → même erreur typée.

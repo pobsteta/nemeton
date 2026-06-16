@@ -47,7 +47,13 @@ identical in meaning and default to [read_fast_alert_raster()]
 `mode = "trend"`.}
 
 \item{apply_zone_mask, mask_polygon}{UGF mask, forwarded to
-[read_fast_alert_raster()].}
+[read_fast_alert_raster()]. When `apply_zone_mask = TRUE` (default) the
+plan \strong{must} stay inside the zone: the polygon is resolved up front
+(from `mask_polygon`, else `con` / `zone_id`) and the function aborts
+with a typed `nemeton_zone_mask_unresolved` error if it cannot be
+obtained — it never falls back to sampling the full S2 tile. Pass
+`mask_polygon` explicitly (the zone `sf` you already hold) to skip the
+DB round-trip.}
 
 \item{seed}{Integer or `NULL`. Makes the GRTS draw reproducible.}
 }
