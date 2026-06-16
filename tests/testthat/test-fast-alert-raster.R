@@ -440,6 +440,37 @@ test_that("read_fast_alert_raster covers the full multi-tile AOI (per-tile mosai
 })
 
 
+test_that(".mosaic_per_tile snaps mismatched-resolution tiles before mosaic", {
+  skip_if_terra_write_broken()
+  skip_if_not_installed("terra")
+  # Regression: per-tile rasters projected to EPSG:2154 independently can come
+  # out at marginally different resolutions (NDRE 20 m over T31TFM + T31TGM),
+  # and `terra::mosaic()` then aborts with "resolution does not match". The two
+  # rasters below reproduce that post-projection state (res 20 vs 20.05, offset
+  # extents) — the helper must resample them onto a common grid and mosaic.
+  t1 <- terra::rast(xmin = 900000, xmax = 900200,
+                    ymin = 6500000, ymax = 6500200,
+                    resolution = 20, crs = "EPSG:2154")
+  terra::values(t1) <- 1
+  t2 <- terra::rast(xmin = 900100, xmax = 900300,
+                    ymin = 6500100, ymax = 6500300,
+                    resolution = 20.05, crs = "EPSG:2154")
+  terra::values(t2) <- 2
+
+  # The naive mosaic (what the old code did) fails on the resolution mismatch.
+  expect_error(terra::mosaic(t1, t2, fun = "max"))
+
+  out <- nemeton:::.mosaic_per_tile(list(t1, t2), method = "near")
+  expect_s4_class(out, "SpatRaster")
+  # Single, consistent resolution (the first tile's) and the union extent.
+  expect_equal(terra::res(out), c(20, 20))
+  expect_lte(terra::xmin(terra::ext(out)), 900000)
+  expect_gte(terra::xmax(terra::ext(out)), 900300)
+  # Both tiles' values survive the snap+mosaic (max over the overlap).
+  expect_setequal(terra::unique(out)[[1]], c(1, 2))
+})
+
+
 # ---- integration: smoke test against the real villards DB ------------
 
 test_that("end-to-end smoke test against villards (count mode)", {
@@ -453,9 +484,17 @@ test_that("end-to-end smoke test against villards (count mode)", {
                                Sys.getenv("NEMETON_DB_URL", "")))
   on.exit(db_disconnect(con))
 
-  has_zone <- DBI::dbGetQuery(con,
-    "SELECT count(*)::int AS n FROM monitoring_zone WHERE id = 1")$n > 0
-  if (!has_zone) testthat::skip("zone_id=1 not in DB on this machine")
+  # A reachable PostgreSQL that carries TimescaleDB but NOT the nemeton
+  # schema (a bare dev DB) makes `skip_if_no_timescaledb()` pass yet the
+  # query below abort on the missing table — skip gracefully in that case
+  # instead of failing this opportunistic smoke test.
+  has_zone <- tryCatch(
+    DBI::dbGetQuery(con,
+      "SELECT count(*)::int AS n FROM monitoring_zone WHERE id = 1")$n > 0,
+    error = function(e) FALSE)
+  if (!has_zone) {
+    testthat::skip("zone_id=1 not in DB (or schema absent) on this machine")
+  }
 
   r <- read_fast_alert_raster(
     con, zone_id = 1L, index = "NDVI",

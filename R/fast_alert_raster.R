@@ -349,9 +349,14 @@ read_fast_alert_raster <- function(con, zone_id,
   # larger of two independently-fitted slope magnitudes on the seam (a
   # mild, bounded high bias — see the "Tile-overlap caveat" in the
   # roxygen). A `mean` would smooth the seam but blur genuine within-strip
-  # differences; `max` is kept for cross-mode consistency.
+  # differences; `max` is kept for cross-mode consistency. `.mosaic_per_tile`
+  # snaps the independently-projected tiles to ONE common EPSG:2154 grid
+  # first: projecting each tile on its own lets terra pick a per-tile output
+  # resolution, and two 20 m tiles (NDRE / B8A over T31TFM + T31TGM) then
+  # land on marginally different resolutions and `terra::mosaic()` aborts
+  # with "resolution does not match" (10 m NDMI happened to match by luck).
   out <- if (length(per_tile) == 1L) per_tile[[1L]] else
-    do.call(terra::mosaic, c(per_tile, list(fun = "max")))
+    .mosaic_per_tile(per_tile, method = method)
 
   names(out)         <- .fast_layer_name(mode)
   attr(out, "mode")  <- mode
@@ -696,6 +701,38 @@ read_fast_alert_rasters <- function(con, zone_id,
   # subset-assignment idiom is fragile in that case and can collapse the
   # SpatRaster to a numeric).
   terra::clamp(threshold - mean_x, lower = 0, values = TRUE)
+}
+
+
+# Mosaic per-tile alert rasters that were each projected to EPSG:2154
+# independently. `terra::project(x, "EPSG:2154")` (no template) lets terra
+# derive the output resolution from each tile's own extent, so two tiles —
+# especially native 20 m ones (NDRE = B8A/B05) over neighbouring MGRS tiles
+# (T31TFM + T31TGM) — can come out at marginally different resolutions and
+# `terra::mosaic()` aborts with "[mosaic] resolution does not match". (Native
+# 10 m indices like NDMI happen to round to the same resolution, which is why
+# they don't reproduce the bug.) We snap every tile onto ONE shared grid —
+# the first tile's resolution, over the union extent, same origin — with a
+# `terra::resample()` (mode-appropriate method) before mosaicking, so the
+# mosaic is well-defined regardless of per-tile projection drift.
+.mosaic_per_tile <- function(rasters, method) {
+  tgt_res <- terra::res(rasters[[1L]])
+  rx <- tgt_res[1L]; ry <- tgt_res[2L]
+  xmn <- min(vapply(rasters, terra::xmin, numeric(1)))
+  xmx <- max(vapply(rasters, terra::xmax, numeric(1)))
+  ymn <- min(vapply(rasters, terra::ymin, numeric(1)))
+  ymx <- max(vapply(rasters, terra::ymax, numeric(1)))
+  # Snap the union extent OUTWARD to whole multiples of the target resolution
+  # (aligned to the projected origin) so the template keeps EXACTLY `tgt_res`.
+  # `terra::rast(ext, resolution=)` otherwise tweaks the resolution to divide
+  # an arbitrary extent evenly, which would reintroduce a per-call resolution
+  # drift — the very thing we are fixing.
+  full <- terra::ext(floor(xmn / rx) * rx, ceiling(xmx / rx) * rx,
+                     floor(ymn / ry) * ry, ceiling(ymx / ry) * ry)
+  tmpl <- terra::rast(full, resolution = tgt_res, crs = "EPSG:2154")
+  aligned <- lapply(rasters, function(r) terra::resample(r, tmpl,
+                                                         method = method))
+  do.call(terra::mosaic, c(aligned, list(fun = "max")))
 }
 
 
