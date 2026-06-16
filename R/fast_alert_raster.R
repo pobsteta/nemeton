@@ -519,6 +519,190 @@ read_fast_alert_rasters <- function(con, zone_id,
 }
 
 
+#' Zone-level trend trajectory (yearly composite series + Theil-Sen fit)
+#'
+#' Companion to [read_fast_alert_raster()] `mode = "trend"`. The trend map
+#' reduces each pixel's multi-year history to a single slope magnitude and so
+#' carries **no onset information** — it cannot say *when* a decline set in.
+#' This returns the intermediate **yearly seasonal composite series** for the
+#' whole zone plus the Theil-Sen / Mann-Kendall fit, so a caller (e.g.
+#' `nemetonshiny`) can plot the trajectory and read off when the index starts
+#' dropping (the year the curve breaks downward).
+#'
+#' For every year in `[date_from, date_to]`, the in-season (`months`) scenes
+#' are reduced to a per-pixel median composite (a year with fewer than
+#' `min_obs_per_year` clear observations is dropped for that pixel), masked to
+#' the UGF zone, and spatially averaged to one value. The `(year, value)`
+#' series is then fitted with the SAME Theil-Sen slope + Mann-Kendall test the
+#' trend map runs per pixel (via the shared [.trend_yearly_composite()]), so
+#' the zone trajectory and the map agree by construction. Multi-tile AOIs are
+#' combined as a valid-pixel-count-weighted mean per year.
+#'
+#' @inheritParams read_fast_alert_raster
+#' @param index One of `"NDRE"`, `"NDMI"`, `"NDVI"`, `"NBR"`. Default
+#'   `"NDRE"` (the red-edge early-stress marker the trend mode targets).
+#'
+#' @return `NULL` when no in-season scene exists in the window. Otherwise a
+#'   `list`:
+#'   \describe{
+#'     \item{`series`}{a `data.frame`, one row per year (ascending), with
+#'       `year` (integer), `n_scenes` (distinct in-season acquisitions that
+#'       year), `value` (zone-mean composite; `NA` for a year with no valid
+#'       pixel) and `fitted` (Theil-Sen fitted value, `NA` when the fit is
+#'       undefined).}
+#'     \item{`fit`}{`NULL` when fewer than `min_years` valid years, else a
+#'       `list` with `slope`, `intercept`, `p_value`, `tau`, `n_years`,
+#'       `significant` (`slope < 0` **and** `p_value < alpha`) and `alert`
+#'       (`abs(slope)` when `significant`, else `0` — the same magnitude the
+#'       trend map bins into classes 1-4).}
+#'     \item{`index`, `months`, `alpha`}{the parameters used.}
+#'   }
+#'
+#' @seealso [read_fast_alert_raster()] (`mode = "trend"`, the per-pixel map),
+#'   [compute_fast_alert_mask()] (the 0-4 discretiser).
+#'
+#' @examples
+#' \dontrun{
+#'   con <- db_connect(Sys.getenv("NEMETON_DB_URL"))
+#'   on.exit(db_disconnect(con), add = TRUE)
+#'   tr <- extract_trend_series(
+#'     con, zone_id = 1L, index = "NDRE",
+#'     date_from = "2017-01-01", date_to = "2024-12-31",
+#'     cache_dir = "/proj/cache/layers/sentinel2")
+#'   plot(tr$series$year, tr$series$value, type = "b")   # trajectory
+#'   lines(tr$series$year, tr$series$fitted)             # Theil-Sen fit
+#'   tr$fit$significant                                  # is the decline real?
+#' }
+#'
+#' @export
+extract_trend_series <- function(con, zone_id,
+                                 index = c("NDRE", "NDMI", "NDVI", "NBR"),
+                                 date_from, date_to, cache_dir,
+                                 months           = 6:9,
+                                 min_years        = 4L,
+                                 min_obs_per_year = 2L,
+                                 alpha            = 0.05,
+                                 apply_zone_mask  = TRUE,
+                                 mask_polygon     = NULL,
+                                 parallel         = FALSE) {
+  index <- match.arg(index)
+  if (!requireNamespace("terra", quietly = TRUE)) {
+    cli::cli_abort("Package {.pkg terra} required.")
+  }
+  if (length(zone_id) != 1L || is.na(zone_id) ||
+      !is.finite(suppressWarnings(as.numeric(zone_id)))) {
+    cli::cli_abort("{.arg zone_id} must be a single non-NA integer.")
+  }
+  zid <- as.integer(zone_id)
+  if (missing(date_from) || missing(date_to)) {
+    cli::cli_abort("{.arg date_from} and {.arg date_to} are required.")
+  }
+  df <- tryCatch(as.Date(date_from), error = function(e) as.Date(NA),
+                 warning = function(w) as.Date(NA))
+  dt <- tryCatch(as.Date(date_to), error = function(e) as.Date(NA),
+                 warning = function(w) as.Date(NA))
+  if (is.na(df) || is.na(dt)) {
+    cli::cli_abort("{.arg date_from} / {.arg date_to} must parse as Date (ISO yyyy-mm-dd).")
+  }
+  if (df > dt) cli::cli_abort("{.arg date_from} must be <= {.arg date_to}.")
+  if (missing(cache_dir) || !is.character(cache_dir) ||
+      length(cache_dir) != 1L || !nzchar(cache_dir) || !dir.exists(cache_dir)) {
+    cli::cli_abort("{.arg cache_dir} is required and must be an existing path.")
+  }
+  if (!is.numeric(months) || !length(months) || anyNA(months) ||
+      any(months < 1 | months > 12)) {
+    cli::cli_abort("{.arg months} must be integers in 1:12.")
+  }
+  months           <- sort(unique(as.integer(months)))
+  min_years        <- as.integer(min_years)
+  min_obs_per_year <- as.integer(min_obs_per_year)
+
+  scenes_df <- .enumerate_cache_scenes(cache_dir, index, df, dt)
+  if (!nrow(scenes_df)) {
+    cli::cli_alert_info("No cached {.field {index}} scene in [{.val {df}}, {.val {dt}}].")
+    return(NULL)
+  }
+
+  poly <- if (isTRUE(apply_zone_mask)) {
+    mask_polygon %||% tryCatch(.get_zone_aoi(con, zid), error = function(e) NULL)
+  } else NULL
+
+  # Per-tile yearly composite, masked to the zone, reduced to one (mean,
+  # valid-pixel-count) per year. Tiles are then combined as a count-weighted
+  # mean per year (the ~10 km MGRS overlap is double-counted in that weight —
+  # a negligible bias for a zone-level trajectory). Computing per tile in its
+  # native CRS avoids reprojecting raw reflectance across UTM zones.
+  scenes_df$mgrs <- vapply(as.character(scenes_df$scene_id),
+                           .s2_mgrs_tile, character(1))
+  tiles <- unique(scenes_df$mgrs[!is.na(scenes_df$mgrs)])
+
+  tile_rows <- lapply(tiles, function(tile) {
+    sub <- scenes_df[!is.na(scenes_df$mgrs) & scenes_df$mgrs == tile, ,
+                     drop = FALSE]
+    stk <- suppressWarnings(
+      build_index_stack(cache_dir, sub, index, parallel = parallel))
+    if (is.null(stk)) return(NULL)
+    yc <- .trend_yearly_composite(stk, months, min_obs_per_year)
+    if (is.null(yc)) return(NULL)
+    comp <- yc$composite
+    if (isTRUE(apply_zone_mask) && !is.null(poly)) {
+      pv <- tryCatch(terra::project(terra::vect(poly), terra::crs(comp)),
+                     error = function(e) NULL)
+      if (!is.null(pv)) comp <- terra::mask(comp, pv)
+    }
+    m  <- terra::global(comp, "mean", na.rm = TRUE)[, 1L]
+    nn <- terra::global(comp, "notNA")[, 1L]
+    m[is.nan(m)] <- NA_real_
+    data.frame(year = yc$years, mean = m, n = nn)
+  })
+  tile_rows <- Filter(Negate(is.null), tile_rows)
+  if (!length(tile_rows)) {
+    cli::cli_alert_info("No usable {.field {index}} composite for zone {.val {zid}}.")
+    return(NULL)
+  }
+  all_rows <- do.call(rbind, tile_rows)
+
+  # Distinct in-season acquisitions per year (dedupe the same date present on
+  # two overlapping tiles).
+  smo <- as.integer(format(scenes_df$obs_date, "%m"))
+  syr <- as.integer(format(scenes_df$obs_date, "%Y"))
+  ins <- smo %in% months
+  nsc <- tapply(scenes_df$obs_date[ins], syr[ins],
+                function(d) length(unique(d)))
+
+  years <- sort(unique(all_rows$year))
+  value <- vapply(years, function(y) {
+    r <- all_rows[all_rows$year == y & !is.na(all_rows$mean), , drop = FALSE]
+    w <- sum(r$n)
+    if (!nrow(r) || w == 0) NA_real_ else sum(r$mean * r$n) / w
+  }, numeric(1))
+  ns <- as.integer(nsc[as.character(years)])
+  ns[is.na(ns)] <- 0L
+  series <- data.frame(
+    year     = as.integer(years),
+    n_scenes = ns,
+    value    = value,
+    fitted   = NA_real_)
+
+  fit <- NULL
+  ok  <- !is.na(series$value)
+  if (sum(ok) >= min_years) {
+    xs <- series$year[ok]; ys <- series$value[ok]
+    slope     <- .theil_sen(xs, ys)
+    mk        <- .mann_kendall(ys)
+    intercept <- stats::median(ys - slope * xs)
+    signif    <- !is.na(slope) && !is.na(mk$p) && slope < 0 && mk$p < alpha
+    fit <- list(slope = slope, intercept = intercept, p_value = mk$p,
+                tau = mk$tau, n_years = sum(ok), significant = signif,
+                alert = if (isTRUE(signif)) abs(slope) else 0)
+    series$fitted <- intercept + slope * series$year
+  }
+
+  list(series = series, fit = fit,
+       index = index, months = months, alpha = alpha)
+}
+
+
 # ---- internal helpers ------------------------------------------------
 
 # spec 017 D6 — content hash of every input that determines the FAST
@@ -759,8 +943,13 @@ read_fast_alert_rasters <- function(con, zone_id,
 # This is the same 0 / >0 contract as count & rolling, so
 # `compute_fast_alert_mask()` discretises it unchanged. Returns NULL when
 # no in-season scene exists at all.
-.fast_raster_trend <- function(stack, months, min_years,
-                               min_obs_per_year, alpha) {
+# spec 023 — the per-year in-season median composite the trend fit runs on,
+# factored out of `.fast_raster_trend()` so `extract_trend_series()` reuses
+# the EXACT same yearly values the per-pixel slope is derived from (the zone
+# trajectory and the trend map then agree by construction). Returns NULL when
+# no in-season scene exists. `composite` is a SpatRaster with one layer per
+# year (named by year), `years` the matching integer years in order.
+.trend_yearly_composite <- function(stack, months, min_obs_per_year) {
   dates <- terra::time(stack)
   if (length(dates) == 0L) return(NULL)
   dates <- as.Date(dates)
@@ -785,7 +974,18 @@ read_fast_alert_rasters <- function(con, zone_id,
     med  <- terra::median(sub, na.rm = TRUE)
     terra::ifel(nok < min_obs_per_year, NA_real_, med)
   })
-  yearly <- terra::rast(yearly)
+  comp <- terra::rast(yearly)
+  names(comp) <- as.character(uy)
+  list(composite = comp, years = uy)
+}
+
+
+.fast_raster_trend <- function(stack, months, min_years,
+                               min_obs_per_year, alpha) {
+  yc <- .trend_yearly_composite(stack, months, min_obs_per_year)
+  if (is.null(yc)) return(NULL)
+  yearly <- yc$composite
+  uy     <- yc$years
 
   # Even the most-covered pixel can't reach `min_years`: short-circuit to
   # an all-NA raster (downstream mask will be empty, never an error).

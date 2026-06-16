@@ -10,6 +10,20 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.86.0] - 2026-06-16
+
+### Added
+
+- `extract_trend_series()` — zone-level yearly seasonal composite series plus
+  the Theil-Sen / Mann-Kendall fit for an index in `trend` mode (default
+  NDRE). The trend map reduces each pixel to a single slope and carries no
+  onset information; this returns the intermediate `(year, value)` trajectory
+  (with `n_scenes`, the Theil-Sen `fitted` line and a `fit` summary:
+  `slope`, `intercept`, `p_value`, `tau`, `significant`, `alert`) so callers
+  can plot *when* a decline sets in. Reuses the same per-year composite as the
+  map via the new internal `.trend_yearly_composite()`; multi-tile AOIs are
+  combined as a valid-pixel-count-weighted mean per year.
+
 ## [0.85.1] - 2026-06-16
 
 ### Fixed
