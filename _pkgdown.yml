@@ -333,6 +333,7 @@ reference:
     - estimate_dq_from_hdom
     - estimate_synthetic_inventory
     - extract_pixel_timeseries
+    - extract_pixel_trend
     - extract_trend_series
     - field_schema
     - find_zone_by_project

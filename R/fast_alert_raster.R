@@ -687,19 +687,153 @@ extract_trend_series <- function(con, zone_id,
   fit <- NULL
   ok  <- !is.na(series$value)
   if (sum(ok) >= min_years) {
-    xs <- series$year[ok]; ys <- series$value[ok]
-    slope     <- .theil_sen(xs, ys)
-    mk        <- .mann_kendall(ys)
-    intercept <- stats::median(ys - slope * xs)
-    signif    <- !is.na(slope) && !is.na(mk$p) && slope < 0 && mk$p < alpha
-    fit <- list(slope = slope, intercept = intercept, p_value = mk$p,
-                tau = mk$tau, n_years = sum(ok), significant = signif,
-                alert = if (isTRUE(signif)) abs(slope) else 0)
-    series$fitted <- intercept + slope * series$year
+    f <- .trend_fit_one(series$value, series$year, alpha)
+    fit <- list(slope = f$slope, intercept = f$intercept, p_value = f$p,
+                tau = f$tau, n_years = sum(ok), significant = f$significant,
+                alert = f$alert)
+    series$fitted <- f$intercept + f$slope * series$year
   }
 
   list(series = series, fit = fit,
        index = index, months = months, alpha = alpha)
+}
+
+
+#' Per-pixel trend diagnostic at a point (composites + Theil-Sen / MK)
+#'
+#' The single-pixel counterpart of the FAST `trend` raster: for the point
+#' `xy`, returns the yearly seasonal composite series of `index` plus the
+#' Theil-Sen / Mann-Kendall result, **strictly consistent** with
+#' `read_fast_alert_raster(mode = "trend")` / `compute_fast_alert_mask()` at
+#' the same pixel. This is what drives the "why does this pixel have this
+#' colour" graph in `nemetonshiny`: the clicked pixel's composite points, the
+#' fitted decline line and the significance behind its severity class.
+#'
+#' The raw per-scene series is read with [extract_pixel_timeseries()] (a
+#' scene-by-scene point extraction, **not** a zone-wide mosaic — so it is
+#' immune to the multi-tile `[mosaic] resolution does not match` failure the
+#' raster path guards against). It is then composited exactly like the raster
+#' (`.trend_yearly_composite` logic: in-season median per year, a year with
+#' fewer than `min_obs_per_year` clear observations dropped) and fitted with
+#' the shared [.trend_fit_one()] — the same Theil-Sen / Mann-Kendall the
+#' raster runs per pixel — so `alert_value` equals the raster's pre-quartile
+#' value cell-for-cell.
+#'
+#' @param cache_dir Character scalar. COG cache root (must exist).
+#' @param scenes_df A `data.frame` of cached scenes with at least
+#'   `scene_id` and `obs_date`, as enumerated for the index (e.g. from
+#'   [list_alerts()] / the monitoring cache). Passed through to
+#'   [extract_pixel_timeseries()].
+#' @param xy Length-2 numeric `c(x, y)` point coordinate in `crs`.
+#' @param crs Coordinate reference of `xy`. Default `4326`.
+#' @param index One of `"NDRE"`, `"NDMI"`, `"NDVI"`, `"NBR"`. Default
+#'   `"NDRE"`.
+#' @param months,min_years,min_obs_per_year,alpha Trend parameters,
+#'   identical in meaning and default to [read_fast_alert_raster()]
+#'   `mode = "trend"`.
+#' @param zone_polygon,warn_outside_zone Optional UGF polygon and flag;
+#'   forwarded to [extract_pixel_timeseries()] to warn when `xy` lies
+#'   outside the managed perimeter (the series is still returned).
+#'
+#' @return `NULL` when no cached scene carries the index bands. Otherwise a
+#'   `list`:
+#'   \describe{
+#'     \item{`index`}{the index.}
+#'     \item{`composites`}{`data.frame(year, value)` — the in-season median
+#'       per year (`value` `NA` for a year below `min_obs_per_year`).}
+#'     \item{`n_years`}{count of valid composite years.}
+#'     \item{`theil_sen_slope`, `theil_sen_intercept`}{signed slope
+#'       (index/yr) and intercept, for the fitted line.}
+#'     \item{`mann_kendall_p`, `mann_kendall_tau`}{significance test.}
+#'     \item{`significant_decline`}{`enough_years` **and** `slope < 0` **and**
+#'       `p < alpha` — the raster's alert condition.}
+#'     \item{`alert_value`}{`abs(slope)` when `significant_decline`, `0` when
+#'       not significant, `NA` when `< min_years` valid years — the raster's
+#'       pre-quartile value, NA-masked exactly like the map.}
+#'     \item{`enough_years`}{`n_years >= min_years`.}
+#'   }
+#'   The 0-4 severity class is NOT returned: its quartile breaks are
+#'   zone-wide, so read the class straight from the mask raster at the pixel.
+#'
+#' @seealso [read_fast_alert_raster()] (`mode = "trend"`, the raster),
+#'   [extract_trend_series()] (the zone-level trajectory),
+#'   [extract_pixel_timeseries()] (the raw per-scene series).
+#'
+#' @examples
+#' \dontrun{
+#'   # `scenes` = the cached scenes for the index (scene_id + obs_date).
+#'   tr <- extract_pixel_trend(
+#'     cache_dir = "/proj/cache/layers/sentinel2",
+#'     scenes_df = scenes, xy = c(6.30, 46.40), index = "NDRE")
+#'   plot(tr$composites$year, tr$composites$value, type = "b")
+#'   abline(tr$theil_sen_intercept, tr$theil_sen_slope)
+#'   tr$significant_decline; tr$alert_value
+#' }
+#'
+#' @export
+extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
+                                index = c("NDRE", "NDMI", "NDVI", "NBR"),
+                                months           = 6:9,
+                                min_years        = 4L,
+                                min_obs_per_year = 2L,
+                                alpha            = 0.05,
+                                zone_polygon      = NULL,
+                                warn_outside_zone = TRUE) {
+  index <- match.arg(index)
+  if (!is.numeric(months) || !length(months) || anyNA(months) ||
+      any(months < 1 | months > 12)) {
+    cli::cli_abort("{.arg months} must be integers in 1:12.")
+  }
+  months           <- sort(unique(as.integer(months)))
+  min_years        <- as.integer(min_years)
+  min_obs_per_year <- as.integer(min_obs_per_year)
+
+  # Raw per-scene series at the point (scene-by-scene extraction — no
+  # zone-wide mosaic, so the multi-tile resolution mismatch never arises).
+  ts <- extract_pixel_timeseries(
+    cache_dir, scenes_df, xy, crs = crs, indices = index,
+    zone_polygon = zone_polygon, warn_outside_zone = warn_outside_zone)
+  ts <- ts[ts$index == index, , drop = FALSE]
+  if (!nrow(ts)) return(NULL)
+
+  # Composite exactly like `.trend_yearly_composite`: in-season scenes,
+  # grouped by year, median of the CLEAR (non-NA) values, a year with fewer
+  # than `min_obs_per_year` clear observations dropped to NA.
+  d  <- as.Date(ts$obs_date)
+  mo <- as.integer(format(d, "%m"))
+  yr <- as.integer(format(d, "%Y"))
+  keep <- mo %in% months
+  if (!any(keep)) return(NULL)
+  yr <- yr[keep]; val <- ts$value[keep]
+  uy <- sort(unique(yr))
+  comp_val <- vapply(uy, function(y) {
+    v <- val[yr == y & !is.na(val)]
+    if (length(v) < min_obs_per_year) NA_real_ else stats::median(v)
+  }, numeric(1))
+  composites <- data.frame(year = as.integer(uy), value = comp_val)
+
+  n_years <- sum(!is.na(comp_val))
+  enough  <- n_years >= min_years
+  f <- .trend_fit_one(comp_val, uy, alpha)
+
+  # Raster parity: a pixel with < min_years valid composites is NA-masked
+  # upstream in `.fast_raster_trend` (never fitted), so the pre-quartile
+  # value is NA there — mirror that here rather than reporting a slope on too
+  # few years.
+  significant <- isTRUE(enough) && isTRUE(f$significant)
+  alert_value <- if (!enough) NA_real_ else f$alert
+
+  list(
+    index               = index,
+    composites          = composites,
+    n_years             = as.integer(n_years),
+    theil_sen_slope     = f$slope,
+    theil_sen_intercept = f$intercept,
+    mann_kendall_p      = f$p,
+    mann_kendall_tau    = f$tau,
+    significant_decline = significant,
+    alert_value         = alert_value,
+    enough_years        = enough)
 }
 
 
@@ -1065,6 +1199,37 @@ extract_trend_series <- function(con, zone_id,
   # Significant monotonic DECLINE -> magnitude; everything else -> 0.
   ifelse(!is.na(ts_slope) & !is.na(pv) & ts_slope < 0 & pv < alpha,
          abs(ts_slope), 0)
+}
+
+
+# spec 023 — scalar Theil-Sen + Mann-Kendall fit on ONE yearly composite
+# series, the single-pixel / single-zone counterpart of the vectorised
+# `.trend_fit_cells()`. `values` is the per-year composite (NA for an
+# invalid year), `years` the matching years. NA years are dropped, then the
+# fit runs on the survivors — identical to the per-pixel column of
+# `.trend_fit_cells` (which is itself verified byte-identical to
+# `.theil_sen` / `.mann_kendall`). Returns `slope` (SIGNED), `intercept`
+# (`median(y - slope*x)`, for drawing the line), Mann-Kendall `p` / `tau`,
+# `significant` (`slope < 0` and `p < alpha`) and `alert` (`abs(slope)` when
+# significant, else `0` — the pre-quartile raster value). `< 2` valid years
+# yield an all-NA / non-significant fit. The `min_years` gate is the
+# CALLER's job (the raster masks sub-`min_years` pixels to NA upstream).
+.trend_fit_one <- function(values, years, alpha) {
+  ok <- !is.na(values)
+  v  <- as.numeric(values[ok])
+  y  <- as.numeric(years[ok])
+  if (length(v) < 2L) {
+    return(list(slope = NA_real_, intercept = NA_real_, p = NA_real_,
+                tau = NA_real_, significant = FALSE, alert = 0))
+  }
+  ord <- order(y)                     # Mann-Kendall needs chronological order
+  v <- v[ord]; y <- y[ord]
+  slope     <- .theil_sen(y, v)
+  mk        <- .mann_kendall(v)
+  intercept <- if (is.na(slope)) NA_real_ else stats::median(v - slope * y)
+  signif    <- !is.na(slope) && !is.na(mk$p) && slope < 0 && mk$p < alpha
+  list(slope = slope, intercept = intercept, p = mk$p, tau = mk$tau,
+       significant = signif, alert = if (isTRUE(signif)) abs(slope) else 0)
 }
 
 
