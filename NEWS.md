@@ -1,3 +1,27 @@
+# nemeton 0.90.0 (2026-06-17)
+
+### Added — `smooth_pixel_series()` : lissage robuste de la série pixel (spec 026)
+
+Le graphe « série pixel » (`extract_pixel_timeseries()`) reliait chaque
+acquisition par des segments → **dents de scie** illisibles (bruit résiduel
+nuages/ombres/neige, pas signal forestier). `smooth_pixel_series(ts,
+window_days = 45, method = c("rolling_median","loess"), min_obs = 3L)` ajoute
+une colonne **`smoothed`** par indice, pour afficher **points bruts estompés
++ ligne lissée** côté app (présentation), la logique de lissage restant dans
+le cœur (règle 12).
+
+- **Défaut `rolling_median`** : médiane sur une **fenêtre temporelle** centrée
+  (`window_days`, en jours — l'échantillonnage est irrégulier), **robuste aux
+  outliers** nuageux (≠ moyenne mobile / LOESS standard, qui les suivent).
+  `NA` quand la fenêtre contient moins de `min_obs` observations claires.
+- Option **`loess`** : régression locale `family = "symmetric"` (robuste),
+  temps centré, `span` plancher 0.3 ; prédit à toutes les dates.
+
+NA-aware, sans dépendance nouvelle (base `median`/`loess`). Opère à l'échelle
+**scène** (le lissage **saisonnier annuel** reste le rôle du mode `trend`).
+Tests : `test-smooth-pixel-series.R` (absorption de spikes nuageux, lissage
+par indice indépendant, `min_obs`, NA ignorés, loess sans NA).
+
 # nemeton 0.89.0 (2026-06-17)
 
 ### Added — seuil de pente minimale `min_slope` (calibration trend)
