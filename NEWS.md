@@ -1,3 +1,19 @@
+# nemeton 0.91.2 (2026-06-17)
+
+### Changed — FORDEAD ingest : suppression du fallback bbox-des-placettes
+
+`ingest_s2_raw_bands_to_cache()` (ingest FORDEAD) **ne lit plus du tout les
+placettes** : c'est un diagnostic **par pixel** dont l'emprise est la
+géométrie de la zone (`monitoring_zone.zone_wkt`). On retire l'appel à
+`.fetch_plots_sf()` et l'ancien **fallback bbox-des-placettes** (vestige
+d'avant spec 012/017, quand l'AOI dérivait de la position des placettes). Une
+zone sans `zone_wkt` exploitable est désormais une erreur de configuration
+claire (avertissement + résultat vide invitant à `register_monitoring_zone()`)
+plutôt qu'une reconstruction d'emprise depuis les placettes. `n_plots` du
+payload de progression `s2:search` passe à `0` (l'ingest est
+placette-indépendant). Tests : `test-sentinel2-cache.R` (l'ingest échoue le
+test si `.fetch_plots_sf` est appelé ; « no usable zone_wkt » → vide + warning).
+
 # nemeton 0.91.1 (2026-06-17)
 
 ### Fixed — diagnostic FORDEAD plantait sur une zone sans placette

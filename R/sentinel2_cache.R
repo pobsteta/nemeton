@@ -99,37 +99,24 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
     }
   }
 
-  plots <- .fetch_plots_sf(con, zone_id)
-
-  # spec 012 / 017 — share the AOI semantics with FAST: the STAC bbox and
-  # the COG crop come from `monitoring_zone.zone_wkt`, NOT from the
-  # per-plot bbox, so a FORDEAD pre-fetch warms the FAST cache and vice
-  # versa. This ingest is placette-independent: resolve the zone AOI
-  # first and only require plots for the LEGACY bbox fallback (a zone with
-  # no usable `zone_wkt`). Mirror of the guard in
-  # `ingest_sentinel2_timeseries()` — a placette-less but registered zone
-  # must still prime the cache.
+  # spec 012 / 017 — FORDEAD ingest is per-pixel and PLACETTE-INDEPENDENT:
+  # the STAC bbox and the COG crop are the monitoring zone geometry
+  # (`monitoring_zone.zone_wkt`), so a FORDEAD pre-fetch warms the FAST cache
+  # and vice versa. A zone without a usable `zone_wkt` is a registration
+  # error — there is NO per-plot bbox fallback (FORDEAD never reads `plot`).
   aoi_zone <- tryCatch(.get_zone_aoi(con, zone_id), error = function(e) NULL)
   if (is.null(aoi_zone)) {
-    if (!nrow(plots)) {
-      cli::cli_warn(c(
-        "Zone {.val {zone_id}} has neither a usable {.field zone_wkt} nor any registered plot.",
-        i = "Re-register the zone via {.fn register_monitoring_zone} first."
-      ))
-      return(.empty_raw_ingest_summary())
-    }
     cli::cli_warn(c(
-      "Zone {.val {zone_id}} has no usable {.field zone_wkt}; falling back to per-plot bbox (legacy behaviour).",
-      i = "Re-register the zone via {.fn register_monitoring_zone} so FAST and FORDEAD share the same cache."
+      "Zone {.val {zone_id}} has no usable {.field zone_wkt}.",
+      i = "Register the zone geometry via {.fn register_monitoring_zone} first."
     ))
-    aoi_zone <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(plots)),
-                          crs = sf::st_crs(plots))
+    return(.empty_raw_ingest_summary())
   }
 
   emit(list(current = "s2:search",
             start   = as.character(start),
             end     = as.character(end),
-            n_plots = nrow(plots),
+            n_plots = 0L,            # placette-independent (per-pixel diagnostic)
             bands   = bands))
 
   bbox <- sf::st_as_sfc(sf::st_bbox(sf::st_transform(aoi_zone, 4326)))

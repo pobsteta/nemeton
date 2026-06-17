@@ -156,17 +156,15 @@ test_that("emits s2:* events in order and returns scenes_df", {
 })
 
 
-test_that("placette-less zone ingests without crashing (spec 017 regression)", {
+test_that("FORDEAD ingest is placette-independent — never reads plots (spec 017)", {
   skip_if_no_sf(); skip_if_no_terra()
-  # Regression: a geometry-only monitoring zone (no placettes) makes
-  # `.fetch_plots_sf()` return a 0-row sf with NO `radius_m` column. The old
-  # dead-code `sf::st_buffer(plots_proj, dist = plots_proj$radius_m)` then got
-  # `dist = NULL` and aborted with
-  # "Not compatible with requested type: [type=NULL; target=double]".
-  empty_plots <- sf::st_sf(data.frame(),
-                           geometry = sf::st_sfc(crs = 4326))   # 0 rows, no radius_m
+  # spec 017 — the FORDEAD ingest is per-pixel and works from `zone_wkt`
+  # only: it must NOT call `.fetch_plots_sf()` at all. Mock it to error — if
+  # the ingest reaches it, the test fails. (Also a regression for the old
+  # dead-code per-plot buffer that crashed on a placette-less zone with
+  # "type=NULL; target=double".)
   testthat::local_mocked_bindings(
-    .fetch_plots_sf = function(con, zone_id) empty_plots,
+    .fetch_plots_sf = function(con, zone_id) stop("FORDEAD must not read plots"),
     .get_zone_aoi   = function(con, zone_id) make_fake_aoi(),
     stac_search_s2  = function(...) make_fake_scenes(2L),
     .get_s2_band_raster = function(scene, band, buf_plots, cache_dir, emit) NULL,
@@ -323,13 +321,13 @@ test_that("empty STAC search yields zero-row scenes_df with stable shape", {
 })
 
 
-test_that("no plots → empty result + warning", {
+test_that("no usable zone_wkt → empty result + warning (no plot fallback)", {
   skip_if_no_sf(); skip_if_no_terra()
-
+  # The zone has no resolvable geometry (`.get_zone_aoi` returns NULL). Since
+  # spec 017 removed the per-plot bbox fallback, the ingest warns and returns
+  # empty rather than reconstructing an AOI from the placettes.
   testthat::local_mocked_bindings(
-    .fetch_plots_sf = function(con, zone_id) {
-      sf::st_sf(data.frame(), geometry = sf::st_sfc(crs = 4326))
-    },
+    .get_zone_aoi = function(con, zone_id) NULL,
     .package = "nemeton"
   )
 
@@ -341,7 +339,7 @@ test_that("no plots → empty result + warning", {
       start = "2020-01-01", end = "2020-12-31",
       cache_dir = d
     ),
-    "neither.*nor any registered plot"   # spec 017 wording (was "No plots")
+    "no usable.*zone_wkt"
   )
   expect_equal(res$n_scenes, 0L)
 })
