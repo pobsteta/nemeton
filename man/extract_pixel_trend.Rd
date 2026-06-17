@@ -14,6 +14,7 @@ extract_pixel_trend(
   min_years = 4L,
   min_obs_per_year = 2L,
   alpha = 0.05,
+  min_slope = 0.005,
   zone_polygon = NULL,
   warn_outside_zone = TRUE
 )
@@ -33,9 +34,10 @@ extract_pixel_trend(
 \item{index}{One of `"NDRE"`, `"NDMI"`, `"NDVI"`, `"NBR"`. Default
 `"NDRE"`.}
 
-\item{months, min_years, min_obs_per_year, alpha}{Trend parameters,
-identical in meaning and default to [read_fast_alert_raster()]
-`mode = "trend"`.}
+\item{months, min_years, min_obs_per_year, alpha, min_slope}{Trend
+parameters, identical in meaning and default to
+[read_fast_alert_raster()] `mode = "trend"` (`min_slope` is the minimum
+decline magnitude for an alert, default `0.005`).}
 
 \item{zone_polygon, warn_outside_zone}{Optional UGF polygon and flag;
 forwarded to [extract_pixel_timeseries()] to warn when `xy` lies

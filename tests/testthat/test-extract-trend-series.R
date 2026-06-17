@@ -42,7 +42,7 @@ test_that("extract_trend_series returns a declining, significant NDRE series", {
     cache_dir = cache, apply_zone_mask = FALSE))
 
   expect_type(tr, "list")
-  expect_named(tr, c("series", "fit", "index", "months", "alpha"))
+  expect_named(tr, c("series", "fit", "index", "months", "alpha", "min_slope"))
   expect_identical(tr$index, "NDRE")
 
   # One row per in-season year, ascending, two scenes each.

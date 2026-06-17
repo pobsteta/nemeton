@@ -80,6 +80,36 @@ test_that("extract_pixel_trend: flat series is not an alert", {
 })
 
 
+test_that("extract_pixel_trend: min_slope rejects a negligible decline", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  cache  <- withr::local_tempdir()
+  # A tiny but strictly-monotonic decline: B05 creeps up ~0.0005/yr -> NDRE
+  # slope ~ -0.001/yr. Mann-Kendall flags it (perfectly monotonic), but it is
+  # ecologically negligible — exactly the noise the min_slope gate filters.
+  scenes <- .write_pixel_trend_cache(cache, years = 2017:2024,
+                                     b05_of = function(k) 0.20 + (k - 1) * 0.0005)
+
+  # Default min_slope (0.005): significant test passes but magnitude too small
+  # -> NOT an alert.
+  tr <- suppressMessages(extract_pixel_trend(
+    cache_dir = cache, scenes_df = scenes, xy = .PT_XY, crs = 32631,
+    index = "NDRE"))
+  expect_true(tr$enough_years)
+  expect_lt(abs(tr$theil_sen_slope), 0.005)   # genuinely tiny slope
+  expect_lt(tr$mann_kendall_p, 0.05)          # yet statistically significant
+  expect_false(tr$significant_decline)        # min_slope gate rejects it
+  expect_equal(tr$alert_value, 0)
+
+  # min_slope = 0 restores the pure significance test -> the decline IS flagged.
+  tr0 <- suppressMessages(extract_pixel_trend(
+    cache_dir = cache, scenes_df = scenes, xy = .PT_XY, crs = 32631,
+    index = "NDRE", min_slope = 0))
+  expect_true(tr0$significant_decline)
+  expect_gt(tr0$alert_value, 0)
+})
+
+
 test_that("extract_pixel_trend: below min_years -> alert_value NA", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")

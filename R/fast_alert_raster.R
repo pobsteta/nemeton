@@ -97,6 +97,17 @@
 #'   decline is `alpha / 2`** — the default `0.05` is a 2.5% one-sided
 #'   risk. Pixels above the threshold are treated as noise (output `0`).
 #'   Default `0.05`.
+#' @param min_slope Numeric `>= 0`. Trend mode only: the **minimum decline
+#'   magnitude** (index units per year) for a pixel to be flagged. A pixel
+#'   is an alert only when its Theil-Sen slope is negative, Mann-Kendall is
+#'   significant **and** `abs(slope) >= min_slope`. This is the calibration
+#'   lever against Mann-Kendall's sensitivity on long series, where a tiny
+#'   but perfectly monotonic drift (e.g. 0.0001 NDRE/yr) is statistically
+#'   "significant" yet ecologically negligible. Default `0.005` (≈ a 0.03–0.05
+#'   total NDRE drop over a typical window); set `0` to restore the pure
+#'   significance test. **Provisional** — to be calibrated against ground
+#'   truth (ONF/DSF). Folded into the D6 cache hash, so a change invalidates
+#'   trend COGs.
 #' @param cache_dir Character scalar. Path to the COG cache root
 #'   (typically `<project>/cache/layers/sentinel2`). Must exist.
 #' @param cache_result Logical. When `TRUE` (default, spec 017 D6) the
@@ -152,6 +163,7 @@ read_fast_alert_raster <- function(con, zone_id,
                                    min_years        = 4L,
                                    min_obs_per_year = 2L,
                                    alpha            = 0.05,
+                                   min_slope        = 0.005,
                                    cache_dir,
                                    apply_zone_mask  = TRUE,
                                    mask_polygon     = NULL,
@@ -241,6 +253,10 @@ read_fast_alert_raster <- function(con, zone_id,
         is.na(min_obs_per_year) || min_obs_per_year < 1) {
       cli::cli_abort("{.arg min_obs_per_year} must be a single integer >= 1 when {.code mode = \"trend\"}.")
     }
+    if (!is.numeric(min_slope) || length(min_slope) != 1L ||
+        is.na(min_slope) || min_slope < 0) {
+      cli::cli_abort("{.arg min_slope} must be a single numeric >= 0 when {.code mode = \"trend\"}.")
+    }
   }
   months           <- sort(unique(as.integer(months)))
   min_years        <- as.integer(min_years)
@@ -278,7 +294,8 @@ read_fast_alert_raster <- function(con, zone_id,
                              wd, df, dt, mask_wkt,
                              alpha = alpha, months = months,
                              min_years = min_years,
-                             min_obs_per_year = min_obs_per_year)
+                             min_obs_per_year = min_obs_per_year,
+                             min_slope = min_slope)
   cpath <- .fast_raster_cache_path(result_cache_dir, zid, index, mode,
                                    threshold, df, dt, wd, rhash,
                                    alpha = alpha, months = months,
@@ -334,7 +351,8 @@ read_fast_alert_raster <- function(con, zone_id,
     } else {
       # spec 023 — multi-year monotonic decline (Theil-Sen + Mann-Kendall).
       .fast_raster_trend(stk, months = months, min_years = min_years,
-                         min_obs_per_year = min_obs_per_year, alpha = alpha)
+                         min_obs_per_year = min_obs_per_year, alpha = alpha,
+                         min_slope = min_slope)
     }
     if (is.null(rn)) return(NULL)
     terra::project(rn, "EPSG:2154", method = method)
@@ -479,6 +497,7 @@ read_fast_alert_rasters <- function(con, zone_id,
                                     min_years        = 4L,
                                     min_obs_per_year = 2L,
                                     alpha            = 0.05,
+                                    min_slope        = 0.005,
                                     cache_dir,
                                     apply_zone_mask  = TRUE,
                                     mask_polygon     = NULL,
@@ -508,6 +527,7 @@ read_fast_alert_rasters <- function(con, zone_id,
       min_years        = min_years,
       min_obs_per_year = min_obs_per_year,
       alpha            = alpha,
+      min_slope        = min_slope,
       cache_dir        = cache_dir,
       apply_zone_mask  = apply_zone_mask,
       mask_polygon     = mask_polygon,
@@ -555,7 +575,7 @@ read_fast_alert_rasters <- function(con, zone_id,
 #'       `significant` (`slope < 0` **and** `p_value < alpha`) and `alert`
 #'       (`abs(slope)` when `significant`, else `0` — the same magnitude the
 #'       trend map bins into classes 1-4).}
-#'     \item{`index`, `months`, `alpha`}{the parameters used.}
+#'     \item{`index`, `months`, `alpha`, `min_slope`}{the parameters used.}
 #'   }
 #'
 #' @seealso [read_fast_alert_raster()] (`mode = "trend"`, the per-pixel map),
@@ -582,6 +602,7 @@ extract_trend_series <- function(con, zone_id,
                                  min_years        = 4L,
                                  min_obs_per_year = 2L,
                                  alpha            = 0.05,
+                                 min_slope        = 0.005,
                                  apply_zone_mask  = TRUE,
                                  mask_polygon     = NULL,
                                  parallel         = FALSE) {
@@ -687,7 +708,7 @@ extract_trend_series <- function(con, zone_id,
   fit <- NULL
   ok  <- !is.na(series$value)
   if (sum(ok) >= min_years) {
-    f <- .trend_fit_one(series$value, series$year, alpha)
+    f <- .trend_fit_one(series$value, series$year, alpha, min_slope)
     fit <- list(slope = f$slope, intercept = f$intercept, p_value = f$p,
                 tau = f$tau, n_years = sum(ok), significant = f$significant,
                 alert = f$alert)
@@ -695,7 +716,7 @@ extract_trend_series <- function(con, zone_id,
   }
 
   list(series = series, fit = fit,
-       index = index, months = months, alpha = alpha)
+       index = index, months = months, alpha = alpha, min_slope = min_slope)
 }
 
 
@@ -728,9 +749,10 @@ extract_trend_series <- function(con, zone_id,
 #' @param crs Coordinate reference of `xy`. Default `4326`.
 #' @param index One of `"NDRE"`, `"NDMI"`, `"NDVI"`, `"NBR"`. Default
 #'   `"NDRE"`.
-#' @param months,min_years,min_obs_per_year,alpha Trend parameters,
-#'   identical in meaning and default to [read_fast_alert_raster()]
-#'   `mode = "trend"`.
+#' @param months,min_years,min_obs_per_year,alpha,min_slope Trend
+#'   parameters, identical in meaning and default to
+#'   [read_fast_alert_raster()] `mode = "trend"` (`min_slope` is the minimum
+#'   decline magnitude for an alert, default `0.005`).
 #' @param zone_polygon,warn_outside_zone Optional UGF polygon and flag;
 #'   forwarded to [extract_pixel_timeseries()] to warn when `xy` lies
 #'   outside the managed perimeter (the series is still returned).
@@ -777,6 +799,7 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
                                 min_years        = 4L,
                                 min_obs_per_year = 2L,
                                 alpha            = 0.05,
+                                min_slope        = 0.005,
                                 zone_polygon      = NULL,
                                 warn_outside_zone = TRUE) {
   index <- match.arg(index)
@@ -814,7 +837,7 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
 
   n_years <- sum(!is.na(comp_val))
   enough  <- n_years >= min_years
-  f <- .trend_fit_one(comp_val, uy, alpha)
+  f <- .trend_fit_one(comp_val, uy, alpha, min_slope)
 
   # Raster parity: a pixel with < min_years valid composites is NA-masked
   # upstream in `.fast_raster_trend` (never fitted), so the pre-quartile
@@ -849,7 +872,8 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
                               window_days, date_from, date_to, mask_wkt,
                               alpha = NA_real_, months = NA_integer_,
                               min_years = NA_integer_,
-                              min_obs_per_year = NA_integer_) {
+                              min_obs_per_year = NA_integer_,
+                              min_slope = NA_real_) {
   base <- list(
     scenes      = sort(as.character(scene_ids)),
     index       = index,
@@ -867,13 +891,14 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
   # Trend-only parameters are appended ONLY for trend, so the hash of a
   # count / rolling raster is byte-identical to pre-spec-023 — existing
   # cached COGs stay valid. Changing alpha / months / min_years /
-  # min_obs_per_year invalidates a trend raster (the content IS the key).
+  # min_obs_per_year / min_slope invalidates a trend raster (content IS key).
   if (identical(mode, "trend")) {
     base <- c(base, list(
       alpha            = round(as.numeric(alpha), 6L),
       months           = paste(sort(as.integer(months)), collapse = "-"),
       min_years        = as.integer(min_years),
-      min_obs_per_year = as.integer(min_obs_per_year)
+      min_obs_per_year = as.integer(min_obs_per_year),
+      min_slope        = round(as.numeric(min_slope), 6L)
     ))
   }
   rlang::hash(base)
@@ -1115,7 +1140,7 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
 
 
 .fast_raster_trend <- function(stack, months, min_years,
-                               min_obs_per_year, alpha) {
+                               min_obs_per_year, alpha, min_slope = 0) {
   yc <- .trend_yearly_composite(stack, months, min_obs_per_year)
   if (is.null(yc)) return(NULL)
   yearly <- yc$composite
@@ -1152,7 +1177,7 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
       "FAST trend: Theil-Sen / Mann-Kendall on {n_cand} candidate pixel{?s} ({n_yr} composite years).")
     res[cand] <- .trend_fit_cells(vals[cand, , drop = FALSE],
                                   present[cand, , drop = FALSE],
-                                  uy, alpha)
+                                  uy, alpha, min_slope)
   }
   out <- terra::setValues(yearly[[1L]], res)
   names(out) <- "alert_trend"
@@ -1168,7 +1193,11 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
 # row: `abs(slope)` for a significant monotonic decline, else `0`. Verified
 # byte-identical to the per-pixel `.theil_sen` / `.mann_kendall` path,
 # including heterogeneous NA coverage, flat series and partial ties.
-.trend_fit_cells <- function(M, present, yrs, alpha) {
+# `min_slope` is the magnitude gate (spec 023 calibration): a pixel is only
+# flagged when `abs(slope) >= min_slope`, so a statistically-significant but
+# ecologically-negligible decline (Mann-Kendall flags tiny monotonic drifts
+# on long series) is treated as noise, not an alert.
+.trend_fit_cells <- function(M, present, yrs, alpha, min_slope = 0) {
   p   <- ncol(M)
   prs <- utils::combn(p, 2L)
   dx  <- yrs[prs[2L, ]] - yrs[prs[1L, ]]
@@ -1196,8 +1225,11 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
       v <- M[i, ]; .mann_kendall(v[!is.na(v)])$p
     }, numeric(1))
   }
-  # Significant monotonic DECLINE -> magnitude; everything else -> 0.
-  ifelse(!is.na(ts_slope) & !is.na(pv) & ts_slope < 0 & pv < alpha,
+  # Significant monotonic DECLINE of sufficient magnitude -> |slope|;
+  # everything else (greening, flat, not significant, or |slope| < min_slope)
+  # -> 0.
+  ifelse(!is.na(ts_slope) & !is.na(pv) & ts_slope < 0 & pv < alpha &
+           abs(ts_slope) >= min_slope,
          abs(ts_slope), 0)
 }
 
@@ -1214,7 +1246,7 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
 # significant, else `0` — the pre-quartile raster value). `< 2` valid years
 # yield an all-NA / non-significant fit. The `min_years` gate is the
 # CALLER's job (the raster masks sub-`min_years` pixels to NA upstream).
-.trend_fit_one <- function(values, years, alpha) {
+.trend_fit_one <- function(values, years, alpha, min_slope = 0) {
   ok <- !is.na(values)
   v  <- as.numeric(values[ok])
   y  <- as.numeric(years[ok])
@@ -1227,7 +1259,10 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
   slope     <- .theil_sen(y, v)
   mk        <- .mann_kendall(v)
   intercept <- if (is.na(slope)) NA_real_ else stats::median(v - slope * y)
-  signif    <- !is.na(slope) && !is.na(mk$p) && slope < 0 && mk$p < alpha
+  # `min_slope` (spec 023 calibration): reject a significant but negligible
+  # decline so Mann-Kendall's sensitivity on long series doesn't flag noise.
+  signif    <- !is.na(slope) && !is.na(mk$p) && slope < 0 && mk$p < alpha &&
+               abs(slope) >= min_slope
   list(slope = slope, intercept = intercept, p = mk$p, tau = mk$tau,
        significant = signif, alert = if (isTRUE(signif)) abs(slope) else 0)
 }
