@@ -156,6 +156,36 @@ test_that("emits s2:* events in order and returns scenes_df", {
 })
 
 
+test_that("placette-less zone ingests without crashing (spec 017 regression)", {
+  skip_if_no_sf(); skip_if_no_terra()
+  # Regression: a geometry-only monitoring zone (no placettes) makes
+  # `.fetch_plots_sf()` return a 0-row sf with NO `radius_m` column. The old
+  # dead-code `sf::st_buffer(plots_proj, dist = plots_proj$radius_m)` then got
+  # `dist = NULL` and aborted with
+  # "Not compatible with requested type: [type=NULL; target=double]".
+  empty_plots <- sf::st_sf(data.frame(),
+                           geometry = sf::st_sfc(crs = 4326))   # 0 rows, no radius_m
+  testthat::local_mocked_bindings(
+    .fetch_plots_sf = function(con, zone_id) empty_plots,
+    .get_zone_aoi   = function(con, zone_id) make_fake_aoi(),
+    stac_search_s2  = function(...) make_fake_scenes(2L),
+    .get_s2_band_raster = function(scene, band, buf_plots, cache_dir, emit) NULL,
+    .package = "nemeton"
+  )
+
+  d <- tempfile("raw-bands-noplot-")
+  dir.create(d, recursive = TRUE)
+  res <- expect_no_error(
+    ingest_s2_raw_bands_to_cache(
+      con       = make_fake_con(), zone_id = 5L,
+      bands     = c("B04", "B12"),
+      start     = "2020-01-01", end = "2020-12-31",
+      cache_dir = d))
+  expect_equal(res$n_scenes, 2L)
+  expect_equal(nrow(res$scenes_df), 2L)
+})
+
+
 test_that("cached bands are counted but not fetched", {
   skip_if_no_sf(); skip_if_no_terra()
 
@@ -311,7 +341,7 @@ test_that("no plots → empty result + warning", {
       start = "2020-01-01", end = "2020-12-31",
       cache_dir = d
     ),
-    "No plots"
+    "neither.*nor any registered plot"   # spec 017 wording (was "No plots")
   )
   expect_equal(res$n_scenes, 0L)
 })

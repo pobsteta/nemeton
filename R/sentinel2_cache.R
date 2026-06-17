@@ -161,13 +161,15 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
             n_cached     = as.integer(n_cached_scenes),
             n_to_process = as.integer(total_scenes - n_cached_scenes)))
 
-  # `buf` is kept for compatibility with downstream extract paths,
-  # but the crop passed to .get_s2_band_raster() is now the zone AOI
-  # (spec 012). FORDEAD doesn't use `buf` after this — only the cache
-  # write is what matters here.
-  plots_proj <- sf::st_transform(plots, 2154)
-  buf <- sf::st_buffer(plots_proj, dist = plots_proj$radius_m)
-  crop_geom <- aoi_zone  # spec 012
+  # spec 012 / 017 — the crop passed to .get_s2_band_raster() is the zone
+  # AOI (placette-independent). The old per-plot buffer was already dead code
+  # (never read downstream) AND crashed on a placette-less zone: a
+  # geometry-only `monitoring_zone` makes `.fetch_plots_sf()` return a 0-row
+  # sf with NO `radius_m` column, so `sf::st_buffer(plots_proj, dist =
+  # plots_proj$radius_m)` got `dist = NULL` and aborted with
+  # "Not compatible with requested type: [type=NULL; target=double]".
+  # Removed — `crop_geom` is the only geometry FORDEAD ingest needs.
+  crop_geom <- aoi_zone
 
   n_bands_fetched <- 0L
   n_bands_cached  <- 0L

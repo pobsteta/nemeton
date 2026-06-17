@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.91.1] - 2026-06-17
+
+### Fixed
+
+- `run_fordead_dieback()` no longer aborts with `Not compatible with requested
+  type: [type=NULL; target=double]` on a geometry-only monitoring zone (no
+  placettes, the default since spec 017). `ingest_s2_raw_bands_to_cache()`
+  computed a dead per-plot buffer `sf::st_buffer(plots_proj, dist =
+  plots_proj$radius_m)`; on a placette-less zone `radius_m` is `NULL`, so the
+  buffer crashed. The buffer was never used downstream (the zone AOI is the
+  crop since spec 012/017) — removed.
+
 ## [0.91.0] - 2026-06-17
 
 ### Added
