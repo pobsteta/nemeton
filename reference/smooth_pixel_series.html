@@ -21,7 +21,7 @@ average or LOESS would chase."><meta property="og:image" content="https://pobste
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.90.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.91.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -73,8 +73,9 @@ average or LOESS would chase.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">smooth_pixel_series</span><span class="op">(</span></span>
 <span>  <span class="va">ts</span>,</span>
 <span>  window_days <span class="op">=</span> <span class="fl">45</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rolling_median"</span>, <span class="st">"loess"</span><span class="op">)</span>,</span>
-<span>  min_obs <span class="op">=</span> <span class="fl">3L</span></span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rolling_median"</span>, <span class="st">"loess"</span>, <span class="st">"harmonic"</span><span class="op">)</span>,</span>
+<span>  min_obs <span class="op">=</span> <span class="fl">3L</span>,</span>
+<span>  n_harmonics <span class="op">=</span> <span class="fl">2L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -89,25 +90,48 @@ average or LOESS would chase.</p>
 
 
 <dt id="arg-window-days">window_days<a class="anchor" aria-label="anchor" href="#arg-window-days"></a></dt>
-<dd><p>Numeric `&gt; 0`. Full width (days) of the centred window.
-Default `45`.</p></dd>
+<dd><p>Numeric `&gt; 0`. Full width (days) of the centred window
+(`rolling_median` / `loess` only). Default `45`.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>`"rolling_median"` (default, robust) or `"loess"` (local
-regression, `family = "symmetric"` so it down-weights outliers).</p></dd>
+<dd><p>One of:</p><dl><dt>`"rolling_median"`</dt>
+<dd><p>(default) median over a centred temporal
+    window — robust, but `NA` in genuine data gaps (winter / cloud runs):
+    it only shows real data, never bridges a gap.</p></dd>
+
+  <dt>`"loess"`</dt>
+<dd><p>local regression (`family = "symmetric"`,
+    outlier-robust); also local, so still gappy.</p></dd>
+
+  <dt>`"harmonic"`</dt>
+<dd><p>robust harmonic regression — models the annual
+    cycle (Fourier) + a linear trend, so the curve is <strong>continuous</strong>
+    across the winter/summer gaps the local methods can't bridge. NB this
+    is a fitted <em>model</em> (the winter is interpolated from the seasonal
+    shape), not raw data — present it as such.</p></dd>
+
+
+</dl></dd>
 
 
 <dt id="arg-min-obs">min_obs<a class="anchor" aria-label="anchor" href="#arg-min-obs"></a></dt>
 <dd><p>Integer `&gt;= 1`. Minimum clear (non-`NA`) observations in the
 window for a smoothed value; below it the point is `NA`. Default `3`.</p></dd>
 
+
+<dt id="arg-n-harmonics">n_harmonics<a class="anchor" aria-label="anchor" href="#arg-n-harmonics"></a></dt>
+<dd><p>Integer in `1:3`. `harmonic` method only: number of
+annual Fourier pairs. Default `2`.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The input `data.frame`, sorted by `(index, obs_date)`, with a new
-  numeric `smoothed` column (`NA` where the window holds fewer than
-  `min_obs` clear observations, or for an all-`NA` / too-short index).</p>
+  numeric `smoothed` column. For `rolling_median` / `loess` it is `NA` in
+  data gaps (window below `min_obs`); for `harmonic` it is continuous at
+  every date, `NA` only for an index with too few clear points or under
+  ~9 months of span.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

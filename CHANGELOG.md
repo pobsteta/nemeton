@@ -12,6 +12,20 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.91.0\] - 2026-06-17
+
+### Added
+
+- `smooth_pixel_series(method = "harmonic")` — a 3rd smoother for the
+  per-pixel series: robust harmonic regression (`n_harmonics` annual
+  Fourier pairs + linear trend, IRLS / Tukey biweight) that models the
+  seasonal cycle and so stays **continuous across the winter/summer data
+  gaps** the local `rolling_median` / `loess` cannot bridge. Base R
+  only. New `n_harmonics` parameter. The fit is a model (winter
+  interpolated from the seasonal shape), not raw data. Since the helper
+  predicts at every row, the app gets a fully continuous curve by
+  appending a regular `value = NA` date grid. Spec 026.
+
 ## \[0.90.0\] - 2026-06-17
 
 ### Added

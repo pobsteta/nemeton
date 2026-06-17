@@ -15,8 +15,9 @@ average or LOESS would chase.
 smooth_pixel_series(
   ts,
   window_days = 45,
-  method = c("rolling_median", "loess"),
-  min_obs = 3L
+  method = c("rolling_median", "loess", "harmonic"),
+  min_obs = 3L,
+  n_harmonics = 2L
 )
 ```
 
@@ -30,13 +31,31 @@ smooth_pixel_series(
 
 - window_days:
 
-  Numeric \`\> 0\`. Full width (days) of the centred window. Default
-  \`45\`.
+  Numeric \`\> 0\`. Full width (days) of the centred window
+  (\`rolling_median\` / \`loess\` only). Default \`45\`.
 
 - method:
 
-  \`"rolling_median"\` (default, robust) or \`"loess"\` (local
-  regression, \`family = "symmetric"\` so it down-weights outliers).
+  One of:
+
+  \`"rolling_median"\`
+
+  :   (default) median over a centred temporal window — robust, but
+      \`NA\` in genuine data gaps (winter / cloud runs): it only shows
+      real data, never bridges a gap.
+
+  \`"loess"\`
+
+  :   local regression (\`family = "symmetric"\`, outlier-robust); also
+      local, so still gappy.
+
+  \`"harmonic"\`
+
+  :   robust harmonic regression — models the annual cycle (Fourier) + a
+      linear trend, so the curve is **continuous** across the
+      winter/summer gaps the local methods can't bridge. NB this is a
+      fitted *model* (the winter is interpolated from the seasonal
+      shape), not raw data — present it as such.
 
 - min_obs:
 
@@ -44,11 +63,18 @@ smooth_pixel_series(
   window for a smoothed value; below it the point is \`NA\`. Default
   \`3\`.
 
+- n_harmonics:
+
+  Integer in \`1:3\`. \`harmonic\` method only: number of annual Fourier
+  pairs. Default \`2\`.
+
 ## Value
 
 The input \`data.frame\`, sorted by \`(index, obs_date)\`, with a new
-numeric \`smoothed\` column (\`NA\` where the window holds fewer than
-\`min_obs\` clear observations, or for an all-\`NA\` / too-short index).
+numeric \`smoothed\` column. For \`rolling_median\` / \`loess\` it is
+\`NA\` in data gaps (window below \`min_obs\`); for \`harmonic\` it is
+continuous at every date, \`NA\` only for an index with too few clear
+points or under ~9 months of span.
 
 ## Details
 

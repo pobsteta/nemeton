@@ -843,6 +843,35 @@ cœur).
 
 ## Journal
 
+### 2026-06-17 — Added : `smooth_pixel_series(method="harmonic")` — lissage saisonnier continu (spec 026, cœur, v0.91.0)
+
+Suite à la question de Pascal : la médiane glissante laisse des trous
+(hiver/ nuages) car c’est un dénoiseur **local** ; quelle méthode mieux
+adaptée aux **trous saisonniers** ? Réponse : la **décomposition
+harmonique** (HANTS/BFAST/ CCDC, cohérent FORDEAD harmonique ADR-013).
+Paperwork-first : amendement spec 026. **Livré** : 3ᵉ méthode `harmonic`
+dans
+[`smooth_pixel_series()`](https://pobsteta.github.io/nemeton/reference/smooth_pixel_series.md)
+— régression harmonique robuste (helper interne `.harmonic_fit()` :
+`n_harmonics` paires de Fourier annuelles + tendance linéaire, **IRLS**
+poids biweight Tukey c=4.685, échelle MAD, phase sur `t` absolu pour
+cohérence inter-années, tendance centrée/échelle années pour le
+conditionnement). Modélise le cycle → **courbe continue** sur les trous.
+Garde-fous : `>= 2K+4` points clairs **et** étendue `>= 0.75·365.25` (~9
+mois) sinon NA ; rang-déficient → NA via tryCatch. Base R
+(`lm.wfit`/`median`), **aucune dépendance**. Nouveau param `n_harmonics`
+(1:3). **Caveat** documenté : `harmonic` = courbe **modélisée** (hiver
+interpolé), pas de la donnée brute. **Densification** : la fonction
+prédit à toutes les lignes (y compris `value=NA`) → l’app obtient une
+courbe pleinement continue en ajoutant une grille de dates régulières NA
+à `ts`. Le **déclin pluriannuel** reste au mode `trend` (la tendance
+harmonique sert l’affichage, pas l’alerte). Doc roxygen +
+`man/smooth_pixel_series.Rd` (édité main). Tests
+`test-smooth-pixel-series.R` (28) : continuité sur trous saisonniers +
+corrélation au signal saisonnier \> 0.9 malgré spikes, densification
+grille NA, série trop courte → NA, validation `n_harmonics`.
+`test-pixel-map.R` (69) inchangé.
+
 ### 2026-06-17 — Added : `smooth_pixel_series()` — lissage robuste série pixel (spec 026, cœur, v0.90.0)
 
 Demande : le graphe « série pixel » (NBR/NDMI/NDVI par scène, modale
