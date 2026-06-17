@@ -78,6 +78,72 @@ test_that("NA values are ignored, not propagated", {
 })
 
 
+test_that("harmonic method is continuous across seasonal gaps", {
+  # A seasonal signal (annual sine) sampled only in summer (months 5-9) over
+  # 5 years, with cloud spikes -> the local methods leave winter NA, the
+  # harmonic fit must return a continuous curve at EVERY date.
+  yrs <- 2018:2022
+  d   <- do.call(c, lapply(yrs, function(y)
+    as.Date(sprintf("%d-%02d-15", y, 5:9))))   # 5 summer dates/year
+  t   <- as.numeric(d)
+  seasonal <- 0.6 + 0.2 * sin(2 * pi * t / 365.25)
+  v   <- seasonal
+  v[c(3L, 12L)] <- 0.0                          # two cloud spikes
+  ts  <- data.frame(obs_date = d, index = "NDVI", value = v,
+                    stringsAsFactors = FALSE)
+
+  sm <- smooth_pixel_series(ts, method = "harmonic", n_harmonics = 2L)
+  expect_true("smoothed" %in% names(sm))
+  expect_false(anyNA(sm$smoothed))              # continuous, no gaps
+  # Tracks the seasonal signal despite the spikes (robust fit).
+  expect_gt(stats::cor(sm$smoothed, seasonal), 0.9)
+  expect_lt(stats::sd(sm$smoothed), stats::sd(sm$value))
+  # Spikes are absorbed (fitted value near the seasonal level, not 0).
+  expect_gt(sm$smoothed[3L], 0.4)
+})
+
+
+test_that("harmonic fills NA-value grid rows (app densification pattern)", {
+  # The app can get a fully continuous winter curve by appending a regular
+  # date grid with value = NA: the harmonic predicts at EVERY row, including
+  # the NA ones (fit uses the clear points only).
+  yrs  <- 2018:2022
+  obs  <- do.call(c, lapply(yrs, function(y)
+    as.Date(sprintf("%d-%02d-15", y, 5:9))))            # real summer obs
+  grid <- seq(min(obs), max(obs), by = 30L)             # dense regular grid
+  t_obs <- as.numeric(obs)
+  ts <- rbind(
+    data.frame(obs_date = obs,  index = "NDVI",
+               value = 0.6 + 0.2 * sin(2 * pi * t_obs / 365.25)),
+    data.frame(obs_date = grid, index = "NDVI", value = NA_real_))
+
+  sm <- smooth_pixel_series(ts, method = "harmonic")
+  grid_rows <- sm[is.na(sm$value), ]
+  # Every synthetic grid date got a modelled value (continuous winter curve).
+  expect_false(anyNA(grid_rows$smoothed))
+  expect_gt(stats::sd(grid_rows$smoothed), 0)           # it actually varies seasonally
+})
+
+
+test_that("harmonic returns NA when the series is too short / sparse", {
+  # Under ~9 months of span -> cannot estimate the annual cycle -> NA.
+  d  <- as.Date("2020-06-01") + seq.int(0L, by = 10L, length.out = 8L)
+  ts <- data.frame(obs_date = d, index = "NDVI",
+                   value = 0.6 + 0.01 * seq_along(d), stringsAsFactors = FALSE)
+  sm <- smooth_pixel_series(ts, method = "harmonic")
+  expect_true(all(is.na(sm$smoothed)))
+})
+
+
+test_that("smooth_pixel_series validates n_harmonics", {
+  ts <- mk_series()
+  expect_error(smooth_pixel_series(ts, method = "harmonic", n_harmonics = 0L),
+               "1:3")
+  expect_error(smooth_pixel_series(ts, method = "harmonic", n_harmonics = 5L),
+               "1:3")
+})
+
+
 test_that("loess method returns a smoothed value at every date", {
   skip_if_not_installed("stats")
   ts <- mk_series("NDVI", n = 40L, base = 0.7, slope_per_day = -0.0005,

@@ -1,3 +1,31 @@
+# nemeton 0.91.0 (2026-06-17)
+
+### Added — `smooth_pixel_series(method = "harmonic")` : lissage saisonnier continu (spec 026)
+
+Les méthodes locales (`rolling_median`, `loess`) laissent des **trous** là où
+il n'y a pas de scène claire (hiver, longues séries nuageuses) — elles ne
+peuvent rien dire sans donnée. Pour une série optique à **trous saisonniers**,
+la famille adaptée est la **décomposition harmonique** (HANTS / BFAST / CCDC),
+cohérente avec FORDEAD (déjà harmonique, ADR-013).
+
+Nouvelle méthode **`harmonic`** : régression **harmonique robuste** —
+`n_harmonics` paires de Fourier annuelles (défaut 2) + tendance linéaire,
+ajustée par **IRLS** (poids biweight de Tukey, échelle MAD) pour rejeter les
+chutes nuageuses. Elle modélise le **cycle saisonnier** → courbe **continue**
+même sur les trous hiver/été. Base R uniquement (`stats::lm.wfit`), aucune
+dépendance nouvelle. Nouveau paramètre `n_harmonics` (1:3).
+
+> **Modèle ≠ donnée** : `harmonic` *interpole* l'hiver à partir de la forme du
+> cycle — courbe **modélisée**, pas mesurée (à présenter comme telle côté app).
+
+`smooth_pixel_series()` prédit à **toutes** les lignes (y compris `value =
+NA`) : l'app obtient une courbe pleinement continue en ajoutant une **grille de
+dates régulières** (`value = NA`) à `ts` avant l'appel. Le déclin pluriannuel
+reste porté par le mode `trend` (le terme de tendance harmonique sert
+l'affichage, pas la décision d'alerte). Tests : `test-smooth-pixel-series.R`
+(continuité sur trous saisonniers, robustesse aux spikes, densification par
+grille NA, garde-fou série trop courte, validation `n_harmonics`).
+
 # nemeton 0.90.0 (2026-06-17)
 
 ### Added — `smooth_pixel_series()` : lissage robuste de la série pixel (spec 026)

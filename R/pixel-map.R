@@ -599,16 +599,31 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
 #' @param ts A `data.frame` with columns `obs_date` (Date or
 #'   `"YYYY-MM-DD"`), `index` (character) and `value` (numeric, possibly
 #'   `NA`) — the output of [extract_pixel_timeseries()].
-#' @param window_days Numeric `> 0`. Full width (days) of the centred window.
-#'   Default `45`.
-#' @param method `"rolling_median"` (default, robust) or `"loess"` (local
-#'   regression, `family = "symmetric"` so it down-weights outliers).
+#' @param window_days Numeric `> 0`. Full width (days) of the centred window
+#'   (`rolling_median` / `loess` only). Default `45`.
+#' @param method One of:
+#'   \describe{
+#'     \item{`"rolling_median"`}{(default) median over a centred temporal
+#'       window — robust, but `NA` in genuine data gaps (winter / cloud runs):
+#'       it only shows real data, never bridges a gap.}
+#'     \item{`"loess"`}{local regression (`family = "symmetric"`,
+#'       outlier-robust); also local, so still gappy.}
+#'     \item{`"harmonic"`}{robust harmonic regression — models the annual
+#'       cycle (Fourier) + a linear trend, so the curve is \strong{continuous}
+#'       across the winter/summer gaps the local methods can't bridge. NB this
+#'       is a fitted \emph{model} (the winter is interpolated from the seasonal
+#'       shape), not raw data — present it as such.}
+#'   }
 #' @param min_obs Integer `>= 1`. Minimum clear (non-`NA`) observations in the
 #'   window for a smoothed value; below it the point is `NA`. Default `3`.
+#' @param n_harmonics Integer in `1:3`. `harmonic` method only: number of
+#'   annual Fourier pairs. Default `2`.
 #'
 #' @return The input `data.frame`, sorted by `(index, obs_date)`, with a new
-#'   numeric `smoothed` column (`NA` where the window holds fewer than
-#'   `min_obs` clear observations, or for an all-`NA` / too-short index).
+#'   numeric `smoothed` column. For `rolling_median` / `loess` it is `NA` in
+#'   data gaps (window below `min_obs`); for `harmonic` it is continuous at
+#'   every date, `NA` only for an index with too few clear points or under
+#'   ~9 months of span.
 #'
 #' @seealso [extract_pixel_timeseries()] (the raw series),
 #'   [extract_pixel_trend()] (the seasonal-composite trend at a pixel).
@@ -623,8 +638,8 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
 #'
 #' @export
 smooth_pixel_series <- function(ts, window_days = 45,
-                                method = c("rolling_median", "loess"),
-                                min_obs = 3L) {
+                                method = c("rolling_median", "loess", "harmonic"),
+                                min_obs = 3L, n_harmonics = 2L) {
   method <- match.arg(method)
   if (!is.data.frame(ts) ||
       !all(c("obs_date", "index", "value") %in% names(ts))) {
@@ -639,6 +654,10 @@ smooth_pixel_series <- function(ts, window_days = 45,
   min_obs <- as.integer(min_obs)
   if (is.na(min_obs) || min_obs < 1L) {
     cli::cli_abort("{.arg min_obs} must be an integer >= 1.")
+  }
+  n_harmonics <- as.integer(n_harmonics)
+  if (is.na(n_harmonics) || n_harmonics < 1L || n_harmonics > 3L) {
+    cli::cli_abort("{.arg n_harmonics} must be an integer in 1:3.")
   }
 
   ts <- ts[order(ts$index, as.Date(ts$obs_date)), , drop = FALSE]
@@ -658,7 +677,7 @@ smooth_pixel_series <- function(ts, window_days = 45,
         win <- which(abs(d - d[i]) <= half & !is.na(v))
         if (length(win) >= min_obs) sm[i] <- stats::median(v[win])
       }
-    } else {
+    } else if (method == "loess") {
       # Robust local regression on the clear points, predicted at every date.
       # Centre the time axis (days since the first observation) — raw epoch-day
       # magnitudes (~18000) make loess numerically unstable ("pseudoinverse").
@@ -679,10 +698,63 @@ smooth_pixel_series <- function(ts, window_days = 45,
             stats::predict(fit, newdata = data.frame(t = d - t0))))
         }
       }
+    } else {
+      # Robust harmonic regression — models the annual cycle (Fourier) + a
+      # linear trend, so the curve is CONTINUOUS across the winter/summer data
+      # gaps a local smoother can't bridge. Predicted at every date.
+      sm <- .harmonic_fit(d, v, n_harmonics = n_harmonics)
     }
     ts$smoothed[sel] <- sm
   }
   ts
+}
+
+
+# spec 026 — robust harmonic regression of one index series. Models the annual
+# cycle (`n_harmonics` Fourier pairs, period 365.25 d) plus a linear trend, fit
+# by IRLS with Tukey-biweight weights (MAD scale) so cloud drops are
+# down-weighted. `d` = numeric days, `v` = values (NA allowed). Returns the
+# fitted value at EVERY `d` (continuous across seasonal gaps), or all-NA when
+# there are too few clear points / too short a span / a rank-deficient fit.
+# Base R only (lm.wfit / median). The harmonic phase uses absolute `d` so it
+# is consistent across years; the trend column is centred and scaled to years
+# (P) for conditioning.
+.harmonic_fit <- function(d, v, n_harmonics = 2L, period = 365.25,
+                          robust_iter = 3L) {
+  ok    <- !is.na(v)
+  n_par <- 2L + 2L * n_harmonics
+  td    <- d[ok]; yd <- v[ok]
+  # Need enough clear points AND ~9 months of span to estimate the cycle.
+  if (length(yd) < n_par + 4L || diff(range(td)) < 0.75 * period) {
+    return(rep(NA_real_, length(d)))
+  }
+  t0 <- mean(td)
+  design <- function(tt) {
+    m <- cbind(1, (tt - t0) / period)
+    for (k in seq_len(n_harmonics)) {
+      w <- 2 * pi * k * tt / period
+      m <- cbind(m, sin(w), cos(w))
+    }
+    m
+  }
+  X  <- design(td)
+  Xa <- design(d)
+
+  beta <- tryCatch(stats::lm.wfit(X, yd, rep(1, length(yd)))$coefficients,
+                   error = function(e) NULL)
+  if (is.null(beta) || anyNA(beta)) return(rep(NA_real_, length(d)))
+  for (it in seq_len(robust_iter)) {
+    r <- yd - as.numeric(X %*% beta)
+    s <- stats::median(abs(r)) * 1.4826                  # MAD-based scale
+    if (!is.finite(s) || s <= 0) break                   # perfect fit -> stop
+    u <- r / (4.685 * s)                                 # Tukey biweight, c=4.685
+    wt <- ifelse(abs(u) < 1, (1 - u^2)^2, 0)
+    b <- tryCatch(stats::lm.wfit(X, yd, wt)$coefficients,
+                  error = function(e) NULL)
+    if (is.null(b) || anyNA(b)) break
+    beta <- b
+  }
+  as.numeric(Xa %*% beta)
 }
 
 
