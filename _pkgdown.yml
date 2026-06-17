@@ -403,6 +403,7 @@ reference:
     - schema_to_df
     - sentinel2_stac
     - site_index_reference_points
+    - smooth_pixel_series
     - stac_get_item
     - stac_search_items
     - stac_search_s2

@@ -560,6 +560,27 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-06-17 — Added : `smooth_pixel_series()` — lissage robuste série pixel (spec 026, cœur, v0.90.0)
+
+Demande : le graphe « série pixel » (NBR/NDMI/NDVI par scène, modale clic carte)
+relie chaque acquisition → dents de scie illisibles (bruit nuages/ombres/neige).
+Pascal valide l'**Option B** (lissage dans le cœur, app affiche). Paperwork-first :
+spec 026. **Livré** : `smooth_pixel_series(ts, window_days = 45, method =
+c("rolling_median","loess"), min_obs = 3L)` (`R/pixel-map.R`) qui ajoute une
+colonne `smoothed` par indice à la sortie de `extract_pixel_timeseries()`.
+**Défaut médiane glissante** sur fenêtre **temporelle** centrée (jours,
+échantillonnage irrégulier) → robuste aux spikes nuageux (≠ moyenne mobile/LOESS
+qui les suivent) ; option **loess** `family="symmetric"` (temps centré contre
+l'instabilité « pseudoinverse » des jours-époque ; span plancher 0.3 contre le
+sur-ajustement). NA-aware, sans dépendance nouvelle. Opère à l'échelle **scène**
+(le lissage saisonnier annuel reste le rôle du `trend`). App : points bruts
+estompés + ligne lissée. Tests `test-smooth-pixel-series.R` (18) : absorption de
+2 spikes nuageux (médiane reste ~0.7), lissage par indice indépendant, `min_obs`
+(NA si trop épars / point unique → soi-même), NA ignorés autour d'un trou, loess
+sans NA + variance réduite. `test-pixel-map.R` (69) inchangé. Doc à la main
+(`man/smooth_pixel_series.Rd`, NAMESPACE, `_pkgdown.yml`). Plancher app à venir
+`nemeton (>= 0.90.0)`.
+
 ### 2026-06-17 — Added : seuil `min_slope` — calibration trend Mann-Kendall (spec 023, cœur, v0.89.0)
 
 Constat (issu du bug v0.88.1 « points hors zone ») : même confiné à la zone, le

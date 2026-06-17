@@ -582,6 +582,110 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
   out[order(out$obs_date, out$index), , drop = FALSE]
 }
 
+
+#' Robustly smooth a per-pixel spectral series (spec 026)
+#'
+#' Adds a `smoothed` column to the long series returned by
+#' [extract_pixel_timeseries()], denoising each index independently so a
+#' caller (e.g. `nemetonshiny`) can draw **faded raw points + a clean line**
+#' instead of joining every acquisition with a sawtooth. The variability in a
+#' raw Sentinel-2 series is mostly residual cloud / shadow / snow and view-angle
+#' noise, not forest signal, so the default smoother is a **rolling median** —
+#' robust to the isolated drops a simple moving average or LOESS would chase.
+#'
+#' The window is **temporal** (`window_days`), not a fixed number of points,
+#' because acquisitions are irregularly spaced; `NA` values are ignored.
+#'
+#' @param ts A `data.frame` with columns `obs_date` (Date or
+#'   `"YYYY-MM-DD"`), `index` (character) and `value` (numeric, possibly
+#'   `NA`) — the output of [extract_pixel_timeseries()].
+#' @param window_days Numeric `> 0`. Full width (days) of the centred window.
+#'   Default `45`.
+#' @param method `"rolling_median"` (default, robust) or `"loess"` (local
+#'   regression, `family = "symmetric"` so it down-weights outliers).
+#' @param min_obs Integer `>= 1`. Minimum clear (non-`NA`) observations in the
+#'   window for a smoothed value; below it the point is `NA`. Default `3`.
+#'
+#' @return The input `data.frame`, sorted by `(index, obs_date)`, with a new
+#'   numeric `smoothed` column (`NA` where the window holds fewer than
+#'   `min_obs` clear observations, or for an all-`NA` / too-short index).
+#'
+#' @seealso [extract_pixel_timeseries()] (the raw series),
+#'   [extract_pixel_trend()] (the seasonal-composite trend at a pixel).
+#'
+#' @examples
+#' \dontrun{
+#'   ts  <- extract_pixel_timeseries(cache_dir, scenes, xy = c(6.1, 46.6),
+#'                                   indices = c("NDVI", "NBR", "NDMI"))
+#'   sm  <- smooth_pixel_series(ts, window_days = 45)
+#'   # plot: points = sm$value (faded), line = sm$smoothed, by index
+#' }
+#'
+#' @export
+smooth_pixel_series <- function(ts, window_days = 45,
+                                method = c("rolling_median", "loess"),
+                                min_obs = 3L) {
+  method <- match.arg(method)
+  if (!is.data.frame(ts) ||
+      !all(c("obs_date", "index", "value") %in% names(ts))) {
+    cli::cli_abort(c(
+      "{.arg ts} must be a data.frame with columns {.field obs_date} / {.field index} / {.field value}.",
+      i = "Pass the output of {.fn extract_pixel_timeseries}."))
+  }
+  if (!is.numeric(window_days) || length(window_days) != 1L ||
+      is.na(window_days) || window_days <= 0) {
+    cli::cli_abort("{.arg window_days} must be a single positive number.")
+  }
+  min_obs <- as.integer(min_obs)
+  if (is.na(min_obs) || min_obs < 1L) {
+    cli::cli_abort("{.arg min_obs} must be an integer >= 1.")
+  }
+
+  ts <- ts[order(ts$index, as.Date(ts$obs_date)), , drop = FALSE]
+  ts$smoothed <- NA_real_
+  if (!nrow(ts)) return(ts)
+  half <- window_days / 2
+
+  for (idx in unique(ts$index)) {
+    sel <- which(ts$index == idx)
+    d   <- as.numeric(as.Date(ts$obs_date[sel]))
+    v   <- as.numeric(ts$value[sel])
+    sm  <- rep(NA_real_, length(sel))
+
+    if (method == "rolling_median") {
+      # Centred temporal window; the median is inherently outlier-robust.
+      for (i in seq_along(sel)) {
+        win <- which(abs(d - d[i]) <= half & !is.na(v))
+        if (length(win) >= min_obs) sm[i] <- stats::median(v[win])
+      }
+    } else {
+      # Robust local regression on the clear points, predicted at every date.
+      # Centre the time axis (days since the first observation) — raw epoch-day
+      # magnitudes (~18000) make loess numerically unstable ("pseudoinverse").
+      ok <- !is.na(v)
+      if (sum(ok) >= max(min_obs, 4L) && diff(range(d[ok])) > 0) {
+        # `span` is a FRACTION of points (loess), only loosely tied to
+        # `window_days`; floor it at 0.3 to avoid the small-neighbourhood
+        # over-fitting that lets a residual spike pull the curve down.
+        t0   <- min(d[ok])
+        span <- min(0.75, max(0.3, window_days / diff(range(d[ok]))))
+        dfit <- data.frame(t = d[ok] - t0, y = v[ok])
+        fit  <- tryCatch(suppressWarnings(
+          stats::loess(y ~ t, data = dfit, span = span, degree = 1L,
+                       family = "symmetric")),
+          error = function(e) NULL)
+        if (!is.null(fit)) {
+          sm <- suppressWarnings(as.numeric(
+            stats::predict(fit, newdata = data.frame(t = d - t0))))
+        }
+      }
+    }
+    ts$smoothed[sel] <- sm
+  }
+  ts
+}
+
+
 # Internal: validate the `scenes_df` argument shared by read_s2_band_stack(),
 # build_index_stack(), and extract_pixel_timeseries(). Stops on first failure
 # rather than collecting — these are programmer-side mistakes, fail fast.
