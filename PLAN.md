@@ -183,6 +183,17 @@ puis retirés de ce repo (suivi désormais côté app).
 
 ---
 
+# Chantier — Suivi sanitaire : graphe trend par pixel + plan sanitaire (spec 023 / 025)
+
+- [x] **Spec 023 — Trajectoire de déclin par pixel (graphe trend)**
+      cœur `extract_pixel_trend()` + `extract_trend_series()` (nemeton v0.87.0) ;
+      app graphe trajectoire NDRE au clic carte Alertes FAST (nemetonshiny v0.86.0)
+- [x] **Spec 025 — Plan d'échantillonnage sanitaire sur le trend (Option A)**
+      cœur `create_trend_sanitary_plan()` (nemeton v0.88.0) ;
+      app « Plan de validation FAST » branché sur le trend (nemetonshiny v0.87.0)
+
+---
+
 # Chantier en cours — RECONFORT : suivi sanitaire feuillus (spec 021, ADR-013 A4)
 
 **Cadré** : 2026-06-10 (paperwork : `specs/021-suivi-sanitaire-reconfort/`
@@ -548,6 +559,30 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-06-16 — Spec 023 (graphe trend par pixel) livrée
+- **Cœur nemeton v0.87.0** : `extract_pixel_trend()` (composites saisonniers
+  annuels + Theil-Sen + Mann-Kendall par pixel, cohérent avec
+  `compute_fast_alert_mask(mode="trend")` : `alert_value` == valeur
+  pré-quartile du raster) et `extract_trend_series()` (overview zone).
+- **App nemetonshiny@6b525470 (v0.86.0)** : clic carte Alertes FAST (mode
+  Tendance) → modale graphe trajectoire NDRE (points composites + droite
+  Theil-Sen + pente/p-value/sévérité), bouton plein écran ; correctif
+  redimensionnement plein écran nemetonshiny@837048eb (v0.86.1).
+- Plancher app relevé : `nemeton (>= 0.87.0)`.
+
+### 2026-06-16 — Spec 025 (plan sanitaire sur le trend, Option A) livrée
+- **Cœur nemeton v0.88.0** : `create_trend_sanitary_plan(con, zone_id, …)` —
+  placettes sanitaires pondérées ∝ |pente| (déclin significatif), témoins
+  sur cellules stables ; sf POINT 2154 (plot_id S##/T##, type, alert_value,
+  index, source "FAST_TREND", seed) ; erreur typée `nemeton_empty_alert_mask`
+  si aucun déclin significatif.
+- **App nemetonshiny@68faa51c (v0.87.0)** : sous-onglet « Plan de validation
+  FAST » rebranché sur le trend (wrapper `generate_trend_sanitary_plan()`),
+  sidebar refondue (indice, fenêtre pluriannuelle, placettes
+  sanitaires/témoins, params avancés ; retrait classes/témoins/tampon),
+  carte colorée par sévérité continue, message « aucun déclin significatif ».
+  FORDEAD/RECONFORT inchangés. Plancher app : `nemeton (>= 0.88.0)`.
 
 ### 2026-06-16 — Fix : `create_trend_sanitary_plan()` tirait hors de la zone (spec 025, cœur, v0.88.1)
 
