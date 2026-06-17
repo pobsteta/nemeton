@@ -1,3 +1,19 @@
+# nemeton 0.91.1 (2026-06-17)
+
+### Fixed — diagnostic FORDEAD plantait sur une zone sans placette
+
+`run_fordead_dieback()` échouait avec `Not compatible with requested type:
+[type=NULL; target=double]` sur une zone de suivi **géométrie-seule** (sans
+placette — le cas par défaut depuis spec 017). Cause : dans
+`ingest_s2_raw_bands_to_cache()`, un reliquat de **code mort** —
+`sf::st_buffer(plots_proj, dist = plots_proj$radius_m)` — recevait
+`dist = NULL` quand `.fetch_plots_sf()` renvoie un `sf` 0 ligne sans colonne
+`radius_m`, d'où l'erreur vctrs. Ce buffer par placette n'était **jamais
+utilisé** en aval (seul le masque de zone `crop_geom` sert depuis spec 012/017)
+— il est supprimé. Le diagnostic FORDEAD tourne désormais sur les zones sans
+placette. Régression : `test-sentinel2-cache.R` (« placette-less zone ingests
+without crashing »).
+
 # nemeton 0.91.0 (2026-06-17)
 
 ### Added — `smooth_pixel_series(method = "harmonic")` : lissage saisonnier continu (spec 026)
