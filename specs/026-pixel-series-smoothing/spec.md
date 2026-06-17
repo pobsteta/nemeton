@@ -28,15 +28,26 @@ cœur** (règle 12), testable et réutilisable.
   (échantillonnage irrégulier).
 - **Option `loess`** : régression locale `family = "symmetric"` (robuste,
   IRLS) `degree = 1`, span ≈ `window_days` / étendue temporelle.
+- **Option `harmonic`** (amendement v0.91.0) : régression **harmonique
+  robuste** — modélise le **cycle saisonnier annuel** (Fourier) + une
+  tendance linéaire, donc **continue** même sur les trous hiver/été (≠ les
+  deux dénoiseurs locaux, qui ne disent rien là où il n'y a pas de points).
+  C'est la famille adaptée aux séries optiques à trous saisonniers (HANTS /
+  BFAST / CCDC), et cohérente avec FORDEAD (déjà harmonique, ADR-013).
+
+  > **Caveat « modèle ≠ donnée »** : `harmonic` *interpole l'hiver* à partir
+  > de la forme du cycle — c'est une courbe **modélisée**, pas de la donnée
+  > brute. À présenter comme telle côté app (ligne « modèle saisonnier »).
 
 ## 3. API
 
 ```r
 smooth_pixel_series(
   ts,                                   # sortie de extract_pixel_timeseries()
-  window_days = 45,
-  method      = c("rolling_median", "loess"),
-  min_obs     = 3L)                     # mini de points clairs dans la fenêtre
+  window_days = 45,                     # rolling_median / loess seulement
+  method      = c("rolling_median", "loess", "harmonic"),
+  min_obs     = 3L,                     # mini de points clairs dans la fenêtre
+  n_harmonics = 2L)                     # harmonic seulement (1-3)
 ```
 
 ### Sortie
@@ -56,16 +67,29 @@ Par groupe `index` :
   (évite l'instabilité numérique des jours-époque), prédit à **toutes** les
   dates ; `span = clamp(window_days / étendue, 0.3, 0.75)` (plancher 0.3 :
   span trop petit → sur-ajustement, un spike résiduel tire la courbe).
+- **harmonic** (amendement v0.91.0) : moindres carrés sur le modèle
+  `y = b0 + b1·(t−t̄)/P + Σ_{k=1}^{K}[a_k·sin(2πk·t/P) + c_k·cos(2πk·t/P)]`,
+  `P = 365.25 j`, `K = n_harmonics`, `t` en jours. Ajustement **robuste IRLS**
+  (3 itérations, poids **biweight de Tukey** `c = 4.685`, échelle = MAD des
+  résidus) → rejette les chutes nuageuses. Prédit à **toutes** les dates →
+  courbe continue. Base R uniquement (`stats::lm.wfit`, `stats::median`).
 
 ## 5. Garde-fous
 
 - `ts` doit porter `obs_date` / `index` / `value` (sinon abort explicite).
-- `window_days > 0`, `min_obs >= 1`.
+- `window_days > 0`, `min_obs >= 1`, `n_harmonics ∈ 1:3`.
 - Groupe tout-`NA` ou trop court → `smoothed` `NA` (jamais d'erreur).
-- Aucune dépendance nouvelle (stats base `median` / `loess`).
+- **harmonic** : exige `>= 2·K + 4` points non-`NA` **et** une étendue
+  temporelle `>= 0.75·P` (~9 mois, pour estimer le cycle annuel) ; sinon
+  `NA`. Ajustement rang-déficient (singularité, trop de poids nuls) → `NA`
+  via `tryCatch` (jamais d'erreur).
+- Aucune dépendance nouvelle (stats base `median` / `loess` / `lm.wfit`).
 
 ## 6. Non-objectifs
 
-- Pas de lissage saisonnier annuel ici (c'est le rôle du `trend` /
-  `.trend_yearly_composite`). `smooth_pixel_series` opère à l'échelle scène.
-- Pas de ré-échantillonnage à pas régulier : on garde les dates d'acquisition.
+- Pas de lissage saisonnier annuel **pour le diagnostic de déclin** : le mode
+  `trend` (composite estival + Theil-Sen) reste la référence pluriannuelle.
+  Le terme de tendance de `harmonic` sert l'**affichage** continu, pas la
+  décision d'alerte.
+- Pas de ré-échantillonnage à pas régulier : on garde les dates d'acquisition
+  (la prédiction harmonique reste évaluée aux dates observées).
