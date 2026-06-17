@@ -12,6 +12,36 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.91.2\] - 2026-06-17
+
+### Changed
+
+- [`ingest_s2_raw_bands_to_cache()`](https://pobsteta.github.io/nemeton/reference/ingest_s2_raw_bands_to_cache.md)
+  (FORDEAD ingest) no longer reads the `plot` table at all: it dropped
+  the `.fetch_plots_sf()` call and the legacy per-plot bbox fallback (a
+  pre-spec-012/017 leftover). FORDEAD is a per-pixel diagnostic whose
+  AOI is the zone geometry (`zone_wkt`); a zone without a usable
+  `zone_wkt` now warns + returns empty (pointing to
+  [`register_monitoring_zone()`](https://pobsteta.github.io/nemeton/reference/register_monitoring_zone.md))
+  instead of reconstructing an AOI from the placettes. The `s2:search`
+  progress payload reports `n_plots = 0`.
+
+## \[0.91.1\] - 2026-06-17
+
+### Fixed
+
+- [`run_fordead_dieback()`](https://pobsteta.github.io/nemeton/reference/run_fordead_dieback.md)
+  no longer aborts with
+  `Not compatible with requested type: [type=NULL; target=double]` on a
+  geometry-only monitoring zone (no placettes, the default since spec
+  017).
+  [`ingest_s2_raw_bands_to_cache()`](https://pobsteta.github.io/nemeton/reference/ingest_s2_raw_bands_to_cache.md)
+  computed a dead per-plot buffer
+  `sf::st_buffer(plots_proj, dist = plots_proj$radius_m)`; on a
+  placette-less zone `radius_m` is `NULL`, so the buffer crashed. The
+  buffer was never used downstream (the zone AOI is the crop since spec
+  012/017) — removed.
+
 ## \[0.91.0\] - 2026-06-17
 
 ### Added

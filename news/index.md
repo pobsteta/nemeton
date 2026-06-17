@@ -1,5 +1,44 @@
 # Changelog
 
+## nemeton 0.91.2 (2026-06-17)
+
+#### Changed — FORDEAD ingest : suppression du fallback bbox-des-placettes
+
+[`ingest_s2_raw_bands_to_cache()`](https://pobsteta.github.io/nemeton/reference/ingest_s2_raw_bands_to_cache.md)
+(ingest FORDEAD) **ne lit plus du tout les placettes** : c’est un
+diagnostic **par pixel** dont l’emprise est la géométrie de la zone
+(`monitoring_zone.zone_wkt`). On retire l’appel à `.fetch_plots_sf()` et
+l’ancien **fallback bbox-des-placettes** (vestige d’avant spec 012/017,
+quand l’AOI dérivait de la position des placettes). Une zone sans
+`zone_wkt` exploitable est désormais une erreur de configuration claire
+(avertissement + résultat vide invitant à
+[`register_monitoring_zone()`](https://pobsteta.github.io/nemeton/reference/register_monitoring_zone.md))
+plutôt qu’une reconstruction d’emprise depuis les placettes. `n_plots`
+du payload de progression `s2:search` passe à `0` (l’ingest est
+placette-indépendant). Tests : `test-sentinel2-cache.R` (l’ingest échoue
+le test si `.fetch_plots_sf` est appelé ; « no usable zone_wkt » →
+vide + warning).
+
+## nemeton 0.91.1 (2026-06-17)
+
+#### Fixed — diagnostic FORDEAD plantait sur une zone sans placette
+
+[`run_fordead_dieback()`](https://pobsteta.github.io/nemeton/reference/run_fordead_dieback.md)
+échouait avec
+`Not compatible with requested type: [type=NULL; target=double]` sur une
+zone de suivi **géométrie-seule** (sans placette — le cas par défaut
+depuis spec 017). Cause : dans
+[`ingest_s2_raw_bands_to_cache()`](https://pobsteta.github.io/nemeton/reference/ingest_s2_raw_bands_to_cache.md),
+un reliquat de **code mort** —
+`sf::st_buffer(plots_proj, dist = plots_proj$radius_m)` — recevait
+`dist = NULL` quand `.fetch_plots_sf()` renvoie un `sf` 0 ligne sans
+colonne `radius_m`, d’où l’erreur vctrs. Ce buffer par placette n’était
+**jamais utilisé** en aval (seul le masque de zone `crop_geom` sert
+depuis spec 012/017) — il est supprimé. Le diagnostic FORDEAD tourne
+désormais sur les zones sans placette. Régression :
+`test-sentinel2-cache.R` (« placette-less zone ingests without crashing
+»).
+
 ## nemeton 0.91.0 (2026-06-17)
 
 #### Added — `smooth_pixel_series(method = "harmonic")` : lissage saisonnier continu (spec 026)

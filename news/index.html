@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.91.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.91.2.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,20 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.91.2" id="nemeton-0912-2026-06-17">nemeton 0.91.2 (2026-06-17)<a class="anchor" aria-label="anchor" href="#nemeton-0912-2026-06-17"></a></h2>
+<div class="section level4">
+<h4 id="changed--fordead-ingest--suppression-du-fallback-bbox-des-placettes-0-91-2">Changed — FORDEAD ingest : suppression du fallback bbox-des-placettes<a class="anchor" aria-label="anchor" href="#changed--fordead-ingest--suppression-du-fallback-bbox-des-placettes-0-91-2"></a></h4>
+<p><code><a href="../reference/ingest_s2_raw_bands_to_cache.html">ingest_s2_raw_bands_to_cache()</a></code> (ingest FORDEAD) <strong>ne lit plus du tout les placettes</strong> : c’est un diagnostic <strong>par pixel</strong> dont l’emprise est la géométrie de la zone (<code>monitoring_zone.zone_wkt</code>). On retire l’appel à <code>.fetch_plots_sf()</code> et l’ancien <strong>fallback bbox-des-placettes</strong> (vestige d’avant spec 012/017, quand l’AOI dérivait de la position des placettes). Une zone sans <code>zone_wkt</code> exploitable est désormais une erreur de configuration claire (avertissement + résultat vide invitant à <code><a href="../reference/register_monitoring_zone.html">register_monitoring_zone()</a></code>) plutôt qu’une reconstruction d’emprise depuis les placettes. <code>n_plots</code> du payload de progression <code>s2:search</code> passe à <code>0</code> (l’ingest est placette-indépendant). Tests : <code>test-sentinel2-cache.R</code> (l’ingest échoue le test si <code>.fetch_plots_sf</code> est appelé ; « no usable zone_wkt » → vide + warning).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.91.1" id="nemeton-0911-2026-06-17">nemeton 0.91.1 (2026-06-17)<a class="anchor" aria-label="anchor" href="#nemeton-0911-2026-06-17"></a></h2>
+<div class="section level4">
+<h4 id="fixed--diagnostic-fordead-plantait-sur-une-zone-sans-placette-0-91-1">Fixed — diagnostic FORDEAD plantait sur une zone sans placette<a class="anchor" aria-label="anchor" href="#fixed--diagnostic-fordead-plantait-sur-une-zone-sans-placette-0-91-1"></a></h4>
+<p><code><a href="../reference/run_fordead_dieback.html">run_fordead_dieback()</a></code> échouait avec <code>Not compatible with requested type: [type=NULL; target=double]</code> sur une zone de suivi <strong>géométrie-seule</strong> (sans placette — le cas par défaut depuis spec 017). Cause : dans <code><a href="../reference/ingest_s2_raw_bands_to_cache.html">ingest_s2_raw_bands_to_cache()</a></code>, un reliquat de <strong>code mort</strong> — <code>sf::st_buffer(plots_proj, dist = plots_proj$radius_m)</code> — recevait <code>dist = NULL</code> quand <code>.fetch_plots_sf()</code> renvoie un <code>sf</code> 0 ligne sans colonne <code>radius_m</code>, d’où l’erreur vctrs. Ce buffer par placette n’était <strong>jamais utilisé</strong> en aval (seul le masque de zone <code>crop_geom</code> sert depuis spec 012/017) — il est supprimé. Le diagnostic FORDEAD tourne désormais sur les zones sans placette. Régression : <code>test-sentinel2-cache.R</code> (« placette-less zone ingests without crashing »).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.91.0" id="nemeton-0910-2026-06-17">nemeton 0.91.0 (2026-06-17)<a class="anchor" aria-label="anchor" href="#nemeton-0910-2026-06-17"></a></h2>
 <div class="section level4">

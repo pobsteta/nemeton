@@ -843,6 +843,54 @@ cœur).
 
 ## Journal
 
+### 2026-06-17 — Changed : FORDEAD ingest — retrait du fallback bbox-des-placettes (spec 017, cœur, v0.91.2)
+
+Suite à la question de Pascal « pourquoi FORDEAD parle de placette ? » :
+c’est un **reliquat** d’avant spec 012/017, quand l’emprise du cache S2
+dérivait de la position des placettes (bbox + buffer `radius_m`).
+FORDEAD est **par pixel**, indépendant des placettes. Demande : «
+supprime la référence à la bbox des placettes ». **Livré** : dans
+[`ingest_s2_raw_bands_to_cache()`](https://pobsteta.github.io/nemeton/reference/ingest_s2_raw_bands_to_cache.md)
+(`R/sentinel2_cache.R`) on retire `.fetch_plots_sf()` **et** le fallback
+`st_bbox(plots)` (zone sans `zone_wkt`). Désormais : AOI = `zone_wkt`
+exclusivement ; zone sans géométrie exploitable → warning « no usable
+zone_wkt » + résultat vide (invite à
+[`register_monitoring_zone()`](https://pobsteta.github.io/nemeton/reference/register_monitoring_zone.md)),
+pas de reconstruction depuis les placettes. `n_plots` du payload
+`s2:search` = `0` (placette- indépendant). Complète le fix v0.91.1
+(suppression du buffer mort qui plantait). Tests
+`test-sentinel2-cache.R` : « FORDEAD ingest is placette-independent —
+never reads plots » (mock `.fetch_plots_sf` qui
+[`stop()`](https://rdrr.io/r/base/stop.html) → échoue si appelé) ; « no
+usable zone_wkt → vide + warning ». `test-fordead-pipeline.R` (78),
+`test-aoi-alignment.R` (18) verts. `.fetch_plots_sf` reste
+défini/utilisé ailleurs (FAST), pas de référence pendante.
+
+### 2026-06-17 — Fix : diagnostic FORDEAD plantait sur zone sans placette (spec 017, cœur, v0.91.1)
+
+Bug remonté en prod (zone 5, log : « pipeline starting … Dropped 48
+duplicates … pipeline failed: Not compatible with requested type:
+\[type=NULL; target=double\] »). **Diagnostic** (via le log) : l’erreur
+tombe juste après le dedup STAC, dans
+[`ingest_s2_raw_bands_to_cache()`](https://pobsteta.github.io/nemeton/reference/ingest_s2_raw_bands_to_cache.md)
+(`R/sentinel2_cache.R`), à la ligne
+`buf <- sf::st_buffer(plots_proj, dist = plots_proj$radius_m)`. Sur une
+zone **géométrie-seule** (sans placette, défaut spec 017),
+`.fetch_plots_sf()` renvoie un `sf` 0 ligne **sans colonne `radius_m`**
+→ `plots_proj$radius_m` = `NULL` → `st_buffer(dist = NULL)` lève
+l’erreur vctrs. Aggravant : `buf` était du **code mort** (commentaire «
+FORDEAD doesn’t use buf after this » ; seul `crop_geom <- aoi_zone`
+sert, l.150 `.get_s2_band_raster`). La spec 017 (ingest placette-
+indépendant) avait oublié de retirer ces 2 lignes. **Fix** : suppression
+de `plots_proj`/`buf` (inutiles + plantent). Régression
+`test-sentinel2-cache.R` : « placette-less zone ingests without crashing
+» (`.fetch_plots_sf` → sf 0 ligne, `.get_zone_aoi` → AOI valide → ingest
+OK, 2 scènes). **Drive-by** : test périmé « no plots → … warning »
+attendait encore « No plots » (message réécrit en v0.83.3 « neither
+zone_wkt nor any registered plot ») — échouait en local, skippé en CI
+(terra) ; corrigé. Suites `test-fordead-pipeline.R` (78),
+`test-aoi-alignment.R` (18) vertes.
+
 ### 2026-06-17 — Added : `smooth_pixel_series(method="harmonic")` — lissage saisonnier continu (spec 026, cœur, v0.91.0)
 
 Suite à la question de Pascal : la médiane glissante laisse des trous
