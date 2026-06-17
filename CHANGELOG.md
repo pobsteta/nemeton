@@ -10,6 +10,19 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.89.0] - 2026-06-17
+
+### Added
+
+- `min_slope` parameter on the whole `trend` pipeline (`read_fast_alert_raster`,
+  `read_fast_alert_rasters`, `extract_pixel_trend`, `extract_trend_series`,
+  `create_trend_sanitary_plan`): minimum decline magnitude (index units/yr) for
+  a pixel to be flagged, on top of the negative-slope + Mann-Kendall test. Fixes
+  the over-sensitivity where a tiny-but-monotonic drift (e.g. 0.0001 NDRE/yr) was
+  "significant" yet ecologically negligible. Default `0.005` (provisional,
+  to be calibrated against ONF/DSF ground truth); `0` restores the pure
+  significance test. Folded into the D6 cache hash. Count/rolling unaffected.
+
 ## [0.88.1] - 2026-06-16
 
 ### Fixed

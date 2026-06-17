@@ -253,9 +253,10 @@ create_validation_sampling_plan <- function(zone,
 #'   frame).
 #' @param n_control Integer. Target number of control plots on the stable
 #'   cells (`trend == 0`). Default `5L`; `0` to skip.
-#' @param months,min_years,min_obs_per_year,alpha Trend parameters,
-#'   identical in meaning and default to [read_fast_alert_raster()]
-#'   `mode = "trend"`.
+#' @param months,min_years,min_obs_per_year,alpha,min_slope Trend
+#'   parameters, identical in meaning and default to
+#'   [read_fast_alert_raster()] `mode = "trend"` (`min_slope` is the minimum
+#'   decline magnitude for a pixel to count as a candidate, default `0.005`).
 #' @param apply_zone_mask,mask_polygon UGF mask, forwarded to
 #'   [read_fast_alert_raster()]. When `apply_zone_mask = TRUE` (default) the
 #'   plan **must** stay inside the zone: the polygon is resolved up front
@@ -304,6 +305,7 @@ create_trend_sanitary_plan <- function(con, zone_id,
                                        min_years        = 4L,
                                        min_obs_per_year = 2L,
                                        alpha            = 0.05,
+                                       min_slope        = 0.005,
                                        apply_zone_mask  = TRUE,
                                        mask_polygon     = NULL,
                                        seed             = NULL) {
@@ -345,7 +347,8 @@ create_trend_sanitary_plan <- function(con, zone_id,
   cont <- read_fast_alert_raster(
     con, zone_id, index = index, date_from = date_from, date_to = date_to,
     mode = "trend", months = months, min_years = min_years,
-    min_obs_per_year = min_obs_per_year, alpha = alpha, cache_dir = cache_dir,
+    min_obs_per_year = min_obs_per_year, alpha = alpha, min_slope = min_slope,
+    cache_dir = cache_dir,
     apply_zone_mask = apply_zone_mask, mask_polygon = mask_polygon,
     cache_result = FALSE)
   if (is.null(cont)) {

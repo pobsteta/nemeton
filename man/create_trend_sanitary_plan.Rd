@@ -17,6 +17,7 @@ create_trend_sanitary_plan(
   min_years = 4L,
   min_obs_per_year = 2L,
   alpha = 0.05,
+  min_slope = 0.005,
   apply_zone_mask = TRUE,
   mask_polygon = NULL,
   seed = NULL
@@ -42,9 +43,10 @@ small frame).}
 \item{n_control}{Integer. Target number of control plots on the stable
 cells (`trend == 0`). Default `5L`; `0` to skip.}
 
-\item{months, min_years, min_obs_per_year, alpha}{Trend parameters,
-identical in meaning and default to [read_fast_alert_raster()]
-`mode = "trend"`.}
+\item{months, min_years, min_obs_per_year, alpha, min_slope}{Trend
+parameters, identical in meaning and default to
+[read_fast_alert_raster()] `mode = "trend"` (`min_slope` is the minimum
+decline magnitude for a pixel to count as a candidate, default `0.005`).}
 
 \item{apply_zone_mask, mask_polygon}{UGF mask, forwarded to
 [read_fast_alert_raster()]. When `apply_zone_mask = TRUE` (default) the

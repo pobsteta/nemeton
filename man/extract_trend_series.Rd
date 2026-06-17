@@ -15,6 +15,7 @@ extract_trend_series(
   min_years = 4L,
   min_obs_per_year = 2L,
   alpha = 0.05,
+  min_slope = 0.005,
   apply_zone_mask = TRUE,
   mask_polygon = NULL,
   parallel = FALSE
@@ -52,6 +53,11 @@ count (else that year is `NA` for the pixel). Default `2`.}
 \item{alpha}{Numeric scalar in `(0, 1)`. Mann-Kendall significance
 level. Default `0.05`.}
 
+\item{min_slope}{Numeric `>= 0`. Minimum decline magnitude (index units
+per year) for the fit to be flagged `significant` (`abs(slope) >=
+min_slope`), filtering Mann-Kendall's sensitivity on long series. Default
+`0.005`; set `0` for the pure significance test.}
+
 \item{apply_zone_mask}{Logical. When `TRUE` (default) the composite is
 masked to the UGF zone polygon before the spatial mean (spec 016).}
 
@@ -74,7 +80,7 @@ or `NULL` (default) to resolve it from `con` / `zone_id`.}
       `significant` (`slope < 0` \strong{and} `p_value < alpha`) and
       `alert` (`abs(slope)` when `significant`, else `0` — the same
       magnitude the trend map bins into classes 1-4).}
-    \item{`index`, `months`, `alpha`}{the parameters used.}
+    \item{`index`, `months`, `alpha`, `min_slope`}{the parameters used.}
   }
 }
 \description{
