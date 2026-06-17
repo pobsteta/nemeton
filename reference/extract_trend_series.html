@@ -19,7 +19,7 @@ index starts dropping (the year the curve breaks downward)."><meta property="og:
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.88.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.89.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -78,6 +78,7 @@ index starts dropping (the year the curve breaks downward).</p>
 <span>  min_years <span class="op">=</span> <span class="fl">4L</span>,</span>
 <span>  min_obs_per_year <span class="op">=</span> <span class="fl">2L</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  min_slope <span class="op">=</span> <span class="fl">0.005</span>,</span>
 <span>  apply_zone_mask <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  mask_polygon <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span></span>
@@ -137,6 +138,13 @@ count (else that year is `NA` for the pixel). Default `2`.</p></dd>
 level. Default `0.05`.</p></dd>
 
 
+<dt id="arg-min-slope">min_slope<a class="anchor" aria-label="anchor" href="#arg-min-slope"></a></dt>
+<dd><p>Numeric `&gt;= 0`. Minimum decline magnitude (index units
+per year) for the fit to be flagged `significant` (`abs(slope) &gt;=
+min_slope`), filtering Mann-Kendall's sensitivity on long series. Default
+`0.005`; set `0` for the pure significance test.</p></dd>
+
+
 <dt id="arg-apply-zone-mask">apply_zone_mask<a class="anchor" aria-label="anchor" href="#arg-apply-zone-mask"></a></dt>
 <dd><p>Logical. When `TRUE` (default) the composite is
 masked to the UGF zone polygon before the spatial mean (spec 016).</p></dd>
@@ -168,7 +176,7 @@ or `NULL` (default) to resolve it from `con` / `zone_id`.</p></dd>
       `alert` (`abs(slope)` when `significant`, else `0` — the same
       magnitude the trend map bins into classes 1-4).</p></dd>
 
-    <dt>`index`, `months`, `alpha`</dt>
+    <dt>`index`, `months`, `alpha`, `min_slope`</dt>
 <dd><p>the parameters used.</p></dd>
 
 

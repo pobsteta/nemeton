@@ -843,6 +843,42 @@ cœur).
 
 ## Journal
 
+### 2026-06-17 — Added : seuil `min_slope` — calibration trend Mann-Kendall (spec 023, cœur, v0.89.0)
+
+Constat (issu du bug v0.88.1 « points hors zone ») : même confiné à la
+zone, le trend flaggait des `alert_value` ≈ 0.0001 NDRE/an — déclins
+**statistiquement significatifs** (Mann-Kendall très sensible sur séries
+longues : une dérive monotone minuscule a p\<0.05) mais **écologiquement
+négligeables**. Significativité ≠ pertinence. **Fix** : nouveau
+paramètre **`min_slope`** (seuil de magnitude, indice/an) — un pixel
+n’est une alerte que si
+`pente<0 & Mann-Kendall significatif & |pente| >= min_slope`. Câblé
+partout : helpers `.trend_fit_cells()` / `.trend_fit_one()` /
+`.fast_raster_trend()` (défaut helper 0 → pas de régression des tests
+internes), publiques
+[`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md)
+/
+[`read_fast_alert_rasters()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_rasters.md)
+/
+[`extract_pixel_trend()`](https://pobsteta.github.io/nemeton/reference/extract_pixel_trend.md)
+/
+[`extract_trend_series()`](https://pobsteta.github.io/nemeton/reference/extract_trend_series.md)
+/
+[`create_trend_sanitary_plan()`](https://pobsteta.github.io/nemeton/reference/create_trend_sanitary_plan.md)
+(défaut **0.005**). Intégré au **hash de cache D6** (`.fast_raster_hash`
+trend block) → un changement invalide les COG trend ; nom de fichier
+inchangé (hash8 discrimine). count/rolling **byte-identiques** (le bloc
+trend du hash n’existe qu’en trend). **Défaut 0.005 PROVISOIRE** — ≈
+0.03–0.05 de chute NDRE totale sur une fenêtre typique ; à calibrer
+contre vérité terrain (ONF/DSF). `min_slope=0` = comportement ≤ v0.88.1.
+Doc roxygen + 5 `.Rd` (édités main). Tests :
+`test-extract-pixel-trend.R` (+1 : déclin ~0.001/an significatif mais
+sous seuil → non alerté ; alerté de nouveau avec `min_slope=0`) ; suites
+trend (fast-trend 49, fast-alert-raster 56, extract-pixel 29,
+extract-series 22, sanitary 26) vertes. **À suivre** : caler `min_slope`
+(+ éventuellement un plancher de durée / d’amplitude relative) sur les
+placettes validées une fois le terrain disponible.
+
 ### 2026-06-16 — Spec 023 (graphe trend par pixel) livrée
 
 - **Cœur nemeton v0.87.0** :

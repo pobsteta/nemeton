@@ -22,6 +22,7 @@ extract_trend_series(
   min_years = 4L,
   min_obs_per_year = 2L,
   alpha = 0.05,
+  min_slope = 0.005,
   apply_zone_mask = TRUE,
   mask_polygon = NULL,
   parallel = FALSE
@@ -77,6 +78,13 @@ extract_trend_series(
   Numeric scalar in \`(0, 1)\`. Mann-Kendall significance level. Default
   \`0.05\`.
 
+- min_slope:
+
+  Numeric \`\>= 0\`. Minimum decline magnitude (index units per year)
+  for the fit to be flagged \`significant\` (\`abs(slope) \>=
+  min_slope\`), filtering Mann-Kendall's sensitivity on long series.
+  Default \`0.005\`; set \`0\` for the pure significance test.
+
 - apply_zone_mask:
 
   Logical. When \`TRUE\` (default) the composite is masked to the UGF
@@ -112,7 +120,7 @@ extract_trend_series(
   \`alert\` (\`abs(slope)\` when \`significant\`, else \`0\` — the same
   magnitude the trend map bins into classes 1-4).
 
-- \`index\`, \`months\`, \`alpha\`:
+- \`index\`, \`months\`, \`alpha\`, \`min_slope\`:
 
   the parameters used.
 

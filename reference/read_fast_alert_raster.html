@@ -13,7 +13,7 @@ via `mode`:"><meta property="og:image" content="https://pobsteta.github.io/nemet
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.88.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.89.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -71,6 +71,7 @@ via `mode`:</p>
 <span>  min_years <span class="op">=</span> <span class="fl">4L</span>,</span>
 <span>  min_obs_per_year <span class="op">=</span> <span class="fl">2L</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  min_slope <span class="op">=</span> <span class="fl">0.005</span>,</span>
 <span>  <span class="va">cache_dir</span>,</span>
 <span>  apply_zone_mask <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  mask_polygon <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -156,6 +157,20 @@ a single tail, the <strong>effective false-positive rate for a declared
 decline is `alpha / 2`</strong> — the default `0.05` is a 2.5% one-sided
 risk. Pixels above the threshold are treated as noise (output `0`).
 Default `0.05`.</p></dd>
+
+
+<dt id="arg-min-slope">min_slope<a class="anchor" aria-label="anchor" href="#arg-min-slope"></a></dt>
+<dd><p>Numeric `&gt;= 0`. Trend mode only: the <strong>minimum
+decline magnitude</strong> (index units per year) for a pixel to be flagged. A
+pixel is an alert only when its Theil-Sen slope is negative, Mann-Kendall
+is significant <strong>and</strong> `abs(slope) &gt;= min_slope`. This is the
+calibration lever against Mann-Kendall's sensitivity on long series, where
+a tiny but perfectly monotonic drift (e.g. 0.0001 NDRE/yr) is statistically
+"significant" yet ecologically negligible. Default `0.005` (≈ a 0.03–0.05
+total NDRE drop over a typical window); set `0` to restore the pure
+significance test. <strong>Provisional</strong> — to be calibrated against ground
+truth (ONF/DSF). Folded into the D6 cache hash, so a change invalidates
+trend COGs.</p></dd>
 
 
 <dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>

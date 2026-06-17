@@ -21,6 +21,7 @@ read_fast_alert_raster(
   min_years = 4L,
   min_obs_per_year = 2L,
   alpha = 0.05,
+  min_slope = 0.005,
   cache_dir,
   apply_zone_mask = TRUE,
   mask_polygon = NULL,
@@ -102,6 +103,20 @@ read_fast_alert_raster(
   **effective false-positive rate for a declared decline is \`alpha /
   2\`** — the default \`0.05\` is a 2.5% one-sided risk. Pixels above
   the threshold are treated as noise (output \`0\`). Default \`0.05\`.
+
+- min_slope:
+
+  Numeric \`\>= 0\`. Trend mode only: the **minimum decline magnitude**
+  (index units per year) for a pixel to be flagged. A pixel is an alert
+  only when its Theil-Sen slope is negative, Mann-Kendall is significant
+  **and** \`abs(slope) \>= min_slope\`. This is the calibration lever
+  against Mann-Kendall's sensitivity on long series, where a tiny but
+  perfectly monotonic drift (e.g. 0.0001 NDRE/yr) is statistically
+  "significant" yet ecologically negligible. Default \`0.005\` (≈ a
+  0.03–0.05 total NDRE drop over a typical window); set \`0\` to restore
+  the pure significance test. **Provisional** — to be calibrated against
+  ground truth (ONF/DSF). Folded into the D6 cache hash, so a change
+  invalidates trend COGs.
 
 - cache_dir:
 

@@ -30,6 +30,7 @@ read_fast_alert_rasters(
   min_years = 4L,
   min_obs_per_year = 2L,
   alpha = 0.05,
+  min_slope = 0.005,
   cache_dir,
   apply_zone_mask = TRUE,
   mask_polygon = NULL,
@@ -106,6 +107,14 @@ read_fast_alert_rasters(
   **effective false-positive rate for a declared decline is \`alpha /
   2\`** — the default \`0.05\` is a 2.5% one-sided risk. Pixels above
   the threshold are treated as noise (output \`0\`). Default \`0.05\`.
+
+- min_slope:
+
+  Numeric \`\>= 0\`. Trend mode only: the minimum decline magnitude
+  (index units per year) for a pixel to be flagged (\`abs(slope) \>=
+  min_slope\`), the calibration lever against Mann-Kendall's sensitivity
+  on long series. Default \`0.005\`; set \`0\` for the pure significance
+  test. Folded into the D6 cache hash.
 
 - cache_dir:
 

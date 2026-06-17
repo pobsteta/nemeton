@@ -22,6 +22,7 @@ create_trend_sanitary_plan(
   min_years = 4L,
   min_obs_per_year = 2L,
   alpha = 0.05,
+  min_slope = 0.005,
   apply_zone_mask = TRUE,
   mask_polygon = NULL,
   seed = NULL
@@ -63,10 +64,12 @@ create_trend_sanitary_plan(
   Integer. Target number of control plots on the stable cells (\`trend
   == 0\`). Default \`5L\`; \`0\` to skip.
 
-- months, min_years, min_obs_per_year, alpha:
+- months, min_years, min_obs_per_year, alpha, min_slope:
 
   Trend parameters, identical in meaning and default to
-  \[read_fast_alert_raster()\] \`mode = "trend"\`.
+  \[read_fast_alert_raster()\] \`mode = "trend"\` (\`min_slope\` is the
+  minimum decline magnitude for a pixel to count as a candidate, default
+  \`0.005\`).
 
 - apply_zone_mask, mask_polygon:
 

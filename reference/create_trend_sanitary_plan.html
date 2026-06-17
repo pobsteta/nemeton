@@ -15,7 +15,7 @@ Optional control plots are drawn on the stable cells."><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.88.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.89.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,6 +74,7 @@ Optional control plots are drawn on the <strong>stable</strong> cells.</p>
 <span>  min_years <span class="op">=</span> <span class="fl">4L</span>,</span>
 <span>  min_obs_per_year <span class="op">=</span> <span class="fl">2L</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  min_slope <span class="op">=</span> <span class="fl">0.005</span>,</span>
 <span>  apply_zone_mask <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  mask_polygon <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  seed <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -117,10 +118,11 @@ small frame).</p></dd>
 cells (`trend == 0`). Default `5L`; `0` to skip.</p></dd>
 
 
-<dt id="arg-months-min-years-min-obs-per-year-alpha">months, min_years, min_obs_per_year, alpha<a class="anchor" aria-label="anchor" href="#arg-months-min-years-min-obs-per-year-alpha"></a></dt>
-<dd><p>Trend parameters,
-identical in meaning and default to [read_fast_alert_raster()]
-`mode = "trend"`.</p></dd>
+<dt id="arg-months-min-years-min-obs-per-year-alpha-min-slope">months, min_years, min_obs_per_year, alpha, min_slope<a class="anchor" aria-label="anchor" href="#arg-months-min-years-min-obs-per-year-alpha-min-slope"></a></dt>
+<dd><p>Trend
+parameters, identical in meaning and default to
+[read_fast_alert_raster()] `mode = "trend"` (`min_slope` is the minimum
+decline magnitude for a pixel to count as a candidate, default `0.005`).</p></dd>
 
 
 <dt id="arg-apply-zone-mask-mask-polygon">apply_zone_mask, mask_polygon<a class="anchor" aria-label="anchor" href="#arg-apply-zone-mask-mask-polygon"></a></dt>

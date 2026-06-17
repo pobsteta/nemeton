@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.88.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.89.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.89.0" id="nemeton-0890-2026-06-17">nemeton 0.89.0 (2026-06-17)<a class="anchor" aria-label="anchor" href="#nemeton-0890-2026-06-17"></a></h2>
+<div class="section level4">
+<h4 id="added--seuil-de-pente-minimale-min_slope-calibration-trend-0-89-0">Added — seuil de pente minimale <code>min_slope</code> (calibration trend)<a class="anchor" aria-label="anchor" href="#added--seuil-de-pente-minimale-min_slope-calibration-trend-0-89-0"></a></h4>
+<p>Le mode <code>trend</code> flaggait des déclins <strong>statistiquement significatifs mais écologiquement négligeables</strong> : sur séries longues, Mann-Kendall détecte une dérive monotone minuscule (ex. 0.0001 NDRE/an, observé en prod) comme « significative », gonflant les alertes de bruit. La significativité statistique ≠ significativité écologique.</p>
+<p>Nouveau paramètre <strong><code>min_slope</code></strong> (seuil de magnitude, unités indice/an) : un pixel n’est une alerte que si <code>pente &lt; 0</code> <strong>et</strong> Mann-Kendall significatif <strong>et</strong> <code>|pente| &gt;= min_slope</code>. Câblé sur tout le pipeline trend : <code><a href="../reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code>, <code><a href="../reference/read_fast_alert_rasters.html">read_fast_alert_rasters()</a></code>, <code><a href="../reference/extract_pixel_trend.html">extract_pixel_trend()</a></code>, <code><a href="../reference/extract_trend_series.html">extract_trend_series()</a></code>, <code><a href="../reference/create_trend_sanitary_plan.html">create_trend_sanitary_plan()</a></code>, et les helpers internes <code>.fast_raster_trend()</code> / <code>.trend_fit_cells()</code> / <code>.trend_fit_one()</code>.</p>
+<p><strong>Défaut <code>0.005</code></strong> (≈ une chute totale de 0.03–0.05 NDRE sur une fenêtre typique) — <strong>provisoire</strong>, à calibrer contre la vérité terrain (ONF/DSF) ; <code>min_slope = 0</code> restaure le test de significativité pur (comportement ≤ v0.88.1). Intégré au hash de cache D6 (un changement invalide les COG trend) ; count/rolling <strong>inchangés</strong> (le seuil n’agit qu’en trend). Tests : <code>test-extract-pixel-trend.R</code> (un déclin ~0.001/an, significatif mais sous le seuil, n’est plus une alerte ; flaggé de nouveau avec <code>min_slope = 0</code>).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.88.1" id="nemeton-0881-2026-06-16">nemeton 0.88.1 (2026-06-16)<a class="anchor" aria-label="anchor" href="#nemeton-0881-2026-06-16"></a></h2>
 <div class="section level4">

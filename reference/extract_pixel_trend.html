@@ -19,7 +19,7 @@ fitted decline line and the significance behind its severity class."><meta prope
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.88.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.89.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,6 +77,7 @@ fitted decline line and the significance behind its severity class.</p>
 <span>  min_years <span class="op">=</span> <span class="fl">4L</span>,</span>
 <span>  min_obs_per_year <span class="op">=</span> <span class="fl">2L</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  min_slope <span class="op">=</span> <span class="fl">0.005</span>,</span>
 <span>  zone_polygon <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  warn_outside_zone <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -110,10 +111,11 @@ fitted decline line and the significance behind its severity class.</p>
 `"NDRE"`.</p></dd>
 
 
-<dt id="arg-months-min-years-min-obs-per-year-alpha">months, min_years, min_obs_per_year, alpha<a class="anchor" aria-label="anchor" href="#arg-months-min-years-min-obs-per-year-alpha"></a></dt>
-<dd><p>Trend parameters,
-identical in meaning and default to [read_fast_alert_raster()]
-`mode = "trend"`.</p></dd>
+<dt id="arg-months-min-years-min-obs-per-year-alpha-min-slope">months, min_years, min_obs_per_year, alpha, min_slope<a class="anchor" aria-label="anchor" href="#arg-months-min-years-min-obs-per-year-alpha-min-slope"></a></dt>
+<dd><p>Trend
+parameters, identical in meaning and default to
+[read_fast_alert_raster()] `mode = "trend"` (`min_slope` is the minimum
+decline magnitude for an alert, default `0.005`).</p></dd>
 
 
 <dt id="arg-zone-polygon-warn-outside-zone">zone_polygon, warn_outside_zone<a class="anchor" aria-label="anchor" href="#arg-zone-polygon-warn-outside-zone"></a></dt>

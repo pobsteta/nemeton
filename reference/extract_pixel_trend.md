@@ -22,6 +22,7 @@ extract_pixel_trend(
   min_years = 4L,
   min_obs_per_year = 2L,
   alpha = 0.05,
+  min_slope = 0.005,
   zone_polygon = NULL,
   warn_outside_zone = TRUE
 )
@@ -53,10 +54,11 @@ extract_pixel_trend(
   One of \`"NDRE"\`, \`"NDMI"\`, \`"NDVI"\`, \`"NBR"\`. Default
   \`"NDRE"\`.
 
-- months, min_years, min_obs_per_year, alpha:
+- months, min_years, min_obs_per_year, alpha, min_slope:
 
   Trend parameters, identical in meaning and default to
-  \[read_fast_alert_raster()\] \`mode = "trend"\`.
+  \[read_fast_alert_raster()\] \`mode = "trend"\` (\`min_slope\` is the
+  minimum decline magnitude for an alert, default \`0.005\`).
 
 - zone_polygon, warn_outside_zone:
 

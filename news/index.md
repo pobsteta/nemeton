@@ -1,5 +1,36 @@
 # Changelog
 
+## nemeton 0.89.0 (2026-06-17)
+
+#### Added — seuil de pente minimale `min_slope` (calibration trend)
+
+Le mode `trend` flaggait des déclins **statistiquement significatifs
+mais écologiquement négligeables** : sur séries longues, Mann-Kendall
+détecte une dérive monotone minuscule (ex. 0.0001 NDRE/an, observé en
+prod) comme « significative », gonflant les alertes de bruit. La
+significativité statistique ≠ significativité écologique.
+
+Nouveau paramètre **`min_slope`** (seuil de magnitude, unités indice/an)
+: un pixel n’est une alerte que si `pente < 0` **et** Mann-Kendall
+significatif **et** `|pente| >= min_slope`. Câblé sur tout le pipeline
+trend :
+[`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md),
+[`read_fast_alert_rasters()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_rasters.md),
+[`extract_pixel_trend()`](https://pobsteta.github.io/nemeton/reference/extract_pixel_trend.md),
+[`extract_trend_series()`](https://pobsteta.github.io/nemeton/reference/extract_trend_series.md),
+[`create_trend_sanitary_plan()`](https://pobsteta.github.io/nemeton/reference/create_trend_sanitary_plan.md),
+et les helpers internes `.fast_raster_trend()` / `.trend_fit_cells()` /
+`.trend_fit_one()`.
+
+**Défaut `0.005`** (≈ une chute totale de 0.03–0.05 NDRE sur une fenêtre
+typique) — **provisoire**, à calibrer contre la vérité terrain (ONF/DSF)
+; `min_slope = 0` restaure le test de significativité pur (comportement
+≤ v0.88.1). Intégré au hash de cache D6 (un changement invalide les COG
+trend) ; count/rolling **inchangés** (le seuil n’agit qu’en trend).
+Tests : `test-extract-pixel-trend.R` (un déclin ~0.001/an, significatif
+mais sous le seuil, n’est plus une alerte ; flaggé de nouveau avec
+`min_slope = 0`).
+
 ## nemeton 0.88.1 (2026-06-16)
 
 #### Fixed — `create_trend_sanitary_plan()` tirait hors de la zone de suivi
