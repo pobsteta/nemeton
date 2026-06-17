@@ -740,6 +740,9 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`site_index_reference_points()`](https://pobsteta.github.io/nemeton/reference/site_index_reference_points.md)
   : Published calibration points for the site-index curves
 
+- [`smooth_pixel_series()`](https://pobsteta.github.io/nemeton/reference/smooth_pixel_series.md)
+  : Robustly smooth a per-pixel spectral series (spec 026)
+
 - [`stac_get_item()`](https://pobsteta.github.io/nemeton/reference/stac_get_item.md)
   : Fetch a single STAC item by id
 

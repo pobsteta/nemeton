@@ -12,6 +12,19 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.90.0\] - 2026-06-17
+
+### Added
+
+- [`smooth_pixel_series()`](https://pobsteta.github.io/nemeton/reference/smooth_pixel_series.md)
+  — robustly denoises the per-pixel spectral series from
+  [`extract_pixel_timeseries()`](https://pobsteta.github.io/nemeton/reference/extract_pixel_timeseries.md),
+  adding a `smoothed` column per index so the app can draw faded raw
+  points + a clean line instead of a sawtooth. Default `rolling_median`
+  over a temporal window (`window_days = 45`, robust to cloud spikes),
+  optional `loess` (`family = "symmetric"`). NA-aware, no new
+  dependency. Spec 026.
+
 ## \[0.89.0\] - 2026-06-17
 
 ### Added

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.89.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.90.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.90.0" id="nemeton-0900-2026-06-17">nemeton 0.90.0 (2026-06-17)<a class="anchor" aria-label="anchor" href="#nemeton-0900-2026-06-17"></a></h2>
+<div class="section level4">
+<h4 id="added--smooth_pixel_series--lissage-robuste-de-la-série-pixel-spec-0-90-0">Added — <code>smooth_pixel_series()</code> : lissage robuste de la série pixel (spec 026)<a class="anchor" aria-label="anchor" href="#added--smooth_pixel_series--lissage-robuste-de-la-s%C3%A9rie-pixel-spec-0-90-0"></a></h4>
+<p>Le graphe « série pixel » (<code><a href="../reference/extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code>) reliait chaque acquisition par des segments → <strong>dents de scie</strong> illisibles (bruit résiduel nuages/ombres/neige, pas signal forestier). <code>smooth_pixel_series(ts, window_days = 45, method = c("rolling_median","loess"), min_obs = 3L)</code> ajoute une colonne <strong><code>smoothed</code></strong> par indice, pour afficher <strong>points bruts estompés + ligne lissée</strong> côté app (présentation), la logique de lissage restant dans le cœur (règle 12).</p>
+<ul><li>
+<strong>Défaut <code>rolling_median</code></strong> : médiane sur une <strong>fenêtre temporelle</strong> centrée (<code>window_days</code>, en jours — l’échantillonnage est irrégulier), <strong>robuste aux outliers</strong> nuageux (≠ moyenne mobile / LOESS standard, qui les suivent). <code>NA</code> quand la fenêtre contient moins de <code>min_obs</code> observations claires.</li>
+<li>Option <strong><code>loess</code></strong> : régression locale <code>family = "symmetric"</code> (robuste), temps centré, <code>span</code> plancher 0.3 ; prédit à toutes les dates.</li>
+</ul><p>NA-aware, sans dépendance nouvelle (base <code>median</code>/<code>loess</code>). Opère à l’échelle <strong>scène</strong> (le lissage <strong>saisonnier annuel</strong> reste le rôle du mode <code>trend</code>). Tests : <code>test-smooth-pixel-series.R</code> (absorption de spikes nuageux, lissage par indice indépendant, <code>min_obs</code>, NA ignorés, loess sans NA).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.89.0" id="nemeton-0890-2026-06-17">nemeton 0.89.0 (2026-06-17)<a class="anchor" aria-label="anchor" href="#nemeton-0890-2026-06-17"></a></h2>
 <div class="section level4">
