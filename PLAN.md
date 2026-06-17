@@ -560,6 +560,25 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-06-17 — Changed : FORDEAD ingest — retrait du fallback bbox-des-placettes (spec 017, cœur, v0.91.2)
+
+Suite à la question de Pascal « pourquoi FORDEAD parle de placette ? » : c'est un
+**reliquat** d'avant spec 012/017, quand l'emprise du cache S2 dérivait de la
+position des placettes (bbox + buffer `radius_m`). FORDEAD est **par pixel**,
+indépendant des placettes. Demande : « supprime la référence à la bbox des
+placettes ». **Livré** : dans `ingest_s2_raw_bands_to_cache()`
+(`R/sentinel2_cache.R`) on retire `.fetch_plots_sf()` **et** le fallback
+`st_bbox(plots)` (zone sans `zone_wkt`). Désormais : AOI = `zone_wkt`
+exclusivement ; zone sans géométrie exploitable → warning « no usable zone_wkt »
++ résultat vide (invite à `register_monitoring_zone()`), pas de reconstruction
+depuis les placettes. `n_plots` du payload `s2:search` = `0` (placette-
+indépendant). Complète le fix v0.91.1 (suppression du buffer mort qui plantait).
+Tests `test-sentinel2-cache.R` : « FORDEAD ingest is placette-independent —
+never reads plots » (mock `.fetch_plots_sf` qui `stop()` → échoue si appelé) ;
+« no usable zone_wkt → vide + warning ». `test-fordead-pipeline.R` (78),
+`test-aoi-alignment.R` (18) verts. `.fetch_plots_sf` reste défini/utilisé
+ailleurs (FAST), pas de référence pendante.
+
 ### 2026-06-17 — Fix : diagnostic FORDEAD plantait sur zone sans placette (spec 017, cœur, v0.91.1)
 
 Bug remonté en prod (zone 5, log : « pipeline starting … Dropped 48 duplicates …
