@@ -101,6 +101,22 @@ branche `feat/health-decouple-placette-phase-a`.
 > placette retirée du mode santé. Tests **AC.15.2 / 15.3 / 15.8 / 15.5** verts
 > (suite : 0 FAIL). **Phase A close.** Reste ouvert : **Phase B** (re-persistance
 > pixel + migration géométrie/`zone_id`/`plot_id` nullable, fusion G2 spatiale).
+>
+> *2026-06-18 (Phase B cœur livrée — v0.93.0)* : re-persistance pixel des
+> alertes. **Migration `0007_alert_pixel_geometry`** (pg + sqlite, `DROP`+`CREATE`
+> table vide) → `alert` pixel (`zone_id` NOT NULL, `geom_wkt` 4326, `n_pixels`,
+> `area_m2`, `cluster_id`, `plot_id` nullable, clé
+> `(zone_id, alert_type, trigger_date, cluster_id)`). Helper partagé
+> `.insert_health_alerts` (replace-by-window D-B1, géométrie D-B2) ;
+> `.insert_fordead_alerts` / `.insert_reconfort_alerts` = wrappers, **re-câblés**
+> dans les pipelines. `list_alerts()` lit `geom_wkt` ; `classify_disturbance()`
+> (G2) jointe sur proximité spatiale (repli legacy `plot_id`). **FORDEAD
+> mono-indice** : `.fordead_supported_vi` → `c("CRSWIR")` (NDVI/NDWI retirés ;
+> l'app n'exposait déjà que CRSWIR). **R5 inchangé.** Tests **AC.15.9-15.12**
+> verts (SQLite + base PG `nemeton_test`, 0 régression). **Reste : Phase B.2**
+> — refonte du workflow de validation terrain G4 (`ingest_health_validation`)
+> sur clé pixel (D-B4), encore sur modèle placette. Côté app : couche
+> markers/centroïdes d'alertes à (ré)activer si souhaité.
 
 ---
 

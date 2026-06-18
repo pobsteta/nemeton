@@ -279,154 +279,130 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 }
 
 
-#' Persist FORDEAD alert centroids in the `alert` table
+#' Persist health-diagnostic alert centroids in the `alert` table
 #'
-#' @section Phase A — not wired (spec 008 §15 / ADR-013 A5):
-#' Le suivi sanitaire a découplé la placette : `run_fordead_dieback()`
-#' n'appelle PLUS cette fonction (l'incident Mouthe a montré qu'une zone
-#' sans placette voyait ses alertes silencieusement perdues). Conservée
-#' telle quelle pour la Phase B (re-persistance d'alertes pixel après
-#' migration de schéma — géométrie + `zone_id` + `plot_id` nullable). Ne
-#' pas recâbler sans la migration.
+#' Shared implementation behind [.insert_fordead_alerts()] and
+#' [.insert_reconfort_alerts()] since spec 008 §15 Phase B. The alert is a
+#' **pixel/cluster entity** : it carries its own centroid geometry
+#' (`geom_wkt`, EPSG:4326 — D-B2) and is attached to the monitoring zone
+#' (`zone_id`), never to a plot. `plot_id` is left `NULL`.
 #'
-#' Bulk-inserts the rows of `alerts_sf` as
-#' `alert_type = 'fordead_dieback'` records, with
-#' `confidence_class` and `stress_index` populated. Idempotent
-#' thanks to the existing UNIQUE `(plot_id, alert_type,
-#' trigger_date)` constraint and `ON CONFLICT DO NOTHING`.
-#'
-#' Each centroid is snapped to the nearest plot of the zone (we do
-#' not invent a new `plot` row per cluster — the plot model is the
-#' grain of all existing alerts). Centroids with no plot within
-#' `radius_m` are skipped with a warning.
+#' Idempotence across runs uses the **replace-by-window** strategy (D-B1) :
+#' the run's monitoring window is deleted for this `(zone_id, alert_type)`
+#' before inserting — `cluster_id` is per-run and not stable, so the UNIQUE
+#' `(zone_id, alert_type, trigger_date, cluster_id)` constraint is only an
+#' intra-run guard. `cluster_id` is renumbered to a per-insert sequence so
+#' it cannot collide within a run (the per-class ids from
+#' [.cluster_to_centroids()] are not unique across classes).
 #'
 #' @param con A `DBIConnection`.
-#' @param alerts_sf An sf POINT returned by
-#'   [.postprocess_fordead_rasters()].
+#' @param alerts_sf An sf POINT (centroids) with columns `trigger_date`,
+#'   `confidence_class`, `stress_index` and, when available, `n_pixels`,
+#'   `area_m2`. CRS assumed EPSG:2154 when absent.
 #' @param zone_id Integer. Target monitoring zone.
-#' @param radius_m Numeric. Maximum allowed centroid → plot
-#'   distance, in metres. Default 200.
+#' @param alert_type Character. `"fordead_dieback"` or
+#'   `"reconfort_dieback"`.
+#' @param monitoring_window Optional length-2 Date / character — the run's
+#'   monitoring window for the replace-by-window delete. When `NULL`, the
+#'   range of the staged `trigger_date`s is used.
 #'
 #' @return Number of rows inserted (integer).
 #' @keywords internal
-.insert_fordead_alerts <- function(con, alerts_sf, zone_id,
-                                   radius_m = 200) {
+.insert_health_alerts <- function(con, alerts_sf, zone_id, alert_type,
+                                  monitoring_window = NULL) {
   .assert_db_pkgs()
   if (!inherits(alerts_sf, "sf") || !nrow(alerts_sf)) return(0L)
+  zid <- as.integer(zone_id)
 
-  plots <- .db_get_query(con,
-    "SELECT id, plot_id, geom_wkt FROM plot WHERE zone_id = $1",
-    params = list(as.integer(zone_id)))
-  if (!nrow(plots)) {
-    cli::cli_warn("Zone {zone_id} has no registered plots; skipping FORDEAD alert insertion.")
-    return(0L)
+  # Centroïde en EPSG:4326 (D-B2), cohérent avec plot.geom_wkt /
+  # monitoring_zone.zone_wkt. Les centroïdes arrivent dans le CRS du
+  # masque (2154) ; on reprojette systématiquement.
+  if (is.na(sf::st_crs(alerts_sf))) {
+    cli::cli_warn("{.arg alerts_sf} has no CRS; assuming EPSG:2154.")
+    sf::st_crs(alerts_sf) <- 2154
   }
-  geoms_plot <- lapply(plots$geom_wkt, sf::st_as_sfc, crs = 4326)
-  plots_sf <- sf::st_sf(
-    plot_db_id = plots$id,
-    geometry   = do.call(c, geoms_plot)
-  )
-  plots_sf <- sf::st_transform(plots_sf, 2154)
+  alerts_sf <- sf::st_transform(alerts_sf, 4326)
+  geom_wkt  <- sf::st_as_text(sf::st_geometry(alerts_sf))
 
-  if (sf::st_crs(alerts_sf) != sf::st_crs(2154)) {
-    alerts_sf <- sf::st_transform(alerts_sf, 2154)
-  }
-
-  nearest <- sf::st_nearest_feature(alerts_sf, plots_sf)
-  dist_m  <- sf::st_distance(alerts_sf, plots_sf[nearest, , drop = FALSE],
-                             by_element = TRUE)
-  dist_m  <- as.numeric(dist_m)
-  keep    <- dist_m <= radius_m
-  if (!any(keep)) {
-    cli::cli_warn("All FORDEAD centroids are farther than {radius_m} m from any plot of zone {zone_id}.")
-    return(0L)
-  }
-  if (any(!keep)) {
-    cli::cli_alert_warning(
-      "Skipping {sum(!keep)} FORDEAD centroid{?s} farther than {radius_m} m from any plot.")
-  }
-
+  col <- function(nm) if (nm %in% names(alerts_sf)) alerts_sf[[nm]] else NA
   staging <- data.frame(
-    plot_id          = plots_sf$plot_db_id[nearest][keep],
-    alert_type       = "fordead_dieback",
-    trigger_date     = alerts_sf$trigger_date[keep],
+    zone_id          = zid,
+    plot_id          = NA_integer_,
+    alert_type       = alert_type,
+    # trigger_date en TEXTE 'YYYY-MM-DD' : portable PG (cast date) /
+    # SQLite (comparaisons texte fiables pour le BETWEEN ci-dessous).
+    trigger_date     = format(as.Date(alerts_sf$trigger_date)),
+    geom_wkt         = geom_wkt,
+    n_pixels         = suppressWarnings(as.integer(col("n_pixels"))),
+    area_m2          = suppressWarnings(as.numeric(col("area_m2"))),
+    cluster_id       = NA_integer_,
+    confidence_class = as.character(col("confidence_class")),
+    stress_index     = suppressWarnings(as.numeric(col("stress_index"))),
     value_before     = NA_real_,
     value_after      = NA_real_,
     delta            = NA_real_,
-    confidence_class = alerts_sf$confidence_class[keep],
-    stress_index     = alerts_sf$stress_index[keep],
     stringsAsFactors = FALSE
   )
-  # A NULL `first_dieback_date` raster upstream leaves every centroid
-  # with `trigger_date = NA`. Such rows cannot be inserted (the column
-  # is part of the UNIQUE key). Dropping them is correct, but doing it
-  # in silence hid a real bug once: a run that detected dieback still
-  # reported "0 alerts". Always warn when rows are discarded this way.
-  n_before  <- nrow(staging)
-  staging   <- staging[!is.na(staging$trigger_date), , drop = FALSE]
-  n_dropped <- n_before - nrow(staging)
+
+  # trigger_date NA → ligne non insérable (colonne de la clé UNIQUE et
+  # NOT NULL). On la retire avec un avertissement explicite : un run qui
+  # détecte du dépérissement mais rapporte « 0 alerte » a déjà masqué un
+  # vrai bug (date de première anomalie non dérivée).
+  keep_dt   <- !is.na(staging$trigger_date) & nzchar(staging$trigger_date) &
+               staging$trigger_date != "NA"
+  n_dropped <- sum(!keep_dt)
+  staging   <- staging[keep_dt, , drop = FALSE]
   if (n_dropped > 0L) {
     cli::cli_warn(c(
-      "Dropped {n_dropped} FORDEAD alert{?s} with a missing {.field trigger_date}.",
-      x = "{cli::qty(n_dropped)}{?This cluster was/These clusters were} detected but cannot be inserted.",
-      i = "Usual cause: the {.field first_dieback_date} raster could not be \\
-           derived (check the {.pkg fordead.utils} import step)."
-    ))
+      "Dropped {n_dropped} {alert_type} alert{?s} with a missing {.field trigger_date}.",
+      i = "Usual cause: the first-anomaly date raster could not be derived."))
   }
   if (!nrow(staging)) return(0L)
 
-  is_pg <- inherits(con, "PqConnection")
+  # cluster_id = séquence intra-insert → unicité garantie de la clé
+  # (zone_id, alert_type, trigger_date, cluster_id) au sein du run.
+  staging$cluster_id <- seq_len(nrow(staging))
+
+  # Fenêtre de remplacement (D-B1) : par défaut l'amplitude des
+  # trigger_date du run.
+  win <- if (!is.null(monitoring_window) && length(monitoring_window) == 2L &&
+             all(!is.na(monitoring_window))) {
+    as.Date(monitoring_window)
+  } else {
+    range(as.Date(staging$trigger_date))
+  }
+
   inserted <- DBI::dbWithTransaction(con, {
-    if (is_pg) {
-      .db_execute(con,
-        "CREATE TEMP TABLE tmp_fordead_alert_staging (
-           plot_id          INTEGER,
-           alert_type       TEXT,
-           trigger_date     DATE,
-           value_before     DOUBLE PRECISION,
-           value_after      DOUBLE PRECISION,
-           delta            DOUBLE PRECISION,
-           confidence_class TEXT,
-           stress_index     DOUBLE PRECISION
-         ) ON COMMIT DROP")
-    } else {
-      # SQLite has no `ON COMMIT DROP`; drop any leftover from a previous
-      # failed run, create, use, and drop manually.
-      .db_execute(con, "DROP TABLE IF EXISTS tmp_fordead_alert_staging")
-      .db_execute(con,
-        "CREATE TEMP TABLE tmp_fordead_alert_staging (
-           plot_id          INTEGER,
-           alert_type       TEXT,
-           trigger_date     DATE,
-           value_before     DOUBLE,
-           value_after      DOUBLE,
-           delta            DOUBLE,
-           confidence_class TEXT,
-           stress_index     DOUBLE
-         )")
-    }
-    DBI::dbAppendTable(con, "tmp_fordead_alert_staging", staging)
-    # The `WHERE 1=1` is mandatory, not cosmetic: when an INSERT draws
-    # its rows from a SELECT, SQLite cannot tell whether the trailing
-    # `ON` opens the UPSERT clause or a join's `ON`, mis-parses
-    # `ON CONFLICT (...)` and fails at `DO` (`near "DO": syntax error`).
-    # A WHERE clause on the SELECT disambiguates the grammar; no-op on PG.
-    n <- .db_execute(con,
-      "INSERT INTO alert (plot_id, alert_type, trigger_date,
-                          value_before, value_after, delta,
-                          confidence_class, stress_index)
-       SELECT plot_id, alert_type, trigger_date,
-              value_before, value_after, delta,
-              confidence_class, stress_index
-         FROM tmp_fordead_alert_staging
-         WHERE 1=1
-       ON CONFLICT (plot_id, alert_type, trigger_date) DO NOTHING")
-    if (!is_pg) {
-      .db_execute(con, "DROP TABLE tmp_fordead_alert_staging")
-    }
-    as.integer(n)
+    # Replace-by-window : purge la fenêtre du run avant ré-insertion.
+    # Garantit l'idempotence inter-runs (cluster_id non stable).
+    .db_execute(con,
+      "DELETE FROM alert WHERE zone_id = $1 AND alert_type = $2
+         AND trigger_date BETWEEN $3 AND $4",
+      params = list(zid, alert_type, format(win[1]), format(win[2])))
+    # Insertion directe : après le DELETE et avec cluster_id séquentiel,
+    # aucun conflit possible → pas besoin de table de staging temporaire
+    # ni de `ON CONFLICT` (et on évite les écueils de grammaire SQLite).
+    DBI::dbAppendTable(con, "alert", staging)
+    nrow(staging)
   })
-  inserted
+  as.integer(inserted)
+}
+
+
+#' Persist FORDEAD alert centroids in the `alert` table
+#'
+#' Thin wrapper over [.insert_health_alerts()] with
+#' `alert_type = "fordead_dieback"`. Pixel/cluster entity, no plot
+#' snapping (spec 008 §15 Phase B).
+#'
+#' @inheritParams .insert_health_alerts
+#' @return Number of rows inserted (integer).
+#' @keywords internal
+.insert_fordead_alerts <- function(con, alerts_sf, zone_id,
+                                   monitoring_window = NULL) {
+  .insert_health_alerts(con, alerts_sf, zone_id,
+                        alert_type        = "fordead_dieback",
+                        monitoring_window = monitoring_window)
 }
 
 
@@ -460,23 +436,32 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 #' Computed in pure R: cost is O(n²) on a few thousand alerts max,
 #' so we deliberately don't push it to SQL.
 #'
-#' @param alerts_df A data frame with columns `plot_id`,
-#'   `alert_type`, `trigger_date`. The `alerts_sf` returned by
-#'   [list_alerts()] works as-is.
+#' Co-location is **spatial** since spec 008 §15 Phase B (the plot is
+#' decoupled): two alerts pair when their centroids are within
+#' `radius_m`, replacing the former `plot_id` equality. A legacy
+#' `plot_id`-equality fallback is kept for pre-Phase-B alert frames that
+#' carry no geometry.
+#'
+#' @param alerts_df The sf POINT returned by [list_alerts()] (columns
+#'   `alert_type`, `trigger_date` + centroid geometry). A plain data
+#'   frame with a non-NULL `plot_id` is tolerated (legacy fallback).
 #' @param window_days Integer. Half-width of the join window in
 #'   days. Default 30.
+#' @param radius_m Numeric. Max centroid-to-centroid distance (m) for two
+#'   alerts to be considered co-located. Default 100.
 #'
 #' @return The input enriched with a `disturbance_type` column and a
 #'   logical `method_overlap` column.
 #'
 #' @export
-classify_disturbance <- function(alerts_df, window_days = 30L) {
+classify_disturbance <- function(alerts_df, window_days = 30L,
+                                 radius_m = 100) {
   if (is.null(alerts_df) || !nrow(alerts_df)) {
     alerts_df$disturbance_type <- character(0)
     alerts_df$method_overlap   <- logical(0)
     return(alerts_df)
   }
-  required <- c("plot_id", "alert_type", "trigger_date")
+  required <- c("alert_type", "trigger_date")
   missing  <- setdiff(required, names(alerts_df))
   if (length(missing)) {
     cli::cli_abort("{.arg alerts_df} is missing column{?s}: {.val {missing}}.")
@@ -485,18 +470,40 @@ classify_disturbance <- function(alerts_df, window_days = 30L) {
   if (is.na(win) || win < 0L) {
     cli::cli_abort("{.arg window_days} must be a non-negative integer.")
   }
+  rad <- as.numeric(radius_m)
+  if (is.na(rad) || rad < 0) {
+    cli::cli_abort("{.arg radius_m} must be a non-negative number.")
+  }
 
   td  <- as.Date(alerts_df$trigger_date)
-  pid <- alerts_df$plot_id
   at  <- alerts_df$alert_type
+  n   <- nrow(alerts_df)
+
+  # Matrice de co-localisation (G2 Phase B). Spatial par défaut : deux
+  # centroïdes à <= radius_m. Repli legacy sur l'égalité plot_id quand
+  # aucune géométrie n'est disponible (alertes pré-Phase-B).
+  near <- if (inherits(alerts_df, "sf") && !is.na(sf::st_crs(alerts_df))) {
+    g  <- sf::st_transform(sf::st_geometry(alerts_df), 2154)
+    dm <- matrix(as.numeric(sf::st_distance(g)), n, n)
+    m  <- dm <= rad
+    m[is.na(m)] <- FALSE   # POINT EMPTY → distance NA → non co-localisé
+    m
+  } else if ("plot_id" %in% names(alerts_df) &&
+             !all(is.na(alerts_df$plot_id))) {
+    pid <- alerts_df$plot_id
+    outer(pid, pid, function(a, b) !is.na(a) & !is.na(b) & a == b)
+  } else {
+    cli::cli_abort(c(
+      "{.arg alerts_df} needs centroid geometry (an sf with a CRS) for the spatial G2 fusion.",
+      i = "Pass the {.fn list_alerts} output (Phase B)."))
+  }
 
   fast_types       <- c("ndvi_drop", "nbr_drop")
   diagnostic_types <- c("fordead_dieback", "reconfort_dieback")
 
-  res <- lapply(seq_len(nrow(alerts_df)), function(i) {
-    same_plot  <- pid == pid[i]
+  res <- lapply(seq_len(n), function(i) {
     in_window  <- abs(as.numeric(td - td[i])) <= win
-    candidates <- same_plot & in_window
+    candidates <- near[i, ] & in_window
     candidates[i] <- FALSE  # don't pair with self
 
     if (at[i] %in% diagnostic_types) {
@@ -522,13 +529,10 @@ classify_disturbance <- function(alerts_df, window_days = 30L) {
 
 #' List alerts of a zone with G1 default filtering
 #'
-#' @section Phase A — legacy reader (spec 008 §15 / ADR-013 A5):
-#' Depuis le découplage de la placette, la table `alert` n'est plus
-#' alimentée par les pipelines santé : cette fonction renvoie donc un sf
-#' vide en pratique. Conservée pour la Phase B, où elle sera refondue pour
-#' lire la géométrie pixel de l'alerte (plus de `JOIN plot` obligatoire).
-#' L'affichage santé passe désormais par le masque raster, pas par ce
-#' lecteur.
+#' Since spec 008 §15 Phase B the alert is a pixel/cluster entity: the
+#' geometry returned is the alert's own centroid (`alert.geom_wkt`,
+#' EPSG:4326), not a plot. `plot` is `LEFT JOIN`ed only to expose the
+#' optional `plot_label`. The result also carries `n_pixels` / `area_m2`.
 #'
 #' Default behaviour applies garde-fou G1: returns only the
 #' trustworthy classes 3-forte and 4-sol-nu (rolling-window alerts
@@ -561,7 +565,7 @@ list_alerts <- function(con, zone_id,
                         period            = NULL) {
   .assert_db_pkgs()
 
-  where <- c("p.zone_id = $1")
+  where <- c("a.zone_id = $1")
   pars  <- list(as.integer(zone_id))
   i <- 1L
   add_param <- function(values) {
@@ -601,17 +605,18 @@ list_alerts <- function(con, zone_id,
   }
 
   sql <- sprintf(
-    "SELECT a.id, a.plot_id, p.plot_id AS plot_label,
+    "SELECT a.id, a.zone_id, a.plot_id, p.plot_id AS plot_label,
             a.alert_type, a.trigger_date,
+            a.n_pixels, a.area_m2, a.cluster_id,
             a.value_before, a.value_after, a.delta,
             a.confidence_class, a.stress_index,
             a.validation_status, a.validation_cause,
             a.validated_by, a.validated_at,
-            p.geom_wkt
+            COALESCE(a.geom_wkt, p.geom_wkt) AS geom_wkt
        FROM alert a
-       JOIN plot p ON p.id = a.plot_id
+       LEFT JOIN plot p ON p.id = a.plot_id
       WHERE %s
-      ORDER BY a.trigger_date DESC, a.plot_id",
+      ORDER BY a.trigger_date DESC, a.id",
     paste(where, collapse = " AND ")
   )
   rs <- .db_get_query(con, sql, params = pars)
@@ -620,10 +625,14 @@ list_alerts <- function(con, zone_id,
     return(sf::st_sf(
       data.frame(
         id                = integer(0),
+        zone_id           = integer(0),
         plot_id           = integer(0),
         plot_label        = character(0),
         alert_type        = character(0),
         trigger_date      = as.Date(character(0)),
+        n_pixels          = integer(0),
+        area_m2           = numeric(0),
+        cluster_id        = integer(0),
         value_before      = numeric(0),
         value_after       = numeric(0),
         delta             = numeric(0),
@@ -637,7 +646,11 @@ list_alerts <- function(con, zone_id,
       geometry = sf::st_sfc(crs = 4326)
     ))
   }
-  geoms <- lapply(rs$geom_wkt, sf::st_as_sfc, crs = 4326)
+  # Rows whose geometry is missing on both sides (should not happen for
+  # Phase B alerts, which always carry a centroid) get an empty POINT.
+  wkt <- rs$geom_wkt
+  wkt[is.na(wkt) | !nzchar(wkt)] <- "POINT EMPTY"
+  geoms <- lapply(wkt, sf::st_as_sfc, crs = 4326)
   geom_sfc <- do.call(c, geoms)
   rs$geom_wkt <- NULL
   sf::st_sf(rs, geometry = geom_sfc, crs = 4326)

@@ -244,123 +244,16 @@ RECONFORT_ALERT_CLASSES <- c("2-deperissant", "3-tres-deperissant")
 
 #' Persist RECONFORT alert centroids in the `alert` table
 #'
-#' @section Phase A — not wired (spec 008 §15 / ADR-013 A5):
-#' Le suivi sanitaire a découplé la placette : `run_reconfort_dieback()`
-#' n'appelle PLUS cette fonction. Conservée telle quelle pour la Phase B
-#' (re-persistance d'alertes pixel après migration de schéma — géométrie +
-#' `zone_id` + `plot_id` nullable). Ne pas recâbler sans la migration.
+#' Thin wrapper over [.insert_health_alerts()] with
+#' `alert_type = "reconfort_dieback"`. Pixel/cluster entity, no plot
+#' snapping (spec 008 §15 Phase B).
 #'
-#' Mirror of [.insert_fordead_alerts()] with
-#' `alert_type = 'reconfort_dieback'`. Idempotent via the existing
-#' UNIQUE `(plot_id, alert_type, trigger_date)` constraint and
-#' `ON CONFLICT DO NOTHING`. Each centroid is snapped to the nearest
-#' plot of the zone within `radius_m`.
-#'
-#' @param con A `DBIConnection`.
-#' @param alerts_sf An sf POINT from [.postprocess_reconfort_rasters()].
-#' @param zone_id Integer. Target monitoring zone.
-#' @param radius_m Numeric. Max centroid -> plot distance (m). Default 200.
+#' @inheritParams .insert_health_alerts
 #' @return Number of rows inserted (integer).
 #' @keywords internal
 .insert_reconfort_alerts <- function(con, alerts_sf, zone_id,
-                                     radius_m = 200) {
-  .assert_db_pkgs()
-  if (!inherits(alerts_sf, "sf") || !nrow(alerts_sf)) return(0L)
-
-  plots <- .db_get_query(con,
-    "SELECT id, plot_id, geom_wkt FROM plot WHERE zone_id = $1",
-    params = list(as.integer(zone_id)))
-  if (!nrow(plots)) {
-    cli::cli_warn("Zone {zone_id} has no registered plots; skipping RECONFORT alert insertion.")
-    return(0L)
-  }
-  geoms_plot <- lapply(plots$geom_wkt, sf::st_as_sfc, crs = 4326)
-  plots_sf <- sf::st_sf(
-    plot_db_id = plots$id,
-    geometry   = do.call(c, geoms_plot)
-  )
-  plots_sf <- sf::st_transform(plots_sf, 2154)
-
-  if (sf::st_crs(alerts_sf) != sf::st_crs(2154)) {
-    alerts_sf <- sf::st_transform(alerts_sf, 2154)
-  }
-
-  nearest <- sf::st_nearest_feature(alerts_sf, plots_sf)
-  dist_m  <- as.numeric(sf::st_distance(
-    alerts_sf, plots_sf[nearest, , drop = FALSE], by_element = TRUE))
-  keep <- dist_m <= radius_m
-  if (!any(keep)) {
-    cli::cli_warn("All RECONFORT centroids are farther than {radius_m} m from any plot of zone {zone_id}.")
-    return(0L)
-  }
-  if (any(!keep)) {
-    cli::cli_alert_warning(
-      "Skipping {sum(!keep)} RECONFORT centroid{?s} farther than {radius_m} m from any plot.")
-  }
-
-  staging <- data.frame(
-    plot_id          = plots_sf$plot_db_id[nearest][keep],
-    alert_type       = "reconfort_dieback",
-    trigger_date     = alerts_sf$trigger_date[keep],
-    value_before     = NA_real_,
-    value_after      = NA_real_,
-    delta            = NA_real_,
-    confidence_class = alerts_sf$confidence_class[keep],
-    stress_index     = alerts_sf$stress_index[keep],
-    stringsAsFactors = FALSE
-  )
-  n_before <- nrow(staging)
-  staging  <- staging[!is.na(staging$trigger_date), , drop = FALSE]
-  if (n_before - nrow(staging) > 0L) {
-    cli::cli_warn("Dropped {n_before - nrow(staging)} RECONFORT alert{?s} with a missing {.field trigger_date}.")
-  }
-  if (!nrow(staging)) return(0L)
-
-  is_pg <- inherits(con, "PqConnection")
-  inserted <- DBI::dbWithTransaction(con, {
-    if (is_pg) {
-      .db_execute(con,
-        "CREATE TEMP TABLE tmp_reconfort_alert_staging (
-           plot_id          INTEGER,
-           alert_type       TEXT,
-           trigger_date     DATE,
-           value_before     DOUBLE PRECISION,
-           value_after      DOUBLE PRECISION,
-           delta            DOUBLE PRECISION,
-           confidence_class TEXT,
-           stress_index     DOUBLE PRECISION
-         ) ON COMMIT DROP")
-    } else {
-      .db_execute(con, "DROP TABLE IF EXISTS tmp_reconfort_alert_staging")
-      .db_execute(con,
-        "CREATE TEMP TABLE tmp_reconfort_alert_staging (
-           plot_id          INTEGER,
-           alert_type       TEXT,
-           trigger_date     DATE,
-           value_before     DOUBLE,
-           value_after      DOUBLE,
-           delta            DOUBLE,
-           confidence_class TEXT,
-           stress_index     DOUBLE
-         )")
-    }
-    DBI::dbAppendTable(con, "tmp_reconfort_alert_staging", staging)
-    # `WHERE 1=1` mandatory on SQLite (UPSERT-after-SELECT parsing, cf.
-    # .insert_fordead_alerts); no-op on PG.
-    n <- .db_execute(con,
-      "INSERT INTO alert (plot_id, alert_type, trigger_date,
-                          value_before, value_after, delta,
-                          confidence_class, stress_index)
-       SELECT plot_id, alert_type, trigger_date,
-              value_before, value_after, delta,
-              confidence_class, stress_index
-         FROM tmp_reconfort_alert_staging
-         WHERE 1=1
-       ON CONFLICT (plot_id, alert_type, trigger_date) DO NOTHING")
-    if (!is_pg) {
-      .db_execute(con, "DROP TABLE tmp_reconfort_alert_staging")
-    }
-    as.integer(n)
-  })
-  inserted
+                                     monitoring_window = NULL) {
+  .insert_health_alerts(con, alerts_sf, zone_id,
+                        alert_type        = "reconfort_dieback",
+                        monitoring_window = monitoring_window)
 }

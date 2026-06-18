@@ -239,15 +239,21 @@ test_that(".insert_reconfort_alerts inserts reconfort_dieback, idempotent", {
         sf::st_point(c(700110, 6800110)),
         sf::st_point(c(700510, 6800510)), crs = 2154))
 
-    n1 <- nemeton:::.insert_reconfort_alerts(con, pts, zone_id = zid)
+    win <- as.Date(c("2025-01-01", "2025-12-31"))
+    n1 <- nemeton:::.insert_reconfort_alerts(con, pts, zone_id = zid,
+                                             monitoring_window = win)
     expect_equal(n1, 2L)
-    n2 <- nemeton:::.insert_reconfort_alerts(con, pts, zone_id = zid)
-    expect_equal(n2, 0L)                                  # idempotent
+    # replace-by-window (D-B1) : re-run → purge + ré-insertion, total = 2.
+    n2 <- nemeton:::.insert_reconfort_alerts(con, pts, zone_id = zid,
+                                             monitoring_window = win)
+    expect_equal(n2, 2L)
 
     rs <- DBI::dbGetQuery(con,
-      "SELECT alert_type, confidence_class, stress_index
-         FROM alert ORDER BY id")
-    expect_equal(nrow(rs), 2L)
+      "SELECT zone_id, plot_id, alert_type, confidence_class, stress_index
+         FROM alert ORDER BY cluster_id")
+    expect_equal(nrow(rs), 2L)                            # pas de doublon
+    expect_true(all(rs$zone_id == zid))
+    expect_true(all(is.na(rs$plot_id)))                  # plot découplé
     expect_equal(unique(rs$alert_type), "reconfort_dieback")
     expect_setequal(rs$confidence_class,
                     c("2-deperissant", "3-tres-deperissant"))
@@ -260,7 +266,7 @@ test_that(".insert_reconfort_alerts on empty / NULL input is a no-op", {
                0L)
 })
 
-test_that("migration 0006 creates the alert_type index", {
+test_that("the alert_type index exists after migration", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
