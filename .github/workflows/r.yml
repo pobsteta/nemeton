@@ -111,7 +111,11 @@ jobs:
   # ============================================================
   tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 45 min : la suite complète frôle/dépasse 30 min sur un runner lent
+    # (le job `coverage`, qui exécute aussi toute la suite via covr, tourne
+    # ~35 min). Le cap 30 min provoquait des annulations intermittentes sans
+    # rapport avec une vraie régression.
+    timeout-minutes: 45
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
