@@ -23,6 +23,69 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 ---
 
+# Chantier EN COURS — Suivi sanitaire : découplage de la placette (Phase A)
+
+> **Cadré le 2026-06-18** (spec 008 **§15**, ADR-013 amendement **A5**, décision **D2**).
+> Déclencheur : incident **Mouthe** (zone 5 `mouthe_tot`) — masque FORDEAD à
+> 813 pixels classe 4 sur disque, **0 placette**, donc 0 alerte en base → UI
+> « zone saine / aucune placette » (faux). Cf. mémoire
+> `project_fordead_placette_decoupling`.
+
+**Décision** : l'alerte santé devient une **entité raster/pixel** rattachée à
+`monitoring_zone`, jamais à une placette. `plot` est découplé du suivi
+sanitaire pour les 3 méthodes (FAST, FORDEAD, RECONFORT). FORDEAD est calculé
+**une seule fois sur `_tot`** ; l'affichage par strate (`_res`/`_mix`) est un
+simple **masquage** du raster `_tot` (`terra::mask` + AOI de strate), sans
+recalcul (D2).
+
+**Phasage** :
+- **Phase A** (ce chantier, cible cœur **v0.92.0** + app `vX.Y.0`) : table
+  `alert` **vidée** (`TRUNCATE` fait le 2026-06-18) + **plus alimentée** ; le
+  masque 0-4 sur disque = source de vérité d'affichage. **Aucune migration.**
+- **Phase B** (différée) : re-persistance pixel → migration inévitable
+  (géométrie + `zone_id` + `n_pixels`/`area_m2`, `plot_id` nullable, nouvelle
+  clé unique, fusion G2 spatiale). Hors-scope ici.
+
+## Avancement Phase A — cœur `nemeton`
+
+| État | Tâche | Détail |
+|------|-------|--------|
+| ✅ | **A1** | `fordead_pipeline.R` (persist) — appel `.insert_fordead_alerts()` retiré, `n_inserted <- NA_integer_` ; masque + bundle restent écrits ; message succès reformulé |
+| ✅ | **A2** | `reconfort_pipeline.R` — appel `.insert_reconfort_alerts()` retiré ; `alerts_sf` désormais renvoyé dans le résultat (parité FORDEAD pour R5) ; `n_alerts = NA` |
+| ✅ | **A3** | note legacy `@section Phase A` sur `.insert_fordead_alerts`, `.insert_reconfort_alerts`, `list_alerts` ; fonctions conservées (pas de `document()`) |
+| ✅ | **A4** | `test-fordead-pipeline.R` : garde-fou « insertion non appelée » + assertions `NA`/`alerts_sf` (test « persist always » réécrit). reconfort/postprocess/R5 verts sans modif (FAIL=0) |
+| 🟨 | **A5** | release **v0.92.0** : DESCRIPTION + NEWS + CITATION bumpés (0.92.0, cohérents) ; commit/PR → merge → release CI |
+
+## Avancement Phase A — app `nemetonshiny` (pour mémoire, repo séparé)
+
+| État | Tâche | Détail |
+|------|-------|--------|
+| ⬜ | **B1** | calcul forcé sur `_tot` (résolution `grep("_tot$", z$name)` avant `run_fordead_async`) |
+| ⬜ | **B2** | `mod_monitoring_fordead_map` : lire le masque `_tot`, masquer à l'affichage par strate via `get_monitoring_zone_aoi()` + `terra::mask()` |
+| ⬜ | **B3** | « zone saine » piloté par le **raster** (pixels classe ≥ 1), plus par le compte d'alertes DB ; découplage de `list_alerts_for_zone()` |
+| ⬜ | **B4** | i18n : retrait du terme « placette » des clés santé (`monitoring_fordead_no_alerts_body`, …) |
+| ⬜ | **B5** | tests app (zone sans placette + raster classe ≥ 1 → carte raster ; tout-0 → zone saine ; changement strate sans recalcul) |
+| ⬜ | **B6** | release app `vX.Y.0` (`Imports: nemeton (>= 0.92.0)`) |
+
+**Journal** — *2026-06-18* : **chantier cadré** (paperwork). spec 008 §15 +
+ADR-013 A5 rédigés ; table `alert` vidée en prod (`TRUNCATE`, elle était déjà
+à 0 ligne — confirme le diagnostic Mouthe) ; mémoire
+`project_fordead_placette_decoupling` créée. **R5 non impacté** (lit
+`alerts_sf` en mémoire, pas la DB). Implémentation cœur A1-A5 démarrée sur la
+branche `feat/health-decouple-placette-phase-a`.
+>
+> *2026-06-18 (suite)* : **cœur A1-A4 livrés** sur la branche. Insertion
+> d'alertes débranchée des deux pipelines (FORDEAD + RECONFORT) ; `alerts_sf`
+> renvoyé par RECONFORT ; fonctions d'insertion + `list_alerts` conservées et
+> annotées legacy (Phase B). Tests : `test-fordead-pipeline.R` adapté
+> (garde-fou non-appel + sémantique `NA`), reconfort/postprocess/R5 verts sans
+> modif (FAIL=0 en local via `load_all` + `test_file`). **A5** : DESCRIPTION +
+> NEWS + CITATION bumpés en **v0.92.0** (cohérents) ; PR vers `main` à ouvrir
+> → `release.yml` posera le tag `v0.92.0`. Repasser ensuite en cycle dev
+> `0.92.0.9000`. **Phase B et app (B1-B6) non démarrées.**
+
+---
+
 # Veille — projets externes susceptibles d'intéresser `nemeton`
 
 Sources à passer en revue régulièrement pour identifier des logiciels,

@@ -120,7 +120,12 @@ make_fake_fordead_2x_module <- function(fail_at = NULL) {
         geometry = sf::st_sfc(crs = 2154)
       )
     },
-    .insert_fordead_alerts = function(con, alerts_sf, zone_id, ...) 0L,
+    # Phase A (spec 008 §15 / ADR-013 A5) — la placette est découplée :
+    # le pipeline ne DOIT plus appeler l'insertion d'alertes. Ce mock est
+    # un garde-fou : s'il est invoqué, le test échoue.
+    .insert_fordead_alerts = function(con, alerts_sf, zone_id, ...) {
+      stop("Phase A: .insert_fordead_alerts must not be called by run_fordead_dieback()")
+    },
     .write_fordead_model_bundle = function(output_dir, model_dir, ...) {
       dir.create(model_dir, recursive = TRUE, showWarnings = FALSE)
       invisible(model_dir)
@@ -253,6 +258,9 @@ test_that("runs the 6 phases in order on the success path", {
   # .mock_pipeline_helpers() to the pinned "2.1.1").
   expect_identical(out$fordead_version, "2.1.1")
   expect_null(out$alerts_sf)
+  # Phase A (spec 008 §15) — aucune insertion : n_alerts_inserted est NA
+  # (non pertinent), plus 0L (qui se lisait à tort « run sain »).
+  expect_true(is.na(out$n_alerts_inserted))
   expect_identical(out$zone_id, 1L)
   expect_equal(out$n_scenes, 2L)
   # Persist phase wires the diagnostic bundle dir into the result
@@ -709,21 +717,23 @@ test_that("ingest phase propagates s2:* events verbatim to the user callback", {
 })
 
 
-test_that("persist phase runs always (con/zone_id required)", {
+test_that("persist phase runs always, without inserting alerts (Phase A)", {
   skip_if_not_installed("terra")
   skip_if_no_reticulate(); skip_if_no_sf()
 
   fk <- make_fake_fordead_2x_module()
   helpers <- .mock_pipeline_helpers()
   helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+  # Un cluster réel (classe 3-forte) sort du postprocess. Avant le
+  # découplage (spec 008 §15), il aurait été inséré dans `alert` ; en
+  # Phase A il reste dans le résultat en mémoire (consommé par R5) et la
+  # base n'est pas touchée. `.insert_fordead_alerts` garde le garde-fou
+  # « ne doit pas être appelé » hérité de .mock_pipeline_helpers().
   helpers$.postprocess_fordead_rasters <- function(...) {
     sf::st_sf(
       confidence_class = "3-forte",
       geometry = sf::st_sfc(sf::st_point(c(1, 1)), crs = 2154)
     )
-  }
-  helpers$.insert_fordead_alerts <- function(con, alerts_sf, zone_id, ...) {
-    7L
   }
 
   testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
@@ -738,7 +748,11 @@ test_that("persist phase runs always (con/zone_id required)", {
   )
 
   expect_identical(out$status, "success")
-  expect_equal(out$n_alerts_inserted, 7L)
+  # Phase A — aucune insertion (n_alerts_inserted = NA), mais l'alerts_sf
+  # est bien renvoyé en mémoire pour l'indicateur R5.
+  expect_true(is.na(out$n_alerts_inserted))
+  expect_s3_class(out$alerts_sf, "sf")
+  expect_equal(nrow(out$alerts_sf), 1L)
   expect_identical(out$zone_id, 42L)
 })
 
