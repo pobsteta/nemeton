@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.91.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.92.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,19 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.92.0" id="nemeton-0920-2026-06-18">nemeton 0.92.0 (2026-06-18)<a class="anchor" aria-label="anchor" href="#nemeton-0920-2026-06-18"></a></h2>
+<div class="section level4">
+<h4 id="changed--suivi-sanitaire--découplage-de-la-placette-phase-a-spec--adr-a5-0-92-0">Changed — Suivi sanitaire : découplage de la placette (Phase A, spec 008 §15 / ADR-013 A5)<a class="anchor" aria-label="anchor" href="#changed--suivi-sanitaire--d%C3%A9couplage-de-la-placette-phase-a-spec--adr-a5-0-92-0"></a></h4>
+<p>L’alerte santé devient une <strong>entité raster/pixel</strong> rattachée à la zone de suivi, jamais à une placette. Les pipelines de diagnostic <strong>n’insèrent plus</strong> d’alerte dans la table <code>alert</code> :</p>
+<ul><li>
+<code><a href="../reference/run_fordead_dieback.html">run_fordead_dieback()</a></code> : la phase <code>persist</code> n’appelle plus <code><a href="../reference/dot-insert_fordead_alerts.html">.insert_fordead_alerts()</a></code>. Le masque 0-4 (<code>dieback_mask_&lt;run_id&gt;.tif</code>) et le bundle modèle restent écrits sur disque — ils deviennent la <strong>source de vérité d’affichage</strong>. <code>n_alerts_inserted</code> vaut désormais <code>NA</code> (non pertinent), plus <code>0L</code> (qui se lisait à tort « run sain »).</li>
+<li>
+<code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> : la phase <code>postprocess</code> calcule toujours les centroïdes de cluster mais ne les insère plus. Le résultat <strong>gagne</strong> <code>alerts_sf</code> (parité avec FORDEAD), consommé en mémoire par <code><a href="../reference/indicateur_r5_deperissement.html">indicateur_r5_deperissement()</a></code>.</li>
+</ul><p><strong>Déclencheur</strong> : incident <em>Mouthe</em> — une zone sans placette voyait ses alertes (813 pixels classe 4 sur disque) silencieusement perdues, et l’UI affichait « zone saine » à tort. <strong>R5 n’est pas impacté</strong> (il lit <code>alerts_sf</code> en mémoire, pas la base).</p>
+<p><code><a href="../reference/dot-insert_fordead_alerts.html">.insert_fordead_alerts()</a></code> / <code>.insert_reconfort_alerts()</code> et <code><a href="../reference/list_alerts.html">list_alerts()</a></code> sont <strong>conservées</strong> (marquées legacy) pour la Phase B (re-persistance pixel après migration de schéma — non incluse ici, <strong>aucune migration DB</strong> en Phase A). Côté app <code>nemetonshiny</code> : l’affichage par strate (<code>_res</code>/<code>_mix</code>) sera un masquage du raster calculé sur <code>_tot</code> (décision D2).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.91.2" id="nemeton-0912-2026-06-17">nemeton 0.91.2 (2026-06-17)<a class="anchor" aria-label="anchor" href="#nemeton-0912-2026-06-17"></a></h2>
 <div class="section level4">
