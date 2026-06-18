@@ -1,3 +1,32 @@
+# nemeton 0.92.0 (2026-06-18)
+
+### Changed — Suivi sanitaire : découplage de la placette (Phase A, spec 008 §15 / ADR-013 A5)
+
+L'alerte santé devient une **entité raster/pixel** rattachée à la zone de
+suivi, jamais à une placette. Les pipelines de diagnostic **n'insèrent plus**
+d'alerte dans la table `alert` :
+
+- `run_fordead_dieback()` : la phase `persist` n'appelle plus
+  `.insert_fordead_alerts()`. Le masque 0-4 (`dieback_mask_<run_id>.tif`) et
+  le bundle modèle restent écrits sur disque — ils deviennent la **source de
+  vérité d'affichage**. `n_alerts_inserted` vaut désormais `NA` (non
+  pertinent), plus `0L` (qui se lisait à tort « run sain »).
+- `run_reconfort_dieback()` : la phase `postprocess` calcule toujours les
+  centroïdes de cluster mais ne les insère plus. Le résultat **gagne**
+  `alerts_sf` (parité avec FORDEAD), consommé en mémoire par
+  `indicateur_r5_deperissement()`.
+
+**Déclencheur** : incident *Mouthe* — une zone sans placette voyait ses
+alertes (813 pixels classe 4 sur disque) silencieusement perdues, et l'UI
+affichait « zone saine » à tort. **R5 n'est pas impacté** (il lit `alerts_sf`
+en mémoire, pas la base).
+
+`.insert_fordead_alerts()` / `.insert_reconfort_alerts()` et `list_alerts()`
+sont **conservées** (marquées legacy) pour la Phase B (re-persistance pixel
+après migration de schéma — non incluse ici, **aucune migration DB** en
+Phase A). Côté app `nemetonshiny` : l'affichage par strate (`_res`/`_mix`)
+sera un masquage du raster calculé sur `_tot` (décision D2).
+
 # nemeton 0.91.2 (2026-06-17)
 
 ### Changed — FORDEAD ingest : suppression du fallback bbox-des-placettes

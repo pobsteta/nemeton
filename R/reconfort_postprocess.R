@@ -244,6 +244,12 @@ RECONFORT_ALERT_CLASSES <- c("2-deperissant", "3-tres-deperissant")
 
 #' Persist RECONFORT alert centroids in the `alert` table
 #'
+#' @section Phase A — not wired (spec 008 §15 / ADR-013 A5):
+#' Le suivi sanitaire a découplé la placette : `run_reconfort_dieback()`
+#' n'appelle PLUS cette fonction. Conservée telle quelle pour la Phase B
+#' (re-persistance d'alertes pixel après migration de schéma — géométrie +
+#' `zone_id` + `plot_id` nullable). Ne pas recâbler sans la migration.
+#'
 #' Mirror of [.insert_fordead_alerts()] with
 #' `alert_type = 'reconfort_dieback'`. Idempotent via the existing
 #' UNIQUE `(plot_id, alert_type, trigger_date)` constraint and

@@ -852,3 +852,115 @@ Pas de nouvelle phase, pas de changement de signature, pas de nouvel événement
 - Patron strictement calqué sur le modal de `mod_monitoring_pixel_map.R` (lignes 669-754).
 - Nouvelles clés i18n FR/EN : `monitoring_fordead_pixel_modal_title_fmt`, `monitoring_fordead_crswir_observed`, `monitoring_fordead_crswir_model`, `monitoring_fordead_anomaly_band`, `monitoring_fordead_first_detection`, `monitoring_fordead_outside_validity`.
 - `Imports: nemeton (>= 0.43.0)`. Release probable `nemetonshiny@vX.Y.0`.
+
+---
+
+## 15. Amendement v0.92.0 — Découplage de la placette : l'alerte santé devient une entité raster/pixel
+
+**Date** : 2026-06-18
+**Statut** : Paperwork validé (ce document) — implémentation à suivre
+**Cible** : `nemeton` v0.92.0 + `nemetonshiny` vX.Y.0
+**ADR associé** : ADR-013 amendement A5
+**Déclencheur** : incident Mouthe (zone 5 `mouthe_tot`). FORDEAD a détecté **813 pixels classe 4 (sol-nu)**, masque `dieback_mask_20260618T072358.tif` écrit correctement, mais l'interface affiche « **Zone saine — aucune anomalie détectée / Aucune placette ne présente d'anomalie** ». Cause vérifiée : la zone n'a **aucune placette `plot`** enregistrée, et toute la persistance d'alertes est conditionnée à l'existence de placettes.
+
+### 15.1 Problème
+
+Le modèle d'alerte hérité de E6.a (surveillance rapide par placette GRTS) **ancre toute alerte sur une `plot`** :
+
+```
+alert.plot_id INTEGER NOT NULL REFERENCES plot(id)   -- placette obligatoire
+UNIQUE (plot_id, alert_type, trigger_date)            -- clé via placette
+-- aucune colonne géométrie, aucun zone_id
+```
+
+Conséquences pour les trois méthodes pixel/raster (FAST, FORDEAD, RECONFORT) :
+
+1. **Perte de géométrie** — `.insert_fordead_alerts()` / `.insert_reconfort_alerts()` *snappent* le centroïde de cluster sur la placette la plus proche (≤ 200 m) et **jettent la vraie géométrie pixel**. `list_alerts()` renvoie ensuite `plot.geom_wkt` comme position de l'alerte.
+2. **Alertes perdues sans placette** — si la zone n'a pas de `plot`, le garde-fou « *Zone X has no registered plots; skipping* » fait `return(0L)` : `n_alerts_inserted = 0` **malgré** des pixels d'anomalie réels.
+3. **Message faux** — l'UI confond « 0 alerte en base » avec « zone saine ». À Mouthe, une zone à dépérissement sévère est annoncée saine.
+
+La placette est un artefact de l'échantillonnage terrain (FAST/E6.a). FORDEAD, RECONFORT et la version raster de FAST (post-v0.60.0, `obs_pixel` retiré) sont des méthodes **pur pixel** : la placette n'a aucune raison d'y intervenir.
+
+### 15.2 Décision
+
+**La placette (`plot`) est intégralement découplée du suivi sanitaire** pour les **trois** méthodes (FAST, FORDEAD, RECONFORT). L'unité d'alerte santé devient une **entité raster/pixel géoréférencée** (centroïde de cluster + classe + surface), rattachée à la **zone de suivi** (`monitoring_zone`), jamais à une placette.
+
+La `plot` reste dans le schéma (validation terrain QField future, garde-fou G4), mais **plus aucun flux santé n'en dépend**.
+
+### 15.3 Phasage (sans migration immédiate)
+
+**Décision D1 — phaser pour éviter une migration prématurée.**
+
+#### Phase A — v0.92.0 (immédiate, AUCUNE migration DB)
+
+La table `alert` est **vidée** (`TRUNCATE`, fait le 2026-06-18 — elle était déjà à 0 ligne) et **n'est plus alimentée** tant que le modèle cible n'est pas arrêté. Le **masque 0-4 sur disque devient la source de vérité unique** de l'affichage santé.
+
+- **Cœur** :
+  - `run_fordead_dieback()` / `run_reconfort_dieback()` — la phase `persist` **n'appelle plus** `.insert_fordead_alerts()` / `.insert_reconfort_alerts()`. Le masque `dieback_mask_<run_id>.tif` + le bundle `model_<run_id>/` (§14) restent écrits. `n_alerts_inserted` devient sémantiquement « non pertinent » (`NA_integer_`).
+  - `list_alerts()` n'est plus utilisée pour l'affichage santé (la lecture passe par le raster). Conservée mais marquée « legacy, à refondre en Phase B ».
+  - **R5 intact** : `indicateur_r5_deperissement()` consomme l'`alerts_sf` **en mémoire** (`fordead_results$alerts_sf` / `reconfort_results$alerts_sf`), **pas la table DB**. Vider `alert` et débrancher l'insertion ne change rien au calcul de R5.
+- **App `nemetonshiny`** :
+  - L'état « zone saine » se décide sur le **raster** (présence de pixels classe ≥ 1), plus sur le compte d'alertes DB. Trois états : *raster avec anomalies* → carte pixel 0-4 ; *raster tout-classe-0* → « zone saine » (vrai) ; *aucun masque* → « lancer un diagnostic ».
+  - Suppression de tout libellé « placette » dans les écrans santé (la clé `monitoring_fordead_no_alerts_body` est réécrite sans « placette »).
+
+#### Phase B — ultérieure (« comment remplir la table », migration requise)
+
+Quand la re-persistance d'alertes pixel sera décidée, une **migration sera inévitable** (le schéma actuel ne peut pas stocker une alerte sans placette ni géométrie). Schéma cible documenté ici, **non appliqué** :
+
+```sql
+-- migration future (Phase B), NON appliquée en v0.92.0
+ALTER TABLE alert ADD COLUMN zone_id INTEGER REFERENCES monitoring_zone(id) ON DELETE CASCADE;
+ALTER TABLE alert ADD COLUMN geom geometry(Point, 2154);   -- centroïde de cluster
+ALTER TABLE alert ADD COLUMN n_pixels INTEGER;             -- déjà calculé, aujourd'hui jeté
+ALTER TABLE alert ADD COLUMN area_m2  DOUBLE PRECISION;    -- idem
+ALTER TABLE alert ALTER COLUMN plot_id DROP NOT NULL;      -- placette devient optionnelle
+ALTER TABLE alert DROP CONSTRAINT alert_plot_id_alert_type_trigger_date_key;
+ALTER TABLE alert ADD CONSTRAINT alert_zone_cluster_key
+  UNIQUE (zone_id, alert_type, trigger_date, cluster_id);  -- clé sans placette
+```
+
+En Phase B :
+- `.insert_fordead_alerts()` / `.insert_reconfort_alerts()` cessent de *snapper* : insèrent `zone_id` + géométrie centroïde + `n_pixels` + `area_m2` directement.
+- `list_alerts()` lit la géométrie de l'alerte (plus de `JOIN plot` obligatoire).
+- `classify_disturbance()` (G2) : la jointure FAST ↔ FORDEAD ↔ RECONFORT passe de l'égalité `plot_id` à une **proximité spatiale** (distance centroïdes ± `window_days`).
+
+### 15.4 Critères d'acceptation
+
+- [ ] **AC.15.1** — La table `alert` est vide et n'est plus alimentée par les pipelines santé en v0.92.0.
+- [ ] **AC.15.2** — Un run FORDEAD sur une zone **sans placette** (ex. Mouthe zone 5) produisant des pixels classe ≥ 1 affiche la **carte raster 0-4**, jamais « zone saine ».
+- [ ] **AC.15.3** — Une zone dont le masque est intégralement classe 0 affiche « zone saine » (vrai négatif).
+- [ ] **AC.15.4** — R5 reste calculé à l'identique (test `test-indicators-deperissement.R` inchangé, vert).
+- [ ] **AC.15.5** — Aucune occurrence du terme « placette » dans les écrans/clés i18n du mode santé.
+- [ ] **AC.15.6** — `devtools::check()` sans nouveau ERROR / WARNING / NOTE ; tests pipelines (mockés) verts après débranchement de l'insertion.
+- [ ] **AC.15.7** — Doc : NEWS.md, PLAN.md (journal daté), spec 008 §15 (ce document), ADR-013 amendement A5.
+- [ ] **AC.15.8** — FORDEAD est calculé **une seule fois sur la strate `_tot`** ; sélectionner `_res` / `_mix` dans le menu de zone ne relance **aucun** run mais masque le raster `_tot` affiché à la géométrie UGF de la strate (cf. §15.6).
+
+### 15.6 Affichage multi-strates : calcul sur `_tot`, masquage à l'affichage (décision D2)
+
+**Décision D2 — FORDEAD calcule une fois sur `_tot`, l'affichage par strate est un simple masquage.**
+
+Depuis spec 020, chaque projet a jusqu'à 4 strates de zone (`_tot`, `_res`, `_feu`, `_mix`) issues d'un filtrage par essence des UGF. Le sélecteur de zone unique (`zone_id_r`) est partagé par FAST et FORDEAD.
+
+**Précédent FAST** : `nemeton::read_fast_alert_raster(con, zone_id, apply_zone_mask = TRUE, mask_polygon = NULL)` calcule le raster sur la zone puis le **masque à la géométrie UGF de la zone** (`.get_zone_aoi(con, zid)` + `terra::mask()`, NA hors UGF, spec 016 v0.49.0) **avant** discrétisation. FAST **recalcule par strate** (acceptable : calcul léger + caché).
+
+**Divergence assumée pour FORDEAD** : le pipeline FORDEAD est lourd (reticulate, fit harmonique, des centaines de scènes S2). Le recalculer par strate serait du gaspillage. On découple donc le *quand* du masquage :
+
+| | FAST | FORDEAD (cible D2) |
+|---|---|---|
+| Calcul | par strate sélectionnée (recompute + cache) | **une seule fois sur `_tot`** |
+| Masquage strate | à la **compute** (`apply_zone_mask`) | à l'**affichage** (`terra::mask`) |
+| Primitif commun | `.get_zone_aoi()` + `terra::mask()` | idem, réutilisé |
+
+**Implémentation cible (app `nemetonshiny`, `mod_monitoring_fordead_map`)** :
+
+1. **Calcul** : `run_fordead_dieback()` n'est lancé que sur la strate **`_tot`** (la sélection d'une autre strate ne déclenche aucun run). Un seul masque 0-4 + bundle modèle, sous `cache/layers/fordead/zone_<id_tot>/`.
+2. **Affichage** : `mask_r` lit le masque `_tot`, puis si la strate sélectionnée n'est pas `_tot`, applique `terra::mask(masque_tot, .get_zone_aoi(con, zone_selectionnee))` → seuls les pixels de la strate (ex. résineux pour `_res`) restent visibles, le reste passe en NA (transparent).
+3. Le sélecteur de zone change **uniquement le masque d'affichage**, jamais le calcul.
+
+**Bénéfice annexe** : résout proprement la question `_tot` vs `_res`. FORDEAD ne s'applique qu'aux résineux ; on calcule sur `_tot` mais on peut n'afficher que les pixels résineux (`_res`) par masquage, sans relancer le pipeline.
+
+### 15.7 Hors-scope de cet amendement
+
+- La migration Phase B (géométrie + `zone_id`) : documentée, **non appliquée**.
+- La refonte spatiale de `classify_disturbance()` (G2) : Phase B.
+- Le workflow de validation terrain (G4) qui écrivait `validation_*` sur `alert` : gelé jusqu'à Phase B (« on verra plus tard comment remplir la table »).

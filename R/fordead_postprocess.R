@@ -281,6 +281,14 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 
 #' Persist FORDEAD alert centroids in the `alert` table
 #'
+#' @section Phase A — not wired (spec 008 §15 / ADR-013 A5):
+#' Le suivi sanitaire a découplé la placette : `run_fordead_dieback()`
+#' n'appelle PLUS cette fonction (l'incident Mouthe a montré qu'une zone
+#' sans placette voyait ses alertes silencieusement perdues). Conservée
+#' telle quelle pour la Phase B (re-persistance d'alertes pixel après
+#' migration de schéma — géométrie + `zone_id` + `plot_id` nullable). Ne
+#' pas recâbler sans la migration.
+#'
 #' Bulk-inserts the rows of `alerts_sf` as
 #' `alert_type = 'fordead_dieback'` records, with
 #' `confidence_class` and `stress_index` populated. Idempotent
@@ -513,6 +521,14 @@ classify_disturbance <- function(alerts_df, window_days = 30L) {
 
 
 #' List alerts of a zone with G1 default filtering
+#'
+#' @section Phase A — legacy reader (spec 008 §15 / ADR-013 A5):
+#' Depuis le découplage de la placette, la table `alert` n'est plus
+#' alimentée par les pipelines santé : cette fonction renvoie donc un sf
+#' vide en pratique. Conservée pour la Phase B, où elle sera refondue pour
+#' lire la géométrie pixel de l'alerte (plus de `JOIN plot` obligatoire).
+#' L'affichage santé passe désormais par le masque raster, pas par ce
+#' lecteur.
 #'
 #' Default behaviour applies garde-fou G1: returns only the
 #' trustworthy classes 3-forte and 4-sol-nu (rolling-window alerts

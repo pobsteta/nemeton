@@ -646,7 +646,11 @@ run_fordead_dieback <- function(con,
     if (!is.null(alerts_sf) && !nrow(alerts_sf)) alerts_sf <- NULL
     end_phase("postprocess")
 
-    n_inserted <- 0L
+    # Phase A (spec 008 §15 / ADR-013 A5) — la persistance d'alertes est
+    # découplée de la placette : on n'insère plus rien dans `alert`. Le
+    # compteur reste pour la signature de l'événement / du résultat mais
+    # vaut NA (non pertinent), pas 0 (qui se lisait « run sain »).
+    n_inserted <- NA_integer_
     begin_phase("persist")
     if (verbose) cli::cli_alert_info("Step: persist")
 
@@ -707,16 +711,23 @@ run_fordead_dieback <- function(con,
       NA_character_
     })
 
-    if (!is.null(alerts_sf)) {
-      n_inserted <- .insert_fordead_alerts(con, alerts_sf,
-                                           zone_id = zone_id)
-    }
+    # Phase A (spec 008 §15 / ADR-013 A5) — découplage de la placette.
+    # L'ancien appel `.insert_fordead_alerts(con, alerts_sf, zone_id)`
+    # snappait chaque centroïde de cluster sur la placette la plus proche
+    # (≤ 200 m) puis l'écrivait dans `alert` ; sans placette dans la zone,
+    # l'insertion était sautée et un run avec dépérissement réel rapportait
+    # « 0 alerte » (incident Mouthe). On NE persiste plus d'alerte ici : le
+    # masque 0-4 + le bundle écrits ci-dessus sont la source de vérité
+    # d'affichage. `.insert_fordead_alerts()` est conservée (réservée à la
+    # Phase B — re-persistance pixel après migration). `alerts_sf` reste
+    # renvoyé en mémoire et consommé tel quel par
+    # `indicateur_r5_deperissement()` (inchangé).
     end_phase("persist")
 
     duration_sec <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
     if (verbose) {
       cli::cli_alert_success(
-        "FORDEAD diagnostic complete: {n_inserted} alert{?s} inserted in {round(duration_sec)} s."
+        "FORDEAD diagnostic complete in {round(duration_sec)} s (alert persistence decoupled from plots — Phase A, spec 008 §15)."
       )
     }
     emit(list(current           = "fordead:complete",
