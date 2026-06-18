@@ -903,26 +903,60 @@ La table `alert` est **vidée** (`TRUNCATE`, fait le 2026-06-18 — elle était 
   - L'état « zone saine » se décide sur le **raster** (présence de pixels classe ≥ 1), plus sur le compte d'alertes DB. Trois états : *raster avec anomalies* → carte pixel 0-4 ; *raster tout-classe-0* → « zone saine » (vrai) ; *aucun masque* → « lancer un diagnostic ».
   - Suppression de tout libellé « placette » dans les écrans santé (la clé `monitoring_fordead_no_alerts_body` est réécrite sans « placette »).
 
-#### Phase B — ultérieure (« comment remplir la table », migration requise)
+#### Phase B — re-persistance pixel (migration requise) — décisions figées
 
-Quand la re-persistance d'alertes pixel sera décidée, une **migration sera inévitable** (le schéma actuel ne peut pas stocker une alerte sans placette ni géométrie). Schéma cible documenté ici, **non appliqué** :
+Quand la re-persistance d'alertes pixel est activée, une **migration est inévitable** (le schéma actuel ne peut pas stocker une alerte sans placette ni géométrie). Les quatre décisions ci-dessous sont **figées** (2026-06-18) ; le code Phase B s'y conforme.
 
+**D-B1 — Idempotence inter-runs : stratégie « replace-by-window ».**
+`cluster_id` est attribué par run (IDs de `terra::as.polygons`) et **n'est pas stable** d'un run à l'autre : re-détecter le même dépérissement créerait des doublons. Donc, avant insertion, chaque pipeline **purge la fenêtre du run** puis ré-insère :
 ```sql
--- migration future (Phase B), NON appliquée en v0.92.0
-ALTER TABLE alert ADD COLUMN zone_id INTEGER REFERENCES monitoring_zone(id) ON DELETE CASCADE;
-ALTER TABLE alert ADD COLUMN geom geometry(Point, 2154);   -- centroïde de cluster
-ALTER TABLE alert ADD COLUMN n_pixels INTEGER;             -- déjà calculé, aujourd'hui jeté
-ALTER TABLE alert ADD COLUMN area_m2  DOUBLE PRECISION;    -- idem
-ALTER TABLE alert ALTER COLUMN plot_id DROP NOT NULL;      -- placette devient optionnelle
-ALTER TABLE alert DROP CONSTRAINT alert_plot_id_alert_type_trigger_date_key;
-ALTER TABLE alert ADD CONSTRAINT alert_zone_cluster_key
-  UNIQUE (zone_id, alert_type, trigger_date, cluster_id);  -- clé sans placette
+DELETE FROM alert
+ WHERE zone_id = ? AND alert_type = ?
+   AND trigger_date BETWEEN <début_monitoring_run> AND <fin_monitoring_run>;
+-- puis INSERT des centroïdes du run
+```
+Le run fait autorité sur sa fenêtre de monitoring. La contrainte `UNIQUE (zone_id, alert_type, trigger_date, cluster_id)` reste un garde-fou intra-run (`ON CONFLICT DO NOTHING`), pas le mécanisme d'idempotence inter-runs.
+
+**D-B2 — Stockage géométrie : `geom_wkt TEXT` en EPSG:4326.**
+Pas de type PostGIS `geometry` (briserait le backend SQLite). On stocke le centroïde en **WKT `TEXT`**, projeté en **EPSG:4326**, cohérent avec `plot.geom_wkt` et `monitoring_zone.zone_wkt`. Le centroïde est calculé en 2154 (CRS du masque) puis **transformé en 4326 à l'insertion**.
+
+**D-B3 — Mécanique de migration : `DROP TABLE` + `CREATE TABLE`.**
+La table `alert` est **vide** (contrat Phase A) → aucune donnée à préserver, et **rien ne référence `alert`** (pas d'enfant FK) → un `DROP`+`CREATE` est sûr et **portable PG/SQLite**. On évite l'`ALTER` (SQLite ne sait ni `DROP NOT NULL` ni `DROP CONSTRAINT`) et le piège des FK différées sous la transaction unique de `db_migrate()` (cf. incident zone-cascade, v0.74.1). **Pré-vol obligatoire** : confirmer `SELECT count(*) FROM alert = 0` en prod avant déploiement.
+
+**D-B4 — Workflow de validation terrain (G4) scindé.**
+B-cœur (schéma + persistance + lecture + G2) et B-app (couche markers/centroïdes) d'abord. La réécriture du workflow QField écrivant `validation_*` sur la clé pixel (au lieu de la placette) est livrée en **Phase B.2**.
+
+Schéma cible (migration `0007_alert_pixel_geometry`, pg **et** sqlite) :
+```sql
+DROP TABLE IF EXISTS alert;
+CREATE TABLE alert (
+  id               SERIAL PRIMARY KEY,                       -- INTEGER PK AUTOINCREMENT (sqlite)
+  zone_id          INTEGER NOT NULL REFERENCES monitoring_zone(id) ON DELETE CASCADE,
+  plot_id          INTEGER REFERENCES plot(id) ON DELETE SET NULL,  -- NULLABLE (placette optionnelle)
+  alert_type       TEXT NOT NULL,
+  trigger_date     DATE NOT NULL,
+  geom_wkt         TEXT,                                     -- centroïde POINT, EPSG:4326 (D-B2)
+  n_pixels         INTEGER,
+  area_m2          DOUBLE PRECISION,
+  cluster_id       INTEGER,
+  confidence_class TEXT,
+  stress_index     DOUBLE PRECISION,
+  validation_status TEXT NOT NULL DEFAULT 'pending',
+  validation_cause TEXT, validated_by TEXT, validated_at TIMESTAMPTZ,
+  value_before DOUBLE PRECISION, value_after DOUBLE PRECISION, delta DOUBLE PRECISION,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (zone_id, alert_type, trigger_date, cluster_id)     -- garde-fou intra-run
+);
+CREATE INDEX alert_zone_idx ON alert(zone_id);
+CREATE INDEX alert_trigger_idx ON alert(trigger_date);
+CREATE INDEX alert_validation_status_idx ON alert(validation_status);
 ```
 
-En Phase B :
-- `.insert_fordead_alerts()` / `.insert_reconfort_alerts()` cessent de *snapper* : insèrent `zone_id` + géométrie centroïde + `n_pixels` + `area_m2` directement.
-- `list_alerts()` lit la géométrie de l'alerte (plus de `JOIN plot` obligatoire).
-- `classify_disturbance()` (G2) : la jointure FAST ↔ FORDEAD ↔ RECONFORT passe de l'égalité `plot_id` à une **proximité spatiale** (distance centroïdes ± `window_days`).
+En Phase B (cœur) :
+- `.insert_fordead_alerts()` / `.insert_reconfort_alerts()` cessent de *snapper* : `DELETE` fenêtre (D-B1) puis insèrent `zone_id` + `geom_wkt` (4326, D-B2) + `n_pixels` + `area_m2` + `cluster_id` directement ; `plot_id` NULL. Re-câblées dans les pipelines (annule le débranchement Phase A) ; `n_alerts_inserted` redevient un vrai compte.
+- `list_alerts()` lit la géométrie de l'alerte (`COALESCE(a.geom_wkt, p.geom_wkt)`, `LEFT JOIN plot`) — plus de `JOIN plot` obligatoire.
+- `classify_disturbance()` (G2) : la jointure FAST ↔ FORDEAD ↔ RECONFORT passe de l'égalité `plot_id` à une **proximité spatiale** (distance centroïdes ≤ `radius_m`, défaut 100 m) dans ± `window_days`.
+- **R5 inchangé** : il lit l'`alerts_sf` en mémoire, pas la DB.
 
 ### 15.4 Critères d'acceptation
 
