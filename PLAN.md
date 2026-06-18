@@ -54,18 +54,18 @@ recalcul (D2).
 | ✅ | **A2** | `reconfort_pipeline.R` — appel `.insert_reconfort_alerts()` retiré ; `alerts_sf` désormais renvoyé dans le résultat (parité FORDEAD pour R5) ; `n_alerts = NA` |
 | ✅ | **A3** | note legacy `@section Phase A` sur `.insert_fordead_alerts`, `.insert_reconfort_alerts`, `list_alerts` ; fonctions conservées (pas de `document()`) |
 | ✅ | **A4** | `test-fordead-pipeline.R` : garde-fou « insertion non appelée » + assertions `NA`/`alerts_sf` (test « persist always » réécrit). reconfort/postprocess/R5 verts sans modif (FAIL=0) |
-| 🟨 | **A5** | release **v0.92.0** : DESCRIPTION + NEWS + CITATION bumpés (0.92.0, cohérents) ; commit/PR → merge → release CI |
+| ✅ | **A5** | release **v0.92.0** (PR #99 mergée, tag + release CI posés) ; cycle dev `0.92.0.9000` (PR #100). Fix CI annexe : job `tests` timeout 30→45 min |
 
 ## Avancement Phase A — app `nemetonshiny` (pour mémoire, repo séparé)
 
 | État | Tâche | Détail |
 |------|-------|--------|
-| ⬜ | **B1** | calcul forcé sur `_tot` (résolution `grep("_tot$", z$name)` avant `run_fordead_async`) |
-| ⬜ | **B2** | `mod_monitoring_fordead_map` : lire le masque `_tot`, masquer à l'affichage par strate via `get_monitoring_zone_aoi()` + `terra::mask()` |
-| ⬜ | **B3** | « zone saine » piloté par le **raster** (pixels classe ≥ 1), plus par le compte d'alertes DB ; découplage de `list_alerts_for_zone()` |
-| ⬜ | **B4** | i18n : retrait du terme « placette » des clés santé (`monitoring_fordead_no_alerts_body`, …) |
-| ⬜ | **B5** | tests app (zone sans placette + raster classe ≥ 1 → carte raster ; tout-0 → zone saine ; changement strate sans recalcul) |
-| ⬜ | **B6** | release app `vX.Y.0` (`Imports: nemeton (>= 0.92.0)`) |
+| ✅ | **B1** | calcul forcé sur `_tot` (résolution `grep("_tot$", z$name)` avant `run_fordead_async`) ; stamping résultat / réconciliation disque alignés `_tot` ; garde-fou si pas de `_tot` ; notif de fin sans décompte (`n_alerts_inserted = NA`) |
+| ✅ | **B2** | `mod_monitoring_fordead_map` : masque `_tot` lu, masquage à l'affichage par strate via `get_monitoring_zone_aoi()` (EPSG:2154) + `terra::mask()`, sans recalcul |
+| ✅ | **B3** | « zone saine » piloté par le **raster** (classe ≥ 1 = affecté), plus par le compte d'alertes DB ; `alerts_panel`/`alerts_map` découplés de `list_alerts_for_zone()` (legacy Phase A) |
+| ✅ | **B4** | i18n : terme « placette » retiré des messages santé FORDEAD |
+| ✅ | **B5** | tests app AC.15.2 / 15.3 / 15.8 / 15.5 verts (suite : 0 FAIL) |
+| ✅ | **B6** | release app **v0.90.0** (`Imports: nemeton (>= 0.92.0)`) |
 
 **Journal** — *2026-06-18* : **chantier cadré** (paperwork). spec 008 §15 +
 ADR-013 A5 rédigés ; table `alert` vidée en prod (`TRUNCATE`, elle était déjà
@@ -83,6 +83,24 @@ branche `feat/health-decouple-placette-phase-a`.
 > NEWS + CITATION bumpés en **v0.92.0** (cohérents) ; PR vers `main` à ouvrir
 > → `release.yml` posera le tag `v0.92.0`. Repasser ensuite en cycle dev
 > `0.92.0.9000`. **Phase B et app (B1-B6) non démarrées.**
+>
+> *2026-06-18 (cœur livré)* : **PR #99 mergée** → release **v0.92.0** (tag +
+> release GitHub posés par `release.yml`) ; cycle dev **`0.92.0.9000`**
+> (PR #100). L'échec CI intermittent du job `tests` était un **timeout 30 min**
+> sur runner lent (le job `coverage`, suite complète via covr, passait à 35 min)
+> — corrigé : `tests` timeout porté à **45 min**. Aucune régression de code.
+>
+> *2026-06-18 (app livrée — Phase A / décision D2)* : **B1-B6 livrés côté
+> `nemetonshiny`** — release **v0.90.0** (cycle dev `0.89.1.9000` → `0.90.0` →
+> cycle dev `0.90.0.9000`), commit `nemetonshiny@e2124a57` (merge PR #86,
+> *« feat(monitoring): affichage santé FORDEAD piloté raster + masquage par
+> strate (Phase A) »*). Cœur consommé : **`nemeton@v0.92.0`** (PR #99), plancher
+> app bumpé à `Imports: nemeton (>= 0.92.0)`. FORDEAD calculé sur `_tot` ;
+> affichage par strate = masquage (`terra::mask` + `get_monitoring_zone_aoi`,
+> EPSG:2154) sans recalcul ; « zone saine » décidée sur le raster (classe ≥ 1) ;
+> placette retirée du mode santé. Tests **AC.15.2 / 15.3 / 15.8 / 15.5** verts
+> (suite : 0 FAIL). **Phase A close.** Reste ouvert : **Phase B** (re-persistance
+> pixel + migration géométrie/`zone_id`/`plot_id` nullable, fusion G2 spatiale).
 
 ---
 
