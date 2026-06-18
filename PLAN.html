@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.92.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.92.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -135,37 +135,35 @@
 <td><strong>A4</strong></td>
 <td>
 <code>test-fordead-pipeline.R</code> : garde-fou « insertion non appelée » + assertions <code>NA</code>/<code>alerts_sf</code> (test « persist always » réécrit). reconfort/postprocess/R5 verts sans modif (FAIL=0)</td>
-</tr><tr><td>🟨</td>
+</tr><tr><td>✅</td>
 <td><strong>A5</strong></td>
-<td>release <strong>v0.92.0</strong> : DESCRIPTION + NEWS + CITATION bumpés (0.92.0, cohérents) ; commit/PR → merge → release CI</td>
+<td>release <strong>v0.92.0</strong> (PR #99 mergée, tag + release CI posés) ; cycle dev <code>0.92.0.9000</code> (PR #100). Fix CI annexe : job <code>tests</code> timeout 30→45 min</td>
 </tr></tbody></table></div>
 <div class="section level2">
 <h2 id="avancement-phase-a--app-nemetonshiny-pour-mémoire-repo-séparé">Avancement Phase A — app <code>nemetonshiny</code> (pour mémoire, repo séparé)<a class="anchor" aria-label="anchor" href="#avancement-phase-a--app-nemetonshiny-pour-m%C3%A9moire-repo-s%C3%A9par%C3%A9"></a></h2>
 <table class="table"><colgroup><col width="28%"><col width="33%"><col width="38%"></colgroup><thead><tr><th>État</th>
 <th>Tâche</th>
 <th>Détail</th>
-</tr></thead><tbody><tr><td>⬜</td>
+</tr></thead><tbody><tr><td>✅</td>
 <td><strong>B1</strong></td>
-<td>calcul forcé sur <code>_tot</code> (résolution <code>grep("_tot$", z$name)</code> avant <code>run_fordead_async</code>)</td>
-</tr><tr><td>⬜</td>
+<td>calcul forcé sur <code>_tot</code> (résolution <code>grep("_tot$", z$name)</code> avant <code>run_fordead_async</code>) ; stamping résultat / réconciliation disque alignés <code>_tot</code> ; garde-fou si pas de <code>_tot</code> ; notif de fin sans décompte (<code>n_alerts_inserted = NA</code>)</td>
+</tr><tr><td>✅</td>
 <td><strong>B2</strong></td>
 <td>
-<code>mod_monitoring_fordead_map</code> : lire le masque <code>_tot</code>, masquer à l’affichage par strate via <code>get_monitoring_zone_aoi()</code> + <code><a href="https://rspatial.github.io/terra/reference/mask.html" class="external-link">terra::mask()</a></code>
-</td>
-</tr><tr><td>⬜</td>
+<code>mod_monitoring_fordead_map</code> : masque <code>_tot</code> lu, masquage à l’affichage par strate via <code>get_monitoring_zone_aoi()</code> (EPSG:2154) + <code><a href="https://rspatial.github.io/terra/reference/mask.html" class="external-link">terra::mask()</a></code>, sans recalcul</td>
+</tr><tr><td>✅</td>
 <td><strong>B3</strong></td>
-<td>« zone saine » piloté par le <strong>raster</strong> (pixels classe ≥ 1), plus par le compte d’alertes DB ; découplage de <code>list_alerts_for_zone()</code>
-</td>
-</tr><tr><td>⬜</td>
+<td>« zone saine » piloté par le <strong>raster</strong> (classe ≥ 1 = affecté), plus par le compte d’alertes DB ; <code>alerts_panel</code>/<code>alerts_map</code> découplés de <code>list_alerts_for_zone()</code> (legacy Phase A)</td>
+</tr><tr><td>✅</td>
 <td><strong>B4</strong></td>
-<td>i18n : retrait du terme « placette » des clés santé (<code>monitoring_fordead_no_alerts_body</code>, …)</td>
-</tr><tr><td>⬜</td>
+<td>i18n : terme « placette » retiré des messages santé FORDEAD</td>
+</tr><tr><td>✅</td>
 <td><strong>B5</strong></td>
-<td>tests app (zone sans placette + raster classe ≥ 1 → carte raster ; tout-0 → zone saine ; changement strate sans recalcul)</td>
-</tr><tr><td>⬜</td>
+<td>tests app AC.15.2 / 15.3 / 15.8 / 15.5 verts (suite : 0 FAIL)</td>
+</tr><tr><td>✅</td>
 <td><strong>B6</strong></td>
-<td>release app <code>vX.Y.0</code> (<code>Imports: nemeton (&gt;= 0.92.0)</code>)</td>
-</tr></tbody></table><p><strong>Journal</strong> — <em>2026-06-18</em> : <strong>chantier cadré</strong> (paperwork). spec 008 §15 + ADR-013 A5 rédigés ; table <code>alert</code> vidée en prod (<code>TRUNCATE</code>, elle était déjà à 0 ligne — confirme le diagnostic Mouthe) ; mémoire <code>project_fordead_placette_decoupling</code> créée. <strong>R5 non impacté</strong> (lit <code>alerts_sf</code> en mémoire, pas la DB). Implémentation cœur A1-A5 démarrée sur la branche <code>feat/health-decouple-placette-phase-a</code>. &gt; &gt; <em>2026-06-18 (suite)</em> : <strong>cœur A1-A4 livrés</strong> sur la branche. Insertion &gt; d’alertes débranchée des deux pipelines (FORDEAD + RECONFORT) ; <code>alerts_sf</code> &gt; renvoyé par RECONFORT ; fonctions d’insertion + <code>list_alerts</code> conservées et &gt; annotées legacy (Phase B). Tests : <code>test-fordead-pipeline.R</code> adapté &gt; (garde-fou non-appel + sémantique <code>NA</code>), reconfort/postprocess/R5 verts sans &gt; modif (FAIL=0 en local via <code>load_all</code> + <code>test_file</code>). <strong>A5</strong> : DESCRIPTION + &gt; NEWS + CITATION bumpés en <strong>v0.92.0</strong> (cohérents) ; PR vers <code>main</code> à ouvrir &gt; → <code>release.yml</code> posera le tag <code>v0.92.0</code>. Repasser ensuite en cycle dev &gt; <code>0.92.0.9000</code>. <strong>Phase B et app (B1-B6) non démarrées.</strong></p>
+<td>release app <strong>v0.90.0</strong> (<code>Imports: nemeton (&gt;= 0.92.0)</code>)</td>
+</tr></tbody></table><p><strong>Journal</strong> — <em>2026-06-18</em> : <strong>chantier cadré</strong> (paperwork). spec 008 §15 + ADR-013 A5 rédigés ; table <code>alert</code> vidée en prod (<code>TRUNCATE</code>, elle était déjà à 0 ligne — confirme le diagnostic Mouthe) ; mémoire <code>project_fordead_placette_decoupling</code> créée. <strong>R5 non impacté</strong> (lit <code>alerts_sf</code> en mémoire, pas la DB). Implémentation cœur A1-A5 démarrée sur la branche <code>feat/health-decouple-placette-phase-a</code>. &gt; &gt; <em>2026-06-18 (suite)</em> : <strong>cœur A1-A4 livrés</strong> sur la branche. Insertion &gt; d’alertes débranchée des deux pipelines (FORDEAD + RECONFORT) ; <code>alerts_sf</code> &gt; renvoyé par RECONFORT ; fonctions d’insertion + <code>list_alerts</code> conservées et &gt; annotées legacy (Phase B). Tests : <code>test-fordead-pipeline.R</code> adapté &gt; (garde-fou non-appel + sémantique <code>NA</code>), reconfort/postprocess/R5 verts sans &gt; modif (FAIL=0 en local via <code>load_all</code> + <code>test_file</code>). <strong>A5</strong> : DESCRIPTION + &gt; NEWS + CITATION bumpés en <strong>v0.92.0</strong> (cohérents) ; PR vers <code>main</code> à ouvrir &gt; → <code>release.yml</code> posera le tag <code>v0.92.0</code>. Repasser ensuite en cycle dev &gt; <code>0.92.0.9000</code>. <strong>Phase B et app (B1-B6) non démarrées.</strong> &gt; &gt; <em>2026-06-18 (cœur livré)</em> : <strong>PR #99 mergée</strong> → release <strong>v0.92.0</strong> (tag + &gt; release GitHub posés par <code>release.yml</code>) ; cycle dev <strong><code>0.92.0.9000</code></strong> &gt; (PR #100). L’échec CI intermittent du job <code>tests</code> était un <strong>timeout 30 min</strong> &gt; sur runner lent (le job <code>coverage</code>, suite complète via covr, passait à 35 min) &gt; — corrigé : <code>tests</code> timeout porté à <strong>45 min</strong>. Aucune régression de code. &gt; &gt; <em>2026-06-18 (app livrée — Phase A / décision D2)</em> : <strong>B1-B6 livrés côté &gt; <code>nemetonshiny</code></strong> — release <strong>v0.90.0</strong> (cycle dev <code>0.89.1.9000</code> → <code>0.90.0</code> → &gt; cycle dev <code>0.90.0.9000</code>), commit <code>nemetonshiny@e2124a57</code> (merge PR #86, &gt; <em>« feat(monitoring): affichage santé FORDEAD piloté raster + masquage par &gt; strate (Phase A) »</em>). Cœur consommé : <strong><code>nemeton@v0.92.0</code></strong> (PR #99), plancher &gt; app bumpé à <code>Imports: nemeton (&gt;= 0.92.0)</code>. FORDEAD calculé sur <code>_tot</code> ; &gt; affichage par strate = masquage (<code><a href="https://rspatial.github.io/terra/reference/mask.html" class="external-link">terra::mask</a></code> + <code>get_monitoring_zone_aoi</code>, &gt; EPSG:2154) sans recalcul ; « zone saine » décidée sur le raster (classe ≥ 1) ; &gt; placette retirée du mode santé. Tests <strong>AC.15.2 / 15.3 / 15.8 / 15.5</strong> verts &gt; (suite : 0 FAIL). <strong>Phase A close.</strong> Reste ouvert : <strong>Phase B</strong> (re-persistance &gt; pixel + migration géométrie/<code>zone_id</code>/<code>plot_id</code> nullable, fusion G2 spatiale).</p>
 <hr></div>
 </div>
 <div class="section level1">
