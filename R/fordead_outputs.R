@@ -381,6 +381,31 @@ NULL
                        overwrite = TRUE)
   }
 
+  # 3b. anomaly_index.tif — latest ANOMALY_INDEX (continuous current
+  #     severity). Best-effort. Feeds the "indice d'anomalie" map layer
+  #     (read_fordead_layer).
+  ai_src <- .latest_layer_file(output_dir, "ANOMALY_INDEX")
+  if (!is.na(ai_src)) {
+    tryCatch(
+      terra::writeRaster(terra::rast(ai_src),
+                         file.path(model_dir, "anomaly_index.tif"),
+                         overwrite = TRUE),
+      error = function(e)
+        cli::cli_warn("anomaly_index persist failed: {conditionMessage(e)}"))
+  }
+
+  # 3c. modelled_pixels.tif — confidence mask (pixels the harmonic model
+  #     could be fitted on). Best-effort. Feeds the "confiance" map layer.
+  mp_src <- file.path(output_dir, "fit", "modelled_pixels.tif")
+  if (file.exists(mp_src)) {
+    tryCatch(
+      terra::writeRaster(terra::rast(mp_src),
+                         file.path(model_dir, "modelled_pixels.tif"),
+                         overwrite = TRUE),
+      error = function(e)
+        cli::cli_warn("modelled_pixels persist failed: {conditionMessage(e)}"))
+  }
+
   # 4. run_meta.json — calibration + provenance of this run.
   jsonlite::write_json(run_meta,
                        file.path(model_dir, "run_meta.json"),

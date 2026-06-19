@@ -1,3 +1,24 @@
+# nemeton 0.94.0 (2026-06-19)
+
+### Added — Carte FORDEAD : couches de diagnostic additionnelles (Partie A, cœur)
+
+Préparation cœur pour 3 couches d'affichage supplémentaires dans la Carte
+FORDEAD de l'app (en plus du masque 0-4) :
+
+- **Bundle modèle enrichi** : la phase `persist` de `run_fordead_dieback()`
+  (`.write_fordead_model_bundle()`) écrit désormais aussi `anomaly_index.tif`
+  (dernier `ANOMALY_INDEX` — sévérité continue) et `modelled_pixels.tif`
+  (masque de confiance des pixels modélisés), en plus de `first_anomaly.tif`
+  (déjà présent). Best-effort : couches sautées si la source manque.
+- **Nouveau lecteur exporté** `read_fordead_layer(con, zone_id, layer, run_id,
+  cache_dir, …)` : lit une couche du bundle (`"first_anomaly"`,
+  `"anomaly_index"`, `"modelled_pixels"`) comme `SpatRaster` masqué à l'UGF
+  (miroir de `read_fordead_dieback_mask()`). Rend `NULL` sans erreur si la
+  couche/le bundle manque (anciens runs → dégradation gracieuse côté app).
+
+Côté app (`nemetonshiny`, Partie B à venir) : sélecteur de couche + palettes /
+légendes dédiées, masquage par strate (D2).
+
 # nemeton 0.93.1 (2026-06-19)
 
 ### Fixed — Validation terrain G4 sur clé pixel (spec 008 §15 Phase B.2, D-B4)

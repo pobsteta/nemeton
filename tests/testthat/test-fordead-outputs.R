@@ -204,7 +204,7 @@ test_that(".compute_first_dieback_date returns NULL when no layer present", {
 # Pixel (1,1) is flagged invalid on the first date so masking can be
 # asserted. Returns the output dir path and the dates used.
 .make_fake_fordead_src <- function(n = 3L, with_masks = TRUE,
-                                   with_model = TRUE) {
+                                   with_model = TRUE, with_extra = FALSE) {
   d <- withr::local_tempdir(.local_envir = parent.frame())
   dates <- seq(as.Date("2019-01-01"), by = "30 days", length.out = n)
   tmpl  <- terra::rast(nrows = 4, ncols = 5,
@@ -218,6 +218,15 @@ test_that(".compute_first_dieback_date returns NULL when no layer present", {
     }))
     names(model) <- paste0("model_", 1:5)
     terra::writeRaster(model, file.path(d, "fit", "model.tif"))
+  }
+
+  # ANOMALY_INDEX (per date) + fit/modelled_pixels.tif feed the
+  # anomaly_index / modelled_pixels bundle artefacts (Carte FORDEAD
+  # display layers). Off by default to keep the legacy fixtures lean.
+  if (with_extra) {
+    dir.create(file.path(d, "fit"), recursive = TRUE, showWarnings = FALSE)
+    mp <- tmpl; terra::values(mp) <- rep(c(1L, 0L), length.out = 20L)
+    terra::writeRaster(mp, file.path(d, "fit", "modelled_pixels.tif"))
   }
 
   for (i in seq_len(n)) {
@@ -236,6 +245,13 @@ test_that(".compute_first_dieback_date returns NULL when no layer present", {
       dir.create(md, showWarnings = FALSE)
       terra::writeRaster(mk,
         file.path(md, sprintf("fordead_%s_INVALID_PIXEL_MASK.tif", ds)))
+    }
+    if (with_extra) {
+      ai <- tmpl; terra::values(ai) <- as.numeric(seq_len(20)) / 10 + i
+      ad <- file.path(d, "ANOMALY_INDEX")
+      dir.create(ad, showWarnings = FALSE)
+      terra::writeRaster(ai,
+        file.path(ad, sprintf("fordead_%s_ANOMALY_INDEX.tif", ds)))
     }
   }
   list(dir = d, dates = dates)
@@ -303,6 +319,30 @@ test_that(".write_fordead_model_bundle writes the 4 artefacts (AC.14.1)", {
       "first_anomaly.tif", "run_meta.json")))))
   expect_equal(terra::nlyr(terra::rast(file.path(md, "coeff_model.tif"))), 5L)
   expect_equal(terra::nlyr(terra::rast(file.path(md, "crswir_stack.tif"))), 3L)
+})
+
+
+test_that(".write_fordead_model_bundle writes anomaly_index + modelled_pixels (Carte FORDEAD layers)", {
+  skip_if_no_terra()
+  fx <- .make_fake_fordead_src(n = 3L, with_extra = TRUE)
+  md <- file.path(withr::local_tempdir(), "model_20190101T120000")
+
+  nemeton:::.write_fordead_model_bundle(
+    fx$dir, md, run_meta = list(run_id = "x"), verbose = FALSE)
+
+  expect_true(file.exists(file.path(md, "anomaly_index.tif")))
+  expect_true(file.exists(file.path(md, "modelled_pixels.tif")))
+})
+
+
+test_that(".write_fordead_model_bundle skips extra layers when sources absent", {
+  skip_if_no_terra()
+  fx <- .make_fake_fordead_src(n = 2L)   # with_extra = FALSE (default)
+  md <- file.path(withr::local_tempdir(), "model_y")
+  nemeton:::.write_fordead_model_bundle(fx$dir, md, run_meta = list(),
+                                        verbose = FALSE)
+  expect_false(file.exists(file.path(md, "anomaly_index.tif")))
+  expect_false(file.exists(file.path(md, "modelled_pixels.tif")))
 })
 
 
