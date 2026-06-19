@@ -10,6 +10,10 @@ alerte** pour le modèle Phase B (alertes `plot_id` NULL). Le mapping
 stade → `validation_status`/`validation_cause` et l'`UPDATE alert` sont
 inchangés. Dernier reliquat placette du suivi sanitaire levé.
 
+Au passage, l'`UPDATE` de validation utilisait `now()` (PostgreSQL
+uniquement) → remplacé par un timestamp fourni par R, portable sur le
+backend SQLite (mode mono-utilisateur local).
+
 # nemeton 0.93.0 (2026-06-18)
 
 ### Added — Suivi sanitaire : re-persistance pixel des alertes (Phase B, spec 008 §15 / ADR-013 A5)

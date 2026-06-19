@@ -95,6 +95,39 @@ test_that("ingest_health_validation snaps and updates 'sain' as false_positive",
 })
 
 
+test_that("ingest_health_validation matches an alert by its pixel centroid (SQLite, Phase B.2)", {
+  skip_if_not_installed("sf")
+  with_sqlite_monitoring_db(function(con) {
+    # Phase B.2 (D-B4) : G4 snappe sur la géométrie pixel de l'alerte
+    # (`alert.geom_wkt`, filtré `alert.zone_id`), sans `JOIN plot`. Ce
+    # test exerce ce chemin sur SQLite (donc en CI, contrairement aux
+    # tests PG-gated ci-dessous).
+    DBI::dbExecute(con, paste0(
+      "INSERT INTO alert (zone_id, alert_type, trigger_date, geom_wkt, ",
+      "confidence_class, stress_index) ",
+      "VALUES (1, 'fordead_dieback', '2024-06-15', 'POINT(6 46)', ",
+      "'3-forte', 1.5)"))
+
+    # Observation terrain ~10 m du centroïde de l'alerte (en EPSG:2154).
+    xy <- sf::st_coordinates(
+      sf::st_transform(sf::st_sfc(sf::st_point(c(6, 46)), crs = 4326), 2154))
+    gpkg <- write_health_gpkg(
+      coords = matrix(c(xy[1] + 10, xy[2]), ncol = 2),
+      stades = "scolyte_vert")
+
+    res <- ingest_health_validation(con, gpkg, zone_id = 1L)
+    expect_equal(res$n_updated, 1L)
+    expect_equal(res$n_confirmed, 1L)
+    expect_equal(res$n_unmatched, 0L)
+
+    row <- DBI::dbGetQuery(con,
+      "SELECT validation_status, validation_cause FROM alert WHERE zone_id = 1")
+    expect_equal(row$validation_status, "confirmed")
+    expect_equal(row$validation_cause, "scolyte_terrain")
+  })
+})
+
+
 test_that("scolyte stages flag alerts as confirmed/scolyte_terrain", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {

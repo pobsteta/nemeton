@@ -512,14 +512,17 @@ ingest_health_validation <- function(con,
       map$cause
     }
 
+    # `validated_at` : timestamp fourni par R (portable PG/SQLite ; SQLite
+    # n'a pas la fonction `now()`).
     .db_execute(con,
       "UPDATE alert
           SET validation_status = $2,
               validation_cause  = $3,
               validated_by      = $4,
-              validated_at      = now()
+              validated_at      = $5
         WHERE id = $1",
-      params = list(alert_id, status, field_cause, obs_by))
+      params = list(alert_id, status, field_cause, obs_by,
+                    format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
 
     if (status == "confirmed") n_confirmed <- n_confirmed + 1L
     if (status == "false_positive") n_false_positive <- n_false_positive + 1L
