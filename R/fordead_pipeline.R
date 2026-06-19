@@ -55,10 +55,11 @@ FORDEAD_BANDS <- c("B02", "B04", "B05", "B8A", "B11", "B12")
 NULL
 
 
-# Recognised vegetation indices for the v0.21.0 release. CRSWIR is
-# the calibrated default; NDVI and NDWI are tolerated for research
-# but not part of the validated workflow.
-.fordead_supported_vi <- c("CRSWIR", "NDVI", "NDWI")
+# FORDEAD est mono-indice : seul CRSWIR (calibré ONF/DSF 2024) est
+# reconnu. Les anciens NDVI / NDWI « tolérés pour la recherche » ont été
+# retirés (ils n'étaient ni calibrés ni exposés dans l'app, qui est
+# verrouillée sur CRSWIR). Toute autre valeur est rejetée.
+.fordead_supported_vi <- c("CRSWIR")
 
 
 #' Validate `run_fordead_dieback()` arguments
@@ -218,8 +219,9 @@ NULL
 #'   The 18-month span is long enough to capture a full vegetation
 #'   cycle plus the early stages of a slow dieback, and short enough
 #'   to keep the diagnostic actionable.
-#' @param vegetation_index One of `"CRSWIR"`, `"NDVI"`, `"NDWI"`.
-#'   Default `"CRSWIR"`.
+#' @param vegetation_index Only `"CRSWIR"` (calibrated ONF/DSF 2024).
+#'   FORDEAD is mono-index; any other value is rejected. Default
+#'   `"CRSWIR"`.
 #' @param threshold_anomaly Numeric in `[0.05, 0.50]`. Default
 #'   `0.16` (calibrated).
 #' @param max_cloud Numeric. Maximum scene cloud cover (%) passed to
@@ -646,11 +648,7 @@ run_fordead_dieback <- function(con,
     if (!is.null(alerts_sf) && !nrow(alerts_sf)) alerts_sf <- NULL
     end_phase("postprocess")
 
-    # Phase A (spec 008 §15 / ADR-013 A5) — la persistance d'alertes est
-    # découplée de la placette : on n'insère plus rien dans `alert`. Le
-    # compteur reste pour la signature de l'événement / du résultat mais
-    # vaut NA (non pertinent), pas 0 (qui se lisait « run sain »).
-    n_inserted <- NA_integer_
+    n_inserted <- 0L
     begin_phase("persist")
     if (verbose) cli::cli_alert_info("Step: persist")
 
@@ -711,23 +709,27 @@ run_fordead_dieback <- function(con,
       NA_character_
     })
 
-    # Phase A (spec 008 §15 / ADR-013 A5) — découplage de la placette.
-    # L'ancien appel `.insert_fordead_alerts(con, alerts_sf, zone_id)`
-    # snappait chaque centroïde de cluster sur la placette la plus proche
-    # (≤ 200 m) puis l'écrivait dans `alert` ; sans placette dans la zone,
-    # l'insertion était sautée et un run avec dépérissement réel rapportait
-    # « 0 alerte » (incident Mouthe). On NE persiste plus d'alerte ici : le
-    # masque 0-4 + le bundle écrits ci-dessus sont la source de vérité
-    # d'affichage. `.insert_fordead_alerts()` est conservée (réservée à la
-    # Phase B — re-persistance pixel après migration). `alerts_sf` reste
-    # renvoyé en mémoire et consommé tel quel par
-    # `indicateur_r5_deperissement()` (inchangé).
+    # Phase B (spec 008 §15 / ADR-013 A5) — re-persistance pixel. L'alerte
+    # est une entité raster/cluster géoréférencée (centroïde EPSG:4326),
+    # rattachée à la zone, jamais à une placette. Stratégie replace-by-window
+    # (D-B1) : la fenêtre de monitoring du run est purgée avant ré-insertion.
+    # `alerts_sf` reste aussi renvoyé en mémoire (consommé par R5, inchangé).
+    if (!is.null(alerts_sf)) {
+      n_inserted <- tryCatch(
+        .insert_fordead_alerts(con, alerts_sf, zone_id = zone_id,
+                               monitoring_window = dates_monitoring),
+        error = function(e) {
+          cli::cli_alert_warning(
+            "FORDEAD alert insertion failed: {conditionMessage(e)}")
+          NA_integer_
+        })
+    }
     end_phase("persist")
 
     duration_sec <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
     if (verbose) {
       cli::cli_alert_success(
-        "FORDEAD diagnostic complete in {round(duration_sec)} s (alert persistence decoupled from plots — Phase A, spec 008 §15)."
+        "FORDEAD diagnostic complete: {n_inserted} pixel alert{?s} persisted in {round(duration_sec)} s."
       )
     }
     emit(list(current           = "fordead:complete",

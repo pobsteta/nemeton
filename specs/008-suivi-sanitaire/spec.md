@@ -905,6 +905,12 @@ La table `alert` est **vidée** (`TRUNCATE`, fait le 2026-06-18 — elle était 
 
 #### Phase B — re-persistance pixel (migration requise) — décisions figées
 
+> **Livré en v0.93.0** (2026-06-18). Migration `0007_alert_pixel_geometry`
+> (pg + sqlite), persistance pixel re-câblée (FORDEAD + RECONFORT),
+> `list_alerts()` / `classify_disturbance()` refondues. Seul le workflow de
+> validation terrain G4 (`ingest_health_validation`) reste sur le modèle
+> placette → **Phase B.2** (D-B4).
+
 Quand la re-persistance d'alertes pixel est activée, une **migration est inévitable** (le schéma actuel ne peut pas stocker une alerte sans placette ni géométrie). Les quatre décisions ci-dessous sont **figées** (2026-06-18) ; le code Phase B s'y conforme.
 
 **D-B1 — Idempotence inter-runs : stratégie « replace-by-window ».**
@@ -968,6 +974,10 @@ En Phase B (cœur) :
 - [ ] **AC.15.6** — `devtools::check()` sans nouveau ERROR / WARNING / NOTE ; tests pipelines (mockés) verts après débranchement de l'insertion.
 - [ ] **AC.15.7** — Doc : NEWS.md, PLAN.md (journal daté), spec 008 §15 (ce document), ADR-013 amendement A5.
 - [ ] **AC.15.8** — FORDEAD est calculé **une seule fois sur la strate `_tot`** ; sélectionner `_res` / `_mix` dans le menu de zone ne relance **aucun** run mais masque le raster `_tot` affiché à la géométrie UGF de la strate (cf. §15.6).
+- [x] **AC.15.9** — *(Phase B, v0.93.0)* Migration `0007_alert_pixel_geometry` appliquée sur PostgreSQL **et** SQLite (`DROP`+`CREATE`, table vide) ; schéma `alert` pixel (`zone_id` NOT NULL, `geom_wkt`, `plot_id` nullable, clé `(zone_id, alert_type, trigger_date, cluster_id)`).
+- [x] **AC.15.10** — *(Phase B)* `.insert_fordead_alerts()` / `.insert_reconfort_alerts()` insèrent le centroïde (EPSG:4326) sans placette (`plot_id` NULL) ; re-run sur la même fenêtre = idempotent (replace-by-window, total inchangé).
+- [x] **AC.15.11** — *(Phase B)* `list_alerts()` renvoie la géométrie de l'alerte ; `classify_disturbance()` fusionne sur proximité spatiale. R5 (`test-indicators-deperissement.R`) inchangé, vert.
+- [x] **AC.15.12** — *(Phase B)* Suite testthat verte sur SQLite + base PG de test (`devtools::test()`), zéro régression du changement de schéma (zone-cascade, validation, monitoring).
 
 ### 15.6 Affichage multi-strates : calcul sur `_tot`, masquage à l'affichage (décision D2)
 

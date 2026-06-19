@@ -1,3 +1,37 @@
+# nemeton 0.93.0 (2026-06-18)
+
+### Added — Suivi sanitaire : re-persistance pixel des alertes (Phase B, spec 008 §15 / ADR-013 A5)
+
+La table `alert` redevient alimentée, mais l'alerte est désormais une **entité
+raster/pixel géoréférencée**, jamais une placette (décisions D-B1 à D-B4) :
+
+- **Migration `0007_alert_pixel_geometry`** (PostgreSQL + SQLite) : `DROP` +
+  `CREATE` de `alert` au nouveau schéma — `zone_id` (NOT NULL, FK
+  `monitoring_zone` `ON DELETE CASCADE`), `geom_wkt` (centroïde EPSG:4326),
+  `n_pixels`, `area_m2`, `cluster_id`, `plot_id` **nullable** (`ON DELETE SET
+  NULL`), clé `UNIQUE (zone_id, alert_type, trigger_date, cluster_id)`. La
+  table étant vide (contrat Phase A), le `DROP`+`CREATE` est sûr et portable.
+- **Persistance** : `.insert_fordead_alerts()` / `.insert_reconfort_alerts()`
+  (helper partagé `.insert_health_alerts`) n'effectuent plus de *snapping*
+  placette ; elles insèrent le centroïde + métadonnées et appliquent la
+  stratégie **replace-by-window** (D-B1, idempotence inter-runs). Re-câblées
+  dans `run_fordead_dieback()` (persist) et `run_reconfort_dieback()`
+  (postprocess) ; `n_alerts_inserted` redevient un vrai compte.
+- **`list_alerts()`** lit la géométrie de l'alerte (`geom_wkt`, `LEFT JOIN
+  plot` optionnel) et expose `zone_id` / `n_pixels` / `area_m2`.
+- **`classify_disturbance()`** (fusion G2) joint sur une **proximité spatiale**
+  des centroïdes (≤ `radius_m`, défaut 100 m) au lieu de l'égalité `plot_id`,
+  avec repli legacy `plot_id` pour les jeux sans géométrie.
+- **R5 inchangé** (lit `alerts_sf` en mémoire). Le workflow de validation
+  terrain G4 (`ingest_health_validation`) reste sur le modèle placette en
+  attendant sa refonte (Phase B.2, D-B4).
+
+### Changed — FORDEAD est strictement mono-indice (CRSWIR)
+
+`.fordead_supported_vi` est réduit à `c("CRSWIR")` : les indices NDVI / NDWI
+« tolérés pour la recherche » sont retirés (ni calibrés, ni exposés dans
+l'app). Toute autre valeur de `vegetation_index` est rejetée.
+
 # nemeton 0.92.0 (2026-06-18)
 
 ### Changed — Suivi sanitaire : découplage de la placette (Phase A, spec 008 §15 / ADR-013 A5)

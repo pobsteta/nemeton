@@ -335,20 +335,16 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       ))
     }
 
-    # PHASE 9 — postprocess: rasters → centroïdes de cluster (L3, spec 021)
-    # Best-effort: a real run may legitimately produce zero dieback patch,
-    # and we never want a post-process glitch to discard a multi-hour
-    # IOTA2 run. Failures warn and leave `alerts_sf = NULL`.
+    # PHASE 9 — postprocess: rasters → centroïdes de cluster → table `alert`
+    # (L3, spec 021). Best-effort : un run réel peut légitimement ne produire
+    # aucun patch, et on ne veut jamais qu'un accroc de post-process jette un
+    # run IOTA2 de plusieurs heures. Échecs → warn.
     #
-    # Phase A (spec 008 §15 / ADR-013 A5) — découplage de la placette.
-    # On calcule toujours les centroïdes (`alerts_sf`), désormais RENVOYÉS
-    # dans le résultat et consommés en mémoire par
-    # `indicateur_r5_deperissement()` (parité avec FORDEAD). Mais on
-    # N'INSÈRE PLUS dans `alert` : l'ancien `.insert_reconfort_alerts()`
-    # snappait les centroïdes sur la placette la plus proche — supprimé ici,
-    # conservé pour la Phase B (re-persistance pixel après migration). Le
-    # masque RECONFORT persisté ci-dessous est la source de vérité
-    # d'affichage. `n_alerts` reste pour la signature mais vaut NA.
+    # Phase B (spec 008 §15 / ADR-013 A5) — re-persistance pixel. Les
+    # centroïdes (`alerts_sf`) sont RENVOYÉS dans le résultat (consommés en
+    # mémoire par `indicateur_r5_deperissement()`, parité FORDEAD) ET
+    # ré-insérés dans `alert` comme entités raster/cluster géoréférencées
+    # (sans placette), stratégie replace-by-window sur la fenêtre du run.
     begin("postprocess")
     classif_for_alerts <- if (!is.na(rasters$classif_masked))
       rasters$classif_masked else rasters$classif
@@ -362,7 +358,13 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
         cli::cli_warn("RECONFORT post-process (clustering) failed: {conditionMessage(e)}")
         NULL
       })
-    n_alerts <- NA_integer_
+    n_alerts <- tryCatch(
+      .insert_reconfort_alerts(con, alerts_sf, zone_id = zone_id,
+                               monitoring_window = c(date_from, date_to)),
+      error = function(e) {
+        cli::cli_warn("RECONFORT alert insertion failed: {conditionMessage(e)}")
+        NA_integer_
+      })
 
     # PHASE 10 — persist CRswir/CRre features for the pixel diagnostic
     # (L5, spec 021). Best-effort, recomputed from the ingested S2

@@ -33,8 +33,8 @@ test_that(".delete_project_zones removes the whole chain (SQLite)", {
       "INSERT INTO plot (id, zone_id, plot_id, geom_wkt) ",
       "VALUES (1, 1, 'p1', 'POINT(0 0)')"))
     DBI::dbExecute(con, paste0(
-      "INSERT INTO alert (id, plot_id, alert_type, trigger_date) ",
-      "VALUES (1, 1, 'fordead', '2026-01-01')"))
+      "INSERT INTO alert (id, zone_id, plot_id, alert_type, trigger_date) ",
+      "VALUES (1, 1, 1, 'fordead', '2026-01-01')"))
     # A second project that must stay untouched.
     DBI::dbExecute(con, paste0(
       "INSERT INTO monitoring_zone (id, name, zone_wkt, project_uuid) ",
@@ -131,8 +131,8 @@ test_that("build_project_monitoring_zones re-build survives FK + child rows (SQL
     pid <- DBI::dbGetQuery(con,
       "SELECT id FROM plot ORDER BY id DESC LIMIT 1")$id[1]
     DBI::dbExecute(con, sprintf(paste0(
-      "INSERT INTO alert (plot_id, alert_type, trigger_date) ",
-      "VALUES (%d, 'fordead', '2026-02-01')"), pid))
+      "INSERT INTO alert (zone_id, plot_id, alert_type, trigger_date) ",
+      "VALUES (%d, %d, 'fordead', '2026-02-01')"), zid, pid))
 
     # Re-build (replace = TRUE) must not raise the FK error.
     expect_no_error(suppressWarnings(
@@ -165,8 +165,8 @@ test_that(".delete_project_zones removes the whole chain (PG)", {
       "INSERT INTO plot (id, zone_id, plot_id, geom_wkt) ",
       "VALUES (1, 1, 'p1', 'POINT(0 0)')"))
     DBI::dbExecute(con, paste0(
-      "INSERT INTO alert (id, plot_id, alert_type, trigger_date) ",
-      "VALUES (1, 1, 'fordead', '2026-01-01')"))
+      "INSERT INTO alert (id, zone_id, plot_id, alert_type, trigger_date) ",
+      "VALUES (1, 1, 1, 'fordead', '2026-01-01')"))
 
     expect_no_error(nemeton:::.delete_project_zones(con, "proj-1"))
     expect_equal(DBI::dbGetQuery(con,

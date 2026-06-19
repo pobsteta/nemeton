@@ -11,43 +11,52 @@
 # Fixtures live in helper-sqlite.R. sf is required to build the alert
 # geometries and to run the nearest-plot matching inside the function.
 
-test_that(".insert_fordead_alerts does not raise SQLite 'near DO' error", {
+test_that(".insert_fordead_alerts persists a pixel alert on SQLite (Phase B)", {
   skip_if_not_installed("sf")
   with_sqlite_monitoring_db(function(con) {
-    # One dieback centroid sitting exactly on the single registered plot
-    # (POINT(0 0), see helper) so it is kept within the default radius.
+    # Phase B (spec 008 §15) : l'alerte est une entité pixel/cluster
+    # rattachée à la zone, sans placette. Centroïde en EPSG:2154 (CRS du
+    # masque) → reprojeté en 4326 par la fonction.
     alerts_sf <- sf::st_sf(
       trigger_date     = as.Date("2026-05-20"),
-      confidence_class = "high",
+      confidence_class = "3-forte",
       stress_index     = 0.8,
-      geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 4326)
+      n_pixels         = 12L,
+      area_m2          = 1200,
+      geometry = sf::st_sfc(sf::st_point(c(900000, 6500000)), crs = 2154)
     )
-    # This is where the fatal `near "DO": syntax error` surfaced on SQLite.
     expect_no_error(
       n <- nemeton:::.insert_fordead_alerts(con, alerts_sf, zone_id = 1L)
     )
     expect_equal(n, 1L)
     got <- DBI::dbGetQuery(
-      con, "SELECT alert_type FROM alert WHERE plot_id = 1")
+      con, "SELECT zone_id, plot_id, alert_type, geom_wkt, n_pixels FROM alert")
     expect_equal(nrow(got), 1L)
+    expect_equal(got$zone_id, 1L)
+    expect_true(is.na(got$plot_id))                 # plot découplé
     expect_equal(got$alert_type, "fordead_dieback")
+    expect_match(got$geom_wkt, "POINT")             # centroïde stocké (4326)
+    expect_equal(got$n_pixels, 12L)
   })
 })
 
-test_that(".insert_fordead_alerts stays idempotent on SQLite (DO NOTHING)", {
+test_that(".insert_fordead_alerts is idempotent via replace-by-window (D-B1)", {
   skip_if_not_installed("sf")
   with_sqlite_monitoring_db(function(con) {
     alerts_sf <- sf::st_sf(
       trigger_date     = as.Date("2026-05-20"),
-      confidence_class = "high",
+      confidence_class = "3-forte",
       stress_index     = 0.8,
-      geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 4326)
+      geometry = sf::st_sfc(sf::st_point(c(900000, 6500000)), crs = 2154)
     )
-    nemeton:::.insert_fordead_alerts(con, alerts_sf, zone_id = 1L)
-    # Re-inserting the same (plot_id, alert_type, trigger_date) must be a
-    # no-op, not a primary-key violation.
+    win <- as.Date(c("2026-01-01", "2026-12-31"))
+    nemeton:::.insert_fordead_alerts(con, alerts_sf, zone_id = 1L,
+                                     monitoring_window = win)
+    # Re-run sur la même fenêtre → purge puis ré-insertion : toujours
+    # 1 ligne, pas 2 (idempotence inter-runs, cluster_id non stable).
     expect_no_error(
-      nemeton:::.insert_fordead_alerts(con, alerts_sf, zone_id = 1L))
+      nemeton:::.insert_fordead_alerts(con, alerts_sf, zone_id = 1L,
+                                       monitoring_window = win))
     got <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM alert")
     expect_equal(got$n, 1L)
   })

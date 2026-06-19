@@ -294,17 +294,15 @@ test_that("list_alerts honours the G1 default class filter", {
   with_clean_db(function(con) {
     db_migrate(con)
     zid <- seed_zone(con)
-    plots <- DBI::dbGetQuery(con,
-      "SELECT id FROM plot WHERE zone_id = $1 ORDER BY plot_id",
-      params = list(zid))$id
+    # Phase B : alertes pixel rattachées à la zone (geom_wkt, plot_id NULL).
     DBI::dbExecute(con,
-      "INSERT INTO alert (plot_id, alert_type, trigger_date,
+      "INSERT INTO alert (zone_id, alert_type, trigger_date, geom_wkt,
                           confidence_class, stress_index)
        VALUES
-         ($1, 'fordead_dieback', '2024-06-01', '1-faible', 0.5),
-         ($1, 'fordead_dieback', '2024-06-15', '3-forte',  1.5),
-         ($2, 'ndvi_drop',       '2024-07-01', NULL,       NULL)",
-      params = list(plots[1], plots[2]))
+         ($1, 'fordead_dieback', '2024-06-01', 'POINT(6 46)', '1-faible', 0.5),
+         ($1, 'fordead_dieback', '2024-06-15', 'POINT(6 46)', '3-forte',  1.5),
+         ($1, 'ndvi_drop',       '2024-07-01', 'POINT(6 46)', NULL,       NULL)",
+      params = list(zid))
 
     default <- list_alerts(con, zid)
     # Default keeps class 3-forte + everything without a class
@@ -323,17 +321,14 @@ test_that("list_alerts filters by validation_status and period", {
   with_clean_db(function(con) {
     db_migrate(con)
     zid <- seed_zone(con)
-    plots <- DBI::dbGetQuery(con,
-      "SELECT id FROM plot WHERE zone_id = $1 ORDER BY plot_id",
-      params = list(zid))$id
     DBI::dbExecute(con,
-      "INSERT INTO alert (plot_id, alert_type, trigger_date,
+      "INSERT INTO alert (zone_id, alert_type, trigger_date, geom_wkt,
                           confidence_class, validation_status)
        VALUES
-         ($1, 'fordead_dieback', '2024-05-01', '3-forte', 'pending'),
-         ($1, 'fordead_dieback', '2024-08-01', '3-forte', 'confirmed'),
-         ($2, 'fordead_dieback', '2024-09-01', '3-forte', 'false_positive')",
-      params = list(plots[1], plots[2]))
+         ($1, 'fordead_dieback', '2024-05-01', 'POINT(6 46)', '3-forte', 'pending'),
+         ($1, 'fordead_dieback', '2024-08-01', 'POINT(6 46)', '3-forte', 'confirmed'),
+         ($1, 'fordead_dieback', '2024-09-01', 'POINT(6 46)', '3-forte', 'false_positive')",
+      params = list(zid))
 
     only_confirmed <- list_alerts(con, zid,
                                   validation_status = "confirmed")
@@ -381,13 +376,13 @@ make_centroids <- function(coords, classes,
   )
 }
 
-test_that(".insert_fordead_alerts inserts new rows and is idempotent", {
+test_that(".insert_fordead_alerts persists pixel alerts (zone, no plot)", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
     zid <- seed_zone(con)
 
-    # Two centroids, one near each plot
+    # Phase B : deux centroïdes, géoréférencés, sans dépendance placette.
     pts <- make_centroids(matrix(c(700110, 6800110,
                                    700510, 6800510),
                                  ncol = 2, byrow = TRUE),
@@ -395,33 +390,40 @@ test_that(".insert_fordead_alerts inserts new rows and is idempotent", {
     n1 <- nemeton:::.insert_fordead_alerts(con, pts, zone_id = zid)
     expect_equal(n1, 2L)
 
-    n2 <- nemeton:::.insert_fordead_alerts(con, pts, zone_id = zid)
-    expect_equal(n2, 0L)
-
     rs <- DBI::dbGetQuery(con,
-      "SELECT alert_type, confidence_class, stress_index, validation_status
-         FROM alert ORDER BY id")
+      "SELECT zone_id, plot_id, alert_type, confidence_class,
+              geom_wkt, n_pixels, validation_status
+         FROM alert ORDER BY cluster_id")
     expect_equal(nrow(rs), 2L)
+    expect_true(all(rs$zone_id == zid))
+    expect_true(all(is.na(rs$plot_id)))               # plot découplé
+    expect_true(all(grepl("POINT", rs$geom_wkt)))     # centroïde stocké
     expect_equal(unique(rs$alert_type), "fordead_dieback")
     expect_setequal(rs$confidence_class, c("3-forte", "4-sol-nu"))
     expect_equal(unique(rs$validation_status), "pending")
   })
 })
 
-test_that(".insert_fordead_alerts skips centroids beyond radius_m", {
+test_that(".insert_fordead_alerts is idempotent via replace-by-window (D-B1)", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
     zid <- seed_zone(con)
 
-    far <- make_centroids(matrix(c(710000, 6810000), ncol = 2),
-                          classes = "3-forte")
-    expect_warning(
-      n <- nemeton:::.insert_fordead_alerts(con, far, zone_id = zid,
-                                            radius_m = 200),
-      "farther than"
-    )
-    expect_equal(n, 0L)
+    pts <- make_centroids(matrix(c(700110, 6800110,
+                                   700510, 6800510),
+                                 ncol = 2, byrow = TRUE),
+                          classes = c("3-forte", "4-sol-nu"))
+    win <- as.Date(c("2024-01-01", "2024-12-31"))
+    nemeton:::.insert_fordead_alerts(con, pts, zone_id = zid,
+                                     monitoring_window = win)
+    # Re-run sur la même fenêtre → purge puis ré-insertion : la fonction
+    # ré-insère 2 lignes, mais le total reste 2 (pas de doublon).
+    n2 <- nemeton:::.insert_fordead_alerts(con, pts, zone_id = zid,
+                                           monitoring_window = win)
+    expect_equal(n2, 2L)
+    total <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM alert")$n
+    expect_equal(total, 2L)
   })
 })
 

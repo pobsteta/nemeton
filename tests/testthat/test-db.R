@@ -99,7 +99,7 @@ test_that("db_migrate applies all bundled migrations on a fresh DB (PG)", {
   })
 })
 
-test_that("0002_fordead adds the validation columns on alert (idempotent, PG)", {
+test_that("alert carries the validation columns + indexes after migration (PG)", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
@@ -117,7 +117,10 @@ test_that("0002_fordead adds the validation columns on alert (idempotent, PG)", 
     idx <- DBI::dbGetQuery(con,
       "SELECT indexname FROM pg_indexes WHERE tablename = 'alert'")
     expect_true("alert_validation_status_idx" %in% idx$indexname)
-    expect_true("alert_plot_date_type_idx"    %in% idx$indexname)
+    # Phase B (migration 0007) a reconstruit `alert` : l'index G2 est
+    # désormais zone-orienté (`alert_zone_date_type_idx`), la fusion ne
+    # passant plus par la placette.
+    expect_true("alert_zone_date_type_idx"    %in% idx$indexname)
 
     # Re-applying 0002 manually is a no-op (IF NOT EXISTS guard).
     # File lives under `pg/` (per-backend migration dirs).

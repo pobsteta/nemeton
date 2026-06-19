@@ -25,14 +25,17 @@ seed_zone_with_alerts <- function(con, zone_name = "Zone-health-test") {
     "SELECT id, plot_id FROM plot WHERE zone_id = $1 ORDER BY plot_id",
     params = list(zid))
 
+  # G4 (validation terrain) reste sur des alertes ancrées placette tant
+  # que sa refonte n'est pas faite (Phase B.2, D-B4). On garde donc
+  # `plot_id` ici, en ajoutant le `zone_id` désormais NOT NULL (Phase B).
   DBI::dbExecute(con,
-    "INSERT INTO alert (plot_id, alert_type, trigger_date,
+    "INSERT INTO alert (zone_id, plot_id, alert_type, trigger_date,
                         confidence_class, stress_index)
      VALUES
-       ($1, 'fordead_dieback', '2024-06-15', '3-forte',  1.5),
-       ($2, 'fordead_dieback', '2024-06-15', '1-faible', 0.4),
-       ($3, 'fordead_dieback', '2024-06-15', '4-sol-nu', 2.0)",
-    params = list(plots_db$id[1], plots_db$id[2], plots_db$id[3]))
+       ($1, $2, 'fordead_dieback', '2024-06-15', '3-forte',  1.5),
+       ($1, $3, 'fordead_dieback', '2024-06-15', '1-faible', 0.4),
+       ($1, $4, 'fordead_dieback', '2024-06-15', '4-sol-nu', 2.0)",
+    params = list(zid, plots_db$id[1], plots_db$id[2], plots_db$id[3]))
 
   list(zone_id = zid, plots = plots_db)
 }
