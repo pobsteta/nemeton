@@ -1,3 +1,19 @@
+# nemeton 0.93.1 (2026-06-19)
+
+### Fixed — Validation terrain G4 sur clé pixel (spec 008 §15 Phase B.2, D-B4)
+
+`ingest_health_validation()` ne dépend plus de la table `plot` : il snappe
+chaque observation terrain (GPKG QField) sur le **centroïde pixel de l'alerte**
+(`alert.geom_wkt`), filtré par `alert.zone_id` — auparavant la requête joignait
+`alert` à `plot` (`p.geom_wkt`, `p.zone_id`), ce qui ne renvoyait **aucune
+alerte** pour le modèle Phase B (alertes `plot_id` NULL). Le mapping
+stade → `validation_status`/`validation_cause` et l'`UPDATE alert` sont
+inchangés. Dernier reliquat placette du suivi sanitaire levé.
+
+Au passage, l'`UPDATE` de validation utilisait `now()` (PostgreSQL
+uniquement) → remplacé par un timestamp fourni par R, portable sur le
+backend SQLite (mode mono-utilisateur local).
+
 # nemeton 0.93.0 (2026-06-18)
 
 ### Added — Suivi sanitaire : re-persistance pixel des alertes (Phase B, spec 008 §15 / ADR-013 A5)

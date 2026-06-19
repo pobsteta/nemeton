@@ -22,20 +22,24 @@ seed_zone_with_alerts <- function(con, zone_name = "Zone-health-test") {
   zid <- nemeton::register_monitoring_zone(con, zone_name, pol, pl)
 
   plots_db <- DBI::dbGetQuery(con,
-    "SELECT id, plot_id FROM plot WHERE zone_id = $1 ORDER BY plot_id",
+    "SELECT id, plot_id, geom_wkt FROM plot WHERE zone_id = $1 ORDER BY plot_id",
     params = list(zid))
 
-  # G4 (validation terrain) reste sur des alertes ancrées placette tant
-  # que sa refonte n'est pas faite (Phase B.2, D-B4). On garde donc
-  # `plot_id` ici, en ajoutant le `zone_id` désormais NOT NULL (Phase B).
+  # Phase B.2 (D-B4) : G4 valide des alertes pixel géoréférencées. On
+  # donne ici à chaque alerte sa propre géométrie (`geom_wkt`, ici la
+  # position de la placette pour que le snapping terrain reste testable).
+  # `plot_id` reste renseigné par commodité d'assertion (la vraie donnée
+  # Phase B l'aurait NULL ; la requête de validation ne l'utilise plus).
   DBI::dbExecute(con,
     "INSERT INTO alert (zone_id, plot_id, alert_type, trigger_date,
-                        confidence_class, stress_index)
+                        geom_wkt, confidence_class, stress_index)
      VALUES
-       ($1, $2, 'fordead_dieback', '2024-06-15', '3-forte',  1.5),
-       ($1, $3, 'fordead_dieback', '2024-06-15', '1-faible', 0.4),
-       ($1, $4, 'fordead_dieback', '2024-06-15', '4-sol-nu', 2.0)",
-    params = list(zid, plots_db$id[1], plots_db$id[2], plots_db$id[3]))
+       ($1, $2, 'fordead_dieback', '2024-06-15', $5, '3-forte',  1.5),
+       ($1, $3, 'fordead_dieback', '2024-06-15', $6, '1-faible', 0.4),
+       ($1, $4, 'fordead_dieback', '2024-06-15', $7, '4-sol-nu', 2.0)",
+    params = list(zid, plots_db$id[1], plots_db$id[2], plots_db$id[3],
+                  plots_db$geom_wkt[1], plots_db$geom_wkt[2],
+                  plots_db$geom_wkt[3]))
 
   list(zone_id = zid, plots = plots_db)
 }
@@ -87,6 +91,39 @@ test_that("ingest_health_validation snaps and updates 'sain' as false_positive",
       params = list(seed$plots$id[2]))
     expect_equal(rows$validation_status, "false_positive")
     expect_equal(rows$validation_cause, "sain_terrain")
+  })
+})
+
+
+test_that("ingest_health_validation matches an alert by its pixel centroid (SQLite, Phase B.2)", {
+  skip_if_not_installed("sf")
+  with_sqlite_monitoring_db(function(con) {
+    # Phase B.2 (D-B4) : G4 snappe sur la géométrie pixel de l'alerte
+    # (`alert.geom_wkt`, filtré `alert.zone_id`), sans `JOIN plot`. Ce
+    # test exerce ce chemin sur SQLite (donc en CI, contrairement aux
+    # tests PG-gated ci-dessous).
+    DBI::dbExecute(con, paste0(
+      "INSERT INTO alert (zone_id, alert_type, trigger_date, geom_wkt, ",
+      "confidence_class, stress_index) ",
+      "VALUES (1, 'fordead_dieback', '2024-06-15', 'POINT(6 46)', ",
+      "'3-forte', 1.5)"))
+
+    # Observation terrain ~10 m du centroïde de l'alerte (en EPSG:2154).
+    xy <- sf::st_coordinates(
+      sf::st_transform(sf::st_sfc(sf::st_point(c(6, 46)), crs = 4326), 2154))
+    gpkg <- write_health_gpkg(
+      coords = matrix(c(xy[1] + 10, xy[2]), ncol = 2),
+      stades = "scolyte_vert")
+
+    res <- ingest_health_validation(con, gpkg, zone_id = 1L)
+    expect_equal(res$n_updated, 1L)
+    expect_equal(res$n_confirmed, 1L)
+    expect_equal(res$n_unmatched, 0L)
+
+    row <- DBI::dbGetQuery(con,
+      "SELECT validation_status, validation_cause FROM alert WHERE zone_id = 1")
+    expect_equal(row$validation_status, "confirmed")
+    expect_equal(row$validation_cause, "scolyte_terrain")
   })
 })
 
