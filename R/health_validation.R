@@ -385,12 +385,16 @@ generate_health_validation_plots <- function(alerts_sf,
 #'
 #' Reads the `placettes` layer of `gpkg_path` (typically a GPKG
 #' edited in QGIS Desktop or in QField on a tablet), snaps each
-#' plot to the nearest alert of the given `zone_id` (within
-#' `snap_distance_m`), maps the observer-selected
+#' field observation to the nearest alert of the given `zone_id`
+#' (within `snap_distance_m`), maps the observer-selected
 #' `stade_deperissement` to `validation_status` /
 #' `validation_cause`, and issues an `UPDATE alert` per match.
-#' Plots without a `stade_deperissement` are skipped (never edited
-#' in the field).
+#' Observations without a `stade_deperissement` are skipped (never
+#' edited in the field).
+#'
+#' Since spec 008 §15 Phase B the match is against the alert's **own
+#' pixel centroid** (`alert.geom_wkt`), not a plot: G4 no longer
+#' depends on the `plot` table (D-B4, Phase B.2).
 #'
 #' @param con A `DBIConnection` to a TimescaleDB instance.
 #' @param gpkg_path Character. Path to the GPKG returned by the
@@ -430,13 +434,14 @@ ingest_health_validation <- function(con,
     cli::cli_abort("Layer {.val {layer}} of {.path {gpkg_path}} is missing the {.field stade_deperissement} column.")
   }
 
-  # Pull every alert of this zone (id + geometry only). Snap is in
-  # metres so we project everything to Lambert-93.
+  # Pull every alert of this zone (id + centroid geometry). Depuis le
+  # découplage de la placette (spec 008 §15 Phase B), l'alerte porte sa
+  # propre géométrie pixel (`a.geom_wkt`, EPSG:4326) et son `a.zone_id` :
+  # plus de `JOIN plot`. Le snapping reste métrique (projection 2154).
   alerts_q <- .db_get_query(con,
-    "SELECT a.id, a.confidence_class, a.alert_type, p.geom_wkt
+    "SELECT a.id, a.confidence_class, a.alert_type, a.geom_wkt
        FROM alert a
-       JOIN plot p ON p.id = a.plot_id
-      WHERE p.zone_id = $1",
+      WHERE a.zone_id = $1 AND a.geom_wkt IS NOT NULL",
     params = list(as.integer(zone_id)))
 
   if (!nrow(alerts_q)) {

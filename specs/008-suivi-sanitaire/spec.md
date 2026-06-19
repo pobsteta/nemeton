@@ -907,9 +907,11 @@ La table `alert` est **vidée** (`TRUNCATE`, fait le 2026-06-18 — elle était 
 
 > **Livré en v0.93.0** (2026-06-18). Migration `0007_alert_pixel_geometry`
 > (pg + sqlite), persistance pixel re-câblée (FORDEAD + RECONFORT),
-> `list_alerts()` / `classify_disturbance()` refondues. Seul le workflow de
-> validation terrain G4 (`ingest_health_validation`) reste sur le modèle
-> placette → **Phase B.2** (D-B4).
+> `list_alerts()` / `classify_disturbance()` refondues.
+> **Phase B.2 livrée en v0.93.1** (2026-06-19) : `ingest_health_validation()`
+> (G4) snappe désormais sur le centroïde pixel de l'alerte (`alert.geom_wkt`,
+> filtré par `alert.zone_id`), plus de `JOIN plot` (D-B4). Le découplage de la
+> placette du suivi sanitaire est **complet**.
 
 Quand la re-persistance d'alertes pixel est activée, une **migration est inévitable** (le schéma actuel ne peut pas stocker une alerte sans placette ni géométrie). Les quatre décisions ci-dessous sont **figées** (2026-06-18) ; le code Phase B s'y conforme.
 
