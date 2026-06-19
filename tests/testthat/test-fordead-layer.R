@@ -3,6 +3,9 @@
 
 skip_if_no_terra <- function() {
   testthat::skip_if_not_installed("terra")
+  # Garde-fou : certains runners CI ont un terra où writeRaster(crs=EPSG)
+  # échoue ("no valid constructor") — même skip que les autres tests fordead.
+  skip_if_terra_write_broken()
 }
 
 # Build cache_dir/zone_<id>/model_<run_id>/<layer>.tif for the requested
