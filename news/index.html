@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.92.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.93.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,27 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.93.0" id="nemeton-0930-2026-06-18">nemeton 0.93.0 (2026-06-18)<a class="anchor" aria-label="anchor" href="#nemeton-0930-2026-06-18"></a></h2>
+<div class="section level4">
+<h4 id="added--suivi-sanitaire--re-persistance-pixel-des-alertes-phase-b-spec--adr-a5-0-93-0">Added — Suivi sanitaire : re-persistance pixel des alertes (Phase B, spec 008 §15 / ADR-013 A5)<a class="anchor" aria-label="anchor" href="#added--suivi-sanitaire--re-persistance-pixel-des-alertes-phase-b-spec--adr-a5-0-93-0"></a></h4>
+<p>La table <code>alert</code> redevient alimentée, mais l’alerte est désormais une <strong>entité raster/pixel géoréférencée</strong>, jamais une placette (décisions D-B1 à D-B4) :</p>
+<ul><li>
+<strong>Migration <code>0007_alert_pixel_geometry</code></strong> (PostgreSQL + SQLite) : <code>DROP</code> + <code>CREATE</code> de <code>alert</code> au nouveau schéma — <code>zone_id</code> (NOT NULL, FK <code>monitoring_zone</code> <code>ON DELETE CASCADE</code>), <code>geom_wkt</code> (centroïde EPSG:4326), <code>n_pixels</code>, <code>area_m2</code>, <code>cluster_id</code>, <code>plot_id</code> <strong>nullable</strong> (<code>ON DELETE SET NULL</code>), clé <code>UNIQUE (zone_id, alert_type, trigger_date, cluster_id)</code>. La table étant vide (contrat Phase A), le <code>DROP</code>+<code>CREATE</code> est sûr et portable.</li>
+<li>
+<strong>Persistance</strong> : <code><a href="../reference/dot-insert_fordead_alerts.html">.insert_fordead_alerts()</a></code> / <code>.insert_reconfort_alerts()</code> (helper partagé <code>.insert_health_alerts</code>) n’effectuent plus de <em>snapping</em> placette ; elles insèrent le centroïde + métadonnées et appliquent la stratégie <strong>replace-by-window</strong> (D-B1, idempotence inter-runs). Re-câblées dans <code><a href="../reference/run_fordead_dieback.html">run_fordead_dieback()</a></code> (persist) et <code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> (postprocess) ; <code>n_alerts_inserted</code> redevient un vrai compte.</li>
+<li>
+<strong><code><a href="../reference/list_alerts.html">list_alerts()</a></code></strong> lit la géométrie de l’alerte (<code>geom_wkt</code>, <code>LEFT JOIN plot</code> optionnel) et expose <code>zone_id</code> / <code>n_pixels</code> / <code>area_m2</code>.</li>
+<li>
+<strong><code><a href="../reference/classify_disturbance.html">classify_disturbance()</a></code></strong> (fusion G2) joint sur une <strong>proximité spatiale</strong> des centroïdes (≤ <code>radius_m</code>, défaut 100 m) au lieu de l’égalité <code>plot_id</code>, avec repli legacy <code>plot_id</code> pour les jeux sans géométrie.</li>
+<li>
+<strong>R5 inchangé</strong> (lit <code>alerts_sf</code> en mémoire). Le workflow de validation terrain G4 (<code>ingest_health_validation</code>) reste sur le modèle placette en attendant sa refonte (Phase B.2, D-B4).</li>
+</ul></div>
+<div class="section level4">
+<h4 id="changed--fordead-est-strictement-mono-indice-crswir-0-93-0">Changed — FORDEAD est strictement mono-indice (CRSWIR)<a class="anchor" aria-label="anchor" href="#changed--fordead-est-strictement-mono-indice-crswir-0-93-0"></a></h4>
+<p><code>.fordead_supported_vi</code> est réduit à <code>c("CRSWIR")</code> : les indices NDVI / NDWI « tolérés pour la recherche » sont retirés (ni calibrés, ni exposés dans l’app). Toute autre valeur de <code>vegetation_index</code> est rejetée.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.92.0" id="nemeton-0920-2026-06-18">nemeton 0.92.0 (2026-06-18)<a class="anchor" aria-label="anchor" href="#nemeton-0920-2026-06-18"></a></h2>
 <div class="section level4">
