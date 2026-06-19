@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.93.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.93.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.93.1" id="nemeton-0931-2026-06-19">nemeton 0.93.1 (2026-06-19)<a class="anchor" aria-label="anchor" href="#nemeton-0931-2026-06-19"></a></h2>
+<div class="section level4">
+<h4 id="fixed--validation-terrain-g4-sur-clé-pixel-spec-phase-b2-d-b4-0-93-1">Fixed — Validation terrain G4 sur clé pixel (spec 008 §15 Phase B.2, D-B4)<a class="anchor" aria-label="anchor" href="#fixed--validation-terrain-g4-sur-cl%C3%A9-pixel-spec-phase-b2-d-b4-0-93-1"></a></h4>
+<p><code><a href="../reference/ingest_health_validation.html">ingest_health_validation()</a></code> ne dépend plus de la table <code>plot</code> : il snappe chaque observation terrain (GPKG QField) sur le <strong>centroïde pixel de l’alerte</strong> (<code>alert.geom_wkt</code>), filtré par <code>alert.zone_id</code> — auparavant la requête joignait <code>alert</code> à <code>plot</code> (<code>p.geom_wkt</code>, <code>p.zone_id</code>), ce qui ne renvoyait <strong>aucune alerte</strong> pour le modèle Phase B (alertes <code>plot_id</code> NULL). Le mapping stade → <code>validation_status</code>/<code>validation_cause</code> et l’<code>UPDATE alert</code> sont inchangés. Dernier reliquat placette du suivi sanitaire levé.</p>
+<p>Au passage, l’<code>UPDATE</code> de validation utilisait <code>now()</code> (PostgreSQL uniquement) → remplacé par un timestamp fourni par R, portable sur le backend SQLite (mode mono-utilisateur local).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.93.0" id="nemeton-0930-2026-06-18">nemeton 0.93.0 (2026-06-18)<a class="anchor" aria-label="anchor" href="#nemeton-0930-2026-06-18"></a></h2>
 <div class="section level4">

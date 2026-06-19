@@ -131,7 +131,17 @@ inchangé.** Tests **AC.15.9-15.12** \> verts (SQLite + base PG
 `nemeton_test`, 0 régression). **Reste : Phase B.2** \> — refonte du
 workflow de validation terrain G4 (`ingest_health_validation`) \> sur
 clé pixel (D-B4), encore sur modèle placette. Côté app : couche \>
-markers/centroïdes d’alertes à (ré)activer si souhaité.
+markers/centroïdes d’alertes à (ré)activer si souhaité. \> \>
+*2026-06-19 (Phase B.2 livrée — v0.93.1)* : **G4 découplé de la
+placette**. \>
+[`ingest_health_validation()`](https://pobsteta.github.io/nemeton/reference/ingest_health_validation.md)
+snappe l’observation terrain sur le centroïde \> pixel de l’alerte
+(`alert.geom_wkt`, filtré `alert.zone_id`) au lieu de \> `JOIN plot`
+(qui ne renvoyait aucune alerte en modèle Phase B). Mapping \>
+stade→statut + `UPDATE alert` inchangés. Tests G4 verts (base PG de
+test). \> **Découplage placette du suivi sanitaire COMPLET** (cœur).
+Reliquat \> facultatif : couche markers d’alertes app + commentaire
+roxygen obsolète \> `nemetonshiny/R/service_monitoring.R:507`.
 
 ------------------------------------------------------------------------
 
