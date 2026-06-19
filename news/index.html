@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.93.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.94.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,18 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.94.0" id="nemeton-0940-2026-06-19">nemeton 0.94.0 (2026-06-19)<a class="anchor" aria-label="anchor" href="#nemeton-0940-2026-06-19"></a></h2>
+<div class="section level4">
+<h4 id="added--carte-fordead--couches-de-diagnostic-additionnelles-partie-a-cœur-0-94-0">Added — Carte FORDEAD : couches de diagnostic additionnelles (Partie A, cœur)<a class="anchor" aria-label="anchor" href="#added--carte-fordead--couches-de-diagnostic-additionnelles-partie-a-c%C5%93ur-0-94-0"></a></h4>
+<p>Préparation cœur pour 3 couches d’affichage supplémentaires dans la Carte FORDEAD de l’app (en plus du masque 0-4) :</p>
+<ul><li>
+<strong>Bundle modèle enrichi</strong> : la phase <code>persist</code> de <code><a href="../reference/run_fordead_dieback.html">run_fordead_dieback()</a></code> (<code><a href="../reference/dot-write_fordead_model_bundle.html">.write_fordead_model_bundle()</a></code>) écrit désormais aussi <code>anomaly_index.tif</code> (dernier <code>ANOMALY_INDEX</code> — sévérité continue) et <code>modelled_pixels.tif</code> (masque de confiance des pixels modélisés), en plus de <code>first_anomaly.tif</code> (déjà présent). Best-effort : couches sautées si la source manque.</li>
+<li>
+<strong>Nouveau lecteur exporté</strong> <code>read_fordead_layer(con, zone_id, layer, run_id, cache_dir, …)</code> : lit une couche du bundle (<code>"first_anomaly"</code>, <code>"anomaly_index"</code>, <code>"modelled_pixels"</code>) comme <code>SpatRaster</code> masqué à l’UGF (miroir de <code><a href="../reference/read_fordead_dieback_mask.html">read_fordead_dieback_mask()</a></code>). Rend <code>NULL</code> sans erreur si la couche/le bundle manque (anciens runs → dégradation gracieuse côté app).</li>
+</ul><p>Côté app (<code>nemetonshiny</code>, Partie B à venir) : sélecteur de couche + palettes / légendes dédiées, masquage par strate (D2).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.93.1" id="nemeton-0931-2026-06-19">nemeton 0.93.1 (2026-06-19)<a class="anchor" aria-label="anchor" href="#nemeton-0931-2026-06-19"></a></h2>
 <div class="section level4">

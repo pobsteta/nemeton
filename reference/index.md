@@ -688,6 +688,9 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`read_fordead_dieback_mask()`](https://pobsteta.github.io/nemeton/reference/read_fordead_dieback_mask.md)
   : Read the FORDEAD dieback classified raster for a zone
 
+- [`read_fordead_layer()`](https://pobsteta.github.io/nemeton/reference/read_fordead_layer.md)
+  : Read an auxiliary FORDEAD diagnostic raster (model bundle)
+
 - [`read_fordead_pixel_series()`](https://pobsteta.github.io/nemeton/reference/read_fordead_pixel_series.md)
   : Read the FORDEAD CRSWIR pixel diagnostic series
 

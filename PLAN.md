@@ -30,6 +30,47 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 ------------------------------------------------------------------------
 
+# Chantier EN COURS — Carte FORDEAD : 3 couches additionnelles
+
+> **Cadré le 2026-06-19.** La Carte FORDEAD n’affiche que le masque 0-4.
+> On ajoute 3 couches pixel pertinentes, sélectionnables et masquées par
+> strate (D2), opacité réglable.
+
+**Couches** : (1) **Date de 1re détection** (`first_anomaly.tif`, déjà
+persistée) ; (2) **Indice d’anomalie / sévérité continue**
+(`ANOMALY_INDEX` dernière date, à persister) ; (3) **Confiance / zone
+modélisée** (`fit/modelled_pixels.tif`, à persister). Décisions : D1 =
+indice = dernière date ; D2 = UI radio « une couche à la fois » ; D3 =
+confiance = `modelled_pixels` seul.
+
+## Avancement — cœur `nemeton` (Partie A)
+
+| État | Tâche | Détail |
+|----|----|----|
+| ✅ | **A1** | [`.write_fordead_model_bundle()`](https://pobsteta.github.io/nemeton/reference/dot-write_fordead_model_bundle.md) persiste aussi `anomaly_index.tif` (dernier `ANOMALY_INDEX`) + `modelled_pixels.tif` (depuis `fit/`), best-effort |
+| ✅ | **A2** | reader exporté `read_fordead_layer(con, zone_id, layer, run_id, cache_dir, …)` (bundle `model_<run_id>/`, masque de zone — miroir de `read_fordead_dieback_mask`) |
+| ✅ | **A3** | NAMESPACE + `man/read_fordead_layer.Rd` à la main ; tests `test-fordead-layer.R` (6) + complément `test-fordead-outputs.R` (anomaly_index/modelled_pixels écrits ou sautés). Verts. |
+| 🟨 | **A4** | release cœur **v0.94.0** : DESCRIPTION+NEWS+CITATION bumpés ; commit/PR → merge → release CI |
+
+## Avancement — app `nemetonshiny` (Partie B, repo séparé)
+
+| État | Tâche | Détail |
+|----|----|----|
+| ⬜ | **B1** | sélecteur radio de couche (sidebar droite) : sévérité 0-4 (défaut) / date détection / indice anomalie / confiance |
+| ⬜ | **B2** | `mask_r` layer-aware (read_fordead_dieback_mask vs read_fordead_layer), masquage par strate conservé |
+| ⬜ | **B3** | palette + légende par couche (catégorielle 0-4 / viridis dates / YlOrRd / binaire) |
+| ⬜ | **B4** | « zone saine » ne court-circuite que la couche sévérité 0-4 |
+| ⬜ | **B5** | i18n (libellés couches + légendes) |
+| ⬜ | **B6** | tests + release (`Imports: nemeton (>= vX.Y.0)`) |
+
+**Journal** — *2026-06-19* : chantier cadré (brief + plan). Partie A
+démarrée sur la branche `feat/fordead-extra-layers`. `first_anomaly`
+déjà persistée (couche 1 dispo même sur anciens runs) ; couches 2-3
+nécessitent la persistance A1 (runs antérieurs → reader rend NULL →
+fallback gracieux app).
+
+------------------------------------------------------------------------
+
 # Chantier EN COURS — Suivi sanitaire : découplage de la placette (Phase A)
 
 > **Cadré le 2026-06-18** (spec 008 **§15**, ADR-013 amendement **A5**,
