@@ -42,23 +42,44 @@ persister). Décisions : D1 = indice = dernière date ; D2 = UI radio « une cou
 | ✅ | **A1** | `.write_fordead_model_bundle()` persiste aussi `anomaly_index.tif` (dernier `ANOMALY_INDEX`) + `modelled_pixels.tif` (depuis `fit/`), best-effort |
 | ✅ | **A2** | reader exporté `read_fordead_layer(con, zone_id, layer, run_id, cache_dir, …)` (bundle `model_<run_id>/`, masque de zone — miroir de `read_fordead_dieback_mask`) |
 | ✅ | **A3** | NAMESPACE + `man/read_fordead_layer.Rd` à la main ; tests `test-fordead-layer.R` (6) + complément `test-fordead-outputs.R` (anomaly_index/modelled_pixels écrits ou sautés). Verts. |
-| 🟨 | **A4** | release cœur **v0.94.0** : DESCRIPTION+NEWS+CITATION bumpés ; commit/PR → merge → release CI |
+| ✅ | **A4** | release cœur **v0.94.0** (PR #107 mergée, tag + release CI) ; cycle dev `0.94.0.9000` |
 
 ## Avancement — app `nemetonshiny` (Partie B, repo séparé)
 
 | État | Tâche | Détail |
 |------|-------|--------|
-| ⬜ | **B1** | sélecteur radio de couche (sidebar droite) : sévérité 0-4 (défaut) / date détection / indice anomalie / confiance |
-| ⬜ | **B2** | `mask_r` layer-aware (read_fordead_dieback_mask vs read_fordead_layer), masquage par strate conservé |
-| ⬜ | **B3** | palette + légende par couche (catégorielle 0-4 / viridis dates / YlOrRd / binaire) |
-| ⬜ | **B4** | « zone saine » ne court-circuite que la couche sévérité 0-4 |
-| ⬜ | **B5** | i18n (libellés couches + légendes) |
-| ⬜ | **B6** | tests + release (`Imports: nemeton (>= vX.Y.0)`) |
+| ✅ | **B1** | sélecteur radio de couche (sidebar droite) : sévérité 0-4 (défaut) / date 1re détection / indice anomalie / zone modélisée |
+| ✅ | **B2** | `mask_r` layer-aware (read_fordead_dieback_mask vs `read_fordead_layer`), masquage par strate conservé |
+| ✅ | **B3** | palette + légende par couche (catégorielle 0-4 / viridis dates / YlOrRd / binaire) |
+| ✅ | **B4** | « zone saine » ne court-circuite que la couche sévérité 0-4 |
+| ✅ | **B5** | i18n (libellés couches + légendes) |
+| ✅ | **B6** | release app **v0.91.0** (`Imports: nemeton (>= 0.94.0)`) ; couche absente → message « indisponible » |
+
+**Chantier CLOS** — cœur **v0.94.0** + app **v0.91.0** livrés.
 
 **Journal** — *2026-06-19* : chantier cadré (brief + plan). Partie A démarrée
 sur la branche `feat/fordead-extra-layers`. `first_anomaly` déjà persistée
 (couche 1 dispo même sur anciens runs) ; couches 2-3 nécessitent la persistance
 A1 (runs antérieurs → reader rend NULL → fallback gracieux app).
+>
+> *2026-06-19 (Partie A livrée — v0.94.0)* : cœur **PR #107 mergée** →
+> `read_fordead_layer()` exporté + persistance `anomaly_index.tif` /
+> `modelled_pixels.tif` dans le bundle modèle. Cycle dev `0.94.0.9000`.
+>
+> *2026-06-19 (Partie B livrée côté app — v0.91.0)* : **sélecteur de couches
+> FORDEAD** livré dans `nemetonshiny` v0.91.0 (commit `nemetonshiny@f4645a03`),
+> consomme `nemeton::read_fordead_layer()` (**nemeton ≥ 0.94.0**). Couches
+> **date 1re détection** / **indice d'anomalie** / **zone modélisée** + sévérité
+> 0-4, masquage par strate (D2), opacité, fallback « couche indisponible » sur
+> les anciens runs.
+>
+> *2026-06-20 (durcissement UX cartes FORDEAD — app v0.90.1 → v0.91.2)* :
+> série de finitions app (aucune API cœur nouvelle au-delà de
+> `read_fordead_layer`) — parité UGF/opacité avec la carte FAST, **classe 0
+> transparente** (alertes visibles), **perf bascule de mode** (connexion DB
+> réutilisée + validité mémoïsée, app v0.90.4), carte de base stable
+> (clic-pixel rétabli), **aides « i » par couche**, **légende date en année**
+> (app v0.91.1/v0.91.2).
 
 ---
 
