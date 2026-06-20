@@ -127,35 +127,37 @@
 </tr><tr><td>✅</td>
 <td><strong>A3</strong></td>
 <td>NAMESPACE + <code>man/read_fordead_layer.Rd</code> à la main ; tests <code>test-fordead-layer.R</code> (6) + complément <code>test-fordead-outputs.R</code> (anomaly_index/modelled_pixels écrits ou sautés). Verts.</td>
-</tr><tr><td>🟨</td>
+</tr><tr><td>✅</td>
 <td><strong>A4</strong></td>
-<td>release cœur <strong>v0.94.0</strong> : DESCRIPTION+NEWS+CITATION bumpés ; commit/PR → merge → release CI</td>
+<td>release cœur <strong>v0.94.0</strong> (PR #107 mergée, tag + release CI) ; cycle dev <code>0.94.0.9000</code>
+</td>
 </tr></tbody></table></div>
 <div class="section level2">
 <h2 id="avancement--app-nemetonshiny-partie-b-repo-séparé">Avancement — app <code>nemetonshiny</code> (Partie B, repo séparé)<a class="anchor" aria-label="anchor" href="#avancement--app-nemetonshiny-partie-b-repo-s%C3%A9par%C3%A9"></a></h2>
 <table class="table"><colgroup><col width="28%"><col width="33%"><col width="38%"></colgroup><thead><tr><th>État</th>
 <th>Tâche</th>
 <th>Détail</th>
-</tr></thead><tbody><tr><td>⬜</td>
+</tr></thead><tbody><tr><td>✅</td>
 <td><strong>B1</strong></td>
-<td>sélecteur radio de couche (sidebar droite) : sévérité 0-4 (défaut) / date détection / indice anomalie / confiance</td>
-</tr><tr><td>⬜</td>
+<td>sélecteur radio de couche (sidebar droite) : sévérité 0-4 (défaut) / date 1re détection / indice anomalie / zone modélisée</td>
+</tr><tr><td>✅</td>
 <td><strong>B2</strong></td>
 <td>
-<code>mask_r</code> layer-aware (read_fordead_dieback_mask vs read_fordead_layer), masquage par strate conservé</td>
-</tr><tr><td>⬜</td>
+<code>mask_r</code> layer-aware (read_fordead_dieback_mask vs <code>read_fordead_layer</code>), masquage par strate conservé</td>
+</tr><tr><td>✅</td>
 <td><strong>B3</strong></td>
 <td>palette + légende par couche (catégorielle 0-4 / viridis dates / YlOrRd / binaire)</td>
-</tr><tr><td>⬜</td>
+</tr><tr><td>✅</td>
 <td><strong>B4</strong></td>
 <td>« zone saine » ne court-circuite que la couche sévérité 0-4</td>
-</tr><tr><td>⬜</td>
+</tr><tr><td>✅</td>
 <td><strong>B5</strong></td>
 <td>i18n (libellés couches + légendes)</td>
-</tr><tr><td>⬜</td>
+</tr><tr><td>✅</td>
 <td><strong>B6</strong></td>
-<td>tests + release (<code>Imports: nemeton (&gt;= vX.Y.0)</code>)</td>
-</tr></tbody></table><p><strong>Journal</strong> — <em>2026-06-19</em> : chantier cadré (brief + plan). Partie A démarrée sur la branche <code>feat/fordead-extra-layers</code>. <code>first_anomaly</code> déjà persistée (couche 1 dispo même sur anciens runs) ; couches 2-3 nécessitent la persistance A1 (runs antérieurs → reader rend NULL → fallback gracieux app).</p>
+<td>release app <strong>v0.91.0</strong> (<code>Imports: nemeton (&gt;= 0.94.0)</code>) ; couche absente → message « indisponible »</td>
+</tr></tbody></table><p><strong>Chantier CLOS</strong> — cœur <strong>v0.94.0</strong> + app <strong>v0.91.0</strong> livrés.</p>
+<p><strong>Journal</strong> — <em>2026-06-19</em> : chantier cadré (brief + plan). Partie A démarrée sur la branche <code>feat/fordead-extra-layers</code>. <code>first_anomaly</code> déjà persistée (couche 1 dispo même sur anciens runs) ; couches 2-3 nécessitent la persistance A1 (runs antérieurs → reader rend NULL → fallback gracieux app). &gt; &gt; <em>2026-06-19 (Partie A livrée — v0.94.0)</em> : cœur <strong>PR #107 mergée</strong> → &gt; <code><a href="reference/read_fordead_layer.html">read_fordead_layer()</a></code> exporté + persistance <code>anomaly_index.tif</code> / &gt; <code>modelled_pixels.tif</code> dans le bundle modèle. Cycle dev <code>0.94.0.9000</code>. &gt; &gt; <em>2026-06-19 (Partie B livrée côté app — v0.91.0)</em> : <strong>sélecteur de couches &gt; FORDEAD</strong> livré dans <code>nemetonshiny</code> v0.91.0 (commit <code>nemetonshiny@f4645a03</code>), &gt; consomme <code><a href="reference/read_fordead_layer.html">nemeton::read_fordead_layer()</a></code> (<strong>nemeton ≥ 0.94.0</strong>). Couches &gt; <strong>date 1re détection</strong> / <strong>indice d’anomalie</strong> / <strong>zone modélisée</strong> + sévérité &gt; 0-4, masquage par strate (D2), opacité, fallback « couche indisponible » sur &gt; les anciens runs. &gt; &gt; <em>2026-06-20 (durcissement UX cartes FORDEAD — app v0.90.1 → v0.91.2)</em> : &gt; série de finitions app (aucune API cœur nouvelle au-delà de &gt; <code>read_fordead_layer</code>) — parité UGF/opacité avec la carte FAST, <strong>classe 0 &gt; transparente</strong> (alertes visibles), <strong>perf bascule de mode</strong> (connexion DB &gt; réutilisée + validité mémoïsée, app v0.90.4), carte de base stable &gt; (clic-pixel rétabli), <strong>aides « i » par couche</strong>, <strong>légende date en année</strong> &gt; (app v0.91.1/v0.91.2).</p>
 <hr></div>
 </div>
 <div class="section level1">
