@@ -43,7 +43,12 @@ if __name__ == "__main__":
     print('list of user variables')
     print(dict_config)
 
-    list_S2_zipfiles = glob.glob(dict_config['zip_path'] + "/SENTINEL*D.zip")
+    # NOTE (nemeton): the upstream pattern "/SENTINEL*D.zip" matched the legacy
+    # THEIA archive naming (…_T31TGM_D.zip). Current MUSCATE / GEODES archives
+    # are named …_T31TGM_C_V4-0.zip — they end in "-0.zip", not "D.zip", so the
+    # old glob selected nothing and extraction produced no scene folder. Widen
+    # to "/SENTINEL*.zip" (every Sentinel-2 L2A archive in the zip dir).
+    list_S2_zipfiles = glob.glob(dict_config['zip_path'] + "/SENTINEL*.zip")
     list_S2_folder = []
 
     if not os.path.exists(dict_config['out_dir']):
