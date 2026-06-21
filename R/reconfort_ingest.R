@@ -147,8 +147,17 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 .reconfort_account_with_download_dir <- function(account, download_dir) {
   conf <- jsonlite::read_json(account, simplifyVector = TRUE)
   conf$download_dir <- paste0(normalizePath(download_dir, mustWork = FALSE), "/")
+  # `jsonlite::read_json()` turns JSON `null` into a zero-length list, which
+  # `write_json()` then re-serialises as `{}` — and pygeodes' S3 archive
+  # download feeds `aws_access_key_id` et al. straight to botocore, which
+  # raises `TypeError: expected str instance, dict found` when they are `{}`
+  # instead of `null`. (Item *search* ignores these fields, so only the
+  # download breaks — silently, via the upstream bare `except`.) Restore the
+  # null-valued keys to JSON `null` so botocore sees `None`.
+  empty <- lengths(conf) == 0L
+  if (any(empty)) conf[empty] <- NA
   out <- tempfile("pygeodes-config-", fileext = ".json")
-  jsonlite::write_json(conf, out, auto_unbox = TRUE, pretty = TRUE)
+  jsonlite::write_json(conf, out, auto_unbox = TRUE, na = "null", pretty = TRUE)
   Sys.chmod(out, mode = "0600")
   out
 }

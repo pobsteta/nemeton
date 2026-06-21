@@ -34,6 +34,14 @@
   if (!all(ok)) {
     cli::cli_abort("Failed to stage the RECONFORT glue into {.path {workdir}}.")
   }
+  # The vendored `run_map_production_reconfort.py` / `generate_cfg_*` open
+  # `generated_config_files/<name>.cfg` for writing and IOTA2 lands its
+  # outputs under `results/`, but neither script `makedirs` first — the
+  # upstream repo simply shipped those folders. `file.copy()` does not
+  # recreate empty dirs, so create them here (the function's contract).
+  for (d in c("generated_config_files", "results")) {
+    dir.create(file.path(workdir, d), recursive = TRUE, showWarnings = FALSE)
+  }
   invisible(workdir)
 }
 
