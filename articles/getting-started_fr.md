@@ -635,11 +635,11 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.3       nemeton_0.94.0.9000
+#> [1] ggplot2_4.0.3  nemeton_0.94.1
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] omnibus_1.2.15       rappdirs_0.3.4       sass_0.4.10         
-#>  [4] generics_0.1.4       xml2_1.5.2           class_7.3-23        
+#>  [4] generics_0.1.4       xml2_1.6.0           class_7.3-23        
 #>  [7] KernSmooth_2.23-26   lattice_0.22-9       digest_0.6.39       
 #> [10] magrittr_2.0.5       evaluate_1.0.5       grid_4.6.0          
 #> [13] RColorBrewer_1.1-3   fastmap_1.2.0        jsonlite_2.0.0      

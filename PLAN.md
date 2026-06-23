@@ -81,13 +81,30 @@ FORDEAD** livré dans `nemetonshiny` v0.91.0 (commit
 (**nemeton ≥ 0.94.0**). Couches \> **date 1re détection** / **indice
 d’anomalie** / **zone modélisée** + sévérité \> 0-4, masquage par strate
 (D2), opacité, fallback « couche indisponible » sur \> les anciens runs.
-\> \> *2026-06-20 (durcissement UX cartes FORDEAD — app v0.90.1 →
-v0.91.2)* : \> série de finitions app (aucune API cœur nouvelle au-delà
-de \> `read_fordead_layer`) — parité UGF/opacité avec la carte FAST,
-**classe 0 \> transparente** (alertes visibles), **perf bascule de
-mode** (connexion DB \> réutilisée + validité mémoïsée, app v0.90.4),
-carte de base stable \> (clic-pixel rétabli), **aides « i » par
-couche**, **légende date en année** \> (app v0.91.1/v0.91.2).
+\> \> *2026-06-23 (fix hors-chantier — v0.94.1)* : **FORDEAD install —
+vraie erreur \> pip**. Rapport terrain Windows : l’install des
+dépendances pinnées du venv \> `nemeton-fordead` échouait sur un message
+vide \> (`✖ FORDEAD pipeline failed: Error installing package(s):`).
+Cause : \>
+[`reticulate::virtualenv_install()`](https://rstudio.github.io/reticulate/reference/virtualenv-tools.html)
+lève un message générique sans le \> diagnostic pip. Fix : nouveau
+helper interne
+[`.fordead_pip_install()`](https://pobsteta.github.io/nemeton/reference/dot-fordead_pip_install.md)
+\> (`R/fordead_python.R`) qui lance pip dans l’interpréteur du venv,
+capture \> stdout+stderr, et sur échec
+[`cli::cli_abort()`](https://cli.r-lib.org/reference/cli_abort.html)
+avec la fin de la sortie pip + \> causes courantes (git absent du PATH
+pour les pins `git+https`, réseau \> gitlab.com / forge.inrae.fr, roue
+non compilable).
+[`.ensure_fordead_python()`](https://pobsteta.github.io/nemeton/reference/dot-ensure_fordead_python.md)
+\> recâblé. 2 tests helper + 3 tests d’orchestration mis à jour. \> \>
+*2026-06-20 (durcissement UX cartes FORDEAD — app v0.90.1 → v0.91.2)* :
+\> série de finitions app (aucune API cœur nouvelle au-delà de \>
+`read_fordead_layer`) — parité UGF/opacité avec la carte FAST, **classe
+0 \> transparente** (alertes visibles), **perf bascule de mode**
+(connexion DB \> réutilisée + validité mémoïsée, app v0.90.4), carte de
+base stable \> (clic-pixel rétabli), **aides « i » par couche**,
+**légende date en année** \> (app v0.91.1/v0.91.2).
 
 ------------------------------------------------------------------------
 
