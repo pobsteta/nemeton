@@ -73,6 +73,18 @@ A1 (runs antérieurs → reader rend NULL → fallback gracieux app).
 > 0-4, masquage par strate (D2), opacité, fallback « couche indisponible » sur
 > les anciens runs.
 >
+> *2026-06-23 (fix hors-chantier — v0.94.1)* : **FORDEAD install — vraie erreur
+> pip**. Rapport terrain Windows : l'install des dépendances pinnées du venv
+> `nemeton-fordead` échouait sur un message vide
+> (`✖ FORDEAD pipeline failed: Error installing package(s):`). Cause :
+> `reticulate::virtualenv_install()` lève un message générique sans le
+> diagnostic pip. Fix : nouveau helper interne `.fordead_pip_install()`
+> (`R/fordead_python.R`) qui lance pip dans l'interpréteur du venv, capture
+> stdout+stderr, et sur échec `cli::cli_abort()` avec la fin de la sortie pip +
+> causes courantes (git absent du PATH pour les pins `git+https`, réseau
+> gitlab.com / forge.inrae.fr, roue non compilable). `.ensure_fordead_python()`
+> recâblé. 2 tests helper + 3 tests d'orchestration mis à jour.
+>
 > *2026-06-20 (durcissement UX cartes FORDEAD — app v0.90.1 → v0.91.2)* :
 > série de finitions app (aucune API cœur nouvelle au-delà de
 > `read_fordead_layer`) — parité UGF/opacité avec la carte FAST, **classe 0

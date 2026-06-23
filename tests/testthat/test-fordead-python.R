@@ -103,15 +103,17 @@ test_that(".ensure_fordead_python is idempotent within a session", {
     virtualenv_exists   = function(env) FALSE,
     virtualenv_python   = function(env) sprintf("~/.virtualenvs/%s/bin/python", env),
     virtualenv_create   = function(env, ...) { create_calls <<- create_calls + 1L; invisible() },
-    virtualenv_install  = function(env, packages = NULL, requirements = NULL,
-                                   ignore_installed = FALSE, ...) {
-      install_calls <<- install_calls + 1L
-      expect_true(file.exists(requirements))
-      invisible()
-    },
     use_virtualenv      = function(env, required = TRUE) invisible(env),
     import              = function(module, convert = TRUE) fake_module,
     .package = "reticulate"
+  )
+  testthat::local_mocked_bindings(
+    .fordead_pip_install = function(env_name, requirements, verbose = TRUE) {
+      install_calls <<- install_calls + 1L
+      expect_true(file.exists(requirements))
+      invisible(TRUE)
+    },
+    .package = "nemeton"
   )
 
   m1 <- nemeton:::.ensure_fordead_python(env_name = "test-env-1", verbose = FALSE)
@@ -141,7 +143,6 @@ test_that(".ensure_fordead_python skips create when the venv already exists", {
     virtualenv_exists   = function(env) TRUE,
     virtualenv_python   = function(env) sprintf("~/.virtualenvs/%s/bin/python", env),
     virtualenv_create   = function(env, ...) { create_calls <<- create_calls + 1L; invisible() },
-    virtualenv_install  = function(env, ...) { install_calls <<- install_calls + 1L; invisible() },
     use_virtualenv      = function(env, required = TRUE) invisible(env),
     import              = function(module, convert = TRUE) fake_module,
     .package = "reticulate"
@@ -150,6 +151,9 @@ test_that(".ensure_fordead_python skips create when the venv already exists", {
   # must skip both create AND install.
   testthat::local_mocked_bindings(
     .fordead_is_installed = function(env_name, requirements_path = NULL) TRUE,
+    .fordead_pip_install  = function(env_name, requirements, verbose = TRUE) {
+      install_calls <<- install_calls + 1L; invisible(TRUE)
+    },
     .package = "nemeton"
   )
 
@@ -177,12 +181,6 @@ test_that(".ensure_fordead_python reinstalls when fordead is missing from existi
     virtualenv_exists   = function(env) TRUE,
     virtualenv_python   = function(env) sprintf("~/.virtualenvs/%s/bin/python", env),
     virtualenv_create   = function(env, ...) { create_calls <<- create_calls + 1L; invisible() },
-    virtualenv_install  = function(env, packages = NULL, requirements = NULL,
-                                   ignore_installed = FALSE, ...) {
-      install_calls <<- install_calls + 1L
-      expect_true(file.exists(requirements))
-      invisible()
-    },
     use_virtualenv      = function(env, required = TRUE) invisible(env),
     import              = function(module, convert = TRUE) fake_module,
     .package = "reticulate"
@@ -191,6 +189,11 @@ test_that(".ensure_fordead_python reinstalls when fordead is missing from existi
   # Expect: no create (venv is there), one install (recovery path).
   testthat::local_mocked_bindings(
     .fordead_is_installed = function(env_name, requirements_path = NULL) FALSE,
+    .fordead_pip_install  = function(env_name, requirements, verbose = TRUE) {
+      install_calls <<- install_calls + 1L
+      expect_true(file.exists(requirements))
+      invisible(TRUE)
+    },
     .package = "nemeton"
   )
 
@@ -203,6 +206,59 @@ test_that(".ensure_fordead_python reinstalls when fordead is missing from existi
   expect_equal(install_calls, 1L)
 
   nemeton:::.reset_fordead_state()
+})
+
+
+test_that(".fordead_pip_install surfaces pip's real error on a non-zero exit", {
+  skip_if_no_reticulate()
+
+  req <- tempfile("req-", fileext = ".txt"); file.create(req)
+  on.exit(unlink(req), add = TRUE)
+
+  testthat::local_mocked_bindings(
+    virtualenv_python = function(env) "/fake/venv/bin/python",
+    .package = "reticulate"
+  )
+  # Pip fails: combined output carries the actual cause, exit status != 0.
+  testthat::local_mocked_bindings(
+    system2 = function(command, args, stdout = FALSE, stderr = FALSE, ...) {
+      structure(
+        c("Collecting fordead @ git+https://gitlab.com/...",
+          "ERROR: Cannot find command 'git' - do you have git installed?"),
+        status = 1L
+      )
+    },
+    .package = "base"
+  )
+
+  # The abort message is actionable (mentions git / network), not the
+  # empty reticulate "Error installing package(s): ".
+  expect_error(
+    nemeton:::.fordead_pip_install("any-env", req, verbose = FALSE),
+    "pip failed to install the FORDEAD requirements"
+  )
+})
+
+
+test_that(".fordead_pip_install returns TRUE on a clean install", {
+  skip_if_no_reticulate()
+
+  req <- tempfile("req-", fileext = ".txt"); file.create(req)
+  on.exit(unlink(req), add = TRUE)
+
+  testthat::local_mocked_bindings(
+    virtualenv_python = function(env) "/fake/venv/bin/python",
+    .package = "reticulate"
+  )
+  # Clean install: real system2() leaves no "status" attribute on success.
+  testthat::local_mocked_bindings(
+    system2 = function(command, args, stdout = FALSE, stderr = FALSE, ...) {
+      "Successfully installed fordead-2.1.1"
+    },
+    .package = "base"
+  )
+
+  expect_true(nemeton:::.fordead_pip_install("any-env", req, verbose = FALSE))
 })
 
 
