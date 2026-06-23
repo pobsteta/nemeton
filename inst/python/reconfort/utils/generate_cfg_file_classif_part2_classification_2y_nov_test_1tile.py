@@ -105,7 +105,7 @@ external_features:
                 
 builders:
 {
-    builders_class_name: ["i2_classification"]
+    builders_class_name: ["I2Classification"]  # nemeton: iota2 class is I2Classification (CamelCase), not the module name
 }
                 
 python_data_managing:
