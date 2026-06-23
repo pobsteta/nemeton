@@ -88,6 +88,26 @@ NULL
 }
 
 
+#' Heuristic: does this interpreter path belong to a conda environment?
+#'
+#' A venv built from a conda Python is not relocatable on Windows (its
+#' `python.exe` needs the conda base's `pythonXY.dll` + satellite DLLs in
+#' `<env>\\Library\\bin`, which are absent from `PATH` outside an activated
+#' conda shell). We use this to warn before creating the FORDEAD venv from
+#' such a base — see [.ensure_fordead_python()]. Matches the usual conda
+#' install roots: `.conda`, `conda`, `miniconda`, `miniforge`, `mambaforge`,
+#' `anaconda` (any case, either path separator).
+#'
+#' @param py_path Character path to a Python interpreter.
+#' @return Logical(1).
+#' @keywords internal
+.looks_like_conda <- function(py_path) {
+  if (length(py_path) != 1L || is.na(py_path) || !nzchar(py_path)) return(FALSE)
+  grepl("[\\\\/](\\.conda|conda|miniconda|miniforge|mambaforge|anaconda)([0-9]*)?[\\\\/]",
+        py_path, ignore.case = TRUE, perl = TRUE)
+}
+
+
 #' Assert reticulate is available and Python >= 3.10 is installed
 #'
 #' Raises a `cli::cli_abort` with installation hints when reticulate
@@ -431,7 +451,7 @@ NULL
     return(.fordead_state[[cache_key]])
   }
 
-  .assert_fordead_system()
+  base_py <- .assert_fordead_system()
 
   if (!file.exists(requirements)) {
     cli::cli_abort("Requirements file not found at {.path {requirements}}.")
@@ -439,6 +459,18 @@ NULL
 
   needs_install <- FALSE
   if (!reticulate::virtualenv_exists(env_name)) {
+    if (.looks_like_conda(base_py)) {
+      # A venv built from a conda interpreter is not relocatable on
+      # Windows: its python.exe depends on the conda base's pythonXY.dll
+      # whose satellite DLLs live in <env>\Library\bin (not on PATH), so
+      # loading it outside an activated conda shell fails with
+      # "pythonXY.dll - module not found". Warn before we bake that in.
+      cli::cli_warn(c(
+        "!" = "The base Python for the FORDEAD venv looks like a conda env: {.path {base_py}}.",
+        "i" = "On Windows a virtualenv built from conda often fails to load later ({.val pythonXY.dll - module not found}).",
+        "i" = "Prefer a standalone Python (python.org): install one and point {.envvar RETICULATE_PYTHON} at it (or remove the conda pin) before first FORDEAD use."
+      ))
+    }
     if (verbose) {
       # `cli_inform` raises a proper `message` condition catchable by
       # `expect_message()`, where `cli_alert_info` is cosmetic only.

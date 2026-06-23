@@ -30,6 +30,21 @@ Nouveau garde-fou de régression dans `test-fordead-python.R` (vérifie que
 `py_config()` est invoqué avec la variable masquée) ; les 5 tests touchant
 `.use_fordead_env` / `.ensure_fordead_python` mockent `py_config`.
 
+### Added — Avertissement : venv FORDEAD bâti sur un Python conda (Windows)
+
+Incident lié : sur le même poste, le venv `nemeton-fordead` avait été créé à
+partir du Python conda `open_canopy`, donnant à l'usage suivant
+`python311.dll - Le module spécifié est introuvable`. Un venv bâti sur conda
+n'est pas relogeable sous Windows (son `python.exe` dépend du `pythonXY.dll`
+de la base conda et de ses DLL satellites dans `<env>\Library\bin`, absentes
+du PATH hors shell conda activé). `.ensure_fordead_python()` émet désormais un
+`cli::cli_warn()` explicite **avant** de créer le venv quand l'interpréteur de
+base ressemble à un env conda (nouveau helper `.looks_like_conda()` :
+`.conda` / `conda` / `miniconda` / `miniforge` / `mambaforge` / `anaconda`),
+en recommandant un Python autonome (python.org). Le contournement utilisateur
+documenté : recréer le venv depuis un Python python.org puis pointer
+`RETICULATE_PYTHON` dessus.
+
 # nemeton 0.94.1 (2026-06-23)
 
 ### Fixed — FORDEAD install : afficher la vraie erreur pip (« Error installing package(s): » vide)

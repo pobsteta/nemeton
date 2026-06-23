@@ -21,6 +21,13 @@ For a narrative, per-feature description of each release, see
   Python to bind to the FORDEAD venv immediately instead of lazily (when the
   restored env var would otherwise win).
 
+### Added
+
+- `.ensure_fordead_python()` warns (via `.looks_like_conda()`) before creating
+  the FORDEAD venv from a conda interpreter, which on Windows yields a
+  non-relocatable venv (`pythonXY.dll - module not found`). Recommends a
+  standalone python.org interpreter.
+
 ## [0.94.1] - 2026-06-23
 
 ### Fixed

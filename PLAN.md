@@ -96,7 +96,14 @@ A1 (runs antérieurs → reader rend NULL → fallback gracieux app).
 > l'init immédiate sur le venv FORDEAD (binding caché pour la session). Garde-fou
 > de régression + `py_config` mocké dans les 5 tests concernés. Workaround
 > utilisateur en attendant le build : pointer `RETICULATE_PYTHON` sur le venv
-> `nemeton-fordead` (ou le désactiver) puis redémarrer R.
+> `nemeton-fordead` (ou le désactiver) puis redémarrer R. **2e incident même
+> poste** : `python311.dll - module introuvable` car le venv avait été créé
+> depuis le Python conda `open_canopy` (venv non relogeable sous Windows :
+> dépend des DLL conda hors PATH). Ajout d'un `cli_warn` dans
+> `.ensure_fordead_python()` (helper `.looks_like_conda()`) avant création du
+> venv si la base est conda → recommande un Python autonome python.org.
+> Contournement : recréer le venv depuis python.org puis viser
+> `RETICULATE_PYTHON` dessus.
 >
 > *2026-06-20 (durcissement UX cartes FORDEAD — app v0.90.1 → v0.91.2)* :
 > série de finitions app (aucune API cœur nouvelle au-delà de

@@ -345,6 +345,61 @@ test_that(".find_python_on_path returns \"\" when no candidate matches", {
 })
 
 
+test_that(".looks_like_conda detects conda interpreters, not standalone ones", {
+  # Conda roots (Windows + Unix, either separator, any case).
+  expect_true(nemeton:::.looks_like_conda(
+    "C:/Users/x/.conda/envs/open_canopy/python.exe"))
+  expect_true(nemeton:::.looks_like_conda(
+    "C:\\Users\\x\\.conda\\envs\\open_canopy\\python.exe"))
+  expect_true(nemeton:::.looks_like_conda("/home/x/miniconda3/bin/python"))
+  expect_true(nemeton:::.looks_like_conda("/opt/miniforge/envs/e/bin/python"))
+  expect_true(nemeton:::.looks_like_conda("/opt/Anaconda3/bin/python"))
+  # Standalone / virtualenv interpreters must NOT match.
+  expect_false(nemeton:::.looks_like_conda(
+    "C:/Users/x/.virtualenvs/nemeton-fordead/Scripts/python.exe"))
+  expect_false(nemeton:::.looks_like_conda("/usr/bin/python3"))
+  # Degenerate inputs.
+  expect_false(nemeton:::.looks_like_conda(""))
+  expect_false(nemeton:::.looks_like_conda(NA_character_))
+})
+
+
+test_that(".ensure_fordead_python warns when the venv base is a conda interpreter", {
+  skip_if_no_reticulate()
+  nemeton:::.reset_fordead_state()
+  withr::local_envvar(c(RETICULATE_PYTHON = ""))
+
+  fake_module <- structure(list(tag = "fake-conda-base"),
+                           class = "python.builtin.module")
+  venv_py <- "C:/Users/x/.virtualenvs/conda-base-env/Scripts/python.exe"
+
+  testthat::local_mocked_bindings(
+    py_discover_config = function() {
+      list(python = "C:/Users/x/.conda/envs/open_canopy/python.exe",
+           version = "3.11")
+    },
+    virtualenv_exists  = function(env) FALSE,
+    virtualenv_python  = function(env) venv_py,
+    virtualenv_create  = function(env, ...) invisible(),
+    use_virtualenv     = function(env, required = TRUE) invisible(env),
+    py_config          = function() list(python = venv_py),
+    import             = function(module, convert = TRUE) fake_module,
+    .package = "reticulate"
+  )
+  testthat::local_mocked_bindings(
+    .fordead_pip_install = function(env_name, requirements, verbose = TRUE) invisible(TRUE),
+    .package = "nemeton"
+  )
+
+  expect_warning(
+    nemeton:::.ensure_fordead_python(env_name = "conda-base-env", verbose = FALSE),
+    "conda"
+  )
+
+  nemeton:::.reset_fordead_state()
+})
+
+
 test_that(".assert_fordead_system falls back to PATH when py_discover_config is NULL", {
   skip_if_no_reticulate()
   testthat::local_mocked_bindings(
