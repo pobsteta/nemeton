@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.94.1] - 2026-06-23
+
+### Fixed
+
+- FORDEAD first-use install now surfaces pip's real diagnostic instead of
+  reticulate's empty `Error installing package(s):`. New internal helper
+  `.fordead_pip_install()` runs pip in the venv interpreter, captures the
+  combined stdout+stderr, and on failure aborts with the tail of pip's own
+  output plus the common offline/Windows causes (missing `git` for the
+  `git+https` pins, no network to gitlab.com / forge.inrae.fr, a wheel that
+  fails to build, or — observed on Windows — `Filename too long` when git
+  checks out the transitive `stac_static` clone, pointing at
+  `git config --system core.longpaths true`). `.ensure_fordead_python()`
+  calls it in place of `reticulate::virtualenv_install()`.
+
 ## [0.91.2] - 2026-06-17
 
 ### Changed

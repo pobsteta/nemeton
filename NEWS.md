@@ -1,3 +1,42 @@
+# nemeton 0.94.1 (2026-06-23)
+
+### Fixed — FORDEAD install : afficher la vraie erreur pip (« Error installing package(s): » vide)
+
+Sur première utilisation de FORDEAD (création du venv `nemeton-fordead`),
+quand l'installation des dépendances pinnées échouait, l'utilisateur ne
+voyait qu'un message inexploitable :
+
+```
+ℹ Installing FORDEAD dependencies from 'requirements.txt'.
+✖ FORDEAD pipeline failed: Error installing package(s):
+```
+
+Cause : `reticulate::virtualenv_install()` lève, sur sortie pip non nulle,
+un message générique `"Error installing package(s): "` — et comme on lui
+passe un fichier `requirements` (et `packages = NULL`), la liste est vide,
+donc le message l'est aussi. Le diagnostic pip réel (ex. `git` absent du
+PATH alors que `fordead` / `simplestac` sont des pins `git+https`, réseau
+bloqué vers `gitlab.com` / `forge.inrae.fr`, ou une roue qui ne compile
+pas) était perdu.
+
+**Fix** : nouveau helper interne `.fordead_pip_install(env_name,
+requirements, verbose)` qui lance pip directement dans l'interpréteur du
+venv (`python -m pip install --upgrade -r requirements.txt`), **capture la
+sortie combinée stdout+stderr**, et en cas d'échec ré-émet un
+`cli::cli_abort()` portant la fin de la sortie pip (verbatim, sans
+ré-interprétation des accolades) plus les causes courantes hors-ligne /
+Windows. `.ensure_fordead_python()` appelle désormais ce helper au lieu de
+`reticulate::virtualenv_install()`. Comportement inchangé en cas de succès
+(sortie pip relayée quand `verbose`). Tests (`test-fordead-python.R`) :
+2 nouveaux pour le helper (échec → message actionnable ; succès → `TRUE`),
+3 tests d'orchestration recâblés sur le nouveau point de montage.
+
+Le message d'abort liste les causes courantes, dont — cas réel rencontré
+sous Windows le 2026-06-23 — l'erreur `Filename too long` /
+`unable to checkout working tree` lors du clone de la dépendance transitive
+`stac_static` (limite des 260 caractères de `MAX_PATH`) : la sortie pointe
+vers `git config --system core.longpaths true`.
+
 # nemeton 0.94.0 (2026-06-19)
 
 ### Added — Carte FORDEAD : couches de diagnostic additionnelles (Partie A, cœur)

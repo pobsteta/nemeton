@@ -453,16 +453,82 @@ NULL
         "Installing FORDEAD dependencies from {.path {basename(requirements)}}."
       )
     }
-    reticulate::virtualenv_install(env_name,
-                                   packages = NULL,
-                                   requirements = requirements,
-                                   ignore_installed = FALSE)
+    .fordead_pip_install(env_name, requirements, verbose = verbose)
   }
 
   .use_fordead_env(env_name)
   fd <- reticulate::import("fordead", convert = FALSE)
   .fordead_state[[cache_key]] <- fd
   fd
+}
+
+
+#' Install the pinned FORDEAD requirements, surfacing pip's real error
+#'
+#' [reticulate::virtualenv_install()] runs pip but, on a non-zero exit,
+#' raises the generic and near-useless message
+#' \code{"Error installing package(s): "} — the actual pip diagnostic
+#' (the line that tells you *why* the install failed: a missing
+#' \code{git} for the \code{git+https} pins, an unreachable
+#' \code{gitlab.com} / \code{forge.inrae.fr}, a wheel that won't build,
+#' …) is lost. That left users staring at an empty error (cf. the
+#' Windows report 2026-06-23).
+#'
+#' This helper runs pip directly in the venv's interpreter, captures the
+#' combined stdout+stderr, and on failure re-raises a [cli::cli_abort()]
+#' carrying the tail of pip's own output plus the most common offline /
+#' Windows causes. On success it returns invisibly, echoing the captured
+#' output when `verbose`.
+#'
+#' @param env_name Character. Virtualenv name.
+#' @param requirements Character path to the pinned requirements file.
+#' @param verbose Logical. Echo pip output once captured. Default `TRUE`.
+#' @return Invisibly `TRUE` on success; aborts otherwise.
+#' @keywords internal
+.fordead_pip_install <- function(env_name, requirements, verbose = TRUE) {
+  py  <- reticulate::virtualenv_python(env_name)
+  req <- normalizePath(requirements, winslash = "/", mustWork = FALSE)
+
+  # Run pip in the venv interpreter ourselves so we keep its output.
+  # `--upgrade` matches reticulate's default for requirements installs.
+  out <- tryCatch(
+    suppressWarnings(system2(
+      py,
+      c("-m", "pip", "install", "--upgrade", "-r", shQuote(req)),
+      stdout = TRUE, stderr = TRUE
+    )),
+    error = function(e) structure(conditionMessage(e), status = 1L)
+  )
+
+  status <- attr(out, "status")
+  ok <- is.null(status) || identical(as.integer(status), 0L)
+
+  if (!ok) {
+    # Show pip's own output (verbatim, so its braces / tracebacks are not
+    # re-interpreted by cli) before the actionable abort.
+    if (length(out)) cli::cli_verbatim(utils::tail(out, 30L))
+    cli::cli_abort(c(
+      "pip failed to install the FORDEAD requirements into {.val {env_name}} (exit {.val {status}}).",
+      i = "See the pip output above for the underlying error.",
+      i = paste(
+        "Common causes on a fresh venv:",
+        "{.code git} not on PATH (the {.pkg fordead} and {.pkg simplestac}",
+        "pins are {.code git+https} URLs); no network access to",
+        "{.url gitlab.com} / {.url forge.inrae.fr}; or a dependency wheel",
+        "that fails to build."
+      ),
+      i = paste(
+        "On Windows, {.val Filename too long} /",
+        "{.val unable to checkout working tree} is git's 260-char path",
+        "limit (hit when cloning {.pkg stac_static}): run",
+        "{.code git config --system core.longpaths true} (Administrator)",
+        "and retry."
+      )
+    ))
+  }
+
+  if (verbose && length(out)) cli::cli_verbatim(out)
+  invisible(TRUE)
 }
 
 
