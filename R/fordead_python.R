@@ -516,6 +516,13 @@ NULL
         "pins are {.code git+https} URLs); no network access to",
         "{.url gitlab.com} / {.url forge.inrae.fr}; or a dependency wheel",
         "that fails to build."
+      ),
+      i = paste(
+        "On Windows, {.val Filename too long} /",
+        "{.val unable to checkout working tree} is git's 260-char path",
+        "limit (hit when cloning {.pkg stac_static}): run",
+        "{.code git config --system core.longpaths true} (Administrator)",
+        "and retry."
       )
     ))
   }

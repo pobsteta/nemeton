@@ -20,8 +20,10 @@ For a narrative, per-feature description of each release, see
   combined stdout+stderr, and on failure aborts with the tail of pip's own
   output plus the common offline/Windows causes (missing `git` for the
   `git+https` pins, no network to gitlab.com / forge.inrae.fr, a wheel that
-  fails to build). `.ensure_fordead_python()` calls it in place of
-  `reticulate::virtualenv_install()`.
+  fails to build, or — observed on Windows — `Filename too long` when git
+  checks out the transitive `stac_static` clone, pointing at
+  `git config --system core.longpaths true`). `.ensure_fordead_python()`
+  calls it in place of `reticulate::virtualenv_install()`.
 
 ## [0.91.2] - 2026-06-17
 

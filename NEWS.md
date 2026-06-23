@@ -31,6 +31,12 @@ Windows. `.ensure_fordead_python()` appelle désormais ce helper au lieu de
 2 nouveaux pour le helper (échec → message actionnable ; succès → `TRUE`),
 3 tests d'orchestration recâblés sur le nouveau point de montage.
 
+Le message d'abort liste les causes courantes, dont — cas réel rencontré
+sous Windows le 2026-06-23 — l'erreur `Filename too long` /
+`unable to checkout working tree` lors du clone de la dépendance transitive
+`stac_static` (limite des 260 caractères de `MAX_PATH`) : la sortie pointe
+vers `git config --system core.longpaths true`.
+
 # nemeton 0.94.0 (2026-06-19)
 
 ### Added — Carte FORDEAD : couches de diagnostic additionnelles (Partie A, cœur)
