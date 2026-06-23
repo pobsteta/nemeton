@@ -74,6 +74,7 @@ STAC `ItemCollection` over local hrefs, and runs FORDEAD `fit()` +
 <span>  output_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"fordead_"</span><span class="op">)</span>,</span>
 <span>  mask_cache_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  keep_output <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  replace <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  python_env <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  min_pixels <span class="op">=</span> <span class="fl">5L</span>,</span>
 <span>  connectivity <span class="op">=</span> <span class="fl">8L</span>,</span>
@@ -170,6 +171,16 @@ without re-`fit`/`predict`. Default `FALSE` (working set in a
 temporary directory). Ignored when `output_dir` is supplied
 explicitly. The categorical dieback mask is persisted regardless
 of this flag.</p></dd>
+
+
+<dt id="arg-replace">replace<a class="anchor" aria-label="anchor" href="#arg-replace"></a></dt>
+<dd><p>Logical. When `TRUE` (default) the run is
+**idempotent**: the zone's prior `fordead_dieback` alerts are
+deleted before the new ones are inserted (same DB transaction),
+and stale on-disk outputs of the zone (older `dieback_mask_*.tif`
+and `model_*/` bundles) are pruned after the new ones are written.
+When `FALSE`, results accumulate (and a re-run can hit the alert
+UNIQUE constraint).</p></dd>
 
 
 <dt id="arg-python-env">python_env<a class="anchor" aria-label="anchor" href="#arg-python-env"></a></dt>

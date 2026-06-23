@@ -22,6 +22,7 @@ run_fordead_dieback(
   output_dir = tempfile("fordead_"),
   mask_cache_dir = NULL,
   keep_output = FALSE,
+  replace = TRUE,
   python_env = NULL,
   min_pixels = 5L,
   connectivity = 8L,
@@ -112,6 +113,15 @@ run_fordead_dieback(
   temporary directory). Ignored when \`output_dir\` is supplied
   explicitly. The categorical dieback mask is persisted regardless of
   this flag.
+
+- replace:
+
+  Logical. When \`TRUE\` (default) the run is \*\*idempotent\*\*: the
+  zone's prior \`fordead_dieback\` alerts are deleted before the new
+  ones are inserted (same DB transaction), and stale on-disk outputs of
+  the zone (older \`dieback_mask\_\*.tif\` and \`model\_\*/\` bundles)
+  are pruned after the new ones are written. When \`FALSE\`, results
+  accumulate (and a re-run can hit the alert UNIQUE constraint).
 
 - python_env:
 
