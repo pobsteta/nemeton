@@ -17,6 +17,7 @@ run_fordead_dieback(
   output_dir = tempfile("fordead_"),
   mask_cache_dir = NULL,
   keep_output = FALSE,
+  replace = TRUE,
   python_env = NULL,
   min_pixels = 5L,
   connectivity = 8L,
@@ -88,6 +89,14 @@ without re-`fit`/`predict`. Default `FALSE` (working set in a
 temporary directory). Ignored when `output_dir` is supplied
 explicitly. The categorical dieback mask is persisted regardless
 of this flag.}
+
+\item{replace}{Logical. When `TRUE` (default) the run is
+**idempotent**: the zone's prior `fordead_dieback` alerts are
+deleted before the new ones are inserted (same DB transaction),
+and stale on-disk outputs of the zone (older `dieback_mask_*.tif`
+and `model_*/` bundles) are pruned after the new ones are written.
+When `FALSE`, results accumulate (and a re-run can hit the alert
+UNIQUE constraint).}
 
 \item{python_env}{Character. Virtualenv name. Defaults to
 `Sys.getenv("NEMETON_FORDEAD_ENV", "nemeton-fordead")`.}

@@ -4,33 +4,27 @@
 \alias{.insert_fordead_alerts}
 \title{Persist FORDEAD alert centroids in the `alert` table}
 \usage{
-.insert_fordead_alerts(con, alerts_sf, zone_id, radius_m = 200)
+.insert_fordead_alerts(con, alerts_sf, zone_id, replace = TRUE)
 }
 \arguments{
 \item{con}{A `DBIConnection`.}
 
-\item{alerts_sf}{An sf POINT returned by
-[.postprocess_fordead_rasters()].}
+\item{alerts_sf}{An sf POINT (centroids) with columns `trigger_date`,
+`confidence_class`, `stress_index` and, when available, `n_pixels`,
+`area_m2`. CRS assumed EPSG:2154 when absent.}
 
 \item{zone_id}{Integer. Target monitoring zone.}
 
-\item{radius_m}{Numeric. Maximum allowed centroid → plot
-distance, in metres. Default 200.}
+\item{replace}{Logical. When `TRUE` (default) every prior
+`(zone_id, alert_type)` alert is deleted before insertion, making the
+call idempotent across re-runs. When `FALSE`, rows are appended.}
 }
 \value{
 Number of rows inserted (integer).
 }
 \description{
-Bulk-inserts the rows of `alerts_sf` as
-`alert_type = 'fordead_dieback'` records, with
-`confidence_class` and `stress_index` populated. Idempotent
-thanks to the existing UNIQUE `(plot_id, alert_type,
-trigger_date)` constraint and `ON CONFLICT DO NOTHING`.
-}
-\details{
-Each centroid is snapped to the nearest plot of the zone (we do
-not invent a new `plot` row per cluster — the plot model is the
-grain of all existing alerts). Centroids with no plot within
-`radius_m` are skipped with a warning.
+Thin wrapper over [.insert_health_alerts()] with
+`alert_type = "fordead_dieback"`. Pixel/cluster entity, no plot
+snapping (spec 008 §15 Phase B).
 }
 \keyword{internal}

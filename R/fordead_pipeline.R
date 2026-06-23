@@ -180,9 +180,10 @@ NULL
 #'   \item **persist** — write the categorical 0-4 dieback mask and
 #'     the diagnostic bundle (`model_<run_id>/`: harmonic coefficients,
 #'     masked CRSWIR stack, first-anomaly date, `run_meta.json` — spec
-#'     008 §14.3) to the project cache, then snap centroids to the
-#'     nearest registered plot of the zone and insert them via
-#'     [.insert_fordead_alerts()] (idempotent `ON CONFLICT DO NOTHING`).
+#'     008 §14.3) to the project cache, then insert the cluster
+#'     centroids as pixel/zone alert entities via
+#'     [.insert_fordead_alerts()] — idempotent when `replace = TRUE`
+#'     (the zone's prior `fordead_dieback` alerts are replaced).
 #' }
 #'
 #' Calibration is frozen on the ONF/DSF reference values
@@ -250,6 +251,12 @@ NULL
 #'   temporary directory). Ignored when `output_dir` is supplied
 #'   explicitly. The categorical dieback mask is persisted regardless
 #'   of this flag.
+#' @param replace Logical. When `TRUE` (default) the run is **idempotent**:
+#'   the zone's prior `fordead_dieback` alerts are deleted before the new
+#'   ones are inserted (same DB transaction), and stale on-disk outputs of
+#'   the zone (older `dieback_mask_*.tif` and `model_*/` bundles) are
+#'   pruned after the new ones are written. When `FALSE`, results
+#'   accumulate (and a re-run can hit the alert UNIQUE constraint).
 #' @param python_env Character. Virtualenv name. Defaults to
 #'   `Sys.getenv("NEMETON_FORDEAD_ENV", "nemeton-fordead")`.
 #' @param min_pixels Integer. Minimum FORDEAD patch size (in
@@ -332,6 +339,7 @@ run_fordead_dieback <- function(con,
                                 output_dir = tempfile("fordead_"),
                                 mask_cache_dir = NULL,
                                 keep_output = FALSE,
+                                replace = TRUE,
                                 python_env = NULL,
                                 min_pixels = 5L,
                                 connectivity = 8L,
@@ -709,15 +717,48 @@ run_fordead_dieback <- function(con,
       NA_character_
     })
 
+    # Idempotence disque (replace) : une fois le masque et le bundle du run
+    # courant écrits, on élague les sorties ANTÉRIEURES de la zone (anciens
+    # `dieback_mask_*.tif` et `model_*/`) — sinon elles s'accumulent et la
+    # lecture (read_fordead_dieback_mask / read_fordead_layer) doit deviner
+    # le bon run. On ne supprime un type de sortie ancien que si le nouveau
+    # a bien été écrit, pour ne jamais laisser la zone sans sortie.
+    # Best-effort : un échec d'élagage avertit mais n'avorte pas le run.
+    if (isTRUE(replace) && dir.exists(zone_dir)) {
+      tryCatch({
+        mask_ok <- !is.null(rasters$dieback_mask) &&
+                   !is.na(rasters$dieback_mask)
+        if (mask_ok) {
+          keep <- paste0("dieback_mask_", run_ts, ".tif")
+          old  <- list.files(zone_dir, pattern = "^dieback_mask_.*\\.tif$",
+                             full.names = TRUE)
+          old  <- old[basename(old) != keep]
+          if (length(old)) unlink(old)
+        }
+        bundle_ok <- !is.null(rasters$model_dir) && !is.na(rasters$model_dir)
+        if (bundle_ok) {
+          keep <- paste0("model_", run_ts)
+          old  <- list.dirs(zone_dir, recursive = FALSE)
+          old  <- old[grepl("^model_", basename(old)) &
+                      basename(old) != keep]
+          if (length(old)) unlink(old, recursive = TRUE)
+        }
+      }, error = function(e) {
+        cli::cli_alert_warning(
+          "Stale FORDEAD output pruning failed: {conditionMessage(e)}")
+      })
+    }
+
     # Phase B (spec 008 §15 / ADR-013 A5) — re-persistance pixel. L'alerte
     # est une entité raster/cluster géoréférencée (centroïde EPSG:4326),
-    # rattachée à la zone, jamais à une placette. Stratégie replace-by-window
-    # (D-B1) : la fenêtre de monitoring du run est purgée avant ré-insertion.
-    # `alerts_sf` reste aussi renvoyé en mémoire (consommé par R5, inchangé).
+    # rattachée à la zone, jamais à une placette. Idempotence (replace) :
+    # un re-run efface toutes les alertes fordead_dieback antérieures de la
+    # zone avant ré-insertion. `alerts_sf` reste aussi renvoyé en mémoire
+    # (consommé par R5, inchangé).
     if (!is.null(alerts_sf)) {
       n_inserted <- tryCatch(
         .insert_fordead_alerts(con, alerts_sf, zone_id = zone_id,
-                               monitoring_window = dates_monitoring),
+                               replace = replace),
         error = function(e) {
           cli::cli_alert_warning(
             "FORDEAD alert insertion failed: {conditionMessage(e)}")
@@ -729,7 +770,7 @@ run_fordead_dieback <- function(con,
     duration_sec <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
     if (verbose) {
       cli::cli_alert_success(
-        "FORDEAD diagnostic complete: {n_inserted} pixel alert{?s} persisted in {round(duration_sec)} s."
+        "FORDEAD diagnostic complete: {cli::qty(n_inserted)} {n_inserted} pixel alert{?s} persisted in {round(duration_sec)} s."
       )
     }
     emit(list(current           = "fordead:complete",

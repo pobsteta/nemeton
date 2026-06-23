@@ -251,9 +251,7 @@ RECONFORT_ALERT_CLASSES <- c("2-deperissant", "3-tres-deperissant")
 #' @inheritParams .insert_health_alerts
 #' @return Number of rows inserted (integer).
 #' @keywords internal
-.insert_reconfort_alerts <- function(con, alerts_sf, zone_id,
-                                     monitoring_window = NULL) {
+.insert_reconfort_alerts <- function(con, alerts_sf, zone_id, replace = TRUE) {
   .insert_health_alerts(con, alerts_sf, zone_id,
-                        alert_type        = "reconfort_dieback",
-                        monitoring_window = monitoring_window)
+                        alert_type = "reconfort_dieback", replace = replace)
 }

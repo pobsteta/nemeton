@@ -404,26 +404,45 @@ test_that(".insert_fordead_alerts persists pixel alerts (zone, no plot)", {
   })
 })
 
-test_that(".insert_fordead_alerts is idempotent via replace-by-window (D-B1)", {
+test_that(".insert_fordead_alerts is idempotent via full zone+type replace", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
     zid <- seed_zone(con)
 
-    pts <- make_centroids(matrix(c(700110, 6800110,
-                                   700510, 6800510),
-                                 ncol = 2, byrow = TRUE),
-                          classes = c("3-forte", "4-sol-nu"))
-    win <- as.Date(c("2024-01-01", "2024-12-31"))
-    nemeton:::.insert_fordead_alerts(con, pts, zone_id = zid,
-                                     monitoring_window = win)
-    # Re-run sur la même fenêtre → purge puis ré-insertion : la fonction
-    # ré-insère 2 lignes, mais le total reste 2 (pas de doublon).
-    n2 <- nemeton:::.insert_fordead_alerts(con, pts, zone_id = zid,
-                                           monitoring_window = win)
+    coords <- matrix(c(700110, 6800110, 700510, 6800510),
+                     ncol = 2, byrow = TRUE)
+    # trigger_date = date de 1re anomalie, antérieure à toute fenêtre de
+    # monitoring (le bug réel : 2023-02-11 hors fenêtre 2024+).
+    pts <- make_centroids(coords, classes = c("3-forte", "4-sol-nu"),
+                          dates = as.Date("2023-02-11"))
+    nemeton:::.insert_fordead_alerts(con, pts, zone_id = zid)
+    # Re-run identique → purge complète puis ré-insertion : pas de
+    # violation de la clé UNIQUE, total stable (régression du duplicate key).
+    n2 <- nemeton:::.insert_fordead_alerts(con, pts, zone_id = zid)
     expect_equal(n2, 2L)
     total <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM alert")$n
     expect_equal(total, 2L)
+
+    # Full replace : un re-run avec d'AUTRES dates remplace tout l'existant
+    # (le window-delete laissait les lignes hors fenêtre → ce qu'on évite).
+    pts2 <- make_centroids(coords, classes = c("3-forte", "4-sol-nu"),
+                           dates = as.Date("2025-08-01"))
+    nemeton:::.insert_fordead_alerts(con, pts2, zone_id = zid)
+    rows <- DBI::dbGetQuery(
+      con, "SELECT trigger_date FROM alert WHERE alert_type = 'fordead_dieback'")
+    expect_equal(nrow(rows), 2L)
+    expect_true(all(as.character(as.Date(rows$trigger_date)) == "2025-08-01"))
+
+    # replace = FALSE → append sans purge (le caller assume les collisions ;
+    # ici une autre date évite la clé UNIQUE).
+    pts3 <- make_centroids(coords, classes = c("3-forte", "4-sol-nu"),
+                           dates = as.Date("2024-03-03"))
+    n_app <- nemeton:::.insert_fordead_alerts(con, pts3, zone_id = zid,
+                                              replace = FALSE)
+    expect_equal(n_app, 2L)
+    total2 <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM alert")$n
+    expect_equal(total2, 4L)
   })
 })
 

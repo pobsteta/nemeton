@@ -173,8 +173,10 @@
 #'   `FALSE` disables masking (continuous score from the raw probability
 #'   map only).
 #' @param number_of_chunks IOTA2 RAM-saving chunk count. Default `200`.
-#' @param scheduler_type IOTA2 scheduler (`"LocalCluster"` or `"Slurm"`
-#'   on HPC). Default `"LocalCluster"`.
+#' @param scheduler_type IOTA2 scheduler. Default `"localCluster"`.
+#'   IOTA2's `Iota2.py` only accepts `debug`, `cluster`, `PBS`, `Slurm`,
+#'   `localCluster` (note the lower-case `l`) — `"LocalCluster"` 400s.
+#'   PENDING : à confirmer après alignement de la version d'iota2.
 #' @param nb_parallel_tasks IOTA2 parallel-task count. Default `1`.
 #' @param output_dir Explicit per-run working directory. Default
 #'   `<cache_dir>/reconfort/run_z<zone_id>_S2<s2_year>`.
@@ -204,7 +206,7 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
                                   v_model           = "v3",
                                   binary_mask       = NULL,
                                   number_of_chunks  = 200L,
-                                  scheduler_type    = "LocalCluster",
+                                  scheduler_type    = "localCluster",
                                   nb_parallel_tasks = 1L,
                                   output_dir        = NULL,
                                   geodes_config     = NULL,
@@ -367,8 +369,10 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
         NULL
       })
     n_alerts <- tryCatch(
+      # Idempotent : un re-run efface les alertes reconfort_dieback
+      # antérieures de la zone avant ré-insertion (replace = TRUE).
       .insert_reconfort_alerts(con, alerts_sf, zone_id = zone_id,
-                               monitoring_window = c(date_from, date_to)),
+                               replace = TRUE),
       error = function(e) {
         cli::cli_warn("RECONFORT alert insertion failed: {conditionMessage(e)}")
         NA_integer_
