@@ -287,13 +287,18 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 #' (`geom_wkt`, EPSG:4326 — D-B2) and is attached to the monitoring zone
 #' (`zone_id`), never to a plot. `plot_id` is left `NULL`.
 #'
-#' Idempotence across runs uses the **replace-by-window** strategy (D-B1) :
-#' the run's monitoring window is deleted for this `(zone_id, alert_type)`
-#' before inserting — `cluster_id` is per-run and not stable, so the UNIQUE
-#' `(zone_id, alert_type, trigger_date, cluster_id)` constraint is only an
-#' intra-run guard. `cluster_id` is renumbered to a per-insert sequence so
-#' it cannot collide within a run (the per-class ids from
-#' [.cluster_to_centroids()] are not unique across classes).
+#' Idempotence across runs uses a **full replace** of the zone's alerts for
+#' this `alert_type` (D-B1, revised) : every prior
+#' `(zone_id, alert_type)` row is deleted before re-inserting, in the same
+#' transaction. `cluster_id` is per-run and not stable, and — crucially for
+#' FORDEAD — `trigger_date` is the *first-anomaly* date, which routinely
+#' predates the run's monitoring window; a window-scoped delete therefore
+#' left those rows behind and a re-run hit the UNIQUE
+#' `(zone_id, alert_type, trigger_date, cluster_id)` constraint. A full
+#' zone+type replace is the only idempotent strategy here. `cluster_id` is
+#' renumbered to a per-insert sequence so it cannot collide within a run
+#' (the per-class ids from [.cluster_to_centroids()] are not unique across
+#' classes).
 #'
 #' @param con A `DBIConnection`.
 #' @param alerts_sf An sf POINT (centroids) with columns `trigger_date`,
@@ -302,14 +307,15 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 #' @param zone_id Integer. Target monitoring zone.
 #' @param alert_type Character. `"fordead_dieback"` or
 #'   `"reconfort_dieback"`.
-#' @param monitoring_window Optional length-2 Date / character — the run's
-#'   monitoring window for the replace-by-window delete. When `NULL`, the
-#'   range of the staged `trigger_date`s is used.
+#' @param replace Logical. When `TRUE` (default) every prior
+#'   `(zone_id, alert_type)` alert is deleted before insertion, making the
+#'   call idempotent across re-runs. When `FALSE`, rows are appended (the
+#'   caller is then responsible for avoiding key collisions).
 #'
 #' @return Number of rows inserted (integer).
 #' @keywords internal
 .insert_health_alerts <- function(con, alerts_sf, zone_id, alert_type,
-                                  monitoring_window = NULL) {
+                                  replace = TRUE) {
   .assert_db_pkgs()
   if (!inherits(alerts_sf, "sf") || !nrow(alerts_sf)) return(0L)
   zid <- as.integer(zone_id)
@@ -363,22 +369,19 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
   # (zone_id, alert_type, trigger_date, cluster_id) au sein du run.
   staging$cluster_id <- seq_len(nrow(staging))
 
-  # Fenêtre de remplacement (D-B1) : par défaut l'amplitude des
-  # trigger_date du run.
-  win <- if (!is.null(monitoring_window) && length(monitoring_window) == 2L &&
-             all(!is.na(monitoring_window))) {
-    as.Date(monitoring_window)
-  } else {
-    range(as.Date(staging$trigger_date))
-  }
-
   inserted <- DBI::dbWithTransaction(con, {
-    # Replace-by-window : purge la fenêtre du run avant ré-insertion.
-    # Garantit l'idempotence inter-runs (cluster_id non stable).
-    .db_execute(con,
-      "DELETE FROM alert WHERE zone_id = $1 AND alert_type = $2
-         AND trigger_date BETWEEN $3 AND $4",
-      params = list(zid, alert_type, format(win[1]), format(win[2])))
+    # Remplacement complet (idempotence inter-runs) : on purge TOUTES les
+    # alertes antérieures de la zone pour ce type avant ré-insertion, dans
+    # la même transaction. Une purge par fenêtre ne suffit pas pour FORDEAD
+    # (trigger_date = date de 1re anomalie, souvent ANTÉRIEURE à la fenêtre
+    # de monitoring → lignes non purgées → violation de la clé UNIQUE au
+    # ré-insert). cluster_id n'étant pas stable d'un run à l'autre, seul le
+    # remplacement complet (zone_id, alert_type) est idempotent.
+    if (isTRUE(replace)) {
+      .db_execute(con,
+        "DELETE FROM alert WHERE zone_id = $1 AND alert_type = $2",
+        params = list(zid, alert_type))
+    }
     # Insertion directe : après le DELETE et avec cluster_id séquentiel,
     # aucun conflit possible → pas besoin de table de staging temporaire
     # ni de `ON CONFLICT` (et on évite les écueils de grammaire SQLite).
@@ -398,11 +401,9 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 #' @inheritParams .insert_health_alerts
 #' @return Number of rows inserted (integer).
 #' @keywords internal
-.insert_fordead_alerts <- function(con, alerts_sf, zone_id,
-                                   monitoring_window = NULL) {
+.insert_fordead_alerts <- function(con, alerts_sf, zone_id, replace = TRUE) {
   .insert_health_alerts(con, alerts_sf, zone_id,
-                        alert_type        = "fordead_dieback",
-                        monitoring_window = monitoring_window)
+                        alert_type = "fordead_dieback", replace = replace)
 }
 
 

@@ -40,7 +40,7 @@ test_that(".insert_fordead_alerts persists a pixel alert on SQLite (Phase B)", {
   })
 })
 
-test_that(".insert_fordead_alerts is idempotent via replace-by-window (D-B1)", {
+test_that(".insert_fordead_alerts is idempotent via full zone+type replace", {
   skip_if_not_installed("sf")
   with_sqlite_monitoring_db(function(con) {
     alerts_sf <- sf::st_sf(
@@ -49,14 +49,11 @@ test_that(".insert_fordead_alerts is idempotent via replace-by-window (D-B1)", {
       stress_index     = 0.8,
       geometry = sf::st_sfc(sf::st_point(c(900000, 6500000)), crs = 2154)
     )
-    win <- as.Date(c("2026-01-01", "2026-12-31"))
-    nemeton:::.insert_fordead_alerts(con, alerts_sf, zone_id = 1L,
-                                     monitoring_window = win)
-    # Re-run sur la même fenêtre → purge puis ré-insertion : toujours
-    # 1 ligne, pas 2 (idempotence inter-runs, cluster_id non stable).
+    nemeton:::.insert_fordead_alerts(con, alerts_sf, zone_id = 1L)
+    # Re-run → purge complète (zone, type) puis ré-insertion : toujours
+    # 1 ligne, pas 2, sans violation de la clé UNIQUE (cluster_id non stable).
     expect_no_error(
-      nemeton:::.insert_fordead_alerts(con, alerts_sf, zone_id = 1L,
-                                       monitoring_window = win))
+      nemeton:::.insert_fordead_alerts(con, alerts_sf, zone_id = 1L))
     got <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM alert")
     expect_equal(got$n, 1L)
   })

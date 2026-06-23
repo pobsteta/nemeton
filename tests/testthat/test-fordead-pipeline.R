@@ -856,3 +856,17 @@ test_that(".empty_fordead_result has the documented shape", {
   expect_identical(res$status, "error")
   expect_identical(res$message, "oops")
 })
+
+
+test_that("FORDEAD completion message uses qty() (no 'Multiple quantities')", {
+  # Garde-fou Change 2 : le template de fin de run a DEUX interpolations
+  # numériques ({n_inserted} et {round(duration_sec)}) + une pluralisation
+  # {?s}. Sans cli::qty() pour désigner la quantité, cli lève
+  # "Multiple quantities for pluralization" et avorte le run.
+  msg <- function(n_inserted, duration_sec) cli::format_inline(
+    paste0("FORDEAD diagnostic complete: {cli::qty(n_inserted)} ",
+           "{n_inserted} pixel alert{?s} persisted in {round(duration_sec)} s."))
+  expect_match(msg(0L, 12), "0 pixel alerts")
+  expect_match(msg(1L, 5),  "1 pixel alert ")
+  expect_match(msg(7L, 9),  "7 pixel alerts")
+})

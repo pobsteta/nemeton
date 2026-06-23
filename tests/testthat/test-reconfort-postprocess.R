@@ -239,13 +239,11 @@ test_that(".insert_reconfort_alerts inserts reconfort_dieback, idempotent", {
         sf::st_point(c(700110, 6800110)),
         sf::st_point(c(700510, 6800510)), crs = 2154))
 
-    win <- as.Date(c("2025-01-01", "2025-12-31"))
-    n1 <- nemeton:::.insert_reconfort_alerts(con, pts, zone_id = zid,
-                                             monitoring_window = win)
+    n1 <- nemeton:::.insert_reconfort_alerts(con, pts, zone_id = zid)
     expect_equal(n1, 2L)
-    # replace-by-window (D-B1) : re-run → purge + ré-insertion, total = 2.
-    n2 <- nemeton:::.insert_reconfort_alerts(con, pts, zone_id = zid,
-                                             monitoring_window = win)
+    # Full zone+type replace (idempotent) : re-run → purge + ré-insertion,
+    # total = 2 (pas de doublon).
+    n2 <- nemeton:::.insert_reconfort_alerts(con, pts, zone_id = zid)
     expect_equal(n2, 2L)
 
     rs <- DBI::dbGetQuery(con,
