@@ -104,6 +104,7 @@ test_that(".ensure_fordead_python is idempotent within a session", {
     virtualenv_python   = function(env) sprintf("~/.virtualenvs/%s/bin/python", env),
     virtualenv_create   = function(env, ...) { create_calls <<- create_calls + 1L; invisible() },
     use_virtualenv      = function(env, required = TRUE) invisible(env),
+    py_config           = function() list(python = "/usr/bin/python3"),
     import              = function(module, convert = TRUE) fake_module,
     .package = "reticulate"
   )
@@ -144,6 +145,7 @@ test_that(".ensure_fordead_python skips create when the venv already exists", {
     virtualenv_python   = function(env) sprintf("~/.virtualenvs/%s/bin/python", env),
     virtualenv_create   = function(env, ...) { create_calls <<- create_calls + 1L; invisible() },
     use_virtualenv      = function(env, required = TRUE) invisible(env),
+    py_config           = function() list(python = "/usr/bin/python3"),
     import              = function(module, convert = TRUE) fake_module,
     .package = "reticulate"
   )
@@ -182,6 +184,7 @@ test_that(".ensure_fordead_python reinstalls when fordead is missing from existi
     virtualenv_python   = function(env) sprintf("~/.virtualenvs/%s/bin/python", env),
     virtualenv_create   = function(env, ...) { create_calls <<- create_calls + 1L; invisible() },
     use_virtualenv      = function(env, required = TRUE) invisible(env),
+    py_config           = function() list(python = "/usr/bin/python3"),
     import              = function(module, convert = TRUE) fake_module,
     .package = "reticulate"
   )
@@ -396,7 +399,8 @@ test_that(".use_fordead_env masks RETICULATE_PYTHON on conflict when Python is n
   fordead_py  <- "/home/pascal/.virtualenvs/nemeton-fordead/bin/python"
   withr::local_envvar(c(RETICULATE_PYTHON = conflicting))
 
-  seen_rp_during_use <- NA_character_
+  seen_rp_during_use      <- NA_character_
+  seen_rp_during_pyconfig <- NA_character_
 
   testthat::local_mocked_bindings(
     py_discover_config = function() list(python = "/usr/bin/python3", version = "3.11"),
@@ -406,6 +410,10 @@ test_that(".use_fordead_env masks RETICULATE_PYTHON on conflict when Python is n
       seen_rp_during_use <<- Sys.getenv("RETICULATE_PYTHON", unset = "")
       invisible(env)
     },
+    py_config          = function() {
+      seen_rp_during_pyconfig <<- Sys.getenv("RETICULATE_PYTHON", unset = "")
+      list(python = fordead_py)
+    },
     .package = "reticulate"
   )
 
@@ -413,6 +421,10 @@ test_that(".use_fordead_env masks RETICULATE_PYTHON on conflict when Python is n
 
   # During use_virtualenv(), the env var was masked (empty string).
   expect_identical(seen_rp_during_use, "")
+  # Regression guard (ModuleNotFoundError: fordead): Python initialisation
+  # is forced via py_config() *while* RETICULATE_PYTHON is still masked, so
+  # the binding lands on the FORDEAD venv and not the restored conda env.
+  expect_identical(seen_rp_during_pyconfig, "")
   # After return, on.exit restored the original value.
   expect_identical(Sys.getenv("RETICULATE_PYTHON", unset = ""), conflicting)
 })
@@ -598,6 +610,7 @@ test_that(".use_fordead_env is a no-op when RETICULATE_PYTHON matches the fordea
       seen_rp_during_use <<- Sys.getenv("RETICULATE_PYTHON", unset = "")
       invisible(env)
     },
+    py_config          = function() list(python = fordead_py),
     .package = "reticulate"
   )
 

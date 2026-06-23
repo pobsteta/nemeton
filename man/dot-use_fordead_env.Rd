@@ -30,7 +30,12 @@ We work around this in two phases:
   call (the var is restored on exit so other reticulate consumers
   — e.g. OpenCanopy CHM operations from spec 005 — are unaffected
   for the rest of their work, though Python's binding is now
-  fixed for the session).
+  fixed for the session). Crucially, we then call
+  [reticulate::py_config()] to **force initialisation while the var
+  is still masked** — `use_virtualenv()` only records a preference
+  and Python binds lazily, so without this the restored
+  `RETICULATE_PYTHON` would win at the next access and bind to the
+  wrong interpreter (`ModuleNotFoundError: fordead`).
 * If Python is **already initialised** to a *different* binary,
   the in-process switch is impossible (reticulate caches the
   binding once Python is initialised). We surface a clear,

@@ -344,7 +344,12 @@ NULL
 #'   call (the var is restored on exit so other reticulate consumers
 #'   — e.g. OpenCanopy CHM operations from spec 005 — are unaffected
 #'   for the rest of their work, though Python's binding is now
-#'   fixed for the session).
+#'   fixed for the session). Crucially, we then call
+#'   [reticulate::py_config()] to **force initialisation while the var
+#'   is still masked** — `use_virtualenv()` only records a preference
+#'   and Python binds lazily, so without this the restored
+#'   `RETICULATE_PYTHON` would win at the next access and bind to the
+#'   wrong interpreter (`ModuleNotFoundError: fordead`).
 #' * If Python is **already initialised** to a *different* binary,
 #'   the in-process switch is impossible (reticulate caches the
 #'   binding once Python is initialised). We surface a clear,
@@ -382,6 +387,18 @@ NULL
   }
 
   reticulate::use_virtualenv(env_name, required = TRUE)
+
+  # `use_virtualenv()` only *records* a preference: reticulate binds Python
+  # lazily, on the first real use. If that initialisation is allowed to
+  # happen later — after the `on.exit` above has restored a conflicting
+  # `RETICULATE_PYTHON` (set in `.Renviron` for another project's env, e.g.
+  # the OpenCanopy conda env from spec 005) — the restored variable wins at
+  # init time and Python binds to the wrong interpreter. The pip install
+  # succeeds into the FORDEAD venv but `import("fordead")` then runs against
+  # the conda env where fordead is absent → `ModuleNotFoundError: fordead`.
+  # Force initialisation *now*, while `RETICULATE_PYTHON` is still masked, so
+  # the binding is cached on the FORDEAD venv for the rest of the session.
+  reticulate::py_config()
   invisible(env_name)
 }
 

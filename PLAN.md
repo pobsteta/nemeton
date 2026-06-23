@@ -85,6 +85,19 @@ A1 (runs antérieurs → reader rend NULL → fallback gracieux app).
 > gitlab.com / forge.inrae.fr, roue non compilable). `.ensure_fordead_python()`
 > recâblé. 2 tests helper + 3 tests d'orchestration mis à jour.
 >
+> *2026-06-23 (fix hors-chantier — v0.94.2)* : **FORDEAD — `ModuleNotFoundError:
+> No module named 'fordead'`**. Après l'install OK (v0.94.1 + `core.longpaths`),
+> l'import échouait sur les postes où `.Renviron` fixe `RETICULATE_PYTHON` vers
+> l'env conda `open_canopy` (CHM Open-Canopy). Cause : `use_virtualenv()`
+> n'enregistre qu'une préférence (binding paresseux) ; le `on.exit` de
+> `.use_fordead_env()` restaurait `RETICULATE_PYTHON` **avant** l'`import`, qui
+> se liait alors à `open_canopy`. Fix : appel de `reticulate::py_config()` juste
+> après `use_virtualenv()`, **pendant que la variable est masquée**, pour forcer
+> l'init immédiate sur le venv FORDEAD (binding caché pour la session). Garde-fou
+> de régression + `py_config` mocké dans les 5 tests concernés. Workaround
+> utilisateur en attendant le build : pointer `RETICULATE_PYTHON` sur le venv
+> `nemeton-fordead` (ou le désactiver) puis redémarrer R.
+>
 > *2026-06-20 (durcissement UX cartes FORDEAD — app v0.90.1 → v0.91.2)* :
 > série de finitions app (aucune API cœur nouvelle au-delà de
 > `read_fordead_layer`) — parité UGF/opacité avec la carte FAST, **classe 0

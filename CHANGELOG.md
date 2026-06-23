@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.94.2] - 2026-06-23
+
+### Fixed
+
+- FORDEAD no longer fails with `ModuleNotFoundError: No module named 'fordead'`
+  when `RETICULATE_PYTHON` points at another interpreter (e.g. the OpenCanopy
+  conda env). `.use_fordead_env()` now calls `reticulate::py_config()` right
+  after `use_virtualenv()`, while `RETICULATE_PYTHON` is still masked, forcing
+  Python to bind to the FORDEAD venv immediately instead of lazily (when the
+  restored env var would otherwise win).
+
 ## [0.94.1] - 2026-06-23
 
 ### Fixed

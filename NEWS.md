@@ -1,3 +1,35 @@
+# nemeton 0.94.2 (2026-06-23)
+
+### Fixed — FORDEAD : `ModuleNotFoundError: No module named 'fordead'` (conflit `RETICULATE_PYTHON`)
+
+Une fois les dépendances FORDEAD installées dans le venv `nemeton-fordead`,
+le pipeline échouait quand même, à l'`import` :
+
+```
+✖ FORDEAD pipeline failed: ModuleNotFoundError: No module named 'fordead'
+```
+
+sur les postes où `.Renviron` fixe `RETICULATE_PYTHON` vers un autre
+interpréteur (typiquement l'env conda `open_canopy` de la chaîne CHM
+Open-Canopy, spec 005).
+
+Cause : `.use_fordead_env()` masquait bien `RETICULATE_PYTHON` puis appelait
+`reticulate::use_virtualenv("nemeton-fordead", required = TRUE)`. Mais
+`use_virtualenv()` ne fait qu'**enregistrer une préférence** — reticulate lie
+Python *paresseusement*, au premier usage réel. Le `on.exit` **restaurait**
+`RETICULATE_PYTHON` (→ `open_canopy`) **avant** le `reticulate::import("fordead")`
+de `.ensure_fordead_python()` ; au moment de l'init paresseuse, la variable
+restaurée gagnait → Python se liait à `open_canopy` (où `fordead` est absent).
+
+**Fix** : `.use_fordead_env()` appelle désormais `reticulate::py_config()`
+juste après `use_virtualenv()`, **pendant que `RETICULATE_PYTHON` est encore
+masqué**, ce qui force l'initialisation immédiate de Python sur le venv FORDEAD.
+Le binding est mis en cache pour la session ; la restauration ultérieure de
+`RETICULATE_PYTHON` (pour ne pas perturber Open-Canopy) ne le change plus.
+Nouveau garde-fou de régression dans `test-fordead-python.R` (vérifie que
+`py_config()` est invoqué avec la variable masquée) ; les 5 tests touchant
+`.use_fordead_env` / `.ensure_fordead_python` mockent `py_config`.
+
 # nemeton 0.94.1 (2026-06-23)
 
 ### Fixed — FORDEAD install : afficher la vraie erreur pip (« Error installing package(s): » vide)
