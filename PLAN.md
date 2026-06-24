@@ -30,6 +30,44 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 ------------------------------------------------------------------------
 
+# Chantier EN COURS — RECONFORT AOI-scoped (spec 021, productionisation)
+
+> **2026-06-24.** RECONFORT (dépérissement feuillus, IOTA²/v3) ne
+> tournait jamais de bout en bout sur ce poste. Après ~12
+> incompatibilités iota2 récent (OTB 10) corrigées, la chaîne produit
+> enfin une **carte de dépérissement** (zone `lajoux_feu`, 370 alertes
+> pixel/cluster en base), **en ~6 min au lieu de 7 h**, en appel
+> [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+> défaut.
+
+**Livré (cœur, working tree — à committer) :** - `R/reconfort_crop.R` :
+`.reconfort_crop_scenes_to_aoi()` (clip + reproj des scènes S2 vers
+l’AOI+buffer dans la projection de sortie 2154 — perf ×~300 ET corrige
+un bug de grille de référence iota2 quand l’entrée est en 32631),
+`.reconfort_write_aoi_ground_truth()` (points part-1 dans l’AOI),
+`.reconfort_oso_broadleaf_mask()` (masque feuillus = OSO classe 16,
+découpé de l’OSO national `<cache>/oso/oso.tif`),
+`.reconfort_oso_national_path()`. - `R/reconfort_pipeline.R` :
+`run_reconfort_dieback(aoi_crop=TRUE, oso_national)` câble crop + masque
+OSO AOI + ground-truth AOI + `number_of_chunks=1` auto. -
+`inst/python/reconfort/iota2/config/iota2_resources.cfg` (#7 : clés
+name/process_min/nb_chunk retirées) + `custom_index.py` (#8 :
+`I2TemporalLabel`). Tests : `test-reconfort-crop.R` (helper fenêtre
+AOI).
+
+**Correctifs ENV (non code — à refaire si rebuild du conda
+`nemeton-reconfort`) :** - \#9 pandas 3.0→2.x
+(`to_datetime(infer_datetime_format=)` retiré en pandas 3). - \#10
+wrapper `task_launcher.py` dans `$ENV/bin/` (absent du build iota2).
+
+**Reste :** warning best-effort
+`persist (features bundle) failed: number of rows/columns` (n’empêche
+pas les alertes) ; validité OTB 10 vs OTB 8 de calibration à confirmer
+avec les auteurs RECONFORT (résultat cohérent : ~23 % feuillus, ~13 % en
+dépérissement). Voir mémoire `project_reconfort_iota2_version`.
+
+------------------------------------------------------------------------
+
 # Chantier EN COURS — Carte FORDEAD : 3 couches additionnelles
 
 > **Cadré le 2026-06-19.** La Carte FORDEAD n’affiche que le masque 0-4.

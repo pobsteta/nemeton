@@ -107,6 +107,15 @@
 <hr></div>
 </div>
 <div class="section level1">
+<h1 id="chantier-en-cours--reconfort-aoi-scoped-spec-021-productionisation">Chantier EN COURS — RECONFORT AOI-scoped (spec 021, productionisation)<a class="anchor" aria-label="anchor" href="#chantier-en-cours--reconfort-aoi-scoped-spec-021-productionisation"></a></h1>
+<blockquote>
+<p><strong>2026-06-24.</strong> RECONFORT (dépérissement feuillus, IOTA²/v3) ne tournait jamais de bout en bout sur ce poste. Après ~12 incompatibilités iota2 récent (OTB 10) corrigées, la chaîne produit enfin une <strong>carte de dépérissement</strong> (zone <code>lajoux_feu</code>, 370 alertes pixel/cluster en base), <strong>en ~6 min au lieu de 7 h</strong>, en appel <code><a href="reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> défaut.</p>
+</blockquote>
+<p><strong>Livré (cœur, working tree — à committer) :</strong> - <code>R/reconfort_crop.R</code> : <code>.reconfort_crop_scenes_to_aoi()</code> (clip + reproj des scènes S2 vers l’AOI+buffer dans la projection de sortie 2154 — perf ×~300 ET corrige un bug de grille de référence iota2 quand l’entrée est en 32631), <code>.reconfort_write_aoi_ground_truth()</code> (points part-1 dans l’AOI), <code>.reconfort_oso_broadleaf_mask()</code> (masque feuillus = OSO classe 16, découpé de l’OSO national <code>&lt;cache&gt;/oso/oso.tif</code>), <code>.reconfort_oso_national_path()</code>. - <code>R/reconfort_pipeline.R</code> : <code>run_reconfort_dieback(aoi_crop=TRUE, oso_national)</code> câble crop + masque OSO AOI + ground-truth AOI + <code>number_of_chunks=1</code> auto. - <code>inst/python/reconfort/iota2/config/iota2_resources.cfg</code> (#7 : clés name/process_min/nb_chunk retirées) + <code>custom_index.py</code> (#8 : <code>I2TemporalLabel</code>). Tests : <code>test-reconfort-crop.R</code> (helper fenêtre AOI).</p>
+<p><strong>Correctifs ENV (non code — à refaire si rebuild du conda <code>nemeton-reconfort</code>) :</strong> - #9 pandas 3.0→2.x (<code>to_datetime(infer_datetime_format=)</code> retiré en pandas 3). - #10 wrapper <code>task_launcher.py</code> dans <code>$ENV/bin/</code> (absent du build iota2).</p>
+<p><strong>Reste :</strong> warning best-effort <code>persist (features bundle) failed: number of rows/columns</code> (n’empêche pas les alertes) ; validité OTB 10 vs OTB 8 de calibration à confirmer avec les auteurs RECONFORT (résultat cohérent : ~23 % feuillus, ~13 % en dépérissement). Voir mémoire <code>project_reconfort_iota2_version</code>.</p>
+<hr></div>
+<div class="section level1">
 <h1 id="chantier-en-cours--carte-fordead--3-couches-additionnelles">Chantier EN COURS — Carte FORDEAD : 3 couches additionnelles<a class="anchor" aria-label="anchor" href="#chantier-en-cours--carte-fordead--3-couches-additionnelles"></a></h1>
 <blockquote>
 <p><strong>Cadré le 2026-06-19.</strong> La Carte FORDEAD n’affiche que le masque 0-4. On ajoute 3 couches pixel pertinentes, sélectionnables et masquées par strate (D2), opacité réglable.</p>

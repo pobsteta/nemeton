@@ -82,8 +82,10 @@ continuous-score rasters (EPSG:2154) plus a `run_meta.json`.</p>
 <span>  date_to <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  v_model <span class="op">=</span> <span class="st">"v3"</span>,</span>
 <span>  binary_mask <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  aoi_crop <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  oso_national <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  number_of_chunks <span class="op">=</span> <span class="fl">200L</span>,</span>
-<span>  scheduler_type <span class="op">=</span> <span class="st">"LocalCluster"</span>,</span>
+<span>  scheduler_type <span class="op">=</span> <span class="st">"localCluster"</span>,</span>
 <span>  nb_parallel_tasks <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  geodes_config <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -136,11 +138,28 @@ Default `"v3"` (oak, 2-year series).</p></dd>
 <dd><p>Broadleaf mask control. `NULL` (default) fetches
 and uses the OSO 2021 deciduous mask; a path uses a custom mask;
 `FALSE` disables masking (continuous score from the raw probability
-map only).</p></dd>
+map only). When `aoi_crop = TRUE` and `binary_mask = NULL`, the mask is
+cut from the national OSO (`oso_national`) for the AOI instead.</p></dd>
+
+
+<dt id="arg-aoi-crop">aoi_crop<a class="anchor" aria-label="anchor" href="#arg-aoi-crop"></a></dt>
+<dd><p>Logical. When `TRUE` (default) the extracted Sentinel-2
+scenes are clipped + reprojected to the zone AOI (+ buffer) in the
+output projection before IOTA2 (spec 021): a multi-hour full-tile run
+becomes minutes, IOTA2's reference-grid handling is fixed, and the
+broadleaf mask + ground truth are AOI-local. All operations are
+per-pixel, so clipping does not change the result for the kept pixels.</p></dd>
+
+
+<dt id="arg-oso-national">oso_national<a class="anchor" aria-label="anchor" href="#arg-oso-national"></a></dt>
+<dd><p>Character or `NULL`. National OSO land-cover raster
+used to cut the AOI broadleaf mask (default `&lt;global cache&gt;/oso/oso.tif`,
+overridable via `options(nemeton.reconfort_oso_national)`).</p></dd>
 
 
 <dt id="arg-number-of-chunks">number_of_chunks<a class="anchor" aria-label="anchor" href="#arg-number-of-chunks"></a></dt>
-<dd><p>IOTA2 RAM-saving chunk count. Default `200`.</p></dd>
+<dd><p>IOTA2 RAM-saving chunk count. Default `200`
+(forced to `1` when `aoi_crop` shrinks the raster to a single block).</p></dd>
 
 
 <dt id="arg-scheduler-type">scheduler_type<a class="anchor" aria-label="anchor" href="#arg-scheduler-type"></a></dt>

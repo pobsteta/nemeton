@@ -26,8 +26,10 @@ run_reconfort_dieback(
   date_to = NULL,
   v_model = "v3",
   binary_mask = NULL,
+  aoi_crop = TRUE,
+  oso_national = NULL,
   number_of_chunks = 200L,
-  scheduler_type = "LocalCluster",
+  scheduler_type = "localCluster",
   nb_parallel_tasks = 1L,
   output_dir = NULL,
   geodes_config = NULL,
@@ -78,11 +80,29 @@ run_reconfort_dieback(
 
   Broadleaf mask control. \`NULL\` (default) fetches and uses the OSO
   2021 deciduous mask; a path uses a custom mask; \`FALSE\` disables
-  masking (continuous score from the raw probability map only).
+  masking (continuous score from the raw probability map only). When
+  \`aoi_crop = TRUE\` and \`binary_mask = NULL\`, the mask is cut from
+  the national OSO (\`oso_national\`) for the AOI instead.
+
+- aoi_crop:
+
+  Logical. When \`TRUE\` (default) the extracted Sentinel-2 scenes are
+  clipped + reprojected to the zone AOI (+ buffer) in the output
+  projection before IOTA2 (spec 021): a multi-hour full-tile run becomes
+  minutes, IOTA2's reference-grid handling is fixed, and the broadleaf
+  mask + ground truth are AOI-local. All operations are per-pixel, so
+  clipping does not change the result for the kept pixels.
+
+- oso_national:
+
+  Character or \`NULL\`. National OSO land-cover raster used to cut the
+  AOI broadleaf mask (default \`\<global cache\>/oso/oso.tif\`,
+  overridable via \`options(nemeton.reconfort_oso_national)\`).
 
 - number_of_chunks:
 
-  IOTA2 RAM-saving chunk count. Default \`200\`.
+  IOTA2 RAM-saving chunk count. Default \`200\` (forced to \`1\` when
+  \`aoi_crop\` shrinks the raster to a single block).
 
 - scheduler_type:
 
