@@ -1,3 +1,45 @@
+# nemeton 0.94.2 (2026-06-24)
+
+### Added — RECONFORT AOI-scoped : la chaîne tourne en minutes (spec 021)
+
+RECONFORT (dépérissement feuillus, IOTA² + modèle pré-entraîné v3) ne tournait
+jamais de bout en bout : IOTA² traite la tuile MGRS entière (10980×10980 px)
+quelle que soit la zone (~7 h pour ~60 pixels utiles), et plusieurs
+incompatibilités de l'iota2 récent (OTB 10) faisaient échouer la chaîne.
+
+`run_reconfort_dieback()` est désormais **AOI-scoped par défaut**
+(`aoi_crop = TRUE`, nouveau `R/reconfort_crop.R`) :
+
+- **Clip + reprojection** des scènes S2 à l'AOI + buffer dans la projection de
+  sortie (EPSG:2154) avant IOTA² : run de 7 h → **~6 min**, et correction d'un
+  bug de grille de référence iota2. Tout est per-pixel (gap-filling, indices
+  CRswir/CRre, RF v3) → résultat inchangé pour les pixels conservés.
+- **Masque feuillus** découpé de l'OSO national (`<cache>/oso/oso.tif`,
+  classe 16) pour l'AOI, au lieu du masque régional partiel.
+- **Points de vérité terrain** régénérés dans l'AOI (sampling part-1 d'IOTA²).
+- `number_of_chunks` forcé à 1 sur le raster clippé.
+
+Nouveaux paramètres `aoi_crop` et `oso_national`. Validé en live (zone
+`lajoux_feu`) : carte de dépérissement produite, 370 alertes pixel/cluster
+persistées en base.
+
+### Fixed
+
+- **RECONFORT bundle features multi-résolution** : `.build_reconfort_feature_stacks()`
+  combinait B04 (10 m) avec B05/B06/B8A/B11/B12 (20 m) → terra échouait
+  (« number of rows and/or columns »), le bundle CRswir/CRre n'était pas
+  persisté. Toutes les bandes sont rééchantillonnées sur la grille 10 m de B04.
+- **Configs IOTA² vendorées** alignées sur l'iota2 récent : clés invalides
+  retirées de `iota2_resources.cfg`, labels `I2TemporalLabel` dans
+  `custom_index.py`, builder `I2Classification`, scheduler `localCluster`.
+
+### Tooling
+
+- `inst/python/reconfort/repair_iota2_env.sh` (idempotent) : applique les deux
+  défauts du paquet `iota2` à la création du conda — `pandas < 3`
+  (`to_datetime(infer_datetime_format=)` retiré en pandas 3) et le wrapper
+  `task_launcher.py` dans `$ENV/bin/`.
+
 # nemeton 0.94.1 (2026-06-23)
 
 ### Fixed — FORDEAD install : afficher la vraie erreur pip (« Error installing package(s): » vide)
