@@ -43,3 +43,19 @@ Lot **L2b.3** (map production), driven by `R/reconfort_pipeline.R`:
 run (the upstream scripts chdir to their own dir and write `results/`
 there). The ~54 MB OSO mask and the RF models are fetched on demand
 (`ensure_reconfort_oso_mask()`, `ensure_reconfort_model()`), not bundled.
+
+## Réparation de l'environnement conda (`repair_iota2_env.sh`)
+
+Le paquet `iota2` (canaux `iota2` + `iota2-deps`) a deux défauts qui cassent la
+chaîne RECONFORT sur un install récent. Après avoir créé l'env conda, lancer
+**une fois** :
+
+```bash
+bash repair_iota2_env.sh nemeton-reconfort
+```
+
+Idempotent. Il applique : (#9) `pandas < 3` — iota2 utilise
+`to_datetime(infer_datetime_format=)`, supprimé en pandas 3 ; (#10) un wrapper
+exécutable `task_launcher.py` dans `$ENV/bin/` — iota2 l'invoque en commande nue
+mais ne l'expose pas comme console-script (les workers dask échouent sinon avec
+`task_launcher.py: not found`).

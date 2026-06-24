@@ -85,11 +85,22 @@ NULL
   crre_layers   <- vector("list", length(scenes))
   for (i in seq_along(scenes)) {
     s   <- scenes[[i]]
-    b4  <- load_one(s$B04); b5 <- load_one(s$B05); b6 <- load_one(s$B06)
-    b8a <- load_one(s$B8A); b11 <- load_one(s$B11); b12 <- load_one(s$B12)
+    b4  <- load_one(s$B04)
+    # The FRE bands mix 10 m (B04) and 20 m (B05/B06/B8A/B11/B12); terra
+    # cannot combine rasters of different dimensions ("number of rows and/or
+    # columns"). Align every band to B04's 10 m grid before the indices.
+    ali <- function(x, method = "bilinear") {
+      if (is.null(x)) return(NULL)
+      if (terra::nrow(x) == terra::nrow(b4) &&
+          terra::ncol(x) == terra::ncol(b4)) return(x)
+      terra::resample(x, b4, method = method)
+    }
+    b5  <- ali(load_one(s$B05)); b6  <- ali(load_one(s$B06))
+    b8a <- ali(load_one(s$B8A)); b11 <- ali(load_one(s$B11))
+    b12 <- ali(load_one(s$B12))
     cw <- .reconfort_crswir(b8a, b11, b12)
     cr <- .reconfort_crre(b4, b5, b6)
-    scl <- load_one(s$scl)
+    scl <- ali(load_one(s$scl), method = "near")
     if (!is.null(scl)) {
       keep <- !(terra::values(scl) %in% .RECONFORT_SCL_MASK_CLASSES)
       cw <- terra::setValues(cw, ifelse(keep, terra::values(cw), NA))
