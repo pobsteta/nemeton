@@ -171,8 +171,20 @@
 #' @param binary_mask Broadleaf mask control. `NULL` (default) fetches
 #'   and uses the OSO 2021 deciduous mask; a path uses a custom mask;
 #'   `FALSE` disables masking (continuous score from the raw probability
-#'   map only).
-#' @param number_of_chunks IOTA2 RAM-saving chunk count. Default `200`.
+#'   map only). When `aoi_crop = TRUE` and `binary_mask = NULL`, the mask is
+#'   cut from the national OSO (`oso_national`) for the AOI instead.
+#' @param aoi_crop Logical. When `TRUE` (default) the extracted Sentinel-2
+#'   scenes are clipped + reprojected to the zone AOI (+ buffer) in the
+#'   output projection before IOTA2 (spec 021). This turns a multi-hour
+#'   full-tile run into minutes, fixes IOTA2's reference-grid handling, and
+#'   makes the broadleaf mask + ground truth AOI-local. All operations are
+#'   per-pixel, so clipping does not change the result for the kept pixels.
+#' @param oso_national Character or `NULL`. National OSO land-cover raster
+#'   used to cut the AOI broadleaf mask (default
+#'   `<global cache>/oso/oso.tif`, overridable via
+#'   `options(nemeton.reconfort_oso_national)`).
+#' @param number_of_chunks IOTA2 RAM-saving chunk count. Default `200`
+#'   (forced to `1` when `aoi_crop` shrinks the raster to a single block).
 #' @param scheduler_type IOTA2 scheduler. Default `"localCluster"`.
 #'   IOTA2's `Iota2.py` only accepts `debug`, `cluster`, `PBS`, `Slurm`,
 #'   `localCluster` (note the lower-case `l`) — `"LocalCluster"` 400s.
@@ -205,6 +217,8 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
                                   date_to           = NULL,
                                   v_model           = "v3",
                                   binary_mask       = NULL,
+                                  aoi_crop          = TRUE,
+                                  oso_national      = NULL,
                                   number_of_chunks  = 200L,
                                   scheduler_type    = "localCluster",
                                   nb_parallel_tasks = 1L,
@@ -268,14 +282,28 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     model_path <- ensure_reconfort_model(v_model, cache_dir = model_cache_dir,
                                          quiet = quiet)
 
+    # AOI resolved once, up front: it drives the broadleaf mask, the scene
+    # clip and the ground-truth points (all AOI-local — spec 021 prod).
+    aoi <- if (!is.null(con) && !is.null(zone_id)) {
+      tryCatch(.get_zone_aoi(con, zone_id), error = function(e) NULL)
+    } else NULL
+    do_crop <- isTRUE(aoi_crop) && !is.null(aoi)
+
     # PHASE 3 — mask resolution ------------------------------------
     begin("mask")
     do_mask <- !isFALSE(binary_mask)
+    oso_nat <- oso_national %||% .reconfort_oso_national_path()
     mask_path <- if (!do_mask) {
       NA_character_
     } else if (is.character(binary_mask)) {
       ensure_reconfort_oso_mask(local_path = binary_mask, verify = FALSE,
                                 quiet = quiet)
+    } else if (do_crop && !is.null(oso_nat) && file.exists(oso_nat)) {
+      # Broadleaf mask cut from the national OSO for this AOI (the upstream
+      # partial mask does not cover most of France — incl. the Jura).
+      p <- file.path(cache_dir, sprintf("oso_broadleaf_zone_%s.tif", zone_id))
+      dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+      .reconfort_oso_broadleaf_mask(oso_nat, aoi, p)
     } else {
       ensure_reconfort_oso_mask(cache_dir = mask_cache_dir, quiet = quiet)
     }
@@ -283,7 +311,9 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     # PHASE 4 — AOI -> tiles ---------------------------------------
     begin("tiles")
     if (is.null(tiles)) {
-      aoi   <- .get_zone_aoi(con, zone_id)
+      if (is.null(aoi)) {
+        cli::cli_abort("Cannot resolve AOI for zone {.val {zone_id}}.")
+      }
       tiles <- reconfort_aoi_tiles(aoi, prefix = TRUE)
       if (length(tiles) == 0L) {
         cli::cli_abort("Zone {.val {zone_id}} resolved to no Sentinel-2 tile.")
@@ -301,6 +331,16 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
                                  geodes_config = geodes_config, quiet = quiet)
       extracted <- ing$extracted
     }
+    # AOI clip + reprojection to the output CRS — turns a multi-hour
+    # full-tile run into minutes and fixes IOTA2's reference-grid bug.
+    if (do_crop) {
+      extracted <- .reconfort_crop_scenes_to_aoi(
+        extracted, aoi, out_root = file.path(s2_dl_root, "extracted_aoi"),
+        quiet = quiet)
+      # cropped raster is tiny → one IOTA2 block (avoids the per-chunk
+      # mask-vs-fulltile BandMath dimension mismatch).
+      if (isTRUE(number_of_chunks == 200L)) number_of_chunks <- 1L
+    }
 
     # PHASE 6 — stage the working dir ------------------------------
     begin("stage")
@@ -309,6 +349,16 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     .reconfort_stage_model(workdir, model_path, v_model)
     if (do_mask) .reconfort_stage_mask(workdir, mask_path)
     s2_path <- .reconfort_stage_s2_layout(workdir, s2_year, tiles, extracted)
+    # AOI-local ground truth so IOTA2's part-1 sampling has points inside the
+    # clipped envelope (the global random_points.shp would not intersect).
+    if (do_crop) {
+      tryCatch(
+        .reconfort_write_aoi_ground_truth(
+          file.path(workdir, "iota2", "vector_db", "random_points.shp"),
+          aoi, n_classes = info$n_classes),
+        error = function(e) cli::cli_alert_warning(
+          "AOI ground-truth generation failed: {conditionMessage(e)}"))
+    }
 
     cfg <- file.path(workdir, "config_file_map_production_nemeton.cfg")
     .reconfort_write_cfg(cfg, list(
