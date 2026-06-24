@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.94.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.94.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,35 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.94.2" id="nemeton-0942-2026-06-24">nemeton 0.94.2 (2026-06-24)<a class="anchor" aria-label="anchor" href="#nemeton-0942-2026-06-24"></a></h2>
+<div class="section level4">
+<h4 id="added--reconfort-aoi-scoped--la-chaîne-tourne-en-minutes-spec-0-94-2">Added — RECONFORT AOI-scoped : la chaîne tourne en minutes (spec 021)<a class="anchor" aria-label="anchor" href="#added--reconfort-aoi-scoped--la-cha%C3%AEne-tourne-en-minutes-spec-0-94-2"></a></h4>
+<p>RECONFORT (dépérissement feuillus, IOTA² + modèle pré-entraîné v3) ne tournait jamais de bout en bout : IOTA² traite la tuile MGRS entière (10980×10980 px) quelle que soit la zone (~7 h pour ~60 pixels utiles), et plusieurs incompatibilités de l’iota2 récent (OTB 10) faisaient échouer la chaîne.</p>
+<p><code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> est désormais <strong>AOI-scoped par défaut</strong> (<code>aoi_crop = TRUE</code>, nouveau <code>R/reconfort_crop.R</code>) :</p>
+<ul><li>
+<strong>Clip + reprojection</strong> des scènes S2 à l’AOI + buffer dans la projection de sortie (EPSG:2154) avant IOTA² : run de 7 h → <strong>~6 min</strong>, et correction d’un bug de grille de référence iota2. Tout est per-pixel (gap-filling, indices CRswir/CRre, RF v3) → résultat inchangé pour les pixels conservés.</li>
+<li>
+<strong>Masque feuillus</strong> découpé de l’OSO national (<code>&lt;cache&gt;/oso/oso.tif</code>, classe 16) pour l’AOI, au lieu du masque régional partiel.</li>
+<li>
+<strong>Points de vérité terrain</strong> régénérés dans l’AOI (sampling part-1 d’IOTA²).</li>
+<li>
+<code>number_of_chunks</code> forcé à 1 sur le raster clippé.</li>
+</ul><p>Nouveaux paramètres <code>aoi_crop</code> et <code>oso_national</code>. Validé en live (zone <code>lajoux_feu</code>) : carte de dépérissement produite, 370 alertes pixel/cluster persistées en base.</p>
+</div>
+<div class="section level4">
+<h4 id="fixed-0-94-2">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-94-2"></a></h4>
+<ul><li>
+<strong>RECONFORT bundle features multi-résolution</strong> : <code>.build_reconfort_feature_stacks()</code> combinait B04 (10 m) avec B05/B06/B8A/B11/B12 (20 m) → terra échouait (« number of rows and/or columns »), le bundle CRswir/CRre n’était pas persisté. Toutes les bandes sont rééchantillonnées sur la grille 10 m de B04.</li>
+<li>
+<strong>Configs IOTA² vendorées</strong> alignées sur l’iota2 récent : clés invalides retirées de <code>iota2_resources.cfg</code>, labels <code>I2TemporalLabel</code> dans <code>custom_index.py</code>, builder <code>I2Classification</code>, scheduler <code>localCluster</code>.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="tooling-0-94-2">Tooling<a class="anchor" aria-label="anchor" href="#tooling-0-94-2"></a></h4>
+<ul><li>
+<code>inst/python/reconfort/repair_iota2_env.sh</code> (idempotent) : applique les deux défauts du paquet <code>iota2</code> à la création du conda — <code>pandas &lt; 3</code> (<code>to_datetime(infer_datetime_format=)</code> retiré en pandas 3) et le wrapper <code>task_launcher.py</code> dans <code>$ENV/bin/</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.94.1" id="nemeton-0941-2026-06-23">nemeton 0.94.1 (2026-06-23)<a class="anchor" aria-label="anchor" href="#nemeton-0941-2026-06-23"></a></h2>
 <div class="section level4">
