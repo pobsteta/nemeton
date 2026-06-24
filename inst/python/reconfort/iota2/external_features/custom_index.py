@@ -11,6 +11,13 @@
 # ------------------------------------------------------------------
 import numpy as np
 
+# nemeton: l'iota2 récent exige des labels I2Label/I2TemporalLabel (plus des
+# chaînes). Les features CRswir/CRre sont temporelles (une par date interpolée),
+# d'où I2TemporalLabel(sensor_name, feat_name, date). Le CALCUL est inchangé —
+# seul le labelling change ; l'ordre des colonnes (par date) est préservé, donc
+# le vecteur de features vu par le modèle sharkrf v3 est identique.
+from iota2.learning.utils import I2TemporalLabel
+
 def get_crswir(self):
     """
     compute the CRswir indice
@@ -24,7 +31,10 @@ def get_crswir(self):
 
     coef = num / den
 
-    labels = [f"CRswir_{i+1}" for i in range(coef.shape[2])]
+    labels = [
+        I2TemporalLabel(sensor_name="sentinel2", feat_name="CRswir", date=date)
+        for date in self.interpolated_dates["Sentinel2"]
+    ]
 
     return coef, labels
 
@@ -45,5 +55,8 @@ def get_crre(self):
 
     coef = num / den
 
-    labels = [f"CRre_{i + 1}" for i in range(coef.shape[2])]
+    labels = [
+        I2TemporalLabel(sensor_name="sentinel2", feat_name="CRre", date=date)
+        for date in self.interpolated_dates["Sentinel2"]
+    ]
     return coef, labels
