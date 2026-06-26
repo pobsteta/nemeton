@@ -614,7 +614,7 @@ write.csv(results_table, "results/forest_quality.csv", row.names = FALSE)
 ``` r
 
 sessionInfo()
-#> R version 4.6.0 (2026-04-24)
+#> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.4 LTS
 #> 
@@ -641,14 +641,14 @@ sessionInfo()
 #>  [1] omnibus_1.2.15       rappdirs_0.3.4       sass_0.4.10         
 #>  [4] generics_0.1.4       xml2_1.6.0           class_7.3-23        
 #>  [7] KernSmooth_2.23-26   lattice_0.22-9       digest_0.6.39       
-#> [10] magrittr_2.0.5       evaluate_1.0.5       grid_4.6.0          
+#> [10] magrittr_2.0.5       evaluate_1.0.5       grid_4.6.1          
 #> [13] RColorBrewer_1.1-3   fastmap_1.2.0        jsonlite_2.0.0      
 #> [16] e1071_1.7-17         DBI_1.3.0            fasterRaster_8.4.1.2
 #> [19] scales_1.4.0         codetools_0.2-20     textshaping_1.0.5   
 #> [22] jquerylib_0.1.4      cli_3.6.6            rgrass_0.5-3        
 #> [25] rlang_1.2.0          units_1.0-1          withr_3.0.3         
 #> [28] cachem_1.1.0         yaml_2.3.12          otel_0.2.0          
-#> [31] raster_3.6-32        tools_4.6.0          dplyr_1.2.1         
+#> [31] raster_3.6-32        tools_4.6.1          dplyr_1.2.1         
 #> [34] exactextractr_0.10.1 vctrs_0.7.3          R6_2.6.1            
 #> [37] proxy_0.4-29         lifecycle_1.0.5      classInt_0.4-11     
 #> [40] fs_2.1.0             htmlwidgets_1.6.4    ragg_1.5.2          
@@ -658,6 +658,6 @@ sessionInfo()
 #> [52] Rcpp_1.1.1-1.1       sf_1.1-1             systemfonts_1.3.2   
 #> [55] xfun_0.59            tibble_3.3.1         tidyselect_1.2.1    
 #> [58] knitr_1.51           farver_2.1.2         htmltools_0.5.9     
-#> [61] rmarkdown_2.31       compiler_4.6.0       S7_0.2.2            
+#> [61] rmarkdown_2.31       compiler_4.6.1       S7_0.2.2            
 #> [64] sp_2.2-1
 ```

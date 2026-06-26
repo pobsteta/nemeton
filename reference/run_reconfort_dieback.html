@@ -119,14 +119,21 @@ convention as FORDEAD's `cache_dir`).</p></dd>
 
 
 <dt id="arg-s-year">s2_year<a class="anchor" aria-label="anchor" href="#arg-s-year"></a></dt>
-<dd><p>Integer last year of the two-year S2 series. Default
-the current year.</p></dd>
+<dd><p>Integer, the <strong>last</strong> year of the two-year Sentinel-2
+series – the single temporal control of a run (the app exposes only this,
+as a year picker). Default the current year. The download window, the
+analysis window and the output names all derive from it; see
+<em>Temporal window</em> below.</p></dd>
 
 
 <dt id="arg-date-from-date-to">date_from, date_to<a class="anchor" aria-label="anchor" href="#arg-date-from-date-to"></a></dt>
-<dd><p>Download window (`"YYYY-MM-DD"`). Default a
-two-year window ending with `s2_year` (the IOTA2 cfg further clips
-to the model's seasonal dates).</p></dd>
+<dd><p>Sentinel-2 <strong>download</strong> window
+(`"YYYY-MM-DD"`). `NULL` (default) derives a two-calendar-year window from
+`s2_year`: `date_from = (s2_year-1)-01-01`, `date_to = s2_year-12-31`. This
+only bounds what is fetched from Theia; IOTA2 then re-clips to the model's
+seasonal <em>analysis</em> window (`S2_start`/`S2_end`), so a custom download
+window cannot widen the analysis beyond what the pre-trained model expects.
+See <em>Temporal window</em>.</p></dd>
 
 
 <dt id="arg-v-model">v_model<a class="anchor" aria-label="anchor" href="#arg-v-model"></a></dt>
@@ -226,6 +233,36 @@ centroids, `confidence_class`, `stress_index`) is lot L3 and is
 conda environment, a GEODES account, tens of GB of Sentinel-2 and an
 OTB/Shark batch execution. It is never exercised in CI; unit tests
 mock every external step.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="temporal-window-s-year-gt-analysis-dates-">Temporal window (<code>s2_year</code> -&gt; analysis dates)<a class="anchor" aria-label="anchor" href="#temporal-window-s-year-gt-analysis-dates-"></a></h2>
+
+
+<p>RECONFORT does not diff two dates: it classifies a pixel's ~2-year index
+trajectory with a pre-trained model. One run is driven entirely by
+`s2_year` (the last year of the series). The dates flow as:</p>
+<ol><li><p><strong>Download window</strong> (this function): from `s2_year`,
+    `date_from = (s2_year-1)-01-01` and `date_to = s2_year-12-31` unless
+    overridden – two calendar years fetched from Theia.</p></li>
+<li><p><strong>Analysis window</strong> (IOTA2 cfg, derived from `s2_year` +
+    `v_model`, <em>not</em> from `date_from`/`date_to`):
+    `S2_start = (s2_year-1)&lt;sdate&gt;`, `S2_end = s2_year&lt;edate&gt;` with
+    `sdate`/`edate` fixed by the model –
+    <code>v3</code>/<code>v3_chestnut</code>/<code>v3_pine</code>: `0101` -&gt; `1029` (Jan of
+    `s2_year-1` to 29 Oct of `s2_year`, ~22 months, the "2y_nov"
+    calibration); <code>v3_early_may</code>: `0101` -&gt; `0531` (~1.5 year).</p></li>
+<li><p><strong>Features</strong>: IOTA2 gap-fills the cloud-masked S2
+    acquisitions of the analysis window onto a regular date grid, then
+    computes CRswir + CRre per date. The per-pixel feature vector is the
+    full two-year trajectory of both indices.</p></li>
+<li><p><strong>Classification</strong>: the SharkRF `v_model` labels each pixel
+    `1 healthy, 2 declining, 3 severely declining` (2 classes for pine)
+    plus a continuous score.</p></li>
+</ol><p>Because the analysis window is model-bound, a custom `date_from`/`date_to`
+only changes <em>what is downloaded</em>, never the window the model sees.
+To cover several years, call once per `s2_year` (each run = a 2-year
+window ending end-October of its `s2_year`); the app stacks the resulting
+yearly maps.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

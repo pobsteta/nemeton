@@ -62,13 +62,21 @@ run_reconfort_dieback(
 
 - s2_year:
 
-  Integer last year of the two-year S2 series. Default the current year.
+  Integer, the **last** year of the two-year Sentinel-2 series – the
+  single temporal control of a run (the app exposes only this, as a year
+  picker). Default the current year. The download window, the analysis
+  window and the output names all derive from it; see *Temporal window*
+  below.
 
 - date_from, date_to:
 
-  Download window (\`"YYYY-MM-DD"\`). Default a two-year window ending
-  with \`s2_year\` (the IOTA2 cfg further clips to the model's seasonal
-  dates).
+  Sentinel-2 **download** window (\`"YYYY-MM-DD"\`). \`NULL\` (default)
+  derives a two-calendar-year window from \`s2_year\`: \`date_from =
+  (s2_year-1)-01-01\`, \`date_to = s2_year-12-31\`. This only bounds
+  what is fetched from Theia; IOTA2 then re-clips to the model's
+  seasonal *analysis* window (\`S2_start\`/\`S2_end\`), so a custom
+  download window cannot widen the analysis beyond what the pre-trained
+  model expects. See *Temporal window*.
 
 - v_model:
 
@@ -169,3 +177,36 @@ centroids, \`confidence_class\`, \`stress_index\`) is lot L3 and is
 environment, a GEODES account, tens of GB of Sentinel-2 and an OTB/Shark
 batch execution. It is never exercised in CI; unit tests mock every
 external step.
+
+## Temporal window (`s2_year` -\> analysis dates)
+
+RECONFORT does not diff two dates: it classifies a pixel's ~2-year index
+trajectory with a pre-trained model. One run is driven entirely by
+\`s2_year\` (the last year of the series). The dates flow as:
+
+1.  **Download window** (this function): from \`s2_year\`, \`date_from =
+    (s2_year-1)-01-01\` and \`date_to = s2_year-12-31\` unless
+    overridden – two calendar years fetched from Theia.
+
+2.  **Analysis window** (IOTA2 cfg, derived from \`s2_year\` +
+    \`v_model\`, *not* from \`date_from\`/\`date_to\`): \`S2_start =
+    (s2_year-1)\<sdate\>\`, \`S2_end = s2_year\<edate\>\` with
+    \`sdate\`/\`edate\` fixed by the model –
+    `v3`/`v3_chestnut`/`v3_pine`: \`0101\` -\> \`1029\` (Jan of
+    \`s2_year-1\` to 29 Oct of \`s2_year\`, ~22 months, the "2y_nov"
+    calibration); `v3_early_may`: \`0101\` -\> \`0531\` (~1.5 year).
+
+3.  **Features**: IOTA2 gap-fills the cloud-masked S2 acquisitions of
+    the analysis window onto a regular date grid, then computes CRswir +
+    CRre per date. The per-pixel feature vector is the full two-year
+    trajectory of both indices.
+
+4.  **Classification**: the SharkRF \`v_model\` labels each pixel \`1
+    healthy, 2 declining, 3 severely declining\` (2 classes for pine)
+    plus a continuous score.
+
+Because the analysis window is model-bound, a custom
+\`date_from\`/\`date_to\` only changes *what is downloaded*, never the
+window the model sees. To cover several years, call once per \`s2_year\`
+(each run = a 2-year window ending end-October of its \`s2_year\`); the
+app stacks the resulting yearly maps.

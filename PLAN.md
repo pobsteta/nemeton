@@ -2091,10 +2091,9 @@ changement cœur `nemeton`.
   `main` 25198c9) + `spec.md` (parité spec 008) + amendement **ADR-013
   A4** (suivi sanitaire multi-méthodes, dans `nemetonplateform`, branche
   `claude/adr-013-a4-reconfort`). **Durcissement CI** (préexistant, sans
-  rapport métier) : job `tests` →
-  [`devtools::test()`](https://devtools.r-lib.org/reference/test.html)
-  réel (l’ancien `test_package()` ne trouvait aucun test installé = faux
-  vert) ; `R-CMD-check --no-tests`/`--no-build-vignettes` ; `pkgdown` +
+  rapport métier) : job `tests` → `devtools::test()` réel (l’ancien
+  `test_package()` ne trouvait aucun test installé = faux vert) ;
+  `R-CMD-check --no-tests`/`--no-build-vignettes` ; `pkgdown` +
   `rsconnect` + 111 topics ajoutés à l’index de référence ; vignette
   `getting-started` en `error = TRUE`. Surtout : **garde-fou par
   capacité** `skip_if_terra_write_broken()` contre une anomalie terra
@@ -2179,9 +2178,7 @@ changement cœur `nemeton`.
   trend), format de nom trend. **À rejouer en CI** (terra/sf indispos
   ici) : chemins raster
   `.fast_raster_trend`/`build_index_stack(NDRE)`/intégration read+mask,
-  [`devtools::document()`](https://devtools.r-lib.org/reference/document.html)
-  (`.Rd` non régénérés),
-  [`devtools::test()`](https://devtools.r-lib.org/reference/test.html)
+  `devtools::document()` (`.Rd` non régénérés), `devtools::test()`
   complet. Clôt le brief « red-edge + mode trend » (TASK 1 spec 022 +
   TASK 2 spec 023).
 
@@ -2209,11 +2206,9 @@ changement cœur `nemeton`.
   abort, red-edge présent → pass, cache NDVI-only → abort pour NDRE).
   **À rejouer en CI** : arithmétique NDRE de
   `build_index_stack`/`extract_pixel_timeseries` (terra indispo ici),
-  [`devtools::document()`](https://devtools.r-lib.org/reference/document.html)
-  (`.Rd` non régénérés — le repo régénère la doc en CI/release, déjà
-  désync sur NDMI),
-  [`devtools::test()`](https://devtools.r-lib.org/reference/test.html).
-  Suite : mode FAST `trend` (spec 023).
+  `devtools::document()` (`.Rd` non régénérés — le repo régénère la doc
+  en CI/release, déjà désync sur NDMI), `devtools::test()`. Suite : mode
+  FAST `trend` (spec 023).
 
 - **2026-06-04** — Release **v0.67.0** (added —
   **[`prune_orphan_zone_caches()`](https://pobsteta.github.io/nemeton/reference/prune_orphan_zone_caches.md)**,
@@ -2553,13 +2548,12 @@ changement cœur `nemeton`.
   `read_fast_alert_raster` — déjà faux depuis spec 017 — corrigé en «
   énumérées depuis le cache COG »). **Breaking** pour les appels directs
   (warning depuis v0.58.0). **NON TESTÉ EN CI ICI** (pas de R) — rejouer
-  sur les deux backends +
-  [`devtools::document()`](https://devtools.r-lib.org/reference/document.html)
-  (`man/*.Rd` ajustés à la main). **Chantier pure-raster FAST
-  entièrement clos** (stockage + API). **Tag v0.58.0 et v0.60.0 NON
-  poussés** : le proxy git de l’environnement refuse les push de tags
-  (HTTP 403) — à pousser + release GitHub depuis une machine aux droits
-  complets, en tagant les commits de merge sur `main`.
+  sur les deux backends + `devtools::document()` (`man/*.Rd` ajustés à
+  la main). **Chantier pure-raster FAST entièrement clos** (stockage +
+  API). **Tag v0.58.0 et v0.60.0 NON poussés** : le proxy git de
+  l’environnement refuse les push de tags (HTTP 403) — à pousser +
+  release GitHub depuis une machine aux droits complets, en tagant les
+  commits de merge sur `main`.
 
 - **2026-06-02** — Release **v0.58.0** (feat — **FAST 100 % pur raster :
   retrait de l’insertion `obs_pixel`**, finalisation spec 017). Chantier
@@ -2595,9 +2589,8 @@ changement cœur `nemeton`.
   `test-ingest-cancel.R` (cache COG partiel),
   `test-obs_pixel-deprecation.R` (3 warnings) ; 4 suites `obs_pixel`
   supprimées. **NON TESTÉ EN CI ICI** (pas de R) — rejouer sur les deux
-  backends via `NEMETON_DB_URL_TEST` +
-  [`devtools::document()`](https://devtools.r-lib.org/reference/document.html)
-  (les `man/*.Rd` édités à la main). **Phase B (v0.60.0)** : retrait
+  backends via `NEMETON_DB_URL_TEST` + `devtools::document()` (les
+  `man/*.Rd` édités à la main). **Phase B (v0.60.0)** : retrait
   définitif des 3 fonctions + retrait du `CREATE TABLE obs_pixel` des
   migrations 0001 (la 0004 reste pour les bases existantes).
 
@@ -2830,11 +2823,10 @@ changement cœur `nemeton`.
   la vraie base `nemeton`, et idem scénarios « TEST unset » et « TEST ==
   prod ». CI (`r.yml`) sans service postgres → tests d’intégration skip
   proprement, build vert (pas de var ajoutée qui pointerait dans le
-  vide). **Breaking côté setup dev** :
-  [`devtools::test()`](https://devtools.r-lib.org/reference/test.html)
-  exige désormais un `NEMETON_DB_URL_TEST` dédié (ex. `nemeton_test`)
-  pour rejouer l’intégration ; sinon skip. Aucune API publique modifiée,
-  pas de bump côté app. **Mea culpa** : c’est moi (session cœur) qui ai
+  vide). **Breaking côté setup dev** : `devtools::test()` exige
+  désormais un `NEMETON_DB_URL_TEST` dédié (ex. `nemeton_test`) pour
+  rejouer l’intégration ; sinon skip. Aucune API publique modifiée, pas
+  de bump côté app. **Mea culpa** : c’est moi (session cœur) qui ai
   re-déclenché l’incident en lançant
   [`testthat::test_dir()`](https://testthat.r-lib.org/reference/test_dir.html)
   plusieurs fois contre la base `nemeton` malgré la note mémoire ; ce
@@ -3002,9 +2994,8 @@ changement cœur `nemeton`.
   étend le drop aux tables `knowledge_*`. **Reliquat E7** : corpus (spec
   009.1) + wiring `nemetonshiny` (injection chunks dans le prompt + bloc
   UI « Sources »). **NON TESTÉ EN CI ICI** au-delà de `test-rag.R`
-  chargé via `load_all` —
-  [`devtools::check()`](https://devtools.r-lib.org/reference/check.html)
-  complet lancé en parallèle, à confirmer.
+  chargé via `load_all` — `devtools::check()` complet lancé en
+  parallèle, à confirmer.
 
 - **2026-05-28** — **Chantier « backend monitoring local » CLOS sur les
   deux repos** (Bug \#2 : verrou de fichier
@@ -3136,13 +3127,12 @@ changement cœur `nemeton`.
   multiples OK / doublon rejeté), erreur read_only fichier absent,
   coexistence reader RO + writer RW en WAL. **NON TESTÉ EN CI ICI** : la
   session de dev cœur n’avait pas R installé — la sonde RSQLite et
-  [`devtools::test()`](https://devtools.r-lib.org/reference/test.html)
-  doivent être rejoués sur une machine avec R avant merge (risque
-  résiduel sur le binding `$n` et le round-trip des dates SQLite, à
-  valider). **Côté `nemetonshiny`** : émettre `sqlite:///` au lieu de
-  `duckdb:///` quand `NEMETON_DB_LOCAL` ; ce changement rend caduc le
-  garde-fou « Option D ». PR \#31 mergée (cf. entrée de synthèse
-  2026-05-28 « backend monitoring local CLOS »).
+  `devtools::test()` doivent être rejoués sur une machine avec R avant
+  merge (risque résiduel sur le binding `$n` et le round-trip des dates
+  SQLite, à valider). **Côté `nemetonshiny`** : émettre `sqlite:///` au
+  lieu de `duckdb:///` quand `NEMETON_DB_LOCAL` ; ce changement rend
+  caduc le garde-fou « Option D ». PR \#31 mergée (cf. entrée de
+  synthèse 2026-05-28 « backend monitoring local CLOS »).
 
 - **2026-05-28** — Release **v0.49.2** (fix — monitoring DuckDB local
   utilisable sous Windows). Symptôme remonté en prod (machine Windows,
@@ -3876,18 +3866,17 @@ changement cœur `nemeton`.
 
 - **2026-05-22** — Release **v0.43.1** (fix — nettoyage de la dette
   `R CMD check`). Release de maintenance, aucun changement fonctionnel.
-  Le
-  [`devtools::check()`](https://devtools.r-lib.org/reference/check.html)
-  accumulait 1 ERROR, 5 WARNINGS, 5 NOTES. **WARNINGS/NOTES traités**
-  : (1) deux `.Rd` corrompus (`ingest_s2_raw_bands_to_cache`,
-  `ingest_sentinel2_timeseries`) — artefacts périmés édités à la main,
-  accolades déséquilibrées par un `%` non échappé — régénérés proprement
-  depuis roxygen, `@param max_cloud` reformulé « percent » ; (2)
-  caractères non-ASCII dans des littéraux de chaîne de 5 fichiers
-  (`fordead_outputs.R`, `fordead_validity.R`, `health_validation.R`,
-  `qgis_export.R`, `sampling_plan.R`) remplacés par des échappements
-  `\uxxxx` (comportement runtime identique) ; (3) arguments non
-  documentés — `@param` ajoutés pour
+  Le `devtools::check()` accumulait 1 ERROR, 5 WARNINGS, 5 NOTES.
+  **WARNINGS/NOTES traités** : (1) deux `.Rd` corrompus
+  (`ingest_s2_raw_bands_to_cache`, `ingest_sentinel2_timeseries`) —
+  artefacts périmés édités à la main, accolades déséquilibrées par un
+  `%` non échappé — régénérés proprement depuis roxygen,
+  `@param max_cloud` reformulé « percent » ; (2) caractères non-ASCII
+  dans des littéraux de chaîne de 5 fichiers (`fordead_outputs.R`,
+  `fordead_validity.R`, `health_validation.R`, `qgis_export.R`,
+  `sampling_plan.R`) remplacés par des échappements `\uxxxx`
+  (comportement runtime identique) ; (3) arguments non documentés —
+  `@param` ajoutés pour
   `indicateur_e1_bois_energie`/`p1_volume`/`p3_qualite_bois` et la
   famille `stac_search_s2_*` ; (4) `charru_bai_drift` `\details` vide +
   `diagnose_s2_cache` accolades — corrigés ; (5) `setNames` qualifié
@@ -3975,10 +3964,9 @@ changement cœur `nemeton`.
   `run_meta.json` round-trip, abort si `fit/model.tif` manquant) ;
   `test-fordead-pipeline.R` 69 ✔ (`model_dir` câblé dans le résultat +
   AC.14.5 best-effort : échec de bundle → `warn`, run
-  `status = "success"`).
-  [`devtools::check()`](https://devtools.r-lib.org/reference/check.html)
-  sans *nouveau* ERROR/WARNING/NOTE (l’ERROR `test-sentinel2.R:135` et
-  les NOTES `setNames`/Rd/CITATION sont préexistants, hors chantier). L2
+  `status = "success"`). `devtools::check()` sans *nouveau*
+  ERROR/WARNING/NOTE (l’ERROR `test-sentinel2.R:135` et les NOTES
+  `setNames`/Rd/CITATION sont préexistants, hors chantier). L2
   ([`read_fordead_pixel_series()`](https://pobsteta.github.io/nemeton/reference/read_fordead_pixel_series.md))
   suit en v0.43.0.
 
@@ -5704,15 +5692,13 @@ changement cœur `nemeton`.
   main et taggée. Tests **non rejoués localement** (env R cassé : terra
   absent en R 4.6, rlang ABI mismatch en R 4.5) — syntaxe parsée via
   `Rscript -e 'parse(...)'`, validation à exécuter côté utilisateur via
-  [`devtools::test()`](https://devtools.r-lib.org/reference/test.html).
-  Idem
-  [`devtools::document()`](https://devtools.r-lib.org/reference/document.html)
-  à exécuter pour régénérer les 4 `man/*.Rd` (le NAMESPACE est édité
-  manuellement et coupled au @export roxygen donc les deux
-  convergeront). T7 bench skippé (nécessite runtime). Cette spec ouvre
-  le 2e fil de l’extension UI sanitaire après v0.21.11 (`read_obs_pixel`
-  per-plot) — désormais l’app a les deux granularités : per-plot via DB
-  (`read_obs_pixel`), per-pixel via cache (`extract_pixel_timeseries`).
+  `devtools::test()`. Idem `devtools::document()` à exécuter pour
+  régénérer les 4 `man/*.Rd` (le NAMESPACE est édité manuellement et
+  coupled au @export roxygen donc les deux convergeront). T7 bench
+  skippé (nécessite runtime). Cette spec ouvre le 2e fil de l’extension
+  UI sanitaire après v0.21.11 (`read_obs_pixel` per-plot) — désormais
+  l’app a les deux granularités : per-plot via DB (`read_obs_pixel`),
+  per-pixel via cache (`extract_pixel_timeseries`).
 
 - **2026-05-15** — Release **v0.21.12**. Bug démasqué pendant la
   validation in-prod de v0.21.10 (monitor live sur `ingest_console.log`)
@@ -6041,8 +6027,7 @@ changement cœur `nemeton`.
 - **2026-04-30** — Hardening DB intégration : activation de
   `NEMETON_DB_URL_TEST` dans `.Renviron` (gitignore) → 19 tests
   TimescaleDB précédemment skippés se rejouent désormais à chaque
-  [`devtools::test()`](https://devtools.r-lib.org/reference/test.html).
-  Trois échecs réels surfacés sur
+  `devtools::test()`. Trois échecs réels surfacés sur
   [`list_alerts()`](https://pobsteta.github.io/nemeton/reference/list_alerts.md)
   (`Parameter 2 does not have length 1` côté RPostgres) parce que le
   helper interne `add_param()` poussait des vecteurs R bruts au binding
