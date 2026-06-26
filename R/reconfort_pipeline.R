@@ -161,11 +161,19 @@
 #' @param cache_dir Project cache root. The per-run working directory is
 #'   created under `<cache_dir>/reconfort/` (same caller-supplied
 #'   convention as FORDEAD's `cache_dir`).
-#' @param s2_year Integer last year of the two-year S2 series. Default
-#'   the current year.
-#' @param date_from,date_to Download window (`"YYYY-MM-DD"`). Default a
-#'   two-year window ending with `s2_year` (the IOTA2 cfg further clips
-#'   to the model's seasonal dates).
+#' @param s2_year Integer, the **last** year of the two-year Sentinel-2
+#'   series — the single temporal control of a run (the app exposes only
+#'   this, as a year picker). Default the current year. The download
+#'   window, the analysis window and the output names all derive from it;
+#'   see *Temporal window* below.
+#' @param date_from,date_to Sentinel-2 **download** window
+#'   (`"YYYY-MM-DD"`). `NULL` (default) derives a two-calendar-year window
+#'   from `s2_year`: `date_from = (s2_year-1)-01-01`,
+#'   `date_to = s2_year-12-31`. This only bounds what is fetched from
+#'   Theia; IOTA2 then re-clips to the model's seasonal *analysis* window
+#'   (`S2_start`/`S2_end`), so a custom download window cannot widen the
+#'   analysis beyond what the pre-trained model expects. See
+#'   *Temporal window*.
 #' @param v_model RF model version (see [RECONFORT_MODELS]). Default
 #'   `"v3"` (oak, 2-year series).
 #' @param binary_mask Broadleaf mask control. `NULL` (default) fetches
@@ -206,6 +214,38 @@
 #' @param progress_callback Optional function called with a named list
 #'   at each phase (`current = "reconfort:phase"` / `"reconfort:..."`),
 #'   for wiring into an app progress bar.
+#'
+#' @section Temporal window (`s2_year` -> analysis dates):
+#' RECONFORT does not diff two dates: it classifies a pixel's ~2-year
+#' index trajectory with a pre-trained model. One run is driven entirely
+#' by `s2_year` (the last year of the series). The dates flow as:
+#'
+#' \enumerate{
+#'   \item \strong{Download window} (this function): from `s2_year`,
+#'     `date_from = (s2_year-1)-01-01` and `date_to = s2_year-12-31`
+#'     unless overridden -- two calendar years fetched from Theia.
+#'   \item \strong{Analysis window} (IOTA2 cfg, derived from `s2_year` +
+#'     `v_model`, \emph{not} from `date_from`/`date_to`):
+#'     `S2_start = (s2_year-1)<sdate>`, `S2_end = s2_year<edate>` with
+#'     `sdate`/`edate` fixed by the model --
+#'     \code{v3}/\code{v3_chestnut}/\code{v3_pine}: `0101` -> `1029`
+#'     (Jan of `s2_year-1` to 29 Oct of `s2_year`, ~22 months, the
+#'     "2y_nov" calibration); \code{v3_early_may}: `0101` -> `0531`
+#'     (~1.5 year).
+#'   \item \strong{Features}: IOTA2 gap-fills the cloud-masked S2
+#'     acquisitions of the analysis window onto a regular date grid, then
+#'     computes CRswir + CRre per date. The per-pixel feature vector is
+#'     the full two-year trajectory of both indices.
+#'   \item \strong{Classification}: the SharkRF `v_model` labels each
+#'     pixel `{1 healthy, 2 declining, 3 severely declining}` (2 classes
+#'     for pine) plus a continuous score.
+#' }
+#'
+#' Because the analysis window is model-bound, a custom
+#' `date_from`/`date_to` only changes \emph{what is downloaded}, never the
+#' window the model sees. To cover several years, call once per `s2_year`
+#' (each run = a 2-year window ending end-October of its `s2_year`); the
+#' app stacks the resulting yearly maps.
 #'
 #' @return Invisibly, a list: `status`, `zone_id`, `tiles`, `s2_year`,
 #'   `v_model`, `species`, `workdir`, `rasters` (the collected output
