@@ -166,15 +166,27 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 # Run a vendored RECONFORT python script in the conda env, from the
 # glue dir so its `from utils.utils import ...` resolves. Returns the
 # exit status (0 = success). Separated out so tests can mock it.
+#
+# `PYTHONWARNINGS` silences two floods of benign warnings from the
+# vendored downloader's deps that would otherwise drown real messages:
+#   - pygeodes' per-item "file with same content already exists, skipping
+#     download" `UserWarning` (one per cached scene — up to 140/tile);
+#   - urllib3's one-shot `InsecureRequestWarning` (pygeodes calls the CNES
+#     GEODES portal with TLS verification disabled — upstream's choice).
+# Only these two *categories* are filtered; Python errors, tracebacks and
+# the scripts' own stdout are untouched, so genuine failures still surface.
 .reconfort_run_py <- function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
-  withr::with_dir(workdir, {
-    suppressWarnings(system2(
-      conda_bin,
-      args = c("run", "-n", env, "python", basename(script),
-               "-config_file", shQuote(cfg)),
-      stdout = if (quiet) FALSE else "", stderr = if (quiet) FALSE else ""
-    ))
-  })
+  withr::with_envvar(
+    c(PYTHONWARNINGS = "ignore::UserWarning,ignore::urllib3.exceptions.InsecureRequestWarning"),
+    withr::with_dir(workdir, {
+      suppressWarnings(system2(
+        conda_bin,
+        args = c("run", "-n", env, "python", basename(script),
+                 "-config_file", shQuote(cfg)),
+        stdout = if (quiet) FALSE else "", stderr = if (quiet) FALSE else ""
+      ))
+    })
+  )
 }
 
 

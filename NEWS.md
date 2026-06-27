@@ -1,3 +1,20 @@
+# nemeton 0.94.3 (2026-06-27)
+
+### Fixed — RECONFORT : console d'ingestion S2 lisible
+
+Le diagnostic RECONFORT noyait ses messages utiles sous des centaines de
+warnings bénins émis par les dépendances du téléchargeur vendoré
+(`pygeodes` / `urllib3`) : un `UserWarning` « *file with same content already
+exists, skipping download* » par scène en cache (jusqu'à 140 par tuile) et le
+`InsecureRequestWarning` d'urllib3 (pygeodes appelle le portail GEODES du CNES
+avec la vérification TLS désactivée, choix de l'amont).
+
+`.reconfort_run_py()` pose désormais `PYTHONWARNINGS` autour du sous-processus
+conda pour filtrer **uniquement ces deux catégories** de warnings. Les erreurs
+Python, tracebacks et la sortie standard des scripts restent intacts, de même
+que les garde-fous applicatifs (abort si aucune archive téléchargée / aucune
+scène extraite). Le script `run_geodes_download.py` reste vendoré verbatim.
+
 # nemeton 0.94.2 (2026-06-24)
 
 ### Added — RECONFORT AOI-scoped : la chaîne tourne en minutes (spec 021)

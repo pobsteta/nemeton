@@ -124,6 +124,17 @@ A1 (runs antérieurs → reader rend NULL → fallback gracieux app).
 > réutilisée + validité mémoïsée, app v0.90.4), carte de base stable
 > (clic-pixel rétabli), **aides « i » par couche**, **légende date en année**
 > (app v0.91.1/v0.91.2).
+>
+> *2026-06-27 (fix hors-chantier — v0.94.3)* : **console d'ingestion S2
+> RECONFORT lisible**. Le diagnostic noyait ses messages utiles sous des
+> centaines de warnings bénins du téléchargeur vendoré (`pygeodes`/`urllib3`) :
+> un `UserWarning` « file with same content already exists, skipping download »
+> par scène en cache (jusqu'à 140/tuile) + l'`InsecureRequestWarning` d'urllib3
+> (TLS off vers GEODES, choix amont). `.reconfort_run_py()`
+> (`R/reconfort_ingest.R`) pose désormais `PYTHONWARNINGS` autour du
+> sous-processus conda pour filtrer **uniquement ces deux catégories** ;
+> erreurs/tracebacks/stdout et garde-fous (abort si 0 archive / 0 scène)
+> intacts. `run_geodes_download.py` reste vendoré verbatim. 34 tests ingest ✔.
 
 ---
 
