@@ -1050,6 +1050,13 @@ fast-trend 49, ndre 20, ndmi 20, prewarm 31.
 > sur `.mosaic_per_tile()` (résolutions 20 / 20,05) reste en place ; ce
 > nouveau test couvre le chemin réel, pas seulement le helper. Aucun
 > changement de code fonctionnel → pas de bump (cycle dev `0.94.2.9000`).
+> PR #121 mergée.
+>
+> *2026-06-27 (validation terrain — chantier CLOS)* : confirmation côté app
+> (`nemetonshiny`) que les **alertes NDRE Tendance s'affichent bien sur
+> Mouthe**. Le fix v0.85.1 est validé de bout en bout (cœur mosaïque
+> commune + test d'intégration ; app affichage). **Bug NDRE Tendance
+> multi-tuiles MGRS : clos**, plus rien en suspens.
 
 ### 2026-06-15 — FAST : wrapper étendu au `trend` + red-edge systématique (spec 023, cœur, v0.85.0)
 
