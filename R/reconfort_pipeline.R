@@ -181,12 +181,14 @@
 #'   `FALSE` disables masking (continuous score from the raw probability
 #'   map only). When `aoi_crop = TRUE` and `binary_mask = NULL`, the mask is
 #'   cut from the national OSO (`oso_national`) for the AOI instead.
-#' @param aoi_crop Logical. When `TRUE` (default) the extracted Sentinel-2
-#'   scenes are clipped + reprojected to the zone AOI (+ buffer) in the
-#'   output projection before IOTA2 (spec 021). This turns a multi-hour
-#'   full-tile run into minutes, fixes IOTA2's reference-grid handling, and
-#'   makes the broadleaf mask + ground truth AOI-local. All operations are
-#'   per-pixel, so clipping does not change the result for the kept pixels.
+#' @param aoi_crop Logical. When `TRUE` (default) the Sentinel-2 scenes are
+#'   streamed and clipped + reprojected to the zone AOI (+ buffer) in the
+#'   output projection during ingestion (spec 021) — each archive is
+#'   downloaded, extracted, cropped and deleted in turn. This turns a
+#'   multi-hour full-tile run into minutes, fixes IOTA2's reference-grid
+#'   handling, makes the broadleaf mask + ground truth AOI-local, and caps
+#'   peak disk near a single archive. All operations are per-pixel, so
+#'   clipping does not change the result for the kept pixels.
 #' @param oso_national Character or `NULL`. National OSO land-cover raster
 #'   used to cut the AOI broadleaf mask (default
 #'   `<global cache>/oso/oso.tif`, overridable via
@@ -361,22 +363,25 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     }
 
     # PHASE 5 — ingest S2 ------------------------------------------
+    # When cropping (AOI available), the ingestion streams each archive and
+    # clips it to the AOI window in-flight — download+extract+crop+delete one
+    # scene at a time. This turns a multi-hour full-tile run into minutes,
+    # fixes IOTA2's reference-grid bug AND caps peak disk near a single
+    # archive (~GB) instead of whole-tile archives + extracted (~460 GB).
     begin("ingest")
     s2_dl_root <- file.path(workdir, "s2_download")
     if (skip_ingest) {
+      # Streaming ingest writes the AOI-cropped scenes straight into
+      # extracted/<tile>/, so a resumed run reads them as-is.
       extracted <- file.path(s2_dl_root, "extracted", tiles)
     } else {
-      ing <- reconfort_ingest_s2(tiles = tiles, date_from = date_from,
+      ing <- reconfort_ingest_s2(aoi = if (do_crop) aoi else NULL,
+                                 tiles = tiles, date_from = date_from,
                                  date_to = date_to, s2_root = s2_dl_root,
                                  geodes_config = geodes_config, quiet = quiet)
       extracted <- ing$extracted
     }
-    # AOI clip + reprojection to the output CRS — turns a multi-hour
-    # full-tile run into minutes and fixes IOTA2's reference-grid bug.
     if (do_crop) {
-      extracted <- .reconfort_crop_scenes_to_aoi(
-        extracted, aoi, out_root = file.path(s2_dl_root, "extracted_aoi"),
-        quiet = quiet)
       # cropped raster is tiny → one IOTA2 block (avoids the per-chunk
       # mask-vs-fulltile BandMath dimension mismatch).
       if (isTRUE(number_of_chunks == 200L)) number_of_chunks <- 1L

@@ -26,11 +26,13 @@ mock_pipeline <- function(calls_env, write_score = TRUE, exit = 0L) {
       d <- withr::local_tempdir(.local_envir = calls_env$env)
       p <- file.path(d, RECONFORT_OSO_MASK$file); writeLines("mask", p); p
     },
-    reconfort_ingest_s2 = function(tiles, date_from, date_to, s2_root,
-                                   geodes_config = NULL, quiet = FALSE) {
+    reconfort_ingest_s2 = function(aoi = NULL, tiles = NULL, date_from, date_to,
+                                   s2_root, geodes_config = NULL, quiet = FALSE,
+                                   ...) {
       ex <- file.path(s2_root, "extracted", tiles)
       for (e in ex) dir.create(e, recursive = TRUE, showWarnings = FALSE)
       calls_env$ingest <- TRUE
+      calls_env$ingest_aoi <- aoi  # streaming mode passes the AOI
       list(tiles = tiles, s2_root = s2_root, extracted = ex)
     },
     .reconfort_run_py = function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {

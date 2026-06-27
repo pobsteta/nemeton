@@ -49,9 +49,31 @@ streaming dans `reconfort_ingest_s2()` · K5 câblage `reconfort_pipeline.R`
 (retrait du `do_crop` séparé) · K6 tests + release **v0.95.0** (bump mineur :
 changement de contrat).
 
-**Prochaine étape** : validation du cadrage par Pascal, puis impl K1→K6.
+**Journal** — *2026-06-27 (impl K1→K6 livrée sur branche)* :
+- **K1/K2** : deux scripts python **nemeton-authored** (pas vendorés) —
+  `list_s2_items.py` (1 search GEODES → 1 STAC JSON par item + `manifest.json`)
+  et `download_s2_item.py` (`Item.from_dict` → `download_item_archive(outfile=)`,
+  1 archive). Round-trip `to_dict`/`from_dict` validé sur GEODES réel (item
+  T31UFQ, href https + datetime préservés) → **R1 levé** (1 search, pas 140).
+  Readers R `.reconfort_list_s2_items` / `.reconfort_download_s2_item`.
+- **K3** : `.reconfort_crop_scene_to_aoi(scene, out, win, crs)` factorisé hors
+  de `.reconfort_crop_scenes_to_aoi` ; **skip SRE** (équiv. suppression amont).
+- **K4** : `.reconfort_ingest_tile_streaming()` — LIST → par item (skip si
+  marqueur `ingested/<tile>/<id>.done`) DL→`utils::unzip`→crop AOI→delete
+  (zip+scratch). `reconfort_ingest_s2()` gagne `aoi`/`target_crs`/`buffer_m` ;
+  `aoi = NULL` → comportement v0.94.x intact. Robustesse R3 : download/zip
+  KO logué + skip, abort seulement si 0 scène cropée.
+- **K5** : `reconfort_pipeline.R` PHASE 5 passe `aoi` à l'ingest, `do_crop`
+  séparé retiré (`extracted_aoi/` disparaît, l'ingest écrit le crop dans
+  `extracted/<tile>/`).
+- **K6** : +14 tests ingest (55 ✔ : crop per-scene, streaming
+  DL→extract→crop→delete + idempotence, manifeste vide → abort) ; pipeline 22 ✔
+  (mock ingest étendu `aoi`) ; python 14 ✔. `.Rd` édités à la main.
 
-**Statut** : ⬜ cadré, en attente de validation.
+**Statut** : 🟨 **implémenté sur branche `feat/reconfort-crop-ingestion`**,
+DESCRIPTION en **cycle dev `0.94.3.9000`** (pas de release auto). **Reste** :
+validation Pascal sur run réel (Mouthe / T31UFQ, vérifier pic disque ~GB +
+carte identique), puis bump stable **v0.95.0** (NEWS/CITATION) et merge.
 
 ---
 
