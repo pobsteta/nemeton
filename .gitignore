@@ -63,6 +63,9 @@ __pycache__/
 *.pyc
 data-raw/references/biljou/ocr/
 
+# RECONFORT AOI test artifact (local zone of interest, not package data)
+data/area_interest.geojson
+
 # testthat failure artifacts (snapshots-on-failure)
 tests/testthat/_problems/
 tests/testthat/testthat-problems.rds

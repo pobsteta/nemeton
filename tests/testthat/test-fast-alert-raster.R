@@ -471,6 +471,88 @@ test_that(".mosaic_per_tile snaps mismatched-resolution tiles before mosaic", {
 })
 
 
+test_that("read_fast_alert_raster: NDRE trend over two MGRS tiles mosaics (no resolution mismatch)", {
+  skip_if_terra_write_broken()
+  skip_if_not_installed("terra")
+  # spec 023 / v0.85.1 regression, end-to-end. NDRE is computed from B05 +
+  # B8A, both NATIVE 20 m. When the AOI straddles two MGRS tiles (Mouthe on
+  # T31TFM + T31TGM), the trend raster is fitted per-tile, each projected to
+  # EPSG:2154 independently, then mosaicked. Pre-fix, terra derived a
+  # marginally different output resolution per tile and `terra::mosaic()`
+  # aborted with "[mosaic] resolution does not match" (10 m NDVI/NDMI rounded
+  # to the same resolution by luck and never reproduced it). This drives the
+  # WHOLE compute_fast_alert_mask -> read_fast_alert_raster -> .fast_raster_trend
+  # -> .mosaic_per_tile path on a two-tile NDRE cache and pins that it
+  # returns a single mosaicked raster instead of aborting. The unit test
+  # above covers .mosaic_per_tile() in isolation; this covers the real path.
+  cache <- withr::local_tempdir()
+
+  # NDRE = (B8A - B05) / (B8A + B05). Hold B05 = 0.2; decline B8A year over
+  # year so NDRE strictly declines (Theil-Sen slope < 0, Mann-Kendall
+  # significant) -> the trend raster flags a real decline magnitude. Both
+  # bands native 20 m, EPSG:32631. The two tiles get DIFFERENT footprints
+  # (FM narrow strip ⊂ GM wide) — the per-tile independent projection to
+  # 2154 is exactly what used to drift the resolutions apart.
+  write_ndre_scene <- function(tile, date, b8a, xmax) {
+    ymd <- format(date, "%Y%m%d")
+    sid <- sprintf("S2A_MSIL2A_%sT103041_R108_%s_%sT180000", ymd, tile, ymd)
+    d <- file.path(cache, .s2_safe_scene_id(sid))
+    dir.create(d, recursive = TRUE, showWarnings = FALSE)
+    mk <- function(val) terra::rast(xmin = 0, xmax = xmax, ymin = 0, ymax = 200,
+                                    resolution = 20, crs = "EPSG:32631",
+                                    vals = val)
+    terra::writeRaster(mk(0.2), file.path(d, "B05.tif"),
+                       filetype = "GTiff", overwrite = TRUE)
+    terra::writeRaster(mk(b8a), file.path(d, "B8A.tif"),
+                       filetype = "GTiff", overwrite = TRUE)
+  }
+
+  yrs         <- 2019:2023                      # 5 years (>= min_years = 4)
+  b8a_by_year <- c(0.9, 0.7, 0.5, 0.3, 0.1)     # strict NDRE decline
+  for (k in seq_along(yrs)) {
+    for (mo in c("07-15", "08-15")) {           # 2 summer obs / year (months 6:9)
+      dt <- as.Date(sprintf("%d-%s", yrs[k], mo))
+      write_ndre_scene("T31TFM", dt, b8a_by_year[k], xmax = 200)   # narrow
+      write_ndre_scene("T31TGM", dt, b8a_by_year[k], xmax = 400)   # wide, FM ⊂ GM
+    }
+  }
+
+  # apply_zone_mask = FALSE so `con` is never touched (cache-only path).
+  con <- structure(list(), class = c("FakeConn", "DBIConnection"))
+  r <- suppressMessages(read_fast_alert_raster(
+    con, zone_id = 1L, index = "NDRE",
+    date_from = "2017-01-01", date_to = "2024-12-31",
+    mode = "trend", months = 6:9, min_years = 4L, min_obs_per_year = 2L,
+    alpha = 0.05, cache_dir = cache, apply_zone_mask = FALSE))
+
+  # The whole point: a single mosaicked raster, not an abort.
+  expect_s4_class(r, "SpatRaster")
+  expect_equal(sf::st_crs(r)$epsg, 2154L)
+  expect_equal(terra::nlyr(r), 1L)
+
+  # Coverage spans the WIDE footprint (union of both tiles), not just the
+  # narrow strip — the mosaic unioned the two tiles.
+  to_2154_width <- function(xmax) {
+    p <- terra::project(
+      terra::rast(xmin = 0, xmax = xmax, ymin = 0, ymax = 200,
+                  crs = "EPSG:32631"),
+      "EPSG:2154")
+    terra::xmax(terra::ext(p)) - terra::xmin(terra::ext(p))
+  }
+  w_narrow <- to_2154_width(200)
+  w_mosaic <- terra::xmax(terra::ext(r)) - terra::xmin(terra::ext(r))
+  expect_gt(w_mosaic, w_narrow * 1.5)
+
+  # The trend ran through the mosaic: decline magnitude is non-negative and
+  # at least one pixel flags the (uniform, significant) decline.
+  vals <- terra::values(r)[, 1]
+  vals <- vals[!is.na(vals)]
+  expect_gt(length(vals), 0L)
+  expect_true(all(vals >= 0))
+  expect_gt(max(vals), 0)
+})
+
+
 # ---- integration: smoke test against the real villards DB ------------
 
 test_that("end-to-end smoke test against villards (count mode)", {
