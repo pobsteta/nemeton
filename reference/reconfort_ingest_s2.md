@@ -1,10 +1,21 @@
 # Acquire Sentinel-2 scenes for an AOI into the IOTA² layout
 
-IOTA²-native ingestion: for each tile covering \`aoi\` (or each tile in
-\`tiles\`), downloads the MUSCATE L2A archives from GEODES via the
-vendored \`pygeodes\` driver, then unzips them into
-\`\<s2_root\>/extracted/\<tile\>/\`. Requires the conda environment
-(L2b.1) and a GEODES account; heavy and opt-in (not run in CI).
+IOTA²-native ingestion. Two modes:
+
+- **AOI streaming** (when \`aoi\` is supplied — the production path):
+  one GEODES search per tile, then each archive is downloaded,
+  extracted, clipped + reprojected to the AOI window and deleted one at
+  a time. Peak disk stays near a single archive (~a few GB) instead of
+  whole-tile archives + whole-tile extracted (~460 GB for one tile over
+  two years). The output \`\<s2_root\>/extracted/\<tile\>/\` is already
+  AOI-cropped in \`target_crs\`.
+
+- **Full tile** (when \`aoi\` is \`NULL\`): downloads the MUSCATE L2A
+  archives for each \`tiles\` entry and unzips the whole tile into
+  \`\<s2_root\>/extracted/\<tile\>/\` (the v0.94.x behaviour).
+
+Requires the conda environment (L2b.1) and a GEODES account; heavy and
+opt-in (not run in CI).
 
 ## Usage
 
@@ -17,6 +28,8 @@ reconfort_ingest_s2(
   s2_root,
   geodes_config = NULL,
   s2_collection = "THEIA_REFLECTANCE_SENTINEL2_L2A",
+  target_crs = 2154,
+  buffer_m = .RECONFORT_AOI_BUFFER_M,
   keep_zips = FALSE,
   quiet = FALSE
 )
@@ -26,7 +39,9 @@ reconfort_ingest_s2(
 
 - aoi:
 
-  An \`sf\`/\`sfc\` AOI. Ignored when \`tiles\` is given.
+  An \`sf\`/\`sfc\` AOI. When supplied, scenes are streamed and clipped
+  to the AOI window (production path); also used to resolve \`tiles\`
+  when those are \`NULL\`. When \`NULL\`, the full tile is ingested.
 
 - tiles:
 
@@ -53,14 +68,22 @@ reconfort_ingest_s2(
   bare \`MUSCATE\_\*\` name from the upstream RECONFORT example is not a
   valid GEODES id and 400s.)
 
+- target_crs:
+
+  Integer EPSG of the AOI-streaming output projection (default 2154).
+  Ignored in full-tile mode.
+
+- buffer_m:
+
+  Numeric buffer (m) around the AOI bbox for the clip window (default
+  3000). Ignored in full-tile mode.
+
 - keep_zips:
 
-  Keep the downloaded \`.zip\` archives after extraction. Default
-  \`FALSE\`: each archive is deleted as soon as it is extracted, so peak
-  disk usage stays near the size of the extracted scenes instead of
-  \*archives + extracted\* (a full tile over two years is ~200 GB of
-  zips). Set \`TRUE\` to retain the archives (e.g. to re-run the unzip
-  without re-downloading).
+  Full-tile mode only: keep the downloaded \`.zip\` archives after
+  extraction. Default \`FALSE\` (each archive is deleted as soon as it
+  is extracted, capping peak disk). In AOI-streaming mode the archives
+  are always streamed and removed.
 
 - quiet:
 

@@ -23,7 +23,7 @@ continuous-score rasters (EPSG:2154) plus a `run_meta.json`."><meta property="og
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.94.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.94.3.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -150,12 +150,14 @@ cut from the national OSO (`oso_national`) for the AOI instead.</p></dd>
 
 
 <dt id="arg-aoi-crop">aoi_crop<a class="anchor" aria-label="anchor" href="#arg-aoi-crop"></a></dt>
-<dd><p>Logical. When `TRUE` (default) the extracted Sentinel-2
-scenes are clipped + reprojected to the zone AOI (+ buffer) in the
-output projection before IOTA2 (spec 021): a multi-hour full-tile run
-becomes minutes, IOTA2's reference-grid handling is fixed, and the
-broadleaf mask + ground truth are AOI-local. All operations are
-per-pixel, so clipping does not change the result for the kept pixels.</p></dd>
+<dd><p>Logical. When `TRUE` (default) the Sentinel-2 scenes are
+streamed and clipped + reprojected to the zone AOI (+ buffer) in the
+output projection during ingestion (spec 021) — each archive is
+downloaded, extracted, cropped and deleted in turn: a multi-hour
+full-tile run becomes minutes, IOTA2's reference-grid handling is fixed,
+the broadleaf mask + ground truth are AOI-local, and peak disk stays
+near a single archive. All operations are per-pixel, so clipping does
+not change the result for the kept pixels.</p></dd>
 
 
 <dt id="arg-oso-national">oso_national<a class="anchor" aria-label="anchor" href="#arg-oso-national"></a></dt>

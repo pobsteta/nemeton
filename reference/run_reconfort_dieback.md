@@ -94,12 +94,14 @@ run_reconfort_dieback(
 
 - aoi_crop:
 
-  Logical. When \`TRUE\` (default) the extracted Sentinel-2 scenes are
-  clipped + reprojected to the zone AOI (+ buffer) in the output
-  projection before IOTA2 (spec 021): a multi-hour full-tile run becomes
-  minutes, IOTA2's reference-grid handling is fixed, and the broadleaf
-  mask + ground truth are AOI-local. All operations are per-pixel, so
-  clipping does not change the result for the kept pixels.
+  Logical. When \`TRUE\` (default) the Sentinel-2 scenes are streamed
+  and clipped + reprojected to the zone AOI (+ buffer) in the output
+  projection during ingestion (spec 021) — each archive is downloaded,
+  extracted, cropped and deleted in turn: a multi-hour full-tile run
+  becomes minutes, IOTA2's reference-grid handling is fixed, the
+  broadleaf mask + ground truth are AOI-local, and peak disk stays near
+  a single archive. All operations are per-pixel, so clipping does not
+  change the result for the kept pixels.
 
 - oso_national:
 
