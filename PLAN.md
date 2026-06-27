@@ -1396,7 +1396,19 @@ rejette (`expect_error`) → helper rend une mosaïque à résolution unique
 durci le skip du smoke-test villards (DB joignable mais schéma absent →
 **skip** au lieu d’**error**). Tests verts (terra local) :
 fast-alert-raster 56 (+1 skip), fast-trend 49, ndre 20, ndmi 20, prewarm
-31.
+31. \> \> *2026-06-27 (durcissement couverture, dev cycle)* : ajout d’un
+**test \> d’intégration bout-en-bout** du chemin NDRE `trend`
+multi-tuiles dans \> `test-fast-alert-raster.R` — fixture cache 2 tuiles
+(T31TFM ⊂ T31TGM, \> bandes B05+B8A à 20 m, 5 ans × 2 obs estivales,
+déclin NDRE strict). Il \> exerce
+[`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md)
+→ `.fast_raster_trend()` → \> `.mosaic_per_tile()` et vérifie qu’on
+obtient une mosaïque unique \> EPSG:2154 (pas d’abort « resolution does
+not match »), couvrant l’union \> des deux tuiles, avec une magnitude de
+déclin non nulle. Le test unitaire \> sur `.mosaic_per_tile()`
+(résolutions 20 / 20,05) reste en place ; ce \> nouveau test couvre le
+chemin réel, pas seulement le helper. Aucun \> changement de code
+fonctionnel → pas de bump (cycle dev `0.94.2.9000`).
 
 ### 2026-06-15 — FAST : wrapper étendu au `trend` + red-edge systématique (spec 023, cœur, v0.85.0)
 
