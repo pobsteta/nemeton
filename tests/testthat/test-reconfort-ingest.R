@@ -208,3 +208,78 @@ test_that("reconfort_ingest_s2 needs aoi or tiles", {
     "aoi.*tiles|tiles.*aoi"
   )
 })
+
+test_that(".reconfort_py_literal serialises R logicals to Python booleans", {
+  expect_equal(.reconfort_py_literal(TRUE), "True")
+  expect_equal(.reconfort_py_literal(FALSE), "False")
+  # And strings/numbers/lists still behave.
+  expect_equal(.reconfort_py_literal("a"), "'a'")
+  expect_equal(.reconfort_py_literal(c("a", "b")), "['a', 'b']")
+})
+
+test_that("reconfort_ingest_s2 writes delete_zip_after_extract from keep_zips", {
+  seen_cfg <- NULL
+  mocks <- list(
+    .ensure_reconfort_python = function(...) "test-env",
+    .reconfort_conda_binary  = function() "/opt/conda/bin/conda",
+    .reconfort_geodes_config = function(path = NULL) "/tmp/geodes.json",
+    .reconfort_account_with_download_dir = function(account, download_dir) {
+      file.path(download_dir, ".pygeodes-config.json")
+    },
+    .reconfort_run_py = function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
+      kv <- readLines(cfg)
+      if (basename(script) == "run_geodes_download.py") {
+        zp <- sub("^zip_path='?([^']*)'?$", "\\1", grep("^zip_path=", kv, value = TRUE))
+        file.create(file.path(zp, "SENTINEL2C_test.zip"))
+      } else {
+        seen_cfg <<- kv
+        od <- sub("^out_dir='?([^']*)'?$", "\\1", grep("^out_dir=", kv, value = TRUE))
+        dir.create(file.path(od, "scene"), recursive = TRUE, showWarnings = FALSE)
+      }
+      0L
+    }
+  )
+
+  do.call(testthat::local_mocked_bindings, mocks)
+  reconfort_ingest_s2(tiles = "T31UDP", date_from = "2021-01-01",
+                      date_to = "2022-12-31",
+                      s2_root = withr::local_tempdir(), quiet = TRUE)
+  expect_true(any(seen_cfg == "delete_zip_after_extract=True"))
+
+  seen_cfg <- NULL
+  do.call(testthat::local_mocked_bindings, mocks)
+  reconfort_ingest_s2(tiles = "T31UDP", date_from = "2021-01-01",
+                      date_to = "2022-12-31", keep_zips = TRUE,
+                      s2_root = withr::local_tempdir(), quiet = TRUE)
+  expect_true(any(seen_cfg == "delete_zip_after_extract=False"))
+})
+
+test_that("reconfort_ingest_s2 aborts before extraction when disk is too small", {
+  testthat::local_mocked_bindings(
+    .ensure_reconfort_python = function(...) "test-env",
+    .reconfort_conda_binary  = function() "/opt/conda/bin/conda",
+    .reconfort_geodes_config = function(path = NULL) "/tmp/geodes.json",
+    .reconfort_account_with_download_dir = function(account, download_dir) {
+      file.path(download_dir, ".pygeodes-config.json")
+    },
+    # Almost no free space — the guard must fire before the unzip runs.
+    .reconfort_free_bytes = function(path) 1,
+    .reconfort_run_py = function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
+      if (basename(script) == "run_geodes_download.py") {
+        kv <- readLines(cfg)
+        zp <- sub("^zip_path='?([^']*)'?$", "\\1", grep("^zip_path=", kv, value = TRUE))
+        # A non-empty archive so the guard's size estimate is > 0.
+        writeBin(raw(2048), file.path(zp, "SENTINEL2C_test.zip"))
+      } else {
+        stop("unzip must not run when the disk guard fires")
+      }
+      0L
+    }
+  )
+  expect_error(
+    reconfort_ingest_s2(tiles = "T31UDP", date_from = "2021-01-01",
+                        date_to = "2022-12-31",
+                        s2_root = withr::local_tempdir(), quiet = TRUE),
+    "free disk space|Not enough free disk"
+  )
+})

@@ -84,7 +84,10 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 # (`load_config_variable` eval()s each value). Length>1 -> Python list.
 .reconfort_py_literal <- function(x) {
   scal <- function(v) {
-    if (is.character(v)) paste0("'", gsub("'", "\\\\'", v), "'") else as.character(v)
+    if (is.character(v)) paste0("'", gsub("'", "\\\\'", v), "'")
+    # R `TRUE`/`FALSE` -> Python `True`/`False` (eval()ed upstream).
+    else if (is.logical(v)) if (isTRUE(v)) "True" else "False"
+    else as.character(v)
   }
   if (length(x) != 1L) paste0("[", paste(vapply(x, scal, ""), collapse = ", "), "]")
   else scal(x)
@@ -163,6 +166,27 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 }
 
 
+# Free bytes available on the filesystem holding `path` (POSIX `df -Pk`,
+# Available column). Returns `NA_real_` when it cannot be determined (no
+# `df`, parse failure) so callers treat the disk guard as best-effort.
+.reconfort_free_bytes <- function(path) {
+  # Walk up to the nearest existing ancestor (the leaf may not exist yet).
+  while (nzchar(path) && !file.exists(path)) {
+    parent <- dirname(path)
+    if (identical(parent, path)) break
+    path <- parent
+  }
+  out <- tryCatch(
+    system2("df", c("-Pk", shQuote(path)), stdout = TRUE, stderr = FALSE),
+    error = function(e) character(0), warning = function(w) character(0))
+  if (length(out) < 2L) return(NA_real_)
+  fields <- strsplit(trimws(out[length(out)]), "\\s+")[[1]]
+  avail_k <- suppressWarnings(as.numeric(fields[4]))  # df -P: col 4 = Available (1K)
+  if (is.na(avail_k)) return(NA_real_)
+  avail_k * 1024
+}
+
+
 # Run a vendored RECONFORT python script in the conda env, from the
 # glue dir so its `from utils.utils import ...` resolves. Returns the
 # exit status (0 = success). Separated out so tests can mock it.
@@ -210,6 +234,12 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 #'   `"THEIA_REFLECTANCE_SENTINEL2_L2A"` — the THEIA/MUSCATE Sentinel-2
 #'   surface-reflectance L2A products. (The bare `MUSCATE_*` name from the
 #'   upstream RECONFORT example is not a valid GEODES id and 400s.)
+#' @param keep_zips Keep the downloaded `.zip` archives after extraction.
+#'   Default `FALSE`: each archive is deleted as soon as it is extracted,
+#'   so peak disk usage stays near the size of the extracted scenes
+#'   instead of *archives + extracted* (a full tile over two years is
+#'   ~200 GB of zips). Set `TRUE` to retain the archives (e.g. to re-run
+#'   the unzip without re-downloading).
 #' @param quiet Suppress progress + subprocess output. Default `FALSE`.
 #'
 #' @return Invisibly, a list: `tiles`, `s2_root`, and `extracted` (the
@@ -220,6 +250,7 @@ reconfort_ingest_s2 <- function(aoi = NULL, tiles = NULL,
                                 s2_root,
                                 geodes_config = NULL,
                                 s2_collection = "THEIA_REFLECTANCE_SENTINEL2_L2A",
+                                keep_zips = FALSE,
                                 quiet = FALSE) {
   if (is.null(tiles)) {
     if (is.null(aoi)) cli::cli_abort("Provide either {.arg aoi} or {.arg tiles}.")
@@ -254,7 +285,9 @@ reconfort_ingest_s2 <- function(aoi = NULL, tiles = NULL,
       start                      = date_from,
       end                        = date_to,
       zip_path                   = zip_dir,
-      out_dir                    = out_dir
+      out_dir                    = out_dir,
+      # Drives extract-then-delete in run_process_downloaded_images.py.
+      delete_zip_after_extract   = !keep_zips
     ))
 
     if (!quiet) cli::cli_alert_info("RECONFORT: downloading S2 for tile {.val {tile}} ...")
@@ -274,6 +307,29 @@ reconfort_ingest_s2 <- function(aoi = NULL, tiles = NULL,
         "S2 download produced no archive for tile {.val {tile}}.",
         i = "The upstream downloader swallows network errors; a single THEIA L2A archive is ~2 GB and the GEODES connection may have dropped.",
         i = "Check connectivity to {.url https://geodes-portal.cnes.fr/} and re-run; partial files in {.path {zip_dir}} can be deleted first."
+      ))
+    }
+
+    # Pre-flight disk guard. Extraction is the big consumer (a full tile
+    # over two years is ~250 GB) and `zipfile.extractall` dies with an
+    # opaque exit 1 (OSError [Errno 28]) when the disk fills mid-way.
+    # Estimate the extracted footprint from the archives (~1.3x, SRE files
+    # are dropped) and require the headroom *before* extracting. With
+    # extract-then-delete on (default), each archive is freed as it is
+    # extracted, so the net additional space is only the excess of
+    # extracted over zips plus a couple of in-flight archives.
+    zip_bytes <- sum(file.size(zips))
+    max_zip   <- max(file.size(zips))
+    extracted_est <- 1.3 * zip_bytes
+    need <- if (keep_zips) extracted_est else max(extracted_est - zip_bytes, 3 * max_zip)
+    free <- .reconfort_free_bytes(out_dir)
+    if (!is.na(free) && free < need) {
+      gb <- function(b) sprintf("%.1f GB", b / 1e9)
+      cli::cli_abort(c(
+        "Not enough free disk space to extract S2 archives for tile {.val {tile}}.",
+        i = "Need ~{gb(need)} free in {.path {out_dir}}, but only {gb(free)} available ({length(zips)} archive{?s}, {gb(zip_bytes)} of zips).",
+        i = if (keep_zips) "Re-run with {.code keep_zips = FALSE} (the default) to free each archive as it is extracted, or free disk space."
+            else "Free disk space (older project caches, the system temp dir) and re-run; already-extracted scenes are kept."
       ))
     }
 

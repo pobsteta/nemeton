@@ -69,6 +69,17 @@ if __name__ == "__main__":
 
         list_S2_folder = new_list_S2_folders
 
+        # NOTE (nemeton): extract-then-delete. A full tile over two years is
+        # ~200 GB of zips *and* ~250 GB of extracted scenes; keeping both
+        # fills the disk and `extractall` then dies with an opaque exit 1
+        # (OSError [Errno 28]). When the R driver sets
+        # `delete_zip_after_extract`, drop each archive right after it is
+        # extracted so peak usage stays near the extracted size. Opt-in:
+        # absent key -> upstream behaviour (archives retained).
+        if dict_config.get('delete_zip_after_extract'):
+            temp_zip.close()
+            os.remove(S2_zip)
+
     # reproject images to Lambert-93
 
     # Set the target EPSG code for Lambert-93

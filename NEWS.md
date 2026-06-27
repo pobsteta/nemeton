@@ -1,19 +1,35 @@
 # nemeton 0.94.3 (2026-06-27)
 
-### Fixed — RECONFORT : console d'ingestion S2 lisible
+### Fixed — RECONFORT : robustesse de l'ingestion S2 (console + disque)
 
-Le diagnostic RECONFORT noyait ses messages utiles sous des centaines de
-warnings bénins émis par les dépendances du téléchargeur vendoré
+**Console lisible.** Le diagnostic noyait ses messages utiles sous des
+centaines de warnings bénins émis par les dépendances du téléchargeur vendoré
 (`pygeodes` / `urllib3`) : un `UserWarning` « *file with same content already
 exists, skipping download* » par scène en cache (jusqu'à 140 par tuile) et le
 `InsecureRequestWarning` d'urllib3 (pygeodes appelle le portail GEODES du CNES
-avec la vérification TLS désactivée, choix de l'amont).
+avec la vérification TLS désactivée, choix de l'amont). `.reconfort_run_py()`
+pose désormais `PYTHONWARNINGS` autour du sous-processus conda pour filtrer
+**uniquement ces deux catégories** ; erreurs, tracebacks et stdout intacts.
 
-`.reconfort_run_py()` pose désormais `PYTHONWARNINGS` autour du sous-processus
-conda pour filtrer **uniquement ces deux catégories** de warnings. Les erreurs
-Python, tracebacks et la sortie standard des scripts restent intacts, de même
-que les garde-fous applicatifs (abort si aucune archive téléchargée / aucune
-scène extraite). Le script `run_geodes_download.py` reste vendoré verbatim.
+**Saturation disque.** Une tuile entière sur deux ans, c'est ~200 GB de zips
+**plus** ~250 GB de scènes extraites conservés simultanément : le disque se
+remplissait et `zipfile.extractall` mourait sur un `exit 1` opaque
+(`OSError [Errno 28]`) à mi-extraction. Deux parades :
+
+- **extract-then-delete** (`reconfort_ingest_s2(keep_zips = FALSE)`, défaut) :
+  chaque archive est supprimée dès son extraction (drapeau
+  `delete_zip_after_extract` passé au script d'unzip vendoré), ce qui plafonne
+  le pic disque à la taille des scènes extraites au lieu de *archives +
+  extraites* ;
+- **garde-fou pré-vol** : avant d'extraire, `reconfort_ingest_s2()` estime
+  l'empreinte des scènes depuis la taille des archives et **abort proprement**
+  si l'espace libre est insuffisant (message chiffré : besoin vs disponible),
+  au lieu de remplir le disque puis d'échouer en `exit 1`.
+
+Les garde-fous existants (abort si aucune archive / aucune scène) sont
+conservés. `run_geodes_download.py` reste vendoré verbatim ; le seul ajout au
+script d'unzip est l'extract-then-delete, annoté `NOTE (nemeton)` et désactivé
+par défaut (clé de config absente → comportement amont).
 
 # nemeton 0.94.2 (2026-06-24)
 

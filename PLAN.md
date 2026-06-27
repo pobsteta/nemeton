@@ -125,16 +125,24 @@ A1 (runs antérieurs → reader rend NULL → fallback gracieux app).
 > (clic-pixel rétabli), **aides « i » par couche**, **légende date en année**
 > (app v0.91.1/v0.91.2).
 >
-> *2026-06-27 (fix hors-chantier — v0.94.3)* : **console d'ingestion S2
-> RECONFORT lisible**. Le diagnostic noyait ses messages utiles sous des
-> centaines de warnings bénins du téléchargeur vendoré (`pygeodes`/`urllib3`) :
-> un `UserWarning` « file with same content already exists, skipping download »
-> par scène en cache (jusqu'à 140/tuile) + l'`InsecureRequestWarning` d'urllib3
-> (TLS off vers GEODES, choix amont). `.reconfort_run_py()`
-> (`R/reconfort_ingest.R`) pose désormais `PYTHONWARNINGS` autour du
-> sous-processus conda pour filtrer **uniquement ces deux catégories** ;
-> erreurs/tracebacks/stdout et garde-fous (abort si 0 archive / 0 scène)
-> intacts. `run_geodes_download.py` reste vendoré verbatim. 34 tests ingest ✔.
+> *2026-06-27 (fix hors-chantier — v0.94.3)* : **robustesse ingestion S2
+> RECONFORT (console + disque)**. (1) *Console* : le diagnostic noyait ses
+> messages sous des centaines de warnings bénins du téléchargeur vendoré
+> (`pygeodes`/`urllib3` : « skipping download » ×140/tuile +
+> `InsecureRequestWarning`). `.reconfort_run_py()` pose `PYTHONWARNINGS` pour
+> filtrer **ces deux catégories** ; erreurs/tracebacks/stdout intacts. (2)
+> *Disque* : une tuile×2 ans = ~200 GB de zips **+** ~250 GB d'extraits gardés
+> en même temps → disque plein → `extractall` mourait sur `exit 1` opaque
+> (`OSError [Errno 28]`). Parades : **extract-then-delete**
+> (`reconfort_ingest_s2(keep_zips = FALSE)` défaut → archive supprimée dès son
+> extraction, plafonne le pic disque) + **garde-fou pré-vol** (estime
+> l'empreinte des scènes, abort chiffré si espace insuffisant). Incident réel
+> 2026-06-27 (zone 5 Mouthe, T31UFQ, disque à 1.9 GB) débloqué par un script
+> de purge sûr (137 zips redondants supprimés, 205 GB récupérés ; vérifie que
+> chaque fichier non-SRE est extrait à la bonne taille avant suppression).
+> `run_geodes_download.py` reste vendoré verbatim ; unzip n'a que
+> l'extract-then-delete annoté `NOTE (nemeton)`, off par défaut. 41 tests
+> ingest ✔.
 
 ---
 
