@@ -83,11 +83,18 @@ disparaît, l’ingest écrit le crop dans `extracted/<tile>/`). - **K6** :
 DL→extract→crop→delete + idempotence, manifeste vide → abort) ; pipeline
 22 ✔ (mock ingest étendu `aoi`) ; python 14 ✔. `.Rd` édités à la main.
 
-**Statut** : 🟨 **implémenté sur branche
-`feat/reconfort-crop-ingestion`**, DESCRIPTION en **cycle dev
-`0.94.3.9000`** (pas de release auto). **Reste** : validation Pascal sur
-run réel (Mouthe / T31UFQ, vérifier pic disque ~GB + carte identique),
-puis bump stable **v0.95.0** (NEWS/CITATION) et merge.
+> *2026-06-27 (release v0.95.0)* : \#124 mergé dans main, puis bump
+> stable **v0.95.0** (DESCRIPTION + NEWS + CITATION). Avant le merge :
+> run full-tile bloqué tué (mauvais code installé — v0.94.3 sans
+> streaming) et cache T31UFQ stale purgé (zip + extracted full-tile,
+> ~334 GB → disque à 467 GB libres). **Validation run réel à faire par
+> Pascal** sur la version installée 0.95.0 (vérifier pic disque ~GB +
+> carte identique) ; signaler si
+> [`utils::unzip`](https://rdrr.io/r/utils/unzip.html) coince sur une
+> vraie archive ~2 GB (fallback `system2("unzip")` prêt à câbler).
+
+**Statut** : ✅ **livré v0.95.0** (code sur main, release CI).
+Validation run réel en attente côté Pascal.
 
 ------------------------------------------------------------------------
 

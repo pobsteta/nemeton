@@ -1,5 +1,48 @@
 # Changelog
 
+## nemeton 0.95.0 (2026-06-27)
+
+#### Added — RECONFORT : ingestion S2 en streaming, crop AOI à la volée (spec 021)
+
+L’ingestion Sentinel-2 de RECONFORT matérialisait la **tuile MGRS
+entière** (~211 GB d’archives + ~250 GB de scènes extraites, ~460 GB
+transitoires) **avant** que le crop AOI ne tourne — pour ~60 pixels
+utiles. C’est ce qui saturait le disque (incident Mouthe / T31UFQ,
+2026-06-27).
+
+[`reconfort_ingest_s2()`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md)
+gagne un **mode AOI streaming** (activé dès qu’un `aoi` est fourni — le
+chemin de production) : **un seul search GEODES par tuile**, puis chaque
+archive est **téléchargée → extraite → clippée + reprojetée à la fenêtre
+AOI → supprimée**, une à la fois. Le pic disque tombe à **~une archive
+(quelques GB)**. Rétrocompatible : `aoi = NULL` conserve le comportement
+full-tile v0.94.x.
+
+- Deux scripts python **nemeton-authored** (pas vendorés) :
+  `list_s2_items.py` (1 search → 1 STAC JSON par item + `manifest.json`)
+  et `download_s2_item.py` (`Item.from_dict` →
+  `download_item_archive(outfile=)`, une archive). Le round-trip
+  `to_dict`/`from_dict` a été validé sur GEODES réel — pas de re-search
+  par item, donc pas de rate-limit.
+- `.reconfort_crop_scene_to_aoi()` factorisé (crop par scène, SRE
+  ignorées), `.reconfort_ingest_tile_streaming()` orchestre la boucle
+  (idempotente via des marqueurs `ingested/<tile>/<id>.done` ; un item
+  en échec est loggé puis ignoré, abort seulement si aucune scène n’est
+  produite).
+- [`reconfort_ingest_s2()`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md)
+  : nouveaux arguments `aoi`, `target_crs`, `buffer_m`.
+- [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+  (`aoi_crop = TRUE`) câble le streaming dans la PHASE 5 du pipeline ;
+  le crop post-extraction séparé (`extracted_aoi/`) disparaît, les
+  scènes cropées atterrissent directement dans `extracted/<tile>/`.
+
+#### Changed
+
+- [`reconfort_ingest_s2()`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md)
+  ne télécharge plus la tuile entière quand un `aoi` est fourni (voir
+  ci-dessus). Le contrat de la fonction évolue (bump mineur), mais
+  l’appel historique sans `aoi` reste identique.
+
 ## nemeton 0.94.3 (2026-06-27)
 
 #### Fixed — RECONFORT : robustesse de l’ingestion S2 (console + disque)
