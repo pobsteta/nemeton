@@ -142,7 +142,26 @@ non compilable).
 0 \> transparente** (alertes visibles), **perf bascule de mode**
 (connexion DB \> réutilisée + validité mémoïsée, app v0.90.4), carte de
 base stable \> (clic-pixel rétabli), **aides « i » par couche**,
-**légende date en année** \> (app v0.91.1/v0.91.2).
+**légende date en année** \> (app v0.91.1/v0.91.2). \> \> *2026-06-27
+(fix hors-chantier — v0.94.3)* : **robustesse ingestion S2 \> RECONFORT
+(console + disque)**. (1) *Console* : le diagnostic noyait ses \>
+messages sous des centaines de warnings bénins du téléchargeur vendoré
+\> (`pygeodes`/`urllib3` : « skipping download » ×140/tuile + \>
+`InsecureRequestWarning`). `.reconfort_run_py()` pose `PYTHONWARNINGS`
+pour \> filtrer **ces deux catégories** ; erreurs/tracebacks/stdout
+intacts. (2) \> *Disque* : une tuile×2 ans = ~200 GB de zips **+** ~250
+GB d’extraits gardés \> en même temps → disque plein → `extractall`
+mourait sur `exit 1` opaque \> (`OSError [Errno 28]`). Parades :
+**extract-then-delete** \> (`reconfort_ingest_s2(keep_zips = FALSE)`
+défaut → archive supprimée dès son \> extraction, plafonne le pic
+disque) + **garde-fou pré-vol** (estime \> l’empreinte des scènes, abort
+chiffré si espace insuffisant). Incident réel \> 2026-06-27 (zone 5
+Mouthe, T31UFQ, disque à 1.9 GB) débloqué par un script \> de purge sûr
+(137 zips redondants supprimés, 205 GB récupérés ; vérifie que \> chaque
+fichier non-SRE est extrait à la bonne taille avant suppression). \>
+`run_geodes_download.py` reste vendoré verbatim ; unzip n’a que \>
+l’extract-then-delete annoté `NOTE (nemeton)`, off par défaut. 41 tests
+\> ingest ✔.
 
 ------------------------------------------------------------------------
 

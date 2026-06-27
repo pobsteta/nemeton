@@ -17,6 +17,7 @@ reconfort_ingest_s2(
   s2_root,
   geodes_config = NULL,
   s2_collection = "THEIA_REFLECTANCE_SENTINEL2_L2A",
+  keep_zips = FALSE,
   quiet = FALSE
 )
 ```
@@ -51,6 +52,15 @@ reconfort_ingest_s2(
   the THEIA/MUSCATE Sentinel-2 surface-reflectance L2A products. (The
   bare \`MUSCATE\_\*\` name from the upstream RECONFORT example is not a
   valid GEODES id and 400s.)
+
+- keep_zips:
+
+  Keep the downloaded \`.zip\` archives after extraction. Default
+  \`FALSE\`: each archive is deleted as soon as it is extracted, so peak
+  disk usage stays near the size of the extracted scenes instead of
+  \*archives + extracted\* (a full tile over two years is ~200 GB of
+  zips). Set \`TRUE\` to retain the archives (e.g. to re-run the unzip
+  without re-downloading).
 
 - quiet:
 

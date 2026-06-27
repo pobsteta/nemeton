@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.94.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.94.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,19 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.94.3" id="nemeton-0943-2026-06-27">nemeton 0.94.3 (2026-06-27)<a class="anchor" aria-label="anchor" href="#nemeton-0943-2026-06-27"></a></h2>
+<div class="section level4">
+<h4 id="fixed--reconfort--robustesse-de-lingestion-s2-console--disque-0-94-3">Fixed — RECONFORT : robustesse de l’ingestion S2 (console + disque)<a class="anchor" aria-label="anchor" href="#fixed--reconfort--robustesse-de-lingestion-s2-console--disque-0-94-3"></a></h4>
+<p><strong>Console lisible.</strong> Le diagnostic noyait ses messages utiles sous des centaines de warnings bénins émis par les dépendances du téléchargeur vendoré (<code>pygeodes</code> / <code>urllib3</code>) : un <code>UserWarning</code> « <em>file with same content already exists, skipping download</em> » par scène en cache (jusqu’à 140 par tuile) et le <code>InsecureRequestWarning</code> d’urllib3 (pygeodes appelle le portail GEODES du CNES avec la vérification TLS désactivée, choix de l’amont). <code>.reconfort_run_py()</code> pose désormais <code>PYTHONWARNINGS</code> autour du sous-processus conda pour filtrer <strong>uniquement ces deux catégories</strong> ; erreurs, tracebacks et stdout intacts.</p>
+<p><strong>Saturation disque.</strong> Une tuile entière sur deux ans, c’est ~200 GB de zips <strong>plus</strong> ~250 GB de scènes extraites conservés simultanément : le disque se remplissait et <code>zipfile.extractall</code> mourait sur un <code>exit 1</code> opaque (<code>OSError [Errno 28]</code>) à mi-extraction. Deux parades :</p>
+<ul><li>
+<strong>extract-then-delete</strong> (<code>reconfort_ingest_s2(keep_zips = FALSE)</code>, défaut) : chaque archive est supprimée dès son extraction (drapeau <code>delete_zip_after_extract</code> passé au script d’unzip vendoré), ce qui plafonne le pic disque à la taille des scènes extraites au lieu de <em>archives + extraites</em> ;</li>
+<li>
+<strong>garde-fou pré-vol</strong> : avant d’extraire, <code><a href="../reference/reconfort_ingest_s2.html">reconfort_ingest_s2()</a></code> estime l’empreinte des scènes depuis la taille des archives et <strong>abort proprement</strong> si l’espace libre est insuffisant (message chiffré : besoin vs disponible), au lieu de remplir le disque puis d’échouer en <code>exit 1</code>.</li>
+</ul><p>Les garde-fous existants (abort si aucune archive / aucune scène) sont conservés. <code>run_geodes_download.py</code> reste vendoré verbatim ; le seul ajout au script d’unzip est l’extract-then-delete, annoté <code>NOTE (nemeton)</code> et désactivé par défaut (clé de config absente → comportement amont).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.94.2" id="nemeton-0942-2026-06-24">nemeton 0.94.2 (2026-06-24)<a class="anchor" aria-label="anchor" href="#nemeton-0942-2026-06-24"></a></h2>
 <div class="section level4">
