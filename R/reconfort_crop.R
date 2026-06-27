@@ -65,6 +65,46 @@
   invisible(dst)
 }
 
+#' Clip + reproject ONE extracted MUSCATE scene to the AOI window
+#'
+#' Clips every band + mask of a single scene directory to `win` (in
+#' `target_crs`), preserving the layout IOTA2 expects (`<scene>/*.tif`,
+#' `<scene>/MASKS/*.tif`, `*.xml` metadata copied verbatim). SRE reflectance
+#' bands are skipped (unused downstream — the upstream unzip step deletes
+#' them), so this is safe whether or not they are still present. Used both by
+#' the bulk post-extraction crop and by the streaming AOI ingestion.
+#'
+#' @param scene Character. Source scene directory.
+#' @param out_scene_dir Character. Destination scene directory.
+#' @param win Numeric AOI window (`.reconfort_aoi_window` output).
+#' @param target_crs Integer EPSG (default 2154).
+#' @return Number of rasters clipped (invisibly via the bulk caller).
+#' @keywords internal
+.reconfort_crop_scene_to_aoi <- function(scene, out_scene_dir, win,
+                                         target_crs = 2154) {
+  dir.create(file.path(out_scene_dir, "MASKS"), recursive = TRUE,
+             showWarnings = FALSE)
+  tifs <- c(list.files(scene, pattern = "\\.tif$", full.names = TRUE),
+            list.files(file.path(scene, "MASKS"), pattern = "\\.tif$",
+                       full.names = TRUE))
+  tifs <- tifs[!grepl("SRE_.*\\.tif$", basename(tifs))]
+  n_tif <- 0L
+  for (tif in tifs) {
+    rel <- sub(paste0("^", scene, "/?"), "", tif)
+    .reconfort_warp_one(tif, file.path(out_scene_dir, rel), win, target_crs)
+    n_tif <- n_tif + 1L
+  }
+  # metadata (MTD XML etc.) copied verbatim — IOTA2 reads dates from it
+  xmls <- c(list.files(scene, pattern = "\\.xml$", full.names = TRUE),
+            list.files(file.path(scene, "MASKS"), pattern = "\\.xml$",
+                       full.names = TRUE))
+  for (x in xmls) {
+    rel <- sub(paste0("^", scene, "/?"), "", x)
+    file.copy(x, file.path(out_scene_dir, rel), overwrite = TRUE)
+  }
+  n_tif
+}
+
 #' Clip + reproject the extracted Sentinel-2 scenes to the AOI window
 #'
 #' For each MUSCATE scene under `extracted_dirs`, clips every band + mask to
@@ -94,25 +134,8 @@
     scenes <- list.dirs(ext, recursive = FALSE)
     n_tif <- 0L
     for (scene in scenes) {
-      sc <- basename(scene)
-      dir.create(file.path(out_tile, sc, "MASKS"), recursive = TRUE,
-                 showWarnings = FALSE)
-      tifs <- c(list.files(scene, pattern = "\\.tif$", full.names = TRUE),
-                list.files(file.path(scene, "MASKS"), pattern = "\\.tif$",
-                           full.names = TRUE))
-      for (tif in tifs) {
-        rel <- sub(paste0("^", scene, "/?"), "", tif)
-        .reconfort_warp_one(tif, file.path(out_tile, sc, rel), win, target_crs)
-        n_tif <- n_tif + 1L
-      }
-      # metadata (MTD XML etc.) copied verbatim — IOTA2 reads dates from it
-      xmls <- c(list.files(scene, pattern = "\\.xml$", full.names = TRUE),
-                list.files(file.path(scene, "MASKS"), pattern = "\\.xml$",
-                           full.names = TRUE))
-      for (x in xmls) {
-        rel <- sub(paste0("^", scene, "/?"), "", x)
-        file.copy(x, file.path(out_tile, sc, rel), overwrite = TRUE)
-      }
+      n_tif <- n_tif + .reconfort_crop_scene_to_aoi(
+        scene, file.path(out_tile, basename(scene)), win, target_crs)
     }
     if (!quiet) {
       cli::cli_alert_info(

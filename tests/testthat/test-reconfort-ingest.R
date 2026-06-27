@@ -254,6 +254,126 @@ test_that("reconfort_ingest_s2 writes delete_zip_after_extract from keep_zips", 
   expect_true(any(seen_cfg == "delete_zip_after_extract=False"))
 })
 
+test_that(".reconfort_crop_scene_to_aoi clips to window, drops SRE, keeps masks+xml", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  dir   <- withr::local_tempdir()
+  nm    <- "SENTINEL2A_20250101-104724-247_L2A_T31UFQ_C_V4-0"
+  scene <- file.path(dir, nm)
+  dir.create(file.path(scene, "MASKS"), recursive = TRUE)
+  r <- terra::rast(nrows = 100, ncols = 100, xmin = 900000, xmax = 901000,
+                   ymin = 6500000, ymax = 6501000, crs = "EPSG:2154")
+  terra::values(r) <- seq_len(terra::ncell(r))
+  terra::writeRaster(r, file.path(scene, paste0(nm, "_FRE_B2.tif")))
+  terra::writeRaster(r, file.path(scene, paste0(nm, "_SRE_B2.tif")))  # dropped
+  terra::writeRaster(r, file.path(scene, "MASKS", paste0(nm, "_CLM_R2.tif")))
+  writeLines("<meta/>", file.path(scene, paste0(nm, "_MTD.xml")))
+
+  aoi <- sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 900300, ymin = 6500300, xmax = 900500, ymax = 6500500), crs = 2154))
+  win <- .reconfort_aoi_window(aoi, 2154, buffer_m = 0)
+  out <- file.path(dir, "out_scene")
+  n   <- .reconfort_crop_scene_to_aoi(scene, out, win, 2154)
+
+  expect_equal(n, 2L)  # FRE + CLM clipped; SRE skipped
+  expect_true(file.exists(file.path(out, paste0(nm, "_FRE_B2.tif"))))
+  expect_false(file.exists(file.path(out, paste0(nm, "_SRE_B2.tif"))))
+  expect_true(file.exists(file.path(out, "MASKS", paste0(nm, "_CLM_R2.tif"))))
+  expect_true(file.exists(file.path(out, paste0(nm, "_MTD.xml"))))
+  cr <- terra::rast(file.path(out, paste0(nm, "_FRE_B2.tif")))
+  expect_lt(terra::ncol(cr), 100L)  # clipped smaller than the source tile
+})
+
+test_that("reconfort_ingest_s2 AOI streaming: download->extract->crop->delete, idempotent", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  skip_if(Sys.which("zip") == "", "needs an external zip program")
+
+  root <- withr::local_tempdir()
+  nm   <- "SENTINEL2A_20250101-104724-247_L2A_T31UFQ_C_V4-0"
+  bld  <- file.path(root, "build", nm)
+  dir.create(file.path(bld, "MASKS"), recursive = TRUE)
+  r <- terra::rast(nrows = 80, ncols = 80, xmin = 900000, xmax = 900800,
+                   ymin = 6500000, ymax = 6500800, crs = "EPSG:2154")
+  terra::values(r) <- seq_len(terra::ncell(r))
+  terra::writeRaster(r, file.path(bld, paste0(nm, "_FRE_B2.tif")))
+  terra::writeRaster(r, file.path(bld, "MASKS", paste0(nm, "_CLM_R2.tif")))
+  writeLines("<meta/>", file.path(bld, paste0(nm, "_MTD.xml")))
+  prebuilt <- file.path(root, "prebuilt.zip")
+  withr::with_dir(file.path(root, "build"),
+                  utils::zip(prebuilt, nm, flags = "-r9Xq"))
+
+  dl_calls <- 0L
+  testthat::local_mocked_bindings(
+    .ensure_reconfort_python = function(...) "test-env",
+    .reconfort_conda_binary  = function() "/opt/conda/bin/conda",
+    .reconfort_geodes_config = function(path = NULL) "/tmp/geodes.json",
+    .reconfort_account_with_download_dir = function(account, download_dir) {
+      file.path(download_dir, ".acct.json")
+    },
+    .reconfort_list_s2_items = function(conda_bin, env, glue, cfg, manifest_dir,
+                                        quiet = FALSE) {
+      dir.create(manifest_dir, recursive = TRUE, showWarnings = FALSE)
+      j <- file.path(manifest_dir, "item0.json")
+      writeLines("{}", j)
+      data.frame(idx = 0L, item_id = "URN:ITEM:1", datetime = "2025-01-01",
+                 filesize = 10L, json = j, stringsAsFactors = FALSE)
+    },
+    .reconfort_download_s2_item = function(conda_bin, env, glue, account,
+                                           item_json, outfile, quiet = FALSE) {
+      dl_calls <<- dl_calls + 1L
+      file.copy(prebuilt, outfile, overwrite = TRUE)
+      0L
+    }
+  )
+
+  aoi <- sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 900200, ymin = 6500200, xmax = 900500, ymax = 6500500), crs = 2154))
+  s2 <- file.path(root, "s2")
+  res <- reconfort_ingest_s2(aoi = aoi, tiles = "T31UFQ",
+                             date_from = "2025-01-01", date_to = "2026-12-31",
+                             s2_root = s2, buffer_m = 0, quiet = TRUE)
+
+  out_tile <- file.path(s2, "extracted", "T31UFQ")
+  expect_true(file.exists(file.path(out_tile, nm, paste0(nm, "_FRE_B2.tif"))))
+  expect_false(file.exists(file.path(out_tile, nm, paste0(nm, "_SRE_B2.tif"))))
+  # archive freed, scratch removed, marker written
+  expect_length(list.files(file.path(s2, "zip", "T31UFQ"), pattern = "\\.zip$"), 0L)
+  expect_false(dir.exists(file.path(s2, "scratch", "T31UFQ")))
+  expect_length(list.files(file.path(s2, "ingested", "T31UFQ")), 1L)
+  expect_equal(dl_calls, 1L)
+
+  # idempotence: a second run skips the already-cropped scene (no re-download)
+  reconfort_ingest_s2(aoi = aoi, tiles = "T31UFQ",
+                      date_from = "2025-01-01", date_to = "2026-12-31",
+                      s2_root = s2, buffer_m = 0, quiet = TRUE)
+  expect_equal(dl_calls, 1L)
+})
+
+test_that("reconfort_ingest_s2 AOI streaming aborts when the manifest is empty", {
+  skip_if_not_installed("sf")
+  testthat::local_mocked_bindings(
+    .ensure_reconfort_python = function(...) "test-env",
+    .reconfort_conda_binary  = function() "/opt/conda/bin/conda",
+    .reconfort_geodes_config = function(path = NULL) "/tmp/geodes.json",
+    .reconfort_account_with_download_dir = function(account, download_dir) {
+      file.path(download_dir, ".acct.json")
+    },
+    .reconfort_list_s2_items = function(conda_bin, env, glue, cfg, manifest_dir,
+                                        quiet = FALSE) {
+      data.frame(item_id = character(0), json = character(0))
+    }
+  )
+  aoi <- sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 900200, ymin = 6500200, xmax = 900500, ymax = 6500500), crs = 2154))
+  expect_error(
+    reconfort_ingest_s2(aoi = aoi, tiles = "T31UFQ", date_from = "2025-01-01",
+                        date_to = "2026-12-31",
+                        s2_root = withr::local_tempdir(), quiet = TRUE),
+    "No Sentinel-2 item"
+  )
+})
+
 test_that("reconfort_ingest_s2 aborts before extraction when disk is too small", {
   testthat::local_mocked_bindings(
     .ensure_reconfort_python = function(...) "test-env",

@@ -187,21 +187,23 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 }
 
 
-# Run a vendored RECONFORT python script in the conda env, from the
-# glue dir so its `from utils.utils import ...` resolves. Returns the
-# exit status (0 = success). Separated out so tests can mock it.
-#
-# `PYTHONWARNINGS` silences two floods of benign warnings from the
-# vendored downloader's deps that would otherwise drown real messages:
+# `PYTHONWARNINGS` filter silencing two floods of benign warnings from the
+# downloader's deps that would otherwise drown real messages:
 #   - pygeodes' per-item "file with same content already exists, skipping
 #     download" `UserWarning` (one per cached scene — up to 140/tile);
 #   - urllib3's one-shot `InsecureRequestWarning` (pygeodes calls the CNES
 #     GEODES portal with TLS verification disabled — upstream's choice).
 # Only these two *categories* are filtered; Python errors, tracebacks and
 # the scripts' own stdout are untouched, so genuine failures still surface.
+.RECONFORT_PYWARN <- "ignore::UserWarning,ignore::urllib3.exceptions.InsecureRequestWarning"
+
+
+# Run a vendored RECONFORT python script in the conda env, from the
+# glue dir so its `from utils.utils import ...` resolves. Returns the
+# exit status (0 = success). Separated out so tests can mock it.
 .reconfort_run_py <- function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
   withr::with_envvar(
-    c(PYTHONWARNINGS = "ignore::UserWarning,ignore::urllib3.exceptions.InsecureRequestWarning"),
+    c(PYTHONWARNINGS = .RECONFORT_PYWARN),
     withr::with_dir(workdir, {
       suppressWarnings(system2(
         conda_bin,
@@ -214,15 +216,172 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 }
 
 
+# List the GEODES S2 items for a tile + date range (one search) via the
+# nemeton-authored `list_s2_items.py`, returning the parsed manifest as a
+# data.frame (idx, item_id, datetime, filesize, json). The script writes one
+# STAC JSON per item under `manifest_dir` so the archives can be fetched one
+# at a time (no re-search). Separated out so tests can mock it.
+.reconfort_list_s2_items <- function(conda_bin, env, glue, cfg, manifest_dir,
+                                     quiet = FALSE) {
+  st <- .reconfort_run_py(conda_bin, env,
+                          file.path(glue, "list_s2_items.py"),
+                          cfg, glue, quiet = quiet)
+  if (!identical(as.integer(st), 0L)) {
+    cli::cli_abort("S2 item listing failed (exit {st}).")
+  }
+  mf <- file.path(manifest_dir, "manifest.json")
+  if (!file.exists(mf)) cli::cli_abort("S2 item manifest not produced ({.path {mf}}).")
+  jsonlite::read_json(mf, simplifyVector = TRUE)
+}
+
+
+# Download ONE S2 archive (reconstructed from its STAC JSON) to `outfile`,
+# via the nemeton-authored `download_s2_item.py`. Same `PYTHONWARNINGS`
+# filter as the bulk runner. Returns the exit status. Mockable in tests.
+.reconfort_download_s2_item <- function(conda_bin, env, glue, account, item_json,
+                                        outfile, quiet = FALSE) {
+  withr::with_envvar(
+    c(PYTHONWARNINGS = .RECONFORT_PYWARN),
+    withr::with_dir(glue, {
+      suppressWarnings(system2(
+        conda_bin,
+        args = c("run", "-n", env, "python", "download_s2_item.py",
+                 "-account", shQuote(account),
+                 "-item_json", shQuote(item_json),
+                 "-outfile", shQuote(outfile)),
+        stdout = if (quiet) FALSE else "", stderr = if (quiet) FALSE else ""
+      ))
+    })
+  )
+}
+
+
 #' Acquire Sentinel-2 scenes for an AOI into the IOTA² layout
 #'
-#' IOTA²-native ingestion: for each tile covering `aoi` (or each tile
-#' in `tiles`), downloads the MUSCATE L2A archives from GEODES via the
-#' vendored `pygeodes` driver, then unzips them into
-#' `<s2_root>/extracted/<tile>/`. Requires the conda environment
-#' (L2b.1) and a GEODES account; heavy and opt-in (not run in CI).
+# Stream one tile's S2 ingestion: one GEODES search -> per item
+# download -> R unzip -> AOI crop -> delete (archive + full scene). Peak
+# disk ~ a single archive. Idempotent: a per-item marker under
+# <s2_root>/ingested/<tile>/ lets a re-run skip already-cropped scenes.
+# Returns out_dir, the per-tile AOI-cropped extraction dir.
+.reconfort_ingest_tile_streaming <- function(tile, bare, aoi, date_from, date_to,
+                                             s2_root, zip_dir, out_dir, account,
+                                             s2_collection, target_crs, buffer_m,
+                                             conda_bin, env, glue, quiet = FALSE) {
+  win          <- .reconfort_aoi_window(aoi, target_crs, buffer_m)
+  manifest_dir <- file.path(s2_root, "manifest", tile)
+  marker_dir   <- file.path(s2_root, "ingested", tile)
+  scratch_root <- file.path(s2_root, "scratch", tile)
+  dir.create(manifest_dir, recursive = TRUE, showWarnings = FALSE)
+  dir.create(marker_dir, recursive = TRUE, showWarnings = FALSE)
+
+  # Sanitised per-run account (api_key tempfile, botocore null-fix). The
+  # download_dir is irrelevant here — each download passes an explicit
+  # `-outfile` — but the sanitiser still applies the null-fix.
+  account_run <- .reconfort_account_with_download_dir(account, zip_dir)
+  on.exit(unlink(account_run, force = TRUE), add = TRUE)
+
+  cfg <- tempfile(fileext = ".cfg")
+  .reconfort_write_cfg(cfg, list(
+    tile                       = c(bare, tile),
+    path_to_cfg_geodes_account = account_run,
+    s2_collection              = s2_collection,
+    start                      = date_from,
+    end                        = date_to,
+    manifest_dir               = manifest_dir
+  ))
+
+  if (!quiet) cli::cli_alert_info(
+    "RECONFORT: listing S2 items for tile {.val {tile}} ...")
+  manifest <- .reconfort_list_s2_items(conda_bin, env, glue, cfg, manifest_dir, quiet)
+  n_items  <- if (is.data.frame(manifest)) nrow(manifest) else length(manifest)
+  if (n_items == 0L) {
+    cli::cli_abort(c(
+      "No Sentinel-2 item found for tile {.val {tile}} ({date_from}..{date_to}).",
+      i = "Check the GEODES collection id and the date range."
+    ))
+  }
+
+  n_done <- 0L; n_skip <- 0L; n_fail <- 0L
+  for (i in seq_len(n_items)) {
+    item_id   <- as.character(manifest$item_id[i])
+    item_json <- as.character(manifest$json[i])
+    safe      <- gsub("[^A-Za-z0-9._-]", "_", item_id)
+    marker    <- file.path(marker_dir, paste0(safe, ".done"))
+    if (file.exists(marker)) { n_skip <- n_skip + 1L; next }  # idempotence
+
+    tmp_zip <- file.path(zip_dir, paste0(safe, ".zip"))
+    scratch <- file.path(scratch_root, safe)
+    unlink(tmp_zip, force = TRUE)
+    unlink(scratch, recursive = TRUE, force = TRUE)
+    dir.create(scratch, recursive = TRUE, showWarnings = FALSE)
+
+    dl <- .reconfort_download_s2_item(conda_bin, env, glue, account_run,
+                                      item_json, tmp_zip, quiet)
+    # A dropped connection / bad item must not kill the tile: log + skip.
+    if (!identical(as.integer(dl), 0L) || !file.exists(tmp_zip) ||
+        file.size(tmp_zip) == 0) {
+      if (!quiet) cli::cli_alert_warning(
+        "RECONFORT: download failed for item {.val {item_id}}; skipping.")
+      n_fail <- n_fail + 1L
+      unlink(tmp_zip, force = TRUE); unlink(scratch, recursive = TRUE, force = TRUE)
+      next
+    }
+
+    suppressWarnings(utils::unzip(tmp_zip, exdir = scratch))
+    sub_scenes <- list.dirs(scratch, recursive = FALSE)
+    if (length(sub_scenes) == 0L) {
+      if (!quiet) cli::cli_alert_warning(
+        "RECONFORT: empty/corrupt archive for item {.val {item_id}}; skipping.")
+      n_fail <- n_fail + 1L
+      unlink(tmp_zip, force = TRUE); unlink(scratch, recursive = TRUE, force = TRUE)
+      next
+    }
+    for (sc in sub_scenes) {
+      .reconfort_crop_scene_to_aoi(sc, file.path(out_dir, basename(sc)),
+                                   win, target_crs)
+    }
+    unlink(tmp_zip, force = TRUE); unlink(scratch, recursive = TRUE, force = TRUE)
+    file.create(marker)
+    n_done <- n_done + 1L
+    if (!quiet) cli::cli_alert_info("RECONFORT: {tile} {i}/{n_items} cropped to AOI.")
+  }
+  unlink(scratch_root, recursive = TRUE, force = TRUE)
+
+  scenes <- list.dirs(out_dir, recursive = FALSE)
+  if (length(scenes) == 0L) {
+    cli::cli_abort(c(
+      "RECONFORT: no scene cropped for tile {.val {tile}}.",
+      i = "{n_fail} item{?s} failed to download/extract; check connectivity to {.url https://geodes-portal.cnes.fr/} and re-run."
+    ))
+  }
+  if (!quiet) cli::cli_alert_success(
+    "RECONFORT: tile {.val {tile}} — {length(scenes)} scene{?s} cropped to AOI ({n_skip} cached, {n_fail} failed).")
+  out_dir
+}
+
+
+#' Acquire Sentinel-2 scenes for an AOI into the IOTA² layout
 #'
-#' @param aoi An `sf`/`sfc` AOI. Ignored when `tiles` is given.
+#' IOTA²-native ingestion. Two modes:
+#'
+#' * **AOI streaming** (when `aoi` is supplied — the production path):
+#'   one GEODES search per tile, then each archive is downloaded,
+#'   extracted, **clipped + reprojected to the AOI window** and deleted
+#'   one at a time. Peak disk stays near a single archive (~a few GB)
+#'   instead of *whole-tile archives + whole-tile extracted* (~460 GB for
+#'   one tile over two years). The output `<s2_root>/extracted/<tile>/` is
+#'   already AOI-cropped in `target_crs`, so the separate post-extraction
+#'   crop is no longer needed.
+#' * **Full tile** (when `aoi` is `NULL`): downloads the MUSCATE L2A
+#'   archives for each `tiles` entry and unzips the whole tile into
+#'   `<s2_root>/extracted/<tile>/` (the v0.94.x behaviour).
+#'
+#' Requires the conda environment (L2b.1) and a GEODES account; heavy and
+#' opt-in (not run in CI).
+#'
+#' @param aoi An `sf`/`sfc` AOI. When supplied, scenes are streamed and
+#'   clipped to the AOI window (production path); also used to resolve
+#'   `tiles` when those are `NULL`. When `NULL`, the full tile is ingested.
 #' @param tiles Explicit MGRS tile code(s) (e.g. `"T31UDP"`); resolved
 #'   from `aoi` when `NULL`.
 #' @param date_from,date_to Date range (`"YYYY-MM-DD"`). RECONFORT needs
@@ -234,12 +393,14 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 #'   `"THEIA_REFLECTANCE_SENTINEL2_L2A"` — the THEIA/MUSCATE Sentinel-2
 #'   surface-reflectance L2A products. (The bare `MUSCATE_*` name from the
 #'   upstream RECONFORT example is not a valid GEODES id and 400s.)
-#' @param keep_zips Keep the downloaded `.zip` archives after extraction.
-#'   Default `FALSE`: each archive is deleted as soon as it is extracted,
-#'   so peak disk usage stays near the size of the extracted scenes
-#'   instead of *archives + extracted* (a full tile over two years is
-#'   ~200 GB of zips). Set `TRUE` to retain the archives (e.g. to re-run
-#'   the unzip without re-downloading).
+#' @param target_crs Integer EPSG of the AOI-streaming output projection
+#'   (default 2154). Ignored in full-tile mode.
+#' @param buffer_m Numeric buffer (m) around the AOI bbox for the clip
+#'   window (default 3000). Ignored in full-tile mode.
+#' @param keep_zips Full-tile mode only: keep the downloaded `.zip`
+#'   archives after extraction. Default `FALSE` (each archive is deleted as
+#'   soon as it is extracted, capping peak disk). In AOI-streaming mode the
+#'   archives are always streamed and removed.
 #' @param quiet Suppress progress + subprocess output. Default `FALSE`.
 #'
 #' @return Invisibly, a list: `tiles`, `s2_root`, and `extracted` (the
@@ -250,6 +411,8 @@ reconfort_ingest_s2 <- function(aoi = NULL, tiles = NULL,
                                 s2_root,
                                 geodes_config = NULL,
                                 s2_collection = "THEIA_REFLECTANCE_SENTINEL2_L2A",
+                                target_crs = 2154,
+                                buffer_m = .RECONFORT_AOI_BUFFER_M,
                                 keep_zips = FALSE,
                                 quiet = FALSE) {
   if (is.null(tiles)) {
@@ -270,6 +433,18 @@ reconfort_ingest_s2 <- function(aoi = NULL, tiles = NULL,
     out_dir <- file.path(s2_root, "extracted", tile)
     dir.create(zip_dir, recursive = TRUE, showWarnings = FALSE)
     dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+
+    if (!is.null(aoi)) {
+      # AOI streaming: list once, then download+extract+crop+delete each
+      # archive in turn so peak disk stays near a single archive.
+      extracted <- c(extracted, .reconfort_ingest_tile_streaming(
+        tile = tile, bare = bare, aoi = aoi, date_from = date_from,
+        date_to = date_to, s2_root = s2_root, zip_dir = zip_dir,
+        out_dir = out_dir, account = account, s2_collection = s2_collection,
+        target_crs = target_crs, buffer_m = buffer_m,
+        conda_bin = conda_bin, env = env, glue = glue, quiet = quiet))
+      next
+    }
 
     # Force pygeodes to download into zip_dir so the unzip step finds
     # the archives there (see .reconfort_account_with_download_dir).

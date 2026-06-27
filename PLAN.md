@@ -23,6 +23,60 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 ---
 
+# Chantier CADRÉ — Crop à l'ingestion S2 (spec 021, optimisation disque)
+
+> **Cadré le 2026-06-27** (paperwork avant code). Doc :
+> `specs/021-suivi-sanitaire-reconfort/L2b-crop-ingestion-cadrage.md`.
+> Déclencheur : incident disque plein 2026-06-27 (zone 5 Mouthe / T31UFQ,
+> `exit 1` = `OSError [Errno 28]`). L'ingestion matérialise ~460 GB
+> transitoires (zips ~211 GB + extraits full-tile ~250 GB) pour ~60 px utiles ;
+> le crop AOI (`reconfort_crop.R`, v0.94.2) n'intervient qu'**après** extraction
+> → réduit le résultat, pas le pic. Palliatifs v0.94.3 (PR #123 :
+> extract-then-delete + garde-fou disque) plafonnent à ~250 GB sans supprimer
+> la couche full-tile.
+
+**Décisions cadrées** (cf. doc) : **C1** Option B — *interleave par date*
+(download 1 archive → extract → crop AOI → delete) → pic disque ~3–5 GB ;
+**C2** crop **en R** (règle « pas de métier dans le python vendoré » ; python
+ne fait que lister + télécharger une archive) ; **C4** `reconfort_ingest_s2()`
+devient **AOI-aware streaming** (nouvel arg `aoi`, rétrocompatible : `aoi =
+NULL` → comportement v0.94.x full-tile) ; **C5** crop AOI par date = cache
+d'idempotence.
+
+**Découpage** : K1 manifeste (`list_s2_items.py` + reader R) · K2 download par
+item · K3 `.reconfort_crop_scene_to_aoi` (factorisation per-scene) · K4 boucle
+streaming dans `reconfort_ingest_s2()` · K5 câblage `reconfort_pipeline.R`
+(retrait du `do_crop` séparé) · K6 tests + release **v0.95.0** (bump mineur :
+changement de contrat).
+
+**Journal** — *2026-06-27 (impl K1→K6 livrée sur branche)* :
+- **K1/K2** : deux scripts python **nemeton-authored** (pas vendorés) —
+  `list_s2_items.py` (1 search GEODES → 1 STAC JSON par item + `manifest.json`)
+  et `download_s2_item.py` (`Item.from_dict` → `download_item_archive(outfile=)`,
+  1 archive). Round-trip `to_dict`/`from_dict` validé sur GEODES réel (item
+  T31UFQ, href https + datetime préservés) → **R1 levé** (1 search, pas 140).
+  Readers R `.reconfort_list_s2_items` / `.reconfort_download_s2_item`.
+- **K3** : `.reconfort_crop_scene_to_aoi(scene, out, win, crs)` factorisé hors
+  de `.reconfort_crop_scenes_to_aoi` ; **skip SRE** (équiv. suppression amont).
+- **K4** : `.reconfort_ingest_tile_streaming()` — LIST → par item (skip si
+  marqueur `ingested/<tile>/<id>.done`) DL→`utils::unzip`→crop AOI→delete
+  (zip+scratch). `reconfort_ingest_s2()` gagne `aoi`/`target_crs`/`buffer_m` ;
+  `aoi = NULL` → comportement v0.94.x intact. Robustesse R3 : download/zip
+  KO logué + skip, abort seulement si 0 scène cropée.
+- **K5** : `reconfort_pipeline.R` PHASE 5 passe `aoi` à l'ingest, `do_crop`
+  séparé retiré (`extracted_aoi/` disparaît, l'ingest écrit le crop dans
+  `extracted/<tile>/`).
+- **K6** : +14 tests ingest (55 ✔ : crop per-scene, streaming
+  DL→extract→crop→delete + idempotence, manifeste vide → abort) ; pipeline 22 ✔
+  (mock ingest étendu `aoi`) ; python 14 ✔. `.Rd` édités à la main.
+
+**Statut** : 🟨 **implémenté sur branche `feat/reconfort-crop-ingestion`**,
+DESCRIPTION en **cycle dev `0.94.3.9000`** (pas de release auto). **Reste** :
+validation Pascal sur run réel (Mouthe / T31UFQ, vérifier pic disque ~GB +
+carte identique), puis bump stable **v0.95.0** (NEWS/CITATION) et merge.
+
+---
+
 # Chantier EN COURS — RECONFORT AOI-scoped (spec 021, productionisation)
 
 > **2026-06-24.** RECONFORT (dépérissement feuillus, IOTA²/v3) ne tournait
