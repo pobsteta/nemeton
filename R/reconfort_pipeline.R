@@ -198,6 +198,11 @@
 #' @param scheduler_type IOTA2 scheduler. Default `"localCluster"`.
 #'   IOTA2's `Iota2.py` only accepts `debug`, `cluster`, `PBS`, `Slurm`,
 #'   `localCluster` (note the lower-case `l`) — `"LocalCluster"` 400s.
+#'   When `aoi_crop = TRUE` the default `"localCluster"` is overridden to
+#'   `"debug"` (sequential): the cropped raster is tiny, so the Dask
+#'   cluster only adds memory pressure (it tripped systemd-oomd and killed
+#'   the R session mid-classification on 2026-06-28). An explicit non-default
+#'   value is respected.
 #'   PENDING : à confirmer après alignement de la version d'iota2.
 #' @param nb_parallel_tasks IOTA2 parallel-task count. Default `1`.
 #' @param output_dir Explicit per-run working directory. Default
@@ -386,6 +391,13 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       # cropped raster is tiny → one IOTA2 block (avoids the per-chunk
       # mask-vs-fulltile BandMath dimension mismatch).
       if (isTRUE(number_of_chunks == 200L)) number_of_chunks <- 1L
+      # ...and IOTA2's localCluster (a Dask cluster of ~nb_cpus workers,
+      # each loading the multi-date feature stack) only adds memory
+      # pressure on a tiny AOI — enough to trip systemd-oomd and kill the
+      # R session mid-classification (observed 2026-06-28). Sequential
+      # "debug" keeps memory flat at no real runtime cost here. Only the
+      # default is overridden; an explicit scheduler choice is respected.
+      if (identical(scheduler_type, "localCluster")) scheduler_type <- "debug"
     }
 
     # PHASE 6 — stage the working dir ------------------------------
