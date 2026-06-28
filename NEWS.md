@@ -1,3 +1,17 @@
+# nemeton 0.95.1 (2026-06-28)
+
+### Fixed — RECONFORT : filtre `PYTHONWARNINGS` urllib3 invalide
+
+Le filtre qui masque l'`InsecureRequestWarning` d'urllib3 pendant l'ingestion
+S2 le référençait par **catégorie** (`ignore::urllib3.exceptions.InsecureRequestWarning`).
+Python rejette ce filtre au démarrage de l'interpréteur
+(`Invalid -W option ignored: invalid module name: 'urllib3.exceptions'`) car le
+module tiers n'est pas importable à ce stade : le filtre était donc ignoré (et
+le warning urllib3 réapparaissait). Il est désormais matché par **message**
+(`ignore:Unverified HTTPS request`), qui ne requiert aucun import. Le filtre
+`ignore::UserWarning` (catégorie standard) est inchangé. Validé dans l'env
+conda `nemeton-reconfort`.
+
 # nemeton 0.95.0 (2026-06-27)
 
 ### Added — RECONFORT : ingestion S2 en streaming, crop AOI à la volée (spec 021)
