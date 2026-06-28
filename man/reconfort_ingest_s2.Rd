@@ -15,7 +15,8 @@ reconfort_ingest_s2(
   target_crs = 2154,
   buffer_m = .RECONFORT_AOI_BUFFER_M,
   keep_zips = FALSE,
-  quiet = FALSE
+  quiet = FALSE,
+  progress_callback = NULL
 )
 }
 \arguments{
@@ -51,6 +52,14 @@ soon as it is extracted, capping peak disk). In AOI-streaming mode the
 archives are always streamed and removed.}
 
 \item{quiet}{Suppress progress + subprocess output. Default `FALSE`.}
+
+\item{progress_callback}{Optional function called with a named list at
+each step of the AOI-streaming ingest, so a caller (e.g. the Shiny
+app) can surface per-scene progress. Events: `reconfort:ingest_listed`
+(`tile`, `total`) once the manifest is known, then
+`reconfort:ingest_item` per scene (`tile`, `completed`, `total`,
+`step` one of `"download"`/`"crop"`/`"done"`/`"cached"`/`"failed"`,
+`item_date`). Ignored in full-tile mode.}
 }
 \value{
 Invisibly, a list: `tiles`, `s2_root`, and `extracted` (the

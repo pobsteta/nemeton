@@ -270,7 +270,12 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 .reconfort_ingest_tile_streaming <- function(tile, bare, aoi, date_from, date_to,
                                              s2_root, zip_dir, out_dir, account,
                                              s2_collection, target_crs, buffer_m,
-                                             conda_bin, env, glue, quiet = FALSE) {
+                                             conda_bin, env, glue, quiet = FALSE,
+                                             progress_callback = NULL) {
+  emit <- function(payload) {
+    if (is.null(progress_callback)) return(invisible(NULL))
+    tryCatch(progress_callback(payload), error = function(e) invisible(NULL))
+  }
   win          <- .reconfort_aoi_window(aoi, target_crs, buffer_m)
   manifest_dir <- file.path(s2_root, "manifest", tile)
   marker_dir   <- file.path(s2_root, "ingested", tile)
@@ -304,20 +309,41 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
       i = "Check the GEODES collection id and the date range."
     ))
   }
+  if (!quiet) cli::cli_alert_info(
+    "RECONFORT: tile {.val {tile}} — {n_items} S2 scene{?s} to ingest.")
+  emit(list(current = "reconfort:ingest_listed", tile = tile,
+            total = as.integer(n_items)))
+
+  item_dates <- if (!is.null(manifest$datetime)) {
+    substr(as.character(manifest$datetime), 1L, 10L)
+  } else rep(NA_character_, n_items)
 
   n_done <- 0L; n_skip <- 0L; n_fail <- 0L
   for (i in seq_len(n_items)) {
     item_id   <- as.character(manifest$item_id[i])
     item_json <- as.character(manifest$json[i])
+    item_date <- item_dates[i]
     safe      <- gsub("[^A-Za-z0-9._-]", "_", item_id)
     marker    <- file.path(marker_dir, paste0(safe, ".done"))
-    if (file.exists(marker)) { n_skip <- n_skip + 1L; next }  # idempotence
+    if (file.exists(marker)) {                                   # idempotence
+      n_skip <- n_skip + 1L
+      emit(list(current = "reconfort:ingest_item", tile = tile, step = "cached",
+                completed = as.integer(i), total = as.integer(n_items),
+                item_date = item_date))
+      next
+    }
 
     tmp_zip <- file.path(zip_dir, paste0(safe, ".zip"))
     scratch <- file.path(scratch_root, safe)
     unlink(tmp_zip, force = TRUE)
     unlink(scratch, recursive = TRUE, force = TRUE)
     dir.create(scratch, recursive = TRUE, showWarnings = FALSE)
+
+    if (!quiet) cli::cli_alert_info(
+      "RECONFORT: {tile} {i}/{n_items} downloading{if (!is.na(item_date)) paste0(' ', item_date) else ''} ...")
+    emit(list(current = "reconfort:ingest_item", tile = tile, step = "download",
+              completed = as.integer(i), total = as.integer(n_items),
+              item_date = item_date))
 
     dl <- .reconfort_download_s2_item(conda_bin, env, glue, account_run,
                                       item_json, tmp_zip, quiet)
@@ -327,16 +353,27 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
       if (!quiet) cli::cli_alert_warning(
         "RECONFORT: download failed for item {.val {item_id}}; skipping.")
       n_fail <- n_fail + 1L
+      emit(list(current = "reconfort:ingest_item", tile = tile, step = "failed",
+                completed = as.integer(i), total = as.integer(n_items),
+                item_date = item_date))
       unlink(tmp_zip, force = TRUE); unlink(scratch, recursive = TRUE, force = TRUE)
       next
     }
 
+    if (!quiet) cli::cli_alert_info(
+      "RECONFORT: {tile} {i}/{n_items} extracting + cropping to AOI ...")
+    emit(list(current = "reconfort:ingest_item", tile = tile, step = "crop",
+              completed = as.integer(i), total = as.integer(n_items),
+              item_date = item_date))
     suppressWarnings(utils::unzip(tmp_zip, exdir = scratch))
     sub_scenes <- list.dirs(scratch, recursive = FALSE)
     if (length(sub_scenes) == 0L) {
       if (!quiet) cli::cli_alert_warning(
         "RECONFORT: empty/corrupt archive for item {.val {item_id}}; skipping.")
       n_fail <- n_fail + 1L
+      emit(list(current = "reconfort:ingest_item", tile = tile, step = "failed",
+                completed = as.integer(i), total = as.integer(n_items),
+                item_date = item_date))
       unlink(tmp_zip, force = TRUE); unlink(scratch, recursive = TRUE, force = TRUE)
       next
     }
@@ -348,6 +385,9 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
     file.create(marker)
     n_done <- n_done + 1L
     if (!quiet) cli::cli_alert_info("RECONFORT: {tile} {i}/{n_items} cropped to AOI.")
+    emit(list(current = "reconfort:ingest_item", tile = tile, step = "done",
+              completed = as.integer(i), total = as.integer(n_items),
+              item_date = item_date))
   }
   unlink(scratch_root, recursive = TRUE, force = TRUE)
 
@@ -406,6 +446,13 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 #'   soon as it is extracted, capping peak disk). In AOI-streaming mode the
 #'   archives are always streamed and removed.
 #' @param quiet Suppress progress + subprocess output. Default `FALSE`.
+#' @param progress_callback Optional function called with a named list at
+#'   each step of the AOI-streaming ingest, so a caller (e.g. the Shiny
+#'   app) can surface per-scene progress. Events: `reconfort:ingest_listed`
+#'   (`tile`, `total`) once the manifest is known, then
+#'   `reconfort:ingest_item` per scene (`tile`, `completed`, `total`,
+#'   `step` one of `"download"`/`"crop"`/`"done"`/`"cached"`/`"failed"`,
+#'   `item_date`). Ignored in full-tile mode.
 #'
 #' @return Invisibly, a list: `tiles`, `s2_root`, and `extracted` (the
 #'   per-tile extraction directories), for the L2b.3 map-production step.
@@ -418,7 +465,8 @@ reconfort_ingest_s2 <- function(aoi = NULL, tiles = NULL,
                                 target_crs = 2154,
                                 buffer_m = .RECONFORT_AOI_BUFFER_M,
                                 keep_zips = FALSE,
-                                quiet = FALSE) {
+                                quiet = FALSE,
+                                progress_callback = NULL) {
   if (is.null(tiles)) {
     if (is.null(aoi)) cli::cli_abort("Provide either {.arg aoi} or {.arg tiles}.")
     tiles <- reconfort_aoi_tiles(aoi, prefix = TRUE)
@@ -446,7 +494,8 @@ reconfort_ingest_s2 <- function(aoi = NULL, tiles = NULL,
         date_to = date_to, s2_root = s2_root, zip_dir = zip_dir,
         out_dir = out_dir, account = account, s2_collection = s2_collection,
         target_crs = target_crs, buffer_m = buffer_m,
-        conda_bin = conda_bin, env = env, glue = glue, quiet = quiet))
+        conda_bin = conda_bin, env = env, glue = glue, quiet = quiet,
+        progress_callback = progress_callback))
       next
     }
 

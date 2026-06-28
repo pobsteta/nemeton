@@ -87,8 +87,19 @@ changement de contrat).
 > (`Invalid -W option ignored`) → bascule sur un filtre par message
 > (`ignore:Unverified HTTPS request`), validé en env conda.
 
-**Statut** : ✅ **livré v0.95.0** (+ patch v0.95.1). Pic disque du streaming
-confirmé sur run réel T31UFQ ; fin de run complète à confirmer côté Pascal.
+> *2026-06-28 (feat v0.96.0 — progression fine)* : l'ingestion streaming
+> n'émettait qu'un event de phase global `ingest` (heures de silence).
+> `reconfort_ingest_s2(progress_callback=)` émet désormais
+> `reconfort:ingest_listed` (total scènes) + `reconfort:ingest_item` par scène
+> (`step` download/crop/done/cached/failed, `completed/total`, `item_date`) ;
+> le pipeline relaie le callback ; la console détaille chaque scène. Côté
+> `nemetonshiny` (v0.92.0) : `.reconfort_handle_progress_event` rend ces events
+> dans le bandeau (comme FORDEAD / FAST), + clés i18n FR/EN. Tests : ingest 59
+> ✔ (assert events), app i18n 2626 ✔, monitoring 100 ✔.
+
+**Statut** : ✅ **livré v0.95.0** (+ patchs v0.95.1, v0.96.0). Pic disque du
+streaming confirmé sur run réel T31UFQ ; fin de run complète à confirmer côté
+Pascal.
 
 ---
 
