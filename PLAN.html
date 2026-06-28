@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.96.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.96.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -123,7 +123,10 @@
 <blockquote>
 <p><em>2026-06-28 (feat v0.96.0 — progression fine)</em> : l’ingestion streaming n’émettait qu’un event de phase global <code>ingest</code> (heures de silence). <code>reconfort_ingest_s2(progress_callback=)</code> émet désormais <code>reconfort:ingest_listed</code> (total scènes) + <code>reconfort:ingest_item</code> par scène (<code>step</code> download/crop/done/cached/failed, <code>completed/total</code>, <code>item_date</code>) ; le pipeline relaie le callback ; la console détaille chaque scène. Côté <code>nemetonshiny</code> (v0.92.0) : <code>.reconfort_handle_progress_event</code> rend ces events dans le bandeau (comme FORDEAD / FAST), + clés i18n FR/EN. Tests : ingest 59 ✔ (assert events), app i18n 2626 ✔, monitoring 100 ✔.</p>
 </blockquote>
-<p><strong>Statut</strong> : ✅ <strong>livré v0.95.0</strong> (+ patchs v0.95.1, v0.96.0). Pic disque du streaming confirmé sur run réel T31UFQ ; fin de run complète à confirmer côté Pascal.</p>
+<blockquote>
+<p><em>2026-06-28 (fix v0.96.1 — crash systemd-oomd)</em> : sur run réel, ingestion streaming OK (140/140, reprise idempotente validée), puis <strong>R/RStudio tué par <code>systemd-oomd</code></strong> en pleine classification IOTA² (pression mémoire 54 % &gt; 50 % pendant &gt;20 s). Cause : <code>scheduler_type = "localCluster"</code> (cluster Dask ~nb_cpus workers × pile features multi-dates) inutile sur AOI minuscule. Fix : <code>reconfort_pipeline.R</code> force <code>scheduler_type = "debug"</code> (séquentiel) quand <code>aoi_crop = TRUE</code>, miroir du <code>number_of_chunks = 1</code>. Choix explicite respecté.</p>
+</blockquote>
+<p><strong>Statut</strong> : ✅ <strong>livré v0.95.0</strong> (+ patchs v0.95.1, v0.96.0, v0.96.1). Streaming validé (140/140) ; classification IOTA² à valider en mode <code>debug</code> (run en cours).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-en-cours--reconfort-aoi-scoped-spec-021-productionisation">Chantier EN COURS — RECONFORT AOI-scoped (spec 021, productionisation)<a class="anchor" aria-label="anchor" href="#chantier-en-cours--reconfort-aoi-scoped-spec-021-productionisation"></a></h1>

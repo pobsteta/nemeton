@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.96.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.96.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,13 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.96.1" id="nemeton-0961-2026-06-28">nemeton 0.96.1 (2026-06-28)<a class="anchor" aria-label="anchor" href="#nemeton-0961-2026-06-28"></a></h2>
+<div class="section level4">
+<h4 id="fixed--reconfort--iota²-séquentiel-en-mode-aoi-évite-le-kill-systemd-oomd-0-96-1">Fixed — RECONFORT : IOTA² séquentiel en mode AOI (évite le kill systemd-oomd)<a class="anchor" aria-label="anchor" href="#fixed--reconfort--iota%C2%B2-s%C3%A9quentiel-en-mode-aoi-%C3%A9vite-le-kill-systemd-oomd-0-96-1"></a></h4>
+<p>Un run RECONFORT en mode AOI (<code>aoi_crop = TRUE</code>) lançait quand même IOTA² avec <code>scheduler_type = "localCluster"</code> : un cluster Dask de ~<code>nb_cpus</code> workers, chacun chargeant la pile de features multi-dates. Sur une AOI minuscule c’est inutile et ça crée une <strong>pression mémoire</strong> qui a fait tuer toute la session R/RStudio par <strong><code>systemd-oomd</code></strong> en pleine classification (incident 2026-06-28 : « Killed app-rstudio…scope due to memory pressure … 54.29 % &gt; 50.00 % »). Le pipeline force désormais <code>scheduler_type = "debug"</code> (séquentiel, mémoire plate, sans coût de temps réel sur une AOI) quand <code>aoi_crop = TRUE</code> — comme il force déjà <code>number_of_chunks = 1</code>. Un <code>scheduler_type</code> explicite non-<code>localCluster</code> reste respecté.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.96.0" id="nemeton-0960-2026-06-28">nemeton 0.96.0 (2026-06-28)<a class="anchor" aria-label="anchor" href="#nemeton-0960-2026-06-28"></a></h2>
 <div class="section level4">

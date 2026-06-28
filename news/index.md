@@ -1,5 +1,21 @@
 # Changelog
 
+## nemeton 0.96.1 (2026-06-28)
+
+#### Fixed — RECONFORT : IOTA² séquentiel en mode AOI (évite le kill systemd-oomd)
+
+Un run RECONFORT en mode AOI (`aoi_crop = TRUE`) lançait quand même
+IOTA² avec `scheduler_type = "localCluster"` : un cluster Dask de
+~`nb_cpus` workers, chacun chargeant la pile de features multi-dates.
+Sur une AOI minuscule c’est inutile et ça crée une **pression mémoire**
+qui a fait tuer toute la session R/RStudio par **`systemd-oomd`** en
+pleine classification (incident 2026-06-28 : « Killed app-rstudio…scope
+due to memory pressure … 54.29 % \> 50.00 % »). Le pipeline force
+désormais `scheduler_type = "debug"` (séquentiel, mémoire plate, sans
+coût de temps réel sur une AOI) quand `aoi_crop = TRUE` — comme il force
+déjà `number_of_chunks = 1`. Un `scheduler_type` explicite
+non-`localCluster` reste respecté.
+
 ## nemeton 0.96.0 (2026-06-28)
 
 #### Added — RECONFORT : progression fine de l’ingestion S2 (console + app)

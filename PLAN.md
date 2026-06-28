@@ -115,9 +115,19 @@ DL→extract→crop→delete + idempotence, manifeste vide → abort) ; pipeline
 > (comme FORDEAD / FAST), + clés i18n FR/EN. Tests : ingest 59 ✔ (assert
 > events), app i18n 2626 ✔, monitoring 100 ✔.
 
-**Statut** : ✅ **livré v0.95.0** (+ patchs v0.95.1, v0.96.0). Pic
-disque du streaming confirmé sur run réel T31UFQ ; fin de run complète à
-confirmer côté Pascal.
+> *2026-06-28 (fix v0.96.1 — crash systemd-oomd)* : sur run réel,
+> ingestion streaming OK (140/140, reprise idempotente validée), puis
+> **R/RStudio tué par `systemd-oomd`** en pleine classification IOTA²
+> (pression mémoire 54 % \> 50 % pendant \>20 s). Cause :
+> `scheduler_type = "localCluster"` (cluster Dask ~nb_cpus workers ×
+> pile features multi-dates) inutile sur AOI minuscule. Fix :
+> `reconfort_pipeline.R` force `scheduler_type = "debug"` (séquentiel)
+> quand `aoi_crop = TRUE`, miroir du `number_of_chunks = 1`. Choix
+> explicite respecté.
+
+**Statut** : ✅ **livré v0.95.0** (+ patchs v0.95.1, v0.96.0, v0.96.1).
+Streaming validé (140/140) ; classification IOTA² à valider en mode
+`debug` (run en cours).
 
 ------------------------------------------------------------------------
 
