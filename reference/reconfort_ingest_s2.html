@@ -35,7 +35,7 @@ opt-in (not run in CI)."><meta property="og:image" content="https://pobsteta.git
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.95.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.96.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -99,7 +99,8 @@ opt-in (not run in CI).</p>
 <span>  target_crs <span class="op">=</span> <span class="fl">2154</span>,</span>
 <span>  buffer_m <span class="op">=</span> <span class="va">.RECONFORT_AOI_BUFFER_M</span>,</span>
 <span>  keep_zips <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  quiet <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  quiet <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -158,6 +159,16 @@ archives are always streamed and removed.</p></dd>
 
 <dt id="arg-quiet">quiet<a class="anchor" aria-label="anchor" href="#arg-quiet"></a></dt>
 <dd><p>Suppress progress + subprocess output. Default `FALSE`.</p></dd>
+
+
+<dt id="arg-progress-callback">progress_callback<a class="anchor" aria-label="anchor" href="#arg-progress-callback"></a></dt>
+<dd><p>Optional function called with a named list at
+each step of the AOI-streaming ingest, so a caller (e.g. the Shiny
+app) can surface per-scene progress. Events: `reconfort:ingest_listed`
+(`tile`, `total`) once the manifest is known, then
+`reconfort:ingest_item` per scene (`tile`, `completed`, `total`,
+`step` one of `"download"`/`"crop"`/`"done"`/`"cached"`/`"failed"`,
+`item_date`). Ignored in full-tile mode.</p></dd>
 
 </dl></div>
     <div class="section level2">

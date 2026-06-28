@@ -1,5 +1,30 @@
 # Changelog
 
+## nemeton 0.96.0 (2026-06-28)
+
+#### Added — RECONFORT : progression fine de l’ingestion S2 (console + app)
+
+L’ingestion S2 streaming (la phase la plus longue, ~4 min/scène limité
+par GEODES) n’émettait qu’un événement de phase global `ingest` : des
+heures de silence côté console et application.
+[`reconfort_ingest_s2()`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md)
+accepte désormais un `progress_callback` et émet, en mode AOI streaming
+:
+
+- `reconfort:ingest_listed` (`tile`, `total`) dès que le manifeste
+  GEODES est connu ;
+- `reconfort:ingest_item` par scène (`tile`, `completed`, `total`,
+  `step` ∈ `download`/`crop`/`done`/`cached`/`failed`, `item_date`).
+
+Le pipeline
+([`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md))
+relaie son `progress_callback` à l’ingestion, et la console affiche
+désormais le détail par scène (« downloading 94/140 … », « extracting +
+cropping … », « cropped »). Côté `nemetonshiny`, ces événements
+alimentent le bandeau de progression (comme FORDEAD / l’ingestion FAST).
+Rétrocompatible : sans `progress_callback` (ou en mode full-tile) le
+comportement est inchangé.
+
 ## nemeton 0.95.1 (2026-06-28)
 
 #### Fixed — RECONFORT : filtre `PYTHONWARNINGS` urllib3 invalide

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.95.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.96.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,18 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.96.0" id="nemeton-0960-2026-06-28">nemeton 0.96.0 (2026-06-28)<a class="anchor" aria-label="anchor" href="#nemeton-0960-2026-06-28"></a></h2>
+<div class="section level4">
+<h4 id="added--reconfort--progression-fine-de-lingestion-s2-console--app-0-96-0">Added — RECONFORT : progression fine de l’ingestion S2 (console + app)<a class="anchor" aria-label="anchor" href="#added--reconfort--progression-fine-de-lingestion-s2-console--app-0-96-0"></a></h4>
+<p>L’ingestion S2 streaming (la phase la plus longue, ~4 min/scène limité par GEODES) n’émettait qu’un événement de phase global <code>ingest</code> : des heures de silence côté console et application. <code><a href="../reference/reconfort_ingest_s2.html">reconfort_ingest_s2()</a></code> accepte désormais un <code>progress_callback</code> et émet, en mode AOI streaming :</p>
+<ul><li>
+<code>reconfort:ingest_listed</code> (<code>tile</code>, <code>total</code>) dès que le manifeste GEODES est connu ;</li>
+<li>
+<code>reconfort:ingest_item</code> par scène (<code>tile</code>, <code>completed</code>, <code>total</code>, <code>step</code> ∈ <code>download</code>/<code>crop</code>/<code>done</code>/<code>cached</code>/<code>failed</code>, <code>item_date</code>).</li>
+</ul><p>Le pipeline (<code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code>) relaie son <code>progress_callback</code> à l’ingestion, et la console affiche désormais le détail par scène (« downloading 94/140 … », « extracting + cropping … », « cropped »). Côté <code>nemetonshiny</code>, ces événements alimentent le bandeau de progression (comme FORDEAD / l’ingestion FAST). Rétrocompatible : sans <code>progress_callback</code> (ou en mode full-tile) le comportement est inchangé.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.95.1" id="nemeton-0951-2026-06-28">nemeton 0.95.1 (2026-06-28)<a class="anchor" aria-label="anchor" href="#nemeton-0951-2026-06-28"></a></h2>
 <div class="section level4">
