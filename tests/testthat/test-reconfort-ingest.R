@@ -330,9 +330,13 @@ test_that("reconfort_ingest_s2 AOI streaming: download->extract->crop->delete, i
   aoi <- sf::st_as_sfc(sf::st_bbox(
     c(xmin = 900200, ymin = 6500200, xmax = 900500, ymax = 6500500), crs = 2154))
   s2 <- file.path(root, "s2")
+  events <- list()
   res <- reconfort_ingest_s2(aoi = aoi, tiles = "T31UFQ",
                              date_from = "2025-01-01", date_to = "2026-12-31",
-                             s2_root = s2, buffer_m = 0, quiet = TRUE)
+                             s2_root = s2, buffer_m = 0, quiet = TRUE,
+                             progress_callback = function(p) {
+                               events[[length(events) + 1L]] <<- p
+                             })
 
   out_tile <- file.path(s2, "extracted", "T31UFQ")
   expect_true(file.exists(file.path(out_tile, nm, paste0(nm, "_FRE_B2.tif"))))
@@ -342,6 +346,15 @@ test_that("reconfort_ingest_s2 AOI streaming: download->extract->crop->delete, i
   expect_false(dir.exists(file.path(s2, "scratch", "T31UFQ")))
   expect_length(list.files(file.path(s2, "ingested", "T31UFQ")), 1L)
   expect_equal(dl_calls, 1L)
+
+  # progress events: one listing + per-item steps (download -> done)
+  currents <- vapply(events, function(e) e$current %||% "", character(1))
+  steps    <- vapply(events, function(e) as.character(e$step %||% ""), character(1))
+  expect_true("reconfort:ingest_listed" %in% currents)
+  expect_true("reconfort:ingest_item" %in% currents)
+  expect_true(all(c("download", "done") %in% steps))
+  listed <- events[[which(currents == "reconfort:ingest_listed")[1]]]
+  expect_equal(as.integer(listed$total), 1L)
 
   # idempotence: a second run skips the already-cropped scene (no re-download)
   reconfort_ingest_s2(aoi = aoi, tiles = "T31UFQ",

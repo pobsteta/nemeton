@@ -378,7 +378,8 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       ing <- reconfort_ingest_s2(aoi = if (do_crop) aoi else NULL,
                                  tiles = tiles, date_from = date_from,
                                  date_to = date_to, s2_root = s2_dl_root,
-                                 geodes_config = geodes_config, quiet = quiet)
+                                 geodes_config = geodes_config, quiet = quiet,
+                                 progress_callback = progress_callback)
       extracted <- ing$extracted
     }
     if (do_crop) {
