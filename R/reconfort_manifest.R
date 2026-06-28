@@ -159,3 +159,106 @@ reconfort_layer_manifest <- function(result, include_range = FALSE) {
   if (is.numeric(n) && length(n) == 1L && !is.na(n)) return(as.integer(n))
   0L
 }
+
+
+# Resolve a raster file path from a `read_reconfort_layer()` `layer`
+# argument: either a length-1 character path, or a single row of a
+# `reconfort_layer_manifest()` data.frame (whose `type` must be
+# "raster"). Aborts with an actionable message otherwise.
+.reconfort_resolve_layer_path <- function(layer) {
+  if (is.data.frame(layer)) {
+    if (nrow(layer) != 1L) {
+      cli::cli_abort(c(
+        "{.arg layer} must be a single manifest row.",
+        x = "Got {nrow(layer)} rows.",
+        i = "Subset one row, e.g. {.code manifest[manifest$id == \"score\", ]}."
+      ))
+    }
+    if (!is.null(layer$type) && !identical(layer$type[[1L]], "raster")) {
+      cli::cli_abort(c(
+        "{.arg layer} is not a raster layer ({.val {layer$type[[1L]]}}).",
+        i = "The alert vector is not a maskable raster; render it directly."
+      ))
+    }
+    path <- layer$path[[1L]]
+  } else if (is.character(layer) && length(layer) == 1L) {
+    path <- layer
+  } else {
+    cli::cli_abort(
+      "{.arg layer} must be a raster path or a single manifest row.")
+  }
+  if (is.null(path) || is.na(path) || !nzchar(path)) {
+    cli::cli_abort("{.arg layer} has no usable raster path.")
+  }
+  if (!file.exists(path)) {
+    cli::cli_abort(c("RECONFORT raster not found.",
+                     x = "{.path {path}}"))
+  }
+  path
+}
+
+
+#' Read a RECONFORT output raster, masked to the UGF zone by default (L7)
+#'
+#' @description
+#' Reader for the raster layers of a RECONFORT run, the analogue of
+#' [read_fast_alert_raster()] and [read_fordead_dieback_mask()]
+#' (spec 016). By default it restricts the raster to the **UGF zone
+#' polygon** (pixels outside the user's managed perimeter become `NA`),
+#' so RECONFORT reaches parity with the two other health pipelines and
+#' the spatial mask lives in the `nemeton` core rather than in the
+#' presentation layer (spec 021 L7, ADR-013 amendment A6).
+#'
+#' The on-disk IOTA² rasters are not modified: the mask is applied at
+#' **read time** (spec 016 principle "mask at read, not write"). Reuses
+#' the spec 016 helpers `.apply_zone_mask()` / `.get_zone_aoi()`.
+#'
+#' @param layer Either a length-1 raster path, or a single row of a
+#'   [reconfort_layer_manifest()] data.frame (its `type` must be
+#'   `"raster"`; a `"vector"` row — the alert centroids — is rejected,
+#'   the vector is not masked here, see spec 021 L7 §D3).
+#' @param con A `DBIConnection`, used only to resolve the zone polygon
+#'   via [`.get_zone_aoi`()] when `mask_polygon` is `NULL`. `NULL`
+#'   skips DB resolution.
+#' @param zone_id Integer scalar identifying the row in `monitoring_zone`
+#'   (used with `con`).
+#' @param apply_zone_mask If `TRUE` (default), mask the raster to the UGF
+#'   polygon. `FALSE` returns the raw raster (bbox + OSO broadleaf
+#'   extent), the pre-L7 behaviour.
+#' @param mask_polygon An explicit `sf`/`sfc` polygon overriding the DB
+#'   lookup. When `NULL`, the polygon is resolved from `con` + `zone_id`.
+#'
+#' @return A `terra::SpatRaster` (masked to the UGF zone unless
+#'   `apply_zone_mask = FALSE` or no polygon could be resolved).
+#'
+#' @seealso [reconfort_layer_manifest()], [run_reconfort_dieback()],
+#'   [read_fast_alert_raster()], [read_fordead_dieback_mask()]
+#' @export
+read_reconfort_layer <- function(layer, con = NULL, zone_id = NULL,
+                                 apply_zone_mask = TRUE,
+                                 mask_polygon = NULL) {
+  path <- .reconfort_resolve_layer_path(layer)
+  if (!requireNamespace("terra", quietly = TRUE)) {
+    cli::cli_abort("Package {.pkg terra} is required to read RECONFORT rasters.")
+  }
+  out <- terra::rast(path)
+
+  if (isTRUE(apply_zone_mask)) {
+    # spec 016 (v0.49.0) parity: restrict to the UGF polygon at read
+    # time. Resolve the polygon from an explicit override, else the DB.
+    poly <- mask_polygon %||%
+      (if (!is.null(con) && !is.null(zone_id))
+         tryCatch(.get_zone_aoi(con, as.integer(zone_id)),
+                  error = function(e) NULL)
+       else NULL)
+    if (is.null(poly)) {
+      cli::cli_warn(c(
+        "{.arg apply_zone_mask} is TRUE but no UGF polygon could be resolved.",
+        i = "Provide {.arg mask_polygon}, or both {.arg con} and {.arg zone_id}.",
+        i = "Returning the unmasked raster (bbox + OSO broadleaf extent)."
+      ))
+    }
+    out <- .apply_zone_mask(out, poly)
+  }
+  out
+}

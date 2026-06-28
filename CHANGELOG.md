@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.98.0] - 2026-06-28
+
+### Added
+- `read_reconfort_layer(layer, con, zone_id, apply_zone_mask = TRUE,
+  mask_polygon = NULL)` : lit une couche raster RECONFORT et la masque au
+  polygone des UGFs par défaut, au read-time (parité `read_fast_alert_raster`
+  / `read_fordead_dieback_mask`, spec 016). Accepte un chemin ou une ligne
+  raster du manifeste ; rejette la ligne vecteur (alertes). Réutilise
+  `.apply_zone_mask()` / `.get_zone_aoi()`. Spec 021 L7, ADR-013 A6.
+  11 tests (`test-reconfort-reader.R`).
+
 ## [0.97.0] - 2026-06-28
 
 ### Added

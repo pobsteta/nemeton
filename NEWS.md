@@ -1,3 +1,30 @@
+# nemeton 0.98.0 (2026-06-28)
+
+### Added — RECONFORT : reader des couches masqué à l'UGF (`read_reconfort_layer()`, L7)
+
+Nouvelle fonction exportée qui lit une couche raster d'un run RECONFORT et la
+**masque au polygone des UGFs par défaut** (`apply_zone_mask = TRUE`), pixels
+hors périmètre géré = `NA`. C'est l'analogue de `read_fast_alert_raster()` et
+`read_fordead_dieback_mask()` (spec 016) : RECONFORT atteint enfin la **parité**
+des trois pipelines de suivi, et le masque spatial vit dans le cœur `nemeton`
+plutôt que dans la présentation (spec 021 L7, ADR-013 amendement A6).
+
+- `read_reconfort_layer(layer, con = NULL, zone_id = NULL,
+  apply_zone_mask = TRUE, mask_polygon = NULL)`. `layer` est un chemin de
+  raster **ou** une ligne raster du manifeste `reconfort_layer_manifest()`
+  (une ligne `type == "vector"` — les centroïdes d'alertes — est rejetée :
+  le vecteur n'est pas masqué ici).
+- Masque appliqué au **read** (principe spec 016 « masque au read, pas au
+  write ») : les `.tif` IOTA² ne sont pas réécrits. Réutilise les helpers
+  spec 016 `.apply_zone_mask()` / `.get_zone_aoi()`.
+- Polygone résolu depuis `mask_polygon` explicite, sinon `con` + `zone_id` ;
+  si rien n'est résoluble alors que le masque est demandé : `cli_warn` +
+  raster brut (best-effort, parité spec 016). Opt-out `apply_zone_mask = FALSE`.
+- 11 tests (`test-reconfort-reader.R`).
+
+Côté `nemetonshiny` (v0.93.x+) : consommer ce reader et **retirer le
+`terra::mask` local** introduit en v0.92.3 (le clip UGF revient au cœur).
+
 # nemeton 0.97.0 (2026-06-28)
 
 ### Added — RECONFORT : manifeste des couches d'un run (`reconfort_layer_manifest()`)

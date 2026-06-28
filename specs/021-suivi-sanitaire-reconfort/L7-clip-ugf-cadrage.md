@@ -1,6 +1,8 @@
 # Cadrage L7 — Masque UGF sur les sorties RECONFORT (spec 021)
 
-**Statut** : cadrage (paperwork avant code) — 2026-06-28. **Reframé le
+**Statut** : ✅ **implémenté en `nemeton` v0.98.0** (`read_reconfort_layer()`,
+`R/reconfort_manifest.R`, 11 tests) — 2026-06-28. Cadrage initial 2026-06-28.
+**Reframé le
 2026-06-28** : l'app `nemetonshiny` v0.92.3 applique déjà un `terra::mask`
 de clip à l'AOI de zone **en présentation** (cf. §1bis) ; la finalité de L7
 devient **rapatrier ce clip dans le cœur** (parité FAST/FORDEAD), pas
