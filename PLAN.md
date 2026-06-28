@@ -78,8 +78,17 @@ changement de contrat).
 > (vérifier pic disque ~GB + carte identique) ; signaler si `utils::unzip`
 > coince sur une vraie archive ~2 GB (fallback `system2("unzip")` prêt à câbler).
 
-**Statut** : ✅ **livré v0.95.0** (code sur main, release CI). Validation run
-réel en attente côté Pascal.
+> *2026-06-28 (patch v0.95.1)* : **comportement disque du streaming confirmé
+> sur run réel** (T31UFQ, observé à 93/140) — `extracted/` ~1,3 GB pour 93
+> scènes vs ~256 GB en full-tile, **1 seule archive en transit**, pic disque
+> ~GB, `utils::unzip` digère les vraies archives MUSCATE ~1,2 GB sans blocage
+> (download limité par GEODES ~4,8 MB/s). Bug cosmétique corrigé : filtre
+> `PYTHONWARNINGS` urllib3 par catégorie rejeté au démarrage Python
+> (`Invalid -W option ignored`) → bascule sur un filtre par message
+> (`ignore:Unverified HTTPS request`), validé en env conda.
+
+**Statut** : ✅ **livré v0.95.0** (+ patch v0.95.1). Pic disque du streaming
+confirmé sur run réel T31UFQ ; fin de run complète à confirmer côté Pascal.
 
 ---
 
