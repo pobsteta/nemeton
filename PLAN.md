@@ -600,6 +600,30 @@ lit jamais `result$rasters` en dur.
 **Ordre cœur → app respecté** : `nemeton@v0.97.0` publié d'abord, propagé à
 l'app via `@*release`. Aucune dépendance inverse.
 
+- [x] **L7 — masque UGF des sorties RECONFORT (reader cœur)** —
+      `read_reconfort_layer(layer, con, zone_id, apply_zone_mask = TRUE,
+      mask_polygon)` : lit une couche raster RECONFORT et la masque au polygone
+      des UGFs au read-time (parité FAST/FORDEAD, spec 016). Rapatrie le clip
+      que l'app faisait en présentation (v0.92.3).
+
+#### 2026-06-28 — L7 : reader cœur masqué UGF (`read_reconfort_layer`)
+
+- **Cadrage** : `specs/021-suivi-sanitaire-reconfort/L7-clip-ugf-cadrage.md`
+  + ADR-013 amendement A6 (draft `ADR-013-A6-reconfort-zone-mask.md`, à porter
+  dans `platform_nemeton`). 3 décisions actées (AskUserQuestion 2026-06-28) :
+  `apply_zone_mask` (pas `clip_to_aoi`), masque au **read-time**, centroïdes
+  **non clippés** (parité spec 016).
+- **Cœur — `v0.98.0`** : `read_reconfort_layer()` exporté
+  (`R/reconfort_manifest.R`) — analogue de `read_fast_alert_raster()` /
+  `read_fordead_dieback_mask()`. Accepte un chemin **ou** une ligne raster du
+  manifeste (`type == "vector"` rejetée) ; masque via les helpers spec 016
+  `.apply_zone_mask()` / `.get_zone_aoi()` ; polygone résolu par
+  `mask_polygon` sinon `con` + `zone_id` ; `cli_warn` + raster brut si rien
+  n'est résoluble. 11 tests (`test-reconfort-reader.R`). Manifeste L6 inchangé.
+- **Suite app (v0.93.x+)** : `nemetonshiny` consomme le reader et **retire son
+  `terra::mask` local** (v0.92.3) → la sémantique spatiale revient au cœur,
+  parité stricte des 3 pipelines.
+
 ---
 
 # Chantier clos (côté cœur) — Diagnostic pixel CRSWIR (spec 008 §14, ADR-013 A3)
