@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.95.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.95.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,7 +117,10 @@
 <blockquote>
 <p><em>2026-06-27 (release v0.95.0)</em> : #124 mergé dans main, puis bump stable <strong>v0.95.0</strong> (DESCRIPTION + NEWS + CITATION). Avant le merge : run full-tile bloqué tué (mauvais code installé — v0.94.3 sans streaming) et cache T31UFQ stale purgé (zip + extracted full-tile, ~334 GB → disque à 467 GB libres). <strong>Validation run réel à faire par Pascal</strong> sur la version installée 0.95.0 (vérifier pic disque ~GB + carte identique) ; signaler si <code><a href="https://rdrr.io/r/utils/unzip.html" class="external-link">utils::unzip</a></code> coince sur une vraie archive ~2 GB (fallback <code>system2("unzip")</code> prêt à câbler).</p>
 </blockquote>
-<p><strong>Statut</strong> : ✅ <strong>livré v0.95.0</strong> (code sur main, release CI). Validation run réel en attente côté Pascal.</p>
+<blockquote>
+<p><em>2026-06-28 (patch v0.95.1)</em> : <strong>comportement disque du streaming confirmé sur run réel</strong> (T31UFQ, observé à 93/140) — <code>extracted/</code> ~1,3 GB pour 93 scènes vs ~256 GB en full-tile, <strong>1 seule archive en transit</strong>, pic disque ~GB, <code><a href="https://rdrr.io/r/utils/unzip.html" class="external-link">utils::unzip</a></code> digère les vraies archives MUSCATE ~1,2 GB sans blocage (download limité par GEODES ~4,8 MB/s). Bug cosmétique corrigé : filtre <code>PYTHONWARNINGS</code> urllib3 par catégorie rejeté au démarrage Python (<code>Invalid -W option ignored</code>) → bascule sur un filtre par message (<code>ignore:Unverified HTTPS request</code>), validé en env conda.</p>
+</blockquote>
+<p><strong>Statut</strong> : ✅ <strong>livré v0.95.0</strong> (+ patch v0.95.1). Pic disque du streaming confirmé sur run réel T31UFQ ; fin de run complète à confirmer côté Pascal.</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-en-cours--reconfort-aoi-scoped-spec-021-productionisation">Chantier EN COURS — RECONFORT AOI-scoped (spec 021, productionisation)<a class="anchor" aria-label="anchor" href="#chantier-en-cours--reconfort-aoi-scoped-spec-021-productionisation"></a></h1>

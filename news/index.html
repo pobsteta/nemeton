@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.95.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.95.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,13 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.95.1" id="nemeton-0951-2026-06-28">nemeton 0.95.1 (2026-06-28)<a class="anchor" aria-label="anchor" href="#nemeton-0951-2026-06-28"></a></h2>
+<div class="section level4">
+<h4 id="fixed--reconfort--filtre-pythonwarnings-urllib3-invalide-0-95-1">Fixed — RECONFORT : filtre <code>PYTHONWARNINGS</code> urllib3 invalide<a class="anchor" aria-label="anchor" href="#fixed--reconfort--filtre-pythonwarnings-urllib3-invalide-0-95-1"></a></h4>
+<p>Le filtre qui masque l’<code>InsecureRequestWarning</code> d’urllib3 pendant l’ingestion S2 le référençait par <strong>catégorie</strong> (<code>ignore::urllib3.exceptions.InsecureRequestWarning</code>). Python rejette ce filtre au démarrage de l’interpréteur (<code>Invalid -W option ignored: invalid module name: 'urllib3.exceptions'</code>) car le module tiers n’est pas importable à ce stade : le filtre était donc ignoré (et le warning urllib3 réapparaissait). Il est désormais matché par <strong>message</strong> (<code>ignore:Unverified HTTPS request</code>), qui ne requiert aucun import. Le filtre <code>ignore::UserWarning</code> (catégorie standard) est inchangé. Validé dans l’env conda <code>nemeton-reconfort</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.95.0" id="nemeton-0950-2026-06-27">nemeton 0.95.0 (2026-06-27)<a class="anchor" aria-label="anchor" href="#nemeton-0950-2026-06-27"></a></h2>
 <div class="section level4">
