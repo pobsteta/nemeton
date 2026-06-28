@@ -563,26 +563,42 @@ essence). Faits amont vérifiés : `…/plan.md` §10.
 ## Sous-chantiers (post-L6)
 
 - [x] **Manifeste des couches RECONFORT pour l'app** — `reconfort_layer_manifest(result, include_range)`
-      (rasters score/classes/proba + vecteur alertes, palettes/domaines/reverse/visibilité
-      par défaut) → consommé par le sous-onglet « Alertes RECONFORT » de nemetonshiny
-      (toggles + opacité).
+      (rasters score / classification / probability + vecteur alertes ; palettes, domaines,
+      reverse, visibilité par défaut). Consommé par le sous-onglet « Alertes RECONFORT » de
+      nemetonshiny : cases à cocher des couches, curseur d'opacité, couche UGF, clip des
+      rasters à la strate sélectionnée.
 
-#### 2026-06-28 — Manifeste couches RECONFORT (cœur → app)
+#### 2026-06-28 — Couches RECONFORT dans l'app (cœur → app)
 
-- **Cœur** : `nemeton::reconfort_layer_manifest(result, include_range = FALSE)`
-  exporté en **`v0.97.0`** (commit `8c32b77`). Retourne un `data.frame`
-  une ligne/couche (`id`, `label_key`, `type`, `role`, `path`,
-  `categorical`, `palette`, `reverse`, `vmin/vmax`, `default_visible`,
-  `default_opacity`, `n_features`) ; rasters `score`/`classification`/
-  `probability` + ligne `alerts` conditionnée à `.reconfort_alert_count() > 0`.
-  `include_range = TRUE` calcule les domaines réels via `terra::minmax`.
-- **App** : nemetonshiny **`v0.92.2`** (feature `nemetonshiny@167cf4cd`,
-  cycle dev `0.92.1.9001` → release stable `v0.92.2`) consomme ce manifeste
-  dans `mod_monitoring_reconfort_map` : cases à cocher des couches + curseur
-  d'opacité (re-render léger `leafletProxy`), aucune sémantique métier côté
-  app. Plancher relevé à `Imports: nemeton (>= 0.97.0)`.
-- **Ordre cœur → app respecté** : `nemeton@v0.97.0` publié d'abord, propagé
-  à l'app via `@*release`.
+**Cœur — `nemeton@v0.97.0` (commit `8c32b77`)**
+`reconfort_layer_manifest(result, include_range = FALSE)` exporté. Retourne
+un `data.frame`, une ligne par couche disponible :
+`id`, `label_key`, `type` (`raster`/`vector`), `role`, `path`,
+`categorical`, `palette`, `reverse`, `vmin`/`vmax`, `default_visible`,
+`default_opacity`, `n_features`. Rasters `score` (RdYlGn, reverse) /
+`classification` (catégoriel) / `probability` (viridis) + ligne `alerts`
+conditionnée à `.reconfort_alert_count(result) > 0`. `include_range = TRUE`
+calcule les domaines réels via `terra::minmax`. Contrat stable : l'app ne
+lit jamais `result$rasters` en dur.
+
+**App — nemetonshiny `v0.92.2` puis `v0.92.3`**
+- `v0.92.2` (commit `nemetonshiny@167cf4cd`, cycle dev `0.92.1.9001`) —
+  `mod_monitoring_reconfort_map` consomme le manifeste : cases à cocher des
+  couches (vecteur/rasters) + curseur d'opacité (re-render léger
+  `leafletProxy`). `result` de `run_reconfort_dieback()` threadé du parent
+  (`reconfort_result` → `result_r`). Plancher relevé à
+  `Imports: nemeton (>= 0.97.0)`. (Lot couplé au retrait du sous-onglet
+  doublon « Alertes FORDEAD ».)
+- `v0.92.3` (commit `nemetonshiny@7e7db429`, cycle dev `0.92.2.9001`) —
+  parité complète FORDEAD/FAST : contrôles en sidebar droite
+  (`layout_sidebar`), carte Leaflet statique + overlay (préserve le
+  clic-pixel CRSWIR/CRre), couche UGF en overlay toggleable
+  (`project$indicators_sf`), et clip des rasters à l'AOI de la zone de suivi
+  sélectionnée (`_tot`/`_res`/`_feu`/`_mix`) via `terra::mask` — présentation
+  pure, aucun calcul métier côté app.
+
+**Ordre cœur → app respecté** : `nemeton@v0.97.0` publié d'abord, propagé à
+l'app via `@*release`. Aucune dépendance inverse.
 
 ---
 

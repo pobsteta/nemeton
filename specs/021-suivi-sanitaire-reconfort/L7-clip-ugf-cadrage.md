@@ -1,6 +1,11 @@
 # Cadrage L7 — Masque UGF sur les sorties RECONFORT (spec 021)
 
-**Statut** : cadrage (paperwork avant code) — 2026-06-28.
+**Statut** : cadrage (paperwork avant code) — 2026-06-28. **Reframé le
+2026-06-28** : l'app `nemetonshiny` v0.92.3 applique déjà un `terra::mask`
+de clip à l'AOI de zone **en présentation** (cf. §1bis) ; la finalité de L7
+devient **rapatrier ce clip dans le cœur** (parité FAST/FORDEAD), pas
+« ajouter » le masque. Décision Pascal 2026-06-28 : **maintenir L7 en mode
+rapatriement**.
 **Décisions** : actées via AskUserQuestion (2026-06-28), cf. §3.
 **Cible cœur** : `nemeton` v0.98.0 (minor — changement de comportement par
 défaut, parité spec 016).
@@ -36,6 +41,27 @@ s'étendent au rectangle, pas à la forme réelle des UGFs.
 Rappel chiffré spec 016 (villards) : union des 6 UGFs = **77 ha**, soit
 **29 %** de la bbox englobante (264 ha). ~70 % des pixels affichés sont
 hors gestion.
+
+## 1bis. État au 2026-06-28 — le clip est déjà fait, mais en présentation
+
+`nemetonshiny` **v0.92.3** (commit `7e7db429`) clippe déjà les rasters
+RECONFORT à l'AOI de la zone de suivi sélectionnée via `terra::mask`, **côté
+app**. Comme `monitoring_zone.zone_wkt = st_union(project$indicators_sf)`
+(l'union des UGFs, spec 016 §1), ce clip d'affichage **couvre déjà le besoin
+fonctionnel** de L7.
+
+**Mais** c'est une opération spatiale (`terra::mask`) dans la couche de
+présentation — exactement ce que FAST et FORDEAD **évitent** en confiant le
+masque à leur reader cœur (`read_fast_alert_raster` / `read_fordead_dieback_mask`,
+spec 016). RECONFORT est donc le seul des trois à porter cette logique dans
+l'app.
+
+**Finalité reframée de L7** : ne plus *ajouter* le masque (l'app le fait
+déjà visuellement), mais **rapatrier le `terra::mask` de l'app vers un reader
+cœur** `read_reconfort_layer(apply_zone_mask = TRUE)`. Bénéfices : parité
+stricte des 3 pipelines, sémantique spatiale hors de la présentation (règles
+strictes §1-3 / ADR-009), masque testable côté cœur. À terme, l'app
+v0.93.x+ consomme le reader et **retire son `terra::mask`** local.
 
 ## 2. Vision cible
 
@@ -124,9 +150,10 @@ arguments de `run_reconfort_dieback()` → le reader peut les réutiliser.
    avec un petit raster terra + un polygone sf de test (skip_if_not_installed).
 4. Release **minor v0.98.0** (`feat:`) : DESCRIPTION + NEWS + CITATION +
    CHANGELOG cohérents, PLAN.md (journal + statut), PR → merge → tag.
-5. Brief Shiny : `nemetonshiny` lit chaque couche raster du manifeste via
-   `read_reconfort_layer(layer, con, zone_id)` ; le curseur d'opacité et les
-   toggles restent inchangés.
+5. Brief Shiny (app v0.93.x+) : `nemetonshiny` lit chaque couche raster du
+   manifeste via `read_reconfort_layer(layer, con, zone_id)` et **retire son
+   `terra::mask` local** (v0.92.3) — le clip UGF passe désormais par le reader
+   cœur. Curseur d'opacité, toggles et couche UGF overlay inchangés.
 
 ## 7. Risques & garde-fous
 
