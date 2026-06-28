@@ -1,3 +1,32 @@
+# nemeton 0.97.0 (2026-06-28)
+
+### Added — RECONFORT : manifeste des couches d'un run (`reconfort_layer_manifest()`)
+
+Nouvelle fonction exportée côté cœur qui traduit le résultat de
+`run_reconfort_dieback()` en un `data.frame` plat décrivant les **couches
+affichables** d'un run RECONFORT — le **score** continu de dépérissement, la
+**classification** par pixel, la carte de **probabilité** et les **alertes**
+(centroïdes) — avec les indications de rendu dont un visualiseur a besoin
+(`palette`, `reverse`, domaine `vmin`/`vmax`, `categorical`, `default_visible`,
+`default_opacity`, `n_features`).
+
+La sémantique d'une sortie RECONFORT (ce qu'une couche *est*, comment ses
+valeurs sont normalisées, le sens de la palette) est une connaissance métier :
+elle reste dans le cœur `nemeton` (ADR-009, règles strictes §1-3). Une couche
+de présentation (`nemetonshiny`) consomme le manifeste tel quel pour générer
+ses cases à cocher de calques et son curseur d'opacité, sans coder en dur la
+moindre sémantique RECONFORT.
+
+Seules les couches **disponibles** sont listées (un raster au chemin `NA` —
+variantes masquées absentes tant que le masquage n'a pas tourné — est ignoré ;
+la ligne d'alertes n'apparaît que si le run a produit au moins une alerte). Les
+domaines de valeurs sont *nominaux* par défaut (score `1..100`, probabilité
+`0..1000`) ; `include_range = TRUE` les remplace par le min/max réel lu via
+\pkg{terra} (best-effort). 29 tests unitaires (`test-reconfort-manifest.R`).
+
+Débloque le câblage de l'affichage des couches RECONFORT (toggles + opacité)
+côté `nemetonshiny` (brief fourni).
+
 # nemeton 0.96.1 (2026-06-28)
 
 ### Fixed — RECONFORT : IOTA² séquentiel en mode AOI (évite le kill systemd-oomd)

@@ -105,8 +105,21 @@ changement de contrat).
 > `reconfort_pipeline.R` force `scheduler_type = "debug"` (séquentiel) quand
 > `aoi_crop = TRUE`, miroir du `number_of_chunks = 1`. Choix explicite respecté.
 
-**Statut** : ✅ **livré v0.95.0** (+ patchs v0.95.1, v0.96.0, v0.96.1). Streaming
-validé (140/140) ; classification IOTA² à valider en mode `debug` (run en cours).
+> *2026-06-28 (feat v0.97.0 — manifeste des couches)* : pour câbler l'affichage
+> « au choix » des sorties RECONFORT côté `nemetonshiny` (rasters score/classes/
+> proba + vecteur alertes, avec curseur d'opacité), nouvelle fonction exportée
+> cœur `reconfort_layer_manifest(result, include_range)` : traduit le retour de
+> `run_reconfort_dieback()` en `data.frame` plat (1 ligne/couche disponible) avec
+> indications de rendu (`palette`/`reverse`/`vmin`/`vmax`/`categorical`/
+> `default_visible`/`default_opacity`/`n_features`). La sémantique des couches
+> reste dans le cœur (règles strictes §1-3) ; l'app consomme le manifeste tel
+> quel. 29 tests (`test-reconfort-manifest.R`). Brief Shiny fourni (toggles +
+> opacité). Validé pendant un run réel de diagnostic (surveillance OOM en place).
+
+**Statut** : ✅ **livré v0.95.0** (+ patchs v0.95.1, v0.96.0, v0.96.1 ;
+helper d'affichage v0.97.0). Streaming validé (140/140) ; classification IOTA²
+à valider en mode `debug` (run en cours) ; affichage des couches à câbler côté
+`nemetonshiny` (manifeste cœur prêt).
 
 ---
 

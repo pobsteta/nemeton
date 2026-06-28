@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.97.0] - 2026-06-28
+
+### Added
+- `reconfort_layer_manifest(result, include_range = FALSE)` : décrit les
+  couches affichables d'un run RECONFORT (score, classification, probabilité,
+  alertes) en un `data.frame` plat avec indications de rendu (`palette`,
+  `reverse`, `vmin`/`vmax`, `categorical`, `default_visible`,
+  `default_opacity`, `n_features`). Sémantique des couches gardée dans le cœur
+  (ADR-009) ; consommé tel quel par `nemetonshiny` pour les toggles de calques
+  et le curseur d'opacité. 29 tests (`test-reconfort-manifest.R`).
+
 ## [0.94.1] - 2026-06-23
 
 ### Fixed
