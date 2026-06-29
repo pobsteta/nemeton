@@ -86,7 +86,30 @@ NA. Comportement strictement aligné sur spec 016 / FAST / FORDEAD.
 |---|----------|----------|
 | D1 | **Nommage** de l'option | **`apply_zone_mask`** (parité FAST `read_fast_alert_raster` / FORDEAD `read_fordead_dieback_mask`, spec 016). Pas `clip_to_aoi`. Défaut `TRUE`. |
 | D2 | **Point d'application** | **Read-time** (parité spec 016 « masque au read, pas au write »). Nouveau reader cœur `read_reconfort_layer()`. Les `.tif` disque restent inchangés. |
-| D3 | **Centroïdes d'alertes** | **Parité : non clippés.** Comme FAST/FORDEAD, on s'appuie sur `zone_id` + `st_intersects` à l'analyse R5 (`indicators-deperissement.R:175`). Pas de `st_intersection` au postprocess. |
+| D3 | **Centroïdes d'alertes** | ~~Parité : non clippés~~ → **RÉVISÉE le 2026-06-29** (cf. §3bis). Un run réel a montré que le vecteur d'alertes RECONFORT déborde des UGFs (centroïdes issus du raster masqué **OSO-feuillus**, pas UGF). Décision : **clipper au read-time** via `filter_alerts_to_zone()`, **étendu aux 3 pipelines**. Livré en v0.99.0. |
+
+## 3bis. Révision D3 (2026-06-29) — clip aussi le vecteur d'alertes
+
+**Constat run réel** (zone 5, 1336 alertes) : le **score raster** est bien
+clippé à l'UGF (v0.98.0), **mais le vecteur d'alertes déborde largement**. La
+cause invalide l'argument initial de D3 (« centroïdes issus de rasters
+UGF-masqués → tombent dans l'UGF ») : le postprocess
+(`reconfort_postprocess.R`) extrait les centroïdes du
+`Final_Classif_masked_<year>.tif`, masqué par **OSO feuillus** (occupation du
+sol) et **non** par l'UGF → les clusters couvrent tous les feuillus de la
+bbox + 3 km. (FORDEAD a le même défaut latent, moins visible.)
+
+**Décision révisée** (AskUserQuestion 2026-06-29) :
+- Clip du vecteur d'alertes au polygone UGF, **au read-time** (parité
+  `read_reconfort_layer`, principe « masque au read, pas au write » : la table
+  `alert` reste complète, seul l'affichage filtre).
+- **Helper unique partagé par les 3 pipelines** : `filter_alerts_to_zone()`
+  (le filtre `sf` POINT est identique pour RECONFORT/FORDEAD/FAST → vraie
+  parité, pas de duplication). Interne `.filter_alerts_to_zone()` miroir de
+  `.apply_zone_mask()`.
+- Livré en **`nemeton` v0.99.0**. Côté app v0.93.x+ : passer la couche
+  d'alertes (RECONFORT **et** FORDEAD) par `filter_alerts_to_zone()` avant
+  rendu.
 
 ## 4. API cible
 

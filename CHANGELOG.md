@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.99.0] - 2026-06-29
+
+### Added
+- `filter_alerts_to_zone(alerts, con, zone_id, apply_zone_mask = TRUE,
+  mask_polygon = NULL)` : ne garde que les centroïdes d'alertes dans le
+  polygone UGF, au read-time (contrepartie vectorielle de
+  `read_reconfort_layer` / spec 016). Helper **unique partagé** par les 3
+  pipelines (RECONFORT/FORDEAD/FAST) ; interne `.filter_alerts_to_zone()`.
+  Révision de L7 §D3 (les centroïdes RECONFORT débordaient des UGFs car
+  extraits du raster masqué OSO-feuillus, pas UGF). 8 tests
+  (`test-filter-alerts-to-zone.R`).
+
 ## [0.98.0] - 2026-06-28
 
 ### Added

@@ -1,3 +1,35 @@
+# nemeton 0.99.0 (2026-06-29)
+
+### Added — Filtre des alertes au polygone UGF (`filter_alerts_to_zone()`, L7)
+
+Contrepartie vectorielle du masquage raster au read-time
+(`read_reconfort_layer()` / `read_fast_alert_raster()` /
+`read_fordead_dieback_mask()`, spec 016) : ne garde que les **centroïdes
+d'alertes situés dans le polygone des UGFs**, pour qu'un visualiseur n'affiche
+plus d'alertes hors du périmètre géré.
+
+Motivation (révision de la décision L7 §D3) : un run réel a montré que le
+vecteur d'alertes RECONFORT débordait largement des UGFs — les centroïdes sont
+extraits du `Final_Classif_masked_<year>.tif`, masqué par OSO **feuillus**
+(occupation du sol) et **pas** par l'UGF, donc les clusters couvrent tous les
+feuillus de la bbox + 3 km. Les rasters étaient déjà clippés (v0.98.0), mais
+pas le vecteur.
+
+- `filter_alerts_to_zone(alerts, con = NULL, zone_id = NULL,
+  apply_zone_mask = TRUE, mask_polygon = NULL)` — **helper unique partagé par
+  les 3 pipelines** (RECONFORT, FORDEAD, FAST) : le filtre `sf` POINT est
+  identique, donc une seule fonction donne la vraie parité. Réutilise
+  `.get_zone_aoi()` ; nouvel interne `.filter_alerts_to_zone()` (miroir de
+  `.apply_zone_mask()`).
+- Filtre au **read/display**, la table `alert` n'est pas modifiée (principe
+  spec 016 « masque au read, pas au write ») ; provenance `zone_id` conservée.
+- Reprojette le polygone au CRS des alertes ; `cli_warn` + passthrough si rien
+  n'est résoluble ; opt-out `apply_zone_mask = FALSE`. 8 tests
+  (`test-filter-alerts-to-zone.R`).
+
+Côté `nemetonshiny` (v0.93.x+) : passer la couche d'alertes par
+`filter_alerts_to_zone()` avant le rendu (RECONFORT **et** FORDEAD).
+
 # nemeton 0.98.0 (2026-06-28)
 
 ### Added — RECONFORT : reader des couches masqué à l'UGF (`read_reconfort_layer()`, L7)

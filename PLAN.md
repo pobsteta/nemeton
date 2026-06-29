@@ -624,6 +624,32 @@ l'app via `@*release`. Aucune dépendance inverse.
   `terra::mask` local** (v0.92.3) → la sémantique spatiale revient au cœur,
   parité stricte des 3 pipelines.
 
+- [x] **L7 (suite) — filtre des alertes au polygone UGF** —
+      `filter_alerts_to_zone(alerts, con, zone_id, apply_zone_mask)` : ne garde
+      que les centroïdes dans l'UGF, au read-time. Révise D3 (les alertes
+      RECONFORT débordaient des UGFs).
+
+#### 2026-06-29 — L7 (suite) : filtre vectoriel des alertes (`filter_alerts_to_zone`)
+
+- **Constat (run réel 2026-06-29)** : run zone 5 complété (1336 alertes), mais
+  le **vecteur d'alertes débordait largement des UGFs** alors que le score
+  raster, lui, était bien clippé (v0.98.0). Cause : le postprocess extrait les
+  centroïdes du `Final_Classif_masked_<year>.tif`, masqué par **OSO feuillus**
+  (occupation du sol) et **pas** par l'UGF → clusters sur tous les feuillus de
+  la bbox + 3 km. La décision L7 §D3 (« ne pas clipper les centroïdes », parité)
+  reposait sur une hypothèse fausse (« centroïdes issus de rasters UGF-masqués »).
+- **Décision (AskUserQuestion 2026-06-29)** : clip **au read-time** (parité
+  `read_reconfort_layer`) + **étendu aux 3 pipelines**. D3 révisée.
+- **Cœur — `v0.99.0`** : `filter_alerts_to_zone()` exporté (`R/zone_aoi.R`),
+  **helper unique partagé** RECONFORT/FORDEAD/FAST (le filtre `sf` POINT est
+  identique → vraie parité, pas de duplication). Interne
+  `.filter_alerts_to_zone()` miroir de `.apply_zone_mask()`. Filtre au read,
+  table `alert` non modifiée ; reprojection CRS ; `cli_warn` + passthrough si
+  pas de polygone ; opt-out `apply_zone_mask = FALSE`. 8 tests
+  (`test-filter-alerts-to-zone.R`).
+- **Suite app (v0.93.x+)** : passer la couche d'alertes (RECONFORT **et**
+  FORDEAD) par `filter_alerts_to_zone()` avant le rendu.
+
 ---
 
 # Chantier clos (côté cœur) — Diagnostic pixel CRSWIR (spec 008 §14, ADR-013 A3)
