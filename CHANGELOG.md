@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.99.1] - 2026-06-29
+
+### Fixed
+- Sens de **R5 dépérissement** : `normalize_indicator()` inverse désormais R5
+  (`100 - score`, colonnes `indicateur_r5_deperissement` / `R5`) pour que sa
+  contribution au radar / `famille_risque` reste « haut = bon » comme R1-R4
+  (R5 brut est « haut = mauvais »). Sans ça, une UGF très dépérie remontait le
+  score de la famille R. `indicateur_r5_deperissement()` inchangé (API brute).
+  Tooltip R5 reformulé (+ mention RECONFORT). Bug latent (R5 pas encore agrégé
+  côté app). 3 tests (`test-normalization.R`).
+
 ## [0.99.0] - 2026-06-29
 
 ### Added

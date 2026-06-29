@@ -203,8 +203,8 @@ INDICATOR_FAMILIES <- list(
         en = "Wildlife pressure (deer) on forest regeneration. Based on hunting data. High score = low pressure."
       ),
       R5 = list(
-        fr = "D\u00e9p\u00e9rissement de peuplements r\u00e9sineux d\u00e9tect\u00e9 par FORDEAD (Sentinel-2 / CRSWIR), pond\u00e9r\u00e9 par les taux de bonne d\u00e9tection ONF/DSF 2024. NA hors zone de validit\u00e9 ou hors peuplement \u00e9pic\u00e9a/sapin. Score \u00e9lev\u00e9 = forte d\u00e9t\u00e9rioration.",
-        en = "Conifer-stand dieback detected by FORDEAD (Sentinel-2 / CRSWIR), weighted by ONF/DSF 2024 detection accuracy. NA outside the validity zone or non-spruce/fir stands. High score = severe deterioration."
+        fr = "D\u00e9p\u00e9rissement d\u00e9tect\u00e9 par FORDEAD (r\u00e9sineux) ou RECONFORT (feuillus) sur Sentinel-2 / CRSWIR, pond\u00e9r\u00e9 par les taux de bonne d\u00e9tection ONF/DSF 2024. NA hors zone de validit\u00e9 ou hors essence cibl\u00e9e. Score \u00e9lev\u00e9 = faible d\u00e9p\u00e9rissement (bon \u00e9tat sanitaire).",
+        en = "Dieback detected by FORDEAD (conifers) or RECONFORT (broadleaves) on Sentinel-2 / CRSWIR, weighted by ONF/DSF 2024 detection accuracy. NA outside the validity zone or for non-targeted species. High score = low dieback (good forest health)."
       )
     )
   ),

@@ -1687,3 +1687,42 @@ test_that("invert_indicator errors on missing indicator", {
     regexp = NULL
   )
 })
+
+
+# --- R5 sens : normalize_indicator inverts the dieback indicator -----------
+# (spec 008 / indicator-config) — R5 raw is "high = more dieback" (bad);
+# its radar / famille_risque contribution must be flipped to "high = good"
+# like R1-R4. Raw indicateur_r5_deperissement() is unchanged.
+
+test_that("normalize_indicator inverts R5 (high dieback -> low score)", {
+  expect_equal(
+    normalize_indicator("indicateur_r5_deperissement", c(0, 20, 80, 100)),
+    c(100, 80, 20, 0)
+  )
+  # short-code column form (create_family_index Strategy 1 detects "R5")
+  expect_equal(normalize_indicator("R5", 80), 20)
+  # clamps out-of-range before inverting
+  expect_equal(normalize_indicator("R5", c(-10, 130)), c(100, 0))
+})
+
+test_that("normalize_indicator leaves a high=good indicator unchanged", {
+  # a plain risk indicator (already oriented high=good) is passed through
+  expect_equal(normalize_indicator("indicateur_r1_feu", c(30, 70)), c(30, 70))
+})
+
+test_that("create_family_index: severe R5 dieback LOWERS famille_risque", {
+  skip_if_not_installed("sf")
+  mk <- function(r5) {
+    sf::st_sf(
+      R1 = 70, R2 = 70, R3 = 70, R4 = 70, R5 = r5,
+      geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 4326)
+    )
+  }
+  # R1-R4 = 70 (good). Raw R5 = 80 (severe dieback) -> inverted to 20.
+  sev  <- create_family_index(mk(80), method = "mean")
+  good <- create_family_index(mk(5),  method = "mean")  # almost no dieback
+  expect_equal(sev$famille_risque,  mean(c(70, 70, 70, 70, 20)))  # = 60
+  expect_equal(good$famille_risque, mean(c(70, 70, 70, 70, 95)))  # = 75
+  # severe dieback must pull the family score DOWN, not up
+  expect_lt(sev$famille_risque, good$famille_risque)
+})

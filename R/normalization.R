@@ -548,6 +548,16 @@ normalize_indicator <- function(indicator, values) {
     return(pmin(100, pmax(0, 100 * (1 - values / 2000))))
   }
 
+  # R5 dépérissement: the only family indicator oriented "high = bad"
+  # (more dieback). Its raw value (indicateur_r5_deperissement(), 0-100,
+  # high = severe) is inverted here so its radar / famille_risque
+  # contribution stays "high = good" like R1-R4. The raw indicator
+  # function and its callers are unchanged — only the normalized radar
+  # value is flipped (cf. spec 008 / indicator-config R5 sens).
+  if (indicator %in% c("indicateur_r5_deperissement", "R5")) {
+    return(pmin(100, pmax(0, 100 - values)))
+  }
+
   if (!is.null(ref_max)) {
     values <- pmin(100, pmax(0, values / ref_max * 100))
   } else {
