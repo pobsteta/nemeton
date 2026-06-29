@@ -40,11 +40,13 @@ FORDEAD :
    write).
 2. **Nommage homogène** : `apply_zone_mask` (et non `clip_to_aoi`), identique
    aux readers FAST/FORDEAD. Opt-out `apply_zone_mask = FALSE`.
-3. **Centroïdes d'alertes non clippés.** Comme FAST/FORDEAD, les centroïdes du
-   postprocess ne sont pas restreints géométriquement ; le rattachement à la
-   zone reste porté par `zone_id` + le test `st_intersects` à l'analyse R5
-   (`indicators-deperissement.R`). Les centroïdes provenant déjà de rasters
-   masqués, ils tombent naturellement dans l'emprise UGF.
+3. **Centroïdes d'alertes — clippés au read-time** (RÉVISÉ 2026-06-29, v0.99.0).
+   La position initiale (« non clippés, ils tombent naturellement dans l'UGF »)
+   était fausse : les centroïdes RECONFORT viennent du raster masqué
+   **OSO-feuillus** (pas UGF), donc débordent. Correctif : helper unique
+   `filter_alerts_to_zone()` qui filtre l'`sf` POINT au polygone UGF **au read**
+   (table `alert` non modifiée), **partagé par les 3 pipelines**. Le
+   rattachement `zone_id` + `st_intersects` de l'analyse R5 reste en place.
 
 ## Conséquences
 
