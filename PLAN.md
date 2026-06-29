@@ -650,6 +650,27 @@ l'app via `@*release`. Aucune dépendance inverse.
 - **Suite app (v0.93.x+)** : passer la couche d'alertes (RECONFORT **et**
   FORDEAD) par `filter_alerts_to_zone()` avant le rendu.
 
+#### 2026-06-29 — Fix sens de R5 dans la famille R (`normalize_indicator`)
+
+- **Constat** : en traçant R5 → famille R → indice général, `normalize_indicator()`
+  laissait passer **R5 brut** (orienté « haut = dépérissement », mauvais) alors
+  que R1-R4 sont « haut = bon ». La moyenne `famille_risque` était donc tirée à
+  l'envers (une UGF très dépérie *remontait* le score).
+- **Vérif app** (agent Explore sur `nemetonshiny`) : l'app **ne compense pas** —
+  en fait **R5 n'est pas encore branché** dans le radar (famille R = R1-R4 ;
+  placeholder i18n « future »). Bug donc **latent**, mais le cœur est conçu pour
+  inclure R5 → correctif côté cœur pour garantir l'orientation au branchement.
+- **Cœur — `v0.99.1` (fix)** : `normalize_indicator()` inverse R5
+  (`100 - score`, colonnes `indicateur_r5_deperissement` / `R5`), au même endroit
+  que l'inversion s1/s2 déjà présente. `indicateur_r5_deperissement()` **inchangé**
+  (API brute « haut = dépérissement »). Tooltip R5 reformulé (« Score élevé =
+  faible dépérissement » + mention RECONFORT). 3 tests (`test-normalization.R`) ;
+  non-régression vérifiée (deperissement 42, famille 95, intégration 91, risque
+  153, viz 232).
+- **Reste** : option « champ `direction` générique dans `indicator-config` » non
+  retenue (plus lourde) ; si un autre indicateur « haut = mauvais » apparaît, le
+  refactor pourra être repris.
+
 ---
 
 # Chantier clos (côté cœur) — Diagnostic pixel CRSWIR (spec 008 §14, ADR-013 A3)

@@ -1,3 +1,28 @@
+# nemeton 0.99.1 (2026-06-29)
+
+### Fixed — sens de R5 dans la famille R / le radar (orientation inversée)
+
+`normalize_indicator()` laissait passer **R5 dépérissement** tel quel, alors que
+sa valeur brute est orientée « **haut = plus de dépérissement** » (mauvais),
+à l'inverse de R1-R4 (« haut = faible risque », bon). Folder R5 brut dans la
+moyenne de la famille R (`create_family_index`) tirait donc le score **dans le
+mauvais sens** : une UGF très dépérie *remontait* `famille_risque` et l'indice
+général.
+
+`normalize_indicator()` **inverse désormais R5** (`100 - score`) pour les
+colonnes `indicateur_r5_deperissement` / `R5`, de sorte que sa contribution au
+radar et à `famille_risque` reste « haut = bon » comme R1-R4 (cf. le cas s1/s2
+distances déjà inversé au même endroit). La fonction
+`indicateur_r5_deperissement()` et ses appelants sont **inchangés** (le score
+brut « haut = dépérissement » reste l'API publique) ; seule la valeur
+normalisée du radar est retournée. Tooltip R5 reformulé en conséquence (« Score
+élevé = faible dépérissement ») et corrigé (R5 couvre FORDEAD **et** RECONFORT
+depuis L4, plus seulement les résineux).
+
+Bug **latent** : R5 n'est pas encore agrégé dans le radar côté `nemetonshiny`
+(famille R = R1-R4 ; R5 « future »). Le correctif garantit la bonne orientation
+le jour du branchement. 3 tests ajoutés (`test-normalization.R`).
+
 # nemeton 0.99.0 (2026-06-29)
 
 ### Added — Filtre des alertes au polygone UGF (`filter_alerts_to_zone()`, L7)
