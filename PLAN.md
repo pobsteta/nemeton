@@ -738,9 +738,20 @@ pas de 13e famille (radar 12 axes). Mode augmenté `microclimate_model`.
   `microclimate_run()` (contrat `micro` ; orchestration microclimf différée —
   données requises, non testable CI ; **pas de prototype dans les repos**). 16
   tests. Non-régression famille/intégration/NDP/air OK.
-- **Reste** : L2 (`indicateur_r6_sensibilite` + années auto E-OBS), L3 (composite
-  par essence), L4 (onglet `nemetonshiny`), L5 (doc/vignette). + câblage réel
-  microclimf/lasR (L1b) quand données disponibles.
+- **Reste** : L3 (composite par essence), L4 (onglet `nemetonshiny`), L5
+  (doc/vignette). + câblage réel microclimf/lasR (L1b) quand données disponibles.
+
+#### 2026-06-30 — L2 cœur : sensibilité R6 + années E-OBS (`v0.102.0`)
+
+- **Cœur — `v0.102.0`** : `indicateur_r6_sensibilite` (R6, famille R) — Δ stress
+  canicule − moyenne (ΔT°max + ΔVPD standardisés, canopée figée), décroissant
+  (peu sensible = 100). Sens haut=bon → pas d'inversion (≠ R5). Famille R → R1…R6
+  (`indicator-config.R`). `R/microclimate_years.R` : `microclimate_detect_years()`
+  (auto E-OBS : été le plus chaud vs médiane, départage proche-LiDAR, `year_window`)
+  — sélecteur pur testable ; extraction E-OBS raster différée (donnée requise) ;
+  override utilisateur. 33 tests (microclimat 23 + years 10). Non-régression
+  famille/déperissement/ndp OK.
+- **Reste** : L3 (composite `regeneration_index` par essence), L4 (onglet), L5 (doc).
 
 ---
 

@@ -78,3 +78,33 @@ test_that("partial raster coverage lowers couverture_pct", {
   expect_lt(out$A3_couverture_pct, 100)
   expect_gt(out$A3_couverture_pct, 0)
 })
+
+
+# --- R6 sensitivity (heatwave vs average year) -----------------------------
+
+test_that("R6 combines ΔT°max and ΔVPD, decreasing (less sensitive = higher)", {
+  skip_if_no_terra()
+  u <- mk_ugf()
+  moy <- list(tmax_understorey = mk_r(25), vpd = mk_r(1.5))
+  can <- list(tmax_understorey = mk_r(31), vpd = mk_r(2.5))   # ΔT=6, ΔVPD=1
+  out <- indicateur_r6_sensibilite(u, micro_moyenne = moy, micro_canicule = can)
+  expect_equal(out$R6_dtmax, 6, tolerance = 1e-6)
+  expect_equal(out$R6_dvpd, 1, tolerance = 1e-6)
+  # sT=6/8=.75, sV=1/2=.5 -> sens=.625 -> R6=37.5
+  expect_equal(out$R6, 37.5, tolerance = 1e-6)
+  expect_true("microclimate_model" %in% attr(out, "augmented"))
+  # a hotter heatwave -> more sensitive -> lower R6
+  can2 <- list(tmax_understorey = mk_r(33), vpd = mk_r(3))
+  out2 <- indicateur_r6_sensibilite(u, micro_moyenne = moy, micro_canicule = can2)
+  expect_lt(out2$R6, out$R6)
+})
+
+test_that("R6 is NA when a year's micro layer is missing", {
+  skip_if_no_terra()
+  u <- mk_ugf()
+  out <- indicateur_r6_sensibilite(
+    u, micro_moyenne = list(tmax_understorey = mk_r(25)),  # no vpd
+    micro_canicule = list(tmax_understorey = mk_r(31), vpd = mk_r(2.5)))
+  expect_true(is.na(out$R6))
+  expect_equal(out$R6_couverture_pct, 0)
+})

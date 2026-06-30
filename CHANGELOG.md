@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.102.0] - 2026-06-30
+
+### Added
+- reGénération L2 (spec 027 / ADR-014) : `indicateur_r6_sensibilite` (R6,
+  famille R) — sensibilité du microsite à une année chaude (Δ stress canicule −
+  moyenne, ΔT°max + ΔVPD standardisés, décroissant = résilient). Sens haut=bon
+  (pas d'inversion). `microclimate_detect_years()` + `R/microclimate_years.R` :
+  détection auto des années moyenne/canicule depuis E-OBS, override utilisateur
+  (§6bis). Famille R → R1…R6. 33 tests.
+
 ## [0.101.0] - 2026-06-30
 
 ### Added

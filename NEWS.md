@@ -1,3 +1,29 @@
+# nemeton 0.102.0 (2026-06-30)
+
+### Added — reGénération L2 : sensibilité microclimatique R6 + années E-OBS
+
+Deuxième lot du chantier reGénération (spec 027 / ADR-014).
+
+- `indicateur_r6_sensibilite(units, micro_moyenne, micro_canicule, …)` — **R6**
+  (famille R) : sensibilité du microsite à une année chaude = Δ stress entre un
+  été **canicule** et un été **moyen** (canopée figée), combinant ΔT°max et ΔVPD
+  standardisés. Normalisé 0–100 **décroissant** (peu sensible / résilient = 100).
+  Sens « haut = bon » → pas d'inversion (contrairement à R5 dépérissement).
+  Colonnes `R6`, `R6_dtmax`, `R6_dvpd`, `R6_couverture_pct` + flag
+  `microclimate_model`. Famille R étendue à R1…R6 (`indicator-config.R`).
+- `microclimate_detect_years(eobs, aoi, year_window, lidar_year)` +
+  `R/microclimate_years.R` : **détection automatique** des années « moyenne » /
+  « canicule » depuis la série estivale E-OBS (été le plus chaud vs médiane
+  climatologique), avec **départage** vers l'année proche du LiDAR (limite le
+  biais canopée figée) et `year_window`. Sélecteur pur testable ; l'extraction
+  E-OBS raster/netcdf est différée (donnée requise) — passer un vecteur nommé
+  `année -> indice de chaleur estivale`, ou choisir les années manuellement
+  (override utilisateur, spec 027 §6bis).
+- 33 tests (`test-indicators-microclimate.R` 23, `test-microclimate-years.R` 10).
+
+À suivre : L3 (composite par essence `regeneration_index`), L4 (onglet
+`nemetonshiny`), L5 (doc).
+
 # nemeton 0.101.0 (2026-06-30)
 
 ### Added — reGénération : indicateurs microclimatiques sous couvert (spec 027 L1)
