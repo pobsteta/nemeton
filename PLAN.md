@@ -620,14 +620,18 @@ l'app via `@*release`. Aucune dépendance inverse.
   `.apply_zone_mask()` / `.get_zone_aoi()` ; polygone résolu par
   `mask_polygon` sinon `con` + `zone_id` ; `cli_warn` + raster brut si rien
   n'est résoluble. 11 tests (`test-reconfort-reader.R`). Manifeste L6 inchangé.
-- **Suite app (v0.93.x+)** : `nemetonshiny` consomme le reader et **retire son
-  `terra::mask` local** (v0.92.3) → la sémantique spatiale revient au cœur,
-  parité stricte des 3 pipelines.
+- **App — `v0.93.0` (`nemetonshiny@628a49b2`)** ✅ : consomme
+  `read_reconfort_layer()` et **retire son `terra::mask` local** (v0.92.3) →
+  la sémantique spatiale **raster** revient au cœur.
 
 - [x] **L7 (suite) — filtre des alertes au polygone UGF** —
       `filter_alerts_to_zone(alerts, con, zone_id, apply_zone_mask)` : ne garde
       que les centroïdes dans l'UGF, au read-time. Révise D3 (les alertes
       RECONFORT débordaient des UGFs).
+- [x] **Parité des 3 pipelines (raster + vecteur)** — FAST / FORDEAD / RECONFORT
+      masquent désormais raster **et** vecteur dans leur reader cœur ; aucune
+      opération spatiale de masquage dans les `mod_*` de `nemetonshiny`
+      (ADR-009, règles strictes §1-3). App à jour jusqu'à `v0.93.1`.
 
 #### 2026-06-29 — L7 (suite) : filtre vectoriel des alertes (`filter_alerts_to_zone`)
 
@@ -647,8 +651,10 @@ l'app via `@*release`. Aucune dépendance inverse.
   table `alert` non modifiée ; reprojection CRS ; `cli_warn` + passthrough si
   pas de polygone ; opt-out `apply_zone_mask = FALSE`. 8 tests
   (`test-filter-alerts-to-zone.R`).
-- **Suite app (v0.93.x+)** : passer la couche d'alertes (RECONFORT **et**
-  FORDEAD) par `filter_alerts_to_zone()` avant le rendu.
+- **App — `v0.93.1` (`nemetonshiny@703bdd66`)** ✅ : `alerts_r` enchaîne
+  `list_alerts()` → `filter_alerts_to_zone()` (RECONFORT **et** FORDEAD). Clôt la
+  **parité raster + vecteur des 3 pipelines** : plus aucune sémantique spatiale
+  de masquage côté `nemetonshiny`.
 
 #### 2026-06-29 — Fix sens de R5 dans la famille R (`normalize_indicator`)
 
