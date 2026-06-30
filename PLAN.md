@@ -715,6 +715,35 @@ l'app via `@*release`. Aucune dépendance inverse.
 
 ---
 
+# Chantier EN COURS — reGénération : microclimat sous couvert (spec 027, ADR-014)
+
+**Cadré** : 2026-06-30 (paperwork : `specs/027-regeneration-microclimat/spec.md`
++ ADR-014 dans `nemetonplateform`). **Objectif** : onglet « reGénération » —
+aptitude microclimatique à la régénération (microclimf + ERA5-Land + LiDAR HD,
+repli opencanopy). Sous-indicateurs A3/A4/W4/**R6** (R5 pris par dépérissement),
+pas de 13e famille (radar 12 axes). Mode augmenté `microclimate_model`.
+
+#### 2026-06-30 — L1 cœur : indicateurs microclimatiques A3/A4/W4 (`v0.101.0`)
+
+- **Cadrage** : spec 027 + ADR-014 (mergé `nemetonplateform` PR #8). 3 corrections
+  au brief actées : **R6** (pas R5, pris), **ADR-014** (pas 012), **spec 027**.
+  Décision années R6 = détection auto E-OBS + override (validé).
+- **Cœur — `v0.101.0`** : `R/indicators-microclimate.R` — `indicateur_a3_microclimat`
+  (A3, T°max sous couvert, décroissant), `indicateur_a4_tamponnement` (A4,
+  tamponnement, croissant), `indicateur_w4_vpd` (W4, VPD, décroissant). Consomment
+  un jeu `micro` (rasters JJA), agrègent par UGF (couverture-pondérée), écrivent
+  score 0-100 (code court) + brut + `couverture_pct` + flag `microclimate_model`.
+  Familles A→4 / W→4 dans `indicator-config.R`. Flag dans `detect_ndp()`. Sources
+  `FR.json` (era5/eobs/lidarhd). Dépendances lourdes en `Suggests`. Scaffold
+  `microclimate_run()` (contrat `micro` ; orchestration microclimf différée —
+  données requises, non testable CI ; **pas de prototype dans les repos**). 16
+  tests. Non-régression famille/intégration/NDP/air OK.
+- **Reste** : L2 (`indicateur_r6_sensibilite` + années auto E-OBS), L3 (composite
+  par essence), L4 (onglet `nemetonshiny`), L5 (doc/vignette). + câblage réel
+  microclimf/lasR (L1b) quand données disponibles.
+
+---
+
 # Chantier clos (côté cœur) — Diagnostic pixel CRSWIR (spec 008 §14, ADR-013 A3)
 
 > **L1 + L2 livrés** (v0.42.0 / v0.43.0). Seul **L3** (modal plotly,

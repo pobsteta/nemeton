@@ -320,6 +320,12 @@ detect_ndp <- function(data) {
   if (!is.null(texture_source) && identical(as.character(texture_source), "maestro")) {
     augmented <- c(augmented, "texture_ml")
   }
+  # spec 027 / ADR-014 : indicateurs microclimatiques modélisés (microclimf),
+  # augmentés par la structure LiDAR HD / CHM. NDP de base inchangé.
+  micro_source <- attr(data, "microclimate_source")
+  if (!is.null(micro_source) && identical(as.character(micro_source), "microclimf")) {
+    augmented <- c(augmented, "microclimate_model")
+  }
 
   new_ndp_result(level, augmented, sources)
 }

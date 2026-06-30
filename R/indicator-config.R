@@ -56,12 +56,13 @@ INDICATOR_FAMILIES <- list(
     name_en = "Water",
     icon = "droplet-fill",
     color = "#1E90FF",
-    indicators = c("W1", "W2", "W3"),
-    column_names = c("indicateur_w1_reseau", "indicateur_w2_zones_humides", "indicateur_w3_humidite"),
+    indicators = c("W1", "W2", "W3", "W4"),
+    column_names = c("indicateur_w1_reseau", "indicateur_w2_zones_humides", "indicateur_w3_humidite", "indicateur_w4_vpd"),
     indicator_labels = list(
       W1 = list(fr = "R\u00e9seau hydrographique", en = "Water Network"),
       W2 = list(fr = "Zones humides", en = "Wetlands"),
-      W3 = list(fr = "Indice topographique d'humidit\u00e9", en = "Topographic Wetness Index")
+      W3 = list(fr = "Indice topographique d'humidit\u00e9", en = "Topographic Wetness Index"),
+      W4 = list(fr = "D\u00e9ficit hydrique sous couvert", en = "Under-canopy water deficit")
     ),
     indicator_tooltips = list(
       W1 = list(
@@ -75,6 +76,10 @@ INDICATOR_FAMILIES <- list(
       W3 = list(
         fr = "Indice topographique d'humidit\u00e9 (TWI). Pr\u00e9dit l'accumulation d'eau selon la topographie. Valeurs \u00e9lev\u00e9es = zones potentiellement humides.",
         en = "Topographic Wetness Index (TWI). Predicts water accumulation based on topography. High values = potentially wet areas."
+      ),
+      W4 = list(
+        fr = "D\u00e9ficit de pression de vapeur (VPD) estival sous couvert (microclimf, augment\u00e9 LiDAR). S\u00e9cheresse atmosph\u00e9rique ressentie par les semis. Score \u00e9lev\u00e9 = air plus humide.",
+        en = "Summer vapour-pressure deficit (VPD) under the canopy (microclimf, LiDAR-augmented). Atmospheric dryness felt by seedlings. High score = moister air."
       )
     )
   ),
@@ -84,11 +89,13 @@ INDICATOR_FAMILIES <- list(
     name_en = "Air & Microclimate",
     icon = "wind",
     color = "#87CEEB",
-    indicators = c("A1", "A2"),
-    column_names = c("indicateur_a1_couverture", "indicateur_a2_qualite_air"),
+    indicators = c("A1", "A2", "A3", "A4"),
+    column_names = c("indicateur_a1_couverture", "indicateur_a2_qualite_air", "indicateur_a3_microclimat", "indicateur_a4_tamponnement"),
     indicator_labels = list(
       A1 = list(fr = "Tampon forestier", en = "Forest Buffer"),
-      A2 = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality")
+      A2 = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality"),
+      A3 = list(fr = "Microclimat sous couvert", en = "Under-canopy microclimate"),
+      A4 = list(fr = "Tamponnement canop\u00e9e", en = "Canopy buffering")
     ),
     indicator_tooltips = list(
       A1 = list(
@@ -98,6 +105,14 @@ INDICATOR_FAMILIES <- list(
       A2 = list(
         fr = "Indice de qualit\u00e9 de l'air bas\u00e9 sur l'\u00e9loignement des sources de pollution et la densit\u00e9 foresti\u00e8re environnante.",
         en = "Air quality index based on distance from pollution sources and surrounding forest density."
+      ),
+      A3 = list(
+        fr = "Temp\u00e9rature maximale estivale sous couvert (microclimf, augment\u00e9 LiDAR). Pilote la r\u00e9g\u00e9n\u00e9ration. Score \u00e9lev\u00e9 = plus frais. Fiable en relatif entre parcelles.",
+        en = "Summer maximum temperature under the canopy (microclimf, LiDAR-augmented). Drives regeneration. High score = cooler. Reliable in relative ranking."
+      ),
+      A4 = list(
+        fr = "Tamponnement thermique de la canop\u00e9e (\u00e9cart T\u00b0max d\u00e9couvert \u2212 sous couvert). Score \u00e9lev\u00e9 = microsite mieux prot\u00e9g\u00e9 de la chaleur.",
+        en = "Canopy thermal buffering (T\u00b0max open minus under canopy). High score = microsite better shielded from heat."
       )
     )
   ),

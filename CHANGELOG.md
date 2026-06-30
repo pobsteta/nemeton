@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.101.0] - 2026-06-30
+
+### Added
+- reGénération L1 (spec 027 / ADR-014) : indicateurs microclimatiques sous
+  couvert `indicateur_a3_microclimat` (A3), `indicateur_a4_tamponnement` (A4),
+  `indicateur_w4_vpd` (W4) — insérés dans les familles A/W existantes (radar 12
+  axes préservé). Flag NDP `microclimate_model` (`detect_ndp`, amende ADR-011).
+  Scaffold `microclimate_run()` + contrat `micro`. Sources `FR.json` (era5_land,
+  eobs, lidarhd_mnt/mnh/nuage). Dépendances lourdes en `Suggests` (microclimf,
+  mcera5, ecmwfr, lidR). 16 tests (`test-indicators-microclimate.R`).
+
 ## [0.100.1] - 2026-06-30
 
 ### Fixed
