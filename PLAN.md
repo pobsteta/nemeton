@@ -676,6 +676,12 @@ l'app via `@*release`. Aucune dépendance inverse.
 - **Reste** : option « champ `direction` générique dans `indicator-config` » non
   retenue (plus lourde) ; si un autre indicateur « haut = mauvais » apparaît, le
   refactor pourra être repris.
+- **App — `nemetonshiny@v0.94.0` (2026-06-30)** ✅ : R5 **branché dans le radar**
+  (`R/service_r5.R::add_r5_to_indicators()` injecté dans `mod_synthesis` avant
+  `create_family_index`). Routage par essence via **intersection d'alertes**
+  (pas de colonne d'essence sur les UGF) ; R5 passé **brut** (le cœur inverse,
+  pas de double-inversion). Best-effort : sans zone/alerte → famille R = R1-R4.
+  Famille R cœur passe à 32 indicateurs (R5 conditionnel).
 
 ---
 
