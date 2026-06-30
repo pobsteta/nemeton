@@ -82,71 +82,181 @@ reconfort_layer_manifest <- function(result, include_range = FALSE) {
     NA_character_
   }
 
-  # One descriptor per candidate raster layer (in display order). Each is
-  # emitted only when its resolved path exists.
-  raster_rows <- list(
-    list(id = "score", label_key = "reconfort_couche_score",
-         role = "score", path = pick(rasters$continuous_score, NULL),
-         categorical = FALSE, palette = "RdYlGn", reverse = TRUE,
-         vmin = 1, vmax = 100, default_visible = TRUE,
-         default_opacity = 0.8),
-    list(id = "classification", label_key = "reconfort_couche_classes",
-         role = "classification",
-         path = pick(rasters$classif_masked, rasters$classif),
-         categorical = TRUE, palette = NA_character_, reverse = FALSE,
-         vmin = NA_real_, vmax = NA_real_, default_visible = FALSE,
-         default_opacity = 0.8),
-    list(id = "probability", label_key = "reconfort_couche_proba",
-         role = "probability",
-         path = pick(rasters$probability_masked, rasters$probability),
-         categorical = FALSE, palette = "viridis", reverse = FALSE,
-         vmin = 0, vmax = 1000, default_visible = FALSE,
-         default_opacity = 0.8)
-  )
+  .reconfort_build_manifest(
+    paths = list(
+      score          = pick(rasters$continuous_score, NULL),
+      classification = pick(rasters$classif_masked, rasters$classif),
+      probability    = pick(rasters$probability_masked, rasters$probability)),
+    n_alerts      = .reconfort_alert_count(result),
+    include_range = include_range)
+}
 
+
+# Static per-layer display descriptors (palette, sens, domain, default
+# visibility/opacity). Shared by reconfort_layer_manifest() (in-memory)
+# and reconfort_cache_manifest() (from cache) so the two emit the *exact*
+# same schema and rendering hints.
+.RECONFORT_LAYER_DESCRIPTORS <- list(
+  list(id = "score", label_key = "reconfort_couche_score", role = "score",
+       categorical = FALSE, palette = "RdYlGn", reverse = TRUE,
+       vmin = 1, vmax = 100, default_visible = TRUE, default_opacity = 0.8),
+  list(id = "classification", label_key = "reconfort_couche_classes",
+       role = "classification", categorical = TRUE, palette = NA_character_,
+       reverse = FALSE, vmin = NA_real_, vmax = NA_real_,
+       default_visible = FALSE, default_opacity = 0.8),
+  list(id = "probability", label_key = "reconfort_couche_proba",
+       role = "probability", categorical = FALSE, palette = "viridis",
+       reverse = FALSE, vmin = 0, vmax = 1000, default_visible = FALSE,
+       default_opacity = 0.8)
+)
+
+
+# Empty manifest with the canonical columns + types.
+.reconfort_empty_manifest <- function() {
+  data.frame(
+    id = character(), label_key = character(), type = character(),
+    role = character(), path = character(), categorical = logical(),
+    palette = character(), reverse = logical(), vmin = numeric(),
+    vmax = numeric(), default_visible = logical(),
+    default_opacity = numeric(), n_features = integer(),
+    stringsAsFactors = FALSE)
+}
+
+
+# Build the manifest data.frame from resolved raster `paths` (named list
+# with `score` / `classification` / `probability`, NA when absent) plus an
+# optional alert count. The single source of truth for the manifest shape.
+.reconfort_build_manifest <- function(paths, n_alerts = 0L,
+                                      include_range = FALSE) {
   rows <- list()
-  for (r in raster_rows) {
-    if (is.na(r$path)) next
-    if (include_range && !r$categorical) {
+  for (d in .RECONFORT_LAYER_DESCRIPTORS) {
+    p <- paths[[d$id]]
+    if (is.null(p) || is.na(p) || !nzchar(p)) next
+    vmin <- d$vmin; vmax <- d$vmax
+    if (include_range && !d$categorical) {
       rng <- tryCatch({
-        mm <- terra::minmax(terra::rast(r$path))
+        mm <- terra::minmax(terra::rast(p))
         if (all(is.finite(mm))) c(mm[1L], mm[2L]) else NULL
       }, error = function(e) NULL)
-      if (!is.null(rng)) { r$vmin <- rng[1L]; r$vmax <- rng[2L] }
+      if (!is.null(rng)) { vmin <- rng[1L]; vmax <- rng[2L] }
     }
     rows[[length(rows) + 1L]] <- data.frame(
-      id = r$id, label_key = r$label_key, type = "raster", role = r$role,
-      path = r$path, categorical = r$categorical, palette = r$palette,
-      reverse = r$reverse, vmin = r$vmin, vmax = r$vmax,
-      default_visible = r$default_visible,
-      default_opacity = r$default_opacity, n_features = NA_integer_,
+      id = d$id, label_key = d$label_key, type = "raster", role = d$role,
+      path = p, categorical = d$categorical, palette = d$palette,
+      reverse = d$reverse, vmin = vmin, vmax = vmax,
+      default_visible = d$default_visible,
+      default_opacity = d$default_opacity, n_features = NA_integer_,
       stringsAsFactors = FALSE)
   }
 
-  # Alert vector layer — present only when the run raised alerts. The
-  # geometry lives in `result$alerts_sf` and the `alert` table, not on a
-  # raster path.
-  n_alerts <- .reconfort_alert_count(result)
-  if (n_alerts > 0L) {
+  # Alert vector layer — present only when there are alerts. Its geometry
+  # lives in the `alert` table / `result$alerts_sf`, not on a raster path.
+  if (is.numeric(n_alerts) && length(n_alerts) == 1L && !is.na(n_alerts) &&
+      n_alerts > 0L) {
     rows[[length(rows) + 1L]] <- data.frame(
       id = "alerts", label_key = "reconfort_couche_alertes",
       type = "vector", role = "alerts", path = NA_character_,
       categorical = NA, palette = NA_character_, reverse = FALSE,
       vmin = NA_real_, vmax = NA_real_, default_visible = TRUE,
-      default_opacity = 0.9, n_features = n_alerts,
+      default_opacity = 0.9, n_features = as.integer(n_alerts),
       stringsAsFactors = FALSE)
   }
 
-  if (!length(rows)) {
-    return(data.frame(
-      id = character(), label_key = character(), type = character(),
-      role = character(), path = character(), categorical = logical(),
-      palette = character(), reverse = logical(), vmin = numeric(),
-      vmax = numeric(), default_visible = logical(),
-      default_opacity = numeric(), n_features = integer(),
-      stringsAsFactors = FALSE))
-  }
+  if (!length(rows)) return(.reconfort_empty_manifest())
   do.call(rbind, rows)
+}
+
+
+# Resolve a RECONFORT run id from the cache zone dir: the supplied
+# `run_id`, else the most recent inferred from the `reconfort_mask_<id>.tif`
+# files and `run_<id>/` bundle dirs (timestamp ids sort chronologically).
+.reconfort_resolve_cache_run <- function(zdir, run_id = NULL) {
+  if (!is.null(run_id) && length(run_id) == 1L && !is.na(run_id) &&
+      nzchar(run_id)) {
+    return(as.character(run_id))
+  }
+  masks <- list.files(zdir, pattern = "^reconfort_mask_.+\\.tif$")
+  ids <- sub("^reconfort_mask_(.+)\\.tif$", "\\1", masks)
+  subdirs <- list.dirs(zdir, recursive = FALSE, full.names = FALSE)
+  ids <- c(ids, sub("^run_", "", subdirs[grepl("^run_", subdirs)]))
+  ids <- unique(ids[nzchar(ids)])
+  if (!length(ids)) return(NULL)
+  sort(ids)[length(ids)]
+}
+
+
+#' Discover the persisted RECONFORT display layers from the cache (L6)
+#'
+#' @description
+#' Cache-side counterpart of [reconfort_layer_manifest()]: rebuilds the
+#' layer manifest of a RECONFORT run from the rasters persisted under the
+#' project cache, **without** the in-memory `result`. This lets a viewer
+#' redraw the RECONFORT rasters after a project reload (parity with
+#' [read_fordead_layer()] / [read_fordead_dieback_mask()], which read
+#' their layers from the cache).
+#'
+#' The run is resolved from `run_id`, else the most recent run found under
+#' the zone cache directory. The discovered display rasters are the
+#' run-scoped files written by the `persist` phase of
+#' [run_reconfort_dieback()]: `reconfort_mask_<run_id>.tif`
+#' (classification), `reconfort_score_<run_id>.tif` (continuous score) and
+#' `reconfort_proba_<run_id>.tif` (probability). The CRswir / CRre
+#' multi-band stacks (a time series consumed by
+#' [read_reconfort_pixel_series()]) are **not** display layers and are
+#' excluded.
+#'
+#' The output is byte-for-byte interchangeable with
+#' [reconfort_layer_manifest()] (same columns, types and rendering hints),
+#' so the caller reuses the same machinery ([read_reconfort_layer()],
+#' raster cache, toggles, opacity). Alerts are not included (they are read
+#' from the `alert` table independently).
+#'
+#' @param cache_dir Project RECONFORT cache directory. The zone layers are
+#'   resolved at `<cache_dir>/zone_<zone_id>/` or, as a fallback,
+#'   `<cache_dir>/reconfort/zone_<zone_id>/`.
+#' @param zone_id Scalar monitoring-zone id.
+#' @param run_id Run timestamp, or `NULL` (default) to pick the most
+#'   recent run in the zone cache.
+#' @param include_range If `TRUE`, fill `vmin`/`vmax` of the continuous
+#'   rasters with their actual `terra::minmax()`. Default `FALSE`.
+#'
+#' @return A `data.frame` with the same columns as
+#'   [reconfort_layer_manifest()] (one row per available display raster).
+#'   Best-effort: a missing cache / zone / run yields a zero-row frame.
+#'
+#' @seealso [reconfort_layer_manifest()], [read_reconfort_layer()],
+#'   [run_reconfort_dieback()]
+#' @export
+reconfort_cache_manifest <- function(cache_dir, zone_id, run_id = NULL,
+                                     include_range = FALSE) {
+  if (missing(cache_dir) || !is.character(cache_dir) ||
+      length(cache_dir) != 1L || is.na(cache_dir) || !nzchar(cache_dir)) {
+    return(.reconfort_empty_manifest())
+  }
+  if (length(zone_id) != 1L || is.na(zone_id)) {
+    return(.reconfort_empty_manifest())
+  }
+  zname <- sprintf("zone_%s", zone_id)
+  cand  <- c(file.path(cache_dir, zname),
+             file.path(cache_dir, "reconfort", zname))
+  zdir  <- cand[dir.exists(cand)]
+  if (!length(zdir)) return(.reconfort_empty_manifest())
+  zdir  <- zdir[[1L]]
+
+  rid <- .reconfort_resolve_cache_run(zdir, run_id)
+  if (is.null(rid)) return(.reconfort_empty_manifest())
+
+  pick_file <- function(name) {
+    fp <- file.path(zdir, sprintf(name, rid))
+    if (file.exists(fp)) fp else NA_character_
+  }
+  .reconfort_build_manifest(
+    paths = list(
+      score          = pick_file("reconfort_score_%s.tif"),
+      classification = pick_file("reconfort_mask_%s.tif"),
+      probability    = pick_file("reconfort_proba_%s.tif")),
+    n_alerts      = 0L,
+    include_range = include_range)
 }
 
 

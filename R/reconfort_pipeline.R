@@ -497,15 +497,30 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     # (source = "RECONFORT") — the RECONFORT mirror of FORDEAD's
     # dieback_mask. Best-effort.
     tryCatch({
+      zdir <- file.path(cache_dir, sprintf("zone_%s", zone_id))
+      if (!dir.exists(zdir)) dir.create(zdir, recursive = TRUE, showWarnings = FALSE)
       if (!is.na(classif_for_alerts) && file.exists(classif_for_alerts)) {
-        zdir <- file.path(cache_dir, sprintf("zone_%s", zone_id))
-        if (!dir.exists(zdir)) dir.create(zdir, recursive = TRUE, showWarnings = FALSE)
         file.copy(classif_for_alerts,
                   file.path(zdir, sprintf("reconfort_mask_%s.tif", run_id)),
                   overwrite = TRUE)
       }
+      # Cache the display rasters (continuous score + probability),
+      # run-scoped, so they reappear after a project reload via
+      # reconfort_cache_manifest() — the workdir holding the originals is
+      # transient (removed when keep_workdir = FALSE).
+      proba_src <- if (!is.na(rasters$probability_masked))
+        rasters$probability_masked else rasters$probability
+      for (cp in list(
+        list(src = rasters$continuous_score,
+             dst = sprintf("reconfort_score_%s.tif", run_id)),
+        list(src = proba_src,
+             dst = sprintf("reconfort_proba_%s.tif", run_id)))) {
+        if (!is.na(cp$src) && file.exists(cp$src)) {
+          file.copy(cp$src, file.path(zdir, cp$dst), overwrite = TRUE)
+        }
+      }
     }, error = function(e)
-      cli::cli_warn("RECONFORT persist (class mask) failed: {conditionMessage(e)}"))
+      cli::cli_warn("RECONFORT persist (cache layers) failed: {conditionMessage(e)}"))
 
     features_bundle <- tryCatch({
       scenes <- .enumerate_reconfort_s2_scenes(file.path(workdir, "S2_data"))

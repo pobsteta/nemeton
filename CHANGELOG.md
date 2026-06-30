@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.100.0] - 2026-06-30
+
+### Added
+- `reconfort_cache_manifest(cache_dir, zone_id, run_id = NULL, include_range)` :
+  découverte cache des couches d'affichage RECONFORT (parité
+  `read_fordead_layer`), pour réafficher les rasters après un rechargement de
+  projet sans le `result` en mémoire. Schéma byte-identique à
+  `reconfort_layer_manifest()`. 18 tests (`test-reconfort-cache-manifest.R`).
+
+### Changed
+- `run_reconfort_dieback()` (phase `persist`) cache aussi le score continu et la
+  probabilité run-scopés (`reconfort_score_<run_id>.tif`,
+  `reconfort_proba_<run_id>.tif`) à côté du masque, pour que ces couches
+  réapparaissent après rechargement.
+
 ## [0.99.1] - 2026-06-29
 
 ### Fixed

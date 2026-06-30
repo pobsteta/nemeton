@@ -683,6 +683,30 @@ l'app via `@*release`. Aucune dépendance inverse.
   pas de double-inversion). Best-effort : sans zone/alerte → famille R = R1-R4.
   Famille R cœur passe à 32 indicateurs (R5 conditionnel).
 
+- [x] **Découverte cache des couches RECONFORT (parité `read_fordead_layer`)** —
+      `reconfort_cache_manifest(cache_dir, zone_id, run_id, include_range)` :
+      réaffiche les rasters RECONFORT après rechargement de projet (sans le
+      `result` mémoire).
+
+#### 2026-06-30 — Découverte cache couches RECONFORT (`reconfort_cache_manifest`)
+
+- **Problème** : l'app n'affichait les rasters RECONFORT (classification/score/
+  proba) qu'à partir du `result` mémoire d'un run de la session courante. Après
+  rechargement de projet → `result` perdu → seules les alertes (DB) restaient.
+  FORDEAD, lui, relit ses couches du cache (`read_fordead_layer`).
+- **Cœur — `v0.100.0`** : `reconfort_cache_manifest()` exporté
+  (`R/reconfort_manifest.R`) — reconstruit le manifeste depuis le cache,
+  **schéma byte-identique** à `reconfort_layer_manifest()` (constructeur de
+  lignes partagé `.reconfort_build_manifest()`). Résolution du run (le plus
+  récent sinon `run_id`), exclut les stacks CRswir/CRre. **+ persistance
+  étendue** : la phase `persist` cache désormais aussi `reconfort_score_<run>` /
+  `reconfort_proba_<run>` (sinon score/proba, qui ne vivaient que dans le
+  workdir transitoire, ne réapparaissaient pas). 18 tests
+  (`test-reconfort-cache-manifest.R`).
+- **Suite app** : `mod_monitoring_reconfort_map` → `manifest_r` retombe sur
+  `reconfort_cache_manifest(cache_dir, zone_id)` quand `result_r()` est NULL
+  (toggles/opacité/clip/pixel-click inchangés). Plancher `nemeton (>= 0.100.0)`.
+
 ---
 
 # Chantier clos (côté cœur) — Diagnostic pixel CRSWIR (spec 008 §14, ADR-013 A3)
