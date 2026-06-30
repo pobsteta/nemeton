@@ -1,3 +1,37 @@
+# nemeton 0.101.0 (2026-06-30)
+
+### Added — reGénération : indicateurs microclimatiques sous couvert (spec 027 L1)
+
+Premier lot du chantier **reGénération** (aptitude microclimatique à la
+régénération forestière, spec 027 / ADR-014). Trois sous-indicateurs insérés
+dans les familles existantes — **pas de 13e famille, radar 12 axes préservé** :
+
+- `indicateur_a3_microclimat(units, micro, …)` — **A3** : T°max estivale (JJA)
+  sous couvert ; normalisé 0–100 décroissant (frais = 100).
+- `indicateur_a4_tamponnement(units, micro, …)` — **A4** : tamponnement de la
+  canopée (écart T°max découvert − sous couvert) ; croissant (tamponné = 100).
+- `indicateur_w4_vpd(units, micro, …)` — **W4** : VPD estival sous couvert ;
+  décroissant (humide = 100).
+
+Chaque indicateur consomme un jeu de rasters microclimat `micro` (liste nommée
+`tmax_understorey` / `tmax_open` / `vpd`), agrège par UGF (couverture-pondérée),
+écrit la colonne score 0–100 (code court, détecté par `create_family_index`) +
+la valeur brute + `couverture_pct`, et pose le flag `augmented =
+"microclimate_model"` (amende ADR-011, nouveau flag dans `detect_ndp()`).
+Familles A (→4) et W (→4) étendues dans `indicator-config.R` (labels/tooltips
+FR/EN). Sens « haut = bon » → pas d'inversion. 16 tests
+(`test-indicators-microclimate.R`).
+
+- `microclimate_run()` — **scaffold** : valide les dépendances lourdes (en
+  `Suggests` : `microclimf`, `mcera5`, `ecmwfr`, `lidR`) et définit le contrat
+  `micro` ; l'orchestration microclimf complète (forçage ERA5-Land + structure
+  LiDAR HD, repli opencanopy) sera câblée dans un incrément ultérieur (données
+  requises). En attendant, les indicateurs acceptent un `micro` précalculé.
+- Registre de sources `FR.json` étendu : `era5_land`, `eobs`, `lidarhd_mnt/mnh/nuage`.
+
+À suivre : L2 (`indicateur_r6_sensibilite`, années auto E-OBS), L3 (composite par
+essence), L4 (onglet `nemetonshiny`).
+
 # nemeton 0.100.1 (2026-06-30)
 
 ### Fixed — `reconfort_cache_manifest()` lit le dossier IOTA² `final/`

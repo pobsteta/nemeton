@@ -7,7 +7,6 @@
   },
   "crs_national": 2154,
   "crs_name": "RGF93 / Lambert-93",
-
   "services": {
     "ign_wfs": {
       "url": "https://data.geopf.fr/wfs/ows",
@@ -45,7 +44,6 @@
       "note": "S3-compatible (MinIO) object store hosting the THEIA / FORMS COG and VRT assets, served by the MESO@UM datacentre. Credentials are NOT stored here: the THEIA API key (access + secret, created at https://gate.stac.teledetection.fr) is a standard S3 SigV4 key pair. Set TLD_ACCESS_KEY and TLD_SECRET_KEY in a gitignored .Renviron, call theia_configure_s3() once per session, then GDAL reads /vsis3/ paths with native SigV4 signing — no Python / teledetection SDK needed."
     }
   },
-
   "layers": {
     "dem": {
       "service": "ign_wms",
@@ -122,7 +120,6 @@
       "description": "LiDAR HD - Nuages de points COPC"
     }
   },
-
   "datasets": {
     "soilgrids_cec": {
       "type": "raster_remote",
@@ -141,7 +138,10 @@
       "format": "GeoPackage",
       "description": "Field inventory collected on QField (placettes + arbres layers), produced by create_qfield_project() and re-ingested via import_qfield_gpkg().",
       "required_crs": "EPSG:2154",
-      "layers": ["placettes", "arbres"],
+      "layers": [
+        "placettes",
+        "arbres"
+      ],
       "ndp_bump": {
         "plots_only": 2,
         "with_trees_min10_per_plot": 3
@@ -155,14 +155,23 @@
       "description": "Canopy Height Model from opencanopy (IGN BD ORTHO + Open-Canopy pretrained models)",
       "required_crs": "EPSG:2154",
       "fallback_crs": "EPSG:3035",
-      "resolution_m": [0.20, 1.5],
+      "resolution_m": [
+        0.2,
+        1.5
+      ],
       "unit": "m",
-      "value_range": [0, 50],
+      "value_range": [
+        0,
+        50
+      ],
       "provenance": {
         "package": "opencanopy",
         "repo": "https://github.com/pobsteta/opencanopynemeton",
         "version_min": "0.1.0",
-        "model": ["unet", "pvtv2"],
+        "model": [
+          "unet",
+          "pvtv2"
+        ],
         "base_data": "BD ORTHO IGN + Open-Canopy pretrained weights (Fogel et al. 2024)"
       },
       "license": {
@@ -193,20 +202,29 @@
           "variable": "canopy_height",
           "resolution_m": 10,
           "unit": "cm",
-          "value_range": [0, 6000],
+          "value_range": [
+            0,
+            6000
+          ],
           "note": "FORMS-T height is stored in centimetres (10^-2 m). The nemeton indicator `chm` argument expects metres: divide the raster by 100 before passing it to indicateur_p1_volume(), indicateur_p2_station(), indicateur_c1_biomasse() or indicateur_b2_structure()."
         },
         "volume": {
           "variable": "growing_stock_volume",
           "resolution_m": 30,
           "unit": "m3/ha",
-          "value_range": [0, 1500]
+          "value_range": [
+            0,
+            1500
+          ]
         },
         "biomass": {
           "variable": "aboveground_biomass",
           "resolution_m": 30,
           "unit": "Mg/ha",
-          "value_range": [0, 800]
+          "value_range": [
+            0,
+            800
+          ]
         }
       },
       "consumed_by": {
@@ -241,19 +259,28 @@
           "variable": "leaf_area_index",
           "resolution_m": 10,
           "unit": "m2/m2",
-          "value_range": [0, 8]
+          "value_range": [
+            0,
+            8
+          ]
         },
         "fapar": {
           "variable": "fapar",
           "resolution_m": 10,
           "unit": "fraction",
-          "value_range": [0, 1]
+          "value_range": [
+            0,
+            1
+          ]
         },
         "fvc": {
           "variable": "fractional_vegetation_cover",
           "resolution_m": 10,
           "unit": "fraction",
-          "value_range": [0, 1]
+          "value_range": [
+            0,
+            1
+          ]
         }
       },
       "consumed_by": {
@@ -285,22 +312,34 @@
         "clay": {
           "variable": "clay_fraction",
           "unit": "g/kg (to confirm: g/kg or percent)",
-          "value_range": [0, 1000]
+          "value_range": [
+            0,
+            1000
+          ]
         },
         "silt": {
           "variable": "silt_fraction",
           "unit": "g/kg (to confirm: g/kg or percent)",
-          "value_range": [0, 1000]
+          "value_range": [
+            0,
+            1000
+          ]
         },
         "sand": {
           "variable": "sand_fraction",
           "unit": "g/kg (to confirm: g/kg or percent)",
-          "value_range": [0, 1000]
+          "value_range": [
+            0,
+            1000
+          ]
         },
         "coarse_elements": {
           "variable": "coarse_element_content",
           "unit": "percent",
-          "value_range": [0, 100]
+          "value_range": [
+            0,
+            100
+          ]
         }
       },
       "consumed_by": {
@@ -343,7 +382,10 @@
           "variable": "snow_cover_duration",
           "resolution_m": 20,
           "unit": "days/year",
-          "value_range": [0, 366]
+          "value_range": [
+            0,
+            366
+          ]
         }
       },
       "consumed_by": {
@@ -384,7 +426,10 @@
           "variable": "water_occurrence_frequency",
           "resolution_m": 10,
           "unit": "percent",
-          "value_range": [0, 100]
+          "value_range": [
+            0,
+            100
+          ]
         }
       },
       "consumed_by": {
@@ -416,13 +461,19 @@
           "variable": "surface_soil_moisture",
           "resolution_m": "to confirm (~25000-43000, SMOS)",
           "unit": "m3/m3",
-          "value_range": [0, 1]
+          "value_range": [
+            0,
+            1
+          ]
         },
         "soil_moisture_s1": {
           "variable": "surface_soil_moisture",
           "resolution_m": "to confirm (Sentinel-1 derived)",
           "unit": "m3/m3",
-          "value_range": [0, 1]
+          "value_range": [
+            0,
+            1
+          ]
         }
       },
       "consumed_by": {
@@ -455,7 +506,18 @@
           "variable": "surface_reflectance",
           "resolution_m": 10,
           "unit": "reflectance (scaled)",
-          "bands": ["B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B11", "B12"]
+          "bands": [
+            "B2",
+            "B3",
+            "B4",
+            "B5",
+            "B6",
+            "B7",
+            "B8",
+            "B8A",
+            "B11",
+            "B12"
+          ]
         },
         "masks": {
           "variable": "cloud_shadow_water_snow_masks",
@@ -526,7 +588,10 @@
           "variable": "land_surface_temperature",
           "resolution_m": "to confirm at the Theia catalogue",
           "unit": "degC",
-          "value_range": [-30, 70]
+          "value_range": [
+            -30,
+            70
+          ]
         }
       },
       "consumed_by": {
@@ -553,7 +618,10 @@
         "preprint": "arXiv:2512.17021",
         "item_id_template": "FORMSpoT-{year}",
         "asset_template": "height_{year}",
-        "years": [2014, 2024],
+        "years": [
+          2014,
+          2024
+        ],
         "note": "Hosted on the MTD STAC API. One item per year (id `FORMSpoT-{year}`), each with a height asset `height_{year}`. Use load_theia_source('formspot', aoi, year = 2023) to target one year. Assets are read from S3 via /vsis3/ (see services.theia_s3)."
       },
       "products": {
@@ -646,9 +714,90 @@
         "daim": "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140026/daim-departement.csv",
         "cerf_sika": "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140034/cerf-sika-departement.csv"
       }
+    },
+    "era5_land": {
+      "type": "climate_reanalysis",
+      "format": "netcdf",
+      "description": "ERA5-Land hourly reanalysis forcing for the mechanistic microclimate model (spec 027 / ADR-014).",
+      "required_crs": "EPSG:4326",
+      "unit": "various",
+      "temporal_resolution": "hourly",
+      "provenance": {
+        "package": "mcera5",
+        "service": "Copernicus CDS",
+        "note": "requires a CDS API key (ecmwfr/mcera5)"
+      },
+      "license": {
+        "era5_land": "Copernicus Climate Data Store licence (attribution)"
+      }
+    },
+    "eobs": {
+      "type": "climate_gridded",
+      "format": "netcdf",
+      "description": "E-OBS gridded summer (JJA) temperature series, used to frame the 'average' vs 'heatwave' years of R6 sensitivity (spec 027 §6bis).",
+      "required_crs": "EPSG:4326",
+      "unit": "degC",
+      "temporal_resolution": "daily",
+      "provenance": {
+        "service": "Copernicus / ECA&D E-OBS"
+      },
+      "license": {
+        "eobs": "Non-commercial research/education use (ECA&D) — see inst/NOTICE"
+      }
+    },
+    "lidarhd_mnt": {
+      "type": "raster_local",
+      "format": "GeoTIFF",
+      "description": "IGN LiDAR HD digital terrain model (MNT), 50 cm — base elevation for the microclimate model.",
+      "required_crs": "EPSG:2154",
+      "unit": "m",
+      "resolution_m": [
+        0.5
+      ],
+      "provenance": {
+        "service": "IGN LiDAR HD"
+      },
+      "license": {
+        "lidarhd": "Open data IGN (Licence Ouverte / Etalab 2.0)"
+      }
+    },
+    "lidarhd_mnh": {
+      "type": "raster_local",
+      "format": "GeoTIFF",
+      "description": "IGN LiDAR HD canopy height model (MNH), 50 cm — canopy height for microclimf (fallback: opencanopy CHM).",
+      "required_crs": "EPSG:2154",
+      "unit": "m",
+      "resolution_m": [
+        0.5
+      ],
+      "value_range": [
+        0,
+        50
+      ],
+      "provenance": {
+        "service": "IGN LiDAR HD",
+        "fallback": "chm_opencanopy"
+      },
+      "license": {
+        "lidarhd": "Open data IGN (Licence Ouverte / Etalab 2.0)"
+      }
+    },
+    "lidarhd_nuage": {
+      "type": "pointcloud_local",
+      "format": "LAZ",
+      "description": "IGN LiDAR HD classified point cloud — plant area index (PAI) via lasR/Beer-Lambert for the microclimate canopy structure (fallback: PAI estimated from opencanopy CHM).",
+      "required_crs": "EPSG:2154",
+      "unit": "class",
+      "provenance": {
+        "package": "lasR",
+        "service": "IGN LiDAR HD",
+        "validation": "lidR::LAD (MacArthur-Horn)"
+      },
+      "license": {
+        "lidarhd": "Open data IGN (Licence Ouverte / Etalab 2.0)"
+      }
     }
   },
-
   "communes": {
     "search_url": "https://geo.api.gouv.fr/communes",
     "geometry_url": "https://geo.api.gouv.fr/communes/{code_commune}",
