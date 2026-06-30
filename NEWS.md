@@ -1,3 +1,20 @@
+# nemeton 0.100.1 (2026-06-30)
+
+### Fixed — `reconfort_cache_manifest()` lit le dossier IOTA² `final/`
+
+La v0.100.0 ne cherchait les couches que dans `zone_<id>/reconfort_*_<run>.tif`,
+or **les rasters d'affichage persistent ailleurs** : dans le dossier de sortie
+IOTA² `output_zone_<id>/results/iota2_results_classif_labels-z<id>-S2_*/final/`
+(`Final_continuous_score_masked*.tif`, `Final_Classif_masked_*.tif`,
+`Final_Proba_map_masked*.tif`). Pour les runs déjà en cache (sans copies
+run-scopées score/proba), la fonction ne retournait donc que la classification.
+
+`reconfort_cache_manifest()` découvre désormais **en priorité le dossier
+`final/`** (les 3 couches, repli sur `Classif_Seed_0`/`ProbabilityMap_seed_0`),
+avec repli sur les copies run-scopées `zone_<id>/` quand `final/` est absent
+(workdir nettoyé) ou pour un `run_id` ancien. Validé sur le cache réel zone 5
+(3 couches retournées). 9 tests ajoutés.
+
 # nemeton 0.100.0 (2026-06-30)
 
 ### Added — Découverte cache des couches RECONFORT (`reconfort_cache_manifest()`)

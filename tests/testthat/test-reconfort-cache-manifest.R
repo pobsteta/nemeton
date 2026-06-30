@@ -105,3 +105,66 @@ test_that("schema is identical to reconfort_layer_manifest(result)", {
   expect_identical(vapply(cache_m, class, ""), vapply(mem_m, class, ""))
   expect_identical(cache_m$id, mem_m$id)
 })
+
+
+# --- IOTA2 final/ dir (primary source — where rasters actually persist) ----
+
+# Lay out the persisting IOTA2 final/ output for a zone.
+setup_final <- function(dir, zone_id = 5, year = 2026,
+                        run_id = "20260630T101010", seed_only = FALSE) {
+  fdir <- file.path(dir, sprintf("output_zone_%s", zone_id), "results",
+                    sprintf("iota2_results_classif_labels-z%s-S2_%s", zone_id, year),
+                    "final")
+  dir.create(fdir, recursive = TRUE, showWarnings = FALSE)
+  if (seed_only) {
+    write_tif(file.path(fdir, "Classif_Seed_0.tif"))
+    write_tif(file.path(fdir, "ProbabilityMap_seed_0.tif"), 500)
+  } else {
+    write_tif(file.path(fdir, sprintf("Final_continuous_score_masked%s.tif", year)), 50)
+    write_tif(file.path(fdir, sprintf("Final_Classif_masked_%s.tif", year)))
+    write_tif(file.path(fdir, sprintf("Final_Proba_map_masked%s.tif", year)), 500)
+  }
+  jsonlite::write_json(list(tool = "reconfort", run_id = run_id,
+                            zone_id = zone_id, status = "completed"),
+                       file.path(fdir, "run_meta.json"), auto_unbox = TRUE)
+  invisible(fdir)
+}
+
+test_that("the final/ dir is discovered with all three display rasters", {
+  skip_if_no_terra()
+  d <- withr::local_tempdir()
+  setup_final(d, 5)
+  m <- reconfort_cache_manifest(d, 5)
+  expect_setequal(m$id, c("score", "classification", "probability"))
+  expect_match(m$path[m$id == "score"], "Final_continuous_score_masked2026\\.tif$")
+  expect_match(m$path[m$id == "classification"], "Final_Classif_masked_2026\\.tif$")
+})
+
+test_that("the final/ dir is preferred over zone_<id> when run_id = NULL", {
+  skip_if_no_terra()
+  d <- withr::local_tempdir()
+  setup_cache(d, 5, "20260629T090000")          # only a run-scoped mask
+  setup_final(d, 5, run_id = "20260630T101010") # full final/
+  m <- reconfort_cache_manifest(d, 5)
+  expect_identical(nrow(m), 3L)                 # from final/, not the 1-row fallback
+  expect_match(m$path[m$id == "classification"], "/final/")
+})
+
+test_that("seed fallbacks are used when Final_* masked files are absent", {
+  skip_if_no_terra()
+  d <- withr::local_tempdir()
+  setup_final(d, 5, seed_only = TRUE)
+  m <- reconfort_cache_manifest(d, 5)
+  expect_match(m$path[m$id == "classification"], "Classif_Seed_0\\.tif$")
+  expect_match(m$path[m$id == "probability"], "ProbabilityMap_seed_0\\.tif$")
+})
+
+test_that("an explicit run_id not matching final/ falls back to zone_<id>", {
+  skip_if_no_terra()
+  d <- withr::local_tempdir()
+  setup_final(d, 5, run_id = "20260630T101010")  # final/ is for this run
+  setup_cache(d, 5, "20260628T080000")           # older run, run-scoped mask
+  m <- reconfort_cache_manifest(d, 5, run_id = "20260628T080000")
+  expect_identical(m$id, "classification")
+  expect_match(m$path, "reconfort_mask_20260628T080000\\.tif$")
+})

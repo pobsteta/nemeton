@@ -185,6 +185,44 @@ reconfort_layer_manifest <- function(result, include_range = FALSE) {
 }
 
 
+# Locate the persisting IOTA2 final/ output dir for a zone — where the
+# display rasters (Final_continuous_score_masked / Final_Classif_masked /
+# Final_Proba_map_masked) actually live and survive a project reload.
+.reconfort_locate_final_dir <- function(cache_dir, zone_id) {
+  lab   <- sprintf("iota2_results_classif_labels-z%s-S2_*", zone_id)
+  roots <- c(cache_dir, file.path(cache_dir, "reconfort"))
+  globs <- character(0)
+  for (r in roots) {
+    globs <- c(globs,
+      file.path(r, sprintf("output_zone_%s", zone_id), "results", lab, "final"),
+      file.path(r, "*", "results", lab, "final"))
+  }
+  finals <- unique(Sys.glob(globs))
+  finals <- finals[dir.exists(finals)]
+  if (!length(finals)) return(NULL)
+  sort(finals)[length(finals)]
+}
+
+# Newest file matching `pattern` in `dir` (lexicographic), or NA.
+.reconfort_pick_glob <- function(dir, pattern) {
+  f <- Sys.glob(file.path(dir, pattern))
+  f <- f[file.exists(f)]
+  if (length(f)) sort(f)[length(f)] else NA_character_
+}
+
+# Whether the IOTA2 final/ dir can serve the requested run: yes when no
+# run_id is requested (it holds the latest), or when its run_meta.json
+# run_id matches the requested one.
+.reconfort_final_serves_run <- function(final, run_id) {
+  if (is.null(final)) return(FALSE)
+  if (is.null(run_id) || is.na(run_id) || !nzchar(run_id)) return(TRUE)
+  mp <- file.path(final, "run_meta.json")
+  if (!file.exists(mp)) return(FALSE)
+  meta <- tryCatch(jsonlite::read_json(mp), error = function(e) NULL)
+  !is.null(meta) && identical(as.character(meta$run_id), as.character(run_id))
+}
+
+
 #' Discover the persisted RECONFORT display layers from the cache (L6)
 #'
 #' @description
@@ -195,15 +233,18 @@ reconfort_layer_manifest <- function(result, include_range = FALSE) {
 #' [read_fordead_layer()] / [read_fordead_dieback_mask()], which read
 #' their layers from the cache).
 #'
-#' The run is resolved from `run_id`, else the most recent run found under
-#' the zone cache directory. The discovered display rasters are the
-#' run-scoped files written by the `persist` phase of
-#' [run_reconfort_dieback()]: `reconfort_mask_<run_id>.tif`
-#' (classification), `reconfort_score_<run_id>.tif` (continuous score) and
-#' `reconfort_proba_<run_id>.tif` (probability). The CRswir / CRre
-#' multi-band stacks (a time series consumed by
-#' [read_reconfort_pixel_series()]) are **not** display layers and are
-#' excluded.
+#' Primary source is the IOTA² `final/` output dir
+#' (`output_zone_<id>/results/iota2_results_classif_labels-z<id>-S2_*/final/`),
+#' where the display rasters persist across reloads:
+#' `Final_continuous_score_masked*.tif` (score),
+#' `Final_Classif_masked_*.tif` (classification, fallback `Classif_Seed_0.tif`)
+#' and `Final_Proba_map_masked*.tif` (probability, fallback
+#' `ProbabilityMap_seed_0.tif`). When that dir is absent (workdir cleaned) or
+#' an older run is requested, it falls back to the run-scoped copies under
+#' `zone_<id>/` (`reconfort_mask_<run_id>.tif` / `reconfort_score_<run_id>.tif`
+#' / `reconfort_proba_<run_id>.tif`). The CRswir / CRre multi-band stacks (a
+#' time series consumed by [read_reconfort_pixel_series()]) are **not**
+#' display layers and are excluded.
 #'
 #' The output is byte-for-byte interchangeable with
 #' [reconfort_layer_manifest()] (same columns, types and rendering hints),
@@ -236,6 +277,30 @@ reconfort_cache_manifest <- function(cache_dir, zone_id, run_id = NULL,
   if (length(zone_id) != 1L || is.na(zone_id)) {
     return(.reconfort_empty_manifest())
   }
+  rid0 <- if (is.null(run_id)) NULL else as.character(run_id)
+
+  # 1. Primary source: the IOTA2 final/ output dir, where the display
+  #    rasters persist across reloads (all three layers of the latest run).
+  final <- .reconfort_locate_final_dir(cache_dir, zone_id)
+  if (.reconfort_final_serves_run(final, rid0)) {
+    classif <- .reconfort_pick_glob(final, "Final_Classif_masked_*.tif")
+    if (is.na(classif)) classif <- .reconfort_pick_glob(final, "Classif_Seed_0.tif")
+    proba <- .reconfort_pick_glob(final, "Final_Proba_map_masked*.tif")
+    if (is.na(proba)) proba <- .reconfort_pick_glob(final, "ProbabilityMap_seed_0.tif")
+    m <- .reconfort_build_manifest(
+      paths = list(
+        score          = .reconfort_pick_glob(final, "Final_continuous_score_masked*.tif"),
+        classification = classif,
+        probability    = proba),
+      n_alerts      = 0L,
+      include_range = include_range)
+    if (nrow(m)) return(m)
+  }
+
+  # 2. Fallback: run-scoped copies under zone_<id>/ (reconfort_mask /
+  #    reconfort_score / reconfort_proba), e.g. when the workdir was cleaned
+  #    or for an older run not held by final/. Resolve the run (newest
+  #    unless run_id given).
   zname <- sprintf("zone_%s", zone_id)
   cand  <- c(file.path(cache_dir, zname),
              file.path(cache_dir, "reconfort", zname))
@@ -243,7 +308,7 @@ reconfort_cache_manifest <- function(cache_dir, zone_id, run_id = NULL,
   if (!length(zdir)) return(.reconfort_empty_manifest())
   zdir  <- zdir[[1L]]
 
-  rid <- .reconfort_resolve_cache_run(zdir, run_id)
+  rid <- .reconfort_resolve_cache_run(zdir, rid0)
   if (is.null(rid)) return(.reconfort_empty_manifest())
 
   pick_file <- function(name) {

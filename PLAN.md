@@ -703,9 +703,15 @@ l'app via `@*release`. Aucune dépendance inverse.
   `reconfort_proba_<run>` (sinon score/proba, qui ne vivaient que dans le
   workdir transitoire, ne réapparaissaient pas). 18 tests
   (`test-reconfort-cache-manifest.R`).
+- **Fix `v0.100.1`** : la découverte ratait le bon dossier. Les rasters
+  d'affichage persistent dans le dossier IOTA² `final/`
+  (`output_zone_<id>/results/.../final/Final_*.tif`), pas dans `zone_<id>/`
+  (qui n'a que le masque + mes copies run-scopées, absentes des runs déjà
+  faits). `reconfort_cache_manifest()` lit désormais `final/` en priorité
+  (repli `zone_<id>/`). Validé sur le cache réel zone 5 → 3 couches. +9 tests.
 - **Suite app** : `mod_monitoring_reconfort_map` → `manifest_r` retombe sur
   `reconfort_cache_manifest(cache_dir, zone_id)` quand `result_r()` est NULL
-  (toggles/opacité/clip/pixel-click inchangés). Plancher `nemeton (>= 0.100.0)`.
+  (toggles/opacité/clip/pixel-click inchangés). Plancher `nemeton (>= 0.100.1)`.
 
 ---
 
