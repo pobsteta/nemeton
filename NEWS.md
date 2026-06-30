@@ -1,3 +1,30 @@
+# nemeton 0.100.0 (2026-06-30)
+
+### Added — Découverte cache des couches RECONFORT (`reconfort_cache_manifest()`)
+
+Pendant cache de [`reconfort_layer_manifest()`] : reconstruit le manifeste des
+couches d'un run RECONFORT depuis les rasters persistés sous le cache projet,
+**sans** le `result` en mémoire. Permet à l'app de **réafficher les rasters
+RECONFORT après un rechargement de projet** (parité `read_fordead_layer()` /
+`read_fordead_dieback_mask()`, qui lisent leurs couches depuis le cache).
+
+- `reconfort_cache_manifest(cache_dir, zone_id, run_id = NULL, include_range = FALSE)`.
+  Résout le run (`run_id` fourni, sinon le plus récent du cache zone), découvre
+  les rasters d'affichage run-scopés et renvoie un `data.frame` **byte-identique**
+  à `reconfort_layer_manifest(result)` (mêmes colonnes/types/indications de
+  rendu) → l'app réutilise telle quelle sa machinerie (`read_reconfort_layer`,
+  cache rasters, toggles, opacité). Les stacks CRswir/CRre (série temporelle,
+  diagnostic pixel) sont exclus ; les alertes viennent de la table `alert`.
+  Best-effort : cache/zone/run absent → `data.frame` 0 ligne.
+- **Persistance étendue** : la phase `persist` de `run_reconfort_dieback()`
+  copie désormais aussi le **score continu** et la **probabilité** dans le cache
+  zone (`reconfort_score_<run_id>.tif`, `reconfort_proba_<run_id>.tif`),
+  run-scopés à côté de `reconfort_mask_<run_id>.tif` — sans ça, ces couches
+  (qui ne vivaient que dans le workdir transitoire) ne réapparaissaient pas
+  après rechargement. Refactor : constructeur de lignes partagé
+  `.reconfort_build_manifest()` (source unique du schéma).
+- 18 tests (`test-reconfort-cache-manifest.R`).
+
 # nemeton 0.99.1 (2026-06-29)
 
 ### Fixed — sens de R5 dans la famille R / le radar (orientation inversée)
