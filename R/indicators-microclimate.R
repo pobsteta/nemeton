@@ -21,7 +21,8 @@
 .MICRO_BOUNDS <- list(
   a3 = c(lo = 15,  hi = 40),    # T°max JJA understorey (°C): 40 -> 0, 15 -> 100
   a4 = c(lo = 0,   hi = 10),    # buffering ΔT (°C): 0 -> 0, 10 -> 100
-  w4 = c(lo = 0.5, hi = 4.0)    # VPD (kPa): 4 -> 0, 0.5 -> 100
+  w4 = c(lo = 0.5, hi = 4.0),   # VPD (kPa): 4 -> 0, 0.5 -> 100
+  r6 = c(scale_t = 8, scale_v = 2)  # R6: ΔT°max /8°C, ΔVPD /2 kPa standardisation
 )
 
 # Linear normalisation to 0-100, clamped. `decreasing = TRUE` maps low raw
@@ -181,6 +182,62 @@ indicateur_w4_vpd <- function(units, micro = NULL, chm = NULL,
   units <- .micro_indicator(units, r, "W4", "W4_vpd",
                             bounds[["lo"]], bounds[["hi"]], decreasing = TRUE)
   .micro_augmented(units, micro)
+}
+
+
+#' R6 — microsite climate sensitivity (heatwave vs average year)
+#'
+#' @description
+#' Per-UGF **sensitivity** of the under-canopy microsite to a hot year
+#' (spec 027 L2, ADR-014): the change in summer heat stress between a
+#' **heatwave** year and an **average** year, with the canopy held fixed
+#' (isolates the climatic effect). Combines the standardised ΔT°max and
+#' ΔVPD; normalised 0-100 **decreasing** (less sensitive = more resilient =
+#' 100).
+#'
+#' The two years are chosen by the caller — typically auto-detected from
+#' the E-OBS summer series via [microclimate_detect_years()], or set
+#' manually. This function consumes the **two precomputed `micro` sets**
+#' (one per year), each carrying `tmax_understorey` and `vpd`.
+#'
+#' @param units An `sf` of UGF.
+#' @param micro_moyenne Summer microclimate rasters for the **average**
+#'   year (needs `tmax_understorey`, `vpd`).
+#' @param micro_canicule Summer microclimate rasters for the **heatwave**
+#'   year (same layers). `NULL`/missing layers → `R6 = NA`.
+#' @param bounds Numeric `c(scale_t, scale_v)` standardisation scales
+#'   (default `c(8, 2)` — ΔT in °C, ΔVPD in kPa).
+#' @param ... Unused.
+#'
+#' @return `units` with `R6` (0-100, higher = less sensitive), `R6_dtmax`
+#'   (raw ΔT°max, °C), `R6_dvpd` (raw ΔVPD, kPa), `R6_couverture_pct`, and
+#'   the `"microclimate_model"` augmentation flag.
+#' @seealso [microclimate_detect_years()], [indicateur_a3_microclimat()]
+#' @export
+indicateur_r6_sensibilite <- function(units, micro_moyenne = NULL,
+                                      micro_canicule = NULL,
+                                      bounds = .MICRO_BOUNDS$r6, ...) {
+  validate_sf(units)
+  tm <- .micro_layer(micro_moyenne, "tmax_understorey")
+  tc <- .micro_layer(micro_canicule, "tmax_understorey")
+  vm <- .micro_layer(micro_moyenne, "vpd")
+  vc <- .micro_layer(micro_canicule, "vpd")
+  if (is.null(tm) || is.null(tc) || is.null(vm) || is.null(vc)) {
+    units$R6 <- NA_real_
+    units$R6_dtmax <- NA_real_
+    units$R6_dvpd <- NA_real_
+    units$R6_couverture_pct <- 0
+    return(.micro_augmented(units, micro_canicule))
+  }
+  exT <- .micro_extract(units, tc - tm)   # ΔT°max (canicule − moyenne)
+  exV <- .micro_extract(units, vc - vm)   # ΔVPD
+  units$R6_dtmax <- exT$mean
+  units$R6_dvpd  <- exV$mean
+  sT <- pmin(1, pmax(0, exT$mean / bounds[["scale_t"]]))
+  sV <- pmin(1, pmax(0, exV$mean / bounds[["scale_v"]]))
+  units$R6 <- 100 * (1 - (0.5 * sT + 0.5 * sV))
+  units$R6_couverture_pct <- 100 * pmin(exT$cover, exV$cover, na.rm = FALSE)
+  .micro_augmented(units, micro_canicule)
 }
 
 

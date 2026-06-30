@@ -191,14 +191,15 @@ INDICATOR_FAMILIES <- list(
     name_en = "Risks & Resilience",
     icon = "exclamation-triangle-fill",
     color = "#DC143C",
-    indicators = c("R1", "R2", "R3", "R4", "R5"),
-    column_names = c("indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse", "indicateur_r4_abroutissement", "indicateur_r5_deperissement"),
+    indicators = c("R1", "R2", "R3", "R4", "R5", "R6"),
+    column_names = c("indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse", "indicateur_r4_abroutissement", "indicateur_r5_deperissement", "indicateur_r6_sensibilite"),
     indicator_labels = list(
       R1 = list(fr = "Risque incendie", en = "Fire Risk"),
       R2 = list(fr = "Risque temp\u00eate", en = "Storm Risk"),
       R3 = list(fr = "Risque s\u00e9cheresse", en = "Drought Risk"),
       R4 = list(fr = "Risque abroutissement", en = "Browsing Risk"),
-      R5 = list(fr = "D\u00e9p\u00e9rissement (FORDEAD)", en = "Dieback (FORDEAD)")
+      R5 = list(fr = "D\u00e9p\u00e9rissement (FORDEAD)", en = "Dieback (FORDEAD)"),
+      R6 = list(fr = "Sensibilit\u00e9 microclimatique", en = "Microclimate sensitivity")
     ),
     indicator_tooltips = list(
       R1 = list(
@@ -220,6 +221,10 @@ INDICATOR_FAMILIES <- list(
       R5 = list(
         fr = "D\u00e9p\u00e9rissement d\u00e9tect\u00e9 par FORDEAD (r\u00e9sineux) ou RECONFORT (feuillus) sur Sentinel-2 / CRSWIR, pond\u00e9r\u00e9 par les taux de bonne d\u00e9tection ONF/DSF 2024. NA hors zone de validit\u00e9 ou hors essence cibl\u00e9e. Score \u00e9lev\u00e9 = faible d\u00e9p\u00e9rissement (bon \u00e9tat sanitaire).",
         en = "Dieback detected by FORDEAD (conifers) or RECONFORT (broadleaves) on Sentinel-2 / CRSWIR, weighted by ONF/DSF 2024 detection accuracy. NA outside the validity zone or for non-targeted species. High score = low dieback (good forest health)."
+      ),
+      R6 = list(
+        fr = "Sensibilité du microsite à une année chaude (Δ stress entre un été canicule et un été moyen, canopée figée). Microclimf, augmenté LiDAR. Score élevé = peu sensible (plus résilient). Fiable en relatif entre parcelles.",
+        en = "Microsite sensitivity to a hot year (stress change between a heatwave and an average summer, canopy fixed). Microclimf, LiDAR-augmented. High score = low sensitivity (more resilient). Reliable in relative ranking."
       )
     )
   ),
