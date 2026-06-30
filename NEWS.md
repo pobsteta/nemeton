@@ -1,3 +1,29 @@
+# nemeton 0.103.0 (2026-06-30)
+
+### Added — `run_reticulate_isolated()` : tâche Python dans un sous-processus à env épinglé
+
+reticulate ne peut lier qu'**un seul Python par session R**. Quand plusieurs
+charges Python ont besoin d'**environnements différents** dans la même session
+(Open-Canopy conda, FORDEAD virtualenv, Theia…), elles ne peuvent pas toutes
+passer par reticulate in-process — la première à se lier gagne, les autres
+échouent (cf. incident CHM Open-Canopy : reticulate happé par un Python uv
+éphémère → P1/P2/P3/E1 en échec).
+
+`run_reticulate_isolated(fun, args, python | virtualenv | condaenv, show)`
+exécute `fun` dans un **sous-processus `callr`** dont reticulate est épinglé sur
+l'interpréteur demandé. Le sous-processus part d'un reticulate **vierge** → il se
+lie toujours au bon env, **quel que soit** le binding de la session parente.
+`R_ENVIRON_USER = ""` empêche un `~/.Renviron` d'écraser le pin. C'est
+l'alternative déterministe à un `RETICULATE_PYTHON` global (qui ne peut servir
+qu'un seul env). `fun` doit être auto-suffisant (callr le sérialise : qualifier
+`pkg::fn`, échanger les rasters par **chemins** de fichiers). Repli in-process si
+`callr` absent ou aucun Python résoluble. `callr` ajouté aux `Suggests`. 8 tests
+(`test-reticulate-isolated.R`).
+
+Primitive réutilisable pour isoler les workloads reticulate : Open-Canopy
+(déjà câblé côté `nemetonshiny` v0.94.5.9001) et, à terme, le bloc modèle
+FORDEAD (étape dédiée, à valider sur un vrai run).
+
 # nemeton 0.102.0 (2026-06-30)
 
 ### Added — reGénération L2 : sensibilité microclimatique R6 + années E-OBS

@@ -755,6 +755,30 @@ pas de 13e famille (radar 12 axes). Mode augmenté `microclimate_model`.
 
 ---
 
+# Infra — Isolation reticulate multi-env (Open-Canopy / FORDEAD / Theia)
+
+#### 2026-06-30 — `run_reticulate_isolated()` (`v0.103.0`)
+
+- **Problème** : reticulate ne lie qu'un Python par session R. Open-Canopy (conda
+  `open_canopy`), FORDEAD (virtualenv) et Theia ne peuvent pas tous passer par
+  reticulate in-process → le premier lié gagne, les autres échouent (incident :
+  reticulate happé par un Python uv éphémère → CHM Open-Canopy KO → P1/P2/P3/E1
+  en échec).
+- **Cœur — `v0.103.0`** : `run_reticulate_isolated(fun, args, python|virtualenv|
+  condaenv, show)` (`R/reticulate_isolated.R`) — exécute `fun` dans un
+  sous-processus `callr` à `RETICULATE_PYTHON` épinglé + `R_ENVIRON_USER=""`
+  (un `~/.Renviron` ne peut pas écraser). Repli in-process. `callr` en Suggests.
+  8 tests (sous-process réel : env transmis, args, fallback). Alternative
+  déterministe à un `RETICULATE_PYTHON` global (qui ne sert qu'un env).
+- **App** : Open-Canopy déjà isolé côté `nemetonshiny` v0.94.5.9001 (pattern
+  inline équivalent — débloque les indicateurs Production).
+- **Reste** : isoler le **bloc modèle FORDEAD** (`FordeadProcess` fit/predict) via
+  la primitive — étape dédiée car frontière complexe (DB `con`, callbacks de
+  progression, cancellation, raster `first_dieback_date` en mémoire, 22 tests
+  mockés in-process à adapter) ; à valider sur un vrai run (env fordead + données).
+
+---
+
 # Chantier clos (côté cœur) — Diagnostic pixel CRSWIR (spec 008 §14, ADR-013 A3)
 
 > **L1 + L2 livrés** (v0.42.0 / v0.43.0). Seul **L3** (modal plotly,

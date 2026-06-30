@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.103.0] - 2026-06-30
+
+### Added
+- `run_reticulate_isolated(fun, args, python|virtualenv|condaenv, show)` :
+  exécute une tâche Python/reticulate dans un sous-processus `callr` à env
+  épinglé (`RETICULATE_PYTHON` + `R_ENVIRON_USER=""`), pour faire cohabiter
+  plusieurs envs reticulate (Open-Canopy, FORDEAD, Theia) dans une même session
+  R sans le conflit de binding unique. Repli in-process. `callr` en `Suggests`.
+  8 tests (`test-reticulate-isolated.R`).
+
 ## [0.102.0] - 2026-06-30
 
 ### Added
