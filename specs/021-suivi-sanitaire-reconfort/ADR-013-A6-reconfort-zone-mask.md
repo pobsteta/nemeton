@@ -1,9 +1,8 @@
 # ADR-013 — Amendement A6 : masque UGF des sorties RECONFORT
 
-> **DRAFT à porter dans `platform_nemeton/docs/` (source de vérité des ADR).**
-> Déposé ici (repo `nemeton`) faute de `platform_nemeton` monté localement.
-> À transcrire dans l'ADR-013 (« Suivi sanitaire ») à la suite des
-> amendements A1–A5.
+> **✅ PORTÉ** dans la source de vérité — `nemetonplateform/docs/ADR-013_Suivi_sanitaire_FORDEAD.md`
+> (amendement A6, PR #7 mergée le 2026-06-30). Ce fichier reste comme draft de
+> travail / trace cœur ; la **version officielle fait foi**. Ne pas diverger.
 
 **Date** : 2026-06-28
 **Statut** : accepté (décisions actées via AskUserQuestion, cf.
