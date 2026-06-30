@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.100.1] - 2026-06-30
+
+### Fixed
+- `reconfort_cache_manifest()` découvre désormais les couches d'affichage
+  depuis le dossier IOTA² `final/`
+  (`output_zone_<id>/results/.../final/Final_*.tif`), où elles persistent —
+  la v0.100.0 ne regardait que les copies run-scopées `zone_<id>/` (absentes
+  pour les runs existants → seule la classification remontait). Repli
+  `zone_<id>/` conservé. Validé sur le cache réel zone 5. 9 tests ajoutés.
+
 ## [0.100.0] - 2026-06-30
 
 ### Added

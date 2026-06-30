@@ -32,15 +32,18 @@ redraw the RECONFORT rasters after a project reload (parity with
 \code{\link{read_fordead_layer}} / \code{\link{read_fordead_dieback_mask}}, which read
 their layers from the cache).
 
-The run is resolved from \code{run_id}, else the most recent run found under
-the zone cache directory. The discovered display rasters are the
-run-scoped files written by the \code{persist} phase of
-\code{\link{run_reconfort_dieback}}: \code{reconfort_mask_<run_id>.tif}
-(classification), \code{reconfort_score_<run_id>.tif} (continuous score) and
-\code{reconfort_proba_<run_id>.tif} (probability). The CRswir / CRre
-multi-band stacks (a time series consumed by
-\code{\link{read_reconfort_pixel_series}}) are \strong{not} display layers and are
-excluded.
+Primary source is the IOTA² \code{final/} output dir
+(\code{output_zone_<id>/results/iota2_results_classif_labels-z<id>-S2_*/final/}),
+where the display rasters persist across reloads:
+\code{Final_continuous_score_masked*.tif} (score),
+\code{Final_Classif_masked_*.tif} (classification, fallback \code{Classif_Seed_0.tif})
+and \code{Final_Proba_map_masked*.tif} (probability, fallback
+\code{ProbabilityMap_seed_0.tif}). When that dir is absent (workdir cleaned) or
+an older run is requested, it falls back to the run-scoped copies under
+\code{zone_<id>/} (\code{reconfort_mask_<run_id>.tif} / \code{reconfort_score_<run_id>.tif}
+/ \code{reconfort_proba_<run_id>.tif}). The CRswir / CRre multi-band stacks (a
+time series consumed by \code{\link{read_reconfort_pixel_series}}) are \strong{not}
+display layers and are excluded.
 
 The output is byte-for-byte interchangeable with
 \code{\link{reconfort_layer_manifest}} (same columns, types and rendering hints),
