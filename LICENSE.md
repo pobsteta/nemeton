@@ -1,31 +1,37 @@
-# MIT License
+# GNU General Public License v3.0
 
-Copyright (c) 2026 Pascal Obstétar
+nemeton — plateforme d'analyse forestière systémique
+Copyright (C) 2026 Pascal Obstetar
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, **version 3** of the License.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+The full text of the GNU General Public License version 3 is available at
+<https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 ---
 
-## Related packages
+## Relicensing note (2026-07-01)
 
-- **nemetonshiny** (EUPL v1.2): Shiny application — https://github.com/pobsteta/nemetonshiny
-- **Produced data** (CC-BY 4.0): Indicator values, species maps, reports
+From **v0.110.0**, `nemeton` is distributed under **GPL-3** (previously MIT).
+Reason: direct dependency on [`biodivMapR`](https://github.com/jbferet/biodivMapR)
+(GPL-3) for the spectral-diversity indicators **B4 / L3** (spec 028). This makes
+`nemeton` a copyleft derivative work. Packages that import it
+(`nemetonshiny`, `tree_sat_nemeton`, `maestro_nemeton`) become GPL-3 at
+distribution by dependency; their own `LICENSE` files are updated in their
+respective repositories.
+
+## Related packages & data
+
+- **Produced data** (CC-BY 4.0): indicator values, species maps, reports —
+  unaffected by this relicensing (ADR-006 data clause unchanged).
+- Downstream packages: see each repository's own `LICENSE`.
 
 ## Third-party data attributions
 

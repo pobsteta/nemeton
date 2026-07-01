@@ -73,8 +73,8 @@ get_famille_code <- function(col_name) {
 #'   \item C1, C2 -> Carbon family (famille_carbone)
 #'   \item W1, W2, W3 -> Water family (famille_eau)
 #'   \item F1, F2 -> Soil fertility family (famille_sol)
-#'   \item L1, L2 -> Landscape family (famille_paysage)
-#'   \item B1, B2, B3 -> Biodiversity family (famille_biodiversite)
+#'   \item L1, L2, L3 -> Landscape family (famille_paysage)
+#'   \item B1, B2, B3, B4 -> Biodiversity family (famille_biodiversite)
 #'   \item And 7 other families (A, T, R, S, P, E, N)
 #' }
 #'

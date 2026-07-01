@@ -558,6 +558,22 @@ normalize_indicator <- function(indicator, values) {
     return(pmin(100, pmax(0, 100 - values)))
   }
 
+  # B4 spectral alpha diversity (Shannon of spectral species): high = good.
+  # Provisional upper bound log(nbclusters) with the biodivMapR default of
+  # 50 clusters (spec 028 D3 — recalibrate empirically after the first
+  # real run).
+  if (indicator %in% c("indicateur_b4_div_spectrale", "B4")) {
+    return(pmin(100, pmax(0, values / log(50) * 100)))
+  }
+
+  # L3 spectral beta diversity (Bray-Curtis turnover / landscape mosaic
+  # heterogeneity): high = good (spec 028 D1). Provisional scale assumes a
+  # dissimilarity in [0, 1] (spec 028 D3 — recalibrate once the biodivMapR
+  # beta output range is confirmed on real data).
+  if (indicator %in% c("indicateur_l3_het_spectrale", "L3")) {
+    return(pmin(100, pmax(0, values * 100)))
+  }
+
   if (!is.null(ref_max)) {
     values <- pmin(100, pmax(0, values / ref_max * 100))
   } else {
