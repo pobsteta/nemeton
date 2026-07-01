@@ -12,7 +12,8 @@ ensure_inventory_fields(
   chm = NULL,
   stocking = 0.75,
   h_dom_percentile = 0.9,
-  min_stand_height = 1.3
+  min_stand_height = 1.3,
+  min_merchantable_height = 6
 )
 }
 \arguments{
@@ -35,10 +36,15 @@ function is a no-op.}
 
 \item{h_dom_percentile}{Percentile for \eqn{H_{dom}} extraction.}
 
-\item{min_stand_height}{Numeric (m). Dominant height below which a
-unit is treated as carrying no standing stock (\code{dbh} /
+\item{min_stand_height}{Numeric (m). Felled/cleared stand threshold;
+see \code{\link{estimate_synthetic_inventory}}. Default \code{1.3}.}
+
+\item{min_merchantable_height}{Numeric (m). Dominant height below
+which a unit carries no merchantable stock (\code{dbh} /
 \code{density} filled with \code{0}, not \code{NA}); see
-\code{\link{estimate_synthetic_inventory}}. Default \code{1.3}.}
+\code{\link{estimate_synthetic_inventory}}. Default \code{6}. The
+\code{chm_suspect} attribute is propagated onto the returned
+\code{sf}.}
 }
 \value{
 The input \code{sf} with \code{dbh_field} and

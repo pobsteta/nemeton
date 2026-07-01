@@ -184,7 +184,16 @@ indicator, exclude)` exportée = **source unique** de la convention de nommage
 `nemetonshiny` dessus (supprimer son `col_map`, dépend de `nemeton >= 0.108.0`).
 Tests `test-indicators-core-dispatch.R`.
 
-**#1 / #2 / #3 :** à traiter (cœur), paperwork d'abord.
+**#1 / #2 / #3 — cœur livré (v0.109.0)** : spec 005 §3.5 (paperwork) +
+implémentation.
+- **#2** peuplement jeune `[1,3;6)` m → `dbh/density = 0` (param
+  `min_merchantable_height = 6`) → P1/P3/E1 = 0 au lieu de NA ; test en
+  **hauteur** (espèce manquante sur grand peuplement reste NA).
+- **#3** `compute_site_index(min_stand_height = 1.3)` : CHM nu → P2 = NA (au
+  lieu du clamp pire classe).
+- **#1** garde-fou `chm_suspect` (warn + attribut) sur CHM dégénéré (≥95 %
+  sous plancher + max CHM ~0).
+Tests `test-synthetic-inventory-debt.R`. **Chantier dette #1-#4 CLOS.**
 
 ---
 

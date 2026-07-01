@@ -180,14 +180,17 @@ test_that("H_dom above class 1 is clamped to best class", {
   expect_gte(out, class_1_at_50 - 0.5)
 })
 
-test_that("H_dom below class 5 is clamped to worst class", {
+test_that("H_dom below class 5 (but above breast height) is clamped to worst class", {
   curves <- read_site_index_curves()
   class_5_at_50 <- stats::approx(
     x = curves[curves$species == "QUPE", "age"],
     y = curves[curves$species == "QUPE", "class_5"],
     xout = 50
   )$y
-  out <- compute_site_index(1, 80, "QUPE")
+  # 2 m: below the worst class curve but above min_stand_height (1.3 m),
+  # so it still clamps rather than returning NA (spec 005 §3.5 #3 only
+  # NA-s a bare CHM below breast height).
+  out <- compute_site_index(2, 80, "QUPE")
   expect_lte(out, class_5_at_50 + 0.5)
 })
 

@@ -62,11 +62,13 @@ test_that("min_stand_height boundary: below = 0, at/above tries the allometry", 
     .units_over(.chm_uniform(0.5), 2), .chm_uniform(0.5), species = "FASY")
   expect_true(all(low$dbh == 0 & low$density == 0))
 
-  # A young stand (3 m, between 1.3 and 6): the mature-stand allometry is
-  # NOT calibrated there -> estimate_dq_from_hdom yields NA (unchanged).
-  young <- estimate_synthetic_inventory(
-    .units_over(.chm_uniform(3), 2), .chm_uniform(3), species = "FASY")
-  expect_true(all(is.na(young$dbh)))
+  # A young stand (3 m, between 1.3 and 6 m): pre-merchantable -> no
+  # merchantable stock, so D_g and N are 0, not NA (spec 005 §3.5 #2;
+  # v0.109.0 changed this from the earlier NA). A uniform 3 m CHM also
+  # trips the degenerate-CHM guard -> suppress its warning here.
+  young <- suppressWarnings(estimate_synthetic_inventory(
+    .units_over(.chm_uniform(3), 2), .chm_uniform(3), species = "FASY"))
+  expect_true(all(young$dbh == 0 & young$density == 0))
 })
 
 test_that("regression: a normal tall CHM still yields positive volume", {
