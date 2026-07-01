@@ -6,6 +6,7 @@
 # Fixture: one scene with B04/B08 at 10 m and B8A/B05 at 20 m, constant
 # per band so (B8A - B05)/(B8A + B05) is a known value.
 .ndre_fixture <- function(dir, b8a = 0.5, b05 = 0.1, b04 = 0.2, b08 = 0.4) {
+  skip_if_terra_write_broken()   # runner terra::writeRaster anomaly
   sid <- "S2_NDRE_001"
   sd  <- file.path(dir, sid)
   dir.create(sd, recursive = TRUE, showWarnings = FALSE)

@@ -21,6 +21,7 @@ make_fixture_s2_cache <- function(dir, scenes = 3L,
                                   with_b12 = TRUE,
                                   start_date = as.Date("2026-01-01"),
                                   fill_value = NULL) {
+  skip_if_terra_write_broken()   # runner terra::writeRaster anomaly
   scene_ids <- sprintf("S2_FIX_%03d", seq_len(scenes))
   obs_dates <- start_date + seq_len(scenes) * 10L
   for (i in seq_len(scenes)) {

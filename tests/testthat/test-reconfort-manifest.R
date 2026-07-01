@@ -103,6 +103,7 @@ test_that("a non-RECONFORT result is rejected", {
 
 test_that("include_range overrides the nominal domain from the raster", {
   testthat::skip_if_not_installed("terra")
+  skip_if_terra_write_broken()   # runner terra::writeRaster anomaly
   tf <- withr::local_tempfile(fileext = ".tif")
   r <- terra::rast(nrow = 4, ncol = 4, xmin = 0, xmax = 40,
                    ymin = 0, ymax = 40, crs = "EPSG:2154")

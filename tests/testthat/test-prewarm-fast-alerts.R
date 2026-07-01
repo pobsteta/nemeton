@@ -17,6 +17,7 @@
 # NDMI = (B08-B11)/(B08+B11); the values are chosen so each index sits
 # clearly below its default threshold (alert). B11 is native 20 m.
 .write_ndvi_nbr_scene <- function(cache, date = "20250530") {
+  skip_if_terra_write_broken()   # runner terra::writeRaster anomaly
   sid <- sprintf("S2A_MSIL2A_%sT103041_R108_T31TFM_x", date)
   d <- file.path(cache, sid)
   dir.create(d, recursive = TRUE, showWarnings = FALSE)
@@ -38,6 +39,7 @@
 # years. B08/B8A are fixed and B11/B05 rise each year so NDMI/NDRE decline
 # (a genuine trend signal); B04/B12 are fixed.
 .write_eight_combo_cache <- function(cache, years = 2019:2023) {
+  skip_if_terra_write_broken()   # runner terra::writeRaster anomaly
   for (k in seq_along(years)) {
     y    <- years[k]
     rise <- 0.05 + (k - 1) * 0.05            # B11 / B05 climb -> NDMI/NDRE fall
@@ -61,6 +63,7 @@
 
 # NDVI-renderable only (B04+B08, no B12) -> NBR has no usable scene.
 .write_ndvi_only_scene <- function(cache, date = "20250530") {
+  skip_if_terra_write_broken()   # runner terra::writeRaster anomaly
   sid <- sprintf("S2A_MSIL2A_%sT103041_R108_T31TFM_x", date)
   d <- file.path(cache, sid)
   dir.create(d, recursive = TRUE, showWarnings = FALSE)
