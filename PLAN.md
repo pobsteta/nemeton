@@ -170,6 +170,30 @@ navigateur) + clé i18n `monitoring_reconfort_year_incomplete`. Dépend de
 
 ---
 
+# Chantier EN COURS — Planche pixel dépérissement (CRswir/CRre)
+
+> **Cadré le 2026-07-01.** Enrichir le click-to-diagnose plotly de la carte
+> RECONFORT (`nemetonshiny/R/mod_monitoring_reconfort_map.R`, 2 traces mono-axe)
+> en **planche 4 panneaux** (double axe Y natif, cycles repliés, espace d'état
+> CRswir×CRre, palette cividis). Brief découpé en 2 parties (règles 1-3
+> CLAUDE.md) : calcul au cœur, rendu dans l'app.
+
+**Partie A — cœur `nemeton` (livrée) :**
+- `prepare_pixel_dieback_series(df, grid_step, smooth, summer, gap_flag_days)`
+  (`R/pixel_dieback_prep.R`, exportée) : transformation pure de la sortie de
+  `read_reconfort_pixel_series()` → grille+gap-fill (`stats::approx`), lissage
+  léger Savitzky-Golay (`signal`), extrema estivaux annuels (creux CRswir / pic
+  CRre sur obs réelles), espace d'état + centroïdes annuels, lacunes longues.
+- Nouvelle dépendance `signal`. Tests : `test-pixel-dieback-prep.R`. → **v0.106.0**.
+
+**Partie B — app `nemetonshiny` (à faire, brief fourni) :** extraire le tracé
+inline en `fct_plot_pixel_dieback.R::plot_pixel_dieback(prepared, opts, i18n)`
+(pur plotly, `yaxis2` natif, cividis via `viridisLite`, subplot 4 panneaux),
+câbler dans `mod_monitoring_reconfort_map`, i18n FR/EN, table `DT` équivalente,
+export `kaleido`. Dépend de `nemeton >= 0.106.0`.
+
+---
+
 # Chantier EN COURS — Carte FORDEAD : 3 couches additionnelles
 
 > **Cadré le 2026-06-19.** La Carte FORDEAD n'affiche que le masque 0-4. On

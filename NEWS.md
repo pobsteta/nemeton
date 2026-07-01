@@ -1,3 +1,28 @@
+# nemeton 0.106.0 (2026-07-01)
+
+### Added — `prepare_pixel_dieback_series()` : dérivés pixel CRswir/CRre pour la planche de suivi
+
+Prépare, côté cœur, tout le dérivé consommé par la planche plotly « pixel »
+(suivi pluriannuel du dépérissement, CRswir = eau / CRre = chlorophylle) de
+`nemetonshiny` — pour que le rendu app reste sans logique métier (règle 3).
+Transformation **pure et testée** de la sortie de
+`read_reconfort_pixel_series()` :
+
+- grille régulière + gap-fill linéaire (`stats::approx`, équivalent iota2) ;
+- lissage **léger** Savitzky-Golay (`signal::sgolayfilt`, `p=2`, `n=5`) — le
+  lissage fort n'est volontairement pas offert (il raboterait les extrema
+  estivaux, qui *sont* le signal) ;
+- **extrema estivaux annuels** mesurés sur les observations réelles (creux
+  CRswir `which.min`, pic CRre `which.max`) ;
+- **espace d'état** estival apparié + **centroïdes annuels** ;
+- **lacunes** interpolées longues (`> gap_flag_days`) signalées.
+
+Renvoie une liste de `data.frame` (`grid_swir/re`, `obs_swir/re`,
+`trough_swir`, `peak_re`, `state`, `centroids`, `gaps`) et reporte les attributs
+RECONFORT (`species`, `v_model`, `date_from/to`, `dans_zone_validite`).
+Nouvelle dépendance `signal`. Partie A du brief planche pixel ; la Partie B
+(rendu plotly 4 panneaux) vit dans `nemetonshiny`.
+
 # nemeton 0.105.0 (2026-07-01)
 
 ### Fixed — cache FAST : clé sur la couverture S2 réelle, plus sur la fenêtre demandée
