@@ -170,15 +170,15 @@ navigateur) + clé i18n `monitoring_reconfort_year_incomplete`. Dépend de
 
 ---
 
-# Chantier EN COURS — Planche pixel dépérissement (CRswir/CRre)
+# Chantier CLOS — Planche pixel dépérissement (CRswir/CRre)
 
-> **Cadré le 2026-07-01.** Enrichir le click-to-diagnose plotly de la carte
-> RECONFORT (`nemetonshiny/R/mod_monitoring_reconfort_map.R`, 2 traces mono-axe)
-> en **planche 4 panneaux** (double axe Y natif, cycles repliés, espace d'état
-> CRswir×CRre, palette cividis). Brief découpé en 2 parties (règles 1-3
-> CLAUDE.md) : calcul au cœur, rendu dans l'app.
+> **Cadré le 2026-07-01, clos le 2026-07-01.** Enrichir le click-to-diagnose
+> plotly de la carte RECONFORT (`nemetonshiny/R/mod_monitoring_reconfort_map.R`,
+> 2 traces mono-axe) en **planche 4 panneaux** (double axe Y natif, cycles
+> repliés, espace d'état CRswir×CRre, palette cividis). Brief découpé en 2
+> parties (règles 1-3 CLAUDE.md) : calcul au cœur, rendu dans l'app.
 
-**Partie A — cœur `nemeton` (livrée) :**
+**Partie A — cœur `nemeton` (✅ livrée) :**
 - `prepare_pixel_dieback_series(df, grid_step, smooth, summer, gap_flag_days)`
   (`R/pixel_dieback_prep.R`, exportée) : transformation pure de la sortie de
   `read_reconfort_pixel_series()` → grille+gap-fill (`stats::approx`), lissage
@@ -186,11 +186,20 @@ navigateur) + clé i18n `monitoring_reconfort_year_incomplete`. Dépend de
   CRre sur obs réelles), espace d'état + centroïdes annuels, lacunes longues.
 - Nouvelle dépendance `signal`. Tests : `test-pixel-dieback-prep.R`. → **v0.106.0**.
 
-**Partie B — app `nemetonshiny` (à faire, brief fourni) :** extraire le tracé
-inline en `fct_plot_pixel_dieback.R::plot_pixel_dieback(prepared, opts, i18n)`
-(pur plotly, `yaxis2` natif, cividis via `viridisLite`, subplot 4 panneaux),
-câbler dans `mod_monitoring_reconfort_map`, i18n FR/EN, table `DT` équivalente,
-export `kaleido`. Dépend de `nemeton >= 0.106.0`.
+**Partie B — app `nemetonshiny` (✅ livrée, 2026-07-01) :** tracé inline extrait
+en `fct_plot_pixel_dieback.R::plot_pixel_dieback(prepared, opts, i18n)` (pur
+plotly, `yaxis2` natif, cividis via `viridisLite`, subplot 4 panneaux), câblé
+dans `mod_monitoring_reconfort_map`, i18n FR/EN, table `DT` équivalente, contrôles
+lissage/points, **export PNG** (helper pur `save_plotly_png` : kaleido→webshot2,
+bouton conditionnel dans la modale). Consomme `nemeton::prepare_pixel_dieback_series()`
+(dépend de `nemeton >= 0.106.0`). → **`nemetonshiny` v0.96.1**.
+
+> **Reste non branché (documenté, hors périmètre app)** : inclusion de la planche
+> au **rapport Quarto PDF**. Volontairement différée : elle exige une sélection de
+> « pixel représentatif » qui relève du **métier (`nemeton`)**, pas de l'app. Le
+> helper d'export PNG est prêt à être réutilisé si/quand cette section est
+> spécifiée côté cœur (à flécher : primitive de choix du pixel représentatif dans
+> `nemeton`, puis wiring rapport côté app).
 
 ---
 
