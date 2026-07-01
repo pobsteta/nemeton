@@ -170,6 +170,24 @@ navigateur) + clé i18n `monitoring_reconfort_year_incomplete`. Dépend de
 
 ---
 
+# Chantier EN COURS — Dette post-coupe-rase (items 1-4)
+
+> **Ouvert le 2026-07-01.** Inventaire de dette autour du correctif CHM/coupe
+> rase. 4 items : (1) un CHM cassé (tout à 0) est indistinguable d'une coupe
+> rase → garde-fou « CHM suspect » ; (2) peuplement jeune [1,3 ; 6) m → NA au
+> lieu de ~0 ; (3) P2 station encore NA sur couvert nul (n'utilise pas
+> `ensure_inventory_fields`) ; (4) duplication du dispatcher cœur/app.
+
+**#4 dispatcher — cœur livré (v0.108.0) :** `extract_indicator_value(result,
+indicator, exclude)` exportée = **source unique** de la convention de nommage
+(code court → nom NMT → motif). `compute_indicator()` délègue. Reste : câbler
+`nemetonshiny` dessus (supprimer son `col_map`, dépend de `nemeton >= 0.108.0`).
+Tests `test-indicators-core-dispatch.R`.
+
+**#1 / #2 / #3 :** à traiter (cœur), paperwork d'abord.
+
+---
+
 # Chantier CLOS — Coupe rase : CHM « couvert nul » → volume 0 (spec 005 §3.4)
 
 > **Cadré + livré le 2026-07-01.** Diagnostic base : sur le projet FORDEAD récent

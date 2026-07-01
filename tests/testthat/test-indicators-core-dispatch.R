@@ -50,6 +50,30 @@ test_that("compute_indicator drops any surplus ... arg for a no-dots function", 
   )
 })
 
+test_that("extract_indicator_value resolves the value column by convention", {
+  # Short code derived from the name (indicateur_p1_volume -> P1).
+  df <- data.frame(a = 1:2, P1 = c(10, 20))
+  expect_equal(extract_indicator_value(df, "indicateur_p1_volume"), c(10, 20))
+
+  # NMT name column.
+  df2 <- data.frame(indicateur_x9_test = c(3, 4))
+  expect_equal(extract_indicator_value(df2, "indicateur_x9_test"), c(3, 4))
+
+  # Pattern fallback, preferring a column NOT in `exclude`.
+  df3 <- data.frame(B1 = c(1, 1), C2 = c(9, 9))   # B1 pre-existing, C2 fresh
+  expect_equal(
+    extract_indicator_value(df3, "indicateur_unknown_zz", exclude = "B1"),
+    c(9, 9))
+
+  # A plain vector is returned unchanged.
+  expect_equal(extract_indicator_value(c(5, 6), "indicateur_whatever"), c(5, 6))
+
+  # No recognizable column -> explicit error.
+  expect_error(
+    extract_indicator_value(data.frame(foo = 1, bar = 2), "indicateur_p1_volume"),
+    "no recognizable value column")
+})
+
 test_that("compute_indicator still forwards every arg to a function with ...", {
   skip_if_not_installed("terra")
   # A stub indicator declaring `...`: it must receive the surplus arg.

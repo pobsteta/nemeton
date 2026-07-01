@@ -221,27 +221,65 @@ compute_indicator <- function(indicator, units, layers, ...) {
   }
   result <- do.call(func, call_args)
 
-  # Many indicator functions return the `units` object (sf / data.frame)
-  # with the value added under a column named by the family short code
-  # (e.g. indicateur_p1_volume -> "P1", indicateur_r1_feu -> "R1"). Extract
-  # that column as a numeric vector. Resolution order: the short code
-  # derived from the indicator name, then the NMT name itself, then any
-  # single "<Letter><digit>" column — so risk (R1-R4), production (P1-P3),
-  # energy (E1-E2) and every other convention resolve without a hand-kept
-  # map.
+  extract_indicator_value(result, indicator)
+}
+
+
+#' Extract an indicator's value column from its result
+#'
+#' Single source of truth for the Nemeton indicator naming convention:
+#' most indicator functions return the `units` object (an `sf` /
+#' `data.frame`) with the computed value added under a column named by the
+#' family short code (`indicateur_p1_volume` -> `"P1"`,
+#' `indicateur_r1_feu` -> `"R1"`, ...). This helper resolves that column to
+#' a plain numeric vector so both the core dispatcher
+#' ([nemeton_compute()] via `compute_indicator()`) and downstream callers
+#' (e.g. the `nemetonshiny` compute loop) share **one** convention and can
+#' never drift apart.
+#'
+#' Resolution order for an `sf` / `data.frame` result:
+#' \enumerate{
+#'   \item the short code derived from the indicator name
+#'     (`indicateur_<code>_...` -> upper-case `<code>`, e.g. `P1`);
+#'   \item the NMT indicator name itself (or its upper-case form);
+#'   \item any single `"<Letter><digit>"` column (optionally suffixed
+#'     `_norm`), preferring columns \strong{not} present in `exclude`
+#'     (pass the pre-existing input column names so a freshly added value
+#'     column wins over a same-shaped attribute already on the units).
+#' }
+#' A result that is already a plain vector is returned unchanged.
+#'
+#' @param result The raw return value of an indicator function (an `sf`,
+#'   a `data.frame`, or a numeric vector).
+#' @param indicator Character. The NMT indicator name (function name),
+#'   e.g. `"indicateur_p1_volume"`.
+#' @param exclude Character vector of column names to treat as
+#'   pre-existing (not the freshly computed value) when falling back to
+#'   the `"<Letter><digit>"` pattern. Default none.
+#'
+#' @return A numeric vector of the indicator's per-unit values.
+#' @seealso [nemeton_compute()]
+#' @export
+extract_indicator_value <- function(result, indicator,
+                                    exclude = character(0)) {
   if (inherits(result, "sf") || inherits(result, "data.frame")) {
     short <- toupper(sub("^indicateur_([a-z][0-9]+)_.*$", "\\1", indicator))
     if (short %in% names(result)) {
       return(result[[short]])
     }
-    if (indicator %in% names(result)) {
-      return(result[[indicator]])
+    hit <- intersect(c(indicator, toupper(indicator)), names(result))
+    if (length(hit) >= 1L) {
+      return(result[[hit[1]]])
     }
     code_cols <- grep("^[A-Z][0-9](_norm)?$", names(result), value = TRUE)
+    fresh     <- setdiff(code_cols, exclude)
+    if (length(fresh) >= 1L) {
+      return(result[[fresh[1]]])
+    }
     if (length(code_cols) >= 1L) {
       return(result[[code_cols[1]]])
     }
-    stop("Indicator function '", func_name,
+    stop("Indicator '", indicator,
          "' returned a data frame with no recognizable value column",
          call. = FALSE)
   }

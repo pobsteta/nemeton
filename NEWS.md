@@ -1,3 +1,22 @@
+# nemeton 0.108.0 (2026-07-01)
+
+### Added — `extract_indicator_value()` : convention de nommage des indicateurs, source unique
+
+Extrait la valeur d'un indicateur depuis son résultat (`sf`/`data.frame` →
+colonne code court `P1`/`R1`/…, ou vecteur renvoyé tel quel). Auparavant, cette
+convention était **dupliquée** entre `nemeton::compute_indicator()` (dérivation
+code court) et la boucle de calcul de `nemetonshiny` (un `col_map` de 17 entrées
+tenu à la main) — deux implémentations vouées à **diverger**.
+
+- `compute_indicator()` délègue désormais à `extract_indicator_value()`.
+- `nemetonshiny` appelle la **même** fonction (à partir de `nemeton >= 0.108.0`),
+  supprimant son `col_map` : une seule source de vérité, plus de dérive possible.
+- Ordre de résolution : code court dérivé du nom → nom NMT → motif
+  `"<Lettre><chiffre>"` (préférant une colonne absente de `exclude`, pour que
+  la valeur fraîchement calculée l'emporte sur un attribut préexistant).
+
+Tests : `test-indicators-core-dispatch.R`.
+
 # nemeton 0.107.1 (2026-07-01)
 
 ### Fixed — `compute_indicator()` / `nemeton_compute()` : dispatch robuste (args + colonne de sortie)
