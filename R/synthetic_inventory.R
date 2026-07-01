@@ -200,11 +200,20 @@ estimate_dq_from_hdom <- function(H_dom, species) {
 #'   self-thinning maximum density used as the expected actual
 #'   density (default 0.75, i.e. 75% of N_max, a realistic value for
 #'   French managed stands).
+#' @param min_stand_height Numeric (m). Dominant height below which a
+#'   unit is treated as carrying \strong{no standing stock} (clear-cut,
+#'   cleared or non-forest): its \code{dbh} and \code{density} are set to
+#'   \code{0} rather than \code{NA}, so volume/quality indicators return
+#'   \code{0} for a felled stand instead of a cryptic \code{NA}. Default
+#'   \code{1.3} (breast height). Only applies when \eqn{H_{dom}} is
+#'   observed (non-\code{NA}); an \code{NA} \eqn{H_{dom}} (no CHM
+#'   coverage) stays \code{NA}.
 #'
 #' @return A data.frame with one row per unit containing
 #'   \code{H_dom} (m), \code{dbh} (cm, the quadratic mean
 #'   diameter), \code{density} (stems / ha), and \code{source}
-#'   (always "synthetic_ml") columns.
+#'   (always "synthetic_ml") columns. Units below
+#'   \code{min_stand_height} get \code{dbh = 0} and \code{density = 0}.
 #'
 #' @examples
 #' \dontrun{
@@ -221,7 +230,8 @@ estimate_dq_from_hdom <- function(H_dom, species) {
 #' @export
 estimate_synthetic_inventory <- function(units, chm, species,
                                          h_dom_percentile = 0.9,
-                                         stocking = 0.75) {
+                                         stocking = 0.75,
+                                         min_stand_height = 1.3) {
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
   }
@@ -231,6 +241,10 @@ estimate_synthetic_inventory <- function(units, chm, species,
   if (!is.numeric(stocking) || length(stocking) != 1L ||
       is.na(stocking) || stocking <= 0 || stocking > 1) {
     stop("stocking must be a scalar in (0, 1]", call. = FALSE)
+  }
+  if (!is.numeric(min_stand_height) || length(min_stand_height) != 1L ||
+      is.na(min_stand_height) || min_stand_height < 0) {
+    stop("min_stand_height must be a non-negative scalar", call. = FALSE)
   }
 
   n <- nrow(units)
@@ -245,6 +259,20 @@ estimate_synthetic_inventory <- function(units, chm, species,
   dq <- estimate_dq_from_hdom(h_dom, species)
   n_max <- n_max_selfthinning(dq, species)
   density <- stocking * n_max
+
+  # spec 005 amendment (v0.107.0) — "no canopy" vs "too young". A unit
+  # whose H_dom is *observed* (non-NA) but below breast height
+  # (`min_stand_height`, 1.3 m) carries NO standing stock: clear-cut,
+  # cleared, or non-forest. There D_g and N are 0, not NA, so the
+  # downstream volume/quality indicators (P1, P3, E1) return 0 —
+  # the correct answer for a felled stand — instead of a cryptic NA.
+  # Distinct from a young stand (min_stand_height <= H_dom < 6 m) where
+  # the mature-stand allometry is not calibrated and estimate_dq_from_hdom
+  # rightly yields NA, and from H_dom = NA (no CHM coverage) which stays
+  # NA (genuinely unknown).
+  no_stand <- !is.na(h_dom) & h_dom < min_stand_height
+  dq[no_stand]      <- 0
+  density[no_stand] <- 0
 
   data.frame(
     H_dom   = h_dom,
@@ -279,6 +307,10 @@ estimate_synthetic_inventory <- function(units, chm, species,
 #' @param stocking Stocking fraction (see
 #'   \code{\link{estimate_synthetic_inventory}}).
 #' @param h_dom_percentile Percentile for \eqn{H_{dom}} extraction.
+#' @param min_stand_height Numeric (m). Dominant height below which a
+#'   unit is treated as carrying no standing stock (\code{dbh} /
+#'   \code{density} filled with \code{0}, not \code{NA}); see
+#'   \code{\link{estimate_synthetic_inventory}}. Default \code{1.3}.
 #'
 #' @return The input \code{sf} with \code{dbh_field} and
 #'   \code{density_field} filled (when possible). The
@@ -293,7 +325,8 @@ ensure_inventory_fields <- function(units,
                                     density_field = "density",
                                     chm = NULL,
                                     stocking = 0.75,
-                                    h_dom_percentile = 0.9) {
+                                    h_dom_percentile = 0.9,
+                                    min_stand_height = 1.3) {
   if (is.null(chm)) return(units)
   if (!species_field %in% names(units)) return(units)
 
@@ -309,7 +342,8 @@ ensure_inventory_fields <- function(units,
       chm              = chm,
       species          = units[[species_field]],
       h_dom_percentile = h_dom_percentile,
-      stocking         = stocking
+      stocking         = stocking,
+      min_stand_height = min_stand_height
     ),
     error = function(e) {
       cli::cli_warn("ensure_inventory_fields: {e$message}")

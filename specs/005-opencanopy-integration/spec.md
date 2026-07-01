@@ -133,6 +133,35 @@ Un **amendement ADR-011** sera rédigé en parallèle pour documenter la sémant
 
 À documenter comme effet de bord positif ; non bloquant pour les phases 1-4.
 
+### 3.4 Amendement (v0.107.0) — sémantique « couvert nul »
+
+**Contexte.** Sur une parcelle **rasée (coupe rase entière)**, le CHM
+Open-Canopy est *correct* mais à hauteur ≈ 0 (H_dom ≈ 0). L'inventaire
+synthétique (`estimate_synthetic_inventory()` → `estimate_dq_from_hdom()`)
+renvoyait alors **NA** (la garde « H_dom < 6 m ⇒ allométrie non calibrée »
+traitait le couvert nul comme un peuplement « trop jeune »). Conséquence
+observée (projet `20260624_073705_armn`, secteur Mouthe) : **P1, P3, E1 tous
+NA**, E2 dégénéré à 0, et **famille Énergie absente** — au lieu du résultat
+correct d'une coupe rase : volume ≈ 0, E1 ≈ 0, **famille Énergie présente à 0**.
+
+**Décision.** Distinguer trois régimes selon H_dom :
+
+| H_dom | Interprétation | D_g / N | Indicateurs |
+|-------|----------------|---------|-------------|
+| `NA` (pas de couverture CHM) | inconnu | `NA` | P1/P3/E1 = `NA` (légitime) |
+| `< min_stand_height` (défaut 1,3 m) | **pas de peuplement** (coupe rase, coupé, non-forêt) | **0 / 0** | P1 = 0, P3 défini bas, E1 = 0 |
+| `[min_stand_height, 6 m)` | peuplement jeune, allométrie non calibrée | `NA` | inchangé (`NA`) |
+| `≥ 6 m` | peuplement établi | allométrie IFN/Charru | inchangé |
+
+Seuil `min_stand_height = 1,3 m` (hauteur de référence du dbh) : en deçà, le
+dbh est nul par définition ⇒ pas de stock sur pied. Paramètre exposé sur
+`estimate_synthetic_inventory()` et `ensure_inventory_fields()`.
+
+**Invariants.** (1) Un CHM normal (peuplement établi) est inchangé
+(non-régression). (2) `H_dom = NA` reste `NA` (on ne force pas 0 sur une absence
+de donnée). (3) Le correctif est côté **cœur** : il vaut quel que soit le wiring
+CHM de l'app — une coupe rase renvoie désormais 0, pas `NA`.
+
 ---
 
 ## 4. Interfaces techniques

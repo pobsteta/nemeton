@@ -170,6 +170,31 @@ navigateur) + clé i18n `monitoring_reconfort_year_incomplete`. Dépend de
 
 ---
 
+# Chantier CLOS — Coupe rase : CHM « couvert nul » → volume 0 (spec 005 §3.4)
+
+> **Cadré + livré le 2026-07-01.** Diagnostic base : sur le projet FORDEAD récent
+> (`20260624_073705_armn`, Mouthe), famille **Énergie absente**. Cause tracée via
+> `data/indicators.parquet` : **P1/P3/E1 = 100 % NA**, E2 = 0, alors que le CHM
+> Open-Canopy en cache est **valide** (EPSG:2154) mais à hauteur ≈ 0 — la forêt a
+> été **rasée**. Test décisif : `indicateur_p1_volume(u, chm=chm)` = NA *même
+> CHM fourni* ⇒ **bug cœur** (pas wiring) : `estimate_dq_from_hdom()` renvoie NA
+> pour H_dom < 6 m, confondant « couvert nul » et « peuplement jeune ».
+
+**Livré (cœur) :** `estimate_synthetic_inventory()` / `ensure_inventory_fields()`
+gagnent `min_stand_height` (défaut 1,3 m) ; H_dom observé sous le seuil ⇒
+`dbh=0/density=0` (au lieu de NA) ⇒ **P1=0, E1=0, P3 défini, E2=0 cohérent,
+famille Énergie présente**. `H_dom=NA` (hors couverture) reste NA. Amendement
+**spec 005 §3.4**. Tests `test-synthetic-inventory-clearcut.R` (+ non-régression).
+Vérifié sur le CHM réel du projet : P1/E1 = 0. → **v0.107.0**.
+
+> **Reste (secondaire, brief §1) :** wiring app — `service_compute` (nemetonshiny)
+> ne charge/passe pas systématiquement le CHM Open-Canopy du cache dans
+> `layers$rasters$chm` ; utile aux projets **non** rasés (ici sans effet, P1 était
+> NA côté cœur). + robustesse dispatcher `compute_indicator()` (filtrer sur
+> `formals()`) pour que `nemeton_compute()` marche sur P1/E1 (pas de `layers`/`...`).
+
+---
+
 # Chantier CLOS — Planche pixel dépérissement (CRswir/CRre)
 
 > **Cadré le 2026-07-01, clos le 2026-07-01.** Enrichir le click-to-diagnose
