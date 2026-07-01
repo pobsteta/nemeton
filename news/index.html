@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.110.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.110.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.110.1" id="nemeton-01101-2026-07-01">nemeton 0.110.1 (2026-07-01)<a class="anchor" aria-label="anchor" href="#nemeton-01101-2026-07-01"></a></h2>
+<div class="section level4">
+<h4 id="fixed--added--cache-des-sorties-biodivmapr-b4l3-spec-0-110-1">Fixed / Added — Cache des sorties biodivMapR (B4/L3, spec 028)<a class="anchor" aria-label="anchor" href="#fixed--added--cache-des-sorties-biodivmapr-b4l3-spec-0-110-1"></a></h4>
+<p><code><a href="../reference/compute_spectral_diversity.html">compute_spectral_diversity()</a></code> gagne un argument <code>reuse_existing = TRUE</code> : quand <code>output_dir</code> (persistant, p. ex. un cache projet) contient déjà les rasters de diversité α/β d’un run précédent, ils sont <strong>réutilisés</strong> au lieu de relancer le coûteux pipeline biodivMapR (PCA + k-means). Le résultat expose un champ <code>reused</code>. Le <code>output_dir</code> par défaut (<code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile()</a></code>) reste toujours neuf, donc aucun cache-hit accidentel.</p>
+<p>Complément au fix côté <code>nemetonshiny</code> (persistance des sorties sous <code>&lt;project&gt;/cache/layers/spectral/&lt;scene&gt;</code>) qui corrige l’erreur <code>[readStart] file does not exist: …/shannon_sd.tiff</code> (SpatRaster lazy dont le tempfile était supprimé avant lecture par B4/L3).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.110.0" id="nemeton-01100-2026-07-01">nemeton 0.110.0 (2026-07-01)<a class="anchor" aria-label="anchor" href="#nemeton-01100-2026-07-01"></a></h2>
 <div class="section level4">

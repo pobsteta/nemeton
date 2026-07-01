@@ -1,5 +1,23 @@
 # Changelog
 
+## nemeton 0.110.1 (2026-07-01)
+
+#### Fixed / Added — Cache des sorties biodivMapR (B4/L3, spec 028)
+
+[`compute_spectral_diversity()`](https://pobsteta.github.io/nemeton/reference/compute_spectral_diversity.md)
+gagne un argument `reuse_existing = TRUE` : quand `output_dir`
+(persistant, p. ex. un cache projet) contient déjà les rasters de
+diversité α/β d’un run précédent, ils sont **réutilisés** au lieu de
+relancer le coûteux pipeline biodivMapR (PCA + k-means). Le résultat
+expose un champ `reused`. Le `output_dir` par défaut
+([`tempfile()`](https://rdrr.io/r/base/tempfile.html)) reste toujours
+neuf, donc aucun cache-hit accidentel.
+
+Complément au fix côté `nemetonshiny` (persistance des sorties sous
+`<project>/cache/layers/spectral/<scene>`) qui corrige l’erreur
+`[readStart] file does not exist: …/shannon_sd.tiff` (SpatRaster lazy
+dont le tempfile était supprimé avant lecture par B4/L3).
+
 ## nemeton 0.110.0 (2026-07-01)
 
 #### ⚠️ Relicence — MIT → **GPL-3**

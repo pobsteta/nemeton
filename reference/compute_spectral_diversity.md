@@ -16,7 +16,8 @@ compute_spectral_diversity(
   window_size = 10L,
   nb_cpu = 1L,
   output_dir = tempfile("biodivmapr_"),
-  options = NULL
+  options = NULL,
+  reuse_existing = TRUE
 )
 ```
 
@@ -56,6 +57,15 @@ compute_spectral_diversity(
   `alpha_metrics`). `NULL` (default) uses biodivMapR defaults — notably
   `nbclusters = 50` spectral species (spec 028 D2).
 
+- reuse_existing:
+
+  Logical. When `TRUE` (default) and `output_dir` already contains the
+  diversity rasters from a prior run, reuse them instead of re-running
+  the (expensive) biodivMapR pipeline. Pass a persistent `output_dir`
+  (e.g. a project cache) to benefit; the default
+  [`tempfile()`](https://rdrr.io/r/base/tempfile.html) directory never
+  hits.
+
 ## Value
 
 A list with:
@@ -71,6 +81,11 @@ A list with:
 - output_dir:
 
   the directory holding the raw biodivMapR outputs.
+
+- reused:
+
+  `TRUE` if the rasters were loaded from a cached `output_dir` rather
+  than recomputed.
 
 ## See also
 
