@@ -1,3 +1,25 @@
+# nemeton 0.107.0 (2026-07-01)
+
+### Fixed — coupe rase : inventaire synthétique CHM « couvert nul » → volume 0, plus NA
+
+Sur une parcelle **rasée** (coupe rase), le CHM Open-Canopy est correct mais à
+hauteur ≈ 0. `estimate_synthetic_inventory()` renvoyait alors `dbh`/`density` =
+**NA** (la garde « H_dom < 6 m ⇒ allométrie non calibrée » confondait *couvert
+nul* et *peuplement trop jeune*), d'où **P1, P3, E1 tous NA**, E2 dégénéré à 0,
+et **famille Énergie absente** — au lieu du résultat correct : volume ≈ 0,
+E1 ≈ 0, famille Énergie **présente à 0**.
+
+- Nouveau paramètre `min_stand_height` (défaut **1,3 m**, hauteur de référence
+  du dbh) sur `estimate_synthetic_inventory()` et `ensure_inventory_fields()` :
+  une unité dont H_dom est **observé** (non-NA) mais **sous** ce seuil est traitée
+  comme **sans peuplement** → `dbh = 0`, `density = 0` (au lieu de NA). P1 = 0,
+  E1 = 0, P3 défini bas. Un `H_dom` `NA` (pas de couverture CHM) **reste NA**.
+- Trois régimes distingués : `NA` (inconnu) / `< 1,3 m` (pas de peuplement → 0) /
+  `[1,3 ; 6) m` (jeune, allométrie non calibrée → NA, inchangé) / `≥ 6 m`
+  (inchangé). Correctif **côté cœur** : vaut quel que soit le wiring CHM de l'app.
+- Amendement spec 005 §3.4. Tests : `test-synthetic-inventory-clearcut.R`
+  (couvert nul → 0, non-régression peuplement établi, NA hors couverture).
+
 # nemeton 0.106.0 (2026-07-01)
 
 ### Added — `prepare_pixel_dieback_series()` : dérivés pixel CRswir/CRre pour la planche de suivi

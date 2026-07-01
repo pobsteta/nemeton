@@ -9,7 +9,8 @@ estimate_synthetic_inventory(
   chm,
   species,
   h_dom_percentile = 0.9,
-  stocking = 0.75
+  stocking = 0.75,
+  min_stand_height = 1.3
 )
 }
 \arguments{
@@ -28,12 +29,22 @@ is already present in \code{units}.}
 self-thinning maximum density used as the expected actual
 density (default 0.75, i.e. 75% of N_max, a realistic value for
 French managed stands).}
+
+\item{min_stand_height}{Numeric (m). Dominant height below which a
+unit is treated as carrying \strong{no standing stock} (clear-cut,
+cleared or non-forest): its \code{dbh} and \code{density} are set to
+\code{0} rather than \code{NA}, so volume/quality indicators return
+\code{0} for a felled stand instead of a cryptic \code{NA}. Default
+\code{1.3} (breast height). Only applies when \eqn{H_{dom}} is
+observed (non-\code{NA}); an \code{NA} \eqn{H_{dom}} (no CHM
+coverage) stays \code{NA}.}
 }
 \value{
 A data.frame with one row per unit containing
   \code{H_dom} (m), \code{dbh} (cm, the quadratic mean
   diameter), \code{density} (stems / ha), and \code{source}
-  (always "synthetic_ml") columns.
+  (always "synthetic_ml") columns. Units below
+  \code{min_stand_height} get \code{dbh = 0} and \code{density = 0}.
 }
 \description{
 Given an \code{sf} of spatial units, a \code{SpatRaster} CHM and
