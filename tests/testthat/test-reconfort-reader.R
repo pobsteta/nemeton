@@ -12,6 +12,7 @@ skip_if_no_terra <- function() {
 # A 10x10 EPSG:2154 raster, value = 1 everywhere, 10 m pixels.
 make_score_raster <- function(path) {
   skip_if_no_terra()
+  skip_if_terra_write_broken()   # runner terra::writeRaster anomaly
   r <- terra::rast(nrow = 10, ncol = 10,
                    xmin = 700000, xmax = 700100,
                    ymin = 6800000, ymax = 6800100,

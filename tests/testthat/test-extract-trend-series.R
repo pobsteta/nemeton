@@ -7,6 +7,7 @@
 # NDRE = (B8A - B05) / (B8A + B05) falls monotonically. Two summer scenes
 # per year (>= min_obs_per_year) over `years`. Native 20 m, EPSG:32631.
 .write_ndre_decline_cache <- function(cache, years = 2017:2024, tile = "T31TFM") {
+  skip_if_terra_write_broken()   # runner terra::writeRaster anomaly
   for (k in seq_along(years)) {
     y    <- years[k]
     b05  <- 0.05 + (k - 1) * 0.03            # rises -> NDRE falls

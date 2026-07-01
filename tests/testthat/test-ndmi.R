@@ -5,6 +5,7 @@
 # Fixture: one scene with B04/B08 at 10 m and B12/B11 at 20 m, constant
 # per band so (B08 - B11)/(B08 + B11) is a known value.
 .ndmi_fixture <- function(dir, b08 = 0.5, b11 = 0.1, b04 = 0.2, b12 = 0.15) {
+  skip_if_terra_write_broken()   # runner terra::writeRaster anomaly
   sid <- "S2_NDMI_001"
   sd  <- file.path(dir, sid)
   dir.create(sd, recursive = TRUE, showWarnings = FALSE)
