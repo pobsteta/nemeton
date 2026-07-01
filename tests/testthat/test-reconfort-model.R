@@ -18,6 +18,54 @@ test_that("RECONFORT_MODELS registry has the four models with required fields", 
   expect_equal(RECONFORT_MODELS$v3_pine$n_classes, 2L)
 })
 
+test_that("RECONFORT_MODELS carries model-bound edate window ends", {
+  expect_equal(RECONFORT_MODELS$v3$edate, "10-29")
+  expect_equal(RECONFORT_MODELS$v3_chestnut$edate, "10-29")
+  expect_equal(RECONFORT_MODELS$v3_pine$edate, "10-29")
+  expect_equal(RECONFORT_MODELS$v3_early_may$edate, "05-31")
+  for (v in names(RECONFORT_MODELS)) {
+    expect_match(RECONFORT_MODELS[[v]]$edate, "^[0-1][0-9]-[0-3][0-9]$")
+  }
+})
+
+test_that("reconfort_latest_complete_year respects the model-bound window", {
+  # 2-year model (window ends 29 Oct): before it -> previous year.
+  expect_equal(reconfort_latest_complete_year("v3", today = as.Date("2026-07-01")), 2025L)
+  expect_equal(reconfort_latest_complete_year("v3", today = as.Date("2026-10-28")), 2025L)
+  # on/after the window end -> current year.
+  expect_equal(reconfort_latest_complete_year("v3", today = as.Date("2026-10-29")), 2026L)
+  expect_equal(reconfort_latest_complete_year("v3", today = as.Date("2026-11-15")), 2026L)
+  # 1.5-year early-May model (window ends 31 May): complete from June.
+  expect_equal(reconfort_latest_complete_year("v3_early_may", today = as.Date("2026-05-30")), 2025L)
+  expect_equal(reconfort_latest_complete_year("v3_early_may", today = as.Date("2026-07-01")), 2026L)
+})
+
+test_that("reconfort_latest_complete_year honours lag_days and validates inputs", {
+  # A 5-day buffer pushes the boundary: 30 Oct is still short of 29 Oct + 5.
+  expect_equal(
+    reconfort_latest_complete_year("v3", today = as.Date("2026-10-30"), lag_days = 5L),
+    2025L)
+  expect_equal(
+    reconfort_latest_complete_year("v3", today = as.Date("2026-11-05"), lag_days = 5L),
+    2026L)
+  expect_error(reconfort_latest_complete_year("nope", today = as.Date("2026-01-01")),
+               "Unknown RECONFORT model")
+  expect_error(reconfort_latest_complete_year("v3", today = NA),
+               "single non-NA date")
+  expect_error(reconfort_latest_complete_year("v3", today = as.Date("2026-01-01"), lag_days = -1L),
+               "non-negative integer")
+})
+
+test_that("reconfort_year_bounds returns min/max/default for a picker", {
+  b <- reconfort_year_bounds("v3", today = as.Date("2026-07-01"))
+  expect_equal(b, list(min = 2016L, max = 2025L, default = 2025L))
+  # default and max never exceed the latest complete year.
+  b2 <- reconfort_year_bounds("v3", today = as.Date("2026-11-15"))
+  expect_equal(b2$max, 2026L)
+  expect_equal(b2$default, 2026L)
+  expect_equal(b2$min, 2016L)
+})
+
 test_that("reconfort_model_info resolves and validates the version", {
   expect_equal(reconfort_model_info("v3_chestnut")$species, "CHT")
   expect_equal(reconfort_model_info("v3")$n_classes, 3L)

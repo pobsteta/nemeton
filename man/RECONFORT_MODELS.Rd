@@ -9,9 +9,13 @@ RECONFORT_MODELS
 \description{
 Metadata for the four RECONFORT models versioned in the upstream
 repository (`fl.mouret/reconfort`, Apache-2.0). Each entry carries
-the calibrated species, number of classes, the file size and the
+the calibrated species, number of classes, the file size, the
 MD5 checksum used by \code{\link{ensure_reconfort_model}} to verify
-a fetch.
+a fetch, and `edate` -- the `"MM-DD"` end of the model-bound analysis
+window within `s2_year` (`10-29` for the 2-year models, `05-31` for
+the 1.5-year `v3_early_may`). `edate` is what
+\code{\link{reconfort_latest_complete_year}} uses to tell whether a
+given `s2_year` season is already complete.
 }
 \details{
 \describe{

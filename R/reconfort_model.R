@@ -17,8 +17,13 @@
 #'
 #' Metadata for the four RECONFORT models versioned in the upstream
 #' repository (`fl.mouret/reconfort`, Apache-2.0). Each entry carries
-#' the calibrated species, number of classes, the file size and the
-#' MD5 checksum used by [ensure_reconfort_model()] to verify a fetch.
+#' the calibrated species, number of classes, the file size, the
+#' MD5 checksum used by [ensure_reconfort_model()] to verify a fetch,
+#' and `edate` — the `"MM-DD"` end of the model-bound analysis window
+#' within `s2_year` (`10-29` for the 2-year models, `05-31` for the
+#' 1.5-year `v3_early_may`). `edate` is what
+#' [reconfort_latest_complete_year()] uses to tell whether a given
+#' `s2_year` season is already complete.
 #'
 #' \describe{
 #'   \item{v3}{Oak (\emph{Quercus}), 2-year series, 3 classes.}
@@ -34,28 +39,32 @@ RECONFORT_MODELS <- list(
     species    = "CHE",
     n_classes  = 3L,
     size_bytes = 205876256,
-    md5        = "9b58a13d7659e757e32298a4da4dd70c"
+    md5        = "9b58a13d7659e757e32298a4da4dd70c",
+    edate      = "10-29"
   ),
   v3_early_may = list(
     label      = "Oak (1.5-year series, Jan-May)",
     species    = "CHE",
     n_classes  = 3L,
     size_bytes = 206198055,
-    md5        = "a4359992a3556704fde9434089112122"
+    md5        = "a4359992a3556704fde9434089112122",
+    edate      = "05-31"
   ),
   v3_chestnut = list(
     label      = "Sweet chestnut",
     species    = "CHT",
     n_classes  = 3L,
     size_bytes = 14216359,
-    md5        = "c65dcc83e9614212633a10f433b5d0b8"
+    md5        = "c65dcc83e9614212633a10f433b5d0b8",
+    edate      = "10-29"
   ),
   v3_pine = list(
     label      = "Scots pine",
     species    = "PS",
     n_classes  = 2L,
     size_bytes = 5933217,
-    md5        = "a3b14ba0ad3644db192138d256d2a0af"
+    md5        = "a3b14ba0ad3644db192138d256d2a0af",
+    edate      = "10-29"
   )
 )
 
@@ -231,4 +240,82 @@ ensure_reconfort_model <- function(version    = "v3",
   }
   say("Cached RECONFORT model {.val {version}} at {.path {dest}}.")
   dest
+}
+
+
+# First Sentinel-2 year with usable dense France coverage (S2A+S2B).
+# The RECONFORT `s2_year` picker starts here.
+.RECONFORT_MIN_YEAR <- 2016L
+
+
+#' Most recent RECONFORT `s2_year` whose season is already complete
+#'
+#' RECONFORT classifies a pixel's model-bound ~2-year index trajectory;
+#' the analysis window ends at `s2_year<edate>` (`10-29` for the 2-year
+#' models, `05-31` for `v3_early_may` — see [RECONFORT_MODELS]). Running
+#' a run for a `s2_year` whose window has not fully elapsed yields a
+#' truncated final season and a degraded classification. This helper
+#' returns the latest `s2_year` for which the window end date has already
+#' passed, so callers (notably the app's year picker) can default to —
+#' and cap at — a year that produces a complete run.
+#'
+#' @param v_model Model version (see [RECONFORT_MODELS]). Default `"v3"`.
+#' @param today Reference date. Default [Sys.Date()]; injectable for
+#'   tests.
+#' @param lag_days Extra buffer (days) added to the window end date to
+#'   account for the Theia/Sentinel-2 processing latency before the last
+#'   acquisitions of the window are ingestible. Default `0L` (the window
+#'   end date itself). Pass a positive value to be conservative.
+#'
+#' @return A single integer year: the current year when its window end
+#'   date (plus `lag_days`) is on or before `today`, otherwise the
+#'   previous year.
+#' @seealso [reconfort_year_bounds()], [run_reconfort_dieback()]
+#' @examples
+#' # Oak 2-year model: complete only once 29 Oct of the year has passed.
+#' reconfort_latest_complete_year("v3", today = as.Date("2026-07-01")) # 2025
+#' reconfort_latest_complete_year("v3", today = as.Date("2026-11-15")) # 2026
+#' # early-May model: complete from June onwards.
+#' reconfort_latest_complete_year("v3_early_may", today = as.Date("2026-07-01")) # 2026
+#' @export
+reconfort_latest_complete_year <- function(v_model  = "v3",
+                                           today    = Sys.Date(),
+                                           lag_days = 0L) {
+  info <- reconfort_model_info(v_model)            # validates v_model
+  today <- as.Date(today)
+  if (length(today) != 1L || is.na(today)) {
+    cli::cli_abort("{.arg today} must be a single non-NA date.")
+  }
+  lag_days <- as.integer(lag_days)
+  if (is.na(lag_days) || lag_days < 0L) {
+    cli::cli_abort("{.arg lag_days} must be a non-negative integer.")
+  }
+  y   <- as.integer(format(today, "%Y"))
+  end <- as.Date(sprintf("%d-%s", y, info$edate)) + lag_days
+  if (today >= end) y else y - 1L
+}
+
+
+#' Bounds for a RECONFORT `s2_year` picker
+#'
+#' Convenience wrapper returning the `min`, `max` and `default` a UI
+#' year picker should use for `s2_year`. `min` is the first Sentinel-2
+#' dense-coverage year (2016); `max` and `default` are both
+#' [reconfort_latest_complete_year()] so the current, still-incomplete
+#' year is neither the default nor selectable through the bounds.
+#'
+#' @inheritParams reconfort_latest_complete_year
+#'
+#' @return A named list of three integers: `min`, `max`, `default`.
+#' @seealso [reconfort_latest_complete_year()]
+#' @examples
+#' reconfort_year_bounds("v3", today = as.Date("2026-07-01"))
+#' # $min 2016  $max 2025  $default 2025
+#' @export
+reconfort_year_bounds <- function(v_model  = "v3",
+                                   today    = Sys.Date(),
+                                   lag_days = 0L) {
+  latest <- reconfort_latest_complete_year(v_model, today = today,
+                                           lag_days = lag_days)
+  list(min = .RECONFORT_MIN_YEAR, max = latest, default = latest)
 }

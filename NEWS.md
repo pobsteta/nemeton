@@ -1,3 +1,27 @@
+# nemeton 0.104.0 (2026-07-01)
+
+### Added — garde-fou d'année RECONFORT : `reconfort_latest_complete_year()` / `reconfort_year_bounds()`
+
+RECONFORT ne compare pas deux dates : il classe la trajectoire d'indices
+**~2 ans** d'un pixel avec un modèle pré-entraîné, sur une fenêtre d'analyse
+**liée au modèle** qui se termine à `s2_year<edate>` (`10-29` pour les modèles
+2 ans `v3`/`v3_chestnut`/`v3_pine`, `05-31` pour `v3_early_may`). Lancer un run
+sur une `s2_year` dont la fenêtre n'est pas encore close produit une dernière
+saison tronquée et une classification dégradée.
+
+- `RECONFORT_MODELS` porte désormais un champ **`edate`** (`"MM-DD"`, fin de la
+  fenêtre d'analyse du modèle), source unique alignée sur le pipeline IOTA2.
+- **`reconfort_latest_complete_year(v_model, today, lag_days)`** : dernière
+  `s2_year` dont la fenêtre est déjà close à `today` (année en cours si sa
+  fenêtre est passée, sinon année précédente). `lag_days` ajoute un tampon pour
+  la latence d'ingestion Theia.
+- **`reconfort_year_bounds(v_model, today, lag_days)`** : `list(min = 2016,
+  max, default)` prêt à câbler un year-picker (défaut et max = dernière année
+  complète, jamais l'année en cours incomplète).
+
+Ces fonctions sont destinées au picker `s2_year` de `nemetonshiny` (défaut/max
+bornés côté cœur, garde-fou serveur au lancement).
+
 # nemeton 0.103.0 (2026-06-30)
 
 ### Added — `run_reticulate_isolated()` : tâche Python dans un sous-processus à env épinglé
