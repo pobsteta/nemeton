@@ -10,7 +10,8 @@ compute_spectral_diversity(
   window_size = 10L,
   nb_cpu = 1L,
   output_dir = tempfile("biodivmapr_"),
-  options = NULL
+  options = NULL,
+  reuse_existing = TRUE
 )
 }
 \arguments{
@@ -38,6 +39,12 @@ temporary directory).}
 \code{biodivMapR::biodivMapR_full(options = )} (e.g. \code{nbclusters},
 \code{alpha_metrics}). \code{NULL} (default) uses biodivMapR defaults
 — notably \code{nbclusters = 50} spectral species (spec 028 D2).}
+
+\item{reuse_existing}{Logical. When \code{TRUE} (default) and
+\code{output_dir} already contains the diversity rasters from a prior
+run, reuse them instead of re-running the (expensive) biodivMapR
+pipeline. Pass a persistent \code{output_dir} (e.g. a project cache)
+to benefit; the default \code{tempfile()} directory never hits.}
 }
 \value{
 A list with:
@@ -47,6 +54,8 @@ A list with:
     \item{beta}{a \code{SpatRaster} of Bray-Curtis beta diversity (or
       \code{NULL}),}
     \item{output_dir}{the directory holding the raw biodivMapR outputs.}
+    \item{reused}{\code{TRUE} if the rasters were loaded from a cached
+      \code{output_dir} rather than recomputed.}
   }
 }
 \description{

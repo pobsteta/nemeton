@@ -51,6 +51,11 @@
 #'   \code{biodivMapR::biodivMapR_full(options = )} (e.g. \code{nbclusters},
 #'   \code{alpha_metrics}). \code{NULL} (default) uses biodivMapR defaults
 #'   — notably \code{nbclusters = 50} spectral species (spec 028 D2).
+#' @param reuse_existing Logical. When \code{TRUE} (default) and
+#'   \code{output_dir} already contains the diversity rasters from a prior
+#'   run, reuse them instead of re-running the (expensive) biodivMapR
+#'   pipeline. Pass a persistent \code{output_dir} (e.g. a project cache)
+#'   to benefit; the default \code{tempfile()} directory never hits.
 #'
 #' @return A list with:
 #'   \describe{
@@ -59,6 +64,8 @@
 #'     \item{beta}{a \code{SpatRaster} of Bray-Curtis beta diversity (or
 #'       \code{NULL}),}
 #'     \item{output_dir}{the directory holding the raw biodivMapR outputs.}
+#'     \item{reused}{\code{TRUE} if the rasters were loaded from a cached
+#'       \code{output_dir} rather than recomputed.}
 #'   }
 #'
 #' @seealso [indicateur_b4_div_spectrale()], [indicateur_l3_het_spectrale()]
@@ -68,14 +75,30 @@ compute_spectral_diversity <- function(reflectance,
                                        window_size = 10L,
                                        nb_cpu = 1L,
                                        output_dir = tempfile("biodivmapr_"),
-                                       options = NULL) {
+                                       options = NULL,
+                                       reuse_existing = TRUE) {
+  if (!requireNamespace("terra", quietly = TRUE)) {
+    stop("Package 'terra' is required.", call. = FALSE)
+  }
+
+  # Cache-hit: when the caller passes a persistent `output_dir` (e.g. a
+  # project cache) that already holds the diversity rasters from a prior
+  # run, reuse them instead of re-running the expensive biodivMapR
+  # PCA + k-means. The default tempfile() dir is always fresh, so this
+  # never fires by accident. `biodivMapR` is not even needed on reuse.
+  if (isTRUE(reuse_existing) && dir.exists(output_dir)) {
+    a <- .find_diversity_raster(output_dir, "shannon")
+    b <- .find_diversity_raster(output_dir, "beta")
+    if (!is.na(a) && !is.na(b)) {
+      return(list(alpha = terra::rast(a), beta = terra::rast(b),
+                  output_dir = output_dir, reused = TRUE))
+    }
+  }
+
   if (!requireNamespace("biodivMapR", quietly = TRUE)) {
     stop("Package 'biodivMapR' is required for spectral diversity (B4/L3). ",
          "Install it with remotes::install_github('jbferet/biodivMapR').",
          call. = FALSE)
-  }
-  if (!requireNamespace("terra", quietly = TRUE)) {
-    stop("Package 'terra' is required.", call. = FALSE)
   }
 
   # Resolve the reflectance to a file path (biodivMapR works on files).
@@ -120,7 +143,8 @@ compute_spectral_diversity <- function(reflectance,
   list(
     alpha      = if (!is.na(alpha_path)) terra::rast(alpha_path) else NULL,
     beta       = if (!is.na(beta_path))  terra::rast(beta_path)  else NULL,
-    output_dir = output_dir
+    output_dir = output_dir,
+    reused     = FALSE
   )
 }
 
