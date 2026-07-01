@@ -57,7 +57,14 @@ jobs:
           # rsconnect : requis par pkgdown::package_tutorials() pour découvrir
           # les tutoriels learnr de inst/tutorials/ (sinon « The package
           # rsconnect is required to find published tutorials »).
-          extra-packages: any::pkgdown, any::rsconnect, local::.
+          # dissUtils/spinR : Imports de biodivMapR absents de ses Remotes
+          # (cf. r.yml), déclarés ici au root scope pour pak.
+          extra-packages: |
+            any::pkgdown
+            any::rsconnect
+            local::.
+            github::cran/dissUtils
+            jbferet/spinR
           needs: website
 
       - name: Build site
