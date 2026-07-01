@@ -10,7 +10,9 @@ estimate_synthetic_inventory(
   species,
   h_dom_percentile = 0.9,
   stocking = 0.75,
-  min_stand_height = 1.3
+  min_stand_height = 1.3,
+  min_merchantable_height = 6,
+  suspect_frac = 0.95
 )
 }
 \arguments{
@@ -31,20 +33,37 @@ density (default 0.75, i.e. 75% of N_max, a realistic value for
 French managed stands).}
 
 \item{min_stand_height}{Numeric (m). Dominant height below which a
-unit is treated as carrying \strong{no standing stock} (clear-cut,
-cleared or non-forest): its \code{dbh} and \code{density} are set to
-\code{0} rather than \code{NA}, so volume/quality indicators return
-\code{0} for a felled stand instead of a cryptic \code{NA}. Default
-\code{1.3} (breast height). Only applies when \eqn{H_{dom}} is
-observed (non-\code{NA}); an \code{NA} \eqn{H_{dom}} (no CHM
-coverage) stays \code{NA}.}
+unit is a felled / cleared / non-forest stand (breast height,
+default \code{1.3}). Used to distinguish the felled case from a
+young stand in documentation; the actual zero-out is governed by
+\code{min_merchantable_height} (which must be \eqn{\ge} this).}
+
+\item{min_merchantable_height}{Numeric (m). Dominant height below
+which a unit carries \strong{no merchantable stock}: its \code{dbh}
+and \code{density} are set to \code{0} rather than \code{NA}, so
+volume/quality indicators (P1, P3, E1) return \code{0} instead of a
+cryptic \code{NA}. Default \code{6} (the lower calibration bound of
+the mature-stand allometry). Covers both felled stands
+(\eqn{H_{dom} <} \code{min_stand_height}) and young / pre-merchantable
+stands. The test is on \emph{height}: a tall stand whose \eqn{D_g}
+is \code{NA} because its \emph{species} is missing stays \code{NA};
+an \code{NA} \eqn{H_{dom}} (no CHM coverage) also stays \code{NA}.}
+
+\item{suspect_frac}{Numeric in \code{(0, 1]}. If at least this
+fraction of observed units fall below \code{min_merchantable_height}
+\emph{and} the CHM's global maximum is itself below it, the CHM is
+flagged as likely degenerate (all-zero / failed prediction): a
+warning is emitted and the returned data.frame carries
+\code{attr(x, "chm_suspect") = TRUE}. Default \code{0.95}.}
 }
 \value{
 A data.frame with one row per unit containing
   \code{H_dom} (m), \code{dbh} (cm, the quadratic mean
   diameter), \code{density} (stems / ha), and \code{source}
   (always "synthetic_ml") columns. Units below
-  \code{min_stand_height} get \code{dbh = 0} and \code{density = 0}.
+  \code{min_merchantable_height} get \code{dbh = 0} and
+  \code{density = 0}. The attribute \code{chm_suspect} (logical)
+  flags a likely degenerate CHM (see \code{suspect_frac}).
 }
 \description{
 Given an \code{sf} of spatial units, a \code{SpatRaster} CHM and

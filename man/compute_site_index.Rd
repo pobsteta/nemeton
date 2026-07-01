@@ -4,7 +4,7 @@
 \alias{compute_site_index}
 \title{Estimate the site index from a dominant height and a stand age}
 \usage{
-compute_site_index(H_dom, age, species, reference_age = 50)
+compute_site_index(H_dom, age, species, reference_age = 50, min_stand_height = 1.3)
 }
 \arguments{
 \item{H_dom}{Numeric vector. Observed dominant height in
@@ -17,14 +17,21 @@ metres.}
 
 \item{reference_age}{Numeric scalar. Reference age at which
 the site index is returned (default 50).}
+
+\item{min_stand_height}{Numeric scalar (m). Dominant height below
+which the site index is not estimable and \code{NA} is returned
+(default \code{1.3}, breast height). A clear-cut / bare CHM
+(\eqn{H_{dom} = 0}) yields \code{NA} — the station's fertility
+potential is simply unknown from a felled stand — rather than being
+clamped to the worst site class.}
 }
 \value{
 A numeric vector of the same length as the recycled
   inputs, giving the site index (dominant height at
   \code{reference_age}) in metres. \code{NA} is returned when
-  \code{H_dom} or \code{age} is missing, when \code{age} is
-  outside the tabulated range, or when the species cannot be
-  resolved.
+  \code{H_dom} or \code{age} is missing, when \code{H_dom} is below
+  \code{min_stand_height}, when \code{age} is outside the tabulated
+  range, or when the species cannot be resolved.
 }
 \description{
 Given an observed dominant height \code{H_dom} (typically

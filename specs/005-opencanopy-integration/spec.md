@@ -162,6 +162,53 @@ dbh est nul par définition ⇒ pas de stock sur pied. Paramètre exposé sur
 de donnée). (3) Le correctif est côté **cœur** : il vaut quel que soit le wiring
 CHM de l'app — une coupe rase renvoie désormais 0, pas `NA`.
 
+### 3.5 Amendement (v0.109.0) — dette H_dom faible/nul (items #1, #2, #3)
+
+Le §3.4 laissait trois angles morts, traités ici ensemble car tous portent sur
+la sémantique d'un H_dom faible ou nul.
+
+**#2 — peuplement jeune `[1,3 ; 6)` m.** Le §3.4 laissait ce régime à `NA`. Or
+un peuplement pré-marchand n'a **pas de volume marchand** (P1/P3/E1 ≈ 0), pas un
+volume « inconnu ». On introduit `min_merchantable_height` (défaut **6 m**, le
+plancher de calibration de l'allométrie) : en deçà, `D_g = 0`, `N = 0`. Le
+tableau §3.4 devient :
+
+| H_dom | Interprétation | D_g / N | P1/P3/E1 |
+|-------|----------------|---------|----------|
+| `NA` | pas de couverture CHM | `NA` | `NA` |
+| `< min_merchantable_height` (6 m) | pas de stock marchand (rasé **ou** jeune) | **0 / 0** | **0** |
+| `≥ 6 m` | peuplement établi | allométrie IFN/Charru | inchangé |
+
+Le test porte sur la **hauteur**, pas sur `is.na(D_g)` : un peuplement de 25 m
+dont l'espèce est manquante garde `D_g = NA` (réellement inconnu), il n'est
+**jamais** forcé à 0. `min_stand_height` (1,3 m) subsiste pour documenter le
+sous-cas « rasé » ; l'escape hatch de rétro-compatibilité v0.107.0 est
+`min_merchantable_height = min_stand_height`.
+
+**#3 — P2 station sur couvert nul.** `indicateur_p2_station()` passe par
+`compute_site_index()`, pas par `ensure_inventory_fields()` : sur H_dom = 0 il
+*clampait* vers la pire classe de fertilité (valeurs parasites + `NA`
+hétérogènes). Or l'indice de station est une propriété de la **station**
+(potentiel sol/climat), pas du peuplement abattu : il n'est **pas estimable**
+depuis un CHM nu. `compute_site_index()` reçoit `min_stand_height = 1,3` ; en
+deçà ⇒ **`NA`**. Cohérence : sur une coupe rase, **P1 = 0** (aucun volume
+marchand *actuel*) mais **P2 = `NA`** (fertilité potentielle *inconnue* depuis
+cette donnée) — deux réponses honnêtes et distinctes.
+
+**#1 — garde-fou CHM dégénéré.** « Couvert nul ⇒ 0 » (§3.4/#2) masque un CHM
+**cassé** (prédiction ratée, tout à 0) : on renverrait volume 0 partout sans
+signal. `estimate_synthetic_inventory()` gagne un garde-fou heuristique : si
+`suspect_frac` (défaut **0,95**) des unités observées sont sous le plancher
+marchand **et** que le maximum global du CHM est lui-même sous ce plancher, on
+émet un `cli::cli_warn` (« CHM dégénéré, vérifier ») et on pose
+`attr(result, "chm_suspect") = TRUE`, propagé par `ensure_inventory_fields()`
+sur l'`sf`. Une vraie coupe rase intégrale déclenche aussi l'alerte — c'est un
+*heads-up* de vérification, et « volume 0 » reste alors l'action correcte.
+
+**Invariants (inchangés + ajouts).** (4) Un peuplement à espèce manquante mais
+grand reste `NA` (le seuil est en hauteur). (5) Le garde-fou #1 est un
+**avertissement**, jamais une erreur — il ne bloque aucun calcul.
+
 ---
 
 ## 4. Interfaces techniques

@@ -201,19 +201,34 @@ estimate_dq_from_hdom <- function(H_dom, species) {
 #'   density (default 0.75, i.e. 75% of N_max, a realistic value for
 #'   French managed stands).
 #' @param min_stand_height Numeric (m). Dominant height below which a
-#'   unit is treated as carrying \strong{no standing stock} (clear-cut,
-#'   cleared or non-forest): its \code{dbh} and \code{density} are set to
-#'   \code{0} rather than \code{NA}, so volume/quality indicators return
-#'   \code{0} for a felled stand instead of a cryptic \code{NA}. Default
-#'   \code{1.3} (breast height). Only applies when \eqn{H_{dom}} is
-#'   observed (non-\code{NA}); an \code{NA} \eqn{H_{dom}} (no CHM
-#'   coverage) stays \code{NA}.
+#'   unit is a felled / cleared / non-forest stand (breast height,
+#'   default \code{1.3}). Used to distinguish the felled case from a
+#'   young stand in documentation; the actual zero-out is governed by
+#'   \code{min_merchantable_height} (which must be \eqn{\ge} this).
+#' @param min_merchantable_height Numeric (m). Dominant height below
+#'   which a unit carries \strong{no merchantable stock}: its \code{dbh}
+#'   and \code{density} are set to \code{0} rather than \code{NA}, so
+#'   volume/quality indicators (P1, P3, E1) return \code{0} instead of a
+#'   cryptic \code{NA}. Default \code{6} (the lower calibration bound of
+#'   the mature-stand allometry). Covers both felled stands
+#'   (\eqn{H_{dom} <} \code{min_stand_height}) and young / pre-merchantable
+#'   stands. The test is on \emph{height}: a tall stand whose \eqn{D_g}
+#'   is \code{NA} because its \emph{species} is missing stays \code{NA};
+#'   an \code{NA} \eqn{H_{dom}} (no CHM coverage) also stays \code{NA}.
+#' @param suspect_frac Numeric in \code{(0, 1]}. If at least this
+#'   fraction of observed units fall below \code{min_merchantable_height}
+#'   \emph{and} the CHM's global maximum is itself below it, the CHM is
+#'   flagged as likely degenerate (all-zero / failed prediction): a
+#'   warning is emitted and the returned data.frame carries
+#'   \code{attr(x, "chm_suspect") = TRUE}. Default \code{0.95}.
 #'
 #' @return A data.frame with one row per unit containing
 #'   \code{H_dom} (m), \code{dbh} (cm, the quadratic mean
 #'   diameter), \code{density} (stems / ha), and \code{source}
 #'   (always "synthetic_ml") columns. Units below
-#'   \code{min_stand_height} get \code{dbh = 0} and \code{density = 0}.
+#'   \code{min_merchantable_height} get \code{dbh = 0} and
+#'   \code{density = 0}. The attribute \code{chm_suspect} (logical)
+#'   flags a likely degenerate CHM (see \code{suspect_frac}).
 #'
 #' @examples
 #' \dontrun{
@@ -231,7 +246,9 @@ estimate_dq_from_hdom <- function(H_dom, species) {
 estimate_synthetic_inventory <- function(units, chm, species,
                                          h_dom_percentile = 0.9,
                                          stocking = 0.75,
-                                         min_stand_height = 1.3) {
+                                         min_stand_height = 1.3,
+                                         min_merchantable_height = 6,
+                                         suspect_frac = 0.95) {
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
   }
@@ -245,6 +262,13 @@ estimate_synthetic_inventory <- function(units, chm, species,
   if (!is.numeric(min_stand_height) || length(min_stand_height) != 1L ||
       is.na(min_stand_height) || min_stand_height < 0) {
     stop("min_stand_height must be a non-negative scalar", call. = FALSE)
+  }
+  if (!is.numeric(min_merchantable_height) ||
+      length(min_merchantable_height) != 1L ||
+      is.na(min_merchantable_height) ||
+      min_merchantable_height < min_stand_height) {
+    stop("min_merchantable_height must be a scalar >= min_stand_height",
+         call. = FALSE)
   }
 
   n <- nrow(units)
@@ -260,27 +284,60 @@ estimate_synthetic_inventory <- function(units, chm, species,
   n_max <- n_max_selfthinning(dq, species)
   density <- stocking * n_max
 
-  # spec 005 amendment (v0.107.0) — "no canopy" vs "too young". A unit
-  # whose H_dom is *observed* (non-NA) but below breast height
-  # (`min_stand_height`, 1.3 m) carries NO standing stock: clear-cut,
-  # cleared, or non-forest. There D_g and N are 0, not NA, so the
-  # downstream volume/quality indicators (P1, P3, E1) return 0 —
-  # the correct answer for a felled stand — instead of a cryptic NA.
-  # Distinct from a young stand (min_stand_height <= H_dom < 6 m) where
-  # the mature-stand allometry is not calibrated and estimate_dq_from_hdom
-  # rightly yields NA, and from H_dom = NA (no CHM coverage) which stays
-  # NA (genuinely unknown).
-  no_stand <- !is.na(h_dom) & h_dom < min_stand_height
-  dq[no_stand]      <- 0
-  density[no_stand] <- 0
+  # spec 005 amendment (v0.109.0) — "no merchantable stock" regime.
+  # A unit whose H_dom is *observed* (non-NA) but below the mature-stand
+  # allometry's lower calibration bound (`min_merchantable_height`, 6 m)
+  # carries NO merchantable timber: it is either felled/cleared
+  # (H_dom < min_stand_height, 1.3 m) or a young/pre-merchantable stand
+  # (min_stand_height <= H_dom < min_merchantable_height). In both cases
+  # D_g and N are set to 0, not NA, so the downstream volume/quality
+  # indicators (P1, P3, E1) return 0 — the correct answer for a stand
+  # with no merchantable stock — instead of a cryptic NA (v0.107.0 only
+  # zeroed the felled case; #2). The test is on *height*, not on
+  # is.na(dq): a tall stand whose D_g is NA because its *species* is
+  # missing stays NA (genuinely unknown), never forced to 0. H_dom = NA
+  # (no CHM coverage) also stays NA.
+  no_merch <- !is.na(h_dom) & h_dom < min_merchantable_height
+  dq[no_merch]      <- 0
+  density[no_merch] <- 0
 
-  data.frame(
+  # #1 degenerate-CHM guard. When nearly every observed unit is below
+  # the merchantable height AND the CHM's own maximum is itself near
+  # zero, the canopy model is very likely a failed / all-zero prediction
+  # masquerading as a clear-cut. Surface it (warning + `chm_suspect`
+  # attribute) rather than silently returning volume 0 everywhere. A
+  # genuine full clear-cut trips it too — the message is a heads-up to
+  # verify, and "volume 0" is then the correct action anyway.
+  observed <- !is.na(h_dom)
+  frac_low <- if (any(observed)) {
+    mean(h_dom[observed] < min_merchantable_height)
+  } else {
+    0
+  }
+  chm_max <- suppressWarnings(
+    as.numeric(terra::global(chm, "max", na.rm = TRUE)[1, 1]))
+  chm_suspect <- isTRUE(frac_low >= suspect_frac) &&
+    is.finite(chm_max) && chm_max < min_merchantable_height
+  if (chm_suspect) {
+    cli::cli_warn(c(
+      "!" = "CHM appears degenerate: {round(100 * frac_low)}% of units are \\
+             below {min_merchantable_height} m and the CHM maximum is \\
+             {round(chm_max, 2)} m.",
+      "i" = "Verify the canopy height model is not an all-zero / failed \\
+             prediction. These units are treated as non-merchantable \\
+             (D_g = 0, N = 0)."
+    ))
+  }
+
+  out <- data.frame(
     H_dom   = h_dom,
     dbh     = dq,
     density = density,
     source  = rep("synthetic_ml", n),
     stringsAsFactors = FALSE
   )
+  attr(out, "chm_suspect") <- chm_suspect
+  out
 }
 
 
@@ -307,10 +364,14 @@ estimate_synthetic_inventory <- function(units, chm, species,
 #' @param stocking Stocking fraction (see
 #'   \code{\link{estimate_synthetic_inventory}}).
 #' @param h_dom_percentile Percentile for \eqn{H_{dom}} extraction.
-#' @param min_stand_height Numeric (m). Dominant height below which a
-#'   unit is treated as carrying no standing stock (\code{dbh} /
+#' @param min_stand_height Numeric (m). Felled/cleared stand threshold;
+#'   see \code{\link{estimate_synthetic_inventory}}. Default \code{1.3}.
+#' @param min_merchantable_height Numeric (m). Dominant height below
+#'   which a unit carries no merchantable stock (\code{dbh} /
 #'   \code{density} filled with \code{0}, not \code{NA}); see
-#'   \code{\link{estimate_synthetic_inventory}}. Default \code{1.3}.
+#'   \code{\link{estimate_synthetic_inventory}}. Default \code{6}. The
+#'   \code{chm_suspect} attribute is propagated onto the returned
+#'   \code{sf}.
 #'
 #' @return The input \code{sf} with \code{dbh_field} and
 #'   \code{density_field} filled (when possible). The
@@ -326,7 +387,8 @@ ensure_inventory_fields <- function(units,
                                     chm = NULL,
                                     stocking = 0.75,
                                     h_dom_percentile = 0.9,
-                                    min_stand_height = 1.3) {
+                                    min_stand_height = 1.3,
+                                    min_merchantable_height = 6) {
   if (is.null(chm)) return(units)
   if (!species_field %in% names(units)) return(units)
 
@@ -338,12 +400,13 @@ ensure_inventory_fields <- function(units,
 
   inv <- tryCatch(
     estimate_synthetic_inventory(
-      units            = units,
-      chm              = chm,
-      species          = units[[species_field]],
-      h_dom_percentile = h_dom_percentile,
-      stocking         = stocking,
-      min_stand_height = min_stand_height
+      units                   = units,
+      chm                     = chm,
+      species                 = units[[species_field]],
+      h_dom_percentile        = h_dom_percentile,
+      stocking                = stocking,
+      min_stand_height        = min_stand_height,
+      min_merchantable_height = min_merchantable_height
     ),
     error = function(e) {
       cli::cli_warn("ensure_inventory_fields: {e$message}")
@@ -361,6 +424,8 @@ ensure_inventory_fields <- function(units,
     units[[density_field]] <- inv$density
     filled <- TRUE
   }
+  # Propagate the degenerate-CHM flag (#1) so callers/UI can surface it.
+  attr(units, "chm_suspect") <- isTRUE(attr(inv, "chm_suspect"))
   if (filled) {
     attr(units, "inventory_source") <- "synthetic_ml"
     cli::cli_alert_info(

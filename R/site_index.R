@@ -233,13 +233,19 @@ site_index_reference_points <- function() {
 #'   4 letters). Recycled against \code{H_dom} / \code{age}.
 #' @param reference_age Numeric scalar. Reference age at which
 #'   the site index is returned (default 50).
+#' @param min_stand_height Numeric scalar (m). Dominant height below
+#'   which the site index is not estimable and \code{NA} is returned
+#'   (default \code{1.3}, breast height). A clear-cut / bare CHM
+#'   (\eqn{H_{dom} = 0}) yields \code{NA} — the station's fertility
+#'   potential is simply unknown from a felled stand — rather than being
+#'   clamped to the worst site class.
 #'
 #' @return A numeric vector of the same length as the recycled
 #'   inputs, giving the site index (dominant height at
 #'   \code{reference_age}) in metres. \code{NA} is returned when
-#'   \code{H_dom} or \code{age} is missing, when \code{age} is
-#'   outside the tabulated range, or when the species cannot be
-#'   resolved.
+#'   \code{H_dom} or \code{age} is missing, when \code{H_dom} is below
+#'   \code{min_stand_height}, when \code{age} is outside the tabulated
+#'   range, or when the species cannot be resolved.
 #'
 #' @examples
 #' # Sessile oak: 20 m at 80 years -> site index at 50 years
@@ -259,7 +265,8 @@ site_index_reference_points <- function() {
 compute_site_index <- function(H_dom,
                                age,
                                species,
-                               reference_age = 50) {
+                               reference_age = 50,
+                               min_stand_height = 1.3) {
 
   n <- max(length(H_dom), length(age), length(species))
   if (n == 0) return(numeric(0))
@@ -271,6 +278,10 @@ compute_site_index <- function(H_dom,
   if (!is.numeric(reference_age) || length(reference_age) != 1L ||
       is.na(reference_age) || reference_age <= 0) {
     stop("reference_age must be a positive scalar.", call. = FALSE)
+  }
+  if (!is.numeric(min_stand_height) || length(min_stand_height) != 1L ||
+      is.na(min_stand_height) || min_stand_height < 0) {
+    stop("min_stand_height must be a non-negative scalar.", call. = FALSE)
   }
 
   curves    <- read_site_index_curves()
@@ -284,7 +295,15 @@ compute_site_index <- function(H_dom,
     a_i <- age[i]
     s_i <- species[i]
 
-    if (is.na(h_i) || is.na(a_i) || is.na(s_i) || h_i < 0 || a_i <= 0) {
+    # #3 — a dominant height below breast height (`min_stand_height`,
+    # 1.3 m) carries no dominant-height signal: a clear-cut / bare CHM
+    # (H_dom = 0) cannot inform a site index, which is a property of the
+    # station (soil/climate potential), not of a felled stand. Return NA
+    # (not estimable from this CHM) rather than clamping H_dom = 0 to the
+    # worst site class. Consistent with P1 = 0 on a clear-cut: current
+    # merchantable volume is 0, but station fertility is simply unknown.
+    if (is.na(h_i) || is.na(a_i) || is.na(s_i) ||
+        h_i < min_stand_height || a_i <= 0) {
       out[i] <- NA_real_
       next
     }

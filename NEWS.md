@@ -1,3 +1,32 @@
+# nemeton 0.109.0 (2026-07-01)
+
+### Changed — Dette H_dom faible/nul : peuplement jeune, garde-fou CHM, P2 station (spec 005 §3.5)
+
+Trois angles morts laissés par le correctif « couvert nul » (v0.107.0), tous
+sur la sémantique d'un H_dom faible ou nul :
+
+- **#2 — peuplement jeune `[1,3 ; 6)` m.** Nouveau paramètre
+  `min_merchantable_height` (défaut **6 m**, plancher de calibration de
+  l'allométrie) sur `estimate_synthetic_inventory()` / `ensure_inventory_fields()` :
+  en deçà, `dbh = 0` et `density = 0` (pas de stock **marchand**) → P1/P3/E1 = 0
+  au lieu de `NA`. Le test porte sur la **hauteur**, pas sur `is.na(D_g)` : un
+  peuplement grand à espèce manquante reste `NA` (réellement inconnu), jamais
+  forcé à 0. Rétro-compat v0.107.0 : `min_merchantable_height = min_stand_height`.
+- **#3 — P2 station sur couvert nul.** `compute_site_index()` gagne
+  `min_stand_height = 1.3` : un CHM nu (H_dom = 0) renvoie **`NA`** (indice de
+  station non estimable depuis un peuplement abattu) au lieu d'un clamp parasite
+  vers la pire classe. Cohérent avec P1 = 0 (aucun volume marchand *actuel*)
+  mais P2 = `NA` (fertilité potentielle *inconnue*).
+- **#1 — garde-fou CHM dégénéré.** `estimate_synthetic_inventory()` émet un
+  `cli::cli_warn` et pose `attr(x, "chm_suspect") = TRUE` (propagé par
+  `ensure_inventory_fields()`) quand ≥ `suspect_frac` (défaut 0,95) des unités
+  sont sous le plancher marchand **et** que le max global du CHM l'est aussi —
+  un CHM cassé (prédiction ratée tout-à-0) ne passe plus pour une coupe rase
+  silencieuse.
+
+Non-régression : peuplement établi inchangé, `H_dom = NA` reste `NA`. Tests :
+`test-synthetic-inventory-debt.R` (+ mises à jour clear-cut / site-index).
+
 # nemeton 0.108.0 (2026-07-01)
 
 ### Added — `extract_indicator_value()` : convention de nommage des indicateurs, source unique
