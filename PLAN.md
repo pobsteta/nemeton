@@ -21,7 +21,7 @@ chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 | ✅ | E3 | Multi-acteurs — 13 profils experts YAML | n/a (app) |
 | ✅ | E4 | Authentification OAuth2/OIDC | n/a (app) |
 | ✅ | E5 | Intégrations & NDP — Open-Canopy CHM (spec 005) + QField export/ingest + sizing échantillon + flag `height_lidar` | v0.16.0 → v0.19.12 |
-| ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). **Backend monitoring local** (Bug \#2 verrou fichier) : DuckDB → SQLite/WAL → **v0.50.0** ; fix warning → **v0.50.1** ; retrait DuckDB → **v0.51.0** (2026-05-28) ; fix UPSERT SQLite `near "DO"` à l’ingestion S2 → **v0.55.1** ; audit complet UPSERT SQLite (db_migrate no-target + FORDEAD/alerts `INSERT…SELECT`) → **v0.55.2** (2026-06-01). **FAST 100 % pur raster** : retrait de l’insertion `obs_pixel` dans [`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md) (amorçage cache COG seul), `DROP TABLE obs_pixel` (migration 0004), dépréciation `read_obs_pixel()`/`list_fast_alerts_for_zone()`/`detect_alerts()` → **v0.58.0** (2026-06-02) ; **retrait définitif des 3 fonctions + `CREATE TABLE obs_pixel` ôté des migrations 0001** → **v0.60.0** (2026-06-02, Phase B). Côté app : `nemetonshiny@v0.49.0`→`v0.50.0` ; consommateur `obs_pixel` retiré dès `nemetonshiny@v0.52.16`. **Indice NDMI** ajouté au FAST (spec 019, `(B08−B11)/(B08+B11)`, humidité ; défaut NDVI conservé, B11 cachée best-effort) → **v0.64.0** (2026-06-03) ; UI NDMI côté `nemetonshiny` à câbler (brief fourni). **Fix régression spec 019** : `.enumerate_cache_scenes()` n’avait pas de branche NDMI → cartes d’alerte NDMI toujours vides malgré B08+B11 en cache ; + nouvel orchestrateur [`read_fast_alert_rasters()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_rasters.md) (les 6 cartes = 3 indices × 2 modes en un appel) → **v0.65.0** (2026-06-03). |
+| ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). **Backend monitoring local** (Bug \#2 verrou fichier) : DuckDB → SQLite/WAL → **v0.50.0** ; fix warning → **v0.50.1** ; retrait DuckDB → **v0.51.0** (2026-05-28) ; fix UPSERT SQLite `near "DO"` à l’ingestion S2 → **v0.55.1** ; audit complet UPSERT SQLite (db_migrate no-target + FORDEAD/alerts `INSERT…SELECT`) → **v0.55.2** (2026-06-01). **FAST 100 % pur raster** : retrait de l’insertion `obs_pixel` dans [`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md) (amorçage cache COG seul), `DROP TABLE obs_pixel` (migration 0004), dépréciation `read_obs_pixel()`/`list_fast_alerts_for_zone()`/`detect_alerts()` → **v0.58.0** (2026-06-02) ; **retrait définitif des 3 fonctions + `CREATE TABLE obs_pixel` ôté des migrations 0001** → **v0.60.0** (2026-06-02, Phase B). Côté app : `nemetonshiny@v0.49.0`→`v0.50.0` ; consommateur `obs_pixel` retiré dès `nemetonshiny@v0.52.16`. **Indice NDMI** ajouté au FAST (spec 019, `(B08−B11)/(B08+B11)`, humidité ; défaut NDVI conservé, B11 cachée best-effort) → **v0.64.0** (2026-06-03) ; UI NDMI côté `nemetonshiny` à câbler (brief fourni). **Fix régression spec 019** : `.enumerate_cache_scenes()` n’avait pas de branche NDMI → cartes d’alerte NDMI toujours vides malgré B08+B11 en cache ; + nouvel orchestrateur [`read_fast_alert_rasters()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_rasters.md) (les 6 cartes = 3 indices × 2 modes en un appel) → **v0.65.0** (2026-06-03). **Fix cache spec 017 D6** (2026-07-01) : la clé du COG FAST incluait `date_from`/`date_to` *demandés* → recalcul quotidien d’une fenêtre glissante ancrée sur aujourd’hui sans nouvelle scène ; désormais clé sur la **couverture S2 réelle** (`min`/`max` des `obs_date` des scènes retenues) + ancre `rolling` sur la dernière acquisition → **v0.105.0**. |
 | ✅ | **Carte pixel** *(hors-skeleton, entre E6 et E7)* | API publique cœur pour exposer le cache S2 pixel-par-pixel (10 m natif) + extraction time-series à un clic. Spec 010. Débloque le sous-onglet *Carte pixel* dans `nemetonshiny` (séparé). | 4 fonctions exportées (`read_s2_band_raster`, `read_s2_band_stack`, `build_index_stack`, `extract_pixel_timeseries`) — release **v0.22.0** (2026-05-15). |
 | ✅ | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d’indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d’essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a → **v0.29.0** ; phase 1b → **v0.30.0** ; phase 2 (loaders) → **v0.31.0** ; phase 3a (`s2_biophysical` → C2/A1) → **v0.32.0** ; phase 3b (`theia_soil` → F1/F2) → **v0.33.0** ; phase 3c (`theia_snow` → R3) → **v0.34.0** ; phase 3d (`theia_water`/`theia_soil_moisture`/`theia_species`) → **v0.35.0** ; FORMSpoT câblé via l’interface CHM → **v0.35.2** ; résolveur STAC Theia → **v0.36.0** ; endpoint corrigé + FORMSpoT vérifié → **v0.37.0** ; auth S3 `/vsis3/` → **v0.38.0** ; ciblage par année → **v0.39.0** ; credentials S3 corrigés → **v0.39.1** ; signature SDK teledetection (`theia_signed_href`) → **v0.40.0** — chaîne validée en réel. Reliquat : MUSCATE, LST, W1. |
 | ✅ | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | **Machinerie** → **v0.52.0** : 7 fonctions exportées (`enable_rag`, `ingest_knowledge_document`, `embed_query`, `retrieve_knowledge`, `list_knowledge_documents`, `delete_knowledge_document`, `format_citations`), schéma opt-in `knowledge_*`, dual-backend pgvector `<=>` (PG) / cosinus R (SQLite). **Corpus** (spec 009.1) : API admin (v0.63.0), curation v0.75.0→v0.76.2 → **déployé en prod : 81 docs, 60 texte intégral, 6 120 chunks, 0 embedding manquant** (dont 4 papiers scannés OCRisés). **Wiring app** : perspectives IA sourcées (`nemetonshiny`). **Clos 2026-06-13.** |
@@ -125,9 +125,25 @@ DL→extract→crop→delete + idempotence, manifeste vide → abort) ; pipeline
 > quand `aoi_crop = TRUE`, miroir du `number_of_chunks = 1`. Choix
 > explicite respecté.
 
-**Statut** : ✅ **livré v0.95.0** (+ patchs v0.95.1, v0.96.0, v0.96.1).
-Streaming validé (140/140) ; classification IOTA² à valider en mode
-`debug` (run en cours).
+> *2026-06-28 (feat v0.97.0 — manifeste des couches)* : pour câbler
+> l’affichage « au choix » des sorties RECONFORT côté `nemetonshiny`
+> (rasters score/classes/ proba + vecteur alertes, avec curseur
+> d’opacité), nouvelle fonction exportée cœur
+> `reconfort_layer_manifest(result, include_range)` : traduit le retour
+> de
+> [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+> en `data.frame` plat (1 ligne/couche disponible) avec indications de
+> rendu (`palette`/`reverse`/`vmin`/`vmax`/`categorical`/
+> `default_visible`/`default_opacity`/`n_features`). La sémantique des
+> couches reste dans le cœur (règles strictes §1-3) ; l’app consomme le
+> manifeste tel quel. 29 tests (`test-reconfort-manifest.R`). Brief
+> Shiny fourni (toggles + opacité). Validé pendant un run réel de
+> diagnostic (surveillance OOM en place).
+
+**Statut** : ✅ **livré v0.95.0** (+ patchs v0.95.1, v0.96.0, v0.96.1 ;
+helper d’affichage v0.97.0). Streaming validé (140/140) ; classification
+IOTA² à valider en mode `debug` (run en cours) ; affichage des couches à
+câbler côté `nemetonshiny` (manifeste cœur prêt).
 
 ------------------------------------------------------------------------
 
@@ -166,6 +182,165 @@ wrapper `task_launcher.py` dans `$ENV/bin/` (absent du build iota2).
 pas les alertes) ; validité OTB 10 vs OTB 8 de calibration à confirmer
 avec les auteurs RECONFORT (résultat cohérent : ~23 % feuillus, ~13 % en
 dépérissement). Voir mémoire `project_reconfort_iota2_version`.
+
+**Journal** — *2026-07-01 (garde-fou année `s2_year` — v0.104.0)* : le
+`s2_year` (dernière année de la série ~2 ans) n’avait aucune borne «
+saison complète » ni côté cœur ni côté app (picker `nemetonshiny` :
+défaut ET max = année en cours → run lancé avant fin octobre = dernière
+saison tronquée, classification dégradée, sans avertissement). Cœur :
+`RECONFORT_MODELS` gagne un champ **`edate`** (`"MM-DD"`, fin de fenêtre
+modèle : `10-29` pour les modèles 2 ans, `05-31` pour `v3_early_may`) ;
+nouvelles fonctions exportées
+**[`reconfort_latest_complete_year()`](https://pobsteta.github.io/nemeton/reference/reconfort_latest_complete_year.md)**
+et
+**[`reconfort_year_bounds()`](https://pobsteta.github.io/nemeton/reference/reconfort_year_bounds.md)**
+(min=2016, max/default = dernière année complète). Tests dans
+`test-reconfort-model.R`. **Brief `nemetonshiny` fourni** : câbler
+`value`/`min`/`max` du `numericInput` sur
+[`reconfort_year_bounds()`](https://pobsteta.github.io/nemeton/reference/reconfort_year_bounds.md) +
+garde-fou serveur dans `.invoke_reconfort()` (le `numericInput` n’étant
+qu’un hint navigateur) + clé i18n
+`monitoring_reconfort_year_incomplete`. Dépend de `nemeton >= 0.104.0`.
+
+------------------------------------------------------------------------
+
+# Chantier EN COURS — Diversité spectrale B4 / L3 (spec 028, biodivMapR)
+
+> **Ouvert le 2026-07-01.** Deux nouveaux indicateurs télédétectés (NDP
+> 0, Sentinel-2) via `biodivMapR` (hypothèse de variation spectrale) :
+> **B4** diversité spectrale (α/Shannon, famille B) et **L3**
+> hétérogénéité spectrale (β/Bray-Curtis, famille L). Décisions D1-D4
+> tranchées (spec 028 §9).
+
+**⚠️ Relicence** : `biodivMapR` étant GPL-3 et intégré en `Imports:`
+direct (décision propriétaire assumée), **nemeton passe MIT → GPL-3**
+(v0.110.0). Effet domino : `nemetonshiny`/`tree_sat`/`maestro` GPL-3 à
+la distribution (bascule à faire dans leurs dépôts) + **amender
+ADR-006** (platform_nemeton).
+
+**Livré (v0.110.0)** : primitive
+[`compute_spectral_diversity()`](https://pobsteta.github.io/nemeton/reference/compute_spectral_diversity.md)
+(wrapper `biodivMapR_full`, agrégation UGF via exactextractr) +
+`indicateur_b4_div_spectrale` / `indicateur_l3_het_spectrale`
+(rétrocompat `NA`), registre + normalisation (haut=mieux, bornes
+provisoires) + tests `test-spectral-diversity.R` (logique validée hors
+biodivMapR ; pipeline réel = smoke manuel).
+
+**Reste** : ⏳ smoke réel sur scène Sentinel-2 → **recalibrer les bornes
+de normalisation B4/L3** (D3) ; affichage B4/L3 côté `nemetonshiny`
+(radar/tooltips).
+
+------------------------------------------------------------------------
+
+# Chantier EN COURS — Dette post-coupe-rase (items 1-4)
+
+> **Ouvert le 2026-07-01.** Inventaire de dette autour du correctif
+> CHM/coupe rase. 4 items : (1) un CHM cassé (tout à 0) est
+> indistinguable d’une coupe rase → garde-fou « CHM suspect » ; (2)
+> peuplement jeune \[1,3 ; 6) m → NA au lieu de ~0 ; (3) P2 station
+> encore NA sur couvert nul (n’utilise pas `ensure_inventory_fields`) ;
+> (4) duplication du dispatcher cœur/app.
+
+**\#4 dispatcher — cœur livré (v0.108.0) :**
+`extract_indicator_value(result, indicator, exclude)` exportée =
+**source unique** de la convention de nommage (code court → nom NMT →
+motif). `compute_indicator()` délègue. Reste : câbler `nemetonshiny`
+dessus (supprimer son `col_map`, dépend de `nemeton >= 0.108.0`). Tests
+`test-indicators-core-dispatch.R`.
+
+**\#1 / \#2 / \#3 — cœur livré (v0.109.0)** : spec 005 §3.5
+(paperwork) + implémentation. - **\#2** peuplement jeune `[1,3;6)` m →
+`dbh/density = 0` (param `min_merchantable_height = 6`) → P1/P3/E1 = 0
+au lieu de NA ; test en **hauteur** (espèce manquante sur grand
+peuplement reste NA). - **\#3**
+`compute_site_index(min_stand_height = 1.3)` : CHM nu → P2 = NA (au lieu
+du clamp pire classe). - **\#1** garde-fou `chm_suspect` (warn +
+attribut) sur CHM dégénéré (≥95 % sous plancher + max CHM ~0). Tests
+`test-synthetic-inventory-debt.R`. **Chantier dette \#1-#4 CLOS.**
+
+------------------------------------------------------------------------
+
+# Chantier CLOS — Coupe rase : CHM « couvert nul » → volume 0 (spec 005 §3.4)
+
+> **Cadré + livré le 2026-07-01.** Diagnostic base : sur le projet
+> FORDEAD récent (`20260624_073705_armn`, Mouthe), famille **Énergie
+> absente**. Cause tracée via `data/indicators.parquet` : **P1/P3/E1 =
+> 100 % NA**, E2 = 0, alors que le CHM Open-Canopy en cache est
+> **valide** (EPSG:2154) mais à hauteur ≈ 0 — la forêt a été **rasée**.
+> Test décisif : `indicateur_p1_volume(u, chm=chm)` = NA *même CHM
+> fourni* ⇒ **bug cœur** (pas wiring) :
+> [`estimate_dq_from_hdom()`](https://pobsteta.github.io/nemeton/reference/estimate_dq_from_hdom.md)
+> renvoie NA pour H_dom \< 6 m, confondant « couvert nul » et «
+> peuplement jeune ».
+
+**Livré (cœur) :**
+[`estimate_synthetic_inventory()`](https://pobsteta.github.io/nemeton/reference/estimate_synthetic_inventory.md)
+/
+[`ensure_inventory_fields()`](https://pobsteta.github.io/nemeton/reference/ensure_inventory_fields.md)
+gagnent `min_stand_height` (défaut 1,3 m) ; H_dom observé sous le seuil
+⇒ `dbh=0/density=0` (au lieu de NA) ⇒ **P1=0, E1=0, P3 défini, E2=0
+cohérent, famille Énergie présente**. `H_dom=NA` (hors couverture) reste
+NA. Amendement **spec 005 §3.4**. Tests
+`test-synthetic-inventory-clearcut.R` (+ non-régression). Vérifié sur le
+CHM réel du projet : P1/E1 = 0. → **v0.107.0**.
+
+> **Suites du brief :** - **§1 wiring app** — *sans objet* :
+> vérification faite, `service_compute` (nemetonshiny) charge **déjà**
+> le CHM Open-Canopy (`chm_source="opencanopy"` dans `metadata.json`,
+> `ndp_level=1`) et le passe aux indicateurs via une boucle par
+> [`formals()`](https://rdrr.io/r/base/formals.html). Le seul levier
+> était le correctif cœur ci-dessus + installer `nemeton ≥ 0.107.0` dans
+> la lib de l’app (fait 2026-07-01) puis relancer le calcul. Aucune PR
+> app. - **§3 dispatcher cœur — livré (v0.107.1)** :
+> `compute_indicator()` filtre les args sur
+> [`formals()`](https://rdrr.io/r/base/formals.html) (fin du
+> `unused argument (layers=)` sur P1/P2/P3/E1/E2) et généralise
+> l’extraction de colonne (code court dérivé du nom, plus de `col_map`
+> R1-R4).
+> [`nemeton_compute()`](https://pobsteta.github.io/nemeton/reference/nemeton_compute.md)
+> marche désormais sur P1/E1. Tests `test-indicators-core-dispatch.R`.
+
+------------------------------------------------------------------------
+
+# Chantier CLOS — Planche pixel dépérissement (CRswir/CRre)
+
+> **Cadré le 2026-07-01, clos le 2026-07-01.** Enrichir le
+> click-to-diagnose plotly de la carte RECONFORT
+> (`nemetonshiny/R/mod_monitoring_reconfort_map.R`, 2 traces mono-axe)
+> en **planche 4 panneaux** (double axe Y natif, cycles repliés, espace
+> d’état CRswir×CRre, palette cividis). Brief découpé en 2 parties
+> (règles 1-3 CLAUDE.md) : calcul au cœur, rendu dans l’app.
+
+**Partie A — cœur `nemeton` (✅ livrée) :** -
+`prepare_pixel_dieback_series(df, grid_step, smooth, summer, gap_flag_days)`
+(`R/pixel_dieback_prep.R`, exportée) : transformation pure de la sortie
+de
+[`read_reconfort_pixel_series()`](https://pobsteta.github.io/nemeton/reference/read_reconfort_pixel_series.md)
+→ grille+gap-fill
+([`stats::approx`](https://rdrr.io/r/stats/approxfun.html)), lissage
+léger Savitzky-Golay (`signal`), extrema estivaux annuels (creux CRswir
+/ pic CRre sur obs réelles), espace d’état + centroïdes annuels, lacunes
+longues. - Nouvelle dépendance `signal`. Tests :
+`test-pixel-dieback-prep.R`. → **v0.106.0**.
+
+**Partie B — app `nemetonshiny` (✅ livrée, 2026-07-01) :** tracé inline
+extrait en
+`fct_plot_pixel_dieback.R::plot_pixel_dieback(prepared, opts, i18n)`
+(pur plotly, `yaxis2` natif, cividis via `viridisLite`, subplot 4
+panneaux), câblé dans `mod_monitoring_reconfort_map`, i18n FR/EN, table
+`DT` équivalente, contrôles lissage/points, **export PNG** (helper pur
+`save_plotly_png` : kaleido→webshot2, bouton conditionnel dans la
+modale). Consomme
+[`nemeton::prepare_pixel_dieback_series()`](https://pobsteta.github.io/nemeton/reference/prepare_pixel_dieback_series.md)
+(dépend de `nemeton >= 0.106.0`). → **`nemetonshiny` v0.96.1**.
+
+> **Reste non branché (documenté, hors périmètre app)** : inclusion de
+> la planche au **rapport Quarto PDF**. Volontairement différée : elle
+> exige une sélection de « pixel représentatif » qui relève du **métier
+> (`nemeton`)**, pas de l’app. Le helper d’export PNG est prêt à être
+> réutilisé si/quand cette section est spécifiée côté cœur (à flécher :
+> primitive de choix du pixel représentatif dans `nemeton`, puis wiring
+> rapport côté app).
 
 ------------------------------------------------------------------------
 
@@ -611,6 +786,283 @@ spec 020 multi-zone),
 caler sur la matrice de confusion Mouret et al. 2023 — flaggé dans le
 code). **Prochaine étape : L4** (R5 unifié, routage par essence). Faits
 amont vérifiés : `…/plan.md` §10.
+
+## Sous-chantiers (post-L6)
+
+**Manifeste des couches RECONFORT pour l’app** —
+`reconfort_layer_manifest(result, include_range)` (rasters score /
+classification / probability + vecteur alertes ; palettes, domaines,
+reverse, visibilité par défaut). Consommé par le sous-onglet « Alertes
+RECONFORT » de nemetonshiny : cases à cocher des couches, curseur
+d’opacité, couche UGF, clip des rasters à la strate sélectionnée.
+
+#### 2026-06-28 — Couches RECONFORT dans l’app (cœur → app)
+
+**Cœur — `nemeton@v0.97.0` (commit `8c32b77`)**
+`reconfort_layer_manifest(result, include_range = FALSE)` exporté.
+Retourne un `data.frame`, une ligne par couche disponible : `id`,
+`label_key`, `type` (`raster`/`vector`), `role`, `path`, `categorical`,
+`palette`, `reverse`, `vmin`/`vmax`, `default_visible`,
+`default_opacity`, `n_features`. Rasters `score` (RdYlGn, reverse) /
+`classification` (catégoriel) / `probability` (viridis) + ligne `alerts`
+conditionnée à `.reconfort_alert_count(result) > 0`.
+`include_range = TRUE` calcule les domaines réels via
+[`terra::minmax`](https://rspatial.github.io/terra/reference/minmax.html).
+Contrat stable : l’app ne lit jamais `result$rasters` en dur.
+
+**App — nemetonshiny `v0.92.2` puis `v0.92.3`** - `v0.92.2` (commit
+`nemetonshiny@167cf4cd`, cycle dev `0.92.1.9001`) —
+`mod_monitoring_reconfort_map` consomme le manifeste : cases à cocher
+des couches (vecteur/rasters) + curseur d’opacité (re-render léger
+`leafletProxy`). `result` de
+[`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+threadé du parent (`reconfort_result` → `result_r`). Plancher relevé à
+`Imports: nemeton (>= 0.97.0)`. (Lot couplé au retrait du sous-onglet
+doublon « Alertes FORDEAD ».) - `v0.92.3` (commit
+`nemetonshiny@7e7db429`, cycle dev `0.92.2.9001`) — parité complète
+FORDEAD/FAST : contrôles en sidebar droite (`layout_sidebar`), carte
+Leaflet statique + overlay (préserve le clic-pixel CRSWIR/CRre), couche
+UGF en overlay toggleable (`project$indicators_sf`), et clip des rasters
+à l’AOI de la zone de suivi sélectionnée (`_tot`/`_res`/`_feu`/`_mix`)
+via
+[`terra::mask`](https://rspatial.github.io/terra/reference/mask.html) —
+présentation pure, aucun calcul métier côté app.
+
+**Ordre cœur → app respecté** : `nemeton@v0.97.0` publié d’abord,
+propagé à l’app via `@*release`. Aucune dépendance inverse.
+
+**L7 — masque UGF des sorties RECONFORT (reader cœur)** —
+`read_reconfort_layer(layer, con, zone_id, apply_zone_mask = TRUE, mask_polygon)`
+: lit une couche raster RECONFORT et la masque au polygone des UGFs au
+read-time (parité FAST/FORDEAD, spec 016). Rapatrie le clip que l’app
+faisait en présentation (v0.92.3).
+
+#### 2026-06-28 — L7 : reader cœur masqué UGF (`read_reconfort_layer`)
+
+**Cadrage** :
+`specs/021-suivi-sanitaire-reconfort/L7-clip-ugf-cadrage.md`
+
+- ADR-013 amendement A6 (draft `ADR-013-A6-reconfort-zone-mask.md`, à
+  porter dans `platform_nemeton`). 3 décisions actées (AskUserQuestion
+  2026-06-28) : `apply_zone_mask` (pas `clip_to_aoi`), masque au
+  **read-time**, centroïdes **non clippés** (parité spec 016).
+
+**Cœur — `v0.98.0`** :
+[`read_reconfort_layer()`](https://pobsteta.github.io/nemeton/reference/read_reconfort_layer.md)
+exporté (`R/reconfort_manifest.R`) — analogue de
+[`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md)
+/
+[`read_fordead_dieback_mask()`](https://pobsteta.github.io/nemeton/reference/read_fordead_dieback_mask.md).
+Accepte un chemin **ou** une ligne raster du manifeste
+(`type == "vector"` rejetée) ; masque via les helpers spec 016
+[`.apply_zone_mask()`](https://pobsteta.github.io/nemeton/reference/dot-apply_zone_mask.md)
+/
+[`.get_zone_aoi()`](https://pobsteta.github.io/nemeton/reference/dot-get_zone_aoi.md)
+; polygone résolu par `mask_polygon` sinon `con` + `zone_id` ;
+`cli_warn` + raster brut si rien n’est résoluble. 11 tests
+(`test-reconfort-reader.R`). Manifeste L6 inchangé.
+
+**App — `v0.93.0` (`nemetonshiny@628a49b2`)** ✅ : consomme
+[`read_reconfort_layer()`](https://pobsteta.github.io/nemeton/reference/read_reconfort_layer.md)
+et **retire son
+[`terra::mask`](https://rspatial.github.io/terra/reference/mask.html)
+local** (v0.92.3) → la sémantique spatiale **raster** revient au cœur.
+
+**L7 (suite) — filtre des alertes au polygone UGF** —
+`filter_alerts_to_zone(alerts, con, zone_id, apply_zone_mask)` : ne
+garde que les centroïdes dans l’UGF, au read-time. Révise D3 (les
+alertes RECONFORT débordaient des UGFs).
+
+**Parité des 3 pipelines (raster + vecteur)** — FAST / FORDEAD /
+RECONFORT masquent désormais raster **et** vecteur dans leur reader cœur
+; aucune opération spatiale de masquage dans les `mod_*` de
+`nemetonshiny` (ADR-009, règles strictes §1-3). App à jour jusqu’à
+`v0.93.1`.
+
+#### 2026-06-29 — L7 (suite) : filtre vectoriel des alertes (`filter_alerts_to_zone`)
+
+- **Constat (run réel 2026-06-29)** : run zone 5 complété (1336
+  alertes), mais le **vecteur d’alertes débordait largement des UGFs**
+  alors que le score raster, lui, était bien clippé (v0.98.0). Cause :
+  le postprocess extrait les centroïdes du
+  `Final_Classif_masked_<year>.tif`, masqué par **OSO feuillus**
+  (occupation du sol) et **pas** par l’UGF → clusters sur tous les
+  feuillus de la bbox + 3 km. La décision L7 §D3 (« ne pas clipper les
+  centroïdes », parité) reposait sur une hypothèse fausse (« centroïdes
+  issus de rasters UGF-masqués »).
+- **Décision (AskUserQuestion 2026-06-29)** : clip **au read-time**
+  (parité `read_reconfort_layer`) + **étendu aux 3 pipelines**. D3
+  révisée.
+- **Cœur — `v0.99.0`** :
+  [`filter_alerts_to_zone()`](https://pobsteta.github.io/nemeton/reference/filter_alerts_to_zone.md)
+  exporté (`R/zone_aoi.R`), **helper unique partagé**
+  RECONFORT/FORDEAD/FAST (le filtre `sf` POINT est identique → vraie
+  parité, pas de duplication). Interne `.filter_alerts_to_zone()` miroir
+  de
+  [`.apply_zone_mask()`](https://pobsteta.github.io/nemeton/reference/dot-apply_zone_mask.md).
+  Filtre au read, table `alert` non modifiée ; reprojection CRS ;
+  `cli_warn` + passthrough si pas de polygone ; opt-out
+  `apply_zone_mask = FALSE`. 8 tests (`test-filter-alerts-to-zone.R`).
+- **App — `v0.93.1` (`nemetonshiny@703bdd66`)** ✅ : `alerts_r` enchaîne
+  [`list_alerts()`](https://pobsteta.github.io/nemeton/reference/list_alerts.md)
+  →
+  [`filter_alerts_to_zone()`](https://pobsteta.github.io/nemeton/reference/filter_alerts_to_zone.md)
+  (RECONFORT **et** FORDEAD). Clôt la **parité raster + vecteur des 3
+  pipelines** : plus aucune sémantique spatiale de masquage côté
+  `nemetonshiny`.
+
+#### 2026-06-29 — Fix sens de R5 dans la famille R (`normalize_indicator`)
+
+**Constat** : en traçant R5 → famille R → indice général,
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+laissait passer **R5 brut** (orienté « haut = dépérissement », mauvais)
+alors que R1-R4 sont « haut = bon ». La moyenne `famille_risque` était
+donc tirée à l’envers (une UGF très dépérie *remontait* le score).
+
+**Vérif app** (agent Explore sur `nemetonshiny`) : l’app **ne compense
+pas** — en fait **R5 n’est pas encore branché** dans le radar (famille R
+= R1-R4 ; placeholder i18n « future »). Bug donc **latent**, mais le
+cœur est conçu pour inclure R5 → correctif côté cœur pour garantir
+l’orientation au branchement.
+
+**Cœur — `v0.99.1` (fix)** :
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+inverse R5 (`100 - score`, colonnes `indicateur_r5_deperissement` /
+`R5`), au même endroit que l’inversion s1/s2 déjà présente.
+[`indicateur_r5_deperissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_r5_deperissement.md)
+**inchangé** (API brute « haut = dépérissement »). Tooltip R5 reformulé
+(« Score élevé = faible dépérissement » + mention RECONFORT). 3 tests
+(`test-normalization.R`) ; non-régression vérifiée (deperissement 42,
+famille 95, intégration 91, risque 153, viz 232).
+
+**Reste** : option « champ `direction` générique dans `indicator-config`
+» non retenue (plus lourde) ; si un autre indicateur « haut = mauvais »
+apparaît, le refactor pourra être repris.
+
+**App — `nemetonshiny@v0.94.0` (2026-06-30)** ✅ : R5 **branché dans le
+radar** (`R/service_r5.R::add_r5_to_indicators()` injecté dans
+`mod_synthesis` avant `create_family_index`). Routage par essence via
+**intersection d’alertes** (pas de colonne d’essence sur les UGF) ; R5
+passé **brut** (le cœur inverse, pas de double-inversion). Best-effort :
+sans zone/alerte → famille R = R1-R4. Famille R cœur passe à 32
+indicateurs (R5 conditionnel).
+
+**Découverte cache des couches RECONFORT (parité `read_fordead_layer`)**
+— `reconfort_cache_manifest(cache_dir, zone_id, run_id, include_range)`
+: réaffiche les rasters RECONFORT après rechargement de projet (sans le
+`result` mémoire).
+
+#### 2026-06-30 — Découverte cache couches RECONFORT (`reconfort_cache_manifest`)
+
+- **Problème** : l’app n’affichait les rasters RECONFORT
+  (classification/score/ proba) qu’à partir du `result` mémoire d’un run
+  de la session courante. Après rechargement de projet → `result` perdu
+  → seules les alertes (DB) restaient. FORDEAD, lui, relit ses couches
+  du cache (`read_fordead_layer`).
+- **Cœur — `v0.100.0`** :
+  [`reconfort_cache_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_cache_manifest.md)
+  exporté (`R/reconfort_manifest.R`) — reconstruit le manifeste depuis
+  le cache, **schéma byte-identique** à
+  [`reconfort_layer_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_layer_manifest.md)
+  (constructeur de lignes partagé `.reconfort_build_manifest()`).
+  Résolution du run (le plus récent sinon `run_id`), exclut les stacks
+  CRswir/CRre. **+ persistance étendue** : la phase `persist` cache
+  désormais aussi `reconfort_score_<run>` / `reconfort_proba_<run>`
+  (sinon score/proba, qui ne vivaient que dans le workdir transitoire,
+  ne réapparaissaient pas). 18 tests
+  (`test-reconfort-cache-manifest.R`).
+- **Fix `v0.100.1`** : la découverte ratait le bon dossier. Les rasters
+  d’affichage persistent dans le dossier IOTA² `final/`
+  (`output_zone_<id>/results/.../final/Final_*.tif`), pas dans
+  `zone_<id>/` (qui n’a que le masque + mes copies run-scopées, absentes
+  des runs déjà faits).
+  [`reconfort_cache_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_cache_manifest.md)
+  lit désormais `final/` en priorité (repli `zone_<id>/`). Validé sur le
+  cache réel zone 5 → 3 couches. +9 tests.
+- **Suite app** : `mod_monitoring_reconfort_map` → `manifest_r` retombe
+  sur `reconfort_cache_manifest(cache_dir, zone_id)` quand `result_r()`
+  est NULL (toggles/opacité/clip/pixel-click inchangés). Plancher
+  `nemeton (>= 0.100.1)`.
+
+------------------------------------------------------------------------
+
+# Chantier EN COURS — reGénération : microclimat sous couvert (spec 027, ADR-014)
+
+**Cadré** : 2026-06-30 (paperwork :
+`specs/027-regeneration-microclimat/spec.md` + ADR-014 dans
+`nemetonplateform`). **Objectif** : onglet « reGénération » — aptitude
+microclimatique à la régénération (microclimf + ERA5-Land + LiDAR HD,
+repli opencanopy). Sous-indicateurs A3/A4/W4/**R6** (R5 pris par
+dépérissement), pas de 13e famille (radar 12 axes). Mode augmenté
+`microclimate_model`.
+
+#### 2026-06-30 — L1 cœur : indicateurs microclimatiques A3/A4/W4 (`v0.101.0`)
+
+- **Cadrage** : spec 027 + ADR-014 (mergé `nemetonplateform` PR \#8). 3
+  corrections au brief actées : **R6** (pas R5, pris), **ADR-014** (pas
+  012), **spec 027**. Décision années R6 = détection auto E-OBS +
+  override (validé).
+- **Cœur — `v0.101.0`** : `R/indicators-microclimate.R` —
+  `indicateur_a3_microclimat` (A3, T°max sous couvert, décroissant),
+  `indicateur_a4_tamponnement` (A4, tamponnement, croissant),
+  `indicateur_w4_vpd` (W4, VPD, décroissant). Consomment un jeu `micro`
+  (rasters JJA), agrègent par UGF (couverture-pondérée), écrivent score
+  0-100 (code court) + brut + `couverture_pct` + flag
+  `microclimate_model`. Familles A→4 / W→4 dans `indicator-config.R`.
+  Flag dans
+  [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md).
+  Sources `FR.json` (era5/eobs/lidarhd). Dépendances lourdes en
+  `Suggests`. Scaffold
+  [`microclimate_run()`](https://pobsteta.github.io/nemeton/reference/microclimate_run.md)
+  (contrat `micro` ; orchestration microclimf différée — données
+  requises, non testable CI ; **pas de prototype dans les repos**). 16
+  tests. Non-régression famille/intégration/NDP/air OK.
+- **Reste** : L3 (composite par essence), L4 (onglet `nemetonshiny`), L5
+  (doc/vignette). + câblage réel microclimf/lasR (L1b) quand données
+  disponibles.
+
+#### 2026-06-30 — L2 cœur : sensibilité R6 + années E-OBS (`v0.102.0`)
+
+- **Cœur — `v0.102.0`** : `indicateur_r6_sensibilite` (R6, famille R) —
+  Δ stress canicule − moyenne (ΔT°max + ΔVPD standardisés, canopée
+  figée), décroissant (peu sensible = 100). Sens haut=bon → pas
+  d’inversion (≠ R5). Famille R → R1…R6 (`indicator-config.R`).
+  `R/microclimate_years.R` :
+  [`microclimate_detect_years()`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md)
+  (auto E-OBS : été le plus chaud vs médiane, départage proche-LiDAR,
+  `year_window`) — sélecteur pur testable ; extraction E-OBS raster
+  différée (donnée requise) ; override utilisateur. 33 tests
+  (microclimat 23 + years 10). Non-régression famille/déperissement/ndp
+  OK.
+- **Reste** : L3 (composite `regeneration_index` par essence), L4
+  (onglet), L5 (doc).
+
+------------------------------------------------------------------------
+
+# Infra — Isolation reticulate multi-env (Open-Canopy / FORDEAD / Theia)
+
+#### 2026-06-30 — `run_reticulate_isolated()` (`v0.103.0`)
+
+- **Problème** : reticulate ne lie qu’un Python par session R.
+  Open-Canopy (conda `open_canopy`), FORDEAD (virtualenv) et Theia ne
+  peuvent pas tous passer par reticulate in-process → le premier lié
+  gagne, les autres échouent (incident : reticulate happé par un Python
+  uv éphémère → CHM Open-Canopy KO → P1/P2/P3/E1 en échec).
+- **Cœur — `v0.103.0`** :
+  `run_reticulate_isolated(fun, args, python|virtualenv| condaenv, show)`
+  (`R/reticulate_isolated.R`) — exécute `fun` dans un sous-processus
+  `callr` à `RETICULATE_PYTHON` épinglé + `R_ENVIRON_USER=""` (un
+  `~/.Renviron` ne peut pas écraser). Repli in-process. `callr` en
+  Suggests. 8 tests (sous-process réel : env transmis, args, fallback).
+  Alternative déterministe à un `RETICULATE_PYTHON` global (qui ne sert
+  qu’un env).
+- **App** : Open-Canopy déjà isolé côté `nemetonshiny` v0.94.5.9001
+  (pattern inline équivalent — débloque les indicateurs Production).
+- **Reste** : isoler le **bloc modèle FORDEAD** (`FordeadProcess`
+  fit/predict) via la primitive — étape dédiée car frontière complexe
+  (DB `con`, callbacks de progression, cancellation, raster
+  `first_dieback_date` en mémoire, 22 tests mockés in-process à adapter)
+  ; à valider sur un vrai run (env fordead + données).
 
 ------------------------------------------------------------------------
 

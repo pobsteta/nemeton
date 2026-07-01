@@ -259,6 +259,8 @@ Protection, diversite structurelle et connectivite ecologique
   : Calculate Structural Diversity (B2)
 - [`indicateur_b3_connectivite()`](https://pobsteta.github.io/nemeton/reference/indicateur_b3_connectivite.md)
   : Calculate Ecological Connectivity (B3)
+- [`indicateur_b4_div_spectrale()`](https://pobsteta.github.io/nemeton/reference/indicateur_b4_div_spectrale.md)
+  : Indicator B4 — Spectral alpha diversity (family B)
 
 ## Famille W : Regulation de l’eau
 
@@ -297,6 +299,9 @@ Structure du paysage et connectivite
   : Sylvosphere - Edge Effect (L1)
 - [`indicateur_l1_sylvosphere()`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.md)
   : Landscape Fragmentation (L2)
+- [`indicateur_l3_het_spectrale()`](https://pobsteta.github.io/nemeton/reference/indicateur_l3_het_spectrale.md)
+  : Indicator L3 — Spectral beta diversity / landscape heterogeneity
+  (family L)
 
 ## Famille T : Dynamique temporelle
 
@@ -1002,6 +1007,61 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 
 - [`write_knowledge_manifest()`](https://pobsteta.github.io/nemeton/reference/write_knowledge_manifest.md)
   : Write the knowledge-corpus manifest
+
+## Fonctions exportees additionnelles
+
+Primitives et indicateurs recents (a recategoriser par famille/theme)
+
+- [`compute_spectral_diversity()`](https://pobsteta.github.io/nemeton/reference/compute_spectral_diversity.md)
+  : Compute spectral diversity rasters (alpha & beta) via biodivMapR
+- [`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
+  [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
+  : Create a QGIS project from a sampling plan
+- [`ensure_inventory_fields()`](https://pobsteta.github.io/nemeton/reference/ensure_inventory_fields.md)
+  : Fill in missing inventory fields from a CHM
+- [`extract_indicator_value()`](https://pobsteta.github.io/nemeton/reference/extract_indicator_value.md)
+  : Extract an indicator's value column from its result
+- [`filter_alerts_to_zone()`](https://pobsteta.github.io/nemeton/reference/filter_alerts_to_zone.md)
+  : Restrict an alert layer to the UGF zone, at read time (spec 021 L7)
+- [`import_qgis_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)
+  [`import_qfield_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)
+  : Read placettes + arbres layers from a field-returned GPKG
+- [`resolve_project_dem()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)
+  [`resolve_project_chm()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)
+  : Discover the best available DEM / CHM raster in a Nemeton project
+- [`indicateur_a3_microclimat()`](https://pobsteta.github.io/nemeton/reference/indicateur_a3_microclimat.md)
+  : A3 — summer under-canopy maximum temperature (regeneration
+  microclimate)
+- [`indicateur_a4_tamponnement()`](https://pobsteta.github.io/nemeton/reference/indicateur_a4_tamponnement.md)
+  : A4 — canopy thermal buffering (regeneration microclimate)
+- [`indicateur_r6_sensibilite()`](https://pobsteta.github.io/nemeton/reference/indicateur_r6_sensibilite.md)
+  : R6 — microsite climate sensitivity (heatwave vs average year)
+- [`indicateur_w4_vpd()`](https://pobsteta.github.io/nemeton/reference/indicateur_w4_vpd.md)
+  : W4 — summer under-canopy vapour-pressure deficit (regeneration)
+- [`microclimate_detect_years()`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md)
+  : Detect the average / heatwave reference years for R6 (spec 027
+  §6bis)
+- [`microclimate_run()`](https://pobsteta.github.io/nemeton/reference/microclimate_run.md)
+  : Run the under-canopy microclimate model (scaffold — spec 027 L1)
+- [`prepare_pixel_dieback_series()`](https://pobsteta.github.io/nemeton/reference/prepare_pixel_dieback_series.md)
+  : Prepare the derived series for the pixel-dieback plot (CRswir +
+  CRre)
+- [`read_reconfort_layer()`](https://pobsteta.github.io/nemeton/reference/read_reconfort_layer.md)
+  : Read a RECONFORT output raster, masked to the UGF zone by default
+  (L7)
+- [`reconfort_cache_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_cache_manifest.md)
+  : Discover the persisted RECONFORT display layers from the cache (L6)
+- [`reconfort_latest_complete_year()`](https://pobsteta.github.io/nemeton/reference/reconfort_latest_complete_year.md)
+  : Most recent RECONFORT \`s2_year\` whose season is already complete
+- [`reconfort_layer_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_layer_manifest.md)
+  : RECONFORT layer manifest: describe a run's displayable outputs (L6)
+- [`reconfort_year_bounds()`](https://pobsteta.github.io/nemeton/reference/reconfort_year_bounds.md)
+  : Bounds for a RECONFORT \`s2_year\` picker
+- [`run_reticulate_isolated()`](https://pobsteta.github.io/nemeton/reference/run_reticulate_isolated.md)
+  : Run a Python/reticulate task in an isolated subprocess (pinned env)
+- [`stac_search_s2_cdse()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
+  [`stac_search_s2_pc()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
+  : Sentinel-2 STAC Search Helpers (E6 monitoring)
 
 # Articles
 

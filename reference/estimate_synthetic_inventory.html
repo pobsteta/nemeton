@@ -23,7 +23,7 @@ n_max_selfthinning (Charru 2012) times a
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.96.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.110.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,7 +75,10 @@ a species vector, returns <code>D_g</code> (cm) and stem density
 <span>  <span class="va">chm</span>,</span>
 <span>  <span class="va">species</span>,</span>
 <span>  h_dom_percentile <span class="op">=</span> <span class="fl">0.9</span>,</span>
-<span>  stocking <span class="op">=</span> <span class="fl">0.75</span></span>
+<span>  stocking <span class="op">=</span> <span class="fl">0.75</span>,</span>
+<span>  min_stand_height <span class="op">=</span> <span class="fl">1.3</span>,</span>
+<span>  min_merchantable_height <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>  suspect_frac <span class="op">=</span> <span class="fl">0.95</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -108,13 +111,46 @@ self-thinning maximum density used as the expected actual
 density (default 0.75, i.e. 75<!-- % of N_max, a realistic value for -->
 French managed stands).</p></dd>
 
+
+<dt id="arg-min-stand-height">min_stand_height<a class="anchor" aria-label="anchor" href="#arg-min-stand-height"></a></dt>
+<dd><p>Numeric (m). Dominant height below which a
+unit is a felled / cleared / non-forest stand (breast height,
+default <code>1.3</code>). Used to distinguish the felled case from a
+young stand in documentation; the actual zero-out is governed by
+<code>min_merchantable_height</code> (which must be \(\ge\) this).</p></dd>
+
+
+<dt id="arg-min-merchantable-height">min_merchantable_height<a class="anchor" aria-label="anchor" href="#arg-min-merchantable-height"></a></dt>
+<dd><p>Numeric (m). Dominant height below
+which a unit carries <strong>no merchantable stock</strong>: its <code>dbh</code>
+and <code>density</code> are set to <code>0</code> rather than <code>NA</code>, so
+volume/quality indicators (P1, P3, E1) return <code>0</code> instead of a
+cryptic <code>NA</code>. Default <code>6</code> (the lower calibration bound of
+the mature-stand allometry). Covers both felled stands
+(\(H_{dom} &lt;\) <code>min_stand_height</code>) and young / pre-merchantable
+stands. The test is on <em>height</em>: a tall stand whose \(D_g\)
+is <code>NA</code> because its <em>species</em> is missing stays <code>NA</code>;
+an <code>NA</code> \(H_{dom}\) (no CHM coverage) also stays <code>NA</code>.</p></dd>
+
+
+<dt id="arg-suspect-frac">suspect_frac<a class="anchor" aria-label="anchor" href="#arg-suspect-frac"></a></dt>
+<dd><p>Numeric in <code>(0, 1]</code>. If at least this
+fraction of observed units fall below <code>min_merchantable_height</code>
+<em>and</em> the CHM's global maximum is itself below it, the CHM is
+flagged as likely degenerate (all-zero / failed prediction): a
+warning is emitted and the returned data.frame carries
+<code>attr(x, "chm_suspect") = TRUE</code>. Default <code>0.95</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data.frame with one row per unit containing
   <code>H_dom</code> (m), <code>dbh</code> (cm, the quadratic mean
   diameter), <code>density</code> (stems / ha), and <code>source</code>
-  (always "synthetic_ml") columns.</p>
+  (always "synthetic_ml") columns. Units below
+  <code>min_merchantable_height</code> get <code>dbh = 0</code> and
+  <code>density = 0</code>. The attribute <code>chm_suspect</code> (logical)
+  flags a likely degenerate CHM (see <code>suspect_frac</code>).</p>
     </div>
 
     <div class="section level2">

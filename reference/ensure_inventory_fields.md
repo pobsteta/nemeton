@@ -19,7 +19,9 @@ ensure_inventory_fields(
   density_field = "density",
   chm = NULL,
   stocking = 0.75,
-  h_dom_percentile = 0.9
+  h_dom_percentile = 0.9,
+  min_stand_height = 1.3,
+  min_merchantable_height = 6
 )
 ```
 
@@ -53,6 +55,20 @@ ensure_inventory_fields(
 - h_dom_percentile:
 
   Percentile for \\H\_{dom}\\ extraction.
+
+- min_stand_height:
+
+  Numeric (m). Felled/cleared stand threshold; see
+  [`estimate_synthetic_inventory`](https://pobsteta.github.io/nemeton/reference/estimate_synthetic_inventory.md).
+  Default `1.3`.
+
+- min_merchantable_height:
+
+  Numeric (m). Dominant height below which a unit carries no
+  merchantable stock (`dbh` / `density` filled with `0`, not `NA`); see
+  [`estimate_synthetic_inventory`](https://pobsteta.github.io/nemeton/reference/estimate_synthetic_inventory.md).
+  Default `6`. The `chm_suspect` attribute is propagated onto the
+  returned `sf`.
 
 ## Value
 

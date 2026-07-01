@@ -3,7 +3,6 @@
 <url><loc>https://pobsteta.github.io/nemeton/CHANGELOG.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/CLAUDE-tests-addendum.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/CLAUDE.html</loc></url>
-<url><loc>https://pobsteta.github.io/nemeton/LICENSE-text.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/LICENSE.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/PLAN.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/README-coverage.html</loc></url>
@@ -65,6 +64,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/compute_general_index_mixed.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/compute_sample_size.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/compute_site_index.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/compute_spectral_diversity.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/create_composite_index.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/create_family_index.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/create_monitoring_zone.html</loc></url>
@@ -135,11 +135,13 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/estimate_dq_from_hdom.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/estimate_synthetic_inventory.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/extract_h_dom.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/extract_indicator_value.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/extract_pixel_timeseries.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/extract_pixel_trend.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/extract_trend_series.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/family-system.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/field_schema.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/filter_alerts_to_zone.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/find_zone_by_project.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/find_zones_by_project.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/fordead_alert_mask.html</loc></url>
@@ -178,9 +180,12 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/index.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_a1_couverture.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_a2_qualite_air.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_a3_microclimat.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_a4_tamponnement.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_b1_protection.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_b2_structure.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_b3_connectivite.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_b4_div_spectrale.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_c1_biomasse.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_c2_ndvi.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_e1_bois_energie.html</loc></url>
@@ -189,6 +194,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_f2_erosion.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_l2_fragmentation.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_l3_het_spectrale.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_n1_distance.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_n2_continuite.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_n3_naturalite.html</loc></url>
@@ -200,6 +206,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_r3_secheresse.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_r4_abroutissement.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_r5_deperissement.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_r6_sensibilite.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_s1_routes.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_s2_bati.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_s3_population.html</loc></url>
@@ -208,6 +215,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_w1_reseau.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_w2_zones_humides.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_w3_humidite.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_w4_vpd.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicators-energy.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicators-families.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicators-naturalness.html</loc></url>
@@ -238,6 +246,8 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/map_oso_class.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/massif_demo_layers.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/massif_demo_units.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/microclimate_run.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/monitoring_ingest.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/n_max_selfthinning.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ndp.html</loc></url>
@@ -258,6 +268,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/plot_temporal_heatmap.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/plot_temporal_trend.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/plot_tradeoff.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/prepare_pixel_dieback_series.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/print.nemeton_layers.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/print.nemeton_temporal.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/print.nemeton_units.html</loc></url>
@@ -275,14 +286,19 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_fordead_pixel_series.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_knowledge_manifest.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_reconfort_alert_mask.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/read_reconfort_layer.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_reconfort_pixel_series.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_s2_band_raster.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_s2_band_stack.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_site_index_curves.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_uts_fertility_table.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_aoi_tiles.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_cache_manifest.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_latest_complete_year.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_layer_manifest.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_model_info.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_year_bounds.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/register_monitoring_zone.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/reset_knowledge_manifest.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/resolve_project_layers.html</loc></url>
@@ -291,6 +307,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/retrieve_knowledge.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/run_fordead_dieback.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/run_reticulate_isolated.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/sample_size.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/sampling_plan.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/sanitize_chm.html</loc></url>

@@ -21,7 +21,7 @@ of any indicator function that depends on \(D_g\) and \(N\).'><meta property="og
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.96.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.110.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,7 +77,9 @@ of any indicator function that depends on \(D_g\) and \(N\).</p>
 <span>  density_field <span class="op">=</span> <span class="st">"density"</span>,</span>
 <span>  chm <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  stocking <span class="op">=</span> <span class="fl">0.75</span>,</span>
-<span>  h_dom_percentile <span class="op">=</span> <span class="fl">0.9</span></span>
+<span>  h_dom_percentile <span class="op">=</span> <span class="fl">0.9</span>,</span>
+<span>  min_stand_height <span class="op">=</span> <span class="fl">1.3</span>,</span>
+<span>  min_merchantable_height <span class="op">=</span> <span class="fl">6</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -116,6 +118,20 @@ function is a no-op.</p></dd>
 
 <dt id="arg-h-dom-percentile">h_dom_percentile<a class="anchor" aria-label="anchor" href="#arg-h-dom-percentile"></a></dt>
 <dd><p>Percentile for \(H_{dom}\) extraction.</p></dd>
+
+
+<dt id="arg-min-stand-height">min_stand_height<a class="anchor" aria-label="anchor" href="#arg-min-stand-height"></a></dt>
+<dd><p>Numeric (m). Felled/cleared stand threshold;
+see <code><a href="estimate_synthetic_inventory.html">estimate_synthetic_inventory</a></code>. Default <code>1.3</code>.</p></dd>
+
+
+<dt id="arg-min-merchantable-height">min_merchantable_height<a class="anchor" aria-label="anchor" href="#arg-min-merchantable-height"></a></dt>
+<dd><p>Numeric (m). Dominant height below
+which a unit carries no merchantable stock (<code>dbh</code> /
+<code>density</code> filled with <code>0</code>, not <code>NA</code>); see
+<code><a href="estimate_synthetic_inventory.html">estimate_synthetic_inventory</a></code>. Default <code>6</code>. The
+<code>chm_suspect</code> attribute is propagated onto the returned
+<code>sf</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

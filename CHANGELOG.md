@@ -12,6 +12,133 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.103.0\] - 2026-06-30
+
+### Added
+
+- `run_reticulate_isolated(fun, args, python|virtualenv|condaenv, show)`
+  : exécute une tâche Python/reticulate dans un sous-processus `callr` à
+  env épinglé (`RETICULATE_PYTHON` + `R_ENVIRON_USER=""`), pour faire
+  cohabiter plusieurs envs reticulate (Open-Canopy, FORDEAD, Theia) dans
+  une même session R sans le conflit de binding unique. Repli
+  in-process. `callr` en `Suggests`. 8 tests
+  (`test-reticulate-isolated.R`).
+
+## \[0.102.0\] - 2026-06-30
+
+### Added
+
+- reGénération L2 (spec 027 / ADR-014) : `indicateur_r6_sensibilite`
+  (R6, famille R) — sensibilité du microsite à une année chaude (Δ
+  stress canicule − moyenne, ΔT°max + ΔVPD standardisés, décroissant =
+  résilient). Sens haut=bon (pas d’inversion).
+  [`microclimate_detect_years()`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md) +
+  `R/microclimate_years.R` : détection auto des années moyenne/canicule
+  depuis E-OBS, override utilisateur (§6bis). Famille R → R1…R6. 33
+  tests.
+
+## \[0.101.0\] - 2026-06-30
+
+### Added
+
+- reGénération L1 (spec 027 / ADR-014) : indicateurs microclimatiques
+  sous couvert `indicateur_a3_microclimat` (A3),
+  `indicateur_a4_tamponnement` (A4), `indicateur_w4_vpd` (W4) — insérés
+  dans les familles A/W existantes (radar 12 axes préservé). Flag NDP
+  `microclimate_model` (`detect_ndp`, amende ADR-011). Scaffold
+  [`microclimate_run()`](https://pobsteta.github.io/nemeton/reference/microclimate_run.md) +
+  contrat `micro`. Sources `FR.json` (era5_land, eobs,
+  lidarhd_mnt/mnh/nuage). Dépendances lourdes en `Suggests` (microclimf,
+  mcera5, ecmwfr, lidR). 16 tests (`test-indicators-microclimate.R`).
+
+## \[0.100.1\] - 2026-06-30
+
+### Fixed
+
+- [`reconfort_cache_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_cache_manifest.md)
+  découvre désormais les couches d’affichage depuis le dossier IOTA²
+  `final/` (`output_zone_<id>/results/.../final/Final_*.tif`), où elles
+  persistent — la v0.100.0 ne regardait que les copies run-scopées
+  `zone_<id>/` (absentes pour les runs existants → seule la
+  classification remontait). Repli `zone_<id>/` conservé. Validé sur le
+  cache réel zone 5. 9 tests ajoutés.
+
+## \[0.100.0\] - 2026-06-30
+
+### Added
+
+- `reconfort_cache_manifest(cache_dir, zone_id, run_id = NULL, include_range)`
+  : découverte cache des couches d’affichage RECONFORT (parité
+  `read_fordead_layer`), pour réafficher les rasters après un
+  rechargement de projet sans le `result` en mémoire. Schéma
+  byte-identique à
+  [`reconfort_layer_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_layer_manifest.md).
+  18 tests (`test-reconfort-cache-manifest.R`).
+
+### Changed
+
+- [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+  (phase `persist`) cache aussi le score continu et la probabilité
+  run-scopés (`reconfort_score_<run_id>.tif`,
+  `reconfort_proba_<run_id>.tif`) à côté du masque, pour que ces couches
+  réapparaissent après rechargement.
+
+## \[0.99.1\] - 2026-06-29
+
+### Fixed
+
+- Sens de **R5 dépérissement** :
+  [`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+  inverse désormais R5 (`100 - score`, colonnes
+  `indicateur_r5_deperissement` / `R5`) pour que sa contribution au
+  radar / `famille_risque` reste « haut = bon » comme R1-R4 (R5 brut est
+  « haut = mauvais »). Sans ça, une UGF très dépérie remontait le score
+  de la famille R.
+  [`indicateur_r5_deperissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_r5_deperissement.md)
+  inchangé (API brute). Tooltip R5 reformulé (+ mention RECONFORT). Bug
+  latent (R5 pas encore agrégé côté app). 3 tests
+  (`test-normalization.R`).
+
+## \[0.99.0\] - 2026-06-29
+
+### Added
+
+- `filter_alerts_to_zone(alerts, con, zone_id, apply_zone_mask = TRUE, mask_polygon = NULL)`
+  : ne garde que les centroïdes d’alertes dans le polygone UGF, au
+  read-time (contrepartie vectorielle de `read_reconfort_layer` / spec
+  016). Helper **unique partagé** par les 3 pipelines
+  (RECONFORT/FORDEAD/FAST) ; interne `.filter_alerts_to_zone()`.
+  Révision de L7 §D3 (les centroïdes RECONFORT débordaient des UGFs car
+  extraits du raster masqué OSO-feuillus, pas UGF). 8 tests
+  (`test-filter-alerts-to-zone.R`).
+
+## \[0.98.0\] - 2026-06-28
+
+### Added
+
+- `read_reconfort_layer(layer, con, zone_id, apply_zone_mask = TRUE, mask_polygon = NULL)`
+  : lit une couche raster RECONFORT et la masque au polygone des UGFs
+  par défaut, au read-time (parité `read_fast_alert_raster` /
+  `read_fordead_dieback_mask`, spec 016). Accepte un chemin ou une ligne
+  raster du manifeste ; rejette la ligne vecteur (alertes). Réutilise
+  [`.apply_zone_mask()`](https://pobsteta.github.io/nemeton/reference/dot-apply_zone_mask.md)
+  /
+  [`.get_zone_aoi()`](https://pobsteta.github.io/nemeton/reference/dot-get_zone_aoi.md).
+  Spec 021 L7, ADR-013 A6. 11 tests (`test-reconfort-reader.R`).
+
+## \[0.97.0\] - 2026-06-28
+
+### Added
+
+- `reconfort_layer_manifest(result, include_range = FALSE)` : décrit les
+  couches affichables d’un run RECONFORT (score, classification,
+  probabilité, alertes) en un `data.frame` plat avec indications de
+  rendu (`palette`, `reverse`, `vmin`/`vmax`, `categorical`,
+  `default_visible`, `default_opacity`, `n_features`). Sémantique des
+  couches gardée dans le cœur (ADR-009) ; consommé tel quel par
+  `nemetonshiny` pour les toggles de calques et le curseur d’opacité. 29
+  tests (`test-reconfort-manifest.R`).
+
 ## \[0.94.1\] - 2026-06-23
 
 ### Fixed

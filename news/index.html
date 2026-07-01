@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.96.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.110.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,219 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.110.0" id="nemeton-01100-2026-07-01">nemeton 0.110.0 (2026-07-01)<a class="anchor" aria-label="anchor" href="#nemeton-01100-2026-07-01"></a></h2>
+<div class="section level4">
+<h4 id="warning-relicence--mit--gpl-0-110-0">⚠️ Relicence — MIT → <strong>GPL-3</strong>
+<a class="anchor" aria-label="anchor" href="#warning-relicence--mit--gpl-0-110-0"></a></h4>
+<p>À partir de cette version, <code>nemeton</code> est distribué sous <strong>GPL-3</strong> (auparavant MIT). Motif : intégration en <strong>dépendance directe</strong> (<code>Imports:</code>) du package <a href="https://github.com/jbferet/biodivMapR" class="external-link"><code>biodivMapR</code></a> (GPL-3) pour les nouveaux indicateurs de diversité spectrale. <code>nemeton</code> devient donc une œuvre dérivée copyleft ; par effet de dépendance, les packages qui l’importent (<code>nemetonshiny</code>, <code>tree_sat_nemeton</code>, <code>maestro_nemeton</code>) sont GPL-3 à la distribution (bascule à faire dans leurs dépôts). Les <strong>données</strong> produites restent CC-BY 4.0. Décision assumée du propriétaire (ADR-006 à amender).</p>
+</div>
+<div class="section level4">
+<h4 id="added--diversité-spectrale--indicateurs-b4--l3-biodivmapr-spec-0-110-0">Added — Diversité spectrale : indicateurs <strong>B4</strong> &amp; <strong>L3</strong> (biodivMapR, spec 028)<a class="anchor" aria-label="anchor" href="#added--diversit%C3%A9-spectrale--indicateurs-b4--l3-biodivmapr-spec-0-110-0"></a></h4>
+<p>Deux nouveaux indicateurs télédétectés, calculables dès le <strong>NDP 0</strong> (Sentinel-2), via l’hypothèse de variation spectrale (PCA → spectral species → diversité) :</p>
+<ul><li>
+<strong>B4 — Diversité spectrale</strong> (famille B) : α-diversité, <strong>Shannon</strong> des spectral species → proxy de diversité compositionnelle.</li>
+<li>
+<strong>L3 — Hétérogénéité spectrale</strong> (famille L) : β-diversité, turnover <strong>Bray-Curtis</strong> de la mosaïque paysagère (complémentaire de L2, fragmentation géométrique).</li>
+</ul><p>Portés par la primitive exportée <code><a href="../reference/compute_spectral_diversity.html">compute_spectral_diversity()</a></code> (wrapper <code><a href="https://rdrr.io/pkg/biodivMapR/man/biodivMapR_full.html" class="external-link">biodivMapR::biodivMapR_full()</a></code>, agrégation par UGF via <code>exactextractr</code>). Fonctions <code><a href="../reference/indicateur_b4_div_spectrale.html">indicateur_b4_div_spectrale()</a></code> / <code><a href="../reference/indicateur_l3_het_spectrale.html">indicateur_l3_het_spectrale()</a></code> strictement rétrocompatibles (colonne <code>NA</code> si ni <code>spectral</code> ni <code>reflectance</code>). Enregistrés dans le registre (labels/tooltips FR/EN avec caveat proxy), normalisation <em>haut = mieux</em> (B4 <code>[0, log 50]</code>, L3 <code>[0, 1]</code> — <strong>bornes provisoires</strong>, recalibrage empirique après premier run réel, spec 028 D3). B4/L3 comptent immédiatement dans l’indice général (D4).</p>
+<p><strong>Statut proxy</strong> : la corrélation diversité spectrale ↔︎ diversité taxonomique est un proxy contexte-dépendant, à <strong>valider terrain</strong> (démarche spec 008). Une futaie régulière monospécifique légitime peut afficher un B4 bas. Tests : <code>test-spectral-diversity.R</code> (le pipeline biodivMapR réel = smoke manuel sur scène Sentinel-2).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.109.0" id="nemeton-01090-2026-07-01">nemeton 0.109.0 (2026-07-01)<a class="anchor" aria-label="anchor" href="#nemeton-01090-2026-07-01"></a></h2>
+<div class="section level4">
+<h4 id="changed--dette-h_dom-faiblenul--peuplement-jeune-garde-fou-chm-p2-station-spec-0-109-0">Changed — Dette H_dom faible/nul : peuplement jeune, garde-fou CHM, P2 station (spec 005 §3.5)<a class="anchor" aria-label="anchor" href="#changed--dette-h_dom-faiblenul--peuplement-jeune-garde-fou-chm-p2-station-spec-0-109-0"></a></h4>
+<p>Trois angles morts laissés par le correctif « couvert nul » (v0.107.0), tous sur la sémantique d’un H_dom faible ou nul :</p>
+<ul><li>
+<strong>#2 — peuplement jeune <code>[1,3 ; 6)</code> m.</strong> Nouveau paramètre <code>min_merchantable_height</code> (défaut <strong>6 m</strong>, plancher de calibration de l’allométrie) sur <code><a href="../reference/estimate_synthetic_inventory.html">estimate_synthetic_inventory()</a></code> / <code><a href="../reference/ensure_inventory_fields.html">ensure_inventory_fields()</a></code> : en deçà, <code>dbh = 0</code> et <code>density = 0</code> (pas de stock <strong>marchand</strong>) → P1/P3/E1 = 0 au lieu de <code>NA</code>. Le test porte sur la <strong>hauteur</strong>, pas sur <code>is.na(D_g)</code> : un peuplement grand à espèce manquante reste <code>NA</code> (réellement inconnu), jamais forcé à 0. Rétro-compat v0.107.0 : <code>min_merchantable_height = min_stand_height</code>.</li>
+<li>
+<strong>#3 — P2 station sur couvert nul.</strong> <code><a href="../reference/compute_site_index.html">compute_site_index()</a></code> gagne <code>min_stand_height = 1.3</code> : un CHM nu (H_dom = 0) renvoie <strong><code>NA</code></strong> (indice de station non estimable depuis un peuplement abattu) au lieu d’un clamp parasite vers la pire classe. Cohérent avec P1 = 0 (aucun volume marchand <em>actuel</em>) mais P2 = <code>NA</code> (fertilité potentielle <em>inconnue</em>).</li>
+<li>
+<strong>#1 — garde-fou CHM dégénéré.</strong> <code><a href="../reference/estimate_synthetic_inventory.html">estimate_synthetic_inventory()</a></code> émet un <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_warn</a></code> et pose <code>attr(x, "chm_suspect") = TRUE</code> (propagé par <code><a href="../reference/ensure_inventory_fields.html">ensure_inventory_fields()</a></code>) quand ≥ <code>suspect_frac</code> (défaut 0,95) des unités sont sous le plancher marchand <strong>et</strong> que le max global du CHM l’est aussi — un CHM cassé (prédiction ratée tout-à-0) ne passe plus pour une coupe rase silencieuse.</li>
+</ul><p>Non-régression : peuplement établi inchangé, <code>H_dom = NA</code> reste <code>NA</code>. Tests : <code>test-synthetic-inventory-debt.R</code> (+ mises à jour clear-cut / site-index).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.108.0" id="nemeton-01080-2026-07-01">nemeton 0.108.0 (2026-07-01)<a class="anchor" aria-label="anchor" href="#nemeton-01080-2026-07-01"></a></h2>
+<div class="section level4">
+<h4 id="added--extract_indicator_value--convention-de-nommage-des-indicateurs-source-unique-0-108-0">Added — <code>extract_indicator_value()</code> : convention de nommage des indicateurs, source unique<a class="anchor" aria-label="anchor" href="#added--extract_indicator_value--convention-de-nommage-des-indicateurs-source-unique-0-108-0"></a></h4>
+<p>Extrait la valeur d’un indicateur depuis son résultat (<code>sf</code>/<code>data.frame</code> → colonne code court <code>P1</code>/<code>R1</code>/…, ou vecteur renvoyé tel quel). Auparavant, cette convention était <strong>dupliquée</strong> entre <code>nemeton::compute_indicator()</code> (dérivation code court) et la boucle de calcul de <code>nemetonshiny</code> (un <code>col_map</code> de 17 entrées tenu à la main) — deux implémentations vouées à <strong>diverger</strong>.</p>
+<ul><li>
+<code>compute_indicator()</code> délègue désormais à <code><a href="../reference/extract_indicator_value.html">extract_indicator_value()</a></code>.</li>
+<li>
+<code>nemetonshiny</code> appelle la <strong>même</strong> fonction (à partir de <code>nemeton &gt;= 0.108.0</code>), supprimant son <code>col_map</code> : une seule source de vérité, plus de dérive possible.</li>
+<li>Ordre de résolution : code court dérivé du nom → nom NMT → motif <code>"&lt;Lettre&gt;&lt;chiffre&gt;"</code> (préférant une colonne absente de <code>exclude</code>, pour que la valeur fraîchement calculée l’emporte sur un attribut préexistant).</li>
+</ul><p>Tests : <code>test-indicators-core-dispatch.R</code>.</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.107.1" id="nemeton-01071-2026-07-01">nemeton 0.107.1 (2026-07-01)<a class="anchor" aria-label="anchor" href="#nemeton-01071-2026-07-01"></a></h2>
+<div class="section level4">
+<h4 id="fixed--compute_indicator--nemeton_compute--dispatch-robuste-args--colonne-de-sortie-0-107-1">Fixed — <code>compute_indicator()</code> / <code>nemeton_compute()</code> : dispatch robuste (args + colonne de sortie)<a class="anchor" aria-label="anchor" href="#fixed--compute_indicator--nemeton_compute--dispatch-robuste-args--colonne-de-sortie-0-107-1"></a></h4>
+<p>Le dispatcher interne appelait chaque fonction indicateur avec <code>do.call(func, list(units, layers, ...))</code> : les indicateurs qui ne déclarent <strong>ni <code>layers</code> ni <code>...</code></strong> (<code>indicateur_p1_volume</code>, <code>p2</code>, <code>p3</code>, <code>e1</code>, <code>e2</code>) échouaient sur <code>unused argument (layers = …)</code>, et l’extraction de la colonne de sortie ne connaissait que <code>R1-R4</code> (les P/C/E renvoyant un <code>sf</code> cassaient sur « column not found »). <code><a href="../reference/nemeton_compute.html">nemeton_compute()</a></code> était donc inutilisable pour ces indicateurs.</p>
+<ul><li>Les arguments (<code>units</code>, <code>layers</code>, <code>...</code> p.ex. <code>chm</code>) sont désormais <strong>filtrés sur les <code><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals()</a></code></strong> de la fonction cible ; une fonction avec <code>...</code> reçoit tout, une fonction sans reçoit seulement ce qu’elle déclare.</li>
+<li>L’extraction de la valeur depuis un résultat <code>sf</code>/<code>data.frame</code> est <strong>généralisée</strong> : code court dérivé du nom (<code>indicateur_p1_volume</code> → <code>P1</code>), puis nom NMT, puis toute colonne <code>"&lt;Lettre&gt;&lt;chiffre&gt;"</code> — plus de table <code>col_map</code> R1-R4 à maintenir.</li>
+</ul><p><code>nemeton_compute(units, layers, indicators = "indicateur_p1_volume", chm = chm)</code> renvoie maintenant un P1 exploitable. Tests : <code>test-indicators-core-dispatch.R</code>. (L’app <code>nemetonshiny</code> n’utilise pas ce dispatcher — elle a sa propre boucle par <code><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals()</a></code> — donc aucun impact côté app ; c’est un correctif de l’API cœur exportée.)</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.107.0" id="nemeton-01070-2026-07-01">nemeton 0.107.0 (2026-07-01)<a class="anchor" aria-label="anchor" href="#nemeton-01070-2026-07-01"></a></h2>
+<div class="section level4">
+<h4 id="fixed--coupe-rase--inventaire-synthétique-chm--couvert-nul---volume-plus-na-0-107-0">Fixed — coupe rase : inventaire synthétique CHM « couvert nul » → volume 0, plus NA<a class="anchor" aria-label="anchor" href="#fixed--coupe-rase--inventaire-synth%C3%A9tique-chm--couvert-nul---volume-plus-na-0-107-0"></a></h4>
+<p>Sur une parcelle <strong>rasée</strong> (coupe rase), le CHM Open-Canopy est correct mais à hauteur ≈ 0. <code><a href="../reference/estimate_synthetic_inventory.html">estimate_synthetic_inventory()</a></code> renvoyait alors <code>dbh</code>/<code>density</code> = <strong>NA</strong> (la garde « H_dom &lt; 6 m ⇒ allométrie non calibrée » confondait <em>couvert nul</em> et <em>peuplement trop jeune</em>), d’où <strong>P1, P3, E1 tous NA</strong>, E2 dégénéré à 0, et <strong>famille Énergie absente</strong> — au lieu du résultat correct : volume ≈ 0, E1 ≈ 0, famille Énergie <strong>présente à 0</strong>.</p>
+<ul><li>Nouveau paramètre <code>min_stand_height</code> (défaut <strong>1,3 m</strong>, hauteur de référence du dbh) sur <code><a href="../reference/estimate_synthetic_inventory.html">estimate_synthetic_inventory()</a></code> et <code><a href="../reference/ensure_inventory_fields.html">ensure_inventory_fields()</a></code> : une unité dont H_dom est <strong>observé</strong> (non-NA) mais <strong>sous</strong> ce seuil est traitée comme <strong>sans peuplement</strong> → <code>dbh = 0</code>, <code>density = 0</code> (au lieu de NA). P1 = 0, E1 = 0, P3 défini bas. Un <code>H_dom</code> <code>NA</code> (pas de couverture CHM) <strong>reste NA</strong>.</li>
+<li>Trois régimes distingués : <code>NA</code> (inconnu) / <code>&lt; 1,3 m</code> (pas de peuplement → 0) / <code>[1,3 ; 6) m</code> (jeune, allométrie non calibrée → NA, inchangé) / <code>≥ 6 m</code> (inchangé). Correctif <strong>côté cœur</strong> : vaut quel que soit le wiring CHM de l’app.</li>
+<li>Amendement spec 005 §3.4. Tests : <code>test-synthetic-inventory-clearcut.R</code> (couvert nul → 0, non-régression peuplement établi, NA hors couverture).</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.106.0" id="nemeton-01060-2026-07-01">nemeton 0.106.0 (2026-07-01)<a class="anchor" aria-label="anchor" href="#nemeton-01060-2026-07-01"></a></h2>
+<div class="section level4">
+<h4 id="added--prepare_pixel_dieback_series--dérivés-pixel-crswircrre-pour-la-planche-de-suivi-0-106-0">Added — <code>prepare_pixel_dieback_series()</code> : dérivés pixel CRswir/CRre pour la planche de suivi<a class="anchor" aria-label="anchor" href="#added--prepare_pixel_dieback_series--d%C3%A9riv%C3%A9s-pixel-crswircrre-pour-la-planche-de-suivi-0-106-0"></a></h4>
+<p>Prépare, côté cœur, tout le dérivé consommé par la planche plotly « pixel » (suivi pluriannuel du dépérissement, CRswir = eau / CRre = chlorophylle) de <code>nemetonshiny</code> — pour que le rendu app reste sans logique métier (règle 3). Transformation <strong>pure et testée</strong> de la sortie de <code><a href="../reference/read_reconfort_pixel_series.html">read_reconfort_pixel_series()</a></code> :</p>
+<ul><li>grille régulière + gap-fill linéaire (<code><a href="https://rdrr.io/r/stats/approxfun.html" class="external-link">stats::approx</a></code>, équivalent iota2) ;</li>
+<li>lissage <strong>léger</strong> Savitzky-Golay (<code><a href="https://rdrr.io/pkg/signal/man/sgolayfilt.html" class="external-link">signal::sgolayfilt</a></code>, <code>p=2</code>, <code>n=5</code>) — le lissage fort n’est volontairement pas offert (il raboterait les extrema estivaux, qui <em>sont</em> le signal) ;</li>
+<li>
+<strong>extrema estivaux annuels</strong> mesurés sur les observations réelles (creux CRswir <code>which.min</code>, pic CRre <code>which.max</code>) ;</li>
+<li>
+<strong>espace d’état</strong> estival apparié + <strong>centroïdes annuels</strong> ;</li>
+<li>
+<strong>lacunes</strong> interpolées longues (<code>&gt; gap_flag_days</code>) signalées.</li>
+</ul><p>Renvoie une liste de <code>data.frame</code> (<code>grid_swir/re</code>, <code>obs_swir/re</code>, <code>trough_swir</code>, <code>peak_re</code>, <code>state</code>, <code>centroids</code>, <code>gaps</code>) et reporte les attributs RECONFORT (<code>species</code>, <code>v_model</code>, <code>date_from/to</code>, <code>dans_zone_validite</code>). Nouvelle dépendance <code>signal</code>. Partie A du brief planche pixel ; la Partie B (rendu plotly 4 panneaux) vit dans <code>nemetonshiny</code>.</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.105.0" id="nemeton-01050-2026-07-01">nemeton 0.105.0 (2026-07-01)<a class="anchor" aria-label="anchor" href="#nemeton-01050-2026-07-01"></a></h2>
+<div class="section level4">
+<h4 id="fixed--cache-fast--clé-sur-la-couverture-s2-réelle-plus-sur-la-fenêtre-demandée-0-105-0">Fixed — cache FAST : clé sur la couverture S2 réelle, plus sur la fenêtre demandée<a class="anchor" aria-label="anchor" href="#fixed--cache-fast--cl%C3%A9-sur-la-couverture-s2-r%C3%A9elle-plus-sur-la-fen%C3%AAtre-demand%C3%A9e-0-105-0"></a></h4>
+<p>Le COG d’alerte FAST (<code><a href="../reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code>) était content-addressé (spec 017 D6) en incluant <code>date_from</code>/<code>date_to</code> <strong>demandés</strong> dans le hash ET le nom de fichier. Avec une fenêtre glissante ancrée sur aujourd’hui (<code>date_to = today</code>), ces bornes bougeaient chaque jour → nom + hash différents → <strong>recalcul complet quotidien</strong> du diagnostic, alors qu’aucune scène Sentinel-2 nouvelle n’avait atterri (revisite S2 ~5 j).</p>
+<ul><li>La clé de cache (hash D6 + nom) est désormais la <strong>couverture S2 effective</strong> : <code>min</code>/<code>max</code> des dates d’acquisition des scènes retenues (<code>scenes_df$obs_date</code>), et non la fenêtre demandée. Deux fenêtres couvrant les mêmes scènes retombent sur le <strong>même</strong> COG (cache hit) ; la liste des scene-ids reste dans le hash, si bien que deux ensembles de scènes distincts ne s’aliasent jamais à couverture min/max identique.</li>
+<li>Mode <code>rolling</code> : la fenêtre glissante est ancrée sur la <strong>dernière acquisition réelle</strong> (<code>cov_to</code>) plutôt que sur <code>date_to</code> demandé — cohérent avec la clé et plus juste (« fenêtre jusqu’à la dernière observation »).</li>
+<li>Effet de bord unique : le changement de hash <strong>invalide une fois</strong> les COGs FAST en cache ; ils se régénèrent au prochain calcul.</li>
+</ul><p>Nouveau test <code>test-fast-alert-raster.R</code> : deux fenêtres demandées différentes couvrant la même scène ⇒ un seul COG, second appel servi depuis le cache.</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.104.0" id="nemeton-01040-2026-07-01">nemeton 0.104.0 (2026-07-01)<a class="anchor" aria-label="anchor" href="#nemeton-01040-2026-07-01"></a></h2>
+<div class="section level4">
+<h4 id="added--garde-fou-dannée-reconfort--reconfort_latest_complete_year--reconfort_year_bounds-0-104-0">Added — garde-fou d’année RECONFORT : <code>reconfort_latest_complete_year()</code> / <code>reconfort_year_bounds()</code>
+<a class="anchor" aria-label="anchor" href="#added--garde-fou-dann%C3%A9e-reconfort--reconfort_latest_complete_year--reconfort_year_bounds-0-104-0"></a></h4>
+<p>RECONFORT ne compare pas deux dates : il classe la trajectoire d’indices <strong>~2 ans</strong> d’un pixel avec un modèle pré-entraîné, sur une fenêtre d’analyse <strong>liée au modèle</strong> qui se termine à <code>s2_year&lt;edate&gt;</code> (<code>10-29</code> pour les modèles 2 ans <code>v3</code>/<code>v3_chestnut</code>/<code>v3_pine</code>, <code>05-31</code> pour <code>v3_early_may</code>). Lancer un run sur une <code>s2_year</code> dont la fenêtre n’est pas encore close produit une dernière saison tronquée et une classification dégradée.</p>
+<ul><li>
+<code>RECONFORT_MODELS</code> porte désormais un champ <strong><code>edate</code></strong> (<code>"MM-DD"</code>, fin de la fenêtre d’analyse du modèle), source unique alignée sur le pipeline IOTA2.</li>
+<li>
+<strong><code>reconfort_latest_complete_year(v_model, today, lag_days)</code></strong> : dernière <code>s2_year</code> dont la fenêtre est déjà close à <code>today</code> (année en cours si sa fenêtre est passée, sinon année précédente). <code>lag_days</code> ajoute un tampon pour la latence d’ingestion Theia.</li>
+<li>
+<strong><code>reconfort_year_bounds(v_model, today, lag_days)</code></strong> : <code>list(min = 2016, max, default)</code> prêt à câbler un year-picker (défaut et max = dernière année complète, jamais l’année en cours incomplète).</li>
+</ul><p>Ces fonctions sont destinées au picker <code>s2_year</code> de <code>nemetonshiny</code> (défaut/max bornés côté cœur, garde-fou serveur au lancement).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.103.0" id="nemeton-01030-2026-06-30">nemeton 0.103.0 (2026-06-30)<a class="anchor" aria-label="anchor" href="#nemeton-01030-2026-06-30"></a></h2>
+<div class="section level4">
+<h4 id="added--run_reticulate_isolated--tâche-python-dans-un-sous-processus-à-env-épinglé-0-103-0">Added — <code>run_reticulate_isolated()</code> : tâche Python dans un sous-processus à env épinglé<a class="anchor" aria-label="anchor" href="#added--run_reticulate_isolated--t%C3%A2che-python-dans-un-sous-processus-%C3%A0-env-%C3%A9pingl%C3%A9-0-103-0"></a></h4>
+<p>reticulate ne peut lier qu’<strong>un seul Python par session R</strong>. Quand plusieurs charges Python ont besoin d’<strong>environnements différents</strong> dans la même session (Open-Canopy conda, FORDEAD virtualenv, Theia…), elles ne peuvent pas toutes passer par reticulate in-process — la première à se lier gagne, les autres échouent (cf. incident CHM Open-Canopy : reticulate happé par un Python uv éphémère → P1/P2/P3/E1 en échec).</p>
+<p><code>run_reticulate_isolated(fun, args, python | virtualenv | condaenv, show)</code> exécute <code>fun</code> dans un <strong>sous-processus <code>callr</code></strong> dont reticulate est épinglé sur l’interpréteur demandé. Le sous-processus part d’un reticulate <strong>vierge</strong> → il se lie toujours au bon env, <strong>quel que soit</strong> le binding de la session parente. <code>R_ENVIRON_USER = ""</code> empêche un <code>~/.Renviron</code> d’écraser le pin. C’est l’alternative déterministe à un <code>RETICULATE_PYTHON</code> global (qui ne peut servir qu’un seul env). <code>fun</code> doit être auto-suffisant (callr le sérialise : qualifier <code>pkg::fn</code>, échanger les rasters par <strong>chemins</strong> de fichiers). Repli in-process si <code>callr</code> absent ou aucun Python résoluble. <code>callr</code> ajouté aux <code>Suggests</code>. 8 tests (<code>test-reticulate-isolated.R</code>).</p>
+<p>Primitive réutilisable pour isoler les workloads reticulate : Open-Canopy (déjà câblé côté <code>nemetonshiny</code> v0.94.5.9001) et, à terme, le bloc modèle FORDEAD (étape dédiée, à valider sur un vrai run).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.102.0" id="nemeton-01020-2026-06-30">nemeton 0.102.0 (2026-06-30)<a class="anchor" aria-label="anchor" href="#nemeton-01020-2026-06-30"></a></h2>
+<div class="section level4">
+<h4 id="added--regénération-l2--sensibilité-microclimatique-r6--années-e-obs-0-102-0">Added — reGénération L2 : sensibilité microclimatique R6 + années E-OBS<a class="anchor" aria-label="anchor" href="#added--reg%C3%A9n%C3%A9ration-l2--sensibilit%C3%A9-microclimatique-r6--ann%C3%A9es-e-obs-0-102-0"></a></h4>
+<p>Deuxième lot du chantier reGénération (spec 027 / ADR-014).</p>
+<ul><li>
+<code>indicateur_r6_sensibilite(units, micro_moyenne, micro_canicule, …)</code> — <strong>R6</strong> (famille R) : sensibilité du microsite à une année chaude = Δ stress entre un été <strong>canicule</strong> et un été <strong>moyen</strong> (canopée figée), combinant ΔT°max et ΔVPD standardisés. Normalisé 0–100 <strong>décroissant</strong> (peu sensible / résilient = 100). Sens « haut = bon » → pas d’inversion (contrairement à R5 dépérissement). Colonnes <code>R6</code>, <code>R6_dtmax</code>, <code>R6_dvpd</code>, <code>R6_couverture_pct</code> + flag <code>microclimate_model</code>. Famille R étendue à R1…R6 (<code>indicator-config.R</code>).</li>
+<li>
+<code>microclimate_detect_years(eobs, aoi, year_window, lidar_year)</code> + <code>R/microclimate_years.R</code> : <strong>détection automatique</strong> des années « moyenne » / « canicule » depuis la série estivale E-OBS (été le plus chaud vs médiane climatologique), avec <strong>départage</strong> vers l’année proche du LiDAR (limite le biais canopée figée) et <code>year_window</code>. Sélecteur pur testable ; l’extraction E-OBS raster/netcdf est différée (donnée requise) — passer un vecteur nommé <code>année -&gt; indice de chaleur estivale</code>, ou choisir les années manuellement (override utilisateur, spec 027 §6bis).</li>
+<li>33 tests (<code>test-indicators-microclimate.R</code> 23, <code>test-microclimate-years.R</code> 10).</li>
+</ul><p>À suivre : L3 (composite par essence <code>regeneration_index</code>), L4 (onglet <code>nemetonshiny</code>), L5 (doc).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.101.0" id="nemeton-01010-2026-06-30">nemeton 0.101.0 (2026-06-30)<a class="anchor" aria-label="anchor" href="#nemeton-01010-2026-06-30"></a></h2>
+<div class="section level4">
+<h4 id="added--regénération--indicateurs-microclimatiques-sous-couvert-spec-l1-0-101-0">Added — reGénération : indicateurs microclimatiques sous couvert (spec 027 L1)<a class="anchor" aria-label="anchor" href="#added--reg%C3%A9n%C3%A9ration--indicateurs-microclimatiques-sous-couvert-spec-l1-0-101-0"></a></h4>
+<p>Premier lot du chantier <strong>reGénération</strong> (aptitude microclimatique à la régénération forestière, spec 027 / ADR-014). Trois sous-indicateurs insérés dans les familles existantes — <strong>pas de 13e famille, radar 12 axes préservé</strong> :</p>
+<ul><li>
+<code>indicateur_a3_microclimat(units, micro, …)</code> — <strong>A3</strong> : T°max estivale (JJA) sous couvert ; normalisé 0–100 décroissant (frais = 100).</li>
+<li>
+<code>indicateur_a4_tamponnement(units, micro, …)</code> — <strong>A4</strong> : tamponnement de la canopée (écart T°max découvert − sous couvert) ; croissant (tamponné = 100).</li>
+<li>
+<code>indicateur_w4_vpd(units, micro, …)</code> — <strong>W4</strong> : VPD estival sous couvert ; décroissant (humide = 100).</li>
+</ul><p>Chaque indicateur consomme un jeu de rasters microclimat <code>micro</code> (liste nommée <code>tmax_understorey</code> / <code>tmax_open</code> / <code>vpd</code>), agrège par UGF (couverture-pondérée), écrit la colonne score 0–100 (code court, détecté par <code>create_family_index</code>) + la valeur brute + <code>couverture_pct</code>, et pose le flag <code>augmented = "microclimate_model"</code> (amende ADR-011, nouveau flag dans <code><a href="../reference/detect_ndp.html">detect_ndp()</a></code>). Familles A (→4) et W (→4) étendues dans <code>indicator-config.R</code> (labels/tooltips FR/EN). Sens « haut = bon » → pas d’inversion. 16 tests (<code>test-indicators-microclimate.R</code>).</p>
+<ul><li>
+<code><a href="../reference/microclimate_run.html">microclimate_run()</a></code> — <strong>scaffold</strong> : valide les dépendances lourdes (en <code>Suggests</code> : <code>microclimf</code>, <code>mcera5</code>, <code>ecmwfr</code>, <code>lidR</code>) et définit le contrat <code>micro</code> ; l’orchestration microclimf complète (forçage ERA5-Land + structure LiDAR HD, repli opencanopy) sera câblée dans un incrément ultérieur (données requises). En attendant, les indicateurs acceptent un <code>micro</code> précalculé.</li>
+<li>Registre de sources <code>FR.json</code> étendu : <code>era5_land</code>, <code>eobs</code>, <code>lidarhd_mnt/mnh/nuage</code>.</li>
+</ul><p>À suivre : L2 (<code>indicateur_r6_sensibilite</code>, années auto E-OBS), L3 (composite par essence), L4 (onglet <code>nemetonshiny</code>).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.100.1" id="nemeton-01001-2026-06-30">nemeton 0.100.1 (2026-06-30)<a class="anchor" aria-label="anchor" href="#nemeton-01001-2026-06-30"></a></h2>
+<div class="section level4">
+<h4 id="fixed--reconfort_cache_manifest-lit-le-dossier-iota²-final-0-100-1">Fixed — <code>reconfort_cache_manifest()</code> lit le dossier IOTA² <code>final/</code>
+<a class="anchor" aria-label="anchor" href="#fixed--reconfort_cache_manifest-lit-le-dossier-iota%C2%B2-final-0-100-1"></a></h4>
+<p>La v0.100.0 ne cherchait les couches que dans <code>zone_&lt;id&gt;/reconfort_*_&lt;run&gt;.tif</code>, or <strong>les rasters d’affichage persistent ailleurs</strong> : dans le dossier de sortie IOTA² <code>output_zone_&lt;id&gt;/results/iota2_results_classif_labels-z&lt;id&gt;-S2_*/final/</code> (<code>Final_continuous_score_masked*.tif</code>, <code>Final_Classif_masked_*.tif</code>, <code>Final_Proba_map_masked*.tif</code>). Pour les runs déjà en cache (sans copies run-scopées score/proba), la fonction ne retournait donc que la classification.</p>
+<p><code><a href="../reference/reconfort_cache_manifest.html">reconfort_cache_manifest()</a></code> découvre désormais <strong>en priorité le dossier <code>final/</code></strong> (les 3 couches, repli sur <code>Classif_Seed_0</code>/<code>ProbabilityMap_seed_0</code>), avec repli sur les copies run-scopées <code>zone_&lt;id&gt;/</code> quand <code>final/</code> est absent (workdir nettoyé) ou pour un <code>run_id</code> ancien. Validé sur le cache réel zone 5 (3 couches retournées). 9 tests ajoutés.</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.100.0" id="nemeton-01000-2026-06-30">nemeton 0.100.0 (2026-06-30)<a class="anchor" aria-label="anchor" href="#nemeton-01000-2026-06-30"></a></h2>
+<div class="section level4">
+<h4 id="added--découverte-cache-des-couches-reconfort-reconfort_cache_manifest-0-100-0">Added — Découverte cache des couches RECONFORT (<code>reconfort_cache_manifest()</code>)<a class="anchor" aria-label="anchor" href="#added--d%C3%A9couverte-cache-des-couches-reconfort-reconfort_cache_manifest-0-100-0"></a></h4>
+<p>Pendant cache de [<code><a href="../reference/reconfort_layer_manifest.html">reconfort_layer_manifest()</a></code>] : reconstruit le manifeste des couches d’un run RECONFORT depuis les rasters persistés sous le cache projet, <strong>sans</strong> le <code>result</code> en mémoire. Permet à l’app de <strong>réafficher les rasters RECONFORT après un rechargement de projet</strong> (parité <code><a href="../reference/read_fordead_layer.html">read_fordead_layer()</a></code> / <code><a href="../reference/read_fordead_dieback_mask.html">read_fordead_dieback_mask()</a></code>, qui lisent leurs couches depuis le cache).</p>
+<ul><li>
+<code>reconfort_cache_manifest(cache_dir, zone_id, run_id = NULL, include_range = FALSE)</code>. Résout le run (<code>run_id</code> fourni, sinon le plus récent du cache zone), découvre les rasters d’affichage run-scopés et renvoie un <code>data.frame</code> <strong>byte-identique</strong> à <code>reconfort_layer_manifest(result)</code> (mêmes colonnes/types/indications de rendu) → l’app réutilise telle quelle sa machinerie (<code>read_reconfort_layer</code>, cache rasters, toggles, opacité). Les stacks CRswir/CRre (série temporelle, diagnostic pixel) sont exclus ; les alertes viennent de la table <code>alert</code>. Best-effort : cache/zone/run absent → <code>data.frame</code> 0 ligne.</li>
+<li>
+<strong>Persistance étendue</strong> : la phase <code>persist</code> de <code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> copie désormais aussi le <strong>score continu</strong> et la <strong>probabilité</strong> dans le cache zone (<code>reconfort_score_&lt;run_id&gt;.tif</code>, <code>reconfort_proba_&lt;run_id&gt;.tif</code>), run-scopés à côté de <code>reconfort_mask_&lt;run_id&gt;.tif</code> — sans ça, ces couches (qui ne vivaient que dans le workdir transitoire) ne réapparaissaient pas après rechargement. Refactor : constructeur de lignes partagé <code>.reconfort_build_manifest()</code> (source unique du schéma).</li>
+<li>18 tests (<code>test-reconfort-cache-manifest.R</code>).</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.99.1" id="nemeton-0991-2026-06-29">nemeton 0.99.1 (2026-06-29)<a class="anchor" aria-label="anchor" href="#nemeton-0991-2026-06-29"></a></h2>
+<div class="section level4">
+<h4 id="fixed--sens-de-r5-dans-la-famille-r--le-radar-orientation-inversée-0-99-1">Fixed — sens de R5 dans la famille R / le radar (orientation inversée)<a class="anchor" aria-label="anchor" href="#fixed--sens-de-r5-dans-la-famille-r--le-radar-orientation-invers%C3%A9e-0-99-1"></a></h4>
+<p><code><a href="../reference/normalize_indicator.html">normalize_indicator()</a></code> laissait passer <strong>R5 dépérissement</strong> tel quel, alors que sa valeur brute est orientée « <strong>haut = plus de dépérissement</strong> » (mauvais), à l’inverse de R1-R4 (« haut = faible risque », bon). Folder R5 brut dans la moyenne de la famille R (<code>create_family_index</code>) tirait donc le score <strong>dans le mauvais sens</strong> : une UGF très dépérie <em>remontait</em> <code>famille_risque</code> et l’indice général.</p>
+<p><code><a href="../reference/normalize_indicator.html">normalize_indicator()</a></code> <strong>inverse désormais R5</strong> (<code>100 - score</code>) pour les colonnes <code>indicateur_r5_deperissement</code> / <code>R5</code>, de sorte que sa contribution au radar et à <code>famille_risque</code> reste « haut = bon » comme R1-R4 (cf. le cas s1/s2 distances déjà inversé au même endroit). La fonction <code><a href="../reference/indicateur_r5_deperissement.html">indicateur_r5_deperissement()</a></code> et ses appelants sont <strong>inchangés</strong> (le score brut « haut = dépérissement » reste l’API publique) ; seule la valeur normalisée du radar est retournée. Tooltip R5 reformulé en conséquence (« Score élevé = faible dépérissement ») et corrigé (R5 couvre FORDEAD <strong>et</strong> RECONFORT depuis L4, plus seulement les résineux).</p>
+<p>Bug <strong>latent</strong> : R5 n’est pas encore agrégé dans le radar côté <code>nemetonshiny</code> (famille R = R1-R4 ; R5 « future »). Le correctif garantit la bonne orientation le jour du branchement. 3 tests ajoutés (<code>test-normalization.R</code>).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.99.0" id="nemeton-0990-2026-06-29">nemeton 0.99.0 (2026-06-29)<a class="anchor" aria-label="anchor" href="#nemeton-0990-2026-06-29"></a></h2>
+<div class="section level4">
+<h4 id="added--filtre-des-alertes-au-polygone-ugf-filter_alerts_to_zone-l7-0-99-0">Added — Filtre des alertes au polygone UGF (<code>filter_alerts_to_zone()</code>, L7)<a class="anchor" aria-label="anchor" href="#added--filtre-des-alertes-au-polygone-ugf-filter_alerts_to_zone-l7-0-99-0"></a></h4>
+<p>Contrepartie vectorielle du masquage raster au read-time (<code><a href="../reference/read_reconfort_layer.html">read_reconfort_layer()</a></code> / <code><a href="../reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> / <code><a href="../reference/read_fordead_dieback_mask.html">read_fordead_dieback_mask()</a></code>, spec 016) : ne garde que les <strong>centroïdes d’alertes situés dans le polygone des UGFs</strong>, pour qu’un visualiseur n’affiche plus d’alertes hors du périmètre géré.</p>
+<p>Motivation (révision de la décision L7 §D3) : un run réel a montré que le vecteur d’alertes RECONFORT débordait largement des UGFs — les centroïdes sont extraits du <code>Final_Classif_masked_&lt;year&gt;.tif</code>, masqué par OSO <strong>feuillus</strong> (occupation du sol) et <strong>pas</strong> par l’UGF, donc les clusters couvrent tous les feuillus de la bbox + 3 km. Les rasters étaient déjà clippés (v0.98.0), mais pas le vecteur.</p>
+<ul><li>
+<code>filter_alerts_to_zone(alerts, con = NULL, zone_id = NULL, apply_zone_mask = TRUE, mask_polygon = NULL)</code> — <strong>helper unique partagé par les 3 pipelines</strong> (RECONFORT, FORDEAD, FAST) : le filtre <code>sf</code> POINT est identique, donc une seule fonction donne la vraie parité. Réutilise <code><a href="../reference/dot-get_zone_aoi.html">.get_zone_aoi()</a></code> ; nouvel interne <code>.filter_alerts_to_zone()</code> (miroir de <code><a href="../reference/dot-apply_zone_mask.html">.apply_zone_mask()</a></code>).</li>
+<li>Filtre au <strong>read/display</strong>, la table <code>alert</code> n’est pas modifiée (principe spec 016 « masque au read, pas au write ») ; provenance <code>zone_id</code> conservée.</li>
+<li>Reprojette le polygone au CRS des alertes ; <code>cli_warn</code> + passthrough si rien n’est résoluble ; opt-out <code>apply_zone_mask = FALSE</code>. 8 tests (<code>test-filter-alerts-to-zone.R</code>).</li>
+</ul><p>Côté <code>nemetonshiny</code> (v0.93.x+) : passer la couche d’alertes par <code><a href="../reference/filter_alerts_to_zone.html">filter_alerts_to_zone()</a></code> avant le rendu (RECONFORT <strong>et</strong> FORDEAD).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.98.0" id="nemeton-0980-2026-06-28">nemeton 0.98.0 (2026-06-28)<a class="anchor" aria-label="anchor" href="#nemeton-0980-2026-06-28"></a></h2>
+<div class="section level4">
+<h4 id="added--reconfort--reader-des-couches-masqué-à-lugf-read_reconfort_layer-l7-0-98-0">Added — RECONFORT : reader des couches masqué à l’UGF (<code>read_reconfort_layer()</code>, L7)<a class="anchor" aria-label="anchor" href="#added--reconfort--reader-des-couches-masqu%C3%A9-%C3%A0-lugf-read_reconfort_layer-l7-0-98-0"></a></h4>
+<p>Nouvelle fonction exportée qui lit une couche raster d’un run RECONFORT et la <strong>masque au polygone des UGFs par défaut</strong> (<code>apply_zone_mask = TRUE</code>), pixels hors périmètre géré = <code>NA</code>. C’est l’analogue de <code><a href="../reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> et <code><a href="../reference/read_fordead_dieback_mask.html">read_fordead_dieback_mask()</a></code> (spec 016) : RECONFORT atteint enfin la <strong>parité</strong> des trois pipelines de suivi, et le masque spatial vit dans le cœur <code>nemeton</code> plutôt que dans la présentation (spec 021 L7, ADR-013 amendement A6).</p>
+<ul><li>
+<code>read_reconfort_layer(layer, con = NULL, zone_id = NULL, apply_zone_mask = TRUE, mask_polygon = NULL)</code>. <code>layer</code> est un chemin de raster <strong>ou</strong> une ligne raster du manifeste <code><a href="../reference/reconfort_layer_manifest.html">reconfort_layer_manifest()</a></code> (une ligne <code>type == "vector"</code> — les centroïdes d’alertes — est rejetée : le vecteur n’est pas masqué ici).</li>
+<li>Masque appliqué au <strong>read</strong> (principe spec 016 « masque au read, pas au write ») : les <code>.tif</code> IOTA² ne sont pas réécrits. Réutilise les helpers spec 016 <code><a href="../reference/dot-apply_zone_mask.html">.apply_zone_mask()</a></code> / <code><a href="../reference/dot-get_zone_aoi.html">.get_zone_aoi()</a></code>.</li>
+<li>Polygone résolu depuis <code>mask_polygon</code> explicite, sinon <code>con</code> + <code>zone_id</code> ; si rien n’est résoluble alors que le masque est demandé : <code>cli_warn</code> + raster brut (best-effort, parité spec 016). Opt-out <code>apply_zone_mask = FALSE</code>.</li>
+<li>11 tests (<code>test-reconfort-reader.R</code>).</li>
+</ul><p>Côté <code>nemetonshiny</code> (v0.93.x+) : consommer ce reader et <strong>retirer le <code><a href="https://rspatial.github.io/terra/reference/mask.html" class="external-link">terra::mask</a></code> local</strong> introduit en v0.92.3 (le clip UGF revient au cœur).</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.97.0" id="nemeton-0970-2026-06-28">nemeton 0.97.0 (2026-06-28)<a class="anchor" aria-label="anchor" href="#nemeton-0970-2026-06-28"></a></h2>
+<div class="section level4">
+<h4 id="added--reconfort--manifeste-des-couches-dun-run-reconfort_layer_manifest-0-97-0">Added — RECONFORT : manifeste des couches d’un run (<code>reconfort_layer_manifest()</code>)<a class="anchor" aria-label="anchor" href="#added--reconfort--manifeste-des-couches-dun-run-reconfort_layer_manifest-0-97-0"></a></h4>
+<p>Nouvelle fonction exportée côté cœur qui traduit le résultat de <code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> en un <code>data.frame</code> plat décrivant les <strong>couches affichables</strong> d’un run RECONFORT — le <strong>score</strong> continu de dépérissement, la <strong>classification</strong> par pixel, la carte de <strong>probabilité</strong> et les <strong>alertes</strong> (centroïdes) — avec les indications de rendu dont un visualiseur a besoin (<code>palette</code>, <code>reverse</code>, domaine <code>vmin</code>/<code>vmax</code>, <code>categorical</code>, <code>default_visible</code>, <code>default_opacity</code>, <code>n_features</code>).</p>
+<p>La sémantique d’une sortie RECONFORT (ce qu’une couche <em>est</em>, comment ses valeurs sont normalisées, le sens de la palette) est une connaissance métier : elle reste dans le cœur <code>nemeton</code> (ADR-009, règles strictes §1-3). Une couche de présentation (<code>nemetonshiny</code>) consomme le manifeste tel quel pour générer ses cases à cocher de calques et son curseur d’opacité, sans coder en dur la moindre sémantique RECONFORT.</p>
+<p>Seules les couches <strong>disponibles</strong> sont listées (un raster au chemin <code>NA</code> — variantes masquées absentes tant que le masquage n’a pas tourné — est ignoré ; la ligne d’alertes n’apparaît que si le run a produit au moins une alerte). Les domaines de valeurs sont <em>nominaux</em> par défaut (score <code>1..100</code>, probabilité <code>0..1000</code>) ; <code>include_range = TRUE</code> les remplace par le min/max réel lu via  (best-effort). 29 tests unitaires (<code>test-reconfort-manifest.R</code>).</p>
+<p>Débloque le câblage de l’affichage des couches RECONFORT (toggles + opacité) côté <code>nemetonshiny</code> (brief fourni).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.96.1" id="nemeton-0961-2026-06-28">nemeton 0.96.1 (2026-06-28)<a class="anchor" aria-label="anchor" href="#nemeton-0961-2026-06-28"></a></h2>
 <div class="section level4">

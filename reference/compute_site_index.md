@@ -8,7 +8,7 @@ classical definition of the site index in French forestry.
 ## Usage
 
 ``` r
-compute_site_index(H_dom, age, species, reference_age = 50)
+compute_site_index(H_dom, age, species, reference_age = 50, min_stand_height = 1.3)
 ```
 
 ## Arguments
@@ -31,12 +31,21 @@ compute_site_index(H_dom, age, species, reference_age = 50)
   Numeric scalar. Reference age at which the site index is returned
   (default 50).
 
+- min_stand_height:
+
+  Numeric scalar (m). Dominant height below which the site index is not
+  estimable and `NA` is returned (default `1.3`, breast height). A
+  clear-cut / bare CHM (\\H\_{dom} = 0\\) yields `NA` — the station's
+  fertility potential is simply unknown from a felled stand — rather
+  than being clamped to the worst site class.
+
 ## Value
 
 A numeric vector of the same length as the recycled inputs, giving the
 site index (dominant height at `reference_age`) in metres. `NA` is
-returned when `H_dom` or `age` is missing, when `age` is outside the
-tabulated range, or when the species cannot be resolved.
+returned when `H_dom` or `age` is missing, when `H_dom` is below
+`min_stand_height`, when `age` is outside the tabulated range, or when
+the species cannot be resolved.
 
 ## Details
 

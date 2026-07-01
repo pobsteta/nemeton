@@ -1,5 +1,551 @@
 # Changelog
 
+## nemeton 0.110.0 (2026-07-01)
+
+#### ⚠️ Relicence — MIT → **GPL-3**
+
+À partir de cette version, `nemeton` est distribué sous **GPL-3**
+(auparavant MIT). Motif : intégration en **dépendance directe**
+(`Imports:`) du package
+[`biodivMapR`](https://github.com/jbferet/biodivMapR) (GPL-3) pour les
+nouveaux indicateurs de diversité spectrale. `nemeton` devient donc une
+œuvre dérivée copyleft ; par effet de dépendance, les packages qui
+l’importent (`nemetonshiny`, `tree_sat_nemeton`, `maestro_nemeton`) sont
+GPL-3 à la distribution (bascule à faire dans leurs dépôts). Les
+**données** produites restent CC-BY 4.0. Décision assumée du
+propriétaire (ADR-006 à amender).
+
+#### Added — Diversité spectrale : indicateurs **B4** & **L3** (biodivMapR, spec 028)
+
+Deux nouveaux indicateurs télédétectés, calculables dès le **NDP 0**
+(Sentinel-2), via l’hypothèse de variation spectrale (PCA → spectral
+species → diversité) :
+
+- **B4 — Diversité spectrale** (famille B) : α-diversité, **Shannon**
+  des spectral species → proxy de diversité compositionnelle.
+- **L3 — Hétérogénéité spectrale** (famille L) : β-diversité, turnover
+  **Bray-Curtis** de la mosaïque paysagère (complémentaire de L2,
+  fragmentation géométrique).
+
+Portés par la primitive exportée
+[`compute_spectral_diversity()`](https://pobsteta.github.io/nemeton/reference/compute_spectral_diversity.md)
+(wrapper
+[`biodivMapR::biodivMapR_full()`](https://rdrr.io/pkg/biodivMapR/man/biodivMapR_full.html),
+agrégation par UGF via `exactextractr`). Fonctions
+[`indicateur_b4_div_spectrale()`](https://pobsteta.github.io/nemeton/reference/indicateur_b4_div_spectrale.md)
+/
+[`indicateur_l3_het_spectrale()`](https://pobsteta.github.io/nemeton/reference/indicateur_l3_het_spectrale.md)
+strictement rétrocompatibles (colonne `NA` si ni `spectral` ni
+`reflectance`). Enregistrés dans le registre (labels/tooltips FR/EN avec
+caveat proxy), normalisation *haut = mieux* (B4 `[0, log 50]`, L3
+`[0, 1]` — **bornes provisoires**, recalibrage empirique après premier
+run réel, spec 028 D3). B4/L3 comptent immédiatement dans l’indice
+général (D4).
+
+**Statut proxy** : la corrélation diversité spectrale ↔︎ diversité
+taxonomique est un proxy contexte-dépendant, à **valider terrain**
+(démarche spec 008). Une futaie régulière monospécifique légitime peut
+afficher un B4 bas. Tests : `test-spectral-diversity.R` (le pipeline
+biodivMapR réel = smoke manuel sur scène Sentinel-2).
+
+## nemeton 0.109.0 (2026-07-01)
+
+#### Changed — Dette H_dom faible/nul : peuplement jeune, garde-fou CHM, P2 station (spec 005 §3.5)
+
+Trois angles morts laissés par le correctif « couvert nul » (v0.107.0),
+tous sur la sémantique d’un H_dom faible ou nul :
+
+- **\#2 — peuplement jeune `[1,3 ; 6)` m.** Nouveau paramètre
+  `min_merchantable_height` (défaut **6 m**, plancher de calibration de
+  l’allométrie) sur
+  [`estimate_synthetic_inventory()`](https://pobsteta.github.io/nemeton/reference/estimate_synthetic_inventory.md)
+  /
+  [`ensure_inventory_fields()`](https://pobsteta.github.io/nemeton/reference/ensure_inventory_fields.md)
+  : en deçà, `dbh = 0` et `density = 0` (pas de stock **marchand**) →
+  P1/P3/E1 = 0 au lieu de `NA`. Le test porte sur la **hauteur**, pas
+  sur `is.na(D_g)` : un peuplement grand à espèce manquante reste `NA`
+  (réellement inconnu), jamais forcé à 0. Rétro-compat v0.107.0 :
+  `min_merchantable_height = min_stand_height`.
+- **\#3 — P2 station sur couvert nul.**
+  [`compute_site_index()`](https://pobsteta.github.io/nemeton/reference/compute_site_index.md)
+  gagne `min_stand_height = 1.3` : un CHM nu (H_dom = 0) renvoie
+  **`NA`** (indice de station non estimable depuis un peuplement abattu)
+  au lieu d’un clamp parasite vers la pire classe. Cohérent avec P1 = 0
+  (aucun volume marchand *actuel*) mais P2 = `NA` (fertilité potentielle
+  *inconnue*).
+- **\#1 — garde-fou CHM dégénéré.**
+  [`estimate_synthetic_inventory()`](https://pobsteta.github.io/nemeton/reference/estimate_synthetic_inventory.md)
+  émet un
+  [`cli::cli_warn`](https://cli.r-lib.org/reference/cli_abort.html) et
+  pose `attr(x, "chm_suspect") = TRUE` (propagé par
+  [`ensure_inventory_fields()`](https://pobsteta.github.io/nemeton/reference/ensure_inventory_fields.md))
+  quand ≥ `suspect_frac` (défaut 0,95) des unités sont sous le plancher
+  marchand **et** que le max global du CHM l’est aussi — un CHM cassé
+  (prédiction ratée tout-à-0) ne passe plus pour une coupe rase
+  silencieuse.
+
+Non-régression : peuplement établi inchangé, `H_dom = NA` reste `NA`.
+Tests : `test-synthetic-inventory-debt.R` (+ mises à jour clear-cut /
+site-index).
+
+## nemeton 0.108.0 (2026-07-01)
+
+#### Added — `extract_indicator_value()` : convention de nommage des indicateurs, source unique
+
+Extrait la valeur d’un indicateur depuis son résultat (`sf`/`data.frame`
+→ colonne code court `P1`/`R1`/…, ou vecteur renvoyé tel quel).
+Auparavant, cette convention était **dupliquée** entre
+`nemeton::compute_indicator()` (dérivation code court) et la boucle de
+calcul de `nemetonshiny` (un `col_map` de 17 entrées tenu à la main) —
+deux implémentations vouées à **diverger**.
+
+- `compute_indicator()` délègue désormais à
+  [`extract_indicator_value()`](https://pobsteta.github.io/nemeton/reference/extract_indicator_value.md).
+- `nemetonshiny` appelle la **même** fonction (à partir de
+  `nemeton >= 0.108.0`), supprimant son `col_map` : une seule source de
+  vérité, plus de dérive possible.
+- Ordre de résolution : code court dérivé du nom → nom NMT → motif
+  `"<Lettre><chiffre>"` (préférant une colonne absente de `exclude`,
+  pour que la valeur fraîchement calculée l’emporte sur un attribut
+  préexistant).
+
+Tests : `test-indicators-core-dispatch.R`.
+
+## nemeton 0.107.1 (2026-07-01)
+
+#### Fixed — `compute_indicator()` / `nemeton_compute()` : dispatch robuste (args + colonne de sortie)
+
+Le dispatcher interne appelait chaque fonction indicateur avec
+`do.call(func, list(units, layers, ...))` : les indicateurs qui ne
+déclarent **ni `layers` ni `...`** (`indicateur_p1_volume`, `p2`, `p3`,
+`e1`, `e2`) échouaient sur `unused argument (layers = …)`, et
+l’extraction de la colonne de sortie ne connaissait que `R1-R4` (les
+P/C/E renvoyant un `sf` cassaient sur « column not found »).
+[`nemeton_compute()`](https://pobsteta.github.io/nemeton/reference/nemeton_compute.md)
+était donc inutilisable pour ces indicateurs.
+
+- Les arguments (`units`, `layers`, `...` p.ex. `chm`) sont désormais
+  **filtrés sur les [`formals()`](https://rdrr.io/r/base/formals.html)**
+  de la fonction cible ; une fonction avec `...` reçoit tout, une
+  fonction sans reçoit seulement ce qu’elle déclare.
+- L’extraction de la valeur depuis un résultat `sf`/`data.frame` est
+  **généralisée** : code court dérivé du nom (`indicateur_p1_volume` →
+  `P1`), puis nom NMT, puis toute colonne `"<Lettre><chiffre>"` — plus
+  de table `col_map` R1-R4 à maintenir.
+
+`nemeton_compute(units, layers, indicators = "indicateur_p1_volume", chm = chm)`
+renvoie maintenant un P1 exploitable. Tests :
+`test-indicators-core-dispatch.R`. (L’app `nemetonshiny` n’utilise pas
+ce dispatcher — elle a sa propre boucle par
+[`formals()`](https://rdrr.io/r/base/formals.html) — donc aucun impact
+côté app ; c’est un correctif de l’API cœur exportée.)
+
+## nemeton 0.107.0 (2026-07-01)
+
+#### Fixed — coupe rase : inventaire synthétique CHM « couvert nul » → volume 0, plus NA
+
+Sur une parcelle **rasée** (coupe rase), le CHM Open-Canopy est correct
+mais à hauteur ≈ 0.
+[`estimate_synthetic_inventory()`](https://pobsteta.github.io/nemeton/reference/estimate_synthetic_inventory.md)
+renvoyait alors `dbh`/`density` = **NA** (la garde « H_dom \< 6 m ⇒
+allométrie non calibrée » confondait *couvert nul* et *peuplement trop
+jeune*), d’où **P1, P3, E1 tous NA**, E2 dégénéré à 0, et **famille
+Énergie absente** — au lieu du résultat correct : volume ≈ 0, E1 ≈ 0,
+famille Énergie **présente à 0**.
+
+- Nouveau paramètre `min_stand_height` (défaut **1,3 m**, hauteur de
+  référence du dbh) sur
+  [`estimate_synthetic_inventory()`](https://pobsteta.github.io/nemeton/reference/estimate_synthetic_inventory.md)
+  et
+  [`ensure_inventory_fields()`](https://pobsteta.github.io/nemeton/reference/ensure_inventory_fields.md)
+  : une unité dont H_dom est **observé** (non-NA) mais **sous** ce seuil
+  est traitée comme **sans peuplement** → `dbh = 0`, `density = 0` (au
+  lieu de NA). P1 = 0, E1 = 0, P3 défini bas. Un `H_dom` `NA` (pas de
+  couverture CHM) **reste NA**.
+- Trois régimes distingués : `NA` (inconnu) / `< 1,3 m` (pas de
+  peuplement → 0) / `[1,3 ; 6) m` (jeune, allométrie non calibrée → NA,
+  inchangé) / `≥ 6 m` (inchangé). Correctif **côté cœur** : vaut quel
+  que soit le wiring CHM de l’app.
+- Amendement spec 005 §3.4. Tests :
+  `test-synthetic-inventory-clearcut.R` (couvert nul → 0, non-régression
+  peuplement établi, NA hors couverture).
+
+## nemeton 0.106.0 (2026-07-01)
+
+#### Added — `prepare_pixel_dieback_series()` : dérivés pixel CRswir/CRre pour la planche de suivi
+
+Prépare, côté cœur, tout le dérivé consommé par la planche plotly «
+pixel » (suivi pluriannuel du dépérissement, CRswir = eau / CRre =
+chlorophylle) de `nemetonshiny` — pour que le rendu app reste sans
+logique métier (règle 3). Transformation **pure et testée** de la sortie
+de
+[`read_reconfort_pixel_series()`](https://pobsteta.github.io/nemeton/reference/read_reconfort_pixel_series.md)
+:
+
+- grille régulière + gap-fill linéaire
+  ([`stats::approx`](https://rdrr.io/r/stats/approxfun.html), équivalent
+  iota2) ;
+- lissage **léger** Savitzky-Golay
+  ([`signal::sgolayfilt`](https://rdrr.io/pkg/signal/man/sgolayfilt.html),
+  `p=2`, `n=5`) — le lissage fort n’est volontairement pas offert (il
+  raboterait les extrema estivaux, qui *sont* le signal) ;
+- **extrema estivaux annuels** mesurés sur les observations réelles
+  (creux CRswir `which.min`, pic CRre `which.max`) ;
+- **espace d’état** estival apparié + **centroïdes annuels** ;
+- **lacunes** interpolées longues (`> gap_flag_days`) signalées.
+
+Renvoie une liste de `data.frame` (`grid_swir/re`, `obs_swir/re`,
+`trough_swir`, `peak_re`, `state`, `centroids`, `gaps`) et reporte les
+attributs RECONFORT (`species`, `v_model`, `date_from/to`,
+`dans_zone_validite`). Nouvelle dépendance `signal`. Partie A du brief
+planche pixel ; la Partie B (rendu plotly 4 panneaux) vit dans
+`nemetonshiny`.
+
+## nemeton 0.105.0 (2026-07-01)
+
+#### Fixed — cache FAST : clé sur la couverture S2 réelle, plus sur la fenêtre demandée
+
+Le COG d’alerte FAST
+([`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md))
+était content-addressé (spec 017 D6) en incluant `date_from`/`date_to`
+**demandés** dans le hash ET le nom de fichier. Avec une fenêtre
+glissante ancrée sur aujourd’hui (`date_to = today`), ces bornes
+bougeaient chaque jour → nom + hash différents → **recalcul complet
+quotidien** du diagnostic, alors qu’aucune scène Sentinel-2 nouvelle
+n’avait atterri (revisite S2 ~5 j).
+
+- La clé de cache (hash D6 + nom) est désormais la **couverture S2
+  effective** : `min`/`max` des dates d’acquisition des scènes retenues
+  (`scenes_df$obs_date`), et non la fenêtre demandée. Deux fenêtres
+  couvrant les mêmes scènes retombent sur le **même** COG (cache hit) ;
+  la liste des scene-ids reste dans le hash, si bien que deux ensembles
+  de scènes distincts ne s’aliasent jamais à couverture min/max
+  identique.
+- Mode `rolling` : la fenêtre glissante est ancrée sur la **dernière
+  acquisition réelle** (`cov_to`) plutôt que sur `date_to` demandé —
+  cohérent avec la clé et plus juste (« fenêtre jusqu’à la dernière
+  observation »).
+- Effet de bord unique : le changement de hash **invalide une fois** les
+  COGs FAST en cache ; ils se régénèrent au prochain calcul.
+
+Nouveau test `test-fast-alert-raster.R` : deux fenêtres demandées
+différentes couvrant la même scène ⇒ un seul COG, second appel servi
+depuis le cache.
+
+## nemeton 0.104.0 (2026-07-01)
+
+#### Added — garde-fou d’année RECONFORT : `reconfort_latest_complete_year()` / `reconfort_year_bounds()`
+
+RECONFORT ne compare pas deux dates : il classe la trajectoire d’indices
+**~2 ans** d’un pixel avec un modèle pré-entraîné, sur une fenêtre
+d’analyse **liée au modèle** qui se termine à `s2_year<edate>` (`10-29`
+pour les modèles 2 ans `v3`/`v3_chestnut`/`v3_pine`, `05-31` pour
+`v3_early_may`). Lancer un run sur une `s2_year` dont la fenêtre n’est
+pas encore close produit une dernière saison tronquée et une
+classification dégradée.
+
+- `RECONFORT_MODELS` porte désormais un champ **`edate`** (`"MM-DD"`,
+  fin de la fenêtre d’analyse du modèle), source unique alignée sur le
+  pipeline IOTA2.
+- **`reconfort_latest_complete_year(v_model, today, lag_days)`** :
+  dernière `s2_year` dont la fenêtre est déjà close à `today` (année en
+  cours si sa fenêtre est passée, sinon année précédente). `lag_days`
+  ajoute un tampon pour la latence d’ingestion Theia.
+- **`reconfort_year_bounds(v_model, today, lag_days)`** :
+  `list(min = 2016, max, default)` prêt à câbler un year-picker (défaut
+  et max = dernière année complète, jamais l’année en cours incomplète).
+
+Ces fonctions sont destinées au picker `s2_year` de `nemetonshiny`
+(défaut/max bornés côté cœur, garde-fou serveur au lancement).
+
+## nemeton 0.103.0 (2026-06-30)
+
+#### Added — `run_reticulate_isolated()` : tâche Python dans un sous-processus à env épinglé
+
+reticulate ne peut lier qu’**un seul Python par session R**. Quand
+plusieurs charges Python ont besoin d’**environnements différents** dans
+la même session (Open-Canopy conda, FORDEAD virtualenv, Theia…), elles
+ne peuvent pas toutes passer par reticulate in-process — la première à
+se lier gagne, les autres échouent (cf. incident CHM Open-Canopy :
+reticulate happé par un Python uv éphémère → P1/P2/P3/E1 en échec).
+
+`run_reticulate_isolated(fun, args, python | virtualenv | condaenv, show)`
+exécute `fun` dans un **sous-processus `callr`** dont reticulate est
+épinglé sur l’interpréteur demandé. Le sous-processus part d’un
+reticulate **vierge** → il se lie toujours au bon env, **quel que soit**
+le binding de la session parente. `R_ENVIRON_USER = ""` empêche un
+`~/.Renviron` d’écraser le pin. C’est l’alternative déterministe à un
+`RETICULATE_PYTHON` global (qui ne peut servir qu’un seul env). `fun`
+doit être auto-suffisant (callr le sérialise : qualifier `pkg::fn`,
+échanger les rasters par **chemins** de fichiers). Repli in-process si
+`callr` absent ou aucun Python résoluble. `callr` ajouté aux `Suggests`.
+8 tests (`test-reticulate-isolated.R`).
+
+Primitive réutilisable pour isoler les workloads reticulate :
+Open-Canopy (déjà câblé côté `nemetonshiny` v0.94.5.9001) et, à terme,
+le bloc modèle FORDEAD (étape dédiée, à valider sur un vrai run).
+
+## nemeton 0.102.0 (2026-06-30)
+
+#### Added — reGénération L2 : sensibilité microclimatique R6 + années E-OBS
+
+Deuxième lot du chantier reGénération (spec 027 / ADR-014).
+
+- `indicateur_r6_sensibilite(units, micro_moyenne, micro_canicule, …)` —
+  **R6** (famille R) : sensibilité du microsite à une année chaude = Δ
+  stress entre un été **canicule** et un été **moyen** (canopée figée),
+  combinant ΔT°max et ΔVPD standardisés. Normalisé 0–100 **décroissant**
+  (peu sensible / résilient = 100). Sens « haut = bon » → pas
+  d’inversion (contrairement à R5 dépérissement). Colonnes `R6`,
+  `R6_dtmax`, `R6_dvpd`, `R6_couverture_pct` + flag
+  `microclimate_model`. Famille R étendue à R1…R6
+  (`indicator-config.R`).
+- `microclimate_detect_years(eobs, aoi, year_window, lidar_year)` +
+  `R/microclimate_years.R` : **détection automatique** des années «
+  moyenne » / « canicule » depuis la série estivale E-OBS (été le plus
+  chaud vs médiane climatologique), avec **départage** vers l’année
+  proche du LiDAR (limite le biais canopée figée) et `year_window`.
+  Sélecteur pur testable ; l’extraction E-OBS raster/netcdf est différée
+  (donnée requise) — passer un vecteur nommé
+  `année -> indice de chaleur estivale`, ou choisir les années
+  manuellement (override utilisateur, spec 027 §6bis).
+- 33 tests (`test-indicators-microclimate.R` 23,
+  `test-microclimate-years.R` 10).
+
+À suivre : L3 (composite par essence `regeneration_index`), L4 (onglet
+`nemetonshiny`), L5 (doc).
+
+## nemeton 0.101.0 (2026-06-30)
+
+#### Added — reGénération : indicateurs microclimatiques sous couvert (spec 027 L1)
+
+Premier lot du chantier **reGénération** (aptitude microclimatique à la
+régénération forestière, spec 027 / ADR-014). Trois sous-indicateurs
+insérés dans les familles existantes — **pas de 13e famille, radar 12
+axes préservé** :
+
+- `indicateur_a3_microclimat(units, micro, …)` — **A3** : T°max estivale
+  (JJA) sous couvert ; normalisé 0–100 décroissant (frais = 100).
+- `indicateur_a4_tamponnement(units, micro, …)` — **A4** : tamponnement
+  de la canopée (écart T°max découvert − sous couvert) ; croissant
+  (tamponné = 100).
+- `indicateur_w4_vpd(units, micro, …)` — **W4** : VPD estival sous
+  couvert ; décroissant (humide = 100).
+
+Chaque indicateur consomme un jeu de rasters microclimat `micro` (liste
+nommée `tmax_understorey` / `tmax_open` / `vpd`), agrège par UGF
+(couverture-pondérée), écrit la colonne score 0–100 (code court, détecté
+par `create_family_index`) + la valeur brute + `couverture_pct`, et pose
+le flag `augmented = "microclimate_model"` (amende ADR-011, nouveau flag
+dans
+[`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)).
+Familles A (→4) et W (→4) étendues dans `indicator-config.R`
+(labels/tooltips FR/EN). Sens « haut = bon » → pas d’inversion. 16 tests
+(`test-indicators-microclimate.R`).
+
+- [`microclimate_run()`](https://pobsteta.github.io/nemeton/reference/microclimate_run.md)
+  — **scaffold** : valide les dépendances lourdes (en `Suggests` :
+  `microclimf`, `mcera5`, `ecmwfr`, `lidR`) et définit le contrat
+  `micro` ; l’orchestration microclimf complète (forçage ERA5-Land +
+  structure LiDAR HD, repli opencanopy) sera câblée dans un incrément
+  ultérieur (données requises). En attendant, les indicateurs acceptent
+  un `micro` précalculé.
+- Registre de sources `FR.json` étendu : `era5_land`, `eobs`,
+  `lidarhd_mnt/mnh/nuage`.
+
+À suivre : L2 (`indicateur_r6_sensibilite`, années auto E-OBS), L3
+(composite par essence), L4 (onglet `nemetonshiny`).
+
+## nemeton 0.100.1 (2026-06-30)
+
+#### Fixed — `reconfort_cache_manifest()` lit le dossier IOTA² `final/`
+
+La v0.100.0 ne cherchait les couches que dans
+`zone_<id>/reconfort_*_<run>.tif`, or **les rasters d’affichage
+persistent ailleurs** : dans le dossier de sortie IOTA²
+`output_zone_<id>/results/iota2_results_classif_labels-z<id>-S2_*/final/`
+(`Final_continuous_score_masked*.tif`, `Final_Classif_masked_*.tif`,
+`Final_Proba_map_masked*.tif`). Pour les runs déjà en cache (sans copies
+run-scopées score/proba), la fonction ne retournait donc que la
+classification.
+
+[`reconfort_cache_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_cache_manifest.md)
+découvre désormais **en priorité le dossier `final/`** (les 3 couches,
+repli sur `Classif_Seed_0`/`ProbabilityMap_seed_0`), avec repli sur les
+copies run-scopées `zone_<id>/` quand `final/` est absent (workdir
+nettoyé) ou pour un `run_id` ancien. Validé sur le cache réel zone 5 (3
+couches retournées). 9 tests ajoutés.
+
+## nemeton 0.100.0 (2026-06-30)
+
+#### Added — Découverte cache des couches RECONFORT (`reconfort_cache_manifest()`)
+
+Pendant cache de
+\[[`reconfort_layer_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_layer_manifest.md)\]
+: reconstruit le manifeste des couches d’un run RECONFORT depuis les
+rasters persistés sous le cache projet, **sans** le `result` en mémoire.
+Permet à l’app de **réafficher les rasters RECONFORT après un
+rechargement de projet** (parité
+[`read_fordead_layer()`](https://pobsteta.github.io/nemeton/reference/read_fordead_layer.md)
+/
+[`read_fordead_dieback_mask()`](https://pobsteta.github.io/nemeton/reference/read_fordead_dieback_mask.md),
+qui lisent leurs couches depuis le cache).
+
+- `reconfort_cache_manifest(cache_dir, zone_id, run_id = NULL, include_range = FALSE)`.
+  Résout le run (`run_id` fourni, sinon le plus récent du cache zone),
+  découvre les rasters d’affichage run-scopés et renvoie un `data.frame`
+  **byte-identique** à `reconfort_layer_manifest(result)` (mêmes
+  colonnes/types/indications de rendu) → l’app réutilise telle quelle sa
+  machinerie (`read_reconfort_layer`, cache rasters, toggles, opacité).
+  Les stacks CRswir/CRre (série temporelle, diagnostic pixel) sont
+  exclus ; les alertes viennent de la table `alert`. Best-effort :
+  cache/zone/run absent → `data.frame` 0 ligne.
+- **Persistance étendue** : la phase `persist` de
+  [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+  copie désormais aussi le **score continu** et la **probabilité** dans
+  le cache zone (`reconfort_score_<run_id>.tif`,
+  `reconfort_proba_<run_id>.tif`), run-scopés à côté de
+  `reconfort_mask_<run_id>.tif` — sans ça, ces couches (qui ne vivaient
+  que dans le workdir transitoire) ne réapparaissaient pas après
+  rechargement. Refactor : constructeur de lignes partagé
+  `.reconfort_build_manifest()` (source unique du schéma).
+- 18 tests (`test-reconfort-cache-manifest.R`).
+
+## nemeton 0.99.1 (2026-06-29)
+
+#### Fixed — sens de R5 dans la famille R / le radar (orientation inversée)
+
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+laissait passer **R5 dépérissement** tel quel, alors que sa valeur brute
+est orientée « **haut = plus de dépérissement** » (mauvais), à l’inverse
+de R1-R4 (« haut = faible risque », bon). Folder R5 brut dans la moyenne
+de la famille R (`create_family_index`) tirait donc le score **dans le
+mauvais sens** : une UGF très dépérie *remontait* `famille_risque` et
+l’indice général.
+
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+**inverse désormais R5** (`100 - score`) pour les colonnes
+`indicateur_r5_deperissement` / `R5`, de sorte que sa contribution au
+radar et à `famille_risque` reste « haut = bon » comme R1-R4 (cf. le cas
+s1/s2 distances déjà inversé au même endroit). La fonction
+[`indicateur_r5_deperissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_r5_deperissement.md)
+et ses appelants sont **inchangés** (le score brut « haut =
+dépérissement » reste l’API publique) ; seule la valeur normalisée du
+radar est retournée. Tooltip R5 reformulé en conséquence (« Score élevé
+= faible dépérissement ») et corrigé (R5 couvre FORDEAD **et** RECONFORT
+depuis L4, plus seulement les résineux).
+
+Bug **latent** : R5 n’est pas encore agrégé dans le radar côté
+`nemetonshiny` (famille R = R1-R4 ; R5 « future »). Le correctif
+garantit la bonne orientation le jour du branchement. 3 tests ajoutés
+(`test-normalization.R`).
+
+## nemeton 0.99.0 (2026-06-29)
+
+#### Added — Filtre des alertes au polygone UGF (`filter_alerts_to_zone()`, L7)
+
+Contrepartie vectorielle du masquage raster au read-time
+([`read_reconfort_layer()`](https://pobsteta.github.io/nemeton/reference/read_reconfort_layer.md)
+/
+[`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md)
+/
+[`read_fordead_dieback_mask()`](https://pobsteta.github.io/nemeton/reference/read_fordead_dieback_mask.md),
+spec 016) : ne garde que les **centroïdes d’alertes situés dans le
+polygone des UGFs**, pour qu’un visualiseur n’affiche plus d’alertes
+hors du périmètre géré.
+
+Motivation (révision de la décision L7 §D3) : un run réel a montré que
+le vecteur d’alertes RECONFORT débordait largement des UGFs — les
+centroïdes sont extraits du `Final_Classif_masked_<year>.tif`, masqué
+par OSO **feuillus** (occupation du sol) et **pas** par l’UGF, donc les
+clusters couvrent tous les feuillus de la bbox + 3 km. Les rasters
+étaient déjà clippés (v0.98.0), mais pas le vecteur.
+
+- `filter_alerts_to_zone(alerts, con = NULL, zone_id = NULL, apply_zone_mask = TRUE, mask_polygon = NULL)`
+  — **helper unique partagé par les 3 pipelines** (RECONFORT, FORDEAD,
+  FAST) : le filtre `sf` POINT est identique, donc une seule fonction
+  donne la vraie parité. Réutilise
+  [`.get_zone_aoi()`](https://pobsteta.github.io/nemeton/reference/dot-get_zone_aoi.md)
+  ; nouvel interne `.filter_alerts_to_zone()` (miroir de
+  [`.apply_zone_mask()`](https://pobsteta.github.io/nemeton/reference/dot-apply_zone_mask.md)).
+- Filtre au **read/display**, la table `alert` n’est pas modifiée
+  (principe spec 016 « masque au read, pas au write ») ; provenance
+  `zone_id` conservée.
+- Reprojette le polygone au CRS des alertes ; `cli_warn` + passthrough
+  si rien n’est résoluble ; opt-out `apply_zone_mask = FALSE`. 8 tests
+  (`test-filter-alerts-to-zone.R`).
+
+Côté `nemetonshiny` (v0.93.x+) : passer la couche d’alertes par
+[`filter_alerts_to_zone()`](https://pobsteta.github.io/nemeton/reference/filter_alerts_to_zone.md)
+avant le rendu (RECONFORT **et** FORDEAD).
+
+## nemeton 0.98.0 (2026-06-28)
+
+#### Added — RECONFORT : reader des couches masqué à l’UGF (`read_reconfort_layer()`, L7)
+
+Nouvelle fonction exportée qui lit une couche raster d’un run RECONFORT
+et la **masque au polygone des UGFs par défaut**
+(`apply_zone_mask = TRUE`), pixels hors périmètre géré = `NA`. C’est
+l’analogue de
+[`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md)
+et
+[`read_fordead_dieback_mask()`](https://pobsteta.github.io/nemeton/reference/read_fordead_dieback_mask.md)
+(spec 016) : RECONFORT atteint enfin la **parité** des trois pipelines
+de suivi, et le masque spatial vit dans le cœur `nemeton` plutôt que
+dans la présentation (spec 021 L7, ADR-013 amendement A6).
+
+- `read_reconfort_layer(layer, con = NULL, zone_id = NULL, apply_zone_mask = TRUE, mask_polygon = NULL)`.
+  `layer` est un chemin de raster **ou** une ligne raster du manifeste
+  [`reconfort_layer_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_layer_manifest.md)
+  (une ligne `type == "vector"` — les centroïdes d’alertes — est rejetée
+  : le vecteur n’est pas masqué ici).
+- Masque appliqué au **read** (principe spec 016 « masque au read, pas
+  au write ») : les `.tif` IOTA² ne sont pas réécrits. Réutilise les
+  helpers spec 016
+  [`.apply_zone_mask()`](https://pobsteta.github.io/nemeton/reference/dot-apply_zone_mask.md)
+  /
+  [`.get_zone_aoi()`](https://pobsteta.github.io/nemeton/reference/dot-get_zone_aoi.md).
+- Polygone résolu depuis `mask_polygon` explicite, sinon `con` +
+  `zone_id` ; si rien n’est résoluble alors que le masque est demandé :
+  `cli_warn` + raster brut (best-effort, parité spec 016). Opt-out
+  `apply_zone_mask = FALSE`.
+- 11 tests (`test-reconfort-reader.R`).
+
+Côté `nemetonshiny` (v0.93.x+) : consommer ce reader et **retirer le
+[`terra::mask`](https://rspatial.github.io/terra/reference/mask.html)
+local** introduit en v0.92.3 (le clip UGF revient au cœur).
+
+## nemeton 0.97.0 (2026-06-28)
+
+#### Added — RECONFORT : manifeste des couches d’un run (`reconfort_layer_manifest()`)
+
+Nouvelle fonction exportée côté cœur qui traduit le résultat de
+[`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+en un `data.frame` plat décrivant les **couches affichables** d’un run
+RECONFORT — le **score** continu de dépérissement, la **classification**
+par pixel, la carte de **probabilité** et les **alertes** (centroïdes) —
+avec les indications de rendu dont un visualiseur a besoin (`palette`,
+`reverse`, domaine `vmin`/`vmax`, `categorical`, `default_visible`,
+`default_opacity`, `n_features`).
+
+La sémantique d’une sortie RECONFORT (ce qu’une couche *est*, comment
+ses valeurs sont normalisées, le sens de la palette) est une
+connaissance métier : elle reste dans le cœur `nemeton` (ADR-009, règles
+strictes §1-3). Une couche de présentation (`nemetonshiny`) consomme le
+manifeste tel quel pour générer ses cases à cocher de calques et son
+curseur d’opacité, sans coder en dur la moindre sémantique RECONFORT.
+
+Seules les couches **disponibles** sont listées (un raster au chemin
+`NA` — variantes masquées absentes tant que le masquage n’a pas tourné —
+est ignoré ; la ligne d’alertes n’apparaît que si le run a produit au
+moins une alerte). Les domaines de valeurs sont *nominaux* par défaut
+(score `1..100`, probabilité `0..1000`) ; `include_range = TRUE` les
+remplace par le min/max réel lu via (best-effort). 29 tests unitaires
+(`test-reconfort-manifest.R`).
+
+Débloque le câblage de l’affichage des couches RECONFORT (toggles +
+opacité) côté `nemetonshiny` (brief fourni).
+
 ## nemeton 0.96.1 (2026-06-28)
 
 #### Fixed — RECONFORT : IOTA² séquentiel en mode AOI (évite le kill systemd-oomd)
