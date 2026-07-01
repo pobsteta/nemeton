@@ -85,9 +85,16 @@ jobs:
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          # biodivMapR (GPL-3, B4/L3) Imports dissUtils + spinR but omits
+          # them from its own Remotes, so pak (which scopes Remotes per
+          # package) can't resolve them from nemeton's Remotes alone.
+          # Listing them here installs them at root scope with an explicit
+          # source. dissUtils is CRAN-archived (cran/ mirror).
           extra-packages: |
             any::rcmdcheck
             any::remotes
+            github::cran/dissUtils
+            jbferet/spinR
           needs: check
 
       - name: Check package
@@ -145,7 +152,14 @@ jobs:
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::testthat, any::remotes, any::devtools
+          # See R-CMD-check job: dissUtils/spinR are biodivMapR Imports
+          # missing from its Remotes; declare them at root scope for pak.
+          extra-packages: |
+            any::testthat
+            any::remotes
+            any::devtools
+            github::cran/dissUtils
+            jbferet/spinR
           needs: check
 
       # Vrais tests via devtools::test() (load_all, comme en local où la suite
@@ -193,7 +207,12 @@ jobs:
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::covr, any::remotes
+          # See R-CMD-check job: dissUtils/spinR for biodivMapR.
+          extra-packages: |
+            any::covr
+            any::remotes
+            github::cran/dissUtils
+            jbferet/spinR
           needs: coverage
 
       - name: Compute coverage
