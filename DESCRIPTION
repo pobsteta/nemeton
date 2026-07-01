@@ -102,5 +102,9 @@ Additional_repositories: https://r-lidar.r-universe.dev
 Remotes:
     git::https://forge.inrae.fr/lidar/lidaRtRee.git,
     gitlab::jbferet/bigRaster,
-    jbferet/biodivMapR
+    jbferet/biodivMapR,
+    ilyamaclean/microclimf,
+    ilyamaclean/microclima,
+    ilyamaclean/microclimc,
+    dklinges9/mcera5
 Config/roxygen2/version: 8.0.0
