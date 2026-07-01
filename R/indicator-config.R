@@ -28,12 +28,13 @@ INDICATOR_FAMILIES <- list(
     name_en = "Biodiversity",
     icon = "bug-fill",
     color = "#9932CC",
-    indicators = c("B1", "B2", "B3"),
-    column_names = c("indicateur_b1_protection", "indicateur_b2_structure", "indicateur_b3_connectivite"),
+    indicators = c("B1", "B2", "B3", "B4"),
+    column_names = c("indicateur_b1_protection", "indicateur_b2_structure", "indicateur_b3_connectivite", "indicateur_b4_div_spectrale"),
     indicator_labels = list(
       B1 = list(fr = "Protection biodiversit\u00e9", en = "Biodiversity Protection"),
       B2 = list(fr = "Diversit\u00e9 structurale", en = "Structural Diversity"),
-      B3 = list(fr = "Connectivit\u00e9 \u00e9cologique", en = "Ecological Connectivity")
+      B3 = list(fr = "Connectivit\u00e9 \u00e9cologique", en = "Ecological Connectivity"),
+      B4 = list(fr = "Diversit\u00e9 spectrale", en = "Spectral Diversity")
     ),
     indicator_tooltips = list(
       B1 = list(
@@ -47,6 +48,10 @@ INDICATOR_FAMILIES <- list(
       B3 = list(
         fr = "Capacit\u00e9 de la parcelle \u00e0 servir de corridor \u00e9cologique. Mesure la continuit\u00e9 foresti\u00e8re et la proximit\u00e9 d'autres habitats naturels.",
         en = "Parcel's capacity to serve as an ecological corridor. Measures forest continuity and proximity to other natural habitats."
+      ),
+      B4 = list(
+        fr = "Diversit\u00e9 spectrale (\u03b1) d\u00e9riv\u00e9e de Sentinel-2 : h\u00e9t\u00e9rog\u00e9n\u00e9it\u00e9 des \u00ab spectral species \u00bb (Shannon) comme proxy de diversit\u00e9 compositionnelle. Proxy \u00e0 valider terrain ; une futaie r\u00e9guli\u00e8re monosp\u00e9cifique l\u00e9gitime peut avoir un score bas.",
+        en = "Spectral (\u03b1) diversity from Sentinel-2: heterogeneity of spectral species (Shannon) as a proxy for compositional diversity. Proxy pending field validation; a legitimate even-aged monospecific stand may score low."
       )
     )
   ),
@@ -145,11 +150,12 @@ INDICATOR_FAMILIES <- list(
     name_en = "Landscape",
     icon = "image-fill",
     color = "#32CD32",
-    indicators = c("L1", "L2"),
-    column_names = c("indicateur_l2_fragmentation", "indicateur_l1_sylvosphere"),
+    indicators = c("L1", "L2", "L3"),
+    column_names = c("indicateur_l2_fragmentation", "indicateur_l1_sylvosphere", "indicateur_l3_het_spectrale"),
     indicator_labels = list(
       L1 = list(fr = "Sylvosph\u00e8re (effet lisi\u00e8re)", en = "Sylvosphere (Edge Effect)"),
-      L2 = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation")
+      L2 = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
+      L3 = list(fr = "H\u00e9t\u00e9rog\u00e9n\u00e9it\u00e9 spectrale", en = "Spectral Heterogeneity")
     ),
     indicator_tooltips = list(
       L1 = list(
@@ -159,6 +165,10 @@ INDICATOR_FAMILIES <- list(
       L2 = list(
         fr = "Niveau de fragmentation du paysage forestier environnant. Bas\u00e9 sur la taille et la connectivit\u00e9 des massifs forestiers proches.",
         en = "Fragmentation level of surrounding forest landscape. Based on size and connectivity of nearby forest patches."
+      ),
+      L3 = list(
+        fr = "H\u00e9t\u00e9rog\u00e9n\u00e9it\u00e9 spectrale (\u03b2) du paysage d\u00e9riv\u00e9e de Sentinel-2 : turnover des \u00ab spectral species \u00bb (dissimilarit\u00e9 Bray-Curtis). Mesure la diversit\u00e9 de la mosa\u00efque (compl\u00e9mentaire de L2, morcellement g\u00e9om\u00e9trique). Proxy \u00e0 valider terrain.",
+        en = "Spectral (\u03b2) landscape heterogeneity from Sentinel-2: spectral-species turnover (Bray-Curtis dissimilarity). Measures mosaic diversity (complementary to L2, geometric fragmentation). Proxy pending field validation."
       )
     )
   ),

@@ -170,6 +170,29 @@ navigateur) + clé i18n `monitoring_reconfort_year_incomplete`. Dépend de
 
 ---
 
+# Chantier EN COURS — Diversité spectrale B4 / L3 (spec 028, biodivMapR)
+
+> **Ouvert le 2026-07-01.** Deux nouveaux indicateurs télédétectés (NDP 0,
+> Sentinel-2) via `biodivMapR` (hypothèse de variation spectrale) :
+> **B4** diversité spectrale (α/Shannon, famille B) et **L3** hétérogénéité
+> spectrale (β/Bray-Curtis, famille L). Décisions D1-D4 tranchées (spec 028 §9).
+
+**⚠️ Relicence** : `biodivMapR` étant GPL-3 et intégré en `Imports:` direct
+(décision propriétaire assumée), **nemeton passe MIT → GPL-3** (v0.110.0).
+Effet domino : `nemetonshiny`/`tree_sat`/`maestro` GPL-3 à la distribution
+(bascule à faire dans leurs dépôts) + **amender ADR-006** (platform_nemeton).
+
+**Livré (v0.110.0)** : primitive `compute_spectral_diversity()` (wrapper
+`biodivMapR_full`, agrégation UGF via exactextractr) + `indicateur_b4_div_spectrale`
+/ `indicateur_l3_het_spectrale` (rétrocompat `NA`), registre + normalisation
+(haut=mieux, bornes provisoires) + tests `test-spectral-diversity.R` (logique
+validée hors biodivMapR ; pipeline réel = smoke manuel).
+
+**Reste** : ⏳ smoke réel sur scène Sentinel-2 → **recalibrer les bornes de
+normalisation B4/L3** (D3) ; affichage B4/L3 côté `nemetonshiny` (radar/tooltips).
+
+---
+
 # Chantier EN COURS — Dette post-coupe-rase (items 1-4)
 
 > **Ouvert le 2026-07-01.** Inventaire de dette autour du correctif CHM/coupe

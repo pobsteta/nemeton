@@ -1,3 +1,43 @@
+# nemeton 0.110.0 (2026-07-01)
+
+### ⚠️ Relicence — MIT → **GPL-3**
+
+À partir de cette version, `nemeton` est distribué sous **GPL-3** (auparavant
+MIT). Motif : intégration en **dépendance directe** (`Imports:`) du package
+[`biodivMapR`](https://github.com/jbferet/biodivMapR) (GPL-3) pour les nouveaux
+indicateurs de diversité spectrale. `nemeton` devient donc une œuvre dérivée
+copyleft ; par effet de dépendance, les packages qui l'importent
+(`nemetonshiny`, `tree_sat_nemeton`, `maestro_nemeton`) sont GPL-3 à la
+distribution (bascule à faire dans leurs dépôts). Les **données** produites
+restent CC-BY 4.0. Décision assumée du propriétaire (ADR-006 à amender).
+
+### Added — Diversité spectrale : indicateurs **B4** & **L3** (biodivMapR, spec 028)
+
+Deux nouveaux indicateurs télédétectés, calculables dès le **NDP 0**
+(Sentinel-2), via l'hypothèse de variation spectrale (PCA → spectral species →
+diversité) :
+
+- **B4 — Diversité spectrale** (famille B) : α-diversité, **Shannon** des
+  spectral species → proxy de diversité compositionnelle.
+- **L3 — Hétérogénéité spectrale** (famille L) : β-diversité, turnover
+  **Bray-Curtis** de la mosaïque paysagère (complémentaire de L2, fragmentation
+  géométrique).
+
+Portés par la primitive exportée `compute_spectral_diversity()` (wrapper
+`biodivMapR::biodivMapR_full()`, agrégation par UGF via `exactextractr`).
+Fonctions `indicateur_b4_div_spectrale()` / `indicateur_l3_het_spectrale()`
+strictement rétrocompatibles (colonne `NA` si ni `spectral` ni `reflectance`).
+Enregistrés dans le registre (labels/tooltips FR/EN avec caveat proxy),
+normalisation *haut = mieux* (B4 `[0, log 50]`, L3 `[0, 1]` — **bornes
+provisoires**, recalibrage empirique après premier run réel, spec 028 D3).
+B4/L3 comptent immédiatement dans l'indice général (D4).
+
+**Statut proxy** : la corrélation diversité spectrale ↔ diversité taxonomique
+est un proxy contexte-dépendant, à **valider terrain** (démarche spec 008). Une
+futaie régulière monospécifique légitime peut afficher un B4 bas. Tests :
+`test-spectral-diversity.R` (le pipeline biodivMapR réel = smoke manuel sur
+scène Sentinel-2).
+
 # nemeton 0.109.0 (2026-07-01)
 
 ### Changed — Dette H_dom faible/nul : peuplement jeune, garde-fou CHM, P2 station (spec 005 §3.5)
