@@ -116,6 +116,12 @@
 #'   disk (zero recompute). A new scene in `cache_dir`, any parameter
 #'   change, or a zone re-registration changes the content hash and
 #'   triggers a fresh compute. `FALSE` disables the persistence entirely.
+#'   The cache is keyed on the **effective Sentinel-2 coverage** (min/max
+#'   acquisition date of the selected scenes), not on `date_from`/`date_to`
+#'   themselves (v0.105.0): a rolling window anchored on "today" therefore
+#'   reuses the cached COG day-to-day until a genuinely new scene lands,
+#'   instead of recomputing on every date shift. In `rolling` mode the
+#'   trailing window is likewise anchored on the last real acquisition.
 #' @param result_cache_dir Character scalar or `NULL`. Root of the result
 #'   COG cache. When `NULL` (default) it is `file.path(dirname(cache_dir),
 #'   "fast_raster")`; COGs land under `<result_cache_dir>/zone_<id>/
@@ -273,6 +279,19 @@ read_fast_alert_raster <- function(con, zone_id,
     return(NULL)
   }
 
+  # spec 017 D6 (amendée v0.105.0) — la clé de cache est la COUVERTURE S2
+  # RÉELLE, pas la fenêtre demandée. `date_from`/`date_to` ne servent qu'à
+  # *sélectionner* les scènes (ci-dessus) ; les folder telles quelles dans
+  # la clé fait recalculer le COG chaque jour d'une fenêtre glissante ancrée
+  # sur aujourd'hui (`date_to = today`) alors qu'aucune scène nouvelle n'a
+  # atterri (revisite S2 ~5 j). On clé donc sur min/max des dates
+  # d'acquisition effectives des scènes retenues — stable d'un jour sur
+  # l'autre tant que le cache de scènes ne bouge pas. Le hash inclut de
+  # toute façon la liste des scene-ids : deux fenêtres couvrant des scènes
+  # différentes restent distinguées même à couverture min/max identique.
+  cov_from <- min(scenes_df$obs_date)
+  cov_to   <- max(scenes_df$obs_date)
+
   # spec 017 D6 — resolve the UGF mask polygon now (cheap DB read), both
   # to apply it at the end AND to fold it into the content hash so a zone
   # re-registration invalidates the cached raster.
@@ -291,13 +310,13 @@ read_fast_alert_raster <- function(con, zone_id,
     tryCatch(sf::st_as_text(sf::st_geometry(poly)[[1L]]),
              error = function(e) NULL) else NULL
   rhash <- .fast_raster_hash(scenes_df$scene_id, index, threshold, mode,
-                             wd, df, dt, mask_wkt,
+                             wd, cov_from, cov_to, mask_wkt,
                              alpha = alpha, months = months,
                              min_years = min_years,
                              min_obs_per_year = min_obs_per_year,
                              min_slope = min_slope)
   cpath <- .fast_raster_cache_path(result_cache_dir, zid, index, mode,
-                                   threshold, df, dt, wd, rhash,
+                                   threshold, cov_from, cov_to, wd, rhash,
                                    alpha = alpha, months = months,
                                    min_years = min_years)
 
@@ -347,7 +366,13 @@ read_fast_alert_raster <- function(con, zone_id,
     rn <- if (mode == "count") {
       .compute_alert_count(stk, threshold)
     } else if (mode == "rolling") {
-      .compute_alert_rolling(stk, threshold, window_days = wd, date_to = dt)
+      # spec 017 D6 (amendée) — la fenêtre glissante est ancrée sur la
+      # dernière acquisition réelle (`cov_to`), pas sur `date_to` demandé :
+      # ancrer sur aujourd'hui décalerait la queue de fenêtre d'un jour sur
+      # l'autre (une vieille scène sortirait) sans nouvelle donnée, faussant
+      # le résultat ET le cache. `cov_to` = trailing window « jusqu'à la
+      # dernière observation », cohérent avec la clé de cache.
+      .compute_alert_rolling(stk, threshold, window_days = wd, date_to = cov_to)
     } else {
       # spec 023 — multi-year monotonic decline (Theil-Sen + Mann-Kendall).
       .fast_raster_trend(stk, months = months, min_years = min_years,
@@ -867,7 +892,12 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
 # re-registration (mask geometry) all change the hash, so the cached COG
 # self-invalidates. Uses `rlang::hash` (already an Import) — no `digest`
 # dependency. `window_days` only matters in rolling mode; the mask WKT is
-# NA when no mask is applied.
+# NA when no mask is applied. NOTE (v0.105.0): the caller passes the
+# EFFECTIVE COVERAGE dates (min/max acquisition date of the selected
+# scenes) as `date_from`/`date_to`, not the requested window — so a
+# rolling window that slides day-to-day without a new scene keeps the
+# same hash (no spurious recompute). The scene-id list stays in the hash,
+# so distinct scene sets never alias even at equal min/max coverage.
 .fast_raster_hash <- function(scene_ids, index, threshold, mode,
                               window_days, date_from, date_to, mask_wkt,
                               alpha = NA_real_, months = NA_integer_,
@@ -906,12 +936,15 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
 
 # Verbose, deterministic cache filename for a FAST alert raster:
 #   fast_<INDEX>_<MODE>_thr<seuil>_<from>_<to>_w<window>_<hash8>.tif
-# The key parameters (threshold, date window, rolling window) are legible
+# `<from>`/`<to>` are the EFFECTIVE COVERAGE dates (min/max acquisition
+# date of the scenes actually used), not the requested window — so the
+# name is stable day-to-day until a new scene lands (v0.105.0). The key
+# parameters (threshold, coverage window, rolling window) are legible
 # straight from the name, so two same-prefix files in one zone dir are
 # distinguishable at a glance. An 8-char slice of the D6 hash still
 # discriminates the inputs that don't fit a filename — the scene-id list
 # (changes after a re-ingest) and the mask WKT (changes with the zone).
-# Same parameters -> identical name, so the D6 cache hit is preserved.
+# Same inputs -> identical name, so the D6 cache hit is preserved.
 .fast_raster_filename <- function(index, mode, threshold,
                                   date_from, date_to, window_days, hash,
                                   alpha = NA_real_, months = NA_integer_,

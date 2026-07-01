@@ -206,11 +206,38 @@ test_that("read_fast_alert_raster persists + serves a content-addressed COG", {
   suppressMessages(do.call(read_fast_alert_raster, args2))
   expect_length(list.files(zone_dir, pattern = "^fast_NDVI_count_.*\\.tif$"), 2L)
 
-  # The persisted name is verbose: the key parameters are legible.
+  # The persisted name is verbose: the key parameters are legible. Since
+  # v0.105.0 the dates in the name are the EFFECTIVE COVERAGE (the single
+  # scene is 2025-05-30), not the requested window 2025-05-01..2025-06-01.
   nm <- list.files(zone_dir, pattern = "^fast_NDVI_count_.*\\.tif$")
-  expect_true(all(grepl("_thr[0-9.]+_2025-05-01_2025-06-01_w30_[0-9a-f]{8}\\.tif$",
+  expect_true(all(grepl("_thr[0-9.]+_2025-05-30_2025-05-30_w30_[0-9a-f]{8}\\.tif$",
                         nm)))
   expect_true(any(grepl("_thr0\\.60_", nm)))   # the threshold = 0.6 recompute
+})
+
+test_that("cache key is the S2 coverage, not the requested window (v0.105.0)", {
+  skip_if_terra_write_broken()
+  skip_if_not_installed("terra")
+  cache  <- withr::local_tempdir()
+  rcache <- withr::local_tempdir()
+  .write_one_ndvi_scene(cache)                 # single scene dated 2025-05-30
+  con <- structure(list(), class = c("FakeConn", "DBIConnection"))
+  common <- list(con, 1L, index = "NDVI", mode = "count", cache_dir = cache,
+                 apply_zone_mask = FALSE, result_cache_dir = rcache)
+
+  # First requested window.
+  r1 <- suppressMessages(do.call(read_fast_alert_raster,
+    c(common, list(date_from = "2025-05-01", date_to = "2025-06-01"))))
+  expect_null(attr(r1, "cached"))              # computed
+
+  # A DIFFERENT requested window that still covers only the 2025-05-30
+  # scene: same coverage -> same cache file -> served from cache, no 2nd COG.
+  r2 <- suppressMessages(do.call(read_fast_alert_raster,
+    c(common, list(date_from = "2025-05-15", date_to = "2025-06-15"))))
+  expect_true(isTRUE(attr(r2, "cached")))      # cache hit despite window shift
+  expect_length(
+    list.files(file.path(rcache, "zone_1"), pattern = "^fast_NDVI_count_.*\\.tif$"),
+    1L)
 })
 
 

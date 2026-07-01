@@ -1,3 +1,29 @@
+# nemeton 0.105.0 (2026-07-01)
+
+### Fixed — cache FAST : clé sur la couverture S2 réelle, plus sur la fenêtre demandée
+
+Le COG d'alerte FAST (`read_fast_alert_raster()`) était content-addressé (spec
+017 D6) en incluant `date_from`/`date_to` **demandés** dans le hash ET le nom de
+fichier. Avec une fenêtre glissante ancrée sur aujourd'hui (`date_to = today`),
+ces bornes bougeaient chaque jour → nom + hash différents → **recalcul complet
+quotidien** du diagnostic, alors qu'aucune scène Sentinel-2 nouvelle n'avait
+atterri (revisite S2 ~5 j).
+
+- La clé de cache (hash D6 + nom) est désormais la **couverture S2 effective** :
+  `min`/`max` des dates d'acquisition des scènes retenues (`scenes_df$obs_date`),
+  et non la fenêtre demandée. Deux fenêtres couvrant les mêmes scènes retombent
+  sur le **même** COG (cache hit) ; la liste des scene-ids reste dans le hash, si
+  bien que deux ensembles de scènes distincts ne s'aliasent jamais à couverture
+  min/max identique.
+- Mode `rolling` : la fenêtre glissante est ancrée sur la **dernière acquisition
+  réelle** (`cov_to`) plutôt que sur `date_to` demandé — cohérent avec la clé et
+  plus juste (« fenêtre jusqu'à la dernière observation »).
+- Effet de bord unique : le changement de hash **invalide une fois** les COGs
+  FAST en cache ; ils se régénèrent au prochain calcul.
+
+Nouveau test `test-fast-alert-raster.R` : deux fenêtres demandées différentes
+couvrant la même scène ⇒ un seul COG, second appel servi depuis le cache.
+
 # nemeton 0.104.0 (2026-07-01)
 
 ### Added — garde-fou d'année RECONFORT : `reconfort_latest_complete_year()` / `reconfort_year_bounds()`
