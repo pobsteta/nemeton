@@ -8,6 +8,10 @@
 skip_if_no_terra <- function() testthat::skip_if_not_installed("terra")
 
 write_tif <- function(path, val = 1) {
+  # The GitHub runner exhibits a terra::writeRaster(crs=EPSG) anomaly
+  # ("no valid constructor") unrelated to the code; skip like the FAST
+  # raster tests do rather than erroring.
+  skip_if_terra_write_broken()
   r <- terra::rast(nrow = 4, ncol = 4, xmin = 700000, xmax = 700040,
                    ymin = 6800000, ymax = 6800040, crs = "EPSG:2154")
   terra::values(r) <- val

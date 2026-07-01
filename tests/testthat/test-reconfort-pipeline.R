@@ -63,6 +63,7 @@ mock_pipeline <- function(calls_env, write_score = TRUE, exit = 0L) {
 }
 
 test_that("run_reconfort_dieback orchestrates the phases and collects outputs", {
+  skip_if_terra_write_broken()   # clustering post-process writes a TIF (runner anomaly)
   con <- local_con()
   cache <- withr::local_tempdir()
   calls <- new.env(); calls$env <- environment()
@@ -88,6 +89,7 @@ test_that("run_reconfort_dieback orchestrates the phases and collects outputs", 
 })
 
 test_that("run_reconfort_dieback writes a cfg with masking on by default", {
+  skip_if_terra_write_broken()   # clustering post-process writes a TIF (runner anomaly)
   con <- local_con()
   cache <- withr::local_tempdir()
   calls <- new.env(); calls$env <- environment()
@@ -103,6 +105,7 @@ test_that("run_reconfort_dieback writes a cfg with masking on by default", {
 })
 
 test_that("run_reconfort_dieback with binary_mask = FALSE disables masking", {
+  skip_if_terra_write_broken()   # clustering post-process writes a TIF (runner anomaly)
   con <- local_con()
   cache <- withr::local_tempdir()
   calls <- new.env(); calls$env <- environment()
