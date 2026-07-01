@@ -153,6 +153,21 @@ rows/columns` (n'empêche pas les alertes) ; validité OTB 10 vs OTB 8 de
 calibration à confirmer avec les auteurs RECONFORT (résultat cohérent : ~23 %
 feuillus, ~13 % en dépérissement). Voir mémoire `project_reconfort_iota2_version`.
 
+**Journal** — *2026-07-01 (garde-fou année `s2_year` — v0.104.0)* : le
+`s2_year` (dernière année de la série ~2 ans) n'avait aucune borne « saison
+complète » ni côté cœur ni côté app (picker `nemetonshiny` : défaut ET max =
+année en cours → run lancé avant fin octobre = dernière saison tronquée,
+classification dégradée, sans avertissement). Cœur : `RECONFORT_MODELS` gagne un
+champ **`edate`** (`"MM-DD"`, fin de fenêtre modèle : `10-29` pour les modèles
+2 ans, `05-31` pour `v3_early_may`) ; nouvelles fonctions exportées
+**`reconfort_latest_complete_year()`** et **`reconfort_year_bounds()`**
+(min=2016, max/default = dernière année complète). Tests dans
+`test-reconfort-model.R`. **Brief `nemetonshiny` fourni** : câbler
+`value`/`min`/`max` du `numericInput` sur `reconfort_year_bounds()` + garde-fou
+serveur dans `.invoke_reconfort()` (le `numericInput` n'étant qu'un hint
+navigateur) + clé i18n `monitoring_reconfort_year_incomplete`. Dépend de
+`nemeton >= 0.104.0`.
+
 ---
 
 # Chantier EN COURS — Carte FORDEAD : 3 couches additionnelles
