@@ -102,6 +102,10 @@ Additional_repositories: https://r-lidar.r-universe.dev
 Remotes:
     git::https://forge.inrae.fr/lidar/lidaRtRee.git,
     gitlab::jbferet/bigRaster,
+    github::cran/dissUtils,
+    jbferet/spinR,
+    jbferet/preprocS2,
+    jbferet/prosail,
     jbferet/biodivMapR,
     ilyamaclean/microclimf,
     ilyamaclean/microclima,
