@@ -187,11 +187,18 @@ famille Énergie présente**. `H_dom=NA` (hors couverture) reste NA. Amendement
 **spec 005 §3.4**. Tests `test-synthetic-inventory-clearcut.R` (+ non-régression).
 Vérifié sur le CHM réel du projet : P1/E1 = 0. → **v0.107.0**.
 
-> **Reste (secondaire, brief §1) :** wiring app — `service_compute` (nemetonshiny)
-> ne charge/passe pas systématiquement le CHM Open-Canopy du cache dans
-> `layers$rasters$chm` ; utile aux projets **non** rasés (ici sans effet, P1 était
-> NA côté cœur). + robustesse dispatcher `compute_indicator()` (filtrer sur
-> `formals()`) pour que `nemeton_compute()` marche sur P1/E1 (pas de `layers`/`...`).
+> **Suites du brief :**
+> - **§1 wiring app** — *sans objet* : vérification faite, `service_compute`
+>   (nemetonshiny) charge **déjà** le CHM Open-Canopy (`chm_source="opencanopy"`
+>   dans `metadata.json`, `ndp_level=1`) et le passe aux indicateurs via une
+>   boucle par `formals()`. Le seul levier était le correctif cœur ci-dessus +
+>   installer `nemeton ≥ 0.107.0` dans la lib de l'app (fait 2026-07-01) puis
+>   relancer le calcul. Aucune PR app.
+> - **§3 dispatcher cœur — livré (v0.107.1)** : `compute_indicator()` filtre les
+>   args sur `formals()` (fin du `unused argument (layers=)` sur P1/P2/P3/E1/E2)
+>   et généralise l'extraction de colonne (code court dérivé du nom, plus de
+>   `col_map` R1-R4). `nemeton_compute()` marche désormais sur P1/E1. Tests
+>   `test-indicators-core-dispatch.R`.
 
 ---
 
