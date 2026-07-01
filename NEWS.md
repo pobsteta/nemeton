@@ -1,3 +1,29 @@
+# nemeton 0.107.1 (2026-07-01)
+
+### Fixed — `compute_indicator()` / `nemeton_compute()` : dispatch robuste (args + colonne de sortie)
+
+Le dispatcher interne appelait chaque fonction indicateur avec
+`do.call(func, list(units, layers, ...))` : les indicateurs qui ne
+déclarent **ni `layers` ni `...`** (`indicateur_p1_volume`, `p2`, `p3`,
+`e1`, `e2`) échouaient sur `unused argument (layers = …)`, et l'extraction
+de la colonne de sortie ne connaissait que `R1-R4` (les P/C/E renvoyant un
+`sf` cassaient sur « column not found »). `nemeton_compute()` était donc
+inutilisable pour ces indicateurs.
+
+- Les arguments (`units`, `layers`, `...` p.ex. `chm`) sont désormais
+  **filtrés sur les `formals()`** de la fonction cible ; une fonction avec
+  `...` reçoit tout, une fonction sans reçoit seulement ce qu'elle déclare.
+- L'extraction de la valeur depuis un résultat `sf`/`data.frame` est
+  **généralisée** : code court dérivé du nom (`indicateur_p1_volume` →
+  `P1`), puis nom NMT, puis toute colonne `"<Lettre><chiffre>"` — plus de
+  table `col_map` R1-R4 à maintenir.
+
+`nemeton_compute(units, layers, indicators = "indicateur_p1_volume",
+chm = chm)` renvoie maintenant un P1 exploitable. Tests :
+`test-indicators-core-dispatch.R`. (L'app `nemetonshiny` n'utilise pas ce
+dispatcher — elle a sa propre boucle par `formals()` — donc aucun impact
+côté app ; c'est un correctif de l'API cœur exportée.)
+
 # nemeton 0.107.0 (2026-07-01)
 
 ### Fixed — coupe rase : inventaire synthétique CHM « couvert nul » → volume 0, plus NA

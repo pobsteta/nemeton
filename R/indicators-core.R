@@ -207,23 +207,43 @@ compute_indicator <- function(indicator, units, layers, ...) {
          call. = FALSE)
   }
 
-  # Call the indicator function dynamically
-  func <- get(func_name, mode = "function")
-  result <- do.call(func, list(units = units, layers = layers, ...))
+  # Call the indicator function dynamically. Match the supplied
+  # arguments (units, layers and any `...` such as `chm`) to the
+  # target function's formals: an indicator that does not declare
+  # `layers` / `chm` (e.g. indicateur_p1_volume, which has neither
+  # `layers` nor `...`) would otherwise abort with "unused argument".
+  # Functions that DO declare `...` receive every argument unchanged.
+  func      <- get(func_name, mode = "function")
+  call_args <- list(units = units, layers = layers, ...)
+  fmls      <- names(formals(func))
+  if (!"..." %in% fmls) {
+    call_args <- call_args[names(call_args) %in% fmls]
+  }
+  result <- do.call(func, call_args)
 
-  # Risk indicator functions return sf objects with added columns (R1, R2, R3, R4)
-  # Extract the indicator column as a numeric vector
-  if (inherits(result, "sf")) {
-    col_map <- c(
-      indicateur_r1_feu = "R1", indicateur_r2_tempete = "R2",
-      indicateur_r3_secheresse = "R3", indicateur_r4_abroutissement = "R4"
-    )
-    col_name <- col_map[indicator]
-    if (!is.na(col_name) && col_name %in% names(result)) {
-      return(result[[col_name]])
+  # Many indicator functions return the `units` object (sf / data.frame)
+  # with the value added under a column named by the family short code
+  # (e.g. indicateur_p1_volume -> "P1", indicateur_r1_feu -> "R1"). Extract
+  # that column as a numeric vector. Resolution order: the short code
+  # derived from the indicator name, then the NMT name itself, then any
+  # single "<Letter><digit>" column — so risk (R1-R4), production (P1-P3),
+  # energy (E1-E2) and every other convention resolve without a hand-kept
+  # map.
+  if (inherits(result, "sf") || inherits(result, "data.frame")) {
+    short <- toupper(sub("^indicateur_([a-z][0-9]+)_.*$", "\\1", indicator))
+    if (short %in% names(result)) {
+      return(result[[short]])
     }
-    stop("Indicator function '", func_name, "' returned sf but column '",
-         col_name, "' not found", call. = FALSE)
+    if (indicator %in% names(result)) {
+      return(result[[indicator]])
+    }
+    code_cols <- grep("^[A-Z][0-9](_norm)?$", names(result), value = TRUE)
+    if (length(code_cols) >= 1L) {
+      return(result[[code_cols[1]]])
+    }
+    stop("Indicator function '", func_name,
+         "' returned a data frame with no recognizable value column",
+         call. = FALSE)
   }
 
   result
