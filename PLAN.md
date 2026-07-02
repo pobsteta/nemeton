@@ -1238,6 +1238,34 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-02 — Cadrage : 3 nouveaux indicateurs depuis le catalogue Theia/MTD (specs 030-032)
+
+Exploration du STAC `api.stac.teledetection.fr` (39 collections) pour de
+nouvelles sources métier. **3 specs de cadrage écrites** (paperwork avant code,
+non implémentées) :
+
+- **spec 030 — T3 « Coupes rases » (SUFOSAT)** : détection submensuelle des
+  coupes rases France métro. (radar S1, assets `dates`/`proba`). Indicateur
+  inversé (haut = mauvais, comme R5). Famille T (Dynamique temporelle).
+- **spec 031 — N4 « Forêt ancienne » (Corona 4B)** : continuité forestière
+  depuis ~1968 via imagerie espion déclassifiée (asset `src` panchromatique).
+  Conditionnel (comme R5). Famille N (Naturalité). Risque majeur : extraction
+  forêt sur mono-bande 1968 + recalage géométrique.
+- **spec 032 — A3 « Régulation thermique » (albédo S2 + LST)** : service de
+  rafraîchissement. Albédo `cesbio-s2albedo` (national) = socle, LST
+  `thermocity-lst` (5 métropoles seulement) = raffinement optionnel. **Résout**
+  l'inadéquation `theia_lst → A2` du chantier Theia. S'aligne sur spec 027.
+  Risque majeur : contresens physique de l'albédo (D2).
+
+Chaque spec ajoute 1 indicateur (31 → 34 base) : impact `CLAUDE.md` (compte +
+table familles) + `massif_demo_units` à l'implémentation. **En attente de
+validation Pascal** avant tout code (aucun n'est prioritaire par défaut ;
+reco d'ordre : 030 SUFOSAT > 031 Corona > 032 microclimat).
+
+Autres pistes cataloguées (non spec'ées) : `geogedi` (structure verticale
+B2/C1/P1), `cartofeux-lidarhd` (combustible R1), quick-wins sources `oso`,
+`spot-6-7-trees-footprint`, `super-sentinel-2-l2a`, `french-tiled-rpg`.
+
 ### 2026-07-02 — Added : MUSCATE, 3e backend S2 de repli souverain (spec 029, cœur, K1→K3, cible v0.111.0)
 
 Reliquat Theia `s2_l2a_muscate` attaqué (mode remote-control). **Décisions
