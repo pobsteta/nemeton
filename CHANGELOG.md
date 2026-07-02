@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.112.1] - 2026-07-02
+
+### Fixed
+- `enrich_parcels_bdforet()`: recover from invalid BD Forêt V2 geometries
+  ("Edge N is degenerate (duplicate vertex)") that aborted the whole
+  `st_intersection` and zeroed species/age enrichment (silently degrading
+  the species-dependent P/C/B indicators to their synthetic-inventory
+  fallback). Now repairs both layers with `sf::st_make_valid()` and retries
+  once before giving up; the repair cost is paid only on failure.
+
 ## [0.112.0] - 2026-07-02
 
 ### Added
