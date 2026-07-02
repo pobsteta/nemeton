@@ -648,6 +648,9 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`bdforet_v2_mapping()`](https://pobsteta.github.io/nemeton/reference/bdforet_v2_mapping.md)
   : BD Forêt v2 -\> CV context mapping
 
+- [`build_foret_ancienne_mask()`](https://pobsteta.github.io/nemeton/reference/build_foret_ancienne_mask.md)
+  : Build an ancient-forest polygon layer for N2 continuity
+
 - [`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md)
   : Build a multi-temporal NDVI or NBR stack from cached Sentinel-2
   bands

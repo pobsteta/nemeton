@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.112.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.113.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -830,6 +830,13 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-02--addedchanged--forêt-ancienne--helper-n2-spec-031-réorientée-cœur-v01130">2026-07-02 — Added/Changed : forêt ancienne — helper N2, spec 031 réorientée (cœur, v0.113.0)<a class="anchor" aria-label="anchor" href="#id_2026-07-02--addedchanged--for%C3%AAt-ancienne--helper-n2-spec-031-r%C3%A9orient%C3%A9e-c%C5%93ur-v01130"></a></h3>
+<p>Implémentation de la spec 031 <strong>réorientée</strong>. <strong>K1 (constats bloquants sur STAC réel)</strong> : (1) <code>corona-4b</code> = 3 items, tous au Moyen-Orient, <strong>0 sur la France</strong> → source morte ; (2) <code><a href="reference/indicateur_n2_continuite.html">indicateur_n2_continuite()</a></code> a <strong>déjà</strong> un argument <code>foret_ancienne</code> (fraction ancienne → score 60-100) → un N4 dédié serait <strong>redondant</strong>. <strong>Décision Pascal</strong> : abandonner N4, renforcer N2.</p>
+<p><strong>Livré</strong> : <code>build_foret_ancienne_mask(source, forest_class, threshold, min_area_m2, crs)</code> (<code>R/indicators-naturalness.R</code>) — source-agnostique : vecteur (validé/reprojeté/filtré) ou raster (masque par classe/seuil/<code>&gt;0</code> → polygonisé <code><a href="https://rspatial.github.io/terra/reference/as.polygons.html" class="external-link">terra::as.polygons</a></code> → taches contiguës → filtre aire). Sortie = couche sf <code>foret_ancienne = TRUE</code> passée telle quelle à <code><a href="reference/indicateur_n2_continuite.html">indicateur_n2_continuite()</a></code>. <code>corona-4b</code> <strong>non déclaré</strong> dans FR.json.</p>
+<p><strong>Tests</strong> : <code>test-foret-ancienne-mask.R</code> 6 PASS (classe, seuil, vecteur, filtre aire, intégration N2 → 100, type invalide). NAMESPACE + <code>_pkgdown.yml</code> + <code>man/build_foret_ancienne_mask.Rd</code> à la main. Spec 031 pivotée (v0.2.0, plan N4 conservé en <code>&lt;details&gt;</code>).</p>
+<p><strong>Brief <code>nemetonshiny</code> fourni séparément</strong> (upload source historique → helper → N2). Specs restantes : 032 (microclimat albédo+LST).</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-02--fixed--enrichissement-bd-forêt-sur-géométrie-invalide-cœur-v01121">2026-07-02 — Fixed : enrichissement BD Forêt sur géométrie invalide (cœur, v0.112.1)<a class="anchor" aria-label="anchor" href="#id_2026-07-02--fixed--enrichissement-bd-for%C3%AAt-sur-g%C3%A9om%C3%A9trie-invalide-c%C5%93ur-v01121"></a></h3>
 <p>Diagnostic d’un run réel Pascal (30 UGF, dépt 45) : <code>! BD Forêt intersection failed: Loop 0 is not valid: Edge 105 is degenerate (duplicate vertex)</code> → <code>species/age set on 0/30 UGF</code> → P/C/B retombent sur l’inventaire synthétique CHM (qualité bois diamètre 0, CO2 évité 0). Cause : <code><a href="reference/enrich_parcels_bdforet.html">enrich_parcels_bdforet()</a></code> (<code>R/utils.R</code>) faisait un <code>st_intersection</code> unique dans un <code>tryCatch</code> qui, sur une géométrie invalide, renvoyait NULL → tout NA. <strong>Fix</strong> : intersection brute puis, en cas d’échec, réparation des deux couches par <code><a href="https://r-spatial.github.io/sf/reference/valid.html" class="external-link">sf::st_make_valid()</a></code> + retry unique avant abandon (coût payé seulement sur échec). Tests : <code>test-bdforet-enrich.R</code> <strong>8 PASS</strong> (mock : erreur au 1er intersect → retry réel récupère l’essence ; échec persistant → NA ; chemin valide intact).</p>

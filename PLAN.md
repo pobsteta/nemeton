@@ -1649,6 +1649,35 @@ cœur).
 
 ## Journal
 
+### 2026-07-02 — Added/Changed : forêt ancienne — helper N2, spec 031 réorientée (cœur, v0.113.0)
+
+Implémentation de la spec 031 **réorientée**. **K1 (constats bloquants
+sur STAC réel)** : (1) `corona-4b` = 3 items, tous au Moyen-Orient, **0
+sur la France** → source morte ; (2)
+[`indicateur_n2_continuite()`](https://pobsteta.github.io/nemeton/reference/indicateur_n2_continuite.md)
+a **déjà** un argument `foret_ancienne` (fraction ancienne → score
+60-100) → un N4 dédié serait **redondant**. **Décision Pascal** :
+abandonner N4, renforcer N2.
+
+**Livré** :
+`build_foret_ancienne_mask(source, forest_class, threshold, min_area_m2, crs)`
+(`R/indicators-naturalness.R`) — source-agnostique : vecteur
+(validé/reprojeté/filtré) ou raster (masque par classe/seuil/`>0` →
+polygonisé
+[`terra::as.polygons`](https://rspatial.github.io/terra/reference/as.polygons.html)
+→ taches contiguës → filtre aire). Sortie = couche sf
+`foret_ancienne = TRUE` passée telle quelle à
+[`indicateur_n2_continuite()`](https://pobsteta.github.io/nemeton/reference/indicateur_n2_continuite.md).
+`corona-4b` **non déclaré** dans FR.json.
+
+**Tests** : `test-foret-ancienne-mask.R` 6 PASS (classe, seuil, vecteur,
+filtre aire, intégration N2 → 100, type invalide). NAMESPACE +
+`_pkgdown.yml` + `man/build_foret_ancienne_mask.Rd` à la main. Spec 031
+pivotée (v0.2.0, plan N4 conservé en `<details>`).
+
+**Brief `nemetonshiny` fourni séparément** (upload source historique →
+helper → N2). Specs restantes : 032 (microclimat albédo+LST).
+
 ### 2026-07-02 — Fixed : enrichissement BD Forêt sur géométrie invalide (cœur, v0.112.1)
 
 Diagnostic d’un run réel Pascal (30 UGF, dépt 45) :

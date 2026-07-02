@@ -1,5 +1,35 @@
 # Changelog
 
+## nemeton 0.113.0 (2026-07-02)
+
+#### Added — `build_foret_ancienne_mask()` : couche forêt ancienne pour N2 (spec 031)
+
+Nouvelle fonction exportée
+**[`build_foret_ancienne_mask()`](https://pobsteta.github.io/nemeton/reference/build_foret_ancienne_mask.md)**
+qui construit la couche `foret_ancienne` consommée par
+[`indicateur_n2_continuite()`](https://pobsteta.github.io/nemeton/reference/indicateur_n2_continuite.md)
+(continuité forestière) depuis une **source historique fournie par
+l’utilisateur**, source-agnostique :
+
+- **vecteur** (sf/sfc) : forêt ancienne déjà vectorisée (Cassini, carte
+  d’état-major digitalisée, couche IGN « forêt ancienne ») → validée,
+  reprojetée, filtrée par aire ;
+- **raster** (SpatRaster) : carte forestière historique → masque dérivé
+  par classe (`forest_class`), par seuil (`threshold`) ou `valeur > 0`,
+  polygonisé, scindé en taches contiguës, filtré par aire
+  (`min_area_m2`).
+
+La sortie (couche sf `foret_ancienne = TRUE`) se passe directement à
+`indicateur_n2_continuite(units, foret_ancienne = ...)`.
+
+**Réorientation de la spec 031** : le plan initial (nouvel indicateur
+**N4** alimenté par l’imagerie **Corona 4B**) est **abandonné** —
+vérification faite, la collection Theia `corona-4b` ne couvre que le
+Moyen-Orient (0 item sur la France), et N2 gère **déjà** la forêt
+ancienne via son argument `foret_ancienne` (un N4 aurait été redondant).
+Le livrable utile est donc ce helper qui produit cette couche, sans
+indicateur redondant ni source morte.
+
 ## nemeton 0.112.1 (2026-07-02)
 
 #### Fixed — Enrichissement BD Forêt : réparation des géométries invalides
