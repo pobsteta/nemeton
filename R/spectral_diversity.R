@@ -163,7 +163,19 @@ compute_spectral_diversity <- function(reflectance,
       sf::st_crs(u)$wkt != terra::crs(raster, describe = FALSE)) {
     u <- sf::st_transform(u, terra::crs(raster))
   }
-  as.numeric(exactextractr::exact_extract(raster, u, "mean", progress = FALSE))
+  ex <- exactextractr::exact_extract(raster, u, "mean", progress = FALSE)
+  # A multi-layer raster (e.g. biodivMapR's beta diversity = 3 PCoA/Bray-Curtis
+  # axes) makes exact_extract return a data.frame (one mean column per band).
+  # `as.numeric()` on a data.frame errors ("list cannot be coerced to double").
+  # Collapse to one scalar per unit — the mean across bands (the unit's mean
+  # position in the ordination space) — while leaving single-layer extraction
+  # (e.g. alpha diversity for B4) numerically unchanged.
+  if (is.data.frame(ex)) {
+    res <- rowMeans(as.matrix(ex), na.rm = TRUE)
+    res[is.nan(res)] <- NA_real_   # all-NA unit (no raster coverage)
+    return(res)
+  }
+  as.numeric(ex)
 }
 
 

@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.114.1] - 2026-07-02
+
+### Fixed
+- `indicateur_l3_het_spectrale()` crashed ("list cannot be coerced to double")
+  on the real biodivMapR beta-diversity output, a multi-band raster (3 PCoA
+  Bray-Curtis axes): `exact_extract(..., "mean")` returns a data.frame that
+  `as.numeric()` cannot coerce. `.aggregate_diversity()` now collapses a
+  multi-band extraction to one scalar per unit (mean across bands), leaving
+  single-band alpha (B4) unchanged; off-coverage units yield `NA`. Added a
+  multi-band regression test.
+
 ## [0.114.0] - 2026-07-02
 
 ### Added
