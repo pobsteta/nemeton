@@ -9,7 +9,7 @@ biophysiques multi-famille** pour la gestion forestiere durable.
 
 ## Architecture (ADR-009)
 
-    nemeton (ce repo)       -> Package coeur R (MIT). 31 indicateurs, 12 familles, NDP, radar.
+    nemeton (ce repo)       -> Package coeur R (GPL-3). 31 indicateurs, 12 familles, NDP, radar.
     nemetonshiny            -> Application Shiny (EUPL v1.2). Interface web interactive.
     tree_sat_nemeton        -> Classification d'essences Sentinel-1/2. NDP 0. MIT.
     maestro_nemeton         -> Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
@@ -200,7 +200,7 @@ Site pkgdown :
 
 ## Licence
 
-MIT - Voir [LICENSE](https://pobsteta.github.io/nemeton/LICENSE)
+GPL-3 - Voir [LICENSE](https://pobsteta.github.io/nemeton/LICENSE)
 
 L’application Shiny
 ([nemetonshiny](https://github.com/pobsteta/nemetonshiny)) est sous EUPL
