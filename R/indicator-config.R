@@ -178,11 +178,12 @@ INDICATOR_FAMILIES <- list(
     name_en = "Temporal Dynamics",
     icon = "clock-fill",
     color = "#FFD700",
-    indicators = c("T1", "T2"),
-    column_names = c("indicateur_t1_anciennete", "indicateur_t2_changement"),
+    indicators = c("T1", "T2", "T3"),
+    column_names = c("indicateur_t1_anciennete", "indicateur_t2_changement", "indicateur_t3_coupes_rases"),
     indicator_labels = list(
       T1 = list(fr = "Anciennet\u00e9 foresti\u00e8re", en = "Forest Age"),
-      T2 = list(fr = "Taux de changement", en = "Change Rate")
+      T2 = list(fr = "Taux de changement", en = "Change Rate"),
+      T3 = list(fr = "Coupes rases", en = "Clear-cuts")
     ),
     indicator_tooltips = list(
       T1 = list(
@@ -192,6 +193,10 @@ INDICATOR_FAMILIES <- list(
       T2 = list(
         fr = "Taux de changement de la couverture foresti\u00e8re sur les 30 derni\u00e8res ann\u00e9es. Valeurs positives = extension, n\u00e9gatives = r\u00e9gression.",
         en = "Rate of forest cover change over the last 30 years. Positive values = expansion, negative = regression."
+      ),
+      T3 = list(
+        fr = "Pression de coupe rase (produit SUFOSAT, radar Sentinel-1). Fraction r\u00e9cente coup\u00e9e \u00e0 blanc, pond\u00e9r\u00e9e par r\u00e9cence. Sens invers\u00e9 : plus de coupe = indice plus bas.",
+        en = "Clear-cut pressure (SUFOSAT product, Sentinel-1 radar). Recency-weighted recently clear-cut fraction. Inverted sense: more clear-cutting = lower score."
       )
     )
   ),

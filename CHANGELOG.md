@@ -10,6 +10,19 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.112.0] - 2026-07-02
+
+### Added
+- Indicator **T3 "Clear-cuts"** (`indicateur_t3_coupes_rases()`, spec 030):
+  recency-weighted clear-cut pressure per forest unit from the SUFOSAT
+  national product (CNES/CESBIO, Sentinel-1 radar change detection). `dates`
+  encoded YYDDD, `proba` in percent; `window_years`/`min_proba` parameters.
+  Oriented "high = bad" like R5 — inverted in `normalize_indicator()`.
+  Source-conditional (NULL raster -> NA); joins the T family config and
+  normalization but not `list_indicators()` (the 31 base indicators).
+- `inst/datasources/FR.json`: `sufosat` source (collection confirmed on the
+  live Theia MTD STAC 2026-07-02, assets `dates`/`proba`).
+
 ## [0.111.0] - 2026-07-02
 
 ### Added
