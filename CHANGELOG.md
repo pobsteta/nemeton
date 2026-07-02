@@ -12,6 +12,27 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.117.0\] - 2026-07-02
+
+### Added
+
+- reGénération engine scaffolds L1/L2 (spec 027 v2.1):
+  [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
+  (biljouR — soil water balance),
+  [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+  (microclimf — summer under-canopy exposure) and
+  [`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)
+  (lasR/lidR — PAI). Heavy GPL deps stay in `Suggests` (guarded via
+  `requireNamespace`, clean degradation). Each offers a pure, testable
+  `precomputed` fast-path that attaches a pre-computed engine output to
+  `units` as the §7 columns without the engine — so the `regen_* -> r3`
+  / `indice_priorite_regen` pipeline already runs on pre-computed model
+  outputs.
+  [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+  derives `d_tmax`/`d_vpd` and `rang_sensibilite`. `biljouR` is not yet
+  declared in Suggests/Remotes (repo to confirm); guarded via
+  `requireNamespace` only.
+
 ## \[0.116.0\] - 2026-07-02
 
 ### Added

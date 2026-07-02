@@ -265,6 +265,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/nemeton_units.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/normalize_indicator.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/normalize_indicators.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/plot_comparison_map.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/plot_correlation_matrix.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/plot_difference_map.html</loc></url>
@@ -303,6 +304,8 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_layer_manifest.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_model_info.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_year_bounds.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/regen_sensibilite.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/regeneration_tolerances.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/register_monitoring_zone.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/reset_knowledge_manifest.html</loc></url>

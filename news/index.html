@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.116.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.117.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,21 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.117.0" id="nemeton-01170-2026-07-02">nemeton 0.117.0 (2026-07-02)<a class="anchor" aria-label="anchor" href="#nemeton-01170-2026-07-02"></a></h2>
+<div class="section level4">
+<h4 id="added--scaffolds-des-moteurs-regénération-l1l2-spec-v21-0-117-0">Added — Scaffolds des moteurs reGénération L1/L2 (spec 027 v2.1)<a class="anchor" aria-label="anchor" href="#added--scaffolds-des-moteurs-reg%C3%A9n%C3%A9ration-l1l2-spec-v21-0-117-0"></a></h4>
+<p>Trois moteurs de l’onglet reGénération, en <strong>scaffolds honnêtes</strong> (les dépendances lourdes <code>microclimf</code>/<code>mcera5</code>/<code>lidR</code>/<code>lasR</code>/<code>biljouR</code> restent en <code>Suggests</code>, chargées via <code>requireNamespace</code>, dégradation propre) avec un <strong>chemin <code>precomputed</code> PUR et testable</strong> :</p>
+<ul><li>
+<strong><code><a href="../reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code></strong> (L2, biljouR) — bilan hydrique du sol par UGF : <code>njstress</code>, <code>istress</code>, <code>rew_min</code>, <code>deb_stress</code>. Le chemin <code>precomputed</code> rattache la sortie d’un run BILJOU aux unités (colonnes §7), <strong>sans le moteur</strong> ; alimente directement <code>indicateur_r3_secheresse(biljou=)</code> et <code><a href="../reference/indice_priorite_regen.html">indice_priorite_regen()</a></code>.</li>
+<li>
+<strong><code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code></strong> (L1, microclimf) — exposition microclimatique par UGF : <code>tmax_*</code>, <code>vpd_*</code>, <code>d_tmax</code>, <code>d_vpd</code>, <code>sensibilite</code>, <code>robustesse</code>… Le chemin <code>precomputed</code> rattache + <strong>dérive</strong> <code>d_tmax</code>/<code>d_vpd</code> (canicule − moyenne) et <code>rang_sensibilite</code> (1 = plus sensible).</li>
+<li>
+<strong><code><a href="../reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code></strong> (L1, lasR/lidR) — PAI mur-à-mur depuis un nuage LiDAR HD ; <code>precomputed</code> accepte un <code>SpatRaster</code> PAI pré-calculé (pass-through).</li>
+</ul><p>Sans <code>precomputed</code> ni moteur installé, chaque fonction <strong>échoue proprement</strong> avec un message actionnable (« installer X, ou passer <code>precomputed</code> »). Quand le moteur est installé mais l’orchestration réelle pas encore câblée, message « exécuter le prototype reGénération et passer <code>precomputed</code> ». <strong>Le pipeline <code>regen_sensibilite</code>/<code>regen_bilan_hydrique → r3</code> / <code>indice_priorite_regen</code> fonctionne dès aujourd’hui sur des sorties de moteur pré-calculées.</strong></p>
+<p><strong>Note dépendance</strong> : <code>biljouR</code> (GPL-3) n’est pas encore dans <code>Suggests</code>/ <code>Remotes</code> (dépôt à confirmer) — gardé via <code>requireNamespace</code> uniquement. À déclarer une fois le dépôt connu.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.116.0" id="nemeton-01160-2026-07-02">nemeton 0.116.0 (2026-07-02)<a class="anchor" aria-label="anchor" href="#nemeton-01160-2026-07-02"></a></h2>
 <div class="section level4">
