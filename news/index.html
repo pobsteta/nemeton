@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.112.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.112.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.112.1" id="nemeton-01121-2026-07-02">nemeton 0.112.1 (2026-07-02)<a class="anchor" aria-label="anchor" href="#nemeton-01121-2026-07-02"></a></h2>
+<div class="section level4">
+<h4 id="fixed--enrichissement-bd-forêt--réparation-des-géométries-invalides-0-112-1">Fixed — Enrichissement BD Forêt : réparation des géométries invalides<a class="anchor" aria-label="anchor" href="#fixed--enrichissement-bd-for%C3%AAt--r%C3%A9paration-des-g%C3%A9om%C3%A9tries-invalides-0-112-1"></a></h4>
+<p><code><a href="../reference/enrich_parcels_bdforet.html">enrich_parcels_bdforet()</a></code> <strong>récupère désormais</strong> les couches BD Forêt V2 qui contiennent des anneaux invalides (p. ex. <code>Loop 0 is not valid: Edge N is degenerate (duplicate vertex)</code>). Auparavant, une seule géométrie invalide faisait <strong>échouer toute l’intersection</strong> (<code><a href="https://r-spatial.github.io/sf/reference/geos_binary_ops.html" class="external-link">sf::st_intersection</a></code>) → l’essence et l’âge étaient posés sur <strong>0 UGF</strong>, et les indicateurs dépendant de l’essence (P1/P2/P3, enrichissement C/B) retombaient silencieusement sur l’inventaire synthétique CHM (d’où <code>qualité bois diamètre = 0</code>, <code>CO2 évité = 0</code>, etc.).</p>
+<p>Le correctif tente l’intersection brute puis, en cas d’échec, <strong>répare les deux couches avec <code><a href="https://r-spatial.github.io/sf/reference/valid.html" class="external-link">sf::st_make_valid()</a></code> et réessaie une fois</strong> avant d’abandonner — le coût de réparation n’est payé que lorsqu’une géométrie est réellement invalide. Observé sur un run réel (30 UGF, dépt 45) où l’enrichissement passait de 0/30 à l’ensemble des UGF couvertes.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.112.0" id="nemeton-01120-2026-07-02">nemeton 0.112.0 (2026-07-02)<a class="anchor" aria-label="anchor" href="#nemeton-01120-2026-07-02"></a></h2>
 <div class="section level4">

@@ -1,5 +1,29 @@
 # Changelog
 
+## nemeton 0.112.1 (2026-07-02)
+
+#### Fixed — Enrichissement BD Forêt : réparation des géométries invalides
+
+[`enrich_parcels_bdforet()`](https://pobsteta.github.io/nemeton/reference/enrich_parcels_bdforet.md)
+**récupère désormais** les couches BD Forêt V2 qui contiennent des
+anneaux invalides (p. ex.
+`Loop 0 is not valid: Edge N is degenerate (duplicate vertex)`).
+Auparavant, une seule géométrie invalide faisait **échouer toute
+l’intersection**
+([`sf::st_intersection`](https://r-spatial.github.io/sf/reference/geos_binary_ops.html))
+→ l’essence et l’âge étaient posés sur **0 UGF**, et les indicateurs
+dépendant de l’essence (P1/P2/P3, enrichissement C/B) retombaient
+silencieusement sur l’inventaire synthétique CHM (d’où
+`qualité bois diamètre = 0`, `CO2 évité = 0`, etc.).
+
+Le correctif tente l’intersection brute puis, en cas d’échec, **répare
+les deux couches avec
+[`sf::st_make_valid()`](https://r-spatial.github.io/sf/reference/valid.html)
+et réessaie une fois** avant d’abandonner — le coût de réparation n’est
+payé que lorsqu’une géométrie est réellement invalide. Observé sur un
+run réel (30 UGF, dépt 45) où l’enrichissement passait de 0/30 à
+l’ensemble des UGF couvertes.
+
 ## nemeton 0.112.0 (2026-07-02)
 
 #### Added — Indicateur T3 « Coupes rases » (SUFOSAT, spec 030)
