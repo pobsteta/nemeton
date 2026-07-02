@@ -440,6 +440,9 @@ reference:
     - indicateur_r6_sensibilite
     - indicateur_w4_vpd
     - indice_priorite_regen
+    - regen_sensibilite
+    - regen_bilan_hydrique
+    - pai_depuis_nuage
     - regeneration_tolerances
     - microclimate_detect_years
     - microclimate_run

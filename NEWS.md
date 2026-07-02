@@ -1,3 +1,35 @@
+# nemeton 0.117.0 (2026-07-02)
+
+### Added — Scaffolds des moteurs reGénération L1/L2 (spec 027 v2.1)
+
+Trois moteurs de l'onglet reGénération, en **scaffolds honnêtes** (les
+dépendances lourdes `microclimf`/`mcera5`/`lidR`/`lasR`/`biljouR` restent en
+`Suggests`, chargées via `requireNamespace`, dégradation propre) avec un
+**chemin `precomputed` PUR et testable** :
+
+- **`regen_bilan_hydrique()`** (L2, biljouR) — bilan hydrique du sol par UGF :
+  `njstress`, `istress`, `rew_min`, `deb_stress`. Le chemin `precomputed`
+  rattache la sortie d'un run BILJOU aux unités (colonnes §7), **sans le
+  moteur** ; alimente directement `indicateur_r3_secheresse(biljou=)` et
+  `indice_priorite_regen()`.
+- **`regen_sensibilite()`** (L1, microclimf) — exposition microclimatique par
+  UGF : `tmax_*`, `vpd_*`, `d_tmax`, `d_vpd`, `sensibilite`, `robustesse`… Le
+  chemin `precomputed` rattache + **dérive** `d_tmax`/`d_vpd` (canicule −
+  moyenne) et `rang_sensibilite` (1 = plus sensible).
+- **`pai_depuis_nuage()`** (L1, lasR/lidR) — PAI mur-à-mur depuis un nuage
+  LiDAR HD ; `precomputed` accepte un `SpatRaster` PAI pré-calculé (pass-through).
+
+Sans `precomputed` ni moteur installé, chaque fonction **échoue proprement**
+avec un message actionnable (« installer X, ou passer `precomputed` »). Quand
+le moteur est installé mais l'orchestration réelle pas encore câblée, message
+« exécuter le prototype reGénération et passer `precomputed` ». **Le pipeline
+`regen_sensibilite`/`regen_bilan_hydrique → r3` / `indice_priorite_regen`
+fonctionne dès aujourd'hui sur des sorties de moteur pré-calculées.**
+
+**Note dépendance** : `biljouR` (GPL-3) n'est pas encore dans `Suggests`/
+`Remotes` (dépôt à confirmer) — gardé via `requireNamespace` uniquement. À
+déclarer une fois le dépôt connu.
+
 # nemeton 0.116.0 (2026-07-02)
 
 ### Added — `indicateur_r3_secheresse()` enrichi par le bilan hydrique BILJOU (spec 027 §5.1)
