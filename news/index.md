@@ -1,5 +1,22 @@
 # Changelog
 
+## nemeton 0.114.1 (2026-07-02)
+
+#### Fixed — L3 hétérogénéité spectrale sur β-diversité multi-bandes (spec 028)
+
+[`indicateur_l3_het_spectrale()`](https://pobsteta.github.io/nemeton/reference/indicateur_l3_het_spectrale.md)
+échouait sur un run réel avec *« l’objet ‘list’ ne peut être converti
+automatiquement en un type ‘double’ »*. Cause : la β-diversité
+biodivMapR est un raster **multi-bandes** (3 axes PCoA Bray-Curtis) ;
+`exact_extract(..., "mean")` renvoie alors un `data.frame` (une colonne
+par bande) que [`as.numeric()`](https://rdrr.io/r/base/numeric.html) ne
+peut pas coercer. `.aggregate_diversity()` réduit désormais un extract
+multi-bandes en **un scalaire par unité** (moyenne des bandes = position
+moyenne dans l’espace d’ordination), le comportement mono-bande (B4
+α-diversité) restant strictement inchangé. Les unités hors couverture
+donnent `NA` (et non `NaN`). Le test épinglait un β mono-bande, d’où le
+bug non détecté : ajout d’un cas de régression **multi-bandes**.
+
 ## nemeton 0.114.0 (2026-07-02)
 
 #### Added — Indicateur A5 « Rafraîchissement urbain » (LST, spec 032 réorientée)

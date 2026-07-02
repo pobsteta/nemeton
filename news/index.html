@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.114.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.114.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,13 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.114.1" id="nemeton-01141-2026-07-02">nemeton 0.114.1 (2026-07-02)<a class="anchor" aria-label="anchor" href="#nemeton-01141-2026-07-02"></a></h2>
+<div class="section level4">
+<h4 id="fixed--l3-hétérogénéité-spectrale-sur-β-diversité-multi-bandes-spec-0-114-1">Fixed — L3 hétérogénéité spectrale sur β-diversité multi-bandes (spec 028)<a class="anchor" aria-label="anchor" href="#fixed--l3-h%C3%A9t%C3%A9rog%C3%A9n%C3%A9it%C3%A9-spectrale-sur-%CE%B2-diversit%C3%A9-multi-bandes-spec-0-114-1"></a></h4>
+<p><code><a href="../reference/indicateur_l3_het_spectrale.html">indicateur_l3_het_spectrale()</a></code> échouait sur un run réel avec <em>« l’objet ‘list’ ne peut être converti automatiquement en un type ‘double’ »</em>. Cause : la β-diversité biodivMapR est un raster <strong>multi-bandes</strong> (3 axes PCoA Bray-Curtis) ; <code>exact_extract(..., "mean")</code> renvoie alors un <code>data.frame</code> (une colonne par bande) que <code><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric()</a></code> ne peut pas coercer. <code>.aggregate_diversity()</code> réduit désormais un extract multi-bandes en <strong>un scalaire par unité</strong> (moyenne des bandes = position moyenne dans l’espace d’ordination), le comportement mono-bande (B4 α-diversité) restant strictement inchangé. Les unités hors couverture donnent <code>NA</code> (et non <code>NaN</code>). Le test épinglait un β mono-bande, d’où le bug non détecté : ajout d’un cas de régression <strong>multi-bandes</strong>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.114.0" id="nemeton-01140-2026-07-02">nemeton 0.114.0 (2026-07-02)<a class="anchor" aria-label="anchor" href="#nemeton-01140-2026-07-02"></a></h2>
 <div class="section level4">
