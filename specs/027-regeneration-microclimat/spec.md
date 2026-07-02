@@ -1,29 +1,31 @@
 # Spec 027 — Onglet « reGénération » : vulnérabilité climatique par parcelle
 
-**Statut** : **RÉALIGNÉE sur le brief `/home/pascal/Documents/reGénération/`
-(2026-07-02).** À valider avant reprise du code (paperwork avant code).
-**Version** : 2.0.0 (réalignement) — remplace le cadrage 1.x du 2026-06-30 qui
-avait **réduit le périmètre** au seul microclimat.
-**Cibles** : `nemeton` (cœur — contrat d'indicateurs, MIT) · **`regen_nemeton`
-(NOUVEAU repo — moteurs GPL-3)** · `nemetonshiny` (onglet, EUPL v1.2).
-**ADR associé** : **ADR-014** (« reGénération : moteurs GPL isolés en
-`regen_nemeton`, contrat MIT au cœur ») — brouillon dans
-`ADR-014-draft.md` (ce dossier), à porter dans `platform_nemeton/docs/`.
-Amende **ADR-009** (ajoute un 5ᵉ repo) et **ADR-011** (flag augmenté).
+**Statut** : **RÉALIGNÉE sur le brief `/home/pascal/Documents/reGénération/`,
+puis SIMPLIFIÉE (2026-07-02).** À valider avant reprise du code (paperwork
+avant code).
+**Version** : 2.1.0 — v2.0 isolait les moteurs GPL dans un 5ᵉ repo pour
+protéger un cœur *supposé* MIT ; **or `nemeton` est déjà GPL-3** (LICENSE +
+DESCRIPTION). Le conflit de licence **n'existe pas** → les moteurs vont
+**directement dans `nemeton`**, pas de `regen_nemeton`.
+**Cibles** : `nemeton` (cœur — moteurs + indicateurs, GPL-3) · `nemetonshiny`
+(onglet, GPL-3).
+**ADR** : **pas d'ADR-014 nécessaire** (voir `ADR-014-draft.md`, réduit à une
+note : nemeton étant GPL-3, les moteurs GPL sont admis au cœur). Amende
+**ADR-011** (flag augmenté `microclimate_model`).
 **Sources brief** : `brief-onglet-regeneration.md`, `README.md`, et prototypes
 `pai_lidarhd_lasR.R`, `microclimat_parcelles_robuste.R` (B4),
 `microclimat_parcelles_2annees.R`, `carte_tendances_estivales_eobs.R`.
 
-> ### ⚠️ Pourquoi ce réalignement
-> Le cadrage 1.x (spec 027 v1, 2026-06-30) et l'implémentation qui a suivi
-> (indicateurs A3/A4/W4/R6 + `regeneration_index`, livrés cœur) ont été faits
-> **sans remonter au brief de référence**. Ils ne couvrent que **la moitié
-> microclimat** et tranchent **à l'inverse** la décision licences §8.1 du brief
-> (moteurs GPL mis dans le cœur MIT via `Suggests`, au lieu d'un repo GPL
-> séparé). Cette v2 recolle au brief : **deux moteurs** (exposition
-> microclimatique **+** bilan hydrique du sol BILJOU), **isolement GPL** dans
-> `regen_nemeton`, **schéma de sortie §7**, indice de priorité = **croisement
-> exposition × stress hydrique**.
+> ### ⚠️ Historique du cadrage
+> - **v1** (2026-06-30) : périmètre réduit au seul microclimat, sans remonter
+>   au brief. A produit A3/A4/W4/R6 + `regeneration_index` (parké).
+> - **v2.0** (2026-07-02) : réalignement sur le brief (2 moteurs), mais bâti sur
+>   la prémisse **fausse** « nemeton est MIT » (héritée de l'en-tête du brief et
+>   d'ADR-006 dans CLAUDE.md) → proposait un repo GPL `regen_nemeton`.
+> - **v2.1** (2026-07-02, cette version) : **vérification du fichier LICENSE →
+>   `nemeton` est GPL-3.** Donc aucun conflit avec `microclimf`/`biljouR`/
+>   `lidR`/`lasR` (tous GPL-3) : **tout reste dans `nemeton`**, `regen_nemeton`
+>   abandonné.
 
 ---
 
@@ -48,69 +50,71 @@ Le **croisement** des deux produit un **indice de priorité de régénération**
 plus défendable que chacun isolé, et alimente les familles NMT existantes
 **A (microclimat), R (r3 sécheresse), W (eau), C (vitalité)**.
 
-## 2. Architecture & licences (décision structurante — ADR-014)
+## 2. Architecture & licences (simplifiée — tout GPL-3)
 
-> **Bloquant, tranché dans le brief §8.1 :** `biljouR`, `microclimf`, `lidR`,
-> `lasR` sont **GPL-3**. Ils ne doivent **pas** devenir des dépendances du cœur
-> `nemeton` (MIT). → **5ᵉ repository `regen_nemeton` (GPL-3)**, consommé par
-> `nemetonshiny` (EUPL v1.2, compatible GPL-3 en distribution). Respecte la
-> logique multi-repo ADR-009 et garde le cœur MIT propre.
+**`nemeton` est GPL-3** (LICENSE = GNU GPL v3.0, DESCRIPTION `License: GPL-3`).
+`microclimf`, `biljouR`, `lidR`, `lasR` sont **GPL-3** : **aucun conflit**. Les
+moteurs vont donc **dans `nemeton`**, sans repo séparé.
 
-| Brique | Repo | Rôle | Licence |
-|---|---|---|---|
-| Contrat d'indicateurs (codes NMT A/R/W/C, NDP, normalisation) | `nemeton` | **déclare + normalise** ; consomme des rasters/`sf` **précalculés**, aucune dép GPL | MIT |
-| Moteur PAI LiDAR HD (`pai_depuis_nuage`) | **`regen_nemeton`** | PAI mur-à-mur depuis nuage `.laz` | GPL-3 |
-| Moteur microclimat (`microclimf`) | **`regen_nemeton`** | ΔT°max, ΔVPD, tamponnement, sensibilité, robustesse | GPL-3 |
-| Moteur bilan hydrique (`biljouR`) | **`regen_nemeton`** | REW, NJstress, Istress, forçage SAFRAN | GPL-3 |
-| Onglet `mod_regeneration`, persistance PostGIS, export | `nemetonshiny` | UI, orchestration tâche de fond, historisation, PDF/GPKG | EUPL v1.2 |
+| Brique | Repo | Rôle |
+|---|---|---|
+| Moteurs (PAI LiDAR, microclimf, biljouR) + indicateurs + normalisation | `nemeton` (GPL-3) | calcul **et** contrat NMT (A/R/W/C, NDP, schéma §7) |
+| Onglet `mod_regeneration`, persistance PostGIS, export, LLM | `nemetonshiny` (GPL-3) | UI, orchestration tâche de fond, historisation, PDF/GPKG |
 
-Sens des dépendances : `regen_nemeton` → `nemeton` (contrat) ; `nemetonshiny`
-→ `nemeton` **et** `regen_nemeton`. Jamais l'inverse.
+**Dépendances lourdes en `Suggests`** (pas `Imports`) — non par contrainte de
+licence (tout est GPL-3), mais par **hygiène d'installation** : `microclimf`
+(GitHub), `mcera5`, `ecmwfr`, `lidR`, `lasR`, `biljouR` sont lourdes et pas
+toutes sur le CRAN. Chargement via `requireNamespace(..., quietly = TRUE)`,
+**échec propre** si absentes (message actionnable). Cohérent avec la règle
+spec 005 / CLAUDE.md. Le cœur reste **installable et testable sans elles** (les
+indicateurs acceptent un `micro` / un bilan précalculé ; CI sans réseau).
+
+Sens des dépendances (inchangé) : `nemetonshiny → nemeton`. Jamais l'inverse.
 
 ## 3. Réconciliation avec l'existant (déjà livré cœur)
 
-Sont **déjà dans `nemeton`** (livrés avant ce réalignement) :
-
-| Élément livré | Devenir proposé (à trancher, §10) |
+| Élément livré | Devenir |
 |---|---|
-| `indicateur_a3_microclimat`, `a4_tamponnement`, `w4_vpd`, `r6_sensibilite` | **Restent au cœur** (MIT) : ils consomment un `micro` **précalculé**, sans dépendance GPL. Conformes au rôle « le cœur déclare/normalise ». |
-| `microclimate_run()` (scaffold appelant `microclimf`) | **Migrer** vers `regen_nemeton` (c'est un moteur GPL). Le cœur n'appelle plus microclimf. |
-| `microclimate_detect_years()` (E-OBS) | À arbitrer : E-OBS n'est pas GPL → peut rester au cœur, ou suivre le moteur. |
-| **`regeneration_index()` + `regeneration_tolerances()`** (v0.115.0, **non mergé**, parké) | **Retravailler** : l'indice cible du brief est un **croisement exposition × stress hydrique** (`indice_priorite_regen`), pas une moyenne pondérée A3/A4/W4/R6. La **pénalité par essence** (inventée hors brief) est à statuer : la garder comme raffinement optionnel, ou la retirer. |
+| `indicateur_a3_microclimat`, `a4_tamponnement`, `w4_vpd`, `r6_sensibilite` | **Restent** tels quels (consomment un `micro` précalculé). |
+| `microclimate_run()` (scaffold appelant `microclimf`) | **Reste au cœur** et sera **complété** en orchestrateur réel (microclimf en `Suggests`). Plus de migration. |
+| `microclimate_detect_years()` (E-OBS) | Reste au cœur. |
+| **`regeneration_index()` + `regeneration_tolerances()`** (parké, non mergé) | **Retravailler** : l'indice cible du brief est un **croisement exposition × stress hydrique** (`indice_priorite_regen`), pas une moyenne pondérée A3/A4/W4/R6. La **pénalité par essence** (inventée hors brief) est à statuer : la garder en option, ou la retirer. |
 
 ## 4. Pipeline (par jeu de parcelles)
 
 ```
-UG (GPKG) ─┬─► [regen_nemeton] pai_depuis_nuage(.laz) ─► PAI raster
-           │                                              │
-           │      LiDAR HD MNT/MNH ─► dtm, hgt            ▼
-           │                              microclimf(veg, soil, forçage ERA5)
-           │                                    ├─► ΔT°max, ΔVPD par pixel
-           │                                    └─► agrégat UG ─► sensibilité, robustesse
+UG (GPKG) ─┬─► pai_depuis_nuage(.laz) ─► PAI raster
+           │                              │
+           │   LiDAR HD MNT/MNH ─► dtm, hgt▼
+           │                        microclimf(veg, soil, forçage ERA5)
+           │                              ├─► ΔT°max, ΔVPD par pixel
+           │                              └─► agrégat UG ─► sensibilité, robustesse
            │
-           └─► [regen_nemeton] lai_max ⇐ PAI(UG) ─► biljouR::biljou_run_grid(SAFRAN, sol)
-                                                     └─► REW, NJstress, Istress par UG
-                                            │
-                    indice_priorite_regen ◄─┘  (croisement exposition × stress hydrique)
+           └─► lai_max ⇐ PAI(UG) ─► biljouR::biljou_run_grid(SAFRAN, sol)
+                                     └─► REW, NJstress, Istress par UG
+                            │
+        indice_priorite_regen ◄─┘  (croisement exposition × stress hydrique)
 ```
 
 **Couplage clé** : le PAI par parcelle (`pai_depuis_nuage`) alimente le
 `lai_max` de `biljou_run_grid()`. ⚠️ PAI ≈ LAI **uniquement** en acquisition
 *feuilles présentes* — paramètre/conversion à exposer (§9.3).
 
-## 5. Contrat côté `nemeton` (MIT — déclare, ne calcule pas les moteurs GPL)
+## 5. Contenu côté `nemeton` (GPL-3 — calcule ET déclare)
 
-1. **Enrichir `indicateur_r3_secheresse`** pour accepter les métriques BILJOU
-   (`njstress`, `istress`, `deb_stress`) en plus du score 0-100 — exposer les
-   **valeurs brutes** (jours, indice), pas seulement le score (conformité).
-2. **Sous-indicateurs microclimat** (déjà là) : A3/A4/W4/R6, avec les champs
-   bruts `d_tmax`, `d_vpd`, `sensibilite`, `robustesse`.
-3. **Normalisation** 0-100 ↔ valeurs physiques (déjà via `normalize_indicator`
-   / `create_family_index`, radar 12 axes inchangé).
-4. **Schéma de sortie documenté** (§7) comme contrat de colonnes.
-5. **Aucune dépendance GPL** au `DESCRIPTION` de `nemeton` (vérif R-CMD-check).
+1. **Moteurs** (nouveaux fichiers) : `pai_depuis_nuage` (PAI LiDAR),
+   orchestration `microclimf` (compléter `microclimate_run`), intégration
+   `biljouR` (`regen_bilan_hydrique`), croisement `regen_priorite`. Dépendances
+   en `Suggests`, dégradation propre.
+2. **Enrichir `indicateur_r3_secheresse`** pour accepter les métriques BILJOU
+   (`njstress`, `istress`, `deb_stress`) + exposer les **valeurs brutes**.
+3. **Sous-indicateurs microclimat** (déjà là) A3/A4/W4/R6 + champs bruts
+   `d_tmax`, `d_vpd`, `sensibilite`, `robustesse`.
+4. **Indice `indice_priorite_regen`** (retravail de `regeneration_index`) =
+   croisement exposition × stress hydrique.
+5. **Schéma de sortie §7** documenté comme contrat de colonnes.
 
-Interfaces `regen_nemeton` à stabiliser (prototypées) :
+Interfaces à stabiliser (prototypées dans `/Documents/reGénération/`) :
 
 ```r
 pai_depuis_nuage(dossier_las, grille, parcelle = NULL, res = 2, k = 0.5, ...)         # -> SpatRaster
@@ -134,8 +138,8 @@ regen_priorite(sf_exposition, sf_hydrique)                                      
 réglementaire) ; ERA5-Land en repli et pour le microclimat.
 
 **Branche A (national/régional, optionnelle)** : reproduction de la carte
-bivariée de tendances estivales E-OBS (T°max × précipitations) — contexte
-régional, prototypes `carte_tendances_estivales_eobs.R` / `…_avec_animation.R`.
+bivariée de tendances estivales E-OBS (T°max × précipitations) — prototypes
+`carte_tendances_estivales_eobs.R` / `…_avec_animation.R`.
 
 ## 7. Schéma de sortie (GPKG / table UG) — contrat à figer
 
@@ -167,16 +171,15 @@ régional, prototypes `carte_tendances_estivales_eobs.R` / `…_avec_animation.R
   `njstress`/`istress`/`sensibilite`, recommandations régénération + flag des
   conflits inter-profils (ex. régénération vs biodiversité B/N).
 - **Persistance/export** : table PostGIS versionnée des états climatiques par
-  UG (6A Archivage) ; section Quarto « reGénération » ; champs GPKG §7 ; i18n
-  FR/EN.
+  UG ; section Quarto « reGénération » ; champs GPKG §7 ; i18n FR/EN.
 
 ## 9. Contraintes & décisions du brief (rappel)
 
-- **9.1 Licence** (bloquant) : repo `regen_nemeton` GPL-3, cœur MIT intact — cf.
-  ADR-014.
+- **9.1 Licence** : **résolu** — tout est GPL-3, moteurs au cœur. (Plus de repo
+  séparé ni d'arbitrage bloquant.)
 - **9.2 Crédibilité BILJOU** : réimplémentation **non cautionnée INRAE**,
-  constantes à **caler sur BILJOU officiel** ; communiquer en **classement
-  relatif** (prudence en valeur absolue).
+  constantes à **caler sur BILJOU officiel** ; sorties communiquées en
+  **classement relatif** (prudence en valeur absolue).
 - **9.3 Hypothèses physiques** : PAI ≈ LAI si feuilles présentes ; sol
   uniforme ; **canopée figée** pour les comparaisons inter-annuelles (isole
   l'effet climatique, pas mortalité/éclaircies/scolytes).
@@ -187,62 +190,37 @@ régional, prototypes `carte_tendances_estivales_eobs.R` / `…_avec_animation.R
 
 ## 10. Décisions à trancher (avant reprise du code)
 
-1. **Créer `regen_nemeton`** (GPL-3) ? confirmer le nom + l'org GitHub. *(brief
-   §8.1 — bloquant.)*
-2. **A3/A4/W4/R6 restent-ils au cœur** (MIT, consomment `micro` précalculé),
-   `microclimate_run` migrant vers `regen_nemeton` ? *(reco : oui.)*
-3. **`regeneration_index`** : le retravailler en `indice_priorite_regen`
+1. **`regeneration_index`** : le retravailler en `indice_priorite_regen`
    (croisement exposition × stress hydrique) — garder ou retirer la **pénalité
    par essence** (hors brief) ? Renommer les colonnes de sortie sur le §7 ?
-4. **Forçage** : SAFRAN primaire via `biljouR::safran_download` confirmé ?
-5. **Tag NDP** : indicateurs **modélisés mécanistes** → NDP 1 forcé, ou un
+2. **Forçage** : SAFRAN primaire via `biljouR::safran_download` confirmé ?
+3. **Tag NDP** : indicateurs **modélisés mécanistes** → NDP 1 forcé, ou un
    flag/tag dédié « modèle mécaniste » (amende ADR-011, déjà flag
    `microclimate_model`) ?
-6. **Branche A E-OBS nationale** : dans le périmètre v1 de l'onglet, ou lot
+4. **Branche A E-OBS nationale** : dans le périmètre v1 de l'onglet, ou lot
    ultérieur ?
 
-## 11. Lots (du brief §9)
+*(Les ex-décisions « créer regen_nemeton » et « migrer microclimate_run » sont
+caduques : tout reste au cœur GPL-3.)*
+
+## 11. Lots
 
 | Lot | Contenu | Repo | Dépend |
 |---|---|---|---|
-| **L0** | Arbitrage licence + création `regen_nemeton` | org | — |
-| **L1** | `pai_depuis_nuage` + `regen_sensibilite` (microclimat) | `regen_nemeton` | L0 |
-| **L2** | `biljouR` + `regen_bilan_hydrique` + forçage SAFRAN | `regen_nemeton` | L0 |
-| **L3** | couplage PAI→lai_max + `regen_priorite` + **contrat NMT** (r3 enrichi, colonnes §7) | `regen_nemeton`, `nemeton` | L1, L2 |
+| **L1** | `pai_depuis_nuage` + `regen_sensibilite` (compléter `microclimate_run`) | `nemeton` | — |
+| **L2** | `biljouR` + `regen_bilan_hydrique` + forçage SAFRAN | `nemeton` | — |
+| **L3** | couplage PAI→lai_max + `regen_priorite` + contrat NMT (r3 enrichi, colonnes §7, `indice_priorite_regen`) | `nemeton` | L1, L2 |
 | **L4** | `mod_regeneration` (UI, run fond, cartes) | `nemetonshiny` | L3 |
 | **L5** | profil LLM adaptation + `mod_synthesis` | `nemetonshiny` | L4 |
 | **L6** | `service_db` (persistance) + `service_export` (PDF/GPKG/i18n) | `nemetonshiny` | L4 |
-| **L7** | calibration BILJOU + validation carto + doc/vignette | tous | L2-L6 |
-
-**Ordre** : L0 (licence) → moteurs (`regen_nemeton`) + contrat (`nemeton`) →
-app. Rien de nouveau au cœur avant la décision §10.1.
+| **L7** | calibration BILJOU + validation carto + doc/vignette | les deux | L2-L6 |
 
 ## 12. Critères d'acceptation (du brief §10)
 
 - Un jeu d'UG produit un GPKG conforme au §7 + une section PDF Quarto.
 - Le radar reflète A/R/W/C sans régression sur les indicateurs existants.
-- Le cœur `nemeton` reste **sans dépendance GPL** (`DESCRIPTION` + R-CMD-check).
+- Les dépendances lourdes restent en `Suggests` ; le cœur reste installable et
+  **testable sans réseau** (CI verte sans microclimf/biljouR/LiDAR réels).
 - Les UG à `couverture_pct` faible sont signalées et exclues par défaut.
 - La synthèse LLM cite `njstress`/`istress`/`sensibilite` + actions.
 - Un run est **rejouable depuis le cache** sans re-télécharger LiDAR/forçage.
-
----
-
-## Annexe — Historique du cadrage v1 (2026-06-30, périmètre réduit, conservé pour trace)
-
-<details>
-<summary>Cadrage initial microclimat-seul (superseded par cette v2)</summary>
-
-Le cadrage v1 ne retenait que l'exposition microclimatique (microclimf), avec
-les sous-indicateurs A3 (T°max sous couvert), A4 (tamponnement), W4 (VPD),
-R6 (sensibilité canicule/moyenne), un pipeline `microclimate_*` dans le cœur
-(microclimf en `Suggests`), un flag NDP `microclimate_model`, la détection auto
-des années via E-OBS (`microclimate_detect_years`), et un indice composite
-`regeneration_index` = moyenne pondérée équipondérée + tolérances par essence.
-
-Livrés cœur : A3/A4/W4/R6 (familles A/W/R), `microclimate_run` (scaffold),
-`microclimate_detect_years`. Parké (non mergé) : `regeneration_index` +
-`regeneration_tolerances`. **Ces éléments sont réconciliés au §3.** Le bilan
-hydrique BILJOU et l'isolement GPL `regen_nemeton` étaient **absents** de v1 —
-c'est l'objet du réalignement.
-</details>

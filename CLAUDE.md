@@ -123,7 +123,7 @@ ADR documentés dans `platform_nemeton/docs/` :
 | 003 | OVHcloud (principal) + Scaleway GPU L4 (ponctuel) |
 | 004 | Mistral API (souveraineté FR), migration self-hosted possible |
 | 005 | OAuth2/OIDC via AgentConnect → Keycloak fédéré pour l'Europe |
-| 006 | EUPL v1.2 (plateforme) + MIT (packages R) + CC-BY 4.0 (données) |
+| 006 | EUPL v1.2 (plateforme) + **GPL-3** (packages R `nemeton`/`nemetonshiny`, cf. fichier `LICENSE`) + CC-BY 4.0 (données) — *l'ADR-006 d'origine mentionnait « MIT (packages R) » ; le `LICENSE` réel fait foi = GPL-3, à réconcilier dans `platform_nemeton`* |
 | 007 | Pipeline NDP : TreeSatAI (NDP 0) → PureForest (NDP 1) → local (NDP 2+) |
 | 008 | OGC, ETRS89/EPSG:3035 paneuropéen, INSPIRE, sources par pays |
 | 009 | 4 packages (nemeton, tree_sat, maestro, nemeton.app) |

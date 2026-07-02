@@ -1255,15 +1255,21 @@ microclimat et tranchent à l'inverse la décision licences §8.1. **Décision
 Pascal : réaligner sur le brief complet.**
 - **`regeneration_index` NON mergé** (PR #163 fermée, branche `feat/regeneration-index`
   parkée) — sera retravaillé en `indice_priorite_regen`.
-- **spec 027 réécrite en v2.0.0** : deux moteurs (microclimf exposition +
-  **biljouR bilan hydrique**), **repo GPL `regen_nemeton`** (isole les moteurs
-  GPL du cœur MIT), schéma de sortie §7, r3 enrichi, branche A E-OBS nationale.
-  Réconciliation de l'existant au §3. 6 décisions à trancher au §10.
-- **ADR-014 brouillon** (`specs/027-.../ADR-014-draft.md`) : `regen_nemeton`
-  GPL-3, contrat MIT au cœur ; amende ADR-009 (5ᵉ repo) + ADR-011. À porter
-  dans `platform_nemeton` par Pascal.
-- **Rien de nouveau au cœur avant validation** de la spec v2 (§10.1 = créer
-  `regen_nemeton`, bloquant).
+- **spec 027 réécrite en v2.0.0** puis **simplifiée en v2.1.0** : deux moteurs
+  (microclimf exposition + **biljouR bilan hydrique**), schéma de sortie §7, r3
+  enrichi, indice = croisement exposition × stress hydrique, branche A E-OBS.
+- **Correction licence (décision Pascal)** : v2.0 proposait un repo GPL
+  `regen_nemeton` pour protéger un cœur *supposé MIT*. **Vérification du fichier
+  LICENSE → `nemeton` est déjà GPL-3.** Aucun conflit avec microclimf/biljouR/
+  lidR/lasR (tous GPL-3) → **tout reste dans `nemeton`**, `regen_nemeton`
+  **abandonné**, ADR-014 **annulé** (sans objet). Dépendances lourdes en
+  `Suggests` par hygiène, pas par licence.
+- **Alignement doc GPL-3** : CLAUDE.md (ADR-006 « MIT (packages R) » → GPL-3),
+  README (badge + description + section Licence). tree_sat/maestro laissés
+  (LICENSE de leur repo fait foi) ; discordance nemetonshiny EUPL/GPL-3 signalée
+  à Pascal. ADR-006 réel à réconcilier dans `platform_nemeton`.
+- **Rien de nouveau au cœur avant validation** de la spec v2.1 (4 décisions §10,
+  plus de blocage licence).
 
 ### 2026-07-02 — Spec 031 forêt ancienne : volet app livré (nemetonshiny v0.97.6)
 

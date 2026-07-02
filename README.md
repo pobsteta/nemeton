@@ -5,7 +5,7 @@
 [![Version](https://img.shields.io/github/v/release/pobsteta/nemeton?sort=semver&logo=github&label=version&color=blue)](https://github.com/pobsteta/nemeton/releases/latest)
 [![pkgdown](https://github.com/pobsteta/nemeton/actions/workflows/pkgdown.yaml/badge.svg)](https://pobsteta.github.io/nemeton/)
 [![codecov](https://codecov.io/gh/pobsteta/nemeton/graph/badge.svg)](https://codecov.io/gh/pobsteta/nemeton)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?logo=opensourceinitiative)](https://opensource.org/licenses/MIT)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?logo=gnu)](https://www.gnu.org/licenses/gpl-3.0)
 <!-- badges: end -->
 
 > **Analyse systemique de territoires forestiers selon la methode Nemeton**
@@ -15,7 +15,7 @@
 ## Architecture (ADR-009)
 
 ```
-nemeton (ce repo)       -> Package coeur R (MIT). 31 indicateurs, 12 familles, NDP, radar.
+nemeton (ce repo)       -> Package coeur R (GPL-3). 31 indicateurs, 12 familles, NDP, radar.
 nemetonshiny            -> Application Shiny (EUPL v1.2). Interface web interactive.
 tree_sat_nemeton        -> Classification d'essences Sentinel-1/2. NDP 0. MIT.
 maestro_nemeton         -> Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
@@ -195,7 +195,7 @@ Site pkgdown : [pobsteta.github.io/nemeton](https://pobsteta.github.io/nemeton/)
 
 ## Licence
 
-MIT - Voir [LICENSE](LICENSE)
+GPL-3 - Voir [LICENSE](LICENSE)
 
 L'application Shiny ([nemetonshiny](https://github.com/pobsteta/nemetonshiny)) est sous EUPL v1.2.
 
