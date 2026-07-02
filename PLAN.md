@@ -1238,6 +1238,32 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-02 — Added v0.115.0 : indice_priorite_regen (spec 027 v2.1 L3, 1er incrément code)
+
+Premier code reGénération après réalignement + arbitrage. **Ordre choisi** :
+pas L1→L2→L3 (les moteurs microclimf/biljouR/lidR exigent deps+données+creds
+**inexécutables/intestables ici**), mais d'abord la **pièce pure-logique
+entièrement testable** = `indice_priorite_regen()` (L3), qui **fige le contrat
+§7** que les moteurs viseront.
+
+`indice_priorite_regen(units, species=NULL, weights, tolerances, flag_breaks)`
+(`R/indice_priorite_regen.R`) : **croise** l'exposition microclimatique
+(`sensibilite`, sinon `d_tmax`/`d_vpd`) et le stress hydrique (`njstress`,
+`istress`, `rew_min`) en une priorité 0-100. **Consomme** les colonnes des
+moteurs (pas de dep GPL), testable sur `sf` synthétique. Conforme §10 :
+générique par défaut, **essence en option OFF** (`regeneration_tolerances()` +
+CSV 11 essences récupérés de la branche parkée), colonnes **au schéma §7**
+(`indice_priorite_regen`, `regen_exposition`, `regen_hydrique`,
+`parcelle_sensible`, `priorite`, `regen_essence`). Retravail du
+`regeneration_index` parké (moyenne pondérée) → croisement du brief. Bornes de
+stress **documentées, non calibrées** (§9.2). Tests `test-indice-priorite-regen.R`
+21 PASS ; sweep voisins 796 PASS. NAMESPACE + man + pkgdown à la main.
+
+**Reste** (au feu vert Pascal) : moteurs L1 (PAI LiDAR + microclimf — compléter
+`microclimate_run`) et L2 (biljouR + bilan hydrique SAFRAN), en `Suggests` +
+tests mockés ; enrichissement `r3_secheresse` (métriques BILJOU) ; branche A
+carte de tendances E-OBS sur emprise UGF + buffer (~25 km à confirmer).
+
 ### 2026-07-02 — Fixed v0.114.1 + réalignement spec 027 sur le brief reGénération
 
 **Fixed (v0.114.1, releasé).** `indicateur_l3_het_spectrale` (spec 028)

@@ -1,0 +1,12 @@
+"code","label","tmax_tol_c","vpd_tol_kpa"
+"essence_hetraie","Hêtraie",28,1.8
+"essence_pessiere_sapiniere","Pessière-Sapinière",27,1.6
+"essence_melezin","Mélézin",29,2
+"essence_douglasaie","Douglasaie",30,2.2
+"essence_chataigneraie","Châtaigneraie",31,2.2
+"essence_chenaie","Chênaie",32,2.5
+"essence_mixte","Forêt mixte",31,2.4
+"essence_feuillus_pionniers","Feuillus pionniers",33,2.6
+"essence_peupleraie","Peupleraie",33,1.8
+"essence_pinede","Pinède",34,3
+"essence_chene_vert","Chêne vert",38,3.8
