@@ -12,6 +12,24 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.111.0\] - 2026-07-02
+
+### Added
+
+- MUSCATE Sentinel-2 L2A as a third, French-sovereign STAC backend of
+  [`stac_search_s2()`](https://pobsteta.github.io/nemeton/reference/stac_search_s2.md)
+  (spec 029). New exported
+  [`stac_search_s2_theia_muscate()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
+  queries the Theia MTD STAC collection `sentinel2-l2a-theia`, remaps
+  the MUSCATE band dialect to the nemeton `B02/B04/…` keys, reduces S3
+  hrefs to `/vsis3/` paths and returns the shared normalised scene
+  tibble. Added to the default `source` vector as a last-resort
+  fallback: only queried when both `cdse` and `pc` fail — nominal
+  behaviour is unchanged.
+- `inst/datasources/FR.json`: `s2_l2a_muscate.access` confirmed
+  collection id + FRE reflectance product (spec 029 K4 real-data smoke,
+  2026-07-02).
+
 ## \[0.103.0\] - 2026-06-30
 
 ### Added
@@ -825,13 +843,14 @@ concise, categorised trail.
 ### Changed
 
 - CI back to green (R-CMD-check, tests, coverage, pkgdown). The `tests`
-  job now runs the real suite via `devtools::test()`; `R-CMD-check` uses
-  `--no-tests`/`--no-build-vignettes`; `pkgdown` gains `rsconnect` and a
-  complete reference index (111 missing topics added). A capability
-  guard (`skip_if_terra_write_broken()`) skips raster tests on a GitHub
-  runner exhibiting a terra “no valid constructor” anomaly (not
-  reproducible locally; the whole suite passes locally), running them
-  fully everywhere else.
+  job now runs the real suite via
+  [`devtools::test()`](https://devtools.r-lib.org/reference/test.html);
+  `R-CMD-check` uses `--no-tests`/`--no-build-vignettes`; `pkgdown`
+  gains `rsconnect` and a complete reference index (111 missing topics
+  added). A capability guard (`skip_if_terra_write_broken()`) skips
+  raster tests on a GitHub runner exhibiting a terra “no valid
+  constructor” anomaly (not reproducible locally; the whole suite passes
+  locally), running them fully everywhere else.
 
 ## \[0.67.0\] - 2026-06-04
 

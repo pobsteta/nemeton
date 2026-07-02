@@ -1,5 +1,41 @@
 # Changelog
 
+## nemeton 0.111.0 (2026-07-02)
+
+#### Added — MUSCATE, 3ᵉ backend Sentinel-2 de repli souverain (spec 029)
+
+[`stac_search_s2()`](https://pobsteta.github.io/nemeton/reference/stac_search_s2.md)
+gagne un troisième backend, **`"muscate"`** (Theia / DATA TERRA,
+production MUSCATE-MAJA du CNES/CESBIO), interrogé via l’API STAC MTD
+déjà déclarée (`services.theia_stac`,
+`https://api.stac.teledetection.fr`). Il s’ajoute au vecteur `source`
+par défaut, désormais `c("cdse", "pc", "muscate")` : les backends sont
+essayés dans l’ordre et le premier qui renvoie une scène gagne, donc la
+source souveraine française **n’est atteinte que si CDSE *et* Planetary
+Computer échouent tous les deux**. En marche nominale, le comportement
+est strictement inchangé et **aucune requête MUSCATE n’est émise**.
+
+Nouvelle fonction exportée
+**[`stac_search_s2_theia_muscate()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)**
+: interroge la collection `sentinel2-l2a-theia`, remappe le dialecte de
+bandes MUSCATE (bandes exposées sous `B02/B04/B05/B08/B8A/B11/B12`,
+adossées aux GeoTIFF FRE) vers les clés nemeton, réduit les hrefs S3 en
+chemins `/vsis3/` lisibles par GDAL, filtre le nuage au niveau scène
+(`eo:cloud_cover ≤ max_cloud`, parité CDSE/PC) et retourne le **même
+tibble normalisé** que les deux autres backends — tout l’aval (cache
+COG, FAST, FORDEAD) est inchangé.
+
+Validé par smoke réel (2026-07-02) : la collection
+`sentinel2-l2a-theia`, la réflectance FRE (`scale 1.0`, `offset 0.0`,
+`nodata -10000` → NDVI/NBR invariants d’échelle) et la propriété
+`eo:cloud_cover` sont confirmées sur 5 scènes réelles (T31TGN/T31UGP).
+La lecture S3 des COG au moment d’une ingestion de repli nécessite les
+identifiants `services.theia_s3`.
+
+Source `s2_l2a_muscate` d’`inst/datasources/FR.json` mise à jour
+(collection confirmée, produit FRE documenté). Clôt le reliquat «
+Sources Theia » pour MUSCATE (PLAN.md).
+
 ## nemeton 0.110.1 (2026-07-01)
 
 #### Fixed / Added — Cache des sorties biodivMapR (B4/L3, spec 028)
@@ -1953,17 +1989,18 @@ EPSG:2154, IOTA²/conda obligatoire.
 La CI (`R-CMD-check`, `tests`, `coverage`, `pkgdown`) repasse au vert
 après plusieurs corrections d’infrastructure préexistantes, sans rapport
 avec le code métier : le job `tests` exécute désormais réellement la
-suite (`devtools::test()` au lieu d’un `test_package()` qui ne trouvait
-aucun test installé) ; `R-CMD-check` délègue les tests au job dédié
-(`--no-tests`) et saute le build des vignettes ; `pkgdown` gagne
-`rsconnect` (tutoriels) et l’index de référence liste les 111 topics
-exportés manquants. Surtout, un **garde-fou par capacité**
-(`skip_if_terra_write_broken()`) neutralise une anomalie terra **propre
-au runner GitHub** (terra::rast/writeRaster y lèvent « no valid
-constructor » dans le contexte testthat, alors que le même code passe en
-local — toute la suite passe, PASS 7381) : les tests raster **skippent**
-sur ce runner et **tournent en entier** partout ailleurs. Le code reste
-prouvé correct.
+suite
+([`devtools::test()`](https://devtools.r-lib.org/reference/test.html) au
+lieu d’un `test_package()` qui ne trouvait aucun test installé) ;
+`R-CMD-check` délègue les tests au job dédié (`--no-tests`) et saute le
+build des vignettes ; `pkgdown` gagne `rsconnect` (tutoriels) et l’index
+de référence liste les 111 topics exportés manquants. Surtout, un
+**garde-fou par capacité** (`skip_if_terra_write_broken()`) neutralise
+une anomalie terra **propre au runner GitHub** (terra::rast/writeRaster
+y lèvent « no valid constructor » dans le contexte testthat, alors que
+le même code passe en local — toute la suite passe, PASS 7381) : les
+tests raster **skippent** sur ce runner et **tournent en entier**
+partout ailleurs. Le code reste prouvé correct.
 
 ## nemeton 0.69.1 (2026-06-10)
 
@@ -2459,8 +2496,9 @@ migration `0004_drop_obs_pixel.sql` est conservée pour les bases
 ; `test-db.R` vérifie l’absence de `obs_pixel` après migration sur une
 base neuve (PG + SQLite) ; suites `obs_pixel` legacy déjà retirées en
 v0.58.0. **NON TESTÉ EN CI ICI** (pas de R) — rejouer sur les deux
-backends + `devtools::document()` (les `man/*.Rd` ont été ajustés à la
-main).
+backends +
+[`devtools::document()`](https://devtools.r-lib.org/reference/document.html)
+(les `man/*.Rd` ont été ajustés à la main).
 
 ## nemeton 0.58.0 (2026-06-02)
 
@@ -2528,8 +2566,9 @@ avertissements. Suites supprimées : `test-read_obs_pixel.R`,
 (toutes adossées à `obs_pixel`). **NON TESTÉ EN CI ICI** (pas de R dans
 l’environnement) — à rejouer sur machine avec R sur les **deux
 backends** (Postgres + SQLite) via `NEMETON_DB_URL_TEST` (rappel
-v0.54.0), et `devtools::document()` à exécuter (les `man/*.Rd` ont été
-mis à jour à la main).
+v0.54.0), et
+[`devtools::document()`](https://devtools.r-lib.org/reference/document.html)
+à exécuter (les `man/*.Rd` ont été mis à jour à la main).
 
 ## nemeton 0.57.0 (2026-06-02)
 
@@ -2718,10 +2757,12 @@ données utilisateur réelles (incidents villards 2026-05-25 et 2026-05-31
 - Nouveau `tests/testthat/test-helper-guards.R` (4 tests offline du
   garde-fou). Nouveau `.Renviron.example`. Section dédiée ajoutée à
   `CLAUDE.md` (setup `nemeton_test`).
-- **Breaking côté setup dev** : `devtools::test()` exige maintenant un
-  `NEMETON_DB_URL_TEST` dédié pour faire tourner les tests
-  d’intégration. Sans lui, ils sont skippés (la suite reste verte).
-  Aucun changement d’API publique — rien à faire côté `nemetonshiny`.
+- **Breaking côté setup dev** :
+  [`devtools::test()`](https://devtools.r-lib.org/reference/test.html)
+  exige maintenant un `NEMETON_DB_URL_TEST` dédié pour faire tourner les
+  tests d’intégration. Sans lui, ils sont skippés (la suite reste
+  verte). Aucun changement d’API publique — rien à faire côté
+  `nemetonshiny`.
 
 ## nemeton 0.53.0 (2026-05-31)
 
@@ -3674,7 +3715,8 @@ drift and a latent [`unlink()`](https://rdrr.io/r/base/unlink.html) bug.
 
 #### Fixed — `R CMD check` debt cleanup
 
-Maintenance release that clears the accumulated `devtools::check()`
+Maintenance release that clears the accumulated
+[`devtools::check()`](https://devtools.r-lib.org/reference/check.html)
 warnings and notes (no functional change):
 
 - **Corrupt Rd files** — `man/ingest_s2_raw_bands_to_cache.Rd` and
@@ -8912,7 +8954,9 @@ plot_indicators_map(normalized, palette = "viridis")
 
 Fix test fixtures
 
-Verify `devtools::check()` passes
+Verify
+[`devtools::check()`](https://devtools.r-lib.org/reference/check.html)
+passes
 
 Measure test coverage (target: ≥70%)
 

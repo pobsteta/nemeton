@@ -743,6 +743,7 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 
 - [`stac_search_s2_cdse()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
   [`stac_search_s2_pc()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
+  [`stac_search_s2_theia_muscate()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
   : Sentinel-2 STAC Search Helpers (E6 monitoring)
 
 - [`site_index_reference_points()`](https://pobsteta.github.io/nemeton/reference/site_index_reference_points.md)
@@ -843,4 +844,5 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
   : Run a Python/reticulate task in an isolated subprocess (pinned env)
 - [`stac_search_s2_cdse()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
   [`stac_search_s2_pc()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
+  [`stac_search_s2_theia_muscate()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
   : Sentinel-2 STAC Search Helpers (E6 monitoring)
