@@ -381,3 +381,121 @@ indicateur_a2_qualite_air <- function(units,
 
   units
 }
+
+
+# ==============================================================================
+# A5 - Urban cooling / relative surface freshness (LST)  [spec 032]
+# ==============================================================================
+
+#' Calculate Urban Cooling Index (A5)
+#'
+#' Relative surface-temperature freshness of a forest / tree unit compared
+#' with its local surroundings, from a Land Surface Temperature (LST) raster
+#' (e.g. Theia Thermocity ECOSTRESS/ASTER). High = the unit is markedly
+#' **cooler** than its surroundings — the cooling service trees provide in an
+#' urban heat-island context.
+#'
+#' Scope (spec 032, reoriented): this indicator targets the **urban tree /
+#' forest-city interface**, precisely where an LST product is available. Over
+#' rural forests, where no LST covers the area, it is left `NA`. Surface
+#' **albedo is deliberately NOT used**: for a tree it is not a valid cooling
+#' proxy (cooling comes from shade + evapotranspiration; canopy albedo is low
+#' and second-order), so LST — the direct temperature signal — is the only
+#' physically sound basis.
+#'
+#' The score is a **relative** freshness: the unit's mean LST is compared with
+#' a local reference (median LST of a surrounding ring, or a supplied
+#' `reference`). Differences are scale-invariant between kelvin and celsius, so
+#' either unit works.
+#'
+#' @param units An sf object with the tree / forest units.
+#' @param lst A terra SpatRaster of Land Surface Temperature (K or °C). `NULL`
+#'   (default) -> the indicator is not applicable and `A5 = NA` for every unit
+#'   (source-conditional, like A3/A4 without a microclimate model).
+#' @param reference Optional numeric. A fixed reference temperature (same unit
+#'   as `lst`). `NULL` (default) -> a per-unit local reference is used: the
+#'   median LST of a ring around the unit (`buffer_m`).
+#' @param buffer_m Numeric. Radius (m) of the local-reference ring around each
+#'   unit. Default 500.
+#' @param delta_scale Numeric. Temperature difference (K/°C) mapped to the full
+#'   score swing: a unit `delta_scale` cooler than its reference scores 100,
+#'   `delta_scale` hotter scores 0, equal scores 50. Default 5.
+#' @param ... Unused.
+#'
+#' @return `units` with `A5` (0-100, high = cooler than surroundings) and
+#'   `A5_delta` (raw reference − unit LST). `A5 = NA` where `lst` is `NULL`,
+#'   the unit does not overlap the raster, or no local reference is available.
+#'
+#' @export
+indicateur_a5_rafraichissement <- function(units, lst = NULL,
+                                           reference   = NULL,
+                                           buffer_m    = 500,
+                                           delta_scale = 5, ...) {
+  if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
+  n <- nrow(units)
+
+  if (is.null(lst)) {
+    cli::cli_alert_info("A5: no LST raster supplied - A5 = NA (indicator skipped).")
+    units$A5 <- rep(NA_real_, n)
+    units$A5_delta <- rep(NA_real_, n)
+    return(units)
+  }
+  if (!inherits(lst, "SpatRaster")) {
+    stop("lst must be a terra SpatRaster", call. = FALSE)
+  }
+  if (!is.numeric(delta_scale) || length(delta_scale) != 1L || delta_scale <= 0) {
+    stop("delta_scale must be a positive scalar", call. = FALSE)
+  }
+  if (!requireNamespace("exactextractr", quietly = TRUE) ||
+      !requireNamespace("terra", quietly = TRUE)) {
+    stop("packages exactextractr and terra are required for A5", call. = FALSE)
+  }
+  if (n == 0L) {
+    units$A5 <- numeric(0); units$A5_delta <- numeric(0)
+    return(units)
+  }
+
+  units_r <- sf::st_transform(as_pure_sf(units), terra::crs(lst))
+
+  # Drop non-finite and the -32768 LST nodata sentinel; keep both K and °C.
+  clean <- function(v) {
+    v <- if (is.data.frame(v)) v$value else v
+    v[is.finite(v) & v > -1000]
+  }
+
+  # Mean LST inside each unit.
+  ex_u <- exactextractr::exact_extract(lst[[1]], units_r, progress = FALSE)
+  unit_lst <- vapply(ex_u, function(df) {
+    v <- clean(df); if (!length(v)) NA_real_ else mean(v)
+  }, numeric(1))
+
+  # Local reference: fixed value, or median LST of a ring around each unit.
+  if (!is.null(reference)) {
+    ref_lst <- rep(as.numeric(reference)[1L], n)
+  } else {
+    # Per-unit ring = buffer(unit_i) minus unit_i, built one geometry at a
+    # time so row order is preserved (a whole-set st_difference can drop
+    # empty rows and break alignment).
+    buf <- sf::st_buffer(sf::st_geometry(units_r), buffer_m)
+    own <- sf::st_geometry(units_r)
+    ring_geoms <- lapply(seq_len(n), function(i) {
+      suppressWarnings(sf::st_difference(buf[[i]], own[[i]]))
+    })
+    ring <- sf::st_sf(
+      geometry = sf::st_sfc(ring_geoms, crs = sf::st_crs(units_r)))
+    ex_r <- exactextractr::exact_extract(lst[[1]], ring, progress = FALSE)
+    ref_lst <- vapply(ex_r, function(df) {
+      v <- clean(df); if (!length(v)) NA_real_ else stats::median(v)
+    }, numeric(1))
+  }
+
+  delta <- ref_lst - unit_lst                      # positive = unit cooler
+  score <- 50 + (delta / delta_scale) * 50
+  score <- pmin(100, pmax(0, score))
+  score[is.na(delta)] <- NA_real_
+
+  units$A5 <- round(score, 1)
+  units$A5_delta <- round(delta, 2)
+  msg_info("indicateur_a5_rafraichissement")
+  units
+}

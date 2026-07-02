@@ -2,7 +2,40 @@
 
 **Version** : 0.1.0
 **Date**    : 2026-07-02
-**Statut**  : Cadrée — à valider (paperwork avant code, non implémentée).
+**Statut**  : **Réorientée puis implémentée (2026-07-02, v0.114.0).** Après
+inspection des données réelles, deux constats ont invalidé le plan initial
+(A3 « régulation thermique » = albédo national socle + LST raffinement) :
+
+1. **L'albédo n'est pas un proxy valide de rafraîchissement** : le
+   refroidissement d'un arbre vient de l'ombrage + l'évapotranspiration ;
+   la canopée a un albédo *bas* (comme l'eau) et radiativement l'albédo bas
+   *réchauffe*. Le mapper serait une erreur de signe (risque D2 confirmé).
+2. **La LST (seul signal juste) ne couvre pas les forêts** — Thermocity =
+   quelques métropoles.
+
+**Décision utilisateur (2026-07-02)** : orienter l'indicateur vers **l'arbre
+en ville**, là où la LST *existe* (les métropoles) et est *physiquement
+juste*. Le slot **A3 est déjà pris** par `indicateur_a3_microclimat` (spec 027,
+microclimat sous couvert pour la régénération) → le nouvel indicateur devient
+**A5 « Rafraîchissement urbain »**. **L'albédo est écarté** (non valide). Le
+reste du document (plan albédo+LST national) est conservé en trace.
+
+## Livrable retenu (v0.114.0) — A5 `indicateur_a5_rafraichissement()`
+
+`indicateur_a5_rafraichissement(units, lst = NULL, reference = NULL,
+buffer_m = 500, delta_scale = 5)` (`R/indicators-air.R`) : **fraîcheur relative
+de surface** — LST moyenne de l'UGF vs référence locale (médiane LST d'un
+anneau, ou `reference` fixe). Score 0-100, **haut = plus frais que l'entour**
+(sens direct). **Source-conditionnel** : `lst = NULL` → `A5 = NA` (comme A3/A4
+sans modèle microclimat). Rejoint la famille A (A1-A5) mais **pas**
+`list_indicators()` (indicateur conditionnel d'extension). Source
+`theia_lst`/`thermocity-lst` → `consumed_by: A5` (couverture urbaine
+documentée). Tests : `test-indicator-a5.R` (frais→100, chaud→0, neutre→50,
+référence fixe, NULL→NA, nodata -32768 ignoré, hors-raster→NA).
+
+---
+
+**Statut initial** : Cadrée — à valider (paperwork avant code, non implémentée).
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` (feat mineur — nouvel indicateur A3).
 **Cible app**  : `nemetonshiny` (radar A3, brief séparé).
