@@ -1,5 +1,39 @@
 # Changelog
 
+## nemeton 0.114.0 (2026-07-02)
+
+#### Added — Indicateur A5 « Rafraîchissement urbain » (LST, spec 032 réorientée)
+
+Nouvel indicateur conditionnel de la famille **A (Air & Microclimat)** :
+**A5 « Rafraîchissement urbain »**,
+[`indicateur_a5_rafraichissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_a5_rafraichissement.md).
+Il mesure la **fraîcheur relative de surface** d’une unité arborée par
+rapport à son environnement, à partir d’un raster de **température de
+surface (LST)** (Theia Thermocity ECOSTRESS/ASTER) : LST moyenne de
+l’UGF comparée à une référence locale (médiane d’un anneau `buffer_m`,
+ou `reference` fixe). Score 0-100, **haut = plus frais que l’entour**
+(sens direct) — le service de rafraîchissement rendu par l’arbre en
+contexte d’îlot de chaleur urbain.
+
+**Source-conditionnel** (comme A3/A4 sans modèle microclimat, R5 sans
+FORDEAD) : `lst = NULL` → `A5 = NA` par unité. Rejoint la famille A
+(A1-A5) et la config, mais **pas**
+[`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
+(les 31 indicateurs de base). Le sentinelle nodata LST `-32768` est
+filtré ; K et °C fonctionnent (l’indice est un écart).
+
+**Réorientation de la spec 032** : le plan initial (A3 « régulation
+thermique » = albédo national + LST) est **abandonné** — l’albédo n’est
+**pas** un proxy valide de rafraîchissement (le refroidissement vient de
+l’ombrage + l’ET ; la canopée a un albédo bas et radiativement
+réchauffant → erreur de signe), et la LST, seul signal juste, ne couvre
+pas les forêts. L’indicateur est donc **orienté arbre urbain**, là où la
+LST existe et est physiquement fondée. Le slot A3 étant déjà pris par
+`indicateur_a3_microclimat` (spec 027, microclimat sous couvert), le
+nouvel indicateur est **A5**. L’albédo (`cesbio-s2albedo`) n’est **pas**
+câblé. Source `theia_lst` (`thermocity-lst`) → `consumed_by: A5`,
+couverture urbaine documentée.
+
 ## nemeton 0.113.0 (2026-07-02)
 
 #### Added — `build_foret_ancienne_mask()` : couche forêt ancienne pour N2 (spec 031)

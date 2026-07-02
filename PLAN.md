@@ -1649,6 +1649,41 @@ cœur).
 
 ## Journal
 
+### 2026-07-02 — Added/Changed : A5 rafraîchissement urbain, spec 032 réorientée (cœur, v0.114.0)
+
+Implémentation de la spec 032 **réorientée**. **K1 (données réelles)** :
+albédo SWA (uint16 ×0.0001, national) ; LST (float32 **kelvin**, nodata
+-32768, id `ECOSTRESS_STRASBOURG` = **métropoles seulement**). **Constat
+scientifique** (risque D2 confirmé) : l’albédo n’est **pas** un proxy de
+rafraîchissement (la canopée a un albédo bas comme l’eau ; radiativement
+l’albédo bas réchauffe → erreur de signe). La LST est le seul signal
+juste mais ne couvre pas les forêts. **Décision Pascal** : orienter vers
+l’**arbre en ville** (LST dispo = métropoles = là où sont les arbres
+urbains).
+
+**Slot** : A3/A4 déjà pris par la spec 027 (microclimat sous couvert
+régénération) → nouvel indicateur = **A5 « Rafraîchissement urbain »**.
+**Livré** :
+`indicateur_a5_rafraichissement(units, lst, reference, buffer_m, delta_scale)`
+(`R/indicators-air.R`) — fraîcheur relative = LST UGF vs référence
+locale (médiane anneau ou `reference` fixe), score 0-100 haut=frais
+(sens direct), source-conditionnel (NULL→NA), nodata -32768 filtré, K/°C
+invariant. **Albédo écarté** (non valide). `theia_lst`/`thermocity-lst`
+→ `consumed_by: A5`.
+
+**Cohérence** : A5 en config famille A + pass-through normalisation (pas
+d’inversion), **pas** dans
+[`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
+(conditionnel comme A3/A4/R5/T3). CLAUDE.md table A = A1-A5. **Tests** :
+`test-indicator-a5.R` 12 PASS ; voisins 477 PASS (air, family, core,
+integration, microclimate). NAMESPACE + `_pkgdown.yml` + `man/*.Rd` à la
+main. Spec 032 pivotée (plan albédo conservé en trace).
+
+**Bilan des specs 030-032** : 030 (SUFOSAT) tenue ; 031 (Corona) →
+helper N2 (source morte) ; 032 (microclimat) → A5 urbain (albédo
+invalide). Seule 030 a tenu telle que cadrée — les idées « indicateur
+depuis une source Theia » étaient survendues au cadrage.
+
 ### 2026-07-02 — Added/Changed : forêt ancienne — helper N2, spec 031 réorientée (cœur, v0.113.0)
 
 Implémentation de la spec 031 **réorientée**. **K1 (constats bloquants

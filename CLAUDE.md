@@ -58,7 +58,7 @@ commit `720a433`).
 | B | Biodiversité | B1 (protection), B2 (structure), B3 (connectivité) |
 | C | Carbone & Vitalité | C1 (biomasse), C2 (NDVI) |
 | W | Eau & Régulation | W1 (réseau hydro), W2 (zones humides), W3 (TWI) |
-| A | Air & Microclimat | A1 (couverture arborée), A2 (qualité air) |
+| A | Air & Microclimat | A1 (couverture arborée), A2 (qualité air), A3 (microclimat sous couvert, spec 027), A4 (tamponnement canopée, spec 027), A5 (rafraîchissement urbain, LST-conditionné — spec 032) |
 | F | Fertilité des sols | F1 (fertilité), F2 (érosion) |
 | L | Paysage | L1 (sylvosphère), L2 (fragmentation) |
 | T | Dynamique temporelle | T1 (ancienneté), T2 (changement), T3 (coupes rases, SUFOSAT-conditionné — spec 030) |

@@ -12,6 +12,29 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.114.0\] - 2026-07-02
+
+### Added
+
+- Indicator **A5 “Rafraîchissement urbain”**
+  ([`indicateur_a5_rafraichissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_a5_rafraichissement.md),
+  spec 032 reoriented): relative surface-temperature freshness of a tree
+  unit vs its local surroundings, from an LST raster (Theia Thermocity).
+  High = cooler than surroundings. Source-conditional (NULL LST -\> NA);
+  joins the A family (A1-A5) but not
+  [`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md).
+  `theia_lst` (`thermocity-lst`) wired as `consumed_by: A5`.
+
+### Changed
+
+- Spec 032 reoriented from “A3 régulation thermique (albedo + LST)” to
+  “A5 urban cooling (LST only)”. Albedo is dropped — it is not a valid
+  cooling proxy for a tree (shade + evapotranspiration dominate; canopy
+  albedo is low and radiatively warming). LST covers only metropolises,
+  matching the urban-tree scope. `cesbio-s2albedo` is not wired. The A3
+  slot is already taken by spec 027’s under-canopy microclimate
+  indicator.
+
 ## \[0.113.0\] - 2026-07-02
 
 ### Added

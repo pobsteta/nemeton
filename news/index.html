@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.113.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.114.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.114.0" id="nemeton-01140-2026-07-02">nemeton 0.114.0 (2026-07-02)<a class="anchor" aria-label="anchor" href="#nemeton-01140-2026-07-02"></a></h2>
+<div class="section level4">
+<h4 id="added--indicateur-a5--rafraîchissement-urbain--lst-spec-réorientée-0-114-0">Added — Indicateur A5 « Rafraîchissement urbain » (LST, spec 032 réorientée)<a class="anchor" aria-label="anchor" href="#added--indicateur-a5--rafra%C3%AEchissement-urbain--lst-spec-r%C3%A9orient%C3%A9e-0-114-0"></a></h4>
+<p>Nouvel indicateur conditionnel de la famille <strong>A (Air &amp; Microclimat)</strong> : <strong>A5 « Rafraîchissement urbain »</strong>, <code><a href="../reference/indicateur_a5_rafraichissement.html">indicateur_a5_rafraichissement()</a></code>. Il mesure la <strong>fraîcheur relative de surface</strong> d’une unité arborée par rapport à son environnement, à partir d’un raster de <strong>température de surface (LST)</strong> (Theia Thermocity ECOSTRESS/ASTER) : LST moyenne de l’UGF comparée à une référence locale (médiane d’un anneau <code>buffer_m</code>, ou <code>reference</code> fixe). Score 0-100, <strong>haut = plus frais que l’entour</strong> (sens direct) — le service de rafraîchissement rendu par l’arbre en contexte d’îlot de chaleur urbain.</p>
+<p><strong>Source-conditionnel</strong> (comme A3/A4 sans modèle microclimat, R5 sans FORDEAD) : <code>lst = NULL</code> → <code>A5 = NA</code> par unité. Rejoint la famille A (A1-A5) et la config, mais <strong>pas</strong> <code><a href="../reference/list_indicators.html">list_indicators()</a></code> (les 31 indicateurs de base). Le sentinelle nodata LST <code>-32768</code> est filtré ; K et °C fonctionnent (l’indice est un écart).</p>
+<p><strong>Réorientation de la spec 032</strong> : le plan initial (A3 « régulation thermique » = albédo national + LST) est <strong>abandonné</strong> — l’albédo n’est <strong>pas</strong> un proxy valide de rafraîchissement (le refroidissement vient de l’ombrage + l’ET ; la canopée a un albédo bas et radiativement réchauffant → erreur de signe), et la LST, seul signal juste, ne couvre pas les forêts. L’indicateur est donc <strong>orienté arbre urbain</strong>, là où la LST existe et est physiquement fondée. Le slot A3 étant déjà pris par <code>indicateur_a3_microclimat</code> (spec 027, microclimat sous couvert), le nouvel indicateur est <strong>A5</strong>. L’albédo (<code>cesbio-s2albedo</code>) n’est <strong>pas</strong> câblé. Source <code>theia_lst</code> (<code>thermocity-lst</code>) → <code>consumed_by: A5</code>, couverture urbaine documentée.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.113.0" id="nemeton-01130-2026-07-02">nemeton 0.113.0 (2026-07-02)<a class="anchor" aria-label="anchor" href="#nemeton-01130-2026-07-02"></a></h2>
 <div class="section level4">
