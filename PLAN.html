@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.114.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.114.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -831,6 +831,20 @@
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
 <div class="section level3">
+<h3 id="id_2026-07-02--spec-031-forêt-ancienne--volet-app-livré-nemetonshiny-v0976">2026-07-02 — Spec 031 forêt ancienne : volet app livré (nemetonshiny v0.97.6)<a class="anchor" aria-label="anchor" href="#id_2026-07-02--spec-031-for%C3%AAt-ancienne--volet-app-livr%C3%A9-nemetonshiny-v0976"></a></h3>
+<p>Le câblage applicatif du helper <code><a href="reference/build_foret_ancienne_mask.html">build_foret_ancienne_mask()</a></code> (cœur v0.113.0) est livré et releasé côté <strong><code>nemetonshiny@v0.97.6</code></strong> (merge <code>f8d20fd3</code>, cycle dev rouvert <code>0.97.6.9000</code>).</p>
+<ul><li><label><input type="checkbox" checked><strong>App</strong> : source forêt ancienne utilisateur (raster classé / vecteur) → <code>build_foret_ancienne_mask</code> → <code>indicateur_n2_continuite</code> (bloc <code>mod_project</code>, cache projet, i18n FR/EN). Livré <code>nemetonshiny v0.97.6</code>.</label></li>
+<li>
+<strong>UI</strong> (<code>mod_project</code>) : bloc optionnel — upload raster (<code>.tif</code>/<code>.tiff</code>) ou vecteur (<code>.gpkg</code>/<code>.shp</code>/<code>.geojson</code>), paramètres adaptés au type (<code>forest_class</code> peuplé via <code><a href="https://rspatial.github.io/terra/reference/unique.html" class="external-link">terra::unique</a></code> / <code>threshold</code> / <code>min_area_m2</code>), aide i18n (sources Cassini / état-major / IGN ; Corona-4B exclu en France).</li>
+<li>
+<strong>Calcul</strong> : <code>build_foret_ancienne_layer</code> (appelle <code><a href="reference/build_foret_ancienne_mask.html">nemeton::build_foret_ancienne_mask</a></code> + cache <code>&lt;projet&gt;/cache/layers/…</code>) → <code>vectors$foret_ancienne</code> → <code>indicateur_n2_continuite(foret_ancienne = …)</code>. Sans source fournie : N2 inchangé (aucune régression).</li>
+<li>
+<strong>Cœur consommé</strong> : <code>build_foret_ancienne_mask</code> (nemeton &gt;= 0.113.0, v0.113.0).</li>
+<li>
+<strong>Reste éventuel côté cœur</strong> : recalibrage des bornes N2 (score 60-100 sur les zones de forêt ancienne) — à confirmer sur données réelles.</li>
+</ul><p><strong>Spec 031 close</strong> (cœur v0.113.0 + app v0.97.6, tous deux releasés).</p>
+</div>
+<div class="section level3">
 <h3 id="id_2026-07-02--addedchanged--a5-rafraîchissement-urbain-spec-032-réorientée-cœur-v01140">2026-07-02 — Added/Changed : A5 rafraîchissement urbain, spec 032 réorientée (cœur, v0.114.0)<a class="anchor" aria-label="anchor" href="#id_2026-07-02--addedchanged--a5-rafra%C3%AEchissement-urbain-spec-032-r%C3%A9orient%C3%A9e-c%C5%93ur-v01140"></a></h3>
 <p>Implémentation de la spec 032 <strong>réorientée</strong>. <strong>K1 (données réelles)</strong> : albédo SWA (uint16 ×0.0001, national) ; LST (float32 <strong>kelvin</strong>, nodata -32768, id <code>ECOSTRESS_STRASBOURG</code> = <strong>métropoles seulement</strong>). <strong>Constat scientifique</strong> (risque D2 confirmé) : l’albédo n’est <strong>pas</strong> un proxy de rafraîchissement (la canopée a un albédo bas comme l’eau ; radiativement l’albédo bas réchauffe → erreur de signe). La LST est le seul signal juste mais ne couvre pas les forêts. <strong>Décision Pascal</strong> : orienter vers l’<strong>arbre en ville</strong> (LST dispo = métropoles = là où sont les arbres urbains).</p>
 <p><strong>Slot</strong> : A3/A4 déjà pris par la spec 027 (microclimat sous couvert régénération) → nouvel indicateur = <strong>A5 « Rafraîchissement urbain »</strong>. <strong>Livré</strong> : <code>indicateur_a5_rafraichissement(units, lst, reference, buffer_m, delta_scale)</code> (<code>R/indicators-air.R</code>) — fraîcheur relative = LST UGF vs référence locale (médiane anneau ou <code>reference</code> fixe), score 0-100 haut=frais (sens direct), source-conditionnel (NULL→NA), nodata -32768 filtré, K/°C invariant. <strong>Albédo écarté</strong> (non valide). <code>theia_lst</code>/<code>thermocity-lst</code> → <code>consumed_by: A5</code>.</p>
@@ -842,7 +856,7 @@
 <p>Implémentation de la spec 031 <strong>réorientée</strong>. <strong>K1 (constats bloquants sur STAC réel)</strong> : (1) <code>corona-4b</code> = 3 items, tous au Moyen-Orient, <strong>0 sur la France</strong> → source morte ; (2) <code><a href="reference/indicateur_n2_continuite.html">indicateur_n2_continuite()</a></code> a <strong>déjà</strong> un argument <code>foret_ancienne</code> (fraction ancienne → score 60-100) → un N4 dédié serait <strong>redondant</strong>. <strong>Décision Pascal</strong> : abandonner N4, renforcer N2.</p>
 <p><strong>Livré</strong> : <code>build_foret_ancienne_mask(source, forest_class, threshold, min_area_m2, crs)</code> (<code>R/indicators-naturalness.R</code>) — source-agnostique : vecteur (validé/reprojeté/filtré) ou raster (masque par classe/seuil/<code>&gt;0</code> → polygonisé <code><a href="https://rspatial.github.io/terra/reference/as.polygons.html" class="external-link">terra::as.polygons</a></code> → taches contiguës → filtre aire). Sortie = couche sf <code>foret_ancienne = TRUE</code> passée telle quelle à <code><a href="reference/indicateur_n2_continuite.html">indicateur_n2_continuite()</a></code>. <code>corona-4b</code> <strong>non déclaré</strong> dans FR.json.</p>
 <p><strong>Tests</strong> : <code>test-foret-ancienne-mask.R</code> 6 PASS (classe, seuil, vecteur, filtre aire, intégration N2 → 100, type invalide). NAMESPACE + <code>_pkgdown.yml</code> + <code>man/build_foret_ancienne_mask.Rd</code> à la main. Spec 031 pivotée (v0.2.0, plan N4 conservé en <code>&lt;details&gt;</code>).</p>
-<p><strong>Brief <code>nemetonshiny</code> fourni séparément</strong> (upload source historique → helper → N2). Specs restantes : 032 (microclimat albédo+LST).</p>
+<p><strong>Brief <code>nemetonshiny</code> fourni séparément</strong> (upload source historique → helper → N2) → <strong>volet app livré <code>nemetonshiny@v0.97.6</code></strong> (cf. entrée du 2026-07-02 en tête de journal). Specs restantes : 032 (microclimat albédo+LST).</p>
 </div>
 <div class="section level3">
 <h3 id="id_2026-07-02--fixed--enrichissement-bd-forêt-sur-géométrie-invalide-cœur-v01121">2026-07-02 — Fixed : enrichissement BD Forêt sur géométrie invalide (cœur, v0.112.1)<a class="anchor" aria-label="anchor" href="#id_2026-07-02--fixed--enrichissement-bd-for%C3%AAt-sur-g%C3%A9om%C3%A9trie-invalide-c%C5%93ur-v01121"></a></h3>

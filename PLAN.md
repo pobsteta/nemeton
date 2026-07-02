@@ -1649,6 +1649,38 @@ cœur).
 
 ## Journal
 
+### 2026-07-02 — Spec 031 forêt ancienne : volet app livré (nemetonshiny v0.97.6)
+
+Le câblage applicatif du helper
+[`build_foret_ancienne_mask()`](https://pobsteta.github.io/nemeton/reference/build_foret_ancienne_mask.md)
+(cœur v0.113.0) est livré et releasé côté **`nemetonshiny@v0.97.6`**
+(merge `f8d20fd3`, cycle dev rouvert `0.97.6.9000`).
+
+**App** : source forêt ancienne utilisateur (raster classé / vecteur) →
+`build_foret_ancienne_mask` → `indicateur_n2_continuite` (bloc
+`mod_project`, cache projet, i18n FR/EN). Livré `nemetonshiny v0.97.6`.
+
+**UI** (`mod_project`) : bloc optionnel — upload raster (`.tif`/`.tiff`)
+ou vecteur (`.gpkg`/`.shp`/`.geojson`), paramètres adaptés au type
+(`forest_class` peuplé via
+[`terra::unique`](https://rspatial.github.io/terra/reference/unique.html)
+/ `threshold` / `min_area_m2`), aide i18n (sources Cassini / état-major
+/ IGN ; Corona-4B exclu en France).
+
+**Calcul** : `build_foret_ancienne_layer` (appelle
+[`nemeton::build_foret_ancienne_mask`](https://pobsteta.github.io/nemeton/reference/build_foret_ancienne_mask.md) +
+cache `<projet>/cache/layers/…`) → `vectors$foret_ancienne` →
+`indicateur_n2_continuite(foret_ancienne = …)`. Sans source fournie : N2
+inchangé (aucune régression).
+
+**Cœur consommé** : `build_foret_ancienne_mask` (nemeton \>= 0.113.0,
+v0.113.0).
+
+**Reste éventuel côté cœur** : recalibrage des bornes N2 (score 60-100
+sur les zones de forêt ancienne) — à confirmer sur données réelles.
+
+**Spec 031 close** (cœur v0.113.0 + app v0.97.6, tous deux releasés).
+
 ### 2026-07-02 — Added/Changed : A5 rafraîchissement urbain, spec 032 réorientée (cœur, v0.114.0)
 
 Implémentation de la spec 032 **réorientée**. **K1 (données réelles)** :
@@ -1711,7 +1743,9 @@ filtre aire, intégration N2 → 100, type invalide). NAMESPACE +
 pivotée (v0.2.0, plan N4 conservé en `<details>`).
 
 **Brief `nemetonshiny` fourni séparément** (upload source historique →
-helper → N2). Specs restantes : 032 (microclimat albédo+LST).
+helper → N2) → **volet app livré `nemetonshiny@v0.97.6`** (cf. entrée du
+2026-07-02 en tête de journal). Specs restantes : 032 (microclimat
+albédo+LST).
 
 ### 2026-07-02 — Fixed : enrichissement BD Forêt sur géométrie invalide (cœur, v0.112.1)
 
