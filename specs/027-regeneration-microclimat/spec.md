@@ -1,263 +1,248 @@
-# Spec 027 — Onglet « reGénération » & indicateurs microclimatiques sous couvert
+# Spec 027 — Onglet « reGénération » : vulnérabilité climatique par parcelle
 
-**Statut** : cadrage (paperwork avant code) — 2026-06-30. À valider avant le Lot 1.
-**Cibles** : `nemeton` (cœur, indicateurs + pipeline microclimat, MIT) ·
-`nemetonshiny` (onglet, UI, EUPL v1.2).
-**ADR associé** : **ADR-014** (« reGénération microclimatique : familles
-existantes, mode augmenté microclimat, repli opencanopy ») — *à porter dans
-`nemetonplateform/docs/`*. Amende **ADR-011** (NDP augmenté).
-**Précédents** : spec 005 (Open-Canopy CHM / NDP augmenté), ADR-009
-(séparation cœur/app), ADR-011 (NDP, pondération Fibonacci).
+**Statut** : **RÉALIGNÉE sur le brief `/home/pascal/Documents/reGénération/`
+(2026-07-02).** À valider avant reprise du code (paperwork avant code).
+**Version** : 2.0.0 (réalignement) — remplace le cadrage 1.x du 2026-06-30 qui
+avait **réduit le périmètre** au seul microclimat.
+**Cibles** : `nemeton` (cœur — contrat d'indicateurs, MIT) · **`regen_nemeton`
+(NOUVEAU repo — moteurs GPL-3)** · `nemetonshiny` (onglet, EUPL v1.2).
+**ADR associé** : **ADR-014** (« reGénération : moteurs GPL isolés en
+`regen_nemeton`, contrat MIT au cœur ») — brouillon dans
+`ADR-014-draft.md` (ce dossier), à porter dans `platform_nemeton/docs/`.
+Amende **ADR-009** (ajoute un 5ᵉ repo) et **ADR-011** (flag augmenté).
+**Sources brief** : `brief-onglet-regeneration.md`, `README.md`, et prototypes
+`pai_lidarhd_lasR.R`, `microclimat_parcelles_robuste.R` (B4),
+`microclimat_parcelles_2annees.R`, `carte_tendances_estivales_eobs.R`.
 
-> ### ⚠️ Corrections au brief d'origine (numéros forcés par l'existant)
-> - **`r5_sensibilite` → `indicateur_r6_sensibilite` (code R6)** : **R5 est déjà
->   pris** par `indicateur_r5_deperissement` (dépérissement FORDEAD/RECONFORT,
->   branché au radar en `nemetonshiny` v0.94.0). Le sous-indicateur de
->   sensibilité microclimatique devient **R6** dans la famille R.
-> - **ADR-014** et non ADR-012 (ADR-012 = Extensions PostgreSQL ; ADR-013 = suivi
->   sanitaire).
-> - **spec 027** (dernier numéro existant : 026).
-> - A3/A4 (famille A) et W4 (famille W) sont libres : conservés tels quels.
+> ### ⚠️ Pourquoi ce réalignement
+> Le cadrage 1.x (spec 027 v1, 2026-06-30) et l'implémentation qui a suivi
+> (indicateurs A3/A4/W4/R6 + `regeneration_index`, livrés cœur) ont été faits
+> **sans remonter au brief de référence**. Ils ne couvrent que **la moitié
+> microclimat** et tranchent **à l'inverse** la décision licences §8.1 du brief
+> (moteurs GPL mis dans le cœur MIT via `Suggests`, au lieu d'un repo GPL
+> séparé). Cette v2 recolle au brief : **deux moteurs** (exposition
+> microclimatique **+** bilan hydrique du sol BILJOU), **isolement GPL** dans
+> `regen_nemeton`, **schéma de sortie §7**, indice de priorité = **croisement
+> exposition × stress hydrique**.
 
 ---
 
 ## 1. Objectif
 
-Évaluer, à l'échelle de la parcelle (UGF), l'**aptitude microclimatique à la
-régénération forestière** : la régénération (semis, recrû) est très sensible à
-la chaleur et à la sécheresse **au niveau du sol forestier**. On calcule la
-température et le déficit hydrique **sous couvert** (pas le macroclimat), le
-**tamponnement** apporté par la canopée, et la **sensibilité** du microsite à
-une année chaude. Question répondue : *où la régénération est-elle climatiquement
-viable, et quelles parcelles prioriser pour l'adaptation ?*
+Fournir, **par unité de gestion (UGF)**, une lecture de la **vulnérabilité
+climatique du peuplement** pour **prioriser les interventions de régénération /
+adaptation**. Question du gestionnaire : *« quelles parcelles se réchauffent et
+s'assèchent le plus, et lesquelles subissent réellement un stress hydrique du
+sol ? »*
 
-Source physique : modèle microclimatique mécaniste **microclimf** forcé par
-**ERA5-Land**, alimenté par le **LiDAR HD IGN** (MNT + MNH + nuage de points
-pour le PAI), avec repli **opencanopy** (CHM ortho) là où le LiDAR manque.
+Deux moteurs complémentaires (déjà prototypés dans la chaîne `reGénération`) :
 
-## 2. Positionnement architecture (ADR-009)
+1. **Exposition microclimatique** (`microclimf` + LiDAR HD) — T°max et VPD
+   **sous couvert**, effet tampon de la canopée, écart canicule / année moyenne
+   → *le climat vu par la parcelle*.
+2. **Bilan hydrique du sol** (`biljouR`, réimplémentation R du modèle INRAE
+   BILJOU) — réserve en eau relative (REW), jours de stress, indice de
+   sécheresse → *la réponse hydrique du peuplement*.
 
-| Élément | Repo | Licence |
-|---|---|---|
-| `indicateur_*`, pipeline microclimat, indice composite | `nemeton` (cœur) | MIT |
-| Onglet « reGénération » (module Shiny, carto, export, i18n) | `nemetonshiny` | EUPL v1.2 |
-| Entrées CHM de repli | via `opencanopy` (déjà intégré, spec 005) | — |
+Le **croisement** des deux produit un **indice de priorité de régénération**
+plus défendable que chacun isolé, et alimente les familles NMT existantes
+**A (microclimat), R (r3 sécheresse), W (eau), C (vitalité)**.
 
-**Dépendances lourdes en `Suggests`, jamais `Imports`** : `microclimf`,
-`mcera5`, `ecmwfr`, `lidR`, `lasR`. Chaque fonction les charge via
-`requireNamespace(..., quietly = TRUE)` et **échoue proprement** (message
-actionnable, jamais d'erreur de chargement de package) si absentes. Cohérent
-avec la règle spec 005 / CLAUDE.md.
+## 2. Architecture & licences (décision structurante — ADR-014)
 
-## 3. Nouveaux sous-indicateurs (familles existantes — radar 12 axes inchangé)
+> **Bloquant, tranché dans le brief §8.1 :** `biljouR`, `microclimf`, `lidR`,
+> `lasR` sont **GPL-3**. Ils ne doivent **pas** devenir des dépendances du cœur
+> `nemeton` (MIT). → **5ᵉ repository `regen_nemeton` (GPL-3)**, consommé par
+> `nemetonshiny` (EUPL v1.2, compatible GPL-3 en distribution). Respecte la
+> logique multi-repo ADR-009 et garde le cœur MIT propre.
 
-**Pas de 13e famille** (préserver le radar). Sous-indicateurs insérés dans A, W,
-R, normalisés 0–100, sens « plus haut = plus favorable à la régénération ».
+| Brique | Repo | Rôle | Licence |
+|---|---|---|---|
+| Contrat d'indicateurs (codes NMT A/R/W/C, NDP, normalisation) | `nemeton` | **déclare + normalise** ; consomme des rasters/`sf` **précalculés**, aucune dép GPL | MIT |
+| Moteur PAI LiDAR HD (`pai_depuis_nuage`) | **`regen_nemeton`** | PAI mur-à-mur depuis nuage `.laz` | GPL-3 |
+| Moteur microclimat (`microclimf`) | **`regen_nemeton`** | ΔT°max, ΔVPD, tamponnement, sensibilité, robustesse | GPL-3 |
+| Moteur bilan hydrique (`biljouR`) | **`regen_nemeton`** | REW, NJstress, Istress, forçage SAFRAN | GPL-3 |
+| Onglet `mod_regeneration`, persistance PostGIS, export | `nemetonshiny` | UI, orchestration tâche de fond, historisation, PDF/GPKG | EUPL v1.2 |
 
-| Code | Famille | Grandeur | Unité brute | Normalisation |
-|---|---|---|---|---|
-| `indicateur_a3_microclimat` | A — Air & Microclimat | T° max estivale sous couvert (JJA) | °C | décroissante (frais = 100) |
-| `indicateur_a4_tamponnement` | A — Air & Microclimat | Écart T°max découvert − sous couvert | °C | croissante (tamponné = 100) |
-| `indicateur_w4_vpd` | W — Eau & Régulation | VPD estival sous couvert (+ RH) | kPa | décroissante (humide = 100) |
-| `indicateur_r6_sensibilite` | R — Risques & Résilience | Δ stress (canicule − moyenne), ΔT°max + ΔVPD standardisés | sans dim. | décroissante (peu sensible = 100) |
+Sens des dépendances : `regen_nemeton` → `nemeton` (contrat) ; `nemetonshiny`
+→ `nemeton` **et** `regen_nemeton`. Jamais l'inverse.
 
-Signature maison : `indicateur_xx(units, chm = NULL, micro = NULL, ...)` →
-renvoie `units` (sf) enrichi d'une colonne **brute** + d'une colonne
-**normalisée** + attributs NDP. Réutilise `normalize_indicators()` /
-`create_family_index()` **sans modification**. Les familles A, W, R passent
-respectivement à 4, 4, 6 sous-indicateurs ; le radar reste à **12 axes**.
+## 3. Réconciliation avec l'existant (déjà livré cœur)
 
-**Impact config** : étendre `INDICATOR_FAMILIES$A` (A1,A2 → +A3,A4),
-`$W` (W1,W2,W3 → +W4), `$R` (R1..R5 → +R6) dans `R/indicator-config.R`
-(labels + tooltips FR/EN), plus la config app (`app_config.R`) côté
-`nemetonshiny`, plus les clés i18n (`indicateur_a3_microclimat`, etc.).
-**Sens R6** : « haut = bon » comme R1-R4 — donc `normalize_indicator()` n'a
-pas à inverser (contrairement à R5 ; cf. [[project_r5_sens_inversion]]).
+Sont **déjà dans `nemeton`** (livrés avant ce réalignement) :
 
-## 4. Indice composite « potentiel de régénération »
+| Élément livré | Devenir proposé (à trancher, §10) |
+|---|---|
+| `indicateur_a3_microclimat`, `a4_tamponnement`, `w4_vpd`, `r6_sensibilite` | **Restent au cœur** (MIT) : ils consomment un `micro` **précalculé**, sans dépendance GPL. Conformes au rôle « le cœur déclare/normalise ». |
+| `microclimate_run()` (scaffold appelant `microclimf`) | **Migrer** vers `regen_nemeton` (c'est un moteur GPL). Le cœur n'appelle plus microclimf. |
+| `microclimate_detect_years()` (E-OBS) | À arbitrer : E-OBS n'est pas GPL → peut rester au cœur, ou suivre le moteur. |
+| **`regeneration_index()` + `regeneration_tolerances()`** (v0.115.0, **non mergé**, parké) | **Retravailler** : l'indice cible du brief est un **croisement exposition × stress hydrique** (`indice_priorite_regen`), pas une moyenne pondérée A3/A4/W4/R6. La **pénalité par essence** (inventée hors brief) est à statuer : la garder comme raffinement optionnel, ou la retirer. |
 
-Score de **tête d'onglet** (pas un axe radar), paramétrable **par essence
-cible** via la config espèces existante (`get_species_config`,
-`list_species_classes`) — une essence thermophile et une mésophile n'ont pas
-les mêmes seuils de chaleur/sécheresse acceptables.
+## 4. Pipeline (par jeu de parcelles)
 
 ```
-potentiel_regeneration = f(a3_microclimat, a4_tamponnement, w4_vpd,
-                           r6_sensibilite ; tolérances de l'essence cible)
+UG (GPKG) ─┬─► [regen_nemeton] pai_depuis_nuage(.laz) ─► PAI raster
+           │                                              │
+           │      LiDAR HD MNT/MNH ─► dtm, hgt            ▼
+           │                              microclimf(veg, soil, forçage ERA5)
+           │                                    ├─► ΔT°max, ΔVPD par pixel
+           │                                    └─► agrégat UG ─► sensibilité, robustesse
+           │
+           └─► [regen_nemeton] lai_max ⇐ PAI(UG) ─► biljouR::biljou_run_grid(SAFRAN, sol)
+                                                     └─► REW, NJstress, Istress par UG
+                                            │
+                    indice_priorite_regen ◄─┘  (croisement exposition × stress hydrique)
 ```
 
-- Pondération par défaut **équipondérée**, surchargée par des profils d'essence
-  tabulés dans `inst/extdata/regeneration_tolerances.csv` (chaud/sec max
-  tolérés par essence).
-- Sortie **0–100** + classe (`favorable` / `marginal` / `defavorable`, NMT sans
-  accent).
-- Fonction cœur `regeneration_index(units, species = NULL, weights = NULL,
-  tolerances = NULL)`.
+**Couplage clé** : le PAI par parcelle (`pai_depuis_nuage`) alimente le
+`lai_max` de `biljou_run_grid()`. ⚠️ PAI ≈ LAI **uniquement** en acquisition
+*feuilles présentes* — paramètre/conversion à exposer (§9.3).
 
-## 5. Données & registre de sources
+## 5. Contrat côté `nemeton` (MIT — déclare, ne calcule pas les moteurs GPL)
 
-Étendre le registre (`get_data_source()`, `list_countries()`,
-`inst/datasources/FR.json`) pour `"FR"` :
+1. **Enrichir `indicateur_r3_secheresse`** pour accepter les métriques BILJOU
+   (`njstress`, `istress`, `deb_stress`) en plus du score 0-100 — exposer les
+   **valeurs brutes** (jours, indice), pas seulement le score (conformité).
+2. **Sous-indicateurs microclimat** (déjà là) : A3/A4/W4/R6, avec les champs
+   bruts `d_tmax`, `d_vpd`, `sensibilite`, `robustesse`.
+3. **Normalisation** 0-100 ↔ valeurs physiques (déjà via `normalize_indicator`
+   / `create_family_index`, radar 12 axes inchangé).
+4. **Schéma de sortie documenté** (§7) comme contrat de colonnes.
+5. **Aucune dépendance GPL** au `DESCRIPTION` de `nemeton` (vérif R-CMD-check).
 
-- `era5` — forçage horaire ERA5-Land (via `mcera5`, clé CDS) ;
-- `eobs` — série estivale E-OBS (Copernicus/ECA&D) pour cadrer le choix des
-  années « moyenne » vs « canicule » ;
-- `lidarhd_mnt`, `lidarhd_mnh`, `lidarhd_nuage` — dalles IGN (GeoTiff 50 cm +
-  `.laz` classé), **repli `opencanopy`** pour le CHM.
+Interfaces `regen_nemeton` à stabiliser (prototypées) :
 
-**Politique de données** (`inst/NOTICE`) : E-OBS = usage non commercial
-recherche/enseignement ; LiDAR HD = open data IGN ; ERA5-Land = Copernicus
-(licence CDS, attribution).
-
-## 6. Chaîne de calcul (`R/microclimate_*.R`)
-
-Pipeline déjà prototypé, à porter en fonctions internes :
-
-1. **PAI** depuis le nuage LiDAR HD — `lasR` (comptage sol/végétation par pixel)
-   + Beer-Lambert ; validation `lidR::LAD` (MacArthur-Horn). Repli : PAI estimé
-   depuis le CHM opencanopy.
-2. **Hauteur de canopée** depuis le MNH (ou CHM opencanopy).
-3. **Forçage** ERA5-Land (`mcera5`) au centroïde de l'emprise (année complète),
-   `microclimf::checkinputs()` en garde-fou.
-4. **microclimf** : `runpointmodel → subsetpointmodel("month","tmax") →
-   runmicro` → `Tz`, `relhum` ; agrégation estivale (JJA).
-5. Dérivés : VPD, tamponnement (run « à découvert »), et — pour R6 —
-   différentiel entre **deux années** (canopée figée) : une année **« moyenne »**
-   et une année **« canicule »**. **Sélection des années : détection automatique
-   par défaut** (à partir de la série estivale E-OBS, cf. §6bis),
-   **surchargeable par l'utilisateur** dans l'onglet.
-6. **Agrégation par parcelle** (`terra::extract`) puis normalisation Néméton.
-
-### 6bis. Sélection des années pour R6 (auto par défaut, override utilisateur)
-
-- **Signature** : `indicateur_r6_sensibilite(units, ..., year_moyenne = NULL,
-  year_canicule = NULL, year_window = NULL)`. Les deux années à `NULL` →
-  **détection automatique** ; renseignées → **choix utilisateur** (l'app les
-  passe depuis ses deux sélecteurs).
-- **Détection auto** (`R/microclimate_years.R`) : sur la série estivale (JJA)
-  **E-OBS** au-dessus de l'emprise, on calcule un **indice de chaleur estivale
-  par an** (T°max moyenne JJA, ou indice de canicule). Dans une fenêtre récente
-  `year_window` (défaut ~10 ans glissants) :
-  - **« canicule »** = l'été le plus chaud,
-  - **« moyenne »** = l'année la plus proche de la médiane climatologique,
-  - **garde-fou biais canopée** (§12) : à indice comparable, **préférer des
-    années proches** de l'année LiDAR/canopée (years adjacentes privilégiées).
-- **Traçabilité** : les deux années retenues + leur indice E-OBS sont **exposés**
-  dans la sortie (attributs) et l'**infobulle** (« sensibilité estimée entre
-  l'été <moyenne> et l'été <canicule> »), pour que l'utilisateur sache sur quoi
-  le différentiel est calculé.
-- **Best-effort** : E-OBS indisponible / hors couverture → l'app demande un choix
-  manuel des deux années (message clair), pas d'erreur silencieuse.
-
-**Performance** : traiter l'union des parcelles + tampon en une fois ;
-`microclimf::runmicro_big` (tuilage) au-delà de quelques km² ; résolution
-2–5 m ; **cache disque** des rasters microclimat par `(emprise, année)` pour ne
-pas relancer le modèle à chaque ouverture de l'onglet (réutilise la convention
-de cache projet, cf. spec 021 L6 `reconfort_cache_manifest`).
-
-## 7. NDP & confiance (amende ADR-011)
-
-- **Flag `augmented = "microclimate_model"`** (nouveau, à côté de `height_ml` /
-  `species_ml` / `texture_ml` dans `detect_ndp()`), confiance φ préservée comme
-  pour `"height_ml"` : le niveau NDP de base n'est pas modifié, l'augmentation
-  est reportée dans le vecteur `augmented`.
-- **NDP attribué selon la source de structure** : LiDAR HD nuage (NDP augmenté
-  le plus élevé) > CHM opencanopy > pas de structure (heuristique → NDP bas).
-- **Honnêteté** (à refléter dans confiance + infobulle) : sans validation
-  terrain (capteurs TMS-4, bases SoilTemp/ForestTemp), ces indicateurs sont
-  fiables en **rangement relatif** entre parcelles, prudents en **valeur
-  absolue**.
-
-## 8. Intégration cœur `nemeton`
-
-```
-R/microclimate_inputs.R     # PAI (lasR), hauteur (MNH/CHM), forçage ERA5, vegp/soilc
-R/microclimate_run.R        # wrapper microclimf -> rasters été (Tz, VPD, RH, tamponnement)
-R/indicateur_a3_microclimat.R
-R/indicateur_a4_tamponnement.R
-R/indicateur_w4_vpd.R
-R/indicateur_r6_sensibilite.R
-R/regeneration_index.R      # indice composite + paramétrage par essence
-data-raw/regeneration_tolerances.R  -> inst/extdata/regeneration_tolerances.csv
+```r
+pai_depuis_nuage(dossier_las, grille, parcelle = NULL, res = 2, k = 0.5, ...)         # -> SpatRaster
+regen_sensibilite(parc, mnt, mnh, las, annees_moy, annees_canic, mois_ete = 6:8, ...)# -> sf
+regen_bilan_hydrique(parc, meteo_safran, sol, lai_max_par_ug, forest_type, ...)      # -> sf
+regen_priorite(sf_exposition, sf_hydrique)                                           # -> indice_priorite_regen
 ```
 
-- Enregistrer les nouveaux indicateurs dans
-  `nemeton_compute(indicators = "all" | c("a3","a4","w4","r6", ...))`.
-- Roxygen + `man/` (édition manuelle, cf. [[project_rd_no_document]]),
-  `NAMESPACE`, `NEWS.md`, `CHANGELOG.md`, bump version, `Suggests`.
+## 6. Sources & forçage
 
-## 9. Onglet `nemetonshiny`
+| Donnée | Moteur | Source | Accès |
+|---|---|---|---|
+| Nuage LiDAR HD `.laz` classé | PAI | Géoplateforme IGN | Open data Etalab |
+| MNT / MNH LiDAR HD | microclimat | Géoplateforme IGN | Open data Etalab |
+| Forçage horaire | microclimat | ERA5-Land (`mcera5`/`ecmwfr`) | Compte CDS + clé |
+| **Forçage bilan hydrique** | biljouR | **SAFRAN** (Météo-France 8 km ; miroir NetCDF INRAE DOI 10.57745/BAZ12C) | `safran_download()` |
+| Série estivale tendances | années R6 + **branche A nationale** | **E-OBS** (Copernicus/ECA&D) | HTTPS, non commercial |
+| Parcelles UG | tous | couche projet | interne |
 
-```
-R/mod_regeneration.R   # UI (essence cible ; années moy/canicule = auto par
-                       #     défaut + 2 sélecteurs d'override ; source structure
-                       #     LiDAR/opencanopy) + server
-```
+**Reco forçage** : SAFRAN **primaire** (donnée officielle FR → crédibilité
+réglementaire) ; ERA5-Land en repli et pour le microclimat.
 
-- Enregistrer l'onglet « reGénération » dans `app_ui`/`app_server`.
-- **Sélecteurs d'années R6** : pré-remplis avec la **paire détectée auto**
-  (E-OBS), modifiables par l'utilisateur ; un bouton « auto » réinitialise. Les
-  deux années retenues + leur indice E-OBS sont affichés (traçabilité §6bis).
-- Visus : choroplèthe des 4 sous-indicateurs ; **carte bivariée T°max × VPD**
-  (rouge = chaud & sec, style du prototype) ; carte de l'indice composite ;
-  table triable ; intégration au **radar** (axes A/W/R mis à jour).
-- Export GPKG + PDF (réutiliser l'existant) ; affichage NDP/confiance ;
-  **i18n fr/en** ; barre de progression (run microclimf long) ; message clair
-  si `Suggests`/données manquantes.
+**Branche A (national/régional, optionnelle)** : reproduction de la carte
+bivariée de tendances estivales E-OBS (T°max × précipitations) — contexte
+régional, prototypes `carte_tendances_estivales_eobs.R` / `…_avec_animation.R`.
 
-## 10. Tests, doc
+## 7. Schéma de sortie (GPKG / table UG) — contrat à figer
 
-- `tests/testthat/` : tests unitaires des 4 indicateurs sur petits rasters
-  synthétiques (sens de normalisation, bornes 0–100, NA/couverture partielle,
-  NDP/flag `microclimate_model`) ; composite par essence ; **mocks de
-  `microclimf`** (pas de réseau en CI).
-- `vignettes/regeneration_microclimat_fr.Rmd` (+ en) : tutoriel end-to-end.
-- `specs/027-regeneration-microclimat/` (ce dossier) + **ADR-014**.
+| Champ | Type | Moteur | Sens |
+|---|---|---|---|
+| `tmax_moyenne`, `tmax_canicule` | num | microclimf | T°max sous couvert (été moyen / canicule) |
+| `vpd_moyenne`, `vpd_canicule` | num | microclimf | VPD sous couvert |
+| `d_tmax`, `d_vpd` | num | microclimf | aggravation canicule vs moyenne |
+| `sensibilite`, `rang_sensibilite` | num | microclimf | score composite + classement |
+| `robustesse`, `signal_robuste` | num/bool | microclimf | écart > variabilité interannuelle |
+| `rew_min` | num | biljouR | réserve en eau relative minimale |
+| `njstress` | int | biljouR | nb jours de stress hydrique |
+| `istress`, `deb_stress` | num | biljouR | intensité / précocité sécheresse |
+| `indice_priorite_regen` | num | croisement | priorité de régénération |
+| `parcelle_sensible`, `priorite` | bool | croisement | flags de priorisation |
+| `couverture_pct` | int | qualité | % UG couvert (filtre parcelles mal renseignées) |
 
-## 11. Critères d'acceptation
+## 8. Onglet `nemetonshiny` (`mod_regeneration`)
 
-1. `nemeton_compute(units, layers, indicators = c("a3","a4","w4","r6"))` →
-   sf avec colonnes brutes + normalisées 0–100 + attributs NDP.
-2. Radar 12 familles reste valide (A, W, R intègrent les nouveaux
-   sous-indicateurs ; A=4, W=4, R=6 axes internes).
-3. Onglet « reGénération » : cartes + table + composite par essence, export
-   GPKG/PDF, fr et en.
-4. Repli opencanopy opérationnel quand le nuage LiDAR HD est absent (NDP
-   dégradé, pas d'erreur).
-5. CI verte (R-CMD-check, tests, lintr, couverture) **sans accès réseau**.
-6. `couverture_pct` par parcelle exposé (signale les parcelles mal renseignées).
+- **UI** : couche UG du projet ; config années moy/canicule (défaut ~2021+),
+  mois été, `forest_type`, `budburst`/`leaf_fall`, `lai_max` (auto PAI ou
+  saisie), sol (`ewm`/`roots` → `biljou_soil()`), forçage (SAFRAN défaut /
+  ERA5), résolution (2 m / 5 m). Run en **tâche de fond** + cache + reprise.
+- **Résultats** : carte commutable (`d_tmax` / `sensibilite` / `njstress` /
+  `indice_priorite_regen`) ; **carte bivariée ΔT°max × ΔVPD** ; tableau trié
+  par `rang_sensibilite` / `priorite` avec `couverture_pct` ; fiche parcelle
+  (chronique REW + flux) ; **radar** A/R/W/C mis à jour.
+- **Synthèse LLM** : profil « adaptation / changement climatique » lisant
+  `njstress`/`istress`/`sensibilite`, recommandations régénération + flag des
+  conflits inter-profils (ex. régénération vs biodiversité B/N).
+- **Persistance/export** : table PostGIS versionnée des états climatiques par
+  UG (6A Archivage) ; section Quarto « reGénération » ; champs GPKG §7 ; i18n
+  FR/EN.
 
-## 12. Limites & risques (à documenter dans l'onglet)
+## 9. Contraintes & décisions du brief (rappel)
 
-- **Canopée figée** pour R6 : isole l'effet climatique, pas la trajectoire
-  complète (mortalité/coupes). Mitigation : la détection auto des années (§6bis)
-  **privilégie des années proches** de l'acquisition LiDAR à indice comparable ;
-  l'utilisateur peut forcer des années adjacentes (ex. 2021/2022).
-- **PAI** sensible à la saison d'acquisition LiDAR (feuilles présentes/absentes)
-  et à `k` ; principal levier de calage.
-- **Sans validation terrain** : indices relatifs, confiance bornée (cohérent NDP).
-- **Coût microclimf** : tuilage + cache obligatoires, sinon onglet lent.
+- **9.1 Licence** (bloquant) : repo `regen_nemeton` GPL-3, cœur MIT intact — cf.
+  ADR-014.
+- **9.2 Crédibilité BILJOU** : réimplémentation **non cautionnée INRAE**,
+  constantes à **caler sur BILJOU officiel** ; communiquer en **classement
+  relatif** (prudence en valeur absolue).
+- **9.3 Hypothèses physiques** : PAI ≈ LAI si feuilles présentes ; sol
+  uniforme ; **canopée figée** pour les comparaisons inter-annuelles (isole
+  l'effet climatique, pas mortalité/éclaircies/scolytes).
+- **9.4 Performance** : `microclimf` = goulot → tâche de fond + cache + mode
+  « bilan hydrique seul » rapide.
+- **9.5 Années** : proches de l'acquisition LiDAR (~2021+) ; classement
+  chaud/frais vérifié sur E-OBS (réutilise `microclimate_detect_years`).
 
-## 13. Lotissement
+## 10. Décisions à trancher (avant reprise du code)
 
-| Lot | Contenu | Repo |
-|---|---|---|
-| **L1 — cœur** | `microclimate_inputs/run` + `indicateur_a3/a4/w4` + tests + registre sources (LiDAR HD + repli opencanopy) | `nemeton` |
-| **L2 — résilience** | `indicateur_r6_sensibilite` (2 années) + `microclimate_years.R` (détection auto E-OBS, override) | `nemeton` |
-| **L3 — composite** | `regeneration_index` + tolérances par essence | `nemeton` |
-| **L4 — onglet** | `mod_regeneration` (carto bivariée, export, i18n, radar) | `nemetonshiny` |
-| **L5 — doc** | vignette, spec, ADR-014, NEWS/CHANGELOG | les deux |
+1. **Créer `regen_nemeton`** (GPL-3) ? confirmer le nom + l'org GitHub. *(brief
+   §8.1 — bloquant.)*
+2. **A3/A4/W4/R6 restent-ils au cœur** (MIT, consomment `micro` précalculé),
+   `microclimate_run` migrant vers `regen_nemeton` ? *(reco : oui.)*
+3. **`regeneration_index`** : le retravailler en `indice_priorite_regen`
+   (croisement exposition × stress hydrique) — garder ou retirer la **pénalité
+   par essence** (hors brief) ? Renommer les colonnes de sortie sur le §7 ?
+4. **Forçage** : SAFRAN primaire via `biljouR::safran_download` confirmé ?
+5. **Tag NDP** : indicateurs **modélisés mécanistes** → NDP 1 forcé, ou un
+   flag/tag dédié « modèle mécaniste » (amende ADR-011, déjà flag
+   `microclimate_model`) ?
+6. **Branche A E-OBS nationale** : dans le périmètre v1 de l'onglet, ou lot
+   ultérieur ?
 
-**Ordre cœur → app** (ADR-009) : L1→L3 publiés en `nemeton` avant L4 côté app.
+## 11. Lots (du brief §9)
 
-## 14. Décisions à acter avant le Lot 1
+| Lot | Contenu | Repo | Dépend |
+|---|---|---|---|
+| **L0** | Arbitrage licence + création `regen_nemeton` | org | — |
+| **L1** | `pai_depuis_nuage` + `regen_sensibilite` (microclimat) | `regen_nemeton` | L0 |
+| **L2** | `biljouR` + `regen_bilan_hydrique` + forçage SAFRAN | `regen_nemeton` | L0 |
+| **L3** | couplage PAI→lai_max + `regen_priorite` + **contrat NMT** (r3 enrichi, colonnes §7) | `regen_nemeton`, `nemeton` | L1, L2 |
+| **L4** | `mod_regeneration` (UI, run fond, cartes) | `nemetonshiny` | L3 |
+| **L5** | profil LLM adaptation + `mod_synthesis` | `nemetonshiny` | L4 |
+| **L6** | `service_db` (persistance) + `service_export` (PDF/GPKG/i18n) | `nemetonshiny` | L4 |
+| **L7** | calibration BILJOU + validation carto + doc/vignette | tous | L2-L6 |
 
-1. ✅ **R6** pour la sensibilité microclimatique (R5 pris). *(validé 2026-06-30.)*
-2. **Sens R6 = « haut = bon »** → pas d'inversion `normalize_indicator` (à la
-   différence de R5). *(confirmer.)*
-3. **microclimf en `Suggests`** + dégradation propre si absent. *(confirmé brief.)*
-4. **Flag `microclimate_model`** dans `detect_ndp()` + amendement ADR-011.
-5. **Numéro ADR = 014** (et porté dans `nemetonplateform`).
-6. ✅ **Années R6 : détection auto par défaut (E-OBS), override utilisateur**
-   (`year_moyenne`/`year_canicule` = `NULL` → auto ; `microclimate_years.R`).
-   *(validé 2026-06-30, cf. §6bis.)*
+**Ordre** : L0 (licence) → moteurs (`regen_nemeton`) + contrat (`nemeton`) →
+app. Rien de nouveau au cœur avant la décision §10.1.
+
+## 12. Critères d'acceptation (du brief §10)
+
+- Un jeu d'UG produit un GPKG conforme au §7 + une section PDF Quarto.
+- Le radar reflète A/R/W/C sans régression sur les indicateurs existants.
+- Le cœur `nemeton` reste **sans dépendance GPL** (`DESCRIPTION` + R-CMD-check).
+- Les UG à `couverture_pct` faible sont signalées et exclues par défaut.
+- La synthèse LLM cite `njstress`/`istress`/`sensibilite` + actions.
+- Un run est **rejouable depuis le cache** sans re-télécharger LiDAR/forçage.
+
+---
+
+## Annexe — Historique du cadrage v1 (2026-06-30, périmètre réduit, conservé pour trace)
+
+<details>
+<summary>Cadrage initial microclimat-seul (superseded par cette v2)</summary>
+
+Le cadrage v1 ne retenait que l'exposition microclimatique (microclimf), avec
+les sous-indicateurs A3 (T°max sous couvert), A4 (tamponnement), W4 (VPD),
+R6 (sensibilité canicule/moyenne), un pipeline `microclimate_*` dans le cœur
+(microclimf en `Suggests`), un flag NDP `microclimate_model`, la détection auto
+des années via E-OBS (`microclimate_detect_years`), et un indice composite
+`regeneration_index` = moyenne pondérée équipondérée + tolérances par essence.
+
+Livrés cœur : A3/A4/W4/R6 (familles A/W/R), `microclimate_run` (scaffold),
+`microclimate_detect_years`. Parké (non mergé) : `regeneration_index` +
+`regeneration_tolerances`. **Ces éléments sont réconciliés au §3.** Le bilan
+hydrique BILJOU et l'isolement GPL `regen_nemeton` étaient **absents** de v1 —
+c'est l'objet du réalignement.
+</details>

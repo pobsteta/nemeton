@@ -1238,6 +1238,33 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-02 — Fixed v0.114.1 + réalignement spec 027 sur le brief reGénération
+
+**Fixed (v0.114.1, releasé).** `indicateur_l3_het_spectrale` (spec 028)
+échouait sur un run réel Pascal (« l'objet 'list' ne peut être converti en
+double ») : la β-diversité biodivMapR est un raster 3 bandes (PCoA Bray-Curtis)
+→ `exact_extract(…, "mean")` renvoie un `data.frame`. `.aggregate_diversity`
+réduit désormais un extract multi-bandes en un scalaire/unité, mono-bande (B4)
+inchangé. 24 PASS. (PR #164.)
+
+**Réalignement spec 027 (paperwork avant code).** Constat : le cadrage v1
+(2026-06-30) et l'implémentation qui a suivi (A3/A4/W4/R6 + `regeneration_index`)
+ont été faits **sans remonter au brief de référence**
+`/home/pascal/Documents/reGénération/`. Ils ne couvrent que la moitié
+microclimat et tranchent à l'inverse la décision licences §8.1. **Décision
+Pascal : réaligner sur le brief complet.**
+- **`regeneration_index` NON mergé** (PR #163 fermée, branche `feat/regeneration-index`
+  parkée) — sera retravaillé en `indice_priorite_regen`.
+- **spec 027 réécrite en v2.0.0** : deux moteurs (microclimf exposition +
+  **biljouR bilan hydrique**), **repo GPL `regen_nemeton`** (isole les moteurs
+  GPL du cœur MIT), schéma de sortie §7, r3 enrichi, branche A E-OBS nationale.
+  Réconciliation de l'existant au §3. 6 décisions à trancher au §10.
+- **ADR-014 brouillon** (`specs/027-.../ADR-014-draft.md`) : `regen_nemeton`
+  GPL-3, contrat MIT au cœur ; amende ADR-009 (5ᵉ repo) + ADR-011. À porter
+  dans `platform_nemeton` par Pascal.
+- **Rien de nouveau au cœur avant validation** de la spec v2 (§10.1 = créer
+  `regen_nemeton`, bloquant).
+
 ### 2026-07-02 — Spec 031 forêt ancienne : volet app livré (nemetonshiny v0.97.6)
 
 Le câblage applicatif du helper `build_foret_ancienne_mask()` (cœur v0.113.0) est
