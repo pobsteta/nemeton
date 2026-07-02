@@ -1270,6 +1270,14 @@ Pascal : réaligner sur le brief complet.**
   à Pascal. ADR-006 réel à réconcilier dans `platform_nemeton`.
 - **Rien de nouveau au cœur avant validation** de la spec v2.1 (4 décisions §10,
   plus de blocage licence).
+- **Arbitrage Pascal (2026-07-02)** des 4 décisions §10 : (1) `indice_priorite_regen`
+  = croisement exposition × stress hydrique, **pénalité par essence gardée en
+  option OFF par défaut**, colonnes renommées §7 ; (2) **SAFRAN primaire**,
+  ERA5 repli ; (3) **tag « modèle mécaniste »**, NDP de base inchangé (étend
+  `microclimate_model`) ; (4) **carte de tendances E-OBS dans la v1 mais sur
+  l'emprise UGF + buffer** (à déterminer, défaut proposé ~25 km), pas nationale.
+  Spec 027 v2.1 passée en statut « arbitrée, prête pour L1→L3 ». **Reste à
+  préciser** : valeur du buffer. Reprise du code au feu vert de Pascal.
 
 ### 2026-07-02 — Spec 031 forêt ancienne : volet app livré (nemetonshiny v0.97.6)
 

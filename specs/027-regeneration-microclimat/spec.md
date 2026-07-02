@@ -1,8 +1,9 @@
 # Spec 027 — Onglet « reGénération » : vulnérabilité climatique par parcelle
 
-**Statut** : **RÉALIGNÉE sur le brief `/home/pascal/Documents/reGénération/`,
-puis SIMPLIFIÉE (2026-07-02).** À valider avant reprise du code (paperwork
-avant code).
+**Statut** : **RÉALIGNÉE + SIMPLIFIÉE + ARBITRÉE (2026-07-02).** Les 4 décisions
+du §10 sont **tranchées** (Pascal). Prête pour l'implémentation (L1→L3 cœur).
+Reste à préciser : la valeur du buffer de la carte de tendances (§10.4, défaut
+proposé ~25 km).
 **Version** : 2.1.0 — v2.0 isolait les moteurs GPL dans un 5ᵉ repo pour
 protéger un cœur *supposé* MIT ; **or `nemeton` est déjà GPL-3** (LICENSE +
 DESCRIPTION). Le conflit de licence **n'existe pas** → les moteurs vont
@@ -78,7 +79,7 @@ Sens des dépendances (inchangé) : `nemetonshiny → nemeton`. Jamais l'inverse
 | `indicateur_a3_microclimat`, `a4_tamponnement`, `w4_vpd`, `r6_sensibilite` | **Restent** tels quels (consomment un `micro` précalculé). |
 | `microclimate_run()` (scaffold appelant `microclimf`) | **Reste au cœur** et sera **complété** en orchestrateur réel (microclimf en `Suggests`). Plus de migration. |
 | `microclimate_detect_years()` (E-OBS) | Reste au cœur. |
-| **`regeneration_index()` + `regeneration_tolerances()`** (parké, non mergé) | **Retravailler** : l'indice cible du brief est un **croisement exposition × stress hydrique** (`indice_priorite_regen`), pas une moyenne pondérée A3/A4/W4/R6. La **pénalité par essence** (inventée hors brief) est à statuer : la garder en option, ou la retirer. |
+| **`regeneration_index()` + `regeneration_tolerances()`** (parké, non mergé) | **Retravailler** en `indice_priorite_regen` = **croisement exposition × stress hydrique** (pas une moyenne pondérée A3/A4/W4/R6). **Pénalité par essence conservée en option OFF par défaut** (décision §10.1) ; `regeneration_tolerances.csv` réutilisé. Colonnes renommées §7. |
 
 ## 4. Pipeline (par jeu de parcelles)
 
@@ -111,7 +112,9 @@ UG (GPKG) ─┬─► pai_depuis_nuage(.laz) ─► PAI raster
 3. **Sous-indicateurs microclimat** (déjà là) A3/A4/W4/R6 + champs bruts
    `d_tmax`, `d_vpd`, `sensibilite`, `robustesse`.
 4. **Indice `indice_priorite_regen`** (retravail de `regeneration_index`) =
-   croisement exposition × stress hydrique.
+   croisement exposition × stress hydrique. **Générique par défaut** ; pénalité
+   par essence en **option désactivée** (arg `species = NULL` → générique ;
+   renseigné → affinage via `regeneration_tolerances.csv`). Décision §10.1.
 5. **Schéma de sortie §7** documenté comme contrat de colonnes.
 
 Interfaces à stabiliser (prototypées dans `/Documents/reGénération/`) :
@@ -137,9 +140,12 @@ regen_priorite(sf_exposition, sf_hydrique)                                      
 **Reco forçage** : SAFRAN **primaire** (donnée officielle FR → crédibilité
 réglementaire) ; ERA5-Land en repli et pour le microclimat.
 
-**Branche A (national/régional, optionnelle)** : reproduction de la carte
-bivariée de tendances estivales E-OBS (T°max × précipitations) — prototypes
-`carte_tendances_estivales_eobs.R` / `…_avec_animation.R`.
+**Branche A (contexte de tendances, DANS la v1 — décision §10.4)** : carte
+bivariée de tendances estivales E-OBS (T°max × précipitations) **calculée sur
+l'emprise de la zone UGF + un buffer** (défaut proposé ~25 km, à confirmer ;
+≥ 2 mailles E-OBS ~0,1° ≈ 11 km). **Pas de carte nationale.** Prototypes de
+référence `carte_tendances_estivales_eobs.R` / `…_avec_animation.R` (à recadrer
+sur l'AOI projet au lieu de la France entière).
 
 ## 7. Schéma de sortie (GPKG / table UG) — contrat à figer
 
@@ -188,20 +194,31 @@ bivariée de tendances estivales E-OBS (T°max × précipitations) — prototype
 - **9.5 Années** : proches de l'acquisition LiDAR (~2021+) ; classement
   chaud/frais vérifié sur E-OBS (réutilise `microclimate_detect_years`).
 
-## 10. Décisions à trancher (avant reprise du code)
+## 10. Décisions — ARBITRÉES (Pascal, 2026-07-02)
 
-1. **`regeneration_index`** : le retravailler en `indice_priorite_regen`
-   (croisement exposition × stress hydrique) — garder ou retirer la **pénalité
-   par essence** (hors brief) ? Renommer les colonnes de sortie sur le §7 ?
-2. **Forçage** : SAFRAN primaire via `biljouR::safran_download` confirmé ?
-3. **Tag NDP** : indicateurs **modélisés mécanistes** → NDP 1 forcé, ou un
-   flag/tag dédié « modèle mécaniste » (amende ADR-011, déjà flag
-   `microclimate_model`) ?
-4. **Branche A E-OBS nationale** : dans le périmètre v1 de l'onglet, ou lot
-   ultérieur ?
+1. **`indice_priorite_regen`** = croisement exposition × stress hydrique
+   (retravail de `regeneration_index`). **Pénalité par essence : conservée en
+   OPTION, désactivée par défaut** — l'indice par défaut est générique (conforme
+   au brief) ; l'affinage par essence cible (seuils chaud/sec de
+   `regeneration_tolerances.csv`) reste disponible via un argument. Les colonnes
+   de sortie sont **renommées sur le §7** (`indice_priorite_regen`, etc.).
+2. **Forçage bilan hydrique : SAFRAN primaire** (`biljouR::safran_download`),
+   **ERA5-Land en repli** et pour le microclimat. *(donnée officielle FR →
+   crédibilité réglementaire.)*
+3. **NDP : tag « modèle mécaniste », NDP de base inchangé.** On étend le flag
+   augmenté existant (`microclimate_model`, ADR-011) — honnêteté sur la nature
+   modélisée, confiance φ prudente ; **pas de NDP 1 forcé**.
+4. **Branche A (carte bivariée de tendances estivales E-OBS) : DANS la v1, mais
+   à l'échelle du projet** — calculée sur **l'emprise de la zone UGF + un
+   buffer** (valeur **à déterminer** — proposition à confirmer : ≥ 2 mailles
+   E-OBS, la grille E-OBS faisant ~0,1° ≈ 11 km ; défaut proposé **~25 km**).
+   **Pas de carte nationale.**
 
 *(Les ex-décisions « créer regen_nemeton » et « migrer microclimate_run » sont
 caduques : tout reste au cœur GPL-3.)*
+
+**Reste à préciser** : la **valeur du buffer** de la carte de tendances (§6
+branche A) — défaut proposé ~25 km, à confirmer par Pascal.
 
 ## 11. Lots
 
