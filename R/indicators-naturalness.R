@@ -211,3 +211,104 @@ indicateur_n3_naturalite <- function(units,
   cli::cli_alert_success("Calculated {column_name}: Composite naturalness (0-100)")
   return(result)
 }
+
+
+# ==============================================================================
+# Ancient-forest mask builder (feeds N2 continuity)  [spec 031]
+# ==============================================================================
+
+#' Build an ancient-forest polygon layer for N2 continuity
+#'
+#' Turns a historical forest source into the `foret_ancienne` polygon layer
+#' consumed by [indicateur_n2_continuite()] (its `foret_ancienne` argument).
+#' Two source forms are accepted:
+#'
+#' \itemize{
+#'   \item an \pkg{sf}/\pkg{sfc} of already-vectorised ancient-forest
+#'     polygons (e.g. a digitised Cassini / état-major map, or an IGN
+#'     \dQuote{forêt ancienne} layer): it is validated, reprojected and
+#'     optionally area-filtered, then returned.
+#'   \item a \pkg{terra} SpatRaster historical forest map: a binary forest
+#'     mask is derived — by class membership (`forest_class`), by threshold
+#'     (`threshold`), or, failing both, as \code{value > 0} — then polygonised,
+#'     split into contiguous patches, area-filtered and returned as polygons.
+#' }
+#'
+#' nemeton ships no French historical forest raster: the source is supplied
+#' by the caller. Note that the Theia \code{corona-4b} collection is NOT a
+#' usable source over France — it covers only the Middle East (spec 031); the
+#' French sources are Cassini / état-major scans or IGN forêt-ancienne layers.
+#'
+#' @param source An sf/sfc of ancient-forest polygons, or a terra SpatRaster
+#'   historical forest map.
+#' @param forest_class Optional. Raster class value(s) that denote forest
+#'   (used only when `source` is a SpatRaster). Selects the mask by
+#'   membership.
+#' @param threshold Optional numeric. Raster values \code{>= threshold} are
+#'   forest (used only when `source` is a SpatRaster and `forest_class` is
+#'   NULL) — e.g. a forest-probability or greenness index.
+#' @param min_area_m2 Numeric. Drop contiguous patches smaller than this
+#'   area (in the working CRS units, m² for a metric CRS). Default 0 = keep
+#'   all.
+#' @param crs Optional target CRS (anything accepted by [sf::st_transform()]).
+#'   NULL (default) keeps the source CRS.
+#'
+#' @return An sf polygon layer with a single logical column
+#'   `foret_ancienne = TRUE`, ready to pass to
+#'   `indicateur_n2_continuite(units, foret_ancienne = ...)`. May have 0 rows
+#'   if no forest is found.
+#'
+#' @export
+build_foret_ancienne_mask <- function(source,
+                                      forest_class = NULL,
+                                      threshold    = NULL,
+                                      min_area_m2  = 0,
+                                      crs          = NULL) {
+  if (!requireNamespace("sf", quietly = TRUE)) {
+    cli::cli_abort("Package {.pkg sf} is required.")
+  }
+  if (!is.numeric(min_area_m2) || length(min_area_m2) != 1L || min_area_m2 < 0) {
+    cli::cli_abort("{.arg min_area_m2} must be a non-negative scalar.")
+  }
+
+  .finalise <- function(fa) {
+    if (!is.null(crs)) fa <- sf::st_transform(fa, crs)
+    if (min_area_m2 > 0 && nrow(fa) > 0) {
+      fa <- suppressWarnings(sf::st_cast(fa, "POLYGON", warn = FALSE))
+      keep <- as.numeric(sf::st_area(fa)) >= min_area_m2
+      fa <- fa[keep, , drop = FALSE]
+    }
+    sf::st_sf(foret_ancienne = rep(TRUE, nrow(fa)),
+              geometry = sf::st_geometry(fa))
+  }
+
+  # --- Vector source: already-vectorised ancient forest ---
+  if (inherits(source, c("sf", "sfc"))) {
+    fa <- sf::st_make_valid(sf::st_as_sf(source))
+    return(.finalise(fa))
+  }
+
+  # --- Raster source: derive a binary forest mask, polygonise ---
+  if (inherits(source, "SpatRaster")) {
+    if (!requireNamespace("terra", quietly = TRUE)) {
+      cli::cli_abort("Package {.pkg terra} is required for a raster source.")
+    }
+    r <- source[[1]]
+    m <- if (!is.null(forest_class)) {
+      terra::ifel(r %in% forest_class, 1L, NA)
+    } else if (!is.null(threshold)) {
+      terra::ifel(r >= threshold, 1L, NA)
+    } else {
+      # No class/threshold: treat the raster as a 0/nodata forest mask.
+      terra::ifel(r > 0, 1L, NA)
+    }
+    polys <- terra::as.polygons(m, dissolve = TRUE)
+    if (length(polys) == 0L) {
+      return(sf::st_sf(foret_ancienne = logical(0),
+                       geometry = sf::st_sfc(crs = crs %||% terra::crs(r))))
+    }
+    return(.finalise(sf::st_as_sf(polys)))
+  }
+
+  cli::cli_abort("{.arg source} must be an sf/sfc object or a terra SpatRaster.")
+}

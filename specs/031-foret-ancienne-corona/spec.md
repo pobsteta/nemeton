@@ -1,8 +1,50 @@
-# Spec 031 — Indicateur N4 « Forêt ancienne » (Corona 4B)
+# Spec 031 — Forêt ancienne : helper `build_foret_ancienne_mask()` (renforce N2)
 
-**Version** : 0.1.0
+**Version** : 0.2.0
 **Date**    : 2026-07-02
-**Statut**  : Cadrée — à valider (paperwork avant code, non implémentée).
+**Statut**  : **Réorientée puis implémentée (2026-07-02, v0.113.0).** Le
+plan initial (nouvel indicateur **N4** alimenté par **Corona 4B**) est
+**abandonné** après deux constats bloquants sur données réelles :
+
+1. **Corona 4B n'a aucune couverture France** : la collection Theia
+   `corona-4b` ne contient que 3 items, tous au Moyen-Orient (lon 44-53°E).
+   Inutilisable pour une forêt ancienne française.
+2. **N2 gère déjà la forêt ancienne** : `indicateur_n2_continuite()` a déjà
+   un argument `foret_ancienne` (fraction ancienne → score 60-100). Un N4
+   dédié serait redondant et double-compterait dans la famille N.
+
+**Décision utilisateur (2026-07-02)** : *abandonner N4, renforcer N2*. Le
+livrable est un **helper source-agnostique `build_foret_ancienne_mask()`**
+qui construit la couche `foret_ancienne` que N2 consomme déjà, depuis une
+source historique fournie par l'utilisateur (Cassini / état-major / IGN forêt
+ancienne, raster classé ou vecteur). Aucun nouvel indicateur, aucune source
+morte. Le reste de ce document (§ N4) est **conservé pour trace historique**.
+
+---
+
+## 0. Livrable retenu (v0.2.0) — `build_foret_ancienne_mask()`
+
+Fonction exportée `build_foret_ancienne_mask(source, forest_class = NULL,
+threshold = NULL, min_area_m2 = 0, crs = NULL)` (`R/indicators-naturalness.R`) :
+
+- **Source vecteur** (sf/sfc) : forêt ancienne déjà vectorisée → validée
+  (`st_make_valid`), reprojetée, filtrée par aire, marquée `foret_ancienne`.
+- **Source raster** (SpatRaster) : masque forêt dérivé par classe
+  (`forest_class`), par seuil (`threshold`), ou `valeur > 0` à défaut →
+  polygonisé (`terra::as.polygons`), scindé en taches contiguës, filtré par
+  aire.
+- **Sortie** : couche sf `foret_ancienne = TRUE`, passée telle quelle à
+  `indicateur_n2_continuite(units, foret_ancienne = ...)`.
+
+Tests : `test-foret-ancienne-mask.R` (raster/classe, seuil, vecteur, filtre
+aire, intégration N2 → score 100 sur forêt ancienne totale, type invalide).
+`corona-4b` **non déclaré** dans `FR.json` (aucune couverture France).
+
+---
+
+<details><summary>Plan initial abandonné — Indicateur N4 « Forêt ancienne » (Corona 4B)</summary>
+
+**Statut initial** : Cadrée — à valider (paperwork avant code, non implémentée).
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` (feat mineur — nouvel indicateur N4).
 **Cible app**  : `nemetonshiny` (radar N4, brief séparé).
@@ -98,3 +140,5 @@ technique du chantier (§4 D2).
   (continuité depuis le milieu du XIXᵉ, cartes d'état-major). ~1968 n'est
   qu'une borne pragmatique — ne pas sur-vendre le terme. Nommage prudent
   requis dans l'UI et l'i18n.
+
+</details>
