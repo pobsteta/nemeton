@@ -12,7 +12,9 @@ indicateur_r3_secheresse(
   snow = NULL,
   snow_relief_strength = 0.3,
   soil_moisture = NULL,
-  sm_relief_strength = 0.3
+  sm_relief_strength = 0.3,
+  biljou = NULL,
+  biljou_weight = 0.5
 )
 }
 \arguments{
@@ -50,11 +52,27 @@ fractional reduction of R3 applied when the soil moisture
 reaches the \eqn{0.3\;m^3/m^3} field-capacity reference.
 Default \code{0.3}. Ignored when \code{soil_moisture} is
 \code{NULL}.}
+
+\item{biljou}{Optional per-unit soil water-balance metrics from the BILJOU
+engine (\code{regen_bilan_hydrique}, spec 027): a \code{data.frame} / list with
+numeric columns \code{njstress} (days of hydric stress), \code{istress}
+(drought-intensity index) and/or \code{deb_stress} (onset day-of-year).
+\code{NULL} (default) → these are read from the same-named columns of
+\code{units} when present, else no enrichment. When available, a BILJOU stress
+score is blended into R3 (weight \code{biljou_weight}) and the raw metrics are
+exposed as columns.}
+
+\item{biljou_weight}{Numeric in \code{[0, 1]}. Weight of the BILJOU stress score
+in the blend with the SPEI/topographic risk. Default \code{0.5}. Ignored when
+no BILJOU metric is available.}
 }
 \value{
-The input sf object with added column:
+The input sf object with added columns:
   \itemize{
     \item R3: Drought stress (0-100). Higher = higher stress.
+    \item r3_njstress, r3_istress, r3_deb_stress: raw BILJOU values
+      (days / index / day-of-year), when supplied — exposed for
+      compliance / reporting, not only the score.
   }
 }
 \description{

@@ -1238,6 +1238,24 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-02 — Added v0.116.0 : r3_secheresse enrichi BILJOU (spec 027 §5.1, 2e incrément code)
+
+2e incrément reGénération (pure logique testable, avant les moteurs).
+`indicateur_r3_secheresse()` accepte les métriques BILJOU via `biljou`
+(data.frame/list : `njstress`/`istress`/`deb_stress`) + `biljou_weight` (défaut
+0.5). **Expose les valeurs brutes** (`r3_njstress`/`r3_istress`/`r3_deb_stress`)
+en plus du score (conformité §5.1). **Blend** : le stress mécanique affine le
+risque SPEI/topo (par unité, NA-safe : `0*NaN=NaN` géré) ; aggrave dans le sens
+du risque (symétrique neige/humidité). **Sans DEM + BILJOU** → R3 depuis le
+bilan hydrique seul. Lecture aussi depuis colonnes `units` (pipeline
+`regen_bilan_hydrique → r3` transparent). **Rétrocompatible strict** (sans
+biljou = v0.115.x, NA sans DEM). Bornes documentées non calibrées (§9.2). Tests
+`test-r3-biljou.R` (BILJOU seul, exposition brute, lecture colonnes, blend DEM,
+sens aggravant, rétrocompat) ; sweep voisins 380 PASS. `.Rd` r3 à la main.
+
+**Reste** (au feu vert) : moteurs L1 (PAI+microclimf) / L2 (biljouR+SAFRAN) en
+`Suggests` + tests mockés ; branche A carte E-OBS sur emprise UGF + buffer.
+
 ### 2026-07-02 — Added v0.115.0 : indice_priorite_regen (spec 027 v2.1 L3, 1er incrément code)
 
 Premier code reGénération après réalignement + arbitrage. **Ordre choisi** :
