@@ -1,6 +1,17 @@
 # Spec 027 — Onglet « reGénération » & indicateurs microclimatiques sous couvert
 
-**Statut** : cadrage (paperwork avant code) — 2026-06-30. À valider avant le Lot 1.
+**Statut** : **Volet cœur CLOS (2026-07-02, v0.115.0).** L1 (`microclimate_run`
+scaffold + `indicateur_a3_microclimat` / `indicateur_a4_tamponnement` /
+`indicateur_w4_vpd`), L2 (`indicateur_r6_sensibilite` +
+`microclimate_detect_years`) et **L3 (`regeneration_index` + `regeneration_tolerances`
++ `inst/extdata/regeneration_tolerances.csv`)** livrés côté `nemeton`. Config
+familles A (A1-A5), W (W1-W4), R (R1-R6) à jour. **Reste** : L4 onglet
+`mod_regeneration` côté `nemetonshiny` ; orchestration microclimf réelle
+(`microclimate_run` est un scaffold, les indicateurs consomment un `micro`
+précalculé) ; calibration terrain des bornes/tolérances (documentées, non
+calibrées — §7/§12) ; ADR-014 à porter dans `platform_nemeton`.
+
+**Statut initial** : cadrage (paperwork avant code) — 2026-06-30. À valider avant le Lot 1.
 **Cibles** : `nemeton` (cœur, indicateurs + pipeline microclimat, MIT) ·
 `nemetonshiny` (onglet, UI, EUPL v1.2).
 **ADR associé** : **ADR-014** (« reGénération microclimatique : familles

@@ -1,3 +1,46 @@
+# nemeton 0.115.0 (2026-07-02)
+
+### Added — Indice composite « potentiel de régénération » (spec 027 L3)
+
+Nouvelle fonction cœur **`regeneration_index()`** : le **score de tête d'onglet**
+de la spec 027 (reGénération microclimatique, ADR-014), qui combine les quatre
+sous-indicateurs microclimatiques sous couvert **A3** (T°max), **A4**
+(tamponnement), **W4** (VPD) et **R6** (sensibilité) en un **potentiel de
+régénération 0-100** paramétrable **par essence cible**.
+
+- Score de base = moyenne pondérée des sous-indicateurs **présents** sur
+  `units` (poids par défaut équipondérés, renormalisés par ligne sur les
+  composantes non-NA → un R6 absent ne fait pas s'effondrer le score).
+- **Pénalité de tolérance par essence** : quand `species` est fourni, la
+  T°max / VPD **brutes** (`A3_tmax` / `W4_vpd`) sont confrontées aux seuils
+  max tolérés de l'essence → un microsite chaud et sec pénalise davantage une
+  essence mésophile (hêtre) qu'une thermophile (chêne vert). Seuils dans
+  `inst/extdata/regeneration_tolerances.csv` (11 classes d'essences), exposés
+  par le nouvel accesseur **`regeneration_tolerances()`**.
+- Sortie : `regeneration_potentiel` (0-100), `regeneration_classe`
+  (`favorable` / `marginal` / `defavorable`, NMT sans accent) et
+  `regeneration_essence`. Indice composite, **pas un axe radar** (les A/W/R
+  gardent leurs axes).
+
+Ceci **clôt le volet cœur de la spec 027** (L1 `microclimate_*` + A3/A4/W4,
+L2 R6 + `microclimate_detect_years`, L3 `regeneration_index`). Reste le L4
+onglet `mod_regeneration` côté `nemetonshiny`. Seuils de tolérance et bornes de
+normalisation microclimat restent **documentés, non calibrés terrain**
+(spec 027 §7/§12).
+
+### Fixed — L3 hétérogénéité spectrale sur β-diversité multi-bandes (spec 028)
+
+`indicateur_l3_het_spectrale()` échouait sur un run réel avec *« l'objet 'list'
+ne peut être converti automatiquement en un type 'double' »*. Cause : la
+β-diversité biodivMapR est un raster **multi-bandes** (3 axes PCoA Bray-Curtis) ;
+`exact_extract(..., "mean")` renvoie alors un `data.frame` (une colonne par
+bande) que `as.numeric()` ne peut pas coercer. `.aggregate_diversity()` réduit
+désormais un extract multi-bandes en **un scalaire par unité** (moyenne des
+bandes = position moyenne dans l'espace d'ordination), le comportement
+mono-bande (B4 α-diversité) restant strictement inchangé. Les unités hors
+couverture donnent `NA` (et non `NaN`). Le test épinglait un β mono-bande, d'où
+le bug non détecté : ajout d'un cas de régression **multi-bandes**.
+
 # nemeton 0.114.0 (2026-07-02)
 
 ### Added — Indicateur A5 « Rafraîchissement urbain » (LST, spec 032 réorientée)

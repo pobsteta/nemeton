@@ -38,12 +38,12 @@ Règle : les dépendances vont toujours vers nemeton (cœur). Jamais d'inverse. 
 |------|---------|-------------|
 | B | Biodiversité | B1 (protection), B2 (structure), B3 (connectivité) |
 | C | Carbone & Vitalité | C1 (biomasse), C2 (NDVI) |
-| W | Eau & Régulation | W1 (réseau hydro), W2 (zones humides), W3 (TWI) |
+| W | Eau & Régulation | W1 (réseau hydro), W2 (zones humides), W3 (TWI), W4 (VPD sous couvert, spec 027) |
 | A | Air & Microclimat | A1 (couverture arborée), A2 (qualité air), A3 (microclimat sous couvert, spec 027), A4 (tamponnement canopée, spec 027), A5 (rafraîchissement urbain, LST-conditionné — spec 032) |
 | F | Fertilité des sols | F1 (fertilité), F2 (érosion) |
 | L | Paysage | L1 (sylvosphère), L2 (fragmentation) |
 | T | Dynamique temporelle | T1 (ancienneté), T2 (changement), T3 (coupes rases, SUFOSAT-conditionné — spec 030) |
-| R | Risques & Résilience | R1 (feu), R2 (tempête), R3 (sécheresse), R4 (abroutissement), R5 (dépérissement, FORDEAD-conditionné — spec 008) |
+| R | Risques & Résilience | R1 (feu), R2 (tempête), R3 (sécheresse), R4 (abroutissement), R5 (dépérissement, FORDEAD-conditionné — spec 008), R6 (sensibilité microclimatique, spec 027) |
 | S | Social & Usages | S1 (routes), S2 (bâti), S3 (population) |
 | P | Production & Économie | P1 (volume bois), P2 (station), P3 (qualité bois) |
 | E | Énergie & Climat | E1 (bois-énergie), E2 (évitement carbone) |
@@ -281,6 +281,8 @@ d'intégration sont *skipped*, comptés dans la sortie testthat).
 R/ndp.R                       → Système NDP, Fibonacci, confiance φ, flag `augmented`
 R/utils-chm.R                 → sanitize_chm(), extract_h_dom() (spec 005)
 R/site_index.R                → compute_site_index() + courbes Duplat & Tran-Ha (spec 005)
+R/indicators-microclimate.R   → A3/A4/W4/R6 sous couvert + microclimate_run (spec 027)
+R/regeneration_index.R        → regeneration_index() composite + tolérances essence (spec 027 L3)
 R/family-system.R             → Agrégation des indicateurs en familles
 R/indicators-*.R              → Calcul des 31 indicateurs (air, biodiversity, energy,
                                  naturalness, productive, risk, social, temporal, core, families)

@@ -442,6 +442,8 @@ reference:
     - microclimate_detect_years
     - microclimate_run
     - prepare_pixel_dieback_series
+    - regeneration_index
+    - regeneration_tolerances
     - read_reconfort_layer
     - reconfort_cache_manifest
     - reconfort_latest_complete_year

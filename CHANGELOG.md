@@ -10,6 +10,25 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.115.0] - 2026-07-02
+
+### Added
+- **`regeneration_index()`** + **`regeneration_tolerances()`** (spec 027 L3):
+  composite 0-100 regeneration potential combining the microclimate
+  sub-indicators A3/A4/W4/R6, tunable by target species via
+  `inst/extdata/regeneration_tolerances.csv` (per-species heat/dryness
+  tolerance penalty). Closes the core side of spec 027 (L1-L3); L4 tab remains
+  in `nemetonshiny`.
+
+### Fixed
+- `indicateur_l3_het_spectrale()` crashed ("list cannot be coerced to double")
+  on the real biodivMapR beta-diversity output, a multi-band raster (3 PCoA
+  Bray-Curtis axes): `exact_extract(..., "mean")` returns a data.frame that
+  `as.numeric()` cannot coerce. `.aggregate_diversity()` now collapses a
+  multi-band extraction to one scalar per unit (mean across bands), leaving
+  single-band alpha (B4) unchanged; off-coverage units yield `NA`. Added a
+  multi-band regression test.
+
 ## [0.114.0] - 2026-07-02
 
 ### Added

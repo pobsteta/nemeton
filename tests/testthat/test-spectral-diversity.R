@@ -51,6 +51,28 @@ test_that("B4 / L3 aggregate a precomputed alpha/beta raster per unit", {
   expect_true(all(is.na(b4_na$B4)))
 })
 
+test_that("L3 aggregates a MULTI-BAND beta raster (biodivMapR 3 PCoA axes)", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
+  # biodivMapR's beta diversity is a 3-band raster (Bray-Curtis PCoA axes).
+  # exact_extract(..., "mean") then returns a data.frame, which used to crash
+  # `.aggregate_diversity` ("list cannot be coerced to double"). Regression.
+  r1 <- terra::rast(xmin = 1, xmax = 3, ymin = 0, ymax = 1,
+                    resolution = 0.1, crs = "EPSG:4326")
+  terra::values(r1) <- rep(seq(0, 1, length.out = terra::ncol(r1)),
+                           each = terra::nrow(r1))
+  beta3 <- c(r1, r1 * 2, r1 * 3)          # 3-band beta ordination
+  names(beta3) <- c("PCO1", "PCO2", "PCO3")
+  u <- .mini_units_ll(2)
+
+  l3 <- indicateur_l3_het_spectrale(u, spectral = list(beta = beta3))
+  expect_length(l3$L3, 2)
+  expect_type(l3$L3, "double")            # scalar per unit, no list-column
+  expect_false(anyNA(l3$L3))
+  # West unit still lower than east (gradient preserved through band-averaging).
+  expect_lt(l3$L3[1], l3$L3[2])
+})
+
 test_that("compute_spectral_diversity validates its reflectance argument", {
   skip_if_not_installed("biodivMapR")
   expect_error(

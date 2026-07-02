@@ -1238,6 +1238,31 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-02 — Added/Fixed : spec 027 L3 `regeneration_index` + fix L3 spectral (cœur, v0.115.0)
+
+**Added — clôture du volet cœur spec 027.** Constat en attaquant la dette : W4
+(`indicateur_w4_vpd`) et R6 existaient déjà — seul le **L3 composite manquait**.
+Livré `regeneration_index(units, species, weights, tolerances, class_breaks)`
+(`R/regeneration_index.R`) : moyenne pondérée des sous-indicateurs
+microclimatiques A3/A4/W4/R6 présents (renormalisée par ligne → un R6 absent ne
+casse rien), + **pénalité de tolérance par essence** sur la T°max/VPD brutes
+(`A3_tmax`/`W4_vpd`) via `inst/extdata/regeneration_tolerances.csv` (11 essences)
+→ un microsite chaud/sec pénalise plus une mésophile qu'une thermophile. Sortie
+`regeneration_potentiel` (0-100) + `regeneration_classe`
+(favorable/marginal/defavorable) + `regeneration_essence`. Accesseur
+`regeneration_tolerances()`. **Pas un axe radar** (score de tête d'onglet).
+Tests `test-regeneration-index.R` 14 PASS. Config familles CLAUDE.md complétée
+(W4/R6 manquaient dans la table). L1-L3 cœur clos ; reste L4 app + microclimf réel.
+
+**Fixed — `indicateur_l3_het_spectrale` (spec 028) sur run réel Pascal.** Erreur
+« l'objet 'list' ne peut être converti en 'double' » : la β-diversité biodivMapR
+est un raster **3 bandes** (axes PCoA Bray-Curtis) → `exact_extract(…, "mean")`
+renvoie un `data.frame` que `as.numeric()` refuse. `.aggregate_diversity()`
+réduit désormais un extract multi-bandes en un scalaire/unité (moyenne des
+bandes), mono-bande (B4 α) inchangé, hors-couverture → NA. Le test épinglait un
+β mono-bande (bug non vu) → ajout d'un cas multi-bandes. `test-spectral-diversity.R`
+24 PASS.
+
 ### 2026-07-02 — Spec 031 forêt ancienne : volet app livré (nemetonshiny v0.97.6)
 
 Le câblage applicatif du helper `build_foret_ancienne_mask()` (cœur v0.113.0) est
