@@ -3,11 +3,13 @@
 ## Identité du projet
 
 Néméton est une plateforme d’analyse forestière systémique développée
-par Pascal Obstetar à titre personnel. Elle calcule **31 indicateurs**
-(32 avec R5 dépérissement quand FORDEAD a tourné, cf. spec 008)
-organisés en **12 familles**, les affiche sur un radar, et génère des
-perspectives IA adaptées à 15 profils d’acteurs de la filière
-forêt-bois. Le nom vient du gaulois *nemeton* (sanctuaire en forêt).
+par Pascal Obstetar à titre personnel. Elle calcule **31 indicateurs de
+base** (33 avec les indicateurs conditionnels R5 dépérissement quand
+FORDEAD a tourné — spec 008 — et T3 coupes rases quand SUFOSAT est
+fourni — spec 030) organisés en **12 familles**, les affiche sur un
+radar, et génère des perspectives IA adaptées à 15 profils d’acteurs de
+la filière forêt-bois. Le nom vient du gaulois *nemeton* (sanctuaire en
+forêt).
 
 Le package R `nemeton` (v0.15.1.9000) est le **cœur métier** :
 indicateurs, familles, NDP, normalisation, visualisation. Depuis v0.15.0
@@ -59,7 +61,7 @@ commit `720a433`).
 | A | Air & Microclimat | A1 (couverture arborée), A2 (qualité air) |
 | F | Fertilité des sols | F1 (fertilité), F2 (érosion) |
 | L | Paysage | L1 (sylvosphère), L2 (fragmentation) |
-| T | Dynamique temporelle | T1 (ancienneté), T2 (changement) |
+| T | Dynamique temporelle | T1 (ancienneté), T2 (changement), T3 (coupes rases, SUFOSAT-conditionné — spec 030) |
 | R | Risques & Résilience | R1 (feu), R2 (tempête), R3 (sécheresse), R4 (abroutissement), R5 (dépérissement, FORDEAD-conditionné — spec 008) |
 | S | Social & Usages | S1 (routes), S2 (bâti), S3 (population) |
 | P | Production & Économie | P1 (volume bois), P2 (station), P3 (qualité bois) |

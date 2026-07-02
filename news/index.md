@@ -1,5 +1,45 @@
 # Changelog
 
+## nemeton 0.112.0 (2026-07-02)
+
+#### Added — Indicateur T3 « Coupes rases » (SUFOSAT, spec 030)
+
+Nouvel indicateur de la famille **T (Dynamique temporelle)** : **T3 «
+Coupes rases »**, exporté via
+[`indicateur_t3_coupes_rases()`](https://pobsteta.github.io/nemeton/reference/indicateur_t3_coupes_rases.md).
+Il mesure la **pression de coupe rase** sur une unité forestière à
+partir du produit national **SUFOSAT** (CNES/CESBIO — détection
+submensuelle des coupes rases par changement radar Sentinel-1, France
+métropolitaine).
+
+Le score est la **fraction récente coupée à blanc**, pondérée
+linéairement par la récence (une coupe de l’an dernier pèse plus qu’une
+coupe ancienne), sur une fenêtre glissante (`window_years`, défaut 5
+ans) et au-dessus d’un seuil de probabilité (`min_proba`, défaut 0.9).
+Le raster `dates` encode la date en `YYDDD` (année 18-25 → 2018-2025,
+jour 1-366), `proba` en pourcentage — métadonnées confirmées sur le STAC
+Theia MTD réel le 2026-07-02.
+
+Comme **R5 (dépérissement)**, T3 est orienté **« haut = mauvais »** : sa
+valeur brute (0-100, haut = plus de coupe) est **inversée à la
+normalisation**
+([`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md))
+pour que sa contribution radar reste « haut = bon » comme T1/T2. Le
+calcul est pondéré par la fraction de recouvrement (l’aire des pixels
+s’annule — aucun calcul de surface de maille nécessaire).
+
+**Source-conditionnel** (comme R5 sans FORDEAD) : sans raster SUFOSAT,
+[`indicateur_t3_coupes_rases()`](https://pobsteta.github.io/nemeton/reference/indicateur_t3_coupes_rases.md)
+renvoie `NA` par unité et l’indice général l’ignore. T3 rejoint la
+config famille T et la normalisation, mais **pas**
+[`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
+(qui reste les 31 indicateurs de base toujours calculables au NDP 0 — R5
+et T3 sont des indicateurs conditionnels d’extension).
+
+Source `sufosat` déclarée dans `inst/datasources/FR.json` (collection
+`sufosat` confirmée, assets `dates`/`proba`). Clôt le reliquat Theia
+SUFOSAT.
+
 ## nemeton 0.111.0 (2026-07-02)
 
 #### Added — MUSCATE, 3ᵉ backend Sentinel-2 de repli souverain (spec 029)

@@ -311,6 +311,8 @@ Anciennete des peuplements et changements d’occupation
   : Calculate Stand Age Index (T1)
 - [`indicateur_t2_changement()`](https://pobsteta.github.io/nemeton/reference/indicateur_t2_changement.md)
   : Calculate Stability / Change Rate Index (T2)
+- [`indicateur_t3_coupes_rases()`](https://pobsteta.github.io/nemeton/reference/indicateur_t3_coupes_rases.md)
+  : Calculate Clear-cut Pressure Index (T3)
 
 ## Famille R : Risques & Resilience
 

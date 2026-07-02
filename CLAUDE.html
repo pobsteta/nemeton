@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.111.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.112.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@
 
 <div class="section level2">
 <h2 id="identité-du-projet">Identité du projet<a class="anchor" aria-label="anchor" href="#identit%C3%A9-du-projet"></a></h2>
-<p>Néméton est une plateforme d’analyse forestière systémique développée par Pascal Obstetar à titre personnel. Elle calcule <strong>31 indicateurs</strong> (32 avec R5 dépérissement quand FORDEAD a tourné, cf. spec 008) organisés en <strong>12 familles</strong>, les affiche sur un radar, et génère des perspectives IA adaptées à 15 profils d’acteurs de la filière forêt-bois. Le nom vient du gaulois <em>nemeton</em> (sanctuaire en forêt).</p>
+<p>Néméton est une plateforme d’analyse forestière systémique développée par Pascal Obstetar à titre personnel. Elle calcule <strong>31 indicateurs de base</strong> (33 avec les indicateurs conditionnels R5 dépérissement quand FORDEAD a tourné — spec 008 — et T3 coupes rases quand SUFOSAT est fourni — spec 030) organisés en <strong>12 familles</strong>, les affiche sur un radar, et génère des perspectives IA adaptées à 15 profils d’acteurs de la filière forêt-bois. Le nom vient du gaulois <em>nemeton</em> (sanctuaire en forêt).</p>
 <p>Le package R <code>nemeton</code> (v0.15.1.9000) est le <strong>cœur métier</strong> : indicateurs, familles, NDP, normalisation, visualisation. Depuis v0.15.0 (ADR-009), l’application Shiny/golem a été extraite dans un package séparé <code>nemetonshiny</code> (repo distinct). Ce repo-ci ne contient donc PLUS de modules Shiny, profils experts ni fichiers i18n — ils vivent dans <code>nemetonshiny</code>.</p>
 </div>
 <div class="section level2">
@@ -101,7 +101,7 @@ platform_nemeton      → Documentation plateforme, ADR, glossaire.</code></pre>
 <td>L1 (sylvosphère), L2 (fragmentation)</td>
 </tr><tr><td>T</td>
 <td>Dynamique temporelle</td>
-<td>T1 (ancienneté), T2 (changement)</td>
+<td>T1 (ancienneté), T2 (changement), T3 (coupes rases, SUFOSAT-conditionné — spec 030)</td>
 </tr><tr><td>R</td>
 <td>Risques &amp; Résilience</td>
 <td>R1 (feu), R2 (tempête), R3 (sécheresse), R4 (abroutissement), R5 (dépérissement, FORDEAD-conditionné — spec 008)</td>

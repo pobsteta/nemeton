@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.111.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.112.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.112.0" id="nemeton-01120-2026-07-02">nemeton 0.112.0 (2026-07-02)<a class="anchor" aria-label="anchor" href="#nemeton-01120-2026-07-02"></a></h2>
+<div class="section level4">
+<h4 id="added--indicateur-t3--coupes-rases--sufosat-spec-0-112-0">Added — Indicateur T3 « Coupes rases » (SUFOSAT, spec 030)<a class="anchor" aria-label="anchor" href="#added--indicateur-t3--coupes-rases--sufosat-spec-0-112-0"></a></h4>
+<p>Nouvel indicateur de la famille <strong>T (Dynamique temporelle)</strong> : <strong>T3 « Coupes rases »</strong>, exporté via <code><a href="../reference/indicateur_t3_coupes_rases.html">indicateur_t3_coupes_rases()</a></code>. Il mesure la <strong>pression de coupe rase</strong> sur une unité forestière à partir du produit national <strong>SUFOSAT</strong> (CNES/CESBIO — détection submensuelle des coupes rases par changement radar Sentinel-1, France métropolitaine).</p>
+<p>Le score est la <strong>fraction récente coupée à blanc</strong>, pondérée linéairement par la récence (une coupe de l’an dernier pèse plus qu’une coupe ancienne), sur une fenêtre glissante (<code>window_years</code>, défaut 5 ans) et au-dessus d’un seuil de probabilité (<code>min_proba</code>, défaut 0.9). Le raster <code>dates</code> encode la date en <code>YYDDD</code> (année 18-25 → 2018-2025, jour 1-366), <code>proba</code> en pourcentage — métadonnées confirmées sur le STAC Theia MTD réel le 2026-07-02.</p>
+<p>Comme <strong>R5 (dépérissement)</strong>, T3 est orienté <strong>« haut = mauvais »</strong> : sa valeur brute (0-100, haut = plus de coupe) est <strong>inversée à la normalisation</strong> (<code><a href="../reference/normalize_indicator.html">normalize_indicator()</a></code>) pour que sa contribution radar reste « haut = bon » comme T1/T2. Le calcul est pondéré par la fraction de recouvrement (l’aire des pixels s’annule — aucun calcul de surface de maille nécessaire).</p>
+<p><strong>Source-conditionnel</strong> (comme R5 sans FORDEAD) : sans raster SUFOSAT, <code><a href="../reference/indicateur_t3_coupes_rases.html">indicateur_t3_coupes_rases()</a></code> renvoie <code>NA</code> par unité et l’indice général l’ignore. T3 rejoint la config famille T et la normalisation, mais <strong>pas</strong> <code><a href="../reference/list_indicators.html">list_indicators()</a></code> (qui reste les 31 indicateurs de base toujours calculables au NDP 0 — R5 et T3 sont des indicateurs conditionnels d’extension).</p>
+<p>Source <code>sufosat</code> déclarée dans <code>inst/datasources/FR.json</code> (collection <code>sufosat</code> confirmée, assets <code>dates</code>/<code>proba</code>). Clôt le reliquat Theia SUFOSAT.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.111.0" id="nemeton-01110-2026-07-02">nemeton 0.111.0 (2026-07-02)<a class="anchor" aria-label="anchor" href="#nemeton-01110-2026-07-02"></a></h2>
 <div class="section level4">

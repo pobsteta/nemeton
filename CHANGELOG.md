@@ -12,6 +12,25 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.112.0\] - 2026-07-02
+
+### Added
+
+- Indicator **T3 “Clear-cuts”**
+  ([`indicateur_t3_coupes_rases()`](https://pobsteta.github.io/nemeton/reference/indicateur_t3_coupes_rases.md),
+  spec 030): recency-weighted clear-cut pressure per forest unit from
+  the SUFOSAT national product (CNES/CESBIO, Sentinel-1 radar change
+  detection). `dates` encoded YYDDD, `proba` in percent;
+  `window_years`/`min_proba` parameters. Oriented “high = bad” like R5 —
+  inverted in
+  [`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md).
+  Source-conditional (NULL raster -\> NA); joins the T family config and
+  normalization but not
+  [`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
+  (the 31 base indicators).
+- `inst/datasources/FR.json`: `sufosat` source (collection confirmed on
+  the live Theia MTD STAC 2026-07-02, assets `dates`/`proba`).
+
 ## \[0.111.0\] - 2026-07-02
 
 ### Added
