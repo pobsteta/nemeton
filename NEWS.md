@@ -1,3 +1,29 @@
+# nemeton 0.116.0 (2026-07-02)
+
+### Added — `indicateur_r3_secheresse()` enrichi par le bilan hydrique BILJOU (spec 027 §5.1)
+
+R3 (sécheresse) **accepte désormais les métriques du moteur BILJOU**
+(`regen_bilan_hydrique`) : deux nouveaux arguments `biljou` (data.frame/list
+avec `njstress` jours de stress, `istress` intensité, `deb_stress` précocité) et
+`biljou_weight` (poids du blend, défaut 0.5).
+
+- **Valeurs brutes exposées** (`r3_njstress`, `r3_istress`, `r3_deb_stress`) —
+  pas seulement le score, pour la conformité / le reporting (comme la logique
+  « m³/ha au lieu du score »).
+- **Blend** : le stress hydrique mécaniste **affine** le risque SPEI/topo
+  (moyenne pondérée par unité ; un `r3_score` NA n'empoisonne pas le blend).
+  BILJOU aggrave dans le même sens que le risque existant (symétrique aux
+  atténuations neige / humidité du sol).
+- **Sans DEM mais avec BILJOU** : R3 est calculé depuis le bilan hydrique seul
+  (auparavant : NA).
+- Les métriques sont aussi **lues depuis les colonnes de `units`** (`njstress`,
+  etc.) quand `biljou = NULL` → le pipeline `regen_bilan_hydrique → r3` est
+  transparent.
+
+**Strictement rétrocompatible** : sans `biljou` ni colonnes BILJOU, le
+comportement v0.115.x est préservé (y compris le retour NA sans DEM). Bornes de
+normalisation du stress **documentées, non calibrées terrain** (spec 027 §9.2).
+
 # nemeton 0.115.0 (2026-07-02)
 
 ### Added — Indice de priorité de régénération (spec 027 v2.1 L3, arbitré)

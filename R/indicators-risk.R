@@ -365,10 +365,24 @@ indicateur_r2_tempete <- function(units,
 #'   reaches the \eqn{0.3\;m^3/m^3} field-capacity reference.
 #'   Default \code{0.3}. Ignored when \code{soil_moisture} is
 #'   \code{NULL}.
+#' @param biljou Optional per-unit soil water-balance metrics from the BILJOU
+#'   engine (\code{regen_bilan_hydrique}, spec 027): a \code{data.frame} / list
+#'   with numeric columns \code{njstress} (days of hydric stress), \code{istress}
+#'   (drought-intensity index) and/or \code{deb_stress} (onset day-of-year).
+#'   \code{NULL} (default) → these are read from the same-named columns of
+#'   \code{units} when present, else no enrichment. When available, a BILJOU
+#'   stress score is blended into R3 (weight \code{biljou_weight}) and the raw
+#'   metrics are exposed as columns.
+#' @param biljou_weight Numeric in \code{[0, 1]}. Weight of the BILJOU stress
+#'   score in the blend with the SPEI/topographic risk. Default \code{0.5}.
+#'   Ignored when no BILJOU metric is available.
 #'
-#' @return The input sf object with added column:
+#' @return The input sf object with added columns:
 #'   \itemize{
 #'     \item R3: Drought stress (0-100). Higher = higher stress.
+#'     \item r3_njstress, r3_istress, r3_deb_stress: raw BILJOU values
+#'       (days / index / day-of-year), when supplied — exposed for
+#'       compliance / reporting, not only the score.
 #'   }
 #'
 #' @details
@@ -417,6 +431,57 @@ indicateur_r2_tempete <- function(units,
 #' result <- indicateur_r3_secheresse(units, dem = dem)
 #' summary(result$R3)
 #' }
+# BILJOU stress normalisation bounds (spec 027). Documented, revisable on
+# BILJOU calibration (§9.2); consistent with .REGEN_STRESS_BOUNDS.
+.R3_BILJOU_BOUNDS <- list(njstress = c(lo = 0, hi = 60),   # days
+                          istress  = c(lo = 0, hi = 50))   # intensity index
+
+# Resolve BILJOU per-unit metrics from `biljou` (data.frame/list) or, failing
+# that, from same-named columns of `units`. Returns a named list of numeric
+# vectors (length nrow(units)) for the metrics found, or NULL if none.
+.r3_resolve_biljou <- function(biljou, units) {
+  n <- nrow(units)
+  pick <- function(nm) {
+    v <- NULL
+    if (!is.null(biljou) && (is.data.frame(biljou) || is.list(biljou)))
+      v <- biljou[[nm]]
+    if (is.null(v) && nm %in% names(units)) v <- units[[nm]]
+    if (is.null(v)) return(NULL)
+    rep(as.numeric(v), length.out = n)
+  }
+  out <- list(njstress = pick("njstress"), istress = pick("istress"),
+              deb_stress = pick("deb_stress"))
+  if (all(vapply(out, is.null, logical(1)))) return(NULL)
+  out
+}
+
+# BILJOU stress score 0-100 (high = more stress), renormalised mean of the
+# available njstress / istress components. NULL if neither is present.
+.r3_biljou_stress <- function(b) {
+  comps <- list()
+  if (!is.null(b$njstress)) {
+    bd <- .R3_BILJOU_BOUNDS$njstress
+    comps$nj <- 100 * pmin(1, pmax(0, (b$njstress - bd[["lo"]]) / (bd[["hi"]] - bd[["lo"]])))
+  }
+  if (!is.null(b$istress)) {
+    bd <- .R3_BILJOU_BOUNDS$istress
+    comps$is <- 100 * pmin(1, pmax(0, (b$istress - bd[["lo"]]) / (bd[["hi"]] - bd[["lo"]])))
+  }
+  if (!length(comps)) return(NULL)
+  mat <- matrix(unlist(comps), ncol = length(comps))
+  s <- rowMeans(mat, na.rm = TRUE)
+  s[is.nan(s)] <- NA_real_
+  s
+}
+
+# Attach the raw BILJOU metrics to `units` (exposed for compliance, §5.1).
+.r3_expose_biljou <- function(units, b) {
+  if (!is.null(b$njstress))   units$r3_njstress   <- b$njstress
+  if (!is.null(b$istress))    units$r3_istress    <- b$istress
+  if (!is.null(b$deb_stress)) units$r3_deb_stress <- b$deb_stress
+  units
+}
+
 indicateur_r3_secheresse <- function(units,
                                    layers = NULL,
                                    dem = NULL,
@@ -424,9 +489,15 @@ indicateur_r3_secheresse <- function(units,
                                    snow = NULL,
                                    snow_relief_strength = 0.3,
                                    soil_moisture = NULL,
-                                   sm_relief_strength = 0.3) {
+                                   sm_relief_strength = 0.3,
+                                   biljou = NULL,
+                                   biljou_weight = 0.5) {
   # Validate inputs
   validate_sf(units)
+
+  # Resolve optional BILJOU water-balance metrics (spec 027 enrichment).
+  biljou_m <- .r3_resolve_biljou(biljou, units)
+  biljou_score <- if (!is.null(biljou_m)) .r3_biljou_stress(biljou_m) else NULL
 
   # Extract DEM from layers if not provided directly
   if (is.null(dem) && !is.null(layers)) {
@@ -434,6 +505,12 @@ indicateur_r3_secheresse <- function(units,
   }
 
   if (is.null(dem) || !inherits(dem, "SpatRaster")) {
+    if (!is.null(biljou_score)) {
+      # No DEM but BILJOU available: R3 from the mechanistic water balance alone.
+      cli::cli_alert_info("R3: no DEM; drought stress from BILJOU metrics alone (spec 027).")
+      units$R3 <- pmin(pmax(biljou_score, 0), 100)
+      return(.r3_expose_biljou(units, biljou_m))
+    }
     cli::cli_alert_warning("R3: No DEM available for drought risk, returning NA")
     units$R3 <- rep(NA_real_, nrow(units))
     return(units)
@@ -532,6 +609,22 @@ indicateur_r3_secheresse <- function(units,
   r3_mean <- safe_extract(r3_raster,
     as_pure_sf(units), fun = "mean", progress = FALSE)
   r3_score <- pmin(pmax(r3_mean * 100, 0), 100)
+
+  # --- BILJOU soil-water-balance enrichment (spec 027 §5.1) ---
+  # A direct, mechanistic drought signal refines the SPEI/topo proxy: blend it
+  # in (weight biljou_weight, bidirectional), and expose the raw metrics. Per
+  # unit, only where the BILJOU score is available (NA -> keep the proxy).
+  if (!is.null(biljou_score)) {
+    cli::cli_alert_info("R3: drought risk refined by BILJOU water balance (spec 027).")
+    w <- pmin(pmax(biljou_weight, 0), 1)
+    # Per unit: blend where both are available; fall back to whichever exists
+    # (a NA proxy must not poison the blend — 0 * NaN is NaN in R).
+    blended <- ifelse(is.na(r3_score), biljou_score,
+                      (1 - w) * r3_score + w * biljou_score)
+    r3_score <- ifelse(is.na(biljou_score), r3_score,
+                       pmin(pmax(blended, 0), 100))
+    units <- .r3_expose_biljou(units, biljou_m)
+  }
 
   # --- Snow attenuation (Theia theia_snow, phase 3c) ---
   if (!is.null(snow)) {

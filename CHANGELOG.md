@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.116.0] - 2026-07-02
+
+### Added
+- `indicateur_r3_secheresse()` enriched with the BILJOU soil water-balance
+  metrics (spec 027 §5.1): new `biljou` (data.frame/list with `njstress`,
+  `istress`, `deb_stress`) and `biljou_weight` arguments. Exposes the raw
+  metrics (`r3_njstress`, `r3_istress`, `r3_deb_stress`) alongside the score,
+  blends the mechanistic water-balance stress into the SPEI/topographic risk,
+  computes R3 from BILJOU alone when no DEM is available, and auto-reads the
+  metrics from `units` columns. Strictly backward compatible (no `biljou` →
+  v0.115.x behaviour, including NA without a DEM).
+
 ## [0.115.0] - 2026-07-02
 
 ### Added
