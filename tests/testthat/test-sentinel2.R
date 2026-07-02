@@ -71,10 +71,11 @@ test_that("stac_search_s2 falls back from CDSE to PC on error", {
   expect_equal(out$source, "pc")
 })
 
-test_that("stac_search_s2 returns empty tibble when both backends are silent", {
+test_that("stac_search_s2 returns empty tibble when all backends are silent", {
   testthat::local_mocked_bindings(
-    stac_search_s2_cdse = function(...) nemeton:::.empty_scene_tibble(),
-    stac_search_s2_pc   = function(...) nemeton:::.empty_scene_tibble()
+    stac_search_s2_cdse          = function(...) nemeton:::.empty_scene_tibble(),
+    stac_search_s2_pc            = function(...) nemeton:::.empty_scene_tibble(),
+    stac_search_s2_theia_muscate = function(...) nemeton:::.empty_scene_tibble()
   )
   out <- stac_search_s2(c(4, 47, 5, 48), "2025-06-01", "2025-06-30")
   expect_equal(nrow(out), 0)

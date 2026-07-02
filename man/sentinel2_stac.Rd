@@ -4,11 +4,21 @@
 \alias{sentinel2_stac}
 \alias{stac_search_s2_cdse}
 \alias{stac_search_s2_pc}
+\alias{stac_search_s2_theia_muscate}
 \title{Sentinel-2 STAC Search Helpers (E6 monitoring)}
 \usage{
 stac_search_s2_cdse(bbox, start, end, max_cloud = 20, limit = 10000L)
 
 stac_search_s2_pc(bbox, start, end, max_cloud = 20, limit = 10000L)
+
+stac_search_s2_theia_muscate(
+  bbox,
+  start,
+  end,
+  max_cloud = 20,
+  limit = 10000L,
+  country = "FR"
+)
 }
 \arguments{
 \item{bbox}{Numeric length 4: c(xmin, ymin, xmax, ymax) in WGS84.}
@@ -18,9 +28,12 @@ stac_search_s2_pc(bbox, start, end, max_cloud = 20, limit = 10000L)
 \item{max_cloud}{Numeric. Maximum scene cloud cover (percent). Default 20.}
 
 \item{limit}{Integer. Maximum number of scenes to return. Default `10000L`.}
+
+\item{country}{Character. Country config used to resolve the Theia
+STAC API endpoint and the MUSCATE collection id. Default `"FR"`.}
 }
 \description{
-Thin STAC clients for Sentinel-2 L2A imagery. Two backends are
+Thin STAC clients for Sentinel-2 L2A imagery. Three backends are
 supported, with automatic failover:
 
 \itemize{
@@ -28,9 +41,16 @@ supported, with automatic failover:
     ADR-008 souveraineté UE).
   \item \strong{Planetary Computer} — Microsoft (fallback,
     resilience).
+  \item \strong{Theia MUSCATE} — CNES / DATA TERRA surface
+    reflectance via the MTD STAC API (French-sovereign last-resort
+    fallback, spec 029). Only queried when both CDSE and PC fail.
 }
 
-Both endpoints accept anonymous STAC search; PC additionally signs
-the COG hrefs with a SAS token before returning them so that
-`terra::rast(href)` reads work without further authentication.
+CDSE and PC accept anonymous STAC search; PC additionally signs
+the COG hrefs with a SAS token. MUSCATE assets live on the Theia S3
+store: their hrefs are reduced to GDAL-readable `/vsis3/` paths and
+read with native SigV4 signing (see \code{\link{theia_configure_s3}}).
+The MUSCATE reflectance-asset dialect (`SRE_B4`/`FRE_B4`/`B4`, no
+leading zero) is remapped to the nemeton `B02/B04/…` band keys so all
+three backends return the same normalised scene tibble.
 }

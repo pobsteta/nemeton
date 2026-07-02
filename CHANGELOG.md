@@ -10,6 +10,19 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.111.0] - 2026-07-02
+
+### Added
+- MUSCATE Sentinel-2 L2A as a third, French-sovereign STAC backend of
+  `stac_search_s2()` (spec 029). New exported `stac_search_s2_theia_muscate()`
+  queries the Theia MTD STAC collection `sentinel2-l2a-theia`, remaps the
+  MUSCATE band dialect to the nemeton `B02/B04/…` keys, reduces S3 hrefs to
+  `/vsis3/` paths and returns the shared normalised scene tibble. Added to
+  the default `source` vector as a last-resort fallback: only queried when
+  both `cdse` and `pc` fail — nominal behaviour is unchanged.
+- `inst/datasources/FR.json`: `s2_l2a_muscate.access` confirmed collection
+  id + FRE reflectance product (spec 029 K4 real-data smoke, 2026-07-02).
+
 ## [0.103.0] - 2026-06-30
 
 ### Added

@@ -57,7 +57,8 @@ NULL
 
 #' Search Sentinel-2 L2A scenes via STAC
 #'
-#' Façade around CDSE (priority) and Planetary Computer (fallback).
+#' Façade around CDSE (priority), Planetary Computer (fallback) and
+#' Theia MUSCATE (sovereign last-resort fallback, spec 029).
 #' Returns a tibble with one row per scene, holding the COG hrefs for
 #' bands B04, B08, B12 (used to derive NDVI and NBR downstream).
 #'
@@ -77,7 +78,12 @@ NULL
 #' @param max_cloud Numeric. Maximum scene cloud cover in percent.
 #'   Default 20.
 #' @param source Character vector. Order in which to try backends.
-#'   Default `c("cdse", "pc")`.
+#'   Default `c("cdse", "pc", "muscate")`. Backends are tried in
+#'   order and the first one that returns at least one scene wins, so
+#'   the French-sovereign `"muscate"` (Theia MUSCATE via the MTD STAC,
+#'   spec 029) is only ever queried when both `"cdse"` and `"pc"`
+#'   fail or return nothing — in nominal operation the behaviour is
+#'   unchanged and no MUSCATE request is issued.
 #' @param limit Integer. Maximum total number of scenes to return
 #'   per backend (across all pagination pages). Default `10000L` —
 #'   covers ~10 years of Sentinel-2 revisit at one tile. The
@@ -104,10 +110,10 @@ NULL
 stac_search_s2 <- function(zone,
                            start, end,
                            max_cloud = 20,
-                           source = c("cdse", "pc"),
+                           source = c("cdse", "pc", "muscate"),
                            limit = 10000L) {
   .assert_httr2()
-  source <- match.arg(source, c("cdse", "pc"), several.ok = TRUE)
+  source <- match.arg(source, c("cdse", "pc", "muscate"), several.ok = TRUE)
 
   bbox <- .zone_to_bbox4326(zone)
   start <- as.Date(start); end <- as.Date(end)
@@ -117,8 +123,9 @@ stac_search_s2 <- function(zone,
   for (s in source) {
     res <- tryCatch(
       switch(s,
-        cdse = stac_search_s2_cdse(bbox, start, end, max_cloud, limit),
-        pc   = stac_search_s2_pc(bbox, start, end, max_cloud, limit)
+        cdse    = stac_search_s2_cdse(bbox, start, end, max_cloud, limit),
+        pc      = stac_search_s2_pc(bbox, start, end, max_cloud, limit),
+        muscate = stac_search_s2_theia_muscate(bbox, start, end, max_cloud, limit)
       ),
       error = function(e) {
         msg <- conditionMessage(e)
@@ -297,6 +304,105 @@ stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 10000L) 
     # so the cause is visible.
   }
   out
+}
+
+
+#' @rdname sentinel2_stac
+#' @export
+stac_search_s2_theia_muscate <- function(bbox, start, end,
+                                         max_cloud = 20, limit = 10000L,
+                                         country = "FR") {
+  .assert_httr2()
+  api        <- .theia_stac_api(country)
+  collection <- .muscate_collection(country)
+  product    <- .muscate_reflectance_product(country)
+
+  # Closed STAC interval, same convention as the CDSE backend.
+  datetime <- sprintf("%sT00:00:00Z/%sT23:59:59Z",
+                      as.Date(start), as.Date(end))
+  features <- stac_search_items(api, collection, as.numeric(bbox),
+                                datetime = datetime, limit = limit)
+
+  # MUSCATE names its reflectance assets `SRE_B4` / `FRE_B4` / `B4`
+  # (no leading zero) whereas the rest of nemeton speaks the STAC
+  # `B02/B04/…` dialect. Rewrite each feature's `assets` so the shared
+  # `.features_to_tibble()` finds every band under its nemeton key,
+  # with the href already reduced to a GDAL-readable `/vsis3/` path.
+  remapped <- lapply(features, .muscate_remap_feature, product = product)
+  out <- .features_to_tibble(remapped, source = "muscate")
+
+  # Scene-level cloud filter (parity with cdse/pc). MUSCATE items that
+  # do not carry `eo:cloud_cover` (NA) are kept: dropping them would
+  # defeat the point of a last-resort fallback.
+  if (nrow(out)) {
+    keep <- is.na(out$cloud_pct) | out$cloud_pct <= as.numeric(max_cloud)
+    out <- out[keep, , drop = FALSE]
+    rownames(out) <- NULL
+  }
+  out
+}
+
+
+# Resolve the MUSCATE STAC collection id from the country config
+# (`datasets.s2_l2a_muscate.access.stac_collection`). Provisional value
+# in FR.json is confirmed by the spec 029 K4 real-data smoke; a wrong
+# id is a one-line JSON fix, not a code change.
+.muscate_collection <- function(country = "FR", collection = NULL) {
+  if (!is.null(collection) && nzchar(collection)) return(collection)
+  config <- get_country_config(country)
+  col <- config$datasets$s2_l2a_muscate$access$stac_collection %||% ""
+  if (!nzchar(col) || grepl("to confirm", col, ignore.case = TRUE)) {
+    cli::cli_abort(c(
+      "No MUSCATE STAC collection configured for country {.val {country}}.",
+      i = "Set {.field datasets.s2_l2a_muscate.access.stac_collection} in the datasource JSON."
+    ))
+  }
+  col
+}
+
+# Configured reflectance product for MUSCATE assets (SRE by default,
+# spec 029 D3 — surface reflectance, comparable to the CDSE/PC L2A feed).
+.muscate_reflectance_product <- function(country = "FR") {
+  config <- get_country_config(country)
+  toupper(config$datasets$s2_l2a_muscate$access$reflectance_product %||% "SRE")
+}
+
+# Candidate MUSCATE asset keys for a nemeton band, in priority order:
+# the configured reflectance product first, then a bare band key, then
+# the other product as a last resort. Covers both the leading-zero
+# nemeton dialect (`B04`) and the MUSCATE one (`B4`).
+.muscate_band_asset_keys <- function(band, product = "SRE") {
+  num   <- sub("^B0", "B", band)          # B04->B4, B08->B8; B8A/B11/B12 kept
+  other <- if (identical(product, "SRE")) "FRE" else "SRE"
+  unique(c(
+    paste0(product, "_", num), paste0(product, "_", band),
+    num, band,
+    paste0(other, "_", num), paste0(other, "_", band)
+  ))
+}
+
+# First matching asset href for a band, reduced to a /vsis3/ path.
+.muscate_asset_href <- function(assets, band, product = "SRE") {
+  for (key in .muscate_band_asset_keys(band, product)) {
+    a <- assets[[key]]
+    h <- if (is.null(a)) "" else (a$href %||% "")
+    if (nzchar(h)) return(.theia_href_to_gdal(h))
+  }
+  ""
+}
+
+# Rewrite one STAC feature so its `assets` are keyed by nemeton band
+# names (B02, B04, …), each pointing at a GDAL-readable href. Missing
+# bands become an empty href — `.features_to_tibble()` then drops the
+# scene only if a *required* band (B04/B08/B12) is missing.
+.muscate_remap_feature <- function(ft, product = "SRE") {
+  assets <- ft$assets %||% list()
+  new_assets <- list()
+  for (b in .S2_STAC_BANDS) {
+    new_assets[[b]] <- list(href = .muscate_asset_href(assets, b, product))
+  }
+  ft$assets <- new_assets
+  ft
 }
 
 
