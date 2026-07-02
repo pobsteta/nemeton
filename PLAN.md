@@ -1238,6 +1238,29 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-02 — Added v0.117.0 : scaffolds moteurs reGénération L1/L2 (spec 027, 3e incrément code)
+
+3e incrément. Les moteurs touchent aux deps GPL lourdes
+(microclimf/mcera5/lidR/lasR/biljouR, inexécutables ici) → **scaffolds
+honnêtes** avec **chemin `precomputed` pur et testable** (`R/regen_engines.R`) :
+- `regen_bilan_hydrique()` (L2, biljouR) → colonnes §7 `njstress`/`istress`/
+  `rew_min`/`deb_stress` ; `precomputed` rattache une sortie BILJOU sans moteur,
+  alimente `r3(biljou=)` + `indice_priorite_regen`.
+- `regen_sensibilite()` (L1, microclimf) → `tmax_*`/`vpd_*`/`sensibilite`… ;
+  `precomputed` + **dérive** `d_tmax`/`d_vpd`/`rang_sensibilite`.
+- `pai_depuis_nuage()` (L1, lasR) → PAI ; `precomputed` pass-through d'un raster.
+Sans `precomputed` ni moteur → **échec propre actionnable** ; moteur présent mais
+non câblé → « exécuter le prototype + passer precomputed ». **Le pipeline
+regen_* → r3 / indice tourne dès aujourd'hui sur sorties pré-calculées.** Deps
+lourdes déjà en Suggests+Remotes SAUF **biljouR** (dépôt à confirmer par Pascal
+→ ajouter Suggests/Remotes). Tests `test-regen-engines.R` 17 PASS ; sweep 508.
+NAMESPACE + 3 man + pkgdown à la main.
+
+**Reste** (au feu vert / avec données) : orchestration RÉELLE des moteurs
+(porter les prototypes /Documents/reGénération, exécutable seulement sur la
+machine de Pascal avec deps+données+creds) ; branche A carte E-OBS sur emprise
+UGF + buffer ; L4-L6 côté nemetonshiny.
+
 ### 2026-07-02 — Added v0.116.0 : r3_secheresse enrichi BILJOU (spec 027 §5.1, 2e incrément code)
 
 2e incrément reGénération (pure logique testable, avant les moteurs).
