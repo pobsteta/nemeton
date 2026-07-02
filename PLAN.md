@@ -1238,6 +1238,34 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-02 — Added : T3 « Coupes rases » (SUFOSAT, spec 030, cœur, v0.112.0)
+
+1ᵉ des 3 nouveaux indicateurs implémenté. **K1 (point dur R1)** : format des
+assets SUFOSAT confirmé sur le STAC réel — `dates` en `YYDDD` (année 18-25,
+jour 1-366, nodata 0), `proba` en pourcentage (nodata 0), une seule couverture
+nationale, bucket S3 `sm1-gdc-ext`. **Implémentation** : `indicateur_t3_coupes_rases()`
+(`R/indicators-temporal.R`) — extraction `exact_extract` d'un stack dates+proba,
+décodage YYDDD → année, filtre `min_proba`, fenêtre `window_years`, pondération
+récence linéaire, score = fraction de recouvrement pondérée (l'aire de maille
+s'annule). Orienté **haut = mauvais** → inversion dans `normalize_indicator()`
+(branche jumelle de R5). **Source-conditionnel** (NULL → NA, comme R5).
+
+**Décision de cohérence** : T3 rejoint la config famille T (`indicator-config.R`)
++ la normalisation, mais **PAS `list_indicators()`** — qui reste les 31
+indicateurs de base toujours calculables au NDP 0. R5 et T3 sont des indicateurs
+**conditionnels d'extension** (dépendent d'une source externe). Compte CLAUDE.md :
+31 base (33 avec R5 + T3 conditionnels).
+
+**Tests** : `test-indicator-t3.R` **11 PASS** (fraction pondérée récence, filtre
+proba, fenêtre, sans proba, NULL→NA, hors-raster→NA, aucune coupe→0, vide,
+inversion normalisation). Voisins verts : indicators-core 202, integration-12-familles
+91, family-system 95, normalization 278, temporal 144. Source `sufosat` déclarée
+dans FR.json. NAMESPACE + `man/indicateur_t3_coupes_rases.Rd` à la main.
+
+**Reliquat** : colonne T3 du fixture `massif_demo_units` (régénération `.rda`,
+différée — `family-system` fait `intersect()` donc T3 absent = sans erreur) ;
+wiring app `nemetonshiny` (radar T3, brief à fournir). Specs 031/032 (Corona, microclimat) restent à implémenter.
+
 ### 2026-07-02 — Cadrage : 3 nouveaux indicateurs depuis le catalogue Theia/MTD (specs 030-032)
 
 Exploration du STAC `api.stac.teledetection.fr` (39 collections) pour de

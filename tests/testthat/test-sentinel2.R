@@ -136,8 +136,12 @@ test_that(".with_stac_retry falls back to 4 when the env var is invalid", {
 
 test_that("stac_search_s2 emits an 'All STAC backends failed' warning when every backend errors", {
   testthat::local_mocked_bindings(
-    stac_search_s2_cdse = function(...) stop("CDSE 504"),
-    stac_search_s2_pc   = function(...) stop("PC 504")
+    stac_search_s2_cdse          = function(...) stop("CDSE 504"),
+    stac_search_s2_pc            = function(...) stop("PC 504"),
+    # muscate is now in the default source vector and reaches a live STAC;
+    # mock it to fail too so this exercises the "every backend errors" path
+    # deterministically (no network dependency).
+    stac_search_s2_theia_muscate = function(...) stop("MUSCATE 504")
   )
   # testthat edition 3: capture all warnings at once (the 2e nested
   # expect_warning() idiom no longer works -- the innermost call

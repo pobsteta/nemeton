@@ -558,6 +558,14 @@ normalize_indicator <- function(indicator, values) {
     return(pmin(100, pmax(0, 100 - values)))
   }
 
+  # T3 coupes rases: like R5, oriented "high = bad" (more recent clear-cut
+  # pressure). Raw value (indicateur_t3_coupes_rases(), 0-100, high = more
+  # clear-cutting) is inverted so its radar / famille_temporelle
+  # contribution stays "high = good" like T1/T2 (cf. spec 030).
+  if (indicator %in% c("indicateur_t3_coupes_rases", "T3")) {
+    return(pmin(100, pmax(0, 100 - values)))
+  }
+
   # B4 spectral alpha diversity (Shannon of spectral species): high = good.
   # Provisional upper bound log(nbclusters) with the biodivMapR default of
   # 50 clusters (spec 028 D3 — recalibrate empirically after the first

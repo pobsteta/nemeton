@@ -275,3 +275,161 @@ indicateur_t2_changement <- function(units,
   cli::cli_alert_warning("T2: No N2 or T1 data available, returning default (50)")
   rep(50.0, nrow(units))
 }
+
+
+# ==============================================================================
+# T3 - Clear-cut pressure (SUFOSAT)  [spec 030]
+# ==============================================================================
+
+#' Calculate Clear-cut Pressure Index (T3)
+#'
+#' Recency-weighted fraction of a forest unit affected by clear-cuts,
+#' derived from the SUFOSAT national product (CNES/CESBIO; Sentinel-1 radar
+#' change detection, submonthly, mainland France). High = more recent
+#' clear-cutting. This is a \dQuote{high = bad} indicator (like R5 dieback):
+#' its normalized radar value is inverted downstream (see `normalization.R`).
+#'
+#' SUFOSAT rasters (spec 030, band metadata confirmed on the live Theia MTD
+#' STAC 2026-07-02):
+#' \itemize{
+#'   \item `sufosat_dates`: clear-cut date per pixel, encoded `YYDDD` (YY =
+#'     year 18-25 -> 2018-2025, DDD = day of year 1-366). `0` = no clear-cut
+#'     (nodata).
+#'   \item `sufosat_proba`: clear-cut probability in percent (0-100). `0` =
+#'     nodata. SUFOSAT publishes detections at >= ~85\%.
+#' }
+#'
+#' The score is coverage-fraction weighted, so equal-area pixels cancel and
+#' no cell-area computation is needed: it is the share of the unit footprint
+#' under clear-cut within the recency window, weighted linearly by recency.
+#'
+#' @param units An sf object with forest units.
+#' @param sufosat_dates A terra SpatRaster of clear-cut dates (`YYDDD`).
+#'   `NULL` (default) -> the indicator is not applicable and `NA` is returned
+#'   for every unit (source-conditional, like R5 without FORDEAD).
+#' @param sufosat_proba A terra SpatRaster of clear-cut probability (percent).
+#'   `NULL` -> no probability filter is applied.
+#' @param window_years Integer. Length of the recency window in years.
+#'   Default `5`. Clear-cuts older than `reference_year - window_years + 1`
+#'   are ignored.
+#' @param min_proba Numeric in [0, 1]. Minimum clear-cut probability to count
+#'   a pixel, compared against `sufosat_proba / 100`. Default `0.9`.
+#' @param reference_year Integer or `NULL`. Most-recent year of the recency
+#'   window (weight 1). `NULL` (default) -> derived from the most recent
+#'   clear-cut year found across the extracted units.
+#'
+#' @return Numeric vector, one value per unit: recency-weighted percentage of
+#'   the unit footprint under clear-cut within the window (0-100, high = more
+#'   clear-cutting). `NA` where `sufosat_dates` is `NULL` or the unit does not
+#'   overlap the raster.
+#'
+#' @export
+indicateur_t3_coupes_rases <- function(units,
+                                       sufosat_dates  = NULL,
+                                       sufosat_proba  = NULL,
+                                       window_years   = 5L,
+                                       min_proba      = 0.9,
+                                       reference_year = NULL) {
+  validate_sf(units)
+  n <- nrow(units)
+  if (n == 0L) return(numeric(0))
+
+  # Source-conditional: no dates raster -> indicator not applicable.
+  if (is.null(sufosat_dates)) {
+    cli::cli_alert_info("T3: no SUFOSAT dates raster supplied - returning NA (indicator skipped).")
+    return(rep(NA_real_, n))
+  }
+  if (!inherits(sufosat_dates, "SpatRaster")) {
+    cli::cli_abort("{.arg sufosat_dates} must be a terra SpatRaster.")
+  }
+  if (!is.numeric(window_years) || length(window_years) != 1L || window_years < 1) {
+    cli::cli_abort("{.arg window_years} must be a positive scalar.")
+  }
+  if (!is.numeric(min_proba) || length(min_proba) != 1L ||
+      min_proba < 0 || min_proba > 1) {
+    cli::cli_abort("{.arg min_proba} must be a scalar in [0, 1].")
+  }
+  if (!requireNamespace("exactextractr", quietly = TRUE)) {
+    cli::cli_abort("Package {.pkg exactextractr} is required for T3.")
+  }
+
+  # Build a 2-layer stack (dates + optional proba) so a single extraction
+  # returns aligned pixel values and coverage fractions per unit.
+  layers <- sufosat_dates[[1]]
+  names(layers) <- "dates"
+  has_proba <- !is.null(sufosat_proba)
+  if (has_proba) {
+    if (!inherits(sufosat_proba, "SpatRaster")) {
+      cli::cli_abort("{.arg sufosat_proba} must be a terra SpatRaster.")
+    }
+    proba <- sufosat_proba[[1]]
+    names(proba) <- "proba"
+    layers <- c(layers, proba)
+  }
+
+  units_proj <- sf::st_transform(as_pure_sf(units), terra::crs(layers))
+  ex <- exactextractr::exact_extract(layers, units_proj, progress = FALSE)
+
+  # A single-layer extraction names its column "value" (not "dates"); a
+  # multi-layer one uses the layer names. Normalise so `df$dates` always
+  # resolves regardless of whether a proba layer was stacked.
+  ex <- lapply(ex, function(df) {
+    if (!"dates" %in% names(df) && "value" %in% names(df)) {
+      names(df)[names(df) == "value"] <- "dates"
+    }
+    df
+  })
+
+  # Decode YYDDD -> calendar year.
+  decode_year <- function(v) 2000L + (as.integer(v) %/% 1000L)
+
+  # Resolve the reference year (window upper bound, weight 1) when not
+  # supplied: the most recent clear-cut year across all extracted pixels.
+  if (is.null(reference_year)) {
+    yrs <- unlist(lapply(ex, function(df) {
+      d <- df$dates
+      d <- d[!is.na(d) & d > 0]
+      if (!length(d)) return(integer(0))
+      decode_year(d)
+    }), use.names = FALSE)
+    reference_year <- if (length(yrs)) max(yrs) else NA_integer_
+  }
+
+  # No clear-cut anywhere: pressure is 0 for units overlapping the raster,
+  # NA for units that fall entirely outside it.
+  if (is.na(reference_year)) {
+    return(vapply(ex, function(df) {
+      cov <- df$coverage_fraction
+      if (!length(cov) || sum(cov, na.rm = TRUE) == 0) NA_real_ else 0
+    }, numeric(1)))
+  }
+
+  window_start <- as.integer(reference_year) - as.integer(window_years) + 1L
+  thr <- min_proba * 100
+
+  vapply(ex, function(df) {
+    cov   <- df$coverage_fraction
+    denom <- sum(cov, na.rm = TRUE)
+    if (!length(cov) || denom == 0) return(NA_real_)  # unit off-raster
+
+    d  <- df$dates
+    ok <- !is.na(d) & d > 0
+    if (has_proba) {
+      p  <- df$proba
+      ok <- ok & !is.na(p) & p >= thr
+    }
+    if (!any(ok)) return(0)
+
+    year   <- decode_year(d[ok])
+    in_win <- year >= window_start & year <= reference_year
+    if (!any(in_win)) return(0)
+
+    # Linear recency weight in (0, 1]: most recent year -> 1, oldest year
+    # in the window -> 1/window_years.
+    w <- (year[in_win] - window_start + 1L) / as.integer(window_years)
+    w <- pmin(1, pmax(0, w))
+
+    num <- sum(cov[ok][in_win] * w)
+    100 * num / denom
+  }, numeric(1))
+}

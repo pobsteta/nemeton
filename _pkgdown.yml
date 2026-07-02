@@ -103,6 +103,7 @@ reference:
     contents:
     - indicateur_t1_anciennete
     - indicateur_t2_changement
+    - indicateur_t3_coupes_rases
 
   - title: "Famille R : Risques & Resilience"
     desc: "Vulnerabilite aux incendies, tempetes et secheresse"
@@ -447,6 +448,7 @@ reference:
     - run_reticulate_isolated
     - stac_search_s2_cdse
     - stac_search_s2_pc
+    - stac_search_s2_theia_muscate
 
 authors:
   Pascal Obstetar:

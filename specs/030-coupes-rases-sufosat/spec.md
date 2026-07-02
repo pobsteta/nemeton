@@ -2,7 +2,10 @@
 
 **Version** : 0.1.0
 **Date**    : 2026-07-02
-**Statut**  : Cadrée — à valider (paperwork avant code, non implémentée).
+**Statut**  : Implémentée côté cœur (2026-07-02, v0.112.0). Décisions D1-D6
+tranchées selon les recommandations ; format des assets `dates`/`proba`
+confirmé sur le STAC réel. Reliquat : colonne T3 du fixture `massif_demo_units`
++ wiring app `nemetonshiny` (radar T3).
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` (feat mineur — nouvel indicateur T3).
 **Cible app**  : `nemetonshiny` (affichage radar T3, brief séparé).

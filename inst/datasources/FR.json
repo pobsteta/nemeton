@@ -539,6 +539,46 @@
       },
       "license": "Etalab Open Licence 2.0 (to confirm at the Theia catalogue record)"
     },
+    "sufosat": {
+      "type": "raster_local",
+      "format": "COG / GeoTIFF",
+      "description": "SUFOSAT (SUivi des FOrêts par SATellite, CNES/CESBIO): submonthly clear-cut detection over mainland France from Sentinel-1 radar change detection. A single national coverage per version (2018-present). Feeds indicator T3 (clear-cut pressure).",
+      "native_crs": "to confirm (read from COG at runtime; units are reprojected to the raster CRS)",
+      "required_crs": "EPSG:2154",
+      "fallback_crs": "EPSG:3035",
+      "ndp_level": 0,
+      "stac_api_service": "theia_stac",
+      "stac_collection": "sufosat",
+      "stac_collection_status": "confirmed",
+      "access": {
+        "catalogue": "https://catalogue.theia.data-terra.org/",
+        "note": "Queried through the MTD STAC API (`services.theia_stac`). Collection `sufosat` confirmed on the live STAC 2026-07-02. Assets hosted on the Theia S3 store (bucket `sm1-gdc-ext`, endpoint `services.theia_s3`); hrefs are read via /vsis3/."
+      },
+      "products": {
+        "dates": {
+          "variable": "clear_cut_date",
+          "resolution_m": 10,
+          "unit": "YYDDD",
+          "nodata": 0,
+          "note": "Clear-cut date per pixel encoded YYDDD: YY = year (18-25 -> 2018-2025), DDD = day of year (1-366). 0 = no clear-cut."
+        },
+        "proba": {
+          "variable": "clear_cut_probability",
+          "resolution_m": 10,
+          "unit": "percent",
+          "nodata": 0,
+          "note": "Clear-cut probability 0-100 %. SUFOSAT publishes detections at >= ~85 %."
+        }
+      },
+      "consumed_by": {
+        "T3": "clear-cut pressure — recency-weighted fraction of the unit clear-cut within a window (indicateur_t3_coupes_rases)."
+      },
+      "provenance": {
+        "producer": "CNES / CESBIO — SUFOSAT",
+        "method": "Sentinel-1 radar change detection of temperate forest clear-cuts (submonthly)."
+      },
+      "license": "Etalab Open Licence 2.0 (to confirm at the Theia catalogue record)"
+    },
     "theia_species": {
       "type": "raster_local",
       "format": "COG / GeoTIFF",
