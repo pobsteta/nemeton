@@ -138,10 +138,11 @@ regeneration_index <- function(units, species = NULL, weights = NULL,
   n <- nrow(units)
 
   # Which sub-indicator score columns are actually present.
-  present <- .REGEN_COMPONENTS[.REGEN_COMPONENTS %in% names(units)]
+  components <- .REGEN_COMPONENTS
+  present <- components[components %in% names(units)]
   if (length(present) == 0L) {
     cli::cli_warn(c(
-      "regeneration_index(): none of {.val {.REGEN_COMPONENTS}} present on {.arg units}.",
+      "regeneration_index(): none of {.val {components}} present on {.arg units}.",
       i = "Compute the microclimate sub-indicators first; potential set to NA."
     ))
     units$regeneration_potentiel <- rep(NA_real_, n)
