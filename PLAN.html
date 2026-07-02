@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.114.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.114.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -830,6 +830,11 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-02--fixed-v01141--réalignement-spec-027-sur-le-brief-regénération">2026-07-02 — Fixed v0.114.1 + réalignement spec 027 sur le brief reGénération<a class="anchor" aria-label="anchor" href="#id_2026-07-02--fixed-v01141--r%C3%A9alignement-spec-027-sur-le-brief-reg%C3%A9n%C3%A9ration"></a></h3>
+<p><strong>Fixed (v0.114.1, releasé).</strong> <code>indicateur_l3_het_spectrale</code> (spec 028) échouait sur un run réel Pascal (« l’objet ‘list’ ne peut être converti en double ») : la β-diversité biodivMapR est un raster 3 bandes (PCoA Bray-Curtis) → <code>exact_extract(…, "mean")</code> renvoie un <code>data.frame</code>. <code>.aggregate_diversity</code> réduit désormais un extract multi-bandes en un scalaire/unité, mono-bande (B4) inchangé. 24 PASS. (PR #164.)</p>
+<p><strong>Réalignement spec 027 (paperwork avant code).</strong> Constat : le cadrage v1 (2026-06-30) et l’implémentation qui a suivi (A3/A4/W4/R6 + <code>regeneration_index</code>) ont été faits <strong>sans remonter au brief de référence</strong> <code>/home/pascal/Documents/reGénération/</code>. Ils ne couvrent que la moitié microclimat et tranchent à l’inverse la décision licences §8.1. <strong>Décision Pascal : réaligner sur le brief complet.</strong> - <strong><code>regeneration_index</code> NON mergé</strong> (PR #163 fermée, branche <code>feat/regeneration-index</code> parkée) — sera retravaillé en <code>indice_priorite_regen</code>. - <strong>spec 027 réécrite en v2.0.0</strong> : deux moteurs (microclimf exposition + <strong>biljouR bilan hydrique</strong>), <strong>repo GPL <code>regen_nemeton</code></strong> (isole les moteurs GPL du cœur MIT), schéma de sortie §7, r3 enrichi, branche A E-OBS nationale. Réconciliation de l’existant au §3. 6 décisions à trancher au §10. - <strong>ADR-014 brouillon</strong> (<code>specs/027-.../ADR-014-draft.md</code>) : <code>regen_nemeton</code> GPL-3, contrat MIT au cœur ; amende ADR-009 (5ᵉ repo) + ADR-011. À porter dans <code>platform_nemeton</code> par Pascal. - <strong>Rien de nouveau au cœur avant validation</strong> de la spec v2 (§10.1 = créer <code>regen_nemeton</code>, bloquant).</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-02--spec-031-forêt-ancienne--volet-app-livré-nemetonshiny-v0976">2026-07-02 — Spec 031 forêt ancienne : volet app livré (nemetonshiny v0.97.6)<a class="anchor" aria-label="anchor" href="#id_2026-07-02--spec-031-for%C3%AAt-ancienne--volet-app-livr%C3%A9-nemetonshiny-v0976"></a></h3>
 <p>Le câblage applicatif du helper <code><a href="reference/build_foret_ancienne_mask.html">build_foret_ancienne_mask()</a></code> (cœur v0.113.0) est livré et releasé côté <strong><code>nemetonshiny@v0.97.6</code></strong> (merge <code>f8d20fd3</code>, cycle dev rouvert <code>0.97.6.9000</code>).</p>
