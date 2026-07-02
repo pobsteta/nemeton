@@ -471,6 +471,8 @@ R/utils_i18n.R                → Traductions FR/EN (liste TRANSLATIONS, source 
 </li>
 <li>Quand je travaille sur une tâche longue, maintiens un fichier PLAN.md à la racine avec l’état actuel, les décisions prises, et la prochaine étape</li>
 <li>Mets-le à jour à chaque étape terminée</li>
+<li>
+<strong>Ne JAMAIS modifier le répertoire de travail de <code>nemetonshiny</code></strong> (ni d’aucun repo frère : <code>tree_sat_nemeton</code>, <code>maestro_nemeton</code>, <code>platform_nemeton</code>, etc.) depuis une session <code>nemeton</code>. Interdits : <code>git checkout</code> / <code>commit</code> / <code>branch</code> / <code>stash</code> / <code>push</code>, création de branches, édition de fichiers dans <code>../nemetonshiny</code>. Pascal gère <code>nemetonshiny</code> depuis ses propres sessions dédiées. La <strong>lecture seule</strong> (inspecter le code de l’app pour écrire un brief juste) est permise ; toute opération git <strong>mutante</strong> y risque d’écraser le WIP d’une session parallèle (incident 2026-07-02 : un <code>git checkout</code> de cette session a déplacé le WIP T3 entre branches, puis commité par-dessus du travail édité en direct). <strong>Livrer côté app = fournir un brief</strong> dans <code>specs/&lt;NNN&gt;-*/brief-nemetonshiny.md</code> (côté cœur), jamais éditer l’app.</li>
 </ol></div>
 </div>
 

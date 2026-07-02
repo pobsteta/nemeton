@@ -485,3 +485,16 @@ release ni échec CI.
     PLAN.md à la racine avec l’état actuel, les décisions prises, et la
     prochaine étape
 10. Mets-le à jour à chaque étape terminée
+11. **Ne JAMAIS modifier le répertoire de travail de `nemetonshiny`**
+    (ni d’aucun repo frère : `tree_sat_nemeton`, `maestro_nemeton`,
+    `platform_nemeton`, etc.) depuis une session `nemeton`. Interdits :
+    `git checkout` / `commit` / `branch` / `stash` / `push`, création de
+    branches, édition de fichiers dans `../nemetonshiny`. Pascal gère
+    `nemetonshiny` depuis ses propres sessions dédiées. La **lecture
+    seule** (inspecter le code de l’app pour écrire un brief juste) est
+    permise ; toute opération git **mutante** y risque d’écraser le WIP
+    d’une session parallèle (incident 2026-07-02 : un `git checkout` de
+    cette session a déplacé le WIP T3 entre branches, puis commité
+    par-dessus du travail édité en direct). **Livrer côté app = fournir
+    un brief** dans `specs/<NNN>-*/brief-nemetonshiny.md` (côté cœur),
+    jamais éditer l’app.
