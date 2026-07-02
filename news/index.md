@@ -1,5 +1,37 @@
 # Changelog
 
+## nemeton 0.115.0 (2026-07-02)
+
+#### Added — Indice de priorité de régénération (spec 027 v2.1 L3, arbitré)
+
+Premier incrément de code de l’onglet **reGénération** réaligné sur le
+brief `/home/pascal/Documents/reGénération/` :
+**[`indice_priorite_regen()`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md)**
+— l’indice de **tête d’onglet** qui **croise** l’**exposition
+microclimatique** (moteur microclimf : `sensibilite`, sinon
+`d_tmax`/`d_vpd`) et le **stress hydrique du sol** (moteur biljouR :
+`njstress`, `istress`, `rew_min`) en une **priorité 0-100**
+d’intervention (haut = parcelle la plus vulnérable). Pure logique R : la
+fonction **consomme** les colonnes de sortie des moteurs (contrat §7),
+sans dépendance GPL, entièrement testable sur `sf` synthétique.
+
+Conforme aux **arbitrages du §10** (Pascal, 2026-07-02) : - **Générique
+par défaut** ; **affinage par essence en OPTION désactivée**
+(`species = NULL` → générique ; renseigné → pousse la priorité via les
+seuils chaud/sec de `regeneration_tolerances.csv`, exposés par le nouvel
+accesseur
+**[`regeneration_tolerances()`](https://pobsteta.github.io/nemeton/reference/regeneration_tolerances.md)**). -
+Colonnes de sortie **au schéma §7** : `indice_priorite_regen`,
+`regen_exposition`, `regen_hydrique`, `parcelle_sensible`, `priorite`,
+`regen_essence` ; `couverture_pct` préservé.
+
+C’est le **retravail** du `regeneration_index` parké (moyenne pondérée
+A3/A4/W4/R6) vers la sémantique du brief (croisement exposition × stress
+hydrique). Bornes de normalisation du stress **documentées, non
+calibrées terrain** (spec 027 §9.2). Les **moteurs** (microclimf,
+biljouR, PAI LiDAR) qui produisent les colonnes d’entrée restent à
+porter (lots L1/L2, dépendances lourdes en `Suggests`).
+
 ## nemeton 0.114.1 (2026-07-02)
 
 #### Fixed — L3 hétérogénéité spectrale sur β-diversité multi-bandes (spec 028)

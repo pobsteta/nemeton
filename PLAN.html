@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.114.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.115.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -830,6 +830,12 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-02--added-v01150--indice_priorite_regen-spec-027-v21-l3-1er-incrément-code">2026-07-02 — Added v0.115.0 : indice_priorite_regen (spec 027 v2.1 L3, 1er incrément code)<a class="anchor" aria-label="anchor" href="#id_2026-07-02--added-v01150--indice_priorite_regen-spec-027-v21-l3-1er-incr%C3%A9ment-code"></a></h3>
+<p>Premier code reGénération après réalignement + arbitrage. <strong>Ordre choisi</strong> : pas L1→L2→L3 (les moteurs microclimf/biljouR/lidR exigent deps+données+creds <strong>inexécutables/intestables ici</strong>), mais d’abord la <strong>pièce pure-logique entièrement testable</strong> = <code><a href="reference/indice_priorite_regen.html">indice_priorite_regen()</a></code> (L3), qui <strong>fige le contrat §7</strong> que les moteurs viseront.</p>
+<p><code>indice_priorite_regen(units, species=NULL, weights, tolerances, flag_breaks)</code> (<code>R/indice_priorite_regen.R</code>) : <strong>croise</strong> l’exposition microclimatique (<code>sensibilite</code>, sinon <code>d_tmax</code>/<code>d_vpd</code>) et le stress hydrique (<code>njstress</code>, <code>istress</code>, <code>rew_min</code>) en une priorité 0-100. <strong>Consomme</strong> les colonnes des moteurs (pas de dep GPL), testable sur <code>sf</code> synthétique. Conforme §10 : générique par défaut, <strong>essence en option OFF</strong> (<code><a href="reference/regeneration_tolerances.html">regeneration_tolerances()</a></code> + CSV 11 essences récupérés de la branche parkée), colonnes <strong>au schéma §7</strong> (<code>indice_priorite_regen</code>, <code>regen_exposition</code>, <code>regen_hydrique</code>, <code>parcelle_sensible</code>, <code>priorite</code>, <code>regen_essence</code>). Retravail du <code>regeneration_index</code> parké (moyenne pondérée) → croisement du brief. Bornes de stress <strong>documentées, non calibrées</strong> (§9.2). Tests <code>test-indice-priorite-regen.R</code> 21 PASS ; sweep voisins 796 PASS. NAMESPACE + man + pkgdown à la main.</p>
+<p><strong>Reste</strong> (au feu vert Pascal) : moteurs L1 (PAI LiDAR + microclimf — compléter <code>microclimate_run</code>) et L2 (biljouR + bilan hydrique SAFRAN), en <code>Suggests</code> + tests mockés ; enrichissement <code>r3_secheresse</code> (métriques BILJOU) ; branche A carte de tendances E-OBS sur emprise UGF + buffer (~25 km à confirmer).</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-02--fixed-v01141--réalignement-spec-027-sur-le-brief-regénération">2026-07-02 — Fixed v0.114.1 + réalignement spec 027 sur le brief reGénération<a class="anchor" aria-label="anchor" href="#id_2026-07-02--fixed-v01141--r%C3%A9alignement-spec-027-sur-le-brief-reg%C3%A9n%C3%A9ration"></a></h3>
 <p><strong>Fixed (v0.114.1, releasé).</strong> <code>indicateur_l3_het_spectrale</code> (spec 028) échouait sur un run réel Pascal (« l’objet ‘list’ ne peut être converti en double ») : la β-diversité biodivMapR est un raster 3 bandes (PCoA Bray-Curtis) → <code>exact_extract(…, "mean")</code> renvoie un <code>data.frame</code>. <code>.aggregate_diversity</code> réduit désormais un extract multi-bandes en un scalaire/unité, mono-bande (B4) inchangé. 24 PASS. (PR #164.)</p>

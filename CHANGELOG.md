@@ -12,6 +12,22 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.115.0\] - 2026-07-02
+
+### Added
+
+- **[`indice_priorite_regen()`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md)** +
+  **[`regeneration_tolerances()`](https://pobsteta.github.io/nemeton/reference/regeneration_tolerances.md)**
+  (spec 027 v2.1 L3): regeneration priority index crossing microclimate
+  exposure (`sensibilite` / `d_tmax` / `d_vpd`) and soil water stress
+  (`njstress` / `istress` / `rew_min`) into a 0-100 priority. Generic by
+  default; optional per-species tuning (off by default, arbitration
+  §10.1). Output columns follow the §7 contract
+  (`indice_priorite_regen`, `regen_exposition`, `regen_hydrique`,
+  `parcelle_sensible`, `priorite`, `regen_essence`). Pure R logic, no
+  GPL dependency; consumes the engine output columns. Reworks the parked
+  `regeneration_index` into the brief’s exposure × water-stress cross.
+
 ## \[0.114.1\] - 2026-07-02
 
 ### Fixed

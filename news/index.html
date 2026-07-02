@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.114.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.115.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.115.0" id="nemeton-01150-2026-07-02">nemeton 0.115.0 (2026-07-02)<a class="anchor" aria-label="anchor" href="#nemeton-01150-2026-07-02"></a></h2>
+<div class="section level4">
+<h4 id="added--indice-de-priorité-de-régénération-spec-v21-l3-arbitré-0-115-0">Added — Indice de priorité de régénération (spec 027 v2.1 L3, arbitré)<a class="anchor" aria-label="anchor" href="#added--indice-de-priorit%C3%A9-de-r%C3%A9g%C3%A9n%C3%A9ration-spec-v21-l3-arbitr%C3%A9-0-115-0"></a></h4>
+<p>Premier incrément de code de l’onglet <strong>reGénération</strong> réaligné sur le brief <code>/home/pascal/Documents/reGénération/</code> : <strong><code><a href="../reference/indice_priorite_regen.html">indice_priorite_regen()</a></code></strong> — l’indice de <strong>tête d’onglet</strong> qui <strong>croise</strong> l’<strong>exposition microclimatique</strong> (moteur microclimf : <code>sensibilite</code>, sinon <code>d_tmax</code>/<code>d_vpd</code>) et le <strong>stress hydrique du sol</strong> (moteur biljouR : <code>njstress</code>, <code>istress</code>, <code>rew_min</code>) en une <strong>priorité 0-100</strong> d’intervention (haut = parcelle la plus vulnérable). Pure logique R : la fonction <strong>consomme</strong> les colonnes de sortie des moteurs (contrat §7), sans dépendance GPL, entièrement testable sur <code>sf</code> synthétique.</p>
+<p>Conforme aux <strong>arbitrages du §10</strong> (Pascal, 2026-07-02) : - <strong>Générique par défaut</strong> ; <strong>affinage par essence en OPTION désactivée</strong> (<code>species = NULL</code> → générique ; renseigné → pousse la priorité via les seuils chaud/sec de <code>regeneration_tolerances.csv</code>, exposés par le nouvel accesseur <strong><code><a href="../reference/regeneration_tolerances.html">regeneration_tolerances()</a></code></strong>). - Colonnes de sortie <strong>au schéma §7</strong> : <code>indice_priorite_regen</code>, <code>regen_exposition</code>, <code>regen_hydrique</code>, <code>parcelle_sensible</code>, <code>priorite</code>, <code>regen_essence</code> ; <code>couverture_pct</code> préservé.</p>
+<p>C’est le <strong>retravail</strong> du <code>regeneration_index</code> parké (moyenne pondérée A3/A4/W4/R6) vers la sémantique du brief (croisement exposition × stress hydrique). Bornes de normalisation du stress <strong>documentées, non calibrées terrain</strong> (spec 027 §9.2). Les <strong>moteurs</strong> (microclimf, biljouR, PAI LiDAR) qui produisent les colonnes d’entrée restent à porter (lots L1/L2, dépendances lourdes en <code>Suggests</code>).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.114.1" id="nemeton-01141-2026-07-02">nemeton 0.114.1 (2026-07-02)<a class="anchor" aria-label="anchor" href="#nemeton-01141-2026-07-02"></a></h2>
 <div class="section level4">
