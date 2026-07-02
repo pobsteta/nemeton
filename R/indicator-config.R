@@ -94,13 +94,14 @@ INDICATOR_FAMILIES <- list(
     name_en = "Air & Microclimate",
     icon = "wind",
     color = "#87CEEB",
-    indicators = c("A1", "A2", "A3", "A4"),
-    column_names = c("indicateur_a1_couverture", "indicateur_a2_qualite_air", "indicateur_a3_microclimat", "indicateur_a4_tamponnement"),
+    indicators = c("A1", "A2", "A3", "A4", "A5"),
+    column_names = c("indicateur_a1_couverture", "indicateur_a2_qualite_air", "indicateur_a3_microclimat", "indicateur_a4_tamponnement", "indicateur_a5_rafraichissement"),
     indicator_labels = list(
       A1 = list(fr = "Tampon forestier", en = "Forest Buffer"),
       A2 = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality"),
       A3 = list(fr = "Microclimat sous couvert", en = "Under-canopy microclimate"),
-      A4 = list(fr = "Tamponnement canop\u00e9e", en = "Canopy buffering")
+      A4 = list(fr = "Tamponnement canop\u00e9e", en = "Canopy buffering"),
+      A5 = list(fr = "Rafra\u00eechissement urbain", en = "Urban cooling")
     ),
     indicator_tooltips = list(
       A1 = list(
@@ -118,6 +119,10 @@ INDICATOR_FAMILIES <- list(
       A4 = list(
         fr = "Tamponnement thermique de la canop\u00e9e (\u00e9cart T\u00b0max d\u00e9couvert \u2212 sous couvert). Score \u00e9lev\u00e9 = microsite mieux prot\u00e9g\u00e9 de la chaleur.",
         en = "Canopy thermal buffering (T\u00b0max open minus under canopy). High score = microsite better shielded from heat."
+      ),
+      A5 = list(
+        fr = "Rafra\u00eechissement urbain : fra\u00eecheur de surface (LST) de l'unit\u00e9 vs son environnement. Orient\u00e9 arbre en ville (LST disponible en m\u00e9tropole). Score \u00e9lev\u00e9 = plus frais que l'entour. NA hors couverture LST.",
+        en = "Urban cooling: relative surface freshness (LST) of the unit vs its surroundings. Urban-tree oriented (LST available over metropolises). High score = cooler than surroundings. NA outside LST coverage."
       )
     )
   ),

@@ -436,6 +436,7 @@ reference:
     - resolve_project_dem
     - indicateur_a3_microclimat
     - indicateur_a4_tamponnement
+    - indicateur_a5_rafraichissement
     - indicateur_r6_sensibilite
     - indicateur_w4_vpd
     - microclimate_detect_years

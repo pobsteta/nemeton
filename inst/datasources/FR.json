@@ -623,22 +623,28 @@
       "ndp_level": 0,
       "access": {
         "catalogue": "https://catalogue.theia.data-terra.org/",
+        "stac_api_service": "theia_stac",
         "stac_collection": "thermocity-lst",
-        "note": "Thermocity is urban-oriented; spatial coverage and resolution are to be confirmed against the analysis area of interest."
+        "stac_collection_status": "confirmed",
+        "note": "Queried through the MTD STAC API (`services.theia_stac`). Collection `thermocity-lst` confirmed on the live STAC 2026-07-02, asset `LST`. COVERAGE IS URBAN-ONLY: Thermocity covers a handful of French metropolises (Marseille, Montpellier, Paris, Strasbourg…), NOT rural forests. Consumed by A5 (urban cooling), which is deliberately source-conditional (NA outside LST coverage)."
       },
       "products": {
         "land_surface_temperature": {
           "variable": "land_surface_temperature",
+          "asset": "LST",
           "resolution_m": "to confirm at the Theia catalogue",
-          "unit": "degC",
+          "unit": "kelvin",
+          "nodata": -32768,
+          "data_type": "float32",
           "value_range": [
-            -30,
-            70
-          ]
+            250,
+            340
+          ],
+          "note": "Values are in kelvin (float32); e.g. 310 K ≈ 37 °C surface. Nodata -32768. Derived from ASTER and ECOSTRESS thermal data."
         }
       },
       "consumed_by": {
-        "A2": "land-surface temperature as a microclimate and heat-stress proxy for the air-quality / microclimate indicator."
+        "A5": "land-surface temperature for the urban-cooling indicator (indicateur_a5_rafraichissement): relative freshness of the unit vs its surroundings, urban-tree oriented."
       },
       "provenance": {
         "producer": "Theia / DATA TERRA — Thermocity processing chain",
