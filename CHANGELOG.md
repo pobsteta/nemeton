@@ -10,6 +10,22 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.113.0] - 2026-07-02
+
+### Added
+- `build_foret_ancienne_mask()` (spec 031): source-agnostic helper that builds
+  the `foret_ancienne` polygon layer consumed by `indicateur_n2_continuite()`,
+  from a user-supplied historical forest source — an sf/sfc of ancient-forest
+  polygons, or a terra SpatRaster classified/threshold map (polygonised,
+  patch-split, area-filtered).
+
+### Changed
+- Spec 031 reoriented: the planned N4 "Forêt ancienne" indicator fed by Corona
+  4B is dropped — the Theia `corona-4b` collection has zero France coverage
+  (3 Middle-East items only) and N2 already handles ancient-forest continuity
+  via its `foret_ancienne` argument (N4 would be redundant). `corona-4b` is
+  not declared as a datasource.
+
 ## [0.112.1] - 2026-07-02
 
 ### Fixed
