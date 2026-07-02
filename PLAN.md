@@ -14,7 +14,7 @@
 | ✅ | E3 | Multi-acteurs — 13 profils experts YAML | n/a (app) |
 | ✅ | E4 | Authentification OAuth2/OIDC | n/a (app) |
 | ✅ | E5 | Intégrations & NDP — Open-Canopy CHM (spec 005) + QField export/ingest + sizing échantillon + flag `height_lidar` | v0.16.0 → v0.19.12 |
-| ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). **Backend monitoring local** (Bug #2 verrou fichier) : DuckDB → SQLite/WAL → **v0.50.0** ; fix warning → **v0.50.1** ; retrait DuckDB → **v0.51.0** (2026-05-28) ; fix UPSERT SQLite `near "DO"` à l'ingestion S2 → **v0.55.1** ; audit complet UPSERT SQLite (db_migrate no-target + FORDEAD/alerts `INSERT…SELECT`) → **v0.55.2** (2026-06-01). **FAST 100 % pur raster** : retrait de l'insertion `obs_pixel` dans `ingest_sentinel2_timeseries()` (amorçage cache COG seul), `DROP TABLE obs_pixel` (migration 0004), dépréciation `read_obs_pixel()`/`list_fast_alerts_for_zone()`/`detect_alerts()` → **v0.58.0** (2026-06-02) ; **retrait définitif des 3 fonctions + `CREATE TABLE obs_pixel` ôté des migrations 0001** → **v0.60.0** (2026-06-02, Phase B). Côté app : `nemetonshiny@v0.49.0`→`v0.50.0` ; consommateur `obs_pixel` retiré dès `nemetonshiny@v0.52.16`. **Indice NDMI** ajouté au FAST (spec 019, `(B08−B11)/(B08+B11)`, humidité ; défaut NDVI conservé, B11 cachée best-effort) → **v0.64.0** (2026-06-03) ; UI NDMI côté `nemetonshiny` à câbler (brief fourni). **Fix régression spec 019** : `.enumerate_cache_scenes()` n'avait pas de branche NDMI → cartes d'alerte NDMI toujours vides malgré B08+B11 en cache ; + nouvel orchestrateur `read_fast_alert_rasters()` (les 6 cartes = 3 indices × 2 modes en un appel) → **v0.65.0** (2026-06-03). **Fix cache spec 017 D6** (2026-07-01) : la clé du COG FAST incluait `date_from`/`date_to` *demandés* → recalcul quotidien d'une fenêtre glissante ancrée sur aujourd'hui sans nouvelle scène ; désormais clé sur la **couverture S2 réelle** (`min`/`max` des `obs_date` des scènes retenues) + ancre `rolling` sur la dernière acquisition → **v0.105.0**. |
+| ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). **Backend monitoring local** (Bug #2 verrou fichier) : DuckDB → SQLite/WAL → **v0.50.0** ; fix warning → **v0.50.1** ; retrait DuckDB → **v0.51.0** (2026-05-28) ; fix UPSERT SQLite `near "DO"` à l'ingestion S2 → **v0.55.1** ; audit complet UPSERT SQLite (db_migrate no-target + FORDEAD/alerts `INSERT…SELECT`) → **v0.55.2** (2026-06-01). **FAST 100 % pur raster** : retrait de l'insertion `obs_pixel` dans `ingest_sentinel2_timeseries()` (amorçage cache COG seul), `DROP TABLE obs_pixel` (migration 0004), dépréciation `read_obs_pixel()`/`list_fast_alerts_for_zone()`/`detect_alerts()` → **v0.58.0** (2026-06-02) ; **retrait définitif des 3 fonctions + `CREATE TABLE obs_pixel` ôté des migrations 0001** → **v0.60.0** (2026-06-02, Phase B). Côté app : `nemetonshiny@v0.49.0`→`v0.50.0` ; consommateur `obs_pixel` retiré dès `nemetonshiny@v0.52.16`. **Indice NDMI** ajouté au FAST (spec 019, `(B08−B11)/(B08+B11)`, humidité ; défaut NDVI conservé, B11 cachée best-effort) → **v0.64.0** (2026-06-03) ; **UI NDMI livrée côté `nemetonshiny`** ✅ (sélecteur FAST NDMI listé en premier / défaut NDVI conservé, i18n FR/EN `monitoring_fast_ndmi_hint`/`_b11_note`, slider `monitoring_threshold_ndmi`, 3ᵉ courbe NDMI dans la modale pixel, avertissement bande B11 dans les sidebars, NDMI dans le pré-chauffage `index × mode`) — scope spec 019 §5, dépassé depuis par NDRE + mode `trend` (specs 023/025). **Fix régression spec 019** : `.enumerate_cache_scenes()` n'avait pas de branche NDMI → cartes d'alerte NDMI toujours vides malgré B08+B11 en cache ; + nouvel orchestrateur `read_fast_alert_rasters()` (les 6 cartes = 3 indices × 2 modes en un appel) → **v0.65.0** (2026-06-03). **Fix cache spec 017 D6** (2026-07-01) : la clé du COG FAST incluait `date_from`/`date_to` *demandés* → recalcul quotidien d'une fenêtre glissante ancrée sur aujourd'hui sans nouvelle scène ; désormais clé sur la **couverture S2 réelle** (`min`/`max` des `obs_date` des scènes retenues) + ancre `rolling` sur la dernière acquisition → **v0.105.0**. |
 | ✅ | **Carte pixel** *(hors-skeleton, entre E6 et E7)* | API publique cœur pour exposer le cache S2 pixel-par-pixel (10 m natif) + extraction time-series à un clic. Spec 010. Débloque le sous-onglet *Carte pixel* dans `nemetonshiny` (séparé). | 4 fonctions exportées (`read_s2_band_raster`, `read_s2_band_stack`, `build_index_stack`, `extract_pixel_timeseries`) — release **v0.22.0** (2026-05-15). |
 | ✅ | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d'indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d'essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a → **v0.29.0** ; phase 1b → **v0.30.0** ; phase 2 (loaders) → **v0.31.0** ; phase 3a (`s2_biophysical` → C2/A1) → **v0.32.0** ; phase 3b (`theia_soil` → F1/F2) → **v0.33.0** ; phase 3c (`theia_snow` → R3) → **v0.34.0** ; phase 3d (`theia_water`/`theia_soil_moisture`/`theia_species`) → **v0.35.0** ; FORMSpoT câblé via l'interface CHM → **v0.35.2** ; résolveur STAC Theia → **v0.36.0** ; endpoint corrigé + FORMSpoT vérifié → **v0.37.0** ; auth S3 `/vsis3/` → **v0.38.0** ; ciblage par année → **v0.39.0** ; credentials S3 corrigés → **v0.39.1** ; signature SDK teledetection (`theia_signed_href`) → **v0.40.0** — chaîne validée en réel. Reliquat : MUSCATE, LST, W1. |
 | ✅ | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | **Machinerie** → **v0.52.0** : 7 fonctions exportées (`enable_rag`, `ingest_knowledge_document`, `embed_query`, `retrieve_knowledge`, `list_knowledge_documents`, `delete_knowledge_document`, `format_citations`), schéma opt-in `knowledge_*`, dual-backend pgvector `<=>` (PG) / cosinus R (SQLite). **Corpus** (spec 009.1) : API admin (v0.63.0), curation v0.75.0→v0.76.2 → **déployé en prod : 81 docs, 60 texte intégral, 6 120 chunks, 0 embedding manquant** (dont 4 papiers scannés OCRisés). **Wiring app** : perspectives IA sourcées (`nemetonshiny`). **Clos 2026-06-13.** |
@@ -1056,9 +1056,11 @@ Du moins au plus invasif :
   atténuation du stress de sécheresse, même mécanique que `snow`) ;
   `theia_species` → nouveau helper `units_add_species_from_raster()` (remplit
   une colonne `species` pour P/C/B, en amont des indicateurs). **Reliquat
-  documenté (non câblé volontairement)** : `s2_l2a_muscate` = donnée de base
+  documenté** : `s2_l2a_muscate` = donnée de base
   S2, son point d'intégration est le pipeline d'ingestion S2 existant, pas un
-  argument d'indicateur ; `theia_lst` → A2 = inadéquation sémantique (A2 est
+  argument d'indicateur → **cadré 2026-07-02 dans `specs/029-muscate-fast-source/`**
+  (backend STAC Theia de repli souverain pour FAST/FORDEAD ; décisions voie
+  d'accès + rôle actées, D1–D6 à confirmer avant impl, cible v0.111.0) ; `theia_lst` → A2 = inadéquation sémantique (A2 est
   un indice de qualité de l'air / pollution, pas de microclimat — câblage
   nécessiterait un sous-indicateur microclimat dédié) ; `theia_water` → W1 =
   W1 est une densité de réseau linéaire (m/ha), un masque raster ne s'y mappe
@@ -1235,6 +1237,65 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-07-02 — Added : MUSCATE, 3e backend S2 de repli souverain (spec 029, cœur, K1→K3, cible v0.111.0)
+
+Reliquat Theia `s2_l2a_muscate` attaqué (mode remote-control). **Décisions
+utilisateur** : voie d'accès = **backend STAC Theia** (pas GEODES/pygeodes) ;
+rôle = **repli souverain** (MUSCATE interrogé seulement si CDSE *et* PC échouent,
+zéro changement par défaut). Spec `specs/029-muscate-fast-source/spec.md`.
+
+**Découverte** : `services.theia_stac.url` était déjà renseigné et opérationnel
+(`https://api.stac.teledetection.fr`, MTD, utilisé par FORMS-T/FORMSpoT) — le D1
+« endpoint to confirm » de la spec était partiellement faux, seul l'**ID de
+collection MUSCATE** manquait.
+
+**K1 (FR.json)** : `datasets.s2_l2a_muscate.access` gagne `stac_api_service`,
+`stac_collection` (**provisoire** `"SENTINEL2-L2A-THEIA"`, `stac_collection_status:
+provisional`), `reflectance_product: SRE` (D3). Le backend lit api+collection
+depuis la config → un mauvais ID = correction d'une ligne JSON, **zéro changement
+de code**.
+
+**K2 (`R/sentinel2.R`)** : nouveau backend exporté `stac_search_s2_theia_muscate()`
++ helpers internes `.muscate_collection()`, `.muscate_reflectance_product()`,
+`.muscate_band_asset_keys()` (dialecte `SRE_B4`/`FRE_B4`/`B4` → clés nemeton
+`B02/B04/…`, SRE prioritaire, D2/D3), `.muscate_asset_href()`,
+`.muscate_remap_feature()`. Réutilise `stac_search_items()` + `.theia_href_to_gdal()`
+(→ `/vsis3/`) + `.features_to_tibble()`. Filtre nuage au niveau scène (parité
+cdse/pc ; NA gardé). **Dédup inerte pour MUSCATE** (IDs Theia ne matchent pas les
+regex S2 → clé unique, aucun collapse) — pas de bypass nécessaire (D5 simplifié).
+
+**K3 (`stac_search_s2()`)** : `match.arg(source, c("cdse","pc","muscate"))` +
+branche `switch(muscate=…)` ; **défaut** passé à `c("cdse","pc","muscate")` (repli
+transparent, inerte en marche nominale car MUSCATE n'est atteint qu'après échec
+des deux autres).
+
+**Tests** : `test-sentinel2-muscate.R` **26 PASS** (mapping bandes SRE/FRE/zéro,
+remap feature → /vsis3/, tibble normalisé, filtre nuage + NA gardé, repli
+cdse+pc→muscate, marche nominale = MUSCATE jamais appelé, invariance NDVI ×10000
+D4). Voisins re-vérifiés : test-sentinel2 77, dedup 16, cache 30, theia-stac 30 —
+tous verts. Test existant « both backends silent » mis à jour (mocke aussi
+muscate, sinon atteindrait le vrai backend → réseau). NAMESPACE + `man/sentinel2_stac.Rd`
+édités à la main (pas de `document()`).
+
+**K4 (smoke réel, fait 2026-07-02)** : STAC live interrogé directement. **ID de
+collection confirmé** = `sentinel2-l2a-theia` (« Sentinel-2 Level 2A from CNES and
+CESBIO » = MUSCATE/MAJA ; le provisoire `SENTINEL2-L2A-THEIA` était faux → corrigé
+dans FR.json, `stac_collection_status: confirmed`). **D2** : bandes exposées
+directement sous `B02/B04/B05/B08/B8A/B11/B12` (fichiers FRE sous-jacents), pas
+`SRE_B4` — le candidat nu du mapping les capte. **D3** : FRE servi (pas de variante
+SRE). **D4** confirmé : `scale 1.0 offset 0.0` int16 nodata −10000 → NDVI/NBR
+invariants (pas de biais inter-source ; nodata −10000 à masquer). **D6** :
+`eo:cloud_cover` (identique cdse/pc). Run `stac_search_s2_theia_muscate()` end-to-end
+= **5 scènes réelles** (T31TGN/T31UGP, filtre nuage OK, hrefs `/vsis3/s2-theia/…`
+corrects, bandes requises présentes). +1 test format réel → `test-sentinel2-muscate.R`
+**28 PASS**.
+
+**K5 (release, 2026-07-02)** : bump DESCRIPTION `0.110.1.9000 → 0.111.0` + NEWS +
+CITATION + CHANGELOG cohérents, PR vers main → `release.yml` taggue v0.111.0.
+Feature **entièrement validée** ; le seul run manquant est la lecture S3 réelle des
+COG (credentials `theia_s3`) au moment d'une vraie ingestion de repli — indépendant
+du contrat STAC ici testé. **Spec 029 close côté cœur.**
 
 ### 2026-06-17 — Changed : FORDEAD ingest — retrait du fallback bbox-des-placettes (spec 017, cœur, v0.91.2)
 

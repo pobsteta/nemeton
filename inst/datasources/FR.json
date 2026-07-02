@@ -498,8 +498,11 @@
       "ndp_level": 0,
       "access": {
         "catalogue": "https://catalogue.theia.data-terra.org/",
-        "note": "MUSCATE Sentinel-2 L2A is distributed per tile and per date. No single static URL: the caller resolves the catalogue download path first.",
-        "stac_collection": "to confirm at the Theia catalogue"
+        "stac_api_service": "theia_stac",
+        "stac_collection": "sentinel2-l2a-theia",
+        "stac_collection_status": "confirmed",
+        "reflectance_product": "FRE",
+        "note": "MUSCATE Sentinel-2 L2A is queried through the MTD STAC API declared in `services.theia_stac` (https://api.stac.teledetection.fr), consumed by stac_search_s2(source = 'muscate') as a sovereign fallback for the FAST/FORDEAD pipeline (spec 029). Collection `sentinel2-l2a-theia` ('Sentinel-2 Level 2A from CNES and CESBIO' = MUSCATE/MAJA production) confirmed by the spec 029 K4 real-data smoke on 2026-07-02. Reflectance assets are exposed directly under the STAC band keys B02/B04/B05/B08/B8A/B11/B12 (backed by FRE — Flat REflectance — GeoTIFFs), int16 scale 1.0 offset 0.0 nodata -10000, on the Theia S3 store (bucket `s2-theia`, endpoint `services.theia_s3`). `reflectance_product` documents that FRE is served (no SRE variant exposed); NDVI/NBR are ratios, so the common x10000 scale cancels (offset 0 → no cross-source bias, decision D4)."
       },
       "products": {
         "surface_reflectance": {

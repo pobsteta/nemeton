@@ -1,3 +1,35 @@
+# nemeton 0.111.0 (2026-07-02)
+
+### Added — MUSCATE, 3ᵉ backend Sentinel-2 de repli souverain (spec 029)
+
+`stac_search_s2()` gagne un troisième backend, **`"muscate"`** (Theia /
+DATA TERRA, production MUSCATE-MAJA du CNES/CESBIO), interrogé via l'API
+STAC MTD déjà déclarée (`services.theia_stac`,
+`https://api.stac.teledetection.fr`). Il s'ajoute au vecteur `source` par
+défaut, désormais `c("cdse", "pc", "muscate")` : les backends sont essayés
+dans l'ordre et le premier qui renvoie une scène gagne, donc la source
+souveraine française **n'est atteinte que si CDSE *et* Planetary Computer
+échouent tous les deux**. En marche nominale, le comportement est
+strictement inchangé et **aucune requête MUSCATE n'est émise**.
+
+Nouvelle fonction exportée **`stac_search_s2_theia_muscate()`** : interroge
+la collection `sentinel2-l2a-theia`, remappe le dialecte de bandes MUSCATE
+(bandes exposées sous `B02/B04/B05/B08/B8A/B11/B12`, adossées aux GeoTIFF
+FRE) vers les clés nemeton, réduit les hrefs S3 en chemins `/vsis3/` lisibles
+par GDAL, filtre le nuage au niveau scène (`eo:cloud_cover ≤ max_cloud`,
+parité CDSE/PC) et retourne le **même tibble normalisé** que les deux autres
+backends — tout l'aval (cache COG, FAST, FORDEAD) est inchangé.
+
+Validé par smoke réel (2026-07-02) : la collection `sentinel2-l2a-theia`,
+la réflectance FRE (`scale 1.0`, `offset 0.0`, `nodata -10000` → NDVI/NBR
+invariants d'échelle) et la propriété `eo:cloud_cover` sont confirmées sur
+5 scènes réelles (T31TGN/T31UGP). La lecture S3 des COG au moment d'une
+ingestion de repli nécessite les identifiants `services.theia_s3`.
+
+Source `s2_l2a_muscate` d'`inst/datasources/FR.json` mise à jour (collection
+confirmée, produit FRE documenté). Clôt le reliquat « Sources Theia » pour
+MUSCATE (PLAN.md).
+
 # nemeton 0.110.1 (2026-07-01)
 
 ### Fixed / Added — Cache des sorties biodivMapR (B4/L3, spec 028)
