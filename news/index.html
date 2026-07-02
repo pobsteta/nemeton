@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.115.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.116.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,21 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.116.0" id="nemeton-01160-2026-07-02">nemeton 0.116.0 (2026-07-02)<a class="anchor" aria-label="anchor" href="#nemeton-01160-2026-07-02"></a></h2>
+<div class="section level4">
+<h4 id="added--indicateur_r3_secheresse-enrichi-par-le-bilan-hydrique-biljou-spec-0-116-0">Added — <code>indicateur_r3_secheresse()</code> enrichi par le bilan hydrique BILJOU (spec 027 §5.1)<a class="anchor" aria-label="anchor" href="#added--indicateur_r3_secheresse-enrichi-par-le-bilan-hydrique-biljou-spec-0-116-0"></a></h4>
+<p>R3 (sécheresse) <strong>accepte désormais les métriques du moteur BILJOU</strong> (<code>regen_bilan_hydrique</code>) : deux nouveaux arguments <code>biljou</code> (data.frame/list avec <code>njstress</code> jours de stress, <code>istress</code> intensité, <code>deb_stress</code> précocité) et <code>biljou_weight</code> (poids du blend, défaut 0.5).</p>
+<ul><li>
+<strong>Valeurs brutes exposées</strong> (<code>r3_njstress</code>, <code>r3_istress</code>, <code>r3_deb_stress</code>) — pas seulement le score, pour la conformité / le reporting (comme la logique « m³/ha au lieu du score »).</li>
+<li>
+<strong>Blend</strong> : le stress hydrique mécaniste <strong>affine</strong> le risque SPEI/topo (moyenne pondérée par unité ; un <code>r3_score</code> NA n’empoisonne pas le blend). BILJOU aggrave dans le même sens que le risque existant (symétrique aux atténuations neige / humidité du sol).</li>
+<li>
+<strong>Sans DEM mais avec BILJOU</strong> : R3 est calculé depuis le bilan hydrique seul (auparavant : NA).</li>
+<li>Les métriques sont aussi <strong>lues depuis les colonnes de <code>units</code></strong> (<code>njstress</code>, etc.) quand <code>biljou = NULL</code> → le pipeline <code>regen_bilan_hydrique → r3</code> est transparent.</li>
+</ul><p><strong>Strictement rétrocompatible</strong> : sans <code>biljou</code> ni colonnes BILJOU, le comportement v0.115.x est préservé (y compris le retour NA sans DEM). Bornes de normalisation du stress <strong>documentées, non calibrées terrain</strong> (spec 027 §9.2).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.115.0" id="nemeton-01150-2026-07-02">nemeton 0.115.0 (2026-07-02)<a class="anchor" aria-label="anchor" href="#nemeton-01150-2026-07-02"></a></h2>
 <div class="section level4">

@@ -15,7 +15,9 @@ indicateur_r3_secheresse(
   snow = NULL,
   snow_relief_strength = 0.3,
   soil_moisture = NULL,
-  sm_relief_strength = 0.3
+  sm_relief_strength = 0.3,
+  biljou = NULL,
+  biljou_weight = 0.5
 )
 ```
 
@@ -68,11 +70,32 @@ indicateur_r3_secheresse(
   the soil moisture reaches the \\0.3\\m^3/m^3\\ field-capacity
   reference. Default `0.3`. Ignored when `soil_moisture` is `NULL`.
 
+- biljou:
+
+  Optional per-unit soil water-balance metrics from the BILJOU engine
+  (`regen_bilan_hydrique`, spec 027): a `data.frame` / list with numeric
+  columns `njstress` (days of hydric stress), `istress`
+  (drought-intensity index) and/or `deb_stress` (onset day-of-year).
+  `NULL` (default) → these are read from the same-named columns of
+  `units` when present, else no enrichment. When available, a BILJOU
+  stress score is blended into R3 (weight `biljou_weight`) and the raw
+  metrics are exposed as columns.
+
+- biljou_weight:
+
+  Numeric in `[0, 1]`. Weight of the BILJOU stress score in the blend
+  with the SPEI/topographic risk. Default `0.5`. Ignored when no BILJOU
+  metric is available.
+
 ## Value
 
-The input sf object with added column:
+The input sf object with added columns:
 
 - R3: Drought stress (0-100). Higher = higher stress.
+
+- r3_njstress, r3_istress, r3_deb_stress: raw BILJOU values (days /
+  index / day-of-year), when supplied — exposed for compliance /
+  reporting, not only the score.
 
 ## Details
 

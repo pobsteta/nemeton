@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.115.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.116.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -830,6 +830,11 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-02--added-v01160--r3_secheresse-enrichi-biljou-spec-027-51-2e-incrément-code">2026-07-02 — Added v0.116.0 : r3_secheresse enrichi BILJOU (spec 027 §5.1, 2e incrément code)<a class="anchor" aria-label="anchor" href="#id_2026-07-02--added-v01160--r3_secheresse-enrichi-biljou-spec-027-51-2e-incr%C3%A9ment-code"></a></h3>
+<p>2e incrément reGénération (pure logique testable, avant les moteurs). <code><a href="reference/indicateur_r3_secheresse.html">indicateur_r3_secheresse()</a></code> accepte les métriques BILJOU via <code>biljou</code> (data.frame/list : <code>njstress</code>/<code>istress</code>/<code>deb_stress</code>) + <code>biljou_weight</code> (défaut 0.5). <strong>Expose les valeurs brutes</strong> (<code>r3_njstress</code>/<code>r3_istress</code>/<code>r3_deb_stress</code>) en plus du score (conformité §5.1). <strong>Blend</strong> : le stress mécanique affine le risque SPEI/topo (par unité, NA-safe : <code>0*NaN=NaN</code> géré) ; aggrave dans le sens du risque (symétrique neige/humidité). <strong>Sans DEM + BILJOU</strong> → R3 depuis le bilan hydrique seul. Lecture aussi depuis colonnes <code>units</code> (pipeline <code>regen_bilan_hydrique → r3</code> transparent). <strong>Rétrocompatible strict</strong> (sans biljou = v0.115.x, NA sans DEM). Bornes documentées non calibrées (§9.2). Tests <code>test-r3-biljou.R</code> (BILJOU seul, exposition brute, lecture colonnes, blend DEM, sens aggravant, rétrocompat) ; sweep voisins 380 PASS. <code>.Rd</code> r3 à la main.</p>
+<p><strong>Reste</strong> (au feu vert) : moteurs L1 (PAI+microclimf) / L2 (biljouR+SAFRAN) en <code>Suggests</code> + tests mockés ; branche A carte E-OBS sur emprise UGF + buffer.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-02--added-v01150--indice_priorite_regen-spec-027-v21-l3-1er-incrément-code">2026-07-02 — Added v0.115.0 : indice_priorite_regen (spec 027 v2.1 L3, 1er incrément code)<a class="anchor" aria-label="anchor" href="#id_2026-07-02--added-v01150--indice_priorite_regen-spec-027-v21-l3-1er-incr%C3%A9ment-code"></a></h3>
 <p>Premier code reGénération après réalignement + arbitrage. <strong>Ordre choisi</strong> : pas L1→L2→L3 (les moteurs microclimf/biljouR/lidR exigent deps+données+creds <strong>inexécutables/intestables ici</strong>), mais d’abord la <strong>pièce pure-logique entièrement testable</strong> = <code><a href="reference/indice_priorite_regen.html">indice_priorite_regen()</a></code> (L3), qui <strong>fige le contrat §7</strong> que les moteurs viseront.</p>

@@ -11,7 +11,7 @@ topographic-only assessment when SPEI is unavailable."><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.115.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.116.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,7 +63,9 @@ topographic-only assessment when <span class="pkg">SPEI</span> is unavailable.</
 <span>  snow <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  snow_relief_strength <span class="op">=</span> <span class="fl">0.3</span>,</span>
 <span>  soil_moisture <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  sm_relief_strength <span class="op">=</span> <span class="fl">0.3</span></span>
+<span>  sm_relief_strength <span class="op">=</span> <span class="fl">0.3</span>,</span>
+<span>  biljou <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  biljou_weight <span class="op">=</span> <span class="fl">0.5</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -121,10 +123,30 @@ reaches the \(0.3\;m^3/m^3\) field-capacity reference.
 Default <code>0.3</code>. Ignored when <code>soil_moisture</code> is
 <code>NULL</code>.</p></dd>
 
+
+<dt id="arg-biljou">biljou<a class="anchor" aria-label="anchor" href="#arg-biljou"></a></dt>
+<dd><p>Optional per-unit soil water-balance metrics from the BILJOU
+engine (<code>regen_bilan_hydrique</code>, spec 027): a <code>data.frame</code> / list with
+numeric columns <code>njstress</code> (days of hydric stress), <code>istress</code>
+(drought-intensity index) and/or <code>deb_stress</code> (onset day-of-year).
+<code>NULL</code> (default) → these are read from the same-named columns of
+<code>units</code> when present, else no enrichment. When available, a BILJOU stress
+score is blended into R3 (weight <code>biljou_weight</code>) and the raw metrics are
+exposed as columns.</p></dd>
+
+
+<dt id="arg-biljou-weight">biljou_weight<a class="anchor" aria-label="anchor" href="#arg-biljou-weight"></a></dt>
+<dd><p>Numeric in <code>[0, 1]</code>. Weight of the BILJOU stress score
+in the blend with the SPEI/topographic risk. Default <code>0.5</code>. Ignored when
+no BILJOU metric is available.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The input sf object with added column:</p><ul><li><p>R3: Drought stress (0-100). Higher = higher stress.</p></li>
+    <p>The input sf object with added columns:</p><ul><li><p>R3: Drought stress (0-100). Higher = higher stress.</p></li>
+<li><p>r3_njstress, r3_istress, r3_deb_stress: raw BILJOU values
+      (days / index / day-of-year), when supplied — exposed for
+      compliance / reporting, not only the score.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
