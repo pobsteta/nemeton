@@ -281,6 +281,8 @@ d'intégration sont *skipped*, comptés dans la sortie testthat).
 R/ndp.R                       → Système NDP, Fibonacci, confiance φ, flag `augmented`
 R/utils-chm.R                 → sanitize_chm(), extract_h_dom() (spec 005)
 R/site_index.R                → compute_site_index() + courbes Duplat & Tran-Ha (spec 005)
+R/indicators-microclimate.R   → A3/A4/W4/R6 sous couvert + microclimate_run (spec 027)
+R/indice_priorite_regen.R     → indice_priorite_regen() croisement exposition × stress hydrique + tolérances essence (spec 027 v2.1 L3)
 R/family-system.R             → Agrégation des indicateurs en familles
 R/indicators-*.R              → Calcul des 31 indicateurs (air, biodiversity, energy,
                                  naturalness, productive, risk, social, temporal, core, families)

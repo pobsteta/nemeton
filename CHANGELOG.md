@@ -10,6 +10,19 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.115.0] - 2026-07-02
+
+### Added
+- **`indice_priorite_regen()`** + **`regeneration_tolerances()`** (spec 027
+  v2.1 L3): regeneration priority index crossing microclimate exposure
+  (`sensibilite` / `d_tmax` / `d_vpd`) and soil water stress (`njstress` /
+  `istress` / `rew_min`) into a 0-100 priority. Generic by default; optional
+  per-species tuning (off by default, arbitration §10.1). Output columns follow
+  the §7 contract (`indice_priorite_regen`, `regen_exposition`,
+  `regen_hydrique`, `parcelle_sensible`, `priorite`, `regen_essence`). Pure R
+  logic, no GPL dependency; consumes the engine output columns. Reworks the
+  parked `regeneration_index` into the brief's exposure × water-stress cross.
+
 ## [0.114.1] - 2026-07-02
 
 ### Fixed

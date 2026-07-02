@@ -439,6 +439,8 @@ reference:
     - indicateur_a5_rafraichissement
     - indicateur_r6_sensibilite
     - indicateur_w4_vpd
+    - indice_priorite_regen
+    - regeneration_tolerances
     - microclimate_detect_years
     - microclimate_run
     - prepare_pixel_dieback_series
