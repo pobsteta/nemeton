@@ -313,12 +313,13 @@ test_that("FR config exposes theia_species tagged species_ml", {
   expect_true(all(c("B1", "B2", "P", "C") %in% names(sp$consumed_by)))
 })
 
-test_that("FR config exposes theia_lst for the A2 indicator", {
+test_that("FR config exposes theia_lst for the A5 urban-cooling indicator", {
   skip_if_not_installed("terra")
   lst <- get_data_source("theia_lst", "FR")
   expect_type(lst, "list")
-  expect_equal(lst$products$land_surface_temperature$unit, "degC")
-  expect_true("A2" %in% names(lst$consumed_by))
+  # spec 032: LST is served in kelvin, consumed by A5 (urban cooling).
+  expect_equal(lst$products$land_surface_temperature$unit, "kelvin")
+  expect_true("A5" %in% names(lst$consumed_by))
 })
 
 test_that("FR config exposes formspot with its THEIA STAC collection", {
