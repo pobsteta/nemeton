@@ -1114,12 +1114,29 @@ enrich_parcels_bdforet <- function(parcels, bdforet_sf) {
   # Add parcel id for aggregation
   parcels$..parcel_id.. <- seq_len(nrow(parcels))
 
-  # Spatial intersection
+  # Spatial intersection. Real BD For\u00eat V2 polygons occasionally carry
+  # invalid rings (e.g. "Edge N is degenerate (duplicate vertex)") that make
+  # GEOS abort the whole intersection -> every UGF ends up with NA species,
+  # silently degrading the species-dependent indicators (P/C/B) to their
+  # synthetic-inventory fallback. Repair both layers with st_make_valid()
+  # and retry once before giving up; only pay the repair cost when the raw
+  # intersection actually fails.
+  .bdf_intersect <- function(bdf, pcl) {
+    suppressWarnings(sf::st_intersection(bdf, pcl["..parcel_id.."]))
+  }
   inter <- tryCatch(
-    suppressWarnings(sf::st_intersection(bdforet_sf, parcels["..parcel_id.."])),
+    .bdf_intersect(bdforet_sf, parcels),
     error = function(e) {
-      cli::cli_alert_warning("BD For\u00eat intersection failed: {e$message}")
-      return(NULL)
+      cli::cli_alert_info(
+        "BD For\u00eat intersection hit an invalid geometry ({e$message}); repairing with {.fn sf::st_make_valid} and retrying...")
+      tryCatch(
+        .bdf_intersect(sf::st_make_valid(bdforet_sf),
+                       sf::st_make_valid(parcels)),
+        error = function(e2) {
+          cli::cli_alert_warning("BD For\u00eat intersection failed after repair: {e2$message}")
+          NULL
+        }
+      )
     }
   )
 

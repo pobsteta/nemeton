@@ -1238,6 +1238,25 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-02 — Fixed : enrichissement BD Forêt sur géométrie invalide (cœur, v0.112.1)
+
+Diagnostic d'un run réel Pascal (30 UGF, dépt 45) : `! BD Forêt intersection
+failed: Loop 0 is not valid: Edge 105 is degenerate (duplicate vertex)` →
+`species/age set on 0/30 UGF` → P/C/B retombent sur l'inventaire synthétique
+CHM (qualité bois diamètre 0, CO2 évité 0). Cause : `enrich_parcels_bdforet()`
+(`R/utils.R`) faisait un `st_intersection` unique dans un `tryCatch` qui, sur
+une géométrie invalide, renvoyait NULL → tout NA. **Fix** : intersection brute
+puis, en cas d'échec, réparation des deux couches par `sf::st_make_valid()` +
+retry unique avant abandon (coût payé seulement sur échec). Tests :
+`test-bdforet-enrich.R` **8 PASS** (mock : erreur au 1er intersect → retry réel
+récupère l'essence ; échec persistant → NA ; chemin valide intact).
+
+**Autres constats du même run (non corrigés ici, cf. réponse à Pascal)** : R5
+NA = normal (aucune ingestion sanitaire → pas de FORDEAD) ; 3 warnings Theia
+non bloquants (`s2_biophysical`/`theia_snow`/`theia_soil_moisture` à collection
+`to confirm`) — IDs de collection réels désormais connus, câblage possible ;
+`SPEI` absent → R3 défaut 0.5.
+
 ### 2026-07-02 — Added : T3 « Coupes rases » (SUFOSAT, spec 030, cœur, v0.112.0)
 
 1ᵉ des 3 nouveaux indicateurs implémenté. **K1 (point dur R1)** : format des
