@@ -10,6 +10,19 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.122.0] - 2026-07-03
+
+### Added
+- Real `pai_depuis_nuage()` engine (spec 027 L1, increment A/3): the LiDAR-HD
+  point-cloud path is now wired to the `lasR` pipeline (single read, two
+  class-filtered `count` rasterizations → gap fraction → Beer-Lambert PAI,
+  resampled onto the working grid, optional parcel mask). Ported faithfully from
+  the reGénération prototype `pai_lidarhd_lasR.R`. Heavy dep `lasR` in Suggests,
+  guarded by `requireNamespace`; `precomputed` pass-through and clean input
+  validation preserved. New args: `parcelle`, `fenetre`, `cl_sol`, `cl_veg`,
+  `epsg`, `pai_max`. Engine path is validated on real LiDAR data by the user
+  (not runnable in CI).
+
 ## [0.121.1] - 2026-07-03
 
 ### Changed

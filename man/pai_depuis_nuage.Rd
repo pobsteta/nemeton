@@ -9,37 +9,61 @@ pai_depuis_nuage(
   grille = NULL,
   res = 2,
   k = 0.5,
+  parcelle = NULL,
+  fenetre = NA,
+  cl_sol = 2L,
+  cl_veg = c(3L, 4L, 5L),
+  epsg = 2154,
+  pai_max = 8,
   precomputed = NULL,
   ...
 )
 }
 \arguments{
-\item{dossier_las}{Directory of classified \code{.laz} tiles (engine path).}
+\item{dossier_las}{Directory of classified \code{.las}/\code{.laz} tiles
+covering the parcels plus a buffer.}
 
-\item{grille}{Target grid (\code{SpatRaster} template).}
+\item{grille}{Target grid (\code{SpatRaster}, typically the working DTM) — the
+PAI is resampled onto it.}
 
 \item{res}{Numeric working resolution in metres (default 2).}
 
 \item{k}{Beer-Lambert extinction coefficient (default 0.5).}
 
+\item{parcelle}{Optional \code{SpatVector}/\code{sf} mask applied at the end.}
+
+\item{fenetre}{Optional smoothing window in metres (\code{NA} = none).}
+
+\item{cl_sol, cl_veg}{ASPRS classes counted as ground / vegetation (defaults
+\code{2} and \code{c(3, 4, 5)}).}
+
+\item{epsg}{CRS forced on the tiles when absent (LiDAR HD = \code{2154}).}
+
+\item{pai_max}{Upper clamp on PAI (default 8).}
+
 \item{precomputed}{Optional pre-built PAI \code{SpatRaster} or raster path.}
 
-\item{...}{Reserved (engine parameters).}
+\item{...}{Reserved.}
 }
 \value{
-A \code{terra::SpatRaster} of PAI.
+A \code{terra::SpatRaster} of PAI (layer \code{pai}).
 }
 \description{
 Wall-to-wall \strong{PAI} raster from a classified LiDAR-HD point cloud
-(\code{.laz}), via gap-fraction + Beer-Lambert (\code{lasR}/\code{lidR}). The
-PAI feeds the \code{lai_max} of \code{\link{regen_bilan_hydrique}} (PAI ≈ LAI
-only for a leaves-on acquisition, spec 027 §9.3).
+(\code{.las}/\code{.laz}), via per-pixel gap fraction + Beer-Lambert:
+\code{P_gap = N_ground / (N_ground + N_veg)} then
+\code{PAI = -(1/k) * ln(P_gap)}. The PAI feeds the \code{lai_max} of
+\code{\link{regen_bilan_hydrique}} and the canopy of
+\code{\link{regen_sensibilite}} (PAI ≈ LAI only for a leaves-on acquisition,
+spec 027 §9.3).
 }
 \details{
-\strong{Scaffold with a pass-through}: when \code{precomputed} is a
-\code{SpatRaster} (or a raster file path), it is returned as the PAI. Otherwise
-the point-cloud processing needs \code{lasR}/\code{lidR} and is not yet wired.
+The point-cloud path uses the \strong{\code{lasR}} pipeline (single read, two
+class-filtered rasterizations) and is resampled onto \code{grille} (the working
+DTM). Heavy dependency in \code{Suggests}, guarded by \code{requireNamespace}.
+When \code{precomputed} is a \code{SpatRaster} (or raster file path) it is
+returned as-is, so the pipeline can run on a pre-built PAI without \code{lasR}.
 }
 \seealso{
-\code{\link{regen_bilan_hydrique}}
+\code{\link{regen_bilan_hydrique}}, \code{\link{regen_sensibilite}}
 }
