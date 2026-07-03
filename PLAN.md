@@ -1238,6 +1238,22 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-03 — Added v0.119.0 : sélecteur essence cible reGénération (spec 027 §10.1, 5e incrément)
+
+`regen_species_choices(units, species_col, region, lang)` (R/indice_priorite_regen.R) :
+liste prête pour le menu « essence cible » de l'onglet, côté cœur. Options =
+intersection `regeneration_tolerances()` ∩ `list_species_classes()` (seul
+ensemble scorable) → data.frame code/label/tmax_tol_c/vpd_tol_kpa/present/groupe,
+classes présentes sur UGF en tête puis alternatives adaptation triées par
+tolérance chaleur croissante. Détection auto colonne essence ; générique
+(species=NULL) ajouté par l'app. **Arbitrage de conception** (question Pascal) :
+NE PAS offrir une liste MFR brute (non scorable) ni deux listes concurrentes —
+une seule liste = le vocabulaire de tolérances, à deux `optgroup`. MFR = étape
+aval future conditionnée à l'extension du CSV. **Origine des tolérances
+clarifiée** : valeurs indicatives/ordinales (dire d'expert, non calibrées ;
+sources à consolider = Rameau, guides station ONF/CNPF, ClimEssences). Brief
+onglet §4.1 mis à jour. Tests test-regen-species-choices.R 17 PASS ; sweep 300.
+
 ### 2026-07-03 — Added v0.118.0 : branche A tendances estivales E-OBS (spec 027 §6, 4e incrément)
 
 4e incrément reGénération. `tendances_estivales_eobs(aoi, tx, rr,
