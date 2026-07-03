@@ -1,5 +1,32 @@
 # Changelog
 
+## nemeton 0.119.0 (2026-07-03)
+
+#### Added — Sélecteur essence cible reGénération (spec 027 §10.1)
+
+**`regen_species_choices(units, species_col, region, lang)`** :
+construit la liste **prête pour le menu déroulant « essence cible »** de
+l’onglet reGénération, côté cœur (zéro logique métier côté app). Les
+options sont **exactement** les classes que le cœur sait scorer —
+l’intersection de
+[`regeneration_tolerances()`](https://pobsteta.github.io/nemeton/reference/regeneration_tolerances.md)
+et
+[`list_species_classes()`](https://pobsteta.github.io/nemeton/reference/list_species_classes.md)
+— le sélecteur ne peut donc jamais proposer une essence que
+`indice_priorite_regen(species=)` ignore.
+
+Renvoie un data.frame
+`code`/`label`/`tmax_tol_c`/`vpd_tol_kpa`/`present`/ `groupe` : les
+classes **présentes sur les UGF** (`groupe = "present"`) en tête, puis
+les **autres (adaptation)** triées par tolérance chaleur croissante
+(mésophile → thermophile). Détection auto de la colonne d’essence
+(`essence_dominante`/`essence`/`species_class`/…). L’entrée générique «
+aucune essence » (→ `species = NULL`) est ajoutée par l’app.
+
+Brief onglet §4.1 mis à jour (deux `optgroup`, défaut générique,
+honnêteté sur le caractère indicatif des seuils, MFR = étape aval hors
+indice).
+
 ## nemeton 0.118.0 (2026-07-03)
 
 #### Added — Branche A : tendances estivales E-OBS sur l’emprise UGF (spec 027 §6)

@@ -365,7 +365,7 @@ sortie testthat).
     R/utils-chm.R                 → sanitize_chm(), extract_h_dom() (spec 005)
     R/site_index.R                → compute_site_index() + courbes Duplat & Tran-Ha (spec 005)
     R/indicators-microclimate.R   → A3/A4/W4/R6 sous couvert + microclimate_run (spec 027)
-    R/indice_priorite_regen.R     → indice_priorite_regen() croisement exposition × stress hydrique + tolérances essence (spec 027 v2.1 L3)
+    R/indice_priorite_regen.R     → indice_priorite_regen() croisement exposition × stress hydrique + tolérances essence + regen_species_choices() (sélecteur essence cible) (spec 027 v2.1 L3, §10.1)
     R/regen_engines.R             → scaffolds moteurs reGénération : regen_bilan_hydrique (biljouR), regen_sensibilite (microclimf), pai_depuis_nuage (lasR) — chemin precomputed pur (spec 027 v2.1 L1/L2)
     R/tendances_eobs.R            → tendances_estivales_eobs() carte bivariée E-OBS sur emprise UGF + buffer 25 km (spec 027 §6, branche A)
     R/family-system.R             → Agrégation des indicateurs en familles

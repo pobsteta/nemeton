@@ -830,6 +830,8 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
   : W4 — summer under-canopy vapour-pressure deficit (regeneration)
 - [`indice_priorite_regen()`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md)
   : Regeneration priority index (spec 027 L3)
+- [`regen_species_choices()`](https://pobsteta.github.io/nemeton/reference/regen_species_choices.md)
+  : Species choices for the reGénération target-species selector
 - [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
   : Microclimate exposure per unit — microclimf engine (spec 027 L1)
 - [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)

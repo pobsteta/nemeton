@@ -12,6 +12,23 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.119.0\] - 2026-07-03
+
+### Added
+
+- [`regen_species_choices()`](https://pobsteta.github.io/nemeton/reference/regen_species_choices.md)
+  (spec 027 §10.1): ready-to-use option list for the reGénération
+  “target species” dropdown, built core-side. Options are exactly the
+  scorable classes (intersection of
+  [`regeneration_tolerances()`](https://pobsteta.github.io/nemeton/reference/regeneration_tolerances.md)
+  and
+  [`list_species_classes()`](https://pobsteta.github.io/nemeton/reference/list_species_classes.md)),
+  so the selector never offers a species the index ignores. Returns
+  `code`/`label`/`tmax_tol_c`/`vpd_tol_kpa`/`present`/`groupe`,
+  UGF-present classes first (`groupe = "present"`) then adaptation
+  alternatives sorted by increasing heat tolerance. Onglet brief §4.1
+  updated.
+
 ## \[0.118.0\] - 2026-07-03
 
 ### Added

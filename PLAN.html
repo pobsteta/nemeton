@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.118.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.119.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -830,6 +830,10 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-03--added-v01190--sélecteur-essence-cible-regénération-spec-027-101-5e-incrément">2026-07-03 — Added v0.119.0 : sélecteur essence cible reGénération (spec 027 §10.1, 5e incrément)<a class="anchor" aria-label="anchor" href="#id_2026-07-03--added-v01190--s%C3%A9lecteur-essence-cible-reg%C3%A9n%C3%A9ration-spec-027-101-5e-incr%C3%A9ment"></a></h3>
+<p><code>regen_species_choices(units, species_col, region, lang)</code> (R/indice_priorite_regen.R) : liste prête pour le menu « essence cible » de l’onglet, côté cœur. Options = intersection <code><a href="reference/regeneration_tolerances.html">regeneration_tolerances()</a></code> ∩ <code><a href="reference/list_species_classes.html">list_species_classes()</a></code> (seul ensemble scorable) → data.frame code/label/tmax_tol_c/vpd_tol_kpa/present/groupe, classes présentes sur UGF en tête puis alternatives adaptation triées par tolérance chaleur croissante. Détection auto colonne essence ; générique (species=NULL) ajouté par l’app. <strong>Arbitrage de conception</strong> (question Pascal) : NE PAS offrir une liste MFR brute (non scorable) ni deux listes concurrentes — une seule liste = le vocabulaire de tolérances, à deux <code>optgroup</code>. MFR = étape aval future conditionnée à l’extension du CSV. <strong>Origine des tolérances clarifiée</strong> : valeurs indicatives/ordinales (dire d’expert, non calibrées ; sources à consolider = Rameau, guides station ONF/CNPF, ClimEssences). Brief onglet §4.1 mis à jour. Tests test-regen-species-choices.R 17 PASS ; sweep 300.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-03--added-v01180--branche-a-tendances-estivales-e-obs-spec-027-6-4e-incrément">2026-07-03 — Added v0.118.0 : branche A tendances estivales E-OBS (spec 027 §6, 4e incrément)<a class="anchor" aria-label="anchor" href="#id_2026-07-03--added-v01180--branche-a-tendances-estivales-e-obs-spec-027-6-4e-incr%C3%A9ment"></a></h3>
 <p>4e incrément reGénération. <code>tendances_estivales_eobs(aoi, tx, rr, buffer_m=25000, breaks, precomputed)</code> (<code>R/tendances_eobs.R</code>) : carte bivariée de tendances estivales (réchauffement × assèchement) <strong>recadrée sur l’emprise UGF + 25 km</strong> (§10.4 validé Pascal ; buffer métrique EPSG:3035), <strong>pas nationale</strong>. Par maille E-OBS : pente moindres carrés T°max/précip estivales + classes bivariées (<code>classe_tmax</code>/<code>classe_precip</code> 1-3 tertiles ou breaks fixes ; <code>classe_bivariee</code> 1-9). Comme les moteurs : chemin <code>precomputed</code> (crop+classe sans données), chemin moteur (rasters par-année → pentes, terra testable), échec propre. Sortie = <code>sf</code> points centres de maille → choroplèthe côté app. Le cœur calcule, l’app rend (<strong>brief nemetonshiny fourni</strong>). Tests <code>test-tendances-eobs.R</code> 17 PASS ; sweep 352. NAMESPACE + man + pkgdown à la main.</p>

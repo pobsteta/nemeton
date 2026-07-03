@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.118.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.119.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.119.0" id="nemeton-01190-2026-07-03">nemeton 0.119.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01190-2026-07-03"></a></h2>
+<div class="section level4">
+<h4 id="added--sélecteur-essence-cible-regénération-spec-0-119-0">Added — Sélecteur essence cible reGénération (spec 027 §10.1)<a class="anchor" aria-label="anchor" href="#added--s%C3%A9lecteur-essence-cible-reg%C3%A9n%C3%A9ration-spec-0-119-0"></a></h4>
+<p><strong><code>regen_species_choices(units, species_col, region, lang)</code></strong> : construit la liste <strong>prête pour le menu déroulant « essence cible »</strong> de l’onglet reGénération, côté cœur (zéro logique métier côté app). Les options sont <strong>exactement</strong> les classes que le cœur sait scorer — l’intersection de <code><a href="../reference/regeneration_tolerances.html">regeneration_tolerances()</a></code> et <code><a href="../reference/list_species_classes.html">list_species_classes()</a></code> — le sélecteur ne peut donc jamais proposer une essence que <code>indice_priorite_regen(species=)</code> ignore.</p>
+<p>Renvoie un data.frame <code>code</code>/<code>label</code>/<code>tmax_tol_c</code>/<code>vpd_tol_kpa</code>/<code>present</code>/ <code>groupe</code> : les classes <strong>présentes sur les UGF</strong> (<code>groupe = "present"</code>) en tête, puis les <strong>autres (adaptation)</strong> triées par tolérance chaleur croissante (mésophile → thermophile). Détection auto de la colonne d’essence (<code>essence_dominante</code>/<code>essence</code>/<code>species_class</code>/…). L’entrée générique « aucune essence » (→ <code>species = NULL</code>) est ajoutée par l’app.</p>
+<p>Brief onglet §4.1 mis à jour (deux <code>optgroup</code>, défaut générique, honnêteté sur le caractère indicatif des seuils, MFR = étape aval hors indice).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.118.0" id="nemeton-01180-2026-07-03">nemeton 0.118.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01180-2026-07-03"></a></h2>
 <div class="section level4">
