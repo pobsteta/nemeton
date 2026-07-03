@@ -68,6 +68,76 @@ regeneration_tolerances <- function() {
   utils::read.csv(path, stringsAsFactors = FALSE, encoding = "UTF-8")
 }
 
+# Détecte la colonne portant les codes de classe d'essence sur `units`.
+.regen_detect_species_col <- function(units) {
+  cand <- c("essence_dominante", "essence", "species_class",
+            "classe_essence", "species")
+  hit <- cand[cand %in% names(units)]
+  if (length(hit)) hit[[1]] else NULL
+}
+
+#' Species choices for the reGénération target-species selector
+#'
+#' @description
+#' Build the list of **scorable** target species for the optional per-species
+#' tuning of [indice_priorite_regen()], ready for the app's "target species"
+#' dropdown. The options are exactly the classes the core can score — the
+#' intersection of [regeneration_tolerances()] and [list_species_classes()] —
+#' so the selector can never offer a species the index ignores.
+#'
+#' When `units` are given, the classes actually present on the parcels are
+#' flagged (`present = TRUE`, `groupe = "present"`) and listed first; the
+#' remaining classes (`groupe = "adaptation"`) follow. Within each group,
+#' species are ordered by increasing heat tolerance (`tmax_tol_c`), so the
+#' adaptation group reads as "more heat-tolerant alternatives". The generic
+#' "no species" default is added by the app (it maps to `species = NULL`).
+#'
+#' @param units Optional `sf`/data.frame of units. Used only to flag the
+#'   species present on the parcels.
+#' @param species_col Optional name of the column holding the species-class
+#'   codes ([list_species_classes()] codes). Auto-detected among
+#'   `essence_dominante`, `essence`, `species_class`, `classe_essence`,
+#'   `species` when `NULL`. Values must be class codes (e.g. `essence_hetraie`),
+#'   not BD Forêt codes — map them upstream with [map_bdforet_to_species_class()]
+#'   if needed.
+#' @param region,lang Passed to [list_species_classes()] for localised labels.
+#'
+#' @return A data.frame with `code`, `label`, `tmax_tol_c`, `vpd_tol_kpa`,
+#'   `present` (logical) and `groupe` (`"present"` / `"adaptation"`), ordered
+#'   present-first then by increasing `tmax_tol_c`.
+#' @seealso [indice_priorite_regen()], [regeneration_tolerances()],
+#'   [list_species_classes()]
+#' @export
+regen_species_choices <- function(units = NULL, species_col = NULL,
+                                  region = "BFC", lang = "fr") {
+  tol <- regeneration_tolerances()
+  base <- tol[, c("code", "label", "tmax_tol_c", "vpd_tol_kpa"), drop = FALSE]
+
+  # Labels localisés depuis list_species_classes() si disponibles.
+  cls <- tryCatch(list_species_classes(region = region, lang = lang),
+                  error = function(e) NULL)
+  if (!is.null(cls) && all(c("code", "label") %in% names(cls))) {
+    loc <- cls$label[match(base$code, cls$code)]
+    base$label <- ifelse(is.na(loc), base$label, loc)
+  }
+
+  # Essences présentes sur les UGF (si une colonne de classe est trouvée).
+  present_codes <- character(0)
+  if (!is.null(units)) {
+    col <- if (!is.null(species_col)) species_col else .regen_detect_species_col(units)
+    if (!is.null(col) && col %in% names(units)) {
+      present_codes <- unique(stats::na.omit(as.character(units[[col]])))
+    }
+  }
+  base$present <- base$code %in% present_codes
+  base$groupe <- ifelse(base$present, "present", "adaptation")
+
+  # Présentes d'abord, puis tolérance chaleur croissante (mésophile → thermophile).
+  base <- base[order(!base$present, base$tmax_tol_c), , drop = FALSE]
+  rownames(base) <- NULL
+  base
+}
+
 # Résout (tmax_tol_c, vpd_tol_kpa) pour une essence — override explicite ou table.
 .regen_resolve_tol <- function(species, tolerances) {
   if (is.null(species) || !nzchar(species)) return(NULL)
