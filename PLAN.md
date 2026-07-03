@@ -1006,7 +1006,7 @@ dépérissement), pas de 13e famille (radar 12 axes). Mode augmenté
 | — | Scaffolds moteurs L1/L2 + branche A E-OBS + sélecteur + table UE (cœur) | ✅ v0.116.0→v0.120.0 |
 | **L4** | Onglet + module `mod_regeneration` (app) | ✅ **nemetonshiny v0.98.0** |
 | **L5** | Profil LLM « Adaptation climatique » (app) | ✅ **nemetonshiny v0.98.0** |
-| **L6** | Persistance `regeneration_states` + export GPKG + Quarto (app) | ✅ **nemetonshiny v0.98.0/.1** |
+| **L6** | Persistance `regeneration_states` + export GPKG + section PDF Quarto (app) | ✅ **nemetonshiny v0.98.0/.1/.2** |
 
 **Reste cœur** : - ✅ **Mapping TFV → essence de régénération** —
 **livré v0.121.0** :
@@ -1706,19 +1706,23 @@ NAMESPACE + 4 man + pkgdown.
   `nemetonshiny@b68b3eb1`) : durcissement UX (strip ANSI warnings
   moteurs, feedback lancement, Auto E-OBS, pré-remplissage années, fix
   sélecteur essence, menu couche rétractable, retrait onglet radar).
-  Plancher `Imports: nemeton (>= 0.118.0)`. **Aucun changement de code
-  cœur** — fonctions déjà exportées (`regen_sensibilite`,
-  `regen_bilan_hydrique`, `indice_priorite_regen`,
+  **nemetonshiny v0.98.2** (merge `nemetonshiny@328ea47f`) : **section
+  reGénération du rapport PDF Quarto** (rendu vérifié lualatex) —
+  complète L6. Plancher `Imports: nemeton (>= 0.118.0)`. **Aucun
+  changement de code cœur** — fonctions déjà exportées
+  (`regen_sensibilite`, `regen_bilan_hydrique`, `indice_priorite_regen`,
   `tendances_estivales_eobs`, `microclimate_detect_years`,
   `indicateur_a3/a4/w4/r6`, `bdforet_v2_mapping`).
 - **Lots spec 027 portés par l’app** : **L4** (onglet/module
   `mod_regeneration`) ✅, **L5** (profil LLM adaptation) ✅, **L6**
-  (persistance + export GPKG + Quarto) ✅ — release côté app
-  (v0.98.0/v0.98.1). Ce commit = **docs(plan) seul**, pas de release
-  cœur.
-- **Items cœur restants ouverts** (voir *Reste cœur* du chantier
-  reGénération) : mapping TFV → essence de régénération ; pondération
-  continue FORDEAD/RECONFORT (à confirmer non couvert).
+  (persistance + export GPKG + section PDF Quarto) ✅ — **lot complet**
+  côté app (v0.98.0/v0.98.1/v0.98.2). Ce commit = **docs(plan) seul**,
+  pas de release cœur.
+- **Item cœur mapping TFV → essence** : **livré depuis v0.121.0**
+  ([`map_tfv_to_species_class()`](https://pobsteta.github.io/nemeton/reference/map_tfv_to_species_class.md) +
+  `regen_species_choices(tfv_col=)`) — l’app peut pré-remplir « Essence
+  cible » depuis BD Forêt v2. **Résidu à confirmer** : pondération
+  continue FORDEAD/RECONFORT (plan de validation-échantillonnage).
 
 ### 2026-07-03 — Added v0.120.0 : table tolérances essences européennes (spec 027, calibration, incrément 1/3)
 
