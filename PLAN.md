@@ -996,6 +996,35 @@ repli opencanopy). Sous-indicateurs A3/A4/W4/**R6** (R5 pris par
 dépérissement), pas de 13e famille (radar 12 axes). Mode augmenté
 `microclimate_model`.
 
+**État des lots (2026-07-03)** :
+
+| Lot | Contenu | État |
+|----|----|----|
+| L1 | Sous-indicateurs microclimat A3/A4/W4 (cœur) | ✅ v0.101.0 |
+| L2 | Sensibilité R6 + années E-OBS (cœur) | ✅ v0.102.0 |
+| L3 | Indice `indice_priorite_regen` + tolérances essence (cœur) | ✅ v0.115.0 |
+| — | Scaffolds moteurs L1/L2 + branche A E-OBS + sélecteur + table UE (cœur) | ✅ v0.116.0→v0.120.0 |
+| **L4** | Onglet + module `mod_regeneration` (app) | ✅ **nemetonshiny v0.98.0** |
+| **L5** | Profil LLM « Adaptation climatique » (app) | ✅ **nemetonshiny v0.98.0** |
+| **L6** | Persistance `regeneration_states` + export GPKG + Quarto (app) | ✅ **nemetonshiny v0.98.0/.1** |
+
+**Reste cœur (ouvert)** : - **Mapping TFV → essence de régénération** :
+fonction cœur reliant les types de formation végétale BD Forêt v2
+([`bdforet_v2_mapping()`](https://pobsteta.github.io/nemeton/reference/bdforet_v2_mapping.md)
+: `tfv_code`/`label_fr`) aux essences paramétrables
+([`regeneration_tolerances()`](https://pobsteta.github.io/nemeton/reference/regeneration_tolerances.md)
+`code`/`label`, et/ou
+[`european_species_tolerances()`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md))
+→ l’app **pré-remplit** « Essence cible » avec les essences réellement
+présentes sur l’emprise (aujourd’hui la liste vient de la seule table de
+tolérances). Logique métier → **doit vivre dans `nemeton`**. -
+**Pondération continue FORDEAD/RECONFORT** (R5) : *à confirmer non
+couvert* — aujourd’hui routage **discret** par part d’essence
+(`.resolve_reconfort_share()`), pas de blend continu des deux signaux. À
+ouvrir seulement si réellement voulu. - Orchestration RÉELLE des moteurs
+(microclimf/biljouR/lasR/SAFRAN) : chez Pascal (deps + données), via le
+chemin `precomputed` déjà en place.
+
 #### 2026-06-30 — L1 cœur : indicateurs microclimatiques A3/A4/W4 (`v0.101.0`)
 
 - **Cadrage** : spec 027 + ADR-014 (mergé `nemetonplateform` PR \#8). 3
@@ -1648,6 +1677,31 @@ cœur).
 ------------------------------------------------------------------------
 
 ## Journal
+
+### 2026-07-03 — spec 027 (reGénération) : lots L4/L5/L6 livrés côté app (aucun code cœur)
+
+- **spec 027 (reGénération) : lots L4/L5/L6 livrés côté app.**
+  **nemetonshiny v0.98.0** (merge `nemetonshiny@445a509d`) : onglet +
+  module `mod_regeneration`, `service_regeneration` (`run_regeneration`
+  via `precomputed`), profil LLM « Adaptation climatique », persistance
+  versionnée `nemeton.regeneration_states` + migration 004, export GPKG,
+  data-prep Quarto. **nemetonshiny v0.98.1** (merge
+  `nemetonshiny@b68b3eb1`) : durcissement UX (strip ANSI warnings
+  moteurs, feedback lancement, Auto E-OBS, pré-remplissage années, fix
+  sélecteur essence, menu couche rétractable, retrait onglet radar).
+  Plancher `Imports: nemeton (>= 0.118.0)`. **Aucun changement de code
+  cœur** — fonctions déjà exportées (`regen_sensibilite`,
+  `regen_bilan_hydrique`, `indice_priorite_regen`,
+  `tendances_estivales_eobs`, `microclimate_detect_years`,
+  `indicateur_a3/a4/w4/r6`, `bdforet_v2_mapping`).
+- **Lots spec 027 portés par l’app** : **L4** (onglet/module
+  `mod_regeneration`) ✅, **L5** (profil LLM adaptation) ✅, **L6**
+  (persistance + export GPKG + Quarto) ✅ — release côté app
+  (v0.98.0/v0.98.1). Ce commit = **docs(plan) seul**, pas de release
+  cœur.
+- **Items cœur restants ouverts** (voir *Reste cœur* du chantier
+  reGénération) : mapping TFV → essence de régénération ; pondération
+  continue FORDEAD/RECONFORT (à confirmer non couvert).
 
 ### 2026-07-03 — Added v0.120.0 : table tolérances essences européennes (spec 027, calibration, incrément 1/3)
 

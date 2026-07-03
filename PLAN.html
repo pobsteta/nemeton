@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.120.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.120.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -504,6 +504,35 @@
 <div class="section level1">
 <h1 id="chantier-en-cours--regénération--microclimat-sous-couvert-spec-027-adr-014">Chantier EN COURS — reGénération : microclimat sous couvert (spec 027, ADR-014)<a class="anchor" aria-label="anchor" href="#chantier-en-cours--reg%C3%A9n%C3%A9ration--microclimat-sous-couvert-spec-027-adr-014"></a></h1>
 <p><strong>Cadré</strong> : 2026-06-30 (paperwork : <code>specs/027-regeneration-microclimat/spec.md</code> + ADR-014 dans <code>nemetonplateform</code>). <strong>Objectif</strong> : onglet « reGénération » — aptitude microclimatique à la régénération (microclimf + ERA5-Land + LiDAR HD, repli opencanopy). Sous-indicateurs A3/A4/W4/<strong>R6</strong> (R5 pris par dépérissement), pas de 13e famille (radar 12 axes). Mode augmenté <code>microclimate_model</code>.</p>
+<p><strong>État des lots (2026-07-03)</strong> :</p>
+<table class="table"><colgroup><col width="25%"><col width="45%"><col width="30%"></colgroup><thead><tr><th>Lot</th>
+<th>Contenu</th>
+<th>État</th>
+</tr></thead><tbody><tr><td>L1</td>
+<td>Sous-indicateurs microclimat A3/A4/W4 (cœur)</td>
+<td>✅ v0.101.0</td>
+</tr><tr><td>L2</td>
+<td>Sensibilité R6 + années E-OBS (cœur)</td>
+<td>✅ v0.102.0</td>
+</tr><tr><td>L3</td>
+<td>Indice <code>indice_priorite_regen</code> + tolérances essence (cœur)</td>
+<td>✅ v0.115.0</td>
+</tr><tr><td>—</td>
+<td>Scaffolds moteurs L1/L2 + branche A E-OBS + sélecteur + table UE (cœur)</td>
+<td>✅ v0.116.0→v0.120.0</td>
+</tr><tr><td><strong>L4</strong></td>
+<td>Onglet + module <code>mod_regeneration</code> (app)</td>
+<td>✅ <strong>nemetonshiny v0.98.0</strong>
+</td>
+</tr><tr><td><strong>L5</strong></td>
+<td>Profil LLM « Adaptation climatique » (app)</td>
+<td>✅ <strong>nemetonshiny v0.98.0</strong>
+</td>
+</tr><tr><td><strong>L6</strong></td>
+<td>Persistance <code>regeneration_states</code> + export GPKG + Quarto (app)</td>
+<td>✅ <strong>nemetonshiny v0.98.0/.1</strong>
+</td>
+</tr></tbody></table><p><strong>Reste cœur (ouvert)</strong> : - <strong>Mapping TFV → essence de régénération</strong> : fonction cœur reliant les types de formation végétale BD Forêt v2 (<code><a href="reference/bdforet_v2_mapping.html">bdforet_v2_mapping()</a></code> : <code>tfv_code</code>/<code>label_fr</code>) aux essences paramétrables (<code><a href="reference/regeneration_tolerances.html">regeneration_tolerances()</a></code> <code>code</code>/<code>label</code>, et/ou <code><a href="reference/european_species_tolerances.html">european_species_tolerances()</a></code>) → l’app <strong>pré-remplit</strong> « Essence cible » avec les essences réellement présentes sur l’emprise (aujourd’hui la liste vient de la seule table de tolérances). Logique métier → <strong>doit vivre dans <code>nemeton</code></strong>. - <strong>Pondération continue FORDEAD/RECONFORT</strong> (R5) : <em>à confirmer non couvert</em> — aujourd’hui routage <strong>discret</strong> par part d’essence (<code>.resolve_reconfort_share()</code>), pas de blend continu des deux signaux. À ouvrir seulement si réellement voulu. - Orchestration RÉELLE des moteurs (microclimf/biljouR/lasR/SAFRAN) : chez Pascal (deps + données), via le chemin <code>precomputed</code> déjà en place.</p>
 <div class="section level4">
 <h4 id="id_2026-06-30--l1-cœur--indicateurs-microclimatiques-a3a4w4-v01010">2026-06-30 — L1 cœur : indicateurs microclimatiques A3/A4/W4 (<code>v0.101.0</code>)<a class="anchor" aria-label="anchor" href="#id_2026-06-30--l1-c%C5%93ur--indicateurs-microclimatiques-a3a4w4-v01010"></a></h4>
 <ul><li>
@@ -830,6 +859,15 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-03--spec-027-regénération--lots-l4l5l6-livrés-côté-app-aucun-code-cœur">2026-07-03 — spec 027 (reGénération) : lots L4/L5/L6 livrés côté app (aucun code cœur)<a class="anchor" aria-label="anchor" href="#id_2026-07-03--spec-027-reg%C3%A9n%C3%A9ration--lots-l4l5l6-livr%C3%A9s-c%C3%B4t%C3%A9-app-aucun-code-c%C5%93ur"></a></h3>
+<ul><li>
+<strong>spec 027 (reGénération) : lots L4/L5/L6 livrés côté app.</strong> <strong>nemetonshiny v0.98.0</strong> (merge <code>nemetonshiny@445a509d</code>) : onglet + module <code>mod_regeneration</code>, <code>service_regeneration</code> (<code>run_regeneration</code> via <code>precomputed</code>), profil LLM « Adaptation climatique », persistance versionnée <code>nemeton.regeneration_states</code> + migration 004, export GPKG, data-prep Quarto. <strong>nemetonshiny v0.98.1</strong> (merge <code>nemetonshiny@b68b3eb1</code>) : durcissement UX (strip ANSI warnings moteurs, feedback lancement, Auto E-OBS, pré-remplissage années, fix sélecteur essence, menu couche rétractable, retrait onglet radar). Plancher <code>Imports: nemeton (&gt;= 0.118.0)</code>. <strong>Aucun changement de code cœur</strong> — fonctions déjà exportées (<code>regen_sensibilite</code>, <code>regen_bilan_hydrique</code>, <code>indice_priorite_regen</code>, <code>tendances_estivales_eobs</code>, <code>microclimate_detect_years</code>, <code>indicateur_a3/a4/w4/r6</code>, <code>bdforet_v2_mapping</code>).</li>
+<li>
+<strong>Lots spec 027 portés par l’app</strong> : <strong>L4</strong> (onglet/module <code>mod_regeneration</code>) ✅, <strong>L5</strong> (profil LLM adaptation) ✅, <strong>L6</strong> (persistance + export GPKG + Quarto) ✅ — release côté app (v0.98.0/v0.98.1). Ce commit = <strong>docs(plan) seul</strong>, pas de release cœur.</li>
+<li>
+<strong>Items cœur restants ouverts</strong> (voir <em>Reste cœur</em> du chantier reGénération) : mapping TFV → essence de régénération ; pondération continue FORDEAD/RECONFORT (à confirmer non couvert).</li>
+</ul></div>
 <div class="section level3">
 <h3 id="id_2026-07-03--added-v01200--table-tolérances-essences-européennes-spec-027-calibration-incrément-13">2026-07-03 — Added v0.120.0 : table tolérances essences européennes (spec 027, calibration, incrément 1/3)<a class="anchor" aria-label="anchor" href="#id_2026-07-03--added-v01200--table-tol%C3%A9rances-essences-europ%C3%A9ennes-spec-027-calibration-incr%C3%A9ment-13"></a></h3>
 <p>Fichier fourni par Pascal (<code>data-raw/Essences_europeennes_tolerances.xlsx</code>, 193 essences UE, 2 onglets) → <strong>remplace la calibration indicative</strong> par une table <strong>sourcée par espèce</strong>. <code>european_species_tolerances(statut, confiance, type, include_invasif)</code> (<code>R/european_species_tolerances.R</code>) lit <code>inst/extdata/european_species_tolerances.csv</code> (généré par <code>data-raw/european_species_tolerances.R</code>). <strong>Mêmes axes</strong> tmax_tol_c/vpd_tol_kpa que <code><a href="reference/regeneration_tolerances.html">regeneration_tolerances()</a></code> (11 classes, conservée pour le mapping UGF), <strong>enrichis</strong> : N&amp;V 2006 sécheresse/<strong>ombre</strong>/engorgement (1–5), gel, humidité, thermophilie. Statuts <code>frm_1999</code>(47)/<code>frm_2025</code>(17)/<code>atlas_jrc</code>(130), colonne <code>confidence</code>, flag <code>invasif</code>(14). <strong>Sources ajoutées</strong> dans <code>inst/REFERENCES.md</code>. Tests test-european-species-tolerances.R 20 PASS.</p>
