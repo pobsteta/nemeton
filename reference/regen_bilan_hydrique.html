@@ -15,7 +15,7 @@ its biljou argument) and indice_priorite_regen."><meta property="og:image" conte
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.125.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.126.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,7 @@ its <code>biljou</code> argument) and <code><a href="indice_priorite_regen.html"
 <span>  sol <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lai_max <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  forest_type <span class="op">=</span> <span class="st">"feuillu"</span>,</span>
+<span>  years <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  precomputed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -81,20 +82,30 @@ its <code>biljou</code> argument) and <code><a href="indice_priorite_regen.html"
 
 
 <dt id="arg-meteo">meteo<a class="anchor" aria-label="anchor" href="#arg-meteo"></a></dt>
-<dd><p>Optional SAFRAN/ERA5 forcing (for the engine path).</p></dd>
+<dd><p>SAFRAN/ERA5 forcing for the engine path: a single <code>meteo</code>
+<code>data.frame</code> (applied to every unit) or a named list keyed by unit id.</p></dd>
 
 
 <dt id="arg-sol">sol<a class="anchor" aria-label="anchor" href="#arg-sol"></a></dt>
-<dd><p>Optional soil description (<code>biljou_soil()</code> inputs: extractable
-water <code>ewm</code>, root fractions <code>roots</code>).</p></dd>
+<dd><p>A <code><a href="https://pobsteta.github.io/biljouR/reference/biljou_soil.html" class="external-link">biljouR::biljou_soil()</a></code> object (extractable water <code>ewm</code>,
+root fractions <code>roots</code>, …).</p></dd>
 
 
 <dt id="arg-lai-max">lai_max<a class="anchor" aria-label="anchor" href="#arg-lai-max"></a></dt>
-<dd><p>Optional per-unit maximum LAI (from <code><a href="pai_depuis_nuage.html">pai_depuis_nuage()</a></code>).</p></dd>
+<dd><p>Per-unit maximum LAI (e.g. derived from
+<code><a href="pai_depuis_nuage.html">pai_depuis_nuage()</a></code>): a scalar, a length-<code>nrow(units)</code> vector, or a
+named list by id.</p></dd>
 
 
 <dt id="arg-forest-type">forest_type<a class="anchor" aria-label="anchor" href="#arg-forest-type"></a></dt>
-<dd><p>Character, <code>"feuillu"</code> / <code>"resineux"</code> (phenology).</p></dd>
+<dd><p>Phenology: <code>"feuillu"</code>/<code>"broadleaved"</code> or
+<code>"resineux"</code>/<code>"coniferous"</code> (mapped to BILJOU's
+<code>broadleaved</code>/<code>coniferous</code>).</p></dd>
+
+
+<dt id="arg-years">years<a class="anchor" aria-label="anchor" href="#arg-years"></a></dt>
+<dd><p>Optional integer years to keep from the BILJOU indices before
+averaging (default: all years in the run).</p></dd>
 
 
 <dt id="arg-precomputed">precomputed<a class="anchor" aria-label="anchor" href="#arg-precomputed"></a></dt>
@@ -104,20 +115,26 @@ Pure fast-path.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Reserved (engine parameters).</p></dd>
+<dd><p>Passed to <code><a href="https://pobsteta.github.io/biljouR/reference/biljou_run.html" class="external-link">biljouR::biljou_run()</a></code> (e.g. <code>budburst</code>,
+<code>leaf_fall</code>, <code>rew_c</code>, <code>k</code>).</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>units</code> with the water-balance columns present in <code>precomputed</code>
-(<code>njstress</code>, <code>istress</code>, <code>rew_min</code>, <code>deb_stress</code>).</p>
+    <p><code>units</code> with the water-balance columns <code>njstress</code>, <code>istress</code>,
+<code>rew_min</code>, <code>deb_stress</code> (per-unit mean over the retained years).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><strong>Scaffold with a pure fast-path</strong>: pass <code>precomputed</code> (the per-unit
+    <p><strong>Two paths.</strong> <em>Fast-path</em>: pass <code>precomputed</code> (the per-unit
 output of a BILJOU run) and the metrics are attached to <code>units</code> as the §7
-columns, <strong>without</strong> the GPL engine. Without <code>precomputed</code>, the full
-<code>biljouR</code> orchestration is not yet wired; the function fails cleanly.</p>
+columns, <strong>without</strong> the GPL engine. <em>Engine path</em>: builds
+unit-centroid points, runs <code><a href="https://pobsteta.github.io/biljouR/reference/biljou_run_grid.html" class="external-link">biljouR::biljou_run_grid()</a></code> (per-point BILJOU
+forced by <code>meteo</code>), and aggregates the per-year drought indices to the mean
+per unit — mapping <code>NJstress</code>/<code>Istress</code>/<code>DEBstress</code>/<code>min_rew</code>
+to <code>njstress</code>/<code>istress</code>/<code>deb_stress</code>/<code>rew_min</code>. It needs
+<code>meteo</code>, a soil (<code>sol</code>) and per-unit <code>lai_max</code>; with SAFRAN/LiDAR
+inputs it is <strong>not runnable in CI</strong> — validated on real data.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

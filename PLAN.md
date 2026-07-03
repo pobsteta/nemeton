@@ -1742,10 +1742,12 @@ lourdes + LiDAR HD + ERA5/CDS + SAFRAN).
   moyen/canicule, robustesse, agrégation §7). Deps
   microclimf/mcera5/lasR en Suggests, gardées ; precomputed conservé.
   **À valider par Pascal sur données réelles avant inc C.**
-- **Inc C — `regen_bilan_hydrique` réel (biljouR)** : à venir — API
-  biljouR
-  (`safran_download`→`safran_to_meteo`→`biljou_soil`→`biljou_run_grid`→
-  `biljou_indices`/`biljou_grid_to_sf`).
+- **Inc C — `regen_bilan_hydrique` réel (biljouR) — LIVRÉ v0.126.0** :
+  API biljouR (centroïdes → `biljou_run_grid` → agrégation moyenne
+  inter-annuelle → mapping des 4 indices §7). **CI-testé** (meteo
+  d’exemple `meteo_hesse` du paquet → run réel hors réseau). Les **3
+  moteurs sont réels**. Reste : validation Pascal LiDAR/ERA5 (A/B) +
+  brief app D.
 - **Inc D — brief app** : brancher « Lancer l’analyse » (reGénération)
   pour lancer les moteurs présents (case opt-in + garde données/creds)
   et écrire `cache/regeneration/`. Pas de prototype BILJOU (package) ;

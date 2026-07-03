@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.125.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.126.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.126.0" id="nemeton-01260-2026-07-03">nemeton 0.126.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01260-2026-07-03"></a></h2>
+<div class="section level4">
+<h4 id="added--moteur-biljou-réel-spec-l2-incrément-c3--les-moteurs-regénération-sont-portés-0-126-0">Added — Moteur BILJOU réel (spec 027 L2, incrément C/3) — les 3 moteurs reGénération sont portés<a class="anchor" aria-label="anchor" href="#added--moteur-biljou-r%C3%A9el-spec-l2-incr%C3%A9ment-c3--les-moteurs-reg%C3%A9n%C3%A9ration-sont-port%C3%A9s-0-126-0"></a></h4>
+<p><strong><code><a href="../reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code></strong> n’est plus un scaffold : le chemin moteur est <strong>câblé à biljouR</strong> (pas de prototype — orchestration via l’API du paquet). Centroïdes des unités → <code><a href="https://pobsteta.github.io/biljouR/reference/biljou_run_grid.html" class="external-link">biljouR::biljou_run_grid()</a></code> (BILJOU par point forcé par <code>meteo</code> SAFRAN/ERA5) → agrégation <strong>moyenne inter-annuelle par unité</strong> des indices, avec mapping <code>NJstress</code>/<code>Istress</code>/<code>DEBstress</code>/<code>min_rew</code> → <code>njstress</code>/<code>istress</code>/ <code>deb_stress</code>/<code>rew_min</code> (colonnes §7). <code>forest_type</code> <code>feuillu</code>/<code>resineux</code> mappé vers <code>broadleaved</code>/<code>coniferous</code> ; phénologie (<code>budburst</code>, <code>leaf_fall</code>, …) transmise via <code>...</code> ; nouvel argument <code>years</code>. Dégradation propre : point en échec → NA (jamais d’abort dur). <code>biljouR</code> en Suggests + Remotes (<code>pobsteta/biljouR</code>), gardé par <code>requireNamespace</code> ; pass-through <code>precomputed</code> conservé.</p>
+<p><strong>Contrairement à PAI/microclimf, ce chemin moteur EST testé en CI</strong> : biljouR fournit la meteo d’exemple <code>meteo_hesse</code>, donc l’orchestration complète tourne hors réseau (résineux + feuillu avec phénologie, mapping des 4 indices, chaînage R3). 31 tests moteurs.</p>
+<p>Fin du portage : les <strong>3 moteurs reGénération</strong> (<code>pai_depuis_nuage</code> lasR, <code>regen_sensibilite</code> microclimf, <code>regen_bilan_hydrique</code> biljouR) sont <strong>réels</strong>. Reste le brief app (déclenchement au bouton « Lancer l’analyse », opt-in) et la validation Pascal des chemins LiDAR/ERA5 (A/B) sur données réelles.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.125.0" id="nemeton-01250-2026-07-03">nemeton 0.125.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01250-2026-07-03"></a></h2>
 <div class="section level4">

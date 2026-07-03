@@ -17,6 +17,7 @@ regen_bilan_hydrique(
   sol = NULL,
   lai_max = NULL,
   forest_type = "feuillu",
+  years = NULL,
   precomputed = NULL,
   ...
 )
@@ -30,21 +31,30 @@ regen_bilan_hydrique(
 
 - meteo:
 
-  Optional SAFRAN/ERA5 forcing (for the engine path).
+  SAFRAN/ERA5 forcing for the engine path: a single `meteo` `data.frame`
+  (applied to every unit) or a named list keyed by unit id.
 
 - sol:
 
-  Optional soil description (`biljou_soil()` inputs: extractable water
-  `ewm`, root fractions `roots`).
+  A
+  [`biljouR::biljou_soil()`](https://pobsteta.github.io/biljouR/reference/biljou_soil.html)
+  object (extractable water `ewm`, root fractions `roots`, …).
 
 - lai_max:
 
-  Optional per-unit maximum LAI (from
-  [`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)).
+  Per-unit maximum LAI (e.g. derived from
+  [`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)):
+  a scalar, a length-`nrow(units)` vector, or a named list by id.
 
 - forest_type:
 
-  Character, `"feuillu"` / `"resineux"` (phenology).
+  Phenology: `"feuillu"`/`"broadleaved"` or `"resineux"`/`"coniferous"`
+  (mapped to BILJOU's `broadleaved`/`coniferous`).
+
+- years:
+
+  Optional integer years to keep from the BILJOU indices before
+  averaging (default: all years in the run).
 
 - precomputed:
 
@@ -53,19 +63,28 @@ regen_bilan_hydrique(
 
 - ...:
 
-  Reserved (engine parameters).
+  Passed to
+  [`biljouR::biljou_run()`](https://pobsteta.github.io/biljouR/reference/biljou_run.html)
+  (e.g. `budburst`, `leaf_fall`, `rew_c`, `k`).
 
 ## Value
 
-`units` with the water-balance columns present in `precomputed`
-(`njstress`, `istress`, `rew_min`, `deb_stress`).
+`units` with the water-balance columns `njstress`, `istress`, `rew_min`,
+`deb_stress` (per-unit mean over the retained years).
 
 ## Details
 
-**Scaffold with a pure fast-path**: pass `precomputed` (the per-unit
-output of a BILJOU run) and the metrics are attached to `units` as the
-§7 columns, **without** the GPL engine. Without `precomputed`, the full
-`biljouR` orchestration is not yet wired; the function fails cleanly.
+**Two paths.** *Fast-path*: pass `precomputed` (the per-unit output of a
+BILJOU run) and the metrics are attached to `units` as the §7 columns,
+**without** the GPL engine. *Engine path*: builds unit-centroid points,
+runs
+[`biljouR::biljou_run_grid()`](https://pobsteta.github.io/biljouR/reference/biljou_run_grid.html)
+(per-point BILJOU forced by `meteo`), and aggregates the per-year
+drought indices to the mean per unit — mapping
+`NJstress`/`Istress`/`DEBstress`/`min_rew` to
+`njstress`/`istress`/`deb_stress`/`rew_min`. It needs `meteo`, a soil
+(`sol`) and per-unit `lai_max`; with SAFRAN/LiDAR inputs it is **not
+runnable in CI** — validated on real data.
 
 ## See also
 

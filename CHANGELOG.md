@@ -12,6 +12,25 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.126.0\] - 2026-07-03
+
+### Added
+
+- Real
+  [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
+  BILJOU engine (spec 027 L2, increment C/3): the engine path is now
+  wired via the `biljouR` API — unit centroids → `biljou_run_grid()`
+  (per-point BILJOU forced by `meteo`) → per-unit mean over years,
+  mapping `NJstress`/`Istress`/`DEBstress`/`min_rew` to the §7 columns
+  `njstress`/`istress`/`deb_stress`/`rew_min`. `forest_type`
+  feuillu/resineux mapped to broadleaved/coniferous; phenology forwarded
+  via `...`; new `years` arg; failed points degrade to NA. `biljouR` in
+  Suggests + Remotes, guarded by `requireNamespace`; `precomputed`
+  pass-through preserved. Unlike PAI/microclimf, this engine path is
+  CI-tested (biljouR ships the `meteo_hesse` example, so the full
+  orchestration runs offline). Completes the reGénération engine
+  porting: all three engines (lasR / microclimf / biljouR) are now real.
+
 ## \[0.125.0\] - 2026-07-03
 
 ### Added

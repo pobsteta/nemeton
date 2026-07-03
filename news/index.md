@@ -1,5 +1,35 @@
 # Changelog
 
+## nemeton 0.126.0 (2026-07-03)
+
+#### Added — Moteur BILJOU réel (spec 027 L2, incrément C/3) — les 3 moteurs reGénération sont portés
+
+**[`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)**
+n’est plus un scaffold : le chemin moteur est **câblé à biljouR** (pas
+de prototype — orchestration via l’API du paquet). Centroïdes des unités
+→
+[`biljouR::biljou_run_grid()`](https://pobsteta.github.io/biljouR/reference/biljou_run_grid.html)
+(BILJOU par point forcé par `meteo` SAFRAN/ERA5) → agrégation **moyenne
+inter-annuelle par unité** des indices, avec mapping
+`NJstress`/`Istress`/`DEBstress`/`min_rew` → `njstress`/`istress`/
+`deb_stress`/`rew_min` (colonnes §7). `forest_type` `feuillu`/`resineux`
+mappé vers `broadleaved`/`coniferous` ; phénologie (`budburst`,
+`leaf_fall`, …) transmise via `...` ; nouvel argument `years`.
+Dégradation propre : point en échec → NA (jamais d’abort dur). `biljouR`
+en Suggests + Remotes (`pobsteta/biljouR`), gardé par `requireNamespace`
+; pass-through `precomputed` conservé.
+
+**Contrairement à PAI/microclimf, ce chemin moteur EST testé en CI** :
+biljouR fournit la meteo d’exemple `meteo_hesse`, donc l’orchestration
+complète tourne hors réseau (résineux + feuillu avec phénologie, mapping
+des 4 indices, chaînage R3). 31 tests moteurs.
+
+Fin du portage : les **3 moteurs reGénération** (`pai_depuis_nuage`
+lasR, `regen_sensibilite` microclimf, `regen_bilan_hydrique` biljouR)
+sont **réels**. Reste le brief app (déclenchement au bouton « Lancer
+l’analyse », opt-in) et la validation Pascal des chemins LiDAR/ERA5
+(A/B) sur données réelles.
+
 ## nemeton 0.125.0 (2026-07-03)
 
 #### Added — Moteur microclimf réel (spec 027 L1, incrément B/3 du portage moteurs)
