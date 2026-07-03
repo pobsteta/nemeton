@@ -1015,13 +1015,14 @@ dépérissement), pas de 13e famille (radar 12 axes). Mode augmenté
 [`bdforet_v2_mapping()`](https://pobsteta.github.io/nemeton/reference/bdforet_v2_mapping.md)) +
 `regen_species_choices(tfv_col=)` (mode espèces FRM, présence UGF via
 TFV) + `indice_priorite_regen(species=)` résout classe **et** espèce UE.
-L’app pré-remplit « Essence cible » depuis BD Forêt v2. - **Pondération
-continue FORDEAD/RECONFORT** (R5) : *à confirmer non couvert* —
-aujourd’hui routage **discret** par part d’essence
-(`.resolve_reconfort_share()`), pas de blend continu des deux signaux. À
-ouvrir seulement si réellement voulu. - Orchestration RÉELLE des moteurs
-(microclimf/biljouR/lasR/SAFRAN) : chez Pascal (deps + données), via le
-chemin `precomputed` déjà en place.
+L’app pré-remplit « Essence cible » depuis BD Forêt v2. - Orchestration
+RÉELLE des moteurs (microclimf/biljouR/lasR/SAFRAN) : chez Pascal
+(deps + données), via le chemin `precomputed` déjà en place.
+
+**Volet cœur spec 027 : clos.** Tout le calculable/testable est livré et
+releasé (v0.101.0 → v0.121.0). Reste hors-cœur : l’orchestration réelle
+des moteurs (chez Pascal). Calibration fine (ClimEssences/RMT AFORCE) :
+non retenue, table UE sourcée jugée suffisante.
 
 #### 2026-06-30 — L1 cœur : indicateurs microclimatiques A3/A4/W4 (`v0.101.0`)
 
@@ -1721,8 +1722,7 @@ NAMESPACE + 4 man + pkgdown.
 - **Item cœur mapping TFV → essence** : **livré depuis v0.121.0**
   ([`map_tfv_to_species_class()`](https://pobsteta.github.io/nemeton/reference/map_tfv_to_species_class.md) +
   `regen_species_choices(tfv_col=)`) — l’app peut pré-remplir « Essence
-  cible » depuis BD Forêt v2. **Résidu à confirmer** : pondération
-  continue FORDEAD/RECONFORT (plan de validation-échantillonnage).
+  cible » depuis BD Forêt v2. **Volet cœur spec 027 clos.**
 
 ### 2026-07-03 — Added v0.120.0 : table tolérances essences européennes (spec 027, calibration, incrément 1/3)
 
@@ -1746,15 +1746,11 @@ Statuts `frm_1999`(47)/`frm_2025`(17)/`atlas_jrc`(130), colonne
 (11 classes UGF + 193 espèces cible) ; (2) sélecteur = FRM par défaut,
 Atlas replié ; (3) axe ombre = **contexte affiché**, pas dans l’indice.
 
-**Reste incréments 2/3** :
+**Suite livrée v0.121.0** :
 [`regen_species_choices()`](https://pobsteta.github.io/nemeton/reference/regen_species_choices.md)
-étendu aux espèces FRM (present-UGF via mapping classe→espèces, Atlas
-replié flag confiance/invasif) ; `indice_priorite_regen(species=)`
-résout sur la table par-espèce + expose la confiance ; brief onglet §4.1
-mis à jour ; **mapping TFV/BD Forêt v2 → essence de régénération**
-(relier
-[`bdforet_v2_mapping()`](https://pobsteta.github.io/nemeton/reference/bdforet_v2_mapping.md)
-aux essences — logique cœur).
+étendu aux espèces FRM + `indice_priorite_regen(species=)`
+double-table + mapping TFV → essence. **Volet cœur spec 027 clos** (pas
+d’incrément de calibration supplémentaire retenu).
 
 ### 2026-07-03 — Added v0.119.0 : sélecteur essence cible reGénération (spec 027 §10.1, 5e incrément)
 
