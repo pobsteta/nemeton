@@ -1677,6 +1677,29 @@ cœur).
 
 ## Journal
 
+### 2026-07-03 — Added v0.123.0 : acquisition forêt ancienne état-major pour N2 (spec 031, item cœur 1/3)
+
+**`load_foret_ancienne_source(aoi, crs)`** livré. L’app (nemetonshiny)
+est déjà câblée (`.fetch_foret_ancienne_auto` →
+`getExportedValue("nemeton", "load_foret_ancienne_source")`) : dès
+export cœur, elle consomme sans bump.
+
+- **Arbitrage source (Pascal, 2026-07-03)** : produit officiel « BD
+  Forêts anciennes » (Nature=ancienne) = **download-only** (GPKG dépt
+  `.7z`, pas de WFS — confirmé via `happign` : seul l’état-major brut
+  est en WFS ; URL de téléchargement non vérifiable via web = bloquée).
+  → on prend l’**ingrédient état-major ~1850** (`c_1_1_ocs_ancien`,
+  EM9.1=forêt, vérifié Fontainebleau/ Beauce) atteignable en WFS. N2
+  recroise avec l’actuel ⇒ continuité émerge.
+- Délègue la finalisation à
+  [`build_foret_ancienne_mask()`](https://pobsteta.github.io/nemeton/reference/build_foret_ancienne_mask.md)
+  ; dégradation `NULL` ; `sf` 0-ligne hors forêt ; `happign` en
+  Suggests. **Smoke réel validé** (Fontainebleau 800 ha clippés). Tests
+  CI = `get_wfs` mocké (16 PASS).
+- Reste 2 items cœur spec 027 briefés : extraction E-OBS estivale
+  (`microclimate_detect_years`) ; mapping TFV→essence (partiellement
+  fait via `map_tfv_to_species_class`, à confirmer côté « not wired »).
+
 ### 2026-07-03 — Chantier : portage des 3 moteurs reGénération dans le cœur (spec 027 L1b)
 
 **Décision Pascal** : câbler l’orchestration RÉELLE des 3 moteurs

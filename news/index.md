@@ -1,5 +1,34 @@
 # Changelog
 
+## nemeton 0.123.0 (2026-07-03)
+
+#### Added — Acquisition forêt ancienne (~1850) pour N2 (spec 031, item cœur 1)
+
+**`load_foret_ancienne_source(aoi, crs = 2154)`** : récupère la
+couverture forestière **~1850** depuis la carte de l’**état-major IGN**
+(BD Carto État-Major, couche WFS
+`BDCARTO_ETAT-MAJOR.NIVEAU3:c_1_1_ocs_ancien`, Etalab 2.0) via
+`happign`, clippée sur l’AOI, et la renvoie comme couche
+`foret_ancienne` de
+[`indicateur_n2_continuite()`](https://pobsteta.github.io/nemeton/reference/indicateur_n2_continuite.md)
+(aucun changement de signature N2). Sortie standardisée par
+[`build_foret_ancienne_mask()`](https://pobsteta.github.io/nemeton/reference/build_foret_ancienne_mask.md)
+(`foret_ancienne = TRUE`).
+
+**Choix de source (arbitré)** : le produit officiel « BD Forêts
+anciennes » (Nature=ancienne, état-major × BD Forêt v2) est
+*download-only* (GeoPackage départemental `.7z`, pas de WFS — confirmé
+via `happign`). On utilise l’**ingrédient état-major ~1850**
+(atteignable en WFS) ; comme N2 recroise cette couche avec les UGF
+actuelles, la **continuité** (« forêt hier *et* aujourd’hui ») émerge de
+l’indicateur lui-même — proxy défendable, livrable sans le blocage 7z.
+
+Dégradation propre : `NULL` (réseau absent, `happign` absent, erreur
+WFS, hors-métropole) → l’app retombe sur N2 couverture actuelle ; `sf`
+0-ligne quand l’AOI n’a pas de forêt ~1850. `happign` en Suggests, gardé
+par `requireNamespace`. Chemin WFS réel validé sur emprise Fontainebleau
+(non jouable en CI : tests via `get_wfs` mocké).
+
 ## nemeton 0.122.0 (2026-07-03)
 
 #### Added — Moteur PAI réel (spec 027 L1, incrément A/3 du portage moteurs)

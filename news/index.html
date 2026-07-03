@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.122.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.123.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.123.0" id="nemeton-01230-2026-07-03">nemeton 0.123.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01230-2026-07-03"></a></h2>
+<div class="section level4">
+<h4 id="added--acquisition-forêt-ancienne-pour-n2-spec-item-cœur-0-123-0">Added — Acquisition forêt ancienne (~1850) pour N2 (spec 031, item cœur 1)<a class="anchor" aria-label="anchor" href="#added--acquisition-for%C3%AAt-ancienne-pour-n2-spec-item-c%C5%93ur-0-123-0"></a></h4>
+<p><strong><code>load_foret_ancienne_source(aoi, crs = 2154)</code></strong> : récupère la couverture forestière <strong>~1850</strong> depuis la carte de l’<strong>état-major IGN</strong> (BD Carto État-Major, couche WFS <code>BDCARTO_ETAT-MAJOR.NIVEAU3:c_1_1_ocs_ancien</code>, Etalab 2.0) via <code>happign</code>, clippée sur l’AOI, et la renvoie comme couche <code>foret_ancienne</code> de <code><a href="../reference/indicateur_n2_continuite.html">indicateur_n2_continuite()</a></code> (aucun changement de signature N2). Sortie standardisée par <code><a href="../reference/build_foret_ancienne_mask.html">build_foret_ancienne_mask()</a></code> (<code>foret_ancienne = TRUE</code>).</p>
+<p><strong>Choix de source (arbitré)</strong> : le produit officiel « BD Forêts anciennes » (Nature=ancienne, état-major × BD Forêt v2) est <em>download-only</em> (GeoPackage départemental <code>.7z</code>, pas de WFS — confirmé via <code>happign</code>). On utilise l’<strong>ingrédient état-major ~1850</strong> (atteignable en WFS) ; comme N2 recroise cette couche avec les UGF actuelles, la <strong>continuité</strong> (« forêt hier <em>et</em> aujourd’hui ») émerge de l’indicateur lui-même — proxy défendable, livrable sans le blocage 7z.</p>
+<p>Dégradation propre : <code>NULL</code> (réseau absent, <code>happign</code> absent, erreur WFS, hors-métropole) → l’app retombe sur N2 couverture actuelle ; <code>sf</code> 0-ligne quand l’AOI n’a pas de forêt ~1850. <code>happign</code> en Suggests, gardé par <code>requireNamespace</code>. Chemin WFS réel validé sur emprise Fontainebleau (non jouable en CI : tests via <code>get_wfs</code> mocké).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.122.0" id="nemeton-01220-2026-07-03">nemeton 0.122.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01220-2026-07-03"></a></h2>
 <div class="section level4">

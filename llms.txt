@@ -874,6 +874,10 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`load_fordead_validity_zones()`](https://pobsteta.github.io/nemeton/reference/load_fordead_validity_zones.md)
   : Load the FORDEAD validity zones layer
 
+- [`load_foret_ancienne_source()`](https://pobsteta.github.io/nemeton/reference/load_foret_ancienne_source.md)
+  : Acquire the IGN historical-forest (~1850 état-major) layer for an
+  AOI
+
 - [`load_raster_source()`](https://pobsteta.github.io/nemeton/reference/load_raster_source.md)
   : Load a raster datasource as a SpatRaster
 
