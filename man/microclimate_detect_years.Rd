@@ -4,15 +4,21 @@
 \alias{microclimate_detect_years}
 \title{Detect the average / heatwave reference years for R6 (spec 027 §6bis)}
 \usage{
-microclimate_detect_years(eobs = NULL, aoi = NULL, year_window = NULL,
-  lidar_year = NULL)
+microclimate_detect_years(eobs = NULL, aoi = NULL, years = NULL,
+  year_window = NULL, lidar_year = NULL)
 }
 \arguments{
-\item{eobs}{The E-OBS summer-heat series. A \strong{named numeric}
-(\code{year -> summer-heat index}, e.g. mean JJA Tmax) is used directly;
-raster/netcdf extraction over \code{aoi} is deferred (data-bound).}
+\item{eobs}{The E-OBS summer-heat series. Either a \strong{named numeric}
+(\code{year -> summer-heat index}, e.g. mean JJA Tmax), used directly, or a
+\strong{per-year summer \code{SpatRaster}} (one layer per year, JJA-aggregated
+— same contract as \code{tx} in \code{\link{tendances_estivales_eobs}}): each
+layer is averaged over \code{aoi} to give the yearly index.}
 
-\item{aoi}{Optional \code{sf}/\code{sfc} AOI (used by the deferred raster path).}
+\item{aoi}{Optional \code{sf}/\code{sfc} AOI. When \code{eobs} is a
+\code{SpatRaster} it is cropped + masked to the units' union before averaging.}
+
+\item{years}{Optional integer years, one per \code{SpatRaster} layer (default:
+the layer names parsed as integers). Ignored for the named-numeric path.}
 
 \item{year_window}{Optional. A single integer \code{n} (last \code{n} years) or a
 \code{c(from, to)} range to restrict the candidate years.}
@@ -32,5 +38,5 @@ over the AOI. Auto-detection is the default; the result is meant to
 pre-fill the app's two year selectors, which the user can override.
 }
 \seealso{
-\code{\link{indicateur_r6_sensibilite}}
+\code{\link{indicateur_r6_sensibilite}}, \code{\link{tendances_estivales_eobs}}
 }

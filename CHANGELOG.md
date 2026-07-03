@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.124.0] - 2026-07-03
+
+### Changed
+- `microclimate_detect_years()` (spec 027 L2, core item 2) now accepts a per-year
+  summer `SpatRaster` E-OBS input (one layer per year, JJA-aggregated) in addition
+  to the precomputed named-numeric series: each layer is cropped + masked to the
+  AOI (units' union) and averaged (`terra::global`) into the yearly summer-heat
+  index feeding the average/heatwave year selection for
+  `indicateur_r6_sensibilite()`. Years come from layer names or a new `years`
+  argument. This wires the previously deferred E-OBS raster path. Backward
+  compatible; testable offline (20 tests, incl. AOI crop/mask).
+
 ## [0.123.0] - 2026-07-03
 
 ### Added

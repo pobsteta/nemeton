@@ -41,16 +41,47 @@
 }
 
 
-# Resolve a per-year summer-heat index from `eobs`. Supports a precomputed
-# named numeric (year -> heat) directly; raster/netcdf extraction over the
-# AOI is deferred (data-bound, requires the E-OBS series — spec 027).
-.eobs_summer_heat <- function(eobs, aoi = NULL, year_window = NULL) {
+# Resolve a per-year summer-heat index from `eobs`. Supports either a
+# precomputed named numeric (year -> heat) directly, or a per-year summer
+# `SpatRaster` (one layer per year, JJA-aggregated, same contract as the `tx`
+# input of `tendances_estivales_eobs`): the AOI-mean of each layer gives the
+# yearly heat index. Years come from `years` or the layer names.
+.eobs_summer_heat <- function(eobs, aoi = NULL, years = NULL, year_window = NULL) {
   if (is.numeric(eobs) && !is.null(names(eobs))) {
     heat <- eobs
+  } else if (inherits(eobs, "SpatRaster")) {
+    if (!requireNamespace("terra", quietly = TRUE)) {
+      cli::cli_abort("E-OBS raster extraction needs the {.pkg terra} package.")
+    }
+    r <- eobs
+    # Restreindre à l'emprise si fournie (crop + mask sur l'union des UGF).
+    if (!is.null(aoi)) {
+      if (!inherits(aoi, c("sf", "sfc"))) {
+        cli::cli_abort("{.arg aoi} must be an sf/sfc when {.arg eobs} is a SpatRaster.")
+      }
+      av <- terra::vect(sf::st_transform(
+        sf::st_union(sf::st_geometry(aoi)), terra::crs(r)))
+      r <- terra::mask(terra::crop(r, av, snap = "out"), av)
+    }
+    # Indice de chaleur estivale par an = moyenne spatiale de la couche sur l'AOI.
+    vals <- terra::global(r, "mean", na.rm = TRUE)[[1L]]
+    if (is.null(years)) years <- suppressWarnings(as.integer(names(r)))
+    if (length(years) != length(vals) || anyNA(years)) {
+      cli::cli_abort(c(
+        "Cannot resolve one year per E-OBS layer.",
+        i = "Name the {.cls SpatRaster} layers with years, or pass {.arg years}."))
+    }
+    heat <- stats::setNames(vals, as.character(as.integer(years)))
+    heat <- heat[is.finite(heat)]
+    if (length(heat) < 2L) {
+      cli::cli_abort(c(
+        "E-OBS raster yielded < 2 usable yearly summer values over the AOI.",
+        i = "Widen the AOI, check layer NA coverage, or pass a named numeric {.arg eobs}."))
+    }
   } else {
     cli::cli_abort(c(
-      "E-OBS summer-heat extraction from a raster/netcdf is not wired yet (spec 027 L2).",
-      i = "Pass {.arg eobs} as a named numeric (year -> summer heat index), or set {.arg year_moyenne}/{.arg year_canicule} manually."))
+      "E-OBS summer-heat must be a named numeric (year -> heat) or a per-year summer {.cls SpatRaster}.",
+      i = "Pass {.arg eobs} accordingly, or set {.arg year_moyenne}/{.arg year_canicule} manually."))
   }
   if (!is.null(year_window)) {
     yrs <- suppressWarnings(as.integer(names(heat)))
@@ -73,10 +104,15 @@
 #' over the AOI. Auto-detection is the default; the result is meant to
 #' pre-fill the app's two year selectors, which the user can override.
 #'
-#' @param eobs The E-OBS summer-heat series. A **named numeric**
-#'   (`year -> summer-heat index`, e.g. mean JJA Tmax) is used directly;
-#'   raster/netcdf extraction over `aoi` is deferred (data-bound).
-#' @param aoi Optional `sf`/`sfc` AOI (used by the deferred raster path).
+#' @param eobs The E-OBS summer-heat series. Either a **named numeric**
+#'   (`year -> summer-heat index`, e.g. mean JJA Tmax), used directly, or a
+#'   **per-year summer `SpatRaster`** (one layer per year, JJA-aggregated —
+#'   same contract as `tx` in [tendances_estivales_eobs()]): each layer is
+#'   averaged over `aoi` to give the yearly index.
+#' @param aoi Optional `sf`/`sfc` AOI. When `eobs` is a `SpatRaster` it is
+#'   cropped + masked to the units' union before averaging.
+#' @param years Optional integer years, one per `SpatRaster` layer (default:
+#'   the layer names parsed as integers). Ignored for the named-numeric path.
 #' @param year_window Optional. A single integer `n` (last `n` years) or a
 #'   `c(from, to)` range to restrict the candidate years.
 #' @param lidar_year Optional integer; on a tie for the average year,
@@ -85,15 +121,16 @@
 #'
 #' @return A list: `year_moyenne`, `year_canicule` (integers) and `index`
 #'   (named numeric, the summer-heat index per candidate year).
-#' @seealso [indicateur_r6_sensibilite()]
+#' @seealso [indicateur_r6_sensibilite()], [tendances_estivales_eobs()]
 #' @export
-microclimate_detect_years <- function(eobs = NULL, aoi = NULL,
+microclimate_detect_years <- function(eobs = NULL, aoi = NULL, years = NULL,
                                       year_window = NULL, lidar_year = NULL) {
   if (is.null(eobs)) {
     cli::cli_abort(c(
       "microclimate_detect_years() needs an E-OBS summer series.",
-      i = "Pass {.arg eobs} (named numeric year -> summer heat), or set the years manually."))
+      i = "Pass {.arg eobs} (named numeric year -> summer heat, or a per-year summer SpatRaster), or set the years manually."))
   }
-  heat <- .eobs_summer_heat(eobs, aoi = aoi, year_window = year_window)
+  heat <- .eobs_summer_heat(eobs, aoi = aoi, years = years,
+                            year_window = year_window)
   .select_years(heat, lidar_year = lidar_year)
 }

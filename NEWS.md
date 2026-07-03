@@ -1,3 +1,24 @@
+# nemeton 0.124.0 (2026-07-03)
+
+### Changed — Extraction E-OBS estivale câblée dans microclimate_detect_years() (spec 027 L2, item cœur 2)
+
+**`microclimate_detect_years(eobs, aoi, years, …)`** accepte désormais un
+**`SpatRaster` E-OBS par-année** (une couche par an, JJA agrégé — même contrat
+que `tx` de `tendances_estivales_eobs()`), plus seulement un named numeric
+pré-calculé. Chaque couche est **croppée + masquée sur l'AOI** (union des UGF)
+puis moyennée (`terra::global`) → indice de chaleur estivale par an, qui alimente
+la sélection année moyenne / canicule de `indicateur_r6_sensibilite()`. Les
+années viennent des noms de couches ou du nouvel argument `years`. C'était le
+chemin « not wired yet » du L2 (l'app pré-remplit ainsi ses deux sélecteurs
+d'années depuis l'Auto E-OBS de reGénération).
+
+Rétrocompatible : le chemin named numeric (`year -> heat`) est inchangé.
+Testable hors réseau (raster synthétique) — 20 tests, dont crop/mask sur l'AOI.
+
+**Note** : l'item cœur « mapping TFV → essence de régénération »
+(`map_tfv_to_species_class()` ↔ `regeneration_tolerances()`) était **déjà livré**
+en v0.121.0 (exporté, documenté, testé) — rien à ajouter.
+
 # nemeton 0.123.0 (2026-07-03)
 
 ### Added — Acquisition forêt ancienne (~1850) pour N2 (spec 031, item cœur 1)

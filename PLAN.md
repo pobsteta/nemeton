@@ -1264,6 +1264,21 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-03 — Changed v0.124.0 : extraction E-OBS raster câblée + item TFV confirmé (spec 027, items cœur 2 & 3)
+
+**3 items cœur spec 027/031 traités ce jour** (tous briefés côté nemetonshiny) :
+
+- **Item 1 — forêt ancienne** : `load_foret_ancienne_source()` (v0.123.0, ci-dessous).
+- **Item 2 — E-OBS estival** : `microclimate_detect_years()` accepte un SpatRaster
+  E-OBS par-année (crop+mask AOI → moyenne JJA/an → sélection moyenne/canicule).
+  Le « not wired yet » du L2 est levé. Rétrocompatible, 20 tests (dont crop/mask).
+- **Item 3 — mapping TFV→essence** : **déjà livré v0.121.0**
+  (`map_tfv_to_species_class` exporté/documenté/testé, consommé par
+  `regen_species_choices`). Aucune action — confirmé complet.
+
+Les 3 items cœur des briefs reGénération sont **soldés**. Reste le portage des
+moteurs (inc B microclimf / C biljouR, après validation PAI) + le brief app D.
+
 ### 2026-07-03 — Added v0.123.0 : acquisition forêt ancienne état-major pour N2 (spec 031, item cœur 1/3)
 
 **`load_foret_ancienne_source(aoi, crs)`** livré. L'app (nemetonshiny) est déjà
