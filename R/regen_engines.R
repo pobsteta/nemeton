@@ -11,8 +11,8 @@
 #   * sinon, tente le moteur si présent, ou ÉCHOUE PROPREMENT (message
 #     actionnable) — jamais d'erreur de chargement de package.
 #
-# NB biljouR n'est pas encore déclaré en `Suggests`/`Remotes` (dépôt à confirmer
-# par Pascal) : il est gardé uniquement via requireNamespace().
+# biljouR est déclaré en `Suggests` + `Remotes` (pobsteta/biljouR) ; il reste
+# chargé via requireNamespace() (dépendance optionnelle, dégradation propre).
 
 # Colonnes de sortie §7 par moteur (contrat).
 .REGEN_COLS_HYDRIQUE <- c("njstress", "istress", "rew_min", "deb_stress")
@@ -89,7 +89,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   if (!requireNamespace("biljouR", quietly = TRUE)) {
     cli::cli_abort(c(
       "regen_bilan_hydrique() needs the {.pkg biljouR} package for the engine path.",
-      i = "Install biljouR (BILJOU, GPL-3), or pass a precomputed BILJOU output via {.arg precomputed}."
+      i = "Install it with {.code remotes::install_github(\"pobsteta/biljouR\")}, or pass a precomputed BILJOU output via {.arg precomputed}."
     ))
   }
   cli::cli_abort(c(

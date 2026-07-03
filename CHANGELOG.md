@@ -10,6 +10,14 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.121.1] - 2026-07-03
+
+### Changed
+- Declared `biljouR` in `Suggests` + `Remotes` (`pobsteta/biljouR`): the
+  BILJOU water-balance engine used by `regen_bilan_hydrique()` is now an
+  official optional dependency (still loaded via `requireNamespace()` with clean
+  degradation). The engine-path error message points to the repository.
+
 ## [0.121.0] - 2026-07-03
 
 ### Added
