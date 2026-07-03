@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.127.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.127.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,13 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.127.1" id="nemeton-01271-2026-07-03">nemeton 0.127.1 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01271-2026-07-03"></a></h2>
+<div class="section level4">
+<h4 id="fixed--agrégation-par-unité-du-moteur-microclimf-via-exactextractr-0-127-1">Fixed — Agrégation par unité du moteur microclimf via exactextractr<a class="anchor" aria-label="anchor" href="#fixed--agr%C3%A9gation-par-unit%C3%A9-du-moteur-microclimf-via-exactextractr-0-127-1"></a></h4>
+<p><code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code> (chemin moteur) agrégeait les rasters par unité avec <code><a href="https://rspatial.github.io/terra/reference/extract.html" class="external-link">terra::extract</a></code> (échantillonnage au centroïde/cellule), incohérent avec le reste du paquet. Il utilise désormais le helper <code>.micro_extract()</code> (<strong>exactextractr</strong>, déjà en Imports) : moyennes <strong>pondérées par le recouvrement exact</strong> cellule/UGF, et <code>couverture_pct</code> = <strong>fraction exacte non-NA</strong> sur l’emprise de l’unité — plus précis aux bords de parcelle. Chemin <code>precomputed</code> inchangé.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.127.0" id="nemeton-01270-2026-07-03">nemeton 0.127.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01270-2026-07-03"></a></h2>
 <div class="section level4">

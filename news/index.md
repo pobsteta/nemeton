@@ -1,5 +1,19 @@
 # Changelog
 
+## nemeton 0.127.1 (2026-07-03)
+
+#### Fixed — Agrégation par unité du moteur microclimf via exactextractr
+
+[`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+(chemin moteur) agrégeait les rasters par unité avec
+[`terra::extract`](https://rspatial.github.io/terra/reference/extract.html)
+(échantillonnage au centroïde/cellule), incohérent avec le reste du
+paquet. Il utilise désormais le helper `.micro_extract()`
+(**exactextractr**, déjà en Imports) : moyennes **pondérées par le
+recouvrement exact** cellule/UGF, et `couverture_pct` = **fraction
+exacte non-NA** sur l’emprise de l’unité — plus précis aux bords de
+parcelle. Chemin `precomputed` inchangé.
+
 ## nemeton 0.127.0 (2026-07-03)
 
 #### Added — Consolidation multi-époques de la forêt ancienne pour N2 (paliers d’ancienneté, spec 031)

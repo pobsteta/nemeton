@@ -12,6 +12,18 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.127.1\] - 2026-07-03
+
+### Fixed
+
+- [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+  engine path now aggregates rasters per unit via `exactextractr` (the
+  `.micro_extract()` helper) instead of
+  [`terra::extract`](https://rspatial.github.io/terra/reference/extract.html):
+  coverage-weighted means and an exact non-NA `couverture_pct` at parcel
+  boundaries, consistent with the A3/A4/W4 microclimate indicators.
+  `precomputed` path unchanged.
+
 ## \[0.127.0\] - 2026-07-03
 
 ### Added
