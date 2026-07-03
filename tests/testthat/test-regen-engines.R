@@ -34,7 +34,67 @@ test_that("regen_bilan_hydrique feeds r3 enrichment end-to-end (precomputed)", {
 
 test_that("regen_bilan_hydrique fails cleanly without engine nor precomputed", {
   u <- .re_units(1)
-  expect_error(regen_bilan_hydrique(u), "biljouR")
+  # Selon que biljouR est installé (Remotes) ou non, l'échec propre tombe soit
+  # sur le paquet manquant, soit sur les entrées moteur manquantes.
+  expect_error(regen_bilan_hydrique(u), "biljouR|engine path")
+})
+
+test_that("regen_bilan_hydrique engine path validates missing forcing inputs", {
+  skip_if_not_installed("biljouR")
+  u <- .re_units(1)
+  expect_error(regen_bilan_hydrique(u, meteo = data.frame(x = 1)),
+               "engine path needs")
+})
+
+test_that("regen_bilan_hydrique rejects an unknown forest_type", {
+  skip_if_not_installed("biljouR")
+  u <- .re_units(1)
+  expect_error(
+    regen_bilan_hydrique(u, meteo = data.frame(x = 1), sol = list(), lai_max = 5,
+                         forest_type = "banane"),
+    "forest_type")
+})
+
+test_that("regen_bilan_hydrique runs BILJOU and maps indices per unit (real, offline)", {
+  skip_if_not_installed("biljouR")
+  utils::data("meteo_hesse", package = "biljouR")
+  soil <- biljouR::biljou_soil(ewm = 150)
+  u <- .re_units(2)
+  # Résineux (persistant) : pas de phénologie requise.
+  out <- regen_bilan_hydrique(u, meteo = meteo_hesse, sol = soil,
+                              lai_max = 5, forest_type = "resineux")
+  expect_s3_class(out, "sf")
+  expect_true(all(c("njstress", "istress", "rew_min", "deb_stress") %in% names(out)))
+  expect_equal(nrow(out), 2L)
+  expect_true(is.numeric(out$njstress) && all(is.finite(out$njstress)))
+  # Forçage uniforme -> les 2 unités partagent les mêmes valeurs.
+  expect_equal(out$njstress[[1]], out$njstress[[2]])
+  expect_equal(out$rew_min[[1]], out$rew_min[[2]])
+})
+
+test_that("regen_bilan_hydrique forwards phenology args to biljou_run via ...", {
+  skip_if_not_installed("biljouR")
+  utils::data("meteo_hesse", package = "biljouR")
+  soil <- biljouR::biljou_soil(ewm = 150)
+  u <- .re_units(1)
+  # Feuillu SANS budburst/leaf_fall -> biljou échoue par point -> NA (dégradation).
+  na_out <- regen_bilan_hydrique(u, meteo = meteo_hesse, sol = soil,
+                                 lai_max = 5, forest_type = "feuillu")
+  expect_true(is.na(na_out$njstress[[1]]))
+  # AVEC budburst/leaf_fall passés par ... -> valeur réelle.
+  ok_out <- regen_bilan_hydrique(u, meteo = meteo_hesse, sol = soil,
+                                 lai_max = 5, forest_type = "feuillu",
+                                 budburst = 105L, leaf_fall = 300L)
+  expect_true(is.finite(ok_out$njstress[[1]]))
+})
+
+test_that("regen_bilan_hydrique output feeds indicateur_r3_secheresse", {
+  skip_if_not_installed("biljouR")
+  utils::data("meteo_hesse", package = "biljouR")
+  soil <- biljouR::biljou_soil(ewm = 150)
+  u <- regen_bilan_hydrique(.re_units(2), meteo = meteo_hesse, sol = soil,
+                            lai_max = 5, forest_type = "resineux")
+  expect_no_error(indicateur_r3_secheresse(u, dem = NULL))   # lit la colonne njstress
 })
 
 test_that("regen_sensibilite attaches precomputed exposure + derives d_tmax", {

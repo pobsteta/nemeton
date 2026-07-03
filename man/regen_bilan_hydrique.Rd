@@ -10,6 +10,7 @@ regen_bilan_hydrique(
   sol = NULL,
   lai_max = NULL,
   forest_type = "feuillu",
+  years = NULL,
   precomputed = NULL,
   ...
 )
@@ -17,24 +18,33 @@ regen_bilan_hydrique(
 \arguments{
 \item{units}{An \code{sf} of management units (UGF).}
 
-\item{meteo}{Optional SAFRAN/ERA5 forcing (for the engine path).}
+\item{meteo}{SAFRAN/ERA5 forcing for the engine path: a single \code{meteo}
+\code{data.frame} (applied to every unit) or a named list keyed by unit id.}
 
-\item{sol}{Optional soil description (\code{biljou_soil()} inputs: extractable
-water \code{ewm}, root fractions \code{roots}).}
+\item{sol}{A \code{biljouR::biljou_soil()} object (extractable water \code{ewm},
+root fractions \code{roots}, …).}
 
-\item{lai_max}{Optional per-unit maximum LAI (from \code{pai_depuis_nuage()}).}
+\item{lai_max}{Per-unit maximum LAI (e.g. derived from
+\code{pai_depuis_nuage()}): a scalar, a length-\code{nrow(units)} vector, or a
+named list by id.}
 
-\item{forest_type}{Character, \code{"feuillu"} / \code{"resineux"} (phenology).}
+\item{forest_type}{Phenology: \code{"feuillu"}/\code{"broadleaved"} or
+\code{"resineux"}/\code{"coniferous"} (mapped to BILJOU's
+\code{broadleaved}/\code{coniferous}).}
+
+\item{years}{Optional integer years to keep from the BILJOU indices before
+averaging (default: all years in the run).}
 
 \item{precomputed}{Optional per-unit BILJOU output (\code{data.frame}/list with
 any of \code{njstress}, \code{istress}, \code{rew_min}, \code{deb_stress}).
 Pure fast-path.}
 
-\item{...}{Reserved (engine parameters).}
+\item{...}{Passed to \code{biljouR::biljou_run()} (e.g. \code{budburst},
+\code{leaf_fall}, \code{rew_c}, \code{k}).}
 }
 \value{
-\code{units} with the water-balance columns present in \code{precomputed}
-(\code{njstress}, \code{istress}, \code{rew_min}, \code{deb_stress}).
+\code{units} with the water-balance columns \code{njstress}, \code{istress},
+\code{rew_min}, \code{deb_stress} (per-unit mean over the retained years).
 }
 \description{
 Per-unit soil water-balance metrics (relative extractable water, days of
@@ -44,10 +54,15 @@ hydric stress, drought intensity / onset) from the \strong{BILJOU} model
 its \code{biljou} argument) and \code{\link{indice_priorite_regen}}.
 }
 \details{
-\strong{Scaffold with a pure fast-path}: pass \code{precomputed} (the per-unit
+\strong{Two paths.} \emph{Fast-path}: pass \code{precomputed} (the per-unit
 output of a BILJOU run) and the metrics are attached to \code{units} as the §7
-columns, \strong{without} the GPL engine. Without \code{precomputed}, the full
-\code{biljouR} orchestration is not yet wired; the function fails cleanly.
+columns, \strong{without} the GPL engine. \emph{Engine path}: builds
+unit-centroid points, runs \code{biljouR::biljou_run_grid()} (per-point BILJOU
+forced by \code{meteo}), and aggregates the per-year drought indices to the mean
+per unit — mapping \code{NJstress}/\code{Istress}/\code{DEBstress}/\code{min_rew}
+to \code{njstress}/\code{istress}/\code{deb_stress}/\code{rew_min}. It needs
+\code{meteo}, a soil (\code{sol}) and per-unit \code{lai_max}; with SAFRAN/LiDAR
+inputs it is \strong{not runnable in CI} — validated on real data.
 }
 \seealso{
 \code{\link{indicateur_r3_secheresse}}, \code{\link{indice_priorite_regen}}
