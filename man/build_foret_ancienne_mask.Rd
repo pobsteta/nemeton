@@ -13,8 +13,9 @@ build_foret_ancienne_mask(
 )
 }
 \arguments{
-\item{source}{An sf/sfc of ancient-forest polygons, or a terra SpatRaster
-historical forest map.}
+\item{source}{An sf/sfc of ancient-forest polygons, a terra SpatRaster
+historical forest map, or a named list of several such sources (multi-epoch
+consolidation).}
 
 \item{forest_class}{Optional. Raster class value(s) that denote forest (used
 only when \code{source} is a SpatRaster). Selects the mask by membership.}
@@ -30,14 +31,16 @@ is NULL) — e.g. a forest-probability or greenness index.}
 NULL (default) keeps the source CRS.}
 }
 \value{
-An sf polygon layer with a single logical column \code{foret_ancienne = TRUE},
-ready to pass to \code{indicateur_n2_continuite(units, foret_ancienne = ...)}.
-May have 0 rows if no forest is found.
+An sf polygon layer with \code{foret_ancienne = TRUE}, ready to pass to
+\code{indicateur_n2_continuite(units, foret_ancienne = ...)}. For a list of
+sources it also carries \code{anciennete} (integer epoch-count tier) and
+\code{epoques} (the contributing epoch labels). May have 0 rows if no forest
+is found.
 }
 \description{
 Turns a historical forest source into the \code{foret_ancienne} polygon layer
 consumed by \code{\link{indicateur_n2_continuite}} (its \code{foret_ancienne}
-argument). Two source forms are accepted:
+argument). Three source forms are accepted:
 \itemize{
   \item an \pkg{sf}/\pkg{sfc} of already-vectorised ancient-forest polygons
     (e.g. a digitised Cassini / état-major map, or an IGN \dQuote{forêt
@@ -48,6 +51,13 @@ argument). Two source forms are accepted:
     (\code{threshold}), or, failing both, as \code{value > 0} — then
     polygonised, split into contiguous patches, area-filtered and returned as
     polygons.
+  \item a \strong{named list} of several sources (each a historical epoch,
+    e.g. \code{list(cassini = ..., etatmajor = ...)}): each is normalised to
+    forest and dissolved, then consolidated into a \strong{non-overlapping
+    tiered layer} with an integer \code{anciennete} column = the number of
+    epochs covering each polygon (higher = older, stronger continuity) and an
+    \code{epoques} label. Feeds the tier-weighted path of
+    \code{\link{indicateur_n2_continuite}}.
 }
 
 nemeton ships no French historical forest raster: the source is supplied by

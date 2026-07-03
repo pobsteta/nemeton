@@ -10,6 +10,7 @@ indicateur_n2_continuite(
   foret_ancienne = NULL,
   layers = NULL,
   column_name = "N2",
+  weight_anciennete = TRUE,
   lang = "en"
 )
 }
@@ -18,11 +19,19 @@ indicateur_n2_continuite(
 
 \item{bdforet}{sf object. Current forest cover (BD Foret V2). NULL = default score 50.}
 
-\item{foret_ancienne}{sf object. Historical forest cover (~1850). NULL = only use bdforet.}
+\item{foret_ancienne}{sf object. Historical forest cover. A single-epoch layer
+(e.g. état-major ~1850) or a \strong{tiered} layer from
+\code{\link{build_foret_ancienne_mask}} with an \code{anciennete} column
+(multi-epoch consolidation, e.g. Cassini + état-major). NULL = only use bdforet.}
 
 \item{layers}{nemeton_layers object. Used to resolve bdforet if not provided directly.}
 
 \item{column_name}{Character. Name for output column. Default "N2".}
+
+\item{weight_anciennete}{Logical. When \code{foret_ancienne} carries an
+\code{anciennete} tier column, weight the ancient-forest coverage by tier depth
+(forest present at more epochs counts more). Ignored for single-epoch layers.
+Default \code{TRUE}.}
 
 \item{lang}{Character. Message language. Default "en".}
 }
