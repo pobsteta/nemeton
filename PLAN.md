@@ -1264,6 +1264,25 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-03 — Added v0.127.0 : consolidation multi-époques forêt ancienne + paliers N2 (spec 031)
+
+Question Pascal : « pour N2 peut-on consolider avec Cassini ? ». Constat (happign) :
+**Cassini ~1750 n'existe qu'en raster** (scans AN/BnF), pas de vecteur forêt IGN.
+Décision : livrer la **capacité de consolidation multi-époques** côté cœur, prête
+pour toute couche Cassini vectorisée fournie, neutre sinon.
+
+- `build_foret_ancienne_mask(list(cassini=, etatmajor=))` → couche paliers
+  non-recouvrante (`anciennete` = nb d'époques via `st_intersection` auto-overlay).
+- `indicateur_n2_continuite(weight_anciennete=TRUE)` pondère par profondeur de
+  palier ; rétrocompatible (mono-époque = binaire). 12 tests.
+- Reste : obtenir un **vecteur Cassini** (digitalisation régionale) pour activer
+  réellement le palier ~1750. Voir [[project_foret_ancienne_source]].
+
+### 2026-07-03 — Livré v0.125.0 & v0.126.0 : moteurs microclimf (B) et BILJOU (C) réels
+
+Voir la section « portage des 3 moteurs » plus bas : incréments B (microclimf,
+v0.125.0) et C (biljouR, v0.126.0) livrés. Les 3 moteurs reGénération sont réels.
+
 ### 2026-07-03 — Changed v0.124.0 : extraction E-OBS raster câblée + item TFV confirmé (spec 027, items cœur 2 & 3)
 
 **3 items cœur spec 027/031 traités ce jour** (tous briefés côté nemetonshiny) :

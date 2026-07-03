@@ -89,9 +89,16 @@ indicateur_n1_distance <- function(units,
 #'
 #' @param units sf object (POLYGON) of spatial units to assess
 #' @param bdforet sf object. Current forest cover (BD Foret V2). NULL = default score 50.
-#' @param foret_ancienne sf object. Historical forest cover (~1850). NULL = only use bdforet.
+#' @param foret_ancienne sf object. Historical forest cover. A single-epoch layer
+#'   (e.g. état-major ~1850) or a **tiered** layer from
+#'   [build_foret_ancienne_mask()] with an `anciennete` column (multi-epoch
+#'   consolidation, e.g. Cassini + état-major). NULL = only use bdforet.
 #' @param layers nemeton_layers object. Used to resolve bdforet if not provided directly.
 #' @param column_name Character. Name for output column. Default "N2".
+#' @param weight_anciennete Logical. When `foret_ancienne` carries an
+#'   `anciennete` tier column, weight the ancient-forest coverage by tier depth
+#'   (forest present at more epochs counts more). Ignored for single-epoch
+#'   layers. Default `TRUE`.
 #' @param lang Character. Message language. Default "en".
 #'
 #' @return sf object with added column N2 (score 0-100)
@@ -102,6 +109,7 @@ indicateur_n2_continuite <- function(units,
                                              foret_ancienne = NULL,
                                              layers = NULL,
                                              column_name = "N2",
+                                             weight_anciennete = TRUE,
                                              lang = "en") {
   if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
 
@@ -159,7 +167,20 @@ indicateur_n2_continuite <- function(units,
                  error = function(e) NULL)
       )
       if (!is.null(inter_ancienne) && nrow(inter_ancienne) > 0) {
-        ancienne_area <- sum(as.numeric(sf::st_area(inter_ancienne)))
+        areas <- as.numeric(sf::st_area(inter_ancienne))
+        # Paliers d'ancienneté (spec 031) : quand la couche porte `anciennete`
+        # (consolidation multi-époques, ex. Cassini + état-major), on pondère
+        # par la profondeur du palier (forêt présente à + d'époques = plus
+        # ancienne = compte davantage). Sinon : couverture binaire (historique).
+        if (weight_anciennete && "anciennete" %in% names(inter_ancienne)) {
+          max_tier <- max(foret_ancienne$anciennete, na.rm = TRUE)
+          w <- if (is.finite(max_tier) && max_tier > 0) {
+            inter_ancienne$anciennete / max_tier
+          } else 1
+          ancienne_area <- sum(areas * w)
+        } else {
+          ancienne_area <- sum(areas)
+        }
         taux_ancienne <- min(1, ancienne_area / parcelle_area)
       }
     }
@@ -232,6 +253,13 @@ indicateur_n3_naturalite <- function(units,
 #'     mask is derived — by class membership (`forest_class`), by threshold
 #'     (`threshold`), or, failing both, as \code{value > 0} — then polygonised,
 #'     split into contiguous patches, area-filtered and returned as polygons.
+#'   \item a **named list** of several sources (each an sf/sfc/SpatRaster of a
+#'     historical epoch, e.g. `list(cassini = ..., etatmajor = ...)`): each is
+#'     normalised to forest and dissolved, then consolidated into a
+#'     **non-overlapping tiered layer** with an integer `anciennete` column =
+#'     the number of epochs covering each polygon (higher = older, stronger
+#'     continuity) and an `epoques` label. Ready for the tier-weighted path of
+#'     [indicateur_n2_continuite()].
 #' }
 #'
 #' nemeton ships no French historical forest raster: the source is supplied
@@ -239,8 +267,9 @@ indicateur_n3_naturalite <- function(units,
 #' usable source over France — it covers only the Middle East (spec 031); the
 #' French sources are Cassini / état-major scans or IGN forêt-ancienne layers.
 #'
-#' @param source An sf/sfc of ancient-forest polygons, or a terra SpatRaster
-#'   historical forest map.
+#' @param source An sf/sfc of ancient-forest polygons, a terra SpatRaster
+#'   historical forest map, or a named list of several such sources (multi-epoch
+#'   consolidation).
 #' @param forest_class Optional. Raster class value(s) that denote forest
 #'   (used only when `source` is a SpatRaster). Selects the mask by
 #'   membership.
@@ -253,10 +282,11 @@ indicateur_n3_naturalite <- function(units,
 #' @param crs Optional target CRS (anything accepted by [sf::st_transform()]).
 #'   NULL (default) keeps the source CRS.
 #'
-#' @return An sf polygon layer with a single logical column
-#'   `foret_ancienne = TRUE`, ready to pass to
-#'   `indicateur_n2_continuite(units, foret_ancienne = ...)`. May have 0 rows
-#'   if no forest is found.
+#' @return An sf polygon layer with `foret_ancienne = TRUE`, ready to pass to
+#'   `indicateur_n2_continuite(units, foret_ancienne = ...)`. For a list of
+#'   sources it also carries `anciennete` (integer epoch-count tier) and
+#'   `epoques` (the contributing epoch labels). May have 0 rows if no forest
+#'   is found.
 #'
 #' @export
 build_foret_ancienne_mask <- function(source,
@@ -280,6 +310,55 @@ build_foret_ancienne_mask <- function(source,
     }
     sf::st_sf(foret_ancienne = rep(TRUE, nrow(fa)),
               geometry = sf::st_geometry(fa))
+  }
+
+  # --- Multiple historical sources: tiered ancienneté (spec 031) ---
+  # Consolidate several epochs (e.g. Cassini ~1750 + état-major ~1850): each
+  # source is normalised to forest, dissolved, then a NON-overlapping planar
+  # subdivision (`sf::st_intersection` self-overlay) yields `anciennete` = the
+  # number of epochs covering each piece (higher = older, stronger continuity).
+  if (is.list(source) &&
+      !inherits(source, c("sf", "sfc", "SpatRaster", "data.frame"))) {
+    if (!length(source)) cli::cli_abort("{.arg source} list is empty.")
+    labels <- names(source)
+    if (is.null(labels) || any(!nzchar(labels))) {
+      labels <- paste0("epoque_", seq_along(source))
+    }
+    layers <- lapply(source, function(s)
+      build_foret_ancienne_mask(s, forest_class = forest_class,
+                                threshold = threshold, min_area_m2 = 0,
+                                crs = NULL))
+    nonempty <- Filter(function(x) nrow(x) > 0, layers)
+    work_crs <- crs %||% (if (length(nonempty)) sf::st_crs(nonempty[[1]])
+                          else sf::st_crs(layers[[1]]))
+    geoms <- lapply(seq_along(layers), function(i) {
+      L <- layers[[i]]
+      if (nrow(L) == 0) return(NULL)
+      g <- sf::st_union(sf::st_geometry(sf::st_transform(L, work_crs)))
+      sf::st_sf(epoque = labels[i], geometry = g)
+    })
+    geoms <- Filter(Negate(is.null), geoms)
+    if (!length(geoms)) {
+      return(sf::st_sf(foret_ancienne = logical(0), anciennete = integer(0),
+                       epoques = character(0), geometry = sf::st_sfc(crs = work_crs)))
+    }
+    stacked <- do.call(rbind, geoms)
+    ov <- suppressWarnings(sf::st_intersection(stacked))
+    ov <- sf::st_make_valid(ov)
+    ov <- suppressWarnings(sf::st_collection_extract(ov, "POLYGON"))
+    ov <- ov[!sf::st_is_empty(ov), , drop = FALSE]
+    epoques <- vapply(ov$origins,
+                      function(ix) paste(stacked$epoque[ix], collapse = "+"),
+                      character(1))
+    out <- sf::st_sf(foret_ancienne = rep(TRUE, nrow(ov)),
+                     anciennete = as.integer(ov$n.overlaps),
+                     epoques = epoques,
+                     geometry = sf::st_geometry(ov))
+    if (min_area_m2 > 0 && nrow(out) > 0) {
+      out <- suppressWarnings(sf::st_cast(out, "POLYGON", warn = FALSE))
+      out <- out[as.numeric(sf::st_area(out)) >= min_area_m2, , drop = FALSE]
+    }
+    return(out)
   }
 
   # --- Vector source: already-vectorised ancient forest ---

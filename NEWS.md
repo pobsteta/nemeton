@@ -1,3 +1,28 @@
+# nemeton 0.127.0 (2026-07-03)
+
+### Added — Consolidation multi-époques de la forêt ancienne pour N2 (paliers d'ancienneté, spec 031)
+
+**`build_foret_ancienne_mask()`** accepte désormais une **liste nommée de
+sources historiques** (ex. `list(cassini = ..., etatmajor = ...)`) et produit
+une **couche en paliers non-recouvrante** : subdivision planaire (auto-overlay
+`sf::st_intersection`) avec une colonne `anciennete` = **nombre d'époques**
+couvrant chaque polygone (plus élevé = plus ancien, continuité plus forte) +
+`epoques` (libellés contributeurs). Les formes mono-source (sf / SpatRaster)
+sont inchangées.
+
+**`indicateur_n2_continuite()`** exploite ces paliers : nouvel argument
+`weight_anciennete = TRUE` — quand la couche porte `anciennete`, la couverture
+forêt-ancienne est **pondérée par la profondeur du palier** (forêt présente à
+plus d'époques compte davantage). Rétrocompatible : sans colonne `anciennete`
+(couche mono-époque), N2 garde son comportement binaire ; `weight_anciennete =
+FALSE` force le binaire.
+
+**Contexte Cassini** : Cassini (~1750) n'est diffusé qu'en **raster** (scans
+AN/BnF, pas de vecteur forêt IGN — vérifié via happign). Cette consolidation est
+prête à recevoir toute couche Cassini **vectorisée** (régionale, fournie), qui
+se combine alors à l'état-major ~1850 en « forêt depuis ~1750 » (palier le plus
+ancien). Testable hors réseau (12 tests paliers + pondération N2).
+
 # nemeton 0.126.0 (2026-07-03)
 
 ### Added — Moteur BILJOU réel (spec 027 L2, incrément C/3) — les 3 moteurs reGénération sont portés

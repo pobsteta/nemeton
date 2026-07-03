@@ -10,6 +10,24 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.127.0] - 2026-07-03
+
+### Added
+- Multi-epoch consolidation of ancient forest for N2 (spec 031). `build_foret_
+  ancienne_mask()` now accepts a named list of historical sources (e.g.
+  Cassini + état-major) and returns a non-overlapping tiered layer with an
+  integer `anciennete` column (number of epochs covering each polygon) and an
+  `epoques` label, via `sf::st_intersection` self-overlay. Single-source forms
+  unchanged.
+
+### Changed
+- `indicateur_n2_continuite()` gains `weight_anciennete = TRUE`: when the
+  `foret_ancienne` layer carries an `anciennete` tier column, the ancient-forest
+  coverage is weighted by tier depth (forest present at more epochs counts more).
+  Backward compatible — single-epoch layers keep the binary behaviour;
+  `weight_anciennete = FALSE` forces it. Ready to fold in a vectorised Cassini
+  (~1750) layer once available (Cassini ships raster-only from IGN).
+
 ## [0.126.0] - 2026-07-03
 
 ### Added
