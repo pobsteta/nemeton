@@ -15,7 +15,7 @@ optionally BD Foret Anciennes (historical forest from ~1850). Follows tuto 04:
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.126.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.127.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,7 @@ optionally BD Foret Anciennes (historical forest from ~1850). Follows tuto 04:
 <span>  foret_ancienne <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  layers <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  column_name <span class="op">=</span> <span class="st">"N2"</span>,</span>
+<span>  weight_anciennete <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  lang <span class="op">=</span> <span class="st">"en"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -84,7 +85,10 @@ optionally BD Foret Anciennes (historical forest from ~1850). Follows tuto 04:
 
 
 <dt id="arg-foret-ancienne">foret_ancienne<a class="anchor" aria-label="anchor" href="#arg-foret-ancienne"></a></dt>
-<dd><p>sf object. Historical forest cover (~1850). NULL = only use bdforet.</p></dd>
+<dd><p>sf object. Historical forest cover. A single-epoch layer
+(e.g. état-major ~1850) or a <strong>tiered</strong> layer from
+<code><a href="build_foret_ancienne_mask.html">build_foret_ancienne_mask</a></code> with an <code>anciennete</code> column
+(multi-epoch consolidation, e.g. Cassini + état-major). NULL = only use bdforet.</p></dd>
 
 
 <dt id="arg-layers">layers<a class="anchor" aria-label="anchor" href="#arg-layers"></a></dt>
@@ -93,6 +97,13 @@ optionally BD Foret Anciennes (historical forest from ~1850). Follows tuto 04:
 
 <dt id="arg-column-name">column_name<a class="anchor" aria-label="anchor" href="#arg-column-name"></a></dt>
 <dd><p>Character. Name for output column. Default "N2".</p></dd>
+
+
+<dt id="arg-weight-anciennete">weight_anciennete<a class="anchor" aria-label="anchor" href="#arg-weight-anciennete"></a></dt>
+<dd><p>Logical. When <code>foret_ancienne</code> carries an
+<code>anciennete</code> tier column, weight the ancient-forest coverage by tier depth
+(forest present at more epochs counts more). Ignored for single-epoch layers.
+Default <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>

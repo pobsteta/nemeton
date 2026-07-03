@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.126.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.127.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.127.0" id="nemeton-01270-2026-07-03">nemeton 0.127.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01270-2026-07-03"></a></h2>
+<div class="section level4">
+<h4 id="added--consolidation-multi-époques-de-la-forêt-ancienne-pour-n2-paliers-dancienneté-spec-0-127-0">Added — Consolidation multi-époques de la forêt ancienne pour N2 (paliers d’ancienneté, spec 031)<a class="anchor" aria-label="anchor" href="#added--consolidation-multi-%C3%A9poques-de-la-for%C3%AAt-ancienne-pour-n2-paliers-danciennet%C3%A9-spec-0-127-0"></a></h4>
+<p><strong><code><a href="../reference/build_foret_ancienne_mask.html">build_foret_ancienne_mask()</a></code></strong> accepte désormais une <strong>liste nommée de sources historiques</strong> (ex. <code>list(cassini = ..., etatmajor = ...)</code>) et produit une <strong>couche en paliers non-recouvrante</strong> : subdivision planaire (auto-overlay <code><a href="https://r-spatial.github.io/sf/reference/geos_binary_ops.html" class="external-link">sf::st_intersection</a></code>) avec une colonne <code>anciennete</code> = <strong>nombre d’époques</strong> couvrant chaque polygone (plus élevé = plus ancien, continuité plus forte) + <code>epoques</code> (libellés contributeurs). Les formes mono-source (sf / SpatRaster) sont inchangées.</p>
+<p><strong><code><a href="../reference/indicateur_n2_continuite.html">indicateur_n2_continuite()</a></code></strong> exploite ces paliers : nouvel argument <code>weight_anciennete = TRUE</code> — quand la couche porte <code>anciennete</code>, la couverture forêt-ancienne est <strong>pondérée par la profondeur du palier</strong> (forêt présente à plus d’époques compte davantage). Rétrocompatible : sans colonne <code>anciennete</code> (couche mono-époque), N2 garde son comportement binaire ; <code>weight_anciennete = FALSE</code> force le binaire.</p>
+<p><strong>Contexte Cassini</strong> : Cassini (~1750) n’est diffusé qu’en <strong>raster</strong> (scans AN/BnF, pas de vecteur forêt IGN — vérifié via happign). Cette consolidation est prête à recevoir toute couche Cassini <strong>vectorisée</strong> (régionale, fournie), qui se combine alors à l’état-major ~1850 en « forêt depuis ~1750 » (palier le plus ancien). Testable hors réseau (12 tests paliers + pondération N2).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.126.0" id="nemeton-01260-2026-07-03">nemeton 0.126.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01260-2026-07-03"></a></h2>
 <div class="section level4">
