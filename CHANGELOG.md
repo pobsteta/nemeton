@@ -10,6 +10,15 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.127.1] - 2026-07-03
+
+### Fixed
+- `regen_sensibilite()` engine path now aggregates rasters per unit via
+  `exactextractr` (the `.micro_extract()` helper) instead of `terra::extract`:
+  coverage-weighted means and an exact non-NA `couverture_pct` at parcel
+  boundaries, consistent with the A3/A4/W4 microclimate indicators. `precomputed`
+  path unchanged.
+
 ## [0.127.0] - 2026-07-03
 
 ### Added

@@ -362,17 +362,20 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
     robustesse <- (abs(d_tmax) / (sdp_t + 1e-6) + abs(d_vpd) / (sdp_v + 1e-6)) / 2
   }
 
-  # 4. Agrégation par unité + indices.
-  moyp <- function(r) terra::extract(r, parc, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
+  # 4. Agrégation par unité + indices. Moyennes pondérées par le RECOUVREMENT
+  # cellule/polygone (exactextractr, cohérent avec .micro_extract des
+  # indicateurs A3/A4/W4) ; `couverture_pct` = fraction exacte non-NA sur l'UGF.
+  moyp <- function(r) .micro_extract(units, r)$mean
   z    <- function(x) (x - mean(x, na.rm = TRUE)) / stats::sd(x, na.rm = TRUE)
 
-  units$tmax_moyenne  <- round(moyp(M$tmax_moy), 2)
+  ex_ref <- .micro_extract(units, M$tmax_moy)
+  units$tmax_moyenne  <- round(ex_ref$mean, 2)
   units$tmax_canicule <- round(moyp(C$tmax_moy), 2)
   units$vpd_moyenne   <- round(moyp(M$vpd_moy), 3)
   units$vpd_canicule  <- round(moyp(C$vpd_moy), 3)
   units$d_tmax <- round(moyp(d_tmax), 2)
   units$d_vpd  <- round(moyp(d_vpd), 3)
-  units$couverture_pct <- round(100 * moyp(!is.na(M$tmax_moy)), 0)
+  units$couverture_pct <- round(100 * ex_ref$cover, 0)
 
   units$sensibilite      <- round(z(units$d_tmax) + z(units$d_vpd), 2)
   units$rang_sensibilite <- rank(-units$sensibilite, na.last = "keep", ties.method = "min")
