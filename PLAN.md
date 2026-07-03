@@ -1238,6 +1238,30 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-03 — Added v0.120.0 : table tolérances essences européennes (spec 027, calibration, incrément 1/3)
+
+Fichier fourni par Pascal (`data-raw/Essences_europeennes_tolerances.xlsx`,
+193 essences UE, 2 onglets) → **remplace la calibration indicative** par une
+table **sourcée par espèce**. `european_species_tolerances(statut, confiance,
+type, include_invasif)` (`R/european_species_tolerances.R`) lit
+`inst/extdata/european_species_tolerances.csv` (généré par
+`data-raw/european_species_tolerances.R`). **Mêmes axes** tmax_tol_c/vpd_tol_kpa
+que `regeneration_tolerances()` (11 classes, conservée pour le mapping UGF),
+**enrichis** : N&V 2006 sécheresse/**ombre**/engorgement (1–5), gel, humidité,
+thermophilie. Statuts `frm_1999`(47)/`frm_2025`(17)/`atlas_jrc`(130), colonne
+`confidence`, flag `invasif`(14). **Sources ajoutées** dans `inst/REFERENCES.md`.
+Tests test-european-species-tolerances.R 20 PASS.
+
+**Arbitrages Pascal (2026-07-03)** : (1) garder les 2 tables coordonnées
+(11 classes UGF + 193 espèces cible) ; (2) sélecteur = FRM par défaut, Atlas
+replié ; (3) axe ombre = **contexte affiché**, pas dans l'indice.
+
+**Reste incréments 2/3** : `regen_species_choices()` étendu aux espèces FRM
+(present-UGF via mapping classe→espèces, Atlas replié flag confiance/invasif) ;
+`indice_priorite_regen(species=)` résout sur la table par-espèce + expose la
+confiance ; brief onglet §4.1 mis à jour ; **mapping TFV/BD Forêt v2 → essence
+de régénération** (relier `bdforet_v2_mapping()` aux essences — logique cœur).
+
 ### 2026-07-03 — Added v0.119.0 : sélecteur essence cible reGénération (spec 027 §10.1, 5e incrément)
 
 `regen_species_choices(units, species_col, region, lang)` (R/indice_priorite_regen.R) :

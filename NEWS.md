@@ -1,3 +1,33 @@
+# nemeton 0.120.0 (2026-07-03)
+
+### Added — Table de tolérances des essences européennes (spec 027, calibration)
+
+**`european_species_tolerances(statut, confiance, type, include_invasif)`** :
+table de référence des tolérances au repeuplement pour **~193 essences
+européennes**, sourcée/calibrée **par espèce** (fichier fourni par Pascal). Elle
+**complète** `regeneration_tolerances()` (11 classes broad, conservée pour le
+mapping UGF) avec les **mêmes axes** `tmax_tol_c`/`vpd_tol_kpa` — désormais
+sourcés — **plus** l'autécologie Niinemets & Valladares 2006 (sécheresse /
+**ombre-couvert** / engorgement 1–5), gel hiver/tardif/précoce, humidité de
+l'air et thermophilie (1–9).
+
+Trois périmètres empilés (`statut`) : `frm_1999` (Directive 1999/105/CE, 47),
+`frm_2025` (ajouts futur règlement FRM, accord 2025-12-08, 17), `atlas_jrc`
+(European Atlas of Forest Tree Species, ~130, **canevas dérivé par règle**).
+Colonne `confidence` (`eleve`/`moyen`/`faible`) + flag `invasif` (INTRO/INVASIF
+= **présence ≠ recommandation**). Filtre pratique `statut = "frm"` (toutes
+essences réglementaires).
+
+Sources ajoutées au projet dans **`inst/REFERENCES.md`** (Directive
+1999/105/CE, JRC European Atlas / San-Miguel-Ayanz 2016, Caudullo 2017,
+Niinemets & Valladares 2006, Münchinger 2023, Visakorpi 2024, EUFORGEN,
+Ellenberg, ClimEssences). Données `inst/extdata/european_species_tolerances.csv`,
+générées par `data-raw/european_species_tolerances.R`.
+
+Incrément 1/3 (donnée + sources). Suivent : sélecteur `regen_species_choices()`
+étendu aux essences FRM (Atlas replié), puis résolution par-espèce dans
+`indice_priorite_regen(species=)` + brief onglet.
+
 # nemeton 0.119.0 (2026-07-03)
 
 ### Added — Sélecteur essence cible reGénération (spec 027 §10.1)
