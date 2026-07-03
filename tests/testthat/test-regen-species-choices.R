@@ -93,9 +93,11 @@ test_that("map_tfv_to_species_class maps named essences and NAs non-forest", {
 # ---- indice_priorite_regen résout un code espèce UE --------------------------
 
 test_that("indice_priorite_regen(species=) resolves a European species code", {
-  u <- data.frame(id = 1:2, sensibilite = c(90, 90), njstress = c(55, 55))
-  u <- sf::st_sf(u, geometry = sf::st_sfc(
-    sf::st_point(c(0, 0)), sf::st_point(c(1, 1)), crs = 2154))
+  poly <- function(x) sf::st_polygon(list(rbind(
+    c(x, 0), c(x + 5, 0), c(x + 5, 5), c(x, 5), c(x, 0))))
+  u <- sf::st_sf(
+    data.frame(id = 1:2, sensibilite = c(90, 90), njstress = c(55, 55)),
+    geometry = sf::st_sfc(poly(0), poly(10), crs = 2154))
   base <- indice_priorite_regen(u)
   # Quercus ilex (chêne vert, tmax_tol 44) tolère mieux qu'un mésophile :
   tuned <- indice_priorite_regen(u, species = "fagus_sylvatica")
