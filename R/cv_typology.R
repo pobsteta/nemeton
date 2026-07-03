@@ -62,7 +62,8 @@ cv_typology <- function(file = NULL) {
 #'   \code{inst/extdata/bdforet_v2_mapping.csv}).
 #'
 #' @return A data.frame with columns \code{tfv_code}, \code{label_fr},
-#'   \code{context_key}, \code{confidence} (\code{"clear"} or
+#'   \code{species_class} (NMT species class, \code{NA} for non-forest / no
+#'   canopy TFV), \code{context_key}, \code{confidence} (\code{"clear"} or
 #'   \code{"ambiguous"}), \code{alt_context_key}, \code{notes_fr}.
 #'
 #' @export
@@ -73,6 +74,32 @@ bdforet_v2_mapping <- function(file = NULL) {
     cli::cli_abort("bdforet_v2_mapping.csv not found.")
   }
   utils::read.csv(path, stringsAsFactors = FALSE, na.strings = c("", "NA"))
+}
+
+
+#' Map BD Forêt v2 TFV codes to NMT species classes
+#'
+#' @description
+#' Translate BD Forêt v2 vegetation-formation-type (TFV) codes into the
+#' corresponding NMT species class ([list_species_classes()]), via
+#' [bdforet_v2_mapping()]. Named essences map to their class (e.g. `FF1-09-09`
+#' hêtre → `essence_hetraie`); generic or mixed formations map to
+#' `essence_mixte`; non-forest / no-canopy TFV (bare, moorland, grassland)
+#' return `NA`. Lets the app pre-fill the reGénération target-species selector
+#' with the classes actually present on a BD Forêt v2 coverage.
+#'
+#' @param tfv_code Character vector of TFV codes.
+#' @param mapping Optional override table (as returned by
+#'   [bdforet_v2_mapping()]).
+#'
+#' @return Character vector of species-class codes (same length as `tfv_code`),
+#'   `NA` where the TFV has no forest species class or is unknown.
+#' @seealso [bdforet_v2_mapping()], [regen_species_choices()],
+#'   [map_bdforet_essence()]
+#' @export
+map_tfv_to_species_class <- function(tfv_code, mapping = NULL) {
+  tbl <- if (is.null(mapping)) bdforet_v2_mapping() else mapping
+  tbl$species_class[match(as.character(tfv_code), tbl$tfv_code)]
 }
 
 

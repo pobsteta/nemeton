@@ -76,64 +76,105 @@ regeneration_tolerances <- function() {
   if (length(hit)) hit[[1]] else NULL
 }
 
+# Classes NMT présentes sur `units` : via TFV (map_tfv_to_species_class) OU une
+# colonne de codes de classe. Retourne un vecteur de codes de classe.
+.regen_present_classes <- function(units, species_col, tfv_col, region) {
+  if (is.null(units)) return(character(0))
+  if (!is.null(tfv_col) && tfv_col %in% names(units)) {
+    return(unique(stats::na.omit(map_tfv_to_species_class(units[[tfv_col]]))))
+  }
+  col <- if (!is.null(species_col)) species_col else .regen_detect_species_col(units)
+  if (is.null(col) || !col %in% names(units)) return(character(0))
+  vals <- unique(stats::na.omit(as.character(units[[col]])))
+  class_codes <- tryCatch(list_species_classes(region = region)$code,
+                          error = function(e) character(0))
+  hit <- vals[vals %in% class_codes]
+  # Repli : la colonne porte peut-être des codes TFV plutôt que des classes.
+  if (!length(hit)) hit <- unique(stats::na.omit(map_tfv_to_species_class(vals)))
+  hit
+}
+
 #' Species choices for the reGénération target-species selector
 #'
 #' @description
-#' Build the list of **scorable** target species for the optional per-species
-#' tuning of [indice_priorite_regen()], ready for the app's "target species"
-#' dropdown. The options are exactly the classes the core can score — the
-#' intersection of [regeneration_tolerances()] and [list_species_classes()] —
-#' so the selector can never offer a species the index ignores.
+#' Build the option list for the app's "target species" dropdown, ready to
+#' render. Two levels:
 #'
-#' When `units` are given, the classes actually present on the parcels are
-#' flagged (`present = TRUE`, `groupe = "present"`) and listed first; the
-#' remaining classes (`groupe = "adaptation"`) follow. Within each group,
-#' species are ordered by increasing heat tolerance (`tmax_tol_c`), so the
+#' * `level = "species"` (default): the **FRM** European species
+#'   ([european_species_tolerances()], `statut = "frm"`) — the regulatory set
+#'   you may plant. With `include_atlas = TRUE`, the JRC-Atlas species follow in
+#'   a folded `"atlas"` group.
+#' * `level = "class"`: the 11 broad species classes
+#'   ([regeneration_tolerances()] ∩ [list_species_classes()]).
+#'
+#' Either way the options are **scorable** by [indice_priorite_regen()]
+#' (`species =` resolves both tables). When `units` are given, the entries whose
+#' species class is present on the parcels are flagged (`present = TRUE`,
+#' `groupe = "present"`) and listed first; presence is read from a TFV column
+#' (`tfv_col`, via [map_tfv_to_species_class()]) or a species-class column.
+#' Remaining FRM entries form `groupe = "adaptation"`. Within each group,
+#' options are ordered by increasing heat tolerance (`tmax_tol_c`) — the
 #' adaptation group reads as "more heat-tolerant alternatives". The generic
 #' "no species" default is added by the app (it maps to `species = NULL`).
 #'
-#' @param units Optional `sf`/data.frame of units. Used only to flag the
-#'   species present on the parcels.
-#' @param species_col Optional name of the column holding the species-class
-#'   codes ([list_species_classes()] codes). Auto-detected among
-#'   `essence_dominante`, `essence`, `species_class`, `classe_essence`,
-#'   `species` when `NULL`. Values must be class codes (e.g. `essence_hetraie`),
-#'   not BD Forêt codes — map them upstream with [map_bdforet_to_species_class()]
-#'   if needed.
-#' @param region,lang Passed to [list_species_classes()] for localised labels.
+#' @param units Optional `sf`/data.frame of units, to flag present species.
+#' @param species_col Optional column holding species-class codes
+#'   ([list_species_classes()] codes). Auto-detected among `essence_dominante`,
+#'   `essence`, `species_class`, `classe_essence`, `species` when `NULL`.
+#' @param tfv_col Optional column holding BD Forêt v2 TFV codes; mapped to
+#'   classes via [map_tfv_to_species_class()] (takes precedence over
+#'   `species_col`).
+#' @param level `"species"` (FRM European species, default) or `"class"` (11
+#'   broad classes).
+#' @param include_atlas Logical; in `"species"` level, also list the JRC-Atlas
+#'   species (folded `"atlas"` group). Default `FALSE`.
+#' @param region,lang Passed to [list_species_classes()] for the class level and
+#'   presence detection.
 #'
-#' @return A data.frame with `code`, `label`, `tmax_tol_c`, `vpd_tol_kpa`,
-#'   `present` (logical) and `groupe` (`"present"` / `"adaptation"`), ordered
-#'   present-first then by increasing `tmax_tol_c`.
-#' @seealso [indice_priorite_regen()], [regeneration_tolerances()],
-#'   [list_species_classes()]
+#' @return A data.frame of options, ordered present-first then by increasing
+#'   `tmax_tol_c`. Level `"species"` columns: `code`, `label`, `species_sci`,
+#'   `type`, `statut`, `species_class`, `tmax_tol_c`, `vpd_tol_kpa`,
+#'   `shade_tol`, `drought_tol`, `confidence`, `invasif`, `present`, `groupe`.
+#'   Level `"class"` columns: `code`, `label`, `tmax_tol_c`, `vpd_tol_kpa`,
+#'   `present`, `groupe`.
+#' @seealso [indice_priorite_regen()], [european_species_tolerances()],
+#'   [regeneration_tolerances()], [map_tfv_to_species_class()]
 #' @export
 regen_species_choices <- function(units = NULL, species_col = NULL,
+                                  tfv_col = NULL,
+                                  level = c("species", "class"),
+                                  include_atlas = FALSE,
                                   region = "BFC", lang = "fr") {
-  tol <- regeneration_tolerances()
-  base <- tol[, c("code", "label", "tmax_tol_c", "vpd_tol_kpa"), drop = FALSE]
+  level <- match.arg(level)
+  present_classes <- .regen_present_classes(units, species_col, tfv_col, region)
 
-  # Labels localisés depuis list_species_classes() si disponibles.
-  cls <- tryCatch(list_species_classes(region = region, lang = lang),
-                  error = function(e) NULL)
-  if (!is.null(cls) && all(c("code", "label") %in% names(cls))) {
-    loc <- cls$label[match(base$code, cls$code)]
-    base$label <- ifelse(is.na(loc), base$label, loc)
-  }
-
-  # Essences présentes sur les UGF (si une colonne de classe est trouvée).
-  present_codes <- character(0)
-  if (!is.null(units)) {
-    col <- if (!is.null(species_col)) species_col else .regen_detect_species_col(units)
-    if (!is.null(col) && col %in% names(units)) {
-      present_codes <- unique(stats::na.omit(as.character(units[[col]])))
+  if (level == "class") {
+    tol <- regeneration_tolerances()
+    base <- tol[, c("code", "label", "tmax_tol_c", "vpd_tol_kpa"), drop = FALSE]
+    cls <- tryCatch(list_species_classes(region = region, lang = lang),
+                    error = function(e) NULL)
+    if (!is.null(cls) && all(c("code", "label") %in% names(cls))) {
+      loc <- cls$label[match(base$code, cls$code)]
+      base$label <- ifelse(is.na(loc), base$label, loc)
     }
+    base$present <- base$code %in% present_classes
+    base$groupe <- ifelse(base$present, "present", "adaptation")
+    base <- base[order(!base$present, base$tmax_tol_c), , drop = FALSE]
+    rownames(base) <- NULL
+    return(base)
   }
-  base$present <- base$code %in% present_codes
-  base$groupe <- ifelse(base$present, "present", "adaptation")
 
-  # Présentes d'abord, puis tolérance chaleur croissante (mésophile → thermophile).
-  base <- base[order(!base$present, base$tmax_tol_c), , drop = FALSE]
+  # level == "species" : essences FRM (+ Atlas replié en option).
+  base <- european_species_tolerances(statut = if (include_atlas) NULL else "frm")
+  base$label <- base$species_fr
+  base$present <- base$species_class %in% present_classes
+  base$groupe <- ifelse(base$present, "present",
+                        ifelse(grepl("^frm", base$statut), "adaptation", "atlas"))
+  grp_rank <- match(base$groupe, c("present", "adaptation", "atlas"))
+  base <- base[order(grp_rank, base$tmax_tol_c), , drop = FALSE]
+  base <- base[, c("code", "label", "species_sci", "type", "statut",
+                   "species_class", "tmax_tol_c", "vpd_tol_kpa", "shade_tol",
+                   "drought_tol", "confidence", "invasif", "present", "groupe")]
   rownames(base) <- NULL
   base
 }
@@ -146,8 +187,18 @@ regen_species_choices <- function(units = NULL, species_col = NULL,
     return(list(tmax_tol_c = as.numeric(tolerances$tmax_tol_c),
                 vpd_tol_kpa = as.numeric(tolerances$vpd_tol_kpa)))
   }
-  tbl <- if (is.data.frame(tolerances)) tolerances else regeneration_tolerances()
-  hit <- tbl[tbl$code == species, , drop = FALSE]
+  if (is.data.frame(tolerances)) {
+    hit <- tolerances[tolerances$code == species, , drop = FALSE]
+  } else {
+    # Défaut : classe (regeneration_tolerances) PUIS espèce UE
+    # (european_species_tolerances) — permet species = "fagus_sylvatica".
+    tbl <- regeneration_tolerances()
+    hit <- tbl[tbl$code == species, , drop = FALSE]
+    if (nrow(hit) == 0L) {
+      eu <- tryCatch(european_species_tolerances(), error = function(e) NULL)
+      if (!is.null(eu)) hit <- eu[eu$code == species, , drop = FALSE]
+    }
+  }
   if (nrow(hit) == 0L) return(NULL)
   list(tmax_tol_c = as.numeric(hit$tmax_tol_c[1]),
        vpd_tol_kpa = as.numeric(hit$vpd_tol_kpa[1]))

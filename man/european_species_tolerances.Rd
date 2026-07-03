@@ -21,7 +21,10 @@ convenience value \code{"frm"} expands to both \code{"frm_1999"} and
 }
 \value{
 A data.frame with \code{code}, \code{species_sci}, \code{species_fr},
-\code{type}, \code{statut}, \code{tmax_tol_c}, \code{vpd_tol_kpa},
+\code{type}, \code{species_class} (rule-based link to the 11
+\code{\link{list_species_classes}}, for the UGF-presence flag of
+\code{\link{regen_species_choices}}), \code{statut}, \code{tmax_tol_c},
+\code{vpd_tol_kpa},
 \code{drought_tol}, \code{shade_tol}, \code{waterlog_tol},
 \code{frost_winter_min_c}, \code{frost_late}, \code{frost_early},
 \code{air_humidity}, \code{thermophily}, \code{confidence}, \code{invasif},

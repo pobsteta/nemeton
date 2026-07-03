@@ -442,6 +442,7 @@ reference:
     - indice_priorite_regen
     - regen_species_choices
     - european_species_tolerances
+    - map_tfv_to_species_class
     - regen_sensibilite
     - regen_bilan_hydrique
     - pai_depuis_nuage
