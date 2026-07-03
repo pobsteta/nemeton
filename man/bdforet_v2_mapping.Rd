@@ -12,7 +12,8 @@ bdforet_v2_mapping(file = NULL)
 }
 \value{
 A data.frame with columns \code{tfv_code}, \code{label_fr},
-  \code{context_key}, \code{confidence} (\code{"clear"} or
+  \code{species_class} (NMT species class, \code{NA} for non-forest / no
+  canopy TFV), \code{context_key}, \code{confidence} (\code{"clear"} or
   \code{"ambiguous"}), \code{alt_context_key}, \code{notes_fr}.
 }
 \description{

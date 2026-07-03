@@ -33,9 +33,11 @@
 #' @param include_invasif Logical; keep INTRO/INVASIVE taxa. Default `TRUE`.
 #'
 #' @return A data.frame with `code`, `species_sci`, `species_fr`, `type`,
-#'   `statut`, `tmax_tol_c`, `vpd_tol_kpa`, `drought_tol`, `shade_tol`,
-#'   `waterlog_tol`, `frost_winter_min_c`, `frost_late`, `frost_early`,
-#'   `air_humidity`, `thermophily`, `confidence`, `invasif`, `notes`.
+#'   `species_class` (rule-based link to the 11 [list_species_classes()], for
+#'   the UGF-presence flag of [regen_species_choices()]), `statut`,
+#'   `tmax_tol_c`, `vpd_tol_kpa`, `drought_tol`, `shade_tol`, `waterlog_tol`,
+#'   `frost_winter_min_c`, `frost_late`, `frost_early`, `air_humidity`,
+#'   `thermophily`, `confidence`, `invasif`, `notes`.
 #' @references European Atlas of Forest Tree Species (San-Miguel-Ayanz et al.
 #'   2016); Caudullo, Welk & San-Miguel-Ayanz (2017); Niinemets & Valladares
 #'   (2006); Directive 1999/105/EC. See `inst/REFERENCES.md`.

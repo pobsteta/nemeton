@@ -53,11 +53,46 @@ norm_conf <- function(x) {
 norm_type <- function(x) ifelse(grepl("onif", x), "conifere", "feuillu")
 num <- function(x) suppressWarnings(as.numeric(x))
 
+# Rattachement espèce -> classe NMT (list_species_classes) par règle de genre.
+# APPROXIMATION assumée : sert au repérage « présent sur UGF » du sélecteur, pas
+# à la botanique fine. Chênes sempervirents & sclérophylles med -> chene_vert ;
+# autres feuillus natifs -> feuillus_pionniers ; exotiques/incertains -> mixte.
+.EVERGREEN_QUERCUS <- c("ilex", "suber", "coccifera", "rotundifolia", "alnifolia")
+.MED_SCLEROPHYLL_GENERA <- c("Olea", "Arbutus", "Pistacia", "Phillyrea", "Myrtus",
+                             "Ceratonia", "Laurus", "Nerium", "Punica", "Quercus")
+map_species_class <- function(sci) {
+  parts <- strsplit(trimws(sci), "\\s+")[[1]]
+  genus <- parts[1]; epithet <- if (length(parts) >= 2) tolower(parts[2]) else ""
+  if (genus %in% c("Abies", "Picea")) return("essence_pessiere_sapiniere")
+  if (genus == "Pseudotsuga") return("essence_douglasaie")
+  if (genus == "Larix") return("essence_melezin")
+  if (genus %in% c("Pinus", "Cedrus", "Juniperus", "Cupressus", "Taxus",
+                   "Tetraclinis")) return("essence_pinede")
+  if (genus == "Fagus") return("essence_hetraie")
+  if (genus == "Castanea") return("essence_chataigneraie")
+  if (genus == "Populus") return("essence_peupleraie")
+  if (genus == "Quercus") {
+    return(if (epithet %in% .EVERGREEN_QUERCUS) "essence_chene_vert" else "essence_chenaie")
+  }
+  if (genus %in% .MED_SCLEROPHYLL_GENERA) return("essence_chene_vert")
+  # Feuillus natifs d'accompagnement.
+  if (genus %in% c("Acer", "Fraxinus", "Carpinus", "Betula", "Alnus", "Salix",
+                   "Sorbus", "Prunus", "Tilia", "Ulmus", "Corylus", "Ostrya",
+                   "Crataegus", "Pyrus", "Malus", "Mespilus", "Cornus",
+                   "Rhamnus", "Frangula", "Euonymus", "Viburnum", "Sambucus",
+                   "Ilex", "Laburnum", "Buxus", "Ligustrum", "Colutea",
+                   "Hippophae", "Erica", "Juglans")) {
+    return("essence_feuillus_pionniers")
+  }
+  "essence_mixte"  # exotiques / introduits / incertains
+}
+
 out <- data.frame(
   code               = mk_code(d[[1]]),
   species_sci        = trimws(d[[1]]),
   species_fr         = trimws(d[[2]]),
   type               = norm_type(d[[3]]),
+  species_class      = vapply(d[[1]], map_species_class, character(1), USE.NAMES = FALSE),
   statut             = norm_statut(d[[4]]),
   tmax_tol_c         = num(d[[5]]),
   vpd_tol_kpa        = num(d[[6]]),

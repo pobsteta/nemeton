@@ -131,27 +131,31 @@ inversé au cœur ; R3/R6 gardent leur sens).
 - Résolution microclimat : 2 m (défaut) / 5 m si beaucoup de parcelles.
 - **Essence cible** (optionnelle) pour l'affinage de l'indice (`species=`).
   **Ne pas construire la liste à la main** — appeler
-  `nemeton::regen_species_choices(units)` qui renvoie déjà les options
-  *scorables* prêtes (data.frame `code`/`label`/`tmax_tol_c`/`vpd_tol_kpa`/
-  `present`/`groupe`). Règles de rendu :
-  - Ce sont **exactement** les classes que le cœur sait noter (intersection
-    `regeneration_tolerances()` ∩ `list_species_classes()`) — jamais une
-    essence hors table (sinon `species=` est sans effet).
-  - **Deux `optgroup`** depuis la colonne `groupe` : `"present"` → « Présentes
-    sur vos UGF » (en tête ; pré-sélectionner la dominante), `"adaptation"` →
-    « Autres essences (adaptation) », triées par `tmax_tol_c` croissant
-    (mésophile → thermophile = « alternatives plus tolérantes »).
+  `nemeton::regen_species_choices(units, tfv_col = "<col_TFV>")` (nemeton ≥
+  0.121.0) qui renvoie déjà les options *scorables* prêtes. Règles de rendu :
+  - **Par défaut `level = "species"`** : les **essences FRM** européennes
+    (`european_species_tolerances`, réglementaires 1999/105/CE + accord 2025).
+    Colonnes : `code`/`label`(nom FR)/`species_sci`/`statut`/`species_class`/
+    `tmax_tol_c`/`vpd_tol_kpa`/`shade_tol`/`confidence`/`invasif`/`present`/
+    `groupe`. `include_atlas = TRUE` ajoute les essences Atlas (groupe replié).
+  - Ce sont **exactement** des codes que le cœur sait noter : `species=`
+    résout classe **et** espèce UE — jamais une essence hors table.
+  - **Pré-remplissage depuis BD Forêt v2** : passer `tfv_col` (colonne des codes
+    TFV des UGF) → le cœur mappe via `map_tfv_to_species_class()` et flague
+    `present = TRUE` les espèces des classes réellement sur l'emprise. (À défaut
+    de TFV, `species_col` avec des **codes de classe** marche aussi.)
+  - **Trois `optgroup`** depuis `groupe` : `"present"` → « Présentes sur vos
+    UGF » (en tête, pré-sélection possible), `"adaptation"` → « Autres essences
+    FRM (adaptation) », `"atlas"` (si `include_atlas`) → « Essences Atlas
+    (hors FRM) ». Tri par `tmax_tol_c` croissant (alternatives plus tolérantes).
   - **Défaut** = une entrée « Générique (aucune essence) » ajoutée par l'app,
     mappée sur `species = NULL` (comportement cœur par défaut, pénalité OFF).
-  - Colonne d'essence des UGF : `regen_species_choices()` détecte
-    `essence_dominante`/`essence`/`species_class`/… ; ces valeurs doivent être
-    des **codes de classe** (`essence_hetraie`…), pas des codes BD Forêt
-    (`"03"`) — mapper en amont via `map_bdforet_to_species_class()` au besoin.
-  - **Honnêteté** : les seuils `tmax_tol`/`vpd_tol` sont **indicatifs** (dire
-    d'expert ordinal, non calibrés terrain — spec 027 §7/§12) ; l'affinage
-    *ordonne* la priorité, il ne donne pas une limite physiologique absolue.
-    À afficher en infobulle. MFR (provenances réglementaires) = **hors indice**,
-    étape aval future conditionnée à l'extension du CSV de tolérances.
+  - **Honnêteté** : afficher `confidence` (eleve/moyen/faible) et **flagger
+    `invasif`** (présence ≠ recommandation). Seuils `tmax_tol`/`vpd_tol`
+    **indicatifs** — sourcés (JRC Atlas, Niinemets & Valladares 2006, cf.
+    `inst/REFERENCES.md`) mais *ordinaux*, pas des limites absolues ; infobulle.
+    `shade_tol` (aptitude régé sous couvert) = **contexte affiché**, hors indice.
+  - **Alternative** `level = "class"` : les 11 classes broad (si UI simplifiée).
 - **Buffer contexte** : 25 km (défaut, cf. branche A).
 
 ### 4.2 Run

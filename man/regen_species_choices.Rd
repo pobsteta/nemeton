@@ -4,46 +4,60 @@
 \alias{regen_species_choices}
 \title{Species choices for the reGénération target-species selector}
 \usage{
-regen_species_choices(units = NULL, species_col = NULL, region = "BFC",
+regen_species_choices(units = NULL, species_col = NULL, tfv_col = NULL,
+  level = c("species", "class"), include_atlas = FALSE, region = "BFC",
   lang = "fr")
 }
 \arguments{
-\item{units}{Optional \code{sf}/data.frame of units. Used only to flag the
-species present on the parcels.}
+\item{units}{Optional \code{sf}/data.frame of units, to flag present species.}
 
-\item{species_col}{Optional name of the column holding the species-class codes
+\item{species_col}{Optional column holding species-class codes
 (\code{\link{list_species_classes}} codes). Auto-detected among
 \code{essence_dominante}, \code{essence}, \code{species_class},
-\code{classe_essence}, \code{species} when \code{NULL}. Values must be class
-codes (e.g. \code{essence_hetraie}), not BD Forêt codes — map them upstream
-with \code{\link{map_bdforet_to_species_class}} if needed.}
+\code{classe_essence}, \code{species} when \code{NULL}.}
 
-\item{region, lang}{Passed to \code{\link{list_species_classes}} for localised
-labels.}
+\item{tfv_col}{Optional column holding BD Forêt v2 TFV codes; mapped to classes
+via \code{\link{map_tfv_to_species_class}} (takes precedence over
+\code{species_col}).}
+
+\item{level}{\code{"species"} (FRM European species, default) or \code{"class"}
+(11 broad classes).}
+
+\item{include_atlas}{Logical; in \code{"species"} level, also list the
+JRC-Atlas species (folded \code{"atlas"} group). Default \code{FALSE}.}
+
+\item{region, lang}{Passed to \code{\link{list_species_classes}} for the class
+level and presence detection.}
 }
 \value{
-A data.frame with \code{code}, \code{label}, \code{tmax_tol_c},
-\code{vpd_tol_kpa}, \code{present} (logical) and \code{groupe}
-(\code{"present"} / \code{"adaptation"}), ordered present-first then by
-increasing \code{tmax_tol_c}.
+A data.frame of options, ordered present-first then by increasing
+\code{tmax_tol_c}. Level \code{"species"} columns: \code{code}, \code{label},
+\code{species_sci}, \code{type}, \code{statut}, \code{species_class},
+\code{tmax_tol_c}, \code{vpd_tol_kpa}, \code{shade_tol}, \code{drought_tol},
+\code{confidence}, \code{invasif}, \code{present}, \code{groupe}. Level
+\code{"class"} columns: \code{code}, \code{label}, \code{tmax_tol_c},
+\code{vpd_tol_kpa}, \code{present}, \code{groupe}.
 }
 \description{
-Build the list of \strong{scorable} target species for the optional
-per-species tuning of \code{\link{indice_priorite_regen}}, ready for the app's
-"target species" dropdown. The options are exactly the classes the core can
-score — the intersection of \code{\link{regeneration_tolerances}} and
-\code{\link{list_species_classes}} — so the selector can never offer a species
-the index ignores.
+Build the option list for the app's "target species" dropdown, ready to
+render. Two levels: \code{level = "species"} (default) lists the \strong{FRM}
+European species (\code{\link{european_species_tolerances}}, \code{statut =
+"frm"}); \code{level = "class"} lists the 11 broad species classes
+(\code{\link{regeneration_tolerances}} ∩ \code{\link{list_species_classes}}).
 }
 \details{
-When \code{units} are given, the classes actually present on the parcels are
-flagged (\code{present = TRUE}, \code{groupe = "present"}) and listed first;
-the remaining classes (\code{groupe = "adaptation"}) follow. Within each group,
-species are ordered by increasing heat tolerance (\code{tmax_tol_c}), so the
-adaptation group reads as "more heat-tolerant alternatives". The generic "no
-species" default is added by the app (it maps to \code{species = NULL}).
+Either way the options are \strong{scorable} by
+\code{\link{indice_priorite_regen}} (\code{species =} resolves both tables).
+When \code{units} are given, the entries whose species class is present on the
+parcels are flagged (\code{present = TRUE}, \code{groupe = "present"}) and
+listed first; presence is read from a TFV column (\code{tfv_col}, via
+\code{\link{map_tfv_to_species_class}}) or a species-class column. Remaining FRM
+entries form \code{groupe = "adaptation"}; with \code{include_atlas = TRUE} the
+Atlas species follow in a folded \code{"atlas"} group. Within each group,
+options are ordered by increasing heat tolerance (\code{tmax_tol_c}). The
+generic "no species" default is added by the app (\code{species = NULL}).
 }
 \seealso{
-\code{\link{indice_priorite_regen}}, \code{\link{regeneration_tolerances}},
-\code{\link{list_species_classes}}
+\code{\link{indice_priorite_regen}}, \code{\link{european_species_tolerances}},
+\code{\link{regeneration_tolerances}}, \code{\link{map_tfv_to_species_class}}
 }
