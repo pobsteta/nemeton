@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.121.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.122.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -860,6 +860,18 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-03--chantier--portage-des-3-moteurs-regénération-dans-le-cœur-spec-027-l1b">2026-07-03 — Chantier : portage des 3 moteurs reGénération dans le cœur (spec 027 L1b)<a class="anchor" aria-label="anchor" href="#id_2026-07-03--chantier--portage-des-3-moteurs-reg%C3%A9n%C3%A9ration-dans-le-c%C5%93ur-spec-027-l1b"></a></h3>
+<p><strong>Décision Pascal</strong> : câbler l’orchestration RÉELLE des 3 moteurs (aujourd’hui scaffolds precomputed-only), déclenchés au clic <strong>« Lancer l’analyse » de l’onglet reGénération</strong> (PAS « Lancer les calculs » de Sélection — redirigé 2026-07-03), via une <strong>case à cocher opt-in</strong> (microclimf ~6 ans = heures). <strong>Stratégie : incrémentale, validation réelle entre chaque</strong> (moteurs inexécutables/intestables en CI : deps lourdes + LiDAR HD + ERA5/CDS + SAFRAN).</p>
+<ul><li>
+<strong>Inc A — <code>pai_depuis_nuage</code> réel (v0.122.0)</strong> : pipeline <code>lasR</code> (comptages sol/veg → Beer-Lambert), portage fidèle de <code>pai_lidarhd_lasR.R</code>. Gardé <code>requireNamespace</code>, precomputed conservé. <strong>À valider par Pascal sur LiDAR réel avant inc B.</strong> Tests plomberie/dégradation 19 PASS.</li>
+<li>
+<strong>Inc B — <code>regen_sensibilite</code> réel (microclimf)</strong> : à venir — orchestration du prototype <code>microclimat_parcelles_robuste.R</code> (MNT/MNH/PAI/veg/soil, ERA5 par an via mcera5, cache, agrégation §7), + callback progress + cache_dir.</li>
+<li>
+<strong>Inc C — <code>regen_bilan_hydrique</code> réel (biljouR)</strong> : à venir — API biljouR (<code>safran_download</code>→<code>safran_to_meteo</code>→<code>biljou_soil</code>→<code>biljou_run_grid</code>→ <code>biljou_indices</code>/<code>biljou_grid_to_sf</code>).</li>
+<li>
+<strong>Inc D — brief app</strong> : brancher « Lancer l’analyse » (reGénération) pour lancer les moteurs présents (case opt-in + garde données/creds) et écrire <code>cache/regeneration/</code>. Pas de prototype BILJOU (package) ; PAI+microclimf portés des prototypes <code>/Documents/reGénération</code>.</li>
+</ul></div>
 <div class="section level3">
 <h3 id="id_2026-07-03--added-v01210--sélecteur-par-espèce-frm--mapping-tfv--essence-spec-027-incrément-23">2026-07-03 — Added v0.121.0 : sélecteur par-espèce FRM + mapping TFV → essence (spec 027, incrément 2/3)<a class="anchor" aria-label="anchor" href="#id_2026-07-03--added-v01210--s%C3%A9lecteur-par-esp%C3%A8ce-frm--mapping-tfv--essence-spec-027-incr%C3%A9ment-23"></a></h3>
 <p>Ferme l’item cœur PLAN « mapping TFV → essence ». <code><a href="reference/map_tfv_to_species_class.html">map_tfv_to_species_class()</a></code> (colonne <code>species_class</code> de <code>bdforet_v2_mapping.csv</code>, 28 TFV mappés / 4 non-forestiers NA) → TFV BD Forêt v2 → classe NMT. <code><a href="reference/regen_species_choices.html">regen_species_choices()</a></code> gagne <code>level</code> : <code>"species"</code> (<strong>défaut</strong>, essences FRM d’<code>european_species_tolerances</code>, Atlas repliable <code>include_atlas</code>) / <code>"class"</code> (11 classes). Présence UGF via <code>tfv_col</code> (mapping TFV) ou colonne de classe → groupes present/adaptation/atlas. <code><a href="reference/european_species_tolerances.html">european_species_tolerances()</a></code> gagne <code>species_class</code> (règle de genre → 11 classes). <code>indice_priorite_regen(species=)</code> résout <strong>les deux tables</strong> (classe <code>essence_hetraie</code> <strong>ou</strong> espèce <code>fagus_sylvatica</code>). Brief onglet §4.1 mis à jour (3 optgroup, tfv_col, confidence/invasif, shade_tol contexte). Tests test-regen-species-choices.R 31 PASS ; sweep 474. NAMESPACE + 4 man + pkgdown.</p>

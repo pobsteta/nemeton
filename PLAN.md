@@ -1677,6 +1677,34 @@ cœur).
 
 ## Journal
 
+### 2026-07-03 — Chantier : portage des 3 moteurs reGénération dans le cœur (spec 027 L1b)
+
+**Décision Pascal** : câbler l’orchestration RÉELLE des 3 moteurs
+(aujourd’hui scaffolds precomputed-only), déclenchés au clic **« Lancer
+l’analyse » de l’onglet reGénération** (PAS « Lancer les calculs » de
+Sélection — redirigé 2026-07-03), via une **case à cocher opt-in**
+(microclimf ~6 ans = heures). **Stratégie : incrémentale, validation
+réelle entre chaque** (moteurs inexécutables/intestables en CI : deps
+lourdes + LiDAR HD + ERA5/CDS + SAFRAN).
+
+- **Inc A — `pai_depuis_nuage` réel (v0.122.0)** : pipeline `lasR`
+  (comptages sol/veg → Beer-Lambert), portage fidèle de
+  `pai_lidarhd_lasR.R`. Gardé `requireNamespace`, precomputed conservé.
+  **À valider par Pascal sur LiDAR réel avant inc B.** Tests
+  plomberie/dégradation 19 PASS.
+- **Inc B — `regen_sensibilite` réel (microclimf)** : à venir —
+  orchestration du prototype `microclimat_parcelles_robuste.R`
+  (MNT/MNH/PAI/veg/soil, ERA5 par an via mcera5, cache, agrégation
+  §7), + callback progress + cache_dir.
+- **Inc C — `regen_bilan_hydrique` réel (biljouR)** : à venir — API
+  biljouR
+  (`safran_download`→`safran_to_meteo`→`biljou_soil`→`biljou_run_grid`→
+  `biljou_indices`/`biljou_grid_to_sf`).
+- **Inc D — brief app** : brancher « Lancer l’analyse » (reGénération)
+  pour lancer les moteurs présents (case opt-in + garde données/creds)
+  et écrire `cache/regeneration/`. Pas de prototype BILJOU (package) ;
+  PAI+microclimf portés des prototypes `/Documents/reGénération`.
+
 ### 2026-07-03 — Added v0.121.0 : sélecteur par-espèce FRM + mapping TFV → essence (spec 027, incrément 2/3)
 
 Ferme l’item cœur PLAN « mapping TFV → essence ».

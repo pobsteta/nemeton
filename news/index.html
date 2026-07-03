@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.121.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.122.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.122.0" id="nemeton-01220-2026-07-03">nemeton 0.122.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01220-2026-07-03"></a></h2>
+<div class="section level4">
+<h4 id="added--moteur-pai-réel-spec-l1-incrément-a3-du-portage-moteurs-0-122-0">Added — Moteur PAI réel (spec 027 L1, incrément A/3 du portage moteurs)<a class="anchor" aria-label="anchor" href="#added--moteur-pai-r%C3%A9el-spec-l1-incr%C3%A9ment-a3-du-portage-moteurs-0-122-0"></a></h4>
+<p><strong><code><a href="../reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code></strong> n’est plus un scaffold : le chemin nuage de points LiDAR HD est <strong>câblé au pipeline <code>lasR</code></strong> (une lecture, deux rastérisations <code>count</code> filtrées par classe sol/végétation → fraction de trouée → PAI Beer-Lambert, rééchantillonné sur la grille de travail, masque parcelle optionnel). <strong>Portage fidèle</strong> du prototype reGénération <code>pai_lidarhd_lasR.R</code>. Dépendance lourde <code>lasR</code> en Suggests, gardée par <code>requireNamespace</code> ; pass-through <code>precomputed</code> et validation d’entrées propre conservés. Nouveaux arguments : <code>parcelle</code>, <code>fenetre</code>, <code>cl_sol</code>, <code>cl_veg</code>, <code>epsg</code>, <code>pai_max</code>.</p>
+<p>Premier des 3 moteurs portés (stratégie <strong>incrémentale avec validation réelle entre chaque</strong>). Le chemin moteur n’est <strong>pas testable en CI</strong> (dalles LiDAR HD requises) — <strong>à valider par Pascal sur données réelles</strong> avant l’incrément B (microclimf). Suivent : B <code>regen_sensibilite</code> (microclimf), C <code>regen_bilan_hydrique</code> (biljouR).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.121.1" id="nemeton-01211-2026-07-03">nemeton 0.121.1 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01211-2026-07-03"></a></h2>
 <div class="section level4">
