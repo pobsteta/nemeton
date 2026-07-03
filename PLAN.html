@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.120.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.121.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -532,7 +532,7 @@
 <td>Persistance <code>regeneration_states</code> + export GPKG + Quarto (app)</td>
 <td>✅ <strong>nemetonshiny v0.98.0/.1</strong>
 </td>
-</tr></tbody></table><p><strong>Reste cœur (ouvert)</strong> : - <strong>Mapping TFV → essence de régénération</strong> : fonction cœur reliant les types de formation végétale BD Forêt v2 (<code><a href="reference/bdforet_v2_mapping.html">bdforet_v2_mapping()</a></code> : <code>tfv_code</code>/<code>label_fr</code>) aux essences paramétrables (<code><a href="reference/regeneration_tolerances.html">regeneration_tolerances()</a></code> <code>code</code>/<code>label</code>, et/ou <code><a href="reference/european_species_tolerances.html">european_species_tolerances()</a></code>) → l’app <strong>pré-remplit</strong> « Essence cible » avec les essences réellement présentes sur l’emprise (aujourd’hui la liste vient de la seule table de tolérances). Logique métier → <strong>doit vivre dans <code>nemeton</code></strong>. - <strong>Pondération continue FORDEAD/RECONFORT</strong> (R5) : <em>à confirmer non couvert</em> — aujourd’hui routage <strong>discret</strong> par part d’essence (<code>.resolve_reconfort_share()</code>), pas de blend continu des deux signaux. À ouvrir seulement si réellement voulu. - Orchestration RÉELLE des moteurs (microclimf/biljouR/lasR/SAFRAN) : chez Pascal (deps + données), via le chemin <code>precomputed</code> déjà en place.</p>
+</tr></tbody></table><p><strong>Reste cœur</strong> : - ✅ <strong>Mapping TFV → essence de régénération</strong> — <strong>livré v0.121.0</strong> : <code><a href="reference/map_tfv_to_species_class.html">map_tfv_to_species_class()</a></code> (colonne <code>species_class</code> de <code><a href="reference/bdforet_v2_mapping.html">bdforet_v2_mapping()</a></code>) + <code>regen_species_choices(tfv_col=)</code> (mode espèces FRM, présence UGF via TFV) + <code>indice_priorite_regen(species=)</code> résout classe <strong>et</strong> espèce UE. L’app pré-remplit « Essence cible » depuis BD Forêt v2. - <strong>Pondération continue FORDEAD/RECONFORT</strong> (R5) : <em>à confirmer non couvert</em> — aujourd’hui routage <strong>discret</strong> par part d’essence (<code>.resolve_reconfort_share()</code>), pas de blend continu des deux signaux. À ouvrir seulement si réellement voulu. - Orchestration RÉELLE des moteurs (microclimf/biljouR/lasR/SAFRAN) : chez Pascal (deps + données), via le chemin <code>precomputed</code> déjà en place.</p>
 <div class="section level4">
 <h4 id="id_2026-06-30--l1-cœur--indicateurs-microclimatiques-a3a4w4-v01010">2026-06-30 — L1 cœur : indicateurs microclimatiques A3/A4/W4 (<code>v0.101.0</code>)<a class="anchor" aria-label="anchor" href="#id_2026-06-30--l1-c%C5%93ur--indicateurs-microclimatiques-a3a4w4-v01010"></a></h4>
 <ul><li>
@@ -859,6 +859,10 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-03--added-v01210--sélecteur-par-espèce-frm--mapping-tfv--essence-spec-027-incrément-23">2026-07-03 — Added v0.121.0 : sélecteur par-espèce FRM + mapping TFV → essence (spec 027, incrément 2/3)<a class="anchor" aria-label="anchor" href="#id_2026-07-03--added-v01210--s%C3%A9lecteur-par-esp%C3%A8ce-frm--mapping-tfv--essence-spec-027-incr%C3%A9ment-23"></a></h3>
+<p>Ferme l’item cœur PLAN « mapping TFV → essence ». <code><a href="reference/map_tfv_to_species_class.html">map_tfv_to_species_class()</a></code> (colonne <code>species_class</code> de <code>bdforet_v2_mapping.csv</code>, 28 TFV mappés / 4 non-forestiers NA) → TFV BD Forêt v2 → classe NMT. <code><a href="reference/regen_species_choices.html">regen_species_choices()</a></code> gagne <code>level</code> : <code>"species"</code> (<strong>défaut</strong>, essences FRM d’<code>european_species_tolerances</code>, Atlas repliable <code>include_atlas</code>) / <code>"class"</code> (11 classes). Présence UGF via <code>tfv_col</code> (mapping TFV) ou colonne de classe → groupes present/adaptation/atlas. <code><a href="reference/european_species_tolerances.html">european_species_tolerances()</a></code> gagne <code>species_class</code> (règle de genre → 11 classes). <code>indice_priorite_regen(species=)</code> résout <strong>les deux tables</strong> (classe <code>essence_hetraie</code> <strong>ou</strong> espèce <code>fagus_sylvatica</code>). Brief onglet §4.1 mis à jour (3 optgroup, tfv_col, confidence/invasif, shade_tol contexte). Tests test-regen-species-choices.R 31 PASS ; sweep 474. NAMESPACE + 4 man + pkgdown.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-03--spec-027-regénération--lots-l4l5l6-livrés-côté-app-aucun-code-cœur">2026-07-03 — spec 027 (reGénération) : lots L4/L5/L6 livrés côté app (aucun code cœur)<a class="anchor" aria-label="anchor" href="#id_2026-07-03--spec-027-reg%C3%A9n%C3%A9ration--lots-l4l5l6-livr%C3%A9s-c%C3%B4t%C3%A9-app-aucun-code-c%C5%93ur"></a></h3>
 <ul><li>

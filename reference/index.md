@@ -834,6 +834,8 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
   : Species choices for the reGénération target-species selector
 - [`european_species_tolerances()`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md)
   : European tree-species regeneration tolerances
+- [`map_tfv_to_species_class()`](https://pobsteta.github.io/nemeton/reference/map_tfv_to_species_class.md)
+  : Map BD Forêt v2 TFV codes to NMT species classes
 - [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
   : Microclimate exposure per unit — microclimf engine (spec 027 L1)
 - [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)

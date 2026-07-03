@@ -1008,18 +1008,16 @@ dépérissement), pas de 13e famille (radar 12 axes). Mode augmenté
 | **L5** | Profil LLM « Adaptation climatique » (app) | ✅ **nemetonshiny v0.98.0** |
 | **L6** | Persistance `regeneration_states` + export GPKG + Quarto (app) | ✅ **nemetonshiny v0.98.0/.1** |
 
-**Reste cœur (ouvert)** : - **Mapping TFV → essence de régénération** :
-fonction cœur reliant les types de formation végétale BD Forêt v2
-([`bdforet_v2_mapping()`](https://pobsteta.github.io/nemeton/reference/bdforet_v2_mapping.md)
-: `tfv_code`/`label_fr`) aux essences paramétrables
-([`regeneration_tolerances()`](https://pobsteta.github.io/nemeton/reference/regeneration_tolerances.md)
-`code`/`label`, et/ou
-[`european_species_tolerances()`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md))
-→ l’app **pré-remplit** « Essence cible » avec les essences réellement
-présentes sur l’emprise (aujourd’hui la liste vient de la seule table de
-tolérances). Logique métier → **doit vivre dans `nemeton`**. -
-**Pondération continue FORDEAD/RECONFORT** (R5) : *à confirmer non
-couvert* — aujourd’hui routage **discret** par part d’essence
+**Reste cœur** : - ✅ **Mapping TFV → essence de régénération** —
+**livré v0.121.0** :
+[`map_tfv_to_species_class()`](https://pobsteta.github.io/nemeton/reference/map_tfv_to_species_class.md)
+(colonne `species_class` de
+[`bdforet_v2_mapping()`](https://pobsteta.github.io/nemeton/reference/bdforet_v2_mapping.md)) +
+`regen_species_choices(tfv_col=)` (mode espèces FRM, présence UGF via
+TFV) + `indice_priorite_regen(species=)` résout classe **et** espèce UE.
+L’app pré-remplit « Essence cible » depuis BD Forêt v2. - **Pondération
+continue FORDEAD/RECONFORT** (R5) : *à confirmer non couvert* —
+aujourd’hui routage **discret** par part d’essence
 (`.resolve_reconfort_share()`), pas de blend continu des deux signaux. À
 ouvrir seulement si réellement voulu. - Orchestration RÉELLE des moteurs
 (microclimf/biljouR/lasR/SAFRAN) : chez Pascal (deps + données), via le
@@ -1677,6 +1675,25 @@ cœur).
 ------------------------------------------------------------------------
 
 ## Journal
+
+### 2026-07-03 — Added v0.121.0 : sélecteur par-espèce FRM + mapping TFV → essence (spec 027, incrément 2/3)
+
+Ferme l’item cœur PLAN « mapping TFV → essence ».
+[`map_tfv_to_species_class()`](https://pobsteta.github.io/nemeton/reference/map_tfv_to_species_class.md)
+(colonne `species_class` de `bdforet_v2_mapping.csv`, 28 TFV mappés / 4
+non-forestiers NA) → TFV BD Forêt v2 → classe NMT.
+[`regen_species_choices()`](https://pobsteta.github.io/nemeton/reference/regen_species_choices.md)
+gagne `level` : `"species"` (**défaut**, essences FRM
+d’`european_species_tolerances`, Atlas repliable `include_atlas`) /
+`"class"` (11 classes). Présence UGF via `tfv_col` (mapping TFV) ou
+colonne de classe → groupes present/adaptation/atlas.
+[`european_species_tolerances()`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md)
+gagne `species_class` (règle de genre → 11 classes).
+`indice_priorite_regen(species=)` résout **les deux tables** (classe
+`essence_hetraie` **ou** espèce `fagus_sylvatica`). Brief onglet §4.1
+mis à jour (3 optgroup, tfv_col, confidence/invasif, shade_tol
+contexte). Tests test-regen-species-choices.R 31 PASS ; sweep 474.
+NAMESPACE + 4 man + pkgdown.
 
 ### 2026-07-03 — spec 027 (reGénération) : lots L4/L5/L6 livrés côté app (aucun code cœur)
 

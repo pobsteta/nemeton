@@ -17,6 +17,7 @@ bdforet_v2_mapping(file = NULL)
 
 ## Value
 
-A data.frame with columns `tfv_code`, `label_fr`, `context_key`,
+A data.frame with columns `tfv_code`, `label_fr`, `species_class` (NMT
+species class, `NA` for non-forest / no canopy TFV), `context_key`,
 `confidence` (`"clear"` or `"ambiguous"`), `alt_context_key`,
 `notes_fr`.

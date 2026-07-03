@@ -12,6 +12,32 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.121.0\] - 2026-07-03
+
+### Added
+
+- [`map_tfv_to_species_class()`](https://pobsteta.github.io/nemeton/reference/map_tfv_to_species_class.md)
+  (spec 027): BD Forêt v2 TFV code -\> NMT species class, via a new
+  `species_class` column of
+  [`bdforet_v2_mapping()`](https://pobsteta.github.io/nemeton/reference/bdforet_v2_mapping.md).
+  Closes the core PLAN item “TFV -\> regeneration species mapping” (app
+  pre-fills the target species from the essences present on the
+  coverage).
+- [`regen_species_choices()`](https://pobsteta.github.io/nemeton/reference/regen_species_choices.md)
+  gains a `level` argument: `"species"` (default) now lists the FRM
+  European species (`european_species_tolerances(statut="frm")`, Atlas
+  foldable via `include_atlas`), `"class"` keeps the 11 broad classes.
+  UGF presence flagged from a TFV column (`tfv_col`) or a species-class
+  column.
+- [`european_species_tolerances()`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md)
+  gains a `species_class` column (genus-rule link to the 11 classes).
+
+### Changed
+
+- `indice_priorite_regen(species=)` resolves both tolerance tables: a
+  class code (`essence_hetraie`) or a European species code
+  (`fagus_sylvatica`).
+
 ## \[0.120.0\] - 2026-07-03
 
 ### Added

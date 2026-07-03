@@ -37,10 +37,14 @@ european_species_tolerances(statut = NULL, confiance = NULL, type = NULL,
 
 ## Value
 
-A data.frame with `code`, `species_sci`, `species_fr`, `type`, `statut`,
-`tmax_tol_c`, `vpd_tol_kpa`, `drought_tol`, `shade_tol`, `waterlog_tol`,
-`frost_winter_min_c`, `frost_late`, `frost_early`, `air_humidity`,
-`thermophily`, `confidence`, `invasif`, `notes`.
+A data.frame with `code`, `species_sci`, `species_fr`, `type`,
+`species_class` (rule-based link to the 11
+[`list_species_classes`](https://pobsteta.github.io/nemeton/reference/list_species_classes.md),
+for the UGF-presence flag of
+[`regen_species_choices`](https://pobsteta.github.io/nemeton/reference/regen_species_choices.md)),
+`statut`, `tmax_tol_c`, `vpd_tol_kpa`, `drought_tol`, `shade_tol`,
+`waterlog_tol`, `frost_winter_min_c`, `frost_late`, `frost_early`,
+`air_humidity`, `thermophily`, `confidence`, `invasif`, `notes`.
 
 ## Details
 

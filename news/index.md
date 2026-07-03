@@ -1,5 +1,39 @@
 # Changelog
 
+## nemeton 0.121.0 (2026-07-03)
+
+#### Added — Sélecteur essence par-espèce + mapping TFV → essence (spec 027, incrément 2/3)
+
+- **`map_tfv_to_species_class(tfv_code)`** : mappe les codes TFV BD
+  Forêt v2 → classe d’essence NMT (`essence_hetraie`…), via une nouvelle
+  colonne `species_class` de
+  [`bdforet_v2_mapping()`](https://pobsteta.github.io/nemeton/reference/bdforet_v2_mapping.md).
+  Essences nommées → classe ; mélanges → `essence_mixte` ; non-forestier
+  → `NA`. **Ferme l’item cœur PLAN** « mapping TFV → essence de
+  régénération » : l’app pré-remplit « Essence cible » depuis les
+  essences réellement présentes sur l’emprise.
+- **[`regen_species_choices()`](https://pobsteta.github.io/nemeton/reference/regen_species_choices.md)
+  étendu** — nouveau paramètre `level` :
+  - `level = "species"` (**défaut**) : les **essences FRM** européennes
+    (`european_species_tolerances(statut = "frm")`), Atlas repliable via
+    `include_atlas = TRUE` (groupe `"atlas"`). Colonnes riches exposées
+    (`species_sci`, `shade_tol`, `confidence`, `invasif`,
+    `species_class`…).
+  - `level = "class"` : les 11 classes broad (comportement antérieur).
+  - **Présence UGF** flaggée depuis une colonne TFV (`tfv_col`, via
+    [`map_tfv_to_species_class()`](https://pobsteta.github.io/nemeton/reference/map_tfv_to_species_class.md))
+    ou une colonne de classe ; groupe `"present"` en tête,
+    `"adaptation"` ensuite, tri par tolérance chaleur.
+- **[`european_species_tolerances()`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md)**
+  gagne une colonne **`species_class`** (rattachement par règle de genre
+  aux 11 classes, pour le flag présence).
+- **`indice_priorite_regen(species=)`** résout désormais **les deux
+  tables** : un code de classe (`essence_hetraie`) **ou** d’espèce UE
+  (`fagus_sylvatica`).
+
+Incrément 2/3. Reste : brief onglet §4.1 (fait ici) et, plus tard,
+calibration fine / voies ClimEssences si souhaité.
+
 ## nemeton 0.120.0 (2026-07-03)
 
 #### Added — Table de tolérances des essences européennes (spec 027, calibration)
