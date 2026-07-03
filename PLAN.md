@@ -1649,6 +1649,26 @@ cœur).
 
 ## Journal
 
+### 2026-07-03 — Added v0.118.0 : branche A tendances estivales E-OBS (spec 027 §6, 4e incrément)
+
+4e incrément reGénération.
+`tendances_estivales_eobs(aoi, tx, rr, buffer_m=25000, breaks, precomputed)`
+(`R/tendances_eobs.R`) : carte bivariée de tendances estivales
+(réchauffement × assèchement) **recadrée sur l’emprise UGF + 25 km**
+(§10.4 validé Pascal ; buffer métrique EPSG:3035), **pas nationale**.
+Par maille E-OBS : pente moindres carrés T°max/précip estivales +
+classes bivariées (`classe_tmax`/`classe_precip` 1-3 tertiles ou breaks
+fixes ; `classe_bivariee` 1-9). Comme les moteurs : chemin `precomputed`
+(crop+classe sans données), chemin moteur (rasters par-année → pentes,
+terra testable), échec propre. Sortie = `sf` points centres de maille →
+choroplèthe côté app. Le cœur calcule, l’app rend (**brief nemetonshiny
+fourni**). Tests `test-tendances-eobs.R` 17 PASS ; sweep 352.
+NAMESPACE + man + pkgdown à la main.
+
+**Volet cœur spec 027 : tout le calculable/testable est livré.** Reste
+l’orchestration RÉELLE des moteurs (chez Pascal, deps+données) et L4-L6
+côté nemetonshiny (indice + carte bivariée A + carto/onglet).
+
 ### 2026-07-02 — Added v0.117.0 : scaffolds moteurs reGénération L1/L2 (spec 027, 3e incrément code)
 
 3e incrément. Les moteurs touchent aux deps GPL lourdes

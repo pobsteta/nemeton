@@ -1,5 +1,29 @@
 # Changelog
 
+## nemeton 0.118.0 (2026-07-03)
+
+#### Added — Branche A : tendances estivales E-OBS sur l’emprise UGF (spec 027 §6)
+
+**[`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)**
+: la carte bivariée de tendances estivales (réchauffement × assèchement,
+inspirée de *L’IF* n°49 IGN), **recadrée sur l’union des UGF + un
+buffer** (décision §10.4, **défaut 25 km** — validé Pascal ; buffer
+métrique via EPSG:3035 LAEA). **Pas de carte nationale.**
+
+Le cœur **calcule** ; l’app **rend**. Par maille E-OBS de l’emprise :
+tendance (pente moindres carrés ~ année) de la **T°max** et des
+**précipitations** estivales, puis **classification bivariée** —
+`classe_tmax` / `classe_precip` (1-3, tertiles par défaut ou `breaks`
+fixes) et `classe_bivariee` (1-9, `(classe_tmax-1)*3 + classe_precip` ;
+« chaud & sec » = 3 & 1).
+
+Comme les moteurs : E-OBS (NetCDF, licence recherche non commerciale)
+est externe → **chemin `precomputed`** (une `sf`/raster de tendances →
+crop + classe, sans données), **chemin moteur** (rasters `tx`/`rr`
+par-année → calcul des pentes, logique terra testable), ou **échec
+propre**. Sortie = `sf` de points (centres de maille) dans l’emprise
+tamponnée, prête pour la choroplèthe bivariée côté `nemetonshiny`.
+
 ## nemeton 0.117.0 (2026-07-02)
 
 #### Added — Scaffolds des moteurs reGénération L1/L2 (spec 027 v2.1)
