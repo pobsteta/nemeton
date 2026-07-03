@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.118.0] - 2026-07-03
+
+### Added
+- `tendances_estivales_eobs()` (spec 027 §6, branch A): summer E-OBS climate
+  trend map (warming × drying) cropped to the union of the units plus a buffer
+  (default 25 km, decision §10.4; metric buffer via EPSG:3035), not national.
+  Per E-OBS cell: least-squares trend of summer tmax and precipitation, plus a
+  bivariate classification (`classe_tmax`/`classe_precip` 1-3, `classe_bivariee`
+  1-9). Engine path from per-year `tx`/`rr` rasters (testable terra logic),
+  `precomputed` fast-path, clean degradation. Returns an sf of cell-centre
+  points for the app to render.
+
 ## [0.117.0] - 2026-07-02
 
 ### Added

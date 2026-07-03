@@ -443,6 +443,7 @@ reference:
     - regen_sensibilite
     - regen_bilan_hydrique
     - pai_depuis_nuage
+    - tendances_estivales_eobs
     - regeneration_tolerances
     - microclimate_detect_years
     - microclimate_run
