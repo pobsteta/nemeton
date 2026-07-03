@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.123.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.124.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.124.0" id="nemeton-01240-2026-07-03">nemeton 0.124.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01240-2026-07-03"></a></h2>
+<div class="section level4">
+<h4 id="changed--extraction-e-obs-estivale-câblée-dans-microclimate_detect_years-spec-l2-item-cœur-0-124-0">Changed — Extraction E-OBS estivale câblée dans microclimate_detect_years() (spec 027 L2, item cœur 2)<a class="anchor" aria-label="anchor" href="#changed--extraction-e-obs-estivale-c%C3%A2bl%C3%A9e-dans-microclimate_detect_years-spec-l2-item-c%C5%93ur-0-124-0"></a></h4>
+<p><strong><code>microclimate_detect_years(eobs, aoi, years, …)</code></strong> accepte désormais un <strong><code>SpatRaster</code> E-OBS par-année</strong> (une couche par an, JJA agrégé — même contrat que <code>tx</code> de <code><a href="../reference/tendances_estivales_eobs.html">tendances_estivales_eobs()</a></code>), plus seulement un named numeric pré-calculé. Chaque couche est <strong>croppée + masquée sur l’AOI</strong> (union des UGF) puis moyennée (<code><a href="https://rspatial.github.io/terra/reference/global.html" class="external-link">terra::global</a></code>) → indice de chaleur estivale par an, qui alimente la sélection année moyenne / canicule de <code><a href="../reference/indicateur_r6_sensibilite.html">indicateur_r6_sensibilite()</a></code>. Les années viennent des noms de couches ou du nouvel argument <code>years</code>. C’était le chemin « not wired yet » du L2 (l’app pré-remplit ainsi ses deux sélecteurs d’années depuis l’Auto E-OBS de reGénération).</p>
+<p>Rétrocompatible : le chemin named numeric (<code>year -&gt; heat</code>) est inchangé. Testable hors réseau (raster synthétique) — 20 tests, dont crop/mask sur l’AOI.</p>
+<p><strong>Note</strong> : l’item cœur « mapping TFV → essence de régénération » (<code><a href="../reference/map_tfv_to_species_class.html">map_tfv_to_species_class()</a></code> ↔︎ <code><a href="../reference/regeneration_tolerances.html">regeneration_tolerances()</a></code>) était <strong>déjà livré</strong> en v0.121.0 (exporté, documenté, testé) — rien à ajouter.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.123.0" id="nemeton-01230-2026-07-03">nemeton 0.123.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01230-2026-07-03"></a></h2>
 <div class="section level4">

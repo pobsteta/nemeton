@@ -12,6 +12,23 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.124.0\] - 2026-07-03
+
+### Changed
+
+- [`microclimate_detect_years()`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md)
+  (spec 027 L2, core item 2) now accepts a per-year summer `SpatRaster`
+  E-OBS input (one layer per year, JJA-aggregated) in addition to the
+  precomputed named-numeric series: each layer is cropped + masked to
+  the AOI (units’ union) and averaged
+  ([`terra::global`](https://rspatial.github.io/terra/reference/global.html))
+  into the yearly summer-heat index feeding the average/heatwave year
+  selection for
+  [`indicateur_r6_sensibilite()`](https://pobsteta.github.io/nemeton/reference/indicateur_r6_sensibilite.md).
+  Years come from layer names or a new `years` argument. This wires the
+  previously deferred E-OBS raster path. Backward compatible; testable
+  offline (20 tests, incl. AOI crop/mask).
+
 ## \[0.123.0\] - 2026-07-03
 
 ### Added

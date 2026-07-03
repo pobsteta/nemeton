@@ -9,21 +9,30 @@ selectors, which the user can override.
 ## Usage
 
 ``` r
-microclimate_detect_years(eobs = NULL, aoi = NULL, year_window = NULL,
-  lidar_year = NULL)
+microclimate_detect_years(eobs = NULL, aoi = NULL, years = NULL,
+  year_window = NULL, lidar_year = NULL)
 ```
 
 ## Arguments
 
 - eobs:
 
-  The E-OBS summer-heat series. A **named numeric**
-  (`year -> summer-heat index`, e.g. mean JJA Tmax) is used directly;
-  raster/netcdf extraction over `aoi` is deferred (data-bound).
+  The E-OBS summer-heat series. Either a **named numeric**
+  (`year -> summer-heat index`, e.g. mean JJA Tmax), used directly, or a
+  **per-year summer `SpatRaster`** (one layer per year, JJA-aggregated —
+  same contract as `tx` in
+  [`tendances_estivales_eobs`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)):
+  each layer is averaged over `aoi` to give the yearly index.
 
 - aoi:
 
-  Optional `sf`/`sfc` AOI (used by the deferred raster path).
+  Optional `sf`/`sfc` AOI. When `eobs` is a `SpatRaster` it is cropped +
+  masked to the units' union before averaging.
+
+- years:
+
+  Optional integer years, one per `SpatRaster` layer (default: the layer
+  names parsed as integers). Ignored for the named-numeric path.
 
 - year_window:
 
@@ -42,4 +51,5 @@ numeric, the summer-heat index per candidate year).
 
 ## See also
 
-[`indicateur_r6_sensibilite`](https://pobsteta.github.io/nemeton/reference/indicateur_r6_sensibilite.md)
+[`indicateur_r6_sensibilite`](https://pobsteta.github.io/nemeton/reference/indicateur_r6_sensibilite.md),
+[`tendances_estivales_eobs`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.123.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.124.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -860,6 +860,17 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-03--changed-v01240--extraction-e-obs-raster-câblée--item-tfv-confirmé-spec-027-items-cœur-2--3">2026-07-03 — Changed v0.124.0 : extraction E-OBS raster câblée + item TFV confirmé (spec 027, items cœur 2 &amp; 3)<a class="anchor" aria-label="anchor" href="#id_2026-07-03--changed-v01240--extraction-e-obs-raster-c%C3%A2bl%C3%A9e--item-tfv-confirm%C3%A9-spec-027-items-c%C5%93ur-2--3"></a></h3>
+<p><strong>3 items cœur spec 027/031 traités ce jour</strong> (tous briefés côté nemetonshiny) :</p>
+<ul><li>
+<strong>Item 1 — forêt ancienne</strong> : <code><a href="reference/load_foret_ancienne_source.html">load_foret_ancienne_source()</a></code> (v0.123.0, ci-dessous).</li>
+<li>
+<strong>Item 2 — E-OBS estival</strong> : <code><a href="reference/microclimate_detect_years.html">microclimate_detect_years()</a></code> accepte un SpatRaster E-OBS par-année (crop+mask AOI → moyenne JJA/an → sélection moyenne/canicule). Le « not wired yet » du L2 est levé. Rétrocompatible, 20 tests (dont crop/mask).</li>
+<li>
+<strong>Item 3 — mapping TFV→essence</strong> : <strong>déjà livré v0.121.0</strong> (<code>map_tfv_to_species_class</code> exporté/documenté/testé, consommé par <code>regen_species_choices</code>). Aucune action — confirmé complet.</li>
+</ul><p>Les 3 items cœur des briefs reGénération sont <strong>soldés</strong>. Reste le portage des moteurs (inc B microclimf / C biljouR, après validation PAI) + le brief app D.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-03--added-v01230--acquisition-forêt-ancienne-état-major-pour-n2-spec-031-item-cœur-13">2026-07-03 — Added v0.123.0 : acquisition forêt ancienne état-major pour N2 (spec 031, item cœur 1/3)<a class="anchor" aria-label="anchor" href="#id_2026-07-03--added-v01230--acquisition-for%C3%AAt-ancienne-%C3%A9tat-major-pour-n2-spec-031-item-c%C5%93ur-13"></a></h3>
 <p><strong><code>load_foret_ancienne_source(aoi, crs)</code></strong> livré. L’app (nemetonshiny) est déjà câblée (<code>.fetch_foret_ancienne_auto</code> → <code>getExportedValue("nemeton", "load_foret_ancienne_source")</code>) : dès export cœur, elle consomme sans bump.</p>

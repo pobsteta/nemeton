@@ -13,7 +13,7 @@ pre-fill the app's two year selectors, which the user can override."><meta prope
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.123.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.124.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,8 +58,8 @@ pre-fill the app's two year selectors, which the user can override.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">microclimate_detect_years</span><span class="op">(</span>eobs <span class="op">=</span> <span class="cn">NULL</span>, aoi <span class="op">=</span> <span class="cn">NULL</span>, year_window <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  lidar_year <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">microclimate_detect_years</span><span class="op">(</span>eobs <span class="op">=</span> <span class="cn">NULL</span>, aoi <span class="op">=</span> <span class="cn">NULL</span>, years <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  year_window <span class="op">=</span> <span class="cn">NULL</span>, lidar_year <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -67,13 +67,21 @@ pre-fill the app's two year selectors, which the user can override.</p>
 
 
 <dl><dt id="arg-eobs">eobs<a class="anchor" aria-label="anchor" href="#arg-eobs"></a></dt>
-<dd><p>The E-OBS summer-heat series. A <strong>named numeric</strong>
-(<code>year -&gt; summer-heat index</code>, e.g. mean JJA Tmax) is used directly;
-raster/netcdf extraction over <code>aoi</code> is deferred (data-bound).</p></dd>
+<dd><p>The E-OBS summer-heat series. Either a <strong>named numeric</strong>
+(<code>year -&gt; summer-heat index</code>, e.g. mean JJA Tmax), used directly, or a
+<strong>per-year summer <code>SpatRaster</code></strong> (one layer per year, JJA-aggregated
+— same contract as <code>tx</code> in <code><a href="tendances_estivales_eobs.html">tendances_estivales_eobs</a></code>): each
+layer is averaged over <code>aoi</code> to give the yearly index.</p></dd>
 
 
 <dt id="arg-aoi">aoi<a class="anchor" aria-label="anchor" href="#arg-aoi"></a></dt>
-<dd><p>Optional <code>sf</code>/<code>sfc</code> AOI (used by the deferred raster path).</p></dd>
+<dd><p>Optional <code>sf</code>/<code>sfc</code> AOI. When <code>eobs</code> is a
+<code>SpatRaster</code> it is cropped + masked to the units' union before averaging.</p></dd>
+
+
+<dt id="arg-years">years<a class="anchor" aria-label="anchor" href="#arg-years"></a></dt>
+<dd><p>Optional integer years, one per <code>SpatRaster</code> layer (default:
+the layer names parsed as integers). Ignored for the named-numeric path.</p></dd>
 
 
 <dt id="arg-year-window">year_window<a class="anchor" aria-label="anchor" href="#arg-year-window"></a></dt>
@@ -94,7 +102,7 @@ frozen-canopy bias).</p></dd>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="indicateur_r6_sensibilite.html">indicateur_r6_sensibilite</a></code></p></div>
+    <div class="dont-index"><p><code><a href="indicateur_r6_sensibilite.html">indicateur_r6_sensibilite</a></code>, <code><a href="tendances_estivales_eobs.html">tendances_estivales_eobs</a></code></p></div>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
