@@ -65,7 +65,16 @@ test_that("regen_sensibilite output feeds indice_priorite_regen", {
 
 test_that("regen_sensibilite fails cleanly without engine nor precomputed", {
   u <- .re_units(1)
-  expect_error(regen_sensibilite(u), "microclimf")
+  # Selon que microclimf est installé (Remotes) ou non, l'échec propre tombe
+  # soit sur le paquet manquant, soit sur les entrées moteur manquantes.
+  expect_error(regen_sensibilite(u), "microclimf|engine path")
+})
+
+test_that("regen_sensibilite engine path validates missing LiDAR inputs", {
+  skip_if_not_installed("microclimf")
+  u <- .re_units(1)
+  expect_error(regen_sensibilite(u, annees_moy = 2014, annees_canic = 2018),
+               "engine path needs")
 })
 
 test_that("pai_depuis_nuage passes a precomputed SpatRaster through", {
