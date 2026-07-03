@@ -12,6 +12,24 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.120.0\] - 2026-07-03
+
+### Added
+
+- [`european_species_tolerances()`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md)
+  (spec 027): per-species restocking-tolerance reference table for ~193
+  European tree species (file provided by Pascal). Complements the
+  11-class
+  [`regeneration_tolerances()`](https://pobsteta.github.io/nemeton/reference/regeneration_tolerances.md)
+  with the same `tmax_tol_c`/`vpd_tol_kpa` axes (now sourced) plus
+  Niinemets & Valladares
+  2006. drought/shade/waterlogging tolerances, frost, air humidity and
+        thermophily. `statut` scopes (frm_1999 / frm_2025 / atlas_jrc),
+        `confidence` grading and an `invasif` flag; `statut = "frm"`
+        convenience filter. Sources added in `inst/REFERENCES.md`; data
+        in `inst/extdata/european_species_tolerances.csv` (built by
+        `data-raw/european_species_tolerances.R`). Increment 1/3.
+
 ## \[0.119.0\] - 2026-07-03
 
 ### Added

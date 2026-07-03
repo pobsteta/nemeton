@@ -383,6 +383,8 @@ sortie testthat).
     inst/tutorials/               → Tutoriels pédagogiques (acquisition, LiDAR, ABA, etc.)
     inst/extdata/aba.model/       → Modèle ABA (Area-Based Approach) + données LiDAR d'exemple
     inst/extdata/site_index_curves.csv → Courbes de hauteur dominante par essence/classe (spec 005)
+    inst/extdata/european_species_tolerances.csv → Tolérances repeuplement ~193 essences UE, sourcées par espèce (spec 027) ; accessor european_species_tolerances()
+    inst/REFERENCES.md              → Bibliographie sources (FRM, JRC Atlas, Niinemets &amp; Valladares, ClimEssences…)
     inst/datasources/             → Définitions des sources de données (NDP)
 
 ## Fichiers clés (app, repo `nemetonshiny`)

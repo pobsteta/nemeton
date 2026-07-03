@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.119.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.120.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,16 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.120.0" id="nemeton-01200-2026-07-03">nemeton 0.120.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01200-2026-07-03"></a></h2>
+<div class="section level4">
+<h4 id="added--table-de-tolérances-des-essences-européennes-spec-calibration-0-120-0">Added — Table de tolérances des essences européennes (spec 027, calibration)<a class="anchor" aria-label="anchor" href="#added--table-de-tol%C3%A9rances-des-essences-europ%C3%A9ennes-spec-calibration-0-120-0"></a></h4>
+<p><strong><code>european_species_tolerances(statut, confiance, type, include_invasif)</code></strong> : table de référence des tolérances au repeuplement pour <strong>~193 essences européennes</strong>, sourcée/calibrée <strong>par espèce</strong> (fichier fourni par Pascal). Elle <strong>complète</strong> <code><a href="../reference/regeneration_tolerances.html">regeneration_tolerances()</a></code> (11 classes broad, conservée pour le mapping UGF) avec les <strong>mêmes axes</strong> <code>tmax_tol_c</code>/<code>vpd_tol_kpa</code> — désormais sourcés — <strong>plus</strong> l’autécologie Niinemets &amp; Valladares 2006 (sécheresse / <strong>ombre-couvert</strong> / engorgement 1–5), gel hiver/tardif/précoce, humidité de l’air et thermophilie (1–9).</p>
+<p>Trois périmètres empilés (<code>statut</code>) : <code>frm_1999</code> (Directive 1999/105/CE, 47), <code>frm_2025</code> (ajouts futur règlement FRM, accord 2025-12-08, 17), <code>atlas_jrc</code> (European Atlas of Forest Tree Species, ~130, <strong>canevas dérivé par règle</strong>). Colonne <code>confidence</code> (<code>eleve</code>/<code>moyen</code>/<code>faible</code>) + flag <code>invasif</code> (INTRO/INVASIF = <strong>présence ≠ recommandation</strong>). Filtre pratique <code>statut = "frm"</code> (toutes essences réglementaires).</p>
+<p>Sources ajoutées au projet dans <strong><code>inst/REFERENCES.md</code></strong> (Directive 1999/105/CE, JRC European Atlas / San-Miguel-Ayanz 2016, Caudullo 2017, Niinemets &amp; Valladares 2006, Münchinger 2023, Visakorpi 2024, EUFORGEN, Ellenberg, ClimEssences). Données <code>inst/extdata/european_species_tolerances.csv</code>, générées par <code>data-raw/european_species_tolerances.R</code>.</p>
+<p>Incrément 1/3 (donnée + sources). Suivent : sélecteur <code><a href="../reference/regen_species_choices.html">regen_species_choices()</a></code> étendu aux essences FRM (Atlas replié), puis résolution par-espèce dans <code>indice_priorite_regen(species=)</code> + brief onglet.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.119.0" id="nemeton-01190-2026-07-03">nemeton 0.119.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01190-2026-07-03"></a></h2>
 <div class="section level4">

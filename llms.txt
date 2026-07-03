@@ -1050,6 +1050,8 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
   : Regeneration priority index (spec 027 L3)
 - [`regen_species_choices()`](https://pobsteta.github.io/nemeton/reference/regen_species_choices.md)
   : Species choices for the reGénération target-species selector
+- [`european_species_tolerances()`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md)
+  : European tree-species regeneration tolerances
 - [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
   : Microclimate exposure per unit — microclimf engine (spec 027 L1)
 - [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
