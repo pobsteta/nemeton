@@ -10,6 +10,20 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.125.0] - 2026-07-03
+
+### Added
+- Real `regen_sensibilite()` microclimf engine (spec 027 L1, increment B/3): the
+  engine path is now wired — static LiDAR-HD grid (DTM, canopy height, PAI via
+  `pai_depuis_nuage()`), per-year microclimf runs forced by ERA5-Land (`mcera5`)
+  with disk caching (`cache_dir`), average-vs-heatwave summer means (fixed
+  canopy), ΔT°max/ΔVPD, signal/noise robustness, and per-unit aggregation into the
+  §7 exposure columns (+ `parcelle_sensible`/`priorite`). Ported faithfully from
+  the reGénération prototype `microclimat_parcelles_robuste.R`. New args `res`,
+  `tampon`, `reqhgt`, `k`, `cache_dir`; heavy deps (`microclimf`, `mcera5`,
+  `lasR`) in Suggests, guarded by `requireNamespace`; `precomputed` pass-through
+  preserved. Engine path validated on real data (not runnable in CI).
+
 ## [0.124.0] - 2026-07-03
 
 ### Changed

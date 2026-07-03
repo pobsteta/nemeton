@@ -12,6 +12,11 @@ regen_sensibilite(
   annees_moy = NULL,
   annees_canic = NULL,
   mois_ete = 6:8,
+  res = 2,
+  tampon = 150,
+  reqhgt = 0.5,
+  k = 0.5,
+  cache_dir = NULL,
   precomputed = NULL,
   ...
 )
@@ -19,21 +24,41 @@ regen_sensibilite(
 \arguments{
 \item{units}{An \code{sf} of UGF.}
 
-\item{mnt, mnh, las}{Optional LiDAR-HD inputs (DTM raster, canopy-height
-raster, classified point cloud) for the engine path.}
+\item{mnt, mnh}{Optional LiDAR-HD DTM / canopy-height inputs for the engine
+path: a \code{terra::SpatRaster}, or a directory of \code{.tif} tiles
+(VRT-mosaicked).}
+
+\item{las}{Optional directory of classified LiDAR \code{.las}/\code{.laz} tiles
+(PAI via \code{\link{pai_depuis_nuage}}).}
 
 \item{annees_moy, annees_canic}{Integer years for the average / heatwave
 summers (engine path). See \code{\link{microclimate_detect_years}}.}
 
 \item{mois_ete}{Integer months of the summer window (default \code{6:8}).}
 
+\item{res}{Target grid resolution in metres (default \code{2}).}
+
+\item{tampon}{Buffer in metres around the units for the working extent
+(default \code{150}).}
+
+\item{reqhgt}{Height (m) above ground for the microclimate (default \code{0.5}).}
+
+\item{k}{Beer-Lambert extinction coefficient for PAI (default \code{0.5}).}
+
+\item{cache_dir}{Directory for the ERA5 \code{.nc} and per-year microclimate
+\code{.tif} caches. \code{NULL} (default) uses a session temp dir; pass a
+persistent path to reuse expensive runs.}
+
 \item{precomputed}{Optional per-unit microclimf output (\code{data.frame}/list).}
 
 \item{...}{Reserved (engine parameters).}
 }
 \value{
-\code{units} with the exposure columns (subset of §7), plus derived
-\code{d_tmax}/\code{d_vpd}/\code{rang_sensibilite} where computable.
+\code{units} with the §7 exposure columns (\code{tmax_moyenne},
+\code{tmax_canicule}, \code{vpd_moyenne}, \code{vpd_canicule}, \code{d_tmax},
+\code{d_vpd}, \code{sensibilite}, \code{rang_sensibilite}, \code{robustesse},
+\code{signal_robuste}, \code{couverture_pct}), plus \code{parcelle_sensible} /
+\code{priorite}.
 }
 \description{
 Per-unit summer under-canopy exposure (T°max, VPD, canopy buffering,
@@ -43,12 +68,20 @@ Produces the §7 exposure columns consumed by
 \code{\link{indice_priorite_regen}}.
 }
 \details{
-\strong{Scaffold with a pure fast-path}: pass \code{precomputed} (a microclimf
-run output) and the metrics are attached as §7 columns without the GPL engine.
-Missing \code{d_tmax}/\code{d_vpd} are derived from the canicule − moyenne
+\strong{Two paths.} \emph{Fast-path}: pass \code{precomputed} (a microclimf run
+output) and the metrics are attached as §7 columns without the GPL engine;
+missing \code{d_tmax}/\code{d_vpd} are derived from the canicule − moyenne
 difference, and \code{rang_sensibilite} from \code{sensibilite} (1 = most
-sensitive). Without \code{precomputed}, the orchestration is not yet wired.
+sensitive). \emph{Engine path} (portage of the prototype
+\code{microclimat_parcelles_robuste.R}): builds the fixed LiDAR-HD grid (DTM,
+canopy height, PAI via \code{\link{pai_depuis_nuage}}), runs \strong{microclimf}
+per year forced by ERA5-Land (\code{mcera5}) with disk caching, averages the
+average vs heatwave summers (canopy held fixed), and aggregates ΔT°max / ΔVPD, a
+z-score \code{sensibilite} and a signal/noise \code{robustesse} per unit. The
+engine path needs LiDAR HD + ERA5/CDS and is \strong{not runnable in CI} —
+validated on real data.
 }
 \seealso{
-\code{\link{indice_priorite_regen}}, \code{\link{microclimate_detect_years}}
+\code{\link{indice_priorite_regen}}, \code{\link{microclimate_detect_years}},
+\code{\link{pai_depuis_nuage}}
 }

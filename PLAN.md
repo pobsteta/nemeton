@@ -1311,9 +1311,11 @@ inexécutables/intestables en CI : deps lourdes + LiDAR HD + ERA5/CDS + SAFRAN).
   sol/veg → Beer-Lambert), portage fidèle de `pai_lidarhd_lasR.R`. Gardé
   `requireNamespace`, precomputed conservé. **À valider par Pascal sur LiDAR
   réel avant inc B.** Tests plomberie/dégradation 19 PASS.
-- **Inc B — `regen_sensibilite` réel (microclimf)** : à venir — orchestration
-  du prototype `microclimat_parcelles_robuste.R` (MNT/MNH/PAI/veg/soil, ERA5 par
-  an via mcera5, cache, agrégation §7), + callback progress + cache_dir.
+- **Inc B — `regen_sensibilite` réel (microclimf) — LIVRÉ v0.125.0** : portage
+  fidèle de `microclimat_parcelles_robuste.R` (grille statique LiDAR HD, microclimf
+  ERA5-Land par an avec cache_dir, moyennes moyen/canicule, robustesse, agrégation
+  §7). Deps microclimf/mcera5/lasR en Suggests, gardées ; precomputed conservé.
+  **À valider par Pascal sur données réelles avant inc C.**
 - **Inc C — `regen_bilan_hydrique` réel (biljouR)** : à venir — API biljouR
   (`safran_download`→`safran_to_meteo`→`biljou_soil`→`biljou_run_grid`→
   `biljou_indices`/`biljou_grid_to_sf`).

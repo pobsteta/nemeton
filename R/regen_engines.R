@@ -1,5 +1,7 @@
-# regen_engines.R — moteurs reGénération : scaffolds L1/L2 (spec 027 v2.1)
+# regen_engines.R — moteurs reGénération : L1/L2 (spec 027 v2.1)
 # ------------------------------------------------------------------
+# État du portage : pai_depuis_nuage (lasR) et regen_sensibilite (microclimf)
+# sont des moteurs RÉELS ; regen_bilan_hydrique (biljouR) reste un scaffold.
 # Ces moteurs orchestrent des dépendances LOURDES (GPL, hors CRAN pour
 # certaines) : microclimf, mcera5, lidR, lasR (exposition microclimatique) et
 # biljouR (bilan hydrique). Elles sont en `Suggests` (hygiène d'installation,
@@ -99,6 +101,92 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 }
 
 
+# --- Helpers moteur exposition (microclimf) — portage fidèle du prototype
+# /Documents/reGénération/microclimat_parcelles_robuste.R. Non testables en CI
+# (LiDAR HD + microclimf + ERA5/CDS requis) ; validés par Pascal sur données
+# réelles. Le chemin `precomputed` de regen_sensibilite() reste pur et testé.
+
+# VPD (kPa) depuis T°C et HR%.
+.rsen_vpd <- function(Tc, RH) {
+  es <- 0.6108 * exp(17.27 * Tc / (Tc + 237.3)); es * (1 - RH / 100)
+}
+
+# MNT/MNH : SpatRaster direct, ou dossier de dalles .tif (VRT + crop emprise).
+.rsen_load_raster <- function(x, emprise, what) {
+  if (inherits(x, "SpatRaster")) return(terra::crop(x, emprise))
+  fich <- list.files(x, pattern = "\\.tif$", full.names = TRUE, ignore.case = TRUE)
+  if (!length(fich)) cli::cli_abort("No .tif tiles for {what} in {.path {x}}.")
+  terra::crop(terra::vrt(fich), emprise)
+}
+
+# Réduit une couche microclimf hétérogène à une grille constante = sa moyenne.
+.rsen_vers_grille <- function(x, g) {
+  if (inherits(x, "SpatRaster")) {
+    r <- g; terra::values(r) <- as.numeric(terra::global(x, "mean", na.rm = TRUE)); r
+  } else x
+}
+
+# Forçage ERA5-Land pour une année (téléchargement mcera5 mis en cache).
+.rsen_forcage_era5 <- function(lon, lat, annee, cache_dir) {
+  nc <- file.path(cache_dir, sprintf("era5_%d.nc", annee))
+  if (!file.exists(nc)) {
+    if (!requireNamespace("mcera5", quietly = TRUE)) {
+      cli::cli_abort(c(
+        "regen_sensibilite() engine needs {.pkg mcera5} to fetch ERA5 forcing.",
+        i = "Install mcera5 (+ CDS credentials), or pre-populate {.path {cache_dir}}."))
+    }
+    req <- mcera5::request_era5(
+      bbox = c(ymx = lat + 0.05, ymn = lat - 0.05, xmx = lon + 0.05, xmn = lon - 0.05),
+      start_time = sprintf("%d-01-01", annee), end_time = sprintf("%d-12-31", annee),
+      outfile_name = tools::file_path_sans_ext(basename(nc)))
+    mcera5::request_era5(req, out_path = cache_dir)
+  }
+  clim <- mcera5::extract_clim(nc, long = lon, lat = lat,
+            start_time = sprintf("%d-01-01", annee), end_time = sprintf("%d-12-31", annee))
+  prec <- mcera5::extract_precip(nc, long = lon, lat = lat,
+            start_time = sprintf("%d-01-01", annee), end_time = sprintf("%d-12-31", annee))
+  data.frame(obs_time = clim$obs_time, temp = clim$temperature, relhum = clim$humidity,
+             pres = clim$pressure, swdown = clim$rad_glbl,
+             difrad = pmax(clim$rad_glbl - clim$rad_dni, 0), lwdown = clim$downlong,
+             windspeed = clim$windspeed, winddir = clim$winddir, precip = prec)
+}
+
+# Une année -> rasters d'été (T°max sous couvert, VPD moyen), mis en cache tif.
+.rsen_traiter_annee <- function(annee, lon, lat, dtm, veg, soil,
+                                reqhgt, mois_ete, cache_dir) {
+  ft <- file.path(cache_dir, sprintf("cache_%d_tmax.tif", annee))
+  fv <- file.path(cache_dir, sprintf("cache_%d_vpd.tif", annee))
+  if (file.exists(ft) && file.exists(fv))
+    return(list(tmax = terra::rast(ft), vpd = terra::rast(fv)))
+  meteo <- .rsen_forcage_era5(lon, lat, annee, cache_dir)
+  microclimf::checkinputs(meteo, veg, soil, dtm)
+  mp  <- microclimf::runpointmodel(meteo, reqhgt, dtm, veg, soil)
+  mp  <- microclimf::subsetpointmodel(mp, tstep = "month", what = "tmax")
+  out <- microclimf::runmicro(mp, reqhgt, veg, soil, dtm)
+  Tz  <- out$Tz
+  mois <- if (!is.null(terra::time(Tz))) as.integer(format(terra::time(Tz), "%m"))
+          else seq_len(terra::nlyr(Tz))
+  sel <- which(mois %in% mois_ete); if (!length(sel)) sel <- seq_len(terra::nlyr(Tz))
+  tmax <- max(Tz[[sel]], na.rm = TRUE)
+  vpd  <- mean(.rsen_vpd(Tz[[sel]], out$relhum[[sel]]), na.rm = TRUE)
+  terra::writeRaster(tmax, ft, overwrite = TRUE)
+  terra::writeRaster(vpd,  fv, overwrite = TRUE)
+  list(tmax = tmax, vpd = vpd)
+}
+
+# Moyenne (et écart-type interannuel) d'une catégorie d'années.
+.rsen_moyenne_categorie <- function(annees, ...) {
+  res  <- lapply(annees, .rsen_traiter_annee, ...)
+  st_t <- terra::rast(lapply(res, `[[`, "tmax"))
+  st_v <- terra::rast(lapply(res, `[[`, "vpd"))
+  list(tmax_moy = terra::mean(st_t, na.rm = TRUE),
+       vpd_moy  = terra::mean(st_v, na.rm = TRUE),
+       tmax_sd  = if (length(annees) > 1) terra::app(st_t, stats::sd, na.rm = TRUE) else NULL,
+       vpd_sd   = if (length(annees) > 1) terra::app(st_v, stats::sd, na.rm = TRUE) else NULL,
+       n = length(annees))
+}
+
+
 #' Microclimate exposure per unit — microclimf engine (spec 027 L1)
 #'
 #' @description
@@ -107,31 +195,50 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #' **microclimf** model driven by LiDAR-HD structure and ERA5-Land forcing.
 #' Produces the §7 exposure columns consumed by [indice_priorite_regen()].
 #'
-#' **Scaffold with a pure fast-path**: pass `precomputed` (the per-unit output
-#' of a microclimf run — e.g. the prototype `microclimat_parcelles_robuste.R`)
-#' and the metrics are attached as §7 columns without the GPL engine. When
-#' `d_tmax`/`d_vpd` are absent they are derived from
-#' `tmax_canicule - tmax_moyenne` / `vpd_canicule - vpd_moyenne`, and
-#' `rang_sensibilite` from `sensibilite` (1 = most sensitive). Without
-#' `precomputed`, the microclimf orchestration is not yet wired; the function
-#' fails cleanly.
+#' **Two paths.** *Fast-path*: pass `precomputed` (the per-unit output of a
+#' microclimf run — e.g. the prototype `microclimat_parcelles_robuste.R`) and the
+#' metrics are attached as §7 columns without the GPL engine; missing
+#' `d_tmax`/`d_vpd` are derived from `tmax_canicule - tmax_moyenne` /
+#' `vpd_canicule - vpd_moyenne`, and `rang_sensibilite` from `sensibilite`
+#' (1 = most sensitive). *Engine path* (portage of the prototype): builds the
+#' fixed LiDAR-HD grid (DTM, canopy height, PAI via [pai_depuis_nuage()]), runs
+#' **microclimf** per year forced by ERA5-Land (`mcera5`) with disk caching,
+#' averages the *average* vs *heatwave* summers (canopy held fixed), and
+#' aggregates ΔT°max / ΔVPD, a z-score `sensibilite`, and a signal/noise
+#' `robustesse` per unit. The engine path needs LiDAR HD + ERA5/CDS and is
+#' **not runnable in CI** — validated on real data.
 #'
 #' @param units An `sf` of UGF.
-#' @param mnt,mnh,las Optional LiDAR-HD inputs (DTM raster, canopy-height
-#'   raster, classified point cloud) for the engine path.
+#' @param mnt,mnh Optional LiDAR-HD DTM / canopy-height inputs for the engine
+#'   path: a `terra::SpatRaster`, or a directory of `.tif` tiles (VRT-mosaicked).
+#' @param las Optional directory of classified LiDAR `.las`/`.laz` tiles (PAI via
+#'   [pai_depuis_nuage()]).
 #' @param annees_moy,annees_canic Integer years for the average / heatwave
 #'   summers (engine path). See [microclimate_detect_years()].
 #' @param mois_ete Integer months of the summer window (default `6:8`).
+#' @param res Target grid resolution in metres (default `2`).
+#' @param tampon Buffer in metres around the units for the working extent
+#'   (default `150`).
+#' @param reqhgt Height (m) above ground for the microclimate (default `0.5`).
+#' @param k Beer-Lambert extinction coefficient for PAI (default `0.5`).
+#' @param cache_dir Directory for the ERA5 `.nc` and per-year microclimate `.tif`
+#'   caches. `NULL` (default) uses a session temp dir; pass a persistent path to
+#'   reuse expensive runs.
 #' @param precomputed Optional per-unit microclimf output (`data.frame`/list).
 #' @param ... Reserved (engine parameters).
 #'
-#' @return `units` with the exposure columns (subset of §7), plus derived
-#'   `d_tmax`/`d_vpd`/`rang_sensibilite` where computable.
-#' @seealso [indice_priorite_regen()], [microclimate_detect_years()]
+#' @return `units` with the §7 exposure columns (`tmax_moyenne`,
+#'   `tmax_canicule`, `vpd_moyenne`, `vpd_canicule`, `d_tmax`, `d_vpd`,
+#'   `sensibilite`, `rang_sensibilite`, `robustesse`, `signal_robuste`,
+#'   `couverture_pct`), plus `parcelle_sensible` / `priorite`.
+#' @seealso [indice_priorite_regen()], [microclimate_detect_years()],
+#'   [pai_depuis_nuage()]
 #' @export
 regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
                               annees_moy = NULL, annees_canic = NULL,
-                              mois_ete = 6:8, precomputed = NULL, ...) {
+                              mois_ete = 6:8, res = 2, tampon = 150,
+                              reqhgt = 0.5, k = 0.5, cache_dir = NULL,
+                              precomputed = NULL, ...) {
   validate_sf(units)
   if (!is.null(precomputed)) {
     units <- .regen_attach_precomputed(units, precomputed, .REGEN_COLS_EXPO)
@@ -148,16 +255,99 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
     }
     return(units)
   }
-  if (!requireNamespace("microclimf", quietly = TRUE)) {
+
+  # --- Engine path : orchestration microclimf (portage prototype) ---
+  if (!requireNamespace("terra", quietly = TRUE) ||
+      !requireNamespace("microclimf", quietly = TRUE)) {
     cli::cli_abort(c(
-      "regen_sensibilite() needs the {.pkg microclimf} package for the engine path.",
-      i = "Install microclimf, or pass a precomputed microclimf output via {.arg precomputed}."
-    ))
+      "regen_sensibilite() needs {.pkg microclimf} (and {.pkg terra}) for the engine path.",
+      i = "Install them, or pass a precomputed microclimf output via {.arg precomputed}."))
   }
-  cli::cli_abort(c(
-    "regen_sensibilite(): the {.pkg microclimf} orchestration is not yet wired (spec 027 L1).",
-    i = "Run the reGénération prototype (microclimat_parcelles_robuste) and pass its per-unit output via {.arg precomputed}."
-  ))
+  if (is.null(mnt) || is.null(mnh) || is.null(las) ||
+      is.null(annees_moy) || is.null(annees_canic)) {
+    cli::cli_abort(c(
+      "regen_sensibilite() engine path needs {.arg mnt}, {.arg mnh}, {.arg las}, {.arg annees_moy} and {.arg annees_canic}.",
+      i = "Or pass a precomputed per-unit result via {.arg precomputed}."))
+  }
+  if (is.null(cache_dir)) cache_dir <- tempfile("regen_micro_")
+  dir.create(cache_dir, showWarnings = FALSE, recursive = TRUE)
+
+  # 1. Unités en CRS de travail (LiDAR HD = EPSG:2154), emprise tamponnée.
+  parc    <- terra::vect(sf::st_transform(units, 2154))
+  emprise <- terra::ext(terra::buffer(parc, tampon))
+
+  # Grille STATIQUE (une fois) : DTM, hauteur de canopée, PAI.
+  mnt_r <- .rsen_load_raster(mnt, emprise, "MNT")
+  mnh_r <- .rsen_load_raster(mnh, emprise, "MNH")
+  f <- max(1, round(res / terra::res(mnt_r)[1]))
+  if (f > 1) {
+    mnt_r <- terra::aggregate(mnt_r, f, fun = "mean", na.rm = TRUE)
+    mnh_r <- terra::aggregate(mnh_r, f, fun = "mean", na.rm = TRUE)
+  }
+  mnh_r <- terra::resample(mnh_r, mnt_r)
+  dtm <- mnt_r; names(dtm) <- "dtm"
+  hgt <- terra::clamp(mnh_r, 0, Inf); names(hgt) <- "hgt"
+  pai <- pai_depuis_nuage(las, dtm, res = res, k = k)
+  names(pai) <- "pai"
+
+  # Végétation / sol microclimf, ramenés à la grille ; hgt/pai injectés.
+  e <- new.env()
+  utils::data("vegp", package = "microclimf", envir = e)
+  utils::data("soilc", package = "microclimf", envir = e)
+  veg <- e$vegp
+  for (nm in names(veg)) if (!nm %in% c("hgt", "pai")) veg[[nm]] <- .rsen_vers_grille(veg[[nm]], dtm)
+  veg$hgt <- hgt; veg$pai <- pai
+  soil <- e$soilc
+  for (nm in names(soil)) soil[[nm]] <- .rsen_vers_grille(soil[[nm]], dtm)
+
+  ll  <- terra::geom(terra::centroids(terra::project(parc, "EPSG:4326")))
+  lon <- mean(ll[, "x"]); lat <- mean(ll[, "y"])
+
+  # 2. microclimat par catégorie (moyenne des étés moyens vs canicule).
+  M <- .rsen_moyenne_categorie(annees_moy, lon = lon, lat = lat, dtm = dtm,
+         veg = veg, soil = soil, reqhgt = reqhgt, mois_ete = mois_ete,
+         cache_dir = cache_dir)
+  C <- .rsen_moyenne_categorie(annees_canic, lon = lon, lat = lat, dtm = dtm,
+         veg = veg, soil = soil, reqhgt = reqhgt, mois_ete = mois_ete,
+         cache_dir = cache_dir)
+
+  # 3. Écarts et robustesse signal/bruit (si >= 2 années par catégorie).
+  d_tmax <- C$tmax_moy - M$tmax_moy
+  d_vpd  <- C$vpd_moy  - M$vpd_moy
+  robustesse <- NULL
+  if (!is.null(M$tmax_sd) && !is.null(C$tmax_sd)) {
+    sdp_t <- sqrt(M$tmax_sd^2 + C$tmax_sd^2)
+    sdp_v <- sqrt(M$vpd_sd^2  + C$vpd_sd^2)
+    robustesse <- (abs(d_tmax) / (sdp_t + 1e-6) + abs(d_vpd) / (sdp_v + 1e-6)) / 2
+  }
+
+  # 4. Agrégation par unité + indices.
+  moyp <- function(r) terra::extract(r, parc, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
+  z    <- function(x) (x - mean(x, na.rm = TRUE)) / stats::sd(x, na.rm = TRUE)
+
+  units$tmax_moyenne  <- round(moyp(M$tmax_moy), 2)
+  units$tmax_canicule <- round(moyp(C$tmax_moy), 2)
+  units$vpd_moyenne   <- round(moyp(M$vpd_moy), 3)
+  units$vpd_canicule  <- round(moyp(C$vpd_moy), 3)
+  units$d_tmax <- round(moyp(d_tmax), 2)
+  units$d_vpd  <- round(moyp(d_vpd), 3)
+  units$couverture_pct <- round(100 * moyp(!is.na(M$tmax_moy)), 0)
+
+  units$sensibilite      <- round(z(units$d_tmax) + z(units$d_vpd), 2)
+  units$rang_sensibilite <- rank(-units$sensibilite, na.last = "keep", ties.method = "min")
+  seuil <- stats::quantile(units$sensibilite, 2 / 3, na.rm = TRUE)
+  units$parcelle_sensible <- units$sensibilite >= seuil
+
+  if (!is.null(robustesse)) {
+    units$robustesse     <- round(moyp(robustesse), 2)
+    units$signal_robuste <- units$robustesse >= 1
+    units$priorite       <- units$parcelle_sensible & units$signal_robuste
+  } else {
+    units$robustesse     <- NA_real_
+    units$signal_robuste <- NA
+    units$priorite       <- units$parcelle_sensible
+  }
+  units
 }
 
 
