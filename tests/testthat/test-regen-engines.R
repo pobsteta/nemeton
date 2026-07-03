@@ -74,12 +74,11 @@ test_that("pai_depuis_nuage passes a precomputed SpatRaster through", {
   expect_true(inherits(pai_depuis_nuage(precomputed = r), "SpatRaster"))
 })
 
-test_that("pai_depuis_nuage rejects a bad precomputed and needs lasR otherwise", {
+test_that("pai_depuis_nuage validates inputs before the engine (env-independent)", {
+  skip_if_not_installed("terra")
   expect_error(pai_depuis_nuage(precomputed = 42), "SpatRaster")
-  if (!requireNamespace("lasR", quietly = TRUE) &&
-      !requireNamespace("lidR", quietly = TRUE)) {
-    expect_error(pai_depuis_nuage(), "lasR")
-  }
+  expect_error(pai_depuis_nuage(), "LiDAR")                          # no inputs
+  expect_error(pai_depuis_nuage(dossier_las = "x", grille = 42), "SpatRaster")
 })
 
 test_that("precomputed with no expected column errors", {

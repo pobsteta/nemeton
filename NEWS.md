@@ -1,3 +1,22 @@
+# nemeton 0.122.0 (2026-07-03)
+
+### Added — Moteur PAI réel (spec 027 L1, incrément A/3 du portage moteurs)
+
+**`pai_depuis_nuage()`** n'est plus un scaffold : le chemin nuage de points
+LiDAR HD est **câblé au pipeline `lasR`** (une lecture, deux rastérisations
+`count` filtrées par classe sol/végétation → fraction de trouée → PAI
+Beer-Lambert, rééchantillonné sur la grille de travail, masque parcelle
+optionnel). **Portage fidèle** du prototype reGénération `pai_lidarhd_lasR.R`.
+Dépendance lourde `lasR` en Suggests, gardée par `requireNamespace` ;
+pass-through `precomputed` et validation d'entrées propre conservés. Nouveaux
+arguments : `parcelle`, `fenetre`, `cl_sol`, `cl_veg`, `epsg`, `pai_max`.
+
+Premier des 3 moteurs portés (stratégie **incrémentale avec validation réelle
+entre chaque**). Le chemin moteur n'est **pas testable en CI** (dalles LiDAR HD
+requises) — **à valider par Pascal sur données réelles** avant l'incrément B
+(microclimf). Suivent : B `regen_sensibilite` (microclimf), C
+`regen_bilan_hydrique` (biljouR).
+
 # nemeton 0.121.1 (2026-07-03)
 
 ### Changed
