@@ -1,7 +1,7 @@
 # regen_engines.R — moteurs reGénération : L1/L2 (spec 027 v2.1)
 # ------------------------------------------------------------------
-# État du portage : pai_depuis_nuage (lasR) et regen_sensibilite (microclimf)
-# sont des moteurs RÉELS ; regen_bilan_hydrique (biljouR) reste un scaffold.
+# État du portage : les 3 moteurs sont RÉELS — pai_depuis_nuage (lasR),
+# regen_sensibilite (microclimf) et regen_bilan_hydrique (biljouR).
 # Ces moteurs orchestrent des dépendances LOURDES (GPL, hors CRAN pour
 # certaines) : microclimf, mcera5, lidR, lasR (exposition microclimatique) et
 # biljouR (bilan hydrique). Elles sont en `Suggests` (hygiène d'installation,
@@ -60,30 +60,39 @@
 #' (fallback) — decision §10.2. Feeds [indicateur_r3_secheresse()] (via its
 #' `biljou` argument) and [indice_priorite_regen()].
 #'
-#' **Scaffold with a pure fast-path**: pass `precomputed` (the per-unit output
-#' of a BILJOU run — e.g. the reGénération prototype `biljou_run_grid()`) and
-#' the metrics are attached to `units` as the §7 columns, **without** the GPL
-#' engine. Without `precomputed`, the full `biljouR` orchestration is not yet
-#' wired (it requires SAFRAN download + soil parameters); the function fails
-#' cleanly with an actionable message.
+#' **Two paths.** *Fast-path*: pass `precomputed` (the per-unit output of a
+#' BILJOU run) and the metrics are attached to `units` as the §7 columns,
+#' **without** the GPL engine. *Engine path*: builds unit-centroid points, runs
+#' `biljouR::biljou_run_grid()` (per-point BILJOU forced by `meteo`), and
+#' aggregates the per-year drought indices to the mean per unit — mapping
+#' `NJstress`/`Istress`/`DEBstress`/`min_rew` to `njstress`/`istress`/
+#' `deb_stress`/`rew_min`. It needs `meteo` (SAFRAN via `biljouR::safran_*`, or
+#' ERA5-Land — §10.2), a soil (`sol`) and per-unit `lai_max`; with LiDAR/SAFRAN
+#' inputs it is **not runnable in CI** — validated on real data.
 #'
 #' @param units An `sf` of management units (UGF).
-#' @param meteo Optional SAFRAN/ERA5 forcing (for the engine path).
-#' @param sol Optional soil description (`biljou_soil()` inputs: extractable
-#'   water `ewm`, root fractions `roots`).
-#' @param lai_max Optional per-unit maximum LAI (from `pai_depuis_nuage()`).
-#' @param forest_type Character, `"feuillu"` / `"resineux"` (phenology).
+#' @param meteo SAFRAN/ERA5 forcing for the engine path: a single `meteo`
+#'   `data.frame` (applied to every unit) or a named list keyed by unit id.
+#' @param sol A `biljouR::biljou_soil()` object (extractable water `ewm`, root
+#'   fractions `roots`, …).
+#' @param lai_max Per-unit maximum LAI (e.g. derived from `pai_depuis_nuage()`):
+#'   a scalar, a length-`nrow(units)` vector, or a named list by id.
+#' @param forest_type Phenology: `"feuillu"`/`"broadleaved"` or
+#'   `"resineux"`/`"coniferous"` (mapped to BILJOU's `broadleaved`/`coniferous`).
+#' @param years Optional integer years to keep from the BILJOU indices before
+#'   averaging (default: all years in the run).
 #' @param precomputed Optional per-unit BILJOU output (`data.frame`/list with
 #'   any of `njstress`, `istress`, `rew_min`, `deb_stress`). Pure fast-path.
-#' @param ... Reserved (engine parameters).
+#' @param ... Passed to `biljouR::biljou_run()` (e.g. `budburst`, `leaf_fall`,
+#'   `rew_c`, `k`).
 #'
-#' @return `units` with the water-balance columns present in `precomputed`
-#'   (`njstress`, `istress`, `rew_min`, `deb_stress`).
+#' @return `units` with the water-balance columns `njstress`, `istress`,
+#'   `rew_min`, `deb_stress` (per-unit mean over the retained years).
 #' @seealso [indicateur_r3_secheresse()], [indice_priorite_regen()]
 #' @export
 regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
                                  lai_max = NULL, forest_type = "feuillu",
-                                 precomputed = NULL, ...) {
+                                 years = NULL, precomputed = NULL, ...) {
   validate_sf(units)
   if (!is.null(precomputed)) {
     return(.regen_attach_precomputed(units, precomputed, .REGEN_COLS_HYDRIQUE))
@@ -94,10 +103,42 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
       i = "Install it with {.code remotes::install_github(\"pobsteta/biljouR\")}, or pass a precomputed BILJOU output via {.arg precomputed}."
     ))
   }
-  cli::cli_abort(c(
-    "regen_bilan_hydrique(): the {.pkg biljouR} orchestration is not yet wired (spec 027 L2).",
-    i = "Run the reGénération prototype (SAFRAN + biljou_run_grid) and pass its per-unit output via {.arg precomputed}."
-  ))
+  if (is.null(meteo) || is.null(sol) || is.null(lai_max)) {
+    cli::cli_abort(c(
+      "regen_bilan_hydrique() engine path needs {.arg meteo}, {.arg sol} and {.arg lai_max}.",
+      i = "Build {.arg meteo} via {.fn biljouR::safran_to_meteo}, {.arg sol} via {.fn biljouR::biljou_soil}, {.arg lai_max} from {.fn pai_depuis_nuage}; or pass a {.arg precomputed} result."))
+  }
+
+  # Type de peuplement -> valeurs BILJOU (broadleaved/coniferous).
+  ft <- unname(c(feuillu = "broadleaved", broadleaved = "broadleaved",
+                 resineux = "coniferous", coniferous = "coniferous")[tolower(forest_type)])
+  if (is.na(ft)) {
+    cli::cli_abort("{.arg forest_type} must be feuillu/broadleaved or resineux/coniferous.")
+  }
+
+  # Points = centroïdes des unités (id séquentiel, lon/lat WGS84).
+  cent <- sf::st_centroid(sf::st_geometry(units))
+  ll   <- sf::st_coordinates(sf::st_transform(cent, 4326))
+  points <- data.frame(id = seq_len(nrow(units)), lon = ll[, 1], lat = ll[, 2])
+
+  grid <- biljouR::biljou_run_grid(
+    points = points, meteo = meteo, soil = sol, lai_max = lai_max,
+    forest_type = ft, years = years,
+    indicators = c("NJstress", "Istress", "DEBstress", "min_rew"),
+    id_col = "id", lon_col = "lon", lat_col = "lat", ...)
+
+  # Moyenne inter-annuelle par unité, remise dans l'ordre des unités.
+  map_col <- function(ind) {
+    sel <- grid$indicator == ind
+    if (!any(sel)) return(rep(NA_real_, nrow(units)))
+    m <- tapply(grid$value[sel], grid$id[sel], mean, na.rm = TRUE)
+    as.numeric(m[as.character(points$id)])
+  }
+  units$njstress   <- map_col("NJstress")
+  units$istress    <- map_col("Istress")
+  units$deb_stress <- map_col("DEBstress")
+  units$rew_min    <- map_col("min_rew")
+  units
 }
 
 
