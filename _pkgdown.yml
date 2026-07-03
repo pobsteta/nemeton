@@ -378,6 +378,7 @@ reference:
     - list_alerts
     - list_knowledge_documents
     - load_fordead_validity_zones
+    - load_foret_ancienne_source
     - load_raster_source
     - load_theia_source
     - monitoring_ingest

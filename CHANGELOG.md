@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.123.0] - 2026-07-03
+
+### Added
+- `load_foret_ancienne_source(aoi, crs = 2154)` (spec 031, core item 1): acquires
+  the ~1850 historical forest cover from the IGN *carte de l'état-major* WFS
+  layer (`BDCARTO_ETAT-MAJOR.NIVEAU3:c_1_1_ocs_ancien`, Etalab 2.0) via `happign`,
+  clipped to the AOI, standardised through `build_foret_ancienne_mask()` as the
+  `foret_ancienne` layer for `indicateur_n2_continuite()` (no N2 signature
+  change). The official *BD Forêts anciennes* product (Nature classification) is
+  download-only (departmental GeoPackage, no WFS) — the état-major ingredient is
+  used instead, and N2's intersection with current units recovers continuity.
+  Degrades to `NULL` (no network, `happign` absent, WFS error, outside metropolitan
+  France); 0-row `sf` when no ~1850 forest. `happign` in Suggests, guarded by
+  `requireNamespace`. Real WFS path validated on real data (not runnable in CI).
+
 ## [0.122.0] - 2026-07-03
 
 ### Added
