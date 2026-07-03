@@ -12,6 +12,17 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.121.1\] - 2026-07-03
+
+### Changed
+
+- Declared `biljouR` in `Suggests` + `Remotes` (`pobsteta/biljouR`): the
+  BILJOU water-balance engine used by
+  [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
+  is now an official optional dependency (still loaded via
+  [`requireNamespace()`](https://rdrr.io/r/base/ns-load.html) with clean
+  degradation). The engine-path error message points to the repository.
+
 ## \[0.121.0\] - 2026-07-03
 
 ### Added

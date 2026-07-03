@@ -1,5 +1,19 @@
 # Changelog
 
+## nemeton 0.121.1 (2026-07-03)
+
+#### Changed
+
+- **`biljouR` déclaré** en `Suggests` + `Remotes` (`pobsteta/biljouR`) :
+  le moteur de bilan hydrique de
+  [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
+  est désormais une dépendance optionnelle officielle (installable via
+  [`remotes::install_github`](https://remotes.r-lib.org/reference/install_github.html)),
+  toujours chargée par
+  [`requireNamespace()`](https://rdrr.io/r/base/ns-load.html) avec
+  dégradation propre. Le message d’erreur du chemin moteur pointe vers
+  le dépôt.
+
 ## nemeton 0.121.0 (2026-07-03)
 
 #### Added — Sélecteur essence par-espèce + mapping TFV → essence (spec 027, incrément 2/3)
