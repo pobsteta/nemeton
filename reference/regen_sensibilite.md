@@ -17,6 +17,11 @@ regen_sensibilite(
   annees_moy = NULL,
   annees_canic = NULL,
   mois_ete = 6:8,
+  res = 2,
+  tampon = 150,
+  reqhgt = 0.5,
+  k = 0.5,
+  cache_dir = NULL,
   precomputed = NULL,
   ...
 )
@@ -28,10 +33,16 @@ regen_sensibilite(
 
   An `sf` of UGF.
 
-- mnt, mnh, las:
+- mnt, mnh:
 
-  Optional LiDAR-HD inputs (DTM raster, canopy-height raster, classified
-  point cloud) for the engine path.
+  Optional LiDAR-HD DTM / canopy-height inputs for the engine path: a
+  [`terra::SpatRaster`](https://rspatial.github.io/terra/reference/SpatRaster-class.html),
+  or a directory of `.tif` tiles (VRT-mosaicked).
+
+- las:
+
+  Optional directory of classified LiDAR `.las`/`.laz` tiles (PAI via
+  [`pai_depuis_nuage`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)).
 
 - annees_moy, annees_canic:
 
@@ -41,6 +52,29 @@ regen_sensibilite(
 - mois_ete:
 
   Integer months of the summer window (default `6:8`).
+
+- res:
+
+  Target grid resolution in metres (default `2`).
+
+- tampon:
+
+  Buffer in metres around the units for the working extent (default
+  `150`).
+
+- reqhgt:
+
+  Height (m) above ground for the microclimate (default `0.5`).
+
+- k:
+
+  Beer-Lambert extinction coefficient for PAI (default `0.5`).
+
+- cache_dir:
+
+  Directory for the ERA5 `.nc` and per-year microclimate `.tif` caches.
+  `NULL` (default) uses a session temp dir; pass a persistent path to
+  reuse expensive runs.
 
 - precomputed:
 
@@ -52,18 +86,29 @@ regen_sensibilite(
 
 ## Value
 
-`units` with the exposure columns (subset of §7), plus derived
-`d_tmax`/`d_vpd`/`rang_sensibilite` where computable.
+`units` with the §7 exposure columns (`tmax_moyenne`, `tmax_canicule`,
+`vpd_moyenne`, `vpd_canicule`, `d_tmax`, `d_vpd`, `sensibilite`,
+`rang_sensibilite`, `robustesse`, `signal_robuste`, `couverture_pct`),
+plus `parcelle_sensible` / `priorite`.
 
 ## Details
 
-**Scaffold with a pure fast-path**: pass `precomputed` (a microclimf run
-output) and the metrics are attached as §7 columns without the GPL
-engine. Missing `d_tmax`/`d_vpd` are derived from the canicule − moyenne
+**Two paths.** *Fast-path*: pass `precomputed` (a microclimf run output)
+and the metrics are attached as §7 columns without the GPL engine;
+missing `d_tmax`/`d_vpd` are derived from the canicule − moyenne
 difference, and `rang_sensibilite` from `sensibilite` (1 = most
-sensitive). Without `precomputed`, the orchestration is not yet wired.
+sensitive). *Engine path* (portage of the prototype
+`microclimat_parcelles_robuste.R`): builds the fixed LiDAR-HD grid (DTM,
+canopy height, PAI via
+[`pai_depuis_nuage`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)),
+runs **microclimf** per year forced by ERA5-Land (`mcera5`) with disk
+caching, averages the average vs heatwave summers (canopy held fixed),
+and aggregates ΔT°max / ΔVPD, a z-score `sensibilite` and a signal/noise
+`robustesse` per unit. The engine path needs LiDAR HD + ERA5/CDS and is
+**not runnable in CI** — validated on real data.
 
 ## See also
 
 [`indice_priorite_regen`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md),
-[`microclimate_detect_years`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md)
+[`microclimate_detect_years`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md),
+[`pai_depuis_nuage`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)

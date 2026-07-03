@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.124.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.125.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -885,7 +885,8 @@
 <ul><li>
 <strong>Inc A — <code>pai_depuis_nuage</code> réel (v0.122.0)</strong> : pipeline <code>lasR</code> (comptages sol/veg → Beer-Lambert), portage fidèle de <code>pai_lidarhd_lasR.R</code>. Gardé <code>requireNamespace</code>, precomputed conservé. <strong>À valider par Pascal sur LiDAR réel avant inc B.</strong> Tests plomberie/dégradation 19 PASS.</li>
 <li>
-<strong>Inc B — <code>regen_sensibilite</code> réel (microclimf)</strong> : à venir — orchestration du prototype <code>microclimat_parcelles_robuste.R</code> (MNT/MNH/PAI/veg/soil, ERA5 par an via mcera5, cache, agrégation §7), + callback progress + cache_dir.</li>
+<strong>Inc B — <code>regen_sensibilite</code> réel (microclimf) — LIVRÉ v0.125.0</strong> : portage fidèle de <code>microclimat_parcelles_robuste.R</code> (grille statique LiDAR HD, microclimf ERA5-Land par an avec cache_dir, moyennes moyen/canicule, robustesse, agrégation §7). Deps microclimf/mcera5/lasR en Suggests, gardées ; precomputed conservé. <strong>À valider par Pascal sur données réelles avant inc C.</strong>
+</li>
 <li>
 <strong>Inc C — <code>regen_bilan_hydrique</code> réel (biljouR)</strong> : à venir — API biljouR (<code>safran_download</code>→<code>safran_to_meteo</code>→<code>biljou_soil</code>→<code>biljou_run_grid</code>→ <code>biljou_indices</code>/<code>biljou_grid_to_sf</code>).</li>
 <li>

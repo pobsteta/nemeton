@@ -1,5 +1,36 @@
 # Changelog
 
+## nemeton 0.125.0 (2026-07-03)
+
+#### Added — Moteur microclimf réel (spec 027 L1, incrément B/3 du portage moteurs)
+
+**[`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)**
+n’est plus un scaffold : le chemin moteur est **câblé à microclimf**.
+Portage fidèle du prototype
+`/Documents/reGénération/microclimat_parcelles_robuste.R` :
+
+1.  grille **statique LiDAR HD** (DTM, hauteur de canopée, PAI via
+    [`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)),
+    MNT/MNH acceptés en `SpatRaster` ou dossier de dalles ;
+2.  **microclimf par année** forcé **ERA5-Land** (`mcera5`), avec
+    **cache disque** (`cache_dir`) des `.nc` et des rasters d’été `.tif`
+    ;
+3.  moyennes **étés moyens vs canicule** (canopée figée) → écarts ΔT°max
+    / ΔVPD ;
+4.  **robustesse signal/bruit** (si ≥ 2 années par catégorie) ;
+5.  **agrégation par unité** → colonnes §7 (`tmax_moyenne`,
+    `tmax_canicule`, `vpd_moyenne`, `vpd_canicule`, `d_tmax`, `d_vpd`,
+    `sensibilite`, `rang_sensibilite`, `robustesse`, `signal_robuste`,
+    `couverture_pct`) + `parcelle_sensible` / `priorite`.
+
+Nouveaux arguments : `res`, `tampon`, `reqhgt`, `k`, `cache_dir`.
+Dépendances lourdes (`microclimf`, `mcera5`, `lasR`) en Suggests +
+Remotes, gardées par `requireNamespace` ; **pass-through `precomputed`
+conservé**. Deuxième des 3 moteurs portés (incrémental + validation
+réelle). Chemin moteur **non jouable en CI** (LiDAR HD + ERA5/CDS) — **à
+valider par Pascal sur données réelles** avant l’incrément C (biljouR).
+Reste : C `regen_bilan_hydrique` (biljouR).
+
 ## nemeton 0.124.0 (2026-07-03)
 
 #### Changed — Extraction E-OBS estivale câblée dans microclimate_detect_years() (spec 027 L2, item cœur 2)

@@ -15,7 +15,7 @@ indice_priorite_regen."><meta property="og:image" content="https://pobsteta.gith
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.124.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.125.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,11 @@ Produces the §7 exposure columns consumed by
 <span>  annees_moy <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  annees_canic <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  mois_ete <span class="op">=</span> <span class="fl">6</span><span class="op">:</span><span class="fl">8</span>,</span>
+<span>  res <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  tampon <span class="op">=</span> <span class="fl">150</span>,</span>
+<span>  reqhgt <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  cache_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  precomputed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -82,9 +87,15 @@ Produces the §7 exposure columns consumed by
 <dd><p>An <code>sf</code> of UGF.</p></dd>
 
 
-<dt id="arg-mnt-mnh-las">mnt, mnh, las<a class="anchor" aria-label="anchor" href="#arg-mnt-mnh-las"></a></dt>
-<dd><p>Optional LiDAR-HD inputs (DTM raster, canopy-height
-raster, classified point cloud) for the engine path.</p></dd>
+<dt id="arg-mnt-mnh">mnt, mnh<a class="anchor" aria-label="anchor" href="#arg-mnt-mnh"></a></dt>
+<dd><p>Optional LiDAR-HD DTM / canopy-height inputs for the engine
+path: a <code><a href="https://rspatial.github.io/terra/reference/SpatRaster-class.html" class="external-link">terra::SpatRaster</a></code>, or a directory of <code>.tif</code> tiles
+(VRT-mosaicked).</p></dd>
+
+
+<dt id="arg-las">las<a class="anchor" aria-label="anchor" href="#arg-las"></a></dt>
+<dd><p>Optional directory of classified LiDAR <code>.las</code>/<code>.laz</code> tiles
+(PAI via <code><a href="pai_depuis_nuage.html">pai_depuis_nuage</a></code>).</p></dd>
 
 
 <dt id="arg-annees-moy-annees-canic">annees_moy, annees_canic<a class="anchor" aria-label="anchor" href="#arg-annees-moy-annees-canic"></a></dt>
@@ -94,6 +105,29 @@ summers (engine path). See <code><a href="microclimate_detect_years.html">microc
 
 <dt id="arg-mois-ete">mois_ete<a class="anchor" aria-label="anchor" href="#arg-mois-ete"></a></dt>
 <dd><p>Integer months of the summer window (default <code>6:8</code>).</p></dd>
+
+
+<dt id="arg-res">res<a class="anchor" aria-label="anchor" href="#arg-res"></a></dt>
+<dd><p>Target grid resolution in metres (default <code>2</code>).</p></dd>
+
+
+<dt id="arg-tampon">tampon<a class="anchor" aria-label="anchor" href="#arg-tampon"></a></dt>
+<dd><p>Buffer in metres around the units for the working extent
+(default <code>150</code>).</p></dd>
+
+
+<dt id="arg-reqhgt">reqhgt<a class="anchor" aria-label="anchor" href="#arg-reqhgt"></a></dt>
+<dd><p>Height (m) above ground for the microclimate (default <code>0.5</code>).</p></dd>
+
+
+<dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
+<dd><p>Beer-Lambert extinction coefficient for PAI (default <code>0.5</code>).</p></dd>
+
+
+<dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>
+<dd><p>Directory for the ERA5 <code>.nc</code> and per-year microclimate
+<code>.tif</code> caches. <code>NULL</code> (default) uses a session temp dir; pass a
+persistent path to reuse expensive runs.</p></dd>
 
 
 <dt id="arg-precomputed">precomputed<a class="anchor" aria-label="anchor" href="#arg-precomputed"></a></dt>
@@ -106,20 +140,31 @@ summers (engine path). See <code><a href="microclimate_detect_years.html">microc
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>units</code> with the exposure columns (subset of §7), plus derived
-<code>d_tmax</code>/<code>d_vpd</code>/<code>rang_sensibilite</code> where computable.</p>
+    <p><code>units</code> with the §7 exposure columns (<code>tmax_moyenne</code>,
+<code>tmax_canicule</code>, <code>vpd_moyenne</code>, <code>vpd_canicule</code>, <code>d_tmax</code>,
+<code>d_vpd</code>, <code>sensibilite</code>, <code>rang_sensibilite</code>, <code>robustesse</code>,
+<code>signal_robuste</code>, <code>couverture_pct</code>), plus <code>parcelle_sensible</code> /
+<code>priorite</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><strong>Scaffold with a pure fast-path</strong>: pass <code>precomputed</code> (a microclimf
-run output) and the metrics are attached as §7 columns without the GPL engine.
-Missing <code>d_tmax</code>/<code>d_vpd</code> are derived from the canicule − moyenne
+    <p><strong>Two paths.</strong> <em>Fast-path</em>: pass <code>precomputed</code> (a microclimf run
+output) and the metrics are attached as §7 columns without the GPL engine;
+missing <code>d_tmax</code>/<code>d_vpd</code> are derived from the canicule − moyenne
 difference, and <code>rang_sensibilite</code> from <code>sensibilite</code> (1 = most
-sensitive). Without <code>precomputed</code>, the orchestration is not yet wired.</p>
+sensitive). <em>Engine path</em> (portage of the prototype
+<code>microclimat_parcelles_robuste.R</code>): builds the fixed LiDAR-HD grid (DTM,
+canopy height, PAI via <code><a href="pai_depuis_nuage.html">pai_depuis_nuage</a></code>), runs <strong>microclimf</strong>
+per year forced by ERA5-Land (<code>mcera5</code>) with disk caching, averages the
+average vs heatwave summers (canopy held fixed), and aggregates ΔT°max / ΔVPD, a
+z-score <code>sensibilite</code> and a signal/noise <code>robustesse</code> per unit. The
+engine path needs LiDAR HD + ERA5/CDS and is <strong>not runnable in CI</strong> —
+validated on real data.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="indice_priorite_regen.html">indice_priorite_regen</a></code>, <code><a href="microclimate_detect_years.html">microclimate_detect_years</a></code></p></div>
+    <div class="dont-index"><p><code><a href="indice_priorite_regen.html">indice_priorite_regen</a></code>, <code><a href="microclimate_detect_years.html">microclimate_detect_years</a></code>,
+<code><a href="pai_depuis_nuage.html">pai_depuis_nuage</a></code></p></div>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

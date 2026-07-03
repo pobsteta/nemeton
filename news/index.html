@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.124.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.125.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,22 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.125.0" id="nemeton-01250-2026-07-03">nemeton 0.125.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01250-2026-07-03"></a></h2>
+<div class="section level4">
+<h4 id="added--moteur-microclimf-réel-spec-l1-incrément-b3-du-portage-moteurs-0-125-0">Added — Moteur microclimf réel (spec 027 L1, incrément B/3 du portage moteurs)<a class="anchor" aria-label="anchor" href="#added--moteur-microclimf-r%C3%A9el-spec-l1-incr%C3%A9ment-b3-du-portage-moteurs-0-125-0"></a></h4>
+<p><strong><code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code></strong> n’est plus un scaffold : le chemin moteur est <strong>câblé à microclimf</strong>. Portage fidèle du prototype <code>/Documents/reGénération/microclimat_parcelles_robuste.R</code> :</p>
+<ol style="list-style-type: decimal"><li>grille <strong>statique LiDAR HD</strong> (DTM, hauteur de canopée, PAI via <code><a href="../reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code>), MNT/MNH acceptés en <code>SpatRaster</code> ou dossier de dalles ;</li>
+<li>
+<strong>microclimf par année</strong> forcé <strong>ERA5-Land</strong> (<code>mcera5</code>), avec <strong>cache disque</strong> (<code>cache_dir</code>) des <code>.nc</code> et des rasters d’été <code>.tif</code> ;</li>
+<li>moyennes <strong>étés moyens vs canicule</strong> (canopée figée) → écarts ΔT°max / ΔVPD ;</li>
+<li>
+<strong>robustesse signal/bruit</strong> (si ≥ 2 années par catégorie) ;</li>
+<li>
+<strong>agrégation par unité</strong> → colonnes §7 (<code>tmax_moyenne</code>, <code>tmax_canicule</code>, <code>vpd_moyenne</code>, <code>vpd_canicule</code>, <code>d_tmax</code>, <code>d_vpd</code>, <code>sensibilite</code>, <code>rang_sensibilite</code>, <code>robustesse</code>, <code>signal_robuste</code>, <code>couverture_pct</code>) + <code>parcelle_sensible</code> / <code>priorite</code>.</li>
+</ol><p>Nouveaux arguments : <code>res</code>, <code>tampon</code>, <code>reqhgt</code>, <code>k</code>, <code>cache_dir</code>. Dépendances lourdes (<code>microclimf</code>, <code>mcera5</code>, <code>lasR</code>) en Suggests + Remotes, gardées par <code>requireNamespace</code> ; <strong>pass-through <code>precomputed</code> conservé</strong>. Deuxième des 3 moteurs portés (incrémental + validation réelle). Chemin moteur <strong>non jouable en CI</strong> (LiDAR HD + ERA5/CDS) — <strong>à valider par Pascal sur données réelles</strong> avant l’incrément C (biljouR). Reste : C <code>regen_bilan_hydrique</code> (biljouR).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.124.0" id="nemeton-01240-2026-07-03">nemeton 0.124.0 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01240-2026-07-03"></a></h2>
 <div class="section level4">
