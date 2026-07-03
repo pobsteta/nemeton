@@ -208,11 +208,13 @@ sur l'AOI projet au lieu de la France entière).
 3. **NDP : tag « modèle mécaniste », NDP de base inchangé.** On étend le flag
    augmenté existant (`microclimate_model`, ADR-011) — honnêteté sur la nature
    modélisée, confiance φ prudente ; **pas de NDP 1 forcé**.
-4. **Branche A (carte bivariée de tendances estivales E-OBS) : DANS la v1, mais
-   à l'échelle du projet** — calculée sur **l'emprise de la zone UGF + un
-   buffer** (valeur **à déterminer** — proposition à confirmer : ≥ 2 mailles
-   E-OBS, la grille E-OBS faisant ~0,1° ≈ 11 km ; défaut proposé **~25 km**).
-   **Pas de carte nationale.**
+4. **Branche A (carte bivariée de tendances estivales E-OBS) : DANS la v1, à
+   l'échelle du projet** — sur **l'emprise de la zone UGF + un buffer de
+   **25 km** (validé Pascal 2026-07-02). **Pas de carte nationale.** **LIVRÉ
+   cœur v0.118.0** : `tendances_estivales_eobs(aoi, tx, rr, buffer_m = 25000,
+   breaks, precomputed)` (`R/tendances_eobs.R`) — pente estivale T°max/précip
+   par maille + classes bivariées, buffer métrique EPSG:3035, chemin
+   `precomputed` + dégradation propre. Rendu côté `nemetonshiny` (brief fourni).
 
 *(Les ex-décisions « créer regen_nemeton » et « migrer microclimate_run » sont
 caduques : tout reste au cœur GPL-3.)*
