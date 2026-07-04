@@ -229,3 +229,21 @@ pour démarrer) :
 - ERA5-Land (compte CDS) → microclimat ; **SAFRAN** (INRAE/Météo-France) →
   `regen_bilan_hydrique`.
 - E-OBS (`tx`/`rr`, agrégés estival par an) → `tendances_estivales_eobs`.
+
+---
+
+## Retour Pascal 2026-07-04 — sidebar « Couche affichée » non rétractable
+
+Dans `mod_regeneration.R`, la sidebar DROITE qui porte le radio « Couche
+affichée » (Indice de priorité / Sensibilité microclimatique / Jours de stress
+hydrique / ΔT°max sous couvert) est **rétractable** (flèche `>`), contrairement
+au sélecteur « Indice spectral / Indice FAST » de la Carte FAST qui reste
+toujours ouvert.
+
+**Correctif (1 ligne)** : aligner sur le pattern FAST — passer
+`open = TRUE` → `open = "always"` sur la `bslib::sidebar(position = "right", …)`.
+
+- **reGénération (actuel)** : `bslib::sidebar(position = "right", open = TRUE, width = 260, …)`
+- **Carte FAST (cible)** : `bslib::sidebar(width = 250L, position = "right", open = "always", …)`
+
+Rien d'autre à changer (le radio, les choix et l'observer `leafletProxy` restent).
