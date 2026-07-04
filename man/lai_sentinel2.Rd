@@ -12,7 +12,7 @@ lai_sentinel2(
   reducer = "p90",
   source = "muscate",
   sensor = "Sentinel_2A",
-  selected_bands = c("B3", "B4", "B8"),
+  selected_bands = c("B4", "B5", "B8"),
   geom_acq = NULL,
   mask = NULL,
   cache_dir = NULL,
@@ -23,10 +23,10 @@ lai_sentinel2(
 \arguments{
 \item{aoi}{An \code{sf}/\code{sfc} extent (used by the MUSCATE auto-fetch path).}
 
-\item{refl}{S2 L2A reflectance for the engine path: a \code{SpatRaster} (bands in
-\code{srf} order) or a file path / vector of paths (one per date). When
-\code{NULL}, a best-effort MUSCATE fetch is attempted over
-\code{aoi}/\code{start}/\code{end}.}
+\item{refl}{S2 L2A reflectance for the engine path: a \code{SpatRaster} (layers
+named as \code{selected_bands}) or a file path / vector of paths (one per date).
+When \code{NULL}, the reflectance is assembled automatically from MUSCATE over
+\code{aoi}/\code{start}/\code{end} (spec 033 D4, reuses the S2 STAC pipeline).}
 
 \item{start, end}{Date bounds (\code{"YYYY-MM-DD"}) for the S2 search.}
 
@@ -39,7 +39,7 @@ lai_sentinel2(
 \code{"Sentinel_2B"}.}
 
 \item{selected_bands}{S2 bands used for the LAI inversion (default
-\code{c("B3","B4","B8")}).}
+\code{c("B4","B5","B8")} — red, red-edge, NIR; all exposed by the S2 pipeline).}
 
 \item{geom_acq}{Optional acquisition-geometry range (\code{list(min=, max=)} of
 \code{data.frame(tto, tts, psi)}); default a France-summer range.}
@@ -69,12 +69,13 @@ wood). \strong{NDP ≥ 1 always keeps the structural LiDAR PAI of
 \details{
 \strong{Two paths.} \emph{Fast-path}: pass \code{precomputed} (a LAI
 \code{SpatRaster}, or a multi-date stack) and only the temporal reduction
-(\code{reducer}, default \code{"p90"}) is applied. \emph{Engine path}: trains the
-PROSAIL hybrid model for the S2 sensor/geometry (cached in \code{cache_dir}),
-applies it to the S2 reflectance raster(s) \code{refl}, and reduces the per-date
-LAI to one layer. Needs \code{prosail} + real S2 scenes and is \strong{not
-runnable in CI} — the engine is validated on real data (training verified;
-application per the official tutorial).
+(\code{reducer}, default \code{"p90"}) is applied. \emph{Engine path}: loads the
+shipped pre-trained model (\code{inst/extdata}, spec 033 D3) — or trains + caches
+one —, applies it to the S2 reflectance raster(s) \code{refl} (auto-assembled
+from MUSCATE when \code{refl} is \code{NULL}, spec 033 D4), and reduces the
+per-date LAI to one layer. Needs \code{prosail} + real S2 scenes and is
+\strong{not runnable in CI} — the engine is validated on real data (training
+verified; application per the official tutorial).
 }
 \seealso{
 \code{\link{regen_bilan_hydrique}}, \code{\link{regen_sensibilite}},

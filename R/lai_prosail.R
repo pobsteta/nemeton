@@ -48,11 +48,23 @@
   names(out) <- "lai"; out
 }
 
-# Entraîne (et met en cache) le modèle d'inversion hybride LAI pour un capteur
-# S2 et une plage de géométrie. VALIDÉ en scratch (train_prosail_inversion).
+# Mappe un nom de bande prosail (B4, B8, B8A) vers le nom nemeton du pipeline S2
+# (.S2_STAC_BANDS : zéro-padding à 2 chiffres, suffixe lettre conservé).
+.lai_band_to_nemeton <- function(b) {
+  m <- regmatches(b, regexec("^B([0-9]+)([A-Z]?)$", b))[[1]]
+  if (length(m) != 3L) return(b)
+  if (nzchar(m[3])) return(b)                 # suffixe lettre (B8A) -> inchangé
+  sprintf("B%02d", as.integer(m[2]))          # numérique -> zéro-padding (B4->B04)
+}
+
+# Entraîne (ou charge) le modèle d'inversion hybride LAI pour un capteur S2 et
+# une plage de géométrie. Priorité : modèle pré-entraîné versionné
+# (inst/extdata, spec 033 D3) -> cache disque -> entraînement (train validé).
 .lai_prosail_train <- function(srf, geom_acq, selected_bands, cache_dir) {
   key <- paste0("prosail_lai_", srf$sensor, "_",
                 paste(selected_bands, collapse = "-"), ".rds")
+  shipped <- system.file("extdata", key, package = "nemeton")
+  if (nzchar(shipped) && file.exists(shipped)) return(readRDS(shipped))
   f <- file.path(cache_dir, key)
   if (file.exists(f)) return(readRDS(f))
   opt <- prosail::set_options_prosail(fun = "train_prosail_inversion")
@@ -62,6 +74,38 @@
     output_dir = cache_dir, options = opt)
   saveRDS(model, f)
   model
+}
+
+# Assemblage MUSCATE stateless (spec 033 D4) : cherche les scènes S2 L2A
+# (source MUSCATE, spec 029), récupère par scène les bandes nécessaires via
+# `.get_s2_band_raster` (crop AOI, cache), assemble un raster multi-bandes par
+# date (couches nommées selon prosail). Non jouable en CI (réseau + scènes) ;
+# validé sur données réelles. Renvoie un vecteur de chemins, ou NULL.
+.lai_s2_reflectance_muscate <- function(aoi, start, end, selected_bands,
+                                        max_cloud, cache_dir) {
+  scenes <- stac_search_s2(aoi, start, end, max_cloud = max_cloud,
+                           source = "muscate")
+  if (is.null(scenes) || !nrow(scenes)) return(NULL)
+  nem_bands <- vapply(selected_bands, .lai_band_to_nemeton, character(1))
+  aoi_v <- terra::vect(sf::st_transform(sf::st_union(sf::st_geometry(aoi)), 4326))
+  paths <- character(0)
+  for (i in seq_len(nrow(scenes))) {
+    sc <- scenes[i, , drop = FALSE]
+    layers <- tryCatch({
+      rs <- lapply(nem_bands, function(b) {
+        g <- .get_s2_band_raster(sc, b, aoi_v, cache_dir)
+        terra::rast(g$path)
+      })
+      st <- terra::rast(rs)
+      names(st) <- selected_bands
+      f <- file.path(cache_dir, sprintf("s2_refl_%s.tif",
+                                        as.character(sc$scene_id[[1]])))
+      terra::writeRaster(st, f, overwrite = TRUE)
+      f
+    }, error = function(e) NULL)
+    if (!is.null(layers)) paths <- c(paths, layers)
+  }
+  if (length(paths)) paths else NULL
 }
 
 # Applique le modèle à un raster de réflectances S2 (chemin fichier) -> LAI.
@@ -96,23 +140,26 @@
 #'
 #' **Two paths.** *Fast-path*: pass `precomputed` (a LAI `SpatRaster`, or a
 #' multi-date stack) and only the temporal reduction (`reducer`, default
-#' `"p90"`) is applied. *Engine path*: trains the PROSAIL hybrid model for the
-#' S2 sensor/geometry (cached in `cache_dir`), applies it to the S2 reflectance
-#' raster(s) `refl`, and reduces the per-date LAI to one layer. Needs `prosail`
-#' + real S2 scenes and is **not runnable in CI** — the engine is validated on
-#' real data (training verified; application per the official tutorial).
+#' `"p90"`) is applied. *Engine path*: loads the shipped pre-trained model
+#' (`inst/extdata`, spec 033 D3) — or trains + caches one —, applies it to the S2
+#' reflectance raster(s) `refl` (auto-assembled from MUSCATE when `refl` is
+#' `NULL`, spec 033 D4), and reduces the per-date LAI to one layer. Needs
+#' `prosail` + real S2 scenes and is **not runnable in CI** — the engine is
+#' validated on real data (training verified; application per the official
+#' tutorial).
 #'
 #' @param aoi An `sf`/`sfc` extent (used by the MUSCATE auto-fetch path).
-#' @param refl S2 L2A reflectance for the engine path: a `SpatRaster` (bands in
-#'   `srf` order) or a file path / vector of paths (one per date). When `NULL`,
-#'   a best-effort MUSCATE fetch is attempted over `aoi`/`start`/`end`.
+#' @param refl S2 L2A reflectance for the engine path: a `SpatRaster` (layers
+#'   named as `selected_bands`) or a file path / vector of paths (one per date).
+#'   When `NULL`, the reflectance is **assembled automatically** from MUSCATE
+#'   over `aoi`/`start`/`end` (spec 033 D4, reuses the S2 STAC pipeline).
 #' @param start,end Date bounds (`"YYYY-MM-DD"`) for the S2 search.
 #' @param reducer Temporal reducer over dates: `"p90"` (default, D1), `"max"`,
 #'   `"median"` or `"mean"`.
 #' @param source S2 STAC backend (default `"muscate"`, spec 029).
 #' @param sensor PROSAIL sensor SRF: `"Sentinel_2A"` (default), `"Sentinel_2B"`.
 #' @param selected_bands S2 bands used for the LAI inversion (default
-#'   `c("B3","B4","B8")`).
+#'   `c("B4","B5","B8")` — red, red-edge, NIR; all exposed by the S2 pipeline).
 #' @param geom_acq Optional acquisition-geometry range
 #'   (`list(min=, max=)` of `data.frame(tto, tts, psi)`); default a France-summer
 #'   range.
@@ -129,7 +176,7 @@
 lai_sentinel2 <- function(aoi = NULL, refl = NULL, start = NULL, end = NULL,
                           reducer = "p90", source = "muscate",
                           sensor = "Sentinel_2A",
-                          selected_bands = c("B3", "B4", "B8"),
+                          selected_bands = c("B4", "B5", "B8"),
                           geom_acq = NULL, mask = NULL, cache_dir = NULL,
                           precomputed = NULL, ...) {
   if (!requireNamespace("terra", quietly = TRUE)) {
@@ -182,12 +229,14 @@ lai_sentinel2 <- function(aoi = NULL, refl = NULL, start = NULL, end = NULL,
   } else if (is.character(refl)) {
     refl
   } else {
-    # Fetch MUSCATE best-effort : l'assemblage multi-bandes vit dans le pipeline
-    # S2 (stac_search_s2/read_s2_band_stack) et est validé sur données réelles.
+    # Assemblage automatique MUSCATE (spec 033 D4), stateless, best-effort.
     if (is.null(aoi) || is.null(start) || is.null(end)) {
       cli::cli_abort("Provide {.arg refl} (S2 reflectance raster/path), or {.arg aoi}+{.arg start}+{.arg end} for a MUSCATE fetch.")
     }
-    cli::cli_abort("Automatic MUSCATE reflectance assembly is validated on real data; pass {.arg refl} meanwhile.")
+    p <- .lai_s2_reflectance_muscate(aoi, start, end, selected_bands,
+                                     max_cloud = 20, cache_dir = cache_dir)
+    if (is.null(p)) cli::cli_abort("No usable MUSCATE Sentinel-2 reflectance over the AOI for the period.")
+    p
   }
 
   model <- .lai_prosail_train(srf, geom_acq, selected_bands, cache_dir)

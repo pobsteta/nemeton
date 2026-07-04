@@ -10,6 +10,20 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.129.0] - 2026-07-04
+
+### Added
+- `lai_sentinel2()` increment 2 (spec 033): automatic MUSCATE reflectance
+  assembly (D4) when `refl` is `NULL` — MUSCATE STAC search + stateless per-scene
+  band fetch (`.get_s2_band_raster`), reusing the S2 pipeline; and a shipped
+  pre-trained PROSAIL model `inst/extdata/prosail_lai_Sentinel_2A_B4-B5-B8.rds`
+  (D3) loaded without retraining (serialization verified, prediction CI-tested;
+  regenerate via `data-raw/prosail_lai_model.R`).
+
+### Changed
+- `lai_sentinel2()` default `selected_bands` is now `c("B4","B5","B8")` (red,
+  red-edge, NIR — the S2 pipeline does not expose B03/green).
+
 ## [0.128.0] - 2026-07-04
 
 ### Added

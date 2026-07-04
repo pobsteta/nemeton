@@ -67,6 +67,29 @@ test_that("detect_ndp flags lai_ml for a PROSAIL S2 LAI source", {
   expect_false("lai_ml" %in% detect_ndp(data.frame(x = 1))$augmented)
 })
 
+test_that("prosail band names map to the nemeton S2 pipeline names", {
+  expect_identical(.lai_band_to_nemeton("B4"), "B04")
+  expect_identical(.lai_band_to_nemeton("B5"), "B05")
+  expect_identical(.lai_band_to_nemeton("B8"), "B08")
+  expect_identical(.lai_band_to_nemeton("B8A"), "B8A")   # suffixe conservé
+  expect_identical(.lai_band_to_nemeton("B11"), "B11")   # 2 chiffres inchangé
+  expect_identical(.lai_band_to_nemeton("B12"), "B12")
+})
+
+test_that("the shipped pre-trained LAI model loads and predicts (spec 033 D3)", {
+  skip_if_not_installed("prosail")
+  f <- system.file("extdata", "prosail_lai_Sentinel_2A_B4-B5-B8.rds",
+                   package = "nemeton")
+  expect_true(nzchar(f) && file.exists(f))
+  model <- readRDS(f)
+  expect_true("lai" %in% names(model))
+  # Prédiction sur 3 bandes (B4,B5,B8) x quelques pixels -> LAI finis.
+  refl <- matrix(stats::runif(3 * 8, 0.02, 0.4), nrow = 3)
+  pred <- prosail::prosail_hybrid_apply(model$lai, refl)
+  vals <- suppressWarnings(as.numeric(unlist(pred)))
+  expect_true(any(is.finite(vals)))
+})
+
 test_that("regen_sensibilite accepts a `pai` fallback (no LiDAR required)", {
   skip_if_not_installed("terra")
   # Sans microclimf -> abort paquet ; avec microclimf mais sans mnt/mnh -> abort

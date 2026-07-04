@@ -1264,6 +1264,17 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-04 — Added v0.129.0 : repli LAI S2/PROSAIL increment 2 (spec 033 D3+D4)
+
+- **D4 assemblage MUSCATE auto** : `lai_sentinel2()` assemble les réflectances S2
+  seul (`stac_search_s2` muscate + `.get_s2_band_raster` stateless). Défaut
+  `selected_bands` → `c("B4","B5","B8")` (B03/vert non exposé par `.S2_STAC_BANDS`).
+- **D3 modèle pré-entraîné** : `inst/extdata/prosail_lai_Sentinel_2A_B4-B5-B8.rds`
+  (1.3 Mo, sérialisation vérifiée, prédiction testée CI), plus de train au
+  runtime. `data-raw/prosail_lai_model.R` pour régénérer.
+- Reste : brief app provenance canopée (D5) + validation Pascal apply sur scène
+  réelle. Voir [[project_regen_engines_porting]].
+
 ### 2026-07-04 — Added v0.128.0 : repli LAI Sentinel-2/PROSAIL (spec 033 increment 1)
 
 D1–D6 validées par Pascal → `lai_sentinel2()` livrée (inversion PROSAIL hybride,
