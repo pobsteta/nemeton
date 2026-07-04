@@ -861,6 +861,10 @@
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
 <div class="section level3">
+<h3 id="id_2026-07-04--proposée--spec-033-repli-lai-sentinel-2prosail-canopée-ndp-0">2026-07-04 — Proposée : spec 033 repli LAI Sentinel-2/PROSAIL (canopée NDP 0)<a class="anchor" aria-label="anchor" href="#id_2026-07-04--propos%C3%A9e--spec-033-repli-lai-sentinel-2prosail-canop%C3%A9e-ndp-0"></a></h3>
+<p>Question Pascal (« PAI depuis GEODES ? ») → constat : GEODES donne du <strong>LAI</strong> (GEOV2 ~1 km, ou S2 L2A → inversion), <strong>pas de PAI structural</strong>. Cadré en <code>specs/033-lai-prosail-sentinel2/spec.md</code> : repli <strong>NDP 0</strong> produisant un LAI S2/PROSAIL (<code>prosail</code> 3.0.0, réutilise la source MUSCATE spec 029) pour <code>lai_max</code> (biljouR, ajustement direct) et <code>pai</code> microclimf (proxy dégradé). <strong>Décisions D1–D6 à arbitrer, aucun code écrit.</strong> ADR justifié (méthode d’inversion) → à acter dans platform_nemeton. NDP ≥ 1 garde toujours <code><a href="reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code> LiDAR.</p>
+</div>
+<div class="section level3">
 <h3 id="id_2026-07-03--added-v01270--consolidation-multi-époques-forêt-ancienne--paliers-n2-spec-031">2026-07-03 — Added v0.127.0 : consolidation multi-époques forêt ancienne + paliers N2 (spec 031)<a class="anchor" aria-label="anchor" href="#id_2026-07-03--added-v01270--consolidation-multi-%C3%A9poques-for%C3%AAt-ancienne--paliers-n2-spec-031"></a></h3>
 <p>Question Pascal : « pour N2 peut-on consolider avec Cassini ? ». Constat (happign) : <strong>Cassini ~1750 n’existe qu’en raster</strong> (scans AN/BnF), pas de vecteur forêt IGN. Décision : livrer la <strong>capacité de consolidation multi-époques</strong> côté cœur, prête pour toute couche Cassini vectorisée fournie, neutre sinon.</p>
 <ul><li>

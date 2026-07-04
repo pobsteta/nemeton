@@ -1677,6 +1677,19 @@ cœur).
 
 ## Journal
 
+### 2026-07-04 — Proposée : spec 033 repli LAI Sentinel-2/PROSAIL (canopée NDP 0)
+
+Question Pascal (« PAI depuis GEODES ? ») → constat : GEODES donne du
+**LAI** (GEOV2 ~1 km, ou S2 L2A → inversion), **pas de PAI structural**.
+Cadré en `specs/033-lai-prosail-sentinel2/spec.md` : repli **NDP 0**
+produisant un LAI S2/PROSAIL (`prosail` 3.0.0, réutilise la source
+MUSCATE spec 029) pour `lai_max` (biljouR, ajustement direct) et `pai`
+microclimf (proxy dégradé). **Décisions D1–D6 à arbitrer, aucun code
+écrit.** ADR justifié (méthode d’inversion) → à acter dans
+platform_nemeton. NDP ≥ 1 garde toujours
+[`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)
+LiDAR.
+
 ### 2026-07-03 — Added v0.127.0 : consolidation multi-époques forêt ancienne + paliers N2 (spec 031)
 
 Question Pascal : « pour N2 peut-on consolider avec Cassini ? ». Constat
