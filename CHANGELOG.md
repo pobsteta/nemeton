@@ -12,6 +12,17 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.129.2\] - 2026-07-04
+
+### Fixed
+
+- [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
+  guard message no longer uses cli `{.fn}` (emits an OSC 8 terminal
+  hyperlink escape that leaks as garbage when the Shiny app renders the
+  captured message as HTML); replaced by `{.code}`. Regression test
+  asserts both engine guard messages stay plain text even with cli
+  hyperlinks on.
+
 ## \[0.129.1\] - 2026-07-04
 
 ### Fixed

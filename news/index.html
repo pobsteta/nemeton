@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.129.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.129.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.129.2" id="nemeton-01292-2026-07-04">nemeton 0.129.2 (2026-07-04)<a class="anchor" aria-label="anchor" href="#nemeton-01292-2026-07-04"></a></h2>
+<div class="section level4">
+<h4 id="fixed--messages-des-gardes-regénération--plus-déchappement-hyperlien-terminal-fuite-dans-lapp-0-129-2">Fixed — Messages des gardes reGénération : plus d’échappement hyperlien terminal (fuite dans l’app)<a class="anchor" aria-label="anchor" href="#fixed--messages-des-gardes-reg%C3%A9n%C3%A9ration--plus-d%C3%A9chappement-hyperlien-terminal-fuite-dans-lapp-0-129-2"></a></h4>
+<ul><li>
+<code><a href="../reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> : le message d’aide de la garde utilisait <code>{.fn ...}</code>, qui émet une <strong>séquence d’échappement OSC 8</strong> (hyperlien cliquable en terminal). Capturée par <code><a href="https://rdrr.io/r/base/conditions.html" class="external-link">conditionMessage()</a></code> et affichée en <strong>HTML par l’app Shiny</strong>, elle fuyait en charabia (<code>]8;;ide:help:biljouR::safran_to_meteo…</code>). Remplacé par <code>{.code ...}</code> (style sans hyperlien). Test de non-régression : les messages de garde des deux moteurs restent texte pur même avec les hyperliens cli forcés.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.129.1" id="nemeton-01291-2026-07-04">nemeton 0.129.1 (2026-07-04)<a class="anchor" aria-label="anchor" href="#nemeton-01291-2026-07-04"></a></h2>
 <div class="section level4">
