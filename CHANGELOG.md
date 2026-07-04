@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.130.0] - 2026-07-04
+
+### Added
+- `load_eobs_source(aoi, var, years, months, source, reducer, nc, …)` (spec 034):
+  builds the per-year summer `SpatRaster` (one layer/year) consumed by
+  `microclimate_detect_years()` and `tendances_estivales_eobs()` from E-OBS.
+  Tested pure/injection path (`nc` netCDF or dated `SpatRaster` → summer-per-year
+  reduction); best-effort CDS auto-download via `ecmwfr` (dataset
+  `insitu-gridded-observations-europe`, same CDS key as ERA5), degrading to
+  `NULL`. Fills the gap that left the app's "Auto (E-OBS)" button unavailable.
+
 ## [0.129.2] - 2026-07-04
 
 ### Fixed

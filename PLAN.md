@@ -1264,6 +1264,16 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-04 — Added v0.130.0 : `load_eobs_source()` — acquisition E-OBS (spec 034)
+
+Comble le maillon manquant qui rendait « Auto (E-OBS) » indisponible dans l'app :
+le cœur n'auto-téléchargeait pas E-OBS. `load_eobs_source(aoi, var, years, …)`
+produit le SpatRaster estival par année attendu par `microclimate_detect_years`
+et `tendances_estivales_eobs`. Chemin pur `nc` (netCDF/SpatRaster daté → estival
+par an) testé CI ; chemin CDS `ecmwfr` (dataset `insitu-gridded-observations-europe`,
+même clé que ERA5) best-effort, validé sur données réelles. Reste : validation
+Pascal du chemin CDS réel + brief app pour brancher le bouton « Auto ».
+
 ### 2026-07-04 — Fixed v0.129.1 : moteur microclimf validé sur données réelles (3 bugs API)
 
 Validation `regen_sensibilite` (microclimf) **sur dalles LiDAR HD réelles**
