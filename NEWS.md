@@ -1,3 +1,14 @@
+# nemeton 0.129.2 (2026-07-04)
+
+### Fixed — Messages des gardes reGénération : plus d'échappement hyperlien terminal (fuite dans l'app)
+
+- `regen_bilan_hydrique()` : le message d'aide de la garde utilisait `{.fn ...}`,
+  qui émet une **séquence d'échappement OSC 8** (hyperlien cliquable en terminal).
+  Capturée par `conditionMessage()` et affichée en **HTML par l'app Shiny**, elle
+  fuyait en charabia (`]8;;ide:help:biljouR::safran_to_meteo…`). Remplacé par
+  `{.code ...}` (style sans hyperlien). Test de non-régression : les messages de
+  garde des deux moteurs restent texte pur même avec les hyperliens cli forcés.
+
 # nemeton 0.129.1 (2026-07-04)
 
 ### Fixed — Moteur microclimf (`regen_sensibilite`) : alignement sur l'API microclimf installée (validation données réelles)

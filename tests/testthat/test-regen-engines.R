@@ -203,3 +203,20 @@ test_that(".rsen_as_rast georeferences a bare microclimf array on the dtm templa
   expect_identical(terra::crs(r), terra::crs(dtm))
   expect_true(inherits(nemeton:::.rsen_as_rast(dtm, dtm), "SpatRaster"))  # raster -> tel quel
 })
+
+test_that("engine guard messages carry no terminal hyperlink escapes (app-safe)", {
+  # Un {.fn} cli émet une séquence OSC 8 (\033]8;;ide:help:...) : cliquable en
+  # terminal, mais elle fuit en charabia quand l'app Shiny affiche le message
+  # capturé en HTML. Les gardes doivent rester texte pur (v0.129.2).
+  skip_if_not_installed("sf")
+  u <- sf::st_sf(id = 1, geometry = sf::st_sfc(
+    sf::st_polygon(list(rbind(c(0, 0), c(5, 0), c(5, 5), c(0, 5), c(0, 0)))),
+    crs = 2154))
+  withr::with_options(
+    list(cli.hyperlink = TRUE, cli.hyperlink_run = TRUE, cli.hyperlink_help = TRUE), {
+      m1 <- tryCatch(regen_bilan_hydrique(u), error = function(e) conditionMessage(e))
+      m2 <- tryCatch(regen_sensibilite(u), error = function(e) conditionMessage(e))
+      expect_false(grepl("\033]8;", m1, fixed = TRUE))
+      expect_false(grepl("\033]8;", m2, fixed = TRUE))
+    })
+})

@@ -106,7 +106,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   if (is.null(meteo) || is.null(sol) || is.null(lai_max)) {
     cli::cli_abort(c(
       "regen_bilan_hydrique() engine path needs {.arg meteo}, {.arg sol} and {.arg lai_max}.",
-      i = "Build {.arg meteo} via {.fn biljouR::safran_to_meteo}, {.arg sol} via {.fn biljouR::biljou_soil}, {.arg lai_max} from {.fn pai_depuis_nuage}; or pass a {.arg precomputed} result."))
+      i = "Build {.arg meteo} via {.code biljouR::safran_to_meteo()}, {.arg sol} via {.code biljouR::biljou_soil()}, {.arg lai_max} from {.code pai_depuis_nuage()}; or pass a {.arg precomputed} result."))
   }
 
   # Type de peuplement -> valeurs BILJOU (broadleaved/coniferous).
