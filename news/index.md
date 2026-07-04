@@ -1,5 +1,37 @@
 # Changelog
 
+## nemeton 0.128.0 (2026-07-04)
+
+#### Added — Repli LAI Sentinel-2/PROSAIL pour la canopée NDP 0 (spec 033, increment 1)
+
+**[`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)**
+: restitue un raster **LAI** depuis **Sentinel-2 L2A** par **inversion
+PROSAIL hybride** (`prosail`), comme **repli NDP 0** des entrées canopée
+reGénération quand le LiDAR HD est absent — `lai_max` de
+[`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
+(ajustement direct) et, en proxy dégradé, `pai` de
+[`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+(LAI ≠ PAI structural). **NDP ≥ 1 garde toujours le PAI LiDAR de
+[`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md).**
+
+Décisions D1–D6 (spec 033) validées : réducteur temporel **p90** (D1) ;
+`lai_max` biljouR + `pai` microclimf derrière injection explicite (D2) ;
+déclencheur auto (D6). Chemin `precomputed` pur + réducteur
+(p90/max/median/mean) **testés en CI** ; l’entraînement PROSAIL est
+**vérifié**, l’application sur scène réelle est validée par Pascal (non
+jouable en CI : scènes S2 + SVM lourd). Intégrations :
+
+- `regen_sensibilite(pai = <raster LAI>)` court-circuite le LiDAR
+  (repli), `las` non requis dans ce cas.
+- [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)
+  remonte `augmented = "lai_ml"` quand
+  `attr(data, "lai_source") == "prosail_s2"` (NDP de base inchangé,
+  ADR-011).
+
+`prosail` en Suggests + Remotes (`jbferet/prosail`), gardé par
+`requireNamespace`. Reste (increment 2) : assemblage auto des
+réflectances MUSCATE + modèle pré-entraîné versionné.
+
 ## nemeton 0.127.1 (2026-07-03)
 
 #### Fixed — Agrégation par unité du moteur microclimf via exactextractr

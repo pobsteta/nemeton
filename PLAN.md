@@ -1677,6 +1677,18 @@ cœur).
 
 ## Journal
 
+### 2026-07-04 — Added v0.128.0 : repli LAI Sentinel-2/PROSAIL (spec 033 increment 1)
+
+D1–D6 validées par Pascal →
+[`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)
+livrée (inversion PROSAIL hybride, `prosail`). Chemin `precomputed` +
+réducteur p90 testés ; **train PROSAIL vérifié en scratch**
+(`train_prosail_inversion`, srf\$sensor requis), apply validé sur
+données réelles. Intégration : `regen_sensibilite(pai=)` (repli
+LiDAR-absent), `detect_ndp` flag `lai_ml`. Reste increment 2 :
+assemblage auto réflectances MUSCATE + modèle pré-entraîné versionné +
+brief app provenance. Voir \[\[project_regen_engines_porting\]\].
+
 ### 2026-07-04 — Proposée : spec 033 repli LAI Sentinel-2/PROSAIL (canopée NDP 0)
 
 Question Pascal (« PAI depuis GEODES ? ») → constat : GEODES donne du

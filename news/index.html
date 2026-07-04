@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.127.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.128.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,19 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.128.0" id="nemeton-01280-2026-07-04">nemeton 0.128.0 (2026-07-04)<a class="anchor" aria-label="anchor" href="#nemeton-01280-2026-07-04"></a></h2>
+<div class="section level4">
+<h4 id="added--repli-lai-sentinelprosail-pour-la-canopée-ndp-spec-increment-0-128-0">Added — Repli LAI Sentinel-2/PROSAIL pour la canopée NDP 0 (spec 033, increment 1)<a class="anchor" aria-label="anchor" href="#added--repli-lai-sentinelprosail-pour-la-canop%C3%A9e-ndp-spec-increment-0-128-0"></a></h4>
+<p><strong><code><a href="../reference/lai_sentinel2.html">lai_sentinel2()</a></code></strong> : restitue un raster <strong>LAI</strong> depuis <strong>Sentinel-2 L2A</strong> par <strong>inversion PROSAIL hybride</strong> (<code>prosail</code>), comme <strong>repli NDP 0</strong> des entrées canopée reGénération quand le LiDAR HD est absent — <code>lai_max</code> de <code><a href="../reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> (ajustement direct) et, en proxy dégradé, <code>pai</code> de <code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code> (LAI ≠ PAI structural). <strong>NDP ≥ 1 garde toujours le PAI LiDAR de <code><a href="../reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code>.</strong></p>
+<p>Décisions D1–D6 (spec 033) validées : réducteur temporel <strong>p90</strong> (D1) ; <code>lai_max</code> biljouR + <code>pai</code> microclimf derrière injection explicite (D2) ; déclencheur auto (D6). Chemin <code>precomputed</code> pur + réducteur (p90/max/median/mean) <strong>testés en CI</strong> ; l’entraînement PROSAIL est <strong>vérifié</strong>, l’application sur scène réelle est validée par Pascal (non jouable en CI : scènes S2 + SVM lourd). Intégrations :</p>
+<ul><li>
+<code>regen_sensibilite(pai = &lt;raster LAI&gt;)</code> court-circuite le LiDAR (repli), <code>las</code> non requis dans ce cas.</li>
+<li>
+<code><a href="../reference/detect_ndp.html">detect_ndp()</a></code> remonte <code>augmented = "lai_ml"</code> quand <code>attr(data, "lai_source") == "prosail_s2"</code> (NDP de base inchangé, ADR-011).</li>
+</ul><p><code>prosail</code> en Suggests + Remotes (<code>jbferet/prosail</code>), gardé par <code>requireNamespace</code>. Reste (increment 2) : assemblage auto des réflectances MUSCATE + modèle pré-entraîné versionné.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.127.1" id="nemeton-01271-2026-07-03">nemeton 0.127.1 (2026-07-03)<a class="anchor" aria-label="anchor" href="#nemeton-01271-2026-07-03"></a></h2>
 <div class="section level4">

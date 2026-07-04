@@ -1064,6 +1064,9 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
   : Soil water balance per unit — BILJOU engine (spec 027 L2)
 - [`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)
   : Plant Area Index from a LiDAR-HD point cloud (spec 027 L1)
+- [`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)
+  : LAI from Sentinel-2 via PROSAIL inversion — NDP-0 canopy fallback
+  (spec 033)
 - [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
   : Summer E-OBS climate trends over the project area (spec 027 §6,
   branch A)
