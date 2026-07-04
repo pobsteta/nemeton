@@ -2,14 +2,15 @@
 
 **Version** : 0.1.0
 **Date**    : 2026-07-04
-**Statut**  : **Implémentée (increment 1, v0.128.0, 2026-07-04)** — D1–D6
-validées par Pascal (propositions retenues). `lai_sentinel2()` livrée : chemin
-`precomputed` + réducteur p90 (D1) testés en CI ; **entraînement PROSAIL vérifié
-en scratch**, application sur scène réelle validée par Pascal (non jouable en
-CI). Intégration : injection `pai` dans `regen_sensibilite()` (D2), flag
-`augmented = "lai_ml"` (`detect_ndp`), `lai_max` biljouR documenté. **Reste**
-(increment 2) : assemblage automatique des réflectances MUSCATE (D4) + modèle
-pré-entraîné versionné (D3) + brief app provenance (D5).
+**Statut**  : **Implémentée (increments 1+2, v0.128.0/v0.129.0, 2026-07-04)** —
+D1–D6 validées par Pascal. Inc 1 : `lai_sentinel2()` (precomputed + réducteur p90
+testés CI ; train PROSAIL vérifié), injection `pai` (D2), flag `lai_ml`. **Inc 2**
+(v0.129.0) : **assemblage automatique MUSCATE** stateless (D4, via
+`.get_s2_band_raster`, bandes B4/B5/B8 exposées) + **modèle pré-entraîné
+versionné** `inst/extdata/prosail_lai_Sentinel_2A_B4-B5-B8.rds` (D3, chargé sans
+ré-entraîner — sérialisation vérifiée + prédiction testée CI). **Reste** : brief
+app provenance canopée (D5) ; validation Pascal de l'application sur scène S2
+réelle.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` (feat mineur, API rétro-compatible).
 **Cible app**  : aucune en v1 (repli automatique, invisible côté UI) — brief
