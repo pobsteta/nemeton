@@ -10,6 +10,14 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.129.2] - 2026-07-04
+
+### Fixed
+- `regen_bilan_hydrique()` guard message no longer uses cli `{.fn}` (emits an
+  OSC 8 terminal hyperlink escape that leaks as garbage when the Shiny app
+  renders the captured message as HTML); replaced by `{.code}`. Regression test
+  asserts both engine guard messages stay plain text even with cli hyperlinks on.
+
 ## [0.129.1] - 2026-07-04
 
 ### Fixed
