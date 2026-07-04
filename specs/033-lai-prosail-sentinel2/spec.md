@@ -8,9 +8,9 @@ testés CI ; train PROSAIL vérifié), injection `pai` (D2), flag `lai_ml`. **In
 (v0.129.0) : **assemblage automatique MUSCATE** stateless (D4, via
 `.get_s2_band_raster`, bandes B4/B5/B8 exposées) + **modèle pré-entraîné
 versionné** `inst/extdata/prosail_lai_Sentinel_2A_B4-B5-B8.rds` (D3, chargé sans
-ré-entraîner — sérialisation vérifiée + prédiction testée CI). **Reste** : brief
-app provenance canopée (D5) ; validation Pascal de l'application sur scène S2
-réelle.
+ré-entraîner — sérialisation vérifiée + prédiction testée CI). **D5** : brief app
+provenance canopée rédigé (`brief-nemetonshiny.md`). **Reste** : validation
+Pascal de l'application sur scène S2 réelle + intégration app du badge provenance.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` (feat mineur, API rétro-compatible).
 **Cible app**  : aucune en v1 (repli automatique, invisible côté UI) — brief
