@@ -214,6 +214,7 @@ ndp_table <- function() {
 #'   \item \code{"height_ml"} : \code{attr(data, "chm_source") == "opencanopy"}
 #'   \item \code{"species_ml"} : \code{attr(data, "species_source") \%in\% c("tree_sat", "maestro")}
 #'   \item \code{"texture_ml"} : \code{attr(data, "texture_source") == "maestro"}
+#'   \item \code{"lai_ml"} : \code{attr(data, "lai_source") == "prosail_s2"} (spec 033)
 #' }
 #'
 #' @note
@@ -325,6 +326,12 @@ detect_ndp <- function(data) {
   micro_source <- attr(data, "microclimate_source")
   if (!is.null(micro_source) && identical(as.character(micro_source), "microclimf")) {
     augmented <- c(augmented, "microclimate_model")
+  }
+  # spec 033 : LAI restitué par inversion PROSAIL sur Sentinel-2 (repli canopée
+  # NDP 0, sans LiDAR HD). Flag ML séparé, NDP de base inchangé.
+  lai_source <- attr(data, "lai_source")
+  if (!is.null(lai_source) && identical(as.character(lai_source), "prosail_s2")) {
+    augmented <- c(augmented, "lai_ml")
   }
 
   new_ndp_result(level, augmented, sources)

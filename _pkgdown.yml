@@ -447,6 +447,7 @@ reference:
     - regen_sensibilite
     - regen_bilan_hydrique
     - pai_depuis_nuage
+    - lai_sentinel2
     - tendances_estivales_eobs
     - regeneration_tolerances
     - microclimate_detect_years

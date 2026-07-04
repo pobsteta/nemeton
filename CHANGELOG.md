@@ -10,6 +10,20 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.128.0] - 2026-07-04
+
+### Added
+- `lai_sentinel2()` (spec 033, increment 1): NDP-0 canopy fallback retrieving a
+  LAI raster from Sentinel-2 L2A via PROSAIL hybrid inversion (`prosail`), for
+  `lai_max` (biljouR, direct) and `pai` (microclimf, degraded proxy) when LiDAR
+  HD is absent. `precomputed` + temporal reducer (p90 default) CI-tested; PROSAIL
+  training verified, application validated on real data. `prosail` in Suggests +
+  Remotes, guarded.
+- `regen_sensibilite(pai = ...)`: inject a canopy raster (S2/PROSAIL LAI fallback)
+  to bypass the LiDAR PAI; `las` no longer required in that case.
+- `detect_ndp()`: `augmented = "lai_ml"` when `attr(data, "lai_source") ==
+  "prosail_s2"` (base NDP unchanged, ADR-011).
+
 ## [0.127.1] - 2026-07-03
 
 ### Fixed

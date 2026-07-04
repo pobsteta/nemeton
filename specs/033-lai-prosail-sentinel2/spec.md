@@ -2,9 +2,14 @@
 
 **Version** : 0.1.0
 **Date**    : 2026-07-04
-**Statut**  : **Proposée — décisions D1–D6 à arbitrer** (aucune ligne de code
-écrite ; ce document cadre le repli demandé par Pascal le 2026-07-04, suite à la
-question « peut-on récupérer le PAI depuis GEODES ? »).
+**Statut**  : **Implémentée (increment 1, v0.128.0, 2026-07-04)** — D1–D6
+validées par Pascal (propositions retenues). `lai_sentinel2()` livrée : chemin
+`precomputed` + réducteur p90 (D1) testés en CI ; **entraînement PROSAIL vérifié
+en scratch**, application sur scène réelle validée par Pascal (non jouable en
+CI). Intégration : injection `pai` dans `regen_sensibilite()` (D2), flag
+`augmented = "lai_ml"` (`detect_ndp`), `lai_max` biljouR documenté. **Reste**
+(increment 2) : assemblage automatique des réflectances MUSCATE (D4) + modèle
+pré-entraîné versionné (D3) + brief app provenance (D5).
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` (feat mineur, API rétro-compatible).
 **Cible app**  : aucune en v1 (repli automatique, invisible côté UI) — brief

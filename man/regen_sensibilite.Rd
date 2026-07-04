@@ -16,6 +16,7 @@ regen_sensibilite(
   tampon = 150,
   reqhgt = 0.5,
   k = 0.5,
+  pai = NULL,
   cache_dir = NULL,
   precomputed = NULL,
   ...
