@@ -1,3 +1,29 @@
+# nemeton 0.130.0 (2026-07-04)
+
+### Added — `load_eobs_source()` : acquisition E-OBS pour la détection auto des années (spec 034)
+
+Nouveau loader qui produit le **SpatRaster estival par année** (une couche/an,
+nommée par l'année) attendu par `microclimate_detect_years()` (années de
+référence moyenne/canicule) et `tendances_estivales_eobs()` (contexte régional).
+Comble le maillon manquant qui rendait le bouton « Auto (E-OBS) » de l'app
+indisponible (le cœur n'auto-téléchargeait pas E-OBS).
+
+- **Deux chemins** (comme les moteurs reGénération) :
+  - *Injection `nc`* (testé CI) : un netCDF E-OBS quotidien (téléchargé depuis le
+    CDS ou ECA&D) ou un `SpatRaster` daté → réduit en estival/an (crop AOI,
+    sélection JJA, réducteur mean/sum/max/median).
+  - *CDS `source = "cds"`* (best-effort, validé sur données réelles) :
+    téléchargement automatique via `ecmwfr` (dataset
+    `insitu-gridded-observations-europe`, **la même clé CDS que ERA5/mcera5**),
+    dézippage, lecture. Dégrade en `NULL`.
+- **Variables** `var ∈ {"tx","tg","rr"}` → variable CDS ; réducteur estival par
+  défaut `mean` (tx/tg) ou `sum` (rr). Fenêtre `months = 6:8` (JJA) par défaut.
+- Dégradation propre (`NULL`) si `terra`/`sf`/`ecmwfr` absents, pas de clé,
+  réseau KO ou AOI hors Europe → l'app retombe sur la saisie manuelle.
+
+Usage : `load_eobs_source(aoi, var = "tx", years = 2014:2023)` → passer à
+`microclimate_detect_years(eobs = …)` ou `tendances_estivales_eobs(tx = …, rr = …)`.
+
 # nemeton 0.129.2 (2026-07-04)
 
 ### Fixed — Messages des gardes reGénération : plus d'échappement hyperlien terminal (fuite dans l'app)
