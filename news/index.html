@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.129.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.129.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,20 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.129.1" id="nemeton-01291-2026-07-04">nemeton 0.129.1 (2026-07-04)<a class="anchor" aria-label="anchor" href="#nemeton-01291-2026-07-04"></a></h2>
+<div class="section level4">
+<h4 id="fixed--moteur-microclimf-regen_sensibilite--alignement-sur-lapi-microclimf-installée-validation-données-réelles-0-129-1">Fixed — Moteur microclimf (<code>regen_sensibilite</code>) : alignement sur l’API microclimf installée (validation données réelles)<a class="anchor" aria-label="anchor" href="#fixed--moteur-microclimf-regen_sensibilite--alignement-sur-lapi-microclimf-install%C3%A9e-validation-donn%C3%A9es-r%C3%A9elles-0-129-1"></a></h4>
+<p>Validation du moteur microclimf <strong>sur données LiDAR HD réelles</strong> (dalles Vercors bundlées) : le chemin moteur, porté depuis un prototype écrit contre une autre version de microclimf, n’avait jamais tourné de bout en bout. Trois défauts qui faisaient planter un run réel sont corrigés :</p>
+<ul><li>
+<strong><code>vegp</code>/<code>soilc</code> en <code>PackedSpatRaster</code></strong> : <code>.rsen_vers_grille()</code> dépaquette désormais (<code><a href="https://rspatial.github.io/terra/reference/wrap.html" class="external-link">terra::unwrap()</a></code>) avant de conformer à la grille — sinon dimensions ≠ dtm et <code><a href="https://rdrr.io/pkg/microclimf/man/checkinputs.html" class="external-link">microclimf::checkinputs()</a></code> échouait (« y dimension of vegp$x does not match dtm »).</li>
+<li>
+<strong>Composants végétation multi-couches</strong> (mensuels) : <code>.rsen_vers_grille()</code> réduit à une valeur scalaire représentative (moyenne toutes cellules/couches) au lieu de crasher (<code>'list' object cannot be coerced to type 'double'</code>).</li>
+<li>
+<strong>Sorties <code>runmicro</code> en array nu</strong> : le microclimf installé renvoie <code>Tz</code> / <code>relhum</code> en tableaux R (<code>nrow×ncol×ntime</code>), plus en <code>SpatRaster</code>. Nouveau helper <code>.rsen_as_rast()</code> les reconvertit en <code>SpatRaster</code> géo-référencé (même convention que <code>microclimf:::.rast</code>), rétro-compatible avec les versions qui renvoient un <code>SpatRaster</code>.</li>
+</ul><p>Validé de bout en bout : <code>checkinputs → runpointmodel → subsetpointmodel → runmicro</code>, agrégation T°max/VPD sous couvert sur grille LiDAR réelle. <strong>Note d’exploitation</strong> : la borne de pression de <code>checkinputs</code> dépend de l’altitude (<code>mxp = 108.5·((293−0.0065·elev)/293)^5.26</code>) ; le forçage ERA5 (mcera5) doit fournir la pression en <strong>kPa</strong> cohérente avec l’altitude du site.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.129.0" id="nemeton-01290-2026-07-04">nemeton 0.129.0 (2026-07-04)<a class="anchor" aria-label="anchor" href="#nemeton-01290-2026-07-04"></a></h2>
 <div class="section level4">
