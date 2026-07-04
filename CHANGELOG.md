@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.129.1] - 2026-07-04
+
+### Fixed
+- `regen_sensibilite()` microclimf engine path aligned with the installed
+  microclimf API, validated on real LiDAR data (bundled Vercors tiles). Three
+  defects that broke a real run: `.rsen_vers_grille()` now unwraps
+  `PackedSpatRaster` `vegp`/`soilc` components (dim mismatch → `checkinputs`
+  failure) and collapses multi-layer components to a scalar (was
+  `'list' object cannot be coerced`); new `.rsen_as_rast()` re-georeferences
+  `runmicro` outputs (`Tz`/`relhum`) now returned as bare arrays instead of
+  `SpatRaster`.
+
 ## [0.129.0] - 2026-07-04
 
 ### Added

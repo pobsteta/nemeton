@@ -161,9 +161,27 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 }
 
 # Réduit une couche microclimf hétérogène à une grille constante = sa moyenne.
+# Reconvertit une sortie microclimf (array nu nrow×ncol×ntime, ou déjà
+# SpatRaster) en SpatRaster géo-référencé sur le gabarit `ref` (dtm). Réplique
+# microclimf:::.rast (rast + ext + crs) tout en restant compatible avec les
+# versions qui renvoient directement un SpatRaster.
+.rsen_as_rast <- function(a, ref) {
+  if (inherits(a, "SpatRaster")) return(a)
+  r <- terra::rast(a)
+  terra::ext(r) <- terra::ext(ref)
+  terra::crs(r) <- terra::crs(ref)
+  r
+}
+
 .rsen_vers_grille <- function(x, g) {
+  # microclimf >= récent stocke vegp/soilc en PackedSpatRaster (sérialisable) :
+  # dépaqueter avant de conformer à la grille, sinon dims != dtm (checkinputs KO).
+  if (inherits(x, "PackedSpatRaster")) x <- terra::unwrap(x)
   if (inherits(x, "SpatRaster")) {
-    r <- g; terra::values(r) <- as.numeric(terra::global(x, "mean", na.rm = TRUE)); r
+    # valeur représentative scalaire (moyenne toutes cellules/couches), conformée
+    # à la grille : robuste aux composants multi-couches (mensuels).
+    m <- mean(unlist(terra::global(x, "mean", na.rm = TRUE)), na.rm = TRUE)
+    r <- g; terra::values(r) <- m; r
   } else x
 }
 
@@ -204,12 +222,15 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   mp  <- microclimf::runpointmodel(meteo, reqhgt, dtm, veg, soil)
   mp  <- microclimf::subsetpointmodel(mp, tstep = "month", what = "tmax")
   out <- microclimf::runmicro(mp, reqhgt, veg, soil, dtm)
-  Tz  <- out$Tz
+  # microclimf >= récent renvoie Tz/relhum en array nu (nrow,ncol,ntime) : les
+  # reconvertir en SpatRaster géo-référencé (même convention que microclimf:::.rast).
+  Tz <- .rsen_as_rast(out$Tz, dtm)
+  RH <- .rsen_as_rast(out$relhum, dtm)
   mois <- if (!is.null(terra::time(Tz))) as.integer(format(terra::time(Tz), "%m"))
           else seq_len(terra::nlyr(Tz))
   sel <- which(mois %in% mois_ete); if (!length(sel)) sel <- seq_len(terra::nlyr(Tz))
   tmax <- max(Tz[[sel]], na.rm = TRUE)
-  vpd  <- mean(.rsen_vpd(Tz[[sel]], out$relhum[[sel]]), na.rm = TRUE)
+  vpd  <- mean(.rsen_vpd(Tz[[sel]], RH[[sel]]), na.rm = TRUE)
   terra::writeRaster(tmax, ft, overwrite = TRUE)
   terra::writeRaster(vpd,  fv, overwrite = TRUE)
   list(tmax = tmax, vpd = vpd)
