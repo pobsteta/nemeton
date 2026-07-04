@@ -161,3 +161,45 @@ test_that("precomputed with a wrong length errors", {
   expect_error(regen_bilan_hydrique(u, precomputed = list(njstress = c(1, 2))),
                "length")
 })
+
+# --- Régressions API microclimf (validation données réelles LiDAR, 2026-07-04) :
+# vegp/soilc packés + sorties runmicro en array nu. 3 bugs corrigés en v0.129.1.
+
+test_that(".rsen_vers_grille unwraps a PackedSpatRaster and conforms to the grid", {
+  skip_if_not_installed("terra")
+  g <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 10, ymin = 0, ymax = 10,
+                   crs = "EPSG:2154")
+  src <- terra::rast(nrows = 3, ncols = 3, xmin = 0, xmax = 9, ymin = 0, ymax = 9,
+                     crs = "EPSG:2154")
+  terra::values(src) <- 1:9
+  out <- nemeton:::.rsen_vers_grille(terra::wrap(src), g)   # packé -> doit dépaqueter
+  expect_true(inherits(out, "SpatRaster"))
+  expect_equal(dim(out)[1:2], dim(g)[1:2])                  # conformé à la grille
+  expect_equal(terra::values(out)[1], mean(1:9))            # valeur = moyenne globale
+})
+
+test_that(".rsen_vers_grille collapses a multi-layer component without error", {
+  skip_if_not_installed("terra")
+  g <- terra::rast(nrows = 4, ncols = 4, xmin = 0, xmax = 4, ymin = 0, ymax = 4,
+                   crs = "EPSG:2154")
+  src <- terra::rast(nrows = 2, ncols = 2, nlyrs = 3, xmin = 0, xmax = 2,
+                     ymin = 0, ymax = 2, crs = "EPSG:2154")
+  terra::values(src) <- 1:12
+  out <- nemeton:::.rsen_vers_grille(src, g)                # multi-couches -> scalaire
+  expect_true(inherits(out, "SpatRaster"))
+  expect_equal(terra::nlyr(out), 1L)
+  expect_true(is.finite(terra::values(out)[1]))
+})
+
+test_that(".rsen_as_rast georeferences a bare microclimf array on the dtm template", {
+  skip_if_not_installed("terra")
+  dtm <- terra::rast(nrows = 6, ncols = 8, xmin = 100, xmax = 180, ymin = 200,
+                     ymax = 260, crs = "EPSG:2154")
+  a <- array(seq_len(6 * 8 * 4), dim = c(6, 8, 4))          # Tz-like (nrow,ncol,ntime)
+  r <- nemeton:::.rsen_as_rast(a, dtm)
+  expect_true(inherits(r, "SpatRaster"))
+  expect_equal(terra::nlyr(r), 4L)
+  expect_equal(as.vector(terra::ext(r)), as.vector(terra::ext(dtm)))
+  expect_identical(terra::crs(r), terra::crs(dtm))
+  expect_true(inherits(nemeton:::.rsen_as_rast(dtm, dtm), "SpatRaster"))  # raster -> tel quel
+})

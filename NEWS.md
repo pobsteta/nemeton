@@ -1,3 +1,31 @@
+# nemeton 0.129.1 (2026-07-04)
+
+### Fixed — Moteur microclimf (`regen_sensibilite`) : alignement sur l'API microclimf installée (validation données réelles)
+
+Validation du moteur microclimf **sur données LiDAR HD réelles** (dalles Vercors
+bundlées) : le chemin moteur, porté depuis un prototype écrit contre une autre
+version de microclimf, n'avait jamais tourné de bout en bout. Trois défauts qui
+faisaient planter un run réel sont corrigés :
+
+- **`vegp`/`soilc` en `PackedSpatRaster`** : `.rsen_vers_grille()` dépaquette
+  désormais (`terra::unwrap()`) avant de conformer à la grille — sinon dimensions
+  ≠ dtm et `microclimf::checkinputs()` échouait (« y dimension of vegp$x does not
+  match dtm »).
+- **Composants végétation multi-couches** (mensuels) : `.rsen_vers_grille()`
+  réduit à une valeur scalaire représentative (moyenne toutes cellules/couches)
+  au lieu de crasher (`'list' object cannot be coerced to type 'double'`).
+- **Sorties `runmicro` en array nu** : le microclimf installé renvoie `Tz` /
+  `relhum` en tableaux R (`nrow×ncol×ntime`), plus en `SpatRaster`. Nouveau
+  helper `.rsen_as_rast()` les reconvertit en `SpatRaster` géo-référencé (même
+  convention que `microclimf:::.rast`), rétro-compatible avec les versions qui
+  renvoient un `SpatRaster`.
+
+Validé de bout en bout : `checkinputs → runpointmodel → subsetpointmodel →
+runmicro`, agrégation T°max/VPD sous couvert sur grille LiDAR réelle. **Note
+d'exploitation** : la borne de pression de `checkinputs` dépend de l'altitude
+(`mxp = 108.5·((293−0.0065·elev)/293)^5.26`) ; le forçage ERA5 (mcera5) doit
+fournir la pression en **kPa** cohérente avec l'altitude du site.
+
 # nemeton 0.129.0 (2026-07-04)
 
 ### Added — Repli LAI Sentinel-2/PROSAIL, increment 2 : MUSCATE auto + modèle pré-entraîné (spec 033)

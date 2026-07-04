@@ -1264,6 +1264,21 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-04 — Fixed v0.129.1 : moteur microclimf validé sur données réelles (3 bugs API)
+
+Validation `regen_sensibilite` (microclimf) **sur dalles LiDAR HD réelles**
+(Vercors bundlées, `inst/extdata/aba.model/ALS`). Le chemin moteur (porté d'un
+prototype) n'avait jamais tourné → 3 défauts corrigés :
+1. `vegp`/`soilc` packés (`PackedSpatRaster`) → `.rsen_vers_grille` dépaquette
+   (`terra::unwrap`) sinon dims ≠ dtm (checkinputs KO).
+2. composants multi-couches → réduction scalaire (fin de `as.numeric(list)` KO).
+3. `runmicro` renvoie `Tz`/`relhum` en **array nu** → `.rsen_as_rast` reconvertit
+   en SpatRaster géo-référencé (comme `microclimf:::.rast`).
+Bout en bout OK : T°max/VPD sous couvert sur grille réelle. PAI aussi validé
+(médiane 4.66, bornes [0,8]). Note : borne pression checkinputs dépend de
+l'altitude → ERA5/mcera5 en kPa. Reste : validation Pascal du forçage ERA5 réel
+(mcera5 + CDS). Voir [[project_regen_engines_porting]].
+
 ### 2026-07-04 — Added v0.129.0 : repli LAI S2/PROSAIL increment 2 (spec 033 D3+D4)
 
 - **D4 assemblage MUSCATE auto** : `lai_sentinel2()` assemble les réflectances S2
