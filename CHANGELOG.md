@@ -12,6 +12,23 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.130.0\] - 2026-07-04
+
+### Added
+
+- `load_eobs_source(aoi, var, years, months, source, reducer, nc, …)`
+  (spec 034): builds the per-year summer `SpatRaster` (one layer/year)
+  consumed by
+  [`microclimate_detect_years()`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md)
+  and
+  [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
+  from E-OBS. Tested pure/injection path (`nc` netCDF or dated
+  `SpatRaster` → summer-per-year reduction); best-effort CDS
+  auto-download via `ecmwfr` (dataset
+  `insitu-gridded-observations-europe`, same CDS key as ERA5), degrading
+  to `NULL`. Fills the gap that left the app’s “Auto (E-OBS)” button
+  unavailable.
+
 ## \[0.129.2\] - 2026-07-04
 
 ### Fixed

@@ -653,6 +653,10 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`list_knowledge_documents()`](https://pobsteta.github.io/nemeton/reference/list_knowledge_documents.md)
   : List the documents in the RAG knowledge base
 
+- [`load_eobs_source()`](https://pobsteta.github.io/nemeton/reference/load_eobs_source.md)
+  : Acquire E-OBS per-year summer fields (Tmax / precipitation) for an
+  AOI
+
 - [`load_fordead_validity_zones()`](https://pobsteta.github.io/nemeton/reference/load_fordead_validity_zones.md)
   : Load the FORDEAD validity zones layer
 

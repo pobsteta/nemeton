@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.129.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.130.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,24 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.130.0" id="nemeton-01300-2026-07-04">nemeton 0.130.0 (2026-07-04)<a class="anchor" aria-label="anchor" href="#nemeton-01300-2026-07-04"></a></h2>
+<div class="section level4">
+<h4 id="added--load_eobs_source--acquisition-e-obs-pour-la-détection-auto-des-années-spec-0-130-0">Added — <code>load_eobs_source()</code> : acquisition E-OBS pour la détection auto des années (spec 034)<a class="anchor" aria-label="anchor" href="#added--load_eobs_source--acquisition-e-obs-pour-la-d%C3%A9tection-auto-des-ann%C3%A9es-spec-0-130-0"></a></h4>
+<p>Nouveau loader qui produit le <strong>SpatRaster estival par année</strong> (une couche/an, nommée par l’année) attendu par <code><a href="../reference/microclimate_detect_years.html">microclimate_detect_years()</a></code> (années de référence moyenne/canicule) et <code><a href="../reference/tendances_estivales_eobs.html">tendances_estivales_eobs()</a></code> (contexte régional). Comble le maillon manquant qui rendait le bouton « Auto (E-OBS) » de l’app indisponible (le cœur n’auto-téléchargeait pas E-OBS).</p>
+<ul><li>
+<strong>Deux chemins</strong> (comme les moteurs reGénération) :
+<ul><li>
+<em>Injection <code>nc</code></em> (testé CI) : un netCDF E-OBS quotidien (téléchargé depuis le CDS ou ECA&amp;D) ou un <code>SpatRaster</code> daté → réduit en estival/an (crop AOI, sélection JJA, réducteur mean/sum/max/median).</li>
+<li>
+<em>CDS <code>source = "cds"</code></em> (best-effort, validé sur données réelles) : téléchargement automatique via <code>ecmwfr</code> (dataset <code>insitu-gridded-observations-europe</code>, <strong>la même clé CDS que ERA5/mcera5</strong>), dézippage, lecture. Dégrade en <code>NULL</code>.</li>
+</ul></li>
+<li>
+<strong>Variables</strong> <code>var ∈ {"tx","tg","rr"}</code> → variable CDS ; réducteur estival par défaut <code>mean</code> (tx/tg) ou <code>sum</code> (rr). Fenêtre <code>months = 6:8</code> (JJA) par défaut.</li>
+<li>Dégradation propre (<code>NULL</code>) si <code>terra</code>/<code>sf</code>/<code>ecmwfr</code> absents, pas de clé, réseau KO ou AOI hors Europe → l’app retombe sur la saisie manuelle.</li>
+</ul><p>Usage : <code>load_eobs_source(aoi, var = "tx", years = 2014:2023)</code> → passer à <code>microclimate_detect_years(eobs = …)</code> ou <code>tendances_estivales_eobs(tx = …, rr = …)</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.129.2" id="nemeton-01292-2026-07-04">nemeton 0.129.2 (2026-07-04)<a class="anchor" aria-label="anchor" href="#nemeton-01292-2026-07-04"></a></h2>
 <div class="section level4">
