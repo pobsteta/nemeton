@@ -21,7 +21,7 @@ lai_sentinel2(
   reducer = "p90",
   source = "muscate",
   sensor = "Sentinel_2A",
-  selected_bands = c("B3", "B4", "B8"),
+  selected_bands = c("B4", "B5", "B8"),
   geom_acq = NULL,
   mask = NULL,
   cache_dir = NULL,
@@ -38,9 +38,10 @@ lai_sentinel2(
 
 - refl:
 
-  S2 L2A reflectance for the engine path: a `SpatRaster` (bands in `srf`
-  order) or a file path / vector of paths (one per date). When `NULL`, a
-  best-effort MUSCATE fetch is attempted over `aoi`/`start`/`end`.
+  S2 L2A reflectance for the engine path: a `SpatRaster` (layers named
+  as `selected_bands`) or a file path / vector of paths (one per date).
+  When `NULL`, the reflectance is assembled automatically from MUSCATE
+  over `aoi`/`start`/`end` (spec 033 D4, reuses the S2 STAC pipeline).
 
 - start, end:
 
@@ -61,7 +62,8 @@ lai_sentinel2(
 
 - selected_bands:
 
-  S2 bands used for the LAI inversion (default `c("B3","B4","B8")`).
+  S2 bands used for the LAI inversion (default `c("B4","B5","B8")` —
+  red, red-edge, NIR; all exposed by the S2 pipeline).
 
 - geom_acq:
 
@@ -94,12 +96,13 @@ A single-layer LAI `SpatRaster` (`lai`), or `NULL` on degradation (no
 
 **Two paths.** *Fast-path*: pass `precomputed` (a LAI `SpatRaster`, or a
 multi-date stack) and only the temporal reduction (`reducer`, default
-`"p90"`) is applied. *Engine path*: trains the PROSAIL hybrid model for
-the S2 sensor/geometry (cached in `cache_dir`), applies it to the S2
-reflectance raster(s) `refl`, and reduces the per-date LAI to one layer.
-Needs `prosail` + real S2 scenes and is **not runnable in CI** — the
-engine is validated on real data (training verified; application per the
-official tutorial).
+`"p90"`) is applied. *Engine path*: loads the shipped pre-trained model
+(`inst/extdata`, spec 033 D3) — or trains + caches one —, applies it to
+the S2 reflectance raster(s) `refl` (auto-assembled from MUSCATE when
+`refl` is `NULL`, spec 033 D4), and reduces the per-date LAI to one
+layer. Needs `prosail` + real S2 scenes and is **not runnable in CI** —
+the engine is validated on real data (training verified; application per
+the official tutorial).
 
 ## See also
 

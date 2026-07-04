@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.128.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.129.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -860,6 +860,14 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-04--added-v01290--repli-lai-s2prosail-increment-2-spec-033-d3d4">2026-07-04 — Added v0.129.0 : repli LAI S2/PROSAIL increment 2 (spec 033 D3+D4)<a class="anchor" aria-label="anchor" href="#id_2026-07-04--added-v01290--repli-lai-s2prosail-increment-2-spec-033-d3d4"></a></h3>
+<ul><li>
+<strong>D4 assemblage MUSCATE auto</strong> : <code><a href="reference/lai_sentinel2.html">lai_sentinel2()</a></code> assemble les réflectances S2 seul (<code>stac_search_s2</code> muscate + <code>.get_s2_band_raster</code> stateless). Défaut <code>selected_bands</code> → <code>c("B4","B5","B8")</code> (B03/vert non exposé par <code>.S2_STAC_BANDS</code>).</li>
+<li>
+<strong>D3 modèle pré-entraîné</strong> : <code>inst/extdata/prosail_lai_Sentinel_2A_B4-B5-B8.rds</code> (1.3 Mo, sérialisation vérifiée, prédiction testée CI), plus de train au runtime. <code>data-raw/prosail_lai_model.R</code> pour régénérer.</li>
+<li>Reste : brief app provenance canopée (D5) + validation Pascal apply sur scène réelle. Voir [[project_regen_engines_porting]].</li>
+</ul></div>
 <div class="section level3">
 <h3 id="id_2026-07-04--added-v01280--repli-lai-sentinel-2prosail-spec-033-increment-1">2026-07-04 — Added v0.128.0 : repli LAI Sentinel-2/PROSAIL (spec 033 increment 1)<a class="anchor" aria-label="anchor" href="#id_2026-07-04--added-v01280--repli-lai-sentinel-2prosail-spec-033-increment-1"></a></h3>
 <p>D1–D6 validées par Pascal → <code><a href="reference/lai_sentinel2.html">lai_sentinel2()</a></code> livrée (inversion PROSAIL hybride, <code>prosail</code>). Chemin <code>precomputed</code> + réducteur p90 testés ; <strong>train PROSAIL vérifié en scratch</strong> (<code>train_prosail_inversion</code>, srf$sensor requis), apply validé sur données réelles. Intégration : <code>regen_sensibilite(pai=)</code> (repli LiDAR-absent), <code>detect_ndp</code> flag <code>lai_ml</code>. Reste increment 2 : assemblage auto réflectances MUSCATE + modèle pré-entraîné versionné + brief app provenance. Voir [[project_regen_engines_porting]].</p>

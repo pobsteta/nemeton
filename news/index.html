@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.128.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.129.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.129.0" id="nemeton-01290-2026-07-04">nemeton 0.129.0 (2026-07-04)<a class="anchor" aria-label="anchor" href="#nemeton-01290-2026-07-04"></a></h2>
+<div class="section level4">
+<h4 id="added--repli-lai-sentinelprosail-increment--muscate-auto--modèle-pré-entraîné-spec-0-129-0">Added — Repli LAI Sentinel-2/PROSAIL, increment 2 : MUSCATE auto + modèle pré-entraîné (spec 033)<a class="anchor" aria-label="anchor" href="#added--repli-lai-sentinelprosail-increment--muscate-auto--mod%C3%A8le-pr%C3%A9-entra%C3%AEn%C3%A9-spec-0-129-0"></a></h4>
+<ul><li>
+<strong>Assemblage automatique MUSCATE (D4)</strong> : <code><a href="../reference/lai_sentinel2.html">lai_sentinel2()</a></code> assemble désormais les réflectances Sentinel-2 tout seul quand <code>refl</code> n’est pas fourni — recherche MUSCATE (<code>stac_search_s2(source="muscate")</code>, spec 029), récupération stateless des bandes par scène (<code>.get_s2_band_raster</code>, crop AOI + cache), stack multi- bandes par date. Le défaut <code>selected_bands</code> passe à <strong><code>c("B4","B5","B8")</code></strong> (rouge, red-edge, NIR — toutes exposées par le pipeline S2 ; B03/vert ne l’est pas). Mapping des noms prosail→nemeton (<code>B4</code>→<code>B04</code>, <code>B8A</code> conservé).</li>
+<li>
+<strong>Modèle pré-entraîné versionné (D3)</strong> : <code>inst/extdata/prosail_lai_Sentinel_2A_B4-B5-B8.rds</code> (~1.3 Mo) chargé directement — plus d’entraînement (~70 s) au runtime. Sérialisation vérifiée, <strong>prédiction après rechargement testée en CI</strong>. À défaut, <code>.lai_prosail_train</code> entraîne + met en cache. Régénérable via <code>data-raw/prosail_lai_model.R</code>.</li>
+</ul><p>Le chemin moteur (application sur scène S2 réelle) reste validé sur données réelles (non jouable en CI).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.128.0" id="nemeton-01280-2026-07-04">nemeton 0.128.0 (2026-07-04)<a class="anchor" aria-label="anchor" href="#nemeton-01280-2026-07-04"></a></h2>
 <div class="section level4">

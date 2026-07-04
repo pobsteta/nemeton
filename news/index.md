@@ -1,5 +1,29 @@
 # Changelog
 
+## nemeton 0.129.0 (2026-07-04)
+
+#### Added — Repli LAI Sentinel-2/PROSAIL, increment 2 : MUSCATE auto + modèle pré-entraîné (spec 033)
+
+- **Assemblage automatique MUSCATE (D4)** :
+  [`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)
+  assemble désormais les réflectances Sentinel-2 tout seul quand `refl`
+  n’est pas fourni — recherche MUSCATE
+  (`stac_search_s2(source="muscate")`, spec 029), récupération stateless
+  des bandes par scène (`.get_s2_band_raster`, crop AOI + cache), stack
+  multi- bandes par date. Le défaut `selected_bands` passe à
+  **`c("B4","B5","B8")`** (rouge, red-edge, NIR — toutes exposées par le
+  pipeline S2 ; B03/vert ne l’est pas). Mapping des noms prosail→nemeton
+  (`B4`→`B04`, `B8A` conservé).
+- **Modèle pré-entraîné versionné (D3)** :
+  `inst/extdata/prosail_lai_Sentinel_2A_B4-B5-B8.rds` (~1.3 Mo) chargé
+  directement — plus d’entraînement (~70 s) au runtime. Sérialisation
+  vérifiée, **prédiction après rechargement testée en CI**. À défaut,
+  `.lai_prosail_train` entraîne + met en cache. Régénérable via
+  `data-raw/prosail_lai_model.R`.
+
+Le chemin moteur (application sur scène S2 réelle) reste validé sur
+données réelles (non jouable en CI).
+
 ## nemeton 0.128.0 (2026-07-04)
 
 #### Added — Repli LAI Sentinel-2/PROSAIL pour la canopée NDP 0 (spec 033, increment 1)

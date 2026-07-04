@@ -19,7 +19,7 @@ pai_depuis_nuage."><meta property="og:image" content="https://pobsteta.github.io
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.128.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.129.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,7 +75,7 @@ wood). <strong>NDP ≥ 1 always keeps the structural LiDAR PAI of
 <span>  reducer <span class="op">=</span> <span class="st">"p90"</span>,</span>
 <span>  source <span class="op">=</span> <span class="st">"muscate"</span>,</span>
 <span>  sensor <span class="op">=</span> <span class="st">"Sentinel_2A"</span>,</span>
-<span>  selected_bands <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B3"</span>, <span class="st">"B4"</span>, <span class="st">"B8"</span><span class="op">)</span>,</span>
+<span>  selected_bands <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B4"</span>, <span class="st">"B5"</span>, <span class="st">"B8"</span><span class="op">)</span>,</span>
 <span>  geom_acq <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  mask <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cache_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -93,10 +93,10 @@ wood). <strong>NDP ≥ 1 always keeps the structural LiDAR PAI of
 
 
 <dt id="arg-refl">refl<a class="anchor" aria-label="anchor" href="#arg-refl"></a></dt>
-<dd><p>S2 L2A reflectance for the engine path: a <code>SpatRaster</code> (bands in
-<code>srf</code> order) or a file path / vector of paths (one per date). When
-<code>NULL</code>, a best-effort MUSCATE fetch is attempted over
-<code>aoi</code>/<code>start</code>/<code>end</code>.</p></dd>
+<dd><p>S2 L2A reflectance for the engine path: a <code>SpatRaster</code> (layers
+named as <code>selected_bands</code>) or a file path / vector of paths (one per date).
+When <code>NULL</code>, the reflectance is assembled automatically from MUSCATE over
+<code>aoi</code>/<code>start</code>/<code>end</code> (spec 033 D4, reuses the S2 STAC pipeline).</p></dd>
 
 
 <dt id="arg-start-end">start, end<a class="anchor" aria-label="anchor" href="#arg-start-end"></a></dt>
@@ -119,7 +119,7 @@ wood). <strong>NDP ≥ 1 always keeps the structural LiDAR PAI of
 
 <dt id="arg-selected-bands">selected_bands<a class="anchor" aria-label="anchor" href="#arg-selected-bands"></a></dt>
 <dd><p>S2 bands used for the LAI inversion (default
-<code>c("B3","B4","B8")</code>).</p></dd>
+<code>c("B4","B5","B8")</code> — red, red-edge, NIR; all exposed by the S2 pipeline).</p></dd>
 
 
 <dt id="arg-geom-acq">geom_acq<a class="anchor" aria-label="anchor" href="#arg-geom-acq"></a></dt>
@@ -153,12 +153,13 @@ wood). <strong>NDP ≥ 1 always keeps the structural LiDAR PAI of
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><strong>Two paths.</strong> <em>Fast-path</em>: pass <code>precomputed</code> (a LAI
 <code>SpatRaster</code>, or a multi-date stack) and only the temporal reduction
-(<code>reducer</code>, default <code>"p90"</code>) is applied. <em>Engine path</em>: trains the
-PROSAIL hybrid model for the S2 sensor/geometry (cached in <code>cache_dir</code>),
-applies it to the S2 reflectance raster(s) <code>refl</code>, and reduces the per-date
-LAI to one layer. Needs <code>prosail</code> + real S2 scenes and is <strong>not
-runnable in CI</strong> — the engine is validated on real data (training verified;
-application per the official tutorial).</p>
+(<code>reducer</code>, default <code>"p90"</code>) is applied. <em>Engine path</em>: loads the
+shipped pre-trained model (<code>inst/extdata</code>, spec 033 D3) — or trains + caches
+one —, applies it to the S2 reflectance raster(s) <code>refl</code> (auto-assembled
+from MUSCATE when <code>refl</code> is <code>NULL</code>, spec 033 D4), and reduces the
+per-date LAI to one layer. Needs <code>prosail</code> + real S2 scenes and is
+<strong>not runnable in CI</strong> — the engine is validated on real data (training
+verified; application per the official tutorial).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
