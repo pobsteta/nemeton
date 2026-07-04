@@ -262,6 +262,9 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #'   (default `150`).
 #' @param reqhgt Height (m) above ground for the microclimate (default `0.5`).
 #' @param k Beer-Lambert extinction coefficient for PAI (default `0.5`).
+#' @param pai Optional canopy `SpatRaster` to use instead of the LiDAR PAI. The
+#'   NDP-0 fallback: a Sentinel-2/PROSAIL LAI from [lai_sentinel2()] (degraded
+#'   proxy — LAI ≠ structural PAI). When supplied, `las` is not required.
 #' @param cache_dir Directory for the ERA5 `.nc` and per-year microclimate `.tif`
 #'   caches. `NULL` (default) uses a session temp dir; pass a persistent path to
 #'   reuse expensive runs.
@@ -278,7 +281,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
                               annees_moy = NULL, annees_canic = NULL,
                               mois_ete = 6:8, res = 2, tampon = 150,
-                              reqhgt = 0.5, k = 0.5, cache_dir = NULL,
+                              reqhgt = 0.5, k = 0.5, pai = NULL, cache_dir = NULL,
                               precomputed = NULL, ...) {
   validate_sf(units)
   if (!is.null(precomputed)) {
@@ -304,10 +307,10 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
       "regen_sensibilite() needs {.pkg microclimf} (and {.pkg terra}) for the engine path.",
       i = "Install them, or pass a precomputed microclimf output via {.arg precomputed}."))
   }
-  if (is.null(mnt) || is.null(mnh) || is.null(las) ||
+  if (is.null(mnt) || is.null(mnh) || (is.null(las) && is.null(pai)) ||
       is.null(annees_moy) || is.null(annees_canic)) {
     cli::cli_abort(c(
-      "regen_sensibilite() engine path needs {.arg mnt}, {.arg mnh}, {.arg las}, {.arg annees_moy} and {.arg annees_canic}.",
+      "regen_sensibilite() engine path needs {.arg mnt}, {.arg mnh}, {.arg annees_moy}, {.arg annees_canic}, and either {.arg las} (LiDAR HD) or {.arg pai} (S2/PROSAIL LAI fallback, spec 033).",
       i = "Or pass a precomputed per-unit result via {.arg precomputed}."))
   }
   if (is.null(cache_dir)) cache_dir <- tempfile("regen_micro_")
@@ -328,7 +331,15 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   mnh_r <- terra::resample(mnh_r, mnt_r)
   dtm <- mnt_r; names(dtm) <- "dtm"
   hgt <- terra::clamp(mnh_r, 0, Inf); names(hgt) <- "hgt"
-  pai <- pai_depuis_nuage(las, dtm, res = res, k = k)
+  # PAI : LiDAR HD (pai_depuis_nuage) par défaut. Repli NDP 0 (spec 033) : un
+  # raster LAI Sentinel-2/PROSAIL fourni via `pai` court-circuite le LiDAR
+  # (proxy dégradé — LAI ≠ PAI structural), rééchantillonné sur la grille.
+  pai <- if (!is.null(pai)) {
+    if (!inherits(pai, "SpatRaster")) cli::cli_abort("{.arg pai} must be a terra SpatRaster (LAI/PAI fallback).")
+    terra::resample(pai[[1]], dtm)
+  } else {
+    pai_depuis_nuage(las, dtm, res = res, k = k)
+  }
   names(pai) <- "pai"
 
   # Végétation / sol microclimf, ramenés à la grille ; hgt/pai injectés.
