@@ -533,7 +533,9 @@ get_dem_raster <- function(layers) {
   if (is.null(dem)) {
     dem <- resolve_raster_layer(layers, "dem")
   }
-  dem
+  # Répare un CRS LiDAR HD « sans autorité » (cf. .normalize_crs) : sinon les
+  # extractions DEM (R1/R2/R3/W3) et le contrôle de couverture bbox échouent.
+  .normalize_crs(dem)
 }
 
 # ==============================================================================
