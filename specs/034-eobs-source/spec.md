@@ -73,9 +73,17 @@ tendances_estivales_eobs(ugf, tx = tx, rr = rr)                    # -> carte bi
 ```r
 load_eobs_source(aoi, var = "tx", years = NULL, months = 6:8,
                  source = "cds", reducer = NULL, nc = NULL,
-                 cache_dir = NULL, version = "28.0e",
+                 cache_dir = NULL, version = "30.0e",
                  resolution = "0.1deg", period = NULL, ...)
 ```
+
+> **Correctif CDS (v0.134.2, 2026-07-05)** — validation sur clé réelle : le CDS
+> attend les valeurs d'enum en **underscore** (`30_0e`, `0_1deg`), pas en point,
+> et la version par défaut `28.0e` ne couvre pas la période `2011_2024` (→ 400
+> « invalid combination », qui masquait le vrai blocage licence). Corrigé :
+> normalisation point→underscore de `version`/`resolution` + défaut `30.0e`
+> (combinaison `30_0e` + `2011_2024` + `0_1deg` **acceptée** par le CDS). Reste :
+> accepter la **licence E-OBS** sur la page du dataset (403 sinon).
 
 Helpers internes :
 - `.eobs_var_spec(var)` — mappe var → (variable CDS, réducteur défaut).

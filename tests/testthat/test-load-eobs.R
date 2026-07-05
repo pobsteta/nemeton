@@ -105,3 +105,17 @@ test_that("load_eobs_source output feeds microclimate_detect_years", {
   expect_true(is.list(det))
   expect_true(all(c("year_moyenne", "year_canicule") %in% names(det)))
 })
+
+test_that(".eobs_cds_fetch normalise version/résolution en underscore pour le CDS", {
+  skip_if_not_installed("ecmwfr")
+  captured <- NULL
+  testthat::local_mocked_bindings(
+    wf_request = function(request, ...) { captured <<- request; NULL },
+    .package = "ecmwfr")
+  nemeton:::.eobs_cds_fetch("maximum_temperature", years = 2022L,
+                            cache_dir = withr::local_tempdir(),
+                            version = "30.0e", resolution = "0.1deg")
+  expect_identical(captured$version, "30_0e")          # point -> underscore
+  expect_identical(captured$grid_resolution, "0_1deg")
+  expect_identical(captured$period, "2011_2024")       # bloc décennal 2022
+})

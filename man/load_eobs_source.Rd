@@ -13,7 +13,7 @@ load_eobs_source(
   reducer = NULL,
   nc = NULL,
   cache_dir = NULL,
-  version = "28.0e",
+  version = "30.0e",
   resolution = "0.1deg",
   period = NULL,
   progress_callback = NULL,
@@ -41,7 +41,8 @@ of the CDS download.}
 
 \item{cache_dir}{Directory for the CDS download / unzip (default \code{tempdir()}).}
 
-\item{version, resolution}{E-OBS product version (default \code{"28.0e"}) and grid
+\item{version, resolution}{E-OBS product version (default \code{"30.0e"}; dots are
+normalised to the CDS underscore form, e.g. \code{30_0e}) and grid
 resolution (default \code{"0.1deg"}) for the CDS request.}
 
 \item{period}{Optional explicit CDS period block (e.g. \code{"2011_2024"});

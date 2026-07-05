@@ -1,3 +1,21 @@
+# nemeton 0.134.2 (2026-07-05)
+
+### Fixed — Requête E-OBS CDS invalide (spec 034)
+
+Validation sur clé CDS réelle : `load_eobs_source(source = "cds")` construisait
+une requête **rejetée en 400** (« invalid combination of values ») par le CDS :
+
+- Le CDS attend les valeurs d'enum en **underscore** (`30_0e`, `0_1deg`), pas en
+  point. Ajout d'une normalisation point→underscore de `version` / `resolution`
+  (on tolère toujours la forme humaine `"30.0e"` / `"0.1deg"` en entrée).
+- La version par défaut `"28.0e"` **ne couvre pas** la période décennale
+  `2011_2024` (rejet 400). Défaut porté à **`"30.0e"`** (combinaison
+  `30_0e` + `2011_2024` + `0_1deg` **acceptée** par le CDS, vérifiée en réel).
+
+Sans ce correctif, E-OBS échouait **même avec la licence acceptée**. Le
+téléchargement réel requiert d'accepter la **licence E-OBS** sur la page du
+dataset (`insitu-gridded-observations-europe`, 403 sinon).
+
 # nemeton 0.134.1 (2026-07-05)
 
 ### Fixed — Assemblage MUSCATE du repli LAI/PROSAIL (spec 033 D4)

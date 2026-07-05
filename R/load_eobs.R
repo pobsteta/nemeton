@@ -78,13 +78,15 @@
     period <- .eobs_cds_period(as.integer(years))
     if (is.null(period)) return(NULL)
   }
+  # Le CDS attend les valeurs d'enum avec des underscores (`30_0e`, `0_1deg`),
+  # pas des points — on tolère la forme humaine `30.0e` / `0.1deg` en entrée.
   req <- list(
     dataset_short_name = .EOBS_CDS_DATASET,
     product_type    = "ensemble_mean",
     variable        = cds_var,
-    grid_resolution = resolution,
+    grid_resolution = gsub("\\.", "_", resolution),
     period          = period,
-    version         = version,
+    version         = gsub("\\.", "_", version),
     format          = "zip",
     target          = "eobs.zip")
   emit(list(current = "eobs:cds_request", variable = cds_var,
@@ -144,7 +146,8 @@
 #' @param nc A daily E-OBS netCDF path (or a dated `SpatRaster`) to use instead
 #'   of the CDS download.
 #' @param cache_dir Directory for the CDS download / unzip (default `tempdir()`).
-#' @param version,resolution E-OBS product version (default `"28.0e"`) and grid
+#' @param version,resolution E-OBS product version (default `"30.0e"`; dots are
+#'   normalised to the CDS underscore form, e.g. `30_0e`) and grid
 #'   resolution (default `"0.1deg"`) for the CDS request.
 #' @param period Optional explicit CDS period block (e.g. `"2011_2024"`);
 #'   inferred from `years` when `NULL`.
@@ -160,7 +163,7 @@
 #' @export
 load_eobs_source <- function(aoi, var = "tx", years = NULL, months = 6:8,
                              source = "cds", reducer = NULL, nc = NULL,
-                             cache_dir = NULL, version = "28.0e",
+                             cache_dir = NULL, version = "30.0e",
                              resolution = "0.1deg", period = NULL,
                              progress_callback = NULL, ...) {
   # Émetteur de progression : chaque étape publie un payload `list(current=…)`
