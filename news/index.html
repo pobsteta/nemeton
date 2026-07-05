@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.133.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.134.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,16 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.134.0" id="nemeton-01340-2026-07-05">nemeton 0.134.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01340-2026-07-05"></a></h2>
+<div class="section level4">
+<h4 id="added--load_biljou_forcing--progression-par-étapes-progress_callback-0-134-0">Added — <code>load_biljou_forcing()</code> : progression par étapes (<code>progress_callback</code>)<a class="anchor" aria-label="anchor" href="#added--load_biljou_forcing--progression-par-%C3%A9tapes-progress_callback-0-134-0"></a></h4>
+<ul><li>
+<code><a href="../reference/load_biljou_forcing.html">load_biljou_forcing()</a></code> accepte un <code>progress_callback</code> appelé à chaque étape (patron monitoring) : <code>"biljou:safran_unit"</code> (<code>i</code>/<code>n</code>/<code>id</code>), <code>"biljou:era5_download"</code> (<code>i</code>/<code>n</code>/<code>id</code>/<code>year</code>), <code>"biljou:complete"</code>, <code>"biljou:unavailable"</code>. L’app peut ainsi afficher des notifications bas-droite au fil du téléchargement du forçage SAFRAN (par unité) ou ERA5 (par unité/année). No-op quand <code>NULL</code> ; API rétro-compatible. Brief spec 027 BILJOU mis à jour.</li>
+<li>
+<strong>Forçage ERA5 validé de bout en bout sur données réelles</strong> (clé CDS + licence acceptée) : téléchargement + <code>extract_clim(format = "microclimf")</code> (pression kPa cohérente altitude) + conversion PET → <code>meteo</code> BILJOU.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.133.1" id="nemeton-01331-2026-07-05">nemeton 0.133.1 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01331-2026-07-05"></a></h2>
 <div class="section level4">

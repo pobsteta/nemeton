@@ -32,6 +32,7 @@ load_biljou_forcing(
   latitude = NULL,
   altitude = 0,
   compute_pet = FALSE,
+  progress_callback = NULL,
   ...
 )
 ```
@@ -78,6 +79,15 @@ load_biljou_forcing(
   [`safran_to_meteo`](https://pobsteta.github.io/biljouR/reference/safran_to_meteo.html)
   (SAFRAN provides `ETP_Q`, so the default `FALSE` is used unless a
   Penman estimate is wanted).
+
+- progress_callback:
+
+  Optional function called at each step with a
+  `list(current = <key>, ...)` payload (monitoring pattern). Keys:
+  `"biljou:safran_unit"` (`i`/`n`/`id`), `"biljou:era5_download"`
+  (`i`/`n`/`id`/`year`), `"biljou:complete"`, `"biljou:unavailable"`.
+  The app maps these to bottom-right notifications during the forcing
+  download.
 
 - ...:
 

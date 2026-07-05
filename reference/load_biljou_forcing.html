@@ -33,7 +33,7 @@ can fall back."><meta property="og:image" content="https://pobsteta.github.io/ne
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.133.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.134.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -98,6 +98,7 @@ can fall back.</p>
 <span>  latitude <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  altitude <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  compute_pet <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -141,6 +142,15 @@ Penman estimate (<code>latitude</code> defaults to the AOI centroid).</p></dd>
 <dt id="arg-compute-pet">compute_pet<a class="anchor" aria-label="anchor" href="#arg-compute-pet"></a></dt>
 <dd><p>Passed to <code><a href="https://pobsteta.github.io/biljouR/reference/safran_to_meteo.html" class="external-link">safran_to_meteo</a></code> (SAFRAN provides
 <code>ETP_Q</code>, so the default <code>FALSE</code> is used unless a Penman estimate is wanted).</p></dd>
+
+
+<dt id="arg-progress-callback">progress_callback<a class="anchor" aria-label="anchor" href="#arg-progress-callback"></a></dt>
+<dd><p>Optional function called at each step with a
+<code>list(current = &lt;key&gt;, ...)</code> payload (monitoring pattern). Keys:
+<code>"biljou:safran_unit"</code> (<code>i</code>/<code>n</code>/<code>id</code>),
+<code>"biljou:era5_download"</code> (<code>i</code>/<code>n</code>/<code>id</code>/<code>year</code>),
+<code>"biljou:complete"</code>, <code>"biljou:unavailable"</code>. The app maps these to
+bottom-right notifications during the forcing download.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
