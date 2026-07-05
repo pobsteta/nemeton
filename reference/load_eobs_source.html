@@ -29,7 +29,7 @@ as ERA5). Not runnable in CI; validated on real data. Degrades to NULL.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.130.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.131.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -91,6 +91,7 @@ as ERA5). Not runnable in CI; validated on real data. Degrades to <code>NULL</co
 <span>  version <span class="op">=</span> <span class="st">"28.0e"</span>,</span>
 <span>  resolution <span class="op">=</span> <span class="st">"0.1deg"</span>,</span>
 <span>  period <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -143,6 +144,14 @@ resolution (default <code>"0.1deg"</code>) for the CDS request.</p></dd>
 <dt id="arg-period">period<a class="anchor" aria-label="anchor" href="#arg-period"></a></dt>
 <dd><p>Optional explicit CDS period block (e.g. <code>"2011_2024"</code>);
 inferred from <code>years</code> when <code>NULL</code>.</p></dd>
+
+
+<dt id="arg-progress-callback">progress_callback<a class="anchor" aria-label="anchor" href="#arg-progress-callback"></a></dt>
+<dd><p>Optional function called at each step with a
+<code>list(current = &lt;key&gt;, ...)</code> payload (monitoring pattern). Keys:
+<code>"eobs:cds_request"</code>, <code>"eobs:cds_download_done"</code>, <code>"eobs:unzip"</code>,
+<code>"eobs:read"</code>, <code>"eobs:reduce"</code>, <code>"eobs:complete"</code>,
+<code>"eobs:unavailable"</code>. The app maps these to bottom-right notifications.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

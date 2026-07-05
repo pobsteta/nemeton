@@ -31,6 +31,7 @@ load_eobs_source(
   version = "28.0e",
   resolution = "0.1deg",
   period = NULL,
+  progress_callback = NULL,
   ...
 )
 ```
@@ -83,6 +84,15 @@ load_eobs_source(
 
   Optional explicit CDS period block (e.g. `"2011_2024"`); inferred from
   `years` when `NULL`.
+
+- progress_callback:
+
+  Optional function called at each step with a
+  `list(current = <key>, ...)` payload (monitoring pattern). Keys:
+  `"eobs:cds_request"`, `"eobs:cds_download_done"`, `"eobs:unzip"`,
+  `"eobs:read"`, `"eobs:reduce"`, `"eobs:complete"`,
+  `"eobs:unavailable"`. The app maps these to bottom-right
+  notifications.
 
 - ...:
 

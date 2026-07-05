@@ -1677,6 +1677,16 @@ cœur).
 
 ## Journal
 
+### 2026-07-05 — Added v0.131.0 : `load_eobs_source()` progression par étapes (spec 034)
+
+`progress_callback` sur
+[`load_eobs_source()`](https://pobsteta.github.io/nemeton/reference/load_eobs_source.md)
+: payloads `list(current=…)`
+(cds_request/download_done/unzip/read/reduce/complete/unavailable) →
+l’app affiche des notifications bas-droite au fil du téléchargement
+E-OBS. Brief 034 mis à jour (mapping clés → i18n + showNotification id
+fixe). Voir \[\[project_eobs_source\]\].
+
 ### 2026-07-04 — Added v0.130.0 : `load_eobs_source()` — acquisition E-OBS (spec 034)
 
 Comble le maillon manquant qui rendait « Auto (E-OBS) » indisponible

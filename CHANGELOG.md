@@ -12,6 +12,18 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.131.0\] - 2026-07-05
+
+### Added
+
+- [`load_eobs_source()`](https://pobsteta.github.io/nemeton/reference/load_eobs_source.md)
+  gains a `progress_callback` argument emitting per-step
+  `list(current = <key>, …)` payloads (`eobs:cds_request`,
+  `eobs:cds_download_done`, `eobs:unzip`, `eobs:read`, `eobs:reduce`,
+  `eobs:complete`, `eobs:unavailable`) so the app can surface
+  bottom-right notifications during the E-OBS download. No-op when
+  `NULL`; back-compatible.
+
 ## \[0.130.0\] - 2026-07-04
 
 ### Added

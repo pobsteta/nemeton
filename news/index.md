@@ -1,5 +1,18 @@
 # Changelog
 
+## nemeton 0.131.0 (2026-07-05)
+
+#### Added — `load_eobs_source()` : progression par étapes (`progress_callback`, spec 034)
+
+- [`load_eobs_source()`](https://pobsteta.github.io/nemeton/reference/load_eobs_source.md)
+  accepte un `progress_callback` appelé à chaque étape avec un payload
+  `list(current = <clé>, …)` (patron monitoring) : `"eobs:cds_request"`,
+  `"eobs:cds_download_done"`, `"eobs:unzip"`, `"eobs:read"`,
+  `"eobs:reduce"`, `"eobs:complete"`, `"eobs:unavailable"`. L’app peut
+  ainsi afficher des notifications bas-droite au fil du téléchargement
+  E-OBS (brief spec 034 mis à jour). No-op quand `NULL` ; API
+  rétro-compatible.
+
 ## nemeton 0.130.0 (2026-07-04)
 
 #### Added — `load_eobs_source()` : acquisition E-OBS pour la détection auto des années (spec 034)

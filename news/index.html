@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.130.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.131.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.131.0" id="nemeton-01310-2026-07-05">nemeton 0.131.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01310-2026-07-05"></a></h2>
+<div class="section level4">
+<h4 id="added--load_eobs_source--progression-par-étapes-progress_callback-spec-0-131-0">Added — <code>load_eobs_source()</code> : progression par étapes (<code>progress_callback</code>, spec 034)<a class="anchor" aria-label="anchor" href="#added--load_eobs_source--progression-par-%C3%A9tapes-progress_callback-spec-0-131-0"></a></h4>
+<ul><li>
+<code><a href="../reference/load_eobs_source.html">load_eobs_source()</a></code> accepte un <code>progress_callback</code> appelé à chaque étape avec un payload <code>list(current = &lt;clé&gt;, …)</code> (patron monitoring) : <code>"eobs:cds_request"</code>, <code>"eobs:cds_download_done"</code>, <code>"eobs:unzip"</code>, <code>"eobs:read"</code>, <code>"eobs:reduce"</code>, <code>"eobs:complete"</code>, <code>"eobs:unavailable"</code>. L’app peut ainsi afficher des notifications bas-droite au fil du téléchargement E-OBS (brief spec 034 mis à jour). No-op quand <code>NULL</code> ; API rétro-compatible.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.130.0" id="nemeton-01300-2026-07-04">nemeton 0.130.0 (2026-07-04)<a class="anchor" aria-label="anchor" href="#nemeton-01300-2026-07-04"></a></h2>
 <div class="section level4">
