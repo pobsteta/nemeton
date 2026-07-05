@@ -4,8 +4,10 @@ Produce the `meteo` input of
 [`regen_bilan_hydrique`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
 — a daily forcing at the biljouR format (`date`, `doy`, `pet`, `rain`) —
 over `years` for `aoi`, from SAFRAN (French primary) or ERA5-Land
-(fallback). Acquisition lives in the core (rule \#1); the app only
-orchestrates and caches (pattern:
+(fallback). SAFRAN is fetched from the GéoSAS OGC API-EDR
+(`safran-isba`, Météo-France SIM daily, **no authentication**) per unit
+centroid; ERA5-Land uses mcera5 (needs a CDS key). Acquisition lives in
+the core (rule \#1); the app only orchestrates and caches (pattern:
 [`load_theia_source`](https://pobsteta.github.io/nemeton/reference/load_theia_source.md),
 spec 027 §10.2).
 
@@ -46,11 +48,12 @@ load_biljou_forcing(
 
 - source:
 
-  `"safran"` (default, France) or `"era5"` (fallback, mcera5).
+  `"safran"` (default, France, GéoSAS OGC API-EDR, no key) or `"era5"`
+  (fallback, mcera5, needs a CDS key).
 
 - cache_dir:
 
-  Directory for the SAFRAN/ERA5 downloads (default a tempdir).
+  Directory for the ERA5 downloads (default a tempdir).
 
 - raw:
 
@@ -73,12 +76,12 @@ load_biljou_forcing(
 
   Passed to
   [`safran_to_meteo`](https://pobsteta.github.io/biljouR/reference/safran_to_meteo.html)
-  for the `raw` path.
+  (SAFRAN provides `ETP_Q`, so the default `FALSE` is used unless a
+  Penman estimate is wanted).
 
 - ...:
 
-  Passed to
-  [`safran_download`](https://pobsteta.github.io/biljouR/reference/safran_download.html).
+  Ignored (forward-compat).
 
 ## Value
 

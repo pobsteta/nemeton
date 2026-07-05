@@ -12,6 +12,18 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.133.0\] - 2026-07-05
+
+### Changed
+
+- `load_biljou_forcing(source = "safran")` now fetches SAFRAN from the
+  GéoSAS OGC API-EDR (`safran-isba`, Météo-France SIM daily, no
+  authentication) via a per-centroid EDR position query (EPSG:2154),
+  instead of the biljouR default DOI which was only a pointer to an
+  external catalog (yielded `NULL`). Validated end-to-end on real data;
+  no CDS key needed for SAFRAN. Pure EDR URL builder
+  `.biljou_safran_edr_url()` is CI-tested.
+
 ## \[0.132.0\] - 2026-07-05
 
 ### Added

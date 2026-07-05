@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.132.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.133.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,18 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.133.0" id="nemeton-01330-2026-07-05">nemeton 0.133.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01330-2026-07-05"></a></h2>
+<div class="section level4">
+<h4 id="changed--safran-via-ogc-api-edr-géosas-acquisition-réelle-sans-clé-spec-l2-0-133-0">Changed — SAFRAN via OGC API-EDR GéoSAS (acquisition réelle, sans clé) (spec 027 L2)<a class="anchor" aria-label="anchor" href="#changed--safran-via-ogc-api-edr-g%C3%A9osas-acquisition-r%C3%A9elle-sans-cl%C3%A9-spec-l2-0-133-0"></a></h4>
+<p>Validation sur données réelles : le DOI biljouR par défaut ne sert que de <strong>pointeur</strong> (grille + page d’accès) vers un catalogue externe — <code>safran_download()</code> n’y trouvait aucun NetCDF de variable, donc <code>load_biljou_forcing(source = "safran")</code> dégradait en <code>NULL</code>. Remplacé par la <strong>vraie</strong> source Météo-France :</p>
+<ul><li>
+<strong><code>load_biljou_forcing(source = "safran")</code> interroge désormais l’OGC API-EDR GéoSAS/INRAE</strong> (<code>safran-isba</code>, SIM quotidien 1958→présent, <strong>sans authentification</strong>) : une requête position CSV par centroïde d’unité (coords <strong>EPSG:2154</strong> — CRS robuste, CRS84/4326 buggé en bêta), variables <code>ETP_Q</code>/<code>PRELIQ_Q</code>/<code>PRENEI_Q</code> (+ T/rayonnement/vent/humidité) → <code><a href="https://pobsteta.github.io/biljouR/reference/safran_to_meteo.html" class="external-link">biljouR::safran_to_meteo()</a></code> → <code>meteo</code> par unité. <strong>Validé de bout en bout sur données réelles</strong> (365 j/an, alimente <code><a href="../reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code>).</li>
+<li>
+<strong>SAFRAN ne nécessite donc aucune clé CDS</strong> — c’est la voie à privilégier en France ; ERA5-Land (fallback) reste réservé aux cas hors couverture SAFRAN et requiert une clé CDS.</li>
+<li>Builder d’URL EDR pur <code>.biljou_safran_edr_url()</code> testé en CI.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.132.0" id="nemeton-01320-2026-07-05">nemeton 0.132.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01320-2026-07-05"></a></h2>
 <div class="section level4">
