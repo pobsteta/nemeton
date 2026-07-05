@@ -1,3 +1,24 @@
+# nemeton 0.133.0 (2026-07-05)
+
+### Changed — SAFRAN via OGC API-EDR GéoSAS (acquisition réelle, sans clé) (spec 027 L2)
+
+Validation sur données réelles : le DOI biljouR par défaut ne sert que de
+**pointeur** (grille + page d'accès) vers un catalogue externe — `safran_download()`
+n'y trouvait aucun NetCDF de variable, donc `load_biljou_forcing(source =
+"safran")` dégradait en `NULL`. Remplacé par la **vraie** source Météo-France :
+
+- **`load_biljou_forcing(source = "safran")` interroge désormais l'OGC API-EDR
+  GéoSAS/INRAE** (`safran-isba`, SIM quotidien 1958→présent, **sans
+  authentification**) : une requête position CSV par centroïde d'unité
+  (coords **EPSG:2154** — CRS robuste, CRS84/4326 buggé en bêta), variables
+  `ETP_Q`/`PRELIQ_Q`/`PRENEI_Q` (+ T/rayonnement/vent/humidité) →
+  `biljouR::safran_to_meteo()` → `meteo` par unité. **Validé de bout en bout sur
+  données réelles** (365 j/an, alimente `regen_bilan_hydrique()`).
+- **SAFRAN ne nécessite donc aucune clé CDS** — c'est la voie à privilégier en
+  France ; ERA5-Land (fallback) reste réservé aux cas hors couverture SAFRAN et
+  requiert une clé CDS.
+- Builder d'URL EDR pur `.biljou_safran_edr_url()` testé en CI.
+
 # nemeton 0.132.0 (2026-07-05)
 
 ### Added — Acquisition BILJOU : `load_biljou_forcing()` + `build_biljou_soil()` (spec 027 L2, option B)

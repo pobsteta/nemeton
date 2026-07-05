@@ -18,6 +18,43 @@
   data.frame(id = seq_len(nrow(units)), lon = ll[, 1], lat = ll[, 2])
 }
 
+# Service OGC API-EDR SAFRAN-ISBA (GéoSAS/INRAE, données Météo-France SIM
+# quotidiennes, 1958->présent, sans authentification). Requête par point.
+.BILJOU_SAFRAN_EDR <- "https://api.geosas.fr/edr/collections/safran-isba/position"
+
+# Variables SAFRAN mappées par safran_to_meteo() (cols par défaut) : PET, pluie
+# liquide/neige, + T/rayonnement/vent/humidité (utiles si compute_pet).
+.BILJOU_SAFRAN_PARAMS <- c("ETP_Q", "PRELIQ_Q", "PRENEI_Q", "T_Q", "SSI_Q",
+                           "FF_Q", "HU_Q")
+
+# URL de requête EDR position (chemin PUR, testable) : coords Lambert-93
+# (EPSG:2154, CRS robuste de l'API — CRS84/4326 buggé en bêta), plage d'années,
+# variables, sortie CSV.
+.biljou_safran_edr_url <- function(x, y, years, params = .BILJOU_SAFRAN_PARAMS,
+                                   base = .BILJOU_SAFRAN_EDR) {
+  sprintf(paste0("%s?coords=POINT(%.1f%%20%.1f)&crs=EPSG:2154",
+                 "&datetime=%d-01-01T00:00:00Z/%d-12-31T00:00:00Z",
+                 "&parameter-name=%s&f=CSV"),
+          base, x, y, min(years), max(years), paste(params, collapse = ","))
+}
+
+# Forçage SAFRAN par unité via l'EDR GéoSAS. Reprojette les centroïdes en L93,
+# une requête CSV par point -> data.frame brut (colonne DATE ajoutée pour
+# safran_to_meteo). Best-effort : liste nommée par id, éléments NULL si vide.
+.biljou_forcing_safran <- function(points, years) {
+  xy <- sf::st_coordinates(sf::st_transform(
+    sf::st_as_sf(points, coords = c("lon", "lat"), crs = 4326), 2154))
+  res <- lapply(seq_len(nrow(points)), function(i) {
+    url <- .biljou_safran_edr_url(xy[i, 1], xy[i, 2], years)
+    df <- tryCatch(utils::read.csv(url, check.names = FALSE),
+                   error = function(e) NULL)
+    if (is.null(df) || !nrow(df) || !"time" %in% names(df)) return(NULL)
+    df$DATE <- as.Date(substr(df$time, 1, 10))
+    df
+  })
+  stats::setNames(res, as.character(points$id))
+}
+
 # Restreint un meteo (ou une liste de meteo) aux années demandées.
 .biljou_filter_years <- function(meteo, years) {
   if (is.null(years)) return(meteo)
@@ -63,9 +100,11 @@
 #' @description
 #' Produce the `meteo` input of [regen_bilan_hydrique()] — a daily forcing at the
 #' biljouR format (`date`, `doy`, `pet`, `rain`) — over `years` for `aoi`, from
-#' SAFRAN (French primary) or ERA5-Land (fallback). Acquisition lives in the core
-#' (rule #1); the app only orchestrates and caches (pattern:
-#' [load_theia_source()], spec 027 §10.2).
+#' SAFRAN (French primary) or ERA5-Land (fallback). SAFRAN is fetched from the
+#' GéoSAS OGC API-EDR (`safran-isba`, Météo-France SIM daily, **no
+#' authentication**) per unit centroid; ERA5-Land uses `mcera5` (needs a CDS key).
+#' Acquisition lives in the core (rule #1); the app only orchestrates and caches
+#' (pattern: [load_theia_source()], spec 027 §10.2).
 #'
 #' Returns a **named list of per-unit `meteo` data frames** (keyed by the same
 #' sequential ids as `regen_bilan_hydrique()`'s grid points), directly consumable
@@ -75,16 +114,18 @@
 #'
 #' @param aoi An `sf`/`sfc` of the management units (their centroids are sampled).
 #' @param years Integer year(s) to fetch.
-#' @param source `"safran"` (default, France) or `"era5"` (fallback, `mcera5`).
-#' @param cache_dir Directory for the SAFRAN/ERA5 downloads (default a tempdir).
+#' @param source `"safran"` (default, France, GéoSAS OGC API-EDR, no key) or
+#'   `"era5"` (fallback, `mcera5`, needs a CDS key).
+#' @param cache_dir Directory for the ERA5 downloads (default a tempdir).
 #' @param raw Optional raw SAFRAN `data.frame` to convert instead of downloading
 #'   (via [biljouR::safran_to_meteo()]) — the tested injection path.
 #' @param points Optional pre-built `data.frame(id, lon, lat)` (defaults to the
 #'   `aoi` centroids).
 #' @param latitude,altitude Site latitude/altitude for PET when `raw`/ERA5 need a
 #'   Penman estimate (`latitude` defaults to the AOI centroid).
-#' @param compute_pet Passed to [biljouR::safran_to_meteo()] for the `raw` path.
-#' @param ... Passed to [biljouR::safran_download()].
+#' @param compute_pet Passed to [biljouR::safran_to_meteo()] (SAFRAN provides
+#'   `ETP_Q`, so the default `FALSE` is used unless a Penman estimate is wanted).
+#' @param ... Ignored (forward-compat).
 #'
 #' @return A per-unit named list of `meteo` data frames (or a single
 #'   `data.frame`), or `NULL` on graceful degradation.
@@ -113,15 +154,14 @@ load_biljou_forcing <- function(aoi, years, source = c("safran", "era5"),
 
   meteo <- tryCatch({
     if (source == "safran") {
-      dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
-      files <- biljouR::safran_download(dest_dir = cache_dir, quiet = TRUE, ...)
-      m <- biljouR::safran_nc_to_meteo(files, points = points, id_col = "id",
-                                       lon_col = "lon", lat_col = "lat")
-      # normaliser en liste nommée par id si un data.frame long est renvoyé
-      if (is.data.frame(m) && "id" %in% names(m)) {
-        m <- split(m[setdiff(names(m), "id")], m$id)
-      }
-      m
+      # Acquisition SAFRAN via l'OGC API-EDR GéoSAS (sans auth) -> data.frame
+      # brut par unité -> safran_to_meteo() (ETP_Q fourni : pas de Penman).
+      raws <- .biljou_forcing_safran(points, years)
+      m <- lapply(raws, function(df) if (is.null(df)) NULL else
+        biljouR::safran_to_meteo(df, compute_pet = compute_pet,
+                                 latitude = latitude, altitude = altitude))
+      m <- m[!vapply(m, is.null, logical(1))]
+      if (!length(m)) NULL else m
     } else {
       .biljou_forcing_era5(points, years, cache_dir, altitude = altitude)
     }
