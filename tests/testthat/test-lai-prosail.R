@@ -122,9 +122,10 @@ test_that(".lai_s2_reflectance_muscate assemble + rééchantillonne les bandes (
   }
   # B04/B08 à 10 m, B05 à 20 m -> résolutions différentes (cas réel MUSCATE).
   band_r <- list(B04 = mk(10, 0.1), B05 = mk(20, 0.2), B08 = mk(10, 0.5))
+  withr::local_envvar(TLD_ACCESS_KEY = "k", TLD_SECRET_KEY = "s")
   testthat::local_mocked_bindings(
     stac_search_s2      = function(...) scene,
-    theia_configure_s3  = function(...) invisible(TRUE),
+    .theia_signed_read  = function(hrefs, ...) hrefs,   # passe-plat, pas de HTTP
     .get_s2_band_raster = function(scene, band, ...) band_r[[band]])
   aoi <- sf::st_as_sf(sf::st_sfc(sf::st_polygon(list(rbind(
     c(5.45, 45.05), c(5.50, 45.05), c(5.50, 45.09),
@@ -139,14 +140,13 @@ test_that(".lai_s2_reflectance_muscate assemble + rééchantillonne les bandes (
   expect_equal(terra::res(st), c(10, 10))            # aligné sur B04 (10 m)
 })
 
-test_that(".lai_s2_reflectance_muscate dégrade en NULL sans identifiants THEIA S3", {
+test_that(".lai_s2_reflectance_muscate dégrade en NULL sans identifiants THEIA", {
   skip_if_not_installed("terra")
   scene <- data.frame(scene_id = "FAKE", cloud_pct = 3,
                       href_B04 = "/vsis3/x/B4.tif", source = "muscate",
                       stringsAsFactors = FALSE)
-  testthat::local_mocked_bindings(
-    stac_search_s2     = function(...) scene,
-    theia_configure_s3 = function(...) stop("THEIA S3 credentials not found."))
+  withr::local_envvar(TLD_ACCESS_KEY = "", TLD_SECRET_KEY = "")
+  testthat::local_mocked_bindings(stac_search_s2 = function(...) scene)
   aoi <- sf::st_as_sf(sf::st_sfc(sf::st_polygon(list(rbind(
     c(5.45, 45.05), c(5.50, 45.05), c(5.50, 45.09),
     c(5.45, 45.09), c(5.45, 45.05)))), crs = 4326))
@@ -155,6 +155,15 @@ test_that(".lai_s2_reflectance_muscate dégrade en NULL sans identifiants THEIA 
       aoi, "2022-07-01", "2022-07-31",
       selected_bands = c("B4"), max_cloud = 40,
       cache_dir = withr::local_tempdir()),
-    "THEIA S3 credentials")
+    "THEIA credentials")
   expect_null(res)
+})
+
+test_that("theia_sign_urls errors without credentials", {
+  withr::local_envvar(TLD_ACCESS_KEY = "", TLD_SECRET_KEY = "")
+  expect_error(
+    theia_sign_urls("https://x.meso.umontpellier.fr/b/k.tif"),
+    "credentials")
+  # Vecteur vide -> retour vide (pas d'appel réseau).
+  expect_length(theia_sign_urls(character(0)), 0L)
 })

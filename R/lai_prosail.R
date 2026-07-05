@@ -86,24 +86,32 @@
   scenes <- stac_search_s2(aoi, start, end, max_cloud = max_cloud,
                            source = "muscate")
   if (is.null(scenes) || !nrow(scenes)) return(NULL)
-  # Les assets MUSCATE sont des COG sur le magasin S3 THEIA (hrefs `/vsis3/`,
-  # lecture authentifiée SigV4). Configurer GDAL une fois ; dégrader en NULL
-  # (message explicite) si les identifiants TLD_ACCESS_KEY/TLD_SECRET_KEY
-  # manquent — la lecture des COG échouerait sinon.
-  ok <- tryCatch({ theia_configure_s3(country = "FR"); TRUE },
-                 error = function(e) {
-                   cli::cli_warn(c(
-                     "LAI PROSAIL MUSCATE fallback needs THEIA S3 credentials to read the reflectance COGs.",
-                     i = conditionMessage(e)))
-                   FALSE
-                 })
-  if (!ok) return(NULL)
+  # Les COG MUSCATE (magasin S3 THEIA/MESO@UM) ne se lisent PAS en /vsis3/
+  # direct : ils exigent des URLs pré-signées par la gateway teledetection
+  # (theia_sign_urls, modèle SAS). Dégrader en NULL (message explicite) si les
+  # identifiants TLD_ACCESS_KEY/TLD_SECRET_KEY manquent.
+  if (!nzchar(Sys.getenv("TLD_ACCESS_KEY")) ||
+      !nzchar(Sys.getenv("TLD_SECRET_KEY"))) {
+    cli::cli_warn(c(
+      "LAI PROSAIL MUSCATE fallback needs THEIA credentials to sign the reflectance COGs.",
+      i = "Set {.envvar TLD_ACCESS_KEY} / {.envvar TLD_SECRET_KEY} (create an API key at {.url https://gate.stac.teledetection.fr})."))
+    return(NULL)
+  }
   nem_bands <- vapply(selected_bands, .lai_band_to_nemeton, character(1))
-  aoi_v <- terra::vect(sf::st_transform(sf::st_union(sf::st_geometry(aoi)), 4326))
+  href_cols <- paste0("href_", nem_bands)
+  # .get_s2_band_raster() attend un objet sf/sfc (il fait sf::st_transform) —
+  # pas un SpatVector terra.
+  aoi_v <- sf::st_transform(sf::st_union(sf::st_geometry(aoi)), 4326)
   paths <- character(0)
   for (i in seq_len(nrow(scenes))) {
     sc <- scenes[i, , drop = FALSE]
     layers <- tryCatch({
+      # Pré-signer les hrefs des bandes voulues -> /vsicurl/ lisible par GDAL.
+      raw <- vapply(href_cols, function(cc) as.character(sc[[cc]][[1]]),
+                    character(1))
+      signed <- .theia_signed_read(raw, country = "FR")
+      if (is.null(signed)) stop("THEIA signing failed")
+      for (j in seq_along(href_cols)) sc[[href_cols[j]]] <- signed[j]
       # .get_s2_band_raster() renvoie directement un SpatRaster (croppé à
       # l'AOI). Les bandes n'ont pas la même résolution (B05 à 20 m, B04/B08
       # à 10 m) : on rééchantillonne toutes sur la grille de la première.
@@ -134,18 +142,34 @@
                                mask_path, cache_dir) {
   opt <- prosail::set_options_prosail(fun = "apply_prosail_inversion")
   opt$multiplying_factor <- 10000
-  res <- prosail::apply_prosail_inversion(
+  # apply_prosail_inversion ÉCRIT le LAI sur disque (`<base>_lai.tif[f]`) mais
+  # peut lever une erreur en post-traitement (ex. « subscript out of bounds »)
+  # ou renvoyer un objet inexploitable — on tolère et on récupère le fichier.
+  # band_names doit décrire les bandes RÉELLEMENT présentes dans le raster
+  # (le repli MUSCATE n'assemble que `selected_bands`, pas les 10 bandes S2) —
+  # sinon apply_prosail_inversion mal-mappe et écrit un LAI corrompu.
+  band_names <- names(terra::rast(refl_path))
+  res <- tryCatch(prosail::apply_prosail_inversion(
     raster_path = refl_path, mask_path = mask_path, hybrid_model = model,
-    output_dir = cache_dir, band_names = srf$spectral_bands,
-    selected_bands = list(lai = selected_bands), options = opt)
-  # apply_prosail_inversion écrit le LAI ; on récupère le SpatRaster résultant.
+    output_dir = cache_dir, band_names = band_names,
+    selected_bands = list(lai = selected_bands), options = opt),
+    error = function(e) e)
   if (inherits(res, "SpatRaster")) return(res)
   if (is.character(res) && length(res) && file.exists(res[[1]])) {
     return(terra::rast(res[[1]]))
   }
-  lai_files <- list.files(cache_dir, pattern = "lai.*\\.(tif|envi)$",
-                          full.names = TRUE, ignore.case = TRUE)
-  if (length(lai_files)) terra::rast(lai_files[[1]]) else NULL
+  # Fichier LAI ciblé sur cette scène (`<base>_lai.<ext>`), en excluant le
+  # `_lai_STD` (incertitude) ; le pattern couvre .tif ET .tiff.
+  base <- tools::file_path_sans_ext(basename(refl_path))
+  lai_files <- list.files(
+    cache_dir, pattern = sprintf("^%s_lai\\.(tif|tiff|envi)$", base),
+    full.names = TRUE, ignore.case = TRUE, recursive = TRUE)
+  if (length(lai_files)) return(terra::rast(lai_files[[1]]))
+  if (inherits(res, "error")) {
+    cli::cli_warn(c("PROSAIL LAI inversion produced no output.",
+                    i = conditionMessage(res)))
+  }
+  NULL
 }
 
 #' LAI from Sentinel-2 via PROSAIL inversion — NDP-0 canopy fallback (spec 033)
