@@ -22,9 +22,10 @@ load_biljou_forcing(
 
 \item{years}{Integer year(s) to fetch.}
 
-\item{source}{\code{"safran"} (default, France) or \code{"era5"} (fallback, \pkg{mcera5}).}
+\item{source}{\code{"safran"} (default, France, GéoSAS OGC API-EDR, no key) or
+\code{"era5"} (fallback, \pkg{mcera5}, needs a CDS key).}
 
-\item{cache_dir}{Directory for the SAFRAN/ERA5 downloads (default a tempdir).}
+\item{cache_dir}{Directory for the ERA5 downloads (default a tempdir).}
 
 \item{raw}{Optional raw SAFRAN \code{data.frame} to convert instead of downloading
 (via \code{\link[biljouR]{safran_to_meteo}}) — the tested injection path.}
@@ -35,9 +36,10 @@ load_biljou_forcing(
 \item{latitude, altitude}{Site latitude/altitude for PET when \code{raw}/ERA5 need a
 Penman estimate (\code{latitude} defaults to the AOI centroid).}
 
-\item{compute_pet}{Passed to \code{\link[biljouR]{safran_to_meteo}} for the \code{raw} path.}
+\item{compute_pet}{Passed to \code{\link[biljouR]{safran_to_meteo}} (SAFRAN provides
+\code{ETP_Q}, so the default \code{FALSE} is used unless a Penman estimate is wanted).}
 
-\item{...}{Passed to \code{\link[biljouR]{safran_download}}.}
+\item{...}{Ignored (forward-compat).}
 }
 \value{
 A per-unit named list of \code{meteo} data frames (or a single \code{data.frame}),
@@ -47,8 +49,11 @@ or \code{NULL} on graceful degradation.
 Produce the \code{meteo} input of \code{\link{regen_bilan_hydrique}} — a daily
 forcing at the biljouR format (\code{date}, \code{doy}, \code{pet}, \code{rain})
 — over \code{years} for \code{aoi}, from SAFRAN (French primary) or ERA5-Land
-(fallback). Acquisition lives in the core (rule #1); the app only orchestrates
-and caches (pattern: \code{\link{load_theia_source}}, spec 027 §10.2).
+(fallback). SAFRAN is fetched from the GéoSAS OGC API-EDR (\code{safran-isba},
+Météo-France SIM daily, \strong{no authentication}) per unit centroid; ERA5-Land
+uses \pkg{mcera5} (needs a CDS key). Acquisition lives in the core (rule #1); the
+app only orchestrates and caches (pattern: \code{\link{load_theia_source}},
+spec 027 §10.2).
 
 Returns a \strong{named list of per-unit \code{meteo} data frames} (keyed by the
 same sequential ids as \code{\link{regen_bilan_hydrique}}'s grid points), directly

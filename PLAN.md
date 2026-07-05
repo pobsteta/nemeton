@@ -1264,6 +1264,18 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-05 — Changed v0.133.0 : SAFRAN via OGC API-EDR GéoSAS (source réelle)
+
+Validation réelle : le DOI biljouR par défaut n'est qu'un pointeur (grille +
+catalogue externe) → `load_biljou_forcing(source="safran")` dégradait en NULL.
+Remplacé par l'**OGC API-EDR GéoSAS** (`safran-isba`, SIM quotidien, sans auth) :
+requête position CSV par centroïde (coords EPSG:2154), variables ETP_Q/PRELIQ_Q/
+PRENEI_Q → `safran_to_meteo` → meteo par unité. **Validé bout en bout sur données
+réelles** (365 j, alimente regen_bilan_hydrique). SAFRAN = **aucune clé CDS**.
+NB : dépôts Bruciamacchie (ForestClimR vide ; Climat/ClimatOmbro = analyse
+mensuelle) n'offrent rien de plus fin en quotidien. Voir
+[[project_regen_engines_porting]].
+
 ### 2026-07-05 — Added v0.132.0 : acquisition BILJOU (spec 027 L2, option B)
 
 `load_biljou_forcing()` (meteo SAFRAN/ERA5 → format biljouR, liste par unité) +

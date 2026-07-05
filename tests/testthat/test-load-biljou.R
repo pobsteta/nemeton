@@ -83,3 +83,13 @@ test_that("load_biljou_forcing output + soil feed regen_bilan_hydrique", {
                               years = 2018)
   expect_true(all(c("njstress", "istress", "rew_min", "deb_stress") %in% names(out)))
 })
+
+test_that(".biljou_safran_edr_url builds a valid GéoSAS EDR position query", {
+  u <- nemeton:::.biljou_safran_edr_url(961000, 6451000, c(2018, 2020))
+  expect_true(grepl("safran-isba/position", u))
+  expect_true(grepl("crs=EPSG:2154", u))               # CRS robuste (pas CRS84 bêta)
+  expect_true(grepl("POINT\\(961000.0%20", u))         # coords L93, espace encodé
+  expect_true(grepl("datetime=2018-01-01.*/2020-12-31", u))
+  expect_true(grepl("parameter-name=ETP_Q,PRELIQ_Q,PRENEI_Q", u))
+  expect_true(grepl("f=CSV", u))
+})
