@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.138.0] - 2026-07-05
+
+### Fixed
+- `regen_bilan_hydrique()`: NULL/NA `lai_max` no longer aborts the engine — it
+  warns and falls back to a stand-type default (broadleaved 5 / coniferous 4.5).
+  On a LiDAR project without a CDS key (microclimf skipped, satellite LAI
+  fallback not triggered because a grid is present) this was leaving the priority
+  index all-NA and the map blank. Verified end-to-end on the RECONFORT project.
+- `build_biljou_soil()`: NULL/NA `ewm` (cleared UI field, passed as NULL by the
+  app) now falls back to the default (150) instead of propagating NULL to
+  `biljouR::biljou_soil()` (which errored "between 1 and 3 soil layers").
+
 ## [0.137.0] - 2026-07-05
 
 ### Added
