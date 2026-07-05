@@ -1,3 +1,23 @@
+# nemeton 0.136.0 (2026-07-05)
+
+### Changed — Cohérence THEIA : tous les accès passent par la gateway de signature
+
+Généralise le flux de signature (v0.135.0) à **tous** les consommateurs des clés
+THEIA, pour une cohérence totale côté application :
+
+- **FORMS / `resolve_theia_assets()` / `load_theia_source()`** : renvoient
+  désormais des URLs **pré-signées** (`/vsicurl/`) au lieu de `/vsis3/`
+  illisibles. **Débloque FORMS-T** (hauteur/biomasse → indicateurs C1/P1/P2/B2).
+  Validé sur données réelles (lecture de la carte hauteur FORMS-T France).
+- **`theia_signed_href()`** : réécrit en **R pur** par-dessus
+  [theia_sign_urls()] — **supprime la dépendance Python/reticulate** (et les
+  paquets `teledetection`/`pystac_client`) pour cette fonction.
+- **`.get_s2_band_raster()`** (repli MUSCATE du pipeline FAST) : signe les hrefs
+  `/vsis3/` THEIA avant lecture (les backends CDSE/PC ne sont pas touchés).
+- **`theia_configure_s3()`** : **déprécié** (avertissement) — le store MESO@UM
+  ne reconnaît pas les clés du portail en accès S3 direct ; conservé pour
+  rétro-compat mais n'active plus de lecture fonctionnelle.
+
 # nemeton 0.135.0 (2026-07-05)
 
 ### Added — Accès THEIA via la gateway de signature + repli LAI/PROSAIL MUSCATE fonctionnel

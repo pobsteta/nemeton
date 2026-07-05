@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.136.0] - 2026-07-05
+
+### Changed
+- All THEIA asset consumers now go through the signing gateway for full
+  coherence: `resolve_theia_assets()` / `load_theia_source()` (FORMS) return
+  pre-signed `/vsicurl/` URLs instead of unreadable `/vsis3/` (validated reading
+  the real FORMS-T height map); `.get_s2_band_raster()` signs `/vsis3/` THEIA
+  hrefs in the FAST MUSCATE fallback.
+- `theia_signed_href()` rewritten in pure R on top of `theia_sign_urls()` —
+  drops the reticulate / Python `teledetection` dependency for this function.
+
+### Deprecated
+- `theia_configure_s3()` — the MESO@UM store rejects portal keys for direct S3
+  access; assets are read via pre-signed URLs. Kept for back-compat (now warns).
+
 ## [0.135.0] - 2026-07-05
 
 ### Added
