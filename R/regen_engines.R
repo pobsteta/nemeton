@@ -116,10 +116,10 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     cli::cli_abort("{.arg forest_type} must be feuillu/broadleaved or resineux/coniferous.")
   }
 
-  # Points = centroïdes des unités (id séquentiel, lon/lat WGS84).
-  cent <- sf::st_centroid(sf::st_geometry(units))
-  ll   <- sf::st_coordinates(sf::st_transform(cent, 4326))
-  points <- data.frame(id = seq_len(nrow(units)), lon = ll[, 1], lat = ll[, 2])
+  # Points = centroïdes des unités (id séquentiel, lon/lat WGS84). Même
+  # construction que load_biljou_forcing() -> les ids de la liste `meteo`
+  # par unité s'y alignent.
+  points <- .biljou_points(units)
 
   grid <- biljouR::biljou_run_grid(
     points = points, meteo = meteo, soil = sol, lai_max = lai_max,
