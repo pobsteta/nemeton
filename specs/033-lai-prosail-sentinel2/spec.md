@@ -9,8 +9,15 @@ testés CI ; train PROSAIL vérifié), injection `pai` (D2), flag `lai_ml`. **In
 `.get_s2_band_raster`, bandes B4/B5/B8 exposées) + **modèle pré-entraîné
 versionné** `inst/extdata/prosail_lai_Sentinel_2A_B4-B5-B8.rds` (D3, chargé sans
 ré-entraîner — sérialisation vérifiée + prédiction testée CI). **D5** : brief app
-provenance canopée rédigé (`brief-nemetonshiny.md`). **Reste** : validation
-Pascal de l'application sur scène S2 réelle + intégration app du badge provenance.
+provenance canopée rédigé (`brief-nemetonshiny.md`).
+**Correctif D4 (v0.134.1, 2026-07-05)** : l'assemblage MUSCATE était cassé —
+`.get_s2_band_raster()` renvoie un **SpatRaster** mais le code lisait `g$path`
+(→ crash silencieux, assemblage toujours `NULL`) ; en plus il ne configurait
+pas GDAL S3 (`theia_configure_s3`) ni ne rééchantillonnait les bandes de
+résolution mixte (B05 20 m vs B04/B08 10 m). Corrigé + testé CI (mock
+search/S3/band). **Recherche MUSCATE validée sur données réelles** (22 scènes
+Vercors, hrefs `/vsis3/`). **Reste** : validation du **download COG** sur scène
+réelle (nécessite `TLD_ACCESS_KEY`/`TLD_SECRET_KEY` Theia S3) + badge provenance app.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` (feat mineur, API rétro-compatible).
 **Cible app**  : aucune en v1 (repli automatique, invisible côté UI) — brief
