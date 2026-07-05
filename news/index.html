@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.134.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.135.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,24 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.135.0" id="nemeton-01350-2026-07-05">nemeton 0.135.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01350-2026-07-05"></a></h2>
+<div class="section level4">
+<h4 id="added--accès-theia-via-la-gateway-de-signature--repli-laiprosail-muscate-fonctionnel-0-135-0">Added — Accès THEIA via la gateway de signature + repli LAI/PROSAIL MUSCATE fonctionnel<a class="anchor" aria-label="anchor" href="#added--acc%C3%A8s-theia-via-la-gateway-de-signature--repli-laiprosail-muscate-fonctionnel-0-135-0"></a></h4>
+<p>Le repli LAI Sentinel-2/PROSAIL sur <strong>MUSCATE</strong> (spec 033 D4) est désormais <strong>validé de bout en bout sur données réelles</strong> (Vercors : LAI médian 2.33, max 7.2). La mise au point a révélé le <strong>vrai modèle d’accès THEIA/DATA TERRA</strong> :</p>
+<ul><li>
+<strong><code><a href="../reference/theia_sign_urls.html">theia_sign_urls()</a></code> (nouvel export)</strong> — les COG <a href="mailto:MESO@UM" class="email">MESO@UM</a> (MUSCATE, FORMS) ne se lisent PAS en <code>/vsis3/</code> direct avec la clé du portail (le store renvoie <em>AccessKeyId does not exist</em>). Il faut des <strong>URLs pré-signées</strong> émises par la gateway <code>signing.stac.teledetection.fr</code> (clés <code>access-key</code>/<code>secret-key</code> en en-têtes, modèle SAS de Planetary Computer), lues ensuite par GDAL en <code>/vsicurl/</code>. Reverse-engineeré depuis le SDK Python <code>teledetection</code>.</li>
+<li>
+<code>.lai_s2_reflectance_muscate()</code> bascule sur ce flux (via <code>.theia_signed_read()</code>) et dégrade proprement en <code>NULL</code> (avertissement) sans <code>TLD_ACCESS_KEY</code> / <code>TLD_SECRET_KEY</code>.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="fixed--chaîne-lai-muscate-bugs-démasqués-une-fois-lauth-franchie-0-135-0">Fixed — chaîne LAI MUSCATE (3 bugs démasqués une fois l’auth franchie)<a class="anchor" aria-label="anchor" href="#fixed--cha%C3%AEne-lai-muscate-bugs-d%C3%A9masqu%C3%A9s-une-fois-lauth-franchie-0-135-0"></a></h4>
+<ul><li>
+<code>.lai_s2_reflectance_muscate()</code> passait un <code>SpatVector</code> à <code>.get_s2_band_raster()</code> qui attend un objet <code>sf</code> (<code><a href="https://r-spatial.github.io/sf/reference/st_transform.html" class="external-link">sf::st_transform</a></code>).</li>
+<li>
+<code>.lai_prosail_apply()</code> : <code>band_names</code> d’<code>apply_prosail_inversion</code> doit décrire les bandes <strong>réellement</strong> présentes dans le raster (3 : B4/B5/B8), pas les 10 bandes S2 du SRF (sinon LAI corrompu) ; récupération du fichier <code>&lt;base&gt;_lai.tif[f]</code> sur disque (le pattern ratait <code>.tiff</code>) + tolérance à une erreur post-écriture d’<code>apply_prosail_inversion</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.134.2" id="nemeton-01342-2026-07-05">nemeton 0.134.2 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01342-2026-07-05"></a></h2>
 <div class="section level4">

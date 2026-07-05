@@ -1677,6 +1677,21 @@ cœur).
 
 ## Journal
 
+### 2026-07-05 — Added v0.135.0 : accès THEIA par gateway de signature + MUSCATE→LAI réel
+
+« Le reste MUSCATE » (spec 033 D4) bouclé et **validé bout-en-bout sur
+données réelles** (Vercors, LAI médian 2.33 / max 7.2). Découverte
+majeure : les COG <MESO@UM> (MUSCATE/FORMS) ne se lisent PAS en
+`/vsis3/` direct — la clé du portail est rejetée (*AccessKeyId does not
+exist*). Le vrai flux (reverse du SDK Python `teledetection`) = **URLs
+pré-signées** via `signing.stac.teledetection.fr` (headers
+`access-key`/`secret-key`, modèle SAS). Nouveau
+[`theia_sign_urls()`](https://pobsteta.github.io/nemeton/reference/theia_sign_urls.md) +
+`.theia_signed_read()`. 3 bugs de chaîne corrigés (sf vs SpatVector ;
+band_names = bandes réelles ; récupération `_lai.tiff`). Reste :
+basculer FORMS (`load_theia_source`) sur le même flux + badge provenance
+app. Voir \[\[project_muscate_lai_s3_creds\]\].
+
 ### 2026-07-05 — Fixed v0.134.2 : requête E-OBS CDS invalide (spec 034)
 
 Validation clé CDS réelle : `load_eobs_source(source="cds")` était

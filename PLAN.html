@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.134.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.135.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -860,6 +860,10 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-05--added-v01350--accès-theia-par-gateway-de-signature--muscatelai-réel">2026-07-05 — Added v0.135.0 : accès THEIA par gateway de signature + MUSCATE→LAI réel<a class="anchor" aria-label="anchor" href="#id_2026-07-05--added-v01350--acc%C3%A8s-theia-par-gateway-de-signature--muscatelai-r%C3%A9el"></a></h3>
+<p>« Le reste MUSCATE » (spec 033 D4) bouclé et <strong>validé bout-en-bout sur données réelles</strong> (Vercors, LAI médian 2.33 / max 7.2). Découverte majeure : les COG <a href="mailto:MESO@UM" class="email">MESO@UM</a> (MUSCATE/FORMS) ne se lisent PAS en <code>/vsis3/</code> direct — la clé du portail est rejetée (<em>AccessKeyId does not exist</em>). Le vrai flux (reverse du SDK Python <code>teledetection</code>) = <strong>URLs pré-signées</strong> via <code>signing.stac.teledetection.fr</code> (headers <code>access-key</code>/<code>secret-key</code>, modèle SAS). Nouveau <code><a href="reference/theia_sign_urls.html">theia_sign_urls()</a></code> + <code>.theia_signed_read()</code>. 3 bugs de chaîne corrigés (sf vs SpatVector ; band_names = bandes réelles ; récupération <code>_lai.tiff</code>). Reste : basculer FORMS (<code>load_theia_source</code>) sur le même flux + badge provenance app. Voir [[project_muscate_lai_s3_creds]].</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-05--fixed-v01342--requête-e-obs-cds-invalide-spec-034">2026-07-05 — Fixed v0.134.2 : requête E-OBS CDS invalide (spec 034)<a class="anchor" aria-label="anchor" href="#id_2026-07-05--fixed-v01342--requ%C3%AAte-e-obs-cds-invalide-spec-034"></a></h3>
 <p>Validation clé CDS réelle : <code>load_eobs_source(source="cds")</code> était rejeté en 400 (« invalid combination ») — le CDS attend les enums en underscore (<code>30_0e</code>, <code>0_1deg</code>) pas en point, et le défaut <code>28.0e</code> ne couvre pas <code>2011_2024</code>. Corrigé (normalisation point→underscore + défaut <code>30.0e</code>, combinaison acceptée en réel). Le 400 masquait le vrai blocage : <strong>licence E-OBS à accepter</strong> (403). Reste : Pascal accepte la licence sur la page du dataset. Voir [[project_eobs_source]].</p>

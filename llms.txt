@@ -1010,6 +1010,9 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
   : Configure GDAL for authenticated THEIA S3 reads
 
+- [`theia_sign_urls()`](https://pobsteta.github.io/nemeton/reference/theia_sign_urls.md)
+  : Sign THEIA object URLs via the teledetection signing gateway
+
 - [`theia_signed_href()`](https://pobsteta.github.io/nemeton/reference/theia_signed_href.md)
   : Resolve a signed THEIA asset URL via the teledetection SDK
 
