@@ -1677,6 +1677,18 @@ cœur).
 
 ## Journal
 
+### 2026-07-05 — Fixed v0.134.1 : assemblage MUSCATE du repli LAI/PROSAIL (spec 033 D4)
+
+Le « reste MUSCATE » = D4 (assemblage réflectances pour le repli LAI).
+Bug trouvé par inspection : `.get_s2_band_raster()` renvoie un
+SpatRaster mais le code lisait `g$path` → assemblage toujours NULL
+(jamais validé). Corrigé + ajout
+[`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
+(dégradation propre sans creds) + rééchantillonnage 20 m→10 m.
+**Recherche MUSCATE validée réel** (22 scènes Vercors, hrefs `/vsis3/`).
+Reste : download COG réel avec `TLD_ACCESS_KEY`/`TLD_SECRET_KEY` Theia
+S3. Voir spec 033.
+
 ### 2026-07-05 — Added v0.134.0 : progression BILJOU + ERA5 validé réel
 
 `progress_callback` sur

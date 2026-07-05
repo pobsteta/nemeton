@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.134.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.134.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,20 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.134.1" id="nemeton-01341-2026-07-05">nemeton 0.134.1 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01341-2026-07-05"></a></h2>
+<div class="section level4">
+<h4 id="fixed--assemblage-muscate-du-repli-laiprosail-spec-d4-0-134-1">Fixed — Assemblage MUSCATE du repli LAI/PROSAIL (spec 033 D4)<a class="anchor" aria-label="anchor" href="#fixed--assemblage-muscate-du-repli-laiprosail-spec-d4-0-134-1"></a></h4>
+<p>L’assemblage automatique des réflectances MUSCATE (<code>.lai_s2_reflectance_muscate</code>, repli Sentinel-2/PROSAIL du LAI) était <strong>cassé</strong> et retournait toujours <code>NULL</code> :</p>
+<ul><li>
+<strong>Contrat</strong> : <code>.get_s2_band_raster()</code> renvoie un <strong>SpatRaster</strong>, mais le code lisait <code>g$path</code> (comme si c’était une liste) → chaque scène plantait dans le <code>tryCatch</code> → assemblage <code>NULL</code>. Corrigé : usage direct du raster retourné.</li>
+<li>
+<strong>S3</strong> : les COG MUSCATE vivent sur le magasin S3 THEIA (<code>/vsis3/</code>, lecture authentifiée). Ajout de <code><a href="../reference/theia_configure_s3.html">theia_configure_s3()</a></code> (une fois) avant lecture, avec <strong>dégradation propre en <code>NULL</code> + avertissement</strong> si <code>TLD_ACCESS_KEY</code>/ <code>TLD_SECRET_KEY</code> manquent (au lieu d’un abort).</li>
+<li>
+<strong>Résolution mixte</strong> : rééchantillonnage des bandes 20 m (B05) sur la grille 10 m (B04/B08) avant empilement (<code><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">terra::rast()</a></code> refusait des géométries hétérogènes).</li>
+</ul><p><strong>Recherche MUSCATE validée sur données réelles</strong> (22 scènes Vercors, source souveraine CNES, hrefs <code>/vsis3/</code>). Tests CI ajoutés (mock search/S3/band). Le download COG réel reste à valider avec des identifiants Theia S3.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.134.0" id="nemeton-01340-2026-07-05">nemeton 0.134.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01340-2026-07-05"></a></h2>
 <div class="section level4">

@@ -1,5 +1,33 @@
 # Changelog
 
+## nemeton 0.134.1 (2026-07-05)
+
+#### Fixed — Assemblage MUSCATE du repli LAI/PROSAIL (spec 033 D4)
+
+L’assemblage automatique des réflectances MUSCATE
+(`.lai_s2_reflectance_muscate`, repli Sentinel-2/PROSAIL du LAI) était
+**cassé** et retournait toujours `NULL` :
+
+- **Contrat** : `.get_s2_band_raster()` renvoie un **SpatRaster**, mais
+  le code lisait `g$path` (comme si c’était une liste) → chaque scène
+  plantait dans le `tryCatch` → assemblage `NULL`. Corrigé : usage
+  direct du raster retourné.
+- **S3** : les COG MUSCATE vivent sur le magasin S3 THEIA (`/vsis3/`,
+  lecture authentifiée). Ajout de
+  [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
+  (une fois) avant lecture, avec **dégradation propre en `NULL` +
+  avertissement** si `TLD_ACCESS_KEY`/ `TLD_SECRET_KEY` manquent (au
+  lieu d’un abort).
+- **Résolution mixte** : rééchantillonnage des bandes 20 m (B05) sur la
+  grille 10 m (B04/B08) avant empilement
+  ([`terra::rast()`](https://rspatial.github.io/terra/reference/rast.html)
+  refusait des géométries hétérogènes).
+
+**Recherche MUSCATE validée sur données réelles** (22 scènes Vercors,
+source souveraine CNES, hrefs `/vsis3/`). Tests CI ajoutés (mock
+search/S3/band). Le download COG réel reste à valider avec des
+identifiants Theia S3.
+
 ## nemeton 0.134.0 (2026-07-05)
 
 #### Added — `load_biljou_forcing()` : progression par étapes (`progress_callback`)

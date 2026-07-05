@@ -12,6 +12,21 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.134.1\] - 2026-07-05
+
+### Fixed
+
+- LAI/PROSAIL MUSCATE reflectance assembly
+  (`.lai_s2_reflectance_muscate`, spec 033 D4) was broken and always
+  returned `NULL`: it read `g$path` on the SpatRaster returned by
+  `.get_s2_band_raster()`, never configured GDAL S3 for the `/vsis3/`
+  THEIA COGs, and didn’t resample the mixed-resolution bands (B05 20 m
+  vs B04/B08 10 m). Now uses the returned raster directly, calls
+  [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
+  (degrading to `NULL` + warning when TLD creds are absent), and
+  resamples to a common grid. MUSCATE STAC search validated on real data
+  (22 Vercors scenes). CI tests added (mocked search/S3/band).
+
 ## \[0.134.0\] - 2026-07-05
 
 ### Added
