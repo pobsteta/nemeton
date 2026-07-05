@@ -1334,6 +1334,13 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   # this avoids a 403 round-trip per remaining scene that the
   # reactive retry in .terra_rast_with_pc_retry would otherwise catch.
   href <- .pc_ensure_fresh_href(href)
+  # Repli MUSCATE/THEIA : les hrefs `/vsis3/` MESO@UM ne se lisent qu'avec une
+  # URL pré-signée par la gateway teledetection (theia_sign_urls) — les backends
+  # CDSE/PC n'utilisent pas `/vsis3/`, donc ce chemin ne touche qu'à THEIA.
+  if (grepl("^/vsis3/", href)) {
+    signed <- .theia_signed_read(href)
+    if (!is.null(signed)) href <- signed[[1]]
+  }
   .s2_cache_log("FETCH href=", href)
   r <- .terra_rast_with_pc_retry(
     href,

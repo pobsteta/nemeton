@@ -2,7 +2,7 @@
 % Please edit documentation in R/theia_stac.R
 \name{theia_signed_href}
 \alias{theia_signed_href}
-\title{Resolve a signed THEIA asset URL via the teledetection SDK}
+\title{Resolve a signed THEIA asset URL via the teledetection gateway}
 \usage{
 theia_signed_href(
   source_key,
@@ -37,17 +37,15 @@ A character scalar: \code{/vsicurl/}-prefixed signed URL.
 \description{
 Returns a ready-to-read, signed URL for one asset of a THEIA
 datasource. THEIA asset objects require an authenticated,
-time-limited signed URL; the signing is delegated to the official
-\code{teledetection} Python SDK through \pkg{reticulate} (the
-\code{tld.sign_inplace} pystac modifier — a standard AWS SigV4
-presign). The returned URL is prefixed with \code{/vsicurl/} so
-that \code{terra::rast()} reads it directly.
+time-limited signed URL minted by the teledetection signing gateway
+(a standard AWS SigV4 presign); this is done in pure R via
+\code{\link{theia_sign_urls}} (no Python / reticulate needed). The
+returned URL is prefixed with \code{/vsicurl/} so that
+\code{terra::rast()} reads it directly.
 }
 \details{
-Requirements: \pkg{reticulate}, plus the Python packages
-\code{teledetection} and \code{pystac_client} (declared via
-\code{reticulate::py_require()} automatically), and a registered
-THEIA API key — see \code{\link{theia_configure_s3}} and
+Requirements: a registered THEIA API key in \env{TLD_ACCESS_KEY} /
+\env{TLD_SECRET_KEY} — see \code{\link{theia_sign_urls}} and
 \url{https://gate.stac.teledetection.fr}.
 }
 \examples{

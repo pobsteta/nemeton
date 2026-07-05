@@ -311,6 +311,14 @@ stac_get_item <- function(stac_api, collection, item_id) {
 #' @export
 theia_configure_s3 <- function(access_key = NULL, secret_key = NULL,
                                country = "FR") {
+  # Déprécié (v0.136.0) : le store MESO@UM ne reconnaît PAS les clés du portail
+  # en accès S3 direct (« AccessKeyId does not exist ») — les assets THEIA se
+  # lisent via des URLs pré-signées par la gateway (theia_sign_urls). Conservée
+  # pour rétro-compat ; ne configure plus un accès fonctionnel.
+  cli::cli_warn(c(
+    "{.fn theia_configure_s3} is deprecated and no longer enables THEIA reads.",
+    i = "THEIA assets are read via pre-signed URLs; use {.fn theia_sign_urls} / {.fn theia_signed_href} / {.fn load_theia_source} instead."
+  ))
   if (is.null(access_key)) {
     access_key <- Sys.getenv("TLD_ACCESS_KEY", "")
   }
@@ -348,16 +356,14 @@ theia_configure_s3 <- function(access_key = NULL, secret_key = NULL,
 #'
 #' Returns a ready-to-read, signed URL for one asset of a THEIA
 #' datasource. THEIA asset objects require an authenticated,
-#' time-limited signed URL; the signing is delegated to the official
-#' \code{teledetection} Python SDK through \pkg{reticulate} (the
-#' \code{tld.sign_inplace} pystac modifier — a standard AWS SigV4
-#' presign). The returned URL is prefixed with \code{/vsicurl/} so
-#' that \code{terra::rast()} reads it directly.
+#' time-limited signed URL minted by the teledetection signing gateway
+#' (a standard AWS SigV4 presign); this is done in pure R via
+#' \code{\link{theia_sign_urls}} (no Python / reticulate needed). The
+#' returned URL is prefixed with \code{/vsicurl/} so that
+#' \code{terra::rast()} reads it directly.
 #'
-#' Requirements: \pkg{reticulate}, plus the Python packages
-#' \code{teledetection} and \code{pystac_client} (declared via
-#' \code{reticulate::py_require()} automatically), and a registered
-#' THEIA API key — see \code{\link{theia_configure_s3}} and
+#' Requirements: a registered THEIA API key in \env{TLD_ACCESS_KEY} /
+#' \env{TLD_SECRET_KEY} — see \code{\link{theia_sign_urls}} and
 #' \url{https://gate.stac.teledetection.fr}.
 #'
 #' @param source_key Character. Theia datasource key (e.g.
@@ -384,9 +390,6 @@ theia_configure_s3 <- function(access_key = NULL, secret_key = NULL,
 theia_signed_href <- function(source_key, year = NULL, asset = NULL,
                               item_id = NULL, country = "FR",
                               stac_api = NULL) {
-  if (!requireNamespace("reticulate", quietly = TRUE)) {
-    cli::cli_abort("Package {.pkg reticulate} is required for THEIA SDK signing.")
-  }
   src <- get_data_source(source_key, country)
   if (is.null(src)) {
     cli::cli_abort("Unknown datasource key {.val {source_key}} for country {.val {country}}.")
@@ -417,26 +420,19 @@ theia_signed_href <- function(source_key, year = NULL, asset = NULL,
     }
   }
 
-  reticulate::py_require(c("teledetection", "pystac_client"))
-  tld <- reticulate::import("teledetection")
-  psc <- reticulate::import("pystac_client")
-  client <- psc$Client$open(api, modifier = tld$sign_inplace)
-  item <- client$get_collection(collection)$get_item(item_id)
+  item <- stac_get_item(api, collection, item_id)
   if (is.null(item)) {
     cli::cli_abort("STAC item {.val {item_id}} not found in collection {.val {collection}}.")
   }
-  assets <- item$get_assets()
-  if (is.null(asset)) {
-    asset <- names(assets)[1]
-  }
-  entry <- assets[[asset]]
-  if (is.null(entry) || !nzchar(entry$href %||% "")) {
+  href <- .theia_href_to_gdal(.stac_pick_asset(item, asset = asset))
+  signed <- .theia_signed_read(href, country)
+  if (is.null(signed)) {
     cli::cli_abort(c(
-      "STAC item {.val {item_id}} has no asset {.val {asset}}.",
-      i = "Available assets: {.val {names(assets)}}."
+      "Could not sign THEIA asset for item {.val {item_id}}.",
+      i = "Set {.envvar TLD_ACCESS_KEY} / {.envvar TLD_SECRET_KEY} (create an API key at {.url https://gate.stac.teledetection.fr})."
     ))
   }
-  paste0("/vsicurl/", entry$href)
+  signed[[1]]
 }
 #' Looks up a Theia datasource declared in
 #' \code{inst/datasources/<country>.json} and returns the matching
@@ -513,7 +509,10 @@ resolve_theia_assets <- function(source_key, aoi, asset = NULL,
       }
     }
     item <- stac_get_item(api, collection, item_id)
-    return(.theia_href_to_gdal(.stac_pick_asset(item, asset = asset)))
+    href <- .theia_href_to_gdal(.stac_pick_asset(item, asset = asset))
+    # Les COG MESO@UM exigent une URL pré-signée par la gateway teledetection
+    # (theia_sign_urls) ; le /vsis3/ direct est rejeté par le store.
+    return(.theia_signed_read(href) %||% href)
   }
 
   # ---- Spatial-search mode ----
@@ -528,7 +527,8 @@ resolve_theia_assets <- function(source_key, aoi, asset = NULL,
   }
 
   hrefs <- vapply(items, .stac_pick_asset, character(1), asset = asset)
-  vapply(hrefs, .theia_href_to_gdal, character(1), USE.NAMES = FALSE)
+  gdal <- vapply(hrefs, .theia_href_to_gdal, character(1), USE.NAMES = FALSE)
+  .theia_signed_read(gdal) %||% gdal
 }
 
 
