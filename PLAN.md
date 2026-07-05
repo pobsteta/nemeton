@@ -1677,6 +1677,19 @@ cœur).
 
 ## Journal
 
+### 2026-07-05 — Fixed v0.138.1 : CRS LiDAR HD « sans autorité » (R1/R2/R3/W3 NA, RECONFORT)
+
+Diagnostic en lançant R3 sur RECONFORT : « No DEM available » alors que
+le MNH/MNT LiDAR HD sont là. Cause = CRS Lambert-93 **dégénéré** sur les
+GeoTIFF LiDAR cachés (dalles, mosaïque, twi.tif) : WKT nommé `EPSG:2154`
+mais sans autorité (`describe$code=NA`) → terra refuse la reprojection →
+extractions NA + TWI resamplé NA → R3/R1/R2/W3 = NA. Fix cœur :
+`.normalize_crs()` récupère le code EPSG du nom du WKT et re-tamponne ;
+appliqué à get_dem_raster, get_or_compute_twi et l’entrée dem de
+R1/R2/R3/W3. Validé RECONFORT : R3 0 NA, ~60-67. Brief app
+`brief-nemetonshiny-lidar-crs.md` : réparer à la source (le contrôle de
+couverture bbox app rejette la mosaïque avant le cœur). +1 test.
+
 ### 2026-07-05 — Fixed v0.138.0 : moteur reGénération, carte vide RECONFORT (diagnostic réel)
 
 Diagnostic en lançant le vrai calcul moteur sur RECONFORT (LiDAR HD,

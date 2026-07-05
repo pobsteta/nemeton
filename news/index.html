@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.138.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.138.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,16 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.138.1" id="nemeton-01381-2026-07-05">nemeton 0.138.1 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01381-2026-07-05"></a></h2>
+<div class="section level4">
+<h4 id="fixed--r1r2r3w3--crs-lidar-hd--sans-autorité--diagnostic-reconfort-0-138-1">Fixed — R1/R2/R3/W3 : CRS LiDAR HD « sans autorité » (diagnostic RECONFORT)<a class="anchor" aria-label="anchor" href="#fixed--r1r2r3w3--crs-lidar-hd--sans-autorit%C3%A9--diagnostic-reconfort-0-138-1"></a></h4>
+<p>En exécutant R3 sur RECONFORT, découverte que les GeoTIFF LiDAR HD IGN cachés (dalles MNT, mosaïque, TWI dérivé) portent un <strong>CRS Lambert-93 dégénéré</strong> : le WKT se nomme <code>PROJCRS["EPSG:2154", ...]</code> mais avec <code>DATUM["unnamed"]</code> / <code>ELLIPSOID["unretrievable"]</code> et <strong>aucune autorité EPSG</strong> (<code>describe$code = NA</code>). terra refuse alors les reprojections (« CRS do not match ») → extractions DEM NA, et le TWI resamplé devient NA → R3 (et R1/R2/W3) rendaient <code>NA</code>.</p>
+<ul><li>Nouveau helper interne <strong><code>.normalize_crs()</code></strong> : récupère le code EPSG déclaré dans le nom du WKT et re-tamponne un CRS propre (no-op si l’autorité est déjà là, si le CRS est vide, ou si aucun EPSG n’est déclaré).</li>
+<li>Appliqué à l’entrée <code>dem</code> de <code><a href="../reference/indicateur_r1_feu.html">indicateur_r1_feu()</a></code>, <code><a href="../reference/indicateur_r2_tempete.html">indicateur_r2_tempete()</a></code>, <code><a href="../reference/indicateur_r3_secheresse.html">indicateur_r3_secheresse()</a></code>, <code><a href="../reference/indicateur_w3_humidite.html">indicateur_w3_humidite()</a></code>, dans <code>get_dem_raster()</code> et <code>get_or_compute_twi()</code> (DEM + TWI caché).</li>
+</ul><p>Validé sur les 30 UGF de RECONFORT (DEM brut au CRS dégénéré) : R3 récupéré, 0 NA, score ~60-67. La réparation à la <strong>source</strong> (cache LiDAR) reste à faire côté app : brief <code>specs/027-*/brief-nemetonshiny-lidar-crs.md</code> (le contrôle de couverture bbox de l’app rejette la mosaïque avant qu’elle atteigne le cœur).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.138.0" id="nemeton-01380-2026-07-05">nemeton 0.138.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01380-2026-07-05"></a></h2>
 <div class="section level4">

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.138.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.138.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -860,6 +860,10 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-05--fixed-v01381--crs-lidar-hd--sans-autorité--r1r2r3w3-na-reconfort">2026-07-05 — Fixed v0.138.1 : CRS LiDAR HD « sans autorité » (R1/R2/R3/W3 NA, RECONFORT)<a class="anchor" aria-label="anchor" href="#id_2026-07-05--fixed-v01381--crs-lidar-hd--sans-autorit%C3%A9--r1r2r3w3-na-reconfort"></a></h3>
+<p>Diagnostic en lançant R3 sur RECONFORT : « No DEM available » alors que le MNH/MNT LiDAR HD sont là. Cause = CRS Lambert-93 <strong>dégénéré</strong> sur les GeoTIFF LiDAR cachés (dalles, mosaïque, twi.tif) : WKT nommé <code>EPSG:2154</code> mais sans autorité (<code>describe$code=NA</code>) → terra refuse la reprojection → extractions NA + TWI resamplé NA → R3/R1/R2/W3 = NA. Fix cœur : <code>.normalize_crs()</code> récupère le code EPSG du nom du WKT et re-tamponne ; appliqué à get_dem_raster, get_or_compute_twi et l’entrée dem de R1/R2/R3/W3. Validé RECONFORT : R3 0 NA, ~60-67. Brief app <code>brief-nemetonshiny-lidar-crs.md</code> : réparer à la source (le contrôle de couverture bbox app rejette la mosaïque avant le cœur). +1 test.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-05--fixed-v01380--moteur-regénération-carte-vide-reconfort-diagnostic-réel">2026-07-05 — Fixed v0.138.0 : moteur reGénération, carte vide RECONFORT (diagnostic réel)<a class="anchor" aria-label="anchor" href="#id_2026-07-05--fixed-v01380--moteur-reg%C3%A9n%C3%A9ration-carte-vide-reconfort-diagnostic-r%C3%A9el"></a></h3>
 <p>Diagnostic en lançant le vrai calcul moteur sur RECONFORT (LiDAR HD, sans clé CDS) : la carte reste vide car BILJOU ne produit aucun <code>njstress</code>. Deux garde-fous manquants corrigés côté cœur : - <code><a href="reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> : <code>lai_max</code> NULL/NA → warning + défaut par type (feuillu 5 / résineux 4.5) au lieu d’abort (microclimf sauté sans CDS + repli satellite non déclenché car grid présent → lai_max restait NULL). - <code><a href="reference/build_biljou_soil.html">build_biljou_soil()</a></code> : <code>ewm</code> NULL/NA → défaut 150 (crash biljou_soil sinon). Validé bout-en-bout sur les 30 UGF (SAFRAN sans clé) : indice ~91.7-91.9, 0 NA. Brief app <code>brief-nemetonshiny-lai-lidar.md</code> : dériver <code>lai_max</code> du LiDAR (<code>pai_depuis_nuage</code>, sans CDS) quand microclimf est sauté. Décision Pascal : les deux (filet cœur + dérivation LiDAR app). +2 tests.</p>

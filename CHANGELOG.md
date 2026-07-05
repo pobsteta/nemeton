@@ -12,6 +12,21 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.138.1\] - 2026-07-05
+
+### Fixed
+
+- R1/R2/R3/W3 returned NA on projects whose cached IGN LiDAR HD rasters
+  carry a degenerate, authority-less Lambert-93 CRS
+  (`PROJCRS["EPSG:2154", ...]` with an unnamed datum and no EPSG
+  authority, so `terra::crs(describe=TRUE)$code` is NA). Added internal
+  `.normalize_crs()` which recovers the EPSG code declared in the WKT
+  name and re-stamps a proper CRS; applied at the `dem` entry of the DEM
+  indicators and in `get_dem_raster()` / `get_or_compute_twi()` (DEM +
+  cached TWI). Verified on RECONFORT (R3 recovered, 0 NA). App-side
+  source fix (stamp EPSG:2154 on the LiDAR cache) tracked in a
+  nemetonshiny brief.
+
 ## \[0.138.0\] - 2026-07-05
 
 ### Fixed
