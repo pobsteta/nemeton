@@ -14,12 +14,17 @@ dérivé) sont en `GEOGCRS["unknown"]` — coordonnées en **degrés** (emprise
 couche sœur `forest_cover.tif`, **même emprise**, est correctement en `EPSG:4326`
 — preuve que le CRS attendu est bien 4326.
 
-**Cause** (`service_compute.R`) : `download_ign_dem()` (~l.2860) et
-`download_ign_irc_ndvi()` (~l.2967) demandent `&CRS=EPSG:4326` au WMS IGN et
-`&FORMAT=image/geotiff`, mais le GeoTIFF WMS a des **tags CRS malformés** (le
-code le note : « Re-write through terra to fix malformed GeoTIFF tags from WMS »).
-Le raster est réécrit **sans réassigner le CRS** → `terra::rast()` le lit en
-« unknown ».
+**Cause (vérifiée empiriquement, requête WMS réelle sur l'emprise Fordead)** :
+`download_ign_dem()` (~l.2860) et `download_ign_irc_ndvi()` (~l.2967) demandent
+`&CRS=EPSG:4326` + `&FORMAT=image/geotiff` au WMS IGN. **La réponse WMS elle-même
+porte un CRS non résolvable** : le GeoTIFF brut d'IGN arrive en
+`GEOGCRS["unknown"]` (code = NA) — `gdalsrsinfo` ne trouve que des candidats à
+**60 % de confiance** (4326, 10475=RGF93, 4762, 6311), le datum embarqué étant
+ambigu. GDAL/terra refusent donc de trancher → `unknown`. Ce n'est **pas** l'app
+qui corrompt le CRS : c'est IGN qui sert un datum ambigu, et l'app ne **force
+pas** le CRS qu'elle a pourtant **demandé** (`CRS=EPSG:4326`) après lecture — le
+raster est réécrit tel quel. Les coordonnées, elles, **sont** bien en 4326 (la
+bbox de la requête est en degrés WGS84).
 
 Propagation :
 - `irc.tif` unknown → **`ndvi.tif`** unknown (calculé depuis l'IRC).
