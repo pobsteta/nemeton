@@ -187,27 +187,28 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 
 # Forçage ERA5-Land pour une année (téléchargement mcera5 mis en cache).
 .rsen_forcage_era5 <- function(lon, lat, annee, cache_dir) {
-  nc <- file.path(cache_dir, sprintf("era5_%d.nc", annee))
-  if (!file.exists(nc)) {
+  if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
+  pat <- sprintf("^era5_%d.*\\.nc$", annee)
+  nc  <- list.files(cache_dir, pattern = pat, full.names = TRUE)
+  st  <- as.POSIXct(sprintf("%d-01-01 00:00", annee), tz = "UTC")
+  en  <- as.POSIXct(sprintf("%d-12-31 23:00", annee), tz = "UTC")
+  if (!length(nc)) {
     if (!requireNamespace("mcera5", quietly = TRUE)) {
       cli::cli_abort(c(
         "regen_sensibilite() engine needs {.pkg mcera5} to fetch ERA5 forcing.",
-        i = "Install mcera5 (+ CDS credentials), or pre-populate {.path {cache_dir}}."))
+        i = "Install mcera5 (+ CDS key, and accept the ERA5 licence on the CDS site), or pre-populate {.path {cache_dir}}."))
     }
-    req <- mcera5::request_era5(
-      bbox = c(ymx = lat + 0.05, ymn = lat - 0.05, xmx = lon + 0.05, xmn = lon - 0.05),
-      start_time = sprintf("%d-01-01", annee), end_time = sprintf("%d-12-31", annee),
-      outfile_name = tools::file_path_sans_ext(basename(nc)))
+    # mcera5 >= 0.4 : build_era5_request() construit, request_era5() exécute.
+    req <- mcera5::build_era5_request(
+      xmin = lon - 0.05, xmax = lon + 0.05, ymin = lat - 0.05, ymax = lat + 0.05,
+      start_time = st, end_time = en, outfile_name = sprintf("era5_%d", annee))
     mcera5::request_era5(req, out_path = cache_dir)
+    nc <- list.files(cache_dir, pattern = pat, full.names = TRUE)
   }
-  clim <- mcera5::extract_clim(nc, long = lon, lat = lat,
-            start_time = sprintf("%d-01-01", annee), end_time = sprintf("%d-12-31", annee))
-  prec <- mcera5::extract_precip(nc, long = lon, lat = lat,
-            start_time = sprintf("%d-01-01", annee), end_time = sprintf("%d-12-31", annee))
-  data.frame(obs_time = clim$obs_time, temp = clim$temperature, relhum = clim$humidity,
-             pres = clim$pressure, swdown = clim$rad_glbl,
-             difrad = pmax(clim$rad_glbl - clim$rad_dni, 0), lwdown = clim$downlong,
-             windspeed = clim$windspeed, winddir = clim$winddir, precip = prec)
+  # format "microclimf" -> colonnes prêtes (obs_time/temp/relhum/pres/swdown/
+  # difrad/lwdown/windspeed/winddir/precip), précip incluse, pression en kPa.
+  mcera5::extract_clim(nc[1], long = lon, lat = lat,
+                       start_time = st, end_time = en, format = "microclimf")
 }
 
 # Une année -> rasters d'été (T°max sous couvert, VPD moyen), mis en cache tif.
