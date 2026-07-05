@@ -221,6 +221,9 @@ load_biljou_forcing <- function(aoi, years, source = c("safran", "era5"),
 build_biljou_soil <- function(units = NULL, ewm = 150, roots = NULL,
                               macro = NULL, micro = NULL, init = 1, ...) {
   if (!requireNamespace("biljouR", quietly = TRUE)) return(NULL)
+  # ewm NULL/NA (ex. champ UI vidé -> na_null) : retomber sur le défaut plutôt
+  # que de propager NULL à biljou_soil (qui échoue « between 1 and 3 layers »).
+  if (is.null(ewm) || (length(ewm) == 1 && is.na(ewm))) ewm <- 150
   args <- list(ewm = ewm, init = init)
   if (!is.null(roots)) args$roots <- roots
   if (!is.null(macro)) args$macro <- macro

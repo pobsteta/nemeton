@@ -103,10 +103,10 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
       i = "Install it with {.code remotes::install_github(\"pobsteta/biljouR\")}, or pass a precomputed BILJOU output via {.arg precomputed}."
     ))
   }
-  if (is.null(meteo) || is.null(sol) || is.null(lai_max)) {
+  if (is.null(meteo) || is.null(sol)) {
     cli::cli_abort(c(
-      "regen_bilan_hydrique() engine path needs {.arg meteo}, {.arg sol} and {.arg lai_max}.",
-      i = "Build {.arg meteo} via {.code biljouR::safran_to_meteo()}, {.arg sol} via {.code biljouR::biljou_soil()}, {.arg lai_max} from {.code pai_depuis_nuage()}; or pass a {.arg precomputed} result."))
+      "regen_bilan_hydrique() engine path needs {.arg meteo} and {.arg sol}.",
+      i = "Build {.arg meteo} via {.code biljouR::safran_to_meteo()}, {.arg sol} via {.code biljouR::biljou_soil()}; or pass a {.arg precomputed} result."))
   }
 
   # Type de peuplement -> valeurs BILJOU (broadleaved/coniferous).
@@ -114,6 +114,18 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
                  resineux = "coniferous", coniferous = "coniferous")[tolower(forest_type)])
   if (is.na(ft)) {
     cli::cli_abort("{.arg forest_type} must be feuillu/broadleaved or resineux/coniferous.")
+  }
+
+  # lai_max NULL/NA : replier sur un défaut par type de peuplement (proxy NDP 0)
+  # plutôt que d'échouer. Cas RECONFORT : LiDAR présent mais microclimf sauté
+  # faute de clé CDS, et repli LAI satellite non déclenché (grid non nul) ->
+  # sans ce garde-fou, BILJOU ne tournait pas et la carte restait vide. L'app
+  # doit privilégier une valeur pilotée par la donnée (PAI LiDAR / LAI S2).
+  if (is.null(lai_max) || (length(lai_max) == 1 && is.na(lai_max))) {
+    lai_max <- if (identical(ft, "coniferous")) 4.5 else 5
+    cli::cli_warn(c(
+      "regen_bilan_hydrique(): no {.arg lai_max} supplied; using a stand-type default ({.val {lai_max}}).",
+      i = "Provide a LiDAR-derived PAI ({.code pai_depuis_nuage()}) or Sentinel-2/PROSAIL LAI ({.code lai_sentinel2()}) for a data-driven value."))
   }
 
   # Points = centroïdes des unités (id séquentiel, lon/lat WGS84). Même

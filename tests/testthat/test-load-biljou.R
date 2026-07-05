@@ -32,6 +32,14 @@ test_that("build_biljou_soil returns a biljou_soil with the requested ewm", {
   expect_equal(build_biljou_soil(ewm = 90)$ewm, 90)
 })
 
+test_that("build_biljou_soil coerces NULL/NA ewm to the default (UI field cleared)", {
+  skip_if_not_installed("biljouR")
+  # L'app passe ewm = na_null(input$ewm) -> NULL quand le champ est vide ;
+  # sans garde-fou, biljou_soil échoue « between 1 and 3 soil layers ».
+  expect_equal(build_biljou_soil(ewm = NULL)$ewm, 150)
+  expect_equal(build_biljou_soil(ewm = NA)$ewm, 150)
+})
+
 test_that("build_biljou_soil degrades to NULL without biljouR", {
   testthat::local_mocked_bindings(
     requireNamespace = function(pkg, ...) if (identical(pkg, "biljouR")) FALSE else TRUE,

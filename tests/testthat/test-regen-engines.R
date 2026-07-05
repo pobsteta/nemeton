@@ -46,6 +46,26 @@ test_that("regen_bilan_hydrique engine path validates missing forcing inputs", {
                "engine path needs")
 })
 
+test_that("regen_bilan_hydrique degrades NULL/NA lai_max to a stand-type default", {
+  skip_if_not_installed("biljouR")
+  utils::data("meteo_hesse", package = "biljouR")
+  soil <- biljouR::biljou_soil(ewm = 150)
+  u <- .re_units(2)
+  # Cas RECONFORT : lai_max NULL (champ UI vide, LiDAR présent mais microclimf
+  # sauté faute de clé CDS) -> ne doit PLUS échouer, mais avertir + défaut.
+  expect_warning(
+    out <- regen_bilan_hydrique(u, meteo = meteo_hesse, sol = soil,
+                                lai_max = NULL, forest_type = "resineux"),
+    "stand-type default")
+  expect_s3_class(out, "sf")
+  expect_true(is.numeric(out$njstress) && all(is.finite(out$njstress)))
+  # NA lai_max traité comme NULL (na_null ne convertit pas toujours).
+  expect_warning(
+    regen_bilan_hydrique(u, meteo = meteo_hesse, sol = soil,
+                         lai_max = NA, forest_type = "resineux"),
+    "stand-type default")
+})
+
 test_that("regen_bilan_hydrique rejects an unknown forest_type", {
   skip_if_not_installed("biljouR")
   u <- .re_units(1)
