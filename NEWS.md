@@ -1,3 +1,26 @@
+# nemeton 0.138.1 (2026-07-05)
+
+### Fixed — R1/R2/R3/W3 : CRS LiDAR HD « sans autorité » (diagnostic RECONFORT)
+
+En exécutant R3 sur RECONFORT, découverte que les GeoTIFF LiDAR HD IGN cachés
+(dalles MNT, mosaïque, TWI dérivé) portent un **CRS Lambert-93 dégénéré** :
+le WKT se nomme `PROJCRS["EPSG:2154", ...]` mais avec `DATUM["unnamed"]` /
+`ELLIPSOID["unretrievable"]` et **aucune autorité EPSG** (`describe$code = NA`).
+terra refuse alors les reprojections (« CRS do not match ») → extractions DEM
+NA, et le TWI resamplé devient NA → R3 (et R1/R2/W3) rendaient `NA`.
+
+- Nouveau helper interne **`.normalize_crs()`** : récupère le code EPSG déclaré
+  dans le nom du WKT et re-tamponne un CRS propre (no-op si l'autorité est déjà
+  là, si le CRS est vide, ou si aucun EPSG n'est déclaré).
+- Appliqué à l'entrée `dem` de `indicateur_r1_feu()`, `indicateur_r2_tempete()`,
+  `indicateur_r3_secheresse()`, `indicateur_w3_humidite()`, dans
+  `get_dem_raster()` et `get_or_compute_twi()` (DEM + TWI caché).
+
+Validé sur les 30 UGF de RECONFORT (DEM brut au CRS dégénéré) : R3 récupéré,
+0 NA, score ~60-67. La réparation à la **source** (cache LiDAR) reste à faire
+côté app : brief `specs/027-*/brief-nemetonshiny-lidar-crs.md` (le contrôle de
+couverture bbox de l'app rejette la mosaïque avant qu'elle atteigne le cœur).
+
 # nemeton 0.138.0 (2026-07-05)
 
 ### Fixed — moteur reGénération : BILJOU ne rend plus une carte vide (diagnostic RECONFORT)

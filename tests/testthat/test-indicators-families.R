@@ -73,6 +73,39 @@ test_that("get_nasapower_wind uses in-memory cache", {
 # get_or_compute_twi Tests
 # ==============================================================================
 
+test_that(".normalize_crs recovers an authorityless EPSG-named CRS", {
+  skip_if_not_installed("terra")
+  # NULL / non-raster / no-CRS : passe-plat sans erreur.
+  expect_null(nemeton:::.normalize_crs(NULL))
+  r0 <- terra::rast(nrows = 4, ncols = 4, xmin = 0, xmax = 4, ymin = 0, ymax = 4)
+  terra::crs(r0) <- ""
+  expect_true(is.na(terra::crs(nemeton:::.normalize_crs(r0), describe = TRUE)$code))
+  # CRS avec autorité : inchangé.
+  r1 <- terra::rast(nrows = 4, ncols = 4, xmin = 0, xmax = 1000, ymin = 0, ymax = 1000)
+  terra::crs(r1) <- "EPSG:2154"
+  expect_equal(terra::crs(nemeton:::.normalize_crs(r1), describe = TRUE)$code, "2154")
+  # CRS Lambert-93 dégénéré (nom = EPSG:2154, sans autorité) : récupéré -> 2154.
+  wkt <- paste0(
+    'PROJCRS["EPSG:2154",BASEGEOGCRS["unknown",DATUM["unnamed",',
+    'ELLIPSOID["GRS 1980",6378137,298.257222101,LENGTHUNIT["metre",1]]],',
+    'PRIMEM["Greenwich",0]],CONVERSION["Lambert-93",',
+    'METHOD["Lambert Conic Conformal (2SP)"],',
+    'PARAMETER["Latitude of false origin",46.5],',
+    'PARAMETER["Longitude of false origin",3],',
+    'PARAMETER["Latitude of 1st standard parallel",49],',
+    'PARAMETER["Latitude of 2nd standard parallel",44],',
+    'PARAMETER["Easting at false origin",700000],',
+    'PARAMETER["Northing at false origin",6600000]],',
+    'CS[Cartesian,2],AXIS["easting",east],AXIS["northing",north],',
+    'LENGTHUNIT["metre",1]]')
+  r2 <- terra::rast(nrows = 4, ncols = 4, xmin = 700000, xmax = 701000,
+                    ymin = 6600000, ymax = 6601000)
+  terra::crs(r2) <- wkt
+  skip_if(!is.na(terra::crs(r2, describe = TRUE)$code),
+          "platform PROJ already resolved the degenerate CRS")
+  expect_equal(terra::crs(nemeton:::.normalize_crs(r2), describe = TRUE)$code, "2154")
+})
+
 test_that("get_or_compute_twi computes TWI from DEM", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")

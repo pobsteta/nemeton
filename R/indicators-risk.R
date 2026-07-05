@@ -70,6 +70,9 @@ indicateur_r1_feu <- function(units,
   if (is.null(dem) && !is.null(layers)) {
     dem <- get_dem_raster(layers)
   }
+  # Répare un CRS LiDAR HD « sans autorité » aussi quand `dem` est fourni
+  # directement (le chemin `layers` passe déjà par get_dem_raster).
+  dem <- .normalize_crs(dem)
 
   if (is.null(dem) || !inherits(dem, "SpatRaster")) {
     cli::cli_alert_warning("R1: No DEM available for fire risk, returning NA")
@@ -240,6 +243,9 @@ indicateur_r2_tempete <- function(units,
   if (is.null(dem) && !is.null(layers)) {
     dem <- get_dem_raster(layers)
   }
+  # Répare un CRS LiDAR HD « sans autorité » aussi quand `dem` est fourni
+  # directement (le chemin `layers` passe déjà par get_dem_raster).
+  dem <- .normalize_crs(dem)
 
   if (is.null(dem) || !inherits(dem, "SpatRaster")) {
     cli::cli_alert_warning("R2: No DEM available for storm risk, returning NA")
@@ -503,6 +509,9 @@ indicateur_r3_secheresse <- function(units,
   if (is.null(dem) && !is.null(layers)) {
     dem <- get_dem_raster(layers)
   }
+  # Répare un CRS LiDAR HD « sans autorité » aussi quand `dem` est fourni
+  # directement (le chemin `layers` passe déjà par get_dem_raster).
+  dem <- .normalize_crs(dem)
 
   if (is.null(dem) || !inherits(dem, "SpatRaster")) {
     if (!is.null(biljou_score)) {

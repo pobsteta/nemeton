@@ -109,7 +109,26 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
 #' @return A SpatRaster with TWI values
 #' @keywords internal
 #' @noRd
+# Répare un CRS Lambert-93 (ou tout CRS) « sans autorité » : certains GeoTIFF
+# LiDAR HD IGN sont lus par GDAL/PROJ avec un WKT dégénéré
+# (`PROJCRS["EPSG:2154", BASEGEOGCRS["unknown", DATUM["unnamed", ...]]`) où le
+# code EPSG est présent dans le *nom* mais sans autorité rattachée. terra ne
+# résout alors pas le code (`describe$code = NA`) et refuse les reprojections
+# (« CRS do not match ») -> extractions NA (R1/R2/R3/W3, TWI). On récupère le
+# code EPSG déclaré dans le WKT et on re-tamponne un CRS propre. No-op si le CRS
+# a déjà une autorité, est vide, ou ne déclare pas d'EPSG.
+.normalize_crs <- function(r) {
+  if (is.null(r) || !inherits(r, "SpatRaster")) return(r)
+  if (!is.na(terra::crs(r, describe = TRUE)$code)) return(r)  # autorité présente
+  w <- terra::crs(r)
+  if (!nzchar(w)) return(r)                                    # pas de CRS du tout
+  m <- regmatches(w, regexpr("EPSG:[0-9]+", w))
+  if (!length(m)) return(r)
+  tryCatch({ terra::crs(r) <- m[[1]]; r }, error = function(e) r)
+}
+
 get_or_compute_twi <- function(dem, cache_dir = NULL) {
+  dem <- .normalize_crs(dem)
   # Key = DEM fingerprint (dimensions + extent + CRS)
   key <- paste(nrow(dem), ncol(dem),
                paste(as.vector(terra::ext(dem)), collapse = ","),
@@ -130,7 +149,7 @@ get_or_compute_twi <- function(dem, cache_dir = NULL) {
 
   if (file.exists(cache_file)) {
     tryCatch({
-      twi_raster <- terra::rast(cache_file)
+      twi_raster <- .normalize_crs(terra::rast(cache_file))
       assign(key, twi_raster, envir = .twi_cache)
       cli::cli_alert_info("TWI: Loaded from file cache")
       return(twi_raster)
@@ -741,7 +760,7 @@ indicateur_w3_humidite <- function(units,
   # Get best available DEM (prefer LiDAR HD MNT over BD ALTI)
   dem <- get_dem_raster(layers)
   if (is.null(dem)) {
-    dem <- resolve_raster_layer(layers, dem_layer)
+    dem <- .normalize_crs(resolve_raster_layer(layers, dem_layer))
   }
   if (is.null(dem)) {
     stop(sprintf("No DEM layer available (tried lidar_mnt, %s)", dem_layer), call. = FALSE)
@@ -1414,7 +1433,7 @@ indicateur_f2_erosion <- function(units,
   # Get best available DEM (prefer LiDAR HD MNT over BD ALTI)
   dem <- get_dem_raster(layers)
   if (is.null(dem)) {
-    dem <- resolve_raster_layer(layers, dem_layer)
+    dem <- .normalize_crs(resolve_raster_layer(layers, dem_layer))
   }
   if (is.null(dem)) {
     stop(sprintf("No DEM layer available (tried lidar_mnt, %s)", dem_layer), call. = FALSE)
