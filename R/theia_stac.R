@@ -88,6 +88,86 @@ NULL
   href
 }
 
+#' Sign THEIA object URLs via the teledetection signing gateway
+#'
+#' @description
+#' THEIA / DATA TERRA assets (MUSCATE Sentinel-2, FORMS, …) live on the MESO@UM
+#' S3 store but are **not** readable with the portal API key directly: the store
+#' only recognises **pre-signed URLs** minted by the teledetection signing
+#' gateway (`signing.stac.teledetection.fr`), the same model as Planetary
+#' Computer's SAS tokens. This function POSTs the object URLs to the gateway
+#' (authenticated with the API key sent as `access-key` / `secret-key` headers)
+#' and returns short-lived pre-signed URLs (`X-Amz-*` query string, ~8 h) that
+#' GDAL reads with `/vsicurl/` — no `theia_configure_s3()` needed.
+#'
+#' @param urls Character vector of `https://<...>.meso.umontpellier.fr/...`
+#'   object URLs to sign. Non-MESO URLs are returned unchanged.
+#' @param access_key,secret_key THEIA API key pair (default the
+#'   \env{TLD_ACCESS_KEY} / \env{TLD_SECRET_KEY} environment variables; create
+#'   one at <https://gate.stac.teledetection.fr>).
+#' @param endpoint Signing gateway base URL (default
+#'   `services$theia_signing$endpoint` from the country config, else
+#'   `https://signing.stac.teledetection.fr`).
+#' @param country Country config key (default `"FR"`).
+#'
+#' @return A named character vector mapping each input URL to its signed
+#'   counterpart (names are the original URLs), in the input order.
+#' @export
+theia_sign_urls <- function(urls, access_key = NULL, secret_key = NULL,
+                            endpoint = NULL, country = "FR") {
+  urls <- as.character(urls)
+  if (!length(urls)) return(stats::setNames(character(0), character(0)))
+  access_key <- access_key %||% Sys.getenv("TLD_ACCESS_KEY", "")
+  secret_key <- secret_key %||% Sys.getenv("TLD_SECRET_KEY", "")
+  if (!nzchar(access_key) || !nzchar(secret_key)) {
+    cli::cli_abort(c(
+      "THEIA signing credentials not found.",
+      i = "Set {.envvar TLD_ACCESS_KEY} and {.envvar TLD_SECRET_KEY} in a gitignored {.file .Renviron} (create an API key at {.url https://gate.stac.teledetection.fr})."
+    ))
+  }
+  if (is.null(endpoint)) {
+    cfg <- get_country_config(country)
+    endpoint <- cfg$services$theia_signing$endpoint %||%
+      "https://signing.stac.teledetection.fr"
+  }
+  endpoint <- sub("/+$", "", endpoint)
+  todo <- unique(urls)
+  signed <- stats::setNames(character(0), character(0))
+  # La gateway accepte jusqu'à 64 URLs par requête (MAX_URLS du SDK).
+  chunks <- split(todo, ceiling(seq_along(todo) / 64L))
+  for (chunk in chunks) {
+    resp <- httr2::request(paste0(endpoint, "/sign_urls"))
+    resp <- httr2::req_headers(resp, `access-key` = access_key,
+                               `secret-key` = secret_key,
+                               Accept = "application/json")
+    resp <- httr2::req_body_json(resp, list(urls = as.list(chunk)))
+    body <- httr2::resp_body_json(httr2::req_perform(resp))
+    hrefs <- body$hrefs %||% list()
+    signed <- c(signed, unlist(hrefs))
+  }
+  # Passe-plat pour les URLs hors domaine (la gateway les renvoie inchangées).
+  out <- vapply(urls, function(u) signed[[u]] %||% u, character(1))
+  stats::setNames(out, urls)
+}
+
+# Convertit des chemins `/vsis3/bucket/key` (ou URLs MESO) en `/vsicurl/`
+# pré-signés, prêts pour GDAL. NULL si la signature échoue (pas de clé, réseau).
+.theia_signed_read <- function(hrefs, country = "FR") {
+  cfg <- get_country_config(country)
+  ep <- cfg$services$theia_s3$endpoint %||% "s3-data.meso.umontpellier.fr"
+  https <- ifelse(grepl("^/vsis3/", hrefs),
+                  sub("^/vsis3/", sprintf("https://%s/", ep), hrefs),
+                  hrefs)
+  signed <- tryCatch(theia_sign_urls(https, country = country),
+                     error = function(e) {
+                       cli::cli_warn(c(
+                         "THEIA asset signing failed.", i = conditionMessage(e)))
+                       NULL
+                     })
+  if (is.null(signed)) return(NULL)
+  paste0("/vsicurl/", unname(signed[https]))
+}
+
 
 
 #' Search a STAC API for items

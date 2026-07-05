@@ -10,6 +10,25 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.135.0] - 2026-07-05
+
+### Added
+- `theia_sign_urls()` (exported): signs THEIA/MESO@UM object URLs via the
+  teledetection signing gateway (`signing.stac.teledetection.fr`, `access-key`/
+  `secret-key` headers) into short-lived pre-signed `/vsicurl/`-readable URLs.
+  MUSCATE COGs are NOT readable with `/vsis3/` + the portal key directly.
+- LAI Sentinel-2/PROSAIL MUSCATE fallback validated end-to-end on real data
+  (Vercors, LAI median 2.33 / max 7.2); `.lai_s2_reflectance_muscate()` now signs
+  via the gateway and degrades to `NULL` without TLD credentials.
+
+### Fixed
+- `.lai_s2_reflectance_muscate()` passed a `SpatVector` where `.get_s2_band_raster()`
+  expects an `sf` object.
+- `.lai_prosail_apply()`: `band_names` must match the raster's actual bands (3,
+  not the 10 SRF bands) or the LAI output is corrupt; recover the on-disk
+  `<base>_lai.tif[f]` (the pattern missed `.tiff`) and tolerate a post-write
+  error from `apply_prosail_inversion`.
+
 ## [0.134.2] - 2026-07-05
 
 ### Fixed

@@ -1,3 +1,31 @@
+# nemeton 0.135.0 (2026-07-05)
+
+### Added — Accès THEIA via la gateway de signature + repli LAI/PROSAIL MUSCATE fonctionnel
+
+Le repli LAI Sentinel-2/PROSAIL sur **MUSCATE** (spec 033 D4) est désormais
+**validé de bout en bout sur données réelles** (Vercors : LAI médian 2.33,
+max 7.2). La mise au point a révélé le **vrai modèle d'accès THEIA/DATA TERRA** :
+
+- **`theia_sign_urls()` (nouvel export)** — les COG MESO@UM (MUSCATE, FORMS) ne
+  se lisent PAS en `/vsis3/` direct avec la clé du portail (le store renvoie
+  *AccessKeyId does not exist*). Il faut des **URLs pré-signées** émises par la
+  gateway `signing.stac.teledetection.fr` (clés `access-key`/`secret-key` en
+  en-têtes, modèle SAS de Planetary Computer), lues ensuite par GDAL en
+  `/vsicurl/`. Reverse-engineeré depuis le SDK Python `teledetection`.
+- `.lai_s2_reflectance_muscate()` bascule sur ce flux (via `.theia_signed_read()`)
+  et dégrade proprement en `NULL` (avertissement) sans `TLD_ACCESS_KEY` /
+  `TLD_SECRET_KEY`.
+
+### Fixed — chaîne LAI MUSCATE (3 bugs démasqués une fois l'auth franchie)
+
+- `.lai_s2_reflectance_muscate()` passait un `SpatVector` à `.get_s2_band_raster()`
+  qui attend un objet `sf` (`sf::st_transform`).
+- `.lai_prosail_apply()` : `band_names` d'`apply_prosail_inversion` doit décrire
+  les bandes **réellement** présentes dans le raster (3 : B4/B5/B8), pas les
+  10 bandes S2 du SRF (sinon LAI corrompu) ; récupération du fichier
+  `<base>_lai.tif[f]` sur disque (le pattern ratait `.tiff`) + tolérance à une
+  erreur post-écriture d'`apply_prosail_inversion`.
+
 # nemeton 0.134.2 (2026-07-05)
 
 ### Fixed — Requête E-OBS CDS invalide (spec 034)

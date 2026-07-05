@@ -16,8 +16,19 @@ provenance canopée rédigé (`brief-nemetonshiny.md`).
 pas GDAL S3 (`theia_configure_s3`) ni ne rééchantillonnait les bandes de
 résolution mixte (B05 20 m vs B04/B08 10 m). Corrigé + testé CI (mock
 search/S3/band). **Recherche MUSCATE validée sur données réelles** (22 scènes
-Vercors, hrefs `/vsis3/`). **Reste** : validation du **download COG** sur scène
-réelle (nécessite `TLD_ACCESS_KEY`/`TLD_SECRET_KEY` Theia S3) + badge provenance app.
+Vercors, hrefs `/vsis3/`).
+**Bout-en-bout validé (v0.135.0, 2026-07-05)** — MUSCATE→LAI **sur données
+réelles** (Vercors, clé Theia) : LAI médian 2.33, max 7.2, 457×408 px. A
+nécessité de découvrir le **vrai modèle d'accès THEIA** (SDK Python
+`teledetection`) : les COG MESO@UM ne se lisent PAS en `/vsis3/` direct — il
+faut des **URLs pré-signées** par la gateway `signing.stac.teledetection.fr`
+(clés `access-key`/`secret-key`, modèle SAS). Nouveau `theia_sign_urls()` +
+`.theia_signed_read()`. 3 bugs additionnels corrigés dans la chaîne :
+`.get_s2_band_raster` veut un `sf` (pas un SpatVector) ; `band_names` de
+`apply_prosail_inversion` = bandes réelles du raster (3, pas les 10 S2) ;
+récupération du `_lai.tif[f]` sur disque + tolérance à l'erreur post-écriture.
+**Reste** : badge provenance app ; FORMS (`load_theia_source`) à basculer sur le
+même flux de signature (idem `/vsis3/` → gateway).
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` (feat mineur, API rétro-compatible).
 **Cible app**  : aucune en v1 (repli automatique, invisible côté UI) — brief
