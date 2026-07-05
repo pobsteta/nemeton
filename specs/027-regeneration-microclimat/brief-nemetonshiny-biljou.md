@@ -66,11 +66,42 @@ if (!is.null(pc$biljou)) {                              # fast-path cache
 }
 ```
 
+### 2.1 Notifications de progression (bas-droite) — `progress_callback`
+
+`load_biljou_forcing()` publie un payload `list(current = <clé>, …)` à chaque
+étape (v0.134.0), comme `load_eobs_source`. Brancher un `progress_callback` qui
+affiche une notification Shiny à **id fixe** (elle se remplace) :
+
+```r
+meteo <- nemeton::load_biljou_forcing(
+  aoi = units, years = c(years$year_moyenne, years$year_canicule),
+  source = cfg$forcing, cache_dir = <cache>/biljou,
+  progress_callback = function(p) {
+    msg <- switch(p$current,
+      "biljou:safran_unit"   = sprintf(i18n$t("regen_biljou_safran"), p$i, p$n),   # « SAFRAN : unité %d/%d… »
+      "biljou:era5_download" = sprintf(i18n$t("regen_biljou_era5"), p$i, p$n, p$year), # « ERA5 : unité %d/%d, %d… »
+      "biljou:complete"      = sprintf(i18n$t("regen_biljou_done"), p$n_units),
+      "biljou:unavailable"   = i18n$t("regen_guard_biljou"),
+      NULL)
+    if (!is.null(msg)) shiny::showNotification(
+      msg, id = ns("biljou_progress"),
+      duration = if (identical(p$current, "biljou:complete")) 6 else NULL,
+      type = if (identical(p$current, "biljou:unavailable")) "warning" else "message")
+  })
+```
+
+Clés `current` : `biljou:safran_unit` (`i`/`n`/`id`), `biljou:era5_download`
+(`i`/`n`/`id`/`year`), `biljou:complete` (`n_units`), `biljou:unavailable`.
+Clés i18n FR/EN à ajouter : `regen_biljou_safran`, `regen_biljou_era5`,
+`regen_biljou_done` (`regen_guard_biljou` existe déjà). En async, router via un
+`reactiveVal` lu côté session.
+
 Points clés :
 
 - **Async** : `load_biljou_forcing(source = "safran"|"era5")` **télécharge** (lent
-  la 1ʳᵉ fois : dataverse SAFRAN ou ERA5-Land). Le lancer dans le **même worker
-  `future`/ExtendedTask** que le moteur microclimf, pas dans le thread UI.
+  la 1ʳᵉ fois : requêtes SAFRAN EDR par unité, ou ERA5-Land mis en file au CDS).
+  Le lancer dans le **même worker `future`/ExtendedTask** que le moteur
+  microclimf, pas dans le thread UI ; router les payloads via un `reactiveVal`.
 - **Cache** `biljou.gpkg` (fast-path) + cache disque cœur du forçage sous
   `<cache>/biljou/` (SAFRAN/ERA5 volumineux, stables par année). Les runs suivants
   réutilisent sans re-télécharger.

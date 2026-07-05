@@ -84,6 +84,25 @@ test_that("load_biljou_forcing output + soil feed regen_bilan_hydrique", {
   expect_true(all(c("njstress", "istress", "rew_min", "deb_stress") %in% names(out)))
 })
 
+test_that("load_biljou_forcing emits progress (raw path -> complete)", {
+  skip_if_not_installed("biljouR")
+  seen <- character(0)
+  load_biljou_forcing(aoi = .biljou_units(1), years = 2018, raw = .biljou_raw(),
+                      latitude = 48,
+                      progress_callback = function(p) seen[[length(seen) + 1L]] <<- p$current)
+  expect_identical(seen, "biljou:complete")
+})
+
+test_that("load_biljou_forcing emits an unavailable payload without biljouR", {
+  testthat::local_mocked_bindings(
+    requireNamespace = function(pkg, ...) if (identical(pkg, "biljouR")) FALSE else TRUE,
+    .package = "base")
+  seen <- list()
+  load_biljou_forcing(aoi = .biljou_units(1), years = 2018, raw = .biljou_raw(),
+                      progress_callback = function(p) seen[[length(seen) + 1L]] <<- p)
+  expect_identical(seen[[length(seen)]]$current, "biljou:unavailable")
+})
+
 test_that(".biljou_safran_edr_url builds a valid GéoSAS EDR position query", {
   u <- nemeton:::.biljou_safran_edr_url(961000, 6451000, c(2018, 2020))
   expect_true(grepl("safran-isba/position", u))

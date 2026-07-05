@@ -1,3 +1,17 @@
+# nemeton 0.134.0 (2026-07-05)
+
+### Added — `load_biljou_forcing()` : progression par étapes (`progress_callback`)
+
+- `load_biljou_forcing()` accepte un `progress_callback` appelé à chaque étape
+  (patron monitoring) : `"biljou:safran_unit"` (`i`/`n`/`id`),
+  `"biljou:era5_download"` (`i`/`n`/`id`/`year`), `"biljou:complete"`,
+  `"biljou:unavailable"`. L'app peut ainsi afficher des notifications bas-droite
+  au fil du téléchargement du forçage SAFRAN (par unité) ou ERA5 (par unité/année).
+  No-op quand `NULL` ; API rétro-compatible. Brief spec 027 BILJOU mis à jour.
+- **Forçage ERA5 validé de bout en bout sur données réelles** (clé CDS +
+  licence acceptée) : téléchargement + `extract_clim(format = "microclimf")`
+  (pression kPa cohérente altitude) + conversion PET → `meteo` BILJOU.
+
 # nemeton 0.133.1 (2026-07-05)
 
 ### Fixed — Forçage ERA5 aligné sur l'API mcera5 0.4 (microclimf + fallback BILJOU)

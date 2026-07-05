@@ -10,6 +10,15 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.134.0] - 2026-07-05
+
+### Added
+- `load_biljou_forcing()` gains a `progress_callback` emitting per-step
+  `list(current = <key>, …)` payloads (`biljou:safran_unit`,
+  `biljou:era5_download`, `biljou:complete`, `biljou:unavailable`) so the app can
+  show bottom-right notifications during the SAFRAN/ERA5 forcing download. No-op
+  when `NULL`. ERA5 forcing validated end-to-end on real CDS data.
+
 ## [0.133.1] - 2026-07-05
 
 ### Fixed

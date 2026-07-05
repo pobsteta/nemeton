@@ -14,6 +14,7 @@ load_biljou_forcing(
   latitude = NULL,
   altitude = 0,
   compute_pet = FALSE,
+  progress_callback = NULL,
   ...
 )
 }
@@ -38,6 +39,13 @@ Penman estimate (\code{latitude} defaults to the AOI centroid).}
 
 \item{compute_pet}{Passed to \code{\link[biljouR]{safran_to_meteo}} (SAFRAN provides
 \code{ETP_Q}, so the default \code{FALSE} is used unless a Penman estimate is wanted).}
+
+\item{progress_callback}{Optional function called at each step with a
+\code{list(current = <key>, ...)} payload (monitoring pattern). Keys:
+\code{"biljou:safran_unit"} (\code{i}/\code{n}/\code{id}),
+\code{"biljou:era5_download"} (\code{i}/\code{n}/\code{id}/\code{year}),
+\code{"biljou:complete"}, \code{"biljou:unavailable"}. The app maps these to
+bottom-right notifications during the forcing download.}
 
 \item{...}{Ignored (forward-compat).}
 }
