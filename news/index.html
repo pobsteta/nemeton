@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.136.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.137.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,13 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.137.0" id="nemeton-01370-2026-07-05">nemeton 0.137.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01370-2026-07-05"></a></h2>
+<div class="section level4">
+<h4 id="added--canopy_provenance--provenance-canopée-pour-le-badge-app-spec-d5-0-137-0">Added — <code>canopy_provenance()</code> : provenance canopée pour le badge app (spec 033 D5)<a class="anchor" aria-label="anchor" href="#added--canopy_provenance--provenance-canop%C3%A9e-pour-le-badge-app-spec-d5-0-137-0"></a></h4>
+<ul><li>Nouvel export <code>canopy_provenance(augmented)</code> : mappe les flags ML de <code><a href="../reference/detect_ndp.html">detect_ndp()</a></code> vers une <strong>clé de provenance canonique</strong> de la structure de canopée — <code>"prosail_s2"</code> (repli LAI Sentinel-2/PROSAIL, flag <code>lai_ml</code>), <code>"opencanopy"</code> (CHM ML, <code>height_ml</code>) ou <code>"lidar_hd"</code> (défaut, PAI LiDAR HD). Le repli satellite (<code>lai_ml</code>) est prioritaire (sa présence = LiDAR absent). Permet à l’app d’afficher le <strong>badge de provenance</strong> de l’onglet reGénération sans ré-implémenter la règle de choix (règle <a href="https://github.com/pobsteta/nemeton/issues/1" class="external-link">#1</a>). Brief D5 finalisé.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.136.0" id="nemeton-01360-2026-07-05">nemeton 0.136.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01360-2026-07-05"></a></h2>
 <div class="section level4">

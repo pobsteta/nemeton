@@ -1677,6 +1677,16 @@ cœur).
 
 ## Journal
 
+### 2026-07-05 — Added v0.137.0 : helper canopy_provenance() (badge provenance, spec 033 D5)
+
+Export `canopy_provenance(augmented)` : flags
+[`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)
+→ clé canonique (`prosail_s2`/`opencanopy`/`lidar_hd`) pour le badge de
+provenance canopée de l’onglet reGénération, sans logique côté app
+(règle \#1). Brief D5 finalisé (bascule sur le helper, contrainte clé
+Theia, version 0.137.0). Livraison app = brief
+`specs/033-*/brief-nemetonshiny.md`. 103 tests ndp.
+
 ### 2026-07-05 — Changed v0.136.0 : cohérence THEIA totale (les 4 consommateurs)
 
 Généralise la signature gateway à tous les usages des clés TLD : FORMS

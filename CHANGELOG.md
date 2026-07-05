@@ -12,6 +12,17 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.137.0\] - 2026-07-05
+
+### Added
+
+- `canopy_provenance(augmented)` (exported): maps
+  [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)
+  ML flags to a canonical canopy-structure provenance key
+  (`"prosail_s2"` / `"opencanopy"` / `"lidar_hd"`) so the app can render
+  the regeneration canopy-provenance badge without re-implementing the
+  flag-to-meaning rule. Spec 033 D5 brief finalised.
+
 ## \[0.136.0\] - 2026-07-05
 
 ### Changed

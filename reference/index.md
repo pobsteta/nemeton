@@ -193,6 +193,8 @@ Ponderation Fibonacci et confiance phi
   : Compute general index with mixed NDP per indicator
 - [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)
   : Detect NDP level and ML augmentation from data
+- [`canopy_provenance()`](https://pobsteta.github.io/nemeton/reference/canopy_provenance.md)
+  : Canonical canopy-structure provenance from NDP augmented flags
 
 ## Configuration essences (ADR-007)
 
