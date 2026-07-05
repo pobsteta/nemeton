@@ -1,5 +1,32 @@
 # Changelog
 
+## nemeton 0.133.1 (2026-07-05)
+
+#### Fixed — Forçage ERA5 aligné sur l’API mcera5 0.4 (microclimf + fallback BILJOU)
+
+Validation sur clé CDS réelle : `.rsen_forcage_era5()` utilisait
+l’**ancienne API mcera5** (`request_era5(bbox=, start_time=, …)`),
+cassée contre **mcera5 0.4.0** (`unused arguments`). Utilisé par le
+forçage microclimf (`regen_sensibilite`) et le fallback ERA5 de
+[`load_biljou_forcing()`](https://pobsteta.github.io/nemeton/reference/load_biljou_forcing.md)
+→ les deux échouaient sur un vrai téléchargement.
+
+- Migré vers l’API scindée :
+  `mcera5::build_era5_request(xmin, xmax, ymin, ymax, start_time, end_time, outfile_name)`
+  puis `mcera5::request_era5(request, out_path)`. **Requête soumise avec
+  succès au nouveau CDS** (validé en réel).
+- Extraction via `mcera5::extract_clim(…, format = "microclimf")` :
+  renvoie directement les colonnes attendues
+  (`temp/relhum/pres/swdown/difrad/lwdown/ windspeed/winddir/precip`,
+  précip incluse, **pression en kPa** — résout aussi la borne d’altitude
+  de
+  [`microclimf::checkinputs`](https://rdrr.io/pkg/microclimf/man/checkinputs.html)).
+  Plus de mapping manuel ni d’appel séparé à `extract_precip()`.
+
+Note : le téléchargement ERA5 requiert d’**accepter la licence**
+*reanalysis-era5* sur le site CDS (une fois) — sans quoi le CDS renvoie
+403.
+
 ## nemeton 0.133.0 (2026-07-05)
 
 #### Changed — SAFRAN via OGC API-EDR GéoSAS (acquisition réelle, sans clé) (spec 027 L2)

@@ -1677,6 +1677,18 @@ cœur).
 
 ## Journal
 
+### 2026-07-05 — Fixed v0.133.1 : forçage ERA5 aligné sur l’API mcera5 0.4
+
+Validation clé CDS réelle (Pascal) : `.rsen_forcage_era5` utilisait
+l’ancienne API mcera5 (`request_era5(bbox=)`) → cassé contre mcera5
+0.4.0 (microclimf + fallback biljou ERA5). Migré vers
+`build_era5_request()` + `request_era5()` +
+`extract_clim(format="microclimf")` (colonnes prêtes, précip incluse,
+pression kPa). Requête soumise OK au nouveau CDS. Reste : accepter la
+**licence ERA5** sur le site CDS (403 sinon) + persister la clé (backend
+env ne survit pas aux sessions). Voir
+\[\[project_regen_engines_porting\]\].
+
 ### 2026-07-05 — Changed v0.133.0 : SAFRAN via OGC API-EDR GéoSAS (source réelle)
 
 Validation réelle : le DOI biljouR par défaut n’est qu’un pointeur

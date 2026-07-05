@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.133.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.133.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,16 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.133.1" id="nemeton-01331-2026-07-05">nemeton 0.133.1 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01331-2026-07-05"></a></h2>
+<div class="section level4">
+<h4 id="fixed--forçage-era5-aligné-sur-lapi-mcera5-microclimf--fallback-biljou-0-133-1">Fixed — Forçage ERA5 aligné sur l’API mcera5 0.4 (microclimf + fallback BILJOU)<a class="anchor" aria-label="anchor" href="#fixed--for%C3%A7age-era5-align%C3%A9-sur-lapi-mcera5-microclimf--fallback-biljou-0-133-1"></a></h4>
+<p>Validation sur clé CDS réelle : <code>.rsen_forcage_era5()</code> utilisait l’<strong>ancienne API mcera5</strong> (<code>request_era5(bbox=, start_time=, …)</code>), cassée contre <strong>mcera5 0.4.0</strong> (<code>unused arguments</code>). Utilisé par le forçage microclimf (<code>regen_sensibilite</code>) et le fallback ERA5 de <code><a href="../reference/load_biljou_forcing.html">load_biljou_forcing()</a></code> → les deux échouaient sur un vrai téléchargement.</p>
+<ul><li>Migré vers l’API scindée : <code>mcera5::build_era5_request(xmin, xmax, ymin, ymax, start_time, end_time, outfile_name)</code> puis <code>mcera5::request_era5(request, out_path)</code>. <strong>Requête soumise avec succès au nouveau CDS</strong> (validé en réel).</li>
+<li>Extraction via <code>mcera5::extract_clim(…, format = "microclimf")</code> : renvoie directement les colonnes attendues (<code>temp/relhum/pres/swdown/difrad/lwdown/ windspeed/winddir/precip</code>, précip incluse, <strong>pression en kPa</strong> — résout aussi la borne d’altitude de <code><a href="https://rdrr.io/pkg/microclimf/man/checkinputs.html" class="external-link">microclimf::checkinputs</a></code>). Plus de mapping manuel ni d’appel séparé à <code>extract_precip()</code>.</li>
+</ul><p>Note : le téléchargement ERA5 requiert d’<strong>accepter la licence</strong> <em>reanalysis-era5</em> sur le site CDS (une fois) — sans quoi le CDS renvoie 403.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.133.0" id="nemeton-01330-2026-07-05">nemeton 0.133.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01330-2026-07-05"></a></h2>
 <div class="section level4">

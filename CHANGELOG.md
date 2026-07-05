@@ -12,6 +12,20 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.133.1\] - 2026-07-05
+
+### Fixed
+
+- ERA5 forcing (`.rsen_forcage_era5`, used by microclimf
+  `regen_sensibilite` and the ERA5 fallback of `load_biljou_forcing`)
+  migrated to the mcera5 0.4 API (`build_era5_request()` +
+  `request_era5()`; old monolithic `request_era5(bbox=)` broke with
+  “unused arguments”). Extraction via
+  `extract_clim(format = "microclimf")` returns the ready columns
+  (precip included, pressure in kPa). Validated against a real CDS key
+  (request submitted; download needs the ERA5 licence accepted on the
+  CDS site).
+
 ## \[0.133.0\] - 2026-07-05
 
 ### Changed
