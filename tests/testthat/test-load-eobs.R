@@ -64,6 +64,26 @@ test_that("load_eobs_source degrades to NULL (no nc, non-cds source)", {
   expect_null(load_eobs_source(aoi = NULL, source = "nope"))
 })
 
+test_that("load_eobs_source emits step progress (read -> reduce -> complete)", {
+  skip_if_not_installed("terra")
+  steps <- character(0)
+  out <- load_eobs_source(
+    aoi = NULL, var = "tx", years = c(2014, 2018),
+    nc = .eobs_daily(), source = "nc",
+    progress_callback = function(p) steps[[length(steps) + 1L]] <<- p$current)
+  expect_true(inherits(out, "SpatRaster"))
+  expect_identical(steps, c("eobs:read", "eobs:reduce", "eobs:complete"))
+})
+
+test_that("load_eobs_source emits an unavailable payload on degradation", {
+  skip_if_not_installed("terra")
+  seen <- list()
+  load_eobs_source(aoi = NULL, source = "nope",
+                   progress_callback = function(p) seen[[length(seen) + 1L]] <<- p)
+  expect_identical(seen[[length(seen)]]$current, "eobs:unavailable")
+  expect_identical(seen[[length(seen)]]$reason, "no_source")
+})
+
 test_that("load_eobs_source rejects an unknown variable", {
   skip_if_not_installed("terra")
   expect_error(load_eobs_source(aoi = NULL, var = "zzz", nc = .eobs_daily()),

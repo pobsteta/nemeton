@@ -69,7 +69,8 @@
 # Téléchargement CDS best-effort (voie A). Non jouable en CI ; validé sur données
 # réelles. Renvoie un chemin netCDF, ou NULL en dégradation.
 .eobs_cds_fetch <- function(cds_var, years, cache_dir, version, resolution,
-                            period = NULL) {
+                            period = NULL, emit = NULL) {
+  if (is.null(emit)) emit <- function(payload) NULL
   if (!requireNamespace("ecmwfr", quietly = TRUE)) return(NULL)
   if (is.null(cache_dir)) cache_dir <- tempdir()
   if (is.null(period)) {
@@ -86,10 +87,14 @@
     version         = version,
     format          = "zip",
     target          = "eobs.zip")
+  emit(list(current = "eobs:cds_request", variable = cds_var,
+            period = period, version = version, resolution = resolution))
   zip <- tryCatch(
     ecmwfr::wf_request(request = req, path = cache_dir, transfer = TRUE),
     error = function(e) NULL)
   if (is.null(zip) || !file.exists(zip)) return(NULL)
+  emit(list(current = "eobs:cds_download_done", file = basename(zip)))
+  emit(list(current = "eobs:unzip"))
   nc <- tryCatch({
     files <- utils::unzip(zip, exdir = cache_dir)
     files[grepl("\\.nc$", files)][1]
@@ -143,6 +148,11 @@
 #'   resolution (default `"0.1deg"`) for the CDS request.
 #' @param period Optional explicit CDS period block (e.g. `"2011_2024"`);
 #'   inferred from `years` when `NULL`.
+#' @param progress_callback Optional function called at each step with a
+#'   `list(current = <key>, …)` payload (monitoring pattern). Keys:
+#'   `"eobs:cds_request"`, `"eobs:cds_download_done"`, `"eobs:unzip"`,
+#'   `"eobs:read"`, `"eobs:reduce"`, `"eobs:complete"`, `"eobs:unavailable"`.
+#'   The app maps these to bottom-right notifications.
 #' @param ... Ignored (forward-compat).
 #'
 #' @return A per-year summer `SpatRaster` (layers named by year), or `NULL` on
@@ -151,27 +161,51 @@
 load_eobs_source <- function(aoi, var = "tx", years = NULL, months = 6:8,
                              source = "cds", reducer = NULL, nc = NULL,
                              cache_dir = NULL, version = "28.0e",
-                             resolution = "0.1deg", period = NULL, ...) {
+                             resolution = "0.1deg", period = NULL,
+                             progress_callback = NULL, ...) {
+  # Émetteur de progression : chaque étape publie un payload `list(current=…)`
+  # que l'app traduit en notification (patron monitoring). No-op si NULL.
+  emit <- function(payload) {
+    if (!is.null(progress_callback)) progress_callback(payload)
+  }
   if (!requireNamespace("terra", quietly = TRUE) ||
       !requireNamespace("sf", quietly = TRUE)) {
+    emit(list(current = "eobs:unavailable", reason = "deps"))
     return(NULL)
   }
   spec <- .eobs_var_spec(var)
   if (is.null(reducer)) reducer <- spec$reducer
   daily <- tryCatch({
     if (!is.null(nc)) {
+      emit(list(current = "eobs:read", source = "nc", var = var))
       if (inherits(nc, "SpatRaster")) nc else terra::rast(nc)
     } else if (identical(source, "cds")) {
-      f <- .eobs_cds_fetch(spec$cds, years, cache_dir, version, resolution, period)
-      if (is.null(f)) return(NULL)
+      f <- .eobs_cds_fetch(spec$cds, years, cache_dir, version, resolution,
+                           period, emit = emit)
+      if (is.null(f)) {
+        emit(list(current = "eobs:unavailable", reason = "cds"))
+        return(NULL)
+      }
+      emit(list(current = "eobs:read", source = "cds", var = var))
       terra::rast(f)
     } else {
+      emit(list(current = "eobs:unavailable", reason = "no_source"))
       return(NULL)
     }
   }, error = function(e) NULL)
-  if (is.null(daily)) return(NULL)
-  tryCatch(
+  if (is.null(daily)) {
+    emit(list(current = "eobs:unavailable", reason = "read_error"))
+    return(NULL)
+  }
+  emit(list(current = "eobs:reduce", var = var, reducer = reducer))
+  out <- tryCatch(
     .eobs_summer_by_year(daily, aoi = aoi, years = years, months = months,
                          reducer = reducer),
     error = function(e) NULL)
+  if (is.null(out)) {
+    emit(list(current = "eobs:unavailable", reason = "reduce_error"))
+    return(NULL)
+  }
+  emit(list(current = "eobs:complete", var = var, n_years = terra::nlyr(out)))
+  out
 }
