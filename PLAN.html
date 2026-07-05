@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.134.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.134.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -860,6 +860,10 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-05--fixed-v01342--requête-e-obs-cds-invalide-spec-034">2026-07-05 — Fixed v0.134.2 : requête E-OBS CDS invalide (spec 034)<a class="anchor" aria-label="anchor" href="#id_2026-07-05--fixed-v01342--requ%C3%AAte-e-obs-cds-invalide-spec-034"></a></h3>
+<p>Validation clé CDS réelle : <code>load_eobs_source(source="cds")</code> était rejeté en 400 (« invalid combination ») — le CDS attend les enums en underscore (<code>30_0e</code>, <code>0_1deg</code>) pas en point, et le défaut <code>28.0e</code> ne couvre pas <code>2011_2024</code>. Corrigé (normalisation point→underscore + défaut <code>30.0e</code>, combinaison acceptée en réel). Le 400 masquait le vrai blocage : <strong>licence E-OBS à accepter</strong> (403). Reste : Pascal accepte la licence sur la page du dataset. Voir [[project_eobs_source]].</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-05--fixed-v01341--assemblage-muscate-du-repli-laiprosail-spec-033-d4">2026-07-05 — Fixed v0.134.1 : assemblage MUSCATE du repli LAI/PROSAIL (spec 033 D4)<a class="anchor" aria-label="anchor" href="#id_2026-07-05--fixed-v01341--assemblage-muscate-du-repli-laiprosail-spec-033-d4"></a></h3>
 <p>Le « reste MUSCATE » = D4 (assemblage réflectances pour le repli LAI). Bug trouvé par inspection : <code>.get_s2_band_raster()</code> renvoie un SpatRaster mais le code lisait <code>g$path</code> → assemblage toujours NULL (jamais validé). Corrigé + ajout <code><a href="reference/theia_configure_s3.html">theia_configure_s3()</a></code> (dégradation propre sans creds) + rééchantillonnage 20 m→10 m. <strong>Recherche MUSCATE validée réel</strong> (22 scènes Vercors, hrefs <code>/vsis3/</code>). Reste : download COG réel avec <code>TLD_ACCESS_KEY</code>/<code>TLD_SECRET_KEY</code> Theia S3. Voir spec 033.</p>

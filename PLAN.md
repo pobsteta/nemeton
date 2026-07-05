@@ -1677,6 +1677,16 @@ cœur).
 
 ## Journal
 
+### 2026-07-05 — Fixed v0.134.2 : requête E-OBS CDS invalide (spec 034)
+
+Validation clé CDS réelle : `load_eobs_source(source="cds")` était
+rejeté en 400 (« invalid combination ») — le CDS attend les enums en
+underscore (`30_0e`, `0_1deg`) pas en point, et le défaut `28.0e` ne
+couvre pas `2011_2024`. Corrigé (normalisation point→underscore + défaut
+`30.0e`, combinaison acceptée en réel). Le 400 masquait le vrai blocage
+: **licence E-OBS à accepter** (403). Reste : Pascal accepte la licence
+sur la page du dataset. Voir \[\[project_eobs_source\]\].
+
 ### 2026-07-05 — Fixed v0.134.1 : assemblage MUSCATE du repli LAI/PROSAIL (spec 033 D4)
 
 Le « reste MUSCATE » = D4 (assemblage réflectances pour le repli LAI).

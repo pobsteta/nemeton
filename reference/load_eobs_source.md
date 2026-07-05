@@ -28,7 +28,7 @@ load_eobs_source(
   reducer = NULL,
   nc = NULL,
   cache_dir = NULL,
-  version = "28.0e",
+  version = "30.0e",
   resolution = "0.1deg",
   period = NULL,
   progress_callback = NULL,
@@ -77,7 +77,8 @@ load_eobs_source(
 
 - version, resolution:
 
-  E-OBS product version (default `"28.0e"`) and grid resolution (default
+  E-OBS product version (default `"30.0e"`; dots are normalised to the
+  CDS underscore form, e.g. `30_0e`) and grid resolution (default
   `"0.1deg"`) for the CDS request.
 
 - period:

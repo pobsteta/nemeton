@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.134.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.134.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,16 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.134.2" id="nemeton-01342-2026-07-05">nemeton 0.134.2 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01342-2026-07-05"></a></h2>
+<div class="section level4">
+<h4 id="fixed--requête-e-obs-cds-invalide-spec-0-134-2">Fixed — Requête E-OBS CDS invalide (spec 034)<a class="anchor" aria-label="anchor" href="#fixed--requ%C3%AAte-e-obs-cds-invalide-spec-0-134-2"></a></h4>
+<p>Validation sur clé CDS réelle : <code>load_eobs_source(source = "cds")</code> construisait une requête <strong>rejetée en 400</strong> (« invalid combination of values ») par le CDS :</p>
+<ul><li>Le CDS attend les valeurs d’enum en <strong>underscore</strong> (<code>30_0e</code>, <code>0_1deg</code>), pas en point. Ajout d’une normalisation point→underscore de <code>version</code> / <code>resolution</code> (on tolère toujours la forme humaine <code>"30.0e"</code> / <code>"0.1deg"</code> en entrée).</li>
+<li>La version par défaut <code>"28.0e"</code> <strong>ne couvre pas</strong> la période décennale <code>2011_2024</code> (rejet 400). Défaut porté à <strong><code>"30.0e"</code></strong> (combinaison <code>30_0e</code> + <code>2011_2024</code> + <code>0_1deg</code> <strong>acceptée</strong> par le CDS, vérifiée en réel).</li>
+</ul><p>Sans ce correctif, E-OBS échouait <strong>même avec la licence acceptée</strong>. Le téléchargement réel requiert d’accepter la <strong>licence E-OBS</strong> sur la page du dataset (<code>insitu-gridded-observations-europe</code>, 403 sinon).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.134.1" id="nemeton-01341-2026-07-05">nemeton 0.134.1 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01341-2026-07-05"></a></h2>
 <div class="section level4">

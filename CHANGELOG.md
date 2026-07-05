@@ -12,6 +12,18 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.134.2\] - 2026-07-05
+
+### Fixed
+
+- `load_eobs_source(source = "cds")` built an invalid CDS request (400
+  “invalid combination”): the CDS expects underscore enum values
+  (`30_0e`, `0_1deg`) not dotted ones, and the default version `28.0e`
+  doesn’t cover the `2011_2024` period. Now normalises dots→underscores
+  for `version`/`resolution` and defaults to `30.0e`. Validated against
+  a real CDS key (combination accepted; download then needs the E-OBS
+  dataset licence accepted).
+
 ## \[0.134.1\] - 2026-07-05
 
 ### Fixed
