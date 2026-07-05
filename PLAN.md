@@ -1677,6 +1677,21 @@ cœur).
 
 ## Journal
 
+### 2026-07-05 — Added v0.132.0 : acquisition BILJOU (spec 027 L2, option B)
+
+[`load_biljou_forcing()`](https://pobsteta.github.io/nemeton/reference/load_biljou_forcing.md)
+(meteo SAFRAN/ERA5 → format biljouR, liste par unité) +
+[`build_biljou_soil()`](https://pobsteta.github.io/nemeton/reference/build_biljou_soil.md)
+(objet biljou_soil, défaut ewm=150). Débloque le bilan hydrique réel
+`regen_bilan_hydrique` depuis l’app (acquisition au cœur, règle \#1),
+symétrique de l’option B microclimf. SAFRAN primaire (DOI par défaut
+biljouR) via safran_download+safran_nc_to_meteo ; ERA5 fallback via
+mcera5 (.rsen_forcage_era5 + penman_pet). Chemin injection `raw` testé
+CI ; téléchargements best-effort → NULL. regen_bilan_hydrique utilise
+`.biljou_points` (ids alignés). Reste : validation Pascal des
+téléchargements SAFRAN/ERA5 réels + câblage app. Voir
+\[\[project_regen_engines_porting\]\].
+
 ### 2026-07-05 — Added v0.131.0 : `load_eobs_source()` progression par étapes (spec 034)
 
 `progress_callback` sur

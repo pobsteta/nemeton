@@ -1,5 +1,41 @@
 # Changelog
 
+## nemeton 0.132.0 (2026-07-05)
+
+#### Added — Acquisition BILJOU : `load_biljou_forcing()` + `build_biljou_soil()` (spec 027 L2, option B)
+
+Débloque le **bilan hydrique réel**
+([`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md),
+chemin moteur) depuis l’app : le cœur exposait déjà les moteurs mais
+aucune acquisition météo/sol, ce qui forçait à mettre de la logique
+données dans l’app (contraire à la règle
+[\#1](https://github.com/pobsteta/nemeton/issues/1)). Patron
+`load_theia_source` (acquisition au cœur, l’app cache).
+
+- **`load_biljou_forcing(aoi, years, source, cache_dir, raw, …)`** :
+  produit le `meteo` journalier au format biljouR (`date`, `doy`, `pet`,
+  `rain`), en **liste nommée par unité** (clés = ids des points de
+  `regen_bilan_hydrique`, alignées), directement consommable par
+  `biljou_run_grid()`.
+  - `source = "safran"` (primaire France) :
+    [`biljouR::safran_download()`](https://pobsteta.github.io/biljouR/reference/safran_download.html)
+    (DOI Recherche Data Gouv par défaut) → `safran_nc_to_meteo()` par
+    centroïde.
+  - `source = "era5"` (fallback) : ERA5-Land via `mcera5` (réutilise
+    `.rsen_forcage_era5`) → agrégation journalière + PET Penman
+    (`penman_pet`).
+  - Chemin d’injection `raw` (conversion `safran_to_meteo`) **testé en
+    CI** ; téléchargements SAFRAN/ERA5 best-effort (réseau/clé CDS),
+    dégradent en `NULL`.
+- **`build_biljou_soil(units, ewm = 150, roots, macro, micro, init)`** :
+  produit le `sol` = objet
+  [`biljouR::biljou_soil()`](https://pobsteta.github.io/biljouR/reference/biljou_soil.html)
+  (défaut uniforme `ewm = 150 mm` en l’absence de référentiel sol fin ;
+  `ewm` surchargeable). Dégrade en `NULL` sans `biljouR`.
+- [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
+  construit désormais ses points via `.biljou_points()` (même helper que
+  le loader → ids alignés).
+
 ## nemeton 0.131.0 (2026-07-05)
 
 #### Added — `load_eobs_source()` : progression par étapes (`progress_callback`, spec 034)

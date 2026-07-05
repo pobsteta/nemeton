@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.131.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.132.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,25 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.132.0" id="nemeton-01320-2026-07-05">nemeton 0.132.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01320-2026-07-05"></a></h2>
+<div class="section level4">
+<h4 id="added--acquisition-biljou--load_biljou_forcing--build_biljou_soil-spec-l2-option-b-0-132-0">Added — Acquisition BILJOU : <code>load_biljou_forcing()</code> + <code>build_biljou_soil()</code> (spec 027 L2, option B)<a class="anchor" aria-label="anchor" href="#added--acquisition-biljou--load_biljou_forcing--build_biljou_soil-spec-l2-option-b-0-132-0"></a></h4>
+<p>Débloque le <strong>bilan hydrique réel</strong> (<code><a href="../reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code>, chemin moteur) depuis l’app : le cœur exposait déjà les moteurs mais aucune acquisition météo/sol, ce qui forçait à mettre de la logique données dans l’app (contraire à la règle <a href="https://github.com/pobsteta/nemeton/issues/1" class="external-link">#1</a>). Patron <code>load_theia_source</code> (acquisition au cœur, l’app cache).</p>
+<ul><li>
+<strong><code>load_biljou_forcing(aoi, years, source, cache_dir, raw, …)</code></strong> : produit le <code>meteo</code> journalier au format biljouR (<code>date</code>, <code>doy</code>, <code>pet</code>, <code>rain</code>), en <strong>liste nommée par unité</strong> (clés = ids des points de <code>regen_bilan_hydrique</code>, alignées), directement consommable par <code>biljou_run_grid()</code>.
+<ul><li>
+<code>source = "safran"</code> (primaire France) : <code><a href="https://pobsteta.github.io/biljouR/reference/safran_download.html" class="external-link">biljouR::safran_download()</a></code> (DOI Recherche Data Gouv par défaut) → <code>safran_nc_to_meteo()</code> par centroïde.</li>
+<li>
+<code>source = "era5"</code> (fallback) : ERA5-Land via <code>mcera5</code> (réutilise <code>.rsen_forcage_era5</code>) → agrégation journalière + PET Penman (<code>penman_pet</code>).</li>
+<li>Chemin d’injection <code>raw</code> (conversion <code>safran_to_meteo</code>) <strong>testé en CI</strong> ; téléchargements SAFRAN/ERA5 best-effort (réseau/clé CDS), dégradent en <code>NULL</code>.</li>
+</ul></li>
+<li>
+<strong><code>build_biljou_soil(units, ewm = 150, roots, macro, micro, init)</code></strong> : produit le <code>sol</code> = objet <code><a href="https://pobsteta.github.io/biljouR/reference/biljou_soil.html" class="external-link">biljouR::biljou_soil()</a></code> (défaut uniforme <code>ewm = 150 mm</code> en l’absence de référentiel sol fin ; <code>ewm</code> surchargeable). Dégrade en <code>NULL</code> sans <code>biljouR</code>.</li>
+<li>
+<code><a href="../reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> construit désormais ses points via <code>.biljou_points()</code> (même helper que le loader → ids alignés).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.131.0" id="nemeton-01310-2026-07-05">nemeton 0.131.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01310-2026-07-05"></a></h2>
 <div class="section level4">

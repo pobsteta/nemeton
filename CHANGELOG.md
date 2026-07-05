@@ -12,6 +12,27 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.132.0\] - 2026-07-05
+
+### Added
+
+- `load_biljou_forcing(aoi, years, source, cache_dir, raw, …)` and
+  `build_biljou_soil(units, ewm, …)` (spec 027 L2, option B): core
+  acquisition of the `meteo` (biljouR daily format, per-unit named list;
+  SAFRAN default DOI or ERA5-Land via `mcera5`) and `sol` (`biljou_soil`
+  object) inputs of
+  [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md),
+  unblocking the real soil-water-balance engine from the app without
+  data logic app-side. Tested `raw`-injection path; SAFRAN/ERA5
+  downloads degrade to `NULL`.
+
+### Changed
+
+- [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
+  now derives its grid points via `.biljou_points()` (shared with
+  [`load_biljou_forcing()`](https://pobsteta.github.io/nemeton/reference/load_biljou_forcing.md)
+  so per-unit `meteo` ids align).
+
 ## \[0.131.0\] - 2026-07-05
 
 ### Added

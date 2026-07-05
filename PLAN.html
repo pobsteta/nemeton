@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.131.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.132.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -860,6 +860,10 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-05--added-v01320--acquisition-biljou-spec-027-l2-option-b">2026-07-05 — Added v0.132.0 : acquisition BILJOU (spec 027 L2, option B)<a class="anchor" aria-label="anchor" href="#id_2026-07-05--added-v01320--acquisition-biljou-spec-027-l2-option-b"></a></h3>
+<p><code><a href="reference/load_biljou_forcing.html">load_biljou_forcing()</a></code> (meteo SAFRAN/ERA5 → format biljouR, liste par unité) + <code><a href="reference/build_biljou_soil.html">build_biljou_soil()</a></code> (objet biljou_soil, défaut ewm=150). Débloque le bilan hydrique réel <code>regen_bilan_hydrique</code> depuis l’app (acquisition au cœur, règle #1), symétrique de l’option B microclimf. SAFRAN primaire (DOI par défaut biljouR) via safran_download+safran_nc_to_meteo ; ERA5 fallback via mcera5 (.rsen_forcage_era5 + penman_pet). Chemin injection <code>raw</code> testé CI ; téléchargements best-effort → NULL. regen_bilan_hydrique utilise <code>.biljou_points</code> (ids alignés). Reste : validation Pascal des téléchargements SAFRAN/ERA5 réels + câblage app. Voir [[project_regen_engines_porting]].</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-05--added-v01310--load_eobs_source-progression-par-étapes-spec-034">2026-07-05 — Added v0.131.0 : <code>load_eobs_source()</code> progression par étapes (spec 034)<a class="anchor" aria-label="anchor" href="#id_2026-07-05--added-v01310--load_eobs_source-progression-par-%C3%A9tapes-spec-034"></a></h3>
 <p><code>progress_callback</code> sur <code><a href="reference/load_eobs_source.html">load_eobs_source()</a></code> : payloads <code>list(current=…)</code> (cds_request/download_done/unzip/read/reduce/complete/unavailable) → l’app affiche des notifications bas-droite au fil du téléchargement E-OBS. Brief 034 mis à jour (mapping clés → i18n + showNotification id fixe). Voir [[project_eobs_source]].</p>
