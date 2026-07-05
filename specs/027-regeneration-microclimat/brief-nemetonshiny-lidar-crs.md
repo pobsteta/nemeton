@@ -47,31 +47,43 @@ raster atteint un indicateur**, son CRS est réparé (R3 validé : 0 NA, range
 rejet au contrôle de couverture (point 1.1) se produit **avant**, côté app. Il
 reste donc **une** correction app indispensable.
 
-## 3. Correctif app (indispensable)
+## 3. Correctif app « en place » pour les futurs projets (2 points exacts)
 
-Le produit LiDAR HD est **par définition EPSG:2154**. Re-tamponner l'autorité au
-plus tôt — deux options, la (a) suffit :
+Le produit LiDAR HD est **par définition EPSG:2154**. Point d'insertion unique et
+minimal, repéré dans `service_compute.R` :
 
-**(a) À l'écriture du cache mosaïque/TWI** (`download_lidar_*` /
-`build_*_mosaic` / calcul TWI) :
+**(a) Sortie fraîche — dans `mosaic_lidar_tiles()`** (appelée par
+`resolve_lidar_layer()` : `result <- mosaic_lidar_tiles(downloaded_files,
+mosaic_cache)`). Juste avant d'écrire / de retourner la mosaïque :
 
 ```r
-r <- terra::rast(tiles)           # ou la mosaïque assemblée
-if (is.na(terra::crs(r, describe = TRUE)$code)) terra::crs(r) <- "EPSG:2154"
-terra::writeRaster(r, mosaic_path, overwrite = TRUE)
+# LiDAR HD = EPSG:2154 ; récupère l'autorité si GDAL a lu un WKT « sans autorité ».
+if (is.na(terra::crs(mos, describe = TRUE)$code)) terra::crs(mos) <- "EPSG:2154"
+terra::writeRaster(mos, mosaic_cache, overwrite = TRUE)
 ```
 
-**(b) Dans `.lidar_mosaic_covers_bbox()`** (a minima, pour ne pas rejeter à
-tort) : normaliser avant le transform.
+**(b) Retour cache — ligne ~3207** (`return(terra::rast(mosaic_cache))`) : ne pas
+retourner un CRS dégénéré :
+
+```r
+r <- terra::rast(mosaic_cache)
+if (is.na(terra::crs(r, describe = TRUE)$code)) terra::crs(r) <- "EPSG:2154"
+return(r)
+```
+
+**(c) Contrôle de couverture — `.lidar_mosaic_covers_bbox()` (l.3112)** : même
+garde avant le `st_transform`, sinon la mosaïque dégénérée est rejetée et
+re-téléchargée à chaque run (coûteux, même si le cœur v0.138.1 sauve ensuite
+l'extraction) :
 
 ```r
 r <- terra::rast(mosaic_path)
 if (is.na(terra::crs(r, describe = TRUE)$code)) terra::crs(r) <- "EPSG:2154"
 ```
 
-Idéalement faire **(a)** (répare le fichier une fois pour toutes, bénéficie à
-tous les consommateurs et au contrôle de couverture) et laisser le cœur en
-filet.
+Les trois gardes sont la **même ligne**. (a)+(b) suffisent à la correction ;
+(c) supprime les re-téléchargements inutiles. Le cœur v0.138.1 reste le filet
+côté indicateurs.
 
 ## 4. Caches existants (RECONFORT & co.)
 
