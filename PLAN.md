@@ -1264,6 +1264,16 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-05 — Added v0.134.0 : progression BILJOU + ERA5 validé réel
+
+`progress_callback` sur `load_biljou_forcing()` (payloads biljou:safran_unit /
+era5_download / complete / unavailable) → notifications bas-droite app pendant le
+téléchargement du forçage. **Forçage ERA5 validé de bout en bout sur données
+réelles** (clé CDS + licence acceptée par Pascal) : download + extract_clim
+(microclimf, pression kPa) + conversion PET → meteo. SAFRAN (sans clé) et ERA5
+(avec clé) désormais tous deux réels et validés. Brief BILJOU mis à jour. Voir
+[[project_regen_engines_porting]].
+
 ### 2026-07-05 — Fixed v0.133.1 : forçage ERA5 aligné sur l'API mcera5 0.4
 
 Validation clé CDS réelle (Pascal) : `.rsen_forcage_era5` utilisait l'ancienne API

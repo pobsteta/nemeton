@@ -41,10 +41,13 @@
 # Forçage SAFRAN par unité via l'EDR GéoSAS. Reprojette les centroïdes en L93,
 # une requête CSV par point -> data.frame brut (colonne DATE ajoutée pour
 # safran_to_meteo). Best-effort : liste nommée par id, éléments NULL si vide.
-.biljou_forcing_safran <- function(points, years) {
+.biljou_forcing_safran <- function(points, years, emit = NULL) {
+  if (is.null(emit)) emit <- function(payload) NULL
   xy <- sf::st_coordinates(sf::st_transform(
     sf::st_as_sf(points, coords = c("lon", "lat"), crs = 4326), 2154))
-  res <- lapply(seq_len(nrow(points)), function(i) {
+  n <- nrow(points)
+  res <- lapply(seq_len(n), function(i) {
+    emit(list(current = "biljou:safran_unit", i = i, n = n, id = points$id[i]))
     url <- .biljou_safran_edr_url(xy[i, 1], xy[i, 2], years)
     df <- tryCatch(utils::read.csv(url, check.names = FALSE),
                    error = function(e) NULL)
@@ -84,12 +87,18 @@
 
 # Forçage ERA5-Land par unité (fallback). Réutilise .rsen_forcage_era5 (mcera5).
 # Best-effort : NULL si mcera5/clé/réseau absent. Validé sur données réelles.
-.biljou_forcing_era5 <- function(points, years, cache_dir, altitude = 0) {
+.biljou_forcing_era5 <- function(points, years, cache_dir, altitude = 0,
+                                 emit = NULL) {
+  if (is.null(emit)) emit <- function(payload) NULL
   if (!requireNamespace("mcera5", quietly = TRUE) || is.null(years)) return(NULL)
-  out <- lapply(seq_len(nrow(points)), function(i) {
+  n <- nrow(points)
+  out <- lapply(seq_len(n), function(i) {
     p <- points[i, ]
-    hourly <- do.call(rbind, lapply(years, function(y)
-      .rsen_forcage_era5(p$lon, p$lat, y, cache_dir)))
+    hourly <- do.call(rbind, lapply(years, function(y) {
+      emit(list(current = "biljou:era5_download", i = i, n = n,
+                id = p$id, year = y))
+      .rsen_forcage_era5(p$lon, p$lat, y, cache_dir)
+    }))
     .biljou_era5_meteo(hourly, lat = p$lat, altitude = altitude)
   })
   stats::setNames(out, as.character(points$id))
@@ -125,6 +134,11 @@
 #'   Penman estimate (`latitude` defaults to the AOI centroid).
 #' @param compute_pet Passed to [biljouR::safran_to_meteo()] (SAFRAN provides
 #'   `ETP_Q`, so the default `FALSE` is used unless a Penman estimate is wanted).
+#' @param progress_callback Optional function called at each step with a
+#'   `list(current = <key>, …)` payload (monitoring pattern). Keys:
+#'   `"biljou:safran_unit"` (`i`/`n`/`id`), `"biljou:era5_download"`
+#'   (`i`/`n`/`id`/`year`), `"biljou:complete"`, `"biljou:unavailable"`. The app
+#'   maps these to bottom-right notifications during the forcing download.
 #' @param ... Ignored (forward-compat).
 #'
 #' @return A per-unit named list of `meteo` data frames (or a single
@@ -133,10 +147,17 @@
 load_biljou_forcing <- function(aoi, years, source = c("safran", "era5"),
                                 cache_dir = NULL, raw = NULL, points = NULL,
                                 latitude = NULL, altitude = 0,
-                                compute_pet = FALSE, ...) {
+                                compute_pet = FALSE, progress_callback = NULL,
+                                ...) {
+  # Progression par étapes (patron monitoring) : chaque unité/année publie un
+  # payload list(current=…) que l'app affiche en notification. No-op si NULL.
+  emit <- function(payload) {
+    if (!is.null(progress_callback)) progress_callback(payload)
+  }
   source <- match.arg(source)
   if (!requireNamespace("biljouR", quietly = TRUE) ||
       !requireNamespace("sf", quietly = TRUE)) {
+    emit(list(current = "biljou:unavailable", reason = "deps"))
     return(NULL)
   }
   if (is.null(cache_dir)) cache_dir <- file.path(tempdir(), "biljou_forcing")
@@ -149,6 +170,8 @@ load_biljou_forcing <- function(aoi, years, source = c("safran", "era5"),
       biljouR::safran_to_meteo(raw, compute_pet = compute_pet,
                                latitude = latitude, altitude = altitude),
       error = function(e) NULL)
+    emit(list(current = if (is.null(meteo)) "biljou:unavailable" else "biljou:complete",
+              source = "raw"))
     return(.biljou_filter_years(meteo, years))
   }
 
@@ -156,17 +179,23 @@ load_biljou_forcing <- function(aoi, years, source = c("safran", "era5"),
     if (source == "safran") {
       # Acquisition SAFRAN via l'OGC API-EDR GéoSAS (sans auth) -> data.frame
       # brut par unité -> safran_to_meteo() (ETP_Q fourni : pas de Penman).
-      raws <- .biljou_forcing_safran(points, years)
+      raws <- .biljou_forcing_safran(points, years, emit = emit)
       m <- lapply(raws, function(df) if (is.null(df)) NULL else
         biljouR::safran_to_meteo(df, compute_pet = compute_pet,
                                  latitude = latitude, altitude = altitude))
       m <- m[!vapply(m, is.null, logical(1))]
       if (!length(m)) NULL else m
     } else {
-      .biljou_forcing_era5(points, years, cache_dir, altitude = altitude)
+      .biljou_forcing_era5(points, years, cache_dir, altitude = altitude,
+                           emit = emit)
     }
   }, error = function(e) NULL)
-  if (is.null(meteo)) return(NULL)
+  if (is.null(meteo)) {
+    emit(list(current = "biljou:unavailable", source = source))
+    return(NULL)
+  }
+  emit(list(current = "biljou:complete", source = source,
+            n_units = length(meteo)))
   .biljou_filter_years(meteo, years)
 }
 
