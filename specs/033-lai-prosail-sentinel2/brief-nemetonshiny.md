@@ -1,6 +1,11 @@
 # Brief `nemetonshiny` — Provenance canopée reGénération (spec 033 D5)
 
-**Cœur requis** : `nemeton (>= 0.129.0)`.
+**Cœur requis** : `nemeton (>= 0.137.0)` (helper `canopy_provenance()`).
+**Statut cœur** : chaîne validée **bout-en-bout sur données réelles** (v0.135.0/
+0.136.0) — MUSCATE→LAI (LAI médian 2.33) + FORMS-T débloqué. Le repli satellite
+lit via des **URLs pré-signées** (gateway teledetection) : nécessite
+`TLD_ACCESS_KEY`/`TLD_SECRET_KEY` dans l'environnement (déjà dans le `.Renviron`
+de nemetonshiny).
 **Objectif** : afficher dans l'onglet **reGénération** la **provenance de la
 donnée canopée** utilisée par les moteurs (LiDAR HD **ou** repli satellite
 Sentinel-2/PROSAIL), et permettre le **repli NDP 0** quand le LiDAR est absent.
@@ -43,27 +48,36 @@ nemeton::detect_ndp(data)$augmented          # contient "lai_ml" quand repli act
 satellite) et qui pose `augmented = "lai_ml"`. L'app **lit** ce flag et
 **affiche**. Le niveau NDP de base reste **0** (le repli n'augmente pas le NDP).
 
-## 3. Détermination de la provenance (à lire, pas à recalculer)
+## 3. Détermination de la provenance — via `canopy_provenance()` (règle #1)
 
-| Situation | `augmented` | Provenance à afficher |
-|-----------|-------------|-----------------------|
-| LiDAR HD présent (PAI structural) | `"height_lidar"` / `"microclimate_model"` | **Canopée : LiDAR HD** |
-| Repli satellite (LAI S2/PROSAIL)  | contient `"lai_ml"` | **Canopée : satellite (repli)** |
-| Aucune donnée canopée | — | moteurs non lançables (état actuel) |
+Depuis v0.137.0, **ne pas** tester les flags à la main : appeler le helper cœur
+qui mappe `augmented` → une **clé de provenance canonique**.
 
-L'app obtient `augmented` via `detect_ndp()` (déjà consommé pour le badge NDP).
-**Ne pas** ré-implémenter la règle de choix côté app.
+```r
+prov <- nemeton::canopy_provenance(detect_ndp(data)$augmented)
+# -> "lidar_hd" | "prosail_s2" | "opencanopy"
+```
+
+| Clé retournée | Flag `augmented` | Provenance à afficher |
+|---------------|------------------|-----------------------|
+| `"lidar_hd"`   | (aucun flag canopée) | **Canopée : LiDAR HD** |
+| `"prosail_s2"` | `"lai_ml"` | **Canopée : satellite (repli Sentinel-2/PROSAIL)** |
+| `"opencanopy"` | `"height_ml"` | **Canopée : CHM ML (Open-Canopy)** |
+
+`lai_ml` est **prioritaire** (sa présence = LiDAR absent). L'app obtient
+`augmented` via `detect_ndp()` (déjà consommé pour le badge NDP) et **ne
+ré-implémente aucune règle de choix**.
 
 ## 4. UI `mod_regeneration`
 
 - **Badge provenance** près du score de priorité / du bouton « Lancer
-  l'analyse » : deux états i18n
-  - `regen_canopee_lidar` → « Canopée : LiDAR HD »
-  - `regen_canopee_satellite` → « Canopée : satellite (repli) »
-- **Info-bulle** sur l'état satellite (avertissement métier, texte fourni par
-  i18n, pas de littéral) : `regen_canopee_satellite_info` →
-  « Repli NDP 0 : LAI Sentinel-2 (inversion PROSAIL) en l'absence de LiDAR HD.
-  Proxy dégradé de la structure de canopée (LAI ≠ PAI) ; précision moindre. »
+  l'analyse » : `switch(prov, …)` sur la clé de `canopy_provenance()` → trois
+  états i18n (`regen_canopee_lidar`, `regen_canopee_satellite`,
+  `regen_canopee_chm`).
+- **Info-bulle** sur l'état satellite (avertissement métier, texte i18n, pas de
+  littéral) : `regen_canopee_satellite_info` → « Repli NDP 0 : LAI Sentinel-2
+  (inversion PROSAIL) en l'absence de LiDAR HD. Proxy dégradé de la structure de
+  canopée (LAI ≠ PAI) ; précision moindre. »
 - **Aucune** exposition des paramètres PROSAIL/bandes dans l'UI (détail cœur).
 
 ## 5. i18n (clés à ajouter dans `utils_i18n.R`, FR/EN)
@@ -72,13 +86,16 @@ L'app obtient `augmented` via `detect_ndp()` (déjà consommé pour le badge NDP
 |-----|----|----|
 | `regen_canopee_lidar` | Canopée : LiDAR HD | Canopy: LiDAR HD |
 | `regen_canopee_satellite` | Canopée : satellite (repli) | Canopy: satellite (fallback) |
+| `regen_canopee_chm` | Canopée : CHM ML (Open-Canopy) | Canopy: ML CHM (Open-Canopy) |
 | `regen_canopee_satellite_info` | Repli NDP 0 : LAI Sentinel-2 (PROSAIL) sans LiDAR ; proxy dégradé (LAI ≠ PAI). | NDP-0 fallback: Sentinel-2 LAI (PROSAIL) without LiDAR; degraded proxy (LAI ≠ PAI). |
 
 ## 6. Dégradation
 
-- `lai_sentinel2()` → `NULL` (pas de scène / prosail absent / réseau) : l'app
-  n'affiche pas le badge satellite et les moteurs restent sur le chemin LiDAR
-  (ou non lançables si pas de LiDAR non plus) — **comportement inchangé**.
+- `lai_sentinel2()` → `NULL` (pas de scène / prosail absent / réseau / **pas de
+  clé Theia `TLD_*`** pour la signature MUSCATE) : l'app n'affiche pas le badge
+  satellite et les moteurs restent sur le chemin LiDAR (ou non lançables si pas
+  de LiDAR non plus) — **comportement inchangé**. `canopy_provenance()` renvoie
+  alors `"lidar_hd"` par défaut.
 - Le badge provenance ne s'affiche que quand une canopée est effectivement
   utilisée.
 
@@ -96,6 +113,6 @@ L'app obtient `augmented` via `detect_ndp()` (déjà consommé pour le badge NDP
 
 ## 8. Hors périmètre (reste cœur / futur)
 
-- Validation Pascal de l'application PROSAIL sur scène S2 réelle (cœur).
+- Validation PROSAIL sur scène S2 réelle : **faite** (v0.135.0, LAI médian 2.33).
 - Choix des années moyenne/canicule (déjà couvert par le brief onglet 027).
 - Toute restitution de structure 3D depuis le satellite (hors sujet — LiDAR HD).

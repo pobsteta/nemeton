@@ -315,3 +315,17 @@ test_that("detect_ndp_from_cache returns 1 when LiDAR file present", {
     expect_equal(detect_ndp_from_cache(getwd()), 1L)
   })
 })
+
+test_that("canopy_provenance maps augmented flags to a canonical key", {
+  expect_identical(canopy_provenance(character(0)), "lidar_hd")
+  expect_identical(canopy_provenance("lai_ml"), "prosail_s2")
+  expect_identical(canopy_provenance("height_ml"), "opencanopy")
+  # lai_ml (repli satellite) est prioritaire : sa présence signifie LiDAR absent.
+  expect_identical(canopy_provenance(c("height_ml", "lai_ml")), "prosail_s2")
+  # flags non-canopée ignorés.
+  expect_identical(canopy_provenance(c("species_ml", "texture_ml")), "lidar_hd")
+  # cohérent avec detect_ndp().
+  df <- data.frame(x = 1)
+  attr(df, "lai_source") <- "prosail_s2"
+  expect_identical(canopy_provenance(detect_ndp(df)$augmented), "prosail_s2")
+})

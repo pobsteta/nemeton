@@ -1,3 +1,15 @@
+# nemeton 0.137.0 (2026-07-05)
+
+### Added — `canopy_provenance()` : provenance canopée pour le badge app (spec 033 D5)
+
+- Nouvel export `canopy_provenance(augmented)` : mappe les flags ML de
+  `detect_ndp()` vers une **clé de provenance canonique** de la structure de
+  canopée — `"prosail_s2"` (repli LAI Sentinel-2/PROSAIL, flag `lai_ml`),
+  `"opencanopy"` (CHM ML, `height_ml`) ou `"lidar_hd"` (défaut, PAI LiDAR HD).
+  Le repli satellite (`lai_ml`) est prioritaire (sa présence = LiDAR absent).
+  Permet à l'app d'afficher le **badge de provenance** de l'onglet reGénération
+  sans ré-implémenter la règle de choix (règle #1). Brief D5 finalisé.
+
 # nemeton 0.136.0 (2026-07-05)
 
 ### Changed — Cohérence THEIA : tous les accès passent par la gateway de signature

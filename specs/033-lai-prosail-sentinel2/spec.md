@@ -9,7 +9,9 @@ testés CI ; train PROSAIL vérifié), injection `pai` (D2), flag `lai_ml`. **In
 `.get_s2_band_raster`, bandes B4/B5/B8 exposées) + **modèle pré-entraîné
 versionné** `inst/extdata/prosail_lai_Sentinel_2A_B4-B5-B8.rds` (D3, chargé sans
 ré-entraîner — sérialisation vérifiée + prédiction testée CI). **D5** : brief app
-provenance canopée rédigé (`brief-nemetonshiny.md`).
+provenance canopée rédigé (`brief-nemetonshiny.md`) + helper cœur
+`canopy_provenance()` (v0.137.0) mappant les flags `augmented` → clé canonique
+(`lidar_hd`/`prosail_s2`/`opencanopy`) pour le badge, sans logique côté app.
 **Correctif D4 (v0.134.1, 2026-07-05)** : l'assemblage MUSCATE était cassé —
 `.get_s2_band_raster()` renvoie un **SpatRaster** mais le code lisait `g$path`
 (→ crash silencieux, assemblage toujours `NULL`) ; en plus il ne configurait
