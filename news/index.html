@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.138.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.138.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.138.2" id="nemeton-01382-2026-07-05">nemeton 0.138.2 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01382-2026-07-05"></a></h2>
+<div class="section level4">
+<h4 id="fixed--s1s2--crs-lidar-hd--sans-autorité--complément-v01381-0-138-2">Fixed — S1/S2 : CRS LiDAR HD « sans autorité » (complément v0.138.1)<a class="anchor" aria-label="anchor" href="#fixed--s1s2--crs-lidar-hd--sans-autorit%C3%A9--compl%C3%A9ment-v01381-0-138-2"></a></h4>
+<p>Le correctif CRS de v0.138.1 (<code>.normalize_crs()</code> sur le DEM d’entrée) avait été posé sur R1/R2/R3/W3 mais <strong>pas</strong> sur les indicateurs sociaux <code><a href="../reference/indicateur_s1_routes.html">indicateur_s1_routes()</a></code> et <code><a href="../reference/indicateur_s2_bati.html">indicateur_s2_bati()</a></code>, qui consomment le <strong>même</strong> DEM — et retombent explicitement sur <code>lidar_mnt</code> quand <code>dem</code> est absent. Sur un projet LiDAR HD, le WKT Lambert-93 dégénéré (<code>describe$code = NA</code>) faisait échouer <code>sf::st_transform(roads/buildings, terra::crs(dem))</code> puis <code>terra::rasterize(..., dem)</code> (« CRS do not match ») → S1/S2 rendaient <code>NA</code>.</p>
+<ul><li>
+<code>dem &lt;- .normalize_crs(dem)</code> ajouté après résolution du DEM dans S1 et S2, avant tout <code>st_transform</code>/<code>rasterize</code> (même patron que <code>indicators-risk.R</code>).</li>
+<li>Test de régression : DEM au CRS dégénéré → S1 et S2 ne rendent plus tout-NA.</li>
+</ul><p>Découvert par l’audit CRS systématique des rasters produits par le cœur (aucune création <em>from-scratch</em> ne sort en <code>unknown</code> ; seule surface résiduelle = les DEM LiDAR HD injectés, désormais normalisés dans tous les indicateurs DEM sauf le moteur reGénération microclimf, protégé en amont par <code>checkinputs</code>).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.138.1" id="nemeton-01381-2026-07-05">nemeton 0.138.1 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01381-2026-07-05"></a></h2>
 <div class="section level4">

@@ -1,5 +1,33 @@
 # Changelog
 
+## nemeton 0.138.2 (2026-07-05)
+
+#### Fixed — S1/S2 : CRS LiDAR HD « sans autorité » (complément v0.138.1)
+
+Le correctif CRS de v0.138.1 (`.normalize_crs()` sur le DEM d’entrée)
+avait été posé sur R1/R2/R3/W3 mais **pas** sur les indicateurs sociaux
+[`indicateur_s1_routes()`](https://pobsteta.github.io/nemeton/reference/indicateur_s1_routes.md)
+et
+[`indicateur_s2_bati()`](https://pobsteta.github.io/nemeton/reference/indicateur_s2_bati.md),
+qui consomment le **même** DEM — et retombent explicitement sur
+`lidar_mnt` quand `dem` est absent. Sur un projet LiDAR HD, le WKT
+Lambert-93 dégénéré (`describe$code = NA`) faisait échouer
+`sf::st_transform(roads/buildings, terra::crs(dem))` puis
+`terra::rasterize(..., dem)` (« CRS do not match ») → S1/S2 rendaient
+`NA`.
+
+- `dem <- .normalize_crs(dem)` ajouté après résolution du DEM dans S1 et
+  S2, avant tout `st_transform`/`rasterize` (même patron que
+  `indicators-risk.R`).
+- Test de régression : DEM au CRS dégénéré → S1 et S2 ne rendent plus
+  tout-NA.
+
+Découvert par l’audit CRS systématique des rasters produits par le cœur
+(aucune création *from-scratch* ne sort en `unknown` ; seule surface
+résiduelle = les DEM LiDAR HD injectés, désormais normalisés dans tous
+les indicateurs DEM sauf le moteur reGénération microclimf, protégé en
+amont par `checkinputs`).
+
 ## nemeton 0.138.1 (2026-07-05)
 
 #### Fixed — R1/R2/R3/W3 : CRS LiDAR HD « sans autorité » (diagnostic RECONFORT)
