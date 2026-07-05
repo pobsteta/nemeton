@@ -1264,6 +1264,24 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-05 — Fixed v0.138.2 : CRS LiDAR HD « sans autorité » aussi sur S1/S2 (complément v0.138.1)
+
+Audit CRS systématique des rasters produits par le cœur (déclencheur : « vérifier
+que tous les rasters créés par le cœur portent le bon CRS »). **Verdict** : aucune
+création *from-scratch* (3 sites : biodiversité B3 ×2, mosaïque FAST) ne sort en
+`unknown` — toutes fixent `crs=` ou héritent d'un raster lu. Seule surface
+d'exposition = les DEM **injectés** (LiDAR HD dégénéré). v0.138.1 avait normalisé
+R1/R2/R3/W3 mais **pas** `indicateur_s1_routes()`/`indicateur_s2_bati()`, qui
+consomment le même DEM (fallback `lidar_mnt` inclus) → sur un projet LiDAR HD,
+`st_transform(roads/buildings, crs(dem))` + `rasterize(..., dem)` échouaient
+(« CRS do not match ») → S1/S2 en NA. Fix : `dem <- .normalize_crs(dem)` après
+résolution du DEM dans S1 et S2 + test de régression (DEM au CRS dégénéré →
+plus de tout-NA). Réserve documentée : `regen_engines.R:.rsen_as_rast` dépend de
+`crs(dtm)` sans normalisation, mais `microclimf::checkinputs` garde en amont.
+En parallèle (hors release) : script de repro CDS E-OBS livré dans le scratchpad
+pour diagnostiquer le toast « Détection E-OBS indisponible » (rejoue la requête
+`load_eobs.R` sans le `tryCatch` masquant → affiche l'erreur `ecmwfr` réelle).
+
 ### 2026-07-05 — Fixed v0.138.1 : CRS LiDAR HD « sans autorité » (R1/R2/R3/W3 NA, RECONFORT)
 
 Diagnostic en lançant R3 sur RECONFORT : « No DEM available » alors que le MNH/MNT

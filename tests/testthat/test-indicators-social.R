@@ -1554,3 +1554,55 @@ test_that("S3 msg_info is called with correct median values", {
     nemeton::indicateur_s3_population(test_units, method = "proxy")
   )
 })
+
+# ==============================================================================
+# CRS LiDAR HD dégénéré : S1/S2 doivent normaliser le DEM (régression v0.138.2)
+# ==============================================================================
+
+test_that("S1/S2 recover a degenerate authorityless DEM CRS (no all-NA)", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  skip_if_not_installed("exactextractr")
+
+  # DEM Lambert-93 « dégénéré » : nom = EPSG:2154 mais sans autorité rattachée,
+  # comme les GeoTIFF LiDAR HD IGN (cf. .normalize_crs, indicators-families.R).
+  wkt <- paste0(
+    'PROJCRS["EPSG:2154",BASEGEOGCRS["unknown",DATUM["unnamed",',
+    'ELLIPSOID["GRS 1980",6378137,298.257222101,LENGTHUNIT["metre",1]]],',
+    'PRIMEM["Greenwich",0]],CONVERSION["Lambert-93",',
+    'METHOD["Lambert Conic Conformal (2SP)"],',
+    'PARAMETER["Latitude of false origin",46.5],',
+    'PARAMETER["Longitude of false origin",3],',
+    'PARAMETER["Latitude of 1st standard parallel",49],',
+    'PARAMETER["Latitude of 2nd standard parallel",44],',
+    'PARAMETER["Easting at false origin",700000],',
+    'PARAMETER["Northing at false origin",6600000]],',
+    'CS[Cartesian,2],AXIS["easting",east],AXIS["northing",north],',
+    'LENGTHUNIT["metre",1]]')
+  dem <- terra::rast(xmin = 700000, xmax = 702500,
+                     ymin = 6600000, ymax = 6602500, resolution = 25)
+  terra::crs(dem) <- wkt
+  skip_if(!is.na(terra::crs(dem, describe = TRUE)$code),
+          "platform PROJ already resolved the degenerate CRS")
+  terra::values(dem) <- 100
+
+  roads <- sf::st_sf(id = 1, geometry = sf::st_sfc(
+    sf::st_linestring(matrix(c(701000, 6600000, 701000, 6602500),
+                             ncol = 2, byrow = TRUE)), crs = 2154))
+  buildings <- sf::st_sf(id = 1, geometry = sf::st_sfc(
+    sf::st_polygon(list(matrix(c(
+      701000, 6601000, 701100, 6601000, 701100, 6601100,
+      701000, 6601100, 701000, 6601000), ncol = 2, byrow = TRUE))), crs = 2154))
+  units <- sf::st_sf(id = 1, geometry = sf::st_sfc(
+    sf::st_polygon(list(matrix(c(
+      700900, 6601000, 701100, 6601000, 701100, 6601200,
+      700900, 6601200, 700900, 6601000), ncol = 2, byrow = TRUE))), crs = 2154))
+
+  # Sans .normalize_crs, terra::crs(dem) est irrésolu -> st_transform/rasterize
+  # échouent -> S1/S2 tombaient en NA. Avec le fix : valeur numérique finie.
+  s1 <- indicateur_s1_routes(units = units, roads = roads, dem = dem)
+  expect_false(all(is.na(s1$S1)))
+
+  s2 <- indicateur_s2_bati(units = units, buildings = buildings, dem = dem)
+  expect_false(all(is.na(s2$S2)))
+})

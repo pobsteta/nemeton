@@ -67,6 +67,11 @@ indicateur_s1_routes <- function(units,
     if (is.null(dem)) dem <- resolve_raster_layer(layers, "lidar_mnt")
   }
 
+  # Répare un éventuel CRS LiDAR HD dégénéré (« EPSG:2154 » sans autorité) avant
+  # tout st_transform/rasterize, sinon terra rejette (« CRS do not match ») et S1
+  # rend NA — même correctif que R1/R2/R3/W3 (indicators-risk.R, v0.138.1).
+  dem <- .normalize_crs(dem)
+
   result <- units
 
   # Fallback: no DEM or no roads → NA
@@ -149,6 +154,11 @@ indicateur_s2_bati <- function(units,
     dem <- resolve_raster_layer(layers, "dem")
     if (is.null(dem)) dem <- resolve_raster_layer(layers, "lidar_mnt")
   }
+
+  # Répare un éventuel CRS LiDAR HD dégénéré (« EPSG:2154 » sans autorité) avant
+  # tout st_transform/rasterize, sinon terra rejette (« CRS do not match ») et S2
+  # rend NA — même correctif que R1/R2/R3/W3 (indicators-risk.R, v0.138.1).
+  dem <- .normalize_crs(dem)
 
   result <- units
 
