@@ -337,6 +337,39 @@ detect_ndp <- function(data) {
   new_ndp_result(level, augmented, sources)
 }
 
+#' Canonical canopy-structure provenance from NDP augmented flags
+#'
+#' @description
+#' Maps the ML-augmentation flags of [detect_ndp()] to a single canonical
+#' canopy-structure provenance key, so a UI can badge which data produced the
+#' canopy / LAI used by the regeneration engines without re-implementing the
+#' flag-to-meaning rule (business logic stays in the core). Priority: the
+#' Sentinel-2 fallback (`lai_ml`) wins — its presence means LiDAR HD was absent.
+#'
+#' @param augmented Character vector of augmentation flags, as returned in the
+#'   `augmented` field of [detect_ndp()].
+#'
+#' @return A single character key:
+#'   \describe{
+#'     \item{`"prosail_s2"`}{Sentinel-2 LAI (PROSAIL inversion) — the NDP-0
+#'       satellite fallback used when LiDAR HD is absent (flag `lai_ml`).}
+#'     \item{`"opencanopy"`}{Open-Canopy ML canopy-height model (flag `height_ml`).}
+#'     \item{`"lidar_hd"`}{Native LiDAR HD structure (PAI) — the default when no
+#'       satellite / ML canopy flag is present.}
+#'   }
+#' @seealso [detect_ndp()]
+#' @examples
+#' canopy_provenance(character(0))                  # "lidar_hd"
+#' canopy_provenance("lai_ml")                      # "prosail_s2"
+#' canopy_provenance(c("height_ml", "species_ml"))  # "opencanopy"
+#' @export
+canopy_provenance <- function(augmented = character(0)) {
+  augmented <- as.character(augmented)
+  if ("lai_ml" %in% augmented) return("prosail_s2")
+  if ("height_ml" %in% augmented) return("opencanopy")
+  "lidar_hd"
+}
+
 
 #' Constructor for ndp_result objects
 #'

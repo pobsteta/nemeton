@@ -10,6 +10,14 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.137.0] - 2026-07-05
+
+### Added
+- `canopy_provenance(augmented)` (exported): maps `detect_ndp()` ML flags to a
+  canonical canopy-structure provenance key (`"prosail_s2"` / `"opencanopy"` /
+  `"lidar_hd"`) so the app can render the regeneration canopy-provenance badge
+  without re-implementing the flag-to-meaning rule. Spec 033 D5 brief finalised.
+
 ## [0.136.0] - 2026-07-05
 
 ### Changed

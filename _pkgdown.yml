@@ -163,6 +163,7 @@ reference:
     - compute_general_index
     - compute_general_index_mixed
     - detect_ndp
+    - canopy_provenance
 
   - title: "Configuration essences (ADR-007)"
     desc: "Classification d'essences par region biogeographique"
