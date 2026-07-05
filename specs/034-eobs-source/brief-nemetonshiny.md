@@ -54,11 +54,46 @@ shiny::observeEvent(input$auto_years, {
 })
 ```
 
+### 2.1 Notifications de progression (bas-droite) — `progress_callback`
+
+`load_eobs_source()` publie un payload `list(current = <clé>, …)` à chaque étape
+(v0.131.0). Brancher un `progress_callback` qui affiche une notification Shiny
+(coin bas-droite par défaut) et **remplacer** la précédente via un `id` fixe :
+
+```r
+tx <- nemeton::load_eobs_source(
+  aoi = units, var = "tx", years = <…>, cache_dir = <cache>,
+  progress_callback = function(p) {
+    msg <- switch(p$current,
+      "eobs:cds_request"       = i18n$t("regen_eobs_dl_request"),   # « Requête E-OBS au CDS… »
+      "eobs:cds_download_done" = i18n$t("regen_eobs_dl_done"),      # « Téléchargement E-OBS terminé »
+      "eobs:unzip"             = i18n$t("regen_eobs_unzip"),        # « Décompression… »
+      "eobs:read"              = i18n$t("regen_eobs_read"),         # « Lecture du netCDF… »
+      "eobs:reduce"            = i18n$t("regen_eobs_reduce"),       # « Réduction estivale par année… »
+      "eobs:complete"          = sprintf(i18n$t("regen_eobs_complete"), p$n_years),
+      "eobs:unavailable"       = i18n$t("regen_auto_none"),
+      NULL)
+    if (!is.null(msg)) shiny::showNotification(
+      msg, id = ns("eobs_progress"),                 # id fixe -> messages se remplacent
+      duration = if (identical(p$current, "eobs:complete")) 6 else NULL,
+      type = if (identical(p$current, "eobs:unavailable")) "warning" else "message")
+  })
+```
+
+Comme l'appel CDS est bloquant, les payloads arrivent au fil des étapes
+(`cds_request` → `cds_download_done` → `unzip` → `read` → `reduce` → `complete`).
+En mode async (ci-dessous), router ces messages via un reactiveVal lu côté session.
+
+Clés i18n à ajouter (FR/EN) : `regen_eobs_dl_request`, `regen_eobs_dl_done`,
+`regen_eobs_unzip`, `regen_eobs_read`, `regen_eobs_reduce`, `regen_eobs_complete`
+(`%s` = nombre d'années). `regen_auto_none` existe déjà.
+
 Points clés :
 
 - **Async** : `load_eobs_source(source = "cds")` télécharge (lent la 1ʳᵉ fois).
   Passer par un `ExtendedTask`/`future` + un spinner, comme les autres calculs
-  reGénération, plutôt que bloquer l'UI dans l'observer.
+  reGénération, plutôt que bloquer l'UI dans l'observer. Le `progress_callback`
+  écrit alors dans un `reactiveVal` que la session relaie en `showNotification`.
 - **Cache** : écrire la sortie sous `<project>/cache/regeneration/eobs_tx.tif`
   (et `eobs_rr.tif` pour la branche A). `load_regeneration_precomputed()` lit
   déjà `pc$eobs` / `pc$eobs_tx` / `pc$eobs_rr` — alimenter ce cache une fois

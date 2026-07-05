@@ -16,6 +16,7 @@ load_eobs_source(
   version = "28.0e",
   resolution = "0.1deg",
   period = NULL,
+  progress_callback = NULL,
   ...
 )
 }
@@ -45,6 +46,12 @@ resolution (default \code{"0.1deg"}) for the CDS request.}
 
 \item{period}{Optional explicit CDS period block (e.g. \code{"2011_2024"});
 inferred from \code{years} when \code{NULL}.}
+
+\item{progress_callback}{Optional function called at each step with a
+\code{list(current = <key>, ...)} payload (monitoring pattern). Keys:
+\code{"eobs:cds_request"}, \code{"eobs:cds_download_done"}, \code{"eobs:unzip"},
+\code{"eobs:read"}, \code{"eobs:reduce"}, \code{"eobs:complete"},
+\code{"eobs:unavailable"}. The app maps these to bottom-right notifications.}
 
 \item{...}{Ignored (forward-compat).}
 }
