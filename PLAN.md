@@ -1677,6 +1677,22 @@ cœur).
 
 ## Journal
 
+### 2026-07-05 — Fixed v0.138.0 : moteur reGénération, carte vide RECONFORT (diagnostic réel)
+
+Diagnostic en lançant le vrai calcul moteur sur RECONFORT (LiDAR HD,
+sans clé CDS) : la carte reste vide car BILJOU ne produit aucun
+`njstress`. Deux garde-fous manquants corrigés côté cœur : -
+[`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
+: `lai_max` NULL/NA → warning + défaut par type (feuillu 5 / résineux
+4.5) au lieu d’abort (microclimf sauté sans CDS + repli satellite non
+déclenché car grid présent → lai_max restait NULL). -
+[`build_biljou_soil()`](https://pobsteta.github.io/nemeton/reference/build_biljou_soil.md)
+: `ewm` NULL/NA → défaut 150 (crash biljou_soil sinon). Validé
+bout-en-bout sur les 30 UGF (SAFRAN sans clé) : indice ~91.7-91.9, 0 NA.
+Brief app `brief-nemetonshiny-lai-lidar.md` : dériver `lai_max` du LiDAR
+(`pai_depuis_nuage`, sans CDS) quand microclimf est sauté. Décision
+Pascal : les deux (filet cœur + dérivation LiDAR app). +2 tests.
+
 ### 2026-07-05 — Added v0.137.0 : helper canopy_provenance() (badge provenance, spec 033 D5)
 
 Export `canopy_provenance(augmented)` : flags

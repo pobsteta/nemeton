@@ -1,5 +1,35 @@
 # Changelog
 
+## nemeton 0.138.0 (2026-07-05)
+
+#### Fixed — moteur reGénération : BILJOU ne rend plus une carte vide (diagnostic RECONFORT)
+
+En exécutant le vrai calcul moteur sur le projet RECONFORT (LiDAR HD
+présent mais **sans clé CDS**), deux garde-fous manquants empêchaient
+BILJOU de produire le moindre `njstress` — donc l’indice de priorité
+restait NA et la carte vide :
+
+- **[`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)**
+  : `lai_max` NULL/NA n’**interrompt plus** le moteur (`cli_abort` «
+  needs lai_max »). Il **avertit** et applique un **défaut par type de
+  peuplement** (feuillu 5 / résineux 4.5), proxy NDP 0. Sur un projet
+  LiDAR sans clé CDS, microclimf est sauté (pas d’ERA5) et le repli LAI
+  satellite ne se déclenche pas (grid non nul) : sans ce filet,
+  `lai_max` restait NULL et le bilan hydrique ne tournait pas. L’app
+  doit privilégier une valeur pilotée par la donnée (PAI LiDAR via
+  [`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md),
+  ou LAI S2 via
+  [`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md))
+  — cf. brief `specs/027-*/brief-nemetonshiny-lai-lidar.md`.
+- **[`build_biljou_soil()`](https://pobsteta.github.io/nemeton/reference/build_biljou_soil.md)**
+  : `ewm` NULL/NA (champ UI vidé, transmis en `NULL` par l’app) retombe
+  sur le défaut 150 au lieu de propager NULL à
+  [`biljouR::biljou_soil()`](https://pobsteta.github.io/biljouR/reference/biljou_soil.html)
+  (qui échouait « between 1 and 3 soil layers »).
+
+Validé de bout en bout sur les 30 UGF de RECONFORT (SAFRAN, sans clé) :
+indice de priorité ~91.7-91.9, 0 NA.
+
 ## nemeton 0.137.0 (2026-07-05)
 
 #### Added — `canopy_provenance()` : provenance canopée pour le badge app (spec 033 D5)

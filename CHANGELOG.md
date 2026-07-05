@@ -12,6 +12,23 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.138.0\] - 2026-07-05
+
+### Fixed
+
+- [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md):
+  NULL/NA `lai_max` no longer aborts the engine — it warns and falls
+  back to a stand-type default (broadleaved 5 / coniferous 4.5). On a
+  LiDAR project without a CDS key (microclimf skipped, satellite LAI
+  fallback not triggered because a grid is present) this was leaving the
+  priority index all-NA and the map blank. Verified end-to-end on the
+  RECONFORT project.
+- [`build_biljou_soil()`](https://pobsteta.github.io/nemeton/reference/build_biljou_soil.md):
+  NULL/NA `ewm` (cleared UI field, passed as NULL by the app) now falls
+  back to the default (150) instead of propagating NULL to
+  [`biljouR::biljou_soil()`](https://pobsteta.github.io/biljouR/reference/biljou_soil.html)
+  (which errored “between 1 and 3 soil layers”).
+
 ## \[0.137.0\] - 2026-07-05
 
 ### Added

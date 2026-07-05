@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.137.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.138.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,18 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.138.0" id="nemeton-01380-2026-07-05">nemeton 0.138.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01380-2026-07-05"></a></h2>
+<div class="section level4">
+<h4 id="fixed--moteur-regénération--biljou-ne-rend-plus-une-carte-vide-diagnostic-reconfort-0-138-0">Fixed — moteur reGénération : BILJOU ne rend plus une carte vide (diagnostic RECONFORT)<a class="anchor" aria-label="anchor" href="#fixed--moteur-reg%C3%A9n%C3%A9ration--biljou-ne-rend-plus-une-carte-vide-diagnostic-reconfort-0-138-0"></a></h4>
+<p>En exécutant le vrai calcul moteur sur le projet RECONFORT (LiDAR HD présent mais <strong>sans clé CDS</strong>), deux garde-fous manquants empêchaient BILJOU de produire le moindre <code>njstress</code> — donc l’indice de priorité restait NA et la carte vide :</p>
+<ul><li>
+<strong><code><a href="../reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code></strong> : <code>lai_max</code> NULL/NA n’<strong>interrompt plus</strong> le moteur (<code>cli_abort</code> « needs lai_max »). Il <strong>avertit</strong> et applique un <strong>défaut par type de peuplement</strong> (feuillu 5 / résineux 4.5), proxy NDP 0. Sur un projet LiDAR sans clé CDS, microclimf est sauté (pas d’ERA5) et le repli LAI satellite ne se déclenche pas (grid non nul) : sans ce filet, <code>lai_max</code> restait NULL et le bilan hydrique ne tournait pas. L’app doit privilégier une valeur pilotée par la donnée (PAI LiDAR via <code><a href="../reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code>, ou LAI S2 via <code><a href="../reference/lai_sentinel2.html">lai_sentinel2()</a></code>) — cf. brief <code>specs/027-*/brief-nemetonshiny-lai-lidar.md</code>.</li>
+<li>
+<strong><code><a href="../reference/build_biljou_soil.html">build_biljou_soil()</a></code></strong> : <code>ewm</code> NULL/NA (champ UI vidé, transmis en <code>NULL</code> par l’app) retombe sur le défaut 150 au lieu de propager NULL à <code><a href="https://pobsteta.github.io/biljouR/reference/biljou_soil.html" class="external-link">biljouR::biljou_soil()</a></code> (qui échouait « between 1 and 3 soil layers »).</li>
+</ul><p>Validé de bout en bout sur les 30 UGF de RECONFORT (SAFRAN, sans clé) : indice de priorité ~91.7-91.9, 0 NA.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.137.0" id="nemeton-01370-2026-07-05">nemeton 0.137.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01370-2026-07-05"></a></h2>
 <div class="section level4">
