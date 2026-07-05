@@ -12,6 +12,31 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.136.0\] - 2026-07-05
+
+### Changed
+
+- All THEIA asset consumers now go through the signing gateway for full
+  coherence:
+  [`resolve_theia_assets()`](https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.md)
+  /
+  [`load_theia_source()`](https://pobsteta.github.io/nemeton/reference/load_theia_source.md)
+  (FORMS) return pre-signed `/vsicurl/` URLs instead of unreadable
+  `/vsis3/` (validated reading the real FORMS-T height map);
+  `.get_s2_band_raster()` signs `/vsis3/` THEIA hrefs in the FAST
+  MUSCATE fallback.
+- [`theia_signed_href()`](https://pobsteta.github.io/nemeton/reference/theia_signed_href.md)
+  rewritten in pure R on top of
+  [`theia_sign_urls()`](https://pobsteta.github.io/nemeton/reference/theia_sign_urls.md)
+  — drops the reticulate / Python `teledetection` dependency for this
+  function.
+
+### Deprecated
+
+- [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
+  — the <MESO@UM> store rejects portal keys for direct S3 access; assets
+  are read via pre-signed URLs. Kept for back-compat (now warns).
+
 ## \[0.135.0\] - 2026-07-05
 
 ### Added

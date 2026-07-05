@@ -1014,7 +1014,7 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
   : Sign THEIA object URLs via the teledetection signing gateway
 
 - [`theia_signed_href()`](https://pobsteta.github.io/nemeton/reference/theia_signed_href.md)
-  : Resolve a signed THEIA asset URL via the teledetection SDK
+  : Resolve a signed THEIA asset URL via the teledetection gateway
 
 - [`theia_stac`](https://pobsteta.github.io/nemeton/reference/theia_stac.md)
   : THEIA STAC resolver

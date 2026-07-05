@@ -1677,6 +1677,16 @@ cœur).
 
 ## Journal
 
+### 2026-07-05 — Changed v0.136.0 : cohérence THEIA totale (les 4 consommateurs)
+
+Généralise la signature gateway à tous les usages des clés TLD : FORMS
+(`resolve_theia_assets`/`load_theia_source`) renvoie du `/vsicurl/`
+signé (**FORMS-T débloqué**, lecture réelle validée) ;
+`theia_signed_href` réécrit en R pur (drop reticulate/Python) ; repli
+MUSCATE FAST (`.get_s2_band_raster`) signe les `/vsis3/` ;
+`theia_configure_s3` déprécié. 373 tests, 0 régression. Voir
+\[\[project_muscate_lai_s3_creds\]\].
+
 ### 2026-07-05 — Added v0.135.0 : accès THEIA par gateway de signature + MUSCATE→LAI réel
 
 « Le reste MUSCATE » (spec 033 D4) bouclé et **validé bout-en-bout sur

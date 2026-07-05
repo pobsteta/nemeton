@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.135.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.136.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,21 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.136.0" id="nemeton-01360-2026-07-05">nemeton 0.136.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01360-2026-07-05"></a></h2>
+<div class="section level4">
+<h4 id="changed--cohérence-theia--tous-les-accès-passent-par-la-gateway-de-signature-0-136-0">Changed — Cohérence THEIA : tous les accès passent par la gateway de signature<a class="anchor" aria-label="anchor" href="#changed--coh%C3%A9rence-theia--tous-les-acc%C3%A8s-passent-par-la-gateway-de-signature-0-136-0"></a></h4>
+<p>Généralise le flux de signature (v0.135.0) à <strong>tous</strong> les consommateurs des clés THEIA, pour une cohérence totale côté application :</p>
+<ul><li>
+<strong>FORMS / <code><a href="../reference/resolve_theia_assets.html">resolve_theia_assets()</a></code> / <code><a href="../reference/load_theia_source.html">load_theia_source()</a></code></strong> : renvoient désormais des URLs <strong>pré-signées</strong> (<code>/vsicurl/</code>) au lieu de <code>/vsis3/</code> illisibles. <strong>Débloque FORMS-T</strong> (hauteur/biomasse → indicateurs C1/P1/P2/B2). Validé sur données réelles (lecture de la carte hauteur FORMS-T France).</li>
+<li>
+<strong><code><a href="../reference/theia_signed_href.html">theia_signed_href()</a></code></strong> : réécrit en <strong>R pur</strong> par-dessus [theia_sign_urls()] — <strong>supprime la dépendance Python/reticulate</strong> (et les paquets <code>teledetection</code>/<code>pystac_client</code>) pour cette fonction.</li>
+<li>
+<strong><code>.get_s2_band_raster()</code></strong> (repli MUSCATE du pipeline FAST) : signe les hrefs <code>/vsis3/</code> THEIA avant lecture (les backends CDSE/PC ne sont pas touchés).</li>
+<li>
+<strong><code><a href="../reference/theia_configure_s3.html">theia_configure_s3()</a></code></strong> : <strong>déprécié</strong> (avertissement) — le store <a href="mailto:MESO@UM" class="email">MESO@UM</a> ne reconnaît pas les clés du portail en accès S3 direct ; conservé pour rétro-compat mais n’active plus de lecture fonctionnelle.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.135.0" id="nemeton-01350-2026-07-05">nemeton 0.135.0 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01350-2026-07-05"></a></h2>
 <div class="section level4">

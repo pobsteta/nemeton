@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.135.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.136.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -860,6 +860,10 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-05--changed-v01360--cohérence-theia-totale-les-4-consommateurs">2026-07-05 — Changed v0.136.0 : cohérence THEIA totale (les 4 consommateurs)<a class="anchor" aria-label="anchor" href="#id_2026-07-05--changed-v01360--coh%C3%A9rence-theia-totale-les-4-consommateurs"></a></h3>
+<p>Généralise la signature gateway à tous les usages des clés TLD : FORMS (<code>resolve_theia_assets</code>/<code>load_theia_source</code>) renvoie du <code>/vsicurl/</code> signé (<strong>FORMS-T débloqué</strong>, lecture réelle validée) ; <code>theia_signed_href</code> réécrit en R pur (drop reticulate/Python) ; repli MUSCATE FAST (<code>.get_s2_band_raster</code>) signe les <code>/vsis3/</code> ; <code>theia_configure_s3</code> déprécié. 373 tests, 0 régression. Voir [[project_muscate_lai_s3_creds]].</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-05--added-v01350--accès-theia-par-gateway-de-signature--muscatelai-réel">2026-07-05 — Added v0.135.0 : accès THEIA par gateway de signature + MUSCATE→LAI réel<a class="anchor" aria-label="anchor" href="#id_2026-07-05--added-v01350--acc%C3%A8s-theia-par-gateway-de-signature--muscatelai-r%C3%A9el"></a></h3>
 <p>« Le reste MUSCATE » (spec 033 D4) bouclé et <strong>validé bout-en-bout sur données réelles</strong> (Vercors, LAI médian 2.33 / max 7.2). Découverte majeure : les COG <a href="mailto:MESO@UM" class="email">MESO@UM</a> (MUSCATE/FORMS) ne se lisent PAS en <code>/vsis3/</code> direct — la clé du portail est rejetée (<em>AccessKeyId does not exist</em>). Le vrai flux (reverse du SDK Python <code>teledetection</code>) = <strong>URLs pré-signées</strong> via <code>signing.stac.teledetection.fr</code> (headers <code>access-key</code>/<code>secret-key</code>, modèle SAS). Nouveau <code><a href="reference/theia_sign_urls.html">theia_sign_urls()</a></code> + <code>.theia_signed_read()</code>. 3 bugs de chaîne corrigés (sf vs SpatVector ; band_names = bandes réelles ; récupération <code>_lai.tiff</code>). Reste : basculer FORMS (<code>load_theia_source</code>) sur le même flux + badge provenance app. Voir [[project_muscate_lai_s3_creds]].</p>
