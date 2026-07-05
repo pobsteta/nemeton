@@ -86,15 +86,35 @@
   scenes <- stac_search_s2(aoi, start, end, max_cloud = max_cloud,
                            source = "muscate")
   if (is.null(scenes) || !nrow(scenes)) return(NULL)
+  # Les assets MUSCATE sont des COG sur le magasin S3 THEIA (hrefs `/vsis3/`,
+  # lecture authentifiée SigV4). Configurer GDAL une fois ; dégrader en NULL
+  # (message explicite) si les identifiants TLD_ACCESS_KEY/TLD_SECRET_KEY
+  # manquent — la lecture des COG échouerait sinon.
+  ok <- tryCatch({ theia_configure_s3(country = "FR"); TRUE },
+                 error = function(e) {
+                   cli::cli_warn(c(
+                     "LAI PROSAIL MUSCATE fallback needs THEIA S3 credentials to read the reflectance COGs.",
+                     i = conditionMessage(e)))
+                   FALSE
+                 })
+  if (!ok) return(NULL)
   nem_bands <- vapply(selected_bands, .lai_band_to_nemeton, character(1))
   aoi_v <- terra::vect(sf::st_transform(sf::st_union(sf::st_geometry(aoi)), 4326))
   paths <- character(0)
   for (i in seq_len(nrow(scenes))) {
     sc <- scenes[i, , drop = FALSE]
     layers <- tryCatch({
-      rs <- lapply(nem_bands, function(b) {
-        g <- .get_s2_band_raster(sc, b, aoi_v, cache_dir)
-        terra::rast(g$path)
+      # .get_s2_band_raster() renvoie directement un SpatRaster (croppé à
+      # l'AOI). Les bandes n'ont pas la même résolution (B05 à 20 m, B04/B08
+      # à 10 m) : on rééchantillonne toutes sur la grille de la première.
+      rs <- lapply(nem_bands, function(b) .get_s2_band_raster(sc, b, aoi_v, cache_dir))
+      ref <- rs[[1]]
+      rs <- lapply(seq_along(rs), function(k) {
+        if (k == 1L) return(rs[[k]])
+        r <- rs[[k]]
+        if (all(terra::res(r) == terra::res(ref)) &&
+            terra::compareGeom(r, ref, stopOnError = FALSE)) r
+        else terra::resample(r, ref, method = "bilinear")
       })
       st <- terra::rast(rs)
       names(st) <- selected_bands

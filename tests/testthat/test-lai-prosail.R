@@ -106,3 +106,55 @@ test_that("regen_sensibilite accepts a `pai` fallback (no LiDAR required)", {
   expect_false(grepl("either .*las.* or .*pai", err) &&
                  grepl("engine path needs", err))
 })
+
+test_that(".lai_s2_reflectance_muscate assemble + rééchantillonne les bandes (contrat corrigé)", {
+  skip_if_not_installed("terra")
+  # Fausse scène MUSCATE (colonnes href_* comme la vraie recherche STAC).
+  scene <- data.frame(
+    scene_id = "FAKE_MUSCATE_T31TFK", cloud_pct = 3,
+    href_B04 = "/vsis3/x/B4.tif", href_B05 = "/vsis3/x/B5.tif",
+    href_B08 = "/vsis3/x/B8.tif", source = "muscate",
+    stringsAsFactors = FALSE)
+  mk <- function(res, v) {
+    r <- terra::rast(xmin = 0, xmax = 100, ymin = 0, ymax = 100,
+                     resolution = res, crs = "EPSG:2154")
+    terra::values(r) <- v; r
+  }
+  # B04/B08 à 10 m, B05 à 20 m -> résolutions différentes (cas réel MUSCATE).
+  band_r <- list(B04 = mk(10, 0.1), B05 = mk(20, 0.2), B08 = mk(10, 0.5))
+  testthat::local_mocked_bindings(
+    stac_search_s2      = function(...) scene,
+    theia_configure_s3  = function(...) invisible(TRUE),
+    .get_s2_band_raster = function(scene, band, ...) band_r[[band]])
+  aoi <- sf::st_as_sf(sf::st_sfc(sf::st_polygon(list(rbind(
+    c(5.45, 45.05), c(5.50, 45.05), c(5.50, 45.09),
+    c(5.45, 45.09), c(5.45, 45.05)))), crs = 4326))
+  cache <- withr::local_tempdir()
+  out <- .lai_s2_reflectance_muscate(
+    aoi, "2022-07-01", "2022-07-31",
+    selected_bands = c("B4", "B5", "B8"), max_cloud = 40, cache_dir = cache)
+  expect_length(out, 1L)
+  st <- terra::rast(out[[1]])
+  expect_identical(names(st), c("B4", "B5", "B8"))   # 3 bandes empilées
+  expect_equal(terra::res(st), c(10, 10))            # aligné sur B04 (10 m)
+})
+
+test_that(".lai_s2_reflectance_muscate dégrade en NULL sans identifiants THEIA S3", {
+  skip_if_not_installed("terra")
+  scene <- data.frame(scene_id = "FAKE", cloud_pct = 3,
+                      href_B04 = "/vsis3/x/B4.tif", source = "muscate",
+                      stringsAsFactors = FALSE)
+  testthat::local_mocked_bindings(
+    stac_search_s2     = function(...) scene,
+    theia_configure_s3 = function(...) stop("THEIA S3 credentials not found."))
+  aoi <- sf::st_as_sf(sf::st_sfc(sf::st_polygon(list(rbind(
+    c(5.45, 45.05), c(5.50, 45.05), c(5.50, 45.09),
+    c(5.45, 45.09), c(5.45, 45.05)))), crs = 4326))
+  expect_warning(
+    res <- .lai_s2_reflectance_muscate(
+      aoi, "2022-07-01", "2022-07-31",
+      selected_bands = c("B4"), max_cloud = 40,
+      cache_dir = withr::local_tempdir()),
+    "THEIA S3 credentials")
+  expect_null(res)
+})
