@@ -91,7 +91,12 @@ test_that("load_eobs_source rejects an unknown variable", {
 })
 
 test_that("E-OBS period block inference covers a within-block year range", {
-  expect_identical(nemeton:::.eobs_cds_period(2014:2020), "2011_2024")
+  # Bloc courant (ouvert) : la borne haute suit l'année demandée la plus récente
+  # -> plus de plafond figé à 2024 (régression v0.139.0).
+  expect_identical(nemeton:::.eobs_cds_period(2014:2020), "2011_2020")
+  expect_identical(nemeton:::.eobs_cds_period(2015:2025), "2011_2025")
+  expect_identical(nemeton:::.eobs_cds_period(2011:2030), "2011_2030")
+  # Bloc clos : borne réelle, inchangée.
   expect_identical(nemeton:::.eobs_cds_period(1996:2005), "1995_2010")
   expect_null(nemeton:::.eobs_cds_period(c(2008, 2015)))   # chevauche 2 blocs
 })
@@ -117,5 +122,24 @@ test_that(".eobs_cds_fetch normalise version/résolution en underscore pour le C
                             version = "30.0e", resolution = "0.1deg")
   expect_identical(captured$version, "30_0e")          # point -> underscore
   expect_identical(captured$grid_resolution, "0_1deg")
-  expect_identical(captured$period, "2011_2024")       # bloc décennal 2022
+  expect_identical(captured$period, "2011_2022")       # borne haute = année demandée
+})
+
+test_that(".eobs_cds_fetch reuses a cached block without re-downloading", {
+  skip_if_not_installed("ecmwfr")
+  cache_dir <- withr::local_tempdir()
+  # Pré-seed le fichier de cache attendu pour (var × période × version × résolution).
+  period <- nemeton:::.eobs_cds_period(2015:2020)          # "2011_2020"
+  ncf <- nemeton:::.eobs_cache_file("maximum_temperature", period,
+                                    "30.0e", "0.1deg", cache_dir)
+  writeLines("stub", ncf)
+  called <- FALSE
+  testthat::local_mocked_bindings(
+    wf_request = function(request, ...) { called <<- TRUE; NULL },
+    .package = "ecmwfr")
+  out <- nemeton:::.eobs_cds_fetch("maximum_temperature", years = 2015:2020,
+                                   cache_dir = cache_dir,
+                                   version = "30.0e", resolution = "0.1deg")
+  expect_identical(normalizePath(out), normalizePath(ncf)) # cache-hit renvoyé
+  expect_false(called)                                     # AUCUN re-téléchargement
 })

@@ -72,11 +72,22 @@
                             period = NULL, emit = NULL) {
   if (is.null(emit)) emit <- function(payload) NULL
   if (!requireNamespace("ecmwfr", quietly = TRUE)) return(NULL)
-  if (is.null(cache_dir)) cache_dir <- tempdir()
+  # Cache PERSISTANT par défaut (les blocs E-OBS pèsent plusieurs Go — on ne
+  # re-télécharge pas à chaque analyse). L'app peut passer un cache_dir projet.
+  if (is.null(cache_dir)) cache_dir <- file.path(get_global_cache_dir(), "eobs")
+  if (!dir.exists(cache_dir)) {
+    dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+  }
   if (is.null(period)) {
     if (is.null(years)) return(NULL)          # sans années, pas de bloc CDS déductible
     period <- .eobs_cds_period(as.integer(years))
     if (is.null(period)) return(NULL)
+  }
+  # Cache-hit : le bloc a déjà été téléchargé -> on réutilise sans réseau.
+  nc_cache <- .eobs_cache_file(cds_var, period, version, resolution, cache_dir)
+  if (file.exists(nc_cache)) {
+    emit(list(current = "eobs:cache_hit", file = basename(nc_cache)))
+    return(nc_cache)
   }
   # Le CDS attend les valeurs d'enum avec des underscores (`30_0e`, `0_1deg`),
   # pas des points — on tolère la forme humaine `30.0e` / `0.1deg` en entrée.
@@ -88,7 +99,7 @@
     period          = period,
     version         = gsub("\\.", "_", version),
     format          = "zip",
-    target          = "eobs.zip")
+    target          = paste0(tools::file_path_sans_ext(basename(nc_cache)), ".zip"))
   emit(list(current = "eobs:cds_request", variable = cds_var,
             period = period, version = version, resolution = resolution))
   zip <- tryCatch(
@@ -102,21 +113,42 @@
     files[grepl("\\.nc$", files)][1]
   }, error = function(e) NULL)
   if (is.null(nc) || is.na(nc) || !file.exists(nc)) return(NULL)
+  # Range le netCDF sous le nom de cache stable (prochain appel = cache-hit) et
+  # supprime le zip volumineux devenu inutile.
+  if (!identical(normalizePath(nc), normalizePath(nc_cache, mustWork = FALSE))) {
+    if (isTRUE(tryCatch(file.rename(nc, nc_cache), error = function(e) FALSE))) {
+      nc <- nc_cache
+    }
+  }
+  tryCatch(unlink(zip), error = function(e) NULL)
   nc
 }
 
 # Bloc pluriannuel E-OBS couvrant les années demandées (les fichiers CDS sont
 # livrés par tranches). Renvoie NULL si les années débordent d'un seul bloc.
 .eobs_cds_period <- function(years) {
+  years  <- as.integer(years)
   blocks <- list(c(1950, 1964), c(1965, 1979), c(1980, 1994),
                  c(1995, 2010), c(2011, 2100))
   for (b in blocks) {
     if (all(years >= b[1] & years <= b[2])) {
-      hi <- if (b[2] >= 2100) 2024L else b[2]     # borne haute réelle du dernier bloc
+      # Bloc ouvert (« courant ») : la borne haute suit l'année demandée la plus
+      # récente au lieu d'un plafond figé — la valeur d'enum `2011_<max>` doit
+      # correspondre à la couverture de la `version` E-OBS choisie (best-effort ;
+      # dégrade proprement si le CDS refuse l'enum). Blocs clos : borne réelle.
+      hi <- if (b[2] >= 2100) max(years) else b[2]
       return(sprintf("%d_%d", b[1], hi))
     }
   }
   NULL
+}
+
+# Nom de cache déterministe pour un bloc E-OBS (variable × période × version ×
+# résolution) : permet le cache-hit et évite les collisions entre requêtes.
+.eobs_cache_file <- function(cds_var, period, version, resolution, cache_dir) {
+  tag <- gsub("[^A-Za-z0-9]+", "-",
+              sprintf("%s_%s_v%s_%s", cds_var, period, version, resolution))
+  file.path(cache_dir, paste0("eobs_", tag, ".nc"))
 }
 
 #' Acquire E-OBS per-year summer fields (Tmax / precipitation) for an AOI
@@ -145,17 +177,22 @@
 #'   `tx`/`tg`, `"sum"` for `rr`. Also `"max"`, `"median"`.
 #' @param nc A daily E-OBS netCDF path (or a dated `SpatRaster`) to use instead
 #'   of the CDS download.
-#' @param cache_dir Directory for the CDS download / unzip (default `tempdir()`).
+#' @param cache_dir Persistent directory for the CDS download / unzip. Defaults
+#'   to `file.path(get_global_cache_dir(), "eobs")` so a given block (variable ×
+#'   period × version × resolution) is downloaded **once** and reused on later
+#'   calls (cache-hit, no network). Pass a project-scoped path to isolate it.
 #' @param version,resolution E-OBS product version (default `"30.0e"`; dots are
 #'   normalised to the CDS underscore form, e.g. `30_0e`) and grid
-#'   resolution (default `"0.1deg"`) for the CDS request.
+#'   resolution (default `"0.1deg"`) for the CDS request. For years beyond the
+#'   default block bound, pair a recent `version` with the matching `period`.
 #' @param period Optional explicit CDS period block (e.g. `"2011_2024"`);
-#'   inferred from `years` when `NULL`.
+#'   inferred from `years` when `NULL`. For the current (open) block the inferred
+#'   upper bound follows the most recent requested year (no fixed ceiling).
 #' @param progress_callback Optional function called at each step with a
 #'   `list(current = <key>, …)` payload (monitoring pattern). Keys:
-#'   `"eobs:cds_request"`, `"eobs:cds_download_done"`, `"eobs:unzip"`,
-#'   `"eobs:read"`, `"eobs:reduce"`, `"eobs:complete"`, `"eobs:unavailable"`.
-#'   The app maps these to bottom-right notifications.
+#'   `"eobs:cache_hit"`, `"eobs:cds_request"`, `"eobs:cds_download_done"`,
+#'   `"eobs:unzip"`, `"eobs:read"`, `"eobs:reduce"`, `"eobs:complete"`,
+#'   `"eobs:unavailable"`. The app maps these to bottom-right notifications.
 #' @param ... Ignored (forward-compat).
 #'
 #' @return A per-year summer `SpatRaster` (layers named by year), or `NULL` on
