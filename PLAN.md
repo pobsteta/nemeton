@@ -650,6 +650,10 @@ puis retirés de ce repo (suivi désormais côté app).
 - [x] **Spec 025 — Plan d'échantillonnage sanitaire sur le trend (Option A)**
       cœur `create_trend_sanitary_plan()` (nemeton v0.88.0) ;
       app « Plan de validation FAST » branché sur le trend (nemetonshiny v0.87.0)
+- [x] **Spec 014 — Tirage validation pondéré continu FORDEAD/RECONFORT** (parité FAST)
+      cœur `create_validation_sampling_plan(weighting = "continuous", weight_raster)`,
+      poids ∝ sévérité par pixel (FORDEAD `anomaly_index`, RECONFORT `score`) —
+      livré cœur **nemeton v0.140.0**, consommé app **nemetonshiny v0.100.4**
 
 ---
 
@@ -1263,6 +1267,22 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-07-06 — Tirage validation pondéré continu FORDEAD/RECONFORT propagé à l'app
+
+- **Cœur** : `create_validation_sampling_plan()` gagne `weighting =
+  c("uniform","continuous")` + `weight_raster` (release **nemeton@v0.140.0**).
+  Normalisation min-max + inclusion GRTS pondérée + alignement du raster de
+  sévérité (`.align_weight_raster`, condition `validation_weight_raster_mismatch`)
+  côté cœur ; colonne de sortie `alert_weight` en mode continu.
+- **App** : `nemetonshiny@033f61d4` (merge) → release **v0.100.4**. Onglets
+  FORDEAD/RECONFORT du plan de validation branchés en continu (parité FAST) :
+  sélecteur « Pondération du tirage » (continu par défaut), résolution du raster
+  de sévérité (FORDEAD `anomaly_index` sur zone `_tot` ; RECONFORT `score` via
+  `reconfort_cache_manifest`), repli propre en uniforme si couche absente,
+  `alert_weight` en table + infobulle. Plancher `Imports: nemeton (>= 0.140.0)`.
+- **Clôture** : le résidu « pondération continue FORDEAD/RECONFORT » (parité avec
+  `create_trend_sanitary_plan` de FAST) est **résolu**, cœur + app.
 
 ### 2026-07-06 — Added v0.140.0 : tirage validation pondéré continu (FORDEAD/RECONFORT)
 
