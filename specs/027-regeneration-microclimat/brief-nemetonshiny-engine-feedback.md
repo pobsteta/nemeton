@@ -126,6 +126,89 @@ dans les branches `success`/`error` de `observeEvent(eobs_task$status())`.
 
 ---
 
+## 3bis. Compteur de temps écoulé (les DEUX boutons)
+
+Le moteur tourne dans un worker `future`, mais la session Shiny principale reste
+réactive → un **timer 1 s** (`shiny::invalidateLater(1000)`) peut afficher un
+chrono tant que la tâche tourne. On l'héberge dans la **ligne de statut sous
+chaque bouton** (`engine_status` existe déjà ; ajouter le pendant `eobs_status`),
+et on peut aussi le refléter dans la notif persistante (§3) sur le même tick.
+
+### 3bis.1 Mémoriser l'instant de départ à l'invoke
+Dans les deux `observeEvent(input$run_engine)` / `observeEvent(input$auto_years)`,
+juste avant `…_task$invoke(…)` :
+```r
+  rv$engine_start <- Sys.time()   # (moteur)  /  rv$eobs_start <- Sys.time() (E-OBS)
+```
+Et remettre à `NULL` à la fin, dans les branches `success`/`error` du
+`observeEvent(<task>$status())` correspondant :
+```r
+  rv$engine_start <- NULL         # (moteur)  /  rv$eobs_start <- NULL (E-OBS)
+```
+
+### 3bis.2 Helper de formatage (module-local, ou `utils_*`)
+```r
+# Durée écoulée depuis `start` en "MM:SS" (ou "H:MM:SS" au-delà de 1 h).
+.fmt_elapsed <- function(start) {
+  if (is.null(start)) return("")
+  s <- as.integer(difftime(Sys.time(), start, units = "secs"))
+  if (s >= 3600L) sprintf("%d:%02d:%02d", s %/% 3600L, (s %% 3600L) %/% 60L, s %% 60L)
+  else            sprintf("%02d:%02d", s %/% 60L, s %% 60L)
+}
+```
+
+### 3bis.3 Affichage qui tick — statut sous le bouton moteur
+Modifier `output$engine_status` pour intégrer le chrono quand ça tourne :
+```r
+output$engine_status <- shiny::renderUI({
+  if (isTRUE(rv$engine_running)) {
+    shiny::invalidateLater(1000)                 # re-render chaque seconde
+    return(htmltools::div(class = "small text-info mt-1",
+      bsicons::bs_icon("hourglass-split", class = "me-1"),
+      i18n$t("regen_engine_running_short"),
+      htmltools::tags$span(class = "ms-1 font-monospace",
+                           .fmt_elapsed(rv$engine_start))))
+  }
+  # … (reste inchangé : prérequis prêts / manquants)
+})
+```
+
+### 3bis.4 Statut sous le bouton E-OBS (nouveau `output$eobs_status`)
+Ajouter un `shiny::uiOutput(ns("eobs_status"))` sous le bouton `auto_years` (UI),
+et le rendu miroir :
+```r
+output$eobs_status <- shiny::renderUI({
+  if (!isTRUE(rv$eobs_running)) return(NULL)
+  shiny::invalidateLater(1000)
+  htmltools::div(class = "small text-info mt-1",
+    bsicons::bs_icon("hourglass-split", class = "me-1"),
+    i18n$t("regen_auto_running_short"),
+    htmltools::tags$span(class = "ms-1 font-monospace",
+                         .fmt_elapsed(rv$eobs_start)))
+})
+```
+
+### 3bis.5 (option) Chrono aussi dans la notif bas-droite
+Si tu veux le compteur **dans** la notif persistante (§3) plutôt que/en plus de
+sous le bouton, refresh-la sur le même tick en ré-appelant `showNotification`
+avec le **même `id`** (Shiny remplace le contenu en place) :
+```r
+shiny::observe({
+  if (!isTRUE(rv$engine_running)) return()
+  shiny::invalidateLater(1000)
+  shiny::showNotification(
+    htmltools::span(i18n$t("regen_engine_running"), " — ",
+                    htmltools::tags$span(class = "font-monospace",
+                                         .fmt_elapsed(rv$engine_start))),
+    id = session$ns("engine_notif"), type = "message", duration = NULL)
+})
+```
+> Un seul hôte suffit. Recommandé : le **chrono sous le bouton** (3bis.3/3bis.4,
+> lisible, sans churn) + la notif persistante **statique** (§3). Le 3bis.5 est
+> pour ceux qui préfèrent tout dans la notif.
+
+---
+
 ## 4. i18n (`utils_i18n.R`, FR/EN) — libellés « busy » courts pour les boutons
 
 | Clé | FR | EN |
@@ -154,12 +237,13 @@ notif persistante bas-droite — elles décrivent le contexte complet.)
 ## 6. Test app (smoke)
 
 - Clic moteur avec projet + prérequis OK : le bouton passe **grisé + spinner**,
-  une notif **persistante** « moteur en cours » reste affichée ; un 2ᵉ clic est
-  **impossible** ; à la fin la notif disparaît et le toast `regen_engine_done`
+  une notif **persistante** « moteur en cours » reste affichée, et un **chrono
+  MM:SS** ticke chaque seconde sous le bouton ; un 2ᵉ clic est **impossible** ; à
+  la fin la notif disparaît, le chrono s'arrête et le toast `regen_engine_done`
   s'affiche.
 - Clic sans projet / prérequis KO : notif d'avertissement + bouton **remis prêt**
-  (pas grisé bloqué).
-- Idem bouton « Auto (E-OBS) ».
+  (pas grisé bloqué), pas de chrono.
+- Idem bouton « Auto (E-OBS) » (chrono sous le bouton via `eobs_status`).
 
 ---
 
@@ -169,5 +253,6 @@ notif persistante bas-droite — elles décrivent le contexte complet.)
 |---|---|
 | `mod_regeneration.R` (UI) | `run_engine` + `auto_years` → `bslib::input_task_button(…, label_busy=)` |
 | `mod_regeneration.R` (server) | `bind_task_button()` ×2 ; `update_task_button(…, "ready")` sur retours anticipés ; notif `duration=NULL`+`id` à l'invoke ; `removeNotification()` dans success/error ×2 |
+| `mod_regeneration.R` (chrono) | `rv$engine_start`/`rv$eobs_start` posés à l'invoke, remis `NULL` à la fin ; helper `.fmt_elapsed()` ; `invalidateLater(1000)` dans `engine_status` + nouveau `eobs_status` (uiOutput ajouté sous le bouton E-OBS) |
 | `utils_i18n.R` | 2 clés `*_running_short` FR/EN |
 | DESCRIPTION | rien (bslib déjà présent) |
