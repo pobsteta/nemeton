@@ -535,6 +535,7 @@
 </td>
 </tr></tbody></table><p><strong>Reste cœur</strong> : - ✅ <strong>Mapping TFV → essence de régénération</strong> — <strong>livré v0.121.0</strong> : <code><a href="reference/map_tfv_to_species_class.html">map_tfv_to_species_class()</a></code> (colonne <code>species_class</code> de <code><a href="reference/bdforet_v2_mapping.html">bdforet_v2_mapping()</a></code>) + <code>regen_species_choices(tfv_col=)</code> (mode espèces FRM, présence UGF via TFV) + <code>indice_priorite_regen(species=)</code> résout classe <strong>et</strong> espèce UE. L’app pré-remplit « Essence cible » depuis BD Forêt v2. - Orchestration RÉELLE des moteurs (microclimf/biljouR/lasR/SAFRAN) : chez Pascal (deps + données), via le chemin <code>precomputed</code> déjà en place.</p>
 <p><strong>Volet cœur spec 027 : clos.</strong> Tout le calculable/testable est livré et releasé (v0.101.0 → v0.121.0). Reste hors-cœur : l’orchestration réelle des moteurs (chez Pascal). Calibration fine (ClimEssences/RMT AFORCE) : non retenue, table UE sourcée jugée suffisante.</p>
+<p><strong>Briefs app livrés (aucun changement cœur)</strong> : - [x] Brief app « engine-feedback » livré (spec 027) — boutons async reGénération (moteur réel &amp; Auto E-OBS) : input_task_button (anti-reclic + spinner), notif persistante bas-droite, chrono MM:SS. Aucun changement cœur. → <a href="mailto:nemetonshiny@3705000f" class="email">nemetonshiny@3705000f</a>, release v0.100.7. - [x] Brief app « cleanups-lowpriority » livré — hygiène CRS à la source (LiDAR HD→2154, WMS NDP 0→4326, stamp conditionnel) + retrait de l’appel déprécié theia_configure_s3(). Aucun changement cœur. → <a href="mailto:nemetonshiny@804d17d1" class="email">nemetonshiny@804d17d1</a>, release v0.100.7.</p>
 <div class="section level4">
 <h4 id="id_2026-06-30--l1-cœur--indicateurs-microclimatiques-a3a4w4-v01010">2026-06-30 — L1 cœur : indicateurs microclimatiques A3/A4/W4 (<code>v0.101.0</code>)<a class="anchor" aria-label="anchor" href="#id_2026-06-30--l1-c%C5%93ur--indicateurs-microclimatiques-a3a4w4-v01010"></a></h4>
 <ul><li>
@@ -861,6 +862,31 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-06--deux-briefs-app-regénérationhygiène-livrés-aucun-changement-cœur">2026-07-06 — Deux briefs app reGénération/hygiène livrés (aucun changement cœur)<a class="anchor" aria-label="anchor" href="#id_2026-07-06--deux-briefs-app-reg%C3%A9n%C3%A9rationhygi%C3%A8ne-livr%C3%A9s-aucun-changement-c%C5%93ur"></a></h3>
+<ul><li>
+<strong>Brief <code>specs/027-regeneration-microclimat/brief-nemetonshiny-engine-feedback.md</code></strong> (HAUTE, user-facing). Feedback des boutons async reGénération côté app :
+<ul><li>
+<code><a href="https://rstudio.github.io/bslib/reference/input_task_button.html" class="external-link">bslib::input_task_button</a></code> + <code>bind_task_button</code> → désactivation + spinner pendant la tâche, réactivation à la fin ; supprime le risque de run concurrent réécrivant <code>sensibilite.gpkg</code> / <code>biljou.gpkg</code> en cours de lecture.</li>
+<li>Notification persistante bas-droite (retirée en fin de tâche) + chrono MM:SS (H:MM:SS au-delà d’une heure) sous chaque bouton.</li>
+<li>
+<strong>Cœur</strong> : aucun. Consommation d’API bslib uniquement.</li>
+<li>App : <code>nemetonshiny@3705000f</code>.</li>
+</ul></li>
+<li>
+<strong>Brief <code>specs/brief-nemetonshiny-cleanups-lowpriority.md</code></strong> (BASSE, hygiène). Corrections CRS <strong>à la source</strong> (le cœur ≥0.138.1 compensait déjà à la lecture) :
+<ul><li>LiDAR HD → EPSG:2154 (mosaïque / retour cache / <code>.lidar_mosaic_covers_bbox</code>), stamp <strong>conditionnel</strong> (seulement si <code>describe$code</code> est NA) → plus de « No DEM available » ni de re-téléchargements.</li>
+<li>WMS NDP 0 (DEM BD ALTI + IRC) → EPSG:4326 ; NDVI dérivé hérite → plus de « CRS do not match » sur C2/R1/R2/R3/W3.</li>
+<li>Retrait de l’appel déprécié <code><a href="reference/theia_configure_s3.html">nemeton::theia_configure_s3()</a></code> (le cœur signe en interne via la gateway STAC <code>signing.stac.teledetection.fr</code>, R pur), remplacé par le garde amont <code>theia_api_key_configured()</code> ; commentaires <code>reticulate</code> périmés mis à jour (reticulate conservé pour FORDEAD/RECONFORT).</li>
+<li>
+<strong>Cœur</strong> : aucun. §4 (réparation one-shot des caches CRS existants) non implémenté (réécriture de caches utilisateur, heuristique, déjà fait à la main : RECONFORT→2154, Fordead→4326).</li>
+<li>App : <code>nemetonshiny@804d17d1</code>.</li>
+</ul></li>
+<li>
+<strong>Release app</strong> : merge <code>nemetonshiny@de495a7a</code> → <strong>v0.100.7</strong>, cycle dev 0.100.7.9000. Plancher inchangé (<code>Imports: nemeton (&gt;= 0.140.0)</code>).</li>
+<li>
+<strong>Vérifié</strong> : <code>regen_canopy_provenance()</code> + badge canopée déjà alignés sur le vocabulaire interne <code>"lidar"/"satellite"</code> (moteur + <code>detect_ndp</code>) → pas de bascule vers <code><a href="reference/canopy_provenance.html">canopy_provenance()</a></code> nécessaire (§3(c) du brief cleanups).</li>
+</ul></div>
 <div class="section level3">
 <h3 id="id_2026-07-06--tirage-validation-pondéré-continu-fordeadreconfort-propagé-à-lapp">2026-07-06 — Tirage validation pondéré continu FORDEAD/RECONFORT propagé à l’app<a class="anchor" aria-label="anchor" href="#id_2026-07-06--tirage-validation-pond%C3%A9r%C3%A9-continu-fordeadreconfort-propag%C3%A9-%C3%A0-lapp"></a></h3>
 <ul><li>
