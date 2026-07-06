@@ -1,5 +1,10 @@
 # Brief `nemetonshiny` — Migration accès THEIA + badge canopée (nemeton v0.135→0.137)
 
+> ⚠️ **Résidu regroupé** dans `specs/brief-nemetonshiny-cleanups-lowpriority.md`
+> (§3) : seul l'appel déprécié `theia_configure_s3()` (bloc SUFOSAT) reste à
+> retirer + commentaires reticulate périmés. Le reste (LAI PROSAIL, signature,
+> badge canopée) est **consommé**. Ce fichier reste le contexte détaillé.
+
 **Cœur requis** : `nemeton (>= 0.137.0)`.
 **Objectif** : aligner l'app sur le **nouveau modèle d'accès THEIA** (gateway de
 signature, pur R) et brancher le **badge de provenance canopée**. Aucune logique

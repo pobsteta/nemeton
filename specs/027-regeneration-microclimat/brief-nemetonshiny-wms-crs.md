@@ -1,5 +1,8 @@
 # Brief `nemetonshiny` — CRS « unknown » sur les rasters WMS NDP 0 (DEM / IRC / NDVI / TWI)
 
+> ⚠️ **Suivi regroupé** dans `specs/brief-nemetonshiny-cleanups-lowpriority.md`
+> (§2). Ce fichier reste le contexte détaillé.
+
 **Cœur requis** : aucun (correctif purement app).
 **But** : que les rasters téléchargés par WMS (`download_ign_dem`,
 `download_ign_irc_ndvi`) portent leur CRS **EPSG:4326** au lieu de `GEOGCRS["unknown"]`.

@@ -1,5 +1,8 @@
 # Brief `nemetonshiny` — CRS Lambert-93 « sans autorité » sur les rasters LiDAR HD
 
+> ⚠️ **Suivi regroupé** dans `specs/brief-nemetonshiny-cleanups-lowpriority.md`
+> (§1). Ce fichier reste le contexte détaillé.
+
 **Cœur requis** : `nemeton (>= 0.138.1)`.
 **But** : réparer le CRS dégénéré des rasters LiDAR HD cachés pour que **R1/R2/R3
 et W3** retrouvent leur DEM (symptôme : « No DEM available », indices NA).
