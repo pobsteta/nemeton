@@ -1677,6 +1677,28 @@ cœur).
 
 ## Journal
 
+### 2026-07-06 — Changed v0.139.0 : E-OBS/CDS cache persistant + plafond d’année levé
+
+Suite du diagnostic du toast « Détection E-OBS indisponible »
+(2026-07-06). La cause du toast était **hors cœur** (variable
+`.Renviron` nommée `ecmwfr_ecmwfr` au lieu de `ecmwfr_PAT` attendu par
+ecmwfr 2.0.3 → « Cannot find password » ; puis licence CDS
+`insitu-gridded-observations-europe` non acceptée → 403 ; clé elle-même
+valide, 36 car UUID). `~/.Renviron` corrigé (ajout `ecmwfr_PAT`) ;
+restent 2 gestes Pascal : renommer la variable dans
+`nemetonshiny/.Renviron` ligne 28 + accepter la licence CDS. **Côté
+cœur**, deux améliorations de
+[`load_eobs_source()`](https://pobsteta.github.io/nemeton/reference/load_eobs_source.md)
+(spec 034) : (1) **cache persistant** `get_global_cache_dir()/eobs`, nom
+déterministe `.eobs_cache_file()`, cache-hit `"eobs:cache_hit"` sans
+réseau, zip supprimé après extraction — fini le re-téléchargement des
+blocs multi-Go à chaque analyse ; (2) `.eobs_cds_period()` ne **plafonne
+plus la borne haute à 2024** (bloc ouvert → `2011_<max année>`), à
+apparier avec la `version` E-OBS couvrant ces années. Tests : bloc sans
+plafond (2015–2025 → `2011_2025`), cache-hit `wf_request` mocké jamais
+appelé. 27 PASS. Repro CDS livré dans le scratchpad
+(\[\[project_eobs_source\]\]).
+
 ### 2026-07-05 — Fixed v0.138.2 : CRS LiDAR HD « sans autorité » aussi sur S1/S2 (complément v0.138.1)
 
 Audit CRS systématique des rasters produits par le cœur (déclencheur : «

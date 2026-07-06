@@ -1,5 +1,38 @@
 # Changelog
 
+## nemeton 0.139.0 (2026-07-06)
+
+#### Changed — E-OBS/CDS : cache persistant + plafond d’année levé
+
+Le chemin CDS de
+[`load_eobs_source()`](https://pobsteta.github.io/nemeton/reference/load_eobs_source.md)
+(spec 034) téléchargeait dans
+[`tempdir()`](https://rdrr.io/r/base/tempfile.html) sans jamais vérifier
+l’existence du fichier → **re-téléchargement du bloc entier (plusieurs
+Go) à chaque analyse**, et perte à la fin de session. Par ailleurs
+`.eobs_cds_period()` **plafonnait la borne haute du bloc courant à
+2024** en dur, excluant silencieusement les années ≥ 2025.
+
+- **Cache persistant** : `cache_dir` par défaut =
+  `file.path(get_global_cache_dir(), "eobs")`. Chaque bloc (variable ×
+  période × version × résolution) est nommé de façon déterministe
+  (`.eobs_cache_file()`) et téléchargé **une seule fois** ; les appels
+  suivants font un **cache-hit** (nouvel événement de progression
+  `"eobs:cache_hit"`, aucun réseau). Le zip volumineux est supprimé
+  après extraction.
+- **Plafond levé** : pour le bloc ouvert (« courant »), la borne haute
+  suit l’année demandée la plus récente (`2011_<max>`) au lieu d’un
+  plafond figé. À apparier avec la `version` E-OBS couvrant ces années
+  (best-effort : dégrade proprement si le CDS refuse l’enum). Blocs clos
+  et cas multi-blocs (→ `NULL`) inchangés.
+- Tests : inférence de bloc sans plafond (2015–2025 → `2011_2025`) ;
+  cache-hit sans appel réseau (`wf_request` mocké, jamais invoqué).
+
+Rappel (hors cœur, config utilisateur) : le bouton « Auto (E-OBS) »
+exige la variable `.Renviron` nommée **`ecmwfr_PAT`** (ecmwfr ≥ 2.0.3,
+pas `ecmwfr_ecmwfr`) **et** la licence CDS
+`insitu-gridded-observations-europe` acceptée sur le compte.
+
 ## nemeton 0.138.2 (2026-07-05)
 
 #### Fixed — S1/S2 : CRS LiDAR HD « sans autorité » (complément v0.138.1)

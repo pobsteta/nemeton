@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.138.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.139.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,19 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.139.0" id="nemeton-01390-2026-07-06">nemeton 0.139.0 (2026-07-06)<a class="anchor" aria-label="anchor" href="#nemeton-01390-2026-07-06"></a></h2>
+<div class="section level4">
+<h4 id="changed--e-obscds--cache-persistant--plafond-dannée-levé-0-139-0">Changed — E-OBS/CDS : cache persistant + plafond d’année levé<a class="anchor" aria-label="anchor" href="#changed--e-obscds--cache-persistant--plafond-dann%C3%A9e-lev%C3%A9-0-139-0"></a></h4>
+<p>Le chemin CDS de <code><a href="../reference/load_eobs_source.html">load_eobs_source()</a></code> (spec 034) téléchargeait dans <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code> sans jamais vérifier l’existence du fichier → <strong>re-téléchargement du bloc entier (plusieurs Go) à chaque analyse</strong>, et perte à la fin de session. Par ailleurs <code>.eobs_cds_period()</code> <strong>plafonnait la borne haute du bloc courant à 2024</strong> en dur, excluant silencieusement les années ≥ 2025.</p>
+<ul><li>
+<strong>Cache persistant</strong> : <code>cache_dir</code> par défaut = <code>file.path(get_global_cache_dir(), "eobs")</code>. Chaque bloc (variable × période × version × résolution) est nommé de façon déterministe (<code>.eobs_cache_file()</code>) et téléchargé <strong>une seule fois</strong> ; les appels suivants font un <strong>cache-hit</strong> (nouvel événement de progression <code>"eobs:cache_hit"</code>, aucun réseau). Le zip volumineux est supprimé après extraction.</li>
+<li>
+<strong>Plafond levé</strong> : pour le bloc ouvert (« courant »), la borne haute suit l’année demandée la plus récente (<code>2011_&lt;max&gt;</code>) au lieu d’un plafond figé. À apparier avec la <code>version</code> E-OBS couvrant ces années (best-effort : dégrade proprement si le CDS refuse l’enum). Blocs clos et cas multi-blocs (→ <code>NULL</code>) inchangés.</li>
+<li>Tests : inférence de bloc sans plafond (2015–2025 → <code>2011_2025</code>) ; cache-hit sans appel réseau (<code>wf_request</code> mocké, jamais invoqué).</li>
+</ul><p>Rappel (hors cœur, config utilisateur) : le bouton « Auto (E-OBS) » exige la variable <code>.Renviron</code> nommée <strong><code>ecmwfr_PAT</code></strong> (ecmwfr ≥ 2.0.3, pas <code>ecmwfr_ecmwfr</code>) <strong>et</strong> la licence CDS <code>insitu-gridded-observations-europe</code> acceptée sur le compte.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.138.2" id="nemeton-01382-2026-07-05">nemeton 0.138.2 (2026-07-05)<a class="anchor" aria-label="anchor" href="#nemeton-01382-2026-07-05"></a></h2>
 <div class="section level4">
