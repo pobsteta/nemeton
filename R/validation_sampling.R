@@ -44,6 +44,22 @@
 #'   `"RECONFORT"` the caller passes the broadleaf class raster (codes
 #'   1 sain / 2 dépérissant / 3 très-dépérissant) with
 #'   `classes = c(2, 3)`, `control_classes = c(1)`.
+#' @param weighting One of `"uniform"` (default) or `"continuous"`.
+#'   `"uniform"` keeps the historical behaviour: the validation draw is a
+#'   per-class unequal-probability GRTS (a class-4 cell outweighs a class-3
+#'   one). `"continuous"` instead weights the inclusion probability by an
+#'   **external continuous severity raster** (`weight_raster`), so two cells in
+#'   the same class are still separated by their raw severity — parity with
+#'   [create_trend_sanitary_plan()] (which does this for FAST via `|slope|`).
+#'   In continuous mode `classes` becomes a pure **eligibility mask** (no
+#'   per-class stratification).
+#' @param weight_raster A single-layer `terra::SpatRaster` of **continuous**
+#'   severity (e.g. FORDEAD `anomaly_index`, or a RECONFORT score/probability),
+#'   **required** when `weighting = "continuous"` (a `NULL` is an explicit
+#'   error — no silent fallback). Aligned onto the alert grid (reprojected /
+#'   resampled bilinearly if needed); a raster without a CRS or not
+#'   reprojectable raises a typed `validation_weight_raster_mismatch` error.
+#'   Ignored when `weighting = "uniform"`.
 #' @param seed Integer or `NULL`. When non-`NULL`, makes the GRTS draw
 #'   reproducible.
 #'
@@ -56,6 +72,9 @@
 #'     \item{`alert_class`}{Integer. Class value of the cell under the
 #'       plot (0 for controls; in `classes` for validation; `min(classes)`
 #'       for plots that fall on a buffer-added cell).}
+#'     \item{`alert_weight`}{Numeric. **Only when `weighting = "continuous"`.**
+#'       Raw value of `weight_raster` at the drawn point (severity that drove
+#'       the inclusion probability), for traceability. Absent in uniform mode.}
 #'     \item{`visit_order`}{Integer. TSP-optimised order over the union
 #'       of the two samples.}
 #'     \item{`source`}{Character. Echo of `source`.}
@@ -68,7 +87,11 @@
 #' currently healthy), the function raises a typed error of class
 #' `nemeton_empty_alert_mask` so the app can render a clean message
 #' (\dQuote{Zone saine, rien à valider}) rather than producing a
-#' degenerate plan.
+#' degenerate plan. In `weighting = "continuous"` mode the same typed
+#' error is raised when `weight_raster` has no finite or no varying value
+#' over the alert cells (empty / all-NA / constant); a `weight_raster`
+#' that cannot be aligned onto the alert grid raises the distinct
+#' `validation_weight_raster_mismatch` error instead.
 #'
 #' @examples
 #' \dontrun{
@@ -95,8 +118,11 @@ create_validation_sampling_plan <- function(zone,
                                             control_classes = c(0L),
                                             buffer_m        = 0,
                                             source          = c("FORDEAD", "FAST", "RECONFORT"),
+                                            weighting       = c("uniform", "continuous"),
+                                            weight_raster   = NULL,
                                             seed            = NULL) {
-  source <- match.arg(source)
+  source    <- match.arg(source)
+  weighting <- match.arg(weighting)
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
   }
@@ -108,6 +134,19 @@ create_validation_sampling_plan <- function(zone,
   }
   if (terra::nlyr(alert_raster) != 1L) {
     cli::cli_abort("{.arg alert_raster} must have a single layer.")
+  }
+  # Continuous weighting needs an external severity raster. A NULL here is an
+  # explicit error (no silent fallback to uniform) so a mis-wired caller fails
+  # loudly rather than shipping a plan that ignores the severity it asked for.
+  if (identical(weighting, "continuous")) {
+    if (is.null(weight_raster)) {
+      cli::cli_abort(c(
+        "{.arg weight_raster} is required when {.arg weighting} = {.val continuous}.",
+        i = "Pass a continuous severity raster (FORDEAD {.field anomaly_index} or a RECONFORT score/probability)."))
+    }
+    if (!inherits(weight_raster, "SpatRaster")) {
+      cli::cli_abort("{.arg weight_raster} must be a {.cls SpatRaster}.")
+    }
   }
   n_validation <- as.integer(n_validation)
   n_control    <- as.integer(n_control)
@@ -137,14 +176,57 @@ create_validation_sampling_plan <- function(zone,
     )
   }
 
-  # --- 2. Weighted GRTS draw on the alert priority ------------------
-  validation_pts <- .draw_grts_weighted(priority, n_validation, seed = seed)
+  # --- 2. Draw the validation plots over the alert priority ---------
+  if (identical(weighting, "continuous")) {
+    # Align the external severity raster onto the alert grid, restrict it to the
+    # eligible alert cells (`classes` acts as an eligibility MASK — no per-class
+    # stratification here) and min-max normalise to a strictly-positive
+    # inclusion weight, so the continuous-probability GRTS favours the most
+    # severe pixels proportionally while every eligible cell keeps p > 0.
+    aligned <- .align_weight_raster(weight_raster, priority)
+    wv <- terra::values(aligned)[, 1L]
+    wv[is.na(terra::values(priority)[, 1L])] <- NA_real_
+    finite <- wv[is.finite(wv)]
+    if (length(finite) == 0L) {
+      cli::cli_abort(
+        c("{.arg weight_raster} holds no finite value over the alert cells.",
+          i = "The severity raster may not overlap the alerts, or is fully NA there."),
+        class = "nemeton_empty_alert_mask")
+    }
+    rng <- range(finite)
+    if (rng[2L] - rng[1L] <= 0) {
+      cli::cli_abort(
+        c("{.arg weight_raster} is constant over the alert cells — no gradient to weight by.",
+          i = "Use {.code weighting = \"uniform\"} or provide a varying severity raster."),
+        class = "nemeton_empty_alert_mask")
+    }
+    eps  <- 1e-3
+    norm <- (wv - rng[1L]) / (rng[2L] - rng[1L])   # [0, 1]
+    norm <- norm * (1 - eps) + eps                 # (eps, 1] : lowest eligible cell keeps p > 0
+    norm[!is.finite(wv)] <- NA_real_
+    wnorm <- priority
+    terra::values(wnorm) <- norm
+    validation_pts <- .draw_grts_continuous(wnorm, n_validation, seed = seed)
+  } else {
+    validation_pts <- .draw_grts_weighted(priority, n_validation, seed = seed)
+  }
   if (is.null(validation_pts) || nrow(validation_pts) == 0L) {
     cli::cli_abort(
       c("Failed to draw any validation plot from the alert mask.",
         i = "Check that {.pkg spsurvey} is installed and the alert mask has enough cells."),
       class = "nemeton_empty_alert_mask"
     )
+  }
+  if (identical(weighting, "continuous")) {
+    # Traceability : raw severity + actual raster class at each drawn point
+    # (`.draw_grts_continuous()` returns the normalised value as `alert_value`,
+    # which we drop in favour of the raw `alert_weight`).
+    vv <- terra::vect(validation_pts)
+    validation_pts$alert_weight <- as.numeric(
+      terra::extract(aligned, vv, ID = FALSE)[[1L]])
+    validation_pts$alert_class <- as.integer(
+      terra::extract(alert_raster, vv, ID = FALSE)[[1L]])
+    validation_pts$alert_value <- NULL
   }
 
   # --- 3. Equiprobable GRTS draw on the "control" cells ------------
@@ -187,6 +269,11 @@ create_validation_sampling_plan <- function(zone,
   # --- 4. Assemble and tag rows -------------------------------------
   validation_pts$plot_id     <- sprintf("V%02d", seq_len(nrow(validation_pts)))
   validation_pts$type        <- "Validation"
+  # Columns shared by both sub-samples (so rbind aligns cleanly). `alert_weight`
+  # is present only in continuous weighting — uniform output stays byte-identical
+  # to the pre-existing schema.
+  common_cols <- c("plot_id", "type", "alert_class",
+                   if (identical(weighting, "continuous")) "alert_weight")
   if (!is.null(control_pts) && nrow(control_pts) > 0L) {
     control_pts$plot_id <- sprintf("T%02d", seq_len(nrow(control_pts)))
     control_pts$type    <- "Temoin"
@@ -198,9 +285,15 @@ create_validation_sampling_plan <- function(zone,
       terra::extract(alert_raster,
                      terra::vect(control_pts$geometry),
                      ID = FALSE)[[1L]])
-    plan <- rbind(validation_pts, control_pts)
+    if (identical(weighting, "continuous")) {
+      # Severity at the control point too (should be low — traceability parity).
+      control_pts$alert_weight <- as.numeric(
+        terra::extract(aligned, terra::vect(control_pts$geometry),
+                       ID = FALSE)[[1L]])
+    }
+    plan <- rbind(validation_pts[, common_cols], control_pts[, common_cols])
   } else {
-    plan <- validation_pts
+    plan <- validation_pts[, common_cols]
   }
 
   plan$source  <- source
@@ -208,9 +301,10 @@ create_validation_sampling_plan <- function(zone,
   plan$seed    <- if (is.null(seed)) NA_integer_ else as.integer(seed)
 
   # --- 5. Reorder columns + TSP visit order -------------------------
-  plan <- plan[, c("plot_id", "type", "alert_class",
-                   "source", "classes", "seed", "geometry"),
-               drop = FALSE]
+  out_cols <- c("plot_id", "type", "alert_class",
+                if (identical(weighting, "continuous")) "alert_weight",
+                "source", "classes", "seed", "geometry")
+  plan <- plan[, out_cols, drop = FALSE]
   plan$visit_order <- .compute_visit_order(plan)
   plan <- plan[order(plan$visit_order), , drop = FALSE]
 
@@ -414,6 +508,39 @@ create_trend_sanitary_plan <- function(con, zone_id,
 
 
 # ---- internal helpers ------------------------------------------------
+
+# Align an external continuous severity raster onto the alert grid (`template`,
+# typically the alert-priority raster). Same grid -> returned as-is; otherwise
+# reprojected + resampled (bilinear) onto the template geometry so its cells map
+# 1:1 to the alert cells. A `weight_raster` without a CRS, or one that cannot be
+# reprojected onto the template CRS, raises a typed
+# `validation_weight_raster_mismatch` error (the app maps it to a clean
+# message). Overlap / all-NA is left to the caller's finite-value guard, which
+# raises `nemeton_empty_alert_mask` instead.
+.align_weight_raster <- function(weight_raster, template) {
+  if (terra::nlyr(weight_raster) != 1L) weight_raster <- weight_raster[[1L]]
+  if (!nzchar(terra::crs(weight_raster))) {
+    cli::cli_abort(
+      c("{.arg weight_raster} has no CRS; cannot align it onto the alert grid.",
+        i = "Provide a georeferenced severity raster (same datum as {.arg alert_raster})."),
+      class = "validation_weight_raster_mismatch")
+  }
+  same <- tryCatch(
+    terra::compareGeom(weight_raster, template, crs = TRUE, ext = TRUE,
+                       rowcol = TRUE, res = TRUE, stopOnError = FALSE),
+    error = function(e) FALSE)
+  if (isTRUE(same)) return(weight_raster)
+  aligned <- tryCatch(
+    terra::project(weight_raster, template, method = "bilinear"),
+    error = function(e) NULL)
+  if (is.null(aligned)) {
+    cli::cli_abort(
+      c("Cannot reconcile {.arg weight_raster} with the alert grid.",
+        i = "Its CRS is not reprojectable onto the {.arg alert_raster} CRS."),
+      class = "validation_weight_raster_mismatch")
+  }
+  aligned
+}
 
 # Draw `n` points with inclusion probability proportional to the cell
 # value of `priority_raster` (NA = excluded). Returns an `sf` POINT
