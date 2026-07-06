@@ -1697,13 +1697,20 @@ utilisé par le plan FAST). Colonne `alert_weight` (sévérité brute au
 point) en mode continu. Garde-fous : NULL → erreur explicite ;
 vide/NA/constant → `nemeton_empty_alert_mask`. 38 tests validation (dont
 sur-représentation déterministe seed=7, alignement grille, 4 garde-fous
-typés), 26 tests trend non-régressés. **Suite côté app** (session
-nemetonshiny, brief) : `service_validation_sampling.R` lit
-`read_fordead_layer("anomaly_index")` / couche continue RECONFORT et
-passe `weight_raster` + `weighting="continuous"` ;
-`mod_validation_sampling.R` bascule les onglets FORDEAD/RECONFORT en
-mode continu (patron `is_fast`) + affiche `alert_weight` ; plancher
-`Imports: nemeton (>= 0.140.0)`. Note : le brief demandait 0.139.0, déjà
+typés), 26 tests trend non-régressés. **Suite côté app** : **brief
+livré** (PR \#253,
+`specs/014-validation-sampling/brief-nemetonshiny-continuous-weighting.md`)
+— `service_validation_sampling.R` (nouveau `.resolve_weight_raster()` :
+FORDEAD `read_fordead_layer("anomaly_index")` sur strate `_tot`,
+RECONFORT `score` via
+`reconfort_layer_manifest(result)`+`read_reconfort_layer(row)`) passe
+`weight_raster` + `weighting="continuous"` à
+`generate_validation_plan()` avec repli uniforme si couche absente ;
+`mod_validation_sampling.R` : toggle pondération (patron `is_fast`),
+`classes` conservé comme masque d’éligibilité, affichage `alert_weight`
+; mapping `validation_weight_raster_mismatch` ; i18n FR/EN ; plancher
+`Imports: nemeton (>= 0.140.0)`. **Reste = exécution app par Pascal**
+(session nemetonshiny dédiée). Note : le brief demandait 0.139.0, déjà
 pris par le cache E-OBS → livré en **0.140.0**.
 
 ### 2026-07-06 — Changed v0.139.0 : E-OBS/CDS cache persistant + plafond d’année levé
