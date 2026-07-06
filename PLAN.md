@@ -883,6 +883,16 @@ pas de 13e famille (radar 12 axes). Mode augmenté `microclimate_model`.
 Pascal). Calibration fine (ClimEssences/RMT AFORCE) : non retenue, table UE
 sourcée jugée suffisante.
 
+**Briefs app livrés (aucun changement cœur)** :
+- [x] Brief app « engine-feedback » livré (spec 027) — boutons async reGénération
+      (moteur réel & Auto E-OBS) : input_task_button (anti-reclic + spinner),
+      notif persistante bas-droite, chrono MM:SS. Aucun changement cœur.
+      → nemetonshiny@3705000f, release v0.100.7.
+- [x] Brief app « cleanups-lowpriority » livré — hygiène CRS à la source
+      (LiDAR HD→2154, WMS NDP 0→4326, stamp conditionnel) + retrait de l'appel
+      déprécié theia_configure_s3(). Aucun changement cœur.
+      → nemetonshiny@804d17d1, release v0.100.7.
+
 #### 2026-06-30 — L1 cœur : indicateurs microclimatiques A3/A4/W4 (`v0.101.0`)
 
 - **Cadrage** : spec 027 + ADR-014 (mergé `nemetonplateform` PR #8). 3 corrections
@@ -1267,6 +1277,40 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-07-06 — Deux briefs app reGénération/hygiène livrés (aucun changement cœur)
+
+- **Brief `specs/027-regeneration-microclimat/brief-nemetonshiny-engine-feedback.md`**
+  (HAUTE, user-facing). Feedback des boutons async reGénération côté app :
+  - `bslib::input_task_button` + `bind_task_button` → désactivation + spinner
+    pendant la tâche, réactivation à la fin ; supprime le risque de run
+    concurrent réécrivant `sensibilite.gpkg` / `biljou.gpkg` en cours de lecture.
+  - Notification persistante bas-droite (retirée en fin de tâche) + chrono MM:SS
+    (H:MM:SS au-delà d'une heure) sous chaque bouton.
+  - **Cœur** : aucun. Consommation d'API bslib uniquement.
+  - App : `nemetonshiny@3705000f`.
+
+- **Brief `specs/brief-nemetonshiny-cleanups-lowpriority.md`** (BASSE, hygiène).
+  Corrections CRS **à la source** (le cœur ≥0.138.1 compensait déjà à la lecture) :
+  - LiDAR HD → EPSG:2154 (mosaïque / retour cache / `.lidar_mosaic_covers_bbox`),
+    stamp **conditionnel** (seulement si `describe$code` est NA) → plus de
+    « No DEM available » ni de re-téléchargements.
+  - WMS NDP 0 (DEM BD ALTI + IRC) → EPSG:4326 ; NDVI dérivé hérite → plus de
+    « CRS do not match » sur C2/R1/R2/R3/W3.
+  - Retrait de l'appel déprécié `nemeton::theia_configure_s3()` (le cœur signe en
+    interne via la gateway STAC `signing.stac.teledetection.fr`, R pur),
+    remplacé par le garde amont `theia_api_key_configured()` ; commentaires
+    `reticulate` périmés mis à jour (reticulate conservé pour FORDEAD/RECONFORT).
+  - **Cœur** : aucun. §4 (réparation one-shot des caches CRS existants) non
+    implémenté (réécriture de caches utilisateur, heuristique, déjà fait à la
+    main : RECONFORT→2154, Fordead→4326).
+  - App : `nemetonshiny@804d17d1`.
+
+- **Release app** : merge `nemetonshiny@de495a7a` → **v0.100.7**, cycle dev
+  0.100.7.9000. Plancher inchangé (`Imports: nemeton (>= 0.140.0)`).
+- **Vérifié** : `regen_canopy_provenance()` + badge canopée déjà alignés sur le
+  vocabulaire interne `"lidar"/"satellite"` (moteur + `detect_ndp`) → pas de
+  bascule vers `canopy_provenance()` nécessaire (§3(c) du brief cleanups).
 
 ### 2026-07-06 — Tirage validation pondéré continu FORDEAD/RECONFORT propagé à l'app
 
