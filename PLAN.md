@@ -1677,6 +1677,35 @@ cœur).
 
 ## Journal
 
+### 2026-07-06 — Added v0.140.0 : tirage validation pondéré continu (FORDEAD/RECONFORT)
+
+Brief cœur : parité de
+[`create_validation_sampling_plan()`](https://pobsteta.github.io/nemeton/reference/create_validation_sampling_plan.md)
+avec
+[`create_trend_sanitary_plan()`](https://pobsteta.github.io/nemeton/reference/create_trend_sanitary_plan.md)
+(déjà en continu pour FAST via `|slope|`). Ajout de
+`weighting = c("uniform","continuous")` + `weight_raster` (params avant
+`seed`, rétro-compat). `uniform` = ancien comportement inchangé (schéma
+byte-identique, pas de `alert_weight`). `continuous` : `weight_raster`
+(FORDEAD `anomaly_index` / score RECONFORT) aligné sur la grille
+d’alerte (helper `.align_weight_raster()` — reproj/resample bilinéaire,
+classe d’erreur `validation_weight_raster_mismatch` si CRS
+irréconciliable), restreint aux cellules d’alerte (`classes` = masque
+d’éligibilité), normalisé min-max → probabilité d’inclusion strictement
+positive, tiré via `.draw_grts_continuous()` (aux_var spsurvey, déjà
+utilisé par le plan FAST). Colonne `alert_weight` (sévérité brute au
+point) en mode continu. Garde-fous : NULL → erreur explicite ;
+vide/NA/constant → `nemeton_empty_alert_mask`. 38 tests validation (dont
+sur-représentation déterministe seed=7, alignement grille, 4 garde-fous
+typés), 26 tests trend non-régressés. **Suite côté app** (session
+nemetonshiny, brief) : `service_validation_sampling.R` lit
+`read_fordead_layer("anomaly_index")` / couche continue RECONFORT et
+passe `weight_raster` + `weighting="continuous"` ;
+`mod_validation_sampling.R` bascule les onglets FORDEAD/RECONFORT en
+mode continu (patron `is_fast`) + affiche `alert_weight` ; plancher
+`Imports: nemeton (>= 0.140.0)`. Note : le brief demandait 0.139.0, déjà
+pris par le cache E-OBS → livré en **0.140.0**.
+
 ### 2026-07-06 — Changed v0.139.0 : E-OBS/CDS cache persistant + plafond d’année levé
 
 Suite du diagnostic du toast « Détection E-OBS indisponible »

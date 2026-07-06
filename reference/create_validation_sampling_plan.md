@@ -14,6 +14,8 @@ create_validation_sampling_plan(
   control_classes = c(0L),
   buffer_m = 0,
   source = c("FORDEAD", "FAST", "RECONFORT"),
+  weighting = c("uniform", "continuous"),
+  weight_raster = NULL,
   seed = NULL
 )
 ```
@@ -46,7 +48,14 @@ create_validation_sampling_plan(
 - classes:
 
   Integer vector. Alert classes retained for the validation draw.
-  Default \`c(3L, 4L)\`.
+  Default \`c(3L, 4L)\`. In \`weighting = "continuous"\` mode this acts
+  as a pure eligibility mask (no per-class stratification).
+
+- control_classes:
+
+  Integer vector. Raster classes eligible for the control plots. Default
+  \`c(0L)\` (strictly healthy). Relax (e.g. \`c(0L, 1L)\`) when no
+  class-0 cell exists.
 
 - buffer_m:
 
@@ -62,6 +71,24 @@ create_validation_sampling_plan(
   caller passes the broadleaf class raster (codes 1 sain / 2 dépérissant
   / 3 très-dépérissant) with \`classes = c(2, 3)\`, \`control_classes =
   c(1)\`.
+
+- weighting:
+
+  One of \`"uniform"\` (default) or \`"continuous"\`. \`"uniform"\`
+  keeps the historical per-class unequal-probability GRTS.
+  \`"continuous"\` weights inclusion by an external continuous severity
+  raster (\`weight_raster\`) — parity with
+  \[create_trend_sanitary_plan()\] (FAST \`\|slope\|\`).
+
+- weight_raster:
+
+  A single-layer \`terra::SpatRaster\` of continuous severity (e.g.
+  FORDEAD \`anomaly_index\`, or a RECONFORT score / probability),
+  \*\*required\*\* when \`weighting = "continuous"\` (a \`NULL\` is an
+  explicit error). Aligned onto the alert grid (reprojected / resampled
+  if needed); a raster without a CRS or not reprojectable raises a typed
+  \`validation_weight_raster_mismatch\` error. Ignored when \`weighting
+  = "uniform"\`.
 
 - seed:
 
@@ -86,6 +113,12 @@ An \`sf\` POINT object in EPSG:2154 with the following columns:
   Integer. Class value of the cell under the plot (0 for controls; in
   \`classes\` for validation; \`min(classes)\` for plots that fall on a
   buffer-added cell).
+
+- \`alert_weight\`:
+
+  Numeric. \*\*Only when \`weighting = "continuous"\`.\*\* Raw value of
+  \`weight_raster\` at the drawn point (the severity that drove
+  inclusion), for traceability. Absent in uniform mode.
 
 - \`visit_order\`:
 
@@ -129,6 +162,11 @@ When no cell of \`alert_raster\` falls in \`classes\` (e.g. the zone is
 currently healthy), the function raises a typed error of class
 \`nemeton_empty_alert_mask\` so the app can render a clean message
 (“Zone saine, rien à valider”) rather than producing a degenerate plan.
+In \`weighting = "continuous"\` mode the same typed error is raised when
+\`weight_raster\` has no finite or no varying value over the alert cells
+(empty / all-NA / constant); a \`weight_raster\` that cannot be aligned
+onto the alert grid raises the distinct
+\`validation_weight_raster_mismatch\` error instead.
 
 ## See also
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.139.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.140.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,20 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.140.0" id="nemeton-01400-2026-07-06">nemeton 0.140.0 (2026-07-06)<a class="anchor" aria-label="anchor" href="#nemeton-01400-2026-07-06"></a></h2>
+<div class="section level4">
+<h4 id="added--tirage-validation-pondéré-continu-fordeadreconfort-0-140-0">Added — tirage validation pondéré continu (FORDEAD/RECONFORT)<a class="anchor" aria-label="anchor" href="#added--tirage-validation-pond%C3%A9r%C3%A9-continu-fordeadreconfort-0-140-0"></a></h4>
+<p><code><a href="../reference/create_validation_sampling_plan.html">create_validation_sampling_plan()</a></code> gagne un mode de pondération <strong>continu</strong>, en parité avec <code><a href="../reference/create_trend_sanitary_plan.html">create_trend_sanitary_plan()</a></code> (qui le faisait déjà pour FAST via <code>|pente Theil-Sen|</code>) : le tirage GRTS des placettes de validation peut être pondéré par un <strong>raster de sévérité continu externe</strong> (FORDEAD <code>anomaly_index</code>, score/probabilité RECONFORT) plutôt que par la classe discrète 0-4.</p>
+<ul><li>Nouveaux paramètres (défauts rétro-compatibles, ajoutés avant <code>seed</code>) : <code>weighting = c("uniform", "continuous")</code> et <code>weight_raster = NULL</code>.</li>
+<li>
+<code>weighting = "uniform"</code> (défaut) : <strong>strictement l’ancien comportement</strong>, schéma de sortie byte-identique (pas de colonne <code>alert_weight</code>).</li>
+<li>
+<code>weighting = "continuous"</code> : <code>weight_raster</code> est aligné sur la grille d’alerte (reprojeté/rééchantillonné si besoin), restreint aux cellules d’alerte (<code>classes</code> devient un simple masque d’éligibilité), normalisé min-max en probabilité d’inclusion strictement positive, puis tiré via la GRTS à probabilité continue (<code>aux_var</code> spsurvey — helper <code>.draw_grts_continuous()</code> déjà utilisé par le plan FAST). Les témoins restent tirés uniformément sur <code>control_classes</code>. Équilibre spatial GRTS conservé.</li>
+<li>Nouvelle colonne de sortie <code>alert_weight</code> (valeur brute de sévérité au point tiré, traçabilité) en mode continu uniquement.</li>
+<li>Garde-fous typés : <code>weight_raster</code> NULL en continu → erreur explicite (pas de repli silencieux) ; vide/tout-NA/constant sur les cellules d’alerte → <code>nemeton_empty_alert_mask</code> (déjà mappée par l’app) ; CRS non réconciliable → nouvelle classe <code>validation_weight_raster_mismatch</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.139.0" id="nemeton-01390-2026-07-06">nemeton 0.139.0 (2026-07-06)<a class="anchor" aria-label="anchor" href="#nemeton-01390-2026-07-06"></a></h2>
 <div class="section level4">

@@ -1,5 +1,38 @@
 # Changelog
 
+## nemeton 0.140.0 (2026-07-06)
+
+#### Added — tirage validation pondéré continu (FORDEAD/RECONFORT)
+
+[`create_validation_sampling_plan()`](https://pobsteta.github.io/nemeton/reference/create_validation_sampling_plan.md)
+gagne un mode de pondération **continu**, en parité avec
+[`create_trend_sanitary_plan()`](https://pobsteta.github.io/nemeton/reference/create_trend_sanitary_plan.md)
+(qui le faisait déjà pour FAST via `|pente Theil-Sen|`) : le tirage GRTS
+des placettes de validation peut être pondéré par un **raster de
+sévérité continu externe** (FORDEAD `anomaly_index`, score/probabilité
+RECONFORT) plutôt que par la classe discrète 0-4.
+
+- Nouveaux paramètres (défauts rétro-compatibles, ajoutés avant `seed`)
+  : `weighting = c("uniform", "continuous")` et `weight_raster = NULL`.
+- `weighting = "uniform"` (défaut) : **strictement l’ancien
+  comportement**, schéma de sortie byte-identique (pas de colonne
+  `alert_weight`).
+- `weighting = "continuous"` : `weight_raster` est aligné sur la grille
+  d’alerte (reprojeté/rééchantillonné si besoin), restreint aux cellules
+  d’alerte (`classes` devient un simple masque d’éligibilité), normalisé
+  min-max en probabilité d’inclusion strictement positive, puis tiré via
+  la GRTS à probabilité continue (`aux_var` spsurvey — helper
+  `.draw_grts_continuous()` déjà utilisé par le plan FAST). Les témoins
+  restent tirés uniformément sur `control_classes`. Équilibre spatial
+  GRTS conservé.
+- Nouvelle colonne de sortie `alert_weight` (valeur brute de sévérité au
+  point tiré, traçabilité) en mode continu uniquement.
+- Garde-fous typés : `weight_raster` NULL en continu → erreur explicite
+  (pas de repli silencieux) ; vide/tout-NA/constant sur les cellules
+  d’alerte → `nemeton_empty_alert_mask` (déjà mappée par l’app) ; CRS
+  non réconciliable → nouvelle classe
+  `validation_weight_raster_mismatch`.
+
 ## nemeton 0.139.0 (2026-07-06)
 
 #### Changed — E-OBS/CDS : cache persistant + plafond d’année levé

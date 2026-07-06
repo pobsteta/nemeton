@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.139.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.140.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,6 +58,8 @@
 <span>  control_classes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0L</span><span class="op">)</span>,</span>
 <span>  buffer_m <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  source <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"FORDEAD"</span>, <span class="st">"FAST"</span>, <span class="st">"RECONFORT"</span><span class="op">)</span>,</span>
+<span>  weighting <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"uniform"</span>, <span class="st">"continuous"</span><span class="op">)</span>,</span>
+<span>  weight_raster <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  seed <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -92,7 +94,14 @@ healthy zone (`alert_raster == 0`). Default `5L`.</p></dd>
 
 <dt id="arg-classes">classes<a class="anchor" aria-label="anchor" href="#arg-classes"></a></dt>
 <dd><p>Integer vector. Alert classes retained for the
-validation draw. Default `c(3L, 4L)`.</p></dd>
+validation draw. Default `c(3L, 4L)`. In `weighting = "continuous"`
+mode this acts as a pure eligibility mask (no per-class stratification).</p></dd>
+
+
+<dt id="arg-control-classes">control_classes<a class="anchor" aria-label="anchor" href="#arg-control-classes"></a></dt>
+<dd><p>Integer vector. Raster classes eligible for the
+control plots. Default `c(0L)` (strictly healthy). Relax (e.g.
+`c(0L, 1L)`) when no class-0 cell exists.</p></dd>
 
 
 <dt id="arg-buffer-m">buffer_m<a class="anchor" aria-label="anchor" href="#arg-buffer-m"></a></dt>
@@ -108,6 +117,24 @@ single-layer categorical `alert_raster` by `classes`; for
 `"RECONFORT"` the caller passes the broadleaf class raster (codes
 1 sain / 2 dépérissant / 3 très-dépérissant) with `classes = c(2, 3)`,
 `control_classes = c(1)`.</p></dd>
+
+
+<dt id="arg-weighting">weighting<a class="anchor" aria-label="anchor" href="#arg-weighting"></a></dt>
+<dd><p>One of `"uniform"` (default) or `"continuous"`.
+`"uniform"` keeps the historical per-class unequal-probability GRTS.
+`"continuous"` weights inclusion by an external continuous severity
+raster (`weight_raster`) — parity with [create_trend_sanitary_plan()]
+(FAST `|slope|`).</p></dd>
+
+
+<dt id="arg-weight-raster">weight_raster<a class="anchor" aria-label="anchor" href="#arg-weight-raster"></a></dt>
+<dd><p>A single-layer `terra::SpatRaster` of continuous
+severity (e.g. FORDEAD `anomaly_index`, or a RECONFORT score /
+probability), **required** when `weighting = "continuous"` (a `NULL`
+is an explicit error). Aligned onto the alert grid (reprojected /
+resampled if needed); a raster without a CRS or not reprojectable
+raises a typed `validation_weight_raster_mismatch` error. Ignored when
+`weighting = "uniform"`.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
@@ -129,6 +156,11 @@ reproducible.</p></dd>
 <dd><p>Integer. Class value of the cell under the
       plot (0 for controls; in `classes` for validation; `min(classes)`
       for plots that fall on a buffer-added cell).</p></dd>
+
+    <dt>`alert_weight`</dt>
+<dd><p>Numeric. **Only when `weighting = "continuous"`.**
+      Raw value of `weight_raster` at the drawn point (the severity that
+      drove inclusion), for traceability. Absent in uniform mode.</p></dd>
 
     <dt>`visit_order`</dt>
 <dd><p>Integer. TSP-optimised order over the union
@@ -172,7 +204,11 @@ upstream in the app layer.</p>
 currently healthy), the function raises a typed error of class
 `nemeton_empty_alert_mask` so the app can render a clean message
 (“Zone saine, rien à valider”) rather than producing a
-degenerate plan.</p>
+degenerate plan. In `weighting = "continuous"` mode the same typed
+error is raised when `weight_raster` has no finite or no varying value
+over the alert cells (empty / all-NA / constant); a `weight_raster`
+that cannot be aligned onto the alert grid raises the distinct
+`validation_weight_raster_mismatch` error instead.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
