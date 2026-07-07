@@ -145,6 +145,24 @@ point cloud nor Sentinel-2 LAI). »
    `nemeton::canopy_provenance()` (clés `"lidar_hd"` / `"prosail_s2"`).
 4. **Prérequis inchangés** : `regen_cds_credentials_ready()` (ERA5-Land, licence
    CDS acceptée — confirmée OK) + `microclimf`/`mcera5`/`lasR` installés.
+5. **Volume ERA5 + rate-limit CDS (important pour l'UX).** `regen_sensibilite()`
+   déclenche **~12 requêtes ERA5 par année** (mensuel, via `mcera5`). Sur 2
+   catégories d'années (moyenne + canicule), c'est beaucoup de requêtes
+   séquentielles → le CDS **throttle/coupe** parfois (observé end-to-end : 4
+   fichiers rapatriés puis `curl_fetch_memory` sur la 5ᵉ, géré par le retry
+   rate-limit de mcera5, mais fatal après N essais). **Ce n'est PAS la structure
+   de végétation** — le garde est déjà franchi à ce stade.
+   - **Auto-réparation** : les `era5_*.nc` sont **cachés dans `micro_cache`**
+     (`cache/regeneration/microclimf/`) et **persistent**. Un re-lancement
+     **reprend** depuis le cache (les fichiers déjà là ne sont pas re-téléchargés)
+     → un 2ᵉ/3ᵉ clic finit par compléter. Ne **pas** vider `micro_cache` entre
+     deux tentatives.
+   - **UX conseillée** : surface un warning distinct « acquisition ERA5
+     interrompue (throttle CDS), relancez pour reprendre » plutôt que le message
+     générique, et laisse le compteur de temps écoulé tourner (déjà en place).
+   - Piste cœur ultérieure (optionnelle) : back-off plus patient / regroupement
+     des requêtes ERA5 dans `.rsen_forcage_era5()` — petit brief cœur si le
+     throttle devient récurrent.
 
 ## Validation
 
