@@ -892,6 +892,11 @@ sourcée jugée suffisante.
       (LiDAR HD→2154, WMS NDP 0→4326, stamp conditionnel) + retrait de l'appel
       déprécié theia_configure_s3(). Aucun changement cœur.
       → nemetonshiny@804d17d1, release v0.100.7.
+- [x] Brief app « microclimf-vegetation-structure » livré — le moteur réel
+      (« Lancer le moteur réel ») produit enfin `sensibilite.gpkg` : l'app fournit
+      la structure de végétation exigée par `regen_sensibilite()` (`las` nuage
+      LiDAR HD prioritaire, sinon repli `pai` LAI S2/PROSAIL). Aucun changement
+      cœur. → nemetonshiny@5493df2c, release v0.100.8.
 
 #### 2026-06-30 — L1 cœur : indicateurs microclimatiques A3/A4/W4 (`v0.101.0`)
 
@@ -1118,6 +1123,15 @@ Du moins au plus invasif :
   `chm_opencanopy` et `forms_t`).
 - Un éventuel **spec 011** pourra formaliser ce chantier si le câblage
   indicateurs (Phase 3) s'avère plus large que prévu.
+- **Moteur exposition (spec 027), 2 pistes cœur optionnelles** (non bloquantes,
+  ouvertes 2026-07-07 par le brief app microclimf-vegetation-structure) :
+  1. Exposer `parcelle` / `fenetre` dans `regen_sensibilite()` pour clipper la
+     dérivation PAI du nuage aux UGF — aujourd'hui `las = <dossier nuage>` fait
+     lire par `lasR` **toutes** les dalles (ex. 25 × ~138 Mo) sur toute l'emprise
+     du nuage → lourd sur grand massif (le repli `pai` S2 reste léger).
+  2. Back-off plus patient / regroupement des requêtes ERA5 dans
+     `.rsen_forcage_era5()` (~12 requêtes/an × 2 catégories → throttle CDS
+     ponctuel ; l'auto-reprise via cache `micro_cache` mitige déjà).
 
 ---
 
@@ -1277,6 +1291,41 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-07-07 — Moteur microclimf : structure de végétation câblée côté app (aucun changement cœur)
+
+- **Brief `specs/027-regeneration-microclimat/brief-nemetonshiny-microclimf-vegetation-structure.md`**
+  (HAUTE). Cause racine : `service_regeneration.R` appelait
+  `nemeton::regen_sensibilite(res, mnt, mnh, …)` **sans `las` ni `pai`** ; le cœur
+  exige la structure de végétation (PAI) et abandonnait avant tout ERA5 (abort
+  avalé en warning), laissant `cache/regeneration/microclimf/` vide et
+  `sensibilite.gpkg` absent. Écartés au diagnostic : licence ERA5-Land (OK),
+  E-OBS (OK), CRS des tuiles (2154 propre), grille MNT+MNH (présente), CDS ready
+  (OK).
+- **Fix app** :
+  - `resolve_regen_lidar_grid()` résout désormais aussi
+    `cache/layers/lidar_nuage` (`.las/.laz/.copc.laz`) → `grid$las_dir`.
+  - Bloc microclimf : `las = grid$las_dir` prioritaire (provenance « lidar »),
+    sinon repli `pai` via `.regen_lai_fallback()` (LAI Sentinel-2/PROSAIL déjà
+    caché, provenance « satellite ») ; aucune source → warning i18n
+    `regen_engine_no_vegetation_structure`.
+  - `micro_cache` créé seulement si le moteur tourne, retiré s'il reste vide
+    après échec ; `era5_*.nc` persistés → reprise au re-lancement. Throttle CDS
+    ERA5 → warning distinct `regen_engine_era5_interrupted`.
+  - i18n : 2 clés FR/EN ; tests app : `las`/`pai`/aucune-structure/ERA5-throttle
+    (test-regeneration_engine 60, provenance 13).
+- **Cœur** : **aucun changement** ; `regen_sensibilite(las=/pai=)` déjà exposé
+  (nemeton ≥ 0.140.0). Plancher app inchangé.
+- **App** : merge `nemetonshiny@5493df2c` → release **v0.100.8**, cycle dev
+  0.100.8.9000.
+- **Pistes cœur ultérieures (optionnelles, non bloquantes)** :
+  1. Exposer `parcelle` / `fenetre` dans `regen_sensibilite()` pour clipper la
+     dérivation PAI du nuage aux UGF — actuellement `las = <dossier nuage>` fait
+     lire par `lasR` **toutes** les dalles (ex. 25 × ~138 Mo) sur toute l'emprise
+     du nuage → lourd sur grand massif. Le repli `pai` (S2) reste léger.
+  2. Back-off plus patient / regroupement des requêtes ERA5 dans
+     `.rsen_forcage_era5()` (~12 requêtes/an × 2 catégories d'années → le CDS
+     throttle parfois ; l'auto-reprise via cache mitige déjà).
 
 ### 2026-07-07 — v0.142.0 : progress_callback sur les moteurs reGénération (implémenté)
 
