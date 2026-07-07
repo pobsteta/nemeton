@@ -24,13 +24,18 @@ pai_depuis_nuage(
 covering the parcels plus a buffer.}
 
 \item{grille}{Target grid (\code{SpatRaster}, typically the working DTM) — the
-PAI is resampled onto it.}
+PAI is resampled onto it, and (when \code{parcelle} is \code{NULL}) its extent
+bounds the LiDAR read window (\code{-keep_xy}), so only tiles/points over the AOI
+are read.}
 
 \item{res}{Numeric working resolution in metres (default 2).}
 
 \item{k}{Beer-Lambert extinction coefficient (default 0.5).}
 
-\item{parcelle}{Optional \code{SpatVector}/\code{sf} mask applied at the end.}
+\item{parcelle}{Optional \code{SpatVector}/\code{sf}: bounds the LiDAR read
+window (\code{-keep_xy}, buffered) \strong{and} masks the final raster.
+\code{NULL} uses \code{grille}'s extent for the read window and applies no final
+mask.}
 
 \item{fenetre}{Optional smoothing window in metres (\code{NA} = none).}
 

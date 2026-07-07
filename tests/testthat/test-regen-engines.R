@@ -150,6 +150,35 @@ test_that(".rsen_moyenne_categorie stays a no-op when emit is NULL", {
   expect_equal(res$n, 2L)
 })
 
+# --- Piste cœur 1 : clip lecture LiDAR à l'AOI (-keep_xy) -------------------
+test_that(".pai_keep_xy_filter builds a buffered -keep_xy from various zones", {
+  skip_if_not_installed("terra")
+  r <- terra::rast(xmin = 100, xmax = 300, ymin = 500, ymax = 700, resolution = 10)
+  # xmin/ymin/xmax/ymax tamponnés de margin, format LASlib.
+  expect_equal(nemeton:::.pai_keep_xy_filter(r, margin = 5),
+               "-keep_xy 95.000 495.000 305.000 705.000")
+  expect_match(nemeton:::.pai_keep_xy_filter(terra::ext(r)), "^-keep_xy ")
+  expect_match(nemeton:::.pai_keep_xy_filter(.re_units(2)), "^-keep_xy ")  # sf
+})
+
+# --- Piste cœur 2 : retry/back-off ERA5 ------------------------------------
+test_that(".rsen_era5_with_retry retries a transient failure then succeeds", {
+  calls <- 0L
+  do_req <- function() { calls <<- calls + 1L; if (calls < 3L) stop("boom") }
+  # base_wait = 0 : pas de sommeil en test.
+  expect_invisible(nemeton:::.rsen_era5_with_retry(do_req, max_tries = 3L, base_wait = 0))
+  expect_equal(calls, 3L)
+})
+
+test_that(".rsen_era5_with_retry gives up after max_tries with the last error", {
+  calls <- 0L
+  do_req <- function() { calls <<- calls + 1L; stop("always down") }
+  expect_error(
+    nemeton:::.rsen_era5_with_retry(do_req, max_tries = 2L, base_wait = 0),
+    "always down")
+  expect_equal(calls, 2L)
+})
+
 test_that("regen_bilan_hydrique forwards phenology args to biljou_run via ...", {
   skip_if_not_installed("biljouR")
   utils::data("meteo_hesse", package = "biljouR")

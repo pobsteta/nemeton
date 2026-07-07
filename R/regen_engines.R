@@ -209,6 +209,21 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   } else x
 }
 
+# Retry + back-off autour d'une requête ERA5 : absorbe un throttle / une coupure
+# réseau CDS transitoire (mcera5 ne relance pas toujours un `curl_fetch_memory`
+# non-429). `do_request` est un thunk (testable sans mcera5). base_wait = 0 en
+# test pour ne pas dormir.
+.rsen_era5_with_retry <- function(do_request, max_tries = 3L, base_wait = 15) {
+  last_err <- NULL
+  for (attempt in seq_len(max_tries)) {
+    ok <- tryCatch({ do_request(); TRUE },
+                   error = function(e) { last_err <<- e; FALSE })
+    if (isTRUE(ok)) return(invisible(TRUE))
+    if (attempt < max_tries) Sys.sleep(min(90, base_wait * attempt))
+  }
+  stop(last_err)
+}
+
 # Forçage ERA5-Land pour une année (téléchargement mcera5 mis en cache).
 .rsen_forcage_era5 <- function(lon, lat, annee, cache_dir) {
   if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
@@ -223,10 +238,14 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
         i = "Install mcera5 (+ CDS key, and accept the ERA5 licence on the CDS site), or pre-populate {.path {cache_dir}}."))
     }
     # mcera5 >= 0.4 : build_era5_request() construit, request_era5() exécute.
+    # by_month = FALSE : UNE requête pour l'année entière au lieu de 12 mensuelles
+    # -> divise par ~12 le nombre d'appels CDS (bbox ponctuelle 0.1° : volume
+    # modeste), réduisant d'autant le throttle observé sur les runs multi-années.
     req <- mcera5::build_era5_request(
       xmin = lon - 0.05, xmax = lon + 0.05, ymin = lat - 0.05, ymax = lat + 0.05,
-      start_time = st, end_time = en, outfile_name = sprintf("era5_%d", annee))
-    mcera5::request_era5(req, out_path = cache_dir)
+      start_time = st, end_time = en, by_month = FALSE,
+      outfile_name = sprintf("era5_%d", annee))
+    .rsen_era5_with_retry(function() mcera5::request_era5(req, out_path = cache_dir))
     nc <- list.files(cache_dir, pattern = pat, full.names = TRUE)
   }
   # format "microclimf" -> colonnes prêtes (obs_time/temp/relhum/pres/swdown/
@@ -474,6 +493,20 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
 }
 
 
+# Filtre spatial LASlib `-keep_xy` calé sur l'emprise d'une zone (SpatExtent /
+# SpatRaster / SpatVector / sf), tamponnée de `margin` m. Passé au reader lasR
+# pour ne lire que les points de l'AOI : sur des dalles COPC (indexées), lasR
+# saute aussi les dalles hors emprise -> évite de lire tout le nuage.
+.pai_keep_xy_filter <- function(zone, margin = 0) {
+  e <- if (inherits(zone, "SpatExtent")) zone
+       else if (inherits(zone, c("SpatRaster", "SpatVector"))) terra::ext(zone)
+       else terra::ext(terra::vect(zone))
+  v <- as.vector(e)   # named: xmin xmax ymin ymax
+  sprintf("-keep_xy %.3f %.3f %.3f %.3f",
+          v[["xmin"]] - margin, v[["ymin"]] - margin,
+          v[["xmax"]] + margin, v[["ymax"]] + margin)
+}
+
 #' Plant Area Index from a LiDAR-HD point cloud (spec 027 L1)
 #'
 #' @description
@@ -493,10 +526,13 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
 #' @param dossier_las Directory of classified `.las`/`.laz` tiles covering the
 #'   parcels plus a buffer.
 #' @param grille Target grid (`SpatRaster`, typically the working DTM) — the PAI
-#'   is resampled onto it.
+#'   is resampled onto it, and (when `parcelle` is `NULL`) its extent bounds the
+#'   LiDAR read window (`-keep_xy`), so only tiles/points over the AOI are read.
 #' @param res Numeric working resolution in metres (default 2).
 #' @param k Beer-Lambert extinction coefficient (default 0.5).
-#' @param parcelle Optional `SpatVector`/`sf` mask applied at the end.
+#' @param parcelle Optional `SpatVector`/`sf`: bounds the LiDAR read window
+#'   (`-keep_xy`, buffered) **and** masks the final raster. `NULL` uses
+#'   `grille`'s extent for the read window and applies no final mask.
 #' @param fenetre Optional smoothing window in metres (`NA` = none).
 #' @param cl_sol,cl_veg ASPRS classes counted as ground / vegetation
 #'   (defaults `2` and `c(3, 4, 5)`).
@@ -548,10 +584,17 @@ pai_depuis_nuage <- function(dossier_las = NULL, grille = NULL, res = 2,
   f_sol <- tempfile(fileext = ".tif")
   f_veg <- tempfile(fileext = ".tif")
 
+  # Clip spatial de la lecture à l'emprise de travail (parcelle si fournie, sinon
+  # la grille — déjà tamponnée à l'AOI par l'appelant), marge = quelques cellules
+  # pour le rééchantillonnage bilinéaire des bords. Sur nuage COPC, lasR n'ouvre
+  # que les dalles concernées : gros massif -> on ne lit plus tout le nuage.
+  zone <- if (!is.null(parcelle)) parcelle else grille
+  xy_filter <- .pai_keep_xy_filter(zone, margin = 3 * res)
+
   # Un seul passage de lecture, deux rastérisations filtrées par classe.
   # default_value = 0 : pixel couvert mais sans point de la classe -> 0 (pas NA),
   # indispensable sous canopée dense où N_sol peut être nul.
-  pipe <- lasR::reader_las() + lasR::set_crs(epsg) +
+  pipe <- lasR::reader_las(filter = xy_filter) + lasR::set_crs(epsg) +
     lasR::rasterize(res_arg, "count", filter = lasR::keep_class(cl_sol),
                     default_value = 0, ofile = f_sol) +
     lasR::rasterize(res_arg, "count", filter = lasR::keep_class(cl_veg),
