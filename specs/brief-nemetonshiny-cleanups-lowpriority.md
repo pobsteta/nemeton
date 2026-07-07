@@ -131,6 +131,14 @@ for (f in c("dem.tif","irc.tif","ndvi.tif","twi.tif")) {
 > **ou** 4326 (projet WMS) selon la nature du projet. Déjà réparés à la main :
 > RECONFORT (→2154), Fordead (→4326).
 
+> **MAJ v0.141.0** : le cœur n'écrit plus `twi.tif` (nom fixe) mais
+> `twi_<hash>.tif` (cache indexé sur l'empreinte du DEM). Ces nouveaux fichiers
+> portent déjà le bon CRS par construction (DEM normalisé avant calcul). Les
+> `twi.tif` existants deviennent **orphelins** (plus lus par le cœur) : la
+> réparation CRS de `twi.tif` ci-dessus est désormais **sans objet** — le cœur
+> recalcule un `twi_<hash>.tif` propre au premier accès (peu coûteux : TWI
+> agrégé à ~10 m). Inutile de réparer/renommer les vieux `twi.tif`.
+
 ---
 
 ## 5. Validation

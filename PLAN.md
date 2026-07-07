@@ -1278,6 +1278,38 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-07 — v0.141.0 : TWI stable (agrégation ~10 m) + cache TWI auto-invalidant
+
+Diagnostic parti de la question « le TWI est-il recalculé depuis
+`lidar_mnt_mosaic.tif` ? ». Vérification empirique sur le projet
+`20260701_204501_ltcp` : le `twi.tif` en cache est **10000×10000, 0.5 m, 2154**
+— géométrie identique à la mosaïque LiDAR ⇒ oui, le TWI y est bien dérivé du
+LiDAR HD. Mais deux vrais sujets cœur émergent :
+
+- **A (fix) — cache fichier périmable.** `get_or_compute_twi()` avait un cache
+  **mémoire** indexé sur l'empreinte du DEM mais un cache **fichier** à nom fixe
+  `twi.tif`, rechargé quelle que soit l'empreinte. Un projet ayant calculé le
+  TWI depuis un DEM grossier (WMS 25 m) **ne le recalculait pas** après
+  acquisition du LiDAR HD. → Fichier renommé `twi_<hash>.tif` (hash = dims +
+  emprise + CRS + `twi_target_res`), auto-invalidant. Les `twi.tif` existants
+  deviennent orphelins, recalculés une fois.
+- **B (feat) — TWI à 0.5 m brut, bruité et lourd.** `calculate_twi_terra()`
+  faisait `terrain`+`flowdir`+`flowAccumulation` sur le DEM natif (100 M
+  cellules à 0.5 m) : TWI dominé par la micro-topographie, valeurs absolues peu
+  fiables. → Nouveau `twi_target_res` (défaut **10 m**, choisi par Pascal ;
+  20 m d'abord évoqué puis ramené à 10) qui **agrège le DEM** (moyenne) avant
+  l'accumulation de flux. `.twi_aggregate_dem()` n'agrège jamais vers plus fin
+  que le natif, ni sur un DEM lon/lat (pas en degrés). ~400× plus léger.
+
+`calculate_twi_terra()`/`calculate_twi_grass()` acceptent aussi `target_res`
+(`NULL` = pas d'agrégation, utilisé par les replis GRASS→terra pour éviter une
+double agrégation). Fonctions internes (non exportées) → pas de `.Rd`. Tests :
+`test-indicators-families.R` (agrégation fine→10 m, cache indexé par empreinte,
+skip lon/lat, clés mémoire avec `|10`) — 317 pass ; `test-indicators-risk.R`
+161 pass. **Aucun impact app** (l'app ne lit jamais `twi.tif` par nom — tout
+passe par le cœur). Note : les valeurs de W3 changent (TWI plus propre) — c'est
+attendu et documenté (NEWS).
+
 ### 2026-07-06 — Deux briefs app reGénération/hygiène livrés (aucun changement cœur)
 
 - **Brief `specs/027-regeneration-microclimat/brief-nemetonshiny-engine-feedback.md`**
