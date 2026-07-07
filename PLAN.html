@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.142.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.142.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -535,7 +535,7 @@
 </td>
 </tr></tbody></table><p><strong>Reste cœur</strong> : - ✅ <strong>Mapping TFV → essence de régénération</strong> — <strong>livré v0.121.0</strong> : <code><a href="reference/map_tfv_to_species_class.html">map_tfv_to_species_class()</a></code> (colonne <code>species_class</code> de <code><a href="reference/bdforet_v2_mapping.html">bdforet_v2_mapping()</a></code>) + <code>regen_species_choices(tfv_col=)</code> (mode espèces FRM, présence UGF via TFV) + <code>indice_priorite_regen(species=)</code> résout classe <strong>et</strong> espèce UE. L’app pré-remplit « Essence cible » depuis BD Forêt v2. - Orchestration RÉELLE des moteurs (microclimf/biljouR/lasR/SAFRAN) : chez Pascal (deps + données), via le chemin <code>precomputed</code> déjà en place.</p>
 <p><strong>Volet cœur spec 027 : clos.</strong> Tout le calculable/testable est livré et releasé (v0.101.0 → v0.121.0). Reste hors-cœur : l’orchestration réelle des moteurs (chez Pascal). Calibration fine (ClimEssences/RMT AFORCE) : non retenue, table UE sourcée jugée suffisante.</p>
-<p><strong>Briefs app livrés (aucun changement cœur)</strong> : - [x] Brief app « engine-feedback » livré (spec 027) — boutons async reGénération (moteur réel &amp; Auto E-OBS) : input_task_button (anti-reclic + spinner), notif persistante bas-droite, chrono MM:SS. Aucun changement cœur. → <a href="mailto:nemetonshiny@3705000f" class="email">nemetonshiny@3705000f</a>, release v0.100.7. - [x] Brief app « cleanups-lowpriority » livré — hygiène CRS à la source (LiDAR HD→2154, WMS NDP 0→4326, stamp conditionnel) + retrait de l’appel déprécié theia_configure_s3(). Aucun changement cœur. → <a href="mailto:nemetonshiny@804d17d1" class="email">nemetonshiny@804d17d1</a>, release v0.100.7.</p>
+<p><strong>Briefs app livrés (aucun changement cœur)</strong> : - [x] Brief app « engine-feedback » livré (spec 027) — boutons async reGénération (moteur réel &amp; Auto E-OBS) : input_task_button (anti-reclic + spinner), notif persistante bas-droite, chrono MM:SS. Aucun changement cœur. → <a href="mailto:nemetonshiny@3705000f" class="email">nemetonshiny@3705000f</a>, release v0.100.7. - [x] Brief app « cleanups-lowpriority » livré — hygiène CRS à la source (LiDAR HD→2154, WMS NDP 0→4326, stamp conditionnel) + retrait de l’appel déprécié theia_configure_s3(). Aucun changement cœur. → <a href="mailto:nemetonshiny@804d17d1" class="email">nemetonshiny@804d17d1</a>, release v0.100.7. - [x] Brief app « microclimf-vegetation-structure » livré — le moteur réel (« Lancer le moteur réel ») produit enfin <code>sensibilite.gpkg</code> : l’app fournit la structure de végétation exigée par <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> (<code>las</code> nuage LiDAR HD prioritaire, sinon repli <code>pai</code> LAI S2/PROSAIL). Aucun changement cœur. → <a href="mailto:nemetonshiny@5493df2c" class="email">nemetonshiny@5493df2c</a>, release v0.100.8.</p>
 <div class="section level4">
 <h4 id="id_2026-06-30--l1-cœur--indicateurs-microclimatiques-a3a4w4-v01010">2026-06-30 — L1 cœur : indicateurs microclimatiques A3/A4/W4 (<code>v0.101.0</code>)<a class="anchor" aria-label="anchor" href="#id_2026-06-30--l1-c%C5%93ur--indicateurs-microclimatiques-a3a4w4-v01010"></a></h4>
 <ul><li>
@@ -695,6 +695,11 @@
 <h2 id="réserves--dette-à-lever">Réserves / dette à lever<a class="anchor" aria-label="anchor" href="#r%C3%A9serves--dette-%C3%A0-lever"></a></h2>
 <ul><li>Pour chaque source, les métadonnées exactes (URL STAC, identifiant de collection, licence précise, CRS natif, résolution) sont à <strong>vérifier source par source</strong> : tant que ce n’est pas fait, les champs concernés portent un marqueur <code>"to confirm"</code> dans FR.json (même convention que <code>chm_opencanopy</code> et <code>forms_t</code>).</li>
 <li>Un éventuel <strong>spec 011</strong> pourra formaliser ce chantier si le câblage indicateurs (Phase 3) s’avère plus large que prévu.</li>
+<li>
+<strong>Moteur exposition (spec 027), 2 pistes cœur optionnelles</strong> (non bloquantes, ouvertes 2026-07-07 par le brief app microclimf-vegetation-structure) :
+<ol style="list-style-type: decimal"><li>Exposer <code>parcelle</code> / <code>fenetre</code> dans <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> pour clipper la dérivation PAI du nuage aux UGF — aujourd’hui <code>las = &lt;dossier nuage&gt;</code> fait lire par <code>lasR</code> <strong>toutes</strong> les dalles (ex. 25 × ~138 Mo) sur toute l’emprise du nuage → lourd sur grand massif (le repli <code>pai</code> S2 reste léger).</li>
+<li>Back-off plus patient / regroupement des requêtes ERA5 dans <code>.rsen_forcage_era5()</code> (~12 requêtes/an × 2 catégories → throttle CDS ponctuel ; l’auto-reprise via cache <code>micro_cache</code> mitige déjà).</li>
+</ol></li>
 </ul><hr></div>
 </div>
 <div class="section level1">
@@ -862,6 +867,29 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-07--moteur-microclimf--structure-de-végétation-câblée-côté-app-aucun-changement-cœur">2026-07-07 — Moteur microclimf : structure de végétation câblée côté app (aucun changement cœur)<a class="anchor" aria-label="anchor" href="#id_2026-07-07--moteur-microclimf--structure-de-v%C3%A9g%C3%A9tation-c%C3%A2bl%C3%A9e-c%C3%B4t%C3%A9-app-aucun-changement-c%C5%93ur"></a></h3>
+<ul><li>
+<strong>Brief <code>specs/027-regeneration-microclimat/brief-nemetonshiny-microclimf-vegetation-structure.md</code></strong> (HAUTE). Cause racine : <code>service_regeneration.R</code> appelait <code>nemeton::regen_sensibilite(res, mnt, mnh, …)</code> <strong>sans <code>las</code> ni <code>pai</code></strong> ; le cœur exige la structure de végétation (PAI) et abandonnait avant tout ERA5 (abort avalé en warning), laissant <code>cache/regeneration/microclimf/</code> vide et <code>sensibilite.gpkg</code> absent. Écartés au diagnostic : licence ERA5-Land (OK), E-OBS (OK), CRS des tuiles (2154 propre), grille MNT+MNH (présente), CDS ready (OK).</li>
+<li>
+<strong>Fix app</strong> :
+<ul><li>
+<code>resolve_regen_lidar_grid()</code> résout désormais aussi <code>cache/layers/lidar_nuage</code> (<code>.las/.laz/.copc.laz</code>) → <code>grid$las_dir</code>.</li>
+<li>Bloc microclimf : <code>las = grid$las_dir</code> prioritaire (provenance « lidar »), sinon repli <code>pai</code> via <code>.regen_lai_fallback()</code> (LAI Sentinel-2/PROSAIL déjà caché, provenance « satellite ») ; aucune source → warning i18n <code>regen_engine_no_vegetation_structure</code>.</li>
+<li>
+<code>micro_cache</code> créé seulement si le moteur tourne, retiré s’il reste vide après échec ; <code>era5_*.nc</code> persistés → reprise au re-lancement. Throttle CDS ERA5 → warning distinct <code>regen_engine_era5_interrupted</code>.</li>
+<li>i18n : 2 clés FR/EN ; tests app : <code>las</code>/<code>pai</code>/aucune-structure/ERA5-throttle (test-regeneration_engine 60, provenance 13).</li>
+</ul></li>
+<li>
+<strong>Cœur</strong> : <strong>aucun changement</strong> ; <code>regen_sensibilite(las=/pai=)</code> déjà exposé (nemeton ≥ 0.140.0). Plancher app inchangé.</li>
+<li>
+<strong>App</strong> : merge <code>nemetonshiny@5493df2c</code> → release <strong>v0.100.8</strong>, cycle dev 0.100.8.9000.</li>
+<li>
+<strong>Pistes cœur ultérieures (optionnelles, non bloquantes)</strong> :
+<ol style="list-style-type: decimal"><li>Exposer <code>parcelle</code> / <code>fenetre</code> dans <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> pour clipper la dérivation PAI du nuage aux UGF — actuellement <code>las = &lt;dossier nuage&gt;</code> fait lire par <code>lasR</code> <strong>toutes</strong> les dalles (ex. 25 × ~138 Mo) sur toute l’emprise du nuage → lourd sur grand massif. Le repli <code>pai</code> (S2) reste léger.</li>
+<li>Back-off plus patient / regroupement des requêtes ERA5 dans <code>.rsen_forcage_era5()</code> (~12 requêtes/an × 2 catégories d’années → le CDS throttle parfois ; l’auto-reprise via cache mitige déjà).</li>
+</ol></li>
+</ul></div>
 <div class="section level3">
 <h3 id="id_2026-07-07--v01420--progress_callback-sur-les-moteurs-regénération-implémenté">2026-07-07 — v0.142.0 : progress_callback sur les moteurs reGénération (implémenté)<a class="anchor" aria-label="anchor" href="#id_2026-07-07--v01420--progress_callback-sur-les-moteurs-reg%C3%A9n%C3%A9ration-impl%C3%A9ment%C3%A9"></a></h3>
 <p>Implémentation du brief cœur (périmètre + noms d’événements validés par Pascal). <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> et <code><a href="reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> gagnent <code>progress_callback = NULL</code> (contrat monitoring, no-op si NULL, <code>tryCatch</code> jamais fatal). Événements : <code>regen_expo:microclimf</code>/<code>:era5</code>(par année×catégorie)/<code>:complete</code> ; <code>regen_biljou:start</code>(n)/<code>:complete</code>. Threading via <code>.rsen_moyenne_categorie</code> (param <code>emit</code>/<code>category</code>, <code>...</code> forwardé par <code>do.call</code>) — <code>.rsen_traiter_annee</code> inchangé. <code>.Rd</code> édités à la main (exportées, pas de <code>document()</code>). Tests (test-regen-engines.R) : émission par année via <code>local_mocked_bindings(.rsen_traiter_annee)</code> sans ERA5 réel, start/complete BILJOU réel offline, callback throw survécu, no-op si emit NULL — 61 pass ; r3-biljou 14, load-biljou 23 verts. Bump mineur 0.141.0.9000 → <strong>0.142.0</strong>. Brief app ntfy §4 mis à jour (granularité fine disponible, snippet <code>on_prog</code> + clés i18n). Le mois k/12 (mcera5) et point k/N (biljouR) restent hors portée (internes amont).</p>
