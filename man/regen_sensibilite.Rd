@@ -18,6 +18,7 @@ regen_sensibilite(
   k = 0.5,
   pai = NULL,
   cache_dir = NULL,
+  progress_callback = NULL,
   precomputed = NULL,
   ...
 )
@@ -49,6 +50,13 @@ summers (engine path). See \code{\link{microclimate_detect_years}}.}
 \item{cache_dir}{Directory for the ERA5 \code{.nc} and per-year microclimate
 \code{.tif} caches. \code{NULL} (default) uses a session temp dir; pass a
 persistent path to reuse expensive runs.}
+
+\item{progress_callback}{Optional function called at each step with a
+\code{list(current = <key>, …)} payload (monitoring pattern). Keys:
+\code{"regen_expo:microclimf"} (\code{category}), \code{"regen_expo:era5"}
+(\code{category}/\code{year}/\code{i}/\code{n}, once per reference year) and
+\code{"regen_expo:complete"}. No-op when \code{NULL}; never fatal. The monthly
+ERA5 split is internal to \code{mcera5}.}
 
 \item{precomputed}{Optional per-unit microclimf output (\code{data.frame}/list).}
 

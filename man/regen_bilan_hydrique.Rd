@@ -12,6 +12,7 @@ regen_bilan_hydrique(
   forest_type = "feuillu",
   years = NULL,
   precomputed = NULL,
+  progress_callback = NULL,
   ...
 )
 }
@@ -38,6 +39,12 @@ averaging (default: all years in the run).}
 \item{precomputed}{Optional per-unit BILJOU output (\code{data.frame}/list with
 any of \code{njstress}, \code{istress}, \code{rew_min}, \code{deb_stress}).
 Pure fast-path.}
+
+\item{progress_callback}{Optional function called at each step with a
+\code{list(current = <key>, …)} payload (monitoring pattern). Keys:
+\code{"regen_biljou:start"} (\code{n} points) and \code{"regen_biljou:complete"}.
+No-op when \code{NULL}; never fatal. The per-point loop is internal to
+\code{biljouR}.}
 
 \item{...}{Passed to \code{biljouR::biljou_run()} (e.g. \code{budburst},
 \code{leaf_fall}, \code{rew_c}, \code{k}).}

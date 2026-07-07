@@ -92,6 +92,64 @@ test_that("regen_bilan_hydrique runs BILJOU and maps indices per unit (real, off
   expect_equal(out$rew_min[[1]], out$rew_min[[2]])
 })
 
+test_that("regen_bilan_hydrique emits regen_biljou start/complete", {
+  skip_if_not_installed("biljouR")
+  utils::data("meteo_hesse", package = "biljouR")
+  soil <- biljouR::biljou_soil(ewm = 150)
+  u <- .re_units(2)
+  events <- list()
+  rec <- function(p) events[[length(events) + 1L]] <<- p
+  out <- regen_bilan_hydrique(u, meteo = meteo_hesse, sol = soil,
+    lai_max = 5, forest_type = "resineux", progress_callback = rec)
+  expect_s3_class(out, "sf")
+  keys <- vapply(events, `[[`, character(1), "current")
+  expect_true("regen_biljou:start" %in% keys)
+  expect_true("regen_biljou:complete" %in% keys)
+  start <- events[[which(keys == "regen_biljou:start")[1]]]
+  expect_equal(start$n, 2L)          # n = nombre de points (unités)
+})
+
+test_that("regen_bilan_hydrique survives a throwing progress_callback", {
+  skip_if_not_installed("biljouR")
+  utils::data("meteo_hesse", package = "biljouR")
+  soil <- biljouR::biljou_soil(ewm = 150)
+  u <- .re_units(1)
+  expect_s3_class(
+    regen_bilan_hydrique(u, meteo = meteo_hesse, sol = soil, lai_max = 5,
+      forest_type = "resineux", progress_callback = function(p) stop("boom")),
+    "sf")
+})
+
+test_that(".rsen_moyenne_categorie emits one regen_expo:era5 per reference year", {
+  skip_if_not_installed("terra")
+  r <- terra::rast(nrows = 2, ncols = 2, vals = 1)
+  # Mock l'acquisition annuelle (pas d'ERA5 réseau) : renvoie des rasters factices.
+  testthat::local_mocked_bindings(
+    .rsen_traiter_annee = function(annee, ...) list(tmax = r, vpd = r))
+  events <- list()
+  rec <- function(p) events[[length(events) + 1L]] <<- p
+  res <- nemeton:::.rsen_moyenne_categorie(c(2020L, 2021L, 2022L),
+           emit = rec, category = "moyenne")
+  era5 <- Filter(function(p) identical(p$current, "regen_expo:era5"), events)
+  expect_length(era5, 3L)
+  expect_equal(vapply(era5, `[[`, integer(1), "i"), 1:3)
+  expect_true(all(vapply(era5, `[[`, integer(1), "n") == 3L))
+  expect_equal(era5[[2]]$year, 2021L)
+  expect_true(all(vapply(era5, `[[`, character(1), "category") == "moyenne"))
+  expect_s4_class(res$tmax_moy, "SpatRaster")   # agrégation inchangée
+})
+
+test_that(".rsen_moyenne_categorie stays a no-op when emit is NULL", {
+  skip_if_not_installed("terra")
+  r <- terra::rast(nrows = 2, ncols = 2, vals = 1)
+  testthat::local_mocked_bindings(
+    .rsen_traiter_annee = function(annee, ...) list(tmax = r, vpd = r))
+  # Sans emit : aucun effet de bord, sortie identique (rétro-compat).
+  res <- nemeton:::.rsen_moyenne_categorie(c(2020L, 2021L))
+  expect_s4_class(res$tmax_moy, "SpatRaster")
+  expect_equal(res$n, 2L)
+})
+
 test_that("regen_bilan_hydrique forwards phenology args to biljou_run via ...", {
   skip_if_not_installed("biljouR")
   utils::data("meteo_hesse", package = "biljouR")

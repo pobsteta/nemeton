@@ -113,13 +113,38 @@ if (length(warnings)) {
 1. **Granularité *stage* seulement (app-only).** Ce brief pousse aux frontières
    microclimf/BILJOU. C'est déjà « au fur et à mesure » au niveau des deux gros
    blocs. Suffisant pour la plupart des cas.
-2. **Granularité *fine* (ERA5 mois k/12, BILJOU point k/N) = brief cœur.**
-   `regen_sensibilite()` (ERA5 mensuel via mcera5) et `regen_bilan_hydrique()`
-   (« point 1/N… ») **n'exposent pas** de callback de progression. Pour pousser
-   « ERA5 4/12 », il faudrait un argument `progress = function(event) …` côté
-   cœur (comme `ingest_sentinel2_timeseries(progress_callback=)` pour FAST).
-   → **petit brief cœur `nemeton` à demander si Pascal veut ce niveau** ; sinon
-   le stage-level suffit. Ne PAS bricoler un scraping du stdout côté app.
+2. **Granularité *fine* — DISPONIBLE depuis `nemeton >= 0.142.0`.**
+   `regen_sensibilite()` et `regen_bilan_hydrique()` exposent désormais
+   `progress_callback = NULL` (contrat monitoring). Événements émis :
+   - `regen_sensibilite` : `"regen_expo:microclimf"` (`category`),
+     `"regen_expo:era5"` (`category`/`year`/`i`/`n`, **1 par année de
+     référence**), `"regen_expo:complete"`.
+   - `regen_bilan_hydrique` : `"regen_biljou:start"` (`n`), `"regen_biljou:complete"`.
+
+   L'app passe un `progress_callback` (dans le worker) qui mappe ces événements
+   vers `.ntfy_send()`, en **complément** des pushes stage-level ci-dessus — p.ex.
+   `regen_expo:era5` → « ERA5 année {year} ({category}) [{i}/{n}] ».
+   Le mois-par-mois (mcera5) et le point-par-point (biljouR) restent internes
+   aux paquets amont — ne PAS scraper le stdout.
+
+   ```r
+   # dans run_regeneration_engine, à passer aux deux appels cœur :
+   on_prog <- function(p) {
+     msg <- switch(p$current,
+       "regen_expo:era5"      = sprintf(i18n$t("regen_ntfy_era5"), p$year, p$category, p$i, p$n),
+       "regen_expo:microclimf"= sprintf(i18n$t("regen_ntfy_micro_cat"), p$category),
+       "regen_biljou:start"   = sprintf(i18n$t("regen_ntfy_biljou_pts"), p$n),
+       NULL)                                  # autres clés : ignorées ici
+     if (!is.null(msg)) .ntfy_send(ntfy, msg, title = "Nemeton Regen",
+                                   priority = "low", tags = tags0[["default"]])
+   }
+   # nemeton::regen_sensibilite(..., progress_callback = on_prog)
+   # nemeton::regen_bilan_hydrique(..., progress_callback = on_prog)
+   ```
+   Clés i18n additionnelles : `regen_ntfy_era5` = « ERA5 %d (%s) [%d/%d]… »,
+   `regen_ntfy_micro_cat` = « microclimf : été %s… », `regen_ntfy_biljou_pts`
+   = « BILJOU : %d points… ». (Le stage-level `regen_ntfy_*_start/done` du §1-4
+   reste utile comme jalons ; la granularité fine s'y ajoute.)
 3. **Rate-limit ERA5 (cf. brief microclimf).** Si microclimf s'arrête sur un
    throttle CDS, le push `micro_skip`/`warn` + le résumé `warnings` le
    signalent — cohérent avec la reprise depuis `micro_cache`.
