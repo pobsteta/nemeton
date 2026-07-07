@@ -142,15 +142,38 @@ test_that("get_or_compute_twi uses file cache when available", {
   # First computation
   result1 <- nemeton:::get_or_compute_twi(dem, cache_dir = temp_cache)
 
-  # Check that cache file was created
-  cache_file <- file.path(temp_cache, "twi.tif")
-  expect_true(file.exists(cache_file))
+  # Le cache fichier est indexé sur l'empreinte du DEM (twi_<hash>.tif), plus
+  # un nom fixe : exactement un fichier est créé.
+  cached <- list.files(temp_cache, pattern = "^twi_.*\\.tif$")
+  expect_length(cached, 1L)
 
   # Second call should use cache
   result2 <- nemeton:::get_or_compute_twi(dem, cache_dir = temp_cache)
 
   expect_s4_class(result2, "SpatRaster")
 
+  unlink(temp_cache, recursive = TRUE)
+})
+
+test_that("get_or_compute_twi file cache is keyed by DEM fingerprint", {
+  skip_if_not_installed("terra")
+
+  temp_cache <- file.path(tempdir(), "twi_key_test")
+  if (dir.exists(temp_cache)) unlink(temp_cache, recursive = TRUE)
+  dir.create(temp_cache, recursive = TRUE)
+
+  # Deux DEM d'empreintes différentes (même emprise, résolution différente :
+  # WMS grossier vs LiDAR fin) -> deux fichiers de cache distincts. Un nom fixe
+  # aurait fait réutiliser le TWI grossier après acquisition du LiDAR.
+  dem1 <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 500, ymin = 0, ymax = 500)
+  terra::crs(dem1) <- "EPSG:2154"; terra::values(dem1) <- 1:25
+  dem2 <- terra::rast(nrows = 50, ncols = 50, xmin = 0, xmax = 500, ymin = 0, ymax = 500)
+  terra::crs(dem2) <- "EPSG:2154"; terra::values(dem2) <- seq_len(2500)
+
+  nemeton:::get_or_compute_twi(dem1, cache_dir = temp_cache)
+  nemeton:::get_or_compute_twi(dem2, cache_dir = temp_cache)
+
+  expect_length(list.files(temp_cache, pattern = "^twi_.*\\.tif$"), 2L)
   unlink(temp_cache, recursive = TRUE)
 })
 
@@ -177,6 +200,40 @@ test_that("calculate_twi_terra computes TWI correctly", {
   # TWI values should be finite where calculated
   twi_vals <- terra::values(result)
   expect_true(sum(!is.na(twi_vals)) > 0)
+})
+
+test_that("calculate_twi_terra aggregates a fine DEM to ~target_res", {
+  skip_if_not_installed("terra")
+
+  # DEM fin 0.5 m (200x200 sur 100 m) : à target_res = 10 m il doit être agrégé
+  # (fact = floor(10/0.5) = 20) -> ~10x10 cellules, résolution ~10 m.
+  dem <- terra::rast(nrows = 200, ncols = 200, xmin = 0, xmax = 100, ymin = 0, ymax = 100)
+  terra::crs(dem) <- "EPSG:2154"
+  terra::values(dem) <- as.vector(matrix(rep(1:200, each = 200), nrow = 200, byrow = TRUE))
+
+  twi10 <- nemeton:::calculate_twi_terra(dem, target_res = 10)
+  expect_equal(terra::res(twi10)[1], 10, tolerance = 1e-6)
+  expect_true(terra::ncol(twi10) == 10 && terra::nrow(twi10) == 10)
+
+  # target_res = NULL : aucune agrégation, on garde la résolution native 0.5 m
+  twi_raw <- nemeton:::calculate_twi_terra(dem, target_res = NULL)
+  expect_equal(terra::res(twi_raw)[1], 0.5, tolerance = 1e-6)
+
+  # DEM déjà grossier (100 m) : target_res = 10 ne raffine pas (pas d'agrégation)
+  coarse <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 500, ymin = 0, ymax = 500)
+  terra::crs(coarse) <- "EPSG:2154"; terra::values(coarse) <- 1:25
+  twi_coarse <- nemeton:::calculate_twi_terra(coarse, target_res = 10)
+  expect_equal(terra::res(twi_coarse)[1], 100, tolerance = 1e-6)
+})
+
+test_that(".twi_aggregate_dem skips lon/lat DEMs (degree resolution)", {
+  skip_if_not_installed("terra")
+  # DEM en 4326 : résolution en degrés, l'agrégation métrique doit être ignorée
+  # (sinon fact = floor(10 / 0.0002) écraserait tout).
+  dem <- terra::rast(nrows = 20, ncols = 20, xmin = 6, xmax = 6.004, ymin = 46, ymax = 46.004)
+  terra::crs(dem) <- "EPSG:4326"; terra::values(dem) <- seq_len(400)
+  out <- nemeton:::.twi_aggregate_dem(dem, target_res = 10)
+  expect_equal(dim(out)[1:2], dim(dem)[1:2])
 })
 
 # ==============================================================================
@@ -970,10 +1027,11 @@ test_that("get_or_compute_twi returns from memory cache on second call", {
   result1 <- nemeton:::get_or_compute_twi(dem, cache_dir = temp_cache)
   expect_s4_class(result1, "SpatRaster")
 
-  # Key should now be in memory cache
+  # Key should now be in memory cache (inclut la résolution TWI cible, défaut 10)
   key <- paste(nrow(dem), ncol(dem),
                paste(as.vector(terra::ext(dem)), collapse = ","),
                terra::crs(dem, describe = TRUE)$code,
+               10,
                sep = "|")
   expect_true(exists(key, envir = twi_cache))
 
@@ -2165,8 +2223,8 @@ test_that("get_or_compute_twi: no cache computes TWI", {
     expect_s4_class(result, "SpatRaster")
     expect_equal(terra::nlyr(result), 1)
 
-    # File cache should be created
-    expect_true(file.exists(file.path(cache_dir, "twi.tif")))
+    # File cache should be created (nom indexé sur l'empreinte : twi_<hash>.tif)
+    expect_length(list.files(cache_dir, pattern = "^twi_.*\\.tif$"), 1L)
   })
 })
 
@@ -2190,10 +2248,11 @@ test_that("get_or_compute_twi: memory cache hit returns cached", {
     result1 <- nemeton:::get_or_compute_twi(dem, cache_dir = cache_dir)
     expect_s4_class(result1, "SpatRaster")
 
-    # Verify key is in memory cache
+    # Verify key is in memory cache (inclut la résolution TWI cible, défaut 10)
     key <- paste(nrow(dem), ncol(dem),
                  paste(as.vector(terra::ext(dem)), collapse = ","),
                  terra::crs(dem, describe = TRUE)$code,
+                 10,
                  sep = "|")
     expect_true(exists(key, envir = twi_cache))
 
@@ -2219,9 +2278,9 @@ test_that("get_or_compute_twi: file cache hit returns cached", {
     cache_dir <- file.path(getwd(), "twi_file_hit")
     dir.create(cache_dir, recursive = TRUE)
 
-    # First call - computes, writes file cache
+    # First call - computes, writes file cache (twi_<hash>.tif)
     result1 <- nemeton:::get_or_compute_twi(dem, cache_dir = cache_dir)
-    expect_true(file.exists(file.path(cache_dir, "twi.tif")))
+    expect_length(list.files(cache_dir, pattern = "^twi_.*\\.tif$"), 1L)
 
     # Clear ONLY the memory cache (not file)
     rm(list = ls(twi_cache), envir = twi_cache)

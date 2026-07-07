@@ -127,12 +127,39 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
   tryCatch({ terra::crs(r) <- m[[1]]; r }, error = function(e) r)
 }
 
-get_or_compute_twi <- function(dem, cache_dir = NULL) {
+# Agrège un DEM à ~`target_res` m avant le calcul hydrologique du TWI. À
+# résolution fine (LiDAR HD 0.5 m) l'accumulation de flux D8 est dominée par la
+# micro-topographie et très lourde (100 M cellules) ; ~10 m donne un TWI
+# hydrologiquement stable. On n'agrège jamais vers plus fin que la résolution
+# native, ni sur un DEM en lon/lat (pas en degrés, incompatible avec un pas
+# métrique).
+.twi_aggregate_dem <- function(dem, target_res = 10) {
+  if (is.null(target_res) || !is.finite(target_res) || target_res <= 0) return(dem)
+  if (terra::is.lonlat(dem)) return(dem)
+  cur <- terra::res(dem)[1]
+  if (!is.finite(cur) || cur <= 0) return(dem)
+  fact <- floor(target_res / cur)
+  if (fact >= 2L) {
+    dem <- terra::aggregate(dem, fact = fact, fun = "mean", na.rm = TRUE)
+  }
+  dem
+}
+
+# Nom du cache fichier indexé sur l'empreinte du DEM (+ résolution cible). Un nom
+# fixe « twi.tif » réutilisait à tort un TWI calculé depuis un AUTRE DEM (ex. WMS
+# 25 m) même après acquisition du LiDAR HD : le fichier était rechargé quelle que
+# soit l'empreinte courante. Le hash rend le cache auto-invalidant.
+.twi_cache_file <- function(key) {
+  paste0("twi_", substr(rlang::hash(key), 1, 12), ".tif")
+}
+
+get_or_compute_twi <- function(dem, cache_dir = NULL, twi_target_res = 10) {
   dem <- .normalize_crs(dem)
-  # Key = DEM fingerprint (dimensions + extent + CRS)
+  # Key = empreinte DEM (dimensions + extent + CRS) + résolution TWI cible
   key <- paste(nrow(dem), ncol(dem),
                paste(as.vector(terra::ext(dem)), collapse = ","),
                terra::crs(dem, describe = TRUE)$code,
+               twi_target_res,
                sep = "|")
 
   # 1. Memory cache (instant)
@@ -145,7 +172,9 @@ get_or_compute_twi <- function(dem, cache_dir = NULL) {
   if (is.null(cache_dir)) {
     cache_dir <- file.path(get_global_cache_dir(), "twi")
   }
-  cache_file <- file.path(cache_dir, "twi.tif")
+  # Nom indexé sur l'empreinte : invalide automatiquement un cache issu d'un
+  # autre DEM (grossier -> LiDAR HD) ou d'une autre résolution cible.
+  cache_file <- file.path(cache_dir, .twi_cache_file(key))
 
   if (file.exists(cache_file)) {
     tryCatch({
@@ -156,11 +185,11 @@ get_or_compute_twi <- function(dem, cache_dir = NULL) {
     }, error = function(e) NULL)
   }
 
-  # 3. Compute: prefer GRASS, fallback terra D8
+  # 3. Compute: prefer GRASS, fallback terra D8 (agrégation à twi_target_res)
   if (requireNamespace("fasterRaster", quietly = TRUE)) {
-    twi_raster <- calculate_twi_grass(dem)
+    twi_raster <- calculate_twi_grass(dem, target_res = twi_target_res)
   } else {
-    twi_raster <- calculate_twi_terra(dem)
+    twi_raster <- calculate_twi_terra(dem, target_res = twi_target_res)
   }
 
   # Save to both caches
@@ -790,7 +819,10 @@ indicateur_w3_humidite <- function(units,
 #' Calculate TWI using terra (D8 algorithm)
 #' @keywords internal
 #' @noRd
-calculate_twi_terra <- function(dem) {
+calculate_twi_terra <- function(dem, target_res = 10) {
+  # Agréger à la résolution cible : TWI hydrologiquement stable + calcul allégé
+  # (cf. .twi_aggregate_dem). target_res = NULL -> pas d'agrégation (repli déjà agrégé).
+  dem <- .twi_aggregate_dem(dem, target_res)
   # Calculate slope (in radians)
   slope_deg <- terra::terrain(dem, v = "slope", unit = "degrees")
   slope_rad <- slope_deg * pi / 180
@@ -839,7 +871,10 @@ calculate_twi_terra <- function(dem) {
 #' depression filling, flow direction/accumulation via wetness().
 #' @keywords internal
 #' @noRd
-calculate_twi_grass <- function(dem) {
+calculate_twi_grass <- function(dem, target_res = 10) {
+  # Agréger une seule fois ici ; les replis terra reçoivent déjà le DEM agrégé
+  # (target_res = NULL) pour éviter une double agrégation.
+  dem <- .twi_aggregate_dem(dem, target_res)
   if (!requireNamespace("fasterRaster", quietly = TRUE)) {
     stop("fasterRaster package required for GRASS TWI calculation", call. = FALSE)
   }
@@ -862,7 +897,7 @@ calculate_twi_grass <- function(dem) {
 
   if (grass_dir == "" || !dir.exists(grass_dir)) {
     warning("GRASS GIS not found, falling back to terra D8", call. = FALSE)
-    return(calculate_twi_terra(dem))
+    return(calculate_twi_terra(dem, target_res = NULL))
   }
 
   tryCatch({
@@ -905,7 +940,7 @@ calculate_twi_grass <- function(dem) {
       sprintf("GRASS TWI failed (%s), falling back to terra D8", conditionMessage(e)),
       call. = FALSE
     )
-    calculate_twi_terra(dem)
+    calculate_twi_terra(dem, target_res = NULL)
   })
 }
 
