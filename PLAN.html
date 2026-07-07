@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.142.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.143.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -696,9 +696,11 @@
 <ul><li>Pour chaque source, les métadonnées exactes (URL STAC, identifiant de collection, licence précise, CRS natif, résolution) sont à <strong>vérifier source par source</strong> : tant que ce n’est pas fait, les champs concernés portent un marqueur <code>"to confirm"</code> dans FR.json (même convention que <code>chm_opencanopy</code> et <code>forms_t</code>).</li>
 <li>Un éventuel <strong>spec 011</strong> pourra formaliser ce chantier si le câblage indicateurs (Phase 3) s’avère plus large que prévu.</li>
 <li>
-<strong>Moteur exposition (spec 027), 2 pistes cœur optionnelles</strong> (non bloquantes, ouvertes 2026-07-07 par le brief app microclimf-vegetation-structure) :
-<ol style="list-style-type: decimal"><li>Exposer <code>parcelle</code> / <code>fenetre</code> dans <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> pour clipper la dérivation PAI du nuage aux UGF — aujourd’hui <code>las = &lt;dossier nuage&gt;</code> fait lire par <code>lasR</code> <strong>toutes</strong> les dalles (ex. 25 × ~138 Mo) sur toute l’emprise du nuage → lourd sur grand massif (le repli <code>pai</code> S2 reste léger).</li>
-<li>Back-off plus patient / regroupement des requêtes ERA5 dans <code>.rsen_forcage_era5()</code> (~12 requêtes/an × 2 catégories → throttle CDS ponctuel ; l’auto-reprise via cache <code>micro_cache</code> mitige déjà).</li>
+<del><strong>Moteur exposition (spec 027), 2 pistes cœur optionnelles</strong></del> <strong>LEVÉES (v0.143.0, 2026-07-07)</strong> :
+<ol style="list-style-type: decimal"><li>
+<del>Clip PAI nuage aux UGF</del> → <code><a href="reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code> clippe la lecture lasR à l’emprise de travail (<code>-keep_xy</code>, COPC-efficient).</li>
+<li>
+<del>Back-off / regroupement ERA5</del> → <code>.rsen_forcage_era5()</code> : <code>by_month=FALSE</code> (1 requête/an) + retry/back-off <code>.rsen_era5_with_retry()</code>.</li>
 </ol></li>
 </ul><hr></div>
 </div>
@@ -867,6 +869,15 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-07--v01430--2-pistes-cœur-moteur-exposition-clip-lidar-aoi--era5-dégroupé">2026-07-07 — v0.143.0 : 2 pistes cœur moteur exposition (clip LiDAR AOI + ERA5 dégroupé)<a class="anchor" aria-label="anchor" href="#id_2026-07-07--v01430--2-pistes-c%C5%93ur-moteur-exposition-clip-lidar-aoi--era5-d%C3%A9group%C3%A9"></a></h3>
+<p>Implémentation des deux pistes cœur ouvertes le même jour (Réserves spec 027) :</p>
+<ul><li>
+<strong>Piste 1 — clip lecture LiDAR à l’AOI.</strong> <code><a href="reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code> ajoute un filtre LASlib <code>-keep_xy</code> au reader lasR (helper <code>.pai_keep_xy_filter</code>, emprise = <code>parcelle</code> sinon <code>grille</code>, marge <code>3·res</code>). Constat clé : <code>parcelle</code> n’était qu’un <strong>masque final</strong> ; <code>lasR::exec(pipe, on = dalles)</code> lisait <strong>toutes</strong> les dalles en entier. Sur nuage <strong>COPC</strong> (indexé), lasR ne lit désormais que les points de l’AOI et saute les dalles hors emprise → plus de lecture de tout le nuage sur grand massif. PAI dans la grille inchangé (résultat identique).</li>
+<li>
+<strong>Piste 2 — ERA5 moins throttlé.</strong> <code>.rsen_forcage_era5()</code> : <code>by_month = FALSE</code> (1 requête/an au lieu de 12) + <code>.rsen_era5_with_retry()</code> (retry + back-off, absorbe un <code>curl_fetch_memory</code>/429 transitoire que mcera5 ne relance pas).</li>
+</ul><p>Aucun changement de résultat. Tests (test-regen-engines.R) : <code>.pai_keep_xy_filter</code> (SpatRaster/SpatExtent/sf → chaîne <code>-keep_xy</code> tamponnée), <code>.rsen_era5_with_retry</code> (retry-puis-succès, abandon après max_tries) — 68 pass. <code>.Rd</code> de <code>pai_depuis_nuage</code> édité à la main (exportée). Bump mineur 0.142.0.9000 → <strong>0.143.0</strong>. Les deux entrées « Réserves / dette » spec 027 sont levées (voir section).</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-07--moteur-microclimf--structure-de-végétation-câblée-côté-app-aucun-changement-cœur">2026-07-07 — Moteur microclimf : structure de végétation câblée côté app (aucun changement cœur)<a class="anchor" aria-label="anchor" href="#id_2026-07-07--moteur-microclimf--structure-de-v%C3%A9g%C3%A9tation-c%C3%A2bl%C3%A9e-c%C3%B4t%C3%A9-app-aucun-changement-c%C5%93ur"></a></h3>
 <ul><li>

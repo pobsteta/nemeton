@@ -1314,19 +1314,15 @@ Du moins au plus invasif :
   `chm_opencanopy` et `forms_t`).
 - Un éventuel **spec 011** pourra formaliser ce chantier si le câblage
   indicateurs (Phase 3) s’avère plus large que prévu.
-- **Moteur exposition (spec 027), 2 pistes cœur optionnelles** (non
-  bloquantes, ouvertes 2026-07-07 par le brief app
-  microclimf-vegetation-structure) :
-  1.  Exposer `parcelle` / `fenetre` dans
-      [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
-      pour clipper la dérivation PAI du nuage aux UGF — aujourd’hui
-      `las = <dossier nuage>` fait lire par `lasR` **toutes** les dalles
-      (ex. 25 × ~138 Mo) sur toute l’emprise du nuage → lourd sur grand
-      massif (le repli `pai` S2 reste léger).
-  2.  Back-off plus patient / regroupement des requêtes ERA5 dans
-      `.rsen_forcage_era5()` (~12 requêtes/an × 2 catégories → throttle
-      CDS ponctuel ; l’auto-reprise via cache `micro_cache` mitige
-      déjà).
+- ~~**Moteur exposition (spec 027), 2 pistes cœur optionnelles**~~
+  **LEVÉES (v0.143.0, 2026-07-07)** :
+  1.  ~~Clip PAI nuage aux UGF~~ →
+      [`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)
+      clippe la lecture lasR à l’emprise de travail (`-keep_xy`,
+      COPC-efficient).
+  2.  ~~Back-off / regroupement ERA5~~ → `.rsen_forcage_era5()` :
+      `by_month=FALSE` (1 requête/an) + retry/back-off
+      `.rsen_era5_with_retry()`.
 
 ------------------------------------------------------------------------
 
@@ -1711,6 +1707,33 @@ cœur).
 ------------------------------------------------------------------------
 
 ## Journal
+
+### 2026-07-07 — v0.143.0 : 2 pistes cœur moteur exposition (clip LiDAR AOI + ERA5 dégroupé)
+
+Implémentation des deux pistes cœur ouvertes le même jour (Réserves spec
+027) :
+
+- **Piste 1 — clip lecture LiDAR à l’AOI.**
+  [`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)
+  ajoute un filtre LASlib `-keep_xy` au reader lasR (helper
+  `.pai_keep_xy_filter`, emprise = `parcelle` sinon `grille`, marge
+  `3·res`). Constat clé : `parcelle` n’était qu’un **masque final** ;
+  `lasR::exec(pipe, on = dalles)` lisait **toutes** les dalles en
+  entier. Sur nuage **COPC** (indexé), lasR ne lit désormais que les
+  points de l’AOI et saute les dalles hors emprise → plus de lecture de
+  tout le nuage sur grand massif. PAI dans la grille inchangé (résultat
+  identique).
+- **Piste 2 — ERA5 moins throttlé.** `.rsen_forcage_era5()` :
+  `by_month = FALSE` (1 requête/an au lieu de 12) +
+  `.rsen_era5_with_retry()` (retry + back-off, absorbe un
+  `curl_fetch_memory`/429 transitoire que mcera5 ne relance pas).
+
+Aucun changement de résultat. Tests (test-regen-engines.R) :
+`.pai_keep_xy_filter` (SpatRaster/SpatExtent/sf → chaîne `-keep_xy`
+tamponnée), `.rsen_era5_with_retry` (retry-puis-succès, abandon après
+max_tries) — 68 pass. `.Rd` de `pai_depuis_nuage` édité à la main
+(exportée). Bump mineur 0.142.0.9000 → **0.143.0**. Les deux entrées «
+Réserves / dette » spec 027 sont levées (voir section).
 
 ### 2026-07-07 — Moteur microclimf : structure de végétation câblée côté app (aucun changement cœur)
 

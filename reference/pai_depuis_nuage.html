@@ -19,7 +19,7 @@ spec 027 §9.3)."><meta property="og:image" content="https://pobsteta.github.io/
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.142.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.143.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -94,7 +94,9 @@ covering the parcels plus a buffer.</p></dd>
 
 <dt id="arg-grille">grille<a class="anchor" aria-label="anchor" href="#arg-grille"></a></dt>
 <dd><p>Target grid (<code>SpatRaster</code>, typically the working DTM) — the
-PAI is resampled onto it.</p></dd>
+PAI is resampled onto it, and (when <code>parcelle</code> is <code>NULL</code>) its extent
+bounds the LiDAR read window (<code>-keep_xy</code>), so only tiles/points over the AOI
+are read.</p></dd>
 
 
 <dt id="arg-res">res<a class="anchor" aria-label="anchor" href="#arg-res"></a></dt>
@@ -106,7 +108,10 @@ PAI is resampled onto it.</p></dd>
 
 
 <dt id="arg-parcelle">parcelle<a class="anchor" aria-label="anchor" href="#arg-parcelle"></a></dt>
-<dd><p>Optional <code>SpatVector</code>/<code>sf</code> mask applied at the end.</p></dd>
+<dd><p>Optional <code>SpatVector</code>/<code>sf</code>: bounds the LiDAR read
+window (<code>-keep_xy</code>, buffered) <strong>and</strong> masks the final raster.
+<code>NULL</code> uses <code>grille</code>'s extent for the read window and applies no final
+mask.</p></dd>
 
 
 <dt id="arg-fenetre">fenetre<a class="anchor" aria-label="anchor" href="#arg-fenetre"></a></dt>

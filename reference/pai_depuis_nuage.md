@@ -38,7 +38,9 @@ pai_depuis_nuage(
 - grille:
 
   Target grid (`SpatRaster`, typically the working DTM) — the PAI is
-  resampled onto it.
+  resampled onto it, and (when `parcelle` is `NULL`) its extent bounds
+  the LiDAR read window (`-keep_xy`), so only tiles/points over the AOI
+  are read.
 
 - res:
 
@@ -50,7 +52,9 @@ pai_depuis_nuage(
 
 - parcelle:
 
-  Optional `SpatVector`/`sf` mask applied at the end.
+  Optional `SpatVector`/`sf`: bounds the LiDAR read window (`-keep_xy`,
+  buffered) **and** masks the final raster. `NULL` uses `grille`'s
+  extent for the read window and applies no final mask.
 
 - fenetre:
 

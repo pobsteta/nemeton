@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.142.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.143.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.143.0" id="nemeton-01430-2026-07-07">nemeton 0.143.0 (2026-07-07)<a class="anchor" aria-label="anchor" href="#nemeton-01430-2026-07-07"></a></h2>
+<div class="section level4">
+<h4 id="changed--moteur-exposition--lecture-lidar-clippée-à-laoi--era5-moins-throttlé-0-143-0">Changed — moteur exposition : lecture LiDAR clippée à l’AOI + ERA5 moins throttlé<a class="anchor" aria-label="anchor" href="#changed--moteur-exposition--lecture-lidar-clipp%C3%A9e-%C3%A0-laoi--era5-moins-throttl%C3%A9-0-143-0"></a></h4>
+<p>Deux optimisations du chemin moteur de <code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code> (spec 027), sans changement de résultat :</p>
+<ul><li>
+<strong><code><a href="../reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code> clippe désormais la lecture LiDAR à l’emprise de travail</strong> (filtre LASlib <code>-keep_xy</code>, dérivé de <code>parcelle</code> si fourni sinon de <code>grille</code>, tamponné). Avant, <code>las = &lt;dossier nuage&gt;</code> faisait lire par <code>lasR</code> <strong>toutes</strong> les dalles en entier (ex. 25 × ~138 Mo) ; sur des dalles <strong>COPC</strong> (indexées), lasR ne lit maintenant que les points de l’AOI et saute les dalles hors emprise. <code>parcelle</code> borne aussi la fenêtre de lecture (en plus du masque final). PAI dans la grille inchangé.</li>
+<li>
+<strong><code>.rsen_forcage_era5()</code> : <code>by_month = FALSE</code></strong> → <strong>1 requête ERA5 par année</strong> au lieu de 12 mensuelles (bbox ponctuelle 0.1°, volume modeste), plus un <strong>retry + back-off</strong> (<code>.rsen_era5_with_retry</code>) qui absorbe un throttle / une coupure réseau CDS transitoire. Réduit fortement les interruptions sur les runs multi-années.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.142.0" id="nemeton-01420-2026-07-07">nemeton 0.142.0 (2026-07-07)<a class="anchor" aria-label="anchor" href="#nemeton-01420-2026-07-07"></a></h2>
 <div class="section level4">
