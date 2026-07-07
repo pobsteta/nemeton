@@ -1,5 +1,29 @@
 # Changelog
 
+## nemeton 0.141.0 (2026-07-07)
+
+#### Added — TWI hydrologiquement stable + cache auto-invalidant
+
+`get_or_compute_twi()` gagne un paramètre `twi_target_res` (défaut **10
+m**) qui **agrège le DEM à la résolution cible avant** le calcul
+d’accumulation de flux. Sur un MNT LiDAR HD 0.5 m, le TWI D8 était
+dominé par la micro-topographie (valeurs absolues peu fiables) et
+coûteux (100 M cellules) ; à ~10 m il est hydrologiquement stable et
+~400× plus léger. L’agrégation est ignorée pour un DEM déjà plus
+grossier que la cible et pour les DEM en lon/lat (résolution en degrés).
+
+#### Fixed — cache TWI fichier indexé sur l’empreinte du DEM
+
+Le cache fichier de TWI utilisait un nom **fixe** `twi.tif`, rechargé
+quelle que soit l’empreinte du DEM courant : un projet ayant calculé le
+TWI depuis un DEM grossier (WMS 25 m) **ne le recalculait pas** après
+acquisition du LiDAR HD. Le fichier est désormais nommé `twi_<hash>.tif`
+où le hash intègre dimensions + emprise + CRS + `twi_target_res`,
+s’invalidant automatiquement. Les caches `twi.tif` existants deviennent
+orphelins et sont recalculés une fois (désormais peu coûteux).
+`calculate_twi_terra()` / `calculate_twi_grass()` acceptent aussi
+`target_res` (défaut 10 ; `NULL` = pas d’agrégation).
+
 ## nemeton 0.140.0 (2026-07-06)
 
 #### Added — tirage validation pondéré continu (FORDEAD/RECONFORT)

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.140.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.141.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -862,6 +862,15 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-07--v01410--twi-stable-agrégation-10-m--cache-twi-auto-invalidant">2026-07-07 — v0.141.0 : TWI stable (agrégation ~10 m) + cache TWI auto-invalidant<a class="anchor" aria-label="anchor" href="#id_2026-07-07--v01410--twi-stable-agr%C3%A9gation-10-m--cache-twi-auto-invalidant"></a></h3>
+<p>Diagnostic parti de la question « le TWI est-il recalculé depuis <code>lidar_mnt_mosaic.tif</code> ? ». Vérification empirique sur le projet <code>20260701_204501_ltcp</code> : le <code>twi.tif</code> en cache est <strong>10000×10000, 0.5 m, 2154</strong> — géométrie identique à la mosaïque LiDAR ⇒ oui, le TWI y est bien dérivé du LiDAR HD. Mais deux vrais sujets cœur émergent :</p>
+<ul><li>
+<strong>A (fix) — cache fichier périmable.</strong> <code>get_or_compute_twi()</code> avait un cache <strong>mémoire</strong> indexé sur l’empreinte du DEM mais un cache <strong>fichier</strong> à nom fixe <code>twi.tif</code>, rechargé quelle que soit l’empreinte. Un projet ayant calculé le TWI depuis un DEM grossier (WMS 25 m) <strong>ne le recalculait pas</strong> après acquisition du LiDAR HD. → Fichier renommé <code>twi_&lt;hash&gt;.tif</code> (hash = dims + emprise + CRS + <code>twi_target_res</code>), auto-invalidant. Les <code>twi.tif</code> existants deviennent orphelins, recalculés une fois.</li>
+<li>
+<strong>B (feat) — TWI à 0.5 m brut, bruité et lourd.</strong> <code>calculate_twi_terra()</code> faisait <code>terrain</code>+<code>flowdir</code>+<code>flowAccumulation</code> sur le DEM natif (100 M cellules à 0.5 m) : TWI dominé par la micro-topographie, valeurs absolues peu fiables. → Nouveau <code>twi_target_res</code> (défaut <strong>10 m</strong>, choisi par Pascal ; 20 m d’abord évoqué puis ramené à 10) qui <strong>agrège le DEM</strong> (moyenne) avant l’accumulation de flux. <code>.twi_aggregate_dem()</code> n’agrège jamais vers plus fin que le natif, ni sur un DEM lon/lat (pas en degrés). ~400× plus léger.</li>
+</ul><p><code>calculate_twi_terra()</code>/<code>calculate_twi_grass()</code> acceptent aussi <code>target_res</code> (<code>NULL</code> = pas d’agrégation, utilisé par les replis GRASS→terra pour éviter une double agrégation). Fonctions internes (non exportées) → pas de <code>.Rd</code>. Tests : <code>test-indicators-families.R</code> (agrégation fine→10 m, cache indexé par empreinte, skip lon/lat, clés mémoire avec <code>|10</code>) — 317 pass ; <code>test-indicators-risk.R</code> 161 pass. <strong>Aucun impact app</strong> (l’app ne lit jamais <code>twi.tif</code> par nom — tout passe par le cœur). Note : les valeurs de W3 changent (TWI plus propre) — c’est attendu et documenté (NEWS).</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-06--deux-briefs-app-regénérationhygiène-livrés-aucun-changement-cœur">2026-07-06 — Deux briefs app reGénération/hygiène livrés (aucun changement cœur)<a class="anchor" aria-label="anchor" href="#id_2026-07-06--deux-briefs-app-reg%C3%A9n%C3%A9rationhygi%C3%A8ne-livr%C3%A9s-aucun-changement-c%C5%93ur"></a></h3>
 <ul><li>

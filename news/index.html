@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.140.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.141.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.141.0" id="nemeton-01410-2026-07-07">nemeton 0.141.0 (2026-07-07)<a class="anchor" aria-label="anchor" href="#nemeton-01410-2026-07-07"></a></h2>
+<div class="section level4">
+<h4 id="added--twi-hydrologiquement-stable--cache-auto-invalidant-0-141-0">Added — TWI hydrologiquement stable + cache auto-invalidant<a class="anchor" aria-label="anchor" href="#added--twi-hydrologiquement-stable--cache-auto-invalidant-0-141-0"></a></h4>
+<p><code>get_or_compute_twi()</code> gagne un paramètre <code>twi_target_res</code> (défaut <strong>10 m</strong>) qui <strong>agrège le DEM à la résolution cible avant</strong> le calcul d’accumulation de flux. Sur un MNT LiDAR HD 0.5 m, le TWI D8 était dominé par la micro-topographie (valeurs absolues peu fiables) et coûteux (100 M cellules) ; à ~10 m il est hydrologiquement stable et ~400× plus léger. L’agrégation est ignorée pour un DEM déjà plus grossier que la cible et pour les DEM en lon/lat (résolution en degrés).</p>
+</div>
+<div class="section level4">
+<h4 id="fixed--cache-twi-fichier-indexé-sur-lempreinte-du-dem-0-141-0">Fixed — cache TWI fichier indexé sur l’empreinte du DEM<a class="anchor" aria-label="anchor" href="#fixed--cache-twi-fichier-index%C3%A9-sur-lempreinte-du-dem-0-141-0"></a></h4>
+<p>Le cache fichier de TWI utilisait un nom <strong>fixe</strong> <code>twi.tif</code>, rechargé quelle que soit l’empreinte du DEM courant : un projet ayant calculé le TWI depuis un DEM grossier (WMS 25 m) <strong>ne le recalculait pas</strong> après acquisition du LiDAR HD. Le fichier est désormais nommé <code>twi_&lt;hash&gt;.tif</code> où le hash intègre dimensions + emprise + CRS + <code>twi_target_res</code>, s’invalidant automatiquement. Les caches <code>twi.tif</code> existants deviennent orphelins et sont recalculés une fois (désormais peu coûteux). <code>calculate_twi_terra()</code> / <code>calculate_twi_grass()</code> acceptent aussi <code>target_res</code> (défaut 10 ; <code>NULL</code> = pas d’agrégation).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.140.0" id="nemeton-01400-2026-07-06">nemeton 0.140.0 (2026-07-06)<a class="anchor" aria-label="anchor" href="#nemeton-01400-2026-07-06"></a></h2>
 <div class="section level4">
