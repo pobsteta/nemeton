@@ -1278,6 +1278,28 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-07 — Brief app : notifications ntfy du moteur reGénération (microclimf + BILJOU)
+
+Demande : pousser des messages ntfy « au fur et à mesure » sur le bouton
+« Moteur microclimf + BILJOU », comme FAST/FORDEAD/RECONFORT. Constat : le
+mécanisme ntfy est **100 % app** (`nemetonshiny/R/service_monitoring.R` :
+`.ntfy_config()`/`.ntfy_send()`, opt-in via `NEMETON_NTFY_*`, no-op si non
+configuré). Le moteur tourne dans un worker `future` (`ExtendedTask`), donc les
+pushes intermédiaires doivent vivre **dans** `run_regeneration_engine()` (pas
+dans le `observeEvent`, qui ne voit que début + fin) — pattern FORDEAD.
+
+→ **Brief app livré** : `specs/027-regeneration-microclimat/brief-nemetonshiny-engine-ntfy.md`
+(MOYENNE, aucun changement cœur). Pushes *stage-level* : start → micro_start →
+micro_done/skip → biljou_start → biljou_done → résumé (`cached`) + warnings.
+Titre ASCII `"Nemeton Regen"` (en-têtes ntfy non UTF-8). 8 clés i18n FR/EN.
+**Option granularité fine** (ERA5 mois k/12) = petit brief cœur ultérieur
+(`regen_sensibilite`/`regen_bilan_hydrique` n'exposent pas de callback de
+progression) — à demander si le stage-level ne suffit pas.
+
+Note : le brief précédent (structure de végétation, `las`/`pai`) est **déjà
+appliqué** côté app (`service_regeneration.R` : `veg_args$las = grid$las_dir`,
+repli `pai`, cleanup dossier vide, warning `regen_engine_no_vegetation_structure`).
+
 ### 2026-07-07 — Élucidation microclimf vide + brief app (structure de végétation manquante)
 
 Suite à « pourquoi `microclimf/` et `sensibilite.gpkg` restent vides ? ».
