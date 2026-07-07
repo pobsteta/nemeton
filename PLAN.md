@@ -1694,6 +1694,34 @@ cœur).
 
 ## Journal
 
+### 2026-07-07 — Élucidation microclimf vide + brief app (structure de végétation manquante)
+
+Suite à « pourquoi `microclimf/` et `sensibilite.gpkg` restent vides ?
+». Écartés par repros ciblés : licence ERA5-Land (✅ téléchargement OK),
+licence E-OBS (✅), CRS des tuiles (✅ 2154 propre), grille LiDAR (✅
+`lidar_mnt/` + `lidar_mnh/` présents), CDS ready (✅). **Cause réelle**
+:
+[`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+exige la **structure de végétation** (`las` nuage LiDAR **ou** `pai` LAI
+S2/PROSAIL), et l’app (`service_regeneration.R:459`) ne passe **que**
+`mnt`+`mnh` → abort avalé en warning « microclimf: … » → dossier créé
+(l.457) mais vide.
+
+Le projet a pourtant `cache/layers/lidar_nuage/` (25 dalles
+`.copc.laz`), mais `resolve_regen_lidar_grid()` ne résout que MNT+MNH.
+**Fix vérifié end-to-end** (repro avec `las = <dossier .laz>`) : garde
+franchi,
+[`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)
+(lasR) dérive le PAI, microclimf tourne (ERA5 en cours).
+
+→ **Brief app livré** :
+`specs/027-regeneration-microclimat/brief-nemetonshiny-microclimf-vegetation-structure.md`
+(HAUTE, aucun changement cœur). Étend `resolve_regen_lidar_grid()`
+(résoudre `lidar_nuage` → `las_dir`) + passe `las = grid$las_dir`, sinon
+repli `pai` via le `.regen_lai_fallback()` (LAI S2 déjà caché) que
+BILJOU utilise. Réserve perf notée (lasR sur toutes les dalles ; clip
+`parcelle`/`fenetre` = petit brief cœur ultérieur si besoin).
+
 ### 2026-07-07 — v0.141.0 : TWI stable (agrégation ~10 m) + cache TWI auto-invalidant
 
 Diagnostic parti de la question « le TWI est-il recalculé depuis
