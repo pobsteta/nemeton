@@ -1278,6 +1278,22 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-07 — v0.142.0 : progress_callback sur les moteurs reGénération (implémenté)
+
+Implémentation du brief cœur (périmètre + noms d'événements validés par Pascal).
+`regen_sensibilite()` et `regen_bilan_hydrique()` gagnent `progress_callback = NULL`
+(contrat monitoring, no-op si NULL, `tryCatch` jamais fatal). Événements :
+`regen_expo:microclimf`/`:era5`(par année×catégorie)/`:complete` ;
+`regen_biljou:start`(n)/`:complete`. Threading via `.rsen_moyenne_categorie`
+(param `emit`/`category`, `...` forwardé par `do.call`) — `.rsen_traiter_annee`
+inchangé. `.Rd` édités à la main (exportées, pas de `document()`). Tests
+(test-regen-engines.R) : émission par année via `local_mocked_bindings(.rsen_traiter_annee)`
+sans ERA5 réel, start/complete BILJOU réel offline, callback throw survécu,
+no-op si emit NULL — 61 pass ; r3-biljou 14, load-biljou 23 verts. Bump mineur
+0.141.0.9000 → **0.142.0**. Brief app ntfy §4 mis à jour (granularité fine
+disponible, snippet `on_prog` + clés i18n). Le mois k/12 (mcera5) et point k/N
+(biljouR) restent hors portée (internes amont).
+
 ### 2026-07-07 — Brief cœur : progress_callback sur regen_sensibilite/regen_bilan_hydrique (granularité fine ntfy)
 
 Demande de granularité fine pour les pushes ntfy du moteur reGénération. Le cœur

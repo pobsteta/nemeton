@@ -83,6 +83,10 @@
 #'   averaging (default: all years in the run).
 #' @param precomputed Optional per-unit BILJOU output (`data.frame`/list with
 #'   any of `njstress`, `istress`, `rew_min`, `deb_stress`). Pure fast-path.
+#' @param progress_callback Optional function called at each step with a
+#'   `list(current = <key>, …)` payload (monitoring pattern). Keys:
+#'   `"regen_biljou:start"` (`n` points) and `"regen_biljou:complete"`. No-op
+#'   when `NULL`; never fatal. The per-point loop is internal to `biljouR`.
 #' @param ... Passed to `biljouR::biljou_run()` (e.g. `budburst`, `leaf_fall`,
 #'   `rew_c`, `k`).
 #'
@@ -92,8 +96,14 @@
 #' @export
 regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
                                  lai_max = NULL, forest_type = "feuillu",
-                                 years = NULL, precomputed = NULL, ...) {
+                                 years = NULL, precomputed = NULL,
+                                 progress_callback = NULL, ...) {
   validate_sf(units)
+  # Progression (patron monitoring) : no-op si NULL, jamais fatale.
+  emit <- function(payload) {
+    if (!is.null(progress_callback))
+      tryCatch(progress_callback(payload), error = function(e) invisible(NULL))
+  }
   if (!is.null(precomputed)) {
     return(.regen_attach_precomputed(units, precomputed, .REGEN_COLS_HYDRIQUE))
   }
@@ -132,12 +142,14 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   # construction que load_biljou_forcing() -> les ids de la liste `meteo`
   # par unité s'y alignent.
   points <- .biljou_points(units)
+  emit(list(current = "regen_biljou:start", n = nrow(points)))
 
   grid <- biljouR::biljou_run_grid(
     points = points, meteo = meteo, soil = sol, lai_max = lai_max,
     forest_type = ft, years = years,
     indicators = c("NJstress", "Istress", "DEBstress", "min_rew"),
     id_col = "id", lon_col = "lon", lat_col = "lat", ...)
+  emit(list(current = "regen_biljou:complete"))
 
   # Moyenne inter-annuelle par unité, remise dans l'ordre des unités.
   map_col <- function(ind) {
@@ -249,9 +261,16 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   list(tmax = tmax, vpd = vpd)
 }
 
-# Moyenne (et écart-type interannuel) d'une catégorie d'années.
-.rsen_moyenne_categorie <- function(annees, ...) {
-  res  <- lapply(annees, .rsen_traiter_annee, ...)
+# Moyenne (et écart-type interannuel) d'une catégorie d'années. `emit`/`category`
+# publient un événement `regen_expo:era5` par année (progression fine ntfy).
+.rsen_moyenne_categorie <- function(annees, ..., emit = NULL, category = NA) {
+  dots <- list(...)
+  n    <- length(annees)
+  res  <- lapply(seq_len(n), function(k) {
+    if (!is.null(emit)) emit(list(current = "regen_expo:era5",
+      category = category, year = annees[[k]], i = k, n = n))
+    do.call(.rsen_traiter_annee, c(list(annees[[k]]), dots))
+  })
   st_t <- terra::rast(lapply(res, `[[`, "tmax"))
   st_v <- terra::rast(lapply(res, `[[`, "vpd"))
   list(tmax_moy = terra::mean(st_t, na.rm = TRUE),
@@ -302,6 +321,12 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #' @param cache_dir Directory for the ERA5 `.nc` and per-year microclimate `.tif`
 #'   caches. `NULL` (default) uses a session temp dir; pass a persistent path to
 #'   reuse expensive runs.
+#' @param progress_callback Optional function called at each step with a
+#'   `list(current = <key>, …)` payload (monitoring pattern). Keys:
+#'   `"regen_expo:microclimf"` (`category`), `"regen_expo:era5"`
+#'   (`category`/`year`/`i`/`n`, once per reference year) and
+#'   `"regen_expo:complete"`. No-op when `NULL`; never fatal. The monthly ERA5
+#'   split is internal to `mcera5`.
 #' @param precomputed Optional per-unit microclimf output (`data.frame`/list).
 #' @param ... Reserved (engine parameters).
 #'
@@ -316,8 +341,14 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
                               annees_moy = NULL, annees_canic = NULL,
                               mois_ete = 6:8, res = 2, tampon = 150,
                               reqhgt = 0.5, k = 0.5, pai = NULL, cache_dir = NULL,
+                              progress_callback = NULL,
                               precomputed = NULL, ...) {
   validate_sf(units)
+  # Progression (patron monitoring) : émission no-op si NULL, jamais fatale.
+  emit <- function(payload) {
+    if (!is.null(progress_callback))
+      tryCatch(progress_callback(payload), error = function(e) invisible(NULL))
+  }
   if (!is.null(precomputed)) {
     units <- .regen_attach_precomputed(units, precomputed, .REGEN_COLS_EXPO)
     if (all(c("tmax_moyenne", "tmax_canicule") %in% names(units)) &&
@@ -390,12 +421,14 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   lon <- mean(ll[, "x"]); lat <- mean(ll[, "y"])
 
   # 2. microclimat par catégorie (moyenne des étés moyens vs canicule).
+  emit(list(current = "regen_expo:microclimf", category = "moyenne"))
   M <- .rsen_moyenne_categorie(annees_moy, lon = lon, lat = lat, dtm = dtm,
          veg = veg, soil = soil, reqhgt = reqhgt, mois_ete = mois_ete,
-         cache_dir = cache_dir)
+         cache_dir = cache_dir, emit = emit, category = "moyenne")
+  emit(list(current = "regen_expo:microclimf", category = "canicule"))
   C <- .rsen_moyenne_categorie(annees_canic, lon = lon, lat = lat, dtm = dtm,
          veg = veg, soil = soil, reqhgt = reqhgt, mois_ete = mois_ete,
-         cache_dir = cache_dir)
+         cache_dir = cache_dir, emit = emit, category = "canicule")
 
   # 3. Écarts et robustesse signal/bruit (si >= 2 années par catégorie).
   d_tmax <- C$tmax_moy - M$tmax_moy
@@ -436,6 +469,7 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
     units$signal_robuste <- NA
     units$priorite       <- units$parcelle_sensible
   }
+  emit(list(current = "regen_expo:complete"))
   units
 }
 

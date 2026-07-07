@@ -1,3 +1,23 @@
+# nemeton 0.142.0 (2026-07-07)
+
+### Added — `progress_callback` sur `regen_sensibilite()` / `regen_bilan_hydrique()`
+
+Les deux moteurs reGénération exposent désormais un argument
+`progress_callback = NULL`, en parité avec le contrat « monitoring » du reste du
+cœur (`load_biljou_forcing()`, `load_eobs_source()`, FORDEAD, RECONFORT…). Chaque
+étape publie un `list(current = "<clé>", …)` ; l'app (nemetonshiny) mappe ces
+événements sur des notifications de progression (bottom-right / ntfy).
+
+- `regen_sensibilite()` : `"regen_expo:microclimf"` (`category`),
+  `"regen_expo:era5"` (`category`/`year`/`i`/`n`, **une fois par année de
+  référence**), `"regen_expo:complete"`. Le découpage mensuel ERA5 reste interne
+  à `mcera5`.
+- `regen_bilan_hydrique()` : `"regen_biljou:start"` (`n` points) et
+  `"regen_biljou:complete"`. La boucle par point reste interne à `biljouR`.
+
+Défaut `NULL` = comportement **byte-identique** (émission no-op) ; un callback
+qui échoue n'interrompt jamais un run (`tryCatch`). Aucune nouvelle dépendance.
+
 # nemeton 0.141.0 (2026-07-07)
 
 ### Added — TWI hydrologiquement stable + cache auto-invalidant
