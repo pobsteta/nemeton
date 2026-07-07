@@ -19,6 +19,7 @@ regen_bilan_hydrique(
   forest_type = "feuillu",
   years = NULL,
   precomputed = NULL,
+  progress_callback = NULL,
   ...
 )
 ```
@@ -60,6 +61,14 @@ regen_bilan_hydrique(
 
   Optional per-unit BILJOU output (`data.frame`/list with any of
   `njstress`, `istress`, `rew_min`, `deb_stress`). Pure fast-path.
+
+- progress_callback:
+
+  Optional function called at each step with a
+  `list(current = <key>, …)` payload (monitoring pattern). Keys:
+  `"regen_biljou:start"` (`n` points) and `"regen_biljou:complete"`.
+  No-op when `NULL`; never fatal. The per-point loop is internal to
+  `biljouR`.
 
 - ...:
 

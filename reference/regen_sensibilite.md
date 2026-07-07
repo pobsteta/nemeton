@@ -23,6 +23,7 @@ regen_sensibilite(
   k = 0.5,
   pai = NULL,
   cache_dir = NULL,
+  progress_callback = NULL,
   precomputed = NULL,
   ...
 )
@@ -76,6 +77,15 @@ regen_sensibilite(
   Directory for the ERA5 `.nc` and per-year microclimate `.tif` caches.
   `NULL` (default) uses a session temp dir; pass a persistent path to
   reuse expensive runs.
+
+- progress_callback:
+
+  Optional function called at each step with a
+  `list(current = <key>, …)` payload (monitoring pattern). Keys:
+  `"regen_expo:microclimf"` (`category`), `"regen_expo:era5"`
+  (`category`/`year`/`i`/`n`, once per reference year) and
+  `"regen_expo:complete"`. No-op when `NULL`; never fatal. The monthly
+  ERA5 split is internal to `mcera5`.
 
 - precomputed:
 

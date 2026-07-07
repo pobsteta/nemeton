@@ -15,7 +15,7 @@ its biljou argument) and indice_priorite_regen."><meta property="og:image" conte
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.141.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.142.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,7 @@ its <code>biljou</code> argument) and <code><a href="indice_priorite_regen.html"
 <span>  forest_type <span class="op">=</span> <span class="st">"feuillu"</span>,</span>
 <span>  years <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  precomputed <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -112,6 +113,14 @@ averaging (default: all years in the run).</p></dd>
 <dd><p>Optional per-unit BILJOU output (<code>data.frame</code>/list with
 any of <code>njstress</code>, <code>istress</code>, <code>rew_min</code>, <code>deb_stress</code>).
 Pure fast-path.</p></dd>
+
+
+<dt id="arg-progress-callback">progress_callback<a class="anchor" aria-label="anchor" href="#arg-progress-callback"></a></dt>
+<dd><p>Optional function called at each step with a
+<code>list(current = &lt;key&gt;, …)</code> payload (monitoring pattern). Keys:
+<code>"regen_biljou:start"</code> (<code>n</code> points) and <code>"regen_biljou:complete"</code>.
+No-op when <code>NULL</code>; never fatal. The per-point loop is internal to
+<code>biljouR</code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

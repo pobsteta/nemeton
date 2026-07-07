@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.141.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.142.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,19 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.142.0" id="nemeton-01420-2026-07-07">nemeton 0.142.0 (2026-07-07)<a class="anchor" aria-label="anchor" href="#nemeton-01420-2026-07-07"></a></h2>
+<div class="section level4">
+<h4 id="added--progress_callback-sur-regen_sensibilite--regen_bilan_hydrique-0-142-0">Added — <code>progress_callback</code> sur <code>regen_sensibilite()</code> / <code>regen_bilan_hydrique()</code>
+<a class="anchor" aria-label="anchor" href="#added--progress_callback-sur-regen_sensibilite--regen_bilan_hydrique-0-142-0"></a></h4>
+<p>Les deux moteurs reGénération exposent désormais un argument <code>progress_callback = NULL</code>, en parité avec le contrat « monitoring » du reste du cœur (<code><a href="../reference/load_biljou_forcing.html">load_biljou_forcing()</a></code>, <code><a href="../reference/load_eobs_source.html">load_eobs_source()</a></code>, FORDEAD, RECONFORT…). Chaque étape publie un <code>list(current = "&lt;clé&gt;", …)</code> ; l’app (nemetonshiny) mappe ces événements sur des notifications de progression (bottom-right / ntfy).</p>
+<ul><li>
+<code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code> : <code>"regen_expo:microclimf"</code> (<code>category</code>), <code>"regen_expo:era5"</code> (<code>category</code>/<code>year</code>/<code>i</code>/<code>n</code>, <strong>une fois par année de référence</strong>), <code>"regen_expo:complete"</code>. Le découpage mensuel ERA5 reste interne à <code>mcera5</code>.</li>
+<li>
+<code><a href="../reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> : <code>"regen_biljou:start"</code> (<code>n</code> points) et <code>"regen_biljou:complete"</code>. La boucle par point reste interne à <code>biljouR</code>.</li>
+</ul><p>Défaut <code>NULL</code> = comportement <strong>byte-identique</strong> (émission no-op) ; un callback qui échoue n’interrompt jamais un run (<code>tryCatch</code>). Aucune nouvelle dépendance.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.141.0" id="nemeton-01410-2026-07-07">nemeton 0.141.0 (2026-07-07)<a class="anchor" aria-label="anchor" href="#nemeton-01410-2026-07-07"></a></h2>
 <div class="section level4">
