@@ -1,3 +1,23 @@
+# nemeton 0.143.0 (2026-07-07)
+
+### Changed — moteur exposition : lecture LiDAR clippée à l'AOI + ERA5 moins throttlé
+
+Deux optimisations du chemin moteur de `regen_sensibilite()` (spec 027), sans
+changement de résultat :
+
+- **`pai_depuis_nuage()` clippe désormais la lecture LiDAR à l'emprise de
+  travail** (filtre LASlib `-keep_xy`, dérivé de `parcelle` si fourni sinon de
+  `grille`, tamponné). Avant, `las = <dossier nuage>` faisait lire par `lasR`
+  **toutes** les dalles en entier (ex. 25 × ~138 Mo) ; sur des dalles **COPC**
+  (indexées), lasR ne lit maintenant que les points de l'AOI et saute les dalles
+  hors emprise. `parcelle` borne aussi la fenêtre de lecture (en plus du masque
+  final). PAI dans la grille inchangé.
+- **`.rsen_forcage_era5()` : `by_month = FALSE`** → **1 requête ERA5 par année**
+  au lieu de 12 mensuelles (bbox ponctuelle 0.1°, volume modeste), plus un
+  **retry + back-off** (`.rsen_era5_with_retry`) qui absorbe un throttle / une
+  coupure réseau CDS transitoire. Réduit fortement les interruptions sur les runs
+  multi-années.
+
 # nemeton 0.142.0 (2026-07-07)
 
 ### Added — `progress_callback` sur `regen_sensibilite()` / `regen_bilan_hydrique()`
