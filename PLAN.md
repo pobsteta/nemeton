@@ -1694,6 +1694,29 @@ cœur).
 
 ## Journal
 
+### 2026-07-07 — Brief cœur : progress_callback sur regen_sensibilite/regen_bilan_hydrique (granularité fine ntfy)
+
+Demande de granularité fine pour les pushes ntfy du moteur reGénération.
+Le cœur a déjà un contrat
+`progress_callback(payload = list(current="<ns>:<step>", …))`
+standardisé (load_biljou, load_eobs, fordead, reconfort, monitoring,
+sentinel2_cache) ; il manque à `regen_sensibilite` et
+`regen_bilan_hydrique`. Granularité **atteignable** : ERA5 **par année ×
+catégorie** (boucle `.rsen_moyenne_categorie` → `.rsen_traiter_annee`) +
+microclimf par catégorie + BILJOU **start/complete**. **Hors portée** :
+ERA5 mois k/12 (interne mcera5) et BILJOU point k/N (interne
+[`biljouR::biljou_run_grid`](https://pobsteta.github.io/biljouR/reference/biljou_run_grid.html))
+— externes, prints only, ne PAS scraper le stdout.
+
+→ **Brief cœur (paperwork-first)** :
+`specs/027-regeneration-microclimat/brief-nemeton-core-progress-callbacks.md`.
+API `progress_callback=NULL` (défaut = no-op byte-identique) ; events
+`regen_expo:era5|microclimf|complete`, `regen_biljou:start|complete` ;
+.Rd édités à la main (fonctions exportées, pas de document()) ; tests
+via `local_mocked_bindings(.rsen_traiter_annee)` sans ERA5 réel ; bump
+mineur. **En attente de 2 confirmations** (périmètre + noms
+d’événements) avant code.
+
 ### 2026-07-07 — Brief app : notifications ntfy du moteur reGénération (microclimf + BILJOU)
 
 Demande : pousser des messages ntfy « au fur et à mesure » sur le bouton
