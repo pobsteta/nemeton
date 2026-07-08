@@ -53,7 +53,9 @@ persistent path to reuse expensive runs.}
 
 \item{progress_callback}{Optional function called at each step with a
 \code{list(current = <key>, …)} payload (monitoring pattern). Keys:
-\code{"regen_expo:microclimf"} (\code{category}), \code{"regen_expo:era5"}
+\code{"regen_expo:pai"} (\code{source} = \code{"lidar"}/\code{"raster"}, once,
+when the vegetation-structure PAI is built), \code{"regen_expo:microclimf"}
+(\code{category}), \code{"regen_expo:era5"}
 (\code{category}/\code{year}/\code{i}/\code{n}, once per reference year) and
 \code{"regen_expo:complete"}. No-op when \code{NULL}; never fatal. The monthly
 ERA5 split is internal to \code{mcera5}.}

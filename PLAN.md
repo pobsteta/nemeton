@@ -1289,6 +1289,28 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-08 — v0.144.0 : phase `regen_expo:pai` (structure végétation visible) + brief app
+
+Sur diagnostic réel RECONFORT (projet `20260701_204501_ltcp`) : grille LiDAR HD
+complète (`cache/layers/lidar_{mnt,mnh,nuage}`), mais `cache/regeneration/` sans
+`microclimf/` ni `sensibilite.gpkg` → le garde-fou `regen_guard_sensibilite`
+s'affiche. Confirmé : le **PAI n'est jamais persisté** (`pai_depuis_nuage()`
+écrit en `tempfile()`, recalculé à chaque run) et la phase PAI était **muette**.
+
+- **Cœur (v0.144.0).** `regen_sensibilite()` émet `regen_expo:pai`
+  (`source = "lidar"|"raster"`) juste avant la construction de la structure de
+  végétation — poste le plus long avant ERA5. Rétro-compatible (no-op si
+  `progress_callback = NULL`). Test : chemin moteur piloté par mock de
+  `.rsen_traiter_annee` (raster calé sur `dtm`) + `pai` fourni (pas de `lasR`),
+  asserte `regen_expo:pai` (source=raster) < `regen_expo:complete` — 73 pass.
+  `.Rd` de `regen_sensibilite` édité à la main (exportée). Bump mineur
+  0.143.0.9000 → **0.144.0**.
+- **App (brief).** `brief-nemetonshiny-engine-phase-status.md` : le worker
+  `future` écrit la phase courante dans `cache/regeneration/engine_status.json`
+  (via `on_prog`), le module la **poll** (`invalidateLater`) et l'affiche dans la
+  notif persistante bas-droite. Mapping des 6 phases → libellés i18n, y compris
+  les phases **sautées** (microclimf ignoré faute de clé CDS / structure).
+
 ### 2026-07-07 — v0.143.0 : 2 pistes cœur moteur exposition (clip LiDAR AOI + ERA5 dégroupé)
 
 Implémentation des deux pistes cœur ouvertes le même jour (Réserves spec 027) :

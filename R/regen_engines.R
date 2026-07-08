@@ -342,8 +342,9 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #'   reuse expensive runs.
 #' @param progress_callback Optional function called at each step with a
 #'   `list(current = <key>, …)` payload (monitoring pattern). Keys:
-#'   `"regen_expo:microclimf"` (`category`), `"regen_expo:era5"`
-#'   (`category`/`year`/`i`/`n`, once per reference year) and
+#'   `"regen_expo:pai"` (`source` = `"lidar"`/`"raster"`, once, when the
+#'   vegetation-structure PAI is built), `"regen_expo:microclimf"` (`category`),
+#'   `"regen_expo:era5"` (`category`/`year`/`i`/`n`, once per reference year) and
 #'   `"regen_expo:complete"`. No-op when `NULL`; never fatal. The monthly ERA5
 #'   split is internal to `mcera5`.
 #' @param precomputed Optional per-unit microclimf output (`data.frame`/list).
@@ -415,6 +416,11 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   mnh_r <- terra::resample(mnh_r, mnt_r)
   dtm <- mnt_r; names(dtm) <- "dtm"
   hgt <- terra::clamp(mnh_r, 0, Inf); names(hgt) <- "hgt"
+  # Phase « structure de végétation » : le PAI LiDAR (pai_depuis_nuage, lecture du
+  # nuage COPC) est le poste le plus long avant ERA5 ; on l'annonce pour que l'app
+  # affiche une phase dédiée (source lidar/raster) plutôt qu'un trou silencieux.
+  emit(list(current = "regen_expo:pai",
+            source = if (is.null(pai)) "lidar" else "raster"))
   # PAI : LiDAR HD (pai_depuis_nuage) par défaut. Repli NDP 0 (spec 033) : un
   # raster LAI Sentinel-2/PROSAIL fourni via `pai` court-circuite le LiDAR
   # (proxy dégradé — LAI ≠ PAI structural), rééchantillonné sur la grille.
