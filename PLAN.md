@@ -1717,6 +1717,34 @@ cœur).
 
 ## Journal
 
+### 2026-07-08 — v0.145.1 : fix ERA5 « request too large » (régression CDS v0.143.0)
+
+**Cause racine trouvée en run réel RECONFORT.** Après redémarrage app
+(creds OK), microclimf entre, calcule le PAI (1h20), puis **échoue ~53
+s** en phase ERA5, `microclimf/` auto-nettoyé. Diagnostic hors app
+(reproductions ciblées) : - clé CDS OK, licences
+`reanalysis-era5-single-levels` **et** `-land` acceptées (requête 6 h
+acceptée `201`) — donc **ni auth ni licence** ; - la requête **année
+entière** du moteur (`by_month=FALSE`, ~105 000 champs) est rejetée par
+le nouveau CDS en 3,5 s :
+`403 cost limits exceeded / request too large`. Le retry 3× (15+30 s) →
+~53 s → échec. **Aucun run microclimf n’aboutissait depuis la bascule
+`by_month=FALSE` de v0.143.0.**
+
+**Fix (v0.145.1, patch).** `.rsen_forcage_era5()` repasse
+`by_month = TRUE` : 12 requêtes mensuelles (~9 000 champs, sous la
+limite) fusionnées par mcera5 (`combine`) en `era5_<annee>.nc`. Cache
+indexé sur ce fichier combiné (helper `.rsen_era5_combined`), plus
+robuste que `list.files()[1]`. Retry/back-off conservé (throttle
+mensuel). Tests : mock mcera5 → by_month=TRUE + sélection du combiné +
+réutilisation du cache sans re-download — 83 pass. Pur cœur, aucun
+changement app. Bump patch 0.145.0.9000 → **0.145.1**.
+
+> Enchaînement de la journée : creds (redémarrage app) débloquent le
+> *skip* microclimf → révèlent le bug ERA5 (403) → corrigé ici. +
+> `pai_cache` (v0.145.0) évitera de repayer les 1h20 de PAI au prochain
+> run.
+
 ### 2026-07-08 — v0.145.0 : cache disque du PAI LiDAR (`pai_cache`) + brief app
 
 Diagnostic en direct d’un run RECONFORT (projet `20260701_204501_ltcp`)

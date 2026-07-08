@@ -1,5 +1,30 @@
 # Changelog
 
+## nemeton 0.145.1 (2026-07-08)
+
+#### Fixed — ERA5 du moteur exposition : requête mensuelle (régression CDS v0.143.0)
+
+`.rsen_forcage_era5()` (chemin moteur de
+[`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md))
+repasse en **requêtes ERA5 mensuelles**
+(`mcera5::build_era5_request(by_month = TRUE)`), fusionnées par `mcera5`
+en un `era5_<année>.nc`. La v0.143.0 avait basculé en **une requête
+annuelle** (`by_month = FALSE`) pour réduire le throttle CDS — mais une
+année entière (365 j × 24 h × 12 variables ≈ 105 000 champs) **dépasse
+la limite de coût par requête du nouveau CDS**, qui la rejette
+immédiatement
+(`403 — cost limits exceeded / "your request is too large"`).
+Conséquence : plus **aucun** run microclimf n’aboutissait depuis la
+v0.143.0 (échec ~53 s après la phase PAI, `microclimf/` auto-nettoyé,
+jamais de `sensibilite.gpkg`). Chaque requête mensuelle (~9 000 champs)
+reste bien sous la limite ; le retry/back-off (`.rsen_era5_with_retry`,
+conservé) absorbe le throttle des appels mensuels.
+
+Le cache est désormais indexé sur le **fichier combiné**
+`era5_<année>.nc` (présence = complet), plus robuste que l’ancien
+`list.files()[1]`. Diagnostiqué en run réel RECONFORT (rejet CDS
+reproduit hors app : `403` en 3,5 s).
+
 ## nemeton 0.145.0 (2026-07-08)
 
 #### Added — cache disque du PAI LiDAR dans `regen_sensibilite()` (`pai_cache`)

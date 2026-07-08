@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.145.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.145.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.145.1" id="nemeton-01451-2026-07-08">nemeton 0.145.1 (2026-07-08)<a class="anchor" aria-label="anchor" href="#nemeton-01451-2026-07-08"></a></h2>
+<div class="section level4">
+<h4 id="fixed--era5-du-moteur-exposition--requête-mensuelle-régression-cds-v01430-0-145-1">Fixed — ERA5 du moteur exposition : requête mensuelle (régression CDS v0.143.0)<a class="anchor" aria-label="anchor" href="#fixed--era5-du-moteur-exposition--requ%C3%AAte-mensuelle-r%C3%A9gression-cds-v01430-0-145-1"></a></h4>
+<p><code>.rsen_forcage_era5()</code> (chemin moteur de <code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code>) repasse en <strong>requêtes ERA5 mensuelles</strong> (<code>mcera5::build_era5_request(by_month = TRUE)</code>), fusionnées par <code>mcera5</code> en un <code>era5_&lt;année&gt;.nc</code>. La v0.143.0 avait basculé en <strong>une requête annuelle</strong> (<code>by_month = FALSE</code>) pour réduire le throttle CDS — mais une année entière (365 j × 24 h × 12 variables ≈ 105 000 champs) <strong>dépasse la limite de coût par requête du nouveau CDS</strong>, qui la rejette immédiatement (<code>403 — cost limits exceeded / "your request is too large"</code>). Conséquence : plus <strong>aucun</strong> run microclimf n’aboutissait depuis la v0.143.0 (échec ~53 s après la phase PAI, <code>microclimf/</code> auto-nettoyé, jamais de <code>sensibilite.gpkg</code>). Chaque requête mensuelle (~9 000 champs) reste bien sous la limite ; le retry/back-off (<code>.rsen_era5_with_retry</code>, conservé) absorbe le throttle des appels mensuels.</p>
+<p>Le cache est désormais indexé sur le <strong>fichier combiné</strong> <code>era5_&lt;année&gt;.nc</code> (présence = complet), plus robuste que l’ancien <code>list.files()[1]</code>. Diagnostiqué en run réel RECONFORT (rejet CDS reproduit hors app : <code>403</code> en 3,5 s).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.145.0" id="nemeton-01450-2026-07-08">nemeton 0.145.0 (2026-07-08)<a class="anchor" aria-label="anchor" href="#nemeton-01450-2026-07-08"></a></h2>
 <div class="section level4">
