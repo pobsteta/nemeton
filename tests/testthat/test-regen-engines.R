@@ -232,6 +232,42 @@ test_that(".pai_keep_xy_filter builds a buffered -keep_xy from various zones", {
   expect_match(nemeton:::.pai_keep_xy_filter(.re_units(2)), "^-keep_xy ")  # sf
 })
 
+# --- Régression CDS : requête ERA5 mensuelle (by_month=TRUE) ----------------
+test_that(".rsen_forcage_era5 requests monthly (by_month=TRUE) to dodge the CDS cost limit", {
+  skip_if_not_installed("mcera5")
+  cd <- withr::local_tempdir()
+  seen <- new.env()
+  testthat::local_mocked_bindings(
+    build_era5_request = function(..., start_time, by_month, outfile_name) {
+      seen$by_month <- by_month; seen$outfile <- outfile_name
+      list(list(target = paste0(outfile_name, ".nc")))
+    },
+    request_era5 = function(request, out_path, ...) {
+      # simule le produit combiné mcera5 : <outfile>.nc dans out_path
+      file.create(file.path(out_path, paste0(seen$outfile, ".nc")))
+    },
+    extract_clim = function(src, ...) { seen$src <- src; data.frame(obs_time = 1) },
+    .package = "mcera5")
+  out <- nemeton:::.rsen_forcage_era5(lon = 6, lat = 48, annee = 2018, cache_dir = cd)
+  expect_true(isTRUE(seen$by_month))                       # mensuel, pas annuel
+  expect_equal(basename(seen$src), "era5_2018.nc")          # fichier combiné choisi
+  expect_true(file.exists(file.path(cd, "era5_2018.nc")))
+  expect_s3_class(out, "data.frame")
+})
+
+test_that(".rsen_forcage_era5 reuses the combined cache without re-downloading", {
+  skip_if_not_installed("mcera5")
+  cd <- withr::local_tempdir()
+  file.create(file.path(cd, "era5_2019.nc"))               # cache déjà présent
+  called <- 0L
+  testthat::local_mocked_bindings(
+    request_era5 = function(...) { called <<- called + 1L; NULL },
+    extract_clim = function(src, ...) data.frame(obs_time = 1),
+    .package = "mcera5")
+  nemeton:::.rsen_forcage_era5(lon = 6, lat = 48, annee = 2019, cache_dir = cd)
+  expect_equal(called, 0L)                                  # pas de re-téléchargement
+})
+
 # --- Piste cœur 2 : retry/back-off ERA5 ------------------------------------
 test_that(".rsen_era5_with_retry retries a transient failure then succeeds", {
   calls <- 0L

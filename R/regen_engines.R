@@ -224,33 +224,44 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   stop(last_err)
 }
 
-# Forçage ERA5-Land pour une année (téléchargement mcera5 mis en cache).
+# Fichier ERA5 combiné attendu pour une année (produit final mcera5).
+.rsen_era5_combined <- function(cache_dir, annee) {
+  file.path(cache_dir, sprintf("era5_%d.nc", annee))
+}
+
+# Forçage ERA5 pour une année (téléchargement mcera5 mis en cache).
 .rsen_forcage_era5 <- function(lon, lat, annee, cache_dir) {
   if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
-  pat <- sprintf("^era5_%d.*\\.nc$", annee)
-  nc  <- list.files(cache_dir, pattern = pat, full.names = TRUE)
+  combined <- .rsen_era5_combined(cache_dir, annee)   # mensuels fusionnés (combine)
   st  <- as.POSIXct(sprintf("%d-01-01 00:00", annee), tz = "UTC")
   en  <- as.POSIXct(sprintf("%d-12-31 23:00", annee), tz = "UTC")
-  if (!length(nc)) {
+  if (!file.exists(combined)) {
     if (!requireNamespace("mcera5", quietly = TRUE)) {
       cli::cli_abort(c(
         "regen_sensibilite() engine needs {.pkg mcera5} to fetch ERA5 forcing.",
         i = "Install mcera5 (+ CDS key, and accept the ERA5 licence on the CDS site), or pre-populate {.path {cache_dir}}."))
     }
     # mcera5 >= 0.4 : build_era5_request() construit, request_era5() exécute.
-    # by_month = FALSE : UNE requête pour l'année entière au lieu de 12 mensuelles
-    # -> divise par ~12 le nombre d'appels CDS (bbox ponctuelle 0.1° : volume
-    # modeste), réduisant d'autant le throttle observé sur les runs multi-années.
+    # by_month = TRUE : 12 requêtes MENSUELLES que mcera5 fusionne (combine=TRUE)
+    # en un `era5_<annee>.nc`. Chaque mensuel (~9 000 champs) reste SOUS la limite
+    # de coût par requête du nouveau CDS. Une requête ANNUELLE (by_month=FALSE,
+    # ~105 000 champs) est rejetée `403 cost limits exceeded / request too large`
+    # → aucun run microclimf n'aboutissait depuis la bascule v0.143.0. Le retry/
+    # back-off (.rsen_era5_with_retry) absorbe le throttle des appels mensuels.
     req <- mcera5::build_era5_request(
       xmin = lon - 0.05, xmax = lon + 0.05, ymin = lat - 0.05, ymax = lat + 0.05,
-      start_time = st, end_time = en, by_month = FALSE,
+      start_time = st, end_time = en, by_month = TRUE,
       outfile_name = sprintf("era5_%d", annee))
     .rsen_era5_with_retry(function() mcera5::request_era5(req, out_path = cache_dir))
-    nc <- list.files(cache_dir, pattern = pat, full.names = TRUE)
   }
+  # Fichier combiné si présent, sinon 1er .nc de l'année (repli défensif). Le
+  # combiné trie avant les mensuels `era5_<annee>_<mois>.nc` ('.' < '_').
+  src <- if (file.exists(combined)) combined else
+    list.files(cache_dir, pattern = sprintf("^era5_%d.*\\.nc$", annee),
+               full.names = TRUE)[1]
   # format "microclimf" -> colonnes prêtes (obs_time/temp/relhum/pres/swdown/
   # difrad/lwdown/windspeed/winddir/precip), précip incluse, pression en kPa.
-  mcera5::extract_clim(nc[1], long = lon, lat = lat,
+  mcera5::extract_clim(src, long = lon, lat = lat,
                        start_time = st, end_time = en, format = "microclimf")
 }
 
