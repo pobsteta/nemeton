@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,19 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.146.2" id="nemeton-01462-2026-07-08">nemeton 0.146.2 (2026-07-08)<a class="anchor" aria-label="anchor" href="#nemeton-01462-2026-07-08"></a></h2>
+<div class="section level4">
+<h4 id="fixed--moteur-exposition--compatibilité-microclimfx-sortie-runmicro-0-146-2">Fixed — moteur exposition : compatibilité microclimf 2.x (sortie <code>runmicro</code>)<a class="anchor" aria-label="anchor" href="#fixed--moteur-exposition--compatibilit%C3%A9-microclimfx-sortie-runmicro-0-146-2"></a></h4>
+<p>Suite du débogage end-to-end (après le fix <code>soilparameters</code> de 0.146.1, le calcul microclimf tournait mais plantait en aval). Trois correctifs, validés par un run complet de <code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code> hors app sur le cache ERA5 réel :</p>
+<ul><li>
+<strong><code>invalid 'trim' argument</code>.</strong> microclimf 2.0.0 ne peuple plus <code>out$tme</code> (renvoyé vide) et ne pose pas <code><a href="https://rspatial.github.io/terra/reference/time.html" class="external-link">terra::time()</a></code> sur la sortie de <code>runmicro()</code>. L’ancien garde <code>!is.null(terra::time(Tz))</code> passait à tort (<code><a href="https://rspatial.github.io/terra/reference/time.html" class="external-link">time()</a></code> renvoie des <code>NA</code>, pas <code>NULL</code>) → <code>format(NA, "%m")</code> interprétait <code>"%m"</code> comme l’argument <code>trim</code>. Les mois d’été sont désormais lus depuis <code>mp$weather$obs_time</code> (modèle ponctuel sous-échantillonné, aligné 1:1 aux couches), seule source fiable en microclimf 2.x.</li>
+<li>
+<strong><code>writeRaster</code> sur un “numeric”.</strong> <code>max(Tz[[sel]], na.rm = TRUE)</code> sur un SpatRaster peut renvoyer un scalaire global (selon la version de terra) → écriture du raster d’été impossible. Réduction cellule-à-cellule explicite via <code>terra::app(..., "max")</code> / <code>terra::app(..., "mean")</code>.</li>
+<li>
+<strong><code>sensibilite = NaN</code> (cas dégénéré).</strong> Le z-score inter-UGF divisait par <code>sd</code> : <code>NaN</code> pour une <strong>seule UGF</strong> (<code>sd</code> de longueur 1 = <code>NA</code>) ou un delta parfaitement uniforme (<code>sd = 0</code>). <code>z()</code> retourne désormais 0 (pas de signal relatif) dans ces cas.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.146.1" id="nemeton-01461-2026-07-08">nemeton 0.146.1 (2026-07-08)<a class="anchor" aria-label="anchor" href="#nemeton-01461-2026-07-08"></a></h2>
 <div class="section level4">

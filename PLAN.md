@@ -1717,6 +1717,39 @@ cœur).
 
 ## Journal
 
+### 2026-07-08 — v0.146.2 : compat microclimf 2.x sortie `runmicro` (3 bugs aval)
+
+**Débogage proactif end-to-end** (à la demande : « je suis sûr qu’il y
+aura d’autres bugs »). J’ai exécuté tout le pipeline
+[`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+hors app (petite grille réelle EPSG:2154 + cache ERA5 2018 réel + `pai`
+raster pour sauter lasR), ce qui a révélé **3 bugs supplémentaires** en
+aval du fix `soilparameters` (0.146.1) :
+
+1.  **`invalid 'trim' argument`** — microclimf 2.0.0 renvoie `out$tme`
+    VIDE et ne pose pas
+    [`terra::time()`](https://rspatial.github.io/terra/reference/time.html)
+    ; l’ancien garde `!is.null(terra::time())` (NA ≠ NULL) faisait
+    `format(NA,"%m")` → `"%m"` pris pour `trim`. Mois d’été lus depuis
+    `mp$weather$obs_time` (288 pas = 12 mois × 24 h, alignés 1:1 aux
+    couches Tz).
+2.  **`writeRaster` sur “numeric”** — `max(SpatRaster)` renvoie un
+    scalaire global selon terra ; remplacé par
+    `terra::app(..., "max"/"mean")` (réduction cellule-à-cellule).
+3.  **`sensibilite = NaN`** — z-score divisait par sd : NaN pour 1 seule
+    UGF (sd=NA) ou delta uniforme (sd=0). `z()` durci → 0.
+
+Run e2e final : sf retourné, tmax sous couvert 33-35 °C, VPD ~1,5 kPa,
+couverture 100 %, tif `cache_2018_{tmax,vpd}.tif` écrits. Test de
+régression mockant microclimf (mois via obs_time + réduction app). **98
+pass.** Bump patch 0.146.1 → **0.146.2**.
+
+> **Bilan de la journée = 6 blocages successifs révélés l’un après
+> l’autre** : creds (redémarrage) → 403 ERA5 (v0.145.1) →
+> `soilparameters` (v0.146.1) → `trim`/temps → `writeRaster`/app → `NaN`
+> z-score (v0.146.2). + perf PAI parallèle/cache. Le pipeline exposition
+> tourne enfin de bout en bout sous microclimf 2.0.0.
+
 ### 2026-07-08 — v0.146.1 : fix microclimf 2.x (`soilparameters`) + cache ERA5 réutilisé
 
 Run réel RECONFORT relancé (nemeton 0.146.0) : PAI parallèle ✅ (~38

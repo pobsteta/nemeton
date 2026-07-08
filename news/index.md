@@ -1,5 +1,35 @@
 # Changelog
 
+## nemeton 0.146.2 (2026-07-08)
+
+#### Fixed — moteur exposition : compatibilité microclimf 2.x (sortie `runmicro`)
+
+Suite du débogage end-to-end (après le fix `soilparameters` de 0.146.1,
+le calcul microclimf tournait mais plantait en aval). Trois correctifs,
+validés par un run complet de
+[`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+hors app sur le cache ERA5 réel :
+
+- **`invalid 'trim' argument`.** microclimf 2.0.0 ne peuple plus
+  `out$tme` (renvoyé vide) et ne pose pas
+  [`terra::time()`](https://rspatial.github.io/terra/reference/time.html)
+  sur la sortie de `runmicro()`. L’ancien garde
+  `!is.null(terra::time(Tz))` passait à tort
+  ([`time()`](https://rspatial.github.io/terra/reference/time.html)
+  renvoie des `NA`, pas `NULL`) → `format(NA, "%m")` interprétait `"%m"`
+  comme l’argument `trim`. Les mois d’été sont désormais lus depuis
+  `mp$weather$obs_time` (modèle ponctuel sous-échantillonné, aligné 1:1
+  aux couches), seule source fiable en microclimf 2.x.
+- **`writeRaster` sur un “numeric”.** `max(Tz[[sel]], na.rm = TRUE)` sur
+  un SpatRaster peut renvoyer un scalaire global (selon la version de
+  terra) → écriture du raster d’été impossible. Réduction
+  cellule-à-cellule explicite via `terra::app(..., "max")` /
+  `terra::app(..., "mean")`.
+- **`sensibilite = NaN` (cas dégénéré).** Le z-score inter-UGF divisait
+  par `sd` : `NaN` pour une **seule UGF** (`sd` de longueur 1 = `NA`) ou
+  un delta parfaitement uniforme (`sd = 0`). `z()` retourne désormais 0
+  (pas de signal relatif) dans ces cas.
+
 ## nemeton 0.146.1 (2026-07-08)
 
 #### Fixed — moteur exposition : microclimf 2.x (`soilparameters`) + cache ERA5
