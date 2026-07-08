@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.143.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.144.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.144.0" id="nemeton-01440-2026-07-08">nemeton 0.144.0 (2026-07-08)<a class="anchor" aria-label="anchor" href="#nemeton-01440-2026-07-08"></a></h2>
+<div class="section level4">
+<h4 id="added--événement-de-phase-regen_expopai-sur-regen_sensibilite-0-144-0">Added — événement de phase <code>regen_expo:pai</code> sur <code>regen_sensibilite()</code>
+<a class="anchor" aria-label="anchor" href="#added--%C3%A9v%C3%A9nement-de-phase-regen_expopai-sur-regen_sensibilite-0-144-0"></a></h4>
+<p>Le chemin moteur de <code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code> (spec 027) émet désormais, via <code>progress_callback</code>, un événement <code>list(current = "regen_expo:pai", source = "lidar"|"raster")</code> <strong>juste avant</strong> de construire la structure de végétation (PAI). C’est le poste le plus long entre la grille et ERA5 : <code>source = "lidar"</code> quand le PAI est dérivé du nuage LiDAR HD (<code><a href="../reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code>), <code>"raster"</code> quand un raster LAI/PAI est fourni en repli (Sentinel-2/PROSAIL, spec 033).</p>
+<p>L’app (<code>nemetonshiny</code>) peut ainsi afficher une phase « Structure de végétation » dédiée plutôt qu’un trou silencieux de plusieurs minutes. Rétro-compatible : no-op quand <code>progress_callback = NULL</code> (sortie byte-identique). Le chemin <code>precomputed</code> n’émet rien (rien n’est calculé). Cf. brief app <code>specs/027-regeneration-microclimat/brief-nemetonshiny-engine-phase-status.md</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.143.0" id="nemeton-01430-2026-07-07">nemeton 0.143.0 (2026-07-07)<a class="anchor" aria-label="anchor" href="#nemeton-01430-2026-07-07"></a></h2>
 <div class="section level4">
@@ -5383,7 +5392,7 @@ docker compose up -d timescaledb</code></pre>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

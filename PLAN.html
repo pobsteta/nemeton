@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.143.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.144.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -870,6 +870,14 @@
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
 <div class="section level3">
+<h3 id="id_2026-07-08--v01440--phase-regen_expopai-structure-végétation-visible--brief-app">2026-07-08 — v0.144.0 : phase <code>regen_expo:pai</code> (structure végétation visible) + brief app<a class="anchor" aria-label="anchor" href="#id_2026-07-08--v01440--phase-regen_expopai-structure-v%C3%A9g%C3%A9tation-visible--brief-app"></a></h3>
+<p>Sur diagnostic réel RECONFORT (projet <code>20260701_204501_ltcp</code>) : grille LiDAR HD complète (<code>cache/layers/lidar_{mnt,mnh,nuage}</code>), mais <code>cache/regeneration/</code> sans <code>microclimf/</code> ni <code>sensibilite.gpkg</code> → le garde-fou <code>regen_guard_sensibilite</code> s’affiche. Confirmé : le <strong>PAI n’est jamais persisté</strong> (<code><a href="reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code> écrit en <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile()</a></code>, recalculé à chaque run) et la phase PAI était <strong>muette</strong>.</p>
+<ul><li>
+<strong>Cœur (v0.144.0).</strong> <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> émet <code>regen_expo:pai</code> (<code>source = "lidar"|"raster"</code>) juste avant la construction de la structure de végétation — poste le plus long avant ERA5. Rétro-compatible (no-op si <code>progress_callback = NULL</code>). Test : chemin moteur piloté par mock de <code>.rsen_traiter_annee</code> (raster calé sur <code>dtm</code>) + <code>pai</code> fourni (pas de <code>lasR</code>), asserte <code>regen_expo:pai</code> (source=raster) &lt; <code>regen_expo:complete</code> — 73 pass. <code>.Rd</code> de <code>regen_sensibilite</code> édité à la main (exportée). Bump mineur 0.143.0.9000 → <strong>0.144.0</strong>.</li>
+<li>
+<strong>App (brief).</strong> <code>brief-nemetonshiny-engine-phase-status.md</code> : le worker <code>future</code> écrit la phase courante dans <code>cache/regeneration/engine_status.json</code> (via <code>on_prog</code>), le module la <strong>poll</strong> (<code>invalidateLater</code>) et l’affiche dans la notif persistante bas-droite. Mapping des 6 phases → libellés i18n, y compris les phases <strong>sautées</strong> (microclimf ignoré faute de clé CDS / structure).</li>
+</ul></div>
+<div class="section level3">
 <h3 id="id_2026-07-07--v01430--2-pistes-cœur-moteur-exposition-clip-lidar-aoi--era5-dégroupé">2026-07-07 — v0.143.0 : 2 pistes cœur moteur exposition (clip LiDAR AOI + ERA5 dégroupé)<a class="anchor" aria-label="anchor" href="#id_2026-07-07--v01430--2-pistes-c%C5%93ur-moteur-exposition-clip-lidar-aoi--era5-d%C3%A9group%C3%A9"></a></h3>
 <p>Implémentation des deux pistes cœur ouvertes le même jour (Réserves spec 027) :</p>
 <ul><li>
@@ -1590,7 +1598,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

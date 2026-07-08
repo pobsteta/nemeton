@@ -82,10 +82,11 @@ regen_sensibilite(
 
   Optional function called at each step with a
   `list(current = <key>, …)` payload (monitoring pattern). Keys:
-  `"regen_expo:microclimf"` (`category`), `"regen_expo:era5"`
-  (`category`/`year`/`i`/`n`, once per reference year) and
-  `"regen_expo:complete"`. No-op when `NULL`; never fatal. The monthly
-  ERA5 split is internal to `mcera5`.
+  `"regen_expo:pai"` (`source` = `"lidar"`/`"raster"`, once, when the
+  vegetation-structure PAI is built), `"regen_expo:microclimf"`
+  (`category`), `"regen_expo:era5"` (`category`/`year`/`i`/`n`, once per
+  reference year) and `"regen_expo:complete"`. No-op when `NULL`; never
+  fatal. The monthly ERA5 split is internal to `mcera5`.
 
 - precomputed:
 

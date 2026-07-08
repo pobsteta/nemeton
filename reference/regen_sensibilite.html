@@ -15,7 +15,7 @@ indice_priorite_regen."><meta property="og:image" content="https://pobsteta.gith
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.143.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.144.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -135,7 +135,9 @@ persistent path to reuse expensive runs.</p></dd>
 <dt id="arg-progress-callback">progress_callback<a class="anchor" aria-label="anchor" href="#arg-progress-callback"></a></dt>
 <dd><p>Optional function called at each step with a
 <code>list(current = &lt;key&gt;, …)</code> payload (monitoring pattern). Keys:
-<code>"regen_expo:microclimf"</code> (<code>category</code>), <code>"regen_expo:era5"</code>
+<code>"regen_expo:pai"</code> (<code>source</code> = <code>"lidar"</code>/<code>"raster"</code>, once,
+when the vegetation-structure PAI is built), <code>"regen_expo:microclimf"</code>
+(<code>category</code>), <code>"regen_expo:era5"</code>
 (<code>category</code>/<code>year</code>/<code>i</code>/<code>n</code>, once per reference year) and
 <code>"regen_expo:complete"</code>. No-op when <code>NULL</code>; never fatal. The monthly
 ERA5 split is internal to <code>mcera5</code>.</p></dd>
@@ -187,7 +189,7 @@ validated on real data.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

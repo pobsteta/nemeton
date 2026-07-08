@@ -1,5 +1,27 @@
 # Changelog
 
+## nemeton 0.144.0 (2026-07-08)
+
+#### Added — événement de phase `regen_expo:pai` sur `regen_sensibilite()`
+
+Le chemin moteur de
+[`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+(spec 027) émet désormais, via `progress_callback`, un événement
+`list(current = "regen_expo:pai", source = "lidar"|"raster")` **juste
+avant** de construire la structure de végétation (PAI). C’est le poste
+le plus long entre la grille et ERA5 : `source = "lidar"` quand le PAI
+est dérivé du nuage LiDAR HD
+([`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)),
+`"raster"` quand un raster LAI/PAI est fourni en repli
+(Sentinel-2/PROSAIL, spec 033).
+
+L’app (`nemetonshiny`) peut ainsi afficher une phase « Structure de
+végétation » dédiée plutôt qu’un trou silencieux de plusieurs minutes.
+Rétro-compatible : no-op quand `progress_callback = NULL` (sortie
+byte-identique). Le chemin `precomputed` n’émet rien (rien n’est
+calculé). Cf. brief app
+`specs/027-regeneration-microclimat/brief-nemetonshiny-engine-phase-status.md`.
+
 ## nemeton 0.143.0 (2026-07-07)
 
 #### Changed — moteur exposition : lecture LiDAR clippée à l’AOI + ERA5 moins throttlé
