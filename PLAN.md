@@ -897,6 +897,15 @@ sourcée jugée suffisante.
       la structure de végétation exigée par `regen_sensibilite()` (`las` nuage
       LiDAR HD prioritaire, sinon repli `pai` LAI S2/PROSAIL). Aucun changement
       cœur. → nemetonshiny@5493df2c, release v0.100.8.
+- [x] Brief app « engine-phase-status » livré — **message de phase en cours du
+      moteur reGénération** (notif bas-droite). Canal fichier
+      `engine_status.json` (écriture atomique tmp+rename côté worker `future`) +
+      poll `invalidateLater(1000)` côté module ; 6 phases rendues (grille → PAI →
+      microclimat étés moyens `year (i/n)` → canicule → exposition → BILJOU) +
+      `microclimf_skipped`. Consomme l'événement cœur `regen_expo:pai`
+      (**nemeton 0.144.0**, `source` lidar|satellite). **Lève la réserve §5** de
+      `brief-nemetonshiny-engine-feedback.md`. → nemetonshiny@95733907,
+      release v0.100.11 (cycle dev 0.100.11.9000).
 
 #### 2026-06-30 — L1 cœur : indicateurs microclimatiques A3/A4/W4 (`v0.101.0`)
 
@@ -1288,6 +1297,24 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-07-08 — reGénération : message de phase en cours du moteur (notif bas-droite, app livrée)
+
+Suite app du canal cœur `regen_expo:pai` (v0.144.0). `nemetonshiny` consomme
+désormais la progression du moteur réel et l'affiche en bas à droite :
+
+- **Canal** : fichier `cache/regeneration/engine_status.json` écrit par le worker
+  `future` (écriture atomique tmp+rename), poll `invalidateLater(1000)` côté
+  module qui rafraîchit la notif persistante bas-droite.
+- **6 phases** rendues : grille → PAI → microclimat étés moyens `year (i/n)` →
+  canicule → exposition → BILJOU, plus `microclimf_skipped` (raison) — la phase
+  sautée devient explicite (ton cas RECONFORT : microclimf ignoré faute de clé /
+  structure, au lieu du garde-fou muet).
+- Consomme l'événement cœur `regen_expo:pai` (`source` lidar|satellite).
+- **Lève la réserve §5** de `brief-nemetonshiny-engine-feedback.md`.
+- Livré app-side : `nemetonshiny@95733907` (**v0.100.11**), cycle dev
+  0.100.11.9000 (commit 1f0d8d40). Plancher cœur `nemeton (>= 0.144.0)`.
+  Spéc : `specs/027-regeneration-microclimat/brief-nemetonshiny-engine-phase-status.md`.
 
 ### 2026-07-08 — v0.144.0 : phase `regen_expo:pai` (structure végétation visible) + brief app
 
