@@ -305,16 +305,28 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   microclimf::checkinputs(meteo, veg, soil, dtm)
   mp  <- microclimf::runpointmodel(meteo, reqhgt, dtm, veg, soil)
   mp  <- microclimf::subsetpointmodel(mp, tstep = "month", what = "tmax")
+  # Horodatage des pas retenus. microclimf 2.x ne peuple plus `out$tme` (renvoyé
+  # VIDE) et ne pose pas `terra::time()` sur la sortie → la seule source fiable
+  # des mois est le modèle ponctuel sous-échantillonné : `mp$weather$obs_time`
+  # (une journée/mois × 24 h = `nlyr` pas, alignés 1:1 aux couches de `out$Tz`).
+  # NB : l'ancien garde `!is.null(terra::time(Tz))` était cassé — `time()` renvoie
+  # des NA (pas NULL) → `format(NA, "%m")` prenait "%m" pour l'argument `trim`
+  # → « invalid 'trim' argument ».
+  tme <- tryCatch(as.POSIXct(mp$weather$obs_time), error = function(e) NULL)
   out <- microclimf::runmicro(mp, reqhgt, veg, soil, dtm)
   # microclimf >= récent renvoie Tz/relhum en array nu (nrow,ncol,ntime) : les
   # reconvertir en SpatRaster géo-référencé (même convention que microclimf:::.rast).
   Tz <- .rsen_as_rast(out$Tz, dtm)
   RH <- .rsen_as_rast(out$relhum, dtm)
-  mois <- if (!is.null(terra::time(Tz))) as.integer(format(terra::time(Tz), "%m"))
-          else seq_len(terra::nlyr(Tz))
+  mois <- if (!is.null(tme) && length(tme) == terra::nlyr(Tz))
+            as.integer(format(tme, "%m")) else seq_len(terra::nlyr(Tz))
   sel <- which(mois %in% mois_ete); if (!length(sel)) sel <- seq_len(terra::nlyr(Tz))
-  tmax <- max(Tz[[sel]], na.rm = TRUE)
-  vpd  <- mean(.rsen_vpd(Tz[[sel]], RH[[sel]]), na.rm = TRUE)
+  # Réduction CELLULE-À-CELLULE sur les couches d'été via `terra::app` : `max()` /
+  # `mean()` nus sur un SpatRaster peuvent renvoyer un scalaire global (selon la
+  # version de terra) → `writeRaster` échouait sur un "numeric". `tmax` = pic
+  # estival de T° sous couvert ; `vpd` = VPD moyen estival.
+  tmax <- terra::app(Tz[[sel]], fun = "max", na.rm = TRUE)
+  vpd  <- terra::app(.rsen_vpd(Tz[[sel]], RH[[sel]]), fun = "mean", na.rm = TRUE)
   terra::writeRaster(tmax, ft, overwrite = TRUE)
   terra::writeRaster(vpd,  fv, overwrite = TRUE)
   list(tmax = tmax, vpd = vpd)
@@ -547,7 +559,13 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   # cellule/polygone (exactextractr, cohérent avec .micro_extract des
   # indicateurs A3/A4/W4) ; `couverture_pct` = fraction exacte non-NA sur l'UGF.
   moyp <- function(r) .micro_extract(units, r)$mean
-  z    <- function(x) (x - mean(x, na.rm = TRUE)) / stats::sd(x, na.rm = TRUE)
+  # z-score inter-UGF ; robuste au cas dégénéré (1 seule UGF -> sd = NA ; delta
+  # parfaitement uniforme -> sd = 0) : pas de signal relatif -> 0 plutôt que NaN.
+  z    <- function(x) {
+    s <- stats::sd(x, na.rm = TRUE)
+    if (is.na(s) || s == 0) return(rep(0, length(x)))
+    (x - mean(x, na.rm = TRUE)) / s
+  }
 
   ex_ref <- .micro_extract(units, M$tmax_moy)
   units$tmax_moyenne  <- round(ex_ref$mean, 2)
