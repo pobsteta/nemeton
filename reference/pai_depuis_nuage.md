@@ -23,6 +23,7 @@ pai_depuis_nuage(
   cl_veg = c(3L, 4L, 5L),
   epsg = 2154,
   pai_max = 8,
+  ncores = NULL,
   precomputed = NULL,
   ...
 )
@@ -72,6 +73,17 @@ pai_depuis_nuage(
 - pai_max:
 
   Upper clamp on PAI (default 8).
+
+- ncores:
+
+  Tile-level parallelism for the `lasR` read (`concurrent_files`):
+  `NULL` (default) processes
+  [`lasR::half_cores()`](https://rdrr.io/pkg/lasR/man/multithreading.html)
+  tiles at once, an integer `N` processes `N`, and `1`/`FALSE` forces
+  sequential. The PAI is identical whatever the value (per-cell counting
+  is associative); more cores trade RAM for wall-time on a multi-tile
+  massif. The global `lasR` strategy is saved and restored around the
+  run.
 
 - precomputed:
 

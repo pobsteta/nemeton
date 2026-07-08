@@ -23,6 +23,7 @@ regen_sensibilite(
   k = 0.5,
   pai = NULL,
   pai_cache = NULL,
+  pai_ncores = NULL,
   cache_dir = NULL,
   progress_callback = NULL,
   precomputed = NULL,
@@ -93,6 +94,16 @@ regen_sensibilite(
   (AOI / `res` changed) invalidates it (recompute + overwrite). Ignored
   when `pai` is supplied. `NULL` (default) disables caching — the
   v0.144.x behaviour.
+
+- pai_ncores:
+
+  Tile-level parallelism for the LiDAR PAI build, forwarded to
+  [`pai_depuis_nuage`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)
+  (`ncores`): `NULL` (default) uses
+  [`lasR::half_cores()`](https://rdrr.io/pkg/lasR/man/multithreading.html),
+  an integer sets the number of tiles processed at once, `1`/`FALSE`
+  forces sequential. Trades RAM for wall-time; the PAI is identical
+  either way.
 
 - cache_dir:
 

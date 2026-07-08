@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.145.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -869,6 +869,14 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-08--v01460--pai-lidar-parallèle-par-dalles-ncores-concurrent_files">2026-07-08 — v0.146.0 : PAI LiDAR parallèle par dalles (<code>ncores</code>, concurrent_files)<a class="anchor" aria-label="anchor" href="#id_2026-07-08--v01460--pai-lidar-parall%C3%A8le-par-dalles-ncores-concurrent_files"></a></h3>
+<p>Suite au diagnostic du run RECONFORT : la phase PAI (<code>pai_depuis_nuage</code>, 25 dalles COPC / 4,7 Go) tenait <strong>&gt;1 h</strong> en séquentiel. Constat : <code>lasR</code> streame déjà les dalles, mais la fonction ne posait <strong>aucune</strong> stratégie parallèle (mono-thread). Le buffer/bord-à-bord n’est pas pertinent pour un <code>rasterize("count")</code> (aucune dépendance de voisinage) — le vrai levier est <code>concurrent_files</code>.</p>
+<ul><li>
+<strong>Cœur (v0.146.0).</strong> <code>pai_depuis_nuage(..., ncores = NULL)</code> : <code>NULL</code> = auto (<code><a href="https://rdrr.io/pkg/lasR/man/multithreading.html" class="external-link">lasR::half_cores()</a></code>), entier <code>N</code> = N dalles de front, <code>1</code>/<code>FALSE</code> = séquentiel. Helper <code>.pai_parallel_ncores</code>. Stratégie globale sauvegardée/restaurée (<code>get/set/unset_parallel_strategy</code>). Sortie identique (comptage associatif), gain ~linéaire (8 cœurs → ~4×). <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> expose <code>pai_ncores</code> (transmis) pour réglage RAM côté app. Défaut auto-parallèle → <strong>le prochain run bénéficie sans changement app</strong>. Test : résolution NULL/FALSE/1/N (mock half_cores) — 89 pass. <code>.Rd</code> des deux fonctions édités main.</li>
+<li>
+<strong>ERA5 12 mois</strong> : parallélisation possible mais <strong>bornée par la concurrence par-utilisateur du CDS</strong> (file serveur) ; <code><a href="https://rdrr.io/pkg/mcera5/man/request_era5.html" class="external-link">mcera5::request_era5</a></code> est séquentiel. Meilleur levier = ne tirer que les mois d’été utiles (<code>mois_ete</code>) → moins de requêtes plutôt que parallèles. À arbitrer (changement de fenêtre temporelle, validation microclimf requise).</li>
+</ul></div>
 <div class="section level3">
 <h3 id="id_2026-07-08--v01451--fix-era5--request-too-large--régression-cds-v01430">2026-07-08 — v0.145.1 : fix ERA5 « request too large » (régression CDS v0.143.0)<a class="anchor" aria-label="anchor" href="#id_2026-07-08--v01451--fix-era5--request-too-large--r%C3%A9gression-cds-v01430"></a></h3>
 <p><strong>Cause racine trouvée en run réel RECONFORT.</strong> Après redémarrage app (creds OK), microclimf entre, calcule le PAI (1h20), puis <strong>échoue ~53 s</strong> en phase ERA5, <code>microclimf/</code> auto-nettoyé. Diagnostic hors app (reproductions ciblées) : - clé CDS OK, licences <code>reanalysis-era5-single-levels</code> <strong>et</strong> <code>-land</code> acceptées (requête 6 h acceptée <code>201</code>) — donc <strong>ni auth ni licence</strong> ; - la requête <strong>année entière</strong> du moteur (<code>by_month=FALSE</code>, ~105 000 champs) est rejetée par le nouveau CDS en 3,5 s : <code>403 cost limits exceeded / request too   large</code>. Le retry 3× (15+30 s) → ~53 s → échec. <strong>Aucun run microclimf n’aboutissait depuis la bascule <code>by_month=FALSE</code> de v0.143.0.</strong></p>

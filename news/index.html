@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.145.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.146.0" id="nemeton-01460-2026-07-08">nemeton 0.146.0 (2026-07-08)<a class="anchor" aria-label="anchor" href="#nemeton-01460-2026-07-08"></a></h2>
+<div class="section level4">
+<h4 id="added--pai-lidar-parallèle-par-dalles-ncores-concurrent_files-0-146-0">Added — PAI LiDAR parallèle par dalles (<code>ncores</code>, <code>concurrent_files</code>)<a class="anchor" aria-label="anchor" href="#added--pai-lidar-parall%C3%A8le-par-dalles-ncores-concurrent_files-0-146-0"></a></h4>
+<p><code><a href="../reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code> gagne un argument <code>ncores</code> qui pilote le parallélisme <strong>par dalles</strong> de <code>lasR</code> (<code>concurrent_files</code>) : <code>NULL</code> (défaut) traite <code><a href="https://rdrr.io/pkg/lasR/man/multithreading.html" class="external-link">lasR::half_cores()</a></code> dalles de front, un entier <code>N</code> en traite <code>N</code>, <code>1</code>/<code>FALSE</code> force le séquentiel. La stratégie <code>lasR</code> globale est <strong>sauvegardée puis restaurée</strong> autour de l’exécution. Le PAI est <strong>strictement identique</strong> quelle que soit la valeur (le comptage par cellule est associatif) — c’est un pur gain de temps mural, au prix de RAM, sur un massif multi-dalles.</p>
+<p>Motivation : mesuré en run réel, la dérivation du PAI sur un nuage COPC de 25 dalles / 4,7 Go tenait <strong>&gt;1 h</strong> en séquentiel (mono-thread). <code>lasR</code> traite déjà les dalles en flux ; il ne posait <strong>aucune</strong> stratégie parallèle. Avec le défaut (moitié des cœurs), on vise un gain ~linéaire (ex. 8 cœurs → ~4× plus rapide). <code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code> expose le réglage via <code>pai_ncores</code> (transmis à <code>ncores</code>) pour permettre à l’app de le baisser si la RAM est limitée. Défaut rétro-compatible en résultat (seule la vitesse change).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.145.1" id="nemeton-01451-2026-07-08">nemeton 0.145.1 (2026-07-08)<a class="anchor" aria-label="anchor" href="#nemeton-01451-2026-07-08"></a></h2>
 <div class="section level4">

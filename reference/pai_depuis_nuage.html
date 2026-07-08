@@ -19,7 +19,7 @@ spec 027 §9.3)."><meta property="og:image" content="https://pobsteta.github.io/
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.145.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -78,6 +78,7 @@ spec 027 §9.3).</p>
 <span>  cl_veg <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3L</span>, <span class="fl">4L</span>, <span class="fl">5L</span><span class="op">)</span>,</span>
 <span>  epsg <span class="op">=</span> <span class="fl">2154</span>,</span>
 <span>  pai_max <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>  ncores <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  precomputed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -129,6 +130,16 @@ mask.</p></dd>
 
 <dt id="arg-pai-max">pai_max<a class="anchor" aria-label="anchor" href="#arg-pai-max"></a></dt>
 <dd><p>Upper clamp on PAI (default 8).</p></dd>
+
+
+<dt id="arg-ncores">ncores<a class="anchor" aria-label="anchor" href="#arg-ncores"></a></dt>
+<dd><p>Tile-level parallelism for the <code>lasR</code> read
+(<code>concurrent_files</code>): <code>NULL</code> (default) processes
+<code><a href="https://rdrr.io/pkg/lasR/man/multithreading.html" class="external-link">lasR::half_cores()</a></code> tiles at once, an integer <code>N</code> processes <code>N</code>,
+and <code>1</code>/<code>FALSE</code> forces sequential. The PAI is identical whatever the
+value (per-cell counting is associative); more cores trade RAM for wall-time on
+a multi-tile massif. The global <code>lasR</code> strategy is saved and restored
+around the run.</p></dd>
 
 
 <dt id="arg-precomputed">precomputed<a class="anchor" aria-label="anchor" href="#arg-precomputed"></a></dt>

@@ -1,5 +1,30 @@
 # Changelog
 
+## nemeton 0.146.0 (2026-07-08)
+
+#### Added — PAI LiDAR parallèle par dalles (`ncores`, `concurrent_files`)
+
+[`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)
+gagne un argument `ncores` qui pilote le parallélisme **par dalles** de
+`lasR` (`concurrent_files`) : `NULL` (défaut) traite
+[`lasR::half_cores()`](https://rdrr.io/pkg/lasR/man/multithreading.html)
+dalles de front, un entier `N` en traite `N`, `1`/`FALSE` force le
+séquentiel. La stratégie `lasR` globale est **sauvegardée puis
+restaurée** autour de l’exécution. Le PAI est **strictement identique**
+quelle que soit la valeur (le comptage par cellule est associatif) —
+c’est un pur gain de temps mural, au prix de RAM, sur un massif
+multi-dalles.
+
+Motivation : mesuré en run réel, la dérivation du PAI sur un nuage COPC
+de 25 dalles / 4,7 Go tenait **\>1 h** en séquentiel (mono-thread).
+`lasR` traite déjà les dalles en flux ; il ne posait **aucune**
+stratégie parallèle. Avec le défaut (moitié des cœurs), on vise un gain
+~linéaire (ex. 8 cœurs → ~4× plus rapide).
+[`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+expose le réglage via `pai_ncores` (transmis à `ncores`) pour permettre
+à l’app de le baisser si la RAM est limitée. Défaut rétro-compatible en
+résultat (seule la vitesse change).
+
 ## nemeton 0.145.1 (2026-07-08)
 
 #### Fixed — ERA5 du moteur exposition : requête mensuelle (régression CDS v0.143.0)

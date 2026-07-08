@@ -15,7 +15,7 @@ indice_priorite_regen."><meta property="og:image" content="https://pobsteta.gith
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.145.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,6 +75,7 @@ Produces the §7 exposure columns consumed by
 <span>  k <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  pai <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pai_cache <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pai_ncores <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cache_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  precomputed <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -143,6 +144,14 @@ working grid it is read back (no recompute); otherwise the PAI is computed and
 written there. A geometry mismatch (AOI / <code>res</code> changed) invalidates it
 (recompute + overwrite). Ignored when <code>pai</code> is supplied. <code>NULL</code>
 (default) disables caching — the v0.144.x behaviour.</p></dd>
+
+
+<dt id="arg-pai-ncores">pai_ncores<a class="anchor" aria-label="anchor" href="#arg-pai-ncores"></a></dt>
+<dd><p>Tile-level parallelism for the LiDAR PAI build, forwarded to
+<code><a href="pai_depuis_nuage.html">pai_depuis_nuage</a></code> (<code>ncores</code>): <code>NULL</code> (default) uses
+<code><a href="https://rdrr.io/pkg/lasR/man/multithreading.html" class="external-link">lasR::half_cores()</a></code>, an integer sets the number of tiles processed at
+once, <code>1</code>/<code>FALSE</code> forces sequential. Trades RAM for wall-time; the
+PAI is identical either way.</p></dd>
 
 
 <dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>
