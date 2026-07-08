@@ -1,9 +1,14 @@
 # Brief `nemetonshiny` — Cache disque du PAI LiDAR (moteur reGénération, spec 027)
 
-**Cœur requis** : `nemeton (>= 0.145.0)` — `regen_sensibilite()` gagne
-`pai_cache = <chemin GeoTIFF>` (relit le PAI si présent + géométrie alignée,
-sinon calcule + écrit). **Correctif app minimal** (`service_regeneration.R` +
-1-2 clés i18n + un bouton optionnel). Pas de nouvelle dépendance.
+**Cœur requis** : `nemeton (>= 0.146.2)`. La fonctionnalité `pai_cache` elle-même
+existe depuis 0.145.0, **mais installe `>= 0.146.2`** : c'est la version où le moteur
+d'exposition tourne réellement de bout en bout sous **microclimf 2.0.0** (chaîne de
+6 correctifs 2026-07-08 : creds → 403 ERA5 → `soilparameters` → `trim`/temps →
+`writeRaster`/`app` → `NaN` z-score). Avec une version antérieure, `sensibilite.gpkg`
+n'est jamais produit. `regen_sensibilite()` gagne `pai_cache = <chemin GeoTIFF>`
+(relit le PAI si présent + géométrie alignée, sinon calcule + écrit). **Correctif app
+minimal** (`service_regeneration.R` + 1-2 clés i18n + un bouton optionnel). Pas de
+nouvelle dépendance.
 
 **Motivation** (mesuré en run réel RECONFORT, projet `20260701_204501_ltcp`) :
 la phase **PAI** (`pai_depuis_nuage()` sur le nuage COPC — 25 dalles / 4,7 Go)
