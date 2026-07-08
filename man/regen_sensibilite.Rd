@@ -17,6 +17,7 @@ regen_sensibilite(
   reqhgt = 0.5,
   k = 0.5,
   pai = NULL,
+  pai_cache = NULL,
   cache_dir = NULL,
   progress_callback = NULL,
   precomputed = NULL,
@@ -47,14 +48,28 @@ summers (engine path). See \code{\link{microclimate_detect_years}}.}
 
 \item{k}{Beer-Lambert extinction coefficient for PAI (default \code{0.5}).}
 
+\item{pai}{Optional canopy \code{SpatRaster} to use instead of the LiDAR PAI.
+The NDP-0 fallback: a Sentinel-2/PROSAIL LAI from \code{\link{lai_sentinel2}}
+(degraded proxy — LAI ≠ structural PAI). When supplied, \code{las} is not
+required.}
+
+\item{pai_cache}{Optional path to a GeoTIFF caching the LiDAR-derived PAI. The
+PAI depends only on the point cloud and the working grid (invariant for a given
+project / AOI / \code{res}), yet \code{\link{pai_depuis_nuage}} is the slowest
+step before ERA5. When the file exists \strong{and} its geometry matches the
+working grid it is read back (no recompute); otherwise the PAI is computed and
+written there. A geometry mismatch (AOI / \code{res} changed) invalidates it
+(recompute + overwrite). Ignored when \code{pai} is supplied. \code{NULL}
+(default) disables caching — the v0.144.x behaviour.}
+
 \item{cache_dir}{Directory for the ERA5 \code{.nc} and per-year microclimate
 \code{.tif} caches. \code{NULL} (default) uses a session temp dir; pass a
 persistent path to reuse expensive runs.}
 
 \item{progress_callback}{Optional function called at each step with a
 \code{list(current = <key>, …)} payload (monitoring pattern). Keys:
-\code{"regen_expo:pai"} (\code{source} = \code{"lidar"}/\code{"raster"}, once,
-when the vegetation-structure PAI is built), \code{"regen_expo:microclimf"}
+\code{"regen_expo:pai"} (\code{source} = \code{"lidar"}/\code{"cache"}/\code{"raster"},
+once, when the vegetation-structure PAI is built/read), \code{"regen_expo:microclimf"}
 (\code{category}), \code{"regen_expo:era5"}
 (\code{category}/\code{year}/\code{i}/\code{n}, once per reference year) and
 \code{"regen_expo:complete"}. No-op when \code{NULL}; never fatal. The monthly

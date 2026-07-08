@@ -173,6 +173,43 @@ test_that("regen_sensibilite engine emits regen_expo:pai then :complete", {
             which(keys == "regen_expo:complete")[1])
 })
 
+test_that("regen_sensibilite caches the LiDAR PAI (miss writes, hit reuses)", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("microclimf")
+  skip_if_not_installed("exactextractr")
+  u <- .re_units(3)
+  tmpl <- terra::rast(xmin = -200, xmax = 260, ymin = -200, ymax = 260,
+                      resolution = 10, crs = "EPSG:2154")
+  mnt <- terra::init(tmpl, fun = function(n) seq_len(n))
+  mnh <- terra::init(tmpl, fun = 12)
+  pai_cache <- withr::local_tempfile(fileext = ".tif")
+  # Mock ERA5 (dtm-calé) et pai_depuis_nuage (compteur d'appels + raster aligné).
+  calls <- 0L
+  testthat::local_mocked_bindings(
+    .rsen_traiter_annee = function(annee, ...) { d <- list(...)$dtm; list(tmax = d, vpd = d) },
+    pai_depuis_nuage = function(dossier_las, grille, ...) {
+      calls <<- calls + 1L
+      r <- grille[[1]]; terra::values(r) <- 3; names(r) <- "pai"; r
+    })
+  run <- function() {
+    ev <- list(); rec <- function(p) ev[[length(ev) + 1L]] <<- p
+    out <- regen_sensibilite(u, mnt = mnt, mnh = mnh, las = "/dummy",
+      pai_cache = pai_cache, annees_moy = 2020L, annees_canic = 2022L,
+      progress_callback = rec)
+    src <- Filter(function(p) identical(p$current, "regen_expo:pai"), ev)[[1]]$source
+    list(out = out, src = src)
+  }
+  # 1er run : cache absent -> calcul (source lidar), fichier écrit.
+  r1 <- run()
+  expect_equal(calls, 1L)
+  expect_equal(r1$src, "lidar")
+  expect_true(file.exists(pai_cache))
+  # 2e run : cache présent + géométrie alignée -> relu, pas de recalcul.
+  r2 <- run()
+  expect_equal(calls, 1L)                       # pai_depuis_nuage NON rappelé
+  expect_equal(r2$src, "cache")
+})
+
 test_that(".rsen_moyenne_categorie stays a no-op when emit is NULL", {
   skip_if_not_installed("terra")
   r <- terra::rast(nrows = 2, ncols = 2, vals = 1)

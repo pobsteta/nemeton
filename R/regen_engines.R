@@ -337,13 +337,21 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #' @param pai Optional canopy `SpatRaster` to use instead of the LiDAR PAI. The
 #'   NDP-0 fallback: a Sentinel-2/PROSAIL LAI from [lai_sentinel2()] (degraded
 #'   proxy — LAI ≠ structural PAI). When supplied, `las` is not required.
+#' @param pai_cache Optional path to a GeoTIFF caching the LiDAR-derived PAI. The
+#'   PAI depends only on the point cloud and the working grid (invariant for a
+#'   given project / AOI / `res`), yet [pai_depuis_nuage()] is the slowest step
+#'   before ERA5. When the file exists **and** its geometry matches the working
+#'   grid it is read back (no recompute); otherwise the PAI is computed and
+#'   written there. A geometry mismatch (AOI / `res` changed) invalidates it
+#'   (recompute + overwrite). Ignored when `pai` is supplied. `NULL` (default)
+#'   disables caching — the v0.144.x behaviour.
 #' @param cache_dir Directory for the ERA5 `.nc` and per-year microclimate `.tif`
 #'   caches. `NULL` (default) uses a session temp dir; pass a persistent path to
 #'   reuse expensive runs.
 #' @param progress_callback Optional function called at each step with a
 #'   `list(current = <key>, …)` payload (monitoring pattern). Keys:
-#'   `"regen_expo:pai"` (`source` = `"lidar"`/`"raster"`, once, when the
-#'   vegetation-structure PAI is built), `"regen_expo:microclimf"` (`category`),
+#'   `"regen_expo:pai"` (`source` = `"lidar"`/`"cache"`/`"raster"`, once, when the
+#'   vegetation-structure PAI is built/read), `"regen_expo:microclimf"` (`category`),
 #'   `"regen_expo:era5"` (`category`/`year`/`i`/`n`, once per reference year) and
 #'   `"regen_expo:complete"`. No-op when `NULL`; never fatal. The monthly ERA5
 #'   split is internal to `mcera5`.
@@ -360,8 +368,8 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
                               annees_moy = NULL, annees_canic = NULL,
                               mois_ete = 6:8, res = 2, tampon = 150,
-                              reqhgt = 0.5, k = 0.5, pai = NULL, cache_dir = NULL,
-                              progress_callback = NULL,
+                              reqhgt = 0.5, k = 0.5, pai = NULL, pai_cache = NULL,
+                              cache_dir = NULL, progress_callback = NULL,
                               precomputed = NULL, ...) {
   validate_sf(units)
   # Progression (patron monitoring) : émission no-op si NULL, jamais fatale.
@@ -416,19 +424,37 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   mnh_r <- terra::resample(mnh_r, mnt_r)
   dtm <- mnt_r; names(dtm) <- "dtm"
   hgt <- terra::clamp(mnh_r, 0, Inf); names(hgt) <- "hgt"
-  # Phase « structure de végétation » : le PAI LiDAR (pai_depuis_nuage, lecture du
-  # nuage COPC) est le poste le plus long avant ERA5 ; on l'annonce pour que l'app
-  # affiche une phase dédiée (source lidar/raster) plutôt qu'un trou silencieux.
-  emit(list(current = "regen_expo:pai",
-            source = if (is.null(pai)) "lidar" else "raster"))
-  # PAI : LiDAR HD (pai_depuis_nuage) par défaut. Repli NDP 0 (spec 033) : un
-  # raster LAI Sentinel-2/PROSAIL fourni via `pai` court-circuite le LiDAR
-  # (proxy dégradé — LAI ≠ PAI structural), rééchantillonné sur la grille.
+
+  # Structure de végétation (PAI), trois provenances par priorité :
+  #  1. `pai` fourni explicitement (repli LAI Sentinel-2/PROSAIL, spec 033 —
+  #     proxy dégradé, LAI ≠ PAI structural), rééchantillonné sur la grille ;
+  #  2. `pai_cache` présent ET géométrie == grille -> relu du disque : le PAI ne
+  #     dépend que du nuage + grille (invariants pour un projet/AOI/res), inutile
+  #     de repayer le poste le plus long avant ERA5. Une géométrie différente
+  #     (AOI/res changés) invalide le cache -> recalcul + réécriture ;
+  #  3. sinon dérivé du nuage LiDAR (pai_depuis_nuage) puis écrit dans `pai_cache`.
+  # La phase est annoncée (source lidar/cache/raster) pour l'affichage app.
+  pai_hit <- !is.null(pai_cache) && file.exists(pai_cache) &&
+    isTRUE(tryCatch(terra::compareGeom(terra::rast(pai_cache), dtm,
+                                       stopOnError = FALSE),
+                    error = function(e) FALSE))
+  pai_source <- if (!is.null(pai)) "raster" else if (pai_hit) "cache" else "lidar"
+  emit(list(current = "regen_expo:pai", source = pai_source))
+
   pai <- if (!is.null(pai)) {
     if (!inherits(pai, "SpatRaster")) cli::cli_abort("{.arg pai} must be a terra SpatRaster (LAI/PAI fallback).")
     terra::resample(pai[[1]], dtm)
+  } else if (pai_hit) {
+    terra::rast(pai_cache)                       # cache hit : PAI relu, grille alignée
   } else {
-    pai_depuis_nuage(las, dtm, res = res, k = k)
+    p <- pai_depuis_nuage(las, dtm, res = res, k = k)
+    if (!is.null(pai_cache)) {
+      dir.create(dirname(pai_cache), showWarnings = FALSE, recursive = TRUE)
+      tryCatch(terra::writeRaster(p, pai_cache, overwrite = TRUE),
+               error = function(e) cli::cli_warn(
+                 "regen_sensibilite(): PAI cache not written to {.path {pai_cache}}."))
+    }
+    p
   }
   names(pai) <- "pai"
 
