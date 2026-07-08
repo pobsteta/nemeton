@@ -139,6 +139,40 @@ test_that(".rsen_moyenne_categorie emits one regen_expo:era5 per reference year"
   expect_s4_class(res$tmax_moy, "SpatRaster")   # agrégation inchangée
 })
 
+test_that("regen_sensibilite engine emits regen_expo:pai then :complete", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("microclimf")
+  skip_if_not_installed("exactextractr")
+  u <- .re_units(3)
+  # Grille synthétique EPSG:2154 couvrant l'emprise tamponnée des unités.
+  tmpl <- terra::rast(xmin = -200, xmax = 260, ymin = -200, ymax = 260,
+                      resolution = 10, crs = "EPSG:2154")
+  mnt <- terra::init(tmpl, fun = function(n) seq_len(n))   # relief factice
+  mnh <- terra::init(tmpl, fun = 12)                       # hauteur canopée
+  pai <- terra::init(tmpl, fun = 3)                        # PAI/LAI fourni -> pas de lasR
+  # Mock l'acquisition annuelle : rasters calés sur le `dtm` (via ...), afin que
+  # l'agrégation `.micro_extract` tombe juste ; facteur canicule pour un signal.
+  testthat::local_mocked_bindings(
+    .rsen_traiter_annee = function(annee, ...) {
+      d <- list(...)$dtm
+      f <- if (annee >= 2022) 1.2 else 1
+      list(tmax = d * f, vpd = d * f)
+    })
+  events <- list()
+  rec <- function(p) events[[length(events) + 1L]] <<- p
+  out <- regen_sensibilite(u, mnt = mnt, mnh = mnh, pai = pai,
+    annees_moy = 2020L, annees_canic = 2022L, progress_callback = rec)
+  expect_s3_class(out, "sf")
+  keys <- vapply(events, function(p) p$current %||% "", character(1))
+  expect_true("regen_expo:pai" %in% keys)
+  pai_ev <- events[[which(keys == "regen_expo:pai")[1]]]
+  expect_equal(pai_ev$source, "raster")               # `pai` fourni -> pas LiDAR
+  expect_true("regen_expo:complete" %in% keys)
+  # La phase PAI précède l'agrégation finale.
+  expect_lt(which(keys == "regen_expo:pai")[1],
+            which(keys == "regen_expo:complete")[1])
+})
+
 test_that(".rsen_moyenne_categorie stays a no-op when emit is NULL", {
   skip_if_not_installed("terra")
   r <- terra::rast(nrows = 2, ncols = 2, vals = 1)
