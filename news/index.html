@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.144.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.145.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.145.0" id="nemeton-01450-2026-07-08">nemeton 0.145.0 (2026-07-08)<a class="anchor" aria-label="anchor" href="#nemeton-01450-2026-07-08"></a></h2>
+<div class="section level4">
+<h4 id="added--cache-disque-du-pai-lidar-dans-regen_sensibilite-pai_cache-0-145-0">Added — cache disque du PAI LiDAR dans <code>regen_sensibilite()</code> (<code>pai_cache</code>)<a class="anchor" aria-label="anchor" href="#added--cache-disque-du-pai-lidar-dans-regen_sensibilite-pai_cache-0-145-0"></a></h4>
+<p><code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code> gagne un argument <code>pai_cache = NULL</code> (chemin GeoTIFF). Le PAI dérivé du nuage LiDAR (<code><a href="../reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code>) est <strong>le poste le plus long</strong> avant ERA5 — sur un gros massif (nuage COPC de plusieurs Go), la dérivation peut durer des dizaines de minutes. Or le PAI ne dépend que du nuage et de la grille de travail : <strong>invariant</strong> pour un projet / AOI / <code>res</code> donnés.</p>
+<p>Avec <code>pai_cache</code> : si le fichier existe <strong>et</strong> que sa géométrie correspond à la grille, le PAI est <strong>relu du disque</strong> (aucun recalcul) ; sinon il est calculé puis écrit là. Un changement d’AOI ou de <code>res</code> produit une géométrie différente → le cache est <strong>invalidé</strong> (recalcul + réécriture), donc jamais de PAI périmé. L’événement <code>regen_expo:pai</code> expose <code>source = "cache"</code> en plus de <code>"lidar"</code>/<code>"raster"</code> (l’app affiche « PAI (cache) », phase quasi instantanée).</p>
+<p>Rétro-compatible : <code>pai_cache = NULL</code> (défaut) = comportement v0.144.x (recalcul à chaque run). Brief app : <code>specs/027-regeneration-microclimat/brief-nemetonshiny-pai-cache.md</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.144.0" id="nemeton-01440-2026-07-08">nemeton 0.144.0 (2026-07-08)<a class="anchor" aria-label="anchor" href="#nemeton-01440-2026-07-08"></a></h2>
 <div class="section level4">

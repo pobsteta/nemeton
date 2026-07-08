@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.144.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.145.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -869,6 +869,14 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-08--v01450--cache-disque-du-pai-lidar-pai_cache--brief-app">2026-07-08 — v0.145.0 : cache disque du PAI LiDAR (<code>pai_cache</code>) + brief app<a class="anchor" aria-label="anchor" href="#id_2026-07-08--v01450--cache-disque-du-pai-lidar-pai_cache--brief-app"></a></h3>
+<p>Diagnostic en direct d’un run RECONFORT (projet <code>20260701_204501_ltcp</code>) : après redémarrage de l’app (env <code>.Renviron</code> + paquets rechargés), microclimf <strong>entre enfin</strong> (dossier <code>cache/regeneration/microclimf/</code> créé, clé CDS vue). Mais la phase <strong>PAI</strong> (<code>pai_depuis_nuage</code> sur nuage COPC 25 dalles / 4,7 Go, disque local) tient <strong>&gt;34 min</strong> à ~0,8 Mo/s (décompression COPC + rastérisation <code>lasR</code> mono-thread sur un gros AOI). Le PAI <strong>n’était pas persisté</strong> (tempfiles) → repayé à chaque run.</p>
+<ul><li>
+<strong>Cœur (v0.145.0).</strong> <code>regen_sensibilite(..., pai_cache = NULL)</code> : cache GeoTIFF du PAI LiDAR. Hit si fichier présent <strong>et</strong> <code>compareGeom(pai, dtm)</code> → relu, pas de recalcul ; sinon calcul + <code>writeRaster</code>. Invalidation par géométrie (AOI/<code>res</code> changés → recalcul). Événement <code>regen_expo:pai</code> gagne <code>source = "cache"</code>. Rétro-compatible (<code>NULL</code> = v0.144.x). Test : miss→écriture (source lidar) puis hit→relu (source cache, <code>pai_depuis_nuage</code> non rappelé, mock compteur) — 78 pass. <code>.Rd</code> édité main (ajout <code>pai</code>+<code>pai_cache</code>, item <code>pai</code> manquait). Bump mineur 0.144.0.9000 → <strong>0.145.0</strong>.</li>
+<li>
+<strong>App (brief).</strong> <code>brief-nemetonshiny-pai-cache.md</code> : passer <code>pai_cache = file.path(out_dir, "pai.tif")</code> à <code>regen_sensibilite</code>, + bouton « recalculer le PAI » (supprime le fichier). Le run en cours (nemeton 0.144.0, app sans câblage) n’en bénéficie pas ; gain dès le prochain run après v0.145.0.</li>
+</ul></div>
 <div class="section level3">
 <h3 id="id_2026-07-08--regénération--message-de-phase-en-cours-du-moteur-notif-bas-droite-app-livrée">2026-07-08 — reGénération : message de phase en cours du moteur (notif bas-droite, app livrée)<a class="anchor" aria-label="anchor" href="#id_2026-07-08--reg%C3%A9n%C3%A9ration--message-de-phase-en-cours-du-moteur-notif-bas-droite-app-livr%C3%A9e"></a></h3>
 <p>Suite app du canal cœur <code>regen_expo:pai</code> (v0.144.0). <code>nemetonshiny</code> consomme désormais la progression du moteur réel et l’affiche en bas à droite :</p>

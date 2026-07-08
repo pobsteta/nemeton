@@ -1717,6 +1717,31 @@ cœur).
 
 ## Journal
 
+### 2026-07-08 — v0.145.0 : cache disque du PAI LiDAR (`pai_cache`) + brief app
+
+Diagnostic en direct d’un run RECONFORT (projet `20260701_204501_ltcp`)
+: après redémarrage de l’app (env `.Renviron` + paquets rechargés),
+microclimf **entre enfin** (dossier `cache/regeneration/microclimf/`
+créé, clé CDS vue). Mais la phase **PAI** (`pai_depuis_nuage` sur nuage
+COPC 25 dalles / 4,7 Go, disque local) tient **\>34 min** à ~0,8 Mo/s
+(décompression COPC + rastérisation `lasR` mono-thread sur un gros AOI).
+Le PAI **n’était pas persisté** (tempfiles) → repayé à chaque run.
+
+- **Cœur (v0.145.0).** `regen_sensibilite(..., pai_cache = NULL)` :
+  cache GeoTIFF du PAI LiDAR. Hit si fichier présent **et**
+  `compareGeom(pai, dtm)` → relu, pas de recalcul ; sinon calcul +
+  `writeRaster`. Invalidation par géométrie (AOI/`res` changés →
+  recalcul). Événement `regen_expo:pai` gagne `source = "cache"`.
+  Rétro-compatible (`NULL` = v0.144.x). Test : miss→écriture (source
+  lidar) puis hit→relu (source cache, `pai_depuis_nuage` non rappelé,
+  mock compteur) — 78 pass. `.Rd` édité main (ajout `pai`+`pai_cache`,
+  item `pai` manquait). Bump mineur 0.144.0.9000 → **0.145.0**.
+- **App (brief).** `brief-nemetonshiny-pai-cache.md` : passer
+  `pai_cache = file.path(out_dir, "pai.tif")` à `regen_sensibilite`, +
+  bouton « recalculer le PAI » (supprime le fichier). Le run en cours
+  (nemeton 0.144.0, app sans câblage) n’en bénéficie pas ; gain dès le
+  prochain run après v0.145.0.
+
 ### 2026-07-08 — reGénération : message de phase en cours du moteur (notif bas-droite, app livrée)
 
 Suite app du canal cœur `regen_expo:pai` (v0.144.0). `nemetonshiny`

@@ -22,6 +22,7 @@ regen_sensibilite(
   reqhgt = 0.5,
   k = 0.5,
   pai = NULL,
+  pai_cache = NULL,
   cache_dir = NULL,
   progress_callback = NULL,
   precomputed = NULL,
@@ -72,6 +73,27 @@ regen_sensibilite(
 
   Beer-Lambert extinction coefficient for PAI (default `0.5`).
 
+- pai:
+
+  Optional canopy `SpatRaster` to use instead of the LiDAR PAI. The
+  NDP-0 fallback: a Sentinel-2/PROSAIL LAI from
+  [`lai_sentinel2`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)
+  (degraded proxy — LAI ≠ structural PAI). When supplied, `las` is not
+  required.
+
+- pai_cache:
+
+  Optional path to a GeoTIFF caching the LiDAR-derived PAI. The PAI
+  depends only on the point cloud and the working grid (invariant for a
+  given project / AOI / `res`), yet
+  [`pai_depuis_nuage`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)
+  is the slowest step before ERA5. When the file exists **and** its
+  geometry matches the working grid it is read back (no recompute);
+  otherwise the PAI is computed and written there. A geometry mismatch
+  (AOI / `res` changed) invalidates it (recompute + overwrite). Ignored
+  when `pai` is supplied. `NULL` (default) disables caching — the
+  v0.144.x behaviour.
+
 - cache_dir:
 
   Directory for the ERA5 `.nc` and per-year microclimate `.tif` caches.
@@ -82,11 +104,12 @@ regen_sensibilite(
 
   Optional function called at each step with a
   `list(current = <key>, …)` payload (monitoring pattern). Keys:
-  `"regen_expo:pai"` (`source` = `"lidar"`/`"raster"`, once, when the
-  vegetation-structure PAI is built), `"regen_expo:microclimf"`
-  (`category`), `"regen_expo:era5"` (`category`/`year`/`i`/`n`, once per
-  reference year) and `"regen_expo:complete"`. No-op when `NULL`; never
-  fatal. The monthly ERA5 split is internal to `mcera5`.
+  `"regen_expo:pai"` (`source` = `"lidar"`/`"cache"`/`"raster"`, once,
+  when the vegetation-structure PAI is built/read),
+  `"regen_expo:microclimf"` (`category`), `"regen_expo:era5"`
+  (`category`/`year`/`i`/`n`, once per reference year) and
+  `"regen_expo:complete"`. No-op when `NULL`; never fatal. The monthly
+  ERA5 split is internal to `mcera5`.
 
 - precomputed:
 

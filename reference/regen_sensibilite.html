@@ -15,7 +15,7 @@ indice_priorite_regen."><meta property="og:image" content="https://pobsteta.gith
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.144.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.145.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,6 +74,7 @@ Produces the §7 exposure columns consumed by
 <span>  reqhgt <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  k <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  pai <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pai_cache <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cache_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  precomputed <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -126,6 +127,24 @@ summers (engine path). See <code><a href="microclimate_detect_years.html">microc
 <dd><p>Beer-Lambert extinction coefficient for PAI (default <code>0.5</code>).</p></dd>
 
 
+<dt id="arg-pai">pai<a class="anchor" aria-label="anchor" href="#arg-pai"></a></dt>
+<dd><p>Optional canopy <code>SpatRaster</code> to use instead of the LiDAR PAI.
+The NDP-0 fallback: a Sentinel-2/PROSAIL LAI from <code><a href="lai_sentinel2.html">lai_sentinel2</a></code>
+(degraded proxy — LAI ≠ structural PAI). When supplied, <code>las</code> is not
+required.</p></dd>
+
+
+<dt id="arg-pai-cache">pai_cache<a class="anchor" aria-label="anchor" href="#arg-pai-cache"></a></dt>
+<dd><p>Optional path to a GeoTIFF caching the LiDAR-derived PAI. The
+PAI depends only on the point cloud and the working grid (invariant for a given
+project / AOI / <code>res</code>), yet <code><a href="pai_depuis_nuage.html">pai_depuis_nuage</a></code> is the slowest
+step before ERA5. When the file exists <strong>and</strong> its geometry matches the
+working grid it is read back (no recompute); otherwise the PAI is computed and
+written there. A geometry mismatch (AOI / <code>res</code> changed) invalidates it
+(recompute + overwrite). Ignored when <code>pai</code> is supplied. <code>NULL</code>
+(default) disables caching — the v0.144.x behaviour.</p></dd>
+
+
 <dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>
 <dd><p>Directory for the ERA5 <code>.nc</code> and per-year microclimate
 <code>.tif</code> caches. <code>NULL</code> (default) uses a session temp dir; pass a
@@ -135,8 +154,8 @@ persistent path to reuse expensive runs.</p></dd>
 <dt id="arg-progress-callback">progress_callback<a class="anchor" aria-label="anchor" href="#arg-progress-callback"></a></dt>
 <dd><p>Optional function called at each step with a
 <code>list(current = &lt;key&gt;, …)</code> payload (monitoring pattern). Keys:
-<code>"regen_expo:pai"</code> (<code>source</code> = <code>"lidar"</code>/<code>"raster"</code>, once,
-when the vegetation-structure PAI is built), <code>"regen_expo:microclimf"</code>
+<code>"regen_expo:pai"</code> (<code>source</code> = <code>"lidar"</code>/<code>"cache"</code>/<code>"raster"</code>,
+once, when the vegetation-structure PAI is built/read), <code>"regen_expo:microclimf"</code>
 (<code>category</code>), <code>"regen_expo:era5"</code>
 (<code>category</code>/<code>year</code>/<code>i</code>/<code>n</code>, once per reference year) and
 <code>"regen_expo:complete"</code>. No-op when <code>NULL</code>; never fatal. The monthly
