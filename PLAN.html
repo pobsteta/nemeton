@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -869,6 +869,18 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-08--v01461--fix-microclimf-2x-soilparameters--cache-era5-réutilisé">2026-07-08 — v0.146.1 : fix microclimf 2.x (<code>soilparameters</code>) + cache ERA5 réutilisé<a class="anchor" aria-label="anchor" href="#id_2026-07-08--v01461--fix-microclimf-2x-soilparameters--cache-era5-r%C3%A9utilis%C3%A9"></a></h3>
+<p>Run réel RECONFORT relancé (nemeton 0.146.0) : PAI parallèle ✅ (~38 min, 4 dalles de front, ~2×), ERA5 mensuel ✅ (fix 403 validé, 2018 téléchargé). <strong>Mais toujours pas de <code>sensibilite.gpkg</code></strong> → deux bugs de plus, diagnostiqués par reproduction hors app sur le cache existant :</p>
+<ul><li>
+<strong>microclimf 2.0.0 <code>object 'soilparameters' not found</code>.</strong> Reproduction de la séquence <code>.rsen_traiter_annee</code> : <code>extract_clim</code> OK, <code>checkinputs</code> OK, mais <code>runpointmodel</code> plante — microclimf 2.x référence <code>soilparameters</code>/<code>soilparamsp</code> sans les charger (namespace verrouillé). Workaround validé (les exposer en globalenv → <code>runpointmodel → subsetpointmodel → runmicro</code> OK, sort <code>Tz</code>). Fix : <code>.rsen_ensure_soildata()</code> (idempotent + <code>on.exit</code> rm). C’était LE blocage réel du calcul depuis la mise à jour microclimf.</li>
+<li>
+<strong>Cache ERA5 cassé.</strong> mcera5 nomme le combiné <code>era5_&lt;an&gt;_&lt;an&gt;.nc</code> (double année), or <code>.rsen_era5_combined</code> cherchait <code>era5_&lt;an&gt;.nc</code> → jamais trouvé → re-download des 24 mois à chaque run. Fix : repérage par suffixe <code>_&lt;an&gt;.nc</code>.</li>
+</ul><p>Tests : reproduction <code>.rsen_ensure_soildata</code> (idempotent) + <code>.rsen_forcage_era5</code> combiné double-année. 92 pass. Pur cœur. Bump patch 0.146.0.9000 → <strong>0.146.1</strong>.</p>
+<blockquote>
+<p>Chaîne complète de la journée : creds (redémarrage) → 403 (v0.145.1) → <code>soilparameters</code> (v0.146.1) = 3 blocages successifs révélés l’un après l’autre. + PAI parallèle (v0.146.0) &amp; cache PAI (v0.145.0) pour la vitesse.</p>
+</blockquote>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-08--v01460--pai-lidar-parallèle-par-dalles-ncores-concurrent_files">2026-07-08 — v0.146.0 : PAI LiDAR parallèle par dalles (<code>ncores</code>, concurrent_files)<a class="anchor" aria-label="anchor" href="#id_2026-07-08--v01460--pai-lidar-parall%C3%A8le-par-dalles-ncores-concurrent_files"></a></h3>
 <p>Suite au diagnostic du run RECONFORT : la phase PAI (<code>pai_depuis_nuage</code>, 25 dalles COPC / 4,7 Go) tenait <strong>&gt;1 h</strong> en séquentiel. Constat : <code>lasR</code> streame déjà les dalles, mais la fonction ne posait <strong>aucune</strong> stratégie parallèle (mono-thread). Le buffer/bord-à-bord n’est pas pertinent pour un <code>rasterize("count")</code> (aucune dépendance de voisinage) — le vrai levier est <code>concurrent_files</code>.</p>

@@ -1,5 +1,32 @@
 # Changelog
 
+## nemeton 0.146.1 (2026-07-08)
+
+#### Fixed — moteur exposition : microclimf 2.x (`soilparameters`) + cache ERA5
+
+Deux correctifs qui débloquent le calcul microclimf de bout en bout
+(diagnostiqués sur run réel RECONFORT, après que le fix 403 v0.145.1 a
+permis d’atteindre l’étape microclimf) :
+
+- **microclimf 2.0.0 : `object 'soilparameters' not found`.**
+  `runpointmodel()` référence les datasets
+  `soilparameters`/`soilparamsp` mais ne les charge pas (namespace
+  verrouillé, pas de lazy-load interne) → le calcul microclimf plantait
+  juste après le téléchargement ERA5, sans produire les rasters d’été
+  (donc pas de `sensibilite.gpkg`).
+  [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+  les expose désormais dans l’environnement global le temps du run
+  (helper `.rsen_ensure_soildata()`, idempotent), puis les retire
+  (`on.exit`). Chaîne validée end-to-end
+  (`runpointmodel → subsetpointmodel → runmicro`).
+- **Cache ERA5 jamais réutilisé.** Le fichier combiné mcera5 s’appelle
+  en réalité `era5_<année>_<année>.nc` (double année,
+  `outfile_name = "era5_<année>"`), que le lookup
+  `.rsen_era5_combined()` cherchait comme `era5_<année>.nc` → jamais
+  trouvé → **re-téléchargement des 24 mois à chaque run** malgré le
+  cache. Le combiné est désormais repéré par son suffixe `_<année>.nc`
+  (robuste au préfixe), donc réutilisé.
+
 ## nemeton 0.146.0 (2026-07-08)
 
 #### Added — PAI LiDAR parallèle par dalles (`ncores`, `concurrent_files`)

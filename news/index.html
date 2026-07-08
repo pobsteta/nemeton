@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.146.1" id="nemeton-01461-2026-07-08">nemeton 0.146.1 (2026-07-08)<a class="anchor" aria-label="anchor" href="#nemeton-01461-2026-07-08"></a></h2>
+<div class="section level4">
+<h4 id="fixed--moteur-exposition--microclimfx-soilparameters--cache-era5-0-146-1">Fixed — moteur exposition : microclimf 2.x (<code>soilparameters</code>) + cache ERA5<a class="anchor" aria-label="anchor" href="#fixed--moteur-exposition--microclimfx-soilparameters--cache-era5-0-146-1"></a></h4>
+<p>Deux correctifs qui débloquent le calcul microclimf de bout en bout (diagnostiqués sur run réel RECONFORT, après que le fix 403 v0.145.1 a permis d’atteindre l’étape microclimf) :</p>
+<ul><li>
+<strong>microclimf 2.0.0 : <code>object 'soilparameters' not found</code>.</strong> <code>runpointmodel()</code> référence les datasets <code>soilparameters</code>/<code>soilparamsp</code> mais ne les charge pas (namespace verrouillé, pas de lazy-load interne) → le calcul microclimf plantait juste après le téléchargement ERA5, sans produire les rasters d’été (donc pas de <code>sensibilite.gpkg</code>). <code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code> les expose désormais dans l’environnement global le temps du run (helper <code>.rsen_ensure_soildata()</code>, idempotent), puis les retire (<code>on.exit</code>). Chaîne validée end-to-end (<code>runpointmodel → subsetpointmodel → runmicro</code>).</li>
+<li>
+<strong>Cache ERA5 jamais réutilisé.</strong> Le fichier combiné mcera5 s’appelle en réalité <code>era5_&lt;année&gt;_&lt;année&gt;.nc</code> (double année, <code>outfile_name = "era5_&lt;année&gt;"</code>), que le lookup <code>.rsen_era5_combined()</code> cherchait comme <code>era5_&lt;année&gt;.nc</code> → jamais trouvé → <strong>re-téléchargement des 24 mois à chaque run</strong> malgré le cache. Le combiné est désormais repéré par son suffixe <code>_&lt;année&gt;.nc</code> (robuste au préfixe), donc réutilisé.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.146.0" id="nemeton-01460-2026-07-08">nemeton 0.146.0 (2026-07-08)<a class="anchor" aria-label="anchor" href="#nemeton-01460-2026-07-08"></a></h2>
 <div class="section level4">
