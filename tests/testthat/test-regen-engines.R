@@ -243,22 +243,24 @@ test_that(".rsen_forcage_era5 requests monthly (by_month=TRUE) to dodge the CDS 
       list(list(target = paste0(outfile_name, ".nc")))
     },
     request_era5 = function(request, out_path, ...) {
-      # simule le produit combiné mcera5 : <outfile>.nc dans out_path
-      file.create(file.path(out_path, paste0(seen$outfile, ".nc")))
+      # mcera5 nomme le combiné <outfile>_<annee>.nc (double année quand
+      # outfile = "era5_2018") + des mensuels <outfile>_<annee>_<mois>.nc.
+      file.create(file.path(out_path, paste0(seen$outfile, "_2018.nc")))
+      file.create(file.path(out_path, paste0(seen$outfile, "_2018_6.nc")))
     },
     extract_clim = function(src, ...) { seen$src <- src; data.frame(obs_time = 1) },
     .package = "mcera5")
   out <- nemeton:::.rsen_forcage_era5(lon = 6, lat = 48, annee = 2018, cache_dir = cd)
-  expect_true(isTRUE(seen$by_month))                       # mensuel, pas annuel
-  expect_equal(basename(seen$src), "era5_2018.nc")          # fichier combiné choisi
-  expect_true(file.exists(file.path(cd, "era5_2018.nc")))
+  expect_true(isTRUE(seen$by_month))                        # mensuel, pas annuel
+  expect_equal(basename(seen$src), "era5_2018_2018.nc")     # combiné (pas un mensuel)
+  expect_true(file.exists(file.path(cd, "era5_2018_2018.nc")))
   expect_s3_class(out, "data.frame")
 })
 
 test_that(".rsen_forcage_era5 reuses the combined cache without re-downloading", {
   skip_if_not_installed("mcera5")
   cd <- withr::local_tempdir()
-  file.create(file.path(cd, "era5_2019.nc"))               # cache déjà présent
+  file.create(file.path(cd, "era5_2019_2019.nc"))          # combiné déjà en cache
   called <- 0L
   testthat::local_mocked_bindings(
     request_era5 = function(...) { called <<- called + 1L; NULL },
@@ -266,6 +268,26 @@ test_that(".rsen_forcage_era5 reuses the combined cache without re-downloading",
     .package = "mcera5")
   nemeton:::.rsen_forcage_era5(lon = 6, lat = 48, annee = 2019, cache_dir = cd)
   expect_equal(called, 0L)                                  # pas de re-téléchargement
+})
+
+# --- microclimf 2.x : datasets sol en portée (soilparameters) --------------
+test_that(".rsen_ensure_soildata exposes soilparameters in globalenv (idempotent)", {
+  skip_if_not_installed("microclimf")
+  genv <- globalenv()
+  had <- c(exists("soilparameters", envir = genv, inherits = FALSE),
+           exists("soilparamsp",   envir = genv, inherits = FALSE))
+  withr::defer({
+    # ne retirer que ce qui n'était pas déjà là
+    if (!had[1] && exists("soilparameters", envir = genv, inherits = FALSE))
+      rm("soilparameters", envir = genv)
+    if (!had[2] && exists("soilparamsp", envir = genv, inherits = FALSE))
+      rm("soilparamsp", envir = genv)
+  })
+  added <- nemeton:::.rsen_ensure_soildata()
+  expect_true(exists("soilparameters", envir = genv, inherits = FALSE))
+  expect_true(exists("soilparamsp",   envir = genv, inherits = FALSE))
+  # 2e appel : déjà présents -> rien de nouveau ajouté (idempotent)
+  expect_length(nemeton:::.rsen_ensure_soildata(), 0L)
 })
 
 # --- Parallélisme lasR du PAI (concurrent_files) ---------------------------
