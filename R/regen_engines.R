@@ -171,6 +171,26 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 # (LiDAR HD + microclimf + ERA5/CDS requis) ; validés par Pascal sur données
 # réelles. Le chemin `precomputed` de regen_sensibilite() reste pur et testé.
 
+# microclimf 2.x : runpointmodel() référence les datasets `soilparameters` /
+# `soilparamsp` mais ne les charge pas lui-même (namespace verrouillé, pas de
+# lazy-load interne) → `object 'soilparameters' not found`. La résolution de nom
+# d'un appel microclimf remonte jusqu'au globalenv : on les y expose (idempotent)
+# le temps du run. Retourne les noms RÉELLEMENT ajoutés, à retirer par l'appelant
+# (on.exit) pour ne pas polluer durablement l'environnement global.
+.rsen_ensure_soildata <- function() {
+  genv <- globalenv()
+  added <- character(0)
+  for (ds in c("soilparameters", "soilparamsp")) {
+    if (!exists(ds, envir = genv, inherits = FALSE)) {
+      ok <- tryCatch({
+        utils::data(list = ds, package = "microclimf", envir = genv); TRUE
+      }, error = function(e) FALSE)
+      if (ok) added <- c(added, ds)
+    }
+  }
+  added
+}
+
 # VPD (kPa) depuis T°C et HR%.
 .rsen_vpd <- function(Tc, RH) {
   es <- 0.6108 * exp(17.27 * Tc / (Tc + 237.3)); es * (1 - RH / 100)
@@ -224,18 +244,26 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   stop(last_err)
 }
 
-# Fichier ERA5 combiné attendu pour une année (produit final mcera5).
+# Fichier ERA5 combiné (mensuels fusionnés par mcera5) pour une année, ou NA.
+# mcera5 nomme le combiné `<outfile>_<annee>.nc` et les mensuels
+# `<outfile>_<annee>_<mois>.nc` : le combiné se termine donc par `_<annee>.nc`.
+# On le repère par CE suffixe (robuste au préfixe `outfile`) : avec
+# `outfile_name = "era5_<annee>"`, mcera5 écrit `era5_<annee>_<annee>.nc`
+# (double année) — que l'ancien lookup `era5_<annee>.nc` ne trouvait jamais, d'où
+# un re-téléchargement des 24 mois à chaque run malgré le cache.
 .rsen_era5_combined <- function(cache_dir, annee) {
-  file.path(cache_dir, sprintf("era5_%d.nc", annee))
+  hit <- list.files(cache_dir, pattern = sprintf("_%d\\.nc$", annee),
+                    full.names = TRUE)
+  if (length(hit)) hit[[1]] else NA_character_
 }
 
 # Forçage ERA5 pour une année (téléchargement mcera5 mis en cache).
 .rsen_forcage_era5 <- function(lon, lat, annee, cache_dir) {
   if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
-  combined <- .rsen_era5_combined(cache_dir, annee)   # mensuels fusionnés (combine)
+  combined <- .rsen_era5_combined(cache_dir, annee)   # NA si aucun combiné en cache
   st  <- as.POSIXct(sprintf("%d-01-01 00:00", annee), tz = "UTC")
   en  <- as.POSIXct(sprintf("%d-12-31 23:00", annee), tz = "UTC")
-  if (!file.exists(combined)) {
+  if (is.na(combined)) {
     if (!requireNamespace("mcera5", quietly = TRUE)) {
       cli::cli_abort(c(
         "regen_sensibilite() engine needs {.pkg mcera5} to fetch ERA5 forcing.",
@@ -253,10 +281,11 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
       start_time = st, end_time = en, by_month = TRUE,
       outfile_name = sprintf("era5_%d", annee))
     .rsen_era5_with_retry(function() mcera5::request_era5(req, out_path = cache_dir))
+    combined <- .rsen_era5_combined(cache_dir, annee)   # re-localise après download
   }
-  # Fichier combiné si présent, sinon 1er .nc de l'année (repli défensif). Le
-  # combiné trie avant les mensuels `era5_<annee>_<mois>.nc` ('.' < '_').
-  src <- if (file.exists(combined)) combined else
+  # Combiné si trouvé, sinon 1er .nc de l'année (repli défensif : le combiné trie
+  # avant les mensuels `era5_<annee>_<mois>.nc`, '.' < '_').
+  src <- if (!is.na(combined)) combined else
     list.files(cache_dir, pattern = sprintf("^era5_%d.*\\.nc$", annee),
                full.names = TRUE)[1]
   # format "microclimf" -> colonnes prêtes (obs_time/temp/relhum/pres/swdown/
@@ -482,6 +511,14 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   veg$hgt <- hgt; veg$pai <- pai
   soil <- e$soilc
   for (nm in names(soil)) soil[[nm]] <- .rsen_vers_grille(soil[[nm]], dtm)
+
+  # microclimf 2.x exige `soilparameters`/`soilparamsp` en portée (cf. helper) ;
+  # exposés le temps du run puis retirés.
+  .soildata_added <- .rsen_ensure_soildata()
+  if (length(.soildata_added)) {
+    on.exit(suppressWarnings(rm(list = .soildata_added, envir = globalenv())),
+            add = TRUE)
+  }
 
   ll  <- terra::geom(terra::centroids(terra::project(parc, "EPSG:4326")))
   lon <- mean(ll[, "x"]); lat <- mean(ll[, "y"])

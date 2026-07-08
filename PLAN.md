@@ -1298,6 +1298,31 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-08 — v0.146.1 : fix microclimf 2.x (`soilparameters`) + cache ERA5 réutilisé
+
+Run réel RECONFORT relancé (nemeton 0.146.0) : PAI parallèle ✅ (~38 min, 4 dalles
+de front, ~2×), ERA5 mensuel ✅ (fix 403 validé, 2018 téléchargé). **Mais toujours
+pas de `sensibilite.gpkg`** → deux bugs de plus, diagnostiqués par reproduction
+hors app sur le cache existant :
+
+- **microclimf 2.0.0 `object 'soilparameters' not found`.** Reproduction de la
+  séquence `.rsen_traiter_annee` : `extract_clim` OK, `checkinputs` OK, mais
+  `runpointmodel` plante — microclimf 2.x référence `soilparameters`/`soilparamsp`
+  sans les charger (namespace verrouillé). Workaround validé (les exposer en
+  globalenv → `runpointmodel → subsetpointmodel → runmicro` OK, sort `Tz`). Fix :
+  `.rsen_ensure_soildata()` (idempotent + `on.exit` rm). C'était LE blocage réel
+  du calcul depuis la mise à jour microclimf.
+- **Cache ERA5 cassé.** mcera5 nomme le combiné `era5_<an>_<an>.nc` (double année),
+  or `.rsen_era5_combined` cherchait `era5_<an>.nc` → jamais trouvé → re-download
+  des 24 mois à chaque run. Fix : repérage par suffixe `_<an>.nc`.
+
+Tests : reproduction `.rsen_ensure_soildata` (idempotent) + `.rsen_forcage_era5`
+combiné double-année. 92 pass. Pur cœur. Bump patch 0.146.0.9000 → **0.146.1**.
+
+> Chaîne complète de la journée : creds (redémarrage) → 403 (v0.145.1) →
+> `soilparameters` (v0.146.1) = 3 blocages successifs révélés l'un après l'autre.
+> + PAI parallèle (v0.146.0) & cache PAI (v0.145.0) pour la vitesse.
+
 ### 2026-07-08 — v0.146.0 : PAI LiDAR parallèle par dalles (`ncores`, concurrent_files)
 
 Suite au diagnostic du run RECONFORT : la phase PAI (`pai_depuis_nuage`, 25 dalles
