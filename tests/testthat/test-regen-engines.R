@@ -270,6 +270,38 @@ test_that(".rsen_forcage_era5 reuses the combined cache without re-downloading",
   expect_equal(called, 0L)                                  # pas de re-téléchargement
 })
 
+# --- microclimf 2.x : sélection des mois d'été + réduction cellule-à-cellule -
+test_that(".rsen_traiter_annee derives summer months from mp$weather$obs_time (microclimf 2.x)", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("microclimf")
+  dtm <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 50, ymin = 0, ymax = 50,
+                     crs = "EPSG:2154"); terra::values(dtm) <- 1; names(dtm) <- "dtm"
+  # 6 pas : mois 5,5,7,7,9,9 -> été (6:8) = couches 3 et 4 (juillet).
+  obs <- as.POSIXct(c("2018-05-01", "2018-05-02", "2018-07-01",
+                      "2018-07-02", "2018-09-01", "2018-09-02"), tz = "UTC")
+  Tz <- array(rep(c(10, 20, 30, 40, 50, 60), each = 25), dim = c(5, 5, 6))
+  RH <- array(50, dim = c(5, 5, 6))
+  testthat::local_mocked_bindings(
+    .rsen_forcage_era5 = function(...) data.frame(obs_time = obs))
+  testthat::local_mocked_bindings(
+    checkinputs      = function(...) invisible(NULL),
+    runpointmodel    = function(...) list(x = 1),
+    subsetpointmodel = function(pointmodel, ...) list(weather = list(obs_time = obs)),
+    # microclimf 2.x : out$tme VIDE, pas de terra::time() -> le fix lit obs_time.
+    runmicro         = function(...) list(Tz = Tz, relhum = RH, tme = as.POSIXct(character(0))),
+    .package = "microclimf")
+  cd <- withr::local_tempdir()
+  res <- nemeton:::.rsen_traiter_annee(2018L, lon = 2, lat = 48, dtm = dtm,
+           veg = list(), soil = list(), reqhgt = 0.5, mois_ete = 6:8, cache_dir = cd)
+  # tmax = max cellule-à-cellule sur juillet (couches 30 et 40) = 40, un SEUL layer.
+  expect_s4_class(res$tmax, "SpatRaster")
+  expect_equal(terra::nlyr(res$tmax), 1L)
+  expect_equal(unname(terra::minmax(res$tmax)[, 1]), c(40, 40))
+  expect_s4_class(res$vpd, "SpatRaster")
+  expect_equal(terra::nlyr(res$vpd), 1L)
+  expect_true(file.exists(file.path(cd, "cache_2018_tmax.tif")))
+})
+
 # --- microclimf 2.x : datasets sol en portée (soilparameters) --------------
 test_that(".rsen_ensure_soildata exposes soilparameters in globalenv (idempotent)", {
   skip_if_not_installed("microclimf")
