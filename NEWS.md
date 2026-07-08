@@ -1,3 +1,24 @@
+# nemeton 0.145.0 (2026-07-08)
+
+### Added — cache disque du PAI LiDAR dans `regen_sensibilite()` (`pai_cache`)
+
+`regen_sensibilite()` gagne un argument `pai_cache = NULL` (chemin GeoTIFF). Le
+PAI dérivé du nuage LiDAR (`pai_depuis_nuage()`) est **le poste le plus long**
+avant ERA5 — sur un gros massif (nuage COPC de plusieurs Go), la dérivation peut
+durer des dizaines de minutes. Or le PAI ne dépend que du nuage et de la grille
+de travail : **invariant** pour un projet / AOI / `res` donnés.
+
+Avec `pai_cache` : si le fichier existe **et** que sa géométrie correspond à la
+grille, le PAI est **relu du disque** (aucun recalcul) ; sinon il est calculé
+puis écrit là. Un changement d'AOI ou de `res` produit une géométrie différente
+→ le cache est **invalidé** (recalcul + réécriture), donc jamais de PAI périmé.
+L'événement `regen_expo:pai` expose `source = "cache"` en plus de
+`"lidar"`/`"raster"` (l'app affiche « PAI (cache) », phase quasi instantanée).
+
+Rétro-compatible : `pai_cache = NULL` (défaut) = comportement v0.144.x
+(recalcul à chaque run). Brief app :
+`specs/027-regeneration-microclimat/brief-nemetonshiny-pai-cache.md`.
+
 # nemeton 0.144.0 (2026-07-08)
 
 ### Added — événement de phase `regen_expo:pai` sur `regen_sensibilite()`
