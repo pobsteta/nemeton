@@ -15,6 +15,7 @@ pai_depuis_nuage(
   cl_veg = c(3L, 4L, 5L),
   epsg = 2154,
   pai_max = 8,
+  ncores = NULL,
   precomputed = NULL,
   ...
 )
@@ -45,6 +46,14 @@ mask.}
 \item{epsg}{CRS forced on the tiles when absent (LiDAR HD = \code{2154}).}
 
 \item{pai_max}{Upper clamp on PAI (default 8).}
+
+\item{ncores}{Tile-level parallelism for the \code{lasR} read
+(\code{concurrent_files}): \code{NULL} (default) processes
+\code{lasR::half_cores()} tiles at once, an integer \code{N} processes \code{N},
+and \code{1}/\code{FALSE} forces sequential. The PAI is identical whatever the
+value (per-cell counting is associative); more cores trade RAM for wall-time on
+a multi-tile massif. The global \code{lasR} strategy is saved and restored
+around the run.}
 
 \item{precomputed}{Optional pre-built PAI \code{SpatRaster} or raster path.}
 
