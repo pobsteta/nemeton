@@ -1298,6 +1298,28 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-08 — v0.146.0 : PAI LiDAR parallèle par dalles (`ncores`, concurrent_files)
+
+Suite au diagnostic du run RECONFORT : la phase PAI (`pai_depuis_nuage`, 25 dalles
+COPC / 4,7 Go) tenait **>1 h** en séquentiel. Constat : `lasR` streame déjà les
+dalles, mais la fonction ne posait **aucune** stratégie parallèle (mono-thread).
+Le buffer/bord-à-bord n'est pas pertinent pour un `rasterize("count")` (aucune
+dépendance de voisinage) — le vrai levier est `concurrent_files`.
+
+- **Cœur (v0.146.0).** `pai_depuis_nuage(..., ncores = NULL)` : `NULL` = auto
+  (`lasR::half_cores()`), entier `N` = N dalles de front, `1`/`FALSE` = séquentiel.
+  Helper `.pai_parallel_ncores`. Stratégie globale sauvegardée/restaurée
+  (`get/set/unset_parallel_strategy`). Sortie identique (comptage associatif),
+  gain ~linéaire (8 cœurs → ~4×). `regen_sensibilite()` expose `pai_ncores`
+  (transmis) pour réglage RAM côté app. Défaut auto-parallèle → **le prochain run
+  bénéficie sans changement app**. Test : résolution NULL/FALSE/1/N (mock
+  half_cores) — 89 pass. `.Rd` des deux fonctions édités main.
+- **ERA5 12 mois** : parallélisation possible mais **bornée par la concurrence
+  par-utilisateur du CDS** (file serveur) ; `mcera5::request_era5` est séquentiel.
+  Meilleur levier = ne tirer que les mois d'été utiles (`mois_ete`) → moins de
+  requêtes plutôt que parallèles. À arbitrer (changement de fenêtre temporelle,
+  validation microclimf requise).
+
 ### 2026-07-08 — v0.145.1 : fix ERA5 « request too large » (régression CDS v0.143.0)
 
 **Cause racine trouvée en run réel RECONFORT.** Après redémarrage app (creds OK),

@@ -18,6 +18,7 @@ regen_sensibilite(
   k = 0.5,
   pai = NULL,
   pai_cache = NULL,
+  pai_ncores = NULL,
   cache_dir = NULL,
   progress_callback = NULL,
   precomputed = NULL,
@@ -61,6 +62,12 @@ working grid it is read back (no recompute); otherwise the PAI is computed and
 written there. A geometry mismatch (AOI / \code{res} changed) invalidates it
 (recompute + overwrite). Ignored when \code{pai} is supplied. \code{NULL}
 (default) disables caching — the v0.144.x behaviour.}
+
+\item{pai_ncores}{Tile-level parallelism for the LiDAR PAI build, forwarded to
+\code{\link{pai_depuis_nuage}} (\code{ncores}): \code{NULL} (default) uses
+\code{lasR::half_cores()}, an integer sets the number of tiles processed at
+once, \code{1}/\code{FALSE} forces sequential. Trades RAM for wall-time; the
+PAI is identical either way.}
 
 \item{cache_dir}{Directory for the ERA5 \code{.nc} and per-year microclimate
 \code{.tif} caches. \code{NULL} (default) uses a session temp dir; pass a

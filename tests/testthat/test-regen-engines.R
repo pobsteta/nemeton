@@ -268,6 +268,18 @@ test_that(".rsen_forcage_era5 reuses the combined cache without re-downloading",
   expect_equal(called, 0L)                                  # pas de re-téléchargement
 })
 
+# --- Parallélisme lasR du PAI (concurrent_files) ---------------------------
+test_that(".pai_parallel_ncores resolves NULL/FALSE/1/N correctly", {
+  skip_if_not_installed("lasR")
+  testthat::local_mocked_bindings(half_cores = function() 4L, .package = "lasR")
+  expect_equal(nemeton:::.pai_parallel_ncores(NULL), 4L)   # auto = half_cores
+  expect_true(is.na(nemeton:::.pai_parallel_ncores(FALSE))) # opt-out
+  expect_true(is.na(nemeton:::.pai_parallel_ncores(1)))     # 1 = séquentiel
+  expect_true(is.na(nemeton:::.pai_parallel_ncores(0)))
+  expect_equal(nemeton:::.pai_parallel_ncores(6), 6L)       # explicite
+  expect_equal(nemeton:::.pai_parallel_ncores(2L), 2L)
+})
+
 # --- Piste cœur 2 : retry/back-off ERA5 ------------------------------------
 test_that(".rsen_era5_with_retry retries a transient failure then succeeds", {
   calls <- 0L

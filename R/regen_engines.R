@@ -356,6 +356,10 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #'   written there. A geometry mismatch (AOI / `res` changed) invalidates it
 #'   (recompute + overwrite). Ignored when `pai` is supplied. `NULL` (default)
 #'   disables caching — the v0.144.x behaviour.
+#' @param pai_ncores Tile-level parallelism for the LiDAR PAI build, forwarded to
+#'   [pai_depuis_nuage()] (`ncores`): `NULL` (default) uses `lasR::half_cores()`,
+#'   an integer sets the number of tiles processed at once, `1`/`FALSE` forces
+#'   sequential. Trades RAM for wall-time; the PAI is identical either way.
 #' @param cache_dir Directory for the ERA5 `.nc` and per-year microclimate `.tif`
 #'   caches. `NULL` (default) uses a session temp dir; pass a persistent path to
 #'   reuse expensive runs.
@@ -380,8 +384,8 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
                               annees_moy = NULL, annees_canic = NULL,
                               mois_ete = 6:8, res = 2, tampon = 150,
                               reqhgt = 0.5, k = 0.5, pai = NULL, pai_cache = NULL,
-                              cache_dir = NULL, progress_callback = NULL,
-                              precomputed = NULL, ...) {
+                              pai_ncores = NULL, cache_dir = NULL,
+                              progress_callback = NULL, precomputed = NULL, ...) {
   validate_sf(units)
   # Progression (patron monitoring) : émission no-op si NULL, jamais fatale.
   emit <- function(payload) {
@@ -458,7 +462,7 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   } else if (pai_hit) {
     terra::rast(pai_cache)                       # cache hit : PAI relu, grille alignée
   } else {
-    p <- pai_depuis_nuage(las, dtm, res = res, k = k)
+    p <- pai_depuis_nuage(las, dtm, res = res, k = k, ncores = pai_ncores)
     if (!is.null(pai_cache)) {
       dir.create(dirname(pai_cache), showWarnings = FALSE, recursive = TRUE)
       tryCatch(terra::writeRaster(p, pai_cache, overwrite = TRUE),
@@ -550,6 +554,16 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
           v[["xmax"]] + margin, v[["ymax"]] + margin)
 }
 
+# Nombre de dalles à traiter en parallèle (lasR concurrent_files). Retourne un
+# entier >= 2 (parallèle) ou NA (séquentiel / stratégie inchangée) :
+#   NULL  -> auto = lasR::half_cores() (défaut bénéfique, sortie identique) ;
+#   FALSE / <= 1 -> NA (séquentiel) ; entier N -> N.
+.pai_parallel_ncores <- function(ncores) {
+  if (isFALSE(ncores)) return(NA_integer_)
+  n <- if (is.null(ncores)) lasR::half_cores() else suppressWarnings(as.integer(ncores))
+  if (length(n) != 1L || is.na(n) || n <= 1L) NA_integer_ else n
+}
+
 #' Plant Area Index from a LiDAR-HD point cloud (spec 027 L1)
 #'
 #' @description
@@ -581,6 +595,12 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
 #'   (defaults `2` and `c(3, 4, 5)`).
 #' @param epsg CRS forced on the tiles when absent (LiDAR HD = `2154`).
 #' @param pai_max Upper clamp on PAI (default 8).
+#' @param ncores Tile-level parallelism for the `lasR` read (`concurrent_files`):
+#'   `NULL` (default) processes `lasR::half_cores()` tiles at once, an integer
+#'   `N` processes `N`, and `1`/`FALSE` forces sequential. The PAI is identical
+#'   whatever the value (per-cell counting is associative); more cores trade RAM
+#'   for wall-time on a multi-tile massif. The global `lasR` strategy is saved and
+#'   restored around the run.
 #' @param precomputed Optional pre-built PAI `SpatRaster` or raster path.
 #' @param ... Reserved.
 #'
@@ -590,7 +610,7 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
 pai_depuis_nuage <- function(dossier_las = NULL, grille = NULL, res = 2,
                              k = 0.5, parcelle = NULL, fenetre = NA,
                              cl_sol = 2L, cl_veg = c(3L, 4L, 5L), epsg = 2154,
-                             pai_max = 8, precomputed = NULL, ...) {
+                             pai_max = 8, ncores = NULL, precomputed = NULL, ...) {
   if (!is.null(precomputed)) {
     if (inherits(precomputed, "SpatRaster")) return(precomputed)
     if (is.character(precomputed) && length(precomputed) == 1L &&
@@ -642,6 +662,18 @@ pai_depuis_nuage <- function(dossier_las = NULL, grille = NULL, res = 2,
                     default_value = 0, ofile = f_sol) +
     lasR::rasterize(res_arg, "count", filter = lasR::keep_class(cl_veg),
                     default_value = 0, ofile = f_veg)
+
+  # Parallélisme lasR : traiter plusieurs dalles de front (concurrent_files) —
+  # sortie strictement identique (le comptage par cellule est associatif), gain
+  # ~linéaire en cœurs sur un massif multi-dalles. On sauvegarde/restaure la
+  # stratégie globale pour ne pas fuiter d'état hors de la fonction.
+  n_par <- .pai_parallel_ncores(ncores)
+  if (!is.na(n_par)) {
+    old_strat <- lasR::get_parallel_strategy()
+    lasR::set_parallel_strategy(lasR::concurrent_files(n_par))
+    on.exit(if (is.null(old_strat)) lasR::unset_parallel_strategy()
+            else lasR::set_parallel_strategy(old_strat), add = TRUE)
+  }
   lasR::exec(pipe, on = dalles, progress = TRUE)
 
   n_sol <- terra::rast(f_sol)
