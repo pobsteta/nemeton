@@ -323,14 +323,26 @@ test_that(".rsen_ensure_soildata exposes soilparameters in globalenv (idempotent
 })
 
 # --- Parallélisme lasR du PAI (concurrent_files) ---------------------------
-test_that(".pai_parallel_ncores resolves NULL/FALSE/1/N correctly", {
+test_that(".pai_parallel_ncores : défaut borné mémoire + overrides", {
   skip_if_not_installed("lasR")
   testthat::local_mocked_bindings(half_cores = function() 4L, .package = "lasR")
-  expect_equal(nemeton:::.pai_parallel_ncores(NULL), 4L)   # auto = half_cores
-  expect_true(is.na(nemeton:::.pai_parallel_ncores(FALSE))) # opt-out
-  expect_true(is.na(nemeton:::.pai_parallel_ncores(1)))     # 1 = séquentiel
+  # Défaut NULL = borné mémoire (budget ~6 Go/dalle sur 40 % RAM, cap half_cores).
+  testthat::local_mocked_bindings(.pai_total_ram_gb = function() 31)   # floor(.4*31/6)=2
+  expect_equal(nemeton:::.pai_parallel_ncores(NULL), 2L)               # 31 Go -> 2 (pas 4)
+  testthat::local_mocked_bindings(.pai_total_ram_gb = function() 128)  # 8, borné half=4
+  expect_equal(nemeton:::.pai_parallel_ncores(NULL), 4L)
+  testthat::local_mocked_bindings(.pai_total_ram_gb = function() NA_real_)  # RAM inconnue
+  expect_equal(nemeton:::.pai_parallel_ncores(NULL), 2L)              # -> prudent min(2,hc)
+  # Overrides du défaut NULL (option puis env).
+  withr::with_options(list(nemeton.pai_ncores = 3L),
+    expect_equal(nemeton:::.pai_parallel_ncores(NULL), 3L))
+  withr::with_envvar(c(NEMETON_PAI_NCORES = "1"),
+    expect_true(is.na(nemeton:::.pai_parallel_ncores(NULL))))         # 1 -> séquentiel
+  # Valeurs explicites (choix appelant, inchangé).
+  expect_true(is.na(nemeton:::.pai_parallel_ncores(FALSE)))           # opt-out
+  expect_true(is.na(nemeton:::.pai_parallel_ncores(1)))
   expect_true(is.na(nemeton:::.pai_parallel_ncores(0)))
-  expect_equal(nemeton:::.pai_parallel_ncores(6), 6L)       # explicite
+  expect_equal(nemeton:::.pai_parallel_ncores(6), 6L)
   expect_equal(nemeton:::.pai_parallel_ncores(2L), 2L)
 })
 

@@ -1298,6 +1298,32 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-09 — v0.146.3 : PAI parallèle borné mémoire (OOM systemd-oomd)
+
+**7ᵉ blocage, sur run réel avec nemetonshiny 0.100.13 (pai_cache câblé).** Run lancé
+16:37, mort à ~17:27 en phase PAI **sans rien produire**. Forensique décisive :
+`journalctl` → `app-rstudio-88421.scope: Failed with result 'oom-kill'` — **`systemd-oomd`**
+a tué le scope RStudio (il tue à ~50 % de pression mémoire soutenue). Le PAI parallèle
+(v0.146.0, `half_cores()`=4 dalles COPC de front, 25 dalles ≈ 38 Go décompressées sur
+31 Go RAM) a saturé la mémoire. Ce matin le PAI 4-dalles était passé de justesse ; ce
+run a franchi le seuil oomd. **Mon défaut `half_cores()` est trop gourmand pour de
+grosses dalles LiDAR.**
+
+Fix : défaut `ncores=NULL` **borné mémoire** (~6 Go/dalle sur 40 % RAM, cap half_cores)
+→ 2 dalles sur 31 Go au lieu de 4 ; + override `options(nemeton.pai_ncores=)` /
+`NEMETON_PAI_NCORES` (tant que l'app n'expose pas le curseur). PAI identique (comptage
+associatif). 102 pass. Bump patch → **0.146.3**.
+
+> ⚠️ Le chemin **LiDAR PAI** (`pai_depuis_nuage` réel) n'était PAS couvert par le run
+> e2e de 0.146.2 (qui passait `pai=raster`). D'où ce bug découvert seulement au run réel.
+> Le calcul PAI lui-même est correct (prouvé ce matin) — seul le dimensionnement mémoire
+> était en cause.
+>
+> **Bilan = 7 blocages successifs le 2026-07-08/09** : creds → 403 ERA5 (v0.145.1) →
+> soilparameters (v0.146.1) → trim/temps + writeRaster/app + NaN (v0.146.2) → **OOM PAI
+> (v0.146.3)**. Prochaine étape : réinstaller 0.146.3, relancer → PAI 2-dalles (sûr) →
+> pai.tif caché (0.100.13) → ERA5 (2018 réutilisé) → microclimf → sensibilite.gpkg.
+
 ### 2026-07-08 — v0.146.2 : compat microclimf 2.x sortie `runmicro` (3 bugs aval)
 
 **Débogage proactif end-to-end** (à la demande : « je suis sûr qu'il y aura d'autres

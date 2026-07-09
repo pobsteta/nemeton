@@ -613,9 +613,41 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
 # entier >= 2 (parallèle) ou NA (séquentiel / stratégie inchangée) :
 #   NULL  -> auto = lasR::half_cores() (défaut bénéfique, sortie identique) ;
 #   FALSE / <= 1 -> NA (séquentiel) ; entier N -> N.
+# RAM totale (Go) — Linux /proc/meminfo, sinon NA.
+.pai_total_ram_gb <- function() {
+  mi <- tryCatch(readLines("/proc/meminfo", n = 1L), error = function(e) NA_character_)
+  if (length(mi) != 1L || is.na(mi[1])) return(NA_real_)
+  kb <- suppressWarnings(as.numeric(sub("\\D*([0-9]+).*", "\\1", mi[1])))  # MemTotal kB
+  if (is.na(kb)) NA_real_ else kb / 1024^2
+}
+
+# Concurrence PAI par défaut BORNÉE MÉMOIRE. Les dalles COPC décompressées sont
+# lourdes (~4 Go/dalle en pic) et `systemd-oomd` tue le scope à ~50 % de pression
+# mémoire soutenue : `half_cores()` aveugle (4 sur 8 cœurs) a fait OOM un run réel
+# sur 31 Go (incident 2026-07-08). On budgète ~6 Go/dalle concurrente sur 40 % de
+# la RAM totale, borné par `hard_max` (= half_cores). RAM inconnue -> prudent (2).
+.pai_mem_safe_ncores <- function(hard_max) {
+  ram <- .pai_total_ram_gb()
+  if (is.na(ram)) return(min(2L, hard_max))
+  max(1L, min(as.integer(hard_max), as.integer(floor(0.40 * ram / 6))))
+}
+
+# Concurrence lasR effective pour le PAI :
+#  - ncores = FALSE           -> séquentiel (NA = pas de stratégie parallèle) ;
+#  - ncores = entier          -> tel quel (choix explicite de l'appelant) ;
+#  - ncores = NULL (défaut)   -> override `options(nemeton.pai_ncores=)` /
+#    env `NEMETON_PAI_NCORES`, sinon défaut borné mémoire ∩ half_cores.
+# Renvoie NA_integer_ pour n<=1 (lasR reste séquentiel — 1 dalle à la fois).
 .pai_parallel_ncores <- function(ncores) {
   if (isFALSE(ncores)) return(NA_integer_)
-  n <- if (is.null(ncores)) lasR::half_cores() else suppressWarnings(as.integer(ncores))
+  if (is.null(ncores)) {
+    ov <- getOption("nemeton.pai_ncores",
+                    Sys.getenv("NEMETON_PAI_NCORES", unset = NA))
+    n <- if (!is.na(ov)) suppressWarnings(as.integer(ov))
+         else .pai_mem_safe_ncores(lasR::half_cores())
+  } else {
+    n <- suppressWarnings(as.integer(ncores))
+  }
   if (length(n) != 1L || is.na(n) || n <= 1L) NA_integer_ else n
 }
 
@@ -651,11 +683,15 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
 #' @param epsg CRS forced on the tiles when absent (LiDAR HD = `2154`).
 #' @param pai_max Upper clamp on PAI (default 8).
 #' @param ncores Tile-level parallelism for the `lasR` read (`concurrent_files`):
-#'   `NULL` (default) processes `lasR::half_cores()` tiles at once, an integer
-#'   `N` processes `N`, and `1`/`FALSE` forces sequential. The PAI is identical
-#'   whatever the value (per-cell counting is associative); more cores trade RAM
-#'   for wall-time on a multi-tile massif. The global `lasR` strategy is saved and
-#'   restored around the run.
+#'   `NULL` (default) picks a **memory-bounded** number of tiles (COPC tiles are
+#'   heavy once decompressed and `systemd-oomd` kills at ~50% memory pressure, so
+#'   the default budgets ~6 GB per concurrent tile over 40% of RAM, capped by
+#'   `lasR::half_cores()`); an integer `N` processes exactly `N`; `1`/`FALSE`
+#'   forces sequential. When `ncores` is `NULL`, `options(nemeton.pai_ncores=)`
+#'   or the `NEMETON_PAI_NCORES` env var override the default (useful when the
+#'   caller — e.g. the Shiny app — does not expose the knob). The PAI is identical
+#'   whatever the value (per-cell counting is associative); more tiles trade RAM
+#'   for wall-time. The global `lasR` strategy is saved and restored around the run.
 #' @param precomputed Optional pre-built PAI `SpatRaster` or raster path.
 #' @param ... Reserved.
 #'
