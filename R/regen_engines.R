@@ -191,6 +191,14 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   added
 }
 
+# Facteur d'agrégation pour borner la grille microclimf sous `max_cells` cellules
+# (agrégation carrée) : ceil(sqrt(ncell / max_cells)). 1 = pas d'agrégation.
+.rsen_micro_agg_factor <- function(dtm, max_cells) {
+  nc <- terra::ncell(dtm)
+  if (!is.finite(max_cells) || max_cells <= 0 || nc <= max_cells) return(1L)
+  max(1L, as.integer(ceiling(sqrt(nc / max_cells))))
+}
+
 # VPD (kPa) depuis T°C et HR%.
 .rsen_vpd <- function(Tc, RH) {
   es <- 0.6108 * exp(17.27 * Tc / (Tc + 237.3)); es * (1 - RH / 100)
@@ -414,6 +422,14 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #'   [pai_depuis_nuage()] (`ncores`): `NULL` (default) uses `lasR::half_cores()`,
 #'   an integer sets the number of tiles processed at once, `1`/`FALSE` forces
 #'   sequential. Trades RAM for wall-time; the PAI is identical either way.
+#' @param micro_max_cells Memory cap on the microclimf working grid. `microclimf`
+#'   allocates arrays of `ncells * ntimesteps * ~11 outputs`, so running it at a
+#'   fine `res` (e.g. 2 m) over a whole massif (millions of cells) exhausts RAM
+#'   (OOM). The grid (`dtm`/`hgt`/`pai`) is aggregated so its cell count stays
+#'   `<= micro_max_cells` before microclimf runs; the **cached** PAI (`pai_cache`)
+#'   stays at fine `res`. The microclimate signal is smooth and only per-unit
+#'   means are used, so coarsening is harmless for the sensitivity ranking.
+#'   `NULL` (default) uses `getOption("nemeton.micro_max_cells", 5e4)`.
 #' @param cache_dir Directory for the ERA5 `.nc` and per-year microclimate `.tif`
 #'   caches. `NULL` (default) uses a session temp dir; pass a persistent path to
 #'   reuse expensive runs.
@@ -438,9 +454,14 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
                               annees_moy = NULL, annees_canic = NULL,
                               mois_ete = 6:8, res = 2, tampon = 150,
                               reqhgt = 0.5, k = 0.5, pai = NULL, pai_cache = NULL,
-                              pai_ncores = NULL, cache_dir = NULL,
+                              pai_ncores = NULL, micro_max_cells = NULL,
+                              cache_dir = NULL,
                               progress_callback = NULL, precomputed = NULL, ...) {
   validate_sf(units)
+  # Budget cellules de la grille microclimf (borne mémoire, cf. bloc plus bas).
+  # NULL -> option `nemeton.micro_max_cells` sinon 5e4 (sûr même sur 8 Go).
+  if (is.null(micro_max_cells))
+    micro_max_cells <- as.numeric(getOption("nemeton.micro_max_cells", 5e4))
   # Progression (patron monitoring) : émission no-op si NULL, jamais fatale.
   emit <- function(payload) {
     if (!is.null(progress_callback))
@@ -526,6 +547,23 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
     p
   }
   names(pai) <- "pai"
+
+  # --- Grille microclimf BORNÉE MÉMOIRE ---
+  # microclimf::runmicro() alloue des tableaux (ncellules × pas_de_temps × ~11
+  # sorties) : à `res` fine (2 m) sur un massif entier (millions de cellules) ->
+  # des dizaines de Go -> tué par systemd-oomd (incident 2026-07-09, APRÈS le PAI).
+  # On agrège dtm/hgt/pai à une résolution gardant ncellules <= `micro_max_cells`.
+  # Le PAI CACHÉ (`pai.tif`) reste à `res` fine (déjà écrit ci-dessus) ; seul le
+  # CALCUL microclimf est coarseé — signal microclimatique lissé, on ne produit que
+  # des moyennes par UGF (ranking de sensibilité), donc résolution fine inutile.
+  # fac = 1 -> aucune agrégation (petits AOI).
+  fac <- .rsen_micro_agg_factor(dtm, micro_max_cells)
+  if (fac > 1L) {
+    dtm <- terra::aggregate(dtm, fac, fun = "mean", na.rm = TRUE)
+    hgt <- terra::aggregate(hgt, fac, fun = "mean", na.rm = TRUE)
+    pai <- terra::resample(pai, dtm, method = "bilinear")
+    names(dtm) <- "dtm"; names(hgt) <- "hgt"; names(pai) <- "pai"
+  }
 
   # Végétation / sol microclimf, ramenés à la grille ; hgt/pai injectés.
   e <- new.env()

@@ -317,6 +317,20 @@ test_that(".rsen_traiter_annee derives summer months from mp$weather$obs_time (m
   expect_true(file.exists(file.path(cd, "cache_2018_tmax.tif")))
 })
 
+# --- microclimf : grille de calcul bornée mémoire --------------------------
+test_that(".rsen_micro_agg_factor caps the grid cell count", {
+  skip_if_not_installed("terra")
+  g <- terra::rast(nrows = 300, ncols = 300)   # 90 000 cellules
+  expect_equal(nemeton:::.rsen_micro_agg_factor(g, 5e4), 2L)   # ceil(sqrt(90000/50000))
+  expect_equal(nemeton:::.rsen_micro_agg_factor(g, 1e4), 3L)   # ceil(sqrt(9))
+  expect_equal(nemeton:::.rsen_micro_agg_factor(g, 9e4), 1L)   # ncell == budget -> pas d'agg
+  expect_equal(nemeton:::.rsen_micro_agg_factor(g, 1e6), 1L)   # budget > ncell -> 1
+  expect_equal(nemeton:::.rsen_micro_agg_factor(g, Inf), 1L)   # pas de borne
+  # agrège vraiment sous le budget
+  fac <- nemeton:::.rsen_micro_agg_factor(g, 5e3)
+  expect_lte(terra::ncell(terra::aggregate(g, fac)), 5e3)
+})
+
 # --- microclimf 2.x : datasets sol en portée (soilparameters) --------------
 test_that(".rsen_ensure_soildata exposes soilparameters in globalenv (idempotent)", {
   skip_if_not_installed("microclimf")
