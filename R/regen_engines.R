@@ -257,6 +257,22 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   if (length(hit)) hit[[1]] else NA_character_
 }
 
+# Fichier ERA5 à LIRE pour une année (entrée d'extract_clim) : le combiné s'il
+# existe, sinon repli défensif = le nom le PLUS COURT parmi les `era5_<annee>*.nc`
+# (le combiné `era5_<annee>_<annee>.nc` est plus court que les mensuels
+# `era5_<annee>_<annee>_<mois>.nc`). `nchar()` est INDÉPENDANT de la locale,
+# contrairement à `sort()`/`[1]` : selon la locale (FR notamment), le combiné ne
+# trie PAS forcément avant les mensuels ('.' vs '_'), donc `[1]` pouvait piocher
+# un mensuel (1 mois au lieu de 12). Renvoie NA si rien.
+.rsen_era5_src <- function(cache_dir, annee) {
+  comb <- .rsen_era5_combined(cache_dir, annee)
+  if (!is.na(comb)) return(comb)
+  cands <- list.files(cache_dir, pattern = sprintf("^era5_%d.*\\.nc$", annee),
+                      full.names = TRUE)
+  if (!length(cands)) return(NA_character_)
+  cands[order(nchar(basename(cands)), basename(cands))][1]
+}
+
 # Forçage ERA5 pour une année (téléchargement mcera5 mis en cache).
 .rsen_forcage_era5 <- function(lon, lat, annee, cache_dir) {
   if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
@@ -281,13 +297,10 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
       start_time = st, end_time = en, by_month = TRUE,
       outfile_name = sprintf("era5_%d", annee))
     .rsen_era5_with_retry(function() mcera5::request_era5(req, out_path = cache_dir))
-    combined <- .rsen_era5_combined(cache_dir, annee)   # re-localise après download
   }
-  # Combiné si trouvé, sinon 1er .nc de l'année (repli défensif : le combiné trie
-  # avant les mensuels `era5_<annee>_<mois>.nc`, '.' < '_').
-  src <- if (!is.na(combined)) combined else
-    list.files(cache_dir, pattern = sprintf("^era5_%d.*\\.nc$", annee),
-               full.names = TRUE)[1]
+  # Combiné si trouvé, sinon repli défensif (nom le plus court = le combiné,
+  # indépendant de la locale — cf. .rsen_era5_src).
+  src <- .rsen_era5_src(cache_dir, annee)
   # format "microclimf" -> colonnes prêtes (obs_time/temp/relhum/pres/swdown/
   # difrad/lwdown/windspeed/winddir/precip), précip incluse, pression en kPa.
   mcera5::extract_clim(src, long = lon, lat = lat,
