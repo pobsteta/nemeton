@@ -19,6 +19,7 @@ regen_sensibilite(
   pai = NULL,
   pai_cache = NULL,
   pai_ncores = NULL,
+  micro_max_cells = NULL,
   cache_dir = NULL,
   progress_callback = NULL,
   precomputed = NULL,
@@ -68,6 +69,15 @@ written there. A geometry mismatch (AOI / \code{res} changed) invalidates it
 \code{lasR::half_cores()}, an integer sets the number of tiles processed at
 once, \code{1}/\code{FALSE} forces sequential. Trades RAM for wall-time; the
 PAI is identical either way.}
+
+\item{micro_max_cells}{Memory cap on the microclimf working grid. \code{microclimf}
+allocates arrays of \code{ncells * ntimesteps * ~11 outputs}, so running it at a
+fine \code{res} (e.g. 2 m) over a whole massif (millions of cells) exhausts RAM
+(OOM). The grid (\code{dtm}/\code{hgt}/\code{pai}) is aggregated so its cell count
+stays \code{<= micro_max_cells} before microclimf runs; the \strong{cached} PAI
+(\code{pai_cache}) stays at fine \code{res}. The microclimate signal is smooth and
+only per-unit means are used, so coarsening is harmless for the sensitivity
+ranking. \code{NULL} (default) uses \code{getOption("nemeton.micro_max_cells", 5e4)}.}
 
 \item{cache_dir}{Directory for the ERA5 \code{.nc} and per-year microclimate
 \code{.tif} caches. \code{NULL} (default) uses a session temp dir; pass a
