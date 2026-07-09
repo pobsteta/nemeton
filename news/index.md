@@ -1,5 +1,30 @@
 # Changelog
 
+## nemeton 0.146.5 (2026-07-09)
+
+#### Fixed — grille microclimf bornée mémoire (OOM après le PAI)
+
+Run réel : le PAI est passé (fix 0.146.3), `pai.tif` écrit, **puis
+`systemd-oomd` a de nouveau tué le scope** — cette fois pendant le
+calcul microclimf. Cause :
+[`microclimf::runmicro()`](https://rdrr.io/pkg/microclimf/man/runmicro.html)
+alloue des tableaux `ncellules × pas_de_temps × ~11 sorties` ; à `res`
+fine (2 m) sur un massif entier (**1905×1792 ≈ 3,4 M cellules**), cela
+dépasse des dizaines de Go. Le test e2e de 0.146.2 tournait sur 30×30
+cellules, donc ce cas n’avait jamais été exercé.
+
+- **La grille de calcul microclimf est désormais agrégée** pour garder
+  son nombre de cellules `<= micro_max_cells` (nouveau paramètre de
+  [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md),
+  défaut `5e4`, override `options(nemeton.micro_max_cells=)`). Sur 3,4 M
+  cellules → facteur 9 → grille ~18 m (~42k cellules) → microclimf ~1 Go
+  au lieu de dizaines.
+- Le **PAI caché** (`pai_cache` / `pai.tif`) **reste à `res` fine** :
+  seul le calcul microclimf est coarseé. Le signal microclimatique est
+  lissé et seules des **moyennes par UGF** sont produites (ranking de
+  sensibilité), donc l’agrégation est sans effet sur le résultat. Helper
+  `.rsen_micro_agg_factor()`.
+
 ## nemeton 0.146.4 (2026-07-09)
 
 #### Fixed — sélection du fichier ERA5 : repli indépendant de la locale

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -869,6 +869,15 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-09--v01465--grille-microclimf-bornée-mémoire-2ᵉ-oom-après-le-pai">2026-07-09 — v0.146.5 : grille microclimf bornée mémoire (2ᵉ OOM, après le PAI)<a class="anchor" aria-label="anchor" href="#id_2026-07-09--v01465--grille-microclimf-born%C3%A9e-m%C3%A9moire-2%E1%B5%89-oom-apr%C3%A8s-le-pai"></a></h3>
+<p><strong>8ᵉ blocage.</strong> Run réel en 0.146.4 : PAI OK en 2 dalles (~57 min, mémoire mini 17 Go, <code>pai.tif</code> caché ✅ — fix OOM PAI confirmé), <strong>puis re-OOM systemd-oomd à 10:28</strong> pendant microclimf. Cause : <code>runmicro()</code> alloue <code>ncellules × pas × ~11 sorties</code> ; à 2 m sur le massif (<strong>3,4 M cellules</strong>) → dizaines de Go. Mon e2e de 0.146.2 tournait sur 30×30 — jamais exercé le vrai massif.</p>
+<p>Fix : agrégation de la grille de calcul microclimf sous <code>micro_max_cells</code> (défaut 5e4, override <code>options(nemeton.micro_max_cells=)</code>) → sur 3,4 M cellules, facteur 9 → ~18 m/~42k cellules → microclimf ~1 Go. Le PAI caché reste à 2 m ; seul le calcul est coarseé (per-UGF inchangé). Helper <code>.rsen_micro_agg_factor()</code>. Validé e2e (agrégation forcée → microclimf tourne sur grille coarseé → sf correct). 111 pass. Bump → <strong>0.146.5</strong>.</p>
+<blockquote>
+<p><strong>Le PAI est désormais caché</strong> (<code>pai.tif</code>, 10:17) → le prochain run <strong>saute le PAI</strong> (plus de 57 min) : on itère vite. Prochaine relance : réinstaller 0.146.5, relancer → PAI sauté (cache) → ERA5 (2018 réutilisé) → microclimf à ~18 m (sûr) → <code>sensibilite.gpkg</code>.</p>
+<p><strong>Bilan = 8 blocages</strong> : creds → 403 → soilparameters → trim/writeRaster/NaN → OOM PAI (v0.146.3) → locale ERA5 (v0.146.4) → <strong>OOM microclimf (v0.146.5)</strong>.</p>
+</blockquote>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-09--v01464--sélection-era5--repli-indépendant-de-la-locale">2026-07-09 — v0.146.4 : sélection ERA5 — repli indépendant de la locale<a class="anchor" aria-label="anchor" href="#id_2026-07-09--v01464--s%C3%A9lection-era5--repli-ind%C3%A9pendant-de-la-locale"></a></h3>
 <p>Suite à la question de Pascal (« les noms <code>era5_2018_2018_1.nc</code> sont-ils bons ? »). Vérifié : <strong>noms corrects, aucun renommage</strong> — le cœur détecte <code>era5_2018_2018.nc</code> (combiné) par suffixe <code>_&lt;annee&gt;.nc</code>. Mais au passage, découverte que le <strong>repli défensif</strong> <code>list.files(...)[1]</code> supposait que le combiné trie avant les mensuels (‘.’ &lt; ’_’) — faux en locale FR (<code><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort()</a></code> suit la locale). Durci : helper <code>.rsen_era5_src()</code> qui prend le nom le <strong>plus court</strong> (le combiné) via <code><a href="https://rdrr.io/r/base/nchar.html" class="external-link">nchar()</a></code>, indépendant de la locale. Chemin principal inchangé. 105 pass. Bump → <strong>0.146.4</strong>.</p>

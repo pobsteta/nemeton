@@ -1717,6 +1717,32 @@ cœur).
 
 ## Journal
 
+### 2026-07-09 — v0.146.5 : grille microclimf bornée mémoire (2ᵉ OOM, après le PAI)
+
+**8ᵉ blocage.** Run réel en 0.146.4 : PAI OK en 2 dalles (~57 min,
+mémoire mini 17 Go, `pai.tif` caché ✅ — fix OOM PAI confirmé), **puis
+re-OOM systemd-oomd à 10:28** pendant microclimf. Cause : `runmicro()`
+alloue `ncellules × pas × ~11 sorties` ; à 2 m sur le massif (**3,4 M
+cellules**) → dizaines de Go. Mon e2e de 0.146.2 tournait sur 30×30 —
+jamais exercé le vrai massif.
+
+Fix : agrégation de la grille de calcul microclimf sous
+`micro_max_cells` (défaut 5e4, override
+`options(nemeton.micro_max_cells=)`) → sur 3,4 M cellules, facteur 9 →
+~18 m/~42k cellules → microclimf ~1 Go. Le PAI caché reste à 2 m ; seul
+le calcul est coarseé (per-UGF inchangé). Helper
+`.rsen_micro_agg_factor()`. Validé e2e (agrégation forcée → microclimf
+tourne sur grille coarseé → sf correct). 111 pass. Bump → **0.146.5**.
+
+> **Le PAI est désormais caché** (`pai.tif`, 10:17) → le prochain run
+> **saute le PAI** (plus de 57 min) : on itère vite. Prochaine relance :
+> réinstaller 0.146.5, relancer → PAI sauté (cache) → ERA5 (2018
+> réutilisé) → microclimf à ~18 m (sûr) → `sensibilite.gpkg`.
+>
+> **Bilan = 8 blocages** : creds → 403 → soilparameters →
+> trim/writeRaster/NaN → OOM PAI (v0.146.3) → locale ERA5 (v0.146.4) →
+> **OOM microclimf (v0.146.5)**.
+
 ### 2026-07-09 — v0.146.4 : sélection ERA5 — repli indépendant de la locale
 
 Suite à la question de Pascal (« les noms `era5_2018_2018_1.nc` sont-ils

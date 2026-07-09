@@ -15,7 +15,7 @@ indice_priorite_regen."><meta property="og:image" content="https://pobsteta.gith
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,6 +76,7 @@ Produces the §7 exposure columns consumed by
 <span>  pai <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pai_cache <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pai_ncores <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  micro_max_cells <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cache_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  precomputed <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -152,6 +153,17 @@ written there. A geometry mismatch (AOI / <code>res</code> changed) invalidates 
 <code><a href="https://rdrr.io/pkg/lasR/man/multithreading.html" class="external-link">lasR::half_cores()</a></code>, an integer sets the number of tiles processed at
 once, <code>1</code>/<code>FALSE</code> forces sequential. Trades RAM for wall-time; the
 PAI is identical either way.</p></dd>
+
+
+<dt id="arg-micro-max-cells">micro_max_cells<a class="anchor" aria-label="anchor" href="#arg-micro-max-cells"></a></dt>
+<dd><p>Memory cap on the microclimf working grid. <code>microclimf</code>
+allocates arrays of <code>ncells * ntimesteps * ~11 outputs</code>, so running it at a
+fine <code>res</code> (e.g. 2 m) over a whole massif (millions of cells) exhausts RAM
+(OOM). The grid (<code>dtm</code>/<code>hgt</code>/<code>pai</code>) is aggregated so its cell count
+stays <code>&lt;= micro_max_cells</code> before microclimf runs; the <strong>cached</strong> PAI
+(<code>pai_cache</code>) stays at fine <code>res</code>. The microclimate signal is smooth and
+only per-unit means are used, so coarsening is harmless for the sensitivity
+ranking. <code>NULL</code> (default) uses <code>getOption("nemeton.micro_max_cells", 5e4)</code>.</p></dd>
 
 
 <dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>

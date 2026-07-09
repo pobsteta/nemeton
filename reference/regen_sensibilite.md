@@ -24,6 +24,7 @@ regen_sensibilite(
   pai = NULL,
   pai_cache = NULL,
   pai_ncores = NULL,
+  micro_max_cells = NULL,
   cache_dir = NULL,
   progress_callback = NULL,
   precomputed = NULL,
@@ -104,6 +105,18 @@ regen_sensibilite(
   an integer sets the number of tiles processed at once, `1`/`FALSE`
   forces sequential. Trades RAM for wall-time; the PAI is identical
   either way.
+
+- micro_max_cells:
+
+  Memory cap on the microclimf working grid. `microclimf` allocates
+  arrays of `ncells * ntimesteps * ~11 outputs`, so running it at a fine
+  `res` (e.g. 2 m) over a whole massif (millions of cells) exhausts RAM
+  (OOM). The grid (`dtm`/`hgt`/`pai`) is aggregated so its cell count
+  stays `<= micro_max_cells` before microclimf runs; the **cached** PAI
+  (`pai_cache`) stays at fine `res`. The microclimate signal is smooth
+  and only per-unit means are used, so coarsening is harmless for the
+  sensitivity ranking. `NULL` (default) uses
+  `getOption("nemeton.micro_max_cells", 5e4)`.
 
 - cache_dir:
 

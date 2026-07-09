@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,16 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.146.5" id="nemeton-01465-2026-07-09">nemeton 0.146.5 (2026-07-09)<a class="anchor" aria-label="anchor" href="#nemeton-01465-2026-07-09"></a></h2>
+<div class="section level4">
+<h4 id="fixed--grille-microclimf-bornée-mémoire-oom-après-le-pai-0-146-5">Fixed — grille microclimf bornée mémoire (OOM après le PAI)<a class="anchor" aria-label="anchor" href="#fixed--grille-microclimf-born%C3%A9e-m%C3%A9moire-oom-apr%C3%A8s-le-pai-0-146-5"></a></h4>
+<p>Run réel : le PAI est passé (fix 0.146.3), <code>pai.tif</code> écrit, <strong>puis <code>systemd-oomd</code> a de nouveau tué le scope</strong> — cette fois pendant le calcul microclimf. Cause : <code><a href="https://rdrr.io/pkg/microclimf/man/runmicro.html" class="external-link">microclimf::runmicro()</a></code> alloue des tableaux <code>ncellules × pas_de_temps × ~11 sorties</code> ; à <code>res</code> fine (2 m) sur un massif entier (<strong>1905×1792 ≈ 3,4 M cellules</strong>), cela dépasse des dizaines de Go. Le test e2e de 0.146.2 tournait sur 30×30 cellules, donc ce cas n’avait jamais été exercé.</p>
+<ul><li>
+<strong>La grille de calcul microclimf est désormais agrégée</strong> pour garder son nombre de cellules <code>&lt;= micro_max_cells</code> (nouveau paramètre de <code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code>, défaut <code>5e4</code>, override <code>options(nemeton.micro_max_cells=)</code>). Sur 3,4 M cellules → facteur 9 → grille ~18 m (~42k cellules) → microclimf ~1 Go au lieu de dizaines.</li>
+<li>Le <strong>PAI caché</strong> (<code>pai_cache</code> / <code>pai.tif</code>) <strong>reste à <code>res</code> fine</strong> : seul le calcul microclimf est coarseé. Le signal microclimatique est lissé et seules des <strong>moyennes par UGF</strong> sont produites (ranking de sensibilité), donc l’agrégation est sans effet sur le résultat. Helper <code>.rsen_micro_agg_factor()</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.146.4" id="nemeton-01464-2026-07-09">nemeton 0.146.4 (2026-07-09)<a class="anchor" aria-label="anchor" href="#nemeton-01464-2026-07-09"></a></h2>
 <div class="section level4">
