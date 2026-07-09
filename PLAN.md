@@ -1298,6 +1298,16 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-09 — v0.146.4 : sélection ERA5 — repli indépendant de la locale
+
+Suite à la question de Pascal (« les noms `era5_2018_2018_1.nc` sont-ils bons ? »).
+Vérifié : **noms corrects, aucun renommage** — le cœur détecte `era5_2018_2018.nc`
+(combiné) par suffixe `_<annee>.nc`. Mais au passage, découverte que le **repli
+défensif** `list.files(...)[1]` supposait que le combiné trie avant les mensuels
+('.' < '_') — faux en locale FR (`sort()` suit la locale). Durci : helper
+`.rsen_era5_src()` qui prend le nom le **plus court** (le combiné) via `nchar()`,
+indépendant de la locale. Chemin principal inchangé. 105 pass. Bump → **0.146.4**.
+
 ### 2026-07-09 — v0.146.3 : PAI parallèle borné mémoire (OOM systemd-oomd)
 
 **7ᵉ blocage, sur run réel avec nemetonshiny 0.100.13 (pai_cache câblé).** Run lancé

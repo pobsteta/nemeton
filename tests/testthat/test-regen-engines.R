@@ -270,6 +270,21 @@ test_that(".rsen_forcage_era5 reuses the combined cache without re-downloading",
   expect_equal(called, 0L)                                  # pas de re-téléchargement
 })
 
+test_that(".rsen_era5_src prefers the combined, falls back to shortest (locale-safe)", {
+  # combiné + 12 mensuels -> combiné (repéré par suffixe _<annee>.nc)
+  cd <- withr::local_tempdir()
+  file.create(file.path(cd, "era5_2018_2018.nc"))
+  for (m in 1:12) file.create(file.path(cd, sprintf("era5_2018_2018_%d.nc", m)))
+  expect_equal(basename(nemeton:::.rsen_era5_src(cd, 2018L)), "era5_2018_2018.nc")
+  # repli (aucun combiné, que des mensuels) -> nom le PLUS COURT, déterministe et
+  # indépendant de la locale (sort()/[1] pouvait piocher un mensuel en locale FR).
+  cd2 <- withr::local_tempdir()
+  for (m in c(1L, 10L, 12L)) file.create(file.path(cd2, sprintf("era5_2019_2019_%d.nc", m)))
+  expect_equal(basename(nemeton:::.rsen_era5_src(cd2, 2019L)), "era5_2019_2019_1.nc")
+  # rien -> NA
+  expect_true(is.na(nemeton:::.rsen_era5_src(withr::local_tempdir(), 2020L)))
+})
+
 # --- microclimf 2.x : sélection des mois d'été + réduction cellule-à-cellule -
 test_that(".rsen_traiter_annee derives summer months from mp$weather$obs_time (microclimf 2.x)", {
   skip_if_not_installed("terra")

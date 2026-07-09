@@ -1,3 +1,17 @@
+# nemeton 0.146.4 (2026-07-09)
+
+### Fixed — sélection du fichier ERA5 : repli indépendant de la locale
+
+Le repli défensif de `.rsen_forcage_era5()` (quand le combiné n'est pas détecté
+par suffixe) choisissait `list.files(...)[1]`, en supposant que le combiné
+`era5_<annee>_<annee>.nc` trie avant les mensuels `..._<mois>.nc` ('.' < '_').
+Or `sort()` suit la **locale** (en `fr_FR`, l'ordre peut différer de l'ASCII) :
+le repli pouvait piocher un mensuel (1 mois au lieu de 12). La sélection passe
+désormais par `.rsen_era5_src()`, qui prend le **nom le plus court** (le combiné),
+via `nchar()` — indépendant de la locale. Chemin principal (détection par suffixe)
+inchangé. Aucun renommage de fichier requis (les `era5_<annee>_<annee>*.nc`
+existants sont correctement reconnus).
+
 # nemeton 0.146.3 (2026-07-09)
 
 ### Fixed — PAI LiDAR : concurrence par défaut bornée mémoire (OOM)
