@@ -48,12 +48,16 @@ mask.}
 \item{pai_max}{Upper clamp on PAI (default 8).}
 
 \item{ncores}{Tile-level parallelism for the \code{lasR} read
-(\code{concurrent_files}): \code{NULL} (default) processes
-\code{lasR::half_cores()} tiles at once, an integer \code{N} processes \code{N},
-and \code{1}/\code{FALSE} forces sequential. The PAI is identical whatever the
-value (per-cell counting is associative); more cores trade RAM for wall-time on
-a multi-tile massif. The global \code{lasR} strategy is saved and restored
-around the run.}
+(\code{concurrent_files}): \code{NULL} (default) picks a \strong{memory-bounded}
+number of tiles (COPC tiles are heavy once decompressed and \code{systemd-oomd}
+kills at ~50\% memory pressure, so the default budgets ~6 GB per concurrent tile
+over 40\% of RAM, capped by \code{lasR::half_cores()}); an integer \code{N}
+processes exactly \code{N}; \code{1}/\code{FALSE} forces sequential. When
+\code{ncores} is \code{NULL}, \code{options(nemeton.pai_ncores=)} or the
+\code{NEMETON_PAI_NCORES} env var override the default (useful when the caller —
+e.g. the Shiny app — does not expose the knob). The PAI is identical whatever the
+value (per-cell counting is associative); more tiles trade RAM for wall-time. The
+global \code{lasR} strategy is saved and restored around the run.}
 
 \item{precomputed}{Optional pre-built PAI \code{SpatRaster} or raster path.}
 
