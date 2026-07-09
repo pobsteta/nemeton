@@ -77,13 +77,18 @@ pai_depuis_nuage(
 - ncores:
 
   Tile-level parallelism for the `lasR` read (`concurrent_files`):
-  `NULL` (default) processes
-  [`lasR::half_cores()`](https://rdrr.io/pkg/lasR/man/multithreading.html)
-  tiles at once, an integer `N` processes `N`, and `1`/`FALSE` forces
-  sequential. The PAI is identical whatever the value (per-cell counting
-  is associative); more cores trade RAM for wall-time on a multi-tile
-  massif. The global `lasR` strategy is saved and restored around the
-  run.
+  `NULL` (default) picks a **memory-bounded** number of tiles (COPC
+  tiles are heavy once decompressed and `systemd-oomd` kills at ~50%
+  memory pressure, so the default budgets ~6 GB per concurrent tile over
+  40% of RAM, capped by
+  [`lasR::half_cores()`](https://rdrr.io/pkg/lasR/man/multithreading.html));
+  an integer `N` processes exactly `N`; `1`/`FALSE` forces sequential.
+  When `ncores` is `NULL`, `options(nemeton.pai_ncores=)` or the
+  `NEMETON_PAI_NCORES` env var override the default (useful when the
+  caller — e.g. the Shiny app — does not expose the knob). The PAI is
+  identical whatever the value (per-cell counting is associative); more
+  tiles trade RAM for wall-time. The global `lasR` strategy is saved and
+  restored around the run.
 
 - precomputed:
 

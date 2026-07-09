@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -869,6 +869,15 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-09--v01463--pai-parallèle-borné-mémoire-oom-systemd-oomd">2026-07-09 — v0.146.3 : PAI parallèle borné mémoire (OOM systemd-oomd)<a class="anchor" aria-label="anchor" href="#id_2026-07-09--v01463--pai-parall%C3%A8le-born%C3%A9-m%C3%A9moire-oom-systemd-oomd"></a></h3>
+<p><strong>7ᵉ blocage, sur run réel avec nemetonshiny 0.100.13 (pai_cache câblé).</strong> Run lancé 16:37, mort à ~17:27 en phase PAI <strong>sans rien produire</strong>. Forensique décisive : <code>journalctl</code> → <code>app-rstudio-88421.scope: Failed with result 'oom-kill'</code> — <strong><code>systemd-oomd</code></strong> a tué le scope RStudio (il tue à ~50 % de pression mémoire soutenue). Le PAI parallèle (v0.146.0, <code>half_cores()</code>=4 dalles COPC de front, 25 dalles ≈ 38 Go décompressées sur 31 Go RAM) a saturé la mémoire. Ce matin le PAI 4-dalles était passé de justesse ; ce run a franchi le seuil oomd. <strong>Mon défaut <code>half_cores()</code> est trop gourmand pour de grosses dalles LiDAR.</strong></p>
+<p>Fix : défaut <code>ncores=NULL</code> <strong>borné mémoire</strong> (~6 Go/dalle sur 40 % RAM, cap half_cores) → 2 dalles sur 31 Go au lieu de 4 ; + override <code>options(nemeton.pai_ncores=)</code> / <code>NEMETON_PAI_NCORES</code> (tant que l’app n’expose pas le curseur). PAI identique (comptage associatif). 102 pass. Bump patch → <strong>0.146.3</strong>.</p>
+<blockquote>
+<p>⚠️ Le chemin <strong>LiDAR PAI</strong> (<code>pai_depuis_nuage</code> réel) n’était PAS couvert par le run e2e de 0.146.2 (qui passait <code>pai=raster</code>). D’où ce bug découvert seulement au run réel. Le calcul PAI lui-même est correct (prouvé ce matin) — seul le dimensionnement mémoire était en cause.</p>
+<p><strong>Bilan = 7 blocages successifs le 2026-07-08/09</strong> : creds → 403 ERA5 (v0.145.1) → soilparameters (v0.146.1) → trim/temps + writeRaster/app + NaN (v0.146.2) → <strong>OOM PAI (v0.146.3)</strong>. Prochaine étape : réinstaller 0.146.3, relancer → PAI 2-dalles (sûr) → pai.tif caché (0.100.13) → ERA5 (2018 réutilisé) → microclimf → sensibilite.gpkg.</p>
+</blockquote>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-08--v01462--compat-microclimf-2x-sortie-runmicro-3-bugs-aval">2026-07-08 — v0.146.2 : compat microclimf 2.x sortie <code>runmicro</code> (3 bugs aval)<a class="anchor" aria-label="anchor" href="#id_2026-07-08--v01462--compat-microclimf-2x-sortie-runmicro-3-bugs-aval"></a></h3>
 <p><strong>Débogage proactif end-to-end</strong> (à la demande : « je suis sûr qu’il y aura d’autres bugs »). J’ai exécuté tout le pipeline <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> hors app (petite grille réelle EPSG:2154 + cache ERA5 2018 réel + <code>pai</code> raster pour sauter lasR), ce qui a révélé <strong>3 bugs supplémentaires</strong> en aval du fix <code>soilparameters</code> (0.146.1) :</p>

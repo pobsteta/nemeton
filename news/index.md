@@ -1,5 +1,34 @@
 # Changelog
 
+## nemeton 0.146.3 (2026-07-09)
+
+#### Fixed — PAI LiDAR : concurrence par défaut bornée mémoire (OOM)
+
+Le PAI parallèle
+([`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md),
+v0.146.0) processait
+[`lasR::half_cores()`](https://rdrr.io/pkg/lasR/man/multithreading.html)
+dalles COPC de front. Sur un run réel (25 dalles ≈ 38 Go décompressées,
+machine 31 Go), 4 dalles simultanées ont saturé la RAM et
+**`systemd-oomd` a tué le scope RStudio** (il tue à ~50 % de pression
+mémoire soutenue) pendant la phase PAI — avant tout calcul microclimf,
+donc aucune sortie. `half_cores()` aveugle est trop gourmand pour de
+grosses dalles LiDAR.
+
+- **Défaut `ncores = NULL` désormais borné mémoire** : budget ~6 Go par
+  dalle concurrente sur 40 % de la RAM totale, plafonné par
+  [`lasR::half_cores()`](https://rdrr.io/pkg/lasR/man/multithreading.html)
+  (helpers `.pai_total_ram_gb()` / `.pai_mem_safe_ncores()`). Sur 31 Go
+  → 2 dalles au lieu de 4. RAM inconnue → 2 (prudent).
+- **Override sans passer par l’app** : quand `ncores` est `NULL`,
+  `options(nemeton.pai_ncores = N)` ou l’env `NEMETON_PAI_NCORES` fixent
+  la valeur (utile tant que l’app n’expose pas le curseur). `ncores`
+  entier explicite ou `FALSE`/`1` (séquentiel) restent prioritaires et
+  inchangés.
+
+Le PAI est identique quel que soit `ncores` (comptage par cellule
+associatif) : on échange seulement RAM contre temps.
+
 ## nemeton 0.146.2 (2026-07-08)
 
 #### Fixed — moteur exposition : compatibilité microclimf 2.x (sortie `runmicro`)

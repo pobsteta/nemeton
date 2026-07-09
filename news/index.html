@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,18 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.146.3" id="nemeton-01463-2026-07-09">nemeton 0.146.3 (2026-07-09)<a class="anchor" aria-label="anchor" href="#nemeton-01463-2026-07-09"></a></h2>
+<div class="section level4">
+<h4 id="fixed--pai-lidar--concurrence-par-défaut-bornée-mémoire-oom-0-146-3">Fixed — PAI LiDAR : concurrence par défaut bornée mémoire (OOM)<a class="anchor" aria-label="anchor" href="#fixed--pai-lidar--concurrence-par-d%C3%A9faut-born%C3%A9e-m%C3%A9moire-oom-0-146-3"></a></h4>
+<p>Le PAI parallèle (<code><a href="../reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code>, v0.146.0) processait <code><a href="https://rdrr.io/pkg/lasR/man/multithreading.html" class="external-link">lasR::half_cores()</a></code> dalles COPC de front. Sur un run réel (25 dalles ≈ 38 Go décompressées, machine 31 Go), 4 dalles simultanées ont saturé la RAM et <strong><code>systemd-oomd</code> a tué le scope RStudio</strong> (il tue à ~50 % de pression mémoire soutenue) pendant la phase PAI — avant tout calcul microclimf, donc aucune sortie. <code>half_cores()</code> aveugle est trop gourmand pour de grosses dalles LiDAR.</p>
+<ul><li>
+<strong>Défaut <code>ncores = NULL</code> désormais borné mémoire</strong> : budget ~6 Go par dalle concurrente sur 40 % de la RAM totale, plafonné par <code><a href="https://rdrr.io/pkg/lasR/man/multithreading.html" class="external-link">lasR::half_cores()</a></code> (helpers <code>.pai_total_ram_gb()</code> / <code>.pai_mem_safe_ncores()</code>). Sur 31 Go → 2 dalles au lieu de 4. RAM inconnue → 2 (prudent).</li>
+<li>
+<strong>Override sans passer par l’app</strong> : quand <code>ncores</code> est <code>NULL</code>, <code>options(nemeton.pai_ncores = N)</code> ou l’env <code>NEMETON_PAI_NCORES</code> fixent la valeur (utile tant que l’app n’expose pas le curseur). <code>ncores</code> entier explicite ou <code>FALSE</code>/<code>1</code> (séquentiel) restent prioritaires et inchangés.</li>
+</ul><p>Le PAI est identique quel que soit <code>ncores</code> (comptage par cellule associatif) : on échange seulement RAM contre temps.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.146.2" id="nemeton-01462-2026-07-08">nemeton 0.146.2 (2026-07-08)<a class="anchor" aria-label="anchor" href="#nemeton-01462-2026-07-08"></a></h2>
 <div class="section level4">
