@@ -639,7 +639,7 @@ sessionInfo()
 #> 
 #> other attached packages:
 #> [1] tidyr_1.3.2     sf_1.1-1        dplyr_1.2.1     ggplot2_4.0.3  
-#> [5] nemeton_0.146.3
+#> [5] nemeton_0.146.4
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] utf8_1.2.6         sass_0.4.10        generics_0.1.4     class_7.3-23      

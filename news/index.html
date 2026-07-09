@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,13 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.146.4" id="nemeton-01464-2026-07-09">nemeton 0.146.4 (2026-07-09)<a class="anchor" aria-label="anchor" href="#nemeton-01464-2026-07-09"></a></h2>
+<div class="section level4">
+<h4 id="fixed--sélection-du-fichier-era5--repli-indépendant-de-la-locale-0-146-4">Fixed — sélection du fichier ERA5 : repli indépendant de la locale<a class="anchor" aria-label="anchor" href="#fixed--s%C3%A9lection-du-fichier-era5--repli-ind%C3%A9pendant-de-la-locale-0-146-4"></a></h4>
+<p>Le repli défensif de <code>.rsen_forcage_era5()</code> (quand le combiné n’est pas détecté par suffixe) choisissait <code>list.files(...)[1]</code>, en supposant que le combiné <code>era5_&lt;annee&gt;_&lt;annee&gt;.nc</code> trie avant les mensuels <code>..._&lt;mois&gt;.nc</code> (‘.’ &lt; ’_’). Or <code><a href="https://rspatial.github.io/terra/reference/sort.html" class="external-link">sort()</a></code> suit la <strong>locale</strong> (en <code>fr_FR</code>, l’ordre peut différer de l’ASCII) : le repli pouvait piocher un mensuel (1 mois au lieu de 12). La sélection passe désormais par <code>.rsen_era5_src()</code>, qui prend le <strong>nom le plus court</strong> (le combiné), via <code><a href="https://rdrr.io/r/base/nchar.html" class="external-link">nchar()</a></code> — indépendant de la locale. Chemin principal (détection par suffixe) inchangé. Aucun renommage de fichier requis (les <code>era5_&lt;annee&gt;_&lt;annee&gt;*.nc</code> existants sont correctement reconnus).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.146.3" id="nemeton-01463-2026-07-09">nemeton 0.146.3 (2026-07-09)<a class="anchor" aria-label="anchor" href="#nemeton-01463-2026-07-09"></a></h2>
 <div class="section level4">
