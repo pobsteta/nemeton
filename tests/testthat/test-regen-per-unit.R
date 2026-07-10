@@ -173,3 +173,51 @@ test_that("build_biljou_soil requires units in soilgrids mode", {
   skip_if_not_installed("biljouR")
   expect_error(build_biljou_soil(source = "soilgrids"), "units.*required")
 })
+
+# --- .rsen_clamp_flux : artefact de dé-accumulation ERA5 (run réel 2026-07-10) ---
+
+test_that(".rsen_clamp_flux zeroes the tiny negative fluxes of ERA5", {
+  # Valeur observée en run réel : microclimf::checkinputs() signalait
+  # « -0.0448426522703349 outside range of typical shortwave radiation values ».
+  meteo <- data.frame(
+    obs_time  = as.POSIXct("2020-06-01", tz = "UTC") + 0:3 * 3600,
+    temp      = c(10, 12, 14, 13),
+    swdown    = c(-0.0448426522703349, 0, 250, 800),
+    difrad    = c(-1e-9, 0, 50, 120),
+    precip    = c(0, -1e-12, 0.5, 0),
+    lwdown    = c(300, 305, 310, 308))
+
+  out <- suppressMessages(.rsen_clamp_flux(meteo))
+  expect_equal(out$swdown, c(0, 0, 250, 800))
+  expect_equal(out$difrad, c(0, 0, 50, 120))
+  expect_equal(out$precip, c(0, 0, 0.5, 0))
+  # Les colonnes hors liste ne sont pas touchées (lwdown, temp peuvent être < 0).
+  expect_equal(out$lwdown, meteo$lwdown)
+  expect_equal(out$temp, meteo$temp)
+})
+
+test_that(".rsen_clamp_flux leaves a clean forcing untouched and stays quiet", {
+  meteo <- data.frame(swdown = c(0, 250), difrad = c(0, 50), precip = c(0, 1))
+  expect_silent(out <- .rsen_clamp_flux(meteo))
+  expect_equal(out, meteo)
+})
+
+test_that(".rsen_clamp_flux reports how many values it clamped", {
+  meteo <- data.frame(swdown = c(-1, -2, 5), difrad = c(-1, 0, 0), precip = c(0, 0, 0))
+  expect_message(.rsen_clamp_flux(meteo), "clamped 3 negative flux values")
+})
+
+test_that(".rsen_clamp_flux preserves NA and tolerates missing columns", {
+  meteo <- data.frame(swdown = c(NA, -1, 3))     # pas de difrad ni precip
+  out <- suppressMessages(.rsen_clamp_flux(meteo))
+  expect_true(is.na(out$swdown[1]))
+  expect_equal(out$swdown[2:3], c(0, 3))
+
+  # Négatif sur une colonne absente de la liste : intact.
+  expect_identical(suppressMessages(.rsen_clamp_flux(data.frame(temp = -5))),
+                   data.frame(temp = -5))
+})
+
+test_that(".rsen_clamp_flux passes non-data.frame input through", {
+  expect_null(.rsen_clamp_flux(NULL))
+})

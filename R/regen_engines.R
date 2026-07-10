@@ -355,8 +355,43 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   src <- .rsen_era5_src(cache_dir, annee)
   # format "microclimf" -> colonnes prêtes (obs_time/temp/relhum/pres/swdown/
   # difrad/lwdown/windspeed/winddir/precip), précip incluse, pression en kPa.
-  mcera5::extract_clim(src, long = lon, lat = lat,
-                       start_time = st, end_time = en, format = "microclimf")
+  meteo <- mcera5::extract_clim(src, long = lon, lat = lat,
+                                start_time = st, end_time = en,
+                                format = "microclimf")
+  .rsen_clamp_flux(meteo)
+}
+
+
+# ERA5 stocke rayonnement et précipitation en CUMULS ; la dé-accumulation
+# (mcera5) produit de minuscules valeurs négatives là où le flux est nul — la
+# nuit pour le rayonnement solaire. Observé en run réel : swdown = -0.0448 W/m²,
+# que microclimf::checkinputs() signale (« outside range of typical shortwave
+# radiation values »). C'est un artefact numérique, pas un signal.
+#
+# Ces colonnes sont non négatives par construction physique. On les borne à 0.
+# Le même forçage alimente BILJOU via .biljou_forcing_era5() -> `rg` puis
+# penman_pet() : le clamp protège donc aussi le bilan hydrique.
+.RSEN_NONNEG_COLS <- c("swdown", "difrad", "precip")
+
+.rsen_clamp_flux <- function(meteo, cols = .RSEN_NONNEG_COLS) {
+  if (!is.data.frame(meteo)) return(meteo)
+  n_clamped <- 0L
+  for (nm in intersect(cols, names(meteo))) {
+    v <- meteo[[nm]]
+    if (!is.numeric(v)) next
+    bad <- which(!is.na(v) & v < 0)
+    if (length(bad)) {
+      n_clamped <- n_clamped + length(bad)
+      v[bad] <- 0
+      meteo[[nm]] <- v
+    }
+  }
+  if (n_clamped > 0L) {
+    cli::cli_inform(c(
+      "i" = "ERA5: clamped {n_clamped} negative flux value{?s} to zero ({.field {cols}}).",
+      " " = "De-accumulation artefact on nil fluxes; not a data error."))
+  }
+  meteo
 }
 
 # Une année -> rasters d'été (T°max sous couvert, VPD moyen), mis en cache tif.
