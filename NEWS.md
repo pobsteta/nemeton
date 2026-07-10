@@ -1,3 +1,21 @@
+# nemeton 0.147.1 (2026-07-10)
+
+### Fixed — `build_foret_ancienne_mask()` : `%in%` résolvait vers `base`, pas `terra`
+
+`build_foret_ancienne_mask(source = <SpatRaster>, forest_class = )` échouait sur
+`unable to find an inherited method for function 'ifel' for signature
+test = "logical"`. Le package n'importe pas l'opérateur `%in%` de **terra** : un
+`r %in% forest_class` non préfixé résolvait donc vers `base::`%in%`` (fondé sur
+`match()`), qui renvoie un `logical` et non un `SpatRaster` — `terra::ifel()`
+n'a pas de méthode pour ça.
+
+L'appel est désormais explicitement préfixé (`terra::`%in%`(r, forest_class)`),
+comme le reste du fichier. Les trois tests de `test-foret-ancienne-mask.R` qui
+erroraient s'exécutent enfin (18 pass / 3 erreurs → **25 pass / 0 erreur**).
+
+Bug préexistant, indépendant de la spec 035 ; surfacé par la suite complète
+lancée pour la v0.147.0.
+
 # nemeton 0.147.0 (2026-07-10)
 
 ### Added — bilan hydrique spatialisé par UGF (spec 035)
