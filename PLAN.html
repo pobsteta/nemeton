@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.147.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.147.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -871,6 +871,19 @@
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
 <div class="section level3">
+<h3 id="id_2026-07-10--v01473--era5-rayonnement-négatif-trouvé-par-le-run-réel">2026-07-10 — v0.147.3 : ERA5, rayonnement négatif (trouvé par le run réel)<a class="anchor" aria-label="anchor" href="#id_2026-07-10--v01473--era5-rayonnement-n%C3%A9gatif-trouv%C3%A9-par-le-run-r%C3%A9el"></a></h3>
+<p><strong>Validation terrain de la spec 035 : concluante.</strong> Run sur <code>20260701_204501_ltcp</code> (30 UGF, cache PAI). <code>njstress</code> passe de <strong>1 valeur distincte</strong> (142,5 j partout) à <strong>≥ 10</strong> (145,5 → 159) ; <code>deb_stress</code> de 1 (122) à une plage 111–118 ; <code>rew_min</code> de 2 valeurs à un continuum. Le sol SoilGrids et le <code>lai_max</code> P90 portent bien la variance inter-UGF, comme prévu par la spec.</p>
+<p><strong>Et le run a livré un bug.</strong> L’UI a affiché :</p>
+<blockquote>
+<p><code>microclimf: -0.0448426522703349 outside range of typical shortwave radiation values. Units should be W / m^2</code></p>
+</blockquote>
+<p>ERA5 stocke rayonnement et précipitation en <strong>cumuls</strong> ; la dé-accumulation par <code>mcera5</code> produit de minuscules négatifs là où le flux est nul (la nuit). Artefact numérique, pas un signal — mais rien ne le bornait. <code>.rsen_forcage_era5()</code> borne désormais <code>swdown</code>/<code>difrad</code>/<code>precip</code> à zéro (<code>.rsen_clamp_flux()</code>).</p>
+<p>Le correctif protège <strong>deux</strong> chemins : <code>.biljou_forcing_era5()</code> réutilise le même forçage, où un <code>swdown</code> négatif se propage dans <code>rg</code> puis <code>penman_pet()</code>. 5 tests. Bump patch → <strong>0.147.3</strong>.</p>
+<blockquote>
+<p><strong>Ce bug n’était visible que grâce à B3.</strong> L’avertissement est émis par <code>microclimf</code> <strong>dans le worker <code>future</code></strong> : avant l’observabilité livrée en <code>nemetonshiny</code> v0.101.1, il mourait sur le <code>stderr</code> du processus fils. B3 a payé son coût dès le premier run réel.</p>
+</blockquote>
+</div>
+<div class="section level3">
 <h3 id="id_2026-07-10--v01470--bilan-hydrique-spatialisé-par-ugf-spec-035">2026-07-10 — v0.147.0 : bilan hydrique spatialisé par UGF (spec 035)<a class="anchor" aria-label="anchor" href="#id_2026-07-10--v01470--bilan-hydrique-spatialis%C3%A9-par-ugf-spec-035"></a></h3>
 <p><strong>Symptôme.</strong> <code><a href="reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> renvoyait la même chose pour les 30 UGF du projet <code>20260701_204501_ltcp</code> : <code>njstress</code> = 142,5 j et <code>deb_stress</code> = 122 partout ; <code>istress</code> et <code>rew_min</code> ne prenaient que <strong>2</strong> valeurs.</p>
 <p><strong>Diagnostic (lecture du moteur, pas supposition).</strong> <code>biljou_run_grid()</code> ne recopie <code>lon</code>/<code>lat</code> qu’en métadonnées ; <code>biljou_run()</code> est une fonction pure de <code>(meteo, soil, lai_max, forest_type, budburst, leaf_fall)</code>. Le sol était uniforme (<code><a href="reference/build_biljou_soil.html">build_biljou_soil()</a></code> → un objet), le <code>lai_max</code> scalaire (défaut 5 : <strong>le PAI calculé n’était jamais consommé par BILJOU</strong>), et la maille SAFRAN fait 8 km — les 30 centroïdes tombent dans <strong>2</strong> mailles, d’où les 2 valeurs. Les comptages entiers de jours absorbaient l’écart de 0,3 %.</p>
@@ -884,7 +897,11 @@
 <li><label><input type="checkbox" checked><strong>B2 — restauration à l’ouverture d’un projet</strong> — observateur <code>(projet, unités)</code> qui relit le cache disque en fast-path : aucun moteur (microclimf, biljouR, lasR) ne démarre. Purge du projet précédent ; alimente <code>app_state$regeneration_result</code>, que <code>mod_synthesis</code> consomme pour la perspective IA. App <strong>v0.101.0</strong>.</label></li>
 <li><label><input type="checkbox" checked><strong>B3 — observabilité du moteur</strong> — journal disque en ajout seul (<code>cache/regeneration/engine.log</code>, JSONL) qui traverse la frontière du worker <code>future</code> et survit à sa mort (OOM) ; relais des entrées <code>error</code>/<code>warning</code> vers la console du processus principal ; cumul des avertissements du moteur au lieu de leur écrasement par le re-run fast-path ; échec de <code>.ntfy_send()</code> journalisé. App <strong>v0.101.1</strong> (<code>nemetonshiny@029abb6a</code>).</label></li>
 <li><label><input type="checkbox" checked><strong>B4 — lisibilité des overrides</strong> — le moteur remonte le <code>lai_max</code> et la réserve utile réellement utilisés ; médiane + étendue par UGF affichées. Le repli silencieux SoilGrids → sol uniforme devient un avertissement UI + une entrée de journal. Section « Paramètres experts » repliée, badge « forcé ». Le champ « LAI max » est <strong>conservé</strong> (échappatoire hors LiDAR/S2, scénario sylvicole, LAI mesuré NDP 3). App <strong>v0.101.2</strong> (<code>nemetonshiny@3ac9edb2</code>).</label></li>
-</ul><p><strong>Validation terrain restante</strong> (non cochée — exige un run réel, à confirmer par Pascal) : sur <code>20260701_204501_ltcp</code> avec cache PAI, <code>njstress</code> doit prendre <strong>plus de deux</strong> valeurs distinctes sur 30 UGF et l’étendue du LAI dérivé doit être non nulle ; les critères B3 exigent de couper le réseau pendant le forçage SAFRAN et de tuer le worker pour observer le post-mortem.</p>
+</ul><p><strong>Validation terrain — ✅ CONFIRMÉE le 2026-07-10</strong> (run réel sur <code>20260701_204501_ltcp</code>, 30 UGF, cache PAI) :</p>
+<ul class="task-list"><li><label><input type="checkbox" checked><strong>Le bilan hydrique est spatialisé.</strong> <code>njstress</code> prend ≥ 10 valeurs distinctes sur les 15 premières UGF (145,5 → 159), <code>deb_stress</code> va de 111 à 118, <code>rew_min</code> de 0,0307 à 0,0487. Avant la spec 035 : <code>njstress</code> = 142,5 j <strong>partout</strong>, <code>deb_stress</code> = 122 partout, <code>istress</code>/<code>rew_min</code> à 2 valeurs (les 2 mailles SAFRAN de 8 km). Les quatre colonnes bougent désormais.</label></li>
+<li><label><input type="checkbox" checked><strong>B3 fonctionne.</strong> Un avertissement émis par <code>microclimf</code> <strong>dans le worker <code>future</code></strong> atteint l’interface (bandeau haut). Avant B3 il mourait sur le <code>stderr</code> du processus fils.</label></li>
+</ul><p>Restent non vérifiés (exigent une injection de panne) : les critères B3 « couper le réseau pendant le forçage SAFRAN » et « tuer le worker pour observer le post-mortem ».</p>
+<p>Le run a par ailleurs <strong>révélé un bug cœur</strong> : <code>microclimf</code> signalait un rayonnement solaire négatif (−0,045 W/m²) issu de la dé-accumulation ERA5 → corrigé en <strong>v0.147.3</strong> (<code>.rsen_clamp_flux()</code>). Sans B3, cet avertissement n’aurait jamais été vu.</p>
 <p><strong>Une dette app relevée au passage</strong> (hors périmètre du brief, à trancher) :</p>
 <ul><li><p><code>nemeton.regeneration_states</code> est en <strong>écriture seule</strong> : <code>db_save_regeneration()</code> insère (versionné), aucun <code>SELECT payload</code> n’existe dans le repo. Rien n’a été changé. <strong>À trancher</strong> : soit la table sert, et il manque un <code>db_load_regeneration()</code> ; soit c’est un journal d’archive, et il faut l’assumer explicitement. (La restauration B2 s’appuie sur le cache disque, pas sur la DB — la dette n’est donc pas bloquante.)</p></li>
 <li>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.147.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.147.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,20 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.147.3" id="nemeton-01473-2026-07-10">nemeton 0.147.3 (2026-07-10)<a class="anchor" aria-label="anchor" href="#nemeton-01473-2026-07-10"></a></h2>
+<div class="section level4">
+<h4 id="fixed--era5--rayonnement-négatif-transmis-à-microclimf-et-à-biljou-0-147-3">Fixed — ERA5 : rayonnement négatif transmis à microclimf et à BILJOU<a class="anchor" aria-label="anchor" href="#fixed--era5--rayonnement-n%C3%A9gatif-transmis-%C3%A0-microclimf-et-%C3%A0-biljou-0-147-3"></a></h4>
+<p>Run réel du 2026-07-10 (projet <code>20260701_204501_ltcp</code>) : l’onglet reGénération affiche l’avertissement</p>
+<blockquote>
+<p><code>microclimf: -0.0448426522703349 outside range of typical shortwave radiation values. Units should be W / m^2</code></p>
+</blockquote>
+<p>ERA5 stocke le rayonnement et la précipitation en <strong>cumuls</strong> ; la dé-accumulation opérée par <code>mcera5</code> produit de minuscules valeurs négatives là où le flux est nul (la nuit, pour le rayonnement solaire). C’est un artefact numérique, pas un signal — mais <code><a href="https://rdrr.io/pkg/microclimf/man/checkinputs.html" class="external-link">microclimf::checkinputs()</a></code> le signale, et rien ne le bornait.</p>
+<p><code>.rsen_forcage_era5()</code> borne désormais à zéro les colonnes non négatives par construction physique (<code>swdown</code>, <code>difrad</code>, <code>precip</code>) via le nouvel helper <code>.rsen_clamp_flux()</code>, qui informe du nombre de valeurs corrigées.</p>
+<p>Le correctif protège <strong>deux</strong> chemins : le même forçage alimente BILJOU par <code>.biljou_forcing_era5()</code>, où un <code>swdown</code> négatif se propage dans <code>rg</code> puis dans <code>penman_pet()</code>. Les colonnes qui peuvent légitimement être négatives (<code>temp</code>) ou qui ne le sont jamais en pratique (<code>lwdown</code>) ne sont pas touchées ; les <code>NA</code> sont préservés.</p>
+<p>Aucun changement de contrat. 5 nouveaux tests.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.147.2" id="nemeton-01472-2026-07-10">nemeton 0.147.2 (2026-07-10)<a class="anchor" aria-label="anchor" href="#nemeton-01472-2026-07-10"></a></h2>
 <div class="section level4">

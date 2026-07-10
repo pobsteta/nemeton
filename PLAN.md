@@ -1729,6 +1729,34 @@ cœur).
 
 ## Journal
 
+### 2026-07-10 — v0.147.3 : ERA5, rayonnement négatif (trouvé par le run réel)
+
+**Validation terrain de la spec 035 : concluante.** Run sur
+`20260701_204501_ltcp` (30 UGF, cache PAI). `njstress` passe de **1
+valeur distincte** (142,5 j partout) à **≥ 10** (145,5 → 159) ;
+`deb_stress` de 1 (122) à une plage 111–118 ; `rew_min` de 2 valeurs à
+un continuum. Le sol SoilGrids et le `lai_max` P90 portent bien la
+variance inter-UGF, comme prévu par la spec.
+
+**Et le run a livré un bug.** L’UI a affiché :
+
+> `microclimf: -0.0448426522703349 outside range of typical shortwave radiation values. Units should be W / m^2`
+
+ERA5 stocke rayonnement et précipitation en **cumuls** ; la
+dé-accumulation par `mcera5` produit de minuscules négatifs là où le
+flux est nul (la nuit). Artefact numérique, pas un signal — mais rien ne
+le bornait. `.rsen_forcage_era5()` borne désormais
+`swdown`/`difrad`/`precip` à zéro (`.rsen_clamp_flux()`).
+
+Le correctif protège **deux** chemins : `.biljou_forcing_era5()`
+réutilise le même forçage, où un `swdown` négatif se propage dans `rg`
+puis `penman_pet()`. 5 tests. Bump patch → **0.147.3**.
+
+> **Ce bug n’était visible que grâce à B3.** L’avertissement est émis
+> par `microclimf` **dans le worker `future`** : avant l’observabilité
+> livrée en `nemetonshiny` v0.101.1, il mourait sur le `stderr` du
+> processus fils. B3 a payé son coût dès le premier run réel.
+
 ### 2026-07-10 — v0.147.0 : bilan hydrique spatialisé par UGF (spec 035)
 
 **Symptôme.**
@@ -1821,12 +1849,28 @@ badge « forcé ». Le champ « LAI max » est **conservé** (échappatoire
 hors LiDAR/S2, scénario sylvicole, LAI mesuré NDP 3). App **v0.101.2**
 (`nemetonshiny@3ac9edb2`).
 
-**Validation terrain restante** (non cochée — exige un run réel, à
-confirmer par Pascal) : sur `20260701_204501_ltcp` avec cache PAI,
-`njstress` doit prendre **plus de deux** valeurs distinctes sur 30 UGF
-et l’étendue du LAI dérivé doit être non nulle ; les critères B3 exigent
-de couper le réseau pendant le forçage SAFRAN et de tuer le worker pour
-observer le post-mortem.
+**Validation terrain — ✅ CONFIRMÉE le 2026-07-10** (run réel sur
+`20260701_204501_ltcp`, 30 UGF, cache PAI) :
+
+**Le bilan hydrique est spatialisé.** `njstress` prend ≥ 10 valeurs
+distinctes sur les 15 premières UGF (145,5 → 159), `deb_stress` va de
+111 à 118, `rew_min` de 0,0307 à 0,0487. Avant la spec 035 : `njstress`
+= 142,5 j **partout**, `deb_stress` = 122 partout, `istress`/`rew_min` à
+2 valeurs (les 2 mailles SAFRAN de 8 km). Les quatre colonnes bougent
+désormais.
+
+**B3 fonctionne.** Un avertissement émis par `microclimf` **dans le
+worker `future`** atteint l’interface (bandeau haut). Avant B3 il
+mourait sur le `stderr` du processus fils.
+
+Restent non vérifiés (exigent une injection de panne) : les critères B3
+« couper le réseau pendant le forçage SAFRAN » et « tuer le worker pour
+observer le post-mortem ».
+
+Le run a par ailleurs **révélé un bug cœur** : `microclimf` signalait un
+rayonnement solaire négatif (−0,045 W/m²) issu de la dé-accumulation
+ERA5 → corrigé en **v0.147.3** (`.rsen_clamp_flux()`). Sans B3, cet
+avertissement n’aurait jamais été vu.
 
 **Une dette app relevée au passage** (hors périmètre du brief, à
 trancher) :
