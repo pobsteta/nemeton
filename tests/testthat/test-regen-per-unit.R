@@ -112,6 +112,9 @@ test_that("lai_max_depuis_pai validates its arguments", {
 })
 
 test_that("lai_max_depuis_pai accepts a path to a raster", {
+  # Ce test écrit un GeoTIFF : certains runners GitHub Actions ont une anomalie
+  # terra sur writeRaster(crs = "EPSG:nnnn"). Cf. helper-fast-raster.R.
+  skip_if_terra_write_broken()
   units <- make_units(1)
   r <- terra::rast(terra::ext(0, 100, 0, 100), resolution = 10, crs = "EPSG:2154")
   terra::values(r) <- rep(3, terra::ncell(r))

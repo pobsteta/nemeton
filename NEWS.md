@@ -1,3 +1,23 @@
+# nemeton 0.147.2 (2026-07-10)
+
+### Fixed — CI rouge après la v0.147.0 (tests + pkgdown)
+
+Deux oublis de la spec 035, sans effet sur le code du package :
+
+- **`test-regen-per-unit.R`** : le test « accepts a path to a raster » écrit un
+  GeoTIFF, or certains runners GitHub Actions ont une anomalie `terra` sur
+  `writeRaster(crs = "EPSG:nnnn")`. Le repo a un garde-fou dédié
+  (`skip_if_terra_write_broken()`, `helper-fast-raster.R`) ; le test l'ignorait et
+  faisait échouer le job `tests` (et `coverage`). Il l'appelle désormais : skip sur
+  runner cassé, exécution complète sur runtime sain.
+- **`_pkgdown.yml`** : les trois fonctions exportées par la v0.147.0
+  (`awc_saxton_rawls`, `ewm_depuis_soilgrids`, `lai_max_depuis_pai`) n'étaient pas
+  référencées dans l'index de la doc, ce qui fait échouer `build_reference_index()`.
+  Ajoutées à la section reGénération.
+
+Aucun changement de comportement. `R-CMD-check` et `version-consistency` passaient
+déjà.
+
 # nemeton 0.147.1 (2026-07-10)
 
 ### Fixed — `build_foret_ancienne_mask()` : `%in%` résolvait vers `base`, pas `terra`
