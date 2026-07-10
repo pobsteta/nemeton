@@ -374,7 +374,11 @@ build_foret_ancienne_mask <- function(source,
     }
     r <- source[[1]]
     m <- if (!is.null(forest_class)) {
-      terra::ifel(r %in% forest_class, 1L, NA)
+      # `%in%` doit être celui de terra (méthode S4 -> SpatRaster) : le package
+      # n'importe pas l'opérateur, donc un `r %in% forest_class` non préfixé
+      # résout vers base::`%in%` (match()) et renvoie un `logical`, sur lequel
+      # terra::ifel() n'a pas de méthode.
+      terra::ifel(terra::`%in%`(r, forest_class), 1L, NA)
     } else if (!is.null(threshold)) {
       terra::ifel(r >= threshold, 1L, NA)
     } else {
