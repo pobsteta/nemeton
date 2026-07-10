@@ -1307,6 +1307,40 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-10 — v0.148.0 : verrou de projet multi-utilisateurs (API cœur)
+
+**Demande app** (`brief-core-project-lock`) : `nemetonshiny` va tourner déployé en
+serveur multi-utilisateurs. Décision produit — **un projet ouvert est verrouillé
+en édition sur un seul utilisateur, les autres l'ouvrent en lecture seule**. Le
+cœur fournit l'API (règle #1 : aucun accès données dans l'app), l'app câble.
+
+**Livré** : `R/project_lock.R` — `project_lock_acquire/heartbeat/release/status`,
+migration `0008_project_lock` (pg + sqlite). Verrou **en table**, pas
+`pg_advisory_lock` (l'app ferme sa connexion par opération → un advisory lock
+serait relâché aussitôt). Heartbeat périodique + péremption par TTL évaluée à la
+lecture contre l'horloge DB. Ré-entrance, vol de verrou périmé (`stolen`),
+transaction + `FOR UPDATE` (PostgreSQL) pour l'exclusion sous concurrence.
+
+**Deux écarts au brief, assumés** :
+- Table `project_lock` **non qualifiée** (le brief écrivait `nemeton.project_lock`),
+  car aucune table du repo n'utilise de schéma `nemeton.` — le code fait foi.
+- `project_lock_status()` retourne `NULL` **seulement si libre** (le brief disait
+  « NULL si libre ou périmé »), sinon le détenteur + `stale`. C'est ce qu'exige le
+  test « distingue libre / tenu-frais / tenu-périmé » : un `NULL` sur périmé
+  empêcherait de distinguer périmé de libre.
+
+**Piège rencontré et corrigé** : RSQLite lie une liste de paramètres non-nommés
+dans l'**ordre d'apparition textuelle** des placeholders, pas par leur numéro.
+Un `$2` (ttl / SET) placé avant `$1` (WHERE) recevait donc la mauvaise valeur →
+requêtes silencieusement vides. Corrigé : TTL interpolé (nombre validé), et tous
+les `$n` renumérotés dans l'ordre textuel (satisfait aussi PostgreSQL, qui lie par
+numéro). 52 tests (SQLite en mémoire + fichier partagé pour la visibilité
+inter-connexions + intégration PostgreSQL). Bump mineur → **0.148.0**.
+
+> **Reste app** : relever le plancher `Imports: nemeton (>= 0.148.0)` et câbler
+> (acquire à l'ouverture `mod_home`, heartbeat `invalidateLater`, release sur
+> `onSessionEnded`, lecture seule + bandeau si `ok = FALSE`).
+
 ### 2026-07-10 — v0.147.3 : ERA5, rayonnement négatif (trouvé par le run réel)
 
 **Validation terrain de la spec 035 : concluante.** Run sur

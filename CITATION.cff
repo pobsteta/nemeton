@@ -14,7 +14,7 @@ authors:
     given-names: "Pascal"
     email: "pascal.obstetar@gmail.com"
     orcid: "https://orcid.org/0009-0003-5403-1187"
-version: "0.147.3"
+version: "0.148.0"
 date-released: "2026-07-10"
 url: "https://github.com/pobsteta/nemeton"
 repository-code: "https://github.com/pobsteta/nemeton"
