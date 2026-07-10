@@ -7,13 +7,19 @@
 - **Fichiers touchés** : `R/service_regeneration.R`, `R/mod_regeneration.R`,
   `R/utils_i18n.R`, `DESCRIPTION`.
 
-Trois chantiers indépendants, livrables ensemble parce qu'ils touchent les mêmes
-deux fichiers. **B1** rend le bilan hydrique réellement spatialisé. **B2** restaure
-les résultats de reGénération à l'ouverture d'un projet récent. **B3** rend visibles
-les erreurs du moteur, qui n'atteignent aujourd'hui que ntfy.
+Quatre chantiers indépendants, sur les mêmes deux fichiers. **B1** rend le bilan
+hydrique réellement spatialisé. **B2** restaure les résultats de reGénération à
+l'ouverture d'un projet récent. **B3** rend visibles les erreurs du moteur, qui
+n'atteignent aujourd'hui que ntfy. **B4** rend lisibles les overrides et la
+provenance des valeurs dérivées.
 
-> **Lire B3 en premier.** Sans observabilité, B1 se valide à l'aveugle : le repli
-> SoilGrids → sol uniforme (B1.c) est silencieux dans l'UI.
+> **État au 2026-07-10** : **B1 ✅ et B2 ✅ livrés** (`nemetonshiny` v0.101.0,
+> commit `0337ed96`, plancher relevé à `nemeton (>= 0.147.0)`). La dette `pc$eobs`
+> signalée en B2 a également été corrigée (`7f2e1816`). **Restent B3 et B4.**
+>
+> **B3 est le plus urgent** : `build_biljou_soil(source = "soilgrids")` dégrade
+> silencieusement vers un sol uniforme si SoilGrids est injoignable, et le
+> `cli_warn` qui l'annonce meurt sur le `stderr` du worker `multisession`.
 
 ---
 
@@ -468,16 +474,100 @@ source. Clé i18n `regen_engine_log`.
 
 ---
 
+## B4 — Lisibilité des overrides
+
+> **Contexte.** B1 et B2 sont livrés (`nemetonshiny` v0.101.0, plancher
+> `nemeton (>= 0.147.0)`). B4 ne corrige pas un bug : il rend visible ce que B1 a
+> rendu vrai. Sans lui, rien à l'écran ne distingue un `lai_max` par UGF d'un
+> scalaire, et un utilisateur peut annuler le bénéfice du PAI sans s'en rendre
+> compte.
+
+### Faut-il garder le champ « LAI max » ? Oui.
+
+Il est déjà correctement conçu — `value = NA` par défaut (`mod_regeneration.R:156`),
+`na_null()` le convertit en `NULL`, et la précédence dans `run_regeneration_engine()`
+est : `cfg$lai_max` d'abord, sinon PAI LiDAR, sinon LAI satellite. Vidé, la donnée
+décide ; rempli, l'utilisateur force. **Ne pas le supprimer**, pour trois raisons :
+
+1. **Échappatoire.** Sans LiDAR HD ni Sentinel-2 exploitable (hors emprise IGN, hors
+   ligne), c'est le seul moyen de piloter BILJOU au lieu de subir en silence le
+   défaut du cœur (5 feuillu / 4,5 résineux).
+2. **Scénario sylvicole.** « Que devient le stress hydrique si la canopée s'éclaircit
+   à LAI 3 ? » exige un scalaire imposé.
+3. **Donnée terrain.** Un LAI mesuré (LAI-2200, photographie hémisphérique) est du
+   NDP 3 : il doit pouvoir écraser une estimation satellite de NDP 0.
+
+Et le risque est limité : un `lai_max` scalaire ré-uniformise le LAI, mais **le sol
+continue de varier** via SoilGrids. Le bilan reste spatialisé, avec une variable de
+moins. Ce n'est plus le cas dégénéré d'avant la spec 035, où *tout* était uniforme.
+
+### B4.a — Afficher ce qui a été utilisé quand le champ est vide
+
+Aujourd'hui, `rv$lai_source` alimente une mention sous le badge « Canopée : LiDAR
+HD » (`mod_regeneration.R:726-731`). Elle dit *d'où* vient le LAI, jamais *ce qu'il
+vaut*. La spatialisation est donc invisible.
+
+Ajouter les statistiques du LAI dérivé, calculées sur le vecteur retourné par
+`nemeton::lai_max_depuis_pai()` — médiane et étendue sur les UGF :
+
+> « LAI dérivé du PAI : **4,1** [2,8 – 6,3] sur 30 UGF »
+
+Le vecteur n'est pas conservé aujourd'hui : `run_regeneration_engine()` le passe à
+`regen_bilan_hydrique()` et l'oublie. Le remonter dans la valeur de retour
+(`list(units = , warnings = , cached = , canopy = , lai_max = )`), puis dans
+`rv$lai_stats`. Faire de même pour l'`ewm` dérivé de SoilGrids (`lai_source`
+a son pendant : une provenance `soilgrids` vs `uniform`), avec la même
+mention — c'est le seul endroit où un repli silencieux vers un sol uniforme
+deviendrait visible **sans** attendre B3.
+
+Nouvelles clés i18n : `regen_lai_derived_stats`, `regen_ewm_derived_stats`
+(gabarits `sprintf`, FR/EN).
+
+### B4.b — Regrouper les trois overrides dans une section « Expert » repliée
+
+`lai_max`, `ewm` et `rooting_depth_cm` partagent exactement la même sémantique :
+**vide = dérivé de la donnée, rempli = forcé**. Isolés dans la sidebar principale,
+ils invitent au remplissage réflexe. Un utilisateur qui saisit `lai_max` parce que
+le champ est là et vide **annule le bénéfice du PAI qu'il vient de calculer en
+57 minutes**, sans aucun signal.
+
+Les regrouper dans un `bslib::accordion_panel()` (ou un `<details>`) intitulé
+« Paramètres experts (dérivés automatiquement si vides) », replié par défaut.
+Une seule phrase d'introduction porte la sémantique commune, au lieu de trois
+infobulles séparées.
+
+Bonus faible coût : quand un champ est rempli, afficher un badge « forcé » à côté
+de la statistique dérivée correspondante, pour que l'utilisateur voie qu'il a
+court-circuité la donnée.
+
+Nouvelles clés i18n : `regen_expert_section`, `regen_expert_hint`,
+`regen_override_badge`.
+
+### Critère d'acceptation B4
+
+- Run avec cache PAI, champ `lai_max` vide → la mention affiche médiane et étendue
+  du LAI par UGF, et l'étendue est **non nulle**.
+- Même run, `lai_max = 5` saisi → badge « forcé », et la mention dérivée disparaît
+  ou est barrée.
+- `ewm` vide + SoilGrids joignable → mention « réserve utile dérivée : … [… – …] ».
+- `ewm` vide + SoilGrids injoignable → la mention indique explicitement le repli
+  uniforme (aujourd'hui totalement silencieux).
+- Les trois champs sont dans une section repliée par défaut.
+
+---
+
 ## Ordre de livraison suggéré
 
-1. **B3** d'abord : c'est de l'observabilité. Sans elle, valider B1 et B2 se fait à
-   l'aveugle, et un échec de SoilGrids (B1.c dégrade en silence sur un sol uniforme)
-   passerait inaperçu.
-2. **B2** ensuite : indépendant du cœur v0.147.0, testable tout de suite, et il
-   rend B1 beaucoup plus facile à valider (on voit le résultat sans re-cliquer).
-3. **B1** enfin, après avoir relevé le plancher `Imports: nemeton (>= 0.147.0)`.
+État au 2026-07-10 : **B1 et B2 sont livrés** (`nemetonshiny` v0.101.0). Reste :
 
-Bump app : `feat` → mineur (`v0.101.0`), les trois changements étant additifs.
+1. **B3** — observabilité. Le plus urgent maintenant que B1 est en place :
+   `build_biljou_soil(source = "soilgrids")` dégrade **silencieusement** vers un sol
+   uniforme si `files.isric.org` est injoignable, et le `cli_warn` qui l'annonce
+   meurt sur le `stderr` du worker `multisession`.
+2. **B4** — lisibilité des overrides. B4.a rend le repli SoilGrids visible dans
+   l'UI même sans B3 ; les deux se complètent (B3 = journal, B4 = état courant).
+
+Bump app : `feat` → mineur, les deux changements étant additifs.
 
 ## Référence cœur
 
