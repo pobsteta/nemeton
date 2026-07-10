@@ -1347,7 +1347,7 @@ verrouillé par test.
 v0.146.x. Bump mineur → **0.147.0**.
 
 **Brief app livré** — `specs/035-bilan-hydrique-spatialise/brief-nemetonshiny.md`
-(2026-07-10, aucun changement cœur). Deux chantiers, mêmes fichiers :
+(2026-07-10, aucun changement cœur). Trois chantiers, mêmes fichiers :
 
 - **B1 — brancher `ewm` et `lai_max` par UGF.** `service_regeneration.R` : le
   garde-fou `is.null(lai_max) && is.null(grid)` saute le LAI dès qu'un LiDAR
@@ -1363,6 +1363,19 @@ v0.146.x. Bump mineur → **0.147.0**.
   `load_regeneration_precomputed()` en direct). Le fast-path `precomputed` rend le
   rechargement gratuit — il faut juste le déclencher. Alimente aussi
   `app_state$regeneration_result`, que `mod_synthesis.R:1036` consomme pour l'IA.
+- **B3 — observabilité du moteur.** Les erreurs n'arrivent que dans ntfy. Deux
+  causes cumulées : (1) le moteur tourne dans un **autre processus**
+  (`ExtendedTask` → `future_promise` → `plan("multisession")`), et le POST HTTP de
+  `.ntfy_send()` est le **seul canal** qui en sort — `cli_warn`/`message` restent
+  sur le stderr du worker ; (2) les erreurs moteur sont aplaties en chaînes
+  (`warnings <<- c(warnings, …)`, l.573/575/649) et `eng$warnings` n'est lu que
+  dans la branche `st == "success"` — si le worker meurt (OOM, déjà vu 2×), tout
+  est perdu ; et même en succès, `rv$warnings` est **écrasé** l.575 par les
+  warnings du re-run fast-path. Fix : journal `engine.log` en ajout seul écrit par
+  le worker (survit à l'OOM, comme `engine_status.json` mais sans écrasement),
+  relu dans les deux branches, cumulé dans `rv$warnings`, relayé en `cli::` côté
+  processus principal. **À livrer en premier** : sans lui, B1 se valide à l'aveugle
+  (le repli SoilGrids → sol uniforme est silencieux).
 
 **Deux dettes app relevées au passage** (hors périmètre du brief, à trancher) :
 

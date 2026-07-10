@@ -1,15 +1,19 @@
-# Brief `nemetonshiny` — spec 035 : bilan hydrique spatialisé + restauration de l'onglet reGénération
+# Brief `nemetonshiny` — spec 035 : bilan hydrique spatialisé, restauration et observabilité de l'onglet reGénération
 
 - **Date** : 2026-07-10
-- **Cœur requis** : `nemeton (>= 0.147.0)` — relever le plancher `Imports`
-  (actuellement `>= 0.146.2`).
+- **Cœur requis** : `nemeton (>= 0.147.0)` pour B1 — relever le plancher `Imports`
+  (actuellement `>= 0.146.2`). B2 et B3 n'exigent rien du cœur.
 - **Repo cible** : `nemetonshiny` (app). **Aucun changement cœur.**
 - **Fichiers touchés** : `R/service_regeneration.R`, `R/mod_regeneration.R`,
   `R/utils_i18n.R`, `DESCRIPTION`.
 
-Deux chantiers indépendants, livrables ensemble parce qu'ils touchent les mêmes
+Trois chantiers indépendants, livrables ensemble parce qu'ils touchent les mêmes
 deux fichiers. **B1** rend le bilan hydrique réellement spatialisé. **B2** restaure
-les résultats de reGénération à l'ouverture d'un projet récent.
+les résultats de reGénération à l'ouverture d'un projet récent. **B3** rend visibles
+les erreurs du moteur, qui n'atteignent aujourd'hui que ntfy.
+
+> **Lire B3 en premier.** Sans observabilité, B1 se valide à l'aveugle : le repli
+> SoilGrids → sol uniforme (B1.c) est silencieux dans l'UI.
 
 ---
 
@@ -327,13 +331,153 @@ séparément ; ne rien changer dans ce brief.
 
 ---
 
+## B3 — Observabilité du moteur : les erreurs n'arrivent que dans ntfy
+
+### Le symptôme
+
+En lançant **« Lancer le moteur réel »**, des messages d'erreur arrivent dans ntfy
+sans apparaître ni dans la console R, ni dans l'application.
+
+*(Précision de vocabulaire : « Lancer l'analyse » (`input$run`) n'envoie **aucun**
+ntfy — `run_regeneration()` ne contient pas un seul `.ntfy_send()`. Seul
+`run_regeneration_engine()` en envoie. Recevoir une notification signifie donc
+qu'on est sur le chemin moteur.)*
+
+### Cause 1 — un seul canal traverse la frontière de processus
+
+`mod_regeneration.R:430` : `engine_task` est un `ExtendedTask` qui appelle
+`promises::future_promise()` après avoir forcé `future::plan("multisession")`.
+**Le moteur tourne dans un processus R distinct.**
+
+De ce processus, un seul canal sort en temps réel : le **POST HTTP** de
+`.ntfy_send()`. Les `cli::cli_warn()` du cœur, les `message()`, les `cat()` partent
+sur le `stdout`/`stderr` du worker, que `multisession` ne relaie pas vers la
+console principale.
+
+D'où l'asymétrie observée. Ce n'est pas un défaut de ntfy : ntfy est simplement le
+seul à sortir.
+
+### Cause 2 — les erreurs sont converties en chaînes, puis perdues
+
+Dans `run_regeneration_engine()`, aucune erreur de moteur n'est propagée comme
+condition R. Elles sont capturées et **aplaties en texte** :
+
+```r
+warnings <<- c(warnings, i18n$t("regen_engine_era5_interrupted"))                  # l.573
+warnings <<- c(warnings, .strip_ansi(sprintf("microclimf: %s", msg)))              # l.575
+warnings <<- c(warnings, .strip_ansi(sprintf("BILJOU: %s", conditionMessage(e))))  # l.649
+```
+
+Ce vecteur part vers ntfy (l.676, `tags = warn`) puis revient dans `eng$warnings`.
+Côté module, il n'est lu **que** dans la branche `st == "success"`
+(`mod_regeneration.R:580-587`), sous forme d'un `showNotification(duration = 10)`.
+
+Deux trous en découlent.
+
+1. **Si le worker meurt** — OOM, ce qui est arrivé deux fois sur ce projet —
+   `st == "error"`, `engine_task$result()` lève, `eng` n'existe jamais, et le toast
+   n'affiche que l'erreur de haut niveau. Tous les avertissements déjà poussés vers
+   ntfy sont **définitivement perdus pour l'UI**.
+2. **Même en cas de succès**, ils ne sont qu'un toast de 10 s. `rv$warnings` — la
+   liste persistante rendue ligne 671 — est écrasée ligne 575 par `res$warnings`,
+   c'est-à-dire les avertissements du *re-run fast-path*, un ensemble sans rapport.
+   Les diagnostics du moteur n'atterrissent donc dans **aucun** support durable.
+
+Accessoirement, `.ntfy_send()` avale ses propres échecs
+(`error = function(e) invisible(FALSE)`, `service_monitoring.R:889`) : si ntfy
+tombe, on perd le dernier canal sans le savoir.
+
+### Le canal existe déjà
+
+Le worker écrit `cache/regeneration/engine_status.json` via `.regen_write_phase()`
+(écriture atomique `tmp` + `file.rename`), et le module le poll chaque seconde
+(`.regen_read_phase()`, `mod_regeneration.R:17`). C'est exactement le véhicule
+qu'il faut : il traverse la frontière de processus **par le disque**, donc il
+survit à la mort du worker.
+
+Mais `.regen_write_phase()` **écrase** le fichier à chaque appel (`payload` =
+`phase` + `ts` + `extra`). Il ne peut donc pas accumuler. Il faut un second
+fichier, en **ajout seul**.
+
+### Changement demandé
+
+**B3.a — un journal en ajout seul, côté worker.** Nouveau helper dans
+`service_regeneration.R` :
+
+```r
+# Journal d'exécution du moteur, en AJOUT (une ligne JSON par entrée). Survit à
+# la mort du worker (OOM) : c'est le seul post-mortem disponible. Jamais fatal.
+.regen_log <- function(out_dir, level, source, message) {
+  tryCatch({
+    line <- jsonlite::toJSON(
+      list(ts = as.integer(Sys.time()), level = level,
+           source = source, message = .strip_ansi(as.character(message))),
+      auto_unbox = TRUE)
+    cat(line, "\n", sep = "", file = file.path(out_dir, "engine.log"), append = TRUE)
+  }, error = function(e) invisible(NULL))
+}
+```
+
+Appeler `.regen_log(out_dir, "error", "biljou", conditionMessage(e))` **partout où
+`warnings <<- c(warnings, …)` est fait aujourd'hui** (l.573, 575, 649), en plus de
+l'accumulation existante — on ne retire rien, on double le canal. Idem pour les
+jalons (`level = "info"`), ce qui donne le pendant console des notifications ntfy.
+
+**Tronquer, ne pas supprimer**, en début de run
+(`unlink(file.path(out_dir, "engine.log"))` juste avant le premier `.ntfy_send`) :
+le journal doit survivre à la fin du run pour le post-mortem. `.regen_cleanup_status()`
+ne doit **pas** y toucher — il ne gère que `engine_status.json`.
+
+**B3.b — lecture côté module, dans les deux branches.** Nouveau
+`.regen_read_log(project_path)` qui lit `engine.log` en JSONL et renvoie un
+`data.frame`. Puis, dans `observeEvent(engine_task$status(), …)` :
+
+- branche `"success"` : **cumuler** au lieu d'écraser —
+  `rv$warnings <- unique(c(res$warnings %||% character(0), eng$warnings %||% character(0)))`
+  pour que les diagnostics du moteur persistent dans la liste (l.671) et pas
+  seulement dans un toast ;
+- branche `"error"` : lire `.regen_read_log(project_path)`, filtrer
+  `level %in% c("error", "warning")`, et alimenter `rv$warnings` avec. C'est le seul
+  moyen de récupérer les diagnostics quand `engine_task$result()` est inaccessible.
+
+**B3.c — relais console.** Dans les deux branches, faire un
+`cli::cli_alert_warning()` / `cli::cli_alert_danger()` par entrée du journal, dans
+le **processus principal**. C'est ce qui rend enfin les erreurs visibles côté R.
+
+**B3.d — ne pas avaler l'échec de ntfy.** `.ntfy_send()` renvoie déjà
+`invisible(FALSE)` en cas d'échec. L'exploiter au moins une fois par run : si le
+premier envoi échoue alors que `NEMETON_NTFY_TOPIC` est défini, journaliser un
+`.regen_log(out_dir, "warning", "ntfy", "…")`. Perdre le canal de notification
+silencieusement est ce qui rend ce bug si difficile à diagnostiquer.
+
+**B3.e — UI (optionnel, faible coût).** Un `<details>` « Journal du moteur » sous
+le badge d'état, alimenté par `.regen_read_log()`, avec horodatage, niveau et
+source. Clé i18n `regen_engine_log`.
+
+### Critère d'acceptation B3
+
+- Provoquer un échec BILJOU (p. ex. couper le réseau pendant le forçage SAFRAN) →
+  le message apparaît **dans la console R**, **dans la liste d'avertissements de
+  l'onglet**, et dans ntfy.
+- Tuer le worker en cours de run (`kill -9` sur le processus fils, ou reproduire
+  un OOM) → la branche `"error"` affiche l'erreur **et** les avertissements
+  accumulés avant la mort, relus depuis `engine.log`.
+- `engine.log` existe encore après la fin du run (il n'est pas supprimé par
+  `.regen_cleanup_status()`), et il est tronqué au run suivant.
+- Un run sans erreur ne produit aucun avertissement dans l'UI.
+
+---
+
 ## Ordre de livraison suggéré
 
-1. **B2** d'abord : indépendant du cœur v0.147.0, testable tout de suite, et il
+1. **B3** d'abord : c'est de l'observabilité. Sans elle, valider B1 et B2 se fait à
+   l'aveugle, et un échec de SoilGrids (B1.c dégrade en silence sur un sol uniforme)
+   passerait inaperçu.
+2. **B2** ensuite : indépendant du cœur v0.147.0, testable tout de suite, et il
    rend B1 beaucoup plus facile à valider (on voit le résultat sans re-cliquer).
-2. **B1** ensuite, après avoir relevé le plancher `Imports: nemeton (>= 0.147.0)`.
+3. **B1** enfin, après avoir relevé le plancher `Imports: nemeton (>= 0.147.0)`.
 
-Bump app : `feat` → mineur (`v0.101.0`), les deux changements étant additifs.
+Bump app : `feat` → mineur (`v0.101.0`), les trois changements étant additifs.
 
 ## Référence cœur
 
