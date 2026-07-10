@@ -23,6 +23,41 @@
                       "rang_sensibilite", "robustesse", "signal_robuste",
                       "couverture_pct")
 
+# Normalise un argument per-UGF pour biljou_run_grid(), spec 035 D6.
+#
+# `as_fun()` de biljou_run_grid n'indexe QUE les listes :
+#   is.list(x) && !is.data.frame(x) && !inherits(x, "biljou_soil")
+# Un vecteur numerique tombe dans la branche `function(id) x` -> la valeur
+# ENTIERE part a chaque point. Verifie : sur resineux, biljou_lai() fait
+# rep(lai_max, ndays) -> serie de n x ndays valeurs, et biljou_run() lit
+# lai_series[t] -> le LAI des UGF defile jour apres jour, SANS erreur. Sur
+# feuillu, warning "number of items to replace..." et seul x[1] est retenu.
+#
+# On convertit donc tout vecteur de longueur nrow(units) en liste nommee par id,
+# et on refuse toute autre longueur. Scalaire -> laisse tel quel (partage).
+.regen_per_unit_list <- function(x, ids, arg) {
+  if (is.null(x)) return(NULL)
+  # Objet atomique partage (sol unique, lai scalaire) : contrat v0.146.x.
+  if (inherits(x, "biljou_soil")) return(x)
+  if (is.list(x) && !is.data.frame(x)) {
+    if (is.null(names(x)) || !all(as.character(ids) %in% names(x))) {
+      cli::cli_abort(c(
+        "`{arg}` is a list but is not keyed by every unit id.",
+        i = "Name it with {.code as.character(seq_len(nrow(units)))}."))
+    }
+    return(x)
+  }
+  if (length(x) == 1L) return(x)
+  if (length(x) != length(ids)) {
+    cli::cli_abort(c(
+      "`{arg}` has length {length(x)}; expected 1 or {length(ids)} (one per unit).",
+      x = "A vector of any other length would be passed whole to every BILJOU point.",
+      i = "See spec 035 D6."))
+  }
+  stats::setNames(as.list(x), as.character(ids))
+}
+
+
 # Rattache des colonnes per-unité `precomputed` (data.frame / liste nommée) à
 # `units`, restreintes à `allowed`. Longueur = nrow(units) ou 1 (recyclé).
 .regen_attach_precomputed <- function(units, precomputed, allowed) {
@@ -142,7 +177,16 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   # construction que load_biljou_forcing() -> les ids de la liste `meteo`
   # par unité s'y alignent.
   points <- .biljou_points(units)
-  emit(list(current = "regen_biljou:start", n = nrow(points)))
+
+  # Spec 035 D6 : un vecteur per-UGF DOIT devenir une liste nommee par id,
+  # sinon biljou_run_grid() le passe entier a chaque point (corruption
+  # silencieuse sur resineux). Idem pour un sol per-UGF.
+  lai_max <- .regen_per_unit_list(lai_max, points$id, "lai_max")
+  sol     <- .regen_per_unit_list(sol, points$id, "sol")
+
+  emit(list(current = "regen_biljou:start", n = nrow(points),
+            lai_per_unit = is.list(lai_max),
+            sol_per_unit = is.list(sol) && !inherits(sol, "biljou_soil")))
 
   grid <- biljouR::biljou_run_grid(
     points = points, meteo = meteo, soil = sol, lai_max = lai_max,
@@ -837,4 +881,62 @@ pai_depuis_nuage <- function(dossier_las = NULL, grille = NULL, res = 2,
     pai <- terra::mask(terra::crop(pai, pv), pv)
   }
   pai
+}
+
+
+#' Per-unit canopy `lai_max` from a LiDAR PAI raster (spec 035 D5)
+#'
+#' @description
+#' Aggregate a Plant Area Index raster (typically the cached `pai.tif` produced
+#' by [pai_depuis_nuage()]) into the per-unit `lai_max` expected by
+#' [regen_bilan_hydrique()].
+#'
+#' `biljouR::biljou_lai()` treats `lai_max` as the **plateau** of the phenology
+#' curve (coniferous: constant all year; broadleaved: the flat top of the
+#' trapezoid between `budburst + ramp` and `leaf_fall - ramp`). A zonal **mean**
+#' under-estimates that plateau — which is what the app's own fallback did. This
+#' function therefore extracts a **high percentile** (default P90), robust to
+#' outlier pixels where a plain `max` would not be.
+#'
+#' Pixels below `min_pai` are treated as non-canopy (gaps, roads, water) and
+#' excluded before the percentile, so a unit with a clearing keeps the PAI of its
+#' stocked part.
+#'
+#' @param units An `sf` of management units.
+#' @param pai A `SpatRaster` of Plant Area Index, or a path to one (e.g. the
+#'   `pai.tif` written by `regen_sensibilite(pai_cache = )`).
+#' @param probs Percentile of the within-unit PAI distribution used as the
+#'   plateau. Default `0.9`.
+#' @param min_pai Pixels strictly below this value are excluded as non-canopy.
+#'   Default `0.1`. Set to `0` to keep every pixel.
+#'
+#' @return Numeric vector of `lai_max`, length `nrow(units)`. `NA` for a unit
+#'   with no canopy pixel. Pass it straight to `regen_bilan_hydrique(lai_max = )`,
+#'   which converts it to the id-keyed list `biljou_run_grid()` requires.
+#' @seealso [pai_depuis_nuage()], [regen_bilan_hydrique()]
+#' @export
+lai_max_depuis_pai <- function(units, pai, probs = 0.9, min_pai = 0.1) {
+  validate_sf(units)
+  if (is.character(pai) && length(pai) == 1L) {
+    if (!file.exists(pai)) {
+      cli::cli_abort("{.arg pai}: file {.path {pai}} does not exist.")
+    }
+    pai <- terra::rast(pai)
+  }
+  if (!inherits(pai, "SpatRaster")) {
+    cli::cli_abort("{.arg pai} must be a {.cls SpatRaster} or a path to one.")
+  }
+  if (!is.numeric(probs) || length(probs) != 1L || is.na(probs) ||
+      probs < 0 || probs > 1) {
+    cli::cli_abort("{.arg probs} must be a single number in {.val [0, 1]}.")
+  }
+
+  # exact_extract sans `fun` renvoie une liste de data.frame (value, coverage_fraction)
+  vals <- safe_extract(pai[[1]], as_pure_sf(units), progress = FALSE)
+  vapply(vals, function(df) {
+    v <- df$value
+    v <- v[is.finite(v) & v >= min_pai]
+    if (!length(v)) return(NA_real_)
+    unname(stats::quantile(v, probs = probs, names = FALSE, type = 7))
+  }, numeric(1))
 }

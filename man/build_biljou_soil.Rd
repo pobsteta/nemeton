@@ -2,40 +2,73 @@
 % Please edit documentation in R/load_biljou.R
 \name{build_biljou_soil}
 \alias{build_biljou_soil}
-\title{Build the BILJOU soil object for management units}
+\title{Build the BILJOU soil object(s) for management units}
 \usage{
 build_biljou_soil(
   units = NULL,
   ewm = 150,
+  source = c("uniform", "soilgrids"),
+  rooting_depth_cm = 100,
+  country = "FR",
   roots = NULL,
   macro = NULL,
   micro = NULL,
   init = 1,
+  progress_callback = NULL,
   ...
 )
 }
 \arguments{
-\item{units}{An \pkg{sf}/\pkg{sfc} of the management units (currently used for
-count / future per-region soil lookup; the returned soil is uniform).}
+\item{units}{An \pkg{sf}/\pkg{sfc} of the management units. Required when
+\code{source = "soilgrids"}.}
 
-\item{ewm}{Maximum extractable water (mm). Default \code{150}.}
+\item{ewm}{Maximum extractable water (mm). Default \code{150}. Under
+\code{source = "uniform"} it is the reserve per soil layer (length 1-3); under
+\code{source = "soilgrids"} it is only the per-unit fallback value.}
+
+\item{source}{\code{"uniform"} (default, shared soil) or \code{"soilgrids"} (per-unit
+soil from SoilGrids + pedotransfer).}
+
+\item{rooting_depth_cm}{Rooting depth in cm passed to \code{\link{ewm_depuis_soilgrids}}
+(default 100). Ignored under \code{source = "uniform"}.}
+
+\item{country}{ISO country code for the datasource lookup. Default \code{"FR"}.}
 
 \item{roots, macro, micro, init}{Passed to \code{\link[biljouR]{biljou_soil}} (root
 fractions, macro/micro porosity, initial fill fraction).}
 
+\item{progress_callback}{Optional monitoring callback, forwarded to
+\code{\link{ewm_depuis_soilgrids}}.}
+
 \item{...}{Ignored (forward-compat).}
 }
 \value{
-A \code{biljou_soil} object, or \code{NULL} when \pkg{biljouR} is unavailable.
+A \code{biljou_soil} object (uniform mode), a \strong{named list} of
+\code{biljou_soil} objects keyed by unit id (SoilGrids mode), or \code{NULL} when
+\pkg{biljouR} is unavailable.
 }
 \description{
-Produce the \code{sol} input of \code{\link{regen_bilan_hydrique}} — a
-\code{\link[biljouR]{biljou_soil}} object (extractable water \code{ewm}, root
-fractions, macro/micro porosity, initial fill). A single soil is returned (shared
-across the \code{biljou_run_grid()} points, as the engine expects). With no fine
-soil reference (RRP / BDGSF / European Soil DB), a sensible uniform default is
-used — the app already exposes an \code{ewm} default (150 mm) usable as a fallback.
+Produce the \code{sol} input of \code{\link{regen_bilan_hydrique}} — one or several
+\code{\link[biljouR]{biljou_soil}} objects (extractable water \code{ewm}, root
+fractions, macro/micro porosity, initial fill).
+}
+\details{
+\strong{Two modes.}
+\itemize{
+\item \code{source = "uniform"} (default): a \strong{single} shared soil, as in v0.146.x.
+\code{ewm} is then the reserve \emph{per soil layer} (1 to 3 layers, per BILJOU) —
+\strong{not} per unit.
+\item \code{source = "soilgrids"}: one \strong{single-layer soil per unit}, its \code{ewm}
+derived from SoilGrids 250 m through the Saxton & Rawls pedotransfer
+function (\code{\link{ewm_depuis_soilgrids}}). Returns a list named by unit id,
+which \code{biljou_run_grid()} indexes per point — this is what spatialises the
+water balance (spec 035).
+}
+
+Falls back to the uniform soil, with a warning, when SoilGrids cannot be
+reached. Units whose \code{ewm} is \code{NA} or non-positive get the \code{ewm} default,
+since \code{\link[biljouR]{biljou_soil}} rejects non-positive reserves.
 }
 \seealso{
-\code{\link{regen_bilan_hydrique}}, \code{\link{load_biljou_forcing}}
+\code{\link{ewm_depuis_soilgrids}}, \code{\link{regen_bilan_hydrique}}
 }

@@ -199,34 +199,89 @@ load_biljou_forcing <- function(aoi, years, source = c("safran", "era5"),
   .biljou_filter_years(meteo, years)
 }
 
-#' Build the BILJOU soil object for management units
+#' Build the BILJOU soil object(s) for management units
 #'
 #' @description
-#' Produce the `sol` input of [regen_bilan_hydrique()] — a
-#' [biljouR::biljou_soil()] object (extractable water `ewm`, root fractions,
-#' macro/micro porosity, initial fill). A single soil is returned (shared across
-#' the `biljou_run_grid()` points, as the engine expects). With no fine soil
-#' reference (RRP / BDGSF / European Soil DB), a sensible uniform default is used
-#' — the app already exposes an `ewm` default (150 mm) usable as a fallback.
+#' Produce the `sol` input of [regen_bilan_hydrique()] — one or several
+#' [biljouR::biljou_soil()] objects (extractable water `ewm`, root fractions,
+#' macro/micro porosity, initial fill).
 #'
-#' @param units An `sf`/`sfc` of the management units (currently used for count /
-#'   future per-region soil lookup; the returned soil is uniform).
-#' @param ewm Maximum extractable water (mm). Default `150`.
+#' **Two modes.**
+#' * `source = "uniform"` (default): a **single** shared soil, as in v0.146.x.
+#'   `ewm` is then the reserve *per soil layer* (1 to 3 layers, per BILJOU) —
+#'   **not** per unit.
+#' * `source = "soilgrids"`: one **single-layer soil per unit**, its `ewm`
+#'   derived from SoilGrids 250 m through the Saxton & Rawls pedotransfer
+#'   function ([ewm_depuis_soilgrids()]). Returns a list named by unit id,
+#'   which `biljou_run_grid()` indexes per point — this is what spatialises the
+#'   water balance (spec 035).
+#'
+#' Falls back to the uniform soil, with a warning, when SoilGrids cannot be
+#' reached. Units whose `ewm` is `NA` or non-positive get the `ewm` default,
+#' since [biljouR::biljou_soil()] rejects non-positive reserves.
+#'
+#' @param units An `sf`/`sfc` of the management units. Required when
+#'   `source = "soilgrids"`.
+#' @param ewm Maximum extractable water (mm). Default `150`. Under
+#'   `source = "uniform"` it is the reserve per soil layer (length 1-3); under
+#'   `source = "soilgrids"` it is only the per-unit fallback value.
+#' @param source `"uniform"` (default, shared soil) or `"soilgrids"` (per-unit
+#'   soil from SoilGrids + pedotransfer).
+#' @param rooting_depth_cm Rooting depth in cm passed to [ewm_depuis_soilgrids()]
+#'   (default 100). Ignored under `source = "uniform"`.
+#' @param country ISO country code for the datasource lookup. Default `"FR"`.
 #' @param roots,macro,micro,init Passed to [biljouR::biljou_soil()] (root
 #'   fractions, macro/micro porosity, initial fill fraction).
+#' @param progress_callback Optional monitoring callback, forwarded to
+#'   [ewm_depuis_soilgrids()].
 #' @param ... Ignored (forward-compat).
 #'
-#' @return A `biljou_soil` object, or `NULL` when `biljouR` is unavailable.
+#' @return A `biljou_soil` object (uniform mode), a **named list** of
+#'   `biljou_soil` objects keyed by unit id (SoilGrids mode), or `NULL` when
+#'   `biljouR` is unavailable.
+#' @seealso [ewm_depuis_soilgrids()], [regen_bilan_hydrique()]
 #' @export
-build_biljou_soil <- function(units = NULL, ewm = 150, roots = NULL,
-                              macro = NULL, micro = NULL, init = 1, ...) {
+build_biljou_soil <- function(units = NULL, ewm = 150,
+                              source = c("uniform", "soilgrids"),
+                              rooting_depth_cm = 100, country = "FR",
+                              roots = NULL, macro = NULL, micro = NULL,
+                              init = 1, progress_callback = NULL, ...) {
+  source <- match.arg(source)
   if (!requireNamespace("biljouR", quietly = TRUE)) return(NULL)
   # ewm NULL/NA (ex. champ UI vidé -> na_null) : retomber sur le défaut plutôt
   # que de propager NULL à biljou_soil (qui échoue « between 1 and 3 layers »).
   if (is.null(ewm) || (length(ewm) == 1 && is.na(ewm))) ewm <- 150
-  args <- list(ewm = ewm, init = init)
-  if (!is.null(roots)) args$roots <- roots
-  if (!is.null(macro)) args$macro <- macro
-  if (!is.null(micro)) args$micro <- micro
-  do.call(biljouR::biljou_soil, args)
+
+  make_soil <- function(e) {
+    args <- list(ewm = e, init = init)
+    if (!is.null(roots)) args$roots <- roots
+    if (!is.null(macro)) args$macro <- macro
+    if (!is.null(micro)) args$micro <- micro
+    do.call(biljouR::biljou_soil, args)
+  }
+
+  if (identical(source, "uniform")) return(make_soil(ewm))
+
+  # --- Mode SoilGrids : un sol mono-couche par UGF (spec 035 D2/D6). ---
+  if (is.null(units)) {
+    cli::cli_abort("{.arg units} is required when {.code source = \"soilgrids\"}.")
+  }
+  per_unit <- ewm_depuis_soilgrids(units, rooting_depth_cm = rooting_depth_cm,
+                                   country = country,
+                                   progress_callback = progress_callback)
+  if (is.null(per_unit)) {
+    cli::cli_warn(c(
+      "SoilGrids is unreachable; falling back to a uniform soil ({.val {ewm[1]}} mm).",
+      i = "Check network access to {.url https://files.isric.org}."))
+    return(make_soil(ewm))
+  }
+
+  # biljou_soil() refuse ewm <= 0 : NA / roche affleurante -> valeur de repli.
+  bad <- !is.finite(per_unit) | per_unit <= 0
+  if (any(bad)) {
+    cli::cli_warn("{sum(bad)} unit{?s} without usable soil data; using {.val {ewm[1]}} mm.")
+    per_unit[bad] <- ewm[1]
+  }
+  ids <- as.character(seq_len(nrow(units)))
+  stats::setNames(lapply(per_unit, make_soil), ids)
 }
