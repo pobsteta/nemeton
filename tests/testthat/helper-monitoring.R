@@ -94,6 +94,7 @@ with_clean_db <- function(code) {
   con <- .test_db_connect()
 
   reset_schema <- function() {
+    DBI::dbExecute(con, "DROP TABLE IF EXISTS project_lock CASCADE")
     DBI::dbExecute(con, "DROP TABLE IF EXISTS knowledge_chunk CASCADE")
     DBI::dbExecute(con, "DROP TABLE IF EXISTS knowledge_document CASCADE")
     DBI::dbExecute(con, "DROP TABLE IF EXISTS alert CASCADE")

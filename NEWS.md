@@ -1,3 +1,36 @@
+# nemeton 0.148.0 (2026-07-10)
+
+### Added — verrou de projet pour usage serveur multi-utilisateurs
+
+Nouvelle API cœur (brief `brief-core-project-lock`), consommée par
+`nemetonshiny` déployé en serveur multi-utilisateurs : **un projet ouvert est
+verrouillé en édition sur un seul utilisateur ; les autres l'ouvrent en lecture
+seule**. Quatre fonctions exportées, prenant une connexion `con` fournie par
+l'appelant, fonctionnant sur PostgreSQL (cible serveur) comme sur SQLite
+(local/test) :
+
+- **`project_lock_acquire(con, project_id, holder_id, holder_label, ttl_seconds)`**
+  — prend le verrou si le projet est libre, déjà tenu par le même `holder_id`
+  (ré-entrant), ou périmé (heartbeat plus vieux que `ttl_seconds` → vol, signalé
+  par `stolen = TRUE`). Refus si un autre détient un verrou frais. La décision
+  tourne dans une transaction avec verrou de ligne (`FOR UPDATE` sur PostgreSQL) :
+  deux acquisitions concurrentes sur un projet libre → exactement un gagnant.
+- **`project_lock_heartbeat(con, project_id, holder_id)`** — rafraîchit le
+  heartbeat si `holder_id` tient toujours le verrou.
+- **`project_lock_release(con, project_id, holder_id)`** — libère si détenteur ;
+  idempotent.
+- **`project_lock_status(con, project_id, ttl_seconds)`** — `NULL` si libre,
+  sinon détenteur + `stale` (distingue libre / tenu-frais / tenu-périmé).
+
+Verrou **matérialisé en table** (`project_lock`, migration 0008) et non
+`pg_advisory_lock` : l'app ouvre/ferme sa connexion par opération, un advisory
+lock lié à la connexion serait relâché aussitôt. La péremption est évaluée à la
+lecture contre l'horloge de la base (`now() - heartbeat_at > ttl`) — aucune
+colonne d'expiration, aucun job de nettoyage.
+
+Le numéro de release est à reporter dans le plancher `Imports` de `nemetonshiny`
+avant câblage de l'API.
+
 # nemeton 0.147.3 (2026-07-10)
 
 ### Fixed — ERA5 : rayonnement négatif transmis à microclimf et à BILJOU

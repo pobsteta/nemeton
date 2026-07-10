@@ -332,6 +332,10 @@ reference:
     - db_connect
     - db_disconnect
     - db_migrate
+    - project_lock_acquire
+    - project_lock_heartbeat
+    - project_lock_release
+    - project_lock_status
     - delete_knowledge_document
     - diagnose_s2_cache
     - embed_query
