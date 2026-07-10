@@ -1053,7 +1053,19 @@ cours du moteur reGénération** (notif bas-droite). Canal fichier
 exposition → BILJOU) + `microclimf_skipped`. Consomme l’événement cœur
 `regen_expo:pai` (**nemeton 0.144.0**, `source` lidar\|satellite).
 **Lève la réserve §5** de `brief-nemetonshiny-engine-feedback.md`. →
-<nemetonshiny@95733907>, release v0.100.11 (cycle dev 0.100.11.9000).
+<nemetonshiny@95733907>, release v0.100.11 (cycle dev 0.100.11.9000). -
+\[x\] **pai-cache** — cache disque du PAI LiDAR
+(`cache/regeneration/pai.tif`) passé à
+[`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+sur la branche LiDAR only : ~38 min économisées par run. Phase « PAI
+(cache) » (`source="cache"`) exposée au canal de statut, lien «
+Recalculer le PAI » sous le badge « Canopée : LiDAR HD ». Livré app
+**v0.100.14** (`nemetonshiny@22713c93`), cycle dev `0.100.14.9000`.
+Plancher app relevé à `nemeton (>= 0.146.2)` (microclimf 2.0.0
+bout-en-bout).
+
+Les deux briefs app du volet moteur spec 027 sont désormais clos ;
+**plus aucun brief app en attente sur ce chantier**.
 
 #### 2026-06-30 — L1 cœur : indicateurs microclimatiques A3/A4/W4 (`v0.101.0`)
 
@@ -1716,6 +1728,12 @@ cœur).
 ------------------------------------------------------------------------
 
 ## Journal
+
+- **2026-07-08** — reGénération : cache disque du PAI LiDAR livré côté
+  app (`nemetonshiny@22713c93`, v0.100.14, cycle dev `0.100.14.9000`).
+  Consomme `regen_sensibilite(pai_cache = ...)` du cœur 0.146.2. Clôt le
+  second et dernier brief app du volet moteur spec 027 — le volet cœur
+  0.145/0.146.x était déjà journalé.
 
 ### 2026-07-09 — v0.146.5 : grille microclimf bornée mémoire (2ᵉ OOM, après le PAI)
 

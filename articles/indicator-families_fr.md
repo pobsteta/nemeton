@@ -654,7 +654,7 @@ sessionInfo()
 #> [37] classInt_0.4-11    fs_2.1.0           htmlwidgets_1.6.4  ragg_1.5.2        
 #> [41] pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.1      terra_1.9-34      
 #> [45] bslib_0.11.0       pillar_1.11.1      gtable_0.3.6       glue_1.8.1        
-#> [49] Rcpp_1.1.2         systemfonts_1.3.2  xfun_0.59          tibble_3.3.1      
+#> [49] Rcpp_1.1.2         systemfonts_1.3.2  xfun_0.60          tibble_3.3.1      
 #> [53] tidyselect_1.2.1   knitr_1.51         farver_2.1.2       nlme_3.1-169      
 #> [57] htmltools_0.5.9    rmarkdown_2.31     labeling_0.4.3     compiler_4.6.1    
 #> [61] S7_0.2.2

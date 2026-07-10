@@ -283,7 +283,7 @@ sessionInfo()
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] terra_1.9-34       cli_3.6.6          knitr_1.51         rlang_1.3.0       
-#>  [5] xfun_0.59          KernSmooth_2.23-26 otel_0.2.0         DBI_1.3.0         
+#>  [5] xfun_0.60          KernSmooth_2.23-26 otel_0.2.0         DBI_1.3.0         
 #>  [9] textshaping_1.0.5  sf_1.1-1           jsonlite_2.0.0     glue_1.8.1        
 #> [13] e1071_1.7-17       htmltools_0.5.9    ragg_1.5.2         sass_0.4.10       
 #> [17] rmarkdown_2.31     grid_4.6.1         classInt_0.4-11    evaluate_1.0.5    
