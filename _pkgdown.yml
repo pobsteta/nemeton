@@ -452,6 +452,9 @@ reference:
     - regen_sensibilite
     - regen_bilan_hydrique
     - pai_depuis_nuage
+    - lai_max_depuis_pai
+    - awc_saxton_rawls
+    - ewm_depuis_soilgrids
     - lai_sentinel2
     - tendances_estivales_eobs
     - regeneration_tolerances
