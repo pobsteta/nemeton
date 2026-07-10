@@ -1,3 +1,30 @@
+# nemeton 0.147.3 (2026-07-10)
+
+### Fixed — ERA5 : rayonnement négatif transmis à microclimf et à BILJOU
+
+Run réel du 2026-07-10 (projet `20260701_204501_ltcp`) : l'onglet reGénération
+affiche l'avertissement
+
+> `microclimf: -0.0448426522703349 outside range of typical shortwave radiation
+> values. Units should be W / m^2`
+
+ERA5 stocke le rayonnement et la précipitation en **cumuls** ; la dé-accumulation
+opérée par `mcera5` produit de minuscules valeurs négatives là où le flux est nul
+(la nuit, pour le rayonnement solaire). C'est un artefact numérique, pas un signal
+— mais `microclimf::checkinputs()` le signale, et rien ne le bornait.
+
+`.rsen_forcage_era5()` borne désormais à zéro les colonnes non négatives par
+construction physique (`swdown`, `difrad`, `precip`) via le nouvel helper
+`.rsen_clamp_flux()`, qui informe du nombre de valeurs corrigées.
+
+Le correctif protège **deux** chemins : le même forçage alimente BILJOU par
+`.biljou_forcing_era5()`, où un `swdown` négatif se propage dans `rg` puis dans
+`penman_pet()`. Les colonnes qui peuvent légitimement être négatives (`temp`) ou
+qui ne le sont jamais en pratique (`lwdown`) ne sont pas touchées ; les `NA` sont
+préservés.
+
+Aucun changement de contrat. 5 nouveaux tests.
+
 # nemeton 0.147.2 (2026-07-10)
 
 ### Fixed — CI rouge après la v0.147.0 (tests + pkgdown)
