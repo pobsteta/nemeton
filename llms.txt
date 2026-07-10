@@ -651,7 +651,7 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
   : BD Forêt v2 -\> CV context mapping
 
 - [`build_biljou_soil()`](https://pobsteta.github.io/nemeton/reference/build_biljou_soil.md)
-  : Build the BILJOU soil object for management units
+  : Build the BILJOU soil object(s) for management units
 
 - [`build_foret_ancienne_mask()`](https://pobsteta.github.io/nemeton/reference/build_foret_ancienne_mask.md)
   : Build an ancient-forest polygon layer for N2 continuity
@@ -1039,75 +1039,119 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
 
 - [`compute_spectral_diversity()`](https://pobsteta.github.io/nemeton/reference/compute_spectral_diversity.md)
   : Compute spectral diversity rasters (alpha & beta) via biodivMapR
+
 - [`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
   [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
   : Create a QGIS project from a sampling plan
+
 - [`ensure_inventory_fields()`](https://pobsteta.github.io/nemeton/reference/ensure_inventory_fields.md)
   : Fill in missing inventory fields from a CHM
+
 - [`extract_indicator_value()`](https://pobsteta.github.io/nemeton/reference/extract_indicator_value.md)
   : Extract an indicator's value column from its result
+
 - [`filter_alerts_to_zone()`](https://pobsteta.github.io/nemeton/reference/filter_alerts_to_zone.md)
   : Restrict an alert layer to the UGF zone, at read time (spec 021 L7)
+
 - [`import_qgis_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)
   [`import_qfield_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)
   : Read placettes + arbres layers from a field-returned GPKG
+
 - [`resolve_project_dem()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)
   [`resolve_project_chm()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)
   : Discover the best available DEM / CHM raster in a Nemeton project
+
 - [`indicateur_a3_microclimat()`](https://pobsteta.github.io/nemeton/reference/indicateur_a3_microclimat.md)
   : A3 — summer under-canopy maximum temperature (regeneration
   microclimate)
+
 - [`indicateur_a4_tamponnement()`](https://pobsteta.github.io/nemeton/reference/indicateur_a4_tamponnement.md)
   : A4 — canopy thermal buffering (regeneration microclimate)
+
 - [`indicateur_a5_rafraichissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_a5_rafraichissement.md)
   : Calculate Urban Cooling Index (A5)
+
 - [`indicateur_r6_sensibilite()`](https://pobsteta.github.io/nemeton/reference/indicateur_r6_sensibilite.md)
   : R6 — microsite climate sensitivity (heatwave vs average year)
+
 - [`indicateur_w4_vpd()`](https://pobsteta.github.io/nemeton/reference/indicateur_w4_vpd.md)
   : W4 — summer under-canopy vapour-pressure deficit (regeneration)
+
 - [`indice_priorite_regen()`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md)
   : Regeneration priority index (spec 027 L3)
+
 - [`regen_species_choices()`](https://pobsteta.github.io/nemeton/reference/regen_species_choices.md)
   : Species choices for the reGénération target-species selector
+
 - [`european_species_tolerances()`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md)
   : European tree-species regeneration tolerances
+
 - [`map_tfv_to_species_class()`](https://pobsteta.github.io/nemeton/reference/map_tfv_to_species_class.md)
   : Map BD Forêt v2 TFV codes to NMT species classes
+
 - [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
   : Microclimate exposure per unit — microclimf engine (spec 027 L1)
+
 - [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
   : Soil water balance per unit — BILJOU engine (spec 027 L2)
+
 - [`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)
   : Plant Area Index from a LiDAR-HD point cloud (spec 027 L1)
+
+- [`lai_max_depuis_pai()`](https://pobsteta.github.io/nemeton/reference/lai_max_depuis_pai.md)
+  :
+
+  Per-unit canopy `lai_max` from a LiDAR PAI raster (spec 035 D5)
+
+- [`awc_saxton_rawls()`](https://pobsteta.github.io/nemeton/reference/awc_saxton_rawls.md)
+  : Available water capacity from soil texture — Saxton & Rawls (2006)
+
+- [`ewm_depuis_soilgrids()`](https://pobsteta.github.io/nemeton/reference/ewm_depuis_soilgrids.md)
+  :
+
+  Maximum extractable water (`ewm`) per unit, from SoilGrids
+
 - [`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)
   : LAI from Sentinel-2 via PROSAIL inversion — NDP-0 canopy fallback
   (spec 033)
+
 - [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
   : Summer E-OBS climate trends over the project area (spec 027 §6,
   branch A)
+
 - [`regeneration_tolerances()`](https://pobsteta.github.io/nemeton/reference/regeneration_tolerances.md)
   : Regeneration tolerance table (per species)
+
 - [`microclimate_detect_years()`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md)
   : Detect the average / heatwave reference years for R6 (spec 027
   §6bis)
+
 - [`microclimate_run()`](https://pobsteta.github.io/nemeton/reference/microclimate_run.md)
   : Run the under-canopy microclimate model (scaffold — spec 027 L1)
+
 - [`prepare_pixel_dieback_series()`](https://pobsteta.github.io/nemeton/reference/prepare_pixel_dieback_series.md)
   : Prepare the derived series for the pixel-dieback plot (CRswir +
   CRre)
+
 - [`read_reconfort_layer()`](https://pobsteta.github.io/nemeton/reference/read_reconfort_layer.md)
   : Read a RECONFORT output raster, masked to the UGF zone by default
   (L7)
+
 - [`reconfort_cache_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_cache_manifest.md)
   : Discover the persisted RECONFORT display layers from the cache (L6)
+
 - [`reconfort_latest_complete_year()`](https://pobsteta.github.io/nemeton/reference/reconfort_latest_complete_year.md)
   : Most recent RECONFORT \`s2_year\` whose season is already complete
+
 - [`reconfort_layer_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_layer_manifest.md)
   : RECONFORT layer manifest: describe a run's displayable outputs (L6)
+
 - [`reconfort_year_bounds()`](https://pobsteta.github.io/nemeton/reference/reconfort_year_bounds.md)
   : Bounds for a RECONFORT \`s2_year\` picker
+
 - [`run_reticulate_isolated()`](https://pobsteta.github.io/nemeton/reference/run_reticulate_isolated.md)
   : Run a Python/reticulate task in an isolated subprocess (pinned env)
+
 - [`stac_search_s2_cdse()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
   [`stac_search_s2_pc()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
   [`stac_search_s2_theia_muscate()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)

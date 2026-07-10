@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.147.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -870,9 +870,21 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-10--v01470--bilan-hydrique-spatialisé-par-ugf-spec-035">2026-07-10 — v0.147.0 : bilan hydrique spatialisé par UGF (spec 035)<a class="anchor" aria-label="anchor" href="#id_2026-07-10--v01470--bilan-hydrique-spatialis%C3%A9-par-ugf-spec-035"></a></h3>
+<p><strong>Symptôme.</strong> <code><a href="reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> renvoyait la même chose pour les 30 UGF du projet <code>20260701_204501_ltcp</code> : <code>njstress</code> = 142,5 j et <code>deb_stress</code> = 122 partout ; <code>istress</code> et <code>rew_min</code> ne prenaient que <strong>2</strong> valeurs.</p>
+<p><strong>Diagnostic (lecture du moteur, pas supposition).</strong> <code>biljou_run_grid()</code> ne recopie <code>lon</code>/<code>lat</code> qu’en métadonnées ; <code>biljou_run()</code> est une fonction pure de <code>(meteo, soil, lai_max, forest_type, budburst, leaf_fall)</code>. Le sol était uniforme (<code><a href="reference/build_biljou_soil.html">build_biljou_soil()</a></code> → un objet), le <code>lai_max</code> scalaire (défaut 5 : <strong>le PAI calculé n’était jamais consommé par BILJOU</strong>), et la maille SAFRAN fait 8 km — les 30 centroïdes tombent dans <strong>2</strong> mailles, d’où les 2 valeurs. Les comptages entiers de jours absorbaient l’écart de 0,3 %.</p>
+<p><strong>Livré (cœur).</strong> <code><a href="reference/awc_saxton_rawls.html">awc_saxton_rawls()</a></code> (PTF Saxton &amp; Rawls 2006, R pur), <code><a href="reference/ewm_depuis_soilgrids.html">ewm_depuis_soilgrids()</a></code> (réserve utile mm/UGF, SoilGrids 250 m + PTF), <code><a href="reference/lai_max_depuis_pai.html">lai_max_depuis_pai()</a></code> (P90 du PAI, pas la moyenne — <code>biljou_lai()</code> traite <code>lai_max</code> comme un <em>plateau</em>), <code>build_biljou_soil(source = "soilgrids")</code> → liste d’objets <code>biljou_soil</code> nommée par id. 30 sources <code>soilgrids_*</code> dans <code>FR.json</code>. Rétrocompatibilité stricte (<code>source = "uniform"</code> + <code>lai_max</code> scalaire).</p>
+<p><strong>Fix de correction.</strong> <code>biljou_run_grid()</code> n’indexe que les <em>listes</em> : un vecteur per-UGF partait <strong>entier</strong> à chaque point. Sur résineux, <code>rep(lai_max, ndays)</code> donnait une série de <code>n × ndays</code> valeurs et le LAI des UGF défilait jour après jour — sans erreur ni warning. <code><a href="reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> convertit désormais tout vecteur en liste nommée par id et refuse les longueurs invalides. La doc annonçait ce contrat ; le code ne l’honorait pas.</p>
+<p><strong>Décisions (spec 035).</strong> D1 : le <strong>TWI ne dérive pas l’<code>ewm</code></strong> — convergence latérale ≠ capacité de stockage, BILJOU est 1D, et le TWI alimente déjà R3 en direct (double comptage <code>ewm → BILJOU → njstress → R3</code>). D3 : Saxton &amp; Rawls plutôt que Tóth 2015 (non closed-form). ⚠ les transcriptions web de la PTF (<code>-0.002</code> / <code>-0.15</code>) sont <strong>fausses</strong> — capacité au champ négative pour un sable ; verrouillé par test.</p>
+<p><strong>Vérifié avec le vrai moteur</strong> : <code>njstress</code> passe de 1 à 3 valeurs distinctes sur 3 UGF ; l’UGF de référence (<code>ewm=150</code>, <code>lai=5</code>) reproduit exactement la valeur v0.146.x. Bump mineur → <strong>0.147.0</strong>.</p>
+<blockquote>
+<p><strong>Reste</strong> : brief app <code>nemetonshiny</code> pour brancher <code>pai.tif</code> → <code>lai_max</code> et <code>source = "soilgrids"</code> dans <code>service_regeneration.R</code> (le garde-fou <code>is.null(lai_max) &amp;&amp; is.null(grid)</code> y saute le LAI dès qu’un LiDAR existe).</p>
+</blockquote>
 <ul><li>
 <strong>2026-07-08</strong> — reGénération : cache disque du PAI LiDAR livré côté app (<code>nemetonshiny@22713c93</code>, v0.100.14, cycle dev <code>0.100.14.9000</code>). Consomme <code>regen_sensibilite(pai_cache = ...)</code> du cœur 0.146.2. Clôt le second et dernier brief app du volet moteur spec 027 — le volet cœur 0.145/0.146.x était déjà journalé.</li>
-</ul><div class="section level3">
+</ul></div>
+<div class="section level3">
 <h3 id="id_2026-07-09--v01465--grille-microclimf-bornée-mémoire-2ᵉ-oom-après-le-pai">2026-07-09 — v0.146.5 : grille microclimf bornée mémoire (2ᵉ OOM, après le PAI)<a class="anchor" aria-label="anchor" href="#id_2026-07-09--v01465--grille-microclimf-born%C3%A9e-m%C3%A9moire-2%E1%B5%89-oom-apr%C3%A8s-le-pai"></a></h3>
 <p><strong>8ᵉ blocage.</strong> Run réel en 0.146.4 : PAI OK en 2 dalles (~57 min, mémoire mini 17 Go, <code>pai.tif</code> caché ✅ — fix OOM PAI confirmé), <strong>puis re-OOM systemd-oomd à 10:28</strong> pendant microclimf. Cause : <code>runmicro()</code> alloue <code>ncellules × pas × ~11 sorties</code> ; à 2 m sur le massif (<strong>3,4 M cellules</strong>) → dizaines de Go. Mon e2e de 0.146.2 tournait sur 30×30 — jamais exercé le vrai massif.</p>
 <p>Fix : agrégation de la grille de calcul microclimf sous <code>micro_max_cells</code> (défaut 5e4, override <code>options(nemeton.micro_max_cells=)</code>) → sur 3,4 M cellules, facteur 9 → ~18 m/~42k cellules → microclimf ~1 Go. Le PAI caché reste à 2 m ; seul le calcul est coarseé (per-UGF inchangé). Helper <code>.rsen_micro_agg_factor()</code>. Validé e2e (agrégation forcée → microclimf tourne sur grille coarseé → sf correct). 111 pass. Bump → <strong>0.146.5</strong>.</p>

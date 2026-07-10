@@ -1,5 +1,115 @@
 # Changelog
 
+## nemeton 0.147.2 (2026-07-10)
+
+#### Fixed — CI rouge après la v0.147.0 (tests + pkgdown)
+
+Deux oublis de la spec 035, sans effet sur le code du package :
+
+- **`test-regen-per-unit.R`** : le test « accepts a path to a raster »
+  écrit un GeoTIFF, or certains runners GitHub Actions ont une anomalie
+  `terra` sur `writeRaster(crs = "EPSG:nnnn")`. Le repo a un garde-fou
+  dédié (`skip_if_terra_write_broken()`, `helper-fast-raster.R`) ; le
+  test l’ignorait et faisait échouer le job `tests` (et `coverage`). Il
+  l’appelle désormais : skip sur runner cassé, exécution complète sur
+  runtime sain.
+- **`_pkgdown.yml`** : les trois fonctions exportées par la v0.147.0
+  (`awc_saxton_rawls`, `ewm_depuis_soilgrids`, `lai_max_depuis_pai`)
+  n’étaient pas référencées dans l’index de la doc, ce qui fait échouer
+  `build_reference_index()`. Ajoutées à la section reGénération.
+
+Aucun changement de comportement. `R-CMD-check` et `version-consistency`
+passaient déjà.
+
+## nemeton 0.147.1 (2026-07-10)
+
+#### Fixed — `build_foret_ancienne_mask()` : `%in%` résolvait vers `base`, pas `terra`
+
+`build_foret_ancienne_mask(source = <SpatRaster>, forest_class = )`
+échouait sur
+`unable to find an inherited method for function 'ifel' for signature test = "logical"`.
+Le package n’importe pas l’opérateur `%in%` de **terra** : un
+`r %in% forest_class` non préfixé résolvait donc vers
+`base::`%in%\``(fondé sur`match()`), qui renvoie un`logical`et non un`SpatRaster`—`terra::ifel()\`
+n’a pas de méthode pour ça.
+
+L’appel est désormais explicitement préfixé
+(`terra::`%in%`(r, forest_class)`), comme le reste du fichier. Les trois
+tests de `test-foret-ancienne-mask.R` qui erroraient s’exécutent enfin
+(18 pass / 3 erreurs → **25 pass / 0 erreur**).
+
+Bug préexistant, indépendant de la spec 035 ; surfacé par la suite
+complète lancée pour la v0.147.0.
+
+## nemeton 0.147.0 (2026-07-10)
+
+#### Added — bilan hydrique spatialisé par UGF (spec 035)
+
+[`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
+renvoyait **la même valeur pour toutes les UGF** (constaté sur 30 UGF
+réelles : `njstress` = 142,5 j partout). Cause : BILJOU n’a aucun terme
+spatial — `biljou_run_grid()` ne recopie `lon`/`lat` qu’en métadonnées,
+et `biljou_run()` est une fonction pure de
+`(meteo, soil, lai_max, forest_type, …)`. Or le sol était uniforme, le
+`lai_max` scalaire, et la maille SAFRAN fait 8 km. Trois nouvelles
+fonctions exportées rendent le sol et le LAI variables par UGF — les
+deux seules variables qui *doivent* varier à l’échelle de gestion.
+
+- **`awc_saxton_rawls(clay, sand, om, coarse)`** — fonction de
+  pédotransfert de Saxton & Rawls (2006), R pur, sans dépendance.
+  Réserve utile volumique (m³/m³) à partir de la texture et de la
+  matière organique, corrigée des éléments grossiers.
+- **`ewm_depuis_soilgrids(units, rooting_depth_cm, …)`** — `ewm` (mm)
+  par UGF, intégrée sur la profondeur d’enracinement depuis SoilGrids
+  250 m (ISRIC, CC-BY-4.0). Dégradation propre (`NULL`) si la source est
+  injoignable.
+- **`lai_max_depuis_pai(units, pai, probs = 0.9)`** — `lai_max` par UGF
+  depuis le PAI LiDAR caché (`pai.tif`). Percentile 90 et non moyenne :
+  `biljou_lai()` traite `lai_max` comme le **plateau** de la phénologie,
+  qu’une moyenne zonale sous-estime.
+- **`build_biljou_soil(source = "soilgrids")`** — retourne désormais une
+  liste d’objets `biljou_soil` nommée par id d’UGF. `source = "uniform"`
+  (défaut) reproduit le comportement v0.146.x.
+- **30 sources `soilgrids_{clay,sand,silt,soc,cfvo}_{profondeur}`**
+  déclarées dans `inst/datasources/FR.json` (VRT tuilés
+  `files.isric.org`, facteurs d’échelle vérifiés dans la FAQ ISRIC —
+  `soc` est en **dg/kg**, donc `%OC = brut/100`).
+
+#### Fixed — garde-fou per-UGF : un vecteur n’est pas une liste
+
+`biljou_run_grid()` n’indexe que les **listes** (`as_fun()` :
+`is.list(x) && !is.data.frame(x) && !inherits(x, "biljou_soil")`). Un
+vecteur numérique tombait dans la branche `function(id) x` et partait
+**entier** à chaque point. Vérifié : sur résineux, `biljou_lai()`
+produit alors une série de `n × ndays` valeurs et le LAI des UGF
+**défile jour après jour**, sans erreur ni warning — corruption
+silencieuse. Sur feuillu, seul `x[1]` était retenu.
+
+[`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
+convertit désormais tout vecteur per-UGF en liste nommée par id, et
+**refuse** une longueur qui n’est ni 1 ni `nrow(units)`. La doc
+annonçait déjà ce contrat ; le code ne l’honorait pas.
+
+#### Notes
+
+- **Le TWI ne dérive pas l’`ewm`** (spec 035, décision D1) : indice de
+  convergence latérale, pas capacité de stockage ; BILJOU est un modèle
+  1D ; et le TWI alimente **déjà**
+  [`indicateur_r3_secheresse()`](https://pobsteta.github.io/nemeton/reference/indicateur_r3_secheresse.md)
+  en direct — l’y faire entrer par `ewm → BILJOU → njstress → R3`
+  créerait un double comptage.
+- **PTF Saxton & Rawls plutôt que Tóth et al. 2015** : cette dernière
+  n’est pas en forme close (modèles `euptf`), pour un gain non mesuré à
+  250 m.
+- ⚠ Plusieurs transcriptions en ligne de Saxton & Rawls donnent `-0.002`
+  au lieu de `-0.02` et `-0.15` au lieu de `-0.015`. Ces variantes
+  produisent une capacité au champ **négative** pour un sable. Les
+  constantes publiées sont verrouillées par un test dédié.
+
+Vérifié de bout en bout avec le vrai moteur : `njstress` passe de 1 à 3
+valeurs distinctes sur 3 UGF, et l’UGF au sol/LAI de référence reproduit
+exactement la valeur v0.146.x.
+
 ## nemeton 0.146.5 (2026-07-09)
 
 #### Fixed — grille microclimf bornée mémoire (OOM après le PAI)

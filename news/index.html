@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.146.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.147.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,59 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.147.2" id="nemeton-01472-2026-07-10">nemeton 0.147.2 (2026-07-10)<a class="anchor" aria-label="anchor" href="#nemeton-01472-2026-07-10"></a></h2>
+<div class="section level4">
+<h4 id="fixed--ci-rouge-après-la-v01470-tests--pkgdown-0-147-2">Fixed — CI rouge après la v0.147.0 (tests + pkgdown)<a class="anchor" aria-label="anchor" href="#fixed--ci-rouge-apr%C3%A8s-la-v01470-tests--pkgdown-0-147-2"></a></h4>
+<p>Deux oublis de la spec 035, sans effet sur le code du package :</p>
+<ul><li>
+<strong><code>test-regen-per-unit.R</code></strong> : le test « accepts a path to a raster » écrit un GeoTIFF, or certains runners GitHub Actions ont une anomalie <code>terra</code> sur <code>writeRaster(crs = "EPSG:nnnn")</code>. Le repo a un garde-fou dédié (<code>skip_if_terra_write_broken()</code>, <code>helper-fast-raster.R</code>) ; le test l’ignorait et faisait échouer le job <code>tests</code> (et <code>coverage</code>). Il l’appelle désormais : skip sur runner cassé, exécution complète sur runtime sain.</li>
+<li>
+<strong><code>_pkgdown.yml</code></strong> : les trois fonctions exportées par la v0.147.0 (<code>awc_saxton_rawls</code>, <code>ewm_depuis_soilgrids</code>, <code>lai_max_depuis_pai</code>) n’étaient pas référencées dans l’index de la doc, ce qui fait échouer <code>build_reference_index()</code>. Ajoutées à la section reGénération.</li>
+</ul><p>Aucun changement de comportement. <code>R-CMD-check</code> et <code>version-consistency</code> passaient déjà.</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.147.1" id="nemeton-01471-2026-07-10">nemeton 0.147.1 (2026-07-10)<a class="anchor" aria-label="anchor" href="#nemeton-01471-2026-07-10"></a></h2>
+<div class="section level4">
+<h4 id="fixed--build_foret_ancienne_mask--in-résolvait-vers-base-pas-terra-0-147-1">Fixed — <code>build_foret_ancienne_mask()</code> : <code>%in%</code> résolvait vers <code>base</code>, pas <code>terra</code>
+<a class="anchor" aria-label="anchor" href="#fixed--build_foret_ancienne_mask--in-r%C3%A9solvait-vers-base-pas-terra-0-147-1"></a></h4>
+<p><code>build_foret_ancienne_mask(source = &lt;SpatRaster&gt;, forest_class = )</code> échouait sur <code>unable to find an inherited method for function 'ifel' for signature test = "logical"</code>. Le package n’importe pas l’opérateur <code>%in%</code> de <strong>terra</strong> : un <code>r %in% forest_class</code> non préfixé résolvait donc vers <code>base::</code>%in%`<code>(fondé sur</code>match()<code>), qui renvoie un</code>logical<code>et non un</code>SpatRaster<code>—</code>terra::ifel()` n’a pas de méthode pour ça.</p>
+<p>L’appel est désormais explicitement préfixé (<code>terra::</code>%in%<code>(r, forest_class)</code>), comme le reste du fichier. Les trois tests de <code>test-foret-ancienne-mask.R</code> qui erroraient s’exécutent enfin (18 pass / 3 erreurs → <strong>25 pass / 0 erreur</strong>).</p>
+<p>Bug préexistant, indépendant de la spec 035 ; surfacé par la suite complète lancée pour la v0.147.0.</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.147.0" id="nemeton-01470-2026-07-10">nemeton 0.147.0 (2026-07-10)<a class="anchor" aria-label="anchor" href="#nemeton-01470-2026-07-10"></a></h2>
+<div class="section level4">
+<h4 id="added--bilan-hydrique-spatialisé-par-ugf-spec-0-147-0">Added — bilan hydrique spatialisé par UGF (spec 035)<a class="anchor" aria-label="anchor" href="#added--bilan-hydrique-spatialis%C3%A9-par-ugf-spec-0-147-0"></a></h4>
+<p><code><a href="../reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> renvoyait <strong>la même valeur pour toutes les UGF</strong> (constaté sur 30 UGF réelles : <code>njstress</code> = 142,5 j partout). Cause : BILJOU n’a aucun terme spatial — <code>biljou_run_grid()</code> ne recopie <code>lon</code>/<code>lat</code> qu’en métadonnées, et <code>biljou_run()</code> est une fonction pure de <code>(meteo, soil, lai_max, forest_type, …)</code>. Or le sol était uniforme, le <code>lai_max</code> scalaire, et la maille SAFRAN fait 8 km. Trois nouvelles fonctions exportées rendent le sol et le LAI variables par UGF — les deux seules variables qui <em>doivent</em> varier à l’échelle de gestion.</p>
+<ul><li>
+<strong><code>awc_saxton_rawls(clay, sand, om, coarse)</code></strong> — fonction de pédotransfert de Saxton &amp; Rawls (2006), R pur, sans dépendance. Réserve utile volumique (m³/m³) à partir de la texture et de la matière organique, corrigée des éléments grossiers.</li>
+<li>
+<strong><code>ewm_depuis_soilgrids(units, rooting_depth_cm, …)</code></strong> — <code>ewm</code> (mm) par UGF, intégrée sur la profondeur d’enracinement depuis SoilGrids 250 m (ISRIC, CC-BY-4.0). Dégradation propre (<code>NULL</code>) si la source est injoignable.</li>
+<li>
+<strong><code>lai_max_depuis_pai(units, pai, probs = 0.9)</code></strong> — <code>lai_max</code> par UGF depuis le PAI LiDAR caché (<code>pai.tif</code>). Percentile 90 et non moyenne : <code>biljou_lai()</code> traite <code>lai_max</code> comme le <strong>plateau</strong> de la phénologie, qu’une moyenne zonale sous-estime.</li>
+<li>
+<strong><code>build_biljou_soil(source = "soilgrids")</code></strong> — retourne désormais une liste d’objets <code>biljou_soil</code> nommée par id d’UGF. <code>source = "uniform"</code> (défaut) reproduit le comportement v0.146.x.</li>
+<li>
+<strong>30 sources <code>soilgrids_{clay,sand,silt,soc,cfvo}_{profondeur}</code></strong> déclarées dans <code>inst/datasources/FR.json</code> (VRT tuilés <code>files.isric.org</code>, facteurs d’échelle vérifiés dans la FAQ ISRIC — <code>soc</code> est en <strong>dg/kg</strong>, donc <code>%OC = brut/100</code>).</li>
+</ul></div>
+<div class="section level4">
+<h4 id="fixed--garde-fou-per-ugf--un-vecteur-nest-pas-une-liste-0-147-0">Fixed — garde-fou per-UGF : un vecteur n’est pas une liste<a class="anchor" aria-label="anchor" href="#fixed--garde-fou-per-ugf--un-vecteur-nest-pas-une-liste-0-147-0"></a></h4>
+<p><code>biljou_run_grid()</code> n’indexe que les <strong>listes</strong> (<code>as_fun()</code> : <code>is.list(x) &amp;&amp; !is.data.frame(x) &amp;&amp; !inherits(x, "biljou_soil")</code>). Un vecteur numérique tombait dans la branche <code>function(id) x</code> et partait <strong>entier</strong> à chaque point. Vérifié : sur résineux, <code>biljou_lai()</code> produit alors une série de <code>n × ndays</code> valeurs et le LAI des UGF <strong>défile jour après jour</strong>, sans erreur ni warning — corruption silencieuse. Sur feuillu, seul <code>x[1]</code> était retenu.</p>
+<p><code><a href="../reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> convertit désormais tout vecteur per-UGF en liste nommée par id, et <strong>refuse</strong> une longueur qui n’est ni 1 ni <code>nrow(units)</code>. La doc annonçait déjà ce contrat ; le code ne l’honorait pas.</p>
+</div>
+<div class="section level4">
+<h4 id="notes-0-147-0">Notes<a class="anchor" aria-label="anchor" href="#notes-0-147-0"></a></h4>
+<ul><li>
+<strong>Le TWI ne dérive pas l’<code>ewm</code></strong> (spec 035, décision D1) : indice de convergence latérale, pas capacité de stockage ; BILJOU est un modèle 1D ; et le TWI alimente <strong>déjà</strong> <code><a href="../reference/indicateur_r3_secheresse.html">indicateur_r3_secheresse()</a></code> en direct — l’y faire entrer par <code>ewm → BILJOU → njstress → R3</code> créerait un double comptage.</li>
+<li>
+<strong>PTF Saxton &amp; Rawls plutôt que Tóth et al. 2015</strong> : cette dernière n’est pas en forme close (modèles <code>euptf</code>), pour un gain non mesuré à 250 m.</li>
+<li>⚠ Plusieurs transcriptions en ligne de Saxton &amp; Rawls donnent <code>-0.002</code> au lieu de <code>-0.02</code> et <code>-0.15</code> au lieu de <code>-0.015</code>. Ces variantes produisent une capacité au champ <strong>négative</strong> pour un sable. Les constantes publiées sont verrouillées par un test dédié.</li>
+</ul><p>Vérifié de bout en bout avec le vrai moteur : <code>njstress</code> passe de 1 à 3 valeurs distinctes sur 3 UGF, et l’UGF au sol/LAI de référence reproduit exactement la valeur v0.146.x.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.146.5" id="nemeton-01465-2026-07-09">nemeton 0.146.5 (2026-07-09)<a class="anchor" aria-label="anchor" href="#nemeton-01465-2026-07-09"></a></h2>
 <div class="section level4">

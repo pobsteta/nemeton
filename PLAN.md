@@ -1729,6 +1729,62 @@ cœur).
 
 ## Journal
 
+### 2026-07-10 — v0.147.0 : bilan hydrique spatialisé par UGF (spec 035)
+
+**Symptôme.**
+[`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
+renvoyait la même chose pour les 30 UGF du projet `20260701_204501_ltcp`
+: `njstress` = 142,5 j et `deb_stress` = 122 partout ; `istress` et
+`rew_min` ne prenaient que **2** valeurs.
+
+**Diagnostic (lecture du moteur, pas supposition).** `biljou_run_grid()`
+ne recopie `lon`/`lat` qu’en métadonnées ; `biljou_run()` est une
+fonction pure de
+`(meteo, soil, lai_max, forest_type, budburst, leaf_fall)`. Le sol était
+uniforme
+([`build_biljou_soil()`](https://pobsteta.github.io/nemeton/reference/build_biljou_soil.md)
+→ un objet), le `lai_max` scalaire (défaut 5 : **le PAI calculé n’était
+jamais consommé par BILJOU**), et la maille SAFRAN fait 8 km — les 30
+centroïdes tombent dans **2** mailles, d’où les 2 valeurs. Les comptages
+entiers de jours absorbaient l’écart de 0,3 %.
+
+**Livré (cœur).**
+[`awc_saxton_rawls()`](https://pobsteta.github.io/nemeton/reference/awc_saxton_rawls.md)
+(PTF Saxton & Rawls 2006, R pur),
+[`ewm_depuis_soilgrids()`](https://pobsteta.github.io/nemeton/reference/ewm_depuis_soilgrids.md)
+(réserve utile mm/UGF, SoilGrids 250 m + PTF),
+[`lai_max_depuis_pai()`](https://pobsteta.github.io/nemeton/reference/lai_max_depuis_pai.md)
+(P90 du PAI, pas la moyenne — `biljou_lai()` traite `lai_max` comme un
+*plateau*), `build_biljou_soil(source = "soilgrids")` → liste d’objets
+`biljou_soil` nommée par id. 30 sources `soilgrids_*` dans `FR.json`.
+Rétrocompatibilité stricte (`source = "uniform"` + `lai_max` scalaire).
+
+**Fix de correction.** `biljou_run_grid()` n’indexe que les *listes* :
+un vecteur per-UGF partait **entier** à chaque point. Sur résineux,
+`rep(lai_max, ndays)` donnait une série de `n × ndays` valeurs et le LAI
+des UGF défilait jour après jour — sans erreur ni warning.
+[`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
+convertit désormais tout vecteur en liste nommée par id et refuse les
+longueurs invalides. La doc annonçait ce contrat ; le code ne l’honorait
+pas.
+
+**Décisions (spec 035).** D1 : le **TWI ne dérive pas l’`ewm`** —
+convergence latérale ≠ capacité de stockage, BILJOU est 1D, et le TWI
+alimente déjà R3 en direct (double comptage
+`ewm → BILJOU → njstress → R3`). D3 : Saxton & Rawls plutôt que Tóth
+2015 (non closed-form). ⚠ les transcriptions web de la PTF (`-0.002` /
+`-0.15`) sont **fausses** — capacité au champ négative pour un sable ;
+verrouillé par test.
+
+**Vérifié avec le vrai moteur** : `njstress` passe de 1 à 3 valeurs
+distinctes sur 3 UGF ; l’UGF de référence (`ewm=150`, `lai=5`) reproduit
+exactement la valeur v0.146.x. Bump mineur → **0.147.0**.
+
+> **Reste** : brief app `nemetonshiny` pour brancher `pai.tif` →
+> `lai_max` et `source = "soilgrids"` dans `service_regeneration.R` (le
+> garde-fou `is.null(lai_max) && is.null(grid)` y saute le LAI dès qu’un
+> LiDAR existe).
+
 - **2026-07-08** — reGénération : cache disque du PAI LiDAR livré côté
   app (`nemetonshiny@22713c93`, v0.100.14, cycle dev `0.100.14.9000`).
   Consomme `regen_sensibilite(pai_cache = ...)` du cœur 0.146.2. Clôt le
