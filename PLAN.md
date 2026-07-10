@@ -1780,10 +1780,56 @@ verrouillé par test.
 distinctes sur 3 UGF ; l’UGF de référence (`ewm=150`, `lai=5`) reproduit
 exactement la valeur v0.146.x. Bump mineur → **0.147.0**.
 
-> **Reste** : brief app `nemetonshiny` pour brancher `pai.tif` →
-> `lai_max` et `source = "soilgrids"` dans `service_regeneration.R` (le
-> garde-fou `is.null(lai_max) && is.null(grid)` y saute le LAI dès qu’un
-> LiDAR existe).
+**Brief app livré** —
+`specs/035-bilan-hydrique-spatialise/brief-nemetonshiny.md` (2026-07-10,
+aucun changement cœur). Trois chantiers, mêmes fichiers :
+
+- **B1 — brancher `ewm` et `lai_max` par UGF.** `service_regeneration.R`
+  : le garde-fou `is.null(lai_max) && is.null(grid)` saute le LAI dès
+  qu’un LiDAR existe, donc `pai.tif` n’est **jamais** consommé par
+  BILJOU (défaut 5) ; `.regen_lai_per_unit()` prend la moyenne au lieu
+  du plateau ;
+  [`build_biljou_soil()`](https://pobsteta.github.io/nemeton/reference/build_biljou_soil.md)
+  est appelé sans `source`. Plancher à relever : `nemeton (>= 0.147.0)`.
+- **B2 — restaurer la reGénération à l’ouverture d’un projet récent.**
+  `rv$result` n’est écrit que par `input$run` (l.402) et `engine_task`
+  (l.573) ; aucun des 7 observateurs de `mod_regeneration.R` n’écoute
+  `app_state$current_project`. Rouvrir un projet analysé n’affiche donc
+  que les contours d’UGF. Seule la carte de contexte E-OBS se restaure
+  (elle appelle `load_regeneration_precomputed()` en direct). Le
+  fast-path `precomputed` rend le rechargement gratuit — il faut juste
+  le déclencher. Alimente aussi `app_state$regeneration_result`, que
+  `mod_synthesis.R:1036` consomme pour l’IA.
+- **B3 — observabilité du moteur.** Les erreurs n’arrivent que dans
+  ntfy. Deux causes cumulées : (1) le moteur tourne dans un **autre
+  processus** (`ExtendedTask` → `future_promise` →
+  `plan("multisession")`), et le POST HTTP de `.ntfy_send()` est le
+  **seul canal** qui en sort — `cli_warn`/`message` restent sur le
+  stderr du worker ; (2) les erreurs moteur sont aplaties en chaînes
+  (`warnings <<- c(warnings, …)`, l.573/575/649) et `eng$warnings` n’est
+  lu que dans la branche `st == "success"` — si le worker meurt (OOM,
+  déjà vu 2×), tout est perdu ; et même en succès, `rv$warnings` est
+  **écrasé** l.575 par les warnings du re-run fast-path. Fix : journal
+  `engine.log` en ajout seul écrit par le worker (survit à l’OOM, comme
+  `engine_status.json` mais sans écrasement), relu dans les deux
+  branches, cumulé dans `rv$warnings`, relayé en `cli::` côté processus
+  principal. **À livrer en premier** : sans lui, B1 se valide à
+  l’aveugle (le repli SoilGrids → sol uniforme est silencieux).
+
+**Deux dettes app relevées au passage** (hors périmètre du brief, à
+trancher) :
+
+- `pc$eobs` **n’existe jamais** : `load_regeneration_precomputed()`
+  peuple `eobs_tx`/`eobs_rr`. Donc
+  `microclimate_detect_years(eobs = pc$eobs)` abort systématiquement dès
+  que l’utilisateur n’a pas fixé les deux années, et le `tryCatch` de
+  `run_regeneration()` empile un avertissement `detect_years:`. Fix :
+  exposer un `eobs` dérivé, ou passer `eobs = pc$eobs_tx`.
+
+- `nemeton.regeneration_states` est en **écriture seule** :
+  `db_save_regeneration()` insère (versionné), aucun `SELECT payload`
+  n’existe dans le repo. Soit la table sert (il manque
+  `db_load_regeneration()`), soit c’est un journal d’archive assumé.
 
 - **2026-07-08** — reGénération : cache disque du PAI LiDAR livré côté
   app (`nemetonshiny@22713c93`, v0.100.14, cycle dev `0.100.14.9000`).
