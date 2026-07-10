@@ -1782,7 +1782,10 @@ exactement la valeur v0.146.x. Bump mineur → **0.147.0**.
 
 **Brief app livré** —
 `specs/035-bilan-hydrique-spatialise/brief-nemetonshiny.md` (2026-07-10,
-aucun changement cœur). Trois chantiers, mêmes fichiers :
+aucun changement cœur). Quatre chantiers, mêmes fichiers. **B1 ✅ et B2
+✅ livrés côté app** (`nemetonshiny` v0.101.0, commit `0337ed96`,
+plancher `nemeton (>= 0.147.0)`) ; la dette `pc$eobs` est corrigée
+(`7f2e1816`). **Restent B3 et B4.**
 
 - **B1 — brancher `ewm` et `lai_max` par UGF.** `service_regeneration.R`
   : le garde-fou `is.null(lai_max) && is.null(grid)` saute le LAI dès
@@ -1815,16 +1818,21 @@ aucun changement cœur). Trois chantiers, mêmes fichiers :
   branches, cumulé dans `rv$warnings`, relayé en `cli::` côté processus
   principal. **À livrer en premier** : sans lui, B1 se valide à
   l’aveugle (le repli SoilGrids → sol uniforme est silencieux).
+- **B4 — lisibilité des overrides.** Le champ « LAI max » **reste**
+  (échappatoire hors LiDAR/S2, scénario sylvicole, LAI mesuré NDP 3) —
+  il est déjà un override optionnel (`value = NA` → `NULL`). Mais rien à
+  l’écran ne distingue un `lai_max` par UGF d’un scalaire : afficher
+  médiane + étendue du LAI/`ewm` dérivés (B4.a), et regrouper
+  `lai_max`/`ewm`/`rooting_depth_cm` dans une section « Expert »
+  repliée, même sémantique *vide = dérivé, rempli = forcé* (B4.b). B4.a
+  rend le repli SoilGrids visible **sans** attendre B3.
 
 **Deux dettes app relevées au passage** (hors périmètre du brief, à
 trancher) :
 
-- `pc$eobs` **n’existe jamais** : `load_regeneration_precomputed()`
-  peuple `eobs_tx`/`eobs_rr`. Donc
-  `microclimate_detect_years(eobs = pc$eobs)` abort systématiquement dès
-  que l’utilisateur n’a pas fixé les deux années, et le `tryCatch` de
-  `run_regeneration()` empile un avertissement `detect_years:`. Fix :
-  exposer un `eobs` dérivé, ou passer `eobs = pc$eobs_tx`.
+- ~~`pc$eobs` n’existe jamais~~ — **corrigé côté app**
+  (`nemetonshiny@7f2e1816`, `detect_years` reçoit désormais la série
+  `eobs_tx`).
 
 - `nemeton.regeneration_states` est en **écriture seule** :
   `db_save_regeneration()` insère (versionné), aucun `SELECT payload`
