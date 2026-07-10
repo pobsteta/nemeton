@@ -31,6 +31,31 @@ expire_lock <- function(con, project_id, seconds = 999) {
   DBI::dbExecute(con, sql, params = list(project_id))
 }
 
+# --- constructeurs SQL par backend (fonctions pures, pas de DB) ---
+# Les branches PostgreSQL ne s'exécutent pas sur le runner CI (pas de serveur
+# PG) ; ce sont des fonctions pures dispatchées par `inherits(con, ...)`, donc
+# testables avec un stub de classe.
+
+test_that("SQL builders dispatch on the connection backend", {
+  pg     <- structure(list(), class = "PqConnection")
+  sqlite <- structure(list(), class = "SQLiteConnection")
+
+  expect_true(.lock_is_pg(pg))
+  expect_false(.lock_is_pg(sqlite))
+
+  expect_equal(.lock_now_sql(pg), "NOW()")
+  expect_equal(.lock_now_sql(sqlite), "CURRENT_TIMESTAMP")
+
+  expect_match(.lock_stale_sql(pg, 120), "make_interval\\(secs => 120")
+  expect_match(.lock_stale_sql(sqlite, 120), "datetime\\('now', '-120.*seconds'\\)")
+})
+
+test_that(".lock_na_chr normalises label values", {
+  expect_true(is.na(.lock_na_chr(NA)))
+  expect_true(is.na(.lock_na_chr(character(0))))
+  expect_equal(.lock_na_chr("Alice"), "Alice")
+})
+
 # --- validation d'arguments (aucune DB requise au-delà d'une con SQLite) ---
 
 test_that("project_lock functions reject bad arguments", {
