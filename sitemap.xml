@@ -290,6 +290,10 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/print.nemeton_units.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/probe_ign_lidar_tile.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/probe_ign_lidar_tiles.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/project_lock_acquire.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/project_lock_heartbeat.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/project_lock_release.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/project_lock_status.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/prune_orphan_zone_caches.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/qgis_export.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/qgis_import.html</loc></url>

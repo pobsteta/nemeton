@@ -512,6 +512,18 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`db_migrate()`](https://pobsteta.github.io/nemeton/reference/db_migrate.md)
   : Apply pending SQL migrations
 
+- [`project_lock_acquire()`](https://pobsteta.github.io/nemeton/reference/project_lock_acquire.md)
+  : Acquire the edit lock on a project
+
+- [`project_lock_heartbeat()`](https://pobsteta.github.io/nemeton/reference/project_lock_heartbeat.md)
+  : Refresh the heartbeat on a held project lock
+
+- [`project_lock_release()`](https://pobsteta.github.io/nemeton/reference/project_lock_release.md)
+  : Release a project lock
+
+- [`project_lock_status()`](https://pobsteta.github.io/nemeton/reference/project_lock_status.md)
+  : Inspect the lock state of a project
+
 - [`delete_knowledge_document()`](https://pobsteta.github.io/nemeton/reference/delete_knowledge_document.md)
   : Delete a document and its chunks from the knowledge base
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.147.3.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.148.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,23 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.148.0" id="nemeton-01480-2026-07-10">nemeton 0.148.0 (2026-07-10)<a class="anchor" aria-label="anchor" href="#nemeton-01480-2026-07-10"></a></h2>
+<div class="section level4">
+<h4 id="added--verrou-de-projet-pour-usage-serveur-multi-utilisateurs-0-148-0">Added — verrou de projet pour usage serveur multi-utilisateurs<a class="anchor" aria-label="anchor" href="#added--verrou-de-projet-pour-usage-serveur-multi-utilisateurs-0-148-0"></a></h4>
+<p>Nouvelle API cœur (brief <code>brief-core-project-lock</code>), consommée par <code>nemetonshiny</code> déployé en serveur multi-utilisateurs : <strong>un projet ouvert est verrouillé en édition sur un seul utilisateur ; les autres l’ouvrent en lecture seule</strong>. Quatre fonctions exportées, prenant une connexion <code>con</code> fournie par l’appelant, fonctionnant sur PostgreSQL (cible serveur) comme sur SQLite (local/test) :</p>
+<ul><li>
+<strong><code>project_lock_acquire(con, project_id, holder_id, holder_label, ttl_seconds)</code></strong> — prend le verrou si le projet est libre, déjà tenu par le même <code>holder_id</code> (ré-entrant), ou périmé (heartbeat plus vieux que <code>ttl_seconds</code> → vol, signalé par <code>stolen = TRUE</code>). Refus si un autre détient un verrou frais. La décision tourne dans une transaction avec verrou de ligne (<code>FOR UPDATE</code> sur PostgreSQL) : deux acquisitions concurrentes sur un projet libre → exactement un gagnant.</li>
+<li>
+<strong><code>project_lock_heartbeat(con, project_id, holder_id)</code></strong> — rafraîchit le heartbeat si <code>holder_id</code> tient toujours le verrou.</li>
+<li>
+<strong><code>project_lock_release(con, project_id, holder_id)</code></strong> — libère si détenteur ; idempotent.</li>
+<li>
+<strong><code>project_lock_status(con, project_id, ttl_seconds)</code></strong> — <code>NULL</code> si libre, sinon détenteur + <code>stale</code> (distingue libre / tenu-frais / tenu-périmé).</li>
+</ul><p>Verrou <strong>matérialisé en table</strong> (<code>project_lock</code>, migration 0008) et non <code>pg_advisory_lock</code> : l’app ouvre/ferme sa connexion par opération, un advisory lock lié à la connexion serait relâché aussitôt. La péremption est évaluée à la lecture contre l’horloge de la base (<code>now() - heartbeat_at &gt; ttl</code>) — aucune colonne d’expiration, aucun job de nettoyage.</p>
+<p>Le numéro de release est à reporter dans le plancher <code>Imports</code> de <code>nemetonshiny</code> avant câblage de l’API.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.147.3" id="nemeton-01473-2026-07-10">nemeton 0.147.3 (2026-07-10)<a class="anchor" aria-label="anchor" href="#nemeton-01473-2026-07-10"></a></h2>
 <div class="section level4">

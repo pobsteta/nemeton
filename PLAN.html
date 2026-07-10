@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.147.3.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.148.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -870,6 +870,16 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-10--v01480--verrou-de-projet-multi-utilisateurs-api-cœur">2026-07-10 — v0.148.0 : verrou de projet multi-utilisateurs (API cœur)<a class="anchor" aria-label="anchor" href="#id_2026-07-10--v01480--verrou-de-projet-multi-utilisateurs-api-c%C5%93ur"></a></h3>
+<p><strong>Demande app</strong> (<code>brief-core-project-lock</code>) : <code>nemetonshiny</code> va tourner déployé en serveur multi-utilisateurs. Décision produit — <strong>un projet ouvert est verrouillé en édition sur un seul utilisateur, les autres l’ouvrent en lecture seule</strong>. Le cœur fournit l’API (règle #1 : aucun accès données dans l’app), l’app câble.</p>
+<p><strong>Livré</strong> : <code>R/project_lock.R</code> — <code>project_lock_acquire/heartbeat/release/status</code>, migration <code>0008_project_lock</code> (pg + sqlite). Verrou <strong>en table</strong>, pas <code>pg_advisory_lock</code> (l’app ferme sa connexion par opération → un advisory lock serait relâché aussitôt). Heartbeat périodique + péremption par TTL évaluée à la lecture contre l’horloge DB. Ré-entrance, vol de verrou périmé (<code>stolen</code>), transaction + <code>FOR UPDATE</code> (PostgreSQL) pour l’exclusion sous concurrence.</p>
+<p><strong>Deux écarts au brief, assumés</strong> : - Table <code>project_lock</code> <strong>non qualifiée</strong> (le brief écrivait <code>nemeton.project_lock</code>), car aucune table du repo n’utilise de schéma <code>nemeton.</code> — le code fait foi. - <code><a href="reference/project_lock_status.html">project_lock_status()</a></code> retourne <code>NULL</code> <strong>seulement si libre</strong> (le brief disait « NULL si libre ou périmé »), sinon le détenteur + <code>stale</code>. C’est ce qu’exige le test « distingue libre / tenu-frais / tenu-périmé » : un <code>NULL</code> sur périmé empêcherait de distinguer périmé de libre.</p>
+<p><strong>Piège rencontré et corrigé</strong> : RSQLite lie une liste de paramètres non-nommés dans l’<strong>ordre d’apparition textuelle</strong> des placeholders, pas par leur numéro. Un <code>$2</code> (ttl / SET) placé avant <code>$1</code> (WHERE) recevait donc la mauvaise valeur → requêtes silencieusement vides. Corrigé : TTL interpolé (nombre validé), et tous les <code>$n</code> renumérotés dans l’ordre textuel (satisfait aussi PostgreSQL, qui lie par numéro). 52 tests (SQLite en mémoire + fichier partagé pour la visibilité inter-connexions + intégration PostgreSQL). Bump mineur → <strong>0.148.0</strong>.</p>
+<blockquote>
+<p><strong>Reste app</strong> : relever le plancher <code>Imports: nemeton (&gt;= 0.148.0)</code> et câbler (acquire à l’ouverture <code>mod_home</code>, heartbeat <code>invalidateLater</code>, release sur <code>onSessionEnded</code>, lecture seule + bandeau si <code>ok = FALSE</code>).</p>
+</blockquote>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-10--v01473--era5-rayonnement-négatif-trouvé-par-le-run-réel">2026-07-10 — v0.147.3 : ERA5, rayonnement négatif (trouvé par le run réel)<a class="anchor" aria-label="anchor" href="#id_2026-07-10--v01473--era5-rayonnement-n%C3%A9gatif-trouv%C3%A9-par-le-run-r%C3%A9el"></a></h3>
 <p><strong>Validation terrain de la spec 035 : concluante.</strong> Run sur <code>20260701_204501_ltcp</code> (30 UGF, cache PAI). <code>njstress</code> passe de <strong>1 valeur distincte</strong> (142,5 j partout) à <strong>≥ 10</strong> (145,5 → 159) ; <code>deb_stress</code> de 1 (122) à une plage 111–118 ; <code>rew_min</code> de 2 valeurs à un continuum. Le sol SoilGrids et le <code>lai_max</code> P90 portent bien la variance inter-UGF, comme prévu par la spec.</p>
