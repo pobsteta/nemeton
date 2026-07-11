@@ -211,15 +211,16 @@ INDICATOR_FAMILIES <- list(
     name_en = "Risks & Resilience",
     icon = "exclamation-triangle-fill",
     color = "#DC143C",
-    indicators = c("R1", "R2", "R3", "R4", "R5", "R6"),
-    column_names = c("indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse", "indicateur_r4_abroutissement", "indicateur_r5_deperissement", "indicateur_r6_sensibilite"),
+    indicators = c("R1", "R2", "R3", "R4", "R5", "R6", "R7"),
+    column_names = c("indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse", "indicateur_r4_abroutissement", "indicateur_r5_deperissement", "indicateur_r6_sensibilite", "indicateur_r7_gel"),
     indicator_labels = list(
       R1 = list(fr = "Risque incendie", en = "Fire Risk"),
       R2 = list(fr = "Risque temp\u00eate", en = "Storm Risk"),
       R3 = list(fr = "Risque s\u00e9cheresse", en = "Drought Risk"),
       R4 = list(fr = "Risque abroutissement", en = "Browsing Risk"),
       R5 = list(fr = "D\u00e9p\u00e9rissement (FORDEAD)", en = "Dieback (FORDEAD)"),
-      R6 = list(fr = "Sensibilit\u00e9 microclimatique", en = "Microclimate sensitivity")
+      R6 = list(fr = "Sensibilit\u00e9 microclimatique", en = "Microclimate sensitivity"),
+      R7 = list(fr = "Risque de gel tardif", en = "Late-frost Risk")
     ),
     indicator_tooltips = list(
       R1 = list(
@@ -245,6 +246,10 @@ INDICATOR_FAMILIES <- list(
       R6 = list(
         fr = "Sensibilité du microsite à une année chaude (Δ stress entre un été canicule et un été moyen, canopée figée). Microclimf, augmenté LiDAR. Score élevé = peu sensible (plus résilient). Fiable en relatif entre parcelles.",
         en = "Microsite sensitivity to a hot year (stress change between a heatwave and an average summer, canopy fixed). Microclimf, LiDAR-augmented. High score = low sensitivity (more resilient). Reliable in relative ranking."
+      ),
+      R7 = list(
+        fr = "Risque de gel tardif : fréquence des gelées printanières après débourrement (Tmin < seuil), déterminant de l'échec de régénération (chêne, hêtre, douglas). Série Tmin downscalée meteoland/SAFRAN. NA sans donnée Tmin. Score élevé = faible risque (peu de gel).",
+        en = "Late-frost risk: frequency of spring frosts after budburst (Tmin below threshold), a driver of regeneration failure (oak, beech, Douglas fir). meteoland/SAFRAN-downscaled Tmin series. NA without Tmin data. High score = low risk (few frosts)."
       )
     )
   ),

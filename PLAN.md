@@ -1307,6 +1307,39 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-11 — v0.150.0 : R7 gel tardif + rail SAFRAN du moteur meteoland (P4)
+
+Deux briques du chantier microclimat P4 (`brief-meteoland-safran-p4`).
+
+**R7 — gel tardif** (`indicateur_r7_gel`, famille R étendue R1…R7). Décision
+Pascal : R5 (dépérissement) et R6 (sensibilité) étant pris, le gel va en **R7**
+(pas R6). Croise une série Tmin journalière × débourrement → gelées printanières
+post-débourrement. Conditionnel (NA/skip sans `tmin`), sens haut = faible risque
+(pas d'inversion, ≠ R5). Testé avec Tmin synthétique (UGF exposée < UGF douce,
+gel avant débourrement ignoré, skip sans donnée). CLAUDE.md : ligne R mise à jour
+(R6 + R7 y manquaient).
+
+**`build_safran_stations()`** — répond à la question « meteoland a-t-il des
+stations ? » : **SAFRAN suffit**. Réanalyse ~8 km → chaque maille = pseudo-station
+(série + altitude MNT), acquise via `.biljou_forcing_safran` **déjà écrit pour
+BILJOU** (pas de source neuve). Testé par mock du `fetch`.
+
+**Choix assumé sur meteoland** : l'interpolation meteoland elle-même **n'est pas
+écrite**. meteoland n'est ni exécutable en CI ni ici de façon significative
+(données synthétiques ≠ structure attendue). Après la leçon gstat (v0.149.0 : du
+code krigeage non exécutable localement avait 2 bugs, rattrapés par le runner CoV
+qui, LUI, installe gstat), je refuse d'expédier des appels d'API meteoland que je
+ne peux valider nulle part. Le moteur `engine = "meteoland"` construit donc les
+stations, borne la densité, puis **retombe proprement sur KED** (`engine_fallback`),
+avec l'interpolation en TODO explicite pour une session sur données réelles
+(patron microclimf). `meta` gagne le slot `cv`.
+
+> **Reste P4** : l'interpolation meteoland (create_meteo_interpolator →
+> interpolate_data par année → summarise → stack → reduce), à écrire et valider
+> sur données réelles chez Pascal, plus l'extension SAFRAN Tmin/Tmax (lire les
+> noms exposés par la collection EDR `safran-isba`). Câblage app R7 (radar) +
+> carte gel : brief app séparé.
+
 ### 2026-07-11 — v0.149.0 : downscaling E-OBS en raster fin (`eobs_downscale`)
 
 **Demande app** (`brief-nemeton-eobs-downscaling`) : la carte « Contexte régional

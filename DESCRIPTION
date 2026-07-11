@@ -1,7 +1,7 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 0.149.0.9000
+Version: 0.150.0
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
@@ -50,6 +50,7 @@ Suggests:
     gstat (>= 2.1.0),
     automap (>= 1.1.9),
     meteoland (>= 2.2.0),
+    stars (>= 0.6.0),
     whitebox (>= 2.3.0),
     fasterRaster (>= 8.0.0),
     data.table (>= 1.14.0),

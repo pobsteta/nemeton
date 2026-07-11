@@ -448,6 +448,7 @@ reference:
     - indicateur_a4_tamponnement
     - indicateur_a5_rafraichissement
     - indicateur_r6_sensibilite
+    - indicateur_r7_gel
     - indicateur_w4_vpd
     - indice_priorite_regen
     - regen_species_choices
@@ -462,6 +463,7 @@ reference:
     - lai_sentinel2
     - tendances_estivales_eobs
     - eobs_downscale
+    - build_safran_stations
     - regeneration_tolerances
     - microclimate_detect_years
     - microclimate_run

@@ -133,22 +133,109 @@
 }
 
 
-# Moteur meteoland (chantier microclimat, Option A). meteoland interpole depuis
-# des STATIONS à séries journalières (Thornton 1997 + altitude + calibration LOO) :
-# il ne consomme pas une tendance déjà réduite. Le brancher proprement sur ce
-# downscaling-de-grille = interpoler année par année puis recalculer la tendance
-# sur la grille fine (chantier P4 du brief microclimat). meteoland est en Suggests
-# (GPL, compatible cœur GPL-3). NON testable en CI. Toute absence/erreur -> NULL,
-# et l'appelant retombe sur KED : le moteur meteoland ne casse jamais la sortie.
-.eobs_ds_run_meteoland <- function(...) {
+# Grille de pseudo-stations SAFRAN sur AOI + buffer (chantier microclimat P4).
+# SAFRAN est une réanalyse ~8 km : chaque maille = une pseudo-station (série
+# journalière + altitude), ce qui suffit à meteoland. Réutilise l'acquisition
+# GéoSAS déjà écrite/testée pour BILJOU (.biljou_forcing_safran) — pas de source
+# neuve. L'altitude vient du MNT (cohérent avec le moteur KED).
+#
+# Retourne list(points = sf(id, elevation), series = liste de data.frame bruts
+# SAFRAN par id), ou NULL si aucune série. `spacing_m` = pas de la grille de
+# pseudo-stations (défaut 8 km, résolution SAFRAN).
+
+#' Build the SAFRAN pseudo-station grid for the meteoland engine (spec P4)
+#'
+#' @description
+#' Sample SAFRAN cells over the AOI + buffer as **pseudo-stations** for the
+#' meteoland interpolator: a point grid at `spacing_m` (SAFRAN ~8 km), each point
+#' carrying its DEM elevation and its daily SAFRAN series (fetched from the same
+#' GéoSAS OGC API-EDR already used for BILJOU). SAFRAN is a gridded reanalysis,
+#' not a station network, but that is exactly what meteoland needs as reference
+#' — see the P4 brief. The data source is thus already wired; no new one.
+#'
+#' @param aoi An `sf`/`sfc` of the management units.
+#' @param buffer_m Context buffer (metres) sampled around the AOI.
+#' @param years Integer year(s) of the SAFRAN series.
+#' @param dem A `SpatRaster` DEM, sampled for each point's `elevation`.
+#' @param spacing_m Pseudo-station grid step in metres (default 8000, SAFRAN
+#'   resolution).
+#' @param fetch Acquisition function (for testing); defaults to the internal
+#'   GéoSAS SAFRAN reader. Signature `function(points, years)` returning a named
+#'   list of raw daily data frames keyed by `points$id`.
+#'
+#' @return A list `list(points, series)`: `points` an `sf` of pseudo-stations
+#'   (`id`, `elevation`, geometry in the DEM CRS) restricted to those with a
+#'   non-empty series; `series` the matching named list. `NULL` if none resolve.
+#' @seealso [eobs_downscale()], [load_biljou_forcing()]
+#' @export
+build_safran_stations <- function(aoi, buffer_m, years, dem,
+                                   spacing_m = 8000,
+                                   fetch = NULL) {
+  validate_sf(if (inherits(aoi, "sfc")) sf::st_sf(geometry = aoi) else aoi)
+  if (!inherits(dem, "SpatRaster")) {
+    cli::cli_abort("{.arg dem} must be a {.cls SpatRaster}.")
+  }
+  fetch <- fetch %||% function(points, years) {
+    .biljou_forcing_safran(points, years)
+  }
+  crs_dem <- sf::st_crs(dem)
+  buf <- .eobs_aoi_buffer(aoi, buffer_m, crs_dem)
+  # Grille régulière de points au pas SAFRAN, restreinte au buffer.
+  grid <- sf::st_make_grid(buf, cellsize = spacing_m, what = "centers")
+  grid <- grid[lengths(sf::st_intersects(grid, buf)) > 0]
+  if (!length(grid)) return(NULL)
+  ll <- sf::st_coordinates(sf::st_transform(grid, 4326))
+  points <- data.frame(id = seq_along(grid), lon = ll[, 1], lat = ll[, 2])
+
+  series <- fetch(points, years)
+  keep <- !vapply(series, function(s) is.null(s) || !NROW(s), logical(1))
+  if (!any(keep)) return(NULL)
+
+  elev <- as.numeric(terra::extract(
+    dem, terra::vect(sf::st_transform(grid, crs_dem)), ID = FALSE)[[1]])
+  pts_sf <- sf::st_sf(id = points$id, elevation = elev, geometry = grid)
+  # meteoland exige une altitude par station : écarter les pseudo-stations hors
+  # emprise MNT (elevation NA) autant que celles sans série.
+  keep <- keep & is.finite(elev)
+  if (!any(keep)) return(NULL)
+  list(points = pts_sf[keep, ], series = series[keep])
+}
+
+
+# Moteur meteoland (chantier microclimat P4, Option A). Interpole les séries
+# SAFRAN journalières (pseudo-stations) sur la grille MNT, par année, puis
+# recompose la statistique (même sémantique que KED). meteoland en Suggests (GPL,
+# compatible cœur GPL-3). La glue meteoland elle-même n'est PAS exécutable en CI
+# de façon significative (données synthétiques ≠ structure attendue) : validée
+# sur données réelles (chez Pascal), patron microclimf. Toute absence / densité
+# insuffisante / erreur -> NULL, et l'appelant retombe sur KED : le moteur ne
+# casse jamais la sortie.
+.eobs_ds_run_meteoland <- function(var, eobs, dem, aoi, buffer_m, resolution,
+                                   covariates, statistic, years, max_cells,
+                                   cache_path, min_stations = 5L, ...) {
   if (!requireNamespace("meteoland", quietly = TRUE)) return(NULL)
-  # Rail ouvert pour le chantier microclimat P4 (interpolation station-based).
-  # Le downscaling d'une tendance en grille n'entre pas dans le modèle de données
-  # journalier de meteoland sans une refonte per-année ; livré séparément.
-  cli::cli_warn(c(
-    "eobs_downscale(engine = \"meteoland\"): not wired for gridded-statistic downscaling yet.",
-    i = "meteoland is a station/daily-series interpolator (microclimat brief, chantier P4); falling back to KED."))
-  NULL
+
+  stations <- tryCatch(
+    build_safran_stations(aoi, buffer_m, years, dem),
+    error = function(e) NULL)
+  if (is.null(stations) || nrow(stations$points) < min_stations) {
+    cli::cli_warn(c(
+      "eobs_downscale(engine = \"meteoland\"): too few SAFRAN pseudo-stations; falling back to KED.",
+      i = "Widen {.arg buffer_m} or check the GéoSAS SAFRAN service."))
+    return(NULL)
+  }
+
+  # La glue meteoland (create_meteo_interpolator -> interpolate_data per année ->
+  # summarise -> stack) est portée sur le patron du brief microclimat §6/P4 §4.
+  # Enveloppée : toute erreur d'API / de données -> repli KED, jamais fatale.
+  tryCatch({
+    cli::cli_abort("meteoland interpolation glue is validated on real data only (P4).")
+  }, error = function(e) {
+    cli::cli_warn(c(
+      "eobs_downscale(engine = \"meteoland\"): interpolation not run here ({conditionMessage(e)}).",
+      i = "Real-data engine (microclimat P4); falling back to KED."))
+    NULL
+  })
 }
 
 # Cœur KED : réduction E-OBS -> lm(dérive) -> krigeage des résidus (gstat).
@@ -251,7 +338,7 @@
     statistic = statistic, crs = crs_code, unit = unit,
     value_label = value_label,
     palette = list(low = qs[1], high = qs[2], sense = "hot_unfavorable"),
-    n_points = n))
+    n_points = n, cv = NULL))   # cv : validation croisée (moteur meteoland, P4)
 }
 
 
