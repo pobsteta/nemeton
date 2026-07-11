@@ -43,7 +43,7 @@ Règle : les dépendances vont toujours vers nemeton (cœur). Jamais d'inverse. 
 | F | Fertilité des sols | F1 (fertilité), F2 (érosion) |
 | L | Paysage | L1 (sylvosphère), L2 (fragmentation) |
 | T | Dynamique temporelle | T1 (ancienneté), T2 (changement), T3 (coupes rases, SUFOSAT-conditionné — spec 030) |
-| R | Risques & Résilience | R1 (feu), R2 (tempête), R3 (sécheresse), R4 (abroutissement), R5 (dépérissement, FORDEAD-conditionné — spec 008) |
+| R | Risques & Résilience | R1 (feu), R2 (tempête), R3 (sécheresse), R4 (abroutissement), R5 (dépérissement, FORDEAD-conditionné — spec 008), R6 (sensibilité microclimatique — spec 027), R7 (gel tardif, meteoland/SAFRAN-conditionné — chantier microclimat P4) |
 | S | Social & Usages | S1 (routes), S2 (bâti), S3 (population) |
 | P | Production & Économie | P1 (volume bois), P2 (station), P3 (qualité bois) |
 | E | Énergie & Climat | E1 (bois-énergie), E2 (évitement carbone) |

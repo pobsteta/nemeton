@@ -150,3 +150,48 @@ test_that(".eobs_ds_reduce computes a per-decade trend", {
   # pente 0.5/an -> ~5 °C/décennie
   expect_equal(unname(terra::global(r, "mean", na.rm = TRUE)$mean), 5, tolerance = 0.3)
 })
+
+# --- moteur meteoland / SAFRAN (chantier P4) ---
+
+test_that("build_safran_stations builds a grid with elevation and series", {
+  mock <- function(points, years) stats::setNames(
+    lapply(points$id, function(i)
+      data.frame(time = as.Date("2020-06-01") + 0:9, T_Q = 20)),
+    as.character(points$id))
+  st <- build_safran_stations(make_aoi(), buffer_m = 20000, years = 2020,
+                              dem = make_dem(), spacing_m = 8000, fetch = mock)
+  expect_type(st, "list")
+  expect_s3_class(st$points, "sf")
+  expect_true(all(c("id", "elevation") %in% names(st$points)))
+  expect_true(all(is.finite(st$points$elevation)))         # NA-elevation écartés
+  expect_equal(names(st$series), as.character(st$points$id))
+  expect_gt(nrow(st$points), 0)
+})
+
+test_that("build_safran_stations returns NULL when no series resolve", {
+  none <- function(points, years) stats::setNames(
+    vector("list", nrow(points)), as.character(points$id))   # que des NULL
+  expect_null(build_safran_stations(make_aoi(), 20000, 2020, make_dem(),
+                                    fetch = none))
+})
+
+test_that("engine = 'meteoland' falls back to KED (interpolation deferred to P4)", {
+  skip_if_not_installed("meteoland")
+  eobs <- terra::rast(replicate(5, {
+    r <- terra::rast(terra::ext(-5000, 45000, -5000, 45000), resolution = 2000,
+                     crs = "EPSG:2154"); terra::values(r) <- 20; r }))
+  res <- suppressWarnings(eobs_downscale(
+    "tx", eobs = eobs, dem = make_dem(), aoi = make_aoi(), engine = "meteoland",
+    statistic = "mean", buffer_m = 20000, covariates = c("dem", "slope")))
+  expect_equal(res$meta$engine, "ked")
+  expect_true(isTRUE(res$meta$engine_fallback))
+  expect_equal(res$meta$engine_requested, "meteoland")
+})
+
+test_that("the KED contract carries a cv slot (NULL, filled by meteoland)", {
+  res <- eobs_downscale("tx", eobs = make_eobs(), dem = make_dem(),
+                        aoi = make_aoi(), statistic = "trend", buffer_m = 30000,
+                        covariates = c("dem", "slope"))
+  expect_true("cv" %in% names(res$meta))
+  expect_null(res$meta$cv)
+})
