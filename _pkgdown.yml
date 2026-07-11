@@ -461,6 +461,7 @@ reference:
     - ewm_depuis_soilgrids
     - lai_sentinel2
     - tendances_estivales_eobs
+    - eobs_downscale
     - regeneration_tolerances
     - microclimate_detect_years
     - microclimate_run
