@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.149.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.150.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.150.0" id="nemeton-01500-2026-07-11">nemeton 0.150.0 (2026-07-11)<a class="anchor" aria-label="anchor" href="#nemeton-01500-2026-07-11"></a></h2>
+<div class="section level4">
+<h4 id="added--indicateur-r7-gel-tardif--rail-safran-du-moteur-meteoland-chantier-microclimat-p4-0-150-0">Added — indicateur R7 gel tardif + rail SAFRAN du moteur meteoland (chantier microclimat P4)<a class="anchor" aria-label="anchor" href="#added--indicateur-r7-gel-tardif--rail-safran-du-moteur-meteoland-chantier-microclimat-p4-0-150-0"></a></h4>
+<p>Deux briques du chantier microclimat P4 (<code>brief-meteoland-safran-p4</code>).</p>
+<p><strong><code>indicateur_r7_gel(units, tmin = NULL, …)</code></strong> — nouvel indicateur <strong>R7, risque de gel tardif</strong> (famille R étendue R1…R7). Croise une série de température <strong>minimale journalière</strong> (<code>tmin</code>, du downscaling meteoland/SAFRAN ou d’une source Tmin directe) avec le débourrement, et compte les gelées printanières post-débourrement — déterminant d’échec de régénération (chêne, hêtre, douglas). Conditionnel comme R5 (FORDEAD) / R6 (microclimf) : sans <code>tmin</code>, R7 = NA / skip. Sens R1-R4/R6 (<strong>haut = faible risque</strong>), pas d’inversion (≠ R5). Radar : la regex <code>^R[0-9]</code> capte R7 automatiquement, pas de 13e axe.</p>
+<p><strong><code>build_safran_stations(aoi, buffer_m, years, dem, …)</code></strong> — grille de <strong>pseudo-stations SAFRAN</strong> pour le moteur meteoland d’<code><a href="../reference/eobs_downscale.html">eobs_downscale()</a></code>. SAFRAN est une réanalyse ~8 km : chaque maille = une pseudo-station (série journalière + altitude MNT), ce qui suffit à meteoland. Réutilise l’acquisition GéoSAS déjà écrite pour BILJOU (<code>.biljou_forcing_safran</code>) — pas de source neuve. Écarte les pseudo-stations sans série ou sans altitude.</p>
+<p><strong>Moteur <code>eobs_downscale(engine = "meteoland")</code></strong> : construit désormais les stations SAFRAN et borne la densité, mais <strong>l’interpolation meteoland elle-même reste différée</strong> (validation sur données réelles, patron microclimf — meteoland n’est ni exécutable en CI ni ici de façon significative). Le moteur retombe proprement sur KED (<code>engine_fallback = TRUE</code>), contrat de sortie inchangé. Le <code>meta</code> gagne un slot <code>cv</code> (validation croisée LOO, rempli par meteoland ; <code>NULL</code> en KED).</p>
+<p>Suggests : <code>stars</code> ajouté (grille meteoland). CLAUDE.md : famille R mise à jour (R6 + R7). Le numéro est à reporter dans le plancher <code>Imports</code> de <code>nemetonshiny</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.149.0" id="nemeton-01490-2026-07-11">nemeton 0.149.0 (2026-07-11)<a class="anchor" aria-label="anchor" href="#nemeton-01490-2026-07-11"></a></h2>
 <div class="section level4">

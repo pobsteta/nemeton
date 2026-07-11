@@ -868,6 +868,9 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
 - [`indicateur_r6_sensibilite()`](https://pobsteta.github.io/nemeton/reference/indicateur_r6_sensibilite.md)
   : R6 — microsite climate sensitivity (heatwave vs average year)
 
+- [`indicateur_r7_gel()`](https://pobsteta.github.io/nemeton/reference/indicateur_r7_gel.md)
+  : Late-frost risk indicator (R7)
+
 - [`indicateur_w4_vpd()`](https://pobsteta.github.io/nemeton/reference/indicateur_w4_vpd.md)
   : W4 — summer under-canopy vapour-pressure deficit (regeneration)
 
@@ -915,6 +918,10 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
 
 - [`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
   : Downscale an E-OBS variable to a fine raster
+
+- [`build_safran_stations()`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)
+  : Build the SAFRAN pseudo-station grid for the meteoland engine (spec
+  P4)
 
 - [`regeneration_tolerances()`](https://pobsteta.github.io/nemeton/reference/regeneration_tolerances.md)
   : Regeneration tolerance table (per species)

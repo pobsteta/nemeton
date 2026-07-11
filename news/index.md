@@ -1,5 +1,43 @@
 # Changelog
 
+## nemeton 0.150.0 (2026-07-11)
+
+#### Added — indicateur R7 gel tardif + rail SAFRAN du moteur meteoland (chantier microclimat P4)
+
+Deux briques du chantier microclimat P4 (`brief-meteoland-safran-p4`).
+
+**`indicateur_r7_gel(units, tmin = NULL, …)`** — nouvel indicateur **R7,
+risque de gel tardif** (famille R étendue R1…R7). Croise une série de
+température **minimale journalière** (`tmin`, du downscaling
+meteoland/SAFRAN ou d’une source Tmin directe) avec le débourrement, et
+compte les gelées printanières post-débourrement — déterminant d’échec
+de régénération (chêne, hêtre, douglas). Conditionnel comme R5 (FORDEAD)
+/ R6 (microclimf) : sans `tmin`, R7 = NA / skip. Sens R1-R4/R6 (**haut =
+faible risque**), pas d’inversion (≠ R5). Radar : la regex `^R[0-9]`
+capte R7 automatiquement, pas de 13e axe.
+
+**`build_safran_stations(aoi, buffer_m, years, dem, …)`** — grille de
+**pseudo-stations SAFRAN** pour le moteur meteoland
+d’[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md).
+SAFRAN est une réanalyse ~8 km : chaque maille = une pseudo-station
+(série journalière + altitude MNT), ce qui suffit à meteoland. Réutilise
+l’acquisition GéoSAS déjà écrite pour BILJOU (`.biljou_forcing_safran`)
+— pas de source neuve. Écarte les pseudo-stations sans série ou sans
+altitude.
+
+**Moteur `eobs_downscale(engine = "meteoland")`** : construit désormais
+les stations SAFRAN et borne la densité, mais **l’interpolation
+meteoland elle-même reste différée** (validation sur données réelles,
+patron microclimf — meteoland n’est ni exécutable en CI ni ici de façon
+significative). Le moteur retombe proprement sur KED
+(`engine_fallback = TRUE`), contrat de sortie inchangé. Le `meta` gagne
+un slot `cv` (validation croisée LOO, rempli par meteoland ; `NULL` en
+KED).
+
+Suggests : `stars` ajouté (grille meteoland). CLAUDE.md : famille R mise
+à jour (R6 + R7). Le numéro est à reporter dans le plancher `Imports` de
+`nemetonshiny`.
+
 ## nemeton 0.149.0 (2026-07-11)
 
 #### Added — downscaling E-OBS en raster fin (`eobs_downscale`)
