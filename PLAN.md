@@ -1307,6 +1307,40 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-11 — v0.149.0 : downscaling E-OBS en raster fin (`eobs_downscale`)
+
+**Demande app** (`brief-nemeton-eobs-downscaling`) : la carte « Contexte régional
+(E-OBS) » de reGénération affiche un semis de points (centres de mailles ~11 km) ;
+l'utilisateur veut une **surface continue** fine, façon FORDEAD/FAST.
+
+**Livré** : `R/eobs_downscale.R` — `eobs_downscale(var, eobs, dem, aoi, engine=, …)`.
+Transforme la grille E-OBS en `SpatRaster` fin par **régression-krigeage** (dérive
+`lm(valeur ~ dem + slope + northness + twi)` + krigeage des résidus). v1 = `tx`
+seul (signal altitudinal ; `rr` hors scope). Contrat `meta` figé pour l'app
+(`status`/`engine`/`method`/`crs`/`unit`/`palette`/`n_points`). Garde-fous :
+grille bornée `max_cells`, cache `.tif`, dégradation propre.
+
+**Décision `engine=` (demandée par Pascal en cours de session)** : interface
+unique, **deux moteurs, contrat identique** (brief microclimat §8). `"ked"`
+(défaut, gstat/automap en Suggests ; sans eux → repli `trend_only`) et
+`"meteoland"`. Réserve honnête : **meteoland ne consomme pas une tendance déjà
+réduite** (interpolateur station/journalier) — le brancher = refonte per-année
+(chantier microclimat P4). La branche `"meteoland"` est donc un **rail gardé qui
+retombe sur KED** (absence ou stub) sans jamais casser la sortie. Deux corrections
+au brief microclimat (daté v0.15.1) : cœur **GPL-3** (la GPL de meteoland n'est
+plus un blocage), et `r5` = dépérissement (le « r5_gel » proposé n'est pas libre).
+
+**Testé** : 33 tests (chemin KED trend-only complet sans gstat — grille/CRS/unité,
+cohérence physique altitude→froid, `rr` hors scope, repli meteoland, cache,
+helpers ; chemin KED-gstat skippé sans gstat). Vérifié bout-en-bout : tendance
+0,3 °C/an → 3 °C/décennie sur la grille fine. Suite : **8961 pass, 0 fail, 0
+error**. Bump mineur → **0.149.0**.
+
+> **Reste app** : plancher `Imports: nemeton (>= 0.149.0)`, remplacer le semis de
+> points de `output$context_map` par `leaflet::addRasterImage(res$raster,
+> opacity = input$context_opacity)` + légende dérivée de `res$meta$palette`
+> (curseur, fonds, emprise UGF déjà en place — cf. brief §« Suite côté app »).
+
 ### 2026-07-10 — v0.148.0 : verrou de projet multi-utilisateurs (API cœur)
 
 **Demande app** (`brief-core-project-lock`) : `nemetonshiny` va tourner déployé en
