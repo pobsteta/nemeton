@@ -100,12 +100,15 @@
 .eobs_ds_krige_residuals <- function(pts_sf, template, variogram_model = NULL) {
   if (!requireNamespace("gstat", quietly = TRUE)) return(NULL)
   tryCatch({
+    # sf de bout en bout : gstat (>= 2.0) et automap (>= 1.1) acceptent sf
+    # directement. On évite `as(, "Spatial")`, dont la coercion S4 sp/spacetime
+    # entre en conflit avec terra selon l'environnement (« coerce » STFDF/
+    # RasterBrick), ce qui faisait échouer le krigeage en silence.
     v <- gstat::variogram(residual ~ 1, pts_sf)
-    fit <- if (!is.null(variogram_model) &&
-               requireNamespace("gstat", quietly = TRUE)) {
+    fit <- if (!is.null(variogram_model)) {
       gstat::fit.variogram(v, variogram_model)
     } else if (requireNamespace("automap", quietly = TRUE)) {
-      automap::autofitVariogram(residual ~ 1, as(pts_sf, "Spatial"))$var_model
+      automap::autofitVariogram(residual ~ 1, pts_sf)$var_model
     } else {
       # Modèle sphérique avec initiales raisonnables (portée = 1/3 de l'étendue).
       ext <- terra::ext(template)
@@ -218,7 +221,14 @@
       coords = c("X", "Y"), crs = sf::st_crs(dem))
     resid_r <- .eobs_ds_krige_residuals(pts_fit, drift, variogram_model)
     if (!is.null(resid_r)) {
-      pred <- drift + terra::resample(resid_r, drift, method = "bilinear")
+      # resid_r est krigé SUR la grille de `drift` (copie du template) : pas de
+      # resample nécessaire. On n'y recourt que si les géométries divergent —
+      # un resample same-grid déclenche un warp GDAL qui échoue sur certains
+      # builds terra (runner CI coverage).
+      if (!terra::compareGeom(resid_r, drift, stopOnError = FALSE)) {
+        resid_r <- terra::resample(resid_r, drift, method = "bilinear")
+      }
+      pred <- drift + resid_r
       names(pred) <- "value"
       method <- "ked"
     }
