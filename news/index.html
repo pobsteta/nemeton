@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.148.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.149.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,18 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.149.0" id="nemeton-01490-2026-07-11">nemeton 0.149.0 (2026-07-11)<a class="anchor" aria-label="anchor" href="#nemeton-01490-2026-07-11"></a></h2>
+<div class="section level4">
+<h4 id="added--downscaling-e-obs-en-raster-fin-eobs_downscale-0-149-0">Added — downscaling E-OBS en raster fin (<code>eobs_downscale</code>)<a class="anchor" aria-label="anchor" href="#added--downscaling-e-obs-en-raster-fin-eobs_downscale-0-149-0"></a></h4>
+<p>Nouvelle fonction cœur (brief <code>brief-nemeton-eobs-downscaling</code>) : transforme la grille grossière E-OBS (~0,1°, ~11 km) en un <code>SpatRaster</code> fin sur le contexte régional du projet, avec le MNT et des dérivées de terrain en covariables. Cible la carte « Contexte régional (E-OBS) » de l’onglet reGénération (rendu raster + curseur d’opacité, comme FORDEAD/FAST) ; <strong>ne duplique pas</strong> <code><a href="../reference/microclimate_run.html">microclimate_run()</a></code> (précision parcellaire microclimf + LiDAR HD).</p>
+<p><strong>v1 : <code>tx</code> (température maximale) uniquement</strong> — signal altitudinal fort et physiquement fondé (~ -0,6 °C/100 m). <code>rr</code> (précipitations) <strong>hors scope</strong> (downscaling peu fiable ; le MNT n’aide qu’en montagne) : <code>var = "rr"</code> renvoie un statut, pas un raster.</p>
+<p><strong>Deux moteurs, un seul contrat de sortie</strong> (brief microclimat §8, <code>engine =</code>) : - <code>"ked"</code> (défaut) — <strong>régression-krigeage</strong> : réduction E-OBS → dérive <code>lm(valeur ~ dem [+ slope + northness + twi])</code> → krigeage des résidus (variogramme auto via <code>automap</code>, sinon modèle sphérique <code>gstat</code>) → dérive + résidus krigés sur la grille MNT. Sans <code>gstat</code>, ou avec trop peu de mailles, la fonction <strong>dégrade en <code>trend_only</code></strong> (dérive seule) — un repli demandé, jamais une erreur. - <code>"meteoland"</code> — l’interpolateur station-based (chantier microclimat P4). meteoland interpole des <strong>séries journalières</strong> : downscaler une tendance déjà réduite exige une refonte per-année, livrée séparément. En attendant, et quand meteoland est absent, ce moteur <strong>retombe sur KED</strong> (contrat de sortie identique — l’app ne teste jamais le moteur).</p>
+<p><code>meta</code> fige le contrat que l’app rend : <code>status</code>, <code>engine</code>, <code>method</code>, <code>crs</code> (EPSG, CRS du MNT), <code>unit</code> (<code>"°C/decade"</code>), <code>value_label</code>, <code>palette</code> (<code>low</code>/<code>high</code> + <code>sense = "hot_unfavorable"</code>, haut = plus chaud = rouge), <code>n_points</code>. Garde-fous : grille bornée (<code>max_cells</code>, défaut 5e5 — jamais de gigapixel), cache <code>.tif</code> optionnel, dégradation propre si &lt; 3 mailles.</p>
+<p>L’exposition brute est entrée comme <strong>northness</strong> (<code>cos(aspect)</code>) : l’aspect circulaire en degrés n’a aucun sens en régression linéaire.</p>
+<p>Dépendances (Suggests, chargées à l’usage) : <code>gstat</code>, <code>automap</code>, <code>meteoland</code>. Numéro à reporter dans le plancher <code>Imports</code> de <code>nemetonshiny</code> avant câblage.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.148.0" id="nemeton-01480-2026-07-10">nemeton 0.148.0 (2026-07-10)<a class="anchor" aria-label="anchor" href="#nemeton-01480-2026-07-10"></a></h2>
 <div class="section level4">

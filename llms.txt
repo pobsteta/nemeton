@@ -1131,6 +1131,9 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
   : Summer E-OBS climate trends over the project area (spec 027 §6,
   branch A)
 
+- [`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
+  : Downscale an E-OBS variable to a fine raster
+
 - [`regeneration_tolerances()`](https://pobsteta.github.io/nemeton/reference/regeneration_tolerances.md)
   : Regeneration tolerance table (per species)
 

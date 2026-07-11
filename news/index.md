@@ -1,5 +1,50 @@
 # Changelog
 
+## nemeton 0.149.0 (2026-07-11)
+
+#### Added — downscaling E-OBS en raster fin (`eobs_downscale`)
+
+Nouvelle fonction cœur (brief `brief-nemeton-eobs-downscaling`) :
+transforme la grille grossière E-OBS (~0,1°, ~11 km) en un `SpatRaster`
+fin sur le contexte régional du projet, avec le MNT et des dérivées de
+terrain en covariables. Cible la carte « Contexte régional (E-OBS) » de
+l’onglet reGénération (rendu raster + curseur d’opacité, comme
+FORDEAD/FAST) ; **ne duplique pas**
+[`microclimate_run()`](https://pobsteta.github.io/nemeton/reference/microclimate_run.md)
+(précision parcellaire microclimf + LiDAR HD).
+
+**v1 : `tx` (température maximale) uniquement** — signal altitudinal
+fort et physiquement fondé (~ -0,6 °C/100 m). `rr` (précipitations)
+**hors scope** (downscaling peu fiable ; le MNT n’aide qu’en montagne) :
+`var = "rr"` renvoie un statut, pas un raster.
+
+**Deux moteurs, un seul contrat de sortie** (brief microclimat §8,
+`engine =`) : - `"ked"` (défaut) — **régression-krigeage** : réduction
+E-OBS → dérive `lm(valeur ~ dem [+ slope + northness + twi])` → krigeage
+des résidus (variogramme auto via `automap`, sinon modèle sphérique
+`gstat`) → dérive + résidus krigés sur la grille MNT. Sans `gstat`, ou
+avec trop peu de mailles, la fonction **dégrade en `trend_only`**
+(dérive seule) — un repli demandé, jamais une erreur. - `"meteoland"` —
+l’interpolateur station-based (chantier microclimat P4). meteoland
+interpole des **séries journalières** : downscaler une tendance déjà
+réduite exige une refonte per-année, livrée séparément. En attendant, et
+quand meteoland est absent, ce moteur **retombe sur KED** (contrat de
+sortie identique — l’app ne teste jamais le moteur).
+
+`meta` fige le contrat que l’app rend : `status`, `engine`, `method`,
+`crs` (EPSG, CRS du MNT), `unit` (`"°C/decade"`), `value_label`,
+`palette` (`low`/`high` + `sense = "hot_unfavorable"`, haut = plus chaud
+= rouge), `n_points`. Garde-fous : grille bornée (`max_cells`, défaut
+5e5 — jamais de gigapixel), cache `.tif` optionnel, dégradation propre
+si \< 3 mailles.
+
+L’exposition brute est entrée comme **northness** (`cos(aspect)`) :
+l’aspect circulaire en degrés n’a aucun sens en régression linéaire.
+
+Dépendances (Suggests, chargées à l’usage) : `gstat`, `automap`,
+`meteoland`. Numéro à reporter dans le plancher `Imports` de
+`nemetonshiny` avant câblage.
+
 ## nemeton 0.148.0 (2026-07-10)
 
 #### Added — verrou de projet pour usage serveur multi-utilisateurs
