@@ -1337,9 +1337,13 @@ les `$n` renumérotés dans l'ordre textuel (satisfait aussi PostgreSQL, qui lie
 numéro). 52 tests (SQLite en mémoire + fichier partagé pour la visibilité
 inter-connexions + intégration PostgreSQL). Bump mineur → **0.148.0**.
 
-> **Reste app** : relever le plancher `Imports: nemeton (>= 0.148.0)` et câbler
-> (acquire à l'ouverture `mod_home`, heartbeat `invalidateLater`, release sur
-> `onSessionEnded`, lecture seule + bandeau si `ok = FALSE`).
+**Chantier clos (cœur + app)** :
+
+- [x] Verrou d'édition projet multi-utilisateurs (table `project_lock` — **non
+      qualifiée**, cf. écart au brief ci-dessus ; API
+      `project_lock_acquire/heartbeat/release/status`, migration 0008, `db_migrate`)
+      — cœur **v0.148.0**, app **nemetonshiny@e6ffb787** (v0.102.0, garde
+      `deny_if_readonly` généralisé à tous les modules mutants). — 2026-07-11
 
 ### 2026-07-10 — v0.147.3 : ERA5, rayonnement négatif (trouvé par le run réel)
 
