@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.151.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.152.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,23 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.152.0" id="nemeton-01520-2026-07-12">nemeton 0.152.0 (2026-07-12)<a class="anchor" aria-label="anchor" href="#nemeton-01520-2026-07-12"></a></h2>
+<div class="section level4">
+<h4 id="added--mnt-de-contexte-auto-sourcé--robustesse-crs-pour-eobs_downscale-0-152-0">Added — MNT de contexte auto-sourcé + robustesse CRS pour <code>eobs_downscale()</code>
+<a class="anchor" aria-label="anchor" href="#added--mnt-de-contexte-auto-sourc%C3%A9--robustesse-crs-pour-eobs_downscale-0-152-0"></a></h4>
+<p>Débloque la carte « contexte régional E-OBS » quand le MNT fourni est à l’échelle parcelle (brief <code>brief-nemeton-eobs-downscaling-dem</code>). Le KED extrait les covariables terrain <strong>aux points E-OBS</strong> : un MNT ~4–5 km ne recouvre qu’~1 maille E-OBS (~11 km) → <code>status = "insufficient_data"</code> (<code>n_points = 1</code>) malgré un buffer 25 km.</p>
+<ul><li>
+<strong>Auto-sourcing du MNT (option A1)</strong> — <code>dem</code> devient <strong>optionnel</strong>. Quand il est <code>NULL</code>, ou trop petit pour couvrir le buffer, <code><a href="../reference/eobs_downscale.html">eobs_downscale()</a></code> télécharge une <strong>élévation grossière</strong> sur <code>st_buffer(aoi, buffer_m)</code> depuis le <strong>WMS IGN Géoplateforme</strong> (<code>ELEVATION.ELEVATIONGRIDCOVERAGE</code>, France, sans auth), à <code>context_res_m</code> (défaut 250 m — un contexte régional n’a pas besoin de plus, la grille est bornée à <code>max_cells</code>). Validé en réel : <code>n_points</code> passe de 1 à 33, <code>status = "ok"</code>. <code>meta$dem_source</code> = <code>"provided"</code> / <code>"autoscaled"</code> / <code>"autoscaled_small_dem"</code>.</li>
+<li>
+<strong>Décision « MNT trop petit » directe</strong> — le MNT n’est jugé insuffisant que si le buffer contient assez de mailles E-OBS (<code>≥ min_points</code>) mais que son emprise n’en couvre pas assez ; si le buffer lui-même est trop pauvre (buffer minuscule), auto-sourcer ne sert à rien et le KED renvoie <code>too_few_cells</code>.</li>
+<li>
+<strong>Robustesse CRS</strong> — un <code>eobs</code> sans CRS est désormais interprété en <strong>EPSG:4326</strong> (E-OBS est toujours en lon/lat) avec avertissement, au lieu de faire chuter <code>n_points</code> à 0 en silence.</li>
+<li>
+<strong>Replis lisibles</strong> — <code>meta$reason</code> distingue <code>eobs_downscale_dem_too_small</code>, <code>eobs_downscale_no_dem</code> et <code>eobs_downscale_too_few_cells</code>.</li>
+</ul><p>Contrat de sortie <code>list(raster, meta)</code> <strong>inchangé</strong> (l’app câble déjà dessus) ; <code>meta</code> gagne seulement <code>dem_source</code>. Brief app : le rendu <code>addRasterImage</code> + opacité se branche dès <code>status = "ok"</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.151.0" id="nemeton-01510-2026-07-12">nemeton 0.151.0 (2026-07-12)<a class="anchor" aria-label="anchor" href="#nemeton-01510-2026-07-12"></a></h2>
 <div class="section level4">

@@ -13,7 +13,7 @@ already produces from microclimf + HD LiDAR.
 eobs_downscale(
   var = c("tx", "rr"),
   eobs,
-  dem,
+  dem = NULL,
   aoi,
   engine = c("ked", "meteoland"),
   buffer_m = 25000,
@@ -27,6 +27,7 @@ eobs_downscale(
   cache_path = NULL,
   calibrate = FALSE,
   cv = FALSE,
+  context_res_m = 250,
   ...
 )
 ```
@@ -45,8 +46,15 @@ eobs_downscale(
 
 - dem:
 
-  A `SpatRaster` DEM — the downscaling target grid and main covariate.
-  The output shares its CRS.
+  A `SpatRaster` DEM — the downscaling target grid and main covariate;
+  the output shares its CRS. **Optional**: pass `NULL` (or a DEM too
+  small to cover the buffer) and a **coarse regional DEM is
+  auto-sourced** over the buffer from the IGN Géoplateforme WMS
+  (`ELEVATION.ELEVATIONGRIDCOVERAGE`, France, no auth). The KED extracts
+  terrain at the E-OBS cell centres, so a stand-scale DEM (~4–5 km)
+  covers only ~1 E-OBS cell and yields `insufficient_data`; the
+  auto-sourced DEM spans the whole buffer. `meta$dem_source` reports
+  `"provided"`, `"autoscaled"`, or `"autoscaled_small_dem"`.
 
 - aoi:
 
@@ -115,6 +123,12 @@ eobs_downscale(
   and return it in `meta$cv` (`r2`, `mae_tmin`, `mae_tmax`); default
   `FALSE` (expensive). KED always reports `meta$cv = NULL`.
 
+- context_res_m:
+
+  Target resolution (metres) of the **auto-sourced** coarse regional DEM
+  (default 250; ignored when a covering `dem` is supplied). A regional
+  trend needs no finer — the grid is capped at `max_cells` anyway.
+
 - ...:
 
   Ignored (forward-compat).
@@ -129,8 +143,14 @@ that actually ran), `method` (`"ked"`/`"trend_only"`), `var`,
 `statistic`, `crs` (EPSG code), `unit` (e.g. `"°C/decade"`),
 `value_label`, `palette` (`low`/`high` quantile bounds and
 `sense = "hot_unfavorable"` — high = warmer = red, per the app's
-red-is-critical rule), `n_points`, and, when degraded, `reason` (i18n
-key).
+red-is-critical rule), `n_points`, `dem_source`
+(`"provided"`/`"autoscaled"`/`"autoscaled_small_dem"`), and, when
+degraded, `reason` (i18n key). Degraded `reason`s distinguish the
+causes: `eobs_downscale_dem_too_small` (the supplied DEM covered too
+little of the buffer and no coarse DEM could be sourced),
+`eobs_downscale_no_dem` (no DEM supplied and none could be sourced),
+`eobs_downscale_too_few_cells` (DEM fine but too few E-OBS cells within
+the buffer).
 
 ## Details
 

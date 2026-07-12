@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.151.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.152.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -870,6 +870,13 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-12--v01520--mnt-de-contexte-auto-sourcé-pour-eobs_downscale-wms-ign">2026-07-12 — v0.152.0 : MNT de contexte auto-sourcé pour <code>eobs_downscale</code> (WMS IGN)<a class="anchor" aria-label="anchor" href="#id_2026-07-12--v01520--mnt-de-contexte-auto-sourc%C3%A9-pour-eobs_downscale-wms-ign"></a></h3>
+<p>Débloque la carte contexte régional E-OBS sur projet réel (brief <code>brief-nemeton-eobs-downscaling-dem</code>). <strong>Cause racine</strong> : le KED extrait les covariables terrain AUX POINTS E-OBS, donc l’emprise du MNT borne <code>n_points</code> — un MNT parcellaire (~4-5 km) ne recouvre qu’~1 maille E-OBS (~11 km) → n_points=1, insufficient_data, malgré buffer 25 km. (Ce n’était PAS un CRS cassé : le MNT BD ALTI porte un WGS84 valide.)</p>
+<p><strong>Option A1 retenue</strong> (recommandée par le brief) : <code>dem</code> devient optionnel ; <code>eobs_downscale</code> auto-source une élévation GROSSIÈRE sur le buffer depuis le <strong>WMS IGN Géoplateforme</strong> (<code>ELEVATION.ELEVATIONGRIDCOVERAGE</code>, France, sans auth) — réutilise <code>get_layer_service("dem","FR")</code> (fonction cœur) et le patron GetMap de l’app <code>download_ign_dem</code>. <strong>Validé en réel</strong> (AOI Besançon, buffer 25 km) : n_points 1 → <strong>33</strong>, status ok, tendance 3 °C/décennie exacte, sortie 2154, ~200 m. Inutile de viser du 5 m sur 25 km : le KED agrège à <code>max_cells</code>, défaut <code>context_res_m = 250</code>.</p>
+<p><strong>Décision « MNT trop petit » robuste</strong> : pas une fraction de recouvrement géométrique (trop sensible), mais un <strong>comptage de mailles E-OBS</strong> — le MNT n’est le facteur limitant que si le buffer contient ≥ <code>min_points</code> mailles mais que l’emprise du MNT n’en couvre pas assez. Buffer minuscule → E-OBS limitant, on garde le MNT fourni (KED → <code>too_few_cells</code>, pas de téléchargement inutile).</p>
+<p><strong>Robustesse CRS</strong> : <code>eobs</code> sans CRS → EPSG:4326 (E-OBS toujours lon/lat) + avertissement, au lieu de n_points=0 silencieux. <strong>Replis</strong> : <code>meta$reason</code> distingue <code>dem_too_small</code> / <code>no_dem</code> / <code>too_few_cells</code> ; <code>meta$dem_source</code> = provided/autoscaled/autoscaled_small_dem. <strong>Contrat <code>list(raster, meta)</code> inchangé</strong>. Tests : branches de résolution (mock download), robustesse CRS, WMS réel (<code>skip_if_offline</code>). Côté app : <code>addRasterImage</code> + opacité dès <code>status=ok</code>.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-12--v01510--moteur-meteoland-réel--tmin-journalier-alimentant-r7-p4">2026-07-12 — v0.151.0 : moteur meteoland RÉEL + Tmin journalier alimentant R7 (P4)<a class="anchor" aria-label="anchor" href="#id_2026-07-12--v01510--moteur-meteoland-r%C3%A9el--tmin-journalier-alimentant-r7-p4"></a></h3>
 <p>Clôt le chantier microclimat P4. Pascal a installé <strong>meteoland 2.2.7</strong> sur le PC : l’interpolation, laissée en TODO à la v0.150.0 (leçon gstat — je ne livre pas d’API que je ne peux valider), a pu être <strong>écrite ET validée de bout en bout sur vraies données</strong> avant merge.</p>

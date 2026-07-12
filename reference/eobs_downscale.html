@@ -15,7 +15,7 @@ already produces from microclimf + HD LiDAR."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.151.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.152.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,7 +64,7 @@ already produces from microclimf + HD LiDAR.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">eobs_downscale</span><span class="op">(</span></span>
 <span>  var <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"tx"</span>, <span class="st">"rr"</span><span class="op">)</span>,</span>
 <span>  <span class="va">eobs</span>,</span>
-<span>  <span class="va">dem</span>,</span>
+<span>  dem <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">aoi</span>,</span>
 <span>  engine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ked"</span>, <span class="st">"meteoland"</span><span class="op">)</span>,</span>
 <span>  buffer_m <span class="op">=</span> <span class="fl">25000</span>,</span>
@@ -78,6 +78,7 @@ already produces from microclimf + HD LiDAR.</p>
 <span>  cache_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  calibrate <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  cv <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  context_res_m <span class="op">=</span> <span class="fl">250</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -98,7 +99,14 @@ already produces from microclimf + HD LiDAR.</p>
 
 <dt id="arg-dem">dem<a class="anchor" aria-label="anchor" href="#arg-dem"></a></dt>
 <dd><p>A <code>SpatRaster</code> DEM — the downscaling target grid and main
-covariate. The output shares its CRS.</p></dd>
+covariate; the output shares its CRS. <strong>Optional</strong>: pass <code>NULL</code> (or a DEM
+too small to cover the buffer) and a <strong>coarse regional DEM is auto-sourced</strong>
+over the buffer from the IGN Géoplateforme WMS
+(<code>ELEVATION.ELEVATIONGRIDCOVERAGE</code>, France, no auth). The KED extracts
+terrain at the E-OBS cell centres, so a stand-scale DEM (~4–5 km) covers only
+~1 E-OBS cell and yields <code>insufficient_data</code>; the auto-sourced DEM spans the
+whole buffer. <code>meta$dem_source</code> reports <code>"provided"</code>, <code>"autoscaled"</code>, or
+<code>"autoscaled_small_dem"</code>.</p></dd>
 
 
 <dt id="arg-aoi">aoi<a class="anchor" aria-label="anchor" href="#arg-aoi"></a></dt>
@@ -165,6 +173,12 @@ and return it in <code>meta$cv</code> (<code>r2</code>, <code>mae_tmin</code>, <
 (expensive). KED always reports <code>meta$cv = NULL</code>.</p></dd>
 
 
+<dt id="arg-context-res-m">context_res_m<a class="anchor" aria-label="anchor" href="#arg-context-res-m"></a></dt>
+<dd><p>Target resolution (metres) of the <strong>auto-sourced</strong> coarse
+regional DEM (default 250; ignored when a covering <code>dem</code> is supplied). A
+regional trend needs no finer — the grid is capped at <code>max_cells</code> anyway.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Ignored (forward-compat).</p></dd>
 
@@ -178,8 +192,13 @@ in the DEM CRS, or <code>NULL</code> when degraded to nothing. <code>meta</code>
 actually ran), <code>method</code> (<code>"ked"</code>/<code>"trend_only"</code>), <code>var</code>, <code>statistic</code>,
 <code>crs</code> (EPSG code), <code>unit</code> (e.g. <code>"°C/decade"</code>), <code>value_label</code>, <code>palette</code>
 (<code>low</code>/<code>high</code> quantile bounds and <code>sense = "hot_unfavorable"</code> — high =
-warmer = red, per the app's red-is-critical rule), <code>n_points</code>, and, when
-degraded, <code>reason</code> (i18n key).</p>
+warmer = red, per the app's red-is-critical rule), <code>n_points</code>, <code>dem_source</code>
+(<code>"provided"</code>/<code>"autoscaled"</code>/<code>"autoscaled_small_dem"</code>), and, when degraded,
+<code>reason</code> (i18n key). Degraded <code>reason</code>s distinguish the causes:
+<code>eobs_downscale_dem_too_small</code> (the supplied DEM covered too little of the
+buffer and no coarse DEM could be sourced), <code>eobs_downscale_no_dem</code> (no DEM
+supplied and none could be sourced), <code>eobs_downscale_too_few_cells</code> (DEM fine
+but too few E-OBS cells within the buffer).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
