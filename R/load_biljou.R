@@ -27,6 +27,13 @@
 .BILJOU_SAFRAN_PARAMS <- c("ETP_Q", "PRELIQ_Q", "PRENEI_Q", "T_Q", "SSI_Q",
                            "FF_Q", "HU_Q")
 
+# Variables SAFRAN pour le moteur meteoland (chantier microclimat P4). Ajoute les
+# températures min/max journalières indispensables au gel tardif (R7) et au stress
+# thermique. Noms EXACTS de la collection `safran-isba` (lus dans l'EDR, PAS
+# présumés : `TINF_H_Q`/`TSUP_H_Q` = min/max des 24 T° horaires, pas `TINF_Q`).
+.SAFRAN_METEOLAND_PARAMS <- c("T_Q", "TINF_H_Q", "TSUP_H_Q", "PRELIQ_Q",
+                              "PRENEI_Q", "HU_Q", "FF_Q", "SSI_Q")
+
 # URL de requête EDR position (chemin PUR, testable) : coords Lambert-93
 # (EPSG:2154, CRS robuste de l'API — CRS84/4326 buggé en bêta), plage d'années,
 # variables, sortie CSV.
@@ -41,14 +48,15 @@
 # Forçage SAFRAN par unité via l'EDR GéoSAS. Reprojette les centroïdes en L93,
 # une requête CSV par point -> data.frame brut (colonne DATE ajoutée pour
 # safran_to_meteo). Best-effort : liste nommée par id, éléments NULL si vide.
-.biljou_forcing_safran <- function(points, years, emit = NULL) {
+.biljou_forcing_safran <- function(points, years, emit = NULL,
+                                   params = .BILJOU_SAFRAN_PARAMS) {
   if (is.null(emit)) emit <- function(payload) NULL
   xy <- sf::st_coordinates(sf::st_transform(
     sf::st_as_sf(points, coords = c("lon", "lat"), crs = 4326), 2154))
   n <- nrow(points)
   res <- lapply(seq_len(n), function(i) {
     emit(list(current = "biljou:safran_unit", i = i, n = n, id = points$id[i]))
-    url <- .biljou_safran_edr_url(xy[i, 1], xy[i, 2], years)
+    url <- .biljou_safran_edr_url(xy[i, 1], xy[i, 2], years, params = params)
     df <- tryCatch(utils::read.csv(url, check.names = FALSE),
                    error = function(e) NULL)
     if (is.null(df) || !nrow(df) || !"time" %in% names(df)) return(NULL)

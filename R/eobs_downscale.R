@@ -176,7 +176,8 @@ build_safran_stations <- function(aoi, buffer_m, years, dem,
     cli::cli_abort("{.arg dem} must be a {.cls SpatRaster}.")
   }
   fetch <- fetch %||% function(points, years) {
-    .biljou_forcing_safran(points, years)
+    # jeu meteoland : Tmin/Tmax journalières en plus (gel R7 / stress thermique).
+    .biljou_forcing_safran(points, years, params = .SAFRAN_METEOLAND_PARAMS)
   }
   crs_dem <- sf::st_crs(dem)
   buf <- .eobs_aoi_buffer(aoi, buffer_m, crs_dem)
@@ -202,38 +203,292 @@ build_safran_stations <- function(aoi, buffer_m, years, dem,
 }
 
 
-# Moteur meteoland (chantier microclimat P4, Option A). Interpole les séries
-# SAFRAN journalières (pseudo-stations) sur la grille MNT, par année, puis
-# recompose la statistique (même sémantique que KED). meteoland en Suggests (GPL,
-# compatible cœur GPL-3). La glue meteoland elle-même n'est PAS exécutable en CI
-# de façon significative (données synthétiques ≠ structure attendue) : validée
-# sur données réelles (chez Pascal), patron microclimf. Toute absence / densité
-# insuffisante / erreur -> NULL, et l'appelant retombe sur KED : le moteur ne
-# casse jamais la sortie.
+# --- Glue meteoland (chantier microclimat P4, Option A) -------------------------
+# Interpole les séries SAFRAN journalières (pseudo-stations) sur la grille MNT,
+# par année, puis recompose la statistique (même sémantique que KED). meteoland en
+# Suggests (GPL, compatible cœur GPL-3). Le pipeline a été validé de bout en bout
+# sur données réelles (meteoland 2.2.7) : CRS projeté (Lambert-93 natif) accepté
+# tant que la grille cible est régulière ; interpolate_data -> summarise ->
+# terra::rast. Non exécuté en CI (meteoland absent), patron microclimf. Toute
+# absence / densité insuffisante / erreur -> NULL, l'appelant retombe sur KED : le
+# moteur ne casse jamais la sortie.
+
+# Mappe un data.frame SAFRAN brut (.biljou_forcing_safran, cols time + `*_Q`) vers
+# les variables meteoland (with_meteo). Précip = liquide + neige. SSI_Q (J/cm²) ->
+# MJ/m² (× 0.01) pour Radiation. Températures/HU/vent tels quels (°C/%/m·s⁻¹).
+.safran_to_meteoland <- function(raw) {
+  num <- function(v) suppressWarnings(as.numeric(v))
+  precip <- rowSums(cbind(num(raw$PRELIQ_Q), num(raw$PRENEI_Q)), na.rm = TRUE)
+  data.frame(
+    dates                = as.Date(substr(raw$time, 1, 10)),
+    MinTemperature       = num(raw$TINF_H_Q),
+    MaxTemperature       = num(raw$TSUP_H_Q),
+    MeanTemperature      = num(raw$T_Q),
+    Precipitation        = precip,
+    MeanRelativeHumidity = num(raw$HU_Q),
+    WindSpeed            = num(raw$FF_Q),
+    Radiation            = num(raw$SSI_Q) * 0.01,
+    stringsAsFactors     = FALSE)
+}
+
+# Construit l'objet `meteo` de meteoland (sf LONG : une ligne par station × jour)
+# depuis la sortie de build_safran_stations (points + series brutes). Géométrie
+# répétée par jour, `stationID`/`elevation` portés. NULL si aucune série.
+.meteoland_meteo_sf <- function(stations) {
+  pts <- stations$points
+  ser <- stations$series
+  parts <- list()
+  geoms <- list()
+  for (i in seq_len(nrow(pts))) {
+    raw <- ser[[i]]
+    if (is.null(raw) || !NROW(raw) || !"time" %in% names(raw)) next
+    d <- .safran_to_meteoland(raw)
+    d$stationID <- as.character(pts$id[i])
+    d$elevation <- pts$elevation[i]
+    parts[[length(parts) + 1L]] <- d
+    geoms[[length(geoms) + 1L]] <- sf::st_geometry(pts)[rep(i, nrow(d))]
+  }
+  if (!length(parts)) return(NULL)
+  sf::st_sf(do.call(rbind, parts), geometry = do.call(c, geoms),
+            crs = sf::st_crs(pts))
+}
+
+# Grille cible meteoland = MNT recadré sur AOI+buffer, borné en cellules, en
+# `stars` à 3 attributs SÉPARÉS (elevation/slope/aspect en degrés) — le format
+# exact attendu par interpolate_data (une grille régulière, pas curviligne : d'où
+# le MNT natif, jamais une reprojection).
+.eobs_ds_stars_grid <- function(dem, aoi_buf, max_cells) {
+  dem <- .normalize_crs(dem)
+  dem <- terra::crop(dem, terra::vect(aoi_buf), snap = "out")
+  fac <- .eobs_ds_agg_factor(dem, max_cells)
+  if (fac > 1L) dem <- terra::aggregate(dem, fact = fac, fun = "mean", na.rm = TRUE)
+  names(dem) <- "elevation"
+  slo <- terra::terrain(dem, v = "slope", unit = "degrees")
+  asp <- terra::terrain(dem, v = "aspect", unit = "degrees")
+  to_stars <- function(x, nm) {
+    s <- stars::st_as_stars(x)
+    names(s) <- nm
+    s
+  }
+  c(to_stars(dem, "elevation"), to_stars(slo, "slope"), to_stars(asp, "aspect"))
+}
+
+# Fenêtre estivale (1 juin - 31 août) d'une année, pour le Tmax estival.
+.eobs_summer_dates <- function(year) {
+  seq(as.Date(sprintf("%d-06-01", year)),
+      as.Date(sprintf("%d-08-31", year)), by = "day")
+}
+
+# Construit et (optionnellement) calibre l'interpolateur meteoland. La calibration
+# LOO est LOURDE -> hors défaut ; l'appelant la déclenche sciemment.
+.meteoland_build_interpolator <- function(meteo, calibrate = FALSE,
+                                          variable = "MaxTemperature") {
+  interp <- meteoland::create_meteo_interpolator(
+    meteoland::with_meteo(meteo, verbose = FALSE), verbose = FALSE)
+  if (isTRUE(calibrate)) {
+    interp <- tryCatch(
+      meteoland::interpolator_calibration(
+        interp, variable = variable,
+        update_interpolation_params = TRUE, verbose = FALSE),
+      error = function(e) {
+        cli::cli_warn("meteoland calibration failed ({conditionMessage(e)}); default params.")
+        interp
+      })
+  }
+  interp
+}
+
+# Validation croisée LOO -> métadonnée de confiance (R² global + MAE Tmin/Tmax).
+# Coûteuse : n'est calculée que si demandée (cv = TRUE). NULL si indisponible.
+.meteoland_cv_stats <- function(interp) {
+  cvv <- tryCatch(
+    meteoland::interpolation_cross_validation(interp, verbose = FALSE),
+    error = function(e) NULL)
+  if (is.null(cvv)) return(NULL)
+  ss <- cvv$station_stats
+  mae <- function(col) {
+    if (is.null(ss) || !col %in% names(ss)) return(NA_real_)
+    mean(ss[[col]], na.rm = TRUE)
+  }
+  # cvv$r2 est un vecteur (R² par variable) : on le réduit à UN scalaire global
+  # (moyenne des valeurs finies) pour ne pas laisser fuiter un vecteur dans meta.
+  r2 <- suppressWarnings(mean(as.numeric(unlist(cvv$r2)), na.rm = TRUE))
+  list(r2 = if (is.finite(r2)) r2 else NA_real_,
+       mae_tmin = mae("MinTemperature_station_mae"),
+       mae_tmax = mae("MaxTemperature_station_mae"))
+}
+
+# Interpole une variable meteoland sur la grille, année par année, et agrège
+# chaque été en UNE couche annuelle (terra). Retourne une pile (une couche/an).
+.meteoland_annual_stack <- function(interp, grid, years, variable, fun) {
+  layers <- lapply(years, function(y) {
+    d <- meteoland::interpolate_data(
+      grid, interp, dates = .eobs_summer_dates(y),
+      ignore_convex_hull_check = TRUE, verbose = FALSE)
+    s <- meteoland::summarise_interpolated_data(
+      d, fun = fun, frequency = "year",
+      vars_to_summary = variable, verbose = FALSE)
+    terra::rast(s)
+  })
+  stk <- terra::rast(layers)
+  terra::time(stk) <- as.Date(sprintf("%d-07-01", years))
+  stk
+}
+
 .eobs_ds_run_meteoland <- function(var, eobs, dem, aoi, buffer_m, resolution,
                                    covariates, statistic, years, max_cells,
-                                   cache_path, min_stations = 5L, ...) {
-  if (!requireNamespace("meteoland", quietly = TRUE)) return(NULL)
-
-  stations <- tryCatch(
-    build_safran_stations(aoi, buffer_m, years, dem),
-    error = function(e) NULL)
-  if (is.null(stations) || nrow(stations$points) < min_stations) {
-    cli::cli_warn(c(
-      "eobs_downscale(engine = \"meteoland\"): too few SAFRAN pseudo-stations; falling back to KED.",
-      i = "Widen {.arg buffer_m} or check the GéoSAS SAFRAN service."))
+                                   cache_path, min_stations = 5L,
+                                   calibrate = FALSE, cv = FALSE, ...) {
+  if (!requireNamespace("meteoland", quietly = TRUE) ||
+      !requireNamespace("stars", quietly = TRUE)) {
     return(NULL)
   }
+  yrs <- sort(unique(as.integer(.eobs_ds_years(eobs, years))))
 
-  # La glue meteoland (create_meteo_interpolator -> interpolate_data per année ->
-  # summarise -> stack) est portée sur le patron du brief microclimat §6/P4 §4.
-  # Enveloppée : toute erreur d'API / de données -> repli KED, jamais fatale.
   tryCatch({
-    cli::cli_abort("meteoland interpolation glue is validated on real data only (P4).")
+    dem_n <- .normalize_crs(dem)
+    aoi_buf <- .eobs_aoi_buffer(aoi, buffer_m, sf::st_crs(dem_n))
+    # Stations sur un buffer élargi (l'enveloppe des mailles doit couvrir la
+    # grille cible : sinon extrapolation en bordure). SAFRAN dense à 8 km.
+    stations <- build_safran_stations(aoi, buffer_m + 8000, yrs, dem_n)
+    if (is.null(stations) || nrow(stations$points) < min_stations) {
+      cli::cli_warn(c(
+        "eobs_downscale(engine = \"meteoland\"): too few SAFRAN pseudo-stations; falling back to KED.",
+        i = "Widen {.arg buffer_m} or check the GéoSAS SAFRAN service."))
+      return(NULL)
+    }
+    meteo <- .meteoland_meteo_sf(stations)
+    if (is.null(meteo) || !nrow(meteo)) return(NULL)
+
+    interp <- .meteoland_build_interpolator(meteo, calibrate = calibrate,
+                                            variable = "MaxTemperature")
+    grid <- .eobs_ds_stars_grid(dem_n, aoi_buf, max_cells)
+    # var = "tx" -> Tmax estival (max journalier agrégé à l'année).
+    stk <- .meteoland_annual_stack(interp, grid, yrs, "MaxTemperature", "max")
+
+    # Même sémantique de réduction que KED. "value" sur pile multi-années -> moyenne.
+    reduce_as <- if (identical(statistic, "value")) "mean" else statistic
+    stat_r <- .eobs_ds_reduce(stk, reduce_as, yrs)
+
+    unit <- switch(statistic, trend = "°C/decade", "°C")
+    value_label <- switch(statistic,
+                          trend = "Tendance T°max estivale",
+                          mean  = "T°max estivale moyenne",
+                          "T°max estivale")
+    pred <- terra::mask(stat_r, terra::vect(aoi_buf))
+    names(pred) <- var
+    terra::units(pred) <- unit
+
+    if (!is.null(cache_path)) {
+      tryCatch(terra::writeRaster(pred, cache_path, overwrite = TRUE),
+               error = function(e) cli::cli_warn("eobs_downscale(): cache not written."))
+    }
+
+    crs_code <- suppressWarnings(terra::crs(pred, describe = TRUE)$code)
+    qs <- suppressWarnings(stats::quantile(
+      terra::values(pred), c(0.02, 0.98), na.rm = TRUE, names = FALSE))
+    cv_stats <- if (isTRUE(cv)) .meteoland_cv_stats(interp) else NULL
+
+    list(raster = pred, meta = list(
+      status = "ok", engine = "meteoland", method = "meteoland", var = var,
+      statistic = statistic, crs = crs_code, unit = unit,
+      value_label = value_label,
+      palette = list(low = qs[1], high = qs[2], sense = "hot_unfavorable"),
+      n_points = nrow(stations$points), cv = cv_stats))
   }, error = function(e) {
     cli::cli_warn(c(
-      "eobs_downscale(engine = \"meteoland\"): interpolation not run here ({conditionMessage(e)}).",
-      i = "Real-data engine (microclimat P4); falling back to KED."))
+      "eobs_downscale(engine = \"meteoland\"): interpolation failed ({conditionMessage(e)}); falling back to KED."))
+    NULL
+  })
+}
+
+
+#' Downscale a daily meteoland variable to a fine raster stack
+#'
+#' @description
+#' Interpolate a **daily** meteorological variable (e.g. daily minimum
+#' temperature) from SAFRAN pseudo-stations onto the DEM grid with
+#' \pkg{meteoland} (Thornton 1997 + elevation), returning a `SpatRaster` with one
+#' layer per day and `terra::time()` set. This is the real-data feeder for
+#' [indicateur_r7_gel()] (late-frost risk needs a daily Tmin series) and for any
+#' downstream daily-climate use; the reduced-statistic context map goes through
+#' [eobs_downscale()] instead.
+#'
+#' meteoland lives in Suggests and is **absent from CI** — like microclimf, this
+#' path is validated on real data. Any failure (package absent, GéoSAS down, too
+#' few stations) returns `NULL`, never an error, so callers degrade gracefully.
+#'
+#' @param aoi An `sf`/`sfc` of the management units.
+#' @param dem A `SpatRaster` DEM — the target grid; the output shares its CRS.
+#' @param years Integer year(s) of the SAFRAN series to interpolate.
+#' @param variable meteoland variable to return (default `"MinTemperature"`;
+#'   also `"MaxTemperature"`, `"MeanTemperature"`, `"Precipitation"`, …).
+#' @param dates Optional explicit `Date` vector; when `NULL`, the spring window
+#'   (day-of-year `doy_range`) of each year is used — the season that matters for
+#'   late frost.
+#' @param doy_range Integer length-2 day-of-year window used when `dates` is
+#'   `NULL` (default `c(60, 180)` ≈ 1 March–end June).
+#' @param buffer_m Context buffer (metres) for sampling SAFRAN stations
+#'   (default 25000).
+#' @param max_cells Cell cap for the target grid (default `5e5`).
+#' @param min_stations Minimum SAFRAN pseudo-stations required (default 5).
+#' @param calibrate Run the (expensive) meteoland LOO calibration first
+#'   (default `FALSE`).
+#' @param ... Ignored (forward-compat).
+#'
+#' @return A daily `SpatRaster` (one layer per interpolated day, `terra::time()`
+#'   set, DEM CRS), ready to pass as `tmin =` to [indicateur_r7_gel()]; or `NULL`
+#'   when unavailable.
+#' @seealso [eobs_downscale()], [indicateur_r7_gel()], [build_safran_stations()]
+#' @export
+meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
+                                 dates = NULL, doy_range = c(60L, 180L),
+                                 buffer_m = 25000, max_cells = 5e5,
+                                 min_stations = 5L, calibrate = FALSE, ...) {
+  if (!requireNamespace("meteoland", quietly = TRUE) ||
+      !requireNamespace("stars", quietly = TRUE)) {
+    return(NULL)
+  }
+  if (!inherits(dem, "SpatRaster")) {
+    cli::cli_abort("{.arg dem} must be a {.cls SpatRaster}.")
+  }
+  yrs <- sort(unique(as.integer(years)))
+
+  tryCatch({
+    dem_n <- .normalize_crs(dem)
+    aoi_buf <- .eobs_aoi_buffer(aoi, buffer_m, sf::st_crs(dem_n))
+    stations <- build_safran_stations(aoi, buffer_m + 8000, yrs, dem_n)
+    if (is.null(stations) || nrow(stations$points) < min_stations) {
+      cli::cli_warn("meteoland_daily_grid(): too few SAFRAN pseudo-stations.")
+      return(NULL)
+    }
+    meteo <- .meteoland_meteo_sf(stations)
+    if (is.null(meteo) || !nrow(meteo)) return(NULL)
+
+    interp <- .meteoland_build_interpolator(meteo, calibrate = calibrate,
+                                            variable = variable)
+    grid <- .eobs_ds_stars_grid(dem_n, aoi_buf, max_cells)
+
+    if (is.null(dates)) {
+      dates <- do.call(c, lapply(yrs, function(y) {
+        all_d <- seq(as.Date(sprintf("%d-01-01", y)),
+                     as.Date(sprintf("%d-12-31", y)), by = "day")
+        all_d[as.integer(format(all_d, "%j")) >= doy_range[1] &
+                as.integer(format(all_d, "%j")) <= doy_range[2]]
+      }))
+    }
+    d <- meteoland::interpolate_data(
+      grid, interp, dates = dates,
+      ignore_convex_hull_check = TRUE, verbose = FALSE)
+    # dim `date` -> couches terra (split : terra::rast() ne convertit pas un stars
+    # multi-dimension directement).
+    stk <- terra::rast(split(d[variable], "date"))
+    stk <- terra::mask(stk, terra::vect(aoi_buf))
+    terra::time(stk) <- as.Date(dates)
+    names(stk) <- format(as.Date(dates), "%Y-%m-%d")
+    stk
+  }, error = function(e) {
+    cli::cli_warn("meteoland_daily_grid(): interpolation failed ({conditionMessage(e)}).")
     NULL
   })
 }
@@ -366,10 +621,14 @@ build_safran_stations <- function(aoi, buffer_m, years, dem,
 #'   a documented fallback, never an error.
 #' * `engine = "meteoland"` — the station-based interpolator (\pkg{meteoland},
 #'   Thornton 1997 + elevation, microclimat brief Option A / chantier P4). It
-#'   interpolates **daily station series**, so downscaling a pre-reduced trend
-#'   needs a per-year restructuring that is delivered separately. Until then, and
-#'   whenever \pkg{meteoland} is absent, this engine **falls back to KED** — the
-#'   output contract is identical, so the caller never branches on the engine.
+#'   interpolates the **daily** SAFRAN pseudo-station series (from
+#'   [build_safran_stations()]) onto the DEM grid, aggregates each summer to an
+#'   annual max, then reduces to the requested `statistic` — same output contract
+#'   as KED, plus a `meta$cv` cross-validation block. Whenever \pkg{meteoland} is
+#'   absent, GéoSAS is down, or too few pseudo-stations resolve, it **falls back
+#'   to KED**, so the caller never branches on the engine. For a **daily** raster
+#'   stack (e.g. the Tmin series feeding [indicateur_r7_gel()]), use
+#'   [meteoland_daily_grid()] instead of a reduced statistic.
 #'
 #' Both engines return the same `list(raster, meta)` shape; the app renders
 #' against `meta` regardless of engine.
@@ -400,6 +659,11 @@ build_safran_stations <- function(aoi, buffer_m, years, dem,
 #'   (default 10); below it, trend-only.
 #' @param cache_path Optional `.tif` path; when given, the result raster is
 #'   written there for instant reload (pattern of `pai.tif`).
+#' @param calibrate `engine = "meteoland"` only: run the (expensive) meteoland
+#'   LOO calibration before interpolating (default `FALSE`, default params).
+#' @param cv `engine = "meteoland"` only: compute leave-one-out cross-validation
+#'   and return it in `meta$cv` (`r2`, `mae_tmin`, `mae_tmax`); default `FALSE`
+#'   (expensive). KED always reports `meta$cv = NULL`.
 #' @param ... Ignored (forward-compat).
 #'
 #' @return A list `list(raster, meta)`. `raster` is a single-layer `SpatRaster`
@@ -422,7 +686,8 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem, aoi,
                            statistic = c("trend", "mean", "value"),
                            variogram_model = NULL, years = NULL,
                            max_cells = 5e5, min_points = 10L,
-                           cache_path = NULL, ...) {
+                           cache_path = NULL, calibrate = FALSE, cv = FALSE,
+                           ...) {
   var <- match.arg(var)
   engine <- match.arg(engine)
   statistic <- match.arg(statistic)
@@ -450,7 +715,8 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem, aoi,
     out <- .eobs_ds_run_meteoland(
       var = var, eobs = eobs, dem = dem, aoi = aoi, buffer_m = buffer_m,
       resolution = resolution, covariates = covariates, statistic = statistic,
-      years = years, max_cells = max_cells, cache_path = cache_path)
+      years = years, max_cells = max_cells, cache_path = cache_path,
+      calibrate = calibrate, cv = cv)
     if (!is.null(out)) return(out)
     # repli KED, en gardant trace du moteur demandé.
     out <- .eobs_ds_run_ked(var, eobs, dem, aoi, buffer_m, resolution,

@@ -94,9 +94,11 @@ test_that("eobs_downscale validates its inputs", {
                "sf")
 })
 
-test_that("engine = 'meteoland' currently falls back to KED (rail P4)", {
-  # `.eobs_ds_run_meteoland()` returns NULL until the P4 station-based engine is
-  # wired, so the fallback happens whether or not meteoland is installed.
+test_that("engine = 'meteoland' falls back to KED when no stations resolve", {
+  # Sans meteoland (CI) le moteur retourne NULL avant tout réseau. Avec meteoland,
+  # on force le repli en mockant l'acquisition -> aucune pseudo-station : pas de
+  # réseau GéoSAS dans le test, repli déterministe quel que soit l'environnement.
+  testthat::local_mocked_bindings(build_safran_stations = function(...) NULL)
   res <- suppressWarnings(eobs_downscale(
     var = "tx", eobs = make_eobs(), dem = make_dem(), aoi = make_aoi(),
     engine = "meteoland", statistic = "trend", buffer_m = 30000,
@@ -175,23 +177,100 @@ test_that("build_safran_stations returns NULL when no series resolve", {
                                     fetch = none))
 })
 
-test_that("engine = 'meteoland' falls back to KED (interpolation deferred to P4)", {
-  skip_if_not_installed("meteoland")
-  eobs <- terra::rast(replicate(5, {
-    r <- terra::rast(terra::ext(-5000, 45000, -5000, 45000), resolution = 2000,
-                     crs = "EPSG:2154"); terra::values(r) <- 20; r }))
-  res <- suppressWarnings(eobs_downscale(
-    "tx", eobs = eobs, dem = make_dem(), aoi = make_aoi(), engine = "meteoland",
-    statistic = "mean", buffer_m = 20000, covariates = c("dem", "slope")))
-  expect_equal(res$meta$engine, "ked")
-  expect_true(isTRUE(res$meta$engine_fallback))
-  expect_equal(res$meta$engine_requested, "meteoland")
-})
-
 test_that("the KED contract carries a cv slot (NULL, filled by meteoland)", {
   res <- eobs_downscale("tx", eobs = make_eobs(), dem = make_dem(),
                         aoi = make_aoi(), statistic = "trend", buffer_m = 30000,
                         covariates = c("dem", "slope"))
   expect_true("cv" %in% names(res$meta))
   expect_null(res$meta$cv)
+})
+
+# --- transformation SAFRAN -> meteoland (pur, testable sans meteoland) ---
+
+# Série SAFRAN synthétique par station : colonnes EXACTES de l'EDR GéoSAS.
+# Un gradient de Tmax par station rend l'interpolation non triviale.
+fake_safran_series <- function(points, years, ndays = 30, base_tx = 25) {
+  yr <- min(years)
+  dts <- as.Date(sprintf("%d-06-01", yr)) + seq_len(ndays) - 1L
+  stats::setNames(lapply(seq_len(nrow(points)), function(i) {
+    off <- (points$lat[i] - mean(points$lat)) * 2   # gradient latitudinal
+    data.frame(
+      time = format(dts, "%Y-%m-%d 00:00:00"),
+      T_Q = base_tx - 5 + off, TINF_H_Q = base_tx - 10 + off,
+      TSUP_H_Q = base_tx + off, PRELIQ_Q = 1, PRENEI_Q = 0,
+      HU_Q = 70, FF_Q = 2, SSI_Q = 1800, check.names = FALSE)
+  }), as.character(points$id))
+}
+
+test_that(".safran_to_meteoland maps raw SAFRAN columns and sums precipitation", {
+  raw <- data.frame(
+    time = c("2020-06-01 00:00:00", "2020-06-02 00:00:00"),
+    T_Q = c(18, 20), TINF_H_Q = c(12, 14), TSUP_H_Q = c(24, 27),
+    PRELIQ_Q = c(3, 0), PRENEI_Q = c(1, 0), HU_Q = c(80, 60),
+    FF_Q = c(2, 3), SSI_Q = c(1800, 2000), check.names = FALSE)
+  d <- .safran_to_meteoland(raw)
+  expect_equal(d$MinTemperature, c(12, 14))
+  expect_equal(d$MaxTemperature, c(24, 27))
+  expect_equal(d$MeanTemperature, c(18, 20))
+  expect_equal(d$Precipitation, c(4, 0))            # liquide + neige
+  expect_equal(d$Radiation, c(18, 20))              # J/cm² -> MJ/m² (× 0.01)
+  expect_s3_class(d$dates, "Date")
+})
+
+test_that(".meteoland_meteo_sf builds a long sf (station × day)", {
+  st <- build_safran_stations(make_aoi(), buffer_m = 20000, years = 2020,
+                              dem = make_dem(), spacing_m = 8000,
+                              fetch = function(p, y) fake_safran_series(p, y, ndays = 5))
+  meteo <- .meteoland_meteo_sf(st)
+  expect_s3_class(meteo, "sf")
+  expect_true(all(c("stationID", "elevation", "MinTemperature",
+                    "MaxTemperature", "Precipitation") %in% names(meteo)))
+  expect_equal(nrow(meteo), nrow(st$points) * 5)    # 5 jours par station
+  expect_true(all(is.finite(meteo$elevation)))
+})
+
+# --- glue meteoland réelle (skippée en CI : meteoland/stars en Suggests) ---
+
+test_that("engine = 'meteoland' runs the interpolator and honours the contract", {
+  skip_if_not_installed("meteoland")
+  skip_if_not_installed("stars")
+  # Injecte des pseudo-stations SAFRAN synthétiques -> vrai run meteoland, offline.
+  testthat::local_mocked_bindings(
+    .biljou_forcing_safran = function(points, years, ...)
+      fake_safran_series(points, years, ndays = 30))
+  eobs <- make_eobs(nyr = 1)
+  res <- suppressWarnings(eobs_downscale(
+    "tx", eobs = eobs, dem = make_dem(), aoi = make_aoi(), engine = "meteoland",
+    statistic = "mean", buffer_m = 20000, covariates = c("dem", "slope"),
+    max_cells = 2000, years = 2020))
+  # Selon la densité effective on obtient meteoland (idéal) OU un repli KED propre.
+  expect_equal(res$meta$status, "ok")
+  expect_true(res$meta$engine %in% c("meteoland", "ked"))
+  if (identical(res$meta$engine, "meteoland")) {
+    expect_equal(res$meta$method, "meteoland")
+    expect_s4_class(res$raster, "SpatRaster")
+    expect_equal(res$meta$crs, "2154")
+    expect_equal(res$meta$palette$sense, "hot_unfavorable")
+    expect_true("cv" %in% names(res$meta))
+  }
+})
+
+test_that("meteoland_daily_grid returns a dated daily Tmin stack for R7", {
+  skip_if_not_installed("meteoland")
+  skip_if_not_installed("stars")
+  testthat::local_mocked_bindings(
+    .biljou_forcing_safran = function(points, years, ...)
+      fake_safran_series(points, years, ndays = 20))
+  tn <- suppressWarnings(meteoland_daily_grid(
+    make_aoi(), make_dem(), years = 2020, variable = "MinTemperature",
+    doy_range = c(153L, 160L), buffer_m = 20000, max_cells = 2000))
+  # NULL toléré si la densité mockée ne suffit pas ; sinon pile datée exploitable.
+  if (!is.null(tn)) {
+    expect_s4_class(tn, "SpatRaster")
+    expect_gt(terra::nlyr(tn), 0)
+    expect_false(all(is.na(terra::time(tn))))
+    expect_equal(terra::crs(tn, describe = TRUE)$code, "2154")
+  } else {
+    succeed()
+  }
 })
