@@ -1733,6 +1733,26 @@ cœur).
 
 ## Journal
 
+### 2026-07-12 — v0.153.1 : fix diagnostic RECONFORT (AOI à anneau dégénéré)
+
+Signalé en séance : le diagnostic RECONFORT s’interrompt à l’étape
+*tiles* \[4/10\] avec
+`Loop 2 is not valid: Edge 13 is degenerate (duplicate vertex)` (via
+`wk_handle.wk_wkb()`), remontant de
+[`nemeton::run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md).
+Cause : la zone du projet porte un anneau dégénéré (sommet dupliqué).
+[`reconfort_aoi_tiles()`](https://pobsteta.github.io/nemeton/reference/reconfort_aoi_tiles.md)
+résout l’emprise contre la grille MGRS **GeoJSON (EPSG:4326)** →
+`st_union`/`st_intersects` sous **s2** → abort. Le chemin indicateurs
+(intersection BD Forêt) réparait déjà ce cas ; la résolution des tuiles
+non. Fix : réparation `st_make_valid()` + réessai dans
+[`reconfort_aoi_tiles()`](https://pobsteta.github.io/nemeton/reference/reconfort_aoi_tiles.md)
+(même idiome), **et** AOI rendue valide une fois à la source dans
+[`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+(protège masque/clip/vérité terrain en aval). Test de non-régression
+ajouté. Reproduit hors fix : l’anneau dupliqué abortait bien s2 avec
+l’erreur exacte du log.
+
 ### 2026-07-12 — v0.153.0 : `eobs_downscale(var="rr")` + carte bivariée fine
 
 Complète le contexte régional E-OBS (brief

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.153.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.153.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,18 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.153.1" id="nemeton-01531-2026-07-12">nemeton 0.153.1 (2026-07-12)<a class="anchor" aria-label="anchor" href="#nemeton-01531-2026-07-12"></a></h2>
+<div class="section level4">
+<h4 id="fixed--diagnostic-reconfort--aoi-à-anneau-dégénéré-sommet-dupliqué-0-153-1">Fixed — diagnostic RECONFORT : AOI à anneau dégénéré (sommet dupliqué)<a class="anchor" aria-label="anchor" href="#fixed--diagnostic-reconfort--aoi-%C3%A0-anneau-d%C3%A9g%C3%A9n%C3%A9r%C3%A9-sommet-dupliqu%C3%A9-0-153-1"></a></h4>
+<p>Le diagnostic RECONFORT échouait à l’étape <em>tiles</em> [4/10] quand la zone du projet portait un anneau <strong>dégénéré</strong> (sommet consécutif dupliqué) : <code><a href="../reference/reconfort_aoi_tiles.html">reconfort_aoi_tiles()</a></code> résout l’emprise contre la grille MGRS <strong>GeoJSON (EPSG:4326)</strong>, donc <code>st_union</code>/<code>st_intersects</code> passent par <strong>s2</strong>, qui rejette la boucle invalide (<code>Loop N is not valid: Edge M is degenerate (duplicate vertex)</code>) et interrompt tout le run. Le chemin indicateurs (intersection BD Forêt, <code>utils.R</code>) réparait déjà ce cas ; la résolution des tuiles ne le faisait pas.</p>
+<ul><li>
+<code><a href="../reference/reconfort_aoi_tiles.html">reconfort_aoi_tiles()</a></code> : réparation <code><a href="https://r-spatial.github.io/sf/reference/valid.html" class="external-link">sf::st_make_valid()</a></code> + réessai unique quand la résolution brute échoue (même idiome que l’intersection BD Forêt) ; le coût de réparation n’est payé qu’en cas d’échec.</li>
+<li>
+<code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> : l’AOI de zone est rendue valide <strong>une fois à la source</strong> (juste après <code><a href="../reference/dot-get_zone_aoi.html">.get_zone_aoi()</a></code>), pour que le masque, le clip de scène et les points de vérité terrain en aval reçoivent tous une géométrie valide (les ops planaires GEOS/terra toléraient déjà le sommet dupliqué, seule l’étape s2 bloquait).</li>
+<li>Test de non-régression : AOI à sommet dupliqué sur le Loiret → résout bien ses tuiles S2 sans interruption.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.153.0" id="nemeton-01530-2026-07-12">nemeton 0.153.0 (2026-07-12)<a class="anchor" aria-label="anchor" href="#nemeton-01530-2026-07-12"></a></h2>
 <div class="section level4">
