@@ -1311,6 +1311,28 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-12 — v0.153.0 : `eobs_downscale(var="rr")` + carte bivariée fine
+
+Complète le contexte régional E-OBS (brief `brief-nemeton-eobs-downscale-rr`).
+Précision demandée en séance (capture de la figure « L'IF n°49 ») : la 2ᵉ carte
+voulue est la **bivariée** (T°max × précip, rouge = réchauffement + assèchement),
+mais **downscalée à la résolution UGF**, pas le semis E-OBS grossier de
+`tendances_estivales_eobs`.
+
+- **`var = "rr"`** : mêmes rails KED que `tx` (plus d'`out_of_scope`). Helper
+  `.eobs_ds_labels(var, statistic)` : `rr` → `mm/decade`, `sense =
+  "dry_unfavorable"` (bas = rouge), `reliability = "low"` (pluie↔altitude bruitée,
+  orographique — contexte régional seulement). `rr` ignore meteoland (température),
+  force KED. `meta$reliability` ajouté aux deux variables.
+- **`eobs_downscale_bivariate(tx, rr, …)`** (export) : downscale les deux
+  tendances (MNT de contexte auto-sourcé partagé) puis croise en classes **1-9**
+  (`(classe_tmax-1)*3 + classe_precip`, chaud&sec = 7 = rouge, frais&humide = 3 =
+  bleu — codage identique à `tendances_estivales_eobs`). Sortie : `SpatRaster`
+  entier `classe_bivariee` + `meta$palette` (9 couleurs/libellés FR) + `meta$breaks`
+  + métas composantes `tx`/`rr`. Validé en local (synthétique).
+- Contrat `list(raster, meta)` inchangé. Brief app mis à jour (2ᵉ couche + carte
+  bivariée + sélecteur).
+
 ### 2026-07-12 — v0.152.0 : MNT de contexte auto-sourcé pour `eobs_downscale` (WMS IGN)
 
 Débloque la carte contexte régional E-OBS sur projet réel (brief
