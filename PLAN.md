@@ -1062,7 +1062,11 @@ sur la branche LiDAR only : ~38 min économisées par run. Phase « PAI
 Recalculer le PAI » sous le badge « Canopée : LiDAR HD ». Livré app
 **v0.100.14** (`nemetonshiny@22713c93`), cycle dev `0.100.14.9000`.
 Plancher app relevé à `nemeton (>= 0.146.2)` (microclimf 2.0.0
-bout-en-bout).
+bout-en-bout). - \[x\] R7 « risque de gel tardif » + moteur meteoland
+live (indicateur_r7_gel, meteoland_daily_grid, build_safran_stations,
+eobs_downscale engine=meteoland) — cœur v0.151.0, app
+<nemetonshiny@9e0d1189> (v0.104.0 : moteur opt-in + cache tmin.tif +
+carte gel + R7 au radar reGénération, sens normal NA-safe). — 2026-07-12
 
 Les deux briefs app du volet moteur spec 027 sont désormais clos ;
 **plus aucun brief app en attente sur ce chantier**.
