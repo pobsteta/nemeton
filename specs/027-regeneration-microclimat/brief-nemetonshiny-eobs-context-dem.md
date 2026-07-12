@@ -137,10 +137,13 @@ contrôle de couches Leaflet. Même code de rendu que §2, palette pilotée par
 
 ## 8. 3ᵉ vue : carte BIVARIÉE fine (la figure « L'IF n°49 » à l'échelle UGF)
 
-`eobs_downscale_bivariate(tx, rr, …)` (cœur ≥ v0.153.0) croise les deux tendances
-**downscalées** en un raster de classes **1-9** — la carte rouge = réchauffement +
-assèchement, mais **à la résolution du contexte** (pas le semis E-OBS grossier de
-`tendances_estivales_eobs`).
+`eobs_downscale_bivariate(tx, rr, …)` croise les deux tendances **downscalées** en
+un raster de classes **1-25** (grille **5×5**, couleurs échantillonnées sur la
+figure « L'IF n°49 » — cœur ≥ **v0.154.0** ; c'était 1-9 en v0.153.x), mais **à la
+résolution du contexte** (pas le semis E-OBS grossier de `tendances_estivales_eobs`).
+La classification est en **bornes absolues fixes ancrées sur 0** (comme L'IF, pas
+en quantiles) : les couleurs sont comparables d'un projet à l'autre. Un massif
+uniformément chaud & sec ressort donc quasi unicolore — c'est voulu.
 
 ```r
 biv <- nemeton::eobs_downscale_bivariate(
@@ -148,24 +151,40 @@ biv <- nemeton::eobs_downscale_bivariate(
   cache_path = "cache/regeneration/context_bivariate.tif")
 
 if (identical(biv$meta$status, "ok")) {
-  pal <- biv$meta$palette                 # classes 1:9, colors (9 hex), labels (9 FR)
+  pal <- biv$meta$palette                 # classes 1:25, colors (25 hex), labels (25 FR), ncol = 5
   cmap <- leaflet::colorFactor(pal$colors, domain = pal$classes, na.color = "transparent")
   leafletProxy("map") |>
     clearGroup("contexte_bivariee") |>
     addRasterImage(biv$raster, colors = cmap, opacity = input$context_opacity,
-                   group = "contexte_bivariee") |>
-    addLegend(colors = pal$colors, labels = pal$labels, title = biv$meta$value_label,
-              group = "contexte_bivariee")
+                   group = "contexte_bivariee")
 }
 ```
 
-- Le raster est **entier 1-9** (`classe_bivariee`) : rendu en **`colorFactor`**
-  (couleurs/libellés fournis dans `meta$palette`), pas `colorNumeric`.
-- Codage : `(classe_tmax-1)*3 + classe_precip`. **Chaud & sec = 7 = rouge** ;
-  frais & humide = 3 = bleu. La **légende 3×3** peut être rendue depuis
-  `pal$colors`/`pal$labels` (9 entrées) ou en petit carré bivarié comme la figure.
-- `biv$meta$breaks` (tertiles tmax/precip utilisés), `biv$meta$tx` / `biv$meta$rr`
-  (métas composantes) pour debug/tooltip. `reliability = "low"`.
+- Le raster est **entier 1-25** (`classe_bivariee`) : rendu en **`colorFactor`**
+  (25 couleurs/libellés fournis dans `meta$palette`), pas `colorNumeric`. **Ne pas
+  câbler `addLegend(colors=…)` en liste verticale de 25 entrées** : illisible.
+- **Légende = carré bivarié 5×5** comme la figure de référence. `pal$ncol` (= 5)
+  donne le côté ; l'ordre est `(classe_tmax-1)*ncol + classe_precip`, donc
+  `matrix(pal$colors, nrow = ncol, byrow = TRUE)` a **T°max en lignes (bas→haut :
+  frais→chaud)** et **précip en colonnes (gauche→droite : sec→humide)**. Rends-la
+  en petit `<table>`/HTML 5×5 avec les deux axes légendés (« Tendance T°max » à la
+  verticale, « Tendance précipitations » à l'horizontale). Chaud & sec = coin
+  haut-gauche = rouge ; frais & humide = bas-droite = violet.
+- **Pointillés blancs 0/0** (comme la figure) : `pal$zero` = `list(tmax, precip)`,
+  chacun une **fraction [0,1]** (ou `NA` si 0 est hors de l'étendue des tendances
+  → ne pas tracer). Sur le carré de côté `S` px (origine coin **bas-gauche**) :
+  - ligne **horizontale** (tendance T°max nulle) à `y = (1 - pal$zero$tmax) * S`
+    depuis le haut, i.e. `pal$zero$tmax` mesuré depuis le bas ;
+  - ligne **verticale** (tendance précip nulle) à `x = pal$zero$precip * S` depuis
+    la gauche.
+  En CSS/SVG : un trait `stroke:#fff; stroke-dasharray:3 2` par-dessus la grille.
+  Ces positions sont **data-dépendantes** (quintiles) : toujours lire `pal$zero`,
+  ne pas figer à 40 %/60 %.
+- `biv$meta$breaks` (bornes absolues tmax/precip utilisées, **4 bornes chacun**),
+  `biv$meta$tx` / `biv$meta$rr` (métas composantes) pour debug/tooltip.
+  `reliability = "low"`.
+- **La palette est pilotée par les données** : lis toujours `pal$colors`/`labels`/
+  `ncol`, ne code pas les 25 couleurs en dur côté app (elles peuvent réévoluer).
 - **Une seule carte** débloque le besoin : proposer le **3ᵉ choix** dans le
   sélecteur (« Bivariée T°max × précip ») à côté des deux couches simples.
 

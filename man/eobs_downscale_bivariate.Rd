@@ -30,8 +30,9 @@ over the buffer (IGN WMS), shared by both trends. See \code{\link{eobs_downscale
 
 \item{buffer_m}{Context buffer around the AOI, in metres (default 25000).}
 
-\item{breaks}{Optional \code{list(tmax=, precip=)} of two cut points each for a
-fixed classification; \code{NULL} → tertiles per trend.}
+\item{breaks}{Optional \code{list(tmax=, precip=)} of four cut points each to
+override the default absolute thresholds; \code{NULL} → the fixed L'IF-scale
+breaks (\code{c(0, 0.4, 0.8, 1.2)} °C/decade, \code{c(-80, -40, 0, 40)} mm/decade).}
 
 \item{context_res_m}{Auto-sourced DEM resolution in metres (default 250).}
 
@@ -43,11 +44,14 @@ fixed classification; \code{NULL} → tertiles per trend.}
 }
 \value{
 A list \code{list(raster, meta)}. \code{raster} is a single-layer integer
-\code{SpatRaster} \code{classe_bivariee} (1-9) in the DEM CRS, or \code{NULL} if either
+\code{SpatRaster} \code{classe_bivariee} (1-25) in the DEM CRS, or \code{NULL} if either
 trend degraded. \code{meta}: \code{status}, \code{var = "bivariate"}, \code{crs}, \code{dem_source},
-\code{n_points}, \code{breaks} (\code{list(tmax, precip)} used), \code{reliability = "low"},
-\code{value_label}, and \code{palette} (\code{classes} 1-9, \code{colors} hex, \code{labels},
-\code{sense = "bivariate"} — class 7 warm&dry = red). \code{meta$tx} / \code{meta$rr} carry
+\code{n_points}, \code{breaks} (\code{list(tmax, precip)} used, four cut points each),
+\code{reliability = "low"}, \code{value_label}, and \code{palette} (\code{classes} 1-25,
+\code{colors} hex, \code{labels}, \code{sense = "bivariate"}, \code{ncol = 5} for the 5×5
+grid legend, and \code{zero = list(tmax, precip)} — the fractional [0,1] position of
+the zero-trend line on each axis, \code{NA} if 0 is outside the data range, for the
+white dashed 0/0 lines of the reference figure). \code{meta$tx} / \code{meta$rr} carry
 the two component \code{\link{eobs_downscale}} metas.
 }
 \description{
@@ -57,12 +61,14 @@ the coarse E-OBS grid (~11 km), it \strong{downscales} both summer trends via
 into a \strong{bivariate classification} — the "L'IF n°49" map (warming × drying,
 red = warm & dry) at the project's context resolution.
 
-Each trend is cut into tertiles (1 = coolest/driest, 3 = warmest/wettest;
-or fixed \code{breaks}); the combined class is
-\code{(classe_tmax - 1) * 3 + classe_precip}, 1-9, with \strong{warm & dry = 7} (red)
-and cool & wet = 3 (blue) — the same encoding as
-\code{\link{tendances_estivales_eobs}}. Reliability is \code{"low"} (bounded by the noisy
-precipitation downscaling).
+Each trend is cut on \strong{fixed absolute thresholds anchored on 0} (the default,
+like \emph{L'IF n°49} — comparable across projects, not relative quantiles): 1 =
+coolest/driest, 5 = warmest/wettest. Defaults: T°max \code{c(0, 0.4, 0.8, 1.2)}
+°C/decade, precipitation \code{c(-80, -40, 0, 40)} mm/decade (override via
+\code{breaks}). The combined class is \code{(classe_tmax - 1) * 5 + classe_precip},
+1-25, on the 5×5 colour scheme sampled from the reference figure — warming
+dominates (hot rows red/magenta), cool & dry = yellow, cool & wet = violet.
+Reliability is \code{"low"} (bounded by the noisy precipitation downscaling).
 }
 \seealso{
 \code{\link{eobs_downscale}}, \code{\link{tendances_estivales_eobs}}
