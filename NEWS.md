@@ -1,3 +1,27 @@
+# nemeton 0.153.1 (2026-07-12)
+
+### Fixed — diagnostic RECONFORT : AOI à anneau dégénéré (sommet dupliqué)
+
+Le diagnostic RECONFORT échouait à l'étape *tiles* [4/10] quand la zone du
+projet portait un anneau **dégénéré** (sommet consécutif dupliqué) :
+`reconfort_aoi_tiles()` résout l'emprise contre la grille MGRS **GeoJSON
+(EPSG:4326)**, donc `st_union`/`st_intersects` passent par **s2**, qui rejette
+la boucle invalide (`Loop N is not valid: Edge M is degenerate (duplicate
+vertex)`) et interrompt tout le run. Le chemin indicateurs (intersection
+BD Forêt, `utils.R`) réparait déjà ce cas ; la résolution des tuiles ne le
+faisait pas.
+
+- `reconfort_aoi_tiles()` : réparation `sf::st_make_valid()` + réessai unique
+  quand la résolution brute échoue (même idiome que l'intersection BD Forêt) ;
+  le coût de réparation n'est payé qu'en cas d'échec.
+- `run_reconfort_dieback()` : l'AOI de zone est rendue valide **une fois à la
+  source** (juste après `.get_zone_aoi()`), pour que le masque, le clip de
+  scène et les points de vérité terrain en aval reçoivent tous une géométrie
+  valide (les ops planaires GEOS/terra toléraient déjà le sommet dupliqué,
+  seule l'étape s2 bloquait).
+- Test de non-régression : AOI à sommet dupliqué sur le Loiret → résout bien
+  ses tuiles S2 sans interruption.
+
 # nemeton 0.153.0 (2026-07-12)
 
 ### Added — `eobs_downscale(var = "rr")` + carte bivariée fine T°max × précipitations

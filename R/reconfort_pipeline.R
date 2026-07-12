@@ -334,6 +334,13 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     aoi <- if (!is.null(con) && !is.null(zone_id)) {
       tryCatch(.get_zone_aoi(con, zone_id), error = function(e) NULL)
     } else NULL
+    # Project zones occasionally carry a degenerate ring (duplicate vertex)
+    # that survives GEOS/terra planar ops (mask, crop) but aborts s2 later
+    # (tile resolution against the longlat grid). Repair once at the source
+    # so every AOI-local consumer downstream sees a valid geometry.
+    if (!is.null(aoi)) {
+      aoi <- tryCatch(sf::st_make_valid(aoi), error = function(e) aoi)
+    }
     do_crop <- isTRUE(aoi_crop) && !is.null(aoi)
 
     # PHASE 3 — mask resolution ------------------------------------
