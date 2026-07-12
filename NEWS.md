@@ -1,3 +1,25 @@
+# nemeton 0.154.0 (2026-07-12)
+
+### Changed — carte bivariée : quinconce 5×5 (25 classes) aux couleurs de « L'IF n°49 »
+
+`eobs_downscale_bivariate()` passe d'un croisement **3×3 (9 classes)** à un
+**5×5 (25 classes)**, avec les couleurs **échantillonnées directement sur la
+figure de référence « L'IF n°49 » (Copernicus E-OBS)**. La référence est un
+dégradé continu (mesuré : un pixel = une couleur) ; le 5×5 en restitue la
+nuance (jaune → olive → violet → rouge → magenta) là où le 3×3 écrasait tout le
+haut en rouge. Schéma : la température domine (lignes chaudes rouge/magenta),
+frais & sec = jaune, frais & humide = violet, chaud & sec = rouge, chaud &
+humide = magenta.
+
+- Chaque tendance est coupée en **quintiles** (au lieu de tertiles) ;
+  `classe_bivariee = (classe_tmax-1)*5 + classe_precip`, **1-25**.
+- Helpers généralisés `.eobs_ds_breaksN()` / `.eobs_ds_classN_rast()` (N-tiles).
+- `meta$palette` porte désormais `classes` 1-25, 25 `colors`/`labels` et
+  **`ncol = 5`** : l'app rend une **légende en carré bivarié 5×5** (pas une liste
+  de 25 lignes). `breaks` (si fourni) attend **4 bornes** par axe.
+- Palette pilotée par les données : l'app lit `pal$colors`/`labels`/`ncol`.
+  Brief app mis à jour (`brief-nemetonshiny-eobs-context-dem` §8).
+
 # nemeton 0.153.2 (2026-07-12)
 
 ### Fixed — gel R7 : MNT parcellaire → auto-source du MNT régional (voie meteoland/SAFRAN)

@@ -1315,6 +1315,20 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-12 — v0.154.0 : carte bivariée E-OBS en quinconce 5×5 (couleurs L'IF n°49)
+
+Demande en séance : coller la bivariée à la figure de référence « L'IF n°49 »
+(mêmes classes / mêmes couleurs). Mesure de l'image : dégradé **continu** (126/166
+transitions = 1 pixel = 1 couleur), pas de classes discrètes → choix de
+granularité soumis (3×3 / 5×5 / continu), retenu = **5×5 (25 classes)**. Couleurs
+échantillonnées directement sur la figure aux 25 centres de cellule. Cœur :
+`.EOBS_BIVARIATE_N=5`, palette+labels 25, helpers généralisés N-tiles
+(`.eobs_ds_breaksN`/`.eobs_ds_classN_rast`), `eobs_downscale_bivariate` code
+`(ct-1)*5+cp` (1-25), `meta$palette$ncol=5` pour une légende carré 5×5 côté app.
+Brief app MAJ (§8 : légende carré, pas liste de 25). Tests 116 verts. Rappel du
+même échange : le neutre central « trou » de la 3×3 (v0.153.2, #A79E8C) n'a plus
+lieu d'être — la 5×5 n'a pas de classe grise.
+
 ### 2026-07-12 — v0.153.2 : fix gel R7 (MNT parcellaire → auto-source régional)
 
 Signalé sur le projet reconfort : le moteur gel se skippe (« Tmin indisponible

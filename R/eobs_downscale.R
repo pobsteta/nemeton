@@ -991,35 +991,45 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
 # (~11 km) ; celle-ci croise les deux tendances DOWNSCALÉES (rasters fins
 # eobs_downscale) pour une carte à la résolution du contexte (UGF).
 
-# Palette bivariée 3×3, indexée par classe 1-9 = (classe_tmax-1)*3 + classe_precip
-# (classe_tmax : 1 frais -> 3 chaud ; classe_precip : 1 sec -> 3 humide). Chaud &
-# sec (tmax 3, precip 1) = classe 7 = rouge ; frais & humide (1,3) = classe 3 =
-# bleu (mêmes conventions que tendances_estivales_eobs).
+# Palette bivariée N×N (N = .EOBS_BIVARIATE_N), indexée par classe
+# 1..N² = (classe_tmax-1)*N + classe_precip (classe_tmax : 1 frais -> N chaud ;
+# classe_precip : 1 sec -> N humide). Couleurs échantillonnées sur la figure
+# « L'IF n°49 » (Copernicus E-OBS) : dégradé continu -> quinconce 5×5. La
+# température domine (haut = rouge/magenta) ; frais & sec = jaune, frais & humide
+# = violet, chaud & sec = rouge, chaud & humide = magenta.
+.EOBS_BIVARIATE_N <- 5L
 .EOBS_BIVARIATE_COLORS <- c(
-  "1" = "#EDE8AA", "2" = "#9FD6C4", "3" = "#2C83B8",   # frais : sec / stable / humide
-  # Centre « Stable » : neutre taupe soutenu (et non un gris pâle) — se lit comme
-  # une couleur pleine en semi-transparence sur fond satellite, pas comme un trou.
-  "4" = "#E39B5A", "5" = "#A79E8C", "6" = "#6FA8CE",   # tempéré
-  "7" = "#B2182B", "8" = "#D6604D", "9" = "#C46B9E")   # chaud : sec(rouge) / stable / humide
-.EOBS_BIVARIATE_LABELS <- c(
-  "1" = "Frais & plus sec",   "2" = "Frais & stable",   "3" = "Frais & plus humide",
-  "4" = "Tempéré & plus sec", "5" = "Stable",           "6" = "Tempéré & plus humide",
-  "7" = "Chaud & plus sec",   "8" = "Chaud & stable",   "9" = "Chaud & plus humide")
+  "1"  = "#F3E600", "2"  = "#C7C638", "3"  = "#AAAA56", "4"  = "#8C8D72", "5"  = "#5656A2",  # frais
+  "6"  = "#F6A815", "7"  = "#E29629", "8"  = "#C48051", "9"  = "#B0726F", "10" = "#8D5A9B",
+  "11" = "#EE721D", "12" = "#E56930", "13" = "#D66452", "14" = "#C85F6D", "15" = "#AA579C",  # tempéré
+  "16" = "#E7411F", "17" = "#E84330", "18" = "#E74750", "19" = "#E04E6C", "20" = "#CF5699",
+  "21" = "#E52521", "22" = "#E62B33", "23" = "#E73453", "24" = "#E83E6B", "25" = "#EB5597")  # chaud
+# Libellés 5×5 dérivés (ct = T°max frais->chaud ; cp = précip sec->humide),
+# ordonnés comme (ct-1)*N + cp (cp varie le plus vite).
+.EOBS_BIVARIATE_LABELS <- local({
+  temp <- c("Frais", "Assez frais", "Tempéré", "Assez chaud", "Chaud")
+  prec <- c("sec", "assez sec", "moyen", "assez humide", "humide")
+  g <- expand.grid(cp = prec, ct = temp, stringsAsFactors = FALSE)
+  stats::setNames(sprintf("%s & %s", g$ct, g$cp),
+                  as.character(seq_len(nrow(g))))
+})
 
-# Bornes de tertiles (ou bornes fixes) d'un raster fin.
-.eobs_ds_breaks3 <- function(r, br = NULL) {
+# Bornes de N-tiles (ou bornes fixes) d'un raster fin (n-1 bornes croissantes).
+.eobs_ds_breaksN <- function(r, n, br = NULL) {
   if (!is.null(br)) return(br)
-  unname(stats::quantile(terra::values(r), c(1 / 3, 2 / 3),
+  unname(stats::quantile(terra::values(r), seq_len(n - 1L) / n,
                          na.rm = TRUE, names = FALSE))
 }
 
-# Classe 1-3 d'un raster selon deux bornes. Bornes dégénérées -> tout en médiane.
-.eobs_ds_class3_rast <- function(r, br) {
-  if (length(unique(br)) < 2L || any(!is.finite(br))) {
-    return(terra::ifel(is.na(r), NA, 2L))
+# Classe 1..N d'un raster selon (n-1) bornes croissantes (N = length(br)+1).
+# Bornes dégénérées (doublons / non finies) -> tout en classe médiane.
+.eobs_ds_classN_rast <- function(r, br) {
+  n <- length(br) + 1L
+  if (length(unique(br)) < length(br) || any(!is.finite(br))) {
+    return(terra::ifel(is.na(r), NA, as.integer(ceiling(n / 2))))
   }
-  rcl <- matrix(c(-Inf, br[1], 1, br[1], br[2], 2, br[2], Inf, 3),
-                ncol = 3, byrow = TRUE)
+  edges <- c(-Inf, br, Inf)
+  rcl <- cbind(edges[-length(edges)], edges[-1L], seq_len(n))
   terra::classify(r, rcl)
 }
 
@@ -1033,12 +1043,12 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
 #' into a **bivariate classification** — the "L'IF n°49" map (warming × drying,
 #' red = warm & dry) at the project's context resolution.
 #'
-#' Each trend is cut into tertiles (1 = coolest/driest, 3 = warmest/wettest;
+#' Each trend is cut into quintiles (1 = coolest/driest, 5 = warmest/wettest;
 #' or fixed `breaks`); the combined class is
-#' `(classe_tmax - 1) * 3 + classe_precip`, 1-9, with **warm & dry = 7** (red)
-#' and cool & wet = 3 (blue) — the same encoding as
-#' [tendances_estivales_eobs()]. Reliability is `"low"` (bounded by the noisy
-#' precipitation downscaling).
+#' `(classe_tmax - 1) * 5 + classe_precip`, 1-25, on the 5×5 colour scheme
+#' sampled from the *L'IF n°49* (Copernicus E-OBS) figure — warming dominates
+#' (hot rows red/magenta), cool & dry = yellow, cool & wet = violet. Reliability
+#' is `"low"` (bounded by the noisy precipitation downscaling).
 #'
 #' @param tx Per-year summer maximum-temperature `SpatRaster` (one layer per
 #'   year) — the `eobs` input of [eobs_downscale()] for `var = "tx"`.
@@ -1047,20 +1057,21 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
 #'   over the buffer (IGN WMS), shared by both trends. See [eobs_downscale()].
 #' @param aoi An `sf`/`sfc` of the management units.
 #' @param buffer_m Context buffer around the AOI, in metres (default 25000).
-#' @param breaks Optional `list(tmax=, precip=)` of two cut points each for a
-#'   fixed classification; `NULL` → tertiles per trend.
+#' @param breaks Optional `list(tmax=, precip=)` of four cut points each for a
+#'   fixed classification; `NULL` → quintiles per trend.
 #' @param context_res_m Auto-sourced DEM resolution in metres (default 250).
 #' @param min_points Minimum E-OBS cells to attempt kriging (default 10).
 #' @param cache_path Optional `.tif` path for the bivariate raster.
 #' @param ... Passed to [eobs_downscale()].
 #'
 #' @return A list `list(raster, meta)`. `raster` is a single-layer integer
-#'   `SpatRaster` `classe_bivariee` (1-9) in the DEM CRS, or `NULL` if either
+#'   `SpatRaster` `classe_bivariee` (1-25) in the DEM CRS, or `NULL` if either
 #'   trend degraded. `meta`: `status`, `var = "bivariate"`, `crs`, `dem_source`,
-#'   `n_points`, `breaks` (`list(tmax, precip)` used), `reliability = "low"`,
-#'   `value_label`, and `palette` (`classes` 1-9, `colors` hex, `labels`,
-#'   `sense = "bivariate"` — class 7 warm&dry = red). `meta$tx` / `meta$rr` carry
-#'   the two component `eobs_downscale()` metas.
+#'   `n_points`, `breaks` (`list(tmax, precip)` used, four cut points each),
+#'   `reliability = "low"`, `value_label`, and `palette` (`classes` 1-25,
+#'   `colors` hex, `labels`, `sense = "bivariate"`, `ncol = 5` for the 5×5 grid
+#'   legend). `meta$tx` / `meta$rr` carry the two component `eobs_downscale()`
+#'   metas.
 #' @seealso [eobs_downscale()], [tendances_estivales_eobs()]
 #' @export
 eobs_downscale_bivariate <- function(tx, rr, dem = NULL, aoi, buffer_m = 25000,
@@ -1089,11 +1100,12 @@ eobs_downscale_bivariate <- function(tx, rr, dem = NULL, aoi, buffer_m = 25000,
   if (!terra::compareGeom(rp, tt, stopOnError = FALSE)) {
     rp <- terra::resample(rp, tt, method = "bilinear")
   }
-  brt <- .eobs_ds_breaks3(tt, breaks$tmax)
-  brp <- .eobs_ds_breaks3(rp, breaks$precip)
-  ct <- .eobs_ds_class3_rast(tt, brt)   # 3 = plus chaud
-  cp <- .eobs_ds_class3_rast(rp, brp)   # 3 = plus humide
-  biv <- (ct - 1L) * 3L + cp            # 1-9 ; chaud & sec (3,1) = 7
+  N <- .EOBS_BIVARIATE_N                # 5 -> quinconce 5×5 (25 classes)
+  brt <- .eobs_ds_breaksN(tt, N, breaks$tmax)
+  brp <- .eobs_ds_breaksN(rp, N, breaks$precip)
+  ct <- .eobs_ds_classN_rast(tt, brt)   # N = plus chaud
+  cp <- .eobs_ds_classN_rast(rp, brp)   # N = plus humide
+  biv <- (ct - 1L) * N + cp             # 1..N² ; chaud & sec (N,1) = (N-1)*N+1
   names(biv) <- "classe_bivariee"
 
   if (!is.null(cache_path)) {
@@ -1107,7 +1119,9 @@ eobs_downscale_bivariate <- function(tx, rr, dem = NULL, aoi, buffer_m = 25000,
     n_points = txr$meta$n_points, reliability = "low",
     value_label = "Tendance bivariée (T°max estivale × précipitations)",
     breaks = list(tmax = brt, precip = brp),
-    palette = list(classes = 1:9, colors = unname(.EOBS_BIVARIATE_COLORS),
-                   labels = unname(.EOBS_BIVARIATE_LABELS), sense = "bivariate"),
+    palette = list(classes = seq_len(N * N),
+                   colors = unname(.EOBS_BIVARIATE_COLORS),
+                   labels = unname(.EOBS_BIVARIATE_LABELS),
+                   sense = "bivariate", ncol = N),
     tx = txr$meta, rr = rrr$meta))
 }

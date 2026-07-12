@@ -448,13 +448,15 @@ test_that(".eobs_ds_labels flips unit/sense/reliability between tx and rr", {
   expect_equal(rr$reliability, "low")
 })
 
-test_that(".eobs_ds_class3_rast cuts a raster into 1-3 by tertiles", {
+test_that(".eobs_ds_classN_rast cuts a raster into 1-N by N-tiles", {
   r <- terra::rast(nrows = 10, ncols = 10, vals = seq_len(100))
-  cl <- .eobs_ds_class3_rast(r, .eobs_ds_breaks3(r))
-  expect_setequal(unique(terra::values(cl)[, 1]), c(1, 2, 3))
+  cl3 <- .eobs_ds_classN_rast(r, .eobs_ds_breaksN(r, 3))
+  expect_setequal(unique(terra::values(cl3)[, 1]), c(1, 2, 3))
+  cl5 <- .eobs_ds_classN_rast(r, .eobs_ds_breaksN(r, 5))
+  expect_setequal(unique(terra::values(cl5)[, 1]), 1:5)
 })
 
-test_that("eobs_downscale_bivariate crosses the two trends into 1-9", {
+test_that("eobs_downscale_bivariate crosses the two trends into 1-25 (5×5)", {
   tx <- make_eobs(slope_per_year = 0.3, lapse = 0.6, seed = 1)   # réchauffement
   rr <- make_eobs(slope_per_year = -0.5, lapse = -0.3, seed = 2) # assèchement
   res <- eobs_downscale_bivariate(tx = tx, rr = rr, dem = make_dem(),
@@ -465,10 +467,11 @@ test_that("eobs_downscale_bivariate crosses the two trends into 1-9", {
   expect_equal(terra::nlyr(res$raster), 1L)
   vals <- terra::values(res$raster)[, 1]
   vals <- vals[is.finite(vals)]
-  expect_true(all(vals >= 1 & vals <= 9))
-  # palette : 9 classes / couleurs / libellés, sens bivarié
-  expect_length(res$meta$palette$colors, 9)
-  expect_length(res$meta$palette$labels, 9)
+  expect_true(all(vals >= 1 & vals <= 25))
+  # palette : 25 classes / couleurs / libellés, grille 5×5, sens bivarié
+  expect_length(res$meta$palette$colors, 25)
+  expect_length(res$meta$palette$labels, 25)
+  expect_equal(res$meta$palette$ncol, 5)
   expect_equal(res$meta$palette$sense, "bivariate")
   expect_equal(res$meta$reliability, "low")
   expect_true(all(c("tmax", "precip") %in% names(res$meta$breaks)))
