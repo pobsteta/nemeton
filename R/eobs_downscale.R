@@ -232,6 +232,41 @@ build_safran_stations <- function(aoi, buffer_m, years, dem,
 }
 
 
+# Résout le MNT de la voie meteoland/SAFRAN. Le MNT fourni sert à LA FOIS de
+# source d'altitude des pseudo-stations SAFRAN (8 km) et de grille cible.
+# `build_safran_stations()` écarte toute pseudo-station hors emprise MNT
+# (elevation NA) : un MNT parcellaire (~5 km) ne garde qu'une poignée de mailles
+# sur le buffer -> `< min_stations` -> abort. Même symptôme que le KED sur MNT
+# trop petit : on auto-source alors un MNT régional grossier (WMS IGN) couvrant
+# le buffer, réutilisé pour les altitudes ET la grille. Retourne un SpatRaster
+# (le fourni s'il couvre assez de mailles, sinon l'auto-sourcé) ou NULL si
+# l'auto-source échoue (réseau) — l'appelant émet alors `too few pseudo-stations`.
+.meteoland_resolve_dem <- function(dem, aoi, buffer_m, min_stations,
+                                   spacing_m = 8000, context_res_m = 250,
+                                   timeout = 180) {
+  metric_crs <- .eobs_ds_metric_crs(dem, aoi)
+  buf <- .eobs_aoi_buffer(aoi, buffer_m, metric_crs)
+  grid <- sf::st_make_grid(buf, cellsize = spacing_m, what = "centers")
+  grid <- grid[lengths(sf::st_intersects(grid, buf)) > 0]
+  if (!length(grid)) return(NULL)
+  if (!is.null(dem)) {
+    dem <- .normalize_crs(dem)
+    elev <- tryCatch(as.numeric(terra::extract(
+      dem, terra::vect(sf::st_transform(grid, sf::st_crs(dem))),
+      ID = FALSE)[[1]]), error = function(e) rep(NA_real_, length(grid)))
+    if (sum(is.finite(elev)) >= min_stations) return(dem)
+  }
+  auto <- .eobs_ds_autoscale_dem(aoi, buffer_m, context_res_m, metric_crs,
+                                 timeout)
+  if (!is.null(auto)) {
+    cli::cli_warn(c(
+      "meteoland: provided DEM spans too few SAFRAN cells over the {buffer_m} m buffer; auto-sourced a coarse regional DEM (IGN WMS).",
+      i = "Pass a DEM spanning the buffer to skip the download."))
+  }
+  auto
+}
+
+
 # --- Glue meteoland (chantier microclimat P4, Option A) -------------------------
 # Interpole les séries SAFRAN journalières (pseudo-stations) sur la grille MNT,
 # par année, puis recompose la statistique (même sémantique que KED). meteoland en
@@ -375,7 +410,15 @@ build_safran_stations <- function(aoi, buffer_m, years, dem,
   yrs <- sort(unique(as.integer(.eobs_ds_years(eobs, years))))
 
   tryCatch({
-    dem_n <- .normalize_crs(dem)
+    # MNT parcellaire trop petit pour les mailles SAFRAN -> auto-source régional
+    # (WMS IGN), même logique que meteoland_daily_grid / la voie KED.
+    dem_n <- .meteoland_resolve_dem(dem, aoi, buffer_m + 8000, min_stations)
+    if (is.null(dem_n)) {
+      cli::cli_warn(c(
+        "eobs_downscale(engine = \"meteoland\"): too few SAFRAN pseudo-stations; falling back to KED.",
+        i = "Widen {.arg buffer_m} or check the GéoSAS SAFRAN service."))
+      return(NULL)
+    }
     aoi_buf <- .eobs_aoi_buffer(aoi, buffer_m, sf::st_crs(dem_n))
     # Stations sur un buffer élargi (l'enveloppe des mailles doit couvrir la
     # grille cible : sinon extrapolation en bordure). SAFRAN dense à 8 km.
@@ -480,7 +523,13 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
   yrs <- sort(unique(as.integer(years)))
 
   tryCatch({
-    dem_n <- .normalize_crs(dem)
+    # Un MNT parcellaire ne couvre qu'une poignée de mailles SAFRAN sur le
+    # buffer -> auto-source d'un MNT régional grossier (WMS IGN), sinon abort.
+    dem_n <- .meteoland_resolve_dem(dem, aoi, buffer_m + 8000, min_stations)
+    if (is.null(dem_n)) {
+      cli::cli_warn("meteoland_daily_grid(): too few SAFRAN pseudo-stations.")
+      return(NULL)
+    }
     aoi_buf <- .eobs_aoi_buffer(aoi, buffer_m, sf::st_crs(dem_n))
     stations <- build_safran_stations(aoi, buffer_m + 8000, yrs, dem_n)
     if (is.null(stations) || nrow(stations$points) < min_stations) {
