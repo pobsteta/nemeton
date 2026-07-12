@@ -36,7 +36,8 @@ eobs_downscale(
 
 - var:
 
-  `"tx"` (v1). `"rr"` returns an out-of-scope status.
+  `"tx"` (maximum temperature) or `"rr"` (precipitation; KED only,
+  `reliability = "low"`, palette sense `"dry_unfavorable"`).
 
 - eobs:
 
@@ -138,12 +139,13 @@ eobs_downscale(
 A list `list(raster, meta)`. `raster` is a single-layer `SpatRaster` in
 the DEM CRS, or `NULL` when degraded to nothing. `meta` carries the
 **output contract** the app renders against: `status`
-(`"ok"`/`"out_of_scope"`/`"insufficient_data"`), `engine` (the engine
-that actually ran), `method` (`"ked"`/`"trend_only"`), `var`,
-`statistic`, `crs` (EPSG code), `unit` (e.g. `"°C/decade"`),
-`value_label`, `palette` (`low`/`high` quantile bounds and
-`sense = "hot_unfavorable"` — high = warmer = red, per the app's
-red-is-critical rule), `n_points`, `dem_source`
+(`"ok"`/`"insufficient_data"`), `engine` (the engine that actually ran),
+`method` (`"ked"`/`"trend_only"`), `var`, `statistic`, `crs` (EPSG
+code), `unit` (e.g. `"°C/decade"` for `tx`, `"mm/decade"` for `rr`),
+`value_label`, `reliability` (`"high"` for `tx`, `"low"` for `rr`),
+`palette` (`low`/`high` quantile bounds and `sense` —
+`"hot_unfavorable"` for `tx` (high = warm = red), `"dry_unfavorable"`
+for `rr` (low = drying = red)), `n_points`, `dem_source`
 (`"provided"`/`"autoscaled"`/`"autoscaled_small_dem"`), and, when
 degraded, `reason` (i18n key). Degraded `reason`s distinguish the
 causes: `eobs_downscale_dem_too_small` (the supplied DEM covered too
@@ -154,10 +156,14 @@ the buffer).
 
 ## Details
 
-**v1 covers `tx` (maximum temperature) only** — a physically justified
-altitudinal signal (~ -0.6 °C / 100 m). `rr` (precipitation) is out of
-scope (unreliable downscaling; the DEM only helps in mountains).
-`var = "rr"` returns a status, not a raster.
+**`var = "tx"`** (maximum temperature) rides a physically strong
+altitudinal signal (~ -0.6 °C / 100 m). **`var = "rr"`** (precipitation)
+is also supported, through the **same KED pipeline** — but the
+rain↔elevation relation is noisy and orographic, so `rr` is **less
+reliable** (`meta$reliability = "low"`) and its palette sense flips to
+`"dry_unfavorable"` (a drying trend is the adverse one — low = red).
+`rr` ignores `engine = "meteoland"` (temperature-only) and runs KED. Fit
+for a **regional context** map, not stand-scale precision.
 
 **Two engines, one contract** (microclimat brief §8):
 

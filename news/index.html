@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.152.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.153.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,18 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.153.0" id="nemeton-01530-2026-07-12">nemeton 0.153.0 (2026-07-12)<a class="anchor" aria-label="anchor" href="#nemeton-01530-2026-07-12"></a></h2>
+<div class="section level4">
+<h4 id="added--eobs_downscalevar--rr--carte-bivariée-fine-tmax--précipitations-0-153-0">Added — <code>eobs_downscale(var = "rr")</code> + carte bivariée fine T°max × précipitations<a class="anchor" aria-label="anchor" href="#added--eobs_downscalevar--rr--carte-bivari%C3%A9e-fine-tmax--pr%C3%A9cipitations-0-153-0"></a></h4>
+<p>Complète le contexte régional E-OBS avec la <strong>2ᵉ variable</strong> (précipitations) et la <strong>carte bivariée</strong> de la figure « L’IF n°49 » (Copernicus E-OBS), mais à la <strong>résolution du contexte (UGF)</strong> au lieu du semis E-OBS grossier (brief <code>brief-nemeton-eobs-downscale-rr</code>).</p>
+<ul><li>
+<strong><code>eobs_downscale(var = "rr")</code></strong> — les précipitations passent par le <strong>même pipeline KED</strong> que <code>tx</code> (n’est plus <code>out_of_scope</code>). Spécifiques <code>rr</code> : <code>unit = "mm/decade"</code>, <code>value_label = "Tendance précipitations estivales"</code>, <code>meta$reliability = "low"</code> (relation pluie↔︎altitude bruitée/orographique) et <strong>palette <code>sense = "dry_unfavorable"</code></strong> (une tendance négative = assèchement = défavorable → bas = rouge, distinct du <code>hot_unfavorable</code> de <code>tx</code>). <code>rr</code> ignore <code>engine = "meteoland"</code> (température seule) et tourne en KED. <code>meta</code> gagne <code>reliability</code> pour les deux variables.</li>
+<li>
+<strong><code>eobs_downscale_bivariate(tx, rr, …)</code></strong> (nouvel export) — downscale les deux tendances puis les <strong>croise en classes 1-9</strong> (tertiles ou <code>breaks</code> fixes ; <code>(classe_tmax-1)*3 + classe_precip</code>, <strong>chaud &amp; sec = 7 = rouge</strong>, frais &amp; humide = 3 = bleu — même codage que <code><a href="../reference/tendances_estivales_eobs.html">tendances_estivales_eobs()</a></code>). Retourne un <code>SpatRaster</code> entier <code>classe_bivariee</code> + <code>meta$palette</code> (9 couleurs/libellés, <code>sense = "bivariate"</code>) + <code>meta$breaks</code> + les métas composantes <code>tx</code>/<code>rr</code>. MNT de contexte auto-sourcé partagé (WMS IGN).</li>
+</ul><p>Contrat <code>list(raster, meta)</code> inchangé. Brief app : <code>specs/027-regeneration-microclimat/brief-nemetonshiny-eobs-context-dem.md</code> (mis à jour : 2ᵉ couche rr + sélecteur + carte bivariée).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.152.0" id="nemeton-01520-2026-07-12">nemeton 0.152.0 (2026-07-12)<a class="anchor" aria-label="anchor" href="#nemeton-01520-2026-07-12"></a></h2>
 <div class="section level4">

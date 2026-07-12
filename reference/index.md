@@ -919,6 +919,9 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
 - [`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
   : Downscale an E-OBS variable to a fine raster
 
+- [`eobs_downscale_bivariate()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale_bivariate.md)
+  : Downscaled bivariate climate-trend map (T°max × precipitation)
+
 - [`build_safran_stations()`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)
   : Build the SAFRAN pseudo-station grid for the meteoland engine (spec
   P4)

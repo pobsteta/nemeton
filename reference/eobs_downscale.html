@@ -15,7 +15,7 @@ already produces from microclimf + HD LiDAR."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.152.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.153.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -88,7 +88,8 @@ already produces from microclimf + HD LiDAR.</p>
 
 
 <dl><dt id="arg-var">var<a class="anchor" aria-label="anchor" href="#arg-var"></a></dt>
-<dd><p><code>"tx"</code> (v1). <code>"rr"</code> returns an out-of-scope status.</p></dd>
+<dd><p><code>"tx"</code> (maximum temperature) or <code>"rr"</code> (precipitation; KED only,
+<code>reliability = "low"</code>, palette sense <code>"dry_unfavorable"</code>).</p></dd>
 
 
 <dt id="arg-eobs">eobs<a class="anchor" aria-label="anchor" href="#arg-eobs"></a></dt>
@@ -188,11 +189,13 @@ regional trend needs no finer — the grid is capped at <code>max_cells</code> a
     <p>A list <code>list(raster, meta)</code>. <code>raster</code> is a single-layer <code>SpatRaster</code>
 in the DEM CRS, or <code>NULL</code> when degraded to nothing. <code>meta</code> carries the
 <strong>output contract</strong> the app renders against: <code>status</code>
-(<code>"ok"</code>/<code>"out_of_scope"</code>/<code>"insufficient_data"</code>), <code>engine</code> (the engine that
+(<code>"ok"</code>/<code>"insufficient_data"</code>), <code>engine</code> (the engine that
 actually ran), <code>method</code> (<code>"ked"</code>/<code>"trend_only"</code>), <code>var</code>, <code>statistic</code>,
-<code>crs</code> (EPSG code), <code>unit</code> (e.g. <code>"°C/decade"</code>), <code>value_label</code>, <code>palette</code>
-(<code>low</code>/<code>high</code> quantile bounds and <code>sense = "hot_unfavorable"</code> — high =
-warmer = red, per the app's red-is-critical rule), <code>n_points</code>, <code>dem_source</code>
+<code>crs</code> (EPSG code), <code>unit</code> (e.g. <code>"°C/decade"</code> for <code>tx</code>, <code>"mm/decade"</code> for
+<code>rr</code>), <code>value_label</code>, <code>reliability</code> (<code>"high"</code> for <code>tx</code>, <code>"low"</code> for <code>rr</code>),
+<code>palette</code> (<code>low</code>/<code>high</code> quantile bounds and <code>sense</code> — <code>"hot_unfavorable"</code>
+for <code>tx</code> (high = warm = red), <code>"dry_unfavorable"</code> for <code>rr</code> (low = drying =
+red)), <code>n_points</code>, <code>dem_source</code>
 (<code>"provided"</code>/<code>"autoscaled"</code>/<code>"autoscaled_small_dem"</code>), and, when degraded,
 <code>reason</code> (i18n key). Degraded <code>reason</code>s distinguish the causes:
 <code>eobs_downscale_dem_too_small</code> (the supplied DEM covered too little of the
@@ -202,10 +205,13 @@ but too few E-OBS cells within the buffer).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><strong>v1 covers <code>tx</code> (maximum temperature) only</strong> — a physically justified
-altitudinal signal (~ -0.6 °C / 100 m). <code>rr</code> (precipitation) is out of scope
-(unreliable downscaling; the DEM only helps in mountains). <code>var = "rr"</code>
-returns a status, not a raster.</p>
+    <p><strong><code>var = "tx"</code></strong> (maximum temperature) rides a physically strong altitudinal
+signal (~ -0.6 °C / 100 m). <strong><code>var = "rr"</code></strong> (precipitation) is also supported,
+through the <strong>same KED pipeline</strong> — but the rain↔elevation relation is noisy
+and orographic, so <code>rr</code> is <strong>less reliable</strong> (<code>meta$reliability = "low"</code>) and
+its palette sense flips to <code>"dry_unfavorable"</code> (a drying trend is the adverse
+one — low = red). <code>rr</code> ignores <code>engine = "meteoland"</code> (temperature-only) and
+runs KED. Fit for a <strong>regional context</strong> map, not stand-scale precision.</p>
 <p><strong>Two engines, one contract</strong> (microclimat brief §8):</p><ul><li><p><code>engine = "ked"</code> (default) — regression-kriging: reduce E-OBS to one value
 per cell (the target <code>statistic</code>), fit the drift
 <code>value ~ dem [+ slope + northness + twi]</code>, krige the residuals (variogram
