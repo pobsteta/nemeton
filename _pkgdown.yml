@@ -464,6 +464,7 @@ reference:
     - tendances_estivales_eobs
     - eobs_downscale
     - build_safran_stations
+    - meteoland_daily_grid
     - regeneration_tolerances
     - microclimate_detect_years
     - microclimate_run

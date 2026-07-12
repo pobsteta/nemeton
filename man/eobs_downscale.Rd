@@ -19,6 +19,8 @@ eobs_downscale(
   max_cells = 5e+05,
   min_points = 10L,
   cache_path = NULL,
+  calibrate = FALSE,
+  cv = FALSE,
   ...
 )
 }
@@ -63,6 +65,13 @@ aggregated above it, so the output is never a gigapixel raster.}
 \item{cache_path}{Optional \code{.tif} path; when given, the result raster is
 written there for instant reload (pattern of \code{pai.tif}).}
 
+\item{calibrate}{\code{engine = "meteoland"} only: run the (expensive) meteoland
+LOO calibration before interpolating (default \code{FALSE}, default params).}
+
+\item{cv}{\code{engine = "meteoland"} only: compute leave-one-out cross-validation
+and return it in \code{meta$cv} (\code{r2}, \code{mae_tmin}, \code{mae_tmax}); default \code{FALSE}
+(expensive). KED always reports \code{meta$cv = NULL}.}
+
 \item{...}{Ignored (forward-compat).}
 }
 \value{
@@ -100,10 +109,14 @@ few E-OBS cells, it \strong{degrades to trend-only} (drift surface) — a docume
 fallback, never an error.
 \item \code{engine = "meteoland"} — the station-based interpolator (\pkg{meteoland},
 Thornton 1997 + elevation, microclimat brief Option A / chantier P4). It
-interpolates \strong{daily station series}, so downscaling a pre-reduced trend
-needs a per-year restructuring delivered separately. Until then, and whenever
-\pkg{meteoland} is absent, this engine \strong{falls back to KED} — the output
-contract is identical, so the caller never branches on the engine.
+interpolates the \strong{daily} SAFRAN pseudo-station series (from
+\code{\link{build_safran_stations}}) onto the DEM grid, aggregates each summer to an
+annual max, then reduces to the requested \code{statistic} — same output contract
+as KED, plus a \code{meta$cv} cross-validation block. Whenever \pkg{meteoland} is
+absent, GéoSAS is down, or too few pseudo-stations resolve, it \strong{falls back
+to KED}, so the caller never branches on the engine. For a \strong{daily} raster
+stack (e.g. the Tmin series feeding \code{\link{indicateur_r7_gel}}), use
+\code{\link{meteoland_daily_grid}} instead of a reduced statistic.
 }
 }
 \references{
