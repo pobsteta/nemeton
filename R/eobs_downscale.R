@@ -997,7 +997,9 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
 # bleu (mêmes conventions que tendances_estivales_eobs).
 .EOBS_BIVARIATE_COLORS <- c(
   "1" = "#EDE8AA", "2" = "#9FD6C4", "3" = "#2C83B8",   # frais : sec / stable / humide
-  "4" = "#E39B5A", "5" = "#C9C9C9", "6" = "#6FA8CE",   # tempéré
+  # Centre « Stable » : neutre taupe soutenu (et non un gris pâle) — se lit comme
+  # une couleur pleine en semi-transparence sur fond satellite, pas comme un trou.
+  "4" = "#E39B5A", "5" = "#A79E8C", "6" = "#6FA8CE",   # tempéré
   "7" = "#B2182B", "8" = "#D6604D", "9" = "#C46B9E")   # chaud : sec(rouge) / stable / humide
 .EOBS_BIVARIATE_LABELS <- c(
   "1" = "Frais & plus sec",   "2" = "Frais & stable",   "3" = "Frais & plus humide",

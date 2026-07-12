@@ -1330,8 +1330,9 @@ de mailles SAFRAN, réutilisé pour altitudes + grille ; câblé dans
 Signatures inchangées, 3 tests de non-régression. Note annexe (même échange) :
 les « trous » de la carte bivariée ne sont PAS des NA — masque NA identique à
 tx/rr (21,4 %, coins du buffer) ; c'est la classe centrale 5 « Stable »
-(#C9C9C9, 9950 cellules) qui se lit comme du vide en semi-transparence sur le
-fond satellite. Levier = opacité app, pas un bug cœur.
+(9950 cellules) qui se lisait comme du vide en semi-transparence. Corrigé dans
+la même release : couleur centrale gris pâle #C9C9C9 → neutre taupe #A79E8C
+(lisible comme une couleur pleine à toute opacité).
 
 ### 2026-07-12 — v0.153.1 : fix diagnostic RECONFORT (AOI à anneau dégénéré)
 

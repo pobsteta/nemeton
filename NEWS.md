@@ -23,6 +23,15 @@ MNT trop petit (déjà corrigé en v0.152.0).
 - Signatures publiques inchangées ; comportement préservé quand le MNT couvre
   déjà le buffer (aucun téléchargement). 3 tests de non-régression.
 
+### Changed — carte bivariée : classe centrale « Stable » lisible sur satellite
+
+La classe centrale 5 « Stable » (T°max et précipitations dans leur tertile
+médian) passe du gris pâle `#C9C9C9` à un **neutre taupe soutenu `#A79E8C`**.
+Le gris pâle rendu en semi-transparence sur le fond satellite se lisait comme
+un trou de données alors que c'est une classe pleine (souvent la plus peuplée) ;
+le taupe se lit comme une couleur à toute opacité. Aucun trou réel n'existait :
+le masque NA de la bivariée est identique à celui des couches tx/rr.
+
 # nemeton 0.153.1 (2026-07-12)
 
 ### Fixed — diagnostic RECONFORT : AOI à anneau dégénéré (sommet dupliqué)
