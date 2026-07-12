@@ -277,10 +277,13 @@ test_that("meteoland_daily_grid returns a dated daily Tmin stack for R7", {
 
 # --- MNT de contexte : auto-sourcing (brief eobs-downscaling-dem) ---
 
-# MNT WGS84 grossier et LARGE, simulant le retour du WMS IGN (indépendant du bbox).
+# MNT grossier et LARGE simulant le retour du WMS IGN, déjà dans le CRS métrique
+# (2154) des fixtures : l'auto-source court-circuite alors la reprojection, si bien
+# que ces tests de résolution ne font AUCUNE écriture/warp terra (tournent sur tout
+# runner, y compris ceux à l'anomalie GDAL). Indépendant du bbox reçu.
 fake_ign_dem <- function(bbox = NULL, ...) {
-  r <- terra::rast(terra::ext(-2, 12, 40, 52), resolution = 0.05,
-                   crs = "EPSG:4326")
+  r <- terra::rast(terra::ext(-50000, 100000, -50000, 100000),
+                   resolution = 2000, crs = "EPSG:2154")
   terra::values(r) <- seq_len(terra::ncell(r))
   names(r) <- "elevation"
   r

@@ -679,6 +679,9 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
   bbox <- as.numeric(sf::st_bbox(buf_ll))   # xmin, ymin, xmax, ymax
   r <- .eobs_ds_download_ign_dem(bbox, res_m = res_m, timeout = timeout)
   if (is.null(r)) return(NULL)
+  # Le WMS IGN sert du 4326 -> reprojection dans le CRS métrique. Court-circuit si
+  # déjà dans ce CRS (évite un warp GDAL inutile).
+  if (sf::st_crs(terra::crs(r)) == sf::st_crs(metric_crs)) return(r)
   tryCatch(terra::project(r, sf::st_crs(metric_crs)$wkt),
            error = function(e) NULL)
 }
