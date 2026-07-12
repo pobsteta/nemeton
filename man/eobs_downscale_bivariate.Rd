@@ -48,8 +48,10 @@ trend degraded. \code{meta}: \code{status}, \code{var = "bivariate"}, \code{crs}
 \code{n_points}, \code{breaks} (\code{list(tmax, precip)} used, four cut points each),
 \code{reliability = "low"}, \code{value_label}, and \code{palette} (\code{classes} 1-25,
 \code{colors} hex, \code{labels}, \code{sense = "bivariate"}, \code{ncol = 5} for the 5×5
-grid legend). \code{meta$tx} / \code{meta$rr} carry the two component
-\code{\link{eobs_downscale}} metas.
+grid legend, and \code{zero = list(tmax, precip)} — the fractional [0,1] position of
+the zero-trend line on each axis, \code{NA} if 0 is outside the data range, for the
+white dashed 0/0 lines of the reference figure). \code{meta$tx} / \code{meta$rr} carry
+the two component \code{\link{eobs_downscale}} metas.
 }
 \description{
 The fine-resolution counterpart of \code{\link{tendances_estivales_eobs}}: instead of

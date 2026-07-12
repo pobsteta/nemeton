@@ -17,6 +17,11 @@ humide = magenta.
 - `meta$palette` porte désormais `classes` 1-25, 25 `colors`/`labels` et
   **`ncol = 5`** : l'app rend une **légende en carré bivarié 5×5** (pas une liste
   de 25 lignes). `breaks` (si fourni) attend **4 bornes** par axe.
+- `meta$palette$zero` = `list(tmax, precip)` : position fractionnaire [0,1] de la
+  **tendance nulle** sur chaque axe (ou `NA` hors étendue) — pour tracer les
+  **pointillés blancs 0/0** de la figure de référence. Comme les classes sont des
+  quintiles des données, la position de 0 est data-dépendante et exposée par le
+  cœur (helper `.eobs_ds_zero_pos`).
 - Palette pilotée par les données : l'app lit `pal$colors`/`labels`/`ncol`.
   Brief app mis à jour (`brief-nemetonshiny-eobs-context-dem` §8).
 

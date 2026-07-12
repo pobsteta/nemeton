@@ -1033,6 +1033,23 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
   terra::classify(r, rcl)
 }
 
+# Position fractionnaire [0,1] de la valeur `val` (0 par défaut) le long d'un axe
+# de N classes, pour tracer la ligne pointillée « tendance nulle » sur la légende
+# 5×5 (comme les pointillés blancs 0/0 de la figure L'IF n°49). Les bornes de
+# N-tiles `br` (n-1) et les extrêmes du raster forment n+1 arêtes régulièrement
+# espacées dans l'espace-légende [0,1] ; on y interpole `val`. NA si `val` sort de
+# l'étendue des données (pas de ligne à tracer). Axe : 0 = bas/gauche (frais/sec).
+.eobs_ds_zero_pos <- function(r, br, val = 0) {
+  rng <- suppressWarnings(as.numeric(terra::minmax(r)))
+  lo <- rng[1]; hi <- rng[2]
+  if (!is.finite(lo) || !is.finite(hi) || val < lo || val > hi) return(NA_real_)
+  edges_data <- c(lo, br, hi)                       # n+1 arêtes croissantes
+  edges_pos  <- seq(0, 1, length.out = length(edges_data))
+  # doublons possibles (val extrême = borne) -> approx gère via rule = 2.
+  as.numeric(stats::approx(edges_data, edges_pos, xout = val,
+                           ties = "ordered", rule = 2)$y)
+}
+
 
 #' Downscaled bivariate climate-trend map (T°max × precipitation)
 #'
@@ -1070,8 +1087,10 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
 #'   `n_points`, `breaks` (`list(tmax, precip)` used, four cut points each),
 #'   `reliability = "low"`, `value_label`, and `palette` (`classes` 1-25,
 #'   `colors` hex, `labels`, `sense = "bivariate"`, `ncol = 5` for the 5×5 grid
-#'   legend). `meta$tx` / `meta$rr` carry the two component `eobs_downscale()`
-#'   metas.
+#'   legend, and `zero = list(tmax, precip)` — the fractional [0,1] position of
+#'   the zero-trend line on each axis, `NA` if 0 is outside the data range, for
+#'   the white dashed 0/0 lines of the reference figure). `meta$tx` / `meta$rr`
+#'   carry the two component `eobs_downscale()` metas.
 #' @seealso [eobs_downscale()], [tendances_estivales_eobs()]
 #' @export
 eobs_downscale_bivariate <- function(tx, rr, dem = NULL, aoi, buffer_m = 25000,
@@ -1107,6 +1126,9 @@ eobs_downscale_bivariate <- function(tx, rr, dem = NULL, aoi, buffer_m = 25000,
   cp <- .eobs_ds_classN_rast(rp, brp)   # N = plus humide
   biv <- (ct - 1L) * N + cp             # 1..N² ; chaud & sec (N,1) = (N-1)*N+1
   names(biv) <- "classe_bivariee"
+  # Position [0,1] de la tendance nulle sur chaque axe (pointillés 0/0 de la légende).
+  zero <- list(tmax = .eobs_ds_zero_pos(tt, brt),
+               precip = .eobs_ds_zero_pos(rp, brp))
 
   if (!is.null(cache_path)) {
     tryCatch(terra::writeRaster(biv, cache_path, overwrite = TRUE),
@@ -1122,6 +1144,6 @@ eobs_downscale_bivariate <- function(tx, rr, dem = NULL, aoi, buffer_m = 25000,
     palette = list(classes = seq_len(N * N),
                    colors = unname(.EOBS_BIVARIATE_COLORS),
                    labels = unname(.EOBS_BIVARIATE_LABELS),
-                   sense = "bivariate", ncol = N),
+                   sense = "bivariate", ncol = N, zero = zero),
     tx = txr$meta, rr = rrr$meta))
 }

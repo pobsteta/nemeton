@@ -1325,9 +1325,13 @@ granularité soumis (3×3 / 5×5 / continu), retenu = **5×5 (25 classes)**. Cou
 `.EOBS_BIVARIATE_N=5`, palette+labels 25, helpers généralisés N-tiles
 (`.eobs_ds_breaksN`/`.eobs_ds_classN_rast`), `eobs_downscale_bivariate` code
 `(ct-1)*5+cp` (1-25), `meta$palette$ncol=5` pour une légende carré 5×5 côté app.
-Brief app MAJ (§8 : légende carré, pas liste de 25). Tests 116 verts. Rappel du
-même échange : le neutre central « trou » de la 3×3 (v0.153.2, #A79E8C) n'a plus
-lieu d'être — la 5×5 n'a pas de classe grise.
+Brief app MAJ (§8 : légende carré, pas liste de 25). Rappel du même échange : le
+neutre central « trou » de la 3×3 (v0.153.2, #A79E8C) n'a plus lieu d'être — la
+5×5 n'a pas de classe grise. Ajout demandé ensuite : **pointillés blancs 0/0**
+sur la légende (comme la figure). Classes = quintiles → position de 0 data-
+dépendante ; cœur expose `meta$palette$zero=list(tmax,precip)` (fraction [0,1] ou
+NA hors étendue, helper `.eobs_ds_zero_pos`), l'app trace les traits. Tests 122
+verts.
 
 ### 2026-07-12 — v0.153.2 : fix gel R7 (MNT parcellaire → auto-source régional)
 

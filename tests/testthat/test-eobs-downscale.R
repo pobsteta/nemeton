@@ -473,11 +473,28 @@ test_that("eobs_downscale_bivariate crosses the two trends into 1-25 (5×5)", {
   expect_length(res$meta$palette$labels, 25)
   expect_equal(res$meta$palette$ncol, 5)
   expect_equal(res$meta$palette$sense, "bivariate")
+  # position [0,1] des pointillés 0/0 sur chaque axe (ou NA hors étendue)
+  z <- res$meta$palette$zero
+  expect_true(all(c("tmax", "precip") %in% names(z)))
+  expect_true(is.na(z$tmax) || (z$tmax >= 0 && z$tmax <= 1))
+  expect_true(is.na(z$precip) || (z$precip >= 0 && z$precip <= 1))
   expect_equal(res$meta$reliability, "low")
   expect_true(all(c("tmax", "precip") %in% names(res$meta$breaks)))
   # les deux métas composantes sont transportées
   expect_equal(res$meta$tx$var, "tx")
   expect_equal(res$meta$rr$var, "rr")
+})
+
+test_that(".eobs_ds_zero_pos places 0 within [0,1] and NA outside range", {
+  r <- terra::rast(nrows = 10, ncols = 10, vals = seq(-4, 5, length.out = 100))
+  br <- .eobs_ds_breaksN(r, 5)
+  p <- .eobs_ds_zero_pos(r, br, 0)
+  expect_true(p > 0 && p < 1)            # 0 est intérieur à [-4, 5]
+  # milieu de l'étendue -> ~0.5 ; ici 0 est un peu sous le milieu (0.5) de [-4,5]
+  expect_lt(p, 0.6)
+  # valeur hors étendue -> NA (pas de ligne)
+  rpos <- terra::rast(nrows = 5, ncols = 5, vals = seq(1, 5, length.out = 25))
+  expect_true(is.na(.eobs_ds_zero_pos(rpos, .eobs_ds_breaksN(rpos, 5), 0)))
 })
 
 test_that("eobs_downscale_bivariate degrades cleanly if a trend fails", {

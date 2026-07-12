@@ -167,6 +167,16 @@ if (identical(biv$meta$status, "ok")) {
   en petit `<table>`/HTML 5×5 avec les deux axes légendés (« Tendance T°max » à la
   verticale, « Tendance précipitations » à l'horizontale). Chaud & sec = coin
   haut-gauche = rouge ; frais & humide = bas-droite = violet.
+- **Pointillés blancs 0/0** (comme la figure) : `pal$zero` = `list(tmax, precip)`,
+  chacun une **fraction [0,1]** (ou `NA` si 0 est hors de l'étendue des tendances
+  → ne pas tracer). Sur le carré de côté `S` px (origine coin **bas-gauche**) :
+  - ligne **horizontale** (tendance T°max nulle) à `y = (1 - pal$zero$tmax) * S`
+    depuis le haut, i.e. `pal$zero$tmax` mesuré depuis le bas ;
+  - ligne **verticale** (tendance précip nulle) à `x = pal$zero$precip * S` depuis
+    la gauche.
+  En CSS/SVG : un trait `stroke:#fff; stroke-dasharray:3 2` par-dessus la grille.
+  Ces positions sont **data-dépendantes** (quintiles) : toujours lire `pal$zero`,
+  ne pas figer à 40 %/60 %.
 - `biv$meta$breaks` (quintiles tmax/precip utilisés, **4 bornes chacun**),
   `biv$meta$tx` / `biv$meta$rr` (métas composantes) pour debug/tooltip.
   `reliability = "low"`.
