@@ -916,6 +916,10 @@ sourcée jugée suffisante.
       meteoland_daily_grid, build_safran_stations, eobs_downscale engine=meteoland) —
       cœur v0.151.0, app nemetonshiny@9e0d1189 (v0.104.0 : moteur opt-in + cache
       tmin.tif + carte gel + R7 au radar reGénération, sens normal NA-safe). — 2026-07-12
+- [x] Contexte régional E-OBS en raster — 3 vues : eobs_downscale(var="tx"/"rr")
+      + eobs_downscale_bivariate(tx,rr) (classes 1-9, palette colors/labels),
+      dem=NULL auto-source WMS IGN — cœur v0.153.0, app nemetonshiny@53b15066
+      (v0.106.0 : sélecteur 3 vues + légende bivariée 2D + download rr + async/cache). — 2026-07-12
 
 Les deux briefs app du volet moteur spec 027 sont désormais clos ; **plus aucun
 brief app en attente sur ce chantier**.
