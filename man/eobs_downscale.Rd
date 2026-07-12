@@ -7,7 +7,7 @@
 eobs_downscale(
   var = c("tx", "rr"),
   eobs,
-  dem,
+  dem = NULL,
   aoi,
   engine = c("ked", "meteoland"),
   buffer_m = 25000,
@@ -21,6 +21,7 @@ eobs_downscale(
   cache_path = NULL,
   calibrate = FALSE,
   cv = FALSE,
+  context_res_m = 250,
   ...
 )
 }
@@ -32,7 +33,14 @@ eobs_downscale(
 (\code{statistic = "value"}).}
 
 \item{dem}{A \code{SpatRaster} DEM — the downscaling target grid and main
-covariate. The output shares its CRS.}
+covariate; the output shares its CRS. \strong{Optional}: pass \code{NULL} (or a DEM
+too small to cover the buffer) and a \strong{coarse regional DEM is auto-sourced}
+over the buffer from the IGN Géoplateforme WMS
+(\code{ELEVATION.ELEVATIONGRIDCOVERAGE}, France, no auth). The KED extracts
+terrain at the E-OBS cell centres, so a stand-scale DEM (~4–5 km) covers only
+~1 E-OBS cell and yields \code{insufficient_data}; the auto-sourced DEM spans the
+whole buffer. \code{meta$dem_source} reports \code{"provided"}, \code{"autoscaled"}, or
+\code{"autoscaled_small_dem"}.}
 
 \item{aoi}{An \code{sf}/\code{sfc} of the management units, buffered to frame the
 regional context.}
@@ -72,6 +80,10 @@ LOO calibration before interpolating (default \code{FALSE}, default params).}
 and return it in \code{meta$cv} (\code{r2}, \code{mae_tmin}, \code{mae_tmax}); default \code{FALSE}
 (expensive). KED always reports \code{meta$cv = NULL}.}
 
+\item{context_res_m}{Target resolution (metres) of the \strong{auto-sourced} coarse
+regional DEM (default 250; ignored when a covering \code{dem} is supplied). A
+regional trend needs no finer — the grid is capped at \code{max_cells} anyway.}
+
 \item{...}{Ignored (forward-compat).}
 }
 \value{
@@ -82,8 +94,13 @@ in the DEM CRS, or \code{NULL} when degraded to nothing. \code{meta} carries the
 actually ran), \code{method} (\code{"ked"}/\code{"trend_only"}), \code{var}, \code{statistic},
 \code{crs} (EPSG code), \code{unit} (e.g. \code{"°C/decade"}), \code{value_label}, \code{palette}
 (\code{low}/\code{high} quantile bounds and \code{sense = "hot_unfavorable"} — high =
-warmer = red, per the app's red-is-critical rule), \code{n_points}, and, when
-degraded, \code{reason} (i18n key).
+warmer = red, per the app's red-is-critical rule), \code{n_points}, \code{dem_source}
+(\code{"provided"}/\code{"autoscaled"}/\code{"autoscaled_small_dem"}), and, when degraded,
+\code{reason} (i18n key). Degraded \code{reason}s distinguish the causes:
+\code{eobs_downscale_dem_too_small} (the supplied DEM covered too little of the
+buffer and no coarse DEM could be sourced), \code{eobs_downscale_no_dem} (no DEM
+supplied and none could be sourced), \code{eobs_downscale_too_few_cells} (DEM fine
+but too few E-OBS cells within the buffer).
 }
 \description{
 Turn the coarse E-OBS grid (~0.1°, ~11 km) into a fine continuous

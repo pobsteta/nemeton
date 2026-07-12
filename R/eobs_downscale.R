@@ -597,6 +597,136 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 }
 
 
+# --- Résolution du MNT de contexte (auto-sourcing, brief eobs-downscaling-dem) --
+# Le KED extrait les covariables terrain AUX POINTS E-OBS : l'emprise du MNT borne
+# donc le nombre de mailles exploitables. Un MNT parcellaire (~4-5 km) ne recouvre
+# qu'~1 maille E-OBS (~11 km) -> insufficient_data malgré un buffer 25 km. On
+# auto-source alors une élévation GROSSIÈRE sur tout le buffer (WMS IGN
+# Géoplateforme, France, sans auth) — inutile de viser du 5 m sur 25 km, le KED
+# agrège de toute façon à max_cells.
+
+# CRS métrique cible : celui du MNT s'il est projeté, sinon celui de l'AOI si
+# projeté, sinon Lambert-93 (le WMS IGN est français).
+.eobs_ds_metric_crs <- function(dem, aoi) {
+  for (x in list(dem, aoi)) {
+    if (is.null(x)) next
+    crs <- tryCatch(
+      if (inherits(x, "SpatRaster")) sf::st_crs(terra::crs(x)) else sf::st_crs(x),
+      error = function(e) NA)
+    if (!is.na(crs) && !isTRUE(sf::st_is_longlat(crs))) return(crs)
+  }
+  sf::st_crs(2154)
+}
+
+# Centres de mailles E-OBS tombant dans le buffer, dans le CRS `crs_out`. C'est la
+# mesure DIRECTE d'utilisabilité : le KED extrait les covariables à ces points.
+.eobs_ds_eobs_pts <- function(eobs, aoi, buffer_m, crs_out) {
+  crs_eobs <- sf::st_crs(terra::crs(eobs))
+  if (is.na(crs_eobs)) crs_eobs <- sf::st_crs(4326)
+  xy <- terra::xyFromCell(eobs[[1]], seq_len(terra::ncell(eobs[[1]])))
+  pts <- sf::st_as_sf(data.frame(x = xy[, 1], y = xy[, 2]),
+                      coords = c("x", "y"), crs = crs_eobs)
+  pts <- sf::st_transform(pts, crs_out)
+  buf <- .eobs_aoi_buffer(aoi, buffer_m, crs_out)
+  pts[lengths(sf::st_intersects(pts, buf)) > 0, , drop = FALSE]
+}
+
+# Combien de ces mailles tombent aussi dans l'emprise du MNT (dans son CRS) ?
+.eobs_ds_pts_in_dem <- function(pts, dem) {
+  pd <- sf::st_transform(pts, sf::st_crs(terra::crs(dem)))
+  de <- terra::ext(dem)
+  co <- sf::st_coordinates(pd)
+  sum(co[, 1] >= de[1] & co[, 1] <= de[2] & co[, 2] >= de[3] & co[, 2] <= de[4])
+}
+
+# Télécharge un MNT grossier (GetMap WMS IGN ELEVATION.ELEVATIONGRIDCOVERAGE,
+# image/geotiff = vraies altitudes) sur un bbox WGS84. Best-effort -> NULL.
+.eobs_ds_download_ign_dem <- function(bbox, res_m = 250, max_px = 2000L,
+                                      timeout = 180) {
+  svc <- tryCatch(get_layer_service("dem", "FR"), error = function(e) NULL)
+  base_url <- svc$url %||% "https://data.geopf.fr/wms-r/wms"
+  layer <- svc$layer %||% "ELEVATION.ELEVATIONGRIDCOVERAGE"
+  res_deg <- res_m / 111000
+  w <- max(1L, ceiling((bbox[3] - bbox[1]) / res_deg))
+  h <- max(1L, ceiling((bbox[4] - bbox[2]) / res_deg))
+  sc <- max(w, h) / max_px
+  if (sc > 1) { w <- max(1L, floor(w / sc)); h <- max(1L, floor(h / sc)) }
+  url <- paste0(base_url, "?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap",
+                "&LAYERS=", layer, "&STYLES=&CRS=EPSG:4326",
+                # WMS 1.3.0 + EPSG:4326 -> ordre lat,lon.
+                "&BBOX=", paste(c(bbox[2], bbox[1], bbox[4], bbox[3]), collapse = ","),
+                "&WIDTH=", w, "&HEIGHT=", h, "&FORMAT=image/geotiff")
+  tmp <- tempfile(fileext = ".tif")
+  old <- options(timeout = timeout); on.exit(options(old), add = TRUE)
+  ok <- tryCatch({
+    utils::download.file(url, tmp, mode = "wb", quiet = TRUE)
+    file.exists(tmp) && file.size(tmp) > 1000
+  }, error = function(e) FALSE)
+  if (!ok) return(NULL)
+  r <- tryCatch(suppressWarnings(terra::rast(tmp)), error = function(e) NULL)
+  if (is.null(r)) return(NULL)
+  # Le WMS IGN sert un datum ambigu (code NA) alors que les coords SONT en 4326.
+  if (is.na(terra::crs(r, describe = TRUE)$code)) terra::crs(r) <- "EPSG:4326"
+  if (terra::nlyr(r) > 1L) r <- r[[1]]
+  names(r) <- "elevation"
+  r
+}
+
+# Auto-source d'un MNT grossier sur le buffer, reprojeté dans le CRS métrique.
+.eobs_ds_autoscale_dem <- function(aoi, buffer_m, res_m, metric_crs,
+                                   timeout = 180) {
+  buf_ll <- .eobs_aoi_buffer(aoi, buffer_m, sf::st_crs(4326))
+  bbox <- as.numeric(sf::st_bbox(buf_ll))   # xmin, ymin, xmax, ymax
+  r <- .eobs_ds_download_ign_dem(bbox, res_m = res_m, timeout = timeout)
+  if (is.null(r)) return(NULL)
+  # Le WMS IGN sert du 4326 -> reprojection dans le CRS métrique. Court-circuit si
+  # déjà dans ce CRS (évite un warp GDAL inutile).
+  if (sf::st_crs(terra::crs(r)) == sf::st_crs(metric_crs)) return(r)
+  tryCatch(terra::project(r, sf::st_crs(metric_crs)$wkt),
+           error = function(e) NULL)
+}
+
+# Décide du MNT à utiliser. Le MNT fourni n'est « trop petit » que si le buffer
+# contient assez de mailles E-OBS (>= min_points) MAIS son emprise n'en couvre pas
+# assez — c'est alors le MNT le facteur limitant, et on auto-source un MNT large.
+# Si le buffer lui-même a trop peu de mailles (buffer minuscule), auto-sourcer ne
+# sert à rien : on garde le MNT fourni et le KED renverra `too_few_cells`.
+# Retourne list(dem, dem_source, reason?). dem = NULL -> insufficient_data.
+.eobs_ds_resolve_dem <- function(dem, eobs, aoi, buffer_m, min_points,
+                                 context_res_m = 250, timeout = 180) {
+  metric_crs <- .eobs_ds_metric_crs(dem, aoi)
+  pts_buf <- tryCatch(.eobs_ds_eobs_pts(eobs, aoi, buffer_m, metric_crs),
+                      error = function(e) NULL)
+  n_buf <- if (is.null(pts_buf)) 0L else nrow(pts_buf)
+
+  if (!is.null(dem)) {
+    dem <- .normalize_crs(dem)
+    n_both <- if (n_buf) tryCatch(.eobs_ds_pts_in_dem(pts_buf, dem),
+                                  error = function(e) 0L) else 0L
+    # MNT suffisant, ou facteur limitant != MNT (buffer/E-OBS) -> garder le fourni.
+    if (n_both >= min_points || n_buf < min_points) {
+      return(list(dem = dem, dem_source = "provided"))
+    }
+    auto <- .eobs_ds_autoscale_dem(aoi, buffer_m, context_res_m, metric_crs,
+                                   timeout)
+    if (!is.null(auto)) {
+      cli::cli_warn(c(
+        "eobs_downscale(): provided {.arg dem} spans too few E-OBS cells ({n_both}/{n_buf}); auto-sourced a coarse regional DEM (IGN WMS).",
+        i = "Pass a DEM spanning the {buffer_m} m buffer to skip the download."))
+      return(list(dem = auto, dem_source = "autoscaled_small_dem"))
+    }
+    return(list(dem = NULL, dem_source = "provided_too_small",
+                reason = "eobs_downscale_dem_too_small"))
+  }
+
+  auto <- .eobs_ds_autoscale_dem(aoi, buffer_m, context_res_m, metric_crs,
+                                 timeout)
+  if (!is.null(auto)) return(list(dem = auto, dem_source = "autoscaled"))
+  list(dem = NULL, dem_source = "unavailable",
+       reason = "eobs_downscale_no_dem")
+}
+
+
 #' Downscale an E-OBS variable to a fine raster
 #'
 #' @description
@@ -638,7 +768,14 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 #'   `statistic = "trend"`/`"mean"`) or a single reduced layer
 #'   (`statistic = "value"`).
 #' @param dem A `SpatRaster` DEM — the downscaling target grid and main
-#'   covariate. The output shares its CRS.
+#'   covariate; the output shares its CRS. **Optional**: pass `NULL` (or a DEM
+#'   too small to cover the buffer) and a **coarse regional DEM is auto-sourced**
+#'   over the buffer from the IGN Géoplateforme WMS
+#'   (`ELEVATION.ELEVATIONGRIDCOVERAGE`, France, no auth). The KED extracts
+#'   terrain at the E-OBS cell centres, so a stand-scale DEM (~4–5 km) covers only
+#'   ~1 E-OBS cell and yields `insufficient_data`; the auto-sourced DEM spans the
+#'   whole buffer. `meta$dem_source` reports `"provided"`, `"autoscaled"`, or
+#'   `"autoscaled_small_dem"`.
 #' @param aoi An `sf`/`sfc` of the management units, buffered to frame the
 #'   regional context.
 #' @param engine `"ked"` (default, regression-kriging) or `"meteoland"`
@@ -664,6 +801,9 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 #' @param cv `engine = "meteoland"` only: compute leave-one-out cross-validation
 #'   and return it in `meta$cv` (`r2`, `mae_tmin`, `mae_tmax`); default `FALSE`
 #'   (expensive). KED always reports `meta$cv = NULL`.
+#' @param context_res_m Target resolution (metres) of the **auto-sourced** coarse
+#'   regional DEM (default 250; ignored when a covering `dem` is supplied). A
+#'   regional trend needs no finer — the grid is capped at `max_cells` anyway.
 #' @param ... Ignored (forward-compat).
 #'
 #' @return A list `list(raster, meta)`. `raster` is a single-layer `SpatRaster`
@@ -673,13 +813,18 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 #'   actually ran), `method` (`"ked"`/`"trend_only"`), `var`, `statistic`,
 #'   `crs` (EPSG code), `unit` (e.g. `"°C/decade"`), `value_label`, `palette`
 #'   (`low`/`high` quantile bounds and `sense = "hot_unfavorable"` — high =
-#'   warmer = red, per the app's red-is-critical rule), `n_points`, and, when
-#'   degraded, `reason` (i18n key).
+#'   warmer = red, per the app's red-is-critical rule), `n_points`, `dem_source`
+#'   (`"provided"`/`"autoscaled"`/`"autoscaled_small_dem"`), and, when degraded,
+#'   `reason` (i18n key). Degraded `reason`s distinguish the causes:
+#'   `eobs_downscale_dem_too_small` (the supplied DEM covered too little of the
+#'   buffer and no coarse DEM could be sourced), `eobs_downscale_no_dem` (no DEM
+#'   supplied and none could be sourced), `eobs_downscale_too_few_cells` (DEM fine
+#'   but too few E-OBS cells within the buffer).
 #' @references E-OBS: Cornes et al. (2018). Regression-kriging: Hengl et al.
 #'   (2007). meteoland: De Cáceres et al. (2018).
 #' @seealso [tendances_estivales_eobs()], [microclimate_run()]
 #' @export
-eobs_downscale <- function(var = c("tx", "rr"), eobs, dem, aoi,
+eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
                            engine = c("ked", "meteoland"),
                            buffer_m = 25000, resolution = NULL,
                            covariates = c("dem", "slope", "aspect", "twi"),
@@ -687,7 +832,7 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem, aoi,
                            variogram_model = NULL, years = NULL,
                            max_cells = 5e5, min_points = 10L,
                            cache_path = NULL, calibrate = FALSE, cv = FALSE,
-                           ...) {
+                           context_res_m = 250, ...) {
   var <- match.arg(var)
   engine <- match.arg(engine)
   statistic <- match.arg(statistic)
@@ -700,8 +845,8 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem, aoi,
   if (!inherits(eobs, "SpatRaster")) {
     cli::cli_abort("{.arg eobs} must be a {.cls SpatRaster}.")
   }
-  if (!inherits(dem, "SpatRaster")) {
-    cli::cli_abort("{.arg dem} must be a {.cls SpatRaster}.")
+  if (!is.null(dem) && !inherits(dem, "SpatRaster")) {
+    cli::cli_abort("{.arg dem} must be a {.cls SpatRaster} or NULL.")
   }
   if (!inherits(aoi, c("sf", "sfc"))) {
     cli::cli_abort("{.arg aoi} must be an {.cls sf} or {.cls sfc}.")
@@ -709,25 +854,51 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem, aoi,
   covariates <- intersect(covariates, c("dem", "slope", "aspect", "twi"))
   if (!length(covariates)) covariates <- "dem"
 
-  # engine = "meteoland" : tenté, mais retombe sur KED tant que le rail P4 n'est
-  # pas livré / que meteoland est absent (contrat de sortie inchangé).
+  # Robustesse CRS : E-OBS est en lon/lat WGS84 ; si le raster arrive sans CRS,
+  # un st_transform des mailles échoue et n_points tombe à 0 en silence. On pose
+  # explicitement EPSG:4326 plutôt que de mal placer les points.
+  if (identical(terra::crs(eobs), "")) {
+    terra::crs(eobs) <- "EPSG:4326"
+    cli::cli_warn("eobs_downscale(): {.arg eobs} had no CRS; assuming EPSG:4326 (E-OBS lon/lat).")
+  }
+
+  # MNT de contexte : le fourni s'il couvre le buffer, sinon auto-sourcé grossier
+  # (WMS IGN) sur le buffer — sans quoi l'emprise parcellaire borne n_points à ~1.
+  demr <- .eobs_ds_resolve_dem(dem, eobs, aoi, buffer_m, min_points,
+                               context_res_m = context_res_m)
+  if (is.null(demr$dem)) {
+    return(list(raster = NULL, meta = list(
+      status = "insufficient_data", engine = engine, var = var,
+      method = NA_character_, n_points = 0L, dem_source = demr$dem_source,
+      reason = demr$reason)))
+  }
+  dem <- demr$dem
+
+  # engine = "meteoland" : tenté, repli KED si meteoland/GéoSAS/densité KO
+  # (contrat de sortie inchangé).
   if (identical(engine, "meteoland")) {
     out <- .eobs_ds_run_meteoland(
       var = var, eobs = eobs, dem = dem, aoi = aoi, buffer_m = buffer_m,
       resolution = resolution, covariates = covariates, statistic = statistic,
       years = years, max_cells = max_cells, cache_path = cache_path,
       calibrate = calibrate, cv = cv)
-    if (!is.null(out)) return(out)
+    if (!is.null(out)) {
+      out$meta$dem_source <- demr$dem_source
+      return(out)
+    }
     # repli KED, en gardant trace du moteur demandé.
     out <- .eobs_ds_run_ked(var, eobs, dem, aoi, buffer_m, resolution,
                             covariates, statistic, variogram_model, years,
                             max_cells, min_points, cache_path)
     out$meta$engine_requested <- "meteoland"
     out$meta$engine_fallback <- TRUE
+    out$meta$dem_source <- demr$dem_source
     return(out)
   }
 
-  .eobs_ds_run_ked(var, eobs, dem, aoi, buffer_m, resolution, covariates,
-                   statistic, variogram_model, years, max_cells, min_points,
-                   cache_path)
+  out <- .eobs_ds_run_ked(var, eobs, dem, aoi, buffer_m, resolution, covariates,
+                          statistic, variogram_model, years, max_cells,
+                          min_points, cache_path)
+  out$meta$dem_source <- demr$dem_source
+  out
 }

@@ -1311,6 +1311,37 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-12 — v0.152.0 : MNT de contexte auto-sourcé pour `eobs_downscale` (WMS IGN)
+
+Débloque la carte contexte régional E-OBS sur projet réel (brief
+`brief-nemeton-eobs-downscaling-dem`). **Cause racine** : le KED extrait les
+covariables terrain AUX POINTS E-OBS, donc l'emprise du MNT borne `n_points` — un
+MNT parcellaire (~4-5 km) ne recouvre qu'~1 maille E-OBS (~11 km) → n_points=1,
+insufficient_data, malgré buffer 25 km. (Ce n'était PAS un CRS cassé : le MNT
+BD ALTI porte un WGS84 valide.)
+
+**Option A1 retenue** (recommandée par le brief) : `dem` devient optionnel ;
+`eobs_downscale` auto-source une élévation GROSSIÈRE sur le buffer depuis le **WMS
+IGN Géoplateforme** (`ELEVATION.ELEVATIONGRIDCOVERAGE`, France, sans auth) —
+réutilise `get_layer_service("dem","FR")` (fonction cœur) et le patron GetMap de
+l'app `download_ign_dem`. **Validé en réel** (AOI Besançon, buffer 25 km) :
+n_points 1 → **33**, status ok, tendance 3 °C/décennie exacte, sortie 2154,
+~200 m. Inutile de viser du 5 m sur 25 km : le KED agrège à `max_cells`, défaut
+`context_res_m = 250`.
+
+**Décision « MNT trop petit » robuste** : pas une fraction de recouvrement
+géométrique (trop sensible), mais un **comptage de mailles E-OBS** — le MNT n'est
+le facteur limitant que si le buffer contient ≥ `min_points` mailles mais que
+l'emprise du MNT n'en couvre pas assez. Buffer minuscule → E-OBS limitant, on
+garde le MNT fourni (KED → `too_few_cells`, pas de téléchargement inutile).
+
+**Robustesse CRS** : `eobs` sans CRS → EPSG:4326 (E-OBS toujours lon/lat) +
+avertissement, au lieu de n_points=0 silencieux. **Replis** : `meta$reason`
+distingue `dem_too_small` / `no_dem` / `too_few_cells` ; `meta$dem_source` =
+provided/autoscaled/autoscaled_small_dem. **Contrat `list(raster, meta)`
+inchangé**. Tests : branches de résolution (mock download), robustesse CRS, WMS
+réel (`skip_if_offline`). Côté app : `addRasterImage` + opacité dès `status=ok`.
+
 ### 2026-07-12 — v0.151.0 : moteur meteoland RÉEL + Tmin journalier alimentant R7 (P4)
 
 Clôt le chantier microclimat P4. Pascal a installé **meteoland 2.2.7** sur le PC :
