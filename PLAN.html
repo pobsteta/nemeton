@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.153.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.153.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -870,6 +870,10 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-12--v01532--fix-gel-r7-mnt-parcellaire--auto-source-régional">2026-07-12 — v0.153.2 : fix gel R7 (MNT parcellaire → auto-source régional)<a class="anchor" aria-label="anchor" href="#id_2026-07-12--v01532--fix-gel-r7-mnt-parcellaire--auto-source-r%C3%A9gional"></a></h3>
+<p>Signalé sur le projet reconfort : le moteur gel se skippe (« Tmin indisponible (meteoland/SAFRAN). R7 absent du radar »), console <code>meteoland_daily_grid(): too few SAFRAN pseudo-stations</code>. Diag (inspection cache réel) : l’app passe le MNT LiDAR parcellaire (<code>lidar_mnt_mosaic.tif</code>, ~5 km) ; <code><a href="reference/build_safran_stations.html">build_safran_stations()</a></code> écarte les pseudo-stations SAFRAN hors emprise MNT (elevation NA) → sur un buffer 25 km, <code>&lt; 5</code> stations survivent → abort. Même classe que le KED sur MNT trop petit (v0.152.0). Fix : <code>.meteoland_resolve_dem()</code> auto-source un MNT régional grossier (WMS IGN 250 m) couvrant le buffer quand le MNT fourni couvre trop peu de mailles SAFRAN, réutilisé pour altitudes + grille ; câblé dans <code><a href="reference/meteoland_daily_grid.html">meteoland_daily_grid()</a></code> (voie R7) et <code>eobs_downscale(engine="meteoland")</code>. Signatures inchangées, 3 tests de non-régression. Note annexe (même échange) : les « trous » de la carte bivariée ne sont PAS des NA — masque NA identique à tx/rr (21,4 %, coins du buffer) ; c’est la classe centrale 5 « Stable » (9950 cellules) qui se lisait comme du vide en semi-transparence. Corrigé dans la même release : couleur centrale gris pâle #C9C9C9 → neutre taupe #A79E8C (lisible comme une couleur pleine à toute opacité).</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-12--v01531--fix-diagnostic-reconfort-aoi-à-anneau-dégénéré">2026-07-12 — v0.153.1 : fix diagnostic RECONFORT (AOI à anneau dégénéré)<a class="anchor" aria-label="anchor" href="#id_2026-07-12--v01531--fix-diagnostic-reconfort-aoi-%C3%A0-anneau-d%C3%A9g%C3%A9n%C3%A9r%C3%A9"></a></h3>
 <p>Signalé en séance : le diagnostic RECONFORT s’interrompt à l’étape <em>tiles</em> [4/10] avec <code>Loop 2 is not valid: Edge 13 is degenerate (duplicate vertex)</code> (via <code>wk_handle.wk_wkb()</code>), remontant de <code><a href="reference/run_reconfort_dieback.html">nemeton::run_reconfort_dieback()</a></code>. Cause : la zone du projet porte un anneau dégénéré (sommet dupliqué). <code><a href="reference/reconfort_aoi_tiles.html">reconfort_aoi_tiles()</a></code> résout l’emprise contre la grille MGRS <strong>GeoJSON (EPSG:4326)</strong> → <code>st_union</code>/<code>st_intersects</code> sous <strong>s2</strong> → abort. Le chemin indicateurs (intersection BD Forêt) réparait déjà ce cas ; la résolution des tuiles non. Fix : réparation <code>st_make_valid()</code> + réessai dans <code><a href="reference/reconfort_aoi_tiles.html">reconfort_aoi_tiles()</a></code> (même idiome), <strong>et</strong> AOI rendue valide une fois à la source dans <code><a href="reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> (protège masque/clip/vérité terrain en aval). Test de non-régression ajouté. Reproduit hors fix : l’anneau dupliqué abortait bien s2 avec l’erreur exacte du log.</p>

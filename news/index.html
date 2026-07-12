@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.153.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.153.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,20 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.153.2" id="nemeton-01532-2026-07-12">nemeton 0.153.2 (2026-07-12)<a class="anchor" aria-label="anchor" href="#nemeton-01532-2026-07-12"></a></h2>
+<div class="section level4">
+<h4 id="fixed--gel-r7--mnt-parcellaire--auto-source-du-mnt-régional-voie-meteolandsafran-0-153-2">Fixed — gel R7 : MNT parcellaire → auto-source du MNT régional (voie meteoland/SAFRAN)<a class="anchor" aria-label="anchor" href="#fixed--gel-r7--mnt-parcellaire--auto-source-du-mnt-r%C3%A9gional-voie-meteolandsafran-0-153-2"></a></h4>
+<p>Le moteur « gelées tardives » (R7) se skippait proprement (« Tmin indisponible ») sur les projets à MNT parcellaire : <code><a href="../reference/meteoland_daily_grid.html">meteoland_daily_grid()</a></code> échouait sur <code>too few SAFRAN pseudo-stations</code>. Cause : le MNT sert <strong>à la fois</strong> de source d’altitude des pseudo-stations SAFRAN (mailles ~8 km sur AOI + buffer) <strong>et</strong> de grille cible. <code><a href="../reference/build_safran_stations.html">build_safran_stations()</a></code> écarte toute pseudo-station hors emprise MNT (<code>elevation</code> NA) ; un MNT LiDAR ~4-5 km ne couvre qu’une poignée de mailles sur un buffer de 25 km → <code>&lt; min_stations</code> → abort. Même symptôme que le KED sur MNT trop petit (déjà corrigé en v0.152.0).</p>
+<ul><li>Nouveau helper interne <code>.meteoland_resolve_dem()</code> : compte les mailles SAFRAN couvertes par le MNT fourni ; si <code>&lt; min_stations</code>, <strong>auto-source un MNT régional grossier (WMS IGN, 250 m)</strong> couvrant le buffer et le réutilise pour les altitudes <em>et</em> la grille. Réutilise <code>.eobs_ds_autoscale_dem()</code> / <code>.eobs_ds_download_ign_dem()</code> de la voie KED (court-circuit CRS identique, aucun warp inutile).</li>
+<li>Câblé dans <code><a href="../reference/meteoland_daily_grid.html">meteoland_daily_grid()</a></code> (voie R7, sans repli auparavant → skip dur) <strong>et</strong> dans <code>eobs_downscale(engine = "meteoland")</code> (le downscaling T°max tourne désormais réellement via meteoland au lieu de dégrader silencieusement au KED).</li>
+<li>Signatures publiques inchangées ; comportement préservé quand le MNT couvre déjà le buffer (aucun téléchargement). 3 tests de non-régression.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="changed--carte-bivariée--classe-centrale--stable--lisible-sur-satellite-0-153-2">Changed — carte bivariée : classe centrale « Stable » lisible sur satellite<a class="anchor" aria-label="anchor" href="#changed--carte-bivari%C3%A9e--classe-centrale--stable--lisible-sur-satellite-0-153-2"></a></h4>
+<p>La classe centrale 5 « Stable » (T°max et précipitations dans leur tertile médian) passe du gris pâle <code>#C9C9C9</code> à un <strong>neutre taupe soutenu <code>#A79E8C</code></strong>. Le gris pâle rendu en semi-transparence sur le fond satellite se lisait comme un trou de données alors que c’est une classe pleine (souvent la plus peuplée) ; le taupe se lit comme une couleur à toute opacité. Aucun trou réel n’existait : le masque NA de la bivariée est identique à celui des couches tx/rr.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.153.1" id="nemeton-01531-2026-07-12">nemeton 0.153.1 (2026-07-12)<a class="anchor" aria-label="anchor" href="#nemeton-01531-2026-07-12"></a></h2>
 <div class="section level4">
