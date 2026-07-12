@@ -108,10 +108,73 @@ Clé = emprise UGF + var + statistic (+ années E-OBS).
 - **Ne pas** confondre ce contexte régional (NDP 0/1, plein champ) avec le
   microclimat sous couvert de `microclimate_run()` (parcelle, NDP 2+).
 
-## 7. Checklist app
+## 7. 2ᵉ couche : précipitations `var = "rr"` (cœur ≥ v0.153.0)
 
-- [ ] Appeler `eobs_downscale(var="tx", eobs=…, dem=NULL, aoi=units, statistic=…, buffer_m=25000)`.
-- [ ] `addRasterImage` + `colorNumeric(reverse=TRUE)` + légende `meta$palette`/`value_label`, groupe `contexte_eobs`, piloté par le curseur d'opacité.
-- [ ] Bandeau statut : mapper `meta$reason` (4 clés i18n FR/EN + `value_label`).
-- [ ] (Option) `cache_path` pour éviter le retéléchargement.
-- [ ] (Option) tooltip debug : `meta$dem_source` / `n_points` / `method`.
+`eobs_downscale(var = "rr")` **n'est plus `out_of_scope`** — même appel que `tx`,
+seul `var` change :
+
+```r
+rr_res <- nemeton::eobs_downscale(
+  var = "rr", eobs = rr, dem = NULL, aoi = units,
+  statistic = "trend", buffer_m = 25000)          # rr force KED (meteoland = T° seule)
+```
+
+Spécificités à respecter au rendu :
+- `meta$palette$sense == "dry_unfavorable"` → **BAS = rouge** (une tendance
+  négative = assèchement = défavorable). Donc `colorNumeric(..., reverse = FALSE)`
+  (l'inverse de `tx` qui est `hot_unfavorable`, `reverse = TRUE`). **Piloter la
+  palette par `meta$palette$sense`**, pas en dur.
+- `meta$unit == "mm/decade"`, `meta$value_label == "Tendance précipitations estivales"`.
+- `meta$reliability == "low"` → à surfacer en tooltip « fiabilité » (le downscaling
+  pluie est bruité/orographique — contexte régional seulement).
+- **Ré-exposer le bouton de téléchargement rr** (~800 Mo, flux `regen_fetch_eobs_rr`
+  déjà côté app) : le contexte `tx` seul ne le déclenchait plus.
+
+**Sélecteur de couche** sur la carte contexte : radio/onglets « Tendance T°max » /
+« Tendance précipitations » — 2 rasters mono-couche, un seul visible via le
+contrôle de couches Leaflet. Même code de rendu que §2, palette pilotée par
+`sense`.
+
+## 8. 3ᵉ vue : carte BIVARIÉE fine (la figure « L'IF n°49 » à l'échelle UGF)
+
+`eobs_downscale_bivariate(tx, rr, …)` (cœur ≥ v0.153.0) croise les deux tendances
+**downscalées** en un raster de classes **1-9** — la carte rouge = réchauffement +
+assèchement, mais **à la résolution du contexte** (pas le semis E-OBS grossier de
+`tendances_estivales_eobs`).
+
+```r
+biv <- nemeton::eobs_downscale_bivariate(
+  tx = tx, rr = rr, dem = NULL, aoi = units, buffer_m = 25000,
+  cache_path = "cache/regeneration/context_bivariate.tif")
+
+if (identical(biv$meta$status, "ok")) {
+  pal <- biv$meta$palette                 # classes 1:9, colors (9 hex), labels (9 FR)
+  cmap <- leaflet::colorFactor(pal$colors, domain = pal$classes, na.color = "transparent")
+  leafletProxy("map") |>
+    clearGroup("contexte_bivariee") |>
+    addRasterImage(biv$raster, colors = cmap, opacity = input$context_opacity,
+                   group = "contexte_bivariee") |>
+    addLegend(colors = pal$colors, labels = pal$labels, title = biv$meta$value_label,
+              group = "contexte_bivariee")
+}
+```
+
+- Le raster est **entier 1-9** (`classe_bivariee`) : rendu en **`colorFactor`**
+  (couleurs/libellés fournis dans `meta$palette`), pas `colorNumeric`.
+- Codage : `(classe_tmax-1)*3 + classe_precip`. **Chaud & sec = 7 = rouge** ;
+  frais & humide = 3 = bleu. La **légende 3×3** peut être rendue depuis
+  `pal$colors`/`pal$labels` (9 entrées) ou en petit carré bivarié comme la figure.
+- `biv$meta$breaks` (tertiles tmax/precip utilisés), `biv$meta$tx` / `biv$meta$rr`
+  (métas composantes) pour debug/tooltip. `reliability = "low"`.
+- **Une seule carte** débloque le besoin : proposer le **3ᵉ choix** dans le
+  sélecteur (« Bivariée T°max × précip ») à côté des deux couches simples.
+
+## 9. Checklist app
+
+- [ ] Couche tx : `eobs_downscale(var="tx", dem=NULL, …)` + `addRasterImage`/`colorNumeric(reverse=TRUE)` (sense `hot_unfavorable`).
+- [ ] Couche rr : `eobs_downscale(var="rr", dem=NULL, …)` + palette pilotée par `sense="dry_unfavorable"` (reverse=FALSE) ; ré-exposer le bouton download rr.
+- [ ] Carte bivariée : `eobs_downscale_bivariate(tx, rr, …)` + `colorFactor(meta$palette$colors)` + légende 9 classes.
+- [ ] Sélecteur 3 vues (T°max / précip / bivariée), un raster visible à la fois, curseur d'opacité commun.
+- [ ] Bandeau statut : mapper `meta$reason` (clés i18n FR/EN + `value_label`). `eobs_downscale_rr_out_of_scope` **supprimée**.
+- [ ] Tooltip fiabilité : `meta$reliability` (tx=high, rr/bivariée=low).
+- [ ] (Option) `cache_path` par variable (`context_tx.tif` / `context_rr.tif` / `context_bivariate.tif`).

@@ -1,3 +1,32 @@
+# nemeton 0.153.0 (2026-07-12)
+
+### Added — `eobs_downscale(var = "rr")` + carte bivariée fine T°max × précipitations
+
+Complète le contexte régional E-OBS avec la **2ᵉ variable** (précipitations) et la
+**carte bivariée** de la figure « L'IF n°49 » (Copernicus E-OBS), mais à la
+**résolution du contexte (UGF)** au lieu du semis E-OBS grossier
+(brief `brief-nemeton-eobs-downscale-rr`).
+
+- **`eobs_downscale(var = "rr")`** — les précipitations passent par le **même
+  pipeline KED** que `tx` (n'est plus `out_of_scope`). Spécifiques `rr` :
+  `unit = "mm/decade"`, `value_label = "Tendance précipitations estivales"`,
+  `meta$reliability = "low"` (relation pluie↔altitude bruitée/orographique) et
+  **palette `sense = "dry_unfavorable"`** (une tendance négative = assèchement =
+  défavorable → bas = rouge, distinct du `hot_unfavorable` de `tx`). `rr` ignore
+  `engine = "meteoland"` (température seule) et tourne en KED. `meta` gagne
+  `reliability` pour les deux variables.
+- **`eobs_downscale_bivariate(tx, rr, …)`** (nouvel export) — downscale les deux
+  tendances puis les **croise en classes 1-9** (tertiles ou `breaks` fixes ;
+  `(classe_tmax-1)*3 + classe_precip`, **chaud & sec = 7 = rouge**, frais & humide
+  = 3 = bleu — même codage que `tendances_estivales_eobs()`). Retourne un
+  `SpatRaster` entier `classe_bivariee` + `meta$palette` (9 couleurs/libellés,
+  `sense = "bivariate"`) + `meta$breaks` + les métas composantes `tx`/`rr`. MNT de
+  contexte auto-sourcé partagé (WMS IGN).
+
+Contrat `list(raster, meta)` inchangé. Brief app :
+`specs/027-regeneration-microclimat/brief-nemetonshiny-eobs-context-dem.md`
+(mis à jour : 2ᵉ couche rr + sélecteur + carte bivariée).
+
 # nemeton 0.152.0 (2026-07-12)
 
 ### Added — MNT de contexte auto-sourcé + robustesse CRS pour `eobs_downscale()`

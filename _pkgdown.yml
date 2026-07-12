@@ -463,6 +463,7 @@ reference:
     - lai_sentinel2
     - tendances_estivales_eobs
     - eobs_downscale
+    - eobs_downscale_bivariate
     - build_safran_stations
     - meteoland_daily_grid
     - regeneration_tolerances

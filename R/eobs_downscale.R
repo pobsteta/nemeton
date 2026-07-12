@@ -56,6 +56,35 @@
   max(1L, as.integer(ceiling(sqrt(nc / max_cells))))
 }
 
+# Étiquettes de sortie par variable × statistique. Détermine unité, libellé,
+# SENS de palette et fiabilité :
+#  - tx (T°max)   : haut = rouge (`hot_unfavorable`), fiabilité haute (gradient
+#    altitudinal fort et physiquement fondé, ~-0,6 °C/100 m) ;
+#  - rr (précip.) : BAS = rouge (`dry_unfavorable`, une tendance négative =
+#    assèchement, défavorable), fiabilité BASSE (relation pluie↔altitude bruitée
+#    et orographique — contexte régional seulement, ne pas sur-promettre).
+.eobs_ds_labels <- function(var, statistic) {
+  if (identical(var, "rr")) {
+    list(
+      unit = switch(statistic, trend = "mm/decade", "mm"),
+      value_label = switch(statistic,
+                           trend = "Tendance précipitations estivales",
+                           mean  = "Précipitations estivales moyennes",
+                           "Précipitations estivales"),
+      sense = "dry_unfavorable",
+      reliability = "low")
+  } else {
+    list(
+      unit = switch(statistic, trend = "°C/decade", "°C"),
+      value_label = switch(statistic,
+                           trend = "Tendance T°max estivale",
+                           mean  = "T°max estivale moyenne",
+                           "T°max estivale"),
+      sense = "hot_unfavorable",
+      reliability = "high")
+  }
+}
+
 # Pile de covariables dérivées du MNT, alignée sur la grille de `dem`.
 # "aspect" est entré comme NORTHNESS = cos(aspect) : l'exposition brute en degrés
 # est circulaire et n'a aucun sens dans une régression linéaire ; la northness
@@ -370,14 +399,10 @@ build_safran_stations <- function(aoi, buffer_m, years, dem,
     reduce_as <- if (identical(statistic, "value")) "mean" else statistic
     stat_r <- .eobs_ds_reduce(stk, reduce_as, yrs)
 
-    unit <- switch(statistic, trend = "°C/decade", "°C")
-    value_label <- switch(statistic,
-                          trend = "Tendance T°max estivale",
-                          mean  = "T°max estivale moyenne",
-                          "T°max estivale")
+    lab <- .eobs_ds_labels(var, statistic)   # meteoland = toujours T°max (tx)
     pred <- terra::mask(stat_r, terra::vect(aoi_buf))
     names(pred) <- var
-    terra::units(pred) <- unit
+    terra::units(pred) <- lab$unit
 
     if (!is.null(cache_path)) {
       tryCatch(terra::writeRaster(pred, cache_path, overwrite = TRUE),
@@ -391,9 +416,9 @@ build_safran_stations <- function(aoi, buffer_m, years, dem,
 
     list(raster = pred, meta = list(
       status = "ok", engine = "meteoland", method = "meteoland", var = var,
-      statistic = statistic, crs = crs_code, unit = unit,
-      value_label = value_label,
-      palette = list(low = qs[1], high = qs[2], sense = "hot_unfavorable"),
+      statistic = statistic, crs = crs_code, unit = lab$unit,
+      value_label = lab$value_label, reliability = lab$reliability,
+      palette = list(low = qs[1], high = qs[2], sense = lab$sense),
       n_points = nrow(stations$points), cv = cv_stats))
   }, error = function(e) {
     cli::cli_warn(c(
@@ -494,15 +519,14 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 }
 
 # Cœur KED : réduction E-OBS -> lm(dérive) -> krigeage des résidus (gstat).
-# Retourne list(raster, meta) ; jamais appelé pour var = "rr".
+# Retourne list(raster, meta). Gère tx (T°max) ET rr (précipitations) : même
+# pipeline, seuls unité/libellé/sens de palette/fiabilité changent (.eobs_ds_labels).
 .eobs_ds_run_ked <- function(var, eobs, dem, aoi, buffer_m, resolution,
                              covariates, statistic, variogram_model, years,
                              max_cells, min_points, cache_path) {
-  unit <- switch(statistic, trend = "°C/decade", "°C")
-  value_label <- switch(statistic,
-                        trend = "Tendance T°max estivale",
-                        mean  = "T°max estivale moyenne",
-                        "T°max estivale")
+  lab <- .eobs_ds_labels(var, statistic)
+  unit <- lab$unit
+  value_label <- lab$value_label
 
   # --- Grille cible : DEM recadré sur AOI+buffer, borné en cellules. ---
   dem <- .normalize_crs(dem)
@@ -591,8 +615,8 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
   list(raster = pred, meta = list(
     status = "ok", engine = "ked", method = method, var = var,
     statistic = statistic, crs = crs_code, unit = unit,
-    value_label = value_label,
-    palette = list(low = qs[1], high = qs[2], sense = "hot_unfavorable"),
+    value_label = value_label, reliability = lab$reliability,
+    palette = list(low = qs[1], high = qs[2], sense = lab$sense),
     n_points = n, cv = NULL))   # cv : validation croisée (moteur meteoland, P4)
 }
 
@@ -736,10 +760,13 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 #' reGénération tab — **not** stand-scale precision, which [microclimate_run()]
 #' already produces from microclimf + HD LiDAR.
 #'
-#' **v1 covers `tx` (maximum temperature) only** — a physically justified
-#' altitudinal signal (~ -0.6 °C / 100 m). `rr` (precipitation) is out of scope
-#' (unreliable downscaling; the DEM only helps in mountains). `var = "rr"`
-#' returns a status, not a raster.
+#' **`var = "tx"`** (maximum temperature) rides a physically strong altitudinal
+#' signal (~ -0.6 °C / 100 m). **`var = "rr"`** (precipitation) is also supported,
+#' through the **same KED pipeline** — but the rain↔elevation relation is noisy
+#' and orographic, so `rr` is **less reliable** (`meta$reliability = "low"`) and
+#' its palette sense flips to `"dry_unfavorable"` (a drying trend is the adverse
+#' one — low = red). `rr` ignores `engine = "meteoland"` (temperature-only) and
+#' runs KED. Fit for a **regional context** map, not stand-scale precision.
 #'
 #' **Two engines, one contract** (microclimat brief §8):
 #' * `engine = "ked"` (default) — regression-kriging: reduce E-OBS to one value
@@ -763,7 +790,8 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 #' Both engines return the same `list(raster, meta)` shape; the app renders
 #' against `meta` regardless of engine.
 #'
-#' @param var `"tx"` (v1). `"rr"` returns an out-of-scope status.
+#' @param var `"tx"` (maximum temperature) or `"rr"` (precipitation; KED only,
+#'   `reliability = "low"`, palette sense `"dry_unfavorable"`).
 #' @param eobs A `SpatRaster` of E-OBS: one layer per year (for
 #'   `statistic = "trend"`/`"mean"`) or a single reduced layer
 #'   (`statistic = "value"`).
@@ -809,11 +837,13 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 #' @return A list `list(raster, meta)`. `raster` is a single-layer `SpatRaster`
 #'   in the DEM CRS, or `NULL` when degraded to nothing. `meta` carries the
 #'   **output contract** the app renders against: `status`
-#'   (`"ok"`/`"out_of_scope"`/`"insufficient_data"`), `engine` (the engine that
+#'   (`"ok"`/`"insufficient_data"`), `engine` (the engine that
 #'   actually ran), `method` (`"ked"`/`"trend_only"`), `var`, `statistic`,
-#'   `crs` (EPSG code), `unit` (e.g. `"°C/decade"`), `value_label`, `palette`
-#'   (`low`/`high` quantile bounds and `sense = "hot_unfavorable"` — high =
-#'   warmer = red, per the app's red-is-critical rule), `n_points`, `dem_source`
+#'   `crs` (EPSG code), `unit` (e.g. `"°C/decade"` for `tx`, `"mm/decade"` for
+#'   `rr`), `value_label`, `reliability` (`"high"` for `tx`, `"low"` for `rr`),
+#'   `palette` (`low`/`high` quantile bounds and `sense` — `"hot_unfavorable"`
+#'   for `tx`, high = warm = red; `"dry_unfavorable"` for `rr`, low = drying =
+#'   red), `n_points`, `dem_source`
 #'   (`"provided"`/`"autoscaled"`/`"autoscaled_small_dem"`), and, when degraded,
 #'   `reason` (i18n key). Degraded `reason`s distinguish the causes:
 #'   `eobs_downscale_dem_too_small` (the supplied DEM covered too little of the
@@ -837,10 +867,11 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
   engine <- match.arg(engine)
   statistic <- match.arg(statistic)
 
-  if (identical(var, "rr")) {
-    return(list(raster = NULL, meta = list(
-      status = "out_of_scope", var = "rr", engine = engine,
-      method = NA_character_, reason = "eobs_downscale_rr_out_of_scope")))
+  # rr (précipitations) : le moteur meteoland interpole la T°max, sans objet pour
+  # la pluie -> KED (dérive orographique sur le MNT), le seul chemin pertinent.
+  if (identical(var, "rr") && identical(engine, "meteoland")) {
+    cli::cli_warn("eobs_downscale(var = \"rr\"): meteoland is temperature-only; using engine = \"ked\".")
+    engine <- "ked"
   }
   if (!inherits(eobs, "SpatRaster")) {
     cli::cli_abort("{.arg eobs} must be a {.cls SpatRaster}.")
@@ -901,4 +932,131 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
                           min_points, cache_path)
   out$meta$dem_source <- demr$dem_source
   out
+}
+
+
+# --- Carte bivariée fine (T°max × précipitations) -------------------------------
+# La figure « L'IF n°49 » (IGN/Copernicus E-OBS) croise la tendance estivale de la
+# T°max et celle des précipitations : rouge = réchauffement + assèchement. La
+# version grossière (tendances_estivales_eobs) travaille sur le semis E-OBS
+# (~11 km) ; celle-ci croise les deux tendances DOWNSCALÉES (rasters fins
+# eobs_downscale) pour une carte à la résolution du contexte (UGF).
+
+# Palette bivariée 3×3, indexée par classe 1-9 = (classe_tmax-1)*3 + classe_precip
+# (classe_tmax : 1 frais -> 3 chaud ; classe_precip : 1 sec -> 3 humide). Chaud &
+# sec (tmax 3, precip 1) = classe 7 = rouge ; frais & humide (1,3) = classe 3 =
+# bleu (mêmes conventions que tendances_estivales_eobs).
+.EOBS_BIVARIATE_COLORS <- c(
+  "1" = "#EDE8AA", "2" = "#9FD6C4", "3" = "#2C83B8",   # frais : sec / stable / humide
+  "4" = "#E39B5A", "5" = "#C9C9C9", "6" = "#6FA8CE",   # tempéré
+  "7" = "#B2182B", "8" = "#D6604D", "9" = "#C46B9E")   # chaud : sec(rouge) / stable / humide
+.EOBS_BIVARIATE_LABELS <- c(
+  "1" = "Frais & plus sec",   "2" = "Frais & stable",   "3" = "Frais & plus humide",
+  "4" = "Tempéré & plus sec", "5" = "Stable",           "6" = "Tempéré & plus humide",
+  "7" = "Chaud & plus sec",   "8" = "Chaud & stable",   "9" = "Chaud & plus humide")
+
+# Bornes de tertiles (ou bornes fixes) d'un raster fin.
+.eobs_ds_breaks3 <- function(r, br = NULL) {
+  if (!is.null(br)) return(br)
+  unname(stats::quantile(terra::values(r), c(1 / 3, 2 / 3),
+                         na.rm = TRUE, names = FALSE))
+}
+
+# Classe 1-3 d'un raster selon deux bornes. Bornes dégénérées -> tout en médiane.
+.eobs_ds_class3_rast <- function(r, br) {
+  if (length(unique(br)) < 2L || any(!is.finite(br))) {
+    return(terra::ifel(is.na(r), NA, 2L))
+  }
+  rcl <- matrix(c(-Inf, br[1], 1, br[1], br[2], 2, br[2], Inf, 3),
+                ncol = 3, byrow = TRUE)
+  terra::classify(r, rcl)
+}
+
+
+#' Downscaled bivariate climate-trend map (T°max × precipitation)
+#'
+#' @description
+#' The fine-resolution counterpart of [tendances_estivales_eobs()]: instead of
+#' the coarse E-OBS grid (~11 km), it **downscales** both summer trends via
+#' [eobs_downscale()] (KED with an auto-sourced regional DEM) and crosses them
+#' into a **bivariate classification** — the "L'IF n°49" map (warming × drying,
+#' red = warm & dry) at the project's context resolution.
+#'
+#' Each trend is cut into tertiles (1 = coolest/driest, 3 = warmest/wettest;
+#' or fixed `breaks`); the combined class is
+#' `(classe_tmax - 1) * 3 + classe_precip`, 1-9, with **warm & dry = 7** (red)
+#' and cool & wet = 3 (blue) — the same encoding as
+#' [tendances_estivales_eobs()]. Reliability is `"low"` (bounded by the noisy
+#' precipitation downscaling).
+#'
+#' @param tx Per-year summer maximum-temperature `SpatRaster` (one layer per
+#'   year) — the `eobs` input of [eobs_downscale()] for `var = "tx"`.
+#' @param rr Per-year summer precipitation `SpatRaster` — for `var = "rr"`.
+#' @param dem Optional DEM; `NULL` (default) auto-sources a coarse regional DEM
+#'   over the buffer (IGN WMS), shared by both trends. See [eobs_downscale()].
+#' @param aoi An `sf`/`sfc` of the management units.
+#' @param buffer_m Context buffer around the AOI, in metres (default 25000).
+#' @param breaks Optional `list(tmax=, precip=)` of two cut points each for a
+#'   fixed classification; `NULL` → tertiles per trend.
+#' @param context_res_m Auto-sourced DEM resolution in metres (default 250).
+#' @param min_points Minimum E-OBS cells to attempt kriging (default 10).
+#' @param cache_path Optional `.tif` path for the bivariate raster.
+#' @param ... Passed to [eobs_downscale()].
+#'
+#' @return A list `list(raster, meta)`. `raster` is a single-layer integer
+#'   `SpatRaster` `classe_bivariee` (1-9) in the DEM CRS, or `NULL` if either
+#'   trend degraded. `meta`: `status`, `var = "bivariate"`, `crs`, `dem_source`,
+#'   `n_points`, `breaks` (`list(tmax, precip)` used), `reliability = "low"`,
+#'   `value_label`, and `palette` (`classes` 1-9, `colors` hex, `labels`,
+#'   `sense = "bivariate"` — class 7 warm&dry = red). `meta$tx` / `meta$rr` carry
+#'   the two component `eobs_downscale()` metas.
+#' @seealso [eobs_downscale()], [tendances_estivales_eobs()]
+#' @export
+eobs_downscale_bivariate <- function(tx, rr, dem = NULL, aoi, buffer_m = 25000,
+                                     breaks = NULL, context_res_m = 250,
+                                     min_points = 10L, cache_path = NULL, ...) {
+  txr <- eobs_downscale("tx", eobs = tx, dem = dem, aoi = aoi,
+                        statistic = "trend", buffer_m = buffer_m,
+                        context_res_m = context_res_m, min_points = min_points,
+                        ...)
+  rrr <- eobs_downscale("rr", eobs = rr, dem = dem, aoi = aoi,
+                        statistic = "trend", buffer_m = buffer_m,
+                        context_res_m = context_res_m, min_points = min_points,
+                        ...)
+  if (!identical(txr$meta$status, "ok") || is.null(txr$raster) ||
+      !identical(rrr$meta$status, "ok") || is.null(rrr$raster)) {
+    bad <- if (!identical(txr$meta$status, "ok")) txr$meta else rrr$meta
+    return(list(raster = NULL, meta = list(
+      status = "insufficient_data", var = "bivariate",
+      reason = bad$reason %||% "eobs_downscale_bivariate_failed",
+      tx = txr$meta, rr = rrr$meta)))
+  }
+
+  tt <- txr$raster
+  rp <- rrr$raster
+  # Aligner rr sur la grille tx (mêmes bornes de contexte -> normalement identiques).
+  if (!terra::compareGeom(rp, tt, stopOnError = FALSE)) {
+    rp <- terra::resample(rp, tt, method = "bilinear")
+  }
+  brt <- .eobs_ds_breaks3(tt, breaks$tmax)
+  brp <- .eobs_ds_breaks3(rp, breaks$precip)
+  ct <- .eobs_ds_class3_rast(tt, brt)   # 3 = plus chaud
+  cp <- .eobs_ds_class3_rast(rp, brp)   # 3 = plus humide
+  biv <- (ct - 1L) * 3L + cp            # 1-9 ; chaud & sec (3,1) = 7
+  names(biv) <- "classe_bivariee"
+
+  if (!is.null(cache_path)) {
+    tryCatch(terra::writeRaster(biv, cache_path, overwrite = TRUE),
+             error = function(e) cli::cli_warn("eobs_downscale_bivariate(): cache not written."))
+  }
+
+  list(raster = biv, meta = list(
+    status = "ok", var = "bivariate", statistic = "trend",
+    crs = txr$meta$crs, dem_source = txr$meta$dem_source,
+    n_points = txr$meta$n_points, reliability = "low",
+    value_label = "Tendance bivariée (T°max estivale × précipitations)",
+    breaks = list(tmax = brt, precip = brp),
+    palette = list(classes = 1:9, colors = unname(.EOBS_BIVARIATE_COLORS),
+                   labels = unname(.EOBS_BIVARIATE_LABELS), sense = "bivariate"),
+    tx = txr$meta, rr = rrr$meta))
 }

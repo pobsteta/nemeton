@@ -26,7 +26,8 @@ eobs_downscale(
 )
 }
 \arguments{
-\item{var}{\code{"tx"} (v1). \code{"rr"} returns an out-of-scope status.}
+\item{var}{\code{"tx"} (maximum temperature) or \code{"rr"} (precipitation; KED only,
+\code{reliability = "low"}, palette sense \code{"dry_unfavorable"}).}
 
 \item{eobs}{A \code{SpatRaster} of E-OBS: one layer per year (for
 \code{statistic = "trend"}/\code{"mean"}) or a single reduced layer
@@ -90,11 +91,13 @@ regional trend needs no finer — the grid is capped at \code{max_cells} anyway.
 A list \code{list(raster, meta)}. \code{raster} is a single-layer \code{SpatRaster}
 in the DEM CRS, or \code{NULL} when degraded to nothing. \code{meta} carries the
 \strong{output contract} the app renders against: \code{status}
-(\code{"ok"}/\code{"out_of_scope"}/\code{"insufficient_data"}), \code{engine} (the engine that
+(\code{"ok"}/\code{"insufficient_data"}), \code{engine} (the engine that
 actually ran), \code{method} (\code{"ked"}/\code{"trend_only"}), \code{var}, \code{statistic},
-\code{crs} (EPSG code), \code{unit} (e.g. \code{"°C/decade"}), \code{value_label}, \code{palette}
-(\code{low}/\code{high} quantile bounds and \code{sense = "hot_unfavorable"} — high =
-warmer = red, per the app's red-is-critical rule), \code{n_points}, \code{dem_source}
+\code{crs} (EPSG code), \code{unit} (e.g. \code{"°C/decade"} for \code{tx}, \code{"mm/decade"} for
+\code{rr}), \code{value_label}, \code{reliability} (\code{"high"} for \code{tx}, \code{"low"} for \code{rr}),
+\code{palette} (\code{low}/\code{high} quantile bounds and \code{sense} — \code{"hot_unfavorable"}
+for \code{tx} (high = warm = red), \code{"dry_unfavorable"} for \code{rr} (low = drying =
+red)), \code{n_points}, \code{dem_source}
 (\code{"provided"}/\code{"autoscaled"}/\code{"autoscaled_small_dem"}), and, when degraded,
 \code{reason} (i18n key). Degraded \code{reason}s distinguish the causes:
 \code{eobs_downscale_dem_too_small} (the supplied DEM covered too little of the
@@ -110,10 +113,13 @@ reGénération tab — \strong{not} stand-scale precision, which \code{\link{mic
 already produces from microclimf + HD LiDAR.
 }
 \details{
-\strong{v1 covers \code{tx} (maximum temperature) only} — a physically justified
-altitudinal signal (~ -0.6 °C / 100 m). \code{rr} (precipitation) is out of scope
-(unreliable downscaling; the DEM only helps in mountains). \code{var = "rr"}
-returns a status, not a raster.
+\strong{\code{var = "tx"}} (maximum temperature) rides a physically strong altitudinal
+signal (~ -0.6 °C / 100 m). \strong{\code{var = "rr"}} (precipitation) is also supported,
+through the \strong{same KED pipeline} — but the rain↔elevation relation is noisy
+and orographic, so \code{rr} is \strong{less reliable} (\code{meta$reliability = "low"}) and
+its palette sense flips to \code{"dry_unfavorable"} (a drying trend is the adverse
+one — low = red). \code{rr} ignores \code{engine = "meteoland"} (temperature-only) and
+runs KED. Fit for a \strong{regional context} map, not stand-scale precision.
 
 \strong{Two engines, one contract} (microclimat brief §8):
 \itemize{

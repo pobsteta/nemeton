@@ -65,12 +65,35 @@ test_that("physical coherence: higher altitude -> colder downscaled tx (mean)", 
   expect_lt(stats::cor(df$pred, df$dem), 0)
 })
 
-test_that("var = 'rr' is out of scope in v1", {
+test_that("var = 'rr' downscales precipitation with its own labels/sense", {
   res <- eobs_downscale(var = "rr", eobs = make_eobs(), dem = make_dem(),
-                        aoi = make_aoi())
-  expect_null(res$raster)
-  expect_equal(res$meta$status, "out_of_scope")
-  expect_equal(res$meta$reason, "eobs_downscale_rr_out_of_scope")
+                        aoi = make_aoi(), statistic = "trend", buffer_m = 30000,
+                        covariates = c("dem", "slope"))
+  expect_equal(res$meta$status, "ok")
+  expect_s4_class(res$raster, "SpatRaster")
+  expect_equal(res$meta$var, "rr")
+  expect_equal(res$meta$unit, "mm/decade")
+  expect_equal(res$meta$value_label, "Tendance précipitations estivales")
+  expect_equal(res$meta$palette$sense, "dry_unfavorable")   # bas = rouge (assèchement)
+  expect_equal(res$meta$reliability, "low")
+})
+
+test_that("var = 'rr' ignores engine = 'meteoland' and runs KED", {
+  res <- suppressWarnings(eobs_downscale(
+    var = "rr", eobs = make_eobs(), dem = make_dem(), aoi = make_aoi(),
+    engine = "meteoland", statistic = "trend", buffer_m = 30000,
+    covariates = c("dem", "slope")))
+  expect_equal(res$meta$engine, "ked")           # pas de repli meteoland pour rr
+  expect_null(res$meta$engine_fallback)          # forcé en amont, pas un fallback
+})
+
+test_that("tx keeps hot_unfavorable / high reliability", {
+  res <- eobs_downscale(var = "tx", eobs = make_eobs(), dem = make_dem(),
+                        aoi = make_aoi(), statistic = "trend", buffer_m = 30000,
+                        covariates = c("dem", "slope"))
+  expect_equal(res$meta$palette$sense, "hot_unfavorable")
+  expect_equal(res$meta$reliability, "high")
+  expect_equal(res$meta$unit, "°C/decade")
 })
 
 test_that("insufficient E-OBS coverage degrades cleanly, no error", {
@@ -378,4 +401,59 @@ test_that(".eobs_ds_download_ign_dem fetches a real coarse DEM (IGN WMS)", {
   v <- terra::values(r); v <- v[is.finite(v)]
   expect_gt(length(v), 0)
   expect_true(all(v > -500 & v < 5000))     # altitudes plausibles (m)
+})
+
+# --- carte bivariée fine (T°max × précipitations) ---
+
+test_that(".eobs_ds_labels flips unit/sense/reliability between tx and rr", {
+  tx <- .eobs_ds_labels("tx", "trend")
+  rr <- .eobs_ds_labels("rr", "trend")
+  expect_equal(tx$unit, "°C/decade")
+  expect_equal(tx$sense, "hot_unfavorable")
+  expect_equal(tx$reliability, "high")
+  expect_equal(rr$unit, "mm/decade")
+  expect_equal(rr$sense, "dry_unfavorable")
+  expect_equal(rr$reliability, "low")
+})
+
+test_that(".eobs_ds_class3_rast cuts a raster into 1-3 by tertiles", {
+  r <- terra::rast(nrows = 10, ncols = 10, vals = seq_len(100))
+  cl <- .eobs_ds_class3_rast(r, .eobs_ds_breaks3(r))
+  expect_setequal(unique(terra::values(cl)[, 1]), c(1, 2, 3))
+})
+
+test_that("eobs_downscale_bivariate crosses the two trends into 1-9", {
+  tx <- make_eobs(slope_per_year = 0.3, lapse = 0.6, seed = 1)   # réchauffement
+  rr <- make_eobs(slope_per_year = -0.5, lapse = -0.3, seed = 2) # assèchement
+  res <- eobs_downscale_bivariate(tx = tx, rr = rr, dem = make_dem(),
+                                  aoi = make_aoi(), buffer_m = 30000)
+  expect_equal(res$meta$status, "ok")
+  expect_equal(res$meta$var, "bivariate")
+  expect_s4_class(res$raster, "SpatRaster")
+  expect_equal(terra::nlyr(res$raster), 1L)
+  vals <- terra::values(res$raster)[, 1]
+  vals <- vals[is.finite(vals)]
+  expect_true(all(vals >= 1 & vals <= 9))
+  # palette : 9 classes / couleurs / libellés, sens bivarié
+  expect_length(res$meta$palette$colors, 9)
+  expect_length(res$meta$palette$labels, 9)
+  expect_equal(res$meta$palette$sense, "bivariate")
+  expect_equal(res$meta$reliability, "low")
+  expect_true(all(c("tmax", "precip") %in% names(res$meta$breaks)))
+  # les deux métas composantes sont transportées
+  expect_equal(res$meta$tx$var, "tx")
+  expect_equal(res$meta$rr$var, "rr")
+})
+
+test_that("eobs_downscale_bivariate degrades cleanly if a trend fails", {
+  # buffer minuscule -> too_few_cells sur tx -> statut dégradé, raster NULL.
+  tiny <- sf::st_as_sf(sf::st_sfc(sf::st_polygon(list(rbind(
+    c(20000, 20000), c(20100, 20000), c(20100, 20100),
+    c(20000, 20100), c(20000, 20000)))), crs = 2154))
+  res <- suppressWarnings(eobs_downscale_bivariate(
+    tx = make_eobs(), rr = make_eobs(seed = 2), dem = make_dem(),
+    aoi = tiny, buffer_m = 500))
+  expect_null(res$raster)
+  expect_equal(res$meta$status, "insufficient_data")
+  expect_match(res$meta$reason, "eobs_downscale")
 })
