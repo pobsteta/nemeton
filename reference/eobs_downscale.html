@@ -15,7 +15,7 @@ already produces from microclimf + HD LiDAR."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.150.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.151.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,6 +76,8 @@ already produces from microclimf + HD LiDAR.</p>
 <span>  max_cells <span class="op">=</span> <span class="fl">5e+05</span>,</span>
 <span>  min_points <span class="op">=</span> <span class="fl">10L</span>,</span>
 <span>  cache_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  calibrate <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  cv <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -152,6 +154,17 @@ aggregated above it, so the output is never a gigapixel raster.</p></dd>
 written there for instant reload (pattern of <code>pai.tif</code>).</p></dd>
 
 
+<dt id="arg-calibrate">calibrate<a class="anchor" aria-label="anchor" href="#arg-calibrate"></a></dt>
+<dd><p><code>engine = "meteoland"</code> only: run the (expensive) meteoland
+LOO calibration before interpolating (default <code>FALSE</code>, default params).</p></dd>
+
+
+<dt id="arg-cv">cv<a class="anchor" aria-label="anchor" href="#arg-cv"></a></dt>
+<dd><p><code>engine = "meteoland"</code> only: compute leave-one-out cross-validation
+and return it in <code>meta$cv</code> (<code>r2</code>, <code>mae_tmin</code>, <code>mae_tmax</code>); default <code>FALSE</code>
+(expensive). KED always reports <code>meta$cv = NULL</code>.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Ignored (forward-compat).</p></dd>
 
@@ -183,10 +196,14 @@ few E-OBS cells, it <strong>degrades to trend-only</strong> (drift surface) — 
 fallback, never an error.</p></li>
 <li><p><code>engine = "meteoland"</code> — the station-based interpolator (<span class="pkg">meteoland</span>,
 Thornton 1997 + elevation, microclimat brief Option A / chantier P4). It
-interpolates <strong>daily station series</strong>, so downscaling a pre-reduced trend
-needs a per-year restructuring delivered separately. Until then, and whenever
-<span class="pkg">meteoland</span> is absent, this engine <strong>falls back to KED</strong> — the output
-contract is identical, so the caller never branches on the engine.</p></li>
+interpolates the <strong>daily</strong> SAFRAN pseudo-station series (from
+<code><a href="build_safran_stations.html">build_safran_stations</a></code>) onto the DEM grid, aggregates each summer to an
+annual max, then reduces to the requested <code>statistic</code> — same output contract
+as KED, plus a <code>meta$cv</code> cross-validation block. Whenever <span class="pkg">meteoland</span> is
+absent, GéoSAS is down, or too few pseudo-stations resolve, it <strong>falls back
+to KED</strong>, so the caller never branches on the engine. For a <strong>daily</strong> raster
+stack (e.g. the Tmin series feeding <code><a href="indicateur_r7_gel.html">indicateur_r7_gel</a></code>), use
+<code><a href="meteoland_daily_grid.html">meteoland_daily_grid</a></code> instead of a reduced statistic.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

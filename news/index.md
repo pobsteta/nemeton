@@ -1,5 +1,40 @@
 # Changelog
 
+## nemeton 0.151.0 (2026-07-12)
+
+#### Added — moteur meteoland réel + Tmin journalier alimentant R7 (chantier microclimat P4)
+
+Concrétise le rail `engine = "meteoland"`
+d’[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
+(jusqu’ici un stub qui retombait sur KED) et ferme la boucle de données
+réelles de R7. **Validé de bout en bout sur meteoland 2.2.7** : CRS
+Lambert-93 natif accepté, pipeline `create_meteo_interpolator()` →
+`interpolate_data()` → `summarise_interpolated_data()` → `terra`.
+
+- **`eobs_downscale(engine = "meteoland")`** interpole désormais
+  réellement les séries SAFRAN journalières (pseudo-stations) sur la
+  grille MNT, agrège chaque été en Tmax annuel, puis réduit à la
+  statistique demandée — **même contrat de sortie que KED**. Nouveaux
+  arguments opt-in `calibrate` (calibration LOO meteoland) et `cv`
+  (validation croisée → `meta$cv = list(r2, mae_tmin, mae_tmax)`,
+  confiance ≈ NDP 1). En l’absence de meteoland / GéoSAS / densité
+  suffisante → repli KED, jamais d’erreur.
+- **`meteoland_daily_grid(aoi, dem, years, variable = "MinTemperature", …)`**
+  (nouvel export) — produit le **raster Tmin journalier** (couche/jour,
+  [`terra::time()`](https://rspatial.github.io/terra/reference/time.html)
+  posé, CRS du MNT) qui alimente `indicateur_r7_gel(tmin = …)` sur
+  données réelles. `NULL` propre si indisponible.
+- **Paramètres SAFRAN Tmin/Tmax** — `.biljou_forcing_safran()` accepte
+  un jeu de variables ;
+  [`build_safran_stations()`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)
+  demande le jeu meteoland incluant les noms EXACTS lus dans l’EDR
+  `safran-isba` (`TINF_H_Q`/`TSUP_H_Q`, min/max des 24 T° horaires — pas
+  les `TINF_Q` supposés dans le brief).
+- **Contrat `meta$cv`** ajouté aux deux moteurs (`NULL` en KED).
+
+Brief app associé :
+`specs/027-regeneration-microclimat/brief-nemetonshiny-r7-gel-microclimat-p4.md`.
+
 ## nemeton 0.150.0 (2026-07-11)
 
 #### Added — indicateur R7 gel tardif + rail SAFRAN du moteur meteoland (chantier microclimat P4)

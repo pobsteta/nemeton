@@ -1729,6 +1729,51 @@ cœur).
 
 ## Journal
 
+### 2026-07-12 — v0.151.0 : moteur meteoland RÉEL + Tmin journalier alimentant R7 (P4)
+
+Clôt le chantier microclimat P4. Pascal a installé **meteoland 2.2.7**
+sur le PC : l’interpolation, laissée en TODO à la v0.150.0 (leçon gstat
+— je ne livre pas d’API que je ne peux valider), a pu être **écrite ET
+validée de bout en bout sur vraies données** avant merge.
+
+**Découvertes API meteoland (lues, pas présumées)** : - `with_meteo()`
+attend un sf **long** (une ligne par station × jour) :
+`dates, stationID, elevation, MinTemperature, MaxTemperature, Precipitation, …`. -
+`interpolate_data()` accepte un `stars` **régulier** en **CRS projeté**
+(Lambert-93 natif OK) — mais **pas** une grille reprojetée (devient
+curviligne). D’où : grille cible dérivée du MNT natif, 3 attributs
+séparés (`elevation`/`slope`/`aspect`), jamais un `st_transform` du
+raster. - Hors enveloppe convexe des stations → `interpolate_data()`
+abort ; on passe `ignore_convex_hull_check = TRUE` + échantillonnage
+stations sur `buffer + 8 km`. -
+[`terra::rast()`](https://rspatial.github.io/terra/reference/rast.html)
+ne convertit pas un `stars` multi-dimension : `split(d[var], "date")`
+puis
+[`terra::rast()`](https://rspatial.github.io/terra/reference/rast.html)
+pour la pile journalière.
+
+**Livré** : - `eobs_downscale(engine = "meteoland")` **tourne** (Tmax
+estival : interpolation journalière → summarise annuel `max` → réduction
+KED-sémantique). Contrat de sortie identique à KED. Args opt-in
+`calibrate` (calibration LOO) et `cv` (validation croisée →
+`meta$cv = list(r2, mae_tmin, mae_tmax)`). Repli KED si
+meteoland/GéoSAS/densité KO. Vérifié en réel : `engine = "meteoland"`,
+25 pseudo-stations, sortie 2154. -
+[`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
+(export) — **raster Tmin journalier**
+([`terra::time()`](https://rspatial.github.io/terra/reference/time.html)
+posé, CRS MNT) qui alimente `indicateur_r7_gel(tmin = …)` sur données
+réelles. - **Params SAFRAN Tmin/Tmax** : noms EXACTS lus dans l’EDR
+`safran-isba` = **`TINF_H_Q`/`TSUP_H_Q`** (min/max des 24 T° horaires) —
+**pas** `TINF_Q`/`TSUP_Q` supposés dans le brief.
+`.biljou_forcing_safran(params=)` + jeu meteoland dédié. - Tests :
+transforms purs (`.safran_to_meteoland`, `.meteoland_meteo_sf`) sur CI ;
+glue meteoland réelle sous `skip_if_not_installed` (mock
+`.biljou_forcing_safran`, vrai run interpolateur). 63 pass / 0 fail sur
+`test-eobs-downscale.R`. - Brief app :
+`specs/027-regeneration-microclimat/brief-nemetonshiny-r7-gel-microclimat-p4.md`
+(R7 radar + producteur Tmin opt-in/caché + carte gel + `meta$cv`).
+
 ### 2026-07-11 — v0.150.0 : R7 gel tardif + rail SAFRAN du moteur meteoland (P4)
 
 Deux briques du chantier microclimat P4 (`brief-meteoland-safran-p4`).
@@ -1764,7 +1809,10 @@ session sur données réelles (patron microclimf). `meta` gagne le slot
 > interpolate_data par année → summarise → stack → reduce), à écrire et
 > valider sur données réelles chez Pascal, plus l’extension SAFRAN
 > Tmin/Tmax (lire les noms exposés par la collection EDR `safran-isba`).
-> Câblage app R7 (radar) + carte gel : brief app séparé.
+> Câblage app R7 (radar) + carte gel : brief app séparé. — **✅ RÉSOLU
+> en v0.151.0** (meteoland installé) : interpolation écrite/validée,
+> SAFRAN Tmin/Tmax (`TINF_H_Q`/`TSUP_H_Q`), brief app livré. Voir entrée
+> du 2026-07-12.
 
 ### 2026-07-11 — v0.149.0 : downscaling E-OBS en raster fin (`eobs_downscale`)
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.150.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.151.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,22 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.151.0" id="nemeton-01510-2026-07-12">nemeton 0.151.0 (2026-07-12)<a class="anchor" aria-label="anchor" href="#nemeton-01510-2026-07-12"></a></h2>
+<div class="section level4">
+<h4 id="added--moteur-meteoland-réel--tmin-journalier-alimentant-r7-chantier-microclimat-p4-0-151-0">Added — moteur meteoland réel + Tmin journalier alimentant R7 (chantier microclimat P4)<a class="anchor" aria-label="anchor" href="#added--moteur-meteoland-r%C3%A9el--tmin-journalier-alimentant-r7-chantier-microclimat-p4-0-151-0"></a></h4>
+<p>Concrétise le rail <code>engine = "meteoland"</code> d’<code><a href="../reference/eobs_downscale.html">eobs_downscale()</a></code> (jusqu’ici un stub qui retombait sur KED) et ferme la boucle de données réelles de R7. <strong>Validé de bout en bout sur meteoland 2.2.7</strong> : CRS Lambert-93 natif accepté, pipeline <code>create_meteo_interpolator()</code> → <code>interpolate_data()</code> → <code>summarise_interpolated_data()</code> → <code>terra</code>.</p>
+<ul><li>
+<strong><code>eobs_downscale(engine = "meteoland")</code></strong> interpole désormais réellement les séries SAFRAN journalières (pseudo-stations) sur la grille MNT, agrège chaque été en Tmax annuel, puis réduit à la statistique demandée — <strong>même contrat de sortie que KED</strong>. Nouveaux arguments opt-in <code>calibrate</code> (calibration LOO meteoland) et <code>cv</code> (validation croisée → <code>meta$cv = list(r2, mae_tmin, mae_tmax)</code>, confiance ≈ NDP 1). En l’absence de meteoland / GéoSAS / densité suffisante → repli KED, jamais d’erreur.</li>
+<li>
+<strong><code>meteoland_daily_grid(aoi, dem, years, variable = "MinTemperature", …)</code></strong> (nouvel export) — produit le <strong>raster Tmin journalier</strong> (couche/jour, <code><a href="https://rspatial.github.io/terra/reference/time.html" class="external-link">terra::time()</a></code> posé, CRS du MNT) qui alimente <code>indicateur_r7_gel(tmin = …)</code> sur données réelles. <code>NULL</code> propre si indisponible.</li>
+<li>
+<strong>Paramètres SAFRAN Tmin/Tmax</strong> — <code>.biljou_forcing_safran()</code> accepte un jeu de variables ; <code><a href="../reference/build_safran_stations.html">build_safran_stations()</a></code> demande le jeu meteoland incluant les noms EXACTS lus dans l’EDR <code>safran-isba</code> (<code>TINF_H_Q</code>/<code>TSUP_H_Q</code>, min/max des 24 T° horaires — pas les <code>TINF_Q</code> supposés dans le brief).</li>
+<li>
+<strong>Contrat <code>meta$cv</code></strong> ajouté aux deux moteurs (<code>NULL</code> en KED).</li>
+</ul><p>Brief app associé : <code>specs/027-regeneration-microclimat/brief-nemetonshiny-r7-gel-microclimat-p4.md</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.150.0" id="nemeton-01500-2026-07-11">nemeton 0.150.0 (2026-07-11)<a class="anchor" aria-label="anchor" href="#nemeton-01500-2026-07-11"></a></h2>
 <div class="section level4">

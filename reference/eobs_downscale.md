@@ -25,6 +25,8 @@ eobs_downscale(
   max_cells = 5e+05,
   min_points = 10L,
   cache_path = NULL,
+  calibrate = FALSE,
+  cv = FALSE,
   ...
 )
 ```
@@ -102,6 +104,17 @@ eobs_downscale(
   Optional `.tif` path; when given, the result raster is written there
   for instant reload (pattern of `pai.tif`).
 
+- calibrate:
+
+  `engine = "meteoland"` only: run the (expensive) meteoland LOO
+  calibration before interpolating (default `FALSE`, default params).
+
+- cv:
+
+  `engine = "meteoland"` only: compute leave-one-out cross-validation
+  and return it in `meta$cv` (`r2`, `mae_tmin`, `mae_tmax`); default
+  `FALSE` (expensive). KED always reports `meta$cv = NULL`.
+
 - ...:
 
   Ignored (forward-compat).
@@ -138,11 +151,18 @@ scope (unreliable downscaling; the DEM only helps in mountains).
 
 - `engine = "meteoland"` — the station-based interpolator (meteoland,
   Thornton 1997 + elevation, microclimat brief Option A / chantier P4).
-  It interpolates **daily station series**, so downscaling a pre-reduced
-  trend needs a per-year restructuring delivered separately. Until then,
-  and whenever meteoland is absent, this engine **falls back to KED** —
-  the output contract is identical, so the caller never branches on the
-  engine.
+  It interpolates the **daily** SAFRAN pseudo-station series (from
+  [`build_safran_stations`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md))
+  onto the DEM grid, aggregates each summer to an annual max, then
+  reduces to the requested `statistic` — same output contract as KED,
+  plus a `meta$cv` cross-validation block. Whenever meteoland is absent,
+  GéoSAS is down, or too few pseudo-stations resolve, it **falls back to
+  KED**, so the caller never branches on the engine. For a **daily**
+  raster stack (e.g. the Tmin series feeding
+  [`indicateur_r7_gel`](https://pobsteta.github.io/nemeton/reference/indicateur_r7_gel.md)),
+  use
+  [`meteoland_daily_grid`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
+  instead of a reduced statistic.
 
 ## References
 

@@ -1141,6 +1141,9 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
   : Build the SAFRAN pseudo-station grid for the meteoland engine (spec
   P4)
 
+- [`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
+  : Downscale a daily meteoland variable to a fine raster stack
+
 - [`regeneration_tolerances()`](https://pobsteta.github.io/nemeton/reference/regeneration_tolerances.md)
   : Regeneration tolerance table (per species)
 
