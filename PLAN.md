@@ -1315,6 +1315,25 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-12 — v0.153.2 : fix gel R7 (MNT parcellaire → auto-source régional)
+
+Signalé sur le projet reconfort : le moteur gel se skippe (« Tmin indisponible
+(meteoland/SAFRAN). R7 absent du radar »), console `meteoland_daily_grid(): too
+few SAFRAN pseudo-stations`. Diag (inspection cache réel) : l'app passe le MNT
+LiDAR parcellaire (`lidar_mnt_mosaic.tif`, ~5 km) ; `build_safran_stations()`
+écarte les pseudo-stations SAFRAN hors emprise MNT (elevation NA) → sur un buffer
+25 km, `< 5` stations survivent → abort. Même classe que le KED sur MNT trop
+petit (v0.152.0). Fix : `.meteoland_resolve_dem()` auto-source un MNT régional
+grossier (WMS IGN 250 m) couvrant le buffer quand le MNT fourni couvre trop peu
+de mailles SAFRAN, réutilisé pour altitudes + grille ; câblé dans
+`meteoland_daily_grid()` (voie R7) et `eobs_downscale(engine="meteoland")`.
+Signatures inchangées, 3 tests de non-régression. Note annexe (même échange) :
+les « trous » de la carte bivariée ne sont PAS des NA — masque NA identique à
+tx/rr (21,4 %, coins du buffer) ; c'est la classe centrale 5 « Stable »
+(9950 cellules) qui se lisait comme du vide en semi-transparence. Corrigé dans
+la même release : couleur centrale gris pâle #C9C9C9 → neutre taupe #A79E8C
+(lisible comme une couleur pleine à toute opacité).
+
 ### 2026-07-12 — v0.153.1 : fix diagnostic RECONFORT (AOI à anneau dégénéré)
 
 Signalé en séance : le diagnostic RECONFORT s'interrompt à l'étape *tiles*

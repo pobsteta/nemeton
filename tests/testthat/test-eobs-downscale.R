@@ -370,6 +370,38 @@ test_that("a tiny buffer stays 'provided' (E-OBS is the limiter, not the DEM)", 
   expect_equal(r$dem_source, "provided")
 })
 
+# --- MNT de la voie meteoland/SAFRAN : même auto-sourcing (fix gel R7) ---
+
+test_that(".meteoland_resolve_dem keeps a covering DEM (no download)", {
+  # MNT 40 km + buffer étroit : assez de mailles SAFRAN 8 km dans l'emprise ->
+  # on garde le fourni. Download mocké en erreur : il ne doit pas être appelé.
+  testthat::local_mocked_bindings(.eobs_ds_download_ign_dem = function(...)
+    stop("should not download for a covering DEM"))
+  r <- .meteoland_resolve_dem(make_dem(), make_aoi(), buffer_m = 8000,
+                              min_stations = 3L)
+  expect_s4_class(r, "SpatRaster")
+  expect_equal(terra::ext(r)[1], terra::ext(make_dem())[1])   # bien le fourni
+})
+
+test_that(".meteoland_resolve_dem auto-sources when the DEM is parcelle-scale", {
+  # Reproduit le bug gel R7 : MNT LiDAR parcellaire (~4 km) sous un buffer large
+  # -> quasi aucune pseudo-station SAFRAN survit (elevation NA) -> auto-source.
+  testthat::local_mocked_bindings(.eobs_ds_download_ign_dem = fake_ign_dem)
+  small <- terra::crop(make_dem(), terra::ext(18000, 22000, 18000, 22000))
+  r <- suppressWarnings(.meteoland_resolve_dem(small, make_aoi(),
+                                               buffer_m = 30000, min_stations = 5L))
+  expect_s4_class(r, "SpatRaster")
+  expect_equal(unname(terra::ext(r)[1]), -50000)   # l'emprise LARGE du WMS factice
+})
+
+test_that(".meteoland_resolve_dem returns NULL when auto-source fails", {
+  testthat::local_mocked_bindings(.eobs_ds_download_ign_dem = function(...) NULL)
+  small <- terra::crop(make_dem(), terra::ext(18000, 22000, 18000, 22000))
+  r <- suppressWarnings(.meteoland_resolve_dem(small, make_aoi(),
+                                               buffer_m = 30000, min_stations = 5L))
+  expect_null(r)
+})
+
 test_that("eobs_downscale sets meta$dem_source on the ok path", {
   res <- eobs_downscale("tx", eobs = make_eobs(), dem = make_dem(),
                         aoi = make_aoi(), statistic = "trend", buffer_m = 30000,
