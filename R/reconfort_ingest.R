@@ -64,9 +64,24 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
     cli::cli_abort("{.arg aoi} must be an sf or sfc object.")
   }
   grid <- .reconfort_load_s2_tiles()
-  aoi_g <- sf::st_union(sf::st_transform(sf::st_geometry(aoi), sf::st_crs(grid)))
-  hit <- suppressWarnings(
-    sf::st_intersects(grid, aoi_g, sparse = FALSE)[, 1]
+  geom <- sf::st_geometry(aoi)
+  # The bundled grid is a GeoJSON (EPSG:4326), so st_union/st_intersects run
+  # under s2. A project zone drawn/imported with a degenerate ring (e.g.
+  # "Loop N is not valid: Edge M is degenerate (duplicate vertex)") makes s2
+  # abort the whole tile resolution. Repair with st_make_valid() and retry
+  # once, mirroring the BD Forêt intersection guard; only pay the repair
+  # cost when the raw resolution actually fails.
+  .aoi_hit <- function(g) {
+    aoi_g <- sf::st_union(sf::st_transform(g, sf::st_crs(grid)))
+    suppressWarnings(sf::st_intersects(grid, aoi_g, sparse = FALSE)[, 1])
+  }
+  hit <- tryCatch(
+    .aoi_hit(geom),
+    error = function(e) {
+      cli::cli_alert_info(
+        "AOI has an invalid geometry ({e$message}); repairing with {.fn sf::st_make_valid} and retrying...")
+      .aoi_hit(sf::st_make_valid(geom))
+    }
   )
   tiles <- sort(unique(as.character(grid$tile[hit])))
   if (length(tiles) == 0L) {

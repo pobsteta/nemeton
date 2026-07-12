@@ -44,6 +44,22 @@ test_that("reconfort_aoi_tiles rejects non-sf input", {
   expect_error(reconfort_aoi_tiles("nope"), "must be an sf or sfc")
 })
 
+test_that("reconfort_aoi_tiles repairs a degenerate AOI ring (duplicate vertex)", {
+  # Reproduces the RECONFORT dieback crash: a project zone with a degenerate
+  # edge (duplicate consecutive vertex) over the Loiret. Valid-looking to
+  # GEOS planar ops but aborts s2 ("Loop N is not valid: Edge M is
+  # degenerate") during tile resolution against the longlat grid.
+  ring <- rbind(
+    c(2.40, 47.90), c(2.50, 47.90), c(2.50, 47.90),  # <- duplicate vertex
+    c(2.50, 48.00), c(2.40, 48.00), c(2.40, 47.90))
+  bad <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_polygon(list(ring)), crs = 4326))
+  expect_false(suppressWarnings(all(sf::st_is_valid(bad))))
+  tiles <- reconfort_aoi_tiles(bad)          # must not abort
+  expect_true(length(tiles) >= 1L)
+  expect_true(all(grepl("^T3[01][A-Z]{3}$", tiles)))
+})
+
 test_that(".reconfort_py_literal serialises R values to Python literals", {
   expect_equal(nemeton:::.reconfort_py_literal("31TCJ"), "'31TCJ'")
   expect_equal(nemeton:::.reconfort_py_literal(c("31TCJ", "T31TCJ")),
