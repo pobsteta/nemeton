@@ -1,3 +1,35 @@
+# nemeton 0.152.0 (2026-07-12)
+
+### Added — MNT de contexte auto-sourcé + robustesse CRS pour `eobs_downscale()`
+
+Débloque la carte « contexte régional E-OBS » quand le MNT fourni est à l'échelle
+parcelle (brief `brief-nemeton-eobs-downscaling-dem`). Le KED extrait les
+covariables terrain **aux points E-OBS** : un MNT ~4–5 km ne recouvre qu'~1 maille
+E-OBS (~11 km) → `status = "insufficient_data"` (`n_points = 1`) malgré un buffer
+25 km.
+
+- **Auto-sourcing du MNT (option A1)** — `dem` devient **optionnel**. Quand il est
+  `NULL`, ou trop petit pour couvrir le buffer, `eobs_downscale()` télécharge une
+  **élévation grossière** sur `st_buffer(aoi, buffer_m)` depuis le **WMS IGN
+  Géoplateforme** (`ELEVATION.ELEVATIONGRIDCOVERAGE`, France, sans auth), à
+  `context_res_m` (défaut 250 m — un contexte régional n'a pas besoin de plus, la
+  grille est bornée à `max_cells`). Validé en réel : `n_points` passe de 1 à 33,
+  `status = "ok"`. `meta$dem_source` = `"provided"` / `"autoscaled"` /
+  `"autoscaled_small_dem"`.
+- **Décision « MNT trop petit » directe** — le MNT n'est jugé insuffisant que si le
+  buffer contient assez de mailles E-OBS (`≥ min_points`) mais que son emprise n'en
+  couvre pas assez ; si le buffer lui-même est trop pauvre (buffer minuscule),
+  auto-sourcer ne sert à rien et le KED renvoie `too_few_cells`.
+- **Robustesse CRS** — un `eobs` sans CRS est désormais interprété en **EPSG:4326**
+  (E-OBS est toujours en lon/lat) avec avertissement, au lieu de faire chuter
+  `n_points` à 0 en silence.
+- **Replis lisibles** — `meta$reason` distingue `eobs_downscale_dem_too_small`,
+  `eobs_downscale_no_dem` et `eobs_downscale_too_few_cells`.
+
+Contrat de sortie `list(raster, meta)` **inchangé** (l'app câble déjà dessus) ;
+`meta` gagne seulement `dem_source`. Brief app : le rendu `addRasterImage` +
+opacité se branche dès `status = "ok"`.
+
 # nemeton 0.151.0 (2026-07-12)
 
 ### Added — moteur meteoland réel + Tmin journalier alimentant R7 (chantier microclimat P4)

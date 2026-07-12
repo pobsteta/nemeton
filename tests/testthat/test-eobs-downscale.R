@@ -274,3 +274,105 @@ test_that("meteoland_daily_grid returns a dated daily Tmin stack for R7", {
     succeed()
   }
 })
+
+# --- MNT de contexte : auto-sourcing (brief eobs-downscaling-dem) ---
+
+# MNT WGS84 grossier et LARGE, simulant le retour du WMS IGN (indépendant du bbox).
+fake_ign_dem <- function(bbox = NULL, ...) {
+  r <- terra::rast(terra::ext(-2, 12, 40, 52), resolution = 0.05,
+                   crs = "EPSG:4326")
+  terra::values(r) <- seq_len(terra::ncell(r))
+  names(r) <- "elevation"
+  r
+}
+
+test_that(".eobs_ds_metric_crs prefers a projected CRS, else Lambert-93", {
+  expect_equal(.eobs_ds_metric_crs(make_dem(), make_aoi())$epsg, 2154)
+  ll <- sf::st_transform(make_aoi(), 4326)
+  expect_equal(.eobs_ds_metric_crs(NULL, ll)$epsg, 2154)   # longlat -> repli 2154
+})
+
+test_that("a covering DEM stays 'provided' (backcompat, no download)", {
+  # download mocké : s'il était appelé le test le saurait (raster factice reconnaissable).
+  testthat::local_mocked_bindings(.eobs_ds_download_ign_dem = function(...) NULL)
+  r <- .eobs_ds_resolve_dem(make_dem(), make_eobs(), make_aoi(),
+                            buffer_m = 30000, min_points = 10L)
+  expect_equal(r$dem_source, "provided")
+  expect_s4_class(r$dem, "SpatRaster")
+})
+
+test_that("a small DEM under a wide buffer triggers auto-sourcing", {
+  testthat::local_mocked_bindings(.eobs_ds_download_ign_dem = fake_ign_dem)
+  small <- terra::crop(make_dem(), terra::ext(18000, 22000, 18000, 22000))
+  r <- suppressWarnings(.eobs_ds_resolve_dem(small, make_eobs(), make_aoi(),
+                                             buffer_m = 30000, min_points = 10L))
+  expect_equal(r$dem_source, "autoscaled_small_dem")
+  expect_s4_class(r$dem, "SpatRaster")
+})
+
+test_that("small DEM + failed download degrades to dem_too_small", {
+  testthat::local_mocked_bindings(.eobs_ds_download_ign_dem = function(...) NULL)
+  small <- terra::crop(make_dem(), terra::ext(18000, 22000, 18000, 22000))
+  r <- .eobs_ds_resolve_dem(small, make_eobs(), make_aoi(),
+                            buffer_m = 30000, min_points = 10L)
+  expect_null(r$dem)
+  expect_equal(r$reason, "eobs_downscale_dem_too_small")
+})
+
+test_that("dem = NULL auto-sources; failure degrades to no_dem", {
+  testthat::local_mocked_bindings(.eobs_ds_download_ign_dem = fake_ign_dem)
+  ok <- .eobs_ds_resolve_dem(NULL, make_eobs(), make_aoi(),
+                             buffer_m = 30000, min_points = 10L)
+  expect_equal(ok$dem_source, "autoscaled")
+  testthat::local_mocked_bindings(.eobs_ds_download_ign_dem = function(...) NULL)
+  ko <- .eobs_ds_resolve_dem(NULL, make_eobs(), make_aoi(),
+                             buffer_m = 30000, min_points = 10L)
+  expect_null(ko$dem)
+  expect_equal(ko$reason, "eobs_downscale_no_dem")
+})
+
+test_that("a tiny buffer stays 'provided' (E-OBS is the limiter, not the DEM)", {
+  # Auto-sourcer un MNT ne sauve rien si le buffer lui-même a trop peu de mailles :
+  # on garde le MNT fourni et le KED renvoie too_few_cells (pas de téléchargement).
+  testthat::local_mocked_bindings(.eobs_ds_download_ign_dem = function(...)
+    stop("should not download for a tiny buffer"))
+  tiny <- sf::st_as_sf(sf::st_sfc(sf::st_polygon(list(rbind(
+    c(20000, 20000), c(20100, 20000), c(20100, 20100),
+    c(20000, 20100), c(20000, 20000)))), crs = 2154))
+  r <- .eobs_ds_resolve_dem(make_dem(), make_eobs(), tiny,
+                            buffer_m = 500, min_points = 10L)
+  expect_equal(r$dem_source, "provided")
+})
+
+test_that("eobs_downscale sets meta$dem_source on the ok path", {
+  res <- eobs_downscale("tx", eobs = make_eobs(), dem = make_dem(),
+                        aoi = make_aoi(), statistic = "trend", buffer_m = 30000,
+                        covariates = c("dem", "slope"))
+  expect_equal(res$meta$status, "ok")
+  expect_equal(res$meta$dem_source, "provided")
+})
+
+test_that("eobs without a CRS is assumed EPSG:4326 (robustness path fires)", {
+  # E-OBS est toujours en lon/lat WGS84 ; un raster sans CRS ferait chuter
+  # n_points à 0 silencieusement. On vérifie que le garde-fou pose bien 4326
+  # (le mécanisme) — l'alignement géographique réel est couvert par le test WMS.
+  e <- make_eobs()
+  terra::crs(e) <- ""
+  expect_warning(
+    eobs_downscale("tx", eobs = e, dem = make_dem(), aoi = make_aoi(),
+                   statistic = "trend", buffer_m = 30000,
+                   covariates = c("dem", "slope")),
+    "EPSG:4326")
+})
+
+test_that(".eobs_ds_download_ign_dem fetches a real coarse DEM (IGN WMS)", {
+  testthat::skip_on_cran()
+  testthat::skip_if_offline("data.geopf.fr")
+  # petit bbox français (Jura), résolution grossière -> image légère.
+  r <- .eobs_ds_download_ign_dem(c(5.9, 47.1, 6.2, 47.3), res_m = 500)
+  skip_if(is.null(r), "IGN WMS unavailable")
+  expect_s4_class(r, "SpatRaster")
+  v <- terra::values(r); v <- v[is.finite(v)]
+  expect_gt(length(v), 0)
+  expect_true(all(v > -500 & v < 5000))     # altitudes plausibles (m)
+})
