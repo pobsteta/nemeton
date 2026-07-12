@@ -9,12 +9,15 @@ trends via
 **bivariate classification** — the "L'IF n°49" map (warming × drying,
 red = warm & dry) at the project's context resolution.
 
-Each trend is cut into tertiles (1 = coolest/driest, 3 =
-warmest/wettest; or fixed `breaks`); the combined class is
-`(classe_tmax - 1) * 3 + classe_precip`, 1-9, with **warm & dry = 7**
-(red) and cool & wet = 3 (blue) — the same encoding as
-[`tendances_estivales_eobs`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md).
-Reliability is `"low"` (bounded by the noisy precipitation downscaling).
+Each trend is cut on **fixed absolute thresholds anchored on 0** (the
+default, like *L'IF n°49* — comparable across projects, not relative
+quantiles): 1 = coolest/driest, 5 = warmest/wettest. Defaults: T°max
+`c(0, 0.4, 0.8, 1.2)` °C/decade, precipitation `c(-80, -40, 0, 40)`
+mm/decade (override via `breaks`). The combined class is
+`(classe_tmax - 1) * 5 + classe_precip`, 1-25, on the 5×5 colour scheme
+sampled from the reference figure — warming dominates (hot rows
+red/magenta), cool & dry = yellow, cool & wet = violet. Reliability is
+`"low"` (bounded by the noisy precipitation downscaling).
 
 ## Usage
 
@@ -62,8 +65,9 @@ eobs_downscale_bivariate(
 
 - breaks:
 
-  Optional `list(tmax=, precip=)` of two cut points each for a fixed
-  classification; `NULL` → tertiles per trend.
+  Optional `list(tmax=, precip=)` of four cut points each to override
+  the default absolute thresholds; `NULL` → the fixed L'IF-scale breaks
+  (`c(0, 0.4, 0.8, 1.2)` °C/decade, `c(-80, -40, 0, 40)` mm/decade).
 
 - context_res_m:
 
@@ -85,12 +89,15 @@ eobs_downscale_bivariate(
 ## Value
 
 A list `list(raster, meta)`. `raster` is a single-layer integer
-`SpatRaster` `classe_bivariee` (1-9) in the DEM CRS, or `NULL` if either
-trend degraded. `meta`: `status`, `var = "bivariate"`, `crs`,
-`dem_source`, `n_points`, `breaks` (`list(tmax, precip)` used),
-`reliability = "low"`, `value_label`, and `palette` (`classes` 1-9,
-`colors` hex, `labels`, `sense = "bivariate"` — class 7 warm&dry = red).
-`meta$tx` / `meta$rr` carry the two component
+`SpatRaster` `classe_bivariee` (1-25) in the DEM CRS, or `NULL` if
+either trend degraded. `meta`: `status`, `var = "bivariate"`, `crs`,
+`dem_source`, `n_points`, `breaks` (`list(tmax, precip)` used, four cut
+points each), `reliability = "low"`, `value_label`, and `palette`
+(`classes` 1-25, `colors` hex, `labels`, `sense = "bivariate"`,
+`ncol = 5` for the 5×5 grid legend, and `zero = list(tmax, precip)` —
+the fractional \[0,1\] position of the zero-trend line on each axis,
+`NA` if 0 is outside the data range, for the white dashed 0/0 lines of
+the reference figure). `meta$tx` / `meta$rr` carry the two component
 [`eobs_downscale`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
 metas.
 

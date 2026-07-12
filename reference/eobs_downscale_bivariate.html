@@ -4,22 +4,26 @@ the coarse E-OBS grid (~11 km), it downscales both summer trends via
 eobs_downscale (KED with an auto-sourced regional DEM) and crosses them
 into a bivariate classification — the &quot;L'IF n°49&quot; map (warming × drying,
 red = warm &amp;amp; dry) at the project's context resolution.
-Each trend is cut into tertiles (1 = coolest/driest, 3 = warmest/wettest;
-or fixed breaks); the combined class is
-(classe_tmax - 1) * 3 + classe_precip, 1-9, with warm &amp;amp; dry = 7 (red)
-and cool &amp;amp; wet = 3 (blue) — the same encoding as
-tendances_estivales_eobs. Reliability is &quot;low&quot; (bounded by the noisy
-precipitation downscaling)."><meta property="og:description" content="The fine-resolution counterpart of tendances_estivales_eobs: instead of
+Each trend is cut on fixed absolute thresholds anchored on 0 (the default,
+like L'IF n°49 — comparable across projects, not relative quantiles): 1 =
+coolest/driest, 5 = warmest/wettest. Defaults: T°max c(0, 0.4, 0.8, 1.2)
+°C/decade, precipitation c(-80, -40, 0, 40) mm/decade (override via
+breaks). The combined class is (classe_tmax - 1) * 5 + classe_precip,
+1-25, on the 5×5 colour scheme sampled from the reference figure — warming
+dominates (hot rows red/magenta), cool &amp;amp; dry = yellow, cool &amp;amp; wet = violet.
+Reliability is &quot;low&quot; (bounded by the noisy precipitation downscaling)."><meta property="og:description" content="The fine-resolution counterpart of tendances_estivales_eobs: instead of
 the coarse E-OBS grid (~11 km), it downscales both summer trends via
 eobs_downscale (KED with an auto-sourced regional DEM) and crosses them
 into a bivariate classification — the &quot;L'IF n°49&quot; map (warming × drying,
 red = warm &amp;amp; dry) at the project's context resolution.
-Each trend is cut into tertiles (1 = coolest/driest, 3 = warmest/wettest;
-or fixed breaks); the combined class is
-(classe_tmax - 1) * 3 + classe_precip, 1-9, with warm &amp;amp; dry = 7 (red)
-and cool &amp;amp; wet = 3 (blue) — the same encoding as
-tendances_estivales_eobs. Reliability is &quot;low&quot; (bounded by the noisy
-precipitation downscaling)."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
+Each trend is cut on fixed absolute thresholds anchored on 0 (the default,
+like L'IF n°49 — comparable across projects, not relative quantiles): 1 =
+coolest/driest, 5 = warmest/wettest. Defaults: T°max c(0, 0.4, 0.8, 1.2)
+°C/decade, precipitation c(-80, -40, 0, 40) mm/decade (override via
+breaks). The combined class is (classe_tmax - 1) * 5 + classe_precip,
+1-25, on the 5×5 colour scheme sampled from the reference figure — warming
+dominates (hot rows red/magenta), cool &amp;amp; dry = yellow, cool &amp;amp; wet = violet.
+Reliability is &quot;low&quot; (bounded by the noisy precipitation downscaling)."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -27,7 +31,7 @@ precipitation downscaling)."><meta property="og:image" content="https://pobsteta
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.153.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.154.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,12 +73,14 @@ the coarse E-OBS grid (~11 km), it <strong>downscales</strong> both summer trend
 <code><a href="eobs_downscale.html">eobs_downscale</a></code> (KED with an auto-sourced regional DEM) and crosses them
 into a <strong>bivariate classification</strong> — the "L'IF n°49" map (warming × drying,
 red = warm &amp; dry) at the project's context resolution.</p>
-<p>Each trend is cut into tertiles (1 = coolest/driest, 3 = warmest/wettest;
-or fixed <code>breaks</code>); the combined class is
-<code>(classe_tmax - 1) * 3 + classe_precip</code>, 1-9, with <strong>warm &amp; dry = 7</strong> (red)
-and cool &amp; wet = 3 (blue) — the same encoding as
-<code><a href="tendances_estivales_eobs.html">tendances_estivales_eobs</a></code>. Reliability is <code>"low"</code> (bounded by the noisy
-precipitation downscaling).</p>
+<p>Each trend is cut on <strong>fixed absolute thresholds anchored on 0</strong> (the default,
+like <em>L'IF n°49</em> — comparable across projects, not relative quantiles): 1 =
+coolest/driest, 5 = warmest/wettest. Defaults: T°max <code>c(0, 0.4, 0.8, 1.2)</code>
+°C/decade, precipitation <code>c(-80, -40, 0, 40)</code> mm/decade (override via
+<code>breaks</code>). The combined class is <code>(classe_tmax - 1) * 5 + classe_precip</code>,
+1-25, on the 5×5 colour scheme sampled from the reference figure — warming
+dominates (hot rows red/magenta), cool &amp; dry = yellow, cool &amp; wet = violet.
+Reliability is <code>"low"</code> (bounded by the noisy precipitation downscaling).</p>
     </div>
 
     <div class="section level2">
@@ -120,8 +126,9 @@ over the buffer (IGN WMS), shared by both trends. See <code><a href="eobs_downsc
 
 
 <dt id="arg-breaks">breaks<a class="anchor" aria-label="anchor" href="#arg-breaks"></a></dt>
-<dd><p>Optional <code>list(tmax=, precip=)</code> of two cut points each for a
-fixed classification; <code>NULL</code> → tertiles per trend.</p></dd>
+<dd><p>Optional <code>list(tmax=, precip=)</code> of four cut points each to
+override the default absolute thresholds; <code>NULL</code> → the fixed L'IF-scale
+breaks (<code>c(0, 0.4, 0.8, 1.2)</code> °C/decade, <code>c(-80, -40, 0, 40)</code> mm/decade).</p></dd>
 
 
 <dt id="arg-context-res-m">context_res_m<a class="anchor" aria-label="anchor" href="#arg-context-res-m"></a></dt>
@@ -143,11 +150,14 @@ fixed classification; <code>NULL</code> → tertiles per trend.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list <code>list(raster, meta)</code>. <code>raster</code> is a single-layer integer
-<code>SpatRaster</code> <code>classe_bivariee</code> (1-9) in the DEM CRS, or <code>NULL</code> if either
+<code>SpatRaster</code> <code>classe_bivariee</code> (1-25) in the DEM CRS, or <code>NULL</code> if either
 trend degraded. <code>meta</code>: <code>status</code>, <code>var = "bivariate"</code>, <code>crs</code>, <code>dem_source</code>,
-<code>n_points</code>, <code>breaks</code> (<code>list(tmax, precip)</code> used), <code>reliability = "low"</code>,
-<code>value_label</code>, and <code>palette</code> (<code>classes</code> 1-9, <code>colors</code> hex, <code>labels</code>,
-<code>sense = "bivariate"</code> — class 7 warm&amp;dry = red). <code>meta$tx</code> / <code>meta$rr</code> carry
+<code>n_points</code>, <code>breaks</code> (<code>list(tmax, precip)</code> used, four cut points each),
+<code>reliability = "low"</code>, <code>value_label</code>, and <code>palette</code> (<code>classes</code> 1-25,
+<code>colors</code> hex, <code>labels</code>, <code>sense = "bivariate"</code>, <code>ncol = 5</code> for the 5×5
+grid legend, and <code>zero = list(tmax, precip)</code> — the fractional [0,1] position of
+the zero-trend line on each axis, <code>NA</code> if 0 is outside the data range, for the
+white dashed 0/0 lines of the reference figure). <code>meta$tx</code> / <code>meta$rr</code> carry
 the two component <code><a href="eobs_downscale.html">eobs_downscale</a></code> metas.</p>
     </div>
     <div class="section level2">

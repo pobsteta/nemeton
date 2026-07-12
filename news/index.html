@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.153.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.154.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,23 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.154.0" id="nemeton-01540-2026-07-12">nemeton 0.154.0 (2026-07-12)<a class="anchor" aria-label="anchor" href="#nemeton-01540-2026-07-12"></a></h2>
+<div class="section level4">
+<h4 id="changed--carte-bivariée--quinconce-en-bornes-absolues-couleurs--lif-n49--0-154-0">Changed — carte bivariée : quinconce 5×5 en <strong>bornes absolues</strong> (couleurs « L’IF n°49 »)<a class="anchor" aria-label="anchor" href="#changed--carte-bivari%C3%A9e--quinconce-en-bornes-absolues-couleurs--lif-n49--0-154-0"></a></h4>
+<p><code><a href="../reference/eobs_downscale_bivariate.html">eobs_downscale_bivariate()</a></code> passe d’un croisement <strong>3×3 (9 classes)</strong> à un <strong>5×5 (25 classes)</strong>, avec les couleurs <strong>échantillonnées directement sur la figure de référence « L’IF n°49 » (Copernicus E-OBS)</strong>. La référence est un dégradé continu (mesuré : un pixel = une couleur) ; le 5×5 en restitue la nuance (jaune → olive → violet → rouge → magenta). Schéma : la température domine (lignes chaudes rouge/magenta), frais &amp; sec = jaune, frais &amp; humide = violet, chaud &amp; sec = rouge, chaud &amp; humide = magenta.</p>
+<ul><li>
+<strong>Classification en bornes ABSOLUES fixes ancrées sur 0</strong> (et non en quantiles de l’emprise) — comme L’IF n°49 : les couleurs sont <strong>comparables d’un projet à l’autre</strong> et « rouge » = un réchauffement + assèchement <em>absolus</em>, pas un rang interne. Défauts : T°max <code>c(0, 0.4, 0.8, 1.2)</code> °C/déc, précip <code>c(-80, -40, 0, 40)</code> mm/déc (surchargeables via <code>breaks</code>). Un massif uniformément chaud &amp; sec ressort donc quasi unicolore — c’est la réalité, là où les quantiles fabriquaient un faux contraste.</li>
+<li>
+<code>classe_bivariee = (classe_tmax-1)*5 + classe_precip</code>, <strong>1-25</strong>.</li>
+<li>Helper <code>.eobs_ds_classN_rast()</code> (classification N-classes sur bornes données).</li>
+<li>
+<code>meta$palette</code> porte désormais <code>classes</code> 1-25, 25 <code>colors</code>/<code>labels</code> et <strong><code>ncol = 5</code></strong> : l’app rend une <strong>légende en carré bivarié 5×5</strong> (pas une liste de 25 lignes). <code>breaks</code> (si fourni) attend <strong>4 bornes</strong> par axe.</li>
+<li>
+<code>meta$palette$zero</code> = <code>list(tmax, precip)</code> : position fractionnaire [0,1] de la <strong>tendance nulle</strong> sur chaque axe (ou <code>NA</code> si 0 hors des bornes) — pour tracer les <strong>pointillés blancs 0/0</strong> de la figure de référence. Avec les bornes absolues par défaut, 0 est une borne : ligne T°max à <strong>0.2</strong> (bas, réchauffement quasi général) et ligne précip à <strong>0.6</strong> (helper <code>.eobs_ds_zero_pos</code>).</li>
+<li>Palette pilotée par les données : l’app lit <code>pal$colors</code>/<code>labels</code>/<code>ncol</code>. Brief app mis à jour (<code>brief-nemetonshiny-eobs-context-dem</code> §8).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.153.2" id="nemeton-01532-2026-07-12">nemeton 0.153.2 (2026-07-12)<a class="anchor" aria-label="anchor" href="#nemeton-01532-2026-07-12"></a></h2>
 <div class="section level4">
