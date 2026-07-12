@@ -485,16 +485,14 @@ test_that("eobs_downscale_bivariate crosses the two trends into 1-25 (5×5)", {
   expect_equal(res$meta$rr$var, "rr")
 })
 
-test_that(".eobs_ds_zero_pos places 0 within [0,1] and NA outside range", {
-  r <- terra::rast(nrows = 10, ncols = 10, vals = seq(-4, 5, length.out = 100))
-  br <- .eobs_ds_breaksN(r, 5)
-  p <- .eobs_ds_zero_pos(r, br, 0)
-  expect_true(p > 0 && p < 1)            # 0 est intérieur à [-4, 5]
-  # milieu de l'étendue -> ~0.5 ; ici 0 est un peu sous le milieu (0.5) de [-4,5]
-  expect_lt(p, 0.6)
-  # valeur hors étendue -> NA (pas de ligne)
-  rpos <- terra::rast(nrows = 5, ncols = 5, vals = seq(1, 5, length.out = 25))
-  expect_true(is.na(.eobs_ds_zero_pos(rpos, .eobs_ds_breaksN(rpos, 5), 0)))
+test_that(".eobs_ds_zero_pos locates 0 in legend space; NA in an open outer cell", {
+  # 0 est une borne -> position exacte = index/N. Bornes T°max absolues par défaut.
+  expect_equal(.eobs_ds_zero_pos(c(0, 0.4, 0.8, 1.2), 0), 1 / 5)   # 0 = 1re borne
+  expect_equal(.eobs_ds_zero_pos(c(-80, -40, 0, 40), 0), 3 / 5)    # 0 = 3e borne
+  # 0 entre deux bornes -> interpolation linéaire dans la cellule
+  expect_equal(.eobs_ds_zero_pos(c(-1, -0.5, 0.5, 1), 0), (2 + 0.5) / 5)
+  # 0 sous toutes les bornes (tout positif) -> cellule ouverte -> NA (pas de ligne)
+  expect_true(is.na(.eobs_ds_zero_pos(c(0.5, 1, 1.5, 2), 0)))
 })
 
 test_that("eobs_downscale_bivariate degrades cleanly if a trend fails", {

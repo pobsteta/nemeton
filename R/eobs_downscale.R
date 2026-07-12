@@ -1007,12 +1007,22 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
 # Libellés 5×5 dérivés (ct = T°max frais->chaud ; cp = précip sec->humide),
 # ordonnés comme (ct-1)*N + cp (cp varie le plus vite).
 .EOBS_BIVARIATE_LABELS <- local({
-  temp <- c("Frais", "Assez frais", "Tempéré", "Assez chaud", "Chaud")
-  prec <- c("sec", "assez sec", "moyen", "assez humide", "humide")
+  temp <- c("Refroidit", "Réch. faible", "Réch. modéré", "Réch. fort", "Réch. très fort")
+  prec <- c("assèch. fort", "assèch. modéré", "assèch. faible", "humidif. faible", "humidif.")
   g <- expand.grid(cp = prec, ct = temp, stringsAsFactors = FALSE)
-  stats::setNames(sprintf("%s & %s", g$ct, g$cp),
+  stats::setNames(sprintf("%s / %s", g$ct, g$cp),
                   as.character(seq_len(nrow(g))))
 })
+
+# Bornes ABSOLUES fixes de la classification bivariée (ancrées sur 0 = pivot),
+# unité par décennie, dans l'esprit de « L'IF n°49 » : couleurs comparables d'un
+# projet à l'autre (contrairement à un découpage en quantiles de l'emprise, qui
+# fabrique un contraste relatif). N-1 = 4 bornes croissantes par axe.
+#  - T°max : <0 refroidit ; 0 est une borne -> ligne 0 à 1/5 (bas, réchauffement
+#    quasi général comme dans L'IF) ; >1.2 °C/déc = réchauffement très fort.
+#  - Précip : 0 est une borne -> ligne 0 à 3/5 ; <-80 mm/déc = assèchement fort.
+.EOBS_TX_BREAKS_ABS <- c(0, 0.4, 0.8, 1.2)      # °C / décennie
+.EOBS_RR_BREAKS_ABS <- c(-80, -40, 0, 40)       # mm / décennie
 
 # Bornes de N-tiles (ou bornes fixes) d'un raster fin (n-1 bornes croissantes).
 .eobs_ds_breaksN <- function(r, n, br = NULL) {
@@ -1034,20 +1044,19 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
 }
 
 # Position fractionnaire [0,1] de la valeur `val` (0 par défaut) le long d'un axe
-# de N classes, pour tracer la ligne pointillée « tendance nulle » sur la légende
-# 5×5 (comme les pointillés blancs 0/0 de la figure L'IF n°49). Les bornes de
-# N-tiles `br` (n-1) et les extrêmes du raster forment n+1 arêtes régulièrement
-# espacées dans l'espace-légende [0,1] ; on y interpole `val`. NA si `val` sort de
-# l'étendue des données (pas de ligne à tracer). Axe : 0 = bas/gauche (frais/sec).
-.eobs_ds_zero_pos <- function(r, br, val = 0) {
-  rng <- suppressWarnings(as.numeric(terra::minmax(r)))
-  lo <- rng[1]; hi <- rng[2]
-  if (!is.finite(lo) || !is.finite(hi) || val < lo || val > hi) return(NA_real_)
-  edges_data <- c(lo, br, hi)                       # n+1 arêtes croissantes
-  edges_pos  <- seq(0, 1, length.out = length(edges_data))
-  # doublons possibles (val extrême = borne) -> approx gère via rule = 2.
-  as.numeric(stats::approx(edges_data, edges_pos, xout = val,
-                           ties = "ordered", rule = 2)$y)
+# de N = length(br)+1 classes (largeur égale par cellule dans la légende 5×5),
+# pour tracer les pointillés blancs 0/0 de la figure L'IF n°49. Une borne
+# intérieure br[j] est à la position j/N ; `val` est interpolée linéairement entre
+# les deux bornes qui l'encadrent. `val` dans une cellule externe ouverte
+# (< br[1] ou > dernière borne) -> NA : aucune ligne à tracer. Axe orienté
+# 0 = bas/gauche (frais/sec), 1 = haut/droite (chaud/humide).
+.eobs_ds_zero_pos <- function(br, val = 0) {
+  n <- length(br) + 1L
+  if (val < br[1] || val > br[length(br)]) return(NA_real_)
+  j <- findInterval(val, br)                        # br[j] <= val (< br[j+1])
+  if (j >= length(br)) return(length(br) / n)       # val == dernière borne
+  frac <- (val - br[j]) / (br[j + 1L] - br[j])      # 0 si val == br[j]
+  (j + frac) / n
 }
 
 
@@ -1060,12 +1069,14 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
 #' into a **bivariate classification** — the "L'IF n°49" map (warming × drying,
 #' red = warm & dry) at the project's context resolution.
 #'
-#' Each trend is cut into quintiles (1 = coolest/driest, 5 = warmest/wettest;
-#' or fixed `breaks`); the combined class is
-#' `(classe_tmax - 1) * 5 + classe_precip`, 1-25, on the 5×5 colour scheme
-#' sampled from the *L'IF n°49* (Copernicus E-OBS) figure — warming dominates
-#' (hot rows red/magenta), cool & dry = yellow, cool & wet = violet. Reliability
-#' is `"low"` (bounded by the noisy precipitation downscaling).
+#' Each trend is cut on **fixed absolute thresholds anchored on 0** (the default,
+#' like *L'IF n°49* — comparable across projects, not relative quantiles): 1 =
+#' coolest/driest, 5 = warmest/wettest. Defaults: T°max `c(0, 0.4, 0.8, 1.2)`
+#' °C/decade, precipitation `c(-80, -40, 0, 40)` mm/decade (override via
+#' `breaks`). The combined class is `(classe_tmax - 1) * 5 + classe_precip`,
+#' 1-25, on the 5×5 colour scheme sampled from the reference figure — warming
+#' dominates (hot rows red/magenta), cool & dry = yellow, cool & wet = violet.
+#' Reliability is `"low"` (bounded by the noisy precipitation downscaling).
 #'
 #' @param tx Per-year summer maximum-temperature `SpatRaster` (one layer per
 #'   year) — the `eobs` input of [eobs_downscale()] for `var = "tx"`.
@@ -1074,8 +1085,9 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
 #'   over the buffer (IGN WMS), shared by both trends. See [eobs_downscale()].
 #' @param aoi An `sf`/`sfc` of the management units.
 #' @param buffer_m Context buffer around the AOI, in metres (default 25000).
-#' @param breaks Optional `list(tmax=, precip=)` of four cut points each for a
-#'   fixed classification; `NULL` → quintiles per trend.
+#' @param breaks Optional `list(tmax=, precip=)` of four cut points each to
+#'   override the default absolute thresholds; `NULL` → the fixed L'IF-scale
+#'   breaks (`c(0, 0.4, 0.8, 1.2)` °C/decade, `c(-80, -40, 0, 40)` mm/decade).
 #' @param context_res_m Auto-sourced DEM resolution in metres (default 250).
 #' @param min_points Minimum E-OBS cells to attempt kriging (default 10).
 #' @param cache_path Optional `.tif` path for the bivariate raster.
@@ -1120,15 +1132,16 @@ eobs_downscale_bivariate <- function(tx, rr, dem = NULL, aoi, buffer_m = 25000,
     rp <- terra::resample(rp, tt, method = "bilinear")
   }
   N <- .EOBS_BIVARIATE_N                # 5 -> quinconce 5×5 (25 classes)
-  brt <- .eobs_ds_breaksN(tt, N, breaks$tmax)
-  brp <- .eobs_ds_breaksN(rp, N, breaks$precip)
+  # Bornes ABSOLUES fixes (défaut, ancrées sur 0, comme L'IF n°49) : couleurs
+  # comparables d'un projet à l'autre. Surcharge possible via `breaks` (4 bornes).
+  brt <- breaks$tmax %||% .EOBS_TX_BREAKS_ABS
+  brp <- breaks$precip %||% .EOBS_RR_BREAKS_ABS
   ct <- .eobs_ds_classN_rast(tt, brt)   # N = plus chaud
   cp <- .eobs_ds_classN_rast(rp, brp)   # N = plus humide
   biv <- (ct - 1L) * N + cp             # 1..N² ; chaud & sec (N,1) = (N-1)*N+1
   names(biv) <- "classe_bivariee"
   # Position [0,1] de la tendance nulle sur chaque axe (pointillés 0/0 de la légende).
-  zero <- list(tmax = .eobs_ds_zero_pos(tt, brt),
-               precip = .eobs_ds_zero_pos(rp, brp))
+  zero <- list(tmax = .eobs_ds_zero_pos(brt), precip = .eobs_ds_zero_pos(brp))
 
   if (!is.null(cache_path)) {
     tryCatch(terra::writeRaster(biv, cache_path, overwrite = TRUE),

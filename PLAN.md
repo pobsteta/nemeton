@@ -1328,10 +1328,15 @@ granularité soumis (3×3 / 5×5 / continu), retenu = **5×5 (25 classes)**. Cou
 Brief app MAJ (§8 : légende carré, pas liste de 25). Rappel du même échange : le
 neutre central « trou » de la 3×3 (v0.153.2, #A79E8C) n'a plus lieu d'être — la
 5×5 n'a pas de classe grise. Ajout demandé ensuite : **pointillés blancs 0/0**
-sur la légende (comme la figure). Classes = quintiles → position de 0 data-
-dépendante ; cœur expose `meta$palette$zero=list(tmax,precip)` (fraction [0,1] ou
-NA hors étendue, helper `.eobs_ds_zero_pos`), l'app trace les traits. Tests 122
-verts.
+sur la légende (comme la figure) ; cœur expose `meta$palette$zero=list(tmax,precip)`
+(fraction [0,1] ou NA, helper `.eobs_ds_zero_pos`), l'app trace les traits.
+Puis question « pourquoi quantile et pas absolu comme L'IF 49 ? » → **bascule en
+bornes ABSOLUES fixes** (choix utilisateur). Diag données projet : T°max
++1.0…+1.9 °C/déc et précip -77…-17 mm/déc = **partout chaud & sec** ; le quantile
+fabriquait un faux contraste. Défauts absolus ancrés sur 0 : T°max
+`c(0,0.4,0.8,1.2)`, précip `c(-80,-40,0,40)` ; couleurs comparables entre projets,
+massif homogène → quasi unicolore (la réalité). 0 devient une borne → pointillés à
+0.2 (T°max) et 0.6 (précip). Tests 123 verts.
 
 ### 2026-07-12 — v0.153.2 : fix gel R7 (MNT parcellaire → auto-source régional)
 

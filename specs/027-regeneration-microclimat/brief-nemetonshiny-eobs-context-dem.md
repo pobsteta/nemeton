@@ -141,6 +141,9 @@ contrôle de couches Leaflet. Même code de rendu que §2, palette pilotée par
 un raster de classes **1-25** (grille **5×5**, couleurs échantillonnées sur la
 figure « L'IF n°49 » — cœur ≥ **v0.154.0** ; c'était 1-9 en v0.153.x), mais **à la
 résolution du contexte** (pas le semis E-OBS grossier de `tendances_estivales_eobs`).
+La classification est en **bornes absolues fixes ancrées sur 0** (comme L'IF, pas
+en quantiles) : les couleurs sont comparables d'un projet à l'autre. Un massif
+uniformément chaud & sec ressort donc quasi unicolore — c'est voulu.
 
 ```r
 biv <- nemeton::eobs_downscale_bivariate(
@@ -177,7 +180,7 @@ if (identical(biv$meta$status, "ok")) {
   En CSS/SVG : un trait `stroke:#fff; stroke-dasharray:3 2` par-dessus la grille.
   Ces positions sont **data-dépendantes** (quintiles) : toujours lire `pal$zero`,
   ne pas figer à 40 %/60 %.
-- `biv$meta$breaks` (quintiles tmax/precip utilisés, **4 bornes chacun**),
+- `biv$meta$breaks` (bornes absolues tmax/precip utilisées, **4 bornes chacun**),
   `biv$meta$tx` / `biv$meta$rr` (métas composantes) pour debug/tooltip.
   `reliability = "low"`.
 - **La palette est pilotée par les données** : lis toujours `pal$colors`/`labels`/

@@ -30,8 +30,9 @@ over the buffer (IGN WMS), shared by both trends. See \code{\link{eobs_downscale
 
 \item{buffer_m}{Context buffer around the AOI, in metres (default 25000).}
 
-\item{breaks}{Optional \code{list(tmax=, precip=)} of four cut points each for a
-fixed classification; \code{NULL} → quintiles per trend.}
+\item{breaks}{Optional \code{list(tmax=, precip=)} of four cut points each to
+override the default absolute thresholds; \code{NULL} → the fixed L'IF-scale
+breaks (\code{c(0, 0.4, 0.8, 1.2)} °C/decade, \code{c(-80, -40, 0, 40)} mm/decade).}
 
 \item{context_res_m}{Auto-sourced DEM resolution in metres (default 250).}
 
@@ -60,12 +61,14 @@ the coarse E-OBS grid (~11 km), it \strong{downscales} both summer trends via
 into a \strong{bivariate classification} — the "L'IF n°49" map (warming × drying,
 red = warm & dry) at the project's context resolution.
 
-Each trend is cut into quintiles (1 = coolest/driest, 5 = warmest/wettest;
-or fixed \code{breaks}); the combined class is
-\code{(classe_tmax - 1) * 5 + classe_precip}, 1-25, on the 5×5 colour scheme
-sampled from the \emph{L'IF n°49} (Copernicus E-OBS) figure — warming dominates
-(hot rows red/magenta), cool & dry = yellow, cool & wet = violet. Reliability
-is \code{"low"} (bounded by the noisy precipitation downscaling).
+Each trend is cut on \strong{fixed absolute thresholds anchored on 0} (the default,
+like \emph{L'IF n°49} — comparable across projects, not relative quantiles): 1 =
+coolest/driest, 5 = warmest/wettest. Defaults: T°max \code{c(0, 0.4, 0.8, 1.2)}
+°C/decade, precipitation \code{c(-80, -40, 0, 40)} mm/decade (override via
+\code{breaks}). The combined class is \code{(classe_tmax - 1) * 5 + classe_precip},
+1-25, on the 5×5 colour scheme sampled from the reference figure — warming
+dominates (hot rows red/magenta), cool & dry = yellow, cool & wet = violet.
+Reliability is \code{"low"} (bounded by the noisy precipitation downscaling).
 }
 \seealso{
 \code{\link{eobs_downscale}}, \code{\link{tendances_estivales_eobs}}

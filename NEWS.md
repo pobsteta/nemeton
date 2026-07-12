@@ -1,27 +1,32 @@
 # nemeton 0.154.0 (2026-07-12)
 
-### Changed — carte bivariée : quinconce 5×5 (25 classes) aux couleurs de « L'IF n°49 »
+### Changed — carte bivariée : quinconce 5×5 en **bornes absolues** (couleurs « L'IF n°49 »)
 
 `eobs_downscale_bivariate()` passe d'un croisement **3×3 (9 classes)** à un
 **5×5 (25 classes)**, avec les couleurs **échantillonnées directement sur la
 figure de référence « L'IF n°49 » (Copernicus E-OBS)**. La référence est un
 dégradé continu (mesuré : un pixel = une couleur) ; le 5×5 en restitue la
-nuance (jaune → olive → violet → rouge → magenta) là où le 3×3 écrasait tout le
-haut en rouge. Schéma : la température domine (lignes chaudes rouge/magenta),
-frais & sec = jaune, frais & humide = violet, chaud & sec = rouge, chaud &
-humide = magenta.
+nuance (jaune → olive → violet → rouge → magenta). Schéma : la température domine
+(lignes chaudes rouge/magenta), frais & sec = jaune, frais & humide = violet,
+chaud & sec = rouge, chaud & humide = magenta.
 
-- Chaque tendance est coupée en **quintiles** (au lieu de tertiles) ;
-  `classe_bivariee = (classe_tmax-1)*5 + classe_precip`, **1-25**.
-- Helpers généralisés `.eobs_ds_breaksN()` / `.eobs_ds_classN_rast()` (N-tiles).
+- **Classification en bornes ABSOLUES fixes ancrées sur 0** (et non en quantiles
+  de l'emprise) — comme L'IF n°49 : les couleurs sont **comparables d'un projet à
+  l'autre** et « rouge » = un réchauffement + assèchement *absolus*, pas un rang
+  interne. Défauts : T°max `c(0, 0.4, 0.8, 1.2)` °C/déc, précip
+  `c(-80, -40, 0, 40)` mm/déc (surchargeables via `breaks`). Un massif
+  uniformément chaud & sec ressort donc quasi unicolore — c'est la réalité,
+  là où les quantiles fabriquaient un faux contraste.
+- `classe_bivariee = (classe_tmax-1)*5 + classe_precip`, **1-25**.
+- Helper `.eobs_ds_classN_rast()` (classification N-classes sur bornes données).
 - `meta$palette` porte désormais `classes` 1-25, 25 `colors`/`labels` et
   **`ncol = 5`** : l'app rend une **légende en carré bivarié 5×5** (pas une liste
   de 25 lignes). `breaks` (si fourni) attend **4 bornes** par axe.
 - `meta$palette$zero` = `list(tmax, precip)` : position fractionnaire [0,1] de la
-  **tendance nulle** sur chaque axe (ou `NA` hors étendue) — pour tracer les
-  **pointillés blancs 0/0** de la figure de référence. Comme les classes sont des
-  quintiles des données, la position de 0 est data-dépendante et exposée par le
-  cœur (helper `.eobs_ds_zero_pos`).
+  **tendance nulle** sur chaque axe (ou `NA` si 0 hors des bornes) — pour tracer
+  les **pointillés blancs 0/0** de la figure de référence. Avec les bornes
+  absolues par défaut, 0 est une borne : ligne T°max à **0.2** (bas, réchauffement
+  quasi général) et ligne précip à **0.6** (helper `.eobs_ds_zero_pos`).
 - Palette pilotée par les données : l'app lit `pal$colors`/`labels`/`ncol`.
   Brief app mis à jour (`brief-nemetonshiny-eobs-context-dem` §8).
 
