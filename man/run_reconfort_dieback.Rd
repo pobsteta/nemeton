@@ -75,11 +75,25 @@ not change the result for the kept pixels.}
 used to cut the AOI broadleaf mask (default `<global cache>/oso/oso.tif`,
 overridable via `options(nemeton.reconfort_oso_national)`).}
 
-\item{number_of_chunks}{IOTA2 RAM-saving chunk count. Default `200`
-(forced to `1` when `aoi_crop` shrinks the raster to a single block).}
+\item{number_of_chunks}{IOTA2 RAM-saving chunk count. Default `200`; when
+`aoi_crop = TRUE` it is derived from the cropped raster height (~240 rows
+per chunk, so 4 chunks for a 930x952 AOI). This is what caps peak memory:
+a single chunk materialises the whole multi-date feature stack at once and
+goes past 20 GB even on a small AOI (the R session was killed by
+systemd-oomd on 2026-07-13; 13.4 GB once chunked). Chunking requires an
+iota2 patched for defect #11 (`repair_iota2_env.sh`) — without it, chunk 0
+keeps an uncut region mask and OTB aborts; the run then falls back to a
+single chunk with a warning. An explicit value is respected.}
 
-\item{scheduler_type}{IOTA2 scheduler (`"LocalCluster"` or `"Slurm"`
-on HPC). Default `"LocalCluster"`.}
+\item{scheduler_type}{IOTA2 scheduler. Default `"localCluster"`.
+IOTA2's `Iota2.py` only accepts `debug`, `cluster`, `PBS`, `Slurm`,
+`localCluster` (note the lower-case `l`) — `"LocalCluster"` 400s.
+When `aoi_crop = TRUE` the default is overridden to `"debug"`. Note this
+does NOT make the run sequential: IOTA2 spawns Dask `distributed.worker`s
+regardless (observed in the OTB classification logs on 2026-07-13, with
+the cfg reading `debug`). Memory is capped by `number_of_chunks`, not by
+this. An explicit non-default value is respected.
+PENDING : à revoir après alignement de la version d'iota2.}
 
 \item{nb_parallel_tasks}{IOTA2 parallel-task count. Default `1`.}
 

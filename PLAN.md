@@ -1315,6 +1315,37 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-13 — v0.154.1 : fix OOM RECONFORT (défaut iota2 #11, chunk 0 falsy)
+
+Un diagnostic RECONFORT lancé depuis l'app a fait tuer la session R entière
+(RStudio + terminaux) par `systemd-oomd` : 26 Go de pic, dont > 20 Go pour la
+seule classification IOTA2 sur une UGF de 930×952 px.
+
+**Cause racine** (trouvée en lisant le code d'iota2, pas le nôtre) :
+`image_classifier.py:644` ne découpe le masque de région sur le bloc courant que
+sous `if ... and targeted_chunk:`. `targeted_chunk` étant l'**indice** du bloc,
+`0` est *falsy* → le bloc 0 garde un masque pleine taille → abort OTB
+(BandMath, dimensions incompatibles). D'où le `number_of_chunks = 1` du
+pipeline : seule valeur où ça coïncide par accident, mais qui oblige à charger
+toute la pile de features multi-dates d'un coup.
+
+**Livré** : patch #11 dans `repair_iota2_env.sh` (idempotent, avec backup) +
+`run_reconfort_dieback()` qui dérive le nombre de blocs de la hauteur du raster
+(~240 lignes/bloc). Env non patché → détection, repli sur 1 bloc, avertissement
+explicite (pas de régression silencieuse).
+
+**Validé en réel** (zone 9, S2 2025, env patché) : 10/10 phases, statut
+`completed`, 819 s, **pic 11,3 Go** (vs > 20 Go), cartes finales produites.
+
+Deux fausses pistes écartées **par la mesure**, à ne pas re-tenter : le budget
+RAM d'OTB (`iota2_resources.cfg`, `classifications: ram`) n'a aucun effet, et
+`nb_cpu` (12 → 4) non plus.
+
+**Prochaine étape** : côté `nemetonshiny`, le job tourne dans le même scope
+systemd que l'app — quand il déborde, oomd tue *tout*. Un brief est à écrire
+pour lancer le worker RECONFORT dans son propre cgroup plafonné, afin qu'un
+dépassement tue le job seul, avec une erreur propre dans l'UI.
+
 ### 2026-07-12 — v0.154.0 : carte bivariée E-OBS en quinconce 5×5 (couleurs L'IF n°49)
 
 Demande en séance : coller la bivariée à la figure de référence « L'IF n°49 »
