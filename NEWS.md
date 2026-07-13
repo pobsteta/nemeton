@@ -1,3 +1,32 @@
+# nemeton 0.155.0 (2026-07-13)
+
+### Added — RECONFORT : le sous-processus IOTA2 tourne sous plafond mémoire
+
+Un job qui déborde ne doit pas emporter la session. Sans plafond, un
+dépassement du sous-processus IOTA2 ne le fait pas échouer *lui* : c'est
+`systemd-oomd` qui tue **tout le scope applicatif** par pression mémoire — le
+2026-07-13, RStudio (22 process), l'application et les terminaux sont partis
+ensemble.
+
+`.reconfort_run_py()` lance désormais `conda run … python` dans un **cgroup
+transitoire plafonné** (`systemd-run --user --scope --property=MemoryMax=…`).
+Un dépassement tue le sous-processus **seul** ; le pipeline remonte alors une
+erreur R normale (`RECONFORT map production failed …`), et la session survit.
+
+* Plafond par défaut : **70 % de la RAM** (21 Go sur une machine de 31 Go),
+  de quoi laisser le bureau sous le seuil de pression d'`oomd`.
+* `options(nemeton.reconfort_memory_max = "12G")` pour forcer une valeur ;
+  `FALSE` désactive le plafond.
+* **Sans effet là où systemd n'est pas disponible** (non-Linux, conteneur sans
+  bus utilisateur, CI) : la commande est alors lancée telle quelle, sans erreur.
+
+Validé en réel (zone 9, S2 2025) : scope plafonné à 21 Go créé par le cœur, run
+complet, statut `completed`, 546 s, cartes finales produites.
+
+Brief associé pour l'app : `specs/008-suivi-sanitaire/brief-nemetonshiny.md`
+(présenter l'OOM comme un échec de tâche ordinaire, ne pas retenir les rasters
+du projet en mémoire).
+
 # nemeton 0.154.1 (2026-07-13)
 
 ### Fixed — RECONFORT : la classification ne fait plus tomber la session (OOM)
