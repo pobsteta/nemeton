@@ -12,6 +12,16 @@
 #       `iota2_step.py` invokes it as a bare command `task_launcher.py`. The
 #       dask workers then fail with `/bin/sh: task_launcher.py: not found`.
 #       Add a thin executable wrapper on the env PATH.
+#   #11 `image_classifier.py` cuts the region mask to the chunk being
+#       classified under `if classif_paths.classif_mask and targeted_chunk:`.
+#       `targeted_chunk` is the chunk INDEX, so chunk 0 is falsy: its mask is
+#       never cut, and OTB aborts comparing a full-size mask to a partial
+#       block ("BandMathImageFilter: Input images must have the same
+#       dimensions, band #1 is [930;238], band #2 is [930;952]"). Only chunk 0
+#       is hit — chunks 1..n classify fine. This forces `number_of_chunks = 1`,
+#       which makes the classification materialise the whole multi-date feature
+#       stack at once: > 20 GB on a 930x952 AOI, enough for systemd-oomd to
+#       kill the whole R session (2026-07-13). Fix the truthiness test.
 #
 # Idempotent. Run once after creating the env:
 #   conda create -n nemeton-reconfort python=3.11 mamba
@@ -55,6 +65,31 @@ WRAP
   chmod +x "$LAUNCHER_BIN"
 else
   echo "[repair] WARNING: iota2/task_launcher.py not found — check the iota2 install" >&2
+fi
+
+# --- #11 chunk 0 is falsy -> region mask never cut to the chunk -----------
+CLASSIFIER="$(find "$ENV_PREFIX"/lib/python*/site-packages/iota2/classification \
+  -maxdepth 1 -name image_classifier.py | head -1)"
+BUG='if classif_paths.classif_mask and targeted_chunk:'
+FIX='if classif_paths.classif_mask and targeted_chunk is not None:'
+if [ -z "$CLASSIFIER" ]; then
+  echo "[repair] WARNING: iota2/classification/image_classifier.py not found" >&2
+elif grep -qF "$FIX" "$CLASSIFIER"; then
+  echo "[repair] image_classifier.py chunk-0 mask already fixed (ok)"
+elif grep -qF "$BUG" "$CLASSIFIER"; then
+  echo "[repair] patching image_classifier.py: chunk 0 mask not cut (#11)"
+  cp -n "$CLASSIFIER" "$CLASSIFIER.nemeton.bak"
+  python3 - "$CLASSIFIER" "$BUG" "$FIX" <<'PY'
+import sys
+path, bug, fix = sys.argv[1], sys.argv[2], sys.argv[3]
+src = open(path).read()
+assert src.count(bug) == 1, f"expected exactly 1 occurrence, found {src.count(bug)}"
+open(path, "w").write(src.replace(bug, fix))
+PY
+  echo "[repair] patched (backup: $(basename "$CLASSIFIER").nemeton.bak)"
+else
+  echo "[repair] WARNING: neither the buggy nor the fixed guard found in" >&2
+  echo "         $CLASSIFIER — the iota2 version may have moved on; re-check #11." >&2
 fi
 
 echo "[repair] done."

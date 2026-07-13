@@ -23,6 +23,42 @@
 # ============================================================
 
 
+# Rows of the AOI raster per IOTA2 chunk. Chunking is what caps the peak
+# memory of the classification: a single chunk materialises the whole
+# multi-date feature stack (every gap-filled date x CRswir/CRre) plus the
+# unpacked SharkRF model at once — > 20 GB on a 930x952 AOI, enough for
+# systemd-oomd to kill the R session (2026-07-13). At ~240 rows the same run
+# peaks at 13.4 GB.
+.RECONFORT_ROWS_PER_CHUNK <- 240L
+
+# Chunk count for an AOI-cropped run, from the height of the cropped mask.
+.reconfort_chunk_count <- function(mask_path,
+                                   rows_per_chunk = .RECONFORT_ROWS_PER_CHUNK) {
+  n <- if (length(mask_path) == 1L && !is.na(mask_path) && file.exists(mask_path)) {
+    tryCatch(terra::nrow(terra::rast(mask_path)), error = function(e) NA_integer_)
+  } else NA_integer_
+  if (is.na(n) || n <= 0L) return(1L)   # unknown extent: stay on the safe path
+  max(1L, as.integer(ceiling(n / rows_per_chunk)))
+}
+
+# Is the installed iota2 free of defect #11 (chunk 0 is falsy, so its region
+# mask is never cut and OTB aborts on a dimension mismatch)? Chunking is only
+# safe once `repair_iota2_env.sh` has patched it — see that script.
+.reconfort_chunk_mask_fixed <- function(conda_bin, env) {
+  if (is.null(conda_bin) || !nzchar(conda_bin)) return(FALSE)
+  expr <- paste(
+    "import inspect, sys",
+    "import iota2.classification.image_classifier as m",
+    "sys.exit(0 if 'targeted_chunk is not None' in inspect.getsource(m) else 1)",
+    sep = "; ")
+  status <- tryCatch(
+    suppressWarnings(system2(conda_bin,
+                             args = c("run", "-n", env, "python", "-c", shQuote(expr)),
+                             stdout = FALSE, stderr = FALSE)),
+    error = function(e) 1L)
+  identical(as.integer(status), 0L)
+}
+
 # Stage a self-contained working copy of the vendored glue into workdir.
 .reconfort_stage_workdir <- function(workdir, glue_dir) {
   dir.create(workdir, recursive = TRUE, showWarnings = FALSE)
@@ -193,17 +229,24 @@
 #'   used to cut the AOI broadleaf mask (default
 #'   `<global cache>/oso/oso.tif`, overridable via
 #'   `options(nemeton.reconfort_oso_national)`).
-#' @param number_of_chunks IOTA2 RAM-saving chunk count. Default `200`
-#'   (forced to `1` when `aoi_crop` shrinks the raster to a single block).
+#' @param number_of_chunks IOTA2 RAM-saving chunk count. Default `200`; when
+#'   `aoi_crop = TRUE` it is derived from the cropped raster height (~240 rows
+#'   per chunk, so 4 chunks for a 930x952 AOI). This is what caps peak memory:
+#'   a single chunk materialises the whole multi-date feature stack at once and
+#'   goes past 20 GB even on a small AOI (the R session was killed by
+#'   systemd-oomd on 2026-07-13; 13.4 GB once chunked). Chunking requires an
+#'   iota2 patched for defect #11 (`repair_iota2_env.sh`) — without it, chunk 0
+#'   keeps an uncut region mask and OTB aborts; the run then falls back to a
+#'   single chunk with a warning. An explicit value is respected.
 #' @param scheduler_type IOTA2 scheduler. Default `"localCluster"`.
 #'   IOTA2's `Iota2.py` only accepts `debug`, `cluster`, `PBS`, `Slurm`,
 #'   `localCluster` (note the lower-case `l`) — `"LocalCluster"` 400s.
-#'   When `aoi_crop = TRUE` the default `"localCluster"` is overridden to
-#'   `"debug"` (sequential): the cropped raster is tiny, so the Dask
-#'   cluster only adds memory pressure (it tripped systemd-oomd and killed
-#'   the R session mid-classification on 2026-06-28). An explicit non-default
-#'   value is respected.
-#'   PENDING : à confirmer après alignement de la version d'iota2.
+#'   When `aoi_crop = TRUE` the default is overridden to `"debug"`. Note this
+#'   does NOT make the run sequential: IOTA2 spawns Dask `distributed.worker`s
+#'   regardless (observed in the OTB classification logs on 2026-07-13, with
+#'   the cfg reading `debug`). Memory is capped by `number_of_chunks`, not by
+#'   this. An explicit non-default value is respected.
+#'   PENDING : à revoir après alignement de la version d'iota2.
 #' @param nb_parallel_tasks IOTA2 parallel-task count. Default `1`.
 #' @param output_dir Explicit per-run working directory. Default
 #'   `<cache_dir>/reconfort/run_z<zone_id>_S2<s2_year>`.
@@ -395,15 +438,28 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       extracted <- ing$extracted
     }
     if (do_crop) {
-      # cropped raster is tiny → one IOTA2 block (avoids the per-chunk
-      # mask-vs-fulltile BandMath dimension mismatch).
-      if (isTRUE(number_of_chunks == 200L)) number_of_chunks <- 1L
-      # ...and IOTA2's localCluster (a Dask cluster of ~nb_cpus workers,
-      # each loading the multi-date feature stack) only adds memory
-      # pressure on a tiny AOI — enough to trip systemd-oomd and kill the
-      # R session mid-classification (observed 2026-06-28). Sequential
-      # "debug" keeps memory flat at no real runtime cost here. Only the
-      # default is overridden; an explicit scheduler choice is respected.
+      # Chunk by rows — the only lever that caps the classification's peak
+      # memory (a single chunk goes past 20 GB on a 930x952 AOI and gets the R
+      # session killed by systemd-oomd). Safe only on an iota2 patched for
+      # defect #11: unpatched, chunk 0 keeps an uncut region mask and OTB
+      # aborts on a dimension mismatch. Stay on the (memory-hungry) single
+      # chunk rather than abort the run for those.
+      if (isTRUE(number_of_chunks == 200L)) {
+        number_of_chunks <- if (.reconfort_chunk_mask_fixed(conda_bin, env)) {
+          .reconfort_chunk_count(mask_path)
+        } else {
+          cli::cli_warn(c(
+            "iota2 is missing the chunk-0 mask fix (defect #11) — classifying in a single chunk.",
+            i = "Peak memory goes past 20 GB and may get this session killed by the OOM killer.",
+            i = "Run {.file repair_iota2_env.sh} on the {.val {env}} env to enable chunking."
+          ))
+          1L
+        }
+      }
+      # NOTE: this does NOT disable the Dask cluster — IOTA2 spawns
+      # `distributed.worker`s whatever the scheduler_type (seen in the OTB
+      # classification logs on 2026-07-13, cfg said "debug"). Kept because
+      # every validated run so far carried it.
       if (identical(scheduler_type, "localCluster")) scheduler_type <- "debug"
     }
 
