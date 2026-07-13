@@ -1,5 +1,39 @@
 # Changelog
 
+## nemeton 0.154.1 (2026-07-13)
+
+#### Fixed — RECONFORT : la classification ne fait plus tomber la session (OOM)
+
+Un diagnostic RECONFORT sur une UGF de 930×952 pixels faisait culminer
+la classification IOTA2 **au-delà de 20 Go**, assez pour que
+`systemd-oomd` tue la session R entière — RStudio, l’application et les
+terminaux avec (incident du 2026-07-13, pic mesuré à 26 Go avec l’app
+par-dessus).
+
+La cause est un défaut d’IOTA2 (`image_classifier.py`) : le masque de
+région n’est découpé sur le bloc courant que sous
+`if classif_paths.classif_mask and targeted_chunk:`. Or `targeted_chunk`
+est l’**indice** du bloc, et `0` est *falsy* en Python — le bloc 0, et
+lui seul, gardait un masque pleine taille, ce qui faisait avorter OTB («
+BandMathImageFilter: Input images must have the same dimensions »). Le
+pipeline contournait en forçant `number_of_chunks = 1`, seule valeur où
+les dimensions coïncident par accident… au prix de matérialiser toute la
+pile de features multi-dates d’un coup.
+
+- `repair_iota2_env.sh` corrige le défaut (**\#11**, comme
+  [\#9](https://github.com/pobsteta/nemeton/issues/9) pandas et
+  [\#10](https://github.com/pobsteta/nemeton/issues/10) `task_launcher`)
+  : idempotent, avec sauvegarde du fichier d’origine.
+- [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+  calcule désormais `number_of_chunks` sur la hauteur du raster découpé
+  (~240 lignes par bloc, soit 4 blocs pour 930×952) au lieu de forcer
+  `1`. Sur un env non patché, le défaut est **détecté**, le run retombe
+  sur un bloc unique et **avertit** explicitement (pic \> 20 Go, lancer
+  `repair_iota2_env.sh`).
+
+Validé en réel sur la zone 9 (S2 2025) : run complet, 10/10 phases,
+**pic à 11,3 Go contre \> 20 Go**, cartes finales produites.
+
 ## nemeton 0.154.0 (2026-07-12)
 
 #### Changed — carte bivariée : quinconce 5×5 en **bornes absolues** (couleurs « L’IF n°49 »)

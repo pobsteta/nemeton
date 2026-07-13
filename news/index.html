@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.154.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.154.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,19 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.154.1" id="nemeton-01541-2026-07-13">nemeton 0.154.1 (2026-07-13)<a class="anchor" aria-label="anchor" href="#nemeton-01541-2026-07-13"></a></h2>
+<div class="section level4">
+<h4 id="fixed--reconfort--la-classification-ne-fait-plus-tomber-la-session-oom-0-154-1">Fixed — RECONFORT : la classification ne fait plus tomber la session (OOM)<a class="anchor" aria-label="anchor" href="#fixed--reconfort--la-classification-ne-fait-plus-tomber-la-session-oom-0-154-1"></a></h4>
+<p>Un diagnostic RECONFORT sur une UGF de 930×952 pixels faisait culminer la classification IOTA2 <strong>au-delà de 20 Go</strong>, assez pour que <code>systemd-oomd</code> tue la session R entière — RStudio, l’application et les terminaux avec (incident du 2026-07-13, pic mesuré à 26 Go avec l’app par-dessus).</p>
+<p>La cause est un défaut d’IOTA2 (<code>image_classifier.py</code>) : le masque de région n’est découpé sur le bloc courant que sous <code>if classif_paths.classif_mask and targeted_chunk:</code>. Or <code>targeted_chunk</code> est l’<strong>indice</strong> du bloc, et <code>0</code> est <em>falsy</em> en Python — le bloc 0, et lui seul, gardait un masque pleine taille, ce qui faisait avorter OTB (« BandMathImageFilter: Input images must have the same dimensions »). Le pipeline contournait en forçant <code>number_of_chunks = 1</code>, seule valeur où les dimensions coïncident par accident… au prix de matérialiser toute la pile de features multi-dates d’un coup.</p>
+<ul><li>
+<code>repair_iota2_env.sh</code> corrige le défaut (<strong>#11</strong>, comme <a href="https://github.com/pobsteta/nemeton/issues/9" class="external-link">#9</a> pandas et <a href="https://github.com/pobsteta/nemeton/issues/10" class="external-link">#10</a> <code>task_launcher</code>) : idempotent, avec sauvegarde du fichier d’origine.</li>
+<li>
+<code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> calcule désormais <code>number_of_chunks</code> sur la hauteur du raster découpé (~240 lignes par bloc, soit 4 blocs pour 930×952) au lieu de forcer <code>1</code>. Sur un env non patché, le défaut est <strong>détecté</strong>, le run retombe sur un bloc unique et <strong>avertit</strong> explicitement (pic &gt; 20 Go, lancer <code>repair_iota2_env.sh</code>).</li>
+</ul><p>Validé en réel sur la zone 9 (S2 2025) : run complet, 10/10 phases, <strong>pic à 11,3 Go contre &gt; 20 Go</strong>, cartes finales produites.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.154.0" id="nemeton-01540-2026-07-12">nemeton 0.154.0 (2026-07-12)<a class="anchor" aria-label="anchor" href="#nemeton-01540-2026-07-12"></a></h2>
 <div class="section level4">
