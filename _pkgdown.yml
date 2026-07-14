@@ -416,6 +416,7 @@ reference:
     - run_fordead_dieback
     - sampling_plan
     - schema_to_df
+    - scratch_dir
     - sentinel2_stac
     - site_index_reference_points
     - smooth_pixel_series

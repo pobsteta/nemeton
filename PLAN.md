@@ -1315,6 +1315,30 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-14 — v0.156.0 : `scratch_dir()` configurable (contrainte disque à l'échelle département)
+
+Conséquence directe de l'allègement mémoire de la v0.155.0 : les intermédiaires
+qui étaient en RAM sont désormais sur disque, et **le volume croît avec
+pixels × dates**. Mesuré : 798 Mo pour 0,89 Mpx × 115 dates (zone 9).
+Extrapolé à un département (~67× l'emprise) : **plusieurs dizaines de Go**.
+
+`tempdir()` n'est pas un bon défaut à cette échelle (petite partition racine,
+parfois tmpfs = en RAM, ce qui annulerait le bénéfice). D'où `scratch_dir()` :
+`options(nemeton.scratch_dir=)` → `NEMETON_SCRATCH_DIR` → `tempdir()`.
+`run_reconfort_dieback()` avertit en amont si l'espace libre est manifestement
+insuffisant, au lieu de mourir sur un disque plein à mi-parcours.
+
+**A/B mesuré sur la construction des stacks** (mêmes 115 dates, zone 9) :
+
+| | temps | RAM |
+|---|---|---|
+| avant (tout en RAM) | 2 min 44 s | 1309 Mo |
+| après (streaming) | 4 min 02 s | 742 Mo |
+
+Le streaming coûte donc ~45 % de temps sur cette phase — **mais à l'échelle
+département l'ancienne version ne tournait pas du tout** (~90 Go de RAM
+nécessaires). Ce n'est pas un ralentissement, c'est un déblocage.
+
 ### 2026-07-13 — v0.155.0 : le sous-processus IOTA2 tourne sous plafond mémoire
 
 Suite de v0.154.1. Le bug iota2 est corrigé, mais **la structure du risque

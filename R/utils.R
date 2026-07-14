@@ -1341,3 +1341,70 @@ format_duration <- function(sec, with_seconds = TRUE) {
   if (is.na(n)) return(all(is.na(terra::values(x))))
   n == 0
 }
+
+
+#' Scratch directory for a run's bulky intermediates
+#'
+#' Long pipelines stream their intermediates to disk rather than holding them
+#' in RAM (see [run_reconfort_dieback()]). The volume is not negligible — the
+#' RECONFORT feature stacks measured ~800 MB for a 0.89 Mpx AOI over 115 dates,
+#' and that scales with pixels x dates: a department-wide run lands in the tens
+#' of GB. `tempdir()` often sits on a small root partition or on tmpfs (i.e. in
+#' RAM, which would defeat the purpose entirely), so the location is
+#' configurable.
+#'
+#' Resolution order:
+#' \enumerate{
+#'   \item `options(nemeton.scratch_dir = "/data/scratch")`
+#'   \item the `NEMETON_SCRATCH_DIR` environment variable
+#'   \item `tempdir()` (the default)
+#' }
+#'
+#' Intermediates are removed by the pipeline as soon as they are consumed; the
+#' directory itself is left in place.
+#'
+#' @param subdir Optional sub-directory to create under the scratch root.
+#'
+#' @return The path, created if needed (character scalar).
+#'
+#' @examples
+#' \dontrun{
+#' options(nemeton.scratch_dir = "/mnt/big/scratch")
+#' scratch_dir()
+#' }
+#'
+#' @export
+scratch_dir <- function(subdir = NULL) {
+  root <- getOption("nemeton.scratch_dir", NULL)
+  if (is.null(root) || !nzchar(as.character(root)[1])) {
+    root <- Sys.getenv("NEMETON_SCRATCH_DIR", "")
+  }
+  root <- as.character(root)[1]
+  if (is.na(root) || !nzchar(root)) root <- tempdir()
+
+  path <- if (is.null(subdir)) root else file.path(root, subdir)
+  if (!dir.exists(path)) {
+    dir.create(path, recursive = TRUE, showWarnings = FALSE)
+  }
+  if (!dir.exists(path)) {
+    cli::cli_abort(c(
+      "Cannot create the scratch directory {.path {path}}.",
+      i = "Set {.code options(nemeton.scratch_dir=)} or {.envvar NEMETON_SCRATCH_DIR} to a writable location."
+    ))
+  }
+  path
+}
+
+
+# Free space (in GB) on the filesystem holding `path`, or NA when it cannot be
+# read (non-POSIX, `df` absent). Advisory only — never abort a run over it.
+.free_space_gb <- function(path) {
+  out <- tryCatch(
+    suppressWarnings(system2("df", c("-Pk", shQuote(path)), stdout = TRUE, stderr = FALSE)),
+    error = function(e) character(0))
+  if (length(out) < 2L) return(NA_real_)
+  f <- strsplit(trimws(out[2L]), "\\s+")[[1L]]
+  kb <- suppressWarnings(as.numeric(f[4L]))
+  if (is.na(kb)) return(NA_real_)
+  kb / 1048576
+}
