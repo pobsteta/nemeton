@@ -121,7 +121,7 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
   for (code in 1:4) {
     cls <- FORDEAD_CLASSES[code + 1L]
     mask <- terra::ifel(class_raster == code, 1L, NA)
-    if (all(is.na(terra::values(mask)))) {
+    if (.raster_is_empty(mask)) {
       out[[cls]] <- mask
       next
     }
@@ -181,7 +181,7 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
   rows <- list()
   for (cls in names(clusters)) {
     r <- clusters[[cls]]
-    if (is.null(r) || all(is.na(terra::values(r)))) next
+    if (.raster_is_empty(r)) next
 
     poly <- sf::st_as_sf(terra::as.polygons(r, dissolve = TRUE))
     if (!nrow(poly)) next

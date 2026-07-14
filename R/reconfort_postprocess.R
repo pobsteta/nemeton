@@ -171,7 +171,7 @@ RECONFORT_ALERT_CLASSES <- c("2-deperissant", "3-tres-deperissant")
   for (code in 2:length(classes)) {            # skip code 1 ("sain")
     cls  <- classes[code]
     mask <- terra::ifel(class_raster == code, 1L, NA)
-    if (all(is.na(terra::values(mask)))) {
+    if (.raster_is_empty(mask)) {
       out[[cls]] <- mask
       next
     }

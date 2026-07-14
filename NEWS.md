@@ -27,6 +27,41 @@ Brief associé pour l'app : `specs/008-suivi-sanitaire/brief-nemetonshiny.md`
 (présenter l'OOM comme un échec de tâche ordinaire, ne pas retenir les rasters
 du projet en mémoire).
 
+### Changed — allègement mémoire des runs (pic RECONFORT : 11,3 Go → 6,5 Go)
+
+Audit de l'empreinte mémoire du code R dans les pipelines longs. Mesuré en réel
+sur le run RECONFORT zone 9 / S2 2025 : **pic 11,3 Go → 6,5 Go**, run complet,
+cartes finales identiques.
+
+**Cause systémique** — aucun appel `terra` du cœur n'utilisait `filename=`, et
+aucun `terraOptions()` n'était posé. Par défaut `terra` matérialise en RAM
+jusqu'à **60 % de la mémoire totale de la machine** (totale, pas libre : rien ne
+tient compte du sous-processus IOTA2/FORDEAD qui tourne à côté). `.onLoad()`
+(nouveau `R/zzz.R`) pose désormais `memfrac = 0.25` ; réglable via
+`options(nemeton.terra_memfrac = …)`.
+
+**Trois postes lourds réécrits** :
+
+* `.build_reconfort_feature_stacks()` gardait les N dates × 2 stacks en mémoire
+  (~6 Go pour 100 dates sur une AOI 2000×2000) et appelait `terra::values()`
+  trois fois par scène pour le masquage SCL. Chaque date est maintenant streamée
+  sur disque (seuls les chemins sont conservés) et le masquage passe par
+  `terra::mask()`. Les intermédiaires sont nettoyés dès le bundle écrit.
+* `.compute_first_dieback_date()` tenait **trois copies** du même tableau (R
+  `values`, R `array`, tas Python). Le buffer numpy est rempli couche par
+  couche : une seule copie. Équivalence numérique vérifiée sur grille non carrée
+  (écart max 0).
+* `.trend_fit_cells()` (Theil-Sen/Mann-Kendall) empilait `D`, `sweep(D)` et
+  `sign(D)` — trois matrices identiques. Découpé en blocs de pixels (lignes
+  indépendantes) et débarrassé de ses temporaires. Résultat **identique au bit
+  près** (NA hétérogènes, ex æquo, séries plates).
+
+**Divers** : `.raster_is_empty()` (via `terra::global()`) remplace
+`all(is.na(terra::values(x)))` sur 3 sites — ces tests matérialisaient un raster
+entier pour répondre à un booléen ; `filename=` sur deux `terra::app()` dont
+l'écriture suivait ; deux rasters relus alors qu'ils étaient déjà en RAM
+(`validation_sampling.R`) ; `rm()` + `gc()` des stacks dès leur dernier usage.
+
 ### Added — `format_duration()` : les durées mènent par l'heure, puis la minute
 
 Nouvelle fonction exportée `format_duration(sec, with_seconds = TRUE)`. Une

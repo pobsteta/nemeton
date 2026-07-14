@@ -167,7 +167,7 @@ create_validation_sampling_plan <- function(zone,
   priority <- fordead_alert_mask(alert_raster,
                                  classes  = classes,
                                  buffer_m = buffer_m)
-  n_alert_cells <- sum(!is.na(terra::values(priority)))
+  n_alert_cells <- sum(terra::global(priority, "notNA")[[1L]], na.rm = TRUE)
   if (n_alert_cells == 0L) {
     cli::cli_abort(
       c("No alert cell in {.arg alert_raster} for {.arg classes} = {.val {classes}}.",
@@ -185,7 +185,11 @@ create_validation_sampling_plan <- function(zone,
     # severe pixels proportionally while every eligible cell keeps p > 0.
     aligned <- .align_weight_raster(weight_raster, priority)
     wv <- terra::values(aligned)[, 1L]
-    wv[is.na(terra::values(priority)[, 1L])] <- NA_real_
+    # `priority` is read once and dropped; re-reading it inside the subset would
+    # materialise the whole raster a second time.
+    pv <- terra::values(priority)[, 1L]
+    wv[is.na(pv)] <- NA_real_
+    rm(pv)
     finite <- wv[is.finite(wv)]
     if (length(finite) == 0L) {
       cli::cli_abort(
@@ -250,7 +254,9 @@ create_validation_sampling_plan <- function(zone,
     h_vals[!is_control] <- NA
     terra::values(healthy) <- h_vals
 
-    if (sum(!is.na(terra::values(healthy))) == 0L) {
+    # `is_control` already says which cells survived — re-reading `healthy` here
+    # would materialise the raster again for a count we hold in RAM.
+    if (sum(is_control) == 0L) {
       dist_str <- if (length(cls_dist)) {
         paste(names(cls_dist), "=", cls_dist, collapse = ", ")
       } else "raster fully NA"

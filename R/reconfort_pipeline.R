@@ -598,6 +598,15 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
           zone_id = zone_id, run_id = run_id, species = info$species,
           v_model = v_model, n_classes = info$n_classes,
           date_from = date_from, date_to = date_to))
+        # The bundle is on disk now. Drop the per-date intermediates and the
+        # stacks here rather than at the end of the enclosing tryCatch (which
+        # runs on through meta assembly) — they are the run's largest R-side
+        # footprint and nothing downstream needs them.
+        if (!is.null(stacks$tmpdir) && dir.exists(stacks$tmpdir)) {
+          unlink(stacks$tmpdir, recursive = TRUE, force = TRUE)
+        }
+        rm(stacks, scenes)
+        gc(verbose = FALSE)
         bdir
       }
     }, error = function(e) {

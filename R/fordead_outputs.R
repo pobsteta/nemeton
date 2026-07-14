@@ -129,19 +129,27 @@ NULL
   n_layers <- terra::nlyr(rast_stack)
   n_rows   <- terra::nrow(rast_stack)
   n_cols   <- terra::ncol(rast_stack)
-  vals <- terra::values(rast_stack)              # matrix: n_cells x n_layers
   # terra's cell order is ROW-major (cell = (row-1)*ncol + col), but
-  # R's array() fills COLUMN-major. Feeding `vals` straight into
+  # R's array() fills COLUMN-major. Feeding a values matrix straight into
   # array(dim = c(n_rows, n_cols, n_layers)) therefore transposes the
   # y/x axes whenever n_rows != n_cols — the first-dieback dates would
   # land on the wrong pixels. Reshape each layer with byrow = TRUE so
   # the axes are an honest (time, y, x).
-  arr <- array(NA_real_, dim = c(n_layers, n_rows, n_cols))
+  #
+  # The numpy buffer is filled layer by layer. Going through a full
+  # `terra::values()` matrix and an intermediate R array kept THREE copies of
+  # the same data alive at once (values + array + numpy heap) — ~1.4 GB of peak
+  # for a 1 Mpx AOI over 60 dates, all of it counted in the RSS systemd-oomd
+  # watches. Only one layer is now in R at any time.
+  np_arr <- np$empty(
+    reticulate::tuple(as.integer(n_layers), as.integer(n_rows), as.integer(n_cols)),
+    dtype = "float64")
   for (l in seq_len(n_layers)) {
-    arr[l, , ] <- matrix(vals[, l], nrow = n_rows, ncol = n_cols,
-                         byrow = TRUE)
+    layer <- matrix(terra::values(rast_stack[[l]])[, 1L],
+                    nrow = n_rows, ncol = n_cols, byrow = TRUE)
+    np_arr$`__setitem__`(as.integer(l - 1L), reticulate::r_to_py(layer))
+    rm(layer)
   }
-  np_arr <- np$asarray(reticulate::r_to_py(arr))
 
   da <- xr$DataArray(
     np_arr,

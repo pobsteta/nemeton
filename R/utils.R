@@ -1326,3 +1326,18 @@ format_duration <- function(sec, with_seconds = TRUE) {
     else              sprintf("%d min", mins)
   }
 }
+
+
+# TRUE when a raster holds no data at all, WITHOUT materialising it.
+# `all(is.na(terra::values(x)))` pulls every cell into RAM just to answer a
+# yes/no question — on a large tile that is hundreds of MB for one boolean.
+# `terra::global(x, "notNA")` counts through terra's own streaming reader.
+.raster_is_empty <- function(x) {
+  if (is.null(x)) return(TRUE)
+  n <- tryCatch(sum(terra::global(x, "notNA")[[1L]], na.rm = TRUE),
+                error = function(e) NA_real_)
+  # Unreadable/degenerate raster: fall back to the honest (costly) answer
+  # rather than silently claiming it is empty.
+  if (is.na(n)) return(all(is.na(terra::values(x))))
+  n == 0
+}
