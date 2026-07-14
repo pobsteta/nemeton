@@ -414,6 +414,7 @@ reference:
     - resolve_theia_assets
     - retrieve_knowledge
     - run_fordead_dieback
+    - run_memory_capped
     - sampling_plan
     - schema_to_df
     - scratch_dir
