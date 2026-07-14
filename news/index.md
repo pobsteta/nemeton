@@ -1,5 +1,31 @@
 # Changelog
 
+## nemeton 0.156.0 (2026-07-14)
+
+#### Added — `scratch_dir()` : où atterrissent les intermédiaires volumineux
+
+Depuis la v0.155.0, les pipelines longs streament leurs intermédiaires
+sur disque au lieu de les tenir en RAM. Le volume n’est pas anodin et
+**croît avec pixels × dates** : ~800 Mo mesurés pour une AOI de 0,89 Mpx
+sur 115 dates, mais de l’ordre de la **dizaine de Go à l’échelle d’un
+département**. Or [`tempdir()`](https://rdrr.io/r/base/tempfile.html)
+vit souvent sur une petite partition racine — ou sur un tmpfs,
+c’est-à-dire *en RAM*, ce qui annulerait tout le bénéfice.
+
+`scratch_dir(subdir = NULL)` résout l’emplacement dans cet ordre :
+
+1.  `options(nemeton.scratch_dir = "/data/scratch")`
+2.  la variable d’environnement `NEMETON_SCRATCH_DIR`
+3.  [`tempdir()`](https://rdrr.io/r/base/tempfile.html) (défaut,
+    comportement inchangé)
+
+[`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+l’utilise pour ses stacks de features, et **avertit avant de commencer**
+quand l’espace libre est manifestement insuffisant (estimation
+volontairement conservatrice), plutôt que de mourir sur un disque plein
+à mi-parcours. L’avertissement est consultatif : il n’interrompt jamais
+un run, et reste silencieux là où l’espace libre n’est pas lisible.
+
 ## nemeton 0.155.0 (2026-07-13)
 
 #### Added — RECONFORT : le sous-processus IOTA2 tourne sous plafond mémoire

@@ -995,6 +995,9 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`schema_to_df()`](https://pobsteta.github.io/nemeton/reference/schema_to_df.md)
   : Convert a schema to a tidy data.frame
 
+- [`scratch_dir()`](https://pobsteta.github.io/nemeton/reference/scratch_dir.md)
+  : Scratch directory for a run's bulky intermediates
+
 - [`stac_search_s2_cdse()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
   [`stac_search_s2_pc()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
   [`stac_search_s2_theia_muscate()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
