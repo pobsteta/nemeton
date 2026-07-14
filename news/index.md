@@ -1,5 +1,106 @@
 # Changelog
 
+## nemeton 0.155.0 (2026-07-13)
+
+#### Added — RECONFORT : le sous-processus IOTA2 tourne sous plafond mémoire
+
+Un job qui déborde ne doit pas emporter la session. Sans plafond, un
+dépassement du sous-processus IOTA2 ne le fait pas échouer *lui* : c’est
+`systemd-oomd` qui tue **tout le scope applicatif** par pression mémoire
+— le 2026-07-13, RStudio (22 process), l’application et les terminaux
+sont partis ensemble.
+
+`.reconfort_run_py()` lance désormais `conda run … python` dans un
+**cgroup transitoire plafonné**
+(`systemd-run --user --scope --property=MemoryMax=…`). Un dépassement
+tue le sous-processus **seul** ; le pipeline remonte alors une erreur R
+normale (`RECONFORT map production failed …`), et la session survit.
+
+- Plafond par défaut : **70 % de la RAM** (21 Go sur une machine de 31
+  Go), de quoi laisser le bureau sous le seuil de pression d’`oomd`.
+- `options(nemeton.reconfort_memory_max = "12G")` pour forcer une valeur
+  ; `FALSE` désactive le plafond.
+- **Sans effet là où systemd n’est pas disponible** (non-Linux,
+  conteneur sans bus utilisateur, CI) : la commande est alors lancée
+  telle quelle, sans erreur.
+
+Validé en réel (zone 9, S2 2025) : scope plafonné à 21 Go créé par le
+cœur, run complet, statut `completed`, 546 s, cartes finales produites.
+
+Brief associé pour l’app :
+`specs/008-suivi-sanitaire/brief-nemetonshiny.md` (présenter l’OOM comme
+un échec de tâche ordinaire, ne pas retenir les rasters du projet en
+mémoire).
+
+#### Changed — allègement mémoire des runs (pic RECONFORT : 11,3 Go → 6,5 Go)
+
+Audit de l’empreinte mémoire du code R dans les pipelines longs. Mesuré
+en réel sur le run RECONFORT zone 9 / S2 2025 : **pic 11,3 Go → 6,5
+Go**, run complet, cartes finales identiques.
+
+**Cause systémique** — aucun appel `terra` du cœur n’utilisait
+`filename=`, et aucun
+[`terraOptions()`](https://rspatial.github.io/terra/reference/terraOptions.html)
+n’était posé. Par défaut `terra` matérialise en RAM jusqu’à **60 % de la
+mémoire totale de la machine** (totale, pas libre : rien ne tient compte
+du sous-processus IOTA2/FORDEAD qui tourne à côté). `.onLoad()` (nouveau
+`R/zzz.R`) pose désormais `memfrac = 0.25` ; réglable via
+`options(nemeton.terra_memfrac = …)`.
+
+**Trois postes lourds réécrits** :
+
+- `.build_reconfort_feature_stacks()` gardait les N dates × 2 stacks en
+  mémoire (~6 Go pour 100 dates sur une AOI 2000×2000) et appelait
+  [`terra::values()`](https://rspatial.github.io/terra/reference/values.html)
+  trois fois par scène pour le masquage SCL. Chaque date est maintenant
+  streamée sur disque (seuls les chemins sont conservés) et le masquage
+  passe par
+  [`terra::mask()`](https://rspatial.github.io/terra/reference/mask.html).
+  Les intermédiaires sont nettoyés dès le bundle écrit.
+- [`.compute_first_dieback_date()`](https://pobsteta.github.io/nemeton/reference/dot-compute_first_dieback_date.md)
+  tenait **trois copies** du même tableau (R `values`, R `array`, tas
+  Python). Le buffer numpy est rempli couche par couche : une seule
+  copie. Équivalence numérique vérifiée sur grille non carrée (écart max
+  0).
+- `.trend_fit_cells()` (Theil-Sen/Mann-Kendall) empilait `D`, `sweep(D)`
+  et `sign(D)` — trois matrices identiques. Découpé en blocs de pixels
+  (lignes indépendantes) et débarrassé de ses temporaires. Résultat
+  **identique au bit près** (NA hétérogènes, ex æquo, séries plates).
+
+**Divers** : `.raster_is_empty()` (via
+[`terra::global()`](https://rspatial.github.io/terra/reference/global.html))
+remplace `all(is.na(terra::values(x)))` sur 3 sites — ces tests
+matérialisaient un raster entier pour répondre à un booléen ;
+`filename=` sur deux
+[`terra::app()`](https://rspatial.github.io/terra/reference/app.html)
+dont l’écriture suivait ; deux rasters relus alors qu’ils étaient déjà
+en RAM (`validation_sampling.R`) ;
+[`rm()`](https://rdrr.io/r/base/rm.html) +
+[`gc()`](https://rdrr.io/r/base/gc.html) des stacks dès leur dernier
+usage.
+
+#### Added — `format_duration()` : les durées mènent par l’heure, puis la minute
+
+Nouvelle fonction exportée `format_duration(sec, with_seconds = TRUE)`.
+Une durée affichée commence toujours par sa plus grande unité utile : un
+run de deux heures se lit **`2 h 00 min 43 s`**, jamais `7243 s`.
+
+Deux messages du cœur affichaient des secondes brutes et sont corrigés :
+
+- `run_fordead_diagnostic()` — « …persisted in **2 h 00 min 43 s** » (au
+  lieu de `7243 s`) ;
+- le pipeline lasR — « lasR done in **1 h 22 min 18 s** » (au lieu de
+  `4938 s`).
+
+Les **champs de données** (`duration_sec`, `elapsed_sec`,
+`run_meta.json`) restent en secondes brutes : ce sont des valeurs
+lisibles par machine, pas des messages.
+
+L’app porte le même défaut sur 4 notifications (RECONFORT/FORDEAD
+terminés) et duplique deux formateurs locaux ; elle doit consommer
+[`format_duration()`](https://pobsteta.github.io/nemeton/reference/format_duration.md)
+— cf. §5 du brief.
+
 ## nemeton 0.154.1 (2026-07-13)
 
 #### Fixed — RECONFORT : la classification ne fait plus tomber la session (OOM)

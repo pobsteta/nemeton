@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.154.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.155.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,44 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.155.0" id="nemeton-01550-2026-07-13">nemeton 0.155.0 (2026-07-13)<a class="anchor" aria-label="anchor" href="#nemeton-01550-2026-07-13"></a></h2>
+<div class="section level4">
+<h4 id="added--reconfort--le-sous-processus-iota2-tourne-sous-plafond-mémoire-0-155-0">Added — RECONFORT : le sous-processus IOTA2 tourne sous plafond mémoire<a class="anchor" aria-label="anchor" href="#added--reconfort--le-sous-processus-iota2-tourne-sous-plafond-m%C3%A9moire-0-155-0"></a></h4>
+<p>Un job qui déborde ne doit pas emporter la session. Sans plafond, un dépassement du sous-processus IOTA2 ne le fait pas échouer <em>lui</em> : c’est <code>systemd-oomd</code> qui tue <strong>tout le scope applicatif</strong> par pression mémoire — le 2026-07-13, RStudio (22 process), l’application et les terminaux sont partis ensemble.</p>
+<p><code>.reconfort_run_py()</code> lance désormais <code>conda run … python</code> dans un <strong>cgroup transitoire plafonné</strong> (<code>systemd-run --user --scope --property=MemoryMax=…</code>). Un dépassement tue le sous-processus <strong>seul</strong> ; le pipeline remonte alors une erreur R normale (<code>RECONFORT map production failed …</code>), et la session survit.</p>
+<ul><li>Plafond par défaut : <strong>70 % de la RAM</strong> (21 Go sur une machine de 31 Go), de quoi laisser le bureau sous le seuil de pression d’<code>oomd</code>.</li>
+<li>
+<code>options(nemeton.reconfort_memory_max = "12G")</code> pour forcer une valeur ; <code>FALSE</code> désactive le plafond.</li>
+<li>
+<strong>Sans effet là où systemd n’est pas disponible</strong> (non-Linux, conteneur sans bus utilisateur, CI) : la commande est alors lancée telle quelle, sans erreur.</li>
+</ul><p>Validé en réel (zone 9, S2 2025) : scope plafonné à 21 Go créé par le cœur, run complet, statut <code>completed</code>, 546 s, cartes finales produites.</p>
+<p>Brief associé pour l’app : <code>specs/008-suivi-sanitaire/brief-nemetonshiny.md</code> (présenter l’OOM comme un échec de tâche ordinaire, ne pas retenir les rasters du projet en mémoire).</p>
+</div>
+<div class="section level4">
+<h4 id="changed--allègement-mémoire-des-runs-pic-reconfort--go--go-0-155-0">Changed — allègement mémoire des runs (pic RECONFORT : 11,3 Go → 6,5 Go)<a class="anchor" aria-label="anchor" href="#changed--all%C3%A8gement-m%C3%A9moire-des-runs-pic-reconfort--go--go-0-155-0"></a></h4>
+<p>Audit de l’empreinte mémoire du code R dans les pipelines longs. Mesuré en réel sur le run RECONFORT zone 9 / S2 2025 : <strong>pic 11,3 Go → 6,5 Go</strong>, run complet, cartes finales identiques.</p>
+<p><strong>Cause systémique</strong> — aucun appel <code>terra</code> du cœur n’utilisait <code>filename=</code>, et aucun <code><a href="https://rspatial.github.io/terra/reference/terraOptions.html" class="external-link">terraOptions()</a></code> n’était posé. Par défaut <code>terra</code> matérialise en RAM jusqu’à <strong>60 % de la mémoire totale de la machine</strong> (totale, pas libre : rien ne tient compte du sous-processus IOTA2/FORDEAD qui tourne à côté). <code>.onLoad()</code> (nouveau <code>R/zzz.R</code>) pose désormais <code>memfrac = 0.25</code> ; réglable via <code>options(nemeton.terra_memfrac = …)</code>.</p>
+<p><strong>Trois postes lourds réécrits</strong> :</p>
+<ul><li>
+<code>.build_reconfort_feature_stacks()</code> gardait les N dates × 2 stacks en mémoire (~6 Go pour 100 dates sur une AOI 2000×2000) et appelait <code><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">terra::values()</a></code> trois fois par scène pour le masquage SCL. Chaque date est maintenant streamée sur disque (seuls les chemins sont conservés) et le masquage passe par <code><a href="https://rspatial.github.io/terra/reference/mask.html" class="external-link">terra::mask()</a></code>. Les intermédiaires sont nettoyés dès le bundle écrit.</li>
+<li>
+<code><a href="../reference/dot-compute_first_dieback_date.html">.compute_first_dieback_date()</a></code> tenait <strong>trois copies</strong> du même tableau (R <code>values</code>, R <code>array</code>, tas Python). Le buffer numpy est rempli couche par couche : une seule copie. Équivalence numérique vérifiée sur grille non carrée (écart max 0).</li>
+<li>
+<code>.trend_fit_cells()</code> (Theil-Sen/Mann-Kendall) empilait <code>D</code>, <code>sweep(D)</code> et <code>sign(D)</code> — trois matrices identiques. Découpé en blocs de pixels (lignes indépendantes) et débarrassé de ses temporaires. Résultat <strong>identique au bit près</strong> (NA hétérogènes, ex æquo, séries plates).</li>
+</ul><p><strong>Divers</strong> : <code>.raster_is_empty()</code> (via <code><a href="https://rspatial.github.io/terra/reference/global.html" class="external-link">terra::global()</a></code>) remplace <code>all(is.na(terra::values(x)))</code> sur 3 sites — ces tests matérialisaient un raster entier pour répondre à un booléen ; <code>filename=</code> sur deux <code><a href="https://rspatial.github.io/terra/reference/app.html" class="external-link">terra::app()</a></code> dont l’écriture suivait ; deux rasters relus alors qu’ils étaient déjà en RAM (<code>validation_sampling.R</code>) ; <code><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm()</a></code> + <code><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc()</a></code> des stacks dès leur dernier usage.</p>
+</div>
+<div class="section level4">
+<h4 id="added--format_duration--les-durées-mènent-par-lheure-puis-la-minute-0-155-0">Added — <code>format_duration()</code> : les durées mènent par l’heure, puis la minute<a class="anchor" aria-label="anchor" href="#added--format_duration--les-dur%C3%A9es-m%C3%A8nent-par-lheure-puis-la-minute-0-155-0"></a></h4>
+<p>Nouvelle fonction exportée <code>format_duration(sec, with_seconds = TRUE)</code>. Une durée affichée commence toujours par sa plus grande unité utile : un run de deux heures se lit <strong><code>2 h 00 min 43 s</code></strong>, jamais <code>7243 s</code>.</p>
+<p>Deux messages du cœur affichaient des secondes brutes et sont corrigés :</p>
+<ul><li>
+<code>run_fordead_diagnostic()</code> — « …persisted in <strong>2 h 00 min 43 s</strong> » (au lieu de <code>7243 s</code>) ;</li>
+<li>le pipeline lasR — « lasR done in <strong>1 h 22 min 18 s</strong> » (au lieu de <code>4938 s</code>).</li>
+</ul><p>Les <strong>champs de données</strong> (<code>duration_sec</code>, <code>elapsed_sec</code>, <code>run_meta.json</code>) restent en secondes brutes : ce sont des valeurs lisibles par machine, pas des messages.</p>
+<p>L’app porte le même défaut sur 4 notifications (RECONFORT/FORDEAD terminés) et duplique deux formateurs locaux ; elle doit consommer <code><a href="../reference/format_duration.html">format_duration()</a></code> — cf. §5 du brief.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.154.1" id="nemeton-01541-2026-07-13">nemeton 0.154.1 (2026-07-13)<a class="anchor" aria-label="anchor" href="#nemeton-01541-2026-07-13"></a></h2>
 <div class="section level4">

@@ -1738,6 +1738,32 @@ cœur).
 
 ## Journal
 
+### 2026-07-13 — v0.155.0 : le sous-processus IOTA2 tourne sous plafond mémoire
+
+Suite de v0.154.1. Le bug iota2 est corrigé, mais **la structure du
+risque restait** : le job tournait dans le même cgroup que l’app, donc
+un dépassement faisait tuer *toute la session* par `systemd-oomd`, pas
+le job.
+
+Le plafond se pose **côté cœur** (et non côté app comme envisagé
+d’abord) : c’est `nemeton` qui lance le sous-processus IOTA2
+(`.reconfort_run_py()`, `R/reconfort_ingest.R`), donc c’est là qu’il
+protège tout le monde — y compris un usage hors Shiny.
+`systemd-run --user --scope --property=MemoryMax=…`, défaut 70 % de la
+RAM, `options(nemeton.reconfort_memory_max=)` pour forcer, no-op
+silencieux si systemd est absent (non-Linux, conteneur, CI).
+
+Un OOM devient ainsi **un échec de tâche ordinaire** (exit non nul → «
+map production failed ») au lieu d’une catastrophe de session.
+
+**Validé en réel** : scope à 21 Go créé par le cœur, run complet,
+`completed`, 546 s, cartes finales produites.
+
+**Reste côté app** : `specs/008-suivi-sanitaire/brief-nemetonshiny.md` —
+présenter l’OOM (exit 137) avec un message dédié plutôt que le brut, et
+cesser de retenir les rasters du projet (~14 Go) en mémoire pendant un
+run.
+
 ### 2026-07-13 — v0.154.1 : fix OOM RECONFORT (défaut iota2 \#11, chunk 0 falsy)
 
 Un diagnostic RECONFORT lancé depuis l’app a fait tuer la session R

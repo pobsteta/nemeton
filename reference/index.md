@@ -598,6 +598,9 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`format_citations()`](https://pobsteta.github.io/nemeton/reference/format_citations.md)
   : Format retrieved chunks as a citation block
 
+- [`format_duration()`](https://pobsteta.github.io/nemeton/reference/format_duration.md)
+  : Format a duration as hours, then minutes, then seconds
+
 - [`generate_health_validation_plots()`](https://pobsteta.github.io/nemeton/reference/generate_health_validation_plots.md)
   : Draw a stratified sample of alerts to be validated in the field
 
