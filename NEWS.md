@@ -27,6 +27,26 @@ Brief associé pour l'app : `specs/008-suivi-sanitaire/brief-nemetonshiny.md`
 (présenter l'OOM comme un échec de tâche ordinaire, ne pas retenir les rasters
 du projet en mémoire).
 
+### Added — `format_duration()` : les durées mènent par l'heure, puis la minute
+
+Nouvelle fonction exportée `format_duration(sec, with_seconds = TRUE)`. Une
+durée affichée commence toujours par sa plus grande unité utile : un run de deux
+heures se lit **`2 h 00 min 43 s`**, jamais `7243 s`.
+
+Deux messages du cœur affichaient des secondes brutes et sont corrigés :
+
+* `run_fordead_diagnostic()` — « …persisted in **2 h 00 min 43 s** » (au lieu de
+  `7243 s`) ;
+* le pipeline lasR — « lasR done in **1 h 22 min 18 s** » (au lieu de `4938 s`).
+
+Les **champs de données** (`duration_sec`, `elapsed_sec`, `run_meta.json`)
+restent en secondes brutes : ce sont des valeurs lisibles par machine, pas des
+messages.
+
+L'app porte le même défaut sur 4 notifications (RECONFORT/FORDEAD terminés) et
+duplique deux formateurs locaux ; elle doit consommer `format_duration()` —
+cf. §5 du brief.
+
 # nemeton 0.154.1 (2026-07-13)
 
 ### Fixed — RECONFORT : la classification ne fait plus tomber la session (OOM)

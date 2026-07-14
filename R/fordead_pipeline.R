@@ -770,7 +770,7 @@ run_fordead_dieback <- function(con,
     duration_sec <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
     if (verbose) {
       cli::cli_alert_success(
-        "FORDEAD diagnostic complete: {cli::qty(n_inserted)} {n_inserted} pixel alert{?s} persisted in {round(duration_sec)} s."
+        "FORDEAD diagnostic complete: {cli::qty(n_inserted)} {n_inserted} pixel alert{?s} persisted in {format_duration(duration_sec)}."
       )
     }
     emit(list(current           = "fordead:complete",

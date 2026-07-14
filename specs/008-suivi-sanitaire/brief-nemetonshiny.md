@@ -105,7 +105,57 @@ pas lire la dernière valeur observée comme un maximum — c'est l'erreur qui m
 fait conclure deux fois l'inverse de la réalité pendant le diagnostic du
 2026-07-13.
 
-## 5. Hors périmètre
+## 5. À faire — durées : heures d'abord, minutes ensuite (audit 2026-07-14)
+
+Quatre messages injectent `duration_sec` **en secondes brutes**. Le run RECONFORT
+validé (819 s) s'affiche « terminé en **819 s** » au lieu de « **13 min 39 s** » ;
+un FORDEAD de deux heures dirait « **7243 s** ».
+
+| clé i18n (`utils_i18n.R`) | texte actuel | appelée depuis |
+|---|---|---|
+| `monitoring_health_success_done` | « Diagnostic FORDEAD terminé en **%.0f s**. » | `mod_monitoring.R:2901` |
+| `monitoring_reconfort_success` | « …%d alertes insérées en **%.0f s**. » | `mod_monitoring.R:3353` |
+| `monitoring_fordead_complete` | « FORDEAD terminé · {n} alertes · **{sec}s** » | `mod_monitoring.R:3841` |
+| `monitoring_reconfort_complete` | « RECONFORT terminé · {n} alertes · **{sec}s** » | `mod_monitoring.R:3988` |
+
+Les deux formateurs existants sont **corrects** (`format_elapsed()` →
+`1 h 02 min 05 s` ; `.format_duration_human()` → `1 h 02 min`) — ces quatre
+messages ne passent simplement par **aucun** des deux.
+
+Le cœur expose désormais **`nemeton::format_duration(sec, with_seconds = TRUE)`**
+(v0.155.0), qui couvre les deux granularités. Proposition : les quatre appels
+formatent la durée **avant** de la passer à `i18n$t()`, et le `%.0f s` / `{sec}s`
+devient un `%s` / `{duree}` :
+
+```r
+# mod_monitoring.R — les 4 sites
+sprintf(i18n$t("monitoring_reconfort_success"),
+        result$n_alerts %||% 0L,
+        nemeton::format_duration(result$duration_sec %||% NA_real_))
+```
+
+```r
+# utils_i18n.R
+monitoring_reconfort_success = list(
+  fr = "Diagnostic RECONFORT terminé : %d alertes insérées en %s.",
+  en = "RECONFORT diagnosis completed: %d alerts inserted in %s."
+),
+monitoring_reconfort_complete = list(
+  fr = "RECONFORT terminé · {n} alertes · {duree}",
+  en = "RECONFORT complete · {n} alerts · {duree}"
+),
+```
+
+**Consolidation (optionnelle, recommandée)** : `format_elapsed()` et
+`.format_duration_human()` peuvent être remplacés par des appels à
+`nemeton::format_duration()` (`with_seconds = FALSE` pour la seconde) — une seule
+source de vérité, conforme à la règle #2 (l'app consomme, le cœur décide).
+
+⚠️ Les **champs de données** (`duration_sec`, `elapsed_sec`, `run_meta.json`,
+colonne `rag_col_duration_sec`) restent en **secondes brutes** : ce sont des
+données lisibles par machine, pas des messages. Ne pas les formater.
+
+## 6. Hors périmètre
 
 * Le plafond mémoire lui-même → **cœur** (§2).
 * Le bug iota2 #11 (chunk 0 falsy, masque non découpé) → **corrigé** en v0.154.1,
