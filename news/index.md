@@ -1,5 +1,58 @@
 # Changelog
 
+## nemeton 0.157.0 (2026-07-14)
+
+#### Added — `run_memory_capped()` : FORDEAD ne peut plus emporter la session
+
+Le 2026-07-13, un diagnostic RECONFORT a tué R, l’app **et** la session
+de surveillance. `systemd-oomd` ne tue pas le processus fautif : sous
+pression mémoire, il tue le **scope** entier (les 11 processus de
+RStudio, les terminaux avec). RECONFORT a été isolé en v0.155.0 — son
+Python est un *sous-processus* (`conda run python`), donc plafonnable
+dans un cgroup.
+
+FORDEAD, lui, n’a pas cette chance : son Python tourne dans
+l’interpréteur **embarqué** de reticulate (`fp$fit()`, `fp$predict()`),
+et les moteurs reGénération sont du R pur. Leur mémoire *est* celle du
+process R, donc celle du scope de l’app. Le 2026-07-14, RStudio est
+reparti à l’OOM en plein FORDEAD. Il n’y a rien à plafonner en
+in-process : il faut déplacer le travail dans un **process R enfant**,
+et plafonner celui-là.
+
+`run_memory_capped(fun, args, db_url, progress_path, progress_callback, memory_max)`
+exécute une fonction exportée du cœur dans un enfant placé dans un
+cgroup transitoire (`systemd-run --scope --property=MemoryMax=…`, 70 %
+de la RAM par défaut). Un run qui déborde meurt **seul**, avec une
+erreur attrapable (« ran out of memory and was killed »), au lieu
+d’emporter le scope.
+
+Deux arguments ne traversent pas une frontière de process, et sont donc
+**reconstruits dans l’enfant** plutôt que passés :
+
+- `con` (une `DBIConnection` n’est pas sérialisable) → passer `db_url` ;
+  l’enfant ouvre et referme la sienne via
+  [`db_connect()`](https://pobsteta.github.io/nemeton/reference/db_connect.md).
+- `progress_callback` (une closure non plus) → passer `progress_path` ;
+  l’enfant y écrit les événements au **format exact** attendu par l’app
+  (`<path>.json` atomique = dernier événement, `<path>.ndjson` =
+  journal), et le parent *tail* ce fichier pour **rejouer** chaque
+  événement dans le `progress_callback` qu’on lui a donné. Les effets de
+  bord du callback appelant — notamment les **push ntfy** — sont donc
+  préservés.
+
+Sans `systemd-run` (hors Linux, conteneur sans bus utilisateur, CI), le
+travail tourne quand même dans un enfant (sa mémoire est au moins rendue
+à l’OS en sortant) mais **sans plafond**, avec un avertissement
+explicite.
+
+À ne pas confondre avec
+[`run_reticulate_isolated()`](https://pobsteta.github.io/nemeton/reference/run_reticulate_isolated.md),
+qui lance aussi un enfant mais pour **épingler un interpréteur Python**,
+et ne plafonne rien. Les deux sont complémentaires.
+
+Dépendance ajoutée : `processx` (Suggests) — pour surveiller l’enfant
+sans bloquer la remontée de progression.
+
 ## nemeton 0.156.0 (2026-07-14)
 
 #### Added — `scratch_dir()` : où atterrissent les intermédiaires volumineux

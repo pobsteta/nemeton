@@ -1738,6 +1738,58 @@ cœur).
 
 ## Journal
 
+### 2026-07-14 — v0.157.0 : `run_memory_capped()` — FORDEAD ne peut plus emporter la session
+
+RStudio est **reparti à l’OOM à 15h37**, cette fois en plein FORDEAD (le
+moteur reGénération, démarré à 15h27, a été tué avec — d’où les
+répertoires `biljou/` et `meteoland/` vides du projet Reconfort : ce
+n’était pas un bug, c’était le kill).
+
+Rappel du mécanisme : `systemd-oomd` ne tue pas le processus fautif, il
+tue le **scope**. RECONFORT était protégé depuis la v0.155.0 parce que
+son Python est un **sous-processus** (`conda run python`) — plafonnable
+dans un cgroup. FORDEAD non : son Python vit dans l’interpréteur
+**embarqué** de reticulate, et les moteurs reGénération sont du R pur.
+Leur mémoire *est* celle du process R. **Il n’y a rien à plafonner en
+in-process** — il faut sortir le travail dans un process enfant.
+
+`run_memory_capped(fun, args, db_url, progress_path, progress_callback, memory_max)`
+exécute une fonction exportée du cœur dans un enfant `Rscript` placé
+dans un cgroup transitoire. Deux arguments ne traversent pas la
+frontière de process et sont reconstruits dans l’enfant : `con` (→
+`db_url`, l’enfant ouvre la sienne) et `progress_callback` (→
+`progress_path` ; l’enfant écrit le format exact de l’app, le parent
+*tail* le NDJSON et **rejoue** chaque événement dans le callback fourni
+— donc **les push ntfy survivent**).
+
+**Découverte de mesure — le plafond v0.155.0 était à moitié
+inefficace.** Sur une machine avec swap (celle-ci en a 8 Go),
+`MemoryMax=` seul **ne tue pas** : le cgroup déborde dans le swap et
+*rame*. Mesuré : 2,4 Go écrits sous un plafond de 64 Mo n’ont jamais été
+tués en 60 s. Et ce thrashing est précisément la pression système que
+`oomd` surveille — le plafond risquait donc de *provoquer* le kill de
+scope qu’il devait empêcher. Correctif : `MemorySwapMax=0` dans
+`.reconfort_cap_memory()`, donc **aussi pour RECONFORT**. Le swap
+refusé, l’enfant est SIGKILL net (exit `-9` vu de processx, `137` vu
+d’un shell).
+
+Second piège rencontré, noté pour la suite : un test qui alloue avec
+`numeric(3e8)` ne prouve rien — `calloc` mappe la page zéro partagée,
+les pages jamais écrites ne sont jamais faultées, le cgroup voit ~0. Il
+faut **écrire** la mémoire (`runif`).
+
+- Livré : `R/isolate.R`, `MemorySwapMax=0`, 26 tests (dont un kill de
+  cgroup réel).
+- Dépendance : `processx` (Suggests) — surveiller l’enfant sans bloquer
+  la remontée de progression.
+- Côté app :
+  `specs/008-suivi-sanitaire/brief-nemetonshiny-fordead-capped.md` (⚠️ y
+  est signalé le piège du callback composite : l’enfant écrivant déjà le
+  fichier de progression, rejouer le composite dupliquerait chaque ligne
+  NDJSON — ne rejouer que la partie ntfy).
+- **Prochaine étape** : appliquer le brief côté `nemetonshiny`, puis un
+  run réel sous surveillance mémoire.
+
 ### 2026-07-14 — v0.156.0 : `scratch_dir()` configurable (contrainte disque à l’échelle département)
 
 Conséquence directe de l’allègement mémoire de la v0.155.0 : les

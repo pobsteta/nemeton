@@ -771,6 +771,9 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`run_fordead_dieback()`](https://pobsteta.github.io/nemeton/reference/run_fordead_dieback.md)
   : Run the FORDEAD dieback detection pipeline on a monitoring zone
 
+- [`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)
+  : Run a heavy nemeton pipeline in a memory-capped child process
+
 - [`sampling_plan`](https://pobsteta.github.io/nemeton/reference/sampling_plan.md)
   : Sampling Plan Generator (GRTS + stratification)
 

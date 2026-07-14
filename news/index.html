@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.156.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.157.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,23 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.157.0" id="nemeton-01570-2026-07-14">nemeton 0.157.0 (2026-07-14)<a class="anchor" aria-label="anchor" href="#nemeton-01570-2026-07-14"></a></h2>
+<div class="section level4">
+<h4 id="added--run_memory_capped--fordead-ne-peut-plus-emporter-la-session-0-157-0">Added — <code>run_memory_capped()</code> : FORDEAD ne peut plus emporter la session<a class="anchor" aria-label="anchor" href="#added--run_memory_capped--fordead-ne-peut-plus-emporter-la-session-0-157-0"></a></h4>
+<p>Le 2026-07-13, un diagnostic RECONFORT a tué R, l’app <strong>et</strong> la session de surveillance. <code>systemd-oomd</code> ne tue pas le processus fautif : sous pression mémoire, il tue le <strong>scope</strong> entier (les 11 processus de RStudio, les terminaux avec). RECONFORT a été isolé en v0.155.0 — son Python est un <em>sous-processus</em> (<code>conda run python</code>), donc plafonnable dans un cgroup.</p>
+<p>FORDEAD, lui, n’a pas cette chance : son Python tourne dans l’interpréteur <strong>embarqué</strong> de reticulate (<code>fp$fit()</code>, <code>fp$predict()</code>), et les moteurs reGénération sont du R pur. Leur mémoire <em>est</em> celle du process R, donc celle du scope de l’app. Le 2026-07-14, RStudio est reparti à l’OOM en plein FORDEAD. Il n’y a rien à plafonner en in-process : il faut déplacer le travail dans un <strong>process R enfant</strong>, et plafonner celui-là.</p>
+<p><code>run_memory_capped(fun, args, db_url, progress_path, progress_callback, memory_max)</code> exécute une fonction exportée du cœur dans un enfant placé dans un cgroup transitoire (<code>systemd-run --scope --property=MemoryMax=…</code>, 70 % de la RAM par défaut). Un run qui déborde meurt <strong>seul</strong>, avec une erreur attrapable (« ran out of memory and was killed »), au lieu d’emporter le scope.</p>
+<p>Deux arguments ne traversent pas une frontière de process, et sont donc <strong>reconstruits dans l’enfant</strong> plutôt que passés :</p>
+<ul><li>
+<code>con</code> (une <code>DBIConnection</code> n’est pas sérialisable) → passer <code>db_url</code> ; l’enfant ouvre et referme la sienne via <code><a href="../reference/db_connect.html">db_connect()</a></code>.</li>
+<li>
+<code>progress_callback</code> (une closure non plus) → passer <code>progress_path</code> ; l’enfant y écrit les événements au <strong>format exact</strong> attendu par l’app (<code>&lt;path&gt;.json</code> atomique = dernier événement, <code>&lt;path&gt;.ndjson</code> = journal), et le parent <em>tail</em> ce fichier pour <strong>rejouer</strong> chaque événement dans le <code>progress_callback</code> qu’on lui a donné. Les effets de bord du callback appelant — notamment les <strong>push ntfy</strong> — sont donc préservés.</li>
+</ul><p>Sans <code>systemd-run</code> (hors Linux, conteneur sans bus utilisateur, CI), le travail tourne quand même dans un enfant (sa mémoire est au moins rendue à l’OS en sortant) mais <strong>sans plafond</strong>, avec un avertissement explicite.</p>
+<p>À ne pas confondre avec <code><a href="../reference/run_reticulate_isolated.html">run_reticulate_isolated()</a></code>, qui lance aussi un enfant mais pour <strong>épingler un interpréteur Python</strong>, et ne plafonne rien. Les deux sont complémentaires.</p>
+<p>Dépendance ajoutée : <code>processx</code> (Suggests) — pour surveiller l’enfant sans bloquer la remontée de progression.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.156.0" id="nemeton-01560-2026-07-14">nemeton 0.156.0 (2026-07-14)<a class="anchor" aria-label="anchor" href="#nemeton-01560-2026-07-14"></a></h2>
 <div class="section level4">

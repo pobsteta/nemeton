@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.156.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.157.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -870,6 +870,19 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-14--v01570--run_memory_capped--fordead-ne-peut-plus-emporter-la-session">2026-07-14 — v0.157.0 : <code>run_memory_capped()</code> — FORDEAD ne peut plus emporter la session<a class="anchor" aria-label="anchor" href="#id_2026-07-14--v01570--run_memory_capped--fordead-ne-peut-plus-emporter-la-session"></a></h3>
+<p>RStudio est <strong>reparti à l’OOM à 15h37</strong>, cette fois en plein FORDEAD (le moteur reGénération, démarré à 15h27, a été tué avec — d’où les répertoires <code>biljou/</code> et <code>meteoland/</code> vides du projet Reconfort : ce n’était pas un bug, c’était le kill).</p>
+<p>Rappel du mécanisme : <code>systemd-oomd</code> ne tue pas le processus fautif, il tue le <strong>scope</strong>. RECONFORT était protégé depuis la v0.155.0 parce que son Python est un <strong>sous-processus</strong> (<code>conda run python</code>) — plafonnable dans un cgroup. FORDEAD non : son Python vit dans l’interpréteur <strong>embarqué</strong> de reticulate, et les moteurs reGénération sont du R pur. Leur mémoire <em>est</em> celle du process R. <strong>Il n’y a rien à plafonner en in-process</strong> — il faut sortir le travail dans un process enfant.</p>
+<p><code>run_memory_capped(fun, args, db_url, progress_path, progress_callback, memory_max)</code> exécute une fonction exportée du cœur dans un enfant <code>Rscript</code> placé dans un cgroup transitoire. Deux arguments ne traversent pas la frontière de process et sont reconstruits dans l’enfant : <code>con</code> (→ <code>db_url</code>, l’enfant ouvre la sienne) et <code>progress_callback</code> (→ <code>progress_path</code> ; l’enfant écrit le format exact de l’app, le parent <em>tail</em> le NDJSON et <strong>rejoue</strong> chaque événement dans le callback fourni — donc <strong>les push ntfy survivent</strong>).</p>
+<p><strong>Découverte de mesure — le plafond v0.155.0 était à moitié inefficace.</strong> Sur une machine avec swap (celle-ci en a 8 Go), <code>MemoryMax=</code> seul <strong>ne tue pas</strong> : le cgroup déborde dans le swap et <em>rame</em>. Mesuré : 2,4 Go écrits sous un plafond de 64 Mo n’ont jamais été tués en 60 s. Et ce thrashing est précisément la pression système que <code>oomd</code> surveille — le plafond risquait donc de <em>provoquer</em> le kill de scope qu’il devait empêcher. Correctif : <code>MemorySwapMax=0</code> dans <code>.reconfort_cap_memory()</code>, donc <strong>aussi pour RECONFORT</strong>. Le swap refusé, l’enfant est SIGKILL net (exit <code>-9</code> vu de processx, <code>137</code> vu d’un shell).</p>
+<p>Second piège rencontré, noté pour la suite : un test qui alloue avec <code>numeric(3e8)</code> ne prouve rien — <code>calloc</code> mappe la page zéro partagée, les pages jamais écrites ne sont jamais faultées, le cgroup voit ~0. Il faut <strong>écrire</strong> la mémoire (<code>runif</code>).</p>
+<ul><li>Livré : <code>R/isolate.R</code>, <code>MemorySwapMax=0</code>, 26 tests (dont un kill de cgroup réel).</li>
+<li>Dépendance : <code>processx</code> (Suggests) — surveiller l’enfant sans bloquer la remontée de progression.</li>
+<li>Côté app : <code>specs/008-suivi-sanitaire/brief-nemetonshiny-fordead-capped.md</code> (⚠️ y est signalé le piège du callback composite : l’enfant écrivant déjà le fichier de progression, rejouer le composite dupliquerait chaque ligne NDJSON — ne rejouer que la partie ntfy).</li>
+<li>
+<strong>Prochaine étape</strong> : appliquer le brief côté <code>nemetonshiny</code>, puis un run réel sous surveillance mémoire.</li>
+</ul></div>
 <div class="section level3">
 <h3 id="id_2026-07-14--v01560--scratch_dir-configurable-contrainte-disque-à-léchelle-département">2026-07-14 — v0.156.0 : <code>scratch_dir()</code> configurable (contrainte disque à l’échelle département)<a class="anchor" aria-label="anchor" href="#id_2026-07-14--v01560--scratch_dir-configurable-contrainte-disque-%C3%A0-l%C3%A9chelle-d%C3%A9partement"></a></h3>
 <p>Conséquence directe de l’allègement mémoire de la v0.155.0 : les intermédiaires qui étaient en RAM sont désormais sur disque, et <strong>le volume croît avec pixels × dates</strong>. Mesuré : 798 Mo pour 0,89 Mpx × 115 dates (zone 9). Extrapolé à un département (~67× l’emprise) : <strong>plusieurs dizaines de Go</strong>.</p>
