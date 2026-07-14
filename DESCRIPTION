@@ -1,7 +1,7 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 0.156.0.9000
+Version: 0.157.0
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
@@ -99,7 +99,8 @@ Suggests:
     ecmwfr,
     lidR,
     biljouR,
-    callr
+    callr,
+    processx
 VignetteBuilder: knitr
 URL: https://pobsteta.github.io/nemeton/, https://github.com/pobsteta/nemeton
 BugReports: https://github.com/pobsteta/nemeton/issues

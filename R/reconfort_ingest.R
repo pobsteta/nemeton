@@ -273,6 +273,14 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
     command = systemd_run,
     args = c("--user", "--scope", "--quiet", "--collect",
              paste0("--property=MemoryMax=", memory_max),
+             # MemoryMax alone does NOT kill an overshooting job on a machine
+             # with swap (this one has 8 GB): the cgroup spills to swap and
+             # crawls instead of dying. Worse, that thrashing is itself the
+             # system-wide memory pressure systemd-oomd watches — so the cap
+             # would end up *causing* the scope kill it exists to prevent.
+             # Measured 2026-07-14: 2.4 GB written under a 64 MB ceiling never
+             # settled in 60 s. With swap denied, it is SIGKILLed at once.
+             "--property=MemorySwapMax=0",
              "--property=MemoryAccounting=yes",
              "--", command, args)
   )
