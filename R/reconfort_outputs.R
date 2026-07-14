@@ -86,8 +86,21 @@ NULL
   # (~6 GB for a 2000x2000 AOI over 100 dates, on top of the IOTA2 subprocess).
   # `tmpdir` is returned so the caller can drop the intermediates once the
   # bundle is written — see `run_reconfort_dieback()`.
-  tmpdir <- file.path(tempdir(), paste0("reconfort_feat_", as.integer(Sys.getpid())))
-  dir.create(tmpdir, recursive = TRUE, showWarnings = FALSE)
+  tmpdir <- scratch_dir(paste0("reconfort_feat_", as.integer(Sys.getpid())))
+  # The stacks scale with pixels x dates (~800 MB for 0.89 Mpx over 115 dates,
+  # tens of GB department-wide). Warn early rather than let the run die on a
+  # full disk half-way through — advisory only, the estimate is rough and the
+  # scratch dir may live on a filesystem `df` cannot read.
+  need_gb <- tryCatch(
+    terra::ncell(load_one(scenes[[1L]]$B04)) * length(scenes) * 2 * 8 / 1024^3,
+    error = function(e) NA_real_)
+  free_gb <- .free_space_gb(tmpdir)
+  if (!is.na(need_gb) && !is.na(free_gb) && free_gb < need_gb) {
+    cli::cli_warn(c(
+      "RECONFORT feature stacks need roughly {round(need_gb, 1)} GB of scratch space; {.path {tmpdir}} has {round(free_gb, 1)} GB free.",
+      i = "Point the scratch dir elsewhere with {.code options(nemeton.scratch_dir=)} or {.envvar NEMETON_SCRATCH_DIR}."
+    ))
+  }
   crswir_files <- character(length(scenes))
   crre_files   <- character(length(scenes))
   for (i in seq_along(scenes)) {
