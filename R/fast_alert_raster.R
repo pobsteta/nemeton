@@ -1208,9 +1208,14 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
     n_yr   <- terra::nlyr(yearly)
     cli::cli_alert_info(
       "FAST trend: Theil-Sen / Mann-Kendall on {n_cand} candidate pixel{?s} ({n_yr} composite years).")
-    res[cand] <- .trend_fit_cells(vals[cand, , drop = FALSE],
-                                  present[cand, , drop = FALSE],
-                                  uy, alpha, min_slope)
+    # Subset first, then drop the full-grid matrices: passing `vals[cand, ]`
+    # inline kept the whole ncell x nyears matrix alive alongside its candidate
+    # copy for the entire fit.
+    M <- vals[cand, , drop = FALSE]
+    P <- present[cand, , drop = FALSE]
+    rm(vals, present)
+    res[cand] <- .trend_fit_cells(M, P, uy, alpha, min_slope)
+    rm(M, P)
   }
   out <- terra::setValues(yearly[[1L]], res)
   names(out) <- "alert_trend"
@@ -1230,7 +1235,30 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
 # flagged when `abs(slope) >= min_slope`, so a statistically-significant but
 # ecologically-negligible decline (Mann-Kendall flags tiny monotonic drifts
 # on long series) is treated as noise, not an alert.
-.trend_fit_cells <- function(M, present, yrs, alpha, min_slope = 0) {
+#
+# Memory: every intermediate here is (pixels x pairs) — with 10 composite years
+# that is 45 columns, and the naive form kept THREE of them alive at once (`D`,
+# `sweep()`'s copy, `sign(D)`) plus the row-lists `apply()` builds. On a 1 Mpx
+# tile that peaked around 1.5-2 GB. Rows are independent, so the pixels are
+# processed in blocks: the maths (and hence the result) is unchanged, the peak
+# is bounded by `block`.
+.trend_fit_cells <- function(M, present, yrs, alpha, min_slope = 0,
+                             block = 50000L) {
+  n <- nrow(M)
+  if (n == 0L) return(numeric(0))
+  if (n <= block) return(.trend_fit_block(M, present, yrs, alpha, min_slope))
+  out <- numeric(n)
+  for (start in seq(1L, n, by = block)) {
+    idx <- start:min(start + block - 1L, n)
+    out[idx] <- .trend_fit_block(M[idx, , drop = FALSE],
+                                 present[idx, , drop = FALSE],
+                                 yrs, alpha, min_slope)
+  }
+  out
+}
+
+# One block of pixels. Identical maths to the original single-shot version.
+.trend_fit_block <- function(M, present, yrs, alpha, min_slope = 0) {
   p   <- ncol(M)
   prs <- utils::combn(p, 2L)
   dx  <- yrs[prs[2L, ]] - yrs[prs[1L, ]]
@@ -1239,8 +1267,13 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
   # pairs (years need not be contiguous — both Theil-Sen and Mann-Kendall
   # only require the values in chronological order, which columns are).
   D <- M[, prs[2L, ], drop = FALSE] - M[, prs[1L, ], drop = FALSE]
-  ts_slope <- apply(sweep(D, 2L, dx, "/"), 1L, stats::median, na.rm = TRUE)
-  S        <- rowSums(sign(D), na.rm = TRUE)
+  # `S` is read off the UNDIVIDED differences (dx > 0, so dividing would not
+  # change any sign — but taking it first lets `D` be divided in place below
+  # instead of `sweep()` allocating a second matrix).
+  S <- rowSums(sign(D), na.rm = TRUE)
+  D <- D / rep(dx, each = nrow(D))                   # == sweep(D, 2L, dx, "/")
+  ts_slope <- apply(D, 1L, stats::median, na.rm = TRUE)
+  rm(D)
   n_i      <- rowSums(present)                       # valid years per pixel
   var_S    <- n_i * (n_i - 1) * (2 * n_i + 5) / 18   # no-tie MK variance
   # Continuity-corrected standard normal deviate, then two-sided p.

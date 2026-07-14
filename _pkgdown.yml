@@ -360,6 +360,7 @@ reference:
     - FORDEAD_VALIDITY_DEPARTMENTS
     - FORDEAD_VALIDITY_SPECIES
     - format_citations
+    - format_duration
     - generate_health_validation_plots
     - get_arbre_schema
     - get_datasource_product

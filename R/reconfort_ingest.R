@@ -217,17 +217,82 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 .RECONFORT_PYWARN <- "ignore::UserWarning,ignore:Unverified HTTPS request"
 
 
+# Memory ceiling for the IOTA2 subprocess, as a systemd size string.
+#
+# IOTA2 classification is the heaviest step of the chain and it runs as a
+# subprocess of this R session. Uncapped, a run that overshoots does not fail
+# on its own: `systemd-oomd` kills the whole application scope by memory
+# pressure — on 2026-07-13 it took down RStudio (22 processes), the Shiny app
+# and the terminals with it. Capping the subprocess turns a session-wide
+# catastrophe into an ordinary non-zero exit that the pipeline reports.
+#
+# Default: 70% of RAM, leaving the desktop enough to stay under the oomd
+# pressure threshold. `options(nemeton.reconfort_memory_max = "12G")` overrides;
+# `FALSE` (or "") disables the cap.
+.reconfort_memory_max <- function() {
+  opt <- getOption("nemeton.reconfort_memory_max", NULL)
+  if (!is.null(opt)) {
+    if (isFALSE(opt) || !nzchar(as.character(opt))) return(NULL)
+    return(as.character(opt))
+  }
+  kb <- tryCatch({
+    line <- grep("^MemTotal:", readLines("/proc/meminfo", warn = FALSE), value = TRUE)[1]
+    as.numeric(sub("^MemTotal:\\s*([0-9]+).*$", "\\1", line))
+  }, error = function(e) NA_real_)
+  if (is.na(kb) || kb <= 0) return(NULL)
+  gb <- floor(kb / 1048576 * 0.7)
+  if (gb < 4) return(NULL)   # too little RAM to carve out a meaningful ceiling
+  paste0(gb, "G")
+}
+
+# Probe (once) for a usable `systemd-run --user --scope`. Absent on non-Linux,
+# in containers without a user bus, in CI — the cap is then simply skipped.
+.reconfort_cache <- new.env(parent = emptyenv())
+.reconfort_systemd_run <- function() {
+  if (!is.null(.reconfort_cache$systemd_run)) {
+    return(if (isFALSE(.reconfort_cache$systemd_run)) NULL else .reconfort_cache$systemd_run)
+  }
+  bin <- if (identical(.Platform$OS.type, "unix")) unname(Sys.which("systemd-run")) else ""
+  ok <- nzchar(bin) && identical(as.integer(tryCatch(
+    suppressWarnings(system2(bin, c("--user", "--scope", "--quiet", "true"),
+                             stdout = FALSE, stderr = FALSE)),
+    error = function(e) 1L)), 0L)
+  .reconfort_cache$systemd_run <- if (ok) bin else FALSE
+  if (ok) bin else NULL
+}
+
+# Wrap a command in a memory-capped transient scope when we can. Returns
+# `list(command, args)` — unchanged when no cap applies. Split out so the
+# decision is testable without spawning anything.
+.reconfort_cap_memory <- function(command, args, memory_max = .reconfort_memory_max(),
+                                  systemd_run = .reconfort_systemd_run()) {
+  if (is.null(memory_max) || is.null(systemd_run)) {
+    return(list(command = command, args = args))
+  }
+  list(
+    command = systemd_run,
+    args = c("--user", "--scope", "--quiet", "--collect",
+             paste0("--property=MemoryMax=", memory_max),
+             "--property=MemoryAccounting=yes",
+             "--", command, args)
+  )
+}
+
+
 # Run a vendored RECONFORT python script in the conda env, from the
 # glue dir so its `from utils.utils import ...` resolves. Returns the
 # exit status (0 = success). Separated out so tests can mock it.
 .reconfort_run_py <- function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
+  cmd <- .reconfort_cap_memory(
+    conda_bin,
+    c("run", "-n", env, "python", basename(script),
+      "-config_file", shQuote(cfg))
+  )
   withr::with_envvar(
     c(PYTHONWARNINGS = .RECONFORT_PYWARN),
     withr::with_dir(workdir, {
       suppressWarnings(system2(
-        conda_bin,
-        args = c("run", "-n", env, "python", basename(script),
-                 "-config_file", shQuote(cfg)),
+        cmd$command, args = cmd$args,
         stdout = if (quiet) FALSE else "", stderr = if (quiet) FALSE else ""
       ))
     })

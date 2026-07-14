@@ -425,10 +425,12 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   # `mean()` nus sur un SpatRaster peuvent renvoyer un scalaire global (selon la
   # version de terra) → `writeRaster` échouait sur un "numeric". `tmax` = pic
   # estival de T° sous couvert ; `vpd` = VPD moyen estival.
-  tmax <- terra::app(Tz[[sel]], fun = "max", na.rm = TRUE)
-  vpd  <- terra::app(.rsen_vpd(Tz[[sel]], RH[[sel]]), fun = "mean", na.rm = TRUE)
-  terra::writeRaster(tmax, ft, overwrite = TRUE)
-  terra::writeRaster(vpd,  fv, overwrite = TRUE)
+  # `filename=` écrit directement à la destination : le raster revient adossé au
+  # fichier au lieu d'être matérialisé en RAM puis réécrit.
+  tmax <- terra::app(Tz[[sel]], fun = "max", na.rm = TRUE,
+                     filename = ft, overwrite = TRUE)
+  vpd  <- terra::app(.rsen_vpd(Tz[[sel]], RH[[sel]]), fun = "mean", na.rm = TRUE,
+                     filename = fv, overwrite = TRUE)
   list(tmax = tmax, vpd = vpd)
 }
 

@@ -1287,3 +1287,57 @@ get_global_cache_dir <- function() {
   }
   cache_dir
 }
+
+
+#' Format a duration as hours, then minutes, then seconds
+#'
+#' Human-facing durations always lead with the largest meaningful unit: a
+#' two-hour run reads `"2 h 05 min 12 s"`, never `"7512 s"`. Machine-facing
+#' fields (`duration_sec`, `elapsed_sec` in results and `run_meta.json`) stay
+#' in raw seconds — this is for messages only.
+#'
+#' @param sec Numeric. Duration in seconds. `NULL`, `NA` or a negative value
+#'   yields `"?"`.
+#' @param with_seconds Logical. Keep the seconds component above one minute.
+#'   `FALSE` gives the coarser `"2 h 05 min"` used in push notifications.
+#'
+#' @return A character scalar.
+#'
+#' @examples
+#' format_duration(23)                        # "23 s"
+#' format_duration(819)                       # "13 min 39 s"
+#' format_duration(7512)                      # "2 h 05 min 12 s"
+#' format_duration(7512, with_seconds = FALSE) # "2 h 05 min"
+#'
+#' @export
+format_duration <- function(sec, with_seconds = TRUE) {
+  sec <- suppressWarnings(as.numeric(sec)[1])
+  if (length(sec) != 1L || is.na(sec) || !is.finite(sec) || sec < 0) return("?")
+  s <- round(sec)
+  if (s < 60) return(sprintf("%d s", as.integer(s)))
+  h    <- s %/% 3600
+  mins <- (s %% 3600) %/% 60
+  secs <- s %% 60
+  if (h > 0L) {
+    if (with_seconds) sprintf("%d h %02d min %02d s", h, mins, secs)
+    else              sprintf("%d h %02d min", h, mins)
+  } else {
+    if (with_seconds) sprintf("%d min %02d s", mins, secs)
+    else              sprintf("%d min", mins)
+  }
+}
+
+
+# TRUE when a raster holds no data at all, WITHOUT materialising it.
+# `all(is.na(terra::values(x)))` pulls every cell into RAM just to answer a
+# yes/no question — on a large tile that is hundreds of MB for one boolean.
+# `terra::global(x, "notNA")` counts through terra's own streaming reader.
+.raster_is_empty <- function(x) {
+  if (is.null(x)) return(TRUE)
+  n <- tryCatch(sum(terra::global(x, "notNA")[[1L]], na.rm = TRUE),
+                error = function(e) NA_real_)
+  # Unreadable/degenerate raster: fall back to the honest (costly) answer
+  # rather than silently claiming it is empty.
+  if (is.na(n)) return(all(is.na(terra::values(x))))
+  n == 0
+}

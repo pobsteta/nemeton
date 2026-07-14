@@ -432,3 +432,77 @@ test_that("reconfort_ingest_s2 aborts before extraction when disk is too small",
     "free disk space|Not enough free disk"
   )
 })
+
+test_that(".reconfort_memory_max honours the option and derives a default", {
+  withr::local_options(nemeton.reconfort_memory_max = "12G")
+  expect_identical(nemeton:::.reconfort_memory_max(), "12G")
+
+  # FALSE / "" desactivent le plafond.
+  withr::local_options(nemeton.reconfort_memory_max = FALSE)
+  expect_null(nemeton:::.reconfort_memory_max())
+  withr::local_options(nemeton.reconfort_memory_max = "")
+  expect_null(nemeton:::.reconfort_memory_max())
+})
+
+test_that(".reconfort_cap_memory wraps in a capped scope, or passes through", {
+  # Plafond + systemd dispo -> scope transitoire.
+  out <- nemeton:::.reconfort_cap_memory(
+    "conda", c("run", "-n", "e", "python", "s.py"),
+    memory_max = "20G", systemd_run = "/usr/bin/systemd-run")
+  expect_identical(out$command, "/usr/bin/systemd-run")
+  expect_true("--scope" %in% out$args)
+  expect_true("--property=MemoryMax=20G" %in% out$args)
+  # La commande d'origine suit le `--`, intacte.
+  i <- which(out$args == "--")
+  expect_identical(out$args[(i + 1L):length(out$args)],
+                   c("conda", "run", "-n", "e", "python", "s.py"))
+
+  # Pas de systemd (ou pas de plafond) -> commande inchangee, jamais d'erreur.
+  passthrough <- nemeton:::.reconfort_cap_memory(
+    "conda", c("run", "-n", "e"), memory_max = "20G", systemd_run = NULL)
+  expect_identical(passthrough, list(command = "conda", args = c("run", "-n", "e")))
+  passthrough2 <- nemeton:::.reconfort_cap_memory(
+    "conda", c("run", "-n", "e"), memory_max = NULL, systemd_run = "/usr/bin/systemd-run")
+  expect_identical(passthrough2$command, "conda")
+})
+
+test_that(".reconfort_memory_max derives a default from the system RAM", {
+  # Sans option : dérivé de /proc/meminfo (Linux) ou NULL ailleurs / si trop peu
+  # de RAM. Dans les deux cas, jamais d'erreur et jamais une valeur absurde.
+  withr::local_options(nemeton.reconfort_memory_max = NULL)
+  val <- nemeton:::.reconfort_memory_max()
+  if (!is.null(val)) {
+    expect_match(val, "^[0-9]+G$")
+    expect_gte(as.integer(sub("G$", "", val)), 4L)
+  } else {
+    expect_null(val)
+  }
+})
+
+test_that(".reconfort_systemd_run probes once and caches its verdict", {
+  # Renvoie un chemin utilisable, ou NULL (non-Linux, conteneur sans bus
+  # utilisateur, CI) — auquel cas le plafond est simplement sauté.
+  rm(list = ls(nemeton:::.reconfort_cache), envir = nemeton:::.reconfort_cache)
+  first <- nemeton:::.reconfort_systemd_run()
+  expect_true(is.null(first) || (is.character(first) && nzchar(first)))
+  # Verdict mémorisé -> le second appel ne re-sonde pas.
+  expect_true(exists("systemd_run", envir = nemeton:::.reconfort_cache))
+  expect_identical(nemeton:::.reconfort_systemd_run(), first)
+})
+
+test_that(".reconfort_run_py runs the command produced by .reconfort_cap_memory", {
+  skip_on_os("windows")
+  wd <- withr::local_tempdir()
+  seen <- NULL
+  testthat::local_mocked_bindings(
+    .reconfort_cap_memory = function(command, args, ...) {
+      seen <<- list(command = command, args = args)
+      list(command = "true", args = character())   # inoffensif, exit 0
+    }
+  )
+  st <- nemeton:::.reconfort_run_py("conda", "envx", "s.py", "cfg.cfg", wd, quiet = TRUE)
+  expect_identical(as.integer(st), 0L)
+  # La commande conda est bien celle soumise au plafond.
+  expect_identical(seen$command, "conda")
+  expect_true(all(c("run", "-n", "envx", "python", "s.py") %in% seen$args))
+})

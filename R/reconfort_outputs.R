@@ -81,8 +81,15 @@ NULL
   ord   <- order(dates)
   scenes <- scenes[ord]; dates <- dates[ord]
 
-  crswir_layers <- vector("list", length(scenes))
-  crre_layers   <- vector("list", length(scenes))
+  # Every date is streamed to disk and only its path is kept: holding the N
+  # in-memory layers of both indices was the run's largest R-side allocation
+  # (~6 GB for a 2000x2000 AOI over 100 dates, on top of the IOTA2 subprocess).
+  # `tmpdir` is returned so the caller can drop the intermediates once the
+  # bundle is written — see `run_reconfort_dieback()`.
+  tmpdir <- file.path(tempdir(), paste0("reconfort_feat_", as.integer(Sys.getpid())))
+  dir.create(tmpdir, recursive = TRUE, showWarnings = FALSE)
+  crswir_files <- character(length(scenes))
+  crre_files   <- character(length(scenes))
   for (i in seq_along(scenes)) {
     s   <- scenes[[i]]
     b4  <- load_one(s$B04)
@@ -102,19 +109,26 @@ NULL
     cr <- .reconfort_crre(b4, b5, b6)
     scl <- ali(load_one(s$scl), method = "near")
     if (!is.null(scl)) {
-      keep <- !(terra::values(scl) %in% .RECONFORT_SCL_MASK_CLASSES)
-      cw <- terra::setValues(cw, ifelse(keep, terra::values(cw), NA))
-      cr <- terra::setValues(cr, ifelse(keep, terra::values(cr), NA))
+      # terra::mask() streams; the previous values()/ifelse() route pulled scl,
+      # cw and cr fully into RAM (plus ifelse's temporaries) on every scene.
+      cw <- terra::mask(cw, scl, maskvalues = .RECONFORT_SCL_MASK_CLASSES,
+                        updatevalue = NA)
+      cr <- terra::mask(cr, scl, maskvalues = .RECONFORT_SCL_MASK_CLASSES,
+                        updatevalue = NA)
     }
-    crswir_layers[[i]] <- cw
-    crre_layers[[i]]   <- cr
+    crswir_files[i] <- file.path(tmpdir, sprintf("crswir_%04d.tif", i))
+    crre_files[i]   <- file.path(tmpdir, sprintf("crre_%04d.tif", i))
+    terra::writeRaster(cw, crswir_files[i], overwrite = TRUE)
+    terra::writeRaster(cr, crre_files[i], overwrite = TRUE)
+    rm(b4, b5, b6, b8a, b11, b12, cw, cr, scl)
   }
-  crswir <- terra::rast(crswir_layers)
-  crre   <- terra::rast(crre_layers)
+  # File-backed stacks: terra reads them by window, nothing is held in RAM.
+  crswir <- terra::rast(crswir_files)
+  crre   <- terra::rast(crre_files)
   names(crswir) <- names(crre) <- format(dates, "%Y-%m-%d")
   terra::time(crswir) <- dates
   terra::time(crre)   <- dates
-  list(crswir = crswir, crre = crre, dates = dates)
+  list(crswir = crswir, crre = crre, dates = dates, tmpdir = tmpdir)
 }
 
 

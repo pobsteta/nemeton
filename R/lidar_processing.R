@@ -189,7 +189,7 @@ compute_dtm_chm_from_laz <- function(laz_dir,
 
   if (verbose) {
     cli::cli_alert_success(
-      "lasR done in {round(as.numeric(elapsed), 1)} s — \\
+      "lasR done in {format_duration(as.numeric(elapsed))} — \\
        DTM: {.path {dtm_path}} | CHM: {.path {chm_path}}"
     )
   }
