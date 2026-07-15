@@ -72,7 +72,13 @@
   }
   unknown <- setdiff(names(precomputed), allowed)
   if (length(unknown)) {
-    cli::cli_warn("Ignoring unexpected `precomputed` column{?s}: {.val {unknown}}.")
+    # Info, pas warning : passer le `sf` résultat complet (tous les indicateurs +
+    # geom + ids) au moteur est le cas NORMAL côté app — seules les colonnes de
+    # forçage de CE moteur sont attachées, le reste est ignoré par conception.
+    # On rapporte donc ce qui est RETENU (utile) + le décompte ignoré, sans
+    # dérouler la liste entière (bruit console, cf. run 2026-07-15).
+    cli::cli_inform(
+      "Attached {length(nms)} precomputed forcing column{?s} ({.val {nms}}); ignored {length(unknown)} other{?s}.")
   }
   for (nm in nms) {
     v <- precomputed[[nm]]

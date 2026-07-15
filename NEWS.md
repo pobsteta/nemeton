@@ -1,3 +1,16 @@
+# nemeton 0.157.1 (2026-07-15)
+
+### Changed — bruit console du moteur reGénération
+
+`.regen_attach_precomputed()` émettait un **avertissement** (`cli_warn`) listant
+toutes les colonnes non retenues chaque fois que l'app passait le `sf` résultat
+complet à `regen_bilan_hydrique()` / `regen_sensibilite()` — le cas normal. La
+console crachait un mur d'une vingtaine de noms à chaque run, qui ressemblait à un
+problème alors que le comportement est correct (seules les colonnes de forçage du
+moteur sont attachées, le reste est ignoré par conception). Rétrogradé en message
+informatif (`cli_inform`) et concis : il rapporte désormais les colonnes
+**retenues** + le décompte ignoré, sans dérouler la liste entière.
+
 # nemeton 0.157.0 (2026-07-14)
 
 ### Added — `run_memory_capped()` : FORDEAD ne peut plus emporter la session

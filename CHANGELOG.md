@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.157.1] - 2026-07-15
+
+### Changed
+- `.regen_attach_precomputed()` now emits an informational (`cli_inform`) message
+  instead of a warning when the app passes the full result `sf` (all indicators +
+  geom + ids) to `regen_bilan_hydrique()` / `regen_sensibilite()` — the normal
+  path. The message is concise (columns kept + count ignored) instead of dumping
+  the whole ~20-name list, which read as a problem on every run when the behaviour
+  is correct.
+
 ## [0.138.1] - 2026-07-05
 
 ### Fixed
