@@ -1738,6 +1738,28 @@ cœur).
 
 ## Journal
 
+### 2026-07-15 — v0.157.1 : bruit console du moteur reGénération
+
+Un run de l’app (`run_app(language = "fr")`, projet
+`20260701_204501_ltcp`) faisait cracher 4 fois dans la console un
+**avertissement** `Ignoring unexpected precomputed columns` listant une
+vingtaine de noms (tous les indicateurs + `geom` + ids). Ça ressemblait
+à un problème alors que c’est le fonctionnement **normal** : l’app passe
+le `sf` résultat complet à
+[`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)
+/
+[`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md),
+et `.regen_attach_precomputed()` (`R/regen_engines.R`) n’attache que les
+colonnes de forçage de CE moteur (`.REGEN_COLS_HYDRIQUE` /
+`.REGEN_COLS_EXPO`), ignorant le reste par conception. Rétrogradé
+`cli_warn` → `cli_inform` et rendu concis : rapporte les colonnes
+**retenues** + le décompte ignoré, sans dérouler la liste. Aucun test ne
+ciblait ce message (les `expect_warning` de `test-regen-engines.R`
+portent sur `stand-type default`). Diagnostic de session : les autres
+messages de ce run (`[minmax]`, `dbDataType` S4,
+`colors() outside color scale`, downloads de polices, `point k/30`) sont
+tous cosmétiques ou attendus — voir mémoire `project_regen_cache_dirs`.
+
 ### 2026-07-14 — v0.157.0 : `run_memory_capped()` — FORDEAD ne peut plus emporter la session
 
 RStudio est **reparti à l’OOM à 15h37**, cette fois en plein FORDEAD (le

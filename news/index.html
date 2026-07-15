@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.157.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.157.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,13 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.157.1" id="nemeton-01571-2026-07-15">nemeton 0.157.1 (2026-07-15)<a class="anchor" aria-label="anchor" href="#nemeton-01571-2026-07-15"></a></h2>
+<div class="section level4">
+<h4 id="changed--bruit-console-du-moteur-regénération-0-157-1">Changed — bruit console du moteur reGénération<a class="anchor" aria-label="anchor" href="#changed--bruit-console-du-moteur-reg%C3%A9n%C3%A9ration-0-157-1"></a></h4>
+<p><code>.regen_attach_precomputed()</code> émettait un <strong>avertissement</strong> (<code>cli_warn</code>) listant toutes les colonnes non retenues chaque fois que l’app passait le <code>sf</code> résultat complet à <code><a href="../reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> / <code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code> — le cas normal. La console crachait un mur d’une vingtaine de noms à chaque run, qui ressemblait à un problème alors que le comportement est correct (seules les colonnes de forçage du moteur sont attachées, le reste est ignoré par conception). Rétrogradé en message informatif (<code>cli_inform</code>) et concis : il rapporte désormais les colonnes <strong>retenues</strong> + le décompte ignoré, sans dérouler la liste entière.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.157.0" id="nemeton-01570-2026-07-14">nemeton 0.157.0 (2026-07-14)<a class="anchor" aria-label="anchor" href="#nemeton-01570-2026-07-14"></a></h2>
 <div class="section level4">
