@@ -2,12 +2,14 @@
 % Please edit documentation in R/isolate.R
 \name{run_memory_capped}
 \alias{run_memory_capped}
-\title{Run a heavy nemeton pipeline in a memory-capped child process}
+\title{Run a heavy pipeline in a memory-capped child process}
 \usage{
 run_memory_capped(
   fun,
   args = list(),
+  package = "nemeton",
   db_url = NULL,
+  options = NULL,
   progress_path = NULL,
   progress_callback = NULL,
   memory_max = NULL,
@@ -16,13 +18,21 @@ run_memory_capped(
 )
 }
 \arguments{
-\item{fun}{Name of the exported \code{nemeton} function to run (character).}
+\item{fun}{Name of the function to run, in \code{package} (character). May be
+internal (not exported).}
 
 \item{args}{Named list of arguments. Must be serialisable: no connections,
 no closures, no \code{SpatRaster} — pass file paths.}
 
+\item{package}{Package the child loads and resolves \code{fun} from. Default
+\code{"nemeton"}. Use e.g. \code{"nemetonshiny"} to cap an app-side worker.}
+
 \item{db_url}{Database URL. When given, the child opens a connection and
-passes it to \code{fun} as \code{con}.}
+passes it to \code{fun} as \code{con} (only if \code{fun} takes a \code{con} argument).}
+
+\item{options}{Named list of session options set in the child (via
+\code{\link{options}}) before calling \code{fun}. Use for options the worker reads but that
+do not cross the process boundary, e.g. \code{list(nemeton.app_options = ...)}.}
 
 \item{progress_path}{Path of the progress \code{.json} file. When given, the child
 passes \code{fun} a callback writing there.}
@@ -41,8 +51,9 @@ events (requires \code{progress_path}).}
 Whatever \code{fun} returned.
 }
 \description{
-Runs an exported \code{nemeton} function in a \strong{child R process} placed in a
-transient, memory-capped cgroup. A run that overshoots then dies \strong{alone},
+Runs a function of \code{package} (an export \strong{or} an internal, resolved via
+\code{\link{asNamespace}}) in a \strong{child R process} placed in a transient,
+memory-capped cgroup. A run that overshoots then dies \strong{alone},
 with an ordinary error the caller can report — instead of having
 \code{systemd-oomd} kill the entire application scope (the R session, the Shiny
 app, the terminals) for being the biggest thing under memory pressure.
@@ -50,8 +61,10 @@ app, the terminals) for being the biggest thing under memory pressure.
 Use it for the pipelines whose memory lives \emph{inside} the R process and so
 cannot be capped in place: \code{\link{run_fordead_dieback}} (Python through
 reticulate's embedded interpreter) and the reGénération engines (plain R).
-\code{\link{run_reconfort_dieback}} does \strong{not} need it — it already caps the Python
-subprocess it spawns.
+The latter live in \code{nemetonshiny} — hence \code{package} and \code{options} (to reach an
+internal worker and to seed session options such as \code{nemeton.app_options}
+across the boundary). \code{\link{run_reconfort_dieback}} does \strong{not} need it — it
+already caps the Python subprocess it spawns.
 }
 \details{
 Two arguments cannot be serialised across a process boundary, and are
