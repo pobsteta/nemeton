@@ -1,9 +1,15 @@
-# Brief `nemetonshiny` — Invalider le cache bivarié E-OBS quand le schéma change (3×3 → 5×5)
+# Brief `nemetonshiny` — Carte bivariée E-OBS : cache périmé (3×3→5×5) + trous de reprojection
 
 **Date** : 2026-07-15
-**Repos** : micro-prérequis `nemeton` (§1) + correctif `nemetonshiny` (§2).
+**Deux bugs INDÉPENDANTS de la même carte** : (A) le cache bivarié n'est pas
+invalidé quand le schéma passe de 3×3 à 5×5 (§1-5) ; (B) la carte affiche une
+**bande de trous** à cause de la reprojection bilinéaire d'un raster catégoriel
+(§6). Le (A) est **cœur+app** (micro-prérequis `eobs_bivariate_n()` déjà livré
+v0.159.0) ; le (B) est **app pur, une ligne**.
+**Repos** : micro-prérequis `nemeton` (§1, livré) + correctifs `nemetonshiny`
+(§2 cache, §6 rendu).
 **Fichiers app** : `R/service_regeneration.R` (`regeneration_context_cached`),
-éventuellement `R/mod_regeneration.R` (garde de rendu du contexte).
+`R/mod_regeneration.R` (garde de rendu du contexte + `addRasterImage` bivarié).
 **Origine** : sur le projet Reconfort, la carte bivariée E-OBS (« Contexte
 régional » → « Bivariée T°max × précip ») affiche **3×3 = 9 classes** alors que le
 cœur produit désormais **5×5 = 25 classes** (`.EOBS_BIVARIATE_N = 5`, « quinconce
@@ -111,10 +117,76 @@ mémoire ne verra pas la MAJ tant qu'il ne change pas de vue (ou via
   légende restait 3×3 après régénération, ce serait un bug distinct à traiter à
   part (vérifier qu'elle n'est pas câblée en dur sur 3×3).
 
-## 5. Test
+## 5. Test (bug A)
 
 * Cœur : `expect_identical(eobs_bivariate_n(), 5L)`.
 * App : `testServer()` — écrire un `context_bivariate.meta.json` avec
   `palette$ncol = 3`, appeler `regeneration_context_cached(view="bivariate")` →
   doit renvoyer `NULL` (périmé) ; avec `ncol = 5` → renvoie le raster. Cache `tx`
   avec un `ncol` absent → **non** invalidé (garde limitée à `view=="bivariate"`).
+
+---
+
+## 6. Bug B (app pur, une ligne) — bande de trous à l'affichage
+
+**Symptôme.** La carte bivariée montre une **bande diagonale de trous** (fond
+satellite visible) traversant le disque de contexte, **y compris sur les UGF** —
+alors que le raster source est **complet** (0 % de NA au centre, vérifié sur
+disque). Les cartes « Tendance T°max » / « Tendance précip » n'ont pas ce problème.
+
+**Cause racine (confirmée empiriquement).** Le rendu du bivarié
+(`R/mod_regeneration.R` ≈ 1691) :
+
+```r
+cmap <- leaflet::colorFactor(pal$colors, domain = classes, na.color = "transparent")
+...
+leaflet::addRasterImage(rast, colors = cmap, opacity = op, project = TRUE, ...)
+```
+
+* `project = TRUE` reprojette le raster **catégoriel** (classes entières 1-25,
+  EPSG:2154) vers Web Mercator. **Sans `method`, `addRasterImage` utilise
+  `bilinear` par défaut.**
+* La bilinéaire **moyenne les cellules voisines** : aux **frontières entre
+  classes**, elle produit des valeurs **fractionnaires** (12,4…) qui ne
+  correspondent à **aucun niveau** de `colorFactor(domain = 1:25)` → rendues
+  `na.color = "transparent"` → **trou**. La bande = les zones de transition de
+  classes (le gradient climatique).
+* tx/rr échappent au bug : `colorNumeric` (continu) mappe n'importe quelle valeur
+  fractionnaire → jamais de trou.
+
+**Mesure** (reprojection de `context_bivariate.tif`, 2026-07-15) :
+
+| Reprojection | Cellules fractionnaires → trous |
+|---|---|
+| `bilinear` (défaut leaflet) | **11 261 / 58 151 = 19,4 %** |
+| `ngb` (plus-proche-voisin) | **0** |
+
+**Correctif.** La bilinéaire est de toute façon **sémantiquement fausse** sur des
+codes de classe (moyenner « classe 12 » et « classe 18 » n'a aucun sens). Passer
+la branche **bivariée** en plus-proche-voisin :
+
+```r
+leaflet::addRasterImage(rast, colors = cmap, opacity = op, project = TRUE,
+  method = "ngb",   # catégoriel : NN préserve les classes entières ; bilinéaire
+                    # fabrique des classes fractionnaires que colorFactor rejette
+                    # (na.color transparent) -> bande de trous aux frontières.
+  group = "Contexte E-OBS", options = opts)
+```
+
+**Ne PAS** toucher la branche univariée tx/rr (≈ 1705) : `colorNumeric` continu,
+la bilinéaire y est correcte (rendu plus lisse). Le correctif est **strictement
+limité au bloc bivarié**.
+
+### 6.1 Test (bug B)
+
+* `terra::project(bv, "EPSG:3857", method = "near")` sur un raster de classes
+  entières → **aucune** valeur fractionnaire (vs ~19 % en `"bilinear"`).
+* Manuel : après correctif, la carte bivariée est **pleine** dans le disque de
+  contexte (plus de bande de trous), les UGF entièrement colorées.
+
+### 6.2 Portée
+
+Ce bug touche **toute carte leaflet d'un raster catégoriel rendue avec
+`project = TRUE`** sans `method = "ngb"`. Si d'autres couches catégorielles
+existent (classes d'essences, strates…), vérifier qu'elles ne tombent pas dans le
+même piège. Les couches continues (tendances, indices) ne sont pas concernées.
