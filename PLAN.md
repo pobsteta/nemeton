@@ -1315,6 +1315,20 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-15 — v0.159.0 : `eobs_bivariate_n()` (invalidation cache bivarié)
+
+Sur Reconfort, la carte bivariée E-OBS affichait **3×3 = 9 classes** au lieu du
+**5×5 = 25** courant. Diagnostic : le cœur (installé 0.158.0, `.EOBS_BIVARIATE_N=5`)
+produit bien 5×5 et réécrit le cache, mais l'app **sert le `context_bivariate.tif`
+caché sans le recalculer** (mod_regeneration.R ≈ 1183) et la clé de cache est un
+chemin fixe par vue, sans marqueur de schéma → un cache écrit avant le passage 5×5
+reste 3×3 indéfiniment. Fix cache manuel = supprimer le `.tif`, mais il faut une
+invalidation automatique. Le cœur exposait déjà le N d'écriture dans la meta
+(`palette$ncol`) ; manquait l'accès au N **courant** côté app. Livré : export
+`eobs_bivariate_n()` (retourne `.EOBS_BIVARIATE_N`), NAMESPACE + `.Rd` main, test
+(128 PASS). Câblage app cadré : `specs/034-eobs-source/brief-nemetonshiny-bivariate-cache.md`
+(§4 : invalider quand `meta$palette$ncol != nemeton::eobs_bivariate_n()`).
+
 ### 2026-07-15 — Briefs reGénération livrés ET mergés côté `nemetonshiny`
 
 Les quatre chantiers app cadrés côté cœur cette session sont implémentés et mergés

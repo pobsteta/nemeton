@@ -1,14 +1,15 @@
-# Brief `nemetonshiny` — Onglet reGénération : verrou des calculs + infobulle Forçage
+# Brief `nemetonshiny` — Onglet reGénération : verrou des calculs + infobulle Forçage + persistance R7
 
-**Date** : 2026-07-14 (§1-6), mis à jour 2026-07-15 (§7 infobulle Forçage)
+**Date** : 2026-07-14 (§1-6), mis à jour 2026-07-15 (§7 infobulle Forçage, §8 persistance R7)
 **Repo cible** : `nemetonshiny` (aucun changement côté cœur `nemeton`)
 **Fichier** : `R/mod_regeneration.R`
 **Origine** : session de test du moteur reGénération. Pendant que `engine_task`
 tournait encore (microclimf + BILJOU, ~4 min), le bouton « Lancer R7 » est resté
 cliquable. Le clic n'a rien produit de visible, ce qui a fait croire à un blocage
-de l'app alors que le moteur travaillait normalement. Deux demandes en sont
-sorties : le **verrou d'exclusion mutuelle** (§1-6) et une **infobulle expliquant
-SAFRAN vs ERA5-Land** sur le radio Forçage (§7).
+de l'app alors que le moteur travaillait normalement. Trois demandes en sont
+sorties : le **verrou d'exclusion mutuelle** (§1-6), une **infobulle expliquant
+SAFRAN vs ERA5-Land** sur le radio Forçage (§7), et la **persistance de la couche
+gel R7** à travers un recalcul (§8).
 
 ## 1. Problème
 
@@ -238,3 +239,101 @@ labels de la sidebar.
   libellé d'aide.
 * Ne pas dupliquer cette explication dans `regen_engine_prereqs()` : le prérequis
   CDS d'ERA5-Land est déjà signalé au moment du run (`regen_engine_prereq_cds`).
+
+---
+
+## 8. Persistance de la couche gel R7 à travers un recalcul
+
+**Demande Pascal 2026-07-15.** Constat en session : après un run réussi du
+**Moteur** (microclimf + BILJOU, forçage ERA5), la couche carte « gel » est
+redevenue **vide** alors que R7 avait été calculé auparavant.
+
+### 8.1 Diagnostic (mécanisme confirmé dans le code)
+
+La couche « gel » de la carte colore les UGF par la colonne **`r7_gel_days`** de
+`rv$result` (choroplèthe, pas un vrai raster). Le rendu (`mod_regeneration.R`
+≈ 1547) fait :
+
+```r
+if (is.null(res) || !col %in% names(res)) {
+  # → contour UGF nu, return()  (aucune coloration)
+}
+```
+
+Or `r7_gel_days` n'est produit **que** par `frost_task` (« Lancer R7 ») — jamais
+par `run_regeneration()` (qui n'a pas de `tmin` en entrée). Et **les deux chemins
+de recalcul remplacent `rv$result` sèchement**, sans préserver la colonne R7 :
+
+| Bouton | Handler | Ligne | Effet sur `r7_gel_days` |
+|---|---|---|---|
+| Lancer l'analyse | `observeEvent(input$run)` | `rv$result <- res$units` (≈ 733) | ❌ écrasé |
+| Moteur | `engine_task` success | `rv$result <- res$units` (≈ 1298 / handler) | ❌ écrasé |
+| Lancer R7 | `frost_task` | `units <- rv$result %||% units_sf()` (≈ 1029) puis `rv$result <- res$units` (≈ 1074) | ✅ enrichit le résultat courant |
+
+Conséquence : R7 doit être lancé **en dernier** ; tout « Lancer l'analyse » ou
+« Moteur » postérieur efface silencieusement la couche gel. Le contour nu qui
+subsiste ressemble à un bug d'affichage.
+
+### 8.2 Correctif — préserver R7 au recalcul (recommandé)
+
+Dans les handlers `input$run` (≈ 733) et `engine_task` success (≈ 1298), au lieu de
+`rv$result <- res$units`, **reporter les colonnes R7 de l'ancien `rv$result`** si
+elles existaient. Helper local :
+
+```r
+# Réattache r7_gel_days / r7_status / R7 depuis l'ancien résultat, par jointure
+# sur l'id d'UGF (colonne stable, cf. `ug_id`). R7 ne dépend ni du forçage BILJOU
+# ni du microclimf → le report est valide tant que la géométrie des UGF n'a pas
+# changé (même projet, même sélection cadastrale).
+.regen_carry_frost <- function(new_sf, old_sf) {
+  frost_cols <- intersect(c("r7_gel_days", "r7_status", "R7"), names(old_sf))
+  if (is.null(old_sf) || !length(frost_cols) || !"ug_id" %in% names(new_sf) ||
+      !"ug_id" %in% names(old_sf)) return(new_sf)
+  keep <- sf::st_drop_geometry(old_sf)[, c("ug_id", frost_cols), drop = FALSE]
+  # merge qui préserve l'ordre et la géométrie de new_sf
+  idx <- match(new_sf$ug_id, keep$ug_id)
+  for (c in frost_cols) new_sf[[c]] <- keep[[c]][idx]
+  new_sf
+}
+```
+
+Usage :
+
+```r
+# input$run
+if (!is.null(res)) {
+  rv$result <- .regen_carry_frost(res$units, shiny::isolate(rv$result))
+  ...
+}
+```
+
+Idem dans le handler success de `engine_task`.
+
+### 8.3 Garde-fous
+
+* **Invalider si la sélection change.** Si l'utilisateur change de projet ou de
+  sélection cadastrale entre le calcul R7 et le recalcul, les `ug_id` ne
+  correspondent plus → le `match()` renvoie `NA`, R7 devient NA (couche grise, pas
+  faux). Acceptable, mais on peut aussi vider explicitement `r7_*` quand le set
+  d'`ug_id` diffère, pour éviter un report partiel trompeur.
+* **Ne PAS recalculer R7 en douce** dans `run_regeneration()` : R7 reste opt-in
+  (coûteux : Tmin meteoland). Le report ne fait que *conserver* un R7 déjà calculé,
+  il ne le régénère pas. Si le forçage/années changent, R7 reporté peut être
+  légèrement périmé — acceptable (c'est un indicateur de calendrier, pas de
+  forçage BILJOU), sinon prévoir un badge « R7 à recalculer ».
+
+### 8.4 Alternative (option 2, moins bonne)
+
+Plutôt que préserver la colonne, **annoter la couche gel** quand `r7_gel_days` est
+absente : au lieu du contour nu (≈ 1547), afficher un message overlay « R7 non
+calculé — cliquez *Lancer R7* ». Corrige la confusion « on dirait un bug » mais
+oblige à relancer R7 à chaque analyse. Retenir §8.2 en priorité ; §8.4 en
+complément éventuel (utile même avec le report, pour le tout premier affichage
+avant tout calcul R7).
+
+### 8.5 Test
+
+`testServer()` : calculer R7 (mock `frost_task` → `rv$result` avec `r7_gel_days`),
+puis déclencher `input$run` → vérifier que `rv$result` **conserve** `r7_gel_days`
+(valeurs identiques par `ug_id`) et que les colonnes d'analyse sont bien
+rafraîchies.

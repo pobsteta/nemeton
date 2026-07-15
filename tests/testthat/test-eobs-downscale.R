@@ -507,3 +507,14 @@ test_that("eobs_downscale_bivariate degrades cleanly if a trend fails", {
   expect_equal(res$meta$status, "insufficient_data")
   expect_match(res$meta$reason, "eobs_downscale")
 })
+
+test_that("eobs_bivariate_n exposes the current per-axis class count", {
+  n <- eobs_bivariate_n()
+  expect_type(n, "integer")
+  expect_length(n, 1L)
+  expect_identical(n, 5L)        # 5×5 = 25 classes (quinconce L'IF n°49)
+  # Cohérence avec la palette exposée par eobs_downscale_bivariate() : ncol == n,
+  # et le nombre de couleurs == n².
+  expect_identical(as.integer(nemeton:::.EOBS_BIVARIATE_N), n)
+  expect_length(nemeton:::.EOBS_BIVARIATE_COLORS, n * n)
+})
