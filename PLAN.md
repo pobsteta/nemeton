@@ -1315,6 +1315,26 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-15 — Briefs reGénération livrés ET mergés côté `nemetonshiny`
+
+Les quatre chantiers app cadrés côté cœur cette session sont implémentés et mergés
+dans `nemetonshiny` (app à **v0.106.13.9000**) :
+- **v0.106.10** (`feat/regen-capped`) : moteur reGénération plafonné en mémoire via
+  `nemeton::run_memory_capped(package="nemetonshiny", …)` — consomme la
+  généralisation cœur v0.158.0 ; garde de capacité vérifiant que
+  `run_memory_capped` a bien `package`/`options`. Vérifié en prod : run ERA5 dans
+  scope isolé, `MemoryMax≈22,5G`, `MemorySwapMax=0`.
+- **v0.106.11** : persistance R7 inter-sessions + infobulle « i » SAFRAN vs
+  ERA5-Land sur le radio Forçage (brief verrou-boutons §7).
+- **v0.106.13** (`fix/regen-carry-r7-recompute`) : la couche gel R7 survit à un
+  « Lancer l'analyse » / « Moteur » (report de `r7_gel_days` au recalcul, brief §8).
+- Verrou d'exclusion mutuelle des tâches lourdes (`deny_if_busy()` / `busy()`,
+  brief §1-6).
+
+Briefs : `specs/035-bilan-hydrique-spatialise/brief-nemetonshiny-verrou-boutons.md`
+(§1-8) et `…/brief-nemetonshiny-regen-capped.md`. Chantier anti-OOM reGénération
+**clos** (cf. mémoire `project_reconfort_oom_isolation`).
+
 ### 2026-07-15 — v0.158.0 : `run_memory_capped()` généralisé (anti-OOM reGénération)
 
 Suite au crash OOM de l'analyse reGénération sur Reconfort (systemd-oomd a tué les
