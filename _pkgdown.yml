@@ -467,6 +467,10 @@ reference:
     - tendances_estivales_eobs
     - eobs_downscale
     - eobs_downscale_bivariate
+    - eobs_bivariate_n
+    - eobs_summer_series
+    - eobs_monthly_climatology
+    - eobs_trend_fit
     - build_safran_stations
     - meteoland_daily_grid
     - regeneration_tolerances
