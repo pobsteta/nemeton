@@ -1738,6 +1738,31 @@ cœur).
 
 ## Journal
 
+### 2026-07-15 — v0.158.0 : `run_memory_capped()` généralisé (anti-OOM reGénération)
+
+Suite au crash OOM de l’analyse reGénération sur Reconfort (systemd-oomd
+a tué les 11 process du scope RStudio, pic 16,8 Go, 10:11), diagnostic :
+le moteur reGénération tourne dans un worker
+[`future::multisession`](https://future.futureverse.org/reference/multisession.html)
+**nu**, dans le scope de l’app — pas d’isolation mémoire, contrairement
+à FORDEAD (`run_memory_capped`, v0.157.0). Mais
+[`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)
+ne s’appliquait pas tel quel : son enfant faisait
+`getExportedValue("nemeton", fun)`, or le worker
+`run_regeneration_engine` est interne à `nemetonshiny`. Prérequis cœur
+livré :
+[`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)
+gagne `package=` (résolution via `get(fun, asNamespace(package))` →
+atteint les internes de n’importe quel package) et `options=` (pose
+`nemeton.app_options` dans l’enfant). Rétrocompatible, FORDEAD inchangé.
+Progress du moteur = déjà sur disque (`engine_status.json`), pas de
+callback à recâbler. Tests : +2 cas dans `test-isolate.R` (round-trip
+`package="jsonlite"`, injection `options=` vérifiée côté enfant/parent)
+— 31 PASS avec cgroup réel. Câblage app cadré dans
+`specs/035-bilan-hydrique-spatialise/brief-nemetonshiny-regen-capped.md`
+(§2) ; brief verrou boutons + infobulle Forçage inchangé. Voir mémoire
+`project_reconfort_oom_isolation`.
+
 ### 2026-07-15 — v0.157.1 : bruit console du moteur reGénération
 
 Un run de l’app (`run_app(language = "fr")`, projet

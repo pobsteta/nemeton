@@ -1,5 +1,35 @@
 # Changelog
 
+## nemeton 0.158.0 (2026-07-15)
+
+#### Added — `run_memory_capped()` généralisé à tout package (anti-OOM reGénération)
+
+[`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)
+ne savait lancer qu’un **export de `nemeton`** dans son enfant plafonné
+(`getExportedValue("nemeton", fun)`). Deux nouveaux arguments le rendent
+réutilisable pour les workers de `nemetonshiny` :
+
+- **`package = "nemeton"`** — l’enfant charge ce package et résout `fun`
+  via `get(fun, asNamespace(package))`, donc une fonction **interne**
+  (non exportée) est atteignable aussi. Permet de plafonner le moteur
+  reGénération (`nemetonshiny:::run_regeneration_engine`), qui tournait
+  jusqu’ici dans un worker
+  [`future::multisession`](https://future.futureverse.org/reference/multisession.html)
+  **nu** — un débordement mémoire faisait tuer par `systemd-oomd` tout
+  le scope RStudio/app (incident Reconfort 2026-07-15).
+- **`options = NULL`** — liste d’options de session posée dans l’enfant
+  avant l’appel (via
+  [`options()`](https://rdrr.io/r/base/options.html)), pour celles que
+  le worker lit mais qui ne franchissent pas la frontière de process
+  (p.ex. `nemeton.app_options` lu par `get_app_options()`).
+
+Rétrocompatible : les défauts reproduisent le comportement v0.157.x
+(FORDEAD inchangé). Le progress du moteur reGénération traverse déjà les
+process par disque (`engine_status.json`), donc aucun
+`progress_callback` n’est requis. Câblage app à faire côté
+`nemetonshiny` (brief
+`specs/035-bilan-hydrique-spatialise/brief-nemetonshiny-regen-capped.md`).
+
 ## nemeton 0.157.1 (2026-07-15)
 
 #### Changed — bruit console du moteur reGénération

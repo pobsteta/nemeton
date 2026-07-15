@@ -1,17 +1,20 @@
-# Run a heavy nemeton pipeline in a memory-capped child process
+# Run a heavy pipeline in a memory-capped child process
 
-Runs an exported `nemeton` function in a **child R process** placed in a
-transient, memory-capped cgroup. A run that overshoots then dies
-**alone**, with an ordinary error the caller can report — instead of
-having `systemd-oomd` kill the entire application scope (the R session,
-the Shiny app, the terminals) for being the biggest thing under memory
-pressure.
+Runs a function of `package` (an export **or** an internal, resolved via
+[`asNamespace`](https://rdrr.io/r/base/ns-internal.html)) in a **child R
+process** placed in a transient, memory-capped cgroup. A run that
+overshoots then dies **alone**, with an ordinary error the caller can
+report — instead of having `systemd-oomd` kill the entire application
+scope (the R session, the Shiny app, the terminals) for being the
+biggest thing under memory pressure.
 
 Use it for the pipelines whose memory lives *inside* the R process and
 so cannot be capped in place:
 [`run_fordead_dieback`](https://pobsteta.github.io/nemeton/reference/run_fordead_dieback.md)
 (Python through reticulate's embedded interpreter) and the reGénération
-engines (plain R).
+engines (plain R). The latter live in `nemetonshiny` — hence `package`
+and `options` (to reach an internal worker and to seed session options
+such as `nemeton.app_options` across the boundary).
 [`run_reconfort_dieback`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
 does **not** need it — it already caps the Python subprocess it spawns.
 
@@ -21,7 +24,9 @@ does **not** need it — it already caps the Python subprocess it spawns.
 run_memory_capped(
   fun,
   args = list(),
+  package = "nemeton",
   db_url = NULL,
+  options = NULL,
   progress_path = NULL,
   progress_callback = NULL,
   memory_max = NULL,
@@ -34,17 +39,30 @@ run_memory_capped(
 
 - fun:
 
-  Name of the exported `nemeton` function to run (character).
+  Name of the function to run, in `package` (character). May be internal
+  (not exported).
 
 - args:
 
   Named list of arguments. Must be serialisable: no connections, no
   closures, no `SpatRaster` — pass file paths.
 
+- package:
+
+  Package the child loads and resolves `fun` from. Default `"nemeton"`.
+  Use e.g. `"nemetonshiny"` to cap an app-side worker.
+
 - db_url:
 
   Database URL. When given, the child opens a connection and passes it
-  to `fun` as `con`.
+  to `fun` as `con` (only if `fun` takes a `con` argument).
+
+- options:
+
+  Named list of session options set in the child (via
+  [`options`](https://rdrr.io/r/base/options.html)) before calling
+  `fun`. Use for options the worker reads but that do not cross the
+  process boundary, e.g. `list(nemeton.app_options = ...)`.
 
 - progress_path:
 

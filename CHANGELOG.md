@@ -12,6 +12,20 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.158.0\] - 2026-07-15
+
+### Added
+
+- [`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)
+  gains `package = "nemeton"` and `options = NULL`. The child now
+  resolves `fun` with `get(fun, asNamespace(package))` (reaching
+  internal functions of any package, not just `nemeton` exports) and
+  sets the given session `options` before the call. This lets the
+  memory-capped runner wrap an app-side worker such as
+  `nemetonshiny:::run_regeneration_engine`, whose overshoot previously
+  took down the whole RStudio/app scope via systemd-oomd. Backward
+  compatible; FORDEAD’s call is unchanged.
+
 ## \[0.157.1\] - 2026-07-15
 
 ### Changed

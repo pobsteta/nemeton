@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.157.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.158.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,18 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.158.0" id="nemeton-01580-2026-07-15">nemeton 0.158.0 (2026-07-15)<a class="anchor" aria-label="anchor" href="#nemeton-01580-2026-07-15"></a></h2>
+<div class="section level4">
+<h4 id="added--run_memory_capped-généralisé-à-tout-package-anti-oom-regénération-0-158-0">Added — <code>run_memory_capped()</code> généralisé à tout package (anti-OOM reGénération)<a class="anchor" aria-label="anchor" href="#added--run_memory_capped-g%C3%A9n%C3%A9ralis%C3%A9-%C3%A0-tout-package-anti-oom-reg%C3%A9n%C3%A9ration-0-158-0"></a></h4>
+<p><code><a href="../reference/run_memory_capped.html">run_memory_capped()</a></code> ne savait lancer qu’un <strong>export de <code>nemeton</code></strong> dans son enfant plafonné (<code>getExportedValue("nemeton", fun)</code>). Deux nouveaux arguments le rendent réutilisable pour les workers de <code>nemetonshiny</code> :</p>
+<ul><li>
+<strong><code>package = "nemeton"</code></strong> — l’enfant charge ce package et résout <code>fun</code> via <code>get(fun, asNamespace(package))</code>, donc une fonction <strong>interne</strong> (non exportée) est atteignable aussi. Permet de plafonner le moteur reGénération (<code>nemetonshiny:::run_regeneration_engine</code>), qui tournait jusqu’ici dans un worker <code><a href="https://future.futureverse.org/reference/multisession.html" class="external-link">future::multisession</a></code> <strong>nu</strong> — un débordement mémoire faisait tuer par <code>systemd-oomd</code> tout le scope RStudio/app (incident Reconfort 2026-07-15).</li>
+<li>
+<strong><code>options = NULL</code></strong> — liste d’options de session posée dans l’enfant avant l’appel (via <code><a href="https://rdrr.io/r/base/options.html" class="external-link">options()</a></code>), pour celles que le worker lit mais qui ne franchissent pas la frontière de process (p.ex. <code>nemeton.app_options</code> lu par <code>get_app_options()</code>).</li>
+</ul><p>Rétrocompatible : les défauts reproduisent le comportement v0.157.x (FORDEAD inchangé). Le progress du moteur reGénération traverse déjà les process par disque (<code>engine_status.json</code>), donc aucun <code>progress_callback</code> n’est requis. Câblage app à faire côté <code>nemetonshiny</code> (brief <code>specs/035-bilan-hydrique-spatialise/brief-nemetonshiny-regen-capped.md</code>).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.157.1" id="nemeton-01571-2026-07-15">nemeton 0.157.1 (2026-07-15)<a class="anchor" aria-label="anchor" href="#nemeton-01571-2026-07-15"></a></h2>
 <div class="section level4">
