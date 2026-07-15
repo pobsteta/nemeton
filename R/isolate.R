@@ -77,11 +77,12 @@
 }
 
 
-#' Run a heavy nemeton pipeline in a memory-capped child process
+#' Run a heavy pipeline in a memory-capped child process
 #'
 #' @description
-#' Runs an exported `nemeton` function in a **child R process** placed in a
-#' transient, memory-capped cgroup. A run that overshoots then dies **alone**,
+#' Runs a function of `package` (an export **or** an internal, resolved via
+#' [asNamespace()]) in a **child R process** placed in a transient,
+#' memory-capped cgroup. A run that overshoots then dies **alone**,
 #' with an ordinary error the caller can report — instead of having
 #' `systemd-oomd` kill the entire application scope (the R session, the Shiny
 #' app, the terminals) for being the biggest thing under memory pressure.
@@ -89,8 +90,10 @@
 #' Use it for the pipelines whose memory lives *inside* the R process and so
 #' cannot be capped in place: [run_fordead_dieback()] (Python through
 #' reticulate's embedded interpreter) and the reGénération engines (plain R).
-#' [run_reconfort_dieback()] does **not** need it — it already caps the Python
-#' subprocess it spawns.
+#' The latter live in `nemetonshiny` — hence `package` and `options` (to reach an
+#' internal worker and to seed session options such as `nemeton.app_options`
+#' across the boundary). [run_reconfort_dieback()] does **not** need it — it
+#' already caps the Python subprocess it spawns.
 #'
 #' @details
 #' Two arguments cannot be serialised across a process boundary, and are
@@ -110,11 +113,17 @@
 #' exit — but **uncapped**, with a warning. Without a cgroup, an overshoot is
 #' once again the whole scope's problem.
 #'
-#' @param fun Name of the exported `nemeton` function to run (character).
+#' @param fun Name of the function to run, in `package` (character). May be
+#'   internal (not exported).
 #' @param args Named list of arguments. Must be serialisable: no connections,
 #'   no closures, no `SpatRaster` — pass file paths.
+#' @param package Package the child loads and resolves `fun` from. Default
+#'   `"nemeton"`. Use e.g. `"nemetonshiny"` to cap an app-side worker.
 #' @param db_url Database URL. When given, the child opens a connection and
-#'   passes it to `fun` as `con`.
+#'   passes it to `fun` as `con` (only if `fun` takes a `con` argument).
+#' @param options Named list of session options set in the child (via
+#'   [options()]) before calling `fun`. Use for options the worker reads but that
+#'   do not cross the process boundary, e.g. `list(nemeton.app_options = ...)`.
 #' @param progress_path Path of the progress `.json` file. When given, the child
 #'   passes `fun` a callback writing there.
 #' @param progress_callback Parent-side callback, fed by replaying the child's
@@ -139,15 +148,22 @@
 #' @seealso [run_fordead_dieback()], [run_reticulate_isolated()] (which pins a
 #'   Python env rather than capping memory), [scratch_dir()]
 #' @export
-run_memory_capped <- function(fun, args = list(), db_url = NULL,
+run_memory_capped <- function(fun, args = list(), package = "nemeton",
+                              db_url = NULL, options = NULL,
                               progress_path = NULL, progress_callback = NULL,
                               memory_max = NULL, poll_ms = 500L,
                               quiet = FALSE) {
   if (!is.character(fun) || length(fun) != 1L || !nzchar(fun)) {
-    cli::cli_abort("{.arg fun} must be the name of an exported nemeton function.")
+    cli::cli_abort("{.arg fun} must be the name of a function in {.arg package}.")
+  }
+  if (!is.character(package) || length(package) != 1L || !nzchar(package)) {
+    cli::cli_abort("{.arg package} must be a single package name.")
   }
   if (!is.list(args) || (length(args) && is.null(names(args)))) {
     cli::cli_abort("{.arg args} must be a named list.")
+  }
+  if (!is.null(options) && (!is.list(options) || is.null(names(options)))) {
+    cli::cli_abort("{.arg options} must be a named list or NULL.")
   }
   if (!requireNamespace("processx", quietly = TRUE)) {
     cli::cli_abort(c(
@@ -162,14 +178,22 @@ run_memory_capped <- function(fun, args = list(), db_url = NULL,
   f_out    <- file.path(dir, "result.rds")
   f_script <- file.path(dir, "run.R")
 
-  saveRDS(list(fun = fun, args = args, db_url = db_url,
-               progress_path = progress_path, libs = .libPaths()), f_in)
+  saveRDS(list(fun = fun, args = args, package = package, db_url = db_url,
+               options = options, progress_path = progress_path,
+               libs = .libPaths()), f_in)
 
   writeLines(c(
     'a <- readRDS(commandArgs(trailingOnly = TRUE)[1L])',
     '.libPaths(a$libs)',
-    'suppressMessages(loadNamespace("nemeton"))',
-    'f <- getExportedValue("nemeton", a$fun)',
+    'suppressMessages(loadNamespace(a$package))',
+    '# `get(envir = asNamespace())` (not getExportedValue) so an INTERNAL',
+    '# function of `package` is reachable too — the reGénération engine worker',
+    '# is not exported from nemetonshiny (spec 035, brief-nemetonshiny-regen-capped).',
+    'f <- get(a$fun, envir = asNamespace(a$package))',
+    '# Options posées avant l\'appel : le worker peut lire des options de session',
+    '# (p.ex. nemeton.app_options via get_app_options()), qui ne franchissent pas',
+    '# la frontiere de process.',
+    'if (length(a$options)) do.call(base::options, a$options)',
     '# Only inject what `f` actually takes: passing `con` or `progress_callback`',
     '# to a function without them is an "unused argument" error mid-run.',
     'takes <- function(arg) arg %in% names(formals(f))',

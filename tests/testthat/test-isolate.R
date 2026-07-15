@@ -65,6 +65,29 @@ test_that(".progress_replay tolerates a missing file, no callback, a bad line", 
 test_that("run_memory_capped rejects a bad call before spawning anything", {
   expect_error(run_memory_capped(fun = c("a", "b")), "must be the name")
   expect_error(run_memory_capped("massif_demo_units", args = list(1)), "named list")
+  expect_error(run_memory_capped("x", package = c("a", "b")), "single package")
+  expect_error(run_memory_capped("x", options = list(1)), "named list or NULL")
+})
+
+test_that("run_memory_capped runs a function from another package and seeds options", {
+  skip_on_cran()
+  skip_if_not_installed("processx")
+  skip_if_not_installed("jsonlite")
+
+  # package= : résout et exécute un export d'un AUTRE package dans l'enfant capé.
+  # memory_max = FALSE : pas de cgroup requis, le test tourne partout (CI incluse).
+  out <- suppressWarnings(run_memory_capped(
+    "toJSON", args = list(x = list(a = 1L)), package = "jsonlite",
+    memory_max = FALSE, quiet = TRUE))
+  expect_equal(as.character(out), "{\"a\":[1]}")
+
+  # options= : posée dans l'enfant AVANT l'appel ; le parent ne l'a pas.
+  val <- suppressWarnings(run_memory_capped(
+    "getOption", args = list(x = "nmt.isolate.test"), package = "base",
+    options = list(nmt.isolate.test = "child-only"),
+    memory_max = FALSE, quiet = TRUE))
+  expect_equal(val, "child-only")
+  expect_null(getOption("nmt.isolate.test"))
 })
 
 test_that("run_memory_capped runs the function in a child and returns its value", {
