@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.158.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.160.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,27 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.160.0" id="nemeton-01600-2026-07-15">nemeton 0.160.0 (2026-07-15)<a class="anchor" aria-label="anchor" href="#nemeton-01600-2026-07-15"></a></h2>
+<div class="section level4">
+<h4 id="added--accesseurs-point-e-obs-pour-les-graphiques-au-clic-spec-0-160-0">Added — accesseurs point E-OBS pour les graphiques au clic (spec 036)<a class="anchor" aria-label="anchor" href="#added--accesseurs-point-e-obs-pour-les-graphiques-au-clic-spec-0-160-0"></a></h4>
+<p>La carte « Contexte régional (E-OBS) » (onglet reGénération) n’affiche qu’une couleur par maille (la pente estivale). Trois accesseurs exposent la donnée sous cette couleur, à la maille cliquée, pour un panneau de graphiques côté app :</p>
+<ul><li>
+<code>eobs_summer_series(stack, point)</code> renvoie la série estivale par année (<code>data.frame(year, value)</code>) au point cliqué — graphes série+tendance, anomalies et distribution régionale. NA-safe hors emprise, accepte un <code>sf</code> POINT ou <code>c(lon, lat)</code>.</li>
+<li>
+<code>eobs_monthly_climatology(daily, point, var, years)</code> renvoie la climatologie mensuelle (<code>data.frame(month = 1:12, value)</code>) pour le diagramme ombrothermique (Gaussen-Bagnouls) : précipitations en cumul mensuel moyenné inter-annuel, température en moyenne mensuelle. Le diagramme de Gaussen demande la température moyenne (<code>tg</code>) alors que le champ de contexte caché est la maximale (<code>tx</code>) — voir spec 036 §5.4 pour l’option retenue.</li>
+<li>
+<code>eobs_trend_fit(series)</code> ajuste la tendance linéaire d’une série estivale et renvoie la pente par décennie (<code>10 ×</code> la pente OLS annuelle, cohérente avec la pente cartographiée), le R² et la p-value.</li>
+</ul><p>Chemin pur (extraction <code>terra</code> au point), aucune acquisition. Câblage app (clic leaflet + panneau plotly, acquisition <code>tg</code>, cache) : brief à écrire, cf. spec 036 §6-7.</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.159.0" id="nemeton-01590-2026-07-15">nemeton 0.159.0 (2026-07-15)<a class="anchor" aria-label="anchor" href="#nemeton-01590-2026-07-15"></a></h2>
+<div class="section level4">
+<h4 id="added--eobs_bivariate_n--accesseur-du-n-de-la-carte-bivariée-e-obs-0-159-0">Added — <code>eobs_bivariate_n()</code> : accesseur du N de la carte bivariée E-OBS<a class="anchor" aria-label="anchor" href="#added--eobs_bivariate_n--accesseur-du-n-de-la-carte-bivari%C3%A9e-e-obs-0-159-0"></a></h4>
+<p>La carte bivariée E-OBS (T°max × précipitations) classe chaque axe en <code>N</code> niveaux (<code>.EOBS_BIVARIATE_N = 5</code> → 5×5 = 25 classes, quinconce « L’IF n°49 »). Le nouvel export <code><a href="../reference/eobs_bivariate_n.html">eobs_bivariate_n()</a></code> expose ce <code>N</code> pour qu’un consommateur — typiquement la couche cache de <code>nemetonshiny</code> — détecte qu’un raster bivarié caché a été écrit sous un <strong>schéma différent</strong> (ancien 3×3) et doive être <strong>recalculé</strong> plutôt que servi périmé. La meta de <code><a href="../reference/eobs_downscale_bivariate.html">eobs_downscale_bivariate()</a></code> porte déjà le <code>N</code> d’écriture dans <code>palette$ncol</code> ; il suffit de le comparer à <code><a href="../reference/eobs_bivariate_n.html">eobs_bivariate_n()</a></code>. Corrige le symptôme observé : une carte bivariée figée en 3×3 sur des projets dont le cache datait d’avant le passage 5×5. Câblage app : brief <code>specs/034-eobs-source/brief-nemetonshiny-bivariate-cache.md</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.158.0" id="nemeton-01580-2026-07-15">nemeton 0.158.0 (2026-07-15)<a class="anchor" aria-label="anchor" href="#nemeton-01580-2026-07-15"></a></h2>
 <div class="section level4">

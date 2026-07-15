@@ -1149,6 +1149,18 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
 - [`eobs_downscale_bivariate()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale_bivariate.md)
   : Downscaled bivariate climate-trend map (T°max × precipitation)
 
+- [`eobs_bivariate_n()`](https://pobsteta.github.io/nemeton/reference/eobs_bivariate_n.md)
+  : Number of classes per axis of the E-OBS bivariate map
+
+- [`eobs_summer_series()`](https://pobsteta.github.io/nemeton/reference/eobs_summer_series.md)
+  : Summer E-OBS series at a point (year -\> value)
+
+- [`eobs_monthly_climatology()`](https://pobsteta.github.io/nemeton/reference/eobs_monthly_climatology.md)
+  : Monthly E-OBS climatology at a point (month -\> value)
+
+- [`eobs_trend_fit()`](https://pobsteta.github.io/nemeton/reference/eobs_trend_fit.md)
+  : Linear trend of an E-OBS summer series (per decade)
+
 - [`build_safran_stations()`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)
   : Build the SAFRAN pseudo-station grid for the meteoland engine (spec
   P4)

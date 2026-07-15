@@ -1,5 +1,53 @@
 # Changelog
 
+## nemeton 0.160.0 (2026-07-15)
+
+#### Added — accesseurs point E-OBS pour les graphiques au clic (spec 036)
+
+La carte « Contexte régional (E-OBS) » (onglet reGénération) n’affiche
+qu’une couleur par maille (la pente estivale). Trois accesseurs exposent
+la donnée sous cette couleur, à la maille cliquée, pour un panneau de
+graphiques côté app :
+
+- `eobs_summer_series(stack, point)` renvoie la série estivale par année
+  (`data.frame(year, value)`) au point cliqué — graphes série+tendance,
+  anomalies et distribution régionale. NA-safe hors emprise, accepte un
+  `sf` POINT ou `c(lon, lat)`.
+- `eobs_monthly_climatology(daily, point, var, years)` renvoie la
+  climatologie mensuelle (`data.frame(month = 1:12, value)`) pour le
+  diagramme ombrothermique (Gaussen-Bagnouls) : précipitations en cumul
+  mensuel moyenné inter-annuel, température en moyenne mensuelle. Le
+  diagramme de Gaussen demande la température moyenne (`tg`) alors que
+  le champ de contexte caché est la maximale (`tx`) — voir spec 036 §5.4
+  pour l’option retenue.
+- `eobs_trend_fit(series)` ajuste la tendance linéaire d’une série
+  estivale et renvoie la pente par décennie (`10 ×` la pente OLS
+  annuelle, cohérente avec la pente cartographiée), le R² et la p-value.
+
+Chemin pur (extraction `terra` au point), aucune acquisition. Câblage
+app (clic leaflet + panneau plotly, acquisition `tg`, cache) : brief à
+écrire, cf. spec 036 §6-7.
+
+## nemeton 0.159.0 (2026-07-15)
+
+#### Added — `eobs_bivariate_n()` : accesseur du N de la carte bivariée E-OBS
+
+La carte bivariée E-OBS (T°max × précipitations) classe chaque axe en
+`N` niveaux (`.EOBS_BIVARIATE_N = 5` → 5×5 = 25 classes, quinconce «
+L’IF n°49 »). Le nouvel export
+[`eobs_bivariate_n()`](https://pobsteta.github.io/nemeton/reference/eobs_bivariate_n.md)
+expose ce `N` pour qu’un consommateur — typiquement la couche cache de
+`nemetonshiny` — détecte qu’un raster bivarié caché a été écrit sous un
+**schéma différent** (ancien 3×3) et doive être **recalculé** plutôt que
+servi périmé. La meta de
+[`eobs_downscale_bivariate()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale_bivariate.md)
+porte déjà le `N` d’écriture dans `palette$ncol` ; il suffit de le
+comparer à
+[`eobs_bivariate_n()`](https://pobsteta.github.io/nemeton/reference/eobs_bivariate_n.md).
+Corrige le symptôme observé : une carte bivariée figée en 3×3 sur des
+projets dont le cache datait d’avant le passage 5×5. Câblage app : brief
+`specs/034-eobs-source/brief-nemetonshiny-bivariate-cache.md`.
+
 ## nemeton 0.158.0 (2026-07-15)
 
 #### Added — `run_memory_capped()` généralisé à tout package (anti-OOM reGénération)
