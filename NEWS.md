@@ -1,3 +1,29 @@
+# nemeton 0.160.0 (2026-07-15)
+
+### Added — accesseurs point E-OBS pour les graphiques au clic (spec 036)
+
+La carte « Contexte régional (E-OBS) » (onglet reGénération) n'affiche qu'une
+couleur par maille (la pente estivale). Trois accesseurs exposent la donnée sous
+cette couleur, à la maille cliquée, pour un panneau de graphiques côté app :
+
+- `eobs_summer_series(stack, point)` renvoie la série estivale par année
+  (`data.frame(year, value)`) au point cliqué — graphes série+tendance, anomalies
+  et distribution régionale. NA-safe hors emprise, accepte un `sf` POINT ou
+  `c(lon, lat)`.
+- `eobs_monthly_climatology(daily, point, var, years)` renvoie la climatologie
+  mensuelle (`data.frame(month = 1:12, value)`) pour le diagramme ombrothermique
+  (Gaussen-Bagnouls) : précipitations en cumul mensuel moyenné inter-annuel,
+  température en moyenne mensuelle. Le diagramme de Gaussen demande la température
+  moyenne (`tg`) alors que le champ de contexte caché est la maximale (`tx`) — voir
+  spec 036 §5.4 pour l'option retenue.
+- `eobs_trend_fit(series)` ajuste la tendance linéaire d'une série estivale et
+  renvoie la pente par décennie (`10 ×` la pente OLS annuelle, cohérente avec la
+  pente cartographiée), le R² et la p-value.
+
+Chemin pur (extraction `terra` au point), aucune acquisition. Câblage app (clic
+leaflet + panneau plotly, acquisition `tg`, cache) : brief à écrire, cf. spec 036
+§6-7.
+
 # nemeton 0.159.0 (2026-07-15)
 
 ### Added — `eobs_bivariate_n()` : accesseur du N de la carte bivariée E-OBS

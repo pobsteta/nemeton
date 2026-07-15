@@ -2,7 +2,8 @@
 
 **Version** : 0.1.0
 **Date**    : 2026-07-15
-**Statut**  : **Cadrage (non implémenté).**
+**Statut**  : **Cœur implémenté** (v0.160.0) — accesseurs `eobs_summer_series()`,
+`eobs_monthly_climatology()`, `eobs_trend_fit()`. Câblage app : brief à écrire.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — 1 accesseur exporté (feat mineur, rétro-compatible).
 **Cible app**  : `nemetonshiny` — clic leaflet + panneau de graphiques (brief §6).

@@ -1368,6 +1368,33 @@ côté enfant/parent) — 31 PASS avec cgroup réel. Câblage app cadré dans
 brief verrou boutons + infobulle Forçage inchangé. Voir mémoire
 `project_reconfort_oom_isolation`.
 
+### 2026-07-15 — v0.160.0 : accesseurs point E-OBS pour les graphiques au clic (spec 036)
+
+Livraison cœur de la [spec 036](specs/036-eobs-click-graphs/spec.md) — la carte
+« Contexte régional (E-OBS) » (onglet reGénération) n'affiche qu'**une couleur par
+maille** (la pente estivale) ; ces accesseurs rendent la donnée **sous** la
+couleur, à la maille cliquée. Trois fonctions exportées, `R/eobs_click_series.R` :
+
+- `eobs_summer_series(stack, point)` → `data.frame(year, value)` : extrait la série
+  estivale par année au point (graphes 1-3 : série+tendance, anomalies,
+  distribution). NA-safe hors emprise, ré-ordonné par année, accepte un `sf` POINT
+  ou `c(lon, lat)` (le clic leaflet).
+- `eobs_monthly_climatology(daily, point, var, years)` → `data.frame(month=1:12,
+  value)` : climatologie mensuelle P/T pour le **diagramme ombrothermique**
+  (Gaussen-Bagnouls, graphe 4). Précip = cumul mensuel moyenné inter-annuel ;
+  température = moyenne mensuelle. Nuance documentée : Gaussen exige la T **moyenne**
+  (`tg`), le `.nc` de contexte est la T **max** (`tx`) — option A (acquérir `tg`)
+  recommandée, option B (`tx` proxy majorant la saison sèche) tolérée si étiquetée.
+- `eobs_trend_fit(series)` → `list(slope_decade, intercept, r2, p_value, n)` : pente
+  **par décennie** (= 10× la pente OLS annuelle) + qualité d'ajustement, pour la
+  droite de tendance du graphe 1. Cohérence carte↔graphe vérifiée par test :
+  `slope_decade == 10 * .eobs_ds_slope` (la pente closed-form de la carte).
+
+Chemin PUR (extraction terra au point), aucune acquisition — 31 tests offline
+(`test-eobs-click-series.R`). Câblage app (clic leaflet + panneau plotly,
+acquisition `tg` 12 mois, cache) cadré dans la spec §6-7, brief à écrire à
+l'implémentation. Feat mineur, rétro-compatible.
+
 ### 2026-07-15 — v0.157.1 : bruit console du moteur reGénération
 
 Un run de l'app (`run_app(language = "fr")`, projet `20260701_204501_ltcp`)

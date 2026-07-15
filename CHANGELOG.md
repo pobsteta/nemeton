@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.160.0] - 2026-07-15
+
+### Added
+- `eobs_summer_series(stack, point)`, `eobs_monthly_climatology(daily, point, var,
+  years)` and `eobs_trend_fit(series)` — point accessors behind the E-OBS regional
+  context map, for the click-to-inspect chart panel (spec 036). Summer per-year
+  series, monthly climatology for the ombrothermic (Gaussen-Bagnouls) diagram, and
+  the per-decade trend fit (matching the mapped slope). Pure terra extraction, no
+  acquisition; app wiring left as a brief (spec 036 §6-7).
+
 ## [0.159.0] - 2026-07-15
 
 ### Added
