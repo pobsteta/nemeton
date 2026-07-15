@@ -10,6 +10,15 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.159.0] - 2026-07-15
+
+### Added
+- `eobs_bivariate_n()` exports the per-axis class count of the E-OBS bivariate map
+  (currently 5 → 5×5 = 25 classes). Lets a consumer detect a cached bivariate
+  raster written under an older scheme (3×3) and recompute it instead of serving it
+  stale — the cache meta already carries the writing N in `palette$ncol`. App
+  wiring: `specs/034-eobs-source/brief-nemetonshiny-bivariate-cache.md`.
+
 ## [0.158.0] - 2026-07-15
 
 ### Added

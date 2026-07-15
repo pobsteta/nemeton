@@ -998,6 +998,24 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
 # température domine (haut = rouge/magenta) ; frais & sec = jaune, frais & humide
 # = violet, chaud & sec = rouge, chaud & humide = magenta.
 .EOBS_BIVARIATE_N <- 5L
+
+#' Number of classes per axis of the E-OBS bivariate map
+#'
+#' @description
+#' The E-OBS bivariate trend map (T°max × precipitation) classifies each axis into
+#' `N` levels, giving `N * N` combined classes. This accessor exposes `N` so a
+#' consumer (e.g. the app's cached-raster layer) can detect when a cached bivariate
+#' raster was written under a **different** scheme and must be recomputed rather
+#' than served stale. The cache meta carries the writing `N` in `palette$ncol`;
+#' compare it against this value.
+#'
+#' @return Integer scalar. Currently `5` (a 5×5 = 25-class quincunx).
+#' @seealso [eobs_downscale_bivariate()]
+#' @examples
+#' eobs_bivariate_n()
+#' @export
+eobs_bivariate_n <- function() .EOBS_BIVARIATE_N
+
 .EOBS_BIVARIATE_COLORS <- c(
   "1"  = "#F3E600", "2"  = "#C7C638", "3"  = "#AAAA56", "4"  = "#8C8D72", "5"  = "#5656A2",  # frais
   "6"  = "#F6A815", "7"  = "#E29629", "8"  = "#C48051", "9"  = "#B0726F", "10" = "#8D5A9B",
