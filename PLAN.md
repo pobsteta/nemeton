@@ -1071,7 +1071,14 @@ carte gel + R7 au radar reGénération, sens normal NA-safe). —
 eobs_downscale(var=“tx”/“rr”) + eobs_downscale_bivariate(tx,rr) (classes
 1-9, palette colors/labels), dem=NULL auto-source WMS IGN — cœur
 v0.153.0, app <nemetonshiny@53b15066> (v0.106.0 : sélecteur 3 vues +
-légende bivariée 2D + download rr + async/cache). — 2026-07-12
+légende bivariée 2D + download rr + async/cache). — 2026-07-12 - \[x\]
+**Spec 036 — graphiques au clic sur la carte « Contexte régional (E-OBS)
+»** : clic → panneau de 4 graphes (série+tendance, anomalies,
+distribution régionale, diagramme ombrothermique Gaussen-Bagnouls). Cœur
+= 3 accesseurs `eobs_summer_series` / `eobs_monthly_climatology` /
+`eobs_trend_fit` (**nemeton v0.160.0**) ; brief app
+`brief-nemetonshiny.md`. Câblage livré app **<nemetonshiny@0bebc6d7>
+(v0.107.0)**. — 2026-07-16
 
 Les deux briefs app du volet moteur spec 027 sont désormais clos ;
 **plus aucun brief app en attente sur ce chantier**.
@@ -1832,9 +1839,17 @@ fonctions exportées, `R/eobs_click_series.R` :
   la carte).
 
 Chemin PUR (extraction terra au point), aucune acquisition — 31 tests
-offline (`test-eobs-click-series.R`). Câblage app (clic leaflet +
-panneau plotly, acquisition `tg` 12 mois, cache) cadré dans la spec
-§6-7, brief à écrire à l’implémentation. Feat mineur, rétro-compatible.
+offline (`test-eobs-click-series.R`). Feat mineur, rétro-compatible.
+
+**Suite — 2026-07-16 : spec 036 close côté app.** Brief app rédigé
+(`brief-nemetonshiny.md`, PR \#329) puis **implémenté** : clic
+`input$context_map_click` → modale à 4 graphes plotly, réutilisant
+l’existant app (`.regen_load_eobs_buffered` pour les stacks estivaux,
+`regen_eobs_cached_nc` pour le `.nc` quotidien plein-année), avec le
+seul ajout d’acquisition `tg` (température moyenne pour le Gaussen
+exact, sur le modèle de `regen_fetch_eobs_rr`). Livré
+**<nemetonshiny@0bebc6d7> (v0.107.0)** sur cœur **nemeton v0.160.0**.
+Spec 036 close (cœur + app) ; plus aucun reste sur ce chantier.
 
 ### 2026-07-15 — v0.157.1 : bruit console du moteur reGénération
 
