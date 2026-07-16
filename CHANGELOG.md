@@ -12,6 +12,21 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.161.0\] - 2026-07-16
+
+### Changed
+
+- Normalisation 0-100 de tous les indicateurs (spec 038).
+  [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+  persiste `sensibilite_score` (R6 borné 0-100, high = favorable)
+  réutilisant les échelles de
+  [`indicateur_r6_sensibilite()`](https://pobsteta.github.io/nemeton/reference/indicateur_r6_sensibilite.md),
+  en parallèle du z-score `sensibilite` gardé pour le rang.
+  [`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+  gagne des cases explicites R6/R7 (passthrough clamp, pas d’inversion)
+  et un garde-fou (`.NORMALIZE_NATIVE_0_100`) qui avertit si un
+  indicateur connu retombe sur le repli naïf. Rétro-compatible.
+
 ## \[0.160.0\] - 2026-07-15
 
 ### Added

@@ -1,5 +1,38 @@
 # Changelog
 
+## nemeton 0.161.0 (2026-07-16)
+
+#### Changed — normalisation 0-100 de tous les indicateurs, R6 à la source (spec 038)
+
+Objectif : que **chaque** indicateur entre proprement dans le score de
+famille. R6 (sensibilité microclimatique) et R7 (gel tardif) étaient
+absents/fragiles.
+
+- **R6 normalisé à la source** :
+  [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+  persiste désormais une colonne **`sensibilite_score`** bornée 0-100
+  (haut = favorable = peu sensible), réutilisant la formule et les
+  échelles de
+  [`indicateur_r6_sensibilite()`](https://pobsteta.github.io/nemeton/reference/indicateur_r6_sensibilite.md)
+  (`.MICRO_BOUNDS$r6`) sur les mêmes ΔT°max/ΔVPD. Le z-score
+  `sensibilite` reste conservé pour le **rang** (`rang_sensibilite`,
+  `parcelle_sensible`, `priorite`). Calculée dans les deux chemins
+  (engine + precomputed), NA-safe.
+- **Cases R6/R7 explicites** dans
+  [`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+  : `indicateur_r6_sensibilite`/`R6`/`sensibilite_score` et
+  `indicateur_r7_gel`/`R7` sont passés en 0-100 (clamp, sans inversion —
+  ≠ R5/T3), ne dépendent plus du repli naïf.
+- **Filet de sécurité** : registre `.NORMALIZE_NATIVE_0_100` des
+  indicateurs nativement 0-100 ; tout indicateur **connu**
+  (`INDICATOR_FAMILIES`) qui atteint le repli naïf sans y être déclaré
+  émet un avertissement — détecte les futurs oublis.
+
+Rétro-compatible : `sensibilite` inchangé, aucun rang modifié, aucun
+indicateur existant renormalisé différemment. Câblage app (injecter
+`sensibilite_score`, intégrer R6/R7 au score) : brief
+`specs/038-normalisation-indicateurs/`.
+
 ## nemeton 0.160.0 (2026-07-15)
 
 #### Added — accesseurs point E-OBS pour les graphiques au clic (spec 036)

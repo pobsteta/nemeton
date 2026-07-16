@@ -147,8 +147,13 @@ regen_sensibilite(
 
 `units` with the §7 exposure columns (`tmax_moyenne`, `tmax_canicule`,
 `vpd_moyenne`, `vpd_canicule`, `d_tmax`, `d_vpd`, `sensibilite`,
-`rang_sensibilite`, `robustesse`, `signal_robuste`, `couverture_pct`),
-plus `parcelle_sensible` / `priorite`.
+`sensibilite_score`, `rang_sensibilite`, `robustesse`, `signal_robuste`,
+`couverture_pct`), plus `parcelle_sensible` / `priorite`. `sensibilite`
+is the project-relative z-score driving the rank; `sensibilite_score` is
+the bounded 0-100 R6 value (high = favorable, low sensitivity) for the
+family score, sharing the scales of
+[`indicateur_r6_sensibilite`](https://pobsteta.github.io/nemeton/reference/indicateur_r6_sensibilite.md)
+(spec 038).
 
 ## Details
 

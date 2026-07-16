@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.160.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.161.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,20 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.161.0" id="nemeton-01610-2026-07-16">nemeton 0.161.0 (2026-07-16)<a class="anchor" aria-label="anchor" href="#nemeton-01610-2026-07-16"></a></h2>
+<div class="section level4">
+<h4 id="changed--normalisation-de-tous-les-indicateurs-r6-à-la-source-spec-0-161-0">Changed — normalisation 0-100 de tous les indicateurs, R6 à la source (spec 038)<a class="anchor" aria-label="anchor" href="#changed--normalisation-de-tous-les-indicateurs-r6-%C3%A0-la-source-spec-0-161-0"></a></h4>
+<p>Objectif : que <strong>chaque</strong> indicateur entre proprement dans le score de famille. R6 (sensibilité microclimatique) et R7 (gel tardif) étaient absents/fragiles.</p>
+<ul><li>
+<strong>R6 normalisé à la source</strong> : <code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code> persiste désormais une colonne <strong><code>sensibilite_score</code></strong> bornée 0-100 (haut = favorable = peu sensible), réutilisant la formule et les échelles de <code><a href="../reference/indicateur_r6_sensibilite.html">indicateur_r6_sensibilite()</a></code> (<code>.MICRO_BOUNDS$r6</code>) sur les mêmes ΔT°max/ΔVPD. Le z-score <code>sensibilite</code> reste conservé pour le <strong>rang</strong> (<code>rang_sensibilite</code>, <code>parcelle_sensible</code>, <code>priorite</code>). Calculée dans les deux chemins (engine + precomputed), NA-safe.</li>
+<li>
+<strong>Cases R6/R7 explicites</strong> dans <code><a href="../reference/normalize_indicator.html">normalize_indicator()</a></code> : <code>indicateur_r6_sensibilite</code>/<code>R6</code>/<code>sensibilite_score</code> et <code>indicateur_r7_gel</code>/<code>R7</code> sont passés en 0-100 (clamp, sans inversion — ≠ R5/T3), ne dépendent plus du repli naïf.</li>
+<li>
+<strong>Filet de sécurité</strong> : registre <code>.NORMALIZE_NATIVE_0_100</code> des indicateurs nativement 0-100 ; tout indicateur <strong>connu</strong> (<code>INDICATOR_FAMILIES</code>) qui atteint le repli naïf sans y être déclaré émet un avertissement — détecte les futurs oublis.</li>
+</ul><p>Rétro-compatible : <code>sensibilite</code> inchangé, aucun rang modifié, aucun indicateur existant renormalisé différemment. Câblage app (injecter <code>sensibilite_score</code>, intégrer R6/R7 au score) : brief <code>specs/038-normalisation-indicateurs/</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.160.0" id="nemeton-01600-2026-07-15">nemeton 0.160.0 (2026-07-15)<a class="anchor" aria-label="anchor" href="#nemeton-01600-2026-07-15"></a></h2>
 <div class="section level4">

@@ -15,7 +15,7 @@ indice_priorite_regen."><meta property="og:image" content="https://pobsteta.gith
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.160.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.161.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -195,9 +195,12 @@ ERA5 split is internal to <code>mcera5</code>.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>units</code> with the §7 exposure columns (<code>tmax_moyenne</code>,
 <code>tmax_canicule</code>, <code>vpd_moyenne</code>, <code>vpd_canicule</code>, <code>d_tmax</code>,
-<code>d_vpd</code>, <code>sensibilite</code>, <code>rang_sensibilite</code>, <code>robustesse</code>,
-<code>signal_robuste</code>, <code>couverture_pct</code>), plus <code>parcelle_sensible</code> /
-<code>priorite</code>.</p>
+<code>d_vpd</code>, <code>sensibilite</code>, <code>sensibilite_score</code>, <code>rang_sensibilite</code>,
+<code>robustesse</code>, <code>signal_robuste</code>, <code>couverture_pct</code>), plus
+<code>parcelle_sensible</code> / <code>priorite</code>. <code>sensibilite</code> is the
+project-relative z-score driving the rank; <code>sensibilite_score</code> is the bounded
+0-100 R6 value (high = favorable, low sensitivity) for the family score, sharing
+the scales of <code><a href="indicateur_r6_sensibilite.html">indicateur_r6_sensibilite</a></code> (spec 038).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
