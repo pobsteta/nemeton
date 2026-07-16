@@ -1078,7 +1078,19 @@ distribution régionale, diagramme ombrothermique Gaussen-Bagnouls). Cœur
 = 3 accesseurs `eobs_summer_series` / `eobs_monthly_climatology` /
 `eobs_trend_fit` (**nemeton v0.160.0**) ; brief app
 `brief-nemetonshiny.md`. Câblage livré app **<nemetonshiny@0bebc6d7>
-(v0.107.0)**. — 2026-07-16
+(v0.107.0)**. — 2026-07-16 - \[x\] **Spec 039 — recommandation
+d’essences reGénération (top-N + conseil IA)** : approche hybride =
+classement DÉTERMINISTE cœur + mise en prose IA. Cœur =
+`regen_rank_species` / `regen_rank_to_wide` + normalisation R6
+`sensibilite_score` (spec 038), **nemeton v0.162.0**. App : **P1** top-3
+déterministe par UGF dans la fiche parcelle (score d’adéquation, facteur
+limitant, confiance, invasives écartées ; wrapper
+`regeneration_species_ranking` NA/erreur-safe) —
+**<nemetonshiny@38b85d00> (v0.107.16)** ; **P2** sidebar « Affiner la
+reGénération avec l’IA » (le LLM met en prose le top-3 + station par
+profil expert, garde-fou anti-essence-hors-classement) —
+**<nemetonshiny@ad77876f> (v0.107.17)**. Plancher app
+`Imports: nemeton (>= 0.162.0)`. — 2026-07-16
 
 Les deux briefs app du volet moteur spec 027 sont désormais clos ;
 **plus aucun brief app en attente sur ce chantier**.
@@ -1808,6 +1820,52 @@ callback à recâbler. Tests : +2 cas dans `test-isolate.R` (round-trip
 `specs/035-bilan-hydrique-spatialise/brief-nemetonshiny-regen-capped.md`
 (§2) ; brief verrou boutons + infobulle Forçage inchangé. Voir mémoire
 `project_reconfort_oom_isolation`.
+
+### 2026-07-16 — v0.162.0 : `regen_rank_species()` top-N essences par UGF (spec 039)
+
+Réponse au brief `brief-nemeton-regen-rank-species.md` : proposer par
+UGF les 3 essences les plus pertinentes pour la régénération. Brique
+cœur **déterministe** (le narratif IA reste app, phase 2).
+`R/regen_rank_species.R`, 2 fonctions exportées :
+
+- `regen_rank_species(units, species_pool, top_n, weights, exclude_invasive, region, cover_col, lai_col, extinction_k, id_col, include_atlas)`
+  → data.frame long (UGF × rang) :
+  `ug_id, rank, species_code, label, type, suitability, limiting_factor, confidence, invasif`.
+- [`regen_rank_to_wide()`](https://pobsteta.github.io/nemeton/reference/regen_rank_to_wide.md)
+  → une ligne/UGF (`essence_r`/`score_r`/`label_r`/`facteur_r`).
+
+Adéquation = moyenne pondérée (renormalisée sur axes présents) de 3 axes
+0-100 : **chaleur & sécheresse** (réutilise
+[`indice_priorite_regen()`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md) +
+REW édaphique vs `drought_tol`, loi du minimum), **gel tardif**
+(pression `R7`/`r7_gel_days` × `frost_late` par essence), **ombre**
+optionnelle (densité couvert via `cover_col` ou `lai_col` converti
+Beer-Lambert vs `shade_tol` ; sinon omise + départage).
+
+**Découverte (verify source of truth)** : le brief supposait 2 lacunes
+data (§3.b trait gel par essence, §3.c). Or
+`european_species_tolerances.csv` a **déjà** `frost_late`/`frost_early`
+(fagus=1 sensible, chêne=4 résistant) et `shade_tol` — donc l’axe gel
+**différencie** les essences (mieux que le repli P1 uniforme du brief).
+Décisions actées via AskUserQuestion : gel par `frost_late` ; ombre
+optionnelle via `cover_col`/`lai_col` (le pipeline produit déjà le
+LAI/PAI — remarque de Pascal), sinon omise. `confidence` propagée (pas
+fondue), déterministe, NA-safe. 10 tests (`test-regen-rank-species.R`,
+valeurs calc. main). Spec 039. **Suivi app** (règle 11) : top-3 fiche
+parcelle + carte, puis conseil IA — brief §7.
+
+**Suite — 2026-07-16 : spec 039 close côté app.** Approche hybride
+livrée : **P1** top-3 déterministe par UGF dans la fiche parcelle de
+reGénération (score d’adéquation 0-100, facteur limitant, confiance ;
+invasives écartées ; wrapper `regeneration_species_ranking`
+NA/erreur-safe) — **<nemetonshiny@38b85d00> (v0.107.16)** ; **P2**
+sidebar repliable « Affiner la reGénération avec l’IA » — le LLM ne
+classe pas, il met en prose le top-3 déterministe + les conditions de
+station par UGF selon le profil expert, avec garde-fou
+anti-essence-hors-classement — **<nemetonshiny@ad77876f> (v0.107.17)**.
+Plancher app `Imports: nemeton (>= 0.162.0)`. Spec 039 close (cœur +
+app). Résidu ouvert : recalibrage terrain des bornes d’adéquation de
+`regen_rank_species` (validation de terrain à venir).
 
 ### 2026-07-16 — v0.161.0 : normalisation 0-100 de tous les indicateurs, R6 à la source (spec 038)
 

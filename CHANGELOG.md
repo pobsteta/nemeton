@@ -12,6 +12,22 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.162.0\] - 2026-07-16
+
+### Added
+
+- [`regen_rank_species()`](https://pobsteta.github.io/nemeton/reference/regen_rank_species.md)
+  and
+  [`regen_rank_to_wide()`](https://pobsteta.github.io/nemeton/reference/regen_rank_to_wide.md)
+  — deterministic per-UGF top-N regeneration species ranking (spec 039).
+  Suitability aggregates heat/dryness (reusing
+  [`indice_priorite_regen()`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md)),
+  late frost (station pressure × per-species `frost_late`, which
+  differentiates species), and an optional shade axis (per-UGF canopy
+  density via `cover_col` or a Beer-Lambert–converted `lai_col`, vs
+  `shade_tol`). Propagates `confidence`, excludes invasives by default,
+  NA-safe.
+
 ## \[0.161.0\] - 2026-07-16
 
 ### Changed

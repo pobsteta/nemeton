@@ -1,5 +1,32 @@
 # Changelog
 
+## nemeton 0.162.0 (2026-07-16)
+
+#### Added — `regen_rank_species()` : top-N essences par UGF (spec 039)
+
+Classement écologique **déterministe** des essences de régénération, par
+UGF, pour l’onglet reGénération (la brique cœur ; le narratif IA reste
+app, phase 2).
+
+- `regen_rank_species(units, species_pool, top_n, weights, exclude_invasive, region, cover_col, lai_col, extinction_k, id_col, include_atlas)`
+  → data.frame **long** (une ligne par UGF × rang) : `ug_id`, `rank`,
+  `species_code`, `label`, `type`, `suitability` (0-100),
+  `limiting_factor`, `confidence`, `invasif`.
+- `regen_rank_to_wide(ranked, top_n)` → une ligne par UGF
+  (`essence_r`/`score_r`/ `label_r`/`facteur_r`).
+
+Adéquation = moyenne pondérée (renormalisée sur les axes présents) de 3
+axes 0-100 : **chaleur & sécheresse** (T°max/VPD vs tolérances + REW
+édaphique vs `drought_tol`, loi du minimum, réutilise
+[`indice_priorite_regen()`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md)),
+**gel tardif** (pression station `R7`/`r7_gel_days` croisée avec
+`frost_late` par essence — l’axe **différencie** les essences), et
+**ombre** *optionnelle* (densité de couvert par UGF via `cover_col`, ou
+`lai_col` du pipeline converti par Beer-Lambert, vs `shade_tol` ; omise
+sinon, `shade_tol` servant de départage). `confidence` propagée (non
+fondue dans le score), invasives exclues par défaut, NA-safe,
+déterministe.
+
 ## nemeton 0.161.0 (2026-07-16)
 
 #### Changed — normalisation 0-100 de tous les indicateurs, R6 à la source (spec 038)

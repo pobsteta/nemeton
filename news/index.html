@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.161.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.162.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,18 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.162.0" id="nemeton-01620-2026-07-16">nemeton 0.162.0 (2026-07-16)<a class="anchor" aria-label="anchor" href="#nemeton-01620-2026-07-16"></a></h2>
+<div class="section level4">
+<h4 id="added--regen_rank_species--top-n-essences-par-ugf-spec-0-162-0">Added — <code>regen_rank_species()</code> : top-N essences par UGF (spec 039)<a class="anchor" aria-label="anchor" href="#added--regen_rank_species--top-n-essences-par-ugf-spec-0-162-0"></a></h4>
+<p>Classement écologique <strong>déterministe</strong> des essences de régénération, par UGF, pour l’onglet reGénération (la brique cœur ; le narratif IA reste app, phase 2).</p>
+<ul><li>
+<code>regen_rank_species(units, species_pool, top_n, weights, exclude_invasive, region, cover_col, lai_col, extinction_k, id_col, include_atlas)</code> → data.frame <strong>long</strong> (une ligne par UGF × rang) : <code>ug_id</code>, <code>rank</code>, <code>species_code</code>, <code>label</code>, <code>type</code>, <code>suitability</code> (0-100), <code>limiting_factor</code>, <code>confidence</code>, <code>invasif</code>.</li>
+<li>
+<code>regen_rank_to_wide(ranked, top_n)</code> → une ligne par UGF (<code>essence_r</code>/<code>score_r</code>/ <code>label_r</code>/<code>facteur_r</code>).</li>
+</ul><p>Adéquation = moyenne pondérée (renormalisée sur les axes présents) de 3 axes 0-100 : <strong>chaleur &amp; sécheresse</strong> (T°max/VPD vs tolérances + REW édaphique vs <code>drought_tol</code>, loi du minimum, réutilise <code><a href="../reference/indice_priorite_regen.html">indice_priorite_regen()</a></code>), <strong>gel tardif</strong> (pression station <code>R7</code>/<code>r7_gel_days</code> croisée avec <code>frost_late</code> par essence — l’axe <strong>différencie</strong> les essences), et <strong>ombre</strong> <em>optionnelle</em> (densité de couvert par UGF via <code>cover_col</code>, ou <code>lai_col</code> du pipeline converti par Beer-Lambert, vs <code>shade_tol</code> ; omise sinon, <code>shade_tol</code> servant de départage). <code>confidence</code> propagée (non fondue dans le score), invasives exclues par défaut, NA-safe, déterministe.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.161.0" id="nemeton-01610-2026-07-16">nemeton 0.161.0 (2026-07-16)<a class="anchor" aria-label="anchor" href="#nemeton-01610-2026-07-16"></a></h2>
 <div class="section level4">

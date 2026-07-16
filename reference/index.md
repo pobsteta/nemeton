@@ -886,6 +886,12 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
 - [`indice_priorite_regen()`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md)
   : Regeneration priority index (spec 027 L3)
 
+- [`regen_rank_species()`](https://pobsteta.github.io/nemeton/reference/regen_rank_species.md)
+  : Rank the top-N regeneration species per management unit
+
+- [`regen_rank_to_wide()`](https://pobsteta.github.io/nemeton/reference/regen_rank_to_wide.md)
+  : Pivot a species ranking to one row per unit (wide)
+
 - [`regen_species_choices()`](https://pobsteta.github.io/nemeton/reference/regen_species_choices.md)
   : Species choices for the reGénération target-species selector
 
