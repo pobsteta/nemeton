@@ -1374,6 +1374,37 @@ côté enfant/parent) — 31 PASS avec cgroup réel. Câblage app cadré dans
 brief verrou boutons + infobulle Forçage inchangé. Voir mémoire
 `project_reconfort_oom_isolation`.
 
+### 2026-07-16 — v0.161.0 : normalisation 0-100 de tous les indicateurs, R6 à la source (spec 038)
+
+Réponse au brief app `brief-nemeton-normalisation-r6.md` : *« intégrer tous les
+indicateurs au score, donc normaliser dès le calcul »*. R6 (sensibilité micro) et
+R7 (gel) manquaient au score de famille (`create_family_index` ne prenait que
+R1-R5). Cause : `normalize_indicator()` a un **repli naïf** `clamp(0,100)` ; la
+reGénération persiste `sensibilite` = **z-score projet-relatif non borné** que l'app
+injectait dans `indicateur_r6_sensibilite` → mutilé par le clamp.
+
+Décision **2.a (normaliser à la source)** retenue (recommandation du brief) :
+
+- **`regen_sensibilite()`** (`R/regen_engines.R`) persiste `sensibilite_score`
+  borné 0-100 (haut = favorable), via le helper `.regen_sensibilite_score()` qui
+  réutilise la formule ET les échelles `.MICRO_BOUNDS$r6` de
+  `indicateur_r6_sensibilite()` (source unique) sur les mêmes ΔT°max/ΔVPD. Calculé
+  chemin engine (après le z-score) et chemin precomputed (dérivé si absent, porté
+  verbatim si fourni). Le z-score `sensibilite` reste la base du **rang**.
+- **`normalize_indicator()`** (`R/normalization.R`) : cases explicites
+  R6 (`indicateur_r6_sensibilite`/`R6`/`sensibilite_score`) et R7
+  (`indicateur_r7_gel`/`R7`) → passthrough clamp, **sans inversion** (≠ R5/T3).
+- **Filet 2.c** : registre `.NORMALIZE_NATIVE_0_100` (23 indicateurs 0-100 natifs) ;
+  tout indicateur **connu** (`get_all_column_names()`) tombant au repli naïf sans y
+  être déclaré émet un `cli_warn` → détecte les futurs oublis. Test de couverture :
+  aucun des 31+ indicateurs n'avertit.
+
+Rétro-compatible (z-score/rang inchangés, aucun indicateur renormalisé
+différemment). Tests : `test-regen-engines.R` +4 (score borné, monotone, NA-safe,
+verbatim), `test-normalization.R` +6 (R6/R7 bornes+direction, couverture, garde).
+Spec `specs/038-normalisation-indicateurs/`. **Suivi app** (règle 11, après release
+cœur) : injecter `sensibilite_score` + intégrer R6/R7 au score — brief §5.
+
 ### 2026-07-15 — v0.160.0 : accesseurs point E-OBS pour les graphiques au clic (spec 036)
 
 Livraison cœur de la [spec 036](specs/036-eobs-click-graphs/spec.md) — la carte

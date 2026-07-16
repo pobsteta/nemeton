@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.161.0] - 2026-07-16
+
+### Changed
+- Normalisation 0-100 de tous les indicateurs (spec 038). `regen_sensibilite()`
+  persiste `sensibilite_score` (R6 borné 0-100, high = favorable) réutilisant les
+  échelles de `indicateur_r6_sensibilite()`, en parallèle du z-score `sensibilite`
+  gardé pour le rang. `normalize_indicator()` gagne des cases explicites R6/R7
+  (passthrough clamp, pas d'inversion) et un garde-fou (`.NORMALIZE_NATIVE_0_100`)
+  qui avertit si un indicateur connu retombe sur le repli naïf. Rétro-compatible.
+
 ## [0.160.0] - 2026-07-15
 
 ### Added

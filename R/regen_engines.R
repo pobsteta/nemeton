@@ -20,8 +20,20 @@
 .REGEN_COLS_HYDRIQUE <- c("njstress", "istress", "rew_min", "deb_stress")
 .REGEN_COLS_EXPO <- c("tmax_moyenne", "tmax_canicule", "vpd_moyenne",
                       "vpd_canicule", "d_tmax", "d_vpd", "sensibilite",
-                      "rang_sensibilite", "robustesse", "signal_robuste",
-                      "couverture_pct")
+                      "sensibilite_score", "rang_sensibilite", "robustesse",
+                      "signal_robuste", "couverture_pct")
+
+# Score de sensibilité microclimatique borné 0-100 (haut = favorable = peu
+# sensible), réutilisant la formule et les échelles de `indicateur_r6_sensibilite()`
+# (`.MICRO_BOUNDS$r6`, source unique) sur les mêmes ΔT°max / ΔVPD que la
+# reGénération produit. Sert de valeur R6 normalisée pour le score de famille,
+# en parallèle du z-score `sensibilite` conservé pour le rang (spec 038).
+# NA-safe : un delta NA propage un score NA.
+.regen_sensibilite_score <- function(d_tmax, d_vpd, bounds = .MICRO_BOUNDS$r6) {
+  sT <- pmin(1, pmax(0, d_tmax / bounds[["scale_t"]]))
+  sV <- pmin(1, pmax(0, d_vpd  / bounds[["scale_v"]]))
+  100 * (1 - (0.5 * sT + 0.5 * sV))
+}
 
 # Normalise un argument per-UGF pour biljou_run_grid(), spec 035 D6.
 #
@@ -532,8 +544,12 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #'
 #' @return `units` with the §7 exposure columns (`tmax_moyenne`,
 #'   `tmax_canicule`, `vpd_moyenne`, `vpd_canicule`, `d_tmax`, `d_vpd`,
-#'   `sensibilite`, `rang_sensibilite`, `robustesse`, `signal_robuste`,
-#'   `couverture_pct`), plus `parcelle_sensible` / `priorite`.
+#'   `sensibilite`, `sensibilite_score`, `rang_sensibilite`, `robustesse`,
+#'   `signal_robuste`, `couverture_pct`), plus `parcelle_sensible` / `priorite`.
+#'   `sensibilite` is the project-relative z-score driving the rank;
+#'   `sensibilite_score` is the bounded 0-100 R6 value (high = favorable, low
+#'   sensitivity) for the family score, sharing the scales of
+#'   [indicateur_r6_sensibilite()] (spec 038).
 #' @seealso [indice_priorite_regen()], [microclimate_detect_years()],
 #'   [pai_depuis_nuage()]
 #' @export
@@ -566,6 +582,13 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
     }
     if ("sensibilite" %in% names(units) && !"rang_sensibilite" %in% names(units)) {
       units$rang_sensibilite <- rank(-units$sensibilite, ties.method = "min")
+    }
+    # Score R6 normalisé 0-100 dérivé des mêmes ΔT°max/ΔVPD (spec 038). Dérivé
+    # seulement s'il n'a pas été fourni tel quel dans `precomputed`.
+    if (all(c("d_tmax", "d_vpd") %in% names(units)) &&
+        !"sensibilite_score" %in% names(units)) {
+      units$sensibilite_score <- round(
+        .regen_sensibilite_score(units$d_tmax, units$d_vpd), 1)
     }
     return(units)
   }
@@ -715,6 +738,11 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   units$couverture_pct <- round(100 * ex_ref$cover, 0)
 
   units$sensibilite      <- round(z(units$d_tmax) + z(units$d_vpd), 2)
+  # Score R6 normalisé 0-100 (haut = favorable), en parallèle du z-score qui
+  # reste la base du rang. Absolu (bornes .MICRO_BOUNDS$r6), pas projet-relatif,
+  # donc consommable directement par le score de famille (spec 038).
+  units$sensibilite_score <- round(
+    .regen_sensibilite_score(units$d_tmax, units$d_vpd), 1)
   units$rang_sensibilite <- rank(-units$sensibilite, na.last = "keep", ties.method = "min")
   seuil <- stats::quantile(units$sensibilite, 2 / 3, na.rm = TRUE)
   units$parcelle_sensible <- units$sensibilite >= seuil
