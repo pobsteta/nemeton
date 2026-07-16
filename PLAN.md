@@ -1374,6 +1374,35 @@ côté enfant/parent) — 31 PASS avec cgroup réel. Câblage app cadré dans
 brief verrou boutons + infobulle Forçage inchangé. Voir mémoire
 `project_reconfort_oom_isolation`.
 
+### 2026-07-16 — v0.162.0 : `regen_rank_species()` top-N essences par UGF (spec 039)
+
+Réponse au brief `brief-nemeton-regen-rank-species.md` : proposer par UGF les 3
+essences les plus pertinentes pour la régénération. Brique cœur **déterministe**
+(le narratif IA reste app, phase 2). `R/regen_rank_species.R`, 2 fonctions
+exportées :
+
+- `regen_rank_species(units, species_pool, top_n, weights, exclude_invasive,
+  region, cover_col, lai_col, extinction_k, id_col, include_atlas)` → data.frame
+  long (UGF × rang) : `ug_id, rank, species_code, label, type, suitability,
+  limiting_factor, confidence, invasif`.
+- `regen_rank_to_wide()` → une ligne/UGF (`essence_r`/`score_r`/`label_r`/`facteur_r`).
+
+Adéquation = moyenne pondérée (renormalisée sur axes présents) de 3 axes 0-100 :
+**chaleur & sécheresse** (réutilise `indice_priorite_regen()` + REW édaphique vs
+`drought_tol`, loi du minimum), **gel tardif** (pression `R7`/`r7_gel_days` ×
+`frost_late` par essence), **ombre** optionnelle (densité couvert via `cover_col`
+ou `lai_col` converti Beer-Lambert vs `shade_tol` ; sinon omise + départage).
+
+**Découverte (verify source of truth)** : le brief supposait 2 lacunes data
+(§3.b trait gel par essence, §3.c). Or `european_species_tolerances.csv` a **déjà**
+`frost_late`/`frost_early` (fagus=1 sensible, chêne=4 résistant) et `shade_tol` —
+donc l'axe gel **différencie** les essences (mieux que le repli P1 uniforme du
+brief). Décisions actées via AskUserQuestion : gel par `frost_late` ; ombre
+optionnelle via `cover_col`/`lai_col` (le pipeline produit déjà le LAI/PAI —
+remarque de Pascal), sinon omise. `confidence` propagée (pas fondue), déterministe,
+NA-safe. 10 tests (`test-regen-rank-species.R`, valeurs calc. main). Spec 039.
+**Suivi app** (règle 11) : top-3 fiche parcelle + carte, puis conseil IA — brief §7.
+
 ### 2026-07-16 — v0.161.0 : normalisation 0-100 de tous les indicateurs, R6 à la source (spec 038)
 
 Réponse au brief app `brief-nemeton-normalisation-r6.md` : *« intégrer tous les

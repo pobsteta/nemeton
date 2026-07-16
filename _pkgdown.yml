@@ -454,6 +454,8 @@ reference:
     - indicateur_r7_gel
     - indicateur_w4_vpd
     - indice_priorite_regen
+    - regen_rank_species
+    - regen_rank_to_wide
     - regen_species_choices
     - european_species_tolerances
     - map_tfv_to_species_class

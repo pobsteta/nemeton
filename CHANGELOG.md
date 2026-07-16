@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.162.0] - 2026-07-16
+
+### Added
+- `regen_rank_species()` and `regen_rank_to_wide()` — deterministic per-UGF top-N
+  regeneration species ranking (spec 039). Suitability aggregates heat/dryness
+  (reusing `indice_priorite_regen()`), late frost (station pressure × per-species
+  `frost_late`, which differentiates species), and an optional shade axis (per-UGF
+  canopy density via `cover_col` or a Beer-Lambert–converted `lai_col`, vs
+  `shade_tol`). Propagates `confidence`, excludes invasives by default, NA-safe.
+
 ## [0.161.0] - 2026-07-16
 
 ### Changed
