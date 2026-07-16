@@ -1726,3 +1726,60 @@ test_that("create_family_index: severe R5 dieback LOWERS famille_risque", {
   # severe dieback must pull the family score DOWN, not up
   expect_lt(sev$famille_risque, good$famille_risque)
 })
+
+
+# --- R6 / R7 : normalisation 0-100 explicite (spec 038) --------------------
+# R6 (sensibilité microclimatique) et R7 (gel tardif) produisent déjà 0-100
+# (haut = favorable). normalize_indicator les passe explicitement (clamp), sans
+# retomber sur le repli naïf, et sans les inverser (≠ R5/T3).
+
+test_that("normalize_indicator passes R6 through 0-100 (high = favorable)", {
+  expect_equal(normalize_indicator("indicateur_r6_sensibilite", c(0, 55, 100)),
+               c(0, 55, 100))
+  expect_equal(normalize_indicator("R6", c(-10, 130)), c(0, 100))   # clamp
+  expect_equal(normalize_indicator("sensibilite_score", c(32.5, 7.5)), c(32.5, 7.5))
+})
+
+test_that("normalize_indicator passes R7 through 0-100 (high = favorable)", {
+  expect_equal(normalize_indicator("indicateur_r7_gel", c(0, 40, 100)),
+               c(0, 40, 100))
+  expect_equal(normalize_indicator("R7", c(-5, 105)), c(0, 100))    # clamp
+})
+
+test_that("normalize_indicator does NOT invert R6/R7 (unlike R5/T3)", {
+  # une valeur haute reste haute (favorable), pas de 100 - values
+  expect_equal(normalize_indicator("indicateur_r6_sensibilite", 80), 80)
+  expect_equal(normalize_indicator("indicateur_r7_gel", 80), 80)
+})
+
+
+# --- Filet 2.c : couverture de normalisation (spec 038) --------------------
+# Chaque indicateur de INDICATOR_FAMILIES doit avoir une règle 0-100 explicite
+# (ref_max, case spécial) OU être déclaré 0-100 natif dans .NORMALIZE_NATIVE_0_100.
+# Sinon, normalize_indicator retombe sur le repli naïf et AVERTIT.
+
+test_that("no known indicator triggers the naive-fallback warning (spec 038)", {
+  cols <- get_all_column_names()
+  expect_true(length(cols) >= 31)
+  for (col in cols) {
+    # aucune colonne d'indicateur connue ne doit émettre l'avertissement de repli
+    expect_no_warning(normalize_indicator(col, c(0, 50, 100)))
+  }
+})
+
+test_that("normalize_indicator warns on a known indicator left unnormalized", {
+  # simule un futur oubli : un indicateur "connu" (via get_all_column_names mocké)
+  # qui n'a ni ref_max, ni case spécial, ni déclaration 0-100 native -> il tombe
+  # au repli naïf et DOIT avertir. Mock d'une fonction (robuste).
+  orig <- get_all_column_names()                     # capturé avant le mock (pas de récursion)
+  testthat::local_mocked_bindings(
+    get_all_column_names = function() c(orig, "indicateur_zz_oubli")
+  )
+  expect_warning(normalize_indicator("indicateur_zz_oubli", c(30, 70)),
+                 "no explicit 0-100 rule")
+})
+
+test_that("normalize_indicator stays silent for a non-indicator column name", {
+  # un nom qui n'est pas un indicateur connu ne déclenche pas le filet
+  expect_no_warning(normalize_indicator("some_derived_column", c(0, 50, 100)))
+})

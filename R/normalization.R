@@ -505,6 +505,27 @@ invert_indicator <- function(data,
 }
 
 
+# Indicateurs qui produisent NATIVEMENT une valeur 0-100 (haut = favorable) et
+# pour lesquels le repli clamp(0,100) EST la normalisation correcte. Déclarés
+# explicitement (spec 038) pour que le garde-fou de `normalize_indicator()`
+# distingue un passthrough légitime d'un indicateur connu tombé au repli sans
+# règle (le bug R6 z-score). Les indicateurs à `ref_max` ou à case spécial
+# (c2/w3/s1/s2/r5/t3/b4/l3/r6/r7) n'atteignent JAMAIS le repli et ne figurent
+# donc pas ici. TOUT nouvel indicateur 0-100 natif doit être ajouté à cette liste.
+.NORMALIZE_NATIVE_0_100 <- c(
+  "indicateur_b1_protection", "indicateur_b2_structure", "indicateur_b3_connectivite",
+  "indicateur_w4_vpd",
+  "indicateur_a1_couverture", "indicateur_a2_qualite_air", "indicateur_a3_microclimat",
+  "indicateur_a4_tamponnement", "indicateur_a5_rafraichissement",
+  "indicateur_f1_fertilite", "indicateur_f2_erosion",
+  "indicateur_l1_sylvosphere", "indicateur_l2_fragmentation",
+  "indicateur_t1_anciennete", "indicateur_t2_changement",
+  "indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse",
+  "indicateur_r4_abroutissement",
+  "indicateur_p3_qualite_bois",
+  "indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite"
+)
+
 #' Normalize a single indicator to 0-100 scale
 #'
 #' Converts raw indicator values to a common 0-100 scale using
@@ -566,6 +587,23 @@ normalize_indicator <- function(indicator, values) {
     return(pmin(100, pmax(0, 100 - values)))
   }
 
+  # R6 microclimate sensitivity: indicateur_r6_sensibilite() and the reGénération
+  # `sensibilite_score` already produce a bounded 0-100 (high = favorable = less
+  # sensitive, cf. .MICRO_BOUNDS$r6). Explicit passthrough clamp so R6 never falls
+  # back to the naive branch — the historical bug was the reGénération *z-score*
+  # (`sensibilite`, unbounded ~[-4,4]) being injected here and mangled; the fix is
+  # to feed the 0-100 `sensibilite_score` instead (spec 038).
+  if (indicator %in% c("indicateur_r6_sensibilite", "R6", "sensibilite_score")) {
+    return(pmin(100, pmax(0, values)))
+  }
+
+  # R7 late frost: indicateur_r7_gel() already 0-100 (high = favorable, little
+  # late-frost exposure). Explicit passthrough clamp, no longer relying on the
+  # naive fallback (spec 038).
+  if (indicator %in% c("indicateur_r7_gel", "R7")) {
+    return(pmin(100, pmax(0, values)))
+  }
+
   # B4 spectral alpha diversity (Shannon of spectral species): high = good.
   # Provisional upper bound log(nbclusters) with the biodivMapR default of
   # 50 clusters (spec 028 D3 — recalibrate empirically after the first
@@ -585,6 +623,17 @@ normalize_indicator <- function(indicator, values) {
   if (!is.null(ref_max)) {
     values <- pmin(100, pmax(0, values / ref_max * 100))
   } else {
+    # Repli clamp(0,100) : correct pour les indicateurs déjà 0-100 (déclarés dans
+    # .NORMALIZE_NATIVE_0_100). Filet spec 038 : un indicateur CONNU (colonne de
+    # INDICATOR_FAMILIES) qui tombe ici sans être déclaré 0-100 natif manque
+    # probablement d'une règle de normalisation (le bug R6 z-score) — on avertit
+    # au lieu de mutiler le score en silence.
+    if (indicator %in% get_all_column_names() &&
+        !indicator %in% .NORMALIZE_NATIVE_0_100) {
+      cli::cli_warn(c(
+        "normalize_indicator(): no explicit 0-100 rule for {.val {indicator}}; using naive clamp(0, 100).",
+        i = "Add a case in {.fun normalize_indicator} or declare it in {.code .NORMALIZE_NATIVE_0_100} (spec 038)."))
+    }
     values <- pmin(100, pmax(0, values))
   }
 

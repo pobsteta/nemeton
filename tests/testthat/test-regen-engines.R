@@ -436,6 +436,38 @@ test_that("regen_sensibilite keeps an explicit d_tmax over the derived one", {
   expect_equal(out$d_tmax, c(99, 99))
 })
 
+test_that("regen_sensibilite derives a bounded 0-100 sensibilite_score (spec 038)", {
+  u <- .re_units(3)
+  out <- regen_sensibilite(u, precomputed = list(
+    tmax_moyenne = c(26, 28, 30), tmax_canicule = c(30, 34, 39),
+    vpd_moyenne = c(1.0, 1.2, 1.5), vpd_canicule = c(1.8, 2.4, 3.2)))
+  # d_tmax = c(4,6,9), d_vpd = c(0.8,1.2,1.7) ; bornes .MICRO_BOUNDS$r6 = (8, 2).
+  # sT = c(.5,.75,1) ; sV = c(.4,.6,.85) ; score = 100*(1 - .5*(sT+sV)).
+  expect_equal(out$sensibilite_score, c(55, 32.5, 7.5), tolerance = 1e-6)
+  expect_true(all(out$sensibilite_score >= 0 & out$sensibilite_score <= 100))
+  # Monotone décroissant avec la sensibilité (delta ↑ ⇒ score ↓).
+  expect_true(all(diff(out$sensibilite_score) < 0))
+})
+
+test_that("regen_sensibilite sensibilite_score is NA-safe and clamps negatives", {
+  u <- .re_units(2)
+  out <- regen_sensibilite(u, precomputed = list(
+    tmax_moyenne = c(26, NA), tmax_canicule = c(24, 34),   # UGF1: d_tmax<0, UGF2: NA
+    vpd_moyenne = c(1.0, 1.2), vpd_canicule = c(0.5, NA)))
+  # UGF1 : d_tmax=-2, d_vpd=-0.5 -> sT=sV=0 -> score=100 (peu sensible).
+  expect_equal(out$sensibilite_score[1], 100)
+  expect_true(is.na(out$sensibilite_score[2]))            # NA propagé, pas d'erreur
+})
+
+test_that("regen_sensibilite carries a precomputed sensibilite_score verbatim", {
+  u <- .re_units(2)
+  out <- regen_sensibilite(u, precomputed = list(
+    tmax_moyenne = c(26, 28), tmax_canicule = c(30, 34),
+    vpd_moyenne = c(1.0, 1.2), vpd_canicule = c(1.8, 2.4),
+    sensibilite_score = c(42, 71)))
+  expect_equal(out$sensibilite_score, c(42, 71))          # fourni -> non recalculé
+})
+
 test_that("regen_sensibilite output feeds indice_priorite_regen", {
   u <- .re_units(2)
   u <- regen_sensibilite(u, precomputed = list(sensibilite = c(80, 20)))

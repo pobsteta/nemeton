@@ -99,9 +99,12 @@ ERA5 split is internal to \code{mcera5}.}
 \value{
 \code{units} with the §7 exposure columns (\code{tmax_moyenne},
 \code{tmax_canicule}, \code{vpd_moyenne}, \code{vpd_canicule}, \code{d_tmax},
-\code{d_vpd}, \code{sensibilite}, \code{rang_sensibilite}, \code{robustesse},
-\code{signal_robuste}, \code{couverture_pct}), plus \code{parcelle_sensible} /
-\code{priorite}.
+\code{d_vpd}, \code{sensibilite}, \code{sensibilite_score}, \code{rang_sensibilite},
+\code{robustesse}, \code{signal_robuste}, \code{couverture_pct}), plus
+\code{parcelle_sensible} / \code{priorite}. \code{sensibilite} is the
+project-relative z-score driving the rank; \code{sensibilite_score} is the bounded
+0-100 R6 value (high = favorable, low sensitivity) for the family score, sharing
+the scales of \code{\link{indicateur_r6_sensibilite}} (spec 038).
 }
 \description{
 Per-unit summer under-canopy exposure (T°max, VPD, canopy buffering,
