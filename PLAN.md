@@ -926,6 +926,16 @@ sourcée jugée suffisante.
       `eobs_summer_series` / `eobs_monthly_climatology` / `eobs_trend_fit`
       (**nemeton v0.160.0**) ; brief app `brief-nemetonshiny.md`. Câblage livré app
       **nemetonshiny@0bebc6d7 (v0.107.0)**. — 2026-07-16
+- [x] **Spec 039 — recommandation d'essences reGénération (top-N + conseil IA)** :
+      approche hybride = classement DÉTERMINISTE cœur + mise en prose IA. Cœur =
+      `regen_rank_species` / `regen_rank_to_wide` + normalisation R6 `sensibilite_score`
+      (spec 038), **nemeton v0.162.0**. App : **P1** top-3 déterministe par UGF dans la
+      fiche parcelle (score d'adéquation, facteur limitant, confiance, invasives
+      écartées ; wrapper `regeneration_species_ranking` NA/erreur-safe) —
+      **nemetonshiny@38b85d00 (v0.107.16)** ; **P2** sidebar « Affiner la reGénération
+      avec l'IA » (le LLM met en prose le top-3 + station par profil expert, garde-fou
+      anti-essence-hors-classement) — **nemetonshiny@ad77876f (v0.107.17)**. Plancher
+      app `Imports: nemeton (>= 0.162.0)`. — 2026-07-16
 
 Les deux briefs app du volet moteur spec 027 sont désormais clos ; **plus aucun
 brief app en attente sur ce chantier**.
@@ -1402,6 +1412,17 @@ optionnelle via `cover_col`/`lai_col` (le pipeline produit déjà le LAI/PAI —
 remarque de Pascal), sinon omise. `confidence` propagée (pas fondue), déterministe,
 NA-safe. 10 tests (`test-regen-rank-species.R`, valeurs calc. main). Spec 039.
 **Suivi app** (règle 11) : top-3 fiche parcelle + carte, puis conseil IA — brief §7.
+
+**Suite — 2026-07-16 : spec 039 close côté app.** Approche hybride livrée : **P1**
+top-3 déterministe par UGF dans la fiche parcelle de reGénération (score
+d'adéquation 0-100, facteur limitant, confiance ; invasives écartées ; wrapper
+`regeneration_species_ranking` NA/erreur-safe) — **nemetonshiny@38b85d00
+(v0.107.16)** ; **P2** sidebar repliable « Affiner la reGénération avec l'IA » — le
+LLM ne classe pas, il met en prose le top-3 déterministe + les conditions de
+station par UGF selon le profil expert, avec garde-fou anti-essence-hors-classement
+— **nemetonshiny@ad77876f (v0.107.17)**. Plancher app `Imports: nemeton
+(>= 0.162.0)`. Spec 039 close (cœur + app). Résidu ouvert : recalibrage terrain des
+bornes d'adéquation de `regen_rank_species` (validation de terrain à venir).
 
 ### 2026-07-16 — v0.161.0 : normalisation 0-100 de tous les indicateurs, R6 à la source (spec 038)
 
