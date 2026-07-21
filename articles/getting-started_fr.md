@@ -659,5 +659,5 @@ sessionInfo()
 #> [55] xfun_0.60            tibble_3.3.1         tidyselect_1.2.1    
 #> [58] knitr_1.51           farver_2.1.2         htmltools_0.5.9     
 #> [61] rmarkdown_2.31       compiler_4.6.1       S7_0.2.2            
-#> [64] sp_2.2-1
+#> [64] sp_2.2-3
 ```

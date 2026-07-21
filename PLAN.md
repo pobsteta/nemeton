@@ -1757,6 +1757,37 @@ cœur).
 
 ## Journal
 
+### 2026-07-21 — App `nemetonshiny` v0.111.2 : `base::%in%` sur SpatRaster (masque no-op) — cœur audité, non affecté
+
+Remontée depuis la session app (`nemetonshiny@59522747`, cycle dev
+0.111.2.9000) : sur la carte **Accessibilité**, les zones hors forêt
+étaient peintes en **blanc opaque** au lieu d’être transparentes, sur
+les 4 couches (skidder / porteur / camion DFCI / classes de débardage).
+Cause : le masquage `hors_foret` était résolu par **`base::%in%`** —
+l’app n’importe aucune méthode S4 de terra dans son NAMESPACE — qui
+renvoie `FALSE` sur un `SpatRaster` → **masque no-op silencieux**.
+Corrigé côté app via
+[`terra::values()`](https://rspatial.github.io/terra/reference/values.html)
+/
+[`terra::setValues()`](https://rspatial.github.io/terra/reference/setValues.html),
+plus couleurs de classes sémantiques (fin de l’`inaccessible` peint en
+vert sur la carte DFCI) et légende traduite. Vérifié sur rasters réels
+(projet Chastel-Nouvel) : ~33 % de pixels transparents contre 0 % avant.
+
+**Audit cœur (aucun changement) :** les deux seuls sites cœur où `%in%`
+porte sur un `SpatRaster` qualifient déjà l’opérateur et documentent le
+piège — `R/indicators-naturalness.R:377` (`terra::\`%in%\`(r,
+forest_class)`) et`R/fordead_postprocess.R:131`(vecteur explicite). Tous les autres`%in%`du cœur portent sur des vecteurs déjà extraits (`terra::values()`,`safe_extract()`,`terra::app()`) ou sur des`names()`— donc sûrs.`NAMESPACE`n'importe de terra que`clamp`/`extract`/`global`/`rasterize`/`terrain`: la règle « toujours préfixer les opérateurs S4 de terra » reste la seule protection. Mémoire :`project_terra_s4_operators\`.
+
+**Dette relevée (règle \#1) :** `run_accessibility()` et toute la
+logique métier d’accessibilité (~1050 lignes :
+`R/service_accessibility.R` + `R/mod_accessibility.R`) vivent
+**entièrement dans l’app**, sans **aucun** appel `nemeton::`. C’est du
+calcul métier (pente → classes de débardage, desserte DFCI, MNT haute
+résolution) qui devrait être porté côté cœur, comme les moteurs
+reGénération. À cadrer dans une spec dédiée avant d’épaissir la carte
+Accessibilité.
+
 ### 2026-07-15 — v0.159.0 : `eobs_bivariate_n()` (invalidation cache bivarié)
 
 Sur Reconfort, la carte bivariée E-OBS affichait **3×3 = 9 classes** au
