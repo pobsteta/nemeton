@@ -1354,12 +1354,32 @@ que `clamp`/`extract`/`global`/`rasterize`/`terrain` : la règle « toujours pr�
 les opérateurs S4 de terra » reste la seule protection. Mémoire :
 `project_terra_s4_operators`.
 
-**Dette relevée (règle #1) :** `run_accessibility()` et toute la logique métier
-d'accessibilité (~1050 lignes : `R/service_accessibility.R` + `R/mod_accessibility.R`)
-vivent **entièrement dans l'app**, sans **aucun** appel `nemeton::`. C'est du calcul
-métier (pente → classes de débardage, desserte DFCI, MNT haute résolution) qui
-devrait être porté côté cœur, comme les moteurs reGénération. À cadrer dans une spec
-dédiée avant d'épaissir la carte Accessibilité.
+**Rectificatif (2026-07-21, même jour) — la « dette règle #1 » annoncée ici
+n'existe pas.** La première rédaction de cette entrée affirmait que
+`run_accessibility()` et ~1050 lignes de logique métier d'accessibilité vivaient
+dans l'app en violation de la règle #1. Conclusion tirée d'un `grep "nemeton::"`
+resté muet, **sans lecture du fichier** — c'est faux :
+
+- `R/service_accessibility.R` est un **adaptateur** autour du package amont
+  **`foretaccess`** (réimplémentation R de Sylvaccess/INRAE, `pobsteta/foretaccess`,
+  déclaré en `Imports:` + `Remotes:` de l'app) ; son en-tête invoque explicitement
+  les règles 1/2. Le métier — pente, propagation least-cost, classes de débardage,
+  masque DFCI — est **dans `foretaccess`**, pas dans l'app, qui se borne à résoudre
+  l'AOI, acquérir la desserte, appeler `preprocess()` + les moteurs et écrire les
+  `.tif`.
+- `R/mod_accessibility.R` (600 lignes) est de l'UI/serveur Shiny — à sa place.
+- « Zéro appel `nemeton::` » ne prouvait rien : le cœur amont, ici, s'appelle
+  `foretaccess`.
+
+**Question ouverte (pas une dette) :** `nemeton` enveloppe déjà `opencanopy` pour
+les CHM (spec 005) ; par symétrie, l'intégration `foretaccess` pourrait passer par
+le cœur — pertinent surtout si l'accessibilité doit un jour nourrir un indicateur
+(S1 routes, exploitabilité côté P). Aujourd'hui **aucun indicateur ne la consomme**
+(non vérifié en détail), donc rien ne l'impose. À trancher le jour où un indicateur
+en dépendra.
+
+Leçon (cf. mémoire `feedback_verify_source_of_truth`) : ne pas conclure à une
+violation d'architecture sur la foi d'un grep — lire le fichier.
 
 ### 2026-07-15 — v0.159.0 : `eobs_bivariate_n()` (invalidation cache bivarié)
 
