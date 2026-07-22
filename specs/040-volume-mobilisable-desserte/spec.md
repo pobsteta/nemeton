@@ -2,7 +2,11 @@
 
 **Version** : 1.0.0
 **Date**    : 2026-07-22
-**Statut**  : **Cadré — non implémenté.**
+**Statut**  : **Jalon « taux saisi » livré (v0.163.0)** — lot 4 seul ; lots 1-3
+(source SER, taux IFN, cascade de repli) différés. Décision Pascal 2026-07-22.
+Correction de périmètre : le lot 1 ne sert qu'à keyer la table IFN, il n'est
+**pas** nécessaire au jalon (l'argument `ser` n'est pas consulté avec un taux
+saisi).
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — `volume_mobilisable()` + table de taux de prélèvement.
 **Cible aval** : `foretaccess` — argument `volume_champ` de `calculer_flux()`,
