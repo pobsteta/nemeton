@@ -1389,9 +1389,15 @@ est un chantier statistique à part entière — à arbitrer avant engagement. L
 expose `IGNF_ACCESSIBILITE-PHYSIQUE-FORETS-:acces_skidder` / `acces_porteur`
 (projet **ACCESSFOR**, IGN, édition 2025-01-01, + variante masque Forêt v3) —
 cartographie nationale de l'accessibilité aux engins d'exploitation, **mêmes noms
-d'engins que les moteurs `foretaccess`**, servie en WFS. Usages possibles :
-référence de validation externe des moteurs, et/ou repli face au blocage perf
-(692 s sur 30 parcelles). Rien à faire côté `nemeton` (spec 040 §12).
+d'engins que les moteurs `foretaccess`**, servie en WFS. En échantillonnant la
+couche (`GetFeature`, dép. 01/08/09) plutôt qu'en la supposant : les libellés sont
+« Accessible - Classe de débardage 1 : 0-250 m », 2 : 250-500, 3 : 500-1000,
+4 : 1000-1500 — **mêmes bornes** que `classes_debardage()` (0-250 … > 2000). La
+comparaison est donc quasi terme à terme. Brief de validation livré :
+`specs/brief-foretaccess-accessfor.md` (correspondance des classes, pièges du
+masque forêt — BD Forêt V2 vs MASQUE-FORETV3 — et de la rasterisation catégorielle
+en plus proche voisin, matrice de confusion attendue). Rien à faire côté `nemeton`
+(spec 040 §12).
 
 Restent ouvertes : D3 politique NA, D5 repli CHM, **D6 granularité réellement
 tenable de la maille essence × SER** (86 SER × ~30 essences → cases à faible

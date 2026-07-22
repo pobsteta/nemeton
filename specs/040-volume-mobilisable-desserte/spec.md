@@ -311,5 +311,13 @@ immédiatement consommable. Deux usages possibles, à trancher hors de cette spe
 classe sur une AOI connue — Chastel-Nouvel), et/ou **repli** quand le calcul local
 est trop coûteux (cf. le blocage perf du brief desserte, 692 s sur 30 parcelles).
 
-→ **À transmettre à la session `foretaccess`**, avec le brief desserte. Rien à
-faire côté `nemeton`.
+Point décisif relevé en échantillonnant la couche (`GetFeature`) plutôt qu'en la
+supposant : les libellés ACCESSFOR sont
+« Accessible - Classe de débardage 1 : **0 - 250 m** », 2 : 250-500, 3 : 500-1000,
+4 : 1000-1500 — **mêmes bornes** que `classes_debardage()` de `foretaccess`
+(0-250, 250-500, 500-1000, 1000-1500, 1500-2000, > 2000). La comparaison est donc
+quasi terme à terme, ce qui rend la validation utile plutôt qu'anecdotique.
+
+→ **Transmis** : `specs/brief-foretaccess-accessfor.md` (cadrage complet de la
+comparaison — correspondance des classes, pièges de masque et de rasterisation,
+matrice de confusion attendue). Rien à faire côté `nemeton`.
