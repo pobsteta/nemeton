@@ -138,3 +138,59 @@ test_that("a non-sf input is refused", {
                                   horizon_ans = 1),
                "sf object")
 })
+
+# --- Mode table IFN (spec 040, D4 refermée) --------------------------
+
+.vm_units_espar <- function(espar = c("09", "62")) {
+  u <- .vm_units(c(100, 100))
+  u$espar <- espar
+  u
+}
+
+test_that("taux_prelevement NULL resolves the rate from the IFN table", {
+  u <- .vm_units_espar()
+  out <- volume_mobilisable(u, unite = "m3_ha", horizon_ans = 10)
+  expect_true(all(out$volume_mobilisable > 0))
+  # L'epicea (62) est plus preleve que le hetre (09) -> volume mobilisable
+  # superieur a P1 egal.
+  expect_gt(out$volume_mobilisable[2], out$volume_mobilisable[1])
+})
+
+test_that("the mesh level actually used is reported, never silently", {
+  u <- .vm_units_espar()
+  out <- volume_mobilisable(u, unite = "m3_ha", horizon_ans = 10, ser = "C20")
+  niv <- attr(out, "niveau_prelevement")
+  expect_length(niv, 2L)
+  expect_true(all(niv %in% c("ser", "greco", "national")))
+})
+
+test_that("a SER-keyed rate differs from the national one", {
+  u <- .vm_units_espar("62")[1, ]
+  nat <- volume_mobilisable(u, unite = "m3_ha", horizon_ans = 1)
+  loc <- volume_mobilisable(u, unite = "m3_ha", horizon_ans = 1, ser = "C20")
+  expect_false(isTRUE(all.equal(nat$volume_mobilisable,
+                                loc$volume_mobilisable)))
+})
+
+test_that("table mode without a species column errors with a pointer", {
+  u <- .vm_units()
+  expect_error(volume_mobilisable(u, horizon_ans = 10), "espar")
+})
+
+test_that("an unknown species leaves NA and warns", {
+  u <- .vm_units_espar(c("09", "ZZZ"))
+  expect_warning(
+    out <- volume_mobilisable(u, unite = "m3_ha", horizon_ans = 10),
+    "no IFN harvest rate"
+  )
+  expect_false(is.na(out$volume_mobilisable[1]))
+  expect_true(is.na(out$volume_mobilisable[2]))
+})
+
+test_that("an explicit rate still bypasses the table entirely", {
+  u <- .vm_units_espar()
+  out <- volume_mobilisable(u, unite = "m3_ha", taux_prelevement = 2,
+                            horizon_ans = 1)
+  expect_equal(out$volume_mobilisable, c(200, 200), tolerance = 1e-6)
+  expect_null(attr(out, "niveau_prelevement"))
+})

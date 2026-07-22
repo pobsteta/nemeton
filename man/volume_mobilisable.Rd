@@ -5,8 +5,8 @@
 \title{Mobilisable timber volume for road-network sizing}
 \usage{
 volume_mobilisable(units, volume_col = "P1", unite = c("m3_total", "m3_ha"),
-  taux_prelevement = NULL, horizon_ans = NULL,
-  na_policy = c("na", "zero", "error"),
+  taux_prelevement = NULL, horizon_ans = NULL, espar_field = "espar",
+  ser = NULL, min_plac = 30, na_policy = c("na", "zero", "error"),
   column_name = "volume_mobilisable")
 }
 \arguments{
@@ -20,7 +20,18 @@ or \code{"m3_ha"} (for \code{reseau_desserte()} / \code{optimiser_reseau()}).}
 
 \item{taux_prelevement}{Harvest rate in m3/ha/year: a single number applied to
 every unit, or a numeric vector of \code{nrow(units)}. \code{NULL} (default)
-would select the not-yet-sourced IFN table and therefore errors.}
+resolves it per unit from the IFN table via
+\code{\link{ifn_taux_prelevement}}, which then requires \code{espar_field}.}
+
+\item{espar_field}{Name of the column holding the IFN species code, used only
+when \code{taux_prelevement} is \code{NULL}.}
+
+\item{ser}{SER code for the units, a single string, used only when
+\code{taux_prelevement} is \code{NULL}. \code{NULL} falls back to national
+rates.}
+
+\item{min_plac}{Minimum plots for an IFN mesh level to qualify, passed to
+\code{\link{ifn_taux_prelevement}}.}
 
 \item{horizon_ans}{Planning horizon in years. Required whenever
 \code{taux_prelevement} is supplied.}
@@ -66,9 +77,11 @@ so \code{horizon_ans} is required with it:
 \strong{has been} removed, not what \strong{should} be; sizing a road network on
 it assumes management carries on unchanged.
 
-The species x sylvoecoregion table (spec 040, D4) is \strong{not implemented
-yet}: \code{taux_prelevement = NULL} errors out rather than serve unsourced
-figures.
+\code{taux_prelevement = NULL} resolves the rate from the IFN species x
+sylvoecoregion table (\code{\link{ifn_taux_prelevement}}), which requires
+\code{espar_field} on \code{units} — the IFN species code. The level actually
+used (SER, GRECO or national) is reported through the
+\code{niveau_prelevement} attribute of the returned object, never silently.
 }
 
 \examples{

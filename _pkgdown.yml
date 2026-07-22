@@ -131,6 +131,25 @@ reference:
     - indicateur_p3_qualite_bois
     - volume_mobilisable
 
+  - title: "References IFN par essence x sylvoecoregion (spec 040)"
+    desc: >
+      Volume sur pied et prelevement issus de l'inventaire forestier national,
+      avec cascade de repli SER -> GRECO -> national declarant le niveau atteint
+    contents:
+    - ifn_volume_essence_ser
+    - ifn_volume_reference
+    - ifn_prelevement_essence_ser
+    - ifn_taux_prelevement
+
+  - title: "Acces aux donnees brutes IFN"
+    desc: >
+      Telechargement et chargement de l'export annuel de l'IGN
+      (Licence Ouverte Etalab v2.0)
+    contents:
+    - ifn_campagne_disponible
+    - ifn_telecharger
+    - ifn_charger
+
   - title: "Famille E : Energie & Climat"
     desc: "Potentiel bois-energie et evitement carbone"
     contents:
