@@ -1428,6 +1428,44 @@ Restent ouvertes : **D8** (le volume IFN sert-il à suppléer P1 en NDP 0 ?) et
 référentiel porte le nom latin, `european_species_tolerances()` porte
 `species_sci` — faisable, non fait).
 
+### 2026-07-22 — Spec 041 : D1 et D4 tranchées sur données réelles (Vercors)
+
+Lots 1-2 de la spec 041 exécutés sur l'emprise Quatre Montagnes (tuiles IGN
+LiDAR HD 2025, desserte BD TOPO V3, 341 tronçons). Scripts rejouables archivés
+dans `specs/041-desserte-lidar-alsroads/`.
+
+**D1 — chaîne d'installation mesurée** : ALSroads → lidR (**archivé CRAN le
+2026-06-09**, vivant sur GitHub) → rlas (idem) → EBImage (**Bioconductor**) →
+fftwtools → **libfftw3-dev** (bibliothèque système). Cinq niveaux, quatre
+écosystèmes. Mise en perspective vérifiée : `nemeton` porte déjà 12+ `Remotes`,
+`fasterRaster` (GRASS GIS), `whitebox` (binaire) et `reticulate` (Python) —
+FFTW3 est plus léger que GRASS. **Chaîne lourde mais proportionnée** ; un premier
+jugement de « coût disproportionné » de ma part reposait sur une norme générique
+de packages R, pas sur ce repo.
+
+**D4 — favorable avec réserves.** Volet A : 40/40 mesures, `DRIVABLEWIDTH`
+sentier **2,40 m** contre 5,25-5,85 m pour les classes carrossables,
+**p = 0,000242** ; le `SCORE` double le signal (36 contre 70-75). Volet B :
+l'ortho ne montre rien sous couvert, mais le MNT 20 cm recalculé par TIN sur les
+retours sol montre la largeur mesurée **épousant les bords de plateforme**.
+Sensibilité : largeur et classe **stables** de 1 m à 20 cm, score 75 → 96,4 en
+affinant `profile_resolution` à 0,2. Coût **47,3 s/tronçon** → ≈ **43 h** sur
+l'AOI de référence `foretaccess` : cache obligatoire.
+
+**Le piège évité, à retenir.** La première exécution portait sur `ROADWIDTH`
+(largeur du **corridor**) et non `DRIVABLEWIDTH` (chaussée) : sentier à 5,40 m,
+ordre inversé, p = 0,0125. La lecture qui s'imposait — « calibrage québécois non
+transposable, D4 échoue » — était plausible, chiffrée, **conforme à ce que le
+brief laissait attendre**, et fausse. Le brief mentionnait pourtant « largeur
+carrossable » ; je l'avais lu, résumé et recopié dans ma propre spec avant de
+coder l'autre colonne. Sixième occurrence du jour du même travers, la première
+attrapée avant de la rapporter comme un fait.
+
+Réserves restantes : justesse absolue **non mesurée** (pas de relevé terrain),
+n = 10/classe sur **une seule emprise** montagnarde, seuils québécois
+`drivable_width_thresholds = c(1, 5)` à recaler (**D7**), surcoût du MNT 20 cm à
+chiffrer (**D6**). Lots 3-4 non implémentés.
+
 ### 2026-07-22 — Spec 041 cadrée : desserte corrigée LiDAR (ALSroads)
 
 Part `nemeton` du brief `brief-foretaccess-desserte-lidar.md`, qui se déclarait
