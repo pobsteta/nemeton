@@ -1,3 +1,78 @@
+# nemeton 0.164.0 (2026-07-22)
+
+### Added — références IFN par essence × sylvoécorégion, et **D4 refermée** (spec 040)
+
+Deux tables de référence régionales dérivées des **données brutes de
+l'inventaire forestier national**, téléchargées directement chez l'IGN
+(export **2005-2024**, Licence Ouverte Etalab v2.0) :
+
+- `inst/extdata/ifn_volume_essence_ser.csv` — volume **sur pied** (m³/ha),
+  6 397 lignes ;
+- `inst/extdata/ifn_prelevement_essence_ser.csv` — **prélèvement** (m³/ha/an),
+  2 581 lignes.
+
+Quatre accesseurs, même schéma de clés et même cascade de repli :
+
+- `ifn_volume_essence_ser()` / `ifn_volume_reference()` ;
+- `ifn_prelevement_essence_ser()` / `ifn_taux_prelevement()`.
+
+Les fonctions à cascade descendent l'échelon **SER → GRECO → national** jusqu'à
+ce que la cellule repose sur assez de placettes, et **déclarent le niveau
+atteint** (`niveau_utilise`) — jamais en silence. `NA` plutôt qu'un chiffre
+quand aucun échelon ne qualifie.
+
+**`volume_mobilisable(taux_prelevement = NULL)` fonctionne désormais** : il
+résout le taux par essence via `ifn_taux_prelevement()` et remonte le niveau de
+maille employé dans l'attribut `niveau_prelevement`. La décision D4 de la
+spec 040, ouverte le matin même, est refermée.
+
+### Added — accès aux données brutes IFN, sans dépendance tierce
+
+`ifn_campagne_disponible()`, `ifn_telecharger()`, `ifn_charger()` — réécriture
+dans `nemeton` de la capacité offerte par `FrenchNFIfindeR::get_NFI()`
+(J. Borderieux, GPL-3), **pas une dépendance**. Cinq différences délibérées,
+documentées dans `?ifn_charger` : campagne découverte dynamiquement (l'original
+fige 2023 et prend une campagne de retard chaque automne), pas de `readline()`
+bloquant en contexte non interactif, lecture sélective des tables (l'original
+lit toujours `FLORE.csv`, 58 Mo), retour d'une valeur au lieu d'une injection
+dans l'environnement global, et **aucune dérivation silencieuse** au chargement
+(l'original impute hauteurs et accroissements manquants et ajoute des surfaces
+terrières comme effet de bord).
+
+### Notes de méthode
+
+**Prélèvement = `VEGET5 == "6"` seul** (*coupé vidangé*). Le code `7` (*coupé
+non vidangé*) est exclu : ce bois reste en forêt et ne circule jamais sur la
+desserte.
+
+**Piège vérifié sur la donnée** : la ligne de revisite ne porte que le sort de
+l'arbre — `V` et `ESPAR` y sont vides à 100 %. Mesure et essence viennent de la
+ligne de **première visite** du même arbre, clé `(IDP, A)`. 92 % des arbres
+coupés ont une telle mesure.
+
+**Contrôle d'ordre de grandeur** : la somme du prélèvement national sur toutes
+les essences donne **2,84 m³/ha/an**, cohérent avec l'ordre de grandeur publié
+pour la récolte française, et le classement par essence (épicéa, peuplier,
+hêtre, sapin, chêne sessile, pin maritime, douglas) est celui attendu. Un test
+verrouille cet ordre de grandeur.
+
+**Deux colonnes par table, à ne pas confondre** : `*_present` (moyenne sur les
+seules placettes de présence — figure de peuplement) et `*_maille`
+(contribution à la maille — figure de ressource). L'écart atteint un facteur 150
+sur le peuplier cultivé.
+
+**Le prélèvement décrit ce qui a été récolté, pas une prescription.**
+
+### Credits
+
+Méthode d'agrégation du volume d'après `PPtools::CarteEssenceSer()` de **Max
+Bruciamacchie** (AgroParisTech Nancy), GPL-2, reprise sous GPL-3 avec son
+autorisation explicite (courriel du 22 juillet 2026). Accès programmatique aux
+données brutes et raccord `(IDP, A)` d'après `FrenchNFIfindeR` de **Jérémy
+Borderieux** (GPL-3). Données : IGN — Inventaire forestier national français,
+Données brutes, campagnes annuelles 2005 et suivantes, Licence Ouverte
+Etalab v2.0.
+
 # nemeton 0.163.0 (2026-07-22)
 
 ### Added — `volume_mobilisable()` : couplage P1 → `volume_champ` (spec 040)

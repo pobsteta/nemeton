@@ -2,11 +2,11 @@
 
 **Version** : 1.0.0
 **Date**    : 2026-07-22
-**Statut**  : **Jalon « taux saisi » livré (v0.163.0)** — lot 4 seul ; lots 1-3
-(source SER, taux IFN, cascade de repli) différés. Décision Pascal 2026-07-22.
-Correction de périmètre : le lot 1 ne sert qu'à keyer la table IFN, il n'est
-**pas** nécessaire au jalon (l'argument `ser` n'est pas consulté avec un taux
-saisi).
+**Statut**  : **Spec close côté cœur** (v0.163.0 puis v0.164.0). Lots 0, 2, 3,
+4, 5 livrés ; lot 1 (jointure spatiale UGF → SER) **non nécessaire** — les
+placettes IFN portent déjà leur SER. **D4 refermée** (§5.c) : le prélèvement est
+dérivé de la revisite IFN, `volume_mobilisable(taux_prelevement = NULL)`
+fonctionne.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — `volume_mobilisable()` + table de taux de prélèvement.
 **Cible aval** : `foretaccess` — argument `volume_champ` de `calculer_flux()`,
@@ -70,8 +70,9 @@ volume_mobilisable(
   unite           = c("m3_total", "m3_ha"),
   taux_prelevement = NULL,          # m³/ha/an : scalaire, vecteur, ou NULL -> table IFN×SER
   horizon_ans     = NULL,           # obligatoire dès qu'un taux annuel est utilisé (§5.a-2)
-  ser             = NULL,           # code SER par unité ; NULL -> résolu par ser_pour_unites()
-  species_field   = "species",
+  espar_field     = "espar",        # code essence IFN, requis en mode table
+  ser             = NULL,           # code SER des unités ; NULL -> échelon national
+  min_plac        = 30,             # profondeur minimale d'un échelon (§5.c)
   na_policy       = c("na", "zero", "error"),
   column_name     = "volume_mobilisable"
 )
@@ -132,6 +133,40 @@ doc de la fonction**, pas implicite.
 **Garde-fou maintenu** : tant que la table n'est pas construite et sourcée, le
 mode table échoue proprement (`cli::cli_abort` explicite) et seules les voies
 scalaire / vecteur sont livrées. Aucun chiffre inventé (leçon spec 027).
+
+### 5.b — Apport `PPtools` / `DataForet` (2026-07-22) — ce qui est résolu, et ce qui ne l'est pas
+
+Les packages **`DataForet`** et **`PPtools`** de **Max Bruciamacchie**
+(AgroParisTech Nancy) embarquent les données brutes IFN et la méthode
+d'agrégation. Autorisation explicite de reprise **GPL-2 → GPL-3** obtenue pour
+`nemeton`. Vérifié en téléchargeant et en inspectant les tables :
+
+| Table | Contenu réel |
+|---|---|
+| `IFNarbres.rda` | 1 018 376 arbres — `idp, a, espar, veget, mortb, acci, ori, c13, ir5, htot, hdec, v, w, Annee` |
+| `IFNplacettes.rda` | 93 043 placettes — `idp, xl93, yl93, `**`ser`**`, csa, dc, dist, Annee`, millésimes **2005-2019** |
+
+**✅ Résolu — le volume par essence × SER.** La jointure est immédiate : `espar`
+et `v`/`w` côté arbres, `ser` **déjà attribué** côté placettes. Deux
+conséquences pour le plan :
+- le **lot 1 n'est pas nécessaire** pour construire la table (les placettes
+  portent leur SER ; la jointure spatiale ne resterait utile que pour situer
+  les UGF de l'utilisateur) ;
+- **D6 est levée et quantifiée** : `w` *est* le poids de sondage de l'IFN, donc
+  la pondération est fournie. Et le déséquilibre est mesuré — sur 4 639
+  cellules essence × SER, **1 193** reposent sur ≥ 30 placettes, **2 107** sur
+  moins de 5. La cascade du lot 3 concerne près de la moitié de la table.
+- Le **GRECO est bien la première lettre du code SER** (`A11`, `B10`, `C20`…),
+  ce que le lot 1 donnait « à confirmer ». Confirmé.
+
+**❌ Non résolu dans CE jeu — le prélèvement.** Les `.rda` de `DataForet` ne
+portent aucune colonne de coupe : c'est la donnée de première visite. La suite
+est en §5.c — la revisite existe bel et bien dans l'export brut de l'IGN.
+
+**Ce que ça ouvre — D8.** Disposer d'un volume de référence régional sourcé par
+essence change l'intérêt de la brique : plutôt que de servir de multiplicande à
+un taux, il peut **calibrer ou suppléer P1** là où P1 est `NA` — c'est-à-dire
+le cas courant en NDP 0. À trancher (cf. §10, D8).
 
 ## 6. Politique NA (décision D3, ouverte)
 
@@ -194,10 +229,12 @@ pipeline Desserte.
 | D1 | Taux paramétrable + table par essence (défaut global, repli feuillu/résineux) | **Tranchée** 2026-07-22 |
 | D2 | Couvrir les **deux** consommateurs via `unite` (`m3_total` / `m3_ha`) | **Tranchée** 2026-07-22 |
 | D3 | Politique NA par défaut = `"na"` + avertissement | Proposée, à confirmer |
-| D4 | Taux de prélèvement **IFN par essence × SER** | **Tranchée** 2026-07-22 (cf. §5.a) |
+| D4 | Taux de prélèvement **IFN par essence × SER** | **Tranchée et livrée** 2026-07-22 (§5.a, §5.c) |
 | D5 | Repli CHM automatique si `volume_col` absent | Ouverte |
-| D6 | Granularité réellement tenable de la maille essence × SER (cf. §11 lot 3) | **Ouverte — à trancher sur la donnée** |
-| D7 | Millésime IFN retenu + périodicité de mise à jour de la table | Ouverte |
+| D6 | Granularité réellement tenable de la maille essence × SER | **Levée** 2026-07-22 — `w` fournit la pondération ; 1 193 cellules sur 4 639 à n ≥ 30, 2 107 à n < 5 → cascade obligatoire (§5.b) |
+| D7 | Millésime IFN retenu + périodicité de mise à jour de la table | Partiellement — table figée sur **2005-2019**, rejouable par `data-raw/build_ifn_volume_ser.R` |
+| D8 | Le volume IFN essence × SER sert-il à **calibrer / suppléer P1** (cas NDP 0) plutôt qu'à multiplier un taux ? | **Ouverte** (§5.b) |
+| D9 | Pont entre codes essence IFN (`09`) et codes 4 lettres de P1 (`FASY`) | **Ouverte** (§5.c) |
 
 ## 11. Plan de développement (5 lots)
 
@@ -242,40 +279,44 @@ Le jalon « lots 1+4 en taux saisi » (fin du §11) devient d'autant plus pertin
 4. Le **GRECO** est le préfixe du code SER : le dériver, ne pas le stocker deux
    fois. À confirmer sur la donnée réelle.
 
-### Lot 2 — Table des taux
+### Lot 2 — Table de référence essence × SER — **livré (v0.164.0)**
 
-**Amendé après le lot 0** : aucun service ne publie le prélèvement. Il faut donc
-le **dériver des données brutes IFN** (tables placettes/arbres, arbres exploités
-entre deux passages du dispositif à revisite). C'est un travail statistique à part
-entière — plan de sondage, pondérations, incertitude — et non une simple recopie
-de tableau. À arbitrer avant de s'y engager : ce lot peut à lui seul peser plus que
-tout le reste de la spec. Alternatives à considérer : publication agrégée du
-Mémento IFN (maille grossière, à retrouver), ou taux dire d'expert **assumé comme
-tel** dans la colonne `source`.
+Livré, mais **pas ce qui était prévu** : c'est une table de **volume sur pied**,
+pas de taux de prélèvement (cf. §5.b — la donnée de prélèvement n'existe pas dans
+ce jeu).
 
-- `inst/extdata/ifn_taux_prelevement.csv` : `species_code, ser, greco,
-  taux_m3_ha_an, n_placettes, ic_bas, ic_haut, millesime, source` — une colonne de
-  provenance **par ligne**, comme les deux tables IFN/ONF déjà embarquées.
-- Accesseur `ifn_taux_prelevement(species = NULL, ser = NULL, ...)` calqué sur
+- `inst/extdata/ifn_volume_essence_ser.csv` — **5 799 lignes** (4 639 SER + 992
+  GRECO + 168 national) : `niveau, ser, greco, espar, n_plac_presence,
+  n_plac_maille, vol_ha_present, vol_ha_maille, taux_presence, libelle_essence,
+  millesime, source`. Provenance par ligne, comme les tables IFN/ONF déjà
+  embarquées.
+- Accesseur `ifn_volume_essence_ser()` calqué sur
   `european_species_tolerances()` (`R/european_species_tolerances.R:47`).
-- Script de construction dans `data-raw/` depuis les données brutes IFN
-  (traçable, rejouable au changement de millésime — D7).
+- `data-raw/build_ifn_volume_ser.R` — reconstruction traçable et rejouable sur
+  un millésime plus récent. Les `.rda` sources (7,4 Mo) sont **gitignorés**,
+  comme le corpus RAG : seule la table dérivée est versionnée.
 
-### Lot 3 — Cascade de repli *(point méthodologique, D6)*
+**La table des taux de prélèvement reste à faire** et n'a toujours pas de
+source (D4).
 
-86 SER × ~30 essences = beaucoup de cellules à effectif faible, voire vide :
-l'IFN est un inventaire par échantillonnage, une case essence × SER peut reposer
-sur une poignée de placettes. Publier un taux par case sans regarder l'effectif
-donnerait une fausse précision.
+### Lot 3 — Cascade de repli — **livré (v0.164.0)**
 
-- Repli en escalier : **essence × SER → essence × GRECO → essence × national →
-  feuillu/résineux national**, en descendant dès que l'effectif passe sous un
-  seuil (`n_placettes` minimal, à fixer sur la donnée).
-- C'est l'idiome déjà en place dans P1 (espèce → genre → `is_conifer()`,
-  `R/indicators-productive.R:184`) : rester cohérent.
-- Remonter le **niveau de repli atteint** dans une colonne, comme la colonne
-  `confidence` des tolérances européennes. L'app doit pouvoir dire « taux
-  national, pas régional ».
+`ifn_volume_reference(espar, ser, min_plac = 30, mesure)` descend l'échelon
+**SER → GRECO → national** jusqu'à ce que la cellule repose sur assez de
+placettes, et **déclare le niveau atteint** (`niveau_utilise`) — jamais en
+silence. Quand aucun échelon ne qualifie, elle rend `NA` plutôt qu'un chiffre.
+
+C'est l'idiome déjà en place dans P1 (espèce → genre → `is_conifer()`,
+`R/indicators-productive.R:184`) : dégrader la résolution plutôt que servir une
+valeur assise sur trois placettes.
+
+Le besoin est **mesuré, pas supposé** : sur 4 639 cellules essence × SER,
+**1 193** reposent sur ≥ 30 placettes et **2 107** sur moins de 5.
+
+Non retenu pour l'instant : l'échelon final « feuillu/résineux national »
+envisagé au cadrage. L'échelon national par essence couvre déjà les 168 codes
+`espar` de la table ; un repli par type ne servirait que pour une essence
+totalement absente de l'IFN, cas où rendre `NA` est plus honnête.
 
 ### Lot 4 — `volume_mobilisable()` *(le peu de code)*
 
@@ -325,3 +366,50 @@ quasi terme à terme, ce qui rend la validation utile plutôt qu'anecdotique.
 → **Transmis** : `specs/brief-foretaccess-accessfor.md` (cadrage complet de la
 comparaison — correspondance des classes, pièges de masque et de rasterisation,
 matrice de confusion attendue). Rien à faire côté `nemeton`.
+
+### 5.c — Prélèvement depuis la revisite IFN (D4 **refermée**, 2026-07-22)
+
+Piste ouverte par Pascal : le package `FrenchNFIfindeR` (Jérémy Borderieux,
+GPL-3) télécharge l'export brut de l'IGN, qui contient la **revisite à 5 ans**.
+Vérifié sur l'export réel `export_dataifn_2005_2024.zip` (63 Mo, Licence
+Ouverte Etalab v2.0) :
+
+- `ARBRE.csv` porte **`VEGET5`**, l'état de l'arbre au second passage.
+  Codes utiles : **`6` = coupé vidangé**, `7` = coupé **non** vidangé, `0`
+  vivant, `M` mort sur pied, `A`/`1`/`2` chablis, `N` non retrouvé.
+- **Seul le code 6 est retenu.** Le bois du code 7 reste en forêt et ne
+  circule jamais sur la desserte — c'est la distinction qui compte ici, et elle
+  n'existait pas dans le jeu `DataForet`.
+- `PLACETTE.csv` porte aussi `PRELEV5` (indicateur de coupe au niveau placette :
+  `0` aucune souche, `1` au moins une souche, `2` **coupe rase**) — non utilisé
+  ici, mais voisin du sujet T3.
+
+**Le piège, vérifié sur la donnée.** Sur les 69 785 lignes `VEGET5 == "6"`,
+`V` et `ESPAR` sont vides à **100 %** (seul `W` est parfois présent) : la ligne
+de revisite ne porte que le **sort** de l'arbre. Mesure et essence vivent sur la
+ligne de **première visite du même arbre**, clé `(IDP, A)`. Agréger directement
+sur les lignes de revisite donne une table **vide** — c'est ce qui est arrivé au
+premier essai. Agréger sur `W` seul aurait donné une table **pleine et fausse**,
+mode d'échec bien plus dangereux.
+
+**Résultat.** 64 447 arbres coupés exploitables (92 %), table de 2 581 lignes
+aux trois échelons. **Contrôle externe** : la somme du prélèvement national sur
+toutes les essences donne **2,84 m³/ha/an**, cohérent avec l'ordre de grandeur
+publié pour la récolte française ; le classement (épicéa, peuplier, hêtre,
+sapin, chêne sessile, pin maritime, douglas) est celui attendu. Un test verrouille
+cet ordre de grandeur.
+
+**Deux approximations assumées** : le volume récolté est celui mesuré au premier
+passage (l'arbre a crû avant d'être coupé), et la récolte des 5 ans est divisée
+par 5 — c'est une moyenne, pas un calendrier.
+
+`volume_mobilisable(taux_prelevement = NULL)` **fonctionne désormais** : il
+résout le taux par essence via `ifn_taux_prelevement()`, avec la cascade
+SER → GRECO → national, et remonte le niveau atteint dans l'attribut
+`niveau_prelevement`. Il exige une colonne de code essence IFN (`espar_field`).
+
+**Reste ouvert — D9** : la correspondance entre les codes essence IFN (`09`,
+`62`) et les codes à quatre lettres de `indicateur_p1_volume()` (`FASY`,
+`PIAB`). Aujourd'hui l'appelant fournit le code IFN. Le référentiel
+`espar-cdref13.csv` porte le nom latin, et `european_species_tolerances()` porte
+`species_sci` : le pont est faisable, non fait.

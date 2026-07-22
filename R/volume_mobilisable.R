@@ -41,8 +41,11 @@
 #' A harvest rate describes what **has been** removed, not what **should** be;
 #' sizing a road network on it assumes management carries on unchanged.
 #'
-#' The species x sylvoecoregion table (spec 040, D4) is **not implemented yet**:
-#' `taux_prelevement = NULL` errors out rather than serve unsourced figures.
+#' `taux_prelevement = NULL` resolves the rate from the IFN species x
+#' sylvoecoregion table ([ifn_taux_prelevement()]), which requires `espar_field`
+#' on `units` — the IFN species code. The level actually used (SER, GRECO or
+#' national) is reported through the `niveau_prelevement` attribute of the
+#' returned object, never silently.
 #'
 #' @param units An `sf` object carrying the P1 column.
 #' @param volume_col Name of the standing-volume column, in m3/ha, as produced
@@ -51,7 +54,14 @@
 #'   `"m3_ha"` (for `reseau_desserte()` / `optimiser_reseau()`).
 #' @param taux_prelevement Harvest rate in m3/ha/year: a single number applied
 #'   to every unit, or a numeric vector of `nrow(units)`. `NULL` (default)
-#'   would select the not-yet-sourced IFN table and therefore errors.
+#'   resolves it per unit from the IFN table via [ifn_taux_prelevement()],
+#'   which then requires `espar_field`.
+#' @param espar_field Name of the column holding the IFN species code, used
+#'   only when `taux_prelevement` is `NULL`.
+#' @param ser SER code for the units, a single string, used only when
+#'   `taux_prelevement` is `NULL`. `NULL` falls back to national rates.
+#' @param min_plac Minimum plots for an IFN mesh level to qualify, passed to
+#'   [ifn_taux_prelevement()].
 #' @param horizon_ans Planning horizon in years. Required whenever
 #'   `taux_prelevement` is supplied.
 #' @param na_policy What to do with units whose volume is `NA` — typically the
@@ -80,6 +90,9 @@ volume_mobilisable <- function(units,
                                unite = c("m3_total", "m3_ha"),
                                taux_prelevement = NULL,
                                horizon_ans = NULL,
+                               espar_field = "espar",
+                               ser = NULL,
+                               min_plac = 30,
                                na_policy = c("na", "zero", "error"),
                                column_name = "volume_mobilisable") {
   if (!inherits(units, "sf")) {
@@ -96,15 +109,38 @@ volume_mobilisable <- function(units,
   }
 
   # --- Taux de prélèvement -------------------------------------------
-  # Le mode table (IFN x SER) est différé : échouer explicitement plutôt que
-  # de servir des chiffres non sourcés (spec 040 §5.a).
+  # Mode table : résolution par essence via l'IFN, avec la cascade
+  # SER -> GRECO -> national. Le niveau atteint est remonté en attribut.
+  niveau_prelev <- NULL
   if (is.null(taux_prelevement)) {
-    cli::cli_abort(c(
-      "{.arg taux_prelevement} is required.",
-      "x" = "The IFN species x sylvoecoregion table is not implemented yet \\
-             (spec 040, D4).",
-      "i" = "Supply a rate in m3/ha/year, as a single number or one per unit."
-    ))
+    if (!espar_field %in% names(units)) {
+      cli::cli_abort(c(
+        "{.arg taux_prelevement} is NULL, so the IFN table is used.",
+        "x" = "Column {.val {espar_field}} (IFN species code) not found in \\
+               {.arg units}.",
+        "i" = "Supply a rate directly, or add the column, or set \\
+               {.arg espar_field}."
+      ))
+    }
+    esp <- as.character(units[[espar_field]])
+    ref <- ifn_taux_prelevement(unique(esp[!is.na(esp)]), ser = ser,
+                                min_plac = min_plac)
+    idx <- match(esp, ref$espar)
+    taux_prelevement <- ref$taux_m3_ha_an[idx]
+    niveau_prelev <- ref$niveau_utilise[idx]
+    n_sans <- sum(is.na(taux_prelevement))
+    if (n_sans > 0L) {
+      cli::cli_warn(
+        "{n_sans} unit{?s} with no IFN harvest rate (unknown species, or no \\
+         mesh level reaching min_plac = {min_plac}): rate left NA."
+      )
+    }
+    # Les NA de taux doivent suivre la politique NA, pas faire échouer la
+    # validation numérique ci-dessous.
+    taux_na <- is.na(taux_prelevement)
+    taux_prelevement[taux_na] <- 0
+  } else {
+    taux_na <- rep(FALSE, nrow(units))
   }
   if (!is.numeric(taux_prelevement) || anyNA(taux_prelevement)) {
     cli::cli_abort("{.arg taux_prelevement} must be numeric and free of NA.")
@@ -161,8 +197,11 @@ volume_mobilisable <- function(units,
   # Densité mobilisable, m3/ha sur l'horizon.
   vol_ha <- p1 * taux_prelevement * horizon_ans
 
+  vol_ha[taux_na] <- NA_real_
+
   if (identical(unite, "m3_ha")) {
     units[[column_name]] <- vol_ha
+    if (!is.null(niveau_prelev)) attr(units, "niveau_prelevement") <- niveau_prelev
     return(units)
   }
 
@@ -187,5 +226,6 @@ volume_mobilisable <- function(units,
   aire_ha <- as.numeric(sf::st_area(units)) / 1e4
 
   units[[column_name]] <- vol_ha * aire_ha
+  if (!is.null(niveau_prelev)) attr(units, "niveau_prelevement") <- niveau_prelev
   units
 }

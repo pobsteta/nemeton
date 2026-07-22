@@ -70,3 +70,9 @@ data/i2_training_data.tar.bz2
 # testthat failure artifacts (snapshots-on-failure)
 tests/testthat/_problems/
 tests/testthat/testthat-problems.rds
+
+# Raw IFN tree/plot data for data-raw/build_ifn_volume_ser.R (7.4 MB).
+# Not versioned: the derived table inst/extdata/ifn_volume_essence_ser.csv is
+# enough. Re-fetch from https://github.com/Bruciamacchie/DataForet/raw/master/data/
+# (IFNarbres.rda, IFNplacettes.rda, CodesEssIFN.rda) into data-raw/ifn/.
+data-raw/ifn/

@@ -43,3 +43,77 @@ Table `european_species_tolerances()` /
    règle** — canevas de départ, à valider avant tout usage opérationnel.
 4. La présence d'un taxon `invasif` dans la table **n'est pas une
    recommandation** de plantation.
+
+## Références IFN par essence × sylvoécorégion (spec 040, lots 2-3)
+
+Tables `inst/extdata/ifn_volume_essence_ser.csv` (volume **sur pied**, m³/ha) et
+`inst/extdata/ifn_prelevement_essence_ser.csv` (**prélèvement**, m³/ha/an),
+exposées par `ifn_volume_essence_ser()` / `ifn_volume_reference()` et
+`ifn_prelevement_essence_ser()` / `ifn_taux_prelevement()`. Construites par
+`data-raw/build_ifn_tables.R`.
+
+### Source des données
+
+**IGN — Inventaire forestier national français, Données brutes, campagnes
+annuelles 2005 et suivantes**, <https://inventaire-forestier.ign.fr/dataIFN/>,
+site consulté le 22/07/2026. Export **2005-2024** (le plus récent servi au
+moment de la construction). **Licence Ouverte Etalab v2.0** — réutilisation
+libre, citation demandée ci-dessus.
+
+Les données sont téléchargées directement chez l'IGN par les fonctions
+`ifn_campagne_disponible()` / `ifn_telecharger()` / `ifn_charger()`, réécrites
+dans `nemeton` (`R/ifn_source.R`) — le package n'a **aucune dépendance** vers un
+package tiers pour cela.
+
+### Crédits méthodologiques
+
+- **Max Bruciamacchie** (AgroParisTech Nancy) — méthode d'agrégation du volume
+  par essence × SER, d'après `PPtools::CarteEssenceSer()`
+  (<https://github.com/Bruciamacchie/PPtools>,
+  <https://github.com/Bruciamacchie/DataForet>). Ces packages sont sous
+  **GPL-2** ; autorisation explicite de reprise sous **GPL-3** donnée **par
+  courriel le 22 juillet 2026**. La première version de la table a été
+  construite depuis leurs `.rda` (campagnes 2005-2019) avant d'être refaite
+  depuis la source IGN.
+- **Jérémy Borderieux** (AgroParisTech) — `FrenchNFIfindeR`
+  (<https://github.com/Jeremy-borderieux/FrenchNFIfindeR>, **GPL-3**) : accès
+  programmatique à l'export brut de l'IGN, et le raccord `(IDP, A)` entre ligne
+  de revisite et ligne de première visite, sans lequel le prélèvement est
+  inexploitable. La capacité est **réécrite** ici, pas importée — cf. les cinq
+  différences documentées dans `?ifn_charger`.
+
+### Méthode
+
+- **Volume sur pied** — par placette et par essence, `somme(V × W)` sur les
+  arbres vivants (`VEGET == "0"`), `W` étant le poids d'extrapolation à
+  l'hectare du plan de sondage IFN.
+- **Prélèvement** — arbres dont l'état à la revisite est `VEGET5 == "6"`
+  (*coupé vidangé*). Le code `7` (*coupé non vidangé*) est **exclu** : ce bois
+  reste en forêt et ne circule jamais sur la desserte.
+- Trois échelons emboîtés dans la même table : **SER** (86), **GRECO** (première
+  lettre du code SER) et **national**.
+
+### Prudence d'usage
+1. **Volume sur pied ≠ prélèvement.** Le premier est un *stock*, le second un
+   *flux*. Ne pas substituer l'un à l'autre.
+2. Le prélèvement décrit **ce qui a été récolté**, pas ce qu'il faudrait
+   récolter. Dimensionner une desserte dessus suppose « la gestion continue
+   comme avant ».
+3. **Deux colonnes par table, à ne pas confondre** : `*_present` (moyenne sur
+   les seules placettes où l'essence est présente — figure de peuplement) et
+   `*_maille` (contribution de l'essence à la maille, moyennée sur *toutes* ses
+   placettes — figure de ressource). L'écart atteint un facteur 150 sur le
+   peuplier cultivé.
+4. **Deux approximations assumées sur le prélèvement** : le volume récolté est
+   celui mesuré à la *première* visite (l'arbre a crû avant d'être coupé ; 92 %
+   des arbres coupés ont une telle mesure), et la récolte observée sur
+   l'intervalle de 5 ans est divisée par 5 — c'est une moyenne, pas un
+   calendrier.
+5. **Profondeur d'échantillonnage très inégale.** Filtrer sur
+   `n_plac_presence`, ou passer par les fonctions à cascade, qui descendent
+   l'échelon SER → GRECO → national et **déclarent le niveau atteint**.
+6. **Contrôle d'ordre de grandeur** : la somme du prélèvement national sur
+   toutes les essences donne **2,84 m³/ha/an**, cohérent avec l'ordre de
+   grandeur publié pour la récolte française. Un test le vérifie.
+7. Millésime **2005-2024** : rejouer `data-raw/build_ifn_tables.R` pour
+   actualiser — le script découvre seul la campagne la plus récente.
