@@ -1331,6 +1331,81 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-22 — Spec 040 cadrée : `volume_mobilisable()` (couplage P1 → `volume_champ`)
+
+Le brief app `brief-desserte-perf-connexite.md` (session `nemetonshiny`) arrive
+avec trois demandes ; **deux ne sont pas pour ce repo**. Perf des moteurs, bornes
+Steiner/optimiseurs, sémantique de `connexe`/CA-16.5, `$lignes` contracté : tout
+cela vit dans **`foretaccess`** (`reseau_desserte`, `surface_cout_construction`,
+`optimiser_reseau` — absents de `nemeton`, `NAMESPACE:86` côté foretaccess), qui a
+son repo, son `PLAN.md` et sa version (v1.6.1). Routé vers la session dédiée, comme
+l'avait été le brief câble (déjà traité là-bas : `fix(depot): places_depot()`).
+
+**Seul point réellement cœur** : le typage du réseau
+(`calculer_flux` → `typer_desserte`) a besoin d'un volume par parcelle, et le vrai
+volume est l'indicateur **P1** — sans dupliquer le calcul (règle 1). Cadré dans
+`specs/040-volume-mobilisable-desserte/spec.md`, **non implémenté**.
+
+Le cadrage a mis au jour un piège qui aurait produit un résultat faux :
+`volume_champ` a **deux consommateurs de sémantique opposée**. `calculer_flux()`
+répartit le volume sur les points sources (`desserte_flux.R:257`) → il attend un
+**total m³** ; `reseau_desserte()` le rasterise par cellule
+(`desserte_reseau.R:319`) → il attend une **densité m³/ha**, sous peine de
+surpondérer les grandes parcelles. P1 étant en m³/ha *sur pied* et `calculer_flux`
+documentant des « harvested parcels », il y a aussi un écart de sémantique
+(stock vs mobilisé) et un trou de politique NA (P1 est `NA` en NDP 0 sans
+inventaire ni CHM). D'où `unite = c("m3_total", "m3_ha")` + taux de prélèvement.
+
+Décisions tranchées : **D1** taux paramétrable + table par essence (repli
+feuillu/résineux via `is_conifer()`), **D2** couvrir les deux consommateurs,
+**D4 taux de prélèvement IFN par essence × SER** (tranchée le 2026-07-22).
+
+D4 coûte plus que le CSV : **le cœur ne sait pas ce qu'est une SER** (aucune
+occurrence dans `R/` ni dans `FR.json`, dont les seules couches `ign_wfs` sont
+bdforet/roads/water/buildings/departments). Il faut donc déclarer la source SER,
+un `load_ser_source()` calqué sur `load_foret_ancienne_source()`, et une jointure
+spatiale UGF → SER au recouvrement majoritaire. Deux autres conséquences : un taux
+IFN est un **flux annuel** (m³/ha/an), d'où un paramètre `horizon_ans` obligatoire
+et non une simple fraction ; et un prélèvement **observé** n'est pas une
+prescription — dimensionner une desserte dessus suppose « la gestion continue comme
+avant », hypothèse à écrire dans la doc. Plan en 5 lots ajouté (spec §11), avec un
+jalon intermédiaire : lots 1+4 en taux saisi suffisent à débloquer l'app, les lots
+2-3 apportent le défaut sourcé.
+
+**Reconnaissance des sources (lot 0, faite le 2026-07-22 — résultat négatif).**
+GetCapabilities WFS Géoplateforme (5,1 Mo, HTTP 200) : **aucune couche SER** (zéro
+« sylvo » dans tout le document) et **aucune donnée de prélèvement** (zéro
+prélèv./récolte/mortalité/production). L'espace `ObsForets` (« Source :
+IGN-Inventaire forestier ») ne publie que 8 couches en maille
+département/région/commune — volume **sur pied**, taux de boisement, niveaux
+trophiques, part forêt publique — jamais de prélèvement, jamais de SER. Donc : la
+couche SER passera par un téléchargement millésimé `inventaire-forestier.ign.fr`
+(download-only, comme la BD Forêts anciennes) et le taux de prélèvement devra être
+**dérivé des données brutes IFN** (arbres exploités entre deux passages), ce qui
+est un chantier statistique à part entière — à arbitrer avant engagement. Le jalon
+« lots 1+4 en taux saisi » devient le chemin le plus probable.
+
+**Trouvaille latérale, à transmettre à `foretaccess`** : le même GetCapabilities
+expose `IGNF_ACCESSIBILITE-PHYSIQUE-FORETS-:acces_skidder` / `acces_porteur`
+(projet **ACCESSFOR**, IGN, édition 2025-01-01, + variante masque Forêt v3) —
+cartographie nationale de l'accessibilité aux engins d'exploitation, **mêmes noms
+d'engins que les moteurs `foretaccess`**, servie en WFS. En échantillonnant la
+couche (`GetFeature`, dép. 01/08/09) plutôt qu'en la supposant : les libellés sont
+« Accessible - Classe de débardage 1 : 0-250 m », 2 : 250-500, 3 : 500-1000,
+4 : 1000-1500 — **mêmes bornes** que `classes_debardage()` (0-250 … > 2000). La
+comparaison est donc quasi terme à terme. Brief de validation livré :
+`specs/brief-foretaccess-accessfor.md` (correspondance des classes, pièges du
+masque forêt — BD Forêt V2 vs MASQUE-FORETV3 — et de la rasterisation catégorielle
+en plus proche voisin, matrice de confusion attendue). Rien à faire côté `nemeton`
+(spec 040 §12).
+
+Restent ouvertes : D3 politique NA, D5 repli CHM, **D6 granularité réellement
+tenable de la maille essence × SER** (86 SER × ~30 essences → cases à faible
+effectif ; repli en escalier SER → GRECO → national → feuillu/résineux, sur
+l'idiome déjà en place dans P1), D7 millésime IFN. Rien n'est débloqué tant que les
+deux blocages `foretaccess` tiennent : le typage est en 6ᵉ position du plan de dev
+app.
+
 ### 2026-07-21 — App `nemetonshiny` v0.111.2 : `base::%in%` sur SpatRaster (masque no-op) — cœur audité, non affecté
 
 Remontée depuis la session app (`nemetonshiny@59522747`, cycle dev 0.111.2.9000) :
