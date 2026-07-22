@@ -894,11 +894,34 @@
 <p>Restent ouvertes : <strong>D8</strong> (le volume IFN sert-il à suppléer P1 en NDP 0 ?) et <strong>D9</strong> (pont entre codes essence IFN <code>09</code> et codes 4 lettres <code>FASY</code> de P1 ; le référentiel porte le nom latin, <code><a href="reference/european_species_tolerances.html">european_species_tolerances()</a></code> porte <code>species_sci</code> — faisable, non fait).</p>
 </div>
 <div class="section level3">
+<h3 id="id_2026-07-22--app-nemetonshiny-v01130--validation-accessfor-câblée">2026-07-22 — App <code>nemetonshiny</code> v0.113.0 : validation ACCESSFOR câblée<a class="anchor" aria-label="anchor" href="#id_2026-07-22--app-nemetonshiny-v01130--validation-accessfor-c%C3%A2bl%C3%A9e"></a></h3>
+<p>Livraison <strong>100 % app</strong>, aucun changement cœur — mais elle referme la boucle ouverte ce matin depuis ce repo.</p>
+<ul><li>2026-07-22 — nemetonshiny v0.113.0. Panneau de <strong>validation ACCESSFOR</strong> : consommation de <code>foretaccess::accessfor_correspondance()</code> (livré en <strong>foretaccess 1.9.0</strong>) et affichage des couches WFS <code>IGNF_ACCESSIBILITE-PHYSIQUE-FORETS-:acces_skidder</code> / <code>:acces_porteur</code>.</li>
+</ul><p><strong>Boucle complète en une journée.</strong> La couche ACCESSFOR a été découverte ici même le 2026-07-22, en sondant le WFS Géoplateforme pendant la reconnaissance de sources de la spec 040 (lot 0). Le brief de cadrage <code>specs/brief-foretaccess-accessfor.md</code> — correspondance des classes, pièges du masque forêt et de la rasterisation catégorielle — a été porté dans <code>foretaccess</code>, qui a livré <code>accessfor_correspondance()</code> en 1.9.0, puis consommé côté app en v0.113.0. Trois repos, un aller-retour, le même jour.</p>
+<p><strong><code>foretaccess</code> a beaucoup avancé</strong> (1.6.0 → 1.9.0) : <code>places_depot()</code> (1.6.0, corrigé 1.6.1), <code>volume_depuis_p1()</code> (1.7.0) + <code>acquire_inputs(volume=)</code> (1.8.0) — le pont <strong>P1 Nemeton → volume câble/IPC</strong>, qui consomme donc directement le travail cœur de cette session —, et <code>accessfor_correspondance()</code> (1.9.0).</p>
+</div>
+<div class="section level3">
 <h3 id="id_2026-07-21--app-nemetonshiny-v01120--sous-onglet-desserte-moteur-glouton">2026-07-21 — App <code>nemetonshiny</code> v0.112.0 : sous-onglet Desserte, moteur glouton<a class="anchor" aria-label="anchor" href="#id_2026-07-21--app-nemetonshiny-v01120--sous-onglet-desserte-moteur-glouton"></a></h3>
 <p>Entrée demandée par la session app (<code>nemeton-plan-entries.md</code>, entrée 2) — livraison <strong>100 % app</strong>, aucun changement cœur.</p>
 <ul><li>2026-07-21 — nemetonshiny v0.112.0 (<code>nemetonshiny@55992e6c</code> + merge <code>nemetonshiny@1a73292c</code>, cycle dev 0.112.0.9000). Nouveau sous-onglet « Desserte » sous « Terrain accessible » : conception de réseau de desserte forestière via <code>foretaccess::reseau_desserte(mode = "glouton")</code>. Pipeline app : acquisition MNT 5 m HIGHRES + desserte IGN BD TOPO + masque BD Forêt V2 → <code>preprocess()</code> → <code>surface_cout_construction()</code> → glouton. Worker <code>future</code> opt-in (glouton mesuré ~11,5 min / 30 parcelles), cache projet, réseau créé en overlay raster, badges parcelles-desservies / connexité / coût, export GeoPackage. <strong>Steiner</strong> (N² tracés, &gt; 5 h estimées) et <strong>optimiseurs</strong> (<code>optimiser_reseau</code>) <strong>non exposés</strong> — ils attendent le travail perf côté <code>foretaccess</code> (cf. <code>specs/brief-foretaccess-desserte-perf-connexite.md</code>). Refactor préalable : IO ForêtAccess mutualisées (<code>service_foretaccess_io.R</code>).</li>
 </ul><p>L’entrée 1 du même document (fix transparence <code>hors_foret</code> v0.111.2) était déjà posée le matin même — non dupliquée. Les deux briefs joints sont archivés dans <code>specs/</code> (entrée du 2026-07-22 ci-dessous).</p>
 <p><strong>Aucun sous-chantier n’est coché</strong> : les moteurs lourds (Steiner, optimiseurs, câble-mât) restent ouverts tant que le travail <code>foretaccess</code> n’est pas livré, conformément à la consigne de l’émetteur.</p>
+</div>
+<div class="section level3">
+<h3 id="id_2026-07-22--archivage-2--briefs-foretaccess-consolidés--plan-dincréments-app">2026-07-22 — Archivage (2) : briefs <code>foretaccess</code> consolidés + plan d’incréments app<a class="anchor" aria-label="anchor" href="#id_2026-07-22--archivage-2--briefs-foretaccess-consolid%C3%A9s--plan-dincr%C3%A9ments-app"></a></h3>
+<p>Trois documents supplémentaires sortis du scratchpad de la session app, recopiés <strong>verbatim</strong> (<code>diff</code> vérifié) dans <code>specs/</code> :</p>
+<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>Fichier archivé</th>
+<th>Nature</th>
+</tr></thead><tbody><tr><td><code>brief-foretaccess-consolide-2026-07-22.md</code></td>
+<td>
+<strong>révision consolidée</strong> — 5 chantiers, mesures sur foretaccess <strong>1.9.0</strong>
+</td>
+</tr><tr><td><code>brief-foretaccess-desserte-lidar.md</code></td>
+<td>desserte corrigée LiDAR (ALSroads) : largeur mesurée + géométrie recalée</td>
+</tr><tr><td><code>plan-app-increments-foretaccess-1.9.md</code></td>
+<td>plan d’incréments app pour consommer foretaccess 1.9.0</td>
+</tr></tbody></table><p>⚠️ <strong><code>brief-foretaccess-consolide-2026-07-22.md</code> supersède <code>brief-foretaccess-desserte-perf-connexite.md</code></strong> (archivé la veille) : même chantier perf/connexité, mais mesuré sur 1.9.0 et enrichi de trois chantiers supplémentaires. L’ancien est conservé comme trace, ne pas le traiter en parallèle.</p>
+<p><strong>Point d’attention côté cœur</strong> : le brief LiDAR se déclare explicitement « feature <strong>NDP 1+</strong>, donc <strong>côté cœur</strong> — l’app ne fera qu’exposer un toggle ». Il y a donc probablement une part <code>nemeton</code> à cadrer dans ce chantier (correction de la desserte BD TOPO par ALSroads), non instruite à ce stade.</p>
 </div>
 <div class="section level3">
 <h3 id="id_2026-07-22--archivage-des-briefs-desserte-sortis-de-tmp">2026-07-22 — Archivage des briefs desserte (sortis de <code>/tmp</code>)<a class="anchor" aria-label="anchor" href="#id_2026-07-22--archivage-des-briefs-desserte-sortis-de-tmp"></a></h3>

@@ -1885,6 +1885,33 @@ Restent ouvertes : **D8** (le volume IFN sert-il à suppléer P1 en NDP 0
 [`european_species_tolerances()`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md)
 porte `species_sci` — faisable, non fait).
 
+### 2026-07-22 — App `nemetonshiny` v0.113.0 : validation ACCESSFOR câblée
+
+Livraison **100 % app**, aucun changement cœur — mais elle referme la
+boucle ouverte ce matin depuis ce repo.
+
+- 2026-07-22 — nemetonshiny v0.113.0. Panneau de **validation
+  ACCESSFOR** : consommation de
+  `foretaccess::accessfor_correspondance()` (livré en **foretaccess
+  1.9.0**) et affichage des couches WFS
+  `IGNF_ACCESSIBILITE-PHYSIQUE-FORETS-:acces_skidder` /
+  `:acces_porteur`.
+
+**Boucle complète en une journée.** La couche ACCESSFOR a été découverte
+ici même le 2026-07-22, en sondant le WFS Géoplateforme pendant la
+reconnaissance de sources de la spec 040 (lot 0). Le brief de cadrage
+`specs/brief-foretaccess-accessfor.md` — correspondance des classes,
+pièges du masque forêt et de la rasterisation catégorielle — a été porté
+dans `foretaccess`, qui a livré `accessfor_correspondance()` en 1.9.0,
+puis consommé côté app en v0.113.0. Trois repos, un aller-retour, le
+même jour.
+
+**`foretaccess` a beaucoup avancé** (1.6.0 → 1.9.0) : `places_depot()`
+(1.6.0, corrigé 1.6.1), `volume_depuis_p1()` (1.7.0) +
+`acquire_inputs(volume=)` (1.8.0) — le pont **P1 Nemeton → volume
+câble/IPC**, qui consomme donc directement le travail cœur de cette
+session —, et `accessfor_correspondance()` (1.9.0).
+
 ### 2026-07-21 — App `nemetonshiny` v0.112.0 : sous-onglet Desserte, moteur glouton
 
 Entrée demandée par la session app (`nemeton-plan-entries.md`, entrée 2)
@@ -1912,6 +1939,29 @@ sont archivés dans `specs/` (entrée du 2026-07-22 ci-dessous).
 **Aucun sous-chantier n’est coché** : les moteurs lourds (Steiner,
 optimiseurs, câble-mât) restent ouverts tant que le travail
 `foretaccess` n’est pas livré, conformément à la consigne de l’émetteur.
+
+### 2026-07-22 — Archivage (2) : briefs `foretaccess` consolidés + plan d’incréments app
+
+Trois documents supplémentaires sortis du scratchpad de la session app,
+recopiés **verbatim** (`diff` vérifié) dans `specs/` :
+
+| Fichier archivé | Nature |
+|----|----|
+| `brief-foretaccess-consolide-2026-07-22.md` | **révision consolidée** — 5 chantiers, mesures sur foretaccess **1.9.0** |
+| `brief-foretaccess-desserte-lidar.md` | desserte corrigée LiDAR (ALSroads) : largeur mesurée + géométrie recalée |
+| `plan-app-increments-foretaccess-1.9.md` | plan d’incréments app pour consommer foretaccess 1.9.0 |
+
+⚠️ **`brief-foretaccess-consolide-2026-07-22.md` supersède
+`brief-foretaccess-desserte-perf-connexite.md`** (archivé la veille) :
+même chantier perf/connexité, mais mesuré sur 1.9.0 et enrichi de trois
+chantiers supplémentaires. L’ancien est conservé comme trace, ne pas le
+traiter en parallèle.
+
+**Point d’attention côté cœur** : le brief LiDAR se déclare
+explicitement « feature **NDP 1+**, donc **côté cœur** — l’app ne fera
+qu’exposer un toggle ». Il y a donc probablement une part `nemeton` à
+cadrer dans ce chantier (correction de la desserte BD TOPO par
+ALSroads), non instruite à ce stade.
 
 ### 2026-07-22 — Archivage des briefs desserte (sortis de `/tmp`)
 
