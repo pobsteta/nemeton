@@ -354,6 +354,8 @@ Volume bois, productivite station et qualite bois d’oeuvre
   : P2: Site Productivity Index Indicator
 - [`indicateur_p3_qualite_bois()`](https://pobsteta.github.io/nemeton/reference/indicateur_p3_qualite_bois.md)
   : P3: Timber Quality Score Indicator
+- [`volume_mobilisable()`](https://pobsteta.github.io/nemeton/reference/volume_mobilisable.md)
+  : Mobilisable timber volume for road-network sizing
 
 ## Famille E : Energie & Climat
 

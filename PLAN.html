@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.162.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.163.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -870,6 +870,14 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-22--v01630--volume_mobilisable-livré-spec-040-jalon--taux-saisi-">2026-07-22 — v0.163.0 : <code>volume_mobilisable()</code> livré (spec 040, jalon « taux saisi »)<a class="anchor" aria-label="anchor" href="#id_2026-07-22--v01630--volume_mobilisable-livr%C3%A9-spec-040-jalon--taux-saisi-"></a></h3>
+<p>Décision de Pascal : <strong>taux saisi d’abord, IFN plus tard</strong>. Correction de périmètre au passage — j’avais annoncé un jalon « lots 1+4 », c’était faux : le <strong>lot 1 (résolution SER) ne sert qu’à keyer la table IFN</strong>, et avec un taux saisi l’argument <code>ser</code> n’est jamais consulté. Le jalon se réduit donc au <strong>lot 4 seul</strong>. Ni source SER à déclarer, ni <code>load_ser_source()</code>, ni jointure spatiale : rien de l’infrastructure identifiée au lot 0 n’est nécessaire pour débloquer l’app.</p>
+<p>Livré : <code>volume_mobilisable(units, volume_col, unite, taux_prelevement, horizon_ans, na_policy, column_name)</code>, export + <code>.Rd</code> à la main (<code>project_rd_no_document</code>), <strong>22 tests PASS</strong>. Le cœur ne calcule aucun volume — <code><a href="reference/indicateur_p1_volume.html">indicateur_p1_volume()</a></code> en reste seul propriétaire — et n’appelle pas <code>foretaccess</code> : le couplage reste un <strong>contrat de colonne</strong>, la direction des dépendances est préservée.</p>
+<p>Les trois écarts du cadrage sont traités : <code>unite</code> (<code>m3_total</code> pour <code>calculer_flux()</code>, <code>m3_ha</code> pour <code>reseau_desserte()</code>/<code>optimiser_reseau()</code>, cf. le piège du §3), <code>taux_prelevement</code> × <code>horizon_ans</code> (flux annuel, pas fraction), et <code>na_policy</code> pour le cas NDP 0 où P1 est <code>NA</code>. Un CRS géographique est refusé en <code>m3_total</code> plutôt que de rendre des hectares douteux. Test de non-régression explicite du piège d’unité : à P1 égal, <code>m3_ha</code> est identique entre deux parcelles et <code>m3_total</code> est dans le rapport de leurs surfaces.</p>
+<p>Décisions prises dans leur version conservatrice, réversibles sans casser l’API : <strong>D3</strong> = <code>na_policy = "na"</code>, <strong>D5</strong> = pas de repli CHM (la fonction consomme une colonne P1 déjà calculée). <strong>D4/D6/D7 différés</strong> : le mode table échoue explicitement (<code>cli_abort</code>) plutôt que de servir des chiffres non sourcés.</p>
+<p>Reste pour plus tard : lots 1-3 (source SER download-only, dérivation des taux depuis les données brutes IFN, cascade de repli). Côté aval, rien n’est débloqué tant que les deux blocages <code>foretaccess</code> du brief desserte tiennent.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-22--spec-040-cadrée--volume_mobilisable-couplage-p1--volume_champ">2026-07-22 — Spec 040 cadrée : <code>volume_mobilisable()</code> (couplage P1 → <code>volume_champ</code>)<a class="anchor" aria-label="anchor" href="#id_2026-07-22--spec-040-cadr%C3%A9e--volume_mobilisable-couplage-p1--volume_champ"></a></h3>
 <p>Le brief app <code>brief-desserte-perf-connexite.md</code> (session <code>nemetonshiny</code>) arrive avec trois demandes ; <strong>deux ne sont pas pour ce repo</strong>. Perf des moteurs, bornes Steiner/optimiseurs, sémantique de <code>connexe</code>/CA-16.5, <code>$lignes</code> contracté : tout cela vit dans <strong><code>foretaccess</code></strong> (<code>reseau_desserte</code>, <code>surface_cout_construction</code>, <code>optimiser_reseau</code> — absents de <code>nemeton</code>, <code>NAMESPACE:86</code> côté foretaccess), qui a son repo, son <code>PLAN.md</code> et sa version (v1.6.1). Routé vers la session dédiée, comme l’avait été le brief câble (déjà traité là-bas : <code>fix(depot): places_depot()</code>).</p>

@@ -1,5 +1,39 @@
 # Changelog
 
+## nemeton 0.163.0 (2026-07-22)
+
+#### Added — `volume_mobilisable()` : couplage P1 → `volume_champ` (spec 040)
+
+Jointure entre l’indicateur **P1** (volume sur pied, m³/ha) et la
+colonne de volume attendue par les moteurs de desserte de `foretaccess`.
+Aucun calcul de volume n’est dupliqué :
+[`indicateur_p1_volume()`](https://pobsteta.github.io/nemeton/reference/indicateur_p1_volume.md)
+en reste le seul propriétaire.
+
+- `volume_mobilisable(units, volume_col, unite, taux_prelevement, horizon_ans, na_policy, column_name)`
+  → `units` + une colonne de volume.
+
+**`unite` n’est pas un confort** : les deux consommateurs de
+`volume_champ` en aval attendent des sémantiques **opposées**, et aucun
+ne lève d’erreur sur la mauvaise. `calculer_flux()` répartit le volume
+sur ses points sources puis l’accumule → il veut un **total m³**
+(`"m3_total"`, défaut) ; `reseau_desserte()` et `optimiser_reseau()`
+rasterisent la colonne cellule par cellule → ils veulent une **densité
+m³/ha** (`"m3_ha"`), un total y étant compté une fois par cellule, ce
+qui surpondère mécaniquement les grandes parcelles.
+
+`taux_prelevement` est un **flux annuel** (m³/ha/an), pas une fraction :
+d’où `horizon_ans` obligatoire (`volume = P1 × taux × horizon`). La
+table IFN essence × sylvoécorégion (spec 040, D4) est **différée** —
+`taux_prelevement = NULL` échoue explicitement plutôt que de servir des
+chiffres non sourcés. Seules les voies scalaire et vecteur sont livrées.
+
+`na_policy` traite le cas courant en **NDP 0**, où P1 est `NA` faute
+d’inventaire et de CHM : `"na"` (défaut) propage et avertit, `"zero"`
+ramène à 0 en signalant que la parcelle passera pour « rien à sortir »,
+`"error"` interrompt. En `"m3_total"`, un CRS géographique est refusé
+plutôt que de rendre des hectares douteux.
+
 ## nemeton 0.162.0 (2026-07-16)
 
 #### Added — `regen_rank_species()` : top-N essences par UGF (spec 039)
