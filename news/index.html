@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.164.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.165.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,32 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.165.0" id="nemeton-01650-2026-07-22">nemeton 0.165.0 (2026-07-22)<a class="anchor" aria-label="anchor" href="#nemeton-01650-2026-07-22"></a></h2>
+<div class="section level4">
+<h4 id="added--pont-entre-nomenclatures-dessences-spec-d9-0-165-0">Added — pont entre nomenclatures d’essences (spec 040, <strong>D9</strong>)<a class="anchor" aria-label="anchor" href="#added--pont-entre-nomenclatures-dessences-spec-d9-0-165-0"></a></h4>
+<p>Trois nomenclatures coexistaient dans le projet sans clé commune : <code>espar</code> IFN (<code>"09"</code>), code P1 à quatre lettres (<code>"FASY"</code>), code tolérances en snake-case (<code>"fagus_sylvatica"</code>). Le <strong>nom latin</strong> sert désormais de pivot.</p>
+<ul><li>
+<code><a href="../reference/ifn_espar_correspondance.html">ifn_espar_correspondance()</a></code> — table de correspondance, 193 lignes.</li>
+<li>
+<code>resoudre_espar(x)</code> — ramène <strong>n’importe laquelle</strong> des quatre formes (les trois codes plus le binôme latin) au code IFN. <code>NA</code> quand rien n’apparie, jamais de devinette.</li>
+</ul><p><code><a href="../reference/volume_mobilisable.html">volume_mobilisable()</a></code> accepte du coup n’importe quelle nomenclature dans <code>espar_field</code> : exiger l’<code>espar</code> le rendait pénible à appeler, les données d’UGF portant rarement les codes de l’inventaire.</p>
+<p><strong>Appariement par autonyme.</strong> Le référentiel IGN descend souvent au rang infraspécifique (<em>Picea abies</em> subsp. <em>abies</em>, <em>Quercus robur</em> var. <em>robur</em>) là où nos tables portent le binôme nu. L’appariement retient donc aussi l’<strong>autonyme</strong> — la sous-espèce nominale, taxonomiquement équivalente à l’espèce. Gain : 12 → <strong>20</strong> codes P1 résolus sur 22 essences réelles, et 107 → <strong>125</strong> codes tolérances. Là où il n’existe pas d’autonyme (<em>Pinus nigra</em> n’est publié qu’en variétés), la ligne reste <code>NA</code> plutôt que de se voir attribuer une variété arbitraire.</p>
+</div>
+<div class="section level4">
+<h4 id="added--supplétif-de-volume-en-ndp-spec-d8-0-165-0">Added — supplétif de volume en NDP 0 (spec 040, <strong>D8</strong>)<a class="anchor" aria-label="anchor" href="#added--suppl%C3%A9tif-de-volume-en-ndp-spec-d8-0-165-0"></a></h4>
+<p><code><a href="../reference/completer_volume_ifn.html">completer_volume_ifn()</a></code> comble les <code>NA</code> de P1 par le volume de référence IFN de l’essence et de la sylvoécorégion, en descendant SER → GRECO → national. C’est le cas ordinaire en <strong>NDP 0</strong> : sans inventaire terrain ni CHM, P1 ne peut rien produire, et une valeur régionale sourcée vaut mieux qu’un trou.</p>
+<p>Deux garde-fous : <strong>une mesure n’est jamais écrasée</strong> (seuls les <code>NA</code> sont comblés), et la <strong>provenance est écrite ligne à ligne</strong> dans une colonne dédiée — <code>"mesure"</code>, <code>"ifn_ser"</code>, <code>"ifn_greco"</code>, <code>"ifn_national"</code> ou <code>NA</code>. Un volume régional ne doit pas pouvoir se faire passer pour un volume mesuré.</p>
+</div>
+<div class="section level4">
+<h4 id="fixed--nom-scientifique-du-douglas-dans-les-tarifs-ifn-0-165-0">Fixed — nom scientifique du douglas dans les tarifs IFN<a class="anchor" aria-label="anchor" href="#fixed--nom-scientifique-du-douglas-dans-les-tarifs-ifn-0-165-0"></a></h4>
+<p><code>inst/extdata/ifn_volume_equations.csv</code> portait <code>PIME | Pinus menziesii</code>. Le douglas est <strong><em>Pseudotsuga</em> menziesii</strong>. Le calcul de P1 n’était pas affecté (<code>lookup_ifn_equation()</code> apparie sur le code, pas sur le nom), mais le nom publié dans la documentation du package était faux, et il rendait tout appariement taxonomique impossible. Erreur mise au jour par le croisement avec le référentiel de l’IGN — invisible tant que personne ne confrontait cette table à une source externe.</p>
+</div>
+<div class="section level4">
+<h4 id="fixed--zéros-non-significatifs-dans-le-pont-de-codes-0-165-0">Fixed — zéros non significatifs dans le pont de codes<a class="anchor" aria-label="anchor" href="#fixed--z%C3%A9ros-non-significatifs-dans-le-pont-de-codes-0-165-0"></a></h4>
+<p>Le référentiel <code>espar-cdref13</code> écrit les codes numériques sur un caractère (<code>"9"</code>) là où <code>ARBRE.csv</code>, donc les tables de référence, les écrit sur deux (<code>"09"</code>). Sans normalisation, <code>resoudre_espar("FASY")</code> rendait <code>"9"</code> — un code <strong>syntaxiquement plausible n’appariant aucune ligne</strong>, donc un pont ne reliant rien, en silence. Aligné sur la convention <code>ARBRE.csv</code>, avec un test qui vérifie non pas la valeur rendue mais qu’elle <strong>ouvre réellement</strong> une ligne des tables de référence.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.164.0" id="nemeton-01640-2026-07-22">nemeton 0.164.0 (2026-07-22)<a class="anchor" aria-label="anchor" href="#nemeton-01640-2026-07-22"></a></h2>
 <div class="section level4">

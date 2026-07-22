@@ -46,8 +46,11 @@ volume_mobilisable(units, volume_col = "P1", unite = c("m3_total", "m3_ha"),
 
 - espar_field:
 
-  Name of the column holding the IFN species code, used only when
-  `taux_prelevement` is `NULL`.
+  Name of the species column, used only when `taux_prelevement` is
+  `NULL`. Any of the project's nomenclatures is accepted — IFN `espar`,
+  four-letter P1 code, snake-case tolerance code or Latin name — and
+  resolved by
+  [`resoudre_espar`](https://pobsteta.github.io/nemeton/reference/resoudre_espar.md).
 
 - ser:
 

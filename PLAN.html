@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.164.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.165.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -870,6 +870,18 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-22--v01650--d8-et-d9-livrées-spec-040-entièrement-close">2026-07-22 — v0.165.0 : D8 et D9 livrées, spec 040 entièrement close<a class="anchor" aria-label="anchor" href="#id_2026-07-22--v01650--d8-et-d9-livr%C3%A9es-spec-040-enti%C3%A8rement-close"></a></h3>
+<p><strong>D9 — pont de nomenclatures.</strong> Trois codes essence coexistaient sans clé commune : <code>espar</code> IFN (<code>"09"</code>), code P1 (<code>"FASY"</code>), code tolérances (<code>"fagus_sylvatica"</code>). Pivot retenu : le <strong>nom latin</strong> du référentiel IGN <code>espar-cdref13</code>, jamais d’heuristique sur les libellés français. <code><a href="reference/ifn_espar_correspondance.html">ifn_espar_correspondance()</a></code> (193 lignes) + <code><a href="reference/resoudre_espar.html">resoudre_espar()</a></code>, qui ramène les quatre formes au code IFN. <code><a href="reference/volume_mobilisable.html">volume_mobilisable()</a></code> accepte du coup n’importe quelle nomenclature — exiger l’<code>espar</code> le rendait pénible à appeler depuis des données d’UGF.</p>
+<p><em>Appariement par autonyme</em> : l’IGN descend souvent au rang infraspécifique (<em>Picea abies</em> subsp. <em>abies</em>) ; l’autonyme étant taxonomiquement équivalent à l’espèce, il est apparié. 12 → <strong>20</strong> codes P1 (sur 22 essences réelles), 107 → <strong>125</strong> codes tolérances. Sans autonyme (<em>Pinus nigra</em>, publié en variétés seules) : <code>NA</code> assumé plutôt qu’une variété choisie au hasard.</p>
+<p><strong>D8 — supplétif de volume.</strong> <code><a href="reference/completer_volume_ifn.html">completer_volume_ifn()</a></code> comble les <code>NA</code> de P1 par la référence régionale (cascade SER → GRECO → national). C’est le cas ordinaire en <strong>NDP 0</strong>. Deux garde-fous : une mesure n’est <strong>jamais</strong> écrasée, et la provenance est écrite <strong>ligne à ligne</strong> (<code>mesure</code> / <code>ifn_ser</code> / <code>ifn_greco</code> / <code>ifn_national</code> / <code>NA</code>) — sans quoi une valeur régionale peut se faire passer pour une mesure. Défaut <code>mesure = "present"</code> (figure de peuplement) et non <code>"maille"</code>, trop basse d’un ordre de grandeur.</p>
+<p><strong>Deux corrections tombées du croisement.</strong></p>
+<ol style="list-style-type: decimal"><li>
+<code>ifn_volume_equations.csv</code> portait <code>PIME | Pinus menziesii</code> — le douglas est <strong><em>Pseudotsuga</em> menziesii</strong>. P1 n’était pas faussé (<code>lookup_ifn_equation()</code> apparie sur le code), mais le nom publié était erroné. <strong>Invisible tant que cette table n’était pas confrontée à une source externe</strong> — c’est le croisement lui-même qui l’a révélé.</li>
+<li>
+<strong>Troisième occurrence du piège des zéros non significatifs</strong>, et la plus dangereuse. Le référentiel écrit <code>"9"</code>, les tables <code>"09"</code> : <code><a href="reference/resoudre_espar.html">resoudre_espar()</a></code> rendait un code <strong>syntaxiquement plausible n’appariant aucune ligne</strong>. Un pont ne reliant rien, en silence — <code><a href="reference/completer_volume_ifn.html">completer_volume_ifn()</a></code> aurait rendu des <code>NA</code> partout et j’aurais conclu « pas de référence pour cette essence », explication crédible et fausse. Le test retenu ne vérifie donc pas la valeur rendue mais qu’elle <strong>ouvre réellement</strong> une ligne des tables de référence.</li>
+</ol><p><strong>36 tests</strong> (<code>test-ifn-espar.R</code> 20, <code>test-completer-volume-ifn.R</code> 16) + 1 sur <code>volume_mobilisable</code>. <strong>Spec 040 entièrement close</strong> : D1-D9 tranchées.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-22--v01640--tables-ifn-essence--ser--d4-refermée-spec-040">2026-07-22 — v0.164.0 : tables IFN essence × SER + <strong>D4 refermée</strong> (spec 040)<a class="anchor" aria-label="anchor" href="#id_2026-07-22--v01640--tables-ifn-essence--ser--d4-referm%C3%A9e-spec-040"></a></h3>
 <p>Trois pas dans la même journée, chacun corrigeant le précédent.</p>

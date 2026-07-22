@@ -61,6 +61,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/check_reconfort_validity.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/classify_disturbance.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/cluster_parcels.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/completer_volume_ifn.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/compute_dtm_chm_from_laz.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/compute_family_correlations.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/compute_fast_alert_mask.html</loc></url>
@@ -192,6 +193,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/identify_pareto_optimal.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_campagne_disponible.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_charger.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/ifn_espar_correspondance.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_prelevement_essence_ser.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_taux_prelevement.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_telecharger.html</loc></url>
@@ -347,6 +349,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/resolve_project_layers.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/resolve_species_code.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/resoudre_espar.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/retrieve_knowledge.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/run_fordead_dieback.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/run_memory_capped.html</loc></url>

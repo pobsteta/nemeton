@@ -15,7 +15,7 @@ owner of the IFN tarif. This function only converts and weights."><meta property
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.164.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.165.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -93,8 +93,10 @@ resolves it per unit from the IFN table via
 
 
 <dt id="arg-espar-field">espar_field<a class="anchor" aria-label="anchor" href="#arg-espar-field"></a></dt>
-<dd><p>Name of the column holding the IFN species code, used only
-when <code>taux_prelevement</code> is <code>NULL</code>.</p></dd>
+<dd><p>Name of the species column, used only when
+<code>taux_prelevement</code> is <code>NULL</code>. Any of the project's nomenclatures is
+accepted — IFN <code>espar</code>, four-letter P1 code, snake-case tolerance code or
+Latin name — and resolved by <code><a href="resoudre_espar.html">resoudre_espar</a></code>.</p></dd>
 
 
 <dt id="arg-ser">ser<a class="anchor" aria-label="anchor" href="#arg-ser"></a></dt>

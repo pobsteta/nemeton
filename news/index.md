@@ -1,5 +1,70 @@
 # Changelog
 
+## nemeton 0.165.0 (2026-07-22)
+
+#### Added — pont entre nomenclatures d’essences (spec 040, **D9**)
+
+Trois nomenclatures coexistaient dans le projet sans clé commune :
+`espar` IFN (`"09"`), code P1 à quatre lettres (`"FASY"`), code
+tolérances en snake-case (`"fagus_sylvatica"`). Le **nom latin** sert
+désormais de pivot.
+
+- [`ifn_espar_correspondance()`](https://pobsteta.github.io/nemeton/reference/ifn_espar_correspondance.md)
+  — table de correspondance, 193 lignes.
+- `resoudre_espar(x)` — ramène **n’importe laquelle** des quatre formes
+  (les trois codes plus le binôme latin) au code IFN. `NA` quand rien
+  n’apparie, jamais de devinette.
+
+[`volume_mobilisable()`](https://pobsteta.github.io/nemeton/reference/volume_mobilisable.md)
+accepte du coup n’importe quelle nomenclature dans `espar_field` :
+exiger l’`espar` le rendait pénible à appeler, les données d’UGF portant
+rarement les codes de l’inventaire.
+
+**Appariement par autonyme.** Le référentiel IGN descend souvent au rang
+infraspécifique (*Picea abies* subsp. *abies*, *Quercus robur* var.
+*robur*) là où nos tables portent le binôme nu. L’appariement retient
+donc aussi l’**autonyme** — la sous-espèce nominale, taxonomiquement
+équivalente à l’espèce. Gain : 12 → **20** codes P1 résolus sur 22
+essences réelles, et 107 → **125** codes tolérances. Là où il n’existe
+pas d’autonyme (*Pinus nigra* n’est publié qu’en variétés), la ligne
+reste `NA` plutôt que de se voir attribuer une variété arbitraire.
+
+#### Added — supplétif de volume en NDP 0 (spec 040, **D8**)
+
+[`completer_volume_ifn()`](https://pobsteta.github.io/nemeton/reference/completer_volume_ifn.md)
+comble les `NA` de P1 par le volume de référence IFN de l’essence et de
+la sylvoécorégion, en descendant SER → GRECO → national. C’est le cas
+ordinaire en **NDP 0** : sans inventaire terrain ni CHM, P1 ne peut rien
+produire, et une valeur régionale sourcée vaut mieux qu’un trou.
+
+Deux garde-fous : **une mesure n’est jamais écrasée** (seuls les `NA`
+sont comblés), et la **provenance est écrite ligne à ligne** dans une
+colonne dédiée — `"mesure"`, `"ifn_ser"`, `"ifn_greco"`,
+`"ifn_national"` ou `NA`. Un volume régional ne doit pas pouvoir se
+faire passer pour un volume mesuré.
+
+#### Fixed — nom scientifique du douglas dans les tarifs IFN
+
+`inst/extdata/ifn_volume_equations.csv` portait
+`PIME | Pinus menziesii`. Le douglas est ***Pseudotsuga* menziesii**. Le
+calcul de P1 n’était pas affecté (`lookup_ifn_equation()` apparie sur le
+code, pas sur le nom), mais le nom publié dans la documentation du
+package était faux, et il rendait tout appariement taxonomique
+impossible. Erreur mise au jour par le croisement avec le référentiel de
+l’IGN — invisible tant que personne ne confrontait cette table à une
+source externe.
+
+#### Fixed — zéros non significatifs dans le pont de codes
+
+Le référentiel `espar-cdref13` écrit les codes numériques sur un
+caractère (`"9"`) là où `ARBRE.csv`, donc les tables de référence, les
+écrit sur deux (`"09"`). Sans normalisation, `resoudre_espar("FASY")`
+rendait `"9"` — un code **syntaxiquement plausible n’appariant aucune
+ligne**, donc un pont ne reliant rien, en silence. Aligné sur la
+convention `ARBRE.csv`, avec un test qui vérifie non pas la valeur
+rendue mais qu’elle **ouvre réellement** une ligne des tables de
+référence.
+
 ## nemeton 0.164.0 (2026-07-22)
 
 #### Added — références IFN par essence × sylvoécorégion, et **D4 refermée** (spec 040)

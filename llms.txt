@@ -365,13 +365,27 @@ atteint
 
 - [`ifn_volume_essence_ser()`](https://pobsteta.github.io/nemeton/reference/ifn_volume_essence_ser.md)
   : IFN standing volume by species and sylvoecoregion
+
 - [`ifn_volume_reference()`](https://pobsteta.github.io/nemeton/reference/ifn_volume_reference.md)
   : Reference standing volume, with a SER -\> GRECO -\> national
   fallback
+
 - [`ifn_prelevement_essence_ser()`](https://pobsteta.github.io/nemeton/reference/ifn_prelevement_essence_ser.md)
   : IFN harvest by species and sylvoecoregion
+
 - [`ifn_taux_prelevement()`](https://pobsteta.github.io/nemeton/reference/ifn_taux_prelevement.md)
   : Reference harvest rate, with a SER -\> GRECO -\> national fallback
+
+- [`ifn_espar_correspondance()`](https://pobsteta.github.io/nemeton/reference/ifn_espar_correspondance.md)
+  : Species-code correspondence across the project's three nomenclatures
+
+- [`resoudre_espar()`](https://pobsteta.github.io/nemeton/reference/resoudre_espar.md)
+  :
+
+  Resolve any species code to the IFN `espar` code
+
+- [`completer_volume_ifn()`](https://pobsteta.github.io/nemeton/reference/completer_volume_ifn.md)
+  : Fill missing P1 volumes with the IFN regional reference
 
 ## Acces aux donnees brutes IFN
 
