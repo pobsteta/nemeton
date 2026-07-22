@@ -1372,6 +1372,27 @@ avant », hypothèse à écrire dans la doc. Plan en 5 lots ajouté (spec §11),
 jalon intermédiaire : lots 1+4 en taux saisi suffisent à débloquer l'app, les lots
 2-3 apportent le défaut sourcé.
 
+**Reconnaissance des sources (lot 0, faite le 2026-07-22 — résultat négatif).**
+GetCapabilities WFS Géoplateforme (5,1 Mo, HTTP 200) : **aucune couche SER** (zéro
+« sylvo » dans tout le document) et **aucune donnée de prélèvement** (zéro
+prélèv./récolte/mortalité/production). L'espace `ObsForets` (« Source :
+IGN-Inventaire forestier ») ne publie que 8 couches en maille
+département/région/commune — volume **sur pied**, taux de boisement, niveaux
+trophiques, part forêt publique — jamais de prélèvement, jamais de SER. Donc : la
+couche SER passera par un téléchargement millésimé `inventaire-forestier.ign.fr`
+(download-only, comme la BD Forêts anciennes) et le taux de prélèvement devra être
+**dérivé des données brutes IFN** (arbres exploités entre deux passages), ce qui
+est un chantier statistique à part entière — à arbitrer avant engagement. Le jalon
+« lots 1+4 en taux saisi » devient le chemin le plus probable.
+
+**Trouvaille latérale, à transmettre à `foretaccess`** : le même GetCapabilities
+expose `IGNF_ACCESSIBILITE-PHYSIQUE-FORETS-:acces_skidder` / `acces_porteur`
+(projet **ACCESSFOR**, IGN, édition 2025-01-01, + variante masque Forêt v3) —
+cartographie nationale de l'accessibilité aux engins d'exploitation, **mêmes noms
+d'engins que les moteurs `foretaccess`**, servie en WFS. Usages possibles :
+référence de validation externe des moteurs, et/ou repli face au blocage perf
+(692 s sur 30 parcelles). Rien à faire côté `nemeton` (spec 040 §12).
+
 Restent ouvertes : D3 politique NA, D5 repli CHM, **D6 granularité réellement
 tenable de la maille essence × SER** (86 SER × ~30 essences → cases à faible
 effectif ; repli en escalier SER → GRECO → national → feuillu/résineux, sur

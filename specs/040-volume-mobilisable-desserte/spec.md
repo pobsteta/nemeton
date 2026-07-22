@@ -200,12 +200,34 @@ pipeline Desserte.
 Ordre imposé par les dépendances : sans le lot 1, la table du lot 2 est
 inutilisable. Le lot 4 — la fonction demandée — est le plus petit.
 
+### Lot 0 — Reconnaissance des sources *(faite le 2026-07-22 — résultat négatif)*
+
+GetCapabilities WFS Géoplateforme (`data.geopf.fr/wfs/ows`, 5,1 Mo, HTTP 200) :
+
+- **Aucune couche SER.** Zéro occurrence de « sylvo » dans tout le document.
+- **Aucune donnée de prélèvement.** Zéro occurrence de
+  prélèv./récolte/mortalité/production/disparition.
+- L'espace de noms **`ObsForets`** (Observatoire des Forêts Françaises,
+  « Source : IGN-Inventaire forestier ») ne publie que **8 couches**, toutes en
+  maille **département / région / commune**, jamais SER :
+  `volume_sur_pied_dep_2017_2021`, `volume_sur_pied_region_2017_2021`,
+  `volume_moyen_ha_dep_2018_2022`, `taux_boisement_communal`,
+  `taux_boisement_dep_2018_2022`, `repartition_niveaux_trophiques_2018_2022`
+  (+ toutes campagnes), `part_forets_publiques_dep_2017_2021`.
+  → du **volume sur pied**, jamais du prélèvement.
+
+**Conséquence sur D4** : ni la maille SER ni le taux de prélèvement ne sont
+servis par le WFS. Les deux doivent venir d'ailleurs — voir lots 1 et 2 amendés.
+Le jalon « lots 1+4 en taux saisi » (fin du §11) devient d'autant plus pertinent.
+
 ### Lot 1 — Résolution SER *(le vrai coût de D4)*
 
-1. **Identifier et déclarer la source SER** dans `inst/datasources/FR.json` :
-   couche des sylvoécorégions IGN. À vérifier sur la Géoplateforme — WFS
-   (comme bdforet/roads) ou téléchargement millésimé, ce qui change le loader.
-   Vérifier aussi la licence et le millésime.
+1. **Déclarer la source SER** dans `inst/datasources/FR.json`. **Vérifié : pas de
+   WFS** (lot 0) → ce sera un **téléchargement millésimé** depuis
+   `inventaire-forestier.ign.fr`, donc un loader de type *download-only*, pas
+   `ign_wfs`. Précédent exact dans le repo : la BD Forêts anciennes, elle aussi
+   download-only (cf. mémoire `project_foret_ancienne_source`). Licence et
+   millésime à relever au passage.
 2. **`load_ser_source(aoi, crs = 2154, ...)`**, sur le modèle exact de
    `load_foret_ancienne_source()` (`R/load_foret_ancienne.R:51`) : garde `sf`/CRS,
    `NULL` en repli propre, cache. **Normaliser le CRS explicitement** — ne jamais
@@ -217,6 +239,15 @@ inutilisable. Le lot 4 — la fonction demandée — est le plus petit.
    fois. À confirmer sur la donnée réelle.
 
 ### Lot 2 — Table des taux
+
+**Amendé après le lot 0** : aucun service ne publie le prélèvement. Il faut donc
+le **dériver des données brutes IFN** (tables placettes/arbres, arbres exploités
+entre deux passages du dispositif à revisite). C'est un travail statistique à part
+entière — plan de sondage, pondérations, incertitude — et non une simple recopie
+de tableau. À arbitrer avant de s'y engager : ce lot peut à lui seul peser plus que
+tout le reste de la spec. Alternatives à considérer : publication agrégée du
+Mémento IFN (maille grossière, à retrouver), ou taux dire d'expert **assumé comme
+tel** dans la colonne `source`.
 
 - `inst/extdata/ifn_taux_prelevement.csv` : `species_code, ser, greco,
   taux_m3_ha_an, n_placettes, ic_bas, ic_haut, millesime, source` — une colonne de
@@ -255,4 +286,30 @@ Tests du §8 + cas SER (UGF à cheval, SER absente, repli en escalier) ;
 
 **Jalon utile** : les lots 1+4 livrés avec taux scalaire/vecteur suffisent déjà à
 débloquer l'app (l'utilisateur saisit son taux). Les lots 2-3 apportent le défaut
-sourcé. Découpage possible en deux releases si le sourcing IFN traîne.
+sourcé. Découpage possible en deux releases si le sourcing IFN traîne — et après
+le lot 0, c'est le scénario le plus probable.
+
+## 12. Trouvaille latérale — `ACCESSFOR` (hors scope de cette spec)
+
+Le GetCapabilities du lot 0 a révélé une couche IGN sans rapport avec le volume,
+mais directement utile au **chantier accessibilité/desserte** :
+
+```
+IGNF_ACCESSIBILITE-PHYSIQUE-FORETS-:acces_skidder   (+ acces_porteur)
+IGNF_ACCESSIBILITE-PHYSIQUE-FORETS-MASQUE-FORETV3:… (variante masque Forêt v3)
+```
+
+> « Cartographie de l'accessibilité physique des forêts aux engins d'exploitation,
+> produite par l'IGN à partir de la méthodologie développée dans le cadre du
+> projet **ACCESSFOR**. […] Édition 2025-01-01 »
+> Mots-clés : forêts, **porteur**, **skidder**, accessibilité forestière.
+
+C'est une cartographie nationale officielle, **avec les mêmes noms d'engins que
+les moteurs `foretaccess`** (skidder / porteur), servie en WFS et donc
+immédiatement consommable. Deux usages possibles, à trancher hors de cette spec :
+**référence de validation externe** des moteurs `foretaccess` (comparer classe à
+classe sur une AOI connue — Chastel-Nouvel), et/ou **repli** quand le calcul local
+est trop coûteux (cf. le blocage perf du brief desserte, 692 s sur 30 parcelles).
+
+→ **À transmettre à la session `foretaccess`**, avec le brief desserte. Rien à
+faire côté `nemeton`.
