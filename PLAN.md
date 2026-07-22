@@ -1357,11 +1357,27 @@ documentant des « harvested parcels », il y a aussi un écart de sémantique
 inventaire ni CHM). D'où `unite = c("m3_total", "m3_ha")` + taux de prélèvement.
 
 Décisions tranchées : **D1** taux paramétrable + table par essence (repli
-feuillu/résineux via `is_conifer()`), **D2** couvrir les deux consommateurs.
-Restent ouvertes : **D4 — la source des taux de prélèvement (bloque le mode
-table ; ne pas inventer de chiffres, cf. leçon spec 027)**, D3 politique NA, D5
-repli CHM. Rien n'est débloqué tant que les deux blocages `foretaccess` tiennent :
-le typage est en 6ᵉ position du plan de dev app.
+feuillu/résineux via `is_conifer()`), **D2** couvrir les deux consommateurs,
+**D4 taux de prélèvement IFN par essence × SER** (tranchée le 2026-07-22).
+
+D4 coûte plus que le CSV : **le cœur ne sait pas ce qu'est une SER** (aucune
+occurrence dans `R/` ni dans `FR.json`, dont les seules couches `ign_wfs` sont
+bdforet/roads/water/buildings/departments). Il faut donc déclarer la source SER,
+un `load_ser_source()` calqué sur `load_foret_ancienne_source()`, et une jointure
+spatiale UGF → SER au recouvrement majoritaire. Deux autres conséquences : un taux
+IFN est un **flux annuel** (m³/ha/an), d'où un paramètre `horizon_ans` obligatoire
+et non une simple fraction ; et un prélèvement **observé** n'est pas une
+prescription — dimensionner une desserte dessus suppose « la gestion continue comme
+avant », hypothèse à écrire dans la doc. Plan en 5 lots ajouté (spec §11), avec un
+jalon intermédiaire : lots 1+4 en taux saisi suffisent à débloquer l'app, les lots
+2-3 apportent le défaut sourcé.
+
+Restent ouvertes : D3 politique NA, D5 repli CHM, **D6 granularité réellement
+tenable de la maille essence × SER** (86 SER × ~30 essences → cases à faible
+effectif ; repli en escalier SER → GRECO → national → feuillu/résineux, sur
+l'idiome déjà en place dans P1), D7 millésime IFN. Rien n'est débloqué tant que les
+deux blocages `foretaccess` tiennent : le typage est en 6ᵉ position du plan de dev
+app.
 
 ### 2026-07-21 — App `nemetonshiny` v0.111.2 : `base::%in%` sur SpatRaster (masque no-op) — cœur audité, non affecté
 
