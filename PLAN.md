@@ -1331,6 +1331,38 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-22 — Spec 040 cadrée : `volume_mobilisable()` (couplage P1 → `volume_champ`)
+
+Le brief app `brief-desserte-perf-connexite.md` (session `nemetonshiny`) arrive
+avec trois demandes ; **deux ne sont pas pour ce repo**. Perf des moteurs, bornes
+Steiner/optimiseurs, sémantique de `connexe`/CA-16.5, `$lignes` contracté : tout
+cela vit dans **`foretaccess`** (`reseau_desserte`, `surface_cout_construction`,
+`optimiser_reseau` — absents de `nemeton`, `NAMESPACE:86` côté foretaccess), qui a
+son repo, son `PLAN.md` et sa version (v1.6.1). Routé vers la session dédiée, comme
+l'avait été le brief câble (déjà traité là-bas : `fix(depot): places_depot()`).
+
+**Seul point réellement cœur** : le typage du réseau
+(`calculer_flux` → `typer_desserte`) a besoin d'un volume par parcelle, et le vrai
+volume est l'indicateur **P1** — sans dupliquer le calcul (règle 1). Cadré dans
+`specs/040-volume-mobilisable-desserte/spec.md`, **non implémenté**.
+
+Le cadrage a mis au jour un piège qui aurait produit un résultat faux :
+`volume_champ` a **deux consommateurs de sémantique opposée**. `calculer_flux()`
+répartit le volume sur les points sources (`desserte_flux.R:257`) → il attend un
+**total m³** ; `reseau_desserte()` le rasterise par cellule
+(`desserte_reseau.R:319`) → il attend une **densité m³/ha**, sous peine de
+surpondérer les grandes parcelles. P1 étant en m³/ha *sur pied* et `calculer_flux`
+documentant des « harvested parcels », il y a aussi un écart de sémantique
+(stock vs mobilisé) et un trou de politique NA (P1 est `NA` en NDP 0 sans
+inventaire ni CHM). D'où `unite = c("m3_total", "m3_ha")` + taux de prélèvement.
+
+Décisions tranchées : **D1** taux paramétrable + table par essence (repli
+feuillu/résineux via `is_conifer()`), **D2** couvrir les deux consommateurs.
+Restent ouvertes : **D4 — la source des taux de prélèvement (bloque le mode
+table ; ne pas inventer de chiffres, cf. leçon spec 027)**, D3 politique NA, D5
+repli CHM. Rien n'est débloqué tant que les deux blocages `foretaccess` tiennent :
+le typage est en 6ᵉ position du plan de dev app.
+
 ### 2026-07-21 — App `nemetonshiny` v0.111.2 : `base::%in%` sur SpatRaster (masque no-op) — cœur audité, non affecté
 
 Remontée depuis la session app (`nemetonshiny@59522747`, cycle dev 0.111.2.9000) :
