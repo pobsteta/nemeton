@@ -129,6 +129,7 @@ reference:
     - indicateur_p1_volume
     - indicateur_p2_station
     - indicateur_p3_qualite_bois
+    - volume_mobilisable
 
   - title: "Famille E : Energie & Climat"
     desc: "Potentiel bois-energie et evitement carbone"
