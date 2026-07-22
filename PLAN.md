@@ -1331,6 +1331,39 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-22 — v0.163.0 : `volume_mobilisable()` livré (spec 040, jalon « taux saisi »)
+
+Décision de Pascal : **taux saisi d'abord, IFN plus tard**. Correction de périmètre
+au passage — j'avais annoncé un jalon « lots 1+4 », c'était faux : le **lot 1
+(résolution SER) ne sert qu'à keyer la table IFN**, et avec un taux saisi
+l'argument `ser` n'est jamais consulté. Le jalon se réduit donc au **lot 4 seul**.
+Ni source SER à déclarer, ni `load_ser_source()`, ni jointure spatiale : rien de
+l'infrastructure identifiée au lot 0 n'est nécessaire pour débloquer l'app.
+
+Livré : `volume_mobilisable(units, volume_col, unite, taux_prelevement,
+horizon_ans, na_policy, column_name)`, export + `.Rd` à la main
+(`project_rd_no_document`), **22 tests PASS**. Le cœur ne calcule aucun volume —
+`indicateur_p1_volume()` en reste seul propriétaire — et n'appelle pas
+`foretaccess` : le couplage reste un **contrat de colonne**, la direction des
+dépendances est préservée.
+
+Les trois écarts du cadrage sont traités : `unite` (`m3_total` pour
+`calculer_flux()`, `m3_ha` pour `reseau_desserte()`/`optimiser_reseau()`, cf. le
+piège du §3), `taux_prelevement` × `horizon_ans` (flux annuel, pas fraction), et
+`na_policy` pour le cas NDP 0 où P1 est `NA`. Un CRS géographique est refusé en
+`m3_total` plutôt que de rendre des hectares douteux. Test de non-régression
+explicite du piège d'unité : à P1 égal, `m3_ha` est identique entre deux parcelles
+et `m3_total` est dans le rapport de leurs surfaces.
+
+Décisions prises dans leur version conservatrice, réversibles sans casser l'API :
+**D3** = `na_policy = "na"`, **D5** = pas de repli CHM (la fonction consomme une
+colonne P1 déjà calculée). **D4/D6/D7 différés** : le mode table échoue
+explicitement (`cli_abort`) plutôt que de servir des chiffres non sourcés.
+
+Reste pour plus tard : lots 1-3 (source SER download-only, dérivation des taux
+depuis les données brutes IFN, cascade de repli). Côté aval, rien n'est débloqué
+tant que les deux blocages `foretaccess` du brief desserte tiennent.
+
 ### 2026-07-22 — Spec 040 cadrée : `volume_mobilisable()` (couplage P1 → `volume_champ`)
 
 Le brief app `brief-desserte-perf-connexite.md` (session `nemetonshiny`) arrive
