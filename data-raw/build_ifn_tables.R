@@ -142,3 +142,88 @@ ecrire(agreger(prelev_plac, pl2, diviseur = 5,
        "ifn_prelevement_essence_ser.csv",
        paste0("IGN IFN donnees brutes ", millesime,
               ", Licence Ouverte Etalab v2.0 ; VEGET5==6 (coupe vidange) / 5 ans"))
+
+# --- 5. Correspondance des codes essence (spec 040, D9) --------------
+# Trois nomenclatures coexistent dans le projet, sans clé commune directe :
+#   espar IFN        "09"              (ARBRE.csv, tables de reference IFN)
+#   code P1          "FASY"            (ifn_volume_equations.csv, 24 essences)
+#   code tolerances  "fagus_sylvatica" (european_species_tolerances.csv, 194)
+# Le PIVOT est le nom latin (`lib_cdref` du referentiel IGN). La table de
+# correspondance est construite par ce pivot, et non par des heuristiques sur
+# les libelles francais.
+message("Correspondance des codes essence...")
+
+corr <- unique(data.table(
+  espar       = codes_ess[[1]],
+  lib_espar   = codes_ess[[2]],
+  espece_sci  = codes_ess[[4]]
+))
+corr <- corr[!is.na(espar) & espar != ""]
+
+# ZEROS NON SIGNIFICATIFS — deuxieme occurrence du meme piege. Le referentiel
+# espar-cdref13 ecrit les codes numeriques sur un caractere ("9", "2", "3")
+# alors que ARBRE.csv — donc les tables ifn_*_essence_ser — les ecrit sur deux
+# ("09", "02", "03"). Sans cette normalisation, resoudre_espar() renvoie "9",
+# qui n'apparie AUCUNE ligne des tables de reference : un pont qui ne relie
+# rien, et en silence. On aligne sur la convention ARBRE.csv.
+corr[, espar := fifelse(grepl("^[0-9]$", espar), paste0("0", espar), espar)]
+
+# Normalisation du latin : minuscules, espaces/traits d'union unifies. Les
+# hybrides ("x") et sous-especes restent tels quels, la comparaison se fait
+# sur la chaine normalisee des deux cotes.
+norm_sci <- function(x) {
+  x <- tolower(trimws(as.character(x)))
+  x <- gsub("[[:space:]]+", " ", x)
+  gsub("-", " ", x)
+}
+corr[, cle_sci := norm_sci(espece_sci)]
+
+# Le referentiel IGN descend souvent au rang infraspecifique ("Picea abies
+# subsp. abies", "Quercus robur var. robur"), la ou nos tables portent le
+# binome nu ("Picea abies"). On apparie donc AUSSI sur l'AUTONYME : la
+# sous-espece/variete nominale, dont l'epithete infraspecifique repete
+# l'epithete specifique — taxonomiquement equivalente a l'espece.
+# Quand il n'existe pas d'autonyme (Pinus nigra n'a que des varietes
+# calabrica/corsicana/salzmannii), on laisse NA plutot que d'en choisir une
+# arbitrairement.
+autonyme <- function(x) {
+  m <- regmatches(x, regexec(
+    "^([a-z]+) ([a-z]+) (subsp\\.|var\\.) ([a-z]+)$", x))
+  vapply(m, function(g) {
+    if (length(g) == 5L && identical(g[3], g[5])) paste(g[2], g[3]) else NA_character_
+  }, character(1))
+}
+corr[, cle_auto := autonyme(cle_sci)]
+
+eq <- as.data.table(utils::read.csv("inst/extdata/ifn_volume_equations.csv",
+                                    stringsAsFactors = FALSE))
+eq <- unique(eq[, .(code_p1 = species_code, cle_sci = norm_sci(species_name))])
+eq <- eq[!duplicated(cle_sci)]
+
+tol <- as.data.table(utils::read.csv("inst/extdata/european_species_tolerances.csv",
+                                     encoding = "UTF-8", stringsAsFactors = FALSE))
+tol <- unique(tol[, .(code_tolerances = code, cle_sci = norm_sci(species_sci))])
+tol <- tol[!duplicated(cle_sci)]
+
+joindre <- function(base, ref, col) {
+  out <- merge(base, ref, by = "cle_sci", all.x = TRUE)
+  # Second passage sur l'autonyme pour ce qui n'a pas apparie au binome nu.
+  reste <- is.na(out[[col]]) & !is.na(out$cle_auto)
+  if (any(reste)) {
+    idx <- match(out$cle_auto[reste], ref$cle_sci)
+    out[[col]][reste] <- ref[[col]][idx]
+  }
+  out
+}
+corr <- joindre(corr, eq,  "code_p1")
+corr <- joindre(corr, tol, "code_tolerances")
+corr[, c("cle_sci", "cle_auto") := NULL]
+setcolorder(corr, c("espar", "lib_espar", "espece_sci", "code_p1",
+                    "code_tolerances"))
+setorder(corr, espar)
+corr[, `:=`(millesime = millesime,
+            source = "IGN espar-cdref13 (Etalab v2.0), pivot nom latin")]
+fwrite(corr, "inst/extdata/ifn_espar_correspondance.csv", na = "")
+message(nrow(corr), " correspondances -> inst/extdata/ifn_espar_correspondance.csv",
+        " | code_p1 resolu : ", sum(!is.na(corr$code_p1)),
+        " | code_tolerances resolu : ", sum(!is.na(corr$code_tolerances)))

@@ -23,8 +23,10 @@ every unit, or a numeric vector of \code{nrow(units)}. \code{NULL} (default)
 resolves it per unit from the IFN table via
 \code{\link{ifn_taux_prelevement}}, which then requires \code{espar_field}.}
 
-\item{espar_field}{Name of the column holding the IFN species code, used only
-when \code{taux_prelevement} is \code{NULL}.}
+\item{espar_field}{Name of the species column, used only when
+\code{taux_prelevement} is \code{NULL}. Any of the project's nomenclatures is
+accepted — IFN \code{espar}, four-letter P1 code, snake-case tolerance code or
+Latin name — and resolved by \code{\link{resoudre_espar}}.}
 
 \item{ser}{SER code for the units, a single string, used only when
 \code{taux_prelevement} is \code{NULL}. \code{NULL} falls back to national

@@ -9,7 +9,7 @@ FASY,Fagus sylvatica,tarif_ifn,0.000039,2.523,0.991,7.5,100,5,50,IFN_tarifs_2016
 FREX,Fraxinus excelsior,tarif_ifn,0.000037,2.467,1.008,7.5,90,5,45,IFN_tarifs_2016
 LADE,Larix decidua,tarif_ifn,0.000040,2.498,0.956,7.5,85,5,45,IFN_tarifs_2016
 PIAB,Picea abies,tarif_ifn,0.000043,2.587,0.967,7.5,95,5,50,IFN_tarifs_2016
-PIME,Pinus menziesii,tarif_ifn,0.000044,2.612,0.945,7.5,100,5,55,IFN_tarifs_2016
+PIME,Pseudotsuga menziesii,tarif_ifn,0.000044,2.612,0.945,7.5,100,5,55,IFN_tarifs_2016
 PINI,Pinus nigra,tarif_ifn,0.000041,2.534,0.963,7.5,85,5,40,IFN_tarifs_2016
 PIPI,Pinus pinaster,tarif_ifn,0.000042,2.556,0.952,7.5,90,5,45,IFN_tarifs_2016
 PISY,Pinus sylvestris,tarif_ifn,0.000040,2.523,0.968,7.5,85,5,40,IFN_tarifs_2016

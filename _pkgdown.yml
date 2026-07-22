@@ -140,6 +140,9 @@ reference:
     - ifn_volume_reference
     - ifn_prelevement_essence_ser
     - ifn_taux_prelevement
+    - ifn_espar_correspondance
+    - resoudre_espar
+    - completer_volume_ifn
 
   - title: "Acces aux donnees brutes IFN"
     desc: >

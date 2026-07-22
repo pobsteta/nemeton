@@ -194,3 +194,14 @@ test_that("an explicit rate still bypasses the table entirely", {
   expect_equal(out$volume_mobilisable, c(200, 200), tolerance = 1e-6)
   expect_null(attr(out, "niveau_prelevement"))
 })
+
+test_that("the table mode accepts any of the project's nomenclatures (D9)", {
+  # Exiger l'espar rendait la fonction penible a appeler : les donnees d'UGF
+  # portent rarement les codes de l'inventaire.
+  u <- .vm_units_espar(c("FASY", "PIAB"))
+  out <- volume_mobilisable(u, unite = "m3_ha", horizon_ans = 10)
+  expect_false(any(is.na(out$volume_mobilisable)))
+  ref <- volume_mobilisable(.vm_units_espar(c("09", "62")),
+                            unite = "m3_ha", horizon_ans = 10)
+  expect_equal(out$volume_mobilisable, ref$volume_mobilisable)
+})

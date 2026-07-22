@@ -1331,6 +1331,49 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-22 — v0.165.0 : D8 et D9 livrées, spec 040 entièrement close
+
+**D9 — pont de nomenclatures.** Trois codes essence coexistaient sans clé
+commune : `espar` IFN (`"09"`), code P1 (`"FASY"`), code tolérances
+(`"fagus_sylvatica"`). Pivot retenu : le **nom latin** du référentiel IGN
+`espar-cdref13`, jamais d'heuristique sur les libellés français.
+`ifn_espar_correspondance()` (193 lignes) + `resoudre_espar()`, qui ramène les
+quatre formes au code IFN. `volume_mobilisable()` accepte du coup n'importe
+quelle nomenclature — exiger l'`espar` le rendait pénible à appeler depuis des
+données d'UGF.
+
+*Appariement par autonyme* : l'IGN descend souvent au rang infraspécifique
+(*Picea abies* subsp. *abies*) ; l'autonyme étant taxonomiquement équivalent à
+l'espèce, il est apparié. 12 → **20** codes P1 (sur 22 essences réelles),
+107 → **125** codes tolérances. Sans autonyme (*Pinus nigra*, publié en
+variétés seules) : `NA` assumé plutôt qu'une variété choisie au hasard.
+
+**D8 — supplétif de volume.** `completer_volume_ifn()` comble les `NA` de P1
+par la référence régionale (cascade SER → GRECO → national). C'est le cas
+ordinaire en **NDP 0**. Deux garde-fous : une mesure n'est **jamais** écrasée,
+et la provenance est écrite **ligne à ligne** (`mesure` / `ifn_ser` /
+`ifn_greco` / `ifn_national` / `NA`) — sans quoi une valeur régionale peut se
+faire passer pour une mesure. Défaut `mesure = "present"` (figure de
+peuplement) et non `"maille"`, trop basse d'un ordre de grandeur.
+
+**Deux corrections tombées du croisement.**
+
+1. `ifn_volume_equations.csv` portait `PIME | Pinus menziesii` — le douglas est
+   ***Pseudotsuga* menziesii**. P1 n'était pas faussé (`lookup_ifn_equation()`
+   apparie sur le code), mais le nom publié était erroné. **Invisible tant que
+   cette table n'était pas confrontée à une source externe** — c'est le
+   croisement lui-même qui l'a révélé.
+2. **Troisième occurrence du piège des zéros non significatifs**, et la plus
+   dangereuse. Le référentiel écrit `"9"`, les tables `"09"` : `resoudre_espar()`
+   rendait un code **syntaxiquement plausible n'appariant aucune ligne**. Un
+   pont ne reliant rien, en silence — `completer_volume_ifn()` aurait rendu des
+   `NA` partout et j'aurais conclu « pas de référence pour cette essence »,
+   explication crédible et fausse. Le test retenu ne vérifie donc pas la valeur
+   rendue mais qu'elle **ouvre réellement** une ligne des tables de référence.
+
+**36 tests** (`test-ifn-espar.R` 20, `test-completer-volume-ifn.R` 16) + 1 sur
+`volume_mobilisable`. **Spec 040 entièrement close** : D1-D9 tranchées.
+
 ### 2026-07-22 — v0.164.0 : tables IFN essence × SER + **D4 refermée** (spec 040)
 
 Trois pas dans la même journée, chacun corrigeant le précédent.
