@@ -117,3 +117,35 @@ package tiers pour cela.
    grandeur publié pour la récolte française. Un test le vérifie.
 7. Millésime **2005-2024** : rejouer `data-raw/build_ifn_tables.R` pour
    actualiser — le script découvre seul la campagne la plus récente.
+
+## Correspondance des codes essence (spec 040, D9)
+
+Table `inst/extdata/ifn_espar_correspondance.csv` (193 lignes), exposée par
+`ifn_espar_correspondance()` et `resoudre_espar()`.
+
+- **Source** : référentiel `espar-cdref13.csv` de l'export IGN (Licence Ouverte
+  Etalab v2.0), qui donne pour chaque `espar` le nom latin (`lib_cdref`).
+- **Pivot** : le **nom latin**, croisé avec `ifn_volume_equations.csv`
+  (codes P1 à quatre lettres) et `european_species_tolerances.csv` (codes
+  snake-case). Jamais d'heuristique sur les libellés français.
+- **Autonyme** : l'IGN descendant souvent au rang infraspécifique
+  (*Picea abies* subsp. *abies*), l'appariement retient aussi la sous-espèce ou
+  variété nominale, taxonomiquement équivalente à l'espèce.
+
+### Prudence d'usage
+1. **Couverture inégale par construction.** `code_p1` n'est renseigné que pour
+   les essences présentes dans `ifn_volume_equations.csv` (20 sur 22 essences
+   réelles) ; un `NA` signifie « pas de tarif IFN spécifique », pas « essence
+   inconnue » — P1 bascule alors sur le genre.
+2. **Pas de repli arbitraire.** Là où l'IGN ne publie que des variétés sans
+   autonyme (*Pinus nigra* : *calabrica*, *corsicana*, *salzmannii*), la ligne
+   reste `NA`. Idem pour les libellés non latins (`POSP`, « Populus cultive »).
+3. **Zéros non significatifs** : les codes sont alignés sur la convention
+   d'`ARBRE.csv` (`"09"`, pas `"9"`), afin qu'un code résolu apparie
+   effectivement les tables `ifn_*_essence_ser`. Un test le verrouille.
+
+### Correction apportée à une table préexistante
+`ifn_volume_equations.csv` portait `PIME | Pinus menziesii` ; le douglas est
+***Pseudotsuga* menziesii**. Corrigé le 22/07/2026. Le calcul de P1 n'était pas
+affecté (`lookup_ifn_equation()` apparie sur le code), mais le nom scientifique
+publié était erroné.

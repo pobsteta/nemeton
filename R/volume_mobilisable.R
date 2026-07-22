@@ -56,8 +56,10 @@
 #'   to every unit, or a numeric vector of `nrow(units)`. `NULL` (default)
 #'   resolves it per unit from the IFN table via [ifn_taux_prelevement()],
 #'   which then requires `espar_field`.
-#' @param espar_field Name of the column holding the IFN species code, used
-#'   only when `taux_prelevement` is `NULL`.
+#' @param espar_field Name of the species column, used only when
+#'   `taux_prelevement` is `NULL`. Any of the project's nomenclatures is
+#'   accepted — IFN `espar`, four-letter P1 code, snake-case tolerance code or
+#'   Latin name — and resolved by [resoudre_espar()].
 #' @param ser SER code for the units, a single string, used only when
 #'   `taux_prelevement` is `NULL`. `NULL` falls back to national rates.
 #' @param min_plac Minimum plots for an IFN mesh level to qualify, passed to
@@ -116,13 +118,16 @@ volume_mobilisable <- function(units,
     if (!espar_field %in% names(units)) {
       cli::cli_abort(c(
         "{.arg taux_prelevement} is NULL, so the IFN table is used.",
-        "x" = "Column {.val {espar_field}} (IFN species code) not found in \\
-               {.arg units}.",
+        "x" = "Species column {.val {espar_field}} not found in {.arg units}.",
         "i" = "Supply a rate directly, or add the column, or set \\
                {.arg espar_field}."
       ))
     }
-    esp <- as.character(units[[espar_field]])
+    # Toute nomenclature du projet est acceptée (espar, code P1 à quatre
+    # lettres, code tolérances, nom latin) : c'est le pont D9 qui ramène au
+    # code IFN. Exiger l'espar rendait la fonction pénible à appeler depuis
+    # des données d'UGF, qui portent rarement les codes de l'inventaire.
+    esp <- resoudre_espar(as.character(units[[espar_field]]))
     ref <- ifn_taux_prelevement(unique(esp[!is.na(esp)]), ser = ser,
                                 min_plac = min_plac)
     idx <- match(esp, ref$espar)

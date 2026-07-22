@@ -2,7 +2,8 @@
 
 **Version** : 1.0.0
 **Date**    : 2026-07-22
-**Statut**  : **Spec close côté cœur** (v0.163.0 puis v0.164.0). Lots 0, 2, 3,
+**Statut**  : **Spec close côté cœur, D8 et D9 comprises** (v0.163.0 → v0.165.0). Détail historique ci-dessous.
+**Statut initial** : **close** (v0.163.0 puis v0.164.0). Lots 0, 2, 3,
 4, 5 livrés ; lot 1 (jointure spatiale UGF → SER) **non nécessaire** — les
 placettes IFN portent déjà leur SER. **D4 refermée** (§5.c) : le prélèvement est
 dérivé de la revisite IFN, `volume_mobilisable(taux_prelevement = NULL)`
@@ -233,8 +234,8 @@ pipeline Desserte.
 | D5 | Repli CHM automatique si `volume_col` absent | Ouverte |
 | D6 | Granularité réellement tenable de la maille essence × SER | **Levée** 2026-07-22 — `w` fournit la pondération ; 1 193 cellules sur 4 639 à n ≥ 30, 2 107 à n < 5 → cascade obligatoire (§5.b) |
 | D7 | Millésime IFN retenu + périodicité de mise à jour de la table | Partiellement — table figée sur **2005-2019**, rejouable par `data-raw/build_ifn_volume_ser.R` |
-| D8 | Le volume IFN essence × SER sert-il à **calibrer / suppléer P1** (cas NDP 0) plutôt qu'à multiplier un taux ? | **Ouverte** (§5.b) |
-| D9 | Pont entre codes essence IFN (`09`) et codes 4 lettres de P1 (`FASY`) | **Ouverte** (§5.c) |
+| D8 | Le volume IFN essence × SER sert-il à **calibrer / suppléer P1** (cas NDP 0) ? | **Tranchée et livrée** v0.165.0 — `completer_volume_ifn()`, provenance par ligne (§5.d) |
+| D9 | Pont entre codes essence IFN (`09`) et codes 4 lettres de P1 (`FASY`) | **Livrée** v0.165.0 — `resoudre_espar()`, pivot latin + autonyme (§5.d) |
 
 ## 11. Plan de développement (5 lots)
 
@@ -413,3 +414,38 @@ SER → GRECO → national, et remonte le niveau atteint dans l'attribut
 `PIAB`). Aujourd'hui l'appelant fournit le code IFN. Le référentiel
 `espar-cdref13.csv` porte le nom latin, et `european_species_tolerances()` porte
 `species_sci` : le pont est faisable, non fait.
+
+### 5.d — D8 et D9 livrées (v0.165.0, 2026-07-22)
+
+**D9 — pont de nomenclatures.** Trois codes coexistaient sans clé commune :
+`espar` IFN (`"09"`), code P1 (`"FASY"`), code tolérances
+(`"fagus_sylvatica"`). Pivot retenu : le **nom latin**, porté par le
+référentiel `espar-cdref13` de l'IGN — jamais d'heuristique sur les libellés
+français. `resoudre_espar()` ramène les quatre formes (les trois codes + le
+binôme) au code IFN, `NA` sinon.
+
+*Appariement par autonyme* : l'IGN descend souvent au rang infraspécifique
+(*Picea abies* subsp. *abies*). L'autonyme — sous-espèce nominale, dont
+l'épithète répète l'épithète spécifique — est taxonomiquement équivalent à
+l'espèce, donc apparié. Gain 12 → 20 codes P1 (sur 22 essences réelles) et
+107 → 125 codes tolérances. Sans autonyme (*Pinus nigra*, publié en variétés
+seules), on laisse `NA` : choisir une variété serait arbitraire.
+
+**D8 — supplétif de volume.** `completer_volume_ifn()` comble les `NA` de P1
+par la référence régionale, cascade SER → GRECO → national. Deux garde-fous :
+une mesure n'est **jamais** écrasée, et la **provenance est écrite ligne à
+ligne** (`"mesure"` / `"ifn_ser"` / `"ifn_greco"` / `"ifn_national"` / `NA`).
+Le risque propre à ce genre de complétion est qu'une valeur régionale se fasse
+passer pour une mesure ; la seule protection est que le lecteur en aval puisse
+trancher. `mesure = "present"` par défaut (figure de peuplement, comparable à
+un P1 d'UGF) et non `"maille"`, trop basse d'un ordre de grandeur.
+
+**Deux corrections tombées du croisement.** (1) `ifn_volume_equations.csv`
+portait `PIME | Pinus menziesii` — le douglas est *Pseudotsuga menziesii*.
+P1 n'était pas affecté (appariement sur le code), mais le nom publié était
+faux ; invisible tant que cette table n'était pas confrontée à une source
+externe. (2) **Troisième occurrence du piège des zéros non significatifs**, et
+la plus dangereuse : le référentiel écrit `"9"`, les tables `"09"` ; le pont
+rendait un code plausible n'appariant **aucune** ligne, en silence. Le test
+retenu ne vérifie donc pas la valeur rendue mais qu'elle **ouvre réellement**
+une ligne des tables de référence.
