@@ -1757,6 +1757,108 @@ cœur).
 
 ## Journal
 
+### 2026-07-22 — v0.164.0 : tables IFN essence × SER + **D4 refermée** (spec 040)
+
+Trois pas dans la même journée, chacun corrigeant le précédent.
+
+**1. Reprise `PPtools`/`DataForet`.** Pascal obtient de **Max
+Bruciamacchie** l’autorisation explicite (courriel du 22/07/2026) de
+reprendre sous GPL-3 ses packages publiés en GPL-2. Table de volume sur
+pied essence × SER construite depuis ses `.rda` (2005-2019). Deux
+découvertes en inspectant la donnée plutôt qu’en supposant : les
+placettes IFN portent **déjà** leur SER — donc **le lot 1 (jointure
+spatiale) était inutile** — et `w` est le poids de sondage, ce qui
+**lève D6**. Mais aucune colonne de coupe : pas de prélèvement.
+
+**2. Pascal signale `FrenchNFIfindeR`.** Le package (Jérémy Borderieux,
+GPL-3) télécharge l’export brut de l’IGN, qui contient la **revisite à 5
+ans**. Vérification sur l’export réel : `ARBRE.csv` porte `VEGET5`, dont
+le code **`6` = coupé vidangé**. Le code `7` (coupé **non** vidangé) est
+exclu — ce bois reste en forêt et ne charge jamais la desserte. Les
+données sont sous **Licence Ouverte Etalab v2.0**, donc l’autorisation
+n’était pas requise pour elles ; elle couvre la méthode. Consigne de
+Pascal : ne pas dépendre du package mais **le réécrire et l’améliorer**,
+et ne pas s’arrêter à 2023.
+
+**3. Tables refaites depuis l’IGN, campagne 2005-2024.**
+`FrenchNFIfindeR` fige 2023 dans son source ;
+[`ifn_campagne_disponible()`](https://pobsteta.github.io/nemeton/reference/ifn_campagne_disponible.md)
+sonde et trouve **2024**.
+
+Livré :
+[`ifn_campagne_disponible()`](https://pobsteta.github.io/nemeton/reference/ifn_campagne_disponible.md)
+/
+[`ifn_telecharger()`](https://pobsteta.github.io/nemeton/reference/ifn_telecharger.md)
+/
+[`ifn_charger()`](https://pobsteta.github.io/nemeton/reference/ifn_charger.md)
+(réécriture, 5 différences documentées : campagne dynamique, non
+interactif, tables sélectives, retour de valeur, **aucune dérivation
+silencieuse** au chargement) ;
+[`ifn_volume_essence_ser()`](https://pobsteta.github.io/nemeton/reference/ifn_volume_essence_ser.md)
+/
+[`ifn_volume_reference()`](https://pobsteta.github.io/nemeton/reference/ifn_volume_reference.md)
+;
+[`ifn_prelevement_essence_ser()`](https://pobsteta.github.io/nemeton/reference/ifn_prelevement_essence_ser.md)
+/
+[`ifn_taux_prelevement()`](https://pobsteta.github.io/nemeton/reference/ifn_taux_prelevement.md)
+; branchement du mode table de
+[`volume_mobilisable()`](https://pobsteta.github.io/nemeton/reference/volume_mobilisable.md),
+qui **cesse d’échouer** — **D4 refermée**. **77 tests** sur les trois
+fichiers.
+
+**Deux bugs traversés, de natures opposées — à retenir.** Le premier
+était *visible* : table de prélèvement à **0 ligne**. La ligne de
+revisite ne porte que le sort de l’arbre, `V` et `ESPAR` y sont vides à
+100 % ; mesure et essence vivent sur la ligne de **1re visite**, clé
+`(IDP, A)`. J’avais lu ces lignes de `FrenchNFIfindeR`, je les avais
+citées, et je ne les avais pas comprises. Agréger sur `W` seul (présent
+sur 50 458 lignes) aurait donné une table **pleine et fausse** — le mode
+d’échec dangereux. Le second était *silencieux* : hêtre et chênes sans
+libellé, parce que le référentiel écrit `9`, `2`, `3` et les données
+`09`, `02`, `03` ; seuls les libellés le trahissaient, les volumes
+étaient justes.
+
+**Contrôle externe** : prélèvement national toutes essences = **2,84
+m³/ha/an**, cohérent avec l’ordre de grandeur publié pour la récolte
+française ; classement épicéa / peuplier / hêtre / sapin / chêne sessile
+/ pin maritime / douglas conforme. Un test verrouille cet ordre de
+grandeur — c’est le garde-fou contre une erreur d’échelle (oubli du
+`/5`, mauvaise colonne, double comptage).
+
+Restent ouvertes : **D8** (le volume IFN sert-il à suppléer P1 en NDP 0
+?) et **D9** (pont entre codes essence IFN `09` et codes 4 lettres
+`FASY` de P1 ; le référentiel porte le nom latin,
+[`european_species_tolerances()`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md)
+porte `species_sci` — faisable, non fait).
+
+### 2026-07-21 — App `nemetonshiny` v0.112.0 : sous-onglet Desserte, moteur glouton
+
+Entrée demandée par la session app (`nemeton-plan-entries.md`, entrée 2)
+— livraison **100 % app**, aucun changement cœur.
+
+- 2026-07-21 — nemetonshiny v0.112.0 (`nemetonshiny@55992e6c` + merge
+  `nemetonshiny@1a73292c`, cycle dev 0.112.0.9000). Nouveau sous-onglet
+  « Desserte » sous « Terrain accessible » : conception de réseau de
+  desserte forestière via
+  `foretaccess::reseau_desserte(mode = "glouton")`. Pipeline app :
+  acquisition MNT 5 m HIGHRES + desserte IGN BD TOPO + masque BD Forêt
+  V2 → `preprocess()` → `surface_cout_construction()` → glouton. Worker
+  `future` opt-in (glouton mesuré ~11,5 min / 30 parcelles), cache
+  projet, réseau créé en overlay raster, badges parcelles-desservies /
+  connexité / coût, export GeoPackage. **Steiner** (N² tracés, \> 5 h
+  estimées) et **optimiseurs** (`optimiser_reseau`) **non exposés** —
+  ils attendent le travail perf côté `foretaccess`
+  (cf. `specs/brief-foretaccess-desserte-perf-connexite.md`). Refactor
+  préalable : IO ForêtAccess mutualisées (`service_foretaccess_io.R`).
+
+L’entrée 1 du même document (fix transparence `hors_foret` v0.111.2)
+était déjà posée le matin même — non dupliquée. Les deux briefs joints
+sont archivés dans `specs/` (entrée du 2026-07-22 ci-dessous).
+
+**Aucun sous-chantier n’est coché** : les moteurs lourds (Steiner,
+optimiseurs, câble-mât) restent ouverts tant que le travail
+`foretaccess` n’est pas livré, conformément à la consigne de l’émetteur.
+
 ### 2026-07-22 — Archivage des briefs desserte (sortis de `/tmp`)
 
 Les documents de cadrage du chantier desserte vivaient dans le

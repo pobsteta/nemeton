@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.163.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.164.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,40 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.164.0" id="nemeton-01640-2026-07-22">nemeton 0.164.0 (2026-07-22)<a class="anchor" aria-label="anchor" href="#nemeton-01640-2026-07-22"></a></h2>
+<div class="section level4">
+<h4 id="added--références-ifn-par-essence--sylvoécorégion-et-d4-refermée-spec-0-164-0">Added — références IFN par essence × sylvoécorégion, et <strong>D4 refermée</strong> (spec 040)<a class="anchor" aria-label="anchor" href="#added--r%C3%A9f%C3%A9rences-ifn-par-essence--sylvo%C3%A9cor%C3%A9gion-et-d4-referm%C3%A9e-spec-0-164-0"></a></h4>
+<p>Deux tables de référence régionales dérivées des <strong>données brutes de l’inventaire forestier national</strong>, téléchargées directement chez l’IGN (export <strong>2005-2024</strong>, Licence Ouverte Etalab v2.0) :</p>
+<ul><li>
+<code>inst/extdata/ifn_volume_essence_ser.csv</code> — volume <strong>sur pied</strong> (m³/ha), 6 397 lignes ;</li>
+<li>
+<code>inst/extdata/ifn_prelevement_essence_ser.csv</code> — <strong>prélèvement</strong> (m³/ha/an), 2 581 lignes.</li>
+</ul><p>Quatre accesseurs, même schéma de clés et même cascade de repli :</p>
+<ul><li>
+<code><a href="../reference/ifn_volume_essence_ser.html">ifn_volume_essence_ser()</a></code> / <code><a href="../reference/ifn_volume_reference.html">ifn_volume_reference()</a></code> ;</li>
+<li>
+<code><a href="../reference/ifn_prelevement_essence_ser.html">ifn_prelevement_essence_ser()</a></code> / <code><a href="../reference/ifn_taux_prelevement.html">ifn_taux_prelevement()</a></code>.</li>
+</ul><p>Les fonctions à cascade descendent l’échelon <strong>SER → GRECO → national</strong> jusqu’à ce que la cellule repose sur assez de placettes, et <strong>déclarent le niveau atteint</strong> (<code>niveau_utilise</code>) — jamais en silence. <code>NA</code> plutôt qu’un chiffre quand aucun échelon ne qualifie.</p>
+<p><strong><code>volume_mobilisable(taux_prelevement = NULL)</code> fonctionne désormais</strong> : il résout le taux par essence via <code><a href="../reference/ifn_taux_prelevement.html">ifn_taux_prelevement()</a></code> et remonte le niveau de maille employé dans l’attribut <code>niveau_prelevement</code>. La décision D4 de la spec 040, ouverte le matin même, est refermée.</p>
+</div>
+<div class="section level4">
+<h4 id="added--accès-aux-données-brutes-ifn-sans-dépendance-tierce-0-164-0">Added — accès aux données brutes IFN, sans dépendance tierce<a class="anchor" aria-label="anchor" href="#added--acc%C3%A8s-aux-donn%C3%A9es-brutes-ifn-sans-d%C3%A9pendance-tierce-0-164-0"></a></h4>
+<p><code><a href="../reference/ifn_campagne_disponible.html">ifn_campagne_disponible()</a></code>, <code><a href="../reference/ifn_telecharger.html">ifn_telecharger()</a></code>, <code><a href="../reference/ifn_charger.html">ifn_charger()</a></code> — réécriture dans <code>nemeton</code> de la capacité offerte par <code>FrenchNFIfindeR::get_NFI()</code> (J. Borderieux, GPL-3), <strong>pas une dépendance</strong>. Cinq différences délibérées, documentées dans <code><a href="../reference/ifn_charger.html">?ifn_charger</a></code> : campagne découverte dynamiquement (l’original fige 2023 et prend une campagne de retard chaque automne), pas de <code><a href="https://rdrr.io/r/base/readline.html" class="external-link">readline()</a></code> bloquant en contexte non interactif, lecture sélective des tables (l’original lit toujours <code>FLORE.csv</code>, 58 Mo), retour d’une valeur au lieu d’une injection dans l’environnement global, et <strong>aucune dérivation silencieuse</strong> au chargement (l’original impute hauteurs et accroissements manquants et ajoute des surfaces terrières comme effet de bord).</p>
+</div>
+<div class="section level4">
+<h4 id="notes-de-méthode-0-164-0">Notes de méthode<a class="anchor" aria-label="anchor" href="#notes-de-m%C3%A9thode-0-164-0"></a></h4>
+<p><strong>Prélèvement = <code>VEGET5 == "6"</code> seul</strong> (<em>coupé vidangé</em>). Le code <code>7</code> (<em>coupé non vidangé</em>) est exclu : ce bois reste en forêt et ne circule jamais sur la desserte.</p>
+<p><strong>Piège vérifié sur la donnée</strong> : la ligne de revisite ne porte que le sort de l’arbre — <code>V</code> et <code>ESPAR</code> y sont vides à 100 %. Mesure et essence viennent de la ligne de <strong>première visite</strong> du même arbre, clé <code>(IDP, A)</code>. 92 % des arbres coupés ont une telle mesure.</p>
+<p><strong>Contrôle d’ordre de grandeur</strong> : la somme du prélèvement national sur toutes les essences donne <strong>2,84 m³/ha/an</strong>, cohérent avec l’ordre de grandeur publié pour la récolte française, et le classement par essence (épicéa, peuplier, hêtre, sapin, chêne sessile, pin maritime, douglas) est celui attendu. Un test verrouille cet ordre de grandeur.</p>
+<p><strong>Deux colonnes par table, à ne pas confondre</strong> : <code>*_present</code> (moyenne sur les seules placettes de présence — figure de peuplement) et <code>*_maille</code> (contribution à la maille — figure de ressource). L’écart atteint un facteur 150 sur le peuplier cultivé.</p>
+<p><strong>Le prélèvement décrit ce qui a été récolté, pas une prescription.</strong></p>
+</div>
+<div class="section level4">
+<h4 id="credits-0-164-0">Credits<a class="anchor" aria-label="anchor" href="#credits-0-164-0"></a></h4>
+<p>Méthode d’agrégation du volume d’après <code>PPtools::CarteEssenceSer()</code> de <strong>Max Bruciamacchie</strong> (AgroParisTech Nancy), GPL-2, reprise sous GPL-3 avec son autorisation explicite (courriel du 22 juillet 2026). Accès programmatique aux données brutes et raccord <code>(IDP, A)</code> d’après <code>FrenchNFIfindeR</code> de <strong>Jérémy Borderieux</strong> (GPL-3). Données : IGN — Inventaire forestier national français, Données brutes, campagnes annuelles 2005 et suivantes, Licence Ouverte Etalab v2.0.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.163.0" id="nemeton-01630-2026-07-22">nemeton 0.163.0 (2026-07-22)<a class="anchor" aria-label="anchor" href="#nemeton-01630-2026-07-22"></a></h2>
 <div class="section level4">

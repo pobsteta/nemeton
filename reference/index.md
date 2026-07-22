@@ -139,6 +139,34 @@ Volume bois, productivite station et qualite bois d’oeuvre
 - [`volume_mobilisable()`](https://pobsteta.github.io/nemeton/reference/volume_mobilisable.md)
   : Mobilisable timber volume for road-network sizing
 
+## References IFN par essence x sylvoecoregion (spec 040)
+
+Volume sur pied et prelevement issus de l’inventaire forestier national,
+avec cascade de repli SER -\> GRECO -\> national declarant le niveau
+atteint
+
+- [`ifn_volume_essence_ser()`](https://pobsteta.github.io/nemeton/reference/ifn_volume_essence_ser.md)
+  : IFN standing volume by species and sylvoecoregion
+- [`ifn_volume_reference()`](https://pobsteta.github.io/nemeton/reference/ifn_volume_reference.md)
+  : Reference standing volume, with a SER -\> GRECO -\> national
+  fallback
+- [`ifn_prelevement_essence_ser()`](https://pobsteta.github.io/nemeton/reference/ifn_prelevement_essence_ser.md)
+  : IFN harvest by species and sylvoecoregion
+- [`ifn_taux_prelevement()`](https://pobsteta.github.io/nemeton/reference/ifn_taux_prelevement.md)
+  : Reference harvest rate, with a SER -\> GRECO -\> national fallback
+
+## Acces aux donnees brutes IFN
+
+Telechargement et chargement de l’export annuel de l’IGN (Licence
+Ouverte Etalab v2.0)
+
+- [`ifn_campagne_disponible()`](https://pobsteta.github.io/nemeton/reference/ifn_campagne_disponible.md)
+  : Latest available French NFI campaign
+- [`ifn_telecharger()`](https://pobsteta.github.io/nemeton/reference/ifn_telecharger.md)
+  : Download the raw French NFI export
+- [`ifn_charger()`](https://pobsteta.github.io/nemeton/reference/ifn_charger.md)
+  : Load raw French NFI tables
+
 ## Famille E : Energie & Climat
 
 Potentiel bois-energie et evitement carbone

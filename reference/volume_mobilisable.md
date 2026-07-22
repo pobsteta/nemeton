@@ -14,8 +14,8 @@ and weights.
 
 ``` r
 volume_mobilisable(units, volume_col = "P1", unite = c("m3_total", "m3_ha"),
-  taux_prelevement = NULL, horizon_ans = NULL,
-  na_policy = c("na", "zero", "error"),
+  taux_prelevement = NULL, horizon_ans = NULL, espar_field = "espar",
+  ser = NULL, min_plac = 30, na_policy = c("na", "zero", "error"),
   column_name = "volume_mobilisable")
 ```
 
@@ -39,8 +39,25 @@ volume_mobilisable(units, volume_col = "P1", unite = c("m3_total", "m3_ha"),
 - taux_prelevement:
 
   Harvest rate in m3/ha/year: a single number applied to every unit, or
-  a numeric vector of `nrow(units)`. `NULL` (default) would select the
-  not-yet-sourced IFN table and therefore errors.
+  a numeric vector of `nrow(units)`. `NULL` (default) resolves it per
+  unit from the IFN table via
+  [`ifn_taux_prelevement`](https://pobsteta.github.io/nemeton/reference/ifn_taux_prelevement.md),
+  which then requires `espar_field`.
+
+- espar_field:
+
+  Name of the column holding the IFN species code, used only when
+  `taux_prelevement` is `NULL`.
+
+- ser:
+
+  SER code for the units, a single string, used only when
+  `taux_prelevement` is `NULL`. `NULL` falls back to national rates.
+
+- min_plac:
+
+  Minimum plots for an IFN mesh level to qualify, passed to
+  [`ifn_taux_prelevement`](https://pobsteta.github.io/nemeton/reference/ifn_taux_prelevement.md).
 
 - horizon_ans:
 
@@ -84,9 +101,12 @@ so `horizon_ans` is required with it:
 been** removed, not what **should** be; sizing a road network on it
 assumes management carries on unchanged.
 
-The species x sylvoecoregion table (spec 040, D4) is **not implemented
-yet**: `taux_prelevement = NULL` errors out rather than serve unsourced
-figures.
+`taux_prelevement = NULL` resolves the rate from the IFN species x
+sylvoecoregion table
+([`ifn_taux_prelevement`](https://pobsteta.github.io/nemeton/reference/ifn_taux_prelevement.md)),
+which requires `espar_field` on `units` — the IFN species code. The
+level actually used (SER, GRECO or national) is reported through the
+`niveau_prelevement` attribute of the returned object, never silently.
 
 ## See also
 

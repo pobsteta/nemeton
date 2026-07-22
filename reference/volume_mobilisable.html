@@ -15,7 +15,7 @@ owner of the IFN tarif. This function only converts and weights."><meta property
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.163.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.164.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,8 +62,8 @@ owner of the IFN tarif. This function only converts and weights.</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">volume_mobilisable</span><span class="op">(</span><span class="va">units</span>, volume_col <span class="op">=</span> <span class="st">"P1"</span>, unite <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"m3_total"</span>, <span class="st">"m3_ha"</span><span class="op">)</span>,</span>
-<span>  taux_prelevement <span class="op">=</span> <span class="cn">NULL</span>, horizon_ans <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  na_policy <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"na"</span>, <span class="st">"zero"</span>, <span class="st">"error"</span><span class="op">)</span>,</span>
+<span>  taux_prelevement <span class="op">=</span> <span class="cn">NULL</span>, horizon_ans <span class="op">=</span> <span class="cn">NULL</span>, espar_field <span class="op">=</span> <span class="st">"espar"</span>,</span>
+<span>  ser <span class="op">=</span> <span class="cn">NULL</span>, min_plac <span class="op">=</span> <span class="fl">30</span>, na_policy <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"na"</span>, <span class="st">"zero"</span>, <span class="st">"error"</span><span class="op">)</span>,</span>
 <span>  column_name <span class="op">=</span> <span class="st">"volume_mobilisable"</span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -88,7 +88,24 @@ or <code>"m3_ha"</code> (for <code>reseau_desserte()</code> / <code>optimiser_re
 <dt id="arg-taux-prelevement">taux_prelevement<a class="anchor" aria-label="anchor" href="#arg-taux-prelevement"></a></dt>
 <dd><p>Harvest rate in m3/ha/year: a single number applied to
 every unit, or a numeric vector of <code>nrow(units)</code>. <code>NULL</code> (default)
-would select the not-yet-sourced IFN table and therefore errors.</p></dd>
+resolves it per unit from the IFN table via
+<code><a href="ifn_taux_prelevement.html">ifn_taux_prelevement</a></code>, which then requires <code>espar_field</code>.</p></dd>
+
+
+<dt id="arg-espar-field">espar_field<a class="anchor" aria-label="anchor" href="#arg-espar-field"></a></dt>
+<dd><p>Name of the column holding the IFN species code, used only
+when <code>taux_prelevement</code> is <code>NULL</code>.</p></dd>
+
+
+<dt id="arg-ser">ser<a class="anchor" aria-label="anchor" href="#arg-ser"></a></dt>
+<dd><p>SER code for the units, a single string, used only when
+<code>taux_prelevement</code> is <code>NULL</code>. <code>NULL</code> falls back to national
+rates.</p></dd>
+
+
+<dt id="arg-min-plac">min_plac<a class="anchor" aria-label="anchor" href="#arg-min-plac"></a></dt>
+<dd><p>Minimum plots for an IFN mesh level to qualify, passed to
+<code><a href="ifn_taux_prelevement.html">ifn_taux_prelevement</a></code>.</p></dd>
 
 
 <dt id="arg-horizon-ans">horizon_ans<a class="anchor" aria-label="anchor" href="#arg-horizon-ans"></a></dt>
@@ -133,9 +150,11 @@ so <code>horizon_ans</code> is required with it:
 <code>volume = P1 x taux x horizon_ans</code>. A harvest rate describes what
 <strong>has been</strong> removed, not what <strong>should</strong> be; sizing a road network on
 it assumes management carries on unchanged.</p>
-<p>The species x sylvoecoregion table (spec 040, D4) is <strong>not implemented
-yet</strong>: <code>taux_prelevement = NULL</code> errors out rather than serve unsourced
-figures.</p>
+<p><code>taux_prelevement = NULL</code> resolves the rate from the IFN species x
+sylvoecoregion table (<code><a href="ifn_taux_prelevement.html">ifn_taux_prelevement</a></code>), which requires
+<code>espar_field</code> on <code>units</code> — the IFN species code. The level actually
+used (SER, GRECO or national) is reported through the
+<code>niveau_prelevement</code> attribute of the returned object, never silently.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
