@@ -1885,6 +1885,47 @@ Restent ouvertes : **D8** (le volume IFN sert-il à suppléer P1 en NDP 0
 [`european_species_tolerances()`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md)
 porte `species_sci` — faisable, non fait).
 
+### 2026-07-22 — Spec 041 cadrée : desserte corrigée LiDAR (ALSroads)
+
+Part `nemeton` du brief `brief-foretaccess-desserte-lidar.md`, qui se
+déclarait lui-même « feature NDP 1+, donc côté cœur ». Cadrée dans
+`specs/041-desserte-lidar-alsroads/spec.md`, **non implémentée**.
+
+**Trois points du brief corrigés après vérification** :
+
+1.  **L’arbitrage `lidR` vs `lasR` n’existe pas.** Le brief le posait en
+    question ouverte ; `DESCRIPTION` porte **déjà les deux**
+    (`lidR >= 4.0.0`, `lasR >= 0.10.0`, en Suggests). ALSroads, qui
+    s’appuie sur `lidR`, n’impose aucun portage.
+2.  **ALSroads est moins dormant qu’annoncé** : dépôt poussé le
+    **2024-11-15** (le brief dit « v0.2.0 (2022), maintenance non
+    visible »), non archivé, et **GPL-3** — compatible, aucune
+    autorisation à demander.
+3.  **Le cœur lit déjà des nuages de points**
+    ([`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md),
+    `R/lidar_processing.R`, via `lasR`, bornage mémoire). La brique
+    d’entrée existe.
+
+**Le vrai manque est l’acquisition, pas la lecture.** `nemeton` n’expose
+que
+[`probe_ign_lidar_tile()`](https://pobsteta.github.io/nemeton/reference/probe_ign_lidar_tile.md)
+— un *diagnostic*, dont la doc dit que c’est `nemetonshiny` qui
+télécharge. `FR.json` ne déclare que les rasters dérivés
+(`lidar_mnh`/`mnt`/`mns`), pas le nuage NUAGE. D’où la décision de
+conception : `desserte_lidar()` prend un **répertoire de tuiles** fourni
+par l’appelant, comme `pai_depuis_nuage(dossier_las=)`. Elle n’acquiert
+rien.
+
+**Le risque du chantier n’est pas technique, il est métrologique.**
+ALSroads est calibré sur des forêts nordiques québécoises et du LiDAR
+single-photon. Une largeur **mesurée mais fausse est pire qu’une largeur
+absente**, parce que `places_depot()` la croira. D’où un lot 1 bloquant
+: confronter les largeurs mesurées au terrain ou à l’orthophoto sur
+emprise française **avant** tout le reste, et un lot 4 qui chiffre
+l’effet réel (les ~1 877 départs tombent-ils à un ordre exploitable ?).
+D1 (dépendre d’ALSroads en Suggests — recommandé) et D4 (recalibrage
+France) restent ouvertes.
+
 ### 2026-07-22 — App `nemetonshiny` v0.113.0 : validation ACCESSFOR câblée
 
 Livraison **100 % app**, aucun changement cœur — mais elle referme la
