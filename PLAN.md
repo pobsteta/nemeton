@@ -1331,6 +1331,28 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-22 — Archivage des briefs desserte (sortis de `/tmp`)
+
+Les documents de cadrage du chantier desserte vivaient dans le **scratchpad de la
+session app** (`/tmp/claude-1000/-home-pascal-dev-nemetonshiny/…`), donc voués à
+disparaître. Recopiés **verbatim** (octet pour octet, `diff` vérifié) dans
+`specs/` :
+
+| Fichier archivé | Origine | État |
+|---|---|---|
+| `brief-foretaccess-desserte-perf-connexite.md` | session app, 2026-07-21 | à traiter côté `foretaccess` |
+| `brief-foretaccess-cable-places-depot.md` | session app, 2026-07-21 | **traité** — `foretaccess` v1.6.1, `fix(depot): places_depot()` |
+| `plan-app-sous-onglet-desserte.md` | plan de dev app | pour mémoire (le typage y est en 6ᵉ position) |
+
+Les fichiers sont conservés tels quels : la provenance est consignée ici plutôt
+qu'ajoutée en tête des documents, pour que le contenu reste le texte de l'émetteur.
+Les originaux `/tmp` n'ont **pas** été supprimés — la session app est active et
+peut encore s'y référer.
+
+Ces trois documents rejoignent `brief-foretaccess-accessfor.md` (émis d'ici le
+2026-07-22). Le chantier desserte est donc entièrement tracé dans ce repo, même si
+son exécution appartient à `foretaccess`.
+
 ### 2026-07-22 — v0.163.0 : `volume_mobilisable()` livré (spec 040, jalon « taux saisi »)
 
 Décision de Pascal : **taux saisi d'abord, IFN plus tard**. Correction de périmètre
