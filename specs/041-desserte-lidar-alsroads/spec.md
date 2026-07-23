@@ -2,9 +2,13 @@
 
 **Version** : 1.0.0
 **Date**    : 2026-07-22
-**Statut**  : **Cadré + validé sur données réelles** (lots 1-2 exécutés, §10). D1 et D4
-tranchées ; lots 3-4 (fonction `desserte_lidar()`, effet sur `places_depot()`) non
-implémentés.
+**Statut**  : **⚠️ CADUQUE — superseded par `foretaccess::acquire_desserte_lidar()`**
+(foretaccess v1.14.0, validée v1.16.0). Le brief se disait « côté cœur » ; j'ai
+interprété `nemeton`, mais l'acquisition de desserte est le domaine de
+`foretaccess` (qui portait déjà `acquire_desserte()`). La fonction n'a **pas** été
+écrite ici. Cette spec est conservée pour ses **résultats de validation** (§10),
+qui convergent avec ceux de foretaccess, et pour la traçabilité. Voir le bilan
+2026-07-23 dans `PLAN.md`.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — `desserte_lidar()`.
 **Cible aval** : `foretaccess` — `places_depot()`, `preprocess()`, `reseau_desserte()`,
