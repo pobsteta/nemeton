@@ -1428,6 +1428,54 @@ Restent ouvertes : **D8** (le volume IFN sert-il à suppléer P1 en NDP 0 ?) et
 référentiel porte le nom latin, `european_species_tolerances()` porte
 `species_sci` — faisable, non fait).
 
+### 2026-07-23 — Point de convergence : `foretaccess` v1.16.0 a traité TOUS les briefs
+
+`foretaccess` a bondi de **1.9.0 à 1.16.0** (dernier commit `feat/desserte-finish`).
+Les cinq chantiers du brief desserte consolidé et le brief LiDAR sont **livrés
+côté foretaccess** — lecture seule de son NEWS :
+
+| Chantier (brief) | Livré foretaccess |
+|---|---|
+| 1 — perf glouton | **v1.12.0** : tracé A* borné au couloir, ~200 s → ~20 ms |
+| 1v2 — Steiner / bornes optimiseurs | **v1.13.0** (Steiner reste N², documenté) |
+| 2 — connexité / `connexe` | **v1.11.0** : booléen `raccorde` + sémantique clarifiée |
+| 3 — `places_depot()` | **v1.11.0** : ~40× plus rapide |
+| 4 — desserte LiDAR | **v1.14.0** `acquire_desserte_lidar()`, validée v1.16.0 |
+| ACCESSFOR | **v1.9.0** `accessfor_correspondance()` (déjà consommé app v0.113.0) |
+| volume P1 → câble | **v1.7.0/1.8.0** `volume_depuis_p1()` |
+
+**Spec 041 (`nemeton`) est CADUQUE.** `acquire_desserte_lidar()` (foretaccess
+v1.14.0) implémente exactement ce que je cadrais côté cœur : géométrie recalée,
+`largeur_carrossable_m` (= `DRIVABLEWIDTH`), `largeur_plateforme_m` (=
+`ROADWIDTH`), `score_lidar`, `etat_classe`, repli NDP 0 → `NA`, dérivation du MNT.
+Le brief se disait « côté cœur » ; j'ai lu `nemeton`, mais l'acquisition de
+desserte relève de `foretaccess` (qui portait déjà `acquire_desserte()`). **Aucun
+code n'était à écrire ici** — la spec 041 est conservée pour ses résultats de
+validation et la traçabilité.
+
+**Convergence sur le MNT.** Mon volet A (MNT 1 m, 40/40 mesures) et la Phase B de
+foretaccess (MNT 1 m, 22/22 pistes Chastel-Nouvel) concluent identiquement :
+ALSroads mesure bien les pistes françaises **avec un MNT ≥ 1 m**. Foretaccess a
+même élucidé le mécanisme — son 0/6 de v1.15.0 était un **faux négatif dû à un MNT
+à 5 m**, pas au calibrage Québec ; le guide ALSroads exige MNT ≥ 1 m, profils à
+0,5 m.
+
+**Correction de ma reco D6.** Mon §10.4 recommandait « MNT 20 cm +
+`profile_resolution = 0.2` » sur la foi du score (96,4) — mais **sur deux tronçons
+seulement**, et dans le sens *plus fin* que le guide. Foretaccess suit le guide
+(dérive un MNT à `dtm_res = 1` m, décime le nuage à ~10 pts/m²). **D6 est à
+abandonner** : mon extrapolation vers du sur-échantillonné était hasardeuse, le
+réglage de référence est MNT ≥ 1 m.
+
+**Ce qui reste réellement côté `nemeton`** : `volume_mobilisable()` (spec 040) est
+livré mais **pas encore consommé** en aval. `foretaccess::volume_depuis_p1()` est
+un pont *géométrique* (P1 sur pied → raster `pre$volume` pour le câble/IPC), sans
+prélèvement — **distinct** de `volume_mobilisable()` (sur pied → *mobilisé* avec
+taux IFN, pour `calculer_flux()`/typage). Les deux sont complémentaires, pas
+redondants. Le typage de desserte (`calculer_flux → typer_desserte`) pourra
+consommer `volume_mobilisable()` maintenant que les moteurs sont débloqués — reste
+à câbler côté app, hors de ce repo.
+
 ### 2026-07-22 — Spec 041 : D1 et D4 tranchées sur données réelles (Vercors)
 
 Lots 1-2 de la spec 041 exécutés sur l'emprise Quatre Montagnes (tuiles IGN
