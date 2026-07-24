@@ -175,6 +175,14 @@ reference:
     - list_site_index_species
     - read_site_index_curves
 
+  - title: "Variables biophysiques Sentinel-2 (spec 043)"
+    desc: >
+      Gouvernance de l'augmentation biophysique (LAI/fAPAR/FCOVER/CCC) dans le
+      systeme NDP ; production amont dans le package biophysnemeton
+    contents:
+    - biophys_gating
+    - biophys_gating_thresholds
+
   - title: "Systeme NDP (Niveau De Precision)"
     desc: "Ponderation Fibonacci et confiance phi"
     contents:
