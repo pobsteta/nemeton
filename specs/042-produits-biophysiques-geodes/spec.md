@@ -2,10 +2,10 @@
 
 **Version** : 2.0.0
 **Date**    : 2026-07-24
-**Statut**  : **Lot 1 livré (v0.166.0)** — `biophysique_sentinel2()` (LAI/fAPAR/FVC).
-Calcul interne depuis Sentinel-2 (généralisation de `lai_sentinel2()`), GEODES
-rétrogradé de *source* à *référence de validation* (D1 dissous). Restent : lots 2
-(branchements A1/C2), 3 (validation GEODES), 4 (CCC), 5 (confiance pixel).
+**Statut**  : **Lots 1-2 livrés** (v0.166.0-.1). `biophysique_sentinel2()`
+(LAI/fAPAR/FVC) + chaînage vérifié vers A1 (`fvc=`) et C2 (`fapar=`). GEODES
+rétrogradé de *source* à *référence de validation* (D1 dissous). **Restent, bloqués
+sur données GEODES** : lot 3 (validation), 4 (CCC), 5 (confiance pixel).
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — `biophysique_sentinel2()` + upgrades de proxys.
 **Cible app**  : `nemetonshiny` — affichage, badge de provenance/qualité.
@@ -153,10 +153,15 @@ refusé (message → lot 4). Tests voie `precomputed` (pure). **Reste** : modèl
 pré-entraînés fAPAR/FVC en `extdata` (voie engine sinon entraînement à la volée)
 et bandes optimales par variable (D3) — dépendent de la validation lot 3.
 
-### Lot 2 — Branchements rétrocompatibles
-FVC → A1 (déjà câblé, fournir la couche). fAPAR → C2 (`fapar = NULL`, prime sinon
-NDVI). LAI → déjà consommé + option C1. Non-régression `chm=NULL`-style : valeur
-inchangée sans couche biophysique.
+### Lot 2 — Branchements rétrocompatibles — **livré (chaînage vérifié)**
+Découverte en implémentant : les consommateurs **préexistaient** (phase Theia
+s2_biophysical). `indicateur_a1_couverture(fvc=)` et `indicateur_c2_ndvi(fapar=)`
+acceptent déjà la couche, opt-in (`NULL` → comportement inchangé). Le socle
+v0.166.0 les alimente directement — chaînage bout-en-bout testé
+(`test-biophys-indicators.R`, voie `precomputed` pure) : `fvc` constant 0,6
+→ A1 ≈ 60 ; `fapar` 0,6 → C2 ≈ 0,6 ; échelles fAPAR/NDVI toutes deux [0,1]
+(drop-in). LAI → déjà consommé (regen). **Aucun code neuf** : la plomberie
+existait, seul le socle amont manquait.
 
 ### Lot 3 — Validation contre GEODES
 Comparer sur quelques tuiles S2 : biais/RMSE par variable. Caractérise le CCC
