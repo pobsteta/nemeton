@@ -1428,6 +1428,45 @@ Restent ouvertes : **D8** (le volume IFN sert-il à suppléer P1 en NDP 0 ?) et
 référentiel porte le nom latin, `european_species_tolerances()` porte
 `species_sci` — faisable, non fait).
 
+### 2026-07-24 — Chaîne desserte bouclée : tout est livré et consommé en aval
+
+Vérification en lecture seule des deux repos frères. Le dernier reliquat côté
+`nemeton` — `volume_mobilisable()` livré mais non consommé — **est câblé**.
+
+**`nemetonshiny` v0.113 → v0.115.2**, plancher relevé à `nemeton (>= 0.165.0)` :
+- **v0.114.0** : panneau **« Typage du réseau »** (spec 040) —
+  `service_desserte.R` enchaîne exactement le brief
+  `brief-nemetonshiny-volume-desserte.md` : `indicateur_p1_volume` →
+  `volume_mobilisable(unite = "m3_total")` → `calculer_flux(volume_champ)` →
+  `typer_desserte(seuils_flux)`. Le piège d'unité du §3 (`m3_total`, pas
+  `m3_ha`) est respecté et cité dans le code.
+- **v0.115.0** : moteur câble-mât exposé + toggle « NDP 1 desserte corrigée
+  LiDAR ». **v0.115.1** : couche **ACCESSFOR** affichable + comparaison avec les
+  classes de débardage (consomme la découverte WFS de ce repo, spec 040 §12).
+  **v0.115.2** : NDP 1 câble n'est plus expérimental, largeurs LiDAR →
+  `places_depot()`, couverture câble **85 % mesuré vs 91 % optimiste**.
+
+**`foretaccess` v1.16 → v1.19.1** :
+- **v1.18** : micro-relief LiDAR, portage **RVT en Rust** (spec 021).
+- **v1.19.0** : `qualifier_desserte()` sur desserte de projet réelle ;
+  **`contracter_lignes()`** — le `$lignes` contracté que le brief desserte
+  demandait en option ; composition `largeur_carrossable_m` → `places_depot()`.
+- **v1.19.1** : fix bloquant du segfault de `qualifier_desserte()` sur 3 299
+  tronçons.
+
+Point notable : `foretaccess` **documente désormais l'appariement des unités**
+avec `volume_mobilisable()` des deux côtés (`desserte_flux.R` : « use
+`unite = "m3_total"` » ; `desserte_reseau.R` : « the **opposite** unit,
+`m3_ha` »). Le piège du §3 de la spec 040 est donc gravé dans les deux repos.
+
+**Bilan.** La boucle ouverte le 2026-07-21 (« quel volume passer à
+`volume_champ` ») est bouclée de bout en bout sur les trois repos :
+**P1 → volume mobilisé → flux → réseau typé**. Aucun reliquat côté `nemeton` —
+spec 040 close **et consommée**, spec 041 caduque (`acquire_desserte_lidar` en
+production), tous les briefs desserte/câble/ACCESSFOR traités. `volume_depuis_p1`
+(câble, sur pied) et `volume_mobilisable` (typage, mobilisé) coexistent sans
+redondance, comme prévu.
+
 ### 2026-07-23 — Point de convergence : `foretaccess` v1.16.0 a traité TOUS les briefs
 
 `foretaccess` a bondi de **1.9.0 à 1.16.0** (dernier commit `feat/desserte-finish`).
@@ -1472,9 +1511,9 @@ livré mais **pas encore consommé** en aval. `foretaccess::volume_depuis_p1()` 
 un pont *géométrique* (P1 sur pied → raster `pre$volume` pour le câble/IPC), sans
 prélèvement — **distinct** de `volume_mobilisable()` (sur pied → *mobilisé* avec
 taux IFN, pour `calculer_flux()`/typage). Les deux sont complémentaires, pas
-redondants. Le typage de desserte (`calculer_flux → typer_desserte`) pourra
-consommer `volume_mobilisable()` maintenant que les moteurs sont débloqués — reste
-à câbler côté app, hors de ce repo.
+redondants. Le typage de desserte (`calculer_flux → typer_desserte`) consommera
+`volume_mobilisable()` maintenant que les moteurs sont débloqués — câblage côté
+app **fait le 2026-07-24** (app v0.114.0, cf. entrée ci-dessus).
 
 ### 2026-07-22 — Spec 041 : D1 et D4 tranchées sur données réelles (Vercors)
 

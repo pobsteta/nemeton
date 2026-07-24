@@ -2,7 +2,10 @@
 
 **Version** : 1.0.0
 **Date**    : 2026-07-22
-**Statut**  : **Spec close côté cœur, D8 et D9 comprises** (v0.163.0 → v0.165.0). Détail historique ci-dessous.
+**Statut**  : **Close côté cœur ET consommée en aval** (2026-07-24). Cœur v0.163.0 →
+v0.165.0 (D1-D9) ; câblage app `nemetonshiny` v0.114.0 (panneau « Typage du
+réseau », brief `brief-nemetonshiny-volume-desserte.md`) ; `foretaccess` v1.19.x
+en production. Détail historique ci-dessous.
 **Statut initial** : **close** (v0.163.0 puis v0.164.0). Lots 0, 2, 3,
 4, 5 livrés ; lot 1 (jointure spatiale UGF → SER) **non nécessaire** — les
 placettes IFN portent déjà leur SER. **D4 refermée** (§5.c) : le prélèvement est
