@@ -1,152 +1,175 @@
-# Spec 042 — Produits biophysiques GEODES (LAI, fAPAR, FVC, CCC)
+# Spec 042 — Produits biophysiques Sentinel-2 (LAI, fAPAR, FVC, CCC)
 
-**Version** : 1.0.0
+**Version** : 2.0.0
 **Date**    : 2026-07-24
-**Statut**  : **Cadré — non implémenté.** Décision D1 (mécanisme d'accès GEODES) à
-lever avant tout code.
+**Statut**  : **Cadré — non implémenté.** Réécrit (v2) : **calcul interne** depuis
+Sentinel-2 (généralisation de `lai_sentinel2()`), GEODES rétrogradé de *source* à
+*référence de validation*. Le verrou d'accès de la v1 (D1) est **dissous**.
 **Auteur**  : Pascal Obstétar (via Claude)
-**Cible cœur** : `nemeton` — source de données GEODES + upgrades de proxys.
-**Cible app**  : `nemetonshiny` — affichage des couches, badge qualité.
-**Origine** : question de cohérence posée le 2026-07-24, à la lumière du produit
-CNES/GEODES « produits biophysiques à 20 m sur la France »
-(<https://geodes.cnes.fr/…-a-20m-de-resolution/>).
+**Cible cœur** : `nemeton` — `biophysique_sentinel2()` + upgrades de proxys.
+**Cible app**  : `nemetonshiny` — affichage, badge de provenance/qualité.
+**Origine** : question de cohérence (2026-07-24) ; pivot après vérification que la
+machinerie PROSAIL du cœur produit **déjà** les quatre variables.
 
-## 1. Objectif, et le cadrage qui le sous-tend
+> **v1 → v2.** La v1 proposait de *consommer* le produit national CNES/GEODES
+> (bloquée sur D1 : mécanisme d'accès inconnu). Vérification faite, `nemeton`
+> calcule **déjà** LAI par inversion PROSAIL hybride (`lai_sentinel2()`, spec 033),
+> et la même machinerie produit fAPAR / FVC / CCC. Le calcul interne est **plus
+> cohérent** (une méthode, une source S2 déjà câblée, étiquetage NDP maîtrisé) et
+> **n'a pas de dépendance d'accès**. GEODES devient la référence pour *valider*
+> l'inversion, pas la fournir.
 
-Le CNES publie sur GEODES quatre variables biophysiques nationales à 20 m,
-dérivées de Sentinel-2 par **apprentissage machine entraîné sur des simulations
-PROSAIL**, avec un **masque qualité par pixel (1-4)**.
+## 1. Objectif
 
-**Thèse de cette spec** (établie par l'analyse de cohérence, §3) : ces quatre
-variables **n'ont pas vocation à devenir quatre indicateurs**. Trois sont des
-lectures colinéaires de la densité de couvert ; les exposer côte à côte dans la
-famille C **triplerait le poids de la « verdeur »** dans l'agrégation Fibonacci —
-*moins* cohérent, pas plus. La valeur est ailleurs : **remplacer des proxys
-grossiers existants par des variables physiquement fondées**, et ajouter **un
-seul** signal réellement neuf (le CCC).
+Restituer, en interne depuis Sentinel-2, les quatre variables biophysiques —
+**LAI, fAPAR, FVC, CCC** — par la **même inversion PROSAIL hybride** que
+`lai_sentinel2()`, et s'en servir pour **remplacer des proxys grossiers** dans les
+indicateurs existants. **Pas pour créer quatre nouveaux indicateurs** (§3).
 
-## 2. État de l'existant (vérifié dans le code)
+## 2. La machinerie est déjà là (vérifié dans le code)
 
-| Variable | État `nemeton` |
-|---|---|
-| **LAI** | déjà produit — `lai_sentinel2()`, inversion PROSAIL hybride (spec 033), consommé par les moteurs reGénération/microclimat |
-| **FVC** | déjà **câblé en entrée** — `indicateur_a1_couverture(fvc = NULL)` (`R/indicators-air.R`) |
-| **fAPAR** | calculable non branché — `prosail::Compute_fAPAR()` / `get_fapar()` disponibles |
-| **CCC** | **absent** |
+`lai_sentinel2()` (`R/lai_prosail.R`, spec 033) fait déjà :
+`S2 (MUSCATE) → inversion PROSAIL hybride → LAI → réduction temporelle`.
 
-`nemeton` porte déjà l'infra CNES/Theia : source `theia_stac`
-(`api.stac.teledetection.fr`, S3 SigV4), résolveur `R/theia_stac.R`, source
-MUSCATE S2 (spec 029). GEODES est **la même famille** — même méthode PROSAIL,
-même grille S2. Consommer GEODES = consommer une version **pré-calculée,
-nationale, masquée-qualité** de ce que le cœur sait déjà inverser localement.
+Le seul point figé est la variable cible :
 
-## 3. Analyse de cohérence, variable par variable
+```r
+# .lai_prosail_train() — actuel :
+prosail::train_prosail_inversion(parms_to_estimate = "lai",
+                                 selected_bands = list(lai = selected_bands), …)
+```
+
+Or `train_prosail_inversion()` prend `parms_to_estimate` en **argument** :
+- `"fCover"` → **FVC** (même inversion, autre cible) ;
+- `"CCC"` (ou `Cab`, puis `Cab × LAI`) → **CCC** ;
+- `prosail::Compute_fAPAR()` → **fAPAR**, calculé **analytiquement** depuis les
+  paramètres PROSAIL restitués + la géométrie d'acquisition.
+
+Le modèle d'inversion est **caché** (clé `prosail_<var>_<sensor>_<bands>.rds`) et
+un modèle LAI pré-entraîné est déjà **livré** dans `inst/extdata`
+(`prosail_lai_Sentinel_2A_B4-B5-B8.rds`). Généraliser = paramétrer la variable et
+livrer un modèle par variable.
+
+## 3. Analyse de cohérence (inchangée depuis v1)
 
 Colinéarité de fond : `fAPAR ≈ 1 − e^(−k·LAI)`, `FVC ≈ 1 − e^(−0,5·LAI)`. LAI,
-fAPAR et FVC mesurent **la même chose** (densité/interception), sous trois angles.
+fAPAR et FVC mesurent **la même densité de couvert** sous trois angles. Les
+exposer comme trois indicateurs de la famille C **triplerait le poids de la
+verdeur** dans l'agrégation Fibonacci — *moins* cohérent. La valeur est de
+**raffiner des proxys existants** :
 
-| Variable | Proxy actuel qu'elle remplacerait | Verdict |
+| Variable | Proxy actuel qu'elle remplace | Geste |
 |---|---|---|
-| **fAPAR** | **C2 = NDVI** (`indicateur_c2_ndvi`), qui **sature** à fort LAI | **Upgrade** : le fAPAR est lié à la production primaire → vitalité mieux fondée. Gain de précision *dans* C2. |
-| **FVC** | A1 (couverture, déjà `fvc = NULL`) | **Branchement** : couche FVC nationale au NDP 0. Pas un nouvel indicateur. |
-| **LAI** | déjà consommé (regen/microclimat) ; **C1 biomasse = `ndvi_mean × 150`** (`indicators-families.R:371`, proxy très grossier) | **Source alternative** + amélioration possible de C1. *Make-vs-buy* : GEODES pré-calculé vs `lai_sentinel2()` local. |
-| **CCC** | — (rien) | **Seul ajout réellement neuf** : chlorophylle/azote foliaire = signal de **stress/santé**, pas de densité. Candidat pour R5 (dépérissement) ou une vitalité composite. |
+| **fAPAR** | **C2 = NDVI** (`indicateur_c2_ndvi`), qui **sature** à fort LAI | **Upgrade** de C2 (lié à la production primaire) |
+| **FVC** | A1 — `indicateur_a1_couverture(fvc = NULL)` **déjà câblé** | **Branchement** |
+| **LAI** | déjà consommé (regen/microclimat) ; **C1 = `ndvi_mean × 150`** (`indicators-families.R:371`, grossier) | **Amélioration** possible de C1 |
+| **CCC** | — (rien) | **Seul ajout neuf** : chlorophylle/azote = **santé**, pas densité → candidat R5 |
 
-## 4. Ce que la spec propose (et ce qu'elle refuse)
+## 4. Fonction
 
-**Refuse** : ajouter LAI/fAPAR/FVC comme trois indicateurs de la famille C.
+Généralisation de `lai_sentinel2()`, mêmes conventions (fast-path `precomputed`,
+réduction temporelle, dégradation `NULL`, `requireNamespace("prosail")`) :
 
-**Propose**, dans l'ordre de valeur croissante :
+```r
+biophysique_sentinel2(
+  variable = c("lai", "fapar", "fvc", "ccc"),   # une ou plusieurs
+  aoi = NULL, refl = NULL, start = NULL, end = NULL,
+  reducer = "p90", source = "muscate", sensor = "Sentinel_2A",
+  selected_bands = NULL,          # défaut PAR VARIABLE (§7)
+  geom_acq = NULL, mask = NULL, cache_dir = NULL, precomputed = NULL, …
+)
+```
 
-1. **Déclarer GEODES en source NDP 0** dans `inst/datasources/FR.json`, avec sa
-   couche de qualité — cf. §5.
-2. **Brancher FVC → A1** : `indicateur_a1_couverture()` accepte déjà `fvc`. Fournir
-   la couche GEODES. Effort quasi nul, rétrocompatible.
-3. **Upgrader C2 : NDVI → fAPAR**, en gardant NDVI en repli. `indicateur_c2_ndvi`
-   gagne un argument `fapar = NULL` ; si fourni, il prime ; sinon comportement
-   inchangé. Même patron que `chm = NULL` de P1/C1/B2 (spec 005) — la voie
-   « rétrocompatible strict » du projet.
-4. **CCC → nouveau signal de santé**, **gaté sur le masque qualité**. À trancher
-   (D2) : entrée d'un indicateur existant (R5) **ou** composante d'une vitalité
-   enrichie — *pas* un indicateur autonome tant que sa fiabilité n'est pas établie
-   (§6).
+→ `SpatRaster` à une couche par variable demandée. `lai_sentinel2()` **conservé**
+comme alias mince (`variable = "lai"`) — rétrocompatibilité stricte, aucun appelant
+existant cassé.
 
-## 5. Accès aux données (D1 — **ouvert, bloquant**)
+## 5. GEODES — référence de validation, pas source (D1 dissous)
 
-L'article GEODES **ne publie pas** le mécanisme d'accès. À élucider avant tout
-code :
-- **STAC ?** GEODES est la plateforme CNES (successeur Theia/PEPS). Probable
-  catalogue STAC (`geodes-portal.cnes.fr` ou équivalent) → réutiliser
-  `R/theia_stac.R` et le patron `theia_stac` de `FR.json`. À confirmer :
-  endpoint, nom de collection, identifiants de bandes (LAI/FAPAR/FCOVER/CCC),
-  clé API éventuelle.
-- **Téléchargement de dalles** par tuile S2 ? Alors loader *download-only*, patron
-  BD Forêts anciennes.
-- **Format** : entiers 0-255 (UInt8) avec **gain/offset dans l'en-tête** — le
-  loader doit appliquer l'échelle, ne pas servir les DN bruts.
+Le produit CNES/GEODES (LAI/fAPAR/FVC/CCC, 20 m France, S2, **même méthode
+PROSAIL-ML**, masque qualité 1-4) **n'est plus consommé**. Il sert à **valider**
+notre inversion là où ses dalles existent :
 
-Tant que D1 n'est pas levée, la spec ne peut pas fournir de loader — seulement le
-contrat de consommation (§4) et les upgrades, testables sur raster fourni.
+- comparer, sur quelques tuiles S2, `biophysique_sentinel2()` à GEODES → biais,
+  RMSE par variable. C'est le **lot de validation** (§9), pas une dépendance.
+- l'accès GEODES (STAC ? dalles ? — non publié) redevient une **question annexe**,
+  utile à la validation seule, plus **bloquante**.
 
-## 6. Le masque qualité — condition, pas bonus
+## 6. Les deux réserves qui SURVIVENT au pivot
 
-GEODES fournit une **confiance par pixel (1-4)**. Deux usages :
+Le calcul interne dissout l'accès, **pas** ces deux limites — les écrire, ne pas
+les masquer :
 
-- **Le CCC en dépend.** L'inversion S2 contraint mal le Cab (problème mal posé) :
-  le CCC est le moins fiable des quatre. **Ne pas bâtir d'indicateur dur sur le
-  CCC** sans filtrer/pondérer par la qualité.
-- **Il s'aligne sur le système NDP.** Une confiance 1-4 par pixel se marie
-  naturellement avec la confiance φ Fibonacci (ADR-011). Piste : moduler la
-  confiance d'un indicateur par la qualité moyenne de la couche biophysique sur
-  l'UGF. Argument de cohérence *architecturale*, au-delà des indicateurs.
+**1. Le mal-posé du CCC est inhérent à Sentinel-2.** L'inversion du Cab est mal
+contrainte par S2 — inverser localement **ne le rend pas plus fiable** que le CCC
+de GEODES. Même limite physique. Le CCC reste le maillon faible, **gaté sur une
+mesure de confiance** (§8) avant tout usage dur.
 
-## 7. Rétrocompatibilité stricte (non négociable)
+**2. On n'a ni validation ni masque qualité « gratuits ».** GEODES est validé au
+niveau national et livre une confiance par pixel ; une inversion locale n'a
+**rien de tel** par défaut. Deux réponses, non exclusives :
+- **valider** contre GEODES (§5) pour caractériser le biais une fois ;
+- **construire notre propre confiance** par pixel (§8) — écart aux bornes
+  physiques PROSAIL, résidu de reconstruction spectrale, ou écart local à GEODES.
 
-Tout upgrade suit le patron `chm = NULL` de la spec 005 : argument optionnel,
-défaut `NULL`, comportement v0.16x **strictement préservé** quand la couche
-biophysique est absente. Aucun indicateur ne doit changer de valeur sur un jeu de
-données qui n'a pas GEODES.
+## 7. Points techniques à trancher
 
-## 8. Décisions
+- **Bandes par variable.** Le modèle LAI livré utilise `B4-B5-B8`. Le CCC (Cab)
+  et le fAPAR sont sensibles au **red-edge** (B5/B6/B7) : le jeu de bandes optimal
+  **diffère par variable**, à établir (D3). D'où `selected_bands = NULL` → défaut
+  par variable.
+- **Modèles pré-entraînés.** Livrer un `.rds` par variable dans `inst/extdata`
+  (comme le LAI), pour que la voie sans `prosail` installé fonctionne en
+  `precomputed`. Reproductibles par un script `data-raw/`.
+- **Coût.** L'entraînement est **caché** (amorti) ; l'application par tuile est le
+  coût courant. À benchmarker, mais du même ordre que le LAI actuel.
+
+## 8. Confiance par pixel (D5 — le vrai chantier)
+
+Sans masque GEODES, construire une confiance interne, alignée sur le système NDP
+(ADR-011) : une confiance biophysique 0-1 par pixel (résidu spectral / proximité
+des bornes PROSAIL) qui **module la confiance φ** de l'UGF. C'est ce qui ferait de
+ces variables une vraie brique NDP, pas juste de meilleurs proxys. Chantier à
+isoler, à ne lancer qu'après le socle (§9 lots 1-2).
+
+## 9. Décisions
 
 | # | Décision | Statut |
 |---|---|---|
-| D1 | Mécanisme d'accès GEODES (STAC ? dalles ? collection, bandes, auth) | **Ouverte — bloque le loader** |
-| D2 | CCC : entrée de R5, composante vitalité, ou rien pour l'instant | **Ouverte** (§4.4) |
-| D3 | C2 : `fapar` prime sur NDVI, ou mélange pondéré ? | Proposée : `fapar` prime, NDVI en repli (§4.3) |
-| D4 | LAI : consommer GEODES ou garder `lai_sentinel2()` local (make-vs-buy) | Proposée : GEODES en source, local en repli |
-| D5 | Moduler la confiance φ par le masque qualité GEODES | **Ouverte** (§6) — plus lourde, à isoler |
+| D1 | ~~Mécanisme d'accès GEODES~~ | **Dissous** — calcul interne, GEODES = validation |
+| D2 | CCC : entrée de R5, composante vitalité, ou rien pour l'instant | **Ouverte** (§3) |
+| D3 | Jeu de bandes S2 par variable (red-edge pour CCC/fAPAR) | **Ouverte** (§7) |
+| D4 | C2 : `fapar` prime sur NDVI, repli NDVI | Proposée (patron `chm=NULL`) |
+| D5 | Confiance par pixel modulant φ (interne + validation GEODES) | **Ouverte** (§8) |
 
-## 9. Plan en lots
+## 10. Plan en lots
 
-### Lot 0 — Reconnaissance d'accès *(bloquant, D1)*
-Établir sur GEODES : endpoint STAC ou URL de dalles, nom de collection,
-identifiants de bandes, gain/offset, clé API éventuelle, licence. Sortie : le
-patron de source à déclarer dans `FR.json`. **Rien d'autre ne démarre avant.**
-
-### Lot 1 — Source de données + loader
-Déclaration `FR.json` (les 4 variables + la couche qualité) et
-`load_biophysique_geodes()` (ou réemploi `theia_stac.R`), appliquant gain/offset,
-repli `NULL` propre. Pas de nouvel indicateur.
+### Lot 1 — `biophysique_sentinel2()` (socle)
+Généraliser `.lai_prosail_train()` (`parms_to_estimate` paramétré, clé de cache
+par variable) et `lai_sentinel2()` → `biophysique_sentinel2()`. Alias LAI
+conservé. FVC + fAPAR d'abord (les mieux posés). Tests voie `precomputed` (pure,
+sans `prosail`). Modèles pré-entraînés FVC/fAPAR livrés en `extdata`.
 
 ### Lot 2 — Branchements rétrocompatibles
 FVC → A1 (déjà câblé, fournir la couche). fAPAR → C2 (`fapar = NULL`, prime sinon
-repli NDVI). LAI → source alternative pour la voie regen/microclimat + option C1.
-Tests `chm = NULL`-style : valeur inchangée sans GEODES.
+NDVI). LAI → déjà consommé + option C1. Non-régression `chm=NULL`-style : valeur
+inchangée sans couche biophysique.
 
-### Lot 3 — CCC, prudemment *(D2, gaté qualité)*
-Brancher le CCC en **entrée** (R5 ou vitalité composite), filtré par le masque.
-Documenter l'incertitude. **Ne pas** en faire un indicateur autonome à ce stade.
+### Lot 3 — Validation contre GEODES
+Comparer sur quelques tuiles S2 : biais/RMSE par variable. Caractérise le CCC
+avant de l'utiliser. Sortie : verdict de fiabilité par variable, pas une
+dépendance.
 
-### Lot 4 — Confiance modulée par qualité *(D5, optionnel)*
-Piste ADR-011 : la qualité GEODES module la confiance φ de l'UGF. Chantier à part,
-à ne lancer que si D2/D3 concluants.
+### Lot 4 — CCC prudent *(D2, après lot 3)*
+Brancher le CCC en **entrée** (R5 ou vitalité), **gaté sur la confiance** (§8).
+Jamais un indicateur autonome tant que le lot 3 n'a pas conclu.
 
-## 10. Hors périmètre
+### Lot 5 — Confiance par pixel *(D5, optionnel)*
+Le chantier §8. À isoler.
 
-- Recalculer localement ce que GEODES fournit : `lai_sentinel2()` reste le repli,
-  pas le chemin principal (D4).
-- Quatre indicateurs biophysiques distincts dans la famille C — **explicitement
-  refusé** (§1, §3), au nom de la cohérence de l'agrégation Fibonacci.
-- Toute décision de licence/diffusion des couches GEODES côté app (badge de
-  provenance) — relève de `nemetonshiny`.
+## 11. Hors périmètre
+
+- Quatre indicateurs biophysiques distincts dans la famille C — **refusé** (§3).
+- Consommer GEODES comme source de données — **abandonné** au profit du calcul
+  interne (§5).
+- Le badge de provenance/qualité côté app — relève de `nemetonshiny`.
