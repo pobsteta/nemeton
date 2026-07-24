@@ -2,7 +2,10 @@
 
 **Version** : 1.0.0
 **Date**    : 2026-07-24
-**Statut**  : **Cadré — non implémenté.** Documents de spécification (aucun code).
+**Statut**  : **Implémentation démarrée.** Gating de gouvernance livré (v0.167.0,
+`biophys_gating()`, D6/ADR-015). Bloqués : moteur SL2P (coefficients auxdata SNAP,
+package amont `biophysnemeton`), transformations d'indicateurs (§7, non définies),
+valeurs des tables (D7, à sourcer).
 **Auteur**  : Pascal Obstétar (via Claude), d'après `specs/brief-instance-nemeton.md`.
 **Cible cœur** : `nemeton` — consommation via arguments optionnels.
 **Cible amont** : `biophysnemeton` (package séparé, ADR-009) — production/assainissement.

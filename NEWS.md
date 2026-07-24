@@ -1,3 +1,28 @@
+# nemeton 0.167.0 (2026-07-24)
+
+### Added — gating de l'augmentation biophysique S2 (spec 043 D6, ADR-015)
+
+Première brique de la spec 043 : `biophys_gating()` décide, **par unité**, si les
+variables biophysiques Sentinel-2 (LAI/fAPAR/FCOVER/CCC) sont assez fiables pour
+porter le flag NDP `"biophysical_s2"`. Les quatre conditions — `n_obs`, taux de
+masquage, part hors-domaine SL2P, surface — doivent **toutes** tenir ;
+`biophys_gating_thresholds()` porte les seuils par défaut.
+
+**Fail-closed** : toute métrique manquante fait échouer le gating. Poser le flag
+sur une base insuffisante ferait compter la donnée dans la confiance φ alors
+qu'elle est peu fiable, ce que l'ADR-011 interdit de fait — le gating est la seule
+barrière entre « donnée présente » et « donnée digne de peser dans φ ».
+
+**Brique de gouvernance, pas de production** : aucune variable biophysique n'est
+calculée ici (cela vit dans le package amont `biophysnemeton`, ADR-009). La
+fonction consomme les métriques de qualité remontées par l'amont et rend un
+prédicat.
+
+**Seuils provisoires, à calibrer.** Les quatre valeurs par défaut (n_obs ≥ 3,
+masquage ≤ 40 %, hors-domaine ≤ 10 %, surface ≥ 25 px) sont annoncées comme à
+calibrer, chacune avec son ordre de grandeur et sa méthode (cf.
+`?biophys_gating_thresholds`).
+
 # nemeton 0.166.1 (2026-07-24)
 
 ### Fixed — `biodivMapR` déclaré en `Imports` alors qu'il est optionnel
