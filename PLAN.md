@@ -1428,6 +1428,33 @@ Restent ouvertes : **D8** (le volume IFN sert-il à suppléer P1 en NDP 0 ?) et
 référentiel porte le nom latin, `european_species_tolerances()` porte
 `species_sci` — faisable, non fait).
 
+### 2026-07-24 — Spec 043 cadrée : variables biophysiques S2 (SL2P) — supersède 042
+
+Brief `specs/brief-instance-nemeton.md` (design considéré, en-tête périmé
+« v0.43.0/MIT » → il ignorait mon travail de session). Décision Pascal **(A) : le
+brief supersède**. Trois livrables rédigés dans `specs/043-biophysique-s2/` (docs
+seuls, aucun code) :
+- **`spec.md`** — LAI/fAPAR/FCOVER/CCC via SL2P (Weiss & Baret) pur-R, consommés
+  par arguments optionnels ; médiane juin-août (table à 1 ligne), gating,
+  correction de biais forêt, mapping 7 sous-indicateurs, tests golden SNAP 1e-4 +
+  invariance au n_obs.
+- **`ADR-015-biophysique-ndp.md`** — amende l'ADR-011 (le brief disait « ADR-012 »,
+  **déjà pris** ; plus haut ADR = 014 → **015**). Flag `augmented` unique
+  `"biophysical_s2"` conditionné, effet sur φ par la granularité seule.
+- **`note-biophysnemeton.md`** — package amont séparé (ADR-009), frontière, interface,
+  arbitrage accès S2 : **STAC direct via le pipeline THEIA existant, pas theia2r**.
+
+Écarts vérifiés dans le code et actés en §0 : `augmented` **déjà** un vecteur et
+`lai_ml` **déjà** présent (E2) ; `fapar=`/`fvc=` **déjà** câblés (E4) ; « ADR-012 »
+pris (E3) ; « 31 vs 29 » signalé, non corrigé — README dit « 31 », le « 29 »
+introuvable dans le repo (E5).
+
+**Conséquence** : spec 042 marquée **superseded**. `biophysique_sentinel2()`
+(v0.166.0-.1, prosail) sera **retiré** à l'implémentation de la 043 ;
+`lai_sentinel2()` (spec 033, repli reGénération) reste. Raison du remplacement :
+SL2P est reproductible au 1e-4 contre SNAP (test golden), l'inversion prosail
+ré-entraînée ne l'est pas.
+
 ### 2026-07-24 — Spec 042 lot 2 : chaînage biophysique → A1/C2 vérifié (déjà câblé)
 
 En attaquant le lot 2 (brancher FVC→A1, fAPAR→C2), découverte : **les
