@@ -50,7 +50,8 @@ jobs:
             libfreetype6-dev \
             libpng-dev \
             libtiff5-dev \
-            libjpeg-dev
+            libjpeg-dev \
+            libtbb-dev
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
@@ -66,6 +67,16 @@ jobs:
             github::cran/dissUtils
             jbferet/spinR
           needs: website
+
+      - name: Rebuild Rfast from source (oneTBB ABI mismatch)
+        # Le binaire RSPM de Rfast est compilé contre une oneTBB ancienne
+        # (symbole `tbb::task`, retiré des versions récentes) : son chargement
+        # échoue sur `undefined symbol: _ZTIN3tbb4taskE` quand pkgdown charge le
+        # namespace (via biodivMapR (Suggests) -> fundiversity -> Rfast).
+        # R-CMD-check ne charge pas ce namespace, d'où l'échec pkgdown seul.
+        # Recompiler depuis les sources contre le libtbb-dev du runner résout.
+        run: install.packages("Rfast", type = "source")
+        shell: Rscript {0}
 
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
