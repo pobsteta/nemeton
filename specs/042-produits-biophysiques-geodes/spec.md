@@ -2,10 +2,12 @@
 
 **Version** : 2.0.0
 **Date**    : 2026-07-24
-**Statut**  : **Lots 1-2 livrés** (v0.166.0-.1). `biophysique_sentinel2()`
-(LAI/fAPAR/FVC) + chaînage vérifié vers A1 (`fvc=`) et C2 (`fapar=`). GEODES
-rétrogradé de *source* à *référence de validation* (D1 dissous). **Restent, bloqués
-sur données GEODES** : lot 3 (validation), 4 (CCC), 5 (confiance pixel).
+**Statut**  : **⚠️ SUPERSEDED par `specs/043-biophysique-s2/`** (2026-07-24,
+décision Pascal « A »). L'approche prosail-dans-nemeton de cette spec est remplacée
+par SL2P pur-R dans un package amont `biophysnemeton` (reproductible au 1e-4 contre
+SNAP, ce que prosail ne permet pas). `biophysique_sentinel2()` (v0.166.0-.1) et son
+chaînage lot 2 seront **retirés** à l'implémentation de la spec 043 ;
+`lai_sentinel2()` (spec 033, prosail, reGénération) reste. Conservée pour l'historique.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — `biophysique_sentinel2()` + upgrades de proxys.
 **Cible app**  : `nemetonshiny` — affichage, badge de provenance/qualité.
