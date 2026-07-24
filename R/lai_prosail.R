@@ -1,10 +1,15 @@
-# lai_prosail.R — repli LAI Sentinel-2/PROSAIL pour la canopée NDP 0 (spec 033)
+# lai_prosail.R — variables biophysiques Sentinel-2/PROSAIL, NDP 0 (spec 033, 042)
 # ------------------------------------------------------------------
-# Quand le LiDAR HD est absent (NDP 0), on restitue un LAI par inversion PROSAIL
-# hybride (paquet `prosail`, jbferet) à partir de Sentinel-2 L2A (source MUSCATE,
-# spec 029), pour alimenter en repli `lai_max` de regen_bilan_hydrique (biljouR,
-# ajustement direct) et `pai` de regen_sensibilite (microclimf, proxy dégradé —
-# LAI ≠ PAI). NDP ≥ 1 conserve TOUJOURS le PAI structural de pai_depuis_nuage().
+# Restitution de variables biophysiques par inversion PROSAIL hybride (paquet
+# `prosail`, jbferet) depuis Sentinel-2 L2A (source MUSCATE, spec 029), en NDP 0
+# (LiDAR HD absent). `lai_sentinel2()` (spec 033) est le cas historique ; la
+# spec 042 généralise en `biophysique_sentinel2(variable=)` : les mêmes train/
+# apply produisent **lai**, **fapar** et **fvc** (fcover) — cibles d'inversion
+# directes de `train_prosail_inversion`, vérifiées dans le code prosail. Le
+# **CCC** est un composé (Cab × LAI), PAS une cible directe : différé (spec 042
+# lot 4). Le LAI reste l'entrée reGénération : `lai_max` de regen_bilan_hydrique
+# et `pai` de regen_sensibilite (proxy dégradé — LAI ≠ PAI). NDP ≥ 1 conserve
+# TOUJOURS le PAI structural de pai_depuis_nuage().
 #
 # `prosail` (Suggests + Remotes jbferet/prosail) gardé par requireNamespace ;
 # chemin `precomputed` pur (testable) ; dégradation NULL. La séquence
@@ -32,12 +37,13 @@
        max = data.frame(tto = 10, tts = 55, psi = 180))
 }
 
-# Réduction temporelle d'un stack LAI -> une couche `lai` (p90 par défaut, D1).
-.lai_reduce <- function(r, reducer = "p90") {
+# Réduction temporelle d'un stack -> une couche nommée `name` (p90 défaut, D1).
+# `name` défaut "lai" : rétrocompatibilité stricte du chemin LAI historique.
+.lai_reduce <- function(r, reducer = "p90", name = "lai") {
   if (!inherits(r, "SpatRaster")) {
-    cli::cli_abort("{.arg precomputed}/LAI must be a {.cls SpatRaster}.")
+    cli::cli_abort("{.arg precomputed}/biophysical raster must be a {.cls SpatRaster}.")
   }
-  if (terra::nlyr(r) <= 1L) { names(r) <- "lai"; return(r) }
+  if (terra::nlyr(r) <= 1L) { names(r) <- name; return(r) }
   out <- switch(
     reducer,
     p90    = terra::app(r, function(v) stats::quantile(v, 0.9, na.rm = TRUE)),
@@ -45,7 +51,7 @@
     median = terra::app(r, function(v) stats::median(v, na.rm = TRUE)),
     mean   = terra::mean(r, na.rm = TRUE),
     cli::cli_abort("Unknown {.arg reducer}: {.val {reducer}} (p90/max/median/mean)."))
-  names(out) <- "lai"; out
+  names(out) <- name; out
 }
 
 # Mappe un nom de bande prosail (B4, B8, B8A) vers le nom nemeton du pipeline S2
@@ -60,8 +66,11 @@
 # Entraîne (ou charge) le modèle d'inversion hybride LAI pour un capteur S2 et
 # une plage de géométrie. Priorité : modèle pré-entraîné versionné
 # (inst/extdata, spec 033 D3) -> cache disque -> entraînement (train validé).
-.lai_prosail_train <- function(srf, geom_acq, selected_bands, cache_dir) {
-  key <- paste0("prosail_lai_", srf$sensor, "_",
+# `parm` = nom de variable PROSAIL ("lai"/"fapar"/"fcover"). Défaut "lai" :
+# clé et parms_to_estimate identiques à l'historique -> modèle LAI livré trouvé.
+.lai_prosail_train <- function(srf, geom_acq, selected_bands, cache_dir,
+                               parm = "lai") {
+  key <- paste0("prosail_", parm, "_", srf$sensor, "_",
                 paste(selected_bands, collapse = "-"), ".rds")
   shipped <- system.file("extdata", key, package = "nemeton")
   if (nzchar(shipped) && file.exists(shipped)) return(readRDS(shipped))
@@ -69,8 +78,8 @@
   if (file.exists(f)) return(readRDS(f))
   opt <- prosail::set_options_prosail(fun = "train_prosail_inversion")
   model <- prosail::train_prosail_inversion(
-    parms_to_estimate = "lai", atbd = TRUE, geom_acq = geom_acq, srf = srf,
-    selected_bands = list(lai = selected_bands),
+    parms_to_estimate = parm, atbd = TRUE, geom_acq = geom_acq, srf = srf,
+    selected_bands = stats::setNames(list(selected_bands), parm),
     output_dir = cache_dir, options = opt)
   saveRDS(model, f)
   model
@@ -139,34 +148,34 @@
 # Applique le modèle à un raster de réflectances S2 (chemin fichier) -> LAI.
 # Suit le tutoriel officiel (apply_prosail_inversion, file-based).
 .lai_prosail_apply <- function(refl_path, model, srf, selected_bands,
-                               mask_path, cache_dir) {
+                               mask_path, cache_dir, parm = "lai") {
   opt <- prosail::set_options_prosail(fun = "apply_prosail_inversion")
   opt$multiplying_factor <- 10000
-  # apply_prosail_inversion ÉCRIT le LAI sur disque (`<base>_lai.tif[f]`) mais
-  # peut lever une erreur en post-traitement (ex. « subscript out of bounds »)
-  # ou renvoyer un objet inexploitable — on tolère et on récupère le fichier.
-  # band_names doit décrire les bandes RÉELLEMENT présentes dans le raster
-  # (le repli MUSCATE n'assemble que `selected_bands`, pas les 10 bandes S2) —
-  # sinon apply_prosail_inversion mal-mappe et écrit un LAI corrompu.
+  # apply_prosail_inversion ÉCRIT la variable sur disque (`<base>_<parm>.tif[f]`)
+  # mais peut lever une erreur en post-traitement (ex. « subscript out of
+  # bounds ») ou renvoyer un objet inexploitable — on tolère et on récupère le
+  # fichier. band_names doit décrire les bandes RÉELLEMENT présentes dans le
+  # raster (le repli MUSCATE n'assemble que `selected_bands`, pas les 10 bandes
+  # S2) — sinon apply_prosail_inversion mal-mappe et écrit une sortie corrompue.
   band_names <- names(terra::rast(refl_path))
   res <- tryCatch(prosail::apply_prosail_inversion(
     raster_path = refl_path, mask_path = mask_path, hybrid_model = model,
     output_dir = cache_dir, band_names = band_names,
-    selected_bands = list(lai = selected_bands), options = opt),
+    selected_bands = stats::setNames(list(selected_bands), parm), options = opt),
     error = function(e) e)
   if (inherits(res, "SpatRaster")) return(res)
   if (is.character(res) && length(res) && file.exists(res[[1]])) {
     return(terra::rast(res[[1]]))
   }
-  # Fichier LAI ciblé sur cette scène (`<base>_lai.<ext>`), en excluant le
-  # `_lai_STD` (incertitude) ; le pattern couvre .tif ET .tiff.
+  # Fichier ciblé sur cette scène (`<base>_<parm>.<ext>`), en excluant le
+  # `_<parm>_STD` (incertitude) ; le pattern couvre .tif ET .tiff.
   base <- tools::file_path_sans_ext(basename(refl_path))
-  lai_files <- list.files(
-    cache_dir, pattern = sprintf("^%s_lai\\.(tif|tiff|envi)$", base),
+  out_files <- list.files(
+    cache_dir, pattern = sprintf("^%s_%s\\.(tif|tiff|envi)$", base, parm),
     full.names = TRUE, ignore.case = TRUE, recursive = TRUE)
-  if (length(lai_files)) return(terra::rast(lai_files[[1]]))
+  if (length(out_files)) return(terra::rast(out_files[[1]]))
   if (inherits(res, "error")) {
-    cli::cli_warn(c("PROSAIL LAI inversion produced no output.",
+    cli::cli_warn(c("PROSAIL {parm} inversion produced no output.",
                     i = conditionMessage(res)))
   }
   NULL
@@ -223,11 +232,69 @@ lai_sentinel2 <- function(aoi = NULL, refl = NULL, start = NULL, end = NULL,
                           selected_bands = c("B4", "B5", "B8"),
                           geom_acq = NULL, mask = NULL, cache_dir = NULL,
                           precomputed = NULL, ...) {
+  biophysique_sentinel2(
+    variable = "lai", aoi = aoi, refl = refl, start = start, end = end,
+    reducer = reducer, source = source, sensor = sensor,
+    selected_bands = selected_bands, geom_acq = geom_acq, mask = mask,
+    cache_dir = cache_dir, precomputed = precomputed, ...)
+}
+
+# Notre nom de variable -> cible PROSAIL de train_prosail_inversion (vérifié :
+# "lai"/"fapar"/"fcover" sont des cibles directes ; "ccc" ne l'est pas).
+.biophys_parm <- function(variable) {
+  variable <- match.arg(variable, c("lai", "fapar", "fvc", "ccc"))
+  if (identical(variable, "ccc")) {
+    cli::cli_abort(c(
+      "CCC is not a direct PROSAIL inversion target (it is Cab x LAI).",
+      i = "Deferred to spec 042 lot 4; use \"lai\", \"fapar\" or \"fvc\"."))
+  }
+  c(lai = "lai", fapar = "fapar", fvc = "fcover")[[variable]]
+}
+
+#' Biophysical variable from Sentinel-2 via PROSAIL inversion (spec 042)
+#'
+#' @description
+#' Generalises [lai_sentinel2()] to any of the directly-invertible PROSAIL
+#' biophysical variables — **LAI**, **fAPAR** or **FVC** (fCover) — over `aoi`
+#' from Sentinel-2 L2A, by the same hybrid inversion machinery. `lai_sentinel2()`
+#' is a thin alias (`variable = "lai"`), kept for backward compatibility.
+#'
+#' Same two paths as [lai_sentinel2()]: *fast-path* (`precomputed`, temporal
+#' reduction only) and *engine path* (train/apply a hybrid model, needs
+#' `prosail` + real S2 scenes — not runnable in CI).
+#'
+#' @section Scope (spec 042 lot 1):
+#' Only the three **direct** inversion targets are supported. **CCC** (canopy
+#' chlorophyll content) is a compound (Cab x LAI), not a direct target — it errors
+#' and is deferred (lot 4). Per-variable band selection (`selected_bands`) is
+#' **provisional**: the LAI default `c("B4","B5","B8")` is validated (spec 033);
+#' for fAPAR/FVC the red-edge-optimal set is still open (spec 042 D3), and their
+#' inversion is unvalidated pending the GEODES cross-check (lot 3).
+#'
+#' @param variable One of `"lai"` (default), `"fapar"`, `"fvc"`.
+#' @param selected_bands S2 bands for the inversion. `NULL` picks a per-variable
+#'   default (currently `c("B4","B5","B8")` for all three — provisional, D3).
+#' @inheritParams lai_sentinel2
+#'
+#' @return A single-layer `SpatRaster` named after `variable`, or `NULL` on
+#'   degradation (no `prosail`, no scene, engine failure).
+#' @seealso [lai_sentinel2()]
+#' @export
+biophysique_sentinel2 <- function(variable = c("lai", "fapar", "fvc", "ccc"),
+                                  aoi = NULL, refl = NULL, start = NULL,
+                                  end = NULL, reducer = "p90",
+                                  source = "muscate", sensor = "Sentinel_2A",
+                                  selected_bands = NULL, geom_acq = NULL,
+                                  mask = NULL, cache_dir = NULL,
+                                  precomputed = NULL, ...) {
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} is required.")
   }
+  variable <- match.arg(variable)
+  parm <- .biophys_parm(variable)
+  if (is.null(selected_bands)) selected_bands <- c("B4", "B5", "B8")
 
-  # --- Fast-path : réduction temporelle d'un LAI déjà calculé. ---
+  # --- Fast-path : réduction temporelle d'une variable déjà calculée. ---
   if (!is.null(precomputed)) {
     r <- if (inherits(precomputed, "SpatRaster")) precomputed
          else if (is.character(precomputed) && all(file.exists(precomputed))) {
@@ -235,27 +302,27 @@ lai_sentinel2 <- function(aoi = NULL, refl = NULL, start = NULL, end = NULL,
          } else {
            cli::cli_abort("{.arg precomputed} must be a SpatRaster or raster file path(s).")
          }
-    return(.lai_reduce(r, reducer))
+    return(.lai_reduce(r, reducer, name = variable))
   }
 
-  # --- Engine path : S2 -> inversion PROSAIL -> LAI -> réduction. ---
+  # --- Engine path : S2 -> inversion PROSAIL -> variable -> réduction. ---
   if (!requireNamespace("prosail", quietly = TRUE)) {
-    cli::cli_warn("lai_sentinel2() needs the {.pkg prosail} package for the engine path; returning NULL.")
+    cli::cli_warn("biophysique_sentinel2() needs the {.pkg prosail} package for the engine path; returning NULL.")
     return(NULL)
   }
-  if (is.null(cache_dir)) cache_dir <- tempfile("lai_prosail_")
+  if (is.null(cache_dir)) cache_dir <- tempfile("biophys_prosail_")
   dir.create(cache_dir, showWarnings = FALSE, recursive = TRUE)
   if (is.null(geom_acq)) geom_acq <- .lai_default_geom()
 
-  out <- tryCatch(
+  tryCatch(
     .lai_sentinel2_engine(aoi, refl, start, end, reducer, source, sensor,
-                          selected_bands, geom_acq, mask, cache_dir),
+                          selected_bands, geom_acq, mask, cache_dir,
+                          variable = variable, parm = parm),
     error = function(e) {
-      cli::cli_warn(c("lai_sentinel2(): engine failed; returning NULL.",
+      cli::cli_warn(c("biophysique_sentinel2(): engine failed; returning NULL.",
                       i = conditionMessage(e)))
       NULL
     })
-  out
 }
 
 # Orchestration moteur (non testable en CI). Résout les réflectances S2 (refl
@@ -263,7 +330,7 @@ lai_sentinel2 <- function(aoi = NULL, refl = NULL, start = NULL, end = NULL,
 # réduit temporellement.
 .lai_sentinel2_engine <- function(aoi, refl, start, end, reducer, source,
                                   sensor, selected_bands, geom_acq, mask,
-                                  cache_dir) {
+                                  cache_dir, variable = "lai", parm = "lai") {
   srf <- .lai_s2_srf(sensor)
 
   # Résolution des chemins de réflectances S2 par date — AVANT l'entraînement
@@ -283,11 +350,11 @@ lai_sentinel2 <- function(aoi = NULL, refl = NULL, start = NULL, end = NULL,
     p
   }
 
-  model <- .lai_prosail_train(srf, geom_acq, selected_bands, cache_dir)
-  lai_list <- lapply(refl_paths, function(p)
-    .lai_prosail_apply(p, model, srf, selected_bands, mask, cache_dir))
-  lai_list <- Filter(function(x) inherits(x, "SpatRaster"), lai_list)
-  if (!length(lai_list)) return(NULL)
-  stack <- if (length(lai_list) == 1L) lai_list[[1]] else terra::rast(lai_list)
-  .lai_reduce(stack, reducer)
+  model <- .lai_prosail_train(srf, geom_acq, selected_bands, cache_dir, parm = parm)
+  var_list <- lapply(refl_paths, function(p)
+    .lai_prosail_apply(p, model, srf, selected_bands, mask, cache_dir, parm = parm))
+  var_list <- Filter(function(x) inherits(x, "SpatRaster"), var_list)
+  if (!length(var_list)) return(NULL)
+  stack <- if (length(var_list) == 1L) var_list[[1]] else terra::rast(var_list)
+  .lai_reduce(stack, reducer, name = variable)
 }
