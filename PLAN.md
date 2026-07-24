@@ -1428,6 +1428,34 @@ Restent ouvertes : **D8** (le volume IFN sert-il à suppléer P1 en NDP 0 ?) et
 référentiel porte le nom latin, `european_species_tolerances()` porte
 `species_sci` — faisable, non fait).
 
+### 2026-07-24 — Spec 042 cadrée : produits biophysiques GEODES (LAI, fAPAR, FVC, CCC)
+
+Question de Pascal : ajouter ces quatre variables (produit CNES/GEODES national,
+20 m, S2, PROSAIL-ML, masque qualité 1-4) renforce-t-il la cohérence des
+indicateurs ? Analyse dans `specs/042-produits-biophysiques-geodes/spec.md`,
+**non implémentée**.
+
+**Réponse cadrée : oui, mais PAS comme quatre nouveaux indicateurs.** LAI, fAPAR
+et FVC sont **colinéaires** (`fAPAR ≈ 1−e^(−k·LAI)`, `FVC ≈ 1−e^(−0,5·LAI)`) :
+trois lectures de la même densité de couvert. Les exposer côte à côte dans la
+famille C **triplerait le poids de la verdeur** dans l'agrégation Fibonacci —
+moins cohérent. La valeur est de **remplacer des proxys grossiers par des
+variables physiquement fondées** :
+- **FVC → A1** : `indicateur_a1_couverture(fvc=)` est **déjà câblé** ;
+- **fAPAR → C2** : remplace le NDVI (qui **sature**), patron `chm=NULL` ;
+- **LAI** : déjà produit par `lai_sentinel2()` (spec 033) et consommé
+  (regen/microclimat) ; GEODES = source pré-calculée alternative + amélioration
+  possible de C1 (`biomasse = ndvi_mean × 150`, très grossier) ;
+- **CCC** : le **seul ajout réellement neuf** — chlorophylle/azote = signal de
+  santé, pas de densité. Candidat R5, **gaté sur le masque qualité** (inversion
+  S2 mal posée sur Cab).
+
+Le masque qualité 1-4 s'aligne sur la confiance φ Fibonacci (ADR-011) : argument
+de cohérence architecturale, piste D5. `nemeton` porte déjà l'infra CNES/Theia
+(`theia_stac`, spec 029 MUSCATE) — GEODES est la même famille. **D1 (mécanisme
+d'accès GEODES : STAC ? dalles ? — l'article ne le dit pas) bloque le loader** ;
+rétrocompatibilité stricte imposée (patron `chm=NULL`).
+
 ### 2026-07-24 — Chaîne desserte bouclée : tout est livré et consommé en aval
 
 Vérification en lecture seule des deux repos frères. Le dernier reliquat côté
