@@ -2,9 +2,10 @@
 
 **Version** : 2.0.0
 **Date**    : 2026-07-24
-**Statut**  : **Cadré — non implémenté.** Réécrit (v2) : **calcul interne** depuis
-Sentinel-2 (généralisation de `lai_sentinel2()`), GEODES rétrogradé de *source* à
-*référence de validation*. Le verrou d'accès de la v1 (D1) est **dissous**.
+**Statut**  : **Lot 1 livré (v0.166.0)** — `biophysique_sentinel2()` (LAI/fAPAR/FVC).
+Calcul interne depuis Sentinel-2 (généralisation de `lai_sentinel2()`), GEODES
+rétrogradé de *source* à *référence de validation* (D1 dissous). Restent : lots 2
+(branchements A1/C2), 3 (validation GEODES), 4 (CCC), 5 (confiance pixel).
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — `biophysique_sentinel2()` + upgrades de proxys.
 **Cible app**  : `nemetonshiny` — affichage, badge de provenance/qualité.
@@ -144,11 +145,13 @@ isoler, à ne lancer qu'après le socle (§9 lots 1-2).
 
 ## 10. Plan en lots
 
-### Lot 1 — `biophysique_sentinel2()` (socle)
-Généraliser `.lai_prosail_train()` (`parms_to_estimate` paramétré, clé de cache
-par variable) et `lai_sentinel2()` → `biophysique_sentinel2()`. Alias LAI
-conservé. FVC + fAPAR d'abord (les mieux posés). Tests voie `precomputed` (pure,
-sans `prosail`). Modèles pré-entraînés FVC/fAPAR livrés en `extdata`.
+### Lot 1 — `biophysique_sentinel2()` (socle) — **livré v0.166.0**
+`.lai_prosail_train()` / `.lai_prosail_apply()` paramétrés par `parm` (clé de
+cache `prosail_<parm>_…`), `lai_sentinel2()` → alias mince de
+`biophysique_sentinel2()`. Trois cibles directes (`lai`/`fapar`/`fcover`), CCC
+refusé (message → lot 4). Tests voie `precomputed` (pure). **Reste** : modèles
+pré-entraînés fAPAR/FVC en `extdata` (voie engine sinon entraînement à la volée)
+et bandes optimales par variable (D3) — dépendent de la validation lot 3.
 
 ### Lot 2 — Branchements rétrocompatibles
 FVC → A1 (déjà câblé, fournir la couche). fAPAR → C2 (`fapar = NULL`, prime sinon

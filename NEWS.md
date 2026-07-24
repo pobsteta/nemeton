@@ -1,3 +1,31 @@
+# nemeton 0.166.0 (2026-07-24)
+
+### Added — `biophysique_sentinel2()` : LAI/fAPAR/FVC depuis Sentinel-2 (spec 042, lot 1)
+
+Généralisation de `lai_sentinel2()` (spec 033) à toutes les variables
+biophysiques **directement inversibles** par PROSAIL — **LAI**, **fAPAR**,
+**FVC** (fCover) —, par la **même machinerie hybride** et la même source
+Sentinel-2 (MUSCATE). `lai_sentinel2()` devient un **alias mince**
+(`variable = "lai"`), strictement rétrocompatible : les appelants reGénération
+sont inchangés.
+
+`biophysique_sentinel2(variable, …)` partage les deux chemins de
+`lai_sentinel2()` — fast-path `precomputed` (réduction temporelle, testable sans
+`prosail`) et engine path (train/apply, non jouable en CI). La couche de sortie
+porte le nom de la variable.
+
+**Scope volontaire.** Seules les trois cibles d'inversion **directes** sont
+exposées (vérifié dans le code `prosail` : `train_prosail_inversion` accepte
+`"lai"`/`"fapar"`/`"fcover"`). Le **CCC** est un composé (Cab × LAI), **pas** une
+cible directe : il échoue avec un message explicite, différé (spec 042 lot 4). Le
+jeu de bandes par variable est **provisoire** — le défaut LAI `c("B4","B5","B8")`
+est validé (spec 033), celui de fAPAR/FVC reste ouvert (spec 042 D3) et leur
+inversion est non validée en attendant le recoupement GEODES (lot 3).
+
+Ce lot livre le **socle** : la machinerie produit désormais les trois variables.
+Les branchements aux indicateurs (FVC→A1, fAPAR→C2) et la validation sont les
+lots suivants de la spec 042.
+
 # nemeton 0.165.0 (2026-07-22)
 
 ### Added — pont entre nomenclatures d'essences (spec 040, **D9**)

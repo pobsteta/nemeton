@@ -167,3 +167,39 @@ test_that("theia_sign_urls errors without credentials", {
   # Vecteur vide -> retour vide (pas d'appel réseau).
   expect_length(theia_sign_urls(character(0)), 0L)
 })
+
+# --- biophysique_sentinel2() : généralisation (spec 042) ---
+
+test_that("lai_sentinel2 est un alias strict de biophysique_sentinel2('lai')", {
+  skip_if_not_installed("terra")
+  r <- .lai_stack(3.2)
+  a <- lai_sentinel2(precomputed = r)
+  b <- biophysique_sentinel2("lai", precomputed = r)
+  expect_equal(names(a), names(b))
+  expect_equal(terra::values(a), terra::values(b))
+})
+
+test_that("chaque variable nomme sa couche d'après elle-même", {
+  skip_if_not_installed("terra")
+  expect_equal(names(biophysique_sentinel2("fvc",   precomputed = .lai_stack(0.6))), "fvc")
+  expect_equal(names(biophysique_sentinel2("fapar", precomputed = .lai_stack(0.5))), "fapar")
+})
+
+test_that("la réduction temporelle s'applique quelle que soit la variable", {
+  skip_if_not_installed("terra")
+  st <- .lai_stack(c(0.1, 0.2, 0.3, 0.4, 0.99))
+  mx <- terra::global(biophysique_sentinel2("fvc", precomputed = st, reducer = "max"), "mean")[[1]]
+  p90 <- terra::global(biophysique_sentinel2("fvc", precomputed = st, reducer = "p90"), "mean")[[1]]
+  expect_lt(p90, mx)
+})
+
+test_that("CCC est refusé avec un message qui pointe vers le lot 4", {
+  skip_if_not_installed("terra")
+  expect_error(biophysique_sentinel2("ccc", precomputed = .lai_stack(1)),
+               "direct PROSAIL inversion target")
+})
+
+test_that("une variable inconnue est rejetée", {
+  skip_if_not_installed("terra")
+  expect_error(biophysique_sentinel2("zzz", precomputed = .lai_stack(1)))
+})

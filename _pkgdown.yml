@@ -489,6 +489,7 @@ reference:
     - awc_saxton_rawls
     - ewm_depuis_soilgrids
     - lai_sentinel2
+    - biophysique_sentinel2
     - tendances_estivales_eobs
     - eobs_downscale
     - eobs_downscale_bivariate

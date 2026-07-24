@@ -1428,6 +1428,26 @@ Restent ouvertes : **D8** (le volume IFN sert-il à suppléer P1 en NDP 0 ?) et
 référentiel porte le nom latin, `european_species_tolerances()` porte
 `species_sci` — faisable, non fait).
 
+### 2026-07-24 — v0.166.0 : `biophysique_sentinel2()` (spec 042 lot 1)
+
+Socle du calcul interne livré. `lai_sentinel2()` (spec 033) généralisé :
+`.lai_prosail_train()` / `.lai_prosail_apply()` gagnent un paramètre `parm`
+(clé de cache `prosail_<parm>_…`, `parms_to_estimate` paramétré), et
+`biophysique_sentinel2(variable=)` expose **LAI/fAPAR/FVC** — les trois cibles
+d'inversion **directes** vérifiées dans le code `prosail`
+(`train_prosail_inversion` accepte `"lai"`/`"fapar"`/`"fcover"`).
+`lai_sentinel2()` devient un **alias mince**, strictement rétrocompatible (les
+appelants reGénération inchangés — vérifié : suite complète).
+
+**CCC refusé, à raison.** Vérification faite : le CCC n'est **pas** une cible
+directe (composé Cab × LAI). La fonction l'abort avec un message qui pointe vers
+le lot 4, plutôt que d'inventer un mapping. Bandes par variable **provisoires**
+(défaut LAI validé ; fAPAR/FVC ouvert, D3) et inversion non validée en attendant
+le recoupement GEODES (lot 3).
+
+Export + `.Rd` main, pkgdown, 5 tests (voie `precomputed` pure). Restent lots 2
+(FVC→A1, fAPAR→C2), 3 (validation GEODES), 4 (CCC), 5 (confiance pixel).
+
 ### 2026-07-24 — Spec 042 (v2) : produits biophysiques calculés en interne depuis S2
 
 Question de Pascal : ajouter LAI/fAPAR/FVC/CCC renforce-t-il la cohérence ?
