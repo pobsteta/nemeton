@@ -19,7 +19,7 @@ l'inspection, listés avant les décisions comme l'exige l'étape 3 du brief.
 
 | # | Écart | Résolution |
 |---|---|---|
-| E1 | **`biophysique_sentinel2()` déjà livré** (v0.166.0-.1), inversion `prosail` **dans** nemeton — contredit D-brief 2 (package séparé) et 3 (SL2P pur, pas prosail) | **Décision Pascal : (A) supersède.** Cette spec remplace la 042 ; `biophysique_sentinel2()` (chemins fAPAR/FVC) et le chaînage lot 2 seront **retirés** à l'implémentation. `lai_sentinel2()` (spec 033, prosail, repli reGénération) reste — hors périmètre. |
+| E1 | **`biophysique_sentinel2()` déjà livré** (v0.166.0-.1), inversion `prosail` **dans** nemeton — contredit D-brief 2 (package séparé) et 3 (SL2P pur, pas prosail) | **Décision Pascal : (A) supersède.** Cette spec remplace la 042 ; `biophysique_sentinel2()` (chemins fAPAR/FVC) et le chaînage lot 2 seront **retirés** à l'implémentation — **sous la contrainte de séquencement C1 ci-dessous**. |
 | E2 | **`augmented` est déjà un vecteur** (`character`), pas un scalaire — et **`lai_ml` existe déjà** (spec 033, `R/ndp.R:334`) | La prémisse « augmented devient multi-valué » est **caduque** : il l'est depuis toujours. L'ADR (§B) ne crée pas la multi-valeur ; il **gouverne l'ajout du flag `biophysical_s2`** et son gating. |
 | E3 | **« ADR-012 » est déjà attribué** (TimescaleDB/pgvector). Plus haut ADR = **014** | Écrit en **ADR-015** (`ADR-015-biophysique-ndp.md`). Le « 012 » du brief est une erreur de numérotation. |
 | E4 | `fapar = NULL` et `fvc = NULL` **existent déjà** dans `indicateur_c2_ndvi` / `indicateur_a1_couverture` (phase « Theia s2_biophysical ») | Le patron d'argument optionnel est **acquis** ; on l'étend à `lai`/`ccc` sur les autres indicateurs (§7). |
@@ -28,6 +28,28 @@ l'inspection, listés avant les décisions comme l'exige l'étape 3 du brief.
 > **HYPOTHÈSE :** « FCOVER » (brief) = « FVC » (fraction de couvert végétal). Même
 > variable, deux graphies ; on retient **FCOVER** (graphie SNAP/SL2P) dans les
 > nouveaux artefacts, `fvc` restant l'argument existant de `a1_couverture`.
+
+### C1 — Contrainte de séquencement (décision Pascal, 2026-07-24)
+
+**`lai_sentinel2()` est maintenu tant que le remplaçant SL2P n'est pas
+fonctionnel.** Il porte le **repli canopée NDP 0 des moteurs reGénération**
+(`lai_max` de `regen_bilan_hydrique`, `pai` de `regen_sensibilite`) : le retirer
+avant que la chaîne SL2P produise et valide le LAI **casserait la reGénération**.
+
+Conséquence sur l'ordre d'implémentation — **impératif** :
+
+1. `biophysique_sentinel2()` est aujourd'hui la fonction, `lai_sentinel2()` en est
+   un **alias**. On ne peut donc pas retirer `biophysique_sentinel2()` sans
+   d'abord **détacher `lai_sentinel2()`** en fonction autonome (restaurer la
+   version prosail de spec 033).
+2. Ce détachement, puis le retrait des chemins fAPAR/FVC, ne se font **qu'après**
+   que la chaîne SL2P (`biophysnemeton` + consommation cœur) soit livrée **et
+   validée** (golden SNAP 1e-4, §9).
+3. Jusque-là, `lai_sentinel2()` reste **strictement fonctionnel et inchangé** —
+   aucune régression tolérée sur la reGénération.
+
+Autrement dit : la spec 043 **ajoute** la voie SL2P ; elle ne **retire** l'ancienne
+qu'une fois la nouvelle prouvée. Pas de fenêtre où ni l'une ni l'autre ne marche.
 
 ---
 
@@ -258,7 +280,9 @@ la ligne de base pluriannuelle, par unité.
 ## 11. Questions ouvertes
 
 - **Q1** — Deux sources LAI (SL2P nouveau ; prosail spec 033 reGénération).
-  Coexistence transitoire, ou le SL2P remplace-t-il le repli prosail à terme ?
+  **Tranchée (C1)** : coexistence, `lai_sentinel2()` maintenu tant que SL2P n'est
+  pas fonctionnel et validé. Un éventuel remplacement du repli reGénération par le
+  LAI SL2P est un chantier **ultérieur et distinct**, hors spec 043.
 - **Q2** — CCC est-il une sortie **directe** de SL2P (auxdata), ou un composé à
   reconstruire ? (Ma spec 042 avait constaté que `prosail` ne le sort pas
   directement ; SL2P peut différer — **à vérifier dans les auxdata SNAP**.)
