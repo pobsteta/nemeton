@@ -1,3 +1,17 @@
+# nemeton 0.166.1 (2026-07-24)
+
+### Fixed — `biodivMapR` déclaré en `Imports` alors qu'il est optionnel
+
+`biodivMapR` (diversité spectrale B4/L3, spec 028) était en **`Imports`** (dépendance
+dure) alors qu'il n'est utilisé que par `compute_spectral_diversity()`, **gardé par
+`requireNamespace()`** et testé avec `skip_if_not_installed()`. Sa chaîne de
+dépendances jbferet (dont `dissUtils`, archivé du CRAN) le rend **non installable en
+CI** par moments, ce qui cassait `load_imports()` au chargement du package — donc
+`R-CMD-check` et `pkgdown` — sans rapport avec le code métier. Déplacé en **`Suggests`**,
+comme tous ses frères lourds déjà (`prosail`, `lidR`, `whitebox`, `fasterRaster`,
+`reticulate`). Aucun changement de comportement : appeler B4/L3 sans `biodivMapR`
+lève toujours le même message « installez-le ».
+
 # nemeton 0.166.0 (2026-07-24)
 
 ### Added — `biophysique_sentinel2()` : LAI/fAPAR/FVC depuis Sentinel-2 (spec 042, lot 1)

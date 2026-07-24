@@ -1428,6 +1428,19 @@ Restent ouvertes : **D8** (le volume IFN sert-il à suppléer P1 en NDP 0 ?) et
 référentiel porte le nom latin, `european_species_tolerances()` porte
 `species_sci` — faisable, non fait).
 
+### 2026-07-24 — v0.166.1 : `biodivMapR` mal déclaré en Imports (fix CI)
+
+Après v0.166.0, `R-CMD-check` + `pkgdown` rouges — **sans rapport avec le
+feature**. `load_imports()` échouait sur `biodivMapR (>= 2.0.0)`, en **Imports**
+(dur) alors qu'il n'est utilisé que par `compute_spectral_diversity()` (B4/L3,
+spec 028), **gardé par `requireNamespace()`** (ligne 98) et testé avec
+`skip_if_not_installed()`. Sa chaîne jbferet (dont `dissUtils`, archivé CRAN) le
+rend non installable en CI par moments — même classe que la saga lidR/rlas.
+Vérifié : aucun import NAMESPACE, seul consommateur, tests déjà gardés → déplacé
+en **Suggests**, comme tous ses frères lourds (`prosail`, `lidR`, `whitebox`,
+`fasterRaster`, `reticulate`). Bug latent exposé par l'environnement, pas
+introduit par le feature.
+
 ### 2026-07-24 — v0.166.0 : `biophysique_sentinel2()` (spec 042 lot 1)
 
 Socle du calcul interne livré. `lai_sentinel2()` (spec 033) généralisé :
