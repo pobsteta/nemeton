@@ -47,5 +47,7 @@ and their inversion is unvalidated pending the GEODES cross-check (lot 3).
 }
 
 \seealso{
-\code{\link{lai_sentinel2}}
+\code{\link{lai_sentinel2}}; consumers of the biophysical layers:
+\code{\link{indicateur_a1_couverture}} (\code{fvc=}) and
+\code{\link{indicateur_c2_ndvi}} (\code{fapar=}).
 }

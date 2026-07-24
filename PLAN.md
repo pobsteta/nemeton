@@ -1428,6 +1428,25 @@ Restent ouvertes : **D8** (le volume IFN sert-il à suppléer P1 en NDP 0 ?) et
 référentiel porte le nom latin, `european_species_tolerances()` porte
 `species_sci` — faisable, non fait).
 
+### 2026-07-24 — Spec 042 lot 2 : chaînage biophysique → A1/C2 vérifié (déjà câblé)
+
+En attaquant le lot 2 (brancher FVC→A1, fAPAR→C2), découverte : **les
+consommateurs préexistaient**. `indicateur_a1_couverture(fvc=)` et
+`indicateur_c2_ndvi(fapar=)` acceptent déjà la couche biophysique en opt-in
+(`NULL` → NDVI/land-cover inchangés), posés lors d'une phase « Theia
+s2_biophysical » antérieure. Il ne manquait que le **socle amont**, livré au
+lot 1 (v0.166.0). **Aucun code neuf** : la plomberie était là.
+
+Livré : chaînage bout-en-bout **testé** (`test-biophys-indicators.R`, voie
+`precomputed` pure) — `biophysique_sentinel2("fvc")` → A1 ≈ 60 (fvc 0,6 × 100) ;
+`biophysique_sentinel2("fapar")` → C2 ≈ 0,6 ; garde-fou d'échelle fAPAR/NDVI
+∈ [0,1] (drop-in). Cross-refs `@seealso` A1/C2. Doc + tests, pas de bump.
+
+**Spec 042 en pause** : lots 3 (validation GEODES), 4 (CCC), 5 (confiance pixel)
+**bloqués sur données GEODES** — impossible de caractériser le biais fAPAR/FVC/CCC
+sans dalles de référence. Le socle produit les variables et les indicateurs les
+consomment ; la validation attend la donnée.
+
 ### 2026-07-24 — v0.166.1 : `biodivMapR` mal déclaré en Imports (fix CI)
 
 Après v0.166.0, `R-CMD-check` + `pkgdown` rouges — **sans rapport avec le
