@@ -109,3 +109,20 @@ caduc et `@*release` pourra être rétabli.
 ## 7. Hors-scope
 - Aucun changement cœur `nemeton` (le package s'installe correctement).
 - Aucune modif de `Imports:`/`Depends:` ni du code de l'app.
+
+---
+
+## Suivi — 2026-07-24 : fix appliqué à moitié, install toujours cassée
+
+Constat sur `nemetonshiny@0.115.9.9000`, `DESCRIPTION` ligne 26 :
+```
+Remotes: pobsteta/nemeton@*release, pobsteta/foretaccess@v1.21.0, r-lidar/lasR
+```
+- `foretaccess@v1.21.0` → tag concret, **corrigé**.
+- `pobsteta/nemeton@*release` → **toujours présent** : le bug pak/R4.6 subsiste,
+  l'installation de `nemetonshiny` échoue encore à la résolution.
+
+**Correctif restant (dans `nemetonshiny`, hors périmètre `nemeton`)** :
+remplacer `pobsteta/nemeton@*release` par un tag concret, p. ex.
+`pobsteta/nemeton@v0.167.0` (satisfait `nemeton (>= 0.165.0)`). Ne jamais
+réintroduire `@*release` tant que pak/R4.6 n'est pas corrigé en amont.
