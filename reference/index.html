@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.165.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.167.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -607,6 +607,29 @@
 
         </dt>
         <dd>Read the site-index reference curves</dd>
+      </dl></div><div class="section level2">
+      <h2 id="variables-biophysiques-sentinel-spec-">Variables biophysiques Sentinel-2 (spec 043)<a class="anchor" aria-label="anchor" href="#variables-biophysiques-sentinel-spec-"></a></h2>
+
+      <div class="section-desc"><p>Gouvernance de l’augmentation biophysique (LAI/fAPAR/FCOVER/CCC) dans le systeme NDP ; production amont dans le package biophysnemeton</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="biophys_gating.html">biophys_gating()</a></code>
+
+        </dt>
+        <dd>Gate the Sentinel-2 biophysical augmentation flag, per unit</dd>
+
+        <dt>
+
+          <code><a href="biophys_gating_thresholds.html">biophys_gating_thresholds()</a></code>
+
+        </dt>
+        <dd>Default gating thresholds for the Sentinel-2 biophysical augmentation</dd>
       </dl></div><div class="section level2">
       <h2 id="systeme-ndp-niveau-de-precision-">Systeme NDP (Niveau De Precision)<a class="anchor" aria-label="anchor" href="#systeme-ndp-niveau-de-precision-"></a></h2>
 
@@ -2443,6 +2466,13 @@
 
         </dt>
         <dd>LAI from Sentinel-2 via PROSAIL inversion — NDP-0 canopy fallback (spec 033)</dd>
+
+        <dt>
+
+          <code><a href="biophysique_sentinel2.html">biophysique_sentinel2()</a></code>
+
+        </dt>
+        <dd>Biophysical variable from Sentinel-2 via PROSAIL inversion (spec 042)</dd>
 
         <dt>
 

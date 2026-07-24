@@ -1,5 +1,86 @@
 # Changelog
 
+## nemeton 0.167.0 (2026-07-24)
+
+#### Added — gating de l’augmentation biophysique S2 (spec 043 D6, ADR-015)
+
+Première brique de la spec 043 :
+[`biophys_gating()`](https://pobsteta.github.io/nemeton/reference/biophys_gating.md)
+décide, **par unité**, si les variables biophysiques Sentinel-2
+(LAI/fAPAR/FCOVER/CCC) sont assez fiables pour porter le flag NDP
+`"biophysical_s2"`. Les quatre conditions — `n_obs`, taux de masquage,
+part hors-domaine SL2P, surface — doivent **toutes** tenir ;
+[`biophys_gating_thresholds()`](https://pobsteta.github.io/nemeton/reference/biophys_gating_thresholds.md)
+porte les seuils par défaut.
+
+**Fail-closed** : toute métrique manquante fait échouer le gating. Poser
+le flag sur une base insuffisante ferait compter la donnée dans la
+confiance φ alors qu’elle est peu fiable, ce que l’ADR-011 interdit de
+fait — le gating est la seule barrière entre « donnée présente » et «
+donnée digne de peser dans φ ».
+
+**Brique de gouvernance, pas de production** : aucune variable
+biophysique n’est calculée ici (cela vit dans le package amont
+`biophysnemeton`, ADR-009). La fonction consomme les métriques de
+qualité remontées par l’amont et rend un prédicat.
+
+**Seuils provisoires, à calibrer.** Les quatre valeurs par défaut (n_obs
+≥ 3, masquage ≤ 40 %, hors-domaine ≤ 10 %, surface ≥ 25 px) sont
+annoncées comme à calibrer, chacune avec son ordre de grandeur et sa
+méthode (cf.
+[`?biophys_gating_thresholds`](https://pobsteta.github.io/nemeton/reference/biophys_gating_thresholds.md)).
+
+## nemeton 0.166.1 (2026-07-24)
+
+#### Fixed — `biodivMapR` déclaré en `Imports` alors qu’il est optionnel
+
+`biodivMapR` (diversité spectrale B4/L3, spec 028) était en
+**`Imports`** (dépendance dure) alors qu’il n’est utilisé que par
+[`compute_spectral_diversity()`](https://pobsteta.github.io/nemeton/reference/compute_spectral_diversity.md),
+**gardé par
+[`requireNamespace()`](https://rdrr.io/r/base/ns-load.html)** et testé
+avec `skip_if_not_installed()`. Sa chaîne de dépendances jbferet (dont
+`dissUtils`, archivé du CRAN) le rend **non installable en CI** par
+moments, ce qui cassait `load_imports()` au chargement du package — donc
+`R-CMD-check` et `pkgdown` — sans rapport avec le code métier. Déplacé
+en **`Suggests`**, comme tous ses frères lourds déjà (`prosail`, `lidR`,
+`whitebox`, `fasterRaster`, `reticulate`). Aucun changement de
+comportement : appeler B4/L3 sans `biodivMapR` lève toujours le même
+message « installez-le ».
+
+## nemeton 0.166.0 (2026-07-24)
+
+#### Added — `biophysique_sentinel2()` : LAI/fAPAR/FVC depuis Sentinel-2 (spec 042, lot 1)
+
+Généralisation de
+[`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)
+(spec 033) à toutes les variables biophysiques **directement
+inversibles** par PROSAIL — **LAI**, **fAPAR**, **FVC** (fCover) —, par
+la **même machinerie hybride** et la même source Sentinel-2 (MUSCATE).
+[`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)
+devient un **alias mince** (`variable = "lai"`), strictement
+rétrocompatible : les appelants reGénération sont inchangés.
+
+`biophysique_sentinel2(variable, …)` partage les deux chemins de
+[`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)
+— fast-path `precomputed` (réduction temporelle, testable sans
+`prosail`) et engine path (train/apply, non jouable en CI). La couche de
+sortie porte le nom de la variable.
+
+**Scope volontaire.** Seules les trois cibles d’inversion **directes**
+sont exposées (vérifié dans le code `prosail` :
+`train_prosail_inversion` accepte `"lai"`/`"fapar"`/`"fcover"`). Le
+**CCC** est un composé (Cab × LAI), **pas** une cible directe : il
+échoue avec un message explicite, différé (spec 042 lot 4). Le jeu de
+bandes par variable est **provisoire** — le défaut LAI
+`c("B4","B5","B8")` est validé (spec 033), celui de fAPAR/FVC reste
+ouvert (spec 042 D3) et leur inversion est non validée en attendant le
+recoupement GEODES (lot 3).
+
+Ce lot livre le **socle** : la machinerie produit désormais les trois
+variables. Les branchements aux indicateurs (FVC→A1, fAPAR→C2) et la
+validation sont les lots suivants de la spec 042.
+
 ## nemeton 0.165.0 (2026-07-22)
 
 #### Added — pont entre nomenclatures d’essences (spec 040, **D9**)

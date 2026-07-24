@@ -1885,6 +1885,176 @@ Restent ouvertes : **D8** (le volume IFN sert-il à suppléer P1 en NDP 0
 [`european_species_tolerances()`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md)
 porte `species_sci` — faisable, non fait).
 
+### 2026-07-24 — Spec 043 cadrée : variables biophysiques S2 (SL2P) — supersède 042
+
+Brief `specs/brief-instance-nemeton.md` (design considéré, en-tête
+périmé « v0.43.0/MIT » → il ignorait mon travail de session). Décision
+Pascal **(A) : le brief supersède**. Trois livrables rédigés dans
+`specs/043-biophysique-s2/` (docs seuls, aucun code) : - **`spec.md`** —
+LAI/fAPAR/FCOVER/CCC via SL2P (Weiss & Baret) pur-R, consommés par
+arguments optionnels ; médiane juin-août (table à 1 ligne), gating,
+correction de biais forêt, mapping 7 sous-indicateurs, tests golden SNAP
+1e-4 + invariance au n_obs. - **`ADR-015-biophysique-ndp.md`** — amende
+l’ADR-011 (le brief disait « ADR-012 », **déjà pris** ; plus haut ADR =
+014 → **015**). Flag `augmented` unique `"biophysical_s2"` conditionné,
+effet sur φ par la granularité seule. - **`note-biophysnemeton.md`** —
+package amont séparé (ADR-009), frontière, interface, arbitrage accès S2
+: **STAC direct via le pipeline THEIA existant, pas theia2r**.
+
+Écarts vérifiés dans le code et actés en §0 : `augmented` **déjà** un
+vecteur et `lai_ml` **déjà** présent (E2) ; `fapar=`/`fvc=` **déjà**
+câblés (E4) ; « ADR-012 » pris (E3) ; « 31 vs 29 » signalé, non corrigé
+— README dit « 31 », le « 29 » introuvable dans le repo (E5).
+
+**Conséquence** : spec 042 marquée **superseded**.
+[`biophysique_sentinel2()`](https://pobsteta.github.io/nemeton/reference/biophysique_sentinel2.md)
+(v0.166.0-.1, prosail) sera **retiré** à l’implémentation de la 043 ;
+[`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)
+(spec 033, repli reGénération) reste. Raison du remplacement : SL2P est
+reproductible au 1e-4 contre SNAP (test golden), l’inversion prosail
+ré-entraînée ne l’est pas.
+
+### 2026-07-24 — Spec 042 lot 2 : chaînage biophysique → A1/C2 vérifié (déjà câblé)
+
+En attaquant le lot 2 (brancher FVC→A1, fAPAR→C2), découverte : **les
+consommateurs préexistaient**. `indicateur_a1_couverture(fvc=)` et
+`indicateur_c2_ndvi(fapar=)` acceptent déjà la couche biophysique en
+opt-in (`NULL` → NDVI/land-cover inchangés), posés lors d’une phase «
+Theia s2_biophysical » antérieure. Il ne manquait que le **socle
+amont**, livré au lot 1 (v0.166.0). **Aucun code neuf** : la plomberie
+était là.
+
+Livré : chaînage bout-en-bout **testé** (`test-biophys-indicators.R`,
+voie `precomputed` pure) — `biophysique_sentinel2("fvc")` → A1 ≈ 60 (fvc
+0,6 × 100) ; `biophysique_sentinel2("fapar")` → C2 ≈ 0,6 ; garde-fou
+d’échelle fAPAR/NDVI ∈ \[0,1\] (drop-in). Cross-refs `@seealso` A1/C2.
+Doc + tests, pas de bump.
+
+**Spec 042 en pause** : lots 3 (validation GEODES), 4 (CCC), 5
+(confiance pixel) **bloqués sur données GEODES** — impossible de
+caractériser le biais fAPAR/FVC/CCC sans dalles de référence. Le socle
+produit les variables et les indicateurs les consomment ; la validation
+attend la donnée.
+
+### 2026-07-24 — v0.166.1 : `biodivMapR` mal déclaré en Imports (fix CI)
+
+Après v0.166.0, `R-CMD-check` + `pkgdown` rouges — **sans rapport avec
+le feature**. `load_imports()` échouait sur `biodivMapR (>= 2.0.0)`, en
+**Imports** (dur) alors qu’il n’est utilisé que par
+[`compute_spectral_diversity()`](https://pobsteta.github.io/nemeton/reference/compute_spectral_diversity.md)
+(B4/L3, spec 028), **gardé par
+[`requireNamespace()`](https://rdrr.io/r/base/ns-load.html)** (ligne 98)
+et testé avec `skip_if_not_installed()`. Sa chaîne jbferet (dont
+`dissUtils`, archivé CRAN) le rend non installable en CI par moments —
+même classe que la saga lidR/rlas. Vérifié : aucun import NAMESPACE,
+seul consommateur, tests déjà gardés → déplacé en **Suggests**, comme
+tous ses frères lourds (`prosail`, `lidR`, `whitebox`, `fasterRaster`,
+`reticulate`). Bug latent exposé par l’environnement, pas introduit par
+le feature.
+
+### 2026-07-24 — v0.166.0 : `biophysique_sentinel2()` (spec 042 lot 1)
+
+Socle du calcul interne livré.
+[`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)
+(spec 033) généralisé : `.lai_prosail_train()` / `.lai_prosail_apply()`
+gagnent un paramètre `parm` (clé de cache `prosail_<parm>_…`,
+`parms_to_estimate` paramétré), et `biophysique_sentinel2(variable=)`
+expose **LAI/fAPAR/FVC** — les trois cibles d’inversion **directes**
+vérifiées dans le code `prosail` (`train_prosail_inversion` accepte
+`"lai"`/`"fapar"`/`"fcover"`).
+[`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)
+devient un **alias mince**, strictement rétrocompatible (les appelants
+reGénération inchangés — vérifié : suite complète).
+
+**CCC refusé, à raison.** Vérification faite : le CCC n’est **pas** une
+cible directe (composé Cab × LAI). La fonction l’abort avec un message
+qui pointe vers le lot 4, plutôt que d’inventer un mapping. Bandes par
+variable **provisoires** (défaut LAI validé ; fAPAR/FVC ouvert, D3) et
+inversion non validée en attendant le recoupement GEODES (lot 3).
+
+Export + `.Rd` main, pkgdown, 5 tests (voie `precomputed` pure). Restent
+lots 2 (FVC→A1, fAPAR→C2), 3 (validation GEODES), 4 (CCC), 5 (confiance
+pixel).
+
+### 2026-07-24 — Spec 042 (v2) : produits biophysiques calculés en interne depuis S2
+
+Question de Pascal : ajouter LAI/fAPAR/FVC/CCC renforce-t-il la
+cohérence ? Cadré, **non implémenté**,
+`specs/042-produits-biophysiques-geodes/spec.md`.
+
+**Pivot v1 → v2.** La v1 proposait de *consommer* le produit national
+CNES/GEODES (bloquée sur D1 : mécanisme d’accès inconnu). Vérification
+faite du code : `nemeton` **calcule déjà** LAI par inversion PROSAIL
+hybride
+([`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md),
+spec 033), et la **même machinerie** produit les trois autres —
+`train_prosail_inversion(parms_to_estimate=)` accepte `"fCover"` (FVC),
+`"CCC"`, et `prosail::Compute_fAPAR()` calcule le fAPAR analytiquement.
+D’où la v2 : **calcul interne** (généraliser
+[`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)
+→
+[`biophysique_sentinel2()`](https://pobsteta.github.io/nemeton/reference/biophysique_sentinel2.md)),
+plus cohérent (une méthode, source S2 MUSCATE déjà câblée, NDP maîtrisé)
+et **sans dépendance d’accès**. **D1 dissous** ; GEODES rétrogradé de
+*source* à *référence de validation*.
+
+**Toujours PAS quatre indicateurs.** LAI/fAPAR/FVC colinéaires → trois
+dans la famille C tripleraient le poids de la verdeur (Fibonacci). La
+valeur : raffiner des proxys — FVC→A1 (déjà câblé), fAPAR→C2 (NDVI
+sature), LAI→C1 (`ndvi×150`), CCC = seul signal neuf (santé), candidat
+R5.
+
+**Deux réserves survivent au pivot** (à ne pas masquer) : le mal-posé du
+CCC est **inhérent à S2** — l’inverser localement ne le fiabilise pas ;
+et on perd la validation + le masque qualité « gratuits » de GEODES →
+soit valider contre lui (lot 3), soit construire une **confiance par
+pixel** interne modulant φ (D5, le vrai chantier). D2 (usage CCC), D3
+(bandes red-edge par variable) ouvertes.
+
+### 2026-07-24 — Chaîne desserte bouclée : tout est livré et consommé en aval
+
+Vérification en lecture seule des deux repos frères. Le dernier reliquat
+côté `nemeton` —
+[`volume_mobilisable()`](https://pobsteta.github.io/nemeton/reference/volume_mobilisable.md)
+livré mais non consommé — **est câblé**.
+
+**`nemetonshiny` v0.113 → v0.115.2**, plancher relevé à
+`nemeton (>= 0.165.0)` : - **v0.114.0** : panneau **« Typage du réseau
+»** (spec 040) — `service_desserte.R` enchaîne exactement le brief
+`brief-nemetonshiny-volume-desserte.md` : `indicateur_p1_volume` →
+`volume_mobilisable(unite = "m3_total")` → `calculer_flux(volume_champ)`
+→ `typer_desserte(seuils_flux)`. Le piège d’unité du §3 (`m3_total`, pas
+`m3_ha`) est respecté et cité dans le code. - **v0.115.0** : moteur
+câble-mât exposé + toggle « NDP 1 desserte corrigée LiDAR ».
+**v0.115.1** : couche **ACCESSFOR** affichable + comparaison avec les
+classes de débardage (consomme la découverte WFS de ce repo, spec 040
+§12). **v0.115.2** : NDP 1 câble n’est plus expérimental, largeurs LiDAR
+→ `places_depot()`, couverture câble **85 % mesuré vs 91 % optimiste**.
+
+**`foretaccess` v1.16 → v1.19.1** : - **v1.18** : micro-relief LiDAR,
+portage **RVT en Rust** (spec 021). - **v1.19.0** :
+`qualifier_desserte()` sur desserte de projet réelle ;
+**`contracter_lignes()`** — le `$lignes` contracté que le brief desserte
+demandait en option ; composition `largeur_carrossable_m` →
+`places_depot()`. - **v1.19.1** : fix bloquant du segfault de
+`qualifier_desserte()` sur 3 299 tronçons.
+
+Point notable : `foretaccess` **documente désormais l’appariement des
+unités** avec
+[`volume_mobilisable()`](https://pobsteta.github.io/nemeton/reference/volume_mobilisable.md)
+des deux côtés (`desserte_flux.R` : « use `unite = "m3_total"` » ;
+`desserte_reseau.R` : « the **opposite** unit, `m3_ha` »). Le piège du
+§3 de la spec 040 est donc gravé dans les deux repos.
+
+**Bilan.** La boucle ouverte le 2026-07-21 (« quel volume passer à
+`volume_champ` ») est bouclée de bout en bout sur les trois repos : **P1
+→ volume mobilisé → flux → réseau typé**. Aucun reliquat côté `nemeton`
+— spec 040 close **et consommée**, spec 041 caduque
+(`acquire_desserte_lidar` en production), tous les briefs
+desserte/câble/ACCESSFOR traités. `volume_depuis_p1` (câble, sur pied)
+et `volume_mobilisable` (typage, mobilisé) coexistent sans redondance,
+comme prévu.
+
 ### 2026-07-23 — Point de convergence : `foretaccess` v1.16.0 a traité TOUS les briefs
 
 `foretaccess` a bondi de **1.9.0 à 1.16.0** (dernier commit
@@ -1936,10 +2106,10 @@ m.
 [`volume_mobilisable()`](https://pobsteta.github.io/nemeton/reference/volume_mobilisable.md)
 (sur pied → *mobilisé* avec taux IFN, pour `calculer_flux()`/typage).
 Les deux sont complémentaires, pas redondants. Le typage de desserte
-(`calculer_flux → typer_desserte`) pourra consommer
+(`calculer_flux → typer_desserte`) consommera
 [`volume_mobilisable()`](https://pobsteta.github.io/nemeton/reference/volume_mobilisable.md)
-maintenant que les moteurs sont débloqués — reste à câbler côté app,
-hors de ce repo.
+maintenant que les moteurs sont débloqués — câblage côté app **fait le
+2026-07-24** (app v0.114.0, cf. entrée ci-dessus).
 
 ### 2026-07-22 — Spec 041 : D1 et D4 tranchées sur données réelles (Vercors)
 

@@ -217,6 +217,17 @@ H0
 - [`read_site_index_curves()`](https://pobsteta.github.io/nemeton/reference/read_site_index_curves.md)
   : Read the site-index reference curves
 
+## Variables biophysiques Sentinel-2 (spec 043)
+
+Gouvernance de l’augmentation biophysique (LAI/fAPAR/FCOVER/CCC) dans le
+systeme NDP ; production amont dans le package biophysnemeton
+
+- [`biophys_gating()`](https://pobsteta.github.io/nemeton/reference/biophys_gating.md)
+  : Gate the Sentinel-2 biophysical augmentation flag, per unit
+- [`biophys_gating_thresholds()`](https://pobsteta.github.io/nemeton/reference/biophys_gating_thresholds.md)
+  : Default gating thresholds for the Sentinel-2 biophysical
+  augmentation
+
 ## Systeme NDP (Niveau De Precision)
 
 Ponderation Fibonacci et confiance phi
@@ -970,6 +981,10 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
 - [`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)
   : LAI from Sentinel-2 via PROSAIL inversion — NDP-0 canopy fallback
   (spec 033)
+
+- [`biophysique_sentinel2()`](https://pobsteta.github.io/nemeton/reference/biophysique_sentinel2.md)
+  : Biophysical variable from Sentinel-2 via PROSAIL inversion (spec
+  042)
 
 - [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
   : Summer E-OBS climate trends over the project area (spec 027 §6,
