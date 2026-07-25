@@ -7,7 +7,7 @@
 volume_mobilisable(units, volume_col = "P1", unite = c("m3_total", "m3_ha"),
   taux_prelevement = NULL, horizon_ans = NULL, espar_field = "espar",
   ser = NULL, min_plac = 30, na_policy = c("na", "zero", "error"),
-  column_name = "volume_mobilisable")
+  p1_max_plausible = 800, column_name = "volume_mobilisable")
 }
 \arguments{
 \item{units}{An \code{sf} object carrying the P1 column.}
@@ -42,6 +42,15 @@ rates.}
 NDP 0 case, where P1 has neither field inventory nor CHM. \code{"na"} (default)
 propagates \code{NA} and warns; \code{"zero"} maps them to 0 (\strong{paints an
 uninventoried parcel as "nothing to haul"}); \code{"error"} aborts.}
+
+\item{p1_max_plausible}{Numeric (m3/ha) or \code{NULL}. Standing-volume ceiling
+above which the input P1 is almost certainly not a per-hectare volume — a wrong
+unit upstream, or an over-estimated synthetic inventory. Units over it trigger a
+\code{cli_warn} (never an abort: a very capitalised stand can genuinely approach
+it), so the silent-wrong-unit failure surfaces before the road typing runs on
+bad flux. Default \code{800}, the P1 normalisation ceiling; \code{NULL} disables
+the check. Typical French standing volume is 100-400 m3/ha (see
+\code{\link{indicateur_p1_volume}}).}
 
 \item{column_name}{Name of the added column. Default \code{"volume_mobilisable"}.}
 }

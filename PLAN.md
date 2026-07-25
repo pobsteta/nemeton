@@ -1331,6 +1331,32 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-25 — v0.168.0 : garde-fou d'unité P1 dans `volume_mobilisable()` (spec 040)
+
+**Contexte.** La session app `nemetonshiny` a émis un brief
+(`~/brief-nemeton-unite-p1-volume.md`) : sur un projet ForêtAccess réel, la
+colonne `indicateur_p1_volume` donnait des valeurs 682–2315 (médiane 1556)
+qu'aucune lecture (m³ totaux ou m³/ha) ne rendait plausibles pour un volume sur
+pied. Doute : `indicateur_p1_volume` est-il vraiment un volume, ou un score ?
+
+**Réponse tranchée côté cœur.** P1 est **sans ambiguïté un volume sur pied en
+m³/ha** (config `Volume de bois (m³/ha)`, `@return … m3/ha`, formule
+`V=a·DBH^b·H^c × density`, plafond de normalisation 800). Les valeurs observées
+sont donc de vrais m³/ha **hors domaine** (~2× le plafond) : le bug est **en
+amont, dans les inputs** (densité/dbh ou inventaire synthétique surestimé), pas
+dans le pipeline desserte ni dans l'unité. Le nom `indicateur_p1_volume` est le
+nom de colonne canonique (config), `P1` le code court — les deux légitimes,
+rien à réconcilier. Brief-réponse complet :
+`specs/040-volume-mobilisable-desserte/reponse-p1-unite-desserte.md`.
+
+**Livré.** `volume_mobilisable()` gagne `p1_max_plausible = 800` : `cli_warn`
+(pas `abort`) quand un P1 d'entrée dépasse le plafond, avec compte/max/médiane
+hors domaine. `NULL` désactive, seuil réglable. Attrape exactement le profil
+d'erreur silencieux du brief avant que le typage ne tourne sur un flux gonflé.
+4 `test_that` ajoutés (hors-domaine → warn + calcul abouti, plausible →
+silencieux, seuil réglable/NULL, seuil invalide → abort). Fichier vert :
+41 expectations, 0 échec.
+
 ### 2026-07-22 — v0.165.0 : D8 et D9 livrées, spec 040 entièrement close
 
 **D9 — pont de nomenclatures.** Trois codes essence coexistaient sans clé

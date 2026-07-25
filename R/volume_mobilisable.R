@@ -70,6 +70,14 @@
 #'   NDP 0 case, where P1 has neither field inventory nor CHM. `"na"` (default)
 #'   propagates `NA` and warns; `"zero"` maps them to 0 (**paints an
 #'   uninventoried parcel as "nothing to haul"**); `"error"` aborts.
+#' @param p1_max_plausible Numeric (m3/ha) or `NULL`. Standing-volume ceiling
+#'   above which the input P1 is almost certainly not a per-hectare volume —
+#'   a wrong unit upstream, or an over-estimated synthetic inventory. Units
+#'   over it trigger a `cli_warn` (never an abort: a very capitalised stand can
+#'   genuinely approach it), so the silent-wrong-unit failure surfaces before
+#'   the road typing runs on bad flux. Default `800`, the P1 normalisation
+#'   ceiling; `NULL` disables the check. Typical French standing volume is
+#'   100-400 m3/ha (see [indicateur_p1_volume()]).
 #' @param column_name Name of the added column. Default `"volume_mobilisable"`.
 #'
 #' @return `units` with the `column_name` column added.
@@ -96,6 +104,7 @@ volume_mobilisable <- function(units,
                                ser = NULL,
                                min_plac = 30,
                                na_policy = c("na", "zero", "error"),
+                               p1_max_plausible = 800,
                                column_name = "volume_mobilisable") {
   if (!inherits(units, "sf")) {
     cli::cli_abort("{.arg units} must be an sf object.")
@@ -196,6 +205,33 @@ volume_mobilisable <- function(units,
         "{n_na} unit{?s} with missing {.val {volume_col}}: \\
          {.val {column_name}} stays NA there (na_policy = \"na\")."
       )
+    }
+  }
+
+  # --- Garde-fou d'unité (spec 040, brief P1 2026-07-24) --------------
+  # P1 est un volume sur pied en m3/ha (typique 100-400, plafond de
+  # normalisation 800). Une valeur au-dessus trahit presque toujours une
+  # mauvaise unité en amont ou un inventaire synthétique surestimé : servie
+  # telle quelle à calculer_flux(), elle fausse le typage de desserte sans
+  # aucune erreur. On alerte — jamais abort : un peuplement très capitalisé
+  # peut frôler le plafond légitimement.
+  if (!is.null(p1_max_plausible)) {
+    if (!is.numeric(p1_max_plausible) || length(p1_max_plausible) != 1L ||
+        is.na(p1_max_plausible) || p1_max_plausible <= 0) {
+      cli::cli_abort("{.arg p1_max_plausible} must be a single positive number \\
+                      or NULL.")
+    }
+    hors <- is.finite(p1) & p1 > p1_max_plausible
+    n_hors <- sum(hors)
+    if (n_hors > 0L) {
+      cli::cli_warn(c(
+        "!" = "{n_hors} unit{?s} with {.val {volume_col}} above \\
+               {p1_max_plausible} m3/ha (max {round(max(p1[hors]), 1)}, \\
+               median {round(stats::median(p1[hors]), 1)}).",
+        "i" = "P1 is a standing volume in m3/ha (typical 100-400). Values this \\
+               high usually mean a wrong unit or an over-estimated inventory \\
+               upstream; the road typing would run on inflated flux."
+      ))
     }
   }
 
