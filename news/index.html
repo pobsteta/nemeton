@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.168.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.168.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,19 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.168.1" id="nemeton-01681-2026-07-25">nemeton 0.168.1 (2026-07-25)<a class="anchor" aria-label="anchor" href="#nemeton-01681-2026-07-25"></a></h2>
+<div class="section level4">
+<h4 id="fixed--cubage-p1c1-gonflé--exposants-du-tarif-ifn-corrigés-spec-0-168-1">Fixed — cubage P1/C1 gonflé ×3-5 : exposants du tarif IFN corrigés (spec 040)<a class="anchor" aria-label="anchor" href="#fixed--cubage-p1c1-gonfl%C3%A9--exposants-du-tarif-ifn-corrig%C3%A9s-spec-0-168-1"></a></h4>
+<p><code>inst/extdata/ifn_volume_equations.csv</code> portait des exposants <code>b</code> (~2,5) et <code>c</code> (~0,97) <strong>incohérents avec le coefficient <code>a</code></strong>, qui est un facteur de forme calibré pour le tarif à variable combinée <code>V = a·D²·H</code> (b=2, c=1). L’erreur était multiplicative en <code>D^0,5</code> : le volume par arbre gonflait ×3-5, d’autant plus que le diamètre est gros. Un hêtre de 30 cm/25 m cubait 4,45 m³ au lieu de 0,85 ; un peuplement à 466 tiges/ha ressortait à ~1550 m³/ha au lieu de ~395.</p>
+<p><strong>Fix</strong> : <code>b → 2.0</code>, <code>c → 1.0</code> sur les 25 lignes ; <code>a</code> inchangé (facteur de forme 0,42–0,57, tous plausibles). Le cubage reproduit désormais un contrôle terrain <code>g·h·0,5</code> à 0,03 m³ près. <strong>Impact</strong> : corrige P1 (<code>indicateur_p1_volume</code>) <strong>et</strong> C1 biomasse (<code>R/indicators-families.R</code>, même tarif) et, en cascade, E1. Les <code>indicators.parquet</code> déjà persistés avec ≤ 0.168.0 doivent être recalculés.</p>
+<p>Merci à la session app <code>nemetonshiny</code> pour la reproduction (V/arbre croissant avec le dbh) qui a pointé l’exposant. Détail : <code>specs/040-volume-mobilisable-desserte/reponse-p1-cubage-gonfle.md</code>.</p>
+</div>
+<div class="section level4">
+<h4 id="changed--method-de-indicateur_p1_volume--allometric-avertit-0-168-1">Changed — <code>method</code> de <code>indicateur_p1_volume()</code> : <code>"allometric"</code> avertit<a class="anchor" aria-label="anchor" href="#changed--method-de-indicateur_p1_volume--allometric-avertit-0-168-1"></a></h4>
+<p>Le dispatch <code>"allometric"</code> n’a jamais été implémenté (la boucle applique toujours le tarif IFN). Il émet désormais un <code>cli_warn</code> explicite au lieu de retourner silencieusement le résultat de <code>"ifn_tarif"</code>. Seul <code>"ifn_tarif"</code> est disponible.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.168.0" id="nemeton-01680-2026-07-25">nemeton 0.168.0 (2026-07-25)<a class="anchor" aria-label="anchor" href="#nemeton-01680-2026-07-25"></a></h2>
 <div class="section level4">

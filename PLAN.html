@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.168.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.168.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -870,6 +870,14 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-25--v01681--cubage-p1c1-gonflé-3-5-corrigé-spec-040">2026-07-25 — v0.168.1 : <strong>cubage P1/C1 gonflé ×3-5 corrigé</strong> (spec 040)<a class="anchor" aria-label="anchor" href="#id_2026-07-25--v01681--cubage-p1c1-gonfl%C3%A9-3-5-corrig%C3%A9-spec-040"></a></h3>
+<p><strong>Suite du garde-fou v0.168.0.</strong> La session app a rejoué le flux compute complet (brief <code>~/brief-nemeton-p1-cubage-gonfle.md</code>) et <strong>infirmé la piste « inputs »</strong> : CHM, D_g (~29 cm), densité (~466/ha) tous plausibles, mais P1 ×3-5. Signature décisive fournie par l’app : V/arbre absurde <strong>croissant avec le dbh</strong> (2,2× à 19 cm → 5,6× à 36 cm).</p>
+<p><strong>Cause racine trouvée.</strong> <code>inst/extdata/ifn_volume_equations.csv</code> : colonnes <code>b</code> (~2,5) et <code>c</code> (~0,97) <strong>incohérentes avec <code>a</code></strong>, qui est un facteur de forme calibré pour la forme à variable combinée <code>V = a·D²·H</code> (preuve : <code>a/(π/4/10⁴) = 0,50</code>, facteur de forme classique). Le <code>b</code> en trop de ~0,5 gonfle en <code>D^0,5</code> — d’où l’erreur croissante avec le diamètre. Fix : <code>b→2.0</code>, <code>c→1.0</code> sur les 25 lignes, <code>a</code> inchangé. Le cubage reproduit le contrôle terrain <code>g·h·0,5</code> à 0,03 m³ près (36 cm/25 m → 1,30 m³ vs 1,27 attendu ; P1 → 395 m³/ha).</p>
+<p><strong>Portée.</strong> Même tarif dans <strong>C1 biomasse</strong> (<code>indicators-families.R:298</code>) → C1 et E1 corrigés d’un coup. Aucun autre consommateur (audité). Non-régression cubage ajoutée + plafond de sanité du test P1 resserré <code>5000 → 800</code> (l’ancien laissait passer le ×4). C1/E1/normalisation revérifiées vertes (317/95/329).</p>
+<p><strong><code>method</code></strong> : confirmé toujours ignoré (jamais réimplémenté depuis <code>match.arg</code>). <code>"allometric"</code> émet désormais un <code>cli_warn</code> au lieu d’un faux silence.</p>
+<p><strong>À faire côté app</strong> : bump <code>nemeton (&gt;= 0.168.1)</code> + <strong>recalculer les projets persistés</strong> (les P1/C1 stockés ≤ 0.168.0 restent gonflés). Brief-réponse : <code>specs/040-volume-mobilisable-desserte/reponse-p1-cubage-gonfle.md</code>.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-25--v01680--garde-fou-dunité-p1-dans-volume_mobilisable-spec-040">2026-07-25 — v0.168.0 : garde-fou d’unité P1 dans <code>volume_mobilisable()</code> (spec 040)<a class="anchor" aria-label="anchor" href="#id_2026-07-25--v01680--garde-fou-dunit%C3%A9-p1-dans-volume_mobilisable-spec-040"></a></h3>
 <p><strong>Contexte.</strong> La session app <code>nemetonshiny</code> a émis un brief (<code>~/brief-nemeton-unite-p1-volume.md</code>) : sur un projet ForêtAccess réel, la colonne <code>indicateur_p1_volume</code> donnait des valeurs 682–2315 (médiane 1556) qu’aucune lecture (m³ totaux ou m³/ha) ne rendait plausibles pour un volume sur pied. Doute : <code>indicateur_p1_volume</code> est-il vraiment un volume, ou un score ?</p>

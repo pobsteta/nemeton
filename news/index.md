@@ -1,5 +1,35 @@
 # Changelog
 
+## nemeton 0.168.1 (2026-07-25)
+
+#### Fixed — cubage P1/C1 gonflé ×3-5 : exposants du tarif IFN corrigés (spec 040)
+
+`inst/extdata/ifn_volume_equations.csv` portait des exposants `b` (~2,5)
+et `c` (~0,97) **incohérents avec le coefficient `a`**, qui est un
+facteur de forme calibré pour le tarif à variable combinée `V = a·D²·H`
+(b=2, c=1). L’erreur était multiplicative en `D^0,5` : le volume par
+arbre gonflait ×3-5, d’autant plus que le diamètre est gros. Un hêtre de
+30 cm/25 m cubait 4,45 m³ au lieu de 0,85 ; un peuplement à 466 tiges/ha
+ressortait à ~1550 m³/ha au lieu de ~395.
+
+**Fix** : `b → 2.0`, `c → 1.0` sur les 25 lignes ; `a` inchangé (facteur
+de forme 0,42–0,57, tous plausibles). Le cubage reproduit désormais un
+contrôle terrain `g·h·0,5` à 0,03 m³ près. **Impact** : corrige P1
+(`indicateur_p1_volume`) **et** C1 biomasse (`R/indicators-families.R`,
+même tarif) et, en cascade, E1. Les `indicators.parquet` déjà persistés
+avec ≤ 0.168.0 doivent être recalculés.
+
+Merci à la session app `nemetonshiny` pour la reproduction (V/arbre
+croissant avec le dbh) qui a pointé l’exposant. Détail :
+`specs/040-volume-mobilisable-desserte/reponse-p1-cubage-gonfle.md`.
+
+#### Changed — `method` de `indicateur_p1_volume()` : `"allometric"` avertit
+
+Le dispatch `"allometric"` n’a jamais été implémenté (la boucle applique
+toujours le tarif IFN). Il émet désormais un `cli_warn` explicite au
+lieu de retourner silencieusement le résultat de `"ifn_tarif"`. Seul
+`"ifn_tarif"` est disponible.
+
 ## nemeton 0.168.0 (2026-07-25)
 
 #### Added — garde-fou d’unité P1 dans `volume_mobilisable()` (spec 040)

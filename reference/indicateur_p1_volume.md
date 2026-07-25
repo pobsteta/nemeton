@@ -50,8 +50,10 @@ indicateur_p1_volume(
 
 - method:
 
-  Character. Volume calculation method: "ifn_tarif" (IFN tariff) or
-  "allometric". Default "ifn_tarif".
+  Character. Volume calculation method. Only "ifn_tarif" (the IFN
+  combined-variable tariff `V = a x D^2 x H`) is implemented;
+  "allometric" is accepted for backward compatibility but has no effect
+  and emits a warning. Default "ifn_tarif".
 
 - column_name:
 

@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.168.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.168.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -290,10 +290,10 @@ mûrs.</p>
 <span><span class="co">#&gt; Dimension:     XY</span></span>
 <span><span class="co">#&gt; Bounding box:  xmin: 10 ymin: 10 xmax: 290 ymax: 100</span></span>
 <span><span class="co">#&gt; Projected CRS: RGF93 v1 / Lambert-93</span></span>
-<span><span class="co">#&gt;   species dbh       P1                       geometry</span></span>
-<span><span class="co">#&gt; 1    QUPE  40 1537.922 POLYGON ((10 10, 100 10, 10...</span></span>
-<span><span class="co">#&gt; 2    FASY  35 1430.763 POLYGON ((110 10, 200 10, 2...</span></span>
-<span><span class="co">#&gt; 3    PIAB  30 1445.557 POLYGON ((210 10, 290 10, 2...</span></span></code></pre></div>
+<span><span class="co">#&gt;   species dbh     P1                       geometry</span></span>
+<span><span class="co">#&gt; 1    QUPE  40 253.44 POLYGON ((10 10, 100 10, 10...</span></span>
+<span><span class="co">#&gt; 2    FASY  35 229.32 POLYGON ((110 10, 200 10, 2...</span></span>
+<span><span class="co">#&gt; 3    PIAB  30 216.72 POLYGON ((210 10, 290 10, 2...</span></span></code></pre></div>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Mode CHM : H vient du raster</span></span>
 <span><span class="va">p1_chm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicateur_p1_volume.html">indicateur_p1_volume</a></span><span class="op">(</span><span class="va">units_p1</span>, chm <span class="op">=</span> <span class="va">chm</span><span class="op">)</span></span>
@@ -304,9 +304,9 @@ mûrs.</p>
 <span><span class="co">#&gt; Bounding box:  xmin: 10 ymin: 10 xmax: 290 ymax: 100</span></span>
 <span><span class="co">#&gt; Projected CRS: RGF93 v1 / Lambert-93</span></span>
 <span><span class="co">#&gt;   species dbh       P1                       geometry</span></span>
-<span><span class="co">#&gt; 1    QUPE  40 1898.891 POLYGON ((10 10, 100 10, 10...</span></span>
-<span><span class="co">#&gt; 2    FASY  35 1641.551 POLYGON ((110 10, 200 10, 2...</span></span>
-<span><span class="co">#&gt; 3    PIAB  30 1970.401 POLYGON ((210 10, 290 10, 2...</span></span></code></pre></div>
+<span><span class="co">#&gt; 1    QUPE  40 313.6601 POLYGON ((10 10, 100 10, 10...</span></span>
+<span><span class="co">#&gt; 2    FASY  35 263.4334 POLYGON ((110 10, 200 10, 2...</span></span>
+<span><span class="co">#&gt; 3    PIAB  30 298.5445 POLYGON ((210 10, 290 10, 2...</span></span></code></pre></div>
 <p>Un CHM moyen plus élevé que le <code>height_field</code> stocké se
 traduit par des volumes supérieurs — ce qui est cohérent puisque le
 peuplement réel est plus développé que l’estimation inventaire.</p>
@@ -344,7 +344,7 @@ combiné à la densité du bois, un facteur d’expansion de biomasse (BEF =
 <span>  geometry <span class="op">=</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span><span class="va">polys</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, <span class="va">polys</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>, crs <span class="op">=</span> <span class="fl">2154</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/indicateur_c1_biomasse.html">indicateur_c1_biomasse</a></span><span class="op">(</span><span class="va">units_c1</span>, chm <span class="op">=</span> <span class="va">chm</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 851.6527 617.9223</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 140.67656  93.62638</span></span></code></pre></div>
 <p>Si <code>stems_ha</code> est absent mais une colonne
 <code>density</code> (0-1) est présente, elle est convertie en stems/ha
 par multiplication par 500. Le paramètre <code>bef</code> est modifiable

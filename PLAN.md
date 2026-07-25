@@ -1757,6 +1757,38 @@ cœur).
 
 ## Journal
 
+### 2026-07-25 — v0.168.1 : **cubage P1/C1 gonflé ×3-5 corrigé** (spec 040)
+
+**Suite du garde-fou v0.168.0.** La session app a rejoué le flux compute
+complet (brief `~/brief-nemeton-p1-cubage-gonfle.md`) et **infirmé la
+piste « inputs »** : CHM, D_g (~29 cm), densité (~466/ha) tous
+plausibles, mais P1 ×3-5. Signature décisive fournie par l’app : V/arbre
+absurde **croissant avec le dbh** (2,2× à 19 cm → 5,6× à 36 cm).
+
+**Cause racine trouvée.** `inst/extdata/ifn_volume_equations.csv` :
+colonnes `b` (~2,5) et `c` (~0,97) **incohérentes avec `a`**, qui est un
+facteur de forme calibré pour la forme à variable combinée `V = a·D²·H`
+(preuve : `a/(π/4/10⁴) = 0,50`, facteur de forme classique). Le `b` en
+trop de ~0,5 gonfle en `D^0,5` — d’où l’erreur croissante avec le
+diamètre. Fix : `b→2.0`, `c→1.0` sur les 25 lignes, `a` inchangé. Le
+cubage reproduit le contrôle terrain `g·h·0,5` à 0,03 m³ près (36 cm/25
+m → 1,30 m³ vs 1,27 attendu ; P1 → 395 m³/ha).
+
+**Portée.** Même tarif dans **C1 biomasse**
+(`indicators-families.R:298`) → C1 et E1 corrigés d’un coup. Aucun autre
+consommateur (audité). Non-régression cubage ajoutée + plafond de sanité
+du test P1 resserré `5000 → 800` (l’ancien laissait passer le ×4).
+C1/E1/normalisation revérifiées vertes (317/95/329).
+
+**`method`** : confirmé toujours ignoré (jamais réimplémenté depuis
+`match.arg`). `"allometric"` émet désormais un `cli_warn` au lieu d’un
+faux silence.
+
+**À faire côté app** : bump `nemeton (>= 0.168.1)` + **recalculer les
+projets persistés** (les P1/C1 stockés ≤ 0.168.0 restent gonflés).
+Brief-réponse :
+`specs/040-volume-mobilisable-desserte/reponse-p1-cubage-gonfle.md`.
+
 ### 2026-07-25 — v0.168.0 : garde-fou d’unité P1 dans `volume_mobilisable()` (spec 040)
 
 **Contexte.** La session app `nemetonshiny` a émis un brief
