@@ -30,7 +30,10 @@ indicateur_p1_volume(
 
 \item{density_field}{Character. Column name containing tree density (stems/ha). Default "density".}
 
-\item{method}{Character. Volume calculation method: "ifn_tarif" (IFN tariff) or "allometric". Default "ifn_tarif".}
+\item{method}{Character. Volume calculation method. Only "ifn_tarif" (the IFN
+combined-variable tariff \code{V = a x D^2 x H}) is implemented; "allometric" is
+accepted for backward compatibility but has no effect and emits a warning.
+Default "ifn_tarif".}
 
 \item{column_name}{Character. Name for output column. Default "P1".}
 

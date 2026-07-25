@@ -44,7 +44,50 @@ test_that("indicateur_p1_volume (P1) calculates with IFN equations", {
   expect_true("P1" %in% names(result))
   expect_type(result$P1, "double")
   expect_true(all(result$P1 > 0, na.rm = TRUE))
-  expect_true(all(result$P1 < 5000, na.rm = TRUE))
+  # Plafond de plausibilité physique (m3/ha) : un ancien plafond à 5000
+  # laissait passer le cubage gonflé x4 (b/c faux dans le tarif). Cf. le
+  # test de non-régression du cubage plus bas.
+  expect_true(all(result$P1 < 800, na.rm = TRUE))
+})
+
+test_that("le cubage IFN rend un volume/arbre physiquement plausible (fix b/c)", {
+  # Non-régression du bug de tarif (brief app 2026-07-25) : les colonnes b, c
+  # de ifn_volume_equations.csv étaient incohérentes avec a (facteur de forme),
+  # gonflant le volume x3-5, d'autant plus que le dbh est gros. La forme
+  # correcte est le tarif à variable combinée V = a·D²·H (b=2, c=1).
+  skip_if_not_installed("sf")
+
+  u <- make_sf(list(
+    id = 1, species = "FASY", dbh = 30, height = 25, density = 400
+  ))
+  res <- indicateur_p1_volume(u, height_field = "height")
+
+  # V/arbre d'un hêtre 30 cm / 25 m : ordre de grandeur ~0,8-1,0 m3, pas ~4.
+  v_arbre <- res$P1[1] / 400
+  expect_gt(v_arbre, 0.6)
+  expect_lt(v_arbre, 1.2)
+
+  # P1 du peuplement : ~300-400 m3/ha, jamais > plafond de normalisation.
+  expect_gt(res$P1[1], 250)
+  expect_lt(res$P1[1], 450)
+
+  # Le ratio ne doit plus exploser avec le dbh : un arbre de 36 cm cube
+  # ~1,3 m3 (contrôle terrain g·h·0,5), pas ~7.
+  u36 <- make_sf(list(id = 1, species = "FASY", dbh = 36, height = 25,
+                      density = 1))
+  v36 <- indicateur_p1_volume(u36, height_field = "height")$P1[1]
+  expect_gt(v36, 1.0)
+  expect_lt(v36, 1.6)
+})
+
+test_that("method = 'allometric' avertit qu'il n'est pas implémenté", {
+  skip_if_not_installed("sf")
+  u <- make_sf(list(id = 1, species = "FASY", dbh = 30, height = 25,
+                    density = 400))
+  expect_warning(
+    indicateur_p1_volume(u, height_field = "height", method = "allometric"),
+    "not implemented"
+  )
 })
 
 test_that("indicateur_p1_volume (P1) handles missing height with estimation", {
