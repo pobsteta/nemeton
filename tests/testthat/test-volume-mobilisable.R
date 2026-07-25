@@ -139,6 +139,52 @@ test_that("a non-sf input is refused", {
                "sf object")
 })
 
+# --- Garde-fou d'unité P1 (brief P1 2026-07-24) ----------------------
+
+test_that("an out-of-domain P1 warns without aborting", {
+  # 1 500 m3/ha : plausible en apparence, hors domaine en réalité (le
+  # profil d'erreur du brief). On alerte, on ne bloque pas.
+  u <- .vm_units(c(1500, 200))
+  expect_warning(
+    out <- volume_mobilisable(u, unite = "m3_ha", taux_prelevement = 1,
+                              horizon_ans = 1),
+    "above 800 m3/ha"
+  )
+  # Le calcul aboutit quand même.
+  expect_equal(out$volume_mobilisable, c(1500, 200), tolerance = 1e-6)
+})
+
+test_that("a plausible P1 raises no unit warning", {
+  u <- .vm_units(c(300, 450))
+  expect_silent(
+    volume_mobilisable(u, unite = "m3_ha", taux_prelevement = 1,
+                       horizon_ans = 1)
+  )
+})
+
+test_that("p1_max_plausible is tunable and NULL disables the check", {
+  u <- .vm_units(c(1500, 200))
+  # Seuil relevé : plus d'alerte.
+  expect_silent(
+    volume_mobilisable(u, unite = "m3_ha", taux_prelevement = 1,
+                       horizon_ans = 1, p1_max_plausible = 2000)
+  )
+  # Désactivé.
+  expect_silent(
+    volume_mobilisable(u, unite = "m3_ha", taux_prelevement = 1,
+                       horizon_ans = 1, p1_max_plausible = NULL)
+  )
+})
+
+test_that("an invalid p1_max_plausible is refused", {
+  u <- .vm_units(c(100, 100))
+  expect_error(
+    volume_mobilisable(u, unite = "m3_ha", taux_prelevement = 1,
+                       horizon_ans = 1, p1_max_plausible = -5),
+    "positive number"
+  )
+})
+
 # --- Mode table IFN (spec 040, D4 refermée) --------------------------
 
 .vm_units_espar <- function(espar = c("09", "62")) {
