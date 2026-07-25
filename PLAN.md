@@ -1331,6 +1331,38 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-25 — App `nemetonshiny` : chaîne desserte durcie + comparateur RVT (spec 040)
+
+Versant APP des releases desserte du jour (le versant cœur est journalisé dans
+les deux entrées v0.168.0/0.168.1 ci-dessous). Huit releases app consommant le
+cœur desserte (spec 040) + corrigeant l'OOM de la correction LiDAR et le cubage
+P1. Toutes sur `main`, tag + release GitHub. *(Traçabilité remontée par la
+session app — je n'édite pas `nemetonshiny`, seulement ce journal.)*
+
+| Release app | `nemetonshiny@SHA` | Apport |
+|---|---|---|
+| v0.115.12 | `f030fea0` | Fix OOM correction LiDAR (`qualifier_desserte` : MNT fourni à 1 m → `.mnt_alsroads` ne lit plus les 165 M points). Pool `future` borné (19 sites). `run_app(tour=)`. Fix faux « Volume P1 absent » (`P1` vs `indicateur_p1_volume`). |
+| v0.115.13 | `ae68fd00` | Cache de mesure `qualifier_desserte` persistant (relance rapide). |
+| v0.116.0  | `1d7ab8f2` | Comparateur swipe desserte BD TOPO vs corrigée sur fond relief RVT. |
+| v0.116.1  | `6a7bcd9a` | Plancher `Imports: nemeton (>= 0.168.0)` — garde-fou `p1_max_plausible`. |
+| v0.116.2  | `1d7ffc9e` | Plancher `nemeton (>= 0.168.1)` — fix cubage P1/C1/E1 (validé app : P1 1556 → 372 m³/ha). |
+| v0.117.0  | `15f23d73` | Fond relief CVAT via `foretaccess::vat_combined()` (foretaccess 1.24.0). |
+| v0.117.1  | `ac3e307a` | Fond RVT sur le MNT LiDAR HD 0,5 m natif (`lidar_mnt_mosaic.tif`) — sans striping. |
+| v0.117.2  | `ca7aa0ce` | Correction LiDAR recalée sur le MNT LiDAR 0,5 m natif (cohérence tracé/fond) + fond RVT asynchrone. |
+
+Cycle dev app courant : `0.117.2.9000` (`nemetonshiny@408f56bb`).
+
+**Diagnostic remonté au cœur depuis l'app (2 briefs, résolus côté cœur) :**
+- unité `indicateur_p1_volume` (→ `reponse-p1-unite-desserte.md`, v0.168.0) ;
+- cubage P1 ×3-5 (→ `reponse-p1-cubage-gonfle.md`, **v0.168.1** : coefficients
+  `b`/`c` du tarif IFN incohérents avec `a`, corrigés en `V = a·D²·H`). Validé
+  depuis l'app par reproduction du flux compute : dbh 29 cm / N 466 tiges/ha /
+  hdom 25 m plausibles, volume ×4 → 372 m³/ha après fix.
+
+**Recette de bout en bout (ForêtAccess, dépt 48) :** correction LiDAR sur MNT
+0,5 m, 2662 tronçons / 1842 mesurés, largeur médiane 5,3 m ; recalage et fond
+CVAT sur le même MNT LiDAR — cohérence visuelle confirmée.
+
 ### 2026-07-25 — v0.168.1 : **cubage P1/C1 gonflé ×3-5 corrigé** (spec 040)
 
 **Suite du garde-fou v0.168.0.** La session app a rejoué le flux compute complet
