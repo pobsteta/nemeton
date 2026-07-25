@@ -26,7 +26,10 @@ NULL
 #' @param dbh_field Character. Column name containing diameter at breast height (cm). Default "dbh".
 #' @param height_field Character. Column name containing tree height (m). Optional, can be estimated.
 #' @param density_field Character. Column name containing tree density (stems/ha). Default "density".
-#' @param method Character. Volume calculation method: "ifn_tarif" (IFN tariff) or "allometric". Default "ifn_tarif".
+#' @param method Character. Volume calculation method. Only "ifn_tarif" (the
+#'   IFN combined-variable tariff \code{V = a x D^2 x H}) is implemented;
+#'   "allometric" is accepted for backward compatibility but has no effect and
+#'   emits a warning. Default "ifn_tarif".
 #' @param column_name Character. Name for output column. Default "P1".
 #' @param lang Character. Message language. Default "en".
 #' @param chm Optional \code{SpatRaster} of canopy heights in
@@ -114,6 +117,17 @@ indicateur_p1_volume <- function(units,
   }
 
   method <- match.arg(method)
+  # Le dispatch "allometric" n'a jamais été implémenté : la boucle applique
+  # toujours le tarif IFN (V = a·D²·H). Le signaler plutôt que de retourner
+  # silencieusement le même résultat que "ifn_tarif" (brief app 2026-07-25).
+  if (identical(method, "allometric")) {
+    cli::cli_warn(c(
+      "!" = "{.arg method = \"allometric\"} is not implemented; the IFN tarif \\
+             is used instead.",
+      "i" = "Only {.val ifn_tarif} is available. This argument has no effect \\
+             and may be removed in a future version."
+    ))
+  }
 
   # Auto-fill dbh / density from the CHM when they are missing,
   # before the required-field check. The synthetic path derives
