@@ -16,7 +16,7 @@ and weights.
 volume_mobilisable(units, volume_col = "P1", unite = c("m3_total", "m3_ha"),
   taux_prelevement = NULL, horizon_ans = NULL, espar_field = "espar",
   ser = NULL, min_plac = 30, na_policy = c("na", "zero", "error"),
-  column_name = "volume_mobilisable")
+  p1_max_plausible = 800, column_name = "volume_mobilisable")
 ```
 
 ## Arguments
@@ -73,6 +73,18 @@ volume_mobilisable(units, volume_col = "P1", unite = c("m3_total", "m3_ha"),
   where P1 has neither field inventory nor CHM. `"na"` (default)
   propagates `NA` and warns; `"zero"` maps them to 0 (**paints an
   uninventoried parcel as "nothing to haul"**); `"error"` aborts.
+
+- p1_max_plausible:
+
+  Numeric (m3/ha) or `NULL`. Standing-volume ceiling above which the
+  input P1 is almost certainly not a per-hectare volume — a wrong unit
+  upstream, or an over-estimated synthetic inventory. Units over it
+  trigger a `cli_warn` (never an abort: a very capitalised stand can
+  genuinely approach it), so the silent-wrong-unit failure surfaces
+  before the road typing runs on bad flux. Default `800`, the P1
+  normalisation ceiling; `NULL` disables the check. Typical French
+  standing volume is 100-400 m3/ha (see
+  [`indicateur_p1_volume`](https://pobsteta.github.io/nemeton/reference/indicateur_p1_volume.md)).
 
 - column_name:
 

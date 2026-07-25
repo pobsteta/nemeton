@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.167.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.168.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -870,6 +870,12 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-07-25--v01680--garde-fou-dunité-p1-dans-volume_mobilisable-spec-040">2026-07-25 — v0.168.0 : garde-fou d’unité P1 dans <code>volume_mobilisable()</code> (spec 040)<a class="anchor" aria-label="anchor" href="#id_2026-07-25--v01680--garde-fou-dunit%C3%A9-p1-dans-volume_mobilisable-spec-040"></a></h3>
+<p><strong>Contexte.</strong> La session app <code>nemetonshiny</code> a émis un brief (<code>~/brief-nemeton-unite-p1-volume.md</code>) : sur un projet ForêtAccess réel, la colonne <code>indicateur_p1_volume</code> donnait des valeurs 682–2315 (médiane 1556) qu’aucune lecture (m³ totaux ou m³/ha) ne rendait plausibles pour un volume sur pied. Doute : <code>indicateur_p1_volume</code> est-il vraiment un volume, ou un score ?</p>
+<p><strong>Réponse tranchée côté cœur.</strong> P1 est <strong>sans ambiguïté un volume sur pied en m³/ha</strong> (config <code>Volume de bois (m³/ha)</code>, <code>@return … m3/ha</code>, formule <code>V=a·DBH^b·H^c × density</code>, plafond de normalisation 800). Les valeurs observées sont donc de vrais m³/ha <strong>hors domaine</strong> (~2× le plafond) : le bug est <strong>en amont, dans les inputs</strong> (densité/dbh ou inventaire synthétique surestimé), pas dans le pipeline desserte ni dans l’unité. Le nom <code>indicateur_p1_volume</code> est le nom de colonne canonique (config), <code>P1</code> le code court — les deux légitimes, rien à réconcilier. Brief-réponse complet : <code>specs/040-volume-mobilisable-desserte/reponse-p1-unite-desserte.md</code>.</p>
+<p><strong>Livré.</strong> <code><a href="reference/volume_mobilisable.html">volume_mobilisable()</a></code> gagne <code>p1_max_plausible = 800</code> : <code>cli_warn</code> (pas <code>abort</code>) quand un P1 d’entrée dépasse le plafond, avec compte/max/médiane hors domaine. <code>NULL</code> désactive, seuil réglable. Attrape exactement le profil d’erreur silencieux du brief avant que le typage ne tourne sur un flux gonflé. 4 <code>test_that</code> ajoutés (hors-domaine → warn + calcul abouti, plausible → silencieux, seuil réglable/NULL, seuil invalide → abort). Fichier vert : 41 expectations, 0 échec.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-07-22--v01650--d8-et-d9-livrées-spec-040-entièrement-close">2026-07-22 — v0.165.0 : D8 et D9 livrées, spec 040 entièrement close<a class="anchor" aria-label="anchor" href="#id_2026-07-22--v01650--d8-et-d9-livr%C3%A9es-spec-040-enti%C3%A8rement-close"></a></h3>
 <p><strong>D9 — pont de nomenclatures.</strong> Trois codes essence coexistaient sans clé commune : <code>espar</code> IFN (<code>"09"</code>), code P1 (<code>"FASY"</code>), code tolérances (<code>"fagus_sylvatica"</code>). Pivot retenu : le <strong>nom latin</strong> du référentiel IGN <code>espar-cdref13</code>, jamais d’heuristique sur les libellés français. <code><a href="reference/ifn_espar_correspondance.html">ifn_espar_correspondance()</a></code> (193 lignes) + <code><a href="reference/resoudre_espar.html">resoudre_espar()</a></code>, qui ramène les quatre formes au code IFN. <code><a href="reference/volume_mobilisable.html">volume_mobilisable()</a></code> accepte du coup n’importe quelle nomenclature — exiger l’<code>espar</code> le rendait pénible à appeler depuis des données d’UGF.</p>

@@ -1,5 +1,27 @@
 # Changelog
 
+## nemeton 0.168.0 (2026-07-25)
+
+#### Added — garde-fou d’unité P1 dans `volume_mobilisable()` (spec 040)
+
+[`volume_mobilisable()`](https://pobsteta.github.io/nemeton/reference/volume_mobilisable.md)
+gagne un paramètre `p1_max_plausible = 800` (m³/ha, le plafond de
+normalisation P1). Toute unité dont le volume sur pied d’entrée dépasse
+ce seuil déclenche un `cli_warn` (compte, max, médiane des valeurs hors
+domaine), **jamais un abort** : un peuplement très capitalisé peut
+frôler le plafond légitimement. `NULL` désactive ; le seuil est
+réglable.
+
+**Pourquoi** : P1 (`indicateur_p1_volume`) est un volume sur pied en
+**m³/ha** (typique 100-400). Servi tel quel à
+`foretaccess::calculer_flux()`, un P1 hors domaine — mauvaise unité en
+amont ou inventaire synthétique surestimé — fausse le typage de desserte
+**sans aucune erreur**. Le garde-fou fait remonter ce profil d’erreur
+silencieux avant que le typage ne tourne sur un flux gonflé. Répond au
+brief app `brief-nemeton-unite-p1-volume.md` (2026-07-24) ; réponse
+détaillée dans
+`specs/040-volume-mobilisable-desserte/reponse-p1-unite-desserte.md`.
+
 ## nemeton 0.167.0 (2026-07-24)
 
 #### Added — gating de l’augmentation biophysique S2 (spec 043 D6, ADR-015)

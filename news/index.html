@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.167.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.168.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.168.0" id="nemeton-01680-2026-07-25">nemeton 0.168.0 (2026-07-25)<a class="anchor" aria-label="anchor" href="#nemeton-01680-2026-07-25"></a></h2>
+<div class="section level4">
+<h4 id="added--garde-fou-dunité-p1-dans-volume_mobilisable-spec-0-168-0">Added — garde-fou d’unité P1 dans <code>volume_mobilisable()</code> (spec 040)<a class="anchor" aria-label="anchor" href="#added--garde-fou-dunit%C3%A9-p1-dans-volume_mobilisable-spec-0-168-0"></a></h4>
+<p><code><a href="../reference/volume_mobilisable.html">volume_mobilisable()</a></code> gagne un paramètre <code>p1_max_plausible = 800</code> (m³/ha, le plafond de normalisation P1). Toute unité dont le volume sur pied d’entrée dépasse ce seuil déclenche un <code>cli_warn</code> (compte, max, médiane des valeurs hors domaine), <strong>jamais un abort</strong> : un peuplement très capitalisé peut frôler le plafond légitimement. <code>NULL</code> désactive ; le seuil est réglable.</p>
+<p><strong>Pourquoi</strong> : P1 (<code>indicateur_p1_volume</code>) est un volume sur pied en <strong>m³/ha</strong> (typique 100-400). Servi tel quel à <code>foretaccess::calculer_flux()</code>, un P1 hors domaine — mauvaise unité en amont ou inventaire synthétique surestimé — fausse le typage de desserte <strong>sans aucune erreur</strong>. Le garde-fou fait remonter ce profil d’erreur silencieux avant que le typage ne tourne sur un flux gonflé. Répond au brief app <code>brief-nemeton-unite-p1-volume.md</code> (2026-07-24) ; réponse détaillée dans <code>specs/040-volume-mobilisable-desserte/reponse-p1-unite-desserte.md</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.167.0" id="nemeton-01670-2026-07-24">nemeton 0.167.0 (2026-07-24)<a class="anchor" aria-label="anchor" href="#nemeton-01670-2026-07-24"></a></h2>
 <div class="section level4">
