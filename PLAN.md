@@ -1331,6 +1331,34 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-07-29 — App `nemetonshiny` v0.120.3 : zone tampon Accessibilité en mètres
+
+Livraison **100 % app**, **aucun impact cœur** : pas de nouvelle API `nemeton`
+consommée, plancher `Imports: nemeton (>= …)` inchangé, `Remotes:` toujours en
+`@*release`. Ajustement d'unité et de défaut sur une entrée de formulaire.
+*(Traçabilité remontée par la session app — je n'édite pas `nemetonshiny`,
+seulement ce journal.)*
+
+- 2026-07-29 — nemetonshiny v0.120.3 (merge `nemetonshiny@79c22d33`, branche
+  `claude/acc-buffer-metres` en no-ff ; cycle dev repris en `0.120.3.9000`,
+  `nemetonshiny@bc180d71`). Champ « Zone tampon autour de la forêt » de
+  **Terrain › Accessibilité** passé du km au **mètre** (pas 50 m, max 20 000 m),
+  **défaut 250 m** au lieu de 1 km. Input `buffer_km` → `buffer_m` : la
+  conversion `* 1000` disparaît des trois appels du module (pré-calcul CVAT,
+  correction LiDAR desserte, lancement de l'analyse) ; les services app
+  (`run_accessibility()`, `run_desserte_lidar_correction()`, `.acc_rvt_cvat()`)
+  prenaient déjà des mètres et sont inchangés.
+- Bug de robustesse corrigé au passage : un `numericInput` vidé renvoie `NA` (et
+  non `NULL`), que `%||%` laissait donc passer — le `NA` empoisonnait la clé de
+  sous-cache `emprise_%gm` et la géométrie tamponnée. Nouveau helper privé app
+  `.acc_buffer_m()` : garde `is.finite()` → retour au défaut, bornage à 0 si
+  négatif. 35 PASS / 0 FAIL.
+- Les onglets **Desserte** et **reGénération** gardent volontairement leurs
+  champs en km.
+
+**Aucune case cochée** : ni sous-chantier ni épaississement n'est clos par cette
+release — c'est un ajustement d'unité et de défaut d'IHM.
+
 ### 2026-07-25 — App `nemetonshiny` : chaîne desserte durcie + comparateur RVT (spec 040)
 
 Versant APP des releases desserte du jour (le versant cœur est journalisé dans
