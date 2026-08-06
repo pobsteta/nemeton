@@ -127,22 +127,46 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
   tryCatch({ terra::crs(r) <- m[[1]]; r }, error = function(e) r)
 }
 
-# Agrège un DEM à ~`target_res` m avant le calcul hydrologique du TWI. À
-# résolution fine (LiDAR HD 0.5 m) l'accumulation de flux D8 est dominée par la
-# micro-topographie et très lourde (100 M cellules) ; ~10 m donne un TWI
-# hydrologiquement stable. On n'agrège jamais vers plus fin que la résolution
-# native, ni sur un DEM en lon/lat (pas en degrés, incompatible avec un pas
-# métrique).
-.twi_aggregate_dem <- function(dem, target_res = 10) {
+# Ramène un DEM à ~`target_res` m avant tout calcul dérivé du terrain.
+#
+# Un MNT LiDAR HD couvre un massif à 0,5 m : 12000 x 10000 = 120 M cellules. Les
+# indicateurs qui en dérivent pente/exposition/TRI, une distance ou un TWI
+# empilent une dizaine de couches plein format — R2 en aligne neuf — soit ~10 Go
+# de rasters intermédiaires. Le 2026-08-06 cette pile a fait monter la session R
+# à 21,2 Go sur une machine de 31 Go, et systemd-oomd a tué le scope entier
+# (RStudio compris) pendant le calcul de R2 sur le projet Dabo.
+#
+# Un indice moyenné par unité de gestion ne gagne rien à une pente dérivée au
+# mètre : à 10 m la pile tient dans 1/100e de la mémoire pour un résultat
+# équivalent. On n'agrège jamais vers plus fin que la résolution native, ni sur
+# un DEM en lon/lat (résolution en degrés, incompatible avec un pas métrique).
+# `target_res = NULL` désactive le garde-fou (calcul à la résolution native).
+.dem_working_res <- function(dem, target_res = 10, context = NULL) {
+  if (is.null(dem) || !inherits(dem, "SpatRaster")) return(dem)
   if (is.null(target_res) || !is.finite(target_res) || target_res <= 0) return(dem)
   if (terra::is.lonlat(dem)) return(dem)
   cur <- terra::res(dem)[1]
   if (!is.finite(cur) || cur <= 0) return(dem)
   fact <- floor(target_res / cur)
-  if (fact >= 2L) {
-    dem <- terra::aggregate(dem, fact = fact, fun = "mean", na.rm = TRUE)
+  if (fact < 2L) return(dem)
+  out <- tryCatch(
+    terra::aggregate(dem, fact = fact, fun = "mean", na.rm = TRUE),
+    error = function(e) NULL
+  )
+  if (is.null(out)) return(dem)
+  if (!is.null(context)) {
+    cli::cli_alert_info(
+      "{context}: DEM aggregated {cur}m -> {terra::res(out)[1]}m (factor {fact}) to bound memory"
+    )
   }
-  dem
+  out
+}
+
+# Historiquement propre au TWI, conservé comme alias : même opération, mêmes
+# garde-fous. Le TWI reste appelé sur un DEM déjà ramené à la résolution de
+# travail par l'indicateur appelant, l'agrégation y est alors un no-op.
+.twi_aggregate_dem <- function(dem, target_res = 10) {
+  .dem_working_res(dem, target_res = target_res)
 }
 
 # Nom du cache fichier indexé sur l'empreinte du DEM (+ résolution cible). Un nom
@@ -606,6 +630,11 @@ indicateur_w1_reseau <- function(units,
 #'   water-occurrence frequency (percent of observations) for a pixel to
 #'   count as wetland. Default \code{25}. Ignored when
 #'   \code{water_occurrence} is \code{NULL}.
+#' @param dem_target_res Numeric. Working resolution (metres) the DEM is
+#'   aggregated to before TWI is computed. Keep it identical across
+#'   W2/W3/F2/R3: the TWI cache is keyed on the DEM footprint, so a different
+#'   value per indicator recomputes a TWI for each. Default \code{10};
+#'   \code{NULL} keeps the native resolution.
 #'
 #' @return Numeric vector of wetland coverage (0-100\%)
 #'
@@ -620,7 +649,8 @@ indicateur_w2_zones_humides <- function(units,
                                      wetland_layer = "wetlands",
                                      wetland_values = NULL,
                                      water_occurrence = NULL,
-                                     occurrence_threshold = 25) {
+                                     occurrence_threshold = 25,
+                                     dem_target_res = 10) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -660,7 +690,8 @@ indicateur_w2_zones_humides <- function(units,
   }
 
   # Source 2: TWI threshold (TWI > 12 = potential wetland zones)
-  dem <- get_dem_raster(layers)
+  dem <- .dem_working_res(get_dem_raster(layers),
+                          target_res = dem_target_res, context = "W2")
   if (!is.null(dem)) {
     cli::cli_alert_info("W2: Adding TWI-based wetland zones (threshold > 12)")
     has_any_source <- TRUE
@@ -761,6 +792,11 @@ indicateur_w2_zones_humides <- function(units,
 #' @param dem_layer Character. Name of DEM layer in layers object
 #' @param method Character. TWI calculation method: "auto" (prefer GRASS),
 #'   "grass" (fasterRaster/GRASS GIS), or "d8" (terra D8). Default "auto".
+#' @param dem_target_res Numeric. Working resolution (metres) the DEM is
+#'   aggregated to before TWI is computed. Keep it identical across
+#'   W2/W3/F2/R3: the TWI cache is keyed on the DEM footprint, so a different
+#'   value per indicator recomputes a TWI for each. Default \code{10};
+#'   \code{NULL} keeps the native resolution.
 #'
 #' @return Numeric vector of TWI mean values
 #'
@@ -773,7 +809,8 @@ indicateur_w2_zones_humides <- function(units,
 indicateur_w3_humidite <- function(units,
                                 layers,
                                 dem_layer = "dem",
-                                method = c("auto", "grass", "d8")) {
+                                method = c("auto", "grass", "d8"),
+                                dem_target_res = 10) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -794,6 +831,7 @@ indicateur_w3_humidite <- function(units,
   if (is.null(dem)) {
     stop(sprintf("No DEM layer available (tried lidar_mnt, %s)", dem_layer), call. = FALSE)
   }
+  dem <- .dem_working_res(dem, target_res = dem_target_res, context = "W3")
 
   # Calculate TWI (cached across W2, W3, F2, R3)
   if (method == "d8") {
@@ -1443,6 +1481,11 @@ extract_fertility_from_gissol <- function(units, layers,
 #'   \code{\link{load_raster_source}}). When supplied, adds the
 #'   texture erosion-resistance component. Default \code{NULL}
 #'   (pre-existing TWI + slope behaviour).
+#' @param dem_target_res Numeric. Working resolution (metres) the DEM is
+#'   aggregated to before TWI and slope are computed. Keep it identical across
+#'   W2/W3/F2/R3: the TWI cache is keyed on the DEM footprint, so a different
+#'   value per indicator recomputes a TWI for each. Default \code{10};
+#'   \code{NULL} keeps the native resolution.
 #'
 #' @return Numeric vector of fertility scores (0-100, higher = more fertile)
 #'
@@ -1455,7 +1498,8 @@ extract_fertility_from_gissol <- function(units, layers,
 indicateur_f2_erosion <- function(units,
                                    layers,
                                    dem_layer = "dem",
-                                   texture = NULL) {
+                                   texture = NULL,
+                                   dem_target_res = 10) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -1473,6 +1517,7 @@ indicateur_f2_erosion <- function(units,
   if (is.null(dem)) {
     stop(sprintf("No DEM layer available (tried lidar_mnt, %s)", dem_layer), call. = FALSE)
   }
+  dem <- .dem_working_res(dem, target_res = dem_target_res, context = "F2")
 
   units_sf <- as_pure_sf(units)
 

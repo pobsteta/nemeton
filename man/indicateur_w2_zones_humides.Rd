@@ -10,7 +10,8 @@ indicateur_w2_zones_humides(
   wetland_layer = "wetlands",
   wetland_values = NULL,
   water_occurrence = NULL,
-  occurrence_threshold = 25
+  occurrence_threshold = 25,
+  dem_target_res = 10
 )
 }
 \arguments{
@@ -34,6 +35,12 @@ wetland coverage. Default \code{NULL}.}
 water-occurrence frequency (percent of observations) for a pixel to
 count as wetland. Default \code{25}. Ignored when
 \code{water_occurrence} is \code{NULL}.}
+
+\item{dem_target_res}{Numeric. Working resolution (metres) the DEM is
+aggregated to before TWI is computed. Keep it identical across
+W2/W3/F2/R3: the TWI cache is keyed on the DEM footprint, so a different
+value per indicator recomputes a TWI for each. Default \code{10};
+\code{NULL} keeps the native resolution.}
 }
 \value{
 Numeric vector of wetland coverage (0-100\%)

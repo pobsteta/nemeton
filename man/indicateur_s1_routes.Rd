@@ -10,7 +10,8 @@ indicateur_s1_routes(
   dem = NULL,
   layers = NULL,
   column_name = "S1",
-  lang = "en"
+  lang = "en",
+  dem_target_res = 10
 )
 }
 \arguments{
@@ -27,6 +28,12 @@ when not provided directly.}
 \item{column_name}{Character. Name for output column. Default "S1".}
 
 \item{lang}{Character. Message language ("en" or "fr"). Default "en".}
+
+\item{dem_target_res}{Numeric. Working resolution (metres) the DEM grid is
+aggregated to before roads are rasterised and the distance transform runs.
+The DEM is only a grid template here, and a 0.5-1 m LiDAR HD MNT makes that
+transform cost gigabytes for a mean distance per unit. Default \code{10};
+\code{NULL} keeps the native resolution.}
 }
 \value{
 sf object with added column: S1 (mean distance to nearest road in metres)

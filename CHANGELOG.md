@@ -10,6 +10,23 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.168.2] - 2026-08-06
+
+### Fixed
+- Résolution de travail du MNT bornée (~10 m) avant tout calcul dérivé du
+  terrain : un MNT LiDAR HD à 0,5 m (120 M cellules sur Dabo) faisait empiler
+  ~10 Go de rasters intermédiaires et `systemd-oomd` tuait la session R pendant
+  R2. Nouvel interne `.dem_working_res()` ; `.twi_aggregate_dem()` en devient un
+  alias.
+
+### Changed
+- Nouvel argument `dem_target_res = 10` sur `indicateur_r1_feu()`,
+  `indicateur_r2_tempete()`, `indicateur_r3_secheresse()`,
+  `indicateur_w2_zones_humides()`, `indicateur_w3_humidite()`,
+  `indicateur_f2_erosion()`, `indicateur_s1_routes()`, `indicateur_s2_bati()`.
+  `NULL` conserve la résolution native. À garder identique sur W2/W3/F2/R3 (clé
+  du cache TWI).
+
 ## [0.162.0] - 2026-07-16
 
 ### Added

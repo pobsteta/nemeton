@@ -1331,6 +1331,61 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-08-06 — v0.168.2 : MNT LiDAR HD, résolution de travail bornée (OOM sur Dabo)
+
+**Symptôme** : sur le projet Dabo, RStudio se fermait en cours de calcul des
+indicateurs, sans message. Ce n'était pas un plantage R — `systemd-oomd` tuait
+le *scope* RStudio entier :
+
+```
+17:39:47  app-rstudio-7052.scope   Current Memory Usage: 21.2G
+17:40:22  Killed … due to memory pressure for user@1000.service
+          being 73.29% > 50.00% for > 20s   → result 'oom-kill'
+```
+
+**Localisation** : `data/compute_progress.json` s'arrête à `indicateur_r1_feu`
+(17:37:04), soit trois minutes avant le kill. L'indicateur suivant dans l'ordre
+du pipeline app est **R2 tempête**.
+
+**Cause** : Dabo est en NDP 1 avec `chm_source: lidar_hd`, donc
+`get_dem_raster()` (`R/utils.R:531`) préfère le MNT LiDAR HD au BD ALTI 25 m —
+ici `lidar_mnt_mosaic.tif`, **12000 × 10000 = 120 M cellules à 0,5 m**. R2
+(branche fallback terrain, `microclima` absent) enchaîne neuf rasters plein
+format : aspect, pente, TRI, l'écart angulaire, son min, `expo_vent`,
+`pente_norm`, `tri_norm`, `r2_raster`. Le `memfrac = 0.25` de `R/zzz.R` borne le
+cache terra, pas les intermédiaires R ni la somme des workers `future`.
+
+**Fix cœur** : `.dem_working_res(dem, target_res, context)` ramène le MNT à ~10 m
+avant tout calcul dérivé du terrain. Jamais d'upsampling, no-op en lon/lat,
+désactivable par `dem_target_res = NULL`. Argument `dem_target_res = 10` ajouté
+aux huit indicateurs concernés : R1, R2, R3, W2, W3, F2, S1, S2.
+`.twi_aggregate_dem()` (précédent de W3, déjà à 10 m) en devient un alias.
+
+Point d'attention retenu : le cache TWI est indexé sur l'empreinte du MNT reçu,
+donc **W2/W3/F2/R3 doivent partager la même valeur** — sinon un TWI est
+recalculé par indicateur. C'est la raison pour laquelle le garde-fou a été posé
+sur les quatre d'un coup et non sur R2 seul. Pour S1/S2 le MNT n'est qu'une
+grille (rasterisation + `terra::distance()`), l'agrégation y est neutre au sens.
+
+**Mesure sur le MNT réel de Dabo** (4 UG, scope `MemoryMax=6G`) :
+
+| `dem_target_res` | Résultat |
+|---|---|
+| `10` (défaut) | R2 en **2,8 s**, pic RSS **958 Mo** |
+| `NULL` (natif 0,5 m) | **tué par l'OOM killer** |
+
+Tests : `tests/testthat/test-dem-working-res.R` (37 PASS) — agrégation, absence
+d'upsampling, no-op sous facteur 2, lon/lat, opt-out, passthrough non-raster,
+message conditionné au `context`, alias TWI, signatures des huit indicateurs,
+et un R2 de bout en bout sur MNT fin. Les 2 échecs `get_nasapower_wind` observés
+en enchaînant plusieurs fichiers de test dans une même session R sont
+**antérieurs** (reproduits à l'identique sans le patch, `git stash` à l'appui).
+
+**Aucune case cochée** : correctif de robustesse, pas de sous-chantier clos.
+Reste à faire côté app (brief à écrire) : lancer les calculs lourds dans un
+cgroup plafonné pour que l'OOM killer tue le job et non la session — cf. l'entrée
+RECONFORT du même sujet.
+
 ### 2026-08-06 — App `nemetonshiny` v0.120.4 : doublon `cache/layers/layers/mnt/` corrigé
 
 Livraison **100 % app**, **aucun impact cœur** : pas de nouvelle API `nemeton`

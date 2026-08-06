@@ -4,7 +4,13 @@
 \alias{indicateur_f2_erosion}
 \title{Soil Fertility Index (F2)}
 \usage{
-indicateur_f2_erosion(units, layers, dem_layer = "dem", texture = NULL)
+indicateur_f2_erosion(
+  units,
+  layers,
+  dem_layer = "dem",
+  texture = NULL,
+  dem_target_res = 10
+)
 }
 \arguments{
 \item{units}{nemeton_units object}
@@ -19,6 +25,12 @@ elements \code{clay}, \code{silt}, \code{sand} (the Theia
 \code{\link{load_raster_source}}). When supplied, adds the
 texture erosion-resistance component. Default \code{NULL}
 (pre-existing TWI + slope behaviour).}
+
+\item{dem_target_res}{Numeric. Working resolution (metres) the DEM is
+aggregated to before TWI and slope are computed. Keep it identical across
+W2/W3/F2/R3: the TWI cache is keyed on the DEM footprint, so a different
+value per indicator recomputes a TWI for each. Default \code{10};
+\code{NULL} keeps the native resolution.}
 }
 \value{
 Numeric vector of fertility scores (0-100, higher = more fertile)

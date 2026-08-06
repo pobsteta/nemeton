@@ -1,3 +1,38 @@
+# nemeton 0.168.2 (2026-08-06)
+
+### Fixed — MNT LiDAR HD : résolution de travail bornée sur les indicateurs de terrain
+
+Le calcul des indicateurs du projet Dabo (NDP 1, MNT LiDAR HD) tuait la session
+R — et avec elle RStudio, `systemd-oomd` tuant le *scope* entier. Diagnostic :
+`get_dem_raster()` préfère le MNT LiDAR HD au BD ALTI 25 m, soit ici
+**12000 × 10000 = 120 M cellules à 0,5 m**. Les indicateurs qui en dérivent
+pente / exposition / TRI, une distance ou un TWI empilent une dizaine de couches
+plein format — R2 en aligne neuf — soit ~10 Go de rasters intermédiaires. La
+session est montée à 21,2 Go sur une machine de 31 Go et a été tuée pendant R2,
+juste après R1.
+
+**Fix** : nouvel interne `.dem_working_res()` qui ramène le MNT à une résolution
+de travail (~10 m) avant tout calcul dérivé du terrain. Un indice moyenné par
+unité de gestion ne gagne rien à une pente dérivée au demi-mètre ; à 10 m la pile
+tient dans 1/100e de la mémoire. Le garde-fou n'agrège jamais vers plus fin que
+la résolution native, est un no-op sur un MNT en lon/lat (résolution en degrés),
+et se désactive avec `dem_target_res = NULL`.
+
+Nouvel argument `dem_target_res = 10` sur les huit indicateurs concernés :
+`indicateur_r1_feu()`, `indicateur_r2_tempete()`, `indicateur_r3_secheresse()`,
+`indicateur_w2_zones_humides()`, `indicateur_w3_humidite()`,
+`indicateur_f2_erosion()`, `indicateur_s1_routes()`, `indicateur_s2_bati()`.
+Valeur à garder **identique** sur W2/W3/F2/R3 : le cache TWI est indexé sur
+l'empreinte du MNT reçu, une valeur différente par indicateur recalculerait un
+TWI pour chacun. Pour S1/S2 le MNT ne sert que de grille (rasterisation +
+transformée de distance) : l'agrégation y est sans effet sur le sens.
+
+`.twi_aggregate_dem()` devient un alias de `.dem_working_res()` — même opération,
+mêmes garde-fous.
+
+Mesuré sur le MNT réel de Dabo (4 UG, scope plafonné à 6 Go) : **R2 en 2,8 s,
+pic RSS 958 Mo** avec le garde-fou ; **tué par l'OOM killer** à résolution native.
+
 # nemeton 0.168.1 (2026-07-25)
 
 ### Fixed — cubage P1/C1 gonflé ×3-5 : exposants du tarif IFN corrigés (spec 040)
