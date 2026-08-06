@@ -1331,6 +1331,28 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-08-06 — App `nemetonshiny` v0.120.4 : doublon `cache/layers/layers/mnt/` corrigé
+
+Livraison **100 % app**, **aucun impact cœur** : pas de nouvelle API `nemeton`
+consommée, plancher `Imports: nemeton (>= …)` inchangé. Bug de chemin de cache
+au pré-calcul CVAT. *(Traçabilité remontée par la session app — je n'édite pas
+`nemetonshiny`, seulement ce journal.)*
+
+- 2026-08-06 — nemetonshiny v0.120.4 (`nemetonshiny@0351e67f` ; cycle dev
+  `0.120.3.9001`). Correction du doublon `cache/layers/layers/mnt/` créé au
+  pré-calcul CVAT : `foretaccess` ajoute lui-même un segment
+  `layers/<couche>/` sous le `cache_dir` qu'il reçoit, alors que l'app lui
+  passait déjà `<projet>/cache/layers`.
+- Nouveau helper app `.foretaccess_cache_root()` : la racine `<projet>/cache`
+  est transmise quand le fichier est dans `cache/layers`, si bien que le MNT
+  ré-acquis se range désormais en `cache/layers/mnt/`.
+- Côté cœur, rien à faire : aucune fonction de `nemeton` n'appelle
+  `foretaccess` avec un `cache_dir` (seul `R/volume_mobilisable.R` évoque
+  `foretaccess`, et uniquement pour la convention de `volume_champ`).
+
+**Aucune case cochée** : ni sous-chantier ni épaississement n'est clos par cette
+release — c'est un correctif de chemin de cache.
+
 ### 2026-07-29 — App `nemetonshiny` v0.120.3 : zone tampon Accessibilité en mètres
 
 Livraison **100 % app**, **aucun impact cœur** : pas de nouvelle API `nemeton`
