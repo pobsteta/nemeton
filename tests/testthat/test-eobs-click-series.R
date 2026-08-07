@@ -157,6 +157,8 @@ test_that("a leaflet click on an EPSG:4326 stack is not reprojected", {
 })
 
 test_that("a click on a projected stack IS reprojected", {
+  # Seul test du fichier à exiger une opération PROJ non triviale.
+  skip_if_terra_project_broken()
   r <- terra::rast(terra::ext(9e5, 1.1e6, 6.7e6, 6.9e6), resolution = 1000,
                    crs = "EPSG:2154")
   v <- .eobs_point_vect(c(7, 48.5), terra::crs(r))
