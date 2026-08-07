@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.169.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.169.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -901,7 +901,7 @@
 </ul></div>
 <div class="section level3">
 <h3 id="changed-25">Changed<a class="anchor" aria-label="anchor" href="#changed-25"></a></h3>
-<ul><li>CI back to green (R-CMD-check, tests, coverage, pkgdown). The <code>tests</code> job now runs the real suite via <code>devtools::test()</code>; <code>R-CMD-check</code> uses <code>--no-tests</code>/<code>--no-build-vignettes</code>; <code>pkgdown</code> gains <code>rsconnect</code> and a complete reference index (111 missing topics added). A capability guard (<code>skip_if_terra_write_broken()</code>) skips raster tests on a GitHub runner exhibiting a terra “no valid constructor” anomaly (not reproducible locally; the whole suite passes locally), running them fully everywhere else.</li>
+<ul><li>CI back to green (R-CMD-check, tests, coverage, pkgdown). The <code>tests</code> job now runs the real suite via <code><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">devtools::test()</a></code>; <code>R-CMD-check</code> uses <code>--no-tests</code>/<code>--no-build-vignettes</code>; <code>pkgdown</code> gains <code>rsconnect</code> and a complete reference index (111 missing topics added). A capability guard (<code>skip_if_terra_write_broken()</code>) skips raster tests on a GitHub runner exhibiting a terra “no valid constructor” anomaly (not reproducible locally; the whole suite passes locally), running them fully everywhere else.</li>
 </ul></div>
 </div>
 <div class="section level2">

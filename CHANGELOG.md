@@ -1602,13 +1602,14 @@ concise, categorised trail.
 ### Changed
 
 - CI back to green (R-CMD-check, tests, coverage, pkgdown). The `tests`
-  job now runs the real suite via `devtools::test()`; `R-CMD-check` uses
-  `--no-tests`/`--no-build-vignettes`; `pkgdown` gains `rsconnect` and a
-  complete reference index (111 missing topics added). A capability
-  guard (`skip_if_terra_write_broken()`) skips raster tests on a GitHub
-  runner exhibiting a terra “no valid constructor” anomaly (not
-  reproducible locally; the whole suite passes locally), running them
-  fully everywhere else.
+  job now runs the real suite via
+  [`devtools::test()`](https://devtools.r-lib.org/reference/test.html);
+  `R-CMD-check` uses `--no-tests`/`--no-build-vignettes`; `pkgdown`
+  gains `rsconnect` and a complete reference index (111 missing topics
+  added). A capability guard (`skip_if_terra_write_broken()`) skips
+  raster tests on a GitHub runner exhibiting a terra “no valid
+  constructor” anomaly (not reproducible locally; the whole suite passes
+  locally), running them fully everywhere else.
 
 ## \[0.67.0\] - 2026-06-04
 
