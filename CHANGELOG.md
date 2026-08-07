@@ -26,6 +26,9 @@ For a narrative, per-feature description of each release, see
   demandée : deux réglages qui aboutissent à la même grille partagent l'entrée.
 - `aspect_risk` de R3 calculé en une passe par `terra::app()` au lieu de quatre
   `SpatRaster` temporaires pleine taille (résultat identique, NA compris).
+- `.eobs_point_vect()` ne reprojette plus le point du clic quand le CRS du
+  raster est déjà celui du clic : l'opération PROJ 4326 → 4326 était sans effet
+  et échouait sur un runtime à PROJ dégradé.
 
 ### Changed
 - Nouvel argument `dem_target_res` sur `indicateur_r1_feu()`,

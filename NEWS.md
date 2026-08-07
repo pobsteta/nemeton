@@ -129,6 +129,15 @@ terra est un vrai système de fichiers. Sur une machine où `/tmp` est un tmpfs,
 le spill écrit en RAM et n'apporte rien — y poser
 `terra::terraOptions(tempdir = ...)`.
 
+### Fixed — clic E-OBS : plus de reprojection 4326 → 4326
+
+`.eobs_point_vect()` projetait systématiquement le point du clic vers le CRS du
+raster. E-OBS étant livré en EPSG:4326 comme le clic leaflet, cela demandait à
+PROJ une opération 4326 → 4326 sans effet — et qui **échoue** (`could not find
+valid method`) sur un runtime à PROJ dégradé, dont les runners GitHub où le
+paquet documente déjà une anomalie terra (cf. `helper-fast-raster.R`). La
+projection n'a plus lieu que si les CRS diffèrent réellement.
+
 Source : hand-off `nemetonshiny` du 2026-08-07
 (`BRIEF-nemeton-r3-topo-resolution.md`), mesures sur le projet Dabo
 (`20260801_130303_xpdk`, 12000 × 10000 @ 0,5 m).
