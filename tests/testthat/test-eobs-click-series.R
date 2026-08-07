@@ -143,3 +143,26 @@ test_that("eobs_trend_fit slope matches the map's closed-form slope", {
   closed <- nemeton:::.eobs_ds_slope(ser$value, ser$year) * 10
   expect_equal(fit$slope_decade, closed, tolerance = 1e-8)
 })
+
+# --- .eobs_point_vect() : pas de reprojection inutile ----------------------
+
+test_that("a leaflet click on an EPSG:4326 stack is not reprojected", {
+  # E-OBS est livré en 4326, comme le clic : demander à PROJ une opération
+  # 4326 -> 4326 ne change rien et échoue sur un runtime à PROJ dégradé.
+  r <- terra::rast(terra::ext(0, 10, 0, 10), resolution = 1, crs = "EPSG:4326")
+  v <- .eobs_point_vect(c(7, 48.5), terra::crs(r))
+
+  expect_equal(as.vector(terra::crds(v)), c(7, 48.5))
+  expect_identical(terra::crs(v, describe = TRUE)$code, "4326")
+})
+
+test_that("a click on a projected stack IS reprojected", {
+  # Seul test du fichier à exiger une opération PROJ non triviale.
+  skip_if_terra_project_broken()
+  r <- terra::rast(terra::ext(9e5, 1.1e6, 6.7e6, 6.9e6), resolution = 1000,
+                   crs = "EPSG:2154")
+  v <- .eobs_point_vect(c(7, 48.5), terra::crs(r))
+
+  expect_identical(terra::crs(v, describe = TRUE)$code, "2154")
+  expect_false(isTRUE(all.equal(as.vector(terra::crds(v)), c(7, 48.5))))
+})

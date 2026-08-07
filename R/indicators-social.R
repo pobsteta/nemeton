@@ -23,6 +23,13 @@ NULL
 #'   when not provided directly.
 #' @param column_name Character. Name for output column. Default "S1".
 #' @param lang Character. Message language ("en" or "fr"). Default "en".
+#' @param dem_target_res Numeric. Working resolution (metres) the DEM grid is
+#'   aggregated to before roads are rasterised and the distance transform runs.
+#'   The DEM is only a grid template here, and a 0.5-1 m LiDAR HD MNT makes that
+#'   transform cost gigabytes for a mean distance per unit. Default: the
+#'   package-wide topographic working resolution, 2 m — see
+#'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
+#'   resolution.
 #'
 #' @return sf object with added column: S1 (mean distance to nearest road in metres)
 #'
@@ -50,7 +57,8 @@ indicateur_s1_routes <- function(units,
                                     dem = NULL,
                                     layers = NULL,
                                     column_name = "S1",
-                                    lang = "en") {
+                                    lang = "en",
+                                    dem_target_res = .topo_target_res()) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -71,6 +79,10 @@ indicateur_s1_routes <- function(units,
   # tout st_transform/rasterize, sinon terra rejette (« CRS do not match ») et S1
   # rend NA — même correctif que R1/R2/R3/W3 (indicators-risk.R, v0.138.1).
   dem <- .normalize_crs(dem)
+  # Le MNT ne sert ici que de grille : rasteriser les routes puis calculer une
+  # transformée de distance sur 120 M cellules de LiDAR HD coûte des Go pour une
+  # distance moyenne par unité (cf. .dem_working_res).
+  dem <- .dem_working_res(dem, target_res = dem_target_res, context = "S1")
 
   result <- units
 
@@ -111,6 +123,13 @@ indicateur_s1_routes <- function(units,
 #'   when not provided directly.
 #' @param column_name Character. Name for output column. Default "S2".
 #' @param lang Character. Message language. Default "en".
+#' @param dem_target_res Numeric. Working resolution (metres) the DEM grid is
+#'   aggregated to before buildings are rasterised and the distance transform
+#'   runs. The DEM is only a grid template here, and a 0.5-1 m LiDAR HD MNT makes
+#'   that transform cost gigabytes for a mean distance per unit. Default: the
+#'   package-wide topographic working resolution, 2 m — see
+#'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
+#'   resolution.
 #'
 #' @return sf object with added column: S2 (mean distance to nearest building in metres)
 #'
@@ -138,7 +157,8 @@ indicateur_s2_bati <- function(units,
                                            dem = NULL,
                                            layers = NULL,
                                            column_name = "S2",
-                                           lang = "en") {
+                                           lang = "en",
+                                           dem_target_res = .topo_target_res()) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -159,6 +179,9 @@ indicateur_s2_bati <- function(units,
   # tout st_transform/rasterize, sinon terra rejette (« CRS do not match ») et S2
   # rend NA — même correctif que R1/R2/R3/W3 (indicators-risk.R, v0.138.1).
   dem <- .normalize_crs(dem)
+  # Grille de travail bornée, comme S1 : la transformée de distance sur le bâti
+  # se fait sur la même grille que la rasterisation (cf. .dem_working_res).
+  dem <- .dem_working_res(dem, target_res = dem_target_res, context = "S2")
 
   result <- units
 

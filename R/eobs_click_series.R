@@ -30,7 +30,11 @@
     }
     pt <- terra::vect(matrix(as.numeric(point), ncol = 2), type = "points",
                       crs = "EPSG:4326")
-    if (!is.na(crs) && nzchar(crs)) terra::project(pt, crs) else pt
+    # E-OBS est livré en EPSG:4326, comme le clic leaflet : reprojeter revient
+    # alors à demander à PROJ une opération 4326 -> 4326 pour rien. On ne
+    # projette que si les CRS diffèrent réellement.
+    if (is.na(crs) || !nzchar(crs) || identical(terra::crs(pt), crs)) return(pt)
+    terra::project(pt, crs)
   }
 }
 

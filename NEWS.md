@@ -1,3 +1,147 @@
+# nemeton 0.169.0 (2026-08-07)
+
+### Fixed — MNT LiDAR HD : résolution de travail bornée sur les indicateurs de terrain
+
+Le calcul des indicateurs du projet Dabo (NDP 1, MNT LiDAR HD) tuait la session
+R — et avec elle RStudio, `systemd-oomd` tuant le *scope* entier. Diagnostic :
+`get_dem_raster()` préfère le MNT LiDAR HD au BD ALTI 25 m, soit ici
+**12000 × 10000 = 120 M cellules à 0,5 m**. Les indicateurs qui en dérivent
+pente / exposition / TRI, une distance ou un TWI empilent une dizaine de couches
+plein format — R2 en aligne neuf — soit ~10 Go de rasters intermédiaires. La
+session est montée à 21,2 Go sur une machine de 31 Go et a été tuée pendant R2,
+juste après R1.
+
+**Fix** : nouvel interne `.dem_working_res()` qui ramène le MNT à une résolution
+de travail (~10 m) avant tout calcul dérivé du terrain. Un indice moyenné par
+unité de gestion ne gagne rien à une pente dérivée au demi-mètre ; à 10 m la pile
+tient dans 1/100e de la mémoire. Le garde-fou n'agrège jamais vers plus fin que
+la résolution native, est un no-op sur un MNT en lon/lat (résolution en degrés),
+et se désactive avec `dem_target_res = NULL`.
+
+Nouvel argument `dem_target_res = 10` sur les huit indicateurs concernés :
+`indicateur_r1_feu()`, `indicateur_r2_tempete()`, `indicateur_r3_secheresse()`,
+`indicateur_w2_zones_humides()`, `indicateur_w3_humidite()`,
+`indicateur_f2_erosion()`, `indicateur_s1_routes()`, `indicateur_s2_bati()`.
+Valeur à garder **identique** sur W2/W3/F2/R3 : le cache TWI est indexé sur
+l'empreinte du MNT reçu, une valeur différente par indicateur recalculerait un
+TWI pour chacun. Pour S1/S2 le MNT ne sert que de grille (rasterisation +
+transformée de distance) : l'agrégation y est sans effet sur le sens.
+
+`.twi_aggregate_dem()` devient un alias de `.dem_working_res()` — même opération,
+mêmes garde-fous.
+
+Mesuré sur le MNT réel de Dabo (4 UG, scope plafonné à 6 Go) : **R2 en 2,8 s,
+pic RSS 958 Mo** avec le garde-fou ; **tué par l'OOM killer** à résolution native.
+
+### Fixed — R3 : la grille du TWI suit enfin la grille du terrain
+
+Le lendemain, **R3 est mort au même endroit** : le garde-fou bornait bien la
+grille du terrain, mais `indicateur_r3_secheresse()` laissait
+`get_or_compute_twi()` à sa valeur par défaut de 10 m. Le TWI sortait donc sur
+une grille *différente* de celle d'`aspect`, `compareGeom()` échouait, et la
+branche de secours **rééchantillonnait le TWI grossier vers la grille fine** —
+un `resample` qui n'ajoute aucune information (le TWI *est* calculé à sa
+résolution) et multiplie le coût de tout ce qui suit.
+
+Le hand-off `nemetonshiny` a mesuré ce seul désalignement à `topo_res = 5 m` :
+**1,36 pt** d'écart de score contre **0,50 pt** grilles alignées, soit un
+facteur 2,7 d'erreur ajoutée gratuitement.
+
+**Fix** : `dem_target_res` est propagé à `get_or_compute_twi(twi_target_res =)`
+par les quatre consommateurs du TWI (W2, W3, F2, R3) et à
+`calculate_twi_terra()` sur le chemin `method = "d8"` de W3. Les deux grilles
+coïncident, `compareGeom()` passe, le `resample` n'est plus emprunté (il reste
+en filet de sécurité pour un TWI GRASS ou un cache d'une version antérieure).
+
+La clé du cache TWI porte désormais la résolution **effective** de la grille et
+non la cible demandée : sur un BD ALTI 25 m, `twi_target_res` 2 ou 10 donnent le
+même TWI et partagent l'entrée de cache au lieu de le recalculer à l'identique.
+
+Le calcul de l'exposition passe par `terra::app()` en une passe :
+`(1 + cos((aspect - 180) * pi/180)) / 2` matérialisait quatre `SpatRaster`
+temporaires pleine taille dans la même expression — c'est de là que venait le
+saut de pic mémoire mesuré sur R3 (2,44 → 8,70 Go sur le MNT 0,5 m de Dabo).
+Résultat numériquement identique, NA compris.
+
+### Changed — résolution de travail topographique à 2 m, réglable sans release
+
+La résolution de travail passe de 10 m à **2 m** et devient un réglage paquet
+plutôt qu'une constante recopiée dans huit signatures :
+
+```r
+options(nemeton.topo_target_res = 5)   # session
+NEMETON_TOPO_TARGET_RES=5              # environnement
+```
+
+Le défaut de `dem_target_res` sur les huit indicateurs est l'appel
+`.topo_target_res()` : l'app peut ajuster sans nouvelle release du cœur, et
+`dem_target_res = NULL` reste l'échappatoire par appel (résolution native).
+
+Choix du 2 m — écart en points de score R3 /100 contre une référence calculée à
+0,5 m, grille TWI alignée à chaque résolution, mesuré sur Dabo (3 000 ha) et
+ForetAccess :
+
+| résolution | Dabo | ForetAccess | temps R3 (Dabo) | spill terra |
+|---|---|---|---|---|
+| 0,5 m (référence) | — | — | 265 s | — |
+| 1 m | 0,81 | 0,64 | 33 s | 329 Mo |
+| **2 m (retenu)** | **1,40** | **1,12** | **10 s** | **0 Mo** |
+| 5 m | 2,33 | 2,10 | 3,5 s | 0 Mo |
+
+La dégradation est monotone, mais « plus proche du 0,5 m » n'est pas « plus
+juste » : sur un MNT LiDAR en forêt, le pas fin capte les cloisonnements
+d'exploitation, les chablis et les fossés — de la micro-topographie qui n'est
+pas l'exposition du peuplement à la sécheresse. Le 2 m garde l'erreur sous
+1,5 pt et tient entièrement en RAM.
+
+**Impact** : les scores R3/R1/R2/W2/W3/F2/S1/S2 des projets à MNT LiDAR bougent
+légèrement (ordre du point /100), et les **caches TWI existants deviennent
+orphelins** — un recalcul unique par projet.
+
+### Changed — plafond mémoire terra absolu (`memmax`) au chargement
+
+`.onLoad` posait `memfrac = 0.25`. Une fraction n'est pas un plafond : elle vaut
+7,8 Go sur une station à 31 Go, 2 Go sur un portable à 8 Go, 32 Go sur un
+serveur à 128 Go — et elle ne dit rien de ce que la machine peut *réellement*
+céder. C'est ce qui a tué Dabo : terra s'autorisait ~15 Go dans une session qui
+partageait le user slice avec RStudio et un navigateur, et `systemd-oomd` a tué
+le scope entier à 50 % de pression bien avant que terra ne songe à écrire sur
+disque.
+
+`.onLoad` pose désormais aussi **`memmax = 3`** (Go, plafond absolu, donc
+identique sur toutes les machines). Mesuré sur la chaîne R3 complète dans un
+cgroup borné à 10 Go :
+
+| configuration | @ 5 m | @ 0,5 m |
+|---|---|---|
+| `memfrac = 0.5` (avant) | 0,67 Go / 0,7 s / 0 Mo | ☠️ OOM |
+| `todisk = TRUE` | 0,66 Go / 2,4 s / 142 Mo | 2,51 Go / 142 s / 8,6 Go |
+| **`memmax = 3`** | **0,67 Go / 0,8 s / 0 Mo** | **0,88 Go / 142 s / 8,5 Go** |
+
+`memmax` est adaptatif — terra ne bascule sur disque que pour les rasters qui
+dépassent le plafond — donc **gratuit** au point de fonctionnement normal, là où
+`todisk = TRUE` coûte 3,4× le temps et 142 Mo d'écritures pour 0,01 Go
+économisé. Réglable : `options(nemeton.terra_memmax = 8)`,
+`NEMETON_TERRA_MEMMAX=8`, ou `-1` pour revenir au comportement terra.
+
+Réserve à connaître : écrire « sur disque » ne protège que si le `tempdir` de
+terra est un vrai système de fichiers. Sur une machine où `/tmp` est un tmpfs,
+le spill écrit en RAM et n'apporte rien — y poser
+`terra::terraOptions(tempdir = ...)`.
+
+### Fixed — clic E-OBS : plus de reprojection 4326 → 4326
+
+`.eobs_point_vect()` projetait systématiquement le point du clic vers le CRS du
+raster. E-OBS étant livré en EPSG:4326 comme le clic leaflet, cela demandait à
+PROJ une opération 4326 → 4326 sans effet — et qui **échoue** (`could not find
+valid method`) sur un runtime à PROJ dégradé, dont les runners GitHub où le
+paquet documente déjà une anomalie terra (cf. `helper-fast-raster.R`). La
+projection n'a plus lieu que si les CRS diffèrent réellement.
+
+Source : hand-off `nemetonshiny` du 2026-08-07
+(`BRIEF-nemeton-r3-topo-resolution.md`), mesures sur le projet Dabo
+(`20260801_130303_xpdk`, 12000 × 10000 @ 0,5 m).
+
 # nemeton 0.168.1 (2026-07-25)
 
 ### Fixed — cubage P1/C1 gonflé ×3-5 : exposants du tarif IFN corrigés (spec 040)

@@ -14,7 +14,8 @@ indicateur_r3_secheresse(
   soil_moisture = NULL,
   sm_relief_strength = 0.3,
   biljou = NULL,
-  biljou_weight = 0.5
+  biljou_weight = 0.5,
+  dem_target_res = .topo_target_res()
 )
 }
 \arguments{
@@ -65,6 +66,14 @@ exposed as columns.}
 \item{biljou_weight}{Numeric in \code{[0, 1]}. Weight of the BILJOU stress score
 in the blend with the SPEI/topographic risk. Default \code{0.5}. Ignored when
 no BILJOU metric is available.}
+
+\item{dem_target_res}{Numeric. Working resolution (metres) the DEM is
+aggregated to before terrain derivatives and TWI are computed. The same value drives the TWI grid, so both
+coincide and the TWI is never resampled up to a finer grid. Keep it identical
+across W2/W3/F2/R3 to share a single cached TWI. Default: the package-wide
+topographic working resolution, 2 m --- see
+\code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
+resolution.}
 }
 \value{
 The input sf object with added columns:
