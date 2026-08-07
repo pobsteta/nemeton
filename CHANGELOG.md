@@ -12,6 +12,56 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.169.0\] - 2026-08-07
+
+### Fixed
+
+- Résolution de travail du MNT bornée avant tout calcul dérivé du
+  terrain : un MNT LiDAR HD à 0,5 m (120 M cellules sur Dabo) faisait
+  empiler ~10 Go de rasters intermédiaires et `systemd-oomd` tuait la
+  session R pendant R2. Nouvel interne `.dem_working_res()` ;
+  `.twi_aggregate_dem()` en devient un alias.
+- R3 : `dem_target_res` est propagé à
+  `get_or_compute_twi(twi_target_res =)` (idem W2/W3/F2, et
+  `calculate_twi_terra()` sur le chemin `method = "d8"` de W3). Les
+  grilles terrain et TWI coïncident, la branche `resample` qui remontait
+  un TWI grossier vers la grille fine n’est plus empruntée (1,36 pt
+  d’écart de score contre 0,50 pt grilles alignées, mesuré à 5 m).
+- Clé du cache TWI indexée sur la résolution **effective** et non la
+  cible demandée : deux réglages qui aboutissent à la même grille
+  partagent l’entrée.
+- `aspect_risk` de R3 calculé en une passe par
+  [`terra::app()`](https://rspatial.github.io/terra/reference/app.html)
+  au lieu de quatre `SpatRaster` temporaires pleine taille (résultat
+  identique, NA compris).
+- `.eobs_point_vect()` ne reprojette plus le point du clic quand le CRS
+  du raster est déjà celui du clic : l’opération PROJ 4326 → 4326 était
+  sans effet et échouait sur un runtime à PROJ dégradé.
+
+### Changed
+
+- Nouvel argument `dem_target_res` sur
+  [`indicateur_r1_feu()`](https://pobsteta.github.io/nemeton/reference/indicateur_r1_feu.md),
+  [`indicateur_r2_tempete()`](https://pobsteta.github.io/nemeton/reference/indicateur_r2_tempete.md),
+  [`indicateur_r3_secheresse()`](https://pobsteta.github.io/nemeton/reference/indicateur_r3_secheresse.md),
+  [`indicateur_w2_zones_humides()`](https://pobsteta.github.io/nemeton/reference/indicateur_w2_zones_humides.md),
+  [`indicateur_w3_humidite()`](https://pobsteta.github.io/nemeton/reference/indicateur_w3_humidite.md),
+  [`indicateur_f2_erosion()`](https://pobsteta.github.io/nemeton/reference/indicateur_f2_erosion.md),
+  [`indicateur_s1_routes()`](https://pobsteta.github.io/nemeton/reference/indicateur_s1_routes.md),
+  [`indicateur_s2_bati()`](https://pobsteta.github.io/nemeton/reference/indicateur_s2_bati.md).
+  `NULL` conserve la résolution native. À garder identique sur
+  W2/W3/F2/R3 (clé du cache TWI).
+- Résolution de travail topographique portée de 10 m à **2 m** et
+  exposée comme réglage paquet : `options(nemeton.topo_target_res = )` /
+  `NEMETON_TOPO_TARGET_RES`, défaut `.topo_target_res()` sur les huit
+  indicateurs. Les scores des projets à MNT LiDAR bougent de l’ordre du
+  point /100 et les caches TWI existants sont recalculés une fois.
+- `.onLoad` pose un plafond mémoire terra **absolu** `memmax = 3` (Go)
+  en plus de `memfrac` : identique sur toutes les machines, adaptatif
+  (spill seulement au-delà du plafond), donc gratuit au point de
+  fonctionnement normal. Réglable via `options(nemeton.terra_memmax = )`
+  / `NEMETON_TERRA_MEMMAX`, `-1` pour revenir au comportement terra.
+
 ## \[0.162.0\] - 2026-07-16
 
 ### Added
@@ -1552,14 +1602,13 @@ concise, categorised trail.
 ### Changed
 
 - CI back to green (R-CMD-check, tests, coverage, pkgdown). The `tests`
-  job now runs the real suite via
-  [`devtools::test()`](https://devtools.r-lib.org/reference/test.html);
-  `R-CMD-check` uses `--no-tests`/`--no-build-vignettes`; `pkgdown`
-  gains `rsconnect` and a complete reference index (111 missing topics
-  added). A capability guard (`skip_if_terra_write_broken()`) skips
-  raster tests on a GitHub runner exhibiting a terra “no valid
-  constructor” anomaly (not reproducible locally; the whole suite passes
-  locally), running them fully everywhere else.
+  job now runs the real suite via `devtools::test()`; `R-CMD-check` uses
+  `--no-tests`/`--no-build-vignettes`; `pkgdown` gains `rsconnect` and a
+  complete reference index (111 missing topics added). A capability
+  guard (`skip_if_terra_write_broken()`) skips raster tests on a GitHub
+  runner exhibiting a terra “no valid constructor” anomaly (not
+  reproducible locally; the whole suite passes locally), running them
+  fully everywhere else.
 
 ## \[0.67.0\] - 2026-06-04
 

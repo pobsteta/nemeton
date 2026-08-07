@@ -14,7 +14,8 @@ indicateur_r2_tempete(
   chm = NULL,
   species_field = "species",
   h_dom_percentile = 0.9,
-  h_reference = 30
+  h_reference = 30,
+  dem_target_res = .topo_target_res()
 )
 ```
 
@@ -51,6 +52,16 @@ indicateur_r2_tempete(
 
   Numeric. Reference height (metres) at which the canopy-vulnerability
   factor equals the species baseline. Default `30`.
+
+- dem_target_res:
+
+  Numeric. Working resolution (metres) the DEM is aggregated to before
+  terrain derivatives are computed. R2 is the heaviest terrain indicator
+  (nine full-size layers), so a 0.5-1 m LiDAR HD MNT can push a session
+  into the OOM killer. Default: the package-wide topographic working
+  resolution, 2 m — see `options("nemeton.topo_target_res")`; `NULL`
+  keeps the native resolution. Never upsamples, and is a no-op on a
+  lon/lat DEM.
 
 ## Value
 

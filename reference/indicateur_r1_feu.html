@@ -11,7 +11,7 @@ when fireexposuR or BD Foret data is unavailable."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.168.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.169.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,7 +62,8 @@ when <span class="pkg">fireexposuR</span> or BD Foret data is unavailable.</p>
 <span>  bdforet <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  species_field <span class="op">=</span> <span class="st">"species"</span>,</span>
 <span>  climate <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>slope <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">3</span>, species <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">3</span>, climate <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">3</span><span class="op">)</span></span>
+<span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>slope <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">3</span>, species <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">3</span>, climate <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">3</span><span class="op">)</span>,</span>
+<span>  dem_target_res <span class="op">=</span> <span class="fu">.topo_target_res</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -98,6 +99,16 @@ or NULL (fallback only).</p></dd>
 <dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
 <dd><p>Named numeric vector. Weights for fallback components:
 c(slope, species, climate). Default c(1/3, 1/3, 1/3).</p></dd>
+
+
+<dt id="arg-dem-target-res">dem_target_res<a class="anchor" aria-label="anchor" href="#arg-dem-target-res"></a></dt>
+<dd><p>Numeric. Working resolution (metres) the DEM is
+aggregated to before terrain derivatives are computed. A LiDAR HD MNT
+comes at 0.5-1 m, i.e. hundreds of millions of cells per derived layer over a
+whole massif, for an index that is averaged per unit anyway. Default: the
+package-wide topographic working resolution, 2 m — see
+<code>options("nemeton.topo_target_res")</code>; <code>NULL</code> keeps the native
+resolution. Never upsamples, and is a no-op on a lon/lat DEM.</p></dd>
 
 </dl></div>
     <div class="section level2">

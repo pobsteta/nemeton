@@ -635,7 +635,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.3        nemeton_0.168.1.9000
+#> [1] ggplot2_4.0.3   nemeton_0.169.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] omnibus_1.2.15       rappdirs_0.3.4       sass_0.4.10         
@@ -653,7 +653,7 @@ sessionInfo()
 #> [37] proxy_0.4-29         lifecycle_1.0.5      classInt_0.4-11     
 #> [40] fs_2.1.0             htmlwidgets_1.6.4    ragg_1.5.2          
 #> [43] pkgconfig_2.0.3      desc_1.4.3           pkgdown_2.2.1       
-#> [46] terra_1.9-34         bslib_0.11.0         pillar_1.11.1       
+#> [46] terra_1.9-34         bslib_0.12.0         pillar_1.11.1       
 #> [49] gtable_0.3.6         data.table_1.18.4    glue_1.8.1          
 #> [52] Rcpp_1.1.2           sf_1.1-2             systemfonts_1.3.2   
 #> [55] xfun_0.60            tibble_3.3.1         tidyselect_1.2.1    

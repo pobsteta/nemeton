@@ -346,10 +346,8 @@ psql -U nemeton -h 127.0.0.1 -d nemeton_test \
   -c "CREATE EXTENSION IF NOT EXISTS timescaledb; CREATE EXTENSION IF NOT EXISTS postgis;"
 ```
 
-Sans `NEMETON_DB_URL_TEST`,
-[`devtools::test()`](https://devtools.r-lib.org/reference/test.html)
-reste **vert** (les tests d’intégration sont *skipped*, comptés dans la
-sortie testthat).
+Sans `NEMETON_DB_URL_TEST`, `devtools::test()` reste **vert** (les tests
+d’intégration sont *skipped*, comptés dans la sortie testthat).
 
 ### Données de test
 

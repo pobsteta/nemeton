@@ -14,7 +14,8 @@ indicateur_r1_feu(
   bdforet = NULL,
   species_field = "species",
   climate = NULL,
-  weights = c(slope = 1/3, species = 1/3, climate = 1/3)
+  weights = c(slope = 1/3, species = 1/3, climate = 1/3),
+  dem_target_res = .topo_target_res()
 )
 ```
 
@@ -49,6 +50,16 @@ indicateur_r1_feu(
 
   Named numeric vector. Weights for fallback components: c(slope,
   species, climate). Default c(1/3, 1/3, 1/3).
+
+- dem_target_res:
+
+  Numeric. Working resolution (metres) the DEM is aggregated to before
+  terrain derivatives are computed. A LiDAR HD MNT comes at 0.5-1 m,
+  i.e. hundreds of millions of cells per derived layer over a whole
+  massif, for an index that is averaged per unit anyway. Default: the
+  package-wide topographic working resolution, 2 m — see
+  `options("nemeton.topo_target_res")`; `NULL` keeps the native
+  resolution. Never upsamples, and is a no-op on a lon/lat DEM.
 
 ## Value
 

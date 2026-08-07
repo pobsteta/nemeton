@@ -9,7 +9,7 @@ nearest road, using rasterized road data and terra::distance()."><meta property=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.168.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.169.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,7 +58,8 @@ nearest road, using rasterized road data and <code><a href="https://rspatial.git
 <span>  dem <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  layers <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  column_name <span class="op">=</span> <span class="st">"S1"</span>,</span>
-<span>  lang <span class="op">=</span> <span class="st">"en"</span></span>
+<span>  lang <span class="op">=</span> <span class="st">"en"</span>,</span>
+<span>  dem_target_res <span class="op">=</span> <span class="fu">.topo_target_res</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -90,6 +91,16 @@ when not provided directly.</p></dd>
 
 <dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
 <dd><p>Character. Message language ("en" or "fr"). Default "en".</p></dd>
+
+
+<dt id="arg-dem-target-res">dem_target_res<a class="anchor" aria-label="anchor" href="#arg-dem-target-res"></a></dt>
+<dd><p>Numeric. Working resolution (metres) the DEM grid is
+aggregated to before roads are rasterised and the distance transform runs.
+The DEM is only a grid template here, and a 0.5-1 m LiDAR HD MNT makes that
+transform cost gigabytes for a mean distance per unit. Default: the
+package-wide topographic working resolution, 2 m — see
+<code>options("nemeton.topo_target_res")</code>; <code>NULL</code> keeps the native
+resolution.</p></dd>
 
 </dl></div>
     <div class="section level2">

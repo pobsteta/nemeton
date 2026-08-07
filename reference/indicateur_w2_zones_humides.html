@@ -13,7 +13,7 @@ Theia theia_water water-occurrence product."><meta property="og:image" content="
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.168.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.169.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,7 +64,8 @@ Theia <code>theia_water</code> water-occurrence product.</p>
 <span>  wetland_layer <span class="op">=</span> <span class="st">"wetlands"</span>,</span>
 <span>  wetland_values <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  water_occurrence <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  occurrence_threshold <span class="op">=</span> <span class="fl">25</span></span>
+<span>  occurrence_threshold <span class="op">=</span> <span class="fl">25</span>,</span>
+<span>  dem_target_res <span class="op">=</span> <span class="fu">.topo_target_res</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -103,6 +104,16 @@ wetland coverage. Default <code>NULL</code>.</p></dd>
 water-occurrence frequency (percent of observations) for a pixel to
 count as wetland. Default <code>25</code>. Ignored when
 <code>water_occurrence</code> is <code>NULL</code>.</p></dd>
+
+
+<dt id="arg-dem-target-res">dem_target_res<a class="anchor" aria-label="anchor" href="#arg-dem-target-res"></a></dt>
+<dd><p>Numeric. Working resolution (metres) the DEM is
+aggregated to before TWI is computed. The same value drives the TWI grid, so both
+coincide and the TWI is never resampled up to a finer grid. Keep it identical
+across W2/W3/F2/R3 to share a single cached TWI. Default: the package-wide
+topographic working resolution, 2 m — see
+<code>options("nemeton.topo_target_res")</code>; <code>NULL</code> keeps the native
+resolution.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -13,7 +13,8 @@ indicateur_s2_bati(
   dem = NULL,
   layers = NULL,
   column_name = "S2",
-  lang = "en"
+  lang = "en",
+  dem_target_res = .topo_target_res()
 )
 ```
 
@@ -44,6 +45,16 @@ indicateur_s2_bati(
 - lang:
 
   Character. Message language. Default "en".
+
+- dem_target_res:
+
+  Numeric. Working resolution (metres) the DEM grid is aggregated to
+  before buildings are rasterised and the distance transform runs. The
+  DEM is only a grid template here, and a 0.5-1 m LiDAR HD MNT makes
+  that transform cost gigabytes for a mean distance per unit. Default:
+  the package-wide topographic working resolution, 2 m — see
+  `options("nemeton.topo_target_res")`; `NULL` keeps the native
+  resolution.
 
 ## Value
 

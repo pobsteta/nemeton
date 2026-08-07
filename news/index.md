@@ -1,5 +1,171 @@
 # Changelog
 
+## nemeton 0.169.0 (2026-08-07)
+
+#### Fixed — MNT LiDAR HD : résolution de travail bornée sur les indicateurs de terrain
+
+Le calcul des indicateurs du projet Dabo (NDP 1, MNT LiDAR HD) tuait la
+session R — et avec elle RStudio, `systemd-oomd` tuant le *scope*
+entier. Diagnostic : `get_dem_raster()` préfère le MNT LiDAR HD au BD
+ALTI 25 m, soit ici **12000 × 10000 = 120 M cellules à 0,5 m**. Les
+indicateurs qui en dérivent pente / exposition / TRI, une distance ou un
+TWI empilent une dizaine de couches plein format — R2 en aligne neuf —
+soit ~10 Go de rasters intermédiaires. La session est montée à 21,2 Go
+sur une machine de 31 Go et a été tuée pendant R2, juste après R1.
+
+**Fix** : nouvel interne `.dem_working_res()` qui ramène le MNT à une
+résolution de travail (~10 m) avant tout calcul dérivé du terrain. Un
+indice moyenné par unité de gestion ne gagne rien à une pente dérivée au
+demi-mètre ; à 10 m la pile tient dans 1/100e de la mémoire. Le
+garde-fou n’agrège jamais vers plus fin que la résolution native, est un
+no-op sur un MNT en lon/lat (résolution en degrés), et se désactive avec
+`dem_target_res = NULL`.
+
+Nouvel argument `dem_target_res = 10` sur les huit indicateurs concernés
+:
+[`indicateur_r1_feu()`](https://pobsteta.github.io/nemeton/reference/indicateur_r1_feu.md),
+[`indicateur_r2_tempete()`](https://pobsteta.github.io/nemeton/reference/indicateur_r2_tempete.md),
+[`indicateur_r3_secheresse()`](https://pobsteta.github.io/nemeton/reference/indicateur_r3_secheresse.md),
+[`indicateur_w2_zones_humides()`](https://pobsteta.github.io/nemeton/reference/indicateur_w2_zones_humides.md),
+[`indicateur_w3_humidite()`](https://pobsteta.github.io/nemeton/reference/indicateur_w3_humidite.md),
+[`indicateur_f2_erosion()`](https://pobsteta.github.io/nemeton/reference/indicateur_f2_erosion.md),
+[`indicateur_s1_routes()`](https://pobsteta.github.io/nemeton/reference/indicateur_s1_routes.md),
+[`indicateur_s2_bati()`](https://pobsteta.github.io/nemeton/reference/indicateur_s2_bati.md).
+Valeur à garder **identique** sur W2/W3/F2/R3 : le cache TWI est indexé
+sur l’empreinte du MNT reçu, une valeur différente par indicateur
+recalculerait un TWI pour chacun. Pour S1/S2 le MNT ne sert que de
+grille (rasterisation + transformée de distance) : l’agrégation y est
+sans effet sur le sens.
+
+`.twi_aggregate_dem()` devient un alias de `.dem_working_res()` — même
+opération, mêmes garde-fous.
+
+Mesuré sur le MNT réel de Dabo (4 UG, scope plafonné à 6 Go) : **R2 en
+2,8 s, pic RSS 958 Mo** avec le garde-fou ; **tué par l’OOM killer** à
+résolution native.
+
+#### Fixed — R3 : la grille du TWI suit enfin la grille du terrain
+
+Le lendemain, **R3 est mort au même endroit** : le garde-fou bornait
+bien la grille du terrain, mais
+[`indicateur_r3_secheresse()`](https://pobsteta.github.io/nemeton/reference/indicateur_r3_secheresse.md)
+laissait `get_or_compute_twi()` à sa valeur par défaut de 10 m. Le TWI
+sortait donc sur une grille *différente* de celle d’`aspect`,
+[`compareGeom()`](https://rspatial.github.io/terra/reference/compareGeom.html)
+échouait, et la branche de secours **rééchantillonnait le TWI grossier
+vers la grille fine** — un `resample` qui n’ajoute aucune information
+(le TWI *est* calculé à sa résolution) et multiplie le coût de tout ce
+qui suit.
+
+Le hand-off `nemetonshiny` a mesuré ce seul désalignement à
+`topo_res = 5 m` : **1,36 pt** d’écart de score contre **0,50 pt**
+grilles alignées, soit un facteur 2,7 d’erreur ajoutée gratuitement.
+
+**Fix** : `dem_target_res` est propagé à
+`get_or_compute_twi(twi_target_res =)` par les quatre consommateurs du
+TWI (W2, W3, F2, R3) et à `calculate_twi_terra()` sur le chemin
+`method = "d8"` de W3. Les deux grilles coïncident,
+[`compareGeom()`](https://rspatial.github.io/terra/reference/compareGeom.html)
+passe, le `resample` n’est plus emprunté (il reste en filet de sécurité
+pour un TWI GRASS ou un cache d’une version antérieure).
+
+La clé du cache TWI porte désormais la résolution **effective** de la
+grille et non la cible demandée : sur un BD ALTI 25 m, `twi_target_res`
+2 ou 10 donnent le même TWI et partagent l’entrée de cache au lieu de le
+recalculer à l’identique.
+
+Le calcul de l’exposition passe par
+[`terra::app()`](https://rspatial.github.io/terra/reference/app.html) en
+une passe : `(1 + cos((aspect - 180) * pi/180)) / 2` matérialisait
+quatre `SpatRaster` temporaires pleine taille dans la même expression —
+c’est de là que venait le saut de pic mémoire mesuré sur R3 (2,44 → 8,70
+Go sur le MNT 0,5 m de Dabo). Résultat numériquement identique, NA
+compris.
+
+#### Changed — résolution de travail topographique à 2 m, réglable sans release
+
+La résolution de travail passe de 10 m à **2 m** et devient un réglage
+paquet plutôt qu’une constante recopiée dans huit signatures :
+
+``` r
+
+options(nemeton.topo_target_res = 5)   # session
+NEMETON_TOPO_TARGET_RES=5              # environnement
+```
+
+Le défaut de `dem_target_res` sur les huit indicateurs est l’appel
+`.topo_target_res()` : l’app peut ajuster sans nouvelle release du cœur,
+et `dem_target_res = NULL` reste l’échappatoire par appel (résolution
+native).
+
+Choix du 2 m — écart en points de score R3 /100 contre une référence
+calculée à 0,5 m, grille TWI alignée à chaque résolution, mesuré sur
+Dabo (3 000 ha) et ForetAccess :
+
+| résolution        | Dabo     | ForetAccess | temps R3 (Dabo) | spill terra |
+|-------------------|----------|-------------|-----------------|-------------|
+| 0,5 m (référence) | —        | —           | 265 s           | —           |
+| 1 m               | 0,81     | 0,64        | 33 s            | 329 Mo      |
+| **2 m (retenu)**  | **1,40** | **1,12**    | **10 s**        | **0 Mo**    |
+| 5 m               | 2,33     | 2,10        | 3,5 s           | 0 Mo        |
+
+La dégradation est monotone, mais « plus proche du 0,5 m » n’est pas «
+plus juste » : sur un MNT LiDAR en forêt, le pas fin capte les
+cloisonnements d’exploitation, les chablis et les fossés — de la
+micro-topographie qui n’est pas l’exposition du peuplement à la
+sécheresse. Le 2 m garde l’erreur sous 1,5 pt et tient entièrement en
+RAM.
+
+**Impact** : les scores R3/R1/R2/W2/W3/F2/S1/S2 des projets à MNT LiDAR
+bougent légèrement (ordre du point /100), et les **caches TWI existants
+deviennent orphelins** — un recalcul unique par projet.
+
+#### Changed — plafond mémoire terra absolu (`memmax`) au chargement
+
+`.onLoad` posait `memfrac = 0.25`. Une fraction n’est pas un plafond :
+elle vaut 7,8 Go sur une station à 31 Go, 2 Go sur un portable à 8 Go,
+32 Go sur un serveur à 128 Go — et elle ne dit rien de ce que la machine
+peut *réellement* céder. C’est ce qui a tué Dabo : terra s’autorisait
+~15 Go dans une session qui partageait le user slice avec RStudio et un
+navigateur, et `systemd-oomd` a tué le scope entier à 50 % de pression
+bien avant que terra ne songe à écrire sur disque.
+
+`.onLoad` pose désormais aussi **`memmax = 3`** (Go, plafond absolu,
+donc identique sur toutes les machines). Mesuré sur la chaîne R3
+complète dans un cgroup borné à 10 Go :
+
+| configuration | @ 5 m | @ 0,5 m |
+|----|----|----|
+| `memfrac = 0.5` (avant) | 0,67 Go / 0,7 s / 0 Mo | ☠️ OOM |
+| `todisk = TRUE` | 0,66 Go / 2,4 s / 142 Mo | 2,51 Go / 142 s / 8,6 Go |
+| **`memmax = 3`** | **0,67 Go / 0,8 s / 0 Mo** | **0,88 Go / 142 s / 8,5 Go** |
+
+`memmax` est adaptatif — terra ne bascule sur disque que pour les
+rasters qui dépassent le plafond — donc **gratuit** au point de
+fonctionnement normal, là où `todisk = TRUE` coûte 3,4× le temps et 142
+Mo d’écritures pour 0,01 Go économisé. Réglable :
+`options(nemeton.terra_memmax = 8)`, `NEMETON_TERRA_MEMMAX=8`, ou `-1`
+pour revenir au comportement terra.
+
+Réserve à connaître : écrire « sur disque » ne protège que si le
+`tempdir` de terra est un vrai système de fichiers. Sur une machine où
+`/tmp` est un tmpfs, le spill écrit en RAM et n’apporte rien — y poser
+`terra::terraOptions(tempdir = ...)`.
+
+#### Fixed — clic E-OBS : plus de reprojection 4326 → 4326
+
+`.eobs_point_vect()` projetait systématiquement le point du clic vers le
+CRS du raster. E-OBS étant livré en EPSG:4326 comme le clic leaflet,
+cela demandait à PROJ une opération 4326 → 4326 sans effet — et qui
+**échoue** (`could not find valid method`) sur un runtime à PROJ
+dégradé, dont les runners GitHub où le paquet documente déjà une
+anomalie terra (cf. `helper-fast-raster.R`). La projection n’a plus lieu
+que si les CRS diffèrent réellement.
+
+Source : hand-off `nemetonshiny` du 2026-08-07
+(`BRIEF-nemeton-r3-topo-resolution.md`), mesures sur le projet Dabo
+(`20260801_130303_xpdk`, 12000 × 10000 @ 0,5 m).
+
 ## nemeton 0.168.1 (2026-07-25)
 
 #### Fixed — cubage P1/C1 gonflé ×3-5 : exposants du tarif IFN corrigés (spec 040)
@@ -4535,18 +4701,17 @@ EPSG:2154, IOTA²/conda obligatoire.
 La CI (`R-CMD-check`, `tests`, `coverage`, `pkgdown`) repasse au vert
 après plusieurs corrections d’infrastructure préexistantes, sans rapport
 avec le code métier : le job `tests` exécute désormais réellement la
-suite
-([`devtools::test()`](https://devtools.r-lib.org/reference/test.html) au
-lieu d’un `test_package()` qui ne trouvait aucun test installé) ;
-`R-CMD-check` délègue les tests au job dédié (`--no-tests`) et saute le
-build des vignettes ; `pkgdown` gagne `rsconnect` (tutoriels) et l’index
-de référence liste les 111 topics exportés manquants. Surtout, un
-**garde-fou par capacité** (`skip_if_terra_write_broken()`) neutralise
-une anomalie terra **propre au runner GitHub** (terra::rast/writeRaster
-y lèvent « no valid constructor » dans le contexte testthat, alors que
-le même code passe en local — toute la suite passe, PASS 7381) : les
-tests raster **skippent** sur ce runner et **tournent en entier**
-partout ailleurs. Le code reste prouvé correct.
+suite (`devtools::test()` au lieu d’un `test_package()` qui ne trouvait
+aucun test installé) ; `R-CMD-check` délègue les tests au job dédié
+(`--no-tests`) et saute le build des vignettes ; `pkgdown` gagne
+`rsconnect` (tutoriels) et l’index de référence liste les 111 topics
+exportés manquants. Surtout, un **garde-fou par capacité**
+(`skip_if_terra_write_broken()`) neutralise une anomalie terra **propre
+au runner GitHub** (terra::rast/writeRaster y lèvent « no valid
+constructor » dans le contexte testthat, alors que le même code passe en
+local — toute la suite passe, PASS 7381) : les tests raster **skippent**
+sur ce runner et **tournent en entier** partout ailleurs. Le code reste
+prouvé correct.
 
 ## nemeton 0.69.1 (2026-06-10)
 
@@ -5042,9 +5207,8 @@ migration `0004_drop_obs_pixel.sql` est conservée pour les bases
 ; `test-db.R` vérifie l’absence de `obs_pixel` après migration sur une
 base neuve (PG + SQLite) ; suites `obs_pixel` legacy déjà retirées en
 v0.58.0. **NON TESTÉ EN CI ICI** (pas de R) — rejouer sur les deux
-backends +
-[`devtools::document()`](https://devtools.r-lib.org/reference/document.html)
-(les `man/*.Rd` ont été ajustés à la main).
+backends + `devtools::document()` (les `man/*.Rd` ont été ajustés à la
+main).
 
 ## nemeton 0.58.0 (2026-06-02)
 
@@ -5112,9 +5276,8 @@ avertissements. Suites supprimées : `test-read_obs_pixel.R`,
 (toutes adossées à `obs_pixel`). **NON TESTÉ EN CI ICI** (pas de R dans
 l’environnement) — à rejouer sur machine avec R sur les **deux
 backends** (Postgres + SQLite) via `NEMETON_DB_URL_TEST` (rappel
-v0.54.0), et
-[`devtools::document()`](https://devtools.r-lib.org/reference/document.html)
-à exécuter (les `man/*.Rd` ont été mis à jour à la main).
+v0.54.0), et `devtools::document()` à exécuter (les `man/*.Rd` ont été
+mis à jour à la main).
 
 ## nemeton 0.57.0 (2026-06-02)
 
@@ -5303,12 +5466,10 @@ données utilisateur réelles (incidents villards 2026-05-25 et 2026-05-31
 - Nouveau `tests/testthat/test-helper-guards.R` (4 tests offline du
   garde-fou). Nouveau `.Renviron.example`. Section dédiée ajoutée à
   `CLAUDE.md` (setup `nemeton_test`).
-- **Breaking côté setup dev** :
-  [`devtools::test()`](https://devtools.r-lib.org/reference/test.html)
-  exige maintenant un `NEMETON_DB_URL_TEST` dédié pour faire tourner les
-  tests d’intégration. Sans lui, ils sont skippés (la suite reste
-  verte). Aucun changement d’API publique — rien à faire côté
-  `nemetonshiny`.
+- **Breaking côté setup dev** : `devtools::test()` exige maintenant un
+  `NEMETON_DB_URL_TEST` dédié pour faire tourner les tests
+  d’intégration. Sans lui, ils sont skippés (la suite reste verte).
+  Aucun changement d’API publique — rien à faire côté `nemetonshiny`.
 
 ## nemeton 0.53.0 (2026-05-31)
 
@@ -6261,8 +6422,7 @@ drift and a latent [`unlink()`](https://rdrr.io/r/base/unlink.html) bug.
 
 #### Fixed — `R CMD check` debt cleanup
 
-Maintenance release that clears the accumulated
-[`devtools::check()`](https://devtools.r-lib.org/reference/check.html)
+Maintenance release that clears the accumulated `devtools::check()`
 warnings and notes (no functional change):
 
 - **Corrupt Rd files** — `man/ingest_s2_raw_bands_to_cache.Rd` and
@@ -11500,9 +11660,7 @@ plot_indicators_map(normalized, palette = "viridis")
 
 Fix test fixtures
 
-Verify
-[`devtools::check()`](https://devtools.r-lib.org/reference/check.html)
-passes
+Verify `devtools::check()` passes
 
 Measure test coverage (target: ≥70%)
 

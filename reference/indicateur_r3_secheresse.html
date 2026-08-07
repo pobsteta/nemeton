@@ -11,7 +11,7 @@ topographic-only assessment when SPEI is unavailable."><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.168.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.169.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,7 +65,8 @@ topographic-only assessment when <span class="pkg">SPEI</span> is unavailable.</
 <span>  soil_moisture <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sm_relief_strength <span class="op">=</span> <span class="fl">0.3</span>,</span>
 <span>  biljou <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  biljou_weight <span class="op">=</span> <span class="fl">0.5</span></span>
+<span>  biljou_weight <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  dem_target_res <span class="op">=</span> <span class="fu">.topo_target_res</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -139,6 +140,16 @@ exposed as columns.</p></dd>
 <dd><p>Numeric in <code>[0, 1]</code>. Weight of the BILJOU stress score
 in the blend with the SPEI/topographic risk. Default <code>0.5</code>. Ignored when
 no BILJOU metric is available.</p></dd>
+
+
+<dt id="arg-dem-target-res">dem_target_res<a class="anchor" aria-label="anchor" href="#arg-dem-target-res"></a></dt>
+<dd><p>Numeric. Working resolution (metres) the DEM is
+aggregated to before terrain derivatives and TWI are computed. The same value drives the TWI grid, so both
+coincide and the TWI is never resampled up to a finer grid. Keep it identical
+across W2/W3/F2/R3 to share a single cached TWI. Default: the package-wide
+topographic working resolution, 2 m — see
+<code>options("nemeton.topo_target_res")</code>; <code>NULL</code> keeps the native
+resolution.</p></dd>
 
 </dl></div>
     <div class="section level2">

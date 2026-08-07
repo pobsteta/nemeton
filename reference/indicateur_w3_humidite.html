@@ -9,7 +9,7 @@ Higher values indicate areas with greater water accumulation potential."><meta p
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.168.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.169.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,7 +56,8 @@ Higher values indicate areas with greater water accumulation potential.</p>
 <span>  <span class="va">units</span>,</span>
 <span>  <span class="va">layers</span>,</span>
 <span>  dem_layer <span class="op">=</span> <span class="st">"dem"</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"grass"</span>, <span class="st">"d8"</span><span class="op">)</span></span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"grass"</span>, <span class="st">"d8"</span><span class="op">)</span>,</span>
+<span>  dem_target_res <span class="op">=</span> <span class="fu">.topo_target_res</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -79,6 +80,16 @@ Higher values indicate areas with greater water accumulation potential.</p>
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>Character. TWI calculation method: "auto" (prefer GRASS),
 "grass" (fasterRaster/GRASS GIS), or "d8" (terra D8). Default "auto".</p></dd>
+
+
+<dt id="arg-dem-target-res">dem_target_res<a class="anchor" aria-label="anchor" href="#arg-dem-target-res"></a></dt>
+<dd><p>Numeric. Working resolution (metres) the DEM is
+aggregated to before TWI is computed. The same value drives the TWI grid, so both
+coincide and the TWI is never resampled up to a finer grid. Keep it identical
+across W2/W3/F2/R3 to share a single cached TWI. Default: the package-wide
+topographic working resolution, 2 m — see
+<code>options("nemeton.topo_target_res")</code>; <code>NULL</code> keeps the native
+resolution.</p></dd>
 
 </dl></div>
     <div class="section level2">

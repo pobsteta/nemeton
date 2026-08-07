@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.168.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.169.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,86 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.169.0" id="nemeton-01690-2026-08-07">nemeton 0.169.0 (2026-08-07)<a class="anchor" aria-label="anchor" href="#nemeton-01690-2026-08-07"></a></h2>
+<div class="section level4">
+<h4 id="fixed--mnt-lidar-hd--résolution-de-travail-bornée-sur-les-indicateurs-de-terrain-0-169-0">Fixed — MNT LiDAR HD : résolution de travail bornée sur les indicateurs de terrain<a class="anchor" aria-label="anchor" href="#fixed--mnt-lidar-hd--r%C3%A9solution-de-travail-born%C3%A9e-sur-les-indicateurs-de-terrain-0-169-0"></a></h4>
+<p>Le calcul des indicateurs du projet Dabo (NDP 1, MNT LiDAR HD) tuait la session R — et avec elle RStudio, <code>systemd-oomd</code> tuant le <em>scope</em> entier. Diagnostic : <code>get_dem_raster()</code> préfère le MNT LiDAR HD au BD ALTI 25 m, soit ici <strong>12000 × 10000 = 120 M cellules à 0,5 m</strong>. Les indicateurs qui en dérivent pente / exposition / TRI, une distance ou un TWI empilent une dizaine de couches plein format — R2 en aligne neuf — soit ~10 Go de rasters intermédiaires. La session est montée à 21,2 Go sur une machine de 31 Go et a été tuée pendant R2, juste après R1.</p>
+<p><strong>Fix</strong> : nouvel interne <code>.dem_working_res()</code> qui ramène le MNT à une résolution de travail (~10 m) avant tout calcul dérivé du terrain. Un indice moyenné par unité de gestion ne gagne rien à une pente dérivée au demi-mètre ; à 10 m la pile tient dans 1/100e de la mémoire. Le garde-fou n’agrège jamais vers plus fin que la résolution native, est un no-op sur un MNT en lon/lat (résolution en degrés), et se désactive avec <code>dem_target_res = NULL</code>.</p>
+<p>Nouvel argument <code>dem_target_res = 10</code> sur les huit indicateurs concernés : <code><a href="../reference/indicateur_r1_feu.html">indicateur_r1_feu()</a></code>, <code><a href="../reference/indicateur_r2_tempete.html">indicateur_r2_tempete()</a></code>, <code><a href="../reference/indicateur_r3_secheresse.html">indicateur_r3_secheresse()</a></code>, <code><a href="../reference/indicateur_w2_zones_humides.html">indicateur_w2_zones_humides()</a></code>, <code><a href="../reference/indicateur_w3_humidite.html">indicateur_w3_humidite()</a></code>, <code><a href="../reference/indicateur_f2_erosion.html">indicateur_f2_erosion()</a></code>, <code><a href="../reference/indicateur_s1_routes.html">indicateur_s1_routes()</a></code>, <code><a href="../reference/indicateur_s2_bati.html">indicateur_s2_bati()</a></code>. Valeur à garder <strong>identique</strong> sur W2/W3/F2/R3 : le cache TWI est indexé sur l’empreinte du MNT reçu, une valeur différente par indicateur recalculerait un TWI pour chacun. Pour S1/S2 le MNT ne sert que de grille (rasterisation + transformée de distance) : l’agrégation y est sans effet sur le sens.</p>
+<p><code>.twi_aggregate_dem()</code> devient un alias de <code>.dem_working_res()</code> — même opération, mêmes garde-fous.</p>
+<p>Mesuré sur le MNT réel de Dabo (4 UG, scope plafonné à 6 Go) : <strong>R2 en 2,8 s, pic RSS 958 Mo</strong> avec le garde-fou ; <strong>tué par l’OOM killer</strong> à résolution native.</p>
+</div>
+<div class="section level4">
+<h4 id="fixed--r3--la-grille-du-twi-suit-enfin-la-grille-du-terrain-0-169-0">Fixed — R3 : la grille du TWI suit enfin la grille du terrain<a class="anchor" aria-label="anchor" href="#fixed--r3--la-grille-du-twi-suit-enfin-la-grille-du-terrain-0-169-0"></a></h4>
+<p>Le lendemain, <strong>R3 est mort au même endroit</strong> : le garde-fou bornait bien la grille du terrain, mais <code><a href="../reference/indicateur_r3_secheresse.html">indicateur_r3_secheresse()</a></code> laissait <code>get_or_compute_twi()</code> à sa valeur par défaut de 10 m. Le TWI sortait donc sur une grille <em>différente</em> de celle d’<code>aspect</code>, <code><a href="https://rspatial.github.io/terra/reference/compareGeom.html" class="external-link">compareGeom()</a></code> échouait, et la branche de secours <strong>rééchantillonnait le TWI grossier vers la grille fine</strong> — un <code>resample</code> qui n’ajoute aucune information (le TWI <em>est</em> calculé à sa résolution) et multiplie le coût de tout ce qui suit.</p>
+<p>Le hand-off <code>nemetonshiny</code> a mesuré ce seul désalignement à <code>topo_res = 5 m</code> : <strong>1,36 pt</strong> d’écart de score contre <strong>0,50 pt</strong> grilles alignées, soit un facteur 2,7 d’erreur ajoutée gratuitement.</p>
+<p><strong>Fix</strong> : <code>dem_target_res</code> est propagé à <code>get_or_compute_twi(twi_target_res =)</code> par les quatre consommateurs du TWI (W2, W3, F2, R3) et à <code>calculate_twi_terra()</code> sur le chemin <code>method = "d8"</code> de W3. Les deux grilles coïncident, <code><a href="https://rspatial.github.io/terra/reference/compareGeom.html" class="external-link">compareGeom()</a></code> passe, le <code>resample</code> n’est plus emprunté (il reste en filet de sécurité pour un TWI GRASS ou un cache d’une version antérieure).</p>
+<p>La clé du cache TWI porte désormais la résolution <strong>effective</strong> de la grille et non la cible demandée : sur un BD ALTI 25 m, <code>twi_target_res</code> 2 ou 10 donnent le même TWI et partagent l’entrée de cache au lieu de le recalculer à l’identique.</p>
+<p>Le calcul de l’exposition passe par <code><a href="https://rspatial.github.io/terra/reference/app.html" class="external-link">terra::app()</a></code> en une passe : <code>(1 + cos((aspect - 180) * pi/180)) / 2</code> matérialisait quatre <code>SpatRaster</code> temporaires pleine taille dans la même expression — c’est de là que venait le saut de pic mémoire mesuré sur R3 (2,44 → 8,70 Go sur le MNT 0,5 m de Dabo). Résultat numériquement identique, NA compris.</p>
+</div>
+<div class="section level4">
+<h4 id="changed--résolution-de-travail-topographique-à-m-réglable-sans-release-0-169-0">Changed — résolution de travail topographique à 2 m, réglable sans release<a class="anchor" aria-label="anchor" href="#changed--r%C3%A9solution-de-travail-topographique-%C3%A0-m-r%C3%A9glable-sans-release-0-169-0"></a></h4>
+<p>La résolution de travail passe de 10 m à <strong>2 m</strong> et devient un réglage paquet plutôt qu’une constante recopiée dans huit signatures :</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>nemeton.topo_target_res <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>   <span class="co"># session</span></span>
+<span><span class="va">NEMETON_TOPO_TARGET_RES</span><span class="op">=</span><span class="fl">5</span>              <span class="co"># environnement</span></span></code></pre></div>
+<p>Le défaut de <code>dem_target_res</code> sur les huit indicateurs est l’appel <code>.topo_target_res()</code> : l’app peut ajuster sans nouvelle release du cœur, et <code>dem_target_res = NULL</code> reste l’échappatoire par appel (résolution native).</p>
+<p>Choix du 2 m — écart en points de score R3 /100 contre une référence calculée à 0,5 m, grille TWI alignée à chaque résolution, mesuré sur Dabo (3 000 ha) et ForetAccess :</p>
+<table class="table"><thead><tr><th>résolution</th>
+<th>Dabo</th>
+<th>ForetAccess</th>
+<th>temps R3 (Dabo)</th>
+<th>spill terra</th>
+</tr></thead><tbody><tr><td>0,5 m (référence)</td>
+<td>—</td>
+<td>—</td>
+<td>265 s</td>
+<td>—</td>
+</tr><tr><td>1 m</td>
+<td>0,81</td>
+<td>0,64</td>
+<td>33 s</td>
+<td>329 Mo</td>
+</tr><tr><td><strong>2 m (retenu)</strong></td>
+<td><strong>1,40</strong></td>
+<td><strong>1,12</strong></td>
+<td><strong>10 s</strong></td>
+<td><strong>0 Mo</strong></td>
+</tr><tr><td>5 m</td>
+<td>2,33</td>
+<td>2,10</td>
+<td>3,5 s</td>
+<td>0 Mo</td>
+</tr></tbody></table><p>La dégradation est monotone, mais « plus proche du 0,5 m » n’est pas « plus juste » : sur un MNT LiDAR en forêt, le pas fin capte les cloisonnements d’exploitation, les chablis et les fossés — de la micro-topographie qui n’est pas l’exposition du peuplement à la sécheresse. Le 2 m garde l’erreur sous 1,5 pt et tient entièrement en RAM.</p>
+<p><strong>Impact</strong> : les scores R3/R1/R2/W2/W3/F2/S1/S2 des projets à MNT LiDAR bougent légèrement (ordre du point /100), et les <strong>caches TWI existants deviennent orphelins</strong> — un recalcul unique par projet.</p>
+</div>
+<div class="section level4">
+<h4 id="changed--plafond-mémoire-terra-absolu-memmax-au-chargement-0-169-0">Changed — plafond mémoire terra absolu (<code>memmax</code>) au chargement<a class="anchor" aria-label="anchor" href="#changed--plafond-m%C3%A9moire-terra-absolu-memmax-au-chargement-0-169-0"></a></h4>
+<p><code>.onLoad</code> posait <code>memfrac = 0.25</code>. Une fraction n’est pas un plafond : elle vaut 7,8 Go sur une station à 31 Go, 2 Go sur un portable à 8 Go, 32 Go sur un serveur à 128 Go — et elle ne dit rien de ce que la machine peut <em>réellement</em> céder. C’est ce qui a tué Dabo : terra s’autorisait ~15 Go dans une session qui partageait le user slice avec RStudio et un navigateur, et <code>systemd-oomd</code> a tué le scope entier à 50 % de pression bien avant que terra ne songe à écrire sur disque.</p>
+<p><code>.onLoad</code> pose désormais aussi <strong><code>memmax = 3</code></strong> (Go, plafond absolu, donc identique sur toutes les machines). Mesuré sur la chaîne R3 complète dans un cgroup borné à 10 Go :</p>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>configuration</th>
+<th>@ 5 m</th>
+<th>@ 0,5 m</th>
+</tr></thead><tbody><tr><td>
+<code>memfrac = 0.5</code> (avant)</td>
+<td>0,67 Go / 0,7 s / 0 Mo</td>
+<td>☠️ OOM</td>
+</tr><tr><td><code>todisk = TRUE</code></td>
+<td>0,66 Go / 2,4 s / 142 Mo</td>
+<td>2,51 Go / 142 s / 8,6 Go</td>
+</tr><tr><td><strong><code>memmax = 3</code></strong></td>
+<td><strong>0,67 Go / 0,8 s / 0 Mo</strong></td>
+<td><strong>0,88 Go / 142 s / 8,5 Go</strong></td>
+</tr></tbody></table><p><code>memmax</code> est adaptatif — terra ne bascule sur disque que pour les rasters qui dépassent le plafond — donc <strong>gratuit</strong> au point de fonctionnement normal, là où <code>todisk = TRUE</code> coûte 3,4× le temps et 142 Mo d’écritures pour 0,01 Go économisé. Réglable : <code>options(nemeton.terra_memmax = 8)</code>, <code>NEMETON_TERRA_MEMMAX=8</code>, ou <code>-1</code> pour revenir au comportement terra.</p>
+<p>Réserve à connaître : écrire « sur disque » ne protège que si le <code>tempdir</code> de terra est un vrai système de fichiers. Sur une machine où <code>/tmp</code> est un tmpfs, le spill écrit en RAM et n’apporte rien — y poser <code>terra::terraOptions(tempdir = ...)</code>.</p>
+</div>
+<div class="section level4">
+<h4 id="fixed--clic-e-obs--plus-de-reprojection--0-169-0">Fixed — clic E-OBS : plus de reprojection 4326 → 4326<a class="anchor" aria-label="anchor" href="#fixed--clic-e-obs--plus-de-reprojection--0-169-0"></a></h4>
+<p><code>.eobs_point_vect()</code> projetait systématiquement le point du clic vers le CRS du raster. E-OBS étant livré en EPSG:4326 comme le clic leaflet, cela demandait à PROJ une opération 4326 → 4326 sans effet — et qui <strong>échoue</strong> (<code>could not find valid method</code>) sur un runtime à PROJ dégradé, dont les runners GitHub où le paquet documente déjà une anomalie terra (cf. <code>helper-fast-raster.R</code>). La projection n’a plus lieu que si les CRS diffèrent réellement.</p>
+<p>Source : hand-off <code>nemetonshiny</code> du 2026-08-07 (<code>BRIEF-nemeton-r3-topo-resolution.md</code>), mesures sur le projet Dabo (<code>20260801_130303_xpdk</code>, 12000 × 10000 @ 0,5 m).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.168.1" id="nemeton-01681-2026-07-25">nemeton 0.168.1 (2026-07-25)<a class="anchor" aria-label="anchor" href="#nemeton-01681-2026-07-25"></a></h2>
 <div class="section level4">
@@ -1887,7 +1967,7 @@
 </div>
 <div class="section level4">
 <h4 id="internal--ci-verte-et-garde-fou-anomalie-terra-du-runner-0-69-2">Internal — CI verte et garde-fou anomalie terra du runner<a class="anchor" aria-label="anchor" href="#internal--ci-verte-et-garde-fou-anomalie-terra-du-runner-0-69-2"></a></h4>
-<p>La CI (<code>R-CMD-check</code>, <code>tests</code>, <code>coverage</code>, <code>pkgdown</code>) repasse au vert après plusieurs corrections d’infrastructure préexistantes, sans rapport avec le code métier : le job <code>tests</code> exécute désormais réellement la suite (<code><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">devtools::test()</a></code> au lieu d’un <code>test_package()</code> qui ne trouvait aucun test installé) ; <code>R-CMD-check</code> délègue les tests au job dédié (<code>--no-tests</code>) et saute le build des vignettes ; <code>pkgdown</code> gagne <code>rsconnect</code> (tutoriels) et l’index de référence liste les 111 topics exportés manquants. Surtout, un <strong>garde-fou par capacité</strong> (<code>skip_if_terra_write_broken()</code>) neutralise une anomalie terra <strong>propre au runner GitHub</strong> (terra::rast/writeRaster y lèvent « no valid constructor » dans le contexte testthat, alors que le même code passe en local — toute la suite passe, PASS 7381) : les tests raster <strong>skippent</strong> sur ce runner et <strong>tournent en entier</strong> partout ailleurs. Le code reste prouvé correct.</p>
+<p>La CI (<code>R-CMD-check</code>, <code>tests</code>, <code>coverage</code>, <code>pkgdown</code>) repasse au vert après plusieurs corrections d’infrastructure préexistantes, sans rapport avec le code métier : le job <code>tests</code> exécute désormais réellement la suite (<code>devtools::test()</code> au lieu d’un <code>test_package()</code> qui ne trouvait aucun test installé) ; <code>R-CMD-check</code> délègue les tests au job dédié (<code>--no-tests</code>) et saute le build des vignettes ; <code>pkgdown</code> gagne <code>rsconnect</code> (tutoriels) et l’index de référence liste les 111 topics exportés manquants. Surtout, un <strong>garde-fou par capacité</strong> (<code>skip_if_terra_write_broken()</code>) neutralise une anomalie terra <strong>propre au runner GitHub</strong> (terra::rast/writeRaster y lèvent « no valid constructor » dans le contexte testthat, alors que le même code passe en local — toute la suite passe, PASS 7381) : les tests raster <strong>skippent</strong> sur ce runner et <strong>tournent en entier</strong> partout ailleurs. Le code reste prouvé correct.</p>
 </div>
 </div>
     <div class="section level2">
@@ -1990,7 +2070,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 <p>Les paramètres clés (seuil, fenêtre temporelle, <code>window_days</code>) sont désormais lisibles directement dans le nom de fichier — deux cartes de même <code>INDEX</code>/<code>MODE</code> dans une même <code>zone_&lt;id&gt;</code> se distinguent à l’œil sans recalcul. Un extrait de 8 caractères du hash D6 (inchangé) continue de discriminer les entrées qui ne tiennent pas dans un nom : la liste des scènes S2 (change après ré-ingestion) et le polygone de masque UGF.</p>
 <p><strong>Idempotence préservée</strong> : mêmes paramètres → même nom → hit cache. Le hash sous-jacent (<code>.fast_raster_hash()</code>) est inchangé.</p>
 <p><strong>Anciens fichiers</strong> : les COG au format pré-0.65.2 (<code>fast_&lt;index&gt;_&lt;mode&gt;_&lt;hash_long&gt;.tif</code>) ne sont plus reconnus comme hits ; ils sont simplement recalculés à la 1re demande (cache idempotent) puis ramassés par la GC LRU (<code>nemeton.fast_raster_keep</code>). Pour récupérer l’espace tout de suite sur un projet existant :</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-f</span> <span class="op">&lt;</span>projet<span class="op">&gt;</span>/cache/layers/fast_alert/zone_<span class="pp">*</span>/fast_<span class="pp">*</span>_<span class="pp">[</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">][</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">]*</span>.tif</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-f</span> <span class="op">&lt;</span>projet<span class="op">&gt;</span>/cache/layers/fast_alert/zone_<span class="pp">*</span>/fast_<span class="pp">*</span>_<span class="pp">[</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">][</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">]*</span>.tif</span></code></pre></div>
 </div>
 </div>
     <div class="section level2">
@@ -2125,7 +2205,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 </ul><p>Fichiers <code>R/read_obs_pixel.R</code>, <code>R/fast_alerts.R</code>, <code>R/alerts.R</code> et leurs <code>man/*.Rd</code> supprimés ; exports retirés du <code>NAMESPACE</code>. Les helpers internes associés partent avec (<code>.empty_obs_pixel()</code>, <code>.coerce_obs_date()</code>, <code>.empty_fast_alerts()</code>, <code>.coerce_alert_date()</code>). La table <code>alert</code> reste en place : elle est toujours alimentée par le post-traitement FORDEAD (<code><a href="../reference/list_alerts.html">list_alerts()</a></code> la lit).</p>
 <p><strong>Simplification du schéma</strong> : le <code>CREATE TABLE obs_pixel</code> (+ <code>create_hypertable</code> PG) est retiré des migrations <code>0001_init.sql</code> (PG + SQLite) — les <strong>nouvelles</strong> bases ne créent plus jamais la table. La migration <code>0004_drop_obs_pixel.sql</code> est conservée pour les bases <strong>existantes</strong> (DROP idempotent ; no-op sur une base neuve).</p>
 <p><strong>Breaking</strong> pour tout appel direct aux trois fonctions retirées (elles émettaient déjà un <code>cli_warn</code> de dépréciation en v0.58.0). Côté app : <code>nemetonshiny@v0.52.16</code> ne les consomme plus → aucun impact.</p>
-<p><strong>Tests</strong> : <code>test-obs_pixel-deprecation.R</code> supprimé (fonctions parties) ; <code>test-db.R</code> vérifie l’absence de <code>obs_pixel</code> après migration sur une base neuve (PG + SQLite) ; suites <code>obs_pixel</code> legacy déjà retirées en v0.58.0. <strong>NON TESTÉ EN CI ICI</strong> (pas de R) — rejouer sur les deux backends + <code><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">devtools::document()</a></code> (les <code>man/*.Rd</code> ont été ajustés à la main).</p>
+<p><strong>Tests</strong> : <code>test-obs_pixel-deprecation.R</code> supprimé (fonctions parties) ; <code>test-db.R</code> vérifie l’absence de <code>obs_pixel</code> après migration sur une base neuve (PG + SQLite) ; suites <code>obs_pixel</code> legacy déjà retirées en v0.58.0. <strong>NON TESTÉ EN CI ICI</strong> (pas de R) — rejouer sur les deux backends + <code>devtools::document()</code> (les <code>man/*.Rd</code> ont été ajustés à la main).</p>
 </div>
 </div>
     <div class="section level2">
@@ -2149,7 +2229,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 </ul></li>
 <li>Helpers internes retirés : <code>.insert_obs_pixel()</code>, <code>.find_cached_obs_dates()</code> ; <code>.extract_scene_obs()</code> remplacé par <code>.cache_scene_bands()</code> (cache des bandes COG uniquement) + helpers <code>.s2_required_bands()</code> / <code>.scene_cogs_cached()</code>.</li>
 </ul><p><strong>Non breaking côté app</strong> (<code>nemetonshiny@v0.52.16</code> ne lit plus <code>obs_pixel</code>, aucun bump <code>Imports</code> requis) ; <strong>breaking pour quiconque appelle directement</strong> <code>read_obs_pixel()</code> / <code>list_fast_alerts_for_zone()</code> / <code>detect_alerts()</code> (dépréquation + warning maintenant, retrait v0.60.0).</p>
-<p><strong>Tests</strong> : <code>test-monitoring.R</code> réécrit (amorçage cache COG + skip COG-based, plus aucune assertion <code>obs_pixel</code> / <code>n_obs_inserted</code>) ; <code>test-db.R</code> vérifie que <code>0004</code> supprime <code>obs_pixel</code> (PG + SQLite, idempotent) ; <code>test-ingest-cancel.R</code> assertion partielle sur le cache COG ; <code>test-obs_pixel-deprecation.R</code> (nouveau) couvre les 3 avertissements. Suites supprimées : <code>test-read_obs_pixel.R</code>, <code>test-fast_alerts.R</code>, <code>test-alerts.R</code>, <code>test-insert-obs-pixel-sqlite.R</code> (toutes adossées à <code>obs_pixel</code>). <strong>NON TESTÉ EN CI ICI</strong> (pas de R dans l’environnement) — à rejouer sur machine avec R sur les <strong>deux backends</strong> (Postgres + SQLite) via <code>NEMETON_DB_URL_TEST</code> (rappel v0.54.0), et <code><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">devtools::document()</a></code> à exécuter (les <code>man/*.Rd</code> ont été mis à jour à la main).</p>
+<p><strong>Tests</strong> : <code>test-monitoring.R</code> réécrit (amorçage cache COG + skip COG-based, plus aucune assertion <code>obs_pixel</code> / <code>n_obs_inserted</code>) ; <code>test-db.R</code> vérifie que <code>0004</code> supprime <code>obs_pixel</code> (PG + SQLite, idempotent) ; <code>test-ingest-cancel.R</code> assertion partielle sur le cache COG ; <code>test-obs_pixel-deprecation.R</code> (nouveau) couvre les 3 avertissements. Suites supprimées : <code>test-read_obs_pixel.R</code>, <code>test-fast_alerts.R</code>, <code>test-alerts.R</code>, <code>test-insert-obs-pixel-sqlite.R</code> (toutes adossées à <code>obs_pixel</code>). <strong>NON TESTÉ EN CI ICI</strong> (pas de R dans l’environnement) — à rejouer sur machine avec R sur les <strong>deux backends</strong> (Postgres + SQLite) via <code>NEMETON_DB_URL_TEST</code> (rappel v0.54.0), et <code>devtools::document()</code> à exécuter (les <code>man/*.Rd</code> ont été mis à jour à la main).</p>
 </div>
 </div>
     <div class="section level2">
@@ -2230,7 +2310,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 </ol></li>
 <li>Nouveau <code>tests/testthat/test-helper-guards.R</code> (4 tests offline du garde-fou). Nouveau <code>.Renviron.example</code>. Section dédiée ajoutée à <code>CLAUDE.md</code> (setup <code>nemeton_test</code>).</li>
 <li>
-<strong>Breaking côté setup dev</strong> : <code><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">devtools::test()</a></code> exige maintenant un <code>NEMETON_DB_URL_TEST</code> dédié pour faire tourner les tests d’intégration. Sans lui, ils sont skippés (la suite reste verte). Aucun changement d’API publique — rien à faire côté <code>nemetonshiny</code>.</li>
+<strong>Breaking côté setup dev</strong> : <code>devtools::test()</code> exige maintenant un <code>NEMETON_DB_URL_TEST</code> dédié pour faire tourner les tests d’intégration. Sans lui, ils sont skippés (la suite reste verte). Aucun changement d’API publique — rien à faire côté <code>nemetonshiny</code>.</li>
 </ul></div>
 </div>
     <div class="section level2">
@@ -2594,7 +2674,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 <h2 class="pkg-version" data-toc-text="0.43.1" id="nemeton-0431-2026-05-22">nemeton 0.43.1 (2026-05-22)<a class="anchor" aria-label="anchor" href="#nemeton-0431-2026-05-22"></a></h2>
 <div class="section level4">
 <h4 id="fixed--r-cmd-check-debt-cleanup-0-43-1">Fixed — <code>R CMD check</code> debt cleanup<a class="anchor" aria-label="anchor" href="#fixed--r-cmd-check-debt-cleanup-0-43-1"></a></h4>
-<p>Maintenance release that clears the accumulated <code><a href="https://devtools.r-lib.org/reference/check.html" class="external-link">devtools::check()</a></code> warnings and notes (no functional change):</p>
+<p>Maintenance release that clears the accumulated <code>devtools::check()</code> warnings and notes (no functional change):</p>
 <ul><li>
 <strong>Corrupt Rd files</strong> — <code>man/ingest_s2_raw_bands_to_cache.Rd</code> and <code>man/ingest_sentinel2_timeseries.Rd</code> were stale, hand-edited artefacts (unbalanced braces from an unescaped <code>%</code>, unknown <code>\item</code> macros). Regenerated cleanly from roxygen; the <code>@param max_cloud</code> text now says “percent” instead of “(%)”.</li>
 <li>
@@ -3006,7 +3086,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 <ul><li><p><code>dates_training</code> defaults to <code>c("2018-01-01", "2020-12-31")</code> — a 2-year baseline anchored on the start of Sentinel-2 dense coverage, long enough to fit the harmonic model and short enough to keep the baseline free from recent disturbances.</p></li>
 <li>
 <p><code>dates_monitoring</code> defaults to a rolling 18-month window ending today:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span>, by <span class="op">=</span> <span class="st">"-18 months"</span>, length.out <span class="op">=</span> <span class="fl">2</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -3118,7 +3198,7 @@ Data variable: stackstac-&lt;hash&gt;</code></pre>
 </li>
 </ul><p>Callers (<code>nemetonshiny</code>, scripts) used to hard-code paths that broke as soon as a different producer was used. Most visibly, the <code>&lt;project&gt;/dtm.tif</code> convention from <code>opencanopynemeton</code> was recognised neither by <code>nemeton</code> nor by <code>nemetonshiny</code>, leading to the v0.25.1 “Stratification-valid candidate pool (0) is below <code>n_base</code>” failure even when the DTM was perfectly downloaded — the file was just never passed to <code>create_sampling_plan(mnt =)</code>.</p>
 <p>Two new exported helpers walk a priority-ordered list of well-known locations and return the first match:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">nemeton</span><span class="fu">::</span><span class="fu"><a href="../reference/resolve_project_layers.html">resolve_project_dem</a></span><span class="op">(</span><span class="va">project_path</span><span class="op">)</span></span>
 <span><span class="va">chm</span> <span class="op">&lt;-</span> <span class="fu">nemeton</span><span class="fu">::</span><span class="fu"><a href="../reference/resolve_project_layers.html">resolve_project_chm</a></span><span class="op">(</span><span class="va">project_path</span><span class="op">)</span></span>
 <span><span class="va">plan</span> <span class="op">&lt;-</span> <span class="fu">nemeton</span><span class="fu">::</span><span class="fu"><a href="../reference/create_sampling_plan.html">create_sampling_plan</a></span><span class="op">(</span><span class="va">zone</span>, mnt <span class="op">=</span> <span class="va">dem</span>, chm <span class="op">=</span> <span class="va">chm</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
@@ -3321,7 +3401,7 @@ no attribute 'ItemCollection'</code></pre>
 <li>
 <code>test-fordead-integration.R</code> adapted — env vars are now <code>NEMETON_DB_URL</code> + <code>NEMETON_FORDEAD_TEST_ZONE_ID</code> + <code>NEMETON_FORDEAD_TEST_CACHE_DIR</code> (was AOI path + cache dir).</li>
 </ul><p><strong>Migration path</strong> :</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># v0.23.0</span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_fordead_dieback.html">run_fordead_dieback</a></span><span class="op">(</span><span class="va">aoi</span>, <span class="va">scenes_df</span>, <span class="va">cache_dir</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
@@ -3395,7 +3475,7 @@ no attribute 'ItemCollection'</code></pre>
 </ul><p><strong>Migration notes for users on <code>v0.21.0..v0.22.5</code></strong> :</p>
 <ul><li>
 <p>Update your code to pass <code>scenes_df</code> and <code>cache_dir</code>:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_fordead_dieback.html">run_fordead_dieback</a></span><span class="op">(</span></span>
 <span>  aoi              <span class="op">=</span> <span class="va">aoi</span>,</span>
 <span>  scenes_df        <span class="op">=</span> <span class="va">scenes_df</span>,  <span class="co"># NEW (required)</span></span>
@@ -3534,7 +3614,7 @@ ERROR: No matching distribution found for fordead==2.1.4</code></pre>
 <div class="section level4">
 <h4 id="migration-notes-for-users-who-hit-the-bug-before-this-release-0-22-2">Migration notes for users who hit the bug before this release<a class="anchor" aria-label="anchor" href="#migration-notes-for-users-who-hit-the-bug-before-this-release-0-22-2"></a></h4>
 <p>If you tried to run FORDEAD against v0.22.1 (or earlier) and saw <code>No matching distribution found for fordead==2.1.4</code>, your virtualenv is in a half-installed state. After upgrading to v0.22.2 the recovery is automatic — the next call to <code><a href="../reference/run_fordead_dieback.html">run_fordead_dieback()</a></code> will detect the missing <code>fordead</code> and reinstall from the correct source. If you prefer a clean slate, you can still do:</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">reticulate</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/reticulate/reference/virtualenv-tools.html" class="external-link">virtualenv_remove</a></span><span class="op">(</span><span class="st">"nemeton-fordead"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level4">
@@ -3630,7 +3710,7 @@ Scene 9..26  → 403 → invalidate cache → resign href → retry → OK</code
 <code>terra::writeRaster(r, tmp, …)</code> finally triggers the byte-range reads on the COG over VSI. If the SAS token expired mid-scene, or Azure returned a 5xx / 429 on the range request, this step throws — <strong>past the retry budget</strong>.</li>
 <li>The <code>tryCatch</code> swallowed the error with a <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_warn()</a></code>, unlinked the partial <code>.tmp</code>, and returned — leaving the empty scene directory behind.</li>
 </ol><p>The fix moves the AOI crop <strong>and</strong> the pixel materialization into a <code>materialize</code> closure passed to <code>.terra_rast_with_pc_retry()</code>. Both steps now run <strong>inside</strong> the retry/refresh loop:</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">materialize</span> <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">r0</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">buf_native</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_transform.html" class="external-link">st_transform</a></span><span class="op">(</span><span class="va">buf_plots</span>, <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crs.html" class="external-link">crs</a></span><span class="op">(</span><span class="va">r0</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="va">r_cropped</span>  <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crop.html" class="external-link">crop</a></span><span class="op">(</span><span class="va">r0</span>, <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/ext.html" class="external-link">ext</a></span><span class="op">(</span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/vect.html" class="external-link">vect</a></span><span class="op">(</span><span class="va">buf_native</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -3668,7 +3748,7 @@ Scene 9..26  → 403 → invalidate cache → resign href → retry → OK</code
 <div class="section level4">
 <h4 id="fixed--every-s2-band-cache-hit-raised-cannot-coerce-type-s4-to-vector-of-type-double-0-21-8">Fixed — every S2 band cache hit raised “cannot coerce type ‘S4’ to vector of type ‘double’”<a class="anchor" aria-label="anchor" href="#fixed--every-s2-band-cache-hit-raised-cannot-coerce-type-s4-to-vector-of-type-double-0-21-8"></a></h4>
 <p><code>.ext_contains()</code> (introduced in v0.21.4 to decide whether a cached COG covers today’s AOI) did:</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">o</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">outer</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">outer</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, <span class="va">outer</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span>, <span class="va">outer</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><code>outer</code> is a <code><a href="https://rspatial.github.io/terra/reference/SpatExtent-class.html" class="external-link">terra::SpatExtent</a></code> (S4). <code>outer[1]</code> does NOT return a plain double — it returns a nested S4 element. <code><a href="https://rdrr.io/r/base/c.html" class="external-link">c()</a></code> accumulates those into an S4 list, and <code><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric()</a></code> then chokes with</p>
 <pre><code>cannot coerce type 'S4' to vector of type 'double'</code></pre>
@@ -4739,14 +4819,14 @@ docker compose up -d timescaledb</code></pre>
 <div class="section level5">
 <h5 id="migration-guide-0-6-0">Migration Guide<a class="anchor" aria-label="anchor" href="#migration-guide-0-6-0"></a></h5>
 <p><strong>Before (v0.1.0-v0.5.x):</strong></p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Old API</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span></span>
 <span>  <span class="va">units</span>, <span class="va">layers</span>,</span>
 <span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span>, <span class="st">"water"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><strong>After (v0.6.0+):</strong></p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># New API with family-based indicators</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span></span>
 <span>  <span class="va">units</span>, <span class="va">layers</span>,</span>
@@ -5891,7 +5971,7 @@ docker compose up -d timescaledb</code></pre>
 </ul></div>
 <div class="section level4">
 <h4 id="quick-start-example-0-1-0">Quick Start Example<a class="anchor" aria-label="anchor" href="#quick-start-example-0-1-0"></a></h4>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pobsteta.github.io/nemeton/">nemeton</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 5-line workflow</span></span>
@@ -5911,7 +5991,7 @@ docker compose up -d timescaledb</code></pre>
 <div class="section level3">
 <h3 id="roadmap-to-v010-0-1-0">Roadmap to v0.1.0<a class="anchor" aria-label="anchor" href="#roadmap-to-v010-0-1-0"></a></h3>
 <ul class="task-list"><li><label><input type="checkbox">Fix test fixtures</label></li>
-<li><label><input type="checkbox">Verify <code><a href="https://devtools.r-lib.org/reference/check.html" class="external-link">devtools::check()</a></code> passes</label></li>
+<li><label><input type="checkbox">Verify <code>devtools::check()</code> passes</label></li>
 <li><label><input type="checkbox">Measure test coverage (target: ≥70%)</label></li>
 <li><label><input type="checkbox">Optional: Implement <code><a href="../reference/nemeton_radar.html">nemeton_radar()</a></code> (P3)</label></li>
 </ul></div>
