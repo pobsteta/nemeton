@@ -11,7 +11,7 @@ indicateur_w2_zones_humides(
   wetland_values = NULL,
   water_occurrence = NULL,
   occurrence_threshold = 25,
-  dem_target_res = 10
+  dem_target_res = .topo_target_res()
 )
 }
 \arguments{
@@ -37,10 +37,12 @@ count as wetland. Default \code{25}. Ignored when
 \code{water_occurrence} is \code{NULL}.}
 
 \item{dem_target_res}{Numeric. Working resolution (metres) the DEM is
-aggregated to before TWI is computed. Keep it identical across
-W2/W3/F2/R3: the TWI cache is keyed on the DEM footprint, so a different
-value per indicator recomputes a TWI for each. Default \code{10};
-\code{NULL} keeps the native resolution.}
+aggregated to before TWI is computed. The same value drives the TWI grid, so both
+coincide and the TWI is never resampled up to a finer grid. Keep it identical
+across W2/W3/F2/R3 to share a single cached TWI. Default: the package-wide
+topographic working resolution, 2 m --- see
+\code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
+resolution.}
 }
 \value{
 Numeric vector of wetland coverage (0-100\%)

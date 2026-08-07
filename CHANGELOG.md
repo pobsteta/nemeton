@@ -10,22 +10,40 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
-## [0.168.2] - 2026-08-06
+## [0.169.0] - 2026-08-07
 
 ### Fixed
-- Résolution de travail du MNT bornée (~10 m) avant tout calcul dérivé du
-  terrain : un MNT LiDAR HD à 0,5 m (120 M cellules sur Dabo) faisait empiler
-  ~10 Go de rasters intermédiaires et `systemd-oomd` tuait la session R pendant
-  R2. Nouvel interne `.dem_working_res()` ; `.twi_aggregate_dem()` en devient un
-  alias.
+- Résolution de travail du MNT bornée avant tout calcul dérivé du terrain : un
+  MNT LiDAR HD à 0,5 m (120 M cellules sur Dabo) faisait empiler ~10 Go de
+  rasters intermédiaires et `systemd-oomd` tuait la session R pendant R2. Nouvel
+  interne `.dem_working_res()` ; `.twi_aggregate_dem()` en devient un alias.
+- R3 : `dem_target_res` est propagé à `get_or_compute_twi(twi_target_res =)`
+  (idem W2/W3/F2, et `calculate_twi_terra()` sur le chemin `method = "d8"` de
+  W3). Les grilles terrain et TWI coïncident, la branche `resample` qui remontait
+  un TWI grossier vers la grille fine n'est plus empruntée (1,36 pt d'écart de
+  score contre 0,50 pt grilles alignées, mesuré à 5 m).
+- Clé du cache TWI indexée sur la résolution **effective** et non la cible
+  demandée : deux réglages qui aboutissent à la même grille partagent l'entrée.
+- `aspect_risk` de R3 calculé en une passe par `terra::app()` au lieu de quatre
+  `SpatRaster` temporaires pleine taille (résultat identique, NA compris).
 
 ### Changed
-- Nouvel argument `dem_target_res = 10` sur `indicateur_r1_feu()`,
+- Nouvel argument `dem_target_res` sur `indicateur_r1_feu()`,
   `indicateur_r2_tempete()`, `indicateur_r3_secheresse()`,
   `indicateur_w2_zones_humides()`, `indicateur_w3_humidite()`,
   `indicateur_f2_erosion()`, `indicateur_s1_routes()`, `indicateur_s2_bati()`.
   `NULL` conserve la résolution native. À garder identique sur W2/W3/F2/R3 (clé
   du cache TWI).
+- Résolution de travail topographique portée de 10 m à **2 m** et exposée comme
+  réglage paquet : `options(nemeton.topo_target_res = )` /
+  `NEMETON_TOPO_TARGET_RES`, défaut `.topo_target_res()` sur les huit
+  indicateurs. Les scores des projets à MNT LiDAR bougent de l'ordre du point
+  /100 et les caches TWI existants sont recalculés une fois.
+- `.onLoad` pose un plafond mémoire terra **absolu** `memmax = 3` (Go) en plus
+  de `memfrac` : identique sur toutes les machines, adaptatif (spill seulement
+  au-delà du plafond), donc gratuit au point de fonctionnement normal. Réglable
+  via `options(nemeton.terra_memmax = )` / `NEMETON_TERRA_MEMMAX`, `-1` pour
+  revenir au comportement terra.
 
 ## [0.162.0] - 2026-07-16
 

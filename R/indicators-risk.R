@@ -31,9 +31,10 @@ NULL
 #' @param dem_target_res Numeric. Working resolution (metres) the DEM is
 #'   aggregated to before terrain derivatives are computed. A LiDAR HD MNT
 #'   comes at 0.5-1 m, i.e. hundreds of millions of cells per derived layer over a
-#'   whole massif, for an index that is averaged per unit anyway. Default
-#'   \code{10}; \code{NULL} keeps the native resolution. Never upsamples, and
-#'   is a no-op on a lon/lat DEM.
+#'   whole massif, for an index that is averaged per unit anyway. Default: the
+#'   package-wide topographic working resolution, 2 m — see
+#'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
+#'   resolution. Never upsamples, and is a no-op on a lon/lat DEM.
 #'
 #' @return The input sf object with added column:
 #'   \itemize{
@@ -69,7 +70,7 @@ indicateur_r1_feu <- function(units,
                                 species_field = "species",
                                 climate = NULL,
                                 weights = c(slope = 1 / 3, species = 1 / 3, climate = 1 / 3),
-                                dem_target_res = 10) {
+                                dem_target_res = .topo_target_res()) {
   # Validate inputs
   validate_sf(units)
 
@@ -211,8 +212,10 @@ indicateur_r1_feu <- function(units,
 #' @param dem_target_res Numeric. Working resolution (metres) the DEM is
 #'   aggregated to before terrain derivatives are computed. R2 is the heaviest
 #'   terrain indicator (nine full-size layers), so a 0.5-1 m LiDAR HD MNT can push
-#'   a session into the OOM killer. Default \code{10}; \code{NULL} keeps the
-#'   native resolution. Never upsamples, and is a no-op on a lon/lat DEM.
+#'   a session into the OOM killer. Default: the package-wide topographic
+#'   working resolution, 2 m — see \code{options("nemeton.topo_target_res")};
+#'   \code{NULL} keeps the native resolution. Never upsamples, and is a no-op
+#'   on a lon/lat DEM.
 #'
 #' @return The input sf object with added column:
 #'   \itemize{
@@ -251,7 +254,7 @@ indicateur_r2_tempete <- function(units,
                                  species_field = "species",
                                  h_dom_percentile = 0.9,
                                  h_reference = 30,
-                                 dem_target_res = 10) {
+                                 dem_target_res = .topo_target_res()) {
   # Validate inputs
   validate_sf(units)
 
@@ -403,10 +406,12 @@ indicateur_r2_tempete <- function(units,
 #'   score in the blend with the SPEI/topographic risk. Default \code{0.5}.
 #'   Ignored when no BILJOU metric is available.
 #' @param dem_target_res Numeric. Working resolution (metres) the DEM is
-#'   aggregated to before terrain derivatives and TWI are computed. Keep it
-#'   identical across W2/W3/F2/R3: the TWI cache is keyed on the DEM footprint,
-#'   so a different value per indicator recomputes a TWI for each. Default
-#'   \code{10}; \code{NULL} keeps the native resolution.
+#'   aggregated to before terrain derivatives and TWI are computed. The same
+#'   value drives the TWI grid, so both coincide and the TWI is never resampled
+#'   up to a finer grid. Keep it identical across W2/W3/F2/R3 to share a single
+#'   cached TWI. Default: the package-wide topographic working resolution, 2 m —
+#'   see \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
+#'   resolution.
 #'
 #' @return The input sf object with added columns:
 #'   \itemize{
@@ -523,7 +528,7 @@ indicateur_r3_secheresse <- function(units,
                                    sm_relief_strength = 0.3,
                                    biljou = NULL,
                                    biljou_weight = 0.5,
-                                   dem_target_res = 10) {
+                                   dem_target_res = .topo_target_res()) {
   # Validate inputs
   validate_sf(units)
 
@@ -618,17 +623,27 @@ indicateur_r3_secheresse <- function(units,
   aspect <- terra::terrain(dem, v = "aspect", unit = "degrees")
   pente <- terra::terrain(dem, v = "slope", unit = "degrees")
 
-  # Aspect risk: south-facing (180°) = max drought risk
-  aspect_risk <- (1 + cos((aspect - 180) * pi / 180)) / 2
+  # Aspect risk: south-facing (180°) = max drought risk.
+  # Écrit en une passe : `(1 + cos((aspect - 180) * pi/180)) / 2` matérialise
+  # quatre SpatRaster temporaires pleine taille dans la même expression — le pic
+  # mémoire de R3 (2,44 -> 8,70 Go sur le MNT 0,5 m de Dabo) venait de là.
+  # `terra::app()` streame par blocs et ne rend qu'un raster.
+  aspect_risk <- terra::app(aspect, function(a) (1 + cos((a - 180) * pi / 180)) / 2)
 
   # Slope risk: steep slopes = more runoff = drier
   pente_risk <- terra::clamp(pente / 30, lower = 0, upper = 1)
 
-  # TWI risk: low TWI = dry
+  # TWI risk: low TWI = dry.
+  # `twi_target_res` suit la résolution de travail : le TWI sort sur la grille
+  # de `dem`, donc sur celle d'`aspect`, et la branche `resample` ci-dessous
+  # n'est plus empruntée. La laisser à 10 aurait rééchantillonné un TWI
+  # grossier vers la grille fine — coûteux et sans information ajoutée.
   twi_cache_dir <- if (!is.null(layers)) layers$cache_dir else NULL
-  twi_raster <- get_or_compute_twi(dem, cache_dir = twi_cache_dir)
+  twi_raster <- get_or_compute_twi(dem, cache_dir = twi_cache_dir,
+                                   twi_target_res = dem_target_res)
 
-  # Ensure TWI has same extent as DEM-derived rasters (cache may have different extent)
+  # Filet de sécurité : un TWI GRASS ou un cache d'une version antérieure peut
+  # encore arriver sur une autre grille.
   if (!terra::compareGeom(twi_raster, aspect, stopOnError = FALSE)) {
     twi_raster <- terra::resample(twi_raster, aspect, method = "bilinear")
   }

@@ -1331,7 +1331,84 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
-### 2026-08-06 — v0.168.2 : MNT LiDAR HD, résolution de travail bornée (OOM sur Dabo)
+### 2026-08-07 — v0.169.0 : R3, la grille du TWI suit le terrain + plafond mémoire absolu
+
+Suite directe de l'entrée du 2026-08-06 : le lendemain, **R3 est mort au même
+endroit**, `progress_state.json` bloqué sur `compute:indicateur_r3_secheresse`
+(21/35 indicateurs), scope RStudio + Brave + ghostty tués par `systemd-oomd`.
+Hand-off côté app : `nemetonshiny/BRIEF-nemeton-r3-topo-resolution.md`, mesures
+sur le MNT réel de Dabo (`20260801_130303_xpdk`, 12000 × 10000 @ 0,5 m).
+
+**Ce que le garde-fou du 06 ne couvrait pas.** Il bornait la grille du terrain,
+mais R3 laissait `get_or_compute_twi()` à `twi_target_res = 10`. Le TWI sortait
+donc sur une grille différente de celle d'`aspect`, `compareGeom()` échouait, et
+la branche de secours **rééchantillonnait le TWI grossier vers la grille fine** —
+un `resample` sans information ajoutée qui multiplie le coût de la suite. Le
+brief mesure ce seul désalignement (à 5 m) : **1,36 pt** d'écart de score contre
+**0,50 pt** grilles alignées, facteur 2,7 d'erreur gratuite.
+
+**Fix** — trois volets, indissociables :
+
+1. **Propagation** : `dem_target_res` → `get_or_compute_twi(twi_target_res =)`
+   sur les quatre consommateurs du TWI (W2, W3, F2, R3) et →
+   `calculate_twi_terra()` sur le chemin `method = "d8"` de W3. Les grilles
+   coïncident, le `resample` n'est plus emprunté (gardé en filet pour un TWI
+   GRASS ou un cache antérieur). Clé du cache TWI indexée sur la résolution
+   **effective** et non la cible demandée : sur un BD ALTI 25 m, 2 m et 10 m
+   donnent le même TWI et partagent l'entrée.
+2. **Résolution 10 m → 2 m**, exposée comme réglage paquet
+   (`options(nemeton.topo_target_res = )` / `NEMETON_TOPO_TARGET_RES`, défaut
+   `.topo_target_res()` dans les huit signatures) pour que l'app ajuste sans
+   release du cœur.
+3. **`memmax = 3` (Go) dans `.onLoad`**, plafond *absolu* en plus de `memfrac`.
+
+**Arbitrage sur la résolution.** Le brief retenait 1 m ; il a été écrit contre
+la 0.168.1 et ignorait le garde-fou 10 m de la veille. Passer de 10 m à 1 m
+aurait *dégradé* la marge mémoire par rapport à l'état du cœur. Retenu : **2 m**
+(décision Pascal, 2026-08-07), que le brief lui-même dit défendable (§3
+réserve b). Écart au score R3 contre une référence 0,5 m, grille TWI alignée à
+chaque résolution :
+
+| résolution | Dabo | ForetAccess | temps R3 (Dabo) | spill terra |
+|---|---|---|---|---|
+| 0,5 m (réf.) | — | — | 265 s | — |
+| 1 m | 0,81 | 0,64 | 33 s | 329 Mo |
+| **2 m (retenu)** | **1,40** | **1,12** | **10 s** | **0 Mo** |
+| 5 m | 2,33 | 2,10 | 3,5 s | 0 Mo |
+
+La dégradation est monotone, mais « plus proche du 0,5 m » n'est pas « plus
+juste » : en forêt, le pas fin capte les cloisonnements, les chablis et les
+fossés — de la micro-topographie qui n'est pas l'exposition du peuplement à la
+sécheresse. Le 2 m reste sous 1,5 pt **et** tient entièrement en RAM, là où le
+1 m fait spiller terra.
+
+**Pourquoi `memmax` et pas `memfrac` seul.** Une fraction n'est pas un plafond :
+0,25 vaut 7,8 Go ici, 2 Go sur un portable à 8 Go, 32 Go sur un serveur — et elle
+ignore ce que la machine peut réellement céder. `memmax` est absolu (identique
+partout) et adaptatif (spill seulement au-delà du plafond), donc **gratuit** au
+point de fonctionnement normal, là où `todisk = TRUE` coûte 3,4× le temps et
+142 Mo d'écritures pour 0,01 Go économisé. Réserve notée dans le code : sur une
+machine où `/tmp` est un tmpfs, le spill écrit en RAM et ne protège de rien.
+
+Divers : `aspect_risk` de R3 passe par `terra::app()` en une passe — l'expression
+`(1 + cos((aspect - 180) * pi/180)) / 2` matérialisait quatre `SpatRaster`
+temporaires pleine taille, d'où le saut de pic mesuré (2,44 → 8,70 Go à 0,5 m).
+Résultat numériquement identique, NA compris.
+
+**Impact à annoncer** : scores des projets à MNT LiDAR décalés de l'ordre du
+point /100, et **caches TWI existants orphelins** (recalcul unique par projet).
+
+Tests : `test-dem-working-res.R` (réglage paquet, résolution effective,
+alignement des grilles avec un `terra::resample` mocké qui `stop()`, cache TWI
+partagé W3/R3) et `test-terra-memory.R` (défaut, option, variable
+d'environnement, opt-out, réglage illisible).
+
+**Aucune case cochée** : correctif de robustesse. Côté app, le brief annonce un
+plafond symétrique à la promotion du MNT dans le slot `dem` — les deux couches
+sont complémentaires (le plafond app protège les cœurs déjà déployés, le plafond
+cœur protège aussi les usages hors app).
+
+### 2026-08-06 — v0.168.2 (non publiée, fondue dans v0.169.0) : MNT LiDAR HD, résolution de travail bornée (OOM sur Dabo)
 
 **Symptôme** : sur le projet Dabo, RStudio se fermait en cours de calcul des
 indicateurs, sans message. Ce n'était pas un plantage R — `systemd-oomd` tuait

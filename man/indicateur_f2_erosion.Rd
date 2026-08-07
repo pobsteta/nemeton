@@ -9,7 +9,7 @@ indicateur_f2_erosion(
   layers,
   dem_layer = "dem",
   texture = NULL,
-  dem_target_res = 10
+  dem_target_res = .topo_target_res()
 )
 }
 \arguments{
@@ -27,10 +27,12 @@ texture erosion-resistance component. Default \code{NULL}
 (pre-existing TWI + slope behaviour).}
 
 \item{dem_target_res}{Numeric. Working resolution (metres) the DEM is
-aggregated to before TWI and slope are computed. Keep it identical across
-W2/W3/F2/R3: the TWI cache is keyed on the DEM footprint, so a different
-value per indicator recomputes a TWI for each. Default \code{10};
-\code{NULL} keeps the native resolution.}
+aggregated to before TWI and slope are computed. The same value drives the TWI grid, so both
+coincide and the TWI is never resampled up to a finer grid. Keep it identical
+across W2/W3/F2/R3 to share a single cached TWI. Default: the package-wide
+topographic working resolution, 2 m --- see
+\code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
+resolution.}
 }
 \value{
 Numeric vector of fertility scores (0-100, higher = more fertile)

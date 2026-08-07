@@ -26,8 +26,10 @@ NULL
 #' @param dem_target_res Numeric. Working resolution (metres) the DEM grid is
 #'   aggregated to before roads are rasterised and the distance transform runs.
 #'   The DEM is only a grid template here, and a 0.5-1 m LiDAR HD MNT makes that
-#'   transform cost gigabytes for a mean distance per unit. Default \code{10};
-#'   \code{NULL} keeps the native resolution.
+#'   transform cost gigabytes for a mean distance per unit. Default: the
+#'   package-wide topographic working resolution, 2 m — see
+#'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
+#'   resolution.
 #'
 #' @return sf object with added column: S1 (mean distance to nearest road in metres)
 #'
@@ -56,7 +58,7 @@ indicateur_s1_routes <- function(units,
                                     layers = NULL,
                                     column_name = "S1",
                                     lang = "en",
-                                    dem_target_res = 10) {
+                                    dem_target_res = .topo_target_res()) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -124,8 +126,10 @@ indicateur_s1_routes <- function(units,
 #' @param dem_target_res Numeric. Working resolution (metres) the DEM grid is
 #'   aggregated to before buildings are rasterised and the distance transform
 #'   runs. The DEM is only a grid template here, and a 0.5-1 m LiDAR HD MNT makes
-#'   that transform cost gigabytes for a mean distance per unit. Default
-#'   \code{10}; \code{NULL} keeps the native resolution.
+#'   that transform cost gigabytes for a mean distance per unit. Default: the
+#'   package-wide topographic working resolution, 2 m — see
+#'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
+#'   resolution.
 #'
 #' @return sf object with added column: S2 (mean distance to nearest building in metres)
 #'
@@ -154,7 +158,7 @@ indicateur_s2_bati <- function(units,
                                            layers = NULL,
                                            column_name = "S2",
                                            lang = "en",
-                                           dem_target_res = 10) {
+                                           dem_target_res = .topo_target_res()) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)

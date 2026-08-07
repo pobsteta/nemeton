@@ -127,6 +127,57 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
   tryCatch({ terra::crs(r) <- m[[1]]; r }, error = function(e) r)
 }
 
+# Résolution de travail topographique par défaut, en mètres.
+#
+# 2 m est un compromis mesuré sur le MNT LiDAR HD de Dabo (3 000 ha, 12000 x
+# 10000 à 0,5 m), l'écart étant exprimé en points de score R3 /100 contre une
+# référence calculée à 0,5 m, grille TWI alignée à chaque résolution :
+#
+#   0,5 m  référence      265 s
+#   1   m  0,81 pt        33 s     spill terra 329 Mo
+#   2   m  1,40 pt        10 s     0 Mo — tient en RAM
+#   5   m  2,33 pt         3 s     0 Mo
+#
+# La dégradation est monotone, mais « plus proche du 0,5 m » n'est pas « plus
+# juste » : sur un MNT LiDAR en forêt, le pas fin capte les cloisonnements, les
+# chablis et les fossés — de la micro-topographie qui n'est pas l'exposition du
+# peuplement à la sécheresse. 2 m garde l'erreur sous 1,5 pt sans faire spiller
+# terra. Réglable sans release du cœur :
+#
+#   options(nemeton.topo_target_res = 5)      # session
+#   NEMETON_TOPO_TARGET_RES=5                 # environnement
+#
+.NEMETON_TOPO_TARGET_RES <- 2
+
+.topo_target_res <- function() {
+  v <- getOption("nemeton.topo_target_res", NULL)
+  if (is.null(v)) {
+    e <- Sys.getenv("NEMETON_TOPO_TARGET_RES", unset = "")
+    if (!nzchar(e)) return(.NEMETON_TOPO_TARGET_RES)
+    v <- e
+  }
+  v <- suppressWarnings(as.numeric(v)[1])
+  # Un réglage illisible retombe sur le défaut plutôt que de désactiver le
+  # garde-fou en silence ; pour calculer à la résolution native, on passe
+  # explicitement `dem_target_res = NULL` à l'indicateur.
+  if (is.na(v) || v <= 0) return(.NEMETON_TOPO_TARGET_RES)
+  v
+}
+
+# Facteur d'agrégation entier ramenant `dem` à ~`target_res` (1 = no-op).
+# On n'agrège jamais vers plus fin que la résolution native, ni sur un DEM en
+# lon/lat (résolution en degrés, incompatible avec un pas métrique).
+.dem_working_fact <- function(dem, target_res) {
+  if (is.null(dem) || !inherits(dem, "SpatRaster")) return(1L)
+  if (is.null(target_res) || !is.finite(target_res) || target_res <= 0) return(1L)
+  if (terra::is.lonlat(dem)) return(1L)
+  cur <- terra::res(dem)[1]
+  if (!is.finite(cur) || cur <= 0) return(1L)
+  fact <- floor(target_res / cur)
+  if (fact < 2L) return(1L)
+  as.integer(fact)
+}
+
 # Ramène un DEM à ~`target_res` m avant tout calcul dérivé du terrain.
 #
 # Un MNT LiDAR HD couvre un massif à 0,5 m : 12000 x 10000 = 120 M cellules. Les
@@ -137,18 +188,12 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
 # (RStudio compris) pendant le calcul de R2 sur le projet Dabo.
 #
 # Un indice moyenné par unité de gestion ne gagne rien à une pente dérivée au
-# mètre : à 10 m la pile tient dans 1/100e de la mémoire pour un résultat
-# équivalent. On n'agrège jamais vers plus fin que la résolution native, ni sur
-# un DEM en lon/lat (résolution en degrés, incompatible avec un pas métrique).
-# `target_res = NULL` désactive le garde-fou (calcul à la résolution native).
-.dem_working_res <- function(dem, target_res = 10, context = NULL) {
-  if (is.null(dem) || !inherits(dem, "SpatRaster")) return(dem)
-  if (is.null(target_res) || !is.finite(target_res) || target_res <= 0) return(dem)
-  if (terra::is.lonlat(dem)) return(dem)
-  cur <- terra::res(dem)[1]
-  if (!is.finite(cur) || cur <= 0) return(dem)
-  fact <- floor(target_res / cur)
+# demi-mètre : toute la structure sub-métrique est moyennée par polygone avant
+# d'entrer dans le score. `target_res = NULL` désactive le garde-fou.
+.dem_working_res <- function(dem, target_res = .topo_target_res(), context = NULL) {
+  fact <- .dem_working_fact(dem, target_res)
   if (fact < 2L) return(dem)
+  cur <- terra::res(dem)[1]
   out <- tryCatch(
     terra::aggregate(dem, fact = fact, fun = "mean", na.rm = TRUE),
     error = function(e) NULL
@@ -162,10 +207,19 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
   out
 }
 
+# Résolution qu'aura la grille de travail, sans matérialiser le raster. Sert de
+# clé de cache TWI : deux indicateurs qui aboutissent à la même grille partagent
+# alors le cache même si le `target_res` demandé diffère (sur un BD ALTI 25 m,
+# toute cible <= 25 m est un no-op et rend le même TWI).
+.dem_working_res_value <- function(dem, target_res) {
+  if (is.null(dem) || !inherits(dem, "SpatRaster")) return(NA_real_)
+  terra::res(dem)[1] * .dem_working_fact(dem, target_res)
+}
+
 # Historiquement propre au TWI, conservé comme alias : même opération, mêmes
 # garde-fous. Le TWI reste appelé sur un DEM déjà ramené à la résolution de
 # travail par l'indicateur appelant, l'agrégation y est alors un no-op.
-.twi_aggregate_dem <- function(dem, target_res = 10) {
+.twi_aggregate_dem <- function(dem, target_res = .topo_target_res()) {
   .dem_working_res(dem, target_res = target_res)
 }
 
@@ -177,13 +231,17 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
   paste0("twi_", substr(rlang::hash(key), 1, 12), ".tif")
 }
 
-get_or_compute_twi <- function(dem, cache_dir = NULL, twi_target_res = 10) {
+get_or_compute_twi <- function(dem, cache_dir = NULL,
+                               twi_target_res = .topo_target_res()) {
   dem <- .normalize_crs(dem)
-  # Key = empreinte DEM (dimensions + extent + CRS) + résolution TWI cible
+  # Key = empreinte DEM (dimensions + extent + CRS) + résolution TWI *effective*.
+  # Effective et non demandée : sur un BD ALTI 25 m, `twi_target_res` 2 ou 10
+  # produisent le même TWI, et deux indicateurs réglés différemment doivent
+  # partager l'entrée de cache plutôt que recalculer à l'identique.
   key <- paste(nrow(dem), ncol(dem),
                paste(as.vector(terra::ext(dem)), collapse = ","),
                terra::crs(dem, describe = TRUE)$code,
-               twi_target_res,
+               signif(.dem_working_res_value(dem, twi_target_res), 6),
                sep = "|")
 
   # 1. Memory cache (instant)
@@ -631,10 +689,12 @@ indicateur_w1_reseau <- function(units,
 #'   count as wetland. Default \code{25}. Ignored when
 #'   \code{water_occurrence} is \code{NULL}.
 #' @param dem_target_res Numeric. Working resolution (metres) the DEM is
-#'   aggregated to before TWI is computed. Keep it identical across
-#'   W2/W3/F2/R3: the TWI cache is keyed on the DEM footprint, so a different
-#'   value per indicator recomputes a TWI for each. Default \code{10};
-#'   \code{NULL} keeps the native resolution.
+#'   aggregated to before TWI is computed. The same value drives the TWI grid,
+#'   so both coincide and the TWI is never resampled up to a finer grid. Keep
+#'   it identical across W2/W3/F2/R3 to share a single cached TWI. Default: the
+#'   package-wide topographic working resolution, 2 m — see
+#'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
+#'   resolution.
 #'
 #' @return Numeric vector of wetland coverage (0-100\%)
 #'
@@ -650,7 +710,7 @@ indicateur_w2_zones_humides <- function(units,
                                      wetland_values = NULL,
                                      water_occurrence = NULL,
                                      occurrence_threshold = 25,
-                                     dem_target_res = 10) {
+                                     dem_target_res = .topo_target_res()) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -695,7 +755,10 @@ indicateur_w2_zones_humides <- function(units,
   if (!is.null(dem)) {
     cli::cli_alert_info("W2: Adding TWI-based wetland zones (threshold > 12)")
     has_any_source <- TRUE
-    twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir)
+    # `twi_target_res` suit la résolution de travail : les deux grilles
+    # coïncident, le TWI n'est jamais rééchantillonné vers du plus fin.
+    twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir,
+                                     twi_target_res = dem_target_res)
 
     for (i in seq_len(nrow(units))) {
       twi_vals <- safe_extract(
@@ -793,10 +856,12 @@ indicateur_w2_zones_humides <- function(units,
 #' @param method Character. TWI calculation method: "auto" (prefer GRASS),
 #'   "grass" (fasterRaster/GRASS GIS), or "d8" (terra D8). Default "auto".
 #' @param dem_target_res Numeric. Working resolution (metres) the DEM is
-#'   aggregated to before TWI is computed. Keep it identical across
-#'   W2/W3/F2/R3: the TWI cache is keyed on the DEM footprint, so a different
-#'   value per indicator recomputes a TWI for each. Default \code{10};
-#'   \code{NULL} keeps the native resolution.
+#'   aggregated to before TWI is computed. The same value drives the TWI grid,
+#'   so both coincide and the TWI is never resampled up to a finer grid. Keep
+#'   it identical across W2/W3/F2/R3 to share a single cached TWI. Default: the
+#'   package-wide topographic working resolution, 2 m — see
+#'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
+#'   resolution.
 #'
 #' @return Numeric vector of TWI mean values
 #'
@@ -810,7 +875,7 @@ indicateur_w3_humidite <- function(units,
                                 layers,
                                 dem_layer = "dem",
                                 method = c("auto", "grass", "d8"),
-                                dem_target_res = 10) {
+                                dem_target_res = .topo_target_res()) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -834,10 +899,13 @@ indicateur_w3_humidite <- function(units,
   dem <- .dem_working_res(dem, target_res = dem_target_res, context = "W3")
 
   # Calculate TWI (cached across W2, W3, F2, R3)
+  # `twi_target_res` suit la résolution de travail : le DEM reçu est déjà à la
+  # bonne grille, l'agrégation interne au TWI est alors un no-op.
   if (method == "d8") {
-    twi_raster <- calculate_twi_terra(dem)
+    twi_raster <- calculate_twi_terra(dem, target_res = dem_target_res)
   } else {
-    twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir)
+    twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir,
+                                     twi_target_res = dem_target_res)
   }
 
   # Extract mean TWI for each unit
@@ -857,7 +925,7 @@ indicateur_w3_humidite <- function(units,
 #' Calculate TWI using terra (D8 algorithm)
 #' @keywords internal
 #' @noRd
-calculate_twi_terra <- function(dem, target_res = 10) {
+calculate_twi_terra <- function(dem, target_res = .topo_target_res()) {
   # Agréger à la résolution cible : TWI hydrologiquement stable + calcul allégé
   # (cf. .twi_aggregate_dem). target_res = NULL -> pas d'agrégation (repli déjà agrégé).
   dem <- .twi_aggregate_dem(dem, target_res)
@@ -909,7 +977,7 @@ calculate_twi_terra <- function(dem, target_res = 10) {
 #' depression filling, flow direction/accumulation via wetness().
 #' @keywords internal
 #' @noRd
-calculate_twi_grass <- function(dem, target_res = 10) {
+calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
   # Agréger une seule fois ici ; les replis terra reçoivent déjà le DEM agrégé
   # (target_res = NULL) pour éviter une double agrégation.
   dem <- .twi_aggregate_dem(dem, target_res)
@@ -1482,10 +1550,12 @@ extract_fertility_from_gissol <- function(units, layers,
 #'   texture erosion-resistance component. Default \code{NULL}
 #'   (pre-existing TWI + slope behaviour).
 #' @param dem_target_res Numeric. Working resolution (metres) the DEM is
-#'   aggregated to before TWI and slope are computed. Keep it identical across
-#'   W2/W3/F2/R3: the TWI cache is keyed on the DEM footprint, so a different
-#'   value per indicator recomputes a TWI for each. Default \code{10};
-#'   \code{NULL} keeps the native resolution.
+#'   aggregated to before TWI and slope are computed. The same value drives the
+#'   TWI grid, so both coincide and the TWI is never resampled up to a finer
+#'   grid. Keep it identical across W2/W3/F2/R3 to share a single cached TWI.
+#'   Default: the package-wide topographic working resolution, 2 m — see
+#'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
+#'   resolution.
 #'
 #' @return Numeric vector of fertility scores (0-100, higher = more fertile)
 #'
@@ -1499,7 +1569,7 @@ indicateur_f2_erosion <- function(units,
                                    layers,
                                    dem_layer = "dem",
                                    texture = NULL,
-                                   dem_target_res = 10) {
+                                   dem_target_res = .topo_target_res()) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -1523,7 +1593,10 @@ indicateur_f2_erosion <- function(units,
 
   # 1. Compute TWI (cached across W2, W3, F2, R3)
   cli::cli_alert_info("F2: Computing fertility from TWI + slope")
-  twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir)
+  # `twi_target_res` suit la résolution de travail (grilles alignées, cache
+  # partagé avec W2/W3/R3).
+  twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir,
+                                   twi_target_res = dem_target_res)
 
   twi_mean <- safe_extract(twi_raster, units_sf, fun = "mean", progress = FALSE)
 
