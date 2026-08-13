@@ -1331,6 +1331,62 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-08-13 — App `nemetonshiny` v0.122.0 : desserte corrigée, l'invariant BD TOPO rétabli + complément OSM
+
+Livraison **100 % app**, **aucun impact cœur** : pas de nouvelle API `nemeton`
+consommée, plancher `Imports: nemeton (>= 0.169.0)` inchangé (`foretaccess`
+consommé en **2.1.0**, plancher déclaré inchangé à `>= 2.0.1` ; `dessertR
+1.3.0.9000`). Correctif de régression sur une fonctionnalité déjà livrée.
+*(Traçabilité remontée par la session app — je n'édite pas `nemetonshiny`,
+seulement ce journal. Brief : `nemetonshiny/BRIEF-nemeton-plan-v0.122.0.md`.)*
+
+- 2026-08-13 — nemetonshiny v0.122.0 (merge `nemetonshiny@b1a7d41a`, branche
+  `claude/desserte-invariant-bdtopo` ; `c4265a9b` = `chore(release): v0.122.0` ;
+  cycle dev repris en `0.122.0.9000`). L'app passait
+  `retirer_disparues = TRUE` à `foretaccess::qualifier_desserte()` — un opt-in
+  que le cœur laisse à `FALSE`. La correction LiDAR **supprimait donc des
+  tronçons déclarés** : **280 sur 373** sur ForêtAccess (84 % du linéaire, **une
+  `route` sur deux**), **322 sur 1 032** sur Dabo. Cette couche amputée
+  remplaçait la BD TOPO en entrée de `preprocess()`, donc de **tous les
+  moteurs**, dès que « utiliser la desserte corrigée » était cochée : les
+  surfaces hors desserte étaient surestimées d'autant.
+- **Cause : erreur d'interprétation côté app.** `dsr_etat()` définit `hors_route`
+  comme « les **deux** conductivités faibles », c'est-à-dire *aucun signal* — et
+  avertit que l'état « n'est réellement interprétable que le long d'un tracé
+  retenu par le pathfinder ». Une plateforme routière laisse une empreinte dans
+  le terrain pendant des décennies : l'absence de signal désigne un échec de
+  mesure bien plus souvent qu'une route effacée. L'app en avait fait un verdict
+  d'existence.
+- **Règle posée, non contournable** : la desserte corrigée conserve
+  l'intégralité de la BD TOPO, s'enrichit d'OSM, qualifie l'ensemble et rend le
+  tout. La qualification **renseigne** (état, largeur, géométrie recalée) ; elle
+  ne **décide** pas de l'existence. Un garde-fou refuse la correction si la
+  sortie compte moins de tronçons que l'entrée.
+- Complément OSM (`.desserte_complement_osm()`) conforme au contrat du cœur
+  (« source *complémentaire* de la BD TOPO, jamais substitutive ») : seule la
+  portion hors d'un corridor de 15 m est ajoutée, à partir de 30 m.
+  Best-effort — Overpass bridé rend la BD TOPO intacte, et l'UI le dit.
+- **Validé bout-en-bout sur ForêtAccess** : 373/373 tronçons BD TOPO conservés,
+  répartition par classe **identique** à l'entrée (44 `hors_desserte`,
+  254 `piste`, 7 `reseau_public`, 68 `route`), + 28 tronçons OSM (3,61 km, plus
+  court 33,8 m). 25,9 min, pic 6,3 Go. Suite app : 0 échec, 10 774 tests.
+- Les états mesurés sur les 401 tronçons disent pourquoi le retrait était faux :
+  **213 `abandonnee` + 95 `hors_route`**, soit 77 % du réseau, sur une emprise
+  portant 68 `route` de la BD TOPO. **Ces états ne sont pas un inventaire.**
+
+**Dette laissée ouverte (app, hors périmètre de ce correctif)** : la détection de
+tronçons non déclarés **rend toujours 0** — mesuré le 2026-08-13 sur Reconfort
+(554 ha, 7/7 canaux retenus, AUC rugosité 0,763) en sept configurations (bornes
+figées, calibration locale, seuils 0,3 à 0,6, `buffer_ref = 0`, avec canal de
+surface : 4 018 s, 8,75 Go), donc la troisième couleur de légende du comparateur
+(« ajouté par détection ») reste sans emploi et la prémisse de
+`design/spec-desserte-reliquats.md` §2 est **réfutée**, à réécrire ; les tronçons
+OSM entrent avec `largeur = NA` ; le garde-fou mémoire de la détection modélise
+la mauvaise grille (1,96 Go annoncés pour 8,75 Go mesurés).
+
+**Aucune case cochée** : ni sous-chantier ni épaississement n'est clos par cette
+release — c'est un correctif de régression sur une fonctionnalité déjà livrée.
+
 ### 2026-08-07 — v0.169.0 : R3, la grille du TWI suit le terrain + plafond mémoire absolu
 
 Suite directe de l'entrée du 2026-08-06 : le lendemain, **R3 est mort au même
