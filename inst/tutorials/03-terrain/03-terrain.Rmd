@@ -1643,6 +1643,15 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 ```{r ex-5-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=80, exercise.setup="ex-5-3-setup", exercise.timelimit=300}
 # === DENSITÉ DE SENTIERS (S3) - osmdata ===
 
+# NOTE (pédagogique) — l'appel `osmdata` direct ci-dessous est là pour montrer
+# la mécanique d'une requête Overpass. Ce n'est PAS le chemin de production :
+# celui-ci passe par le client canonique de `foretaccess`, `osm_overpass()`
+# pour le transport et `acquire_desserte_osm()` pour la desserte. Le client
+# borne le pire cas, tourne sur plusieurs instances, distingue un refus
+# Overpass d'un résultat vide, et cache avec provenance horodatée — trois
+# propriétés qu'`osmdata` n'offre pas (une instance saturée le fait attendre en
+# backoff sans rendre la main). Voir `specs/BRIEF-osm-overpass-unification.md`.
+
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 mnt_path <- file.path(data_dir, "mnt.tif")
 sentiers_path <- file.path(data_dir, "sentiers.gpkg")
