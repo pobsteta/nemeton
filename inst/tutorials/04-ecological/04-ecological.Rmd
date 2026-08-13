@@ -1026,6 +1026,15 @@ if (!ocs_available && requireNamespace("geodata", quietly = TRUE)) {
 # -------------------------------------------------------------
 # PRIORITÉ 4 : osmdata (OpenStreetMap)
 # -------------------------------------------------------------
+# NOTE (pédagogique) — les appels `osmdata` directs ci-dessous montrent la
+# mécanique d'une requête Overpass, une par thème. Ce n'est PAS le chemin de
+# production : celui-ci passe par le client canonique de `foretaccess`,
+# `osm_overpass()`, qui borne le pire cas, tourne sur plusieurs instances,
+# distingue un refus Overpass d'un résultat vide et cache avec provenance
+# horodatée. En production on **regroupe** aussi les filtres en une seule
+# requête au lieu d'en enchaîner quatre comme ici : Overpass limite le nombre
+# de requêtes, pas la surface interrogée.
+# Voir `specs/BRIEF-osm-overpass-unification.md`.
 osm_available <- FALSE
 
 if (!ocs_available && requireNamespace("osmdata", quietly = TRUE)) {
@@ -1973,6 +1982,14 @@ if (file.exists(routes_path)) {
 }
 
 # Distance aux bâtiments (via OSM si disponible)
+#
+# NOTE (pédagogique) — ce bloc et le suivant (zones urbaines) appellent
+# `osmdata` directement pour rester lisibles. Ce n'est PAS le chemin de
+# production : `foretaccess::acquire_obstacles()` couvre déjà bâti / eau / voie
+# ferrée / falaise en une requête, au-dessus du client canonique
+# `osm_overpass()` (pire cas borné, rotation d'instances, refus distingué d'un
+# résultat vide, cache horodaté).
+# Voir `specs/BRIEF-osm-overpass-unification.md`.
 dist_batiments <- rep(500, nrow(parcelles)) # Valeur par défaut
 
 if (requireNamespace("osmdata", quietly = TRUE)) {
