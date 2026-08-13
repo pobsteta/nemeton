@@ -1331,6 +1331,43 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-08-13 — Unification OSM/Overpass : le versant cœur (§5.4) + spec 044 ouverte
+
+Versant **cœur** du brief `specs/BRIEF-osm-overpass-unification.md`. Le gros du
+lot ne vit pas ici : le transport canonique est livré **dans `foretaccess`**
+(`osm_overpass()` exporté, décision D1 actée en **ADR-010** *avant* le code comme
+le brief l'exigeait ; `foretaccess@3c7b386` + `c437269`), et les deux
+consommateurs restants ont leurs briefs de hand-off côté `foretaccess/docs/`
+(`brief-dessertR-transport-overpass.md`, `brief-nemetonshiny-overpass.md`).
+Je n'édite aucun repo frère (règle 11).
+
+**§5.4 — périmètre cœur, livré.** Vérification faite avant d'écrire : **aucun
+code `R/` de `nemeton` n'appelle OSM**, `osmdata` est en `Suggests` (ligne 59) et
+n'est utilisé que par les tutoriels. Le brief annonçait deux fichiers et deux
+chunks ; le repo en compte **trois chunks pour quatre sites d'appel** —
+`03-terrain.Rmd` (`ex-5-3`, sentiers S3), `04-ecological.Rmd` (`ex-4-1`, landuse
+en repli d'OCS-GE ; `ex-5-1`, bâti **et** zones urbaines). Chacun porte désormais
+une note : l'appel `osmdata` direct est **pédagogique**, le chemin de production
+est le client canonique de `foretaccess`. La note d'`ex-4-1` ajoute le *pourquoi*
+du regroupement de filtres (Overpass limite les requêtes, pas la surface), celle
+d'`ex-5-1` renvoie à `acquire_obstacles()` — vérifié en lecture seule : il fait
+bien **une seule** requête avec union de filtres puis dispatch local depuis
+`3c7b386`. Les tutoriels ne sont **pas** réécrits (interdit par le §5.4) ; les
+deux `purl()` + `parse()` passent (221 et 400 expressions).
+
+**§6 — spec 044 ouverte, non implémentée** :
+`specs/044-osm-extraits-pbf/spec.md`. Le brief range les extraits Geofabrik
+`.pbf` hors périmètre et laisse la décision à Pascal ; la spec cadre cinq
+décisions dont **D1 conditionne tout : aucun consommateur batch n'existe
+aujourd'hui** (l'app est interactive, les indicateurs cœur ne consomment pas
+OSM), donc le résultat attendu par défaut est qu'elle reste ouverte. Deux faits
+vérifiés y sont consignés pour D3 : `osmextract` n'est **pas** installé, le
+**driver OSM de GDAL est présent** via `sf` — un chemin `.pbf` par GDAL
+n'ajouterait aucune dépendance.
+
+**Aucune case cochée**, aucun bump : modification de commentaires de tutoriels et
+ouverture d'une spec, rien de fonctionnel.
+
 ### 2026-08-13 — App `nemetonshiny` v0.122.0 : desserte corrigée, l'invariant BD TOPO rétabli + complément OSM
 
 Livraison **100 % app**, **aucun impact cœur** : pas de nouvelle API `nemeton`
