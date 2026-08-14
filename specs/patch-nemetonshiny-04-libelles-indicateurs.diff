@@ -1,0 +1,161 @@
+--- a/R/utils_i18n.R
++++ b/R/utils_i18n.R
+@@ -1225,50 +1225,12 @@
+   # et `description`). Les 24 cles `famille_*` / `famille_*_desc` qui vivaient
+   # a cet endroit doublonnaient la table du coeur et pouvaient en diverger sans
+   # que rien ne le signale. Ne pas les reintroduire.
+-  # ============================================================
+-  # Indicator Codes (short labels for table/map display)
+-  # ============================================================
+-  indicator_C1 = list(fr = "Biomasse carbone (tC/ha)", en = "Carbon Biomass (tC/ha)"),
+-  indicator_C2 = list(fr = "NDVI - Vitalit\u00e9", en = "NDVI - Vitality"),
+-  indicator_B1 = list(fr = "Protection biodiversit\u00e9", en = "Biodiversity Protection"),
+-  indicator_B2 = list(fr = "Diversit\u00e9 structurale", en = "Structural Diversity"),
+-  indicator_B3 = list(fr = "Connectivit\u00e9 \u00e9cologique", en = "Ecological Connectivity"),
+-  indicator_B4 = list(fr = "Diversit\u00e9 spectrale (\u03b1)", en = "Spectral Diversity (\u03b1)"),
+-  indicator_W1 = list(fr = "R\u00e9seau hydrographique", en = "Water Network"),
+-  indicator_W2 = list(fr = "Zones humides", en = "Wetlands"),
+-  indicator_W3 = list(fr = "Indice topographique d'humidit\u00e9", en = "Topographic Wetness Index"),
+-  indicator_W4 = list(fr = "D\u00e9ficit de pression (VPD)", en = "Vapour Pressure Deficit"),
+-  indicator_A1 = list(fr = "Tampon forestier", en = "Forest Buffer"),
+-  indicator_A2 = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality"),
+-  indicator_A3 = list(fr = "Microclimat (T\u00b0max)", en = "Microclimate (T\u00b0max)"),
+-  indicator_A4 = list(fr = "Tamponnement thermique", en = "Thermal buffering"),
+-  indicator_F1 = list(fr = "Fertilit\u00e9 des sols", en = "Soil Fertility"),
+-  indicator_F2 = list(fr = "Risque d'\u00e9rosion", en = "Erosion Risk"),
+-  indicator_L1 = list(fr = "Sylvosph\u00e8re (effet lisi\u00e8re)", en = "Sylvosphere (Edge Effect)"),
+-  indicator_L2 = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
+-  indicator_L3 = list(fr = "H\u00e9t\u00e9rog\u00e9n\u00e9it\u00e9 spectrale (\u03b2)", en = "Spectral Heterogeneity (\u03b2)"),
+-  indicator_T1 = list(fr = "Anciennet\u00e9 foresti\u00e8re", en = "Forest Age"),
+-  indicator_T2 = list(fr = "Taux de changement", en = "Change Rate"),
+-  indicator_T3 = list(fr = "Coupes rases", en = "Clear-cuts"),
+-  indicator_R1 = list(fr = "Risque incendie", en = "Fire Risk"),
+-  indicator_R2 = list(fr = "Risque temp\u00eate", en = "Storm Risk"),
+-  indicator_R3 = list(fr = "Risque s\u00e9cheresse", en = "Drought Risk"),
+-  indicator_R4 = list(fr = "Risque abroutissement", en = "Browsing Risk"),
+-  indicator_R5 = list(fr = "D\u00e9p\u00e9rissement", en = "Dieback"),
+-  indicator_R6 = list(fr = "Sensibilit\u00e9 microclimatique", en = "Microclimatic sensitivity"),
+-  indicator_R7 = list(fr = "Risque de gel tardif", en = "Late-frost risk"),
+-  indicator_S1 = list(fr = "Densit\u00e9 de sentiers", en = "Trail Density"),
+-  indicator_S2 = list(fr = "Accessibilit\u00e9", en = "Accessibility"),
+-  indicator_S3 = list(fr = "Proximit\u00e9 population", en = "Population Proximity"),
+-  indicator_P1 = list(fr = "Volume de bois (m\u00b3/ha)", en = "Timber Volume (m\u00b3/ha)"),
+-  indicator_P2 = list(fr = "Productivit\u00e9", en = "Productivity"),
+-  indicator_P3 = list(fr = "Qualit\u00e9 du bois", en = "Timber Quality"),
+-  indicator_E1 = list(fr = "Bois-\u00e9nergie", en = "Wood Energy"),
+-  indicator_E2 = list(fr = "\u00c9vitement CO2", en = "CO2 Avoidance"),
+-  indicator_N1 = list(fr = "Distance infrastructures", en = "Infrastructure Distance"),
+-  indicator_N2 = list(fr = "Continuit\u00e9 foresti\u00e8re", en = "Forest Continuity"),
+-  indicator_N3 = list(fr = "Score de naturalit\u00e9", en = "Naturalness Score"),
+-
++  # Les libelles courts d'indicateurs (tableaux et cartes des pages de famille)
++  # sont lus dans le coeur via `nemeton::indicator_labels()`. Les 40 cles
++  # `indicator_<CODE>` qui vivaient ici en etaient une copie, et avaient
++  # diverge : F1/F2 etaient INVERSES (la colonne d'erosion s'affichait
++  # "F1 - Fertilite des sols"), S1/S2 decrivaient autre chose que ce que le
++  # coeur calcule, et A5 manquait. Ne pas les reintroduire.
+   # Missing indicators
+   missing_indicators_title = list(
+     fr = "Indicateurs manquants",
+@@ -1890,43 +1852,12 @@
+     en = "Canopy height model (CHM) unavailable. The Production indicators (P1/P2/P3) and Wood energy (E1) require a CHM (Theia FORMSpoT, LiDAR HD or Open-Canopy). Configure the Theia API key via the settings menu."
+   ),
+ 
+-  # ============================================================
+-  # Progress Messages - Indicator Names
+-  # ============================================================
+-  indicateur_c1_biomasse = list(fr = "Biomasse carbone", en = "Carbon Biomass"),
+-  indicateur_c2_ndvi = list(fr = "NDVI - Vitalit\u00e9 v\u00e9g\u00e9tation", en = "NDVI - Vegetation Vitality"),
+-  indicateur_b1_protection = list(fr = "Protection biodiversit\u00e9", en = "Biodiversity Protection"),
+-  indicateur_b2_structure = list(fr = "Structure biodiversit\u00e9", en = "Biodiversity Structure"),
+-  indicateur_b3_connectivite = list(fr = "Connectivit\u00e9 \u00e9cologique", en = "Ecological Connectivity"),
+-  indicateur_b4_div_spectrale = list(fr = "Diversit\u00e9 spectrale (\u03b1)", en = "Spectral Diversity (\u03b1)"),
+-  indicateur_w1_reseau = list(fr = "R\u00e9seau hydrographique", en = "Water Network"),
+-  indicateur_w2_zones_humides = list(fr = "Zones humides", en = "Wetlands"),
+-  indicateur_w3_humidite = list(fr = "Indice topographique d'humidit\u00e9", en = "Topographic Wetness Index"),
+-  indicateur_a1_couverture = list(fr = "Tampon forestier", en = "Forest Buffer"),
+-  indicateur_a2_qualite_air = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality"),
+-  indicateur_f2_erosion = list(fr = "Risque d'\u00e9rosion (RUSLE)", en = "Erosion Risk (RUSLE)"),
+-  indicateur_f1_fertilite = list(fr = "Fertilit\u00e9 des sols (TWI+pente)", en = "Soil Fertility (TWI+slope)"),
+-  indicateur_l1_sylvosphere = list(fr = "Sylvosph\u00e8re (effet lisi\u00e8re)", en = "Sylvosphere (Edge Effect)"),
+-  indicateur_l2_fragmentation = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
+-  indicateur_l3_het_spectrale = list(fr = "H\u00e9t\u00e9rog\u00e9n\u00e9it\u00e9 spectrale (\u03b2)", en = "Spectral Heterogeneity (\u03b2)"),
+-  indicateur_t1_anciennete = list(fr = "Anciennet\u00e9 foresti\u00e8re", en = "Forest Age"),
+-  indicateur_t2_changement = list(fr = "Taux de changement", en = "Change Rate"),
+-  indicateur_r1_feu = list(fr = "Risque incendie", en = "Fire Risk"),
+-  indicateur_r2_tempete = list(fr = "Risque temp\u00eate", en = "Storm Risk"),
+-  indicateur_r3_secheresse = list(fr = "Risque s\u00e9cheresse", en = "Drought Risk"),
+-  indicateur_r4_abroutissement = list(fr = "Risque abroutissement", en = "Browsing Risk"),
+-  indicateur_r5_deperissement = list(fr = "D\u00e9p\u00e9rissement", en = "Dieback"),
+-  indicateur_s1_routes = list(fr = "Densit\u00e9 de sentiers", en = "Trail Density"),
+-  indicateur_s2_bati = list(fr = "Accessibilit\u00e9", en = "Accessibility"),
+-  indicateur_s3_population = list(fr = "Proximit\u00e9 population", en = "Population Proximity"),
+-  indicateur_p1_volume = list(fr = "Volume de bois", en = "Timber Volume"),
+-  indicateur_p2_station = list(fr = "Productivit\u00e9", en = "Productivity"),
+-  indicateur_p3_qualite_bois = list(fr = "Qualit\u00e9 du bois", en = "Timber Quality"),
+-  indicateur_e1_bois_energie = list(fr = "Bois-\u00e9nergie", en = "Wood Energy"),
+-  indicateur_e2_evitement = list(fr = "\u00c9vitement CO2", en = "CO2 Avoidance"),
+-  indicateur_n1_distance = list(fr = "Distance infrastructures", en = "Infrastructure Distance"),
+-  indicateur_n2_continuite = list(fr = "Continuit\u00e9 foresti\u00e8re", en = "Forest Continuity"),
+-  indicateur_n3_naturalite = list(fr = "Score de naturalit\u00e9", en = "Naturalness Score"),
++  # Les libelles d'indicateurs de la barre de progression sont lus dans le
++  # coeur (`nemeton::indicator_labels()`), plus dans des cles locales : les 34
++  # cles `indicateur_*` qui vivaient ici ne couvraient que 34 des 41
++  # indicateurs - w4_vpd, a3_microclimat, a4_tamponnement,
++  # a5_rafraichissement, t3_coupes_rases, r6_sensibilite et r7_gel affichaient
++  # leur nom de colonne brut. Ne pas les reintroduire.
+ 
+   # ============================================================
+   # NDP (Niveau De Precision)
+@@ -4994,7 +4925,12 @@
+   # Handle new format: "compute:indicator_key"
+   if (grepl("^compute:", task)) {
+     indicator_key <- sub("^compute:", "", task)
+-    indicator_name <- i18n$t(indicator_key)
++    # Libelle lu dans le coeur : couvre les 41 indicateurs, la ou les cles
++    # i18n locales n'en couvraient que 34.
++    ind <- nemeton::indicator_labels(lang = i18n$language)
++    hit <- match(indicator_key, ind$column_name)
++    if (is.na(hit)) hit <- match(indicator_key, ind$code)
++    indicator_name <- if (!is.na(hit)) ind$label[hit] else i18n$t(indicator_key)
+     return(i18n$t("computing_indicator_name", indicator = indicator_name))
+   }
+ 
+--- a/R/mod_family.R
++++ b/R/mod_family.R
+@@ -828,25 +828,17 @@
+   # Strip _norm suffix for display
+   base <- sub("_norm$", "", col_name)
+ 
+-  # Try matching long-form name against INDICATOR_FAMILIES config first
+-  # (maps column_names -> short codes -> i18n keys with richer labels)
+-  for (fam in INDICATOR_FAMILIES) {
+-    if (!is.null(fam$column_names) && base %in% fam$column_names) {
+-      idx <- which(fam$column_names == base)
+-      if (idx <= length(fam$indicators)) {
+-        code <- fam$indicators[idx]
+-        short_key <- paste0("indicator_", code)
+-        if (i18n$has(short_key)) {
+-          return(paste0(code, " - ", i18n$t(short_key)))
+-        }
+-      }
+-    }
+-  }
++  # Libelle lu dans le coeur. `indicator_labels()` apparie `column_name` et
++  # `code` par position, croisement historique F/L compris (F1 est bien
++  # `indicateur_f2_erosion`) : c'est cette table qui fait foi. La copie i18n
++  # locale avait inverse F1/F2 et affichait "F1 - Fertilite des sols" sur la
++  # colonne d'erosion.
++  ind <- nemeton::indicator_labels(lang = i18n$language)
+ 
+-  # Try i18n key directly (works for short codes like C1, B2)
+-  key <- paste0("indicator_", base)
+-  if (i18n$has(key)) {
+-    return(paste0(base, " - ", i18n$t(key)))
++  hit <- match(base, ind$column_name)
++  if (is.na(hit)) hit <- match(base, ind$code)
++  if (!is.na(hit)) {
++    return(paste0(ind$code[hit], " - ", ind$label[hit]))
+   }
+ 
+   # Fallback: humanize the column name

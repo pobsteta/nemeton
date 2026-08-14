@@ -1,0 +1,183 @@
+--- a/tests/testthat/test-app_config.R
++++ b/tests/testthat/test-app_config.R
+@@ -108,115 +108,78 @@
+ })
+ 
+ # ==============================================================================
+-# Tests for INDICATOR_FAMILIES structure
++# INDICATOR_FAMILIES : identite avec le coeur
+ # ==============================================================================
+-
+-test_that("INDICATOR_FAMILIES has 12 families", {
+-  families <- nemetonshiny:::INDICATOR_FAMILIES
+-  expect_length(families, 12)
+-})
+-
+-test_that("INDICATOR_FAMILIES has correct family codes as names", {
+-  families <- nemetonshiny:::INDICATOR_FAMILIES
+-  expected_codes <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
+-  expect_equal(names(families), expected_codes)
+-})
+-
+-test_that("Each family has required fields", {
+-  families <- nemetonshiny:::INDICATOR_FAMILIES
+-  required_fields <- c(
+-    "code", "name_fr", "name_en", "icon", "color",
+-    "indicators", "column_names",
+-    "indicator_labels", "indicator_tooltips"
+-  )
+-
+-  for (fam_code in names(families)) {
+-    fam <- families[[fam_code]]
+-    for (field in required_fields) {
+-      expect_true(
+-        field %in% names(fam),
+-        info = paste("Family", fam_code, "missing field:", field)
+-      )
+-    }
+-  }
+-})
+-
+-test_that("Each family code field matches its list name", {
+-  families <- nemetonshiny:::INDICATOR_FAMILIES
+-
+-  for (fam_code in names(families)) {
+-    expect_equal(
+-      families[[fam_code]]$code, fam_code,
+-      info = paste("Family code mismatch for:", fam_code)
+-    )
+-  }
+-})
+-
+-test_that("Family indicators and column_names have same length", {
+-  families <- nemetonshiny:::INDICATOR_FAMILIES
+-
+-  for (fam_code in names(families)) {
+-    fam <- families[[fam_code]]
+-    expect_equal(
+-      length(fam$indicators), length(fam$column_names),
+-      info = paste("Indicator/column_names length mismatch for family:", fam_code)
++#
++# La table n'est plus declaree ici : elle est reconstruite depuis
++# `nemeton::indicator_families()` par `.build_indicator_families()`. Les tests
++# de structure (12 familles, codes, champs requis, longueurs, couleurs hex)
++# vivent desormais cote coeur, qui en est proprietaire - les repeter ici ne
++# testerait que la copie.
++#
++# Ce qui reste a tester ici, et qui manquait : que l'app ne REDECLARE rien.
++# C'est ce trou qui avait laisse passer, en silence, un fork a 40 indicateurs
++# au lieu de 41 (A5 absent) avec 14 libelles et 18 tooltips divergents.
++
++test_that("la table des familles vient du coeur, sans redeclaration", {
++  ref <- nemeton::indicator_families()
++  fams <- nemetonshiny:::INDICATOR_FAMILIES
++
++  expect_false(is.null(fams), info = "INDICATOR_FAMILIES non rempli : .onLoad() n'a pas tourne ?")
++  expect_identical(names(fams), ref$code)
++
++  for (i in seq_len(nrow(ref))) {
++    code <- ref$code[i]
++    f <- fams[[code]]
++
++    expect_identical(f$code, code)
++    expect_identical(f$name_fr, ref$name_fr[i], info = code)
++    expect_identical(f$name_en, ref$name_en[i], info = code)
++    expect_identical(f$icon, ref$icon[i], info = code)
++    expect_identical(f$color, ref$color[i], info = code)
++    expect_identical(f$indicators, ref$indicators[[i]], info = code)
++    expect_identical(f$column_names, ref$column_names[[i]], info = code)
++
++    expect_identical(
++      vapply(f$indicator_labels, `[[`, character(1), "fr"),
++      ref$labels_fr[[i]],
++      info = code
+     )
+-  }
+-})
+-
+-test_that("Family indicator_labels keys match indicators", {
+-  families <- nemetonshiny:::INDICATOR_FAMILIES
+-
+-  for (fam_code in names(families)) {
+-    fam <- families[[fam_code]]
+-    expect_equal(
+-      sort(names(fam$indicator_labels)), sort(fam$indicators),
+-      info = paste("indicator_labels keys mismatch for family:", fam_code)
++    expect_identical(
++      vapply(f$indicator_labels, `[[`, character(1), "en"),
++      ref$labels_en[[i]],
++      info = code
+     )
+-  }
+-})
+-
+-test_that("Family indicator_tooltips keys match indicators", {
+-  families <- nemetonshiny:::INDICATOR_FAMILIES
+-
+-  for (fam_code in names(families)) {
+-    fam <- families[[fam_code]]
+-    expect_equal(
+-      sort(names(fam$indicator_tooltips)), sort(fam$indicators),
+-      info = paste("indicator_tooltips keys mismatch for family:", fam_code)
++    expect_identical(
++      vapply(f$indicator_tooltips, `[[`, character(1), "fr"),
++      ref$tooltips_fr[[i]],
++      info = code
+     )
+   }
+ })
+ 
+-test_that("Family labels have fr and en translations", {
+-  families <- nemetonshiny:::INDICATOR_FAMILIES
+-
+-  for (fam_code in names(families)) {
+-    fam <- families[[fam_code]]
+-    for (ind in fam$indicators) {
+-      label <- fam$indicator_labels[[ind]]
+-      expect_true(
+-        "fr" %in% names(label),
+-        info = paste("Missing FR label for", ind, "in family", fam_code)
+-      )
+-      expect_true(
+-        "en" %in% names(label),
+-        info = paste("Missing EN label for", ind, "in family", fam_code)
+-      )
+-    }
+-  }
+-})
+-
+-test_that("Family colors are valid hex colors", {
+-  families <- nemetonshiny:::INDICATOR_FAMILIES
+-
+-  for (fam_code in names(families)) {
+-    color <- families[[fam_code]]$color
+-    expect_match(
+-      color, "^#[0-9A-Fa-f]{6}$",
+-      info = paste("Invalid hex color for family:", fam_code)
+-    )
+-  }
++test_that("aucun nom de famille ne revient par la porte i18n", {
++  # Les libelles des familles se lisent dans le coeur. Une cle i18n portant le
++  # nom d'une colonne de score de famille signalerait le retour de la copie.
++  keys <- names(nemetonshiny:::TRANSLATIONS)
++  famille_cols <- nemeton::indicator_families()$family_column
++
++  expect_equal(intersect(famille_cols, keys), character(0))
++  expect_equal(intersect(paste0(famille_cols, "_desc"), keys), character(0))
++})
++
++test_that("les indicateurs conditionnels recents sont bien la", {
++  # Garde-fou cible : ce sont ceux que le fork avait rates ou omis.
++  fams <- nemetonshiny:::INDICATOR_FAMILIES
++
++  expect_true("A5" %in% fams$A$indicators)
++  expect_true("indicateur_a5_rafraichissement" %in% fams$A$column_names)
++  expect_length(fams$A$indicators, 5L)
++  expect_length(fams$R$indicators, 7L)
++  expect_equal(
++    length(unlist(lapply(fams, `[[`, "indicators"), use.names = FALSE)),
++    nrow(nemeton::indicator_labels())
++  )
+ })
+ 
+ # ==============================================================================
