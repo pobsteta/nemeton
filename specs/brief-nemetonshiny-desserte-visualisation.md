@@ -208,7 +208,14 @@ Trois options :
 **Recommandation : (b), et (c) seulement si (b) tarde.** Le recoupement coûte
 104 s pour 3 122 × 544 tronçons (mesure `nemetonshiny` du 2026-08-12) : le
 refaire côté app pour récupérer une géométrie que le cœur avait sous la main
-serait absurde.
+serait absurde. Mieux : le cœur **calcule déjà** cette géométrie et la jette —
+`st_difference()` dans l'helper interne `hors()`, dont on ne garde que la
+longueur.
+
+→ **Brief dédié** : `specs/brief-foretaccess-comparer-osm-geometries.md`
+(implémentation prototypée et vérifiée, pièges compris). Une fois
+`foretaccess 2.4.0` publiée, le calque devient « Pistes OSM hors BD TOPO » et
+affiche la sortie de la comparaison, plus la couche brute.
 
 Et quoi qu'il arrive, la documentation du cœur est explicite et doit être
 reprise dans l'UI : *« C'est un diagnostic, pas un résultat : un linéaire hors
