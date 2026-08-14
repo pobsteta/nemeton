@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.169.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.170.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,21 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.170.0" id="nemeton-01700-2026-08-14">nemeton 0.170.0 (2026-08-14)<a class="anchor" aria-label="anchor" href="#nemeton-01700-2026-08-14"></a></h2>
+<div class="section level4">
+<h4 id="added--la-table-des-familles-dindicateurs-devient-une-api-publique-0-170-0">Added — la table des familles d’indicateurs devient une API publique<a class="anchor" aria-label="anchor" href="#added--la-table-des-familles-dindicateurs-devient-une-api-publique-0-170-0"></a></h4>
+<p><code>INDICATOR_FAMILIES</code> existait dans le cœur depuis toujours, mais n’était pas exporté. Le <code>CLAUDE.md</code> de <code>nemetonshiny</code> affirmait pourtant que l’app lisait les noms de famille depuis le cœur : en réalité elle les redéclarait — 24 chaînes FR/EN dans <code>utils_i18n.R</code>, 12 codes en dur dans <code>app_ui.R</code>, 34 libellés d’indicateurs. Duplication aujourd’hui <strong>exacte</strong> (0/12 divergence mesurée), donc silencieuse : renommer une famille ici ne changerait rien là-bas, et aucun test ne le dirait.</p>
+<p>Plutôt que d’exporter l’objet brut — ce qui figerait sa structure interne en API cassante — deux accesseurs :</p>
+<ul><li>
+<strong><code>indicator_families(codes = NULL, lang = c("fr", "en"))</code></strong> — un <code>data.frame</code> d’une ligne par famille : <code>code</code>, <code>name</code> (dans <code>lang</code>), <code>name_fr</code>, <code>name_en</code>, <code>icon</code>, <code>color</code>, et quatre colonnes-listes <code>indicators</code>, <code>column_names</code>, <code>labels</code>, <code>tooltips</code>. Ordre canonique garanti <code>C B W A F L T R S P E N</code> — déjà celui du menu de l’app, rien à réordonner. <code>name_fr</code> et <code>name_en</code> sont toujours tous deux présents : basculer de langue ne demande pas un second appel.</li>
+<li>
+<strong><code>indicator_labels(codes = NULL, lang = c("fr", "en"))</code></strong> — la même table à plat, une ligne par indicateur (41) : <code>family</code>, <code>code</code>, <code>column_name</code>, <code>label</code>, <code>tooltip</code>. C’est la forme qui permet de bâtir un lookup colonne → libellé et de retirer les clés <code>indicateur_*</code> en aval.</li>
+</ul><p>Les deux fonctions sont <strong>pures</strong> (aucune I/O, aucun état), donc appelables depuis un worker <code>future</code>.</p>
+<p><strong>Deux pièges documentés plutôt que « corrigés ».</strong> <code>indicators</code> et <code>column_names</code> sont appariés <strong>par position</strong>, pas par le slug : <code>F1</code> est <code>indicateur_f2_erosion</code> et <code>F2</code> est <code>indicateur_f1_fertilite</code> ; <code>L1</code> est <code>indicateur_l2_fragmentation</code> et <code>L2</code> est <code>indicateur_l1_sylvosphere</code>. Ce croisement historique est cohérent de bout en bout (les libellés suivent le code court, pas le slug) et un test le verrouille : dériver la colonne du code par manipulation de chaîne casserait ces deux familles. Et <code>color</code> porte la palette <strong>sémantique</strong> du cœur (vert forêt pour le carbone, bleu pour l’eau) : ce n’est pas une dérive vis-à-vis du viridis de l’app, choisi pour l’accessibilité daltonienne — l’aval ignore cette colonne.</p>
+<p>Le test qui a le plus de valeur relie la table au moteur : chacune des 41 colonnes déclarées doit être produite par une fonction exportée du même nom <strong>et</strong> passer <code><a href="../reference/normalize_indicator.html">normalize_indicator()</a></code> sans déclencher le garde-fou « pas de règle 0-100 » (spec 038). Déclarer un indicateur sans le brancher échoue désormais côté cœur.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.169.0" id="nemeton-01690-2026-08-07">nemeton 0.169.0 (2026-08-07)<a class="anchor" aria-label="anchor" href="#nemeton-01690-2026-08-07"></a></h2>
 <div class="section level4">

@@ -12,6 +12,29 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.170.0\] - 2026-08-14
+
+### Added
+
+- `indicator_families(codes = NULL, lang = c("fr", "en"))` : accesseur
+  public de la table des 12 familles (`code`, `name`, `name_fr`,
+  `name_en`, `icon`, `color`, colonnes-listes `indicators`,
+  `column_names`, `labels`, `tooltips`). Ordre canonique garanti
+  `C B W A F L T R S P E N`, fonction pure.
+- `indicator_labels(codes = NULL, lang = c("fr", "en"))` : la même table
+  à plat, une ligne par indicateur (`family`, `code`, `column_name`,
+  `label`, `tooltip`), pour bâtir un lookup colonne → libellé en aval.
+- Tests verrouillant l’API : ordre et effectif des familles, noms non
+  vides en FR et EN, appariement positionnel `indicators` ↔︎
+  `column_names`, convention `<code><n>`, croisement historique F/L, et
+  surtout le lien table ↔︎ moteur (chaque colonne déclarée est produite
+  par une fonction exportée et normalisée par une règle explicite).
+
+### Changed
+
+- `_pkgdown.yml` : nouvelle section « Table des familles d’indicateurs
+  ».
+
 ## \[0.169.0\] - 2026-08-07
 
 ### Fixed

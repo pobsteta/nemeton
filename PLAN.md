@@ -30,6 +30,59 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 ------------------------------------------------------------------------
 
+# Chantier CLOS — Export public de la table des familles d’indicateurs
+
+> **Clos le 2026-08-14 (v0.170.0).** Brief :
+> `specs/BRIEF-indicator-families-export.md` (émis depuis
+> `nemetonshiny`).
+
+**Journal** — *2026-08-14* (**v0.170.0**) : **`INDICATOR_FAMILIES`
+devient une API publique, sans être exporté tel quel.** Constat du brief
+: le `CLAUDE.md` de l’app affirmait que les noms de famille étaient lus
+depuis le cœur, alors que l’objet n’était pas dans le `NAMESPACE` —
+l’app redéclarait 24 chaînes FR/EN, 12 codes en dur et 34 libellés
+d’indicateurs. Duplication **exacte** aujourd’hui (0/12 divergence
+mesurée), donc silencieuse : rien ne signalerait l’écart le jour où il
+apparaîtrait.
+
+**Décision** : option 2 du brief — deux **accesseurs** plutôt que
+`export(INDICATOR_FAMILIES)`, pour ne pas figer la structure interne en
+API cassante. `indicator_families(codes, lang)` renvoie un `data.frame`
+de 12 lignes (colonnes-listes `indicators` / `column_names` / `labels` /
+`tooltips`, ordre canonique `C B W A F L T R S P E N` garanti) ;
+`indicator_labels(codes, lang)` la même table à plat, 41 lignes, une par
+indicateur — c’est la forme qui permettra à l’app de retirer ses clés
+`indicateur_*`. Les deux sont pures (appelables dans un worker
+`future`). Point tranché du brief (« lang : une colonne `name` ou les
+deux ? ») : **les deux** — `name` suit `lang`, `name_fr`/`name_en` sont
+toujours présents, basculer de langue ne coûte pas un second appel.
+
+**Deux choses documentées plutôt qu’« alignées »** : (1) les couleurs du
+cœur sont sémantiques et divergent volontairement du viridis de l’app
+(§3 du brief) — la colonne est exposée mais l’aval l’ignore ; (2)
+`indicators` et `column_names` sont appariés **par position**, et deux
+familles portent un croisement historique — `F1` =
+`indicateur_f2_erosion`, `F2` = `indicateur_f1_fertilite`, `L1` =
+`indicateur_l2_fragmentation`, `L2` = `indicateur_l1_sylvosphere`.
+Cohérent de bout en bout (les libellés suivent le code court, pas le
+slug) et verrouillé par un test : dériver la colonne du code par
+manipulation de chaîne casserait ces deux familles.
+
+**Test qui relie la table au moteur** (le §5.5 du brief, celui qui a le
+plus de valeur) : chacune des 41 colonnes déclarées doit être produite
+par une fonction exportée du même nom **et** passer
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+sans déclencher le garde-fou « pas de règle 0-100 » (spec 038). Déclarer
+un indicateur sans le brancher échoue désormais côté cœur. Suite
+(`test-indicator-families.R`) : 353 assertions, vertes.
+
+**Suite côté app** (`nemetonshiny`, repo séparé — non fait ici) :
+plancher `Imports: nemeton (>= 0.170.0)`, boucle sur la table dans
+`app_ui.R`, retrait des 24 clés `famille_*`, test anti-redéclaration,
+correction du `CLAUDE.md` de l’app. Cf. §6 du brief.
+
+------------------------------------------------------------------------
+
 # Chantier CADRÉ — Crop à l’ingestion S2 (spec 021, optimisation disque)
 
 > **Cadré le 2026-06-27** (paperwork avant code). Doc :

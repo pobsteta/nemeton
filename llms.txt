@@ -240,6 +240,17 @@ Fonctions principales pour le calcul d’indicateurs
 - [`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
   : List available indicators
 
+## Table des familles d’indicateurs
+
+Source canonique des 12 familles et de leurs indicateurs (codes, noms
+FR/EN, colonnes produites, libelles). A lire depuis l’aval plutot que de
+redeclarer la liste.
+
+- [`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md)
+  : Indicator family table
+- [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md)
+  : Indicator table (long format)
+
 ## Famille C : Carbone & Vitalite
 
 Stockage de carbone et vitalite de la vegetation

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.169.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.170.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -106,6 +106,17 @@
 </tr></tbody></table><p>Légende : ✅ livré · 🟨 en cours · ⬜ à venir.</p>
 <hr></div>
 </div>
+<div class="section level1">
+<h1 id="chantier-clos--export-public-de-la-table-des-familles-dindicateurs">Chantier CLOS — Export public de la table des familles d’indicateurs<a class="anchor" aria-label="anchor" href="#chantier-clos--export-public-de-la-table-des-familles-dindicateurs"></a></h1>
+<blockquote>
+<p><strong>Clos le 2026-08-14 (v0.170.0).</strong> Brief : <code>specs/BRIEF-indicator-families-export.md</code> (émis depuis <code>nemetonshiny</code>).</p>
+</blockquote>
+<p><strong>Journal</strong> — <em>2026-08-14</em> (<strong>v0.170.0</strong>) : <strong><code>INDICATOR_FAMILIES</code> devient une API publique, sans être exporté tel quel.</strong> Constat du brief : le <code>CLAUDE.md</code> de l’app affirmait que les noms de famille étaient lus depuis le cœur, alors que l’objet n’était pas dans le <code>NAMESPACE</code> — l’app redéclarait 24 chaînes FR/EN, 12 codes en dur et 34 libellés d’indicateurs. Duplication <strong>exacte</strong> aujourd’hui (0/12 divergence mesurée), donc silencieuse : rien ne signalerait l’écart le jour où il apparaîtrait.</p>
+<p><strong>Décision</strong> : option 2 du brief — deux <strong>accesseurs</strong> plutôt que <code>export(INDICATOR_FAMILIES)</code>, pour ne pas figer la structure interne en API cassante. <code>indicator_families(codes, lang)</code> renvoie un <code>data.frame</code> de 12 lignes (colonnes-listes <code>indicators</code> / <code>column_names</code> / <code>labels</code> / <code>tooltips</code>, ordre canonique <code>C B W A F L T R S P E N</code> garanti) ; <code>indicator_labels(codes, lang)</code> la même table à plat, 41 lignes, une par indicateur — c’est la forme qui permettra à l’app de retirer ses clés <code>indicateur_*</code>. Les deux sont pures (appelables dans un worker <code>future</code>). Point tranché du brief (« lang : une colonne <code>name</code> ou les deux ? ») : <strong>les deux</strong> — <code>name</code> suit <code>lang</code>, <code>name_fr</code>/<code>name_en</code> sont toujours présents, basculer de langue ne coûte pas un second appel.</p>
+<p><strong>Deux choses documentées plutôt qu’« alignées »</strong> : (1) les couleurs du cœur sont sémantiques et divergent volontairement du viridis de l’app (§3 du brief) — la colonne est exposée mais l’aval l’ignore ; (2) <code>indicators</code> et <code>column_names</code> sont appariés <strong>par position</strong>, et deux familles portent un croisement historique — <code>F1</code> = <code>indicateur_f2_erosion</code>, <code>F2</code> = <code>indicateur_f1_fertilite</code>, <code>L1</code> = <code>indicateur_l2_fragmentation</code>, <code>L2</code> = <code>indicateur_l1_sylvosphere</code>. Cohérent de bout en bout (les libellés suivent le code court, pas le slug) et verrouillé par un test : dériver la colonne du code par manipulation de chaîne casserait ces deux familles.</p>
+<p><strong>Test qui relie la table au moteur</strong> (le §5.5 du brief, celui qui a le plus de valeur) : chacune des 41 colonnes déclarées doit être produite par une fonction exportée du même nom <strong>et</strong> passer <code><a href="reference/normalize_indicator.html">normalize_indicator()</a></code> sans déclencher le garde-fou « pas de règle 0-100 » (spec 038). Déclarer un indicateur sans le brancher échoue désormais côté cœur. Suite (<code>test-indicator-families.R</code>) : 353 assertions, vertes.</p>
+<p><strong>Suite côté app</strong> (<code>nemetonshiny</code>, repo séparé — non fait ici) : plancher <code>Imports: nemeton (&gt;= 0.170.0)</code>, boucle sur la table dans <code>app_ui.R</code>, retrait des 24 clés <code>famille_*</code>, test anti-redéclaration, correction du <code>CLAUDE.md</code> de l’app. Cf. §6 du brief.</p>
+<hr></div>
 <div class="section level1">
 <h1 id="chantier-cadré--crop-à-lingestion-s2-spec-021-optimisation-disque">Chantier CADRÉ — Crop à l’ingestion S2 (spec 021, optimisation disque)<a class="anchor" aria-label="anchor" href="#chantier-cadr%C3%A9--crop-%C3%A0-lingestion-s2-spec-021-optimisation-disque"></a></h1>
 <blockquote>
