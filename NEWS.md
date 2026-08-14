@@ -1,3 +1,46 @@
+# nemeton 0.171.0 (2026-08-14)
+
+### Added — la table des familles gagne ce qui manquait pour câbler l'app
+
+Écrire le brief de câblage côté `nemetonshiny`
+(`specs/brief-nemetonshiny-indicator-families.md`) a fait apparaître trois
+manques dans l'API de la v0.170.0. Aucun n'était bloquant, tous obligeaient
+l'aval à contourner. Ils sont comblés ici.
+
+**1. Les deux langues, toujours.** L'app lit les libellés en FR *et* en EN
+(elle retombe sur l'anglais quand le français manque) : avec la v0.170.0 il
+fallait deux appels et un zip. Désormais tout champ traduisible sort dans des
+colonnes `_fr` / `_en` dédiées — `labels_fr`, `labels_en`, `tooltips_fr`,
+`tooltips_en` pour `indicator_families()`, `label_fr`, `label_en`,
+`tooltip_fr`, `tooltip_en` pour `indicator_labels()`. `lang` ne pilote plus
+que les colonnes de confort `name` / `description` / `labels` / `tooltips`.
+C'est le prolongement de ce que `name_fr` / `name_en` faisaient déjà : un
+mode `lang = "both"` aurait fait varier le schéma selon l'argument, ce qui
+est plus difficile à consommer qu'une colonne toujours présente.
+
+**2. Une description par famille.** Nouveau champ `description` (+
+`description_fr` / `description_en`), une phrase par famille. Les 12
+descriptions sont écrites à jour du contenu réel des familles — celles que
+l'app portait de son côté dataient d'avant A3-A5, R5-R7, T3, W4, B4 et L3, et
+décrivaient donc des familles amputées (« Risques feu, tempête, sécheresse et
+abroutissement » pour une famille R qui compte sept indicateurs).
+
+**3. La colonne de score de famille devient publique.** `get_famille_col()`
+(`"C"` → `"famille_carbone"`) et `get_famille_code()` (l'inverse) sont
+exportées, et la table gagne une colonne `family_column`. Ce nom est de fait
+un contrat entre les packages — c'est la colonne portée par l'`sf` calculé, la
+valeur d'onglet et une clé de base côté app — mais il n'était accessible que
+par `utils::getFromNamespace()` sur une API interne, ce que `nemetonshiny`
+fait aujourd'hui dans `R/imports.R`. Les deux fonctions sont au passage
+vectorisées : `get_famille_col()` valide ses entrées et échoue clairement sur
+un code inconnu, `get_famille_code()` renvoie `NA` pour une colonne qui n'est
+pas un score de famille, ce qui permet de la passer sur toutes les colonnes
+d'un `sf`.
+
+Un test relie `family_column` au moteur : les 12 noms doivent être présents
+dans les colonnes de `massif_demo_units`, c'est-à-dire dans ce que
+`create_family_index()` produit réellement.
+
 # nemeton 0.170.0 (2026-08-14)
 
 ### Added — la table des familles d'indicateurs devient une API publique

@@ -28,26 +28,70 @@ FAMILLE_NMT_MAP <- c(
   N = "famille_naturalite"
 )
 
-#' Get NMT family column name from code
+#' Family score column name from family code
 #'
-#' @param code Character. Single-letter family code (e.g., "C", "B").
-#' @return Character. NMT family column name (e.g., "famille_carbone").
-#' @noRd
+#' @description
+#' Maps a family code to the name of the family score column produced by
+#' [create_family_index()] — `"C"` becomes `"famille_carbone"`. That name is a
+#' contract between the core and its consumers: it is the column carried by the
+#' computed `sf`, and downstream packages use it as a stable identifier (tab
+#' value, database column). Read it here rather than hard-coding the 12
+#' strings; the whole mapping is also available as the `family_column` column
+#' of [indicator_families()].
+#'
+#' @param code Character. Single-letter family code (e.g. `"C"`, `"B"`),
+#'   case-insensitive. Vectorised.
+#'
+#' @return Character vector of NMT family column names (e.g.
+#'   `"famille_carbone"`), same length as `code`.
+#'
+#' @seealso [get_famille_code()] for the reverse lookup, [indicator_families()].
+#'
+#' @examples
+#' get_famille_col("C")
+#' get_famille_col(c("C", "b", "N"))
+#'
+#' @export
 get_famille_col <- function(code) {
-  FAMILLE_NMT_MAP[[toupper(code)]]
+  if (!is.character(code)) {
+    stop("`code` must be a character vector of family codes.", call. = FALSE)
+  }
+  code <- toupper(code)
+  unknown <- setdiff(code, names(FAMILLE_NMT_MAP))
+  if (length(unknown) > 0) {
+    stop(
+      "Unknown family code(s): ", paste(unknown, collapse = ", "),
+      ". Valid codes: ", paste(names(FAMILLE_NMT_MAP), collapse = " "), ".",
+      call. = FALSE
+    )
+  }
+  unname(FAMILLE_NMT_MAP[code])
 }
 
-#' Get family code from NMT column name
+#' Family code from family score column name
 #'
-#' Reverse lookup: "famille_biodiversite" -> "B"
+#' @description
+#' Reverse of [get_famille_col()]: `"famille_biodiversite"` becomes `"B"`.
+#' Unknown names give `NA` rather than an error, so the function can be mapped
+#' over the columns of an arbitrary `sf` to pick out the family scores.
 #'
-#' @param col_name Character. NMT family column name.
-#' @return Character. Single-letter family code, or NA if not found.
-#' @noRd
+#' @param col_name Character. Family score column name(s). Vectorised.
+#'
+#' @return Character vector of single-letter family codes, `NA_character_`
+#'   where the name is not a family score column.
+#'
+#' @seealso [get_famille_col()], [indicator_families()].
+#'
+#' @examples
+#' get_famille_code("famille_biodiversite")
+#' get_famille_code(c("famille_eau", "surface_m2"))
+#'
+#' @export
 get_famille_code <- function(col_name) {
   idx <- match(col_name, FAMILLE_NMT_MAP)
-  if (is.na(idx)) return(NA_character_)
-  names(FAMILLE_NMT_MAP)[idx]
+  out <- names(FAMILLE_NMT_MAP)[idx]
+  out[is.na(idx)] <- NA_character_
+  out
 }
 
 #' Create Family Composite Indices

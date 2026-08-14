@@ -12,17 +12,21 @@ indicator_families(codes = NULL, lang = c("fr", "en"))
 \code{C B W A F L T R S P E N}. When supplied, rows are returned in the order
 given.}
 
-\item{lang}{Character. Language used to fill the \code{name}, \code{labels} and
-\code{tooltips} columns: \code{"fr"} (default) or \code{"en"}. \code{name_fr} and \code{name_en}
-are always both returned, so a caller that switches language at runtime
-does not need to call the function twice.}
+\item{lang}{Character. Language copied into the convenience columns \code{name},
+\code{description}, \code{labels} and \code{tooltips}: \code{"fr"} (default) or \code{"en"}. The
+\code{_fr} / \code{_en} columns are returned regardless.}
 }
 \value{
 A \code{data.frame} with one row per family and the columns:
 \describe{
 \item{code}{Family code (\code{"C"}, \code{"B"}, ...).}
+\item{family_column}{Name of the family score column produced by
+\code{\link{create_family_index}} (\code{"famille_carbone"}, ...). See
+\code{\link{get_famille_col}}.}
 \item{name}{Family name in \code{lang}.}
 \item{name_fr, name_en}{Family name in both languages.}
+\item{description}{One-line description of the family in \code{lang}.}
+\item{description_fr, description_en}{Description in both languages.}
 \item{icon}{Bootstrap icon name.}
 \item{color}{Semantic hex color (see \emph{Colors}).}
 \item{indicators}{List column: character vector of indicator codes
@@ -31,8 +35,10 @@ A \code{data.frame} with one row per family and the columns:
 names, paired by position with \code{indicators}.}
 \item{labels}{List column: named character vector of indicator labels in
 \code{lang}, named by indicator code.}
+\item{labels_fr, labels_en}{Same, in each language.}
 \item{tooltips}{List column: named character vector of indicator
 tooltips in \code{lang}, named by indicator code.}
+\item{tooltips_fr, tooltips_en}{Same, in each language.}
 }
 }
 \description{
@@ -61,6 +67,15 @@ The labels follow the short code, so \code{labels[["F1"]]} describes erosion --
 consistent with the paired column, not with the column's own slug.
 }
 
+\section{Both languages, always}{
+
+Every translatable field is returned in \strong{both} languages, in dedicated
+\code{_fr} / \code{_en} columns. \code{lang} only selects which of them is copied into the
+convenience columns \code{name}, \code{description}, \code{labels} and \code{tooltips}. A caller
+that switches language at runtime -- or that needs a fallback when one
+language is missing -- never has to call the function twice.
+}
+
 \section{Colors}{
 
 \code{color} carries the \emph{semantic} palette of the core (forest green for carbon,
@@ -81,6 +96,12 @@ for (i in seq_len(nrow(fams))) {
 
 # A subset, in English
 indicator_families(c("C", "W"), lang = "en")$name
+
+# Both languages are always there, whatever `lang`
+fams$labels_en[[1]]
+
+# The family score column produced by create_family_index()
+fams$family_column
 
 }
 \seealso{

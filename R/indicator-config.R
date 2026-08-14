@@ -3,6 +3,8 @@ INDICATOR_FAMILIES <- list(
     code = "C",
     name_fr = "Carbone & Vitalit\u00e9",
     name_en = "Carbon & Vitality",
+    description_fr = "Stockage de carbone et vitalit\u00e9 de la v\u00e9g\u00e9tation (biomasse, NDVI)",
+    description_en = "Carbon storage and vegetation vitality (biomass, NDVI)",
     icon = "tree-fill",
     color = "#228B22",
     indicators = c("C1", "C2"),
@@ -26,6 +28,8 @@ INDICATOR_FAMILIES <- list(
     code = "B",
     name_fr = "Biodiversit\u00e9",
     name_en = "Biodiversity",
+    description_fr = "Protection r\u00e9glementaire, diversit\u00e9 structurale, connectivit\u00e9 \u00e9cologique et diversit\u00e9 spectrale",
+    description_en = "Regulatory protection, structural diversity, ecological connectivity and spectral diversity",
     icon = "bug-fill",
     color = "#9932CC",
     indicators = c("B1", "B2", "B3", "B4"),
@@ -59,6 +63,8 @@ INDICATOR_FAMILIES <- list(
     code = "W",
     name_fr = "Eau",
     name_en = "Water",
+    description_fr = "R\u00e9seau hydrographique, zones humides, indice topographique d'humidit\u00e9 et d\u00e9ficit hydrique sous couvert",
+    description_en = "Water network, wetlands, topographic wetness index and under-canopy water deficit",
     icon = "droplet-fill",
     color = "#1E90FF",
     indicators = c("W1", "W2", "W3", "W4"),
@@ -92,6 +98,8 @@ INDICATOR_FAMILIES <- list(
     code = "A",
     name_fr = "Air & Microclimat",
     name_en = "Air & Microclimate",
+    description_fr = "Tampon forestier, qualit\u00e9 de l'air, microclimat sous couvert et rafra\u00eechissement urbain",
+    description_en = "Forest buffer, air quality, under-canopy microclimate and urban cooling",
     icon = "wind",
     color = "#87CEEB",
     indicators = c("A1", "A2", "A3", "A4", "A5"),
@@ -130,6 +138,8 @@ INDICATOR_FAMILIES <- list(
     code = "F",
     name_fr = "Fertilit\u00e9 des Sols",
     name_en = "Soil Fertility",
+    description_fr = "Fertilit\u00e9 des sols et risque d'\u00e9rosion",
+    description_en = "Soil fertility and erosion risk",
     icon = "globe-americas",
     color = "#8B4513",
     indicators = c("F1", "F2"),
@@ -153,6 +163,8 @@ INDICATOR_FAMILIES <- list(
     code = "L",
     name_fr = "Paysage",
     name_en = "Landscape",
+    description_fr = "Sylvosph\u00e8re (effet lisi\u00e8re), fragmentation paysag\u00e8re et h\u00e9t\u00e9rog\u00e9n\u00e9it\u00e9 spectrale",
+    description_en = "Sylvosphere (edge effect), landscape fragmentation and spectral heterogeneity",
     icon = "image-fill",
     color = "#32CD32",
     indicators = c("L1", "L2", "L3"),
@@ -181,6 +193,8 @@ INDICATOR_FAMILIES <- list(
     code = "T",
     name_fr = "Dynamique Temporelle",
     name_en = "Temporal Dynamics",
+    description_fr = "Anciennet\u00e9 foresti\u00e8re, taux de changement et pression de coupe rase",
+    description_en = "Forest age, change rate and clear-cut pressure",
     icon = "clock-fill",
     color = "#FFD700",
     indicators = c("T1", "T2", "T3"),
@@ -209,6 +223,8 @@ INDICATOR_FAMILIES <- list(
     code = "R",
     name_fr = "Risques & R\u00e9silience",
     name_en = "Risks & Resilience",
+    description_fr = "Risques feu, temp\u00eate, s\u00e9cheresse, abroutissement, d\u00e9p\u00e9rissement, sensibilit\u00e9 microclimatique et gel tardif",
+    description_en = "Fire, storm, drought, browsing, dieback, microclimate sensitivity and late-frost risks",
     icon = "exclamation-triangle-fill",
     color = "#DC143C",
     indicators = c("R1", "R2", "R3", "R4", "R5", "R6", "R7"),
@@ -257,6 +273,8 @@ INDICATOR_FAMILIES <- list(
     code = "S",
     name_fr = "Social & R\u00e9cr\u00e9atif",
     name_en = "Social & Recreational",
+    description_fr = "Distance aux routes et aux b\u00e2timents, proximit\u00e9 de la population",
+    description_en = "Distance to roads and buildings, population proximity",
     icon = "people-fill",
     color = "#FF69B4",
     indicators = c("S1", "S2", "S3"),
@@ -285,6 +303,8 @@ INDICATOR_FAMILIES <- list(
     code = "P",
     name_fr = "Production",
     name_en = "Production",
+    description_fr = "Volume de bois, productivit\u00e9 de la station et qualit\u00e9 du bois",
+    description_en = "Timber volume, site productivity and timber quality",
     icon = "box-seam-fill",
     color = "#006400",
     indicators = c("P1", "P2", "P3"),
@@ -313,6 +333,8 @@ INDICATOR_FAMILIES <- list(
     code = "E",
     name_fr = "\u00c9nergie & Climat",
     name_en = "Energy & Climate",
+    description_fr = "Potentiel bois-\u00e9nergie et \u00e9vitement de CO2",
+    description_en = "Wood energy potential and CO2 avoidance",
     icon = "lightning-fill",
     color = "#FF8C00",
     indicators = c("E1", "E2"),
@@ -336,6 +358,8 @@ INDICATOR_FAMILIES <- list(
     code = "N",
     name_fr = "Naturalit\u00e9",
     name_en = "Naturalness",
+    description_fr = "\u00c9loignement des infrastructures, continuit\u00e9 foresti\u00e8re et score de naturalit\u00e9",
+    description_en = "Infrastructure remoteness, forest continuity and naturalness score",
     icon = "flower1",
     color = "#2E8B57",
     indicators = c("N1", "N2", "N3"),
@@ -463,16 +487,27 @@ get_all_column_names <- function() {
 #'   (default) for all 12 families in canonical order
 #'   `C B W A F L T R S P E N`. When supplied, rows are returned in the order
 #'   given.
-#' @param lang Character. Language used to fill the `name`, `labels` and
-#'   `tooltips` columns: `"fr"` (default) or `"en"`. `name_fr` and `name_en`
-#'   are always both returned, so a caller that switches language at runtime
-#'   does not need to call the function twice.
+#' @section Both languages, always:
+#' Every translatable field is returned in **both** languages, in dedicated
+#' `_fr` / `_en` columns. `lang` only selects which of them is copied into the
+#' convenience columns `name`, `description`, `labels` and `tooltips`. A caller
+#' that switches language at runtime — or that needs a fallback when one
+#' language is missing — never has to call the function twice.
+#'
+#' @param lang Character. Language copied into the convenience columns `name`,
+#'   `description`, `labels` and `tooltips`: `"fr"` (default) or `"en"`. The
+#'   `_fr` / `_en` columns are returned regardless.
 #'
 #' @return A `data.frame` with one row per family and the columns:
 #'   \describe{
 #'     \item{code}{Family code (`"C"`, `"B"`, ...).}
+#'     \item{family_column}{Name of the family score column produced by
+#'       [create_family_index()] (`"famille_carbone"`, ...). See
+#'       [get_famille_col()].}
 #'     \item{name}{Family name in `lang`.}
 #'     \item{name_fr, name_en}{Family name in both languages.}
+#'     \item{description}{One-line description of the family in `lang`.}
+#'     \item{description_fr, description_en}{Description in both languages.}
 #'     \item{icon}{Bootstrap icon name.}
 #'     \item{color}{Semantic hex color (see *Colors*).}
 #'     \item{indicators}{List column: character vector of indicator codes
@@ -481,8 +516,10 @@ get_all_column_names <- function() {
 #'       names, paired by position with `indicators`.}
 #'     \item{labels}{List column: named character vector of indicator labels in
 #'       `lang`, named by indicator code.}
+#'     \item{labels_fr, labels_en}{Same, in each language.}
 #'     \item{tooltips}{List column: named character vector of indicator
 #'       tooltips in `lang`, named by indicator code.}
+#'     \item{tooltips_fr, tooltips_en}{Same, in each language.}
 #'   }
 #'
 #' @seealso [indicator_labels()] for a long-format, one-row-per-indicator view.
@@ -500,20 +537,33 @@ get_all_column_names <- function() {
 #' # A subset, in English
 #' indicator_families(c("C", "W"), lang = "en")$name
 #'
+#' # Both languages are always there, whatever `lang`
+#' fams$labels_en[[1]]
+#'
+#' # The family score column produced by create_family_index()
+#' fams$family_column
+#'
 #' @export
 indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
   lang <- match.arg(lang)
   fams <- .select_families(codes)
 
+  atomic_cols <- c(
+    "code", "family_column", "name", "name_fr", "name_en",
+    "description", "description_fr", "description_en", "icon", "color"
+  )
+  list_cols <- c(
+    "indicators", "column_names",
+    "labels", "labels_fr", "labels_en",
+    "tooltips", "tooltips_fr", "tooltips_en"
+  )
+
   if (length(fams) == 0) {
     empty <- data.frame(
-      code = character(0), name = character(0), name_fr = character(0),
-      name_en = character(0), icon = character(0), color = character(0),
+      stats::setNames(rep(list(character(0)), length(atomic_cols)), atomic_cols),
       stringsAsFactors = FALSE
     )
-    for (col in c("indicators", "column_names", "labels", "tooltips")) {
-      empty[[col]] <- list()
-    }
+    for (col in list_cols) empty[[col]] <- list()
     return(empty)
   }
 
@@ -525,9 +575,16 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 
   out <- data.frame(
     code = chr("code"),
+    family_column = vapply(fams, function(f) get_famille_col(f$code),
+      character(1),
+      USE.NAMES = FALSE
+    ),
     name = chr(paste0("name_", lang)),
     name_fr = chr("name_fr"),
     name_en = chr("name_en"),
+    description = chr(paste0("description_", lang)),
+    description_fr = chr("description_fr"),
+    description_en = chr("description_en"),
     icon = chr("icon"),
     color = chr("color"),
     stringsAsFactors = FALSE
@@ -535,13 +592,18 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 
   out$indicators <- lapply(fams, function(f) as.character(f$indicators))
   out$column_names <- lapply(fams, function(f) as.character(f$column_names))
-  out$labels <- lapply(fams, .family_texts, field = "indicator_labels", lang = lang)
-  out$tooltips <- lapply(fams, .family_texts, field = "indicator_tooltips", lang = lang)
+  for (lg in c("fr", "en")) {
+    out[[paste0("labels_", lg)]] <-
+      lapply(fams, .family_texts, field = "indicator_labels", lang = lg)
+    out[[paste0("tooltips_", lg)]] <-
+      lapply(fams, .family_texts, field = "indicator_tooltips", lang = lg)
+  }
+  out$labels <- out[[paste0("labels_", lang)]]
+  out$tooltips <- out[[paste0("tooltips_", lang)]]
 
-  names(out$indicators) <- NULL
-  names(out$column_names) <- NULL
-  names(out$labels) <- NULL
-  names(out$tooltips) <- NULL
+  # Colonnes-listes rangées dans l'ordre documenté, sans noms résiduels
+  out <- out[, c(atomic_cols, list_cols)]
+  for (col in list_cols) names(out[[col]]) <- NULL
   rownames(out) <- NULL
 
   out
@@ -578,12 +640,18 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 #' see the *Column pairing* section of [indicator_families()] for the two
 #' families where the short code and the column slug disagree.
 #'
+#' As in [indicator_families()], both languages are always returned: `lang`
+#' only selects which one is copied into the convenience columns `label` and
+#' `tooltip`.
+#'
 #' @param codes Character vector of family codes (case-insensitive), or `NULL`
 #'   (default) for all 12 families.
-#' @param lang Character. `"fr"` (default) or `"en"`.
+#' @param lang Character. Language copied into `label` and `tooltip`: `"fr"`
+#'   (default) or `"en"`. The `_fr` / `_en` columns are returned regardless.
 #'
-#' @return A `data.frame` with columns `family` (family code), `code`
-#'   (indicator code), `column_name`, `label` and `tooltip`.
+#' @return A `data.frame` with columns `family` (family code), `family_column`
+#'   (family score column), `code` (indicator code), `column_name`, `label`,
+#'   `label_fr`, `label_en`, `tooltip`, `tooltip_fr` and `tooltip_en`.
 #'
 #' @seealso [indicator_families()]
 #'
@@ -594,27 +662,43 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 #' # Lookup table: column name -> label
 #' stats::setNames(ind$label, ind$column_name)[["indicateur_c1_biomasse"]]
 #'
+#' # Bilingual lookup, without a second call
+#' stats::setNames(ind$label_en, ind$code)[["C1"]]
+#'
 #' @export
 indicator_labels <- function(codes = NULL, lang = c("fr", "en")) {
   lang <- match.arg(lang)
   fams <- .select_families(codes)
 
+  cols <- c(
+    "family", "family_column", "code", "column_name",
+    "label", "label_fr", "label_en",
+    "tooltip", "tooltip_fr", "tooltip_en"
+  )
+
   if (length(fams) == 0) {
     return(data.frame(
-      family = character(0), code = character(0), column_name = character(0),
-      label = character(0), tooltip = character(0), stringsAsFactors = FALSE
+      stats::setNames(rep(list(character(0)), length(cols)), cols),
+      stringsAsFactors = FALSE
     ))
   }
 
   rows <- lapply(fams, function(f) {
-    data.frame(
-      family = rep(as.character(f$code), length(f$indicators)),
+    n <- length(f$indicators)
+    out <- data.frame(
+      family = rep(as.character(f$code), n),
+      family_column = rep(get_famille_col(f$code), n),
       code = as.character(f$indicators),
       column_name = as.character(f$column_names),
-      label = unname(.family_texts(f, "indicator_labels", lang)),
-      tooltip = unname(.family_texts(f, "indicator_tooltips", lang)),
+      label_fr = unname(.family_texts(f, "indicator_labels", "fr")),
+      label_en = unname(.family_texts(f, "indicator_labels", "en")),
+      tooltip_fr = unname(.family_texts(f, "indicator_tooltips", "fr")),
+      tooltip_en = unname(.family_texts(f, "indicator_tooltips", "en")),
       stringsAsFactors = FALSE
     )
+    out$label <- out[[paste0("label_", lang)]]
+    out$tooltip <- out[[paste0("tooltip_", lang)]]
+    out[, cols]
   })
 
   out <- do.call(rbind, c(rows, list(make.row.names = FALSE)))

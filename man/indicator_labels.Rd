@@ -10,11 +10,13 @@ indicator_labels(codes = NULL, lang = c("fr", "en"))
 \item{codes}{Character vector of family codes (case-insensitive), or \code{NULL}
 (default) for all 12 families.}
 
-\item{lang}{Character. \code{"fr"} (default) or \code{"en"}.}
+\item{lang}{Character. Language copied into \code{label} and \code{tooltip}: \code{"fr"}
+(default) or \code{"en"}. The \code{_fr} / \code{_en} columns are returned regardless.}
 }
 \value{
-A \code{data.frame} with columns \code{family} (family code), \code{code}
-(indicator code), \code{column_name}, \code{label} and \code{tooltip}.
+A \code{data.frame} with columns \code{family} (family code), \code{family_column}
+(family score column), \code{code} (indicator code), \code{column_name}, \code{label},
+\code{label_fr}, \code{label_en}, \code{tooltip}, \code{tooltip_fr} and \code{tooltip_en}.
 }
 \description{
 One row per indicator, flattening \code{\link{indicator_families}}. Useful to build a
@@ -25,6 +27,10 @@ Rows follow the canonical family order, and within a family the declaration
 order of the indicators. \code{column_name} is the column paired with \code{code} --
 see the \emph{Column pairing} section of \code{\link{indicator_families}} for the two
 families where the short code and the column slug disagree.
+
+As in \code{\link{indicator_families}}, both languages are always returned: \code{lang}
+only selects which one is copied into the convenience columns \code{label} and
+\code{tooltip}.
 }
 \examples{
 ind <- indicator_labels()
@@ -32,6 +38,9 @@ head(ind)
 
 # Lookup table: column name -> label
 stats::setNames(ind$label, ind$column_name)[["indicateur_c1_biomasse"]]
+
+# Bilingual lookup, without a second call
+stats::setNames(ind$label_en, ind$code)[["C1"]]
 
 }
 \seealso{
