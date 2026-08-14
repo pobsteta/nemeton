@@ -158,6 +158,37 @@ immédiate), **(b)** plus tard si le besoin s'en fait sentir.
 Les 5 accesseurs copiés (`get_family_config` & co.) restent tels quels : ils
 lisent l'objet reconstruit et n'ont plus rien de dupliqué.
 
+#### Le patch est prêt
+
+L'étape 1 est livrée sous forme de patch appliquable, dans ce repo :
+
+```bash
+cd ~/dev/nemetonshiny
+git apply ~/dev/nemeton/specs/patch-nemetonshiny-app_config-defork.diff
+```
+
+Il touche **deux fichiers** : `R/app_config.R` (−309 lignes : le fork disparaît,
+`.build_indicator_families()` le remplace) et `R/zzz.R` (+7 lignes : le
+`.onLoad()`). Il ne touche ni `utils_i18n.R`, ni `utils_theme.R`, ni aucun des
+consommateurs — les étapes 2 à 5 restent à faire à la main.
+
+Vérifications passées avant livraison, sans rien écrire dans l'app :
+
+- `git apply --check` passe sur l'arbre de travail actuel de `nemetonshiny`
+  (branche `claude/ascii-sources`, 65 fichiers modifiés) — aucun conflit ;
+- les deux fichiers patchés parsent ;
+- l'objet reconstruit est `identical()` au cœur, **champ par champ, pour les 12
+  familles** ;
+- **41 indicateurs au lieu de 40** : `get_family_config("A")` rend bien 5
+  indicateurs, A5 et `indicateur_a5_rafraichissement` sont de retour ;
+- les 5 accesseurs conservés répondent sur l'objet reconstruit
+  (`get_all_column_names()` : 41, `get_column_family_map()` : 82 entrées).
+
+Le patch **suppose `nemeton >= 0.171.0` installé** (colonnes `labels_fr` /
+`labels_en` / `tooltips_fr` / `tooltips_en`) : bumper `DESCRIPTION` et
+réinstaller le cœur avant de charger l'app, sinon `.onLoad()` échouera au
+chargement.
+
 > **Vérifié** : sur `nemeton 0.171.0`, chacun des 9 champs reconstruits est
 > `identical()` à son homologue de `nemeton:::INDICATOR_FAMILIES`, pour les 12
 > familles, tooltips compris. Le remplacement est donc à comportement
@@ -378,8 +409,9 @@ cosmétique (libellés du cœur un peu plus longs).
 - [ ] `DESCRIPTION` : `Imports: nemeton (>= 0.171.0)` (actuellement `>= 0.169.0`).
       `Remotes: pobsteta/nemeton@*release` est déjà bon — le tag `v0.171.0`
       existe.
-- [ ] `app_config.R` : supprimer les lignes 127–558, poser
-      `.build_indicator_families()` + `.onLoad`.
+- [ ] `app_config.R` + `zzz.R` : **`git apply
+      ~/dev/nemeton/specs/patch-nemetonshiny-app_config-defork.diff`** (patch
+      prêt et vérifié, cf. étape 1).
 - [ ] `app_ui.R` : boucle sur `indicator_families()`, `value` de nav inchangée
       (lue dans `family_column`).
 - [ ] `utils_i18n.R` : retirer les 12 clés de noms de famille ; supprimer le
