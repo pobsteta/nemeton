@@ -5,11 +5,12 @@
 > **Côté cœur** : ✅ livré, `nemeton 0.171.0` — les trois manques du §5 sont
 > comblés (deux langues systématiques, `description` de famille,
 > `family_column` + `get_famille_col()`/`get_famille_code()` exportées).
-> **Côté app** : à faire. Ce brief remplace le §6 du brief entrant, qui
-> **sous-estimait la duplication d'un facteur ~15** et la croyait à tort
-> silencieuse. Lire le §2 avant de planifier.
-> **Contexte de lecture** : `nemetonshiny@0.122.12.9000`, branche
-> `claude/ascii-sources`, lecture seule.
+> **Côté app** : **6 patches prêts à appliquer** (§3), vérifiés sur copie —
+> rien n'a été écrit dans le repo frère (règle #11). Ce brief remplace le §6 du
+> brief entrant, qui **sous-estimait la duplication d'un facteur ~15** et la
+> croyait à tort silencieuse. Lire le §2 avant de planifier.
+> **Contexte de lecture** : `nemetonshiny@0.122.14.9000`, branche `main`
+> propre, lecture seule (2026-08-14).
 
 ---
 
@@ -98,6 +99,31 @@ apparaître dans l'onglet Air sans qu'on ait rien codé pour lui.**
 ---
 
 ## 3. Migration proposée
+
+**Tout est livré sous forme de patches appliquables**, dans ce repo. À appliquer
+**dans l'ordre** (aucun ne recouvre le même fichier qu'un autre, sauf le 04 qui
+suppose le 03 posé) :
+
+```bash
+cd ~/dev/nemetonshiny
+for p in 01-app_config-defork 02-menu-boucle 03-cles-famille \
+         04-libelles-indicateurs 05-theme-ordre 06-test-identite; do
+  git apply ~/dev/nemeton/specs/patch-nemetonshiny-$p.diff || break
+done
+```
+
+| Patch | Fichiers | Effet |
+|---|---|---|
+| `01-app_config-defork` | `app_config.R`, `zzz.R` | −309 lignes : le fork remplacé par `.build_indicator_families()` |
+| `02-menu-boucle` | `app_ui.R` | Les 12 onglets par boucle ; sous-titre lu dans `description` |
+| `03-cles-famille` | `utils_i18n.R`, `mod_synthesis.R` | −24 clés `famille_*` ; retrait du `col_names` mort |
+| `04-libelles-indicateurs` | `utils_i18n.R`, `mod_family.R` | −74 clés ; libellés et progression lus dans le cœur |
+| `05-theme-ordre` | `utils_theme.R` | Ordre canonique lu dans le cœur (viridis conservé) |
+| `06-test-identite` | `test-app_config.R` | Les 8 tests de structure → 3 tests d'identité |
+
+Vérifié avant livraison, sans rien écrire dans l'app : les 6 patches
+s'appliquent sur `main` (`git apply --check`), et **après la séquence complète
+les 66 fichiers `R/` et les 91 fichiers de test parsent**.
 
 ### Étape 1 — remplacer le fork par un adaptateur (le gros du gain)
 
@@ -199,6 +225,8 @@ chargement.
 
 ### Étape 2 — `app_ui.R` : les 12 onglets par boucle
 
+`patch-nemetonshiny-02-menu-boucle.diff`.
+
 Attention à un détail structurel : `family_tab(key, code)` utilise `key` comme
 `value =` du `nav_panel` **et** comme namespace du module. Ce `key` n'est pas
 un simple libellé : c'est `famille_carbone`, `famille_sol`, … c'est-à-dire le
@@ -242,6 +270,8 @@ inchangé à l'écran.
 
 ### Étape 3 — `utils_i18n.R` : les 24 clés `famille_*`, mais pas de la même façon
 
+`patch-nemetonshiny-03-cles-famille.diff`.
+
 Le brief entrant parle de « retirer les 24 clés `famille_*` ». Ces 24 clés sont
 en réalité **12 noms + 12 descriptions**, et elles ne se traitent pas pareil.
 
@@ -265,30 +295,50 @@ en réalité **12 noms + 12 descriptions**, et elles ne se traitent pas pareil.
   C'est une correction, pas une régression — mais c'est visible, donc à valider
   d'un coup d'œil sur les 12 pages.
 
-### Étape 4 — les 34 clés `indicateur_*` : à ne surtout pas supprimer en l'état
+### Étape 4 — les libellés d'indicateurs : deux copies, dont une fausse
 
-Le brief entrant les disait « redondantes, à vérifier une à une ». Vérification
-faite : **elles sont vivantes**, mais pas là où on le croit. Aucune page de
-famille ne les utilise (les libellés viennent du fork). Elles alimentent le
-**canal de progression** : `utils_i18n.R:5057` traduit une tâche
-`"compute:indicateur_c1_biomasse"` en libellé lisible.
+`patch-nemetonshiny-04-libelles-indicateurs.diff` — **à appliquer après le 03**
+(même fichier).
 
-Ce sont des formes **volontairement courtes** (« Biomasse carbone » contre
-« Biomasse carbone (tC/ha) » côté cœur). Deux options :
+Deux jeux de clés portent les libellés d'indicateurs, et aucun n'est celui
+qu'on croit :
 
-- **les garder** telles quelles — l'aval n'y touche pas, aucune dette ;
-- **basculer le canal de progression sur `nemeton::indicator_labels()`** et
-  supprimer les 34 clés (68 chaînes). Effet de bord **positif** : 7 indicateurs
-  calculés n'ont aujourd'hui **aucune** clé de progression — `w4_vpd`,
-  `a3_microclimat`, `a4_tamponnement`, `a5_rafraichissement`,
-  `t3_coupes_rases`, `r6_sensibilite`, `r7_gel` — et la barre affiche le nom de
-  colonne brut. La bascule les corrige d'un coup. Coût : le libellé s'allonge
-  (« (tC/ha) », « (FORDEAD) »).
+- **40 clés `indicator_<CODE>`** (`indicator_C1`, `indicator_B4`, …) →
+  `clean_indicator_label()` (`mod_family.R:838`), pour les tableaux et cartes
+  des pages de famille ;
+- **34 clés `indicateur_*`** (`indicateur_c1_biomasse`, …) → le **canal de
+  progression**, `utils_i18n.R` traduit `"compute:indicateur_c1_biomasse"` en
+  libellé lisible.
 
-Recommandation : **option 2**, dans un second temps, une fois l'étape 1 en
-production. C'est un gain net de cohérence pour un risque cosmétique.
+Le patch branche les deux sur `nemeton::indicator_labels()` et supprime les 74
+clés (148 chaînes). Il corrige au passage **trois défauts mesurés** :
+
+**a) F1 et F2 sont inversés — un vrai bug d'affichage.** `clean_indicator_label()`
+apparie correctement la colonne au code (`indicateur_f2_erosion` → `F1`, via la
+position, croisement historique compris), puis va chercher `indicator_F1`… qui
+dans la copie locale vaut « Fertilité des sols ». **La colonne d'érosion
+s'affiche donc aujourd'hui « F1 - Fertilité des sols »**, et la fertilité
+« F2 - Risque d'érosion ». Après patch : « F1 - Risque d'érosion », conforme au
+cœur et à ce que la colonne contient réellement.
+
+**b) S1/S2 décrivent autre chose que ce qui est calculé.** L'app affiche
+« Densité de sentiers » et « Accessibilité » ; le cœur calcule une *distance
+moyenne aux routes* (BD TOPO) et une *distance aux bâtiments*. Le libellé du
+cœur dit ce que le chiffre mesure.
+
+**c) 7 indicateurs sans libellé de progression.** `w4_vpd`, `a3_microclimat`,
+`a4_tamponnement`, `a5_rafraichissement`, `t3_coupes_rases`, `r6_sensibilite`,
+`r7_gel` n'ont aucune clé : la barre affiche le nom de colonne brut. Plus A5,
+absent aussi des clés d'affichage.
+
+**Coût, à valider à l'œil** : 22 libellés sur 80 changent de texte. Outre les
+corrections ci-dessus, ce sont des nuances — A3 « Microclimat (T°max) » →
+« Microclimat sous couvert », L3 perd son « (β) », R5 gagne « (FORDEAD) ». 58
+sont identiques au caractère près.
 
 ### Étape 5 — `utils_theme.R` : l'ordre canonique, encore
+
+`patch-nemetonshiny-05-theme-ordre.diff`.
 
 `get_family_colors()` (ligne 276) réécrit les 12 codes à la main :
 
@@ -311,6 +361,9 @@ migration ne change donc rien aux couleurs, dans un sens comme dans l'autre.
 ## 4. Tests
 
 ### 4.1 Le test anti-redéclaration (§6.4 du brief entrant)
+
+`patch-nemetonshiny-06-test-identite.diff`. Les trois tests ont été exécutés
+contre la table reconstruite avant livraison : **129 assertions, vertes**.
 
 Remplacer les ~10 tests structurels de `tests/testthat/test-app_config.R`
 (lignes 111–220 : « 12 familles », « codes corrects », « champs requis »,
@@ -406,28 +459,39 @@ cosmétique (libellés du cœur un peu plus longs).
 
 ## 6. Checklist
 
+**Prérequis, à faire à la main** :
+
 - [ ] `DESCRIPTION` : `Imports: nemeton (>= 0.171.0)` (actuellement `>= 0.169.0`).
       `Remotes: pobsteta/nemeton@*release` est déjà bon — le tag `v0.171.0`
       existe.
-- [ ] `app_config.R` + `zzz.R` : **`git apply
-      ~/dev/nemeton/specs/patch-nemetonshiny-app_config-defork.diff`** (patch
-      prêt et vérifié, cf. étape 1).
-- [ ] `app_ui.R` : boucle sur `indicator_families()`, `value` de nav inchangée
-      (lue dans `family_column`).
-- [ ] `utils_i18n.R` : retirer les 12 clés de noms de famille ; supprimer le
-      `col_names` mort de `mod_synthesis.R:592`. Les 12 `_desc` peuvent suivre
-      (colonne `description`), en validant le changement de texte.
+- [ ] Réinstaller le cœur en `0.171.0` **avant** de charger l'app : sans les
+      colonnes bilingues, `.onLoad()` échoue au chargement.
+
+**Les 6 patches, dans l'ordre** (§3) :
+
+- [ ] `01-app_config-defork` — `app_config.R` + `zzz.R`
+- [ ] `02-menu-boucle` — `app_ui.R`
+- [ ] `03-cles-famille` — `utils_i18n.R` + `mod_synthesis.R`
+- [ ] `04-libelles-indicateurs` — `utils_i18n.R` + `mod_family.R` *(après le 03)*
+- [ ] `05-theme-ordre` — `utils_theme.R`
+- [ ] `06-test-identite` — `test-app_config.R`
+
+**Le reste, à la main** :
+
 - [ ] `imports.R` : `get_famille_col` / `get_famille_code` en `nemeton::`
-      direct, `FAMILLE_NMT_MAP` remplaçable par `family_column`.
-- [ ] `utils_theme.R` : ordre canonique lu depuis le cœur.
-- [ ] `test-app_config.R` : remplacer les ~10 tests structurels par le test
-      d'identité du §4.1.
+      direct, `FAMILLE_NMT_MAP` remplaçable par `family_column`. Pas patché :
+      il faut vérifier les appelants un par un.
+- [ ] `devtools::test()` complet — les patches ne modifient que
+      `test-app_config.R`, mais d'autres suites touchent `INDICATOR_FAMILIES`
+      (`test-03mod_synthesis.R`, `test-mod_family.R`, `test-llm_prompts.R`,
+      `test-app_infrastructure.R`, `test-regeneration-frost.R`).
+      *Déjà vérifié* : les 5 assertions existantes sur
+      `clean_indicator_label()` (`test-mod_family.R`, `test-regeneration-frost.R`)
+      passent telles quelles après le patch 04 — « C1 - Biomasse carbone
+      (tC/ha) », « W3 - Topographic Wetness Index », le repli « UNKNOWN IND »
+      et « R7 - Risque de gel tardif » sont inchangés.
 - [ ] Recette §4.2, **en commençant par A5 dans l'onglet Air**.
 - [ ] `CLAUDE.md` de l'app : la phrase « les noms de famille sont lus depuis
       `nemeton::INDICATOR_FAMILIES` » devient vraie — la mettre à jour pour
       pointer `nemeton::indicator_families()` (l'objet reste interne au cœur,
       l'accesseur est l'API).
-- [ ] Second temps (§5.1) : brancher `clean_indicator_label()` et le canal de
-      progression sur `indicator_labels()`, puis supprimer les 40 clés
-      `indicator_<CODE>` et les 34 clés `indicateur_*` (corrige au passage les
-      7 indicateurs sans libellé de progression).

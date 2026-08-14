@@ -1,0 +1,91 @@
+--- a/R/app_ui.R
++++ b/R/app_ui.R
+@@ -26,16 +26,28 @@
+   # parentheses - " Carbone & Vitalite (C) " : ce code est la cle qui circule
+   # partout ailleurs (radar, exports, profils experts, briefs coeur, tableaux
+   # d'indicateurs B1/C2/...), et le menu etait le seul endroit qui ne le donnait
+-  # pas. Le composer ici, a partir du code deja passe au module, evite de
+-  # l'ecrire deux fois par famille.
+-  family_tab <- function(key, code) {
++  # pas.
++  #
++  # `key` est le nom de la colonne de score de famille du coeur
++  # ("famille_carbone") : c'est aussi la valeur de nav, le namespace du module,
++  # la cible du tour guide et une cle en base - il ne doit PAS changer. Il est
++  # lu dans `family_column`, le nom n'est plus ecrit ici.
++  family_tab <- function(key, code, name) {
+     bslib::nav_panel(
+-      title = sprintf("%s (%s)", i18n$t(key), code),
++      title = sprintf("%s (%s)", name, code),
+       value = key,
+       mod_family_ui(key, code)
+     )
+   }
+ 
++  # Les 12 onglets, construits par boucle sur la table du coeur. L'ordre
++  # canonique (C B W A F L T R S P E N) est garanti par `indicator_families()`
++  # et teste cote coeur : c'est exactement l'ordre historique du menu.
++  family_tabs <- local({
++    fams <- nemeton::indicator_families(lang = lang)
++    unname(Map(family_tab, fams$family_column, fams$code, fams$name))
++  })
++
+   htmltools::tagList(
+     # Add external resources (CSS, JS)
+     app_add_external_resources(),
+@@ -141,23 +153,13 @@
+       ),
+ 
+       # === Tabs 5-16: Indicator Families ===
+-      bslib::nav_menu(
+-        title = i18n$t("tab_families"),
+-        icon = bsicons::bs_icon("layers"),
+-
+-        family_tab("famille_carbone",      "C"),
+-        family_tab("famille_biodiversite", "B"),
+-        family_tab("famille_eau",          "W"),
+-        family_tab("famille_air",          "A"),
+-        family_tab("famille_sol",          "F"),
+-        family_tab("famille_paysage",      "L"),
+-        family_tab("famille_temporel",     "T"),
+-        family_tab("famille_risque",       "R"),
+-        family_tab("famille_social",       "S"),
+-        family_tab("famille_production",   "P"),
+-        family_tab("famille_energie",      "E"),
+-        family_tab("famille_naturalite",   "N")
+-      ),
++      do.call(bslib::nav_menu, c(
++        list(
++          title = i18n$t("tab_families"),
++          icon = bsicons::bs_icon("layers")
++        ),
++        family_tabs
++      )),
+ 
+       # === Navbar items (right side) ===
+       bslib::nav_spacer(),
+@@ -748,6 +750,15 @@
+ 
+   family_name <- if (opts$language == "fr") family$name_fr else family$name_en
+ 
++  # Sous-titre de la page : description lue dans le coeur (nemeton >= 0.171.0)
++  # au lieu d'une cle i18n `famille_*_desc` locale. Le texte du coeur est a jour
++  # du contenu reel des familles - les descriptions locales dataient d'avant
++  # A3-A5, R5-R7, T3, W4, B4 et L3 et decrivaient des familles amputees.
++  family_desc <- nemeton::indicator_families(
++    family_code,
++    lang = opts$language
++  )$description
++
+   htmltools::tagList(
+     # Family header
+     htmltools::div(
+@@ -756,7 +767,7 @@
+       htmltools::span(family_name, class = "fw-bold me-2"),
+       htmltools::span(
+         class = "text-muted",
+-        paste0("\u2014 ", i18n$t(paste0(get_famille_col(family_code), "_desc")))
++        paste0("\u2014 ", family_desc)
+       )
+     ),
+ 

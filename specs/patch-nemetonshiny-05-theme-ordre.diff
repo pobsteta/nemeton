@@ -1,0 +1,18 @@
+--- a/R/utils_theme.R
++++ b/R/utils_theme.R
+@@ -274,9 +274,12 @@
+ #'
+ #' @noRd
+ get_family_colors <- function() {
+-  # Use viridis palette for 12 families
+-  colors <- get_accessible_palette(12)
+-  names(colors) <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
++  # Palette viridis (accessibilite daltonienne) - deliberement differente des
++  # couleurs semantiques du coeur (`indicator_families()$color`), qu'on ignore.
++  # Seul l'ORDRE des codes vient du coeur, pour ne pas le reecrire ici.
++  codes <- nemeton::indicator_families()$code
++  colors <- get_accessible_palette(length(codes))
++  names(colors) <- codes
+   colors
+ }
+ 
