@@ -107,6 +107,15 @@
 <hr></div>
 </div>
 <div class="section level1">
+<h1 id="brief-émis--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess">Brief émis — Onglet Desserte : rendre visibles les sorties (app + foretaccess)<a class="anchor" aria-label="anchor" href="#brief-%C3%A9mis--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess"></a></h1>
+<blockquote>
+<p><strong>Émis le 2026-08-14</strong> : <code>specs/brief-nemetonshiny-desserte-visualisation.md</code>. Aucun impact cœur <code>nemeton</code> — tracé ici parce que le brief part d’ici.</p>
+</blockquote>
+<p><strong>Constat</strong> (lecture seule de <code>nemetonshiny@0.123.0.9000</code>) : la sidebar droite de l’onglet Desserte porte 5 actions, toutes produisent un résultat sur disque, <strong>2 seulement sont visibles</strong>. Le complément OSM (<code>desserte_osm.gpkg</code>) et la détection de routes non cartographiées (<code>desserte_detectee.gpkg</code>) — les deux traitements les plus coûteux de l’onglet — n’ont <strong>aucun calque</strong> : la sidebar n’en donne qu’un compteur, la géométrie reste dans le cache du projet, et l’export ne copie que <code>desserte.gpkg</code>. Deux autres trous vérifiés : le typage est le seul des cinq à n’avoir <strong>aucun <code>.load_cached_*</code></strong>, il est donc perdu au rechargement du projet malgré son GeoPackage sur disque ; et <code>run_desserte_osm()</code> écrit son GeoPackage sans en renvoyer le chemin.</p>
+<p><strong>Point dur, côté <code>foretaccess</code></strong> : <code>comparer_desserte_osm()</code> ne renvoie que des <strong>tables de linéaire</strong> (<code>osm</code>, <code>bdtopo</code>, <code>resume</code>) — aucune géométrie. Le « hors corridor », c’est-à-dire le gisement à instruire, n’existe qu’en mètres. Ce que l’app écrit dans <code>desserte_osm.gpkg</code> est donc la couche OSM <strong>brute</strong>, pas le résultat de la comparaison. Recommandation : faire renvoyer aussi <code>osm_hors_corridor</code> / <code>bdtopo_hors_corridor</code> par le cœur (le calcul est fait, il est jeté ; 104 s pour 3 122 × 544 tronçons) plutôt que de le refaire côté app avec un <code>corridor_m</code> qui pourrait diverger.</p>
+<p><strong>Livré en brief et non en patch</strong> : <code>R/mod_desserte.R</code> était en cours d’édition au moment de la rédaction (modifié 3 minutes plus tôt, 5 fichiers en travail sur <code>main</code>). Des patches ancrés sur des numéros de ligne y auraient pourri en quelques minutes — le brief cite des observers et des fonctions.</p>
+<hr></div>
+<div class="section level1">
 <h1 id="chantier-clos--export-public-de-la-table-des-familles-dindicateurs">Chantier CLOS — Export public de la table des familles d’indicateurs<a class="anchor" aria-label="anchor" href="#chantier-clos--export-public-de-la-table-des-familles-dindicateurs"></a></h1>
 <blockquote>
 <p><strong>Clos le 2026-08-14 (v0.170.0).</strong> Brief : <code>specs/BRIEF-indicator-families-export.md</code> (émis depuis <code>nemetonshiny</code>).</p>

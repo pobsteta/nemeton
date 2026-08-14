@@ -30,6 +30,42 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 ------------------------------------------------------------------------
 
+# Brief émis — Onglet Desserte : rendre visibles les sorties (app + foretaccess)
+
+> **Émis le 2026-08-14** :
+> `specs/brief-nemetonshiny-desserte-visualisation.md`. Aucun impact
+> cœur `nemeton` — tracé ici parce que le brief part d’ici.
+
+**Constat** (lecture seule de `nemetonshiny@0.123.0.9000`) : la sidebar
+droite de l’onglet Desserte porte 5 actions, toutes produisent un
+résultat sur disque, **2 seulement sont visibles**. Le complément OSM
+(`desserte_osm.gpkg`) et la détection de routes non cartographiées
+(`desserte_detectee.gpkg`) — les deux traitements les plus coûteux de
+l’onglet — n’ont **aucun calque** : la sidebar n’en donne qu’un
+compteur, la géométrie reste dans le cache du projet, et l’export ne
+copie que `desserte.gpkg`. Deux autres trous vérifiés : le typage est le
+seul des cinq à n’avoir **aucun `.load_cached_*`**, il est donc perdu au
+rechargement du projet malgré son GeoPackage sur disque ; et
+`run_desserte_osm()` écrit son GeoPackage sans en renvoyer le chemin.
+
+**Point dur, côté `foretaccess`** : `comparer_desserte_osm()` ne renvoie
+que des **tables de linéaire** (`osm`, `bdtopo`, `resume`) — aucune
+géométrie. Le « hors corridor », c’est-à-dire le gisement à instruire,
+n’existe qu’en mètres. Ce que l’app écrit dans `desserte_osm.gpkg` est
+donc la couche OSM **brute**, pas le résultat de la comparaison.
+Recommandation : faire renvoyer aussi `osm_hors_corridor` /
+`bdtopo_hors_corridor` par le cœur (le calcul est fait, il est jeté ;
+104 s pour 3 122 × 544 tronçons) plutôt que de le refaire côté app avec
+un `corridor_m` qui pourrait diverger.
+
+**Livré en brief et non en patch** : `R/mod_desserte.R` était en cours
+d’édition au moment de la rédaction (modifié 3 minutes plus tôt, 5
+fichiers en travail sur `main`). Des patches ancrés sur des numéros de
+ligne y auraient pourri en quelques minutes — le brief cite des
+observers et des fonctions.
+
+------------------------------------------------------------------------
+
 # Chantier CLOS — Export public de la table des familles d’indicateurs
 
 > **Clos le 2026-08-14 (v0.170.0).** Brief :
