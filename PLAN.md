@@ -96,6 +96,20 @@ ce que fait `nemetonshiny/R/imports.R`. Un test relie `family_column` au
 moteur : les 12 noms doivent figurer dans les colonnes de
 `massif_demo_units`. Suite `test-indicator-families.R` : 405 assertions.
 
+*2026-08-14, suite* : **patch de dé-fork livré** —
+`specs/patch-nemetonshiny-app_config-defork.diff`, à appliquer depuis
+une session `nemetonshiny` (`git apply`). Deux fichiers :
+`R/app_config.R` (−309 lignes, le fork remplacé par
+`.build_indicator_families()`) et `R/zzz.R` (+7, le `.onLoad`). Vérifié
+sans rien écrire dans l’app : `git apply --check` passe sur l’arbre
+courant (branche `claude/ascii-sources`, **65 fichiers modifiés non
+commités**, dont les trois de cette migration), les fichiers parsent,
+l’objet reconstruit est
+[`identical()`](https://rdrr.io/r/base/identical.html) au cœur champ par
+champ, et la famille A repasse à 5 indicateurs — A5 revient. Règle \#11
+respectée : rien n’a été écrit dans le repo frère, Pascal applique
+depuis sa session (choix explicite du 2026-08-14).
+
 **Suite côté app** — brief livré le 2026-08-14 :
 `specs/brief-nemetonshiny-indicator-families.md`. La lecture (seule) de
 l’app pour l’écrire a corrigé la prémisse du brief entrant : la
