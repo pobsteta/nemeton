@@ -96,6 +96,29 @@ ce que fait `nemetonshiny/R/imports.R`. Un test relie `family_column` au
 moteur : les 12 noms doivent figurer dans les colonnes de
 `massif_demo_units`. Suite `test-indicator-families.R` : 405 assertions.
 
+*2026-08-14, suite 2* : **étapes 2 à 5 livrées, 6 patches au total**
+(`specs/patch-nemetonshiny-0[1-6]-*.diff`) : dé-fork, menu par boucle +
+sous-titre lu dans `description`, retrait des 24 clés `famille_*` + du
+`col_names` mort de `mod_synthesis.R`, bascule des libellés
+d’indicateurs sur
+[`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md)
+(−74 clés), ordre canonique dans `utils_theme.R`, et les 8 tests de
+structure remplacés par 3 tests d’identité. Vérifié sur une copie
+(`git archive`, jamais dans l’app) : les 6 patches s’appliquent sur
+`main`, la séquence complète laisse les **66 fichiers `R/` et 91
+fichiers de test qui parsent**, les 3 nouveaux tests passent (129
+assertions) et les 5 assertions existantes sur `clean_indicator_label()`
+restent vertes.
+
+**Second bug trouvé en écrivant le patch 04** : les clés i18n
+`indicator_<CODE>` (3ᵉ copie des libellés, distincte du fork) ont **F1
+et F2 inversés** — `clean_indicator_label()` apparie correctement la
+colonne au code puis lit `indicator_F1` = « Fertilité des sols », si
+bien que la **colonne d’érosion s’affiche « F1 - Fertilité des sols »**.
+S1/S2 y décrivent aussi autre chose que ce que le cœur calcule («
+Densité de sentiers » pour une distance aux routes). Le patch 04 corrige
+les deux.
+
 *2026-08-14, suite* : **patch de dé-fork livré** —
 `specs/patch-nemetonshiny-app_config-defork.diff`, à appliquer depuis
 une session `nemetonshiny` (`git apply`). Deux fichiers :
