@@ -32,6 +32,10 @@ redeclarer la liste.
   : Indicator family table
 - [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md)
   : Indicator table (long format)
+- [`get_famille_col()`](https://pobsteta.github.io/nemeton/reference/get_famille_col.md)
+  : Family score column name from family code
+- [`get_famille_code()`](https://pobsteta.github.io/nemeton/reference/get_famille_code.md)
+  : Family code from family score column name
 
 ## Famille C : Carbone & Vitalite
 

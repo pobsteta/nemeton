@@ -26,10 +26,9 @@ indicator_families(codes = NULL, lang = c("fr", "en"))
 
 - lang:
 
-  Character. Language used to fill the `name`, `labels` and `tooltips`
-  columns: `"fr"` (default) or `"en"`. `name_fr` and `name_en` are
-  always both returned, so a caller that switches language at runtime
-  does not need to call the function twice.
+  Character. Language copied into the convenience columns `name`,
+  `description`, `labels` and `tooltips`: `"fr"` (default) or `"en"`.
+  The `_fr` / `_en` columns are returned regardless.
 
 ## Value
 
@@ -39,6 +38,13 @@ A `data.frame` with one row per family and the columns:
 
   Family code (`"C"`, `"B"`, ...).
 
+- family_column:
+
+  Name of the family score column produced by
+  [`create_family_index`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)
+  (`"famille_carbone"`, ...). See
+  [`get_famille_col`](https://pobsteta.github.io/nemeton/reference/get_famille_col.md).
+
 - name:
 
   Family name in `lang`.
@@ -46,6 +52,14 @@ A `data.frame` with one row per family and the columns:
 - name_fr, name_en:
 
   Family name in both languages.
+
+- description:
+
+  One-line description of the family in `lang`.
+
+- description_fr, description_en:
+
+  Description in both languages.
 
 - icon:
 
@@ -70,10 +84,18 @@ A `data.frame` with one row per family and the columns:
   List column: named character vector of indicator labels in `lang`,
   named by indicator code.
 
+- labels_fr, labels_en:
+
+  Same, in each language.
+
 - tooltips:
 
   List column: named character vector of indicator tooltips in `lang`,
   named by indicator code.
+
+- tooltips_fr, tooltips_en:
+
+  Same, in each language.
 
 ## Column pairing
 
@@ -90,6 +112,14 @@ code and the column slug disagree.
 
 The labels follow the short code, so `labels[["F1"]]` describes erosion
 – consistent with the paired column, not with the column's own slug.
+
+## Both languages, always
+
+Every translatable field is returned in **both** languages, in dedicated
+`_fr` / `_en` columns. `lang` only selects which of them is copied into
+the convenience columns `name`, `description`, `labels` and `tooltips`.
+A caller that switches language at runtime – or that needs a fallback
+when one language is missing – never has to call the function twice.
 
 ## Colors
 
@@ -133,4 +163,16 @@ for (i in seq_len(nrow(fams))) {
 # A subset, in English
 indicator_families(c("C", "W"), lang = "en")$name
 #> [1] "Carbon & Vitality" "Water"            
+
+# Both languages are always there, whatever `lang`
+fams$labels_en[[1]]
+#>                       C1                       C2 
+#> "Carbon Biomass (tC/ha)"        "NDVI - Vitality" 
+
+# The family score column produced by create_family_index()
+fams$family_column
+#>  [1] "famille_carbone"      "famille_biodiversite" "famille_eau"         
+#>  [4] "famille_air"          "famille_sol"          "famille_paysage"     
+#>  [7] "famille_temporel"     "famille_risque"       "famille_social"      
+#> [10] "famille_production"   "famille_energie"      "famille_naturalite"  
 ```

@@ -76,10 +76,45 @@ sans déclencher le garde-fou « pas de règle 0-100 » (spec 038). Déclarer
 un indicateur sans le brancher échoue désormais côté cœur. Suite
 (`test-indicator-families.R`) : 353 assertions, vertes.
 
-**Suite côté app** (`nemetonshiny`, repo séparé — non fait ici) :
-plancher `Imports: nemeton (>= 0.170.0)`, boucle sur la table dans
-`app_ui.R`, retrait des 24 clés `famille_*`, test anti-redéclaration,
-correction du `CLAUDE.md` de l’app. Cf. §6 du brief.
+**Journal** — *2026-08-14* (**v0.171.0**) : **les trois manques repérés
+en écrivant le brief de câblage sont comblés.** (1) *Les deux langues,
+toujours* — tout champ traduisible sort en colonnes `_fr`/`_en` ; `lang`
+ne pilote plus que les colonnes de confort. Un mode `lang = "both"`
+aurait fait varier le schéma selon l’argument ; une colonne toujours
+présente se consomme mieux, et c’est le prolongement de ce que
+`name_fr`/`name_en` faisaient déjà. (2) *Description par famille* —
+`description` + `description_fr`/`description_en`, 12 phrases réécrites
+à jour du contenu réel des familles (celles de l’app dataient d’avant
+A3-A5, R5-R7, T3, W4, B4, L3 et décrivaient des familles amputées). (3)
+*La colonne de score devient publique* — colonne `family_column` +
+[`get_famille_col()`](https://pobsteta.github.io/nemeton/reference/get_famille_col.md)/[`get_famille_code()`](https://pobsteta.github.io/nemeton/reference/get_famille_code.md)
+exportées et vectorisées, avec validation explicite. Ce nom était de
+fait un contrat entre packages (colonne de l’`sf` calculé, valeur
+d’onglet, clé DB) mais n’était joignable que par
+[`getFromNamespace()`](https://rdrr.io/r/utils/getFromNamespace.html),
+ce que fait `nemetonshiny/R/imports.R`. Un test relie `family_column` au
+moteur : les 12 noms doivent figurer dans les colonnes de
+`massif_demo_units`. Suite `test-indicator-families.R` : 405 assertions.
+
+**Suite côté app** — brief livré le 2026-08-14 :
+`specs/brief-nemetonshiny-indicator-families.md`. La lecture (seule) de
+l’app pour l’écrire a corrigé la prémisse du brief entrant : la
+duplication n’est pas de 24 chaînes dans `utils_i18n.R`, c’est un **fork
+complet de la table** dans `app_config.R` (lignes 127-558, ~430 lignes,
+5 accesseurs copiés, 8 fichiers consommateurs) — et **il a déjà
+divergé** : 40 indicateurs contre 41, **A5
+`indicateur_a5_rafraichissement` absent** (calculé par
+`service_compute.R` puis filtré à l’affichage par `mod_family.R:70`,
+donc invisible dans l’onglet Air), 14 libellés et 18 tooltips
+divergents. L’adaptateur proposé reconstruit la table du cœur **au bit
+près** ([`identical()`](https://rdrr.io/r/base/identical.html) vérifié).
+Trois manques cœur identifiés et laissés à trancher (§5 du brief) :
+`lang = "both"`, une `description` de famille, et un accesseur exporté
+pour la colonne de score de famille — l’app tire aujourd’hui
+[`get_famille_col()`](https://pobsteta.github.io/nemeton/reference/get_famille_col.md)/`FAMILLE_NMT_MAP`
+par
+[`getFromNamespace()`](https://rdrr.io/r/utils/getFromNamespace.html)
+sur une API interne.
 
 ------------------------------------------------------------------------
 

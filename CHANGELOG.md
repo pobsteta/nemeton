@@ -12,6 +12,34 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.171.0\] - 2026-08-14
+
+### Added
+
+- [`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md)
+  /
+  [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md)
+  renvoient désormais **les deux langues en permanence**
+  (`labels_fr`/`labels_en`, `tooltips_fr`/`tooltips_en`,
+  `label_fr`/`label_en`, `tooltip_fr`/`tooltip_en`) ; `lang` ne pilote
+  plus que les colonnes de confort. Plus besoin de deux appels pour un
+  consommateur bilingue.
+- Champ `description` par famille (+ `description_fr` /
+  `description_en`), à jour du contenu réel des 12 familles.
+- Colonne `family_column` dans les deux accesseurs : le nom de la
+  colonne de score de famille produite par
+  [`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md).
+- [`get_famille_col()`](https://pobsteta.github.io/nemeton/reference/get_famille_col.md)
+  et
+  [`get_famille_code()`](https://pobsteta.github.io/nemeton/reference/get_famille_code.md)
+  exportées et vectorisées (validation explicite des codes ; `NA` pour
+  une colonne non-famille).
+
+### Changed
+
+- `_pkgdown.yml` : les deux accesseurs de famille rejoignent la section
+  « Table des familles d’indicateurs ».
+
 ## \[0.170.0\] - 2026-08-14
 
 ### Added

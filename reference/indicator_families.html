@@ -19,7 +19,7 @@ future worker."><meta property="og:image" content="https://pobsteta.github.io/ne
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.170.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.171.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -82,10 +82,9 @@ given.</p></dd>
 
 
 <dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
-<dd><p>Character. Language used to fill the <code>name</code>, <code>labels</code> and
-<code>tooltips</code> columns: <code>"fr"</code> (default) or <code>"en"</code>. <code>name_fr</code> and <code>name_en</code>
-are always both returned, so a caller that switches language at runtime
-does not need to call the function twice.</p></dd>
+<dd><p>Character. Language copied into the convenience columns <code>name</code>,
+<code>description</code>, <code>labels</code> and <code>tooltips</code>: <code>"fr"</code> (default) or <code>"en"</code>. The
+<code>_fr</code> / <code>_en</code> columns are returned regardless.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -93,11 +92,22 @@ does not need to call the function twice.</p></dd>
     <p>A <code>data.frame</code> with one row per family and the columns:</p><dl><dt>code</dt>
 <dd><p>Family code (<code>"C"</code>, <code>"B"</code>, ...).</p></dd>
 
+<dt>family_column</dt>
+<dd><p>Name of the family score column produced by
+<code><a href="create_family_index.html">create_family_index</a></code> (<code>"famille_carbone"</code>, ...). See
+<code><a href="get_famille_col.html">get_famille_col</a></code>.</p></dd>
+
 <dt>name</dt>
 <dd><p>Family name in <code>lang</code>.</p></dd>
 
 <dt>name_fr, name_en</dt>
 <dd><p>Family name in both languages.</p></dd>
+
+<dt>description</dt>
+<dd><p>One-line description of the family in <code>lang</code>.</p></dd>
+
+<dt>description_fr, description_en</dt>
+<dd><p>Description in both languages.</p></dd>
 
 <dt>icon</dt>
 <dd><p>Bootstrap icon name.</p></dd>
@@ -117,9 +127,15 @@ names, paired by position with <code>indicators</code>.</p></dd>
 <dd><p>List column: named character vector of indicator labels in
 <code>lang</code>, named by indicator code.</p></dd>
 
+<dt>labels_fr, labels_en</dt>
+<dd><p>Same, in each language.</p></dd>
+
 <dt>tooltips</dt>
 <dd><p>List column: named character vector of indicator
 tooltips in <code>lang</code>, named by indicator code.</p></dd>
+
+<dt>tooltips_fr, tooltips_en</dt>
+<dd><p>Same, in each language.</p></dd>
 
 
 </dl></div>
@@ -136,6 +152,16 @@ and the column slug disagree.</p><ul><li><p><code>F1</code> is <code>indicateur_
 <code>indicateur_l1_sylvosphere</code>.</p></li>
 </ul><p>The labels follow the short code, so <code>labels[["F1"]]</code> describes erosion –
 consistent with the paired column, not with the column's own slug.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="both-languages-always">Both languages, always<a class="anchor" aria-label="anchor" href="#both-languages-always"></a></h2>
+
+
+<p>Every translatable field is returned in <strong>both</strong> languages, in dedicated
+<code>_fr</code> / <code>_en</code> columns. <code>lang</code> only selects which of them is copied into the
+convenience columns <code>name</code>, <code>description</code>, <code>labels</code> and <code>tooltips</code>. A caller
+that switches language at runtime – or that needs a fallback when one
+language is missing – never has to call the function twice.</p>
     </div>
     <div class="section level2">
     <h2 id="colors">Colors<a class="anchor" aria-label="anchor" href="#colors"></a></h2>
@@ -179,6 +205,18 @@ Consumers who need an accessible palette should ignore this column.</p>
 <span class="r-in"><span><span class="co"># A subset, in English</span></span></span>
 <span class="r-in"><span><span class="fu">indicator_families</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"C"</span>, <span class="st">"W"</span><span class="op">)</span>, lang <span class="op">=</span> <span class="st">"en"</span><span class="op">)</span><span class="op">$</span><span class="va">name</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Carbon &amp; Vitality" "Water"            </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Both languages are always there, whatever `lang`</span></span></span>
+<span class="r-in"><span><span class="va">fams</span><span class="op">$</span><span class="va">labels_en</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       C1                       C2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> "Carbon Biomass (tC/ha)"        "NDVI - Vitality" </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The family score column produced by create_family_index()</span></span></span>
+<span class="r-in"><span><span class="va">fams</span><span class="op">$</span><span class="va">family_column</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "famille_carbone"      "famille_biodiversite" "famille_eau"         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [4] "famille_air"          "famille_sol"          "famille_paysage"     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "famille_temporel"     "famille_risque"       "famille_social"      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [10] "famille_production"   "famille_energie"      "famille_naturalite"  </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

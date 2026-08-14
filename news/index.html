@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.170.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.171.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.171.0" id="nemeton-01710-2026-08-14">nemeton 0.171.0 (2026-08-14)<a class="anchor" aria-label="anchor" href="#nemeton-01710-2026-08-14"></a></h2>
+<div class="section level4">
+<h4 id="added--la-table-des-familles-gagne-ce-qui-manquait-pour-câbler-lapp-0-171-0">Added — la table des familles gagne ce qui manquait pour câbler l’app<a class="anchor" aria-label="anchor" href="#added--la-table-des-familles-gagne-ce-qui-manquait-pour-c%C3%A2bler-lapp-0-171-0"></a></h4>
+<p>Écrire le brief de câblage côté <code>nemetonshiny</code> (<code>specs/brief-nemetonshiny-indicator-families.md</code>) a fait apparaître trois manques dans l’API de la v0.170.0. Aucun n’était bloquant, tous obligeaient l’aval à contourner. Ils sont comblés ici.</p>
+<p><strong>1. Les deux langues, toujours.</strong> L’app lit les libellés en FR <em>et</em> en EN (elle retombe sur l’anglais quand le français manque) : avec la v0.170.0 il fallait deux appels et un zip. Désormais tout champ traduisible sort dans des colonnes <code>_fr</code> / <code>_en</code> dédiées — <code>labels_fr</code>, <code>labels_en</code>, <code>tooltips_fr</code>, <code>tooltips_en</code> pour <code><a href="../reference/indicator_families.html">indicator_families()</a></code>, <code>label_fr</code>, <code>label_en</code>, <code>tooltip_fr</code>, <code>tooltip_en</code> pour <code><a href="../reference/indicator_labels.html">indicator_labels()</a></code>. <code>lang</code> ne pilote plus que les colonnes de confort <code>name</code> / <code>description</code> / <code>labels</code> / <code>tooltips</code>. C’est le prolongement de ce que <code>name_fr</code> / <code>name_en</code> faisaient déjà : un mode <code>lang = "both"</code> aurait fait varier le schéma selon l’argument, ce qui est plus difficile à consommer qu’une colonne toujours présente.</p>
+<p><strong>2. Une description par famille.</strong> Nouveau champ <code>description</code> (+ <code>description_fr</code> / <code>description_en</code>), une phrase par famille. Les 12 descriptions sont écrites à jour du contenu réel des familles — celles que l’app portait de son côté dataient d’avant A3-A5, R5-R7, T3, W4, B4 et L3, et décrivaient donc des familles amputées (« Risques feu, tempête, sécheresse et abroutissement » pour une famille R qui compte sept indicateurs).</p>
+<p><strong>3. La colonne de score de famille devient publique.</strong> <code><a href="../reference/get_famille_col.html">get_famille_col()</a></code> (<code>"C"</code> → <code>"famille_carbone"</code>) et <code><a href="../reference/get_famille_code.html">get_famille_code()</a></code> (l’inverse) sont exportées, et la table gagne une colonne <code>family_column</code>. Ce nom est de fait un contrat entre les packages — c’est la colonne portée par l’<code>sf</code> calculé, la valeur d’onglet et une clé de base côté app — mais il n’était accessible que par <code><a href="https://rdrr.io/r/utils/getFromNamespace.html" class="external-link">utils::getFromNamespace()</a></code> sur une API interne, ce que <code>nemetonshiny</code> fait aujourd’hui dans <code>R/imports.R</code>. Les deux fonctions sont au passage vectorisées : <code><a href="../reference/get_famille_col.html">get_famille_col()</a></code> valide ses entrées et échoue clairement sur un code inconnu, <code><a href="../reference/get_famille_code.html">get_famille_code()</a></code> renvoie <code>NA</code> pour une colonne qui n’est pas un score de famille, ce qui permet de la passer sur toutes les colonnes d’un <code>sf</code>.</p>
+<p>Un test relie <code>family_column</code> au moteur : les 12 noms doivent être présents dans les colonnes de <code>massif_demo_units</code>, c’est-à-dire dans ce que <code><a href="../reference/create_family_index.html">create_family_index()</a></code> produit réellement.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.170.0" id="nemeton-01700-2026-08-14">nemeton 0.170.0 (2026-08-14)<a class="anchor" aria-label="anchor" href="#nemeton-01700-2026-08-14"></a></h2>
 <div class="section level4">
@@ -4581,7 +4592,7 @@ docker compose up -d timescaledb</code></pre>
 <ul><li>All function, column and family names aligned with the NMT glossary</li>
 <li>DB schema aligned with NMT glossary keys (ADR-002)</li>
 <li>
-<code>get_famille_code()</code> reverse lookup added for NMT family names</li>
+<code><a href="../reference/get_famille_code.html">get_famille_code()</a></code> reverse lookup added for NMT family names</li>
 <li>Test column names renamed to NMT convention</li>
 <li>Indicator names in <code><a href="../reference/list_indicators.html">list_indicators()</a></code> switched to NMT</li>
 </ul></div>
