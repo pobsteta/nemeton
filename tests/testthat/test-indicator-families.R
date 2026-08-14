@@ -127,7 +127,11 @@ test_that("indicator_labels() flattens the table consistently", {
   ind <- indicator_labels()
 
   expect_s3_class(ind, "data.frame")
-  expect_equal(names(ind), c("family", "code", "column_name", "label", "tooltip"))
+  expect_equal(names(ind), c(
+    "family", "family_column", "code", "column_name",
+    "label", "label_fr", "label_en",
+    "tooltip", "tooltip_fr", "tooltip_en"
+  ))
   expect_equal(nrow(ind), length(unlist(fams$indicators, use.names = FALSE)))
 
   expect_equal(ind$code, unlist(fams$indicators, use.names = FALSE))
@@ -145,6 +149,94 @@ test_that("indicator_labels() flattens the table consistently", {
 
   expect_equal(nrow(indicator_labels(codes = character(0))), 0L)
   expect_error(indicator_labels(codes = "Z"), "Unknown family code")
+})
+
+test_that("both languages are always returned, whatever lang", {
+  fr <- indicator_families(lang = "fr")
+  en <- indicator_families(lang = "en")
+
+  # Les colonnes _fr / _en ne dépendent pas de `lang`
+  for (col in c(
+    "name_fr", "name_en", "description_fr", "description_en",
+    "labels_fr", "labels_en", "tooltips_fr", "tooltips_en"
+  )) {
+    expect_identical(fr[[col]], en[[col]], info = col)
+  }
+
+  # `lang` ne pilote que les colonnes de confort
+  expect_identical(fr$name, fr$name_fr)
+  expect_identical(en$name, en$name_en)
+  expect_identical(fr$description, fr$description_fr)
+  expect_identical(en$description, en$description_en)
+  expect_identical(fr$labels, fr$labels_fr)
+  expect_identical(en$labels, en$labels_en)
+  expect_identical(fr$tooltips, fr$tooltips_fr)
+  expect_identical(en$tooltips, en$tooltips_en)
+
+  ind_fr <- indicator_labels(lang = "fr")
+  ind_en <- indicator_labels(lang = "en")
+  for (col in c("label_fr", "label_en", "tooltip_fr", "tooltip_en")) {
+    expect_identical(ind_fr[[col]], ind_en[[col]], info = col)
+  }
+  expect_identical(ind_fr$label, ind_fr$label_fr)
+  expect_identical(ind_en$label, ind_en$label_en)
+  expect_identical(ind_fr$tooltip, ind_fr$tooltip_fr)
+  expect_identical(ind_en$tooltip, ind_en$tooltip_en)
+
+  # Une langue ne doit pas être la copie de l'autre
+  expect_false(identical(fr$name_fr, fr$name_en))
+  expect_false(identical(ind_fr$label_fr, ind_fr$label_en))
+})
+
+test_that("descriptions are present and non-empty in both languages", {
+  fams <- indicator_families()
+
+  for (col in c("description", "description_fr", "description_en")) {
+    expect_type(fams[[col]], "character")
+    expect_false(any(is.na(fams[[col]])), info = col)
+    expect_true(all(nzchar(fams[[col]])), info = col)
+  }
+  # Une description est une phrase, pas un mot-clé
+  expect_true(all(nchar(fams$description_fr) > 20))
+  expect_true(all(nchar(fams$description_en) > 20))
+})
+
+test_that("family_column matches the column produced by create_family_index()", {
+  fams <- indicator_families()
+
+  expect_identical(fams$family_column, get_famille_col(fams$code))
+  expect_identical(get_famille_code(fams$family_column), fams$code)
+  expect_equal(anyDuplicated(fams$family_column), 0L)
+  expect_true(all(grepl("^famille_[a-z]+$", fams$family_column)))
+
+  # Le lien avec le moteur : ce sont les colonnes que create_family_index()
+  # ajoute réellement au jeu de données.
+  data(massif_demo_units, package = "nemeton", envir = environment())
+  expect_true(all(fams$family_column %in% names(massif_demo_units)))
+
+  # indicator_labels() porte la même colonne, par famille
+  ind <- indicator_labels()
+  expect_identical(ind$family_column, get_famille_col(ind$family))
+})
+
+test_that("get_famille_col() / get_famille_code() round-trip and validate", {
+  expect_identical(get_famille_col("C"), "famille_carbone")
+  expect_identical(get_famille_col("c"), "famille_carbone")
+  expect_identical(
+    get_famille_col(c("C", "b", "N")),
+    c("famille_carbone", "famille_biodiversite", "famille_naturalite")
+  )
+  expect_identical(get_famille_col(character(0)), character(0))
+  expect_null(names(get_famille_col("C")))
+
+  expect_error(get_famille_col("Z"), "Unknown family code")
+  expect_error(get_famille_col(1), "character vector")
+
+  expect_identical(get_famille_code("famille_eau"), "W")
+  expect_identical(
+    get_famille_code(c("famille_eau", "surface_m2")),
+    c("W", NA_character_)
+  )
 })
 
 test_that("indicator_families() is pure (no side effect, stable across calls)", {

@@ -66,6 +66,8 @@ reference:
     contents:
     - indicator_families
     - indicator_labels
+    - get_famille_col
+    - get_famille_code
 
   - title: "Famille C : Carbone & Vitalite"
     desc: "Stockage de carbone et vitalite de la vegetation"

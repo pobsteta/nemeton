@@ -10,6 +10,25 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.171.0] - 2026-08-14
+
+### Added
+- `indicator_families()` / `indicator_labels()` renvoient désormais **les deux
+  langues en permanence** (`labels_fr`/`labels_en`, `tooltips_fr`/`tooltips_en`,
+  `label_fr`/`label_en`, `tooltip_fr`/`tooltip_en`) ; `lang` ne pilote plus que
+  les colonnes de confort. Plus besoin de deux appels pour un consommateur
+  bilingue.
+- Champ `description` par famille (+ `description_fr` / `description_en`), à
+  jour du contenu réel des 12 familles.
+- Colonne `family_column` dans les deux accesseurs : le nom de la colonne de
+  score de famille produite par `create_family_index()`.
+- `get_famille_col()` et `get_famille_code()` exportées et vectorisées
+  (validation explicite des codes ; `NA` pour une colonne non-famille).
+
+### Changed
+- `_pkgdown.yml` : les deux accesseurs de famille rejoignent la section
+  « Table des familles d'indicateurs ».
+
 ## [0.170.0] - 2026-08-14
 
 ### Added
