@@ -1,3 +1,50 @@
+# nemeton 0.170.0 (2026-08-14)
+
+### Added — la table des familles d'indicateurs devient une API publique
+
+`INDICATOR_FAMILIES` existait dans le cœur depuis toujours, mais n'était pas
+exporté. Le `CLAUDE.md` de `nemetonshiny` affirmait pourtant que l'app lisait
+les noms de famille depuis le cœur : en réalité elle les redéclarait — 24
+chaînes FR/EN dans `utils_i18n.R`, 12 codes en dur dans `app_ui.R`, 34 libellés
+d'indicateurs. Duplication aujourd'hui **exacte** (0/12 divergence mesurée),
+donc silencieuse : renommer une famille ici ne changerait rien là-bas, et aucun
+test ne le dirait.
+
+Plutôt que d'exporter l'objet brut — ce qui figerait sa structure interne en
+API cassante — deux accesseurs :
+
+- **`indicator_families(codes = NULL, lang = c("fr", "en"))`** — un
+  `data.frame` d'une ligne par famille : `code`, `name` (dans `lang`),
+  `name_fr`, `name_en`, `icon`, `color`, et quatre colonnes-listes
+  `indicators`, `column_names`, `labels`, `tooltips`. Ordre canonique garanti
+  `C B W A F L T R S P E N` — déjà celui du menu de l'app, rien à réordonner.
+  `name_fr` et `name_en` sont toujours tous deux présents : basculer de langue
+  ne demande pas un second appel.
+- **`indicator_labels(codes = NULL, lang = c("fr", "en"))`** — la même table à
+  plat, une ligne par indicateur (41) : `family`, `code`, `column_name`,
+  `label`, `tooltip`. C'est la forme qui permet de bâtir un lookup
+  colonne → libellé et de retirer les clés `indicateur_*` en aval.
+
+Les deux fonctions sont **pures** (aucune I/O, aucun état), donc appelables
+depuis un worker `future`.
+
+**Deux pièges documentés plutôt que « corrigés ».** `indicators` et
+`column_names` sont appariés **par position**, pas par le slug : `F1` est
+`indicateur_f2_erosion` et `F2` est `indicateur_f1_fertilite` ; `L1` est
+`indicateur_l2_fragmentation` et `L2` est `indicateur_l1_sylvosphere`. Ce
+croisement historique est cohérent de bout en bout (les libellés suivent le
+code court, pas le slug) et un test le verrouille : dériver la colonne du code
+par manipulation de chaîne casserait ces deux familles. Et `color` porte la
+palette **sémantique** du cœur (vert forêt pour le carbone, bleu pour l'eau) :
+ce n'est pas une dérive vis-à-vis du viridis de l'app, choisi pour
+l'accessibilité daltonienne — l'aval ignore cette colonne.
+
+Le test qui a le plus de valeur relie la table au moteur : chacune des 41
+colonnes déclarées doit être produite par une fonction exportée du même nom
+**et** passer `normalize_indicator()` sans déclencher le garde-fou « pas de
+règle 0-100 » (spec 038). Déclarer un indicateur sans le brancher échoue
+désormais côté cœur.
+
 # nemeton 0.169.0 (2026-08-07)
 
 ### Fixed — MNT LiDAR HD : résolution de travail bornée sur les indicateurs de terrain

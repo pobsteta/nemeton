@@ -400,6 +400,229 @@ get_all_column_names <- function() {
 }
 
 
+#' Subset INDICATOR_FAMILIES by code
+#'
+#' @param codes Character vector of family codes, or NULL for all 12.
+#' @return Named list of family configurations.
+#' @noRd
+.select_families <- function(codes = NULL) {
+  if (is.null(codes)) {
+    return(INDICATOR_FAMILIES)
+  }
+  if (!is.character(codes)) {
+    stop("`codes` must be a character vector of family codes, or NULL.",
+      call. = FALSE
+    )
+  }
+  codes <- toupper(codes)
+  unknown <- setdiff(codes, names(INDICATOR_FAMILIES))
+  if (length(unknown) > 0) {
+    stop(
+      "Unknown family code(s): ", paste(unknown, collapse = ", "),
+      ". Valid codes: ", paste(names(INDICATOR_FAMILIES), collapse = " "), ".",
+      call. = FALSE
+    )
+  }
+  INDICATOR_FAMILIES[codes]
+}
+
+
+#' Indicator family table
+#'
+#' @description
+#' Public, stable view of the 12 indicator families of the Nemeton framework.
+#' This is the canonical source for family codes, display names and the
+#' indicators each family aggregates. Downstream packages (notably
+#' `nemetonshiny`) should read it instead of re-declaring the list, so that
+#' renaming a family in the core propagates instead of silently diverging.
+#'
+#' The function is pure (no I/O, no state), and therefore safe to call from a
+#' `future` worker.
+#'
+#' @section Column pairing:
+#' `indicators` and `column_names` are always the same length and are paired
+#' **by position**: `column_names[[i]]` is the column produced for
+#' `indicators[[i]]`. Do **not** derive one from the other by string
+#' manipulation: two families carry a legacy naming swap, where the short code
+#' and the column slug disagree.
+#' \itemize{
+#'   \item `F1` is `indicateur_f2_erosion` and `F2` is `indicateur_f1_fertilite`.
+#'   \item `L1` is `indicateur_l2_fragmentation` and `L2` is
+#'     `indicateur_l1_sylvosphere`.
+#' }
+#' The labels follow the short code, so `labels[["F1"]]` describes erosion —
+#' consistent with the paired column, not with the column's own slug.
+#'
+#' @section Colors:
+#' `color` carries the *semantic* palette of the core (forest green for carbon,
+#' water blue for the water family). It is deliberately not the palette used by
+#' the Shiny application, which applies viridis for colorblind accessibility.
+#' Consumers who need an accessible palette should ignore this column.
+#'
+#' @param codes Character vector of family codes (case-insensitive), or `NULL`
+#'   (default) for all 12 families in canonical order
+#'   `C B W A F L T R S P E N`. When supplied, rows are returned in the order
+#'   given.
+#' @param lang Character. Language used to fill the `name`, `labels` and
+#'   `tooltips` columns: `"fr"` (default) or `"en"`. `name_fr` and `name_en`
+#'   are always both returned, so a caller that switches language at runtime
+#'   does not need to call the function twice.
+#'
+#' @return A `data.frame` with one row per family and the columns:
+#'   \describe{
+#'     \item{code}{Family code (`"C"`, `"B"`, ...).}
+#'     \item{name}{Family name in `lang`.}
+#'     \item{name_fr, name_en}{Family name in both languages.}
+#'     \item{icon}{Bootstrap icon name.}
+#'     \item{color}{Semantic hex color (see *Colors*).}
+#'     \item{indicators}{List column: character vector of indicator codes
+#'       (`"C1"`, `"C2"`, ...).}
+#'     \item{column_names}{List column: character vector of the produced column
+#'       names, paired by position with `indicators`.}
+#'     \item{labels}{List column: named character vector of indicator labels in
+#'       `lang`, named by indicator code.}
+#'     \item{tooltips}{List column: named character vector of indicator
+#'       tooltips in `lang`, named by indicator code.}
+#'   }
+#'
+#' @seealso [indicator_labels()] for a long-format, one-row-per-indicator view.
+#'
+#' @examples
+#' fams <- indicator_families()
+#' fams$code
+#' fams[fams$code == "C", "name"]
+#'
+#' # Loop over the families to build a menu
+#' for (i in seq_len(nrow(fams))) {
+#'   cat(sprintf("%s (%s)\n", fams$name[i], fams$code[i]))
+#' }
+#'
+#' # A subset, in English
+#' indicator_families(c("C", "W"), lang = "en")$name
+#'
+#' @export
+indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
+  lang <- match.arg(lang)
+  fams <- .select_families(codes)
+
+  if (length(fams) == 0) {
+    empty <- data.frame(
+      code = character(0), name = character(0), name_fr = character(0),
+      name_en = character(0), icon = character(0), color = character(0),
+      stringsAsFactors = FALSE
+    )
+    for (col in c("indicators", "column_names", "labels", "tooltips")) {
+      empty[[col]] <- list()
+    }
+    return(empty)
+  }
+
+  chr <- function(field) {
+    vapply(fams, function(f) as.character(f[[field]]), character(1),
+      USE.NAMES = FALSE
+    )
+  }
+
+  out <- data.frame(
+    code = chr("code"),
+    name = chr(paste0("name_", lang)),
+    name_fr = chr("name_fr"),
+    name_en = chr("name_en"),
+    icon = chr("icon"),
+    color = chr("color"),
+    stringsAsFactors = FALSE
+  )
+
+  out$indicators <- lapply(fams, function(f) as.character(f$indicators))
+  out$column_names <- lapply(fams, function(f) as.character(f$column_names))
+  out$labels <- lapply(fams, .family_texts, field = "indicator_labels", lang = lang)
+  out$tooltips <- lapply(fams, .family_texts, field = "indicator_tooltips", lang = lang)
+
+  names(out$indicators) <- NULL
+  names(out$column_names) <- NULL
+  names(out$labels) <- NULL
+  names(out$tooltips) <- NULL
+  rownames(out) <- NULL
+
+  out
+}
+
+
+#' Extract per-indicator texts of one family in a given language
+#'
+#' @param fam List. One entry of INDICATOR_FAMILIES.
+#' @param field Character. "indicator_labels" or "indicator_tooltips".
+#' @param lang Character. "fr" or "en".
+#' @return Named character vector (names = indicator codes).
+#' @noRd
+.family_texts <- function(fam, field, lang) {
+  texts <- fam[[field]]
+  out <- vapply(fam$indicators, function(ic) {
+    entry <- texts[[ic]]
+    if (is.null(entry) || is.null(entry[[lang]])) NA_character_ else entry[[lang]]
+  }, character(1), USE.NAMES = FALSE)
+  names(out) <- fam$indicators
+  out
+}
+
+
+#' Indicator table (long format)
+#'
+#' @description
+#' One row per indicator, flattening [indicator_families()]. Useful to build a
+#' label lookup keyed by indicator code or by column name, without re-declaring
+#' the strings downstream.
+#'
+#' Rows follow the canonical family order, and within a family the declaration
+#' order of the indicators. `column_name` is the column paired with `code` —
+#' see the *Column pairing* section of [indicator_families()] for the two
+#' families where the short code and the column slug disagree.
+#'
+#' @param codes Character vector of family codes (case-insensitive), or `NULL`
+#'   (default) for all 12 families.
+#' @param lang Character. `"fr"` (default) or `"en"`.
+#'
+#' @return A `data.frame` with columns `family` (family code), `code`
+#'   (indicator code), `column_name`, `label` and `tooltip`.
+#'
+#' @seealso [indicator_families()]
+#'
+#' @examples
+#' ind <- indicator_labels()
+#' head(ind)
+#'
+#' # Lookup table: column name -> label
+#' stats::setNames(ind$label, ind$column_name)[["indicateur_c1_biomasse"]]
+#'
+#' @export
+indicator_labels <- function(codes = NULL, lang = c("fr", "en")) {
+  lang <- match.arg(lang)
+  fams <- .select_families(codes)
+
+  if (length(fams) == 0) {
+    return(data.frame(
+      family = character(0), code = character(0), column_name = character(0),
+      label = character(0), tooltip = character(0), stringsAsFactors = FALSE
+    ))
+  }
+
+  rows <- lapply(fams, function(f) {
+    data.frame(
+      family = rep(as.character(f$code), length(f$indicators)),
+      code = as.character(f$indicators),
+      column_name = as.character(f$column_names),
+      label = unname(.family_texts(f, "indicator_labels", lang)),
+      tooltip = unname(.family_texts(f, "indicator_tooltips", lang)),
+      stringsAsFactors = FALSE
+    )
+  })
+
+  out <- do.call(rbind, c(rows, list(make.row.names = FALSE)))
+  rownames(out) <- NULL
+  out
+}
+
+
 #' Get column-to-family mapping
 #'
 #' @description

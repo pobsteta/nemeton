@@ -58,6 +58,15 @@ reference:
     - nemeton_compute
     - list_indicators
 
+  - title: "Table des familles d'indicateurs"
+    desc: >
+      Source canonique des 12 familles et de leurs indicateurs (codes, noms
+      FR/EN, colonnes produites, libelles). A lire depuis l'aval plutot que
+      de redeclarer la liste.
+    contents:
+    - indicator_families
+    - indicator_labels
+
   - title: "Famille C : Carbone & Vitalite"
     desc: "Stockage de carbone et vitalite de la vegetation"
     contents:
