@@ -48,15 +48,25 @@ seul des cinq à n’avoir **aucun `.load_cached_*`**, il est donc perdu au
 rechargement du projet malgré son GeoPackage sur disque ; et
 `run_desserte_osm()` écrit son GeoPackage sans en renvoyer le chemin.
 
-**Point dur, côté `foretaccess`** : `comparer_desserte_osm()` ne renvoie
-que des **tables de linéaire** (`osm`, `bdtopo`, `resume`) — aucune
-géométrie. Le « hors corridor », c’est-à-dire le gisement à instruire,
-n’existe qu’en mètres. Ce que l’app écrit dans `desserte_osm.gpkg` est
-donc la couche OSM **brute**, pas le résultat de la comparaison.
-Recommandation : faire renvoyer aussi `osm_hors_corridor` /
-`bdtopo_hors_corridor` par le cœur (le calcul est fait, il est jeté ;
-104 s pour 3 122 × 544 tronçons) plutôt que de le refaire côté app avec
-un `corridor_m` qui pourrait diverger.
+**Point dur, côté `foretaccess`** — brief dédié émis le 2026-08-14 :
+`specs/brief-foretaccess-comparer-osm-geometries.md`.
+`comparer_desserte_osm()` ne renvoie que des **tables de linéaire**
+(`osm`, `bdtopo`, `resume`) — aucune géométrie. Le « hors corridor »,
+c’est-à-dire le gisement à instruire, n’existe qu’en mètres. Ce que
+l’app écrit dans `desserte_osm.gpkg` est donc la couche OSM **brute**,
+pas le résultat de la comparaison. Le cœur **calcule pourtant déjà**
+cette géométrie — `st_difference()` dans l’helper interne `hors()` — et
+n’en garde que la longueur : l’objet le plus utile est détruit à la
+sortie de la boucle, après avoir payé les 104 s. Demande : deux `sf`
+additifs `osm_hors_corridor` / `bdtopo_hors_corridor`, sans toucher aux
+trois tables. Implémentation prototypée et vérifiée sur la fixture du
+test en place (0,1 km hors corridor, la valeur que le test attend déjà)
+; seul piège réel, le mélange LINESTRING/MULTILINESTRING quand le
+corridor coupe un tronçon en deux, à homogénéiser par `st_cast()` avant
+écriture GeoPackage. Argument de poids : CA-28.5 de la spec 028 mesure
+**93 % du linéaire hors corridor en desserte réelle** pour 4 % de faux
+positifs — ce n’est pas du bruit qu’on cacherait, c’est un résultat
+qu’on refuse faute de le renvoyer.
 
 **Livré en brief et non en patch** : `R/mod_desserte.R` était en cours
 d’édition au moment de la rédaction (modifié 3 minutes plus tôt, 5
