@@ -212,10 +212,24 @@ serait absurde. Mieux : le cœur **calcule déjà** cette géométrie et la jett
 `st_difference()` dans l'helper interne `hors()`, dont on ne garde que la
 longueur.
 
-→ **Brief dédié** : `specs/brief-foretaccess-comparer-osm-geometries.md`
-(implémentation prototypée et vérifiée, pièges compris). Une fois
-`foretaccess 2.4.0` publiée, le calque devient « Pistes OSM hors BD TOPO » et
-affiche la sortie de la comparaison, plus la couche brute.
+→ **Brief dédié** : `specs/brief-foretaccess-comparer-osm-geometries.md`.
+
+**✅ Livré : `foretaccess 2.4.0`, taguée le 2026-08-15.**
+`comparer_desserte_osm()` renvoie désormais `osm_hors_corridor` et
+`bdtopo_hors_corridor`, deux `sf` — géométrie clippée, attributs d'origine plus
+`hors_m`, type homogène `MULTILINESTRING`, `sf` à 0 ligne plutôt que `NULL`.
+Les trois tables et la classe S3 sont inchangées.
+
+L'option (c) devient donc caduque : le calque doit lire
+`cmp$osm_hors_corridor` au lieu de l'acquisition brute, et peut alors
+s'appeler **« Pistes OSM hors BD TOPO »** — ce que son libellé actuel se
+refusait honnêtement à dire. Deux gestes côté app : monter le plancher à
+`Imports: foretaccess (>= 2.4.0)`, et persister cette couche plutôt que la
+sortie d'`acquire_desserte_osm()` dans `desserte_osm.gpkg`.
+
+La réserve du cœur reste vraie et doit rester à l'écran : *un linéaire hors
+corridor est un gisement à instruire*, pas une desserte manquante prouvée —
+même si CA-28.5 la borne à moins d'un vingtième du linéaire.
 
 Et quoi qu'il arrive, la documentation du cœur est explicite et doit être
 reprise dans l'UI : *« C'est un diagnostic, pas un résultat : un linéaire hors
