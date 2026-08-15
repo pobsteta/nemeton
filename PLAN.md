@@ -23,6 +23,37 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 ---
 
+# Écarts ouverts dans la chaîne cœur → app → foretaccess
+
+> Tenu à jour depuis le 2026-08-15. Ce que la source unique de vérité est
+> censée rendre visible : ce qu'un maillon a livré et que le suivant n'a pas
+> encore consommé. **Ne rien cocher ici tant que la chaîne entière n'a pas
+> suivi.**
+
+| # | Écart | Livré par | En attente chez | État |
+|---|---|---|---|---|
+| 1 | `indicator_families()` / `indicator_labels()` | `nemeton` **v0.170.0** puis **v0.171.0** | `nemetonshiny` | **Non consommé.** Plancher toujours `Imports: nemeton (>= 0.169.0)` ; `app_config.R` porte encore le fork complet de la table |
+| 2 | `osm_hors_corridor` / `bdtopo_hors_corridor` | brief émis par `nemeton`, **implémenté** dans `foretaccess` | `foretaccess` puis `nemetonshiny` | **Implémenté, non tagué.** PR #160 ouverte, `DESCRIPTION` en 2.4.0, aucun tag `v2.4.0` — donc invisible pour `Remotes: @*release` |
+| 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
+
+**Écart 1 — le cœur a livré, l'app n'a pas consommé.** C'est exactement le
+genre d'écart que ce fichier doit rendre visible, et il est mesurable : la copie
+de la table dans `nemetonshiny/R/app_config.R` **a déjà divergé** — 40
+indicateurs déclarés contre 41, A5 `indicateur_a5_rafraichissement` absent (donc
+calculé par `service_compute.R` puis filtré à l'affichage, invisible dans
+l'onglet Air), 14 libellés et 18 tooltips divergents. Une troisième copie des
+libellés, les 40 clés i18n `indicator_<CODE>`, a même **F1 et F2 inversés** : la
+colonne d'érosion s'affiche « F1 - Fertilité des sols ». Six patches vérifiés
+sont prêts (`specs/patch-nemetonshiny-0[1-6]-*.diff`), non appliqués.
+
+**Écart 2 — vérifié le 2026-08-15 en lecture seule.** L'implémentation dans
+`foretaccess` est fidèle au brief et correcte : évaluée hors de son dépôt, elle
+passe 15 assertions, dont la non-régression des quatre valeurs de `resume` et le
+`st_cast()` qui homogénéise LINESTRING/MULTILINESTRING avant écriture
+GeoPackage. Il ne manque que le merge et le tag.
+
+---
+
 # Brief émis — Onglet Desserte : rendre visibles les sorties (app + foretaccess)
 
 > **Émis le 2026-08-14** : `specs/brief-nemetonshiny-desserte-visualisation.md`.
@@ -62,6 +93,21 @@ c'est un résultat qu'on refuse faute de le renvoyer.
 au moment de la rédaction (modifié 3 minutes plus tôt, 5 fichiers en travail sur
 `main`). Des patches ancrés sur des numéros de ligne y auraient pourri en
 quelques minutes — le brief cite des observers et des fonctions.
+
+**Suite (2026-08-15)** — les deux versants ont bougé, aucun n'est clos :
+
+- **App : livré** en `nemetonshiny` v0.124.0 (`ccbeb3e7`), cf. l'entrée de
+  journal du 2026-08-14. Les deux calques, le popup, `.load_cached_typage()`,
+  le `gpkg_path` d'OSM et l'export fusionné sont en place.
+- **`foretaccess` : implémenté, pas publié.** Le brief a été appliqué —
+  `hors()` rend désormais `list(long, parts)`, `.sf_hors()` assemble, le
+  `st_cast()` est là et la version passe à 2.4.0. Vérifié ici en lecture seule,
+  hors du dépôt : 15 assertions passent, dont la non-régression des quatre
+  valeurs de `resume` et l'aller-retour GeoPackage sur un tronçon traversant.
+  **Mais la PR #160 est ouverte et aucun tag `v2.4.0` n'existe** : `Remotes:
+  pobsteta/foretaccess@*release` ne voit que les tags, l'app ne peut donc pas
+  consommer la nouveauté. Tant que ce tag manque, le calque « Pistes OSM »
+  continue d'afficher l'acquisition brute. Cf. écart n° 2 en tête de fichier.
 
 ---
 
@@ -1479,6 +1525,114 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-08-14 — App `nemetonshiny` : trois livraisons (v0.122.14, v0.123.0, v0.124.0)
+
+Consigné d'après `specs/BRIEF-nemeton-plan-md-0.122-0.124.md`, émis par la
+session app — qui ne peut ni lire ni écrire ce fichier (règle 12 de son
+`CLAUDE.md`), d'où un brief qui livre le texte et laisse à la session cœur le
+placement. SHA et tags **vérifiés** ici en lecture seule : les trois tags
+existent, les trois commits sont sur `main` côté app.
+
+| Release app | `nemetonshiny@SHA` | Cycle dev repris | Apport |
+|---|---|---|---|
+| v0.122.14 | `3bc827dc` | `0.122.14.9000` | Lot de fiabilisation (0.122.5 → 0.122.14) |
+| v0.123.0 | `6711b05d` | `0.123.0.9000` | Profil en travers d'un tronçon au clic |
+| v0.124.0 | `ccbeb3e7` | `0.124.0.9000` | Sorties de l'onglet Desserte rendues visibles |
+
+**Aucun impact cœur** : les trois sont portées par l'app, aucune ne demande de
+release `nemeton`, et l'ordre cœur → app est respecté (l'app consomme
+`foretaccess 2.3.0`, déjà taguée, via `Remotes: @*release`).
+
+#### v0.123.0 — Profil en travers au clic (spec 030, `foretaccess`)
+
+Dans l'onglet Accessibilité, couche « Desserte BD TOPO / corrigée », un clic
+affiche la coupe transversale du tronçon le plus proche : nuage LiDAR de la
+tranche, profil du terrain, chaussée ajustée, et les cinq familles de bords
+cotées (chaussée roulable, plateforme, bande de secours, emprise, accotements).
+Le calcul appartient au cœur — `foretaccess::profil_travers()`, spec 030,
+release 2.3.0, écrite d'après le brief `BRIEF-profil-travers-desserte.md` émis
+par l'app. Côté app : résolution des chemins projet, conversion du clic WGS84
+vers le CRS de travail, appel, et tracé (`acc_profil_travers()` +
+`fct_plot_desserte_profil.R`, présentation pure). Clic asynchrone malgré un coût
+cœur mesuré à 0,4 s : ce chiffre vaut sur une dalle d'exemple, la première
+lecture d'un catalogue LAZ réel est plus lourde, et la boucle Shiny est
+mono-thread.
+
+**Réserve, à ne pas cocher comme validé terrain** : la chaîne clic → coupe n'a
+**jamais été exercée de bout en bout sur un projet réel** portant à la fois un
+nuage LiDAR et une desserte corrigée. Les 30 tests couvrent la résolution des
+chemins, la traduction des échecs en raisons lisibles et la planche ; pas la
+géométrie, qui est testée côté `foretaccess`.
+
+#### v0.124.0 — Sorties Desserte rendues visibles (specs 026 et 028)
+
+Mise en vue, pas évolution du calcul. Cinq actions de la sidebar produisaient
+toutes un résultat sur disque ; deux seulement étaient visibles sur la carte. Le
+complément OSM (spec 028) et la détection de routes (spec 026) — les deux
+traitements les plus coûteux de l'onglet, plusieurs minutes et jusqu'à 8 Go pour
+le second — n'affichaient qu'un compteur : pour voir sa propre géométrie il
+fallait connaître le chemin du cache et ouvrir QGIS.
+
+Livré : calques « Pistes OSM » et « Routes détectées » (tiretés, éteints au
+départ, déclarés dans le contrôle de couches) ; popup portant `CLASSE_CONF`,
+`CLASSE_MOTIF` et `OSM_TAGS` à côté de `CLASSE`, le balisage OSM étant présenté
+comme une proposition et jamais un téléversement ; `.load_cached_typage()` +
+sidecar `typage.rds` (le typage était le seul des cinq à ne pas survivre au
+rechargement du projet) ; `run_desserte_osm()` renvoie et persiste `gpkg_path` ;
+l'export GeoPackage fusionne réseau typé, pistes OSM et routes détectées, en
+retenant le typage du moteur courant ; chemin du cache affiché. Aucune logique
+métier ajoutée côté app (règle 1).
+
+Ce chantier a été instruit des deux côtés le même jour : le versant cœur est
+journalisé plus haut sous *« Brief émis — Onglet Desserte : rendre visibles les
+sorties »*, qui décrit le même constat depuis ce dépôt.
+
+**Sous-chantier non clos côté chaîne** — voir la section dédiée : le calque OSM
+affiche pour l'instant l'acquisition **brute**, doublons BD TOPO compris, parce
+que `foretaccess::comparer_desserte_osm()` ne rendait aucune géométrie. Son
+libellé et son popup le disent explicitement. Correctif livré depuis (§ ci-dessous).
+
+#### v0.122.14 — Fiabilisation (lot 0.122.5 → 0.122.14)
+
+Dix releases patch en une journée, sans nouvelle fonctionnalité métier : un lot
+de fiabilisation, pas un épaississement. `R CMD check` repasse sans aucun
+avertissement ni note — sources entièrement désaccentuées, tests ne lisant plus
+`R/` sans garde (sous `.Rcheck` le paquet installé n'a pas de sources),
+dépendances de `Suggests` corrigées après un échec d'installation `pak` en CI
+que le check local ne voyait pas. Les notes de release sont désormais extraites
+de `NEWS.md` par `release.yml`, et un test interdit qu'un titre de version y
+disparaisse — ce défaut avait atteint le tag publié v0.122.7. Trois smoke E2E
+rendus hermétiques et le démarrage réessayé.
+
+Côté UX : menu des couches piloté intégralement (un groupe peint mais non
+déclaré n'a pas de case — défaut du relief), légende BD TOPO re-contrastée par
+mesure ΔE, infobulles à 17 px, sidebars rétractables uniformisées, « i »
+d'information unifiés sur un seul motif (`info_popover()`), code de famille
+affiché dans le menu des indicateurs.
+
+**La leçon du lot, qui vaut au-delà de lui** : *un signal vert dans
+l'environnement le plus favorable ne prouve rien.* `devtools::test()` masquait
+l'échec de `R CMD check` ; le check local masquait l'échec d'installation en CI.
+Chaque garde-fou de ce lot vient d'un défaut qui avait franchi l'étape
+précédente.
+
+#### Revue du §4 du brief — items signalés « peut-être non consignés »
+
+Confrontés au fichier réel, quatre des six y figuraient déjà ; deux ne l'étaient
+qu'à moitié, et ont été complétés là où ils vivent plutôt qu'ici :
+
+| Item du §4 | Verdict |
+|---|---|
+| spec 035 / 027 — moteur et UX reGénération (app v0.101.x) | déjà consigné |
+| R7 gel tardif + meteoland (app v0.104.0, cœur v0.151.0) | déjà consigné, les deux versants nommés |
+| Contexte E-OBS downscalé (app v0.105.0, cœur v0.152.0) | déjà consigné |
+| Bascule ALSroads → dessertR (`foretaccess`) | déjà consigné |
+| Mémoire des workers `future`, spec 008 (app v0.106.5) | versant cœur consigné (v0.158.0), **référence app ajoutée** |
+| FORDEAD en processus plafonné (app v0.106.6, cœur ≥ v0.157.0) | versant cœur consigné (v0.157.0), **référence app ajoutée** |
+
+Le complément est posé dans l'entrée du 2026-07-15 qui porte déjà le lot
+v0.106.x, pas ici : c'est là que le lecteur le cherchera.
+
 ### 2026-08-13 — Unification OSM/Overpass : le versant cœur (§5.4) + spec 044 ouverte
 
 Versant **cœur** du brief `specs/BRIEF-osm-overpass-unification.md`. Le gros du
@@ -2487,6 +2641,13 @@ dans `nemetonshiny` (app à **v0.106.13.9000**) :
 Briefs : `specs/035-bilan-hydrique-spatialise/brief-nemetonshiny-verrou-boutons.md`
 (§1-8) et `…/brief-nemetonshiny-regen-capped.md`. Chantier anti-OOM reGénération
 **clos** (cf. mémoire `project_reconfort_oom_isolation`).
+
+*Complément 2026-08-15* — deux releases app du même lot n'étaient pas nommées
+ici, relevées à la revue du §4 de `specs/BRIEF-nemeton-plan-md-0.122-0.124.md` :
+**v0.106.5** (mémoire des workers `future`, spec 008) et **v0.106.6** (FORDEAD
+en processus plafonné, consomme le cœur ≥ v0.157.0). Leurs versants cœur sont
+journalisés — v0.157.0 le 2026-07-14, v0.158.0 le 2026-07-15 — seule la
+référence app manquait.
 
 ### 2026-07-15 — v0.158.0 : `run_memory_capped()` généralisé (anti-OOM reGénération)
 
