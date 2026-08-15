@@ -40,7 +40,7 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | \# | Écart | Livré par | En attente chez | État |
 |----|----|----|----|----|
 | 1 | [`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md) / [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md) | `nemeton` **v0.170.0** puis **v0.171.0** | `nemetonshiny` | **Non consommé.** Plancher toujours `Imports: nemeton (>= 0.169.0)` ; `app_config.R` porte encore le fork complet de la table |
-| 2 | `osm_hors_corridor` / `bdtopo_hors_corridor` | brief émis par `nemeton`, **implémenté** dans `foretaccess` | `foretaccess` puis `nemetonshiny` | **Implémenté, non tagué.** PR \#160 ouverte, `DESCRIPTION` en 2.4.0, aucun tag `v2.4.0` — donc invisible pour `Remotes: @*release` |
+| 2 | `osm_hors_corridor` / `bdtopo_hors_corridor` | `foretaccess` **v2.4.0**, taguée le 2026-08-15 | `nemetonshiny` | **Publié, non consommé.** Plancher app toujours `foretaccess (>= 2.3.0)`, et le calque « Pistes OSM » affiche encore l’acquisition brute |
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 
 **Écart 1 — le cœur a livré, l’app n’a pas consommé.** C’est exactement
@@ -55,12 +55,16 @@ inversés** : la colonne d’érosion s’affiche « F1 - Fertilité des sols »
 Six patches vérifiés sont prêts
 (`specs/patch-nemetonshiny-0[1-6]-*.diff`), non appliqués.
 
-**Écart 2 — vérifié le 2026-08-15 en lecture seule.** L’implémentation
-dans `foretaccess` est fidèle au brief et correcte : évaluée hors de son
-dépôt, elle passe 15 assertions, dont la non-régression des quatre
-valeurs de `resume` et le `st_cast()` qui homogénéise
-LINESTRING/MULTILINESTRING avant écriture GeoPackage. Il ne manque que
-le merge et le tag.
+**Écart 2 — le maillon `foretaccess` est bouclé, l’app ne l’a pas encore
+pris.** L’implémentation avait été vérifiée le 2026-08-15 en lecture
+seule, hors du dépôt : 15 assertions passent, dont la non-régression des
+quatre valeurs de `resume` et le `st_cast()` qui homogénéise
+LINESTRING/MULTILINESTRING avant écriture GeoPackage. La PR \#160 a été
+mergée et **`v2.4.0` est taguée le même jour** — `Remotes: @*release` la
+voit donc désormais. Reste, côté app : monter le plancher à
+`foretaccess (>= 2.4.0)`, et faire lire au calque
+`cmp$osm_hors_corridor` au lieu de l’acquisition brute, ce qui permet
+enfin de le renommer « Pistes OSM hors BD TOPO ».
 
 ------------------------------------------------------------------------
 
@@ -114,16 +118,17 @@ observers et des fonctions.
   de journal du 2026-08-14. Les deux calques, le popup,
   `.load_cached_typage()`, le `gpkg_path` d’OSM et l’export fusionné
   sont en place.
-- **`foretaccess` : implémenté, pas publié.** Le brief a été appliqué —
-  `hors()` rend désormais `list(long, parts)`, `.sf_hors()` assemble, le
-  `st_cast()` est là et la version passe à 2.4.0. Vérifié ici en lecture
-  seule, hors du dépôt : 15 assertions passent, dont la non-régression
-  des quatre valeurs de `resume` et l’aller-retour GeoPackage sur un
-  tronçon traversant. **Mais la PR \#160 est ouverte et aucun tag
-  `v2.4.0` n’existe** : `Remotes: pobsteta/foretaccess@*release` ne voit
-  que les tags, l’app ne peut donc pas consommer la nouveauté. Tant que
-  ce tag manque, le calque « Pistes OSM » continue d’afficher
-  l’acquisition brute. Cf. écart n° 2 en tête de fichier.
+- **`foretaccess` : livré et publié en `v2.4.0`** (2026-08-15, PR \#160
+  mergée). `hors()` rend désormais `list(long, parts)`, `.sf_hors()`
+  assemble, le `st_cast()` est là. Vérifié ici en lecture seule, hors du
+  dépôt : 15 assertions passent, dont la non-régression des quatre
+  valeurs de `resume` et l’aller-retour GeoPackage sur un tronçon
+  traversant.
+- **Reste le dernier maillon, côté app** : plancher
+  `foretaccess (>= 2.4.0)`, et le calque qui lit `cmp$osm_hors_corridor`
+  au lieu de l’acquisition brute — il pourra alors s’appeler « Pistes
+  OSM hors BD TOPO », ce que son libellé actuel se refuse honnêtement à
+  dire. Cf. écart n° 2 en tête de fichier.
 
 ------------------------------------------------------------------------
 

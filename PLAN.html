@@ -130,14 +130,11 @@
 <td>
 <code>osm_hors_corridor</code> / <code>bdtopo_hors_corridor</code>
 </td>
-<td>brief émis par <code>nemeton</code>, <strong>implémenté</strong> dans <code>foretaccess</code>
-</td>
 <td>
-<code>foretaccess</code> puis <code>nemetonshiny</code>
-</td>
+<code>foretaccess</code> <strong>v2.4.0</strong>, taguée le 2026-08-15</td>
+<td><code>nemetonshiny</code></td>
 <td>
-<strong>Implémenté, non tagué.</strong> PR #160 ouverte, <code>DESCRIPTION</code> en 2.4.0, aucun tag <code>v2.4.0</code> — donc invisible pour <code>Remotes: @*release</code>
-</td>
+<strong>Publié, non consommé.</strong> Plancher app toujours <code>foretaccess (&gt;= 2.3.0)</code>, et le calque « Pistes OSM » affiche encore l’acquisition brute</td>
 </tr><tr><td>3</td>
 <td>Validation terrain du profil en travers</td>
 <td>
@@ -146,7 +143,7 @@
 <td>
 <strong>Jamais exercé de bout en bout</strong> sur un projet réel portant nuage LiDAR <em>et</em> desserte corrigée</td>
 </tr></tbody></table><p><strong>Écart 1 — le cœur a livré, l’app n’a pas consommé.</strong> C’est exactement le genre d’écart que ce fichier doit rendre visible, et il est mesurable : la copie de la table dans <code>nemetonshiny/R/app_config.R</code> <strong>a déjà divergé</strong> — 40 indicateurs déclarés contre 41, A5 <code>indicateur_a5_rafraichissement</code> absent (donc calculé par <code>service_compute.R</code> puis filtré à l’affichage, invisible dans l’onglet Air), 14 libellés et 18 tooltips divergents. Une troisième copie des libellés, les 40 clés i18n <code>indicator_&lt;CODE&gt;</code>, a même <strong>F1 et F2 inversés</strong> : la colonne d’érosion s’affiche « F1 - Fertilité des sols ». Six patches vérifiés sont prêts (<code>specs/patch-nemetonshiny-0[1-6]-*.diff</code>), non appliqués.</p>
-<p><strong>Écart 2 — vérifié le 2026-08-15 en lecture seule.</strong> L’implémentation dans <code>foretaccess</code> est fidèle au brief et correcte : évaluée hors de son dépôt, elle passe 15 assertions, dont la non-régression des quatre valeurs de <code>resume</code> et le <code>st_cast()</code> qui homogénéise LINESTRING/MULTILINESTRING avant écriture GeoPackage. Il ne manque que le merge et le tag.</p>
+<p><strong>Écart 2 — le maillon <code>foretaccess</code> est bouclé, l’app ne l’a pas encore pris.</strong> L’implémentation avait été vérifiée le 2026-08-15 en lecture seule, hors du dépôt : 15 assertions passent, dont la non-régression des quatre valeurs de <code>resume</code> et le <code>st_cast()</code> qui homogénéise LINESTRING/MULTILINESTRING avant écriture GeoPackage. La PR #160 a été mergée et <strong><code>v2.4.0</code> est taguée le même jour</strong> — <code>Remotes: @*release</code> la voit donc désormais. Reste, côté app : monter le plancher à <code>foretaccess (&gt;= 2.4.0)</code>, et faire lire au calque <code>cmp$osm_hors_corridor</code> au lieu de l’acquisition brute, ce qui permet enfin de le renommer « Pistes OSM hors BD TOPO ».</p>
 <hr></div>
 <div class="section level1">
 <h1 id="brief-émis--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess">Brief émis — Onglet Desserte : rendre visibles les sorties (app + foretaccess)<a class="anchor" aria-label="anchor" href="#brief-%C3%A9mis--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess"></a></h1>
@@ -160,7 +157,9 @@
 <ul><li>
 <strong>App : livré</strong> en <code>nemetonshiny</code> v0.124.0 (<code>ccbeb3e7</code>), cf. l’entrée de journal du 2026-08-14. Les deux calques, le popup, <code>.load_cached_typage()</code>, le <code>gpkg_path</code> d’OSM et l’export fusionné sont en place.</li>
 <li>
-<strong><code>foretaccess</code> : implémenté, pas publié.</strong> Le brief a été appliqué — <code>hors()</code> rend désormais <code>list(long, parts)</code>, <code>.sf_hors()</code> assemble, le <code>st_cast()</code> est là et la version passe à 2.4.0. Vérifié ici en lecture seule, hors du dépôt : 15 assertions passent, dont la non-régression des quatre valeurs de <code>resume</code> et l’aller-retour GeoPackage sur un tronçon traversant. <strong>Mais la PR #160 est ouverte et aucun tag <code>v2.4.0</code> n’existe</strong> : <code>Remotes: pobsteta/foretaccess@*release</code> ne voit que les tags, l’app ne peut donc pas consommer la nouveauté. Tant que ce tag manque, le calque « Pistes OSM » continue d’afficher l’acquisition brute. Cf. écart n° 2 en tête de fichier.</li>
+<strong><code>foretaccess</code> : livré et publié en <code>v2.4.0</code></strong> (2026-08-15, PR #160 mergée). <code>hors()</code> rend désormais <code>list(long, parts)</code>, <code>.sf_hors()</code> assemble, le <code>st_cast()</code> est là. Vérifié ici en lecture seule, hors du dépôt : 15 assertions passent, dont la non-régression des quatre valeurs de <code>resume</code> et l’aller-retour GeoPackage sur un tronçon traversant.</li>
+<li>
+<strong>Reste le dernier maillon, côté app</strong> : plancher <code>foretaccess (&gt;= 2.4.0)</code>, et le calque qui lit <code>cmp$osm_hors_corridor</code> au lieu de l’acquisition brute — il pourra alors s’appeler « Pistes OSM hors BD TOPO », ce que son libellé actuel se refuse honnêtement à dire. Cf. écart n° 2 en tête de fichier.</li>
 </ul><hr></div>
 <div class="section level1">
 <h1 id="chantier-clos--export-public-de-la-table-des-familles-dindicateurs">Chantier CLOS — Export public de la table des familles d’indicateurs<a class="anchor" aria-label="anchor" href="#chantier-clos--export-public-de-la-table-des-familles-dindicateurs"></a></h1>
