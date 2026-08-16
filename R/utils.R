@@ -449,6 +449,32 @@ safe_extract <- function(raster, polygons, ...) {
 }
 
 
+#' Rasterize a vector layer with automatic CRS alignment
+#'
+#' Wrapper around \code{terra::rasterize()} that reprojects the vector onto the
+#' template CRS first. \code{terra::rasterize()} does not reproject — and,
+#' unlike most terra operations, it does not fail on mismatched CRS either: it
+#' silently returns a raster filled with \code{background}. R1 fire risk was
+#' therefore 0 everywhere on the Fordead project (BD Foret served in EPSG:4326
+#' by the IGN WFS, LiDAR HD MNT in EPSG:2154): the fuel layer simply never
+#' landed on the grid, and no error was raised to trigger the fallback.
+#'
+#' @param x sf object or SpatVector to rasterize.
+#' @param template SpatRaster giving the target grid.
+#' @param ... Additional arguments passed to \code{terra::rasterize()}.
+#' @return A SpatRaster on the template grid.
+#' @keywords internal
+#' @noRd
+safe_rasterize <- function(x, template, ...) {
+  v <- if (inherits(x, "SpatVector")) x else terra::vect(as_pure_sf(x))
+  tmpl_crs <- terra::crs(template)
+  if (nzchar(tmpl_crs) && nzchar(terra::crs(v)) && !terra::same.crs(v, template)) {
+    v <- terra::project(v, tmpl_crs)
+  }
+  terra::rasterize(v, template, ...)
+}
+
+
 #' Resolve a raster layer from a nemeton_layers object
 #'
 #' Extracts a SpatRaster from a lazy-load list structure (with path/object/loaded

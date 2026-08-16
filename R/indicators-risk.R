@@ -150,8 +150,18 @@ indicateur_r1_feu <- function(units,
       # (2 * t_dist / res)^2 par cellule (cf. .fire_exp_working_dem). Le repli,
       # lui, garde la résolution topographique de travail.
       hazard_dem <- .fire_exp_working_dem(dem, fire_exp_res, dem_target_res)
-      # Rasterize BD Foret onto DEM grid: forest = 1 (fuel), non-forest = 0
-      hazard <- terra::rasterize(terra::vect(bdforet), hazard_dem, field = 1, background = 0)
+      # Rasterize BD Foret onto DEM grid: forest = 1 (fuel), non-forest = 0.
+      # `safe_rasterize` aligne le CRS : la BD Forêt arrive en EPSG:4326 du WFS
+      # IGN quand le MNT LiDAR est en Lambert-93, et `terra::rasterize()` ne
+      # reprojette pas — il rend silencieusement un raster tout-à-`background`.
+      hazard <- safe_rasterize(bdforet, hazard_dem, field = 1, background = 0)
+      # Un `hazard` sans une seule cellule de combustible n'est pas un « risque
+      # nul » : c'est une absence de donnée (emprises disjointes, BD Forêt vide).
+      # On bascule sur le repli plutôt que de rendre 0 partout — c'est ce qu'a
+      # produit le projet Fordead le 2026-08-16, sans le moindre avertissement.
+      if (!isTRUE(terra::global(hazard, "max", na.rm = TRUE)[1, 1] > 0)) {
+        stop("BD For\u00eat does not overlap the DEM grid (hazard has no fuel cell)")
+      }
       # Fire exposure with 500m transmission distance
       exposure <- fireexposuR::fire_exp(hazard, t_dist = 500)
       # Extract mean exposure per parcel (0-1 scale)
