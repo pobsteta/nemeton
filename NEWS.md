@@ -1,3 +1,39 @@
+# nemeton 0.172.1 (2026-08-16)
+
+### Fixed — R1 feu valait 0 partout : la BD Forêt n'atteignait pas la grille
+
+Une fois R1 débloqué par la v0.172.0, le projet **Fordead** rendait
+`indicateur_r1_feu` = **0 sur les 30 unités**. Ce n'était pas la borne de
+résolution : un bug préexistant, jusqu'ici invisible parce que le chemin
+`fireexposuR` ne terminait jamais.
+
+La BD Forêt y arrive en **EPSG:4326** (WFS IGN) alors que le MNT LiDAR HD est en
+**Lambert-93**. `terra::rasterize()` ne reprojette pas — et, contrairement à la
+plupart des opérations terra, **il n'échoue pas non plus** sur un CRS
+discordant : il rend un raster entièrement rempli de `background`. Le `hazard`
+ne contenait donc aucune cellule de combustible, `fire_exp()` renvoyait une
+exposition nulle, le `tryCatch` ne voyait rien, aucun repli n'était déclenché —
+et un « risque feu nul » s'affichait à la place d'une absence de donnée.
+
+Deux correctifs :
+
+- **`safe_rasterize()`** (interne, pendant de `safe_extract()`) aligne le CRS du
+  vecteur sur celui du template avant de rasteriser. R1 l'utilise pour la
+  couche de combustible.
+- **Un `hazard` sans une seule cellule de combustible bascule sur le repli**
+  (`slope + species + climate`) avec un avertissement explicite, au lieu de
+  produire un 0 silencieux. Emprises disjointes, BD Forêt vide : c'est une
+  absence de donnée, pas un risque nul.
+
+Sur Fordead, R1 passe de `0` à **98,7–100** (2 s) : la BD Forêt couvre 93 % des
+22 378 cellules de la grille, et `fire_exp()` mesure précisément la part de
+combustible dans un rayon de 500 m. Le score est mécaniquement juste mais **ne
+discrimine plus les unités** sur un massif continu — un point de méthode à
+trancher séparément, hors de ce correctif.
+
+Les trois autres projets locaux (Reconfort, ForetAccess, Dabo) n'étaient pas
+touchés : ils passaient déjà par le repli.
+
 # nemeton 0.172.0 (2026-08-16)
 
 ### Fixed — R1 feu : la résolution de travail du chemin `fireexposuR` est bornée
