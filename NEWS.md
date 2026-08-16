@@ -1,3 +1,43 @@
+# nemeton 0.173.0 (2026-08-16)
+
+### Changed — l'exposition `fireexposuR` est pondérée par la pente et le climat
+
+Une fois la BD Forêt correctement rasterisée (v0.172.1), R1 valait **98,7 à 100
+sur les 30 unités** du projet Fordead. Mécaniquement juste — `fire_exp()` mesure
+la part de combustible dans un rayon de 500 m, et la BD Forêt couvre 93 % de
+l'emprise — mais l'indicateur ne classait plus rien : sur un massif continu,
+toutes les unités ont tout leur voisinage combustible.
+
+Le chemin `fireexposuR` compose désormais trois termes, comme le fait le repli :
+
+```
+R1 = w_exposure x exposition(500 m) + w_slope x pente + w_climate x sécheresse
+```
+
+Nouvel argument **`fire_exp_weights = c(exposure = 0.5, slope = 0.25,
+climate = 0.25)`**. L'exposition reste le terme dominant : c'est le signal propre
+de la méthode, la pente et le climat le modulent.
+
+- Une composante non calculable (pas de raster climatique) **sort du calcul** et
+  son poids est redistribué au prorata — plutôt que d'être remplacée par un 50
+  arbitraire : ne pas savoir n'est pas « moyen ». Les poids effectivement
+  utilisés sont journalisés (`R1: fire_exp score = 0.67 x exposure + 0.33 x slope`).
+- `fire_exp_weights = c(exposure = 1)` restitue l'exposition brute.
+- La **pente est dérivée de la grille du `hazard` (30 m)**, pas du MNT plein
+  format : c'est la résolution à laquelle raisonnent les modèles de propagation,
+  et la pente d'un MNT LiDAR à 2 m décrit surtout des cloisonnements et des
+  fossés. Le chemin reste rapide (5,1 s sur Fordead).
+- Le repli `slope + species + climate` est inchangé, mais partage désormais les
+  mêmes helpers de composantes (`.r1_slope_factor`, `.r1_climate_factor`).
+
+Effet de bord corrigé au passage : la composante climatique passe de
+`terra::extract()` à `safe_extract()`. Les rasters climatiques arrivent en
+EPSG:4326 (WorldClim) quand les unités peuvent être en Lambert-93 — même famille
+de piège silencieux que la BD Forêt non reprojetée de la v0.172.1.
+
+**Sur Fordead**, R1 passe de `98,7-100` (plat) à **68,8-87**, médiane 71,9 : les
+unités se classent enfin, sur la pente à exposition saturée.
+
 # nemeton 0.172.1 (2026-08-16)
 
 ### Fixed — R1 feu valait 0 partout : la BD Forêt n'atteignait pas la grille

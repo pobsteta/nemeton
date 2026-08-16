@@ -10,6 +10,27 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.173.0] - 2026-08-16
+
+### Added
+- `indicateur_r1_feu(fire_exp_weights = c(exposure = 0.5, slope = 0.25, climate = 0.25))` :
+  le chemin `fireexposuR` module l'exposition par la pente et la sécheresse
+  climatique. Une composante indisponible sort du calcul et son poids est
+  redistribué au prorata ; les poids retenus sont journalisés.
+  `c(exposure = 1)` restitue l'exposition brute.
+
+### Changed
+- La pente du chemin `fireexposuR` est dérivée de la grille du `hazard` (30 m)
+  et non du MNT plein format — résolution des modèles de propagation, et le
+  chemin reste rapide.
+- Composantes pente et climat factorisées (`.r1_slope_factor`,
+  `.r1_climate_factor`), partagées par les deux chemins de R1.
+
+### Fixed
+- La composante climatique passe de `terra::extract()` à `safe_extract()` :
+  un raster WorldClim en EPSG:4326 face à des unités en Lambert-93 passait
+  jusqu'ici sans bruit (même famille de piège que la BD Forêt en v0.172.1).
+
 ## [0.172.1] - 2026-08-16
 
 ### Fixed
