@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.172.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.172.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,21 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.172.1" id="nemeton-01721-2026-08-16">nemeton 0.172.1 (2026-08-16)<a class="anchor" aria-label="anchor" href="#nemeton-01721-2026-08-16"></a></h2>
+<div class="section level4">
+<h4 id="fixed--r1-feu-valait-partout--la-bd-forêt-natteignait-pas-la-grille-0-172-1">Fixed — R1 feu valait 0 partout : la BD Forêt n’atteignait pas la grille<a class="anchor" aria-label="anchor" href="#fixed--r1-feu-valait-partout--la-bd-for%C3%AAt-natteignait-pas-la-grille-0-172-1"></a></h4>
+<p>Une fois R1 débloqué par la v0.172.0, le projet <strong>Fordead</strong> rendait <code>indicateur_r1_feu</code> = <strong>0 sur les 30 unités</strong>. Ce n’était pas la borne de résolution : un bug préexistant, jusqu’ici invisible parce que le chemin <code>fireexposuR</code> ne terminait jamais.</p>
+<p>La BD Forêt y arrive en <strong>EPSG:4326</strong> (WFS IGN) alors que le MNT LiDAR HD est en <strong>Lambert-93</strong>. <code><a href="https://rspatial.github.io/terra/reference/rasterize.html" class="external-link">terra::rasterize()</a></code> ne reprojette pas — et, contrairement à la plupart des opérations terra, <strong>il n’échoue pas non plus</strong> sur un CRS discordant : il rend un raster entièrement rempli de <code>background</code>. Le <code>hazard</code> ne contenait donc aucune cellule de combustible, <code>fire_exp()</code> renvoyait une exposition nulle, le <code>tryCatch</code> ne voyait rien, aucun repli n’était déclenché — et un « risque feu nul » s’affichait à la place d’une absence de donnée.</p>
+<p>Deux correctifs :</p>
+<ul><li>
+<strong><code>safe_rasterize()</code></strong> (interne, pendant de <code>safe_extract()</code>) aligne le CRS du vecteur sur celui du template avant de rasteriser. R1 l’utilise pour la couche de combustible.</li>
+<li>
+<strong>Un <code>hazard</code> sans une seule cellule de combustible bascule sur le repli</strong> (<code>slope + species + climate</code>) avec un avertissement explicite, au lieu de produire un 0 silencieux. Emprises disjointes, BD Forêt vide : c’est une absence de donnée, pas un risque nul.</li>
+</ul><p>Sur Fordead, R1 passe de <code>0</code> à <strong>98,7–100</strong> (2 s) : la BD Forêt couvre 93 % des 22 378 cellules de la grille, et <code>fire_exp()</code> mesure précisément la part de combustible dans un rayon de 500 m. Le score est mécaniquement juste mais <strong>ne discrimine plus les unités</strong> sur un massif continu — un point de méthode à trancher séparément, hors de ce correctif.</p>
+<p>Les trois autres projets locaux (Reconfort, ForetAccess, Dabo) n’étaient pas touchés : ils passaient déjà par le repli.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.172.0" id="nemeton-01720-2026-08-16">nemeton 0.172.0 (2026-08-16)<a class="anchor" aria-label="anchor" href="#nemeton-01720-2026-08-16"></a></h2>
 <div class="section level4">

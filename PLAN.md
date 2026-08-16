@@ -804,6 +804,44 @@ inspirer un épaississement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-16* (**v0.172.1**) : **R1 feu valait 0 partout —
+la BD Forêt n’atteignait pas la grille**. Une fois R1 débloqué par la
+v0.172.0, le projet Fordead rendait `indicateur_r1_feu` = **0 sur les 30
+unités**. Ce n’était pas la borne de résolution mais un bug
+**préexistant**, resté invisible parce que le chemin `fireexposuR` ne
+terminait jamais. **Cause** : la BD Forêt du projet est en **EPSG:4326**
+(WFS IGN), le MNT LiDAR HD en **Lambert-93** ;
+[`terra::rasterize()`](https://rspatial.github.io/terra/reference/rasterize.html)
+ne reprojette pas et — contrairement à la plupart des opérations terra —
+**n’échoue pas** sur un CRS discordant : il rend un raster entièrement
+rempli de `background`. Vérifié sur les données réelles : `hazard`
+minmax `0 0`, **0 cellule** de combustible sur 22 378 ; après
+reprojection, **20 924** (93 %). Le `tryCatch` du chemin fireexposuR ne
+voyait donc rien, aucun repli n’était déclenché, et un « risque feu nul
+» s’affichait à la place d’une absence de donnée. **Correctif** en deux
+points : (1) helper interne `safe_rasterize()` dans `R/utils.R` —
+pendant exact de `safe_extract()`, il aligne le CRS du vecteur sur le
+template avant
+[`terra::rasterize()`](https://rspatial.github.io/terra/reference/rasterize.html)
+; (2) un `hazard` sans une seule cellule de combustible **bascule sur le
+repli** `slope + species + climate` avec un avertissement explicite
+(`no fuel cell`), au lieu de produire un 0 silencieux. **Résultat sur
+Fordead** : R1 passe de `0` à **98,7–100** en 2 s. **Réserve de méthode
+ouverte** : ce score est mécaniquement juste (`fire_exp()` mesure la
+part de combustible dans 500 m, la BD Forêt couvre 93 % de l’emprise)
+mais **ne discrimine plus les unités** sur un massif continu — à
+trancher séparément (pondérer par pente/climat comme le repli, ou
+réserver `fireexposuR` aux mosaïques forêt/non-forêt contrastées). Les
+trois autres projets locaux (Reconfort 29–46, ForetAccess 41–75, Dabo
+50–60) n’étaient pas touchés : ils passaient déjà par le repli. Tests :
+5 `test_that` (12 assertions) dans
+`tests/testthat/test-r1-hazard-crs.R`, dont un qui **documente le piège
+amont**
+([`terra::rasterize()`](https://rspatial.github.io/terra/reference/rasterize.html)
+silencieux sur CRS discordant) et échouera si terra change d’avis.
+
+------------------------------------------------------------------------
+
 **Journal** — *2026-08-16* (**v0.172.0**) : **R1 feu — la résolution de
 travail du chemin `fireexposuR` est bornée à 30 m**. Symptôme remonté du
 projet **Fordead** : le calcul des 31 indicateurs restait affiché à 64

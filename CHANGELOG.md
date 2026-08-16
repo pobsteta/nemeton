@@ -12,6 +12,22 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.172.1\] - 2026-08-16
+
+### Fixed
+
+- **R1 feu valait 0 sur toutes les unités** quand la BD Forêt et le MNT
+  n’étaient pas dans le même CRS (projet Fordead : BD Forêt en EPSG:4326
+  du WFS IGN, MNT LiDAR HD en EPSG:2154).
+  [`terra::rasterize()`](https://rspatial.github.io/terra/reference/rasterize.html)
+  ne reprojette pas et n’échoue pas non plus : il rend un raster
+  tout-à-`background`. Nouveau helper interne `safe_rasterize()`
+  (pendant de `safe_extract()`) qui aligne le CRS.
+- Un `hazard` sans aucune cellule de combustible bascule désormais sur
+  le repli `slope + species + climate` avec un avertissement, au lieu de
+  rendre 0 : une emprise disjointe est une absence de donnée, pas un
+  risque nul.
+
 ## \[0.172.0\] - 2026-08-16
 
 ### Added
