@@ -412,14 +412,26 @@ indicateur_c1_biomasse <- function(units,
   mnh_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "lidar_mnh") else NULL
   if (!is.null(mnh_raster)) {
     cli::cli_alert_info("Estimating C1 from LiDAR MNH (canopy height model)")
-    zmean <- safe_extract(
-      mnh_raster, units_sf, fun = "mean", progress = FALSE
-    )
     # pzabove2: proportion of MNH pixels > 2m (canopy cover %)
     mnh_above2 <- mnh_raster > 2
     pzabove2 <- safe_extract(
       mnh_above2, units_sf, fun = "mean", progress = FALSE
     ) * 100
+    # `zmean` est la hauteur moyenne DE LA CANOPÉE, pas celle de l'unité : le
+    # modèle porte déjà la fraction de couvert dans `pzabove2`, et un zmean
+    # calculé sur toutes les cellules compte donc les trouées deux fois. Sur un
+    # peuplement ouvert l'écart est majeur — projet Fordead, parcelle 1 : 47 %
+    # de cellules exactement à 0 m (sol nu, MNS = MNT), zmean 1,04 m sur l'unité
+    # contre 6,03 m sur la canopée, soit un C1 de 0,14 au lieu de 1,91 tC/ha.
+    # La formule n'était pas robuste aux peuplements hétérogènes : elle écrasait
+    # le signal des îlots restants.
+    mnh_canopy <- terra::ifel(mnh_raster > 2, mnh_raster, NA)
+    zmean <- safe_extract(
+      mnh_canopy, units_sf, fun = "mean", progress = FALSE
+    )
+    # Aucune cellule de canopée : la moyenne est NA, mais la biomasse est 0 —
+    # une coupe rase n'est pas une donnée manquante.
+    zmean[is.na(zmean) | is.nan(zmean)] <- 0
     # AGB = k * (pzabove2/100) * zmean^1.5  (tutorial 02 model)
     k_biomasse <- 2.5
     fraction_carbone <- 0.47

@@ -537,7 +537,53 @@ invert_indicator <- function(data,
 #' @return Numeric vector. Normalized values (0-100).
 #'
 #' @export
+# Indicateurs pour lesquels `normalize_indicator()` applique une règle EXPLICITE
+# (ref_max, échelle dédiée, inversion de sens). Hors de cette liste et hors de
+# `.NORMALIZE_NATIVE_0_100`, la normalisation se réduit à un écrêtage naïf — ce
+# que `create_family_index()` signale. Déduire la présence d'une règle en
+# comparant les valeurs ne marche pas : quand la règle sature (C1 à 320 tC/ha,
+# S3 à 271 900 habitants), son résultat est indistinguable de l'écrêtage.
+.NORMALIZE_RULED <- c(
+  "indicateur_c1_biomasse", "indicateur_c2_ndvi",
+  "indicateur_w1_reseau", "indicateur_w2_zones_humides", "indicateur_w3_humidite",
+  "indicateur_s1_routes", "indicateur_s2_bati", "indicateur_s3_population",
+  "indicateur_p1_volume", "indicateur_p2_station",
+  "indicateur_e1_bois_energie", "indicateur_e2_evitement",
+  "indicateur_r5_deperissement", "indicateur_t3_coupes_rases",
+  "indicateur_r6_sensibilite", "indicateur_r7_gel",
+  "indicateur_b4_div_spectrale", "indicateur_l3_het_spectrale",
+  "sensibilite_score"
+)
+
+# TRUE quand la colonne est ramenée sur 0-100 par une règle explicite ou par
+# déclaration (« native 0-100 »), les deux écritures étant acceptées.
+.normalize_has_rule <- function(indicator) {
+  ind <- .normalize_resolve_alias(indicator)
+  ind %in% .NORMALIZE_RULED || ind %in% .NORMALIZE_NATIVE_0_100
+}
+
+# Code court -> nom long canonique (`P1` -> `indicateur_p1_volume`).
+#
+# `create_family_index()` accepte les deux écritures — le motif `^C[0-9]` est
+# même sa PREMIÈRE stratégie de sélection — mais les règles ci-dessous sont
+# indexées sur les noms longs. Un `P1` en m3/ha tombait donc sur l'écrêtage
+# naïf : 400 m3/ha rendait 100 au lieu de 50 (ref_max 800), et 75 tC/ha en `C1`
+# rendait 75 au lieu de 50. Le score de famille était faux sans un mot, pour la
+# raison même que ce brief cherchait ailleurs.
+.normalize_resolve_alias <- function(indicator) {
+  if (length(indicator) != 1L || is.na(indicator)) return(indicator)
+  if (grepl("^indicateur_", indicator)) return(indicator)
+  if (!grepl("^[A-Za-z][0-9]+$", indicator)) return(indicator)
+  longs <- get_all_column_names()
+  shorts <- toupper(sub("^indicateur_([a-z][0-9]+)_.*$", "\\1", longs))
+  hit <- longs[shorts == toupper(indicator)]
+  if (length(hit) == 1L) hit else indicator
+}
+
 normalize_indicator <- function(indicator, values) {
+  # Les deux écritures (courte et longue) suivent la même règle.
+  indicator <- .normalize_resolve_alias(indicator)
+
   ref_max <- switch(indicator,
     "indicateur_c1_biomasse" = 150,
     "indicateur_c2_ndvi" = NULL,

@@ -46,8 +46,13 @@ test_that("create_family_index supports custom weights per indicator", {
   expect_s3_class(result, "sf")
   expect_true("famille_carbone" %in% names(result))
 
-  # Verify weighted average calculation
-  expected_C <- units$C1 * 0.7 + units$C2 * 0.3
+  # Verify weighted average calculation. Les attentes passent par
+  # normalize_indicator() : ce test porte sur la PONDÉRATION, pas sur l'échelle.
+  # Coder l'échelle en dur revenait à supposer que `C1` est déjà un score 0-100,
+  # alors que la convention des codes courts (cf. massif_demo_units : C1 en
+  # tC/ha, S3 en habitants) est celle de la valeur brute.
+  expected_C <- normalize_indicator("C1", units$C1) * 0.7 +
+                normalize_indicator("C2", units$C2) * 0.3
   expect_equal(result$famille_carbone, expected_C, tolerance = 0.01)
 })
 
@@ -89,9 +94,12 @@ test_that("create_family_index supports different aggregation methods", {
   units$C1 <- c(50, 60, 55)
   units$C2 <- c(70, 75, 72)
 
+  n_c1 <- normalize_indicator("C1", units$C1)
+  n_c2 <- normalize_indicator("C2", units$C2)
+
   # Mean
   result_mean <- create_family_index(units, method = "mean")
-  expect_equal(result_mean$famille_carbone, (units$C1 + units$C2) / 2)
+  expect_equal(result_mean$famille_carbone, (n_c1 + n_c2) / 2)
 
   # Weighted mean with equal weights
   result_weighted <- create_family_index(units, method = "weighted")
@@ -99,7 +107,7 @@ test_that("create_family_index supports different aggregation methods", {
 
   # Geometric mean
   result_geom <- create_family_index(units, method = "geometric")
-  expect_equal(result_geom$famille_carbone, sqrt(units$C1 * units$C2), tolerance = 0.01)
+  expect_equal(result_geom$famille_carbone, sqrt(n_c1 * n_c2), tolerance = 0.01)
 })
 
 test_that("create_family_index handles NA values appropriately", {
@@ -115,10 +123,10 @@ test_that("create_family_index handles NA values appropriately", {
   expect_false(is.na(result$famille_carbone[1]))
 
   # Second unit: C1 is NA, only C2 contributes
-  expect_equal(result$famille_carbone[2], 75)
+  expect_equal(result$famille_carbone[2], normalize_indicator("C2", 75))
 
   # Third unit: C2 is NA, only C1 contributes
-  expect_equal(result$famille_carbone[3], 55)
+  expect_equal(result$famille_carbone[3], normalize_indicator("C1", 55))
 })
 
 test_that("create_family_index validates inputs", {

@@ -58,10 +58,16 @@ twelve_family_units <- st_sf(
   P3 = c(72, 58, 84, 65, 75), # Timber quality (0-100)
 
   # Family E - Energy & Climate (NEW)
-  E1 = c(4.5, 2.8, 6.2, 3.7, 5.1), # Fuelwood potential (t DM/yr)
+  # Unités alignées sur celles qu'attend normalize_indicator() : E1 en tep/ha/an
+  # (ref_max 0.3) et E2 en tCO2/ha/an (ref_max 0.75). La fixture portait des
+  # totaux annuels (t MS/an, tCO2eq/an), d'un ordre de grandeur tel que les deux
+  # colonnes saturaient à 100 après normalisation : famille_energie devenait
+  # constante, et sa corrélation avec elle-même NA. Les rapports entre unités
+  # sont conservés.
+  E1 = c(0.195, 0.121, 0.269, 0.160, 0.221), # Fuelwood potential (tep/ha/yr)
   E1_residues = c(3.2, 2.1, 4.5, 2.8, 3.6),
   E1_coppice = c(1.3, 0.7, 1.7, 0.9, 1.5),
-  E2 = c(8.2, 5.1, 11.3, 6.8, 9.3), # CO2 avoidance (tCO2eq/yr)
+  E2 = c(0.492, 0.306, 0.678, 0.408, 0.558), # CO2 avoidance (tCO2/ha/yr)
   E2_energy = c(7.5, 4.6, 10.2, 6.1, 8.4),
   E2_material = c(0.7, 0.5, 1.1, 0.7, 0.9),
 
