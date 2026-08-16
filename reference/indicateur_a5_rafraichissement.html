@@ -15,7 +15,7 @@ heat-island context."><meta property="og:image" content="https://pobsteta.github
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.173.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.173.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -108,10 +108,16 @@ score swing: a unit <code>delta_scale</code> cooler than its reference scores 10
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>units</code> with <code>A5</code> (0-100, high = cooler than surroundings) and
-<code>A5_delta</code> (raw reference − unit LST). <code>A5 = NA</code> where <code>lst</code> is
-<code>NULL</code>, the unit does not overlap the raster, or no local reference is
-available.</p>
+    <p><code>units</code> with <code>A5</code> (0-100, high = cooler than surroundings),
+<code>A5_delta</code> (raw reference − unit LST) and <code>a5_status</code>.
+<code>A5 = NA</code> where <code>lst</code> is <code>NULL</code>, the unit does not overlap the
+raster, or no local reference is available.</p>
+<p><code>a5_status</code> is one of <code>"calculated"</code>, <code>"skipped_no_lst"</code> (no
+LST raster supplied) or <code>"skipped_no_reference"</code> (raster supplied but no
+unit could be scored — no overlap, or no local reference). It mirrors
+<code>r5_status</code> and exists so that a consumer can tell an empty indicator
+apart from a broken one: outside Thermocity coverage <code>A5 = NA</code> is the
+correct answer, not a failure.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

@@ -12,6 +12,40 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.173.1\] - 2026-08-16
+
+### Fixed
+
+- **SUFOSAT était inatteignable** : l’entrée `sufosat` de `FR.json`
+  déclarait `stac_collection` / `stac_collection_status` /
+  `stac_api_service` à la racine de l’entrée, alors que le résolveur lit
+  `access$stac_collection`. Conséquence : cache `layers/sufosat/` vide
+  et T3 (coupes rases) `NA` en silence. Les deux produits nationaux
+  (`..._dates_v3_set25.tif`, `..._prob_v3_set25.tif`) se résolvent à
+  nouveau.
+
+### Added
+
+- Garde-fou de schéma (`test-datasources-stac-schema.R`) : aucune source
+  ne peut déclarer ses champs STAC hors de `access`, dans aucun fichier
+  pays.
+- `inst/REFERENCES.md` : référence de méthode SUFOSAT (rapport final
+  SuFoSat, Planells / CNES / ADEME 2024 — TropiSCO adapté, ombres radar
+  Sentinel-1).
+- **`theia_source_status(source_key, aoi)`** (exportée) : dit si une
+  source Theia est lisible sur une emprise et, sinon, pourquoi —
+  `reason` ∈
+  `{"ok", "unknown_source", "no_stac_collection", "no_asset_over_aoi", "no_credentials", "error"}`,
+  clé stable destinée à être traduite en aval. Aucun téléchargement.
+  Deux tests contre le catalogue réel.
+- Colonne **`a5_status`** sur
+  [`indicateur_a5_rafraichissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_a5_rafraichissement.md)
+  (`calculated` / `skipped_no_lst` / `skipped_no_reference`), par unité,
+  sur le modèle de `r5_status` : distinguer « pas de données ici » de «
+  source cassée ».
+- Brief de câblage app :
+  `specs/032-regulation-thermique-albedo-lst/brief-nemetonshiny-a5-diagnostic.md`.
+
 ## \[0.173.0\] - 2026-08-16
 
 ### Added

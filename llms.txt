@@ -1109,6 +1109,9 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`theia_signed_href()`](https://pobsteta.github.io/nemeton/reference/theia_signed_href.md)
   : Resolve a signed THEIA asset URL via the teledetection gateway
 
+- [`theia_source_status()`](https://pobsteta.github.io/nemeton/reference/theia_source_status.md)
+  : Report whether a THEIA datasource is usable over an AOI
+
 - [`theia_stac`](https://pobsteta.github.io/nemeton/reference/theia_stac.md)
   : THEIA STAC resolver
 

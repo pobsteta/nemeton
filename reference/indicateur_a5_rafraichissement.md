@@ -54,10 +54,17 @@ indicateur_a5_rafraichissement(
 
 ## Value
 
-`units` with `A5` (0-100, high = cooler than surroundings) and
-`A5_delta` (raw reference − unit LST). `A5 = NA` where `lst` is `NULL`,
-the unit does not overlap the raster, or no local reference is
+`units` with `A5` (0-100, high = cooler than surroundings), `A5_delta`
+(raw reference − unit LST) and `a5_status`. `A5 = NA` where `lst` is
+`NULL`, the unit does not overlap the raster, or no local reference is
 available.
+
+`a5_status` is one of `"calculated"`, `"skipped_no_lst"` (no LST raster
+supplied) or `"skipped_no_reference"` (raster supplied but no unit could
+be scored — no overlap, or no local reference). It mirrors `r5_status`
+and exists so that a consumer can tell an empty indicator apart from a
+broken one: outside Thermocity coverage `A5 = NA` is the correct answer,
+not a failure.
 
 ## Details
 
