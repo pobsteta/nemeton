@@ -8,7 +8,10 @@
 # L'exposition est donc modulée par la pente et la sécheresse climatique, comme
 # le fait le repli.
 
-skip_if_not_installed("terra")
+# Pas de `skip_if_not_installed("terra")` au niveau fichier : le helper maison de
+# ce dépôt sonde aussi l'anomalie terra des runners GitHub, et un appel en tête
+# de fichier y fait sauter le fichier ENTIER — y compris l'algèbre des poids,
+# qui ne touche pas un raster. Le garde-fou est donc posé test par test.
 
 # MNT en pente régulière ouest -> est, sur l'emprise des unités de test.
 make_sloped_dem <- function(res = 10) {
@@ -54,6 +57,7 @@ test_that(".r1_weighted_score clamps to [0, 100] and handles a single component"
 # --- Le chemin fireexposuR pondéré ------------------------------------------
 
 test_that("weighting makes R1 discriminate on a fully forested massif", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("fireexposuR")
   skip_if_terra_write_broken()
   mock_fire_exp_identity()
@@ -82,6 +86,7 @@ test_that("weighting makes R1 discriminate on a fully forested massif", {
 })
 
 test_that("the fireexposuR path reports the weights it actually used", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("fireexposuR")
   skip_if_terra_write_broken()
   mock_fire_exp_identity()
@@ -100,6 +105,7 @@ test_that("the fireexposuR path reports the weights it actually used", {
 })
 
 test_that("a climate raster enters the fireexposuR score as a third component", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("fireexposuR")
   skip_if_terra_write_broken()
   mock_fire_exp_identity()
@@ -120,6 +126,7 @@ test_that("a climate raster enters the fireexposuR score as a third component", 
 })
 
 test_that("custom fire_exp_weights shift the balance", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("fireexposuR")
   skip_if_terra_write_broken()
   mock_fire_exp_identity()
@@ -148,6 +155,7 @@ test_that("custom fire_exp_weights shift the balance", {
 # --- Le repli garde son comportement -----------------------------------------
 
 test_that("the fallback path is unchanged by the fire_exp weighting", {
+  skip_if_not_installed("terra")
   skip_if_terra_write_broken()
 
   dem <- make_sloped_dem()
@@ -160,4 +168,25 @@ test_that("the fallback path is unchanged by the fire_exp weighting", {
                          fire_exp_weights = c(exposure = 1))
   expect_equal(a$R1, b$R1)
   expect_true(all(a$R1 >= 0 & a$R1 <= 100))
+})
+
+# --- Contrats des helpers sans raster (exécutables sur tout runner) ----------
+
+test_that("component helpers return NULL when their input is missing", {
+  units <- data.frame(id = 1:2)
+
+  # Pas de MNT : pas de pente. NULL, pas un 50 de complaisance — c'est
+  # `.r1_weighted_score` qui décide ensuite de redistribuer le poids.
+  expect_null(.r1_slope_factor(NULL, units))
+  expect_null(.r1_slope_factor("pas un raster", units))
+
+  # Climat absent ou incomplet : pas de composante climatique.
+  expect_null(.r1_climate_factor(NULL, units))
+  expect_null(.r1_climate_factor(list(temperature = 1), units))
+  expect_null(.r1_climate_factor(list(foo = 1, bar = 2), units))
+})
+
+test_that(".fire_exp_working_dem passes through a missing DEM", {
+  expect_null(.fire_exp_working_dem(NULL))
+  expect_identical(.fire_exp_working_dem("pas un raster"), "pas un raster")
 })
