@@ -804,6 +804,90 @@ inspirer un épaississement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-16* (**v0.174.0**) : **brief « normalisation des
+familles » — prémisse écartée, vraies causes corrigées**. Le brief
+`specs/BRIEF-nemeton-normalisation-familles.md` (score
+`famille_carbone = 0,90 / 100` sur Fordead) posait en CA-1 bloquant que
+[`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)
+agrégeait des **valeurs brutes**. **Vérifié : c’est faux.** La fonction
+appelle
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+sur chaque colonne avant d’agréger, et le fait **depuis la v0.10.0**
+(commit `e2285fce0`, 2026-02-04, `git log -S` à l’appui). La preuve
+tient sur les données réelles : `s3_population` vaut **9 094 habitants**
+et `famille_social` **94,03** — une moyenne de brutes donnerait ~3 000,
+tandis que `9094,5/10000×100 = 90,9` est exactement le score observé.
+`famille_carbone = 0,90` est donc l’agrégation *correcte* d’entrées
+réellement quasi nulles (C1 à 0,062 tC/ha → 0,041 ; C2 négatif → 0).
+L’observation d’origine (« avec ou sans colonnes `_norm`, score
+identique ») était juste, l’inférence non : les `_norm` sont ignorées
+**parce que** la fonction normalise elle-même les brutes. **Ce qui a
+réellement été corrigé** : (1) **CA-5, C1 biomasse** — `zmean` est
+extrait des seules cellules de canopée (\> 2 m) ; `pzabove2` portant
+déjà la fraction de couvert, un `zmean` calculé sur toute l’unité
+comptait les trouées **deux fois**. Sur Fordead, parcelle 1 : 47 % de
+cellules exactement à 0 m, `zmean` 1,04 m sur l’unité contre 6,03 m sur
+la canopée. Résultat rejoué en réel : **0,138 → 1,913**, **0,056 →
+1,087**, **0,433 → 4,690** tC/ha — au centième près les valeurs que le
+brief prédisait par calcul à la main. Une unité sans canopée rend **0**,
+pas `NA` (une coupe rase n’est pas une donnée manquante). (2) La
+**préférence `_norm` était morte** : elle cherchait dans les colonnes
+déjà sélectionnées, où aucune stratégie ne fait entrer un `_norm` ; la
+recherche se fait désormais dans les données, et une colonne `_norm`
+retenue est **écrêtée, pas re-normalisée**. (3) **CA-2** —
+[`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)
+avertit quand une colonne hors `[0, 100]` est agrégée sans règle de
+normalisation, en nommant la colonne **et la famille**
+([`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+ignore la famille et ne prévient que pour les colonnes déclarées). (4)
+**CA-3** — 5 `test_that` (`test-family-normalisation.R`) verrouillent la
+propriété avec les valeurs réelles de Fordead : seules ces valeurs
+distinguent « normalisé » de « brut ». (5) **Le garde-fou a
+immédiatement payé** : il a signalé 49 agrégations naïves dans la suite,
+toutes sur des **codes courts**. Vérification : les règles de
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+sont indexées sur les noms longs, alors que la convention des codes
+courts est celle de la **valeur brute** — `massif_demo_units` porte `C1`
+en tC/ha (20..300) et `S3` en habitants (70 200..271 900).
+`normalize_indicator("P1", 400)` rendait donc **100** au lieu de 50. Les
+deux écritures suivent désormais la même règle. C’est le défaut que le
+brief cherchait, à un endroit qu’il n’avait pas regardé. (6) **Effet
+mesuré sur la fixture de référence** : `massif_demo_units` embarque
+`C1_norm`/`C2_norm`, jusqu’ici ignorées ; `famille_carbone` y passe de
+**80,5** (brutes écrêtées) à **46,6** (normalisées fournies). Cinq tests
+de `test-family-system.R` codaient l’échelle en dur (`C1 = 50` traité
+comme un score) : leurs attentes passent désormais par
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md),
+ce qui les recentre sur ce qu’ils testaient vraiment — la pondération et
+la gestion des NA.
+
+7.  **La famille S comptait quatre fois la même population** : le motif
+    `^S[0-9]` n’était pas ancré et faisait entrer les colonnes de
+    diagnostic `S3_5km` / `S3_10km` / `S3_20km` produites par
+    [`indicateur_s3_population()`](https://pobsteta.github.io/nemeton/reference/indicateur_s3_population.md).
+    Motif ancré en `^S[0-9]+(_norm)?$`. (8) La présence d’une règle est
+    vérifiée **explicitement** (`.NORMALIZE_RULED`) et non déduite des
+    valeurs : quand une règle sature (C1 à 320 tC/ha, S3 à 271 900
+    habitants), son résultat est indistinguable de l’écrêtage — le
+    premier détecteur, par comparaison, produisait des faux positifs.
+8.  Fixture d’intégration corrigée : ses colonnes E étaient en totaux
+    annuels (t MS/an, tCO2eq/an) là où les indicateurs sont en tep/ha/an
+    et tCO2/ha/an, d’où deux colonnes saturées, une `famille_energie`
+    constante et sa corrélation avec elle-même `NA`.
+
+**Déjà livré avant ce brief** : **CA-6** (collection STAC `sufosat`) en
+v0.173.1, **CA-7** (`r1_feu` constant à 0) en v0.172.1 puis v0.173.0 —
+R1 vaut désormais 68,8 à 87 sur Fordead. **CA-4** (C2 depuis Sentinel-2
+L2A et non l’ortho IRC WMS) est **entièrement côté app** : le cœur
+reçoit un raster NDVI, il n’en choisit pas la source, et
+`build_index_stack(index = "NDVI")` existe déjà → brief
+`specs/brief-nemetonshiny-c2-ndvi-sentinel2.md`, qui solde aussi la
+copie morte de
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+en `service_compute.R:3793`.
+
+------------------------------------------------------------------------
+
 **Journal** — *2026-08-16* (**v0.173.1**) : **SUFOSAT était
 inatteignable — trois champs STAC à la mauvaise place**. Symptôme : le
 cache `cache/layers/sufosat/` de **tous** les projets restait vide et

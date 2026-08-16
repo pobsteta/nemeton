@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.173.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.174.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,73 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.174.0" id="nemeton-01740-2026-08-16">nemeton 0.174.0 (2026-08-16)<a class="anchor" aria-label="anchor" href="#nemeton-01740-2026-08-16"></a></h2>
+<div class="section level4">
+<h4 id="fixed--c1--la-hauteur-moyenne-porte-sur-la-canopée-plus-sur-lunité-entière-0-174-0">Fixed — C1 : la hauteur moyenne porte sur la canopée, plus sur l’unité entière<a class="anchor" aria-label="anchor" href="#fixed--c1--la-hauteur-moyenne-porte-sur-la-canop%C3%A9e-plus-sur-lunit%C3%A9-enti%C3%A8re-0-174-0"></a></h4>
+<p>Le modèle LiDAR de C1 est <code>AGB = k × (pzabove2/100) × zmean^1.5</code>. <code>pzabove2</code> porte déjà la <strong>fraction de couvert</strong>, mais <code>zmean</code> était calculé sur <strong>toutes</strong> les cellules du MNH, trouées comprises : la même surface nue pénalisait donc le résultat <strong>deux fois</strong>.</p>
+<p>Sur un peuplement fermé l’écart est mineur ; sur un peuplement ouvert il écrase le signal des îlots restants. Mesuré sur le projet Fordead, parcelle 1 : 47 % des cellules valent exactement 0 m (sol nu, MNS = MNT), <code>zmean</code> vaut 1,04 m sur l’unité contre <strong>6,03 m sur la canopée</strong>.</p>
+<p><code>zmean</code> est désormais extrait des seules cellules &gt; 2 m. Une unité sans aucune cellule de canopée donne 0, pas <code>NA</code> — une coupe rase n’est pas une donnée manquante. Résultat sur les quatre premières parcelles de Fordead :</p>
+<table class="table"><thead><tr><th>Parcelle</th>
+<th>C1 avant</th>
+<th>C1 après</th>
+</tr></thead><tbody><tr><td>1</td>
+<td>0,138</td>
+<td><strong>1,913</strong></td>
+</tr><tr><td>2</td>
+<td>0,056</td>
+<td><strong>1,087</strong></td>
+</tr><tr><td>4</td>
+<td>0,433</td>
+<td><strong>4,690</strong></td>
+</tr></tbody></table><p>Un facteur 10 à 14. Cela ne « répare » pas C1 sur ce projet — ces parcelles sont réellement rases, et pour un suivi du dépérissement c’est le signal attendu — mais la formule est maintenant robuste aux peuplements hétérogènes.</p>
+</div>
+<div class="section level4">
+<h4 id="fixed--la-préférence-pour-les-colonnes-_norm-sapplique-enfin-0-174-0">Fixed — la préférence pour les colonnes <code>_norm</code> s’applique enfin<a class="anchor" aria-label="anchor" href="#fixed--la-pr%C3%A9f%C3%A9rence-pour-les-colonnes-_norm-sapplique-enfin-0-174-0"></a></h4>
+<p><code><a href="../reference/create_family_index.html">create_family_index()</a></code> documentait une préférence pour les colonnes déjà normalisées (<code>&lt;indicateur&gt;_norm</code>). Elle était <strong>morte</strong> : la recherche se faisait dans les colonnes déjà sélectionnées, or aucune stratégie de sélection ne retient un <code>_norm</code> — ni le motif <code>^C[0-9]</code>, ni les <code>column_names</code> de <code>INDICATOR_FAMILIES</code>, qui portent les noms bruts. Un appelant qui normalisait en amont voyait son travail ignoré (sans dommage : la fonction normalise elle-même les colonnes brutes, cf. ci-dessous — mais sans effet non plus).</p>
+<p>La recherche se fait désormais dans les données, et une colonne <code>_norm</code> retenue est <strong>écrêtée, pas re-normalisée</strong> : une seconde passe écraserait une échelle déjà correcte.</p>
+<p>Conséquence mesurable : <code>massif_demo_units</code> <strong>embarque</strong> <code>C1_norm</code> / <code>C2_norm</code>, jusqu’ici ignorées. <code>famille_carbone</code> sur la fixture de référence passe de <strong>80,5</strong> (colonnes brutes écrêtées) à <strong>46,6</strong> (colonnes normalisées fournies) — c’est-à-dire à la valeur que la fixture porte depuis toujours.</p>
+</div>
+<div class="section level4">
+<h4 id="fixed--les-codes-courts-se-normalisent-enfin-comme-leur-nom-long-0-174-0">Fixed — les codes courts se normalisent enfin comme leur nom long<a class="anchor" aria-label="anchor" href="#fixed--les-codes-courts-se-normalisent-enfin-comme-leur-nom-long-0-174-0"></a></h4>
+<p><code><a href="../reference/create_family_index.html">create_family_index()</a></code> accepte les deux écritures — le motif <code>^C[0-9]</code> est même sa <strong>première</strong> stratégie de sélection — et la convention des codes courts est celle de la <strong>valeur brute</strong> : <code>massif_demo_units</code>, la fixture de référence du package, porte <code>C1</code> en tC/ha (20 à 300) et <code>S3</code> en habitants (70 200 à 271 900).</p>
+<p>Mais les règles de <code><a href="../reference/normalize_indicator.html">normalize_indicator()</a></code> sont indexées sur les <strong>noms longs</strong>. Un code court tombait donc sur l’écrêtage naïf :</p>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>Appel</th>
+<th>Avant</th>
+<th>Après</th>
+</tr></thead><tbody><tr><td>
+<code>normalize_indicator("P1", 400)</code> (m³/ha, <code>ref_max</code> 800)</td>
+<td><strong>100</strong></td>
+<td><strong>50</strong></td>
+</tr><tr><td>
+<code>normalize_indicator("C1", 75)</code> (tC/ha, <code>ref_max</code> 150)</td>
+<td><strong>75</strong></td>
+<td><strong>50</strong></td>
+</tr></tbody></table><p>C’est le défaut que le brief cherchait, à un endroit qu’il n’avait pas regardé. Il a été mis au jour par le garde-fou ci-dessous, qui a signalé 49 agrégations naïves dans la suite de tests.</p>
+</div>
+<div class="section level4">
+<h4 id="fixed--la-famille-s-ne-compte-plus-quatre-fois-la-même-population-0-174-0">Fixed — la famille S ne compte plus quatre fois la même population<a class="anchor" aria-label="anchor" href="#fixed--la-famille-s-ne-compte-plus-quatre-fois-la-m%C3%AAme-population-0-174-0"></a></h4>
+<p>Le motif de sélection des codes courts, <code>^S[0-9]</code>, n’était pas ancré en fin de nom : il faisait entrer dans la famille S les colonnes de <strong>diagnostic</strong> que produit <code><a href="../reference/indicateur_s3_population.html">indicateur_s3_population()</a></code> — <code>S3_5km</code>, <code>S3_10km</code>, <code>S3_20km</code> (population par rayon). La famille agrégeait donc S1, S2 et <strong>quatre</strong> variantes du même S3. Le motif est désormais ancré (<code>^S[0-9]+(_norm)?$</code>) : le suffixe <code>_norm</code> reste accepté, c’est une écriture du même indicateur, pas une variante.</p>
+</div>
+<div class="section level4">
+<h4 id="added--un-score-de-famille-ne-se-fausse-plus-en-silence-0-174-0">Added — un score de famille ne se fausse plus en silence<a class="anchor" aria-label="anchor" href="#added--un-score-de-famille-ne-se-fausse-plus-en-silence-0-174-0"></a></h4>
+<p><code><a href="../reference/create_family_index.html">create_family_index()</a></code> avertit désormais quand une colonne <strong>hors <code>[0, 100]</code></strong> est agrégée <strong>sans règle de normalisation</strong> — cas où le repli naïf l’écrête, c’est-à-dire la mutile. Le message nomme la colonne <strong>et la famille</strong> : <code><a href="../reference/normalize_indicator.html">normalize_indicator()</a></code>, lui, ne connaît pas la famille et ne prévient que pour les colonnes qu’il sait connaître.</p>
+<p>La présence d’une règle est vérifiée explicitement (<code>.NORMALIZE_RULED</code>), et non déduite des valeurs : quand une règle sature — C1 à 320 tC/ha, S3 à 271 900 habitants — son résultat est indistinguable de l’écrêtage, et un détecteur par comparaison criait au loup.</p>
+<p>Ce garde-fou a payé immédiatement : il a signalé 49 agrégations naïves dans la suite de tests, dont les deux défauts ci-dessus, plus une fixture d’intégration dont les colonnes E étaient en totaux annuels (t MS/an, tCO₂eq/an) là où les indicateurs sont en tep/ha/an et tCO₂/ha/an — assez pour saturer les deux colonnes, rendre <code>famille_energie</code> constante et sa corrélation avec elle-même <code>NA</code>. Unités corrigées à la source (<code>tests/testthat/fixtures/create_twelve_family_fixture.R</code>).</p>
+</div>
+<div class="section level4">
+<h4 id="note--la-normalisation-nétait-pas-en-cause-premise-vérifiée-puis-écartée-0-174-0">Note — la normalisation n’était pas en cause (premise vérifiée puis écartée)<a class="anchor" aria-label="anchor" href="#note--la-normalisation-n%C3%A9tait-pas-en-cause-premise-v%C3%A9rifi%C3%A9e-puis-%C3%A9cart%C3%A9e-0-174-0"></a></h4>
+<p>Un score <code>famille_carbone = 0,90 / 100</code> sur Fordead avait fait soupçonner que <code><a href="../reference/create_family_index.html">create_family_index()</a></code> agrégeait des valeurs brutes. Vérification faite, il normalise — <strong>et depuis la v0.10.0 (2026-02-04)</strong>, <code>git log -S</code> à l’appui.</p>
+<p>La preuve tient en une ligne, sur les données réelles : <code>s3_population</code> vaut <strong>9 094 habitants</strong> et <code>famille_social</code> vaut <strong>94,03</strong>. Une moyenne de valeurs brutes donnerait ~3 000. Avec normalisation, <code>9094,5 / 10000 × 100 = 90,9</code> — ce qui est exactement le score observé. De même, <code>famille_carbone = 0,90</code> est l’agrégation <strong>correcte</strong> d’entrées réellement quasi nulles : C1 à 0,062 tC/ha (→ 0,041 / 100) et C2 négatif (→ 0).</p>
+<p>L’observation d’origine — « avec ou sans colonnes <code>_norm</code>, le score est identique » — était juste ; c’est l’inférence qui ne l’était pas. Les <code>_norm</code> sont ignorées parce que la fonction normalise elle-même les colonnes brutes, pas parce qu’elle n’normalise rien. Les vraies causes du C effondré sont C1 (ci-dessus) et la source de C2 (brief app ci-dessous).</p>
+<p>Trois tests verrouillent la propriété, avec les valeurs réelles de Fordead (<code>test-family-normalisation.R</code>) : elles seules distinguent « normalisé » de « brut ».</p>
+</div>
+<div class="section level4">
+<h4 id="changed--briefs-app-0-174-0">Changed — briefs app<a class="anchor" aria-label="anchor" href="#changed--briefs-app-0-174-0"></a></h4>
+<ul><li>
+<code>specs/brief-nemetonshiny-c2-ndvi-sentinel2.md</code> : C2 doit être calculé depuis les scènes <strong>Sentinel-2 L2A</strong> déjà en cache, pas depuis l’orthophoto IRC du WMS IGN — une image 8 bits étirée pour l’affichage, dont le NDVI n’a pas de sens physique (33,7 % de pixels négatifs). Le cœur expose déjà <code>build_index_stack(index = "NDVI")</code> : rien à ajouter ici.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.173.1" id="nemeton-01731-2026-08-16">nemeton 0.173.1 (2026-08-16)<a class="anchor" aria-label="anchor" href="#nemeton-01731-2026-08-16"></a></h2>
 <div class="section level4">
