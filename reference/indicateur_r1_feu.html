@@ -11,7 +11,7 @@ when fireexposuR or BD Foret data is unavailable."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.171.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.172.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,7 +63,8 @@ when <span class="pkg">fireexposuR</span> or BD Foret data is unavailable.</p>
 <span>  species_field <span class="op">=</span> <span class="st">"species"</span>,</span>
 <span>  climate <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>slope <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">3</span>, species <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">3</span>, climate <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">3</span><span class="op">)</span>,</span>
-<span>  dem_target_res <span class="op">=</span> <span class="fu">.topo_target_res</span><span class="op">(</span><span class="op">)</span></span>
+<span>  dem_target_res <span class="op">=</span> <span class="fu">.topo_target_res</span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  fire_exp_res <span class="op">=</span> <span class="va">.NEMETON_FIRE_EXP_RES</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -110,6 +111,15 @@ package-wide topographic working resolution, 2 m — see
 <code>options("nemeton.topo_target_res")</code>; <code>NULL</code> keeps the native
 resolution. Never upsamples, and is a no-op on a lon/lat DEM.</p></dd>
 
+
+<dt id="arg-fire-exp-res">fire_exp_res<a class="anchor" aria-label="anchor" href="#arg-fire-exp-res"></a></dt>
+<dd><p>Numeric. Upper bound (metres) on the working resolution
+of the <span class="pkg">fireexposuR</span> path only: the hazard raster handed to
+<code>fire_exp()</code> is aggregated to at least this cell size. Default 30 m,
+the Landsat-like resolution <span class="pkg">fireexposuR</span> is calibrated for. The
+fallback method is unaffected and keeps <code>dem_target_res</code>. Never
+upsamples a DEM that is already coarser; <code>NULL</code> disables the bound.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -119,7 +129,10 @@ resolution. Never upsamples, and is a no-op on a lon/lat DEM.</p></dd>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>**Primary method** (requires <span class="pkg">fireexposuR</span> + BD Foret):
 Rasterizes BD Foret as a hazard layer, then computes fire exposure
-with a 500m transmission distance. The 0-1 exposure is scaled to 0-100.</p>
+with a 500m transmission distance. The 0-1 exposure is scaled to 0-100.
+The hazard grid is bounded to <code>fire_exp_res</code> (30 m) because the
+annular kernel of <code>fire_exp()</code> costs <code>(2 * t_dist / res)^2</code>
+operations per cell: at 2 m it is ~52 000x the cost at 30 m.</p>
 <p>**Fallback method**: R1 = w1*slope + w2*species_flammability + w3*climate_dryness</p>
     </div>
     <div class="section level2">

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.171.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.172.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,36 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.172.0" id="nemeton-01720-2026-08-16">nemeton 0.172.0 (2026-08-16)<a class="anchor" aria-label="anchor" href="#nemeton-01720-2026-08-16"></a></h2>
+<div class="section level4">
+<h4 id="fixed--r1-feu--la-résolution-de-travail-du-chemin-fireexposur-est-bornée-0-172-0">Fixed — R1 feu : la résolution de travail du chemin <code>fireexposuR</code> est bornée<a class="anchor" aria-label="anchor" href="#fixed--r1-feu--la-r%C3%A9solution-de-travail-du-chemin-fireexposur-est-born%C3%A9e-0-172-0"></a></h4>
+<p>Sur le projet <strong>Fordead</strong>, le calcul des 31 indicateurs restait figé à 64 % : <code><a href="../reference/indicateur_r1_feu.html">indicateur_r1_feu()</a></code> tournait depuis plus de <strong>75 minutes</strong>, à 51 % d’un cœur, sans la moindre I/O ni pression mémoire (2,7 Go de RSS pour un plafond à 10 Go). Ni blocage, ni fuite : un coût algorithmique.</p>
+<p><code>fire_exp()</code> construit sa fenêtre avec <code>MultiscaleDTM::annulus_window(c(res, t_dist), "map", res)</code> puis <code><a href="https://rspatial.github.io/terra/reference/focal.html" class="external-link">terra::focal()</a></code>. La fenêtre est <strong>exprimée en mètres mais matérialisée en cellules</strong> : à <code>t_dist = 500 m</code>, elle pèse ~<code>(2 * t_dist / res)^2</code> poids par pixel. Le coût total varie donc en <code>1/res^4</code>.</p>
+<table class="table"><colgroup><col width="18%"><col width="14%"><col width="44%"><col width="22%"></colgroup><thead><tr><th>Résolution</th>
+<th>Fenêtre</th>
+<th>Cellules (emprise Fordead)</th>
+<th>Coût relatif</th>
+</tr></thead><tbody><tr><td>30 m (calibration Landsat de <code>fireexposuR</code>)</td>
+<td>33 × 33 ≈ 1 100</td>
+<td>~22 000</td>
+<td><strong>1×</strong></td>
+</tr><tr><td>2 m (<code>.topo_target_res()</code>)</td>
+<td>501 × 501 ≈ 251 000</td>
+<td>5 000 000</td>
+<td><strong>~52 000×</strong></td>
+</tr></tbody></table><p>Le MNT était une mosaïque <code>lidar_mnt</code> 8000 × 10000 à 0,50 m, ramenée à 2 m par <code>.dem_working_res()</code> — la bonne résolution pour une pente ou un TWI, pas pour un noyau de 500 m de portée.</p>
+<p><code><a href="../reference/indicateur_r1_feu.html">indicateur_r1_feu()</a></code> gagne donc un argument <strong><code>fire_exp_res</code> (défaut 30 m)</strong> qui borne la grille du <code>hazard</code> <strong>du seul chemin <code>fireexposuR</code></strong>. Le repli (<code>slope + species + climate</code>), dont le coût est linéaire en cellules, garde le <code>dem_target_res</code> courant : la borne est spécifique au chemin fautif, et <code>.topo_target_res()</code> reste à 2 m pour R2, R3, W3 où il a raison de l’être.</p>
+<p>Trois précisions d’implémentation :</p>
+<ul><li>la borne ne <strong>sur-échantillonne jamais</strong> — un BD ALTI 25 m (NDP 0) ou un MNT 100 m est laissé tel quel (<code>max(fire_exp_res, res(dem))</code>) ;</li>
+<li>l’agrégation part du MNT <strong>natif</strong> et non du MNT déjà ramené à 2 m : une seule passe (0,5 m → 30 m) au lieu de deux, et le 2 m n’est plus calculé du tout quand le chemin <code>fireexposuR</code> aboutit ;</li>
+<li>
+<code>fire_exp_res = NULL</code> retombe sur <code>dem_target_res</code>, c’est-à-dire le comportement d’avant le correctif, conservé comme échappatoire explicite.</li>
+</ul><p>Le log de <code>.dem_working_res()</code> porte le contexte <code>R1/fire_exp</code>, pour que la résolution effective se lise dans les journaux au prochain diagnostic.</p>
+<p><strong>Mesuré</strong> sur une mosaïque de la taille de Fordead (8000 × 10000 à 0,5 m, 80 M cellules, <code>fireexposuR</code> réel) : <strong>3,2 s</strong>, contre plus de 75 min. Le classement des unités est conservé (corrélation de Pearson et de Spearman &gt; 0,95 / &gt; 0,9 contre une référence non bornée, testées).</p>
+<p><strong>Côté <code>nemetonshiny</code></strong> : rien à faire, la signature reste compatible et l’app ne passe pas ces arguments.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.171.0" id="nemeton-01710-2026-08-14">nemeton 0.171.0 (2026-08-14)<a class="anchor" aria-label="anchor" href="#nemeton-01710-2026-08-14"></a></h2>
 <div class="section level4">

@@ -12,6 +12,29 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.172.0\] - 2026-08-16
+
+### Added
+
+- `indicateur_r1_feu(fire_exp_res = 30)` : borne (m) de la résolution de
+  travail du seul chemin `fireexposuR`. `NULL` retombe sur
+  `dem_target_res`, soit le comportement d’avant le correctif.
+
+### Fixed
+
+- **R1 feu ne prend plus des heures sur un MNT LiDAR.** La fenêtre
+  annulaire de `fire_exp()` est matérialisée en cellules : à 2 m et
+  `t_dist = 500 m` elle pèse 501 × 501 poids, soit ~52 000× le coût du
+  30 m pour lequel `fireexposuR` est calibré. Sur le projet Fordead
+  (mosaïque `lidar_mnt` 8000 × 10000 à 0,5 m) l’indicateur tournait
+  depuis \> 75 min ; il rend la main en **3,2 s**. La borne ne
+  sur-échantillonne jamais (BD ALTI 25 m, MNT 100 m laissés tels quels)
+  et n’affecte pas le repli `slope + species + climate`.
+- L’agrégation du MNT au `.topo_target_res()` (2 m) n’est plus payée
+  quand le chemin `fireexposuR` aboutit : le `hazard` est agrégé une
+  seule fois, du natif vers 30 m. Le log porte le contexte
+  `R1/fire_exp`.
+
 ## \[0.171.0\] - 2026-08-14
 
 ### Added
