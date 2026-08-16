@@ -937,11 +937,11 @@
       "required_crs": "EPSG:2154",
       "fallback_crs": "EPSG:3035",
       "ndp_level": 0,
-      "stac_api_service": "theia_stac",
-      "stac_collection": "sufosat",
-      "stac_collection_status": "confirmed",
       "access": {
         "catalogue": "https://catalogue.theia.data-terra.org/",
+        "stac_api_service": "theia_stac",
+        "stac_collection": "sufosat",
+        "stac_collection_status": "confirmed",
         "note": "Queried through the MTD STAC API (`services.theia_stac`). Collection `sufosat` confirmed on the live STAC 2026-07-02. Assets hosted on the Theia S3 store (bucket `sm1-gdc-ext`, endpoint `services.theia_s3`); hrefs are read via /vsis3/."
       },
       "products": {

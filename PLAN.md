@@ -701,6 +701,70 @@ inspirer un épaississement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-16* (**v0.173.1**) : **SUFOSAT était inatteignable — trois
+champs STAC à la mauvaise place**. Symptôme : le cache
+`cache/layers/sufosat/` de **tous** les projets restait vide et **T3 (coupes
+rases) rendait `NA` en silence**, y compris sur Dabo où la source est
+explicitement activée (`metadata$sufosat$enabled = TRUE`). **Cause** :
+`resolve_theia_assets()` et `theia_signed_href()` lisent
+`src$access$stac_collection` ; l'entrée `sufosat` de `inst/datasources/FR.json`
+déclarait `stac_collection` / `stac_collection_status` / `stac_api_service` à la
+**racine** de l'entrée — seule des dix sources Theia à le faire. D'où
+`Datasource "sufosat" has no confirmed STAC collection`, **attrapé par le
+`tryCatch` de `build_sufosat_layer()`** côté app : pas de couche, pas de message,
+pas d'indicateur. **Correctif** : les trois champs rejoignent `access`. Vérifié
+en réel sur l'AOI de Dabo — `asset=dates ->
+forest-clearcuts_mainland-france_sufosat_dates_v3_set25.tif`, `asset=proba ->
+..._prob_v3_set25.tif`. **Garde-fou** : `test-datasources-stac-schema.R` refuse
+tout champ STAC déclaré hors de `access`, dans n'importe quel fichier pays — le
+test passe au rouge sur le JSON d'avant le correctif (vérifié). Le mode de
+défaillance visé n'est pas la clé mal tapée mais le **silence** : une source
+inatteignable se traduisait par un indicateur NA sans trace. **Référence de
+méthode** ajoutée à `inst/REFERENCES.md` : rapport final SuFoSat (Planells,
+CNES/ADEME 2024, tâche 2.3 GLOBEO) — TropiSCO adapté aux forêts tempérées
+(ombres radar S1, filtrage Quegan & Yu 2001, Radar Change Ratio Tanase 2018),
+détection minimale 0,1 ha à 10 m, limite des peuplements < 15 m, validation sur
+403 + 967 polygones. **Décision consignée** : le cœur *consomme* SUFOSAT, il ne
+le recalcule pas — reproduire la chaîne demanderait l'archive S1 GRD dense, le
+filtrage multitemporel et une recalibration des seuils, pour dupliquer un produit
+déjà validé (et la visionneuse Earth Engine `ee-sufosatclearcuts` est un
+explorateur, pas un point d'accès).
+
+**Deuxième volet, même release — le silence lui-même** : le défaut commun à
+SUFOSAT et à A5 n'est pas la donnée manquante, c'est qu'une source **cassée** et
+une source **légitimement sans données** finissent toutes deux en couche `NULL`
+et indicateur `NA`, indiscernables depuis l'app. Deux ajouts au cœur :
+(1) **`theia_source_status(source_key, aoi)`** (exportée) — interroge le
+catalogue sans rien télécharger et rend `list(available, reason, n_assets,
+collection, detail)`, `reason` ∈ `{ok, unknown_source, no_stac_collection,
+no_asset_over_aoi, no_credentials, error}`. Une **clé stable**, pas un message :
+la traduction est à l'app, le diagnostic au cœur. Trois choix verrouillés par
+les tests — source inconnue ou sans collection nommée **sans requête réseau** ;
+clés `TLD_*` vérifiées **après** avoir constaté qu'il existe des données (sinon
+la réponse utile reste `no_asset_over_aoi`) ; catalogue injoignable → `error` et
+**jamais** `no_asset_over_aoi`, « je n'ai pas pu demander » n'étant pas « il n'y
+a rien ». Deux tests interrogent le catalogue réel, dont un sur `sufosat` qui
+échouerait si le défaut de schéma ci-dessus réapparaissait.
+(2) Colonne **`a5_status`** sur `indicateur_a5_rafraichissement()`
+(`calculated` / `skipped_no_lst` / `skipped_no_reference`), **par unité**, sur le
+modèle de `r5_status` (spec 008). 8 `test_that` ajoutés
+(`test-theia-source-status.R`, `test-indicator-a5.R`). **Brief app** :
+`specs/032-regulation-thermique-albedo-lst/brief-nemetonshiny-a5-diagnostic.md`
+— avec un constat à traiter côté app : `service_r5.R:86` fait
+`out$r5_status <- NULL`, c'est-à-dire que la seule colonne expliquant un R5 vide
+est supprimée juste avant d'atteindre l'interface. Le mécanisme d'affichage est
+le même pour T3, R5 et R7 (extension listée dans le brief).
+
+**Au passage, un non-problème écarté** : `cache/layers/lst/` vide n'est **pas**
+une anomalie. `theia_lst` (lignée Thermocity) ne couvre que quelques métropoles ;
+mesuré sur les projets locaux, la requête STAC rend **0 asset** pour Fordead
+(Ardennes) et ForetAccess, **8** scènes ECOSTRESS Strasbourg pour Dabo — qui a
+bien son `lst_*.tif`. A5 est source-conditionné et rend `NA` hors couverture,
+comme documenté. Reliquat côté app : rien n'explique à l'utilisateur *pourquoi*
+A5 est NA (brief à écrire, pas un correctif cœur).
+
+---
+
 **Journal** — *2026-08-16* (**v0.173.0**) : **l'exposition `fireexposuR` de R1
 est pondérée par la pente et le climat**. Suite directe de la v0.172.1 : une fois
 la BD Forêt correctement rasterisée, R1 valait **98,7 à 100 sur les 30 unités**

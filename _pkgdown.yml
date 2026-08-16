@@ -472,6 +472,7 @@ reference:
     - theia_configure_s3
     - theia_sign_urls
     - theia_signed_href
+    - theia_source_status
     - theia_stac
     - units_add_species_from_raster
     - validate_field_data

@@ -34,10 +34,17 @@ score swing: a unit \code{delta_scale} cooler than its reference scores 100,
 \item{...}{Unused.}
 }
 \value{
-\code{units} with \code{A5} (0-100, high = cooler than surroundings) and
-\code{A5_delta} (raw reference − unit LST). \code{A5 = NA} where \code{lst} is
-\code{NULL}, the unit does not overlap the raster, or no local reference is
-available.
+\code{units} with \code{A5} (0-100, high = cooler than surroundings),
+\code{A5_delta} (raw reference − unit LST) and \code{a5_status}.
+\code{A5 = NA} where \code{lst} is \code{NULL}, the unit does not overlap the
+raster, or no local reference is available.
+
+\code{a5_status} is one of \code{"calculated"}, \code{"skipped_no_lst"} (no
+LST raster supplied) or \code{"skipped_no_reference"} (raster supplied but no
+unit could be scored --- no overlap, or no local reference). It mirrors
+\code{r5_status} and exists so that a consumer can tell an empty indicator
+apart from a broken one: outside Thermocity coverage \code{A5 = NA} is the
+correct answer, not a failure.
 }
 \description{
 Relative surface-temperature freshness of a forest / tree unit compared with

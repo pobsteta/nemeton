@@ -1,3 +1,99 @@
+# nemeton 0.173.1 (2026-08-16)
+
+### Fixed — SUFOSAT était inatteignable : trois champs STAC à la mauvaise place
+
+Le cache `cache/layers/sufosat/` des projets restait vide et **T3 (coupes rases)
+rendait `NA` en silence**, y compris sur un projet où la source est explicitement
+activée (`metadata$sufosat$enabled = TRUE`). Le produit était pourtant publié.
+
+`resolve_theia_assets()` et `theia_signed_href()` lisent
+`src$access$stac_collection`. Or l'entrée `sufosat` de `inst/datasources/FR.json`
+déclarait ses champs STAC à la **racine** de l'entrée — la seule des dix sources
+Theia à le faire :
+
+```
+/datasets/forms_t/access     -> forms-t
+/datasets/theia_lst/access   -> thermocity-lst
+/datasets/sufosat            -> sufosat      <- jamais lu
+```
+
+D'où `Datasource "sufosat" has no confirmed STAC collection`, attrapé par le
+`tryCatch` de `build_sufosat_layer()` côté app : pas de couche, pas de message,
+pas d'indicateur. Les trois champs rejoignent `access`. Vérifié en réel, les deux
+produits nationaux se résolvent :
+
+```
+asset=dates  -> forest-clearcuts_mainland-france_sufosat_dates_v3_set25.tif
+asset=proba  -> forest-clearcuts_mainland-france_sufosat_prob_v3_set25.tif
+```
+
+### Added — un garde-fou de schéma sur les sources de données
+
+`tests/testthat/test-datasources-stac-schema.R` : aucune source, dans aucun
+fichier pays, ne peut déclarer `stac_collection` / `stac_collection_status` /
+`stac_api_service` ailleurs que sous `access`. Une clé mal placée échoue
+désormais en test, au lieu de se manifester par un cache vide en production.
+(Vérifié : le test passe au rouge sur le JSON d'avant le correctif.)
+
+### Added — la référence de méthode de SUFOSAT
+
+`inst/REFERENCES.md` documente le rapport final du projet SuFoSat (Planells,
+CNES/ADEME, 2024) : méthode TropiSCO adaptée aux forêts tempérées (ombres radar
+Sentinel-1, filtrage Quegan & Yu, Radar Change Ratio), taille minimale de
+détection 0,1 ha à 10 m, limite des peuplements de moins de 15 m, et données de
+validation. Avec la raison pour laquelle le cœur **consomme** ce produit au lieu
+de le recalculer.
+
+### Added — `theia_source_status()` : nommer la cause au lieu de rendre `NULL`
+
+Le vrai défaut commun à SUFOSAT et à A5 n'était pas la donnée manquante, c'était
+le **silence**. Une source cassée et une source légitimement sans données sur
+l'emprise finissaient toutes deux en couche `NULL` et indicateur `NA`, sans
+signal : indiscernables depuis l'application.
+
+```r
+theia_source_status("theia_lst", aoi)
+#> $available FALSE  $reason "no_asset_over_aoi"  $n_assets 0
+#> $collection "thermocity-lst"
+```
+
+`reason` ∈ `{"ok", "unknown_source", "no_stac_collection", "no_asset_over_aoi",
+"no_credentials", "error"}` — une **clé stable**, pas un message : l'aval
+traduit, le cœur diagnostique. Là où `resolve_theia_assets()` abort au premier
+obstacle, cette fonction le nomme, sans rien télécharger.
+
+Trois choix, verrouillés par les tests :
+
+- une source inconnue ou sans collection confirmée est nommée **sans requête
+  réseau** ;
+- les clés `TLD_*` ne sont vérifiées **qu'après** avoir constaté qu'il existe des
+  données — sur une emprise sans couverture, la réponse utile reste
+  `no_asset_over_aoi` ;
+- un catalogue injoignable rend `error`, **jamais** `no_asset_over_aoi` : « je
+  n'ai pas pu demander » n'est pas « il n'y a rien ».
+
+Deux tests interrogent le catalogue Theia réel : `theia_lst` sur l'emprise
+ardennaise rend bien `no_asset_over_aoi`, et `sufosat` résout sa collection —
+ce dernier échouerait si le défaut de schéma corrigé plus haut réapparaissait.
+
+### Added — colonne `a5_status`
+
+`indicateur_a5_rafraichissement()` rend désormais, à côté de `A5` et
+`A5_delta`, une colonne `a5_status` ∈ `{"calculated", "skipped_no_lst",
+"skipped_no_reference"}`, **par unité** — même contrat que `r5_status`
+(spec 008). `skipped_no_lst` = aucune source ; `skipped_no_reference` = raster
+fourni mais l'unité n'a pas pu être notée (emprises disjointes, pas de référence
+locale). Deux causes, deux messages possibles en aval.
+
+Brief de câblage : `specs/032-regulation-thermique-albedo-lst/brief-nemetonshiny-a5-diagnostic.md`.
+
+### Note — un `lst/` vide n'est pas une anomalie
+
+Vérifié sur les projets locaux : `theia_lst` (lignée Thermocity) ne renvoie
+aucun asset hors couverture urbaine (0 pour deux projets forestiers, 8 scènes
+ECOSTRESS Strasbourg pour un troisième). A5 est source-conditionné et rend `NA`
+hors couverture, comme documenté dans la source. Rien à corriger côté cœur.
+
 # nemeton 0.173.0 (2026-08-16)
 
 ### Changed — l'exposition `fireexposuR` est pondérée par la pente et le climat

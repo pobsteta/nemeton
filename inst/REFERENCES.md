@@ -149,3 +149,58 @@ Table `inst/extdata/ifn_espar_correspondance.csv` (193 lignes), exposée par
 ***Pseudotsuga* menziesii**. Corrigé le 22/07/2026. Le calcul de P1 n'était pas
 affecté (`lookup_ifn_equation()` apparie sur le code), mais le nom scientifique
 publié était erroné.
+
+---
+
+## SUFOSAT — coupes rases par Sentinel-1 (spec 030, indicateur T3)
+
+### Référence de méthode
+PLANELLS, Milena (CNES). 2024. *Suivi des forêts par satellite — Projet SuFoSat,
+rapport final.* ADEME, contrat 2003C0077, 133 p. Coordination CESBIO
+(Université Toulouse III), avec CNPF-IDF, DYNAFOR et GLOBEO.
+En ligne : <https://librairie.ademe.fr/>.
+Copie locale : `data-raw/references/sufosat Suivi des forets par satelite RF.pdf`.
+
+La cartographie des coupes rases est la **tâche 2.3** (GLOBEO, p. 35-40) :
+adaptation aux forêts tempérées de la méthode **TropiSCO** (<https://www.tropisco.org>),
+elle-même publiée dans Bouvet et al. 2018, Mermoz et al. 2021 et Doblas et al. 2023.
+
+### Méthode (résumé)
+Détection des **ombres radar** apparaissant à la lisière entre forêt intacte et
+coupe. Le rapport signal/bruit y est très bas, ce qui rend la détection peu
+sensible aux conditions environnementales et à l'état du sol — là où les
+méthodes optiques produisent des faux positifs et subissent les retards liés à
+la couverture nuageuse. Pour chaque polygone :
+
+1. détermination des orbites Sentinel-1 concernées, puis traitement **par orbite** ;
+2. filtrage temporel de Quegan & Yu (2001) sur les images acquises autour de la
+   date de coupe ;
+3. **Radar Change Ratio** (Tanase et al. 2018) : rapport entre les 3 à 6 images
+   suivant la date et 6 mois à 1 an d'images la précédant — la moyenne longue
+   amortit le speckle et les effets saisonniers (perte de feuille) ;
+4. détection d'anomalies dans un rayon de 500 m autour du centroïde, puis
+   reconstruction en image d'anomalies cumulées ;
+5. fusion des orbites.
+
+### Limites documentées
+- **Taille minimale de détection 0,1 ha**, pixel de 10 m.
+- La méthode suppose des ombres, donc des **arbres de plus de 15 m** ; une part
+  non négligeable des forêts françaises est plus basse. Les coupes franches y
+  sont malgré tout détectées (perte de signal forte sur parcelles bien
+  nettoyées), mais ces détections ne sont pas de vraies ombres et varient
+  davantage dans le temps après la coupe.
+- Validation sur 403 parcelles de peupliers photo-interprétées (Haute-Garonne,
+  Grand-Est, Loire, 2017-2022) et 967 polygones dessinés manuellement (48 %
+  feuillus, 52 % conifères), comparée à Hansen et al. 2013/2016.
+
+### Prudence d'usage
+Le cœur `nemeton` **consomme** le produit SUFOSAT, il ne le recalcule pas :
+`indicateur_t3_coupes_rases()` prend en entrée les rasters `dates` (YYDDD) et
+`proba` (%) publiés par le producteur. Reproduire la chaîne demanderait
+l'archive Sentinel-1 GRD dense, une implémentation du filtrage multitemporel et
+une recalibration des seuils sur des données de validation équivalentes — pour
+dupliquer un produit déjà validé. La visionneuse Earth Engine
+(<https://ee-sufosatclearcuts.projects.earthengine.app/view/sufosat-clearcuts-fr>)
+sert à l'exploration visuelle ; l'accès aux données passe par le catalogue Theia
+(collection STAC `sufosat`, cf. `inst/datasources/FR.json`).
+

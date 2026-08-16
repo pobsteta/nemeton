@@ -532,6 +532,105 @@ resolve_theia_assets <- function(source_key, aoi, asset = NULL,
 }
 
 
+#' Report whether a THEIA datasource is usable over an AOI
+#'
+#' Answers "can this source be read here, and if not, why" \strong{without}
+#' downloading anything. Where \code{\link{resolve_theia_assets}} aborts on the
+#' first obstacle, this reports the obstacle as a stable key the caller can
+#' translate and act on.
+#'
+#' The motivating failure is silence: a source that is unreachable and a source
+#' that legitimately has no data over the AOI both end as a \code{NULL} layer
+#' and an \code{NA} indicator. On the 2026-08-16 project audit, A5 (urban
+#' cooling) was empty because \code{theia_lst} — Thermocity lineage — only
+#' covers a handful of French metropolises, which is correct and documented; T3
+#' (clear-cuts) was empty because the \code{sufosat} datasource entry declared
+#' its STAC fields outside \code{access}, which was a defect. Same symptom,
+#' opposite causes, no signal either way.
+#'
+#' @inheritParams resolve_theia_assets
+#'
+#' @return A list with:
+#'   \itemize{
+#'     \item \code{available}: logical. \code{TRUE} only when the source can
+#'       actually be read for this AOI.
+#'     \item \code{reason}: character, one of \code{"ok"},
+#'       \code{"unknown_source"}, \code{"no_stac_collection"},
+#'       \code{"no_asset_over_aoi"}, \code{"no_credentials"},
+#'       \code{"error"}. A \strong{stable key}, not a message: translate it
+#'       downstream.
+#'     \item \code{n_assets}: integer. Number of STAC items intersecting the
+#'       AOI (\code{0} when the query could not run).
+#'     \item \code{collection}: character. STAC collection queried, or \code{NA}.
+#'     \item \code{detail}: character. Free-form diagnostic (upstream error
+#'       message) or \code{NA}. For logs, never for the interface.
+#'   }
+#'
+#' @seealso \code{\link{resolve_theia_assets}}, \code{\link{load_theia_source}}
+#'
+#' @examples
+#' \dontrun{
+#' st <- theia_source_status("theia_lst", aoi)
+#' if (!st$available && st$reason == "no_asset_over_aoi") {
+#'   message("Outside Thermocity coverage - A5 stays NA, this is not an error")
+#' }
+#' }
+#'
+#' @export
+theia_source_status <- function(source_key, aoi, country = "FR",
+                                datetime = NULL, stac_api = NULL,
+                                limit = 50L) {
+  out <- function(available, reason, n_assets = 0L, collection = NA_character_,
+                  detail = NA_character_) {
+    list(available = available, reason = reason,
+         n_assets = as.integer(n_assets),
+         collection = collection, detail = detail)
+  }
+
+  src <- tryCatch(get_data_source(source_key, country), error = function(e) NULL)
+  if (is.null(src)) return(out(FALSE, "unknown_source"))
+
+  collection <- src$access$stac_collection %||% ""
+  if (!nzchar(collection) || grepl("to confirm", collection, ignore.case = TRUE)) {
+    # Le cas SUFOSAT : la source existe, le produit est en ligne, mais rien dans
+    # le catalogue ne dit où le chercher.
+    return(out(FALSE, "no_stac_collection"))
+  }
+
+  api <- tryCatch(.theia_stac_api(country, stac_api), error = function(e) NULL)
+  if (is.null(api)) {
+    return(out(FALSE, "error", collection = collection,
+               detail = "no STAC API endpoint configured"))
+  }
+
+  items <- tryCatch(
+    stac_search_items(api, collection, .theia_bbox_4326(aoi),
+                      datetime = datetime, limit = limit),
+    error = function(e) e
+  )
+  if (inherits(items, "condition")) {
+    return(out(FALSE, "error", collection = collection,
+               detail = conditionMessage(items)))
+  }
+  n <- length(items)
+  if (n == 0L) {
+    # Couverture partielle assumée (Thermocity urbain, fenêtre temporelle) :
+    # ce n'est pas une panne, et l'appelant doit pouvoir le dire ainsi.
+    return(out(FALSE, "no_asset_over_aoi", collection = collection))
+  }
+
+  # Des données existent ; reste à savoir si on peut les lire. Les assets THEIA
+  # se lisent via des URLs pré-signées par la gateway, qui exige une paire de
+  # clés — sans elle, le catalogue répond mais le téléchargement échouera.
+  if (!nzchar(Sys.getenv("TLD_ACCESS_KEY", "")) ||
+      !nzchar(Sys.getenv("TLD_SECRET_KEY", ""))) {
+    return(out(FALSE, "no_credentials", n_assets = n, collection = collection))
+  }
+
+  out(TRUE, "ok", n_assets = n, collection = collection)
+}
+
+
 #' Load a THEIA datasource as a SpatRaster
 #'
 #' Loads a Theia datasource for an area of interest and crops it to
