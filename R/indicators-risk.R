@@ -51,6 +51,58 @@ NULL
   .dem_working_res(dem, target_res = target, context = "R1/fire_exp")
 }
 
+# --- Composantes partagées entre le chemin fireexposuR et le repli ------------
+#
+# Les deux chemins de R1 lisent la même pente et la même sécheresse climatique.
+# Le chemin fireexposuR les tire de la grille du `hazard` (30 m) : c'est la
+# résolution à laquelle les modèles de propagation raisonnent, et la pente d'un
+# MNT LiDAR à 2 m décrit surtout des cloisonnements et des fossés — de la
+# micro-topographie qui n'est pas la pente que remonte un front de feu.
+
+.r1_slope_factor <- function(dem, units) {
+  if (is.null(dem) || !inherits(dem, "SpatRaster")) return(NULL)
+  slope_raster <- tryCatch(
+    terra::terrain(dem, v = "slope", unit = "degrees"),
+    error = function(e) NULL
+  )
+  if (is.null(slope_raster)) return(NULL)
+  slope_values <- safe_extract(slope_raster,
+    as_pure_sf(units), fun = "mean", progress = FALSE)
+  # 30 degres et au-dela : facteur maximal (le feu remonte la pente).
+  pmin(slope_values / 30, 1) * 100
+}
+
+.r1_climate_factor <- function(climate, units) {
+  if (is.null(climate) ||
+      !all(c("temperature", "precipitation") %in% names(climate))) {
+    return(NULL)
+  }
+  # `safe_extract` et non `terra::extract` : les rasters climatiques arrivent en
+  # EPSG:4326 (WorldClim) quand les unites peuvent etre en Lambert-93, et un
+  # desaccord de CRS y passait jusqu ici sans bruit (meme famille de bug que la
+  # BD Foret non reprojetee, cf. safe_rasterize).
+  temp_values <- safe_extract(climate$temperature,
+    as_pure_sf(units), fun = "mean", progress = FALSE)
+  precip_values <- safe_extract(climate$precipitation,
+    as_pure_sf(units), fun = "mean", progress = FALSE)
+  temp_norm <- pmin(pmax((temp_values - 8) / 8, 0), 1) * 100
+  precip_norm <- pmin(pmax((1400 - precip_values) / 900, 0), 1) * 100
+  (temp_norm + precip_norm) / 2
+}
+
+# Somme ponderee des composantes disponibles. Une composante absente (NULL) sort
+# du calcul et son poids est redistribue au prorata sur les autres, plutot que
+# d etre remplace par un 50 arbitraire : ne pas savoir n est pas « moyen ».
+.r1_weighted_score <- function(components, weights) {
+  present <- names(components)[!vapply(components, is.null, logical(1))]
+  w <- weights[intersect(names(weights), present)]
+  w <- w[is.finite(w) & w > 0]
+  if (length(w) == 0L) return(NULL)
+  w <- w / sum(w)
+  score <- Reduce(`+`, lapply(names(w), function(k) w[[k]] * components[[k]]))
+  list(score = pmin(pmax(score, 0), 100), weights = w)
+}
+
 #' Calculate Fire Risk Index (R1)
 #'
 #' Computes fire risk using fire exposure analysis from BD Foret fuel mapping
@@ -79,6 +131,15 @@ NULL
 #'   the Landsat-like resolution \pkg{fireexposuR} is calibrated for. The
 #'   fallback method is unaffected and keeps \code{dem_target_res}. Never
 #'   upsamples a DEM that is already coarser; \code{NULL} disables the bound.
+#' @param fire_exp_weights Named numeric vector weighting the components of the
+#'   \pkg{fireexposuR} path: \code{exposure} (fire transmission exposure),
+#'   \code{slope} and \code{climate}. Default
+#'   \code{c(exposure = 0.5, slope = 0.25, climate = 0.25)}. Exposure alone
+#'   saturates near 100 over a continuous forest — every unit has ~all its
+#'   500 m neighbourhood burnable — so slope and climatic dryness modulate it,
+#'   as in the fallback. A component that cannot be computed (no climate raster)
+#'   drops out and its weight is redistributed proportionally.
+#'   \code{c(exposure = 1)} restores the raw exposure.
 #'
 #' @return The input sf object with added column:
 #'   \itemize{
@@ -118,7 +179,9 @@ indicateur_r1_feu <- function(units,
                                 climate = NULL,
                                 weights = c(slope = 1 / 3, species = 1 / 3, climate = 1 / 3),
                                 dem_target_res = .topo_target_res(),
-                                fire_exp_res = .NEMETON_FIRE_EXP_RES) {
+                                fire_exp_res = .NEMETON_FIRE_EXP_RES,
+                                fire_exp_weights = c(exposure = 0.5, slope = 0.25,
+                                                     climate = 0.25)) {
   # Validate inputs
   validate_sf(units)
 
@@ -167,7 +230,28 @@ indicateur_r1_feu <- function(units,
       # Extract mean exposure per parcel (0-1 scale)
       exposure_mean <- safe_extract(exposure,
         as_pure_sf(units), fun = "mean", progress = FALSE)
-      units$R1 <- pmin(pmax(exposure_mean * 100, 0), 100)
+      exposure_factor <- pmin(pmax(exposure_mean * 100, 0), 100)
+
+      # L'exposition seule sature : sur un massif continu, chaque unité a ~tout
+      # son voisinage de 500 m combustible (93 % sur Fordead, R1 = 98,7-100 sur
+      # les 30 unités) et l'indicateur ne classe plus rien. On la module par la
+      # pente et la sécheresse climatique, comme le repli. La pente est dérivée
+      # de la grille du `hazard` : pas de retour au MNT plein format.
+      scored <- .r1_weighted_score(
+        list(
+          exposure = exposure_factor,
+          slope    = .r1_slope_factor(hazard_dem, units),
+          climate  = .r1_climate_factor(climate, units)
+        ),
+        fire_exp_weights
+      )
+      if (is.null(scored)) {
+        stop("no usable component for the fire_exp weighting")
+      }
+      cli::cli_alert_info(
+        "R1: fire_exp score = {paste(sprintf('%.2f x %s', scored$weights, names(scored$weights)), collapse = ' + ')}"
+      )
+      units$R1 <- scored$score
       msg_info("indicateur_r1_feu")
       return(units)
     }, error = function(e) {
@@ -190,10 +274,11 @@ indicateur_r1_feu <- function(units,
   weights <- weights / sum(weights)
 
   # Component 1: Slope factor
-  slope_raster <- terra::terrain(dem, v = "slope", unit = "degrees")
-  slope_values <- safe_extract(slope_raster,
-    as_pure_sf(units), fun = "mean", progress = FALSE)
-  slope_factor <- pmin(slope_values / 30, 1) * 100
+  slope_factor <- .r1_slope_factor(dem, units)
+  if (is.null(slope_factor)) {
+    cli::cli_alert_warning("R1: slope could not be derived, using a neutral value")
+    slope_factor <- rep(50, nrow(units))
+  }
 
   # Component 2: Species flammability (or NDVI-based proxy)
   if (species_field %in% names(units)) {
@@ -214,13 +299,8 @@ indicateur_r1_feu <- function(units,
   }
 
   # Component 3: Climate dryness (if available)
-  if (!is.null(climate) && all(c("temperature", "precipitation") %in% names(climate))) {
-    temp_values <- terra::extract(climate$temperature, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
-    precip_values <- terra::extract(climate$precipitation, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
-    temp_norm <- pmin(pmax((temp_values - 8) / 8, 0), 1) * 100
-    precip_norm <- pmin(pmax((1400 - precip_values) / 900, 0), 1) * 100
-    climate_factor <- (temp_norm + precip_norm) / 2
-  } else {
+  climate_factor <- .r1_climate_factor(climate, units)
+  if (is.null(climate_factor)) {
     climate_factor <- rep(50, nrow(units))
     weights["slope"] <- weights["slope"] + weights["climate"] / 2
     weights["species"] <- weights["species"] + weights["climate"] / 2

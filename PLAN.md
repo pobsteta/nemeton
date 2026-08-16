@@ -701,6 +701,40 @@ inspirer un épaississement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-16* (**v0.173.0**) : **l'exposition `fireexposuR` de R1
+est pondérée par la pente et le climat**. Suite directe de la v0.172.1 : une fois
+la BD Forêt correctement rasterisée, R1 valait **98,7 à 100 sur les 30 unités**
+de Fordead — mécaniquement juste (`fire_exp()` mesure la part de combustible
+dans 500 m, la BD Forêt couvre 93 % de l'emprise) mais **plat**, donc inutile
+comme classement. Sur un massif continu, toutes les unités ont tout leur
+voisinage combustible ; la réserve de méthode ouverte dans le journal de la
+v0.172.1 est ici tranchée. **Décision** : le chemin `fireexposuR` compose trois
+termes, comme le repli — `R1 = w_exposure x exposition + w_slope x pente +
+w_climate x sécheresse` — via un nouvel argument `fire_exp_weights =
+c(exposure = 0.5, slope = 0.25, climate = 0.25)`. L'exposition reste dominante :
+c'est le signal propre de la méthode, pente et climat le modulent.
+`c(exposure = 1)` restitue l'exposition brute. **Trois choix** : (1) une
+composante non calculable (pas de raster climatique) **sort du calcul** et son
+poids est redistribué au prorata, plutôt que d'être remplacée par un 50
+arbitraire — ne pas savoir n'est pas « moyen » ; les poids retenus sont
+journalisés (`R1: fire_exp score = 0.67 x exposure + 0.33 x slope`), sans quoi un
+score composite n'est pas relisible a posteriori ; (2) la **pente est dérivée de
+la grille du `hazard` (30 m)**, pas du MNT plein format — c'est la résolution à
+laquelle raisonnent les modèles de propagation, et la pente d'un MNT LiDAR à 2 m
+décrit surtout des cloisonnements et des fossés ; le chemin reste à **5,1 s** sur
+Fordead (contre 2 s sans pente, et > 75 min avant la v0.172.0) ; (3) les
+composantes pente et climat sont factorisées (`.r1_slope_factor`,
+`.r1_climate_factor`) et partagées par les deux chemins — le repli est inchangé
+à la virgule près (testé). **Effet de bord corrigé** : la composante climatique
+passe de `terra::extract()` à `safe_extract()`, les rasters WorldClim arrivant en
+EPSG:4326 quand les unités peuvent être en Lambert-93 — même famille de piège
+silencieux que la BD Forêt de la v0.172.1. **Résultat sur Fordead** : R1 passe de
+`98,7-100` (plat) à **68,8-87**, médiane 71,9, sur la pente à exposition saturée.
+7 `test_that` (18 assertions) dans `tests/testthat/test-r1-weighting.R`. **App** :
+aucun changement requis — argument optionnel, défaut appliqué.
+
+---
+
 **Journal** — *2026-08-16* (**v0.172.1**) : **R1 feu valait 0 partout — la BD
 Forêt n'atteignait pas la grille**. Une fois R1 débloqué par la v0.172.0, le
 projet Fordead rendait `indicateur_r1_feu` = **0 sur les 30 unités**. Ce n'était
