@@ -13,6 +13,44 @@ NULL
 # T031: R1 - Fire Risk Index
 # ==============================================================================
 
+# Borne (m) de la résolution de travail du chemin `fireexposuR`.
+#
+# `fire_exp()` construit sa fenêtre avec
+# `MultiscaleDTM::annulus_window(c(res, t_dist), "map", res)` puis
+# `terra::focal(haz, w, fun = sum)` : la fenêtre est exprimée en mètres mais
+# matérialisée en CELLULES, soit ~(2 * t_dist / res)^2 poids par pixel. Le coût
+# total varie donc en 1/res^4.
+#
+#   res = 30 m : fenêtre 33 x 33 (~1 100)      -> coût 1x
+#   res =  2 m : fenêtre 501 x 501 (~251 000)  -> coût ~52 000x
+#
+# Le 2026-08-16 sur le projet Fordead (mosaïque lidar_mnt 8000 x 10000 à 0,5 m,
+# ramenée à 2 m par .dem_working_res, soit 5 M cellules), R1 tournait depuis plus
+# de 75 min à 51 % d'un cœur, sans I/O ni pression mémoire : ~1,25e12 opérations
+# mono-thread. fireexposuR est calibré pour du ~30 m (Landsat) ; on borne donc la
+# grille du `hazard` indépendamment de `.topo_target_res()`, qui reste à 2 m là
+# où il a raison de l'être (R2, R3, W3 sur MNT LiDAR).
+.NEMETON_FIRE_EXP_RES <- 30
+
+# MNT ramené à la grille de travail de `fire_exp()`. La grille est au moins
+# aussi grossière que la borne feu ET que la résolution topographique de travail,
+# mais jamais plus fine que le MNT natif : le `max()` évite de ré-agréger pour
+# rien un BD ALTI 25 m (NDP 0) et interdit tout sur-échantillonnage. On part du
+# MNT natif plutôt que du MNT déjà ramené à 2 m : une seule agrégation
+# (0,5 m -> 30 m) au lieu de deux, sur des dizaines de millions de cellules.
+# `fire_exp_res = NULL` retombe sur `dem_target_res`, soit le comportement
+# d'avant la borne ; les deux à NULL gardent la résolution native.
+.fire_exp_working_dem <- function(dem, fire_exp_res = .NEMETON_FIRE_EXP_RES,
+                                  dem_target_res = .topo_target_res()) {
+  if (is.null(dem) || !inherits(dem, "SpatRaster")) return(dem)
+  bounds <- c(fire_exp_res, dem_target_res)
+  bounds <- bounds[is.finite(bounds) & bounds > 0]
+  if (length(bounds) == 0L) return(dem)
+  cur <- terra::res(dem)[1]
+  target <- max(bounds, if (is.finite(cur)) cur else numeric(0))
+  .dem_working_res(dem, target_res = target, context = "R1/fire_exp")
+}
+
 #' Calculate Fire Risk Index (R1)
 #'
 #' Computes fire risk using fire exposure analysis from BD Foret fuel mapping
@@ -35,6 +73,12 @@ NULL
 #'   package-wide topographic working resolution, 2 m — see
 #'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
 #'   resolution. Never upsamples, and is a no-op on a lon/lat DEM.
+#' @param fire_exp_res Numeric. Upper bound (metres) on the working resolution
+#'   of the \pkg{fireexposuR} path only: the hazard raster handed to
+#'   \code{fire_exp()} is aggregated to at least this cell size. Default 30 m,
+#'   the Landsat-like resolution \pkg{fireexposuR} is calibrated for. The
+#'   fallback method is unaffected and keeps \code{dem_target_res}. Never
+#'   upsamples a DEM that is already coarser; \code{NULL} disables the bound.
 #'
 #' @return The input sf object with added column:
 #'   \itemize{
@@ -45,6 +89,9 @@ NULL
 #' **Primary method** (requires \pkg{fireexposuR} + BD Foret):
 #' Rasterizes BD Foret as a hazard layer, then computes fire exposure
 #' with a 500m transmission distance. The 0-1 exposure is scaled to 0-100.
+#' The hazard grid is bounded to \code{fire_exp_res} (30 m) because the
+#' annular kernel of \code{fire_exp()} costs \code{(2 * t_dist / res)^2}
+#' operations per cell: at 2 m it is ~52 000x the cost at 30 m.
 #'
 #' **Fallback method**: R1 = w1*slope + w2*species_flammability + w3*climate_dryness
 #'
@@ -70,7 +117,8 @@ indicateur_r1_feu <- function(units,
                                 species_field = "species",
                                 climate = NULL,
                                 weights = c(slope = 1 / 3, species = 1 / 3, climate = 1 / 3),
-                                dem_target_res = .topo_target_res()) {
+                                dem_target_res = .topo_target_res(),
+                                fire_exp_res = .NEMETON_FIRE_EXP_RES) {
   # Validate inputs
   validate_sf(units)
 
@@ -81,9 +129,6 @@ indicateur_r1_feu <- function(units,
   # Répare un CRS LiDAR HD « sans autorité » aussi quand `dem` est fourni
   # directement (le chemin `layers` passe déjà par get_dem_raster).
   dem <- .normalize_crs(dem)
-  # Borne la résolution de travail : un MNT LiDAR HD à 0,5 m ferait dériver la
-  # pente sur 120 M cellules pour une moyenne par unité (cf. .dem_working_res).
-  dem <- .dem_working_res(dem, target_res = dem_target_res, context = "R1")
 
   if (is.null(dem) || !inherits(dem, "SpatRaster")) {
     cli::cli_alert_warning("R1: No DEM available for fire risk, returning NA")
@@ -101,8 +146,12 @@ indicateur_r1_feu <- function(units,
   if (has_fireexposur && !is.null(bdforet) && inherits(bdforet, "sf") && nrow(bdforet) > 0) {
     tryCatch({
       cli::cli_alert_info("R1: Using fireexposuR with BD For\u00eat hazard layer")
+      # Grille du hazard bornée à ~30 m : le noyau annulaire de fire_exp() coûte
+      # (2 * t_dist / res)^2 par cellule (cf. .fire_exp_working_dem). Le repli,
+      # lui, garde la résolution topographique de travail.
+      hazard_dem <- .fire_exp_working_dem(dem, fire_exp_res, dem_target_res)
       # Rasterize BD Foret onto DEM grid: forest = 1 (fuel), non-forest = 0
-      hazard <- terra::rasterize(terra::vect(bdforet), dem, field = 1, background = 0)
+      hazard <- terra::rasterize(terra::vect(bdforet), hazard_dem, field = 1, background = 0)
       # Fire exposure with 500m transmission distance
       exposure <- fireexposuR::fire_exp(hazard, t_dist = 500)
       # Extract mean exposure per parcel (0-1 scale)
@@ -120,6 +169,12 @@ indicateur_r1_feu <- function(units,
   if (!has_fireexposur || is.null(bdforet)) {
     cli::cli_alert_info("R1: Using fallback method (slope + species + climate)")
   }
+
+  # Borne la résolution de travail : un MNT LiDAR HD à 0,5 m ferait dériver la
+  # pente sur 120 M cellules pour une moyenne par unité (cf. .dem_working_res).
+  # Agrégation faite ici et pas en tête de fonction : quand le chemin
+  # fireexposuR aboutit, elle n'a pas lieu d'être payée.
+  dem <- .dem_working_res(dem, target_res = dem_target_res, context = "R1")
 
   # Normalize weights
   weights <- weights / sum(weights)

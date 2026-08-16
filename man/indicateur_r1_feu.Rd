@@ -12,7 +12,8 @@ indicateur_r1_feu(
   species_field = "species",
   climate = NULL,
   weights = c(slope = 1/3, species = 1/3, climate = 1/3),
-  dem_target_res = .topo_target_res()
+  dem_target_res = .topo_target_res(),
+  fire_exp_res = .NEMETON_FIRE_EXP_RES
 )
 }
 \arguments{
@@ -39,6 +40,13 @@ whole massif, for an index that is averaged per unit anyway. Default: the
 package-wide topographic working resolution, 2 m --- see
 \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
 resolution. Never upsamples, and is a no-op on a lon/lat DEM.}
+
+\item{fire_exp_res}{Numeric. Upper bound (metres) on the working resolution
+of the \pkg{fireexposuR} path only: the hazard raster handed to
+\code{fire_exp()} is aggregated to at least this cell size. Default 30 m,
+the Landsat-like resolution \pkg{fireexposuR} is calibrated for. The
+fallback method is unaffected and keeps \code{dem_target_res}. Never
+upsamples a DEM that is already coarser; \code{NULL} disables the bound.}
 }
 \value{
 The input sf object with added column:
@@ -55,6 +63,9 @@ when \pkg{fireexposuR} or BD Foret data is unavailable.
 **Primary method** (requires \pkg{fireexposuR} + BD Foret):
 Rasterizes BD Foret as a hazard layer, then computes fire exposure
 with a 500m transmission distance. The 0-1 exposure is scaled to 0-100.
+The hazard grid is bounded to \code{fire_exp_res} (30 m) because the
+annular kernel of \code{fire_exp()} costs \code{(2 * t_dist / res)^2}
+operations per cell: at 2 m it is ~52 000x the cost at 30 m.
 
 **Fallback method**: R1 = w1*slope + w2*species_flammability + w3*climate_dryness
 }

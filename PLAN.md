@@ -701,6 +701,46 @@ inspirer un épaississement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-16* (**v0.172.0**) : **R1 feu — la résolution de travail
+du chemin `fireexposuR` est bornée à 30 m**. Symptôme remonté du projet
+**Fordead** : le calcul des 31 indicateurs restait affiché à 64 %,
+`progress_state.json` figé sur `compute:indicateur_r1_feu` (19/35 faits). Le
+processus n'était pas bloqué — 51 % d'un cœur en continu pendant > 75 min, état
+`R`, **0 octet** de `rchar`/`wchar` sur 21 s, 2,7 Go de RSS pour un plafond
+`NEMETON_MEMORY_MAX=10G`. Ni verrou, ni I/O, ni mémoire : un coût algorithmique.
+**Cause** : `fire_exp()` construit sa fenêtre avec
+`MultiscaleDTM::annulus_window(c(res, t_dist), "map", res)` puis
+`terra::focal()` — la fenêtre est exprimée en mètres mais **matérialisée en
+cellules**, ~`(2 * t_dist / res)^2` poids par pixel, d'où un coût total en
+`1/res^4`. Sur Fordead, la mosaïque `lidar_mnt` 8000 × 10000 à 0,50 m était
+ramenée à 2 m par `.dem_working_res()` (5 M cellules) et la fenêtre `t_dist =
+500 m` pesait 501 × 501 ≈ 251 000 cellules, soit ~1,25e12 opérations
+mono-thread — ~52 000× le coût du **30 m** pour lequel `fireexposuR` est
+calibré (Landsat). **Correctif** : nouvel argument `fire_exp_res` (défaut 30) +
+helper `.fire_exp_working_dem()`, qui borne la grille du `hazard` **du seul
+chemin `fireexposuR`**. Le `.topo_target_res()` reste à 2 m — il a raison de
+l'être pour R2, R3, W3 sur MNT LiDAR — et le repli `slope + species + climate`,
+linéaire en cellules, garde `dem_target_res`. Trois choix d'implémentation :
+(1) `max(fire_exp_res, res(dem))` — un BD ALTI 25 m (NDP 0) ou un MNT 100 m
+n'est jamais ré-agrégé ni affiné ; (2) l'agrégation part du MNT **natif** et
+non du MNT déjà ramené à 2 m, donc une seule passe 0,5 m → 30 m, et le 2 m
+n'est plus calculé quand le chemin `fireexposuR` aboutit ; (3)
+`fire_exp_res = NULL` retombe sur `dem_target_res`, échappatoire explicite vers
+le comportement antérieur. Log contextualisé `R1/fire_exp` dans
+`.dem_working_res()`. **Mesures** : sur une mosaïque de la taille de Fordead
+(8000 × 10000 à 0,5 m écrite sur disque, 80 M cellules, `fireexposuR` réel),
+`indicateur_r1_feu()` rend la main en **3,2 s** (CA-1 : < 60 s) ; grille du
+`hazard` à 30 m vérifiée par test (CA-2) ; MNT 25 m / 100 m intouchés (CA-3) ;
+corrélation Pearson > 0,95 et Spearman > 0,9 contre une référence non bornée sur
+une emprise de 4 km (CA-4) — la borne change le temps, pas le classement des
+unités. 9 `test_that` (33 assertions) dans `tests/testthat/test-r1-fire-exp-res.R`.
+Suite complète : **9 943 PASS / 0 FAIL** (25 WARN, 17 SKIP, tous préexistants). **App** :
+aucun changement requis, la signature reste compatible et `nemetonshiny` ne
+passe pas ces arguments. Brief d'origine :
+`specs/BRIEF-nemeton-r1-feu-resolution.md`.
+
+---
+
 **Journal** — *2026-06-12* (**v0.74.1**) : **fix `FOREIGN KEY constraint
 failed` au re-build des zones de suivi (backend SQLite)**. Symptôme remonté
 depuis `nemetonshiny` (Windows local = SQLite) :
