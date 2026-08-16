@@ -16,7 +16,8 @@ indicateur_r1_feu(
   climate = NULL,
   weights = c(slope = 1/3, species = 1/3, climate = 1/3),
   dem_target_res = .topo_target_res(),
-  fire_exp_res = .NEMETON_FIRE_EXP_RES
+  fire_exp_res = .NEMETON_FIRE_EXP_RES,
+  fire_exp_weights = c(exposure = 0.5, slope = 0.25, climate = 0.25)
 )
 ```
 
@@ -70,6 +71,17 @@ indicateur_r1_feu(
   resolution fireexposuR is calibrated for. The fallback method is
   unaffected and keeps `dem_target_res`. Never upsamples a DEM that is
   already coarser; `NULL` disables the bound.
+
+- fire_exp_weights:
+
+  Named numeric vector weighting the components of the fireexposuR path:
+  `exposure` (fire transmission exposure), `slope` and `climate`.
+  Default `c(exposure = 0.5, slope = 0.25, climate = 0.25)`. Exposure
+  alone saturates near 100 over a continuous forest — every unit has
+  ~all its 500 m neighbourhood burnable — so slope and climatic dryness
+  modulate it, as in the fallback. A component that cannot be computed
+  (no climate raster) drops out and its weight is redistributed
+  proportionally. `c(exposure = 1)` restores the raw exposure.
 
 ## Value
 

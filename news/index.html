@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.172.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.173.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,23 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.173.0" id="nemeton-01730-2026-08-16">nemeton 0.173.0 (2026-08-16)<a class="anchor" aria-label="anchor" href="#nemeton-01730-2026-08-16"></a></h2>
+<div class="section level4">
+<h4 id="changed--lexposition-fireexposur-est-pondérée-par-la-pente-et-le-climat-0-173-0">Changed — l’exposition <code>fireexposuR</code> est pondérée par la pente et le climat<a class="anchor" aria-label="anchor" href="#changed--lexposition-fireexposur-est-pond%C3%A9r%C3%A9e-par-la-pente-et-le-climat-0-173-0"></a></h4>
+<p>Une fois la BD Forêt correctement rasterisée (v0.172.1), R1 valait <strong>98,7 à 100 sur les 30 unités</strong> du projet Fordead. Mécaniquement juste — <code>fire_exp()</code> mesure la part de combustible dans un rayon de 500 m, et la BD Forêt couvre 93 % de l’emprise — mais l’indicateur ne classait plus rien : sur un massif continu, toutes les unités ont tout leur voisinage combustible.</p>
+<p>Le chemin <code>fireexposuR</code> compose désormais trois termes, comme le fait le repli :</p>
+<pre><code>R1 = w_exposure x exposition(500 m) + w_slope x pente + w_climate x sécheresse</code></pre>
+<p>Nouvel argument <strong><code>fire_exp_weights = c(exposure = 0.5, slope = 0.25, climate = 0.25)</code></strong>. L’exposition reste le terme dominant : c’est le signal propre de la méthode, la pente et le climat le modulent.</p>
+<ul><li>Une composante non calculable (pas de raster climatique) <strong>sort du calcul</strong> et son poids est redistribué au prorata — plutôt que d’être remplacée par un 50 arbitraire : ne pas savoir n’est pas « moyen ». Les poids effectivement utilisés sont journalisés (<code>R1: fire_exp score = 0.67 x exposure + 0.33 x slope</code>).</li>
+<li>
+<code>fire_exp_weights = c(exposure = 1)</code> restitue l’exposition brute.</li>
+<li>La <strong>pente est dérivée de la grille du <code>hazard</code> (30 m)</strong>, pas du MNT plein format : c’est la résolution à laquelle raisonnent les modèles de propagation, et la pente d’un MNT LiDAR à 2 m décrit surtout des cloisonnements et des fossés. Le chemin reste rapide (5,1 s sur Fordead).</li>
+<li>Le repli <code>slope + species + climate</code> est inchangé, mais partage désormais les mêmes helpers de composantes (<code>.r1_slope_factor</code>, <code>.r1_climate_factor</code>).</li>
+</ul><p>Effet de bord corrigé au passage : la composante climatique passe de <code><a href="https://rspatial.github.io/terra/reference/extract.html" class="external-link">terra::extract()</a></code> à <code>safe_extract()</code>. Les rasters climatiques arrivent en EPSG:4326 (WorldClim) quand les unités peuvent être en Lambert-93 — même famille de piège silencieux que la BD Forêt non reprojetée de la v0.172.1.</p>
+<p><strong>Sur Fordead</strong>, R1 passe de <code>98,7-100</code> (plat) à <strong>68,8-87</strong>, médiane 71,9 : les unités se classent enfin, sur la pente à exposition saturée.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.172.1" id="nemeton-01721-2026-08-16">nemeton 0.172.1 (2026-08-16)<a class="anchor" aria-label="anchor" href="#nemeton-01721-2026-08-16"></a></h2>
 <div class="section level4">
@@ -134,7 +151,7 @@
 <div class="section level4">
 <h4 id="changed--résolution-de-travail-topographique-à-m-réglable-sans-release-0-169-0">Changed — résolution de travail topographique à 2 m, réglable sans release<a class="anchor" aria-label="anchor" href="#changed--r%C3%A9solution-de-travail-topographique-%C3%A0-m-r%C3%A9glable-sans-release-0-169-0"></a></h4>
 <p>La résolution de travail passe de 10 m à <strong>2 m</strong> et devient un réglage paquet plutôt qu’une constante recopiée dans huit signatures :</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>nemeton.topo_target_res <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>   <span class="co"># session</span></span>
 <span><span class="va">NEMETON_TOPO_TARGET_RES</span><span class="op">=</span><span class="fl">5</span>              <span class="co"># environnement</span></span></code></pre></div>
 <p>Le défaut de <code>dem_target_res</code> sur les huit indicateurs est l’appel <code>.topo_target_res()</code> : l’app peut ajuster sans nouvelle release du cœur, et <code>dem_target_res = NULL</code> reste l’échappatoire par appel (résolution native).</p>
@@ -2141,7 +2158,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 <p>Les paramètres clés (seuil, fenêtre temporelle, <code>window_days</code>) sont désormais lisibles directement dans le nom de fichier — deux cartes de même <code>INDEX</code>/<code>MODE</code> dans une même <code>zone_&lt;id&gt;</code> se distinguent à l’œil sans recalcul. Un extrait de 8 caractères du hash D6 (inchangé) continue de discriminer les entrées qui ne tiennent pas dans un nom : la liste des scènes S2 (change après ré-ingestion) et le polygone de masque UGF.</p>
 <p><strong>Idempotence préservée</strong> : mêmes paramètres → même nom → hit cache. Le hash sous-jacent (<code>.fast_raster_hash()</code>) est inchangé.</p>
 <p><strong>Anciens fichiers</strong> : les COG au format pré-0.65.2 (<code>fast_&lt;index&gt;_&lt;mode&gt;_&lt;hash_long&gt;.tif</code>) ne sont plus reconnus comme hits ; ils sont simplement recalculés à la 1re demande (cache idempotent) puis ramassés par la GC LRU (<code>nemeton.fast_raster_keep</code>). Pour récupérer l’espace tout de suite sur un projet existant :</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-f</span> <span class="op">&lt;</span>projet<span class="op">&gt;</span>/cache/layers/fast_alert/zone_<span class="pp">*</span>/fast_<span class="pp">*</span>_<span class="pp">[</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">][</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">]*</span>.tif</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-f</span> <span class="op">&lt;</span>projet<span class="op">&gt;</span>/cache/layers/fast_alert/zone_<span class="pp">*</span>/fast_<span class="pp">*</span>_<span class="pp">[</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">][</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">]*</span>.tif</span></code></pre></div>
 </div>
 </div>
     <div class="section level2">
@@ -3157,7 +3174,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 <ul><li><p><code>dates_training</code> defaults to <code>c("2018-01-01", "2020-12-31")</code> — a 2-year baseline anchored on the start of Sentinel-2 dense coverage, long enough to fit the harmonic model and short enough to keep the baseline free from recent disturbances.</p></li>
 <li>
 <p><code>dates_monitoring</code> defaults to a rolling 18-month window ending today:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span>, by <span class="op">=</span> <span class="st">"-18 months"</span>, length.out <span class="op">=</span> <span class="fl">2</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -3269,7 +3286,7 @@ Data variable: stackstac-&lt;hash&gt;</code></pre>
 </li>
 </ul><p>Callers (<code>nemetonshiny</code>, scripts) used to hard-code paths that broke as soon as a different producer was used. Most visibly, the <code>&lt;project&gt;/dtm.tif</code> convention from <code>opencanopynemeton</code> was recognised neither by <code>nemeton</code> nor by <code>nemetonshiny</code>, leading to the v0.25.1 “Stratification-valid candidate pool (0) is below <code>n_base</code>” failure even when the DTM was perfectly downloaded — the file was just never passed to <code>create_sampling_plan(mnt =)</code>.</p>
 <p>Two new exported helpers walk a priority-ordered list of well-known locations and return the first match:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">nemeton</span><span class="fu">::</span><span class="fu"><a href="../reference/resolve_project_layers.html">resolve_project_dem</a></span><span class="op">(</span><span class="va">project_path</span><span class="op">)</span></span>
 <span><span class="va">chm</span> <span class="op">&lt;-</span> <span class="fu">nemeton</span><span class="fu">::</span><span class="fu"><a href="../reference/resolve_project_layers.html">resolve_project_chm</a></span><span class="op">(</span><span class="va">project_path</span><span class="op">)</span></span>
 <span><span class="va">plan</span> <span class="op">&lt;-</span> <span class="fu">nemeton</span><span class="fu">::</span><span class="fu"><a href="../reference/create_sampling_plan.html">create_sampling_plan</a></span><span class="op">(</span><span class="va">zone</span>, mnt <span class="op">=</span> <span class="va">dem</span>, chm <span class="op">=</span> <span class="va">chm</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
@@ -3472,7 +3489,7 @@ no attribute 'ItemCollection'</code></pre>
 <li>
 <code>test-fordead-integration.R</code> adapted — env vars are now <code>NEMETON_DB_URL</code> + <code>NEMETON_FORDEAD_TEST_ZONE_ID</code> + <code>NEMETON_FORDEAD_TEST_CACHE_DIR</code> (was AOI path + cache dir).</li>
 </ul><p><strong>Migration path</strong> :</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># v0.23.0</span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_fordead_dieback.html">run_fordead_dieback</a></span><span class="op">(</span><span class="va">aoi</span>, <span class="va">scenes_df</span>, <span class="va">cache_dir</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
@@ -3546,7 +3563,7 @@ no attribute 'ItemCollection'</code></pre>
 </ul><p><strong>Migration notes for users on <code>v0.21.0..v0.22.5</code></strong> :</p>
 <ul><li>
 <p>Update your code to pass <code>scenes_df</code> and <code>cache_dir</code>:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_fordead_dieback.html">run_fordead_dieback</a></span><span class="op">(</span></span>
 <span>  aoi              <span class="op">=</span> <span class="va">aoi</span>,</span>
 <span>  scenes_df        <span class="op">=</span> <span class="va">scenes_df</span>,  <span class="co"># NEW (required)</span></span>
@@ -3685,7 +3702,7 @@ ERROR: No matching distribution found for fordead==2.1.4</code></pre>
 <div class="section level4">
 <h4 id="migration-notes-for-users-who-hit-the-bug-before-this-release-0-22-2">Migration notes for users who hit the bug before this release<a class="anchor" aria-label="anchor" href="#migration-notes-for-users-who-hit-the-bug-before-this-release-0-22-2"></a></h4>
 <p>If you tried to run FORDEAD against v0.22.1 (or earlier) and saw <code>No matching distribution found for fordead==2.1.4</code>, your virtualenv is in a half-installed state. After upgrading to v0.22.2 the recovery is automatic — the next call to <code><a href="../reference/run_fordead_dieback.html">run_fordead_dieback()</a></code> will detect the missing <code>fordead</code> and reinstall from the correct source. If you prefer a clean slate, you can still do:</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">reticulate</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/reticulate/reference/virtualenv-tools.html" class="external-link">virtualenv_remove</a></span><span class="op">(</span><span class="st">"nemeton-fordead"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level4">
@@ -3781,7 +3798,7 @@ Scene 9..26  → 403 → invalidate cache → resign href → retry → OK</code
 <code>terra::writeRaster(r, tmp, …)</code> finally triggers the byte-range reads on the COG over VSI. If the SAS token expired mid-scene, or Azure returned a 5xx / 429 on the range request, this step throws — <strong>past the retry budget</strong>.</li>
 <li>The <code>tryCatch</code> swallowed the error with a <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_warn()</a></code>, unlinked the partial <code>.tmp</code>, and returned — leaving the empty scene directory behind.</li>
 </ol><p>The fix moves the AOI crop <strong>and</strong> the pixel materialization into a <code>materialize</code> closure passed to <code>.terra_rast_with_pc_retry()</code>. Both steps now run <strong>inside</strong> the retry/refresh loop:</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">materialize</span> <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">r0</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">buf_native</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_transform.html" class="external-link">st_transform</a></span><span class="op">(</span><span class="va">buf_plots</span>, <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crs.html" class="external-link">crs</a></span><span class="op">(</span><span class="va">r0</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="va">r_cropped</span>  <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crop.html" class="external-link">crop</a></span><span class="op">(</span><span class="va">r0</span>, <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/ext.html" class="external-link">ext</a></span><span class="op">(</span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/vect.html" class="external-link">vect</a></span><span class="op">(</span><span class="va">buf_native</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -3819,7 +3836,7 @@ Scene 9..26  → 403 → invalidate cache → resign href → retry → OK</code
 <div class="section level4">
 <h4 id="fixed--every-s2-band-cache-hit-raised-cannot-coerce-type-s4-to-vector-of-type-double-0-21-8">Fixed — every S2 band cache hit raised “cannot coerce type ‘S4’ to vector of type ‘double’”<a class="anchor" aria-label="anchor" href="#fixed--every-s2-band-cache-hit-raised-cannot-coerce-type-s4-to-vector-of-type-double-0-21-8"></a></h4>
 <p><code>.ext_contains()</code> (introduced in v0.21.4 to decide whether a cached COG covers today’s AOI) did:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">o</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">outer</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">outer</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, <span class="va">outer</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span>, <span class="va">outer</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><code>outer</code> is a <code><a href="https://rspatial.github.io/terra/reference/SpatExtent-class.html" class="external-link">terra::SpatExtent</a></code> (S4). <code>outer[1]</code> does NOT return a plain double — it returns a nested S4 element. <code><a href="https://rdrr.io/r/base/c.html" class="external-link">c()</a></code> accumulates those into an S4 list, and <code><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric()</a></code> then chokes with</p>
 <pre><code>cannot coerce type 'S4' to vector of type 'double'</code></pre>
@@ -4890,14 +4907,14 @@ docker compose up -d timescaledb</code></pre>
 <div class="section level5">
 <h5 id="migration-guide-0-6-0">Migration Guide<a class="anchor" aria-label="anchor" href="#migration-guide-0-6-0"></a></h5>
 <p><strong>Before (v0.1.0-v0.5.x):</strong></p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Old API</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span></span>
 <span>  <span class="va">units</span>, <span class="va">layers</span>,</span>
 <span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span>, <span class="st">"water"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><strong>After (v0.6.0+):</strong></p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># New API with family-based indicators</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span></span>
 <span>  <span class="va">units</span>, <span class="va">layers</span>,</span>
@@ -6042,7 +6059,7 @@ docker compose up -d timescaledb</code></pre>
 </ul></div>
 <div class="section level4">
 <h4 id="quick-start-example-0-1-0">Quick Start Example<a class="anchor" aria-label="anchor" href="#quick-start-example-0-1-0"></a></h4>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pobsteta.github.io/nemeton/">nemeton</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 5-line workflow</span></span>

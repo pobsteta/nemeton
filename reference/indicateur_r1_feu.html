@@ -11,7 +11,7 @@ when fireexposuR or BD Foret data is unavailable."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.172.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.173.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,7 +64,8 @@ when <span class="pkg">fireexposuR</span> or BD Foret data is unavailable.</p>
 <span>  climate <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>slope <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">3</span>, species <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">3</span>, climate <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">3</span><span class="op">)</span>,</span>
 <span>  dem_target_res <span class="op">=</span> <span class="fu">.topo_target_res</span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  fire_exp_res <span class="op">=</span> <span class="va">.NEMETON_FIRE_EXP_RES</span></span>
+<span>  fire_exp_res <span class="op">=</span> <span class="va">.NEMETON_FIRE_EXP_RES</span>,</span>
+<span>  fire_exp_weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>exposure <span class="op">=</span> <span class="fl">0.5</span>, slope <span class="op">=</span> <span class="fl">0.25</span>, climate <span class="op">=</span> <span class="fl">0.25</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -119,6 +120,18 @@ of the <span class="pkg">fireexposuR</span> path only: the hazard raster handed 
 the Landsat-like resolution <span class="pkg">fireexposuR</span> is calibrated for. The
 fallback method is unaffected and keeps <code>dem_target_res</code>. Never
 upsamples a DEM that is already coarser; <code>NULL</code> disables the bound.</p></dd>
+
+
+<dt id="arg-fire-exp-weights">fire_exp_weights<a class="anchor" aria-label="anchor" href="#arg-fire-exp-weights"></a></dt>
+<dd><p>Named numeric vector weighting the components of the
+<span class="pkg">fireexposuR</span> path: <code>exposure</code> (fire transmission exposure),
+<code>slope</code> and <code>climate</code>. Default
+<code>c(exposure = 0.5, slope = 0.25, climate = 0.25)</code>. Exposure alone
+saturates near 100 over a continuous forest — every unit has ~all its
+500 m neighbourhood burnable — so slope and climatic dryness modulate it,
+as in the fallback. A component that cannot be computed (no climate raster)
+drops out and its weight is redistributed proportionally.
+<code>c(exposure = 1)</code> restores the raw exposure.</p></dd>
 
 </dl></div>
     <div class="section level2">
