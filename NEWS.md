@@ -1,3 +1,54 @@
+# nemeton 0.172.0 (2026-08-16)
+
+### Fixed — R1 feu : la résolution de travail du chemin `fireexposuR` est bornée
+
+Sur le projet **Fordead**, le calcul des 31 indicateurs restait figé à 64 % :
+`indicateur_r1_feu()` tournait depuis plus de **75 minutes**, à 51 % d'un cœur,
+sans la moindre I/O ni pression mémoire (2,7 Go de RSS pour un plafond à 10 Go).
+Ni blocage, ni fuite : un coût algorithmique.
+
+`fire_exp()` construit sa fenêtre avec
+`MultiscaleDTM::annulus_window(c(res, t_dist), "map", res)` puis
+`terra::focal()`. La fenêtre est **exprimée en mètres mais matérialisée en
+cellules** : à `t_dist = 500 m`, elle pèse ~`(2 * t_dist / res)^2` poids par
+pixel. Le coût total varie donc en `1/res^4`.
+
+| Résolution | Fenêtre | Cellules (emprise Fordead) | Coût relatif |
+|-----------|---------|---------------------------|--------------|
+| 30 m (calibration Landsat de `fireexposuR`) | 33 × 33 ≈ 1 100 | ~22 000 | **1×** |
+| 2 m (`.topo_target_res()`) | 501 × 501 ≈ 251 000 | 5 000 000 | **~52 000×** |
+
+Le MNT était une mosaïque `lidar_mnt` 8000 × 10000 à 0,50 m, ramenée à 2 m par
+`.dem_working_res()` — la bonne résolution pour une pente ou un TWI, pas pour un
+noyau de 500 m de portée.
+
+`indicateur_r1_feu()` gagne donc un argument **`fire_exp_res` (défaut 30 m)**
+qui borne la grille du `hazard` **du seul chemin `fireexposuR`**. Le repli
+(`slope + species + climate`), dont le coût est linéaire en cellules, garde le
+`dem_target_res` courant : la borne est spécifique au chemin fautif, et
+`.topo_target_res()` reste à 2 m pour R2, R3, W3 où il a raison de l'être.
+
+Trois précisions d'implémentation :
+
+- la borne ne **sur-échantillonne jamais** — un BD ALTI 25 m (NDP 0) ou un MNT
+  100 m est laissé tel quel (`max(fire_exp_res, res(dem))`) ;
+- l'agrégation part du MNT **natif** et non du MNT déjà ramené à 2 m : une seule
+  passe (0,5 m → 30 m) au lieu de deux, et le 2 m n'est plus calculé du tout
+  quand le chemin `fireexposuR` aboutit ;
+- `fire_exp_res = NULL` retombe sur `dem_target_res`, c'est-à-dire le
+  comportement d'avant le correctif, conservé comme échappatoire explicite.
+
+Le log de `.dem_working_res()` porte le contexte `R1/fire_exp`, pour que la
+résolution effective se lise dans les journaux au prochain diagnostic.
+
+**Mesuré** sur une mosaïque de la taille de Fordead (8000 × 10000 à 0,5 m,
+80 M cellules, `fireexposuR` réel) : **3,2 s**, contre plus de 75 min. Le
+classement des unités est conservé (corrélation de Pearson et de Spearman
+> 0,95 / > 0,9 contre une référence non bornée, testées).
+
+**Côté `nemetonshiny`** : rien à faire, la signature reste compatible et l'app
+ne passe pas ces arguments.
+
 # nemeton 0.171.0 (2026-08-14)
 
 ### Added — la table des familles gagne ce qui manquait pour câbler l'app
