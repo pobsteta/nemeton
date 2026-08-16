@@ -57,6 +57,83 @@ test_that("credentials are checked only once data exists", {
   expect_identical(st$reason, "unknown_source")
 })
 
+# --- La logique de décision, sans réseau -------------------------------------
+#
+# `testthat::skip_if_not_installed()` est appelé explicitement : le helper maison
+# du même nom (helper-fixtures.R) sonde en plus l'anomalie terra des runners
+# GitHub et ferait sauter ces tests, qui ne touchent pourtant aucun raster.
+
+.tss_aoi <- function() {
+  sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 900000, ymin = 6500000, xmax = 901000, ymax = 6501000),
+    crs = sf::st_crs(2154)))
+}
+
+test_that("an empty catalogue answer is absence of data, not a failure", {
+  testthat::skip_if_not_installed("sf")
+  testthat::local_mocked_bindings(stac_search_items = function(...) list())
+
+  st <- theia_source_status("theia_lst", .tss_aoi())
+  expect_false(st$available)
+  expect_identical(st$reason, "no_asset_over_aoi")
+  expect_identical(st$n_assets, 0L)
+  expect_identical(st$collection, "thermocity-lst")
+  expect_true(is.na(st$detail))
+})
+
+test_that("data plus credentials is the only path to available = TRUE", {
+  testthat::skip_if_not_installed("sf")
+  testthat::local_mocked_bindings(
+    stac_search_items = function(...) list(list(id = "a"), list(id = "b")))
+  withr::local_envvar(c(TLD_ACCESS_KEY = "k", TLD_SECRET_KEY = "s"))
+
+  st <- theia_source_status("theia_lst", .tss_aoi())
+  expect_true(st$available)
+  expect_identical(st$reason, "ok")
+  expect_identical(st$n_assets, 2L)
+})
+
+test_that("data without credentials is reported as a credentials problem", {
+  testthat::skip_if_not_installed("sf")
+  testthat::local_mocked_bindings(
+    stac_search_items = function(...) list(list(id = "a")))
+  withr::local_envvar(c(TLD_ACCESS_KEY = "", TLD_SECRET_KEY = ""))
+
+  st <- theia_source_status("theia_lst", .tss_aoi())
+  expect_false(st$available)
+  expect_identical(st$reason, "no_credentials")
+  # Le compte est conservé : « il y a bien des données, c'est la clé qui manque »
+  # est une information différente de « il n'y a rien ».
+  expect_identical(st$n_assets, 1L)
+})
+
+test_that("a half-set credential pair counts as missing", {
+  testthat::skip_if_not_installed("sf")
+  testthat::local_mocked_bindings(
+    stac_search_items = function(...) list(list(id = "a")))
+  withr::local_envvar(c(TLD_ACCESS_KEY = "k", TLD_SECRET_KEY = ""))
+
+  expect_identical(theia_source_status("theia_lst", .tss_aoi())$reason,
+                   "no_credentials")
+})
+
+test_that("a datetime window narrows the query without changing the vocabulary", {
+  testthat::skip_if_not_installed("sf")
+  seen <- new.env(parent = emptyenv())
+  testthat::local_mocked_bindings(
+    stac_search_items = function(api, collection, bbox, datetime = NULL, limit = 50L) {
+      seen$datetime <- datetime
+      seen$limit <- limit
+      list()
+    })
+
+  st <- theia_source_status("theia_lst", .tss_aoi(),
+                            datetime = "2020-01-01/2020-12-31", limit = 5L)
+  expect_identical(seen$datetime, "2020-01-01/2020-12-31")
+  expect_identical(seen$limit, 5L)
+  expect_identical(st$reason, "no_asset_over_aoi")
+})
+
 # --- Vérification contre le catalogue réel (réseau) --------------------------
 
 test_that("theia_lst reports urban-only coverage against the live catalogue", {
