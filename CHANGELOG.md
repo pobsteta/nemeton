@@ -10,6 +10,33 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.174.0] - 2026-08-16
+
+### Fixed
+- **C1 biomasse LiDAR** : `zmean` est extrait des seules cellules de canopée
+  (> 2 m). `pzabove2` portant déjà la fraction de couvert, un `zmean` calculé
+  sur toute l'unité comptait les trouées deux fois. Facteur 10 à 14 sur des
+  peuplements ouverts (Fordead : 0,138 → 1,913 tC/ha sur la parcelle 1). Une
+  unité sans canopée donne 0, pas `NA`.
+- **Codes courts non normalisés** : `normalize_indicator("P1", 400)` rendait
+  100 au lieu de 50 — les règles sont indexées sur les noms longs, alors que la
+  convention des codes courts est celle de la valeur brute (`massif_demo_units` :
+  C1 en tC/ha, S3 en habitants). Les deux écritures suivent désormais la même
+  règle.
+- Motif de sélection des codes courts ancré (`^S[0-9]+(_norm)?$`) : la famille S
+  agrégeait S3 **et** ses colonnes de diagnostic `S3_5km` / `S3_10km` /
+  `S3_20km`, soit quatre fois la même population.
+- `create_family_index()` : la préférence pour les colonnes `_norm` s'applique
+  enfin (elle cherchait dans les colonnes sélectionnées, où un `_norm` n'entre
+  jamais). Une colonne `_norm` retenue est écrêtée, pas re-normalisée.
+
+### Added
+- `create_family_index()` avertit quand une colonne hors `[0, 100]` est agrégée
+  sans règle de normalisation (repli naïf = écrêtage silencieux). Le message
+  nomme la colonne et la famille.
+- `specs/brief-nemetonshiny-c2-ndvi-sentinel2.md` : brief app pour calculer C2
+  depuis Sentinel-2 L2A au lieu de l'ortho IRC WMS.
+
 ## [0.173.1] - 2026-08-16
 
 ### Fixed

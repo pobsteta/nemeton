@@ -182,7 +182,13 @@ create_family_index <- function(data,
 
   for (fam in family_codes) {
     # Strategy 1: Match short codes (C1, C2, W1, etc.)
-    pattern <- paste0("^", fam, "[0-9]")
+    # Ancrage en fin de nom : le motif ouvert `^S[0-9]` faisait aussi entrer les
+    # colonnes de diagnostic que produisent certains indicateurs — `S3_5km`,
+    # `S3_10km`, `S3_20km` (population par rayon, cf. indicateur_s3_population).
+    # La famille S agrégeait donc la même population quatre fois. Le suffixe
+    # `_norm` reste accepté : c'est une écriture du même indicateur, pas une
+    # variante.
+    pattern <- paste0("^", fam, "[0-9]+(_norm)?$")
     fam_indicators <- grep(pattern, indicator_cols, value = TRUE)
 
     # Strategy 2: Match long-form column names from INDICATOR_FAMILIES config
@@ -200,19 +206,23 @@ create_family_index <- function(data,
     }
 
     if (length(fam_indicators) > 0) {
-      # Prefer normalized indicators (_norm suffix) when both raw and normalized exist
-      base_names <- sub("_norm$", "", fam_indicators)
-      unique_bases <- unique(base_names)
-
-      preferred_indicators <- character(0)
-      for (base in unique_bases) {
+      # Préférence pour les colonnes déjà normalisées (`_norm`). La recherche se
+      # fait dans `data`, pas dans `fam_indicators` : aucune stratégie de
+      # sélection ci-dessus ne retient un `_norm` (ni le motif `^C[0-9]`, ni
+      # `column_names`, qui portent les noms bruts), si bien que cette
+      # préférence ne s'appliquait jamais aux noms longs. Un appelant qui
+      # normalisait en amont voyait donc son travail ignoré — sans dommage, la
+      # fonction normalisant elle-même les colonnes brutes, mais sans effet non
+      # plus.
+      unique_bases <- unique(sub("_norm$", "", fam_indicators))
+      preferred_indicators <- vapply(unique_bases, function(base) {
         norm_version <- paste0(base, "_norm")
-        if (norm_version %in% fam_indicators) {
-          preferred_indicators <- c(preferred_indicators, norm_version)
+        if (norm_version %in% names(data) && is.numeric(data[[norm_version]])) {
+          norm_version
         } else {
-          preferred_indicators <- c(preferred_indicators, base)
+          base
         }
-      }
+      }, character(1), USE.NAMES = FALSE)
 
       family_groups[[fam]] <- preferred_indicators
     }
@@ -239,7 +249,28 @@ create_family_index <- function(data,
     # Raw metrics (tC/ha, m³/ha, etc.) must be scaled to a common range
     for (j in seq_len(ncol(indicator_data))) {
       col_name <- indicators[j]
-      indicator_data[, j] <- normalize_indicator(col_name, indicator_data[, j])
+      raw <- indicator_data[, j]
+      if (grepl("_norm$", col_name)) {
+        # Déjà normalisée par l'appelant : simple écrêtage, pas de seconde
+        # normalisation (qui mutilerait une échelle déjà correcte).
+        indicator_data[, j] <- pmin(100, pmax(0, raw))
+        next
+      }
+      normed <- normalize_indicator(col_name, raw)
+      # Garde-fou : quand aucune règle explicite ne s'applique, la normalisation
+      # retombe sur un écrêtage naïf. Sur une colonne dont les valeurs sortent de
+      # [0, 100], cet écrêtage est une mutilation silencieuse — le score de
+      # famille devient faux sans que rien ne le signale. On le dit, en nommant
+      # la colonne ET la famille (`normalize_indicator()` ne connaît pas la
+      # famille, et ne prévient que pour les colonnes qu'il sait connaître).
+      out_of_range <- any(raw < 0 | raw > 100, na.rm = TRUE)
+      if (out_of_range && !.normalize_has_rule(col_name)) {
+        cli::cli_warn(c(
+          "create_family_index(): {.val {col_name}} (family {.val {fam}}) has values outside [0, 100] and no normalization rule; naively clamped.",
+          i = "Add a case in {.fun normalize_indicator} or declare it in {.code .NORMALIZE_NATIVE_0_100} (spec 038)."
+        ))
+      }
+      indicator_data[, j] <- normed
     }
 
     # Determine weights for this family

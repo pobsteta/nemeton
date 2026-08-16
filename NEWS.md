@@ -1,3 +1,130 @@
+# nemeton 0.174.0 (2026-08-16)
+
+### Fixed — C1 : la hauteur moyenne porte sur la canopée, plus sur l'unité entière
+
+Le modèle LiDAR de C1 est `AGB = k × (pzabove2/100) × zmean^1.5`. `pzabove2`
+porte déjà la **fraction de couvert**, mais `zmean` était calculé sur **toutes**
+les cellules du MNH, trouées comprises : la même surface nue pénalisait donc le
+résultat **deux fois**.
+
+Sur un peuplement fermé l'écart est mineur ; sur un peuplement ouvert il écrase
+le signal des îlots restants. Mesuré sur le projet Fordead, parcelle 1 : 47 %
+des cellules valent exactement 0 m (sol nu, MNS = MNT), `zmean` vaut 1,04 m sur
+l'unité contre **6,03 m sur la canopée**.
+
+`zmean` est désormais extrait des seules cellules > 2 m. Une unité sans aucune
+cellule de canopée donne 0, pas `NA` — une coupe rase n'est pas une donnée
+manquante. Résultat sur les quatre premières parcelles de Fordead :
+
+| Parcelle | C1 avant | C1 après |
+|---|---|---|
+| 1 | 0,138 | **1,913** |
+| 2 | 0,056 | **1,087** |
+| 4 | 0,433 | **4,690** |
+
+Un facteur 10 à 14. Cela ne « répare » pas C1 sur ce projet — ces parcelles sont
+réellement rases, et pour un suivi du dépérissement c'est le signal attendu —
+mais la formule est maintenant robuste aux peuplements hétérogènes.
+
+### Fixed — la préférence pour les colonnes `_norm` s'applique enfin
+
+`create_family_index()` documentait une préférence pour les colonnes déjà
+normalisées (`<indicateur>_norm`). Elle était **morte** : la recherche se faisait
+dans les colonnes déjà sélectionnées, or aucune stratégie de sélection ne retient
+un `_norm` — ni le motif `^C[0-9]`, ni les `column_names` de
+`INDICATOR_FAMILIES`, qui portent les noms bruts. Un appelant qui normalisait en
+amont voyait son travail ignoré (sans dommage : la fonction normalise elle-même
+les colonnes brutes, cf. ci-dessous — mais sans effet non plus).
+
+La recherche se fait désormais dans les données, et une colonne `_norm` retenue
+est **écrêtée, pas re-normalisée** : une seconde passe écraserait une échelle
+déjà correcte.
+
+Conséquence mesurable : `massif_demo_units` **embarque** `C1_norm` / `C2_norm`,
+jusqu'ici ignorées. `famille_carbone` sur la fixture de référence passe de
+**80,5** (colonnes brutes écrêtées) à **46,6** (colonnes normalisées fournies) —
+c'est-à-dire à la valeur que la fixture porte depuis toujours.
+
+### Fixed — les codes courts se normalisent enfin comme leur nom long
+
+`create_family_index()` accepte les deux écritures — le motif `^C[0-9]` est même
+sa **première** stratégie de sélection — et la convention des codes courts est
+celle de la **valeur brute** : `massif_demo_units`, la fixture de référence du
+package, porte `C1` en tC/ha (20 à 300) et `S3` en habitants (70 200 à 271 900).
+
+Mais les règles de `normalize_indicator()` sont indexées sur les **noms longs**.
+Un code court tombait donc sur l'écrêtage naïf :
+
+| Appel | Avant | Après |
+|---|---|---|
+| `normalize_indicator("P1", 400)` (m³/ha, `ref_max` 800) | **100** | **50** |
+| `normalize_indicator("C1", 75)` (tC/ha, `ref_max` 150) | **75** | **50** |
+
+C'est le défaut que le brief cherchait, à un endroit qu'il n'avait pas regardé.
+Il a été mis au jour par le garde-fou ci-dessous, qui a signalé 49 agrégations
+naïves dans la suite de tests.
+
+### Fixed — la famille S ne compte plus quatre fois la même population
+
+Le motif de sélection des codes courts, `^S[0-9]`, n'était pas ancré en fin de
+nom : il faisait entrer dans la famille S les colonnes de **diagnostic** que
+produit `indicateur_s3_population()` — `S3_5km`, `S3_10km`, `S3_20km`
+(population par rayon). La famille agrégeait donc S1, S2 et **quatre** variantes
+du même S3. Le motif est désormais ancré (`^S[0-9]+(_norm)?$`) : le suffixe
+`_norm` reste accepté, c'est une écriture du même indicateur, pas une variante.
+
+### Added — un score de famille ne se fausse plus en silence
+
+`create_family_index()` avertit désormais quand une colonne **hors `[0, 100]`**
+est agrégée **sans règle de normalisation** — cas où le repli naïf l'écrête,
+c'est-à-dire la mutile. Le message nomme la colonne **et la famille** :
+`normalize_indicator()`, lui, ne connaît pas la famille et ne prévient que pour
+les colonnes qu'il sait connaître.
+
+La présence d'une règle est vérifiée explicitement (`.NORMALIZE_RULED`), et non
+déduite des valeurs : quand une règle sature — C1 à 320 tC/ha, S3 à 271 900
+habitants — son résultat est indistinguable de l'écrêtage, et un détecteur par
+comparaison criait au loup.
+
+Ce garde-fou a payé immédiatement : il a signalé 49 agrégations naïves dans la
+suite de tests, dont les deux défauts ci-dessus, plus une fixture d'intégration
+dont les colonnes E étaient en totaux annuels (t MS/an, tCO₂eq/an) là où les
+indicateurs sont en tep/ha/an et tCO₂/ha/an — assez pour saturer les deux
+colonnes, rendre `famille_energie` constante et sa corrélation avec elle-même
+`NA`. Unités corrigées à la source
+(`tests/testthat/fixtures/create_twelve_family_fixture.R`).
+
+### Note — la normalisation n'était pas en cause (premise vérifiée puis écartée)
+
+Un score `famille_carbone = 0,90 / 100` sur Fordead avait fait soupçonner que
+`create_family_index()` agrégeait des valeurs brutes. Vérification faite, il
+normalise — **et depuis la v0.10.0 (2026-02-04)**, `git log -S` à l'appui.
+
+La preuve tient en une ligne, sur les données réelles : `s3_population` vaut
+**9 094 habitants** et `famille_social` vaut **94,03**. Une moyenne de valeurs
+brutes donnerait ~3 000. Avec normalisation, `9094,5 / 10000 × 100 = 90,9` — ce
+qui est exactement le score observé. De même, `famille_carbone = 0,90` est
+l'agrégation **correcte** d'entrées réellement quasi nulles : C1 à 0,062 tC/ha
+(→ 0,041 / 100) et C2 négatif (→ 0).
+
+L'observation d'origine — « avec ou sans colonnes `_norm`, le score est
+identique » — était juste ; c'est l'inférence qui ne l'était pas. Les `_norm`
+sont ignorées parce que la fonction normalise elle-même les colonnes brutes, pas
+parce qu'elle n'normalise rien. Les vraies causes du C effondré sont C1
+(ci-dessus) et la source de C2 (brief app ci-dessous).
+
+Trois tests verrouillent la propriété, avec les valeurs réelles de Fordead
+(`test-family-normalisation.R`) : elles seules distinguent « normalisé » de
+« brut ».
+
+### Changed — briefs app
+
+- `specs/brief-nemetonshiny-c2-ndvi-sentinel2.md` : C2 doit être calculé depuis
+  les scènes **Sentinel-2 L2A** déjà en cache, pas depuis l'orthophoto IRC du
+  WMS IGN — une image 8 bits étirée pour l'affichage, dont le NDVI n'a pas de
+  sens physique (33,7 % de pixels négatifs). Le cœur expose déjà
+  `build_index_stack(index = "NDVI")` : rien à ajouter ici.
+
 # nemeton 0.173.1 (2026-08-16)
 
 ### Fixed — SUFOSAT était inatteignable : trois champs STAC à la mauvaise place
