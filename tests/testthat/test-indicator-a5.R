@@ -95,3 +95,53 @@ test_that("A5 is NA for a unit off the LST raster", {
   out <- indicateur_a5_rafraichissement(off, lst = lst)
   expect_true(is.na(out$A5[[1]]))
 })
+
+# --- a5_status : distinguer « vide » de « cassé » (brief A5, spec 032) -------
+#
+# Hors couverture Thermocity, A5 = NA est la bonne réponse, pas une panne. Sans
+# colonne de statut, l'aval ne peut pas faire la différence — il ne voit qu'un NA
+# et affiche une carte grise sans explication.
+
+test_that("a5_status says why the indicator is empty", {
+  skip_if_not_installed("terra"); skip_if_not_installed("sf")
+  skip_if_not_installed("exactextractr")
+
+  units <- .a5_unit()
+
+  # 1. Pas de raster du tout : la source n'a rien fourni.
+  no_lst <- indicateur_a5_rafraichissement(units, lst = NULL)
+  expect_identical(no_lst$a5_status, "skipped_no_lst")
+  expect_true(all(is.na(no_lst$A5)))
+
+  # 2. Raster fourni et unité notée.
+  ok <- indicateur_a5_rafraichissement(units, lst = .a5_lst())
+  expect_identical(ok$a5_status, "calculated")
+  expect_false(is.na(ok$A5))
+
+  # 3. Raster fourni mais emprises disjointes : ce n'est pas la même chose que
+  #    l'absence de source, et l'aval doit pouvoir le dire.
+  ailleurs <- sf::st_sf(
+    id = 1L,
+    geometry = sf::st_as_sfc(sf::st_bbox(
+      c(xmin = 10000, ymin = 10000, xmax = 10100, ymax = 10100), crs = 2154)))
+  off <- indicateur_a5_rafraichissement(ailleurs, lst = .a5_lst())
+  expect_identical(off$a5_status, "skipped_no_reference")
+  expect_true(all(is.na(off$A5)))
+})
+
+test_that("a5_status is per-unit, like r5_status", {
+  skip_if_not_installed("terra"); skip_if_not_installed("sf")
+  skip_if_not_installed("exactextractr")
+
+  # Une unité sur le raster, une hors emprise : le statut suit l'unité, il n'est
+  # pas global — c'est ce qui permet un affichage par UGF.
+  units <- rbind(
+    .a5_unit(),
+    sf::st_sf(id = 2L, geometry = sf::st_as_sfc(sf::st_bbox(
+      c(xmin = 10000, ymin = 10000, xmax = 10100, ymax = 10100), crs = 2154))))
+  out <- indicateur_a5_rafraichissement(units, lst = .a5_lst())
+
+  expect_length(out$a5_status, 2L)
+  expect_identical(out$a5_status[1], "calculated")
+  expect_identical(out$a5_status[2], "skipped_no_reference")
+})

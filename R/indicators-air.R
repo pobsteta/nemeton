@@ -422,9 +422,17 @@ indicateur_a2_qualite_air <- function(units,
 #'   `delta_scale` hotter scores 0, equal scores 50. Default 5.
 #' @param ... Unused.
 #'
-#' @return `units` with `A5` (0-100, high = cooler than surroundings) and
-#'   `A5_delta` (raw reference − unit LST). `A5 = NA` where `lst` is `NULL`,
-#'   the unit does not overlap the raster, or no local reference is available.
+#' @return `units` with `A5` (0-100, high = cooler than surroundings),
+#'   `A5_delta` (raw reference − unit LST) and `a5_status`. `A5 = NA` where
+#'   `lst` is `NULL`, the unit does not overlap the raster, or no local
+#'   reference is available.
+#'
+#'   `a5_status` is one of `"calculated"`, `"skipped_no_lst"` (no LST raster
+#'   supplied) or `"skipped_no_reference"` (raster supplied but no unit could be
+#'   scored — no overlap, or no local reference). It mirrors `r5_status` and
+#'   exists so that a consumer can tell an empty indicator apart from a broken
+#'   one: outside Thermocity coverage `A5 = NA` is the correct answer, not a
+#'   failure.
 #'
 #' @export
 indicateur_a5_rafraichissement <- function(units, lst = NULL,
@@ -438,6 +446,7 @@ indicateur_a5_rafraichissement <- function(units, lst = NULL,
     cli::cli_alert_info("A5: no LST raster supplied - A5 = NA (indicator skipped).")
     units$A5 <- rep(NA_real_, n)
     units$A5_delta <- rep(NA_real_, n)
+    units$a5_status <- rep("skipped_no_lst", n)
     return(units)
   }
   if (!inherits(lst, "SpatRaster")) {
@@ -496,6 +505,10 @@ indicateur_a5_rafraichissement <- function(units, lst = NULL,
 
   units$A5 <- round(score, 1)
   units$A5_delta <- round(delta, 2)
+  # Un raster fourni mais aucune unité notée (emprises disjointes, pas de
+  # référence locale) n'est pas la même chose qu'une source absente : l'aval doit
+  # pouvoir distinguer les deux sans réinspecter les données.
+  units$a5_status <- ifelse(is.na(units$A5), "skipped_no_reference", "calculated")
   msg_info("indicateur_a5_rafraichissement")
   units
 }
