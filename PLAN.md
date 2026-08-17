@@ -39,9 +39,11 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 | \# | Écart | Livré par | En attente chez | État |
 |----|----|----|----|----|
-| 1 | [`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md) / [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md) | `nemeton` **v0.170.0** puis **v0.171.0** | `nemetonshiny` | **Non consommé.** Plancher toujours `Imports: nemeton (>= 0.169.0)` ; `app_config.R` porte encore le fork complet de la table |
-| 2 | `osm_hors_corridor` / `bdtopo_hors_corridor` | `foretaccess` **v2.4.0**, taguée le 2026-08-15 | `nemetonshiny` | **Publié, non consommé.** Plancher app toujours `foretaccess (>= 2.3.0)`, et le calque « Pistes OSM » affiche encore l’acquisition brute |
+| 1 | [`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md) / [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md) | `nemeton` **v0.170.0** puis **v0.171.0** | `nemetonshiny` | **Non consommé, et désormais bloquant.** Plancher monté à `nemeton (>= 0.174.0)`, mais `app_config.R:127` porte toujours le fork de la table — dont la famille A déclare `A1..A4` **sans A5**. `mod_family.R:17` lisant `get_family_config()`, le travail A5 livré en v0.173.1 (statut de cause) **ne peut pas s’afficher** dans l’onglet Air |
+| 2 | `osm_hors_corridor` / `bdtopo_hors_corridor` | `foretaccess` **v2.4.0**, taguée le 2026-08-15 | `nemetonshiny` | **Consommé par le code, pas par le plancher.** `mod_desserte.R` lit désormais `osm_hors_corridor` ; `DESCRIPTION` exige toujours `foretaccess (>= 2.3.0)`, où le champ n’existe pas |
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
+| 4 | `r5_status` (cause d’un R5 vide) | `nemeton`, **spec 008** (2026-04-30) | `nemetonshiny` | **Jeté à l’arrivée.** `service_r5.R:117` fait `out$r5_status <- NULL` : la seule colonne qui explique un R5 vide est supprimée juste avant l’interface. Rien à livrer côté cœur — c’est le gain le moins cher qui reste (§7 du brief A5) |
+| 5 | [`check_fordead_validity()`](https://pobsteta.github.io/nemeton/reference/check_fordead_validity.md) — « R5 est-il calculable ici ? » | `nemeton`, **spec 008 E6.c.3** | `nemetonshiny` | **Exposé, non exploité en amont.** L’app l’enveloppe (`service_monitoring_db.R:673`) mais ne s’en sert pas pour dire *avant calcul* que R5 ne s’applique pas. Mesuré le 2026-08-17 sur les trois projets locaux : **aucun n’est dans la zone de calibration FORDEAD** (88/39/01/73/74) — Fordead 100 % sapin mais Ardennes, Dabo 100 % sapin mais Moselle, Reconfort 0 % résineux (relève de RECONFORT) |
 
 **Écart 1 — le cœur a livré, l’app n’a pas consommé.** C’est exactement
 le genre d’écart que ce fichier doit rendre visible, et il est mesurable
@@ -54,6 +56,18 @@ libellés, les 40 clés i18n `indicator_<CODE>`, a même **F1 et F2
 inversés** : la colonne d’érosion s’affiche « F1 - Fertilité des sols ».
 Six patches vérifiés sont prêts
 (`specs/patch-nemetonshiny-0[1-6]-*.diff`), non appliqués.
+
+**Consommé le 2026-08-16/17, donc retiré de la table** : les deux briefs
+du jour sont câblés côté app —
+[`theia_source_status()`](https://pobsteta.github.io/nemeton/reference/theia_source_status.md)
+(`mod_sources_config`, `service_compute`, `service_status`), `a5_status`
+(`service_compute`, `mod_family`),
+[`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md)
+pour C2 (commit `cc3071f9`, « NDVI depuis Sentinel-2 L2A »), clé i18n
+`lst_status_no_coverage`, et la copie morte de
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+supprimée de `service_compute.R`. Plancher app monté à
+`nemeton (>= 0.174.0)`. Vérifié en lecture seule le 2026-08-17.
 
 **Écart 2 — le maillon `foretaccess` est bouclé, l’app ne l’a pas encore
 pris.** L’implémentation avait été vérifiée le 2026-08-15 en lecture
