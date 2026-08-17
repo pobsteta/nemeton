@@ -387,6 +387,136 @@ indicateur_a2_qualite_air <- function(units,
 # A5 - Urban cooling / relative surface freshness (LST)  [spec 032]
 # ==============================================================================
 
+#' Can A5 urban cooling be computed here?
+#'
+#' Answers, **before** any computation, whether the LST-based cooling indicator
+#' applies to a set of units — and if not, which condition fails. The
+#' counterpart of [r5_applicabilite()] for the A family.
+#'
+#' A5 has two independent conditions, and they fail at different scales:
+#' \itemize{
+#'   \item \strong{coverage} — a Land Surface Temperature product must exist
+#'     over the extent. Theia's Thermocity lineage covers a handful of French
+#'     metropolises, not rural forests. Checked with
+#'     [theia_source_status()], which queries the catalogue without
+#'     downloading.
+#'   \item \strong{local reference} — each unit is scored against the median
+#'     LST of a ring around it (\code{buffer_m}). A unit inside the scene
+#'     footprint but with no valid pixel in its ring cannot be scored.
+#' }
+#'
+#' The first is answered at the scale of the **scene**: a STAC query knows
+#' bounding boxes, not pixels. A unit 20 km from a covered city may fall inside
+#' a scene's bbox without holding a single valid pixel. So the verdict is
+#' two-tiered: without \code{lst}, an extent-level answer costing one catalogue
+#' query; with a raster already at hand (typically the project cache), a
+#' per-unit answer.
+#'
+#' @param units An sf object with the units.
+#' @param lst A SpatRaster of Land Surface Temperature, when one is already
+#'   available (project cache). \code{NULL} (default) answers at extent level.
+#' @param buffer_m Numeric. Radius (m) of the local-reference ring, as in
+#'   [indicateur_a5_rafraichissement()]. Default 500.
+#' @param country Character. Country config key for the catalogue query.
+#'   Default \code{"FR"}.
+#'
+#' @return A list with:
+#'   \itemize{
+#'     \item \code{status}: one of \code{"eligible"},
+#'       \code{"eligible_partial"} (coverage, but only some units are
+#'       scorable), \code{"no_coverage"}, \code{"no_reference"},
+#'       \code{"no_credentials"}, \code{"error"}. A \strong{stable key}, meant
+#'       to be translated downstream.
+#'     \item \code{n_units}, \code{n_eligible}.
+#'     \item \code{n_assets}: LST scenes intersecting the extent
+#'       (\code{NA} when \code{lst} was supplied and no query was made).
+#'     \item \code{per_unit}: data.frame (\code{has_lst}, \code{has_reference},
+#'       \code{eligible}) or \code{NULL} at extent level.
+#'   }
+#'
+#' @seealso [theia_source_status()], [indicateur_a5_rafraichissement()],
+#'   [r5_applicabilite()]
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' ap <- a5_applicabilite(units)
+#' if (ap$status == "no_coverage") {
+#'   message("Hors couverture Thermocity - A5 restera NA, ce n'est pas une erreur")
+#' }
+#' }
+a5_applicabilite <- function(units, lst = NULL, buffer_m = 500,
+                             country = "FR") {
+  if (!inherits(units, "sf")) {
+    cli::cli_abort("{.arg units} must be an sf object.")
+  }
+  n <- nrow(units)
+  out <- function(status, n_eligible = 0L, n_assets = NA_integer_,
+                  per_unit = NULL) {
+    list(status = status, n_units = n, n_eligible = as.integer(n_eligible),
+         n_assets = as.integer(n_assets), per_unit = per_unit)
+  }
+  if (n == 0L) return(out("no_coverage"))
+
+  # --- Niveau emprise : une requête catalogue, aucun téléchargement. ---------
+  if (is.null(lst) || !inherits(lst, "SpatRaster")) {
+    st <- theia_source_status("theia_lst",
+                              sf::st_as_sfc(sf::st_bbox(units)),
+                              country = country)
+    status <- switch(
+      st$reason,
+      ok                = "eligible",
+      no_asset_over_aoi = "no_coverage",
+      no_credentials    = "no_credentials",
+      "error"
+    )
+    # `eligible` est ici un verdict d'EMPRISE : la couverture existe, mais rien
+    # ne dit encore que chaque unité porte des pixels. Passer `lst` tranche.
+    return(out(status, n_eligible = if (status == "eligible") n else 0L,
+               n_assets = st$n_assets))
+  }
+
+  # --- Niveau unité : le raster est là, on regarde les pixels. ---------------
+  units_r <- sf::st_transform(as_pure_sf(units), terra::crs(lst))
+  valid <- function(v) {
+    v <- if (is.data.frame(v)) v$value else v
+    # Même sentinelle que l'indicateur : -32768 est le nodata des produits LST.
+    sum(is.finite(v) & v > -1000) > 0
+  }
+
+  ex_u <- exactextractr::exact_extract(lst[[1]], units_r, progress = FALSE)
+  has_lst <- vapply(ex_u, valid, logical(1))
+
+  buf <- sf::st_buffer(sf::st_geometry(units_r), buffer_m)
+  own <- sf::st_geometry(units_r)
+  ring <- sf::st_sf(geometry = sf::st_sfc(
+    lapply(seq_len(n), function(i) {
+      suppressWarnings(sf::st_difference(buf[[i]], own[[i]]))
+    }), crs = sf::st_crs(units_r)))
+  ex_r <- exactextractr::exact_extract(lst[[1]], ring, progress = FALSE)
+  has_ref <- vapply(ex_r, valid, logical(1))
+
+  eligible <- has_lst & has_ref
+  per_unit <- data.frame(has_lst = has_lst, has_reference = has_ref,
+                         eligible = eligible)
+
+  status <- if (all(eligible)) {
+    "eligible"
+  } else if (any(eligible)) {
+    # Le cas qui manquait : couverture réelle, mais un axe A5 à moitié vide.
+    "eligible_partial"
+  } else if (any(has_lst)) {
+    # Des pixels sur les unités, aucun anneau exploitable : ce n'est pas un
+    # défaut de couverture mais de géométrie (unités trop grandes, bord de
+    # scène). L'indicateur rendra `skipped_no_reference`.
+    "no_reference"
+  } else {
+    "no_coverage"
+  }
+  out(status, n_eligible = sum(eligible), per_unit = per_unit)
+}
+
+
 #' Calculate Urban Cooling Index (A5)
 #'
 #' Relative surface-temperature freshness of a forest / tree unit compared

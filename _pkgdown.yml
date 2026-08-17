@@ -358,6 +358,8 @@ reference:
     - charru_bai_drift_table
     - charru_selfthinning_table
     - check_fordead_validity
+    - r5_applicabilite
+    - a5_applicabilite
     - classify_disturbance
     - compute_dtm_chm_from_laz
     - compute_fast_alert_mask
