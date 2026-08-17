@@ -12,6 +12,30 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.175.0\] - 2026-08-17
+
+### Added
+
+- **`r5_applicabilite(units, bdforet, ...)`** (exportée) : dit avant
+  tout calcul si R5 s’applique et par quelle méthode, depuis les seules
+  parcelles cadastrales (essence dérivée de la BD Forêt V2 au besoin).
+  `status` ∈
+  `{"eligible_fordead", "eligible_fordead_out_of_calibration", "eligible_reconfort", "no_species", "not_applicable"}`,
+  routage **par unité** (`per_unit`). Sépare le critère espèce du
+  critère géographique : hors des cinq départements de calibration
+  ONF/DSF 2024 (88, 39, 01, 73, 74), un sapin pectiné reste calculable,
+  avec ses classes de confiance extrapolées. Couvre la route RECONFORT
+  (chêne / châtaignier / pin sylvestre), que
+  [`check_fordead_validity()`](https://pobsteta.github.io/nemeton/reference/check_fordead_validity.md)
+  ignore — d’où son « non calculable » erroné sur un projet feuillus.
+- **`a5_applicabilite(units, lst = NULL, ...)`** (exportée) : pendant du
+  précédent pour A5. Verdict à deux niveaux — emprise (une requête
+  catalogue, zéro téléchargement) ou par unité quand le raster LST est
+  déjà en cache. `status` ∈
+  `{"eligible", "eligible_partial", "no_coverage", "no_reference", "no_credentials", "error"}`
+  ; `eligible_partial` nomme le cas d’un axe A5 à moitié vide,
+  `no_reference` sépare le défaut de géométrie du défaut de couverture.
+
 ## \[0.174.0\] - 2026-08-16
 
 ### Fixed

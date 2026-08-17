@@ -530,6 +530,12 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`check_fordead_validity()`](https://pobsteta.github.io/nemeton/reference/check_fordead_validity.md)
   : Check whether an AOI lies within the FORDEAD calibration domain
 
+- [`r5_applicabilite()`](https://pobsteta.github.io/nemeton/reference/r5_applicabilite.md)
+  : Can R5 dieback be computed here, and by which method?
+
+- [`a5_applicabilite()`](https://pobsteta.github.io/nemeton/reference/a5_applicabilite.md)
+  : Can A5 urban cooling be computed here?
+
 - [`classify_disturbance()`](https://pobsteta.github.io/nemeton/reference/classify_disturbance.md)
   : Tag each alert with the disturbance type it most likely reflects
   (G2)

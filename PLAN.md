@@ -818,6 +818,67 @@ inspirer un épaississement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-17* (**v0.175.0**) :
+**[`r5_applicabilite()`](https://pobsteta.github.io/nemeton/reference/r5_applicabilite.md)
+— savoir avant de calculer**. Question posée : peut-on déduire des
+**parcelles cadastrales** si R5 est calculable ? Oui, et la matière
+existait déjà
+([`check_fordead_validity()`](https://pobsteta.github.io/nemeton/reference/check_fordead_validity.md),
+spec 008 E6.c.3, qui dérive l’essence de la BD Forêt V2 quand les
+parcelles n’en portent pas). Mais l’exploiter a fait apparaître **deux
+confusions**. (1) **Espèce ≠ géographie.** La zone de validation de R5
+est celle du rapport ONF/DSF 2024 (Bernard & Doridant, 397 relevés) :
+cinq départements — Vosges (88), Jura (39), Ain (01), Savoie (73),
+Haute-Savoie (74) — soit **27 565 km²**, pour l’épicéa commun et le
+sapin pectiné. Hors de ces départements, le calcul tourne : seules ses
+classes de confiance sont extrapolées. Rendre un unique « non calculable
+» revenait donc soit à masquer une limite réelle, soit à jeter un signal
+exploitable. (2) **FORDEAD ≠ R5.**
+[`check_fordead_validity()`](https://pobsteta.github.io/nemeton/reference/check_fordead_validity.md)
+ne connaît que la route résineuse : sur le projet **Reconfort** (chêne),
+il répondait « non calculable » alors que RECONFORT est exactement la
+méthode faite pour lui. **Livré** :
+`r5_applicabilite(units, bdforet, layers, resineux_col, feuillus_col, min_resineux, min_feuillus, threshold_geo)`,
+exportée, qui reproduit le routage
+d’[`indicateur_r5_deperissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_r5_deperissement.md)
+**sans lancer FORDEAD ni RECONFORT**. `status` ∈
+`{eligible_fordead, eligible_fordead_out_of_calibration, eligible_reconfort, no_species, not_applicable}`
+— clé stable à traduire en aval ; `in_calibration` reste **`NA`** sur la
+route RECONFORT (aucune zone publiée : `FALSE` laisserait croire à un
+hors-zone constaté) ; le routage est **par unité** (`per_unit`), un
+massif mixte n’étant pas un verdict global. **Mesuré sur les trois
+projets locaux** : Fordead `eligible_fordead_out_of_calibration` (30/30
+en sapin, 0 % dans la zone), Dabo idem (4/4), Reconfort
+`eligible_reconfort` (14/30 en chêne) — aucun n’est dans la zone de
+calibration, deux sur trois restent calculables avec la réserve qui va
+avec. 9 `test_that` (33 assertions) dans `test-r5-applicabilite.R`.
+
+**Pendant A5, même release** :
+`a5_applicabilite(units, lst = NULL, buffer_m, country)`, exportée.
+Différence de nature assumée avec R5 : les deux conditions de R5 se
+décident sur les parcelles seules, alors que la couverture LST ne se
+connaît qu’à la maille de la **scène** — une requête STAC répond sur des
+emprises, pas sur des pixels, et une UGF à 20 km d’une métropole
+couverte peut tomber dans une bbox sans porter un pixel valide. D’où
+deux niveaux : sans raster, verdict d’emprise via
+[`theia_source_status()`](https://pobsteta.github.io/nemeton/reference/theia_source_status.md)
+; avec le raster du cache, verdict **par unité** (pixels dans l’unité ET
+dans l’anneau de référence). `status` ∈
+`{eligible, eligible_partial, no_coverage, no_reference, no_credentials, error}`
+— `eligible_partial` nomme le cas jusqu’ici muet d’un axe A5 à moitié
+vide, `no_reference` sépare le défaut de géométrie de celui de
+couverture (la sentinelle `-32768` ne passe pas pour de la donnée).
+Mesuré : Fordead `no_coverage` (0 scène), Dabo `eligible` (8 scènes, 4/4
+UGF avec pixels et anneau). 9 `test_that` (28 assertions) dans
+`test-a5-applicabilite.R`.
+
+**Suite côté app** : afficher ces verdicts au moment de choisir les
+sources plutôt qu’un R5 vide après le calcul — à joindre au brief
+`specs/032-.../brief-nemetonshiny-a5-diagnostic.md` §7, qui porte déjà
+la même mécanique pour A5 et le `r5_status` jeté en `service_r5.R:117`.
+
+------------------------------------------------------------------------
+
 **Journal** — *2026-08-16* (**v0.174.0**) : **brief « normalisation des
 familles » — prémisse écartée, vraies causes corrigées**. Le brief
 `specs/BRIEF-nemeton-normalisation-familles.md` (score

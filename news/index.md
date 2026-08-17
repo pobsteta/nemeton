@@ -1,5 +1,92 @@
 # Changelog
 
+## nemeton 0.175.0 (2026-08-17)
+
+#### Added — `r5_applicabilite()` : savoir avant de calculer, et savoir pourquoi
+
+Depuis les parcelles cadastrales seules, on peut désormais dire si R5
+(dépérissement) s’applique — et, sinon, **laquelle des deux conditions
+indépendantes bloque**. La fonction reproduit le routage
+qu’[`indicateur_r5_deperissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_r5_deperissement.md)
+fait au moment du calcul, sans lancer ni FORDEAD ni RECONFORT.
+
+``` r
+
+r5_applicabilite(units, bdforet = bdforet)
+#> $status "eligible_fordead_out_of_calibration"  $method "fordead"
+#> $in_calibration FALSE  $geo_pct 0  $n_fordead 30 / $n_units 30
+```
+
+`status` ∈
+`{"eligible_fordead", "eligible_fordead_out_of_calibration", "eligible_reconfort", "no_species", "not_applicable"}`
+— une **clé stable**, à traduire en aval.
+
+**Deux confusions défaites.**
+
+*Espèce contre géographie.* La zone de validation de R5 est celle du
+rapport ONF/DSF 2024 (Bernard & Doridant, 397 relevés) : cinq
+départements — **Vosges (88), Jura (39), Ain (01), Savoie (73),
+Haute-Savoie (74)**, 27 565 km² — pour l’épicéa commun et le sapin
+pectiné. Hors de ces départements, un sapin pectiné reste un sapin
+pectiné : le calcul tourne, seules ses classes de confiance sont
+extrapolées. « Hors calibration » et « mauvaise espèce » sont donc deux
+verdicts distincts, et les confondre revient soit à masquer une limite
+réelle, soit à jeter un signal exploitable.
+
+*FORDEAD contre RECONFORT.*
+[`check_fordead_validity()`](https://pobsteta.github.io/nemeton/reference/check_fordead_validity.md)
+ne connaît que la route résineuse. Sur le projet **Reconfort** (chêne),
+il répondait « non calculable » alors que RECONFORT est précisément la
+méthode faite pour lui. La nouvelle fonction route les deux, et laisse
+`in_calibration` à `NA` sur la route RECONFORT — aucune zone n’y est
+publiée, et `FALSE` laisserait croire à un hors-zone constaté.
+
+**Le routage est par unité** : un massif mixte n’est pas un verdict
+global. `per_unit` rend le détail, `method` la méthode dominante.
+
+Mesuré sur les trois projets locaux :
+
+| Projet | Statut | Détail |
+|----|----|----|
+| Fordead (Ardennes) | `eligible_fordead_out_of_calibration` | 30/30 unités en sapin, 0 % dans la zone |
+| Reconfort | `eligible_reconfort` | 14/30 en chêne — calculable |
+| Dabo (Moselle) | `eligible_fordead_out_of_calibration` | 4/4 |
+
+Aucun des trois n’est dans la zone de calibration ; deux sur trois
+restent calculables avec la réserve qui va avec.
+
+#### Added — `a5_applicabilite()` : le pendant pour le rafraîchissement urbain
+
+Même question pour A5, avec une différence de nature qu’il faut nommer.
+Pour R5, les deux conditions se décident sur les **parcelles seules**
+(essence, géographie). Pour A5, la couverture ne se connaît qu’à la
+maille de la **scène** : une requête STAC répond sur des emprises, pas
+sur des pixels. Une UGF à 20 km d’une métropole couverte peut tomber
+dans la bbox d’une scène ECOSTRESS sans porter un seul pixel valide.
+
+D’où un verdict à deux niveaux :
+
+``` r
+
+a5_applicabilite(units)              # une requête catalogue, zéro téléchargement
+a5_applicabilite(units, lst = lst)   # le raster est en cache -> verdict par UGF
+```
+
+`status` ∈
+`{"eligible", "eligible_partial", "no_coverage", "no_reference", "no_credentials", "error"}`.
+**`eligible_partial`** est le cas qui manquait : couverture réelle, mais
+seules quelques unités portent des pixels — l’app affichait un axe A5 à
+moitié vide sans pouvoir dire pourquoi.
+
+`no_reference` distingue le défaut de **géométrie** du défaut de
+**couverture** : des pixels sur l’unité mais aucun dans son anneau de
+référence, ce que l’indicateur rapporte déjà sous `skipped_no_reference`
+(v0.173.1). La sentinelle `-32768` des produits LST ne passe pas pour de
+la donnée.
+
+Mesuré sur les projets locaux : Fordead `no_coverage` (0 scène), Dabo
+`eligible` — 8 scènes, et 4/4 UGF avec pixels **et** anneau valides.
+
 ## nemeton 0.174.0 (2026-08-16)
 
 #### Fixed — C1 : la hauteur moyenne porte sur la canopée, plus sur l’unité entière
