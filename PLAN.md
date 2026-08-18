@@ -711,6 +711,53 @@ inspirer un épaississement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-18* (**v0.177.0**) : **le parcellaire forestier public
+ONF entre dans le cœur**. Question de Pascal : « est-ce qu'on peut avoir un
+serveur qui comprend les parcelles forestières domaniale et communale qui
+permettrait de créer automatiquement les UGF dans Carte UGF de Sélection ? ».
+Réponse vérifiée en direct, pas de mémoire : **oui**, le WFS ONF « Forêts
+publiques » (Carmen, diffusion publique, référencé data.gouv.fr) sert
+`ms:PARC_PUBL_FR` — **408 400 parcelles forestières** en métropole — et
+`ms:FOR_PUBL_FR` qui porte la domanialité (`cdom_frt` OUI/NON). Endpoints et
+CRS natifs relevés pour les six territoires (FR 2154, GLP/MTQ 32620, GUF 2972,
+REU 2975, MYT 4471), schéma d'attributs identique partout.
+
+**Pourquoi ça compte** : `ug_init_default()` côté app fait *1 parcelle = 1
+tenement = 1 UGF*, mais à partir du **cadastre**. En forêt domaniale ou
+communale, c'est démarrer sur un découpage étranger au métier — la parcelle
+forestière est le cadre de gestion matérialisé sur le terrain. Le cœur livre
+donc `load_onf_parcelles_source()` (`R/load_onf_parcelles.R`, exportée), qui
+rend un `sf` **une ligne = une parcelle = une UGF**, avec un `id` stable, le
+libellé `nom_ugf` prêt à afficher, la domanialité et les surfaces. Le schéma
+est déjà compatible `standardize_parcels()` / `ug_init_default()` : le câblage
+app passe par le chemin existant, **sans nouvelle logique métier** (règles
+#1/#3).
+
+**Trois pièges du service, trouvés en le testant et non en le lisant** : (1) le
+paramètre WFS `FILTER` est **rejeté par son pare-feu applicatif** — page HTML
+« Request Rejected » servie en **HTTP 200** — donc aucune requête attributaire,
+seul `BBOX` passe, et le filtre domanialité est appliqué localement ; (2) le
+service ne répond **qu'en HTTP**, `https://ws.carmencarto.fr` est mort → appel
+côté serveur obligatoire, sinon contenu mixte bloqué dans le navigateur ; (3)
+les échecs arrivent en HTTP 200 (pare-feu, `ExceptionReport` OWS) → détectés à
+la lecture de l'en-tête GML, jamais passés à `sf`.
+
+**Limite assumée, écrite dans l'UI par le brief** : le grain est la **parcelle**,
+pas la sous-parcelle. La sous-parcelle — la vraie unité de gestion de
+l'aménagement — n'est pas ouverte ; une parcelle peut donc mélanger plusieurs
+peuplements. C'est une approximation NDP 0 de l'UGF, à dire, pas à masquer.
+Licence non déclarée sur data.gouv.fr (`License Not Specified`), l'ONF
+annonçant une diffusion « libre et gratuite » → citer le producteur.
+
+Écartés après vérification : `ONF.FORETS_PUBLIQUES` et `BDTOPO_V3:foret_publique`
+sur la Géoplateforme ne servent que les **périmètres**, pas le parcellaire ; le
+re-hébergement Esri France en FeatureServer est en millésime **2019**.
+
+Mesures réelles : bbox 3 × 3 km → 71 parcelles en 0,17 s ; forêt domaniale de
+Chaux → **217 parcelles, 2 105 ha, 5,8 s** de bout en bout, domaniales et
+communales correctement séparées. Spec `specs/046-parcellaire-onf/spec.md`,
+brief app `brief-nemetonshiny.md`, 50 assertions dont un test de fumée réseau.
+
 **Journal** — *2026-08-18* (**v0.176.0**) : **famille L — le nom des fonctions
 dit enfin ce qu'elles calculent**. Suite directe de l'entrée précédente : le
 brief demandait d'échanger les libellés, la vérification a montré que les
