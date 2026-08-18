@@ -769,6 +769,9 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
   : Acquire the IGN historical-forest (~1850 état-major) layer for an
   AOI
 
+- [`load_onf_parcelles_source()`](https://pobsteta.github.io/nemeton/reference/load_onf_parcelles_source.md)
+  : Acquire the ONF public-forest parcel layer for an AOI
+
 - [`load_raster_source()`](https://pobsteta.github.io/nemeton/reference/load_raster_source.md)
   : Load a raster datasource as a SpatRaster
 

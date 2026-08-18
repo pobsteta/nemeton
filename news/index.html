@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.176.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.177.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,27 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.177.0" id="nemeton-01770-2026-08-18">nemeton 0.177.0 (2026-08-18)<a class="anchor" aria-label="anchor" href="#nemeton-01770-2026-08-18"></a></h2>
+<div class="section level4">
+<h4 id="added--créer-les-ugf-depuis-le-parcellaire-forestier-public-onf-spec-0-177-0">Added — créer les UGF depuis le parcellaire forestier public ONF (spec 046)<a class="anchor" aria-label="anchor" href="#added--cr%C3%A9er-les-ugf-depuis-le-parcellaire-forestier-public-onf-spec-0-177-0"></a></h4>
+<p>En forêt publique, la parcelle <strong>cadastrale</strong> n’est pas l’unité de gestion : la parcelle <strong>forestière</strong> l’est. Le cœur sait désormais aller la chercher.</p>
+<p><code>load_onf_parcelles_source(aoi, crs, domanialite, territoire, max_parcelles, clip)</code> interroge le WFS ONF « Forêts publiques » (Carmen, producteur ONF, diffusion publique) et rend un <code>sf</code> où <strong>une ligne = une parcelle = une UGF</strong> : <code>id</code> (<code>F06831S-400</code>), <code>foret_id</code>, <code>foret_nom</code>, <code>parcelle</code>, <code>domaniale</code>, <code>nom_ugf</code> (« Forêt domaniale de Chaux — parcelle 400 »), <code>contenance</code> et <code>surface_ha</code>. Forêts domaniales <strong>et</strong> des collectivités, filtrables par <code>domanialite</code> ; métropole (<code>FR</code>) et les cinq territoires ultramarins (<code>GLP</code>, <code>MTQ</code>, <code>GUF</code>, <code>REU</code>, <code>MYT</code>), chacun dans son CRS natif.</p>
+<p>Mesuré en réel sur la forêt domaniale de Chaux : <strong>217 parcelles, 2 105 ha, 5,8 s</strong> de bout en bout.</p>
+<p>Choix qui tiennent le résultat :</p>
+<ul><li>
+<code>clip = FALSE</code> par défaut — une UGF est la parcelle <strong>entière</strong>, on ne fabrique pas d’échardes sur le bord de l’emprise ;</li>
+<li>domanialité jointe depuis la couche des forêts (<code>cdom_frt</code>), avec repli sur le libellé si cette couche échoue ;</li>
+<li>les parties d’une même parcelle sont <strong>refusionnées</strong>, et les surfaces mesurées après fusion ;</li>
+<li>
+<code>max_parcelles</code> borne le volume et <strong>alerte</strong> quand le service annonce plus de correspondances qu’il n’en rend — pas de troncature silencieuse ;</li>
+<li>les faux succès du service (page HTML de son pare-feu, <code>ExceptionReport</code> OWS, tous deux renvoyés en <strong>HTTP 200</strong>) sont détectés, pas laissés passer ;</li>
+<li>
+<code>NULL</code> sur échec, <code>sf</code> 0 ligne sur emprise sans forêt publique : l’app peut toujours retomber sur la sélection cadastrale.</li>
+</ul><p>Limites assumées et documentées : grain = <strong>parcelle, pas sous-parcelle</strong> (une parcelle peut mélanger plusieurs peuplements) ; le paramètre WFS <code>FILTER</code> est rejeté par le pare-feu du service, donc sélection par emprise uniquement ; service en HTTP seul, à n’appeler que côté serveur ; licence non déclarée sur data.gouv.fr, l’ONF annonçant une réutilisation libre et gratuite — citer le producteur.</p>
+<p>Sources déclarées dans <code>inst/datasources/FR.json</code> (<code>onf_wfs</code>, <code>onf_parcelles</code>, <code>onf_forets_publiques</code>). 50 assertions, dont un test de fumée sur le service réel. Suite côté app : <code>specs/046-parcellaire-onf/brief-nemetonshiny.md</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.176.0" id="nemeton-01760-2026-08-18">nemeton 0.176.0 (2026-08-18)<a class="anchor" aria-label="anchor" href="#nemeton-01760-2026-08-18"></a></h2>
 <div class="section level4">
