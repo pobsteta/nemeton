@@ -300,13 +300,13 @@ head(carbon[, c("parcel_id", "forest_type", "indicateur_c2_ndvi")])
 results <- nemeton_compute(
   massif_demo_units,
   layers,
-  indicators = c("indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_l2_fragmentation")
+  indicators = c("indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_l1_effet_lisiere")
 )
 #> Error:
 #> ! no valid constructor available for the argument list
 
 # Vue d'ensemble
-summary(results[, c("indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_l2_fragmentation")])
+summary(results[, c("indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_l1_effet_lisiere")])
 #> Error:
 #> ! object 'results' not found
 ```
@@ -320,7 +320,7 @@ Normalisez les indicateurs pour les rendre comparables (échelle 0-100) :
 # Normalisation min-max
 normalized <- normalize_indicators(
   results,
-  indicators = c("indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_l2_fragmentation"),
+  indicators = c("indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_l1_effet_lisiere"),
   method = "minmax"
 )
 #> Error:
@@ -374,7 +374,7 @@ Combinez plusieurs indicateurs en un indice unique :
 # Indice composite avec poids égaux
 composite <- create_composite_index(
   normalized,
-  indicators = c("indicateur_c2_ndvi_norm", "indicateur_w3_humidite_norm", "indicateur_l2_fragmentation_norm"),
+  indicators = c("indicateur_c2_ndvi_norm", "indicateur_w3_humidite_norm", "indicateur_l1_effet_lisiere_norm"),
   name = "ecosystem_health"
 )
 #> Error:
@@ -393,7 +393,7 @@ head(composite[, c("parcel_id", "forest_type", "ecosystem_health")])
 # Poids personnalisés (carbone 50%, paysage 30%, eau 20%)
 composite_weighted <- create_composite_index(
   normalized,
-  indicators = c("indicateur_c2_ndvi_norm", "indicateur_l2_fragmentation_norm", "indicateur_w3_humidite_norm"),
+  indicators = c("indicateur_c2_ndvi_norm", "indicateur_l1_effet_lisiere_norm", "indicateur_w3_humidite_norm"),
   weights = c(0.5, 0.3, 0.2),
   name = "conservation_index"
 )
@@ -465,7 +465,7 @@ plot_indicators_map(
 nemeton_radar(
   normalized,
   unit_id = "P01",
-  indicators = c("indicateur_c2_ndvi_norm", "indicateur_w3_humidite_norm", "indicateur_l2_fragmentation_norm"),
+  indicators = c("indicateur_c2_ndvi_norm", "indicateur_w3_humidite_norm", "indicateur_l1_effet_lisiere_norm"),
   title = "Profil multi-indicateurs - Parcelle P01"
 )
 #> Error:
@@ -487,7 +487,7 @@ results <- nemeton_compute(
   massif_demo_units,
   layers,
   indicators = c(
-    "indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_l2_fragmentation"
+    "indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_l1_effet_lisiere"
   )
 )
 #> Error:
@@ -497,7 +497,7 @@ results <- nemeton_compute(
 normalized <- normalize_indicators(
   results,
   indicators = c(
-    "indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_l2_fragmentation"
+    "indicateur_c2_ndvi", "indicateur_w3_humidite", "indicateur_l1_effet_lisiere"
   ),
   method = "minmax"
 )
@@ -507,7 +507,7 @@ normalized <- normalize_indicators(
 # 4. Créer un indice composite
 composite <- create_composite_index(
   normalized,
-  indicators = c("indicateur_c2_ndvi_norm", "indicateur_w3_humidite_norm", "indicateur_l2_fragmentation_norm"),
+  indicators = c("indicateur_c2_ndvi_norm", "indicateur_w3_humidite_norm", "indicateur_l1_effet_lisiere_norm"),
   weights = c(0.4, 0.4, 0.2),
   name = "forest_quality"
 )
@@ -635,7 +635,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.3        nemeton_0.175.0.9000
+#> [1] ggplot2_4.0.3   nemeton_0.176.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] omnibus_1.2.15       rappdirs_0.3.4       sass_0.4.10         

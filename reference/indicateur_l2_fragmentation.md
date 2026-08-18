@@ -1,7 +1,9 @@
-# Sylvosphere - Edge Effect (L1)
+# Sylvosphere - Edge Effect (L1), deprecated name
 
-Composite indicator (0-100) with 3 components: - Geometry (30 - Matrix
-contrast (40 - Exposure (30
+Deprecated since 0.176.0. The name announced the L2 fragmentation metric
+while the function computes the L1 edge effect. Use
+[`indicateur_l1_effet_lisiere`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_effet_lisiere.md),
+which returns the same values.
 
 ## Usage
 
@@ -39,16 +41,9 @@ indicateur_l2_fragmentation(
 
 ## Value
 
-Numeric vector of sylvosphere scores (0-100)
+Numeric vector of sylvosphere scores (0-100) – unchanged.
 
-## Examples
+## See also
 
-``` r
-if (FALSE) { # \dontrun{
-layers <- nemeton_layers(rasters = list(landcover = "landcover.tif"))
-results <- indicateur_l2_fragmentation(
-  units, layers,
-  forest_values = c(1, 2, 3), buffer = 50
-)
-} # }
-```
+[`migrer_colonnes_l`](https://pobsteta.github.io/nemeton/reference/migrer_colonnes_l.md)
+to rename the columns of an already computed dataset.

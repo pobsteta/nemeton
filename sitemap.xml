@@ -222,8 +222,10 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_e2_evitement.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_f1_fertilite.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_f2_erosion.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_l1_effet_lisiere.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_l2_fragmentation.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_l2_morcellement.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_l3_het_spectrale.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_n1_distance.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_n2_continuite.html</loc></url>
@@ -290,6 +292,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/microclimate_run.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/migrer_colonnes_l.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/monitoring_ingest.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/n_max_selfthinning.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ndp.html</loc></url>

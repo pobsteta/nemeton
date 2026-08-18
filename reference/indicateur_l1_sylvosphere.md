@@ -1,7 +1,9 @@
-# Landscape Fragmentation (L2)
+# Landscape Fragmentation (L2), deprecated name
 
-Calculates landscape fragmentation using landscapemetrics (COHESION +
-AI) when available, or shape index fallback. Returns a score 0-100.
+Deprecated since 0.176.0. The name announced the L1 sylvosphere while
+the function computes the L2 fragmentation metric. Use
+[`indicateur_l2_morcellement`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_morcellement.md),
+which returns the same values.
 
 ## Usage
 
@@ -39,12 +41,9 @@ indicateur_l1_sylvosphere(
 
 ## Value
 
-Numeric vector of fragmentation scores (0-100)
+Numeric vector of fragmentation scores (0-100) – unchanged.
 
-## Examples
+## See also
 
-``` r
-if (FALSE) { # \dontrun{
-results <- indicateur_l1_sylvosphere(units, layers, buffer = 1000)
-} # }
-```
+[`migrer_colonnes_l`](https://pobsteta.github.io/nemeton/reference/migrer_colonnes_l.md)
+to rename the columns of an already computed dataset.

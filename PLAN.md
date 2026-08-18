@@ -818,6 +818,63 @@ inspirer un épaississement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-18* (**v0.176.0**) : **famille L — le nom des
+fonctions dit enfin ce qu’elles calculent**. Suite directe de l’entrée
+précédente : le brief demandait d’échanger les libellés, la vérification
+a montré que les libellés étaient justes et que **le nom des deux
+fonctions** était le menteur. Trois options ont été posées (statu quo /
+échange / renommage) ; Pascal a tranché pour **traiter la cause**.
+[`indicateur_l2_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_fragmentation.md)
+devient
+**[`indicateur_l1_effet_lisiere()`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_effet_lisiere.md)**
+(sylvosphère : indice de forme, contraste de matrice, exposition) et
+[`indicateur_l1_sylvosphere()`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.md)
+devient
+**[`indicateur_l2_morcellement()`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_morcellement.md)**
+(fragmentation : landscapemetrics COHESION + AI). **Aucune valeur ne
+change** — vérifié par
+[`identical()`](https://rdrr.io/r/base/identical.html) sur le massif
+démo. **La décision qui structure le lot** : les deux anciens slugs sont
+**retirés définitivement, jamais recyclés**. L’échange en place aurait
+été plus élégant (`indicateur_l1_sylvosphere` redevenant la sylvosphère)
+mais les noms de colonnes sont **persistés** — parquet de projet,
+PostGIS, alias DB de l’app — et un slug recyclé au sens opposé ferait
+basculer en silence la signification de toute donnée déjà écrite, sans
+qu’aucune relecture puisse s’en apercevoir. D’où
+[`migrer_colonnes_l()`](https://pobsteta.github.io/nemeton/reference/migrer_colonnes_l.md),
+exportée : renomme les colonnes héritées **sans toucher aux valeurs**
+(variantes `_norm` comprises), rend inchangé un jeu déjà migré ou
+étranger — donc se laisse poser une fois pour toutes dans un chemin de
+lecture — et **avertit au lieu d’écraser** quand ancienne et nouvelle
+colonne coexistent. Les deux anciennes fonctions restent exportées,
+avertissent via
+[`.Deprecated()`](https://rdrr.io/r/base/Deprecated.html) et rendent
+exactement ce qu’elles rendaient. **Deux effets de bord réparés au
+passage** : (1) la famille L sort du croisement `code ↔︎ colonne`,
+[`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md)
+n’en compte plus qu’un — `F1`/`F2`, dont le cas est d’une autre nature
+(aucune fonction n’y contredit son propre titre : ce qui reste à
+trancher pour F est sémantique, pas typographique, et reste hors
+périmètre) ; (2) `.normalize_resolve_alias()` déduit le code court **du
+slug**, donc `"L1"` résolvait vers la fragmentation — sans conséquence
+tant que les deux colonnes sont des 0-100 natifs, mais c’était un piège
+armé, désarmé par construction. Surface touchée : `INDICATOR_FAMILIES`,
+[`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md),
+`.NORMALIZE_NATIVE_0_100` (anciens slugs **conservés** pour que les jeux
+non migrés restent normalisables), `R/i18n.R`, `R/nemeton-package.R`,
+NAMESPACE, 6 fichiers de tests, la vignette `getting-started_fr`, et 5
+`man/*.Rd` écrits à la main. Spec
+`specs/045-renommage-famille-L/spec.md`. Tests :
+`test-renommage-famille-l.R` (27 assertions) +
+`test-indicator-labels-pairing.R` (126). **Suite côté app** :
+`specs/brief-nemetonshiny-libelles-famille-L.md`, réécrit — plancher
+`nemeton (>= 0.176.0)`, listes de colonnes, et surtout
+[`migrer_colonnes_l()`](https://pobsteta.github.io/nemeton/reference/migrer_colonnes_l.md)
+à l’ouverture d’un projet existant, faute de quoi ses deux cartes L
+disparaissent de l’onglet Paysage.
+
+------------------------------------------------------------------------
+
 **Journal** — *2026-08-18* (**hors release, cycle dev 0.175.0.9000**) :
 **brief « libellés de la famille L » — la demande n’a pas été appliquée,
 et c’est le résultat**. Le brief `BRIEF-nemeton-libelles-famille-L.md`,

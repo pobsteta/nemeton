@@ -92,13 +92,17 @@ Qualite du sol et risque d’erosion
 
 Structure du paysage et connectivite
 
-- [`indicateur_l2_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_fragmentation.md)
+- [`indicateur_l1_effet_lisiere()`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_effet_lisiere.md)
   : Sylvosphere - Edge Effect (L1)
-- [`indicateur_l1_sylvosphere()`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.md)
+- [`indicateur_l2_morcellement()`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_morcellement.md)
   : Landscape Fragmentation (L2)
 - [`indicateur_l3_het_spectrale()`](https://pobsteta.github.io/nemeton/reference/indicateur_l3_het_spectrale.md)
   : Indicator L3 — Spectral beta diversity / landscape heterogeneity
   (family L)
+- [`indicateur_l2_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_fragmentation.md)
+  : Sylvosphere - Edge Effect (L1), deprecated name
+- [`indicateur_l1_sylvosphere()`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.md)
+  : Landscape Fragmentation (L2), deprecated name
 
 ## Famille T : Dynamique temporelle
 
@@ -347,6 +351,8 @@ Transformer et combiner les indicateurs
   : Create Family Composite Indices
 - [`invert_indicator()`](https://pobsteta.github.io/nemeton/reference/invert_indicator.md)
   : Invert indicator values
+- [`migrer_colonnes_l()`](https://pobsteta.github.io/nemeton/reference/migrer_colonnes_l.md)
+  : Rename legacy landscape (L) columns
 
 ## Visualisation
 

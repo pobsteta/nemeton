@@ -133,10 +133,10 @@ See the vignettes for comprehensive guides:
 - [`indicateur_f2_erosion`](https://pobsteta.github.io/nemeton/reference/indicateur_f2_erosion.md) -
   Erosion risk (F1)
 
-- [`indicateur_l2_fragmentation`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_fragmentation.md) -
+- [`indicateur_l1_effet_lisiere`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_effet_lisiere.md) -
   Sylvosphere, edge effect (L1)
 
-- [`indicateur_l1_sylvosphere`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.md) -
+- [`indicateur_l2_morcellement`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_morcellement.md) -
   Landscape fragmentation (L2)
 
 **Temporal Analysis:**
