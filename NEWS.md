@@ -1,3 +1,48 @@
+# nemeton 0.177.0 (2026-08-18)
+
+### Added — créer les UGF depuis le parcellaire forestier public ONF (spec 046)
+
+En forêt publique, la parcelle **cadastrale** n'est pas l'unité de gestion : la
+parcelle **forestière** l'est. Le cœur sait désormais aller la chercher.
+
+`load_onf_parcelles_source(aoi, crs, domanialite, territoire, max_parcelles,
+clip)` interroge le WFS ONF « Forêts publiques » (Carmen, producteur ONF,
+diffusion publique) et rend un `sf` où **une ligne = une parcelle = une UGF** :
+`id` (`F06831S-400`), `foret_id`, `foret_nom`, `parcelle`, `domaniale`,
+`nom_ugf` (« Forêt domaniale de Chaux — parcelle 400 »), `contenance` et
+`surface_ha`. Forêts domaniales **et** des collectivités, filtrables par
+`domanialite` ; métropole (`FR`) et les cinq territoires ultramarins
+(`GLP`, `MTQ`, `GUF`, `REU`, `MYT`), chacun dans son CRS natif.
+
+Mesuré en réel sur la forêt domaniale de Chaux : **217 parcelles, 2 105 ha,
+5,8 s** de bout en bout.
+
+Choix qui tiennent le résultat :
+
+- `clip = FALSE` par défaut — une UGF est la parcelle **entière**, on ne
+  fabrique pas d'échardes sur le bord de l'emprise ;
+- domanialité jointe depuis la couche des forêts (`cdom_frt`), avec repli sur le
+  libellé si cette couche échoue ;
+- les parties d'une même parcelle sont **refusionnées**, et les surfaces
+  mesurées après fusion ;
+- `max_parcelles` borne le volume et **alerte** quand le service annonce plus de
+  correspondances qu'il n'en rend — pas de troncature silencieuse ;
+- les faux succès du service (page HTML de son pare-feu, `ExceptionReport` OWS,
+  tous deux renvoyés en **HTTP 200**) sont détectés, pas laissés passer ;
+- `NULL` sur échec, `sf` 0 ligne sur emprise sans forêt publique : l'app peut
+  toujours retomber sur la sélection cadastrale.
+
+Limites assumées et documentées : grain = **parcelle, pas sous-parcelle** (une
+parcelle peut mélanger plusieurs peuplements) ; le paramètre WFS `FILTER` est
+rejeté par le pare-feu du service, donc sélection par emprise uniquement ;
+service en HTTP seul, à n'appeler que côté serveur ; licence non déclarée sur
+data.gouv.fr, l'ONF annonçant une réutilisation libre et gratuite — citer le
+producteur.
+
+Sources déclarées dans `inst/datasources/FR.json` (`onf_wfs`, `onf_parcelles`,
+`onf_forets_publiques`). 50 assertions, dont un test de fumée sur le service
+réel. Suite côté app : `specs/046-parcellaire-onf/brief-nemetonshiny.md`.
+
 # nemeton 0.176.0 (2026-08-18)
 
 ### Changed — famille L : le nom des fonctions dit enfin ce qu'elles calculent

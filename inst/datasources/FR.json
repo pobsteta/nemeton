@@ -42,6 +42,14 @@
       "https": true,
       "region": "sm1",
       "note": "S3-compatible (MinIO) object store hosting the THEIA / FORMS COG and VRT assets, served by the MESO@UM datacentre. Credentials are NOT stored here: the THEIA API key (access + secret, created at https://gate.stac.teledetection.fr) is a standard S3 SigV4 key pair. Set TLD_ACCESS_KEY and TLD_SECRET_KEY in a gitignored .Renviron, call theia_configure_s3() once per session, then GDAL reads /vsis3/ paths with native SigV4 signing — no Python / teledetection SDK needed."
+    },
+    "onf_wfs": {
+      "url": "http://ws.carmencarto.fr/WFS/105/ONF_Forets",
+      "version": "2.0.0",
+      "provider": "Office National des Forêts (ONF) — diffusion publique, service Carmen",
+      "crs": 2154,
+      "note": "HTTP only (no TLS endpoint). GML output only; the FILTER parameter is rejected by the service firewall, so queries are BBOX-driven. Overseas territories have their own endpoints: ONF_Forets_glp/_mtq (EPSG:32620), _guf (2972), _reu (2975), _myt (4471). Consumed by load_onf_parcelles_source().",
+      "license": "Not declared on data.gouv.fr; ONF announces free and open reuse — cite the producer."
     }
   },
   "layers": {
@@ -118,6 +126,16 @@
       "product": "nuage",
       "happign_layer": "IGNF_NUAGES-DE-POINTS-LIDAR-HD:dalle",
       "description": "LiDAR HD - Nuages de points COPC"
+    },
+    "onf_parcelles": {
+      "service": "onf_wfs",
+      "typename": "ms:PARC_PUBL_FR",
+      "description": "Parcelles forestières des forêts publiques (408 400 en métropole) — cadre de gestion ONF, graine d'UGF"
+    },
+    "onf_forets_publiques": {
+      "service": "onf_wfs",
+      "typename": "ms:FOR_PUBL_FR",
+      "description": "Périmètres des forêts publiques relevant du régime forestier (attribut cdom_frt : domaniale OUI/NON)"
     }
   },
   "datasets": {
