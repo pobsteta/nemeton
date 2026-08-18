@@ -105,9 +105,12 @@ reference:
   - title: "Famille L : Paysage"
     desc: "Structure du paysage et connectivite"
     contents:
+    - indicateur_l1_effet_lisiere
+    - indicateur_l2_morcellement
+    - indicateur_l3_het_spectrale
+    # Noms retires en 0.176.0 (spec 045), conserves deprecies.
     - indicateur_l2_fragmentation
     - indicateur_l1_sylvosphere
-    - indicateur_l3_het_spectrale
 
   - title: "Famille T : Dynamique temporelle"
     desc: "Anciennete des peuplements et changements d'occupation"
@@ -256,6 +259,7 @@ reference:
     - create_composite_index
     - create_family_index
     - invert_indicator
+    - migrer_colonnes_l
 
   - title: "Visualisation"
     desc: "Cartes et graphiques"
