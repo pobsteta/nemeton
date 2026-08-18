@@ -747,7 +747,7 @@ migrés restent normalisables), `R/i18n.R`, `R/nemeton-package.R`, NAMESPACE,
 la main. Spec `specs/045-renommage-famille-L/spec.md`. Tests :
 `test-renommage-famille-l.R` (27 assertions) + `test-indicator-labels-pairing.R`
 (126).
-**Suite côté app** : `specs/brief-nemetonshiny-libelles-famille-L.md`, réécrit —
+**Suite côté app** : `specs/brief-nemetonshiny-renommage-famille-L.md` —
 plancher `nemeton (>= 0.176.0)`, listes de colonnes, et surtout
 `migrer_colonnes_l()` à l'ouverture d'un projet existant, faute de quoi ses deux
 cartes L disparaissent de l'onglet Paysage.
@@ -792,7 +792,10 @@ langues, et `indicator_families()` confronté à `indicator_labels()` (CA-2 du
 brief). C'est le test que le brief demandait en CA-1, écrit à l'endroit juste :
 il interdit précisément l'échange qu'il réclamait. Aucun changement de valeur,
 aucun changement d'API — **pas de release**.
-**Suite côté app** : `specs/brief-nemetonshiny-libelles-famille-L.md`. Trois
+**Suite côté app** : brief émis ce jour-là sous le nom
+`brief-nemetonshiny-libelles-famille-L.md` — livré côté app en **v0.127.1**,
+puis réécrit et renommé `specs/brief-nemetonshiny-renommage-famille-L.md`
+quand le renommage a été décidé (entrée v0.176.0 ci-dessus). Trois
 tables indexées par nom de colonne y suivent le slug et s'inversent
 (`utils_i18n.R:2284-2285`, `mod_progress.R:316-317` — la barre de progression
 annonce « Paysage - Fragmentation » pendant qu'elle calcule la sylvosphère) ;

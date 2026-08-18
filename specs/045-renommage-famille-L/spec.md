@@ -115,7 +115,7 @@ croisement F reste documenté et verrouillé par test.
 
 ## 4. Suite côté `nemetonshiny`
 
-Brief : `specs/brief-nemetonshiny-libelles-famille-L.md` (réécrit). L'app doit
+Brief : `specs/brief-nemetonshiny-renommage-famille-L.md`. L'app doit
 adopter les nouveaux noms, appeler `migrer_colonnes_l()` à la relecture des
 projets existants, et cesser de tenir ses propres tables de libellés indexées
 par colonne (`utils_i18n.R`, `mod_progress.R`, `service_db.R`).

@@ -3,8 +3,10 @@
 **Dépôt cible** : `/home/pascal/dev/nemetonshiny`. Session dédiée requise.
 **Amont** : `nemeton` **v0.176.0** (spec 045). Plancher à monter.
 
-**Ce brief remplace** sa version du 2026-08-18 (qui concluait « rien à faire
-côté app, seulement trois tables de libellés à redresser »). La décision a
+**Ce brief remplace** sa version du 2026-08-18, émise sous le nom
+`brief-nemetonshiny-libelles-famille-L.md` et livrée côté app en **v0.127.1**
+(elle concluait « rien à faire côté app, seulement trois tables de libellés à
+redresser » — ce qui reste acquis). La décision a
 changé : plutôt que documenter un croisement, le cœur a **renommé les deux
 fonctions**, ce qui change les noms de colonnes.
 
