@@ -112,10 +112,12 @@ nemeton_radar(family_scores, unit_id = 1, mode = "family")
   \item \code{\link{indicateur_w1_reseau}} - Hydrographic density (W1)
   \item \code{\link{indicateur_w2_zones_humides}} - Wetland coverage (W2)
   \item \code{\link{indicateur_w3_humidite}} - Topographic Wetness Index (W3)
-  \item \code{\link{indicateur_f1_fertilite}} - Soil fertility (F1)
-  \item \code{\link{indicateur_f2_erosion}} - Erosion risk (F2)
-  \item \code{\link{indicateur_l2_fragmentation}} - Fragmentation (L1)
-  \item \code{\link{indicateur_l1_sylvosphere}} - Edge ratio (L2)
+  \item \code{\link{indicateur_f1_fertilite}} - Soil fertility (F2)
+  \item \code{\link{indicateur_f2_erosion}} - Erosion risk (F1)
+  \item \code{\link{indicateur_l2_fragmentation}} - Sylvosphere, edge
+effect (L1)
+  \item \code{\link{indicateur_l1_sylvosphere}} - Landscape
+fragmentation (L2)
 }
 
 \strong{Temporal Analysis:}
