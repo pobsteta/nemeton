@@ -867,7 +867,7 @@ NAMESPACE, 6 fichiers de tests, la vignette `getting-started_fr`, et 5
 `specs/045-renommage-famille-L/spec.md`. Tests :
 `test-renommage-famille-l.R` (27 assertions) +
 `test-indicator-labels-pairing.R` (126). **Suite côté app** :
-`specs/brief-nemetonshiny-libelles-famille-L.md`, réécrit — plancher
+`specs/brief-nemetonshiny-renommage-famille-L.md` — plancher
 `nemeton (>= 0.176.0)`, listes de colonnes, et surtout
 [`migrer_colonnes_l()`](https://pobsteta.github.io/nemeton/reference/migrer_colonnes_l.md)
 à l’ouverture d’un projet existant, faute de quoi ses deux cartes L
@@ -923,12 +923,15 @@ confronté à
 (CA-2 du brief). C’est le test que le brief demandait en CA-1, écrit à
 l’endroit juste : il interdit précisément l’échange qu’il réclamait.
 Aucun changement de valeur, aucun changement d’API — **pas de release**.
-**Suite côté app** : `specs/brief-nemetonshiny-libelles-famille-L.md`.
-Trois tables indexées par nom de colonne y suivent le slug et
-s’inversent (`utils_i18n.R:2284-2285`, `mod_progress.R:316-317` — la
-barre de progression annonce « Paysage - Fragmentation » pendant qu’elle
-calcule la sylvosphère) ; le remède est le même que pour
-`INDICATOR_FAMILIES` : lire
+**Suite côté app** : brief émis ce jour-là sous le nom
+`brief-nemetonshiny-libelles-famille-L.md` — livré côté app en
+**v0.127.1**, puis réécrit et renommé
+`specs/brief-nemetonshiny-renommage-famille-L.md` quand le renommage a
+été décidé (entrée v0.176.0 ci-dessus). Trois tables indexées par nom de
+colonne y suivent le slug et s’inversent (`utils_i18n.R:2284-2285`,
+`mod_progress.R:316-317` — la barre de progression annonce « Paysage -
+Fragmentation » pendant qu’elle calcule la sylvosphère) ; le remède est
+le même que pour `INDICATOR_FAMILIES` : lire
 [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md)
 au lieu de tenir une deuxième table. `service_db.R:458-459` aliase les
 colonnes DB à l’envers, mais l’aller-retour est sans perte — à ne
