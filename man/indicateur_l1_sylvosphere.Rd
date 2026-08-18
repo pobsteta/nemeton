@@ -2,7 +2,7 @@
 % Please edit documentation in R/indicators-families.R
 \name{indicateur_l1_sylvosphere}
 \alias{indicateur_l1_sylvosphere}
-\title{Landscape Fragmentation (L2)}
+\title{Landscape Fragmentation (L2), deprecated name}
 \usage{
 indicateur_l1_sylvosphere(
   units,
@@ -24,14 +24,14 @@ indicateur_l1_sylvosphere(
 \item{buffer}{Numeric. Buffer distance in meters around union of parcels.}
 }
 \value{
-Numeric vector of fragmentation scores (0-100)
+Numeric vector of fragmentation scores (0-100) -- unchanged.
 }
 \description{
-Calculates landscape fragmentation using landscapemetrics (COHESION + AI)
-when available, or shape index fallback. Returns a score 0-100.
+Deprecated since 0.176.0. The name announced the L1 sylvosphere while the
+function computes the L2 fragmentation metric. Use
+\code{\link{indicateur_l2_morcellement}}, which returns the same values.
 }
-\examples{
-\dontrun{
-results <- indicateur_l1_sylvosphere(units, layers, buffer = 1000)
-}
+\seealso{
+\code{\link{migrer_colonnes_l}} to rename the columns of an already computed
+dataset.
 }

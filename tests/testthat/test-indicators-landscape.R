@@ -1,19 +1,19 @@
 # Tests for Landscape Family Indicators (Famille L)
-# L1: indicateur_l2_fragmentation() - Sylvosphere (edge effect), score 0-100
-# L2: indicateur_l1_sylvosphere() - Landscape fragmentation, score 0-100
+# L1: indicateur_l1_effet_lisiere() - Sylvosphere (edge effect), score 0-100
+# L2: indicateur_l2_morcellement() - Landscape fragmentation, score 0-100
 
 # ==============================================================================
 # L1: SYLVOSPHERE (EDGE EFFECT)
 # ==============================================================================
 
-test_that("indicateur_l2_fragmentation returns score 0-100", {
+test_that("indicateur_l1_effet_lisiere returns score 0-100", {
   skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:5, ]
 
-  score <- indicateur_l2_fragmentation(
+  score <- indicateur_l1_effet_lisiere(
     units,
     layers,
     landcover_layer = "landcover",
@@ -28,13 +28,13 @@ test_that("indicateur_l2_fragmentation returns score 0-100", {
   expect_true(all(score >= 0 & score <= 100))
 })
 
-test_that("indicateur_l2_fragmentation works without layers (fallback)", {
+test_that("indicateur_l1_effet_lisiere works without layers (fallback)", {
   skip_if_not_installed("terra")
   data(massif_demo_units)
   units <- massif_demo_units[1:3, ]
 
   # No layers: geometry + exposure still work, contrast defaults to 50
-  score <- indicateur_l2_fragmentation(units)
+  score <- indicateur_l1_effet_lisiere(units)
 
   expect_type(score, "double")
   expect_length(score, 3)
@@ -42,14 +42,14 @@ test_that("indicateur_l2_fragmentation works without layers (fallback)", {
   expect_true(all(score >= 0 & score <= 100))
 })
 
-test_that("indicateur_l2_fragmentation geometry component varies with shape", {
+test_that("indicateur_l1_effet_lisiere geometry component varies with shape", {
   skip_if_not_installed("terra")
   data(massif_demo_units)
   units <- massif_demo_units[1:10, ]
 
   # Scores should vary across parcels with different shapes
 
-  score <- indicateur_l2_fragmentation(units)
+  score <- indicateur_l1_effet_lisiere(units)
 
   expect_length(score, 10)
   expect_true(all(score >= 0 & score <= 100))
@@ -60,24 +60,24 @@ test_that("indicateur_l2_fragmentation geometry component varies with shape", {
   }
 })
 
-test_that("indicateur_l2_fragmentation validates inputs", {
+test_that("indicateur_l1_effet_lisiere validates inputs", {
   skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   # Invalid units
   expect_error(
-    indicateur_l2_fragmentation(data.frame(x = 1:3), layers),
+    indicateur_l1_effet_lisiere(data.frame(x = 1:3), layers),
     "must be.*sf"
   )
 })
 
-test_that("indicateur_l2_fragmentation works for single parcel", {
+test_that("indicateur_l1_effet_lisiere works for single parcel", {
   skip_if_not_installed("terra")
   data(massif_demo_units)
   units <- massif_demo_units[1, ]
 
-  score <- indicateur_l2_fragmentation(units)
+  score <- indicateur_l1_effet_lisiere(units)
 
   expect_length(score, 1)
   expect_true(!is.na(score))
@@ -88,13 +88,13 @@ test_that("indicateur_l2_fragmentation works for single parcel", {
 # L2: LANDSCAPE FRAGMENTATION
 # ==============================================================================
 
-test_that("indicateur_l1_sylvosphere returns score 0-100", {
+test_that("indicateur_l2_morcellement returns score 0-100", {
   skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:5, ]
 
-  score <- indicateur_l1_sylvosphere(units)
+  score <- indicateur_l2_morcellement(units)
 
   # Test output
   expect_type(score, "double")
@@ -103,13 +103,13 @@ test_that("indicateur_l1_sylvosphere returns score 0-100", {
   expect_true(all(score >= 0 & score <= 100))
 })
 
-test_that("indicateur_l1_sylvosphere fallback uses shape index", {
+test_that("indicateur_l2_morcellement fallback uses shape index", {
   skip_if_not_installed("terra")
   data(massif_demo_units)
   units <- massif_demo_units[1:5, ]
 
   # Without layers, should use shape index fallback
-  score <- indicateur_l1_sylvosphere(units)
+  score <- indicateur_l2_morcellement(units)
 
   expect_type(score, "double")
   expect_length(score, 5)
@@ -117,7 +117,7 @@ test_that("indicateur_l1_sylvosphere fallback uses shape index", {
   expect_true(all(score >= 0 & score <= 100))
 })
 
-test_that("indicateur_l1_sylvosphere with layers uses landscapemetrics when available", {
+test_that("indicateur_l2_morcellement with layers uses landscapemetrics when available", {
   skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
@@ -125,7 +125,7 @@ test_that("indicateur_l1_sylvosphere with layers uses landscapemetrics when avai
   units <- massif_demo_units[1:5, ]
 
   # With layers - may use landscapemetrics if available, otherwise shape index
-  score <- indicateur_l1_sylvosphere(
+  score <- indicateur_l2_morcellement(
     units,
     layers,
     landcover_layer = "landcover",
@@ -139,29 +139,29 @@ test_that("indicateur_l1_sylvosphere with layers uses landscapemetrics when avai
   expect_true(all(score >= 0 & score <= 100))
 })
 
-test_that("indicateur_l1_sylvosphere validates inputs", {
+test_that("indicateur_l2_morcellement validates inputs", {
   skip_if_not_installed("terra")
   # Invalid units
   expect_error(
-    indicateur_l1_sylvosphere(data.frame(x = 1:3)),
+    indicateur_l2_morcellement(data.frame(x = 1:3)),
     "must be.*sf"
   )
 
   # Empty units
   data(massif_demo_units)
   expect_error(
-    indicateur_l1_sylvosphere(massif_demo_units[0, ]),
+    indicateur_l2_morcellement(massif_demo_units[0, ]),
     "empty|no features|nrow.*0"
   )
 })
 
-test_that("indicateur_l1_sylvosphere works for single parcel", {
+test_that("indicateur_l2_morcellement works for single parcel", {
   skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1, ]
 
-  score <- indicateur_l1_sylvosphere(units)
+  score <- indicateur_l2_morcellement(units)
 
   expect_length(score, 1)
   expect_true(!is.na(score))
@@ -181,13 +181,13 @@ test_that("Both landscape indicators work together", {
 
   # Calculate both indicators
   expect_no_error({
-    l1 <- indicateur_l2_fragmentation(
+    l1 <- indicateur_l1_effet_lisiere(
       units,
       layers,
       forest_values = c(1, 2, 3),
       buffer = 50
     )
-    l2 <- indicateur_l1_sylvosphere(units)
+    l2 <- indicateur_l2_morcellement(units)
   })
 
   # Both should return valid 0-100 scores
@@ -208,13 +208,13 @@ test_that("Landscape indicators can be added to units dataframe", {
   units <- massif_demo_units[1:3, ]
 
   # Add all landscape indicators as columns
-  units$L1_sylvosphere <- indicateur_l2_fragmentation(
+  units$L1_sylvosphere <- indicateur_l1_effet_lisiere(
     units,
     layers,
     forest_values = c(1, 2, 3),
     buffer = 50
   )
-  units$L2_fragmentation <- indicateur_l1_sylvosphere(units)
+  units$L2_fragmentation <- indicateur_l2_morcellement(units)
 
   # Check structure
   expect_true("L1_sylvosphere" %in% names(units))
@@ -235,13 +235,13 @@ test_that("Landscape indicators work with full dataset", {
   # Test on all parcels
   units <- massif_demo_units
 
-  l1 <- indicateur_l2_fragmentation(
+  l1 <- indicateur_l1_effet_lisiere(
     units,
     layers,
     forest_values = c(1, 2, 3),
     buffer = 50
   )
-  l2 <- indicateur_l1_sylvosphere(units)
+  l2 <- indicateur_l2_morcellement(units)
 
   expect_length(l1, nrow(massif_demo_units))
   expect_length(l2, nrow(massif_demo_units))

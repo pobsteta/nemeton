@@ -320,7 +320,7 @@ list_indicators <- function(category = "all", return_type = c("names", "details"
       # F - Soil Fertility (2)
       "indicateur_f1_fertilite", "indicateur_f2_erosion",
       # L - Landscape (2)
-      "indicateur_l1_sylvosphere", "indicateur_l2_fragmentation",
+      "indicateur_l1_effet_lisiere", "indicateur_l2_morcellement",
       # B - Biodiversity (3)
       "indicateur_b1_protection", "indicateur_b2_structure", "indicateur_b3_connectivite",
       # R - Risk/Resilience (4)
@@ -374,8 +374,8 @@ list_indicators <- function(category = "all", return_type = c("names", "details"
       "Water regulation via Topographic Wetness Index (W3)",
       "Soil fertility assessment (F1)",
       "Soil erosion risk (F2)",
-      "Sylvosphere landscape mosaic (L1)",
-      "Forest fragmentation metrics (L2)",
+      "Sylvosphere, edge effect (L1)",
+      "Landscape fragmentation (L2)",
       "Biodiversity protection status (B1)",
       "Structural diversity (B2)",
       "Habitat connectivity (B3)",

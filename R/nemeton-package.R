@@ -104,9 +104,9 @@
 #'   \item \code{\link{indicateur_w3_humidite}} - Topographic Wetness Index (W3)
 #'   \item \code{\link{indicateur_f1_fertilite}} - Soil fertility (F2)
 #'   \item \code{\link{indicateur_f2_erosion}} - Erosion risk (F1)
-#'   \item \code{\link{indicateur_l2_fragmentation}} - Sylvosphere, edge
+#'   \item \code{\link{indicateur_l1_effet_lisiere}} - Sylvosphere, edge
 #'     effect (L1)
-#'   \item \code{\link{indicateur_l1_sylvosphere}} - Landscape
+#'   \item \code{\link{indicateur_l2_morcellement}} - Landscape
 #'     fragmentation (L2)
 #' }
 #'

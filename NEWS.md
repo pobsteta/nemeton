@@ -1,3 +1,58 @@
+# nemeton 0.176.0 (2026-08-18)
+
+### Changed — famille L : le nom des fonctions dit enfin ce qu'elles calculent
+
+Les deux indicateurs de paysage portaient chacun le nom de la métrique de
+l'autre. Ils sont renommés ; **aucune valeur ne change**.
+
+| Avant | Après | Ce que la fonction calcule |
+|---|---|---|
+| `indicateur_l2_fragmentation()` | **`indicateur_l1_effet_lisiere()`** | sylvosphère / effet lisière (indice de forme, contraste de matrice, exposition) |
+| `indicateur_l1_sylvosphere()` | **`indicateur_l2_morcellement()`** | fragmentation paysagère (landscapemetrics COHESION + AI) |
+
+Une colonne porte le nom de la fonction qui la remplit — `compute_indicator()`
+résout la fonction par le nom de l'indicateur. Quand ce nom ment, tout
+consommateur doit connaître l'exception : `INDICATOR_FAMILIES` devait croiser
+l'appariement `code ↔ colonne` pour que les libellés restent justes, et ce
+croisement se lit comme une erreur. Il avait d'ailleurs produit une demande
+d'échanger les libellés, ce qui aurait retitré les cartes à faux.
+
+**Les deux anciens noms restent appelables** et rendent exactement les mêmes
+valeurs, avec un avertissement de dépréciation. Ils ne sont en revanche
+**jamais recyclés** : réutiliser un slug en lui donnant le sens opposé ferait
+basculer en silence la signification de toute donnée déjà écrite.
+
+### Added — `migrer_colonnes_l()`
+
+Renomme les colonnes héritées d'un jeu calculé avant 0.176.0 — parquet de
+projet, table PostGIS, GeoPackage en cache — **sans toucher aux valeurs**, les
+variantes `_norm` comprises. Un jeu déjà migré ou étranger revient inchangé,
+donc l'appel se laisse poser dans un chemin de lecture. Quand ancienne et
+nouvelle colonne coexistent, la nouvelle est conservée et un avertissement
+nomme le conflit.
+
+```r
+projet <- migrer_colonnes_l(projet)
+#> ✔ Renamed 2 legacy L columns: indicateur_l2_fragmentation ->
+#>   indicateur_l1_effet_lisiere, indicateur_l1_sylvosphere ->
+#>   indicateur_l2_morcellement
+```
+
+### Effets de bord réparés
+
+- **La famille L n'est plus croisée** : `indicator_labels()` ne compte plus
+  qu'un seul couple `code ↔ colonne` divergent, `F1`/`F2` — dont le cas est
+  d'une autre nature (aucune fonction n'y contredit son propre titre) et reste
+  documenté.
+- **`.normalize_resolve_alias("L1")`** déduisait le code court du slug : il
+  résolvait donc vers la fragmentation. Slug et code concordent désormais.
+  Sans conséquence jusqu'ici, les deux colonnes étant des 0-100 natifs — mais
+  c'était un piège armé.
+
+Spec 045. 27 assertions dédiées (`test-renommage-famille-l.R`) : mêmes valeurs
+qu'avant, avertissement nommant le remplaçant, migration sans perte, conflit
+signalé, jeux non migrés toujours normalisables.
+
 # nemeton 0.175.0 (2026-08-17)
 
 ### Added — `r5_applicabilite()` : savoir avant de calculer, et savoir pourquoi

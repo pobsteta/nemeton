@@ -94,7 +94,7 @@ test_that("F and L keep their legacy code/slug pairing", {
   expect_equal(l$indicators[[1]][1:2], c("L1", "L2"))
   expect_equal(
     l$column_names[[1]][1:2],
-    c("indicateur_l2_fragmentation", "indicateur_l1_sylvosphere")
+    c("indicateur_l1_effet_lisiere", "indicateur_l2_morcellement")
   )
 })
 
