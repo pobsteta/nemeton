@@ -1,19 +1,16 @@
 # Appariement code <-> colonne <-> libelle dans INDICATOR_FAMILIES
 #
-# Quatre lignes sur 41 sont croisees : le nom court et le slug de la colonne
-# ne se correspondent pas. Le croisement vient du **nom des fonctions**, pas
-# de l'appariement — une colonne porte le nom de la fonction qui la remplit
-# (`compute_indicator()` resout la fonction par le nom de l'indicateur), et
-# pour ces quatre-la le nom contredit ce que la fonction calcule :
+# Une colonne porte le nom de la fonction qui la remplit (`compute_indicator()`
+# resout la fonction par le nom de l'indicateur). Quand ce nom ment, le libelle
+# ne peut plus suivre le slug sans mentir a son tour.
 #
-#   indicateur_l2_fragmentation()  ->  sylvosphere / effet lisiere
-#                                      (indice de forme, contraste, exposition)
-#   indicateur_l1_sylvosphere()    ->  fragmentation paysagere
-#                                      (landscapemetrics COHESION + AI)
+# La famille L etait dans ce cas jusqu'en 0.176.0 : les deux fonctions portaient
+# chacune le nom de la metrique de l'autre. Elles ont ete RENOMMEES (spec 045)
+# plutot que les libelles echanges — L n'est donc plus croisee, et ses deux
+# anciens slugs sont retires definitivement.
 #
-# Les libelles suivent donc le code **et** les valeurs portees par la colonne.
-# Les echanger pour coller au slug retitrerait les cartes a faux : c'est
-# exactement ce que ces tests empechent.
+# Reste F, dont le croisement est d'une autre nature : aucune fonction n'y
+# contredit son propre titre, c'est le sens de `F1` qui est en suspens.
 
 test_that("les lignes croisees sont exactement les quatre documentees (CA-3)", {
   ind <- indicator_labels()
@@ -25,14 +22,17 @@ test_that("les lignes croisees sont exactement les quatre documentees (CA-3)", {
     paste0("indicateur_", tolower(ind$code), "_")
   )
 
-  expect_equal(ind$code[!slug_ok], c("F1", "F2", "L1", "L2"))
+  expect_equal(ind$code[!slug_ok], c("F1", "F2"))
   expect_equal(
     ind$column_name[!slug_ok],
-    c(
-      "indicateur_f2_erosion", "indicateur_f1_fertilite",
-      "indicateur_l2_fragmentation", "indicateur_l1_sylvosphere"
-    )
+    c("indicateur_f2_erosion", "indicateur_f1_fertilite")
   )
+
+  # Les deux slugs retires en 0.176.0 ne reviennent pas par une porte derobee.
+  expect_false(any(
+    c("indicateur_l2_fragmentation", "indicateur_l1_sylvosphere") %in%
+      ind$column_name
+  ))
 })
 
 test_that("le libelle decrit la grandeur portee par la colonne (CA-1)", {
@@ -50,16 +50,15 @@ test_that("le libelle decrit la grandeur portee par la colonne (CA-1)", {
   expect_match(f2$label_fr, "ertilit")
   expect_match(f2$label_en, "Fertility")
 
-  # L1 : la colonne s'appelle "fragmentation" mais porte les valeurs de
-  # sylvosphere — le libelle suit les valeurs, pas le slug.
+  # L1 : depuis le renommage, le slug, le code et les valeurs concordent.
   l1 <- by_code("L1")
-  expect_equal(l1$column_name, "indicateur_l2_fragmentation")
+  expect_equal(l1$column_name, "indicateur_l1_effet_lisiere")
   expect_match(l1$label_fr, "ylvosph")
   expect_match(l1$label_en, "Sylvosphere")
   expect_false(grepl("ragmentation", l1$label_fr))
 
   l2 <- by_code("L2")
-  expect_equal(l2$column_name, "indicateur_l1_sylvosphere")
+  expect_equal(l2$column_name, "indicateur_l2_morcellement")
   expect_match(l2$label_fr, "ragmentation")
   expect_match(l2$label_en, "Fragmentation")
   expect_false(grepl("ylvosph", l2$label_fr))

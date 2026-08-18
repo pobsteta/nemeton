@@ -1,55 +1,81 @@
-# BRIEF `nemetonshiny` — les trois tables L croisées côté app
+# BRIEF `nemetonshiny` — famille L : les deux colonnes sont renommées
 
 **Dépôt cible** : `/home/pascal/dev/nemetonshiny`. Session dédiée requise.
-**Portée** : trois tables de correspondance. Aucun calcul, aucun affichage de
-famille en cause.
+**Amont** : `nemeton` **v0.176.0** (spec 045). Plancher à monter.
 
-**Origine** : réponse au brief `BRIEF-nemeton-libelles-famille-L.md` (émis par
-la session app le 2026-08-18). **Sa demande n'a pas été appliquée** : les
-libellés du cœur sont justes, et les échanger aurait retitré les cartes à faux.
-Le détail est dans `PLAN.md` (entrée 2026-08-18). Ce qui reste à corriger est
-côté app, et n'a pas d'effet sur l'onglet Paysage.
+**Ce brief remplace** sa version du 2026-08-18 (qui concluait « rien à faire
+côté app, seulement trois tables de libellés à redresser »). La décision a
+changé : plutôt que documenter un croisement, le cœur a **renommé les deux
+fonctions**, ce qui change les noms de colonnes.
 
 ---
 
-## 1. Le fait établi
+## 1. Ce qui a bougé, et pourquoi
 
-Une colonne porte le nom de la **fonction qui la remplit** : `compute_indicator()`
-résout la fonction par le nom de l'indicateur (`R/indicators-core.R:199`). Or
-pour la famille L, le nom de la fonction contredit ce qu'elle calcule :
+Une colonne porte le nom de la fonction qui la remplit. Les deux fonctions de
+paysage portaient chacune le nom de la métrique de l'**autre** :
 
-| Fonction | Ce qu'elle calcule | Donc la colonne du même nom contient |
+| Avant | Après | Ce que ça calcule |
 |---|---|---|
-| `indicateur_l2_fragmentation()` | indice de forme + contraste de matrice + exposition → **sylvosphère / effet lisière** | des valeurs de sylvosphère |
-| `indicateur_l1_sylvosphere()` | landscapemetrics COHESION + AI → **fragmentation paysagère** | des valeurs de fragmentation |
+| `indicateur_l2_fragmentation` | **`indicateur_l1_effet_lisiere`** | sylvosphère / effet lisière |
+| `indicateur_l1_sylvosphere` | **`indicateur_l2_morcellement`** | fragmentation paysagère |
 
-Quatre sources concordent dans le cœur : le corps des fonctions, leurs titres
-roxygen (« Sylvosphere - Edge Effect (L1) » sur `l2_fragmentation`), l'en-tête de
-`tests/testthat/test-indicators-landscape.R`, et `R/i18n.R`.
+**Aucune valeur ne change.** Les libellés non plus : ils décrivaient déjà les
+valeurs. Ce sont les slugs qui cessent de mentir — et avec eux le croisement
+`code ↔ colonne` de la famille L, qui disparaît de `indicator_families()`.
 
-L'appariement `L1 -> indicateur_l2_fragmentation` du cœur est donc **correct**,
-et le libellé « Sylvosphère (effet lisière) » décrit bien les valeurs affichées.
-**L'onglet Paysage n'a rien à corriger** : ce que le lecteur prend pour « la
-carte de fragmentation » est identifié par le *slug* de la colonne, qui ment.
+Les deux anciens noms de **fonctions** restent appelables (avertissement de
+dépréciation, mêmes valeurs). Les deux anciens **slugs** ne sont jamais
+recyclés : c'est ce qui garantit qu'une donnée écrite avant la migration ne
+peut pas être relue à l'envers.
 
-## 2. Ce qui reste faux côté app
+## 2. À faire côté app
 
-Trois tables sont indexées **par nom de colonne** et suivent le slug, donc
-s'inversent :
+### 2.a — Plancher
 
-| Fichier | Ligne | Écrit | Devrait dire |
-|---|---|---|---|
-| `R/utils_i18n.R` | 2284 | `indicateur_l1_sylvosphere = "Sylvosphère (effet lisière)"` | Fragmentation paysagère / Landscape Fragmentation |
-| `R/utils_i18n.R` | 2285 | `indicateur_l2_fragmentation = "Fragmentation paysagère"` | Sylvosphère (effet lisière) / Sylvosphere (Edge Effect) |
-| `R/mod_progress.R` | 316 | `indicateur_l2_fragmentation = "Paysage - Fragmentation"` | Paysage - Sylvosphère |
-| `R/mod_progress.R` | 317 | `indicateur_l1_sylvosphere = "Paysage - Ratio bordure"` | Paysage - Fragmentation |
+`DESCRIPTION` : `nemeton (>= 0.176.0)`.
 
-Effet visible : pendant le calcul, la barre de progression annonce
-« Paysage - Fragmentation » alors qu'elle calcule la sylvosphère, et
-réciproquement. Sans conséquence sur les résultats.
+### 2.b — Listes de colonnes
 
-**Le mieux** est de ne pas maintenir une deuxième table du tout : les deux
-libellés sont déjà dans le cœur, indexables par colonne en une ligne —
+`R/service_compute.R:308` énumère les indicateurs à calculer. Remplacer :
+
+```r
+    # Landscape (L)
+    "indicateur_l1_effet_lisiere", "indicateur_l2_morcellement",
+    "indicateur_l3_het_spectrale",
+```
+
+Idem `R/service_db.R:514`. Le mieux reste de ne plus énumérer du tout :
+`nemeton::indicator_labels()$column_name` donne la liste, à jour par
+construction.
+
+### 2.c — Relecture des projets existants — **le point qui compte**
+
+Tout projet calculé avant 0.176.0 porte les anciens noms. À la lecture
+(parquet, PostGIS, GeoPackage en cache), passer le jeu par :
+
+```r
+data <- nemeton::migrer_colonnes_l(data)
+```
+
+Renommage sans perte, variantes `_norm` comprises ; un jeu déjà migré ou
+étranger revient inchangé, donc l'appel se laisse poser une fois pour toutes
+dans le chemin de lecture. Sans lui, les colonnes L d'un ancien projet
+n'apparaîtront simplement plus dans l'onglet Paysage.
+
+### 2.d — Les trois tables indexées par colonne
+
+Elles suivaient le slug, donc s'inversaient. Elles deviennent **justes** si on
+les réécrit avec les nouveaux noms — mais l'occasion est bonne de les
+supprimer :
+
+| Fichier | Ligne | Aujourd'hui |
+|---|---|---|
+| `R/utils_i18n.R` | 2284-2285 | libellés indexés par colonne, inversés |
+| `R/mod_progress.R` | 316-317 | « Paysage - Fragmentation » affiché pendant le calcul de la sylvosphère |
+| `R/service_db.R` | 458-459 | alias DB inversés (aller-retour sans perte, donc sans urgence) |
+
+Pour les deux premières, une ligne suffit :
 
 ```r
 lbl <- stats::setNames(
@@ -58,31 +84,23 @@ lbl <- stats::setNames(
 )
 ```
 
-C'est le même mouvement que le dé-fork d'`INDICATOR_FAMILIES` : une source, pas
-trois.
+Pour `service_db.R`, renommer les colonnes DB imposerait une migration : à ne
+faire que si ces noms sont un jour exposés. Ils sont cohérents en interne.
 
-## 3. Point mineur, sans urgence
+## 3. Recette
 
-`R/service_db.R:458-459` aliase les colonnes DB à l'envers
-(`landscape_edge_ratio <- indicateur_l1_sylvosphere`, qui porte la
-fragmentation). L'aller-retour reste **sans perte** — la même table sert à lire
-et à écrire — donc aucune donnée n'est fausse ; seul quelqu'un qui interroge la
-base par ses propres noms est induit en erreur. À traiter si les noms DB sont
-un jour exposés, pas avant : les renommer impose une migration.
+1. Un projet **neuf** produit `indicateur_l1_effet_lisiere` et
+   `indicateur_l2_morcellement` ; l'onglet Paysage affiche « Sylvosphère (effet
+   lisière) » et « Fragmentation paysagère » sur les mêmes cartes qu'avant, aux
+   mêmes valeurs.
+2. Un projet **ancien** rouvert affiche toujours ses deux cartes L — c'est le
+   test de `migrer_colonnes_l()`.
+3. La barre de progression annonce la bonne métrique.
 
-## 4. Côté `nemeton`
+## 4. Côté `nemeton` — livré
 
-**Livré** (branche `fix/libelles-famille-L`, aucune release nécessaire) :
-
-- `R/nemeton-package.R` — quatre descriptions d'indicateurs corrigées (les deux
-  L annonçaient la mauvaise grandeur, les deux F le mauvais code court).
-- Section *Column pairing* d'`indicator_families()` — dit désormais **d'où vient**
-  le croisement (le nom des fonctions) et pourquoi échanger les libellés
-  retitrerait les cartes à faux.
-- `tests/testthat/test-indicator-labels-pairing.R` — 125 assertions : les quatre
-  lignes croisées sont exactement `F1 F2 L1 L2` sur 41 (balayage structurel), le
-  libellé et l'infobulle décrivent la grandeur portée par la colonne, et
-  `indicator_families()` ne contredit pas `indicator_labels()` dans les deux
-  langues.
-
-Aucun changement de valeur, aucun changement d'API.
+`indicateur_l1_effet_lisiere()`, `indicateur_l2_morcellement()`,
+`migrer_colonnes_l()` exportées ; anciens noms dépréciés ; `INDICATOR_FAMILIES`,
+`list_indicators()`, la normalisation et l'i18n alignés ; spec 045 ;
+`test-renommage-famille-l.R` (27 assertions) et `test-indicator-labels-pairing.R`
+(126) verrouillent l'ensemble.

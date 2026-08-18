@@ -341,7 +341,7 @@ test_that("indicateur_f2_erosion returns expected structure", {
   expect_length(result, 3)
 })
 
-test_that("indicateur_l2_fragmentation returns expected structure", {
+test_that("indicateur_l1_effet_lisiere returns expected structure", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
@@ -350,7 +350,7 @@ test_that("indicateur_l2_fragmentation returns expected structure", {
   layers <- list()
 
   result <- tryCatch({
-    nemeton:::indicateur_l2_fragmentation(units, layers = layers)
+    nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)
   }, error = function(e) {
     rep(NA_real_, nrow(units))
   })
@@ -358,7 +358,7 @@ test_that("indicateur_l2_fragmentation returns expected structure", {
   expect_length(result, 3)
 })
 
-test_that("indicateur_l1_sylvosphere returns expected structure", {
+test_that("indicateur_l2_morcellement returns expected structure", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
@@ -367,7 +367,7 @@ test_that("indicateur_l1_sylvosphere returns expected structure", {
   layers <- list()
 
   result <- tryCatch({
-    nemeton:::indicateur_l1_sylvosphere(units, layers = layers)
+    nemeton:::indicateur_l2_morcellement(units, layers = layers)
   }, error = function(e) {
     rep(NA_real_, nrow(units))
   })
@@ -515,23 +515,23 @@ test_that("indicateur_c1_biomasse validates sf input", {
 # Landscape fallback (shape index)
 # ==============================================================================
 
-test_that("indicateur_l1_sylvosphere uses shape index fallback", {
+test_that("indicateur_l2_morcellement uses shape index fallback", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   # No layers -> uses shape index fallback
-  result <- nemeton:::indicateur_l1_sylvosphere(units, layers = NULL)
+  result <- nemeton:::indicateur_l2_morcellement(units, layers = NULL)
   expect_length(result, 2)
   expect_true(all(result >= 0 & result <= 100))
 })
 
-test_that("indicateur_l1_sylvosphere validates empty units", {
+test_that("indicateur_l2_morcellement validates empty units", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   empty_units <- units[0, ]
   expect_error(
-    nemeton:::indicateur_l1_sylvosphere(empty_units),
+    nemeton:::indicateur_l2_morcellement(empty_units),
     "empty"
   )
 })
@@ -665,10 +665,10 @@ test_that("indicateur_c1_biomasse BD Foret path", {
 # ==============================================================================
 
 # ==============================================================================
-# indicateur_l2_fragmentation - with mock landcover
+# indicateur_l1_effet_lisiere - with mock landcover
 # ==============================================================================
 
-test_that("indicateur_l2_fragmentation with landcover layer", {
+test_that("indicateur_l1_effet_lisiere with landcover layer", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
@@ -682,28 +682,28 @@ test_that("indicateur_l2_fragmentation with landcover layer", {
   terra::values(lc) <- vals
 
   layers <- make_mock_layers(rasters = list(landcover = lc))
-  result <- nemeton:::indicateur_l2_fragmentation(units, layers = layers)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
   expect_true(all(result >= 0 & result <= 100))
 })
 
-test_that("indicateur_l2_fragmentation without layers uses shape fallback", {
+test_that("indicateur_l1_effet_lisiere without layers uses shape fallback", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 3)
-  result <- nemeton:::indicateur_l2_fragmentation(units, layers = NULL)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = NULL)
   expect_length(result, 3)
   # Without landcover, contrast defaults to 50; should still compute geometry + exposure
   expect_true(all(!is.na(result)))
   expect_true(all(result >= 0 & result <= 100))
 })
 
-test_that("indicateur_l2_fragmentation validates sf input", {
+test_that("indicateur_l1_effet_lisiere validates sf input", {
   skip_if_not_installed("terra")
   expect_error(
-    nemeton:::indicateur_l2_fragmentation(data.frame(x = 1)),
+    nemeton:::indicateur_l1_effet_lisiere(data.frame(x = 1)),
     "sf"
   )
 })
@@ -1068,22 +1068,22 @@ test_that("calculate_twi_grass requires fasterRaster package", {
 })
 
 # ==============================================================================
-# indicateur_l1_sylvosphere - shape index fallback
+# indicateur_l2_morcellement - shape index fallback
 # ==============================================================================
 
-test_that("indicateur_l1_sylvosphere shape index fallback scores", {
+test_that("indicateur_l2_morcellement shape index fallback scores", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 3)
   # layers = NULL, no landcover -> shape index fallback
-  result <- nemeton:::indicateur_l1_sylvosphere(units, layers = NULL)
+  result <- nemeton:::indicateur_l2_morcellement(units, layers = NULL)
   expect_length(result, 3)
   # For regular squares, shape index ~ 1.128, so scores ~ 100/1.128 ~ 88.6
   expect_true(all(result > 0 & result <= 100))
 })
 
-test_that("indicateur_l1_sylvosphere with landcover (no landscapemetrics)", {
+test_that("indicateur_l2_morcellement with landcover (no landscapemetrics)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
@@ -1098,12 +1098,12 @@ test_that("indicateur_l1_sylvosphere with landcover (no landscapemetrics)", {
 
   if (!requireNamespace("landscapemetrics", quietly = TRUE)) {
     # Without landscapemetrics, should fall back to shape index
-    result <- nemeton:::indicateur_l1_sylvosphere(units, layers = layers)
+    result <- nemeton:::indicateur_l2_morcellement(units, layers = layers)
     expect_length(result, 2)
     expect_true(all(result > 0 & result <= 100))
   } else {
     # With landscapemetrics, may use COHESION + AI or fallback
-    result <- nemeton:::indicateur_l1_sylvosphere(units, layers = layers)
+    result <- nemeton:::indicateur_l2_morcellement(units, layers = layers)
     expect_length(result, 2)
     expect_true(all(result >= 0 & result <= 100))
   }
@@ -1423,11 +1423,11 @@ test_that("indicateur_n3_naturalite delegates to composite", {
 # indicateur_l1_sylvosphere_ratio alias
 # ==============================================================================
 
-test_that("indicateur_l1_sylvosphere_ratio delegates to indicateur_l1_sylvosphere", {
+test_that("indicateur_l1_sylvosphere_ratio delegates to indicateur_l2_morcellement", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
-  result1 <- nemeton:::indicateur_l1_sylvosphere(units, layers = NULL)
+  result1 <- nemeton:::indicateur_l2_morcellement(units, layers = NULL)
   result2 <- nemeton:::indicateur_l1_sylvosphere_ratio(units, layers = NULL)
   expect_equal(result1, result2)
 })
@@ -2034,31 +2034,31 @@ test_that("indicateur_f2_erosion: LiDAR MNT preferred over regular DEM", {
 })
 
 # ==============================================================================
-# 8. indicateur_l2_fragmentation
+# 8. indicateur_l1_effet_lisiere
 # ==============================================================================
 
-test_that("indicateur_l2_fragmentation: geometry component (shape index)", {
+test_that("indicateur_l1_effet_lisiere: geometry component (shape index)", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   # No layers -> only geometry + exposure components
-  result <- nemeton:::indicateur_l2_fragmentation(units, layers = NULL)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = NULL)
   expect_length(result, 3)
   expect_true(all(!is.na(result)))
   expect_true(all(result >= 0 & result <= 100))
 })
 
-test_that("indicateur_l2_fragmentation: no landcover yields neutral contrast", {
+test_that("indicateur_l1_effet_lisiere: no landcover yields neutral contrast", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   # Empty layers (has class but no landcover raster)
   layers <- create_test_layers(rasters = list())
-  result <- nemeton:::indicateur_l2_fragmentation(units, layers = layers)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
   expect_true(all(result >= 0 & result <= 100))
 })
 
-test_that("indicateur_l2_fragmentation: with landcover raster computes contrast", {
+test_that("indicateur_l1_effet_lisiere: with landcover raster computes contrast", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   lc <- create_test_raster(values = "constant", res = 10)
@@ -2067,21 +2067,21 @@ test_that("indicateur_l2_fragmentation: with landcover raster computes contrast"
   terra::values(lc) <- vals
 
   layers <- create_test_layers(rasters = list(landcover = lc))
-  result <- nemeton:::indicateur_l2_fragmentation(units, layers = layers)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
   expect_true(all(result >= 0 & result <= 100))
 })
 
-test_that("indicateur_l2_fragmentation: non-sf input errors", {
+test_that("indicateur_l1_effet_lisiere: non-sf input errors", {
   skip_if_not_installed("terra")
   expect_error(
-    nemeton:::indicateur_l2_fragmentation(data.frame(x = 1)),
+    nemeton:::indicateur_l1_effet_lisiere(data.frame(x = 1)),
     "sf"
   )
 })
 
-test_that("indicateur_l2_fragmentation: forest_cover fallback for landcover", {
+test_that("indicateur_l1_effet_lisiere: forest_cover fallback for landcover", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   lc <- create_test_raster(values = "constant", res = 10)
@@ -2090,15 +2090,15 @@ test_that("indicateur_l2_fragmentation: forest_cover fallback for landcover", {
 
   # Use "forest_cover" name instead of "landcover"
   layers <- create_test_layers(rasters = list(forest_cover = lc))
-  result <- nemeton:::indicateur_l2_fragmentation(units, layers = layers)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
 })
 
-test_that("indicateur_l2_fragmentation: single unit works", {
+test_that("indicateur_l1_effet_lisiere: single unit works", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
-  result <- nemeton:::indicateur_l2_fragmentation(units, layers = NULL)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = NULL)
   expect_length(result, 1)
   expect_true(!is.na(result))
   expect_true(result >= 0 & result <= 100)
@@ -2472,7 +2472,7 @@ test_that("indicateur_w1_reseau: crossing stream gives full proximity bonus", {
   expect_true(result >= 50)
 })
 
-test_that("indicateur_l2_fragmentation: returns scores in [0, 100] for irregular parcels", {
+test_that("indicateur_l1_effet_lisiere: returns scores in [0, 100] for irregular parcels", {
   skip_if_not_installed("terra")
   # Create irregular polygon
   poly <- sf::st_polygon(list(matrix(
@@ -2489,7 +2489,7 @@ test_that("indicateur_l2_fragmentation: returns scores in [0, 100] for irregular
     geometry = sf::st_sfc(poly, crs = 2154)
   )
 
-  result <- nemeton:::indicateur_l2_fragmentation(units, layers = NULL)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = NULL)
   expect_length(result, 1)
   expect_true(!is.na(result))
   expect_true(result >= 0 & result <= 100)

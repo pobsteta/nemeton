@@ -518,6 +518,8 @@ invert_indicator <- function(data,
   "indicateur_a1_couverture", "indicateur_a2_qualite_air", "indicateur_a3_microclimat",
   "indicateur_a4_tamponnement", "indicateur_a5_rafraichissement",
   "indicateur_f1_fertilite", "indicateur_f2_erosion",
+  "indicateur_l1_effet_lisiere", "indicateur_l2_morcellement",
+  # Slugs retires en 0.176.0 (spec 045), gardes pour les jeux non migres.
   "indicateur_l1_sylvosphere", "indicateur_l2_fragmentation",
   "indicateur_t1_anciennete", "indicateur_t2_changement",
   "indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse",

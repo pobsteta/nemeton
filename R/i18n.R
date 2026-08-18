@@ -220,6 +220,9 @@ msg_error <- function(key, ...) {
     soil_erosion_calculated = "Calculated erosion risk (slope \u00d7 land cover)",
 
     # v0.2.0 - Family L: Landscape/Esth\u00e9tique
+    indicateur_l1_effet_lisiere = "Sylvosphere - edge effect (L: Landscape/Esth\u00e9tique)",
+    indicateur_l2_morcellement = "Landscape fragmentation (L: Landscape/Esth\u00e9tique)",
+    # Slugs retires en 0.176.0 (spec 045), gardes pour les appels deprecies.
     indicateur_l2_fragmentation = "Sylvosphere - edge effect (L: Landscape/Esth\u00e9tique)",
     indicateur_l1_sylvosphere = "Landscape fragmentation (L: Landscape/Esth\u00e9tique)",
     landscape_patches_detected = "Detected %d forest patches in buffer zone",
@@ -436,6 +439,9 @@ msg_error <- function(key, ...) {
     soil_erosion_calculated = "Risque d'\u00e9rosion calcul\u00e9 (pente \u00d7 couvert)",
 
     # v0.2.0 - Famille L : Landscape/Esth\u00e9tique
+    indicateur_l1_effet_lisiere = "Sylvosph\u00e8re - effet lisi\u00e8re (L: Landscape/Esth\u00e9tique)",
+    indicateur_l2_morcellement = "Fragmentation paysag\u00e8re (L: Landscape/Esth\u00e9tique)",
+    # Slugs retires en 0.176.0 (spec 045), gardes pour les appels deprecies.
     indicateur_l2_fragmentation = "Sylvosph\u00e8re - effet lisi\u00e8re (L: Landscape/Esth\u00e9tique)",
     indicateur_l1_sylvosphere = "Fragmentation paysag\u00e8re (L: Landscape/Esth\u00e9tique)",
     landscape_patches_detected = "%d taches foresti\u00e8res d\u00e9tect\u00e9es dans la zone tampon",

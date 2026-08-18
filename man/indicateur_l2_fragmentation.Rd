@@ -2,7 +2,7 @@
 % Please edit documentation in R/indicators-families.R
 \name{indicateur_l2_fragmentation}
 \alias{indicateur_l2_fragmentation}
-\title{Sylvosphere - Edge Effect (L1)}
+\title{Sylvosphere - Edge Effect (L1), deprecated name}
 \usage{
 indicateur_l2_fragmentation(
   units,
@@ -24,20 +24,14 @@ indicateur_l2_fragmentation(
 \item{buffer}{Numeric. Buffer distance (meters) for contrast analysis. Default 50m.}
 }
 \value{
-Numeric vector of sylvosphere scores (0-100)
+Numeric vector of sylvosphere scores (0-100) -- unchanged.
 }
 \description{
-Composite indicator (0-100) with 3 components:
-- Geometry (30%): shape index measuring parcel irregularity
-- Matrix contrast (40%): land use contrast in buffer zone (OSO classes)
-- Exposure (30%): wind (60%) and sun (40%) exposure based on boundary orientation
+Deprecated since 0.176.0. The name announced the L2 fragmentation metric
+while the function computes the L1 edge effect. Use
+\code{\link{indicateur_l1_effet_lisiere}}, which returns the same values.
 }
-\examples{
-\dontrun{
-layers <- nemeton_layers(rasters = list(landcover = "landcover.tif"))
-results <- indicateur_l2_fragmentation(
-  units, layers,
-  forest_values = c(1, 2, 3), buffer = 50
-)
-}
+\seealso{
+\code{\link{migrer_colonnes_l}} to rename the columns of an already computed
+dataset.
 }

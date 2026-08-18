@@ -23,8 +23,8 @@ test_that("list_indicators returns all 31 indicator names by default", {
   expect_true("indicateur_w3_humidite" %in% indicators)
   expect_true("indicateur_f1_fertilite" %in% indicators)
   expect_true("indicateur_f2_erosion" %in% indicators)
-  expect_true("indicateur_l2_fragmentation" %in% indicators)
-  expect_true("indicateur_l1_sylvosphere" %in% indicators)
+  expect_true("indicateur_l1_effet_lisiere" %in% indicators)
+  expect_true("indicateur_l2_morcellement" %in% indicators)
   expect_true("indicateur_b1_protection" %in% indicators)
   expect_true("indicateur_b2_structure" %in% indicators)
   expect_true("indicateur_b3_connectivite" %in% indicators)
@@ -99,7 +99,7 @@ test_that("list_indicators filters by category = 'biophysical'", {
 
   expect_false("indicateur_s2_bati" %in% biophysical)
   expect_false("indicateur_r1_feu" %in% biophysical)
-  expect_false("indicateur_l2_fragmentation" %in% biophysical)
+  expect_false("indicateur_l1_effet_lisiere" %in% biophysical)
 })
 
 test_that("list_indicators filters by category = 'risk'", {
@@ -130,8 +130,8 @@ test_that("list_indicators filters by category = 'landscape'", {
   landscape <- list_indicators(category = "landscape")
 
   expect_length(landscape, 2)
-  expect_true("indicateur_l2_fragmentation" %in% landscape)
-  expect_true("indicateur_l1_sylvosphere" %in% landscape)
+  expect_true("indicateur_l1_effet_lisiere" %in% landscape)
+  expect_true("indicateur_l2_morcellement" %in% landscape)
   expect_false("indicateur_c1_biomasse" %in% landscape)
 })
 
@@ -432,14 +432,14 @@ test_that("nemeton_compute computes multiple indicators at once", {
   result <- suppressWarnings(
     nemeton_compute(
       units, layers,
-      indicators = c("indicateur_c1_biomasse", "indicateur_l2_fragmentation"),
+      indicators = c("indicateur_c1_biomasse", "indicateur_l1_effet_lisiere"),
       preprocess = FALSE,
       forest_values = c(1, 2, 3)
     )
   )
 
   expect_true("indicateur_c1_biomasse" %in% names(result))
-  expect_true("indicateur_l2_fragmentation" %in% names(result))
+  expect_true("indicateur_l1_effet_lisiere" %in% names(result))
   expect_equal(nrow(result), nrow(units))
 })
 
@@ -770,16 +770,16 @@ test_that("nemeton_compute passes extra arguments through ...", {
     rasters = list(landcover = temp_files$landcover)
   )
 
-  # forest_values is passed through ... to indicateur_l2_fragmentation
+  # forest_values is passed through ... to indicateur_l1_effet_lisiere
   result <- nemeton_compute(
     units, layers,
-    indicators = "indicateur_l2_fragmentation",
+    indicators = "indicateur_l1_effet_lisiere",
     preprocess = FALSE,
     forest_values = c(1, 2, 3)
   )
 
   expect_s3_class(result, "sf")
-  expect_true("indicateur_l2_fragmentation" %in% names(result))
+  expect_true("indicateur_l1_effet_lisiere" %in% names(result))
 })
 
 test_that("nemeton_compute result is still an sf object", {

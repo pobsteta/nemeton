@@ -105,10 +105,10 @@ test_that("Full workflow with real parcel and synthetic layers", {
   )
 
   # Compute indicators with preprocessing
-  # Note: forest_values causes issues with indicateur_c1_biomasse, so we only use it for indicateur_l2_fragmentation
+  # Note: forest_values causes issues with indicateur_c1_biomasse, so we only use it for indicateur_l1_effet_lisiere
   result <- nemeton_compute(
     units, layers,
-    indicators = c("indicateur_c1_biomasse", "indicateur_l2_fragmentation"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_l1_effet_lisiere"),
     preprocess = TRUE
   )
 
@@ -118,7 +118,7 @@ test_that("Full workflow with real parcel and synthetic layers", {
 
   # Check that indicator columns were added
   expect_true("indicateur_c1_biomasse" %in% names(result))
-  expect_true("indicateur_l2_fragmentation" %in% names(result))
+  expect_true("indicateur_l1_effet_lisiere" %in% names(result))
 
   # Check metadata
   meta <- attr(result, "metadata")
@@ -128,7 +128,7 @@ test_that("Full workflow with real parcel and synthetic layers", {
 
   # Indicator values should be present
   expect_false(is.na(result$indicateur_c1_biomasse))
-  expect_false(is.na(result$indicateur_l2_fragmentation))
+  expect_false(is.na(result$indicateur_l1_effet_lisiere))
 })
 
 test_that("Real parcel with subset of indicators", {
@@ -162,18 +162,18 @@ test_that("Real parcel with subset of indicators", {
   # Note: indicators="all" + forest_values causes issues with some indicators
   result <- nemeton_compute(
     units, layers,
-    indicators = c("indicateur_c1_biomasse", "indicateur_l2_fragmentation"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_l1_effet_lisiere"),
     preprocess = TRUE
   )
 
   # Should have the requested indicator columns
   expect_true("indicateur_c1_biomasse" %in% names(result))
-  expect_true("indicateur_l2_fragmentation" %in% names(result))
+  expect_true("indicateur_l1_effet_lisiere" %in% names(result))
 
   # Check that indicateur_c1_biomasse (computed from attributes) is valid
   expect_true(result$indicateur_c1_biomasse >= 0)
-  # Check indicateur_l2_fragmentation (computed from landcover) is valid
-  expect_true(result$indicateur_l2_fragmentation >= 0 && result$indicateur_l2_fragmentation <= 100)
+  # Check indicateur_l1_effet_lisiere (computed from landcover) is valid
+  expect_true(result$indicateur_l1_effet_lisiere >= 0 && result$indicateur_l1_effet_lisiere <= 100)
 })
 
 test_that("Real parcel survives CRS harmonization", {
