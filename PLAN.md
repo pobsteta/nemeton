@@ -818,6 +818,67 @@ inspirer un épaississement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-18* (**hors release, cycle dev 0.175.0.9000**) :
+**brief « libellés de la famille L » — la demande n’a pas été appliquée,
+et c’est le résultat**. Le brief `BRIEF-nemeton-libelles-famille-L.md`,
+émis par la session app après le dé-fork d’`INDICATOR_FAMILIES`,
+demandait d’échanger les libellés de `L1` et `L2` : `L1` est apparié à
+`indicateur_l2_fragmentation` mais libellé « Sylvosphère (effet lisière)
+», donc le libellé suivrait le code au lieu de la colonne. **Vérifié :
+l’échange aurait retitré les cartes à faux.** Une colonne porte le nom
+de la **fonction qui la remplit** (`compute_indicator()` résout la
+fonction par le nom de l’indicateur, `R/indicators-core.R:199`), et pour
+la famille L le nom de la fonction contredit ce qu’elle calcule :
+[`indicateur_l2_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_fragmentation.md)
+a pour titre roxygen « Sylvosphere - Edge Effect (L1) » et calcule
+indice de forme + contraste de matrice + exposition, tandis
+qu’[`indicateur_l1_sylvosphere()`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.md)
+a pour titre « Landscape Fragmentation (L2) » et appelle
+landscapemetrics (COHESION + AI). La colonne au slug « fragmentation »
+**contient donc de la sylvosphère**. Quatre sources concordent — corps
+des fonctions, titres roxygen, en-tête de `test-indicators-landscape.R`,
+et `R/i18n.R` qui traduit déjà `indicateur_l2_fragmentation` par «
+Sylvosphère - effet lisière ». L’appariement du cœur est juste, le
+libellé décrit bien les valeurs affichées, et l’onglet Paysage n’avait
+rien de faux : ce que le lecteur prend pour « la carte de fragmentation
+» est identifié par le slug, qui ment. C’est la deuxième fois en trois
+jours qu’un brief pose en cause une fonction du cœur qui, vérification
+faite, fait ce qu’il faut (cf. v0.174.0, CA-1) — la lecture du slug
+tient lieu de lecture du corps. **Livré quand même**, parce que le brief
+pointait une vraie zone d’ambiguïté : (1) `R/nemeton-package.R`
+annonçait « `indicateur_l2_fragmentation` - Fragmentation (L1) » et «
+`indicateur_l1_sylvosphere` - Edge ratio (L2) », soit **la mauvaise
+grandeur pour les deux**, et le mauvais code court pour les deux F —
+corrigé, `man/nemeton-package.Rd` à la main. (2) La section *Column
+pairing*
+d’[`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md)
+disait *que* le croisement existe sans dire **d’où** il vient ; elle
+nomme désormais la cause (le nom des fonctions) et avertit qu’un échange
+de libellés retitrerait les cartes. (3)
+`test-indicator-labels-pairing.R` — **125 assertions** : balayage
+structurel des 41 lignes (les seules dont le code court et le slug
+divergent sont exactement `F1 F2 L1 L2`), libellé *et* infobulle
+vérifiés contre la grandeur réellement portée par la colonne dans les
+deux langues, et
+[`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md)
+confronté à
+[`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md)
+(CA-2 du brief). C’est le test que le brief demandait en CA-1, écrit à
+l’endroit juste : il interdit précisément l’échange qu’il réclamait.
+Aucun changement de valeur, aucun changement d’API — **pas de release**.
+**Suite côté app** : `specs/brief-nemetonshiny-libelles-famille-L.md`.
+Trois tables indexées par nom de colonne y suivent le slug et
+s’inversent (`utils_i18n.R:2284-2285`, `mod_progress.R:316-317` — la
+barre de progression annonce « Paysage - Fragmentation » pendant qu’elle
+calcule la sylvosphère) ; le remède est le même que pour
+`INDICATOR_FAMILIES` : lire
+[`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md)
+au lieu de tenir une deuxième table. `service_db.R:458-459` aliase les
+colonnes DB à l’envers, mais l’aller-retour est sans perte — à ne
+traiter que si ces noms sont un jour exposés.
+
+------------------------------------------------------------------------
+
 **Journal** — *2026-08-17* (**v0.175.0**) :
 **[`r5_applicabilite()`](https://pobsteta.github.io/nemeton/reference/r5_applicabilite.md)
 — savoir avant de calculer**. Question posée : peut-on déduire des

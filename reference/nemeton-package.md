@@ -128,16 +128,16 @@ See the vignettes for comprehensive guides:
   Topographic Wetness Index (W3)
 
 - [`indicateur_f1_fertilite`](https://pobsteta.github.io/nemeton/reference/indicateur_f1_fertilite.md) -
-  Soil fertility (F1)
+  Soil fertility (F2)
 
 - [`indicateur_f2_erosion`](https://pobsteta.github.io/nemeton/reference/indicateur_f2_erosion.md) -
-  Erosion risk (F2)
+  Erosion risk (F1)
 
 - [`indicateur_l2_fragmentation`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_fragmentation.md) -
-  Fragmentation (L1)
+  Sylvosphere, edge effect (L1)
 
 - [`indicateur_l1_sylvosphere`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.md) -
-  Edge ratio (L2)
+  Landscape fragmentation (L2)
 
 **Temporal Analysis:**
 

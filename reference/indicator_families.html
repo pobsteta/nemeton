@@ -150,8 +150,18 @@ manipulation: two families carry a legacy naming swap, where the short code
 and the column slug disagree.</p><ul><li><p><code>F1</code> is <code>indicateur_f2_erosion</code> and <code>F2</code> is <code>indicateur_f1_fertilite</code>.</p></li>
 <li><p><code>L1</code> is <code>indicateur_l2_fragmentation</code> and <code>L2</code> is
 <code>indicateur_l1_sylvosphere</code>.</p></li>
-</ul><p>The labels follow the short code, so <code>labels[["F1"]]</code> describes erosion –
-consistent with the paired column, not with the column's own slug.</p>
+</ul><p>The swap lives in the <strong>function names</strong>, not in the pairing. A column is
+named after the function that fills it (<code>compute_indicator()</code> looks the
+function up by the indicator name), and for these four the function name
+contradicts what the function computes:
+<code><a href="indicateur_l2_fragmentation.html">indicateur_l2_fragmentation()</a></code> returns the sylvosphere / edge-effect score
+(shape index, matrix contrast, exposure) while <code><a href="indicateur_l1_sylvosphere.html">indicateur_l1_sylvosphere()</a></code>
+returns the landscape fragmentation score (landscapemetrics COHESION + AI).
+The labels therefore follow the short code <strong>and</strong> the values the paired
+column carries – <code>labels[["L1"]]</code> says sylvosphere because the column
+<code>indicateur_l2_fragmentation</code> holds sylvosphere values, whatever its slug
+suggests. Reading the slug alone inverts the two, and swapping the labels to
+match it would mislabel the maps built from these columns.</p>
     </div>
     <div class="section level2">
     <h2 id="both-languages-always">Both languages, always<a class="anchor" aria-label="anchor" href="#both-languages-always"></a></h2>

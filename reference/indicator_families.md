@@ -110,8 +110,20 @@ code and the column slug disagree.
 - `L1` is `indicateur_l2_fragmentation` and `L2` is
   `indicateur_l1_sylvosphere`.
 
-The labels follow the short code, so `labels[["F1"]]` describes erosion
-– consistent with the paired column, not with the column's own slug.
+The swap lives in the **function names**, not in the pairing. A column
+is named after the function that fills it (`compute_indicator()` looks
+the function up by the indicator name), and for these four the function
+name contradicts what the function computes:
+[`indicateur_l2_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_fragmentation.md)
+returns the sylvosphere / edge-effect score (shape index, matrix
+contrast, exposure) while
+[`indicateur_l1_sylvosphere()`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.md)
+returns the landscape fragmentation score (landscapemetrics COHESION +
+AI). The labels therefore follow the short code **and** the values the
+paired column carries – `labels[["L1"]]` says sylvosphere because the
+column `indicateur_l2_fragmentation` holds sylvosphere values, whatever
+its slug suggests. Reading the slug alone inverts the two, and swapping
+the labels to match it would mislabel the maps built from these columns.
 
 ## Both languages, always
 
