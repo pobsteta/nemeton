@@ -22,9 +22,6 @@ jobs:
       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      # Fixé ici pour que notre cache et `setup-r-dependencies` visent le même
-      # dossier : l'action ne pose `R_LIBS_USER` qu'au moment où elle tourne.
-      R_LIBS_USER: ${{ runner.temp }}/Library
     permissions:
       contents: write
     steps:
@@ -60,6 +57,13 @@ jobs:
       # La clé porte sur les seuls champs de dépendance de DESCRIPTION, pas
       # sur le fichier entier : sinon chaque bump de `Version:` — donc chaque
       # release et chaque ouverture de cycle dev — invaliderait le cache.
+      # `setup-r-dependencies` ne pose `R_LIBS_USER` qu'au moment où elle
+      # tourne : sans ça, notre cache et elle viseraient des dossiers
+      # différents. Le contexte `runner` n'existant pas dans le bloc `env:`
+      # d'un job, on l'exporte ici.
+      - name: Fixer R_LIBS_USER
+        run: echo "R_LIBS_USER=$RUNNER_TEMP/Library" >> "$GITHUB_ENV"
+
       - name: Empreinte des dependances
         id: deps
         run: |
