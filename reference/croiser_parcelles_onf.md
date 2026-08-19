@@ -1,58 +1,84 @@
-# Cross ONF forest parcels with selected cadastral parcels
+# Tenements met by each ONF forest parcel (UGF)
 
-Intersect the ONF public-forest parcels returned by
+Start from the **forest parcels** returned by
 [`load_onf_parcelles_source`](https://pobsteta.github.io/nemeton/reference/load_onf_parcelles_source.md)
-with a selection of **cadastral** parcels, and return the fragments that
-the application turns into tenements: one row per (cadastral parcel ×
-forest parcel) pair, plus one `reste` row per cadastral parcel whose
-area is not covered by any forest parcel.
+— they are the management units, hence the UGF — and return, for each of
+them, the tenement(s) cut out of the **cadastral** parcels it meets. One
+tenement per cadastral parcel met, so the result reads as: *this UGF is
+made of these pieces of these cadastral parcels*.
 
-The two subdivisions do not coincide, and their misalignment is the
-whole difficulty. Measured on the *forêt communale de La-Vieille-Loye*
-(39): 56 cadastral parcels × 33 forest parcels produce 92 fragments, of
-which **51 fall under 0.05 ha** while carrying together **0.13 %** of
-the area — digitising slivers, not management objects.
+The two subdivisions do not coincide, and the misalignment is invisible
+at UGF scale. Measured on the *forêt communale de La-Vieille-Loye* (39):
+coverage of each forest parcel by the cadastre is 98.1 % at worst, 100 %
+at the median — yet cutting 33 forest parcels against 56 cadastral
+parcels yields 92 fragments, **51 of them under 0.05 ha**, carrying
+together **0.13 %** of the area. Digitising slivers, not management
+objects.
 
-Slivers below `min_surface_ha` are therefore **absorbed** into the
-largest fragment of the same cadastral parcel (the `reste` included),
-never dropped: each cadastral parcel stays exactly tiled, which is what
-the application's tiling invariant requires.
+Two corrections, mildest first:
+
+- `min_surface_ha` — a sliver is **absorbed** by the largest tenement of
+  the same cadastral parcel, never dropped, so each cadastral parcel
+  stays exactly tiled (the application's tiling invariant).
+
+- `caler_sur_cadastre` — when one UGF already holds at least
+  `seuil_calage` of a cadastral parcel, that parcel is given to it
+  **whole**: the UGF boundary snaps onto the cadastral boundary. Parcels
+  genuinely shared between two UGF stay cut, and the uncovered remainder
+  can never take a parcel — dropping forest is not a correction.
 
 ## Usage
 
 ``` r
 croiser_parcelles_onf(
-  parcelles,
   parcelles_onf,
+  parcelles,
   min_surface_ha = 0.05,
-  absorber_echardes = TRUE,
+  caler_sur_cadastre = FALSE,
+  seuil_calage = 0.9,
+  inclure_reste = FALSE,
   id_col = NULL
 )
 ```
 
 ## Arguments
 
-- parcelles:
-
-  An sf of selected cadastral parcels. Its identifier column is taken
-  from `id_col`, or auto-detected among `id`, `nemeton_id`,
-  `geo_parcelle`, `idu`.
-
 - parcelles_onf:
 
   An sf of forest parcels, as returned by
   [`load_onf_parcelles_source`](https://pobsteta.github.io/nemeton/reference/load_onf_parcelles_source.md).
+  These are the UGF.
+
+- parcelles:
+
+  An sf of cadastral parcels. Its identifier column is taken from
+  `id_col`, or auto-detected among `id`, `nemeton_id`, `geo_parcelle`,
+  `idu`.
 
 - min_surface_ha:
 
-  Fragments strictly smaller than this are treated as slivers. Default
-  `0.05` (500 m²) — inside the natural gap measured between slivers (≤
-  0.035 ha) and real fragments (≥ 0.12 ha).
+  Tenements strictly smaller than this are treated as slivers and
+  absorbed. Default `0.05` (500 m²) — inside the natural gap measured
+  between slivers (≤ 0.035 ha) and real tenements (≥ 0.12 ha). Use `0`
+  to keep every sliver.
 
-- absorber_echardes:
+- caler_sur_cadastre:
 
-  Absorb slivers into the largest fragment of the same cadastral parcel.
-  Default `TRUE`. Set `FALSE` to inspect them.
+  Snap UGF boundaries onto cadastral boundaries by giving each
+  nearly-covered cadastral parcel whole to its dominant UGF. Default
+  `FALSE`.
+
+- seuil_calage:
+
+  Share of a cadastral parcel above which its dominant UGF takes it
+  whole. Only used when `caler_sur_cadastre` is `TRUE`. Default `0.9`.
+
+- inclure_reste:
+
+  Also return, with `ugf_id` `NA` and `hors_ugf` `TRUE`, the parts of
+  cadastral parcels no forest parcel covers. Default `FALSE` — the
+  UGF-first view does not need them, and the application's
+  `tenement_split_by_import()` recreates that remainder itself.
 
 - id_col:
 
@@ -61,12 +87,18 @@ croiser_parcelles_onf(
 
 ## Value
 
-An sf of fragments in the CRS of `parcelles`, with columns
-`parcelle_cadastrale`, `id_onf`, `nom_ugf`, `foret_id`, `foret_nom`,
-`parcelle`, `domaniale`, `reste`, `surface_ha`, `part_cadastrale` (share
-of the cadastral parcel) and `part_onf` (share of the forest parcel —
-how much of it the selection actually holds). A 0-row sf when nothing
-intersects.
+An sf of tenements in the CRS of `parcelles_onf`, ordered by UGF then by
+decreasing area, with columns `ugf_id`, `nom_ugf`, `foret_id`,
+`foret_nom`, `parcelle`, `domaniale`, `tenement_id`
+(`<ugf_id>~<cadastral id>`), `parcelle_cadastrale`, `hors_ugf`,
+`surface_ha`, `part_ugf` (share of the UGF this tenement represents),
+`part_cadastrale` (share of the cadastral parcel) and `n_tenements`
+(tenements of that UGF). A 0-row sf when nothing intersects.
+
+`part_ugf` is measured against the *original* ONF parcel, so it answers
+"how much of this forest parcel does the selection hold". With
+`caler_sur_cadastre = TRUE` it can exceed 1, since the UGF then gains
+the sliver of the cadastral parcel it did not cover.
 
 ## See also
 
