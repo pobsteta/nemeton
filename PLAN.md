@@ -719,7 +719,7 @@ inspirer un épaississement.
 | ✅ | `load_onf_parcelles_source()` — WFS ONF, métropole + 5 territoires ultramarins | `nemeton` | **v0.177.0** |
 | ✅ | `croiser_parcelles_onf()` — un tènement par (UGF × parcelle cadastrale) | `nemeton` | **v0.178.0**, réorientée UGF-first en **v0.179.0** |
 | ✅ | `caler_sur_cadastre` — colle le bord d'UGF au bord cadastral | `nemeton` | **v0.179.0** |
-| ✅ | Deux actions dans Carte UGF (**Croiser** / **Importer**), sélecteur de domanialité, case de calage, surcouche, mention du producteur | `nemetonshiny` | **v0.129.0** (`01873e72`) |
+| ✅ | Une action dans Carte UGF (**Créer les UGF avec le parcellaire ONF**), sélecteur de domanialité, **calage systématique**, surcouche, mention du producteur | `nemetonshiny` | **v0.129.0** (`01873e72`), simplifié en **v0.130.2** (`b3e8f44b`) |
 | ✅ | **Recette §6 passée sur le service réel**, calage validé sur cadastre réel | `nemetonshiny` | **v0.130.0** (`e3de17a5`) |
 
 **Calage reproduit à l'identique** entre cœur et app sur La-Vieille-Loye
@@ -739,6 +739,37 @@ La-Vieille-Loye) ferait passer `croiser_parcelles_onf()` de 24,9 s à 11,5 s. À
 ce niveau le gain ne justifie probablement pas le changement.
 
 # Correctifs de production (hors chantier)
+
+**Journal app** — *2026-08-19* (**`nemetonshiny` v0.130.2**, merge
+`nemetonshiny@b3e8f44b` / PR #149, cycle dev `0.130.2.9000`) : **le calage
+cadastral devient systématique**. La coche disparaît, `caler_sur_cadastre` vaut
+`TRUE` par défaut côté service, une note permanente l'annonce à l'écran, et le
+bouton est renommé **« Créer les UGF avec le parcellaire ONF »**.
+
+C'est le **contre-pied assumé** du §10 du brief spec 046, qui demandait de
+laisser le choix à l'utilisateur — la spec est mise à jour en conséquence.
+Raisonnement retenu : les limites forestières ONF sont approximatives **au
+bord** ; une UGF dont le tracé ne suit pas la parcelle qu'elle recouvre à 90 %
+ou plus est un artefact de numérisation, pas une décision de gestion. Exposer le
+choix revenait à faire arbitrer par l'utilisateur une question technique qui n'a
+qu'une bonne réponse. Ce qui a rendu la décision possible : la mesure sur
+cadastre **réel** (170 → 124 tènements, 13 → 41 bords exactement cadastraux),
+là où un cadastre synthétique ne franchit jamais le seuil. Les deux garde-fous
+du cœur ont pesé — une parcelle réellement partagée n'est pas calée, et le
+« hors UGF » ne peut jamais prendre une parcelle. Le paramètre subsiste dans la
+signature : le comportement brut reste joignable et testable. Aucune action
+cœur.
+
+**Journal app** — *2026-08-19* (**`nemetonshiny` v0.130.1**, merge
+`nemetonshiny@cb27c6bf` / PR #148) : **retrait du bouton « Importer le
+parcellaire ONF »**. Il partait de la même emprise que le croisement et
+produisait les mêmes UGF, mais en **jetant la composition cadastrale** — donc
+`part_ugf`, le « vous ne détenez que 40 % de cette parcelle forestière ». Un cas
+dégradé, et destructif de surcroît. Partent avec lui
+`onf_projet_from_parcelles()`, ses tests et six clés i18n orphelines : **−261
+lignes**. Le §3 du brief spec 046 décrivait ce chemin ; il est marqué historique
+plutôt que supprimé, pour garder trace de ce qui a été essayé et pourquoi il a
+été retiré. Aucune action cœur.
 
 **Journal app** — *2026-08-19* (**`nemetonshiny` v0.130.0**, merge
 `nemetonshiny@e3de17a5` / PR #146, commits `a3aef111` et `42ddab0c`, cycle dev

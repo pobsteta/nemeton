@@ -43,7 +43,18 @@ Retourne un `sf`, **une ligne = une parcelle forestière** :
 sur le cadastre**. `sf` 0 ligne = emprise sans forêt publique → message, pas
 erreur.
 
-## 3. Câblage proposé
+## 3. Câblage proposé — **HISTORIQUE, chemin abandonné**
+
+> ⚠️ **Cette section décrit une action qui n'existe plus.** Le bouton
+> « Importer le parcellaire ONF » (`ug_from_onf`) a été livré en v0.129.0 puis
+> **retiré en v0.130.1** : il partait de la même emprise que le croisement et
+> produisait les mêmes UGF, en **jetant la composition cadastrale** — donc
+> `part_ugf`, le « vous ne détenez que 40 % de cette parcelle forestière ». Un
+> cas dégradé, destructif de surcroît.
+>
+> Il ne reste qu'**une** action, **« Créer les UGF avec le parcellaire ONF »**,
+> décrite au **§7 et §8**. La section est conservée pour garder trace du chemin
+> essayé et de la raison de son retrait.
 
 ### 3.1 Un bouton dans `mod_ug_map_actions_bar()`
 
@@ -253,9 +264,18 @@ Deux garde-fous, déjà dans le cœur : une parcelle réellement partagée entre
 deux UGF **reste coupée**, et le « hors UGF » ne peut jamais prendre une
 parcelle — le laisser gagner supprimerait de la forêt.
 
-**Proposition UI** : une case « caler les UGF sur les limites cadastrales »,
-décochée par défaut, avec l'infobulle « les limites forestières ONF sont
-approximatives au bord ; cochez pour qu'elles suivent exactement vos parcelles ».
+**UI retenue** (app v0.130.2) : **pas de case**. Le calage est systématique et
+annoncé par une note permanente — « Les UGF sont calées sur les limites
+cadastrales : une parcelle couverte à 90 % ou plus par une UGF lui revient
+entièrement. Les limites forestières ONF sont approximatives au bord. » Une
+première version exposait le choix ; il a été retiré parce qu'il demandait à
+l'utilisateur d'arbitrer une question technique qui n'a qu'une bonne réponse.
+
+Ce qui a rendu la décision possible, c'est la mesure sur cadastre **réel**
+(cf. §6) : 170 → 124 tènements et 13 → 41 bords exactement cadastraux, là où un
+cadastre synthétique ne franchit jamais le seuil. Les deux garde-fous du cœur
+ont pesé : une parcelle réellement partagée entre deux UGF n'est pas calée, et
+le « hors UGF » ne peut jamais prendre une parcelle.
 
 ## 8. Câblage du bouton
 
@@ -279,7 +299,7 @@ shiny::observeEvent(input$ug_croise_onf, {
   }
 
   ten <- nemeton::croiser_parcelles_onf(
-    onf, sel, caler_sur_cadastre = isTRUE(input$onf_caler))
+    onf, sel, caler_sur_cadastre = TRUE)   # systématique depuis v0.130.2
   if (nrow(ten) == 0) {
     shiny::showNotification(i18n$t("onf_no_overlap"), type = "warning"); return()
   }
@@ -324,8 +344,17 @@ Tout est lisible dans le retour, ne rien recalculer :
 
 - **Ne pas filtrer les tènements** par la surface côté app : le cœur l'a déjà
   fait, et refiltrer casserait le pavage exact que `validate_tiling()` vérifie.
-- **Ne pas caler par défaut** : c'est une correction volontaire des limites
-  ONF, elle doit rester un choix explicite de l'utilisateur.
+- **Ne pas caler en silence** : le calage est désormais **systématique** côté
+  app (v0.130.2) — la coche a été retirée et `caler_sur_cadastre` vaut `TRUE`
+  par défaut. Ce qui doit rester, c'est de le **dire** : une note permanente
+  annonce qu'une parcelle couverte à 90 % ou plus revient entière à son UGF
+  dominante. Sans elle, une UGF dont le bord suit le cadastre plutôt que le
+  tracé ONF est incompréhensible. Le paramètre subsiste dans la signature : le
+  comportement brut reste joignable et testable.
+- **Ne pas rouvrir un chemin qui REMPLACE `projet$parcels`** : essayé puis
+  retiré (v0.130.1). Même emprise, mêmes UGF que le croisement, mais la
+  composition cadastrale est perdue — et avec elle `part_ugf`, le « vous ne
+  détenez que 40 % de cette parcelle forestière ».
 - **Ne pas appeler le WFS par parcelle** : un seul appel sur l'emprise de toute
   la sélection suffit.
 - **Ne pas inverser les arguments** : la fonction part des **parcelles
