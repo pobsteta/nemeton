@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.177.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.178.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.178.0" id="nemeton-01780-2026-08-19">nemeton 0.178.0 (2026-08-19)<a class="anchor" aria-label="anchor" href="#nemeton-01780-2026-08-19"></a></h2>
+<div class="section level4">
+<h4 id="added--croiser-le-parcellaire-onf-avec-les-parcelles-cadastrales-spec-0-178-0">Added — croiser le parcellaire ONF avec les parcelles cadastrales (spec 046 §7)<a class="anchor" aria-label="anchor" href="#added--croiser-le-parcellaire-onf-avec-les-parcelles-cadastrales-spec-0-178-0"></a></h4>
+<p><code>croiser_parcelles_onf(parcelles, parcelles_onf, min_surface_ha, absorber_echardes, id_col)</code> croise les parcelles forestières publiques (v0.177.0) avec une sélection de parcelles <strong>cadastrales</strong>, et rend les fragments qui deviendront des tenements : une ligne par (parcelle cadastrale × parcelle forestière), plus un <code>reste</code> par parcelle cadastrale non couverte.</p>
+<p>Colonnes : <code>parcelle_cadastrale</code>, <code>id_onf</code>, <code>nom_ugf</code>, <code>foret_id</code>, <code>foret_nom</code>, <code>parcelle</code>, <code>domaniale</code>, <code>reste</code>, <code>surface_ha</code>, <code>part_cadastrale</code> et <code>part_onf</code> — cette dernière répondant à une question qu’aucune des deux couches ne porte seule : <em>quelle part de cette parcelle forestière la sélection détient-elle ?</em></p>
+<p><strong>Le fait mesuré qui structure la fonction</strong> : les deux découpages ne coïncident pas. Sur la forêt communale de La-Vieille-Loye (39), 56 parcelles cadastrales × 33 parcelles forestières donnent 92 fragments, dont <strong>51 sous 0,05 ha</strong> qui ne portent ensemble que <strong>0,13 %</strong> de la surface. Le saut est net — 0,035 ha puis 0,123 ha, rien entre les deux. Ces échardes de numérisation étaient <strong>invisibles</strong> au niveau de la parcelle forestière (recouvrement minimum 98,1 %, médiane 100 %) : il a fallu descendre au fragment.</p>
+<p>Elles sont donc <strong>absorbées par le plus gros fragment de la même parcelle cadastrale, jamais supprimées</strong> : la surface totale est conservée au mètre près, ce qu’exige l’invariant de tuilage de l’app. Un fragment seul sur sa parcelle est conservé quelle que soit sa taille — il <em>est</em> la parcelle.</p>
+<p>43 assertions. Câblage des deux boutons (créer / croiser) : <code>specs/046-parcellaire-onf/brief-nemetonshiny.md</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.177.0" id="nemeton-01770-2026-08-18">nemeton 0.177.0 (2026-08-18)<a class="anchor" aria-label="anchor" href="#nemeton-01770-2026-08-18"></a></h2>
 <div class="section level4">

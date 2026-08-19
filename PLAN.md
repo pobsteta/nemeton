@@ -818,6 +818,55 @@ inspirer un épaississement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-19* (**v0.178.0**) : **croisement parcellaire ONF
+× parcelles cadastrales**. Suite directe de v0.177.0 : Pascal demande
+comment brancher un bouton d’app qui croise le retour ONF avec la
+sélection cadastrale. Le croisement n’est pas de l’affichage →
+[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+(`R/croiser_parcelles_onf.R`, exportée) rend les fragments qui
+deviendront des tenements : une ligne par (parcelle cadastrale ×
+parcelle forestière), plus un `reste` par parcelle cadastrale non
+couverte, avec `part_cadastrale` et `part_onf`.
+
+**Le fait qui a changé la conception, et qu’aucune lecture n’aurait
+donné** : au niveau de la *parcelle forestière*, cadastre et parcellaire
+ONF paraissent parfaitement alignés — recouvrement minimum **98,1 %**,
+médiane 100 % sur la forêt communale de La-Vieille-Loye (39). Descendu
+au *fragment*, le tableau s’inverse : 56 parcelles cadastrales × 33
+parcelles forestières donnent **92 fragments dont 51 sous 0,05 ha**, qui
+ne portent ensemble que **0,13 %** de la surface. Le saut de
+distribution est net — 0,035 ha puis 0,123 ha, rien entre les deux. Sans
+traitement, l’app se serait retrouvée avec plus d’échardes que de
+tenements réels.
+
+**Absorption, pas suppression** : chaque écharde est fusionnée dans le
+plus gros fragment de la même parcelle cadastrale (`reste` compris).
+Supprimer aurait cassé l’invariant de tuilage que l’app vérifie
+(`validate_tiling()`, tolérance 0,01 m²) ; là, la surface totale est
+conservée au mètre près et seule l’attribution change. Un fragment
+**seul** sur sa parcelle est conservé quelle que soit sa taille — il
+*est* la parcelle. Vérifié en réel : 92 fragments bruts → 41 attribués +
+56 restes, 0 attribué sous le seuil, 288,9 ha inchangés.
+
+**Ce que ça rend lisible côté utilisateur** : 48 des 56 parcelles
+sélectionnées dans l’essai étaient entièrement hors du parcellaire de la
+forêt communale, soit **115 ha sur 288,9** — l’information qu’un
+propriétaire doit voir avant de lancer un calcul sur une sélection trop
+large. Et `part_onf` répond à l’inverse : quelle part d’une parcelle
+forestière la sélection détient-elle.
+
+**Essai Dabo** (demandé le même jour) : il n’existe **pas** de forêt
+communale de Dabo. Sur 24 × 24 km, une seule forêt porte ce nom — la
+**domaniale** de Dabo (`F13185C`, 203 parcelles, 3 966 ha, médiane 19,4
+ha/parcelle, soit trois fois Chaux). Vérifié sur les deux couches
+(parcelles et périmètres) ; 52 communales voisines remontent
+normalement, donc ce n’est pas un trou de couverture. Les parcelles de
+Dabo étant grosses, la limite « parcelle, pas sous-parcelle » y mord
+plus fort qu’ailleurs.
+
+Spec `specs/046-parcellaire-onf/spec.md` §7, brief app §7-10 (deux
+boutons : créer depuis ONF / croiser avec le cadastre), 43 assertions.
+
 **Journal** — *2026-08-18* (**v0.177.0**) : **le parcellaire forestier
 public ONF entre dans le cœur**. Question de Pascal : « est-ce qu’on
 peut avoir un serveur qui comprend les parcelles forestières domaniale

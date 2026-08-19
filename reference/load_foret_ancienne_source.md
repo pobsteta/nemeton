@@ -46,7 +46,8 @@ load_foret_ancienne_source(
 
 - ...:
 
-  Passed to [`get_wfs`](https://rdrr.io/pkg/happign/man/get_wfs.html).
+  Passed to
+  [`get_wfs`](https://paul-carteron.github.io/happign/reference/get_wfs.html).
 
 ## Value
 

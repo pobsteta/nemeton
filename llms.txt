@@ -791,6 +791,9 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`create_validation_sampling_plan()`](https://pobsteta.github.io/nemeton/reference/create_validation_sampling_plan.md)
   : Create a validation sampling plan over an alert raster (spec 014 A3)
 
+- [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+  : Cross ONF forest parcels with selected cadastral parcels
+
 - [`cv_from_bdforet()`](https://pobsteta.github.io/nemeton/reference/cv_from_bdforet.md)
   : Compute an area-weighted CV from a BD Forêt v2 coverage
 
