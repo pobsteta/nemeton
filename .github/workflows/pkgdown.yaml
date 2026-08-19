@@ -14,6 +14,7 @@ name: pkgdown
 jobs:
   pkgdown:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     # Only restrict concurrency for non-PR jobs
     concurrency:
       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
@@ -34,6 +35,8 @@ jobs:
           extra-repositories: 'https://r-lidar.r-universe.dev'
 
       - name: Install system dependencies
+        # Cf. r.yml : nominal ~20 s, le reste est un miroir apt muet.
+        timeout-minutes: 6
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -53,7 +56,10 @@ jobs:
             libjpeg-dev \
             libtbb-dev
 
-      - uses: r-lib/actions/setup-r-dependencies@v2
+      - name: Install R dependencies
+        # Cf. r.yml : nominal ~1 min 30, plafond à dix fois la marge.
+        timeout-minutes: 15
+        uses: r-lib/actions/setup-r-dependencies@v2
         with:
           # rsconnect : requis par pkgdown::package_tutorials() pour découvrir
           # les tutoriels learnr de inst/tutorials/ (sinon « The package

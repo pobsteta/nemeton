@@ -64,6 +64,10 @@ jobs:
           extra-repositories: 'https://r-lidar.r-universe.dev'
 
       - name: Install system dependencies
+        # Nominal : ~20 s. Au-delà, c'est le miroir apt du runner qui ne
+        # répond pas (Ign: azure.archive.ubuntu.com en boucle) : échouer
+        # vite et relancer, plutôt que brûler le timeout du job.
+        timeout-minutes: 6
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -83,6 +87,10 @@ jobs:
             libjpeg-dev
 
       - name: Install R dependencies
+        # Nominal : ~1 min 30 avec les binaires RSPM. Le plafond laisse
+        # dix fois la marge pour un cache froid, et coupe court aux
+        # blocages de miroir (39 min de silence observées le 2026-08-19).
+        timeout-minutes: 15
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           # biodivMapR (GPL-3, B4/L3) Imports dissUtils + spinR but omits
@@ -141,6 +149,10 @@ jobs:
           extra-repositories: 'https://r-lidar.r-universe.dev'
 
       - name: Install system dependencies
+        # Nominal : ~20 s. Au-delà, c'est le miroir apt du runner qui ne
+        # répond pas (Ign: azure.archive.ubuntu.com en boucle) : échouer
+        # vite et relancer, plutôt que brûler le timeout du job.
+        timeout-minutes: 6
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -150,6 +162,10 @@ jobs:
             libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
 
       - name: Install R dependencies
+        # Nominal : ~1 min 30 avec les binaires RSPM. Le plafond laisse
+        # dix fois la marge pour un cache froid, et coupe court aux
+        # blocages de miroir (39 min de silence observées le 2026-08-19).
+        timeout-minutes: 15
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           # See R-CMD-check job: dissUtils/spinR are biodivMapR Imports
@@ -196,6 +212,10 @@ jobs:
           extra-repositories: 'https://r-lidar.r-universe.dev'
 
       - name: Install system dependencies
+        # Nominal : ~20 s. Au-delà, c'est le miroir apt du runner qui ne
+        # répond pas (Ign: azure.archive.ubuntu.com en boucle) : échouer
+        # vite et relancer, plutôt que brûler le timeout du job.
+        timeout-minutes: 6
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -205,6 +225,10 @@ jobs:
             libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
 
       - name: Install R dependencies
+        # Nominal : ~1 min 30 avec les binaires RSPM. Le plafond laisse
+        # dix fois la marge pour un cache froid, et coupe court aux
+        # blocages de miroir (39 min de silence observées le 2026-08-19).
+        timeout-minutes: 15
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           # See R-CMD-check job: dissUtils/spinR for biodivMapR.
