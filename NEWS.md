@@ -1,3 +1,35 @@
+# nemeton 0.178.0 (2026-08-19)
+
+### Added — croiser le parcellaire ONF avec les parcelles cadastrales (spec 046 §7)
+
+`croiser_parcelles_onf(parcelles, parcelles_onf, min_surface_ha,
+absorber_echardes, id_col)` croise les parcelles forestières publiques
+(v0.177.0) avec une sélection de parcelles **cadastrales**, et rend les
+fragments qui deviendront des tenements : une ligne par (parcelle cadastrale ×
+parcelle forestière), plus un `reste` par parcelle cadastrale non couverte.
+
+Colonnes : `parcelle_cadastrale`, `id_onf`, `nom_ugf`, `foret_id`, `foret_nom`,
+`parcelle`, `domaniale`, `reste`, `surface_ha`, `part_cadastrale` et
+`part_onf` — cette dernière répondant à une question qu'aucune des deux couches
+ne porte seule : *quelle part de cette parcelle forestière la sélection
+détient-elle ?*
+
+**Le fait mesuré qui structure la fonction** : les deux découpages ne
+coïncident pas. Sur la forêt communale de La-Vieille-Loye (39), 56 parcelles
+cadastrales × 33 parcelles forestières donnent 92 fragments, dont **51 sous
+0,05 ha** qui ne portent ensemble que **0,13 %** de la surface. Le saut est net
+— 0,035 ha puis 0,123 ha, rien entre les deux. Ces échardes de numérisation
+étaient **invisibles** au niveau de la parcelle forestière (recouvrement
+minimum 98,1 %, médiane 100 %) : il a fallu descendre au fragment.
+
+Elles sont donc **absorbées par le plus gros fragment de la même parcelle
+cadastrale, jamais supprimées** : la surface totale est conservée au mètre
+près, ce qu'exige l'invariant de tuilage de l'app. Un fragment seul sur sa
+parcelle est conservé quelle que soit sa taille — il *est* la parcelle.
+
+43 assertions. Câblage des deux boutons (créer / croiser) :
+`specs/046-parcellaire-onf/brief-nemetonshiny.md`.
+
 # nemeton 0.177.0 (2026-08-18)
 
 ### Added — créer les UGF depuis le parcellaire forestier public ONF (spec 046)

@@ -139,3 +139,130 @@ réutilisation libre et gratuite.
    aucune UGF créée, projet inchangé.
 4. Service coupé (couper le réseau) → message d'indisponibilité, retour possible
    au cadastre sans redémarrer.
+
+---
+
+# Deuxième bouton — croiser le parcellaire ONF avec les parcelles cadastrales sélectionnées
+
+**Cœur requis** : `nemeton (>= 0.178.0)`.
+
+Le §3 crée les UGF **à la place** du cadastre. Ce second bouton fait autre
+chose : il garde la sélection cadastrale de l'utilisateur — son bien — et la
+**redécoupe** selon les limites de parcelles forestières. Chaque tenement
+devient « la part de ma parcelle X qui est dans la parcelle forestière Y »,
+et l'UGF devient la parcelle forestière.
+
+## 7. Le maillon fourni par le cœur
+
+```r
+nemeton::croiser_parcelles_onf(
+  parcelles,                     # sf des parcelles cadastrales sélectionnées
+  parcelles_onf,                 # sortie de load_onf_parcelles_source()
+  min_surface_ha = 0.05,
+  absorber_echardes = TRUE,
+  id_col = NULL                  # défaut : id / nemeton_id / geo_parcelle / idu
+)
+```
+
+Rend un `sf` de **fragments**, une ligne par (parcelle cadastrale × parcelle
+forestière), plus une ligne `reste` par parcelle cadastrale non couverte :
+
+| Colonne | Usage |
+|---|---|
+| `parcelle_cadastrale` | id de la parcelle d'origine → `parcelle_id` de `tenement_split_by_import()` |
+| `id_onf`, `nom_ugf`, `foret_nom`, `parcelle`, `domaniale` | l'UGF cible (`NA` sur un `reste`) |
+| `reste` | `TRUE` = part de la parcelle hors de toute forêt publique |
+| `surface_ha` | surface du fragment |
+| `part_cadastrale` | part de la parcelle cadastrale que prend ce fragment |
+| `part_onf` | part de la **parcelle forestière** que la sélection détient — la donnée qui permet de dire « vous ne possédez que 40 % de la parcelle 12 » |
+
+**Pourquoi c'est dans le cœur et pas dans l'app** : les deux découpages ne
+coïncident pas, et c'est tout le problème. Mesuré sur la forêt communale de
+La-Vieille-Loye (39) — 56 parcelles cadastrales × 33 parcelles forestières :
+
+| | fragments | dont < 0,05 ha | surface |
+|---|---|---|---|
+| croisement brut | 92 | **51** | 288,9 ha |
+| après absorption | **41** attribués + 56 restes | 0 | 288,9 ha |
+
+Les 51 échardes ne portent ensemble que **0,13 %** de la surface : ce sont des
+écarts de numérisation entre cadastre et parcellaire ONF, pas des objets de
+gestion. Elles sont **absorbées par le plus gros fragment de la même parcelle
+cadastrale, jamais supprimées** — la surface totale est conservée au mètre
+près, donc `validate_tiling()` passe. Ne refaites pas ce calcul côté app.
+
+## 8. Câblage du bouton
+
+Bouton `ug_croise_onf` (« Croiser avec le parcellaire ONF »), actif quand des
+parcelles cadastrales sont sélectionnées **et** que le projet a déjà ses UG
+(`has_ug_data(projet)`).
+
+```r
+shiny::observeEvent(input$ug_croise_onf, {
+  sel <- selected_parcels()                      # sf des parcelles cochées
+  if (is.null(sel) || nrow(sel) == 0) {
+    shiny::showNotification(i18n$t("onf_need_selection"), type = "warning"); return()
+  }
+
+  onf <- nemeton::load_onf_parcelles_source(sel)   # emprise = la sélection
+  if (is.null(onf)) {
+    shiny::showNotification(i18n$t("onf_unavailable"), type = "error"); return()
+  }
+  if (nrow(onf) == 0) {
+    shiny::showNotification(i18n$t("onf_no_public_forest"), type = "warning"); return()
+  }
+
+  frags <- nemeton::croiser_parcelles_onf(sel, onf)
+
+  # 1) Découper chaque parcelle cadastrale par ses fragments.
+  projet <- app_state$projet
+  for (pid in unique(frags$parcelle_cadastrale)) {
+    f <- frags[frags$parcelle_cadastrale == pid, ]
+    if (nrow(f) < 2) next                        # rien à découper
+    projet <- tenement_split_by_import(
+      projet, pid, f,
+      labels = ifelse(f$reste, i18n$t("onf_hors_foret"), f$nom_ugf))
+  }
+
+  # 2) Regrouper : une UG par parcelle forestière, tous cadastres confondus.
+  for (idf in unique(stats::na.omit(frags$id_onf))) {
+    tids <- tenement_ids_for_label(projet, frags$nom_ugf[match(idf, frags$id_onf)])
+    projet <- ug_create(projet, tids, label = frags$nom_ugf[match(idf, frags$id_onf)])
+  }
+
+  app_state$projet <- projet
+})
+```
+
+Le point d'attention est l'étape 2 : `tenement_split_by_import()` fabrique des
+identifiants de fragments (`parcelle_id` + suffixe a/b/c…), il faut donc
+retrouver les tenements par leur libellé — ou, plus propre, capturer les ids
+que la fonction vient de créer plutôt que de les rechercher après coup. Une
+même parcelle forestière à cheval sur plusieurs parcelles cadastrales doit
+donner **une seule UG** rassemblant tous ses fragments : c'est le seul endroit
+où l'ordre des appels compte.
+
+## 9. Ce qu'il faut restituer à l'utilisateur
+
+Le croisement produit trois informations qu'il attend, toutes lisibles dans le
+retour du cœur — ne pas les recalculer :
+
+| Message | Calcul |
+|---|---|
+| « N de vos parcelles sont hors forêt publique » | `sum(frags$reste & frags$part_cadastrale > 0.999)` |
+| « X ha de votre sélection hors forêt publique » | `sum(frags$surface_ha[frags$reste])` |
+| « vous ne détenez que P % de la parcelle forestière Y » | `tapply(frags$part_onf, frags$id_onf, sum)` |
+
+Sur le cas de La-Vieille-Loye ci-dessus : 48 des 56 parcelles sélectionnées
+étaient entièrement hors du parcellaire de la forêt communale, soit 115 ha des
+288,9 ha sélectionnés. C'est exactement l'information qu'un propriétaire veut
+voir **avant** de lancer un calcul d'indicateurs sur une sélection trop large.
+
+## 10. Ce qu'il ne faut PAS faire
+
+- **Ne pas filtrer les fragments** par la surface côté app : le cœur l'a déjà
+  fait, et refiltrer casserait le pavage exact que `validate_tiling()` vérifie.
+- **Ne pas jeter les `reste`** : ils font partie du bien de l'utilisateur. Ils
+  deviennent des tenements sans UGF forestière, pas des trous.
+- **Ne pas appeler le WFS par parcelle** : un seul appel sur l'emprise de toute
+  la sélection suffit (`load_onf_parcelles_source(sel)`).
