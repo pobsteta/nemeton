@@ -48,6 +48,9 @@ jobs:
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # Fixé ici pour que notre cache et `setup-r-dependencies` visent le même
+      # dossier : l'action ne pose `R_LIBS_USER` qu'au moment où elle tourne.
+      R_LIBS_USER: ${{ runner.temp }}/Library
       R_KEEP_PKG_SOURCE: yes
       NOT_CRAN: true
 
@@ -63,6 +66,7 @@ jobs:
         run: echo 'APT::Install-Recommends "false";' | sudo tee /etc/apt/apt.conf.d/99-no-recommends
 
       - name: Setup R
+        id: setup-r
         uses: r-lib/actions/setup-r@v2
         with:
           r-version: 'release'
@@ -70,6 +74,33 @@ jobs:
           # lasR / lidR are not on CRAN; resolve them from r-lidar's
           # r-universe. lidaRtRee comes from forge.inrae.fr (Remotes).
           extra-repositories: 'https://r-lidar.r-universe.dev'
+
+      # --- Cache des paquets R, clé déterministe -------------------------
+      # `setup-r-dependencies` cache sur `hashFiles('.github/pkg.lock')`, or
+      # `pak::lockfile_create()` écrit les paquets dans un ordre NON
+      # déterministe : mesuré sur deux runs consécutifs, 332 entrées sur 377
+      # avaient changé de place pour un contenu identique (même hash après
+      # tri). La clé exacte manquait donc à CHAQUE run — repli sur le préfixe
+      # et ré-upload de 482 Mo à chaque fois. On gère le cache nous-mêmes.
+      #
+      # La clé porte sur les seuls champs de dépendance de DESCRIPTION, pas
+      # sur le fichier entier : sinon chaque bump de `Version:` — donc chaque
+      # release et chaque ouverture de cycle dev — invaliderait le cache.
+      - name: Empreinte des dependances
+        id: deps
+        run: |
+          Rscript -e 'd <- read.dcf("DESCRIPTION"); f <- intersect(c("Depends", "Imports", "LinkingTo", "Suggests", "Remotes", "Additional_repositories"), colnames(d)); writeLines(as.character(d[1, f]), file.path(Sys.getenv("RUNNER_TEMP"), "deps-fingerprint"))'
+          echo "hash=$(sha256sum "$RUNNER_TEMP/deps-fingerprint" | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache des paquets R
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.temp }}/Library/*
+            !${{ runner.temp }}/Library/pak
+            !${{ runner.temp }}/Library/_cache
+          key: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-deps${{ steps.deps.outputs.hash }}-v1
+          restore-keys: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-deps
 
       - name: Install system dependencies
         run: |
@@ -93,6 +124,7 @@ jobs:
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          cache: false   # cf. « Cache des paquets R » ci-dessus
           # biodivMapR (GPL-3, B4/L3) Imports dissUtils + spinR but omits
           # them from its own Remotes, so pak (which scopes Remotes per
           # package) can't resolve them from nemeton's Remotes alone.
@@ -134,6 +166,9 @@ jobs:
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # Fixé ici pour que notre cache et `setup-r-dependencies` visent le même
+      # dossier : l'action ne pose `R_LIBS_USER` qu'au moment où elle tourne.
+      R_LIBS_USER: ${{ runner.temp }}/Library
       NOT_CRAN: true
 
     steps:
@@ -148,6 +183,7 @@ jobs:
         run: echo 'APT::Install-Recommends "false";' | sudo tee /etc/apt/apt.conf.d/99-no-recommends
 
       - name: Setup R
+        id: setup-r
         uses: r-lib/actions/setup-r@v2
         with:
           r-version: 'release'
@@ -155,6 +191,33 @@ jobs:
           # lasR / lidR are not on CRAN; resolve them from r-lidar's
           # r-universe. lidaRtRee comes from forge.inrae.fr (Remotes).
           extra-repositories: 'https://r-lidar.r-universe.dev'
+
+      # --- Cache des paquets R, clé déterministe -------------------------
+      # `setup-r-dependencies` cache sur `hashFiles('.github/pkg.lock')`, or
+      # `pak::lockfile_create()` écrit les paquets dans un ordre NON
+      # déterministe : mesuré sur deux runs consécutifs, 332 entrées sur 377
+      # avaient changé de place pour un contenu identique (même hash après
+      # tri). La clé exacte manquait donc à CHAQUE run — repli sur le préfixe
+      # et ré-upload de 482 Mo à chaque fois. On gère le cache nous-mêmes.
+      #
+      # La clé porte sur les seuls champs de dépendance de DESCRIPTION, pas
+      # sur le fichier entier : sinon chaque bump de `Version:` — donc chaque
+      # release et chaque ouverture de cycle dev — invaliderait le cache.
+      - name: Empreinte des dependances
+        id: deps
+        run: |
+          Rscript -e 'd <- read.dcf("DESCRIPTION"); f <- intersect(c("Depends", "Imports", "LinkingTo", "Suggests", "Remotes", "Additional_repositories"), colnames(d)); writeLines(as.character(d[1, f]), file.path(Sys.getenv("RUNNER_TEMP"), "deps-fingerprint"))'
+          echo "hash=$(sha256sum "$RUNNER_TEMP/deps-fingerprint" | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache des paquets R
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.temp }}/Library/*
+            !${{ runner.temp }}/Library/pak
+            !${{ runner.temp }}/Library/_cache
+          key: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-deps${{ steps.deps.outputs.hash }}-v1
+          restore-keys: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-deps
 
       - name: Install system dependencies
         run: |
@@ -168,6 +231,7 @@ jobs:
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          cache: false   # cf. « Cache des paquets R » ci-dessus
           # See R-CMD-check job: dissUtils/spinR are biodivMapR Imports
           # missing from its Remotes; declare them at root scope for pak.
           extra-packages: |
@@ -197,6 +261,9 @@ jobs:
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # Fixé ici pour que notre cache et `setup-r-dependencies` visent le même
+      # dossier : l'action ne pose `R_LIBS_USER` qu'au moment où elle tourne.
+      R_LIBS_USER: ${{ runner.temp }}/Library
       NOT_CRAN: true
 
     steps:
@@ -211,6 +278,7 @@ jobs:
         run: echo 'APT::Install-Recommends "false";' | sudo tee /etc/apt/apt.conf.d/99-no-recommends
 
       - name: Setup R
+        id: setup-r
         uses: r-lib/actions/setup-r@v2
         with:
           r-version: 'release'
@@ -218,6 +286,33 @@ jobs:
           # lasR / lidR are not on CRAN; resolve them from r-lidar's
           # r-universe. lidaRtRee comes from forge.inrae.fr (Remotes).
           extra-repositories: 'https://r-lidar.r-universe.dev'
+
+      # --- Cache des paquets R, clé déterministe -------------------------
+      # `setup-r-dependencies` cache sur `hashFiles('.github/pkg.lock')`, or
+      # `pak::lockfile_create()` écrit les paquets dans un ordre NON
+      # déterministe : mesuré sur deux runs consécutifs, 332 entrées sur 377
+      # avaient changé de place pour un contenu identique (même hash après
+      # tri). La clé exacte manquait donc à CHAQUE run — repli sur le préfixe
+      # et ré-upload de 482 Mo à chaque fois. On gère le cache nous-mêmes.
+      #
+      # La clé porte sur les seuls champs de dépendance de DESCRIPTION, pas
+      # sur le fichier entier : sinon chaque bump de `Version:` — donc chaque
+      # release et chaque ouverture de cycle dev — invaliderait le cache.
+      - name: Empreinte des dependances
+        id: deps
+        run: |
+          Rscript -e 'd <- read.dcf("DESCRIPTION"); f <- intersect(c("Depends", "Imports", "LinkingTo", "Suggests", "Remotes", "Additional_repositories"), colnames(d)); writeLines(as.character(d[1, f]), file.path(Sys.getenv("RUNNER_TEMP"), "deps-fingerprint"))'
+          echo "hash=$(sha256sum "$RUNNER_TEMP/deps-fingerprint" | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache des paquets R
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.temp }}/Library/*
+            !${{ runner.temp }}/Library/pak
+            !${{ runner.temp }}/Library/_cache
+          key: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-deps${{ steps.deps.outputs.hash }}-v1
+          restore-keys: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-deps
 
       - name: Install system dependencies
         run: |
@@ -231,6 +326,7 @@ jobs:
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          cache: false   # cf. « Cache des paquets R » ci-dessus
           # See R-CMD-check job: dissUtils/spinR for biodivMapR.
           extra-packages: |
             any::covr
