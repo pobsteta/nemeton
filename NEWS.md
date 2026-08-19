@@ -50,14 +50,19 @@ moins de 500 m² et rejoint tout seul l'UGF dominante), `caler_sur_cadastre` les
 
 60 assertions. Brief app mis à jour (`specs/046-parcellaire-onf/`).
 
-### Fixed — le WFS ONF ne peut plus bloquer une session
+### Changed — le WFS ONF est borné dans le temps, son test réel est opt-in
 
-Deux jobs CI ont été tués au timeout (60 min, puis 45 min) sur un transfert
-calé vers `ws.carmencarto.fr`. Le service est vieux et s'endort sans fermer la
-connexion. Deux verrous : `.onf_wfs_read()` borne désormais explicitement le
-transfert (30 s), et le test de fumée qui tape le service réel devient
-**opt-in** (`NEMETON_TEST_ONF_LIVE=true`), comme les tests d'intégration DB du
-dépôt. La CI ne dépend plus de la disponibilité d'un service tiers.
+`.onf_wfs_read()` borne explicitement le transfert (30 s) : un appel réseau
+sans plafond peut immobiliser une session, et ce service est un vieux MapServer
+derrière un pare-feu. Le test de fumée qui tape le service réel devient
+**opt-in** (`NEMETON_TEST_ONF_LIVE=true`), sur l'idiome des tests d'intégration
+DB du dépôt — une suite ne devrait pas dépendre de la disponibilité d'un tiers.
+
+Ces deux verrous sont de l'hygiène, **pas** le correctif d'un incident : trois
+jobs CI tués au timeout les 18 et 19 août l'ont été sur `apt-get update`
+(miroir `azure.archive.ubuntu.com` injoignable, 45 min avant même le démarrage
+de R), pas sur le WFS ONF. Diagnostic initial erroné, corrigé après lecture du
+journal de job.
 
 # nemeton 0.178.0 (2026-08-19)
 

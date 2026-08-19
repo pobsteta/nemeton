@@ -69,8 +69,8 @@
   dest <- tempfile(fileext = ".gml")
   on.exit(unlink(c(dest, paste0(tools::file_path_sans_ext(dest), ".gfs"))),
           add = TRUE)
-  # Le service est vieux et s'endort : sans borne explicite, un transfert qui
-  # cale bloque la session (deux jobs CI tués au timeout, 2026-08-18/19).
+  # Vieux MapServer derrière un pare-feu : un appel réseau sans plafond peut
+  # immobiliser la session appelante. On borne, par principe.
   ancien <- options(timeout = timeout)
   on.exit(options(ancien), add = TRUE)
 
