@@ -1,3 +1,36 @@
+# nemeton 0.179.1 (2026-08-19)
+
+### Fixed — `Remotes:` ne tire plus `microclimc`
+
+`ilyamaclean/microclimc` figurait dans `Remotes:` sans être déclaré dans aucun
+champ de dépendance ni appelé nulle part — une entrée orpheline qui rendait
+l'installation **impossible sous R 4.5** :
+
+```
+* installing *source* package 'microclimc' ...
+Erreur dans loadNamespace(i, ...) : aucun package nommé 'NicheMapR' n'est trouvé
+ERROR: lazy loading failed for package 'microclimc'
+```
+
+Le paquet amont se contredit : son `NAMESPACE` fait `import(NicheMapR)` alors
+que sa `DESCRIPTION` ne déclare `NicheMapR` qu'en `Suggests` — `pak` ne
+l'installe donc pas et ne résout pas les `Remotes` d'un paquet suggéré. Second
+mur derrière : `microclimc` a `rgdal` en `Imports`, retiré du CRAN en octobre
+2023. Signalé et vérifié côté app (installation Windows, R 4.5).
+
+### Changed — `microclima` est désormais déclaré en `Suggests`
+
+Dépendance **douce** de `indicateur_r2_tempete()`, détectée à l'exécution
+(`system.file(package = "microclima")` puis `getFromNamespace("windcoef", …)`,
+repli terrain sinon). Elle vivait dans `Remotes:` sans être déclarée nulle part :
+`dependencies = TRUE` ne l'installait pas et rien ne documentait le lien. La
+déclarer la rend installable et lisible ; son absence reste sans conséquence.
+
+Piège à connaître pour toute recette d'installation : `microclima` fait
+`import(sp)` sans déclarer `sp` dans ses `Imports`. Installer `sp` d'abord.
+
+Aucun code, aucun test, aucun comportement modifié.
+
 # nemeton 0.179.0 (2026-08-19)
 
 ### Changed — `croiser_parcelles_onf()` part désormais des UGF (spec 046 §7)

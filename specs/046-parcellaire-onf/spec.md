@@ -166,8 +166,13 @@ peut dépasser 1 — l'UGF a gagné le bord qu'elle ne couvrait pas.
 
 Le « hors UGF » (part de parcelle cadastrale qu'aucune forêt ne couvre) n'est
 **pas** rendu par défaut : la vue UGF-first n'en a pas besoin, et
-`tenement_split_by_import()` côté app recrée ce reste tout seul.
-`inclure_reste = TRUE` le remet.
+l'appelant peut le recréer. `inclure_reste = TRUE` le remet.
+
+**Rectificatif (app v0.130.0)** : le chemin retenu côté app est
+`tenement_import_replace()`, qui **ne recrée rien**. Avec lui,
+`inclure_reste = TRUE` est donc **obligatoire** — sans les lignes de reste, les
+parts de parcelle cadastrale hors forêt publique perdent leur tènement et la
+parcelle cesse d'être exactement pavée, en silence. Voir le brief §7 et §8.
 
 ### 7.1 Le fait mesuré qui structure la fonction
 

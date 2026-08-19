@@ -43,7 +43,18 @@ Retourne un `sf`, **une ligne = une parcelle forestière** :
 sur le cadastre**. `sf` 0 ligne = emprise sans forêt publique → message, pas
 erreur.
 
-## 3. Câblage proposé
+## 3. Câblage proposé — **HISTORIQUE, chemin abandonné**
+
+> ⚠️ **Cette section décrit une action qui n'existe plus.** Le bouton
+> « Importer le parcellaire ONF » (`ug_from_onf`) a été livré en v0.129.0 puis
+> **retiré en v0.130.1** : il partait de la même emprise que le croisement et
+> produisait les mêmes UGF, en **jetant la composition cadastrale** — donc
+> `part_ugf`, le « vous ne détenez que 40 % de cette parcelle forestière ». Un
+> cas dégradé, destructif de surcroît.
+>
+> Il ne reste qu'**une** action, **« Créer les UGF avec le parcellaire ONF »**,
+> décrite au **§7 et §8**. La section est conservée pour garder trace du chemin
+> essayé et de la raison de son retrait.
 
 ### 3.1 Un bouton dans `mod_ug_map_actions_bar()`
 
@@ -79,10 +90,20 @@ shiny::observeEvent(input$ug_from_onf, {
 
   # 1 parcelle forestière = 1 tenement = 1 UGF, par le chemin existant.
   parcelles$geo_parcelle <- parcelles$nom_ugf   # devient le label d'UG
-  projet <- ug_init_default(modifyList(projet, list(parcels = parcelles)))
+  projet$parcels <- parcelles                   # affectation directe, cf. ci-dessous
+  projet <- ug_init_default(projet)
   app_state$projet <- projet
 })
 ```
+
+> **Ne pas passer par `modifyList()`.** Une première version de ce brief
+> écrivait `ug_init_default(modifyList(projet, list(parcels = parcelles)))`.
+> `modifyList()` **récurse dans les listes**, et un `data.frame` en est une :
+> au lieu de remplacer `parcels`, il le fusionne **colonne par colonne**.
+> Erreur immédiate dès que les deux n'ont pas le même nombre de lignes —
+> `replacement has 427 rows, data has 1` — donc systématiquement en vrai. Et
+> fusion **silencieuse** à tailles égales, ce qui est pire : c'est le cas qui a
+> laissé passer les tests unitaires. Constaté côté app, v0.130.0.
 
 **Pourquoi `geo_parcelle`** : `ug_init_default()` (`domain_ug.R`) prend le
 libellé d'UG dans `geo_parcelle` s'il existe, sinon dans `id`. Sans ça les UGF
@@ -127,18 +148,51 @@ réutilisation libre et gratuite.
   cœur rend déjà `id`, `contenance`, `surface_ha`, `nom_ugf`.
 - **Pas d'appel depuis le navigateur** (HTTP only, cf. §3.2).
 
-## 6. Vérification
+## 6. Vérification — **passée** (app v0.130.0, service réel)
 
-1. Emprise sur la **forêt domaniale de Chaux** (Lambert-93, autour de
-   900 000 / 6 667 000) → l'import doit créer ~200 UGF, dont un mélange
-   « Forêt domaniale de Chaux » / « Forêt communale de La-Vieille-Loye » ;
-   mesuré côté cœur : 217 parcelles, 2 105 ha, 5,8 s.
-2. `domanialite = "domaniale"` sur la même emprise → seules les UGF de la
-   domaniale subsistent.
-3. Emprise en pleine plaine agricole → message « aucune forêt publique »,
-   aucune UGF créée, projet inchangé.
-4. Service coupé (couper le réseau) → message d'indisponibilité, retour possible
-   au cadastre sans redémarrer.
+| Cas | Attendu | Mesuré côté app |
+|---|---|---|
+| Chaux, emprise 4 × 4 km | ~200 UGF, domaniale **et** communale | **213** parcelles, **2 114 ha**, **1,1 s** — 189 domaniale + 24 communale |
+| `domanialite = "domaniale"` | seules les domaniales | 394/394 ; `autre` → 33, aucune domaniale |
+| plaine agricole | « aucune forêt publique », projet inchangé | `status = empty`, 0,4 s |
+| service coupé | indisponibilité, repli cadastral | `status = unavailable`, 0,1 s |
+
+Les chiffres de Chaux diffèrent de ceux mesurés côté cœur (217 / 2 105 ha /
+5,8 s) : emprises et versions de service ne sont pas identiques. L'ordre de
+grandeur et la composition sont les mêmes.
+
+**Calage cadastral — validé sur cadastre réel.** La-Vieille-Loye, 1 271
+parcelles cadastrales × 94 parcelles forestières : les quatre chiffres annoncés
+par le cœur sont reproduits **exactement**.
+
+| | Annoncé (cœur) | Mesuré (app) |
+|---|---|---|
+| Tènements sans calage | 170 | **170** |
+| Tènements avec calage | 124 | **124** |
+| Bords cadastraux sans calage | 13 | **13** |
+| Bords cadastraux avec calage | 41 | **41** |
+
+> **Le calage n'est pas vérifiable sur cadastre synthétique.** Une grille
+> régulière est par construction désalignée du parcellaire forestier : l'UGF
+> dominante n'y détient jamais plus de **30,1 %** d'une maille, contre 90 %
+> exigés — le calage ne se déclenche donc jamais et le test ne prouve rien. Sur
+> cadastre réel, la part dominante médiane monte à **0,95** et 41 parcelles sur
+> 64 franchissent le seuil. Toute recette du calage doit partir de vrai cadastre.
+
+## 6 bis. Performance — le cœur est devenu le poste dominant
+
+Croisement sur La-Vieille-Loye, avant et après l'optimisation app v0.130.0 :
+
+| | avant | après |
+|---|---|---|
+| total | 654 s | **31,5 s** |
+| dont app | 628,9 s | 6,6 s |
+| dont `croiser_parcelles_onf()` | 24,9 s | **24,9 s** |
+
+Levier identifié côté cœur, **non demandé** : ne croiser que les parcelles
+cadastrales intersectant réellement le parcellaire forestier — 181 sur 1 271 à
+La-Vieille-Loye, soit 14 % — mesuré à 24,9 s → 11,5 s. À ce niveau, le gain ne
+justifie probablement pas le changement.
 
 ---
 
@@ -171,16 +225,22 @@ Une ligne = un tènement, trié par UGF puis surface décroissante :
 |---|---|
 | `ugf_id`, `nom_ugf`, `foret_nom`, `parcelle`, `domaniale` | l'UGF à créer |
 | `tenement_id` | `<ugf_id>~<id cadastral>` — traçable des deux côtés |
-| `parcelle_cadastrale` | id de la parcelle d'origine → `parcelle_id` de `tenement_split_by_import()` |
+| `parcelle_cadastrale` | id de la parcelle d'origine — `tenement_import_replace()` la retrouve par recouvrement |
 | `n_tenements` | nombre de tènements de cette UGF (répété sur ses lignes) |
 | `surface_ha` | surface du tènement |
 | `part_ugf` | part de la **parcelle forestière** que la sélection détient — « vous ne possédez que 40 % de la parcelle 12 » |
 | `part_cadastrale` | part de la parcelle cadastrale que prend ce tènement ; `== 1` signifie « bord calé sur le cadastre » |
-| `hors_ugf` | seulement si `inclure_reste = TRUE` |
+| `hors_ugf` | présent seulement avec `inclure_reste = TRUE` |
 
-**Le reste n'est pas rendu par défaut** : `tenement_split_by_import()` recrée
-lui-même le reliquat non couvert pour tenir l'invariant de tuilage. Passez
-`inclure_reste = TRUE` seulement si vous voulez l'afficher.
+**`inclure_reste = TRUE` est obligatoire avec `tenement_import_replace()`**, pas
+un confort d'affichage. Cette fonction ne recrée **rien** : sans les lignes de
+reste, les parts de parcelle hors forêt publique perdent leur tènement et la
+parcelle **cesse d'être exactement pavée**, en silence — `projet_validate()` ne
+contrôle pas le pavage. Ces lignes arrivant avec `nom_ugf = NA`, il faut leur
+donner une UGF, sinon elles violent l'invariant 2 (cf. §8).
+
+Le défaut `FALSE` ne convient que si l'appelant recrée lui-même le reliquat,
+ce que faisait l'ancienne boucle `tenement_split_by_import()` — abandonnée.
 
 **Pourquoi c'est dans le cœur et pas dans l'app** : les deux découpages ne
 coïncident pas, et **ça ne se voit pas** à l'échelle de l'UGF (couverture
@@ -204,9 +264,18 @@ Deux garde-fous, déjà dans le cœur : une parcelle réellement partagée entre
 deux UGF **reste coupée**, et le « hors UGF » ne peut jamais prendre une
 parcelle — le laisser gagner supprimerait de la forêt.
 
-**Proposition UI** : une case « caler les UGF sur les limites cadastrales »,
-décochée par défaut, avec l'infobulle « les limites forestières ONF sont
-approximatives au bord ; cochez pour qu'elles suivent exactement vos parcelles ».
+**UI retenue** (app v0.130.2) : **pas de case**. Le calage est systématique et
+annoncé par une note permanente — « Les UGF sont calées sur les limites
+cadastrales : une parcelle couverte à 90 % ou plus par une UGF lui revient
+entièrement. Les limites forestières ONF sont approximatives au bord. » Une
+première version exposait le choix ; il a été retiré parce qu'il demandait à
+l'utilisateur d'arbitrer une question technique qui n'a qu'une bonne réponse.
+
+Ce qui a rendu la décision possible, c'est la mesure sur cadastre **réel**
+(cf. §6) : 170 → 124 tènements et 13 → 41 bords exactement cadastraux, là où un
+cadastre synthétique ne franchit jamais le seuil. Les deux garde-fous du cœur
+ont pesé : une parcelle réellement partagée entre deux UGF n'est pas calée, et
+le « hors UGF » ne peut jamais prendre une parcelle.
 
 ## 8. Câblage du bouton
 
@@ -230,36 +299,35 @@ shiny::observeEvent(input$ug_croise_onf, {
   }
 
   ten <- nemeton::croiser_parcelles_onf(
-    onf, sel, caler_sur_cadastre = isTRUE(input$onf_caler))
+    onf, sel, caler_sur_cadastre = TRUE)   # systématique depuis v0.130.2
   if (nrow(ten) == 0) {
     shiny::showNotification(i18n$t("onf_no_overlap"), type = "warning"); return()
   }
 
-  projet <- app_state$projet
-
-  # 1) Découper chaque parcelle cadastrale par les tènements qu'elle porte.
-  for (pid in unique(ten$parcelle_cadastrale)) {
-    f <- ten[ten$parcelle_cadastrale == pid, ]
-    projet <- tenement_split_by_import(projet, pid, f, labels = f$nom_ugf)
-  }
-
-  # 2) Une UG par UGF, tous cadastres confondus.
-  for (u in unique(ten$ugf_id)) {
-    lignes <- ten[ten$ugf_id == u, ]
-    tids <- tenement_ids_created(projet, lignes$parcelle_cadastrale, lignes$nom_ugf)
-    projet <- ug_create(projet, tids, label = lignes$nom_ugf[1])
-  }
-
-  app_state$projet <- projet
+  # Un seul appel : découpe, affectation UGF, ids et invariants.
+  ten$label_ugf <- ifelse(is.na(ten$nom_ugf), "Hors forêt publique", ten$nom_ugf)
+  app_state$projet <- tenement_import_replace(app_state$projet, ten)
 })
 ```
 
-Le point d'attention est l'étape 2. `tenement_split_by_import()` fabrique ses
-propres identifiants de fragments (`parcelle_id` + suffixe a/b/c…), donc il
-faut **capturer les ids qu'il vient de créer** plutôt que les rechercher après
-coup par libellé. Une UGF à cheval sur plusieurs parcelles cadastrales doit
-donner **une seule UG** rassemblant tous ses tènements — `n_tenements` dit
-combien en attendre, ce qui donne une assertion gratuite.
+`tenement_import_replace()` déduit chaque parcelle parente par recouvrement,
+pilote l'affectation UGF par `label_ugf` — en réutilisant une UGF de même
+libellé, donc son `groupe` survit —, forge tous les ids en une fois, purge les
+UGF vides et valide les invariants.
+
+> **Ne pas boucler sur `tenement_split_by_import()`.** Une première version de
+> ce brief proposait une double boucle découpe puis regroupement. Trois défauts,
+> tous constatés côté app :
+>
+> 1. `tenement_ids_created()` **n'existe pas** ;
+> 2. `tenement_split_by_import()` forgeait ses ids depuis `Sys.time()` **à la
+>    seconde** : deux parcelles découpées dans la même seconde recevaient les
+>    **mêmes**. Reproduit — 2 découpes, 4 tènements, **2 identifiants
+>    distincts**, et `projet_validate()` vert, car il ne contrôle pas l'unicité.
+>    Corrigé côté app en v0.129.0, mais la boucle l'aurait déclenché
+>    systématiquement ;
+> 3. l'argument `labels =` est un **no-op** : calculé, jamais écrit dans les
+>    tènements.
 
 ## 9. Ce qu'il faut restituer à l'utilisateur
 
@@ -270,15 +338,30 @@ Tout est lisible dans le retour, ne rien recalculer :
 | « N UGF créées à partir de M parcelles cadastrales » | `length(unique(ten$ugf_id))`, `length(unique(ten$parcelle_cadastrale))` |
 | « vous ne détenez que P % de la parcelle forestière Y » | `tapply(ten$part_ugf, ten$ugf_id, sum)` |
 | « ces UGF sont à cheval sur plusieurs de vos parcelles » | `ten$n_tenements > 1` |
-| « X ha de votre sélection hors forêt publique » | relancer avec `inclure_reste = TRUE` et sommer `surface_ha[hors_ugf]` |
+| « X ha de votre sélection hors forêt publique » | `sum(ten$surface_ha[ten$hors_ugf])` — les lignes sont déjà là, `inclure_reste = TRUE` étant requis (§7) |
 
 ## 10. Ce qu'il ne faut PAS faire
 
 - **Ne pas filtrer les tènements** par la surface côté app : le cœur l'a déjà
   fait, et refiltrer casserait le pavage exact que `validate_tiling()` vérifie.
-- **Ne pas caler par défaut** : c'est une correction volontaire des limites
-  ONF, elle doit rester un choix explicite de l'utilisateur.
+- **Ne pas caler en silence** : le calage est désormais **systématique** côté
+  app (v0.130.2) — la coche a été retirée et `caler_sur_cadastre` vaut `TRUE`
+  par défaut. Ce qui doit rester, c'est de le **dire** : une note permanente
+  annonce qu'une parcelle couverte à 90 % ou plus revient entière à son UGF
+  dominante. Sans elle, une UGF dont le bord suit le cadastre plutôt que le
+  tracé ONF est incompréhensible. Le paramètre subsiste dans la signature : le
+  comportement brut reste joignable et testable.
+- **Ne pas rouvrir un chemin qui REMPLACE `projet$parcels`** : essayé puis
+  retiré (v0.130.1). Même emprise, mêmes UGF que le croisement, mais la
+  composition cadastrale est perdue — et avec elle `part_ugf`, le « vous ne
+  détenez que 40 % de cette parcelle forestière ».
 - **Ne pas appeler le WFS par parcelle** : un seul appel sur l'emprise de toute
   la sélection suffit.
 - **Ne pas inverser les arguments** : la fonction part des **parcelles
   forestières** (`parcelles_onf` en premier), pas du cadastre.
+- **Ne pas remplacer `projet$parcels` par `modifyList()`** : il fusionne
+  colonne par colonne au lieu de remplacer (§3.2).
+- **Ne pas boucler sur `tenement_split_by_import()`** : un seul
+  `tenement_import_replace()` (§8).
+- **Ne pas laisser `inclure_reste = FALSE`** avec `tenement_import_replace()` :
+  la parcelle cesse d'être pavée, en silence (§7).
