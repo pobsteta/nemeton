@@ -14,6 +14,9 @@ name: pkgdown
 jobs:
   pkgdown:
     runs-on: ubuntu-latest
+    # Ce job n'avait aucun plafond : un runner bloqué y tournait
+    # sans fin. 90 min, comme les autres jobs lourds.
+    timeout-minutes: 90
     # Only restrict concurrency for non-PR jobs
     concurrency:
       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
