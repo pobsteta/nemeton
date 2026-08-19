@@ -65,10 +65,14 @@
 # "numberMatched" quand le serveur l'annonce) ou NULL en cas d'échec —
 # y compris les échecs qui arrivent en HTTP 200 (page HTML du pare-feu,
 # ExceptionReport OWS).
-.onf_wfs_read <- function(url) {
+.onf_wfs_read <- function(url, timeout = 30L) {
   dest <- tempfile(fileext = ".gml")
   on.exit(unlink(c(dest, paste0(tools::file_path_sans_ext(dest), ".gfs"))),
           add = TRUE)
+  # Vieux MapServer derrière un pare-feu : un appel réseau sans plafond peut
+  # immobiliser la session appelante. On borne, par principe.
+  ancien <- options(timeout = timeout)
+  on.exit(options(ancien), add = TRUE)
 
   status <- tryCatch(
     suppressWarnings(utils::download.file(url, dest, mode = "wb", quiet = TRUE)),

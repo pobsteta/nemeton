@@ -711,6 +711,45 @@ inspirer un épaississement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-19* (**v0.179.0**) : **`croiser_parcelles_onf()`
+réorienté — on part des UGF**. Correction de cadrage de Pascal, un jour après
+l'introduction de la fonction et avant tout câblage app : l'orientation était à
+l'envers. La parcelle **forestière** est l'unité de gestion, donc l'UGF ; la
+fonction part d'elle et rend, pour chacune, le ou les **tènements** découpés
+dans les parcelles cadastrales rencontrées — un seul par parcelle, même quand
+l'intersection est multipartie. L'ordre des arguments change
+(`parcelles_onf` d'abord), les colonnes aussi (`ugf_id`, `tenement_id`,
+`part_ugf`, `n_tenements`). Le reliquat hors forêt n'est plus rendu par défaut :
+`tenement_split_by_import()` le recrée côté app pour tenir son invariant de
+tuilage. Changement d'API assumé en bump **mineur** — la fonction a un jour et
+aucun consommateur.
+
+**Nouveauté demandée : `caler_sur_cadastre`.** Quand une UGF détient déjà
+≥ `seuil_calage` (0,9) d'une parcelle cadastrale, elle la prend **entière** :
+son bord se colle au bord cadastral. **Un défaut trouvé à l'essai réel et
+corrigé** : dans la première écriture, le « hors UGF » pouvait être dominant et
+prendre la parcelle — 0,7 ha de forêt disparaissaient en silence. Seule une UGF
+peut désormais gagner ; supprimer de la forêt n'est pas une correction. Second
+garde-fou : une parcelle réellement partagée entre deux UGF reste coupée.
+
+**Le seuil 0,9 n'est pas arbitraire** — part dominante détenue par une UGF dans
+chaque parcelle cadastrale touchée, mesurée sur trois communes (La Vieille-Loye
+39559, Harreberg 57298, Nantilly 70376) : bande `[0,9 ; 0,99[` = 31 / 12 / 4
+parcelles (les quasi-couvertures que le calage répare), bande `[0,5 ; 0,9[` =
+6 / 6 / 3. Une parcelle est soit quasi entièrement dans une UGF, soit
+franchement partagée ; le seuil tombe dans un creux réel.
+
+**Les deux réglages ne visent pas la même chose**, et c'est le résultat le plus
+utile de la journée : `min_surface_ha` traite les **petites** parcelles (sur un
+cadastre fin, le reliquat de 5 % pèse moins de 500 m² et rejoint tout seul
+l'UGF dominante), `caler_sur_cadastre` traite les **grandes** (le reliquat
+dépasse le seuil, il faut la règle de part). Effet mesuré — tènements, puis
+tènements au bord exactement cadastral : La Vieille-Loye **170 → 124** et
+**13 → 41** ; Harreberg 77 → 76 et 29 → 32 ; Nantilly 60 → 60 et 4 → 7.
+
+Spec §7 réécrite, brief app §7-10 réécrit (deux réglages, câblage, garde-fous),
+60 assertions.
+
 **Journal** — *2026-08-19* (**v0.178.0**) : **croisement parcellaire ONF ×
 parcelles cadastrales**. Suite directe de v0.177.0 : Pascal demande comment
 brancher un bouton d'app qui croise le retour ONF avec la sélection cadastrale.
