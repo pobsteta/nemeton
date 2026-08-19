@@ -54,6 +54,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Les « recommandés » d'apt sont des données et de la doc dont aucune
+      # compilation n'a besoin : pari-elldata (57 Mo), pari-doc, lmodern,
+      # mupdf-tools (49 Mo)… pak installe les dépendances système des paquets
+      # R sans pouvoir passer d'option, on la pose donc globalement, avant
+      # tout appel à apt (y compris ceux de setup-r).
+      - name: Ne pas installer les paquets apt recommandes
+        run: echo 'APT::Install-Recommends "false";' | sudo tee /etc/apt/apt.conf.d/99-no-recommends
+
       - name: Setup R
         uses: r-lib/actions/setup-r@v2
         with:
@@ -131,6 +139,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Les « recommandés » d'apt sont des données et de la doc dont aucune
+      # compilation n'a besoin : pari-elldata (57 Mo), pari-doc, lmodern,
+      # mupdf-tools (49 Mo)… pak installe les dépendances système des paquets
+      # R sans pouvoir passer d'option, on la pose donc globalement, avant
+      # tout appel à apt (y compris ceux de setup-r).
+      - name: Ne pas installer les paquets apt recommandes
+        run: echo 'APT::Install-Recommends "false";' | sudo tee /etc/apt/apt.conf.d/99-no-recommends
+
       - name: Setup R
         uses: r-lib/actions/setup-r@v2
         with:
@@ -185,6 +201,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      # Les « recommandés » d'apt sont des données et de la doc dont aucune
+      # compilation n'a besoin : pari-elldata (57 Mo), pari-doc, lmodern,
+      # mupdf-tools (49 Mo)… pak installe les dépendances système des paquets
+      # R sans pouvoir passer d'option, on la pose donc globalement, avant
+      # tout appel à apt (y compris ceux de setup-r).
+      - name: Ne pas installer les paquets apt recommandes
+        run: echo 'APT::Install-Recommends "false";' | sudo tee /etc/apt/apt.conf.d/99-no-recommends
 
       - name: Setup R
         uses: r-lib/actions/setup-r@v2
