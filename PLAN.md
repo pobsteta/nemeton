@@ -818,6 +818,80 @@ inspirer un épaississement.
 
 # Correctifs de production (hors chantier)
 
+**Journal app** — *2026-08-19* (**`nemetonshiny` v0.128.1**, merge
+`nemetonshiny@2840c5f7` / PR \#144, commit fonctionnel
+`nemetonshiny@7efc5fd0`, cycle dev `0.128.1.9000`) : **la résolution
+microclimat était décorative**. En déplaçant le radio « Résolution
+microclimat » (2 m / 5 m) vers *Sources & paramètres* (entrée
+précédente), l’app a découvert qu’il n’entrait dans **aucune** `cfg` :
+[`nemeton::regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+recevait toujours son défaut `res = 2`, quel que soit l’affichage,
+depuis l’introduction du radio. Choisir 5 m ne changeait ni la finesse
+de la grille ni le temps de calcul. Le réglage est désormais transmis,
+avec la coercition qui manquait (le radio porte la chaîne `"5"`, le cœur
+attend le numérique `5`) ; une valeur absente, nulle ou négative retombe
+sur le défaut du cœur. Portée : le chemin **moteur** seul (microclimf
+réel) — les deux autres appels passent par `precomputed =` et relisent
+une grille déjà figée.
+
+**Aucune action cœur** :
+[`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
+expose `res` (défaut `2`) depuis toujours ; c’était une dette **app**,
+sans bug ni manque côté `nemeton`, donc pas de spec ouverte. **En
+revanche, à savoir pour tout banc de validation cœur** : les sorties
+microclimf déjà en cache ont **toutes** été produites à 2 m, y compris
+pour un projet réglé sur 5 m, et les caches ne sont pas invalidés. Un
+run à 5 m donnera donc des valeurs différentes de celles affichées
+jusqu’ici — c’est le premier facteur à regarder si l’on compare des
+sorties microclimf produites avant et après le 2026-08-19. Tests app :
+`regeneration_engine` 177 ✓, `regeneration_provenance` 13 ✓,
+`mod_regeneration` 151 ✓.
+
+**Journal app** — *2026-08-18* (**`nemetonshiny` v0.128.0**, merge
+`nemetonshiny@c7a745d8` / PR \#143, commit fonctionnel
+`nemetonshiny@0bde27e7`, cycle dev `0.128.0.9000`) : **les calibrages
+quittent les sidebars**. Réorganisation UX transverse — les calibrages
+de quatre onglets migrent vers *Paramètres › Sources & paramètres*, où
+ils sont persistés **par projet** dans `metadata`, dans le même
+mouvement que les seuils FAST en v0.126.2.
+
+| Onglet | Réglages déplacés | Clé metadata |
+|----|----|----|
+| Suivi sanitaire | seuil d’anomalie (CRSWIR) | `monitoring_threshold_anomaly` (inchangée) |
+| Accessibilité | zone tampon autour de la forêt (m) | `accessibility_params` |
+| Desserte | tampon (km), distance de débardage, pente max constructible, tarification de la pente, largeur de plateforme | `desserte_params` |
+| reGénération | débourrement, chute des feuilles, `lai_max`, `ewm`, profondeur d’enracinement, forçage météo, résolution microclimat | `regen_params` |
+
+Critère de partage retenu : reste au sidebar **ce qui varie d’un essai à
+l’autre** (périodes d’observation/entraînement, moteur glouton/Steiner,
+type de peuplement, essence cible, mode « bilan hydrique seul ») ; migre
+**ce qui se règle une fois par massif**. Chaque sidebar garde un rappel
+des valeurs en vigueur — une carte d’alertes est illisible sans le seuil
+qui l’a produite.
+
+Deux changements de comportement : `methode_pente` passe de `bareme` à
+**`terrassement`** par défaut (il chiffre un volume de déblai/remblai,
+donc tient compte de la largeur de plateforme que le barème ignore), et
+`pente_max_pct` devient une entrée **séparée** — le couplage historique
+déplaçait le plafond de 60 à 100 % en silence. Les boutons Exports
+d’Accessibilité et de Desserte adoptent le bloc « Tableau des actions »
+de reGénération.
+
+Nouveaux accesseurs app (`R/service_project.R`, tous `@noRd`) :
+`project_fordead_params()`, `project_accessibility_params()`,
+`project_desserte_params()`, `project_regen_params()` et leurs setters.
+`lai_max` / `ewm` gardent leur sémantique **`NA` = dérivé de la donnée**
+(PAI LiDAR / SoilGrids). Tests app : `service_project` 294 ✓,
+`service_desserte` 160 ✓, `mod_sources_config` 31 ✓, `mod_monitoring`
+148 ✓, `mod_accessibility` 74 ✓, `mod_desserte` 35 ✓, `mod_regeneration`
+151 ✓.
+
+**Côté cœur : rien.** Aucune API nouvelle consommée par l’une ou l’autre
+release, plancher `Imports: nemeton (>= …)` inchangé côté app, version
+cœur consommée `nemeton 0.176.0` via `Remotes: @*release`. Aucune case
+de sous-chantier cochée : livraison UX transverse, pas la clôture d’un
+épaississement.
+
 **Journal** — *2026-08-19* (**v0.179.0**) :
 **[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
 réorienté — on part des UGF**. Correction de cadrage de Pascal, un jour
