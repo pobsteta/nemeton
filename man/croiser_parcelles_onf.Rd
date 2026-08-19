@@ -2,59 +2,89 @@
 % Please edit documentation in R/croiser_parcelles_onf.R
 \name{croiser_parcelles_onf}
 \alias{croiser_parcelles_onf}
-\title{Cross ONF forest parcels with selected cadastral parcels}
+\title{Tenements met by each ONF forest parcel (UGF)}
 \usage{
 croiser_parcelles_onf(
-  parcelles,
   parcelles_onf,
+  parcelles,
   min_surface_ha = 0.05,
-  absorber_echardes = TRUE,
+  caler_sur_cadastre = FALSE,
+  seuil_calage = 0.9,
+  inclure_reste = FALSE,
   id_col = NULL
 )
 }
 \arguments{
-\item{parcelles}{An \pkg{sf} of selected cadastral parcels. Its identifier
-column is taken from \code{id_col}, or auto-detected among \code{id},
+\item{parcelles_onf}{An \pkg{sf} of forest parcels, as returned by
+\code{\link{load_onf_parcelles_source}}. These are the UGF.}
+
+\item{parcelles}{An \pkg{sf} of cadastral parcels. Its identifier column is
+taken from \code{id_col}, or auto-detected among \code{id},
 \code{nemeton_id}, \code{geo_parcelle}, \code{idu}.}
 
-\item{parcelles_onf}{An \pkg{sf} of forest parcels, as returned by
-\code{\link{load_onf_parcelles_source}}.}
+\item{min_surface_ha}{Tenements strictly smaller than this are treated as
+slivers and absorbed. Default \code{0.05} (500 m²) — inside the natural gap
+measured between slivers (≤ 0.035 ha) and real tenements (≥ 0.12 ha). Use
+\code{0} to keep every sliver.}
 
-\item{min_surface_ha}{Fragments strictly smaller than this are treated as
-slivers. Default \code{0.05} (500 m²) — inside the natural gap measured
-between slivers (≤ 0.035 ha) and real fragments (≥ 0.12 ha).}
+\item{caler_sur_cadastre}{Snap UGF boundaries onto cadastral boundaries by
+giving each nearly-covered cadastral parcel whole to its dominant UGF.
+Default \code{FALSE}.}
 
-\item{absorber_echardes}{Absorb slivers into the largest fragment of the same
-cadastral parcel. Default \code{TRUE}. Set \code{FALSE} to inspect them.}
+\item{seuil_calage}{Share of a cadastral parcel above which its dominant UGF
+takes it whole. Only used when \code{caler_sur_cadastre} is \code{TRUE}.
+Default \code{0.9}.}
+
+\item{inclure_reste}{Also return, with \code{ugf_id} \code{NA} and
+\code{hors_ugf} \code{TRUE}, the parts of cadastral parcels no forest parcel
+covers. Default \code{FALSE} — the UGF-first view does not need them, and the
+application's \code{tenement_split_by_import()} recreates that remainder
+itself.}
 
 \item{id_col}{Name of the identifier column of \code{parcelles}. Default
 \code{NULL} (auto-detect).}
 }
 \value{
-An \pkg{sf} of fragments in the CRS of \code{parcelles}, with columns
-\code{parcelle_cadastrale}, \code{id_onf}, \code{nom_ugf}, \code{foret_id},
-\code{foret_nom}, \code{parcelle}, \code{domaniale}, \code{reste},
-\code{surface_ha}, \code{part_cadastrale} (share of the cadastral parcel) and
-\code{part_onf} (share of the forest parcel — how much of it the selection
-actually holds). A 0-row \pkg{sf} when nothing intersects.
+An \pkg{sf} of tenements in the CRS of \code{parcelles_onf}, ordered by UGF
+then by decreasing area, with columns \code{ugf_id}, \code{nom_ugf},
+\code{foret_id}, \code{foret_nom}, \code{parcelle}, \code{domaniale},
+\code{tenement_id} (\code{<ugf_id>~<cadastral id>}),
+\code{parcelle_cadastrale}, \code{hors_ugf}, \code{surface_ha},
+\code{part_ugf} (share of the UGF this tenement represents),
+\code{part_cadastrale} (share of the cadastral parcel) and \code{n_tenements}
+(tenements of that UGF). A 0-row \pkg{sf} when nothing intersects.
+
+\code{part_ugf} is measured against the \emph{original} ONF parcel, so it
+answers "how much of this forest parcel does the selection hold". With
+\code{caler_sur_cadastre = TRUE} it can exceed 1, since the UGF then gains the
+sliver of the cadastral parcel it did not cover.
 }
 \description{
-Intersect the ONF public-forest parcels returned by
-\code{\link{load_onf_parcelles_source}} with a selection of \strong{cadastral}
-parcels, and return the fragments that the application turns into tenements:
-one row per (cadastral parcel × forest parcel) pair, plus one \code{reste} row
-per cadastral parcel whose area is not covered by any forest parcel.
+Start from the \strong{forest parcels} returned by
+\code{\link{load_onf_parcelles_source}} — they are the management units, hence
+the UGF — and return, for each of them, the tenement(s) cut out of the
+\strong{cadastral} parcels it meets. One tenement per cadastral parcel met, so
+the result reads as: \emph{this UGF is made of these pieces of these cadastral
+parcels}.
 
-The two subdivisions do not coincide, and their misalignment is the whole
-difficulty. Measured on the \emph{forêt communale de La-Vieille-Loye} (39):
-56 cadastral parcels × 33 forest parcels produce 92 fragments, of which
-\strong{51 fall under 0.05 ha} while carrying together \strong{0.13 \%} of the
-area — digitising slivers, not management objects.
+The two subdivisions do not coincide, and the misalignment is invisible at UGF
+scale. Measured on the \emph{forêt communale de La-Vieille-Loye} (39): coverage
+of each forest parcel by the cadastre is 98.1 \% at worst, 100 \% at the median
+— yet cutting 33 forest parcels against 56 cadastral parcels yields 92
+fragments, \strong{51 of them under 0.05 ha}, carrying together \strong{0.13
+\%} of the area. Digitising slivers, not management objects.
 
-Slivers below \code{min_surface_ha} are therefore \strong{absorbed} into the
-largest fragment of the same cadastral parcel (the \code{reste} included),
-never dropped: each cadastral parcel stays exactly tiled, which is what the
-application's tiling invariant requires.
+Two corrections, mildest first:
+\itemize{
+\item \code{min_surface_ha} — a sliver is \strong{absorbed} by the largest
+tenement of the same cadastral parcel, never dropped, so each cadastral parcel
+stays exactly tiled (the application's tiling invariant).
+\item \code{caler_sur_cadastre} — when one UGF already holds at least
+\code{seuil_calage} of a cadastral parcel, that parcel is given to it
+\strong{whole}: the UGF boundary snaps onto the cadastral boundary. Parcels
+genuinely shared between two UGF stay cut, and the uncovered remainder can
+never take a parcel — dropping forest is not a correction.
+}
 }
 \seealso{
 \code{\link{load_onf_parcelles_source}}

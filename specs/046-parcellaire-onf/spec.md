@@ -135,61 +135,95 @@ chemin existant, sans nouvelle logique métier côté app (règles #1/#3).
 
 ---
 
-## 7. Croisement avec les parcelles cadastrales (v0.178.0)
+## 7. Croisement avec les parcelles cadastrales (v0.178.0, réorienté en v0.179.0)
 
 Demande de suite : *« comment ajouter un bouton dans l'app, qui croise ce
-retour avec les parcelles cadastrales sélectionnées ? »*. Le croisement n'est
-pas de l'affichage, il vit donc dans le cœur.
+retour avec les parcelles cadastrales sélectionnées ? »*, puis correction de
+cadrage : **la fonction doit partir des parcelles forestières**, donc des UGF,
+et rendre pour chaque UGF le ou les tènements de parcelles cadastrales
+rencontrées. C'est l'orientation retenue.
 
 ```r
-croiser_parcelles_onf(parcelles, parcelles_onf,
+croiser_parcelles_onf(parcelles_onf, parcelles,
                       min_surface_ha = 0.05,
-                      absorber_echardes = TRUE, id_col = NULL)
+                      caler_sur_cadastre = FALSE, seuil_calage = 0.9,
+                      inclure_reste = FALSE, id_col = NULL)
 ```
 
-`R/croiser_parcelles_onf.R`, exportée. Rend un `sf` de fragments — une ligne
-par (parcelle cadastrale × parcelle forestière), plus un `reste` par parcelle
-cadastrale non couverte — avec `parcelle_cadastrale`, `id_onf`, `nom_ugf`,
-`foret_id`, `foret_nom`, `parcelle`, `domaniale`, `reste`, `surface_ha`,
-`part_cadastrale` et `part_onf`.
+`R/croiser_parcelles_onf.R`, exportée. Une ligne = **un tènement** =
+(UGF × parcelle cadastrale), un seul par parcelle rencontrée. Colonnes :
+`ugf_id`, `nom_ugf`, `foret_id`, `foret_nom`, `parcelle`, `domaniale`,
+`tenement_id` (`<ugf_id>~<id cadastral>`), `parcelle_cadastrale`, `hors_ugf`,
+`surface_ha`, `part_ugf`, `part_cadastrale`, `n_tenements`.
+
+`part_ugf` se lit contre la parcelle forestière **d'origine** : « quelle part
+de cette parcelle la sélection détient-elle ». Avec `caler_sur_cadastre`, elle
+peut dépasser 1 — l'UGF a gagné le bord qu'elle ne couvrait pas.
+
+Le « hors UGF » (part de parcelle cadastrale qu'aucune forêt ne couvre) n'est
+**pas** rendu par défaut : la vue UGF-first n'en a pas besoin, et
+`tenement_split_by_import()` côté app recrée ce reste tout seul.
+`inclure_reste = TRUE` le remet.
 
 ### 7.1 Le fait mesuré qui structure la fonction
 
-Les deux découpages **ne coïncident pas**. Sur la forêt communale de
-La-Vieille-Loye (39), 56 parcelles cadastrales × 33 parcelles forestières :
+Les deux découpages **ne coïncident pas**, et à l'échelle de l'UGF **ça ne se
+voit pas** : sur la forêt communale de La-Vieille-Loye (39), chaque parcelle
+forestière est couverte par le cadastre à **98,1 % au pire, 100 % à la
+médiane**. Au niveau du fragment, 33 UGF × 56 parcelles cadastrales donnent
+92 fragments dont **51 sous 0,05 ha**, portant ensemble **0,13 %** de la
+surface. Le saut est net dans la distribution : 0,035 ha → 0,123 ha, rien
+entre les deux.
 
-| | fragments | dont < 0,05 ha | surface totale |
-|---|---|---|---|
-| croisement brut | 92 | **51** | 288,9 ha |
-| après absorption | 41 attribués + 56 restes | **0** | 288,9 ha |
+### 7.2 Deux corrections, du plus doux au plus franc
 
-Les 51 fragments sous le seuil portent ensemble **0,13 %** de la surface. Le
-saut est net dans la distribution : 0,035 ha → 0,123 ha, rien entre les deux.
-Ce sont des écarts de numérisation, pas des objets de gestion — et vus au
-niveau de la parcelle forestière ils étaient **invisibles** (recouvrement
-minimum 98,1 %, médiane 100 %). Il a fallu descendre au fragment pour les voir.
+**`min_surface_ha`** — l'écharde est **absorbée** par le plus gros tènement de
+la même parcelle cadastrale, jamais supprimée : la parcelle reste pavée
+exactement, ce qu'exige `validate_tiling()` côté app.
 
-### 7.2 Absorption, pas suppression
+**`caler_sur_cadastre`** — quand une UGF détient déjà au moins `seuil_calage`
+d'une parcelle cadastrale, elle la prend **entière** : le bord de l'UGF vient
+se coller au bord cadastral. Deux garde-fous : une parcelle réellement partagée
+entre deux UGF reste coupée, et le « hors UGF » ne peut **jamais** prendre une
+parcelle — le laisser gagner supprimerait de la forêt, ce qui n'est pas une
+correction (défaut trouvé et corrigé à l'essai réel : 0,7 ha de forêt
+disparaissaient).
 
-Une écharde est **absorbée par le plus gros fragment de la même parcelle
-cadastrale**, `reste` compris. Supprimer aurait cassé l'invariant de tuilage
-que l'app vérifie (`validate_tiling()`, tolérance 0,01 m²) : la surface totale
-est conservée au mètre près, seule l'attribution change. Un fragment **seul**
-sur sa parcelle est conservé quelle que soit sa taille — il *est* la parcelle,
-il n'y a rien où l'absorber.
+Le seuil 0,9 n'est pas arbitraire. Part dominante détenue par une UGF dans
+chaque parcelle cadastrale touchée, sur trois communes :
 
-### 7.3 Ce que le croisement rend lisible
+| commune | parcelles touchées | ≥ 0,99 | [0,9 ; 0,99[ | [0,5 ; 0,9[ | < 0,5 |
+|---|---|---|---|---|---|
+| La Vieille-Loye (39559) | 181 | 9 | **31** | 6 | 135 |
+| Harreberg (57298) | 189 | 19 | **12** | 6 | 152 |
+| Nantilly (70376) | 30 | 2 | **4** | 3 | 21 |
 
-`part_onf` répond à une question qu'aucune des deux couches ne porte seule :
-*quelle part de cette parcelle forestière la sélection détient-elle ?* Et les
-`reste` disent l'inverse : sur le cas ci-dessus, **48 des 56** parcelles
-sélectionnées étaient entièrement hors du parcellaire de la forêt communale,
-soit **115 ha sur 288,9**. C'est ce qu'un propriétaire doit voir avant de
-lancer un calcul d'indicateurs sur une sélection trop large.
+La bande `[0,9 ; 0,99[` — les quasi-couvertures à quelques pour cent près — est
+précisément ce que le calage répare, et la bande `[0,5 ; 0,9[` est presque
+vide : une parcelle est soit quasi entièrement dans une UGF, soit franchement
+partagée. Le seuil tombe dans un vrai creux.
+
+### 7.3 Effet mesuré des deux corrections
+
+| commune | brut | dont < 0,05 ha | absorbé | calé |
+|---|---|---|---|---|
+| La Vieille-Loye | 368 tèn. | 201 | 170 tèn., 13 bords cadastraux | **124 tèn., 41 bords** |
+| Harreberg | 280 tèn. | 204 | 77 tèn., 29 bords | 76 tèn., 32 bords |
+| Nantilly | 90 tèn. | 31 | 60 tèn., 4 bords | 60 tèn., 7 bords |
+
+« bords cadastraux » = tènements dont la limite est exactement celle d'une
+parcelle cadastrale (`part_cadastrale == 1`).
+
+Les deux réglages ne visent pas la même chose : **l'absorption traite les
+petites parcelles** (sur un cadastre fin, le reliquat de 5 % pèse moins de
+0,05 ha et rejoint tout seul l'UGF dominante), **le calage traite les
+grandes** (là, 5 % de reliquat dépasse le seuil et il faut la règle de part).
 
 ### 7.4 Tests
 
-`tests/testthat/test-croiser-parcelles-onf.R` — 43 assertions, géométries
-synthétiques : pavage exact, les deux parts, absorption et seuil, reste seul
-sous le seuil conservé, parcelles hors forêt, parcelle forestière à cheval sur
-plusieurs cadastres, couche vide, CRS géographique en entrée, `id_col` explicite.
+`tests/testthat/test-croiser-parcelles-onf.R` — 60 assertions : validation des
+entrées, un tènement par parcelle rencontrée (multipartie comprise), les deux
+parts, `n_tenements`, reste exclu puis réintégré, absorption et son seuil,
+calage et son seuil, parcelle réellement partagée laissée coupée, garde-fou du
+« hors UGF », couches vides ou disjointes, CRS géographique en entrée,
+`id_col` explicite.

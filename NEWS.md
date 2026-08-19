@@ -1,3 +1,55 @@
+# nemeton 0.179.0 (2026-08-19)
+
+### Changed — `croiser_parcelles_onf()` part désormais des UGF (spec 046 §7)
+
+**Changement d'API**, un jour après l'introduction de la fonction et avant tout
+câblage côté app. L'orientation était à l'envers : on partait du cadastre. On
+part maintenant de la **parcelle forestière** — c'est elle l'unité de gestion,
+donc l'UGF — et on rend, pour chacune, le ou les **tènements** découpés dans
+les parcelles cadastrales qu'elle rencontre.
+
+```r
+croiser_parcelles_onf(parcelles_onf, parcelles,   # l'ordre a changé
+                      min_surface_ha = 0.05,
+                      caler_sur_cadastre = FALSE, seuil_calage = 0.9,
+                      inclure_reste = FALSE, id_col = NULL)
+```
+
+Une ligne = un tènement = (UGF × parcelle cadastrale), un seul par parcelle
+rencontrée même quand l'intersection est multipartie. Colonnes : `ugf_id`,
+`nom_ugf`, `foret_id`, `foret_nom`, `parcelle`, `domaniale`, `tenement_id`
+(`<ugf_id>~<id cadastral>`), `parcelle_cadastrale`, `hors_ugf`, `surface_ha`,
+`part_ugf`, `part_cadastrale`, `n_tenements`.
+
+La part de parcelle cadastrale qu'aucune forêt ne couvre n'est plus rendue par
+défaut (`inclure_reste = FALSE`) : la vue UGF-first n'en a pas besoin et
+`tenement_split_by_import()` recrée ce reliquat lui-même côté app.
+
+### Added — `caler_sur_cadastre` : coller les bords d'UGF au cadastre
+
+Quand une UGF détient déjà au moins `seuil_calage` (0,9 par défaut) d'une
+parcelle cadastrale, elle la prend **entière** : son bord vient se caler sur le
+bord cadastral. Deux garde-fous — une parcelle réellement partagée entre deux
+UGF **reste coupée**, et le « hors UGF » ne peut **jamais** prendre une
+parcelle : le laisser gagner supprimerait de la forêt, ce qui n'est pas une
+correction (défaut trouvé à l'essai réel, 0,7 ha de forêt disparaissaient).
+
+Le seuil n'est pas arbitraire. Part dominante détenue par une UGF dans chaque
+parcelle cadastrale touchée, sur trois communes — La Vieille-Loye (39),
+Harreberg (57), Nantilly (70) : la bande `[0,9 ; 0,99[` compte 31, 12 et 4
+parcelles (les quasi-couvertures que le calage répare) tandis que la bande
+`[0,5 ; 0,9[` en compte 6, 6 et 3. Une parcelle est soit quasi entièrement dans
+une UGF, soit franchement partagée : le seuil tombe dans un vrai creux.
+
+Effet mesuré, tènements puis tènements dont le bord est exactement cadastral :
+La Vieille-Loye **170 → 124** et **13 → 41 bords** ; Harreberg 77 → 76 et
+29 → 32 ; Nantilly 60 → 60 et 4 → 7. Les deux réglages ne visent pas la même
+chose : `min_surface_ha` traite les **petites** parcelles (le reliquat pèse
+moins de 500 m² et rejoint tout seul l'UGF dominante), `caler_sur_cadastre` les
+**grandes** (le reliquat dépasse le seuil, il faut la règle de part).
+
+60 assertions. Brief app mis à jour (`specs/046-parcellaire-onf/`).
+
 # nemeton 0.178.0 (2026-08-19)
 
 ### Added — croiser le parcellaire ONF avec les parcelles cadastrales (spec 046 §7)
