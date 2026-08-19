@@ -407,3 +407,19 @@ release ni échec CI.
     session a déplacé le WIP T3 entre branches, puis commité par-dessus du travail
     édité en direct). **Livrer côté app = fournir un brief** dans
     `specs/<NNN>-*/brief-nemetonshiny.md` (côté cœur), jamais éditer l'app.
+
+    **Seule exception — l'espace d'échange `/home/pascal/dev/briefs/`.** Il est
+    *hors* des dépôts : y écrire ne touche aucun arbre de travail, ne peut donc
+    pas écraser de WIP et n'a aucune implication git. Une session peut y déposer
+    un brief pour une autre :
+
+    ```
+    /home/pascal/dev/briefs/vers-nemeton/       AAAA-MM-JJ-sujet.md
+    /home/pascal/dev/briefs/vers-nemetonshiny/
+    /home/pascal/dev/briefs/traites/            déplacé ici une fois exécuté
+    ```
+
+    La copie **de référence** d'un brief lié à une spec reste versionnée dans le
+    dépôt émetteur ; ce qui transite par cet espace est une notification de
+    travail, pas la source de vérité. Écrire directement dans l'arbre d'un dépôt
+    frère reste interdit, espace d'échange ou pas.

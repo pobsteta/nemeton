@@ -1,7 +1,7 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 0.179.0.9000
+Version: 0.179.1
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
@@ -95,6 +95,7 @@ Suggests:
     pdftools (>= 3.0.0),
     xml2,
     microclimf,
+    microclima,
     mcera5,
     ecmwfr,
     lidR,
@@ -115,7 +116,6 @@ Remotes:
     jbferet/biodivMapR,
     ilyamaclean/microclimf,
     ilyamaclean/microclima,
-    ilyamaclean/microclimc,
     dklinges9/mcera5,
     pobsteta/biljouR
 Config/roxygen2/version: 8.0.0

@@ -709,7 +709,68 @@ inspirer un épaississement.
 
 ---
 
+# Chantier CLOS — Parcellaire forestier ONF (spec 046)
+
+> Créer les UGF depuis le parcellaire forestier public ONF, et croiser ce
+> parcellaire avec les parcelles cadastrales sélectionnées.
+
+| État | Livrable | Repo | Référence |
+|------|----------|------|-----------|
+| ✅ | `load_onf_parcelles_source()` — WFS ONF, métropole + 5 territoires ultramarins | `nemeton` | **v0.177.0** |
+| ✅ | `croiser_parcelles_onf()` — un tènement par (UGF × parcelle cadastrale) | `nemeton` | **v0.178.0**, réorientée UGF-first en **v0.179.0** |
+| ✅ | `caler_sur_cadastre` — colle le bord d'UGF au bord cadastral | `nemeton` | **v0.179.0** |
+| ✅ | Deux actions dans Carte UGF (**Croiser** / **Importer**), sélecteur de domanialité, case de calage, surcouche, mention du producteur | `nemetonshiny` | **v0.129.0** (`01873e72`) |
+| ✅ | **Recette §6 passée sur le service réel**, calage validé sur cadastre réel | `nemetonshiny` | **v0.130.0** (`e3de17a5`) |
+
+**Calage reproduit à l'identique** entre cœur et app sur La-Vieille-Loye
+(1 271 parcelles cadastrales × 94 parcelles forestières) : 170 tènements sans
+calage, 124 avec, 13 puis 41 bords exactement cadastraux — les quatre chiffres.
+
+**Deux enseignements consignés dans le brief**, parce qu'ils ne se voient pas
+autrement : le calage **n'est pas vérifiable sur cadastre synthétique** (une
+grille régulière est par construction désalignée, la part dominante y plafonne à
+30,1 % contre 90 % exigés), et `inclure_reste = TRUE` est **obligatoire** avec
+`tenement_import_replace()`, faute de quoi la parcelle cesse d'être pavée en
+silence.
+
+**Reliquat identifié, non demandé** : côté cœur, ne croiser que les parcelles
+cadastrales intersectant réellement le parcellaire forestier (181 sur 1 271 à
+La-Vieille-Loye) ferait passer `croiser_parcelles_onf()` de 24,9 s à 11,5 s. À
+ce niveau le gain ne justifie probablement pas le changement.
+
 # Correctifs de production (hors chantier)
+
+**Journal app** — *2026-08-19* (**`nemetonshiny` v0.130.0**, merge
+`nemetonshiny@e3de17a5` / PR #146, commits `a3aef111` et `42ddab0c`, cycle dev
+`0.130.0.9000`) : **recette du parcellaire ONF passée, croisement 95× plus
+rapide**. La recette §6 du brief spec 046 est jouée contre le vrai WFS — Chaux
+4 × 4 km rend 213 parcelles / 2 114 ha en 1,1 s (189 domaniale + 24 communale),
+la plaine agricole rend `status = empty`, le service coupé `status =
+unavailable`. Le **calage** est validé sur le vrai cadastre de La-Vieille-Loye
+et reproduit **exactement** les quatre chiffres annoncés par le cœur (170 → 124
+tènements, 13 → 41 bords cadastraux).
+
+`tenement_import_replace()` est accélérée **95×** (628,9 s → 6,6 s) à résultat
+strictement identique ; le croisement complet passe de 654 s à 31,5 s, dont
+**24,9 s de cœur** — `croiser_parcelles_onf()` est désormais le poste dominant.
+
+**Trois corrections rapportées au brief cœur** (spec 046, faites ce jour) : le
+`modifyList()` du §3.2 fusionnait `projet$parcels` colonne par colonne au lieu
+de le remplacer ; la boucle du §8 appelait une fonction inexistante et
+déclenchait des identifiants de tènements dupliqués (`Sys.time()` à la seconde,
+corrigé app en v0.129.0) ; `inclure_reste` y était présenté comme un confort
+d'affichage alors qu'il est **obligatoire** avec `tenement_import_replace()`.
+Ces trois passages propageaient du code qui corrompt — ils sont réécrits.
+
+**Journal app** — *2026-08-19* (**`nemetonshiny` v0.129.0**, merge
+`nemetonshiny@01873e72` / PR #145, commit fonctionnel `e75661a1`, cycle dev
+`0.129.0.9000`) : **le parcellaire forestier ONF entre dans Carte UGF**
+(spec 046). Deux actions — **Croiser**, qui garde les parcelles cadastrales et
+les redécoupe, et **Importer**, qui les remplace après prévisualisation et
+confirmation. Sélecteur de domanialité, case de calage **décochée par défaut**,
+surcouche colorée par domanialité, mention du producteur ONF. L'app ajoute
+`R/service_onf.R`. C'est la seule des quatre releases à relever le plancher :
+`Imports: nemeton (>= 0.179.0)`.
 
 **Journal app** — *2026-08-19* (**`nemetonshiny` v0.128.1**, merge
 `nemetonshiny@2840c5f7` / PR #144, commit fonctionnel `nemetonshiny@7efc5fd0`,
