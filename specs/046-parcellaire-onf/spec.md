@@ -132,3 +132,64 @@ UGF, en **alternative** à la sélection cadastrale. Le schéma rendu par le cœ
 (`id`, `contenance`) est déjà compatible avec `standardize_parcels()` /
 `ug_init_default()` : *1 parcelle forestière = 1 tenement = 1 UGF* passe par le
 chemin existant, sans nouvelle logique métier côté app (règles #1/#3).
+
+---
+
+## 7. Croisement avec les parcelles cadastrales (v0.178.0)
+
+Demande de suite : *« comment ajouter un bouton dans l'app, qui croise ce
+retour avec les parcelles cadastrales sélectionnées ? »*. Le croisement n'est
+pas de l'affichage, il vit donc dans le cœur.
+
+```r
+croiser_parcelles_onf(parcelles, parcelles_onf,
+                      min_surface_ha = 0.05,
+                      absorber_echardes = TRUE, id_col = NULL)
+```
+
+`R/croiser_parcelles_onf.R`, exportée. Rend un `sf` de fragments — une ligne
+par (parcelle cadastrale × parcelle forestière), plus un `reste` par parcelle
+cadastrale non couverte — avec `parcelle_cadastrale`, `id_onf`, `nom_ugf`,
+`foret_id`, `foret_nom`, `parcelle`, `domaniale`, `reste`, `surface_ha`,
+`part_cadastrale` et `part_onf`.
+
+### 7.1 Le fait mesuré qui structure la fonction
+
+Les deux découpages **ne coïncident pas**. Sur la forêt communale de
+La-Vieille-Loye (39), 56 parcelles cadastrales × 33 parcelles forestières :
+
+| | fragments | dont < 0,05 ha | surface totale |
+|---|---|---|---|
+| croisement brut | 92 | **51** | 288,9 ha |
+| après absorption | 41 attribués + 56 restes | **0** | 288,9 ha |
+
+Les 51 fragments sous le seuil portent ensemble **0,13 %** de la surface. Le
+saut est net dans la distribution : 0,035 ha → 0,123 ha, rien entre les deux.
+Ce sont des écarts de numérisation, pas des objets de gestion — et vus au
+niveau de la parcelle forestière ils étaient **invisibles** (recouvrement
+minimum 98,1 %, médiane 100 %). Il a fallu descendre au fragment pour les voir.
+
+### 7.2 Absorption, pas suppression
+
+Une écharde est **absorbée par le plus gros fragment de la même parcelle
+cadastrale**, `reste` compris. Supprimer aurait cassé l'invariant de tuilage
+que l'app vérifie (`validate_tiling()`, tolérance 0,01 m²) : la surface totale
+est conservée au mètre près, seule l'attribution change. Un fragment **seul**
+sur sa parcelle est conservé quelle que soit sa taille — il *est* la parcelle,
+il n'y a rien où l'absorber.
+
+### 7.3 Ce que le croisement rend lisible
+
+`part_onf` répond à une question qu'aucune des deux couches ne porte seule :
+*quelle part de cette parcelle forestière la sélection détient-elle ?* Et les
+`reste` disent l'inverse : sur le cas ci-dessus, **48 des 56** parcelles
+sélectionnées étaient entièrement hors du parcellaire de la forêt communale,
+soit **115 ha sur 288,9**. C'est ce qu'un propriétaire doit voir avant de
+lancer un calcul d'indicateurs sur une sélection trop large.
+
+### 7.4 Tests
+
+`tests/testthat/test-croiser-parcelles-onf.R` — 43 assertions, géométries
+synthétiques : pavage exact, les deux parts, absorption et seuil, reste seul
+sous le seuil conservé, parcelles hors forêt, parcelle forestière à cheval sur
+plusieurs cadastres, couche vide, CRS géographique en entrée, `id_col` explicite.
