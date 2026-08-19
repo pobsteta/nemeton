@@ -50,6 +50,15 @@ moins de 500 m² et rejoint tout seul l'UGF dominante), `caler_sur_cadastre` les
 
 60 assertions. Brief app mis à jour (`specs/046-parcellaire-onf/`).
 
+### Fixed — le WFS ONF ne peut plus bloquer une session
+
+Deux jobs CI ont été tués au timeout (60 min, puis 45 min) sur un transfert
+calé vers `ws.carmencarto.fr`. Le service est vieux et s'endort sans fermer la
+connexion. Deux verrous : `.onf_wfs_read()` borne désormais explicitement le
+transfert (30 s), et le test de fumée qui tape le service réel devient
+**opt-in** (`NEMETON_TEST_ONF_LIVE=true`), comme les tests d'intégration DB du
+dépôt. La CI ne dépend plus de la disponibilité d'un service tiers.
+
 # nemeton 0.178.0 (2026-08-19)
 
 ### Added — croiser le parcellaire ONF avec les parcelles cadastrales (spec 046 §7)

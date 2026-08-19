@@ -65,10 +65,14 @@
 # "numberMatched" quand le serveur l'annonce) ou NULL en cas d'échec —
 # y compris les échecs qui arrivent en HTTP 200 (page HTML du pare-feu,
 # ExceptionReport OWS).
-.onf_wfs_read <- function(url) {
+.onf_wfs_read <- function(url, timeout = 30L) {
   dest <- tempfile(fileext = ".gml")
   on.exit(unlink(c(dest, paste0(tools::file_path_sans_ext(dest), ".gfs"))),
           add = TRUE)
+  # Le service est vieux et s'endort : sans borne explicite, un transfert qui
+  # cale bloque la session (deux jobs CI tués au timeout, 2026-08-18/19).
+  ancien <- options(timeout = timeout)
+  on.exit(options(ancien), add = TRUE)
 
   status <- tryCatch(
     suppressWarnings(utils::download.file(url, dest, mode = "wb", quiet = TRUE)),

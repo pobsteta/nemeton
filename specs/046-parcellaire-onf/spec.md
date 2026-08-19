@@ -63,7 +63,10 @@ Mesures faites en direct le 2026-08-18 :
 4. **HTTP seul** : `https://ws.carmencarto.fr` ne répond pas. Sans conséquence
    depuis R côté serveur ; bloquant depuis un navigateur en HTTPS (contenu
    mixte) → l'appel doit rester côté serveur.
-5. **Licence non déclarée** : data.gouv.fr affiche `License Not Specified`,
+5. **Le service s'endort** : deux jobs CI tués au timeout sur un transfert
+   calé (2026-08-18 et 19). `.onf_wfs_read()` borne le transfert à 30 s, et le
+   test de fumée réel est **opt-in** (`NEMETON_TEST_ONF_LIVE=true`).
+6. **Licence non déclarée** : data.gouv.fr affiche `License Not Specified`,
    l'ONF annonce une diffusion « libre et gratuite » sans nommer de licence.
    Citer le producteur ; à retrancher si l'ONF précise ses conditions.
 

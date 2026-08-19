@@ -189,6 +189,11 @@ test_that("the WFS url carries the territory, the bbox and the count", {
 test_that("the live ONF service answers over the forêt domaniale de Chaux", {
   skip_on_cran()
   skip_if_offline()
+  # Opt-in : le WFS ONF est un vieux service qui cale sans prévenir, et un
+  # transfert bloqué a déjà tué deux jobs CI au timeout. Idiome des tests
+  # d'intégration DB du dépôt — on n'y va que sur demande explicite.
+  skip_if_not(identical(tolower(Sys.getenv("NEMETON_TEST_ONF_LIVE")), "true"),
+              "set NEMETON_TEST_ONF_LIVE=true to hit the live ONF WFS")
   aoi <- sf::st_as_sf(sf::st_sfc(
     sf::st_polygon(list(rbind(c(900000, 6666500), c(902000, 6666500),
                               c(902000, 6668500), c(900000, 6668500),
