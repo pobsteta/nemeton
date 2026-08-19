@@ -474,23 +474,33 @@ release ni échec CI.
 
 1.  Le code métier (indicateurs, familles, NDP) reste dans le package
     `nemeton` (ce repo), JAMAIS dans `nemetonshiny`
+
 2.  `nemetonshiny` est de la présentation : il appelle les fonctions
     exportées par `nemeton`
+
 3.  Aucune logique métier dans `server.R` / `ui.R` / `mod_*.R` de
     `nemetonshiny`
+
 4.  Dans `nemetonshiny`, les textes UI passent par `i18n$t("clé")`,
     jamais en littéral
+
 5.  Chaque nouvelle fonction exportée (côté cœur) a un test dans
     `tests/testthat/`
+
 6.  Les rasters et le LiDAR ne sont JAMAIS stockés dans PostgreSQL
     (ADR-002)
+
 7.  Le NDP mesure la qualité des données, pas la complétude de l’analyse
+
 8.  Pas de dépendance inverse : `nemeton` n’importe JAMAIS
     `nemetonshiny`
+
 9.  Quand je travaille sur une tâche longue, maintiens un fichier
     PLAN.md à la racine avec l’état actuel, les décisions prises, et la
     prochaine étape
+
 10. Mets-le à jour à chaque étape terminée
+
 11. **Ne JAMAIS modifier le répertoire de travail de `nemetonshiny`**
     (ni d’aucun repo frère : `tree_sat_nemeton`, `maestro_nemeton`,
     `platform_nemeton`, etc.) depuis une session `nemeton`. Interdits :
@@ -504,3 +514,18 @@ release ni échec CI.
     par-dessus du travail édité en direct). **Livrer côté app = fournir
     un brief** dans `specs/<NNN>-*/brief-nemetonshiny.md` (côté cœur),
     jamais éditer l’app.
+
+    **Seule exception — l’espace d’échange `/home/pascal/dev/briefs/`.**
+    Il est *hors* des dépôts : y écrire ne touche aucun arbre de
+    travail, ne peut donc pas écraser de WIP et n’a aucune implication
+    git. Une session peut y déposer un brief pour une autre :
+
+        /home/pascal/dev/briefs/vers-nemeton/       AAAA-MM-JJ-sujet.md
+        /home/pascal/dev/briefs/vers-nemetonshiny/
+        /home/pascal/dev/briefs/traites/            déplacé ici une fois exécuté
+
+    La copie **de référence** d’un brief lié à une spec reste versionnée
+    dans le dépôt émetteur ; ce qui transite par cet espace est une
+    notification de travail, pas la source de vérité. Écrire directement
+    dans l’arbre d’un dépôt frère reste interdit, espace d’échange ou
+    pas.

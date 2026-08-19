@@ -79,10 +79,11 @@ and at equal height conifers are more vulnerable than broadleaves
 and clamped to `[0, 100]`.
 
 \*\*Primary method\*\* (requires microclima): Uses
-`microclima::windcoef()` to compute wind shelter coefficient from the
-DEM. Dominant wind direction is obtained from NASA POWER climatology
-(nasapower), defaulting to 270 degrees (west) for France. R2 = (1 -
-shelter_coef) \* 100.
+[`microclima::windcoef()`](https://rdrr.io/pkg/microclima/man/windcoef.html)
+to compute wind shelter coefficient from the DEM. Dominant wind
+direction is obtained from NASA POWER climatology (nasapower),
+defaulting to 270 degrees (west) for France. R2 = (1 - shelter_coef) \*
+100.
 
 \*\*Fallback method\*\* (DEM terrain derivatives): Combines aspect-wind
 alignment, slope, and terrain ruggedness (TRI): R2 = wind_exposure \*

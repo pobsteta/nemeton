@@ -11,7 +11,7 @@ microclima is unavailable."><meta property="og:image" content="https://pobsteta.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.179.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.179.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -132,7 +132,7 @@ roots). The modulation is multiplicative and clamped to
 <code>[0, 100]</code>.</p>
 
 <p>**Primary method** (requires <span class="pkg">microclima</span>):
-Uses <code>microclima::windcoef()</code> to compute wind shelter coefficient
+Uses <code><a href="https://rdrr.io/pkg/microclima/man/windcoef.html" class="external-link">microclima::windcoef()</a></code> to compute wind shelter coefficient
 from the DEM. Dominant wind direction is obtained from NASA POWER
 climatology (<span class="pkg">nasapower</span>), defaulting to 270 degrees (west) for France.
 R2 = (1 - shelter_coef) * 100.</p>

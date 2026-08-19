@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.179.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.179.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -397,7 +397,55 @@
 </blockquote>
 <hr></div>
 <div class="section level1">
+<h1 id="chantier-clos--parcellaire-forestier-onf-spec-046">Chantier CLOS — Parcellaire forestier ONF (spec 046)<a class="anchor" aria-label="anchor" href="#chantier-clos--parcellaire-forestier-onf-spec-046"></a></h1>
+<blockquote>
+<p>Créer les UGF depuis le parcellaire forestier public ONF, et croiser ce parcellaire avec les parcelles cadastrales sélectionnées.</p>
+</blockquote>
+<table class="table"><colgroup><col width="18%"><col width="30%"><col width="18%"><col width="33%"></colgroup><thead><tr><th>État</th>
+<th>Livrable</th>
+<th>Repo</th>
+<th>Référence</th>
+</tr></thead><tbody><tr><td>✅</td>
+<td>
+<code><a href="reference/load_onf_parcelles_source.html">load_onf_parcelles_source()</a></code> — WFS ONF, métropole + 5 territoires ultramarins</td>
+<td><code>nemeton</code></td>
+<td><strong>v0.177.0</strong></td>
+</tr><tr><td>✅</td>
+<td>
+<code><a href="reference/croiser_parcelles_onf.html">croiser_parcelles_onf()</a></code> — un tènement par (UGF × parcelle cadastrale)</td>
+<td><code>nemeton</code></td>
+<td>
+<strong>v0.178.0</strong>, réorientée UGF-first en <strong>v0.179.0</strong>
+</td>
+</tr><tr><td>✅</td>
+<td>
+<code>caler_sur_cadastre</code> — colle le bord d’UGF au bord cadastral</td>
+<td><code>nemeton</code></td>
+<td><strong>v0.179.0</strong></td>
+</tr><tr><td>✅</td>
+<td>Une action dans Carte UGF (<strong>Créer les UGF avec le parcellaire ONF</strong>), sélecteur de domanialité, <strong>calage systématique</strong>, surcouche, mention du producteur</td>
+<td><code>nemetonshiny</code></td>
+<td>
+<strong>v0.129.0</strong> (<code>01873e72</code>), simplifié en <strong>v0.130.2</strong> (<code>b3e8f44b</code>)</td>
+</tr><tr><td>✅</td>
+<td>
+<strong>Recette §6 passée sur le service réel</strong>, calage validé sur cadastre réel</td>
+<td><code>nemetonshiny</code></td>
+<td>
+<strong>v0.130.0</strong> (<code>e3de17a5</code>)</td>
+</tr></tbody></table><p><strong>Calage reproduit à l’identique</strong> entre cœur et app sur La-Vieille-Loye (1 271 parcelles cadastrales × 94 parcelles forestières) : 170 tènements sans calage, 124 avec, 13 puis 41 bords exactement cadastraux — les quatre chiffres.</p>
+<p><strong>Deux enseignements consignés dans le brief</strong>, parce qu’ils ne se voient pas autrement : le calage <strong>n’est pas vérifiable sur cadastre synthétique</strong> (une grille régulière est par construction désalignée, la part dominante y plafonne à 30,1 % contre 90 % exigés), et <code>inclure_reste = TRUE</code> est <strong>obligatoire</strong> avec <code>tenement_import_replace()</code>, faute de quoi la parcelle cesse d’être pavée en silence.</p>
+<p><strong>Reliquat identifié, non demandé</strong> : côté cœur, ne croiser que les parcelles cadastrales intersectant réellement le parcellaire forestier (181 sur 1 271 à La-Vieille-Loye) ferait passer <code><a href="reference/croiser_parcelles_onf.html">croiser_parcelles_onf()</a></code> de 24,9 s à 11,5 s. À ce niveau le gain ne justifie probablement pas le changement.</p>
+</div>
+<div class="section level1">
 <h1 id="correctifs-de-production-hors-chantier">Correctifs de production (hors chantier)<a class="anchor" aria-label="anchor" href="#correctifs-de-production-hors-chantier"></a></h1>
+<p><strong>Journal app</strong> — <em>2026-08-19</em> (<strong><code>nemetonshiny</code> v0.130.2</strong>, merge <code>nemetonshiny@b3e8f44b</code> / PR #149, cycle dev <code>0.130.2.9000</code>) : <strong>le calage cadastral devient systématique</strong>. La coche disparaît, <code>caler_sur_cadastre</code> vaut <code>TRUE</code> par défaut côté service, une note permanente l’annonce à l’écran, et le bouton est renommé <strong>« Créer les UGF avec le parcellaire ONF »</strong>.</p>
+<p>C’est le <strong>contre-pied assumé</strong> du §10 du brief spec 046, qui demandait de laisser le choix à l’utilisateur — la spec est mise à jour en conséquence. Raisonnement retenu : les limites forestières ONF sont approximatives <strong>au bord</strong> ; une UGF dont le tracé ne suit pas la parcelle qu’elle recouvre à 90 % ou plus est un artefact de numérisation, pas une décision de gestion. Exposer le choix revenait à faire arbitrer par l’utilisateur une question technique qui n’a qu’une bonne réponse. Ce qui a rendu la décision possible : la mesure sur cadastre <strong>réel</strong> (170 → 124 tènements, 13 → 41 bords exactement cadastraux), là où un cadastre synthétique ne franchit jamais le seuil. Les deux garde-fous du cœur ont pesé — une parcelle réellement partagée n’est pas calée, et le « hors UGF » ne peut jamais prendre une parcelle. Le paramètre subsiste dans la signature : le comportement brut reste joignable et testable. Aucune action cœur.</p>
+<p><strong>Journal app</strong> — <em>2026-08-19</em> (<strong><code>nemetonshiny</code> v0.130.1</strong>, merge <code>nemetonshiny@cb27c6bf</code> / PR #148) : <strong>retrait du bouton « Importer le parcellaire ONF »</strong>. Il partait de la même emprise que le croisement et produisait les mêmes UGF, mais en <strong>jetant la composition cadastrale</strong> — donc <code>part_ugf</code>, le « vous ne détenez que 40 % de cette parcelle forestière ». Un cas dégradé, et destructif de surcroît. Partent avec lui <code>onf_projet_from_parcelles()</code>, ses tests et six clés i18n orphelines : <strong>−261 lignes</strong>. Le §3 du brief spec 046 décrivait ce chemin ; il est marqué historique plutôt que supprimé, pour garder trace de ce qui a été essayé et pourquoi il a été retiré. Aucune action cœur.</p>
+<p><strong>Journal app</strong> — <em>2026-08-19</em> (<strong><code>nemetonshiny</code> v0.130.0</strong>, merge <code>nemetonshiny@e3de17a5</code> / PR #146, commits <code>a3aef111</code> et <code>42ddab0c</code>, cycle dev <code>0.130.0.9000</code>) : <strong>recette du parcellaire ONF passée, croisement 95× plus rapide</strong>. La recette §6 du brief spec 046 est jouée contre le vrai WFS — Chaux 4 × 4 km rend 213 parcelles / 2 114 ha en 1,1 s (189 domaniale + 24 communale), la plaine agricole rend <code>status = empty</code>, le service coupé <code>status = unavailable</code>. Le <strong>calage</strong> est validé sur le vrai cadastre de La-Vieille-Loye et reproduit <strong>exactement</strong> les quatre chiffres annoncés par le cœur (170 → 124 tènements, 13 → 41 bords cadastraux).</p>
+<p><code>tenement_import_replace()</code> est accélérée <strong>95×</strong> (628,9 s → 6,6 s) à résultat strictement identique ; le croisement complet passe de 654 s à 31,5 s, dont <strong>24,9 s de cœur</strong> — <code><a href="reference/croiser_parcelles_onf.html">croiser_parcelles_onf()</a></code> est désormais le poste dominant.</p>
+<p><strong>Trois corrections rapportées au brief cœur</strong> (spec 046, faites ce jour) : le <code><a href="https://rdrr.io/r/utils/modifyList.html" class="external-link">modifyList()</a></code> du §3.2 fusionnait <code>projet$parcels</code> colonne par colonne au lieu de le remplacer ; la boucle du §8 appelait une fonction inexistante et déclenchait des identifiants de tènements dupliqués (<code><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time()</a></code> à la seconde, corrigé app en v0.129.0) ; <code>inclure_reste</code> y était présenté comme un confort d’affichage alors qu’il est <strong>obligatoire</strong> avec <code>tenement_import_replace()</code>. Ces trois passages propageaient du code qui corrompt — ils sont réécrits.</p>
+<p><strong>Journal app</strong> — <em>2026-08-19</em> (<strong><code>nemetonshiny</code> v0.129.0</strong>, merge <code>nemetonshiny@01873e72</code> / PR #145, commit fonctionnel <code>e75661a1</code>, cycle dev <code>0.129.0.9000</code>) : <strong>le parcellaire forestier ONF entre dans Carte UGF</strong> (spec 046). Deux actions — <strong>Croiser</strong>, qui garde les parcelles cadastrales et les redécoupe, et <strong>Importer</strong>, qui les remplace après prévisualisation et confirmation. Sélecteur de domanialité, case de calage <strong>décochée par défaut</strong>, surcouche colorée par domanialité, mention du producteur ONF. L’app ajoute <code>R/service_onf.R</code>. C’est la seule des quatre releases à relever le plancher : <code>Imports: nemeton (&gt;= 0.179.0)</code>.</p>
 <p><strong>Journal app</strong> — <em>2026-08-19</em> (<strong><code>nemetonshiny</code> v0.128.1</strong>, merge <code>nemetonshiny@2840c5f7</code> / PR #144, commit fonctionnel <code>nemetonshiny@7efc5fd0</code>, cycle dev <code>0.128.1.9000</code>) : <strong>la résolution microclimat était décorative</strong>. En déplaçant le radio « Résolution microclimat » (2 m / 5 m) vers <em>Sources &amp; paramètres</em> (entrée précédente), l’app a découvert qu’il n’entrait dans <strong>aucune</strong> <code>cfg</code> : <code><a href="reference/regen_sensibilite.html">nemeton::regen_sensibilite()</a></code> recevait toujours son défaut <code>res = 2</code>, quel que soit l’affichage, depuis l’introduction du radio. Choisir 5 m ne changeait ni la finesse de la grille ni le temps de calcul. Le réglage est désormais transmis, avec la coercition qui manquait (le radio porte la chaîne <code>"5"</code>, le cœur attend le numérique <code>5</code>) ; une valeur absente, nulle ou négative retombe sur le défaut du cœur. Portée : le chemin <strong>moteur</strong> seul (microclimf réel) — les deux autres appels passent par <code>precomputed =</code> et relisent une grille déjà figée.</p>
 <p><strong>Aucune action cœur</strong> : <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> expose <code>res</code> (défaut <code>2</code>) depuis toujours ; c’était une dette <strong>app</strong>, sans bug ni manque côté <code>nemeton</code>, donc pas de spec ouverte. <strong>En revanche, à savoir pour tout banc de validation cœur</strong> : les sorties microclimf déjà en cache ont <strong>toutes</strong> été produites à 2 m, y compris pour un projet réglé sur 5 m, et les caches ne sont pas invalidés. Un run à 5 m donnera donc des valeurs différentes de celles affichées jusqu’ici — c’est le premier facteur à regarder si l’on compare des sorties microclimf produites avant et après le 2026-08-19. Tests app : <code>regeneration_engine</code> 177 ✓, <code>regeneration_provenance</code> 13 ✓, <code>mod_regeneration</code> 151 ✓.</p>
 <p><strong>Journal app</strong> — <em>2026-08-18</em> (<strong><code>nemetonshiny</code> v0.128.0</strong>, merge <code>nemetonshiny@c7a745d8</code> / PR #143, commit fonctionnel <code>nemetonshiny@0bde27e7</code>, cycle dev <code>0.128.0.9000</code>) : <strong>les calibrages quittent les sidebars</strong>. Réorganisation UX transverse — les calibrages de quatre onglets migrent vers <em>Paramètres › Sources &amp; paramètres</em>, où ils sont persistés <strong>par projet</strong> dans <code>metadata</code>, dans le même mouvement que les seuils FAST en v0.126.2.</p>
