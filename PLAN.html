@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.179.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.180.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -439,6 +439,24 @@
 </div>
 <div class="section level1">
 <h1 id="correctifs-de-production-hors-chantier">Correctifs de production (hors chantier)<a class="anchor" aria-label="anchor" href="#correctifs-de-production-hors-chantier"></a></h1>
+<p><strong>Journal</strong> — <em>2026-08-20</em> (<strong>v0.180.0</strong>) : <strong><code><a href="reference/croiser_parcelles_onf.html">croiser_parcelles_onf()</a></code> écarte d’elle-même les parcelles sans forêt</strong>. Demande de l’app, motivée par une mesure : sur La-Vieille-Loye, 181 parcelles cadastrales sur 1 271 — <strong>14 %</strong> — rencontrent la forêt publique. Les 1 090 autres ne peuvent produire qu’une ligne, elles-mêmes entières hors UGF ; les croiser, c’est demander une intersection dont le vide est connu d’avance.</p>
+<table class="table"><thead><tr><th></th>
+<th>avant</th>
+<th>après</th>
+</tr></thead><tbody><tr><td><code>inclure_reste = FALSE</code></td>
+<td>19,1 s</td>
+<td><strong>7,3 s</strong></td>
+</tr><tr><td><code>inclure_reste = TRUE</code></td>
+<td>20,6 s</td>
+<td><strong>14,0 s</strong></td>
+</tr><tr><td>
+<code>inclure_reste = TRUE</code>, calage</td>
+<td>15,5 s</td>
+<td><strong>11,7 s</strong></td>
+</tr></tbody></table><p><strong>Le contrat ne bouge pas</strong>, et c’est ce qui rend le changement sûr : vérifié contre la version précédente sur le cadastre réel — 1 388 lignes des deux côtés, table attributaire identique à 1e-12 près, <strong>1 388 géométries égales une à une</strong> au sens de <code>st_equals()</code>. Cinq tests verrouillent l’équivalence.</p>
+<p><strong>Ce que le cœur fait mieux que l’appelant, et qui justifie la remontée</strong> : l’app faisait déjà ce pré-filtrage (v0.130.3) mais devait réinjecter les parcelles écartées depuis leur CRS d’origine — un aller-retour de projection portant le défaut de pavage de 0 % à <strong>0,001231 %</strong>. Le cœur tient déjà les deux couches dans un CRS commun : il émet la ligne sans reprojection, donc sans perte. L’app peut retirer son <code>.onf_parcelles_concernees()</code> et sa réinjection.</p>
+<p>Le résultat porte désormais un attribut <code>parcelles_concernees</code> (<code>c(concernees =, total =)</code>) pour que l’appelant affiche « N parcelles sur M » sans refaire un <code>st_intersects()</code>.</p>
+<p><strong>Note de méthode</strong> : le brief annonçait 24,9 s → 11,5 s. Mesuré ici, la référence est à 19,1 s et non 24,9 — les deux mesures ne portaient pas les mêmes arguments. Le gain relatif est du même ordre, mais c’est le chiffre mesuré dans ce dépôt qui est consigné.</p>
 <p><strong>Journal app</strong> — <em>2026-08-19</em> (<strong><code>nemetonshiny</code> v0.130.2</strong>, merge <code>nemetonshiny@b3e8f44b</code> / PR #149, cycle dev <code>0.130.2.9000</code>) : <strong>le calage cadastral devient systématique</strong>. La coche disparaît, <code>caler_sur_cadastre</code> vaut <code>TRUE</code> par défaut côté service, une note permanente l’annonce à l’écran, et le bouton est renommé <strong>« Créer les UGF avec le parcellaire ONF »</strong>.</p>
 <p>C’est le <strong>contre-pied assumé</strong> du §10 du brief spec 046, qui demandait de laisser le choix à l’utilisateur — la spec est mise à jour en conséquence. Raisonnement retenu : les limites forestières ONF sont approximatives <strong>au bord</strong> ; une UGF dont le tracé ne suit pas la parcelle qu’elle recouvre à 90 % ou plus est un artefact de numérisation, pas une décision de gestion. Exposer le choix revenait à faire arbitrer par l’utilisateur une question technique qui n’a qu’une bonne réponse. Ce qui a rendu la décision possible : la mesure sur cadastre <strong>réel</strong> (170 → 124 tènements, 13 → 41 bords exactement cadastraux), là où un cadastre synthétique ne franchit jamais le seuil. Les deux garde-fous du cœur ont pesé — une parcelle réellement partagée n’est pas calée, et le « hors UGF » ne peut jamais prendre une parcelle. Le paramètre subsiste dans la signature : le comportement brut reste joignable et testable. Aucune action cœur.</p>
 <p><strong>Journal app</strong> — <em>2026-08-19</em> (<strong><code>nemetonshiny</code> v0.130.1</strong>, merge <code>nemetonshiny@cb27c6bf</code> / PR #148) : <strong>retrait du bouton « Importer le parcellaire ONF »</strong>. Il partait de la même emprise que le croisement et produisait les mêmes UGF, mais en <strong>jetant la composition cadastrale</strong> — donc <code>part_ugf</code>, le « vous ne détenez que 40 % de cette parcelle forestière ». Un cas dégradé, et destructif de surcroît. Partent avec lui <code>onf_projet_from_parcelles()</code>, ses tests et six clés i18n orphelines : <strong>−261 lignes</strong>. Le §3 du brief spec 046 décrivait ce chemin ; il est marqué historique plutôt que supprimé, pour garder trace de ce qui a été essayé et pourquoi il a été retiré. Aucune action cœur.</p>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.179.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.180.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,34 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.180.0" id="nemeton-01800-2026-08-20">nemeton 0.180.0 (2026-08-20)<a class="anchor" aria-label="anchor" href="#nemeton-01800-2026-08-20"></a></h2>
+<div class="section level4">
+<h4 id="changed--croiser_parcelles_onf-écarte-delle-même-les-parcelles-sans-forêt-0-180-0">Changed — <code>croiser_parcelles_onf()</code> écarte d’elle-même les parcelles sans forêt<a class="anchor" aria-label="anchor" href="#changed--croiser_parcelles_onf-%C3%A9carte-delle-m%C3%AAme-les-parcelles-sans-for%C3%AAt-0-180-0"></a></h4>
+<p>Une parcelle cadastrale qu’aucune parcelle forestière ne rencontre ne peut produire qu’une ligne : elle-même, entière, hors UGF. La croiser, c’est demander une intersection dont le vide est connu d’avance. Elles sont désormais détectées avant le croisement et leur ligne émise directement, <strong>depuis la géométrie intacte</strong>.</p>
+<p>Sur une commune réelle — La-Vieille-Loye (39), 1 271 parcelles cadastrales × 94 parcelles forestières — seules <strong>181, soit 14 %</strong>, rencontrent la forêt publique :</p>
+<table class="table"><thead><tr><th></th>
+<th>avant</th>
+<th>après</th>
+</tr></thead><tbody><tr><td><code>inclure_reste = FALSE</code></td>
+<td>19,1 s</td>
+<td><strong>7,3 s</strong></td>
+</tr><tr><td><code>inclure_reste = TRUE</code></td>
+<td>20,6 s</td>
+<td><strong>14,0 s</strong></td>
+</tr><tr><td>
+<code>inclure_reste = TRUE</code>, calage</td>
+<td>15,5 s</td>
+<td><strong>11,7 s</strong></td>
+</tr></tbody></table><p>Le gain est franc sans <code>inclure_reste</code> : les parcelles écartées ne produisent alors aucune ligne à fabriquer.</p>
+<p><strong>Le résultat ne change pas</strong>, et c’est ce qui rend l’évolution sûre. Vérifié sur ce cadastre réel contre la version précédente : <strong>1 388 lignes des deux côtés</strong>, table attributaire identique à 1e-12 près (bruit flottant), et les <strong>1 388 géométries égales une à une</strong> au sens de <code><a href="https://r-spatial.github.io/sf/reference/geos_binary_pred.html" class="external-link">st_equals()</a></code>. Cinq tests verrouillent l’équivalence, dont un qui ajoute des parcelles lointaines à un jeu et vérifie que les lignes des autres sont inchangées.</p>
+<p><strong>Pourquoi dans le cœur plutôt que chez l’appelant</strong> : l’app faisait déjà ce pré-filtrage, mais devait réinjecter les parcelles écartées depuis leur CRS d’origine — un aller-retour de projection qui portait le défaut de pavage à 0,001231 %. Le cœur tient déjà les deux couches dans un CRS commun : il émet la ligne sans aucune reprojection, donc sans perte. Et pour tous ses consommateurs.</p>
+</div>
+<div class="section level4">
+<h4 id="added--le-décompte-des-parcelles-concernées-est-rendu-0-180-0">Added — le décompte des parcelles concernées est rendu<a class="anchor" aria-label="anchor" href="#added--le-d%C3%A9compte-des-parcelles-concern%C3%A9es-est-rendu-0-180-0"></a></h4>
+<p>Le résultat porte un attribut <code>parcelles_concernees</code>, vecteur d’entiers nommé <code>c(concernees =, total =)</code> : combien de parcelles cadastrales rencontrent réellement la couche forestière, sur combien fournies. Évite à l’appelant un <code><a href="https://r-spatial.github.io/sf/reference/geos_binary_pred.html" class="external-link">st_intersects()</a></code> pour la seule information « N parcelles sur M ».</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.179.1" id="nemeton-01791-2026-08-19">nemeton 0.179.1 (2026-08-19)<a class="anchor" aria-label="anchor" href="#nemeton-01791-2026-08-19"></a></h2>
 <div class="section level4">

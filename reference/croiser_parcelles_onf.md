@@ -15,6 +15,14 @@ parcels yields 92 fragments, **51 of them under 0.05 ha**, carrying
 together **0.13 %** of the area. Digitising slivers, not management
 objects.
 
+Cadastral parcels that meet **no** forest parcel are detected up front
+and never crossed: they can only produce one row — themselves, whole,
+outside any UGF — so that row is emitted directly, from the untouched
+geometry. On a real commune (La-Vieille-Loye, 39) only 181 of 1 271
+parcels meet the public forest; skipping the rest takes the crossing
+from 19.1 s to 7.3 s with `inclure_reste = FALSE`, and from 20.6 s to
+14.0 s with it. The result is unchanged, geometry for geometry.
+
 Two corrections, mildest first:
 
 - `min_surface_ha` — a sliver is **absorbed** by the largest tenement of
@@ -94,6 +102,13 @@ decreasing area, with columns `ugf_id`, `nom_ugf`, `foret_id`,
 `surface_ha`, `part_ugf` (share of the UGF this tenement represents),
 `part_cadastrale` (share of the cadastral parcel) and `n_tenements`
 (tenements of that UGF). A 0-row sf when nothing intersects.
+
+The result carries a `parcelles_concernees` attribute, a named integer
+vector `c(concernees =, total =)`: how many cadastral parcels actually
+meet the forest layer, out of how many were given. It saves the caller
+an
+[`st_intersects()`](https://r-spatial.github.io/sf/reference/geos_binary_pred.html)
+just to report "N parcels out of M".
 
 `part_ugf` is measured against the *original* ONF parcel, so it answers
 "how much of this forest parcel does the selection hold". With

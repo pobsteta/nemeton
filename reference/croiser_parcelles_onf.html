@@ -11,6 +11,13 @@ of each forest parcel by the cadastre is 98.1 % at worst, 100 % at the median
 — yet cutting 33 forest parcels against 56 cadastral parcels yields 92
 fragments, 51 of them under 0.05 ha, carrying together 0.13
 % of the area. Digitising slivers, not management objects.
+Cadastral parcels that meet no forest parcel are detected up front
+and never crossed: they can only produce one row — themselves, whole, outside
+any UGF — so that row is emitted directly, from the untouched geometry. On a
+real commune (La-Vieille-Loye, 39) only 181 of 1 271 parcels meet the public
+forest; skipping the rest takes the crossing from 19.1 s to 7.3 s with
+inclure_reste = FALSE, and from 20.6 s to 14.0 s with it. The result is
+unchanged, geometry for geometry.
 Two corrections, mildest first:
 min_surface_ha — a sliver is absorbed by the largest
 tenement of the same cadastral parcel, never dropped, so each cadastral parcel
@@ -33,6 +40,13 @@ of each forest parcel by the cadastre is 98.1 % at worst, 100 % at the median
 — yet cutting 33 forest parcels against 56 cadastral parcels yields 92
 fragments, 51 of them under 0.05 ha, carrying together 0.13
 % of the area. Digitising slivers, not management objects.
+Cadastral parcels that meet no forest parcel are detected up front
+and never crossed: they can only produce one row — themselves, whole, outside
+any UGF — so that row is emitted directly, from the untouched geometry. On a
+real commune (La-Vieille-Loye, 39) only 181 of 1 271 parcels meet the public
+forest; skipping the rest takes the crossing from 19.1 s to 7.3 s with
+inclure_reste = FALSE, and from 20.6 s to 14.0 s with it. The result is
+unchanged, geometry for geometry.
 Two corrections, mildest first:
 min_surface_ha — a sliver is absorbed by the largest
 tenement of the same cadastral parcel, never dropped, so each cadastral parcel
@@ -51,7 +65,7 @@ never take a parcel — dropping forest is not a correction.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.179.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.180.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -100,6 +114,13 @@ of each forest parcel by the cadastre is 98.1 % at worst, 100 % at the median
 — yet cutting 33 forest parcels against 56 cadastral parcels yields 92
 fragments, <strong>51 of them under 0.05 ha</strong>, carrying together <strong>0.13
 %</strong> of the area. Digitising slivers, not management objects.</p>
+<p>Cadastral parcels that meet <strong>no</strong> forest parcel are detected up front
+and never crossed: they can only produce one row — themselves, whole, outside
+any UGF — so that row is emitted directly, from the untouched geometry. On a
+real commune (La-Vieille-Loye, 39) only 181 of 1 271 parcels meet the public
+forest; skipping the rest takes the crossing from 19.1 s to 7.3 s with
+<code>inclure_reste = FALSE</code>, and from 20.6 s to 14.0 s with it. The result is
+unchanged, geometry for geometry.</p>
 <p>Two corrections, mildest first:</p><ul><li><p><code>min_surface_ha</code> — a sliver is <strong>absorbed</strong> by the largest
 tenement of the same cadastral parcel, never dropped, so each cadastral parcel
 stays exactly tiled (the application's tiling invariant).</p></li>
@@ -180,6 +201,10 @@ then by decreasing area, with columns <code>ugf_id</code>, <code>nom_ugf</code>,
 <code>part_ugf</code> (share of the UGF this tenement represents),
 <code>part_cadastrale</code> (share of the cadastral parcel) and <code>n_tenements</code>
 (tenements of that UGF). A 0-row <span class="pkg">sf</span> when nothing intersects.</p>
+<p>The result carries a <code>parcelles_concernees</code> attribute, a named integer
+vector <code>c(concernees =, total =)</code>: how many cadastral parcels actually
+meet the forest layer, out of how many were given. It saves the caller an
+<code><a href="https://r-spatial.github.io/sf/reference/geos_binary_pred.html" class="external-link">st_intersects()</a></code> just to report "N parcels out of M".</p>
 <p><code>part_ugf</code> is measured against the <em>original</em> ONF parcel, so it
 answers "how much of this forest parcel does the selection hold". With
 <code>caler_sur_cadastre = TRUE</code> it can exceed 1, since the UGF then gains the
