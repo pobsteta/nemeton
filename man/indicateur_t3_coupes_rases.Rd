@@ -32,7 +32,15 @@ pixel, compared against \code{sufosat_proba / 100}. Default \code{0.9}.}
 
 \item{reference_year}{Integer or \code{NULL}. Most-recent year of the recency
 window (weight 1). \code{NULL} (default) -> derived from the most recent
-clear-cut year found across the extracted units.}
+clear-cut year found across the extracted units.
+
+\strong{Pass a calendar year when scores must be comparable.} With
+\code{NULL} the window is anchored on the \emph{data}, not on the calendar: a
+massif whose last clear-cut dates from 2021 is scored over 2017-2021, so a 2018
+cut still counts as "recent", and two projects with different last-cut years are
+not comparable at the same \code{window_years}. Anchoring on the current year —
+\code{reference_year = as.integer(format(Sys.Date(), "\%Y"))} — makes "the last
+N years" mean exactly that.}
 }
 \value{
 Numeric vector, one value per unit: recency-weighted percentage of the unit

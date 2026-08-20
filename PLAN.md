@@ -740,6 +740,34 @@ ce niveau le gain ne justifie probablement pas le changement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-20* : **T3 — la fenêtre de récence était ancrée sur la
+donnée, pas sur le calendrier**. Trouvé en vérifiant, à la demande de Pascal,
+que le calcul SUFOSAT fonctionne. Il fonctionne — catalogue STAC disponible,
+rasters `dates` et `proba` lus, 5 UGF sur 94 avec une pression non nulle (max
+16,76 sur la forêt domaniale de Chaux, 26,19 en élargissant la fenêtre à 8 ans).
+
+Mais `reference_year` n'est **passé nulle part** par l'app : les deux sliders de
+*Sources & paramètres* couvrent `window_years` et `min_proba`, pas lui. Il reste
+donc `NULL`, et le cœur le déduit de **la coupe la plus récente trouvée dans les
+UGF analysées**. La fenêtre a la bonne largeur, mais son point d'ancrage flotte :
+un massif dont les dernières coupes datent de 2021 est jugé sur 2017-2021, et
+deux projets ne sont pas comparables s'ils n'ont pas la même dernière coupe.
+Mesuré : `reference_year` valait 2025 et excluait 565 des 1 260 pixels détectés.
+
+**Décision (Pascal, 2026-08-20)** : ancrer sur l'année courante, sans nouveau
+réglage — le slider annonce « fenêtre en années », l'utilisateur suppose
+légitimement qu'elle se termine aujourd'hui. Correctif d'une ligne côté app,
+brief en `specs/030-coupes-rases-sufosat/brief-nemetonshiny.md` §8. **Aucun
+changement de code cœur** : le paramètre existe depuis l'origine, seule sa
+documentation est renforcée pour signaler le piège.
+
+**Deux erreurs de lecture de ma part, corrigées en route**, qui valent d'être
+consignées : le premier essai rendait 0 partout — c'était juste, les 1 260
+pixels détectés sont tous dans la domaniale de Chaux, aucun dans la communale de
+La-Vieille-Loye que je testais. Et j'ai d'abord lu les valeurs du raster comme
+des jours depuis 1970 (ce qui donnait une date en 2039) alors que l'encodage est
+`YYDDD` — 18020 = 2018 jour 20 — exactement ce que la fonction décode.
+
 **Journal** — *2026-08-20* (**v0.180.0**) : **`croiser_parcelles_onf()` écarte
 d'elle-même les parcelles sans forêt**. Demande de l'app, motivée par une
 mesure : sur La-Vieille-Loye, 181 parcelles cadastrales sur 1 271 — **14 %** —
