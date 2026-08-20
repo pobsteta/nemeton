@@ -228,6 +228,38 @@ petites parcelles** (sur un cadastre fin, le reliquat de 5 % pèse moins de
 0,05 ha et rejoint tout seul l'UGF dominante), **le calage traite les
 grandes** (là, 5 % de reliquat dépasse le seuil et il faut la règle de part).
 
+### 7.5 Pré-filtrage des parcelles sans forêt (v0.180.0)
+
+Une parcelle cadastrale qu'aucune parcelle forestière ne rencontre ne peut
+produire qu'une ligne : elle-même, entière, hors UGF. Elle est donc écartée
+**avant** le croisement et sa ligne émise depuis la géométrie intacte.
+
+Sur La-Vieille-Loye (39), 1 271 parcelles cadastrales × 94 parcelles
+forestières, seules **181 — 14 %** rencontrent la forêt publique :
+
+| | avant | après |
+|---|---|---|
+| `inclure_reste = FALSE` | 19,1 s | **7,3 s** |
+| `inclure_reste = TRUE` | 20,6 s | **14,0 s** |
+| `inclure_reste = TRUE`, calage | 15,5 s | **11,7 s** |
+
+**Le contrat ne change pas** : vérifié contre la version précédente sur ce même
+cadastre, 1 388 lignes des deux côtés, table attributaire identique à 1e-12
+près et 1 388 géométries égales une à une au sens de `st_equals()`.
+
+**Pourquoi le cœur et pas l'appelant.** L'app (`nemetonshiny` v0.130.3) faisait
+ce pré-filtrage elle-même, mais devait réinjecter les parcelles écartées depuis
+leur CRS d'origine — un aller-retour de projection qui portait le défaut de
+pavage de 0 % à **0,001231 %** (40× sous la tolérance de `validate_tiling()`,
+donc sans conséquence pratique, mais gratuit). Le cœur tient déjà les deux
+couches dans un CRS commun : il émet la ligne sans reprojection. Et
+« quelles parcelles rencontrent le parcellaire forestier » est une question
+géométrique sur le domaine, donc du métier (règle #1).
+
+Le résultat porte un attribut `parcelles_concernees` — `c(concernees =,
+total =)` — pour que l'appelant affiche « N parcelles sur M » sans refaire un
+`st_intersects()`.
+
 ### 7.4 Tests
 
 `tests/testthat/test-croiser-parcelles-onf.R` — 60 assertions : validation des

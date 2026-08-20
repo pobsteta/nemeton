@@ -54,6 +54,11 @@ then by decreasing area, with columns \code{ugf_id}, \code{nom_ugf},
 \code{part_cadastrale} (share of the cadastral parcel) and \code{n_tenements}
 (tenements of that UGF). A 0-row \pkg{sf} when nothing intersects.
 
+The result carries a \code{parcelles_concernees} attribute, a named integer
+vector \code{c(concernees =, total =)}: how many cadastral parcels actually
+meet the forest layer, out of how many were given. It saves the caller an
+\code{st_intersects()} just to report "N parcels out of M".
+
 \code{part_ugf} is measured against the \emph{original} ONF parcel, so it
 answers "how much of this forest parcel does the selection hold". With
 \code{caler_sur_cadastre = TRUE} it can exceed 1, since the UGF then gains the
@@ -73,6 +78,14 @@ of each forest parcel by the cadastre is 98.1 \% at worst, 100 \% at the median
 — yet cutting 33 forest parcels against 56 cadastral parcels yields 92
 fragments, \strong{51 of them under 0.05 ha}, carrying together \strong{0.13
 \%} of the area. Digitising slivers, not management objects.
+
+Cadastral parcels that meet \strong{no} forest parcel are detected up front
+and never crossed: they can only produce one row — themselves, whole, outside
+any UGF — so that row is emitted directly, from the untouched geometry. On a
+real commune (La-Vieille-Loye, 39) only 181 of 1 271 parcels meet the public
+forest; skipping the rest takes the crossing from 19.1 s to 7.3 s with
+\code{inclure_reste = FALSE}, and from 20.6 s to 14.0 s with it. The result is
+unchanged, geometry for geometry.
 
 Two corrections, mildest first:
 \itemize{

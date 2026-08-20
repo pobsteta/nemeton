@@ -1,3 +1,46 @@
+# nemeton 0.180.0 (2026-08-20)
+
+### Changed — `croiser_parcelles_onf()` écarte d'elle-même les parcelles sans forêt
+
+Une parcelle cadastrale qu'aucune parcelle forestière ne rencontre ne peut
+produire qu'une ligne : elle-même, entière, hors UGF. La croiser, c'est demander
+une intersection dont le vide est connu d'avance. Elles sont désormais détectées
+avant le croisement et leur ligne émise directement, **depuis la géométrie
+intacte**.
+
+Sur une commune réelle — La-Vieille-Loye (39), 1 271 parcelles cadastrales ×
+94 parcelles forestières — seules **181, soit 14 %**, rencontrent la forêt
+publique :
+
+| | avant | après |
+|---|---|---|
+| `inclure_reste = FALSE` | 19,1 s | **7,3 s** |
+| `inclure_reste = TRUE` | 20,6 s | **14,0 s** |
+| `inclure_reste = TRUE`, calage | 15,5 s | **11,7 s** |
+
+Le gain est franc sans `inclure_reste` : les parcelles écartées ne produisent
+alors aucune ligne à fabriquer.
+
+**Le résultat ne change pas**, et c'est ce qui rend l'évolution sûre. Vérifié
+sur ce cadastre réel contre la version précédente : **1 388 lignes des deux
+côtés**, table attributaire identique à 1e-12 près (bruit flottant), et les
+**1 388 géométries égales une à une** au sens de `st_equals()`. Cinq tests
+verrouillent l'équivalence, dont un qui ajoute des parcelles lointaines à un jeu
+et vérifie que les lignes des autres sont inchangées.
+
+**Pourquoi dans le cœur plutôt que chez l'appelant** : l'app faisait déjà ce
+pré-filtrage, mais devait réinjecter les parcelles écartées depuis leur CRS
+d'origine — un aller-retour de projection qui portait le défaut de pavage à
+0,001231 %. Le cœur tient déjà les deux couches dans un CRS commun : il émet la
+ligne sans aucune reprojection, donc sans perte. Et pour tous ses consommateurs.
+
+### Added — le décompte des parcelles concernées est rendu
+
+Le résultat porte un attribut `parcelles_concernees`, vecteur d'entiers nommé
+`c(concernees =, total =)` : combien de parcelles cadastrales rencontrent
+réellement la couche forestière, sur combien fournies. Évite à l'appelant un
+`st_intersects()` pour la seule information « N parcelles sur M ».
+
 # nemeton 0.179.1 (2026-08-19)
 
 ### Fixed — `Remotes:` ne tire plus `microclimc`
