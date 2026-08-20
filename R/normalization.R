@@ -522,8 +522,9 @@ invert_indicator <- function(data,
   # Slugs retires en 0.176.0 (spec 045), gardes pour les jeux non migres.
   "indicateur_l1_sylvosphere", "indicateur_l2_fragmentation",
   "indicateur_t1_anciennete", "indicateur_t2_changement",
-  "indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse",
-  "indicateur_r4_abroutissement",
+  # R1-R4 ne sont PLUS ici : ils sont 0-100 natifs mais orientés « haut =
+  # mauvais », donc ils ont besoin d'une règle (inversion), pas d'un
+  # passthrough. Cf. .NORMALIZE_RULED et le bloc d'inversion plus bas.
   "indicateur_p3_qualite_bois",
   "indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite"
 )
@@ -551,6 +552,8 @@ invert_indicator <- function(data,
   "indicateur_s1_routes", "indicateur_s2_bati", "indicateur_s3_population",
   "indicateur_p1_volume", "indicateur_p2_station",
   "indicateur_e1_bois_energie", "indicateur_e2_evitement",
+  "indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse",
+  "indicateur_r4_abroutissement",
   "indicateur_r5_deperissement", "indicateur_t3_coupes_rases",
   "indicateur_r6_sensibilite", "indicateur_r7_gel",
   "indicateur_b4_div_spectrale", "indicateur_l3_het_spectrale",
@@ -617,13 +620,29 @@ normalize_indicator <- function(indicator, values) {
     return(pmin(100, pmax(0, 100 * (1 - values / 2000))))
   }
 
-  # R5 dépérissement: the only family indicator oriented "high = bad"
-  # (more dieback). Its raw value (indicateur_r5_deperissement(), 0-100,
-  # high = severe) is inverted here so its radar / famille_risque
-  # contribution stays "high = good" like R1-R4. The raw indicator
-  # function and its callers are unchanged — only the normalized radar
-  # value is flipped (cf. spec 008 / indicator-config R5 sens).
-  if (indicator %in% c("indicateur_r5_deperissement", "R5")) {
+  # Famille R — les cinq indicateurs de risque sont TOUS orientés
+  # « haut = mauvais » à l'état brut : R1 plus de risque de feu, R2 plus
+  # vulnérable à la tempête, R3 plus de stress hydrique, R4 plus de pression
+  # d'abroutissement, R5 plus de dépérissement. Ils sont donc tous inversés
+  # ici pour que la convention du radar tienne : 0-100, et plus c'est haut,
+  # mieux c'est.
+  #
+  # Correction de 0.181.0 : jusque-là, seul R5 était inversé, et le
+  # commentaire qui le justifiait affirmait que c'était « pour rester high =
+  # good comme R1-R4 ». La prémisse était fausse — R1-R4 passaient tels
+  # quels, donc R5 pointait à l'opposé des quatre autres dans sa propre
+  # famille, et une UGF très exposée obtenait un `famille_risque` élevé,
+  # c'est-à-dire flatteur. R6 (« higher = less sensitive ») et R7 (« high =
+  # low frost risk ») sont, eux, déjà orientés « haut = bon » à la source :
+  # ils ne s'inversent pas.
+  #
+  # Les fonctions d'indicateur et leurs appelants sont inchangés : seule la
+  # valeur normalisée bascule (cf. spec 048).
+  if (indicator %in% c("indicateur_r1_feu", "R1",
+                       "indicateur_r2_tempete", "R2",
+                       "indicateur_r3_secheresse", "R3",
+                       "indicateur_r4_abroutissement", "R4",
+                       "indicateur_r5_deperissement", "R5")) {
     return(pmin(100, pmax(0, 100 - values)))
   }
 

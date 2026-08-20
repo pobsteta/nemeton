@@ -1,3 +1,57 @@
+# nemeton 0.181.0 (2026-08-20)
+
+### Fixed — la famille R disait l'inverse de ce qu'elle mesurait (spec 048)
+
+**Le radar suit une convention : 0-100, et plus c'est haut, mieux c'est.**
+`R1` (feu), `R2` (tempête), `R3` (sécheresse) et `R4` (abroutissement) ne la
+respectaient pas : leur grandeur brute est « haut = mauvais » et elle passait
+**telle quelle**.
+
+Conséquence : une UGF très exposée au feu, vulnérable aux tempêtes, en stress
+hydrique et fortement abroutie obtenait un `famille_risque` **élevé**, donc
+flatteur. Et dans sa propre famille, `R5` — seul inversé — pointait à l'opposé
+des quatre autres.
+
+Les cinq indicateurs de risque sont désormais inversés ensemble. `R6`
+(« higher = less sensitive ») et `R7` (« high = low frost risk ») sont orientés
+« haut = bon » à la source et ne s'inversent pas.
+
+**Comment la faute a survécu** — elle était écrite deux fois, ce qui la rendait
+auto-confirmante :
+
+1. le commentaire justifiant l'inversion de `R5` affirmait que c'était « pour
+   que sa contribution reste *high = good* **comme R1-R4** ». La prémisse était
+   fausse ;
+2. un test affirmait en commentaire que R1 était « *a plain risk indicator
+   (already oriented high=good)* » et vérifiait le passthrough. Un test qui
+   valide le défaut le protège.
+
+Même mécanique que la famille L en 0.176.0 : un texte qui décrit l'intention et
+non le comportement, que personne ne recoupe.
+
+**L'audit derrière le correctif** : les 41 colonnes de `INDICATOR_FAMILIES` ont
+été passées au même test, orientation déclarée contre orientation mesurée. La
+couverture est saine — 23 natifs 0-100, 18 avec règle dédiée, aucun au repli
+naïf — et les inversés sont désormais exactement R1-R5, T3, S1 et S2.
+
+Trois verrous ajoutés, dont un **balayage des 41 colonnes** qui échouera si un
+nouvel indicateur arrive mal orienté.
+
+### ⚠️ Conséquence — tout projet doit être recalculé
+
+**Tous les `famille_risque` déjà calculés changent**, et l'indice général avec
+eux. Ce n'est pas une régression, c'est la correction : mais une comparaison de
+scores d'avant et d'après le 2026-08-20 n'a pas de sens. Côté app, **ne jamais
+ré-inverser** — voir `specs/048-sens-radar/brief-nemetonshiny.md`.
+
+### Note — un cas voisin laissé ouvert
+
+`indicateur_f2_erosion` déclare rendre des « fertility scores (higher = more
+fertile) » et calcule effectivement de la fertilité. Son **orientation est
+juste** ; c'est son **nom** qui annonce l'érosion alors qu'il duplique la
+sémantique de F1. Même famille de défaut que L1/L2 avant 0.176.0, à traiter
+séparément.
+
 # nemeton 0.180.0 (2026-08-20)
 
 ### Changed — `croiser_parcelles_onf()` écarte d'elle-même les parcelles sans forêt
