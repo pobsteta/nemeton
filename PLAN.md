@@ -740,6 +740,40 @@ ce niveau le gain ne justifie probablement pas le changement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-20* : **cadrage R1 sur `firexpovulnR`** (spec 047 +
+ADR-016 proposé). Suite à la question « comment est calculé le risque
+incendie ? », trois défauts de `indicateur_r1_feu()` remontent, tous constatés
+dans le dépôt : les seuils du repli ne sont **sourcés nulle part** (30° de
+pente, 8 °C et 1400 mm pour le climat, 50 pour une essence inconnue) ;
+l'exposition **sature** — mesuré sur Fordead, 93 % du voisinage de 500 m est
+combustible et R1 tombe entre 98,7 et 100 sur les 30 unités, l'indicateur ne
+classe plus rien ; et il n'a **jamais été calibré** contre des surfaces brûlées.
+
+`pobsteta/firexpovulnR` (v0.32.0, GPL-3, même auteur, `sf`/`terra`) traite
+exactement ça : rayons d'exposition sourcés (Beverly 2010/2021, Khan 2025),
+FWI en percentiles régionaux, `fev_validate()` contre les surfaces brûlées,
+provenance YAML systématique. Ses `Imports` sont légers et `ecmwfr` est en
+`Suggests` — donc `fev_exposure()` reste jouable en **NDP 0**, sans CDS.
+
+**Trois frontières font l'essentiel de la décision proposée** : (1) le paquet
+**calcule**, `nemeton` **acquiert** — ses `fev_fetch_*` recouvrent notre couche
+d'acquisition, SUFOSAT compris, et deux chaînes parallèles divergeraient sur les
+CRS et les millésimes ; (2) on prend l'exposition et le danger, **pas
+`fev_risk()`**, qui croise avec une vulnérabilité d'enjeux déjà couverte par S1,
+S2, S3 et la famille N ; (3) **`Suggests`, jamais `Imports`**, le repli actuel
+restant intact. Le FWI est conditionnel à la source, comme SUFOSAT pour T3 et
+FORDEAD pour R5 — la friction CDS qui a bloqué E-OBS interdit d'en faire une
+exigence.
+
+**Réserve écrite dans les deux documents** : la revue est **documentaire**
+(signatures, roxygen, README, sources citées), **aucune exécution**. La spec
+impose donc une comparaison à l'aveugle sur Fordead et les Maures **avant** tout
+câblage, et cette étape peut invalider la décision : si `fev_exposure()` sature
+comme l'actuel, le gain se réduit aux seuils sourcés et à la provenance.
+
+Aucun code, aucune dépendance ajoutée à ce stade. ADR-016 déposé pour
+`platform_nemeton`.
+
 **Journal** — *2026-08-20* : **T3 — la fenêtre de récence était ancrée sur la
 donnée, pas sur le calendrier**. Trouvé en vérifiant, à la demande de Pascal,
 que le calcul SUFOSAT fonctionne. Il fonctionne — catalogue STAC disponible,
