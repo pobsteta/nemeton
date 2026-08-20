@@ -129,3 +129,65 @@ passe donc de 2 à 3 sous-indicateurs **sans code radar dédié**.
 - Carte des coupes rases (affichage raster) — le radar T3 d'abord ; une couche
   Leaflet SUFOSAT pourra suivre.
 - Recalibrage des bornes de normalisation T3 (fait au cœur, défaut 0-100).
+
+---
+
+# 8. Ancrer la fenêtre sur le calendrier (2026-08-20)
+
+**Cœur requis** : `nemeton (>= 0.177.0)` — aucun changement de code cœur, le
+paramètre existe depuis l'origine.
+
+## Le constat
+
+Les deux sliders de *Sources & paramètres* couvrent `window_years` (1-8) et
+`min_proba`. **`reference_year` n'est passé nulle part** — ni UI, ni
+`metadata$sufosat`, ni `service_compute.R`. Il reste donc `NULL`, et le cœur le
+déduit alors de **la coupe la plus récente trouvée dans les UGF analysées**.
+
+La fenêtre a donc la bonne largeur, mais son **point d'ancrage flotte** :
+
+- un massif dont les dernières coupes datent de 2021 est jugé sur **2017-2021**,
+  donc une coupe de 2018 y compte comme « récente » ;
+- deux projets ne sont **pas comparables** s'ils n'ont pas la même coupe la plus
+  récente, même réglés sur la même fenêtre.
+
+Mesuré sur les 94 UGF de La-Vieille-Loye / Chaux : `reference_year` valait 2025
+et excluait **565 des 1 260** pixels détectés (ceux de 2018-2020). Correct pour
+« pression récente », mais ce 2025 venait des données, pas d'un choix.
+
+## Le correctif — une ligne
+
+Décision validée le 2026-08-20 : **ancrer sur l'année courante**, sans nouveau
+réglage. Le slider annonce « fenêtre en années » ; l'utilisateur suppose
+légitimement qu'elle se termine aujourd'hui.
+
+Dans `service_compute.R`, à côté des deux paramètres déjà transmis (~l. 971) :
+
+```r
+sufosat_layer$window_years   <- sufosat_cfg$window_years %||% 5
+sufosat_layer$min_proba      <- sufosat_cfg$min_proba    %||% 0.9
+sufosat_layer$reference_year <- as.integer(format(Sys.Date(), "%Y"))
+```
+
+…puis s'assurer que le dispatcher le fait suivre à
+`nemeton::indicateur_t3_coupes_rases(reference_year = )`, comme les deux autres.
+
+## Ce que ça change pour l'utilisateur
+
+« Les 5 dernières années » veut enfin dire les 5 dernières années. Un massif
+sans coupe récente descend vers 0 au lieu d'être jugé sur une fenêtre ancienne
+— ce qui est le résultat attendu : pas de coupe récente, pas de pression.
+
+**À prévoir** : les scores T3 déjà calculés peuvent changer sur les projets dont
+la dernière coupe est antérieure à l'année courante. Ce n'est pas une
+régression, c'est la correction ; mais si un banc de validation compare des
+sorties T3 d'avant et d'après, c'est le facteur à regarder en premier.
+
+## Ce que ce brief ne demande PAS
+
+- **Pas de troisième slider.** L'option d'exposer une « année de référence » a
+  été écartée : elle ferait arbitrer par l'utilisateur une question qui n'a
+  qu'une bonne réponse par défaut. Le paramètre reste joignable par le code
+  pour une analyse rétrospective.
+- **Aucun changement cœur.** `reference_year` existe depuis l'origine ; seule sa
+  documentation a été renforcée pour signaler le piège (v0.180.0.9000).
