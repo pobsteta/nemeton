@@ -52,6 +52,15 @@ indicateur_t3_coupes_rases(
   `NULL` (default) -\> derived from the most recent clear-cut year found
   across the extracted units.
 
+  **Pass a calendar year when scores must be comparable.** With `NULL`
+  the window is anchored on the *data*, not on the calendar: a massif
+  whose last clear-cut dates from 2021 is scored over 2017-2021, so a
+  2018 cut still counts as "recent", and two projects with different
+  last-cut years are not comparable at the same `window_years`.
+  Anchoring on the current year —
+  `reference_year = as.integer(format(Sys.Date(), "%Y"))` — makes "the
+  last N years" mean exactly that.
+
 ## Value
 
 Numeric vector, one value per unit: recency-weighted percentage of the

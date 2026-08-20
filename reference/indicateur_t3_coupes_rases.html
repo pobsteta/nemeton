@@ -104,7 +104,14 @@ pixel, compared against <code>sufosat_proba / 100</code>. Default <code>0.9</cod
 <dt id="arg-reference-year">reference_year<a class="anchor" aria-label="anchor" href="#arg-reference-year"></a></dt>
 <dd><p>Integer or <code>NULL</code>. Most-recent year of the recency
 window (weight 1). <code>NULL</code> (default) -&gt; derived from the most recent
-clear-cut year found across the extracted units.</p></dd>
+clear-cut year found across the extracted units.</p>
+<p><strong>Pass a calendar year when scores must be comparable.</strong> With
+<code>NULL</code> the window is anchored on the <em>data</em>, not on the calendar: a
+massif whose last clear-cut dates from 2021 is scored over 2017-2021, so a 2018
+cut still counts as "recent", and two projects with different last-cut years are
+not comparable at the same <code>window_years</code>. Anchoring on the current year —
+<code>reference_year = as.integer(format(Sys.Date(), "%Y"))</code> — makes "the last
+N years" mean exactly that.</p></dd>
 
 </dl></div>
     <div class="section level2">
