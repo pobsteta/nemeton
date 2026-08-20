@@ -740,6 +740,40 @@ ce niveau le gain ne justifie probablement pas le changement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-20* (**v0.180.0**) : **`croiser_parcelles_onf()` écarte
+d'elle-même les parcelles sans forêt**. Demande de l'app, motivée par une
+mesure : sur La-Vieille-Loye, 181 parcelles cadastrales sur 1 271 — **14 %** —
+rencontrent la forêt publique. Les 1 090 autres ne peuvent produire qu'une
+ligne, elles-mêmes entières hors UGF ; les croiser, c'est demander une
+intersection dont le vide est connu d'avance.
+
+| | avant | après |
+|---|---|---|
+| `inclure_reste = FALSE` | 19,1 s | **7,3 s** |
+| `inclure_reste = TRUE` | 20,6 s | **14,0 s** |
+| `inclure_reste = TRUE`, calage | 15,5 s | **11,7 s** |
+
+**Le contrat ne bouge pas**, et c'est ce qui rend le changement sûr : vérifié
+contre la version précédente sur le cadastre réel — 1 388 lignes des deux côtés,
+table attributaire identique à 1e-12 près, **1 388 géométries égales une à une**
+au sens de `st_equals()`. Cinq tests verrouillent l'équivalence.
+
+**Ce que le cœur fait mieux que l'appelant, et qui justifie la remontée** :
+l'app faisait déjà ce pré-filtrage (v0.130.3) mais devait réinjecter les
+parcelles écartées depuis leur CRS d'origine — un aller-retour de projection
+portant le défaut de pavage de 0 % à **0,001231 %**. Le cœur tient déjà les
+deux couches dans un CRS commun : il émet la ligne sans reprojection, donc sans
+perte. L'app peut retirer son `.onf_parcelles_concernees()` et sa réinjection.
+
+Le résultat porte désormais un attribut `parcelles_concernees`
+(`c(concernees =, total =)`) pour que l'appelant affiche « N parcelles sur M »
+sans refaire un `st_intersects()`.
+
+**Note de méthode** : le brief annonçait 24,9 s → 11,5 s. Mesuré ici, la
+référence est à 19,1 s et non 24,9 — les deux mesures ne portaient pas les mêmes
+arguments. Le gain relatif est du même ordre, mais c'est le chiffre mesuré dans
+ce dépôt qui est consigné.
+
 **Journal app** — *2026-08-19* (**`nemetonshiny` v0.130.2**, merge
 `nemetonshiny@b3e8f44b` / PR #149, cycle dev `0.130.2.9000`) : **le calage
 cadastral devient systématique**. La coche disparaît, `caler_sur_cadastre` vaut

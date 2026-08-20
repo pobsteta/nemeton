@@ -205,3 +205,86 @@ test_that("id_col picks the identifier column explicitly", {
   out <- croiser_parcelles_onf(onf, cad, id_col = "ref")
   expect_equal(out$parcelle_cadastrale, "A")
 })
+
+# --- Pré-filtrage des parcelles sans forêt (spec 046 §7.5) -----------------
+# Une parcelle qu'aucune UGF ne rencontre ne peut produire qu'une ligne :
+# elle-même, entière, hors UGF. Elle est donc écartée avant le croisement, et
+# réémise telle quelle — sans reprojection, donc sans perte de précision.
+
+test_that("les parcelles sans forêt n'altèrent pas le résultat des autres", {
+  onf <- .cx_onf(list(c(0, 100, 0, 100)))
+  proche <- .cx_cad("A", list(c(0, 60, 0, 100)))
+  # Mêmes données, plus deux parcelles très loin de toute forêt.
+  avec_loin <- .cx_cad(c("A", "Z1", "Z2"),
+                       list(c(0, 60, 0, 100), c(9000, 9100, 9000, 9100),
+                            c(9200, 9300, 9000, 9100)))
+
+  ref <- croiser_parcelles_onf(onf, proche, inclure_reste = TRUE)
+  out <- croiser_parcelles_onf(onf, avec_loin, inclure_reste = TRUE)
+
+  # La ligne de A est identique, au champ près.
+  sans_compteur <- function(x) {
+    x <- sf::st_drop_geometry(x)
+    attr(x, "parcelles_concernees") <- NULL   # ne dépend pas de la parcelle
+    x
+  }
+  a_ref <- sans_compteur(ref[ref$parcelle_cadastrale == "A", ])
+  a_out <- sans_compteur(out[out$parcelle_cadastrale == "A", ])
+  expect_equal(a_out, a_ref)
+  expect_true(sf::st_equals(sf::st_geometry(ref[ref$parcelle_cadastrale == "A", ]),
+                            sf::st_geometry(out[out$parcelle_cadastrale == "A", ]),
+                            sparse = FALSE)[1, 1])
+
+  # Les deux parcelles écartées n'apparaissent que comme « hors UGF », entières.
+  loin <- out[out$parcelle_cadastrale %in% c("Z1", "Z2"), ]
+  expect_equal(nrow(loin), 2L)
+  expect_true(all(loin$hors_ugf))
+  expect_true(all(is.na(loin$ugf_id)))
+  expect_equal(loin$part_cadastrale, c(1, 1))
+  expect_equal(sort(loin$tenement_id), c("hors_ugf~Z1", "hors_ugf~Z2"))
+})
+
+test_that("une parcelle écartée revient avec sa géométrie exacte", {
+  onf <- .cx_onf(list(c(0, 100, 0, 100)))
+  cad <- .cx_cad(c("A", "Z"), list(c(0, 50, 0, 100), c(9000, 9100, 9000, 9100)))
+  out <- croiser_parcelles_onf(onf, cad, inclure_reste = TRUE)
+  z_out <- sf::st_geometry(out[out$parcelle_cadastrale == "Z", ])
+  z_in  <- sf::st_geometry(cad[cad$id == "Z", ])
+  # Aucune reprojection sur ce chemin : l'égalité est stricte, pas approchée.
+  expect_true(sf::st_equals(z_out, z_in, sparse = FALSE)[1, 1])
+  expect_identical(as.numeric(sf::st_area(z_out)), as.numeric(sf::st_area(z_in)))
+})
+
+test_that("sans inclure_reste, une parcelle écartée ne produit rien", {
+  onf <- .cx_onf(list(c(0, 100, 0, 100)))
+  cad <- .cx_cad(c("A", "Z"), list(c(0, 50, 0, 100), c(9000, 9100, 9000, 9100)))
+  out <- croiser_parcelles_onf(onf, cad)
+  expect_equal(nrow(out), 1L)
+  expect_equal(out$parcelle_cadastrale, "A")
+})
+
+test_that("le décompte des parcelles concernées est rendu en attribut", {
+  onf <- .cx_onf(list(c(0, 100, 0, 100)))
+  cad <- .cx_cad(c("A", "B", "Z"),
+                 list(c(0, 50, 0, 100), c(50, 100, 0, 100),
+                      c(9000, 9100, 9000, 9100)))
+  out <- croiser_parcelles_onf(onf, cad, inclure_reste = TRUE)
+  expect_equal(attr(out, "parcelles_concernees"),
+               c(concernees = 2L, total = 3L))
+})
+
+test_that("aucune parcelle concernée : rien, ou tout en hors UGF", {
+  onf <- .cx_onf(list(c(0, 100, 0, 100)))
+  loin <- .cx_cad(c("Y", "Z"),
+                  list(c(9000, 9100, 9000, 9100), c(9200, 9300, 9000, 9100)))
+
+  vide <- croiser_parcelles_onf(onf, loin)
+  expect_equal(nrow(vide), 0L)
+  expect_equal(attr(vide, "parcelles_concernees"),
+               c(concernees = 0L, total = 2L))
+
+  tout <- croiser_parcelles_onf(onf, loin, inclure_reste = TRUE)
+  expect_equal(nrow(tout), 2L)
+  expect_true(all(tout$hors_ugf))
+  expect_equal(sum(tout$surface_ha), 2)
+})
