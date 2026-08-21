@@ -563,8 +563,13 @@ test_that("create_family_index supports custom weights for new families", {
     weights = list(R = c(R1 = 0.5, R2 = 0.3, R3 = 0.2))
   )
 
-  # Calculate expected weighted average
-  expected <- units$R1 * 0.5 + units$R2 * 0.3 + units$R3 * 0.2
+  # Moyenne pondérée des valeurs NORMALISÉES, pas des brutes : R1-R3 sont
+  # orientés « haut = mauvais » à la source et donc inversés (spec 048).
+  # 0.180.0 et avant calculaient l'attendu sur le brut, ce qui revenait à
+  # valider le passthrough fautif.
+  expected <- (100 - units$R1) * 0.5 +
+              (100 - units$R2) * 0.3 +
+              (100 - units$R3) * 0.2
   expect_equal(result$famille_risque, expected)
 })
 

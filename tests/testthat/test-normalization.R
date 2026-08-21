@@ -1705,9 +1705,12 @@ test_that("normalize_indicator inverts R5 (high dieback -> low score)", {
   expect_equal(normalize_indicator("R5", c(-10, 130)), c(100, 0))
 })
 
-test_that("normalize_indicator leaves a high=good indicator unchanged", {
-  # a plain risk indicator (already oriented high=good) is passed through
-  expect_equal(normalize_indicator("indicateur_r1_feu", c(30, 70)), c(30, 70))
+test_that("normalize_indicator inverts R1: raw fire risk is high=bad", {
+  # Ce test affirmait le contraire jusqu'en 0.180.0 — « a plain risk indicator
+  # (already oriented high=good) is passed through » — et c'est cette fausse
+  # prémisse, écrite noir sur blanc, qui a fait survivre le défaut. R1 brut est
+  # « Higher = higher risk » (cf. son propre roxygen) : il s'inverse.
+  expect_equal(normalize_indicator("indicateur_r1_feu", c(30, 70)), c(70, 30))
 })
 
 test_that("create_family_index: severe R5 dieback LOWERS famille_risque", {
@@ -1718,11 +1721,12 @@ test_that("create_family_index: severe R5 dieback LOWERS famille_risque", {
       geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 4326)
     )
   }
-  # R1-R4 = 70 (good). Raw R5 = 80 (severe dieback) -> inverted to 20.
+  # R1-R4 = 70 BRUT, c'est-à-dire un risque assez élevé -> normalisés à 30
+  # chacun. Raw R5 = 80 (dépérissement sévère) -> inversé à 20.
   sev  <- create_family_index(mk(80), method = "mean")
-  good <- create_family_index(mk(5),  method = "mean")  # almost no dieback
-  expect_equal(sev$famille_risque,  mean(c(70, 70, 70, 70, 20)))  # = 60
-  expect_equal(good$famille_risque, mean(c(70, 70, 70, 70, 95)))  # = 75
+  good <- create_family_index(mk(5),  method = "mean")  # presque pas de dépérissement
+  expect_equal(sev$famille_risque,  mean(c(30, 30, 30, 30, 20)))  # = 28
+  expect_equal(good$famille_risque, mean(c(30, 30, 30, 30, 95)))  # = 43
   # severe dieback must pull the family score DOWN, not up
   expect_lt(sev$famille_risque, good$famille_risque)
 })
@@ -1782,4 +1786,56 @@ test_that("normalize_indicator warns on a known indicator left unnormalized", {
 test_that("normalize_indicator stays silent for a non-indicator column name", {
   # un nom qui n'est pas un indicateur connu ne déclenche pas le filet
   expect_no_warning(normalize_indicator("some_derived_column", c(0, 50, 100)))
+})
+
+# --- Convention du radar : 0-100, haut = bon (spec 048) --------------------
+# Verrou de non-régression : R1-R5 sont orientés « haut = mauvais » à l'état
+# brut et doivent tous être inversés. Jusqu'en 0.180.0 seul R5 l'était, si bien
+# qu'une UGF très exposée obtenait un famille_risque flatteur.
+
+test_that("les cinq indicateurs de risque sont inversés", {
+  v <- c(0, 25, 50, 75, 100)
+  for (ind in c("indicateur_r1_feu", "indicateur_r2_tempete",
+                "indicateur_r3_secheresse", "indicateur_r4_abroutissement",
+                "indicateur_r5_deperissement")) {
+    expect_equal(normalize_indicator(ind, v), c(100, 75, 50, 25, 0),
+                 info = ind)
+    # Et par le code court, que create_family_index() accepte aussi.
+    code <- toupper(sub("^indicateur_([a-z][0-9]+)_.*$", "\\1", ind))
+    expect_equal(normalize_indicator(code, v), c(100, 75, 50, 25, 0),
+                 info = code)
+  }
+})
+
+test_that("R6 et R7 ne sont PAS inversés : ils sont déjà haut = bon", {
+  v <- c(0, 25, 50, 75, 100)
+  # « higher = less sensitive » et « high = low frost risk » : la source est
+  # déjà dans le bon sens, les inverser les casserait.
+  expect_equal(normalize_indicator("indicateur_r6_sensibilite", v), v)
+  expect_equal(normalize_indicator("indicateur_r7_gel", v), v)
+})
+
+test_that("tout indicateur du radar est monotone croissant une fois normalisé", {
+  # La convention ne tolère aucune exception : quel que soit l'indicateur,
+  # une valeur normalisée plus haute doit valoir « mieux ».
+  cols <- unlist(lapply(INDICATOR_FAMILIES, function(f) f$column_names),
+                 use.names = FALSE)
+  brut <- c(0, 1, 5, 20, 50, 100, 500, 2000)
+  sens <- vapply(cols, function(ind) {
+    n <- suppressWarnings(normalize_indicator(ind, brut))
+    d <- diff(n[!is.na(n)]); d <- d[d != 0]
+    if (!length(d)) "constant" else if (all(d > 0)) "croissant" else
+      if (all(d < 0)) "decroissant" else "non_monotone"
+  }, character(1))
+  # Décroissant = l'indicateur brut est « haut = mauvais » et l'inversion a
+  # bien eu lieu ; croissant = il était déjà « haut = bon ».
+  expect_true(all(sens %in% c("croissant", "decroissant")),
+              info = paste(names(sens)[!sens %in% c("croissant", "decroissant")],
+                           collapse = ", "))
+  # Les neuf inversés, et eux seuls.
+  attendu <- c("indicateur_r1_feu", "indicateur_r2_tempete",
+               "indicateur_r3_secheresse", "indicateur_r4_abroutissement",
+               "indicateur_r5_deperissement", "indicateur_t3_coupes_rases",
+               "indicateur_s1_routes", "indicateur_s2_bati")
+  expect_setequal(names(sens)[sens == "decroissant"], attendu)
 })

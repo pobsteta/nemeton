@@ -740,6 +740,52 @@ ce niveau le gain ne justifie probablement pas le changement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-20* (**v0.181.0**) : **la famille R disait l'inverse de
+ce qu'elle mesurait** (spec 048). Pascal énonce la convention du radar — 0-100,
+plus c'est haut mieux c'est, donc R1 proche de 100 = peu de risque incendie — et
+demande de vérifier que les 41 colonnes la respectent. **Quatre ne la
+respectaient pas** : R1 (feu), R2 (tempête), R3 (sécheresse) et R4
+(abroutissement), tous « haut = mauvais » à l'état brut et passés **tels quels**.
+
+Une UGF très exposée obtenait donc un `famille_risque` **élevé**, c'est-à-dire
+flatteur ; et R5, seul inversé, pointait à l'opposé des quatre autres dans sa
+propre famille.
+
+**La faute était écrite deux fois, ce qui la rendait auto-confirmante** : le
+commentaire justifiant l'inversion de R5 affirmait que c'était « pour rester
+*high = good* **comme R1-R4** » — prémisse fausse — et un test affirmait en
+commentaire que R1 était « *a plain risk indicator (already oriented
+high=good)* » puis vérifiait le passthrough. Un test qui valide le défaut le
+protège. **Même mécanique que la famille L en 0.176.0** : un texte qui décrit
+l'intention et non le comportement, que personne ne recoupe.
+
+**L'audit** : les 41 colonnes passées au même test, orientation déclarée
+(roxygen) contre orientation mesurée (`normalize_indicator()` sur une entrée
+croissante). Couverture saine — 23 natifs 0-100, 18 avec règle dédiée, aucun au
+repli naïf. Inversés désormais : exactement R1-R5, T3, S1, S2. R6 (« higher =
+less sensitive ») et R7 (« high = low frost risk ») sont « haut = bon » à la
+source et ne s'inversent pas ; S1/S2 valorisent la proximité (Social & Usages)
+quand N1 valorise la distance (Naturalité) — sens opposés assumés.
+
+**Trois verrous**, dont un **balayage des 41 colonnes** qui échouera si un
+nouvel indicateur arrive mal orienté. Deux tests existants encodaient l'ancien
+comportement et sont corrigés.
+
+**Conséquence à annoncer** : tous les `famille_risque` déjà calculés changent,
+et l'indice général avec eux. Brief app écrit — invalider et recalculer, et
+surtout **ne jamais ré-inverser**.
+
+**Cas voisin laissé ouvert** : `indicateur_f2_erosion` déclare et calcule de la
+*fertilité* — son orientation est juste, c'est son **nom** qui annonce l'érosion
+en dupliquant la sémantique de F1. Même famille de défaut que L1/L2 avant
+0.176.0, à traiter séparément.
+
+**Deux corrections que je me dois** : j'avais affirmé la veille que R1 figurait
+dans la liste des indicateurs inversés — `.NORMALIZE_NATIVE_0_100` est la liste
+des **passthrough**, pas des inversés. Et j'ai d'abord cru que `f2_erosion`
+avait une doc copiée-collée de F1 ; vérification faite, la doc est juste et
+c'est le nom qui ment.
+
 **Journal** — *2026-08-20* : **T3 — la fenêtre de récence était ancrée sur la
 donnée, pas sur le calendrier**. Trouvé en vérifiant, à la demande de Pascal,
 que le calcul SUFOSAT fonctionne. Il fonctionne — catalogue STAC disponible,
