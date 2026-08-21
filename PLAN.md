@@ -740,6 +740,44 @@ ce niveau le gain ne justifie probablement pas le changement.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-21* (**v0.182.0**) : **famille F décroisée — F1 =
+fertilité, F2 = érosion** (spec 049). Clôt le point que la spec 045 avait
+explicitement laissé ouvert dans son propre test : « Reste F, dont le croisement
+est d'une autre nature : aucune fonction n'y contredit son propre titre, c'est
+le sens de `F1` qui est en suspens. »
+
+**Quatre sources décrivaient la famille, trois disaient F1 = fertilité** — le
+nom des deux fonctions, `.normalize_resolve_alias()` et `CLAUDE.md`. Seule
+`INDICATOR_FAMILIES` disait l'inverse, avec `column_names` croisé pour
+compenser.
+
+**Ce qui rendait le défaut invisible** : les deux erreurs s'annulaient à
+l'affichage — le libellé « Risque d'érosion » était bien apparié à la colonne
+d'érosion, le radar ne mentait pas. Mais le **code court** désignait deux choses
+selon le chemin : `.normalize_resolve_alias("F1")` rendait la fertilité quand la
+table rendait l'érosion. Un appelant qui normalise par code court obtenait la
+règle de la fertilité pour une colonne d'érosion — sans dégât visible, les deux
+étant 0-100 natifs, mais c'est exactement le piège décrit au §3 de la spec 045.
+
+**Correctif plus léger que pour L** : aucune fonction renommée, aucune colonne
+migrée. Les slugs persistés étaient déjà justes ; seule la table change. Aucune
+valeur ne bouge, aucun recalcul nécessaire — à l'inverse de la spec 048 de la
+veille, qui imposait de tout recalculer.
+
+**Correction annexe** : `indicateur_f2_erosion` déclarait rendre des « fertility
+scores (higher = more fertile) » et journalisait « Computing fertility from TWI
++ slope » — copié-collé depuis F1. Ses ingrédients sont topographiques. Le
+`@return` dit maintenant *résistance à l'érosion*, et l'infobulle ne mentionne
+plus « la couverture végétale », que le calcul n'utilise pas.
+
+**Le garde-fou change de sens, et c'est l'essentiel** :
+`test-indicator-labels-pairing.R` exigeait que les lignes croisées soient
+« exactement les quatre documentées » ; il exige désormais **zéro croisement**
+sur les 41 lignes. Même bascule pour `test-indicator-families.R`. Les deux
+tests gardaient le défaut ; ils gardent maintenant son absence.
+
+**Il ne reste plus aucun croisement code/slug dans la table des indicateurs.**
+
 **Journal** — *2026-08-20* (**v0.181.0**) : **la famille R disait l'inverse de
 ce qu'elle mesurait** (spec 048). Pascal énonce la convention du radar — 0-100,
 plus c'est haut mieux c'est, donc R1 proche de 100 = peu de risque incendie — et
