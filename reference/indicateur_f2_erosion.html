@@ -11,7 +11,7 @@ F2 = (twi_norm + slope_norm) / 2"><meta property="og:image" content="https://pob
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.181.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.182.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -101,7 +101,10 @@ resolution.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Numeric vector of fertility scores (0-100, higher = more fertile)</p>
+    <p>Numeric vector of erosion-resistance scores (0-100, higher = more
+resistant, i.e. LOWER erosion risk). Despite the historical variable name
+inside the function, this is not a fertility score: the ingredients are
+topographic (TWI wetness, slope steepness) plus optional soil texture.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

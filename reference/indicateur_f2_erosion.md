@@ -50,7 +50,11 @@ indicateur_f2_erosion(
 
 ## Value
 
-Numeric vector of fertility scores (0-100, higher = more fertile)
+Numeric vector of erosion-resistance scores (0-100, higher = more
+resistant, i.e. LOWER erosion risk). Despite the historical variable
+name inside the function, this is not a fertility score: the ingredients
+are topographic (TWI wetness, slope steepness) plus optional soil
+texture.
 
 ## Details
 
