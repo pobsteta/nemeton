@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.180.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.181.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,29 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.181.0" id="nemeton-01810-2026-08-20">nemeton 0.181.0 (2026-08-20)<a class="anchor" aria-label="anchor" href="#nemeton-01810-2026-08-20"></a></h2>
+<div class="section level4">
+<h4 id="fixed--la-famille-r-disait-linverse-de-ce-quelle-mesurait-spec-0-181-0">Fixed — la famille R disait l’inverse de ce qu’elle mesurait (spec 048)<a class="anchor" aria-label="anchor" href="#fixed--la-famille-r-disait-linverse-de-ce-quelle-mesurait-spec-0-181-0"></a></h4>
+<p><strong>Le radar suit une convention : 0-100, et plus c’est haut, mieux c’est.</strong> <code>R1</code> (feu), <code>R2</code> (tempête), <code>R3</code> (sécheresse) et <code>R4</code> (abroutissement) ne la respectaient pas : leur grandeur brute est « haut = mauvais » et elle passait <strong>telle quelle</strong>.</p>
+<p>Conséquence : une UGF très exposée au feu, vulnérable aux tempêtes, en stress hydrique et fortement abroutie obtenait un <code>famille_risque</code> <strong>élevé</strong>, donc flatteur. Et dans sa propre famille, <code>R5</code> — seul inversé — pointait à l’opposé des quatre autres.</p>
+<p>Les cinq indicateurs de risque sont désormais inversés ensemble. <code>R6</code> (« higher = less sensitive ») et <code>R7</code> (« high = low frost risk ») sont orientés « haut = bon » à la source et ne s’inversent pas.</p>
+<p><strong>Comment la faute a survécu</strong> — elle était écrite deux fois, ce qui la rendait auto-confirmante :</p>
+<ol style="list-style-type: decimal"><li>le commentaire justifiant l’inversion de <code>R5</code> affirmait que c’était « pour que sa contribution reste <em>high = good</em> <strong>comme R1-R4</strong> ». La prémisse était fausse ;</li>
+<li>un test affirmait en commentaire que R1 était « <em>a plain risk indicator (already oriented high=good)</em> » et vérifiait le passthrough. Un test qui valide le défaut le protège.</li>
+</ol><p>Même mécanique que la famille L en 0.176.0 : un texte qui décrit l’intention et non le comportement, que personne ne recoupe.</p>
+<p><strong>L’audit derrière le correctif</strong> : les 41 colonnes de <code>INDICATOR_FAMILIES</code> ont été passées au même test, orientation déclarée contre orientation mesurée. La couverture est saine — 23 natifs 0-100, 18 avec règle dédiée, aucun au repli naïf — et les inversés sont désormais exactement R1-R5, T3, S1 et S2.</p>
+<p>Trois verrous ajoutés, dont un <strong>balayage des 41 colonnes</strong> qui échouera si un nouvel indicateur arrive mal orienté.</p>
+</div>
+<div class="section level4">
+<h4 id="warning-conséquence--tout-projet-doit-être-recalculé-0-181-0">⚠️ Conséquence — tout projet doit être recalculé<a class="anchor" aria-label="anchor" href="#warning-cons%C3%A9quence--tout-projet-doit-%C3%AAtre-recalcul%C3%A9-0-181-0"></a></h4>
+<p><strong>Tous les <code>famille_risque</code> déjà calculés changent</strong>, et l’indice général avec eux. Ce n’est pas une régression, c’est la correction : mais une comparaison de scores d’avant et d’après le 2026-08-20 n’a pas de sens. Côté app, <strong>ne jamais ré-inverser</strong> — voir <code>specs/048-sens-radar/brief-nemetonshiny.md</code>.</p>
+</div>
+<div class="section level4">
+<h4 id="note--un-cas-voisin-laissé-ouvert-0-181-0">Note — un cas voisin laissé ouvert<a class="anchor" aria-label="anchor" href="#note--un-cas-voisin-laiss%C3%A9-ouvert-0-181-0"></a></h4>
+<p><code>indicateur_f2_erosion</code> déclare rendre des « fertility scores (higher = more fertile) » et calcule effectivement de la fertilité. Son <strong>orientation est juste</strong> ; c’est son <strong>nom</strong> qui annonce l’érosion alors qu’il duplique la sémantique de F1. Même famille de défaut que L1/L2 avant 0.176.0, à traiter séparément.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.180.0" id="nemeton-01800-2026-08-20">nemeton 0.180.0 (2026-08-20)<a class="anchor" aria-label="anchor" href="#nemeton-01800-2026-08-20"></a></h2>
 <div class="section level4">
