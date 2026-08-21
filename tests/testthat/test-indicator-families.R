@@ -83,12 +83,14 @@ test_that("every declared column is actually produced by the engine", {
   }
 })
 
-test_that("F and L keep their legacy code/slug pairing", {
-  # Garde-fou : le code court et le slug de colonne divergent sur ces deux
-  # familles. Un « alignement » naïf casserait les libellés en aval.
+test_that("F et L n'ont plus de code/slug croise", {
+  # Ce test gardait le croisement des deux familles. L a ete decroisee en
+  # 0.176.0 (renommage des fonctions, spec 045), F en 0.182.0 (correction de
+  # la table, spec 049) : plus aucune ne diverge, et c'est desormais l'absence
+  # de croisement qui est verrouillee.
   f <- indicator_families(codes = "F")
   expect_equal(f$indicators[[1]], c("F1", "F2"))
-  expect_equal(f$column_names[[1]], c("indicateur_f2_erosion", "indicateur_f1_fertilite"))
+  expect_equal(f$column_names[[1]], c("indicateur_f1_fertilite", "indicateur_f2_erosion"))
 
   l <- indicator_families(codes = "L")
   expect_equal(l$indicators[[1]][1:2], c("L1", "L2"))

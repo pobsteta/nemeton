@@ -9,10 +9,17 @@
 # plutot que les libelles echanges — L n'est donc plus croisee, et ses deux
 # anciens slugs sont retires definitivement.
 #
-# Reste F, dont le croisement est d'une autre nature : aucune fonction n'y
-# contredit son propre titre, c'est le sens de `F1` qui est en suspens.
+# La famille F etait le dernier croisement, tranche en 0.182.0 (spec 049) :
+# F1 = fertilite, F2 = erosion, comme le disaient deja le nom des deux
+# fonctions, `.normalize_resolve_alias()` et CLAUDE.md. Seule la table des
+# familles disait l'inverse, avec `column_names` croise pour compenser -- si
+# bien que le MEME code « F1 » designait la fertilite par le resolveur d'alias
+# et l'erosion par la table.
+#
+# Il n'y a donc PLUS aucune ligne croisee, et ce test l'exige desormais : toute
+# reapparition d'un croisement le fera echouer.
 
-test_that("les lignes croisees sont exactement les quatre documentees (CA-3)", {
+test_that("aucun code ne contredit le slug de sa colonne (CA-3)", {
   ind <- indicator_labels()
 
   expect_equal(nrow(ind), 41L)
@@ -22,11 +29,8 @@ test_that("les lignes croisees sont exactement les quatre documentees (CA-3)", {
     paste0("indicateur_", tolower(ind$code), "_")
   )
 
-  expect_equal(ind$code[!slug_ok], c("F1", "F2"))
-  expect_equal(
-    ind$column_name[!slug_ok],
-    c("indicateur_f2_erosion", "indicateur_f1_fertilite")
-  )
+  expect_equal(ind$code[!slug_ok], character(0))
+  expect_equal(ind$column_name[!slug_ok], character(0))
 
   # Les deux slugs retires en 0.176.0 ne reviennent pas par une porte derobee.
   expect_false(any(
@@ -39,16 +43,16 @@ test_that("le libelle decrit la grandeur portee par la colonne (CA-1)", {
   ind <- indicator_labels()
   by_code <- function(code) ind[ind$code == code, , drop = FALSE]
 
-  # F1 : colonne au slug "erosion", valeurs d'erosion, libelle d'erosion.
+  # F1 : colonne au slug "fertilite", valeurs de fertilite, libelle de fertilite.
   f1 <- by_code("F1")
-  expect_equal(f1$column_name, "indicateur_f2_erosion")
-  expect_match(f1$label_fr, "rosion")
-  expect_match(f1$label_en, "Erosion")
+  expect_equal(f1$column_name, "indicateur_f1_fertilite")
+  expect_match(f1$label_fr, "ertilit")
+  expect_match(f1$label_en, "Fertility")
 
   f2 <- by_code("F2")
-  expect_equal(f2$column_name, "indicateur_f1_fertilite")
-  expect_match(f2$label_fr, "ertilit")
-  expect_match(f2$label_en, "Fertility")
+  expect_equal(f2$column_name, "indicateur_f2_erosion")
+  expect_match(f2$label_fr, "rosion")
+  expect_match(f2$label_en, "Erosion")
 
   # L1 : depuis le renommage, le slug, le code et les valeurs concordent.
   l1 <- by_code("L1")
@@ -76,8 +80,8 @@ test_that("les infobulles suivent le meme appariement que les libelles", {
   expect_match(by_code("L2")$tooltip_fr, "ragmentation")
   expect_match(by_code("L2")$tooltip_en, "ragmentation")
 
-  expect_match(by_code("F1")$tooltip_fr, "rosion")
-  expect_match(by_code("F2")$tooltip_fr, "ertilit")
+  expect_match(by_code("F1")$tooltip_fr, "ertilit")
+  expect_match(by_code("F2")$tooltip_fr, "rosion")
 })
 
 test_that("indicator_families() et indicator_labels() ne se contredisent pas (CA-2)", {

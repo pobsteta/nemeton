@@ -1,3 +1,53 @@
+# nemeton 0.182.0 (2026-08-21)
+
+### Fixed — la famille F était croisée : F1 = fertilité, F2 = érosion (spec 049)
+
+Clôt le point que la spec 045 avait explicitement laissé en suspens — « c'est le
+sens de `F1` qui est en suspens » — après avoir décroisé la famille L.
+
+Dans `INDICATOR_FAMILIES`, le créneau **F1** portait le libellé « Risque
+d'érosion » et la colonne `indicateur_f2_erosion` ; le créneau F2 l'inverse.
+Quatre sources décrivaient la famille, **trois disaient F1 = fertilité** — le
+nom des deux fonctions, `.normalize_resolve_alias()` et `CLAUDE.md` — et seule
+la table disait le contraire, avec `column_names` croisé pour compenser.
+
+**Pourquoi ça devait être corrigé.** Les deux erreurs s'annulaient à
+l'affichage : le radar ne mentait pas. Mais le **code court** désignait deux
+choses selon le chemin :
+
+```
+.normalize_resolve_alias("F1")  ->  indicateur_f1_fertilite   (fertilité)
+INDICATOR_FAMILIES$F  : F1      ->  indicateur_f2_erosion     (érosion)
+```
+
+Un appelant qui normalise par code court obtenait la règle de la fertilité pour
+une colonne d'érosion. Sans dégât visible — les deux sont 0-100 natifs — mais
+c'est le piège que la spec 045 décrivait déjà pour L.
+
+**Contrairement à L, aucune fonction n'est renommée et aucune colonne migrée** :
+les slugs persistés étaient déjà justes. Seule la table change. **Aucune valeur
+ne bouge, aucun recalcul n'est nécessaire.**
+
+### Fixed — la doc de `indicateur_f2_erosion` parlait de fertilité
+
+Elle déclarait rendre des « fertility scores (higher = more fertile) » et
+journalisait « Computing fertility from TWI + slope » — copié-collé depuis F1.
+Ses ingrédients sont topographiques : TWI, pente, plus une résistance texturale
+optionnelle. Le `@return` dit maintenant ce qu'elle calcule, un score de
+**résistance à l'érosion** (haut = risque d'érosion plus faible), et l'infobulle
+F2 ne mentionne plus « la couverture végétale », que le calcul n'utilise pas.
+
+### Changed — le garde-fou d'appariement change de sens
+
+`test-indicator-labels-pairing.R` exigeait que les lignes croisées soient
+« exactement les quatre documentées ». Il exige désormais **zéro croisement** sur
+les 41 lignes : toute réapparition le fera échouer. Même bascule pour
+`test-indicator-families.R`, qui gardait le croisement de F et L.
+
+**Côté app** : le libellé affiché reste correct, mais la **lettre** attachée à
+chaque grandeur change. Un axe étiqueté « F1 » en dur, ou un fork de la table,
+sont à vérifier — voir `specs/049-famille-f-decroisee/brief-nemetonshiny.md`.
+
 # nemeton 0.181.0 (2026-08-20)
 
 ### Fixed — la famille R disait l'inverse de ce qu'elle mesurait (spec 048)

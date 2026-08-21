@@ -143,17 +143,22 @@ INDICATOR_FAMILIES <- list(
     icon = "globe-americas",
     color = "#8B4513",
     indicators = c("F1", "F2"),
-    column_names = c("indicateur_f2_erosion", "indicateur_f1_fertilite"),
+    # Décroisé en 0.182.0 (spec 049) : F1 = fertilité, F2 = érosion, comme le
+    # disent le nom des deux fonctions, `.normalize_resolve_alias()` et
+    # CLAUDE.md. Seule cette table disait l'inverse, et `column_names` était
+    # croisé pour compenser — si bien que le MÊME code « F1 » désignait la
+    # fertilité par le résolveur d'alias et l'érosion par cette table.
+    column_names = c("indicateur_f1_fertilite", "indicateur_f2_erosion"),
     indicator_labels = list(
-      F1 = list(fr = "Risque d'\u00e9rosion", en = "Erosion Risk"),
-      F2 = list(fr = "Fertilit\u00e9 des sols", en = "Soil Fertility")
+      F1 = list(fr = "Fertilit\u00e9 des sols", en = "Soil Fertility"),
+      F2 = list(fr = "Risque d'\u00e9rosion", en = "Erosion Risk")
     ),
     indicator_tooltips = list(
-      F1 = list(
-        fr = "Risque d'\u00e9rosion des sols bas\u00e9 sur la pente, le type de sol et la couverture v\u00e9g\u00e9tale. Score \u00e9lev\u00e9 = faible risque.",
-        en = "Soil erosion risk based on slope, soil type and vegetation cover. High score = low risk."
-      ),
       F2 = list(
+        fr = "R\u00e9sistance \u00e0 l'\u00e9rosion des sols, d\u00e9riv\u00e9e de la topographie (indice d'humidit\u00e9 TWI, pente) et de la texture. Score \u00e9lev\u00e9 = faible risque.",
+        en = "Soil erosion resistance, from topography (TWI wetness index, slope) and texture. High score = low risk."
+      ),
+      F1 = list(
         fr = "Potentiel de fertilit\u00e9 des sols bas\u00e9 sur les caract\u00e9ristiques p\u00e9dologiques (texture, profondeur, mati\u00e8re organique).",
         en = "Soil fertility potential based on pedological characteristics (texture, depth, organic matter)."
       )

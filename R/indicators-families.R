@@ -1569,7 +1569,10 @@ extract_fertility_from_gissol <- function(units, layers,
 #'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
 #'   resolution.
 #'
-#' @return Numeric vector of fertility scores (0-100, higher = more fertile)
+#' @return Numeric vector of erosion-resistance scores (0-100, higher = more
+#'   resistant, i.e. LOWER erosion risk). Despite the historical variable name
+#'   inside the function, this is not a fertility score: the ingredients are
+#'   topographic (TWI wetness, slope steepness) plus optional soil texture.
 #'
 #' @export
 #' @examples
@@ -1604,7 +1607,7 @@ indicateur_f2_erosion <- function(units,
   units_sf <- as_pure_sf(units)
 
   # 1. Compute TWI (cached across W2, W3, F2, R3)
-  cli::cli_alert_info("F2: Computing fertility from TWI + slope")
+  cli::cli_alert_info("F2: Computing erosion resistance from TWI + slope")
   # `twi_target_res` suit la résolution de travail (grilles alignées, cache
   # partagé avec W2/W3/R3).
   twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir,
@@ -1620,7 +1623,7 @@ indicateur_f2_erosion <- function(units,
   # Window adjusted to match typical TWI values (2.5-10 range covers most landscapes)
   twi_norm <- pmax(pmin((twi_mean - 2.5) / 7.5 * 100, 100), 0)
 
-  # 4. Normalize slope: [0°, 45°] -> [100, 0] (flatter = more fertile)
+  # 4. Normalize slope: [0°, 45°] -> [100, 0] (flatter = less erodible)
   slope_norm <- pmax(pmin(100 - (slope_mean / 45) * 100, 100), 0)
 
   # 5. F2 = average of TWI and slope components, plus an optional
