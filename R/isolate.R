@@ -128,8 +128,15 @@
 #'   passes `fun` a callback writing there.
 #' @param progress_callback Parent-side callback, fed by replaying the child's
 #'   events (requires `progress_path`).
-#' @param memory_max Ceiling as a systemd size string (e.g. `"12G"`). Default:
-#'   70% of RAM, or `options(nemeton.reconfort_memory_max)`. `FALSE` disables it.
+#' @param memory_max Ceiling as a systemd size string (e.g. `"12G"`), or
+#'   `FALSE` to disable it. Default (`NULL`): **50% of `MemTotal`**, unless
+#'   `options(nemeton.memory_max)` or the `NEMETON_MEMORY_MAX` environment
+#'   variable says otherwise — one policy, shared with the RECONFORT subprocess
+#'   cap. The fraction is not a guess: on the reference workstation
+#'   `systemd-oomd` was observed killing the session at 17.1 GB of 31.2 GB,
+#'   which the former 70% default (21 GB) sat *above* — a ceiling that can only
+#'   trip after the OOM killer has acted is not a ceiling. See
+#'   `R/memory-ceiling.R` for the full argument and the escape hatches.
 #' @param poll_ms How often to poll the child for progress, in milliseconds.
 #' @param quiet Suppress the child's console output.
 #'
@@ -212,11 +219,11 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
   ), f_script)
 
   mm <- if (is.null(memory_max)) {
-    .reconfort_memory_max()
+    .memory_ceiling()
   } else if (isFALSE(memory_max)) {
     NULL
   } else {
-    as.character(memory_max)
+    .memory_ceiling_parse(memory_max)
   }
   systemd <- .reconfort_systemd_run()
   if (is.null(systemd) || is.null(mm)) {
@@ -253,7 +260,7 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
       ceiling <- if (is.null(mm)) "none" else mm
       cli::cli_abort(c(
         "{.val {fun}} ran out of memory and was killed (ceiling: {ceiling}).",
-        i = "Raise it with {.arg memory_max}, or run on a smaller extent.",
+        i = "Raise it with {.arg memory_max}, {.envvar NEMETON_MEMORY_MAX} (accepts {.val none}) or {.code options(nemeton.memory_max=)}, or run on a smaller extent.",
         i = "The rest of the session was spared — only the job died."
       ))
     }

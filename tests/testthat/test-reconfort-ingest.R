@@ -434,6 +434,10 @@ test_that("reconfort_ingest_s2 aborts before extraction when disk is too small",
 })
 
 test_that(".reconfort_memory_max honours the option and derives a default", {
+  # Le plafond lui-meme est decide par `.memory_ceiling()` (memory-ceiling.R,
+  # 50 % de MemTotal depuis le 2026-08-22) ; ici on verifie seulement que
+  # l'alias RECONFORT y delegue et respecte les memes interrupteurs.
+  withr::local_envvar(NEMETON_MEMORY_MAX = NA)
   withr::local_options(nemeton.reconfort_memory_max = "12G")
   expect_identical(nemeton:::.reconfort_memory_max(), "12G")
 
@@ -469,7 +473,9 @@ test_that(".reconfort_cap_memory wraps in a capped scope, or passes through", {
 test_that(".reconfort_memory_max derives a default from the system RAM", {
   # Sans option : dérivé de /proc/meminfo (Linux) ou NULL ailleurs / si trop peu
   # de RAM. Dans les deux cas, jamais d'erreur et jamais une valeur absurde.
-  withr::local_options(nemeton.reconfort_memory_max = NULL)
+  withr::local_envvar(NEMETON_MEMORY_MAX = NA)
+  withr::local_options(nemeton.reconfort_memory_max = NULL,
+                       nemeton.memory_max = NULL)
   val <- nemeton:::.reconfort_memory_max()
   if (!is.null(val)) {
     expect_match(val, "^[0-9]+G$")

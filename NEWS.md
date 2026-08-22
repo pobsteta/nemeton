@@ -1,3 +1,79 @@
+# nemeton 0.183.0 (2026-08-22)
+
+### Changed — le plafond mémoire par défaut passe de 70 % à 50 % de la RAM
+
+Le plafond posé sur les travaux lourds isolés (`run_memory_capped()`, cap du
+sous-processus RECONFORT) valait **70 % de `MemTotal`**. Sur la station de
+référence — 31,2 Go, 8 Go de swap — cela fait **21 Go**, alors que
+`systemd-oomd` avait déjà tué la session à **17,1 Go** :
+
+```
+Killed .../app-gnome-rstudio-*.scope due to memory pressure for
+user@1000.service being 77.22% > 50.00% for > 20s
+Current Memory Usage: 17.1G
+```
+
+**Un plafond qui ne peut se déclencher qu'après l'exécuteur n'est pas un
+plafond** : il n'a jamais servi, ni le 2026-07-13 ni le 2026-08-15. Le défaut
+passe à **50 % de `MemTotal`** — 15 Go sur cette machine, sous le point de
+déclenchement observé et au-dessus du run légitime le plus lourd jamais mesuré
+ici (chaîne RECONFORT/IOTA2 complète, 11,3 Go). Deux mesures encadrent le
+choix ; ce n'est pas une fraction tirée au sort.
+
+**Confirmation indépendante** : `.pai_mem_safe_ncores()` (`R/regen_engines.R`)
+budgète la concurrence lasR du PAI sur **40 % de la RAM totale**, pour la même
+raison et après un OOM réel sur la même machine (2026-07-08). Deux helpers écrits
+à trois mois d'écart convergent ; c'est 70 % qui était l'exception. Cette
+concurrence-là n'est pas unifiée avec le plafond — elle borne un nombre de dalles
+simultanées, pas un cgroup.
+
+`MemTotal` et non `MemAvailable`, délibérément : dimensionner sur ce qui est
+libre à l'instant du lancement ferait dépendre la survie d'un même calcul des
+onglets de navigateur ouverts.
+
+**Ce qui reste vrai** : la protection principale n'est pas le chiffre mais le
+**cgroup**. `MemorySwapMax=0` fait mourir l'enfant sur sa propre limite au lieu
+de le laisser ramer en swap — et cette rame *est* la pression que `systemd-oomd`
+surveille.
+
+### Changed — une seule politique, deux interrupteurs, honorés partout
+
+La politique vit désormais dans `R/memory-ceiling.R` (`.memory_ceiling()`), et
+`.reconfort_memory_max()` n'en est plus qu'un alias. Trois travaux lourds d'une
+même session ne peuvent plus tourner sous trois plafonds différents — c'était le
+cas : deux chemins prenaient le défaut du cœur (70 %) et un troisième, côté app,
+sa propre copie à 50 %.
+
+Ordre de résolution, du plus spécifique au moins spécifique :
+
+1. l'argument `memory_max =` du site d'appel (`FALSE` = aucun plafond) ;
+2. `options(nemeton.memory_max)` — le nom historique
+   `nemeton.reconfort_memory_max` reste honoré ;
+3. la variable d'environnement **`NEMETON_MEMORY_MAX`** — désormais lue par le
+   cœur lui-même, et non plus seulement par `nemetonshiny`. `"none"`, `"off"`,
+   `"false"`, `"no"` et `"0"` désactivent le plafond ;
+4. 50 % de `MemTotal`, arrondi au Go inférieur.
+
+Sous 4 Go calculés, **aucun plafond n'est posé** : sur une telle machine il
+ferait échouer tout travail légitime, et le dire vaut mieux que le prétendre.
+
+Le message d'échec nomme maintenant les trois interrupteurs, au lieu du seul
+argument que l'utilisateur d'une app ne peut pas atteindre.
+
+### Documentation
+
+`R/memory-ceiling.R` porte l'argument complet — le mécanisme PSI de
+`systemd-oomd` (`ManagedOOMMemoryPressureLimit`, vérifié à 50 % sur cette
+station), les deux incidents, les deux mesures qui encadrent la fraction, et
+pourquoi aucune fraction ne peut être *prouvée* correcte depuis R.
+
+### Suite côté app
+
+`specs/brief-nemetonshiny-plafond-memoire.md` : `nemetonshiny` peut supprimer
+`.compute_memory_max()` et `.capped_memory_max()` et passer `memory_max = NULL`
+partout — le cœur applique la même valeur et lit la même variable
+d'environnement. Plancher à relever à `nemeton (>= 0.183.0)`.
+
 # nemeton 0.182.0 (2026-08-21)
 
 ### Fixed — la famille F était croisée : F1 = fertilité, F2 = érosion (spec 049)
