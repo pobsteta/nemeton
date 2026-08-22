@@ -76,8 +76,16 @@ run_memory_capped(
 
 - memory_max:
 
-  Ceiling as a systemd size string (e.g. `"12G"`). Default: 70% of RAM,
-  or `options(nemeton.reconfort_memory_max)`. `FALSE` disables it.
+  Ceiling as a systemd size string (e.g. `"12G"`), or `FALSE` to disable
+  it. Default (`NULL`): **50% of `MemTotal`**, unless
+  `options(nemeton.memory_max)` or the `NEMETON_MEMORY_MAX` environment
+  variable says otherwise — one policy, shared with the RECONFORT
+  subprocess cap. The fraction is not a guess: on the reference
+  workstation `systemd-oomd` was observed killing the session at 17.1 GB
+  of 31.2 GB, which the former 70% default (21 GB) sat *above* — a
+  ceiling that can only trip after the OOM killer has acted is not a
+  ceiling. See `R/memory-ceiling.R` for the full argument and the escape
+  hatches.
 
 - poll_ms:
 
