@@ -39,46 +39,33 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 | \# | Écart | Livré par | En attente chez | État |
 |----|----|----|----|----|
-| 1 | [`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md) / [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md) | `nemeton` **v0.170.0** puis **v0.171.0** | `nemetonshiny` | **Non consommé, et désormais bloquant.** Plancher monté à `nemeton (>= 0.174.0)`, mais `app_config.R:127` porte toujours le fork de la table — dont la famille A déclare `A1..A4` **sans A5**. `mod_family.R:17` lisant `get_family_config()`, le travail A5 livré en v0.173.1 (statut de cause) **ne peut pas s’afficher** dans l’onglet Air |
-| 2 | `osm_hors_corridor` / `bdtopo_hors_corridor` | `foretaccess` **v2.4.0**, taguée le 2026-08-15 | `nemetonshiny` | **Consommé par le code, pas par le plancher.** `mod_desserte.R` lit désormais `osm_hors_corridor` ; `DESCRIPTION` exige toujours `foretaccess (>= 2.3.0)`, où le champ n’existe pas |
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
-| 4 | `r5_status` (cause d’un R5 vide) | `nemeton`, **spec 008** (2026-04-30) | `nemetonshiny` | **Jeté à l’arrivée.** `service_r5.R:117` fait `out$r5_status <- NULL` : la seule colonne qui explique un R5 vide est supprimée juste avant l’interface. Rien à livrer côté cœur — c’est le gain le moins cher qui reste (§7 du brief A5) |
-| 5 | [`check_fordead_validity()`](https://pobsteta.github.io/nemeton/reference/check_fordead_validity.md) — « R5 est-il calculable ici ? » | `nemeton`, **spec 008 E6.c.3** | `nemetonshiny` | **Exposé, non exploité en amont.** L’app l’enveloppe (`service_monitoring_db.R:673`) mais ne s’en sert pas pour dire *avant calcul* que R5 ne s’applique pas. Mesuré le 2026-08-17 sur les trois projets locaux : **aucun n’est dans la zone de calibration FORDEAD** (88/39/01/73/74) — Fordead 100 % sapin mais Ardennes, Dabo 100 % sapin mais Moselle, Reconfort 0 % résineux (relève de RECONFORT) |
 
-**Écart 1 — le cœur a livré, l’app n’a pas consommé.** C’est exactement
-le genre d’écart que ce fichier doit rendre visible, et il est mesurable
-: la copie de la table dans `nemetonshiny/R/app_config.R` **a déjà
-divergé** — 40 indicateurs déclarés contre 41, A5
-`indicateur_a5_rafraichissement` absent (donc calculé par
-`service_compute.R` puis filtré à l’affichage, invisible dans l’onglet
-Air), 14 libellés et 18 tooltips divergents. Une troisième copie des
-libellés, les 40 clés i18n `indicator_<CODE>`, a même **F1 et F2
-inversés** : la colonne d’érosion s’affiche « F1 - Fertilité des sols ».
-Six patches vérifiés sont prêts
-(`specs/patch-nemetonshiny-0[1-6]-*.diff`), non appliqués.
+**Il ne reste qu’un écart, et il ne se referme pas au clavier** : le n°
+3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR
+et une desserte corrigée, pas une release.
 
-**Consommé le 2026-08-16/17, donc retiré de la table** : les deux briefs
-du jour sont câblés côté app —
-[`theia_source_status()`](https://pobsteta.github.io/nemeton/reference/theia_source_status.md)
-(`mod_sources_config`, `service_compute`, `service_status`), `a5_status`
-(`service_compute`, `mod_family`),
-[`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md)
-pour C2 (commit `cc3071f9`, « NDVI depuis Sentinel-2 L2A »), clé i18n
-`lst_status_no_coverage`, et la copie morte de
-[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
-supprimée de `service_compute.R`. Plancher app monté à
-`nemeton (>= 0.174.0)`. Vérifié en lecture seule le 2026-08-17.
+**Les quatre autres sont refermés**, vérifiés en lecture seule sur
+`nemetonshiny@5a1afd7c` le 2026-08-22 (détail dans l’entrée de journal
+du 2026-08-22, chantiers A et D) :
 
-**Écart 2 — le maillon `foretaccess` est bouclé, l’app ne l’a pas encore
-pris.** L’implémentation avait été vérifiée le 2026-08-15 en lecture
-seule, hors du dépôt : 15 assertions passent, dont la non-régression des
-quatre valeurs de `resume` et le `st_cast()` qui homogénéise
-LINESTRING/MULTILINESTRING avant écriture GeoPackage. La PR \#160 a été
-mergée et **`v2.4.0` est taguée le même jour** — `Remotes: @*release` la
-voit donc désormais. Reste, côté app : monter le plancher à
-`foretaccess (>= 2.4.0)`, et faire lire au calque
-`cmp$osm_hors_corridor` au lieu de l’acquisition brute, ce qui permet
-enfin de le renommer « Pistes OSM hors BD TOPO ».
+| \# | Écart | Refermé par | Ce qui a été relu |
+|----|----|----|----|
+| 1 | [`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md) / [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md) | app **v0.127.0** (`65a806ac`) | `app_config.R:150` — `.build_indicator_families()` appelle [`nemeton::indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md) + [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md), [`delayedAssign()`](https://rdrr.io/r/base/delayedAssign.html) ligne 201, 368 lignes de fork remplacées par 81. La famille A retrouve **A5** |
+| 2 | `osm_hors_corridor` / `bdtopo_hors_corridor` | app **v0.127.0** | `DESCRIPTION:15` exige désormais `foretaccess (>= 2.4.0)` — le code lisait déjà le champ, c’est le plancher qui manquait |
+| 4 | `r5_status` (cause d’un R5 vide) | app **v0.126.0** (`c5887a5e`) | `service_r5.R:115-117` — le `out$r5_status <- NULL` n’est plus un rejet mais la **seconde ligne d’un renommage** vers `.r5_status`. À `v0.125.1` c’était bien une suppression sèche (`service_r5.R:86`) : le constat du 2026-08-15 était juste, il a été corrigé depuis |
+| 5 | [`check_fordead_validity()`](https://pobsteta.github.io/nemeton/reference/check_fordead_validity.md) — « R5 est-il calculable ici ? » | app **v0.127.0** | `mod_sources_config.R:95,125` — [`r5_applicabilite()`](https://pobsteta.github.io/nemeton/reference/r5_applicabilite.md) et [`a5_applicabilite()`](https://pobsteta.github.io/nemeton/reference/a5_applicabilite.md) (cœur v0.175.0) rendent un badge **avant** le calcul, et court-circuitent `not_applicable` / `no_species` / `no_coverage`. `eligible_fordead_out_of_calibration` ne bloque **rien**, délibérément : hors zone de calibration le calcul reste juste, seules ses classes de confiance sont extrapolées |
+
+**Ce que l’écart n° 1 aura coûté et rapporté.** Ouvert le 2026-08-15
+comme « non consommé, et désormais bloquant », il l’était : la copie de
+la table dans `app_config.R` déclarait 40 indicateurs contre 41, A5
+était calculé puis filtré à l’affichage, et une troisième copie des
+libellés (les clés i18n `indicator_<CODE>`) avait F1 et F2 inversés — la
+carte d’érosion sortait « F1 - Fertilité des sols ». Le dé-fork a retiré
+la **classe** de bug : quatre jours plus tard, la correction du sens de
+la famille R (v0.181.0) puis le décroisement de F (v0.182.0) ont
+traversé l’app **sans une ligne de table à toucher**. C’est l’argument à
+opposer au prochain fork qui se présentera comme un raccourci.
 
 ------------------------------------------------------------------------
 
@@ -138,11 +125,12 @@ observers et des fonctions.
   dépôt : 15 assertions passent, dont la non-régression des quatre
   valeurs de `resume` et l’aller-retour GeoPackage sur un tronçon
   traversant.
-- **Reste le dernier maillon, côté app** : plancher
-  `foretaccess (>= 2.4.0)`, et le calque qui lit `cmp$osm_hors_corridor`
-  au lieu de l’acquisition brute — il pourra alors s’appeler « Pistes
-  OSM hors BD TOPO », ce que son libellé actuel se refuse honnêtement à
-  dire. Cf. écart n° 2 en tête de fichier.
+- **Dernier maillon fermé le 2026-08-18** : `nemetonshiny` v0.127.0
+  monte le plancher à `foretaccess (>= 2.4.0)` (`DESCRIPTION:15`, relu
+  le 2026-08-22). Le calque lisait déjà `cmp$osm_hors_corridor` ; il ne
+  dépendait plus que d’une ligne de `DESCRIPTION`. Écart n° 2 retiré de
+  la table en tête de fichier — la chaîne `foretaccess` → app est
+  complète pour ce brief.
 
 ------------------------------------------------------------------------
 
@@ -268,6 +256,29 @@ pour la colonne de score de famille — l’app tire aujourd’hui
 par
 [`getFromNamespace()`](https://rdrr.io/r/utils/getFromNamespace.html)
 sur une API interne.
+
+**Versant app livré le 2026-08-18 — le chantier est clos des deux
+côtés.** `nemetonshiny` v0.127.0 (`65a806ac`) remplace les 368 lignes de
+fork par 81 : `.build_indicator_families()` assemble la table depuis
+[`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md) +
+[`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md),
+un [`delayedAssign()`](https://rdrr.io/r/base/delayedAssign.html) laisse
+les douze consommateurs inchangés, et A5 revient dans la famille A.
+v0.127.1 (`fb9d72a1`) retire les deux dernières tables de libellés
+indexées par nom de colonne (`indicator_label_by_column()`), v0.127.2
+(`b6864c19`) suit le renommage des colonnes L de la spec 045 avec
+migration à la lecture. Plancher app : `nemeton (>= 0.175.0)`. Vérifié
+en lecture seule le 2026-08-22 (`app_config.R:150,201`).
+
+**Le retour sur investissement est mesurable, et c’est ce qu’il faut
+retenir du chantier** : ouvert alors que la divergence entre les deux
+copies était *mesurée à zéro* — donc sans symptôme —, il avait déjà
+dérivé au moment du dé-fork (A5 manquant, F1/F2 inversés dans les clés
+i18n), puis il a rendu **gratuites** la correction du sens de la famille
+R (v0.181.0) et le décroisement de F (v0.182.0), toutes deux traversant
+l’app sans une ligne de table à toucher. Une duplication sans divergence
+n’est pas une duplication inoffensive : c’est une divergence qui n’a pas
+encore eu lieu.
 
 ------------------------------------------------------------------------
 
@@ -828,6 +839,9 @@ inspirer un épaississement.
 | ✅ | `caler_sur_cadastre` — colle le bord d’UGF au bord cadastral | `nemeton` | **v0.179.0** |
 | ✅ | Une action dans Carte UGF (**Créer les UGF avec le parcellaire ONF**), sélecteur de domanialité, **calage systématique**, surcouche, mention du producteur | `nemetonshiny` | **v0.129.0** (`01873e72`), simplifié en **v0.130.2** (`b3e8f44b`) |
 | ✅ | **Recette §6 passée sur le service réel**, calage validé sur cadastre réel | `nemetonshiny` | **v0.130.0** (`e3de17a5`) |
+| ✅ | Pré-filtrage des parcelles sans forêt **remonté dans le cœur** + attribut `parcelles_concernees` | `nemeton` | **v0.180.0** — consommé par l’app en **v0.130.4** |
+| ✅ | Queue de recette (8 correctifs) : bouton sans sélection préalable, suppression optionnelle des parcelles \< 10 % de forêt publique, onglet Sélection rafraîchi, couche orange fantôme | `nemetonshiny` | **v0.130.1** → **v0.130.8** (`cb27c6bf` … `29c831ad`) |
+| ✅ | Créer un projet **entier** depuis `commune-code_insee.csv` croisé avec le parcellaire ONF | `nemetonshiny` | **v0.132.0** (commit `37c8a539`) |
 
 **Calage reproduit à l’identique** entre cœur et app sur La-Vieille-Loye
 (1 271 parcelles cadastrales × 94 parcelles forestières) : 170 tènements
@@ -847,9 +861,281 @@ parcelles cadastrales intersectant réellement le parcellaire forestier
 (181 sur 1 271 à La-Vieille-Loye) ferait passer
 [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
 de 24,9 s à 11,5 s. À ce niveau le gain ne justifie probablement pas le
-changement.
+changement. — **Fait finalement en v0.180.0**, sur demande de l’app, qui
+avait implémenté le pré-filtrage de son côté (v0.130.3) et payait un
+aller-retour de projection pour réinjecter les parcelles écartées.
+Mesuré ici : 19,1 s → 7,3 s, contrat inchangé (1 388 géométries égales
+une à une).
+
+**Clos pour de bon le 2026-08-21** (v0.132.0 côté app). Le chantier a
+produit une **sortie devenue publique de fait** : l’attribut
+`parcelles_concernees` (`c(concernees =, total =)`) est lu par l’app
+pour afficher « N parcelles sur M » et n’est plus recalculé en aval. Le
+retirer, ou en changer la forme, casserait l’affichage — à traiter comme
+une sortie stable de
+[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md),
+pas comme un attribut de commodité.
 
 # Correctifs de production (hors chantier)
+
+**Journal app** — *2026-08-22* : **le lot `nemetonshiny` v0.125.0 →
+v0.132.0 — 25 releases, cinq chantiers**. Consigné d’après
+`specs/BRIEF-nemeton-plan-md-0.125-0.132.md`, émis par la session app :
+elle peut **lire** ce fichier depuis la révision de sa règle 12, mais
+non l’écrire — d’où un brief qui livre le texte et laisse ici le
+placement.
+
+**Vérifié en lecture seule** sur `nemetonshiny@5a1afd7c` (cycle dev
+`0.132.0.9000`) : les 25 tags annoncés existent, les commits sont sur
+`main`. Une seule correction de SHA — le brief donne `ca363953` pour
+v0.132.0, qui est l’**objet tag** ; le commit taggué est `37c8a539` (le
+tag n’est pas fetché dans le clone local, `git ls-remote` le confirme
+sur le distant). Les sept versions cœur que le brief cite d’après le
+NEWS de l’app — **0.174.0, 0.175.0, 0.176.0, 0.179.0, 0.180.0, 0.181.0,
+0.182.0** — sont toutes taguées ici : le point §4.4 du brief est levé,
+aucune n’est inventée.
+
+**Six des 25 étaient déjà consignées** (v0.128.0, v0.128.1, v0.129.0,
+v0.130.0, v0.130.1, v0.130.2 — entrées « Journal app » des 18 et 19
+août, plus bas). Le brief les regroupe par chantier sans pouvoir savoir
+ce que ce fichier portait déjà ; ce qui suit ne consigne que les
+**dix-neuf** qui manquaient et renvoie aux entrées existantes plutôt que
+de les redire.
+
+**Un trou repéré en recoupant les deux briefs** : **v0.124.1** et
+**v0.124.2** (2026-08-15) ne figurent dans aucun — le brief précédent
+s’arrête à v0.124.0, celui-ci part de v0.125.0. Consignées ici, la
+seconde ayant un versant cœur : v0.124.1 est un lot de lisibilité de
+l’onglet Desserte (étiquette de tronçon, infobulles, contraste des
+boutons) ; **v0.124.2 fait passer le calcul des 31 indicateurs dans un
+cgroup plafonné** via
+[`nemeton::run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)
+— le worker `future` était nu, donc dans le périmètre de la session, et
+`systemd-oomd` tuait RStudio à 17,1 Go. **Point à arbitrer côté cœur** :
+l’app **n’utilise pas** le défaut du cœur (70 % de la RAM, soit 21,7 Go
+sur la machine de l’incident, au-dessus du seuil auquel le système avait
+déjà frappé) et redescend à 50 % de `MemTotal`, plancher 4 Go. Un
+plafond qui se déclenche après l’exécuteur n’est pas un plafond : le
+défaut de
+[`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)
+mérite d’être rediscuté ici, pas seulement contourné là-bas.
+
+### Chantier A — `INDICATOR_FAMILIES` cesse d’être forké (v0.127.0 → v0.127.2)
+
+*Contrepartie applicative de l’export
+[`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md)
+/
+[`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md)
+(cœur v0.170.0-v0.171.0, brief
+`specs/BRIEF-indicator-families-export.md`) et du renommage des deux
+colonnes L (spec 045, cœur v0.176.0). Referme les écarts n° 1, 2 et 5 de
+la table en tête de fichier.*
+
+`app_config.R` portait sa propre copie des 12 familles — 368 lignes — et
+cette copie avait dérivé de deux façons qui atteignaient l’écran : **A5
+manquait de la famille A** (l’indicateur était calculé par
+`service_compute.R` puis filtré à l’affichage, donc tout ce qui avait
+été livré pour le rafraîchissement urbain restait invisible), et
+**l’appariement code ↔︎ colonne, qui est positionnel, était croisé pour F
+et L** — une copie qui compensait dans ses `indicator_labels` mais pas
+dans les clés i18n `indicator_<code>` produisait un libellé dépendant de
+la copie que le lecteur atteignait ; la carte d’érosion sortait « F1 —
+Fertilité des sols ». La table est désormais **lue du cœur**
+(`.build_indicator_families()` sur
+[`nemeton::indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md) +
+[`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md),
+qui apparient code, colonne et libellé ligne par ligne), ce qui retire
+la **classe** de bug et non une instance. Deux tables locales de
+libellés indexées par nom de colonne suivaient encore le slug : elles
+sont remplacées par `indicator_label_by_column()` (v0.127.1). Le
+renommage des deux colonnes L de la spec 045 suit en v0.127.2, avec
+migration à la lecture pour qu’un projet calculé avant le renommage
+reste lisible. Planchers relevés à `nemeton (>= 0.175.0)` et
+`foretaccess (>= 2.4.0)`. Livré `nemetonshiny@65a806ac` (v0.127.0),
+`fb9d72a1` (v0.127.1), `b6864c19` (v0.127.2) ; cycles dev `0.127.0.9000`
+→ `0.127.2.9000`.
+
+**Ce que le dé-fork a rapporté, et qui est l’argument à retenir** : il a
+rendu **gratuites** les deux corrections de sens du chantier C. Trois
+jours après avoir été payé une fois, il a payé deux fois. À consigner
+comme la justification a posteriori du chantier
+[`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md),
+qui n’avait au moment de son ouverture qu’une divergence *mesurée à
+zéro* pour argument.
+
+### Chantier B — parcellaire forestier ONF (v0.129.0 → v0.130.8, v0.132.0)
+
+*Spec 046, versant app de
+[`load_onf_parcelles_source()`](https://pobsteta.github.io/nemeton/reference/load_onf_parcelles_source.md)
+(cœur v0.177.0) et
+[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+(v0.178.0-v0.180.0). Les quatre premières releases (v0.129.0, v0.130.0,
+v0.130.1, v0.130.2) sont déjà journalisées plus bas ; ce qui suit
+complète la queue de recette et la clôture.*
+
+En forêt publique, la parcelle **cadastrale** n’est pas l’unité de
+gestion : la parcelle **forestière** l’est. L’onglet Carte UGF offre
+deux actions dont la distinction est tout le sujet — **croiser** (garde
+les parcelles cadastrales du projet et dit quelles parcelles forestières
+les recouvrent) et **créer depuis le parcellaire** (remplace les UGF par
+les parcelles forestières).
+
+La **recette sur le vrai service WFS ONF** (forêt domaniale de Chaux) a
+révélé un défaut que les tests ne pouvaient pas voir :
+`onf_projet_from_parcelles()` plantait dès que le parcellaire n’avait
+pas exactement le même nombre de lignes que les parcelles du projet
+(idiome [`modifyList()`](https://rdrr.io/r/utils/modifyList.html) sur un
+data.frame). Corrigé en v0.130.0, puis huit correctifs de recette
+(v0.130.1 → v0.130.8) : retrait du bouton d’import devenu redondant,
+calage systématique sur les limites cadastrales, bouton ONF qui ne
+réclame plus de sélection préalable, **remontée du tri des parcelles
+dans le cœur** (v0.130.4 — `nemeton 0.180.0` écarte lui-même les
+parcelles qu’aucune parcelle forestière ne rencontre et expose
+`parcelles_concernees` ; l’app cesse de le recalculer, plancher relevé à
+`>= 0.180.0`), coche optionnelle « supprimer les parcelles hors forêt
+publique (\< 10 %) », rafraîchissement de l’onglet Sélection qui
+montrait des parcelles supprimées, et couche orange fantôme sur la Carte
+UGF.
+
+**v0.132.0 ferme le chantier par l’autre bout** : créer un projet
+**entier** depuis un fichier `commune-code_insee.csv` listant les
+références cadastrales (`A1;A2;…;AO220`), croisé avec le parcellaire
+ONF. La commune est lue dans le **nom** du fichier et un nom hors
+convention est **refusé, jamais deviné** — `A1` existe dans presque
+toutes les communes de France, un INSEE erroné apparierait par
+coïncidence. Vérifié sur `couchey-21200.csv` : 23 références, 23
+parcelles, 535,6 ha. Livré `nemetonshiny@01873e72` (v0.129.0) →
+`29c831ad` (v0.130.8), puis `37c8a539` (v0.132.0, tag `v0.132.0` =
+`ca363953`) ; cycles dev `0.129.0.9000` → `0.132.0.9000`.
+
+**Conséquence côté cœur, à acter** : `parcelles_concernees`
+(`c(concernees =, total =)`, attribut posé par
+[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+en v0.180.0) est désormais **lu** par l’app et non recalculé. Son
+contrat est devenu public de fait : le retirer ou en changer la forme
+casserait l’affichage « N parcelles sur M ». À traiter comme une sortie
+stable, pas comme un attribut de commodité.
+
+### Chantier C — le sens des indicateurs (v0.131.0, v0.131.1)
+
+*Versant app de la spec 048 (cœur v0.181.0).*
+
+`nemeton 0.181.0` inverse R1 (feu), R2 (tempête), R3 (sécheresse) et R4
+(abroutissement) à la normalisation, comme R5 l’était déjà : un score
+haut signifie désormais une **bonne résilience**, non un risque élevé.
+Côté app, trois conséquences. (1) La palette de `famille_risque` n’est
+plus la palette de risque — elle est peinte comme les onze autres
+familles. (2) Un projet calculé **avant** l’inversion porte des valeurs
+de l’ancien sens : une migration (`R/migrate.R`,
+`INDICATOR_SENSE_VERSION`, marqueur de sens versionné dans les
+`metadata`) l’invalide **une seule fois** et force le recalcul, plutôt
+que d’afficher des scores muets qui disent le contraire. (3) L’app
+**n’inverse rien elle-même** — un test le verrouille, car une inversion
+applicative doublerait celle du cœur.
+
+L’inversion a rendu visible un manque plus ancien, corrigé en v0.131.1 :
+**aucune colonne `Score` ne disait sa direction**. Une note sous le
+tableau de synthèse le dit maintenant, R comprise. **Deux options
+écartées, qui méritent d’être consignées ici parce qu’elles
+reviendront** : renommer l’axe du radar (il n’y a pas d’axe à renommer —
+le radar ne porte que des **lettres**), et renommer la famille en «
+Résilience » (son nom vient du cœur et reste **juste** dans l’onglet
+Famille, où l’on voit les grandeurs brutes : `R1 = 100` y signifie bien
+un fort risque incendie ; le renommer aurait rendu cet onglet faux à son
+tour). Plancher relevé à `nemeton (>= 0.181.0)`. Livré
+`nemetonshiny@50e60ab3` (v0.131.0) et `7173b00f` (v0.131.1) ; cycles dev
+`0.131.0.9000`, `0.131.1.9000`.
+
+### Chantier D — quatre réglages qui ne parvenaient pas au cœur (v0.126.0, v0.126.1, v0.128.1, v0.130.5)
+
+*Un même motif, trouvé quatre fois : l’app affichait un choix que le
+cœur ne recevait pas. v0.128.1 est déjà journalisée plus bas (résolution
+microclimat) ; les trois autres suivent.*
+
+- **C2 était calculé sur une image d’affichage** (v0.126.1).
+  `indicateur_c2_ndvi` sortait **négatif sur les 30 UGF** de Fordead —
+  physiquement impossible sous couvert. Ni le calcul ni l’ordre des
+  bandes n’étaient en cause : le NDVI était dérivé de l’**orthophoto IRC
+  du WMS IGN**, une image 8 bits étirée pour l’affichage (valeurs 9-247,
+  compression JPEG), et non de la réflectance. Il se calcule désormais
+  sur les scènes **Sentinel-2** que chaque projet suivi cache déjà
+  ([`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md)),
+  et la provenance du NDVI est **dite** et non devinée. Plancher
+  `nemeton (>= 0.174.0)`.
+- **« Les 5 dernières années » ne voulait pas dire les 5 dernières
+  années** (v0.130.5). T3 recevait `window_years` et `min_proba` mais
+  **jamais** `reference_year` : laissé à `NULL`, le cœur ancrait la
+  fenêtre sur la coupe la plus récente **trouvée dans les UGF
+  analysées**, si bien qu’un massif sans coupe récente voyait sa fenêtre
+  glisser en arrière. C’est la mise en œuvre du §8 du brief
+  `specs/030-coupes-rases-sufosat/brief-nemetonshiny.md`, versant cœur
+  journalisé le 2026-08-20 ci-dessous. **Aucun plancher à bouger** :
+  `reference_year` existe dans le cœur depuis l’origine.
+- **A5 disait enfin *pourquoi* il est vide** (v0.126.0). « Pourquoi
+  `cache/layers/lst/` est-il vide ? » avait une réponse — *hors
+  couverture Thermocity* — introuvable depuis l’application : axe vide,
+  carte grise, « NA » dans le détail de famille, et un panneau des
+  sources affirmant « Rafraîchissement urbain : activé ». Quatre
+  situations sont désormais distinguées
+  (`specs/032-.../brief-nemetonshiny-a5-diagnostic.md`), et la cause
+  n’est plus jetée juste avant l’interface — c’est cette release qui
+  referme l’écart n° 4.
+
+Livré `nemetonshiny@c5887a5e` (v0.126.0), `793fd04a` (v0.126.1),
+`2840c5f7` (v0.128.1), `6171c4f4` (v0.130.5) ; cycles dev
+`0.126.0.9000`, `0.126.1.9000`, `0.128.1.9000`, `0.130.5.9000`.
+
+**Réponse au §4.2 du brief** (« le défaut de `reference_year` surprend,
+à arbitrer côté cœur ») : **arbitré le 2026-08-20**, entrée « T3 — la
+fenêtre de récence était ancrée sur la donnée » ci-dessous. Décision de
+Pascal : ancrer sur l’année courante **côté appelant**, sans nouveau
+réglage et **sans changement de code cœur** — le paramètre existe, seule
+sa documentation est renforcée pour signaler le piège
+(`R/indicators-temporal.R`, `@param reference_year`). L’app fait
+exactement ce qui avait été décidé ; il n’y a pas de second arbitrage à
+rendre.
+
+### Chantier E — UX : les calibrages quittent les sidebars, l’accent IA devient une règle (v0.125.0, v0.125.1, v0.126.2, v0.128.0, v0.130.9, v0.130.10)
+
+*Aucun impact cœur. v0.128.0 est déjà journalisée plus bas ; consigné
+ici pour mémoire et pour la partie qui manquait.*
+
+Les réglages qu’on ne touche qu’une fois par massif (seuils FAST
+NDVI/NBR/NDMI et fenêtre roulante en v0.126.2, puis les calibrages de
+quatre autres onglets en v0.128.0) quittent les sidebars pour
+**Paramètres › Sources & paramètres**, où ils sont **persistés par
+projet** ; chaque sidebar garde un rappel des valeurs en vigueur. La
+période d’observation, elle, **reste** dans le sidebar : ce n’est pas un
+calibrage, elle change à chaque essai. Les actions de vue passent toutes
+sous un en-tête unique (`action_table_card()`, v0.125.0), les libellés
+de famille viennent du cœur (plancher `nemeton (>= 0.170.0)`, première
+consommation partielle avant le dé-fork complet de v0.127.0), et la
+copie morte de
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+est retirée de `service_compute.R` (v0.125.1).
+
+Enfin, les quatre surfaces qui produisent du contenu **généré** —
+Synthèse, Plan d’actions, reGénération, Famille — partagent un accent
+**ambre `#E8A33D`** et l’icône trois étoiles (v0.130.9, v0.130.10), et
+**une ligne « Ambre » entre dans le tableau des couleurs de bouton du
+`CLAUDE.md` app** : cette couleur ne dit pas un *niveau d’action* comme
+les cinq autres, elle dit une **provenance**, ce qui l’autorise à
+échapper à l’échelle plutôt qu’à la rompre. Contraste vérifié : texte
+sombre sur ambre à 5,09:1 (le blanc échouerait à 2,16:1), verrouillé par
+un test. Livré `nemetonshiny@b1374606`, `3c4c1898`, `71f39ad1`,
+`c7a745d8`, `e686816b`, `3a8c1025`.
+
+### Ce qui n’est pas encore consignable — spec 049
+
+L’app a traité `specs/049-famille-f-decroisee/brief-nemetonshiny.md`
+(décroisement de F, cœur v0.182.0) dans une **v0.132.1 non encore
+mergée** : ni le tag ni le commit n’existent, vérifié sur le distant le
+2026-08-22, et le plancher de `main` est encore `nemeton (>= 0.181.0)`.
+**Rien n’est coché** de ce côté. Le versant cœur, lui, est clos (entrée
+v0.182.0 ci-dessous), et le point que le brief en tire est traité juste
+après.
+
+------------------------------------------------------------------------
 
 **Journal** — *2026-08-21* (**v0.182.0**) : **famille F décroisée — F1 =
 fertilité, F2 = érosion** (spec 049). Clôt le point que la spec 045
@@ -893,6 +1179,22 @@ gardent maintenant son absence.
 **Il ne reste plus aucun croisement code/slug dans la table des
 indicateurs.**
 
+**Suite aval, consignée le 2026-08-22 — le brief 049 sous-estimait sa
+portée.** Il annonçait « une vérification, pas forcément du code ». Il y
+avait du code : côté app, `test-renommage-famille-L.R` **figeait le
+croisement en fixture** (`F1 → indicateur_f2_erosion`) et **tombait** à
+la publication du cœur. Les quatre contrôles du brief passent sans une
+ligne de production à toucher — le dé-fork de l’app (v0.127.0) a payé —
+mais un test qui garde un défaut devient un test qui casse quand on le
+corrige, et c’est le seul effet réel du décroisement en aval. Le brief
+est amendé en conséquence
+(`specs/049-famille-f-decroisee/brief-nemetonshiny.md`, section « Portée
+réelle »). **Règle à en tirer, la même qu’en v0.181.0 et v0.176.0** : un
+brief qui corrige une table doit demander à l’aval de chercher ses
+**tests**, pas seulement ses écrans. Les consommateurs du cœur qui
+auraient encodé `F1 = érosion` dans une assertion sont rouges depuis
+v0.182.0, et c’est le comportement voulu.
+
 **Journal** — *2026-08-20* (**v0.181.0**) : **la famille R disait
 l’inverse de ce qu’elle mesurait** (spec 048). Pascal énonce la
 convention du radar — 0-100, plus c’est haut mieux c’est, donc R1 proche
@@ -931,6 +1233,15 @@ l’ancien comportement et sont corrigés.
 **Conséquence à annoncer** : tous les `famille_risque` déjà calculés
 changent, et l’indice général avec eux. Brief app écrit — invalider et
 recalculer, et surtout **ne jamais ré-inverser**.
+
+**Versant app livré le 2026-08-21** (`nemetonshiny` v0.131.0 `50e60ab3`,
+v0.131.1 `7173b00f`, cf. l’entrée du 2026-08-22, chantier C) : palette
+de `famille_risque` alignée sur les onze autres familles, migration
+`INDICATOR_SENSE_VERSION` qui invalide **une seule fois** les projets
+calculés avant l’inversion, et un test qui **interdit** toute inversion
+applicative. Le nom de la famille n’a **pas** été changé en « Résilience
+» : il vient du cœur et reste juste dans l’onglet Famille, qui affiche
+les grandeurs brutes.
 
 **Cas voisin laissé ouvert** : `indicateur_f2_erosion` déclare et
 calcule de la *fertilité* — son orientation est juste, c’est son **nom**
