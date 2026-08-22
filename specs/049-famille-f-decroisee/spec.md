@@ -92,6 +92,23 @@ Le **libellé affiché reste correct** — il l'était déjà. Ce qui change, c'
 F2, la fertilité l'inverse. Une interface qui étiquette un axe « F1 » en dur, ou
 qui a forké la table, doit être vérifiée.
 
+### 7.1 Portée réelle, mesurée en aval (2026-08-22)
+
+Le brief annonçait « une vérification, pas forcément du code ». Retour de la
+session app : les quatre contrôles passent **sans une ligne de production à
+toucher** — la table est lue du cœur ligne par ligne depuis le dé-fork de
+`nemetonshiny` v0.127.0.
+
+**Il y avait pourtant du code : dans les tests.** Une fixture app
+(`test-renommage-famille-L.R`) figeait le croisement — `F1 →
+indicateur_f2_erosion` — et **tombait** à la publication de v0.182.0. C'est le
+seul effet réel du décroisement en aval, et le brief ne l'annonçait pas.
+
+**À généraliser** : un consommateur du cœur doit chercher ses **assertions**
+autant que ses écrans. Toute fixture qui encode `F1 = érosion` est rouge depuis
+v0.182.0 — comportement voulu : un test qui gardait le défaut doit tomber quand
+on le corrige (§6 fait la même bascule côté cœur).
+
 ## 8. Limite assumée
 
 `indicateur_f2_erosion` reste une **résistance à l'érosion dérivée de la
