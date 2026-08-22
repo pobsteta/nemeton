@@ -226,24 +226,11 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 # and the terminals with it. Capping the subprocess turns a session-wide
 # catastrophe into an ordinary non-zero exit that the pipeline reports.
 #
-# Default: 70% of RAM, leaving the desktop enough to stay under the oomd
-# pressure threshold. `options(nemeton.reconfort_memory_max = "12G")` overrides;
-# `FALSE` (or "") disables the cap.
-.reconfort_memory_max <- function() {
-  opt <- getOption("nemeton.reconfort_memory_max", NULL)
-  if (!is.null(opt)) {
-    if (isFALSE(opt) || !nzchar(as.character(opt))) return(NULL)
-    return(as.character(opt))
-  }
-  kb <- tryCatch({
-    line <- grep("^MemTotal:", readLines("/proc/meminfo", warn = FALSE), value = TRUE)[1]
-    as.numeric(sub("^MemTotal:\\s*([0-9]+).*$", "\\1", line))
-  }, error = function(e) NA_real_)
-  if (is.na(kb) || kb <= 0) return(NULL)
-  gb <- floor(kb / 1048576 * 0.7)
-  if (gb < 4) return(NULL)   # too little RAM to carve out a meaningful ceiling
-  paste0(gb, "G")
-}
+# The ceiling itself is NOT decided here: `.memory_ceiling()` (memory-ceiling.R)
+# holds the single policy shared with `run_memory_capped()`, so the three heavy
+# jobs of one session cannot run under three different ceilings. This alias is
+# kept because the name reads well at its call sites.
+.reconfort_memory_max <- function() .memory_ceiling()
 
 # Probe (once) for a usable `systemd-run --user --scope`. Absent on non-Linux,
 # in containers without a user bus, in CI — the cap is then simply skipped.

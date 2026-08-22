@@ -40,8 +40,15 @@ passes \code{fun} a callback writing there.}
 \item{progress_callback}{Parent-side callback, fed by replaying the child's
 events (requires \code{progress_path}).}
 
-\item{memory_max}{Ceiling as a systemd size string (e.g. \code{"12G"}). Default:
-70\% of RAM, or \code{options(nemeton.reconfort_memory_max)}. \code{FALSE} disables it.}
+\item{memory_max}{Ceiling as a systemd size string (e.g. \code{"12G"}), or
+\code{FALSE} to disable it. Default (\code{NULL}): \strong{50\% of \code{MemTotal}}, unless
+\code{options(nemeton.memory_max)} or the \code{NEMETON_MEMORY_MAX} environment
+variable says otherwise — one policy, shared with the RECONFORT subprocess
+cap. The fraction is not a guess: on the reference workstation
+\code{systemd-oomd} was observed killing the session at 17.1 GB of 31.2 GB,
+which the former 70\% default (21 GB) sat \emph{above} — a ceiling that can only
+trip after the OOM killer has acted is not a ceiling. See
+\code{R/memory-ceiling.R} for the full argument and the escape hatches.}
 
 \item{poll_ms}{How often to poll the child for progress, in milliseconds.}
 
