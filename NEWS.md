@@ -1,3 +1,86 @@
+# nemeton 0.184.0 (2026-08-23)
+
+### Added — `segment_houppiers()` : la couche `houppier` de Marculus
+
+Implémente `nemetonshiny/specs/BRIEF-nemeton-houppiers-mnh.md` (§2 du
+rattrapage 2026-08-23). Segmente les couronnes sur un MNH et rend un `sf` de
+POLYGON, une entité par houppier, avec `h_max` en mètres — le nom canonique
+attendu par l'application de martelage, où la hauteur d'une tige est
+pré-remplie par un point-dans-polygone sur la position GNSS.
+
+```r
+segment_houppiers(chm, aoi = NULL, ws = 5, hmin = 5,
+                  algorithme = c("dalponte", "silva", "watershed"),
+                  resolution = 0.5, max_cells = 2e7, h_range = c(1, 70))
+```
+
+C'est un calcul forestier, donc du cœur : l'app appelle et écrit la couche,
+elle ne segmente pas (règle 1).
+
+**La résolution de travail est décidée ici, pas par l'appelant.** Un houppier
+fait 3 à 10 m de diamètre ; segmenter un MNH à 0,20 m n'apporte rien de
+sylvicole et ne tient pas en mémoire — celui de Couchey fait 418 M de cellules.
+Le MNH est agrégé à `resolution` (0,5 m par défaut), puis davantage si le
+résultat dépasserait `max_cells`.
+
+**L'agrégation se fait par le `max`, pas par la moyenne** — et c'est la
+décision qui porte la fonction. Les apex sont précisément ce que la détection
+de maxima locaux cherche ; une statistique lissante les effacerait. Le prix est
+un léger biais vers le haut sur `h_max` (la cellule la plus haute de chaque
+agrégat gagne), assumé : mieux vaut un décimètre de trop qu'un arbre de moins.
+Un test compare les deux agrégations sur un apex isolé pour que le choix ne
+puisse pas être inversé par mégarde.
+
+Les hauteurs sont relues par **zonale** (`terra::zonal()`), jamais par un
+`values()` global : c'est exactement l'appel anodin qui a coûté 3 h 20 de
+pipeline le 2026-08-22.
+
+**Trois règles viennent de l'aval et sont tenues ici** : rien hors de 1-70 m
+n'est produit (le téléphone rejette, autant ne pas fabriquer) ; les houppiers
+peuvent se recouvrir (l'aval retient le plus haut, celui dont l'apex domine
+l'opérateur) ; aucun repli sur le houppier le plus proche — une position dans
+aucun polygone n'écrit rien plutôt que de deviner l'arbre d'à côté.
+
+Zéro houppier rend un `sf` **vide mais typé**, pour que l'appelant écrive une
+couche vide plutôt qu'une couche manquante.
+
+### Fixed — un WKT dégénéré ne part plus dans le GeoPackage
+
+Le MNH de Couchey porte le **nom** « EPSG:2154 » sans bloc d'autorité :
+`sf::st_crs(x)$epsg` y lit `NA`, et la couche embarquerait un CRS que
+l'application téléphone ne saurait pas rattacher. `segment_houppiers()`
+re-tamponne le CRS via `.normalize_crs()` — même famille de défaut que les
+rasters WMS/LiDAR en cache, et moins cher à corriger ici qu'à expliquer en aval.
+
+### Fixed — une AOI disjointe dit laquelle, et où chercher
+
+`terra::crop()` abortait sur « [crop] extents do not overlap », qui ne nomme ni
+l'argument fautif ni ce qu'il faut faire. L'intersection est désormais vérifiée
+**avant** le découpage, et le message donne l'emprise réelle du MNH.
+
+### Validation sur données réelles
+
+MNH de Couchey (`chm_predicted_0_2m.tif`, 11,9 M de cellules à 0,175 m,
+EPSG:2154) :
+
+| Emprise | Houppiers | Densité | `h_max` médian | Temps | Pic mémoire R |
+|---|---|---|---|---|---|
+| 4 ha (AOI) | 266 | 66/ha | 20,0 m | 2 s | ~590 Mo |
+| 36,4 ha (dalle entière) | 2 046 | 56/ha | 24,0 m | 11 s | ~670 Mo |
+
+Diamètre équivalent médian **9,1 m**, aucune valeur hors 1-70 m, CRS de sortie
+EPSG:2154. Le pic mémoire est à ~4 % du plafond courant (15 Go) : la
+segmentation n'est pas un travail lourd une fois la résolution bornée.
+
+`test-houppiers.R` : 43 assertions, sur MNH synthétique — aucune donnée externe
+requise.
+
+### Suite côté app
+
+Plancher à relever à `nemeton (>= 0.184.0)`, puis `service_marculus.R` écrit la
+couche sous le nom exact **`houppier`** — c'est un contrat : une couche de
+houppiers nommée autrement devient une couche de *parcelles* côté téléphone.
+
 # nemeton 0.183.1 (2026-08-23)
 
 ### Fixed — un dépassement de plafond ne se présentait pas comme tel

@@ -1,0 +1,171 @@
+# Segmentation des houppiers sur MNH — brief
+# `nemetonshiny/specs/BRIEF-nemeton-houppiers-mnh.md` (§2 du rattrapage
+# 2026-08-23). Le contrat de sortie est fige par Marculus : une couche
+# `houppier`, une entite par couronne, `h_max` en metres dans 1-70.
+
+# MNH synthetique : `n` cones gaussiens de hauteurs connues sur une grille
+# metrique. Tout est verifiable sans donnee externe.
+.mnh_synthetique <- function(hauteurs = c(25, 18, 12), res = 0.25, crs = "EPSG:2154") {
+  n <- length(hauteurs)
+  r <- terra::rast(nrows = 240, ncols = 80 * n, xmin = 0, xmax = 20 * n,
+                   ymin = 0, ymax = 60, crs = crs)
+  terra::res(r) <- res
+  xy <- terra::xyFromCell(r, seq_len(terra::ncell(r)))
+  z <- rep(0, nrow(xy))
+  for (i in seq_len(n)) {
+    cx <- 20 * (i - 1) + 10; cy <- 30
+    d2 <- (xy[, 1] - cx)^2 + (xy[, 2] - cy)^2
+    z <- pmax(z, hauteurs[i] * exp(-d2 / (2 * 3^2)))   # sigma 3 m -> houppier ~9 m
+  }
+  terra::values(r) <- z
+  r
+}
+
+test_that("une couronne par arbre, avec la hauteur de son apex", {
+  skip_if_not_installed("lidR")
+  h <- segment_houppiers(.mnh_synthetique(c(25, 18, 12)), ws = 4, hmin = 3)
+
+  expect_s3_class(h, "sf")
+  expect_identical(as.character(unique(sf::st_geometry_type(h))), "POLYGON")
+  expect_identical(names(h), c("houppier_id", "h_max", "surface_m2", "geometry"))
+  expect_equal(nrow(h), 3L)
+
+  # Les trois hauteurs sont retrouvees. L'agregation par max introduit un
+  # BIAIS VERS LE HAUT assume (la cellule la plus haute de chaque agregat
+  # gagne) : jamais sous la verite, jamais au-dessus de plus d'un metre.
+  trouve <- sort(h$h_max, decreasing = TRUE)
+  expect_true(all(trouve <= c(25, 18, 12) + 1))
+  expect_true(all(trouve >= c(25, 18, 12) - 1))
+
+  # Trie par hauteur decroissante, identifiants 1..n.
+  expect_identical(h$houppier_id, seq_len(nrow(h)))
+  expect_false(is.unsorted(rev(h$h_max)))
+})
+
+test_that("le contrat aval est tenu : rien hors de 1-70 m ne sort", {
+  skip_if_not_installed("lidR")
+  # Un peuplement de 25 m, mais une fenetre qui n'admet que ce qui depasse 30 m.
+  h <- segment_houppiers(.mnh_synthetique(c(25, 18)), ws = 4, hmin = 3,
+                         h_range = c(30, 70))
+  expect_equal(nrow(h), 0L)
+  # Zero houppier reste un `sf` avec les bonnes colonnes : l'app ecrit une
+  # couche VIDE, pas une couche manquante.
+  expect_s3_class(h, "sf")
+  expect_identical(names(h), c("houppier_id", "h_max", "surface_m2", "geometry"))
+
+  # Et par defaut, aucune valeur ne sort de la plage.
+  h2 <- segment_houppiers(.mnh_synthetique(c(25, 18)), ws = 4, hmin = 3)
+  expect_true(all(h2$h_max >= 1 & h2$h_max <= 70))
+})
+
+test_that("aucun apex au-dessus de hmin : zero houppier, pas une erreur", {
+  skip_if_not_installed("lidR")
+  h <- segment_houppiers(.mnh_synthetique(c(8, 6)), ws = 4, hmin = 20)
+  expect_equal(nrow(h), 0L)
+  expect_s3_class(h, "sf")
+})
+
+test_that("l'AOI decoupe, et le CRS de sortie porte son code d'autorite", {
+  skip_if_not_installed("lidR")
+  mnh <- .mnh_synthetique(c(25, 18, 12))
+  # AOI sur le premier arbre seulement.
+  aoi <- sf::st_as_sf(sf::st_sfc(sf::st_polygon(list(rbind(
+    c(0, 20), c(20, 20), c(20, 40), c(0, 40), c(0, 20)))), crs = 2154))
+  h <- segment_houppiers(mnh, aoi = aoi, ws = 4, hmin = 3)
+
+  expect_equal(nrow(h), 1L)
+  expect_equal(h$h_max, 25, tolerance = 1)
+  expect_identical(sf::st_crs(h)$epsg, 2154L)
+  # La geometrie ne deborde pas de l'emprise demandee.
+  expect_true(all(sf::st_bbox(h)[c("xmin", "xmax")] >= -1e-6))
+  expect_lte(as.numeric(sf::st_bbox(h)["xmax"]), 20 + 1e-6)
+})
+
+test_that("un WKT degenere est re-tamponne, pas propage", {
+  skip_if_not_installed("lidR")
+  # Le MNH de Couchey porte le NOM « EPSG:2154 » sans autorite : `st_crs()$epsg`
+  # y lit NA, et le GeoPackage embarquerait un CRS que le telephone ne sait pas
+  # rattacher. Reproduit en retirant l'autorite.
+  mnh <- .mnh_synthetique(c(25, 18))
+  # Fidele au fichier reel : le NOM du systeme est la chaine « EPSG:2154 »,
+  # et le bloc d'autorite ID[...] a disparu.
+  wkt <- terra::crs(mnh)
+  wkt <- sub('^PROJCRS\\["[^"]*"', 'PROJCRS["EPSG:2154"', wkt)
+  wkt <- gsub('\\s*,?\\s*ID\\["EPSG",[0-9]+\\]', '', wkt)
+  terra::crs(mnh) <- wkt
+  skip_if(!is.na(terra::crs(mnh, describe = TRUE)$code),
+          "le WKT a garde son autorite, cas non reproduit ici")
+
+  h <- segment_houppiers(mnh, ws = 4, hmin = 3)
+  expect_identical(sf::st_crs(h)$epsg, 2154L)
+})
+
+test_that("la resolution de travail est decidee par le coeur, par le MAXIMUM", {
+  # C'est la decision technique qui porte la fonction : une agregation lissante
+  # effacerait les apex que la detection cherche.
+  r <- terra::rast(nrows = 100, ncols = 100, xmin = 0, xmax = 20, ymin = 0,
+                   ymax = 20, crs = "EPSG:2154")
+  terra::values(r) <- 0
+  r[50, 50] <- 30                       # un apex isole, une seule cellule
+
+  fac <- nemeton:::.houppier_agg_factor(r, resolution = 0.5, max_cells = 2e7)
+  expect_gt(fac, 1L)
+  agrege_max  <- terra::aggregate(r, fact = fac, fun = "max")
+  agrege_mean <- terra::aggregate(r, fact = fac, fun = "mean")
+  expect_equal(as.numeric(terra::minmax(agrege_max)[2]), 30)
+  expect_lt(as.numeric(terra::minmax(agrege_mean)[2]), 30)  # l'apex a fondu
+})
+
+test_that("le plafond de cellules borne un MNH que la resolution ne borne pas", {
+  # Cas Couchey : 418 M de cellules a 0,20 m. A 0,5 m il en resterait 67 M —
+  # au-dessus du plafond, donc le facteur doit encore monter.
+  # `terra::res<-` conserve l'ETENDUE et recalcule les dimensions : construire
+  # le raster par son etendue, sinon on teste un raster de 1,6 M de cellules.
+  r <- terra::rast(xmin = 0, xmax = 14695 * 0.2, ymin = 0, ymax = 28481 * 0.2,
+                   resolution = 0.2, crs = "EPSG:2154")
+  expect_equal(terra::ncell(r), 418528295, tolerance = 1e-6)
+
+  fac_res <- nemeton:::.houppier_agg_factor(r, resolution = 0.5, max_cells = Inf)
+  fac_cap <- nemeton:::.houppier_agg_factor(r, resolution = 0.5, max_cells = 2e7)
+  expect_gt(fac_cap, fac_res)
+  expect_lte(terra::ncell(r) / fac_cap^2, 2e7)
+
+  # Un MNH deja plus grossier que la resolution demandee n'est pas raffine.
+  grossier <- terra::rast(xmin = 0, xmax = 200, ymin = 0, ymax = 200,
+                          resolution = 2, crs = "EPSG:2154")
+  expect_identical(nemeton:::.houppier_agg_factor(grossier, 0.5, 2e7), 1L)
+})
+
+test_that("les trois algorithmes rendent la meme forme de sortie", {
+  skip_if_not_installed("lidR")
+  mnh <- .mnh_synthetique(c(25, 18, 12))
+  for (a in c("dalponte", "silva", "watershed")) {
+    h <- segment_houppiers(mnh, ws = 4, hmin = 3, algorithme = a)
+    expect_true(inherits(h, "sf"), info = a)
+    expect_identical(names(h), c("houppier_id", "h_max", "surface_m2", "geometry"),
+                     info = a)
+    expect_true(all(h$h_max >= 1 & h$h_max <= 70), info = a)
+  }
+})
+
+test_that("les entrees impossibles sont refusees, pas devinees", {
+  mnh <- .mnh_synthetique(c(25))
+  expect_error(segment_houppiers(mnh, ws = 0), "positive")
+  expect_error(segment_houppiers(mnh, ws = c(1, 2)), "single")
+  expect_error(segment_houppiers(mnh, h_range = c(70, 1)), "increasing")
+  expect_error(segment_houppiers("/non/existant/chm.tif"), "not found")
+  expect_error(segment_houppiers(42), "SpatRaster")
+
+  # Un CRS geographique lirait `ws` en degres et trouverait un arbre par
+  # peuplement : refuser plutot que rendre un resultat absurde.
+  lonlat <- terra::rast(nrows = 50, ncols = 50, crs = "EPSG:4326")
+  terra::values(lonlat) <- 10
+  expect_error(segment_houppiers(lonlat), "geographic CRS")
+
+  # Une AOI disjointe est une erreur, pas une couche vide : c'est un mauvais
+  # appel, pas un peuplement sans arbre.
+  ailleurs <- sf::st_as_sf(sf::st_sfc(sf::st_polygon(list(rbind(
+    c(1e6, 1e6), c(1e6+10, 1e6), c(1e6+10, 1e6+10), c(1e6, 1e6+10),
+    c(1e6, 1e6)))), crs = 2154))
+  expect_error(segment_houppiers(mnh, aoi = ailleurs), "does not intersect")
+})
