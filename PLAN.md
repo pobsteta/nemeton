@@ -940,7 +940,21 @@ il dit autre chose.
 **Reliquat identifié, non traité** : `.reconfort_run_py()` ne rend qu’un
 code de sortie à sa chaîne appelante et reste aveugle au même défaut.
 L’outillage (`unit =`, `.capped_scope_result()`) l’attend ; hors
-périmètre du brief.
+périmètre du brief. **Cadré le jour même** dans
+`specs/brief-interne-reconfort-diagnostic-oom.md` (paperwork avant code)
+: quatre sites d’abort concernés, dont la production de cartes IOTA2 —
+l’étape la plus lourde de la chaîne, celle pour qui le cgroup avait été
+construit, et qui tourne des heures. **Mesuré en cadrant** :
+[`system2()`](https://rdrr.io/r/base/system2.html) rend **137** là où
+`processx` rendait `-9` (convention shell, 128 + signal), donc un
+correctif copié-collé de cette release ne marcherait pas ; et `--unit=`
+rend bien `oom-kill` sur ce chemin aussi. Décision de conception
+proposée : **généraliser** `.capped_failure_message()` plutôt qu’écrire
+un helper voisin — deux copies d’une politique de message finiraient par
+diverger, motif déjà payé deux fois ce mois-ci. **Recommandation : à
+faire sans urgence**, avec le prochain travail qui touche RECONFORT ; le
+défaut est démontré par construction et par la mesure, pas encore par
+une soirée perdue.
 
 **Point de méthode** : c’est le deuxième brief app en deux jours dont le
 constat est juste et dont le remède proposé était trop court (cf. le
