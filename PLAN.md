@@ -878,6 +878,117 @@ pas comme un attribut de commodité.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-23* (**v0.184.0**) :
+**[`segment_houppiers()`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md)
+— la couche que l’app ne pouvait pas produire**. §2 du rattrapage
+`nemetonshiny/specs/BRIEF-coeur-rattrapage-2026-08-23.md`, référence
+`BRIEF-nemeton-houppiers-mnh.md`. L’app écrit déjà `parcelle` et
+`desserte` du GeoPackage Marculus ; il manquait `houppier`, qui
+pré-remplit la hauteur d’une tige au martelage par un
+point-dans-polygone sur la position GNSS. Segmenter des couronnes est un
+calcul forestier : règle 1, ça vit ici.
+
+**La décision technique qui porte la fonction : agréger par le `max`.**
+Le MNH est ramené à 0,5 m avant segmentation (un houppier fait 3 à 10 m
+de diamètre ; 0,20 m n’apporte rien de sylvicole et ne tient pas en
+mémoire), et cette agrégation prend le **maximum**, pas la moyenne — les
+apex sont exactement ce que la détection cherche, une statistique
+lissante les effacerait. Prix assumé : un léger biais vers le haut sur
+`h_max`. Un test compare les deux agrégations sur un apex isolé, pour
+que l’arbitrage ne puisse pas être inversé par mégarde.
+
+**Validé sur le vrai MNH de Couchey**, pas seulement sur une fixture :
+
+| Emprise         | Houppiers | Densité | `h_max` médian | Temps | Pic R   |
+|-----------------|-----------|---------|----------------|-------|---------|
+| 4 ha (AOI)      | 266       | 66/ha   | 20,0 m         | 2 s   | ~590 Mo |
+| 36,4 ha (dalle) | 2 046     | 56/ha   | 24,0 m         | 11 s  | ~670 Mo |
+
+Diamètre équivalent médian **9,1 m** — l’ordre de grandeur d’une chênaie
+mûre, pas un artefact de pixels. Pic mémoire à ~4 % du plafond : une
+fois la résolution bornée, ce n’est pas un travail lourd. C’est le
+contre-exemple utile aux deux incidents de la semaine — le coût venait
+de la résolution, pas du calcul.
+
+**Deux défauts trouvés en validant, invisibles autrement.** (1) Le MNH
+de Couchey porte le **nom** « EPSG:2154 » sans bloc d’autorité :
+`st_crs()$epsg` y lit `NA` et la couche serait partie dans le GeoPackage
+avec un CRS que le téléphone ne sait pas rattacher — re-tamponné par
+`.normalize_crs()`, la même famille de défaut que les rasters WMS/LiDAR
+en cache. (2) Une AOI disjointe sortait le « \[crop\] extents do not
+overlap » de terra, qui ne nomme ni l’argument fautif ni le remède ;
+l’intersection est vérifiée avant, et le message donne l’emprise réelle
+du MNH.
+
+**Trois règles de l’aval tenues ici plutôt que documentées** : rien hors
+1-70 m n’est produit ; les recouvrements sont admis (l’aval garde le
+plus haut) ; aucun repli sur le houppier le plus proche — une position
+dans aucun polygone n’écrit rien plutôt que de deviner l’arbre voisin.
+Zéro houppier rend un `sf` **vide mais typé** : l’app écrit une couche
+vide, jamais une couche manquante.
+
+`test-houppiers.R` : 43 assertions sur MNH synthétique, sans donnée
+externe. Suite app : plancher `>= 0.184.0`, couche nommée exactement
+`houppier` — c’est un contrat, pas une convention.
+
+------------------------------------------------------------------------
+
+**Journal app** — *2026-08-23* : **quatre releases `nemetonshiny`
+(v0.132.1 → v0.134.1)**, consignées d’après
+`nemetonshiny/specs/BRIEF-coeur-rattrapage-2026-08-23.md` §1. Les quatre
+tags existent et les commits sont sur `main` (vérifié en lecture seule).
+
+| Release  | `nemetonshiny@SHA` | Apport                                     |
+|----------|--------------------|--------------------------------------------|
+| v0.132.1 | `4c882d83`         | décroisement de F suivi (spec 049)         |
+| v0.133.0 | `aa12f180`         | l’import CSV remplace le projet courant    |
+| v0.134.0 | `053d6082`         | le plafond mémoire appartient au cœur      |
+| v0.134.1 | `2b9a9f5d`         | la prudence ne recouvre plus une certitude |
+
+**v0.132.1 — spec 049, et un effet de bord qui vaut d’être écrit.** Les
+quatre contrôles passent sans toucher au code de production : la table
+venant du cœur ligne par ligne depuis le dé-fork de v0.127.0, la
+correction traverse l’app seule. Une fixture figeait en revanche le
+croisement et tombait à la publication — c’est l’amendement « Portée
+réelle » ajouté ici le 2026-08-22. **L’effet de bord signalé par l’app**
+: plus aucune famille n’étant croisée, ces tests ne peuvent plus
+*distinguer* une lecture par colonne d’une lecture par slug ; ils ne
+gardent plus que la concordance. Autrement dit, le garde-fou qui
+protégeait du défaut a perdu son pouvoir discriminant en même temps que
+le défaut a disparu — à savoir si une régression future réintroduisait
+un croisement.
+
+**v0.133.0 — import CSV destructif.** Un import supprime et remplace le
+projet courant. L’ordre protège : nouveau projet créé, chargé et croisé,
+*puis* destruction de l’ancien ; tous les chemins d’échec repartent
+avant ce point. Corrigé au passage : `app_state$project_id` ne suivait
+pas `current_project`, d’où des commentaires écrits dans le répertoire
+du projet précédent. **Décision de Pascal à acter côté cœur** : la
+suppression reste **disque seul**, aucune ligne PostGIS n’est effacée —
+ni par l’import, ni par le bouton Supprimer. Rien à faire ici, mais
+c’est un invariant à ne pas casser depuis le cœur : une fonction de
+nettoyage qui toucherait PostGIS en croyant bien faire prendrait cette
+décision à la place de son auteur.
+
+**v0.134.0 — plafond mémoire (cœur v0.183.0).** L’app supprime
+`.compute_memory_max()`, `.total_memory_bytes()` et
+`.capped_memory_max()` ; plus aucun site d’appel ne passe `memory_max`.
+**Un test y interdit désormais toute fraction de RAM côté app** — c’est
+le garde-fou qui empêche les trois plafonds concurrents de repousser, et
+il est posé du bon côté : chez celui qui serait tenté de re-forker.
+
+**v0.134.1 — diagnostic OOM (cœur v0.183.1).** L’app n’atténue plus ce
+que le cœur affirme et réserve la formulation prudente au mode dégradé.
+C’était le point que la réponse du 2026-08-23 signalait ; il est traité.
+
+**§4 du brief : périmé à la lecture.** Il annonce `v0.183.1` « ni
+commitée, ni mergée, ni taguée » et l’app « théorique » faute de tag.
+C’était vrai à l’écriture : le tag a été publié le 2026-08-23 à **09:34
+UTC** (PR \#423 mergée, `release.yml`), et `@*release` le voit depuis.
+Rien à faire.
+
+------------------------------------------------------------------------
+
 **Journal** — *2026-08-23* (**v0.183.1**) : **un OOM sous cgroup ne se
 présentait pas comme un OOM**. Brief entrant de la session app,
 `nemetonshiny/specs/BRIEF-nemeton-oom-sigterm-scope.md`, écrit après un

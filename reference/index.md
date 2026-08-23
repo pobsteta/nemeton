@@ -236,6 +236,14 @@ H0
 - [`read_site_index_curves()`](https://pobsteta.github.io/nemeton/reference/read_site_index_curves.md)
   : Read the site-index reference curves
 
+## Houppiers (couche `houppier` de Marculus)
+
+Segmentation des couronnes sur un MNH : une entite par houppier, avec la
+hauteur de son apex, pour pre-remplir la hauteur d’une tige au martelage
+
+- [`segment_houppiers()`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md)
+  : Segment tree crowns on a Canopy Height Model
+
 ## Variables biophysiques Sentinel-2 (spec 043)
 
 Gouvernance de l’augmentation biophysique (LAI/fAPAR/FCOVER/CCC) dans le
