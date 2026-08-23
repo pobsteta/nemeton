@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.183.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.183.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,41 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.183.1" id="nemeton-01831-2026-08-23">nemeton 0.183.1 (2026-08-23)<a class="anchor" aria-label="anchor" href="#nemeton-01831-2026-08-23"></a></h2>
+<div class="section level4">
+<h4 id="fixed--un-dépassement-de-plafond-ne-se-présentait-pas-comme-tel-0-183-1">Fixed — un dépassement de plafond ne se présentait pas comme tel<a class="anchor" aria-label="anchor" href="#fixed--un-d%C3%A9passement-de-plafond-ne-se-pr%C3%A9sentait-pas-comme-tel-0-183-1"></a></h4>
+<p>Implémente <code>nemetonshiny/specs/BRIEF-nemeton-oom-sigterm-scope.md</code>. Après 3 h 20 de calcul, un OOM sous cgroup s’annonçait :</p>
+<pre><code>"start_computation" failed in its capped child process (exit -15).</code></pre>
+<p>…alors que le message qui l’aurait dit — plafond, échappatoires, « la session a été épargnée » — existait <strong>juste au-dessus dans le même <code>if</code></strong>, gardé par <code>status %in% c(-9L, 137L)</code>. Le journal système, lui, disait <code>oom-kill</code>.</p>
+<p><strong>Ce que la reproduction a montré, et qui va plus loin que le brief.</strong> Le brief proposait d’élargir la liste à <code>-15</code>/<code>143</code>. Mesuré ici le 2026-08-23 :</p>
+<ul><li>un dépassement remonte en <strong><code>-9</code></strong> quand le processus principal du scope est la victime (reproduit) et en <strong><code>-15</code></strong> quand l’OOM killer en prend un autre et que systemd démonte le scope (observé en production le 2026-08-22) ;</li>
+<li>les deux valeurs signifient <strong>aussi</strong> « quelqu’un a arrêté le scope ».</li>
+</ul><p>Le code de sortie n’est donc probant dans <strong>aucun</strong> sens : l’élargir échangeait un faux négatif contre un faux positif. Le correctif retenu est l’option 2 du brief — <strong>constater au lieu d’inférer</strong>.</p>
+</div>
+<div class="section level4">
+<h4 id="changed--le-scope-est-nommé-et-systemd-est-interrogé-0-183-1">Changed — le scope est nommé, et systemd est interrogé<a class="anchor" aria-label="anchor" href="#changed--le-scope-est-nomm%C3%A9-et-systemd-est-interrog%C3%A9-0-183-1"></a></h4>
+<p><code><a href="../reference/run_memory_capped.html">run_memory_capped()</a></code> nomme désormais son scope transitoire (<code>.capped_scope_unit()</code>) et lui demande son verdict après coup (<code>.capped_scope_result()</code> → <code>systemctl --user show -p Result</code>). Trois niveaux de certitude, et la formulation dit lequel :</p>
+<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>Verdict systemd</th>
+<th>Message</th>
+</tr></thead><tbody><tr><td><code>oom-kill</code></td>
+<td>« ran out of memory », <strong>affirmé</strong> — plafond et échappatoires nommés</td>
+</tr><tr><td>autre (<code>signal</code>, <code>timeout</code>, <code>exit-code</code>)</td>
+<td>ce que systemd a dit, <strong>sans</strong> prétendre à un OOM</td>
+</tr><tr><td>indisponible (pas de cgroup, pas de <code>systemctl</code>)</td>
+<td>« killed (signal N) », le plafond donné comme cause <strong>habituelle</strong>, pas comme fait</td>
+</tr></tbody></table><p><strong>Le piège trouvé en implémentant</strong> : <code>--collect</code> et l’interrogation sont <strong>exclusifs</strong>. Avec <code>--collect</code>, un scope mort d’OOM répond <code>Result=success</code> — l’unité a disparu avant la question, et une unité détruite ne répond pas « je ne sais pas », elle répond l’inverse de la vérité. Nommer l’unité impose donc de renoncer à <code>--collect</code> et de reprendre son ménage : <code>.capped_scope_reset()</code> est appelé sur <strong>tous</strong> les chemins de sortie, interruption comprise. Vérifié : zéro unité résiduelle après une série d’échecs.</p>
+<p>Le chemin RECONFORT (<code>.reconfort_run_py()</code>) garde <code>--collect</code> et son comportement : <code>.reconfort_cap_memory(unit = NULL)</code> est le défaut.</p>
+</div>
+<div class="section level4">
+<h4 id="vérification-0-183-1">Vérification<a class="anchor" aria-label="anchor" href="#v%C3%A9rification-0-183-1"></a></h4>
+<p>Recette du brief passée en réel, pas seulement en test : un dépassement sous cgroup rend maintenant le message mémoire (au lieu de <code>exit -15</code>), une erreur R ordinaire dans l’enfant reste un <code>exit 1</code> sans mention de mémoire, et le compteur d’unités résiduelles est à zéro. <code>test-capped-diagnosis.R</code> : 39 assertions, dont le fait que les <strong>quatre</strong> codes (<code>-9</code>, <code>-15</code>, <code>137</code>, <code>143</code>) mènent au même verdict quand systemd dit <code>oom-kill</code>, et qu’aucun n’y mène quand il dit autre chose.</p>
+</div>
+<div class="section level4">
+<h4 id="reliquat-identifié-0-183-1">Reliquat identifié<a class="anchor" aria-label="anchor" href="#reliquat-identifi%C3%A9-0-183-1"></a></h4>
+<p><code>.reconfort_run_py()</code> ne rend qu’un code de sortie à sa chaîne appelante : il reste aveugle au même défaut. Non traité ici — le brief porte sur <code><a href="../reference/run_memory_capped.html">run_memory_capped()</a></code> — mais l’outillage (<code>unit =</code>, <code>.capped_scope_result()</code>) l’attend.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.183.0" id="nemeton-01830-2026-08-22">nemeton 0.183.0 (2026-08-22)<a class="anchor" aria-label="anchor" href="#nemeton-01830-2026-08-22"></a></h2>
 <div class="section level4">
@@ -173,7 +208,7 @@ ERROR: lazy loading failed for package 'microclimc'</code></pre>
 <div class="section level4">
 <h4 id="changed--croiser_parcelles_onf-part-désormais-des-ugf-spec-0-179-0">Changed — <code>croiser_parcelles_onf()</code> part désormais des UGF (spec 046 §7)<a class="anchor" aria-label="anchor" href="#changed--croiser_parcelles_onf-part-d%C3%A9sormais-des-ugf-spec-0-179-0"></a></h4>
 <p><strong>Changement d’API</strong>, un jour après l’introduction de la fonction et avant tout câblage côté app. L’orientation était à l’envers : on partait du cadastre. On part maintenant de la <strong>parcelle forestière</strong> — c’est elle l’unité de gestion, donc l’UGF — et on rend, pour chacune, le ou les <strong>tènements</strong> découpés dans les parcelles cadastrales qu’elle rencontre.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/croiser_parcelles_onf.html">croiser_parcelles_onf</a></span><span class="op">(</span><span class="va">parcelles_onf</span>, <span class="va">parcelles</span>,   <span class="co"># l'ordre a changé</span></span>
 <span>                      min_surface_ha <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>                      caler_sur_cadastre <span class="op">=</span> <span class="cn">FALSE</span>, seuil_calage <span class="op">=</span> <span class="fl">0.9</span>,</span>
@@ -247,7 +282,7 @@ ERROR: lazy loading failed for package 'microclimc'</code></pre>
 <h4 id="added--migrer_colonnes_l-0-176-0">Added — <code>migrer_colonnes_l()</code>
 <a class="anchor" aria-label="anchor" href="#added--migrer_colonnes_l-0-176-0"></a></h4>
 <p>Renomme les colonnes héritées d’un jeu calculé avant 0.176.0 — parquet de projet, table PostGIS, GeoPackage en cache — <strong>sans toucher aux valeurs</strong>, les variantes <code>_norm</code> comprises. Un jeu déjà migré ou étranger revient inchangé, donc l’appel se laisse poser dans un chemin de lecture. Quand ancienne et nouvelle colonne coexistent, la nouvelle est conservée et un avertissement nomme le conflit.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">projet</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/migrer_colonnes_l.html">migrer_colonnes_l</a></span><span class="op">(</span><span class="va">projet</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ✔ Renamed 2 legacy L columns: indicateur_l2_fragmentation -&gt;</span></span>
 <span><span class="co">#&gt;   indicateur_l1_effet_lisiere, indicateur_l1_sylvosphere -&gt;</span></span>
@@ -267,7 +302,7 @@ ERROR: lazy loading failed for package 'microclimc'</code></pre>
 <div class="section level4">
 <h4 id="added--r5_applicabilite--savoir-avant-de-calculer-et-savoir-pourquoi-0-175-0">Added — <code>r5_applicabilite()</code> : savoir avant de calculer, et savoir pourquoi<a class="anchor" aria-label="anchor" href="#added--r5_applicabilite--savoir-avant-de-calculer-et-savoir-pourquoi-0-175-0"></a></h4>
 <p>Depuis les parcelles cadastrales seules, on peut désormais dire si R5 (dépérissement) s’applique — et, sinon, <strong>laquelle des deux conditions indépendantes bloque</strong>. La fonction reproduit le routage qu’<code><a href="../reference/indicateur_r5_deperissement.html">indicateur_r5_deperissement()</a></code> fait au moment du calcul, sans lancer ni FORDEAD ni RECONFORT.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/r5_applicabilite.html">r5_applicabilite</a></span><span class="op">(</span><span class="va">units</span>, bdforet <span class="op">=</span> <span class="va">bdforet</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $status "eligible_fordead_out_of_calibration"  $method "fordead"</span></span>
 <span><span class="co">#&gt; $in_calibration FALSE  $geo_pct 0  $n_fordead 30 / $n_units 30</span></span></code></pre></div>
@@ -295,7 +330,7 @@ ERROR: lazy loading failed for package 'microclimc'</code></pre>
 <h4 id="added--a5_applicabilite--le-pendant-pour-le-rafraîchissement-urbain-0-175-0">Added — <code>a5_applicabilite()</code> : le pendant pour le rafraîchissement urbain<a class="anchor" aria-label="anchor" href="#added--a5_applicabilite--le-pendant-pour-le-rafra%C3%AEchissement-urbain-0-175-0"></a></h4>
 <p>Même question pour A5, avec une différence de nature qu’il faut nommer. Pour R5, les deux conditions se décident sur les <strong>parcelles seules</strong> (essence, géographie). Pour A5, la couverture ne se connaît qu’à la maille de la <strong>scène</strong> : une requête STAC répond sur des emprises, pas sur des pixels. Une UGF à 20 km d’une métropole couverte peut tomber dans la bbox d’une scène ECOSTRESS sans porter un seul pixel valide.</p>
 <p>D’où un verdict à deux niveaux :</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/a5_applicabilite.html">a5_applicabilite</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span>              <span class="co"># une requête catalogue, zéro téléchargement</span></span>
 <span><span class="fu"><a href="../reference/a5_applicabilite.html">a5_applicabilite</a></span><span class="op">(</span><span class="va">units</span>, lst <span class="op">=</span> <span class="va">lst</span><span class="op">)</span>   <span class="co"># le raster est en cache -&gt; verdict par UGF</span></span></code></pre></div>
 <p><code>status</code> ∈ <code>{"eligible", "eligible_partial", "no_coverage", "no_reference", "no_credentials", "error"}</code>. <strong><code>eligible_partial</code></strong> est le cas qui manquait : couverture réelle, mais seules quelques unités portent des pixels — l’app affichait un axe A5 à moitié vide sans pouvoir dire pourquoi.</p>
@@ -395,7 +430,7 @@ ERROR: lazy loading failed for package 'microclimc'</code></pre>
 <h4 id="added--theia_source_status--nommer-la-cause-au-lieu-de-rendre-null-0-173-1">Added — <code>theia_source_status()</code> : nommer la cause au lieu de rendre <code>NULL</code>
 <a class="anchor" aria-label="anchor" href="#added--theia_source_status--nommer-la-cause-au-lieu-de-rendre-null-0-173-1"></a></h4>
 <p>Le vrai défaut commun à SUFOSAT et à A5 n’était pas la donnée manquante, c’était le <strong>silence</strong>. Une source cassée et une source légitimement sans données sur l’emprise finissaient toutes deux en couche <code>NULL</code> et indicateur <code>NA</code>, sans signal : indiscernables depuis l’application.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/theia_source_status.html">theia_source_status</a></span><span class="op">(</span><span class="st">"theia_lst"</span>, <span class="va">aoi</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $available FALSE  $reason "no_asset_over_aoi"  $n_assets 0</span></span>
 <span><span class="co">#&gt; $collection "thermocity-lst"</span></span></code></pre></div>
@@ -526,7 +561,7 @@ ERROR: lazy loading failed for package 'microclimc'</code></pre>
 <div class="section level4">
 <h4 id="changed--résolution-de-travail-topographique-à-m-réglable-sans-release-0-169-0">Changed — résolution de travail topographique à 2 m, réglable sans release<a class="anchor" aria-label="anchor" href="#changed--r%C3%A9solution-de-travail-topographique-%C3%A0-m-r%C3%A9glable-sans-release-0-169-0"></a></h4>
 <p>La résolution de travail passe de 10 m à <strong>2 m</strong> et devient un réglage paquet plutôt qu’une constante recopiée dans huit signatures :</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>nemeton.topo_target_res <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>   <span class="co"># session</span></span>
 <span><span class="va">NEMETON_TOPO_TARGET_RES</span><span class="op">=</span><span class="fl">5</span>              <span class="co"># environnement</span></span></code></pre></div>
 <p>Le défaut de <code>dem_target_res</code> sur les huit indicateurs est l’appel <code>.topo_target_res()</code> : l’app peut ajuster sans nouvelle release du cœur, et <code>dem_target_res = NULL</code> reste l’échappatoire par appel (résolution native).</p>
@@ -2533,7 +2568,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 <p>Les paramètres clés (seuil, fenêtre temporelle, <code>window_days</code>) sont désormais lisibles directement dans le nom de fichier — deux cartes de même <code>INDEX</code>/<code>MODE</code> dans une même <code>zone_&lt;id&gt;</code> se distinguent à l’œil sans recalcul. Un extrait de 8 caractères du hash D6 (inchangé) continue de discriminer les entrées qui ne tiennent pas dans un nom : la liste des scènes S2 (change après ré-ingestion) et le polygone de masque UGF.</p>
 <p><strong>Idempotence préservée</strong> : mêmes paramètres → même nom → hit cache. Le hash sous-jacent (<code>.fast_raster_hash()</code>) est inchangé.</p>
 <p><strong>Anciens fichiers</strong> : les COG au format pré-0.65.2 (<code>fast_&lt;index&gt;_&lt;mode&gt;_&lt;hash_long&gt;.tif</code>) ne sont plus reconnus comme hits ; ils sont simplement recalculés à la 1re demande (cache idempotent) puis ramassés par la GC LRU (<code>nemeton.fast_raster_keep</code>). Pour récupérer l’espace tout de suite sur un projet existant :</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-f</span> <span class="op">&lt;</span>projet<span class="op">&gt;</span>/cache/layers/fast_alert/zone_<span class="pp">*</span>/fast_<span class="pp">*</span>_<span class="pp">[</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">][</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">]*</span>.tif</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-f</span> <span class="op">&lt;</span>projet<span class="op">&gt;</span>/cache/layers/fast_alert/zone_<span class="pp">*</span>/fast_<span class="pp">*</span>_<span class="pp">[</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">][</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">]*</span>.tif</span></code></pre></div>
 </div>
 </div>
     <div class="section level2">
@@ -3549,7 +3584,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 <ul><li><p><code>dates_training</code> defaults to <code>c("2018-01-01", "2020-12-31")</code> — a 2-year baseline anchored on the start of Sentinel-2 dense coverage, long enough to fit the harmonic model and short enough to keep the baseline free from recent disturbances.</p></li>
 <li>
 <p><code>dates_monitoring</code> defaults to a rolling 18-month window ending today:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span>, by <span class="op">=</span> <span class="st">"-18 months"</span>, length.out <span class="op">=</span> <span class="fl">2</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -3661,7 +3696,7 @@ Data variable: stackstac-&lt;hash&gt;</code></pre>
 </li>
 </ul><p>Callers (<code>nemetonshiny</code>, scripts) used to hard-code paths that broke as soon as a different producer was used. Most visibly, the <code>&lt;project&gt;/dtm.tif</code> convention from <code>opencanopynemeton</code> was recognised neither by <code>nemeton</code> nor by <code>nemetonshiny</code>, leading to the v0.25.1 “Stratification-valid candidate pool (0) is below <code>n_base</code>” failure even when the DTM was perfectly downloaded — the file was just never passed to <code>create_sampling_plan(mnt =)</code>.</p>
 <p>Two new exported helpers walk a priority-ordered list of well-known locations and return the first match:</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">nemeton</span><span class="fu">::</span><span class="fu"><a href="../reference/resolve_project_layers.html">resolve_project_dem</a></span><span class="op">(</span><span class="va">project_path</span><span class="op">)</span></span>
 <span><span class="va">chm</span> <span class="op">&lt;-</span> <span class="fu">nemeton</span><span class="fu">::</span><span class="fu"><a href="../reference/resolve_project_layers.html">resolve_project_chm</a></span><span class="op">(</span><span class="va">project_path</span><span class="op">)</span></span>
 <span><span class="va">plan</span> <span class="op">&lt;-</span> <span class="fu">nemeton</span><span class="fu">::</span><span class="fu"><a href="../reference/create_sampling_plan.html">create_sampling_plan</a></span><span class="op">(</span><span class="va">zone</span>, mnt <span class="op">=</span> <span class="va">dem</span>, chm <span class="op">=</span> <span class="va">chm</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
@@ -3864,7 +3899,7 @@ no attribute 'ItemCollection'</code></pre>
 <li>
 <code>test-fordead-integration.R</code> adapted — env vars are now <code>NEMETON_DB_URL</code> + <code>NEMETON_FORDEAD_TEST_ZONE_ID</code> + <code>NEMETON_FORDEAD_TEST_CACHE_DIR</code> (was AOI path + cache dir).</li>
 </ul><p><strong>Migration path</strong> :</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># v0.23.0</span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_fordead_dieback.html">run_fordead_dieback</a></span><span class="op">(</span><span class="va">aoi</span>, <span class="va">scenes_df</span>, <span class="va">cache_dir</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
@@ -3938,7 +3973,7 @@ no attribute 'ItemCollection'</code></pre>
 </ul><p><strong>Migration notes for users on <code>v0.21.0..v0.22.5</code></strong> :</p>
 <ul><li>
 <p>Update your code to pass <code>scenes_df</code> and <code>cache_dir</code>:</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_fordead_dieback.html">run_fordead_dieback</a></span><span class="op">(</span></span>
 <span>  aoi              <span class="op">=</span> <span class="va">aoi</span>,</span>
 <span>  scenes_df        <span class="op">=</span> <span class="va">scenes_df</span>,  <span class="co"># NEW (required)</span></span>
@@ -4077,7 +4112,7 @@ ERROR: No matching distribution found for fordead==2.1.4</code></pre>
 <div class="section level4">
 <h4 id="migration-notes-for-users-who-hit-the-bug-before-this-release-0-22-2">Migration notes for users who hit the bug before this release<a class="anchor" aria-label="anchor" href="#migration-notes-for-users-who-hit-the-bug-before-this-release-0-22-2"></a></h4>
 <p>If you tried to run FORDEAD against v0.22.1 (or earlier) and saw <code>No matching distribution found for fordead==2.1.4</code>, your virtualenv is in a half-installed state. After upgrading to v0.22.2 the recovery is automatic — the next call to <code><a href="../reference/run_fordead_dieback.html">run_fordead_dieback()</a></code> will detect the missing <code>fordead</code> and reinstall from the correct source. If you prefer a clean slate, you can still do:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">reticulate</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/reticulate/reference/virtualenv-tools.html" class="external-link">virtualenv_remove</a></span><span class="op">(</span><span class="st">"nemeton-fordead"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level4">
@@ -4173,7 +4208,7 @@ Scene 9..26  → 403 → invalidate cache → resign href → retry → OK</code
 <code>terra::writeRaster(r, tmp, …)</code> finally triggers the byte-range reads on the COG over VSI. If the SAS token expired mid-scene, or Azure returned a 5xx / 429 on the range request, this step throws — <strong>past the retry budget</strong>.</li>
 <li>The <code>tryCatch</code> swallowed the error with a <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_warn()</a></code>, unlinked the partial <code>.tmp</code>, and returned — leaving the empty scene directory behind.</li>
 </ol><p>The fix moves the AOI crop <strong>and</strong> the pixel materialization into a <code>materialize</code> closure passed to <code>.terra_rast_with_pc_retry()</code>. Both steps now run <strong>inside</strong> the retry/refresh loop:</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">materialize</span> <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">r0</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">buf_native</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_transform.html" class="external-link">st_transform</a></span><span class="op">(</span><span class="va">buf_plots</span>, <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crs.html" class="external-link">crs</a></span><span class="op">(</span><span class="va">r0</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="va">r_cropped</span>  <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crop.html" class="external-link">crop</a></span><span class="op">(</span><span class="va">r0</span>, <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/ext.html" class="external-link">ext</a></span><span class="op">(</span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/vect.html" class="external-link">vect</a></span><span class="op">(</span><span class="va">buf_native</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -4211,7 +4246,7 @@ Scene 9..26  → 403 → invalidate cache → resign href → retry → OK</code
 <div class="section level4">
 <h4 id="fixed--every-s2-band-cache-hit-raised-cannot-coerce-type-s4-to-vector-of-type-double-0-21-8">Fixed — every S2 band cache hit raised “cannot coerce type ‘S4’ to vector of type ‘double’”<a class="anchor" aria-label="anchor" href="#fixed--every-s2-band-cache-hit-raised-cannot-coerce-type-s4-to-vector-of-type-double-0-21-8"></a></h4>
 <p><code>.ext_contains()</code> (introduced in v0.21.4 to decide whether a cached COG covers today’s AOI) did:</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">o</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">outer</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">outer</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, <span class="va">outer</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span>, <span class="va">outer</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><code>outer</code> is a <code><a href="https://rspatial.github.io/terra/reference/SpatExtent-class.html" class="external-link">terra::SpatExtent</a></code> (S4). <code>outer[1]</code> does NOT return a plain double — it returns a nested S4 element. <code><a href="https://rdrr.io/r/base/c.html" class="external-link">c()</a></code> accumulates those into an S4 list, and <code><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric()</a></code> then chokes with</p>
 <pre><code>cannot coerce type 'S4' to vector of type 'double'</code></pre>
@@ -5282,14 +5317,14 @@ docker compose up -d timescaledb</code></pre>
 <div class="section level5">
 <h5 id="migration-guide-0-6-0">Migration Guide<a class="anchor" aria-label="anchor" href="#migration-guide-0-6-0"></a></h5>
 <p><strong>Before (v0.1.0-v0.5.x):</strong></p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Old API</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span></span>
 <span>  <span class="va">units</span>, <span class="va">layers</span>,</span>
 <span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span>, <span class="st">"water"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><strong>After (v0.6.0+):</strong></p>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># New API with family-based indicators</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span></span>
 <span>  <span class="va">units</span>, <span class="va">layers</span>,</span>
@@ -6434,7 +6469,7 @@ docker compose up -d timescaledb</code></pre>
 </ul></div>
 <div class="section level4">
 <h4 id="quick-start-example-0-1-0">Quick Start Example<a class="anchor" aria-label="anchor" href="#quick-start-example-0-1-0"></a></h4>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pobsteta.github.io/nemeton/">nemeton</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 5-line workflow</span></span>
