@@ -232,11 +232,18 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
       i = "With no cgroup, an overshoot is the whole session's problem again: the OOM killer takes the scope, not the job."
     ))
   }
+  # Name the scope so systemd can be *asked* what became of it, instead of
+  # guessing from an exit status that means several things at once (see
+  # `.capped_failure_message()`).
+  unit <- .capped_scope_unit(fun)
   cmd <- .reconfort_cap_memory(
     file.path(R.home("bin"), "Rscript"),
     c(f_script, f_in, f_out),
-    memory_max = mm, systemd_run = systemd
+    memory_max = mm, systemd_run = systemd, unit = unit
   )
+  # Naming the unit costs `--collect`, so we do its cleanup ourselves — on every
+  # exit path, including the caller's interrupt.
+  if (!is.null(cmd$unit)) on.exit(.capped_scope_reset(cmd$unit), add = TRUE)
 
   std <- if (quiet) NULL else ""
   px <- processx::process$new(cmd$command, cmd$args, stdout = std, stderr = std)
@@ -253,18 +260,14 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
   if (!is.null(ndjson)) .progress_replay(ndjson, seen, progress_callback)
 
   if (!identical(as.integer(st), 0L) || !file.exists(f_out)) {
-    # The ceiling (or the OOM killer) got it: SIGKILL, reported as -9 by
-    # processx and as 137 (128 + 9) by a shell. Say so plainly — neither number
-    # tells the user anything.
-    if (as.integer(st) %in% c(-9L, 137L)) {
-      ceiling <- if (is.null(mm)) "none" else mm
-      cli::cli_abort(c(
-        "{.val {fun}} ran out of memory and was killed (ceiling: {ceiling}).",
-        i = "Raise it with {.arg memory_max}, {.envvar NEMETON_MEMORY_MAX} (accepts {.val none}) or {.code options(nemeton.memory_max=)}, or run on a smaller extent.",
-        i = "The rest of the session was spared — only the job died."
-      ))
-    }
-    cli::cli_abort("{.val {fun}} failed in its capped child process (exit {st}).")
+    # Do not read the tea leaves of the exit status: a ceiling overshoot reaches
+    # us as -9 OR as -15 depending on which process of the scope the OOM killer
+    # picked, and both also mean "someone stopped the scope". Ask systemd, which
+    # kept a verdict, and fall back to a hedged wording only when it cannot
+    # answer (no cgroup, no systemctl, unit already gone).
+    ceiling <- if (is.null(mm)) "none" else mm
+    result  <- .capped_scope_result(cmd$unit)
+    cli::cli_abort(.capped_failure_message(fun, st, ceiling, result))
   }
   readRDS(f_out)
 }

@@ -1,3 +1,71 @@
+# nemeton 0.183.1 (2026-08-23)
+
+### Fixed — un dépassement de plafond ne se présentait pas comme tel
+
+Implémente `nemetonshiny/specs/BRIEF-nemeton-oom-sigterm-scope.md`. Après 3 h 20
+de calcul, un OOM sous cgroup s'annonçait :
+
+```
+"start_computation" failed in its capped child process (exit -15).
+```
+
+…alors que le message qui l'aurait dit — plafond, échappatoires, « la session a
+été épargnée » — existait **juste au-dessus dans le même `if`**, gardé par
+`status %in% c(-9L, 137L)`. Le journal système, lui, disait `oom-kill`.
+
+**Ce que la reproduction a montré, et qui va plus loin que le brief.** Le brief
+proposait d'élargir la liste à `-15`/`143`. Mesuré ici le 2026-08-23 :
+
+* un dépassement remonte en **`-9`** quand le processus principal du scope est
+  la victime (reproduit) et en **`-15`** quand l'OOM killer en prend un autre et
+  que systemd démonte le scope (observé en production le 2026-08-22) ;
+* les deux valeurs signifient **aussi** « quelqu'un a arrêté le scope ».
+
+Le code de sortie n'est donc probant dans **aucun** sens : l'élargir échangeait
+un faux négatif contre un faux positif. Le correctif retenu est l'option 2 du
+brief — **constater au lieu d'inférer**.
+
+### Changed — le scope est nommé, et systemd est interrogé
+
+`run_memory_capped()` nomme désormais son scope transitoire
+(`.capped_scope_unit()`) et lui demande son verdict après coup
+(`.capped_scope_result()` → `systemctl --user show -p Result`). Trois niveaux de
+certitude, et la formulation dit lequel :
+
+| Verdict systemd | Message |
+|---|---|
+| `oom-kill` | « ran out of memory », **affirmé** — plafond et échappatoires nommés |
+| autre (`signal`, `timeout`, `exit-code`) | ce que systemd a dit, **sans** prétendre à un OOM |
+| indisponible (pas de cgroup, pas de `systemctl`) | « killed (signal N) », le plafond donné comme cause **habituelle**, pas comme fait |
+
+**Le piège trouvé en implémentant** : `--collect` et l'interrogation sont
+**exclusifs**. Avec `--collect`, un scope mort d'OOM répond `Result=success` —
+l'unité a disparu avant la question, et une unité détruite ne répond pas « je ne
+sais pas », elle répond l'inverse de la vérité. Nommer l'unité impose donc de
+renoncer à `--collect` et de reprendre son ménage : `.capped_scope_reset()` est
+appelé sur **tous** les chemins de sortie, interruption comprise. Vérifié : zéro
+unité résiduelle après une série d'échecs.
+
+Le chemin RECONFORT (`.reconfort_run_py()`) garde `--collect` et son
+comportement : `.reconfort_cap_memory(unit = NULL)` est le défaut.
+
+### Vérification
+
+Recette du brief passée en réel, pas seulement en test : un dépassement sous
+cgroup rend maintenant le message mémoire (au lieu de `exit -15`), une erreur R
+ordinaire dans l'enfant reste un `exit 1` sans mention de mémoire, et le
+compteur d'unités résiduelles est à zéro. `test-capped-diagnosis.R` : 39
+assertions, dont le fait que les **quatre** codes (`-9`, `-15`, `137`, `143`)
+mènent au même verdict quand systemd dit `oom-kill`, et qu'aucun n'y mène quand
+il dit autre chose.
+
+### Reliquat identifié
+
+`.reconfort_run_py()` ne rend qu'un code de sortie à sa chaîne appelante : il
+reste aveugle au même défaut. Non traité ici — le brief porte sur
+`run_memory_capped()` — mais l'outillage (`unit =`, `.capped_scope_result()`)
+l'attend.
+
 # nemeton 0.183.0 (2026-08-22)
 
 ### Changed — le plafond mémoire par défaut passe de 70 % à 50 % de la RAM

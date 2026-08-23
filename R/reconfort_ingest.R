@@ -249,16 +249,29 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 }
 
 # Wrap a command in a memory-capped transient scope when we can. Returns
-# `list(command, args)` — unchanged when no cap applies. Split out so the
-# decision is testable without spawning anything.
+# `list(command, args)` — unchanged when no cap applies — plus `unit` when the
+# scope was named. Split out so the decision is testable without spawning
+# anything.
+#
+# `unit`: name the transient scope so the caller can ask systemd what became of
+# it (`.capped_scope_result()`). Naming it means giving up `--collect`, and that
+# trade is the whole point — MEASURED 2026-08-23: with `--collect`, a scope that
+# died of OOM answers `Result=success`, because the unit is gone by the time
+# anyone asks. A destroyed unit does not say "I don't know", it says the
+# opposite of the truth. The caller therefore takes over the cleanup
+# `--collect` was doing, via `.capped_scope_reset()`.
 .reconfort_cap_memory <- function(command, args, memory_max = .reconfort_memory_max(),
-                                  systemd_run = .reconfort_systemd_run()) {
+                                  systemd_run = .reconfort_systemd_run(),
+                                  unit = NULL) {
   if (is.null(memory_max) || is.null(systemd_run)) {
     return(list(command = command, args = args))
   }
+  named <- !is.null(unit) && nzchar(unit)
   list(
     command = systemd_run,
-    args = c("--user", "--scope", "--quiet", "--collect",
+    unit    = if (named) unit else NULL,
+    args = c("--user", "--scope", "--quiet",
+             if (named) paste0("--unit=", unit) else "--collect",
              paste0("--property=MemoryMax=", memory_max),
              # MemoryMax alone does NOT kill an overshooting job on a machine
              # with swap (this one has 8 GB): the cgroup spills to swap and
