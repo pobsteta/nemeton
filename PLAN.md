@@ -769,6 +769,74 @@ pas comme un attribut de commodité.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-23* (**v0.183.1**) : **un OOM sous cgroup ne se
+présentait pas comme un OOM**. Brief entrant de la session app,
+`nemetonshiny/specs/BRIEF-nemeton-oom-sigterm-scope.md`, écrit après un calcul
+Couchey perdu au bout de **3 h 20** sur ce message :
+
+```
+"start_computation" failed in its capped child process (exit -15).
+```
+
+Le message utile — plafond, échappatoires, « la session a été épargnée » —
+existait **juste au-dessus dans le même `if`**, gardé par
+`status %in% c(-9L, 137L)`. Le journal système disait `oom-kill` à la même
+minute. Diagnostic du brief : exact et bien instruit.
+
+**Ce que la reproduction a ajouté, et qui change le correctif.** Le brief
+proposait deux options — élargir la liste des signaux (1), ou nommer le scope et
+demander son sort à systemd (2) — en laissant l'arbitrage au coût. Mesuré ici le
+2026-08-23 sur des dépassements provoqués :
+
+| Situation | Ce que `processx` voit | Ce que systemd sait |
+|---|---|---|
+| OOM, processus principal victime (**reproduit**) | `-9` | `Result=oom-kill` |
+| OOM, autre processus du scope victime (**production 2026-08-22**) | `-15` | `Result=oom-kill` |
+| `systemctl stop`, kill extérieur | `-15` | `Result=signal` |
+
+**Le code de sortie n'est probant dans aucun sens** : l'élargir à `-15`
+échangeait un faux négatif contre un faux positif. Le mécanisme avancé par le
+brief (« `processx` observe le client `systemd-run`, tué en SIGTERM ») **n'est
+pas ce que j'ai mesuré** — `systemd-run --scope` laisse remonter le signal du
+processus du scope lui-même. Je n'ai pas reproduit le `-15` en local ; le journal
+de production étant formel, la conclusion tient sans que son explication soit
+acquise, et c'est une raison de plus de ne pas inférer. **Option 2 retenue.**
+
+**Le piège, trouvé en implémentant, qu'aucune lecture n'aurait donné** :
+`--collect` et l'interrogation sont **exclusifs**. Avec `--collect` — ce que le
+code faisait — un scope mort d'OOM répond `Result=success` : l'unité a été
+ramassée avant la question. Une unité détruite ne répond pas « je ne sais pas »,
+elle répond **l'inverse de la vérité**, ce qui est pire que le symptôme de
+départ. Nommer l'unité impose donc de reprendre le ménage de `--collect` :
+`.capped_scope_reset()` est appelé sur tous les chemins de sortie, interruption
+comprise ; vérifié à zéro unité résiduelle après une série d'échecs.
+
+**Trois niveaux de certitude, et la formulation dit lequel** — `oom-kill`
+affirmé sans réserve ; un autre verdict nommé **sans** prétendre à un OOM ; pas
+de verdict du tout (mode dégradé sans cgroup) → le plafond donné comme cause
+*habituelle*, avec la phrase qui le relativise. C'est ce que l'app faisait déjà
+de son mieux dans `.compute_error_message()` (v0.133.1) faute de pouvoir faire
+mieux depuis un code de sortie ; le cœur peut, lui, et le fait.
+
+**Recette du brief passée en réel**, pas seulement en test : dépassement sous
+cgroup → message mémoire ; erreur R ordinaire dans l'enfant → `exit 1` sans
+mention de mémoire (le scope, lui, a réussi) ; zéro unité résiduelle.
+`test-capped-diagnosis.R`, 39 assertions — dont le verrou qui compte : les
+**quatre** codes (`-9`, `-15`, `137`, `143`) mènent au même verdict quand systemd
+dit `oom-kill`, et **aucun** n'y mène quand il dit autre chose.
+
+**Reliquat identifié, non traité** : `.reconfort_run_py()` ne rend qu'un code de
+sortie à sa chaîne appelante et reste aveugle au même défaut. L'outillage
+(`unit =`, `.capped_scope_result()`) l'attend ; hors périmètre du brief.
+
+**Point de méthode** : c'est le deuxième brief app en deux jours dont le constat
+est juste et dont le remède proposé était trop court (cf. le plafond à 70 %,
+v0.183.0). Dans les deux cas la mesure faite ici a déplacé la solution — pas la
+conclusion. Le brief reste la bonne unité d'échange ; la mesure reste due de ce
+côté-ci.
+
+---
+
 **Journal** — *2026-08-22* (**v0.183.0**) : **le plafond mémoire par défaut
 n'en était pas un — 70 % → 50 % de la RAM**. Point laissé ouvert le matin même
 par la consignation du lot app (v0.124.2, ci-dessous), tranché ici l'après-midi.

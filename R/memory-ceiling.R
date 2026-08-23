@@ -99,3 +99,143 @@
   if (gb < .MEMORY_CEILING_MIN_GB) return(NULL)
   paste0(gb, "G")
 }
+
+
+# ============================================================
+# What actually became of a capped scope
+# ------------------------------------------------------------
+# An exit status cannot tell an OOM from a `systemctl stop`, and — measured on
+# 2026-08-23 — cannot even tell an OOM from an OOM: the same overshoot surfaces
+# as `-9` (SIGKILL, reproduced locally: the scope's main process is the victim)
+# or as `-15` (SIGTERM, observed in production on 2026-08-22: the OOM killer
+# takes another process of the scope and systemd then tears the scope down,
+# terminating the main process). Widening the list of "signals that mean OOM"
+# would therefore trade one wrong answer for another, in both directions.
+#
+# systemd knows. A named transient scope keeps a `Result` — `oom-kill`,
+# `exit-code`, `signal`, `timeout`, `success` — and that is a *constat*, not an
+# inference. These two helpers ask it, and clean up after themselves since
+# naming the unit costs us `--collect`.
+# ============================================================
+
+# A valid, unique transient scope name. systemd accepts [a-zA-Z0-9:_.\-] in unit
+# names; anything else in `fun` is folded away rather than rejected.
+.capped_scope_unit <- function(fun) {
+  slug <- gsub("[^a-zA-Z0-9_.-]", "-", as.character(fun)[1L])
+  slug <- substr(slug, 1L, 60L)
+  sprintf("nemeton-%s-%d-%s.scope", slug, as.integer(Sys.getpid()),
+          sub("^file", "", basename(tempfile("file"))))
+}
+
+
+# `Result` of a transient scope, once it has settled. Returns one of systemd's
+# result strings, or NA when the question cannot be asked or answered.
+#
+# The poll exists because a scope is not necessarily done being torn down when
+# the child's exit status reaches us; `Result` reads `success` for a unit that
+# is still active, which is exactly the ambiguity to avoid. So wait for
+# `ActiveState` to settle first, briefly, and give up rather than guess.
+.capped_scope_result <- function(unit, timeout_ms = 2000L, poll_ms = 100L) {
+  if (is.null(unit) || !nzchar(unit)) return(NA_character_)
+  bin <- unname(Sys.which("systemctl"))
+  if (!nzchar(bin)) return(NA_character_)
+
+  ask <- function(prop) {
+    out <- tryCatch(
+      suppressWarnings(system2(bin, c("--user", "show", "--property", prop,
+                                      "--value", unit),
+                               stdout = TRUE, stderr = FALSE)),
+      error = function(e) character()
+    )
+    out <- trimws(paste(out, collapse = ""))
+    if (!nzchar(out)) NA_character_ else out
+  }
+
+  deadline <- Sys.time() + timeout_ms / 1000
+  repeat {
+    state <- ask("ActiveState")
+    if (!is.na(state) && state %in% c("failed", "inactive")) break
+    if (Sys.time() >= deadline) return(NA_character_)
+    Sys.sleep(poll_ms / 1000)
+  }
+  ask("Result")
+}
+
+
+# Drop a failed transient unit, so naming it does not leak one entry per crash.
+# A scope that ended well is garbage-collected by systemd on its own; only the
+# failed ones linger, which is precisely what let us read `Result`.
+.capped_scope_reset <- function(unit) {
+  if (is.null(unit) || !nzchar(unit)) return(invisible(NULL))
+  bin <- unname(Sys.which("systemctl"))
+  if (!nzchar(bin)) return(invisible(NULL))
+  tryCatch(
+    suppressWarnings(system2(bin, c("--user", "reset-failed", unit),
+                             stdout = FALSE, stderr = FALSE)),
+    error = function(e) NULL
+  )
+  invisible(NULL)
+}
+
+
+# The failure message of a capped child, decided from what we actually know.
+# Pure: `result` is systemd's verdict (NA when unavailable), `status` the exit
+# status seen by processx. Kept separate from `run_memory_capped()` so every
+# branch is testable without spawning, killing or filling anything.
+#
+# Three cases, three levels of certainty — and the wording says which:
+#   * systemd says `oom-kill`      -> assert the ceiling. No hedging.
+#   * systemd says something else  -> do NOT claim memory; name what it said.
+#   * systemd cannot be asked      -> a killing signal is *usually* the ceiling,
+#                                     said as a likelihood, not as a fact.
+#
+# Values are interpolated HERE rather than left to `cli_abort()`: its `{}`
+# expressions evaluate in the *calling* frame, which does not hold `status` or
+# `signal`. Braces surviving in an interpolated value are escaped, so a function
+# name containing one cannot turn into an expression downstream.
+.capped_failure_message <- function(fun, status, ceiling, result = NA_character_) {
+  status  <- as.integer(status)
+  ceiling <- if (is.null(ceiling)) "none" else as.character(ceiling)
+  killed  <- status %in% c(-9L, 137L, -15L, 143L)
+  signal  <- if (status < 0L) -status else if (status > 128L) status - 128L else NA_integer_
+
+  esc <- function(x) gsub("}", "}}", gsub("{", "{{", x, fixed = TRUE), fixed = TRUE)
+  f   <- function(...) esc(cli::format_inline(...))
+
+  hatches <- f("Raise it with {.arg memory_max}, {.envvar NEMETON_MEMORY_MAX} ",
+               "(accepts {.val none}) or {.code options(nemeton.memory_max=)}, ",
+               "or run on a smaller extent.")
+  spared  <- "The rest of the session was spared \u2014 only the job died."
+
+  if (identical(result, "oom-kill")) {
+    return(c(
+      f("{.val {fun}} ran out of memory and was killed (ceiling: {ceiling})."),
+      i = hatches,
+      i = spared
+    ))
+  }
+
+  if (!is.na(result) && !identical(result, "success")) {
+    return(c(
+      f("{.val {fun}} failed in its capped child process (systemd: {.val {result}})."),
+      i = if (identical(result, "timeout")) {
+            "The scope hit a time limit, not the memory ceiling."
+          } else {
+            f("This is not the memory ceiling: systemd would have said {.val oom-kill}.")
+          },
+      i = spared
+    ))
+  }
+
+  if (killed) {
+    return(c(
+      f("{.val {fun}} was killed (signal {signal}; systemd's verdict unavailable)."),
+      i = f("The memory ceiling ({ceiling}) is the usual cause \u2014 but a stopped ",
+            "scope or an outside {.code kill} looks the same from here."),
+      i = hatches,
+      i = spared
+    ))
+  }
+
+  f("{.val {fun}} failed in its capped child process (exit {status}).")
+}
