@@ -129,16 +129,18 @@ jobs:
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           cache: false   # cf. « Cache des paquets R » ci-dessus
-          # biodivMapR (GPL-3, B4/L3) Imports dissUtils + spinR but omits
-          # them from its own Remotes, so pak (which scopes Remotes per
-          # package) can't resolve them from nemeton's Remotes alone.
-          # Listing them here installs them at root scope with an explicit
-          # source. dissUtils is CRAN-archived (cran/ mirror).
+          # biodivMapR (GPL-3, B4/L3) Imports dissUtils + spinR. dissUtils is
+          # absent from its Remotes (CRAN-archived, hence the cran/ mirror);
+          # spinR IS declared upstream, as `gitlab::jbferet/spinR` since
+          # 2026-08-17 — and the prefix is not cosmetic. Listed here without
+          # it, pak sees two sources for one package and refuses the whole
+          # graph: « gitlab::jbferet/spinR: Conflicts with jbferet/spinR »,
+          # which broke every job on 2026-08-24. Keep the two in step.
           extra-packages: |
             any::rcmdcheck
             any::remotes
             github::cran/dissUtils
-            jbferet/spinR
+            gitlab::jbferet/spinR
           needs: check
 
       - name: Check package
@@ -247,7 +249,7 @@ jobs:
             any::remotes
             any::devtools
             github::cran/dissUtils
-            jbferet/spinR
+            gitlab::jbferet/spinR
           needs: check
 
       # Vrais tests via devtools::test() (load_all, comme en local où la suite
@@ -344,7 +346,7 @@ jobs:
             any::covr
             any::remotes
             github::cran/dissUtils
-            jbferet/spinR
+            gitlab::jbferet/spinR
           needs: coverage
 
       - name: Compute coverage
