@@ -107,14 +107,16 @@ jobs:
           # rsconnect : requis par pkgdown::package_tutorials() pour découvrir
           # les tutoriels learnr de inst/tutorials/ (sinon « The package
           # rsconnect is required to find published tutorials »).
-          # dissUtils/spinR : Imports de biodivMapR absents de ses Remotes
+          # dissUtils/spinR : Imports de biodivMapR. Le prefixe gitlab:: de
+          # spinR doit suivre celui que biodivMapR declare, sinon pak
+          # refuse le graphe entier (incident du 2026-08-24).
           # (cf. r.yml), déclarés ici au root scope pour pak.
           extra-packages: |
             any::pkgdown
             any::rsconnect
             local::.
             github::cran/dissUtils
-            jbferet/spinR
+            gitlab::jbferet/spinR
           needs: website
 
       - name: Rebuild Rfast from source (oneTBB ABI mismatch)
