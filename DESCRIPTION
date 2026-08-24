@@ -111,7 +111,6 @@ Remotes:
     gitlab::jbferet/bigRaster,
     github::cran/dissUtils,
     gitlab::jbferet/spinR,
-    jbferet/preprocS2,
     jbferet/prosail,
     jbferet/biodivMapR,
     ilyamaclean/microclimf,
