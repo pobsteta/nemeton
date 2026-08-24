@@ -4038,7 +4038,7 @@ species → diversité) :
 Portés par la primitive exportée
 [`compute_spectral_diversity()`](https://pobsteta.github.io/nemeton/reference/compute_spectral_diversity.md)
 (wrapper
-[`biodivMapR::biodivMapR_full()`](https://rdrr.io/pkg/biodivMapR/man/biodivMapR_full.html),
+[`biodivMapR::biodivMapR_full()`](https://rdrr.io/pkg/biodivMapR/man/deprecated.html),
 agrégation par UGF via `exactextractr`). Fonctions
 [`indicateur_b4_div_spectrale()`](https://pobsteta.github.io/nemeton/reference/indicateur_b4_div_spectrale.md)
 /
