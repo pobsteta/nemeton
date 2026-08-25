@@ -878,6 +878,68 @@ pas comme un attribut de commodité.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-25* (**v0.186.0**) : **« 0 » et « pas de donnée »
+cessent de se confondre**. Brief entrant
+`briefs/vers-nemeton/2026-08-25-indicateurs-zero-ou-na.md`, règle
+demandée : si un calcul est fait → `0` ; s’il n’y a pas de calcul →
+`NA`.
+
+**L’enjeu se chiffre.**
+[`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)
+moyenne avec `na.rm = TRUE` : un `0` fabriqué **pèse**, un `NA`
+s’écarte. Mesuré sur une famille à trois indicateurs — B1 absent valait
+**50,0** en score de famille contre **75,0** une fois rendu à `NA`. **25
+points**, un quart de l’échelle, pour une donnée qu’on n’avait pas.
+
+**Deux indicateurs corrigés.** `b1_protection` posait `B1 = 0` partout
+sans aucune aire protégée ; sa branche WFS **fabriquait même un jeu
+vide** faute d’implémentation INPN, que la suite lisait comme une
+requête réussie n’ayant rien trouvé — convertir « je n’ai pas pu
+demander » en « j’ai demandé, il n’y a rien ». `e2_evitement`
+initialisait ses vecteurs à zéro, si bien qu’une UGF au stock inconnu
+ressortait à « 0 tCO2eq évité ».
+
+**La moitié du travail est de préserver le zéro légitime** : une couche
+d’aires protégées **vide fournie par l’appelant** rend toujours `0` (on
+a regardé), un `E1` nul rend toujours `E2 = 0` (rien à brûler). Trois
+tests verrouillent ces cas, dont le mélange des deux écritures dans une
+même colonne selon l’unité.
+
+**Le balayage des 43 indicateurs** — chacun appelé sans ses entrées :
+
+|                                       | avant | après  |
+|---------------------------------------|-------|--------|
+| Rendent `NA`                          | 30    | **32** |
+| Erreur explicite (entrée obligatoire) | 11    | 11     |
+| **Rendent `0`**                       | **2** | **0**  |
+
+**Dette découverte et FIGÉE, non corrigée** : sept indicateurs ne
+rendent pas `0` sans entrée mais une **valeur fabriquée** —
+`rep(50, nrow(units))` pour A2, `rep(1000)` / `rep(500)` de distances «
+default like tuto 04 » pour N1. Même faute, plus discrète : un 50
+ressemble à une mesure moyenne crédible quand une colonne de zéros finit
+par se remarquer. La corriger toucherait la valeur de sept indicateurs
+sur des projets existants — **arbitrage, pas correctif**, non rendu à ce
+jour. Un test fige la liste : un huitième la ferait échouer, un des sept
+corrigé aussi. Elle doit se vider, jamais s’allonger en silence.
+Concernés : `a2_qualite_air`, `b3_connectivite`, `n1_distance`,
+`n2_continuite`, `n3_naturalite`, `r4_abroutissement`, `s3_population`.
+
+**Le brief se trompait sur son propre exemple, et c’est instructif.** Il
+donnait P1 avec 18 UGF à `0` et 4 à `NA` pour « la même situation
+physique ». Vérification sur Couchey : les 4 vides portent **0 à 662
+pixels CHM valides** contre **1 205 315 en médiane** pour les 18 à zéro
+— quatre ordres de grandeur, et deux d’entre elles n’ont aucun pixel
+exploitable. Le partage suit la disponibilité de la donnée, exactement
+comme l’amendement spec 005 (v0.109.0) le prévoit. La « hauteur moyenne
+0,0 m » qui fondait le constat est un artefact de mesure : moyenner une
+couche quasi vide donne 0 et ressemble à une donnée. **Le brief avait
+raison sur la règle et tort sur le cas qui l’illustrait** — la règle
+valait quand même d’être balayée, et elle a rapporté deux vrais défauts
+plus une dette de sept.
+
+------------------------------------------------------------------------
+
 **Journal** — *2026-08-25* (**v0.185.0**) : **un houppier de bord n’est
 plus coupé par la limite d’UGF**. Demande de Pascal en exportant le lot
 Marculus de Couchey : sélectionner les houppiers qui **intersectent**

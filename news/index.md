@@ -1,5 +1,85 @@
 # Changelog
 
+## nemeton 0.186.0 (2026-08-25)
+
+#### Changed — « 0 » et « pas de donnée » cessent de se confondre (B1, E2)
+
+Implémente `briefs/vers-nemeton/2026-08-25-indicateurs-zero-ou-na.md`.
+La règle demandée : **si un calcul est fait, l’indicateur rend `0` ;
+s’il n’y a pas de calcul, il rend `NA`.**
+
+Ce n’est pas une question d’écriture.
+[`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)
+moyenne avec `na.rm = TRUE` : un `0` fabriqué **pèse** sur le score de
+famille, un `NA` honnête s’en écarte. Mesuré sur une famille à trois
+indicateurs, un B1 absent valait **50,0** en score de famille contre
+**75,0** une fois rendu à `NA` — **25 points**, soit un quart de
+l’échelle, pour une donnée qu’on n’avait pas.
+
+**`indicateur_b1_protection`** posait `B1 = 0` partout sans aucune aire
+protégée en entrée. Deux chemins le faisaient, dont un plus insidieux :
+la branche `source = "wfs"`, faute d’implémentation INPN, **fabriquait
+un jeu de données vide** que la suite lisait comme une requête réussie
+n’ayant rien trouvé. Convertir « je n’ai pas pu demander » en « j’ai
+demandé, il n’y a rien » est précisément ce que la règle interdit. Les
+deux rendent désormais `NA`.
+
+**`indicateur_e2_evitement`** initialisait ses trois vecteurs à zéro :
+une UGF dont le stock bois-énergie était inconnu ressortait à « 0 tCO2eq
+évité ». Le calcul est maintenant suivi par unité, et les colonnes de
+détail (`E2_energy`, `E2_material`) suivent le total — un appelant qui
+ne lit que l’une d’elles ne s’y verra pas annoncer « 0 évité » là où
+rien n’a été évalué.
+
+**Le zéro légitime est préservé, et c’est la moitié du travail** : une
+couche d’aires protégées **vide fournie par l’appelant** rend toujours
+`0` (on a regardé, rien ne protège cette unité) ; un `E1` valant `0`
+rend toujours `E2 = 0` (rien à brûler, rien d’évité). Trois tests
+verrouillent ces cas, y compris le mélange des deux écritures dans une
+même colonne selon l’unité.
+
+#### Vérification — le balayage des 43 indicateurs
+
+Chaque indicateur exporté, appelé **sans ses données d’entrée** :
+
+|                             | avant | après  |
+|-----------------------------|-------|--------|
+| Rendent `NA`                | 30    | **32** |
+| Lèvent une erreur explicite | 11    | 11     |
+| **Rendent `0`**             | **2** | **0**  |
+
+Un test générique interdit désormais qu’un indicateur rende un zéro sans
+entrée.
+
+#### Known — sept indicateurs fabriquent un défaut neutre
+
+Le balayage a mis au jour une dette plus large, **non corrigée ici** :
+sept indicateurs ne rendent pas `0` sans entrée mais une **valeur
+fabriquée** — `units$A2 <- rep(50, nrow(units))` faute de données atmo,
+`dist_routes <- rep(1000, ...)` et `dist_batiments <- rep(500, ...)`
+pour N1 (« default like tuto 04 »). C’est la même faute, en plus
+discrète : un `50` ressemble à une mesure moyenne crédible là où une
+colonne de zéros finit par se remarquer.
+
+La corriger changerait la valeur de sept indicateurs sur des projets
+existants — c’est un arbitrage, pas un correctif, et il n’est pas rendu.
+Un test **fige la liste** (`test-zero-ou-na.R`) : un huitième indicateur
+qui s’y ajouterait le ferait échouer, et un des sept qui serait corrigé
+aussi. La liste doit se vider, jamais s’allonger en silence.
+
+Concernés : `a2_qualite_air`, `b3_connectivite`, `n1_distance`,
+`n2_continuite`, `n3_naturalite`, `r4_abroutissement`, `s3_population`.
+
+#### Note — P1 appliquait déjà la règle
+
+Le brief donnait `p1_volume` en exemple, sur 18 UGF à `0` et 4 à `NA`
+pour « la même situation physique ». Vérifié sur Couchey : les 4 vides
+portent **0 à 662 pixels CHM valides**, contre **1 205 315 en médiane**
+pour les 18 à zéro — quatre ordres de grandeur. Deux d’entre elles n’ont
+aucun pixel exploitable. Le partage suit donc la disponibilité de la
+donnée, comme l’amendement spec 005 (v0.109.0) le prévoit explicitement.
+Aucun changement.
+
 ## nemeton 0.185.0 (2026-08-25)
 
 #### Changed — un houppier de bord n’est plus coupé par la limite d’UGF

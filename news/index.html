@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.185.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.186.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,45 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.186.0" id="nemeton-01860-2026-08-25">nemeton 0.186.0 (2026-08-25)<a class="anchor" aria-label="anchor" href="#nemeton-01860-2026-08-25"></a></h2>
+<div class="section level4">
+<h4 id="changed----et--pas-de-donnée--cessent-de-se-confondre-b1-e2-0-186-0">Changed — « 0 » et « pas de donnée » cessent de se confondre (B1, E2)<a class="anchor" aria-label="anchor" href="#changed----et--pas-de-donn%C3%A9e--cessent-de-se-confondre-b1-e2-0-186-0"></a></h4>
+<p>Implémente <code>briefs/vers-nemeton/2026-08-25-indicateurs-zero-ou-na.md</code>. La règle demandée : <strong>si un calcul est fait, l’indicateur rend <code>0</code> ; s’il n’y a pas de calcul, il rend <code>NA</code>.</strong></p>
+<p>Ce n’est pas une question d’écriture. <code><a href="../reference/create_family_index.html">create_family_index()</a></code> moyenne avec <code>na.rm = TRUE</code> : un <code>0</code> fabriqué <strong>pèse</strong> sur le score de famille, un <code>NA</code> honnête s’en écarte. Mesuré sur une famille à trois indicateurs, un B1 absent valait <strong>50,0</strong> en score de famille contre <strong>75,0</strong> une fois rendu à <code>NA</code> — <strong>25 points</strong>, soit un quart de l’échelle, pour une donnée qu’on n’avait pas.</p>
+<p><strong><code>indicateur_b1_protection</code></strong> posait <code>B1 = 0</code> partout sans aucune aire protégée en entrée. Deux chemins le faisaient, dont un plus insidieux : la branche <code>source = "wfs"</code>, faute d’implémentation INPN, <strong>fabriquait un jeu de données vide</strong> que la suite lisait comme une requête réussie n’ayant rien trouvé. Convertir « je n’ai pas pu demander » en « j’ai demandé, il n’y a rien » est précisément ce que la règle interdit. Les deux rendent désormais <code>NA</code>.</p>
+<p><strong><code>indicateur_e2_evitement</code></strong> initialisait ses trois vecteurs à zéro : une UGF dont le stock bois-énergie était inconnu ressortait à « 0 tCO2eq évité ». Le calcul est maintenant suivi par unité, et les colonnes de détail (<code>E2_energy</code>, <code>E2_material</code>) suivent le total — un appelant qui ne lit que l’une d’elles ne s’y verra pas annoncer « 0 évité » là où rien n’a été évalué.</p>
+<p><strong>Le zéro légitime est préservé, et c’est la moitié du travail</strong> : une couche d’aires protégées <strong>vide fournie par l’appelant</strong> rend toujours <code>0</code> (on a regardé, rien ne protège cette unité) ; un <code>E1</code> valant <code>0</code> rend toujours <code>E2 = 0</code> (rien à brûler, rien d’évité). Trois tests verrouillent ces cas, y compris le mélange des deux écritures dans une même colonne selon l’unité.</p>
+</div>
+<div class="section level4">
+<h4 id="vérification--le-balayage-des-indicateurs-0-186-0">Vérification — le balayage des 43 indicateurs<a class="anchor" aria-label="anchor" href="#v%C3%A9rification--le-balayage-des-indicateurs-0-186-0"></a></h4>
+<p>Chaque indicateur exporté, appelé <strong>sans ses données d’entrée</strong> :</p>
+<table class="table"><thead><tr><th></th>
+<th>avant</th>
+<th>après</th>
+</tr></thead><tbody><tr><td>Rendent <code>NA</code>
+</td>
+<td>30</td>
+<td><strong>32</strong></td>
+</tr><tr><td>Lèvent une erreur explicite</td>
+<td>11</td>
+<td>11</td>
+</tr><tr><td><strong>Rendent <code>0</code></strong></td>
+<td><strong>2</strong></td>
+<td><strong>0</strong></td>
+</tr></tbody></table><p>Un test générique interdit désormais qu’un indicateur rende un zéro sans entrée.</p>
+</div>
+<div class="section level4">
+<h4 id="known--sept-indicateurs-fabriquent-un-défaut-neutre-0-186-0">Known — sept indicateurs fabriquent un défaut neutre<a class="anchor" aria-label="anchor" href="#known--sept-indicateurs-fabriquent-un-d%C3%A9faut-neutre-0-186-0"></a></h4>
+<p>Le balayage a mis au jour une dette plus large, <strong>non corrigée ici</strong> : sept indicateurs ne rendent pas <code>0</code> sans entrée mais une <strong>valeur fabriquée</strong> — <code>units$A2 &lt;- rep(50, nrow(units))</code> faute de données atmo, <code>dist_routes &lt;- rep(1000, ...)</code> et <code>dist_batiments &lt;- rep(500, ...)</code> pour N1 (« default like tuto 04 »). C’est la même faute, en plus discrète : un <code>50</code> ressemble à une mesure moyenne crédible là où une colonne de zéros finit par se remarquer.</p>
+<p>La corriger changerait la valeur de sept indicateurs sur des projets existants — c’est un arbitrage, pas un correctif, et il n’est pas rendu. Un test <strong>fige la liste</strong> (<code>test-zero-ou-na.R</code>) : un huitième indicateur qui s’y ajouterait le ferait échouer, et un des sept qui serait corrigé aussi. La liste doit se vider, jamais s’allonger en silence.</p>
+<p>Concernés : <code>a2_qualite_air</code>, <code>b3_connectivite</code>, <code>n1_distance</code>, <code>n2_continuite</code>, <code>n3_naturalite</code>, <code>r4_abroutissement</code>, <code>s3_population</code>.</p>
+</div>
+<div class="section level4">
+<h4 id="note--p1-appliquait-déjà-la-règle-0-186-0">Note — P1 appliquait déjà la règle<a class="anchor" aria-label="anchor" href="#note--p1-appliquait-d%C3%A9j%C3%A0-la-r%C3%A8gle-0-186-0"></a></h4>
+<p>Le brief donnait <code>p1_volume</code> en exemple, sur 18 UGF à <code>0</code> et 4 à <code>NA</code> pour « la même situation physique ». Vérifié sur Couchey : les 4 vides portent <strong>0 à 662 pixels CHM valides</strong>, contre <strong>1 205 315 en médiane</strong> pour les 18 à zéro — quatre ordres de grandeur. Deux d’entre elles n’ont aucun pixel exploitable. Le partage suit donc la disponibilité de la donnée, comme l’amendement spec 005 (v0.109.0) le prévoit explicitement. Aucun changement.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.185.0" id="nemeton-01850-2026-08-25">nemeton 0.185.0 (2026-08-25)<a class="anchor" aria-label="anchor" href="#nemeton-01850-2026-08-25"></a></h2>
 <div class="section level4">

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.185.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.186.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -456,7 +456,27 @@
 </div>
 <div class="section level1">
 <h1 id="correctifs-de-production-hors-chantier">Correctifs de production (hors chantier)<a class="anchor" aria-label="anchor" href="#correctifs-de-production-hors-chantier"></a></h1>
-<p><strong>Journal</strong> — <em>2026-08-25</em> (<strong>v0.185.0</strong>) : <strong>un houppier de bord n’est plus coupé par la limite d’UGF</strong>. Demande de Pascal en exportant le lot Marculus de Couchey : sélectionner les houppiers qui <strong>intersectent</strong> les UGF et garder entiers ceux qui débordent. L’<code>aoi</code> de <code><a href="reference/segment_houppiers.html">segment_houppiers()</a></code> faisait l’inverse — elle découpait le MNH (<code>crop(mask = TRUE)</code>), donc l’arbre à cheval sortait rogné.</p>
+<p><strong>Journal</strong> — <em>2026-08-25</em> (<strong>v0.186.0</strong>) : <strong>« 0 » et « pas de donnée » cessent de se confondre</strong>. Brief entrant <code>briefs/vers-nemeton/2026-08-25-indicateurs-zero-ou-na.md</code>, règle demandée : si un calcul est fait → <code>0</code> ; s’il n’y a pas de calcul → <code>NA</code>.</p>
+<p><strong>L’enjeu se chiffre.</strong> <code><a href="reference/create_family_index.html">create_family_index()</a></code> moyenne avec <code>na.rm = TRUE</code> : un <code>0</code> fabriqué <strong>pèse</strong>, un <code>NA</code> s’écarte. Mesuré sur une famille à trois indicateurs — B1 absent valait <strong>50,0</strong> en score de famille contre <strong>75,0</strong> une fois rendu à <code>NA</code>. <strong>25 points</strong>, un quart de l’échelle, pour une donnée qu’on n’avait pas.</p>
+<p><strong>Deux indicateurs corrigés.</strong> <code>b1_protection</code> posait <code>B1 = 0</code> partout sans aucune aire protégée ; sa branche WFS <strong>fabriquait même un jeu vide</strong> faute d’implémentation INPN, que la suite lisait comme une requête réussie n’ayant rien trouvé — convertir « je n’ai pas pu demander » en « j’ai demandé, il n’y a rien ». <code>e2_evitement</code> initialisait ses vecteurs à zéro, si bien qu’une UGF au stock inconnu ressortait à « 0 tCO2eq évité ».</p>
+<p><strong>La moitié du travail est de préserver le zéro légitime</strong> : une couche d’aires protégées <strong>vide fournie par l’appelant</strong> rend toujours <code>0</code> (on a regardé), un <code>E1</code> nul rend toujours <code>E2 = 0</code> (rien à brûler). Trois tests verrouillent ces cas, dont le mélange des deux écritures dans une même colonne selon l’unité.</p>
+<p><strong>Le balayage des 43 indicateurs</strong> — chacun appelé sans ses entrées :</p>
+<table class="table"><thead><tr><th></th>
+<th>avant</th>
+<th>après</th>
+</tr></thead><tbody><tr><td>Rendent <code>NA</code>
+</td>
+<td>30</td>
+<td><strong>32</strong></td>
+</tr><tr><td>Erreur explicite (entrée obligatoire)</td>
+<td>11</td>
+<td>11</td>
+</tr><tr><td><strong>Rendent <code>0</code></strong></td>
+<td><strong>2</strong></td>
+<td><strong>0</strong></td>
+</tr></tbody></table><p><strong>Dette découverte et FIGÉE, non corrigée</strong> : sept indicateurs ne rendent pas <code>0</code> sans entrée mais une <strong>valeur fabriquée</strong> — <code>rep(50, nrow(units))</code> pour A2, <code>rep(1000)</code> / <code>rep(500)</code> de distances « default like tuto 04 » pour N1. Même faute, plus discrète : un 50 ressemble à une mesure moyenne crédible quand une colonne de zéros finit par se remarquer. La corriger toucherait la valeur de sept indicateurs sur des projets existants — <strong>arbitrage, pas correctif</strong>, non rendu à ce jour. Un test fige la liste : un huitième la ferait échouer, un des sept corrigé aussi. Elle doit se vider, jamais s’allonger en silence. Concernés : <code>a2_qualite_air</code>, <code>b3_connectivite</code>, <code>n1_distance</code>, <code>n2_continuite</code>, <code>n3_naturalite</code>, <code>r4_abroutissement</code>, <code>s3_population</code>.</p>
+<p><strong>Le brief se trompait sur son propre exemple, et c’est instructif.</strong> Il donnait P1 avec 18 UGF à <code>0</code> et 4 à <code>NA</code> pour « la même situation physique ». Vérification sur Couchey : les 4 vides portent <strong>0 à 662 pixels CHM valides</strong> contre <strong>1 205 315 en médiane</strong> pour les 18 à zéro — quatre ordres de grandeur, et deux d’entre elles n’ont aucun pixel exploitable. Le partage suit la disponibilité de la donnée, exactement comme l’amendement spec 005 (v0.109.0) le prévoit. La « hauteur moyenne 0,0 m » qui fondait le constat est un artefact de mesure : moyenner une couche quasi vide donne 0 et ressemble à une donnée. <strong>Le brief avait raison sur la règle et tort sur le cas qui l’illustrait</strong> — la règle valait quand même d’être balayée, et elle a rapporté deux vrais défauts plus une dette de sept.</p>
+<hr><p><strong>Journal</strong> — <em>2026-08-25</em> (<strong>v0.185.0</strong>) : <strong>un houppier de bord n’est plus coupé par la limite d’UGF</strong>. Demande de Pascal en exportant le lot Marculus de Couchey : sélectionner les houppiers qui <strong>intersectent</strong> les UGF et garder entiers ceux qui débordent. L’<code>aoi</code> de <code><a href="reference/segment_houppiers.html">segment_houppiers()</a></code> faisait l’inverse — elle découpait le MNH (<code>crop(mask = TRUE)</code>), donc l’arbre à cheval sortait rogné.</p>
 <p><strong>La demande n’était pas cosmétique, et la mesure le montre</strong> (Couchey, 559,7 ha, 23 parcelles, 75 UGF) :</p>
 <table class="table"><thead><tr><th></th>
 <th>
