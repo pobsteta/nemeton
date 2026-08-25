@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.184.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.185.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -456,7 +456,32 @@
 </div>
 <div class="section level1">
 <h1 id="correctifs-de-production-hors-chantier">Correctifs de production (hors chantier)<a class="anchor" aria-label="anchor" href="#correctifs-de-production-hors-chantier"></a></h1>
-<p><strong>Journal</strong> — <em>2026-08-23</em> (<strong>v0.184.0</strong>) : <strong><code><a href="reference/segment_houppiers.html">segment_houppiers()</a></code> — la couche que l’app ne pouvait pas produire</strong>. §2 du rattrapage <code>nemetonshiny/specs/BRIEF-coeur-rattrapage-2026-08-23.md</code>, référence <code>BRIEF-nemeton-houppiers-mnh.md</code>. L’app écrit déjà <code>parcelle</code> et <code>desserte</code> du GeoPackage Marculus ; il manquait <code>houppier</code>, qui pré-remplit la hauteur d’une tige au martelage par un point-dans-polygone sur la position GNSS. Segmenter des couronnes est un calcul forestier : règle 1, ça vit ici.</p>
+<p><strong>Journal</strong> — <em>2026-08-25</em> (<strong>v0.185.0</strong>) : <strong>un houppier de bord n’est plus coupé par la limite d’UGF</strong>. Demande de Pascal en exportant le lot Marculus de Couchey : sélectionner les houppiers qui <strong>intersectent</strong> les UGF et garder entiers ceux qui débordent. L’<code>aoi</code> de <code><a href="reference/segment_houppiers.html">segment_houppiers()</a></code> faisait l’inverse — elle découpait le MNH (<code>crop(mask = TRUE)</code>), donc l’arbre à cheval sortait rogné.</p>
+<p><strong>La demande n’était pas cosmétique, et la mesure le montre</strong> (Couchey, 559,7 ha, 23 parcelles, 75 UGF) :</p>
+<table class="table"><thead><tr><th></th>
+<th>
+<code>decoupe</code> (ancien)</th>
+<th>
+<code>intersecte</code> (nouveau défaut)</th>
+</tr></thead><tbody><tr><td>Houppiers</td>
+<td>22 435</td>
+<td>22 623</td>
+</tr><tr><td>Touchant le bord</td>
+<td>1 047 (4,7 %)</td>
+<td>1 229 (5,4 %)</td>
+</tr><tr><td>Surface médiane au bord</td>
+<td>75 m²</td>
+<td><strong>111 m²</strong></td>
+</tr><tr><td>
+<code>h_max</code> médian au bord</td>
+<td>16,1 m</td>
+<td><strong>17,0 m</strong></td>
+</tr></tbody></table><p><strong>Un houppier coupé est plus petit ET plus bas</strong> : son apex se trouve souvent de l’autre côté de la limite, si bien que la tige martelée sous cet arbre recevait une hauteur pré-remplie <strong>1,6 m trop courte</strong> à la médiane. C’est le genre de défaut qui ne se voit pas sur une carte — la couche paraissait correcte — et qui se paye au terrain, sur la seule valeur que la couche existe pour porter.</p>
+<p><strong>Contrôle qui vaut confirmation</strong> : après correction, la surface médiane des houppiers de bord repasse <strong>au-dessus</strong> de celle de l’intérieur (111 contre 106 m²). C’est le comportement attendu d’un arbre de lisière, mieux éclairé — une valeur en dessous aurait signalé que la troncature subsistait.</p>
+<p><strong>Deux arguments, un choix d’implémentation qui compte</strong> : <code>emprise</code> et <code>marge_m</code> (défaut <code>3 * ws</code>). La sélection passe par <code><a href="https://r-spatial.github.io/sf/reference/st_join.html" class="external-link">sf::st_filter()</a></code>, <strong>jamais</strong> par <code>st_intersection()</code> — filtrer rend la géométrie intacte, intersecter la couperait, c’est-à-dire referait le défaut sous un autre nom. Un test vérifie aussi que la marge <strong>complète</strong> les houppiers du bord sans en <strong>ramener</strong> d’autres : un arbre au-delà de la marge n’entre pas dans la sélection.</p>
+<p><strong>Contexte de la découverte</strong> : les deux couches <code>desserte</code> et <code>houppier</code> sortaient vides du lot Marculus. Diagnostic (2026-08-25) — la desserte n’avait jamais été calculée sur ce projet (aucun <code>cache/desserte/*.gpkg</code>, alors que deux projets plus anciens en ont quatre chacun) ; les houppiers, eux, sont produits par <code>precompute_houppiers()</code> <strong>pendant</strong> le calcul des indicateurs, et ce cache n’existait pour aucun projet. Le calcul relancé le 2026-08-25 à 07:35 est allé au bout des indicateurs <strong>sans</strong> écrire les houppiers, alors que la même fonction appelée directement en produit 22 435 sans erreur. <strong>L’échec est avalé par un <code>tryCatch</code> best-effort côté app et ne laisse aucune trace sur disque</strong> — cause non établie, à instruire côté <code>nemetonshiny</code> (brief émis). Rien à corriger dans le cœur de ce côté-là : <code><a href="reference/segment_houppiers.html">segment_houppiers()</a></code> fait son travail dès qu’on l’appelle.</p>
+<p><code>test-houppiers.R</code> : 54 assertions (11 nouvelles). <strong>Les caches produits avant cette version portent des houppiers rognés</strong> et sont à régénérer.</p>
+<hr><p><strong>Journal</strong> — <em>2026-08-23</em> (<strong>v0.184.0</strong>) : <strong><code><a href="reference/segment_houppiers.html">segment_houppiers()</a></code> — la couche que l’app ne pouvait pas produire</strong>. §2 du rattrapage <code>nemetonshiny/specs/BRIEF-coeur-rattrapage-2026-08-23.md</code>, référence <code>BRIEF-nemeton-houppiers-mnh.md</code>. L’app écrit déjà <code>parcelle</code> et <code>desserte</code> du GeoPackage Marculus ; il manquait <code>houppier</code>, qui pré-remplit la hauteur d’une tige au martelage par un point-dans-polygone sur la position GNSS. Segmenter des couronnes est un calcul forestier : règle 1, ça vit ici.</p>
 <p><strong>La décision technique qui porte la fonction : agréger par le <code>max</code>.</strong> Le MNH est ramené à 0,5 m avant segmentation (un houppier fait 3 à 10 m de diamètre ; 0,20 m n’apporte rien de sylvicole et ne tient pas en mémoire), et cette agrégation prend le <strong>maximum</strong>, pas la moyenne — les apex sont exactement ce que la détection cherche, une statistique lissante les effacerait. Prix assumé : un léger biais vers le haut sur <code>h_max</code>. Un test compare les deux agrégations sur un apex isolé, pour que l’arbitrage ne puisse pas être inversé par mégarde.</p>
 <p><strong>Validé sur le vrai MNH de Couchey</strong>, pas seulement sur une fixture :</p>
 <table class="table"><thead><tr><th>Emprise</th>

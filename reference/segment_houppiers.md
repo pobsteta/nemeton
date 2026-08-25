@@ -14,6 +14,8 @@ segment_houppiers(
   ws = 5,
   hmin = 5,
   algorithme = c("dalponte", "silva", "watershed"),
+  emprise = c("intersecte", "decoupe"),
+  marge_m = NULL,
   resolution = 0.5,
   max_cells = 2e+07,
   h_range = c(1, 70)
@@ -49,6 +51,22 @@ segment_houppiers(
   `"dalponte"` (default), `"silva"` or `"watershed"`. The first two grow
   regions from located apexes; `"watershed"` ignores them and floods the
   inverted surface.
+
+- emprise:
+
+  How `aoi` is honoured. `"intersecte"` (default) segments on the AOI
+  grown by `marge_m`, then keeps **whole** every crown that meets the
+  AOI: a tree on the boundary is a tree, not a fraction of one.
+  `"decoupe"` lets the AOI cut the raster, so boundary crowns are
+  truncated — measured on Couchey, 4.7% of them, losing 29% of their
+  area and 1.6 m of height. Use it only when a strict geometric clip is
+  what you want.
+
+- marge_m:
+
+  Metres by which the AOI is grown before segmentation, so a crown
+  standing on the boundary is complete. `NULL` (default) means `3 * ws`.
+  Ignored when `emprise = "decoupe"`.
 
 - resolution:
 

@@ -1,5 +1,63 @@
 # Changelog
 
+## nemeton 0.185.0 (2026-08-25)
+
+#### Changed — un houppier de bord n’est plus coupé par la limite d’UGF
+
+Demande de Pascal, sur le lot Marculus de Couchey : les houppiers
+doivent être **sélectionnés** par intersection avec les UGF, et ceux qui
+débordent **conservés entiers**. L’`aoi` de
+[`segment_houppiers()`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md)
+faisait l’inverse — elle découpait le MNH (`crop(mask = TRUE)`), donc un
+arbre à cheval sur la limite sortait rogné.
+
+**Ce n’était pas qu’une question de forme.** Mesuré sur Couchey (559,7
+ha, 23 parcelles, 75 UGF) :
+
+|                         | `decoupe` (ancien) | `intersecte` (nouveau défaut) |
+|-------------------------|--------------------|-------------------------------|
+| Houppiers               | 22 435             | 22 623                        |
+| Touchant le bord        | 1 047 (4,7 %)      | 1 229 (5,4 %)                 |
+| Surface médiane au bord | 75 m²              | **111 m²**                    |
+| `h_max` médian au bord  | 16,1 m             | **17,0 m**                    |
+
+Un houppier coupé est un houppier **plus petit** *et* **plus bas** : son
+apex se trouve souvent de l’autre côté de la limite. La tige martelée
+sous cet arbre recevait donc une hauteur pré-remplie fausse, de 1,6 m
+trop courte à la médiane. Après correction, la surface médiane des
+houppiers de bord repasse **au-dessus** de celle de l’intérieur (111
+contre 106 m²) — ce qui est le comportement attendu d’un arbre de
+lisière, mieux éclairé.
+
+**Deux arguments nouveaux**, rétrocompatibles en lecture mais changeant
+le défaut :
+
+- `emprise = c("intersecte", "decoupe")` — `"intersecte"` segmente sur
+  l’AOI **élargie**, puis retient entier tout houppier qui la rencontre.
+  La sélection passe par
+  [`sf::st_filter()`](https://r-spatial.github.io/sf/reference/st_join.html),
+  jamais par
+  [`st_intersection()`](https://r-spatial.github.io/sf/reference/geos_binary_ops.html)
+  : filtrer rend la géométrie intacte, intersecter la couperait — c’est
+  précisément ce qu’on évite. `"decoupe"` restaure l’ancien comportement
+  pour qui veut un découpage géométrique strict.
+- `marge_m` — largeur d’élargissement, `3 * ws` par défaut (15 m aux
+  réglages usuels), soit un rayon de houppier confortable.
+
+**La marge complète les houppiers du bord, elle n’en ramène pas
+d’autres** : un test vérifie qu’un arbre situé au-delà de la marge
+n’entre pas dans la sélection.
+
+`test-houppiers.R` : 54 assertions (11 nouvelles).
+
+#### Suite côté app
+
+Aucun changement d’appel nécessaire :
+`segment_houppiers(chm, aoi = ...)` prend le nouveau comportement par
+défaut. Les caches `houppiers.gpkg` produits avant cette version portent
+des houppiers rognés — **à régénérer** pour que les hauteurs de bord
+soient justes. Plancher à relever à `nemeton (>= 0.185.0)`.
+
 ## nemeton 0.184.0 (2026-08-23)
 
 #### Added — `segment_houppiers()` : la couche `houppier` de Marculus

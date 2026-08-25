@@ -13,7 +13,7 @@ point-in-polygon on the GNSS position."><meta property="og:image" content="https
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.184.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.185.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,6 +64,8 @@ point-in-polygon on the GNSS position.</p>
 <span>  ws <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  hmin <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  algorithme <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"dalponte"</span>, <span class="st">"silva"</span>, <span class="st">"watershed"</span><span class="op">)</span>,</span>
+<span>  emprise <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"intersecte"</span>, <span class="st">"decoupe"</span><span class="op">)</span>,</span>
+<span>  marge_m <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  resolution <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  max_cells <span class="op">=</span> <span class="fl">2e+07</span>,</span>
 <span>  h_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">70</span><span class="op">)</span></span>
@@ -99,6 +101,21 @@ merges neighbours.</p></dd>
 <dd><p><code>"dalponte"</code> (default), <code>"silva"</code> or <code>"watershed"</code>. The
 first two grow regions from located apexes; <code>"watershed"</code> ignores them and
 floods the inverted surface.</p></dd>
+
+
+<dt id="arg-emprise">emprise<a class="anchor" aria-label="anchor" href="#arg-emprise"></a></dt>
+<dd><p>How <code>aoi</code> is honoured. <code>"intersecte"</code> (default) segments on
+the AOI grown by <code>marge_m</code>, then keeps <strong>whole</strong> every crown that meets the
+AOI: a tree on the boundary is a tree, not a fraction of one. <code>"decoupe"</code>
+lets the AOI cut the raster, so boundary crowns are truncated — measured on
+Couchey, 4.7% of them, losing 29% of their area and 1.6 m of height.
+Use it only when a strict geometric clip is what you want.</p></dd>
+
+
+<dt id="arg-marge-m">marge_m<a class="anchor" aria-label="anchor" href="#arg-marge-m"></a></dt>
+<dd><p>Metres by which the AOI is grown before segmentation, so a
+crown standing on the boundary is complete. <code>NULL</code> (default) means
+<code>3 * ws</code>. Ignored when <code>emprise = "decoupe"</code>.</p></dd>
 
 
 <dt id="arg-resolution">resolution<a class="anchor" aria-label="anchor" href="#arg-resolution"></a></dt>

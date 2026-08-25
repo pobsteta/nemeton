@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.184.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.185.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,44 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.185.0" id="nemeton-01850-2026-08-25">nemeton 0.185.0 (2026-08-25)<a class="anchor" aria-label="anchor" href="#nemeton-01850-2026-08-25"></a></h2>
+<div class="section level4">
+<h4 id="changed--un-houppier-de-bord-nest-plus-coupé-par-la-limite-dugf-0-185-0">Changed — un houppier de bord n’est plus coupé par la limite d’UGF<a class="anchor" aria-label="anchor" href="#changed--un-houppier-de-bord-nest-plus-coup%C3%A9-par-la-limite-dugf-0-185-0"></a></h4>
+<p>Demande de Pascal, sur le lot Marculus de Couchey : les houppiers doivent être <strong>sélectionnés</strong> par intersection avec les UGF, et ceux qui débordent <strong>conservés entiers</strong>. L’<code>aoi</code> de <code><a href="../reference/segment_houppiers.html">segment_houppiers()</a></code> faisait l’inverse — elle découpait le MNH (<code>crop(mask = TRUE)</code>), donc un arbre à cheval sur la limite sortait rogné.</p>
+<p><strong>Ce n’était pas qu’une question de forme.</strong> Mesuré sur Couchey (559,7 ha, 23 parcelles, 75 UGF) :</p>
+<table class="table"><thead><tr><th></th>
+<th>
+<code>decoupe</code> (ancien)</th>
+<th>
+<code>intersecte</code> (nouveau défaut)</th>
+</tr></thead><tbody><tr><td>Houppiers</td>
+<td>22 435</td>
+<td>22 623</td>
+</tr><tr><td>Touchant le bord</td>
+<td>1 047 (4,7 %)</td>
+<td>1 229 (5,4 %)</td>
+</tr><tr><td>Surface médiane au bord</td>
+<td>75 m²</td>
+<td><strong>111 m²</strong></td>
+</tr><tr><td>
+<code>h_max</code> médian au bord</td>
+<td>16,1 m</td>
+<td><strong>17,0 m</strong></td>
+</tr></tbody></table><p>Un houppier coupé est un houppier <strong>plus petit</strong> <em>et</em> <strong>plus bas</strong> : son apex se trouve souvent de l’autre côté de la limite. La tige martelée sous cet arbre recevait donc une hauteur pré-remplie fausse, de 1,6 m trop courte à la médiane. Après correction, la surface médiane des houppiers de bord repasse <strong>au-dessus</strong> de celle de l’intérieur (111 contre 106 m²) — ce qui est le comportement attendu d’un arbre de lisière, mieux éclairé.</p>
+<p><strong>Deux arguments nouveaux</strong>, rétrocompatibles en lecture mais changeant le défaut :</p>
+<ul><li>
+<code>emprise = c("intersecte", "decoupe")</code> — <code>"intersecte"</code> segmente sur l’AOI <strong>élargie</strong>, puis retient entier tout houppier qui la rencontre. La sélection passe par <code><a href="https://r-spatial.github.io/sf/reference/st_join.html" class="external-link">sf::st_filter()</a></code>, jamais par <code><a href="https://r-spatial.github.io/sf/reference/geos_binary_ops.html" class="external-link">st_intersection()</a></code> : filtrer rend la géométrie intacte, intersecter la couperait — c’est précisément ce qu’on évite. <code>"decoupe"</code> restaure l’ancien comportement pour qui veut un découpage géométrique strict.</li>
+<li>
+<code>marge_m</code> — largeur d’élargissement, <code>3 * ws</code> par défaut (15 m aux réglages usuels), soit un rayon de houppier confortable.</li>
+</ul><p><strong>La marge complète les houppiers du bord, elle n’en ramène pas d’autres</strong> : un test vérifie qu’un arbre situé au-delà de la marge n’entre pas dans la sélection.</p>
+<p><code>test-houppiers.R</code> : 54 assertions (11 nouvelles).</p>
+</div>
+<div class="section level4">
+<h4 id="suite-côté-app-0-185-0">Suite côté app<a class="anchor" aria-label="anchor" href="#suite-c%C3%B4t%C3%A9-app-0-185-0"></a></h4>
+<p>Aucun changement d’appel nécessaire : <code>segment_houppiers(chm, aoi = ...)</code> prend le nouveau comportement par défaut. Les caches <code>houppiers.gpkg</code> produits avant cette version portent des houppiers rognés — <strong>à régénérer</strong> pour que les hauteurs de bord soient justes. Plancher à relever à <code>nemeton (&gt;= 0.185.0)</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.184.0" id="nemeton-01840-2026-08-23">nemeton 0.184.0 (2026-08-23)<a class="anchor" aria-label="anchor" href="#nemeton-01840-2026-08-23"></a></h2>
 <div class="section level4">
