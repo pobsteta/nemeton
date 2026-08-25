@@ -74,23 +74,35 @@ indicateur_b1_protection <- function(units,
   validate_sf(units)
   source <- match.arg(source)
 
-  # Handle data source
-  if (source == "wfs") {
-    if (is.null(protected_areas)) {
+  # Absent input is NOT a measurement.
+  #
+  # `0` says "we looked, nothing protects this unit". `NA` says "we could not
+  # look". They do not weigh the same downstream: `create_family_index()`
+  # averages with `na.rm = TRUE`, so a fabricated 0 drags the Biodiversity
+  # score down while an honest NA steps aside.
+  #
+  # Both branches used to fabricate that 0 — the local one openly ("setting
+  # coverage to 0%"), the WFS one by building an EMPTY dataset when the INPN
+  # fetch is unavailable, which then reads exactly like a successful query that
+  # found nothing. Converting "I could not ask" into "I asked and there is
+  # none" is the defect this guard removes.
+  #
+  # A protected_areas WITH ZERO ROWS, supplied by the caller, keeps returning
+  # 0: that one IS a measurement.
+  if (is.null(protected_areas)) {
+    if (source == "wfs") {
       msg_info("biodiversity_wfs_fetching")
-      # WFS fetch from INPN not yet available — use empty dataset
       msg_warn("biodiversity_wfs_failed")
-      protected_areas <- sf::st_sf(
-        zone_id = character(0),
-        geometry = sf::st_sfc(crs = sf::st_crs(units))
+      cli::cli_alert_info(
+        "B1: INPN WFS fetch unavailable, returning NA (no measurement made)."
+      )
+    } else {
+      cli::cli_alert_info(
+        "B1: no protected-areas data provided, returning NA (no measurement made)."
       )
     }
-  } else {
-    if (is.null(protected_areas)) {
-      cli::cli_alert_info("B1: No protected areas data provided, setting coverage to 0%")
-      units$B1 <- rep(0, nrow(units))
-      return(units)
-    }
+    units$B1 <- rep(NA_real_, nrow(units))
+    return(units)
   }
 
   # Preprocess: harmonize CRS
