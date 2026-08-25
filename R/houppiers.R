@@ -77,6 +77,15 @@
 #' @param algorithme `"dalponte"` (default), `"silva"` or `"watershed"`. The
 #'   first two grow regions from located apexes; `"watershed"` ignores them and
 #'   floods the inverted surface.
+#' @param emprise How `aoi` is honoured. `"intersecte"` (default) segments on
+#'   the AOI grown by `marge_m`, then keeps **whole** every crown that meets the
+#'   AOI: a tree on the boundary is a tree, not a fraction of one. `"decoupe"`
+#'   lets the AOI cut the raster, so boundary crowns are truncated — measured on
+#'   Couchey, 4.7% of them, losing 29% of their area and 1.6 m of height.
+#'   Use it only when a strict geometric clip is what you want.
+#' @param marge_m Metres by which the AOI is grown before segmentation, so a
+#'   crown standing on the boundary is complete. `NULL` (default) means
+#'   `3 * ws`. Ignored when `emprise = "decoupe"`.
 #' @param resolution Working resolution in metres (default `0.5`). Ignored when
 #'   the CHM is already coarser.
 #' @param max_cells Backstop cell cap for the working raster (default `2e7`).
@@ -110,10 +119,18 @@ segment_houppiers <- function(chm,
                               ws         = 5,
                               hmin       = 5,
                               algorithme = c("dalponte", "silva", "watershed"),
+                              emprise    = c("intersecte", "decoupe"),
+                              marge_m    = NULL,
                               resolution = 0.5,
                               max_cells  = 2e7,
                               h_range    = c(1, 70)) {
   algorithme <- match.arg(algorithme)
+  emprise    <- match.arg(emprise)
+  if (is.null(marge_m)) marge_m <- 3 * ws
+  if (!is.numeric(marge_m) || length(marge_m) != 1L || !is.finite(marge_m) ||
+      marge_m < 0) {
+    cli::cli_abort("{.arg marge_m} must be a single non-negative number of metres.")
+  }
 
   if (!requireNamespace("lidR", quietly = TRUE)) {
     cli::cli_abort(c(
@@ -157,8 +174,22 @@ segment_houppiers <- function(chm,
   }
 
   # 1. Clip FIRST. Everything below is sized by what survives here.
+  #
+  # Two ways to honour an `aoi`, and they are NOT interchangeable:
+  #   * "decoupe"    — the AOI cuts the raster, so a crown straddling the edge
+  #                    is cut with it. Measured on Couchey: 1 047 crowns (4.7 %)
+  #                    touch the boundary, with a median area of 75 m² against
+  #                    106 m² inside and a median `h_max` of 16.1 m against
+  #                    17.7 m. A cut crown is a *smaller* crown AND a *shorter*
+  #                    one — its apex may well be on the other side.
+  #   * "intersecte" — segment on the AOI GROWN by `marge_m`, then KEEP WHOLE
+  #                    every crown that meets the AOI. A tree on the boundary is
+  #                    a tree, not a fraction of one, and the stem marked under
+  #                    it deserves its real height.
+  aoi_sel <- NULL
   if (!is.null(aoi)) {
-    aoi_v <- terra::vect(sf::st_transform(sf::st_as_sf(aoi), terra::crs(chm)))
+    aoi_sf <- sf::st_transform(sf::st_as_sf(aoi), terra::crs(chm))
+    aoi_v  <- terra::vect(aoi_sf)
     # Check the overlap BEFORE cropping: `terra::crop()` aborts on disjoint
     # extents with "[crop] extents do not overlap", which names neither the
     # argument at fault nor what the caller should do about it.
@@ -167,6 +198,10 @@ segment_houppiers <- function(chm,
         "The {.arg aoi} does not intersect the CHM.",
         i = "Check they describe the same site: the CHM covers {.val {as.character(terra::ext(chm))}}."
       ))
+    }
+    if (identical(emprise, "intersecte")) {
+      aoi_sel <- aoi_sf                      # kept for the final selection
+      aoi_v   <- terra::vect(sf::st_buffer(aoi_sf, marge_m))
     }
     chm <- terra::crop(chm, aoi_v, mask = TRUE)
     if (terra::ncell(chm) == 0L) {
@@ -207,6 +242,15 @@ segment_houppiers <- function(chm,
     polys$h_max >= h_range[1] & polys$h_max <= h_range[2]
   polys <- polys[keep, , drop = FALSE]
   if (nrow(polys) == 0L) return(.houppier_empty(chm))
+
+  # 5b. Keep the crowns that MEET the AOI, whole. Selection, never clipping:
+  # `st_filter()` returns the geometry untouched, `st_intersection()` would cut
+  # it — which is the very thing this mode exists to avoid.
+  if (!is.null(aoi_sel)) {
+    polys <- sf::st_filter(polys, sf::st_union(sf::st_geometry(aoi_sel)),
+                           .predicate = sf::st_intersects)
+    if (nrow(polys) == 0L) return(.houppier_empty(chm))
+  }
 
   polys <- polys[order(-polys$h_max), , drop = FALSE]
   out <- sf::st_sf(

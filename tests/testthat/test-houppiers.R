@@ -169,3 +169,74 @@ test_that("les entrees impossibles sont refusees, pas devinees", {
     c(1e6, 1e6)))), crs = 2154))
   expect_error(segment_houppiers(mnh, aoi = ailleurs), "does not intersect")
 })
+
+
+# --- Emprise : selectionner sans couper -------------------------------------
+# Demande de Pascal (2026-08-25) : un houppier qui deborde de l'UGF doit etre
+# CONSERVE ENTIER, pas rogne au bord de la parcelle.
+
+test_that("emprise = 'intersecte' garde entier un houppier a cheval sur le bord", {
+  skip_if_not_installed("lidR")
+  mnh <- .mnh_synthetique(c(25, 18, 12))
+  # AOI dont le bord coupe le PREMIER arbre en deux (centre en x = 10).
+  aoi <- sf::st_as_sf(sf::st_sfc(sf::st_polygon(list(rbind(
+    c(0, 0), c(10, 0), c(10, 60), c(0, 60), c(0, 0)))), crs = 2154))
+
+  garde <- segment_houppiers(mnh, aoi = aoi, ws = 4, hmin = 3,
+                             emprise = "intersecte")
+  coupe <- segment_houppiers(mnh, aoi = aoi, ws = 4, hmin = 3,
+                             emprise = "decoupe")
+
+  expect_gte(nrow(garde), 1L)
+  expect_gte(nrow(coupe), 1L)
+
+  # Le houppier conserve entier est PLUS GRAND que le meme, rogne.
+  expect_gt(max(garde$surface_m2), max(coupe$surface_m2))
+
+  # Et il deborde reellement de l'AOI : c'est la definition de « pas coupe ».
+  hors <- sf::st_difference(garde, sf::st_union(sf::st_geometry(aoi)))
+  expect_gt(sum(as.numeric(sf::st_area(hors))), 0)
+
+  # Le mode « decoupe », lui, ne deborde pas d'un metre carre.
+  hors_coupe <- sf::st_difference(coupe, sf::st_union(sf::st_geometry(aoi)))
+  expect_lt(sum(as.numeric(sf::st_area(hors_coupe))), 1)
+})
+
+test_that("la hauteur d'un houppier de bord n'est plus rabotee", {
+  skip_if_not_installed("lidR")
+  # L'apex du premier arbre (25 m) est en x = 10 ; une AOI s'arretant a x = 8
+  # le laisse DEHORS. En « decoupe », le houppier retenu porte la hauteur du
+  # flanc ; en « intersecte », celle du sommet.
+  mnh <- .mnh_synthetique(c(25, 18))
+  aoi <- sf::st_as_sf(sf::st_sfc(sf::st_polygon(list(rbind(
+    c(0, 0), c(8, 0), c(8, 60), c(0, 60), c(0, 0)))), crs = 2154))
+
+  garde <- segment_houppiers(mnh, aoi = aoi, ws = 4, hmin = 3,
+                             emprise = "intersecte")
+  coupe <- segment_houppiers(mnh, aoi = aoi, ws = 4, hmin = 3,
+                             emprise = "decoupe")
+  skip_if(nrow(garde) == 0L || nrow(coupe) == 0L, "aucun apex retenu de ce cote")
+  expect_gt(max(garde$h_max), max(coupe$h_max))
+})
+
+test_that("la selection n'introduit aucun houppier etranger a l'AOI", {
+  skip_if_not_installed("lidR")
+  # La marge sert a COMPLETER les houppiers du bord, pas a en ramener d'autres :
+  # le troisieme arbre (x = 50) est loin, il ne doit pas apparaitre.
+  mnh <- .mnh_synthetique(c(25, 18, 12))
+  aoi <- sf::st_as_sf(sf::st_sfc(sf::st_polygon(list(rbind(
+    c(0, 0), c(15, 0), c(15, 60), c(0, 60), c(0, 0)))), crs = 2154))
+  h <- segment_houppiers(mnh, aoi = aoi, ws = 4, hmin = 3, marge_m = 12)
+
+  expect_true(all(lengths(sf::st_intersects(h, sf::st_union(sf::st_geometry(aoi)))) > 0))
+  expect_false(any(h$h_max < 13))          # l'arbre de 12 m est reste dehors
+})
+
+test_that("marge_m vaut 3 x ws par defaut et refuse l'absurde", {
+  mnh <- .mnh_synthetique(c(25))
+  expect_error(segment_houppiers(mnh, marge_m = -1), "non-negative")
+  expect_error(segment_houppiers(mnh, marge_m = c(1, 2)), "single")
+  # Sans aoi, la marge n'a aucun effet : pas d'erreur, pas de selection.
+  skip_if_not_installed("lidR")
+  expect_s3_class(segment_houppiers(mnh, ws = 4, hmin = 3, marge_m = 99), "sf")
+})

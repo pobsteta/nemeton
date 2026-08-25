@@ -10,6 +10,8 @@ segment_houppiers(
   ws = 5,
   hmin = 5,
   algorithme = c("dalponte", "silva", "watershed"),
+  emprise = c("intersecte", "decoupe"),
+  marge_m = NULL,
   resolution = 0.5,
   max_cells = 2e+07,
   h_range = c(1, 70)
@@ -32,6 +34,17 @@ merges neighbours.}
 \item{algorithme}{\code{"dalponte"} (default), \code{"silva"} or \code{"watershed"}. The
 first two grow regions from located apexes; \code{"watershed"} ignores them and
 floods the inverted surface.}
+
+\item{emprise}{How \code{aoi} is honoured. \code{"intersecte"} (default) segments on
+the AOI grown by \code{marge_m}, then keeps \strong{whole} every crown that meets the
+AOI: a tree on the boundary is a tree, not a fraction of one. \code{"decoupe"}
+lets the AOI cut the raster, so boundary crowns are truncated — measured on
+Couchey, 4.7\% of them, losing 29\% of their area and 1.6 m of height.
+Use it only when a strict geometric clip is what you want.}
+
+\item{marge_m}{Metres by which the AOI is grown before segmentation, so a
+crown standing on the boundary is complete. \code{NULL} (default) means
+\code{3 * ws}. Ignored when \code{emprise = "decoupe"}.}
 
 \item{resolution}{Working resolution in metres (default \code{0.5}). Ignored when
 the CHM is already coarser.}

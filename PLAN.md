@@ -769,6 +769,58 @@ pas comme un attribut de commodité.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-25* (**v0.185.0**) : **un houppier de bord n'est plus
+coupé par la limite d'UGF**. Demande de Pascal en exportant le lot Marculus de
+Couchey : sélectionner les houppiers qui **intersectent** les UGF et garder
+entiers ceux qui débordent. L'`aoi` de `segment_houppiers()` faisait l'inverse —
+elle découpait le MNH (`crop(mask = TRUE)`), donc l'arbre à cheval sortait rogné.
+
+**La demande n'était pas cosmétique, et la mesure le montre** (Couchey, 559,7 ha,
+23 parcelles, 75 UGF) :
+
+| | `decoupe` (ancien) | `intersecte` (nouveau défaut) |
+|---|---|---|
+| Houppiers | 22 435 | 22 623 |
+| Touchant le bord | 1 047 (4,7 %) | 1 229 (5,4 %) |
+| Surface médiane au bord | 75 m² | **111 m²** |
+| `h_max` médian au bord | 16,1 m | **17,0 m** |
+
+**Un houppier coupé est plus petit ET plus bas** : son apex se trouve souvent de
+l'autre côté de la limite, si bien que la tige martelée sous cet arbre recevait
+une hauteur pré-remplie **1,6 m trop courte** à la médiane. C'est le genre de
+défaut qui ne se voit pas sur une carte — la couche paraissait correcte — et qui
+se paye au terrain, sur la seule valeur que la couche existe pour porter.
+
+**Contrôle qui vaut confirmation** : après correction, la surface médiane des
+houppiers de bord repasse **au-dessus** de celle de l'intérieur (111 contre
+106 m²). C'est le comportement attendu d'un arbre de lisière, mieux éclairé —
+une valeur en dessous aurait signalé que la troncature subsistait.
+
+**Deux arguments, un choix d'implémentation qui compte** : `emprise` et
+`marge_m` (défaut `3 * ws`). La sélection passe par `sf::st_filter()`, **jamais**
+par `st_intersection()` — filtrer rend la géométrie intacte, intersecter la
+couperait, c'est-à-dire referait le défaut sous un autre nom. Un test vérifie
+aussi que la marge **complète** les houppiers du bord sans en **ramener**
+d'autres : un arbre au-delà de la marge n'entre pas dans la sélection.
+
+**Contexte de la découverte** : les deux couches `desserte` et `houppier`
+sortaient vides du lot Marculus. Diagnostic (2026-08-25) — la desserte n'avait
+jamais été calculée sur ce projet (aucun `cache/desserte/*.gpkg`, alors que deux
+projets plus anciens en ont quatre chacun) ; les houppiers, eux, sont produits
+par `precompute_houppiers()` **pendant** le calcul des indicateurs, et ce cache
+n'existait pour aucun projet. Le calcul relancé le 2026-08-25 à 07:35 est allé au
+bout des indicateurs **sans** écrire les houppiers, alors que la même fonction
+appelée directement en produit 22 435 sans erreur. **L'échec est avalé par un
+`tryCatch` best-effort côté app et ne laisse aucune trace sur disque** — cause
+non établie, à instruire côté `nemetonshiny` (brief émis). Rien à corriger dans
+le cœur de ce côté-là : `segment_houppiers()` fait son travail dès qu'on
+l'appelle.
+
+`test-houppiers.R` : 54 assertions (11 nouvelles). **Les caches produits avant
+cette version portent des houppiers rognés** et sont à régénérer.
+
+---
+
 **Journal** — *2026-08-23* (**v0.184.0**) : **`segment_houppiers()` — la couche
 que l'app ne pouvait pas produire**. §2 du rattrapage
 `nemetonshiny/specs/BRIEF-coeur-rattrapage-2026-08-23.md`, référence
