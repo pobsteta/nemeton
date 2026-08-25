@@ -140,6 +140,13 @@ indicateur_e2_evitement <- function(units,
   e2_energy <- numeric(nrow(units))
   e2_material <- numeric(nrow(units))
   e2_total <- numeric(nrow(units))
+  # Was any substitution actually COMPUTED for this unit? The three vectors
+  # above start at zero, so a unit whose fuelwood stock is unknown used to be
+  # reported as "0 tCO2eq avoided" — an absent input dressed up as a
+  # measurement, which then weighs on the Energy family score
+  # (`create_family_index()` averages with `na.rm = TRUE`). A unit whose E1 is
+  # a genuine 0 still gets 0: nothing to burn IS nothing avoided.
+  e2_calcule <- logical(nrow(units))
 
   # Lookup ADEME emission factors
   energy_factor <- lookup_ademe_factor("wood_energy", energy_scenario)
@@ -156,6 +163,7 @@ indicateur_e2_evitement <- function(units,
       energy_kwh <- fuelwood_tonnes_dm * 4500
       # Calculate avoided CO2
       e2_energy[i] <- energy_kwh * as.numeric(energy_factor$emission_factor_kgCO2eq_per_unit) / 1000 # Convert to tonnes
+      e2_calcule[i] <- TRUE
     }
 
     # Material substitution (if applicable)
@@ -167,11 +175,26 @@ indicateur_e2_evitement <- function(units,
           # Convert volume to mass (assuming 500 kg/m³ average)
           wood_mass_kg <- construction_volume * 500
           e2_material[i] <- wood_mass_kg * as.numeric(material_factor$emission_factor_kgCO2eq_per_unit) / 1000
+          e2_calcule[i] <- TRUE
         }
       }
     }
 
     e2_total[i] <- e2_energy[i] + e2_material[i]
+  }
+
+  # Neither component computable -> no measurement, hence NA. The two detail
+  # columns follow the total, so a caller reading `E2_energy` alone is not told
+  # "0 avoided" where nothing was assessed.
+  e2_total[!e2_calcule]    <- NA_real_
+  e2_energy[!e2_calcule]   <- NA_real_
+  e2_material[!e2_calcule] <- NA_real_
+
+  if (!any(e2_calcule)) {
+    cli::cli_alert_info(
+      "{column_name}: no unit carries a usable {.field {fuelwood_field}}, \
+       returning NA (no measurement made)."
+    )
   }
 
   result$E2_energy <- e2_energy

@@ -237,11 +237,14 @@ test_that("indicateur_b1_protection returns 0 when source='local' and no protect
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
-  # No protected areas data -> graceful degradation to 0% coverage
+  # v0.186.0 : « graceful degradation to 0% coverage » etait la formule du
+  # defaut. Une absence de donnee n'est pas une couverture nulle : le 0 pesait
+  # dans la moyenne de la famille Biodiversite (mesure : 25 points d'ecart sur
+  # une famille a trois indicateurs) la ou un NA s'en ecarte.
   result <- indicateur_b1_protection(units, protected_areas = NULL, source = "local")
   expect_s3_class(result, "sf")
   expect_true("B1" %in% names(result))
-  expect_true(all(result$B1 == 0))
+  expect_true(all(is.na(result$B1)))
 })
 
 test_that("indicateur_b1_protection handles WFS source with fallback", {
@@ -257,8 +260,11 @@ test_that("indicateur_b1_protection handles WFS source with fallback", {
 
   expect_s3_class(result, "sf")
   expect_true("B1" %in% names(result))
-  # All should be 0 since WFS failed
-  expect_true(all(result$B1 == 0))
+  # v0.186.0 : « All should be 0 since WFS failed » — c'est precisement ce
+  # qu'il ne faut pas ecrire. Un fetch qui echoue ne mesure pas une couverture
+  # nulle ; la branche fabriquait un jeu vide, que la suite lisait comme une
+  # requete reussie n'ayant rien trouve.
+  expect_true(all(is.na(result$B1)))
 })
 
 test_that("indicateur_b1_protection transforms CRS when needed", {
@@ -776,20 +782,22 @@ test_that("B1 with no type column uses default weight", {
   expect_true(all(result$B1_pct > 0))
 })
 
-test_that("B1 with WFS source and NULL areas returns 0", {
+test_that("B1 with WFS source and NULL areas returns NA", {
+  # Titre ET assertion retournes en v0.186.0. Un fetch WFS indisponible ne
+  # mesure pas une couverture nulle — il ne mesure rien.
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   suppressWarnings({
     result <- nemeton::indicateur_b1_protection(units, source = "wfs")
   })
-  expect_true(all(result$B1 == 0))
+  expect_true(all(is.na(result$B1)))
 })
 
-test_that("B1 with NULL protected_areas in local mode returns 0", {
+test_that("B1 with NULL protected_areas in local mode returns NA", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   result <- nemeton::indicateur_b1_protection(units, protected_areas = NULL, source = "local")
-  expect_true(all(result$B1 == 0))
+  expect_true(all(is.na(result$B1)))
 })
 
 test_that("B1 with CRS mismatch preprocesses correctly", {

@@ -389,10 +389,14 @@ test_that("indicateur_e2_evitement handles missing fuelwood field gracefully", {
 
   result <- indicateur_e2_evitement(test_units, fuelwood_field = "E1")
 
+  # v0.186.0 : ce test attendait 0 pour un champ ABSENT. C'etait le defaut
+  # qu'il gardait — un stock inconnu annonce comme « 0 tCO2eq evite », et ce 0
+  # pesait dans la moyenne de famille quand un NA s'en ecarte. Aucun calcul
+  # n'a eu lieu ici : la reponse est NA.
   expect_true("E2" %in% names(result))
-  expect_equal(result$E2[1], 0)
-  expect_equal(result$E2_energy[1], 0)
-  expect_equal(result$E2_material[1], 0)
+  expect_true(is.na(result$E2[1]))
+  expect_true(is.na(result$E2_energy[1]))
+  expect_true(is.na(result$E2_material[1]))
 })
 
 test_that("indicateur_e2_evitement handles NA fuelwood values", {
@@ -404,7 +408,10 @@ test_that("indicateur_e2_evitement handles NA fuelwood values", {
   result <- indicateur_e2_evitement(test_units, fuelwood_field = "E1")
 
   expect_true(result$E2_energy[1] > 0)
-  expect_equal(result$E2_energy[2], 0)  # NA fuelwood => no energy calculation
+  # Le commentaire d'origine enoncait deja la regle — « no energy calculation »
+  # — et la ligne verifiait 0. Un test qui dit l'intention et valide son
+  # contraire protege le defaut : l'absence de calcul s'ecrit NA.
+  expect_true(is.na(result$E2_energy[2]))
   expect_true(result$E2_energy[3] > 0)
 })
 
