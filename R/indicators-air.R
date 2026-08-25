@@ -251,9 +251,13 @@ indicateur_a2_qualite_air <- function(units,
     } else if (!is.null(roads)) {
       method <- "proxy"
     } else {
-      # No data available at all - return neutral score
-      cli::cli_alert_warning("A2: No ATMO data or roads available, returning neutral score")
-      units$A2 <- rep(50, nrow(units))
+      # Ni donnee ATMO ni routes : aucune mesure n'est possible. Un 50
+      # « neutre » serait pire qu'un zero — il ressemble a un score moyen
+      # credible, la ou une colonne vide se remarque — et il PESE dans la
+      # moyenne de la famille Air (create_family_index moyenne avec
+      # na.rm = TRUE), tirant vers 50 une famille qui n'a rien mesure.
+      cli::cli_alert_warning("A2: no ATMO data and no roads, returning NA (no measurement made)")
+      units$A2 <- rep(NA_real_, nrow(units))
       units$A2_method <- "none"
       return(units)
     }

@@ -89,10 +89,10 @@ test_that("indicateur_n1_distance (N1) returns default scores without roads/buil
 
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
-  # Default distances: routes=1000, batiments=500, urbain=2000
-  # N1 = 0.40*pmin(100,1000/20) + 0.35*pmin(100,500/20) + 0.25*pmin(100,2000/20)
-  # N1 = 0.40*50 + 0.35*25 + 0.25*100 = 20 + 8.75 + 25 = 53.75
-  expect_equal(result$N1[1], 53.75)
+  # v0.187.0 : ce 53,75 etait le produit de distances INVENTEES (1000 m aux
+  # routes, 500 m au bati). Sans couche, la distance n'est pas connue — et un
+  # N1 fabrique pesait dans la moyenne de la famille Naturalite.
+  expect_true(is.na(result$N1[1]))
 })
 
 test_that("indicateur_n1_distance validates input", {
@@ -159,8 +159,9 @@ test_that("indicateur_n1_distance (N1) handles empty roads sf (0 rows)", {
 
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
-  # roads default to 1000m distance, buildings have real distance
-  expect_true(result$N1[1] >= 0 & result$N1[1] <= 100)
+  # 40 % du poids de N1 vient des routes : sans elles, le composite serait une
+  # moyenne entre du mesure (le bati) et de l'invente.
+  expect_true(is.na(result$N1[1]))
 })
 
 test_that("indicateur_n1_distance (N1) handles empty buildings sf (0 rows)", {
@@ -198,8 +199,8 @@ test_that("indicateur_n1_distance (N1) handles empty buildings sf (0 rows)", {
 
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
-  # roads have real distance, buildings default to 500m
-  expect_true(result$N1[1] >= 0 & result$N1[1] <= 100)
+  # Symetrique du cas precedent : 35 % du poids manque.
+  expect_true(is.na(result$N1[1]))
 })
 
 test_that("indicateur_n1_distance (N1) handles non-sf roads/buildings (ignored)", {
@@ -223,8 +224,8 @@ test_that("indicateur_n1_distance (N1) handles non-sf roads/buildings (ignored)"
 
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
-  # Both fall back to defaults: same as no roads/buildings
-  expect_equal(result$N1[1], 53.75)
+  # Les deux couches manquent : aucune mesure.
+  expect_true(is.na(result$N1[1]))
 })
 
 test_that("indicateur_n1_distance (N1) resolves layers via nemeton_layers", {
@@ -321,8 +322,9 @@ test_that("indicateur_n1_distance (N1) with layers but no matching vector names"
     layers = mock_layers
   )
 
-  # resolve_vector_layer returns NULL for "roads" and "buildings" -> defaults used
-  expect_equal(result$N1[1], 53.75)
+  # resolve_vector_layer rend NULL pour « roads » et « buildings » : rien a
+  # mesurer, donc NA — et non les defauts inventes d'avant la v0.187.0.
+  expect_true(is.na(result$N1[1]))
 })
 
 test_that("indicateur_n1_distance (N1) roads/buildings override layers", {
@@ -367,14 +369,19 @@ test_that("indicateur_n1_distance (N1) roads/buildings override layers", {
   )
   class(mock_layers) <- "nemeton_layers"
 
+  # `buildings` fourni depuis la v0.187.0 : sans lui N1 vaut NA (35 % du poids
+  # manquerait) et ce test perdrait son objet, qui est la PRECEDENCE de `roads`
+  # sur `layers` — pas la gestion d'une couche absente.
   result <- indicateur_n1_distance(
     units = test_units,
     roads = direct_roads,
+    buildings = direct_roads,
     layers = mock_layers
   )
 
   # Direct roads are close -> small road distance -> score should be low
   # The layers roads (far away) should NOT be used
+  expect_false(is.na(result$N1[1]))
   expect_true(result$N1[1] < 53.75)
 })
 
@@ -407,13 +414,17 @@ test_that("indicateur_n1_distance (N1) transforms CRS for roads in different CRS
   )
   road_4326 <- sf::st_transform(road_2154, 4326)
 
+  # `buildings` fourni pour la meme raison : l'objet de ce test est la
+  # REPROJECTION d'une couche en 4326, pas l'absence de donnee.
   result <- indicateur_n1_distance(
     units = test_units,
-    roads = road_4326
+    roads = road_4326,
+    buildings = road_4326
   )
 
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
+  expect_false(is.na(result$N1[1]))
   expect_true(result$N1[1] >= 0 & result$N1[1] <= 100)
 })
 
@@ -425,9 +436,10 @@ test_that("indicateur_n1_distance (N1) handles multiple units", {
 
   result <- indicateur_n1_distance(units = test_units)
 
+  # Sans couche, les cinq unites rendent NA — ce que ce test verifie desormais,
+  # tout en gardant son objet : la fonction traite bien un lot de 5.
   expect_equal(nrow(result), 5)
-  expect_true(all(!is.na(result$N1)))
-  expect_true(all(result$N1 >= 0 & result$N1 <= 100))
+  expect_true(all(is.na(result$N1)))
 })
 
 test_that("indicateur_n1_distance (N1) normalization caps at 100", {
@@ -565,7 +577,8 @@ test_that("indicateur_n2_continuite (N2) returns 50 without data", {
 
   result <- indicateur_n2_continuite(units = test_units)
 
-  expect_equal(result$N2[1], 50)
+  # Sans donnee forestiere, la continuite n'est pas mesurable (v0.187.0).
+  expect_true(is.na(result$N2[1]))
 })
 
 test_that("indicateur_n2_continuite validates input", {
@@ -985,14 +998,11 @@ test_that("indicateur_n3_naturalite (N3) combines N1 and N2", {
   expect_true("N3" %in% names(result))
   expect_type(result$N3, "double")
 
-  # N3 = 0.35*N1 + 0.35*N2 + 0.15*50 + 0.15*50 (no L1/B3 -> fallback 50)
-  expected_1 <- 0.35 * 80 + 0.35 * 90 + 0.15 * 50 + 0.15 * 50
-  expected_2 <- 0.35 * 20 + 0.35 * 30 + 0.15 * 50 + 0.15 * 50
-  expect_equal(result$N3[1], expected_1)
-  expect_equal(result$N3[2], expected_2)
-
-  # Higher N1+N2 -> higher N3
-  expect_true(result$N3[1] > result$N3[2])
+  # v0.187.0 : ce test verifiait le REPLI a 50 d'une composante absente.
+  # N3 pese quatre composantes ; en remplacer une par 50 produisait une moyenne
+  # entre du mesure et de l'invente, indiscernable en aval d'un N3 complet.
+  # L1 et B3 manquent : N3 n'est pas calculable.
+  expect_true(all(is.na(result$N3)))
 })
 
 test_that("indicateur_n3_naturalite (N3) uses L1 and B3 when available", {
@@ -1032,8 +1042,10 @@ test_that("indicateur_n3_naturalite (N3) without N1/N2 uses fallback 50", {
 
   result <- indicateur_n3_naturalite(units = test_units)
 
-  # All fallback to 50 -> N3 = 50
-  expect_equal(result$N3[1], 50)
+  # v0.187.0 : ce test verifiait le REPLI a 50 d'une composante absente.
+  # N3 pese quatre composantes ; en remplacer une par 50 produisait une moyenne
+  # entre du mesure et de l'invente, indiscernable en aval d'un N3 complet.
+  expect_true(is.na(result$N3[1]))
 })
 
 test_that("indicateur_n3_naturalite validates input", {
@@ -1079,9 +1091,10 @@ test_that("indicateur_n3_naturalite (N3) with only N1 (no N2)", {
 
   result <- indicateur_n3_naturalite(units = test_units)
 
-  # N1 = 80, N2 fallback 50, L1 fallback -> anti_frag=50, B3 fallback -> connectivite=50
-  expected <- 0.35 * 80 + 0.35 * 50 + 0.15 * 50 + 0.15 * 50
-  expect_equal(result$N3[1], expected)
+  # v0.187.0 : ce test verifiait le REPLI a 50 d'une composante absente.
+  # N3 pese quatre composantes ; en remplacer une par 50 produisait une moyenne
+  # entre du mesure et de l'invente, indiscernable en aval d'un N3 complet.
+  expect_true(is.na(result$N3[1]))
 })
 
 test_that("indicateur_n3_naturalite (N3) with only N2 (no N1)", {
@@ -1099,9 +1112,10 @@ test_that("indicateur_n3_naturalite (N3) with only N2 (no N1)", {
 
   result <- indicateur_n3_naturalite(units = test_units)
 
-  # N1 fallback 50, N2 = 90
-  expected <- 0.35 * 50 + 0.35 * 90 + 0.15 * 50 + 0.15 * 50
-  expect_equal(result$N3[1], expected)
+  # v0.187.0 : ce test verifiait le REPLI a 50 d'une composante absente.
+  # N3 pese quatre composantes ; en remplacer une par 50 produisait une moyenne
+  # entre du mesure et de l'invente, indiscernable en aval d'un N3 complet.
+  expect_true(is.na(result$N3[1]))
 })
 
 test_that("indicateur_n3_naturalite (N3) with only L1 (no B3)", {
@@ -1121,9 +1135,10 @@ test_that("indicateur_n3_naturalite (N3) with only L1 (no B3)", {
 
   result <- indicateur_n3_naturalite(units = test_units)
 
-  # anti_frag = 100 - 30 = 70, connectivite fallback = 50
-  expected <- 0.35 * 60 + 0.35 * 70 + 0.15 * 70 + 0.15 * 50
-  expect_equal(result$N3[1], expected)
+  # v0.187.0 : ce test verifiait le REPLI a 50 d'une composante absente.
+  # N3 pese quatre composantes ; en remplacer une par 50 produisait une moyenne
+  # entre du mesure et de l'invente, indiscernable en aval d'un N3 complet.
+  expect_true(is.na(result$N3[1]))
 })
 
 test_that("indicateur_n3_naturalite (N3) with only B3 (no L1)", {
@@ -1143,9 +1158,10 @@ test_that("indicateur_n3_naturalite (N3) with only B3 (no L1)", {
 
   result <- indicateur_n3_naturalite(units = test_units)
 
-  # anti_frag fallback = 50, connectivite = 90
-  expected <- 0.35 * 60 + 0.35 * 70 + 0.15 * 50 + 0.15 * 90
-  expect_equal(result$N3[1], expected)
+  # v0.187.0 : ce test verifiait le REPLI a 50 d'une composante absente.
+  # N3 pese quatre composantes ; en remplacer une par 50 produisait une moyenne
+  # entre du mesure et de l'invente, indiscernable en aval d'un N3 complet.
+  expect_true(is.na(result$N3[1]))
 })
 
 test_that("indicateur_n3_naturalite (N3) all columns present", {
@@ -1215,14 +1231,16 @@ test_that("Naturalness indicators integrate with family system", {
     )
   )
 
-  # N1 and N2 without external data -> defaults, N3 combines them
+  # Sans donnee externe, N1 et N2 sont NA (v0.187.0) — et N3, qui les pese,
+  # l'est aussi. Le test garde son objet : la chaine des trois s'enchaine et
+  # produit bien les trois colonnes.
   result <- test_units |>
     indicateur_n1_distance() |>
     indicateur_n2_continuite() |>
     indicateur_n3_naturalite()
 
   expect_true(all(c("N1", "N2", "N3") %in% names(result)))
-  expect_true(all(result$N3 >= 0 & result$N3 <= 100))
+  expect_true(all(is.na(result$N3)))
 })
 
 test_that("Full pipeline with spatial data and L1/B3 produces valid N3", {
@@ -1263,8 +1281,10 @@ test_that("Full pipeline with spatial data and L1/B3 produces valid N3", {
 
   result <- indicateur_n3_naturalite(result)
 
+  # N1/N2 sont NA faute de couches (v0.187.0), donc N3 aussi : le test garde
+  # son objet, la chaine produit bien les trois colonnes.
   expect_true(all(c("N1", "N2", "N3") %in% names(result)))
-  expect_true(result$N3[1] >= 0 & result$N3[1] <= 100)
+  expect_true(is.na(result$N3[1]))
 
   # Verify exact computation
   expected_n3 <- 0.35 * result$N1[1] + 0.35 * result$N2[1] + 0.15 * (100 - 20) + 0.15 * 75
@@ -1383,10 +1403,8 @@ test_that("N1 with layers that have no roads or buildings keys returns defaults"
     layers = mock_layers
   )
 
-  # roads=NULL -> default 1000, buildings=NULL -> default 500
-  # N1 = 0.40*pmin(100,1000/20) + 0.35*pmin(100,500/20) + 0.25*pmin(100,2000/20)
-  # = 0.40*50 + 0.35*25 + 0.25*100 = 20 + 8.75 + 25 = 53.75
-  expect_equal(result$N1[1], 53.75)
+  # v0.187.0 : les couches resolues sont NULL, donc aucune distance mesuree.
+  expect_true(is.na(result$N1[1]))
 })
 
 test_that("N1 layers argument ignored when not nemeton_layers class", {
@@ -1417,9 +1435,9 @@ test_that("N1 layers argument ignored when not nemeton_layers class", {
     layers = fake_layers
   )
 
-  # layers ignored (not nemeton_layers class), roads/buildings NULL -> defaults
-
-  expect_equal(result$N1[1], 53.75)
+  # `layers` ignore (mauvaise classe) et roads/buildings NULL : rien a mesurer.
+  # L'objet du test — que `layers` mal typee soit ignoree — est conserve.
+  expect_true(is.na(result$N1[1]))
 })
 
 test_that("N1 with lang = 'fr' works correctly", {
@@ -1427,10 +1445,12 @@ test_that("N1 with lang = 'fr' works correctly", {
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 2)
+  # L'objet est la localisation des messages, pas la valeur : sans couche,
+  # N1 vaut NA depuis la v0.187.0.
   result <- nemeton::indicateur_n1_distance(units = test_units, lang = "fr")
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
-  expect_true(all(!is.na(result$N1)))
+  expect_true(all(is.na(result$N1)))
 })
 
 test_that("N1 correctly transforms buildings in different CRS", {
@@ -1471,10 +1491,12 @@ test_that("N1 correctly transforms buildings in different CRS", {
     buildings = buildings_4326
   )
 
+  # Le bati est reprojete et mesure, mais les routes manquent (40 % du poids) :
+  # N1 vaut donc NA. L'objet du test — la reprojection — reste verifie par
+  # l'absence d'erreur et la presence de la colonne.
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
-  # buildings transformed -> real distance computed, not default 500
-  expect_true(result$N1[1] >= 0 & result$N1[1] <= 100)
+  expect_true(is.na(result$N1[1]))
 })
 
 # --- N2: indicateur_n2_continuite ---
@@ -1670,7 +1692,9 @@ test_that("N2 lang = 'fr' works correctly", {
   test_units <- create_test_units(n_features = 1)
   result <- nemeton::indicateur_n2_continuite(units = test_units, lang = "fr")
   # No data -> default 50
-  expect_equal(result$N2[1], 50)
+  # Le « default score 50 » d'avant la v0.187.0 : sans donnee forestiere, la
+  # continuite n'est pas mesurable.
+  expect_true(is.na(result$N2[1]))
 })
 
 # --- N3: indicateur_n3_naturalite ---
@@ -1717,11 +1741,11 @@ test_that("N3 lang = 'fr' works correctly", {
     )
   )
 
+  # L'objet est la localisation, pas la valeur : L1 et B3 manquent, donc NA.
   result <- nemeton::indicateur_n3_naturalite(units = test_units, lang = "fr")
   expect_s3_class(result, "sf")
   expect_true("N3" %in% names(result))
-  expected <- 0.35 * 60 + 0.35 * 70 + 0.15 * 50 + 0.15 * 50
-  expect_equal(result$N3[1], expected)
+  expect_true(is.na(result$N3[1]))
 })
 
 test_that("N3 preserves original columns", {

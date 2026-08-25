@@ -45,7 +45,16 @@
 
 
 # Total physical memory, in kB, or NA off Linux / when /proc is unreadable.
+#
+# Le `file.exists()` n'est pas une precaution de style : `readLines()` sur un
+# fichier absent AVERTIT avant d'echouer, et le `tryCatch(error=)` n'attrape
+# pas l'avertissement. Sous Windows, l'utilisateur lisait donc en pleine
+# console « impossible d'ouvrir le fichier '/proc/meminfo' » au milieu d'un
+# calcul qui, lui, aboutissait (rapport du 2026-08-24). `/proc/meminfo` est une
+# specificite Linux, pas un alea d'entree-sortie : le test dit ce qu'on veut
+# vraiment dire.
 .mem_total_kb <- function() {
+  if (!file.exists("/proc/meminfo")) return(NA_real_)
   tryCatch({
     line <- grep("^MemTotal:", readLines("/proc/meminfo", warn = FALSE),
                  value = TRUE)[1]

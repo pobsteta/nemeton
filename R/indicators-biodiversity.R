@@ -564,9 +564,12 @@ indicateur_b3_connectivite <- function(units,
   validate_sf(units)
 
   # Handle NULL bdforet (use fallback scoring)
+  # Sans BD Foret, la connectivite des massifs n'est pas mesurable : elle est
+  # inconnue, pas moyenne. Le 50 d'origine entrait dans la moyenne de famille
+  # comme s'il avait ete constate.
   if (is.null(bdforet)) {
     msg_warn("biodiversity_no_bdforet")
-    units$B3 <- rep(50, nrow(units))
+    units$B3 <- rep(NA_real_, nrow(units))
     return(units)
   }
 
@@ -589,9 +592,12 @@ indicateur_b3_connectivite <- function(units,
   # Remove empty geometries
   bdforet_local <- bdforet_local[!sf::st_is_empty(bdforet_local), ]
 
+  # BD Foret fournie mais aucun polygone sur l'emprise : la connectivite des
+  # massifs reste indefinie (il n'y a pas de massif a relier), elle ne vaut pas
+  # « moyenne ».
   if (nrow(bdforet_local) == 0) {
     msg_warn("biodiversity_no_bdforet")
-    units$B3 <- rep(50, nrow(units))
+    units$B3 <- rep(NA_real_, nrow(units))
     return(units)
   }
 

@@ -52,7 +52,9 @@ indicateur_n1_distance <- function(units,
     roads <- sf::st_make_valid(roads)
     dist_routes <- as.numeric(sf::st_distance(centroids, sf::st_union(roads)))
   } else {
-    dist_routes <- rep(1000, nrow(units)) # default like tuto 04
+    # « default like tuto 04 » : une distance inventee, qui produit un N1
+    # d'apparence normale. Sans couche, la distance n'est pas connue.
+    dist_routes <- rep(NA_real_, nrow(units))
   }
 
   # Distance to buildings
@@ -61,10 +63,16 @@ indicateur_n1_distance <- function(units,
     buildings <- sf::st_make_valid(buildings)
     dist_batiments <- as.numeric(sf::st_distance(centroids, sf::st_union(buildings)))
   } else {
-    dist_batiments <- rep(500, nrow(units)) # default like tuto 04
+    dist_batiments <- rep(NA_real_, nrow(units))
   }
 
-  # Distance to urban zones (no dedicated layer, use default)
+  # Distance aux zones urbaines : CONSTANTE de la formule tuto 04, pas une
+  # donnee. Aucune couche « zones urbaines » n'existe dans le projet, et ce
+  # terme vaut donc toujours pmin(100, 2000/20) = 100, soit un +25 fixe sur
+  # N1. Contrairement aux distances routes/bati ci-dessus — qui sont, elles,
+  # des mesures et valent NA quand leur couche manque — celle-ci ne pretend
+  # rien mesurer. A ne pas confondre en lisant le composite : N1 a DEUX
+  # sources de donnees, pas trois.
   dist_urbain <- rep(2000, nrow(units))
 
   # Normalize: 0m = score 0, 2000m+ = score 100
@@ -120,10 +128,12 @@ indicateur_n2_continuite <- function(units,
     bdforet <- resolve_vector_layer(layers, "bdforet")
   }
 
-  # If no forest data at all, return default score 50
+  # Aucune donnee forestiere : la continuite n'est pas mesurable. « default 50,
+  # no data » disait deja qu'aucune mesure n'avait eu lieu — et rendait quand
+  # meme un nombre, qui pesait ensuite dans la famille Naturalite.
   if (is.null(bdforet) && is.null(foret_ancienne)) {
-    result[[column_name]] <- rep(50, nrow(units))
-    cli::cli_alert_success("Calculated {column_name}: Forest continuity (default 50, no data)")
+    result[[column_name]] <- rep(NA_real_, nrow(units))
+    cli::cli_alert_info("{column_name}: no forest data, returning NA (no measurement made)")
     return(result)
   }
 
@@ -220,11 +230,23 @@ indicateur_n3_naturalite <- function(units,
 
   result <- units
 
-  # Use existing columns or fallback to 50
-  n1 <- if ("N1" %in% names(units)) units$N1 else rep(50, nrow(units))
-  n2 <- if ("N2" %in% names(units)) units$N2 else rep(50, nrow(units))
-  anti_frag <- if ("L1" %in% names(units)) 100 - units$L1 else rep(50, nrow(units))
-  connectivite <- if ("B3" %in% names(units)) units$B3 else rep(50, nrow(units))
+  # N3 est une somme ponderee de QUATRE composantes. Une composante absente
+  # remplacee par 50 ne rend pas le composite « approximatif » : elle en fait
+  # une moyenne entre du mesure et de l'invente, impossible a distinguer d'un
+  # vrai N3 en aval. Une composante manquante -> NA, qui se propage.
+  manquantes <- setdiff(c("N1", "N2", "L1", "B3"), names(units))
+  if (length(manquantes)) {
+    cli::cli_alert_info(
+      "{column_name}: composante{?s} {.field {manquantes}} absente{?s}, \
+       returning NA (no measurement made)"
+    )
+    result[[column_name]] <- rep(NA_real_, nrow(units))
+    return(result)
+  }
+  n1 <- units$N1
+  n2 <- units$N2
+  anti_frag <- 100 - units$L1
+  connectivite <- units$B3
 
   # Tuto 04: 35% N1 + 35% N2 + 15% anti-fragmentation + 15% connectivity
   result[[column_name]] <- 0.35 * n1 + 0.35 * n2 + 0.15 * anti_frag + 0.15 * connectivite

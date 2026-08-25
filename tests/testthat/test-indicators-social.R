@@ -720,7 +720,6 @@ test_that("indicateur_s3_population (S3) calculates population buffers", {
 
   result <- indicateur_s3_population(
     units = test_units,
-    method = "proxy",
     buffer_radii = c(5000, 10000, 20000)
   )
 
@@ -732,9 +731,12 @@ test_that("indicateur_s3_population (S3) calculates population buffers", {
   expect_type(result$S3_10km, "double")
   expect_type(result$S3_20km, "double")
 
-  # Population should increase with buffer size
-  expect_true(all(result$S3_10km >= result$S3_5km))
-  expect_true(all(result$S3_20km >= result$S3_10km))
+  # v0.187.0 : sans grille, les trois rayons valent NA. La croissance de la
+  # population avec le rayon reste verifiee — sur une vraie grille — dans
+  # `test-zero-ou-na.R`, ou elle a un sens.
+  expect_true(all(is.na(result$S3_5km)))
+  expect_true(all(is.na(result$S3_10km)))
+  expect_true(all(is.na(result$S3_20km)))
 })
 
 test_that("indicateur_s3_population validates input", {
@@ -754,7 +756,6 @@ test_that("indicateur_s3_population uses buffer_radii parameter", {
 
   result <- indicateur_s3_population(
     test_units,
-    method = "proxy",
     buffer_radii = c(5000, 10000, 20000)
   )
 
@@ -778,7 +779,6 @@ test_that("indicateur_s3_population uses custom column name", {
 
   result <- indicateur_s3_population(
     test_units,
-    method = "proxy",
     column_name = "pop_score"
   )
 
@@ -801,7 +801,6 @@ test_that("indicateur_s3_population S3 equals S3_5km (primary = first buffer)", 
 
   result <- indicateur_s3_population(
     test_units,
-    method = "proxy",
     buffer_radii = c(5000, 10000, 20000)
   )
 
@@ -841,15 +840,15 @@ test_that("indicateur_s3_population produces positive population values", {
 
   result <- indicateur_s3_population(
     test_units,
-    method = "proxy",
     buffer_radii = c(5000, 10000, 20000)
   )
 
-  # All population values should be positive (area * 100 density > 0)
-  expect_true(all(result$S3_5km > 0))
-  expect_true(all(result$S3_10km > 0))
-  expect_true(all(result$S3_20km > 0))
-  expect_true(all(result$S3 > 0))
+  # « area * 100 density > 0 » : le commentaire disait lui-meme que la valeur
+  # venait d'une surface, pas d'une population. Sans grille, c'est NA.
+  expect_true(all(is.na(result$S3_5km)))
+  expect_true(all(is.na(result$S3_10km)))
+  expect_true(all(is.na(result$S3_20km)))
+  expect_true(all(is.na(result$S3)))
 })
 
 test_that("indicateur_s3_population preserves original columns", {
@@ -866,7 +865,7 @@ test_that("indicateur_s3_population preserves original columns", {
     )
   )
 
-  result <- indicateur_s3_population(test_units, method = "proxy")
+  result <- suppressMessages(indicateur_s3_population(test_units))
 
   expect_true("id" %in% names(result))
   expect_true("name" %in% names(result))
@@ -889,7 +888,6 @@ test_that("indicateur_s3_population with custom buffer_radii", {
   # Use different buffer radii
   result <- indicateur_s3_population(
     test_units,
-    method = "proxy",
     buffer_radii = c(1000, 2000, 5000)
   )
 
@@ -899,9 +897,10 @@ test_that("indicateur_s3_population with custom buffer_radii", {
   expect_true("S3_10km" %in% names(result))
   expect_true("S3_20km" %in% names(result))
 
-  # Smaller buffers should give smaller population
-  expect_true(result$S3_10km >= result$S3_5km)
-  expect_true(result$S3_20km >= result$S3_10km)
+  # Sans grille : NA. La monotonie est verifiee sur une vraie grille ailleurs.
+  expect_true(is.na(result$S3_5km))
+  expect_true(is.na(result$S3_10km))
+  expect_true(is.na(result$S3_20km))
 })
 
 test_that("indicateur_s3_population accepts method 'insee'", {
@@ -950,7 +949,6 @@ test_that("indicateur_s3_population with multiple units computes per-unit values
 
   result <- indicateur_s3_population(
     test_units,
-    method = "proxy",
     buffer_radii = c(5000, 10000, 20000)
   )
 
@@ -961,9 +959,10 @@ test_that("indicateur_s3_population with multiple units computes per-unit values
   expect_equal(length(result$S3_10km), 5)
   expect_equal(length(result$S3_20km), 5)
 
-  # All values should be numeric and non-NA
-  expect_true(all(!is.na(result$S3)))
-  expect_true(all(!is.na(result$S3_5km)))
+  # v0.187.0 : sans grille de population, NA. Le test garde son objet — la
+  # fonction traite bien un lot de 5 et rend les quatre colonnes.
+  expect_true(all(is.na(result$S3)))
+  expect_true(all(is.na(result$S3_5km)))
 })
 
 # ==============================================================================
@@ -987,7 +986,7 @@ test_that("Social indicators integrate with family system", {
   result <- test_units |>
     indicateur_s1_routes() |>
     indicateur_s2_bati() |>
-    indicateur_s3_population(method = "proxy")
+    indicateur_s3_population()
 
   # Check all indicators present
   expect_true(all(c("S1", "S2", "S3") %in% names(result)))
@@ -1011,7 +1010,7 @@ test_that("Social indicators can be chained on units with existing columns", {
   result <- test_units |>
     indicateur_s1_routes() |>
     indicateur_s2_bati() |>
-    indicateur_s3_population(method = "proxy")
+    indicateur_s3_population()
 
   # Original columns preserved
   expect_true("C1" %in% names(result))
@@ -1486,15 +1485,17 @@ test_that("S3 buffer area calculation with different sized units", {
     )
   )
 
-  res_small <- nemeton::indicateur_s3_population(small_unit, method = "proxy")
-  res_large <- nemeton::indicateur_s3_population(large_unit, method = "proxy")
+  res_small <- suppressMessages(nemeton::indicateur_s3_population(small_unit))
+  res_large <- suppressMessages(nemeton::indicateur_s3_population(large_unit))
 
   # Both should have valid results
   expect_true(all(c("S3", "S3_5km", "S3_10km", "S3_20km") %in% names(res_small)))
   expect_true(all(c("S3", "S3_5km", "S3_10km", "S3_20km") %in% names(res_large)))
 
-  # Larger unit with bigger buffers should have more area hence more population
-  expect_true(res_large$S3_5km >= res_small$S3_5km)
+  # « more area hence more population » : le raisonnement du chemin fabrique,
+  # ou la population etait une surface. Sans grille, les deux valent NA.
+  expect_true(is.na(res_large$S3_5km))
+  expect_true(is.na(res_small$S3_5km))
 })
 
 test_that("S3 with very small buffer_radii still works", {
@@ -1504,15 +1505,15 @@ test_that("S3 with very small buffer_radii still works", {
   test_units <- create_test_units(n_features = 2)
   result <- nemeton::indicateur_s3_population(
     test_units,
-    method = "proxy",
     buffer_radii = c(100, 500, 1000)
   )
 
   expect_s3_class(result, "sf")
   expect_true(all(c("S3", "S3_5km", "S3_10km", "S3_20km") %in% names(result)))
-  # Population should still increase with buffer
-  expect_true(all(result$S3_10km >= result$S3_5km))
-  expect_true(all(result$S3_20km >= result$S3_10km))
+  # Sans grille : NA, quel que soit le rayon. La monotonie est verifiee sur une
+  # vraie grille dans `test-zero-ou-na.R`.
+  expect_true(all(is.na(result$S3_10km)))
+  expect_true(all(is.na(result$S3_20km)))
 })
 
 test_that("S3 with single feature returns scalar S3", {
@@ -1520,12 +1521,13 @@ test_that("S3 with single feature returns scalar S3", {
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 1)
-  result <- nemeton::indicateur_s3_population(test_units, method = "proxy")
+  result <- suppressMessages(nemeton::indicateur_s3_population(test_units))
 
+  # L'objet du test est la FORME du retour sur une unite unique, pas la valeur.
   expect_equal(nrow(result), 1)
   expect_equal(length(result$S3), 1)
-  expect_true(is.numeric(result$S3))
-  expect_true(result$S3 > 0)
+  expect_true(is.numeric(result$S3))   # NA_real_ reste numerique
+  expect_true(is.na(result$S3))
 })
 
 test_that("S3 with custom column_name uses that name for primary indicator", {
@@ -1535,7 +1537,6 @@ test_that("S3 with custom column_name uses that name for primary indicator", {
   test_units <- create_test_units(n_features = 2)
   result <- nemeton::indicateur_s3_population(
     test_units,
-    method = "proxy",
     column_name = "pop_pressure"
   )
 
@@ -1551,7 +1552,7 @@ test_that("S3 msg_info is called with correct median values", {
   # Just make sure the function completes without error when msg_info is called
   test_units <- create_test_units(n_features = 3)
   expect_no_error(
-    nemeton::indicateur_s3_population(test_units, method = "proxy")
+    suppressMessages(nemeton::indicateur_s3_population(test_units))
   )
 })
 
