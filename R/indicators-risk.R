@@ -941,7 +941,11 @@ indicateur_r4_abroutissement <- function(units,
   # ==========================================================================
   # Component 1: Palatability from BD Foret intersection (tuto 03 method)
   # ==========================================================================
-  palatability_factor <- rep(50, n_units)  # Default
+  # Sans BD Foret, l'appetence du peuplement n'est pas evaluable. Le 50
+  # « Default » d'origine entrait dans la ponderation comme une composante
+  # mesuree, et donnait un R4 d'apparence normale : NA se propage a la somme
+  # ponderee ci-dessous, ce qui est le comportement voulu.
+  palatability_factor <- rep(NA_real_, n_units)
 
   if (!is.null(bdforet) && inherits(bdforet, "sf") && nrow(bdforet) > 0) {
     cli::cli_alert_info("R4: Computing palatability from BD For\u00eat intersection")
@@ -982,7 +986,10 @@ indicateur_r4_abroutissement <- function(units,
   # ==========================================================================
   # Component 2: Vulnerability from LiDAR MNH (tuto 03 method)
   # ==========================================================================
-  vulnerability_factor <- rep(50, n_units)  # Default
+  # Meme raisonnement que pour l'appetence : sans MNH, la vulnerabilite du
+  # peuplement n'est pas evaluable. Corriger l'une et laisser l'autre aurait
+  # rendu R4 « a moitie mesure », ce qui ne se voit pas dans la valeur.
+  vulnerability_factor <- rep(NA_real_, n_units)
 
   mnh_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "lidar_mnh") else NULL
 
@@ -1033,7 +1040,9 @@ indicateur_r4_abroutissement <- function(units,
   # ==========================================================================
   # Component 4: Game density (tuto 03: hunting data from data.gouv.fr)
   # ==========================================================================
-  density_factor <- rep(50, n_units)  # Default
+  # Sans raster de densite de gibier ni couche equivalente, la pression de
+  # population n'est pas connue.
+  density_factor <- rep(NA_real_, n_units)
 
   if (!is.null(game_density) && inherits(game_density, "SpatRaster")) {
     # Use provided raster

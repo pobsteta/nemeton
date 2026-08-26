@@ -781,6 +781,9 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
 #   FALSE / <= 1 -> NA (séquentiel) ; entier N -> N.
 # RAM totale (Go) — Linux /proc/meminfo, sinon NA.
 .pai_total_ram_gb <- function() {
+  # Meme garde que `.mem_total_kb()` : sans elle, `readLines()` avertit avant
+  # d'echouer et le bruit remonte a l'utilisateur (Windows, 2026-08-24).
+  if (!file.exists("/proc/meminfo")) return(NA_real_)
   mi <- tryCatch(readLines("/proc/meminfo", n = 1L), error = function(e) NA_character_)
   if (length(mi) != 1L || is.na(mi[1])) return(NA_real_)
   kb <- suppressWarnings(as.numeric(sub("\\D*([0-9]+).*", "\\1", mi[1])))  # MemTotal kB

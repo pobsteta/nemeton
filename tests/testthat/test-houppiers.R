@@ -240,3 +240,46 @@ test_that("marge_m vaut 3 x ws par defaut et refuse l'absurde", {
   skip_if_not_installed("lidR")
   expect_s3_class(segment_houppiers(mnh, ws = 4, hmin = 3, marge_m = 99), "sf")
 })
+
+# --- Garde CRS des apex (rapport du 2026-08-23) ------------------------------
+
+test_that("un apex sans CRS est repare depuis le raster, pas propage", {
+  skip_if_not_installed("lidR")
+  # Le rapport decrivait un echec « st_crs(x) == st_crs(y) is not TRUE » leve
+  # par `sf` DEPUIS lidR — un symptome, pas une cause. L'hypothese : a grande
+  # echelle, `locate_trees()` rend un objet non vide mais sans CRS.
+  #
+  # Non reproduit (le raster incrimine rend 46 158 houppiers en 71 s, et le
+  # diff montre que le code n'avait pas bouge entre la version qui passait et
+  # celle qui echouait). Le mode de defaillance est simule ici.
+  mnh <- .mnh_synthetique(c(25, 18))
+  vrai_locate <- lidR::locate_trees
+  testthat::local_mocked_bindings(
+    locate_trees = function(las, algorithm, ...) {
+      tops <- vrai_locate(las, algorithm, ...)
+      sf::st_crs(tops) <- NA          # l'anomalie decrite par le rapport
+      tops
+    },
+    .package = "lidR"
+  )
+  h <- segment_houppiers(mnh, ws = 4, hmin = 3)
+  expect_s3_class(h, "sf")
+  expect_gte(nrow(h), 1L)
+  expect_identical(sf::st_crs(h)$epsg, 2154L)
+})
+
+test_that("un apex dans un AUTRE CRS est nomme, pas laisse en langage sf", {
+  skip_if_not_installed("lidR")
+  mnh <- .mnh_synthetique(c(25, 18))
+  vrai_locate <- lidR::locate_trees
+  testthat::local_mocked_bindings(
+    locate_trees = function(las, algorithm, ...) {
+      tops <- vrai_locate(las, algorithm, ...)
+      sf::st_crs(tops) <- 4326        # incoherent avec le MNH
+      tops
+    },
+    .package = "lidR"
+  )
+  expect_error(segment_houppiers(mnh, ws = 4, hmin = 3),
+               "different CRS than the CHM")
+})

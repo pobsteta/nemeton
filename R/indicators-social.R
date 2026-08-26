@@ -250,7 +250,8 @@ indicateur_s2_bati <- function(units,
 #' }
 indicateur_s3_population <- function(units,
                                        population_grid = NULL,
-                                       method = c("proxy", "insee", "local"),
+                                       population_field = NULL,
+                                       method = c("insee", "local", "proxy"),
                                        buffer_radii = c(5000, 10000, 20000),
                                        column_name = "S3",
                                        lang = "en") {
@@ -261,26 +262,97 @@ indicateur_s3_population <- function(units,
 
   method <- match.arg(method)
 
+  # `"proxy"` etait le nom du chemin fabrique : il rendait
+  # `surface_du_tampon x 100 hab/km2` sans jamais lire de grille. Le retirer
+  # des choix aurait fait tomber les appels existants sur un `match.arg`
+  # cryptique ; il est donc conserve pour DIRE ce qui a change, une fois.
+  if (identical(method, "proxy")) {
+    cli::cli_abort(c(
+      "{.val proxy} no longer exists: it never read a population grid.",
+      i = "It returned buffer area x 100 inhabitants/km2 — a number that varied \\
+           plausibly with unit size and therefore looked measured.",
+      i = "Pass a {.arg population_grid} (INSEE Filosofi carreaux carry {.field ind}), \\
+           or omit {.arg method} to get {.val NA} where nothing can be measured."
+    ))
+  }
+
   result <- units
 
-  # Simplified proxy calculation
-  # (In production, would query INSEE Carroyage or other population grids)
+  # Sans grille de population, S3 n'est pas mesurable.
+  #
+  # Jusqu'a la v0.187.0, cette fonction n'a JAMAIS lu son `population_grid` :
+  # elle rendait `surface_du_tampon x 100 hab/km2`, avec ses propres
+  # commentaires pour l'avouer (« Placeholder calculation », « In production,
+  # would query INSEE Carroyage »). Le resultat variait plausiblement avec la
+  # taille de l'UGF, donc ressemblait a une population mesuree — et pesait dans
+  # la moyenne de la famille Social & Usages. C'est la forme la plus couteuse
+  # d'une valeur fabriquee : celle qui ne se voit pas.
+  #
+  # Source attendue : INSEE Filosofi, carreaux 200 m ou 1 km (GeoPackage,
+  # variable `ind` = nombre d'individus, carroyage INSPIRE en EPSG:3035 — le
+  # CRS de l'ADR-008). Ou tout `sf`/`SpatRaster` portant un comptage.
+  if (is.null(population_grid)) {
+    cli::cli_alert_info(
+      "{column_name}: no population grid provided, returning NA \\
+       (no measurement made). Supply INSEE Filosofi carreaux, or any layer \\
+       carrying a population count."
+    )
+    na <- rep(NA_real_, nrow(units))
+    result$S3_5km <- na
+    result$S3_10km <- na
+    result$S3_20km <- na
+    result[[column_name]] <- na
+    return(result)
+  }
 
-  # Create buffers
+  # Somme de population dans un tampon. Deux portages de grille acceptes :
+  # un `sf` de carreaux (INSEE) pondere par la part de carreau intersectee,
+  # un `SpatRaster` de comptage somme par `exactextractr`.
+  .s3_somme <- function(buffers) {
+    if (inherits(population_grid, "SpatRaster")) {
+      if (!requireNamespace("exactextractr", quietly = TRUE)) {
+        cli::cli_abort("{.pkg exactextractr} is required to read a raster population grid.")
+      }
+      b <- sf::st_transform(buffers, sf::st_crs(terra::crs(population_grid)))
+      return(as.numeric(exactextractr::exact_extract(population_grid, b, "sum",
+                                                     progress = FALSE)))
+    }
+    if (!inherits(population_grid, "sf")) {
+      cli::cli_abort("{.arg population_grid} must be an {.cls sf} or a {.cls SpatRaster}.")
+    }
+    champ <- population_field %||%
+      intersect(c("ind", "pop", "population", "POP", "Ind", "IND"),
+                names(population_grid))[1]
+    if (is.na(champ) || is.null(champ) || !(champ %in% names(population_grid))) {
+      cli::cli_abort(c(
+        "No population column found in {.arg population_grid}.",
+        i = "INSEE Filosofi names it {.field ind}; name yours with {.arg population_field}."
+      ))
+    }
+    grille <- sf::st_transform(population_grid, sf::st_crs(buffers))
+    aire_carreau <- as.numeric(sf::st_area(grille))
+    vapply(seq_len(nrow(buffers)), function(i) {
+      inter <- suppressWarnings(sf::st_intersection(grille, buffers[i, ]))
+      if (nrow(inter) == 0L) return(0)
+      # Part de chaque carreau reellement dans le tampon : un carreau a cheval
+      # ne compte pas pour sa population entiere.
+      idx <- match(
+        sf::st_drop_geometry(inter)[[champ]], sf::st_drop_geometry(grille)[[champ]])
+      part <- as.numeric(sf::st_area(inter)) /
+        ifelse(is.na(idx), NA_real_, aire_carreau[idx])
+      part[!is.finite(part)] <- 1
+      sum(as.numeric(sf::st_drop_geometry(inter)[[champ]]) * pmin(part, 1),
+          na.rm = TRUE)
+    }, numeric(1))
+  }
+
   buffer_5km <- sf::st_buffer(units, dist = buffer_radii[1])
   buffer_10km <- sf::st_buffer(units, dist = buffer_radii[2])
   buffer_20km <- sf::st_buffer(units, dist = buffer_radii[3])
 
-  # Placeholder calculation - proxy based on inverse area
-  # (larger buffers would typically contain more population)
-  area_5km <- as.numeric(sf::st_area(buffer_5km)) / 1000000 # km²
-  area_10km <- as.numeric(sf::st_area(buffer_10km)) / 1000000
-  area_20km <- as.numeric(sf::st_area(buffer_20km)) / 1000000
-
-  # Proxy population assuming 100 people/km² average rural density
-  pop_5km <- round(area_5km * 100)
-  pop_10km <- round(area_10km * 100)
-  pop_20km <- round(area_20km * 100)
+  pop_5km <- round(.s3_somme(buffer_5km))
+  pop_10km <- round(.s3_somme(buffer_10km))
+  pop_20km <- round(.s3_somme(buffer_20km))
 
   # Add to result
   result$S3_5km <- pop_5km

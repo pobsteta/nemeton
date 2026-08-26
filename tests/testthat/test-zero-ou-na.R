@@ -92,27 +92,51 @@ test_that("aucun indicateur ne fabrique un ZERO sans donnee d'entree", {
                                 paste(fautifs, collapse = ", ")))
 })
 
-test_that("la dette des DEFAUTS NEUTRES est figee, et ne s'etend pas", {
-  # Trouve en balayant pour B1/E2 : sept indicateurs ne rendent pas 0 sans
-  # entree, mais une VALEUR FABRIQUEE — `units$A2 <- rep(50, nrow(units))`
-  # faute de donnee atmo, `dist_routes <- rep(1000, ...)` et
-  # `dist_batiments <- rep(500, ...)` « default like tuto 04 » pour N1.
-  #
-  # C'est la meme faute que le zero de B1, en plus discrete : un 50 ressemble a
-  # une mesure moyenne credible, quand une colonne de zeros finit par se
-  # remarquer. La corriger touche a la valeur de sept indicateurs sur des
-  # projets existants — c'est un arbitrage, pas un correctif, et il n'a pas
-  # encore ete rendu.
-  #
-  # Ce test ne masque donc rien : il FIGE la liste. Un huitieme indicateur qui
-  # s'y ajouterait le ferait echouer ; un des sept qui serait corrige aussi,
-  # et c'est voulu — la liste doit se vider, jamais s'allonger en silence.
-  connus <- c("indicateur_a2_qualite_air", "indicateur_b3_connectivite",
+test_that("les six defauts neutres sont corriges", {
+  # v0.187.0. Chacun rendait une VALEUR FABRIQUEE sans entree — 50 « neutre »
+  # pour A2/B3/N2/N3/R4, des distances inventees pour N1 (« default like
+  # tuto 04 » : 1000 m aux routes, 500 m au bati). Plus discret qu'un zero :
+  # un 50 ressemble a une mesure moyenne credible, quand une colonne de zeros
+  # finit par se remarquer. Et il PESAIT dans la moyenne de famille.
+  u <- fixture_units()
+  for (f in c("indicateur_a2_qualite_air", "indicateur_b3_connectivite",
               "indicateur_n1_distance", "indicateur_n2_continuite",
-              "indicateur_n3_naturalite", "indicateur_r4_abroutissement",
-              "indicateur_s3_population")
+              "indicateur_n3_naturalite", "indicateur_r4_abroutissement")) {
+    r <- suppressWarnings(suppressMessages(do.call(f, list(u))))
+    cc <- setdiff(names(r), names(u))
+    val <- suppressWarnings(as.numeric(r[[cc[1]]]))
+    expect_true(all(is.na(val)), info = f)
+  }
+})
+
+test_that("N3 ne moyenne pas du mesure avec de l'invente", {
+  # Le composite pese quatre composantes. Une seule absente, remplacee par 50,
+  # produisait un N3 d'apparence normale — impossible a distinguer en aval d'un
+  # composite entierement mesure.
+  u <- fixture_units()
+  u$N1 <- 60; u$N2 <- 70; u$L1 <- 20          # B3 manque volontairement
+  r <- suppressMessages(indicateur_n3_naturalite(u))
+  expect_true(all(is.na(r$N3)))
+
+  u$B3 <- 80                                   # les quatre sont la
+  r2 <- suppressMessages(indicateur_n3_naturalite(u))
+  expect_true(all(!is.na(r2$N3)))
+  expect_equal(r2$N3[1], 0.35*60 + 0.35*70 + 0.15*(100-20) + 0.15*80)
+})
+
+test_that("plus aucun indicateur ne fabrique de valeur sans entree", {
+  # Ce test a d'abord FIGE une dette de sept indicateurs (v0.186.0), puis l'a
+  # vue fondre : six corriges en v0.187.0, puis S3 sur decision de Pascal
+  # (« S3 ne doit pas fabriquer de fausse valeur »). Il est maintenant vide, et
+  # c'est son etat cible.
+  #
+  # Il reste utile en l'etat : un indicateur qui recommencerait a rendre une
+  # valeur sans donnee d'entree — 0, 50 neutre, ou surface deguisee en
+  # population — le ferait echouer. La regle admet deux reponses, NA ou une
+  # erreur explicite ; elle n'en admet pas une troisieme.
   u <- fixture_units()
   fns <- sort(grep("^indicateur_", getNamespaceExports("nemeton"), value = TRUE))
+  skip_if(length(fns) == 0L, "aucun indicateur exporte")
 
   fabrique <- character(0)
   for (f in fns) {
@@ -124,5 +148,65 @@ test_that("la dette des DEFAUTS NEUTRES est figee, et ne s'etend pas", {
     val <- suppressWarnings(as.numeric(r[[cc[1]]]))
     if (all(!is.na(val))) fabrique <- c(fabrique, f)
   }
-  expect_setequal(fabrique, connus)
+  expect_identical(fabrique, character(0),
+                   info = paste("valeur fabriquee sans entree :",
+                                paste(fabrique, collapse = ", ")))
+})
+
+# --- S3 : plus aucune population fabriquee -----------------------------------
+# Decision de Pascal (2026-08-25) : « S3 ne doit pas fabriquer de fausse
+# valeur. » Jusqu'ici la fonction ne lisait JAMAIS son `population_grid` et
+# rendait surface_du_tampon x 100 hab/km2 — un nombre qui variait plausiblement
+# avec la taille de l'UGF, donc indiscernable d'une mesure.
+
+test_that("S3 sans grille de population rend NA, pas une surface deguisee", {
+  u <- fixture_units(2)
+  r <- suppressMessages(indicateur_s3_population(u))
+  expect_true(all(is.na(r$S3)))
+  # Les trois rayons suivent : un appelant qui lit S3_10km seul ne doit pas y
+  # trouver un nombre la ou rien n'a ete mesure.
+  expect_true(all(is.na(r$S3_5km)))
+  expect_true(all(is.na(r$S3_10km)))
+  expect_true(all(is.na(r$S3_20km)))
+})
+
+test_that("S3 lit une grille de carreaux et pondere les carreaux a cheval", {
+  # Deux carreaux de 1 km, 100 habitants chacun, cote a cote.
+  carreau <- function(x0, y0, n) sf::st_sf(
+    ind = n,
+    geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+      c(x0, y0), c(x0 + 1000, y0), c(x0 + 1000, y0 + 1000),
+      c(x0, y0 + 1000), c(x0, y0)))), crs = 2154))
+  grille <- rbind(carreau(0, 0, 100), carreau(1000, 0, 100))
+
+  # Une UGF ponctuelle au centre du premier carreau, tampon de 500 m :
+  # entierement dans le premier carreau, dont elle couvre pi*500^2 / 1e6 ~ 78,5 %.
+  u <- sf::st_sf(id = 1L, geometry = sf::st_sfc(
+    sf::st_point(c(500, 500)), crs = 2154))
+  r <- suppressMessages(indicateur_s3_population(
+    u, population_grid = grille, buffer_radii = c(500, 1000, 2000)))
+
+  expect_false(is.na(r$S3[1]))
+  expect_gt(r$S3[1], 0)
+  expect_lt(r$S3[1], 100)          # pondere : pas les 100 habitants entiers
+  expect_equal(r$S3[1], round(100 * pi * 500^2 / 1e6), tolerance = 0.05)
+
+  # Un tampon plus large atteint le second carreau : la population croit.
+  expect_gt(r$S3_20km[1], r$S3_5km[1])
+})
+
+test_that("S3 nomme la colonne manquante plutot que de deviner", {
+  grille <- sf::st_sf(
+    habitants = 100,
+    geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+      c(0, 0), c(1000, 0), c(1000, 1000), c(0, 1000), c(0, 0)))), crs = 2154))
+  u <- sf::st_sf(id = 1L, geometry = sf::st_sfc(sf::st_point(c(500, 500)), crs = 2154))
+  expect_error(
+    suppressMessages(indicateur_s3_population(u, population_grid = grille)),
+    "No population column")
+  # Nomme explicitement, elle est acceptee.
+  r <- suppressMessages(indicateur_s3_population(
+    u, population_grid = grille, population_field = "habitants",
+    buffer_radii = c(500, 1000, 2000)))
+  expect_false(is.na(r$S3[1]))
 })

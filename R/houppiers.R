@@ -221,6 +221,28 @@ segment_houppiers <- function(chm,
   } else {
     tops <- lidR::locate_trees(chm, lidR::lmf(ws = ws, hmin = hmin))
     if (is.null(tops) || nrow(tops) == 0L) return(.houppier_empty(chm))
+    # Garde suggeree par le rapport du 2026-08-23 : la segmentation echouait
+    # sur « st_crs(x) == st_crs(y) is not TRUE », leve par un stopifnot() de
+    # `sf` DEPUIS lidR — un message qui decrit un symptome, pas une cause.
+    # L'hypothese du rapport : a grande echelle, `locate_trees()` peut rendre
+    # un objet non vide mais SANS CRS ; le garde ci-dessus ne couvre que le cas
+    # vide, et la comparaison suivante echoue alors avec ce message.
+    #
+    # Non reproduit ici (46 158 houppiers sur le raster incrimine de 418 M
+    # cellules, en 71 s) et le diff montre que le code n'avait pas change entre
+    # la version qui passait et celle qui echouait — mais le mode de defaillance
+    # est reel et sa parade coute deux lignes. Un CRS absent est REPARE depuis
+    # le raster, un CRS *different* est une anomalie qu'on nomme plutot que de
+    # la laisser sortir en langage `sf`.
+    if (is.na(sf::st_crs(tops))) {
+      sf::st_crs(tops) <- sf::st_crs(terra::crs(chm))
+    } else if (sf::st_crs(tops) != sf::st_crs(terra::crs(chm))) {
+      cli::cli_abort(c(
+        "Crown apexes came back in a different CRS than the CHM.",
+        i = "CHM: {.val {sf::st_crs(terra::crs(chm))$input}}; apexes: {.val {sf::st_crs(tops)$input}}.",
+        i = "This is a {.pkg lidR} anomaly, not a CHM defect — report it with the raster size."
+      ))
+    }
     if (identical(algorithme, "dalponte")) {
       lidR::dalponte2016(chm, tops, th_tree = hmin)()
     } else {

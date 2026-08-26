@@ -162,7 +162,10 @@ test_that("indicateur_b3_connectivite returns fallback when no bdforet", {
 
   expect_s3_class(result, "sf")
   expect_true("B3" %in% names(result))
-  expect_true(all(result$B3 == 50))
+  # v0.187.0 : sans BD Foret, la connectivite des massifs n'est pas mesurable.
+  # Le 50 « neutre » entrait dans la moyenne de la famille Biodiversite comme
+  # s'il avait ete constate.
+  expect_true(all(is.na(result$B3)))
 })
 
 # ==============================================================================
@@ -363,7 +366,10 @@ test_that("indicateur_b3_connectivite handles empty bdforet", {
 
   expect_s3_class(result, "sf")
   expect_true("B3" %in% names(result))
-  expect_true(all(result$B3 == 50))
+  # v0.187.0 : sans BD Foret, la connectivite des massifs n'est pas mesurable.
+  # Le 50 « neutre » entrait dans la moyenne de la famille Biodiversite comme
+  # s'il avait ete constate.
+  expect_true(all(is.na(result$B3)))
 })
 
 test_that("indicateur_b3_connectivite scores vary with forest proximity", {
@@ -900,7 +906,10 @@ test_that("B3 with NULL bdforet returns fallback 50", {
   suppressWarnings({
     result <- nemeton::indicateur_b3_connectivite(units, bdforet = NULL)
   })
-  expect_true(all(result$B3 == 50))
+  # v0.187.0 : sans BD Foret, la connectivite des massifs n'est pas mesurable.
+  # Le 50 « neutre » entrait dans la moyenne de la famille Biodiversite comme
+  # s'il avait ete constate.
+  expect_true(all(is.na(result$B3)))
 })
 
 test_that("B3 with bdforet computes connectivity", {

@@ -227,10 +227,27 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
   }
   systemd <- .reconfort_systemd_run()
   if (is.null(systemd) || is.null(mm)) {
-    cli::cli_warn(c(
-      "Running {.val {fun}} in a child process, but WITHOUT a memory ceiling.",
-      i = "With no cgroup, an overshoot is the whole session's problem again: the OOM killer takes the scope, not the job."
-    ))
+    # Deux situations que le meme message decrivait, alors qu'elles n'appellent
+    # pas la meme action :
+    #   * Linux sans cgroup utilisable — anormal et REPARABLE, l'utilisateur
+    #     peut agir (bus utilisateur absent, systemd-run indisponible) ;
+    #   * plateforme sans cgroups du tout (Windows, macOS) — normal et
+    #     IRREPARABLE. Lui parler d'OOM killer et de scope, c'est lui expliquer
+    #     son probleme dans un vocabulaire qui n'existe pas chez lui : il n'y a
+    #     ni systemd a installer, ni cgroup a activer. Signale le 2026-08-24
+    #     sur un run Windows reel.
+    if (identical(.Platform$OS.type, "unix")) {
+      cli::cli_warn(c(
+        "Running {.val {fun}} in a child process, but WITHOUT a memory ceiling.",
+        i = "With no cgroup, an overshoot is the whole session's problem again: the OOM killer takes the scope, not the job."
+      ))
+    } else {
+      cli::cli_alert_info(
+        "Running {.val {fun}} in a child process; memory ceilings are not \
+         available on this platform. The job's memory still returns to the OS \
+         when it ends."
+      )
+    }
   }
   # Name the scope so systemd can be *asked* what became of it, instead of
   # guessing from an exit status that means several things at once (see

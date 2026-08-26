@@ -306,7 +306,7 @@ test_that("indicateur_r4_abroutissement calculates edge exposure", {
   result <- indicateur_r4_abroutissement(units, edge_buffer = 50)
 
   # Edge factor should be calculated (part of R4)
-  expect_true(all(result$R4 >= 0 & result$R4 <= 100))
+  expect_true(all(is.na(result$R4)))
 })
 
 test_that("indicateur_r4_abroutissement uses game density raster when provided", {
@@ -335,8 +335,11 @@ test_that("indicateur_r4_abroutissement defaults to 50 without layers", {
   result <- indicateur_r4_abroutissement(units)
 
   # Should use defaults (50 for both)
-  expect_true(all(result$R4_palatability == 50))
-  expect_true(all(result$R4_vulnerability == 50))
+  # v0.187.0 : sans BD Foret ni MNH ni raster de densite, aucune des
+  # composantes de R4 n'est mesurable — les 50 « Default » d'avant
+  # produisaient un R4 d'apparence normale qui pesait dans la famille Risques.
+  expect_true(all(is.na(result$R4_palatability)))
+  expect_true(all(is.na(result$R4_vulnerability)))
 })
 
 test_that("indicateur_r4_abroutissement uses fixed weights from tuto 03", {
@@ -350,7 +353,7 @@ test_that("indicateur_r4_abroutissement uses fixed weights from tuto 03", {
   # So R4 ≈ 0.35*50 + 0.30*50 + 0.20*edge + 0.15*50 = 40 + 0.20*edge
   # Edge for 100m squares with 50m buffer = 100% (entirely in edge zone)
   # So R4 ≈ 17.5 + 15 + 20 + 7.5 = 60
-  expect_true(all(result$R4 >= 0 & result$R4 <= 100))
+  expect_true(all(is.na(result$R4)))
 })
 
 # ==============================================================================
@@ -591,9 +594,12 @@ test_that("indicateur_r4_abroutissement exercises all default components", {
   expect_true("R4_palatability" %in% names(result))
   expect_true("R4_vulnerability" %in% names(result))
   # All components use defaults
-  expect_true(all(result$R4_palatability == 50))
-  expect_true(all(result$R4_vulnerability == 50))
-  expect_true(all(result$R4 >= 0 & result$R4 <= 100))
+  # v0.187.0 : sans BD Foret ni MNH ni raster de densite, aucune des
+  # composantes de R4 n'est mesurable — les 50 « Default » d'avant
+  # produisaient un R4 d'apparence normale qui pesait dans la famille Risques.
+  expect_true(all(is.na(result$R4_palatability)))
+  expect_true(all(is.na(result$R4_vulnerability)))
+  expect_true(all(is.na(result$R4)))
 })
 
 test_that("indicateur_r4_abroutissement with bdforet lacking essence column", {
@@ -616,7 +622,10 @@ test_that("indicateur_r4_abroutissement with bdforet lacking essence column", {
 
   expect_s3_class(result, "sf")
   expect_true("R4" %in% names(result))
-  expect_true(all(result$R4_palatability == 50))
+  # v0.187.0 : sans BD Foret ni MNH ni raster de densite, aucune des
+  # composantes de R4 n'est mesurable — les 50 « Default » d'avant
+  # produisaient un R4 d'apparence normale qui pesait dans la famille Risques.
+  expect_true(all(is.na(result$R4_palatability)))
 })
 
 test_that("indicateur_r4_abroutissement edge exposure with small polygons", {
@@ -629,7 +638,7 @@ test_that("indicateur_r4_abroutissement edge exposure with small polygons", {
 
   expect_s3_class(result, "sf")
   expect_true("R4" %in% names(result))
-  expect_true(all(result$R4 >= 0 & result$R4 <= 100))
+  expect_true(all(is.na(result$R4)))
 })
 
 test_that("indicateur_r4_abroutissement with bdforet and valid essence column", {
@@ -810,7 +819,7 @@ test_that("R4 without bdforet returns fallback", {
   result <- nemeton::indicateur_r4_abroutissement(units, bdforet = NULL)
   expect_true("R4" %in% names(result))
   # Should return some value (50 for fallback or computed)
-  expect_true(all(!is.na(result$R4) | result$R4 >= 0))
+  expect_true(all(is.na(result$R4)))
 })
 
 test_that("R4 with edge_buffer parameter", {
