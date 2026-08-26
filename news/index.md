@@ -1,5 +1,33 @@
 # Changelog
 
+## nemeton 0.189.1 (2026-08-26)
+
+#### Fixed — le tooltip de S3 annonçait une grandeur qui n’est plus la sienne
+
+Implémente `briefs/vers-nemeton/2026-08-26-tooltip-s3-faux.md`. Le texte
+disait « Population dans un rayon de 10 km ». **Deux erreurs, dont une
+antérieure au changement de v0.189.0** : le code utilisait déjà
+`pop_5km` quand le tooltip annonçait 10 km, et S3 porte une densité
+depuis la v0.189.0, plus un effectif.
+
+Il dit désormais « Densité de population dans un rayon de 5 km (hab/km²,
+échelle logarithmique) » — l’échelle est nommée parce qu’un score de 82
+sur une échelle log ne se lit pas comme un pourcentage.
+
+**Pourquoi c’était au cœur de le corriger, et pas à l’app.**
+`nemetonshiny` lit ce texte tel quel depuis `INDICATOR_FAMILIES`
+(`.build_indicator_families()`), et son `CLAUDE.md` interdit d’en
+dupliquer la liste. Le réécrire là-bas aurait créé **deux vérités** sur
+une donnée qui n’en a qu’une — exactement le fork que le dé-fork de
+v0.127.0 avait supprimé, et que la session app a eu raison de refuser.
+
+Un test verrouille la concordance : aucun « 10 km » dans les deux
+langues, la grandeur et son échelle nommées.
+
+Le libellé court reste « Proximité population » : il tient sur un axe de
+radar et reste juste pour une densité de voisinage. Seul le tooltip
+disait faux.
+
 ## nemeton 0.189.0 (2026-08-26)
 
 #### Fixed — lidR refusait un MNH sur disque (la vraie cause, enfin)

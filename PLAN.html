@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.189.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.189.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -456,6 +456,9 @@
 </div>
 <div class="section level1">
 <h1 id="correctifs-de-production-hors-chantier">Correctifs de production (hors chantier)<a class="anchor" aria-label="anchor" href="#correctifs-de-production-hors-chantier"></a></h1>
+<p><strong>Journal</strong> — <em>2026-08-26</em> (<strong>v0.189.1</strong>) : <strong>le tooltip de S3 décrivait une autre grandeur</strong>. Brief entrant, déposé par la session app <em>en implémentant</em> le brief que je venais de lui envoyer — lequel lui demandait de corriger un libellé qui, vérification faite, <strong>est le nôtre</strong>.</p>
+<p>Deux erreurs, dont une <strong>antérieure</strong> au changement de v0.189.0 : le code utilisait déjà <code>pop_5km</code> quand le tooltip annonçait « 10 km », et S3 porte une densité depuis hier, plus un effectif. Le texte nomme désormais les deux, et l’échelle avec — un score de 82 sur une échelle logarithmique ne se lit pas comme un pourcentage.</p>
+<p><strong>Le point de méthode, et il est à porter au crédit de la session app</strong> : elle aurait pu corriger le texte chez elle en trois secondes. Elle a refusé, parce que <code>nemetonshiny</code> lit ce tooltip tel quel depuis <code>INDICATOR_FAMILIES</code> et que son <code>CLAUDE.md</code> interdit d’en dupliquer la liste — le réécrire là-bas aurait créé <strong>deux vérités</strong> sur une donnée qui n’en a qu’une. C’est exactement le fork que le dé-fork de v0.127.0 a supprimé, et le réflexe qu’on cherchait à installer a fonctionné dans le sens le moins confortable : renvoyer le défaut à l’amont plutôt que le contourner.</p>
 <p><strong>Journal</strong> — <em>2026-08-26</em> (<strong>v0.189.0</strong>) : <strong>la vraie cause des échecs de segmentation, et le reliquat qui rejoint son voisin</strong>. Deux briefs de l’espace d’échange, découverts en auditant <code>briefs/vers-nemeton/</code> à la demande de Pascal — <strong>la deuxième fois en deux jours</strong> que cet audit révèle des briefs jamais lus.</p>
 <p><strong>lidR n’accepte pas un raster sur disque.</strong> Le message poursuivi par deux rapports — <code>st_crs(x) == st_crs(y) is not TRUE</code> — était un symptôme ; le garde de <code>dalponte2016()</code> dit la cause en clair : <em>« Cannot segment the trees from a raster stored on disk »</em>. <strong>Ce qui explique pourquoi tous mes tests passaient</strong> : <code><a href="https://rspatial.github.io/terra/reference/aggregate.html" class="external-link">terra::aggregate()</a></code> rend son résultat <strong>en mémoire</strong>, donc tout raster assez fin pour être agrégé esquivait le défaut, et un raster déjà à la bonne résolution — facteur 1 — restait sur disque et échouait. La taille n’y était pour rien : une dalle LiDAR HD de 4 M cellules échouait quand un MNH de 11,9 M passait. <strong>Mes cas de validation étaient tous du mauvais côté de cette frontière</strong>, et mon garde CRS de la v0.187.0 regardait au mauvais endroit.</p>
 <p><strong>Le cas résiduel du rapport reste inexpliqué</strong> — un raster croppé puis agrégé, en mémoire et au CRS sain, qui échoue quand même. Non reproduit, ni sur synthétique ni en dégradant le CRS comme le fait le MNH de Couchey. Signalé, non résolu : c’est plus honnête que de le déclarer couvert par le correctif.</p>

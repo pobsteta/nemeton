@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.189.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.189.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.189.1" id="nemeton-01891-2026-08-26">nemeton 0.189.1 (2026-08-26)<a class="anchor" aria-label="anchor" href="#nemeton-01891-2026-08-26"></a></h2>
+<div class="section level4">
+<h4 id="fixed--le-tooltip-de-s3-annonçait-une-grandeur-qui-nest-plus-la-sienne-0-189-1">Fixed — le tooltip de S3 annonçait une grandeur qui n’est plus la sienne<a class="anchor" aria-label="anchor" href="#fixed--le-tooltip-de-s3-annon%C3%A7ait-une-grandeur-qui-nest-plus-la-sienne-0-189-1"></a></h4>
+<p>Implémente <code>briefs/vers-nemeton/2026-08-26-tooltip-s3-faux.md</code>. Le texte disait « Population dans un rayon de 10 km ». <strong>Deux erreurs, dont une antérieure au changement de v0.189.0</strong> : le code utilisait déjà <code>pop_5km</code> quand le tooltip annonçait 10 km, et S3 porte une densité depuis la v0.189.0, plus un effectif.</p>
+<p>Il dit désormais « Densité de population dans un rayon de 5 km (hab/km², échelle logarithmique) » — l’échelle est nommée parce qu’un score de 82 sur une échelle log ne se lit pas comme un pourcentage.</p>
+<p><strong>Pourquoi c’était au cœur de le corriger, et pas à l’app.</strong> <code>nemetonshiny</code> lit ce texte tel quel depuis <code>INDICATOR_FAMILIES</code> (<code>.build_indicator_families()</code>), et son <code>CLAUDE.md</code> interdit d’en dupliquer la liste. Le réécrire là-bas aurait créé <strong>deux vérités</strong> sur une donnée qui n’en a qu’une — exactement le fork que le dé-fork de v0.127.0 avait supprimé, et que la session app a eu raison de refuser.</p>
+<p>Un test verrouille la concordance : aucun « 10 km » dans les deux langues, la grandeur et son échelle nommées.</p>
+<p>Le libellé court reste « Proximité population » : il tient sur un axe de radar et reste juste pour une densité de voisinage. Seul le tooltip disait faux.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.189.0" id="nemeton-01890-2026-08-26">nemeton 0.189.0 (2026-08-26)<a class="anchor" aria-label="anchor" href="#nemeton-01890-2026-08-26"></a></h2>
 <div class="section level4">

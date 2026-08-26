@@ -878,6 +878,28 @@ pas comme un attribut de commodité.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-26* (**v0.189.1**) : **le tooltip de S3 décrivait
+une autre grandeur**. Brief entrant, déposé par la session app *en
+implémentant* le brief que je venais de lui envoyer — lequel lui
+demandait de corriger un libellé qui, vérification faite, **est le
+nôtre**.
+
+Deux erreurs, dont une **antérieure** au changement de v0.189.0 : le
+code utilisait déjà `pop_5km` quand le tooltip annonçait « 10 km », et
+S3 porte une densité depuis hier, plus un effectif. Le texte nomme
+désormais les deux, et l’échelle avec — un score de 82 sur une échelle
+logarithmique ne se lit pas comme un pourcentage.
+
+**Le point de méthode, et il est à porter au crédit de la session app**
+: elle aurait pu corriger le texte chez elle en trois secondes. Elle a
+refusé, parce que `nemetonshiny` lit ce tooltip tel quel depuis
+`INDICATOR_FAMILIES` et que son `CLAUDE.md` interdit d’en dupliquer la
+liste — le réécrire là-bas aurait créé **deux vérités** sur une donnée
+qui n’en a qu’une. C’est exactement le fork que le dé-fork de v0.127.0 a
+supprimé, et le réflexe qu’on cherchait à installer a fonctionné dans le
+sens le moins confortable : renvoyer le défaut à l’amont plutôt que le
+contourner.
+
 **Journal** — *2026-08-26* (**v0.189.0**) : **la vraie cause des échecs
 de segmentation, et le reliquat qui rejoint son voisin**. Deux briefs de
 l’espace d’échange, découverts en auditant `briefs/vers-nemeton/` à la
