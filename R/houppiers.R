@@ -215,6 +215,25 @@ segment_houppiers <- function(chm,
     chm <- terra::aggregate(chm, fact = fac, fun = "max", na.rm = TRUE)
   }
 
+  # 2bis. lidR ne segmente QUE depuis la memoire.
+  #
+  #   dalponte2016() : if (raster_is_proxy(chm) & missing(bbox))
+  #                      stop("Cannot segment the trees from a raster stored on disk...")
+  #
+  # C'est la cause reelle des echecs poursuivis par deux rapports (2026-08-23
+  # et 2026-08-26), et elle explique pourquoi ils paraissaient capricieux :
+  # `terra::aggregate()` rend son resultat EN MEMOIRE, si bien que tout raster
+  # assez fin pour etre agrege passait, et qu'un raster deja a la bonne
+  # resolution — facteur 1, donc pas d'agregation — restait sur disque et
+  # echouait. Une dalle LiDAR HD de 4 M cellules echouait la ou un MNH de
+  # 11,9 M reussissait : ce n'etait pas une question de taille.
+  #
+  # Le cout est deja borne par `max_cells` : a 2e7, ~160 Mo, du meme ordre que
+  # ce que `locate_trees()` alloue ensuite.
+  if (!terra::inMemory(chm)) {
+    terra::set.values(chm)
+  }
+
   # 3. Apexes, then crowns around them.
   seg <- if (identical(algorithme, "watershed")) {
     lidR::watershed(chm, th_tree = hmin)()

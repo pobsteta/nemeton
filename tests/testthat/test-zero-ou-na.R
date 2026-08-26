@@ -186,12 +186,19 @@ test_that("S3 lit une grille de carreaux et pondere les carreaux a cheval", {
   r <- suppressMessages(indicateur_s3_population(
     u, population_grid = grille, buffer_radii = c(500, 1000, 2000)))
 
-  expect_false(is.na(r$S3[1]))
-  expect_gt(r$S3[1], 0)
-  expect_lt(r$S3[1], 100)          # pondere : pas les 100 habitants entiers
-  expect_equal(r$S3[1], round(100 * pi * 500^2 / 1e6), tolerance = 0.05)
+  # La PONDERATION se lit sur l'effectif : le tampon couvre pi*500^2 / 1e6
+  # ~ 78,5 % du carreau, donc ~78 des 100 habitants — pas les 100.
+  expect_false(is.na(r$S3_5km[1]))
+  expect_gt(r$S3_5km[1], 0)
+  expect_lt(r$S3_5km[1], 100)
+  expect_equal(r$S3_5km[1], round(100 * pi * 500^2 / 1e6), tolerance = 0.05)
 
-  # Un tampon plus large atteint le second carreau : la population croit.
+  # S3 lui-meme est une DENSITE (hab/km2), pas un effectif : ~78 habitants sur
+  # les 0,785 km2 du tampon, soit ~100 hab/km2 — la densite du carreau, ce qui
+  # est le controle le plus parlant.
+  expect_equal(as.numeric(r$S3[1]), 100, tolerance = 0.02)
+
+  # Un tampon plus large atteint le second carreau : l'effectif croit.
   expect_gt(r$S3_20km[1], r$S3_5km[1])
 })
 

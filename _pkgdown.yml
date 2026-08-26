@@ -445,6 +445,7 @@ reference:
     - load_fordead_validity_zones
     - load_foret_ancienne_source
     - load_onf_parcelles_source
+    - load_insee_population_source
     - load_raster_source
     - load_theia_source
     - monitoring_ingest

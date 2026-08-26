@@ -16,7 +16,7 @@ skip_if_not_installed("sf")
 .fordead_medians <- c(
   indicateur_c1_biomasse   = 0.062,      # tC/ha       -> ref_max 150
   indicateur_c2_ndvi       = -0.109,     # NDVI [-1,1] -> clamp 0
-  indicateur_s3_population = 9094.5,     # habitants   -> ref_max 10000
+  indicateur_s3_population = 297,        # hab/km2     -> echelle log (v0.188.0)
   indicateur_p1_volume     = 0,          # m3/ha       -> ref_max 800
   indicateur_p2_station    = 10.9        # m3/ha/an    -> ref_max 15
 )
@@ -34,11 +34,16 @@ test_that("family scores aggregate NORMALIZED values, not raw units", {
   units <- .units_from(.fordead_medians)
   out <- suppressWarnings(create_family_index(units, method = "mean"))
 
-  # S : 9 094 habitants. Brut, la moyenne de famille exploserait ; normalisé,
-  # 9094.5 / 10000 * 100 = 90,9. C'est le test décisif — aucune autre hypothèse
-  # ne produit un score dans [0, 100] ici.
-  expect_equal(out$famille_social[1], 90.945, tolerance = 1e-3)
+  # S : le test décisif — brut, la moyenne de famille exploserait ; normalisé,
+  # elle tient dans [0, 100]. Depuis la v0.188.0, S3 porte une DENSITÉ
+  # (hab/km²) normalisée sur une échelle logarithmique, non plus un effectif
+  # écrêté à 10 000 : la valeur attendue est donc recalculée à partir de la
+  # règle, pas figée sur l'ancienne.
+  attendu_s3 <- as.numeric(normalize_indicator(
+    "indicateur_s3_population", .fordead_medians[["indicateur_s3_population"]]))
+  expect_equal(out$famille_social[1], attendu_s3, tolerance = 1e-3)
   expect_lte(out$famille_social[1], 100)
+  expect_gte(out$famille_social[1], 0)
 
   # C : 0,062 tC/ha -> 0,041 ; NDVI négatif -> 0. Le score très bas est correct,
   # ce sont les ENTRÉES qui sont quasi nulles (cf. C1 canopée, C2 source S2).
@@ -100,7 +105,12 @@ test_that("short codes normalize like their long-form name", {
   expect_equal(normalize_indicator("P1", 400),
                normalize_indicator("indicateur_p1_volume", 400))
   expect_equal(normalize_indicator("P1", 400), 50)
-  expect_equal(normalize_indicator("S3", 5000), 50)
+  # S3 : l'objet de ce test est la RESOLUTION du code court, pas l'echelle.
+  # Depuis la v0.188.0, S3 porte une densite (hab/km2) sur une echelle
+  # logarithmique — un 5 000 y est hors domaine et sature, la valeur en dur
+  # n'aurait plus de sens. La propriete verifiee reste la meme.
+  expect_equal(normalize_indicator("S3", 120),
+               normalize_indicator("indicateur_s3_population", 120))
   # Règle non linéaire (TWI) : même résultat par les deux écritures.
   expect_equal(normalize_indicator("W3", 3.5),
                normalize_indicator("indicateur_w3_humidite", 3.5))

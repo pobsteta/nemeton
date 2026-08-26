@@ -358,11 +358,31 @@ indicateur_s3_population <- function(units,
   result$S3_5km <- pop_5km
   result$S3_10km <- pop_10km
   result$S3_20km <- pop_20km
-  result[[column_name]] <- pop_5km # Primary indicator is 5km buffer
 
-  msg_info("social_population_calculated", as.integer(median(pop_5km)), as.integer(median(pop_10km)), as.integer(median(pop_20km)))
+  # S3 = DENSITE dans la couronne d'accessibilite, pas comptage brut.
+  #
+  # Un effectif ne se compare pas d'un massif a l'autre : le tampon grandit
+  # avec l'UGF, donc un grand massif rural totalise plus d'habitants qu'un
+  # petit bois periurbain, ce qui inverse le sens de « pression sociale ».
+  # Pire, la normalisation historique saturait a 10 000 habitants — mesure sur
+  # Couchey : 46 110 habitants dans 5 km, soit un score de 100/100 pour un
+  # massif de bourgogne rurale. Presque toute foret francaise y serait a 100.
+  #
+  # La densite (hab/km2) est comparable, ne sature pas, et dit ce que
+  # l'indicateur pretend dire. Couchey : 297 hab/km2, 2,8 fois la moyenne
+  # francaise (106). Les effectifs restent en colonnes compagnes : ce sont eux
+  # qu'un gestionnaire cite dans un document.
+  aire_5km_km2 <- as.numeric(sf::st_area(buffer_5km)) / 1e6
+  result$S3_densite <- ifelse(aire_5km_km2 > 0, pop_5km / aire_5km_km2, NA_real_)
+  result[[column_name]] <- result$S3_densite
 
-  cli::cli_alert_success("Calculated {column_name}: Population proximity (5/10/20km buffers)")
-
-  return(result)
+  msg_info("social_population_calculated",
+           as.integer(stats::median(pop_5km, na.rm = TRUE)),
+           as.integer(stats::median(pop_10km, na.rm = TRUE)),
+           as.integer(stats::median(pop_20km, na.rm = TRUE)))
+  cli::cli_alert_success(
+    "Calculated {column_name}: population density in the 5 km ring \
+     (median {round(stats::median(result$S3_densite, na.rm = TRUE))} inhab/km2)"
+  )
+  result
 }
