@@ -283,3 +283,44 @@ test_that("un apex dans un AUTRE CRS est nomme, pas laisse en langage sf", {
   expect_error(segment_houppiers(mnh, ws = 4, hmin = 3),
                "different CRS than the CHM")
 })
+
+# --- lidR n'accepte pas un raster sur disque ---------------------------------
+# Brief `briefs/vers-nemeton/2026-08-26-lidr-raster-en-memoire.md`, cause
+# PROUVEE de ce que deux rapports precedents poursuivaient sous la formulation
+# trompeuse « st_crs(x) == st_crs(y) is not TRUE ».
+
+test_that("un MNH sur disque est segmente (materialisation avant lidR)", {
+  skip_if_not_installed("lidR")
+  # Le piege qui a fait passer tous les tests precedents : `terra::aggregate()`
+  # rend son resultat EN MEMOIRE. Tout raster assez fin pour etre agrege
+  # esquivait donc le defaut, et un raster deja a la bonne resolution — facteur
+  # 1, aucune agregation — restait sur disque et echouait. La taille n'y etait
+  # pour rien : une dalle de 4 M cellules echouait quand un MNH de 11,9 M
+  # passait.
+  #
+  # `resolution = 1` sur un raster deja a 1 m : facteur 1, donc pas
+  # d'agregation. C'est le chemin qui echouait.
+  mnh <- .mnh_synthetique(c(25, 18, 12), res = 1)
+  f <- withr::local_tempfile(fileext = ".tif")
+  terra::writeRaster(mnh, f, overwrite = TRUE)
+
+  sur_disque <- terra::rast(f)
+  expect_false(terra::inMemory(sur_disque))
+
+  h <- segment_houppiers(f, ws = 4, hmin = 3, resolution = 1)
+  expect_s3_class(h, "sf")
+  expect_gte(nrow(h), 1L)
+  expect_true(all(h$h_max >= 1 & h$h_max <= 70))
+})
+
+test_that("le chemin par chemin de fichier vaut celui par objet", {
+  skip_if_not_installed("lidR")
+  mnh <- .mnh_synthetique(c(25, 18), res = 1)
+  f <- withr::local_tempfile(fileext = ".tif")
+  terra::writeRaster(mnh, f, overwrite = TRUE)
+
+  par_objet <- segment_houppiers(mnh, ws = 4, hmin = 3, resolution = 1)
+  par_chemin <- segment_houppiers(f, ws = 4, hmin = 3, resolution = 1)
+  expect_equal(nrow(par_objet), nrow(par_chemin))
+  expect_equal(sort(round(par_objet$h_max, 3)), sort(round(par_chemin$h_max, 3)))
+})

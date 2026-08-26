@@ -769,6 +769,110 @@ pas comme un attribut de commodité.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-26* (**v0.189.0**) : **la vraie cause des échecs de
+segmentation, et le reliquat qui rejoint son voisin**. Deux briefs de l'espace
+d'échange, découverts en auditant `briefs/vers-nemeton/` à la demande de Pascal
+— **la deuxième fois en deux jours** que cet audit révèle des briefs jamais lus.
+
+**lidR n'accepte pas un raster sur disque.** Le message poursuivi par deux
+rapports — `st_crs(x) == st_crs(y) is not TRUE` — était un symptôme ; le garde
+de `dalponte2016()` dit la cause en clair : *« Cannot segment the trees from a
+raster stored on disk »*. **Ce qui explique pourquoi tous mes tests passaient** :
+`terra::aggregate()` rend son résultat **en mémoire**, donc tout raster assez
+fin pour être agrégé esquivait le défaut, et un raster déjà à la bonne
+résolution — facteur 1 — restait sur disque et échouait. La taille n'y était
+pour rien : une dalle LiDAR HD de 4 M cellules échouait quand un MNH de 11,9 M
+passait. **Mes cas de validation étaient tous du mauvais côté de cette
+frontière**, et mon garde CRS de la v0.187.0 regardait au mauvais endroit.
+
+**Le cas résiduel du rapport reste inexpliqué** — un raster croppé puis agrégé,
+en mémoire et au CRS sain, qui échoue quand même. Non reproduit, ni sur
+synthétique ni en dégradant le CRS comme le fait le MNH de Couchey. Signalé,
+non résolu : c'est plus honnête que de le déclarer couvert par le correctif.
+
+**Le reliquat rejoint son voisin** (`rattacher_reste = TRUE`), sur la règle
+énoncée par Pascal : le parcellaire ONF est une **source d'étiquettes**, pas un
+filtre — rien d'une parcelle cadastrale n'est écarté. Chaque morceau rejoint la
+parcelle forestière avec laquelle il partage **la plus longue frontière**
+(longueur, pas surface ni distance : un contact ponctuel n'est pas un
+voisinage) ; sans voisin, la parcelle devient sa propre UGF. Mesuré sur
+Couchey : l'UGF « hors forêt publique » disparaît, 529,73 ha conservés **au
+mètre carré**.
+
+**Défaut trouvé en implémentant, et c'est le plus instructif** : sur un mélange
+POLYGON/MULTIPOLYGON, `sf::st_cast("POLYGON")` ne garde que le **premier**
+polygone de chaque multipartie — sans erreur, sans avertissement. Première
+écriture : 20 lignes en entrée, 20 en sortie, **13,74 ha des 50,34 évaporés**.
+C'est exactement la perte silencieuse que l'invariant de pavage existe pour
+interdire ; un test la verrouille désormais.
+
+**Défaut `FALSE`, délibérément.** `inclure_reste` promet des lignes
+`hors_ugf = TRUE` ; basculer le défaut annulerait ce contrat sans un mot. La
+règle est disponible, l'appelant choisit — et peut alors retirer sa propre copie
+(`nemetonshiny::.onf_rattacher_reste()`, livrée en v0.140.0).
+
+**Deux échecs de la v0.188.0 corrigés au passage**, que l'interruption de l'audit
+m'avait fait manquer : un test figeait `normalize_indicator("S3", 5000) == 50`
+alors que son objet est la résolution des codes courts, et un score de famille
+attendait la valeur de l'ancienne échelle. Les deux recalculent désormais depuis
+la règle au lieu de figer un nombre.
+
+---
+
+**Journal** — *2026-08-26* (**v0.188.0**) : **S3 fonctionne enfin — carroyage
+INSEE branché, et l'indicateur change de grandeur**. Spec 050, demande de
+Pascal (« fais ce qu'il y a de plus pertinent pour la forêt »), qui laissait
+l'arbitrage de conception ouvert.
+
+**Le branchement seul n'aurait rien donné, et c'est la découverte du chantier.**
+La normalisation historique saturait à `ref_max = 10 000` habitants ; or Couchey
+en compte **46 110 dans 5 km**. Brancher la vraie source aurait livré un
+**interrupteur** : 100/100 pour une bourgogne rurale, et pour presque toute
+forêt française. Le placeholder rendait ~8 300 — c'est-à-dire une surface de
+tampon déguisée — et la borne avait été calibrée sur lui.
+
+**S3 porte désormais une DENSITÉ** (hab/km² dans la couronne de 5 km), avec les
+effectifs en colonnes compagnes. Un effectif ne se compare pas d'un massif à
+l'autre : le tampon grandit avec l'UGF, donc un grand massif rural totalise plus
+d'habitants qu'un petit bois périurbain — l'inverse de ce que « pression
+sociale » signifie. **Normalisation logarithmique** (5 → 26, 50 → 57, 100 → 67,
+297 → 82, ≥ 1 000 → 100), parce que la grandeur couvre trois ordres de grandeur
+en France et qu'une échelle linéaire écraserait tout le domaine forestier dans
+les premiers points.
+
+**Validé de bout en bout** sur cinq UGF de Couchey, avec la vraie grille :
+densités **37,5 à 192,8 hab/km²**, scores **53 à 76**. L'indicateur discrimine
+*à l'intérieur d'un même massif* — les cinq auraient été à 100 sous l'ancienne
+borne.
+
+| | Ancien | Nouveau |
+|---|---|---|
+| Valeur (Couchey, 5 km) | ~8 300 « habitants » = surface × 100 | **46 110 habitants**, densité **297 hab/km²** |
+| Score | 100/100 (saturé) | **82/100** |
+| Comparable entre massifs | non | oui |
+
+**Deux mesures qui corrigent des idées reçues, dont les miennes.** (1) La
+géométrie du GeoPackage est en **Lambert-93**, pas en EPSG:3035 : c'est
+l'**identifiant** du carreau qui porte la référence INSPIRE, une chaîne et non
+une projection — j'avais affirmé deux fois le contraire, et l'argument « intègre
+sans conversion de référentiel » tombe. (2) J'avais supposé que l'imputation
+(63,6 % des carreaux, 9,1 % de la population au national) pèserait **plus** en
+forêt ; mesuré autour de Couchey, elle y pèse **3 à 6 %**, donc moins. Le massif
+est à portée de Dijon et les tampons captent de l'urbain — **un massif
+réellement isolé donnerait autre chose**, à re-mesurer avant de généraliser.
+
+**Décision sur les carreaux imputés : comptés, et la part est dite** (attribut
+`part_imputee`). Les exclure retirerait des habitants réels — l'INSEE impute
+pour que les totaux restent justes — et mordrait le plus là où sont les forêts
+(42 % des carreaux autour de Couchey, 53 % à 20 km).
+
+**Acquisition** : découpage **à la lecture** (1 024 carreaux au lieu de
+374 511), cache partagé **par machine** et non par projet (52 Mo, un millésime
+par an), source injoignable → `NULL` et S3 reste `NA` — jamais de repli
+fabriqué. Licence Ouverte 2.0, attribution INSEE.
+
+---
+
 **Journal** — *2026-08-25* (**v0.187.0**) : **la dette des défauts neutres est
 soldée à six sur sept, et deux briefs oubliés sont traités**.
 

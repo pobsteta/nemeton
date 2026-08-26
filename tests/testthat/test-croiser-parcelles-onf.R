@@ -288,3 +288,92 @@ test_that("aucune parcelle concernée : rien, ou tout en hors UGF", {
   expect_true(all(tout$hors_ugf))
   expect_equal(sum(tout$surface_ha), 2)
 })
+
+# --- Rattachement du reliquat au voisin (brief 2026-08-26) -------------------
+# Regle de Pascal : le parcellaire ONF est une SOURCE D'ETIQUETTES, pas un
+# filtre. Rien d'une parcelle cadastrale n'est ecarte ; les bouts non couverts
+# (layons, routes, interstices) appartiennent aux peuplements qui les bordent.
+
+.rat_fixture <- function() {
+  # Une parcelle cadastrale de 300 x 100 m, deux parcelles forestieres qui en
+  # couvrent les extremites et laissent une bande de 100 m au milieu.
+  poly <- function(x0, x1) sf::st_polygon(list(rbind(
+    c(x0, 0), c(x1, 0), c(x1, 100), c(x0, 100), c(x0, 0))))
+  cad <- sf::st_sf(id = "A1",
+                   geometry = sf::st_sfc(poly(0, 300), crs = 2154))
+  onf <- sf::st_sf(
+    id = c("F1", "F2"), nom_ugf = c("parcelle 1", "parcelle 2"),
+    foret_id = "F13185C", foret_nom = "Forêt test",
+    parcelle = c("1", "2"), domaniale = TRUE,
+    geometry = sf::st_sfc(poly(0, 100), poly(200, 300), crs = 2154))
+  list(cad = cad, onf = onf)
+}
+
+test_that("le reliquat rejoint son voisin au lieu d'un fourre-tout", {
+  f <- .rat_fixture()
+  r <- croiser_parcelles_onf(f$onf, f$cad, inclure_reste = TRUE,
+                             rattacher_reste = TRUE, min_surface_ha = 0)
+  expect_false(any(r$hors_ugf))
+  # La surface totale est conservee : rien n'est ecarte, rien n'est duplique.
+  expect_equal(sum(as.numeric(sf::st_area(r))), 300 * 100, tolerance = 1e-6)
+})
+
+test_that("rattacher_reste = FALSE conserve l'ancien comportement", {
+  f <- .rat_fixture()
+  r <- croiser_parcelles_onf(f$onf, f$cad, inclure_reste = TRUE,
+                             rattacher_reste = FALSE, min_surface_ha = 0)
+  expect_true(any(r$hors_ugf))
+  expect_equal(sum(as.numeric(sf::st_area(r))), 300 * 100, tolerance = 1e-6)
+})
+
+test_that("sans voisin forestier, la parcelle devient sa propre UGF", {
+  # Une parcelle cadastrale isolee, qu'aucune parcelle ONF ne touche : elle ne
+  # doit pas finir dans un fourre-tout — ce serait une unite de gestion qui n'en
+  # est pas une — mais porter sa propre reference.
+  f <- .rat_fixture()
+  loin <- sf::st_sf(id = "A2", geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+    c(1000, 0), c(1100, 0), c(1100, 100), c(1000, 100), c(1000, 0)))), crs = 2154))
+  cad <- rbind(f$cad, loin)
+  r <- croiser_parcelles_onf(f$onf, cad, inclure_reste = TRUE,
+                             rattacher_reste = TRUE, min_surface_ha = 0)
+  isole <- r[r$parcelle_cadastrale == "A2", ]
+  expect_equal(nrow(isole), 1L)
+  expect_false(isole$hors_ugf)
+  expect_match(isole$ugf_id, "^cad~")
+  expect_identical(isole$nom_ugf, "A2")
+})
+
+test_that("le rattachement ne perd pas un metre carre (piege st_cast)", {
+  # Defaut trouve sur le parcellaire reel de Couchey : sur un melange
+  # POLYGON/MULTIPOLYGON, `st_cast("POLYGON")` ne garde que le PREMIER polygone
+  # de chaque multipartie, sans erreur ni avertissement — 20 lignes en entree,
+  # 20 en sortie, 13,74 ha des 50,34 evapores. C'est exactement le genre de
+  # perte que le pavage doit interdire.
+  poly <- function(x0, x1) sf::st_polygon(list(rbind(
+    c(x0, 0), c(x1, 0), c(x1, 100), c(x0, 100), c(x0, 0))))
+  # Parcelle cadastrale dont le reliquat sera MULTIPARTIE : deux parcelles
+  # forestieres aux extremites laissent deux bandes separees au milieu.
+  cad <- sf::st_sf(id = "A1", geometry = sf::st_sfc(poly(0, 500), crs = 2154))
+  onf <- sf::st_sf(
+    id = c("F1", "F2", "F3"), nom_ugf = c("p1", "p2", "p3"),
+    foret_id = "F1", foret_nom = "T", parcelle = c("1", "2", "3"),
+    domaniale = TRUE,
+    geometry = sf::st_sfc(poly(0, 100), poly(200, 300), poly(400, 500),
+                          crs = 2154))
+
+  sans <- croiser_parcelles_onf(onf, cad, inclure_reste = TRUE,
+                                rattacher_reste = FALSE, min_surface_ha = 0)
+  avec <- croiser_parcelles_onf(onf, cad, inclure_reste = TRUE,
+                                rattacher_reste = TRUE, min_surface_ha = 0)
+
+  # Le reliquat EST multipartie : c'est la condition du piege.
+  expect_true(any(as.character(sf::st_geometry_type(sans[sans$hors_ugf, ])) ==
+                    "MULTIPOLYGON"))
+  # Et la surface traverse le rattachement intacte.
+  expect_equal(sum(as.numeric(sf::st_area(avec))),
+               sum(as.numeric(sf::st_area(sans))), tolerance = 1e-9)
+  expect_equal(sum(as.numeric(sf::st_area(avec))), 500 * 100, tolerance = 1e-9)
+  expect_false(any(avec$hors_ugf))
+  # Les deux bandes rejoignent des UGF differentes : chacune son voisin.
+  expect_gt(length(unique(avec$ugf_id)), 2L)
+})

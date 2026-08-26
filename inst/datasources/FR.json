@@ -50,6 +50,12 @@
       "crs": 2154,
       "note": "HTTP only (no TLS endpoint). GML output only; the FILTER parameter is rejected by the service firewall, so queries are BBOX-driven. Overseas territories have their own endpoints: ONF_Forets_glp/_mtq (EPSG:32620), _guf (2972), _reu (2975), _myt (4471). Consumed by load_onf_parcelles_source().",
       "license": "Not declared on data.gouv.fr; ONF announces free and open reuse — cite the producer."
+    },
+    "insee_files": {
+      "type": "file_download",
+      "base_url": "https://www.insee.fr/fr/statistiques/fichier/",
+      "licence": "Licence Ouverte / Open Licence 2.0",
+      "description": "Fichiers INSEE en telechargement direct (pas de service OGC)"
     }
   },
   "layers": {
@@ -136,6 +142,14 @@
       "service": "onf_wfs",
       "typename": "ms:FOR_PUBL_FR",
       "description": "Périmètres des forêts publiques relevant du régime forestier (attribut cdom_frt : domaniale OUI/NON)"
+    },
+    "population_insee": {
+      "service": "insee_files",
+      "file": "8735171/Filosofi2021_carreaux_1km_gpkg.zip",
+      "layer": "carreaux_1km_met",
+      "crs": 2154,
+      "variable": "ind",
+      "description": "Carroyage de population INSEE Filosofi 2021, maille 1 km (374 511 carreaux, 62,6 M hab.) — alimente S3. Geometrie en Lambert-93 malgre l'identifiant INSPIRE du carreau."
     }
   },
   "datasets": {

@@ -597,13 +597,31 @@ normalize_indicator <- function(indicator, values) {
     "indicateur_w3_humidite" = NULL,
     "indicateur_s1_routes" = NULL,
     "indicateur_s2_bati" = NULL,
-    "indicateur_s3_population" = 10000,
+    # S3 n'a plus de `ref_max` : il porte une DENSITE (hab/km2), traitee par la
+    # regle logarithmique ci-dessous. L'ancien 10 000 bornait un effectif brut
+    # et saturait des qu'une vraie source etait branchee — mesure sur Couchey,
+    # 46 110 habitants dans 5 km, soit 100/100 pour une bourgogne rurale.
+    "indicateur_s3_population" = NULL,
     "indicateur_p1_volume" = 800,
     "indicateur_p2_station" = 15,
     "indicateur_e1_bois_energie" = 0.3,
     "indicateur_e2_evitement" = 0.75,
     NULL
   )
+
+  # S3 : densite de population dans la couronne d'accessibilite, sur une
+  # echelle LOGARITHMIQUE. La grandeur couvre trois ordres de grandeur en
+  # France — 5 hab/km2 dans un massif alpin isole, 40-80 en rural ordinaire,
+  # 300-1000 en periurbain, au-dela en lisiere de metropole. Une echelle
+  # lineaire ecraserait tout le domaine forestier dans les premiers points ;
+  # l'echelle log etale le bas (10 -> 33, 50 -> 57, 100 -> 67) et comprime le
+  # haut, ou l'ecart cesse d'etre informatif : au-dessus de 300 hab/km2 la
+  # foret est periurbaine, que le chiffre exact soit 400 ou 900.
+  # Reference : 1 000 hab/km2 = 100.
+  if (indicator == "indicateur_s3_population") {
+    d <- pmax(0, values)
+    return(pmin(100, 100 * log10(1 + d) / log10(1 + 1000)))
+  }
 
   # TWI: rescale [2.5, 4.5] -> [0, 100]
   if (indicator == "indicateur_w3_humidite") {

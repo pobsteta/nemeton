@@ -91,6 +91,23 @@
 #' @param seuil_calage Share of a cadastral parcel above which its dominant UGF
 #'   takes it whole. Only used when `caler_sur_cadastre` is `TRUE`. Default
 #'   `0.9`.
+#' @param rattacher_reste When `TRUE`, each piece of the remainder
+#'   joins the forest parcel it shares its **longest common boundary** with,
+#'   instead of piling up in a "hors forêt" catch-all. Length, not area nor
+#'   distance: a ride running 400 m along parcel 3 and touching parcel 4 at a
+#'   corner belongs to 3, and a point contact is not a neighbourhood. A piece
+#'   with no forest neighbour makes its cadastral parcel **its own unit**, named
+#'   after its reference. Measured at Couchey: the catch-all held 72 tenements
+#'   and 49.68 ha on a project whose parcels are *all* in forest; attaching
+#'   spreads one parcel's 10.89 ha of strips across **six** units instead of
+#'   inflating the dominant one by 77% with ground it does not touch.
+#'   Only meaningful with `inclure_reste = TRUE`.
+#'
+#'   **Default `FALSE`, deliberately.** `inclure_reste` promises rows carrying
+#'   `ugf_id = NA` and `hors_ugf = TRUE`; flipping this default would void that
+#'   promise without a word for every existing caller. The rule is available,
+#'   the contract holds — the caller opts in, and can then drop its own copy of
+#'   the logic.
 #' @param inclure_reste Also return, with `ugf_id` `NA` and `hors_ugf` `TRUE`,
 #'   the parts of cadastral parcels no forest parcel covers. Default `FALSE` —
 #'   the UGF-first view does not need them, and the application's
@@ -125,6 +142,7 @@ croiser_parcelles_onf <- function(parcelles_onf, parcelles,
                                   caler_sur_cadastre = FALSE,
                                   seuil_calage = 0.9,
                                   inclure_reste = FALSE,
+                                  rattacher_reste = FALSE,
                                   id_col = NULL) {
   if (!inherits(parcelles_onf, "sf")) {
     cli::cli_abort("{.arg parcelles_onf} must be an sf of ONF forest parcels.")
@@ -220,6 +238,22 @@ croiser_parcelles_onf <- function(parcelles_onf, parcelles,
     frags <- .croiser_caler(frags, cad, droite, aire_cad, seuil_calage)
     frags$surface_ha <- as.numeric(sf::st_area(frags)) / 1e4
   }
+  # Le reliquat rejoint son VOISIN, il ne s'entasse plus dans un fourre-tout.
+  #
+  # Regle enoncee par Pascal (2026-08-26) : le parcellaire ONF n'est pas un
+  # filtre mais une SOURCE D'ETIQUETTES. Ce qui fait foi, c'est le cadastre, et
+  # rien d'une parcelle cadastrale n'est jamais ecarte. Les bouts que le
+  # parcellaire ne couvre pas — layons, routes, interstices entre parcelles
+  # adjacentes, jeu de numerisation le long des limites — ne sont pas « hors
+  # foret » : ils appartiennent aux peuplements qui les bordent.
+  #
+  # Mesure a Couchey : le receptacle « hors foret publique » totalisait 72
+  # tenements et 49,68 ha sur un projet dont TOUTES les parcelles sont en foret.
+  if (isTRUE(inclure_reste) && isTRUE(rattacher_reste) && any(frags$hors_ugf)) {
+    frags <- .croiser_rattacher(frags, gauche)
+    frags$surface_ha <- as.numeric(sf::st_area(frags)) / 1e4
+  }
+
   if (min_surface_ha > 0) {
     frags <- .croiser_absorber(frags, min_surface_ha)
     frags$surface_ha <- as.numeric(sf::st_area(frags)) / 1e4
@@ -342,6 +376,96 @@ croiser_parcelles_onf <- function(parcelles_onf, parcelles,
 
 # Absorbe chaque écharde dans le plus gros tènement de la même parcelle
 # cadastrale : le pavage reste exact, seule l'attribution change.
+# Rattache chaque morceau de reliquat a la parcelle forestiere avec laquelle il
+# partage la PLUS LONGUE FRONTIERE commune.
+#
+# Trois choix de conception, chacun mesure a Couchey (spec 046, brief du
+# 2026-08-26) :
+#
+#  1. ECLATER d'abord. `.croiser_reste()` rend une ligne par parcelle
+#     cadastrale (un `st_difference`), donc multipartie : a cette granularite
+#     « le voisin » n'a pas de sens — A0036 borde VINGT-HUIT parcelles
+#     forestieres, et son reliquat de 10,89 ha se disperse en 8 bandes.
+#
+#  2. La LONGUEUR de frontiere, pas la surface ni la distance. Un layon qui
+#     longe la parcelle 3 sur 400 m et effleure la parcelle 4 par un coin
+#     appartient a la 3. Un contact PONCTUEL (longueur nulle) n'est pas un
+#     voisinage.
+#
+#  3. Sans voisin forestier, la parcelle reste SA PROPRE UGF, nommee par sa
+#     reference cadastrale — jamais versee dans un fourre-tout, qui ferait une
+#     unite de gestion qui n'en est pas une.
+#
+# L'alternative « tout a l'UGF dominante » a ete ecartee sur mesure : sur A0036
+# elle absorberait 10,89 ha de bandes dont plusieurs qu'elle ne touche pas,
+# grossissant de 77 % sur des terrains situes a l'autre bout de la parcelle.
+# La plus longue frontiere les repartit entre SIX UGF.
+.croiser_rattacher <- function(frags, gauche) {
+  i_hors <- which(frags$hors_ugf)
+  if (!length(i_hors)) return(frags)
+
+  hors <- frags[i_hors, , drop = FALSE]
+  garde <- frags[-i_hors, , drop = FALSE]
+
+  # 1. Parties simples — en DEUX temps, et ce n'est pas un detail.
+  #
+  # Sur un melange POLYGON/MULTIPOLYGON, `st_cast("POLYGON")` ne garde que le
+  # PREMIER polygone de chaque multipartie, sans erreur ni avertissement :
+  # mesure sur le parcellaire reel de Couchey, 20 lignes en entree, 20 en
+  # sortie, et 13,74 ha des 50,34 evapores. Passer par MULTIPOLYGON d'abord
+  # force l'eclatement (75 lignes, 50,34 ha conserves au metre carre).
+  hors <- suppressWarnings(sf::st_cast(hors, "MULTIPOLYGON"))
+  hors <- suppressWarnings(sf::st_cast(hors, "POLYGON", warn = FALSE))
+  hors <- hors[!sf::st_is_empty(sf::st_geometry(hors)), , drop = FALSE]
+  if (nrow(hors) == 0L) return(garde)
+
+  # 2. Plus longue frontiere partagee avec une parcelle forestiere.
+  # `gauche` porte les parcelles FORESTIERES et leurs attributs ; c'est bien
+  # d'elles qu'on cherche le voisin, pas des parcelles cadastrales.
+  voisins <- sf::st_intersects(hors, gauche)
+  attrs <- c("ugf_id", "nom_ugf", "foret_id", "foret_nom", "parcelle",
+             "domaniale")
+  for (i in seq_len(nrow(hors))) {
+    cand <- voisins[[i]]
+    if (!length(cand)) next
+    # Frontiere COMMUNE : on intersecte les BORDS, pas les surfaces. Deux
+    # polygones adjacents ont une intersection surfacique vide mais un bord
+    # partage bien reel — et l'intersection de deux polygones rend une
+    # GEOMETRYCOLLECTION (lignes ET points) que `st_cast()` refuse en bloc,
+    # defaut apparu sur le parcellaire reel de Couchey.
+    lg <- vapply(cand, function(j) {
+      inter <- suppressWarnings(sf::st_intersection(
+        sf::st_boundary(sf::st_geometry(gauche)[j]),
+        sf::st_boundary(sf::st_geometry(hors)[i])))
+      if (!length(inter)) return(0)
+      lin <- suppressWarnings(tryCatch(
+        sf::st_collection_extract(inter, "LINESTRING"),
+        error = function(e) inter))
+      if (!length(lin)) return(0)
+      v <- suppressWarnings(as.numeric(sum(sf::st_length(lin))))
+      if (!is.finite(v)) 0 else v
+    }, numeric(1))
+    # Un contact PONCTUEL a une longueur nulle : ce n'est pas un voisinage.
+    if (max(lg) <= 0) next
+    j <- cand[which.max(lg)]
+    for (a in intersect(attrs, names(gauche))) hors[[a]][i] <- gauche[[a]][j]
+    hors$hors_ugf[i] <- FALSE
+  }
+
+  # 3. Sans voisin : la parcelle cadastrale devient sa propre UGF.
+  orphelin <- hors$hors_ugf
+  if (any(orphelin)) {
+    ref <- hors$parcelle_cadastrale[orphelin]
+    hors$ugf_id[orphelin]  <- paste0("cad~", ref)
+    hors$nom_ugf[orphelin] <- ref
+    hors$hors_ugf[orphelin] <- FALSE
+  }
+
+  out <- if (nrow(garde) == 0L) hors else rbind(garde, hors[, names(garde)])
+  out
+}
+
+
 .croiser_absorber <- function(frags, min_surface_ha) {
   if (nrow(frags) == 0L) return(frags)
   groupes <- split(seq_len(nrow(frags)), frags$parcelle_cadastrale)
