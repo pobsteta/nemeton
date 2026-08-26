@@ -45,6 +45,7 @@ croiser_parcelles_onf(
   caler_sur_cadastre = FALSE,
   seuil_calage = 0.9,
   inclure_reste = FALSE,
+  rattacher_reste = FALSE,
   id_col = NULL
 )
 ```
@@ -80,6 +81,22 @@ croiser_parcelles_onf(
 
   Share of a cadastral parcel above which its dominant UGF takes it
   whole. Only used when `caler_sur_cadastre` is `TRUE`. Default `0.9`.
+
+- rattacher_reste:
+
+  When `TRUE`, each piece of the remainder joins the forest parcel it
+  shares its **longest common boundary** with, instead of piling up in a
+  "hors forêt" catch-all. Length, not area nor distance: a ride running
+  400 m along parcel 3 and touching parcel 4 at a corner belongs to 3,
+  and a point contact is not a neighbourhood. A piece with no forest
+  neighbour makes its cadastral parcel **its own unit**, named after its
+  reference. Measured at Couchey: the catch-all held 72 tenements and
+  49.68 ha on a project whose parcels are *all* in forest. Only
+  meaningful with `inclure_reste = TRUE`.
+
+  **Default `FALSE`, deliberately.** `inclure_reste` promises rows
+  carrying `ugf_id = NA` and `hors_ugf = TRUE`; flipping this default
+  would void that promise without a word for every existing caller.
 
 - inclure_reste:
 

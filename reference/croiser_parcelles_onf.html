@@ -65,7 +65,7 @@ never take a parcel — dropping forest is not a correction.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.187.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.189.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,6 +140,7 @@ never take a parcel — dropping forest is not a correction.</p></li>
 <span>  caler_sur_cadastre <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  seuil_calage <span class="op">=</span> <span class="fl">0.9</span>,</span>
 <span>  inclure_reste <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  rattacher_reste <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  id_col <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -176,6 +177,20 @@ Default <code>FALSE</code>.</p></dd>
 <dd><p>Share of a cadastral parcel above which its dominant UGF
 takes it whole. Only used when <code>caler_sur_cadastre</code> is <code>TRUE</code>.
 Default <code>0.9</code>.</p></dd>
+
+
+<dt id="arg-rattacher-reste">rattacher_reste<a class="anchor" aria-label="anchor" href="#arg-rattacher-reste"></a></dt>
+<dd><p>When <code>TRUE</code>, each piece of the remainder joins the
+forest parcel it shares its <strong>longest common boundary</strong> with, instead of piling
+up in a "hors forêt" catch-all. Length, not area nor distance: a ride running
+400 m along parcel 3 and touching parcel 4 at a corner belongs to 3, and a
+point contact is not a neighbourhood. A piece with no forest neighbour makes
+its cadastral parcel <strong>its own unit</strong>, named after its reference. Measured at
+Couchey: the catch-all held 72 tenements and 49.68 ha on a project whose
+parcels are <em>all</em> in forest. Only meaningful with <code>inclure_reste = TRUE</code>.</p>
+<p><strong>Default <code>FALSE</code>, deliberately.</strong> <code>inclure_reste</code> promises rows carrying
+<code>ugf_id = NA</code> and <code>hors_ugf = TRUE</code>; flipping this default would void that
+promise without a word for every existing caller.</p></dd>
 
 
 <dt id="arg-inclure-reste">inclure_reste<a class="anchor" aria-label="anchor" href="#arg-inclure-reste"></a></dt>

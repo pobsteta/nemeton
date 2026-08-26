@@ -783,6 +783,9 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`load_onf_parcelles_source()`](https://pobsteta.github.io/nemeton/reference/load_onf_parcelles_source.md)
   : Acquire the ONF public-forest parcel layer for an AOI
 
+- [`load_insee_population_source()`](https://pobsteta.github.io/nemeton/reference/load_insee_population_source.md)
+  : French population grid (INSEE Filosofi)
+
 - [`load_raster_source()`](https://pobsteta.github.io/nemeton/reference/load_raster_source.md)
   : Load a raster datasource as a SpatRaster
 

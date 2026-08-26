@@ -1,5 +1,166 @@
 # Changelog
 
+## nemeton 0.189.0 (2026-08-26)
+
+#### Fixed — lidR refusait un MNH sur disque (la vraie cause, enfin)
+
+Implémente `briefs/vers-nemeton/2026-08-26-lidr-raster-en-memoire.md`.
+[`segment_houppiers()`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md)
+échouait sur certains rasters avec un message trompeur —
+`st_crs(x) == st_crs(y) is not TRUE`, levé par `sf` **depuis lidR**. La
+cause réelle est ailleurs et le garde de
+[`lidR::dalponte2016()`](https://rdrr.io/pkg/lidR/man/its_dalponte2016.html)
+la dit :
+
+    Cannot segment the trees from a raster stored on disk.
+
+**Pourquoi deux rapports ont pu s’y perdre — et pourquoi tous mes tests
+passaient.**
+[`terra::aggregate()`](https://rspatial.github.io/terra/reference/aggregate.html)
+rend son résultat **en mémoire**. Tout raster assez fin pour être agrégé
+esquivait donc le défaut, et un raster déjà à la bonne résolution —
+facteur 1, aucune agrégation — restait sur disque et échouait. **La
+taille n’y était pour rien** : une dalle LiDAR HD de 4 M cellules
+échouait là où un MNH de 11,9 M passait. Mes cas de validation étaient
+tous du mauvais côté de cette frontière.
+
+Le CHM est désormais matérialisé
+([`terra::set.values()`](https://rspatial.github.io/terra/reference/inplace.html))
+avant l’appel à lidR. Le coût reste borné par `max_cells` — à 2e7, ~160
+Mo, l’ordre de ce que `locate_trees()` alloue ensuite. Deux tests
+couvrent le chemin par chemin de fichier et l’équivalence avec le chemin
+par objet.
+
+**Le cas résiduel du rapport n’est pas expliqué** : un raster croppé
+puis agrégé, en mémoire et au CRS sain, qui échoue quand même. Je n’ai
+pas réussi à le reproduire — ni sur raster synthétique, ni en dégradant
+le CRS comme le fait le MNH de Couchey. Signalé, non résolu.
+
+#### Added — le reliquat du croisement peut rejoindre son voisin
+
+Implémente
+`briefs/vers-nemeton/2026-08-26-rattachement-reste-voisin.md`. Règle
+énoncée par Pascal : le parcellaire ONF n’est pas un filtre mais une
+**source d’étiquettes** — ce qui fait foi, c’est le cadastre, et rien
+d’une parcelle cadastrale n’est écarté.
+
+`croiser_parcelles_onf(rattacher_reste = TRUE)` rattache chaque morceau
+de reliquat à la parcelle forestière avec laquelle il partage **la plus
+longue frontière commune**. Longueur, pas surface ni distance : un layon
+qui longe la parcelle 3 sur 400 m et effleure la 4 par un coin
+appartient à la 3, et un contact ponctuel n’est pas un voisinage. Sans
+voisin forestier, la parcelle devient **sa propre UGF**, nommée par sa
+référence cadastrale — jamais versée dans un fourre-tout, qui ferait une
+unité de gestion qui n’en est pas une.
+
+Mesuré sur Couchey (21 parcelles, parcellaire ONF réel) : l’UGF « hors
+forêt publique » disparaît (20 tènements), la surface reste à **529,73
+ha au mètre carré près**, et une UGF supplémentaire apparaît — la
+parcelle qu’aucune parcelle forestière ne touche.
+
+**Défaut trouvé en implémentant, et verrouillé par un test** : sur un
+mélange POLYGON/MULTIPOLYGON, `sf::st_cast("POLYGON")` ne garde que le
+**premier** polygone de chaque multipartie, sans erreur ni
+avertissement. Première écriture : 20 lignes en entrée, 20 en sortie,
+**13,74 ha des 50,34 évaporés**. Il faut passer par MULTIPOLYGON
+d’abord.
+
+**Défaut `FALSE`, délibérément** : `inclure_reste` promet des lignes
+portant `ugf_id = NA` et `hors_ugf = TRUE` ; basculer le défaut
+annulerait cette promesse sans un mot pour tout appelant existant. La
+règle est disponible, le contrat tient — l’appelant choisit, et peut
+alors supprimer sa propre copie de la logique
+(`nemetonshiny::.onf_rattacher_reste()`).
+
+## nemeton 0.188.0 (2026-08-26)
+
+#### Added — S3 fonctionne : carroyage INSEE Filosofi branché (spec 050)
+
+[`load_insee_population_source()`](https://pobsteta.github.io/nemeton/reference/load_insee_population_source.md)
+télécharge (une fois par machine) et lit le carroyage **INSEE Filosofi
+2021**, découpé sur l’emprise. Il alimente
+[`indicateur_s3_population()`](https://pobsteta.github.io/nemeton/reference/indicateur_s3_population.md),
+qui rendait `NA` partout depuis la v0.187.0.
+
+**Le découpage se fait à la lecture**, pas après : mesuré sur le massif
+de Couchey, **1 024 carreaux lus au lieu de 374 511**. Cache partagé par
+machine (`~/.cache/nemeton/insee/filosofi<millésime>_<maille>/`) — le
+fichier pèse 52 Mo zippé et ne change qu’une fois l’an, un recalcul ne
+re-télécharge rien.
+
+Source injoignable → `NULL`, et S3 reste `NA`. **Jamais de repli
+fabriqué** : c’est la règle de la v0.187.0, et elle vaut aussi pour
+l’acquisition.
+
+Licence Ouverte / Open Licence 2.0, attribution INSEE.
+
+#### Changed — S3 mesure une densité, plus un effectif
+
+**C’est le changement qui rend l’indicateur utilisable, et il ne va pas
+de soi.** Brancher la vraie source sans y toucher aurait livré un
+interrupteur : la normalisation historique saturait à `ref_max = 10 000`
+habitants, or Couchey en compte **46 110 dans 5 km**. Score : 100/100 —
+pour une bourgogne rurale. Presque toute forêt française y serait à 100.
+
+Un effectif ne se compare pas non plus d’un massif à l’autre : le tampon
+grandit avec l’UGF, si bien qu’un grand massif rural totalise plus
+d’habitants qu’un petit bois périurbain — l’inverse de ce que « pression
+sociale » veut dire.
+
+`S3` porte donc désormais la **densité de population dans la couronne de
+5 km** (hab/km²). Les effectifs restent en colonnes compagnes (`S3_5km`,
+`S3_10km`, `S3_20km`) : ce sont eux qu’un gestionnaire cite dans un
+document.
+
+**Normalisation logarithmique**, parce que la grandeur couvre trois
+ordres de grandeur en France — ~5 hab/km² dans un massif alpin isolé,
+40-80 en rural ordinaire, 300-1 000 en périurbain :
+
+| Densité       | Score |
+|---------------|-------|
+| 5 hab/km²     | 26    |
+| 50            | 57    |
+| 100           | 67    |
+| 297 (Couchey) | 82    |
+| ≥ 1 000       | 100   |
+
+Une échelle linéaire écraserait tout le domaine forestier dans les
+premiers points ; l’échelle log étale le bas et comprime le haut, où
+l’écart cesse d’être informatif : au-delà de 300 hab/km², la forêt est
+périurbaine, que le chiffre soit 400 ou 900.
+
+**Validé de bout en bout** sur cinq UGF de Couchey : densités **37,5 à
+192,8 hab/km²**, scores **53 à 76**. L’indicateur discrimine enfin *à
+l’intérieur d’un même massif* — avec l’ancien comptage saturé, les cinq
+auraient été à 100.
+
+#### Note — les carreaux imputés sont comptés, et la part est dite
+
+`i_est_1km == 1` marque un carreau de moins de 11 ménages fiscaux, dont
+l’effectif est **modélisé** par l’INSEE. Les exclure retirerait des
+habitants réels — l’imputation existe justement pour que les totaux
+restent justes — et mordrait le plus là où sont les forêts : **42 %**
+des carreaux autour de Couchey, **53 %** à 20 km. Ils sont donc comptés,
+et la part revient dans l’attribut `part_imputee`.
+
+**Deux mesures qui corrigent des idées reçues** (la mienne comprise) :
+
+- la géométrie du GeoPackage est en **EPSG:2154 (Lambert-93)**, *pas*
+  en 3035. C’est l’**identifiant** du carreau qui porte la référence
+  INSPIRE (`idcar_1km = "CRS3035RES1000mN2029000E4252000"`) — une
+  chaîne, pas une projection ;
+- l’imputation, qui touche **63,6 %** des carreaux au niveau national
+  mais ne porte que **9,1 %** de la population, ne pèse pas *davantage*
+  en forêt comme je l’avais supposé : autour de Couchey elle représente
+  **3 à 6 %** de la population. Le massif est à portée de Dijon, et les
+  tampons captent de l’urbain. **Un massif réellement isolé donnerait un
+  autre résultat** — à re-mesurer avant de généraliser.
+
+#### Documentation
+
+`specs/050-population-insee/spec.md` — source vérifiée sur le fichier
+réel, décision sur les carreaux imputés, et les mesures ci-dessus.
+
 ## nemeton 0.187.0 (2026-08-25)
 
 #### Changed — six indicateurs cessent de fabriquer un défaut « neutre »
