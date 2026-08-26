@@ -878,6 +878,94 @@ pas comme un attribut de commodité.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-25* (**v0.187.0**) : **la dette des défauts
+neutres est soldée à six sur sept, et deux briefs oubliés sont
+traités**.
+
+**Six indicateurs fabriquaient une valeur sans rien mesurer** —
+`rep(50)` pour A2, B3, N2, N3 et l’appétence de R4, des distances
+inventées pour N1 (« default like tuto 04 » : 1000 m aux routes, 500 m
+au bâti). Même faute que le zéro de B1 (v0.186.0), **en plus
+dangereuse** : un 50 ressemble à une mesure moyenne crédible quand une
+colonne de zéros finit par se remarquer, et il pesait dans la moyenne de
+famille. Tous rendent `NA` désormais.
+
+**N3 est le cas qui mérite d’être isolé** : somme pondérée de quatre
+composantes, il remplaçait une composante absente par 50 — produisant
+non pas un composite « approximatif » mais une **moyenne entre du mesuré
+et de l’inventé, indiscernable en aval d’un N3 entièrement mesuré**.
+C’est la forme la plus coûteuse du défaut, parce qu’elle survit à toute
+inspection de la valeur seule.
+
+**S3 tranché par Pascal dans la foulée** — « S3 ne doit pas fabriquer de
+fausse valeur ». C’était le cas le plus coûteux des sept : il acceptait
+un `population_grid` et **ne l’a jamais lu**, rendant
+`surface × 100 hab/km²`. Cette valeur **variait plausiblement avec la
+taille de l’UGF**, donc ressemblait à une mesure — impossible à repérer
+en aval, contrairement à un 50 constant. Sans grille il rend `NA` ; avec
+une grille il **somme réellement**, en pondérant les carreaux à cheval
+par leur part dans le tampon. Source prête : INSEE Filosofi 2021,
+carreaux 200 m ou 1 km, variable `ind`, carroyage INSPIRE en
+**EPSG:3035** — le CRS de l’ADR-008, intégrable sans conversion.
+
+`method = "proxy"` est conservé mais lève une erreur qui **dit** ce
+qu’il produisait : retirer le nom des choix aurait fait tomber les
+appels existants sur un `match.arg` cryptique.
+
+**La dette de sept est soldée.** Le test qui la figeait attend désormais
+une liste vide — et reste utile : il échouera si un indicateur
+recommence à rendre une valeur sans donnée d’entrée.
+
+------------------------------------------------------------------------
+
+**Deux briefs de l’espace d’échange n’avaient jamais été lus**,
+découverts en auditant `briefs/vers-nemeton/` à la demande de Pascal.
+C’est une leçon de méthode : **l’espace d’échange fait partie des
+sources à consulter avant d’enquêter**, au même titre que le code et le
+journal.
+
+**`2026-08-24-meminfo-windows.md`** — juste sur toute la ligne, et
+visant du code de la v0.183.0.
+[`readLines()`](https://rdrr.io/r/base/readLines.html) sur un fichier
+absent **avertit avant d’échouer**, et `tryCatch(error =)` n’attrape pas
+l’avertissement : sous Windows, « impossible d’ouvrir le fichier
+‘/proc/meminfo’ » s’affichait en pleine console au milieu d’un calcul
+qui aboutissait. Garde
+[`file.exists()`](https://rdrr.io/r/base/files.html) sur les deux sites,
+dont celui de `regen_engines.R` que le brief annonçait comme la
+prochaine occurrence. Et son second point, le plus fin : sous Windows,
+parler d’OOM killer et de scope décrit le problème dans un vocabulaire
+qui n’existe pas là-bas — il n’y a ni systemd à installer ni cgroup à
+activer. Le message distingue désormais Linux-sans-cgroup (anormal,
+réparable) de plateforme-sans-cgroups (normal, irréparable).
+
+**`2026-08-23-houppiers-regression-crs.md`** — celui-ci expliquait ce
+que j’avais cherché en vain le matin du 2026-08-25 (pourquoi
+`precompute_houppiers()` n’écrivait rien pendant le calcul).
+**L’attribution du rapport est cependant réfutée** : sa reproduction
+minimale rend ici **46 158 houppiers en 71 s** sur le raster incriminé
+de 418 M cellules — exactement le chiffre qu’il attribue à la version
+qui marchait — et le diff entre `v0.184.0` et l’état de `main` au moment
+de l’échec ne contient **qu’une ligne de `DESCRIPTION`**. Le code était
+identique au bit près : ce n’était pas une régression du cycle dev, mais
+l’environnement de la session appelante.
+
+**Le garde est posé quand même**, parce que la meilleure intuition du
+rapport tient : `st_crs(x) == st_crs(y)` vient d’un
+[`stopifnot()`](https://rdrr.io/r/base/stopifnot.html) de `sf` **appelé
+depuis lidR**, donc décrit un symptôme ; si `locate_trees()` rend un
+objet non vide **sans CRS**, le garde `nrow(tops) == 0` ne l’attrape
+pas. Un CRS absent est réparé depuis le raster, un CRS différent lève
+une erreur qui nomme les deux systèmes et désigne lidR.
+
+**Erreur de méthode à consigner** : j’avais validé
+[`segment_houppiers()`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md)
+sur le fichier de sortie d’`opencanopynemeton` (11,9 M cellules) en
+croyant valider le MNH du projet — lequel fait **418 M cellules**,
+trente-cinq fois plus. Les deux fichiers portent le même nom.
+
+------------------------------------------------------------------------
+
 **Journal** — *2026-08-25* (**v0.186.0**) : **« 0 » et « pas de donnée »
 cessent de se confondre**. Brief entrant
 `briefs/vers-nemeton/2026-08-25-indicateurs-zero-ou-na.md`, règle

@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.186.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.187.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -71,7 +71,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstétar</h4>
             
-            <h4 data-toc-skip class="date">2026-08-25</h4>
+            <h4 data-toc-skip class="date">2026-08-26</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/biodiversity-resilience_fr.Rmd" class="external-link"><code>vignettes/biodiversity-resilience_fr.Rmd</code></a></small>
       <div class="d-none name"><code>biodiversity-resilience_fr.Rmd</code></div>
@@ -197,8 +197,8 @@ travers les strates, âges et essences.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">B3</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
-<span><span class="co">#&gt;      50      50      50      50      50      50</span></span></code></pre></div>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.     NAs </span></span>
+<span><span class="co">#&gt;      NA      NA      NA     NaN      NA      NA      10</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -341,12 +341,12 @@ famille.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">famille_biodiversite</span>, <span class="va">famille_risque</span>, <span class="va">famille_temporel</span>, <span class="va">famille_air</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   parcel_id famille_biodiversite famille_risque famille_temporel famille_air</span></span>
-<span><span class="co">#&gt; 1       P01             43.51269       70.33977         61.29032    50.00000</span></span>
-<span><span class="co">#&gt; 2       P02             72.22222       48.24446         17.62303    28.71851</span></span>
+<span><span class="co">#&gt; 1       P01             40.26904       70.33977         61.29032    50.00000</span></span>
+<span><span class="co">#&gt; 2       P02             83.33333       48.24446         17.62303    28.71851</span></span>
 <span><span class="co">#&gt; 3       P03             50.00000       53.02653         44.71207    44.90653</span></span>
-<span><span class="co">#&gt; 4       P04             16.66667       16.61201         62.47047    40.25588</span></span>
-<span><span class="co">#&gt; 5       P05             27.77778       26.45295         11.29032    30.80376</span></span>
-<span><span class="co">#&gt; 6       P06             38.88889       48.35630         41.69098    54.08198</span></span></code></pre></div>
+<span><span class="co">#&gt; 4       P04              0.00000       16.61201         62.47047    40.25588</span></span>
+<span><span class="co">#&gt; 5       P05             16.66667       26.45295         11.29032    30.80376</span></span>
+<span><span class="co">#&gt; 6       P06             33.33333       48.35630         41.69098    54.08198</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="agrégation-conservative-méthode-min">Agrégation conservative (méthode “min”)<a class="anchor" aria-label="anchor" href="#agr%C3%A9gation-conservative-m%C3%A9thode-min"></a>
@@ -476,7 +476,7 @@ haute biodiversité (famille B) mais forte vulnérabilité (famille R).</p>
 <span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt;   parcel_id famille_biodiversite  T1 famille_risque</span></span>
-<span><span class="co">#&gt; 1       P07             83.33333 150       53.99158</span></span></code></pre></div>
+<span><span class="co">#&gt; 1       P07                  100 150       53.99158</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="parcelles-vulnérables-multi-risques">Parcelles vulnérables multi-risques<a class="anchor" aria-label="anchor" href="#parcelles-vuln%C3%A9rables-multi-risques"></a>
@@ -578,11 +578,11 @@ haute biodiversité (famille B) mais forte vulnérabilité (famille R).</p>
 <span></span>
 <span><span class="va">summary_table</span></span>
 <span><span class="co">#&gt;   parcel_id        B1 B2 B3 famille_biodiversite       R1       R2       R3</span></span>
-<span><span class="co">#&gt; 1       P01  47.20474 85 50             43.51269 44.25188 47.07114 73.04010</span></span>
-<span><span class="co">#&gt; 2       P02 100.00000 86 50             72.22222 65.53830 30.47225 68.09509</span></span>
-<span><span class="co">#&gt; 3       P03   0.00000 87 50             50.00000 29.74880 71.66821 29.17421</span></span>
-<span><span class="co">#&gt; 4       P04   0.00000 84 50             16.66667 55.26992 28.43826 20.55258</span></span>
-<span><span class="co">#&gt; 5       P05   0.00000 85 50             27.77778 35.67475 48.22051 39.90999</span></span>
+<span><span class="co">#&gt; 1       P01  47.20474 85 NA             40.26904 44.25188 47.07114 73.04010</span></span>
+<span><span class="co">#&gt; 2       P02 100.00000 86 NA             83.33333 65.53830 30.47225 68.09509</span></span>
+<span><span class="co">#&gt; 3       P03   0.00000 87 NA             50.00000 29.74880 71.66821 29.17421</span></span>
+<span><span class="co">#&gt; 4       P04   0.00000 84 NA              0.00000 55.26992 28.43826 20.55258</span></span>
+<span><span class="co">#&gt; 5       P05   0.00000 85 NA             16.66667 35.67475 48.22051 39.90999</span></span>
 <span><span class="co">#&gt;         R4 famille_risque  T1         T2 famille_temporel       A1       A2</span></span>
 <span><span class="co">#&gt; 1 64.02529       70.33977  80 18.5854441         61.29032 74.83550 62.37394</span></span>
 <span><span class="co">#&gt; 2 22.89638       48.24446  45  7.0717841         17.62303 57.46452 64.73451</span></span>

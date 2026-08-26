@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.186.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.187.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,44 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.187.0" id="nemeton-01870-2026-08-25">nemeton 0.187.0 (2026-08-25)<a class="anchor" aria-label="anchor" href="#nemeton-01870-2026-08-25"></a></h2>
+<div class="section level4">
+<h4 id="changed--six-indicateurs-cessent-de-fabriquer-un-défaut--neutre--0-187-0">Changed — six indicateurs cessent de fabriquer un défaut « neutre »<a class="anchor" aria-label="anchor" href="#changed--six-indicateurs-cessent-de-fabriquer-un-d%C3%A9faut--neutre--0-187-0"></a></h4>
+<p>Suite de la v0.186.0, sur la dette que son balayage avait figée. Six indicateurs ne rendaient pas <code>0</code> sans donnée d’entrée, mais une <strong>valeur inventée</strong> : <code>units$A2 &lt;- rep(50, nrow(units))</code> faute de données atmo, <code>dist_routes &lt;- rep(1000, ...)</code> et <code>dist_batiments &lt;- rep(500, ...)</code> « default like tuto 04 » pour N1, <code>rep(50)</code> encore pour B3, N2, N3 et la composante d’appétence de R4.</p>
+<p><strong>C’est la même faute que le zéro de B1, en plus dangereuse</strong> : un <code>50</code> ressemble à une mesure moyenne crédible, là où une colonne de zéros finit par se remarquer. Et il pesait dans la moyenne de famille (<code><a href="../reference/create_family_index.html">create_family_index()</a></code> moyenne avec <code>na.rm = TRUE</code>), tirant vers 50 des familles qui n’avaient rien mesuré.</p>
+<p><code>A2</code>, <code>B3</code> (deux chemins), <code>N1</code>, <code>N2</code>, <code>N3</code> et <code>R4</code> rendent désormais <code>NA</code> quand leur entrée manque.</p>
+<p><strong>Le cas de N3 mérite d’être isolé.</strong> C’est une somme pondérée de quatre composantes (N1, N2, anti-fragmentation, connectivité). Remplacer une composante absente par 50 ne rendait pas le composite « approximatif » : ça produisait une moyenne entre du mesuré et de l’inventé, <strong>indiscernable en aval d’un N3 entièrement mesuré</strong>. Une composante manquante rend maintenant <code>NA</code>, qui se propage.</p>
+</div>
+<div class="section level4">
+<h4 id="changed--s3-ne-fabrique-plus-de-population-il-en-lit-une-ou-dit-na-0-187-0">Changed — S3 ne fabrique plus de population, il en lit une ou dit <code>NA</code>
+<a class="anchor" aria-label="anchor" href="#changed--s3-ne-fabrique-plus-de-population-il-en-lit-une-ou-dit-na-0-187-0"></a></h4>
+<p>Décision de Pascal : « S3 ne doit pas fabriquer de fausse valeur. »</p>
+<p><code><a href="../reference/indicateur_s3_population.html">indicateur_s3_population()</a></code> acceptait un <code>population_grid</code> et <strong>ne l’a jamais lu</strong>. Il rendait <code>surface_du_tampon × 100 hab/km²</code>, avec ses propres commentaires pour l’avouer (« Placeholder calculation », « In production, would query INSEE Carroyage »). C’est la forme la plus coûteuse d’une valeur fabriquée : elle <strong>variait plausiblement avec la taille de l’UGF</strong>, donc ressemblait à une mesure et ne pouvait pas se repérer en aval.</p>
+<p>Désormais :</p>
+<ul><li>
+<strong>sans grille → <code>NA</code></strong> sur les quatre colonnes (<code>S3</code>, <code>S3_5km</code>, <code>S3_10km</code>, <code>S3_20km</code>) — un appelant qui ne lit qu’un rayon n’y trouve pas un nombre là où rien n’a été mesuré ;</li>
+<li>
+<strong>avec grille → une vraie somme</strong>. Deux portages acceptés : un <code>sf</code> de carreaux, <strong>pondéré par la part de carreau réellement dans le tampon</strong> (un carreau à cheval ne compte pas pour sa population entière), ou un <code>SpatRaster</code> sommé par <code>exactextractr</code>. La colonne de population est détectée (<code>ind</code>, <code>pop</code>, <code>population</code>…) ou nommée par <code>population_field</code>.</li>
+</ul><p><strong>Source prête à brancher</strong> : INSEE <strong>Filosofi 2021</strong>, carreaux 200 m ou 1 km, GeoPackage, variable <strong><code>ind</code></strong> (nombre d’individus), carroyage INSPIRE en <strong>EPSG:3035</strong> — le CRS paneuropéen de l’ADR-008, donc intégrable sans conversion de référentiel.</p>
+<p><strong><code>method = "proxy"</code> ne disparaît pas en silence</strong> : la valeur est conservée et lève une erreur qui explique ce qu’elle produisait et par quoi la remplacer. Retirer le nom des choix aurait fait tomber les appels existants sur un <code>match.arg</code> cryptique.</p>
+<p><strong>La dette figée en v0.186.0 est donc soldée</strong> : le test qui gardait la liste des indicateurs fabriquant une valeur attend maintenant une liste <strong>vide</strong>.</p>
+</div>
+<div class="section level4">
+<h4 id="fixed--procmeminfo-lu-sans-garde--bruit-système-sous-windows-0-187-0">Fixed — <code>/proc/meminfo</code> lu sans garde : bruit système sous Windows<a class="anchor" aria-label="anchor" href="#fixed--procmeminfo-lu-sans-garde--bruit-syst%C3%A8me-sous-windows-0-187-0"></a></h4>
+<p>Implémente <code>briefs/vers-nemeton/2026-08-24-meminfo-windows.md</code>. <code><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines()</a></code> sur un fichier absent <strong>avertit avant d’échouer</strong>, et <code>tryCatch(error = )</code> n’attrape pas l’avertissement : l’utilisateur Windows lisait « impossible d’ouvrir le fichier ‘/proc/meminfo’ » en pleine console, au milieu d’un calcul qui, lui, aboutissait. Garde <code><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists()</a></code> posée sur les <strong>deux</strong> sites — <code>.mem_total_kb()</code> et <code>.pai_total_ram_gb()</code>, ce dernier n’étant pas encore apparu mais annoncé par le brief comme la prochaine occurrence.</p>
+</div>
+<div class="section level4">
+<h4 id="changed--le-message--sans-plafond-mémoire--parle-la-langue-de-la-plateforme-0-187-0">Changed — le message « sans plafond mémoire » parle la langue de la plateforme<a class="anchor" aria-label="anchor" href="#changed--le-message--sans-plafond-m%C3%A9moire--parle-la-langue-de-la-plateforme-0-187-0"></a></h4>
+<p>Deux situations partageaient un message qui n’appelle pourtant pas la même action : <strong>Linux sans cgroup utilisable</strong> (anormal, réparable) et <strong>plateforme sans cgroups du tout</strong> (Windows, macOS — normal, irréparable). Expliquer à un utilisateur Windows que « the OOM killer takes the scope, not the job », c’est décrire son problème avec un vocabulaire qui n’existe pas chez lui : il n’a ni systemd à installer, ni cgroup à activer. Le second cas dit maintenant que le plafond n’est pas disponible sur cette plateforme et que la mémoire du travail revient à l’OS en fin de job.</p>
+</div>
+<div class="section level4">
+<h4 id="added--garde-sur-le-crs-des-apex-de-houppiers-0-187-0">Added — garde sur le CRS des apex de houppiers<a class="anchor" aria-label="anchor" href="#added--garde-sur-le-crs-des-apex-de-houppiers-0-187-0"></a></h4>
+<p>Rapport <code>briefs/vers-nemeton/2026-08-23-houppiers-regression-crs.md</code> : <code><a href="../reference/segment_houppiers.html">segment_houppiers()</a></code> échouait sur <code>st_crs(x) == st_crs(y) is not TRUE</code>, levé par un <code><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot()</a></code> de <code>sf</code> <strong>depuis lidR</strong> — un message qui décrit un symptôme, pas une cause.</p>
+<p><strong>Non reproduit, et l’attribution du rapport est réfutée.</strong> La reproduction minimale sur le raster incriminé (418 M cellules) rend <strong>46 158 houppiers en 71 s</strong>, exactement le chiffre que le rapport attribue à la version qui marchait ; et le diff entre <code>v0.184.0</code> et l’état de <code>main</code> au moment de l’échec ne contient <strong>qu’une ligne de <code>DESCRIPTION</code></strong> — le code était identique au bit près. Ce n’était pas une régression du cycle dev.</p>
+<p><strong>Le garde est posé quand même</strong>, parce que la meilleure intuition du rapport tient : si <code>locate_trees()</code> rend un objet non vide mais <strong>sans CRS</strong>, le garde existant (<code>nrow(tops) == 0</code>) ne l’attrape pas. Un CRS absent est désormais réparé depuis le raster ; un CRS <em>différent</em> lève une erreur qui nomme les deux systèmes et désigne lidR, au lieu de sortir en langage <code>sf</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.186.0" id="nemeton-01860-2026-08-25">nemeton 0.186.0 (2026-08-25)<a class="anchor" aria-label="anchor" href="#nemeton-01860-2026-08-25"></a></h2>
 <div class="section level4">

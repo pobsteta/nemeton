@@ -1,5 +1,119 @@
 # Changelog
 
+## nemeton 0.187.0 (2026-08-25)
+
+#### Changed — six indicateurs cessent de fabriquer un défaut « neutre »
+
+Suite de la v0.186.0, sur la dette que son balayage avait figée. Six
+indicateurs ne rendaient pas `0` sans donnée d’entrée, mais une **valeur
+inventée** : `units$A2 <- rep(50, nrow(units))` faute de données atmo,
+`dist_routes <- rep(1000, ...)` et `dist_batiments <- rep(500, ...)` «
+default like tuto 04 » pour N1, `rep(50)` encore pour B3, N2, N3 et la
+composante d’appétence de R4.
+
+**C’est la même faute que le zéro de B1, en plus dangereuse** : un `50`
+ressemble à une mesure moyenne crédible, là où une colonne de zéros
+finit par se remarquer. Et il pesait dans la moyenne de famille
+([`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)
+moyenne avec `na.rm = TRUE`), tirant vers 50 des familles qui n’avaient
+rien mesuré.
+
+`A2`, `B3` (deux chemins), `N1`, `N2`, `N3` et `R4` rendent désormais
+`NA` quand leur entrée manque.
+
+**Le cas de N3 mérite d’être isolé.** C’est une somme pondérée de quatre
+composantes (N1, N2, anti-fragmentation, connectivité). Remplacer une
+composante absente par 50 ne rendait pas le composite « approximatif » :
+ça produisait une moyenne entre du mesuré et de l’inventé,
+**indiscernable en aval d’un N3 entièrement mesuré**. Une composante
+manquante rend maintenant `NA`, qui se propage.
+
+#### Changed — S3 ne fabrique plus de population, il en lit une ou dit `NA`
+
+Décision de Pascal : « S3 ne doit pas fabriquer de fausse valeur. »
+
+[`indicateur_s3_population()`](https://pobsteta.github.io/nemeton/reference/indicateur_s3_population.md)
+acceptait un `population_grid` et **ne l’a jamais lu**. Il rendait
+`surface_du_tampon × 100 hab/km²`, avec ses propres commentaires pour
+l’avouer (« Placeholder calculation », « In production, would query
+INSEE Carroyage »). C’est la forme la plus coûteuse d’une valeur
+fabriquée : elle **variait plausiblement avec la taille de l’UGF**, donc
+ressemblait à une mesure et ne pouvait pas se repérer en aval.
+
+Désormais :
+
+- **sans grille → `NA`** sur les quatre colonnes (`S3`, `S3_5km`,
+  `S3_10km`, `S3_20km`) — un appelant qui ne lit qu’un rayon n’y trouve
+  pas un nombre là où rien n’a été mesuré ;
+- **avec grille → une vraie somme**. Deux portages acceptés : un `sf` de
+  carreaux, **pondéré par la part de carreau réellement dans le tampon**
+  (un carreau à cheval ne compte pas pour sa population entière), ou un
+  `SpatRaster` sommé par `exactextractr`. La colonne de population est
+  détectée (`ind`, `pop`, `population`…) ou nommée par
+  `population_field`.
+
+**Source prête à brancher** : INSEE **Filosofi 2021**, carreaux 200 m ou
+1 km, GeoPackage, variable **`ind`** (nombre d’individus), carroyage
+INSPIRE en **EPSG:3035** — le CRS paneuropéen de l’ADR-008, donc
+intégrable sans conversion de référentiel.
+
+**`method = "proxy"` ne disparaît pas en silence** : la valeur est
+conservée et lève une erreur qui explique ce qu’elle produisait et par
+quoi la remplacer. Retirer le nom des choix aurait fait tomber les
+appels existants sur un `match.arg` cryptique.
+
+**La dette figée en v0.186.0 est donc soldée** : le test qui gardait la
+liste des indicateurs fabriquant une valeur attend maintenant une liste
+**vide**.
+
+#### Fixed — `/proc/meminfo` lu sans garde : bruit système sous Windows
+
+Implémente `briefs/vers-nemeton/2026-08-24-meminfo-windows.md`.
+[`readLines()`](https://rdrr.io/r/base/readLines.html) sur un fichier
+absent **avertit avant d’échouer**, et `tryCatch(error = )` n’attrape
+pas l’avertissement : l’utilisateur Windows lisait « impossible d’ouvrir
+le fichier ‘/proc/meminfo’ » en pleine console, au milieu d’un calcul
+qui, lui, aboutissait. Garde
+[`file.exists()`](https://rdrr.io/r/base/files.html) posée sur les
+**deux** sites — `.mem_total_kb()` et `.pai_total_ram_gb()`, ce dernier
+n’étant pas encore apparu mais annoncé par le brief comme la prochaine
+occurrence.
+
+#### Changed — le message « sans plafond mémoire » parle la langue de la plateforme
+
+Deux situations partageaient un message qui n’appelle pourtant pas la
+même action : **Linux sans cgroup utilisable** (anormal, réparable) et
+**plateforme sans cgroups du tout** (Windows, macOS — normal,
+irréparable). Expliquer à un utilisateur Windows que « the OOM killer
+takes the scope, not the job », c’est décrire son problème avec un
+vocabulaire qui n’existe pas chez lui : il n’a ni systemd à installer,
+ni cgroup à activer. Le second cas dit maintenant que le plafond n’est
+pas disponible sur cette plateforme et que la mémoire du travail revient
+à l’OS en fin de job.
+
+#### Added — garde sur le CRS des apex de houppiers
+
+Rapport `briefs/vers-nemeton/2026-08-23-houppiers-regression-crs.md` :
+[`segment_houppiers()`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md)
+échouait sur `st_crs(x) == st_crs(y) is not TRUE`, levé par un
+[`stopifnot()`](https://rdrr.io/r/base/stopifnot.html) de `sf` **depuis
+lidR** — un message qui décrit un symptôme, pas une cause.
+
+**Non reproduit, et l’attribution du rapport est réfutée.** La
+reproduction minimale sur le raster incriminé (418 M cellules) rend **46
+158 houppiers en 71 s**, exactement le chiffre que le rapport attribue à
+la version qui marchait ; et le diff entre `v0.184.0` et l’état de
+`main` au moment de l’échec ne contient **qu’une ligne de
+`DESCRIPTION`** — le code était identique au bit près. Ce n’était pas
+une régression du cycle dev.
+
+**Le garde est posé quand même**, parce que la meilleure intuition du
+rapport tient : si `locate_trees()` rend un objet non vide mais **sans
+CRS**, le garde existant (`nrow(tops) == 0`) ne l’attrape pas. Un CRS
+absent est désormais réparé depuis le raster ; un CRS *différent* lève
+une erreur qui nomme les deux systèmes et désigne lidR, au lieu de
+sortir en langage `sf`.
+
 ## nemeton 0.186.0 (2026-08-25)
 
 #### Changed — « 0 » et « pas de donnée » cessent de se confondre (B1, E2)
