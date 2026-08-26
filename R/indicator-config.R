@@ -287,6 +287,8 @@ INDICATOR_FAMILIES <- list(
     indicator_labels = list(
       S1 = list(fr = "Distance aux routes", en = "Road Distance"),
       S2 = list(fr = "Distance aux b\u00e2timents", en = "Building Distance"),
+      # « Proximite population » reste juste pour une densite de voisinage et
+      # tient sur un axe de radar ; seul le tooltip disait faux.
       S3 = list(fr = "Proximit\u00e9 population", en = "Population Proximity")
     ),
     indicator_tooltips = list(
@@ -299,8 +301,14 @@ INDICATOR_FAMILIES <- list(
         en = "Average distance to buildings (BD TOPO). Indicator of urban proximity and potential human pressure."
       ),
       S3 = list(
-        fr = "Population dans un rayon de 10 km. Mesure le potentiel d'usage r\u00e9cr\u00e9atif et la pression sociale sur la for\u00eat.",
-        en = "Population within 10 km radius. Measures recreational use potential and social pressure on the forest."
+        # v0.189.1 : deux erreurs, dont une anterieure au changement de
+        # grandeur. S3 ne porte pas un effectif mais une DENSITE (v0.189.0),
+        # et son rayon de reference est 5 km, pas 10 — le code utilisait deja
+        # `pop_5km` quand le tooltip annoncait 10 km. L'app lit ce texte tel
+        # quel depuis `INDICATOR_FAMILIES` : le corriger la-bas creerait une
+        # seconde verite sur une donnee qui n'en a qu'une.
+        fr = "Densit\u00e9 de population dans un rayon de 5 km (hab/km\u00b2, \u00e9chelle logarithmique). Mesure le potentiel d'usage r\u00e9cr\u00e9atif et la pression sociale sur la for\u00eat.",
+        en = "Population density within a 5 km radius (inhab/km\u00b2, log scale). Measures recreational use potential and social pressure on the forest."
       )
     )
   ),

@@ -124,3 +124,28 @@ test_that("la table des libelles est complete et sans doublon de colonne", {
   expect_equal(anyDuplicated(ind$column_name), 0L)
   expect_equal(anyDuplicated(ind$code), 0L)
 })
+
+test_that("le tooltip de S3 decrit la grandeur qu'il porte", {
+  # Brief `briefs/vers-nemeton/2026-08-26-tooltip-s3-faux.md`. Deux erreurs,
+  # dont une ANTERIEURE au changement de grandeur : le tooltip annoncait
+  # « Population dans un rayon de 10 km » alors que le code utilisait deja
+  # `pop_5km`, et que S3 porte une DENSITE depuis la v0.189.0.
+  #
+  # L'app lit ce texte tel quel depuis `INDICATOR_FAMILIES` : le corriger
+  # la-bas creerait une seconde verite sur une donnee qui n'en a qu'une —
+  # exactement le fork que le de-fork de v0.127.0 a supprime.
+  s <- indicator_labels("S")
+  i <- which(s$code == "S3")
+  expect_length(i, 1L)
+
+  for (tt in c(s$tooltip_fr[i], s$tooltip_en[i])) {
+    expect_false(grepl("10 km", tt, fixed = TRUE), info = tt)
+    expect_match(tt, "5 km")
+  }
+  # La grandeur est nommee, et son echelle avec — un score de 82 sur une
+  # echelle log ne se lit pas comme un pourcentage.
+  expect_match(s$tooltip_fr[i], "[Dd]ensit")
+  expect_match(s$tooltip_en[i], "densit")
+  expect_match(s$tooltip_fr[i], "logarithmique")
+  expect_match(s$tooltip_en[i], "log scale")
+})
