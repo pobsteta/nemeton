@@ -15,9 +15,13 @@
 # gestion ; les laisser passer noierait l'app sous des tènements fantômes.
 #
 # Deux traitements, du plus doux au plus franc :
-#   - `min_surface_ha` : une écharde est absorbée par le plus gros tènement de
-#     la MÊME parcelle cadastrale, jamais supprimée — la parcelle reste pavée
-#     exactement, ce qu'exige `validate_tiling()` côté app.
+#   - `min_surface_ha` : une écharde est absorbée par le tènement de la MÊME
+#     parcelle cadastrale avec lequel elle partage la plus longue frontière,
+#     jamais supprimée — la parcelle reste pavée exactement, ce qu'exige
+#     `validate_tiling()` côté app. Le seuil s'applique aux PARTIES et non aux
+#     lignes (v0.190.0) : `ten` et `reste` étant fondus en multipolygones, il
+#     comparait auparavant un seuil conçu pour des échardes au total d'un
+#     multipolygone, et ne voyait donc jamais les échardes qu'il visait.
 #   - `caler_sur_cadastre` : quand une UGF couvre déjà l'essentiel d'une
 #     parcelle cadastrale (>= `seuil_calage`), la parcelle lui est attribuée
 #     ENTIÈRE. Le bord de l'UGF vient alors se coller au bord cadastral. Les
@@ -68,9 +72,10 @@
 #' **0.13 %** of the area. Digitising slivers, not management objects.
 #'
 #' Two corrections, mildest first:
-#' * `min_surface_ha` — a sliver is **absorbed** by the largest tenement of the
-#'   same cadastral parcel, never dropped, so each cadastral parcel stays
-#'   exactly tiled (the application's tiling invariant).
+#' * `min_surface_ha` — a sliver is **absorbed** by the tenement of the same
+#'   cadastral parcel it shares the longest boundary with, never dropped, so
+#'   each cadastral parcel stays exactly tiled (the application's tiling
+#'   invariant).
 #' * `caler_sur_cadastre` — when one UGF already holds at least
 #'   `seuil_calage` of a cadastral parcel, that parcel is given to it **whole**:
 #'   the UGF boundary snaps onto the cadastral boundary. Parcels genuinely
@@ -81,10 +86,25 @@
 #' @param parcelles An `sf` of cadastral parcels. Its identifier column is taken
 #'   from `id_col`, or auto-detected among `id`, `nemeton_id`, `geo_parcelle`,
 #'   `idu`.
-#' @param min_surface_ha Tenements strictly smaller than this are treated as
+#' @param min_surface_ha Parts strictly smaller than this are treated as
 #'   slivers and absorbed. Default `0.05` (500 m²) — inside the natural gap
 #'   measured between slivers (≤ 0.035 ha) and real tenements (≥ 0.12 ha). Use
 #'   `0` to keep every sliver.
+#'
+#'   Since v0.190.0 the threshold is compared against each **simple part**, not
+#'   against the row: both `ten` and the remainder are merged into
+#'   multipolygons, so a 10 ha remainder made of eight pieces — several under
+#'   100 m² — sailed over the threshold and shed its slivers as soon as a
+#'   consumer normalised the output to single parts. Measured on the 21 real
+#'   parcels of Couchey: 255 parts, 96 under the threshold and 57 under 100 m²
+#'   survived absorption; none does now, and the cadastral tiling is unchanged
+#'   to the square metre.
+#'
+#'   A sliver joins the part it shares the **longest boundary** with, not the
+#'   largest one: the union of two touching polygons is a single polygon, which
+#'   is what makes the sliver disappear for good. When nothing touches it, the
+#'   historical fallback applies (largest fragment of the parcel) — the sliver
+#'   then only changes label, since the union stays multipart.
 #' @param caler_sur_cadastre Snap UGF boundaries onto cadastral boundaries by
 #'   giving each nearly-covered cadastral parcel whole to its dominant UGF.
 #'   Default `FALSE`.
@@ -466,23 +486,156 @@ croiser_parcelles_onf <- function(parcelles_onf, parcelles,
 }
 
 
+# Eclate une geometrie en parties simples. En DEUX temps, et ce n'est pas un
+# detail : sur un melange POLYGON/MULTIPOLYGON, `st_cast("POLYGON")` ne garde
+# que le PREMIER polygone de chaque multipartie, sans erreur ni avertissement
+# (mesure sur le parcellaire reel de Couchey, v0.189.0 : 13,74 ha des 50,34
+# evapores). Passer par MULTIPOLYGON d'abord force l'eclatement.
+.croiser_parties <- function(geo) {
+  g <- suppressWarnings(sf::st_cast(geo, "MULTIPOLYGON"))
+  g <- suppressWarnings(sf::st_cast(g, "POLYGON", warn = FALSE))
+  g[!sf::st_is_empty(g)]
+}
+
+# Longueur de frontiere COMMUNE entre deux polygones, a partir de leurs BORDS
+# deja calcules -- ce sont les bords qu'on intersecte, pas les surfaces. Deux
+# polygones adjacents ont une intersection surfacique vide et un bord partage
+# bien reel ; l'intersection de deux bords rend une GEOMETRYCOLLECTION (lignes
+# ET points) dont il faut extraire les lignes, sans quoi un contact PONCTUEL
+# compterait comme un voisinage.
+#
+# Les bords arrivent precalcules : `st_boundary()` sur toutes les parties d'un
+# groupe en un appel vectorise coute une fraction de ce que coutait un appel
+# par paire, ou le bord d'une meme echarde etait recalcule pour chaque
+# candidate.
+.croiser_longueur_commune <- function(bord_a, bord_b) {
+  inter <- suppressWarnings(sf::st_intersection(bord_a, bord_b))
+  if (!length(inter)) return(0)
+  lin <- suppressWarnings(tryCatch(
+    sf::st_collection_extract(inter, "LINESTRING"), error = function(e) inter))
+  if (!length(lin)) return(0)
+  .croiser_longueur_euclidienne(lin)
+}
+
+# Longueur d'un jeu de lignes, en euclidien et sans passer par `st_length()`.
+#
+# Ce n'est pas une micro-optimisation gratuite : `st_length()` interroge les
+# parametres du CRS a CHAQUE appel pour attacher son unite, et le profil de
+# l'absorption sur Couchey y passait 6,1 s des 6,4 s mesurees
+# (`CPL_crs_parameters`). Le CRS de travail est toujours PROJETE
+# (`.croiser_crs_travail()` bascule en 2154 des que l'entree est en
+# longitude/latitude), donc la somme euclidienne des segments EST la longueur,
+# au metre pres et sans conversion.
+.croiser_longueur_euclidienne <- function(lignes) {
+  xy <- sf::st_coordinates(lignes)
+  if (!nrow(xy)) return(0)
+  # Les colonnes de regroupement (L1, L2...) separent les parties : un segment
+  # ne relie deux points que s'ils appartiennent a la meme ligne.
+  grp <- setdiff(colnames(xy), c("X", "Y", "Z", "M"))
+  cle <- if (length(grp)) do.call(paste, c(as.data.frame(xy[, grp, drop = FALSE]),
+                                           sep = "\r"))
+         else rep("1", nrow(xy))
+  meme <- cle[-1L] == cle[-length(cle)]
+  d <- sqrt(diff(xy[, "X"])^2 + diff(xy[, "Y"])^2)
+  v <- sum(d[meme])
+  if (is.finite(v)) v else 0
+}
+
+# Absorption des echardes, AU NIVEAU DE LA PARTIE et non de la ligne.
+#
+# Pourquoi ce niveau. Un fragment est frequemment MULTIPARTIE : `ten` est fondu
+# a une ligne par (UGF x parcelle cadastrale) et `reste` a une ligne par
+# parcelle cadastrale. Comparer `min_surface_ha` a la surface de la ligne
+# revient donc a comparer un seuil concu pour des echardes au total d'un
+# multipolygone : a Couchey, le reliquat de `212000000A0036` pese 10,89 ha en
+# une ligne, n'est jamais une echarde, et se disloque en 8 morceaux -- dont
+# plusieurs sous 100 m2 -- des que le consommateur normalise en parties
+# simples. Mesure sur les 21 parcelles reelles : 20 lignes de reliquat
+# donnaient 78 morceaux dont 40 sous le seuil de 0,05 ha, et les tenements
+# 117 lignes -> 158 morceaux dont 36 sous le seuil. L'absorption ne voyait
+# aucun des deux.
+#
+# Ou va l'echarde. Au fragment avec lequel elle partage la PLUS LONGUE
+# FRONTIERE -- pas au plus gros. C'est ce qui la fait vraiment disparaitre :
+# l'union de deux polygones qui se touchent est UN polygone, qui survit a une
+# normalisation en parties simples en aval. Le repli sur « le plus gros de la
+# parcelle » est conserve quand rien ne touche l'echarde (comportement
+# historique), mais il produit alors un multipolygone : le morceau reste
+# separable, il change seulement d'etiquette.
+#
+# Ce que l'absorption ne fait jamais : jeter de la surface. Chaque partie
+# retiree d'un fragment est ajoutee a un autre — le pavage cadastral reste
+# exact au metre carre.
 .croiser_absorber <- function(frags, min_surface_ha) {
   if (nrow(frags) == 0L) return(frags)
-  groupes <- split(seq_len(nrow(frags)), frags$parcelle_cadastrale)
   geo <- sf::st_geometry(frags)
-  a_jeter <- integer(0)
+
+  # Toutes les parties de tous les fragments, en UN seul jeu. Les mesures
+  # (`st_area`, `st_boundary`) sont ensuite vectorisees sur l'ensemble : elles
+  # interrogent les parametres du CRS a chaque appel, et les faire par groupe
+  # coutait 2,1 s des 10,4 s de l'absorption sur les 21 parcelles de Couchey.
+  morceaux <- lapply(seq_len(nrow(frags)), function(i) .croiser_parties(geo[i]))
+  proprio <- rep(seq_len(nrow(frags)), vapply(morceaux, length, integer(1)))
+  if (!length(proprio)) return(frags)
+  parts <- do.call(c, morceaux)
+  aires <- as.numeric(sf::st_area(parts)) / 1e4
+  bords <- sf::st_boundary(parts)
+
+  groupes <- split(seq_along(parts), frags$parcelle_cadastrale[proprio])
+  a_refaire <- integer(0)
 
   for (g in groupes) {
-    if (length(g) <= 1L) next
-    petites <- g[frags$surface_ha[g] < min_surface_ha]
-    if (length(petites) == 0L) next
+    # Un seul fragment dans la parcelle : ses parties sont disjointes par
+    # construction (`.croiser_fusionner` a deja fondu ce qui se touchait), une
+    # echarde n'a nulle part ou aller.
+    if (length(unique(proprio[g])) <= 1L) next
+    petites <- g[aires[g] < min_surface_ha]
+    if (!length(petites)) next
     grosses <- setdiff(g, petites)
-    cible <- if (length(grosses) > 0L) grosses[which.max(frags$surface_ha[grosses])]
-             else g[which.max(frags$surface_ha[g])]
-    petites <- setdiff(petites, cible)
-    if (length(petites) == 0L) next
-    geo[cible] <- sf::st_union(sf::st_union(geo[c(cible, petites)]))
-    a_jeter <- c(a_jeter, petites)
+    # Aucune partie au-dessus du seuil : la plus grande sert de receptacle.
+    if (!length(grosses)) grosses <- g[which.max(aires[g])]
+    petites <- setdiff(petites, grosses)
+    if (!length(petites)) next
+
+    # Pre-selection par predicat spatial : `st_intersects` est indexe (STRtree)
+    # et coute une fraction d'une intersection de bords. Sans elle, chaque
+    # echarde etait mesuree contre TOUTES les parties du groupe -- 28 tenements
+    # pour la seule parcelle 212000000A0036 de Couchey.
+    touche <- sf::st_intersects(parts[petites], parts[grosses])
+
+    for (n in seq_along(petites)) {
+      k <- petites[n]
+      # Candidates : les parties d'un AUTRE fragment. Deplacer une echarde a
+      # l'interieur de son propre fragment ne changerait rien.
+      cand <- grosses[proprio[grosses] != proprio[k]]
+      if (!length(cand)) next
+      proches <- intersect(cand, grosses[touche[[n]]])
+      cible <- if (length(proches) == 1L) {
+        # Une seule voisine : rien a departager, et l'intersection de bords
+        # -- le poste de cout de cette boucle -- n'a pas lieu d'etre.
+        proches
+      } else if (length(proches) > 1L) {
+        lg <- vapply(proches,
+                     function(j) .croiser_longueur_commune(bords[j], bords[k]),
+                     numeric(1))
+        if (max(lg) > 0) proches[which.max(lg)] else cand[which.max(aires[cand])]
+      } else {
+        cand[which.max(aires[cand])]
+      }
+      a_refaire <- c(a_refaire, proprio[k], proprio[cible])
+      proprio[k] <- proprio[cible]
+    }
+  }
+
+  if (!length(a_refaire)) return(frags)
+
+  # Reassemblage : seuls les fragments dont la composition a change sont
+  # reconstruits ; les autres gardent leur geometrie d'origine au bit pres.
+  a_jeter <- integer(0)
+  for (i in unique(a_refaire)) {
+    mien <- which(proprio == i)
+    if (!length(mien)) { a_jeter <- c(a_jeter, i); next }
+    geo[i] <- sf::st_cast(sf::st_union(parts[mien]), "MULTIPOLYGON")
   }
 
   sf::st_geometry(frags) <- geo
