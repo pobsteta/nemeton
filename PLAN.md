@@ -833,6 +833,60 @@ et n'est plus recalculé en aval. Le retirer, ou en changer la forme, casserait
 l'affichage — à traiter comme une sortie stable de `croiser_parcelles_onf()`,
 pas comme un attribut de commodité.
 
+# Chantier CADRÉ — Houppiers par LSMS, borné par un budget de calcul (spec 051)
+
+> **Cadré le 2026-08-27**, **non implémenté**. Décisions D1-D5 tranchées par
+> Pascal sur mesures réelles. Origine : brief
+> `2026-08-24-houppiers-sans-lidar-otb-lsms.md` (session app), étude de
+> faisabilité.
+
+**Le coût tranche le périmètre.** Mesuré sur le projet Fordead, fenêtre de
+200 × 200 m en futaie fermée à 89 % : LSMS met **160,5 s** là où la voie CHM met
+**2,3 s** — ~70×. À 4 Mpx, 716 s. Le modèle `t = 160,5 × P^1,0787` reproduit les
+deux points à la seconde près et donne **13 à 20 h sur l'emprise entière**
+(292 Mpx, 1 170 ha). **LSMS n'est pas un algorithme d'emprise.**
+
+Le brief annonçait ~9 s pour la même taille en pixels — **facteur 18**. Sa
+vectorisation (1,1 s) coïncide pourtant avec la mienne (1,05 s) : tout l'écart
+est dans la segmentation. Hypothèse non vérifiable : le mean-shift converge selon
+le *contenu*, et ma fenêtre est le peuplement le plus texturé du massif. Le brief
+ne dit pas quel couvert avait la sienne, et **son projet de référence n'existe
+plus** — le Couchey mesuré a été remplacé le 2026-08-25 par l'import CSV
+destructif de l'app (v0.133.0), le lendemain du dépôt.
+
+**Le garde-fou porte sur les PIXELS, pas sur les hectares** — c'est le point de
+conception. Budget de 10 min = **3,4 Mpx**, soit **13,6 ha à 0,20 m** mais
+**84,9 ha à 0,50 m**. Rééchantillonner est le seul levier d'ordre de grandeur
+(×6), au prix du détail spectral qui justifie LSMS : exposé, pas tranché en dur.
+
+**Défaut calibré `15/20/700`** contre la voie CHM sur la même fenêtre (596
+houppiers, 149/ha, 8,04 m) : diamètre équivalent médian à **−0,15 m** de la
+cible, compte +12 %. Aucun réglage ne satisfait les deux. **`spatialr = 20` est
+dominé** — plus lent (321 s contre 178 s) *et* plus loin de la cible.
+
+**Deux usages séparés** : `"martelage"` exige le CHM et refuse sans lui ;
+`"couvert"` assume l'absence de hauteur et n'expose pas `h_max` du tout (pas
+`NA` : absente).
+
+**Ce qui marche déjà** : `h_max` par zonale place **876 segments sur 886** dans
+la plage 1–70 m qu'exige Marculus, médiane 35,5 m — identique à la voie CHM.
+
+**Cinq choses non mesurées, à ne pas supposer** (spec §6) : le coût sur un
+peuplement clair ; la valeur du filtre `h_max >= hmin` (invisible ici, la fenêtre
+n'a pas de sol) ; **le gain qualitatif annoncé** — séparer deux houppiers de même
+hauteur mais d'essences différentes — qui est l'argument central du sujet et
+reste une hypothèse ; la stabilité du défaut entre peuplements ; le pilote GPKG
+d'OTB 9.1.1, repris du brief sans re-test.
+
+**Trouvé en chemin, hors sujet mais à traiter** : les deux CHM Open-Canopy du
+projet Fordead (`chm_predicted_0_2m.tif`, `chm_vegetation_0_2m.tif`) sont
+**entièrement à zéro** (max 0,10 m). C'est le cas que le garde-fou `chm_suspect`
+(v0.109.0) existe pour attraper — reste à vérifier qu'il se déclenche bien
+dessus, le projet ayant produit 224 614 houppiers en passant par son MNH LiDAR
+sans que rien ne signale que la prédiction était vide.
+
+---
+
 # Correctifs de production (hors chantier)
 
 **Journal** — *2026-08-27* (**v0.190.0**) : **ERA5, la progression par mois et
