@@ -231,6 +231,16 @@ lsms_budget_pixels <- function(budget_s, spatialr = .LSMS_DEFAUTS$spatialr) {
   segs <- segs[!sf::st_is_empty(sf::st_geometry(segs)), , drop = FALSE]
   if (nrow(segs) == 0L) return(.houppier_empty_lsms(image, usage))
 
+  # Le CHM ne sert qu'à la hauteur ici, mais un CHM mort produit le MÊME objet
+  # vide qu'une clairière : le verdict est posé avant la zonale et estampillé
+  # sur la sortie. `hmin` n'a pas cours côté LSMS (c'est `minsize` qui filtre),
+  # on prend donc le plancher du contrat aval, `h_range[1]`.
+  degenere <- if (identical(usage, "martelage")) {
+    .houppier_chm_degenere(chm, h_range[1])
+  } else {
+    list(suspect = FALSE, frac_low = NA_real_, chm_max = NA_real_)
+  }
+
   if (identical(usage, "martelage")) {
     # LSMS délimite ; la hauteur vient du CHM par zonale — la mécanique que le
     # cœur applique déjà à l'étape 4 de la voie CHM.
@@ -240,13 +250,17 @@ lsms_budget_pixels <- function(budget_s, spatialr = .LSMS_DEFAUTS$spatialr) {
     keep <- !is.na(segs$h_max) &
       segs$h_max >= h_range[1] & segs$h_max <= h_range[2]
     segs <- segs[keep, , drop = FALSE]
-    if (nrow(segs) == 0L) return(.houppier_empty_lsms(image, usage))
+    if (nrow(segs) == 0L) {
+      return(.houppier_flag(.houppier_empty_lsms(image, usage), degenere))
+    }
   }
 
   if (!is.null(aoi_sel)) {
     segs <- sf::st_filter(segs, sf::st_union(sf::st_geometry(
       sf::st_transform(aoi_sel, sf::st_crs(segs)))), .predicate = sf::st_intersects)
-    if (nrow(segs) == 0L) return(.houppier_empty_lsms(image, usage))
+    if (nrow(segs) == 0L) {
+      return(.houppier_flag(.houppier_empty_lsms(image, usage), degenere))
+    }
   }
 
   if (identical(usage, "martelage")) {
@@ -270,7 +284,7 @@ lsms_budget_pixels <- function(budget_s, spatialr = .LSMS_DEFAUTS$spatialr) {
     )
   }
   sf::st_agr(out) <- "constant"
-  out
+  .houppier_flag(out, degenere)
 }
 
 
