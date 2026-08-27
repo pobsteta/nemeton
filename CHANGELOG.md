@@ -10,6 +10,64 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.190.0] - 2026-08-27
+
+### Fixed
+- **ERA5 : une année interrompue était irrécupérable.** `request_era5()` s'arrête
+  quand le `.zip` cible existe (`overwrite = FALSE` par défaut) et les `.zip` ne
+  sont pas purgés après extraction : un run tué au mois 7 faisait échouer les
+  runs suivants sur le mois 1. Le cœur découpe la boucle, saute les mois dont le
+  `.nc` est là, et fusionne lui-même sous le nom exact de mcera5
+  (`era5_<annee>_<annee>.nc`).
+- **`min_surface_ha` ne voyait pas les échardes qu'il visait.** Le seuil était
+  comparé à la surface de la **ligne**, or `ten` est fondu à une ligne par
+  (UGF × parcelle cadastrale) et `reste` à une ligne par parcelle : un
+  multipolygone de 10 ha n'est jamais une écharde, et se disloquait en morceaux
+  de moins de 100 m² dès que le consommateur normalisait en parties simples.
+  Le seuil s'applique désormais aux **parties**. Défaut symétrique sur les
+  tènements, que le brief n'avait pas vu. Couchey (21 parcelles) : 44 morceaux
+  sous 100 m² → **0**, pavage inchangé au m² (529,729626 ha).
+- **L'écharde rejoint la plus longue frontière partagée**, pas le plus gros
+  fragment : l'union de deux polygones qui se touchent est *un* polygone, qui
+  survit à une normalisation en parties simples. Repli historique conservé
+  quand rien ne touche l'écharde.
+- **B4 lisait `shannon_sd.tiff` au lieu de `shannon_mean.tiff`.**
+  `.find_diversity_raster()` départageait les candidats par longueur de nom et
+  le fichier d'écart-type est plus court de deux caractères ; l'indicateur
+  rapportait la dispersion intra-fenêtre du Shannon. Sur le run de référence
+  (spec 028 §10) les 30 UGF tenaient entre 3,5 et 5,4 / 100. La sélection écarte
+  désormais les cartes de dispersion (`_sd`, `_var`, `_cv`, `_se`…) avant tout
+  départage et préfère une carte `_mean` explicite.
+- **L3 moyennait des coordonnées d'ordination.** `beta.tiff` porte les trois
+  premiers axes d'une PCoA de la dissimilarité Bray-Curtis — des coordonnées
+  signées centrées sur zéro. La moyenne des bandes mesurait une *position*, sans
+  signification de diversité, et le clamp `[0, 100]` posait 16 UGF sur 30 à
+  exactement 0. L3 est désormais la dispersion multivariée de l'unité autour de
+  son propre centroïde (*betadisper* d'Anderson).
+- **Bornes de normalisation B4/L3 recalibrées** (spec 028 D3) : B4 sur
+  `[0, log(10)]` (dix spectral species effectives par hectare) au lieu de
+  `[0, log(50)]` ; L3 sur `[0, 0.5]` de la dispersion PCoA au lieu de `[0, 1]`.
+  Les deux clampent. Calibrations **mono-scène** — D3 reste ouverte.
+- Tooltips B4 et L3 : la grandeur et son échelle sont nommées.
+
+### Changed
+- **ERA5 : un événement de progression par MOIS** (`regen_expo:era5_mois`, avec
+  `category` / `year` / `mois_i` / `mois_n`). `emit` n'était appelé qu'une fois
+  par année — « 1/1 » puis 1 h 36 de silence, sur ~3 h 15 de téléchargement CDS
+  par run. `category` descend désormais jusqu'au téléchargement ; l'événement
+  annuel `regen_expo:era5` est conservé ; `emit = NULL` reste un no-op.
+
+### Added
+- `indicateur_l3_het_spectrale(min_windows = 3L)` : sous trois fenêtres
+  couvertes la dispersion est dégénérée et l'unité vaut `NA` plutôt qu'un zéro
+  qui se lirait « unité homogène ». Toute valeur inférieure à 3 est relevée à 3.
+- Spec 028 §10 : le run de référence (tuile T31UFQ, scène
+  `S2A_MSIL2A_20170814`, 649 fenêtres, 30 UGF) et ses mesures, consignés pour
+  rendre possible la comparaison avec un second massif.
+
+> **Note de dette** : ce fichier n'avait plus été tenu depuis la `[0.175.0]`.
+> Les versions 0.176.0 à 0.189.1 ne sont documentées que dans `NEWS.md`.
+
 ## [0.175.0] - 2026-08-17
 
 ### Added

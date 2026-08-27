@@ -1,6 +1,6 @@
 # Spec 028 — Diversité spectrale : indicateurs B4 & L3 (biodivMapR)
 
-**Statut :** livré v0.110.0 (logique validée hors biodivMapR ; pipeline réel = smoke manuel + recalibrage bornes D3)
+**Statut :** livré v0.110.0 ; **smoke réel exécuté et D3 recalibré en v0.190.0** (§10) — trois défauts corrigés, bornes B4/L3 refaites sur run réel puis **confirmées sur un second massif indépendant** (§10.6). Limite de méthode consignée : B4/L3 comparables au sein d'un projet, pas entre projets.
 **Auteur :** Pascal Obstetar
 **Date :** 2026-07-01
 **Familles impactées :** B (Biodiversité), L (Paysage)
@@ -156,8 +156,186 @@ inst/…                        → paramètres par défaut (window, n_clusters)
   distinction.
 - **D2** ✅ Défauts **`window = 10×10 px`** (≈100 m à 10 m S2), **`n_clusters =
   50`** spectral species (défaut biodivMapR). Ajustables.
-- **D3** ✅ Normalisation **provisoire** : B4 sur `[0, log(n_clusters)]`, L3 sur
-  l'amplitude de dissimilarité observée. **Recalibrage empirique obligatoire**
-  après le premier run réel.
+- **D3** ✅ Normalisation. *Provisoire (2026-07-01)* : B4 sur
+  `[0, log(n_clusters)]`, L3 sur l'amplitude de dissimilarité observée.
+  **Recalibrée sur run réel le 2026-08-27** (§10.4) : B4 sur `[0, log(10)]`
+  (nombre effectif de spectral species), L3 sur `[0, 0,5]` de la dispersion
+  PCoA. **Tenue sur deux massifs indépendants** (§10.6 — tuiles T31UFQ/2017 et
+  T31UDP/2025, capteurs S2A/S2C) : aucune saturation, la borne L3 approchée sans
+  être franchie. Enveloppes empiriques du quart nord-est ; un massif
+  méditerranéen ou de montagne reste à mesurer.
 - **D4** ✅ B4/L3 **comptent immédiatement** dans l'indice général (poids NDP
   normal de la famille) ; validation terrain ultérieure pour recalibrer.
+
+---
+
+## 10. Run de référence — smoke réel et recalibrage D3 (2026-08-27)
+
+**Statut D3 : recalibré sur un run réel, mais sur *une seule scène*.** La
+décision reste ouverte tant qu'un second massif n'a pas été mesuré.
+
+### 10.1 Le run
+
+| | |
+|---|---|
+| Projet | `20260624_073705_armn` (« Fordead ») |
+| Scène | `S2A_MSIL2A_20170814T105031_R051_T31UFQ_20210712T212346` (14 août 2017) |
+| Tuile / CRS | T31UFQ, EPSG:32631 |
+| Fenêtre | 10 × 10 px = 100 m (D2) |
+| `nbclusters` | 50 (D2), 10 répétitions |
+| Sorties | `shannon_mean.tiff`, `shannon_sd.tiff`, `beta.tiff` (3 bandes) |
+| Fenêtres valides | 649 sur 1 131 (grille 29 × 39) |
+| Unités agrégées | 30 UGF, 2,1 à 34,0 ha (2 à 36 fenêtres couvertes) |
+
+Le run avait été produit par l'app le 2026-07-02 et **dormait dans le cache du
+projet sans avoir jamais été relu**. Il n'a pas fallu le refaire : le chemin
+`reuse_existing` de `compute_spectral_diversity()` a rendu les rasters tels
+quels — ce qui valide au passage ce chemin sur données réelles.
+
+### 10.2 Ce que le smoke a trouvé
+
+**(1) B4 lisait l'écart-type, pas la moyenne.** `.find_diversity_raster()`
+départageait les candidats par **longueur de nom** : `shannon_sd.tiff`
+(15 caractères) l'emportait sur `shannon_mean.tiff` (17). B4 rapportait donc la
+*dispersion intra-fenêtre* du Shannon au lieu du Shannon. Effet mesuré : les
+30 UGF tenaient toutes entre **3,5 et 5,4 / 100**, soit 1,9 point d'étendue.
+
+**(2) L3 moyennait des coordonnées d'ordination.** `beta.tiff` n'est pas un
+raster de dissimilarité : ce sont les **trois premiers axes d'une PCoA** de la
+dissimilarité Bray-Curtis entre fenêtres. Ses valeurs sont des coordonnées
+**signées et centrées sur zéro** (amplitudes mesurées : `[-0,351 ; 0,538]`,
+`[-0,549 ; 0,423]`, `[-0,460 ; 0,421]`, moyennes à moins de 0,006 de zéro).
+Les moyenner donnait la **position** moyenne de l'unité dans l'ordination, sans
+signification de diversité — puis le clamp `[0, 100]` envoyait à **exactement 0**
+toute unité du côté négatif : **16 UGF sur 30**.
+
+**(3) La borne `log(50)` était hors d'atteinte.** Sur 649 fenêtres le Shannon
+plafonne à **2,456** (11,7 spectral species effectives) contre `log(50) = 3,912`
+en théorie. Même corrigée du défaut (1), la famille B serait restée dans le
+premier tiers de l'échelle quoi qu'elle contienne.
+
+**(4) Une variable `ID` circule dans l'espace de k-means — et elle est inerte.**
+`Kmeans_info` porte 7 variables : `ID, B04, B05, B08, B8A, B11, B12` (B02 est
+lue par l'app mais absente ici). `ID` a une amplitude de 218 622 contre 3 000 à
+10 400 pour les bandes, ce qui pouvait laisser craindre une classification
+pilotée par un index. **Vérifié : elle porte 0,0 % de la variance inter-
+centroïdes** (écart-type 0,0024 après normalisation, contre 0,24 à 0,82 pour les
+bandes). Le run est exploitable ; aucun correctif n'est demandé de ce fait.
+
+### 10.2 bis — Corroboration indépendante
+
+Les valeurs d'avant correctif ne sortent pas seulement de ma relecture du cache.
+Le brief `specs/BRIEF-nemeton-normalisation-familles.md` (diagnostic du
+**2026-08-16**, soldé les 16-17 août), établi depuis
+`data/indicators.parquet` du **même projet** et sans rapport avec biodivMapR,
+tabule déjà :
+
+| Indicateur | min | méd | max | verdict du brief |
+|---|---|---|---|---|
+| `b4_div_spectrale` | 0,135 | 0,174 | 0,211 | « B faussée » |
+| `l3_het_spectrale` | −0,159 | −0,016 | 0,200 | « L faussée » |
+
+Ce sont **exactement** les distributions mesurées ici pour `shannon_sd` et pour
+la moyenne des axes PCoA. Le défaut était donc bien vivant dans les sorties de
+production, et pas un artefact de cache périmé. Le brief l'avait traité comme un
+problème de **normalisation** — ce qui était juste à son niveau d'observation :
+depuis le parquet on voit une échelle aberrante, pas une carte lue au mauvais
+fichier. La cause ne se voyait qu'en remontant aux rasters.
+
+### 10.3 Distributions mesurées
+
+Shannon par fenêtre (649 fenêtres) : min 0 · q05 0,067 · médiane **0,797** ·
+q95 1,846 · max **2,456**.
+
+| | B4 — Shannon moyen par UGF | L3 — dispersion PCoA par UGF |
+|---|---|---|
+| min | 0,288 | 0,064 |
+| médiane | 0,797 | 0,282 |
+| max | 1,553 | 0,440 |
+| NA | 0 | 1 (UGF de 2 fenêtres) |
+
+### 10.4 D3 recalibré
+
+- **B4 → `[0, log(10)]`.** La borne est exprimée sur le **nombre effectif de
+  spectral species**, `exp(H)` : le score atteint 100 pour l'équivalent de
+  **10 spectral species également abondantes par hectare**. Constante
+  `.B4_MAX_SPECTRAL_SPECIES`. Le clamp laisse saturer une scène plus diverse
+  (la meilleure fenêtre du run, à 11,7, sature).
+- **L3 → `[0, 0,5]` sur la dispersion.** Bray-Curtis est nominalement borné par
+  1, mais une PCoA à 3 axes n'en restitue qu'une partie (**GOF 0,563 / 0,619**
+  sur ce run) : les distances y sont systématiquement contractées et les
+  dispersions par UGF mesurées s'étalent de 0,064 à 0,440. Retenir 1,0 aurait
+  écrasé une seconde fois tout le domaine dans la moitié basse. Constante
+  `.L3_MAX_DISPERSION`.
+- **Métrique L3 redéfinie** : dispersion multivariée de l'unité autour de son
+  propre centroïde dans l'espace PCoA (*betadisper* d'Anderson), et non plus
+  moyenne des axes. `NA` sous **3 fenêtres** couvertes — une dispersion autour
+  d'un centroïde y est dégénérée, et une valeur proche de zéro s'y lirait à tort
+  comme « unité homogène ».
+
+### 10.5 Effet sur le run de référence
+
+| | avant | après |
+|---|---|---|
+| B4, étendue des scores | 3,5 → 5,4 (1,9 pt) | **12,5 → 67,4 (54,9 pts)** |
+| B4, UGF médiane | 4,4 | **34,6** |
+| L3, UGF à exactement 0 | **16 / 30** | **0** |
+| L3, étendue des scores | 0 → 20,0 | **12,9 → 87,9** |
+| L3, UGF médiane | 0 | **56,4** |
+
+### 10.6 Second massif — les bornes tiennent, et une limite apparaît
+
+Un **second run** dormait dans le cache du projet `Reconfort`, jamais relu lui
+non plus : scène `S2C_MSIL2A_20250815` (2025), tuile **T31UDP**, capteur **S2C**,
+597 fenêtres, 30 UGF, `nbclusters = 50`. Tuile, année et capteur tous différents
+du run de référence — l'échantillon indépendant que D3 attendait.
+
+| | Fordead (T31UFQ, 2017) | Reconfort (T31UDP, 2025) |
+|---|---|---|
+| Shannon fenêtre, médiane / max | 0,797 / **2,455** | 0,257 / **0,893** |
+| Espèces effectives, meilleure fenêtre | **11,7** | **2,4** |
+| B4 brut par UGF | 0,288 → 1,553 | 0,199 → 0,519 |
+| **Scores B4** | 12,5 → 67,4 (méd. 34,6) | **8,6 → 22,6 (méd. 12,1)** |
+| L3 brut par UGF | 0,064 → **0,440** | 0,028 → **0,364** |
+| **Scores L3** | 12,9 → 87,9 (méd. 56,4) | **5,6 → 72,8 (méd. 19,6)** |
+| Saturations à 100 | 0 | 0 |
+| PCoA, part des 3 axes | 61,9 % | 88,7 % |
+
+**La borne L3 = 0,5 est confirmée** : les deux massifs restent dessous (0,440 et
+0,364), l'un en approche. **La borne B4 = log(10) tient** : aucune saturation par
+UGF, et la meilleure *fenêtre* de Fordead (11,7 espèces effectives) la dépasse
+tout juste — le clamp joue son rôle sans écraser personne.
+
+**Les scores bas de Reconfort ne sont pas un artefact d'échelle, et c'est
+vérifiable avant toute normalisation.** La matrice Bray-Curtis brute entre
+fenêtres (`Beta_info$MatBC`, bornée par construction) donne une dissimilarité
+médiane de **0,889 sur Fordead contre 0,260 sur Reconfort**. Ce massif est
+réellement plus uniforme spectralement ; c'est d'ailleurs pourquoi sa PCoA ajuste
+mieux (88,7 % sur trois axes, un axe dominant à 143 contre 19,4 et 4,5). La même
+mesure écarte aussi l'hypothèse d'un run dégradé : jeu de variables identique
+(`ID, B04, B05, B08, B8A, B11, B12`), et **`ID` y est inerte de la même façon**
+(0,0 % de la variance inter-centroïdes) — le constat §10.2 (4) se généralise.
+
+**La limite qui apparaît, et elle tempère le paragraphe précédent.** Les
+« spectral species » sont un **k-means réajusté à chaque run**, sur la seule
+scène traitée. Le dictionnaire d'espèces de Fordead n'est pas celui de
+Reconfort, et la PCoA de L3 est elle aussi calculée par run, sur ses propres
+valeurs propres. **B4 et L3 sont donc rigoureusement comparables *à l'intérieur*
+d'un projet, pas d'un projet à l'autre.** Que les deux massifs diffèrent
+réellement est établi (par le Bray-Curtis brut, indépendant du k-means) ; que
+« 12,1 » et « 34,6 » soient sur la même règle graduée ne l'est pas. C'est une
+limite de méthode, pas un défaut à corriger — mais elle doit être dite, et elle
+interdit un classement inter-projets fondé sur B4/L3.
+
+### 10.7 Ce qui reste ouvert
+
+- **D3 : passe de « ouverte » à « tenue sur deux massifs ».** Les bornes ne sont
+  plus mono-scène. Elles restent des **enveloppes empiriques** sur deux massifs
+  du quart nord-est, sans prétention nationale ; un massif méditerranéen ou de
+  montagne reste à mesurer.
+- **Comparabilité inter-projets** : à documenter côté app (§10.6) — B4/L3 se
+  lisent au sein d'un projet.
+- **La validation terrain de D4** (le statut proxy, spec 008 / QField) n'est pas
+  entamée et ne l'est pas par ce chantier.
+- **Affichage `nemetonshiny`** : livré (vérifié en lecture seule le 2026-08-27,
+  `service_compute.R:315,327` et `utils_i18n.R:1670,1683`).

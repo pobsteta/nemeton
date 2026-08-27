@@ -51,8 +51,11 @@ A list with:
   \describe{
     \item{alpha}{a \code{SpatRaster} of Shannon alpha diversity (or
       \code{NULL} if not produced),}
-    \item{beta}{a \code{SpatRaster} of Bray-Curtis beta diversity (or
-      \code{NULL}),}
+    \item{beta}{a 3-layer \code{SpatRaster} holding the first three PCoA
+      axes of the Bray-Curtis dissimilarity between windows — an
+      ordination, not a scalar dissimilarity; see
+      \code{\link{indicateur_l3_het_spectrale}} for how a per-unit value is
+      derived from it (or \code{NULL}),}
     \item{output_dir}{the directory holding the raw biodivMapR outputs.}
     \item{reused}{\code{TRUE} if the rasters were loaded from a cached
       \code{output_dir} rather than recomputed.}

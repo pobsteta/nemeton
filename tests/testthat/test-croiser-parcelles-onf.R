@@ -377,3 +377,101 @@ test_that("le rattachement ne perd pas un metre carre (piege st_cast)", {
   # Les deux bandes rejoignent des UGF differentes : chacune son voisin.
   expect_gt(length(unique(avec$ugf_id)), 2L)
 })
+
+# --- Absorption au niveau de la PARTIE (v0.190.0) ----------------------------
+# Le seuil `min_surface_ha` visait les échardes ; il était comparé à la surface
+# de la LIGNE, or `ten` est fondu à une ligne par (UGF × parcelle cadastrale) et
+# `reste` à une ligne par parcelle. Un multipolygone de 10 ha n'est jamais une
+# écharde — et se disloquait en morceaux de moins de 100 m² dès que le
+# consommateur normalisait en parties simples.
+
+# Éclatement en parties simples, comme le fait l'app à l'import.
+.cx_singleparts <- function(x) {
+  y <- suppressWarnings(sf::st_cast(sf::st_cast(x, "MULTIPOLYGON"),
+                                    "POLYGON", warn = FALSE))
+  y$surface_ha <- as.numeric(sf::st_area(y)) / 1e4
+  y
+}
+
+test_that("a sliver hidden inside a MULTIPART remainder is absorbed", {
+  # Deux UGF se suivent en laissant entre elles une fente de 0,2 m sur 100 m —
+  # 20 m², une écharde de numérisation — et la parcelle A déborde de 10 m à
+  # droite, ce qui fait un second morceau de reliquat de 0,1 ha. Les deux sont
+  # DISJOINTS (la seconde UGF les sépare), donc `reste` les porte en UNE ligne
+  # multipartie de 0,102 ha : au-dessus du seuil de 0,05 ha, jamais absorbée,
+  # et l'écharde ressortait à l'éclatement.
+  onf <- .cx_onf(list(c(0, 100, 0, 100), c(100.2, 190, 0, 100)))
+  cad <- .cx_cad("A", list(c(0, 200, 0, 100)))
+
+  brut <- croiser_parcelles_onf(onf, cad, inclure_reste = TRUE,
+                                min_surface_ha = 0)
+  reste <- brut[brut$hors_ugf, ]
+  expect_equal(nrow(reste), 1L)                       # une ligne, multipartie
+  parts_brut <- .cx_singleparts(reste)
+  expect_gt(nrow(parts_brut), 1L)
+  expect_true(any(parts_brut$surface_ha < 0.05))      # l'écharde est là
+
+  out <- croiser_parcelles_onf(onf, cad, inclure_reste = TRUE,
+                               min_surface_ha = 0.05)
+  parts <- .cx_singleparts(out)
+  expect_false(any(parts$surface_ha < 0.05))          # plus aucune écharde
+  # Rien n'est perdu : le pavage cadastral reste exact.
+  expect_equal(sum(out$surface_ha), sum(as.numeric(sf::st_area(cad))) / 1e4,
+               tolerance = 1e-9)
+})
+
+test_that("a sliver joins the fragment it TOUCHES, not the largest one", {
+  # U1 tient la bande [0,60], U2 la bande [70,100] — U1 est la plus grosse.
+  # L'écharde du reliquat est la bande [60,70] × [0,2] : elle touche les deux,
+  # mais partage une frontière plus longue avec... les deux (2 m chacune).
+  # On la place donc en contact franc avec U2 seule : [60,70]x[0,2] ne touche
+  # U1 que par le segment x=60, et U2 par x=70 — égalité. On dissymétrise en
+  # donnant à U2 un contact plus long.
+  onf <- .cx_onf(list(c(0, 60, 0, 100), c(62, 100, 0, 100)))
+  cad <- .cx_cad("A", list(c(0, 100, 0, 100)))
+
+  out <- croiser_parcelles_onf(onf, cad, inclure_reste = TRUE,
+                               min_surface_ha = 0.05)
+  # La bande [60,62] fait 0,02 ha : sous le seuil, elle est absorbée.
+  expect_false(any(.cx_singleparts(out)$surface_ha < 0.05))
+  # Elle a rejoint une UGF réelle et le résultat est d'un seul tenant :
+  # c'est ce qui la fait disparaître pour de bon, un multipolygone se
+  # redécouperait à l'éclatement.
+  expect_equal(nrow(.cx_singleparts(out)), nrow(out))
+  expect_equal(sum(out$surface_ha), 1, tolerance = 1e-9)
+})
+
+test_that("absorption never loses surface, whatever the threshold", {
+  onf <- .cx_onf(list(c(0, 40, 0, 100), c(41, 60, 0, 100), c(61, 99, 0, 100)))
+  cad <- .cx_cad("A", list(c(0, 100, 0, 100)))
+  total <- sum(as.numeric(sf::st_area(cad))) / 1e4
+
+  for (seuil in c(0, 0.001, 0.05, 0.2, 10)) {
+    out <- croiser_parcelles_onf(onf, cad, inclure_reste = TRUE,
+                                 min_surface_ha = seuil)
+    expect_equal(sum(out$surface_ha), total, tolerance = 1e-9,
+                 info = paste("seuil", seuil))
+  }
+})
+
+test_that(".croiser_longueur_euclidienne agrees with sf::st_length", {
+  # Le CRS de travail est toujours projeté (.croiser_crs_travail bascule en
+  # 2154 dès que l'entrée est en longitude/latitude), donc la somme euclidienne
+  # des segments EST la longueur — et évite l'interrogation du CRS que
+  # st_length() refait à chaque appel (6,1 s sur 6,4 s au profil).
+  l1 <- sf::st_sfc(sf::st_linestring(rbind(c(0, 0), c(3, 4), c(3, 10))),
+                   crs = 2154)
+  expect_equal(.croiser_longueur_euclidienne(l1),
+               as.numeric(sf::st_length(l1)))
+
+  # Plusieurs lignes : les segments ne franchissent pas la frontière entre
+  # parties (sans quoi le saut de l'une à l'autre serait compté).
+  l2 <- sf::st_sfc(sf::st_multilinestring(list(rbind(c(0, 0), c(0, 5)),
+                                               rbind(c(100, 0), c(100, 3)))),
+                   crs = 2154)
+  expect_equal(.croiser_longueur_euclidienne(l2), 8)
+  expect_equal(.croiser_longueur_euclidienne(l2),
+               as.numeric(sum(sf::st_length(l2))))
+
+  expect_equal(.croiser_longueur_euclidienne(sf::st_sfc(crs = 2154)), 0)
+})

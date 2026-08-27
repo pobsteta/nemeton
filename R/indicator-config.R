@@ -54,8 +54,8 @@ INDICATOR_FAMILIES <- list(
         en = "Parcel's capacity to serve as an ecological corridor. Measures forest continuity and proximity to other natural habitats."
       ),
       B4 = list(
-        fr = "Diversit\u00e9 spectrale (\u03b1) d\u00e9riv\u00e9e de Sentinel-2 : h\u00e9t\u00e9rog\u00e9n\u00e9it\u00e9 des \u00ab spectral species \u00bb (Shannon) comme proxy de diversit\u00e9 compositionnelle. Proxy \u00e0 valider terrain ; une futaie r\u00e9guli\u00e8re monosp\u00e9cifique l\u00e9gitime peut avoir un score bas.",
-        en = "Spectral (\u03b1) diversity from Sentinel-2: heterogeneity of spectral species (Shannon) as a proxy for compositional diversity. Proxy pending field validation; a legitimate even-aged monospecific stand may score low."
+        fr = "Diversit\u00e9 spectrale (\u03b1) d\u00e9riv\u00e9e de Sentinel-2 : indice de Shannon des \u00ab spectral species \u00bb par fen\u00eatre de 100 m, moyenn\u00e9 sur l\u2019unit\u00e9. Le score atteint 100 pour l\u2019\u00e9quivalent de 10 spectral species \u00e9galement abondantes par hectare. Proxy \u00e0 valider terrain ; une futaie r\u00e9guli\u00e8re monosp\u00e9cifique l\u00e9gitime peut avoir un score bas.",
+        en = "Spectral (\u03b1) diversity from Sentinel-2: Shannon index of spectral species over 100 m windows, averaged over the unit. The score reaches 100 for the equivalent of 10 equally abundant spectral species per hectare. Proxy pending field validation; a legitimate even-aged monospecific stand may score low."
       )
     )
   ),
@@ -189,8 +189,8 @@ INDICATOR_FAMILIES <- list(
         en = "Fragmentation level of surrounding forest landscape. Based on size and connectivity of nearby forest patches."
       ),
       L3 = list(
-        fr = "H\u00e9t\u00e9rog\u00e9n\u00e9it\u00e9 spectrale (\u03b2) du paysage d\u00e9riv\u00e9e de Sentinel-2 : turnover des \u00ab spectral species \u00bb (dissimilarit\u00e9 Bray-Curtis). Mesure la diversit\u00e9 de la mosa\u00efque (compl\u00e9mentaire de L2, morcellement g\u00e9om\u00e9trique). Proxy \u00e0 valider terrain.",
-        en = "Spectral (\u03b2) landscape heterogeneity from Sentinel-2: spectral-species turnover (Bray-Curtis dissimilarity). Measures mosaic diversity (complementary to L2, geometric fragmentation). Proxy pending field validation."
+        fr = "H\u00e9t\u00e9rog\u00e9n\u00e9it\u00e9 spectrale (\u03b2) du paysage d\u00e9riv\u00e9e de Sentinel-2 : dispersion des fen\u00eatres de l\u2019unit\u00e9 dans l\u2019ordination (PCoA) de la dissimilarit\u00e9 Bray-Curtis entre \u00ab spectral species \u00bb. Mesure la diversit\u00e9 de la mosa\u00efque (compl\u00e9mentaire de L2, morcellement g\u00e9om\u00e9trique). NA sous 3 fen\u00eatres couvertes. Proxy \u00e0 valider terrain.",
+        en = "Spectral (\u03b2) landscape heterogeneity from Sentinel-2: dispersion of the unit\u2019s windows in the PCoA ordination of the Bray-Curtis dissimilarity between spectral species. Measures mosaic diversity (complementary to L2, geometric fragmentation). NA below 3 covered windows. Proxy pending field validation."
       )
     )
   ),

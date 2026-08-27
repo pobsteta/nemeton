@@ -23,10 +23,25 @@ croiser_parcelles_onf(
 taken from \code{id_col}, or auto-detected among \code{id},
 \code{nemeton_id}, \code{geo_parcelle}, \code{idu}.}
 
-\item{min_surface_ha}{Tenements strictly smaller than this are treated as
+\item{min_surface_ha}{Parts strictly smaller than this are treated as
 slivers and absorbed. Default \code{0.05} (500 m²) — inside the natural gap
 measured between slivers (≤ 0.035 ha) and real tenements (≥ 0.12 ha). Use
-\code{0} to keep every sliver.}
+\code{0} to keep every sliver.
+
+Since v0.190.0 the threshold is compared against each \strong{simple part},
+not against the row: both \code{ten} and the remainder are merged into
+multipolygons, so a 10 ha remainder made of eight pieces — several under
+100 m² — sailed over the threshold and shed its slivers as soon as a consumer
+normalised the output to single parts. Measured on the 21 real parcels of
+Couchey: 255 parts, 96 under the threshold and 57 under 100 m² survived
+absorption; none does now, and the cadastral tiling is unchanged to the
+square metre.
+
+A sliver joins the part it shares the \strong{longest boundary} with, not the
+largest one: the union of two touching polygons is a single polygon, which is
+what makes the sliver disappear for good. When nothing touches it, the
+historical fallback applies (largest fragment of the parcel) — the sliver then
+only changes label, since the union stays multipart.}
 
 \item{caler_sur_cadastre}{Snap UGF boundaries onto cadastral boundaries by
 giving each nearly-covered cadastral parcel whole to its dominant UGF.
@@ -103,9 +118,10 @@ unchanged, geometry for geometry.
 
 Two corrections, mildest first:
 \itemize{
-\item \code{min_surface_ha} — a sliver is \strong{absorbed} by the largest
-tenement of the same cadastral parcel, never dropped, so each cadastral parcel
-stays exactly tiled (the application's tiling invariant).
+\item \code{min_surface_ha} — a sliver is \strong{absorbed} by the tenement of
+the same cadastral parcel it shares the longest boundary with, never dropped,
+so each cadastral parcel stays exactly tiled (the application's tiling
+invariant).
 \item \code{caler_sur_cadastre} — when one UGF already holds at least
 \code{seuil_calage} of a cadastral parcel, that parcel is given to it
 \strong{whole}: the UGF boundary snaps onto the cadastral boundary. Parcels
