@@ -53,14 +53,32 @@ Trois défauts en sont sortis, tous côté cœur, tous corrigés en v0.190.0 :
   L'affichage doit donc tolérer un `NA` sur L3 — ce qu'il fait déjà pour les
   autres indicateurs conditionnels, mais autant le dire.
 
-## 3. Ce qui reste ouvert, et qu'il ne faut pas surestimer
+## 3. Une chose à NE PAS faire dans l'interface
 
-Les deux bornes sont calibrées sur **une seule scène et un seul massif**. Elles
-sont honnêtes sur l'amplitude que le pipeline produit, muettes sur la diversité
-du domaine forestier français. **D3 reste ouverte** dans la spec 028. Si un
-utilisateur trouve les scores B4 systématiquement bas sur un autre massif, c'est
-une donnée utile, pas un bug : elle est attendue et le run de référence est
-consigné (spec 028 §10) pour rendre la comparaison possible.
+**Ne pas comparer B4 ou L3 entre projets** — ni classement, ni « ce massif est
+plus divers que celui-là », ni moyenne inter-projets.
+
+Les « spectral species » sont un **k-means réajusté à chaque run**, sur la seule
+scène traitée ; la PCoA dont L3 tire sa dispersion l'est aussi. Le dictionnaire
+d'espèces d'un projet n'est pas celui d'un autre. Les deux indicateurs sont
+rigoureusement comparables **au sein d'un projet** (c'est leur usage : situer les
+UGF les unes par rapport aux autres), pas d'un projet à l'autre.
+
+Mesuré sur les deux runs disponibles : Fordead (T31UFQ, 2017, S2A) donne un B4
+médian de 34,6, Reconfort (T31UDP, 2025, S2C) de 12,1. **La différence est
+réelle** — le Bray-Curtis brut, borné par construction et antérieur à toute
+normalisation, donne 0,889 de dissimilarité médiane contre 0,260 — mais que les
+deux nombres soient sur la même règle graduée n'est pas établi. Spec 028 §10.6.
+
+Corollaire pratique : si un utilisateur trouve les scores B4 bas sur son massif,
+c'est le plus souvent une donnée juste (massif spectralement uniforme), pas un
+bug.
+
+## 3 bis. Ce qui reste ouvert
+
+Les bornes tiennent sur **deux massifs indépendants** (tuiles, années et capteurs
+différents), tous deux du **quart nord-est**. Ce ne sont pas des bornes
+nationales : un massif méditerranéen ou de montagne reste à mesurer.
 
 ## 4. Une question, pas une demande
 

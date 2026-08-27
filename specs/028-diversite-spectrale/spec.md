@@ -1,6 +1,6 @@
 # Spec 028 — Diversité spectrale : indicateurs B4 & L3 (biodivMapR)
 
-**Statut :** livré v0.110.0 ; **smoke réel exécuté et D3 recalibré en v0.190.0** (§10) — trois défauts corrigés, bornes B4/L3 refaites sur run réel. D3 reste **ouverte** : calibration mono-scène, à confirmer sur un second massif.
+**Statut :** livré v0.110.0 ; **smoke réel exécuté et D3 recalibré en v0.190.0** (§10) — trois défauts corrigés, bornes B4/L3 refaites sur run réel puis **confirmées sur un second massif indépendant** (§10.6). Limite de méthode consignée : B4/L3 comparables au sein d'un projet, pas entre projets.
 **Auteur :** Pascal Obstetar
 **Date :** 2026-07-01
 **Familles impactées :** B (Biodiversité), L (Paysage)
@@ -156,11 +156,14 @@ inst/…                        → paramètres par défaut (window, n_clusters)
   distinction.
 - **D2** ✅ Défauts **`window = 10×10 px`** (≈100 m à 10 m S2), **`n_clusters =
   50`** spectral species (défaut biodivMapR). Ajustables.
-- **D3** 🟨 Normalisation. *Provisoire (2026-07-01)* : B4 sur
+- **D3** ✅ Normalisation. *Provisoire (2026-07-01)* : B4 sur
   `[0, log(n_clusters)]`, L3 sur l'amplitude de dissimilarité observée.
   **Recalibrée sur run réel le 2026-08-27** (§10.4) : B4 sur `[0, log(10)]`
   (nombre effectif de spectral species), L3 sur `[0, 0,5]` de la dispersion
-  PCoA. **Reste ouverte** — une seule scène mesurée.
+  PCoA. **Tenue sur deux massifs indépendants** (§10.6 — tuiles T31UFQ/2017 et
+  T31UDP/2025, capteurs S2A/S2C) : aucune saturation, la borne L3 approchée sans
+  être franchie. Enveloppes empiriques du quart nord-est ; un massif
+  méditerranéen ou de montagne reste à mesurer.
 - **D4** ✅ B4/L3 **comptent immédiatement** dans l'indice général (poids NDP
   normal de la famille) ; validation terrain ultérieure pour recalibrer.
 
@@ -280,11 +283,59 @@ q95 1,846 · max **2,456**.
 | L3, étendue des scores | 0 → 20,0 | **12,9 → 87,9** |
 | L3, UGF médiane | 0 | **56,4** |
 
-### 10.6 Ce qui reste ouvert
+### 10.6 Second massif — les bornes tiennent, et une limite apparaît
 
-- **Une seule scène, un seul massif.** Les deux bornes sont des calibrations
-  mono-scène, honnêtes sur l'amplitude que le pipeline produit réellement mais
-  à revoir dès qu'un second massif est mesuré. D3 reste **ouverte**.
+Un **second run** dormait dans le cache du projet `Reconfort`, jamais relu lui
+non plus : scène `S2C_MSIL2A_20250815` (2025), tuile **T31UDP**, capteur **S2C**,
+597 fenêtres, 30 UGF, `nbclusters = 50`. Tuile, année et capteur tous différents
+du run de référence — l'échantillon indépendant que D3 attendait.
+
+| | Fordead (T31UFQ, 2017) | Reconfort (T31UDP, 2025) |
+|---|---|---|
+| Shannon fenêtre, médiane / max | 0,797 / **2,455** | 0,257 / **0,893** |
+| Espèces effectives, meilleure fenêtre | **11,7** | **2,4** |
+| B4 brut par UGF | 0,288 → 1,553 | 0,199 → 0,519 |
+| **Scores B4** | 12,5 → 67,4 (méd. 34,6) | **8,6 → 22,6 (méd. 12,1)** |
+| L3 brut par UGF | 0,064 → **0,440** | 0,028 → **0,364** |
+| **Scores L3** | 12,9 → 87,9 (méd. 56,4) | **5,6 → 72,8 (méd. 19,6)** |
+| Saturations à 100 | 0 | 0 |
+| PCoA, part des 3 axes | 61,9 % | 88,7 % |
+
+**La borne L3 = 0,5 est confirmée** : les deux massifs restent dessous (0,440 et
+0,364), l'un en approche. **La borne B4 = log(10) tient** : aucune saturation par
+UGF, et la meilleure *fenêtre* de Fordead (11,7 espèces effectives) la dépasse
+tout juste — le clamp joue son rôle sans écraser personne.
+
+**Les scores bas de Reconfort ne sont pas un artefact d'échelle, et c'est
+vérifiable avant toute normalisation.** La matrice Bray-Curtis brute entre
+fenêtres (`Beta_info$MatBC`, bornée par construction) donne une dissimilarité
+médiane de **0,889 sur Fordead contre 0,260 sur Reconfort**. Ce massif est
+réellement plus uniforme spectralement ; c'est d'ailleurs pourquoi sa PCoA ajuste
+mieux (88,7 % sur trois axes, un axe dominant à 143 contre 19,4 et 4,5). La même
+mesure écarte aussi l'hypothèse d'un run dégradé : jeu de variables identique
+(`ID, B04, B05, B08, B8A, B11, B12`), et **`ID` y est inerte de la même façon**
+(0,0 % de la variance inter-centroïdes) — le constat §10.2 (4) se généralise.
+
+**La limite qui apparaît, et elle tempère le paragraphe précédent.** Les
+« spectral species » sont un **k-means réajusté à chaque run**, sur la seule
+scène traitée. Le dictionnaire d'espèces de Fordead n'est pas celui de
+Reconfort, et la PCoA de L3 est elle aussi calculée par run, sur ses propres
+valeurs propres. **B4 et L3 sont donc rigoureusement comparables *à l'intérieur*
+d'un projet, pas d'un projet à l'autre.** Que les deux massifs diffèrent
+réellement est établi (par le Bray-Curtis brut, indépendant du k-means) ; que
+« 12,1 » et « 34,6 » soient sur la même règle graduée ne l'est pas. C'est une
+limite de méthode, pas un défaut à corriger — mais elle doit être dite, et elle
+interdit un classement inter-projets fondé sur B4/L3.
+
+### 10.7 Ce qui reste ouvert
+
+- **D3 : passe de « ouverte » à « tenue sur deux massifs ».** Les bornes ne sont
+  plus mono-scène. Elles restent des **enveloppes empiriques** sur deux massifs
+  du quart nord-est, sans prétention nationale ; un massif méditerranéen ou de
+  montagne reste à mesurer.
+- **Comparabilité inter-projets** : à documenter côté app (§10.6) — B4/L3 se
+  lisent au sein d'un projet.
 - **La validation terrain de D4** (le statut proxy, spec 008 / QField) n'est pas
   entamée et ne l'est pas par ce chantier.
-- **Affichage `nemetonshiny`** : B4/L3 au radar et tooltips — brief émis.
+- **Affichage `nemetonshiny`** : livré (vérifié en lecture seule le 2026-08-27,
+  `service_compute.R:315,327` et `utils_i18n.R:1670,1683`).

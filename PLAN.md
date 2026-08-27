@@ -449,11 +449,24 @@ classification pilotée par un index de pixel. Elle porte **0,0 % de la variance
 inter-centroïdes** — inerte. Le run est exploitable, aucun correctif n'en
 découle. Consigné pour que la question ne soit pas reposée.
 
-**Reste** : ⏳ **D3 reste ouverte** — les deux bornes sont calibrées sur **une
-seule scène et un seul massif** ; honnêtes sur l'amplitude que le pipeline
-produit, muettes sur la diversité du domaine forestier français. À confirmer ou
-déplacer sur un second massif (le run de référence est consigné spec 028 §10
-pour rendre la comparaison possible). ⏳ Validation terrain du statut proxy
+**Second massif — D3 tenue (même jour).** Un deuxième run dormait dans le cache
+du projet `Reconfort`, jamais relu non plus : `S2C_MSIL2A_20250815`, tuile
+**T31UDP**, capteur **S2C**, 597 fenêtres. Tuile, année et capteur différents.
+**Aucune saturation**, borne L3 approchée sans être franchie (0,440 / 0,364).
+Les scores y sont bien plus bas (B4 médian 12,1 contre 34,6) et **ce n'est pas
+l'échelle** : le Bray-Curtis brut (`Beta_info$MatBC`, borné par construction,
+antérieur à toute normalisation) donne 0,889 de dissimilarité médiane sur
+Fordead contre **0,260** sur Reconfort. Le massif est réellement uniforme. `ID`
+y est inerte de la même façon — le constat se généralise.
+
+**Limite de méthode trouvée en chemin** : les « spectral species » sont un
+k-means **réajusté par run**, la PCoA de L3 aussi. B4/L3 sont comparables *au
+sein* d'un projet, **pas entre projets**. Que les deux massifs diffèrent est
+établi (par le BC brut, indépendant du k-means) ; que leurs scores soient sur la
+même règle graduée ne l'est pas. Spec 028 §10.6.
+
+**Reste** : ⏳ deux massifs du **quart nord-est** — ce ne sont pas des bornes
+nationales ; un massif méditerranéen ou de montagne reste à mesurer. ⏳ Validation terrain du statut proxy
 (D4, démarche spec 008/QField) : non entamée, hors de ce chantier.
 
 **Le « reste » app était périmé** : ce chantier listait encore « affichage

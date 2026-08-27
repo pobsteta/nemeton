@@ -64,11 +64,27 @@ Vérification faite, elle porte **0,0 % de la variance inter-centroïdes**
 (écart-type 0,0024 après normalisation, contre 0,24 à 0,82 pour les bandes) :
 elle est inerte, le run est exploitable, aucun correctif n'en découle.
 
-**Ce qui reste ouvert, et doit être dit** : les deux bornes sont calibrées sur
-**une seule scène et un seul massif**. Elles sont honnêtes sur l'amplitude que
-le pipeline produit, pas sur la diversité du domaine forestier français. La
-décision D3 de la spec 028 reste **ouverte** jusqu'à un second massif ; le run
-de référence est consigné en §10 pour que la comparaison soit possible.
+**Les bornes tiennent sur un second massif.** Un deuxième run dormait dans le
+cache du projet `Reconfort`, jamais relu lui non plus : scène
+`S2C_MSIL2A_20250815`, tuile **T31UDP**, capteur **S2C**, 597 fenêtres — tuile,
+année et capteur tous différents du run de référence. Aucune saturation d'aucun
+côté, et la borne L3 approchée sans être franchie (0,440 sur Fordead, 0,364 sur
+Reconfort). Les scores y sont nettement plus bas (B4 médian 12,1 contre 34,6),
+**et ce n'est pas un artefact d'échelle** : la matrice Bray-Curtis brute, bornée
+par construction et antérieure à toute normalisation, donne une dissimilarité
+médiane de 0,889 sur Fordead contre 0,260 sur Reconfort. Ce massif est
+réellement plus uniforme. La variable `ID` y est inerte de la même façon.
+
+**Une limite de méthode apparaît, et elle tempère ce qui précède.** Les
+« spectral species » sont un k-means **réajusté à chaque run**, et la PCoA de L3
+également. B4 et L3 sont donc rigoureusement comparables *au sein* d'un projet,
+**pas d'un projet à l'autre** : que les deux massifs diffèrent est établi par le
+Bray-Curtis brut, mais que « 12,1 » et « 34,6 » soient sur la même règle graduée
+ne l'est pas. Consigné spec 028 §10.6 ; un classement inter-projets fondé sur
+B4/L3 est à proscrire.
+
+**Ce qui reste ouvert** : deux massifs du quart nord-est, ce ne sont pas des
+bornes nationales. Un massif méditerranéen ou de montagne reste à mesurer.
 
 Les tooltips de B4 et L3 nomment désormais la grandeur *et* son échelle — la
 leçon de la v0.189.1, appliquée avant que le défaut n'existe.
