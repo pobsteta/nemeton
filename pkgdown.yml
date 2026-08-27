@@ -5,6 +5,47 @@ articles:
   biodiversity-resilience_fr: biodiversity-resilience_fr.html
   complete-referential_fr: complete-referential_fr.html
   f1-three-sources_fr: f1-three-sources_fr.html
+  fiche-a1-couverture_fr: fiche-a1-couverture_fr.html
+  fiche-a2-qualite-air_fr: fiche-a2-qualite-air_fr.html
+  fiche-a3-microclimat_fr: fiche-a3-microclimat_fr.html
+  fiche-a4-tamponnement_fr: fiche-a4-tamponnement_fr.html
+  fiche-a5-rafraichissement_fr: fiche-a5-rafraichissement_fr.html
+  fiche-b1-protection_fr: fiche-b1-protection_fr.html
+  fiche-b2-structure_fr: fiche-b2-structure_fr.html
+  fiche-b3-connectivite_fr: fiche-b3-connectivite_fr.html
+  fiche-b4-diversite-spectrale_fr: fiche-b4-diversite-spectrale_fr.html
+  fiche-c1-biomasse_fr: fiche-c1-biomasse_fr.html
+  fiche-c2-ndvi_fr: fiche-c2-ndvi_fr.html
+  fiche-e1-bois-energie_fr: fiche-e1-bois-energie_fr.html
+  fiche-e2-evitement_fr: fiche-e2-evitement_fr.html
+  fiche-f1-fertilite_fr: fiche-f1-fertilite_fr.html
+  fiche-f2-erosion_fr: fiche-f2-erosion_fr.html
+  fiche-l1-effet-lisiere_fr: fiche-l1-effet-lisiere_fr.html
+  fiche-l2-morcellement_fr: fiche-l2-morcellement_fr.html
+  fiche-l3-heterogeneite-spectrale_fr: fiche-l3-heterogeneite-spectrale_fr.html
+  fiche-n1-distance_fr: fiche-n1-distance_fr.html
+  fiche-n2-continuite_fr: fiche-n2-continuite_fr.html
+  fiche-n3-naturalite_fr: fiche-n3-naturalite_fr.html
+  fiche-p1-volume_fr: fiche-p1-volume_fr.html
+  fiche-p2-station_fr: fiche-p2-station_fr.html
+  fiche-p3-qualite-bois_fr: fiche-p3-qualite-bois_fr.html
+  fiche-r1-feu_fr: fiche-r1-feu_fr.html
+  fiche-r2-tempete_fr: fiche-r2-tempete_fr.html
+  fiche-r3-secheresse_fr: fiche-r3-secheresse_fr.html
+  fiche-r4-abroutissement_fr: fiche-r4-abroutissement_fr.html
+  fiche-r5-deperissement_fr: fiche-r5-deperissement_fr.html
+  fiche-r6-sensibilite_fr: fiche-r6-sensibilite_fr.html
+  fiche-r7-gel_fr: fiche-r7-gel_fr.html
+  fiche-s1-routes_fr: fiche-s1-routes_fr.html
+  fiche-s2-bati_fr: fiche-s2-bati_fr.html
+  fiche-s3-population_fr: fiche-s3-population_fr.html
+  fiche-t1-anciennete_fr: fiche-t1-anciennete_fr.html
+  fiche-t2-changement_fr: fiche-t2-changement_fr.html
+  fiche-t3-coupes-rases_fr: fiche-t3-coupes-rases_fr.html
+  fiche-w1-reseau_fr: fiche-w1-reseau_fr.html
+  fiche-w2-zones-humides_fr: fiche-w2-zones-humides_fr.html
+  fiche-w3-humidite_fr: fiche-w3-humidite_fr.html
+  fiche-w4-vpd_fr: fiche-w4-vpd_fr.html
   getting-started_fr: getting-started_fr.html
   indicator-families_fr: indicator-families_fr.html
   internationalization: internationalization.html
@@ -13,7 +54,7 @@ articles:
   site-index-open-canopy_fr: site-index-open-canopy_fr.html
   temporal-analysis_fr: temporal-analysis_fr.html
   tutorial-guide: tutorial-guide.html
-last_built: 2026-08-27T14:18Z
+last_built: 2026-08-27T14:30Z
 urls:
   reference: https://pobsteta.github.io/nemeton/reference
   article: https://pobsteta.github.io/nemeton/articles

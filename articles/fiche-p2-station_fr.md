@@ -1,0 +1,84 @@
+# Fiche indicateur P2 - Indice de station
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+
+------------------------------------------------------------------------
+
+## 1. Carte d’identité
+
+| Élément | Valeur |
+|----|----|
+| Code | `P2` |
+| Nom long / colonne | `indicateur_p2_station` |
+| Famille | **P — Production & Économie** |
+| Grandeur mesurée | **Indice de station** — hauteur dominante à l’âge de référence |
+| Unité brute | **mètres** (H₀ à l’âge de référence) |
+| Sens | Haut = favorable |
+| Normalisation | `ref_max = 15` → `score = min(100, H₀ / 15 × 100)` |
+| Fonction | [`indicateur_p2_station()`](https://pobsteta.github.io/nemeton/reference/indicateur_p2_station.md) — `R/indicators-productive.R:334` |
+
+## 2. Le calcul
+
+    H_dom = extract_h_dom(chm, percentile = 0,9)        ou colonne fournie
+    H_0   = compute_site_index(H_dom, age, essence, reference_age)
+
+[`compute_site_index()`](https://pobsteta.github.io/nemeton/reference/compute_site_index.md)
+applique les **courbes de hauteur dominante de Duplat & Tran-Ha
+(1997)**, embarquées dans `inst/extdata/site_index_curves.csv` avec
+l’autorisation explicite de M. Tran-Ha (avril 2026). Elles couvrent les
+principales essences françaises ;
+[`list_site_index_species()`](https://pobsteta.github.io/nemeton/reference/list_site_index_species.md)
+en donne la liste.
+
+**Exemples chiffrés** :
+
+| Essence       | H_dom | Âge    | H₀ à l’âge de référence | Score    |
+|---------------|-------|--------|-------------------------|----------|
+| Hêtre         | 24 m  | 80 ans | ~11,5 m                 | **76,7** |
+| Chêne sessile | 18 m  | 90 ans | ~8,0 m                  | **53,3** |
+| Douglas       | 30 m  | 45 ans | ~14,5 m                 | **96,7** |
+
+## 3. Le calcul par niveau NDP
+
+| NDP | Entrées | Ce qui change |
+|----|----|----|
+| **0** | pas de hauteur → P2 peu fiable |  |
+| **0 augmenté** `height_ml` | **CHM ML** | H_dom prédite — le cas nominal de la spec 005 |
+| **1** | MNH LiDAR HD | H_dom mesurée |
+| **3** | H_dom relevée au dendromètre + âge par sondage | la mesure de référence |
+| **4** | TLS | — |
+
+P2 est **l’indicateur pour lequel la spec 005 a été écrite** : sans
+hauteur dominante, il n’existe pas.
+
+## 4. Trois pièges
+
+1.  **L’âge est aussi critique que la hauteur, et souvent moins bien
+    connu.** L’indice de station est une hauteur *ramenée à un âge de
+    référence* : une erreur de 20 ans sur l’âge déplace H₀ autant qu’une
+    erreur de plusieurs mètres sur H_dom. Or l’âge vient souvent de T1,
+    c’est-à-dire d’une typologie BD Forêt (cf. la fiche T1).
+2.  **Les courbes ne valent que pour des peuplements réguliers purs.**
+    Sur une futaie jardinée ou un mélange, H_dom au 90ᵉ percentile
+    mesure les dominants d’une strate parmi d’autres, et l’indice de
+    station perd son sens.
+3.  **`ref_max = 15` est une hauteur, pas un score.** Un H₀ de 15 m à
+    l’âge de référence sature l’échelle : les très bonnes stations de
+    Douglas y arrivent.
+
+## 5. Aval
+
+    indicateur_p2_station()  ->  colonne indicateur_p2_station (m)
+          |
+          +- normalize_indicator()     -> min(100, H0 / 15 x 100)
+          +- create_family_index("P")  -> famille_production
+
+## 6. Références internes
+
+| Sujet | Fichier |
+|----|----|
+| Fonction P2 | `R/indicators-productive.R:334-500` |
+| Indice de station | [`compute_site_index()`](https://pobsteta.github.io/nemeton/reference/compute_site_index.md) — `R/site_index.R` |
+| Courbes | `inst/extdata/site_index_curves.csv` (Duplat & Tran-Ha 1997) |
+| Essences couvertes | [`list_site_index_species()`](https://pobsteta.github.io/nemeton/reference/list_site_index_species.md), [`site_index_reference_points()`](https://pobsteta.github.io/nemeton/reference/site_index_reference_points.md) |
+| Spécification | `specs/005-opencanopy-integration/` |

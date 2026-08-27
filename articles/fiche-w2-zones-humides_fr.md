@@ -1,0 +1,88 @@
+# Fiche indicateur W2 - Zones humides
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+
+------------------------------------------------------------------------
+
+## 1. Carte d’identité
+
+| Élément | Valeur |
+|----|----|
+| Code | `W2` |
+| Nom long / colonne | `indicateur_w2_zones_humides` |
+| Famille | **W — Eau & Régulation** |
+| Grandeur mesurée | Part de l’unité en zone humide ou riparienne |
+| Unité brute | **pourcentage cumulé** (cf. §4) |
+| Sens | Haut = favorable |
+| Normalisation | `ref_max = 5` → `score = min(100, valeur / 5 × 100)` |
+| Fonction | [`indicateur_w2_zones_humides()`](https://pobsteta.github.io/nemeton/reference/indicateur_w2_zones_humides.md) — `R/indicators-families.R:719` |
+
+## 2. Le calcul — une somme de sources, pas un maximum
+
+W2 **additionne** la contribution de chaque source disponible :
+
+| Source | Contribution |
+|----|----|
+| BD TOPO, surfaces en eau | `aire(intersection) / aire(unité) × 100` |
+| TWI | part surfacique des pixels de **TWI \> 12** |
+| OSO, codes d’occupation « zone humide » | part surfacique des pixels concernés |
+| Theia `theia_water` (occurrence d’eau) | part des pixels dont l’occurrence atteint `occurrence_threshold` |
+
+    W2 = somme des contributions disponibles      puis min(...) au plafond
+
+**Exemples chiffrés** :
+
+| Situation | Contributions | W2 brut | Score |
+|----|----|----|----|
+| 1 % de mare en BD TOPO, rien d’autre | 1,0 | 1,0 | **20,0** |
+| 3 % de TWI \> 12 | 3,0 | 3,0 | **60,0** |
+| 2 % BD TOPO + 4 % TWI | 2 + 4 | 6,0 | **100,0** (saturé) |
+| Aucune source | 0 | 0,0 | **0,0** |
+
+## 3. Le calcul par niveau NDP
+
+| NDP | Sources effectives | Ce qui change |
+|----|----|----|
+| **0** | OSO 30 m + TWI calculé sur MNT 25 m | le TWI grossier domine |
+| **1** | BD TOPO surfaces en eau + **TWI sur LiDAR HD** | le TWI change d’échelle : les micro-dépressions apparaissent |
+| **2** | \+ détection drone | zones humides visibles au sol |
+| **3** | cartographie terrain | seule source qui distingue une vraie zone humide d’un simple creux |
+| **4** | inventaire complet modélisé | — |
+
+**C’est l’indicateur le plus sensible au passage NDP 0 → 1 de la famille
+W**, parce que le TWI y change de résolution, et que le TWI y pèse le
+plus lourd.
+
+## 4. Trois pièges
+
+1.  **Le plafond de 5 % sature très vite.** `ref_max = 5` signifie
+    qu’**une unité à 5 % de zone humide obtient déjà 100**. Le choix se
+    défend — 5 % de zone humide dans une parcelle forestière est une
+    proportion notable — mais toute la variabilité au-dessus de 5 % est
+    écrasée. Une ripisylve à 30 % et une parcelle à 5 % sont
+    indistinguables sur le score.
+2.  **Les sources s’additionnent, elles ne s’unissent pas
+    géométriquement.** Une mare cartographiée en BD TOPO, située dans
+    une dépression de TWI \> 12 et classée « zone humide » par OSO est
+    comptée **trois fois**. Avec trois sources concordantes, 1,7 % de
+    surface réelle suffit à saturer le score. Plus il y a de sources
+    branchées, plus W2 monte — même à réalité constante.
+3.  **Le seuil TWI \> 12 est un seuil de convention.** Il ne signifie
+    pas « zone humide » au sens réglementaire (sol, flore, hydromorphie)
+    ; c’est un proxy topographique d’accumulation. Ne pas s’en servir
+    pour un enjeu réglementaire.
+
+## 5. Aval
+
+    indicateur_w2_zones_humides()  ->  colonne indicateur_w2_zones_humides
+          |
+          +- normalize_indicator()     -> min(100, valeur / 5 x 100)
+          +- create_family_index("W")  -> famille_eau
+
+## 6. Références internes
+
+| Sujet               | Fichier                                           |
+|---------------------|---------------------------------------------------|
+| Fonction W2         | `R/indicators-families.R:719-880`                 |
+| TWI partagé avec W3 | `get_or_compute_twi()` — cache de fichier         |
+| Sources déclarées   | `inst/datasources/FR.json` — `theia_water`, `oso` |

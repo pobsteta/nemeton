@@ -4,8 +4,8 @@
 
 Depuis la spec 005, le package `nemeton` peut exploiter un **Canopy
 Height Model (CHM)** — typiquement produit par le package
-[`opencanopy`](https://github.com/pobsteta/opencanopynemeton) à partir
-de l’ortho IGN et de modèles ML — pour estimer un véritable **indice de
+[`opencanopy`](https://github.com/pobsteta/opencanopy) à partir de
+l’ortho IGN et de modèles ML — pour estimer un véritable **indice de
 station** par unité forestière. L’indice de station est la hauteur
 dominante $`H_0`$ qu’un peuplement atteindrait à un âge de référence
 (traditionnellement 50 ans pour les résineux, 100 ans pour les
@@ -353,8 +353,7 @@ indicateur_r2_tempete(units, dem = dem, chm = chm)
 - ADR-011 (amendement) : sémantique du flag `augmented` pour la
   détection NDP.
 - Spec 005 : `specs/005-opencanopy-integration/` (plan, tâches).
-- Package amont
-  [`opencanopy`](https://github.com/pobsteta/opencanopynemeton) pour
-  produire les CHM à partir de l’ortho IGN.
+- Package amont [`opencanopy`](https://github.com/pobsteta/opencanopy)
+  pour produire les CHM à partir de l’ortho IGN.
 - `inst/NOTICE` pour les attributions des courbes Duplat & Tran-Ha et
   sources complémentaires.

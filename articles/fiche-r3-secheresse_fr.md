@@ -1,0 +1,89 @@
+# Fiche indicateur R3 - Risque de secheresse
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+
+> ### Le sens de la famille R, corrigé en 0.181.0
+>
+> **R1 à R5 sont tous orientés « haut = mauvais » à l’état brut** et
+> sont donc **inversés** à la normalisation : `score = 100 − valeur`.
+> **R6 et R7 ne le sont pas** — ils sont déjà « haut = bon » à la
+> source.
+>
+> Jusqu’à la version 0.181.0, **seul R5 était inversé**, et le
+> commentaire qui le justifiait affirmait que c’était « pour rester high
+> = good comme R1-R4 ». La prémisse était fausse : R1-R4 passaient tels
+> quels. R5 pointait donc à l’opposé des quatre autres **dans sa propre
+> famille**, et une UGF très exposée obtenait un `famille_risque` élevé,
+> c’est-à-dire flatteur. Les fonctions d’indicateur et leurs appelants
+> sont inchangés — **seule la valeur normalisée a basculé** (spec 048).
+> Tout `famille_risque` calculé avant 0.181.0 est à refaire.
+
+------------------------------------------------------------------------
+
+## 1. Carte d’identité
+
+| Élément | Valeur |
+|----|----|
+| Code | `R3` |
+| Nom long / colonne | `indicateur_r3_secheresse` |
+| Famille | **R — Risques & Résilience** |
+| Grandeur mesurée | Risque de stress hydrique |
+| Unité brute | **0–100, haut = risque élevé** |
+| Sens | **inversé** |
+| Fonction | [`indicateur_r3_secheresse()`](https://pobsteta.github.io/nemeton/reference/indicateur_r3_secheresse.md) — `R/indicators-risk.R:666` |
+
+## 2. Trois chemins
+
+| Ordre | Chemin | Condition | Formule |
+|----|----|----|----|
+| 1 | **Bilan hydrique BILJOU** | `biljou` fourni | `.r3_biljou_stress()`, écrêté `[0, 100]` |
+| 2 | **Climat + topographie** | MNT disponible | `(0,6 × climat + 0,4 × topo) × 100` |
+| — | *aucun* | — | `NA` |
+
+    topo = 0,4 x aspect_risk + 0,3 x slope_risk + 0,3 x twi_risk
+    climat = f(SPEI-3)   avec  climat = max(0, min(1, (-SPEI + 2) / 4))
+
+Une modulation par l’enneigement (`snow`, `snow_relief_strength = 0,3`)
+est appliquée quand le produit neige est fourni.
+
+## 3. Le calcul par niveau NDP
+
+| NDP | Ce qui change |
+|----|----|
+| **0** | SPEI depuis WorldClim + topographie sur MNT 25 m |
+| **1** | topographie LiDAR HD : exposition et TWI fins |
+| **2** | — |
+| **3** | **BILJOU** alimenté par un sol décrit sur placette : vrai bilan hydrique |
+| **4** | — |
+
+## 4. Trois pièges
+
+1.  **La composante climatique retombe sur `0,5` en dur**
+    (`r3_climat <- 0.5`, « Default scalar fallback ») quand la série
+    SPEI n’est pas calculable. Comme elle pèse **60 %**, un projet sans
+    climat exploitable a un R3 dominé par une constante — et rien ne le
+    distingue d’un risque réellement moyen.
+2.  **Le chemin BILJOU court-circuite tout le reste.** Quand un bilan
+    hydrique est fourni, R3 vaut son score et ne mélange plus climat ni
+    topographie. Deux projets, l’un avec BILJOU, l’autre sans, mesurent
+    deux grandeurs différentes.
+3.  **Le SPEI est calculé au centroïde de l’union des unités**, donc
+    **une seule valeur climatique pour tout le projet**. Sur une emprise
+    étendue ou à cheval sur un gradient, la composante climatique ne
+    discrimine rien.
+
+## 5. Aval
+
+    indicateur_r3_secheresse()  ->  colonne R3 (0-100, haut = risque)
+          |
+          +- normalize_indicator()     -> 100 - valeur
+          +- create_family_index("R")  -> famille_risque
+
+## 6. Références internes
+
+| Sujet | Fichier |
+|----|----|
+| Fonction R3 | `R/indicators-risk.R:666-910` |
+| Bilan hydrique | [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md), [`load_biljou_forcing()`](https://pobsteta.github.io/nemeton/reference/load_biljou_forcing.md), [`build_biljou_soil()`](https://pobsteta.github.io/nemeton/reference/build_biljou_soil.md) |
+| TWI partagé | `get_or_compute_twi()` — cache W2/W3/F2/R3 |
+| Neige | `inst/datasources/FR.json` — `theia_snow` |

@@ -1,0 +1,112 @@
+# Fiche indicateur B2 - Diversite structurale
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+
+------------------------------------------------------------------------
+
+## 1. Carte d’identité
+
+| Élément | Valeur |
+|----|----|
+| Code | `B2` |
+| Nom long / colonne | `indicateur_b2_structure` |
+| Famille | **B — Biodiversité** |
+| Grandeur mesurée | Hétérogénéité verticale et horizontale du peuplement |
+| Unité brute | **score 0–100** |
+| Sens | Haut = favorable (plus hétérogène) |
+| Normalisation | **native 0–100**, simple écrêtage |
+| Fonction | [`indicateur_b2_structure()`](https://pobsteta.github.io/nemeton/reference/indicateur_b2_structure.md) — `R/indicators-biodiversity.R:302` |
+
+## 2. Quatre chemins, servis en cascade
+
+Comme C1, B2 essaie ses entrées dans un ordre fixe ; le premier chemin
+servi gagne. Le déclencheur du chemin principal est la présence
+**simultanée** des colonnes `strata` et `age_class`.
+
+| Ordre | Chemin | Condition | Formule |
+|----|----|----|----|
+| — | **Shannon terrain** | colonnes `strata` **et** `age_class` | Shannon pondéré strates 0,4 / âges 0,3 / essences 0,3 |
+| 0 | **CHM direct** | argument `chm` fourni | `min(CV / 0,4 ; 1) × 100` |
+| 1 | **MNH LiDAR** | couche `lidar_mnh` | `min(σ_hauteur / 10 ; 1) × 100` |
+| 2 | **NDVI** | couche `ndvi` | `min(CV_NDVI / 0,4 ; 1) × 100` |
+| — | *aucun* | — | `NA` + avertissement |
+
+**Composante CHM additive.** Quand `chm` est fourni **et** que le chemin
+Shannon terrain s’applique, le CV du CHM entre comme composante additive
+de poids `cv_chm_weight` (défaut **0,20**) — il ne remplace pas le
+Shannon, il le corrige.
+
+### Les trois proxys, et ce qu’ils mesurent vraiment
+
+    CV(CHM)   = ecart-type(hauteurs) / moyenne(hauteurs)     >= 10 pixels valides
+    score     = min(CV / 0,4 ; 1) x 100                      CV 0,4 = plafond « futaie melangee mure »
+
+    sigma(MNH) = ecart-type des hauteurs sur l'unite
+    score      = min(sigma / 10 ; 1) x 100                   futaie reguliere ~ 2-4 m, melangee mure ~ 8-12 m
+
+    CV(NDVI)  = ecart-type(NDVI) / moyenne(NDVI)
+    score     = min(CV / 0,4 ; 1) x 100
+
+**Exemples chiffrés** :
+
+| Peuplement                    | Chemin     | Mesure    | B2       |
+|-------------------------------|------------|-----------|----------|
+| Plantation régulière d’épicéa | MNH LiDAR  | σ = 2,5 m | **25,0** |
+| Futaie feuillue irrégulière   | MNH LiDAR  | σ = 9,0 m | **90,0** |
+| Futaie jardinée, CHM FORMS-T  | CHM direct | CV = 0,34 | **85,0** |
+| Taillis homogène              | NDVI       | CV = 0,08 | **20,0** |
+
+## 3. Le calcul par niveau NDP
+
+| NDP | Chemin servi | Ce qui change |
+|----|----|----|
+| **0** | 2 (CV du NDVI) | proxy indirect : le NDVI ne voit pas la **verticale** |
+| **0 augmenté** `height_ml` | 0 (CHM FORMS-T / FORMSpoT / Open-Canopy) | première mesure réelle de la structure verticale |
+| **1** | 1 (MNH LiDAR HD) | même grandeur, mesurée au lieu d’être prédite |
+| **2** | 1 (MNH drone) | résolution centimétrique : les sous-étages apparaissent |
+| **3** | Shannon terrain | strates et classes d’âge **relevées**, plus déduites |
+| **4** | Shannon + scan 3D | structure complète |
+
+> **La rupture est entre NDP 0 nu et NDP 0 augmenté**, pas entre NDP 0
+> et NDP 1. Le CV du NDVI mesure une hétérogénéité **spectrale
+> horizontale** et l’appelle structure ; le CHM mesure la **hauteur**.
+> Ce sont deux grandeurs différentes portant le même nom de colonne.
+> Brancher un CHM public change la nature de B2, pas seulement sa
+> précision.
+
+## 4. Quatre pièges
+
+1.  **Deux échelles pour le CHM, deux plafonds différents.** Le chemin
+    CHM normalise par `CV = 0,4` et le chemin MNH LiDAR par `σ = 10 m`.
+    Ce sont des grandeurs distinctes (l’une sans dimension, l’autre en
+    mètres) : **les scores B2 d’un projet CHM et d’un projet LiDAR ne
+    sont pas directement comparables**, même à structure identique.
+2.  **Le CV exige au moins 10 pixels valides** par unité, sinon `NA`.
+    Sur des unités petites croisées avec un CHM à 30 m, une part des
+    unités sort `NA` sans que rien de visible ne le signale au niveau de
+    la famille.
+3.  **Le CV du NDVI plafonne aussi à 0,4**, valeur reprise du chemin
+    CHM. Rien n’indique qu’un CV de NDVI de 0,4 corresponde à la même
+    richesse structurale qu’un CV de hauteurs de 0,4. C’est un plafond
+    emprunté, pas calibré.
+4.  **`species_field` est optionnel et vaut `NULL` par défaut.** Le
+    poids 0,3 nominalement dévolu aux essences ne s’applique donc que si
+    l’appelant nomme explicitement la colonne. Sans cela, le Shannon ne
+    porte que sur strates et âges — et les poids ne sont pas
+    renormalisés.
+
+## 5. Aval
+
+    indicateur_b2_structure()  ->  colonne B2 (0-100)
+          |
+          +- normalize_indicator()     -> passthrough clamp
+          +- create_family_index("B")  -> famille_biodiversite = moy(B1, B2, B3, B4)
+
+## 6. Références internes
+
+| Sujet | Fichier |
+|----|----|
+| Fonction B2 | `R/indicators-biodiversity.R:302-460` |
+| Sources CHM déclarées | `inst/datasources/FR.json` — `forms_t`, `formspot`, `s2_biophysical` (CV du LAI) |
+| Nettoyage du CHM | [`sanitize_chm()`](https://pobsteta.github.io/nemeton/reference/sanitize_chm.md) — `R/utils-chm.R:109` |
+| Fiche de l’autre consommateur du CHM | [`vignette("fiche-c1-biomasse_fr", package = "nemeton")`](https://pobsteta.github.io/nemeton/articles/fiche-c1-biomasse_fr.md) |

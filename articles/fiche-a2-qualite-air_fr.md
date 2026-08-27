@@ -1,0 +1,100 @@
+# Fiche indicateur A2 - Qualite de l'air
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+
+------------------------------------------------------------------------
+
+## 1. Carte d’identité
+
+| Élément | Valeur |
+|----|----|
+| Code | `A2` |
+| Nom long / colonne | `indicateur_a2_qualite_air` |
+| Famille | **A — Air & Microclimat** |
+| Grandeur mesurée | Qualité de l’air, mesurée ou approchée par l’éloignement au trafic |
+| Unité brute | **score 0–100** |
+| Sens | Haut = favorable |
+| Normalisation | **native 0–100**, écrêtage |
+| Fonction | [`indicateur_a2_qualite_air()`](https://pobsteta.github.io/nemeton/reference/indicateur_a2_qualite_air.md) — `R/indicators-air.R:221` |
+| Colonne annexe | `A2_method` — `"direct"`, `"proxy"` ou `"none"` |
+
+## 2. Deux méthodes, choisies automatiquement
+
+`method = "auto"` (défaut) tranche ainsi :
+
+| Condition | Méthode | Colonne `A2_method` |
+|----|----|----|
+| `atmo_data` fourni (sf avec `NO2` et `PM10`) | **direct** — IDW sur les 3 stations les plus proches | `"direct"` |
+| sinon, `roads` disponible | **proxy** — éloignement au trafic pondéré | `"proxy"` |
+| ni l’un ni l’autre | aucune — `NA` | `"none"` |
+
+### Méthode proxy
+
+    pollution = somme sur les routes a moins de 2 000 m de  w_route / (d/100)^2
+                                                            d borne a 10 m minimum
+    pollution_norm = log1p(pollution) / log1p(max du projet)
+    A2 = (1 - pollution_norm) x 100
+
+Poids par nature de voie (BD TOPO v3, `nature` / `classe` /
+`road_type`…) :
+
+| Nature                      | Poids    |
+|-----------------------------|----------|
+| Autoroute, type autoroutier | 1,00     |
+| Quasi-autoroute             | 0,90     |
+| Route à 2 chaussées         | 0,80     |
+| Bretelle                    | 0,70     |
+| Route à 1 chaussée          | 0,60     |
+| Rond-point                  | 0,50     |
+| Route empierrée             | 0,30     |
+| Chemin                      | 0,10     |
+| Piste cyclable              | 0,05     |
+| Sentier, escalier           | 0,02     |
+| *nature non reconnue*       | **0,50** |
+
+## 3. Le calcul par niveau NDP
+
+| NDP   | Ce qui change                                                 |
+|-------|---------------------------------------------------------------|
+| **0** | proxy BD TOPO — aucune mesure de pollution                    |
+| **1** | proxy identique                                               |
+| **2** | proxy amélioré (voirie relevée au drone)                      |
+| **3** | **stations ATMO** : première vraie mesure (NO₂ + PM₁₀ en IDW) |
+| **4** | réseau ATMO complet + capteurs sur site                       |
+
+**A2 est l’indicateur dont le saut de NDP est le plus brutal** :
+jusqu’au NDP 2, il ne mesure pas la qualité de l’air mais l’éloignement
+au trafic. Le passage au NDP 3 change la grandeur, pas seulement sa
+précision. La colonne `A2_method` existe précisément pour que ce
+basculement soit lisible.
+
+## 4. Trois pièges
+
+1.  **En mode proxy, A2 est relatif au projet.** La normalisation divise
+    par `max(pollution)` **du jeu d’unités traité**. L’unité la plus
+    polluée d’un projet obtient donc toujours 0, et la moins polluée
+    toujours 100 — même si toutes sont en pleine forêt à 10 km de la
+    première route. **Deux projets ne se comparent pas, et un projet
+    mono-unité n’a pas de sens en mode proxy.**
+2.  **Une nature de voie non reconnue pèse 0,50**, soit autant qu’un
+    rond-point et cinq fois plus qu’un chemin. Un jeu de routes sans
+    champ `nature` met toutes les voies à 0,50 : les sentiers forestiers
+    y polluent alors comme des routes départementales.
+3.  **`NA` quand rien n’est disponible, délibérément.** Le code refuse
+    explicitement un 50 « neutre », avec ce commentaire — « il ressemble
+    à un score moyen crédible, là où une colonne vide se remarque ». Ne
+    pas le remplacer en aval.
+
+## 5. Aval
+
+    indicateur_a2_qualite_air()  ->  colonnes A2 (0-100) et A2_method
+          |
+          +- normalize_indicator()     -> passthrough clamp
+          +- create_family_index("A")  -> famille_air
+
+## 6. Références internes
+
+| Sujet | Fichier |
+|----|----|
+| Fonction A2, table des poids | `R/indicators-air.R:221-380` |
+| Politique NA | commentaire « no measurement made », `R/indicators-air.R:~255` |

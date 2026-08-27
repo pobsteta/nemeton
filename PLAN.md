@@ -41,12 +41,18 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 |----|----|----|----|----|
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 | 6 | B4/L3 : les valeurs changent de sens et d’échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Rien à coder** — les tooltips viennent d’`INDICATOR_FAMILIES` et les rasters en cache restent valides — mais l’interface ne doit **ni classer ni moyenner B4/L3 entre projets** : les « spectral species » sont un k-means réajusté par run (spec 028 §10.6). Non accusé réception |
+| 8 | **Le sens de `L1` est lu à l’envers par la normalisation** | relevé le 2026-08-27 en écrivant les fiches | cœur `nemeton` | Le calcul (`(SI−1)×25`, contraste bâti = 90), l’infobulle (« fragmentent l’habitat intérieur ») et [`indicateur_n3_naturalite()`](https://pobsteta.github.io/nemeton/reference/indicateur_n3_naturalite.md) (`anti_frag = 100 − L1`) lisent tous **haut = beaucoup de lisière = défavorable**. Mais `indicateur_l1_effet_lisiere` est dans `.NORMALIZE_NATIVE_0_100` (`R/normalization.R:521`) et aucune inversion ne le rattrape : le radar et `famille_paysage` le lisent **haut = bon**. Une parcelle en lanière bordée de bâti obtient donc un score de paysage flatteur. **Même défaut que R5 avant la spec 048.** Correctif : retirer L1 (et l’alias `indicateur_l1_sylvosphere`) de `.NORMALIZE_NATIVE_0_100`, l’ajouter au bloc d’inversion. Aucune fonction d’indicateur ne change ; tout `famille_paysage` déjà calculé est à refaire. **Non corrigé — décision à prendre.** |
+| 7 | L’icône « fiche » à côté du « i » de C1, onglet Familles d’indicateurs | cœur **v0.192.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/052-fiche-indicateur-c1/brief-nemetonshiny.md`). Le cœur expose `doc_url` / `doc_lang` / `doc_url_fr` / `doc_url_en` dans [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md) (URL absolue, `NA` quand l’indicateur n’a pas de fiche ; `doc_lang` = langue réellement servie) ; côté app, ~20 lignes dans `mod_family.R` + 3 clés i18n. **L’URL n’est vivante qu’après merge sur `main`** (déploiement pkgdown). Non accusé réception |
 
-**Deux écarts, et aucun des deux ne se referme par une release cœur.**
-Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage
-LiDAR et une desserte corrigée. Le n° 6 attend une lecture côté app : il
-n’appelle pas de code, il interdit un usage — et un interdit non lu ne
-protège de rien.
+**Quatre écarts.** Le n° 8 est le seul qui appelle un correctif **dans
+le cœur**, et le seul qui rende une valeur affichée fausse — les trois
+autres attendent l’aval ou le terrain. Le n° 3 attend une sortie sur un
+projet réel portant à la fois un nuage LiDAR et une desserte corrigée.
+Le n° 6 attend une lecture côté app : il n’appelle pas de code, il
+interdit un usage — et un interdit non lu ne protège de rien. Le n° 7,
+lui, attend bien du code côté app, mais quinze lignes : le cœur a livré
+la donnée (`doc_url`) et la page (article pkgdown), il ne peut pas poser
+l’icône lui-même.
 
 **Les quatre autres sont refermés**, vérifiés en lecture seule sur
 `nemetonshiny@5a1afd7c` le 2026-08-22 (détail dans l’entrée de journal
@@ -134,6 +140,100 @@ observers et des fonctions.
   dépendait plus que d’une ligne de `DESCRIPTION`. Écart n° 2 retiré de
   la table en tête de fichier — la chaîne `foretaccess` → app est
   complète pour ce brief.
+
+------------------------------------------------------------------------
+
+# Chantier CLOS — Fiche indicateur C1 + son lien depuis l’app (spec 052)
+
+**Journal** — *2026-08-27* (**v0.192.0**) : **la première fiche longue
+d’indicateur, et le mécanisme qui la rend atteignable depuis l’app.**
+
+Demande initiale : « une fiche récapitulant, par niveau NDP, comment est
+calculé C1 », puis « une icône à côté du “i” qui l’ouvre ».
+
+Livré côté cœur :
+
+- `vignettes/fiche-c1-biomasse_fr.Rmd` — les **cinq chemins** de
+  [`indicateur_c1_biomasse()`](https://pobsteta.github.io/nemeton/reference/indicateur_c1_biomasse.md)
+  dans leur ordre de priorité réel, ce que produit chaque NDP, un
+  exemple chiffré par chemin, un schéma SVG entrées → cascade →
+  livrables, et les pièges. Publiée en article pkgdown : l’URL est
+  publique, versionnée et déployée à chaque push sur `main`.
+- `INDICATOR_FAMILIES$C$indicator_docs$C1` + colonnes **`doc_url`**,
+  **`doc_lang`**, **`doc_url_fr`**, **`doc_url_en`** dans
+  [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md).
+  La base d’URL est lue dans le champ `URL` du `DESCRIPTION` — une seule
+  source de vérité, comme pour les libellés (chantier v0.170.0
+  ci-dessous).
+- **Les fiches sont déclarées par langue.** Quand la langue demandée n’a
+  pas de page mais que l’autre en a une, c’est l’autre qui est servie
+  plutôt que `NA`, et `doc_lang` le dit. Sans ce détour, un lecteur
+  anglophone aurait ouvert du français sans prévenir — et l’argument «
+  l’i18n vit dans l’app, donc les fiches aussi » aurait tenu.
+- Brief app : `specs/052-fiche-indicateur-c1/brief-nemetonshiny.md`.
+
+**Placement tranché le 2026-08-27** : les fiches restent **dans le
+cœur**. Une fiche décrit comment un indicateur est calculé — elle cite
+des numéros de ligne de `R/`, des tables de `inst/extdata/`, un
+`ref_max` de `R/normalization.R`. C’est de la documentation de logique
+métier (règle 1), qui doit changer dans le même commit et sortir dans la
+même release que le code qu’elle décrit. Le contre-exemple est dans ce
+dépôt : `docs/TABLEAU_INDICATEURS_NDP.md`, resté à la v0.14.1, décrit C1
+avec trois chemins alors qu’il en a cinq. Une fiche dans un dépôt à
+cadence de release distincte dérive de la même façon, en pire — un
+correctif du cœur (0.169.0, exposants du tarif IFN) ne toucherait plus
+le texte qui l’énonce. S’ajoute l’ADR-009 : une fiche côté app serait
+invisible depuis
+[`vignette("fiche-c1-biomasse_fr", package = "nemeton")`](https://pobsteta.github.io/nemeton/articles/fiche-c1-biomasse_fr.md),
+donc pour quiconque appelle le cœur sans l’app.
+
+**Le point de conception** : l’app ne doit connaître **ni l’URL, ni la
+liste des indicateurs documentés, ni la langue des fiches**. Elle teste
+`is.na(row$doc_url)` et affiche l’icône ou non. Ajouter une fiche B2
+demain se fait **entièrement côté cœur** — vignette, entrée
+`_pkgdown.yml`, entrée `indicator_docs` — et l’icône apparaît sans que
+l’app bouge. C’est le même raisonnement que l’export des familles : une
+duplication silencieuse et exacte est plus dangereuse qu’une divergence
+bruyante.
+
+**Étendu le 2026-08-27 aux 41 indicateurs.** Les 40 fiches restantes ont
+été écrites sur le même modèle, chacune en lisant l’implémentation. Le
+décompte a été corrigé au passage : la configuration vivante porte **41
+indicateurs**, pas 31 — `CLAUDE.md` et `docs/TABLEAU_INDICATEURS_NDP.md`
+sont périmés sur ce point.
+
+**Le motif qui revient dans presque toutes les familles** : une
+composante dont l’entrée manque est remplacée par une constante (souvent
+**50**), sans avertissement, et le score garde l’apparence d’une mesure.
+Relevé sur B3 (les quatre composantes de paysage, soit 70 % du score),
+L1 (deux composantes sur trois), R1 (la pente, un tiers), R3 (le climat,
+60 %), T1 (l’âge entier), T2, A2 et W1. La politique inverse — `NA`
+plutôt qu’une valeur fabriquée — est pourtant explicitement défendue en
+commentaire dans B1, B3, A2, N1 et S3, où elle a été appliquée. Elle n’a
+simplement jamais été généralisée.
+
+**Découverte la plus sérieuse** : le sens de **L1** (écart n° 8
+ci-dessus).
+
+**Quatre écarts documentés au passage**, relevés en lisant le code de C1
+pour écrire la fiche, non corrigés (aucun n’est une régression) :
+
+1.  `density` porte **deux unités** selon l’indicateur — fraction 0–1
+    pour C1 chemin 1, tiges/ha pour
+    [`indicateur_p1_volume()`](https://pobsteta.github.io/nemeton/reference/indicateur_p1_volume.md)
+    et
+    [`ensure_inventory_fields()`](https://pobsteta.github.io/nemeton/reference/ensure_inventory_fields.md).
+    Le repli `density × 500` du chemin CHM peut donc surestimer C1
+    **×500**, sans message. *C’est le plus sérieux des quatre.*
+2.  Le chemin BD Forêt écrit `age = 60` et `density = 0,7` en dur
+    (`R/utils.R:1206-1207`) : C1 n’y varie que par l’essence dominante,
+    sur cinq valeurs de 4,3 à 14,1 tC/ha.
+3.  L’allométrie âge/densité rend 6 à 53 tC/ha pour des peuplements
+    mûrs, soit 3 à 10 fois moins que les chemins CHM, LiDAR et NDVI —
+    alors que c’est le chemin censé être le plus précis (NDP 3).
+    Coefficients « illustratifs » assumés dans
+    `data-raw/allometric_models.R`.
+4.  Le `ref_max` de 150 tC/ha sature dès une hêtraie mûre en chemin CHM.
 
 ------------------------------------------------------------------------
 
