@@ -952,9 +952,9 @@ une sortie stable de
 [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md),
 pas comme un attribut de commodité.
 
-# Chantier CADRÉ — Houppiers par LSMS, borné par un budget de calcul (spec 051)
+# Chantier LIVRÉ — Houppiers par LSMS, borné par un budget de calcul (spec 051)
 
-> **Cadré le 2026-08-27**, **non implémenté**. Décisions D1-D5 tranchées
+> **Cadré ET livré le 2026-08-27** (v0.191.0). Décisions D1-D5 tranchées
 > par Pascal sur mesures réelles. Origine : brief
 > `2026-08-24-houppiers-sans-lidar-otb-lsms.md` (session app), étude de
 > faisabilité.
@@ -1002,6 +1002,20 @@ séparer deux houppiers de même hauteur mais d’essences différentes — qui
 est l’argument central du sujet et reste une hypothèse ; la stabilité du
 défaut entre peuplements ; le pilote GPKG d’OTB 9.1.1, repris du brief
 sans re-test.
+
+**Livré en v0.191.0**, et deux affirmations du cadrage corrigées en
+chemin (spec 051 §8) : OTB n’est **pas** un `Suggests` — c’est un
+binaire externe, détecté par `OTB_DIR` comme GRASS l’est ; et son
+lanceur ne se configure pas seul (il source `otbenv.profile` avec
+`source`, mot-clé bash, sous un shebang `#!/bin/sh`), l’environnement
+doit être posé par l’appelant. Le modèle de coût gagne aussi `spatialr`
+au carré, que le cadrage ne prévoyait pas.
+
+**Validé de bout en bout** sur la fenêtre de calibration : `martelage`
+rend 692 houppiers en 143 s (173/ha, 7,92 m), `couvert` 698 segments
+sans colonne `h_max`. Le balayage manuel est reproduit à moins de 1 % —
+le ré-estampillage du CRS, l’aller-retour shapefile et la zonale
+n’introduisent aucune dérive, ce qui était le risque principal.
 
 **Trouvé en chemin, hors sujet mais à traiter** : les deux CHM
 Open-Canopy du projet Fordead (`chm_predicted_0_2m.tif`,

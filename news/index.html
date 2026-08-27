@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.190.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.191.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,26 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.191.0" id="nemeton-01910-2026-08-27">nemeton 0.191.0 (2026-08-27)<a class="anchor" aria-label="anchor" href="#nemeton-01910-2026-08-27"></a></h2>
+<div class="section level4">
+<h4 id="added--houppiers-par-lsms-otb-bornés-par-un-budget-de-calcul-spec-0-191-0">Added — houppiers par LSMS (OTB), bornés par un budget de calcul (spec 051)<a class="anchor" aria-label="anchor" href="#added--houppiers-par-lsms-otb-born%C3%A9s-par-un-budget-de-calcul-spec-0-191-0"></a></h4>
+<p><code><a href="../reference/segment_houppiers.html">segment_houppiers()</a></code> gagne <code>algorithme = "lsms"</code> : une délimitation portée par le <strong>signal spectral</strong> d’une orthophoto plutôt que par la forme du CHM. Deux houppiers voisins de même hauteur mais d’essences différentes se séparent en IRC là où un MNH lissé les fond — c’est l’argument du sujet, et il reste <strong>une hypothèse non vérifiée</strong> (spec 051 §6).</p>
+<p><strong>Ce n’est pas un algorithme d’emprise, et le code le sait.</strong> Mesuré sur une fenêtre de 200 × 200 m en futaie fermée à 89 % : LSMS met <strong>160,5 s</strong> là où la voie CHM met <strong>2,3 s</strong> — environ <strong>70×</strong>. À 4 Mpx, 716 s. Sur l’emprise entière du massif de référence (292 Mpx), l’extrapolation donne <strong>13 à 20 h</strong>.</p>
+<p>Le garde-fou porte donc sur les <strong>pixels</strong>, pas sur les hectares, et c’est le point de conception : le budget achète des pixels, et la surface qu’ils couvrent dépend de la résolution. Un budget de 10 min (défaut) vaut <strong>3,4 Mpx</strong> — soit <strong>13,6 ha à 0,20 m mais 84,9 ha à 0,50 m</strong>. Rééchantillonner l’ortho (<code>resolution_image</code>) est le seul levier d’ordre de grandeur, au prix du détail spectral qui justifie LSMS : exposé, jamais imposé.</p>
+<p>Le refus intervient <strong>avant</strong> l’appel à OTB et dit <em>combien tient dans le budget</em>, pas « trop grand ». Deux fonctions exportées le rendent consultable : <code><a href="../reference/lsms_duree_estimee.html">lsms_duree_estimee()</a></code> et <code><a href="../reference/lsms_budget_pixels.html">lsms_budget_pixels()</a></code>, exactement inverses l’une de l’autre.</p>
+<p><strong>Deux usages séparés, aucun entre-deux silencieux.</strong> LSMS délimite, il ne mesure pas : sans modèle de hauteur il produit des polygones sans <code>h_max</code>, et Marculus ignore <strong>sans un mot</strong> toute entité dépourvue de hauteur lisible.</p>
+<ul><li>
+<code>usage = "martelage"</code> (défaut) <strong>exige</strong> le CHM et refuse sans lui. <code>h_max</code> vient d’une zonale, la mécanique que le cœur applique déjà à la voie CHM.</li>
+<li>
+<code>usage = "couvert"</code> assume de ne produire aucune hauteur — surface de houppier, densité de tiges, taux de couvert — et <strong>n’expose pas</strong> la colonne <code>h_max</code> : absente, pas <code>NA</code>, pour qu’aucun consommateur ne la lise comme une mesure manquante.</li>
+</ul><p><strong>Défaut calibré <code>15 / 20 / 700</code></strong>, contre la voie CHM sur la même fenêtre (596 houppiers, 149/ha, 8,04 m de diamètre équivalent médian) : LSMS y rend 7,88 m, soit <strong>−0,15 m</strong>. Ce ne sont <strong>pas</strong> les valeurs du CookBook OTB (<code>5/15/50</code>), qui sur-segmentent d’un facteur 15 — à 2,4 m de diamètre médian on segmente des facettes de houppier, pas des arbres. <code>spatialr = 20</code> est <strong>dominé</strong> : 321 s contre 178 s à <code>minsize</code> égal, pour un résultat plus éloigné de la cible.</p>
+<p><strong>Validé de bout en bout</strong> sur la fenêtre de calibration : <code>martelage</code> rend 692 houppiers en 143 s (173/ha, 7,92 m, <code>h_max</code> médian 35,9 m, tous dans la plage 1–70 m), <code>couvert</code> rend 698 segments sans colonne <code>h_max</code>. Les chiffres reproduisent le balayage manuel à moins de 1 % — l’aller-retour shapefile, le ré-estampillage du CRS et la zonale n’introduisent aucune dérive, ce qui était le risque principal.</p>
+<p><strong>Deux corrections apportées à la spec en l’implémentant.</strong> (1) Elle annonçait OTB en <code>Suggests</code> : faux, OTB n’est pas un paquet R mais un <strong>binaire externe</strong>, détecté par <code>OTB_DIR</code> puis chemins usuels, comme GRASS. (2) Le lanceur d’OTB source <code>otbenv.profile</code> avec <code>source</code> — un mot-clé bash — sous un shebang <code>#!/bin/sh</code> : appelé tel quel il échoue sur « Could not find application ». L’environnement doit être posé par l’appelant.</p>
+<p><strong>Ce qui reste non mesuré</strong> (spec 051 §6) : le gain qualitatif annoncé, le coût sur un peuplement clair, la valeur du filtre par hauteur (invisible sur une fenêtre fermée à 89 %), la stabilité du défaut entre types de peuplement, et le pilote GPKG d’OTB 9.1.1 — la sortie passe par un shapefile, repris du brief sans re-test.</p>
+<p>Sans OTB installé, <code>algorithme = "lsms"</code> échoue en nommant la variable à poser et l’algorithme de repli ; les trois voies CHM sont inchangées.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.190.0" id="nemeton-01900-2026-08-27">nemeton 0.190.0 (2026-08-27)<a class="anchor" aria-label="anchor" href="#nemeton-01900-2026-08-27"></a></h2>
 <div class="section level4">

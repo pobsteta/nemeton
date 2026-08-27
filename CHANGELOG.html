@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.190.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.191.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,6 +51,19 @@
 <h2 id="unreleased"><a href="https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD" class="external-link">Unreleased</a><a class="anchor" aria-label="anchor" href="#unreleased"></a></h2>
 </div>
 <div class="section level2">
+<h2 id="id_01910---2026-08-27">[0.191.0] - 2026-08-27<a class="anchor" aria-label="anchor" href="#id_01910---2026-08-27"></a></h2>
+<div class="section level3">
+<h3 id="added">Added<a class="anchor" aria-label="anchor" href="#added"></a></h3>
+<ul><li>
+<strong><code>segment_houppiers(algorithme = "lsms")</code></strong> (spec 051) : délimitation de houppiers par Large-Scale Mean-Shift (OTB) sur orthophoto, <strong>bornée par un budget de calcul</strong>. LSMS coûte ~70× la voie CHM à surface égale (160,5 s contre 2,3 s sur 4 ha) : le garde-fou porte sur les <strong>pixels</strong> et refuse avant d’appeler OTB, en disant combien tient dans le budget. Défaut 10 min = 3,4 Mpx, soit 13,6 ha à 0,20 m mais 84,9 ha à 0,50 m.</li>
+<li>
+<strong><code>usage = "martelage"</code> / <code>"couvert"</code></strong> : le premier exige le CHM et remplit <code>h_max</code> par zonale ; le second assume l’absence de hauteur et n’expose pas la colonne (absente, pas <code>NA</code>).</li>
+<li>
+<strong><code><a href="reference/lsms_duree_estimee.html">lsms_duree_estimee()</a></code> / <code><a href="reference/lsms_budget_pixels.html">lsms_budget_pixels()</a></code></strong> (exportées), exactement inverses l’une de l’autre.</li>
+<li>Défaut LSMS calibré <code>15/20/700</code> contre la voie CHM (écart −0,15 m sur le diamètre équivalent médian), et non les <code>5/15/50</code> du CookBook OTB qui sur-segmentent d’un facteur 15.</li>
+</ul></div>
+</div>
+<div class="section level2">
 <h2 id="id_01900---2026-08-27">[0.190.0] - 2026-08-27<a class="anchor" aria-label="anchor" href="#id_01900---2026-08-27"></a></h2>
 <div class="section level3">
 <h3 id="fixed">Fixed<a class="anchor" aria-label="anchor" href="#fixed"></a></h3>
@@ -74,7 +87,7 @@
 <strong>ERA5 : un événement de progression par MOIS</strong> (<code>regen_expo:era5_mois</code>, avec <code>category</code> / <code>year</code> / <code>mois_i</code> / <code>mois_n</code>). <code>emit</code> n’était appelé qu’une fois par année — « 1/1 » puis 1 h 36 de silence, sur ~3 h 15 de téléchargement CDS par run. <code>category</code> descend désormais jusqu’au téléchargement ; l’événement annuel <code>regen_expo:era5</code> est conservé ; <code>emit = NULL</code> reste un no-op.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added">Added<a class="anchor" aria-label="anchor" href="#added"></a></h3>
+<h3 id="added-1">Added<a class="anchor" aria-label="anchor" href="#added-1"></a></h3>
 <ul><li>
 <code>indicateur_l3_het_spectrale(min_windows = 3L)</code> : sous trois fenêtres couvertes la dispersion est dégénérée et l’unité vaut <code>NA</code> plutôt qu’un zéro qui se lirait « unité homogène ». Toute valeur inférieure à 3 est relevée à 3.</li>
 <li>Spec 028 §10 : le run de référence (tuile T31UFQ, scène <code>S2A_MSIL2A_20170814</code>, 649 fenêtres, 30 UGF) et ses mesures, consignés pour rendre possible la comparaison avec un second massif.</li>
@@ -86,7 +99,7 @@
 <div class="section level2">
 <h2 id="id_01750---2026-08-17">[0.175.0] - 2026-08-17<a class="anchor" aria-label="anchor" href="#id_01750---2026-08-17"></a></h2>
 <div class="section level3">
-<h3 id="added-1">Added<a class="anchor" aria-label="anchor" href="#added-1"></a></h3>
+<h3 id="added-2">Added<a class="anchor" aria-label="anchor" href="#added-2"></a></h3>
 <ul><li>
 <strong><code>r5_applicabilite(units, bdforet, ...)</code></strong> (exportée) : dit avant tout calcul si R5 s’applique et par quelle méthode, depuis les seules parcelles cadastrales (essence dérivée de la BD Forêt V2 au besoin). <code>status</code> ∈ <code>{"eligible_fordead", "eligible_fordead_out_of_calibration", "eligible_reconfort", "no_species", "not_applicable"}</code>, routage <strong>par unité</strong> (<code>per_unit</code>). Sépare le critère espèce du critère géographique : hors des cinq départements de calibration ONF/DSF 2024 (88, 39, 01, 73, 74), un sapin pectiné reste calculable, avec ses classes de confiance extrapolées. Couvre la route RECONFORT (chêne / châtaignier / pin sylvestre), que <code><a href="reference/check_fordead_validity.html">check_fordead_validity()</a></code> ignore — d’où son « non calculable » erroné sur un projet feuillus.</li>
 <li>
@@ -106,7 +119,7 @@
 <code><a href="reference/create_family_index.html">create_family_index()</a></code> : la préférence pour les colonnes <code>_norm</code> s’applique enfin (elle cherchait dans les colonnes sélectionnées, où un <code>_norm</code> n’entre jamais). Une colonne <code>_norm</code> retenue est écrêtée, pas re-normalisée.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-2">Added<a class="anchor" aria-label="anchor" href="#added-2"></a></h3>
+<h3 id="added-3">Added<a class="anchor" aria-label="anchor" href="#added-3"></a></h3>
 <ul><li>
 <code><a href="reference/create_family_index.html">create_family_index()</a></code> avertit quand une colonne hors <code>[0, 100]</code> est agrégée sans règle de normalisation (repli naïf = écrêtage silencieux). Le message nomme la colonne et la famille.</li>
 <li>
@@ -121,7 +134,7 @@
 <strong>SUFOSAT était inatteignable</strong> : l’entrée <code>sufosat</code> de <code>FR.json</code> déclarait <code>stac_collection</code> / <code>stac_collection_status</code> / <code>stac_api_service</code> à la racine de l’entrée, alors que le résolveur lit <code>access$stac_collection</code>. Conséquence : cache <code>layers/sufosat/</code> vide et T3 (coupes rases) <code>NA</code> en silence. Les deux produits nationaux (<code>..._dates_v3_set25.tif</code>, <code>..._prob_v3_set25.tif</code>) se résolvent à nouveau.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-3">Added<a class="anchor" aria-label="anchor" href="#added-3"></a></h3>
+<h3 id="added-4">Added<a class="anchor" aria-label="anchor" href="#added-4"></a></h3>
 <ul><li>Garde-fou de schéma (<code>test-datasources-stac-schema.R</code>) : aucune source ne peut déclarer ses champs STAC hors de <code>access</code>, dans aucun fichier pays.</li>
 <li>
 <code>inst/REFERENCES.md</code> : référence de méthode SUFOSAT (rapport final SuFoSat, Planells / CNES / ADEME 2024 — TropiSCO adapté, ombres radar Sentinel-1).</li>
@@ -134,7 +147,7 @@
 <div class="section level2">
 <h2 id="id_01730---2026-08-16">[0.173.0] - 2026-08-16<a class="anchor" aria-label="anchor" href="#id_01730---2026-08-16"></a></h2>
 <div class="section level3">
-<h3 id="added-4">Added<a class="anchor" aria-label="anchor" href="#added-4"></a></h3>
+<h3 id="added-5">Added<a class="anchor" aria-label="anchor" href="#added-5"></a></h3>
 <ul><li>
 <code>indicateur_r1_feu(fire_exp_weights = c(exposure = 0.5, slope = 0.25, climate = 0.25))</code> : le chemin <code>fireexposuR</code> module l’exposition par la pente et la sécheresse climatique. Une composante indisponible sort du calcul et son poids est redistribué au prorata ; les poids retenus sont journalisés. <code>c(exposure = 1)</code> restitue l’exposition brute.</li>
 </ul></div>
@@ -160,7 +173,7 @@
 <div class="section level2">
 <h2 id="id_01720---2026-08-16">[0.172.0] - 2026-08-16<a class="anchor" aria-label="anchor" href="#id_01720---2026-08-16"></a></h2>
 <div class="section level3">
-<h3 id="added-5">Added<a class="anchor" aria-label="anchor" href="#added-5"></a></h3>
+<h3 id="added-6">Added<a class="anchor" aria-label="anchor" href="#added-6"></a></h3>
 <ul><li>
 <code>indicateur_r1_feu(fire_exp_res = 30)</code> : borne (m) de la résolution de travail du seul chemin <code>fireexposuR</code>. <code>NULL</code> retombe sur <code>dem_target_res</code>, soit le comportement d’avant le correctif.</li>
 </ul></div>
@@ -174,7 +187,7 @@
 <div class="section level2">
 <h2 id="id_01710---2026-08-14">[0.171.0] - 2026-08-14<a class="anchor" aria-label="anchor" href="#id_01710---2026-08-14"></a></h2>
 <div class="section level3">
-<h3 id="added-6">Added<a class="anchor" aria-label="anchor" href="#added-6"></a></h3>
+<h3 id="added-7">Added<a class="anchor" aria-label="anchor" href="#added-7"></a></h3>
 <ul><li>
 <code><a href="reference/indicator_families.html">indicator_families()</a></code> / <code><a href="reference/indicator_labels.html">indicator_labels()</a></code> renvoient désormais <strong>les deux langues en permanence</strong> (<code>labels_fr</code>/<code>labels_en</code>, <code>tooltips_fr</code>/<code>tooltips_en</code>, <code>label_fr</code>/<code>label_en</code>, <code>tooltip_fr</code>/<code>tooltip_en</code>) ; <code>lang</code> ne pilote plus que les colonnes de confort. Plus besoin de deux appels pour un consommateur bilingue.</li>
 <li>Champ <code>description</code> par famille (+ <code>description_fr</code> / <code>description_en</code>), à jour du contenu réel des 12 familles.</li>
@@ -191,7 +204,7 @@
 <div class="section level2">
 <h2 id="id_01700---2026-08-14">[0.170.0] - 2026-08-14<a class="anchor" aria-label="anchor" href="#id_01700---2026-08-14"></a></h2>
 <div class="section level3">
-<h3 id="added-7">Added<a class="anchor" aria-label="anchor" href="#added-7"></a></h3>
+<h3 id="added-8">Added<a class="anchor" aria-label="anchor" href="#added-8"></a></h3>
 <ul><li>
 <code>indicator_families(codes = NULL, lang = c("fr", "en"))</code> : accesseur public de la table des 12 familles (<code>code</code>, <code>name</code>, <code>name_fr</code>, <code>name_en</code>, <code>icon</code>, <code>color</code>, colonnes-listes <code>indicators</code>, <code>column_names</code>, <code>labels</code>, <code>tooltips</code>). Ordre canonique garanti <code>C B W A F L T R S P E N</code>, fonction pure.</li>
 <li>
@@ -227,7 +240,7 @@
 <div class="section level2">
 <h2 id="id_01620---2026-07-16">[0.162.0] - 2026-07-16<a class="anchor" aria-label="anchor" href="#id_01620---2026-07-16"></a></h2>
 <div class="section level3">
-<h3 id="added-8">Added<a class="anchor" aria-label="anchor" href="#added-8"></a></h3>
+<h3 id="added-9">Added<a class="anchor" aria-label="anchor" href="#added-9"></a></h3>
 <ul><li>
 <code><a href="reference/regen_rank_species.html">regen_rank_species()</a></code> and <code><a href="reference/regen_rank_to_wide.html">regen_rank_to_wide()</a></code> — deterministic per-UGF top-N regeneration species ranking (spec 039). Suitability aggregates heat/dryness (reusing <code><a href="reference/indice_priorite_regen.html">indice_priorite_regen()</a></code>), late frost (station pressure × per-species <code>frost_late</code>, which differentiates species), and an optional shade axis (per-UGF canopy density via <code>cover_col</code> or a Beer-Lambert–converted <code>lai_col</code>, vs <code>shade_tol</code>). Propagates <code>confidence</code>, excludes invasives by default, NA-safe.</li>
 </ul></div>
@@ -242,7 +255,7 @@
 <div class="section level2">
 <h2 id="id_01600---2026-07-15">[0.160.0] - 2026-07-15<a class="anchor" aria-label="anchor" href="#id_01600---2026-07-15"></a></h2>
 <div class="section level3">
-<h3 id="added-9">Added<a class="anchor" aria-label="anchor" href="#added-9"></a></h3>
+<h3 id="added-10">Added<a class="anchor" aria-label="anchor" href="#added-10"></a></h3>
 <ul><li>
 <code>eobs_summer_series(stack, point)</code>, <code>eobs_monthly_climatology(daily, point, var, years)</code> and <code>eobs_trend_fit(series)</code> — point accessors behind the E-OBS regional context map, for the click-to-inspect chart panel (spec 036). Summer per-year series, monthly climatology for the ombrothermic (Gaussen-Bagnouls) diagram, and the per-decade trend fit (matching the mapped slope). Pure terra extraction, no acquisition; app wiring left as a brief (spec 036 §6-7).</li>
 </ul></div>
@@ -250,7 +263,7 @@
 <div class="section level2">
 <h2 id="id_01590---2026-07-15">[0.159.0] - 2026-07-15<a class="anchor" aria-label="anchor" href="#id_01590---2026-07-15"></a></h2>
 <div class="section level3">
-<h3 id="added-10">Added<a class="anchor" aria-label="anchor" href="#added-10"></a></h3>
+<h3 id="added-11">Added<a class="anchor" aria-label="anchor" href="#added-11"></a></h3>
 <ul><li>
 <code><a href="reference/eobs_bivariate_n.html">eobs_bivariate_n()</a></code> exports the per-axis class count of the E-OBS bivariate map (currently 5 → 5×5 = 25 classes). Lets a consumer detect a cached bivariate raster written under an older scheme (3×3) and recompute it instead of serving it stale — the cache meta already carries the writing N in <code>palette$ncol</code>. App wiring: <code>specs/034-eobs-source/brief-nemetonshiny-bivariate-cache.md</code>.</li>
 </ul></div>
@@ -258,7 +271,7 @@
 <div class="section level2">
 <h2 id="id_01580---2026-07-15">[0.158.0] - 2026-07-15<a class="anchor" aria-label="anchor" href="#id_01580---2026-07-15"></a></h2>
 <div class="section level3">
-<h3 id="added-11">Added<a class="anchor" aria-label="anchor" href="#added-11"></a></h3>
+<h3 id="added-12">Added<a class="anchor" aria-label="anchor" href="#added-12"></a></h3>
 <ul><li>
 <code><a href="reference/run_memory_capped.html">run_memory_capped()</a></code> gains <code>package = "nemeton"</code> and <code>options = NULL</code>. The child now resolves <code>fun</code> with <code>get(fun, asNamespace(package))</code> (reaching internal functions of any package, not just <code>nemeton</code> exports) and sets the given session <code>options</code> before the call. This lets the memory-capped runner wrap an app-side worker such as <code>nemetonshiny:::run_regeneration_engine</code>, whose overshoot previously took down the whole RStudio/app scope via systemd-oomd. Backward compatible; FORDEAD’s call is unchanged.</li>
 </ul></div>
@@ -291,7 +304,7 @@
 <div class="section level2">
 <h2 id="id_01370---2026-07-05">[0.137.0] - 2026-07-05<a class="anchor" aria-label="anchor" href="#id_01370---2026-07-05"></a></h2>
 <div class="section level3">
-<h3 id="added-12">Added<a class="anchor" aria-label="anchor" href="#added-12"></a></h3>
+<h3 id="added-13">Added<a class="anchor" aria-label="anchor" href="#added-13"></a></h3>
 <ul><li>
 <code>canopy_provenance(augmented)</code> (exported): maps <code><a href="reference/detect_ndp.html">detect_ndp()</a></code> ML flags to a canonical canopy-structure provenance key (<code>"prosail_s2"</code> / <code>"opencanopy"</code> / <code>"lidar_hd"</code>) so the app can render the regeneration canopy-provenance badge without re-implementing the flag-to-meaning rule. Spec 033 D5 brief finalised.</li>
 </ul></div>
@@ -313,7 +326,7 @@
 <div class="section level2">
 <h2 id="id_01350---2026-07-05">[0.135.0] - 2026-07-05<a class="anchor" aria-label="anchor" href="#id_01350---2026-07-05"></a></h2>
 <div class="section level3">
-<h3 id="added-13">Added<a class="anchor" aria-label="anchor" href="#added-13"></a></h3>
+<h3 id="added-14">Added<a class="anchor" aria-label="anchor" href="#added-14"></a></h3>
 <ul><li>
 <code><a href="reference/theia_sign_urls.html">theia_sign_urls()</a></code> (exported): signs <a href="mailto:THEIA/MESO@UM" class="email">THEIA/MESO@UM</a> object URLs via the teledetection signing gateway (<code>signing.stac.teledetection.fr</code>, <code>access-key</code>/ <code>secret-key</code> headers) into short-lived pre-signed <code>/vsicurl/</code>-readable URLs. MUSCATE COGs are NOT readable with <code>/vsis3/</code> + the portal key directly.</li>
 <li>LAI Sentinel-2/PROSAIL MUSCATE fallback validated end-to-end on real data (Vercors, LAI median 2.33 / max 7.2); <code>.lai_s2_reflectance_muscate()</code> now signs via the gateway and degrades to <code>NULL</code> without TLD credentials.</li>
@@ -344,7 +357,7 @@
 <div class="section level2">
 <h2 id="id_01340---2026-07-05">[0.134.0] - 2026-07-05<a class="anchor" aria-label="anchor" href="#id_01340---2026-07-05"></a></h2>
 <div class="section level3">
-<h3 id="added-14">Added<a class="anchor" aria-label="anchor" href="#added-14"></a></h3>
+<h3 id="added-15">Added<a class="anchor" aria-label="anchor" href="#added-15"></a></h3>
 <ul><li>
 <code><a href="reference/load_biljou_forcing.html">load_biljou_forcing()</a></code> gains a <code>progress_callback</code> emitting per-step <code>list(current = &lt;key&gt;, …)</code> payloads (<code>biljou:safran_unit</code>, <code>biljou:era5_download</code>, <code>biljou:complete</code>, <code>biljou:unavailable</code>) so the app can show bottom-right notifications during the SAFRAN/ERA5 forcing download. No-op when <code>NULL</code>. ERA5 forcing validated end-to-end on real CDS data.</li>
 </ul></div>
@@ -367,7 +380,7 @@
 <div class="section level2">
 <h2 id="id_01320---2026-07-05">[0.132.0] - 2026-07-05<a class="anchor" aria-label="anchor" href="#id_01320---2026-07-05"></a></h2>
 <div class="section level3">
-<h3 id="added-15">Added<a class="anchor" aria-label="anchor" href="#added-15"></a></h3>
+<h3 id="added-16">Added<a class="anchor" aria-label="anchor" href="#added-16"></a></h3>
 <ul><li>
 <code>load_biljou_forcing(aoi, years, source, cache_dir, raw, …)</code> and <code>build_biljou_soil(units, ewm, …)</code> (spec 027 L2, option B): core acquisition of the <code>meteo</code> (biljouR daily format, per-unit named list; SAFRAN default DOI or ERA5-Land via <code>mcera5</code>) and <code>sol</code> (<code>biljou_soil</code> object) inputs of <code><a href="reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code>, unblocking the real soil-water-balance engine from the app without data logic app-side. Tested <code>raw</code>-injection path; SAFRAN/ERA5 downloads degrade to <code>NULL</code>.</li>
 </ul></div>
@@ -380,7 +393,7 @@
 <div class="section level2">
 <h2 id="id_01310---2026-07-05">[0.131.0] - 2026-07-05<a class="anchor" aria-label="anchor" href="#id_01310---2026-07-05"></a></h2>
 <div class="section level3">
-<h3 id="added-16">Added<a class="anchor" aria-label="anchor" href="#added-16"></a></h3>
+<h3 id="added-17">Added<a class="anchor" aria-label="anchor" href="#added-17"></a></h3>
 <ul><li>
 <code><a href="reference/load_eobs_source.html">load_eobs_source()</a></code> gains a <code>progress_callback</code> argument emitting per-step <code>list(current = &lt;key&gt;, …)</code> payloads (<code>eobs:cds_request</code>, <code>eobs:cds_download_done</code>, <code>eobs:unzip</code>, <code>eobs:read</code>, <code>eobs:reduce</code>, <code>eobs:complete</code>, <code>eobs:unavailable</code>) so the app can surface bottom-right notifications during the E-OBS download. No-op when <code>NULL</code>; back-compatible.</li>
 </ul></div>
@@ -388,7 +401,7 @@
 <div class="section level2">
 <h2 id="id_01300---2026-07-04">[0.130.0] - 2026-07-04<a class="anchor" aria-label="anchor" href="#id_01300---2026-07-04"></a></h2>
 <div class="section level3">
-<h3 id="added-17">Added<a class="anchor" aria-label="anchor" href="#added-17"></a></h3>
+<h3 id="added-18">Added<a class="anchor" aria-label="anchor" href="#added-18"></a></h3>
 <ul><li>
 <code>load_eobs_source(aoi, var, years, months, source, reducer, nc, …)</code> (spec 034): builds the per-year summer <code>SpatRaster</code> (one layer/year) consumed by <code><a href="reference/microclimate_detect_years.html">microclimate_detect_years()</a></code> and <code><a href="reference/tendances_estivales_eobs.html">tendances_estivales_eobs()</a></code> from E-OBS. Tested pure/injection path (<code>nc</code> netCDF or dated <code>SpatRaster</code> → summer-per-year reduction); best-effort CDS auto-download via <code>ecmwfr</code> (dataset <code>insitu-gridded-observations-europe</code>, same CDS key as ERA5), degrading to <code>NULL</code>. Fills the gap that left the app’s “Auto (E-OBS)” button unavailable.</li>
 </ul></div>
@@ -412,7 +425,7 @@
 <div class="section level2">
 <h2 id="id_01290---2026-07-04">[0.129.0] - 2026-07-04<a class="anchor" aria-label="anchor" href="#id_01290---2026-07-04"></a></h2>
 <div class="section level3">
-<h3 id="added-18">Added<a class="anchor" aria-label="anchor" href="#added-18"></a></h3>
+<h3 id="added-19">Added<a class="anchor" aria-label="anchor" href="#added-19"></a></h3>
 <ul><li>
 <code><a href="reference/lai_sentinel2.html">lai_sentinel2()</a></code> increment 2 (spec 033): automatic MUSCATE reflectance assembly (D4) when <code>refl</code> is <code>NULL</code> — MUSCATE STAC search + stateless per-scene band fetch (<code>.get_s2_band_raster</code>), reusing the S2 pipeline; and a shipped pre-trained PROSAIL model <code>inst/extdata/prosail_lai_Sentinel_2A_B4-B5-B8.rds</code> (D3) loaded without retraining (serialization verified, prediction CI-tested; regenerate via <code>data-raw/prosail_lai_model.R</code>).</li>
 </ul></div>
@@ -425,7 +438,7 @@
 <div class="section level2">
 <h2 id="id_01280---2026-07-04">[0.128.0] - 2026-07-04<a class="anchor" aria-label="anchor" href="#id_01280---2026-07-04"></a></h2>
 <div class="section level3">
-<h3 id="added-19">Added<a class="anchor" aria-label="anchor" href="#added-19"></a></h3>
+<h3 id="added-20">Added<a class="anchor" aria-label="anchor" href="#added-20"></a></h3>
 <ul><li>
 <code><a href="reference/lai_sentinel2.html">lai_sentinel2()</a></code> (spec 033, increment 1): NDP-0 canopy fallback retrieving a LAI raster from Sentinel-2 L2A via PROSAIL hybrid inversion (<code>prosail</code>), for <code>lai_max</code> (biljouR, direct) and <code>pai</code> (microclimf, degraded proxy) when LiDAR HD is absent. <code>precomputed</code> + temporal reducer (p90 default) CI-tested; PROSAIL training verified, application validated on real data. <code>prosail</code> in Suggests + Remotes, guarded.</li>
 <li>
@@ -445,7 +458,7 @@
 <div class="section level2">
 <h2 id="id_01270---2026-07-03">[0.127.0] - 2026-07-03<a class="anchor" aria-label="anchor" href="#id_01270---2026-07-03"></a></h2>
 <div class="section level3">
-<h3 id="added-20">Added<a class="anchor" aria-label="anchor" href="#added-20"></a></h3>
+<h3 id="added-21">Added<a class="anchor" aria-label="anchor" href="#added-21"></a></h3>
 <ul><li>Multi-epoch consolidation of ancient forest for N2 (spec 031). <code>build_foret_ ancienne_mask()</code> now accepts a named list of historical sources (e.g. Cassini + état-major) and returns a non-overlapping tiered layer with an integer <code>anciennete</code> column (number of epochs covering each polygon) and an <code>epoques</code> label, via <code><a href="https://r-spatial.github.io/sf/reference/geos_binary_ops.html" class="external-link">sf::st_intersection</a></code> self-overlay. Single-source forms unchanged.</li>
 </ul></div>
 <div class="section level3">
@@ -457,14 +470,14 @@
 <div class="section level2">
 <h2 id="id_01260---2026-07-03">[0.126.0] - 2026-07-03<a class="anchor" aria-label="anchor" href="#id_01260---2026-07-03"></a></h2>
 <div class="section level3">
-<h3 id="added-21">Added<a class="anchor" aria-label="anchor" href="#added-21"></a></h3>
+<h3 id="added-22">Added<a class="anchor" aria-label="anchor" href="#added-22"></a></h3>
 <ul><li>Real <code><a href="reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> BILJOU engine (spec 027 L2, increment C/3): the engine path is now wired via the <code>biljouR</code> API — unit centroids → <code>biljou_run_grid()</code> (per-point BILJOU forced by <code>meteo</code>) → per-unit mean over years, mapping <code>NJstress</code>/<code>Istress</code>/<code>DEBstress</code>/<code>min_rew</code> to the §7 columns <code>njstress</code>/<code>istress</code>/<code>deb_stress</code>/<code>rew_min</code>. <code>forest_type</code> feuillu/resineux mapped to broadleaved/coniferous; phenology forwarded via <code>...</code>; new <code>years</code> arg; failed points degrade to NA. <code>biljouR</code> in Suggests + Remotes, guarded by <code>requireNamespace</code>; <code>precomputed</code> pass-through preserved. Unlike PAI/microclimf, this engine path is CI-tested (biljouR ships the <code>meteo_hesse</code> example, so the full orchestration runs offline). Completes the reGénération engine porting: all three engines (lasR / microclimf / biljouR) are now real.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_01250---2026-07-03">[0.125.0] - 2026-07-03<a class="anchor" aria-label="anchor" href="#id_01250---2026-07-03"></a></h2>
 <div class="section level3">
-<h3 id="added-22">Added<a class="anchor" aria-label="anchor" href="#added-22"></a></h3>
+<h3 id="added-23">Added<a class="anchor" aria-label="anchor" href="#added-23"></a></h3>
 <ul><li>Real <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> microclimf engine (spec 027 L1, increment B/3): the engine path is now wired — static LiDAR-HD grid (DTM, canopy height, PAI via <code><a href="reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code>), per-year microclimf runs forced by ERA5-Land (<code>mcera5</code>) with disk caching (<code>cache_dir</code>), average-vs-heatwave summer means (fixed canopy), ΔT°max/ΔVPD, signal/noise robustness, and per-unit aggregation into the §7 exposure columns (+ <code>parcelle_sensible</code>/<code>priorite</code>). Ported faithfully from the reGénération prototype <code>microclimat_parcelles_robuste.R</code>. New args <code>res</code>, <code>tampon</code>, <code>reqhgt</code>, <code>k</code>, <code>cache_dir</code>; heavy deps (<code>microclimf</code>, <code>mcera5</code>, <code>lasR</code>) in Suggests, guarded by <code>requireNamespace</code>; <code>precomputed</code> pass-through preserved. Engine path validated on real data (not runnable in CI).</li>
 </ul></div>
 </div>
@@ -479,7 +492,7 @@
 <div class="section level2">
 <h2 id="id_01230---2026-07-03">[0.123.0] - 2026-07-03<a class="anchor" aria-label="anchor" href="#id_01230---2026-07-03"></a></h2>
 <div class="section level3">
-<h3 id="added-23">Added<a class="anchor" aria-label="anchor" href="#added-23"></a></h3>
+<h3 id="added-24">Added<a class="anchor" aria-label="anchor" href="#added-24"></a></h3>
 <ul><li>
 <code>load_foret_ancienne_source(aoi, crs = 2154)</code> (spec 031, core item 1): acquires the ~1850 historical forest cover from the IGN <em>carte de l’état-major</em> WFS layer (<code>BDCARTO_ETAT-MAJOR.NIVEAU3:c_1_1_ocs_ancien</code>, Etalab 2.0) via <code>happign</code>, clipped to the AOI, standardised through <code><a href="reference/build_foret_ancienne_mask.html">build_foret_ancienne_mask()</a></code> as the <code>foret_ancienne</code> layer for <code><a href="reference/indicateur_n2_continuite.html">indicateur_n2_continuite()</a></code> (no N2 signature change). The official <em>BD Forêts anciennes</em> product (Nature classification) is download-only (departmental GeoPackage, no WFS) — the état-major ingredient is used instead, and N2’s intersection with current units recovers continuity. Degrades to <code>NULL</code> (no network, <code>happign</code> absent, WFS error, outside metropolitan France); 0-row <code>sf</code> when no ~1850 forest. <code>happign</code> in Suggests, guarded by <code>requireNamespace</code>. Real WFS path validated on real data (not runnable in CI).</li>
 </ul></div>
@@ -487,7 +500,7 @@
 <div class="section level2">
 <h2 id="id_01220---2026-07-03">[0.122.0] - 2026-07-03<a class="anchor" aria-label="anchor" href="#id_01220---2026-07-03"></a></h2>
 <div class="section level3">
-<h3 id="added-24">Added<a class="anchor" aria-label="anchor" href="#added-24"></a></h3>
+<h3 id="added-25">Added<a class="anchor" aria-label="anchor" href="#added-25"></a></h3>
 <ul><li>Real <code><a href="reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code> engine (spec 027 L1, increment A/3): the LiDAR-HD point-cloud path is now wired to the <code>lasR</code> pipeline (single read, two class-filtered <code>count</code> rasterizations → gap fraction → Beer-Lambert PAI, resampled onto the working grid, optional parcel mask). Ported faithfully from the reGénération prototype <code>pai_lidarhd_lasR.R</code>. Heavy dep <code>lasR</code> in Suggests, guarded by <code>requireNamespace</code>; <code>precomputed</code> pass-through and clean input validation preserved. New args: <code>parcelle</code>, <code>fenetre</code>, <code>cl_sol</code>, <code>cl_veg</code>, <code>epsg</code>, <code>pai_max</code>. Engine path is validated on real LiDAR data by the user (not runnable in CI).</li>
 </ul></div>
 </div>
@@ -501,7 +514,7 @@
 <div class="section level2">
 <h2 id="id_01210---2026-07-03">[0.121.0] - 2026-07-03<a class="anchor" aria-label="anchor" href="#id_01210---2026-07-03"></a></h2>
 <div class="section level3">
-<h3 id="added-25">Added<a class="anchor" aria-label="anchor" href="#added-25"></a></h3>
+<h3 id="added-26">Added<a class="anchor" aria-label="anchor" href="#added-26"></a></h3>
 <ul><li>
 <code><a href="reference/map_tfv_to_species_class.html">map_tfv_to_species_class()</a></code> (spec 027): BD Forêt v2 TFV code -&gt; NMT species class, via a new <code>species_class</code> column of <code><a href="reference/bdforet_v2_mapping.html">bdforet_v2_mapping()</a></code>. Closes the core PLAN item “TFV -&gt; regeneration species mapping” (app pre-fills the target species from the essences present on the coverage).</li>
 <li>
@@ -518,7 +531,7 @@
 <div class="section level2">
 <h2 id="id_01200---2026-07-03">[0.120.0] - 2026-07-03<a class="anchor" aria-label="anchor" href="#id_01200---2026-07-03"></a></h2>
 <div class="section level3">
-<h3 id="added-26">Added<a class="anchor" aria-label="anchor" href="#added-26"></a></h3>
+<h3 id="added-27">Added<a class="anchor" aria-label="anchor" href="#added-27"></a></h3>
 <ul><li>
 <code><a href="reference/european_species_tolerances.html">european_species_tolerances()</a></code> (spec 027): per-species restocking-tolerance reference table for ~193 European tree species (file provided by Pascal). Complements the 11-class <code><a href="reference/regeneration_tolerances.html">regeneration_tolerances()</a></code> with the same <code>tmax_tol_c</code>/<code>vpd_tol_kpa</code> axes (now sourced) plus Niinemets &amp; Valladares
 <ol start="2006" style="list-style-type: decimal"><li>drought/shade/waterlogging tolerances, frost, air humidity and thermophily. <code>statut</code> scopes (frm_1999 / frm_2025 / atlas_jrc), <code>confidence</code> grading and an <code>invasif</code> flag; <code>statut = "frm"</code> convenience filter. Sources added in <code>inst/REFERENCES.md</code>; data in <code>inst/extdata/european_species_tolerances.csv</code> (built by <code>data-raw/european_species_tolerances.R</code>). Increment 1/3.</li>
@@ -528,7 +541,7 @@
 <div class="section level2">
 <h2 id="id_01190---2026-07-03">[0.119.0] - 2026-07-03<a class="anchor" aria-label="anchor" href="#id_01190---2026-07-03"></a></h2>
 <div class="section level3">
-<h3 id="added-27">Added<a class="anchor" aria-label="anchor" href="#added-27"></a></h3>
+<h3 id="added-28">Added<a class="anchor" aria-label="anchor" href="#added-28"></a></h3>
 <ul><li>
 <code><a href="reference/regen_species_choices.html">regen_species_choices()</a></code> (spec 027 §10.1): ready-to-use option list for the reGénération “target species” dropdown, built core-side. Options are exactly the scorable classes (intersection of <code><a href="reference/regeneration_tolerances.html">regeneration_tolerances()</a></code> and <code><a href="reference/list_species_classes.html">list_species_classes()</a></code>), so the selector never offers a species the index ignores. Returns <code>code</code>/<code>label</code>/<code>tmax_tol_c</code>/<code>vpd_tol_kpa</code>/<code>present</code>/<code>groupe</code>, UGF-present classes first (<code>groupe = "present"</code>) then adaptation alternatives sorted by increasing heat tolerance. Onglet brief §4.1 updated.</li>
 </ul></div>
@@ -536,7 +549,7 @@
 <div class="section level2">
 <h2 id="id_01180---2026-07-03">[0.118.0] - 2026-07-03<a class="anchor" aria-label="anchor" href="#id_01180---2026-07-03"></a></h2>
 <div class="section level3">
-<h3 id="added-28">Added<a class="anchor" aria-label="anchor" href="#added-28"></a></h3>
+<h3 id="added-29">Added<a class="anchor" aria-label="anchor" href="#added-29"></a></h3>
 <ul><li>
 <code><a href="reference/tendances_estivales_eobs.html">tendances_estivales_eobs()</a></code> (spec 027 §6, branch A): summer E-OBS climate trend map (warming × drying) cropped to the union of the units plus a buffer (default 25 km, decision §10.4; metric buffer via EPSG:3035), not national. Per E-OBS cell: least-squares trend of summer tmax and precipitation, plus a bivariate classification (<code>classe_tmax</code>/<code>classe_precip</code> 1-3, <code>classe_bivariee</code> 1-9). Engine path from per-year <code>tx</code>/<code>rr</code> rasters (testable terra logic), <code>precomputed</code> fast-path, clean degradation. Returns an sf of cell-centre points for the app to render.</li>
 </ul></div>
@@ -544,14 +557,14 @@
 <div class="section level2">
 <h2 id="id_01170---2026-07-02">[0.117.0] - 2026-07-02<a class="anchor" aria-label="anchor" href="#id_01170---2026-07-02"></a></h2>
 <div class="section level3">
-<h3 id="added-29">Added<a class="anchor" aria-label="anchor" href="#added-29"></a></h3>
+<h3 id="added-30">Added<a class="anchor" aria-label="anchor" href="#added-30"></a></h3>
 <ul><li>reGénération engine scaffolds L1/L2 (spec 027 v2.1): <code><a href="reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> (biljouR — soil water balance), <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> (microclimf — summer under-canopy exposure) and <code><a href="reference/pai_depuis_nuage.html">pai_depuis_nuage()</a></code> (lasR/lidR — PAI). Heavy GPL deps stay in <code>Suggests</code> (guarded via <code>requireNamespace</code>, clean degradation). Each offers a pure, testable <code>precomputed</code> fast-path that attaches a pre-computed engine output to <code>units</code> as the §7 columns without the engine — so the <code>regen_* -&gt; r3</code> / <code>indice_priorite_regen</code> pipeline already runs on pre-computed model outputs. <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> derives <code>d_tmax</code>/<code>d_vpd</code> and <code>rang_sensibilite</code>. <code>biljouR</code> is not yet declared in Suggests/Remotes (repo to confirm); guarded via <code>requireNamespace</code> only.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_01160---2026-07-02">[0.116.0] - 2026-07-02<a class="anchor" aria-label="anchor" href="#id_01160---2026-07-02"></a></h2>
 <div class="section level3">
-<h3 id="added-30">Added<a class="anchor" aria-label="anchor" href="#added-30"></a></h3>
+<h3 id="added-31">Added<a class="anchor" aria-label="anchor" href="#added-31"></a></h3>
 <ul><li>
 <code><a href="reference/indicateur_r3_secheresse.html">indicateur_r3_secheresse()</a></code> enriched with the BILJOU soil water-balance metrics (spec 027 §5.1): new <code>biljou</code> (data.frame/list with <code>njstress</code>, <code>istress</code>, <code>deb_stress</code>) and <code>biljou_weight</code> arguments. Exposes the raw metrics (<code>r3_njstress</code>, <code>r3_istress</code>, <code>r3_deb_stress</code>) alongside the score, blends the mechanistic water-balance stress into the SPEI/topographic risk, computes R3 from BILJOU alone when no DEM is available, and auto-reads the metrics from <code>units</code> columns. Strictly backward compatible (no <code>biljou</code> → v0.115.x behaviour, including NA without a DEM).</li>
 </ul></div>
@@ -559,7 +572,7 @@
 <div class="section level2">
 <h2 id="id_01150---2026-07-02">[0.115.0] - 2026-07-02<a class="anchor" aria-label="anchor" href="#id_01150---2026-07-02"></a></h2>
 <div class="section level3">
-<h3 id="added-31">Added<a class="anchor" aria-label="anchor" href="#added-31"></a></h3>
+<h3 id="added-32">Added<a class="anchor" aria-label="anchor" href="#added-32"></a></h3>
 <ul><li>
 <strong><code><a href="reference/indice_priorite_regen.html">indice_priorite_regen()</a></code></strong> + <strong><code><a href="reference/regeneration_tolerances.html">regeneration_tolerances()</a></code></strong> (spec 027 v2.1 L3): regeneration priority index crossing microclimate exposure (<code>sensibilite</code> / <code>d_tmax</code> / <code>d_vpd</code>) and soil water stress (<code>njstress</code> / <code>istress</code> / <code>rew_min</code>) into a 0-100 priority. Generic by default; optional per-species tuning (off by default, arbitration §10.1). Output columns follow the §7 contract (<code>indice_priorite_regen</code>, <code>regen_exposition</code>, <code>regen_hydrique</code>, <code>parcelle_sensible</code>, <code>priorite</code>, <code>regen_essence</code>). Pure R logic, no GPL dependency; consumes the engine output columns. Reworks the parked <code>regeneration_index</code> into the brief’s exposure × water-stress cross.</li>
 </ul></div>
@@ -575,7 +588,7 @@
 <div class="section level2">
 <h2 id="id_01140---2026-07-02">[0.114.0] - 2026-07-02<a class="anchor" aria-label="anchor" href="#id_01140---2026-07-02"></a></h2>
 <div class="section level3">
-<h3 id="added-32">Added<a class="anchor" aria-label="anchor" href="#added-32"></a></h3>
+<h3 id="added-33">Added<a class="anchor" aria-label="anchor" href="#added-33"></a></h3>
 <ul><li>Indicator <strong>A5 “Rafraîchissement urbain”</strong> (<code><a href="reference/indicateur_a5_rafraichissement.html">indicateur_a5_rafraichissement()</a></code>, spec 032 reoriented): relative surface-temperature freshness of a tree unit vs its local surroundings, from an LST raster (Theia Thermocity). High = cooler than surroundings. Source-conditional (NULL LST -&gt; NA); joins the A family (A1-A5) but not <code><a href="reference/list_indicators.html">list_indicators()</a></code>. <code>theia_lst</code> (<code>thermocity-lst</code>) wired as <code>consumed_by: A5</code>.</li>
 </ul></div>
 <div class="section level3">
@@ -586,7 +599,7 @@
 <div class="section level2">
 <h2 id="id_01130---2026-07-02">[0.113.0] - 2026-07-02<a class="anchor" aria-label="anchor" href="#id_01130---2026-07-02"></a></h2>
 <div class="section level3">
-<h3 id="added-33">Added<a class="anchor" aria-label="anchor" href="#added-33"></a></h3>
+<h3 id="added-34">Added<a class="anchor" aria-label="anchor" href="#added-34"></a></h3>
 <ul><li>
 <code><a href="reference/build_foret_ancienne_mask.html">build_foret_ancienne_mask()</a></code> (spec 031): source-agnostic helper that builds the <code>foret_ancienne</code> polygon layer consumed by <code><a href="reference/indicateur_n2_continuite.html">indicateur_n2_continuite()</a></code>, from a user-supplied historical forest source — an sf/sfc of ancient-forest polygons, or a terra SpatRaster classified/threshold map (polygonised, patch-split, area-filtered).</li>
 </ul></div>
@@ -606,7 +619,7 @@
 <div class="section level2">
 <h2 id="id_01120---2026-07-02">[0.112.0] - 2026-07-02<a class="anchor" aria-label="anchor" href="#id_01120---2026-07-02"></a></h2>
 <div class="section level3">
-<h3 id="added-34">Added<a class="anchor" aria-label="anchor" href="#added-34"></a></h3>
+<h3 id="added-35">Added<a class="anchor" aria-label="anchor" href="#added-35"></a></h3>
 <ul><li>Indicator <strong>T3 “Clear-cuts”</strong> (<code><a href="reference/indicateur_t3_coupes_rases.html">indicateur_t3_coupes_rases()</a></code>, spec 030): recency-weighted clear-cut pressure per forest unit from the SUFOSAT national product (CNES/CESBIO, Sentinel-1 radar change detection). <code>dates</code> encoded YYDDD, <code>proba</code> in percent; <code>window_years</code>/<code>min_proba</code> parameters. Oriented “high = bad” like R5 — inverted in <code><a href="reference/normalize_indicator.html">normalize_indicator()</a></code>. Source-conditional (NULL raster -&gt; NA); joins the T family config and normalization but not <code><a href="reference/list_indicators.html">list_indicators()</a></code> (the 31 base indicators).</li>
 <li>
 <code>inst/datasources/FR.json</code>: <code>sufosat</code> source (collection confirmed on the live Theia MTD STAC 2026-07-02, assets <code>dates</code>/<code>proba</code>).</li>
@@ -615,7 +628,7 @@
 <div class="section level2">
 <h2 id="id_01110---2026-07-02">[0.111.0] - 2026-07-02<a class="anchor" aria-label="anchor" href="#id_01110---2026-07-02"></a></h2>
 <div class="section level3">
-<h3 id="added-35">Added<a class="anchor" aria-label="anchor" href="#added-35"></a></h3>
+<h3 id="added-36">Added<a class="anchor" aria-label="anchor" href="#added-36"></a></h3>
 <ul><li>MUSCATE Sentinel-2 L2A as a third, French-sovereign STAC backend of <code><a href="reference/stac_search_s2.html">stac_search_s2()</a></code> (spec 029). New exported <code><a href="reference/sentinel2_stac.html">stac_search_s2_theia_muscate()</a></code> queries the Theia MTD STAC collection <code>sentinel2-l2a-theia</code>, remaps the MUSCATE band dialect to the nemeton <code>B02/B04/…</code> keys, reduces S3 hrefs to <code>/vsis3/</code> paths and returns the shared normalised scene tibble. Added to the default <code>source</code> vector as a last-resort fallback: only queried when both <code>cdse</code> and <code>pc</code> fail — nominal behaviour is unchanged.</li>
 <li>
 <code>inst/datasources/FR.json</code>: <code>s2_l2a_muscate.access</code> confirmed collection id + FRE reflectance product (spec 029 K4 real-data smoke, 2026-07-02).</li>
@@ -624,7 +637,7 @@
 <div class="section level2">
 <h2 id="id_01030---2026-06-30">[0.103.0] - 2026-06-30<a class="anchor" aria-label="anchor" href="#id_01030---2026-06-30"></a></h2>
 <div class="section level3">
-<h3 id="added-36">Added<a class="anchor" aria-label="anchor" href="#added-36"></a></h3>
+<h3 id="added-37">Added<a class="anchor" aria-label="anchor" href="#added-37"></a></h3>
 <ul><li>
 <code>run_reticulate_isolated(fun, args, python|virtualenv|condaenv, show)</code> : exécute une tâche Python/reticulate dans un sous-processus <code>callr</code> à env épinglé (<code>RETICULATE_PYTHON</code> + <code>R_ENVIRON_USER=""</code>), pour faire cohabiter plusieurs envs reticulate (Open-Canopy, FORDEAD, Theia) dans une même session R sans le conflit de binding unique. Repli in-process. <code>callr</code> en <code>Suggests</code>. 8 tests (<code>test-reticulate-isolated.R</code>).</li>
 </ul></div>
@@ -632,14 +645,14 @@
 <div class="section level2">
 <h2 id="id_01020---2026-06-30">[0.102.0] - 2026-06-30<a class="anchor" aria-label="anchor" href="#id_01020---2026-06-30"></a></h2>
 <div class="section level3">
-<h3 id="added-37">Added<a class="anchor" aria-label="anchor" href="#added-37"></a></h3>
+<h3 id="added-38">Added<a class="anchor" aria-label="anchor" href="#added-38"></a></h3>
 <ul><li>reGénération L2 (spec 027 / ADR-014) : <code>indicateur_r6_sensibilite</code> (R6, famille R) — sensibilité du microsite à une année chaude (Δ stress canicule − moyenne, ΔT°max + ΔVPD standardisés, décroissant = résilient). Sens haut=bon (pas d’inversion). <code><a href="reference/microclimate_detect_years.html">microclimate_detect_years()</a></code> + <code>R/microclimate_years.R</code> : détection auto des années moyenne/canicule depuis E-OBS, override utilisateur (§6bis). Famille R → R1…R6. 33 tests.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_01010---2026-06-30">[0.101.0] - 2026-06-30<a class="anchor" aria-label="anchor" href="#id_01010---2026-06-30"></a></h2>
 <div class="section level3">
-<h3 id="added-38">Added<a class="anchor" aria-label="anchor" href="#added-38"></a></h3>
+<h3 id="added-39">Added<a class="anchor" aria-label="anchor" href="#added-39"></a></h3>
 <ul><li>reGénération L1 (spec 027 / ADR-014) : indicateurs microclimatiques sous couvert <code>indicateur_a3_microclimat</code> (A3), <code>indicateur_a4_tamponnement</code> (A4), <code>indicateur_w4_vpd</code> (W4) — insérés dans les familles A/W existantes (radar 12 axes préservé). Flag NDP <code>microclimate_model</code> (<code>detect_ndp</code>, amende ADR-011). Scaffold <code><a href="reference/microclimate_run.html">microclimate_run()</a></code> + contrat <code>micro</code>. Sources <code>FR.json</code> (era5_land, eobs, lidarhd_mnt/mnh/nuage). Dépendances lourdes en <code>Suggests</code> (microclimf, mcera5, ecmwfr, lidR). 16 tests (<code>test-indicators-microclimate.R</code>).</li>
 </ul></div>
 </div>
@@ -654,7 +667,7 @@
 <div class="section level2">
 <h2 id="id_01000---2026-06-30">[0.100.0] - 2026-06-30<a class="anchor" aria-label="anchor" href="#id_01000---2026-06-30"></a></h2>
 <div class="section level3">
-<h3 id="added-39">Added<a class="anchor" aria-label="anchor" href="#added-39"></a></h3>
+<h3 id="added-40">Added<a class="anchor" aria-label="anchor" href="#added-40"></a></h3>
 <ul><li>
 <code>reconfort_cache_manifest(cache_dir, zone_id, run_id = NULL, include_range)</code> : découverte cache des couches d’affichage RECONFORT (parité <code>read_fordead_layer</code>), pour réafficher les rasters après un rechargement de projet sans le <code>result</code> en mémoire. Schéma byte-identique à <code><a href="reference/reconfort_layer_manifest.html">reconfort_layer_manifest()</a></code>. 18 tests (<code>test-reconfort-cache-manifest.R</code>).</li>
 </ul></div>
@@ -674,7 +687,7 @@
 <div class="section level2">
 <h2 id="id_0990---2026-06-29">[0.99.0] - 2026-06-29<a class="anchor" aria-label="anchor" href="#id_0990---2026-06-29"></a></h2>
 <div class="section level3">
-<h3 id="added-40">Added<a class="anchor" aria-label="anchor" href="#added-40"></a></h3>
+<h3 id="added-41">Added<a class="anchor" aria-label="anchor" href="#added-41"></a></h3>
 <ul><li>
 <code>filter_alerts_to_zone(alerts, con, zone_id, apply_zone_mask = TRUE, mask_polygon = NULL)</code> : ne garde que les centroïdes d’alertes dans le polygone UGF, au read-time (contrepartie vectorielle de <code>read_reconfort_layer</code> / spec 016). Helper <strong>unique partagé</strong> par les 3 pipelines (RECONFORT/FORDEAD/FAST) ; interne <code>.filter_alerts_to_zone()</code>. Révision de L7 §D3 (les centroïdes RECONFORT débordaient des UGFs car extraits du raster masqué OSO-feuillus, pas UGF). 8 tests (<code>test-filter-alerts-to-zone.R</code>).</li>
 </ul></div>
@@ -682,7 +695,7 @@
 <div class="section level2">
 <h2 id="id_0980---2026-06-28">[0.98.0] - 2026-06-28<a class="anchor" aria-label="anchor" href="#id_0980---2026-06-28"></a></h2>
 <div class="section level3">
-<h3 id="added-41">Added<a class="anchor" aria-label="anchor" href="#added-41"></a></h3>
+<h3 id="added-42">Added<a class="anchor" aria-label="anchor" href="#added-42"></a></h3>
 <ul><li>
 <code>read_reconfort_layer(layer, con, zone_id, apply_zone_mask = TRUE, mask_polygon = NULL)</code> : lit une couche raster RECONFORT et la masque au polygone des UGFs par défaut, au read-time (parité <code>read_fast_alert_raster</code> / <code>read_fordead_dieback_mask</code>, spec 016). Accepte un chemin ou une ligne raster du manifeste ; rejette la ligne vecteur (alertes). Réutilise <code><a href="reference/dot-apply_zone_mask.html">.apply_zone_mask()</a></code> / <code><a href="reference/dot-get_zone_aoi.html">.get_zone_aoi()</a></code>. Spec 021 L7, ADR-013 A6. 11 tests (<code>test-reconfort-reader.R</code>).</li>
 </ul></div>
@@ -690,7 +703,7 @@
 <div class="section level2">
 <h2 id="id_0970---2026-06-28">[0.97.0] - 2026-06-28<a class="anchor" aria-label="anchor" href="#id_0970---2026-06-28"></a></h2>
 <div class="section level3">
-<h3 id="added-42">Added<a class="anchor" aria-label="anchor" href="#added-42"></a></h3>
+<h3 id="added-43">Added<a class="anchor" aria-label="anchor" href="#added-43"></a></h3>
 <ul><li>
 <code>reconfort_layer_manifest(result, include_range = FALSE)</code> : décrit les couches affichables d’un run RECONFORT (score, classification, probabilité, alertes) en un <code>data.frame</code> plat avec indications de rendu (<code>palette</code>, <code>reverse</code>, <code>vmin</code>/<code>vmax</code>, <code>categorical</code>, <code>default_visible</code>, <code>default_opacity</code>, <code>n_features</code>). Sémantique des couches gardée dans le cœur (ADR-009) ; consommé tel quel par <code>nemetonshiny</code> pour les toggles de calques et le curseur d’opacité. 29 tests (<code>test-reconfort-manifest.R</code>).</li>
 </ul></div>
@@ -721,7 +734,7 @@
 <div class="section level2">
 <h2 id="id_0910---2026-06-17">[0.91.0] - 2026-06-17<a class="anchor" aria-label="anchor" href="#id_0910---2026-06-17"></a></h2>
 <div class="section level3">
-<h3 id="added-43">Added<a class="anchor" aria-label="anchor" href="#added-43"></a></h3>
+<h3 id="added-44">Added<a class="anchor" aria-label="anchor" href="#added-44"></a></h3>
 <ul><li>
 <code>smooth_pixel_series(method = "harmonic")</code> — a 3rd smoother for the per-pixel series: robust harmonic regression (<code>n_harmonics</code> annual Fourier pairs + linear trend, IRLS / Tukey biweight) that models the seasonal cycle and so stays <strong>continuous across the winter/summer data gaps</strong> the local <code>rolling_median</code> / <code>loess</code> cannot bridge. Base R only. New <code>n_harmonics</code> parameter. The fit is a model (winter interpolated from the seasonal shape), not raw data. Since the helper predicts at every row, the app gets a fully continuous curve by appending a regular <code>value = NA</code> date grid. Spec 026.</li>
 </ul></div>
@@ -729,7 +742,7 @@
 <div class="section level2">
 <h2 id="id_0900---2026-06-17">[0.90.0] - 2026-06-17<a class="anchor" aria-label="anchor" href="#id_0900---2026-06-17"></a></h2>
 <div class="section level3">
-<h3 id="added-44">Added<a class="anchor" aria-label="anchor" href="#added-44"></a></h3>
+<h3 id="added-45">Added<a class="anchor" aria-label="anchor" href="#added-45"></a></h3>
 <ul><li>
 <code><a href="reference/smooth_pixel_series.html">smooth_pixel_series()</a></code> — robustly denoises the per-pixel spectral series from <code><a href="reference/extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code>, adding a <code>smoothed</code> column per index so the app can draw faded raw points + a clean line instead of a sawtooth. Default <code>rolling_median</code> over a temporal window (<code>window_days = 45</code>, robust to cloud spikes), optional <code>loess</code> (<code>family = "symmetric"</code>). NA-aware, no new dependency. Spec 026.</li>
 </ul></div>
@@ -737,7 +750,7 @@
 <div class="section level2">
 <h2 id="id_0890---2026-06-17">[0.89.0] - 2026-06-17<a class="anchor" aria-label="anchor" href="#id_0890---2026-06-17"></a></h2>
 <div class="section level3">
-<h3 id="added-45">Added<a class="anchor" aria-label="anchor" href="#added-45"></a></h3>
+<h3 id="added-46">Added<a class="anchor" aria-label="anchor" href="#added-46"></a></h3>
 <ul><li>
 <code>min_slope</code> parameter on the whole <code>trend</code> pipeline (<code>read_fast_alert_raster</code>, <code>read_fast_alert_rasters</code>, <code>extract_pixel_trend</code>, <code>extract_trend_series</code>, <code>create_trend_sanitary_plan</code>): minimum decline magnitude (index units/yr) for a pixel to be flagged, on top of the negative-slope + Mann-Kendall test. Fixes the over-sensitivity where a tiny-but-monotonic drift (e.g. 0.0001 NDRE/yr) was “significant” yet ecologically negligible. Default <code>0.005</code> (provisional, to be calibrated against ONF/DSF ground truth); <code>0</code> restores the pure significance test. Folded into the D6 cache hash. Count/rolling unaffected.</li>
 </ul></div>
@@ -753,7 +766,7 @@
 <div class="section level2">
 <h2 id="id_0880---2026-06-16">[0.88.0] - 2026-06-16<a class="anchor" aria-label="anchor" href="#id_0880---2026-06-16"></a></h2>
 <div class="section level3">
-<h3 id="added-46">Added<a class="anchor" aria-label="anchor" href="#added-46"></a></h3>
+<h3 id="added-47">Added<a class="anchor" aria-label="anchor" href="#added-47"></a></h3>
 <ul><li>
 <code><a href="reference/create_trend_sanitary_plan.html">create_trend_sanitary_plan()</a></code> — a standalone <strong>sanitary</strong> plot plan drawn on the FAST <code>trend</code> raster (default NDRE) with a continuous-probability GRTS weighted by the decline magnitude (<code>|slope|</code>, via <code>spsurvey aux_var</code>). Optional control plots on stable cells. Distinct from the terrain/inventory plots: it never reads the <code>plot</code> table and computes <strong>no TSP tour</strong> — plots are ordered by descending severity (<code>S01</code> = steepest). Returns an <code>sf</code> POINT (<code>plot_id</code>, <code>type</code> Sanitaire/Temoin, <code>alert_value</code>, <code>index</code>, <code>source = "FAST_TREND"</code>, <code>seed</code>; no <code>visit_order</code>). Typed <code>nemeton_empty_alert_mask</code> error when no significant decline. New internal <code>.draw_grts_continuous()</code>. Spec 025.</li>
 </ul></div>
@@ -761,7 +774,7 @@
 <div class="section level2">
 <h2 id="id_0870---2026-06-16">[0.87.0] - 2026-06-16<a class="anchor" aria-label="anchor" href="#id_0870---2026-06-16"></a></h2>
 <div class="section level3">
-<h3 id="added-47">Added<a class="anchor" aria-label="anchor" href="#added-47"></a></h3>
+<h3 id="added-48">Added<a class="anchor" aria-label="anchor" href="#added-48"></a></h3>
 <ul><li>
 <code><a href="reference/extract_pixel_trend.html">extract_pixel_trend()</a></code> — the per-pixel counterpart of the FAST trend raster. For a point <code>xy</code> it returns the yearly seasonal composite series plus the Theil-Sen / Mann-Kendall result, strictly consistent with <code>read_fast_alert_raster(mode = "trend")</code> at the same pixel (cross-checked in tests). Reads the raw per-scene series via <code><a href="reference/extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code> (scene-by-scene, no zone-wide mosaic — immune to the multi-tile resolution bug). Returns <code>composites</code>, <code>n_years</code>, <code>theil_sen_slope/intercept</code>, <code>mann_kendall_p/tau</code>, <code>significant_decline</code>, <code>alert_value</code> (<code>abs(slope)</code> if significant, <code>0</code> if not, <code>NA</code> below <code>min_years</code>) and <code>enough_years</code>. Drives the “why this pixel has this colour” graph in <code>nemetonshiny</code>.</li>
 </ul></div>
@@ -773,7 +786,7 @@
 <div class="section level2">
 <h2 id="id_0860---2026-06-16">[0.86.0] - 2026-06-16<a class="anchor" aria-label="anchor" href="#id_0860---2026-06-16"></a></h2>
 <div class="section level3">
-<h3 id="added-48">Added<a class="anchor" aria-label="anchor" href="#added-48"></a></h3>
+<h3 id="added-49">Added<a class="anchor" aria-label="anchor" href="#added-49"></a></h3>
 <ul><li>
 <code><a href="reference/extract_trend_series.html">extract_trend_series()</a></code> — zone-level yearly seasonal composite series plus the Theil-Sen / Mann-Kendall fit for an index in <code>trend</code> mode (default NDRE). The trend map reduces each pixel to a single slope and carries no onset information; this returns the intermediate <code>(year, value)</code> trajectory (with <code>n_scenes</code>, the Theil-Sen <code>fitted</code> line and a <code>fit</code> summary: <code>slope</code>, <code>intercept</code>, <code>p_value</code>, <code>tau</code>, <code>significant</code>, <code>alert</code>) so callers can plot <em>when</em> a decline sets in. Reuses the same per-year composite as the map via the new internal <code>.trend_yearly_composite()</code>; multi-tile AOIs are combined as a valid-pixel-count-weighted mean per year.</li>
 </ul></div>
@@ -790,7 +803,7 @@
 <div class="section level2">
 <h2 id="id_0850---2026-06-15">[0.85.0] - 2026-06-15<a class="anchor" aria-label="anchor" href="#id_0850---2026-06-15"></a></h2>
 <div class="section level3">
-<h3 id="added-49">Added<a class="anchor" aria-label="anchor" href="#added-49"></a></h3>
+<h3 id="added-50">Added<a class="anchor" aria-label="anchor" href="#added-50"></a></h3>
 <ul><li>
 <code><a href="reference/read_fast_alert_rasters.html">read_fast_alert_rasters()</a></code> now covers the <code>trend</code> mode (spec 023). The wrapper’s defaults become <code>c("NDVI","NBR","NDMI","NDRE")</code> × <code>c("count","rolling","trend")</code> and it builds only the meaningful combinations (8 by default): <code>trend</code> on <code>NDMI</code>/<code>NDRE</code>, <code>count</code>/<code>rolling</code> on <code>NDVI</code>/<code>NBR</code>/<code>NDMI</code> — a nonsensical pair such as <code>NDVI_trend</code> or <code>NDRE_count</code> is silently skipped. Trend parameters (<code>months</code>, <code>min_years</code>, <code>min_obs_per_year</code>, <code>alpha</code>) are exposed and forwarded. (The end-of-ingest pre-warm gained the same trend combos in 0.84.0.)</li>
 <li>
@@ -804,7 +817,7 @@
 <div class="section level2">
 <h2 id="id_0840---2026-06-15">[0.84.0] - 2026-06-15<a class="anchor" aria-label="anchor" href="#id_0840---2026-06-15"></a></h2>
 <div class="section level3">
-<h3 id="added-50">Added<a class="anchor" aria-label="anchor" href="#added-50"></a></h3>
+<h3 id="added-51">Added<a class="anchor" aria-label="anchor" href="#added-51"></a></h3>
 <ul><li>
 <code>ingest_sentinel2_timeseries(prewarm_alerts = TRUE)</code> now pre-warms <strong>8</strong> FAST alert maps instead of 6: the historical <code>{NDVI, NBR, NDMI} × {count, rolling}</code> (spec 019) plus two <strong>trend</strong> combos <code>{NDMI, NDRE} × {trend}</code> (spec 023). Trend targets chronic broadleaf decline, whose relevant signals are moisture (NDMI, B11) and red-edge (NDRE, B05/B8A); NDVI/NBR stay count/rolling only. The trend warm uses the core defaults <code>months = 6:9</code>, <code>min_obs_per_year = 2</code>, <code>min_years = 4</code>, <code>alpha = 0.05</code> (<code>threshold</code>/<code>window_days</code> unused in trend). It is best-effort: a zone whose cache lacks the red-edge (B05/B8A) or B11 bands is skipped without failing the ingestion. New progress events <code>fast_prewarm:{NDMI,NDRE}_trend{,_done,_failed}</code> mirror the existing format; <code>fast_prewarm:complete</code> / <code>:cancelled</code> unchanged. Unblocks the 3-mode selector wiring in <code>nemetonshiny</code>.</li>
 </ul></div>
@@ -843,7 +856,7 @@
 <div class="section level2">
 <h2 id="id_0830---2026-06-14">[0.83.0] - 2026-06-14<a class="anchor" aria-label="anchor" href="#id_0830---2026-06-14"></a></h2>
 <div class="section level3">
-<h3 id="added-51">Added<a class="anchor" aria-label="anchor" href="#added-51"></a></h3>
+<h3 id="added-52">Added<a class="anchor" aria-label="anchor" href="#added-52"></a></h3>
 <ul><li>
 <code>read_reconfort_alert_mask(con, zone_id, run_id, cache_dir, ...)</code>: the RECONFORT mirror of <code><a href="reference/read_fordead_dieback_mask.html">read_fordead_dieback_mask()</a></code>, returning the categorical class raster (1 sain / 2 dépérissant / 3 très-dépérissant) of the latest run. <code><a href="reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code>’s <code>persist</code> phase now writes that flat mask (<code>&lt;cache_dir&gt;/zone_&lt;id&gt;/reconfort_mask_&lt;run_id&gt;.tif</code>, best-effort). Lets nemetonshiny reuse its raster validation-sampling module 1:1 with <code>create_validation_sampling_plan(source = "RECONFORT")</code> (full FORDEAD parity, control plots included). Closes the core side of G4 (Option A).</li>
 </ul></div>
@@ -855,7 +868,7 @@
 <ul><li>Broadleaf terrain-validation vocabulary <code>HEALTH_VALIDATION_STADES_FEUILLUS</code> finalised against the real DSF DEPERIS protocol (MB + MR criteria, A–F notation, &gt; 50 % crown-damage threshold): sain / deperissement_faible / deperissement_marque / deperissement_grave / mort / coupe_rase. “PROVISIONAL” note removed.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-52">Added<a class="anchor" aria-label="anchor" href="#added-52"></a></h3>
+<h3 id="added-53">Added<a class="anchor" aria-label="anchor" href="#added-53"></a></h3>
 <ul><li>
 <code>create_validation_sampling_plan(source = ...)</code> accepts <code>"RECONFORT"</code> (the function samples any single-layer categorical raster; the caller passes the RECONFORT class raster with <code>classes = c(2, 3)</code>, <code>control_classes = c(1)</code>). Unblocks the nemetonshiny “RECONFORT validation plan” sub-tab (L6 / G4).</li>
 </ul></div>
@@ -863,21 +876,21 @@
 <div class="section level2">
 <h2 id="id_0810---2026-06-13">[0.81.0] - 2026-06-13<a class="anchor" aria-label="anchor" href="#id_0810---2026-06-13"></a></h2>
 <div class="section level3">
-<h3 id="added-53">Added<a class="anchor" aria-label="anchor" href="#added-53"></a></h3>
+<h3 id="added-54">Added<a class="anchor" aria-label="anchor" href="#added-54"></a></h3>
 <ul><li>Broadleaf QField terrain-validation schema (spec 021 G4, support for L6): <code>get_health_validation_schema(method = c("fordead", "reconfort"))</code> serves a broadleaf dieback vocabulary in <code>reconfort</code> mode (<code>HEALTH_VALIDATION_STADES_FEUILLUS</code> / <code>HEALTH_VALIDATION_CAUSES_FEUILLUS</code>). The stage→status mapping routes by method (a clearcut on a <code>reconfort_dieback</code> alert is a <code>false_positive</code>); <code><a href="reference/ingest_health_validation.html">ingest_health_validation()</a></code> detects the method from <code>alert.alert_type</code>. <code>fordead</code> mode unchanged. DEPERIS stage vocabulary provisional.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0800---2026-06-13">[0.80.0] - 2026-06-13<a class="anchor" aria-label="anchor" href="#id_0800---2026-06-13"></a></h2>
 <div class="section level3">
-<h3 id="added-54">Added<a class="anchor" aria-label="anchor" href="#added-54"></a></h3>
+<h3 id="added-55">Added<a class="anchor" aria-label="anchor" href="#added-55"></a></h3>
 <ul><li>RECONFORT pixel diagnostic (spec 021, lot L5): <code>R/reconfort_outputs.R</code> recomputes CRswir/CRre per date from the ingested S2 (option B) and persists dated stacks; <code><a href="reference/read_reconfort_pixel_series.html">read_reconfort_pixel_series()</a></code> returns the observed CRswir/CRre series at a clicked pixel (no reticulate — no harmonic model). A best-effort <code>persist</code> phase + a <code>run_id</code> are wired into <code><a href="reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code>. The S2 scene enumeration (THEIA/MUSCATE naming) is best-effort, pending validation against a real IOTA² run.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0790---2026-06-13">[0.79.0] - 2026-06-13<a class="anchor" aria-label="anchor" href="#id_0790---2026-06-13"></a></h2>
 <div class="section level3">
-<h3 id="added-55">Added<a class="anchor" aria-label="anchor" href="#added-55"></a></h3>
+<h3 id="added-56">Added<a class="anchor" aria-label="anchor" href="#added-56"></a></h3>
 <ul><li>
 <code>reset_knowledge_manifest(confirm = TRUE)</code>: overwrites the writable project manifest copy with the packaged seed. The writable copy is created once and never auto-refreshed, so a stale copy kept listing documents the package no longer ships (e.g. the tutorials removed in 0.75.0). Meant to back a “reset to packaged corpus” action in the nemetonshiny RAG admin tab.</li>
 </ul></div>
@@ -885,14 +898,14 @@
 <div class="section level2">
 <h2 id="id_0780---2026-06-13">[0.78.0] - 2026-06-13<a class="anchor" aria-label="anchor" href="#id_0780---2026-06-13"></a></h2>
 <div class="section level3">
-<h3 id="added-56">Added<a class="anchor" aria-label="anchor" href="#added-56"></a></h3>
+<h3 id="added-57">Added<a class="anchor" aria-label="anchor" href="#added-57"></a></h3>
 <ul><li>Unified R5 dieback indicator with per-species routing (spec 021, lot L4): <code><a href="reference/indicateur_r5_deperissement.html">indicateur_r5_deperissement()</a></code> gains <code>reconfort_results</code> (+ <code>weights_reconfort</code>, <code>min_feuillus</code>, <code>feuillus_col</code>) and routes each unit to the method calibrated for its dominant species — RECONFORT (oak/chestnut/Scots pine) vs FORDEAD (spruce/fir), else <code>skipped_no_method</code>. New statuses <code>calculated_reconfort</code>, <code>skipped_no_reconfort</code>, <code>skipped_no_method</code> (replacing <code>skipped_no_resineux</code>). R5 stays a 0-100 column. Default RECONFORT weights are provisional.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0770---2026-06-13">[0.77.0] - 2026-06-13<a class="anchor" aria-label="anchor" href="#id_0770---2026-06-13"></a></h2>
 <div class="section level3">
-<h3 id="added-57">Added<a class="anchor" aria-label="anchor" href="#added-57"></a></h3>
+<h3 id="added-58">Added<a class="anchor" aria-label="anchor" href="#added-58"></a></h3>
 <ul><li>RECONFORT post-process (spec 021, lot L3): <code>R/reconfort_postprocess.R</code> turns <code><a href="reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> rasters into <code>reconfort_dieback</code> alerts (reclassify → 8-connectivity patches → centroids, continuous score as <code>stress_index</code>). <code><a href="reference/classify_disturbance.html">classify_disturbance()</a></code> extended to 3 methods (FAST + FORDEAD + RECONFORT) with a <code>method_overlap</code> flag. Migration <code>0006</code> (index on <code>alert(alert_type)</code>, PG + SQLite). A best-effort <code>postprocess</code> phase is wired into <code><a href="reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code>. New exports <code>RECONFORT_CLASSES</code>, <code>RECONFORT_CONFIDENCE_WEIGHTS</code>, <code>RECONFORT_ALERT_CLASSES</code> (confidence weights are provisional, pending the upstream confusion matrix).</li>
 </ul></div>
 </div>
@@ -903,7 +916,7 @@
 <ul><li>RAG corpus: the 4 scanned BILJOU papers (Bréda 1993/2002/2008, Granier 1996), demoted to <code>link_only</code> in 0.76.1, are now OCR’d (<code>tesseract</code> fra+eng, 300 dpi) and re-ingested as full-text. Prod corpus: 60 full-text / 81 (6120 chunks). OCR text (<code>data-raw/references/biljou/ocr/*.md</code>) is gitignored (copyright).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-58">Added<a class="anchor" aria-label="anchor" href="#added-58"></a></h3>
+<h3 id="added-59">Added<a class="anchor" aria-label="anchor" href="#added-59"></a></h3>
 <ul><li>
 <code>data-raw/ocr_biljou_scans.sh</code>: reproduces the OCR of the scanned PDFs.</li>
 </ul></div>
@@ -915,7 +928,7 @@
 <ul><li>RAG corpus: 4 BILJOU PDFs are scanned images with no text layer (<code>pdf_text</code> → 0 chars) and failed full-text ingestion. Set to <code>link_only</code> (citable references) → prod corpus 81/81, 0 errors (56 full-text + 25 references, 6033 chunks). OCR would be required for full-text.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-59">Added<a class="anchor" aria-label="anchor" href="#added-59"></a></h3>
+<h3 id="added-60">Added<a class="anchor" aria-label="anchor" href="#added-60"></a></h3>
 <ul><li>
 <code>data-raw/fill_corpus_prod.sh</code>: incremental (non-FRESH) prod corpus build to complete a partial run without re-ingesting everything.</li>
 </ul></div>
@@ -923,7 +936,7 @@
 <div class="section level2">
 <h2 id="id_0760---2026-06-13">[0.76.0] - 2026-06-13<a class="anchor" aria-label="anchor" href="#id_0760---2026-06-13"></a></h2>
 <div class="section level3">
-<h3 id="added-60">Added<a class="anchor" aria-label="anchor" href="#added-60"></a></h3>
+<h3 id="added-61">Added<a class="anchor" aria-label="anchor" href="#added-61"></a></h3>
 <ul><li>
 <code>db_connect(url, read_only, connect_timeout = 10L)</code>: bounds the connection attempt. Passed to libpq (<code>connect_timeout</code>, seconds) on the PostgreSQL backend to cap the hang on an unreachable host; ignored for SQLite.</li>
 </ul></div>
@@ -939,7 +952,7 @@
 <ul><li>RAG corpus: 44 BILJOU reference papers (+ user-deposited Monnet &amp; Peiffer) wired to full-text from the PDFs hosted by INRAE on the BILJOU portal (<code>appgeodb.nancy.inrae.fr/biljou/pdf/</code>). Ex-<code>copyright</code> rows retagged <code>license=HAL</code> (open archive, non-commercial), consistent with Bontemps/Charru. Also fills 2 institutional gaps (Bréthes 1997 soils, Badeau RENECOFOR feasibility “Livre Jaune”). Manifest: 60 full-text + 21 references (81/81, 0 skipped). Remaining references: 4 non-BILJOU copyright papers, unhosted books (Quae/Biotope/AFORCE), EFI (dead links), portal-only docs.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-61">Added<a class="anchor" aria-label="anchor" href="#added-61"></a></h3>
+<h3 id="added-62">Added<a class="anchor" aria-label="anchor" href="#added-62"></a></h3>
 <ul><li>
 <code>data-raw/wire_biljou_pdfs.R</code> (filename → doc_id mapping). <code>.gitignore</code> extended to <code>data-raw/references/**/*.pdf</code> for the <code>biljou/</code> subfolder.</li>
 </ul></div>
@@ -959,7 +972,7 @@
 <li>Fixed <code>monnet_mermin_2014</code> metadata (it is <em>Forests</em> 5(9):2307-2326, DOI 10.3390/f5092307, open on HAL — was wrongly <em>Remote Sensing 6(8)</em>); added open HAL <code>source_url</code> for <code>duplat_tranha_1997</code> and <code>larrieu_2018_ibp</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-62">Added<a class="anchor" aria-label="anchor" href="#added-62"></a></h3>
+<h3 id="added-63">Added<a class="anchor" aria-label="anchor" href="#added-63"></a></h3>
 <ul><li>
 <code>data-raw/link_only_skipped.R</code> (reproducible) and a manual-download section in <code>data-raw/references/README.md</code> for the OA PDFs behind anti-bot walls.</li>
 </ul></div>
@@ -971,7 +984,7 @@
 <ul><li>RAG corpus: lifted the D5 license gate across the whole manifest — the 50 <code>to_confirm</code> rows (BILJOU + 4 copyright papers) are now <code>cleared</code> (explicit override). All being <code>abstract_only</code>, they ingest as citable references (<code>link_only</code>), not full text. Manifest: 81 cleared / 0 to_confirm. Prod pgvector re-synced (FRESH): 60 docs (10 full-text + 50 references), 2354 chunks, 0 missing embeddings; 21 skipped (cleared <code>full</code> without an attached PDF — kept <code>full</code> for later full-text ingestion).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-63">Added<a class="anchor" aria-label="anchor" href="#added-63"></a></h3>
+<h3 id="added-64">Added<a class="anchor" aria-label="anchor" href="#added-64"></a></h3>
 <ul><li>
 <code>data-raw/clear_all_to_confirm.R</code> (reproducible status flip) and <code>data-raw/build_corpus_prod.sh</code> (FRESH prod-corpus rebuild wrapper).</li>
 </ul></div>
@@ -983,7 +996,7 @@
 <ul><li>RAG knowledge corpus (E7) curation of <code>inst/extdata/knowledge_corpus_v1.csv</code> (spec 009/009.1): removed the 12 internal MIT seed docs (tutorials + specs 005/008); added 54 references cited by the BILJOU tool (INRAE Nancy, forest water-balance model) under the conservative D5 license gate (<code>to_confirm</code> / <code>abstract_only</code> / <code>copyright</code>); promoted 8 institutional reports to <code>cleared</code> (ONF/RENECOFOR <code>LO-Etalab</code>, FAO paper 56 <code>CC-BY-NC</code>, EFI WSCTU n°1 <code>CC-BY</code>) with public source URLs. Manifest 39 → 81 docs (31 cleared / 50 to_confirm); full-text build plan 7 → 10 PDFs.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-64">Added<a class="anchor" aria-label="anchor" href="#added-64"></a></h3>
+<h3 id="added-65">Added<a class="anchor" aria-label="anchor" href="#added-65"></a></h3>
 <ul><li>
 <code>data-raw/{add_biljou_refs,clear_biljou_institutional,url_biljou_institutional}.R</code> — reproducible provenance scripts for the corpus curation above.</li>
 </ul></div>
@@ -999,7 +1012,7 @@
 <div class="section level2">
 <h2 id="id_0740---2026-06-12">[0.74.0] - 2026-06-12<a class="anchor" aria-label="anchor" href="#id_0740---2026-06-12"></a></h2>
 <div class="section level3">
-<h3 id="added-65">Added<a class="anchor" aria-label="anchor" href="#added-65"></a></h3>
+<h3 id="added-66">Added<a class="anchor" aria-label="anchor" href="#added-66"></a></h3>
 <ul><li>RECONFORT end-to-end orchestration (spec 021, lot L2b.3): <code>run_reconfort_dieback(con, zone_id, cache_dir, …)</code> chains env → model → mask → tile → S2 ingest → vendored IOTA² map-production (sampling + classification ×2 + OSO masking + continuous score), producing the classification / probability / continuous-score rasters (EPSG:2154) and a <code>run_meta.json</code>. Each run stages a writable copy of the vendored glue (scripts + <code>iota2/</code> subtree + model + mask + year-partitioned S2 symlinks) under <code>cache_dir</code>, keeping the installed package read-only. 8 phases with a <code>progress_callback</code>. A post-condition guard aborts when the IOTA² subprocess (whose return code the upstream driver ignores) produces no continuous-score raster.</li>
 <li>
 <code><a href="reference/ensure_reconfort_oso_mask.html">ensure_reconfort_oso_mask()</a></code> + <code>RECONFORT_OSO_MASK</code>: the OSO 2021 deciduous mask (~54 MB) is fetched on demand, MD5-verified and cached, with a <code>local_path</code> fallback (custom mask) — mirroring the RF model fetch (L2a). <code>binary_mask</code> control: <code>NULL</code> → OSO, a path → custom, <code>FALSE</code> → unmasked.</li>
@@ -1013,28 +1026,28 @@
 <div class="section level2">
 <h2 id="id_0730---2026-06-11">[0.73.0] - 2026-06-11<a class="anchor" aria-label="anchor" href="#id_0730---2026-06-11"></a></h2>
 <div class="section level3">
-<h3 id="added-66">Added<a class="anchor" aria-label="anchor" href="#added-66"></a></h3>
+<h3 id="added-67">Added<a class="anchor" aria-label="anchor" href="#added-67"></a></h3>
 <ul><li>RECONFORT IOTA²-native S2 ingestion (spec 021, lot L2b.2): <code><a href="reference/reconfort_aoi_tiles.html">reconfort_aoi_tiles()</a></code> resolves the Sentinel-2 MGRS tile(s) covering an AOI from a bundled France grid (<code>inst/extdata/s2_mgrs_tiles_fr.geojson</code>, 188 tiles, no network); <code><a href="reference/reconfort_ingest_s2.html">reconfort_ingest_s2()</a></code> downloads MUSCATE L2A from GEODES (<code>pygeodes</code>) and unzips into the IOTA² layout, driving the vendored upstream scripts via a conda subprocess. GEODES config via <code>options(nemeton.geodes_config)</code>. Default collection <code>THEIA_REFLECTANCE_SENTINEL2_L2A</code> (the upstream <code>MUSCATE_*</code> example id 400s on GEODES; confirmed by a real smoke). <code><a href="reference/reconfort_ingest_s2.html">reconfort_ingest_s2()</a></code> writes a per-run pygeodes config whose <code>download_dir</code> matches the per-tile <code>zip_path</code> (in the caller-supplied project cache, like FORDEAD’s <code>cache_dir</code>), so download and unzip agree on the path; that copy carries the api_key so it lives in a private mode-600 tempfile, never in the cache, wiped after each tile. Post-condition guards abort when the (error-swallowing, exit-0) upstream downloader leaves <code>zip_path</code> empty or the unzip produces no scene folder. Heavy/opt-in, never in CI; end-to-end plumbing validated by a real smoke (<code>data-raw/smoke_reconfort_ingest.R</code>).</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0720---2026-06-11">[0.72.0] - 2026-06-11<a class="anchor" aria-label="anchor" href="#id_0720---2026-06-11"></a></h2>
 <div class="section level3">
-<h3 id="added-67">Added<a class="anchor" aria-label="anchor" href="#added-67"></a></h3>
+<h3 id="added-68">Added<a class="anchor" aria-label="anchor" href="#added-68"></a></h3>
 <ul><li>RECONFORT Python/IOTA² foundations (spec 021, lot L2b.1): <code>.ensure_reconfort_python()</code> locates and validates the conda IOTA² environment (<code>nemeton-reconfort</code>, never bootstrapped — cadrage D2); <code>RECONFORT_BANDS</code> (B04/B05/B06/B8A/B11/B12); vendored <code>inst/python/reconfort/custom_index.py</code> (CRswir/CRre indices, Apache-2.0, attributed in <code>inst/NOTICE</code>). No real run yet (pipeline in L2b.2/L2b.3).</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0710---2026-06-11">[0.71.0] - 2026-06-11<a class="anchor" aria-label="anchor" href="#id_0710---2026-06-11"></a></h2>
 <div class="section level3">
-<h3 id="added-68">Added<a class="anchor" aria-label="anchor" href="#added-68"></a></h3>
+<h3 id="added-69">Added<a class="anchor" aria-label="anchor" href="#added-69"></a></h3>
 <ul><li>RECONFORT model fetch (spec 021, lot L2a): <code><a href="reference/ensure_reconfort_model.html">ensure_reconfort_model()</a></code> downloads the calibrated Random-Forest model on demand (5.7–197 MB, Apache-2.0), verifies size + MD5, and caches it; <code>local_path</code> short-circuits to a copy already on disk. <code>RECONFORT_MODELS</code> registry (4 versions) + <code><a href="reference/reconfort_model_info.html">reconfort_model_info()</a></code>. No IOTA²/Python in this lot; upstream training code is out of scope. Base URL overridable via <code>options(nemeton.reconfort_model_base_url)</code>.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0700---2026-06-11">[0.70.0] - 2026-06-11<a class="anchor" aria-label="anchor" href="#id_0700---2026-06-11"></a></h2>
 <div class="section level3">
-<h3 id="added-69">Added<a class="anchor" aria-label="anchor" href="#added-69"></a></h3>
+<h3 id="added-70">Added<a class="anchor" aria-label="anchor" href="#added-70"></a></h3>
 <ul><li>RECONFORT validity domain (spec 021, lot L1): <code><a href="reference/check_reconfort_validity.html">check_reconfort_validity()</a></code>, <code><a href="reference/load_reconfort_validity_zones.html">load_reconfort_validity_zones()</a></code>, <code>RECONFORT_VALIDITY_DEPARTMENTS</code> (6 Centre-Val de Loire departments) and <code>RECONFORT_VALIDITY_SPECIES</code> (oak CHE / chestnut CHT / Scots pine PS). Ships <code>inst/extdata/reconfort_validity_zones.geojson</code> + the <code>data-raw/</code> build script. G3 guard-rail is <strong>advisory, not blocking</strong> (<code>advisory = TRUE</code>): RECONFORT has no upstream geographic lock. No Python in this lot.</li>
 </ul></div>
 <div class="section level3">
@@ -1050,7 +1063,7 @@
 <code>.fast_raster_trend()</code> (FAST <code>mode = "trend"</code>, spec 023): a year with a single in-season scene yields a one-layer SpatRaster, on which <code>terra::app(sub, fun)</code> errors (“number of values returned by ‘fun’ is not appropriate”). Replaced by layer-count-robust cell-wise primitives (<code>nlyr - countNA</code>, <code><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">terra::median</a></code>). Covered by <code>test-fast-trend.R</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-70">Added<a class="anchor" aria-label="anchor" href="#added-70"></a></h3>
+<h3 id="added-71">Added<a class="anchor" aria-label="anchor" href="#added-71"></a></h3>
 <ul><li>spec 021 (RECONFORT, 3rd health-monitoring method for broadleaves): design docs only — <code>plan.md</code> (6 open questions resolved against the verified upstream repo) + <code>spec.md</code>. ADR-013 amendment A4 (multi-method health monitoring) lives in <code>nemetonplateform</code>.</li>
 </ul></div>
 <div class="section level3">
@@ -1061,7 +1074,7 @@
 <div class="section level2">
 <h2 id="id_0670---2026-06-04">[0.67.0] - 2026-06-04<a class="anchor" aria-label="anchor" href="#id_0670---2026-06-04"></a></h2>
 <div class="section level3">
-<h3 id="added-71">Added<a class="anchor" aria-label="anchor" href="#added-71"></a></h3>
+<h3 id="added-72">Added<a class="anchor" aria-label="anchor" href="#added-72"></a></h3>
 <ul><li>
 <code><a href="reference/prune_orphan_zone_caches.html">prune_orphan_zone_caches()</a></code>: removes <code>zone_&lt;id&gt;/</code> cache directories whose zone no longer exists in <code>monitoring_zone</code> (orphaned by the spec-020 zone upsert, which assigns new ids). Covers the FAST / FORDEAD / sampling per-zone caches; <code>dry_run = TRUE</code> previews; shared caches (<code>sentinel2/</code>, <code>lidar_*</code>) are never touched.</li>
 </ul></div>
@@ -1069,7 +1082,7 @@
 <div class="section level2">
 <h2 id="id_0660---2026-06-04">[0.66.0] - 2026-06-04<a class="anchor" aria-label="anchor" href="#id_0660---2026-06-04"></a></h2>
 <div class="section level3">
-<h3 id="added-72">Added<a class="anchor" aria-label="anchor" href="#added-72"></a></h3>
+<h3 id="added-73">Added<a class="anchor" aria-label="anchor" href="#added-73"></a></h3>
 <ul><li>Monitoring zones from UGF × BD Forêt v2 strata (spec 020): a project can own up to 4 zones <code>&lt;project&gt;_tot/_feu/_res/_mix</code> (UGF union, and its intersection with broadleaf / conifer / mixed strata classified via <code>tfv_g11</code>). New exports <code><a href="reference/build_project_monitoring_zones.html">build_project_monitoring_zones()</a></code>, <code><a href="reference/create_monitoring_zone.html">create_monitoring_zone()</a></code> (zone-only, no placettes — spec 017), <code><a href="reference/find_zones_by_project.html">find_zones_by_project()</a></code>. Empty strata are skipped with a warning; <code>replace = TRUE</code> performs an idempotent upsert.</li>
 <li>Migration 0005 (pg + sqlite): <code>monitoring_zone</code> uniqueness relaxed from <code>project_uuid</code> to <code>(project_uuid, name)</code> — N zones per project.</li>
 </ul></div>
@@ -1082,7 +1095,7 @@
 <div class="section level2">
 <h2 id="id_0653---2026-06-03">[0.65.3] - 2026-06-03<a class="anchor" aria-label="anchor" href="#id_0653---2026-06-03"></a></h2>
 <div class="section level3">
-<h3 id="added-73">Added<a class="anchor" aria-label="anchor" href="#added-73"></a></h3>
+<h3 id="added-74">Added<a class="anchor" aria-label="anchor" href="#added-74"></a></h3>
 <ul><li>LRU GC for the FAST 0-4 mask cache: <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> writes a timestamped <code>fast_alert_&lt;ts&gt;.tif</code> per call, so the mask directory grew unbounded. <code>.fast_alert_mask_gc()</code> now keeps at most <code>getOption("nemeton.fast_mask_keep", 20)</code> masks per zone (LRU by mtime), mirroring <code>.fast_raster_gc()</code> for the continuous COGs.</li>
 </ul></div>
 <div class="section level3">
@@ -1108,7 +1121,7 @@
 <div class="section level2">
 <h2 id="id_0650---2026-06-03">[0.65.0] - 2026-06-03<a class="anchor" aria-label="anchor" href="#id_0650---2026-06-03"></a></h2>
 <div class="section level3">
-<h3 id="added-74">Added<a class="anchor" aria-label="anchor" href="#added-74"></a></h3>
+<h3 id="added-75">Added<a class="anchor" aria-label="anchor" href="#added-75"></a></h3>
 <ul><li>
 <code><a href="reference/read_fast_alert_rasters.html">read_fast_alert_rasters()</a></code>: convenience orchestrator that builds the full FAST diagnostic in one call — the three indices (NDVI, NBR, NDMI) in both modes (count, rolling), i.e. up to six rasters. Returns a named list keyed <code>"&lt;index&gt;_&lt;mode&gt;"</code>; each map shares the COG cache, the content-addressed result cache (spec 017 D6) and the zone mask. Missing index → <code>NULL</code> slot (stable shape). <code>indices</code>/<code>modes</code> restrict the set.</li>
 </ul></div>
@@ -1120,7 +1133,7 @@
 <div class="section level2">
 <h2 id="id_0640---2026-06-03">[0.64.0] - 2026-06-03<a class="anchor" aria-label="anchor" href="#id_0640---2026-06-03"></a></h2>
 <div class="section level3">
-<h3 id="added-75">Added<a class="anchor" aria-label="anchor" href="#added-75"></a></h3>
+<h3 id="added-76">Added<a class="anchor" aria-label="anchor" href="#added-76"></a></h3>
 <ul><li>NDMI index in the FAST health-monitoring subsystem (spec 019): <code>NDMI = (B08 - B11) / (B08 + B11)</code> (NIR − SWIR1), a vegetation-moisture proxy. <code><a href="reference/build_index_stack.html">build_index_stack()</a></code>, <code><a href="reference/extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code>, <code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> and <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> accept <code>index/indices = "NDMI"</code>; <code><a href="reference/read_s2_band_raster.html">read_s2_band_raster()</a></code> / <code><a href="reference/read_s2_band_stack.html">read_s2_band_stack()</a></code> accept band <code>"B11"</code>. The FAST default stays NDVI (back-compatible); the D6 cache key includes the index, so NDMI COGs (<code>fast_NDMI_*</code>) never collide with existing NDVI/NBR caches.</li>
 </ul></div>
 <div class="section level3">
@@ -1132,7 +1145,7 @@
 <div class="section level2">
 <h2 id="id_0630---2026-06-03">[0.63.0] - 2026-06-03<a class="anchor" aria-label="anchor" href="#id_0630---2026-06-03"></a></h2>
 <div class="section level3">
-<h3 id="added-76">Added<a class="anchor" aria-label="anchor" href="#added-76"></a></h3>
+<h3 id="added-77">Added<a class="anchor" aria-label="anchor" href="#added-77"></a></h3>
 <ul><li>
 <code>R/knowledge-corpus.R</code> — public API for RAG corpus administration (spec 009.2), so a <code>nemetonshiny</code> admin tab can edit the manifest and import the corpus without re-implementing business logic: <code><a href="reference/knowledge_manifest_vocab.html">knowledge_manifest_vocab()</a></code> (single source of truth for the controlled vocabularies), <code>knowledge_manifest_path(writable)</code> (packaged seed vs writable project copy, D1), <code><a href="reference/read_knowledge_manifest.html">read_knowledge_manifest()</a></code>, <code><a href="reference/validate_knowledge_manifest.html">validate_knowledge_manifest()</a></code> (structured issues incl. license-gate D5 invariants), <code><a href="reference/write_knowledge_manifest.html">write_knowledge_manifest()</a></code> (deterministic minimal quoting), and <code>build_knowledge_corpus(con, …, dry_run, progress)</code> (ingestion orchestrator returning a structured per-document report).</li>
 </ul></div>
@@ -1147,7 +1160,7 @@
 <div class="section level2">
 <h2 id="id_0620---2026-06-02">[0.62.0] - 2026-06-02<a class="anchor" aria-label="anchor" href="#id_0620---2026-06-02"></a></h2>
 <div class="section level3">
-<h3 id="added-77">Added<a class="anchor" aria-label="anchor" href="#added-77"></a></h3>
+<h3 id="added-78">Added<a class="anchor" aria-label="anchor" href="#added-78"></a></h3>
 <ul><li>
 <code><a href="reference/ingest_knowledge_reference.html">ingest_knowledge_reference()</a></code> — exported reference-only ingestion for the RAG corpus (spec 009.1 §5). Stores a single citation chunk (title, author, year, URL + optional abstract) without the protected full text; records <code>link_only</code> / <code>abstract_only</code> under the JSON <code>metadata.ingestion_mode</code> (no schema change). Delegates chunk/embed/ insert to <code><a href="reference/ingest_knowledge_document.html">ingest_knowledge_document()</a></code> (DRY).</li>
 <li>
@@ -1168,7 +1181,7 @@
 <ul><li>RAG corpus manifest (<code>inst/extdata/knowledge_corpus_v1.csv</code>): the <code>set_revue_foret_croissance_climat</code> row was <code>status = cleared</code> while its <code>license</code> was the literal <code>to-confirm</code> placeholder, which would have let <code>build_knowledge_corpus.R</code> ingest it despite an unconfirmed license (contrary to spec 009.1 D5). Status reset to <code>to_confirm</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-78">Added<a class="anchor" aria-label="anchor" href="#added-78"></a></h3>
+<h3 id="added-79">Added<a class="anchor" aria-label="anchor" href="#added-79"></a></h3>
 <ul><li>
 <code>tests/testthat/test-knowledge-corpus-manifest.R</code> — integrity guards for the packaged corpus manifest: column set, unique slug <code>doc_id</code>, controlled enums (<code>license</code> / <code>status</code> / <code>ingest_strategy</code> / <code>lang</code> / <code>doc_type</code> / <code>license_commercial_ok</code>), valid family/profile codes, and the D5/§5 safety invariants (a <code>cleared</code> row needs a confirmed license; a <code>copyright</code> document is never <code>full</code>-ingested).</li>
 <li>
@@ -1178,7 +1191,7 @@
 <div class="section level2">
 <h2 id="id_0610---2026-06-02">[0.61.0] - 2026-06-02<a class="anchor" aria-label="anchor" href="#id_0610---2026-06-02"></a></h2>
 <div class="section level3">
-<h3 id="added-79">Added<a class="anchor" aria-label="anchor" href="#added-79"></a></h3>
+<h3 id="added-80">Added<a class="anchor" aria-label="anchor" href="#added-80"></a></h3>
 <ul><li>
 <code><a href="reference/ingest_sentinel2_timeseries.html">ingest_sentinel2_timeseries()</a></code> gains opt-in <code>prewarm_alerts = FALSE</code> + <code>prewarm_mask_cache_dir = NULL</code> (spec 018). When <code>prewarm_alerts = TRUE</code>, a successful ingestion chains on four <code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> calls (<code>NDVI</code>/<code>NBR</code> × <code>count</code>/<code>rolling</code>, default threshold, <code>window_days = 30</code>) so the four usual FAST alert maps land in the D6 result cache and the app’s FAST tab is instant on first visit. Per-combination failures warn and are skipped (the others still complete); the pre-warm polls <code>cancel_path</code> between combinations and never starts on a cancelled ingestion. New internal helper <code>.prewarm_fast_alerts()</code>. Progress heartbeat events <code>fast_prewarm:&lt;index&gt;_&lt;mode&gt;</code> / <code>_done</code> / <code>_failed</code>.</li>
 </ul></div>
@@ -1214,14 +1227,14 @@
 <div class="section level2">
 <h2 id="id_0570---2026-06-02">[0.57.0] - 2026-06-02<a class="anchor" aria-label="anchor" href="#id_0570---2026-06-02"></a></h2>
 <div class="section level3">
-<h3 id="added-80">Added<a class="anchor" aria-label="anchor" href="#added-80"></a></h3>
+<h3 id="added-81">Added<a class="anchor" aria-label="anchor" href="#added-81"></a></h3>
 <ul><li>Opt-in multi-core scene processing (spec 017 D4). <code><a href="reference/build_index_stack.html">build_index_stack()</a></code> and <code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> / <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> gain a <code>parallel = FALSE</code> argument; when <code>TRUE</code> and <code>furrr</code> is installed the per-scene index compute runs in <code><a href="https://furrr.futureverse.org/reference/future_map.html" class="external-link">furrr::future_map()</a></code> (caller sets the <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code>). Workers return <code><a href="https://rspatial.github.io/terra/reference/wrap.html" class="external-link">terra::wrap()</a></code>-ed rasters that the main process unwraps; results are identical to sequential. Falls back to sequential when <code>furrr</code> is absent. Closes spec 017.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0560---2026-06-01">[0.56.0] - 2026-06-01<a class="anchor" aria-label="anchor" href="#id_0560---2026-06-01"></a></h2>
 <div class="section level3">
-<h3 id="added-81">Added<a class="anchor" aria-label="anchor" href="#added-81"></a></h3>
+<h3 id="added-82">Added<a class="anchor" aria-label="anchor" href="#added-82"></a></h3>
 <ul><li>Content-addressed persistence of the FAST alert raster (spec 017 D6). <code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> gains <code>cache_result = TRUE</code> and <code>result_cache_dir = NULL</code>: the continuous raster is written as a COG keyed by a hash of its inputs (scenes + index + threshold + mode + window_days + dates + mask WKT), so a same-input revisit is served instantly from disk and the cache self-invalidates on any change. At most <code>getOption("nemeton.fast_raster_keep", 20)</code> COGs kept per zone.</li>
 <li>
 <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> passes <code>cache_result</code> / <code>result_cache_dir</code> through; quartiles are recomputed from the persisted COG without a raster recompute. Hash via <code><a href="https://rlang.r-lib.org/reference/hash.html" class="external-link">rlang::hash</a></code> (no <code>digest</code> dependency).</li>
@@ -1254,7 +1267,7 @@
 <code>read_fast_alert_raster</code> enumerates scenes <strong>from the COG cache</strong>, not from <code>obs_pixel</code> — the raster diagnostic is now independent of placettes (spec 017 D3). <code>con</code>/<code>zone_id</code> are used only for the UGF mask.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-82">Added<a class="anchor" aria-label="anchor" href="#added-82"></a></h3>
+<h3 id="added-83">Added<a class="anchor" aria-label="anchor" href="#added-83"></a></h3>
 <ul><li>Internal helpers <code>.enumerate_cache_scenes()</code>, <code>.s2_scene_date()</code>, <code>.fast_alert_quartile_breaks()</code>.</li>
 <li>
 <code>specs/017-fast-alert-raster-perf/spec.md</code> (D1-D6; perf phases D6/D4 follow in v0.56.0 / v0.57.0).</li>
@@ -1267,7 +1280,7 @@
 <ul><li>Test-DB isolation guard. Integration DB access now goes through <code>.guard_test_db()</code> + <code>.test_db_connect()</code> in <code>helper-monitoring.R</code>, which require <code>NEMETON_DB_URL_TEST</code> to be set, distinct from <code>NEMETON_DB_URL</code>, and free of application tables (<code>projects</code>/<code>users</code>/<code>parcels</code>). This prevents the destructive <code>DROP TABLE … CASCADE</code> integration helper from wiping a production DB (villards incidents 2026-05-25 &amp; 2026-05-31). Without <code>NEMETON_DB_URL_TEST</code>, integration tests skip (suite stays green). Override with <code>NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-83">Added<a class="anchor" aria-label="anchor" href="#added-83"></a></h3>
+<h3 id="added-84">Added<a class="anchor" aria-label="anchor" href="#added-84"></a></h3>
 <ul><li>
 <code>tests/testthat/test-helper-guards.R</code> — offline tests for the guard.</li>
 <li>
@@ -1277,7 +1290,7 @@
 <div class="section level2">
 <h2 id="id_0530---2026-05-31">[0.53.0] - 2026-05-31<a class="anchor" aria-label="anchor" href="#id_0530---2026-05-31"></a></h2>
 <div class="section level3">
-<h3 id="added-84">Added<a class="anchor" aria-label="anchor" href="#added-84"></a></h3>
+<h3 id="added-85">Added<a class="anchor" aria-label="anchor" href="#added-85"></a></h3>
 <ul><li>
 <code>ingest_sentinel2_timeseries(..., cancel_path = NULL)</code> — cooperative file-based cancellation. The worker polls <code>file.exists(cancel_path)</code> between tiles; when the flag appears it exits cleanly after the current tile, keeping already-committed tiles. The summary gains a <code>status</code> column (<code>"success"</code> / <code>"cancelled"</code>) and an <code>s2:cancelled</code> progress event.</li>
 <li>
@@ -1310,7 +1323,7 @@
 <div class="section level2">
 <h2 id="id_0520---2026-05-29">[0.52.0] - 2026-05-29<a class="anchor" aria-label="anchor" href="#id_0520---2026-05-29"></a></h2>
 <div class="section level3">
-<h3 id="added-85">Added<a class="anchor" aria-label="anchor" href="#added-85"></a></h3>
+<h3 id="added-86">Added<a class="anchor" aria-label="anchor" href="#added-86"></a></h3>
 <ul><li>RAG knowledge base for AI perspectives (E7, spec 009) — seven exported functions in <code>R/rag.R</code>: <code><a href="reference/enable_rag.html">enable_rag()</a></code>, <code><a href="reference/ingest_knowledge_document.html">ingest_knowledge_document()</a></code>, <code><a href="reference/embed_query.html">embed_query()</a></code>, <code><a href="reference/retrieve_knowledge.html">retrieve_knowledge()</a></code>, <code><a href="reference/list_knowledge_documents.html">list_knowledge_documents()</a></code>, <code><a href="reference/delete_knowledge_document.html">delete_knowledge_document()</a></code>, <code><a href="reference/format_citations.html">format_citations()</a></code>.</li>
 <li>Opt-in RAG migration <code>inst/db/migrations/{pg,sqlite}/rag/0004_rag.sql</code> (<code>knowledge_document</code> + <code>knowledge_chunk</code>), applied by <code><a href="reference/enable_rag.html">enable_rag()</a></code> rather than the default <code><a href="reference/db_migrate.html">db_migrate()</a></code> sequence (PostgreSQL needs pgvector; ADR-012).</li>
 <li>Dual-backend retrieval: pgvector <code>&lt;=&gt;</code> on PostgreSQL, R-side cosine on SQLite (JSON-encoded embeddings). Embedding providers: Mistral (default), OpenAI, Voyage AI.</li>
@@ -1326,7 +1339,7 @@
 <div class="section level2">
 <h2 id="id_0491---2026-05-27">[0.49.1] - 2026-05-27<a class="anchor" aria-label="anchor" href="#id_0491---2026-05-27"></a></h2>
 <div class="section level3">
-<h3 id="added-86">Added<a class="anchor" aria-label="anchor" href="#added-86"></a></h3>
+<h3 id="added-87">Added<a class="anchor" aria-label="anchor" href="#added-87"></a></h3>
 <ul><li>
 <code>create_validation_sampling_plan(..., control_classes = c(0L))</code> — new argument to relax the strict “class 0 = healthy” filter for control plots. Useful on heavily disturbed zones where no class-0 cell exists (villards FAST: all 8471 UGF pixels were class 4).</li>
 <li>Enriched warning when no control candidates : the message now reports the alert raster’s class distribution to help the user pick a relaxed <code>control_classes</code> value.</li>
@@ -1347,7 +1360,7 @@
 <code><a href="reference/extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code> gains <code>zone_polygon = NULL</code> / <code>warn_outside_zone = TRUE</code>. No raster mask (single-point query), only a warning when the click sits outside the UGFs.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-87">Added<a class="anchor" aria-label="anchor" href="#added-87"></a></h3>
+<h3 id="added-88">Added<a class="anchor" aria-label="anchor" href="#added-88"></a></h3>
 <ul><li>Internal helper <code>.apply_zone_mask(raster, zone_polygon)</code> in <code>R/zone_aoi.R</code>. Wraps <code><a href="https://rspatial.github.io/terra/reference/mask.html" class="external-link">terra::mask()</a></code> with CRS reprojection and a defensive <code>tryCatch</code> (failure → unmask with <code>cli_warn</code>).</li>
 </ul></div>
 <div class="section level3">
@@ -1363,7 +1376,7 @@
 <ul><li>Cache S2 : memoize the COG tile native extent per MGRS code in a session-scoped environment. The tile-aware second chance introduced in v0.48.2 was paying ~10-25 s per band per scene for the GET range that reads the COG header, even though all bands of all dates of the same MGRS tile share the same native extent. Villards full re-validation drops from ~1 h to ~50 s.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-88">Added<a class="anchor" aria-label="anchor" href="#added-88"></a></h3>
+<h3 id="added-89">Added<a class="anchor" aria-label="anchor" href="#added-89"></a></h3>
 <ul><li>Internal helpers <code>.s2_tile_ext_cache</code> (environment), <code>.s2_tile_ext_memoize(tile_code, href)</code>, and <code>.s2_tile_ext_cache_clear()</code> (test helper).</li>
 </ul></div>
 </div>
@@ -1383,7 +1396,7 @@
 <li>Diagnostic log on CACHE-STALE now shows snapped extents + signed per-side margin (<code>delta_m</code>) for quick triage.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-89">Added<a class="anchor" aria-label="anchor" href="#added-89"></a></h3>
+<h3 id="added-90">Added<a class="anchor" aria-label="anchor" href="#added-90"></a></h3>
 <ul><li>Internal helpers <code>.snap_ext_to_grid(ext, res)</code> and <code>.ext_contains_at_grid(outer, inner, res, tol_pixels)</code>.</li>
 <li>Internal helper <code>.cache_skip_validation()</code> (env var check).</li>
 </ul></div>
@@ -1391,7 +1404,7 @@
 <div class="section level2">
 <h2 id="id_0480---2026-05-26">[0.48.0] - 2026-05-26<a class="anchor" aria-label="anchor" href="#id_0480---2026-05-26"></a></h2>
 <div class="section level3">
-<h3 id="added-90">Added<a class="anchor" aria-label="anchor" href="#added-90"></a></h3>
+<h3 id="added-91">Added<a class="anchor" aria-label="anchor" href="#added-91"></a></h3>
 <ul><li>
 <code>lasR</code> fallback to derive MNT/MNH from cached <code>.laz</code> tiles when IGN pre-rasterized downloads fail. See <code><a href="reference/compute_dtm_chm_from_laz.html">compute_dtm_chm_from_laz()</a></code>, <code>resolve_project_dem/chm(try_compute_from_laz = TRUE)</code>. Diagnostic helpers <code><a href="reference/probe_ign_lidar_tile.html">probe_ign_lidar_tile()</a></code> / <code><a href="reference/probe_ign_lidar_tiles.html">probe_ign_lidar_tiles()</a></code> classify IGN failures. <code>lasR (&gt;= 0.10.0)</code> in Suggests.</li>
 </ul></div>
@@ -1443,7 +1456,7 @@
 <div class="section level2">
 <h2 id="id_0470---2026-05-25">[0.47.0] - 2026-05-25<a class="anchor" aria-label="anchor" href="#id_0470---2026-05-25"></a></h2>
 <div class="section level3">
-<h3 id="added-91">Added<a class="anchor" aria-label="anchor" href="#added-91"></a></h3>
+<h3 id="added-92">Added<a class="anchor" aria-label="anchor" href="#added-92"></a></h3>
 <ul><li>
 <code>fordead_alert_mask(alert_raster, classes, buffer_m)</code> — exported. Extracts alert cells from a categorical 0-4 SpatRaster (FORDEAD <code>dieback_mask</code> or FAST mask), preserves their class value (NA elsewhere), with optional metric buffer dilation. Output is suitable both as mask AND as priority raster.</li>
 <li>
@@ -1461,7 +1474,7 @@
 <div class="section level2">
 <h2 id="id_0460---2026-05-24">[0.46.0] - 2026-05-24<a class="anchor" aria-label="anchor" href="#id_0460---2026-05-24"></a></h2>
 <div class="section level3">
-<h3 id="added-92">Added<a class="anchor" aria-label="anchor" href="#added-92"></a></h3>
+<h3 id="added-93">Added<a class="anchor" aria-label="anchor" href="#added-93"></a></h3>
 <ul><li>
 <code>read_fast_alert_raster(con, zone_id, threshold_ndvi, threshold_nbr, date_from, date_to, mode, window_days, cache_dir)</code> — exported. Produces a single-band <code>SpatRaster</code> (EPSG:2154) of FAST alerts at native S2 pixel resolution. Two modes: <code>"count"</code> (integer per-pixel alert-day count) and <code>"rolling"</code> (continuous deficit magnitude on the trailing window). Multi-tile MGRS AOIs handled via per-tile compute + mosaic. Spec 013.</li>
 <li>Internal helpers <code>.compute_alert_count()</code>, <code>.compute_alert_rolling()</code>, <code>.s2_mgrs_tile()</code> in <code>R/fast_alert_raster.R</code>.</li>
@@ -1477,7 +1490,7 @@
 <li>Defensive fallback to per-plot bbox + warn when <code>zone_wkt</code> is empty or unparseable.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-93">Added<a class="anchor" aria-label="anchor" href="#added-93"></a></h3>
+<h3 id="added-94">Added<a class="anchor" aria-label="anchor" href="#added-94"></a></h3>
 <ul><li>
 <code>R/zone_aoi.R</code> — shared resolver <code>.get_zone_aoi(con, zone_id)</code>.</li>
 </ul></div>
@@ -1485,7 +1498,7 @@
 <div class="section level2">
 <h2 id="id_0440---2026-05-23">[0.44.0] - 2026-05-23<a class="anchor" aria-label="anchor" href="#id_0440---2026-05-23"></a></h2>
 <div class="section level3">
-<h3 id="added-94">Added<a class="anchor" aria-label="anchor" href="#added-94"></a></h3>
+<h3 id="added-95">Added<a class="anchor" aria-label="anchor" href="#added-95"></a></h3>
 <ul><li>Migration <code>0003_project_uuid</code> (PG + DuckDB) adding <code>monitoring_zone.project_uuid TEXT</code> and a partial UNIQUE index on non-NULL values. Spec 011.</li>
 <li>
 <code>register_monitoring_zone(..., project_uuid = NULL)</code> — optional new argument, persisted on the zone row when non-NULL.</li>
@@ -1514,7 +1527,7 @@
 <ul><li>Sentinel-2 STAC searches returned ESA reprocessing duplicates (the same acquisition republished under a new processing baseline) as distinct scenes — doubling the cache footprint (~14 % of scenes on a real zone) and feeding FORDEAD two items with the same <code>datetime</code>. <code><a href="reference/stac_search_s2.html">stac_search_s2()</a></code> and <code><a href="reference/dot-build_stac_collection_for_aoi.html">.build_stac_collection_for_aoi()</a></code> now collapse such duplicates by acquisition identity (mission + sensing time + orbit + MGRS tile), keeping the latest baseline.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-95">Added<a class="anchor" aria-label="anchor" href="#added-95"></a></h3>
+<h3 id="added-96">Added<a class="anchor" aria-label="anchor" href="#added-96"></a></h3>
 <ul><li>Internal helpers <code>.s2_split_product_id()</code> and <code>.dedup_s2_reprocessed()</code> — Sentinel-2 reprocessing-duplicate detection and removal.</li>
 </ul></div>
 </div>
@@ -1525,14 +1538,14 @@
 <ul><li>FORDEAD version probe read the <code>fordead.version</code> <em>attribute</em> (a function, not a string), so the installed version never matched the pin and <code>pip install --upgrade</code> ran on every <code><a href="reference/run_fordead_dieback.html">run_fordead_dieback()</a></code> call. <code><a href="reference/dot-fordead_python_version.html">.fordead_python_version()</a></code> now reads <code>importlib.metadata.version("fordead")</code>; the pipeline start banner reuses the same probe, so <code>fordead_version</code> is reported correctly instead of <code>NA</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-96">Added<a class="anchor" aria-label="anchor" href="#added-96"></a></h3>
+<h3 id="added-97">Added<a class="anchor" aria-label="anchor" href="#added-97"></a></h3>
 <ul><li>Internal helper <code><a href="reference/dot-python_capture_stdout.html">.python_capture_stdout()</a></code> — mockable <code><a href="https://rdrr.io/r/base/system2.html" class="external-link">system2()</a></code> wrapper used by the FORDEAD version probe.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0400---2026-05-20">[0.40.0] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0400---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="added-97">Added<a class="anchor" aria-label="anchor" href="#added-97"></a></h3>
+<h3 id="added-98">Added<a class="anchor" aria-label="anchor" href="#added-98"></a></h3>
 <ul><li>
 <code><a href="reference/theia_signed_href.html">theia_signed_href()</a></code> — resolves a <code>/vsicurl/</code>-prefixed signed THEIA asset URL via the <code>teledetection</code> Python SDK (reticulate).</li>
 <li>
@@ -1550,7 +1563,7 @@
 <div class="section level2">
 <h2 id="id_0390---2026-05-20">[0.39.0] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0390---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="added-98">Added<a class="anchor" aria-label="anchor" href="#added-98"></a></h3>
+<h3 id="added-99">Added<a class="anchor" aria-label="anchor" href="#added-99"></a></h3>
 <ul><li>
 <code><a href="reference/stac_get_item.html">stac_get_item()</a></code> — fetch a single STAC item by id.</li>
 <li>
@@ -1560,7 +1573,7 @@
 <div class="section level2">
 <h2 id="id_0380---2026-05-20">[0.38.0] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0380---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="added-99">Added<a class="anchor" aria-label="anchor" href="#added-99"></a></h3>
+<h3 id="added-100">Added<a class="anchor" aria-label="anchor" href="#added-100"></a></h3>
 <ul><li>
 <code><a href="reference/theia_configure_s3.html">theia_configure_s3()</a></code> — configures GDAL <code>/vsis3/</code> for authenticated reads of the THEIA S3 object store; credentials from <code>THEIA_S3_ACCESS_KEY</code> / <code>THEIA_S3_SECRET_KEY</code> env vars.</li>
 <li>
@@ -1582,7 +1595,7 @@
 <li>FORMSpoT metadata verified: collection <code>FORMSpoT</code>, yearly items <code>FORMSpoT-{year}</code> (2014-2024), <code>height_{year}</code> assets, height in decimetres.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-100">Added<a class="anchor" aria-label="anchor" href="#added-100"></a></h3>
+<h3 id="added-101">Added<a class="anchor" aria-label="anchor" href="#added-101"></a></h3>
 <ul><li>New datasource <code>formspot_delta</code> — FORMSpoT-∆ forest-disturbance polygons (<code>consumed_by</code>: R5, T2).</li>
 </ul></div>
 </div>
@@ -1598,7 +1611,7 @@
 <div class="section level2">
 <h2 id="id_0360---2026-05-20">[0.36.0] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0360---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="added-101">Added<a class="anchor" aria-label="anchor" href="#added-101"></a></h3>
+<h3 id="added-102">Added<a class="anchor" aria-label="anchor" href="#added-102"></a></h3>
 <ul><li>THEIA STAC resolver (<code>R/theia_stac.R</code>): <code><a href="reference/stac_search_items.html">stac_search_items()</a></code>, <code><a href="reference/resolve_theia_assets.html">resolve_theia_assets()</a></code> and <code><a href="reference/load_theia_source.html">load_theia_source()</a></code> materialise the Theia datasources from the THEIA STAC API. New <code>services.theia_stac</code> entry in <code>FR.json</code> (STAC API URL still to confirm). Closes the deferred Phase 2 STAC-resolution item.</li>
 </ul></div>
 </div>
@@ -1621,28 +1634,28 @@
 <div class="section level2">
 <h2 id="id_0350---2026-05-20">[0.35.0] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0350---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="added-102">Added<a class="anchor" aria-label="anchor" href="#added-102"></a></h3>
+<h3 id="added-103">Added<a class="anchor" aria-label="anchor" href="#added-103"></a></h3>
 <ul><li>Theia data sources, phase 3d: <code><a href="reference/indicateur_w2_zones_humides.html">indicateur_w2_zones_humides()</a></code> gains a <code>water_occurrence</code> argument (Theia <code>theia_water</code>); <code><a href="reference/indicateur_r3_secheresse.html">indicateur_r3_secheresse()</a></code> gains <code>soil_moisture</code> / <code>sm_relief_strength</code> arguments (Theia <code>theia_soil_moisture</code>); new exported helper <code><a href="reference/units_add_species_from_raster.html">units_add_species_from_raster()</a></code> fills a species column from the Theia <code>theia_species</code> product. Closes Phase 3 of the Theia chantier. Backward-compatible.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0340---2026-05-20">[0.34.0] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0340---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="added-103">Added<a class="anchor" aria-label="anchor" href="#added-103"></a></h3>
+<h3 id="added-104">Added<a class="anchor" aria-label="anchor" href="#added-104"></a></h3>
 <ul><li>Theia data sources, phase 3c: <code><a href="reference/indicateur_r3_secheresse.html">indicateur_r3_secheresse()</a></code> gains <code>snow</code> and <code>snow_relief_strength</code> arguments — a Theia <code>theia_snow</code> snow-cover-duration raster attenuates the drought stress (snowpack as a seasonal water reserve). Backward-compatible.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0330---2026-05-20">[0.33.0] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0330---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="added-104">Added<a class="anchor" aria-label="anchor" href="#added-104"></a></h3>
+<h3 id="added-105">Added<a class="anchor" aria-label="anchor" href="#added-105"></a></h3>
 <ul><li>Theia data sources, phase 3b: exported helpers <code><a href="reference/texture_to_fertility_score.html">texture_to_fertility_score()</a></code> and <code><a href="reference/texture_to_erosion_resistance.html">texture_to_erosion_resistance()</a></code>; <code><a href="reference/indicateur_f1_fertilite.html">indicateur_f1_fertilite()</a></code> gains a <code>"theia_soil"</code> source + <code>texture</code> argument; <code><a href="reference/indicateur_f2_erosion.html">indicateur_f2_erosion()</a></code> gains a <code>texture</code> argument. Wires the Theia <code>theia_soil</code> product into the F1/F2 indicators.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0320---2026-05-20">[0.32.0] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0320---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="added-105">Added<a class="anchor" aria-label="anchor" href="#added-105"></a></h3>
+<h3 id="added-106">Added<a class="anchor" aria-label="anchor" href="#added-106"></a></h3>
 <ul><li>Theia data sources, phase 3a: <code><a href="reference/indicateur_c2_ndvi.html">indicateur_c2_ndvi()</a></code> gains a <code>fapar</code> argument (FAPAR-based vitality) and <code><a href="reference/indicateur_a1_couverture.html">indicateur_a1_couverture()</a></code> gains an <code>fvc</code> argument (FVC-based tree coverage), wiring the Theia <code>s2_biophysical</code> product into the C2 and A1 indicators. Both arguments are optional and backward-compatible.</li>
 </ul></div>
 <div class="section level3">
@@ -1654,7 +1667,7 @@
 <div class="section level2">
 <h2 id="id_0310---2026-05-20">[0.31.0] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0310---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="added-106">Added<a class="anchor" aria-label="anchor" href="#added-106"></a></h3>
+<h3 id="added-107">Added<a class="anchor" aria-label="anchor" href="#added-107"></a></h3>
 <ul><li>
 <code><a href="reference/load_raster_source.html">load_raster_source()</a></code> gains a <code>path</code> argument so path-less <code>raster_local</code> datasources (the Theia products) can be loaded from a locally downloaded file.</li>
 <li>New exported helper <code><a href="reference/get_datasource_product.html">get_datasource_product()</a></code> returning the metadata of one sub-product of a multi-product datasource (e.g. <code>forms_t</code> height/volume/biomass).</li>
@@ -1663,21 +1676,21 @@
 <div class="section level2">
 <h2 id="id_0300---2026-05-20">[0.30.0] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0300---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="added-107">Added<a class="anchor" aria-label="anchor" href="#added-107"></a></h3>
+<h3 id="added-108">Added<a class="anchor" aria-label="anchor" href="#added-108"></a></h3>
 <ul><li>Theia data sources, phase 1b: <code>theia_water</code>, <code>theia_soil_moisture</code>, <code>s2_l2a_muscate</code>, <code>theia_species</code>, <code>theia_lst</code> and <code>formspot</code> declared in <code>inst/datasources/FR.json</code>, completing Phase 1 (catalogue) of the Theia chantier. Declarative only — no core indicator code changed.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0290---2026-05-20">[0.29.0] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0290---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="added-108">Added<a class="anchor" aria-label="anchor" href="#added-108"></a></h3>
+<h3 id="added-109">Added<a class="anchor" aria-label="anchor" href="#added-109"></a></h3>
 <ul><li>Theia data sources, phase 1a: <code>s2_biophysical</code> (LAI/FAPAR/FVC), <code>theia_soil</code> (texture fractions) and <code>theia_snow</code> (Let-it-snow collection) declared in <code>inst/datasources/FR.json</code>, with <code>consumed_by</code> wiring to the C2/A1/B2, F1/F2 and R3/W indicators respectively. Declarative only — no core indicator code changed.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0280---2026-05-20">[0.28.0] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0280---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="added-109">Added<a class="anchor" aria-label="anchor" href="#added-109"></a></h3>
+<h3 id="added-110">Added<a class="anchor" aria-label="anchor" href="#added-110"></a></h3>
 <ul><li>
 <code>forms_t</code> dataset declared in <code>inst/datasources/FR.json</code>: the FORMS-T Theia time-series of canopy height (10 m), growing stock volume (30 m) and aboveground biomass (30 m) maps over metropolitan France (Schwartz et al. 2023, ESSD). Documents the <code>consumed_by</code> wiring of the height product into the CHM path of the C1, P1, P2 and B2 indicators.</li>
 </ul></div>
@@ -1697,7 +1710,7 @@
 <code><a href="reference/create_sampling_plan.html">create_sampling_plan()</a></code> now clamps <code>n_base + n_over</code> to the candidate-frame capacity upfront, preserving the Base/Over ratio and emitting a <code>cli_warn()</code>. Prevents the silent LPM2 fallback that could drop all Over plots on small AOIs with strict forest-cover / slope filters.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-110">Added<a class="anchor" aria-label="anchor" href="#added-110"></a></h3>
+<h3 id="added-111">Added<a class="anchor" aria-label="anchor" href="#added-111"></a></h3>
 <ul><li>Two new unit tests covering the clamp logic: ratio preservation, minimum-1-Over guarantee, and warning signature.</li>
 </ul></div>
 </div>
@@ -1709,7 +1722,7 @@
 <code><a href="reference/create_sampling_plan.html">create_sampling_plan()</a></code> now auto-simplifies the stratification (drops TPI, then type) when the full 3D combination would contain thin strata, instead of skipping GRTS entirely. A <code>cli_inform()</code> reports which dimensions were dropped. Extends GRTS coverage to small AOIs where the 3D stratification produces too many singletons.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="added-111">Added<a class="anchor" aria-label="anchor" href="#added-111"></a></h3>
+<h3 id="added-112">Added<a class="anchor" aria-label="anchor" href="#added-112"></a></h3>
 <ul><li>Internal helper <code>.fit_stratum()</code> plus four unit tests covering degradation, fully-thin edge cases, and constant-dimension handling.</li>
 </ul></div>
 </div>
@@ -1791,7 +1804,7 @@
 <h2 id="id_0190---2026-04-24">
 <a href="https://github.com/pobsteta/nemeton/compare/v0.18.0...v0.19.0" class="external-link">0.19.0</a> - 2026-04-24<a class="anchor" aria-label="anchor" href="#id_0190---2026-04-24"></a></h2>
 <div class="section level3">
-<h3 id="added-112">Added<a class="anchor" aria-label="anchor" href="#added-112"></a></h3>
+<h3 id="added-113">Added<a class="anchor" aria-label="anchor" href="#added-113"></a></h3>
 <ul><li>
 <code>compute_sample_size(cv, target_error, alpha, N)</code> — Cochran formula with iterative Student-t refinement and optional finite-population correction. (<code>R/sample_size.R</code>)</li>
 <li>

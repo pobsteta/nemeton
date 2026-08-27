@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.190.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.191.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -485,9 +485,9 @@
 <p><strong>Clos pour de bon le 2026-08-21</strong> (v0.132.0 côté app). Le chantier a produit une <strong>sortie devenue publique de fait</strong> : l’attribut <code>parcelles_concernees</code> (<code>c(concernees =, total =)</code>) est lu par l’app pour afficher « N parcelles sur M » et n’est plus recalculé en aval. Le retirer, ou en changer la forme, casserait l’affichage — à traiter comme une sortie stable de <code><a href="reference/croiser_parcelles_onf.html">croiser_parcelles_onf()</a></code>, pas comme un attribut de commodité.</p>
 </div>
 <div class="section level1">
-<h1 id="chantier-cadré--houppiers-par-lsms-borné-par-un-budget-de-calcul-spec-051">Chantier CADRÉ — Houppiers par LSMS, borné par un budget de calcul (spec 051)<a class="anchor" aria-label="anchor" href="#chantier-cadr%C3%A9--houppiers-par-lsms-born%C3%A9-par-un-budget-de-calcul-spec-051"></a></h1>
+<h1 id="chantier-livré--houppiers-par-lsms-borné-par-un-budget-de-calcul-spec-051">Chantier LIVRÉ — Houppiers par LSMS, borné par un budget de calcul (spec 051)<a class="anchor" aria-label="anchor" href="#chantier-livr%C3%A9--houppiers-par-lsms-born%C3%A9-par-un-budget-de-calcul-spec-051"></a></h1>
 <blockquote>
-<p><strong>Cadré le 2026-08-27</strong>, <strong>non implémenté</strong>. Décisions D1-D5 tranchées par Pascal sur mesures réelles. Origine : brief <code>2026-08-24-houppiers-sans-lidar-otb-lsms.md</code> (session app), étude de faisabilité.</p>
+<p><strong>Cadré ET livré le 2026-08-27</strong> (v0.191.0). Décisions D1-D5 tranchées par Pascal sur mesures réelles. Origine : brief <code>2026-08-24-houppiers-sans-lidar-otb-lsms.md</code> (session app), étude de faisabilité.</p>
 </blockquote>
 <p><strong>Le coût tranche le périmètre.</strong> Mesuré sur le projet Fordead, fenêtre de 200 × 200 m en futaie fermée à 89 % : LSMS met <strong>160,5 s</strong> là où la voie CHM met <strong>2,3 s</strong> — ~70×. À 4 Mpx, 716 s. Le modèle <code>t = 160,5 × P^1,0787</code> reproduit les deux points à la seconde près et donne <strong>13 à 20 h sur l’emprise entière</strong> (292 Mpx, 1 170 ha). <strong>LSMS n’est pas un algorithme d’emprise.</strong></p>
 <p>Le brief annonçait ~9 s pour la même taille en pixels — <strong>facteur 18</strong>. Sa vectorisation (1,1 s) coïncide pourtant avec la mienne (1,05 s) : tout l’écart est dans la segmentation. Hypothèse non vérifiable : le mean-shift converge selon le <em>contenu</em>, et ma fenêtre est le peuplement le plus texturé du massif. Le brief ne dit pas quel couvert avait la sienne, et <strong>son projet de référence n’existe plus</strong> — le Couchey mesuré a été remplacé le 2026-08-25 par l’import CSV destructif de l’app (v0.133.0), le lendemain du dépôt.</p>
@@ -496,6 +496,8 @@
 <p><strong>Deux usages séparés</strong> : <code>"martelage"</code> exige le CHM et refuse sans lui ; <code>"couvert"</code> assume l’absence de hauteur et n’expose pas <code>h_max</code> du tout (pas <code>NA</code> : absente).</p>
 <p><strong>Ce qui marche déjà</strong> : <code>h_max</code> par zonale place <strong>876 segments sur 886</strong> dans la plage 1–70 m qu’exige Marculus, médiane 35,5 m — identique à la voie CHM.</p>
 <p><strong>Cinq choses non mesurées, à ne pas supposer</strong> (spec §6) : le coût sur un peuplement clair ; la valeur du filtre <code>h_max &gt;= hmin</code> (invisible ici, la fenêtre n’a pas de sol) ; <strong>le gain qualitatif annoncé</strong> — séparer deux houppiers de même hauteur mais d’essences différentes — qui est l’argument central du sujet et reste une hypothèse ; la stabilité du défaut entre peuplements ; le pilote GPKG d’OTB 9.1.1, repris du brief sans re-test.</p>
+<p><strong>Livré en v0.191.0</strong>, et deux affirmations du cadrage corrigées en chemin (spec 051 §8) : OTB n’est <strong>pas</strong> un <code>Suggests</code> — c’est un binaire externe, détecté par <code>OTB_DIR</code> comme GRASS l’est ; et son lanceur ne se configure pas seul (il source <code>otbenv.profile</code> avec <code>source</code>, mot-clé bash, sous un shebang <code>#!/bin/sh</code>), l’environnement doit être posé par l’appelant. Le modèle de coût gagne aussi <code>spatialr</code> au carré, que le cadrage ne prévoyait pas.</p>
+<p><strong>Validé de bout en bout</strong> sur la fenêtre de calibration : <code>martelage</code> rend 692 houppiers en 143 s (173/ha, 7,92 m), <code>couvert</code> 698 segments sans colonne <code>h_max</code>. Le balayage manuel est reproduit à moins de 1 % — le ré-estampillage du CRS, l’aller-retour shapefile et la zonale n’introduisent aucune dérive, ce qui était le risque principal.</p>
 <p><strong>Trouvé en chemin, hors sujet mais à traiter</strong> : les deux CHM Open-Canopy du projet Fordead (<code>chm_predicted_0_2m.tif</code>, <code>chm_vegetation_0_2m.tif</code>) sont <strong>entièrement à zéro</strong> (max 0,10 m). C’est le cas que le garde-fou <code>chm_suspect</code> (v0.109.0) existe pour attraper — reste à vérifier qu’il se déclenche bien dessus, le projet ayant produit 224 614 houppiers en passant par son MNH LiDAR sans que rien ne signale que la prédiction était vide.</p>
 <hr></div>
 <div class="section level1">

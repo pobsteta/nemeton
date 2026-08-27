@@ -243,6 +243,10 @@ hauteur de son apex, pour pre-remplir la hauteur d’une tige au martelage
 
 - [`segment_houppiers()`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md)
   : Segment tree crowns on a Canopy Height Model
+- [`lsms_duree_estimee()`](https://pobsteta.github.io/nemeton/reference/lsms_duree_estimee.md)
+  : Estimate the LSMS compute time for a pixel count
+- [`lsms_budget_pixels()`](https://pobsteta.github.io/nemeton/reference/lsms_budget_pixels.md)
+  : Pixel budget affordable within a compute budget
 
 ## Variables biophysiques Sentinel-2 (spec 043)
 
