@@ -10,6 +10,24 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.191.0] - 2026-08-27
+
+### Added
+- **`segment_houppiers(algorithme = "lsms")`** (spec 051) : délimitation de
+  houppiers par Large-Scale Mean-Shift (OTB) sur orthophoto, **bornée par un
+  budget de calcul**. LSMS coûte ~70× la voie CHM à surface égale (160,5 s
+  contre 2,3 s sur 4 ha) : le garde-fou porte sur les **pixels** et refuse avant
+  d'appeler OTB, en disant combien tient dans le budget. Défaut 10 min =
+  3,4 Mpx, soit 13,6 ha à 0,20 m mais 84,9 ha à 0,50 m.
+- **`usage = "martelage"` / `"couvert"`** : le premier exige le CHM et remplit
+  `h_max` par zonale ; le second assume l'absence de hauteur et n'expose pas la
+  colonne (absente, pas `NA`).
+- **`lsms_duree_estimee()` / `lsms_budget_pixels()`** (exportées), exactement
+  inverses l'une de l'autre.
+- Défaut LSMS calibré `15/20/700` contre la voie CHM (écart −0,15 m sur le
+  diamètre équivalent médian), et non les `5/15/50` du CookBook OTB qui
+  sur-segmentent d'un facteur 15.
+
 ## [0.190.0] - 2026-08-27
 
 ### Fixed
