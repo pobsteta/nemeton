@@ -13,6 +13,24 @@ For a narrative, per-feature description of each release, see
 ## [0.190.0] - 2026-08-27
 
 ### Fixed
+- **ERA5 : une année interrompue était irrécupérable.** `request_era5()` s'arrête
+  quand le `.zip` cible existe (`overwrite = FALSE` par défaut) et les `.zip` ne
+  sont pas purgés après extraction : un run tué au mois 7 faisait échouer les
+  runs suivants sur le mois 1. Le cœur découpe la boucle, saute les mois dont le
+  `.nc` est là, et fusionne lui-même sous le nom exact de mcera5
+  (`era5_<annee>_<annee>.nc`).
+- **`min_surface_ha` ne voyait pas les échardes qu'il visait.** Le seuil était
+  comparé à la surface de la **ligne**, or `ten` est fondu à une ligne par
+  (UGF × parcelle cadastrale) et `reste` à une ligne par parcelle : un
+  multipolygone de 10 ha n'est jamais une écharde, et se disloquait en morceaux
+  de moins de 100 m² dès que le consommateur normalisait en parties simples.
+  Le seuil s'applique désormais aux **parties**. Défaut symétrique sur les
+  tènements, que le brief n'avait pas vu. Couchey (21 parcelles) : 44 morceaux
+  sous 100 m² → **0**, pavage inchangé au m² (529,729626 ha).
+- **L'écharde rejoint la plus longue frontière partagée**, pas le plus gros
+  fragment : l'union de deux polygones qui se touchent est *un* polygone, qui
+  survit à une normalisation en parties simples. Repli historique conservé
+  quand rien ne touche l'écharde.
 - **B4 lisait `shannon_sd.tiff` au lieu de `shannon_mean.tiff`.**
   `.find_diversity_raster()` départageait les candidats par longueur de nom et
   le fichier d'écart-type est plus court de deux caractères ; l'indicateur
@@ -31,6 +49,13 @@ For a narrative, per-feature description of each release, see
   `[0, log(50)]` ; L3 sur `[0, 0.5]` de la dispersion PCoA au lieu de `[0, 1]`.
   Les deux clampent. Calibrations **mono-scène** — D3 reste ouverte.
 - Tooltips B4 et L3 : la grandeur et son échelle sont nommées.
+
+### Changed
+- **ERA5 : un événement de progression par MOIS** (`regen_expo:era5_mois`, avec
+  `category` / `year` / `mois_i` / `mois_n`). `emit` n'était appelé qu'une fois
+  par année — « 1/1 » puis 1 h 36 de silence, sur ~3 h 15 de téléchargement CDS
+  par run. `category` descend désormais jusqu'au téléchargement ; l'événement
+  annuel `regen_expo:era5` est conservé ; `emit = NULL` reste un no-op.
 
 ### Added
 - `indicateur_l3_het_spectrale(min_windows = 3L)` : sous trois fenêtres

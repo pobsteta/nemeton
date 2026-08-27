@@ -1,5 +1,108 @@
 # nemeton 0.190.0 (2026-08-27)
 
+### Fixed — ERA5 : une année interrompue était irrécupérable
+
+Implémente `briefs/vers-nemeton/2026-08-27-era5-progression-mensuelle-et-reprise.md`.
+`mcera5::request_era5()` **refuse** de réécrire : `overwrite = FALSE` par défaut,
+et il s'arrête dès que le `.zip` cible existe (`"Filename already exists within
+requested out_path in request N of request series"`). Or les `.zip` ne sont pas
+supprimés après extraction.
+
+Conséquence : **un run tué au mois 7 rendait l'année entière irrécupérable.** Au
+run suivant aucun combiné n'existe — les mensuels s'appellent
+`era5_2020_2020_7.nc` et ne matchent pas `_2020\.nc$` — donc le cœur redemandait
+les douze mois et l'appel échouait immédiatement sur le mois 1, dont le `.zip`
+traînait encore. `.rsen_era5_with_retry()` brûlait alors ses trois tentatives sur
+une erreur qui ne pouvait pas guérir.
+
+Le cœur découpe désormais la boucle lui-même : un mois dont le `.nc` est présent
+est sauté, les autres repartent avec `overwrite = TRUE`, et la fusion se fait ici
+une fois les douze réunis. **C'est le `.nc` qui fait foi, pas le `.zip`** — un
+téléchargement coupé laisse le second sans le premier.
+
+Le nom du combiné est reproduit **à l'identique** de ce que
+`request_era5(combine = TRUE)` aurait écrit : `era5_<annee>_<annee>.nc`, double
+année, parce que mcera5 le calcule par `shared_substring()` sur les douze cibles.
+S'en écarter d'un caractère et le cache ne se relit jamais — c'est déjà la panne
+qu'avait corrigée le commentaire de `.rsen_era5_combined()`.
+
+### Changed — ERA5 : un événement de progression par MOIS
+
+Même brief, versant lisibilité. `request_era5()` boucle sur les douze requêtes
+mensuelles en interne et n'accepte aucun callback : `emit` n'était donc appelé
+qu'une fois par **année**, avant la descente. Dans le cas nominal — une année
+moyenne, une année canicule — cela donnait « 1/1 », un compteur exact qui
+n'apprend rien, suivi de 1 h 36 de silence.
+
+Mesuré sur un run réel : **~8 min par mois, 12 mois, 2 années — 3 h 15 de
+téléchargement muet sur 4 h 25 de run.** Le processus travaillait (32,5 % CPU en
+continu, 1,06 Go de RSS, des `.nc` ERA5 successifs dans ses descripteurs), mais
+`engine_status.json` n'avait pas bougé depuis 1 h 40, ce qui se lit comme un
+blocage.
+
+Nouvel événement `regen_expo:era5_mois`, émis avant chaque requête mensuelle,
+portant `category` / `year` / `mois_i` / `mois_n`. `category` descend maintenant
+jusqu'au téléchargement — elle s'arrêtait à `.rsen_moyenne_categorie()`, si bien
+que l'app n'aurait pas su distinguer l'année moyenne de l'année canicule.
+L'événement annuel `regen_expo:era5` est **conservé** : le mensuel s'ajoute, il
+ne remplace pas. `emit = NULL` reste un no-op.
+
+Le contrat côté app était déjà posé (`nemetonshiny` v0.141.0, `b7aff412`) et
+affiche « Microclimat — étés canicule 2022 — mois 3/12 ». Ce correctif rend
+l'attente lisible ; **il ne la raccourcit pas** — les ~8 min par mois sont la
+file d'attente de Copernicus.
+
+L'événement est émis **même pour un mois déjà en cache** : sur une reprise, la
+barre parcourt les douze mois au lieu de sauter du 6 au 7.
+
+
+### Fixed — le seuil d'absorption ne voyait pas les échardes qu'il visait
+
+Implémente `briefs/vers-nemeton/2026-08-25-reliquat-echappe-absorption.md`.
+`min_surface_ha` promet d'absorber les échardes de numérisation. Il comparait le
+seuil à la surface de la **ligne**, or `ten` est fondu à une ligne par
+(UGF × parcelle cadastrale) et `reste` à une ligne par parcelle cadastrale. Un
+multipolygone de 10 ha n'est jamais une écharde — et se disloque en morceaux de
+moins de 100 m² dès que le consommateur normalise en parties simples, ce que
+l'app fait à l'import. **Aucun reliquat n'était donc jamais absorbé, par
+construction.**
+
+Le seuil s'applique désormais aux **parties**, pas aux lignes.
+
+**Ce que le brief n'avait pas vu, et que la mesure montre : le défaut est
+symétrique.** Il portait sur le reliquat ; les tènements ont exactement le même
+problème, pour la même raison. Sur les 21 parcelles réelles de Couchey
+(529,73 ha, 81 parcelles forestières) :
+
+| | lignes | morceaux après éclatement | < 0,05 ha | < 100 m² |
+|---|---|---|---|---|
+| sans absorption (témoin) | 163 | 255 | 96 | 57 |
+| **avant** (seuil 0,05) | 137 | 236 | 76 | 44 |
+| **après** (seuil 0,05) | **134** | **158** | **0** | **0** |
+
+**Où va l'écharde : au fragment avec lequel elle partage la plus longue
+frontière**, pas au plus gros. C'est ce qui la fait vraiment disparaître —
+l'union de deux polygones qui se touchent est *un* polygone, qui survit à une
+normalisation en parties simples. Le repli historique (« le plus gros de la
+parcelle ») ne joue que si rien ne touche l'écharde ; elle change alors
+seulement d'étiquette, l'union restant multipartie. Longueur et non surface : un
+contact ponctuel n'est pas un voisinage.
+
+**Le pavage reste exact** — 529,729626 ha avant comme après, à 5 × 10⁻⁷ m² près.
+Rien n'est jamais jeté : chaque partie retirée d'un fragment est ajoutée à un
+autre. Un test le vérifie sur cinq seuils, de 0 à 10 ha.
+
+**Le coût, parce qu'il est réel.** L'absorption passe de ~0,1 s à ~5 s sur ce
+projet (croisement complet : 0,6 s → 6,0 s). Une première écriture tenait 38 s ;
+trois mesures l'ont ramenée à 6 : présélection par `st_intersects` (indexé) au
+lieu de tester chaque écharde contre toutes les parties du groupe, mesures
+(`st_area`, `st_boundary`) vectorisées une fois sur l'ensemble des parties au
+lieu d'une fois par parcelle, et surtout **abandon de `st_length()`** — le
+profil y passait 6,1 s sur 6,4, en interrogeant les paramètres du CRS à chaque
+appel. Le CRS de travail étant toujours projeté, la somme euclidienne des
+segments *est* la longueur ; un test verrouille l'égalité avec `st_length()`.
+
+
 ### Fixed — le smoke B4/L3 a tourné, et il a trouvé trois défauts (spec 028 §10)
 
 La spec 028 réclamait depuis le 2026-07-01 un « smoke réel sur scène

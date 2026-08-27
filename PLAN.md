@@ -833,6 +833,84 @@ pas comme un attribut de commodité.
 
 # Correctifs de production (hors chantier)
 
+**Journal** — *2026-08-27* (**v0.190.0**) : **ERA5, la progression par mois et
+la reprise**. Brief `2026-08-27-era5-progression-mensuelle-et-reprise`, déposé
+par la session app sur constat de Pascal (« ça bloque sur fordead ? »). Ça ne
+bloquait pas : ça téléchargeait en silence.
+
+**B2, le vrai bug.** `mcera5::request_era5()` refuse de réécrire — `overwrite =
+FALSE` par défaut, `stop()` dès que le `.zip` cible existe — et les `.zip` ne
+sont pas purgés après extraction. **Un run tué au mois 7 rendait l'année entière
+irrécupérable** : au run suivant, aucun combiné n'existant, le cœur redemandait
+les douze mois et échouait sur le mois 1, dont le `.zip` traînait. Les trois
+tentatives de `.rsen_era5_with_retry()` se consumaient sur une erreur incapable
+de guérir. Le cœur découpe désormais la boucle : un mois dont le **`.nc`** est là
+est sauté (c'est le `.nc` qui fait foi, pas le `.zip` — une coupure laisse le
+second sans le premier), les autres repartent en `overwrite = TRUE`.
+
+**B1, la lisibilité.** `request_era5()` boucle en interne sur les douze requêtes
+et n'accepte aucun callback : `emit` n'était appelé qu'une fois par **année**.
+Avec une année par catégorie, cela donnait « 1/1 » — exact et inutile — puis
+1 h 36 de silence. Mesuré : **~8 min/mois, 12 mois, 2 années, 3 h 15 de
+téléchargement muet sur 4 h 25 de run**, pendant que le processus tournait à
+32,5 % de CPU. Nouvel événement `regen_expo:era5_mois` ; `category` descend
+enfin jusqu'au téléchargement ; l'annuel est conservé. Le contrat app était déjà
+posé (`nemetonshiny` v0.141.0, `b7aff412`).
+
+**Vérifié plutôt que repris du brief** : `mcera5` 0.4.0 installé ici, `req[k]`
+est bien une liste de longueur 1, les cibles sont `era5_2020_2020_<mois>.zip`, et
+le combiné doit donc s'appeler `era5_2020_2020.nc` (double année) pour que
+`.rsen_era5_combined()` le retrouve. `combine_netcdf()` est exporté.
+
+**Ce que ça ne fait pas** : raccourcir l'attente. Les ~8 min par mois sont la
+file d'attente de Copernicus, pas le cœur.
+
+---
+
+**Journal** — *2026-08-27* (**v0.190.0**) : **le seuil d'absorption ne voyait
+pas les échardes qu'il visait**. Brief `2026-08-25-reliquat-echappe-absorption`,
+déposé par la session app sur constat de Pascal, et resté deux jours dans
+`vers-nemeton/`.
+
+`min_surface_ha` comparait le seuil à la surface de la **ligne**. Or `ten` est
+fondu à une ligne par (UGF × parcelle cadastrale) et `reste` à une ligne par
+parcelle cadastrale : un multipolygone de 10 ha n'est jamais une écharde, et se
+disloque en morceaux de moins de 100 m² dès que le consommateur normalise en
+parties simples — ce que fait l'app à l'import. **Aucun reliquat n'était donc
+absorbé, par construction.** Le seuil porte désormais sur les **parties**.
+
+**Ce que le brief n'avait pas vu : le défaut est symétrique.** Il visait le
+reliquat ; les tènements ont exactement le même problème, pour la même raison
+(`.croiser_fusionner` les fond délibérément en multipolygones). Mesure sur les
+21 parcelles réelles de Couchey :
+
+| | lignes | morceaux éclatés | < 0,05 ha | < 100 m² |
+|---|---|---|---|---|
+| sans absorption (témoin) | 163 | 255 | 96 | 57 |
+| **avant** | 137 | 236 | 76 | 44 |
+| **après** | **134** | **158** | **0** | **0** |
+
+**L'écharde rejoint la plus longue frontière partagée, pas le plus gros.**
+C'est ce qui la fait vraiment disparaître : l'union de deux polygones qui se
+touchent est *un* polygone, qui survit à l'éclatement en aval. Le repli
+historique (« le plus gros de la parcelle ») ne joue que sans voisin, et
+l'écharde change alors seulement d'étiquette. Longueur et non surface — un
+contact ponctuel n'est pas un voisinage, même règle qu'en v0.189.0.
+
+**Pavage exact** : 529,729626 ha avant comme après, à 5 × 10⁻⁷ m² près. Un test
+le vérifie sur cinq seuils de 0 à 10 ha.
+
+**Le coût est réel et il faut le dire** : le croisement passe de 0,6 s à 6,0 s
+sur ce projet. Une première écriture tenait **38 s** ; trois mesures l'ont
+ramenée à 6 — présélection par `st_intersects` (indexé), mesures `st_area` /
+`st_boundary` vectorisées une fois sur toutes les parties au lieu d'une fois par
+parcelle, et surtout **abandon de `st_length()`**, où le profil passait 6,1 s
+sur 6,4 en réinterrogeant les paramètres du CRS à chaque appel. Le CRS de
+travail étant toujours projeté (`.croiser_crs_travail` bascule en 2154), la
+somme euclidienne des segments *est* la longueur ; un test verrouille l'égalité.
+
+---
+
 **Journal** — *2026-08-26* (**v0.189.1**) : **le tooltip de S3 décrivait une
 autre grandeur**. Brief entrant, déposé par la session app *en implémentant* le
 brief que je venais de lui envoyer — lequel lui demandait de corriger un libellé
