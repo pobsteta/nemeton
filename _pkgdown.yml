@@ -110,6 +110,28 @@ navbar:
         href: articles/fiche-n2-continuite_fr.html
       - text: "N3 - Naturalite composite"
         href: articles/fiche-n3-naturalite_fr.html
+      - text: "---"
+      - text: "Famille S - Social & Usages"
+      - text: "S1 - Distance aux routes"
+        href: articles/fiche-s1-routes_fr.html
+      - text: "S2 - Distance au bati"
+        href: articles/fiche-s2-bati_fr.html
+      - text: "S3 - Population accessible"
+        href: articles/fiche-s3-population_fr.html
+      - text: "---"
+      - text: "Famille P - Production & Economie"
+      - text: "P1 - Volume sur pied"
+        href: articles/fiche-p1-volume_fr.html
+      - text: "P2 - Indice de station"
+        href: articles/fiche-p2-station_fr.html
+      - text: "P3 - Qualite du bois"
+        href: articles/fiche-p3-qualite-bois_fr.html
+      - text: "---"
+      - text: "Famille E - Energie & Climat"
+      - text: "E1 - Potentiel bois-energie"
+        href: articles/fiche-e1-bois-energie_fr.html
+      - text: "E2 - Evitement carbone"
+        href: articles/fiche-e2-evitement_fr.html
     articles:
       text: Articles
       menu:
