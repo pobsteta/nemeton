@@ -52,6 +52,18 @@ navbar:
         href: articles/fiche-w3-humidite_fr.html
       - text: "W4 - VPD sous couvert"
         href: articles/fiche-w4-vpd_fr.html
+      - text: "---"
+      - text: "Famille A - Air & Microclimat"
+      - text: "A1 - Couverture arboree"
+        href: articles/fiche-a1-couverture_fr.html
+      - text: "A2 - Qualite de l'air"
+        href: articles/fiche-a2-qualite-air_fr.html
+      - text: "A3 - T max sous couvert"
+        href: articles/fiche-a3-microclimat_fr.html
+      - text: "A4 - Tamponnement canopee"
+        href: articles/fiche-a4-tamponnement_fr.html
+      - text: "A5 - Rafraichissement urbain"
+        href: articles/fiche-a5-rafraichissement_fr.html
     articles:
       text: Articles
       menu:

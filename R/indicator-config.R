@@ -160,8 +160,16 @@ INDICATOR_FAMILIES <- list(
         fr = "Rafra\u00eechissement urbain : fra\u00eecheur de surface (LST) de l'unit\u00e9 vs son environnement. Orient\u00e9 arbre en ville (LST disponible en m\u00e9tropole). Score \u00e9lev\u00e9 = plus frais que l'entour. NA hors couverture LST.",
         en = "Urban cooling: relative surface freshness (LST) of the unit vs its surroundings. Urban-tree oriented (LST available over metropolises). High score = cooler than surroundings. NA outside LST coverage."
       )
+    ),
+    indicator_docs = list(
+      A1 = list(fr = "articles/fiche-a1-couverture_fr.html"),
+      A2 = list(fr = "articles/fiche-a2-qualite-air_fr.html"),
+      A3 = list(fr = "articles/fiche-a3-microclimat_fr.html"),
+      A4 = list(fr = "articles/fiche-a4-tamponnement_fr.html"),
+      A5 = list(fr = "articles/fiche-a5-rafraichissement_fr.html")
     )
   ),
+
   F = list(
     code = "F",
     name_fr = "Fertilit\u00e9 des Sols",

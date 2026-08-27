@@ -1,0 +1,109 @@
+---
+title: "Fiche indicateur A5 - Rafraichissement urbain"
+author: "Pascal Obstetar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fiche indicateur A5 - Rafraichissement urbain}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+> Indicateur **conditionné** : calculé seulement si un raster **LST** est
+> fourni (spec 032).
+
+---
+
+## 1. Carte d'identité
+
+| Élément | Valeur |
+|---|---|
+| Code | `A5` |
+| Nom long / colonne | `indicateur_a5_rafraichissement` |
+| Famille | **A — Air & Microclimat** |
+| Grandeur mesurée | Écart de **température de surface** entre l'unité et sa couronne |
+| Unité brute | **score 0–100, centré sur 50** |
+| Sens | Haut = favorable (l'unité rafraîchit son voisinage) |
+| Normalisation | **native 0–100**, écrêtage |
+| Fonction | `indicateur_a5_rafraichissement()` — `R/indicators-air.R:572` |
+| Colonnes annexes | `A5_delta` (K), `a5_status` |
+| Applicabilité | `a5_applicabilite()` — `R/indicators-air.R:452` |
+
+## 2. Le calcul
+
+```
+LST_unite   = moyenne de la LST dans l'unite
+LST_ref     = mediane de la LST dans la couronne buffer(unite, 500 m) \ unite
+              ou valeur fixe si `reference` est fourni
+delta       = LST_ref - LST_unite                     K, positif = l'unite est plus fraiche
+A5          = 50 + (delta / 5) x 50                   ecrete [0, 100]
+```
+
+Les valeurs `-32768` (nodata LST) et non finies sont écartées ; l'échelle
+d'entrée (K ou °C) est indifférente puisque seul l'écart compte.
+
+**Exemples chiffrés** :
+
+| Situation | Δ (K) | A5 |
+|---|---|---|
+| Boisement urbain, îlot de fraîcheur marqué | +4,0 | **90,0** |
+| Rafraîchissement modéré | +1,5 | **65,0** |
+| Aussi chaud que son voisinage | 0,0 | **50,0** |
+| Plus chaud que son voisinage (coupe, sol nu) | −2,0 | **30,0** |
+
+> **50 n'est pas « moyen », c'est « neutre ».** L'échelle est **centrée** :
+> 50 signifie exactement « cette unité a la même température de surface que sa
+> couronne ». C'est le seul indicateur des 41 où la moitié de l'échelle a ce
+> sens — ailleurs, 50 veut dire « à mi-chemin du plafond ». Un radar où A5 sort
+> à 50 ne dit pas « performance moyenne » mais « aucun effet mesuré ».
+
+## 3. Le calcul par niveau NDP
+
+| NDP | Ce qui existe | A5 |
+|---|---|---|
+| **0** sans LST | rien | **`NA`**, `a5_status = "skipped_no_lst"` |
+| **0** + LST Theia (`theia_lst`, lignée Thermocity) | satellite thermique | **calculé** |
+| **1–2** | LST aéroportée ou drone thermique | même grandeur, résolution supérieure |
+| **3–4** | + mesures in situ | validation |
+
+`a5_applicabilite()` répond, avant calcul, si l'indicateur a un sens sur
+l'emprise : la LST thermique n'est pertinente qu'en contexte urbain ou
+périurbain, et le produit ne couvre pas tout le territoire.
+
+## 4. Trois pièges
+
+1. **La couronne de référence n'est pas neutre.** La médiane de la LST dans un
+   anneau de 500 m dépend de ce qu'il y a autour : une parcelle entourée
+   d'autres forêts aura une couronne fraîche, donc un Δ faible, donc un A5
+   proche de 50 — alors qu'elle rafraîchit réellement. **A5 mesure un contraste
+   local, pas une capacité de rafraîchissement absolue.** En plein massif, il ne
+   veut presque rien dire ; c'est un indicateur périurbain, comme son nom
+   l'indique.
+2. **La date et l'heure de l'acquisition thermique dominent le résultat.** Une
+   LST de nuit et une LST de milieu d'après-midi en août donnent des contrastes
+   opposés en amplitude. Le raster porte cette information, la colonne non.
+3. **`NA` est le cas nominal hors contexte urbain**, avec `a5_status`
+   renseigné. Vérifier `a5_status` avant de conclure à un défaut de calcul.
+
+## 5. Aval
+
+```
+indicateur_a5_rafraichissement()  ->  colonnes A5, A5_delta, a5_status
+      |
+      +- normalize_indicator()     -> passthrough clamp
+      +- create_family_index("A")  -> famille_air = moy(A1..A5, na.rm = TRUE)
+```
+
+## 6. Références internes
+
+| Sujet | Fichier |
+|---|---|
+| Fonction A5 | `R/indicators-air.R:572-650` |
+| Applicabilité | `a5_applicabilite()` — `R/indicators-air.R:452` |
+| Source LST | `inst/datasources/FR.json` — `theia_lst` |
+| Spécification | `specs/032-regulation-thermique-albedo-lst/` |
