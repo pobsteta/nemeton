@@ -325,8 +325,18 @@ INDICATOR_FAMILIES <- list(
         fr = "Risque de gel tardif : fréquence des gelées printanières après débourrement (Tmin < seuil), déterminant de l'échec de régénération (chêne, hêtre, douglas). Série Tmin downscalée meteoland/SAFRAN. NA sans donnée Tmin. Score élevé = faible risque (peu de gel).",
         en = "Late-frost risk: frequency of spring frosts after budburst (Tmin below threshold), a driver of regeneration failure (oak, beech, Douglas fir). meteoland/SAFRAN-downscaled Tmin series. NA without Tmin data. High score = low risk (few frosts)."
       )
+    ),
+    indicator_docs = list(
+      R1 = list(fr = "articles/fiche-r1-feu_fr.html"),
+      R2 = list(fr = "articles/fiche-r2-tempete_fr.html"),
+      R3 = list(fr = "articles/fiche-r3-secheresse_fr.html"),
+      R4 = list(fr = "articles/fiche-r4-abroutissement_fr.html"),
+      R5 = list(fr = "articles/fiche-r5-deperissement_fr.html"),
+      R6 = list(fr = "articles/fiche-r6-sensibilite_fr.html"),
+      R7 = list(fr = "articles/fiche-r7-gel_fr.html")
     )
   ),
+
   S = list(
     code = "S",
     name_fr = "Social & R\u00e9cr\u00e9atif",

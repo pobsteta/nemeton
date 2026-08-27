@@ -86,6 +86,22 @@ navbar:
         href: articles/fiche-t2-changement_fr.html
       - text: "T3 - Coupes rases (SUFOSAT)"
         href: articles/fiche-t3-coupes-rases_fr.html
+      - text: "---"
+      - text: "Famille R - Risques & Resilience"
+      - text: "R1 - Risque d'incendie"
+        href: articles/fiche-r1-feu_fr.html
+      - text: "R2 - Vulnerabilite aux tempetes"
+        href: articles/fiche-r2-tempete_fr.html
+      - text: "R3 - Risque de secheresse"
+        href: articles/fiche-r3-secheresse_fr.html
+      - text: "R4 - Pression d'abroutissement"
+        href: articles/fiche-r4-abroutissement_fr.html
+      - text: "R5 - Deperissement (FORDEAD)"
+        href: articles/fiche-r5-deperissement_fr.html
+      - text: "R6 - Sensibilite microclimatique"
+        href: articles/fiche-r6-sensibilite_fr.html
+      - text: "R7 - Gel tardif"
+        href: articles/fiche-r7-gel_fr.html
     articles:
       text: Articles
       menu:
