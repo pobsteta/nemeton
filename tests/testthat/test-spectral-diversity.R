@@ -129,6 +129,40 @@ test_that("L3 returns NA rather than a fabricated value below min_windows", {
                                 min_windows = 1L)$L3)))
 })
 
+test_that("L3 falls back to NA when the beta raster was not produced", {
+  # Symmetric with the B4 case above: biodivMapR can return an alpha map and
+  # no beta one (or the reverse). A missing metric is NA, never a zero.
+  l3 <- indicateur_l3_het_spectrale(.mini_units_ll(2),
+                                    spectral = list(beta = NULL))
+  expect_true(all(is.na(l3$L3)))
+})
+
+test_that("B4 / L3 reproject the units onto the raster CRS", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
+  # biodivMapR writes in the scene's UTM CRS (EPSG:32631 on the reference run)
+  # while the units arrive in the project CRS. Both aggregators must transform
+  # rather than silently miss the raster.
+  u <- .mini_units_ll(2)
+  u_m <- sf::st_transform(u, 3857)
+
+  r <- terra::rast(xmin = 1, xmax = 3, ymin = 0, ymax = 1,
+                   resolution = 0.1, crs = "EPSG:4326")
+  terra::values(r) <- seq_len(terra::ncell(r)) / terra::ncell(r)
+  beta3 <- c(r, r * 2, r * 3)
+
+  b4 <- indicateur_b4_div_spectrale(u_m, spectral = list(alpha = r))
+  l3 <- indicateur_l3_het_spectrale(u_m, spectral = list(beta = beta3))
+  expect_false(anyNA(b4$B4))
+  expect_false(anyNA(l3$L3))
+  # Same numbers as the un-reprojected call: the transform is plumbing, not a
+  # change of measurement.
+  expect_equal(b4$B4, indicateur_b4_div_spectrale(u, spectral = list(alpha = r))$B4,
+               tolerance = 1e-6)
+  expect_equal(l3$L3, indicateur_l3_het_spectrale(u, spectral = list(beta = beta3))$L3,
+               tolerance = 1e-6)
+})
+
 test_that("compute_spectral_diversity validates its reflectance argument", {
   skip_if_not_installed("biodivMapR")
   expect_error(
