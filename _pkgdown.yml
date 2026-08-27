@@ -78,6 +78,14 @@ navbar:
         href: articles/fiche-l2-morcellement_fr.html
       - text: "L3 - Heterogeneite spectrale"
         href: articles/fiche-l3-heterogeneite-spectrale_fr.html
+      - text: "---"
+      - text: "Famille T - Dynamique temporelle"
+      - text: "T1 - Anciennete"
+        href: articles/fiche-t1-anciennete_fr.html
+      - text: "T2 - Stabilite temporelle"
+        href: articles/fiche-t2-changement_fr.html
+      - text: "T3 - Coupes rases (SUFOSAT)"
+        href: articles/fiche-t3-coupes-rases_fr.html
     articles:
       text: Articles
       menu:

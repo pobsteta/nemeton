@@ -1,0 +1,89 @@
+---
+title: "Fiche indicateur T2 - Stabilite temporelle"
+author: "Pascal Obstetar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fiche indicateur T2 - Stabilite temporelle}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+
+---
+
+## 1. Carte d'identité
+
+| Élément | Valeur |
+|---|---|
+| Code | `T2` |
+| Nom long / colonne | `indicateur_t2_changement` |
+| Famille | **T — Dynamique temporelle** |
+| Grandeur mesurée | Stabilité du couvert dans le temps |
+| Unité brute | **score 0–100** |
+| Sens | Haut = favorable (stable) |
+| Normalisation | **native 0–100**, écrêtage |
+| Fonction | `indicateur_t2_changement()` — `R/indicators-temporal.R:230` |
+
+## 2. Deux chemins, tous deux empruntés à un autre indicateur
+
+| Ordre | Chemin | Condition | Valeur |
+|---|---|---|---|
+| 1 | **N2 comme proxy** | colonne `N2`, `N2_anciennete` ou `N2_anciennet` présente | `N2`, écrêté `[0, 100]` |
+| 2 | **T1 plafonné** | `t1_values` fourni | `min(100, âge)`, les `NA` remplacés par **50** |
+
+> **T2 ne mesure rien en propre.** Il recopie N2 (continuité écologique) ou T1
+> (âge). C'est un indicateur **dérivé**, et il faut le savoir avant de lire un
+> radar : dans la famille T, T1 et T2 peuvent porter la même information sous
+> deux noms, et `famille_temporelle` la compte alors deux fois.
+
+**Exemples chiffrés** :
+
+| Situation | Chemin | Entrée | T2 |
+|---|---|---|---|
+| N2 disponible, continuité forte | 1 | N2 = 82 | **82,0** |
+| N2 disponible, forêt récente | 1 | N2 = 25 | **25,0** |
+| Pas de N2, peuplement de 70 ans | 2 | T1 = 70 | **70,0** |
+| Pas de N2, peuplement de 150 ans | 2 | T1 = 150 | **100,0** |
+| Pas de N2, âge inconnu | 2 | T1 = `NA` | **50,0** (fabriqué) |
+
+## 3. Le calcul par niveau NDP
+
+T2 hérite du NDP de la source qu'il recopie : celui de **N2** si N2 est présent,
+celui de **T1** sinon. Il n'a pas de progression propre. Le chemin réellement
+temporel — une détection de changement sur séries Sentinel-2 — **n'est pas
+implémenté** dans T2 ; il vit ailleurs, dans la chaîne de suivi sanitaire
+(`compute_fast_alert_mask()`, `extract_trend_series()`) et dans **T3**.
+
+## 4. Trois pièges
+
+1. **`NA` devient 50.** `t2[is.na(t2)] <- 50` sur le chemin 2 : une unité dont
+   l'âge est inconnu se voit attribuer une stabilité moyenne. Rien ne la
+   distingue ensuite d'une unité réellement mesurée à 50.
+2. **Double comptage dans la famille T.** Quand T2 recopie T1, la même grandeur
+   pèse deux tiers de `famille_temporelle` (T1 et T2) au lieu d'un tiers.
+3. **Le nom annonce un changement, la valeur mesure une stabilité.** « T2
+   changement » avec « haut = stable » : le sens est inverse de ce que le nom
+   suggère, comme pour L2 avant son renommage.
+
+## 5. Aval
+
+```
+indicateur_t2_changement()  ->  colonne indicateur_t2_changement (0-100)
+      |
+      +- normalize_indicator()     -> passthrough clamp
+      +- create_family_index("T")  -> famille_temporelle = moy(T1, T2, T3)
+```
+
+## 6. Références internes
+
+| Sujet | Fichier |
+|---|---|
+| Fonction T2 | `R/indicators-temporal.R:230-330` |
+| Source amont possible | `indicateur_n2_continuite()` |
+| Vraie détection de changement | `compute_fast_alert_mask()`, `extract_trend_series()`, **T3** |

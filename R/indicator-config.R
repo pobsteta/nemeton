@@ -269,8 +269,14 @@ INDICATOR_FAMILIES <- list(
         fr = "Pression de coupe rase (produit SUFOSAT, radar Sentinel-1). Fraction r\u00e9cente coup\u00e9e \u00e0 blanc, pond\u00e9r\u00e9e par r\u00e9cence. Sens invers\u00e9 : plus de coupe = indice plus bas.",
         en = "Clear-cut pressure (SUFOSAT product, Sentinel-1 radar). Recency-weighted recently clear-cut fraction. Inverted sense: more clear-cutting = lower score."
       )
+    ),
+    indicator_docs = list(
+      T1 = list(fr = "articles/fiche-t1-anciennete_fr.html"),
+      T2 = list(fr = "articles/fiche-t2-changement_fr.html"),
+      T3 = list(fr = "articles/fiche-t3-coupes-rases_fr.html")
     )
   ),
+
   R = list(
     code = "R",
     name_fr = "Risques & R\u00e9silience",
