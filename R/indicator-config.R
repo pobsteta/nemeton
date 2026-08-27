@@ -34,7 +34,8 @@ INDICATOR_FAMILIES <- list(
     # au lecteur plutot que d'ouvrir du francais sans prevenir. Le jour ou
     # `fiche-c1-biomasse_en.Rmd` existe, il suffit d'ajouter `en = ...` ici.
     indicator_docs = list(
-      C1 = list(fr = "articles/fiche-c1-biomasse_fr.html")
+      C1 = list(fr = "articles/fiche-c1-biomasse_fr.html"),
+      C2 = list(fr = "articles/fiche-c2-ndvi_fr.html")
     )
   ),
   B = list(
@@ -70,8 +71,15 @@ INDICATOR_FAMILIES <- list(
         fr = "Diversit\u00e9 spectrale (\u03b1) d\u00e9riv\u00e9e de Sentinel-2 : indice de Shannon des \u00ab spectral species \u00bb par fen\u00eatre de 100 m, moyenn\u00e9 sur l\u2019unit\u00e9. Le score atteint 100 pour l\u2019\u00e9quivalent de 10 spectral species \u00e9galement abondantes par hectare. Proxy \u00e0 valider terrain ; une futaie r\u00e9guli\u00e8re monosp\u00e9cifique l\u00e9gitime peut avoir un score bas.",
         en = "Spectral (\u03b1) diversity from Sentinel-2: Shannon index of spectral species over 100 m windows, averaged over the unit. The score reaches 100 for the equivalent of 10 equally abundant spectral species per hectare. Proxy pending field validation; a legitimate even-aged monospecific stand may score low."
       )
+    ),
+    indicator_docs = list(
+      B1 = list(fr = "articles/fiche-b1-protection_fr.html"),
+      B2 = list(fr = "articles/fiche-b2-structure_fr.html"),
+      B3 = list(fr = "articles/fiche-b3-connectivite_fr.html"),
+      B4 = list(fr = "articles/fiche-b4-diversite-spectrale_fr.html")
     )
   ),
+
   W = list(
     code = "W",
     name_fr = "Eau",

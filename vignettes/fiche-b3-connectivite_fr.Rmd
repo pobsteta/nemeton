@@ -1,0 +1,124 @@
+---
+title: "Fiche indicateur B3 - Connectivite ecologique"
+author: "Pascal Obstetar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fiche indicateur B3 - Connectivite ecologique}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+> Cette fiche documente un défaut de conception actif (§4, piège n° 1). À lire
+> avant d'interpréter un score B3.
+
+---
+
+## 1. Carte d'identité
+
+| Élément | Valeur |
+|---|---|
+| Code | `B3` |
+| Nom long / colonne | `indicateur_b3_connectivite` |
+| Famille | **B — Biodiversité** |
+| Grandeur mesurée | Capacité de l'unité à fonctionner comme corridor écologique |
+| Unité brute | **score 0–100** |
+| Sens | Haut = favorable |
+| Normalisation | **native 0–100**, simple écrêtage |
+| Fonction | `indicateur_b3_connectivite()` — `R/indicators-biodiversity.R:559` |
+| Entrée obligatoire | `bdforet` (sf) — sans elle, `NA` |
+
+## 2. Le calcul
+
+B3 mêle un score **de paysage** (identique pour toutes les unités du projet) et
+un score **local** (propre à chaque unité) :
+
+```
+B3_global = 0,25 x structural + 0,25 x cost + 0,25 x graph + 0,25 x kernel
+B3        = min(100, max(0, 0,7 x B3_global + 0,3 x local))
+```
+
+| Composante | Outil | Ce qu'elle mesure | Paquet |
+|---|---|---|---|
+| `structural` | `landscapemetrics::lsm_c_cohesion()` + ENN | cohésion des taches forestières | **Suggests** |
+| `cost` | `terra` | distance-coût sur le MNT (`dem`) | Imports |
+| `graph` | `igraph` | graphe des taches reliées à moins de **500 m** | **Suggests** |
+| `kernel` | `adehabitatHR` (+ `sp`) | noyau de dispersion | **Suggests** |
+| `local` | `sf::st_distance` | proximité forestière dans `max_distance` (défaut **5 000 m**) | Imports |
+
+L'emprise d'analyse est la bbox des unités **tamponnée de 2 km**, pour que les
+massifs voisins comptent dans la connectivité.
+
+## 3. Le calcul par niveau NDP
+
+| NDP | Ce qui change |
+|---|---|
+| **0** | BD Forêt + distance euclidienne ; MNT 25 m pour la distance-coût |
+| **1** | MNT LiDAR HD → distance-coût sur un relief réel, graphe et noyau inchangés |
+| **2** | emprise forestière corrigée au drone : les taches sont justes |
+| **3** | emprise vérifiée au sol |
+| **4** | réseau complet modélisé |
+
+B3 est, avec B1, l'un des indicateurs où le NDP joue **peu** : la connectivité
+se calcule sur un **zonage forestier** (BD Forêt) et une **topographie**, pas sur
+un capteur haute résolution. Le gain réel du NDP 1 porte sur la seule composante
+`cost`, soit un quart du score de paysage, soit **17,5 %** du B3 final.
+
+## 4. Trois pièges, dont un sérieux
+
+1. **Chaque composante absente est remplacée par un 50 silencieux.** Les trois
+   paquets `landscapemetrics`, `igraph` et `adehabitatHR` sont en **`Suggests`**,
+   donc absents d'une installation minimale. Chaque `tryCatch` retombe alors sur
+   la constante **50** — sans avertissement, sans colonne de diagnostic, sans
+   trace dans la valeur rendue.
+
+   Conséquence chiffrée : sans aucun des trois paquets, `structural = cost =
+   graph = kernel = 50` (la distance-coût elle-même retombe à 50 si le `dem` est
+   `NULL`), donc `B3_global = 50` **exactement**, et
+   `B3 = 35 + 0,3 × local` — un score qui **paraît mesuré** alors que 70 % en est
+   une constante. Un projet installé sans les Suggests et un projet complet
+   produiront des B3 différents sur les mêmes données, sans que rien ne le dise.
+
+   > Le même fichier, quinze lignes plus haut, refuse explicitement ce procédé :
+   > l'absence de `bdforet` rend `NA` et non 50, avec ce commentaire — « la
+   > connectivité des massifs n'est pas mesurable : elle est inconnue, pas
+   > moyenne. Le 50 d'origine entrait dans la moyenne de famille comme s'il
+   > avait été constaté. » Le raisonnement est juste ; il n'a simplement pas été
+   > appliqué aux quatre composantes internes.
+
+   **Contournement en attendant** : installer les trois Suggests, fournir un
+   `dem`, et vérifier le message `biodiversity_b3_components` émis en fin de
+   calcul — il affiche la moyenne de chaque composante. Quatre valeurs à
+   exactement 50 sont le symptôme.
+
+2. **Le score de paysage est identique pour toutes les unités.** 70 % de B3 ne
+   varie pas d'une unité à l'autre à l'intérieur d'un projet ; seuls les 30 %
+   locaux discriminent. L'écart-type de B3 dans un projet est donc, par
+   construction, **trois fois plus faible** que celui de sa composante locale.
+   Un radar B3 « plat » entre unités n'est pas une anomalie de mesure.
+
+3. **B3 n'est pas comparable entre projets.** La bbox tamponnée de 2 km et le
+   seuil de graphe de 500 m sont ancrés sur l'emprise du projet : deux projets
+   d'étendues différentes ne calculent pas la même chose.
+
+## 5. Aval
+
+```
+indicateur_b3_connectivite()  ->  colonne B3 (0-100)
+      |
+      +- normalize_indicator()     -> passthrough clamp
+      +- create_family_index("B")  -> famille_biodiversite
+```
+
+## 6. Références internes
+
+| Sujet | Fichier |
+|---|---|
+| Fonction B3 et ses quatre composantes | `R/indicators-biodiversity.R:559-680` |
+| Helpers | `.b3_structural`, `.b3_cost_distance`, `.b3_graph`, `.b3_kernel`, `.b3_local` |
+| Paquets optionnels | `DESCRIPTION`, section `Suggests` |

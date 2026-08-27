@@ -171,10 +171,12 @@ test_that("indicator_labels() porte l'URL de la fiche C1, et NA partout ailleurs
   expect_match(c1, "^https?://")
   expect_match(c1, "articles/fiche-c1-biomasse_fr\\.html$")
 
-  # Aujourd'hui C1 est le seul indicateur documente par une fiche. Ce test
-  # n'interdit pas d'en ajouter : il verifie que les autres sortent bien a NA
-  # tant qu'aucune entree `indicator_docs` ne les declare.
-  expect_true(all(is.na(ind$doc_url[ind$code != "C1"])))
+  # Le test porte sur le MECANISME, pas sur la liste : `doc_url` est non-NA
+  # exactement pour les indicateurs declares dans `indicator_docs`, et NA pour
+  # tous les autres. Ajouter une fiche ne le fait donc pas tomber au rouge.
+  declares <- unlist(lapply(INDICATOR_FAMILIES, function(f) names(f$indicator_docs)),
+                     use.names = FALSE)
+  expect_setequal(ind$code[!is.na(ind$doc_url)], declares)
 
   # Une famille sans aucune fiche ne casse pas (indicator_docs absent).
   expect_true(all(is.na(indicator_labels("W")$doc_url)))
@@ -190,7 +192,30 @@ test_that("indicator_labels() porte l'URL de la fiche C1, et NA partout ailleurs
   # doc_url_fr / doc_url_en sont presentes quelle que soit la langue demandee,
   # comme label_fr / label_en.
   expect_equal(en$doc_url_fr[en$code == "C1"], c1)
-  expect_true(all(is.na(ind$doc_lang[ind$code != "C1"])))
+  # `doc_lang` et `doc_url` sont NA aux memes lignes, toujours.
+  expect_equal(is.na(ind$doc_lang), is.na(ind$doc_url))
+
+})
+
+test_that("chaque fiche declaree pointe une vignette qui existe", {
+  # C'est ce test qui rattrape une faute de frappe dans un `indicator_docs` :
+  # sans lui, l'icone cote app ouvrirait un 404 silencieux.
+  #
+  # Il ne vaut que dans l'arbre source : sous R CMD check les tests tournent
+  # depuis le paquet installe, ou `vignettes/` n'existe plus. Il se skippe
+  # alors, plutot que de tomber au rouge pour une raison sans rapport.
+  vdir <- testthat::test_path("..", "..", "vignettes")
+  skip_if_not(dir.exists(vdir), "hors arbre source")
+
+  ind <- indicator_labels()
+  urls <- ind$doc_url[!is.na(ind$doc_url)]
+  expect_true(length(urls) > 0L)
+
+  for (u in urls) {
+    rmd <- sub("\\.html$", ".Rmd", basename(u))
+    expect_true(file.exists(file.path(vdir, rmd)),
+                info = paste("vignette absente pour", u))
+  }
 })
 
 test_that(".family_docs laisse passer une URL deja absolue", {

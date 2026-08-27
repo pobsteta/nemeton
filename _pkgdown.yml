@@ -21,9 +21,27 @@ home:
 
 navbar:
   structure:
-    left:  [intro, reference, articles, news]
+    left:  [intro, reference, articles, fiches, news]
     right: [search, github]
   components:
+    fiches:
+      text: Fiches indicateurs
+      menu:
+      - text: "Famille C - Carbone & Vitalite"
+      - text: "C1 - Biomasse carbone"
+        href: articles/fiche-c1-biomasse_fr.html
+      - text: "C2 - NDVI, vitalite"
+        href: articles/fiche-c2-ndvi_fr.html
+      - text: "---"
+      - text: "Famille B - Biodiversite"
+      - text: "B1 - Protection reglementaire"
+        href: articles/fiche-b1-protection_fr.html
+      - text: "B2 - Diversite structurale"
+        href: articles/fiche-b2-structure_fr.html
+      - text: "B3 - Connectivite ecologique"
+        href: articles/fiche-b3-connectivite_fr.html
+      - text: "B4 - Diversite spectrale alpha"
+        href: articles/fiche-b4-diversite-spectrale_fr.html
     articles:
       text: Articles
       menu:
@@ -42,9 +60,6 @@ navbar:
         href: articles/site-index-open-canopy_fr.html
       - text: Analyse temporelle
         href: articles/temporal-analysis_fr.html
-      - text: "---"
-      - text: "Fiche C1 - Biomasse carbone (par NDP)"
-        href: articles/fiche-c1-biomasse_fr.html
 
 reference:
   - title: "Gestion des donnees"
