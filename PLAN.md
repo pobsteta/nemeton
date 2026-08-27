@@ -33,10 +33,12 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | # | Écart | Livré par | En attente chez | État |
 |---|---|---|---|---|
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
+| 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Rien à coder** — les tooltips viennent d'`INDICATOR_FAMILIES` et les rasters en cache restent valides — mais l'interface ne doit **ni classer ni moyenner B4/L3 entre projets** : les « spectral species » sont un k-means réajusté par run (spec 028 §10.6). Non accusé réception |
 
-**Il ne reste qu'un écart, et il ne se referme pas au clavier** : le n° 3 attend
-une sortie sur un projet réel portant à la fois un nuage LiDAR et une desserte
-corrigée, pas une release.
+**Deux écarts, et aucun des deux ne se referme par une release cœur.** Le n° 3
+attend une sortie sur un projet réel portant à la fois un nuage LiDAR et une
+desserte corrigée. Le n° 6 attend une lecture côté app : il n'appelle pas de
+code, il interdit un usage — et un interdit non lu ne protège de rien.
 
 **Les quatre autres sont refermés**, vérifiés en lecture seule sur
 `nemetonshiny@5a1afd7c` le 2026-08-22 (détail dans l'entrée de journal du
