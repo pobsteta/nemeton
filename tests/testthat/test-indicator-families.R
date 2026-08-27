@@ -132,7 +132,8 @@ test_that("indicator_labels() flattens the table consistently", {
   expect_equal(names(ind), c(
     "family", "family_column", "code", "column_name",
     "label", "label_fr", "label_en",
-    "tooltip", "tooltip_fr", "tooltip_en"
+    "tooltip", "tooltip_fr", "tooltip_en",
+    "doc_url", "doc_url_fr", "doc_url_en", "doc_lang"
   ))
   expect_equal(nrow(ind), length(unlist(fams$indicators, use.names = FALSE)))
 
@@ -151,6 +152,144 @@ test_that("indicator_labels() flattens the table consistently", {
 
   expect_equal(nrow(indicator_labels(codes = character(0))), 0L)
   expect_error(indicator_labels(codes = "Z"), "Unknown family code")
+})
+
+
+test_that("indicator_labels() expose doc_url selon ce que declare indicator_docs", {
+  ind <- indicator_labels()
+
+  # La colonne existe pour les 41 indicateurs et reste du texte : l'aval teste
+  # `is.na()` pour decider d'afficher le lien, il ne doit jamais recevoir NULL
+  # ni une liste.
+  expect_type(ind$doc_url, "character")
+  expect_equal(length(ind$doc_url), nrow(ind))
+
+  c1 <- ind$doc_url[ind$code == "C1"]
+  expect_length(c1, 1L)
+  expect_false(is.na(c1))
+  # URL absolue, batie sur le champ URL du DESCRIPTION, pas codee en dur ici.
+  expect_match(c1, "^https?://")
+  expect_match(c1, "articles/fiche-c1-biomasse_fr\\.html$")
+
+  # Le test porte sur le MECANISME, pas sur la liste : `doc_url` est non-NA
+  # exactement pour les indicateurs declares dans `indicator_docs`, et NA pour
+  # tous les autres. Ajouter une fiche ne le fait donc pas tomber au rouge.
+  declares <- unlist(lapply(INDICATOR_FAMILIES, function(f) names(f$indicator_docs)),
+                     use.names = FALSE)
+  expect_setequal(ind$code[!is.na(ind$doc_url)], declares)
+
+  # Une famille sans aucune fiche ne casse pas. Le cas est verifie sur une
+  # famille SYNTHETIQUE, pas sur une famille reelle : nommer "W" ici revenait
+  # a figer le fait que W n'a pas de fiche, et l'assertion est effectivement
+  # tombee au rouge le jour ou les fiches W ont ete ecrites — pour une bonne
+  # nouvelle. C'est exactement le piege que le brief app decrit.
+  fam_sans_docs <- list(indicators = c("X1", "X2"))
+  sans <- .family_docs(fam_sans_docs, "fr")
+  expect_true(all(is.na(sans$url)))
+  expect_true(all(is.na(sans$lang)))
+
+  # C1 n'a qu'une fiche francaise : une demande en anglais rend la page
+  # francaise, et le dit (`doc_lang`). Le jour ou la fiche anglaise existe,
+  # c'est cette assertion qui signalera qu'il faut la mettre a jour.
+  en <- indicator_labels(lang = "en")
+  expect_equal(en$doc_url[en$code == "C1"], c1)
+  expect_equal(en$doc_lang[en$code == "C1"], "fr")
+  expect_equal(ind$doc_lang[ind$code == "C1"], "fr")
+
+  # doc_url_fr / doc_url_en sont presentes quelle que soit la langue demandee,
+  # comme label_fr / label_en.
+  expect_equal(en$doc_url_fr[en$code == "C1"], c1)
+  # `doc_lang` et `doc_url` sont NA aux memes lignes, toujours.
+  expect_equal(is.na(ind$doc_lang), is.na(ind$doc_url))
+
+})
+
+test_that("chaque fiche declaree pointe une vignette qui existe", {
+  # C'est ce test qui rattrape une faute de frappe dans un `indicator_docs` :
+  # sans lui, l'icone cote app ouvrirait un 404 silencieux.
+  #
+  # Il ne vaut que dans l'arbre source : sous R CMD check les tests tournent
+  # depuis le paquet installe, ou `vignettes/` n'existe plus. Il se skippe
+  # alors, plutot que de tomber au rouge pour une raison sans rapport.
+  vdir <- testthat::test_path("..", "..", "vignettes")
+  skip_if_not(dir.exists(vdir), "hors arbre source")
+
+  ind <- indicator_labels()
+  urls <- ind$doc_url[!is.na(ind$doc_url)]
+  expect_true(length(urls) > 0L)
+
+  for (u in urls) {
+    rmd <- sub("\\.html$", ".Rmd", basename(u))
+    expect_true(file.exists(file.path(vdir, rmd)),
+                info = paste("vignette absente pour", u))
+  }
+})
+
+test_that(".family_docs laisse passer une URL deja absolue", {
+  fam <- list(
+    indicators = c("X1", "X2"),
+    indicator_docs = list(X1 = list(fr = "https://example.org/fiche.html"))
+  )
+  out <- .family_docs(fam, "fr",
+                                base = "https://pobsteta.github.io/nemeton/")
+  expect_equal(out$url, c("https://example.org/fiche.html", NA_character_))
+  expect_equal(out$lang, c("fr", NA_character_))
+})
+
+test_that("une fiche absente dans la langue demandee retombe sur l'autre", {
+  # Le repli est deliberé : une fiche en francais vaut mieux que pas de fiche.
+  # `doc_lang` dit la langue REELLEMENT servie pour que l'interface le signale.
+  fam_fr <- list(
+    indicators = "X1",
+    indicator_docs = list(X1 = list(fr = "articles/x.html"))
+  )
+  en <- .family_docs(fam_fr, "en", base = "https://ex.org/")
+  expect_equal(en$url, "https://ex.org/articles/x.html")
+  expect_equal(en$lang, "fr")
+
+  # Les deux langues presentes : chacune sert la sienne, sans repli.
+  fam_both <- list(
+    indicators = "X1",
+    indicator_docs = list(X1 = list(fr = "articles/x_fr.html",
+                                    en = "articles/x_en.html"))
+  )
+  expect_equal(.family_docs(fam_both, "en", base = "https://ex.org/")$url,
+               "https://ex.org/articles/x_en.html")
+  expect_equal(.family_docs(fam_both, "en", base = "https://ex.org/")$lang,
+               "en")
+
+  # Entree vide ou malformee : NA des deux cotes, jamais une erreur.
+  fam_bad <- list(indicators = "X1", indicator_docs = list(X1 = list(fr = "")))
+  expect_true(is.na(.family_docs(fam_bad, "fr")$url))
+  expect_true(is.na(.family_docs(fam_bad, "fr")$lang))
+})
+
+test_that("toute entree indicator_docs est une liste nommee par langue", {
+  # Garde-fou de configuration : une entree ecrite en chaine nue
+  # (`C1 = "articles/x.html"`) resterait silencieusement invisible cote app.
+  # Ce test transforme la faute de frappe en echec de suite.
+  for (fam in INDICATOR_FAMILIES) {
+    docs <- fam$indicator_docs
+    if (is.null(docs)) next
+    expect_true(is.list(docs))
+    expect_true(all(nzchar(names(docs))))
+    expect_true(all(names(docs) %in% fam$indicators),
+                info = paste("famille", fam$code))
+    for (ic in names(docs)) {
+      entry <- docs[[ic]]
+      expect_true(is.list(entry), info = paste(fam$code, ic))
+      expect_true(length(entry) > 0L, info = paste(fam$code, ic))
+      expect_true(all(names(entry) %in% c("fr", "en")),
+                  info = paste(fam$code, ic))
+      expect_true(all(vapply(entry, function(h) {
+        is.character(h) && length(h) == 1L && !is.na(h) && nzchar(h)
+      }, logical(1))), info = paste(fam$code, ic))
+    }
+  }
+})
+
+test_that(".doc_base_url se termine toujours par une barre oblique", {
+  expect_match(.doc_base_url(), "/$")
 })
 
 test_that("both languages are always returned, whatever lang", {

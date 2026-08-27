@@ -1,0 +1,104 @@
+---
+title: "Fiche indicateur T3 - Coupes rases (SUFOSAT)"
+author: "Pascal Obstetar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fiche indicateur T3 - Coupes rases (SUFOSAT)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+> Indicateur **conditionné** : calculé seulement si un raster SUFOSAT est
+> fourni (spec 030).
+
+---
+
+## 1. Carte d'identité
+
+| Élément | Valeur |
+|---|---|
+| Code | `T3` |
+| Nom long / colonne | `indicateur_t3_coupes_rases` |
+| Famille | **T — Dynamique temporelle** |
+| Grandeur mesurée | Pression de coupe rase récente sur l'unité |
+| Unité brute | **0–100, orienté « haut = beaucoup de coupes »** |
+| Sens | **Inversé à la normalisation** : `score = 100 − valeur` |
+| Fonction | `indicateur_t3_coupes_rases()` — `R/indicators-temporal.R:335` |
+| Source | SUFOSAT (CNES/CESBIO), suivi submensuel des coupes |
+
+## 2. Le calcul
+
+```
+T3_brut = part de l'unite touchee par une coupe rase detectee
+          dans les `window_years` dernieres annees (defaut 5)
+          en ne gardant que les pixels de probabilite >= `min_proba` (defaut 0,9)
+
+score = 100 - T3_brut          inversion, cf. R/normalization.R
+```
+
+Les deux rasters (dates et probabilité) sont empilés pour **une seule
+extraction**, ce qui garantit l'alignement pixel à pixel des valeurs et des
+fractions de couverture.
+
+**Exemples chiffrés** :
+
+| Situation | T3 brut | Score |
+|---|---|---|
+| Aucune coupe détectée en 5 ans | 0 | **100,0** |
+| 15 % de l'unité coupée | 15 | **85,0** |
+| 60 % coupé | 60 | **40,0** |
+| Coupe rase totale récente | 100 | **0,0** |
+
+## 3. Le calcul par niveau NDP
+
+| NDP | Ce qui existe | T3 |
+|---|---|---|
+| **0** sans SUFOSAT | rien | **`NA`** — indicateur non applicable |
+| **0** + SUFOSAT | Sentinel-1/2, submensuel | **calculé** |
+| **1–2** | — | inchangé : SUFOSAT est un produit national, pas un capteur local |
+| **3** | registre de coupes de l'aménagement | vérité terrain |
+| **4** | — | — |
+
+T3 est un **indicateur de source**, pas de résolution : il existe ou n'existe
+pas, selon que le produit SUFOSAT a été fourni. Comme R5 (dépérissement
+FORDEAD), il porte le nombre d'indicateurs de 31 à 33 dans le décompte
+historique du `CLAUDE.md`.
+
+## 4. Trois pièges
+
+1. **Le sens brut est inversé par rapport au score.** La colonne brute vaut
+   *haut = beaucoup de coupes* ; le radar affiche *haut = bon*. L'inversion est
+   faite par `normalize_indicator()`, pas par la fonction. Lire la colonne brute
+   comme un score est un contresens complet.
+2. **Une coupe rase n'est pas nécessairement une anomalie.** T3 pénalise
+   uniformément, alors qu'une coupe rase peut être un acte de gestion planifié
+   et régulier (futaie régulière arrivée à terme). L'indicateur mesure une
+   **pression**, pas une faute. C'est au profil expert d'en faire la lecture.
+3. **`min_proba = 0,9` est strict, et c'est délibéré.** Abaisser le seuil fait
+   entrer des détections douteuses ; le laisser haut sous-estime les coupes
+   partielles. Le même arbitrage que les garde-fous G1 de FORDEAD sur les
+   classes de faible confiance.
+
+## 5. Aval
+
+```
+indicateur_t3_coupes_rases()  ->  colonne indicateur_t3_coupes_rases (0-100, haut = coupes)
+      |
+      +- normalize_indicator()     -> 100 - valeur    (inversion)
+      +- create_family_index("T")  -> famille_temporelle = moy(T1, T2, T3)
+```
+
+## 6. Références internes
+
+| Sujet | Fichier |
+|---|---|
+| Fonction T3 | `R/indicators-temporal.R:335-430` |
+| Inversion | `R/normalization.R`, branche `indicateur_t3_coupes_rases` |
+| Source déclarée | `inst/datasources/FR.json` — `sufosat` |
+| Spécification | `specs/030-coupes-rases-sufosat/` |

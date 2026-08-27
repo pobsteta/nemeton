@@ -10,6 +10,42 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.192.0] - 2026-08-27
+
+### Added
+- **Fiche indicateur C1 « Biomasse carbone »**
+  (`vignettes/fiche-c1-biomasse_fr.Rmd`, article pkgdown) : les cinq chemins de
+  `indicateur_c1_biomasse()` dans leur ordre de priorité réel, le calcul par
+  niveau NDP, un exemple chiffré par chemin, un schéma entrées → cascade →
+  livrables, et les pièges connus.
+- **Colonnes `doc_url` / `doc_lang` / `doc_url_fr` / `doc_url_en` dans
+  `indicator_labels()`** : URL absolue de la fiche d'un indicateur dans la
+  langue demandée, `NA` quand il n'en a pas. La base d'URL vient du champ `URL`
+  du `DESCRIPTION` — l'aval n'a ni URL, ni liste d'indicateurs documentés, ni
+  langue à coder en dur ; il teste `is.na()`.
+- **Repli de langue explicite** : une fiche absente dans la langue demandée est
+  servie dans l'autre plutôt que masquée, et `doc_lang` dit laquelle — une
+  interface peut le signaler au lieu d'ouvrir du français sans prévenir.
+- **`INDICATOR_FAMILIES$<famille>$indicator_docs`** : point de déclaration d'une
+  fiche, `list(<CODE> = list(fr = ..., en = ...))`. Ajouter ou traduire une
+  fiche est une opération purement cœur.
+- Brief app `specs/052-fiche-indicateur-c1/brief-nemetonshiny.md` (icône
+  « fiche » à côté du « i », onglet Familles d'indicateurs).
+- **Fiches des 40 autres indicateurs** (`vignettes/fiche-*_fr.Rmd`) : les 41
+  indicateurs des 12 familles sont documentés, chacun avec ses chemins de
+  calcul réels, son comportement par NDP, des exemples chiffrés et ses pièges.
+- Composant **Fiches indicateurs** dans le menu pkgdown, groupé par famille.
+
+### Documented
+- **Le sens de `L1` est lu à l'envers par la normalisation** — le calcul,
+  l'infobulle et `indicateur_n3_naturalite()` disent « haut = défavorable », la
+  normalisation dit « haut = bon ». Non corrigé, écart n° 8 du `PLAN.md`.
+- **Le motif « constante silencieuse »** dans huit indicateurs (B3, R3, L1, R1,
+  T1, T2, W1) : une composante manquante remplacée par 50 — ou par 0 — sans
+  avertissement.
+
+### Changed
+- Entrée « Fiche C1 » dans le menu Articles de `_pkgdown.yml`.
 ## [0.191.1] - 2026-08-27
 
 ### Fixed

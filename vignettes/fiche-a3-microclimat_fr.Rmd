@@ -1,0 +1,100 @@
+---
+title: "Fiche indicateur A3 - T max sous couvert"
+author: "Pascal Obstetar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fiche indicateur A3 - T max sous couvert}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+> Indicateur **conditionné** à la chaîne microclimat (spec 027, ADR-014).
+
+---
+
+## 1. Carte d'identité
+
+| Élément | Valeur |
+|---|---|
+| Code | `A3` |
+| Nom long / colonne | `indicateur_a3_microclimat` |
+| Famille | **A — Air & Microclimat** |
+| Grandeur mesurée | **T°max estivale sous couvert** (JJA), modélisée |
+| Unité brute | **score 0–100** (la température brute est en colonne annexe) |
+| Sens | Haut = favorable (**frais = bon**) |
+| Normalisation | **native 0–100**, écrêtage |
+| Bornes | `.MICRO_BOUNDS$a3 = c(lo = 15, hi = 40)` °C, **décroissant** |
+| Fonction | `indicateur_a3_microclimat()` — `R/indicators-microclimate.R:120` |
+| Drapeau NDP | `microclimate_model` |
+
+## 2. Le calcul
+
+```
+A3_tmax = moyenne zonale du raster `tmax_understorey` sur l'unite   °C
+A3      = 100 x (40 - Tmax) / (40 - 15)                             ecrete [0, 100]
+```
+
+Le raster vient du moteur `microclimf`, orchestré par `microclimate_run()` :
+forçage climatique ERA5-Land + structure de canopée (CHM ML ou LiDAR HD).
+Néméton ne modélise pas, il **extrait et normalise**.
+
+**Exemples chiffrés** :
+
+| Situation | T°max sous couvert | A3 |
+|---|---|---|
+| Futaie fermée, versant nord | 22 °C | **72,0** |
+| Futaie ordinaire | 27 °C | **52,0** |
+| Peuplement clair, versant sud | 32 °C | **32,0** |
+| Trouée exposée en canicule | 38 °C | **8,0** |
+
+## 3. Le calcul par niveau NDP
+
+| NDP | Ce qui existe | A3 |
+|---|---|---|
+| **0** sans microclimat | rien | **`NA`** |
+| **0** + `microclimate_run()` | ERA5-Land + CHM ML | **calculé**, drapeau `microclimate_model` |
+| **1** | + canopée LiDAR HD | même modèle, structure mesurée |
+| **2** | + canopée drone | résolution supérieure |
+| **3–4** | + capteurs sous couvert | validation du modèle |
+
+Le drapeau `microclimate_model` **ne relève pas le NDP** : une modélisation
+reste une modélisation, si fine soit son entrée.
+
+## 4. Trois pièges
+
+1. **A3 est une sortie de modèle, pas une mesure.** Aucun thermomètre n'a été
+   posé sous ce couvert. La chaîne est `ERA5-Land (9 km) → descente d'échelle →
+   microclimf → T°max sous couvert`. La valeur est cohérente et comparable entre
+   unités d'un même run ; elle n'est pas une observation.
+2. **La borne haute de 40 °C est un plafond de convention.** Au-delà, le score
+   est écrêté à 0 : deux unités à 41 et 46 °C sont indistinguables.
+3. **L'année compte, et n'est pas dans la valeur.** `microclimate_run()` tourne
+   sur une année donnée. Un A3 d'année moyenne et un A3 d'année caniculaire ne
+   se comparent pas — c'est précisément l'écart que **R6** mesure, en croisant
+   les deux.
+
+## 5. Aval
+
+```
+indicateur_a3_microclimat()  ->  colonnes A3 et A3_tmax (°C)
+      |
+      +- normalize_indicator()     -> passthrough clamp
+      +- create_family_index("A")  -> famille_air
+```
+
+Partage l'objet `micro` avec **A4**, **W4** et **R6** : un seul
+`microclimate_run()` alimente les quatre.
+
+## 6. Références internes
+
+| Sujet | Fichier |
+|---|---|
+| Fonction A3 | `R/indicators-microclimate.R:120` |
+| Bornes | `.MICRO_BOUNDS` — `R/indicators-microclimate.R:21-26` |
+| Spécification | `specs/027-regeneration-microclimat/`, ADR-014 |

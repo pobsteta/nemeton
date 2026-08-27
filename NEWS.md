@@ -1,3 +1,128 @@
+# nemeton 0.192.0 (2026-08-27)
+
+### Added — fiche indicateur C1, et le `doc_url` qui la rend atteignable depuis l'aval
+
+Première **fiche longue d'indicateur** du projet, publiée en article pkgdown :
+`vignettes/fiche-c1-biomasse_fr.Rmd`. Elle documente les **cinq chemins** de
+`indicateur_c1_biomasse()` dans leur ordre de priorité réel, ce que produit
+chaque niveau NDP, un exemple chiffré bout en bout par chemin, un schéma des
+données d'entrée jusqu'aux livrables, et les pièges connus.
+
+Elle comble un manque précis : `docs/TABLEAU_INDICATEURS_NDP.md` est resté à la
+v0.14.1 et décrit C1 avec trois chemins (allométrie / LiDAR / NDVI). Il ignore
+le **chemin CHM** de la spec 005 — celui qui sert aujourd'hui dès qu'un CHM ML
+public (FORMS-T, FORMSpoT, Open-Canopy) est branché, c'est-à-dire le cas le plus
+courant en production.
+
+**Le mécanisme, plutôt que le lien.** `indicator_labels()` gagne quatre
+colonnes : **`doc_url`** (URL absolue de la fiche dans la langue demandée, `NA`
+sinon), **`doc_lang`**, **`doc_url_fr`** et **`doc_url_en`**. La base d'URL est
+lue dans le champ `URL` du `DESCRIPTION`, donc l'adresse du site pkgdown n'est
+déclarée qu'une fois. L'aval (`nemetonshiny`) teste `is.na(doc_url)` pour
+décider d'afficher un lien « fiche » à côté de l'infobulle — il ne code **ni
+l'URL, ni la liste des indicateurs documentés, ni la langue des fiches**.
+
+**Les fiches sont déclarées par langue, et le cœur dit laquelle il sert.**
+Quand la langue demandée n'a pas de page mais que l'autre en a une, c'est
+l'autre qui est rendue plutôt que `NA` : une fiche dans la mauvaise langue vaut
+mieux que pas de fiche. `doc_lang` nomme la langue réellement servie, pour
+qu'une interface puisse le signaler au lieu d'ouvrir du français sans prévenir.
+C'est le cas de C1 aujourd'hui : `indicator_labels(lang = "en")` rend la page
+française avec `doc_lang == "fr"`. Écrire la fiche anglaise se fera **sans
+toucher à l'app** — une vignette de plus et un `en = ...` dans l'entrée
+`indicator_docs`.
+
+Ajouter une fiche à un autre indicateur se fait donc **entièrement côté cœur** :
+écrire la vignette, l'ajouter au menu de `_pkgdown.yml`, déclarer une entrée
+`indicator_docs` dans sa famille. L'icône apparaît côté app sans que l'app
+bouge. C'est le prolongement direct du chantier v0.170.0 (export de la table des
+familles) : une duplication silencieuse et exacte est plus dangereuse qu'une
+divergence bruyante.
+
+Brief app : `specs/052-fiche-indicateur-c1/brief-nemetonshiny.md`.
+
+### Added — les 40 autres fiches : les 41 indicateurs sont documentés
+
+Les fiches des 40 indicateurs restants, sur le modèle de C1, chacune écrite en
+lisant l'implémentation : carte d'identité, chemins de calcul dans leur ordre
+réel, calcul par niveau NDP, exemples chiffrés, aval, pièges, références
+`fichier:ligne`. Le menu pkgdown porte un composant **Fiches indicateurs**
+groupé par famille.
+
+**Le décompte est corrigé au passage** : la configuration vivante porte
+**41 indicateurs**, pas 31. `CLAUDE.md` et `docs/TABLEAU_INDICATEURS_NDP.md`
+sont périmés sur ce point — B4, L3, A3, A4, A5, W4, R5, R6, R7 et T3 se sont
+ajoutés depuis.
+
+### Documenté — le sens de `L1` est lu à l'envers par la normalisation
+
+Relevé en écrivant la fiche N3. **Non corrigé : la décision revient au
+mainteneur, parce que le correctif change des valeurs affichées.**
+
+Trois sources disent que `L1` monte avec l'influence des lisières, donc que
+**haut = défavorable** :
+
+* le **calcul** — composante géométrie `(SI − 1) × 25` (0 pour une parcelle
+  compacte), composante contraste à 0 face à de la forêt et **90 face à du
+  bâti** ;
+* l'**infobulle** — « Proportion de la parcelle sous influence des lisières
+  […] **fragmentent l'habitat intérieur** » ;
+* **`indicateur_n3_naturalite()`** — qui calcule `anti_frag = 100 - L1` avant
+  de l'ajouter positivement à la naturalité.
+
+Mais `indicateur_l1_effet_lisiere` figure dans `.NORMALIZE_NATIVE_0_100`
+(`R/normalization.R:521`) et aucune branche d'inversion ne le rattrape : le
+radar et `famille_paysage` le lisent **haut = bon**. Une parcelle en lanière
+bordée de bâti obtient donc un score de paysage **flatteur**.
+
+C'est le défaut corrigé pour R5 en 0.181.0 (spec 048) et pour les noms de la
+famille L en 0.176.0 (spec 045), à un endroit qui n'a pas été revu. Le
+correctif tient en un déplacement : retirer `indicateur_l1_effet_lisiere` et
+son alias `indicateur_l1_sylvosphere` de `.NORMALIZE_NATIVE_0_100`, les ajouter
+au bloc d'inversion. Aucune fonction d'indicateur ne changerait ; tout
+`famille_paysage` déjà calculé serait à recalculer. Écart n° 8 du `PLAN.md`.
+
+### Documenté — le motif « constante silencieuse », relevé dans huit indicateurs
+
+Une composante dont l'entrée manque est remplacée par une constante — souvent
+**50** — sans avertissement, et le score garde l'apparence d'une mesure :
+
+| Indicateur | Ce qui est fabriqué | Part du score |
+|---|---|---|
+| **B3** | les 4 composantes de paysage (`landscapemetrics`, `igraph`, `adehabitatHR` en Suggests) | **70 %** |
+| **R3** | la composante climatique (`r3_climat <- 0.5`) | **60 %** |
+| **L1** | contraste de matrice + exposition | **70 %** |
+| **R1** | la pente | **33 %** |
+| **T1** | l'âge entier (`rep(50, n)`) | **100 %** |
+| **T2** | les `NA` de T1 (`t2[is.na(t2)] <- 50`) | par unité |
+| **W1** | rend `0` au lieu de `NA` sans couche | **100 %** |
+| **A2** | *(corrigé)* rend désormais `NA` | — |
+
+La politique inverse est pourtant défendue explicitement en commentaire dans
+B1, B3, A2, N1 et S3 — « absent input is NOT a measurement », « un 50 neutre
+[…] ressemble à un score moyen crédible ». Elle n'a jamais été généralisée.
+
+### Documenté — quatre écarts de C1, relevés en écrivant la fiche
+
+Aucun n'est une régression, aucun n'est corrigé ici ; tous sont consignés dans
+la fiche et dans `PLAN.md`.
+
+1. **`density` porte deux unités selon l'indicateur.** Fraction 0–1 pour C1
+   chemin 1 ; **tiges/ha** pour `indicateur_p1_volume()` et
+   `ensure_inventory_fields()`. Or le chemin CHM de C1, faute de colonne
+   `stems_ha`, calcule `density × 500`. Un `sf` passé d'abord dans P1 puis dans
+   C1 sans `stems_ha` produit un C1 surestimé **×500**, sans message. C'est le
+   plus sérieux des quatre.
+2. **Le chemin BD Forêt rend une constante par essence.** `age = 60` et
+   `density = 0,7` sont écrits en dur (`R/utils.R:1206-1207`) : C1 n'y varie que
+   par l'essence dominante, sur cinq valeurs de 4,3 à 14,1 tC/ha.
+3. **L'allométrie âge/densité sous-estime d'un facteur 3 à 10.** 6 à 53 tC/ha
+   pour des peuplements mûrs, là où les chemins CHM, LiDAR et NDVI rendent 76 à
+   162 tC/ha — alors que c'est le chemin censé être le plus précis (NDP 3).
+   `data-raw/allometric_models.R` assume des coefficients « illustratifs »
+   visant 50–200 tC/ha, que les valeurs livrées ne produisent pas.
+4. **`ref_max = 150 tC/ha` sature** dès une hêtraie mûre en chemin CHM
+   (162 tC/ha → score 100).
 # nemeton 0.191.1 (2026-08-27)
 
 ### Fixed — un CHM mort rendait une couche vide, sans un mot

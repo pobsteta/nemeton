@@ -21,9 +21,117 @@ home:
 
 navbar:
   structure:
-    left:  [intro, reference, articles, news]
+    left:  [intro, reference, articles, fiches, news]
     right: [search, github]
   components:
+    fiches:
+      text: Fiches indicateurs
+      menu:
+      - text: "Famille C - Carbone & Vitalite"
+      - text: "C1 - Biomasse carbone"
+        href: articles/fiche-c1-biomasse_fr.html
+      - text: "C2 - NDVI, vitalite"
+        href: articles/fiche-c2-ndvi_fr.html
+      - text: "---"
+      - text: "Famille B - Biodiversite"
+      - text: "B1 - Protection reglementaire"
+        href: articles/fiche-b1-protection_fr.html
+      - text: "B2 - Diversite structurale"
+        href: articles/fiche-b2-structure_fr.html
+      - text: "B3 - Connectivite ecologique"
+        href: articles/fiche-b3-connectivite_fr.html
+      - text: "B4 - Diversite spectrale alpha"
+        href: articles/fiche-b4-diversite-spectrale_fr.html
+      - text: "---"
+      - text: "Famille W - Eau & Regulation"
+      - text: "W1 - Reseau hydrographique"
+        href: articles/fiche-w1-reseau_fr.html
+      - text: "W2 - Zones humides"
+        href: articles/fiche-w2-zones-humides_fr.html
+      - text: "W3 - TWI, humidite topographique"
+        href: articles/fiche-w3-humidite_fr.html
+      - text: "W4 - VPD sous couvert"
+        href: articles/fiche-w4-vpd_fr.html
+      - text: "---"
+      - text: "Famille A - Air & Microclimat"
+      - text: "A1 - Couverture arboree"
+        href: articles/fiche-a1-couverture_fr.html
+      - text: "A2 - Qualite de l'air"
+        href: articles/fiche-a2-qualite-air_fr.html
+      - text: "A3 - T max sous couvert"
+        href: articles/fiche-a3-microclimat_fr.html
+      - text: "A4 - Tamponnement canopee"
+        href: articles/fiche-a4-tamponnement_fr.html
+      - text: "A5 - Rafraichissement urbain"
+        href: articles/fiche-a5-rafraichissement_fr.html
+      - text: "---"
+      - text: "Famille F - Fertilite des sols"
+      - text: "F1 - Fertilite des sols"
+        href: articles/fiche-f1-fertilite_fr.html
+      - text: "F2 - Resistance a l'erosion"
+        href: articles/fiche-f2-erosion_fr.html
+      - text: "---"
+      - text: "Famille L - Paysage"
+      - text: "L1 - Effet de lisiere"
+        href: articles/fiche-l1-effet-lisiere_fr.html
+      - text: "L2 - Morcellement"
+        href: articles/fiche-l2-morcellement_fr.html
+      - text: "L3 - Heterogeneite spectrale"
+        href: articles/fiche-l3-heterogeneite-spectrale_fr.html
+      - text: "---"
+      - text: "Famille T - Dynamique temporelle"
+      - text: "T1 - Anciennete"
+        href: articles/fiche-t1-anciennete_fr.html
+      - text: "T2 - Stabilite temporelle"
+        href: articles/fiche-t2-changement_fr.html
+      - text: "T3 - Coupes rases (SUFOSAT)"
+        href: articles/fiche-t3-coupes-rases_fr.html
+      - text: "---"
+      - text: "Famille R - Risques & Resilience"
+      - text: "R1 - Risque d'incendie"
+        href: articles/fiche-r1-feu_fr.html
+      - text: "R2 - Vulnerabilite aux tempetes"
+        href: articles/fiche-r2-tempete_fr.html
+      - text: "R3 - Risque de secheresse"
+        href: articles/fiche-r3-secheresse_fr.html
+      - text: "R4 - Pression d'abroutissement"
+        href: articles/fiche-r4-abroutissement_fr.html
+      - text: "R5 - Deperissement (FORDEAD)"
+        href: articles/fiche-r5-deperissement_fr.html
+      - text: "R6 - Sensibilite microclimatique"
+        href: articles/fiche-r6-sensibilite_fr.html
+      - text: "R7 - Gel tardif"
+        href: articles/fiche-r7-gel_fr.html
+      - text: "---"
+      - text: "Famille N - Naturalite"
+      - text: "N1 - Distance aux infrastructures"
+        href: articles/fiche-n1-distance_fr.html
+      - text: "N2 - Continuite ecologique"
+        href: articles/fiche-n2-continuite_fr.html
+      - text: "N3 - Naturalite composite"
+        href: articles/fiche-n3-naturalite_fr.html
+      - text: "---"
+      - text: "Famille S - Social & Usages"
+      - text: "S1 - Distance aux routes"
+        href: articles/fiche-s1-routes_fr.html
+      - text: "S2 - Distance au bati"
+        href: articles/fiche-s2-bati_fr.html
+      - text: "S3 - Population accessible"
+        href: articles/fiche-s3-population_fr.html
+      - text: "---"
+      - text: "Famille P - Production & Economie"
+      - text: "P1 - Volume sur pied"
+        href: articles/fiche-p1-volume_fr.html
+      - text: "P2 - Indice de station"
+        href: articles/fiche-p2-station_fr.html
+      - text: "P3 - Qualite du bois"
+        href: articles/fiche-p3-qualite-bois_fr.html
+      - text: "---"
+      - text: "Famille E - Energie & Climat"
+      - text: "E1 - Potentiel bois-energie"
+        href: articles/fiche-e1-bois-energie_fr.html
+      - text: "E2 - Evitement carbone"
+        href: articles/fiche-e2-evitement_fr.html
     articles:
       text: Articles
       menu:

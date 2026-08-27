@@ -22,6 +22,20 @@ INDICATOR_FAMILIES <- list(
         fr = "Indice de v\u00e9g\u00e9tation par diff\u00e9rence normalis\u00e9e (NDVI). Mesure la vitalit\u00e9 et l'activit\u00e9 photosynth\u00e9tique de la v\u00e9g\u00e9tation. Valeurs de 0 (sol nu) \u00e0 1 (v\u00e9g\u00e9tation dense).",
         en = "Normalized Difference Vegetation Index (NDVI). Measures vegetation vitality and photosynthetic activity. Values from 0 (bare soil) to 1 (dense vegetation)."
       )
+    ),
+    # Fiches longues (vignettes pkgdown) : une entree PAR indicateur qui en a
+    # une, et DANS CHAQUE LANGUE ou elle existe. L'aval (nemetonshiny) lit
+    # `doc_url` dans `indicator_labels()` pour decider s'il affiche un lien
+    # « fiche » a cote de l'infobulle. Un indicateur sans fiche n'a pas de cle
+    # ici et sort a NA : c'est la condition d'affichage, pas une erreur.
+    #
+    # C1 n'a qu'une fiche francaise a ce jour. Un appel en `lang = "en"` rend
+    # donc l'URL francaise, et `doc_lang` vaut "fr" : l'interface peut le dire
+    # au lecteur plutot que d'ouvrir du francais sans prevenir. Le jour ou
+    # `fiche-c1-biomasse_en.Rmd` existe, il suffit d'ajouter `en = ...` ici.
+    indicator_docs = list(
+      C1 = list(fr = "articles/fiche-c1-biomasse_fr.html"),
+      C2 = list(fr = "articles/fiche-c2-ndvi_fr.html")
     )
   ),
   B = list(
@@ -57,8 +71,15 @@ INDICATOR_FAMILIES <- list(
         fr = "Diversit\u00e9 spectrale (\u03b1) d\u00e9riv\u00e9e de Sentinel-2 : indice de Shannon des \u00ab spectral species \u00bb par fen\u00eatre de 100 m, moyenn\u00e9 sur l\u2019unit\u00e9. Le score atteint 100 pour l\u2019\u00e9quivalent de 10 spectral species \u00e9galement abondantes par hectare. Proxy \u00e0 valider terrain ; une futaie r\u00e9guli\u00e8re monosp\u00e9cifique l\u00e9gitime peut avoir un score bas.",
         en = "Spectral (\u03b1) diversity from Sentinel-2: Shannon index of spectral species over 100 m windows, averaged over the unit. The score reaches 100 for the equivalent of 10 equally abundant spectral species per hectare. Proxy pending field validation; a legitimate even-aged monospecific stand may score low."
       )
+    ),
+    indicator_docs = list(
+      B1 = list(fr = "articles/fiche-b1-protection_fr.html"),
+      B2 = list(fr = "articles/fiche-b2-structure_fr.html"),
+      B3 = list(fr = "articles/fiche-b3-connectivite_fr.html"),
+      B4 = list(fr = "articles/fiche-b4-diversite-spectrale_fr.html")
     )
   ),
+
   W = list(
     code = "W",
     name_fr = "Eau",
@@ -92,8 +113,15 @@ INDICATOR_FAMILIES <- list(
         fr = "D\u00e9ficit de pression de vapeur (VPD) estival sous couvert (microclimf, augment\u00e9 LiDAR). S\u00e9cheresse atmosph\u00e9rique ressentie par les semis. Score \u00e9lev\u00e9 = air plus humide.",
         en = "Summer vapour-pressure deficit (VPD) under the canopy (microclimf, LiDAR-augmented). Atmospheric dryness felt by seedlings. High score = moister air."
       )
+    ),
+    indicator_docs = list(
+      W1 = list(fr = "articles/fiche-w1-reseau_fr.html"),
+      W2 = list(fr = "articles/fiche-w2-zones-humides_fr.html"),
+      W3 = list(fr = "articles/fiche-w3-humidite_fr.html"),
+      W4 = list(fr = "articles/fiche-w4-vpd_fr.html")
     )
   ),
+
   A = list(
     code = "A",
     name_fr = "Air & Microclimat",
@@ -132,8 +160,16 @@ INDICATOR_FAMILIES <- list(
         fr = "Rafra\u00eechissement urbain : fra\u00eecheur de surface (LST) de l'unit\u00e9 vs son environnement. Orient\u00e9 arbre en ville (LST disponible en m\u00e9tropole). Score \u00e9lev\u00e9 = plus frais que l'entour. NA hors couverture LST.",
         en = "Urban cooling: relative surface freshness (LST) of the unit vs its surroundings. Urban-tree oriented (LST available over metropolises). High score = cooler than surroundings. NA outside LST coverage."
       )
+    ),
+    indicator_docs = list(
+      A1 = list(fr = "articles/fiche-a1-couverture_fr.html"),
+      A2 = list(fr = "articles/fiche-a2-qualite-air_fr.html"),
+      A3 = list(fr = "articles/fiche-a3-microclimat_fr.html"),
+      A4 = list(fr = "articles/fiche-a4-tamponnement_fr.html"),
+      A5 = list(fr = "articles/fiche-a5-rafraichissement_fr.html")
     )
   ),
+
   F = list(
     code = "F",
     name_fr = "Fertilit\u00e9 des Sols",
@@ -162,8 +198,13 @@ INDICATOR_FAMILIES <- list(
         fr = "Potentiel de fertilit\u00e9 des sols bas\u00e9 sur les caract\u00e9ristiques p\u00e9dologiques (texture, profondeur, mati\u00e8re organique).",
         en = "Soil fertility potential based on pedological characteristics (texture, depth, organic matter)."
       )
+    ),
+    indicator_docs = list(
+      F1 = list(fr = "articles/fiche-f1-fertilite_fr.html"),
+      F2 = list(fr = "articles/fiche-f2-erosion_fr.html")
     )
   ),
+
   L = list(
     code = "L",
     name_fr = "Paysage",
@@ -192,8 +233,14 @@ INDICATOR_FAMILIES <- list(
         fr = "H\u00e9t\u00e9rog\u00e9n\u00e9it\u00e9 spectrale (\u03b2) du paysage d\u00e9riv\u00e9e de Sentinel-2 : dispersion des fen\u00eatres de l\u2019unit\u00e9 dans l\u2019ordination (PCoA) de la dissimilarit\u00e9 Bray-Curtis entre \u00ab spectral species \u00bb. Mesure la diversit\u00e9 de la mosa\u00efque (compl\u00e9mentaire de L2, morcellement g\u00e9om\u00e9trique). NA sous 3 fen\u00eatres couvertes. Proxy \u00e0 valider terrain.",
         en = "Spectral (\u03b2) landscape heterogeneity from Sentinel-2: dispersion of the unit\u2019s windows in the PCoA ordination of the Bray-Curtis dissimilarity between spectral species. Measures mosaic diversity (complementary to L2, geometric fragmentation). NA below 3 covered windows. Proxy pending field validation."
       )
+    ),
+    indicator_docs = list(
+      L1 = list(fr = "articles/fiche-l1-effet-lisiere_fr.html"),
+      L2 = list(fr = "articles/fiche-l2-morcellement_fr.html"),
+      L3 = list(fr = "articles/fiche-l3-heterogeneite-spectrale_fr.html")
     )
   ),
+
   T = list(
     code = "T",
     name_fr = "Dynamique Temporelle",
@@ -222,8 +269,14 @@ INDICATOR_FAMILIES <- list(
         fr = "Pression de coupe rase (produit SUFOSAT, radar Sentinel-1). Fraction r\u00e9cente coup\u00e9e \u00e0 blanc, pond\u00e9r\u00e9e par r\u00e9cence. Sens invers\u00e9 : plus de coupe = indice plus bas.",
         en = "Clear-cut pressure (SUFOSAT product, Sentinel-1 radar). Recency-weighted recently clear-cut fraction. Inverted sense: more clear-cutting = lower score."
       )
+    ),
+    indicator_docs = list(
+      T1 = list(fr = "articles/fiche-t1-anciennete_fr.html"),
+      T2 = list(fr = "articles/fiche-t2-changement_fr.html"),
+      T3 = list(fr = "articles/fiche-t3-coupes-rases_fr.html")
     )
   ),
+
   R = list(
     code = "R",
     name_fr = "Risques & R\u00e9silience",
@@ -272,8 +325,18 @@ INDICATOR_FAMILIES <- list(
         fr = "Risque de gel tardif : fréquence des gelées printanières après débourrement (Tmin < seuil), déterminant de l'échec de régénération (chêne, hêtre, douglas). Série Tmin downscalée meteoland/SAFRAN. NA sans donnée Tmin. Score élevé = faible risque (peu de gel).",
         en = "Late-frost risk: frequency of spring frosts after budburst (Tmin below threshold), a driver of regeneration failure (oak, beech, Douglas fir). meteoland/SAFRAN-downscaled Tmin series. NA without Tmin data. High score = low risk (few frosts)."
       )
+    ),
+    indicator_docs = list(
+      R1 = list(fr = "articles/fiche-r1-feu_fr.html"),
+      R2 = list(fr = "articles/fiche-r2-tempete_fr.html"),
+      R3 = list(fr = "articles/fiche-r3-secheresse_fr.html"),
+      R4 = list(fr = "articles/fiche-r4-abroutissement_fr.html"),
+      R5 = list(fr = "articles/fiche-r5-deperissement_fr.html"),
+      R6 = list(fr = "articles/fiche-r6-sensibilite_fr.html"),
+      R7 = list(fr = "articles/fiche-r7-gel_fr.html")
     )
   ),
+
   S = list(
     code = "S",
     name_fr = "Social & R\u00e9cr\u00e9atif",
@@ -310,8 +373,14 @@ INDICATOR_FAMILIES <- list(
         fr = "Densit\u00e9 de population dans un rayon de 5 km (hab/km\u00b2, \u00e9chelle logarithmique). Mesure le potentiel d'usage r\u00e9cr\u00e9atif et la pression sociale sur la for\u00eat.",
         en = "Population density within a 5 km radius (inhab/km\u00b2, log scale). Measures recreational use potential and social pressure on the forest."
       )
+    ),
+    indicator_docs = list(
+      S1 = list(fr = "articles/fiche-s1-routes_fr.html"),
+      S2 = list(fr = "articles/fiche-s2-bati_fr.html"),
+      S3 = list(fr = "articles/fiche-s3-population_fr.html")
     )
   ),
+
   P = list(
     code = "P",
     name_fr = "Production",
@@ -340,8 +409,14 @@ INDICATOR_FAMILIES <- list(
         fr = "Qualit\u00e9 potentielle du bois bas\u00e9e sur les essences pr\u00e9sentes et les conditions de croissance.",
         en = "Potential timber quality based on species present and growing conditions."
       )
+    ),
+    indicator_docs = list(
+      P1 = list(fr = "articles/fiche-p1-volume_fr.html"),
+      P2 = list(fr = "articles/fiche-p2-station_fr.html"),
+      P3 = list(fr = "articles/fiche-p3-qualite-bois_fr.html")
     )
   ),
+
   E = list(
     code = "E",
     name_fr = "\u00c9nergie & Climat",
@@ -365,8 +440,13 @@ INDICATOR_FAMILIES <- list(
         fr = "\u00c9missions de CO2 \u00e9vit\u00e9es par substitution aux \u00e9nergies fossiles (tCO2/ha/an). Contribution \u00e0 la transition \u00e9nerg\u00e9tique.",
         en = "CO2 emissions avoided by substituting fossil fuels (tCO2/ha/year). Contribution to energy transition."
       )
+    ),
+    indicator_docs = list(
+      E1 = list(fr = "articles/fiche-e1-bois-energie_fr.html"),
+      E2 = list(fr = "articles/fiche-e2-evitement_fr.html")
     )
   ),
+
   N = list(
     code = "N",
     name_fr = "Naturalit\u00e9",
@@ -395,6 +475,11 @@ INDICATOR_FAMILIES <- list(
         fr = "Score composite de naturalit\u00e9 int\u00e9grant structure, continuit\u00e9, \u00e9loignement et perturbations anthropiques.",
         en = "Composite naturalness score integrating structure, continuity, remoteness and human disturbance."
       )
+    ),
+    indicator_docs = list(
+      N1 = list(fr = "articles/fiche-n1-distance_fr.html"),
+      N2 = list(fr = "articles/fiche-n2-continuite_fr.html"),
+      N3 = list(fr = "articles/fiche-n3-naturalite_fr.html")
     )
   )
 )
@@ -649,6 +734,74 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 }
 
 
+# Base du site pkgdown, lue dans le champ URL du DESCRIPTION (premiere entree)
+# pour qu'il n'existe qu'une seule source de verite. Le repli couvre le cas ou
+# le package est charge par devtools::load_all() sans DESCRIPTION installe.
+.doc_base_url <- function() {
+  url <- tryCatch(utils::packageDescription("nemeton")$URL,
+                  error = function(e) NULL)
+  first <- if (!is.null(url) && !is.na(url)) {
+    trimws(strsplit(url, ",", fixed = TRUE)[[1]][1])
+  } else {
+    NA_character_
+  }
+  if (is.na(first) || !nzchar(first)) first <- "https://pobsteta.github.io/nemeton/"
+  sub("/?$", "/", first)
+}
+
+# Resout UNE entree `indicator_docs` pour une langue demandee.
+#
+# L'entree est une liste nommee par langue : `list(fr = "...", en = "...")`.
+# Quand la langue demandee n'a pas de page mais que l'autre en a une, c'est
+# l'AUTRE qui est rendue : une fiche dans la mauvaise langue vaut mieux que
+# pas de fiche du tout. Le deuxieme element du retour dit laquelle, pour que
+# l'interface puisse le signaler au lecteur au lieu d'ouvrir du francais sans
+# prevenir.
+#
+# Retourne c(href, lang), les deux NA quand aucune page n'existe.
+.resolve_doc_entry <- function(entry, lang) {
+  none <- c(NA_character_, NA_character_)
+  if (is.null(entry) || !is.list(entry)) return(none)
+  for (l in c(lang, setdiff(c("fr", "en"), lang))) {
+    href <- entry[[l]]
+    if (is.null(href)) next
+    href <- as.character(href)[1]
+    if (is.na(href) || !nzchar(href)) next
+    return(c(href, l))
+  }
+  none
+}
+
+# URLs absolues des fiches d'une famille pour une langue, et langue reellement
+# servie. `indicator_docs` porte des hrefs RELATIFS au site pkgdown ; une
+# entree deja absolue (http/https) est laissee telle quelle, pour qu'une fiche
+# hebergee ailleurs reste possible sans changer l'API.
+#
+# Retourne une liste de deux vecteurs de longueur length(fam$indicators).
+.family_docs <- function(fam, lang, base = .doc_base_url()) {
+  docs <- fam$indicator_docs
+  # Le test d'appartenance, plutot que `docs[[ic]]` : la famille peut n'avoir
+  # aucune fiche (`docs` NULL), et `[[` sur un nom absent n'a pas le meme
+  # comportement selon le type du conteneur.
+  known <- if (is.null(docs)) character(0) else names(docs)
+  resolved <- lapply(fam$indicators, function(ic) {
+    if (!ic %in% known) return(c(NA_character_, NA_character_))
+    hit <- .resolve_doc_entry(docs[[ic]], lang)
+    if (is.na(hit[1])) return(hit)
+    href <- if (grepl("^https?://", hit[1])) {
+      hit[1]
+    } else {
+      paste0(base, sub("^/", "", hit[1]))
+    }
+    c(href, hit[2])
+  })
+  list(
+    url = vapply(resolved, function(x) x[1], character(1), USE.NAMES = FALSE),
+    lang = vapply(resolved, function(x) x[2], character(1), USE.NAMES = FALSE)
+  )
+}
+
+
 #' Indicator table (long format)
 #'
 #' @description
@@ -672,7 +825,24 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 #'
 #' @return A `data.frame` with columns `family` (family code), `family_column`
 #'   (family score column), `code` (indicator code), `column_name`, `label`,
-#'   `label_fr`, `label_en`, `tooltip`, `tooltip_fr` and `tooltip_en`.
+#'   `label_fr`, `label_en`, `tooltip`, `tooltip_fr`, `tooltip_en`, `doc_url`,
+#'   `doc_url_fr`, `doc_url_en` and `doc_lang`.
+#'
+#' @section Indicator fact sheets (`doc_url`):
+#' Some indicators have a long-form fact sheet published as a pkgdown article
+#' (C1 today). `doc_url` carries its absolute URL, and is `NA` for every
+#' indicator without one — that `NA` is the condition a UI tests before
+#' offering a "read the fact sheet" link next to the tooltip, not an error.
+#' The base of the URL is the first entry of the package `URL` field, so the
+#' site address is declared once, in `DESCRIPTION`.
+#'
+#' A fact sheet is declared per language. When the requested language has no
+#' page but the other one does, that other page is returned rather than `NA`:
+#' a fact sheet in the wrong language beats no fact sheet. `doc_lang` names
+#' the language actually served, so an interface can say so instead of opening
+#' French without warning — today `indicator_labels(lang = "en")` returns the
+#' French C1 page with `doc_lang == "fr"`. Compare `doc_lang` with the
+#' language you asked for; do not assume they match.
 #'
 #' @seealso [indicator_families()]
 #'
@@ -686,6 +856,13 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 #' # Bilingual lookup, without a second call
 #' stats::setNames(ind$label_en, ind$code)[["C1"]]
 #'
+#' # Indicators that have a fact sheet, and where to read it
+#' ind[!is.na(ind$doc_url), c("code", "doc_url", "doc_lang")]
+#'
+#' # A fact sheet served in a language other than the one requested
+#' en <- indicator_labels(lang = "en")
+#' en[!is.na(en$doc_lang) & en$doc_lang != "en", c("code", "doc_lang")]
+#'
 #' @export
 indicator_labels <- function(codes = NULL, lang = c("fr", "en")) {
   lang <- match.arg(lang)
@@ -694,7 +871,8 @@ indicator_labels <- function(codes = NULL, lang = c("fr", "en")) {
   cols <- c(
     "family", "family_column", "code", "column_name",
     "label", "label_fr", "label_en",
-    "tooltip", "tooltip_fr", "tooltip_en"
+    "tooltip", "tooltip_fr", "tooltip_en",
+    "doc_url", "doc_url_fr", "doc_url_en", "doc_lang"
   )
 
   if (length(fams) == 0) {
@@ -703,6 +881,9 @@ indicator_labels <- function(codes = NULL, lang = c("fr", "en")) {
       stringsAsFactors = FALSE
     ))
   }
+
+  # Une seule lecture du DESCRIPTION par appel, pas une par famille.
+  doc_base <- .doc_base_url()
 
   rows <- lapply(fams, function(f) {
     n <- length(f$indicators)
@@ -717,6 +898,15 @@ indicator_labels <- function(codes = NULL, lang = c("fr", "en")) {
       tooltip_en = unname(.family_texts(f, "indicator_tooltips", "en")),
       stringsAsFactors = FALSE
     )
+    # Les deux langues sont resolues une fois ; `doc_url` / `doc_lang` sont
+    # la vue de celle qui a ete demandee.
+    docs_fr <- .family_docs(f, "fr", base = doc_base)
+    docs_en <- .family_docs(f, "en", base = doc_base)
+    docs <- if (lang == "fr") docs_fr else docs_en
+    out$doc_url <- docs$url
+    out$doc_lang <- docs$lang
+    out$doc_url_fr <- docs_fr$url
+    out$doc_url_en <- docs_en$url
     out$label <- out[[paste0("label_", lang)]]
     out$tooltip <- out[[paste0("tooltip_", lang)]]
     out[, cols]
