@@ -369,7 +369,7 @@ Phase hors repo courant. À planifier dans `nemetonshiny` une fois phase 1 merg�
 
 ### 10.3 Pas de test E2E dans ce spec
 
-Les tests E2E avec vrai CHM Open-Canopy sont dans `opencanopynemeton` côté, pas ici. `nemeton` reçoit un raster en entrée, point.
+Les tests E2E avec vrai CHM Open-Canopy sont dans `opencanopy` côté, pas ici. `nemeton` reçoit un raster en entrée, point.
 
 ---
 

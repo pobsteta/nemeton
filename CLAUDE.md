@@ -142,7 +142,7 @@ Note : certains épaississements sont implémentés côté `nemetonshiny` (profi
 
 Depuis la v0.16.0 (spec 005), `nemeton` consomme des Canopy Height
 Models (CHM) produits par le package amont `opencanopy`
-(pobsteta/opencanopynemeton). L'intégration suit l'ADR-011 amendé :
+(pobsteta/opencanopy). L'intégration suit l'ADR-011 amendé :
 
 - **Flag vectoriel `augmented`** dans le résultat de `detect_ndp()`.
   Valeurs reconnues : `"height_ml"` (CHM ML d'Open-Canopy),

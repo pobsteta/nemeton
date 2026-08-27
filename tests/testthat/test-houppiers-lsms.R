@@ -126,3 +126,98 @@ test_that("a generous budget lets the same image through the guard", {
   terra::values(r) <- 1L
   expect_lt(lsms_duree_estimee(terra::ncell(r)), 600)
 })
+
+# --- Garde-fou « CHM dégénéré » (v0.191.1) ----------------------------------
+# Un CHM mort ne fait pas échouer la segmentation : il rend zéro houppier. Une
+# clairière légitime et une prédiction Open-Canopy en panne produisaient donc le
+# MÊME objet vide, sans un mot. Mesuré sur le projet Fordead :
+# `chm_predicted_0_2m.tif` plafonne à 0,1879 m sur 292 M cellules.
+
+.chm_test <- function(values) {
+  n <- ceiling(sqrt(length(values)))
+  r <- terra::rast(nrows = n, ncols = n, xmin = 0, xmax = n * 0.5,
+                   ymin = 0, ymax = n * 0.5, crs = "EPSG:2154")
+  terra::values(r) <- rep_len(values, terra::ncell(r))
+  r
+}
+
+test_that("a dead CHM is diagnosed, not silently empty", {
+  skip_if_not_installed("terra")
+  mort <- .chm_test(runif(400, 0, 0.19))      # l'ordre de grandeur réel mesuré
+  d <- nemeton:::.houppier_chm_degenere(mort, hmin = 5)
+  expect_true(d$suspect)
+  expect_lt(d$chm_max, 0.2)
+  expect_equal(d$frac_low, 1)
+  expect_warning(nemeton:::.houppier_chm_degenere(mort, hmin = 5), "degenerate")
+})
+
+test_that("the warning says why an empty layer is ambiguous", {
+  skip_if_not_installed("terra")
+  msg <- tryCatch(
+    nemeton:::.houppier_chm_degenere(.chm_test(rep(0, 400)), hmin = 5),
+    warning = function(w) conditionMessage(w))
+  # Le message doit expliquer la CONFUSION, pas seulement constater la hauteur :
+  # c'est « 0 n'est pas NA » (v0.186/v0.187) appliqué ici.
+  expect_match(msg, "same empty crown layer", ignore.case = TRUE)
+  expect_match(msg, "clearing")
+})
+
+test_that("a healthy CHM is not flagged", {
+  skip_if_not_installed("terra")
+  sain <- .chm_test(runif(400, 0, 30))
+  expect_silent(d <- nemeton:::.houppier_chm_degenere(sain, hmin = 5))
+  expect_false(d$suspect)
+})
+
+test_that("the guard needs BOTH conditions, not just a low maximum", {
+  skip_if_not_installed("terra")
+  # Un jeune peuplement homogène à 4 m : 100 % sous le plancher de 5 m, mais son
+  # maximum n'est PAS quasi nul. Ce n'est pas un CHM mort, c'est un gaulis.
+  #
+  # La règle portée depuis `synthetic_inventory.R` le signalait pourtant : elle
+  # n'exigeait qu'un maximum « sous le plancher ». Resserrée ici à `max_frac`
+  # fois le plancher (0,5 m pour 5 m), parce que le CHM réellement mort mesuré
+  # sur Fordead plafonne à 0,19 m — trois ordres de grandeur plus bas.
+  gaulis <- .chm_test(rep(4, 400))
+  expect_silent(d <- nemeton:::.houppier_chm_degenere(gaulis, hmin = 5))
+  expect_false(d$suspect)
+  # Descendre le plancher sous la hauteur du gaulis le disculpe aussi.
+  expect_false(nemeton:::.houppier_chm_degenere(gaulis, hmin = 3)$suspect)
+})
+
+test_that("a partially stocked stand is not flagged either", {
+  skip_if_not_installed("terra")
+  # 96 % de sol nu mais 4 % d'arbres à 25 m : au-dessus de suspect_frac, et
+  # pourtant parfaitement légitime — le maximum le prouve.
+  clair <- .chm_test(c(rep(0, 384), rep(25, 16)))
+  d <- nemeton:::.houppier_chm_degenere(clair, hmin = 5)
+  expect_gt(d$frac_low, 0.95)
+  expect_false(d$suspect)
+})
+
+test_that("the verdict is stamped on the OUTPUT, empty layer included", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("lidR")
+  f <- withr::local_tempfile(fileext = ".tif")
+  terra::writeRaster(.chm_test(rep(0.1, 400)), f)
+  out <- suppressWarnings(segment_houppiers(f))
+  expect_equal(nrow(out), 0L)
+  # C'est le cas VIDE qui a le plus besoin de porter le diagnostic : sans
+  # l'attribut, l'appelant ne peut pas distinguer « rien ici » de « CHM mort ».
+  expect_true(attr(out, "chm_suspect"))
+  expect_lt(attr(out, "chm_max"), 0.2)
+})
+
+test_that("a healthy segmentation carries chm_suspect = FALSE, not NULL", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("lidR")
+  # Un cône : un apex net, donc au moins un houppier.
+  r <- terra::rast(nrows = 60, ncols = 60, resolution = 0.5, crs = "EPSG:2154")
+  xy <- terra::xyFromCell(r, seq_len(terra::ncell(r)))
+  ctr <- c(mean(xy[, 1]), mean(xy[, 2]))
+  d <- sqrt((xy[, 1] - ctr[1])^2 + (xy[, 2] - ctr[2])^2)
+  terra::values(r) <- pmax(0, 25 - d * 2)
+  out <- segment_houppiers(r, ws = 3, hmin = 2)
+  expect_false(is.null(attr(out, "chm_suspect")))
+  expect_false(attr(out, "chm_suspect"))
+})

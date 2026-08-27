@@ -123,6 +123,35 @@ la fiche et dans `PLAN.md`.
    visant 50–200 tC/ha, que les valeurs livrées ne produisent pas.
 4. **`ref_max = 150 tC/ha` sature** dès une hêtraie mûre en chemin CHM
    (162 tC/ha → score 100).
+# nemeton 0.191.1 (2026-08-27)
+
+### Fixed — un CHM mort rendait une couche vide, sans un mot
+
+`segment_houppiers()` ne distinguait pas **« aucun arbre ici »** de **« le modèle
+de hauteur est en panne »** : les deux rendaient le même objet vide. Le garde-fou
+existait pourtant depuis la v0.109.0 — mais dans `R/synthetic_inventory.R`, sur
+le chemin de l'inventaire synthétique, pas ici.
+
+C'est la confusion « 0 n'est pas NA » que les v0.186/v0.187 ont soldée partout
+ailleurs. Portée ici, pour les **quatre** algorithmes, LSMS `martelage` compris.
+
+Mesuré sur le projet Fordead : `chm_predicted_0_2m.tif` plafonne à **0,1879 m sur
+ses 292 millions de cellules** (vérifié sur le raster entier, sans facteur
+d'échelle en cause), et la segmentation rendait `0 houppiers` en silence.
+
+Le verdict est estampillé **sur la sortie, couche vide comprise** —
+`attr(x, "chm_suspect")`, plus `chm_max` et `chm_frac_low` quand il est vrai.
+C'est le cas vide qui a le plus besoin de porter le diagnostic.
+
+**La règle est plus stricte que celle dont elle est issue, et c'est un test qui
+l'a imposé.** La version d'origine n'exige qu'un maximum « sous le plancher » :
+elle signale donc un gaulis uniforme à 4 m sous un plancher de 5 m — un
+peuplement parfaitement légitime. Le CHM réellement mort plafonne à 0,19 m, soit
+**trois ordres de grandeur** plus bas. Le maximum doit désormais tomber sous
+`max_frac` fois le plancher (10 % par défaut, soit 0,5 m pour un plancher de
+5 m). Un peuplement clair — 96 % de sol nu mais des arbres de 25 m — n'est pas
+signalé non plus ; une coupe rase réelle l'est, et c'est voulu : le message
+invite à vérifier, et « zéro houppier » reste alors la bonne réponse.
 
 # nemeton 0.191.0 (2026-08-27)
 

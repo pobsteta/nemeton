@@ -82,7 +82,7 @@ list_countries()                   # c("EU", "FR")
 ## NDP augmente : integration Open-Canopy (v0.16.0, spec 005)
 
 Depuis la v0.16.0, nemeton exploite des Canopy Height Models (CHM)
-produits par le package amont [`opencanopy`](https://github.com/pobsteta/opencanopynemeton)
+produits par le package amont [`opencanopy`](https://github.com/pobsteta/opencanopy)
 pour affiner cinq indicateurs (P1 volume, P2 station, C1 biomasse,
 B2 structure, R2 tempete) a partir de l'ortho IGN, sans besoin de
 LiDAR. L'ADR-011 amende le systeme NDP avec un flag vectoriel

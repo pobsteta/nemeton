@@ -46,6 +46,16 @@ For a narrative, per-feature description of each release, see
 
 ### Changed
 - Entrée « Fiche C1 » dans le menu Articles de `_pkgdown.yml`.
+## [0.191.1] - 2026-08-27
+
+### Fixed
+- **Un CHM dégénéré rendait une couche vide sans diagnostic.** `segment_houppiers()`
+  ne distinguait pas « aucun arbre ici » de « modèle de hauteur en panne ». Le
+  garde-fou `chm_suspect` (v0.109.0) vivait dans `R/synthetic_inventory.R` ;
+  porté ici pour les quatre algorithmes, avec `attr(x, "chm_suspect")` estampillé
+  sur la sortie, couche vide comprise. Règle resserrée : le maximum doit tomber
+  sous 10 % du plancher (et non simplement sous le plancher), pour ne pas
+  signaler un gaulis légitime.
 
 ## [0.191.0] - 2026-08-27
 

@@ -38,6 +38,67 @@
 }
 
 
+# Garde-fou « CHM degenere », porte ici depuis `synthetic_inventory.R` (v0.109.0).
+#
+# Pourquoi il manquait, et pourquoi ca compte. Un CHM mort ne fait pas echouer la
+# segmentation : il rend simplement zero houppier. Une clairiere legitime et une
+# prediction Open-Canopy en panne produisaient donc LE MEME OBJET VIDE, sans un
+# mot. Mesure sur le projet Fordead : `chm_predicted_0_2m.tif` plafonne a
+# 0,1879 m sur ses 292 millions de cellules, et `segment_houppiers()` rendait
+# `0 houppiers` sans rien signaler.
+#
+# C'est la confusion « 0 n'est pas NA » soldee ailleurs en v0.186/v0.187.
+#
+# La regle est celle de `synthetic_inventory.R` transposee au raster, mais
+# RESSERREE sur un point : la version d'origine exige un maximum « sous le
+# plancher », ce qui signale aussi un gaulis uniforme a 4 m sous un plancher de
+# 5 m -- un peuplement parfaitement legitime, pas un CHM mort. Le CHM mesure sur
+# Fordead plafonne a 0,19 m, soit TROIS ORDRES DE GRANDEUR sous le plancher.
+#
+# On exige donc un maximum quasi nul : `max_frac` fois le plancher (0,5 m pour
+# un plancher de 5 m). Une coupe rase reelle la declenche encore -- c'est voulu,
+# le message invite a verifier et « zero houppier » reste alors la bonne reponse.
+.houppier_chm_degenere <- function(chm, hmin, suspect_frac = 0.95,
+                                   max_frac = 0.1) {
+  vide <- list(suspect = FALSE, frac_low = NA_real_, chm_max = NA_real_)
+  if (is.null(chm)) return(vide)
+  chm_max <- suppressWarnings(
+    as.numeric(terra::global(chm, "max", na.rm = TRUE)[1L, 1L]))
+  if (!is.finite(chm_max)) return(vide)
+  n_ok <- suppressWarnings(
+    as.numeric(terra::global(!is.na(chm), "sum", na.rm = TRUE)[1L, 1L]))
+  if (!is.finite(n_ok) || n_ok <= 0) return(vide)
+  n_low <- suppressWarnings(
+    as.numeric(terra::global(chm < hmin, "sum", na.rm = TRUE)[1L, 1L]))
+  frac_low <- if (is.finite(n_low)) n_low / n_ok else NA_real_
+
+  suspect <- isTRUE(frac_low >= suspect_frac) && chm_max < hmin * max_frac
+  if (suspect) {
+    cli::cli_warn(c(
+      "!" = "CHM appears degenerate: {round(100 * frac_low)}% of valid cells are \\
+             below {hmin} m and the CHM maximum is only {round(chm_max, 3)} m \\
+             \u2014 {round(100 * max_frac)}% of that floor or less.",
+      "i" = "An all-zero or failed height prediction returns the SAME empty crown \\
+             layer as a genuine clearing \u2014 hence this warning.",
+      "i" = "Check the height model before reading {.val 0 crowns} as {.val no trees}."
+    ))
+  }
+  list(suspect = suspect, frac_low = frac_low, chm_max = chm_max)
+}
+
+
+# Estampille le verdict sur la sortie, quelle qu'elle soit (vide comprise) :
+# c'est le cas VIDE qui a le plus besoin de porter le diagnostic.
+.houppier_flag <- function(x, degenere) {
+  attr(x, "chm_suspect") <- isTRUE(degenere$suspect)
+  if (isTRUE(degenere$suspect)) {
+    attr(x, "chm_max") <- degenere$chm_max
+    attr(x, "chm_frac_low") <- degenere$frac_low
+  }
+  x
+}
+
+
 #' Segment tree crowns on a Canopy Height Model
 #'
 #' @description
@@ -277,6 +338,10 @@ segment_houppiers <- function(chm        = NULL,
     chm <- terra::aggregate(chm, fact = fac, fun = "max", na.rm = TRUE)
   }
 
+  # 2ter. Le CHM est-il exploitable ? Verdict AVANT la segmentation, sur le CHM
+  # effectivement utilise (rogne puis agrege), et estampille sur la sortie.
+  degenere <- .houppier_chm_degenere(chm, hmin)
+
   # 2bis. lidR ne segmente QUE depuis la memoire.
   #
   #   dalponte2016() : if (raster_is_proxy(chm) & missing(bbox))
@@ -301,7 +366,8 @@ segment_houppiers <- function(chm        = NULL,
     lidR::watershed(chm, th_tree = hmin)()
   } else {
     tops <- lidR::locate_trees(chm, lidR::lmf(ws = ws, hmin = hmin))
-    if (is.null(tops) || nrow(tops) == 0L) return(.houppier_empty(chm))
+    if (is.null(tops) || nrow(tops) == 0L)
+      return(.houppier_flag(.houppier_empty(chm), degenere))
     # Garde suggeree par le rapport du 2026-08-23 : la segmentation echouait
     # sur « st_crs(x) == st_crs(y) is not TRUE », leve par un stopifnot() de
     # `sf` DEPUIS lidR — un message qui decrit un symptome, pas une cause.
@@ -330,7 +396,9 @@ segment_houppiers <- function(chm        = NULL,
       lidR::silva2016(chm, tops, ID = "treeID")()
     }
   }
-  if (is.null(seg) || all(is.na(terra::minmax(seg)))) return(.houppier_empty(chm))
+  if (is.null(seg) || all(is.na(terra::minmax(seg)))) {
+    return(.houppier_flag(.houppier_empty(chm), degenere))
+  }
 
   # 4. Apex height per crown — zonal, never a global read.
   h <- terra::zonal(chm, seg, fun = "max", na.rm = TRUE)
@@ -344,7 +412,7 @@ segment_houppiers <- function(chm        = NULL,
   keep <- !is.na(polys$h_max) &
     polys$h_max >= h_range[1] & polys$h_max <= h_range[2]
   polys <- polys[keep, , drop = FALSE]
-  if (nrow(polys) == 0L) return(.houppier_empty(chm))
+  if (nrow(polys) == 0L) return(.houppier_flag(.houppier_empty(chm), degenere))
 
   # 5b. Keep the crowns that MEET the AOI, whole. Selection, never clipping:
   # `st_filter()` returns the geometry untouched, `st_intersection()` would cut
@@ -352,7 +420,7 @@ segment_houppiers <- function(chm        = NULL,
   if (!is.null(aoi_sel)) {
     polys <- sf::st_filter(polys, sf::st_union(sf::st_geometry(aoi_sel)),
                            .predicate = sf::st_intersects)
-    if (nrow(polys) == 0L) return(.houppier_empty(chm))
+    if (nrow(polys) == 0L) return(.houppier_flag(.houppier_empty(chm), degenere))
   }
 
   polys <- polys[order(-polys$h_max), , drop = FALSE]
@@ -363,7 +431,7 @@ segment_houppiers <- function(chm        = NULL,
     geometry    = sf::st_geometry(polys)
   )
   sf::st_agr(out) <- "constant"
-  out
+  .houppier_flag(out, degenere)
 }
 
 

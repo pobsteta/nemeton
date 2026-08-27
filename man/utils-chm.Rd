@@ -6,7 +6,7 @@
 \description{
 Helpers to sanitize and exploit Canopy Height Model rasters produced
 by external sources such as the \code{opencanopy} package
-(pobsteta/opencanopynemeton) or LiDAR HD.
+(pobsteta/opencanopy) or LiDAR HD.
 }
 \details{
 The main entry point is \code{\link{sanitize_chm}}, a 5-step pipeline

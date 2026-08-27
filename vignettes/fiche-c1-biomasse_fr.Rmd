@@ -384,7 +384,7 @@ Détails qui comptent :
 │   ├── lidar_nuage/  ← nuage .laz ; MNH recalculé à la volée via lasR si absent
 │   └── chm.tif | mnh.tif                    (fichiers directs)
 ├── data/chm.tif | data/mnh.tif              (dernier recours)
-└── (chm.tif | mnh.tif à la racine — convention opencanopynemeton)
+└── (chm.tif | mnh.tif à la racine — convention opencanopy)
 ```
 
 La présence de `cache/layers/lidar_mn[ht]` est aussi ce qui fait basculer

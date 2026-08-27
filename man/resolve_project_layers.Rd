@@ -51,7 +51,7 @@ When `load = TRUE`: a `SpatRaster`, or `NULL` if no
 Néméton projects accumulate digital terrain models (MNT / DEM /
 DTM) and canopy height models (MNH / CHM) from several sources —
 IGN RGE ALTI downloaded by tutorials, LiDAR HD MNT produced by
-`lidR`, `opencanopynemeton`'s `dtm.tif`, Open-Canopy CHM tiles —
+`lidR`, `opencanopy`'s `dtm.tif`, Open-Canopy CHM tiles —
 each landing under its own naming convention. These helpers walk
 a list of well-known locations in **priority order** (highest
 quality first) and return the first match, so callers don't have
@@ -74,7 +74,7 @@ calls transparently cover the full footprint.
   \item `<project>/cache/layers/dem.tif`          — direct file (v0.25.5)
   \item `<project>/cache/layers/dtm.tif`          — direct file (v0.25.5)
   \item `<project>/cache/layers/mnt.tif`          — direct file (v0.25.5)
-  \item `<project>/dtm.tif`                        — `opencanopynemeton` convention
+  \item `<project>/dtm.tif`                        — `opencanopy` convention
   \item `<project>/dem.tif`                        — project root (v0.25.5)
   \item `<project>/mnt.tif`                        — tutorial convention
   \item `<project>/data/dtm.tif`                   — alt project layout
@@ -103,7 +103,7 @@ calls transparently cover the full footprint.
 dem <- resolve_project_dem("C:/.../projects/20260416_112240_gomv",
                            verbose = TRUE)
 if (is.null(dem)) {
-  stop("No DEM found — download one with opencanopynemeton or happign.")
+  stop("No DEM found — download one with opencanopy or happign.")
 }
 attr(dem, "nemeton_dem_layer")  # "opencanopy DTM"
 plan <- create_sampling_plan(zone, mnt = dem, ...)

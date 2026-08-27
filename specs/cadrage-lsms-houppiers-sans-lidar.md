@@ -14,7 +14,7 @@
 
 **`segment_houppiers()` (v0.184.0) ne demande pas de LiDAR. Elle demande un
 MNH.** Et le MNH sur lequel elle a été validée n'en vient pas :
-`opencanopynemeton` **prédit** `chm_predicted_0_2m.tif` depuis l'**ortho IGN +
+`opencanopy` **prédit** `chm_predicted_0_2m.tif` depuis l'**ortho IGN +
 IRC à 0,20 m** (4 canaux R, G, B, NIR) avec un modèle Open-Canopy entraîné sur
 SPOT. Vérifié dans `R/pipeline_aoi_to_chm.R` : les seules entrées téléchargées
 sont `download_ortho_for_aoi()` et la couche IRC. Aucun `.laz` n'intervient.
@@ -124,7 +124,7 @@ fonction concurrente.
 **Trois points durs à ne pas sous-estimer**, si la question revient :
 
 * **L'ombre.** Sans traitement, une couronne éclairée et son ombre font deux
-  régions. Un masque NDVI/NDWI (celui que `opencanopynemeton` calcule déjà pour
+  régions. Un masque NDVI/NDWI (celui que `opencanopy` calcule déjà pour
   `chm_vegetation_0_2m.tif`) limiterait la casse, sans la supprimer.
 * **La taille.** 418 M de cellules à 0,20 m : LSMS est conçu pour ça (c'est le
   sens de *Large-Scale*, il travaille par tuiles sur disque), mais la chaîne

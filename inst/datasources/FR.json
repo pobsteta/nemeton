@@ -588,7 +588,7 @@
       ],
       "provenance": {
         "package": "opencanopy",
-        "repo": "https://github.com/pobsteta/opencanopynemeton",
+        "repo": "https://github.com/pobsteta/opencanopy",
         "version_min": "0.1.0",
         "model": [
           "unet",

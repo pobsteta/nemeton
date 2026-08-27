@@ -28,7 +28,7 @@ License  : MIT (code) / CC-BY-4.0 (data) — to be confirmed at commit
            for the specific release consumed.
 Usage    : Pre-trained UNet / PVTv2 weights and benchmark data used
            by the downstream `opencanopy` R package
-           (pobsteta/opencanopynemeton) to produce CHM rasters fed
+           (pobsteta/opencanopy) to produce CHM rasters fed
            into `nemeton::sanitize_chm()`.
 
 Derived CHM (opencanopy artefact)
