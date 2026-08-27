@@ -155,7 +155,7 @@ test_that("indicator_labels() flattens the table consistently", {
 })
 
 
-test_that("indicator_labels() porte l'URL de la fiche C1, et NA partout ailleurs", {
+test_that("indicator_labels() expose doc_url selon ce que declare indicator_docs", {
   ind <- indicator_labels()
 
   # La colonne existe pour les 41 indicateurs et reste du texte : l'aval teste
@@ -178,8 +178,15 @@ test_that("indicator_labels() porte l'URL de la fiche C1, et NA partout ailleurs
                      use.names = FALSE)
   expect_setequal(ind$code[!is.na(ind$doc_url)], declares)
 
-  # Une famille sans aucune fiche ne casse pas (indicator_docs absent).
-  expect_true(all(is.na(indicator_labels("W")$doc_url)))
+  # Une famille sans aucune fiche ne casse pas. Le cas est verifie sur une
+  # famille SYNTHETIQUE, pas sur une famille reelle : nommer "W" ici revenait
+  # a figer le fait que W n'a pas de fiche, et l'assertion est effectivement
+  # tombee au rouge le jour ou les fiches W ont ete ecrites — pour une bonne
+  # nouvelle. C'est exactement le piege que le brief app decrit.
+  fam_sans_docs <- list(indicators = c("X1", "X2"))
+  sans <- .family_docs(fam_sans_docs, "fr")
+  expect_true(all(is.na(sans$url)))
+  expect_true(all(is.na(sans$lang)))
 
   # C1 n'a qu'une fiche francaise : une demande en anglais rend la page
   # francaise, et le dit (`doc_lang`). Le jour ou la fiche anglaise existe,
