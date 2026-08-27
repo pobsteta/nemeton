@@ -198,8 +198,13 @@ INDICATOR_FAMILIES <- list(
         fr = "Potentiel de fertilit\u00e9 des sols bas\u00e9 sur les caract\u00e9ristiques p\u00e9dologiques (texture, profondeur, mati\u00e8re organique).",
         en = "Soil fertility potential based on pedological characteristics (texture, depth, organic matter)."
       )
+    ),
+    indicator_docs = list(
+      F1 = list(fr = "articles/fiche-f1-fertilite_fr.html"),
+      F2 = list(fr = "articles/fiche-f2-erosion_fr.html")
     )
   ),
+
   L = list(
     code = "L",
     name_fr = "Paysage",
@@ -228,8 +233,14 @@ INDICATOR_FAMILIES <- list(
         fr = "H\u00e9t\u00e9rog\u00e9n\u00e9it\u00e9 spectrale (\u03b2) du paysage d\u00e9riv\u00e9e de Sentinel-2 : dispersion des fen\u00eatres de l\u2019unit\u00e9 dans l\u2019ordination (PCoA) de la dissimilarit\u00e9 Bray-Curtis entre \u00ab spectral species \u00bb. Mesure la diversit\u00e9 de la mosa\u00efque (compl\u00e9mentaire de L2, morcellement g\u00e9om\u00e9trique). NA sous 3 fen\u00eatres couvertes. Proxy \u00e0 valider terrain.",
         en = "Spectral (\u03b2) landscape heterogeneity from Sentinel-2: dispersion of the unit\u2019s windows in the PCoA ordination of the Bray-Curtis dissimilarity between spectral species. Measures mosaic diversity (complementary to L2, geometric fragmentation). NA below 3 covered windows. Proxy pending field validation."
       )
+    ),
+    indicator_docs = list(
+      L1 = list(fr = "articles/fiche-l1-effet-lisiere_fr.html"),
+      L2 = list(fr = "articles/fiche-l2-morcellement_fr.html"),
+      L3 = list(fr = "articles/fiche-l3-heterogeneite-spectrale_fr.html")
     )
   ),
+
   T = list(
     code = "T",
     name_fr = "Dynamique Temporelle",

@@ -1,0 +1,110 @@
+---
+title: "Fiche indicateur F2 - Resistance a l'erosion"
+author: "Pascal Obstetar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fiche indicateur F2 - Resistance a l'erosion}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+
+---
+
+## 1. Carte d'identité
+
+| Élément | Valeur |
+|---|---|
+| Code | `F2` |
+| Nom long / colonne | `indicateur_f2_erosion` |
+| Famille | **F — Fertilité des sols** |
+| Grandeur mesurée | **Résistance** à l'érosion (haut = risque plus faible) |
+| Unité brute | **score 0–100** |
+| Sens | Haut = favorable |
+| Normalisation | **native 0–100**, écrêtage |
+| Fonction | `indicateur_f2_erosion()` — `R/indicators-families.R:1583` |
+
+> **Le nom trompe, et la doc l'a longtemps fait aussi.** L'indicateur s'appelle
+> « érosion » mais **un score élevé est bon** : il mesure une résistance, pas un
+> risque. Jusqu'au correctif de la spec 049, sa documentation annonçait rendre
+> des « fertility scores (higher = more fertile) » et journalisait « Computing
+> fertility from TWI + slope » — copié-collé depuis F1.
+
+## 2. Le calcul
+
+```
+TWI       = moyenne zonale du TWI                    cache partage W2/W3/F2/R3
+pente     = moyenne zonale de terrain(dem, "slope")  degres
+
+twi_norm   = ecrete((TWI - 2,5) / 7,5 x 100, 0, 100)
+slope_norm = ecrete(100 - pente / 45 x 100, 0, 100)
+
+F2 = moyenne(twi_norm, slope_norm)   [+ composante texturale si `texture` fourni]
+```
+
+Les ingrédients sont **topographiques** — TWI et pente — plus une résistance
+texturale optionnelle issue de Theia (`texture_to_erosion_resistance()`). La
+couverture végétale **n'entre pas** dans le calcul, contrairement à ce que
+l'ancienne infobulle laissait croire.
+
+**Exemples chiffrés** :
+
+| Situation | TWI | Pente | twi_norm | slope_norm | F2 |
+|---|---|---|---|---|---|
+| Plateau, sol drainant | 4,0 | 3° | 20,0 | 93,3 | **56,7** |
+| Bas de versant humide, pente douce | 7,0 | 8° | 60,0 | 82,2 | **71,1** |
+| Versant raide | 3,2 | 30° | 9,3 | 33,3 | **21,3** |
+| Ravin très pentu | 2,8 | 42° | 4,0 | 6,7 | **5,4** |
+
+## 3. Le calcul par niveau NDP
+
+| NDP | MNT | Ce qui change |
+|---|---|---|
+| **0** | MNT 25 m | pente moyennée sur 25 m : les ruptures disparaissent |
+| **1** | **LiDAR HD** | pente et TWI à l'échelle du micro-relief — la vraie rupture |
+| **2** | LiDAR drone | ravines et ornières de débardage visibles |
+| **3** | observation terrain | signes d'érosion constatés |
+| **4** | — | — |
+
+Comme W3, F2 est **très sensible à la résolution du MNT** : la pente moyenne
+d'une unité augmente mécaniquement quand le MNT s'affine. Un projet qui passe au
+LiDAR HD verra F2 baisser sans qu'aucun sol n'ait bougé.
+
+## 4. Trois pièges
+
+1. **Deux fenêtres de TWI coexistent dans le paquet.** F2 normalise le TWI sur
+   `[2,5 ; 10]` alors que **W3 le normalise sur `[2,5 ; 4,5]`** et que W2 le
+   seuille à 12. Trois conventions pour le même raster. Un TWI de 5 vaut 33 dans
+   F2 et 100 dans W3 : ne jamais transposer une lecture de l'un à l'autre.
+2. **Un TWI élevé améliore la résistance à l'érosion dans ce calcul.** Le
+   commentaire du code dit « higher TWI = more fertile » — hérité de F1. Un TWI
+   élevé signale une zone d'accumulation, ce qui est cohérent avec « peu
+   érodable » (le matériau s'y dépose plutôt qu'il n'en part), mais le
+   raisonnement n'est pas explicité et mérite validation terrain.
+3. **La pente moyenne d'une unité masque les ruptures.** Une parcelle plate
+   coupée d'un talus de 20 m rend une pente moyenne faible et un F2 flatteur,
+   alors que tout le risque est concentré sur le talus.
+
+## 5. Aval
+
+```
+indicateur_f2_erosion()  ->  colonne indicateur_f2_erosion (0-100)
+      |
+      +- normalize_indicator()     -> passthrough clamp
+      +- create_family_index("F")  -> famille_fertilite = moy(F1, F2)
+```
+
+## 6. Références internes
+
+| Sujet | Fichier |
+|---|---|
+| Fonction F2 | `R/indicators-families.R:1583-1680` |
+| TWI partagé | `get_or_compute_twi()` — cache W2/W3/F2/R3 |
+| Composante texturale | `texture_to_erosion_resistance()` |
+| Correction du sens et de la doc | `NEWS.md`, spec 049 |

@@ -64,6 +64,20 @@ navbar:
         href: articles/fiche-a4-tamponnement_fr.html
       - text: "A5 - Rafraichissement urbain"
         href: articles/fiche-a5-rafraichissement_fr.html
+      - text: "---"
+      - text: "Famille F - Fertilite des sols"
+      - text: "F1 - Fertilite des sols"
+        href: articles/fiche-f1-fertilite_fr.html
+      - text: "F2 - Resistance a l'erosion"
+        href: articles/fiche-f2-erosion_fr.html
+      - text: "---"
+      - text: "Famille L - Paysage"
+      - text: "L1 - Effet de lisiere"
+        href: articles/fiche-l1-effet-lisiere_fr.html
+      - text: "L2 - Morcellement"
+        href: articles/fiche-l2-morcellement_fr.html
+      - text: "L3 - Heterogeneite spectrale"
+        href: articles/fiche-l3-heterogeneite-spectrale_fr.html
     articles:
       text: Articles
       menu:

@@ -1,0 +1,117 @@
+---
+title: "Fiche indicateur L1 - Effet de lisiere"
+author: "Pascal Obstetar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fiche indicateur L1 - Effet de lisiere}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+
+---
+
+## 1. Carte d'identité
+
+| Élément | Valeur |
+|---|---|
+| Code | `L1` |
+| Nom long / colonne | `indicateur_l1_effet_lisiere` |
+| Famille | **L — Paysage** (avec L2, L3) |
+| Grandeur mesurée | Intensité de l'effet de lisière subi par l'unité |
+| Unité brute | **score 0–100** |
+| Sens | Haut = favorable |
+| Normalisation | **native 0–100**, écrêtage |
+| Fonction | `indicateur_l1_effet_lisiere()` — `R/indicators-families.R:1682` |
+| Ancien nom | `indicateur_l1_sylvosphere()` — conservé en alias (spec 045) |
+
+## 2. Le calcul — trois composantes pondérées
+
+```
+L1 = 0,30 x geometrie + 0,40 x contraste_matrice + 0,30 x exposition
+```
+
+### Géométrie (30 %)
+
+```
+SI = perimetre / (2 x racine(pi x aire))     indice de forme, 1 = disque parfait
+composante = min(100, (SI - 1) x 25)
+```
+
+Une parcelle compacte a un SI proche de 1 et une composante proche de 0 ; une
+lanière étroite monte vite.
+
+### Contraste de matrice (40 %)
+
+Table de contraste OSO, appliquée aux pixels voisins :
+
+| Occupation | Contraste |
+|---|---|
+| Forêt (16, 17, 18) | 0 |
+| Landes (19) | 15 |
+| Prairies (20) | 20 |
+| Eau (30) | 30 |
+| Vignes (24) | 45 |
+| Cultures (21, 22, 23) | 50 |
+| Routes (29) | 75 |
+| Bâti (25–28) | 90 |
+
+**Sans couche d'occupation du sol, cette composante vaut 50** pour toutes les
+unités — soit 40 % du score figé sur une constante (cf. §4).
+
+### Exposition (30 %)
+
+`0,6 × score_vent + 0,4 × score_ensoleillement`, calculés sur le relief. Repli à
+**50** en l'absence des entrées nécessaires.
+
+## 3. Le calcul par niveau NDP
+
+| NDP | Ce qui change |
+|---|---|
+| **0** | OSO 30 m + MNT 25 m — les trois composantes sont calculables |
+| **1** | MNT LiDAR HD : l'exposition (vent, soleil) gagne en finesse |
+| **2** | ortho drone : le contraste de matrice devient réel, haie par haie |
+| **3** | relevé terrain de la lisière | 
+| **4** | — |
+
+## 4. Trois pièges
+
+1. **Deux composantes sur trois retombent sur 50 en l'absence de données**, sans
+   avertissement — le contraste (40 %) et l'exposition (30 %). Sans occupation
+   du sol ni relief exploitable, **70 % de L1 est une constante** et le score se
+   réduit à `35 + 0,3 × géométrie`. C'est le même motif que B3 : un score
+   d'apparence mesurée dont la majeure partie est fabriquée. Vérifier qu'une
+   couche `landcover` est bien chargée avant de lire L1.
+2. **La géométrie mesure la forme de l'UGF, pas celle du massif.** Un découpage
+   cadastral en lanières produit des SI élevés sans qu'aucune lisière
+   écologique n'existe : deux parcelles voisines au cœur d'un même massif
+   continu peuvent obtenir des scores très différents pour une raison purement
+   administrative.
+3. **Le nom a changé, l'ancien reste accepté.** `indicateur_l1_sylvosphere()`
+   est conservé comme alias (spec 045) et les slugs `indicateur_l1_sylvosphere`
+   restent reconnus par la normalisation pour les jeux non migrés. Les deux
+   noms historiques de la famille L « annonçaient l'inverse de ce qu'ils
+   calculaient » — d'où le renommage.
+
+## 5. Aval
+
+```
+indicateur_l1_effet_lisiere()  ->  colonne indicateur_l1_effet_lisiere
+      |
+      +- normalize_indicator()     -> passthrough clamp
+      +- create_family_index("L")  -> famille_paysage = moy(L1, L2, L3)
+```
+
+## 6. Références internes
+
+| Sujet | Fichier |
+|---|---|
+| Fonction L1 | `R/indicators-families.R:1682-1860` |
+| Alias historique | `indicateur_l1_sylvosphere()` — `:1992` |
+| Renommage de la famille | `specs/045-renommage-famille-L/`, `migrer_colonnes_l()` |
