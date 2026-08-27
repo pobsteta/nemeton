@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.191.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.191.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.191.1" id="nemeton-01911-2026-08-27">nemeton 0.191.1 (2026-08-27)<a class="anchor" aria-label="anchor" href="#nemeton-01911-2026-08-27"></a></h2>
+<div class="section level4">
+<h4 id="fixed--un-chm-mort-rendait-une-couche-vide-sans-un-mot-0-191-1">Fixed — un CHM mort rendait une couche vide, sans un mot<a class="anchor" aria-label="anchor" href="#fixed--un-chm-mort-rendait-une-couche-vide-sans-un-mot-0-191-1"></a></h4>
+<p><code><a href="../reference/segment_houppiers.html">segment_houppiers()</a></code> ne distinguait pas <strong>« aucun arbre ici »</strong> de <strong>« le modèle de hauteur est en panne »</strong> : les deux rendaient le même objet vide. Le garde-fou existait pourtant depuis la v0.109.0 — mais dans <code>R/synthetic_inventory.R</code>, sur le chemin de l’inventaire synthétique, pas ici.</p>
+<p>C’est la confusion « 0 n’est pas NA » que les v0.186/v0.187 ont soldée partout ailleurs. Portée ici, pour les <strong>quatre</strong> algorithmes, LSMS <code>martelage</code> compris.</p>
+<p>Mesuré sur le projet Fordead : <code>chm_predicted_0_2m.tif</code> plafonne à <strong>0,1879 m sur ses 292 millions de cellules</strong> (vérifié sur le raster entier, sans facteur d’échelle en cause), et la segmentation rendait <code>0 houppiers</code> en silence.</p>
+<p>Le verdict est estampillé <strong>sur la sortie, couche vide comprise</strong> — <code>attr(x, "chm_suspect")</code>, plus <code>chm_max</code> et <code>chm_frac_low</code> quand il est vrai. C’est le cas vide qui a le plus besoin de porter le diagnostic.</p>
+<p><strong>La règle est plus stricte que celle dont elle est issue, et c’est un test qui l’a imposé.</strong> La version d’origine n’exige qu’un maximum « sous le plancher » : elle signale donc un gaulis uniforme à 4 m sous un plancher de 5 m — un peuplement parfaitement légitime. Le CHM réellement mort plafonne à 0,19 m, soit <strong>trois ordres de grandeur</strong> plus bas. Le maximum doit désormais tomber sous <code>max_frac</code> fois le plancher (10 % par défaut, soit 0,5 m pour un plancher de 5 m). Un peuplement clair — 96 % de sol nu mais des arbres de 25 m — n’est pas signalé non plus ; une coupe rase réelle l’est, et c’est voulu : le message invite à vérifier, et « zéro houppier » reste alors la bonne réponse.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.191.0" id="nemeton-01910-2026-08-27">nemeton 0.191.0 (2026-08-27)<a class="anchor" aria-label="anchor" href="#nemeton-01910-2026-08-27"></a></h2>
 <div class="section level4">
