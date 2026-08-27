@@ -12,7 +12,7 @@
 
 ### 1.1 Vision
 
-Faire consommer par le cœur `nemeton` les **CHM (Canopy Height Models) produits par le package `opencanopy`** (pobsteta/opencanopynemeton) afin d'améliorer substantiellement la qualité des indicateurs de production (P1, P2) et quelques indicateurs connexes (C1, B2, R2) **dès NDP 0-1**, là où aujourd'hui la hauteur de canopée n'est disponible qu'à partir de NDP 1 (via LiDAR HD).
+Faire consommer par le cœur `nemeton` les **CHM (Canopy Height Models) produits par le package `opencanopy`** (pobsteta/opencanopy) afin d'améliorer substantiellement la qualité des indicateurs de production (P1, P2) et quelques indicateurs connexes (C1, B2, R2) **dès NDP 0-1**, là où aujourd'hui la hauteur de canopée n'est disponible qu'à partir de NDP 1 (via LiDAR HD).
 
 ### 1.2 Principe
 
@@ -41,7 +41,7 @@ Faire consommer par le cœur `nemeton` les **CHM (Canopy Height Models) produits
 
 ```
 ┌──────────────────────────┐
-│   opencanopynemeton      │  (pobsteta/opencanopynemeton, v0.1.0)
+│   opencanopy            │  (pobsteta/opencanopy, v0.1.0)
 │   R + reticulate + torch │
 │   Produit : CHM COG      │  ← sortie standard : Cloud-Optimized GeoTIFF
 └────────────┬─────────────┘
@@ -384,7 +384,7 @@ Tout est **rétrocompatible** : si `chm` absent, comportement actuel inchangé.
 - ADR-009 (séparation 4 packages)
 - ADR-011 (NDP, Fibonacci, φ) — **à amender pour le flag `augmented`**
 - ADR-002 (abstraction sources de données)
-- Package `opencanopy` v0.1.0 : https://github.com/pobsteta/opencanopynemeton
+- Package `opencanopy` v0.1.0 : https://github.com/pobsteta/opencanopy
 - Dataset Open-Canopy : https://huggingface.co/datasets/AI4Forest/Open-Canopy
 - Fogel et al. 2024, arXiv:2407.09392
 - BD ORTHO® IGN : https://geoservices.ign.fr/bdortho

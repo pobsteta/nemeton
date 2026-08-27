@@ -1,7 +1,7 @@
 # Note de cadrage — package amont `biophysnemeton`
 
 > Deliverable C de `specs/brief-instance-nemeton.md`. Cadrage de périmètre, pas
-> d'implémentation. Nom provisoire `biophysnemeton` ; patron `opencanopynemeton`
+> d'implémentation. Nom provisoire `biophysnemeton` ; patron `opencanopy`
 > (ADR-009).
 
 ## 1. Raison d'être
@@ -11,7 +11,7 @@ rasters biophysiques (LAI, fAPAR, FCOVER, CCC). Ce traitement — acquisition S2
 application du perceptron par plateforme, assainissement, composite temporel —
 est **de la production de donnée amont**, pas du calcul d'indicateur. L'ADR-009
 impose : les dépendances vont **vers** le cœur `nemeton`, jamais l'inverse. Donc
-un package séparé, comme `opencanopynemeton` produit les CHM que nemeton consomme
+un package séparé, comme `opencanopy` produit les CHM que nemeton consomme
 via `chm=`.
 
 ## 2. Frontière exacte avec `nemeton`
@@ -30,7 +30,7 @@ via `chm=`.
 **Règle de partage** : `biophysnemeton` produit des **rasters + métriques de
 qualité** ; `nemeton` **décide** (gating, anomalie, correction) et **consomme**.
 La frontière suit celle de `sanitize_chm()` (nemeton assainit un CHM produit par
-`opencanopynemeton`) — mais ici l'assainissement SL2P (masques, hors-domaine) est
+`opencanopy`) — mais ici l'assainissement SL2P (masques, hors-domaine) est
 intrinsèque au traitement et reste **amont**.
 
 > **HYPOTHÈSE :** le gating reste **côté nemeton** (il pose `augmented`, qui est
@@ -40,7 +40,7 @@ intrinsèque au traitement et reste **amont**.
 
 ## 3. Interface publique proposée
 
-Minimale, sur le modèle `opencanopynemeton` :
+Minimale, sur le modèle `opencanopy` :
 
 ```r
 # Production : AOI + période -> stack des 4 variables + métriques de qualité.
