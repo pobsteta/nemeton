@@ -891,12 +891,28 @@ houppiers en 143 s (173/ha, 7,92 m), `couvert` 698 segments sans colonne
 CRS, l'aller-retour shapefile et la zonale n'introduisent aucune dérive, ce qui
 était le risque principal.
 
-**Trouvé en chemin, hors sujet mais à traiter** : les deux CHM Open-Canopy du
-projet Fordead (`chm_predicted_0_2m.tif`, `chm_vegetation_0_2m.tif`) sont
-**entièrement à zéro** (max 0,10 m). C'est le cas que le garde-fou `chm_suspect`
-(v0.109.0) existe pour attraper — reste à vérifier qu'il se déclenche bien
-dessus, le projet ayant produit 224 614 houppiers en passant par son MNH LiDAR
-sans que rien ne signale que la prédiction était vide.
+**Le couplage LSMS + Open-Canopy n'est pas testable, et le constat est plus
+large que prévu.** Les deux CHM Open-Canopy de Fordead plafonnent à **0,1879 m
+sur 292 M cellules** (vérifié sur le raster entier, sans facteur d'échelle) :
+le couplage rend **0 segment sur 698** contre 692 avec le MNH LiDAR. Et
+l'inventaire des quatre projets montre qu'**il n'existe qu'UN seul jeu ortho
+haute résolution + CHM sur ce poste** — celui de Fordead, dont l'ortho à 0,20 m
+est un sous-produit du run Open-Canopy. Les `irc.tif` des autres projets sont
+des vues WMS à **~3,7 m/pixel** : un houppier de 8 m y fait deux pixels.
+Reconfort a un MNH LiDAR sain et **rien à segmenter**.
+
+Conséquence pour la spec : les points 1 et 4 du §6 (coût sur peuplement clair,
+stabilité du défaut entre peuplements) sont bloqués par la **donnée**, pas par
+la méthode. Il faut acquérir une BD ORTHO IGN à 0,20 m ailleurs, ou relancer
+Open-Canopy. Consigné §6 pour ne pas laisser croire que c'est à portée.
+
+**Défaut mis au jour, et il dépasse LSMS** : un CHM mort produit une couche
+**vide sans que rien ne le dise**. Vérifié — `segment_houppiers()` rend
+`0 houppiers` et l'attribut `chm_suspect` est **absent**. Le garde-fou existe
+(v0.109.0) mais vit dans `R/synthetic_inventory.R`, pas ici : une clairière
+légitime et une prédiction en panne rendent le même objet. C'est la confusion
+« 0 n'est pas NA » soldée ailleurs en v0.186/v0.187. À porter dans
+`segment_houppiers()`, pour les quatre algorithmes.
 
 ---
 
