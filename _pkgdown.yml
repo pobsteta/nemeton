@@ -42,6 +42,9 @@ navbar:
         href: articles/site-index-open-canopy_fr.html
       - text: Analyse temporelle
         href: articles/temporal-analysis_fr.html
+      - text: "---"
+      - text: "Fiche C1 - Biomasse carbone (par NDP)"
+        href: articles/fiche-c1-biomasse_fr.html
 
 reference:
   - title: "Gestion des donnees"

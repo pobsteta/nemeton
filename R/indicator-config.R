@@ -22,6 +22,14 @@ INDICATOR_FAMILIES <- list(
         fr = "Indice de v\u00e9g\u00e9tation par diff\u00e9rence normalis\u00e9e (NDVI). Mesure la vitalit\u00e9 et l'activit\u00e9 photosynth\u00e9tique de la v\u00e9g\u00e9tation. Valeurs de 0 (sol nu) \u00e0 1 (v\u00e9g\u00e9tation dense).",
         en = "Normalized Difference Vegetation Index (NDVI). Measures vegetation vitality and photosynthetic activity. Values from 0 (bare soil) to 1 (dense vegetation)."
       )
+    ),
+    # Fiches longues (vignettes pkgdown) : une entree PAR indicateur qui en a
+    # une. L'aval (nemetonshiny) lit `doc_url` dans `indicator_labels()` pour
+    # decider s'il affiche un lien « fiche » a cote de l'infobulle. Un
+    # indicateur sans fiche n'a pas de cle ici et sort a NA : c'est la
+    # condition d'affichage, pas une erreur.
+    indicator_docs = list(
+      C1 = "articles/fiche-c1-biomasse_fr.html"
     )
   ),
   B = list(
@@ -649,6 +657,40 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 }
 
 
+# Base du site pkgdown, lue dans le champ URL du DESCRIPTION (premiere entree)
+# pour qu'il n'existe qu'une seule source de verite. Le repli couvre le cas ou
+# le package est charge par devtools::load_all() sans DESCRIPTION installe.
+.doc_base_url <- function() {
+  url <- tryCatch(utils::packageDescription("nemeton")$URL,
+                  error = function(e) NULL)
+  first <- if (!is.null(url) && !is.na(url)) {
+    trimws(strsplit(url, ",", fixed = TRUE)[[1]][1])
+  } else {
+    NA_character_
+  }
+  if (is.na(first) || !nzchar(first)) first <- "https://pobsteta.github.io/nemeton/"
+  sub("/?$", "/", first)
+}
+
+# URL absolue de la fiche de chaque indicateur d'une famille, NA quand
+# l'indicateur n'en a pas. `indicator_docs` porte des hrefs RELATIFS au site
+# pkgdown ; une entree deja absolue (http/https) est laissee telle quelle,
+# pour qu'une fiche hebergee ailleurs reste possible sans changer l'API.
+.family_doc_urls <- function(fam, base = .doc_base_url()) {
+  docs <- fam$indicator_docs
+  # Le test d'appartenance, plutot que `docs[[ic]]` : la famille peut n'avoir
+  # aucune fiche (`docs` NULL), et `[[` sur un nom absent n'a pas le meme
+  # comportement selon le type du conteneur.
+  known <- if (is.null(docs)) character(0) else names(docs)
+  vapply(fam$indicators, function(ic) {
+    if (!ic %in% known) return(NA_character_)
+    href <- as.character(docs[[ic]])[1]
+    if (is.na(href) || !nzchar(href)) return(NA_character_)
+    if (grepl("^https?://", href)) href else paste0(base, sub("^/", "", href))
+  }, character(1), USE.NAMES = FALSE)
+}
+
+
 #' Indicator table (long format)
 #'
 #' @description
@@ -672,7 +714,16 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 #'
 #' @return A `data.frame` with columns `family` (family code), `family_column`
 #'   (family score column), `code` (indicator code), `column_name`, `label`,
-#'   `label_fr`, `label_en`, `tooltip`, `tooltip_fr` and `tooltip_en`.
+#'   `label_fr`, `label_en`, `tooltip`, `tooltip_fr`, `tooltip_en` and
+#'   `doc_url`.
+#'
+#' @section Indicator fact sheets (`doc_url`):
+#' Some indicators have a long-form fact sheet published as a pkgdown article
+#' (C1 today). `doc_url` carries its absolute URL, and is `NA` for every
+#' indicator without one — that `NA` is the condition a UI tests before
+#' offering a "read the fact sheet" link next to the tooltip, not an error.
+#' The base of the URL is the first entry of the package `URL` field, so the
+#' site address is declared once, in `DESCRIPTION`.
 #'
 #' @seealso [indicator_families()]
 #'
@@ -686,6 +737,9 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 #' # Bilingual lookup, without a second call
 #' stats::setNames(ind$label_en, ind$code)[["C1"]]
 #'
+#' # Indicators that have a fact sheet, and where to read it
+#' ind[!is.na(ind$doc_url), c("code", "doc_url")]
+#'
 #' @export
 indicator_labels <- function(codes = NULL, lang = c("fr", "en")) {
   lang <- match.arg(lang)
@@ -694,7 +748,8 @@ indicator_labels <- function(codes = NULL, lang = c("fr", "en")) {
   cols <- c(
     "family", "family_column", "code", "column_name",
     "label", "label_fr", "label_en",
-    "tooltip", "tooltip_fr", "tooltip_en"
+    "tooltip", "tooltip_fr", "tooltip_en",
+    "doc_url"
   )
 
   if (length(fams) == 0) {
@@ -703,6 +758,9 @@ indicator_labels <- function(codes = NULL, lang = c("fr", "en")) {
       stringsAsFactors = FALSE
     ))
   }
+
+  # Une seule lecture du DESCRIPTION par appel, pas une par famille.
+  doc_base <- .doc_base_url()
 
   rows <- lapply(fams, function(f) {
     n <- length(f$indicators)
@@ -715,6 +773,7 @@ indicator_labels <- function(codes = NULL, lang = c("fr", "en")) {
       label_en = unname(.family_texts(f, "indicator_labels", "en")),
       tooltip_fr = unname(.family_texts(f, "indicator_tooltips", "fr")),
       tooltip_en = unname(.family_texts(f, "indicator_tooltips", "en")),
+      doc_url = unname(.family_doc_urls(f, base = doc_base)),
       stringsAsFactors = FALSE
     )
     out$label <- out[[paste0("label_", lang)]]

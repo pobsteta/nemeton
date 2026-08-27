@@ -16,7 +16,8 @@ indicator_labels(codes = NULL, lang = c("fr", "en"))
 \value{
 A \code{data.frame} with columns \code{family} (family code), \code{family_column}
 (family score column), \code{code} (indicator code), \code{column_name}, \code{label},
-\code{label_fr}, \code{label_en}, \code{tooltip}, \code{tooltip_fr} and \code{tooltip_en}.
+\code{label_fr}, \code{label_en}, \code{tooltip}, \code{tooltip_fr}, \code{tooltip_en} and
+\code{doc_url}.
 }
 \description{
 One row per indicator, flattening \code{\link{indicator_families}}. Useful to build a
@@ -42,7 +43,20 @@ stats::setNames(ind$label, ind$column_name)[["indicateur_c1_biomasse"]]
 # Bilingual lookup, without a second call
 stats::setNames(ind$label_en, ind$code)[["C1"]]
 
+# Indicators that have a fact sheet, and where to read it
+ind[!is.na(ind$doc_url), c("code", "doc_url")]
+
 }
+\section{Indicator fact sheets (\code{doc_url})}{
+
+Some indicators have a long-form fact sheet published as a pkgdown article
+(C1 today). \code{doc_url} carries its absolute URL, and is \code{NA} for every
+indicator without one -- that \code{NA} is the condition a UI tests before
+offering a "read the fact sheet" link next to the tooltip, not an error.
+The base of the URL is the first entry of the package \code{URL} field, so the
+site address is declared once, in \code{DESCRIPTION}.
+}
+
 \seealso{
 \code{\link{indicator_families}}
 }

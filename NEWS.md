@@ -1,3 +1,57 @@
+# nemeton 0.192.0 (2026-08-27)
+
+### Added — fiche indicateur C1, et le `doc_url` qui la rend atteignable depuis l'aval
+
+Première **fiche longue d'indicateur** du projet, publiée en article pkgdown :
+`vignettes/fiche-c1-biomasse_fr.Rmd`. Elle documente les **cinq chemins** de
+`indicateur_c1_biomasse()` dans leur ordre de priorité réel, ce que produit
+chaque niveau NDP, un exemple chiffré bout en bout par chemin, un schéma des
+données d'entrée jusqu'aux livrables, et les pièges connus.
+
+Elle comble un manque précis : `docs/TABLEAU_INDICATEURS_NDP.md` est resté à la
+v0.14.1 et décrit C1 avec trois chemins (allométrie / LiDAR / NDVI). Il ignore
+le **chemin CHM** de la spec 005 — celui qui sert aujourd'hui dès qu'un CHM ML
+public (FORMS-T, FORMSpoT, Open-Canopy) est branché, c'est-à-dire le cas le plus
+courant en production.
+
+**Le mécanisme, plutôt que le lien.** `indicator_labels()` gagne une colonne
+**`doc_url`** : URL absolue de la fiche quand l'indicateur en a une, `NA` sinon.
+La base d'URL est lue dans le champ `URL` du `DESCRIPTION`, donc l'adresse du
+site pkgdown n'est déclarée qu'une fois. L'aval (`nemetonshiny`) teste
+`is.na(doc_url)` pour décider d'afficher un lien « fiche » à côté de
+l'infobulle — il ne code **ni l'URL, ni la liste des indicateurs documentés**.
+
+Ajouter une fiche à un autre indicateur se fait donc **entièrement côté cœur** :
+écrire la vignette, l'ajouter au menu de `_pkgdown.yml`, déclarer une entrée
+`indicator_docs` dans sa famille. L'icône apparaît côté app sans que l'app
+bouge. C'est le prolongement direct du chantier v0.170.0 (export de la table des
+familles) : une duplication silencieuse et exacte est plus dangereuse qu'une
+divergence bruyante.
+
+Brief app : `specs/052-fiche-indicateur-c1/brief-nemetonshiny.md`.
+
+### Documenté — quatre écarts de C1, relevés en écrivant la fiche
+
+Aucun n'est une régression, aucun n'est corrigé ici ; tous sont consignés dans
+la fiche et dans `PLAN.md`.
+
+1. **`density` porte deux unités selon l'indicateur.** Fraction 0–1 pour C1
+   chemin 1 ; **tiges/ha** pour `indicateur_p1_volume()` et
+   `ensure_inventory_fields()`. Or le chemin CHM de C1, faute de colonne
+   `stems_ha`, calcule `density × 500`. Un `sf` passé d'abord dans P1 puis dans
+   C1 sans `stems_ha` produit un C1 surestimé **×500**, sans message. C'est le
+   plus sérieux des quatre.
+2. **Le chemin BD Forêt rend une constante par essence.** `age = 60` et
+   `density = 0,7` sont écrits en dur (`R/utils.R:1206-1207`) : C1 n'y varie que
+   par l'essence dominante, sur cinq valeurs de 4,3 à 14,1 tC/ha.
+3. **L'allométrie âge/densité sous-estime d'un facteur 3 à 10.** 6 à 53 tC/ha
+   pour des peuplements mûrs, là où les chemins CHM, LiDAR et NDVI rendent 76 à
+   162 tC/ha — alors que c'est le chemin censé être le plus précis (NDP 3).
+   `data-raw/allometric_models.R` assume des coefficients « illustratifs »
+   visant 50–200 tC/ha, que les valeurs livrées ne produisent pas.
+4. **`ref_max = 150 tC/ha` sature** dès une hêtraie mûre en chemin CHM
+   (162 tC/ha → score 100).
+
 # nemeton 0.191.0 (2026-08-27)
 
 ### Added — houppiers par LSMS (OTB), bornés par un budget de calcul (spec 051)

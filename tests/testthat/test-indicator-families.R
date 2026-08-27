@@ -132,7 +132,8 @@ test_that("indicator_labels() flattens the table consistently", {
   expect_equal(names(ind), c(
     "family", "family_column", "code", "column_name",
     "label", "label_fr", "label_en",
-    "tooltip", "tooltip_fr", "tooltip_en"
+    "tooltip", "tooltip_fr", "tooltip_en",
+    "doc_url"
   ))
   expect_equal(nrow(ind), length(unlist(fams$indicators, use.names = FALSE)))
 
@@ -151,6 +152,45 @@ test_that("indicator_labels() flattens the table consistently", {
 
   expect_equal(nrow(indicator_labels(codes = character(0))), 0L)
   expect_error(indicator_labels(codes = "Z"), "Unknown family code")
+})
+
+
+test_that("indicator_labels() porte l'URL de la fiche C1, et NA partout ailleurs", {
+  ind <- indicator_labels()
+
+  # La colonne existe pour les 41 indicateurs et reste du texte : l'aval teste
+  # `is.na()` pour decider d'afficher le lien, il ne doit jamais recevoir NULL
+  # ni une liste.
+  expect_type(ind$doc_url, "character")
+  expect_equal(length(ind$doc_url), nrow(ind))
+
+  c1 <- ind$doc_url[ind$code == "C1"]
+  expect_length(c1, 1L)
+  expect_false(is.na(c1))
+  # URL absolue, batie sur le champ URL du DESCRIPTION, pas codee en dur ici.
+  expect_match(c1, "^https?://")
+  expect_match(c1, "articles/fiche-c1-biomasse_fr\\.html$")
+
+  # Aujourd'hui C1 est le seul indicateur documente par une fiche. Ce test
+  # n'interdit pas d'en ajouter : il verifie que les autres sortent bien a NA
+  # tant qu'aucune entree `indicator_docs` ne les declare.
+  expect_true(all(is.na(ind$doc_url[ind$code != "C1"])))
+
+  # Une famille sans aucune fiche ne casse pas (indicator_docs absent).
+  expect_true(all(is.na(indicator_labels("W")$doc_url)))
+})
+
+test_that(".family_doc_urls laisse passer une URL deja absolue", {
+  fam <- list(
+    indicators = c("X1", "X2"),
+    indicator_docs = list(X1 = "https://example.org/fiche.html")
+  )
+  out <- nemeton:::.family_doc_urls(fam, base = "https://pobsteta.github.io/nemeton/")
+  expect_equal(out, c("https://example.org/fiche.html", NA_character_))
+})
+
+test_that(".doc_base_url se termine toujours par une barre oblique", {
+  expect_match(nemeton:::.doc_base_url(), "/$")
 })
 
 test_that("both languages are always returned, whatever lang", {

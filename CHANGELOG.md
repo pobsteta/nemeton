@@ -10,6 +10,26 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.192.0] - 2026-08-27
+
+### Added
+- **Fiche indicateur C1 « Biomasse carbone »**
+  (`vignettes/fiche-c1-biomasse_fr.Rmd`, article pkgdown) : les cinq chemins de
+  `indicateur_c1_biomasse()` dans leur ordre de priorité réel, le calcul par
+  niveau NDP, un exemple chiffré par chemin, un schéma entrées → cascade →
+  livrables, et les pièges connus.
+- **Colonne `doc_url` dans `indicator_labels()`** : URL absolue de la fiche d'un
+  indicateur, `NA` quand il n'en a pas. La base d'URL vient du champ `URL` du
+  `DESCRIPTION` — l'aval n'a ni URL ni liste d'indicateurs documentés à coder en
+  dur, il teste `is.na()`.
+- **`INDICATOR_FAMILIES$<famille>$indicator_docs`** : point de déclaration d'une
+  fiche. Ajouter une fiche est désormais une opération purement cœur.
+- Brief app `specs/052-fiche-indicateur-c1/brief-nemetonshiny.md` (icône
+  « fiche » à côté du « i », onglet Familles d'indicateurs).
+
+### Changed
+- Entrée « Fiche C1 » dans le menu Articles de `_pkgdown.yml`.
+
 ## [0.191.0] - 2026-08-27
 
 ### Added

@@ -1,8 +1,22 @@
-# Fiche indicateur — C1 « Biomasse carbone »
+---
+title: "Fiche indicateur C1 - Biomasse carbone"
+author: "Pascal Obstetar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fiche indicateur C1 - Biomasse carbone}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
 
-> **Document de référence** — Néméton (package cœur) `0.191.0.9000`, 2026-08-27.
-> Complète et détaille la ligne `C1` de [`TABLEAU_INDICATEURS_NDP.md`](TABLEAU_INDICATEURS_NDP.md),
-> qui datait de la v0.14.1 et ignorait le chemin CHM introduit par la spec 005.
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+> Complète et détaille la ligne `C1` du tableau récapitulatif
+> `docs/TABLEAU_INDICATEURS_NDP.md`, resté à la v0.14.1 et qui ignore le
+> chemin CHM introduit par la spec 005.
 
 ---
 
@@ -395,54 +409,169 @@ qu'exporter, l'app présente) :
 
 ## 5. Diagramme d'ensemble
 
-```mermaid
-flowchart TB
-    subgraph IN["Données d'entrée"]
-        S2["Sentinel-2<br/>NDVI"]
-        BDF["BD Forêt V2"]
-        MLC["CHM ML<br/>FORMS-T / FORMSpoT / Open-Canopy"]
-        LID["LiDAR HD / drone<br/>MNH"]
-        TER["Inventaire terrain<br/>QField : essence, âge, D, N"]
-        TLS["TLS / modèle 3D"]
-    end
+<figure>
+<svg viewBox="0 0 1060 660" style="width:100%;height:auto;max-width:100%" role="img"
+           aria-label="Chaîne de calcul de C1 : cinq sources d'entrée alimentent cinq chemins de calcul essayés en cascade ; le premier servi produit la colonne en tonnes de carbone par hectare, qui est ensuite normalisée, agrégée en score de famille Carbone, pondérée Fibonacci dans l'indice général, puis livrée dans l'application et les fichiers du projet.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+          <marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#2C6B60"/>
+          </marker>
+        </defs>
 
-    S2 --> P4
-    BDF --> P3
-    MLC --> SAN["sanitize_chm()<br/>5 masques"]
-    LID --> SAN
-    SAN --> HDOM["extract_h_dom()<br/>quantile p90"]
-    HDOM --> SYN["estimate_synthetic_inventory()<br/>D_g = a·H^0,9 ; N = N_max × 0,75"]
-    SYN --> P0
-    TER --> P0
-    TER --> P1
-    TLS --> P0
-    LID --> P2
+        <g fill="currentColor" font-family="'Bricolage Grotesque',sans-serif" font-size="11" letter-spacing="1.4" opacity=".55">
+          <text x="20" y="30">ENTRÉES</text>
+          <text x="322" y="30">AIGUILLAGE — PREMIER CHEMIN SERVI</text>
+          <text x="762" y="30">AVAL ET LIVRABLES</text>
+        </g>
 
-    subgraph DISP["indicateur_c1_biomasse() — premier chemin servi"]
-        direction TB
-        P0["**0** CHM + tarif IFN<br/>a·D²·H × ρ/1000 × BEF 1,3 × 0,5 × N"]
-        P1["**1** Allométrie<br/>a · âge^b · densité^c"]
-        P2["**2** LiDAR MNH<br/>2,5 · pz>2m · z̄^1,5 × 0,47"]
-        P3["**3** BD Forêt<br/>essence dominante → chemin 1<br/>(âge 60 / densité 0,7 en dur)"]
-        P4["**4** NDVI × 150"]
-        P0 -.->|"pas de dbh"| P1 -.-> P2 -.-> P3 -.-> P4 -.->|"rien"| NA["NA + warning"]
-    end
+        <!-- ================= sources ================= -->
+        <g font-family="'Bricolage Grotesque',sans-serif">
+          <g>
+            <rect x="20" y="52" width="262" height="72" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+            <text x="34" y="74" font-size="13" font-weight="600" fill="currentColor">CHM ML ou MNH LiDAR + essence</text>
+            <text x="34" y="93" font-size="11" fill="currentColor" opacity=".7">FORMS-T ÷100 · FORMSpoT ÷10 · Open-Canopy</text>
+            <text x="34" y="110" font-size="11" fill="currentColor" opacity=".7">sanitize_chm → H_dom p90 → D_g, N (Charru)</text>
+          </g>
+          <g>
+            <rect x="20" y="140" width="262" height="56" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+            <text x="34" y="162" font-size="13" font-weight="600" fill="currentColor">Inventaire terrain / TLS</text>
+            <text x="34" y="181" font-size="11" fill="currentColor" opacity=".7">essence, âge, densité 0–1 — QField</text>
+          </g>
+          <g>
+            <rect x="20" y="212" width="262" height="56" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+            <text x="34" y="234" font-size="13" font-weight="600" fill="currentColor">MNH LiDAR HD ou drone</text>
+            <text x="34" y="253" font-size="11" fill="currentColor" opacity=".7">couche layers$lidar_mnh</text>
+          </g>
+          <g>
+            <rect x="20" y="284" width="262" height="56" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+            <text x="34" y="306" font-size="13" font-weight="600" fill="currentColor">BD Forêt V2</text>
+            <text x="34" y="325" font-size="11" fill="currentColor" opacity=".7">essence dominante en surface</text>
+          </g>
+          <g>
+            <rect x="20" y="356" width="262" height="56" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+            <text x="34" y="378" font-size="13" font-weight="600" fill="currentColor">Sentinel-2</text>
+            <text x="34" y="397" font-size="11" fill="currentColor" opacity=".7">NDVI moyen zonal</text>
+          </g>
+        </g>
 
-    P0 & P1 & P2 & P3 & P4 --> RAW["colonne indicateur_c1_biomasse<br/>tC/ha"]
-    RAW --> NORM["normalize_indicator()<br/>min(100, v/150 × 100) → C1_norm"]
-    NORM --> FAM["create_family_index('C')<br/>famille_carbone = moy(C1_norm, C2_norm)"]
-    FAM --> GEN["compute_general_index(ndp)<br/>pondération Fibonacci + confiance φ"]
+        <!-- ================= arrows sources -> rungs ================= -->
+        <g stroke="currentColor" stroke-width="1.2" opacity=".75" fill="none" marker-end="url(#ar)">
+          <line x1="282" y1="88"  x2="326" y2="88"/>
+          <line x1="282" y1="168" x2="326" y2="168"/>
+          <line x1="282" y1="240" x2="326" y2="240"/>
+          <line x1="282" y1="312" x2="326" y2="312"/>
+          <line x1="282" y1="384" x2="326" y2="384"/>
+        </g>
 
-    subgraph OUT["Livrables"]
-        direction TB
-        APP["nemetonshiny — onglet C,<br/>radar 12 axes, badge NDP,<br/>perspectives IA par profil"]
-        FILES["Projet — cache/layers/{chm,lidar_mnh}/<br/>exports CSV / Parquet / PDF plan d'action"]
-    end
+        <!-- ================= rungs ================= -->
+        <g font-family="'Bricolage Grotesque',sans-serif">
+          <g>
+            <rect x="330" y="52" width="386" height="72" rx="3" fill="#2C6B60" fill-opacity=".10" stroke="#2C6B60" stroke-width="1.6"/>
+            <text x="346" y="74" font-size="13" font-weight="700" fill="currentColor">0 · CHM + tarif IFN</text>
+            <text x="346" y="94" font-size="11.5" font-family="'IBM Plex Mono',monospace" fill="currentColor">V = a·D²·H_dom</text>
+            <text x="346" y="111" font-size="11.5" font-family="'IBM Plex Mono',monospace" fill="currentColor">C1 = V · ρ/1000 · BEF 1,3 · 0,5 · N</text>
+          </g>
+          <g>
+            <rect x="330" y="140" width="386" height="56" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+            <text x="346" y="162" font-size="13" font-weight="700" fill="currentColor">1 · Allométrie âge / densité</text>
+            <text x="346" y="182" font-size="11.5" font-family="'IBM Plex Mono',monospace" fill="currentColor">C1 = a · âge^b · densité^c</text>
+          </g>
+          <g>
+            <rect x="330" y="212" width="386" height="56" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+            <text x="346" y="234" font-size="13" font-weight="700" fill="currentColor">2 · Modèle LiDAR MNH</text>
+            <text x="346" y="254" font-size="11.5" font-family="'IBM Plex Mono',monospace" fill="currentColor">C1 = 2,5 · pz&gt;2m · z̄_canopée^1,5 · 0,47</text>
+          </g>
+          <g>
+            <rect x="330" y="284" width="386" height="56" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+            <text x="346" y="306" font-size="13" font-weight="700" fill="currentColor">3 · BD Forêt → rang 1</text>
+            <text x="346" y="326" font-size="11.5" font-family="'IBM Plex Mono',monospace" fill="currentColor">âge = 60 et densité = 0,7 en dur</text>
+          </g>
+          <g>
+            <rect x="330" y="356" width="386" height="56" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+            <text x="346" y="378" font-size="13" font-weight="700" fill="currentColor">4 · Proxy NDVI</text>
+            <text x="346" y="398" font-size="11.5" font-family="'IBM Plex Mono',monospace" fill="currentColor">C1 = NDVI × 150</text>
+          </g>
+          <g>
+            <rect x="330" y="428" width="386" height="34" rx="3" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity=".55"/>
+            <text x="346" y="450" font-size="12" fill="currentColor" opacity=".8">aucune entrée → NA + avertissement</text>
+          </g>
+        </g>
 
-    GEN --> APP
-    RAW --> FILES
-    FAM --> APP
-```
+        <!-- fall-through -->
+        <g stroke="currentColor" stroke-width="1" stroke-dasharray="4 4" opacity=".5" fill="none" marker-end="url(#ar)">
+          <path d="M318,124 L318,140"/><path d="M318,196 L318,212"/>
+          <path d="M318,268 L318,284"/><path d="M318,340 L318,356"/>
+          <path d="M318,412 L318,428"/>
+        </g>
+        <g font-family="'Bricolage Grotesque',sans-serif" font-size="9.5" fill="currentColor" opacity=".55" text-anchor="end">
+          <text x="312" y="136">sinon</text><text x="312" y="208">sinon</text>
+          <text x="312" y="280">sinon</text><text x="312" y="352">sinon</text>
+        </g>
+
+        <!-- collector -->
+        <g stroke="#2C6B60" stroke-width="1.4" fill="none" opacity=".9">
+          <line x1="716" y1="88" x2="742" y2="88"/>
+          <line x1="716" y1="168" x2="742" y2="168"/>
+          <line x1="716" y1="240" x2="742" y2="240"/>
+          <line x1="716" y1="312" x2="742" y2="312"/>
+          <line x1="716" y1="384" x2="742" y2="384"/>
+          <line x1="742" y1="88" x2="742" y2="384"/>
+          <line x1="742" y1="88" x2="768" y2="88" marker-end="url(#ar-a)"/>
+        </g>
+
+        <!-- ================= downstream ================= -->
+        <g font-family="'Bricolage Grotesque',sans-serif">
+          <g>
+            <rect x="772" y="52" width="268" height="60" rx="3" fill="#2C6B60" fill-opacity=".10" stroke="#2C6B60" stroke-width="1.6"/>
+            <text x="788" y="76" font-size="13" font-weight="700" fill="currentColor">indicateur_c1_biomasse</text>
+            <text x="788" y="95" font-size="11.5" fill="currentColor" opacity=".75">colonne brute, tC/ha</text>
+          </g>
+          <g>
+            <rect x="772" y="140" width="268" height="60" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+            <text x="788" y="164" font-size="13" font-weight="600" fill="currentColor">normalize_indicator()</text>
+            <text x="788" y="183" font-size="11.5" font-family="'IBM Plex Mono',monospace" fill="currentColor" opacity=".8">C1_norm = min(100, v/150·100)</text>
+          </g>
+          <g>
+            <rect x="772" y="228" width="268" height="60" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+            <text x="788" y="252" font-size="13" font-weight="600" fill="currentColor">create_family_index("C")</text>
+            <text x="788" y="271" font-size="11.5" font-family="'IBM Plex Mono',monospace" fill="currentColor" opacity=".8">famille_carbone = moy(C1, C2)</text>
+          </g>
+          <g>
+            <rect x="772" y="316" width="268" height="60" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+            <text x="788" y="340" font-size="13" font-weight="600" fill="currentColor">compute_general_index(ndp)</text>
+            <text x="788" y="359" font-size="11.5" fill="currentColor" opacity=".75">pondération Fibonacci · confiance φ</text>
+          </g>
+          <g>
+            <rect x="772" y="404" width="268" height="86" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/>
+            <text x="788" y="428" font-size="13" font-weight="700" fill="currentColor">Livrables</text>
+            <text x="788" y="447" font-size="11.5" fill="currentColor" opacity=".8">app : onglet C, radar 12 axes, badge NDP</text>
+            <text x="788" y="464" font-size="11.5" fill="currentColor" opacity=".8">perspectives IA par profil</text>
+            <text x="788" y="481" font-size="11.5" fill="currentColor" opacity=".8">projet : CSV / Parquet / PDF plan d'action</text>
+          </g>
+        </g>
+        <g stroke="currentColor" stroke-width="1.2" opacity=".75" fill="none" marker-end="url(#ar)">
+          <line x1="906" y1="112" x2="906" y2="138"/>
+          <line x1="906" y1="200" x2="906" y2="226"/>
+          <line x1="906" y1="288" x2="906" y2="314"/>
+          <line x1="906" y1="376" x2="906" y2="402"/>
+        </g>
+
+        <!-- footnote -->
+        <g font-family="'Bricolage Grotesque',sans-serif" font-size="11" fill="currentColor" opacity=".6">
+          <text x="20" y="520">Le rang 0 est le seul chemin fondé sur un cubage ; les rangs 2 à 4 sont des proxys de plus en plus indirects.</text>
+          <text x="20" y="540">Le NDP ne choisit pas le chemin : il qualifie a posteriori la source qui a servi, et fixe le poids Fibonacci de la famille.</text>
+        </g>
+      </svg>
+<figcaption style="font-size:.9em;opacity:.75">
+La cascade complète. Chaque source alimente un rang ; si ses entrées manquent, le
+calcul retombe d'un cran. Le résultat, quel que soit le rang servi, rejoint la même
+chaîne aval — d'où le risque de comparer deux unités calculées par deux chemins
+différents.
+</figcaption>
+</figure>
 
 ---
 
