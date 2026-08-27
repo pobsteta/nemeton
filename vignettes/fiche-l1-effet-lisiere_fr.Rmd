@@ -14,6 +14,9 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
 > **Document de référence** — Néméton (package cœur), 2026-08-27.
+> **Cette fiche documente une incohérence de sens active** (§4, piège n° 1) :
+> le calcul, l'infobulle et N3 lisent L1 « haut = beaucoup de lisière =
+> défavorable », la normalisation le lit « haut = favorable ».
 
 ---
 
@@ -80,20 +83,59 @@ unités — soit 40 % du score figé sur une constante (cf. §4).
 | **3** | relevé terrain de la lisière | 
 | **4** | — |
 
-## 4. Trois pièges
+## 4. Quatre pièges, dont une incohérence de sens
 
-1. **Deux composantes sur trois retombent sur 50 en l'absence de données**, sans
+1. **Le sens de L1 n'est pas le même selon qui le lit.**
+
+   Le **calcul** produit un score qui monte avec l'influence des lisières : la
+   composante géométrie vaut `(SI − 1) × 25`, donc 0 pour une parcelle compacte
+   et beaucoup pour une lanière ; la composante contraste vaut 0 face à de la
+   forêt et 90 face à du bâti. **Un L1 élevé signifie donc : forme découpée,
+   matrice contrastée, forte exposition** — c'est-à-dire un habitat intérieur
+   fragmenté.
+
+   L'**infobulle** dit la même chose : « Proportion de la parcelle sous
+   influence des lisières (sylvosphère). Les lisières favorisent certaines
+   espèces mais **fragmentent l'habitat intérieur**. »
+
+   **N3** aussi : il calcule `anti_frag = 100 − L1` avant de l'ajouter
+   positivement à la naturalité.
+
+   Mais `indicateur_l1_effet_lisiere` figure dans `.NORMALIZE_NATIVE_0_100`
+   (`R/normalization.R:521`), et aucune branche d'inversion ne le rattrape. La
+   normalisation le laisse donc **passer tel quel, comme un score où haut =
+   bon**.
+
+   > **Conséquence** : une parcelle en lanière bordée de bâti obtient un L1
+   > élevé, que le **radar affiche comme un bon score de paysage** et qui tire
+   > `famille_paysage` vers le haut — alors que le même chiffre, injecté dans
+   > N3, la pénalise. Trois sources sur quatre disent « haut = mauvais », la
+   > quatrième décide de l'affichage.
+
+   C'est exactement le défaut corrigé pour **R5** en 0.181.0 (spec 048 : « seul
+   R5 était inversé […] une UGF très exposée obtenait un `famille_risque`
+   élevé, c'est-à-dire flatteur ») et pour les **noms** de la famille L en
+   0.176.0 (spec 045 : « les deux noms historiques annonçaient l'inverse de ce
+   qu'ils calculaient »). Le sens de L1, lui, n'a pas été revu.
+
+   **Le correctif serait d'un mot** : retirer `indicateur_l1_effet_lisiere` (et
+   son alias `indicateur_l1_sylvosphere`) de `.NORMALIZE_NATIVE_0_100`, et
+   l'ajouter au bloc d'inversion aux côtés de R1–R5 et T3. Comme pour la spec
+   048, aucune fonction d'indicateur ne changerait — seule la valeur normalisée
+   basculerait, et tout `famille_paysage` déjà calculé serait à refaire.
+
+2. **Deux composantes sur trois retombent sur 50 en l'absence de données**, sans
    avertissement — le contraste (40 %) et l'exposition (30 %). Sans occupation
    du sol ni relief exploitable, **70 % de L1 est une constante** et le score se
    réduit à `35 + 0,3 × géométrie`. C'est le même motif que B3 : un score
    d'apparence mesurée dont la majeure partie est fabriquée. Vérifier qu'une
    couche `landcover` est bien chargée avant de lire L1.
-2. **La géométrie mesure la forme de l'UGF, pas celle du massif.** Un découpage
+3. **La géométrie mesure la forme de l'UGF, pas celle du massif.** Un découpage
    cadastral en lanières produit des SI élevés sans qu'aucune lisière
    écologique n'existe : deux parcelles voisines au cœur d'un même massif
    continu peuvent obtenir des scores très différents pour une raison purement
    administrative.
-3. **Le nom a changé, l'ancien reste accepté.** `indicateur_l1_sylvosphere()`
+4. **Le nom a changé, l'ancien reste accepté.** `indicateur_l1_sylvosphere()`
    est conservé comme alias (spec 045) et les slugs `indicateur_l1_sylvosphere`
    restent reconnus par la normalisation pour les jeux non migrés. Les deux
    noms historiques de la famille L « annonçaient l'inverse de ce qu'ils

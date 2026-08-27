@@ -373,8 +373,14 @@ INDICATOR_FAMILIES <- list(
         fr = "Densit\u00e9 de population dans un rayon de 5 km (hab/km\u00b2, \u00e9chelle logarithmique). Mesure le potentiel d'usage r\u00e9cr\u00e9atif et la pression sociale sur la for\u00eat.",
         en = "Population density within a 5 km radius (inhab/km\u00b2, log scale). Measures recreational use potential and social pressure on the forest."
       )
+    ),
+    indicator_docs = list(
+      S1 = list(fr = "articles/fiche-s1-routes_fr.html"),
+      S2 = list(fr = "articles/fiche-s2-bati_fr.html"),
+      S3 = list(fr = "articles/fiche-s3-population_fr.html")
     )
   ),
+
   P = list(
     code = "P",
     name_fr = "Production",
@@ -403,8 +409,14 @@ INDICATOR_FAMILIES <- list(
         fr = "Qualit\u00e9 potentielle du bois bas\u00e9e sur les essences pr\u00e9sentes et les conditions de croissance.",
         en = "Potential timber quality based on species present and growing conditions."
       )
+    ),
+    indicator_docs = list(
+      P1 = list(fr = "articles/fiche-p1-volume_fr.html"),
+      P2 = list(fr = "articles/fiche-p2-station_fr.html"),
+      P3 = list(fr = "articles/fiche-p3-qualite-bois_fr.html")
     )
   ),
+
   E = list(
     code = "E",
     name_fr = "\u00c9nergie & Climat",
@@ -428,8 +440,13 @@ INDICATOR_FAMILIES <- list(
         fr = "\u00c9missions de CO2 \u00e9vit\u00e9es par substitution aux \u00e9nergies fossiles (tCO2/ha/an). Contribution \u00e0 la transition \u00e9nerg\u00e9tique.",
         en = "CO2 emissions avoided by substituting fossil fuels (tCO2/ha/year). Contribution to energy transition."
       )
+    ),
+    indicator_docs = list(
+      E1 = list(fr = "articles/fiche-e1-bois-energie_fr.html"),
+      E2 = list(fr = "articles/fiche-e2-evitement_fr.html")
     )
   ),
+
   N = list(
     code = "N",
     name_fr = "Naturalit\u00e9",
@@ -458,6 +475,11 @@ INDICATOR_FAMILIES <- list(
         fr = "Score composite de naturalit\u00e9 int\u00e9grant structure, continuit\u00e9, \u00e9loignement et perturbations anthropiques.",
         en = "Composite naturalness score integrating structure, continuity, remoteness and human disturbance."
       )
+    ),
+    indicator_docs = list(
+      N1 = list(fr = "articles/fiche-n1-distance_fr.html"),
+      N2 = list(fr = "articles/fiche-n2-continuite_fr.html"),
+      N3 = list(fr = "articles/fiche-n3-naturalite_fr.html")
     )
   )
 )

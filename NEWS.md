@@ -41,6 +41,67 @@ divergence bruyante.
 
 Brief app : `specs/052-fiche-indicateur-c1/brief-nemetonshiny.md`.
 
+### Added — les 40 autres fiches : les 41 indicateurs sont documentés
+
+Les fiches des 40 indicateurs restants, sur le modèle de C1, chacune écrite en
+lisant l'implémentation : carte d'identité, chemins de calcul dans leur ordre
+réel, calcul par niveau NDP, exemples chiffrés, aval, pièges, références
+`fichier:ligne`. Le menu pkgdown porte un composant **Fiches indicateurs**
+groupé par famille.
+
+**Le décompte est corrigé au passage** : la configuration vivante porte
+**41 indicateurs**, pas 31. `CLAUDE.md` et `docs/TABLEAU_INDICATEURS_NDP.md`
+sont périmés sur ce point — B4, L3, A3, A4, A5, W4, R5, R6, R7 et T3 se sont
+ajoutés depuis.
+
+### Documenté — le sens de `L1` est lu à l'envers par la normalisation
+
+Relevé en écrivant la fiche N3. **Non corrigé : la décision revient au
+mainteneur, parce que le correctif change des valeurs affichées.**
+
+Trois sources disent que `L1` monte avec l'influence des lisières, donc que
+**haut = défavorable** :
+
+* le **calcul** — composante géométrie `(SI − 1) × 25` (0 pour une parcelle
+  compacte), composante contraste à 0 face à de la forêt et **90 face à du
+  bâti** ;
+* l'**infobulle** — « Proportion de la parcelle sous influence des lisières
+  […] **fragmentent l'habitat intérieur** » ;
+* **`indicateur_n3_naturalite()`** — qui calcule `anti_frag = 100 - L1` avant
+  de l'ajouter positivement à la naturalité.
+
+Mais `indicateur_l1_effet_lisiere` figure dans `.NORMALIZE_NATIVE_0_100`
+(`R/normalization.R:521`) et aucune branche d'inversion ne le rattrape : le
+radar et `famille_paysage` le lisent **haut = bon**. Une parcelle en lanière
+bordée de bâti obtient donc un score de paysage **flatteur**.
+
+C'est le défaut corrigé pour R5 en 0.181.0 (spec 048) et pour les noms de la
+famille L en 0.176.0 (spec 045), à un endroit qui n'a pas été revu. Le
+correctif tient en un déplacement : retirer `indicateur_l1_effet_lisiere` et
+son alias `indicateur_l1_sylvosphere` de `.NORMALIZE_NATIVE_0_100`, les ajouter
+au bloc d'inversion. Aucune fonction d'indicateur ne changerait ; tout
+`famille_paysage` déjà calculé serait à recalculer. Écart n° 8 du `PLAN.md`.
+
+### Documenté — le motif « constante silencieuse », relevé dans huit indicateurs
+
+Une composante dont l'entrée manque est remplacée par une constante — souvent
+**50** — sans avertissement, et le score garde l'apparence d'une mesure :
+
+| Indicateur | Ce qui est fabriqué | Part du score |
+|---|---|---|
+| **B3** | les 4 composantes de paysage (`landscapemetrics`, `igraph`, `adehabitatHR` en Suggests) | **70 %** |
+| **R3** | la composante climatique (`r3_climat <- 0.5`) | **60 %** |
+| **L1** | contraste de matrice + exposition | **70 %** |
+| **R1** | la pente | **33 %** |
+| **T1** | l'âge entier (`rep(50, n)`) | **100 %** |
+| **T2** | les `NA` de T1 (`t2[is.na(t2)] <- 50`) | par unité |
+| **W1** | rend `0` au lieu de `NA` sans couche | **100 %** |
+| **A2** | *(corrigé)* rend désormais `NA` | — |
+
+La politique inverse est pourtant défendue explicitement en commentaire dans
+B1, B3, A2, N1 et S3 — « absent input is NOT a measurement », « un 50 neutre
+[…] ressemble à un score moyen crédible ». Elle n'a jamais été généralisée.
+
 ### Documenté — quatre écarts de C1, relevés en écrivant la fiche
 
 Aucun n'est une régression, aucun n'est corrigé ici ; tous sont consignés dans

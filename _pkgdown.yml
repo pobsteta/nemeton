@@ -102,6 +102,14 @@ navbar:
         href: articles/fiche-r6-sensibilite_fr.html
       - text: "R7 - Gel tardif"
         href: articles/fiche-r7-gel_fr.html
+      - text: "---"
+      - text: "Famille N - Naturalite"
+      - text: "N1 - Distance aux infrastructures"
+        href: articles/fiche-n1-distance_fr.html
+      - text: "N2 - Continuite ecologique"
+        href: articles/fiche-n2-continuite_fr.html
+      - text: "N3 - Naturalite composite"
+        href: articles/fiche-n3-naturalite_fr.html
     articles:
       text: Articles
       menu:

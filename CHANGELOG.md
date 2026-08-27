@@ -31,6 +31,18 @@ For a narrative, per-feature description of each release, see
   fiche est une opération purement cœur.
 - Brief app `specs/052-fiche-indicateur-c1/brief-nemetonshiny.md` (icône
   « fiche » à côté du « i », onglet Familles d'indicateurs).
+- **Fiches des 40 autres indicateurs** (`vignettes/fiche-*_fr.Rmd`) : les 41
+  indicateurs des 12 familles sont documentés, chacun avec ses chemins de
+  calcul réels, son comportement par NDP, des exemples chiffrés et ses pièges.
+- Composant **Fiches indicateurs** dans le menu pkgdown, groupé par famille.
+
+### Documented
+- **Le sens de `L1` est lu à l'envers par la normalisation** — le calcul,
+  l'infobulle et `indicateur_n3_naturalite()` disent « haut = défavorable », la
+  normalisation dit « haut = bon ». Non corrigé, écart n° 8 du `PLAN.md`.
+- **Le motif « constante silencieuse »** dans huit indicateurs (B3, R3, L1, R1,
+  T1, T2, W1) : une composante manquante remplacée par 50 — ou par 0 — sans
+  avertissement.
 
 ### Changed
 - Entrée « Fiche C1 » dans le menu Articles de `_pkgdown.yml`.
