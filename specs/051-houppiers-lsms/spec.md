@@ -180,6 +180,21 @@ segment_houppiers(chm, aoi = NULL, ws = 5, hmin = 5,
 
 ## 6. Ce qui n'est pas mesuré, et qu'il ne faut pas supposer
 
+> **Amendement du 2026-08-27 — les points 1 et 4 sont bloqués par la donnée, pas
+> par la méthode.** Inventaire des quatre projets du poste : **un seul jeu
+> ortho haute résolution + CHM existe**, celui de Fordead. Les `irc.tif` des
+> `cache/layers/` sont des vues WMS à **~3,7 m/pixel** — un houppier de 8 m y
+> fait deux pixels, LSMS n'a rien à y segmenter. L'ortho à 0,20 m de Fordead est
+> un **sous-produit du run Open-Canopy**, pas une couche de projet, et Fordead
+> est le seul projet à porter un dossier `opencanopy/`. Les quatre sont en
+> `chm_source: lidar_hd`.
+>
+> Mesurer le coût sur un peuplement clair et la stabilité du défaut entre
+> peuplements demande donc **d'acquérir une BD ORTHO IGN à 0,20 m** sur une autre
+> emprise (Reconfort a un MNH LiDAR sain, −0,60 à 40,15 m, et rien à segmenter),
+> ou de relancer Open-Canopy ailleurs. Ce n'est pas à portée de clavier.
+
+
 1. **Le coût sur un peuplement clair.** Toutes les mesures viennent d'une futaie
    fermée à 89 %. Si le coût suit la texture, un taillis clair pourrait être
    nettement moins cher — ce qui déplacerait tout le tableau §3.1.
@@ -240,7 +255,38 @@ Le §3.1 ne modélisait que le nombre de pixels. Le balayage §3.3 montre que
 deux points). Le modèle implémenté est donc
 `t = 160,5 × (P/1e6)^1,0787 × (spatialr/15)^2,04`.
 
-### 8.4 Ce que la validation de bout en bout a confirmé
+### 8.4 Le couplage LSMS + Open-Canopy n'est pas testable aujourd'hui
+
+Question posée le 2026-08-27 : *peut-on coupler LSMS et Open-Canopy sur Fordead
+pour obtenir une couche `houppier` avec `h_max` ?* **Non**, et c'est mesuré :
+
+| CHM utilisé pour la hauteur | `h_max` médian | max | Segments retenus (1–70 m) |
+|---|---|---|---|
+| **Open-Canopy** | 0,000 m | 0,094 m | **0 / 698** |
+| **LiDAR MNH** | 35,83 m | 44,67 m | **692 / 698** |
+
+Le CHM Open-Canopy du projet plafonne à **0,1879 m sur ses 292 millions de
+cellules** — vérifié sur le raster entier via `minmax(compute = TRUE)`, pas sur
+un échantillon, et sans facteur d'échelle en cause. Les deux fichiers
+(`chm_predicted_0_2m.tif`, `chm_vegetation_0_2m.tif`) portent la même donnée
+morte, le second étant une version masquée du premier. Le couplage rendrait une
+couche **vide**.
+
+La couche `houppier` avec `h_max` **existe pourtant sur Fordead** : par
+LSMS + MNH LiDAR, ce que valide le §8.5. Le projet est d'ailleurs en
+`chm_source: lidar_hd` — Open-Canopy y a échoué et le LiDAR a pris le relais.
+
+**Défaut mis au jour par cette question, et il dépasse LSMS :** un CHM mort
+produit une couche **vide sans que rien ne le dise**. Vérifié — la voie CHM
+classique sur ce raster rend `0 houppiers` et l'attribut `chm_suspect` est
+**absent**. Le garde-fou existe (`R/synthetic_inventory.R`) mais vit sur le
+chemin de l'inventaire synthétique, pas dans `segment_houppiers()`. Une
+clairière légitime et une prédiction en panne rendent donc le même objet, et
+c'est exactement la confusion « 0 n'est pas NA » que les v0.186/v0.187 ont
+soldée ailleurs. **À porter dans `segment_houppiers()`**, pour les quatre
+algorithmes.
+
+### 8.5 Ce que la validation de bout en bout a confirmé
 
 Sur la fenêtre de calibration, `segment_houppiers()` reproduit le balayage
 manuel **à moins de 1 %** :
