@@ -162,12 +162,12 @@ v0.14.1, décrit C1 avec trois chemins alors qu'il en a cinq. Une fiche dans un
 dépôt à cadence de release distincte dérive de la même façon, en pire — un
 correctif du cœur (0.169.0, exposants du tarif IFN) ne toucherait plus le texte
 qui l'énonce. S'ajoute l'ADR-009 : une fiche côté app serait invisible depuis
-`vignette(..., package = "nemeton")`, donc pour quiconque appelle le cœur sans
-l'app.
+`vignette("fiche-c1-biomasse_fr", package = "nemeton")`, donc pour quiconque
+appelle le cœur sans l'app.
 
 **Le point de conception** : l'app ne doit connaître **ni l'URL, ni la liste des
-indicateurs documentés, ni la langue des fiches**. Elle teste `is.na(row$doc_url)` et affiche l'icône ou
-non. Ajouter une fiche B2 demain se fait **entièrement côté cœur** — vignette,
+indicateurs documentés, ni la langue des fiches**. Elle teste
+`is.na(row$doc_url)` et affiche l'icône ou non. Ajouter une fiche B2 demain se fait **entièrement côté cœur** — vignette,
 entrée `_pkgdown.yml`, entrée `indicator_docs` — et l'icône apparaît sans que
 l'app bouge. C'est le même raisonnement que l'export des familles : une
 duplication silencieuse et exacte est plus dangereuse qu'une divergence bruyante.
