@@ -10,6 +10,39 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.190.0] - 2026-08-27
+
+### Fixed
+- **B4 lisait `shannon_sd.tiff` au lieu de `shannon_mean.tiff`.**
+  `.find_diversity_raster()` départageait les candidats par longueur de nom et
+  le fichier d'écart-type est plus court de deux caractères ; l'indicateur
+  rapportait la dispersion intra-fenêtre du Shannon. Sur le run de référence
+  (spec 028 §10) les 30 UGF tenaient entre 3,5 et 5,4 / 100. La sélection écarte
+  désormais les cartes de dispersion (`_sd`, `_var`, `_cv`, `_se`…) avant tout
+  départage et préfère une carte `_mean` explicite.
+- **L3 moyennait des coordonnées d'ordination.** `beta.tiff` porte les trois
+  premiers axes d'une PCoA de la dissimilarité Bray-Curtis — des coordonnées
+  signées centrées sur zéro. La moyenne des bandes mesurait une *position*, sans
+  signification de diversité, et le clamp `[0, 100]` posait 16 UGF sur 30 à
+  exactement 0. L3 est désormais la dispersion multivariée de l'unité autour de
+  son propre centroïde (*betadisper* d'Anderson).
+- **Bornes de normalisation B4/L3 recalibrées** (spec 028 D3) : B4 sur
+  `[0, log(10)]` (dix spectral species effectives par hectare) au lieu de
+  `[0, log(50)]` ; L3 sur `[0, 0.5]` de la dispersion PCoA au lieu de `[0, 1]`.
+  Les deux clampent. Calibrations **mono-scène** — D3 reste ouverte.
+- Tooltips B4 et L3 : la grandeur et son échelle sont nommées.
+
+### Added
+- `indicateur_l3_het_spectrale(min_windows = 3L)` : sous trois fenêtres
+  couvertes la dispersion est dégénérée et l'unité vaut `NA` plutôt qu'un zéro
+  qui se lirait « unité homogène ». Toute valeur inférieure à 3 est relevée à 3.
+- Spec 028 §10 : le run de référence (tuile T31UFQ, scène
+  `S2A_MSIL2A_20170814`, 649 fenêtres, 30 UGF) et ses mesures, consignés pour
+  rendre possible la comparaison avec un second massif.
+
+> **Note de dette** : ce fichier n'avait plus été tenu depuis la `[0.175.0]`.
+> Les versions 0.176.0 à 0.189.1 ne sont documentées que dans `NEWS.md`.
+
 ## [0.175.0] - 2026-08-17
 
 ### Added

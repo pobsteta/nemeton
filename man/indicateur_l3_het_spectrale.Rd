@@ -9,6 +9,7 @@ indicateur_l3_het_spectrale(
   spectral = NULL,
   reflectance = NULL,
   column_name = "L3",
+  min_windows = 3L,
   ...
 )
 }
@@ -25,6 +26,11 @@ compute spectral diversity on the fly when \code{spectral} is
 
 \item{column_name}{Output column name (default \code{"L3"}).}
 
+\item{min_windows}{Integer. Minimum number of covered diversity windows
+below which the unit's dispersion is undefined and \code{NA} is returned
+(default \code{3L}, the floor for a dispersion around a centroid). Values
+below 3 are raised to 3.}
+
 \item{...}{Passed to \code{\link{compute_spectral_diversity}} when computing
 on the fly (e.g. \code{window_size}, \code{mask}, \code{nb_cpu}).}
 }
@@ -37,6 +43,20 @@ biodivMapR): the compositional heterogeneity of the landscape mosaic,
 complementary to L2 (geometric fragmentation). Higher = more diverse
 mosaic (spec 028 D1). Backward compatible like
 \code{\link{indicateur_b4_div_spectrale}}.
+}
+\details{
+biodivMapR returns beta diversity as the first three axes of a PCoA of the
+Bray-Curtis dissimilarity between windows, \emph{not} as a scalar
+dissimilarity raster. The value reported here is therefore the unit's
+\strong{multivariate dispersion} in that ordination space: the mean
+Euclidean distance of the unit's windows to the unit's own centroid
+(Anderson's betadisper). A spectrally uniform unit scores near zero; a unit
+spanning contrasted spectral communities scores high.
+
+Before v0.190.0 the axes were simply averaged, which measured a unit's mean
+\emph{position} in ordination space — a quantity centred on zero by
+construction, and clamped to 0 for every unit on the negative side. See
+spec 028 section 10.
 }
 \seealso{
 \code{\link{compute_spectral_diversity}}

@@ -690,19 +690,36 @@ normalize_indicator <- function(indicator, values) {
   }
 
   # B4 spectral alpha diversity (Shannon of spectral species): high = good.
-  # Provisional upper bound log(nbclusters) with the biodivMapR default of
-  # 50 clusters (spec 028 D3 — recalibrate empirically after the first
-  # real run).
+  #
+  # Upper bound = log(.B4_MAX_SPECTRAL_SPECIES): the Shannon index of a
+  # window holding ten equally abundant spectral species. Read on the
+  # EFFECTIVE NUMBER of spectral species, exp(H), which is the quantity a
+  # forester can picture — ten distinguishable spectral communities inside
+  # one hectare is a genuinely heterogeneous stand.
+  #
+  # It replaces the provisional log(nbclusters) = log(50) of spec 028 D3,
+  # which was the theoretical ceiling of the k-means space and not a
+  # reachable one: the reference run (spec 028 §10) tops out at H = 2.456
+  # (11.7 effective species) over 649 windows, so log(50) = 3.912 left the
+  # whole forest domain in the bottom 40 % of the scale — a typical unit
+  # scored 20/100 whatever it held.
   if (indicator %in% c("indicateur_b4_div_spectrale", "B4")) {
-    return(pmin(100, pmax(0, values / log(50) * 100)))
+    return(pmin(100, pmax(0, values / log(.B4_MAX_SPECTRAL_SPECIES) * 100)))
   }
 
-  # L3 spectral beta diversity (Bray-Curtis turnover / landscape mosaic
-  # heterogeneity): high = good (spec 028 D1). Provisional scale assumes a
-  # dissimilarity in [0, 1] (spec 028 D3 — recalibrate once the biodivMapR
-  # beta output range is confirmed on real data).
+  # L3 spectral beta diversity: high = good (spec 028 D1). The input is the
+  # unit's multivariate dispersion in the Bray-Curtis PCoA space, as
+  # produced by indicateur_l3_het_spectrale().
+  #
+  # Bray-Curtis dissimilarity itself lives in [0, 1], but a 3-axis PCoA only
+  # recovers part of that structure (goodness of fit 0.56/0.62 on the
+  # reference run), so distances in the ordination are systematically
+  # shrunk: measured per-unit dispersions span 0.064 to 0.440. The bound is
+  # therefore .L3_MAX_DISPERSION = 0.5 — the amplitude a 3-axis ordination
+  # actually reaches — not the nominal 1.0, which would have compressed
+  # every unit into the bottom half of the scale for a second time.
   if (indicator %in% c("indicateur_l3_het_spectrale", "L3")) {
-    return(pmin(100, pmax(0, values * 100)))
+    return(pmin(100, pmax(0, values / .L3_MAX_DISPERSION * 100)))
   }
 
   if (!is.null(ref_max)) {

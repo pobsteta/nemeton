@@ -1,3 +1,78 @@
+# nemeton 0.190.0 (2026-08-27)
+
+### Fixed — le smoke B4/L3 a tourné, et il a trouvé trois défauts (spec 028 §10)
+
+La spec 028 réclamait depuis le 2026-07-01 un « smoke réel sur scène
+Sentinel-2 » avant de figer les bornes de normalisation (décision D3). Ce run
+**existait déjà** : l'app l'avait produit le 2026-07-02 dans le cache du projet
+`Fordead` (scène `S2A_MSIL2A_20170814`, tuile T31UFQ, 649 fenêtres de 100 m,
+30 UGF) et personne ne l'avait relu. Le chemin `reuse_existing` de
+`compute_spectral_diversity()` l'a rendu tel quel — ce qui valide au passage ce
+chemin sur données réelles.
+
+**B4 lisait l'écart-type au lieu de la moyenne.** `.find_diversity_raster()`
+départageait les candidats par **longueur de nom**, et `shannon_sd.tiff`
+(15 caractères) l'emporte sur `shannon_mean.tiff` (17). L'indicateur rapportait
+la dispersion intra-fenêtre du Shannon. Mesuré sur le run : les **30 UGF tenaient
+entre 3,5 et 5,4 / 100**, soit 1,9 point d'étendue. La sélection écarte
+désormais les cartes de dispersion (`_sd`, `_var`, `_cv`…) avant tout
+départage, et préfère une carte `_mean` explicite.
+
+**L3 moyennait des coordonnées d'ordination.** `beta.tiff` n'est pas un raster
+de dissimilarité : ce sont les **trois premiers axes d'une PCoA** de la
+dissimilarité Bray-Curtis entre fenêtres, donc des coordonnées **signées et
+centrées sur zéro** (les trois axes mesurés ont une moyenne à moins de 0,006 de
+zéro). En moyenner les bandes donnait la *position* de l'unité dans
+l'ordination, sans signification de diversité — et le clamp `[0, 100]` envoyait
+ensuite à **exactement 0 seize UGF sur trente**. L3 est désormais la
+**dispersion multivariée** de l'unité autour de son propre centroïde dans cet
+espace (*betadisper* d'Anderson), qui est ce qu'un turnover veut dire. Nouvel
+argument `min_windows = 3L` : sous trois fenêtres couvertes la dispersion est
+dégénérée et l'unité vaut `NA` plutôt qu'un zéro qui se lirait « homogène ».
+
+**Les deux bornes étaient hors d'atteinte.** `log(50)` supposait les 50 spectral
+species équi-réparties dans un hectare ; le run plafonne à **2,456** (11,7
+espèces effectives). Et Bray-Curtis est nominalement borné par 1, mais une PCoA
+à 3 axes n'en restitue qu'une partie (GOF 0,563 / 0,619) — les dispersions
+mesurées s'étalent de 0,064 à 0,440. B4 est donc normalisé sur `[0, log(10)]`,
+soit **dix spectral species effectives par hectare** pour un score de 100 ; L3
+sur `[0, 0,5]`, l'amplitude qu'une PCoA à trois axes atteint réellement. Les
+deux clampent, donc une scène plus diverse sature au lieu d'être rejetée.
+
+| | avant | après |
+|---|---|---|
+| B4, étendue des scores | 3,5 → 5,4 (1,9 pt) | **12,5 → 67,4 (54,9 pts)** |
+| B4, UGF médiane | 4,4 | **34,6** |
+| L3, UGF à exactement 0 | **16 / 30** | **0** |
+| L3, étendue des scores | 0 → 20,0 | **12,9 → 87,9** |
+
+**Ces valeurs avaient déjà été vues, sans qu'on en voie la cause.** Le brief
+`specs/BRIEF-nemeton-normalisation-familles.md` (diagnostic du 2026-08-16, soldé
+les 16-17 août), établi depuis `data/indicators.parquet` du même projet et sans
+rapport avec biodivMapR, tabulait déjà `b4_div_spectrale` à 0,135 / 0,174 /
+0,211 (« B faussée ») et `l3_het_spectrale` à −0,159 / −0,016 / 0,200 (« L
+faussée ») — **exactement** les distributions de `shannon_sd` et de la moyenne
+des axes PCoA. Le défaut était donc vivant dans les sorties de production, et
+pas un artefact de cache périmé. Le brief l'avait imputé à la **normalisation**,
+ce qui était juste à son niveau : depuis un parquet on voit une échelle
+aberrante, pas une carte lue au mauvais fichier.
+
+**Une frayeur écartée, et c'est utile de la consigner.** L'espace de k-means
+porte une variable `ID` d'amplitude 218 622 contre 3 000 à 10 400 pour les
+bandes — de quoi croire la classification pilotée par un index de pixel.
+Vérification faite, elle porte **0,0 % de la variance inter-centroïdes**
+(écart-type 0,0024 après normalisation, contre 0,24 à 0,82 pour les bandes) :
+elle est inerte, le run est exploitable, aucun correctif n'en découle.
+
+**Ce qui reste ouvert, et doit être dit** : les deux bornes sont calibrées sur
+**une seule scène et un seul massif**. Elles sont honnêtes sur l'amplitude que
+le pipeline produit, pas sur la diversité du domaine forestier français. La
+décision D3 de la spec 028 reste **ouverte** jusqu'à un second massif ; le run
+de référence est consigné en §10 pour que la comparaison soit possible.
+
+Les tooltips de B4 et L3 nomment désormais la grandeur *et* son échelle — la
+leçon de la v0.189.1, appliquée avant que le défaut n'existe.
+
 # nemeton 0.189.1 (2026-08-26)
 
 ### Fixed — le tooltip de S3 annonçait une grandeur qui n'est plus la sienne

@@ -393,7 +393,7 @@ navigateur) + clé i18n `monitoring_reconfort_year_incomplete`. Dépend de
 
 ---
 
-# Chantier EN COURS — Diversité spectrale B4 / L3 (spec 028, biodivMapR)
+# Chantier EN COURS (cœur : réglé) — Diversité spectrale B4 / L3 (spec 028, biodivMapR)
 
 > **Ouvert le 2026-07-01.** Deux nouveaux indicateurs télédétectés (NDP 0,
 > Sentinel-2) via `biodivMapR` (hypothèse de variation spectrale) :
@@ -411,8 +411,59 @@ Effet domino : `nemetonshiny`/`tree_sat`/`maestro` GPL-3 à la distribution
 (haut=mieux, bornes provisoires) + tests `test-spectral-diversity.R` (logique
 validée hors biodivMapR ; pipeline réel = smoke manuel).
 
-**Reste** : ⏳ smoke réel sur scène Sentinel-2 → **recalibrer les bornes de
-normalisation B4/L3** (D3) ; affichage B4/L3 côté `nemetonshiny` (radar/tooltips).
+**Smoke réel exécuté — v0.190.0 (2026-08-27).** Le run n'a pas eu à être
+refait : l'app en avait produit un le 2026-07-02 dans le cache du projet
+`Fordead` (scène `S2A_MSIL2A_20170814`, tuile T31UFQ, 649 fenêtres de 100 m,
+30 UGF, `nbclusters = 50`) et **personne ne l'avait relu**. Le chemin
+`reuse_existing` de `compute_spectral_diversity()` l'a rendu tel quel — ce
+chemin est donc validé sur données réelles, en prime.
+
+**Trois défauts trouvés, tous invisibles sans données réelles** (détail spec 028
+§10, NEWS v0.190.0) :
+
+1. **B4 lisait `shannon_sd`, pas `shannon_mean`.** `.find_diversity_raster()`
+   départageait par **longueur de nom** et le fichier d'écart-type est plus
+   court de deux caractères. Les 30 UGF tenaient entre **3,5 et 5,4 / 100**.
+2. **L3 moyennait des coordonnées d'ordination.** `beta.tiff` porte les trois
+   premiers axes d'une **PCoA** de la dissimilarité Bray-Curtis — des
+   coordonnées signées centrées sur zéro. La moyenne des bandes donnait une
+   *position*, pas une diversité, et le clamp `[0,100]` posait **16 UGF sur 30
+   à exactement 0**. L3 est désormais la **dispersion multivariée** autour du
+   centroïde de l'unité (*betadisper*), avec `min_windows = 3L` → `NA` en
+   dessous plutôt qu'un zéro qui se lirait « homogène ».
+3. **Les deux bornes étaient hors d'atteinte.** `log(50)` contre un maximum
+   observé de 2,456 ; Bray-Curtis nominalement borné par 1 quand une PCoA à
+   3 axes (GOF 0,563/0,619) ne produit que 0,064 à 0,440. → B4 sur
+   `[0, log(10)]` (dix spectral species effectives par hectare), L3 sur
+   `[0, 0,5]`. Les deux clampent.
+
+| | avant | après |
+|---|---|---|
+| B4, étendue des scores | 3,5 → 5,4 (1,9 pt) | **12,5 → 67,4 (54,9 pts)** |
+| L3, UGF à exactement 0 | **16 / 30** | **0** |
+| L3, étendue des scores | 0 → 20,0 | **12,9 → 87,9** |
+
+**Une frayeur écartée.** L'espace de k-means porte une variable `ID`
+d'amplitude 218 622 (contre 3 000-10 400 pour les bandes) : de quoi croire la
+classification pilotée par un index de pixel. Elle porte **0,0 % de la variance
+inter-centroïdes** — inerte. Le run est exploitable, aucun correctif n'en
+découle. Consigné pour que la question ne soit pas reposée.
+
+**Reste** : ⏳ **D3 reste ouverte** — les deux bornes sont calibrées sur **une
+seule scène et un seul massif** ; honnêtes sur l'amplitude que le pipeline
+produit, muettes sur la diversité du domaine forestier français. À confirmer ou
+déplacer sur un second massif (le run de référence est consigné spec 028 §10
+pour rendre la comparaison possible). ⏳ Validation terrain du statut proxy
+(D4, démarche spec 008/QField) : non entamée, hors de ce chantier.
+
+**Le « reste » app était périmé** : ce chantier listait encore « affichage
+B4/L3 côté `nemetonshiny` » comme à faire. Vérifié en lecture seule le
+2026-08-27 — c'est livré, et depuis un moment : `service_compute.R:315,327`
+calcule les deux indicateurs, `utils_i18n.R:1670,1683` porte leurs libellés, et
+le dé-fork de `INDICATOR_FAMILIES` (app v0.127.0) les fait entrer au radar sans
+qu'une table ait à les déclarer. **Un brief de notification** part quand même :
+les valeurs B4/L3 changent de sens et d'échelle avec ce correctif, et les
+rasters `cache/layers/spectral/` restent valides (rien à recalculer).
 
 ---
 
