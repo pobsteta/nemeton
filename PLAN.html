@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.189.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.190.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -123,7 +123,13 @@
 <td>terrain</td>
 <td>
 <strong>Jamais exercé de bout en bout</strong> sur un projet réel portant nuage LiDAR <em>et</em> desserte corrigée</td>
-</tr></tbody></table><p><strong>Il ne reste qu’un écart, et il ne se referme pas au clavier</strong> : le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR et une desserte corrigée, pas une release.</p>
+</tr><tr><td>6</td>
+<td>B4/L3 : les valeurs changent de sens et d’échelle, et ne se comparent pas entre projets</td>
+<td>cœur <strong>v0.190.0</strong>
+</td>
+<td><code>nemetonshiny</code></td>
+<td>Brief émis le 2026-08-27 (<code>specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md</code>). <strong>Rien à coder</strong> — les tooltips viennent d’<code>INDICATOR_FAMILIES</code> et les rasters en cache restent valides — mais l’interface ne doit <strong>ni classer ni moyenner B4/L3 entre projets</strong> : les « spectral species » sont un k-means réajusté par run (spec 028 §10.6). Non accusé réception</td>
+</tr></tbody></table><p><strong>Deux écarts, et aucun des deux ne se referme par une release cœur.</strong> Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR et une desserte corrigée. Le n° 6 attend une lecture côté app : il n’appelle pas de code, il interdit un usage — et un interdit non lu ne protège de rien.</p>
 <p><strong>Les quatre autres sont refermés</strong>, vérifiés en lecture seule sur <code>nemetonshiny@5a1afd7c</code> le 2026-08-22 (détail dans l’entrée de journal du 2026-08-22, chantiers A et D) :</p>
 <table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th>#</th>
 <th>Écart</th>
@@ -229,13 +235,37 @@
 <p><strong>Journal</strong> — <em>2026-07-01 (garde-fou année <code>s2_year</code> — v0.104.0)</em> : le <code>s2_year</code> (dernière année de la série ~2 ans) n’avait aucune borne « saison complète » ni côté cœur ni côté app (picker <code>nemetonshiny</code> : défaut ET max = année en cours → run lancé avant fin octobre = dernière saison tronquée, classification dégradée, sans avertissement). Cœur : <code>RECONFORT_MODELS</code> gagne un champ <strong><code>edate</code></strong> (<code>"MM-DD"</code>, fin de fenêtre modèle : <code>10-29</code> pour les modèles 2 ans, <code>05-31</code> pour <code>v3_early_may</code>) ; nouvelles fonctions exportées <strong><code><a href="reference/reconfort_latest_complete_year.html">reconfort_latest_complete_year()</a></code></strong> et <strong><code><a href="reference/reconfort_year_bounds.html">reconfort_year_bounds()</a></code></strong> (min=2016, max/default = dernière année complète). Tests dans <code>test-reconfort-model.R</code>. <strong>Brief <code>nemetonshiny</code> fourni</strong> : câbler <code>value</code>/<code>min</code>/<code>max</code> du <code>numericInput</code> sur <code><a href="reference/reconfort_year_bounds.html">reconfort_year_bounds()</a></code> + garde-fou serveur dans <code>.invoke_reconfort()</code> (le <code>numericInput</code> n’étant qu’un hint navigateur) + clé i18n <code>monitoring_reconfort_year_incomplete</code>. Dépend de <code>nemeton &gt;= 0.104.0</code>.</p>
 <hr></div>
 <div class="section level1">
-<h1 id="chantier-en-cours--diversité-spectrale-b4--l3-spec-028-biodivmapr">Chantier EN COURS — Diversité spectrale B4 / L3 (spec 028, biodivMapR)<a class="anchor" aria-label="anchor" href="#chantier-en-cours--diversit%C3%A9-spectrale-b4--l3-spec-028-biodivmapr"></a></h1>
+<h1 id="chantier-en-cours-cœur--réglé--diversité-spectrale-b4--l3-spec-028-biodivmapr">Chantier EN COURS (cœur : réglé) — Diversité spectrale B4 / L3 (spec 028, biodivMapR)<a class="anchor" aria-label="anchor" href="#chantier-en-cours-c%C5%93ur--r%C3%A9gl%C3%A9--diversit%C3%A9-spectrale-b4--l3-spec-028-biodivmapr"></a></h1>
 <blockquote>
 <p><strong>Ouvert le 2026-07-01.</strong> Deux nouveaux indicateurs télédétectés (NDP 0, Sentinel-2) via <code>biodivMapR</code> (hypothèse de variation spectrale) : <strong>B4</strong> diversité spectrale (α/Shannon, famille B) et <strong>L3</strong> hétérogénéité spectrale (β/Bray-Curtis, famille L). Décisions D1-D4 tranchées (spec 028 §9).</p>
 </blockquote>
 <p><strong>⚠️ Relicence</strong> : <code>biodivMapR</code> étant GPL-3 et intégré en <code>Imports:</code> direct (décision propriétaire assumée), <strong>nemeton passe MIT → GPL-3</strong> (v0.110.0). Effet domino : <code>nemetonshiny</code>/<code>tree_sat</code>/<code>maestro</code> GPL-3 à la distribution (bascule à faire dans leurs dépôts) + <strong>amender ADR-006</strong> (platform_nemeton).</p>
 <p><strong>Livré (v0.110.0)</strong> : primitive <code><a href="reference/compute_spectral_diversity.html">compute_spectral_diversity()</a></code> (wrapper <code>biodivMapR_full</code>, agrégation UGF via exactextractr) + <code>indicateur_b4_div_spectrale</code> / <code>indicateur_l3_het_spectrale</code> (rétrocompat <code>NA</code>), registre + normalisation (haut=mieux, bornes provisoires) + tests <code>test-spectral-diversity.R</code> (logique validée hors biodivMapR ; pipeline réel = smoke manuel).</p>
-<p><strong>Reste</strong> : ⏳ smoke réel sur scène Sentinel-2 → <strong>recalibrer les bornes de normalisation B4/L3</strong> (D3) ; affichage B4/L3 côté <code>nemetonshiny</code> (radar/tooltips).</p>
+<p><strong>Smoke réel exécuté — v0.190.0 (2026-08-27).</strong> Le run n’a pas eu à être refait : l’app en avait produit un le 2026-07-02 dans le cache du projet <code>Fordead</code> (scène <code>S2A_MSIL2A_20170814</code>, tuile T31UFQ, 649 fenêtres de 100 m, 30 UGF, <code>nbclusters = 50</code>) et <strong>personne ne l’avait relu</strong>. Le chemin <code>reuse_existing</code> de <code><a href="reference/compute_spectral_diversity.html">compute_spectral_diversity()</a></code> l’a rendu tel quel — ce chemin est donc validé sur données réelles, en prime.</p>
+<p><strong>Trois défauts trouvés, tous invisibles sans données réelles</strong> (détail spec 028 §10, NEWS v0.190.0) :</p>
+<ol style="list-style-type: decimal"><li>
+<strong>B4 lisait <code>shannon_sd</code>, pas <code>shannon_mean</code>.</strong> <code>.find_diversity_raster()</code> départageait par <strong>longueur de nom</strong> et le fichier d’écart-type est plus court de deux caractères. Les 30 UGF tenaient entre <strong>3,5 et 5,4 / 100</strong>.</li>
+<li>
+<strong>L3 moyennait des coordonnées d’ordination.</strong> <code>beta.tiff</code> porte les trois premiers axes d’une <strong>PCoA</strong> de la dissimilarité Bray-Curtis — des coordonnées signées centrées sur zéro. La moyenne des bandes donnait une <em>position</em>, pas une diversité, et le clamp <code>[0,100]</code> posait <strong>16 UGF sur 30 à exactement 0</strong>. L3 est désormais la <strong>dispersion multivariée</strong> autour du centroïde de l’unité (<em>betadisper</em>), avec <code>min_windows = 3L</code> → <code>NA</code> en dessous plutôt qu’un zéro qui se lirait « homogène ».</li>
+<li>
+<strong>Les deux bornes étaient hors d’atteinte.</strong> <code>log(50)</code> contre un maximum observé de 2,456 ; Bray-Curtis nominalement borné par 1 quand une PCoA à 3 axes (GOF 0,563/0,619) ne produit que 0,064 à 0,440. → B4 sur <code>[0, log(10)]</code> (dix spectral species effectives par hectare), L3 sur <code>[0, 0,5]</code>. Les deux clampent.</li>
+</ol><table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th></th>
+<th>avant</th>
+<th>après</th>
+</tr></thead><tbody><tr><td>B4, étendue des scores</td>
+<td>3,5 → 5,4 (1,9 pt)</td>
+<td><strong>12,5 → 67,4 (54,9 pts)</strong></td>
+</tr><tr><td>L3, UGF à exactement 0</td>
+<td><strong>16 / 30</strong></td>
+<td><strong>0</strong></td>
+</tr><tr><td>L3, étendue des scores</td>
+<td>0 → 20,0</td>
+<td><strong>12,9 → 87,9</strong></td>
+</tr></tbody></table><p><strong>Une frayeur écartée.</strong> L’espace de k-means porte une variable <code>ID</code> d’amplitude 218 622 (contre 3 000-10 400 pour les bandes) : de quoi croire la classification pilotée par un index de pixel. Elle porte <strong>0,0 % de la variance inter-centroïdes</strong> — inerte. Le run est exploitable, aucun correctif n’en découle. Consigné pour que la question ne soit pas reposée.</p>
+<p><strong>Second massif — D3 tenue (même jour).</strong> Un deuxième run dormait dans le cache du projet <code>Reconfort</code>, jamais relu non plus : <code>S2C_MSIL2A_20250815</code>, tuile <strong>T31UDP</strong>, capteur <strong>S2C</strong>, 597 fenêtres. Tuile, année et capteur différents. <strong>Aucune saturation</strong>, borne L3 approchée sans être franchie (0,440 / 0,364). Les scores y sont bien plus bas (B4 médian 12,1 contre 34,6) et <strong>ce n’est pas l’échelle</strong> : le Bray-Curtis brut (<code>Beta_info$MatBC</code>, borné par construction, antérieur à toute normalisation) donne 0,889 de dissimilarité médiane sur Fordead contre <strong>0,260</strong> sur Reconfort. Le massif est réellement uniforme. <code>ID</code> y est inerte de la même façon — le constat se généralise.</p>
+<p><strong>Limite de méthode trouvée en chemin</strong> : les « spectral species » sont un k-means <strong>réajusté par run</strong>, la PCoA de L3 aussi. B4/L3 sont comparables <em>au sein</em> d’un projet, <strong>pas entre projets</strong>. Que les deux massifs diffèrent est établi (par le BC brut, indépendant du k-means) ; que leurs scores soient sur la même règle graduée ne l’est pas. Spec 028 §10.6.</p>
+<p><strong>Reste</strong> : ⏳ deux massifs du <strong>quart nord-est</strong> — ce ne sont pas des bornes nationales ; un massif méditerranéen ou de montagne reste à mesurer. ⏳ Validation terrain du statut proxy (D4, démarche spec 008/QField) : non entamée, hors de ce chantier.</p>
+<p><strong>Le « reste » app était périmé</strong> : ce chantier listait encore « affichage B4/L3 côté <code>nemetonshiny</code> » comme à faire. Vérifié en lecture seule le 2026-08-27 — c’est livré, et depuis un moment : <code>service_compute.R:315,327</code> calcule les deux indicateurs, <code>utils_i18n.R:1670,1683</code> porte leurs libellés, et le dé-fork de <code>INDICATOR_FAMILIES</code> (app v0.127.0) les fait entrer au radar sans qu’une table ait à les déclarer. <strong>Un brief de notification</strong> part quand même : les valeurs B4/L3 changent de sens et d’échelle avec ce correctif, et les rasters <code>cache/layers/spectral/</code> restent valides (rien à recalculer).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-en-cours--dette-post-coupe-rase-items-1-4">Chantier EN COURS — Dette post-coupe-rase (items 1-4)<a class="anchor" aria-label="anchor" href="#chantier-en-cours--dette-post-coupe-rase-items-1-4"></a></h1>
@@ -456,7 +486,38 @@
 </div>
 <div class="section level1">
 <h1 id="correctifs-de-production-hors-chantier">Correctifs de production (hors chantier)<a class="anchor" aria-label="anchor" href="#correctifs-de-production-hors-chantier"></a></h1>
-<p><strong>Journal</strong> — <em>2026-08-26</em> (<strong>v0.189.1</strong>) : <strong>le tooltip de S3 décrivait une autre grandeur</strong>. Brief entrant, déposé par la session app <em>en implémentant</em> le brief que je venais de lui envoyer — lequel lui demandait de corriger un libellé qui, vérification faite, <strong>est le nôtre</strong>.</p>
+<p><strong>Journal</strong> — <em>2026-08-27</em> (<strong>v0.190.0</strong>) : <strong>ERA5, la progression par mois et la reprise</strong>. Brief <code>2026-08-27-era5-progression-mensuelle-et-reprise</code>, déposé par la session app sur constat de Pascal (« ça bloque sur fordead ? »). Ça ne bloquait pas : ça téléchargeait en silence.</p>
+<p><strong>B2, le vrai bug.</strong> <code><a href="https://rdrr.io/pkg/mcera5/man/request_era5.html" class="external-link">mcera5::request_era5()</a></code> refuse de réécrire — <code>overwrite = FALSE</code> par défaut, <code><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop()</a></code> dès que le <code>.zip</code> cible existe — et les <code>.zip</code> ne sont pas purgés après extraction. <strong>Un run tué au mois 7 rendait l’année entière irrécupérable</strong> : au run suivant, aucun combiné n’existant, le cœur redemandait les douze mois et échouait sur le mois 1, dont le <code>.zip</code> traînait. Les trois tentatives de <code>.rsen_era5_with_retry()</code> se consumaient sur une erreur incapable de guérir. Le cœur découpe désormais la boucle : un mois dont le <strong><code>.nc</code></strong> est là est sauté (c’est le <code>.nc</code> qui fait foi, pas le <code>.zip</code> — une coupure laisse le second sans le premier), les autres repartent en <code>overwrite = TRUE</code>.</p>
+<p><strong>B1, la lisibilité.</strong> <code>request_era5()</code> boucle en interne sur les douze requêtes et n’accepte aucun callback : <code>emit</code> n’était appelé qu’une fois par <strong>année</strong>. Avec une année par catégorie, cela donnait « 1/1 » — exact et inutile — puis 1 h 36 de silence. Mesuré : <strong>~8 min/mois, 12 mois, 2 années, 3 h 15 de téléchargement muet sur 4 h 25 de run</strong>, pendant que le processus tournait à 32,5 % de CPU. Nouvel événement <code>regen_expo:era5_mois</code> ; <code>category</code> descend enfin jusqu’au téléchargement ; l’annuel est conservé. Le contrat app était déjà posé (<code>nemetonshiny</code> v0.141.0, <code>b7aff412</code>).</p>
+<p><strong>Vérifié plutôt que repris du brief</strong> : <code>mcera5</code> 0.4.0 installé ici, <code>req[k]</code> est bien une liste de longueur 1, les cibles sont <code>era5_2020_2020_&lt;mois&gt;.zip</code>, et le combiné doit donc s’appeler <code>era5_2020_2020.nc</code> (double année) pour que <code>.rsen_era5_combined()</code> le retrouve. <code>combine_netcdf()</code> est exporté.</p>
+<p><strong>Ce que ça ne fait pas</strong> : raccourcir l’attente. Les ~8 min par mois sont la file d’attente de Copernicus, pas le cœur.</p>
+<hr><p><strong>Journal</strong> — <em>2026-08-27</em> (<strong>v0.190.0</strong>) : <strong>le seuil d’absorption ne voyait pas les échardes qu’il visait</strong>. Brief <code>2026-08-25-reliquat-echappe-absorption</code>, déposé par la session app sur constat de Pascal, et resté deux jours dans <code>vers-nemeton/</code>.</p>
+<p><code>min_surface_ha</code> comparait le seuil à la surface de la <strong>ligne</strong>. Or <code>ten</code> est fondu à une ligne par (UGF × parcelle cadastrale) et <code>reste</code> à une ligne par parcelle cadastrale : un multipolygone de 10 ha n’est jamais une écharde, et se disloque en morceaux de moins de 100 m² dès que le consommateur normalise en parties simples — ce que fait l’app à l’import. <strong>Aucun reliquat n’était donc absorbé, par construction.</strong> Le seuil porte désormais sur les <strong>parties</strong>.</p>
+<p><strong>Ce que le brief n’avait pas vu : le défaut est symétrique.</strong> Il visait le reliquat ; les tènements ont exactement le même problème, pour la même raison (<code>.croiser_fusionner</code> les fond délibérément en multipolygones). Mesure sur les 21 parcelles réelles de Couchey :</p>
+<table class="table"><thead><tr><th></th>
+<th>lignes</th>
+<th>morceaux éclatés</th>
+<th>&lt; 0,05 ha</th>
+<th>&lt; 100 m²</th>
+</tr></thead><tbody><tr><td>sans absorption (témoin)</td>
+<td>163</td>
+<td>255</td>
+<td>96</td>
+<td>57</td>
+</tr><tr><td><strong>avant</strong></td>
+<td>137</td>
+<td>236</td>
+<td>76</td>
+<td>44</td>
+</tr><tr><td><strong>après</strong></td>
+<td><strong>134</strong></td>
+<td><strong>158</strong></td>
+<td><strong>0</strong></td>
+<td><strong>0</strong></td>
+</tr></tbody></table><p><strong>L’écharde rejoint la plus longue frontière partagée, pas le plus gros.</strong> C’est ce qui la fait vraiment disparaître : l’union de deux polygones qui se touchent est <em>un</em> polygone, qui survit à l’éclatement en aval. Le repli historique (« le plus gros de la parcelle ») ne joue que sans voisin, et l’écharde change alors seulement d’étiquette. Longueur et non surface — un contact ponctuel n’est pas un voisinage, même règle qu’en v0.189.0.</p>
+<p><strong>Pavage exact</strong> : 529,729626 ha avant comme après, à 5 × 10⁻⁷ m² près. Un test le vérifie sur cinq seuils de 0 à 10 ha.</p>
+<p><strong>Le coût est réel et il faut le dire</strong> : le croisement passe de 0,6 s à 6,0 s sur ce projet. Une première écriture tenait <strong>38 s</strong> ; trois mesures l’ont ramenée à 6 — présélection par <code>st_intersects</code> (indexé), mesures <code>st_area</code> / <code>st_boundary</code> vectorisées une fois sur toutes les parties au lieu d’une fois par parcelle, et surtout <strong>abandon de <code>st_length()</code></strong>, où le profil passait 6,1 s sur 6,4 en réinterrogeant les paramètres du CRS à chaque appel. Le CRS de travail étant toujours projeté (<code>.croiser_crs_travail</code> bascule en 2154), la somme euclidienne des segments <em>est</em> la longueur ; un test verrouille l’égalité.</p>
+<hr><p><strong>Journal</strong> — <em>2026-08-26</em> (<strong>v0.189.1</strong>) : <strong>le tooltip de S3 décrivait une autre grandeur</strong>. Brief entrant, déposé par la session app <em>en implémentant</em> le brief que je venais de lui envoyer — lequel lui demandait de corriger un libellé qui, vérification faite, <strong>est le nôtre</strong>.</p>
 <p>Deux erreurs, dont une <strong>antérieure</strong> au changement de v0.189.0 : le code utilisait déjà <code>pop_5km</code> quand le tooltip annonçait « 10 km », et S3 porte une densité depuis hier, plus un effectif. Le texte nomme désormais les deux, et l’échelle avec — un score de 82 sur une échelle logarithmique ne se lit pas comme un pourcentage.</p>
 <p><strong>Le point de méthode, et il est à porter au crédit de la session app</strong> : elle aurait pu corriger le texte chez elle en trois secondes. Elle a refusé, parce que <code>nemetonshiny</code> lit ce tooltip tel quel depuis <code>INDICATOR_FAMILIES</code> et que son <code>CLAUDE.md</code> interdit d’en dupliquer la liste — le réécrire là-bas aurait créé <strong>deux vérités</strong> sur une donnée qui n’en a qu’une. C’est exactement le fork que le dé-fork de v0.127.0 a supprimé, et le réflexe qu’on cherchait à installer a fonctionné dans le sens le moins confortable : renvoyer le défaut à l’amont plutôt que le contourner.</p>
 <p><strong>Journal</strong> — <em>2026-08-26</em> (<strong>v0.189.0</strong>) : <strong>la vraie cause des échecs de segmentation, et le reliquat qui rejoint son voisin</strong>. Deux briefs de l’espace d’échange, découverts en auditant <code>briefs/vers-nemeton/</code> à la demande de Pascal — <strong>la deuxième fois en deux jours</strong> que cet audit révèle des briefs jamais lus.</p>

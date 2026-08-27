@@ -76,7 +76,11 @@ A list with:
 
 - beta:
 
-  a `SpatRaster` of Bray-Curtis beta diversity (or `NULL`),
+  a 3-layer `SpatRaster` holding the first three PCoA axes of the
+  Bray-Curtis dissimilarity between windows — an ordination, not a
+  scalar dissimilarity; see
+  [`indicateur_l3_het_spectrale`](https://pobsteta.github.io/nemeton/reference/indicateur_l3_het_spectrale.md)
+  for how a per-unit value is derived from it (or `NULL`),
 
 - output_dir:
 

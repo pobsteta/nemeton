@@ -15,7 +15,7 @@ indicateur_b4_div_spectrale."><meta property="og:image" content="https://pobstet
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.189.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.190.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -66,6 +66,7 @@ mosaic (spec 028 D1). Backward compatible like
 <span>  spectral <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  reflectance <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  column_name <span class="op">=</span> <span class="st">"L3"</span>,</span>
+<span>  min_windows <span class="op">=</span> <span class="fl">3L</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -94,6 +95,13 @@ compute spectral diversity on the fly when <code>spectral</code> is
 <dd><p>Output column name (default <code>"L3"</code>).</p></dd>
 
 
+<dt id="arg-min-windows">min_windows<a class="anchor" aria-label="anchor" href="#arg-min-windows"></a></dt>
+<dd><p>Integer. Minimum number of covered diversity windows
+below which the unit's dispersion is undefined and <code>NA</code> is returned
+(default <code>3L</code>, the floor for a dispersion around a centroid). Values
+below 3 are raised to 3.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Passed to <code><a href="compute_spectral_diversity.html">compute_spectral_diversity</a></code> when computing
 on the fly (e.g. <code>window_size</code>, <code>mask</code>, <code>nb_cpu</code>).</p></dd>
@@ -102,6 +110,20 @@ on the fly (e.g. <code>window_size</code>, <code>mask</code>, <code>nb_cpu</code
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>units</code> with the numeric <code>column_name</code> column added.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>biodivMapR returns beta diversity as the first three axes of a PCoA of the
+Bray-Curtis dissimilarity between windows, <em>not</em> as a scalar
+dissimilarity raster. The value reported here is therefore the unit's
+<strong>multivariate dispersion</strong> in that ordination space: the mean
+Euclidean distance of the unit's windows to the unit's own centroid
+(Anderson's betadisper). A spectrally uniform unit scores near zero; a unit
+spanning contrasted spectral communities scores high.</p>
+<p>Before v0.190.0 the axes were simply averaged, which measured a unit's mean
+<em>position</em> in ordination space — a quantity centred on zero by
+construction, and clamped to 0 for every unit on the negative side. See
+spec 028 section 10.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

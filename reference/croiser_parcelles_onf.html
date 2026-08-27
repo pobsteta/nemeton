@@ -19,9 +19,10 @@ forest; skipping the rest takes the crossing from 19.1 s to 7.3 s with
 inclure_reste = FALSE, and from 20.6 s to 14.0 s with it. The result is
 unchanged, geometry for geometry.
 Two corrections, mildest first:
-min_surface_ha — a sliver is absorbed by the largest
-tenement of the same cadastral parcel, never dropped, so each cadastral parcel
-stays exactly tiled (the application's tiling invariant).
+min_surface_ha — a sliver is absorbed by the tenement of
+the same cadastral parcel it shares the longest boundary with, never dropped,
+so each cadastral parcel stays exactly tiled (the application's tiling
+invariant).
 caler_sur_cadastre — when one UGF already holds at least
 seuil_calage of a cadastral parcel, that parcel is given to it
 whole: the UGF boundary snaps onto the cadastral boundary. Parcels
@@ -48,9 +49,10 @@ forest; skipping the rest takes the crossing from 19.1 s to 7.3 s with
 inclure_reste = FALSE, and from 20.6 s to 14.0 s with it. The result is
 unchanged, geometry for geometry.
 Two corrections, mildest first:
-min_surface_ha — a sliver is absorbed by the largest
-tenement of the same cadastral parcel, never dropped, so each cadastral parcel
-stays exactly tiled (the application's tiling invariant).
+min_surface_ha — a sliver is absorbed by the tenement of
+the same cadastral parcel it shares the longest boundary with, never dropped,
+so each cadastral parcel stays exactly tiled (the application's tiling
+invariant).
 caler_sur_cadastre — when one UGF already holds at least
 seuil_calage of a cadastral parcel, that parcel is given to it
 whole: the UGF boundary snaps onto the cadastral boundary. Parcels
@@ -65,7 +67,7 @@ never take a parcel — dropping forest is not a correction.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.189.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.190.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -121,9 +123,10 @@ real commune (La-Vieille-Loye, 39) only 181 of 1 271 parcels meet the public
 forest; skipping the rest takes the crossing from 19.1 s to 7.3 s with
 <code>inclure_reste = FALSE</code>, and from 20.6 s to 14.0 s with it. The result is
 unchanged, geometry for geometry.</p>
-<p>Two corrections, mildest first:</p><ul><li><p><code>min_surface_ha</code> — a sliver is <strong>absorbed</strong> by the largest
-tenement of the same cadastral parcel, never dropped, so each cadastral parcel
-stays exactly tiled (the application's tiling invariant).</p></li>
+<p>Two corrections, mildest first:</p><ul><li><p><code>min_surface_ha</code> — a sliver is <strong>absorbed</strong> by the tenement of
+the same cadastral parcel it shares the longest boundary with, never dropped,
+so each cadastral parcel stays exactly tiled (the application's tiling
+invariant).</p></li>
 <li><p><code>caler_sur_cadastre</code> — when one UGF already holds at least
 <code>seuil_calage</code> of a cadastral parcel, that parcel is given to it
 <strong>whole</strong>: the UGF boundary snaps onto the cadastral boundary. Parcels
@@ -161,10 +164,23 @@ taken from <code>id_col</code>, or auto-detected among <code>id</code>,
 
 
 <dt id="arg-min-surface-ha">min_surface_ha<a class="anchor" aria-label="anchor" href="#arg-min-surface-ha"></a></dt>
-<dd><p>Tenements strictly smaller than this are treated as
+<dd><p>Parts strictly smaller than this are treated as
 slivers and absorbed. Default <code>0.05</code> (500 m²) — inside the natural gap
 measured between slivers (≤ 0.035 ha) and real tenements (≥ 0.12 ha). Use
-<code>0</code> to keep every sliver.</p></dd>
+<code>0</code> to keep every sliver.</p>
+<p>Since v0.190.0 the threshold is compared against each <strong>simple part</strong>,
+not against the row: both <code>ten</code> and the remainder are merged into
+multipolygons, so a 10 ha remainder made of eight pieces — several under
+100 m² — sailed over the threshold and shed its slivers as soon as a consumer
+normalised the output to single parts. Measured on the 21 real parcels of
+Couchey: 255 parts, 96 under the threshold and 57 under 100 m² survived
+absorption; none does now, and the cadastral tiling is unchanged to the
+square metre.</p>
+<p>A sliver joins the part it shares the <strong>longest boundary</strong> with, not the
+largest one: the union of two touching polygons is a single polygon, which is
+what makes the sliver disappear for good. When nothing touches it, the
+historical fallback applies (largest fragment of the parcel) — the sliver then
+only changes label, since the union stays multipart.</p></dd>
 
 
 <dt id="arg-caler-sur-cadastre">caler_sur_cadastre<a class="anchor" aria-label="anchor" href="#arg-caler-sur-cadastre"></a></dt>

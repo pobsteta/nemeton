@@ -17,7 +17,7 @@ result to both indicator functions to avoid running biodivMapR twice."><meta pro
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.189.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.190.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -131,8 +131,11 @@ to benefit; the default <code><a href="https://rdrr.io/r/base/tempfile.html" cla
       <code>NULL</code> if not produced),</p></dd>
 
     <dt>beta</dt>
-<dd><p>a <code>SpatRaster</code> of Bray-Curtis beta diversity (or
-      <code>NULL</code>),</p></dd>
+<dd><p>a 3-layer <code>SpatRaster</code> holding the first three PCoA
+      axes of the Bray-Curtis dissimilarity between windows — an
+      ordination, not a scalar dissimilarity; see
+      <code><a href="indicateur_l3_het_spectrale.html">indicateur_l3_het_spectrale</a></code> for how a per-unit value is
+      derived from it (or <code>NULL</code>),</p></dd>
 
     <dt>output_dir</dt>
 <dd><p>the directory holding the raw biodivMapR outputs.</p></dd>
