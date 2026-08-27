@@ -89,7 +89,76 @@ indicateur_r6_sensibilite()  ->  colonnes R6, R6_dtmax, R6_dvpd, R6_couverture_p
       +- create_family_index("R")  -> famille_risque
 ```
 
-## 6. Références internes
+## 6. Diagramme d'ensemble
+
+<!-- diagramme:auto:debut -->
+<figure>
+<svg viewBox="0 0 820 376" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de R6 : le meme peuplement est simule sous une annee caniculaire et sous une annee moyenne, canopee tenue fixe, et l'ecart de temperature et de deficit de vapeur mesure sa sensibilite ; contrairement a R1-R5, le score n'est pas inverse.">
+<defs>
+<marker id="fd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+</marker>
+</defs>
+<g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55">
+<text x="10" y="16">ENTRÉES</text>
+<text x="290" y="16">CALCUL — ÉTAPES SUCCESSIVES</text>
+<text x="588" y="16">AVAL</text>
+</g>
+<rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">microclimate_run() ×2</text>
+<text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">année caniculaire</text>
+<text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">année moyenne, canopée figée</text>
+<rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">microclimate_detect_years()</text>
+<text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">années choisies sur la série E-OBS</text>
+<rect x="8" y="162" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"/>
+<text x="20" y="181" font-size="12.5" font-weight="600" fill="currentColor">Chaîne microclimat non lancée</text>
+<text x="20" y="197" font-size="11" fill="currentColor" opacity=".78">R6 = NA</text>
+<rect x="288" y="34" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Deux écarts</text>
+<text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">dT   = Tmax(can.) - Tmax(moy.)</text>
+<text x="300" y="85" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">dVPD = VPD(can.) - VPD(moy.)</text>
+<rect x="288" y="126" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="145" font-size="12.5" font-weight="600" fill="currentColor">Standardisation</text>
+<text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">dT / 8  et  dVPD / 2</text>
+<text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">R6 = 100 - standardisation</text>
+<rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"/>
+<text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_r6_sensibilite</text>
+<text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">haut = peu sensible</text>
+<rect x="586" y="98" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text>
+<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">passthrough écrêté</text>
+<text x="598" y="149" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">PAS d'inversion, contra R1–R5</text>
+<rect x="586" y="178" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="197" font-size="12.5" font-weight="600" fill="currentColor">create_family_index("R")</text>
+<text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_risque</text>
+<text x="598" y="229" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne de R1 à R7</text>
+<rect x="586" y="258" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="277" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text>
+<text x="598" y="293" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci · confiance φ</text>
+<line x1="260" y1="63" x2="282" y2="63" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 127 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 183 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">puis</text>
+<line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="550" y1="155" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="63" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="158" x2="699" y2="172" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="238" x2="699" y2="252" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">R6 n'est pas inversé alors que R1 à R5 le sont : il est déjà orienté « haut = bon » à la source.</text>
+<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Piège historique : c'est le sensibilite_score 0–100 qu'il faut injecter, jamais le z-score de reGénération (spec 038).</text>
+<text x="10" y="358" font-size="10.5" fill="currentColor" opacity=".62">Le choix des deux années détermine tout : une « caniculaire » mal choisie aplatit l'écart.</text>
+</svg>
+<figcaption style="font-size:.9em;opacity:.75">
+Une différence entre deux simulations, pas un état. La canopée est tenue fixe pour que l'écart mesure le climat seul — ce que R6 dit, c'est ce que le peuplement encaisserait, pas ce qu'il a subi.
+</figcaption>
+</figure>
+<!-- diagramme:auto:fin -->
+
+## 7. Références internes
 
 | Sujet | Fichier |
 |---|---|

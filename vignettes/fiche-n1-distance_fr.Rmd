@@ -78,7 +78,81 @@ indicateur_n1_distance()  ->  colonne N1 (0-100)
       +- alimente N3 (poids 0,35)
 ```
 
-## 6. Références internes
+## 6. Diagramme d'ensemble
+
+<!-- diagramme:auto:debut -->
+<figure>
+<svg viewBox="0 0 820 376" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de N1 : depuis le centroide de l'unite, deux distances mesurees — aux routes, au bati — et un troisieme terme qui n'est pas une mesure mais une constante de 2 000 m, laquelle ajoute un quart de score fixe a toutes les unites.">
+<defs>
+<marker id="fd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+</marker>
+</defs>
+<g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55">
+<text x="10" y="16">ENTRÉES</text>
+<text x="290" y="16">CALCUL — TERMES CUMULÉS</text>
+<text x="588" y="16">AVAL</text>
+</g>
+<rect x="8" y="34" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">BD TOPO — routes</text>
+<text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">st_distance(centroïde, union)</text>
+<rect x="8" y="90" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="109" font-size="12.5" font-weight="600" fill="currentColor">BD TOPO — bâti</text>
+<text x="20" y="125" font-size="11" fill="currentColor" opacity=".78">st_distance(centroïde, union)</text>
+<rect x="8" y="146" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"/>
+<text x="20" y="165" font-size="12.5" font-weight="600" fill="currentColor">« Zones urbaines »</text>
+<text x="20" y="181" font-size="11" fill="currentColor" opacity=".78">aucune couche n'existe</text>
+<text x="20" y="197" font-size="11" fill="currentColor" opacity=".78">constante figée à 2 000 m</text>
+<rect x="288" y="34" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Routes — 40 %</text>
+<text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">pmin(100, d_routes / 20)</text>
+<rect x="288" y="110" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="129" font-size="12.5" font-weight="600" fill="currentColor">Bâti — 35 %</text>
+<text x="300" y="145" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">pmin(100, d_bati / 20)</text>
+<rect x="288" y="186" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"/>
+<text x="300" y="205" font-size="12.5" font-weight="600" fill="currentColor">Urbain — 25 %</text>
+<text x="300" y="221" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">pmin(100, 2000/20) = 100</text>
+<text x="300" y="237" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">soit +25 fixe</text>
+<rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"/>
+<text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_n1_distance</text>
+<text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score 0–100, natif</text>
+<rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text>
+<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">écrêtage natif 0–100</text>
+<rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index("N")</text>
+<text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_naturalite</text>
+<text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne de N1 à N3</text>
+<rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text>
+<text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci · confiance φ</text>
+<line x1="260" y1="55" x2="282" y2="55" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 111 H271 V131 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 175 H271 V215 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="306" y1="78" x2="306" y2="104" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="312" y="94" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">+</text>
+<line x1="306" y1="154" x2="306" y2="180" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="312" y="170" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">+</text>
+<line x1="550" y1="55" x2="566" y2="55" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="550" y1="131" x2="566" y2="131" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="550" y1="215" x2="566" y2="215" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="55" x2="566" y2="215" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="55" x2="580" y2="55" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">N1 a deux sources de données, pas trois : le terme urbain vaut toujours 100 et n'a rien mesuré.</text>
+<text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Sans couche, la distance vaut NA — plus de distance inventée (correctif).</text>
+<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Le calcul part du centroïde : une lanière qui longe une route peut avoir un centroïde éloigné.</text>
+<text x="10" y="358" font-size="10.5" fill="currentColor" opacity=".62">N1 et S1/S2 notent la même géométrie en sens contraire — un radar ne peut monter des deux côtés.</text>
+</svg>
+<figcaption style="font-size:.9em;opacity:.75">
+Trois termes, dont un qui n'est pas une donnée. Le +25 constant relève le plancher de N1 pour toutes les unités : la variabilité utile se joue sur les 75 points restants.
+</figcaption>
+</figure>
+<!-- diagramme:auto:fin -->
+
+## 7. Références internes
 
 | Sujet | Fichier |
 |---|---|

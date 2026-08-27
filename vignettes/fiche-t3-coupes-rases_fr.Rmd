@@ -94,7 +94,76 @@ indicateur_t3_coupes_rases()  ->  colonne indicateur_t3_coupes_rases (0-100, hau
       +- create_family_index("T")  -> famille_temporelle = moy(T1, T2, T3)
 ```
 
-## 6. Références internes
+## 6. Diagramme d'ensemble
+
+<!-- diagramme:auto:debut -->
+<figure>
+<svg viewBox="0 0 820 376" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de T3 : les dates et les probabilites SUFOSAT sont empilees pour une extraction unique, la part de l'unite coupee dans les cinq dernieres annees au-dela de 0,9 de probabilite est retenue, puis le sens est inverse a la normalisation — score = 100 moins la valeur brute.">
+<defs>
+<marker id="fd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+</marker>
+</defs>
+<g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55">
+<text x="10" y="16">ENTRÉES</text>
+<text x="290" y="16">CALCUL — ÉTAPES SUCCESSIVES</text>
+<text x="588" y="16">AVAL</text>
+</g>
+<rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">SUFOSAT — dates de coupe</text>
+<text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">CNES/CESBIO, suivi submensuel</text>
+<text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">fenêtre window_years = 5</text>
+<rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">SUFOSAT — probabilité</text>
+<text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">seuil min_proba = 0,9</text>
+<rect x="8" y="162" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"/>
+<text x="20" y="181" font-size="12.5" font-weight="600" fill="currentColor">SUFOSAT non fourni</text>
+<text x="20" y="197" font-size="11" fill="currentColor" opacity=".78">T3 non calculé (conditionnel)</text>
+<rect x="288" y="34" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Empilement des deux rasters</text>
+<text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">une seule extraction</text>
+<text x="300" y="85" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">alignement pixel à pixel</text>
+<rect x="288" y="126" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="145" font-size="12.5" font-weight="600" fill="currentColor">Part de l'unité coupée</text>
+<text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">pixels retenus / unité × 100</text>
+<text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">T3 brut : haut = coupé</text>
+<rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"/>
+<text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_t3_coupes_rases</text>
+<text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">brut : haut = beaucoup coupé</text>
+<rect x="586" y="98" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text>
+<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score = 100 - valeur</text>
+<text x="598" y="149" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">comme R1 à R5 (spec 048)</text>
+<rect x="586" y="178" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="197" font-size="12.5" font-weight="600" fill="currentColor">create_family_index("T")</text>
+<text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_temporel</text>
+<text x="598" y="229" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne de T1 à T3</text>
+<rect x="586" y="258" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="277" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text>
+<text x="598" y="293" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci · confiance φ</text>
+<line x1="260" y1="63" x2="282" y2="63" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 127 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 183 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">puis</text>
+<line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="550" y1="155" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="63" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="158" x2="699" y2="172" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="238" x2="699" y2="252" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Le sens brut est inversé par rapport au score : ne jamais lire la colonne brute comme un score.</text>
+<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Une coupe rase n'est pas nécessairement une anomalie — T3 pénalise une pratique sylvicole légitime.</text>
+<text x="10" y="358" font-size="10.5" fill="currentColor" opacity=".62">min_proba = 0,9 est strict et délibéré : abaisser le seuil ferait entrer des détections douteuses.</text>
+</svg>
+<figcaption style="font-size:.9em;opacity:.75">
+Un des six indicateurs — R1 à R5 et lui — dont la normalisation retourne le sens. La colonne brute mesure une pression de coupe ; le score, lui, mesure son absence — deux lectures opposées du même nombre.
+</figcaption>
+</figure>
+<!-- diagramme:auto:fin -->
+
+## 7. Références internes
 
 | Sujet | Fichier |
 |---|---|

@@ -102,7 +102,84 @@ indicateur_r5_deperissement()  ->  colonnes R5 (0-100, haut = deperissement) et 
       +- create_family_index("R")  -> famille_risque
 ```
 
-## 6. Références internes
+## 6. Diagramme d'ensemble
+
+<!-- diagramme:auto:debut -->
+<figure>
+<svg viewBox="0 0 820 392" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de R5 : deux pipelines de detection — FORDEAD pour les resineux, RECONFORT pour les feuillus — livrent des clusters d'alerte dont seules les classes fortes sont retenues, ponderees par la confiance calibree sur le rapport ONF/DSF 2024, puis rapportees a la surface de l'UGF.">
+<defs>
+<marker id="fd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+</marker>
+</defs>
+<g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55">
+<text x="10" y="16">ENTRÉES</text>
+<text x="290" y="16">CALCUL — ÉTAPES SUCCESSIVES</text>
+<text x="588" y="16">AVAL</text>
+</g>
+<rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">FORDEAD — résineux</text>
+<text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">CRSWIR + modèle harmonique</text>
+<text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">épicéa, sapin pectiné</text>
+<rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">RECONFORT — feuillus</text>
+<text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">chêne et autres feuillus</text>
+<rect x="8" y="162" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"/>
+<text x="20" y="181" font-size="12.5" font-weight="600" fill="currentColor">Fraction d'essence cible</text>
+<text x="20" y="197" font-size="11" fill="currentColor" opacity=".78">min_resineux = min_feuillus = 0,3</text>
+<text x="20" y="213" font-size="11" fill="currentColor" opacity=".78">sinon skipped_no_resineux</text>
+<rect x="288" y="34" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Garde-fou G1</text>
+<text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">include_low_classes = FALSE</text>
+<text x="300" y="85" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">seules 3-forte et 4-sol-nu</text>
+<rect x="288" y="126" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="145" font-size="12.5" font-weight="600" fill="currentColor">Intersection des clusters</text>
+<text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">centroïdes × UGF</text>
+<rect x="288" y="202" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="221" font-size="12.5" font-weight="600" fill="currentColor">Somme pondérée</text>
+<text x="300" y="237" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Σ poids × aire / surface UGF</text>
+<text x="300" y="253" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">plafonné à 1, × 100</text>
+<rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"/>
+<text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_r5_deperissement</text>
+<text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">brut : haut = dépérissement</text>
+<rect x="586" y="98" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text>
+<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score = 100 - valeur</text>
+<text x="598" y="149" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">R1 à R5 (spec 048)</text>
+<rect x="586" y="178" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="197" font-size="12.5" font-weight="600" fill="currentColor">create_family_index("R")</text>
+<text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_risque</text>
+<text x="598" y="229" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne de R1 à R7</text>
+<rect x="586" y="258" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="277" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text>
+<text x="598" y="293" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci · confiance φ</text>
+<line x1="260" y1="63" x2="282" y2="63" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 127 H271 V147 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 191 H271 V231 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">puis</text>
+<line x1="306" y1="170" x2="306" y2="196" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="312" y="186" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">puis</text>
+<line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="550" y1="147" x2="566" y2="147" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="550" y1="231" x2="566" y2="231" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="63" x2="566" y2="231" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="158" x2="699" y2="172" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="238" x2="699" y2="252" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Poids 0,10 / 0,30 / 0,82 / 0,70 : calibrés sur 397 relevés terrain (ONF/DSF 2024), pas choisis.</text>
+<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Détection précoce médiocre — 60 % des stades précoces manqués ; confusion mécanique de 25 à 41 %.</text>
+<text x="10" y="358" font-size="10.5" fill="currentColor" opacity=".62">NA ne veut pas dire sain : trois causes distinctes se cachent derrière (r5_status les distingue).</text>
+<text x="10" y="374" font-size="10.5" fill="currentColor" opacity=".62">Le seuil de 30 % d'essence cible exclut les peuplements mélangés du calcul.</text>
+</svg>
+<figcaption style="font-size:.9em;opacity:.75">
+Une chaîne dont chaque maille est calibrée sur du terrain. Le garde-fou G1 écarte les deux classes faibles parce qu'elles portent la moitié des faux positifs — c'est un choix de justesse, payé en sensibilité.
+</figcaption>
+</figure>
+<!-- diagramme:auto:fin -->
+
+## 7. Références internes
 
 | Sujet | Fichier |
 |---|---|

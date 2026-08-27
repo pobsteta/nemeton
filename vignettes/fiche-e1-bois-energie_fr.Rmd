@@ -83,7 +83,81 @@ indicateur_e1_bois_energie()  ->  colonnes E1, E1_residues, E1_coppice
       +- alimente E2 (fuelwood_field)
 ```
 
-## 6. Références internes
+## 6. Diagramme d'ensemble
+
+<!-- diagramme:auto:debut -->
+<figure>
+<svg viewBox="0 0 820 360" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de E1 : le volume sur pied P1 est preleve a 2 % par an, 30 % de cette recolte part en remanents, convertis en matiere seche par la densite de l'essence, puis additionnes d'un forfait taillis de 2 tonnes par hectare et par an ; trois constantes portent donc tout le resultat.">
+<defs>
+<marker id="fd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+</marker>
+</defs>
+<g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55">
+<text x="10" y="16">ENTRÉES</text>
+<text x="290" y="16">CALCUL — ÉTAPES SUCCESSIVES</text>
+<text x="588" y="16">AVAL</text>
+</g>
+<rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">P1 — volume sur pied</text>
+<text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">colonne, ou calculé à la volée</text>
+<text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">hérite des propriétés de P1</text>
+<rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">wood_density.csv — ρ</text>
+<text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">550 kg/m³ si essence inconnue</text>
+<rect x="8" y="162" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="181" font-size="12.5" font-weight="600" fill="currentColor">Fraction de taillis</text>
+<text x="20" y="197" font-size="11" fill="currentColor" opacity=".78">forfait 2 t MS/ha/an, en dur</text>
+<rect x="288" y="34" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Récolte annuelle</text>
+<text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">V × harvest_rate</text>
+<text x="300" y="85" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">défaut 2 % / an</text>
+<rect x="288" y="126" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="145" font-size="12.5" font-weight="600" fill="currentColor">Rémanents en matière sèche</text>
+<text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">récolte × 30 %</text>
+<text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">× ρ/1000 × 0,5</text>
+<rect x="288" y="218" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="237" font-size="12.5" font-weight="600" fill="currentColor">Somme des deux gisements</text>
+<text x="300" y="253" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">E1 = rémanents + taillis</text>
+<rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"/>
+<text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_e1_bois_energie</text>
+<text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">t MS / ha / an</text>
+<rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text>
+<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">min(100, t / 0,3 × 100)</text>
+<rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index("E")</text>
+<text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_energie</text>
+<text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne de E1 et E2</text>
+<rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text>
+<text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci · confiance φ</text>
+<line x1="260" y1="63" x2="282" y2="63" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 127 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 183 H271 V239 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">puis</text>
+<line x1="306" y1="186" x2="306" y2="212" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="312" y="202" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">puis</text>
+<line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="550" y1="155" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="550" y1="239" x2="566" y2="239" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="63" x2="566" y2="239" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">Le plafond de 0,3 t MS/ha/an sature dès 150 m³/ha environ : la moitié du domaine forestier est à 100.</text>
+<text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Trois constantes portent le résultat — taux de récolte 2 %, fraction rémanents 30 %, forfait taillis 2 t.</text>
+<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">La récolte de 2 % est une hypothèse de gestion, pas une mesure de prélèvement réel.</text>
+</svg>
+<figcaption style="font-size:.9em;opacity:.75">
+Une chaîne de coefficients appliquée à P1. E1 ne mesure pas un gisement observé : il décrit ce que produirait une gestion conventionnelle appliquée uniformément à toutes les unités.
+</figcaption>
+</figure>
+<!-- diagramme:auto:fin -->
+
+## 7. Références internes
 
 | Sujet | Fichier |
 |---|---|
