@@ -1,0 +1,115 @@
+---
+title: "Fiche indicateur W3 - TWI - Humidite topographique"
+author: "Pascal Obstetar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fiche indicateur W3 - TWI - Humidite topographique}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+
+---
+
+## 1. Carte d'identité
+
+| Élément | Valeur |
+|---|---|
+| Code | `W3` |
+| Nom long / colonne | `indicateur_w3_humidite` |
+| Famille | **W — Eau & Régulation** |
+| Grandeur mesurée | Topographic Wetness Index moyen de l'unité |
+| Unité brute | **indice TWI**, sans unité |
+| Sens | Haut = favorable |
+| Normalisation | rééchelonnement `[2,5 ; 4,5] → [0 ; 100]` — `R/normalization.R` |
+| Fonction | `indicateur_w3_humidite()` — `R/indicators-families.R:886` |
+
+## 2. Le calcul
+
+```
+TWI = ln( SCA / tan(pente) )        SCA = surface drainee amont specifique
+W3  = moyenne zonale du TWI sur l'unite
+```
+
+Deux moteurs, choisis par `method` :
+
+| `method` | Moteur | Quand |
+|---|---|---|
+| `"auto"` (défaut) | GRASS si disponible, sinon `terra` D8 | via `get_or_compute_twi()`, avec cache fichier |
+| `"grass"` | GRASS GIS (`r.watershed`) | multi-directionnel, plus juste sur relief doux |
+| `"d8"` | `terra`, D8 | repli sans dépendance externe |
+
+Le MNT est cherché dans l'ordre `lidar_mnt` puis la couche `dem_layer`, puis
+ramené à la résolution de travail (`.dem_working_res()`). **Absence de MNT →
+`stop()`**, pas `NA`.
+
+**Exemples chiffrés** :
+
+| Situation | TWI moyen | Score |
+|---|---|---|
+| Crête, versant convexe | 2,4 | **0,0** |
+| Versant régulier | 3,0 | **25,0** |
+| Bas de versant | 3,8 | **65,0** |
+| Fond de vallon, zone d'accumulation | 4,6 | **100,0** |
+
+## 3. Le calcul par niveau NDP
+
+| NDP | MNT | Ce qui change |
+|---|---|---|
+| **0** | MNT 25 m, D8 | le TWI lisse tout le micro-relief |
+| **1** | **LiDAR HD**, GRASS | la rupture : dépressions, banquettes et fossés apparaissent |
+| **2** | LiDAR drone | micro-topographie de placette |
+| **3** | vérification terrain | — |
+| **4** | MNT scanner | — |
+
+W3 est, avec W2, l'indicateur de la famille W qui **gagne le plus** au NDP 1 :
+la grandeur ne change pas de nature, mais son support passe de 25 m à 1 m, et le
+TWI est une fonction très non-linéaire du relief.
+
+## 4. Trois pièges
+
+1. **La fenêtre de normalisation `[2,5 ; 4,5]` est étroite et non calibrée
+   localement.** Un TWI moyen de 2,4 rend 0 et de 4,6 rend 100 : l'essentiel
+   des unités françaises de plaine tombe dans une plage de deux points d'indice.
+   Deux massifs de reliefs contrastés ne se comparent pas sur ce score.
+2. **Le TWI dépend de la résolution du MNT, fortement.** Le même versant rend un
+   TWI plus élevé et plus contrasté sur un MNT à 1 m que sur un MNT à 25 m — la
+   pente locale y est plus forte et la surface drainée mieux résolue. **Un
+   projet qui passe au LiDAR HD verra W3 bouger sans qu'aucune goutte d'eau ait
+   changé de place.** C'est attendu au sens du NDP, mais ce n'est pas une
+   évolution du terrain.
+3. **GRASS et D8 ne donnent pas le même TWI.** Le mode `"auto"` bascule de l'un
+   à l'autre selon ce qui est installé sur la machine, silencieusement. Deux
+   exécutions du même projet sur deux postes peuvent donc différer. Figer
+   `method` explicitement quand la reproductibilité compte.
+
+## 5. Aval
+
+```
+indicateur_w3_humidite()  ->  colonne indicateur_w3_humidite (TWI)
+      |
+      +- normalize_indicator()     -> (TWI - 2,5) / 2 x 100, ecrete [0, 100]
+      +- create_family_index("W")  -> famille_eau
+```
+
+Le raster TWI est **partagé avec W2** (seuil > 12) via le cache de
+`get_or_compute_twi()` : un seul calcul par projet et par résolution.
+
+> Noter l'écart d'échelle entre les deux usages : W2 seuille à **TWI > 12**
+> tandis que W3 normalise sur **[2,5 ; 4,5]**. Ce ne sont pas les mêmes ordres
+> de grandeur — le seuil de W2 vise des pixels d'accumulation extrême, la
+> fenêtre de W3 une moyenne d'unité. Les deux cohabitent sur le même raster.
+
+## 6. Références internes
+
+| Sujet | Fichier |
+|---|---|
+| Fonction W3 | `R/indicators-families.R:886` |
+| Calcul et cache du TWI | `get_or_compute_twi()`, `calculate_twi_terra()` |
+| Normalisation | `R/normalization.R`, branche `indicateur_w3_humidite` |

@@ -1,0 +1,107 @@
+---
+title: "Fiche indicateur W1 - Reseau hydrographique"
+author: "Pascal Obstetar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fiche indicateur W1 - Reseau hydrographique}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+> **Document de référence** — Néméton (package cœur), 2026-08-27.
+> Cette fiche documente une saturation systématique (§4, piège n° 1).
+
+---
+
+## 1. Carte d'identité
+
+| Élément | Valeur |
+|---|---|
+| Code | `W1` |
+| Nom long / colonne | `indicateur_w1_reseau` |
+| Famille | **W — Eau & Régulation** (avec W2, W3, W4) |
+| Grandeur mesurée | Densité du réseau hydrographique, majorée d'un bonus de proximité |
+| Unité brute | **m/ha + bonus** (grandeur composite, cf. §4) |
+| Sens | Haut = favorable |
+| Normalisation | `ref_max = 50` → `score = min(100, valeur / 50 × 100)` |
+| Fonction | `indicateur_w1_reseau()` — `R/indicators-families.R:603` |
+
+## 2. Le calcul
+
+```
+densite_directe = longueur des cours d'eau dans l'unite (m) / surface (ha)
+
+bonus = proximity_ref                             si l'unite est traversee
+      = (1 - d_min / proximity_m) x proximity_ref si d_min < proximity_m
+      = 0                                          sinon
+
+W1 = densite_directe + bonus
+```
+
+Défauts : `proximity_m = 500` m, `proximity_ref = 50`, `buffer = 0`.
+
+**Exemples chiffrés** :
+
+| Situation | Densité directe | Bonus | W1 brut | Score |
+|---|---|---|---|---|
+| Traversée par un ruisseau, 40 m/ha | 40 | 50 | 90 | **100,0** |
+| Traversée par un ruisseau, 5 m/ha | 5 | 50 | 55 | **100,0** |
+| Non traversée, cours d'eau à 100 m | 0 | 40 | 40 | **80,0** |
+| Non traversée, cours d'eau à 400 m | 0 | 10 | 10 | **20,0** |
+| Cours d'eau à plus de 500 m | 0 | 0 | 0 | **0,0** |
+
+## 3. Le calcul par niveau NDP
+
+| NDP | Source | Ce qui change |
+|---|---|---|
+| **0** | BD TOPO — réseau hydrographique | le cas nominal |
+| **1** | idem | **inchangé** : le réseau vient d'un référentiel vecteur, pas d'un capteur |
+| **2** | + drainage détecté au LiDAR drone | les écoulements temporaires apparaissent |
+| **3** | relevé terrain des cours d'eau | fossés, sources et écoulements non cartographiés |
+| **4** | hydrologie complète modélisée | — |
+
+Le saut utile est **NDP 2**, pas NDP 1 : la BD TOPO ne porte pas les
+écoulements temporaires ni les fossés d'assainissement forestier, qui sont
+précisément ce qui manque à une lecture hydrologique de parcelle.
+
+## 4. Trois pièges
+
+1. **Toute unité traversée par un cours d'eau score exactement 100.** Le bonus
+   plein vaut `proximity_ref = 50`, soit exactement le `ref_max` de
+   normalisation. `min(100, (densité + 50) / 50 × 100)` vaut donc **100 dès que
+   la densité est positive**, et la densité elle-même n'a plus aucun effet. Un
+   fond de vallon parcouru par 120 m/ha de ruisseaux et une parcelle effleurée
+   par 3 m/ha rendent le **même score**. W1 se comporte, en pratique, comme un
+   indicateur à trois états : traversée (100), proche (0–100 selon la distance),
+   éloignée (0).
+2. **Sans donnée, W1 rend `0`, pas `NA`.** L'absence de couche produit un
+   avertissement puis `rep(0, nrow(units))`. C'est l'inverse de la politique
+   suivie par B1 et B3, où l'absence rend `NA` avec ce commentaire — « absent
+   input is NOT a measurement ». Ici, un projet sans couche hydrographique voit
+   `famille_eau` tirée vers le bas par des zéros fabriqués, sans que rien ne
+   distingue « aucun cours d'eau » de « on n'a pas regardé ».
+3. **La grandeur brute n'a pas d'unité interprétable.** `densité + bonus`
+   additionne des m/ha et un score sans dimension. La colonne brute ne se lit
+   donc pas comme une densité : elle ne sert qu'à produire le score.
+
+## 5. Aval
+
+```
+indicateur_w1_reseau()  ->  colonne indicateur_w1_reseau
+      |
+      +- normalize_indicator()     -> min(100, valeur / 50 x 100)
+      +- create_family_index("W")  -> famille_eau = moy(W1, W2, W3, W4)
+```
+
+## 6. Références internes
+
+| Sujet | Fichier |
+|---|---|
+| Fonction W1 | `R/indicators-families.R:603-680` |
+| Normalisation (`ref_max = 50`) | `R/normalization.R:588` |
+| Source | BD TOPO, couche `water_network` |

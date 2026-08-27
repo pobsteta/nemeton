@@ -42,6 +42,16 @@ navbar:
         href: articles/fiche-b3-connectivite_fr.html
       - text: "B4 - Diversite spectrale alpha"
         href: articles/fiche-b4-diversite-spectrale_fr.html
+      - text: "---"
+      - text: "Famille W - Eau & Regulation"
+      - text: "W1 - Reseau hydrographique"
+        href: articles/fiche-w1-reseau_fr.html
+      - text: "W2 - Zones humides"
+        href: articles/fiche-w2-zones-humides_fr.html
+      - text: "W3 - TWI, humidite topographique"
+        href: articles/fiche-w3-humidite_fr.html
+      - text: "W4 - VPD sous couvert"
+        href: articles/fiche-w4-vpd_fr.html
     articles:
       text: Articles
       menu:

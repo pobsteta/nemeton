@@ -113,8 +113,15 @@ INDICATOR_FAMILIES <- list(
         fr = "D\u00e9ficit de pression de vapeur (VPD) estival sous couvert (microclimf, augment\u00e9 LiDAR). S\u00e9cheresse atmosph\u00e9rique ressentie par les semis. Score \u00e9lev\u00e9 = air plus humide.",
         en = "Summer vapour-pressure deficit (VPD) under the canopy (microclimf, LiDAR-augmented). Atmospheric dryness felt by seedlings. High score = moister air."
       )
+    ),
+    indicator_docs = list(
+      W1 = list(fr = "articles/fiche-w1-reseau_fr.html"),
+      W2 = list(fr = "articles/fiche-w2-zones-humides_fr.html"),
+      W3 = list(fr = "articles/fiche-w3-humidite_fr.html"),
+      W4 = list(fr = "articles/fiche-w4-vpd_fr.html")
     )
   ),
+
   A = list(
     code = "A",
     name_fr = "Air & Microclimat",
