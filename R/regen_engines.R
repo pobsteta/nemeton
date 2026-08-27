@@ -343,8 +343,89 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   cands[order(nchar(basename(cands)), basename(cands))][1]
 }
 
+# Fichiers mensuels attendus pour une requête `build_era5_request(by_month=TRUE)`.
+# mcera5 nomme sa cible `<outfile>_<annee>_<mois>.zip` et l'extrait sous le même
+# radical en `.nc` — les deux cohabitent dans le cache, le `.zip` n'étant jamais
+# supprimé après extraction.
+.rsen_era5_mois_nc <- function(req, cache_dir) {
+  vapply(seq_along(req), function(k)
+    file.path(cache_dir, sub("\\.zip$", ".nc", req[[k]]$target)), character(1))
+}
+
+# Nom du combiné, reproduit À L'IDENTIQUE de ce que `request_era5(combine=TRUE)`
+# aurait écrit — sinon le cache ne se relit jamais.
+#
+# mcera5 le calcule par `shared_substring()` sur les 12 cibles puis coupe le `_`
+# final : avec `outfile_name = "era5_<annee>"`, les mensuels sont
+# `era5_<annee>_<annee>_<mois>.nc`, le préfixe commun `era5_<annee>_<annee>_`,
+# donc le combiné est `era5_<annee>_<annee>.nc` — double année. C'est
+# exactement ce que `.rsen_era5_combined()` cherche via `_<annee>\.nc$`.
+.rsen_era5_nom_combine <- function(cache_dir, annee) {
+  file.path(cache_dir, sprintf("era5_%d_%d.nc", annee, annee))
+}
+
+# Une requête mensuelle. `overwrite = TRUE` est ESSENTIEL : `request_era5()`
+# s'arrête (`stop()`) quand le `.zip` cible existe déjà, et sur une série le
+# message est « Filename already exists within requested out_path in request N
+# of request series ». C'est ce qui rendait une année irrécupérable après une
+# interruption. `combine = FALSE` : on ne lui donne qu'un mois, la fusion est
+# faite ici une fois les douze réunis.
+.rsen_era5_requete <- function(req_k, cache_dir) {
+  mcera5::request_era5(req_k, out_path = cache_dir, overwrite = TRUE,
+                       combine = FALSE)
+}
+
+.rsen_era5_combiner <- function(fichiers, cible) {
+  mcera5::combine_netcdf(filenames = fichiers, combined_name = cible)
+}
+
+# Téléchargement ERA5 mois par mois, avec progression et reprise.
+#
+# Pourquoi découper la boucle que `request_era5()` fait déjà en interne. Deux
+# raisons, et la seconde est un bug :
+#
+#  * PROGRESSION. `request_era5()` n'accepte aucun callback. `emit` n'était donc
+#    appelé qu'une fois par ANNÉE, avant la descente — soit, dans le cas nominal
+#    d'une seule année par catégorie, « 1/1 » suivi de 1 h 36 de silence. Mesuré
+#    sur un run réel : ~8 min par mois, 12 mois, 2 années, 3 h 15 de
+#    téléchargement muet sur 4 h 25 de run.
+#  * REPRISE. `request_era5()` REFUSE de réécrire : `overwrite = FALSE` par
+#    défaut, et il `stop()` dès que le `.zip` cible existe. Un run tué au mois 7
+#    rendait donc l'année entière irrécupérable — au run suivant, aucun combiné
+#    n'existe, le cœur redemande les douze mois, et l'appel échoue immédiatement
+#    sur le mois 1 dont le `.zip` traîne encore. `.rsen_era5_with_retry()`
+#    brûlait alors ses trois tentatives sur une erreur qui ne peut pas guérir.
+#
+# Un mois dont le `.nc` est là est sauté : c'est le `.nc` qui fait foi, pas le
+# `.zip`, un téléchargement coupé en cours laissant le second sans le premier.
+#
+# `requete`/`combiner` sont des points d'injection pour les tests : la logique de
+# reprise et de nommage se vérifie sans réseau ni clé CDS.
+.rsen_era5_telecharger <- function(req, cache_dir, annee, emit = NULL,
+                                   category = NA,
+                                   requete = .rsen_era5_requete,
+                                   combiner = .rsen_era5_combiner) {
+  n <- length(req)
+  fichiers <- .rsen_era5_mois_nc(req, cache_dir)
+  for (k in seq_len(n)) {
+    # Émis AVANT le test de présence : sur un cache partiel, l'app doit voir la
+    # barre parcourir les douze mois, pas sauter du 6 au 7.
+    if (!is.null(emit)) emit(list(current = "regen_expo:era5_mois",
+                                  category = category, year = annee,
+                                  mois_i = k, mois_n = n))
+    if (file.exists(fichiers[[k]])) next
+    # `req[k]` et non `req[[k]]` : `request_era5()` attend une LISTE de requêtes
+    # et itère dessus.
+    .rsen_era5_with_retry(function() requete(req[k], cache_dir))
+  }
+  cible <- .rsen_era5_nom_combine(cache_dir, annee)
+  combiner(fichiers, cible)
+  cible
+}
+
 # Forçage ERA5 pour une année (téléchargement mcera5 mis en cache).
-.rsen_forcage_era5 <- function(lon, lat, annee, cache_dir) {
+.rsen_forcage_era5 <- function(lon, lat, annee, cache_dir, emit = NULL,
+                               category = NA) {
   if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
   combined <- .rsen_era5_combined(cache_dir, annee)   # NA si aucun combiné en cache
   st  <- as.POSIXct(sprintf("%d-01-01 00:00", annee), tz = "UTC")
@@ -366,7 +447,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
       xmin = lon - 0.05, xmax = lon + 0.05, ymin = lat - 0.05, ymax = lat + 0.05,
       start_time = st, end_time = en, by_month = TRUE,
       outfile_name = sprintf("era5_%d", annee))
-    .rsen_era5_with_retry(function() mcera5::request_era5(req, out_path = cache_dir))
+    .rsen_era5_telecharger(req, cache_dir, annee, emit = emit, category = category)
   }
   # Combiné si trouvé, sinon repli défensif (nom le plus court = le combiné,
   # indépendant de la locale — cf. .rsen_era5_src).
@@ -414,12 +495,14 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 
 # Une année -> rasters d'été (T°max sous couvert, VPD moyen), mis en cache tif.
 .rsen_traiter_annee <- function(annee, lon, lat, dtm, veg, soil,
-                                reqhgt, mois_ete, cache_dir) {
+                                reqhgt, mois_ete, cache_dir, emit = NULL,
+                                category = NA) {
   ft <- file.path(cache_dir, sprintf("cache_%d_tmax.tif", annee))
   fv <- file.path(cache_dir, sprintf("cache_%d_vpd.tif", annee))
   if (file.exists(ft) && file.exists(fv))
     return(list(tmax = terra::rast(ft), vpd = terra::rast(fv)))
-  meteo <- .rsen_forcage_era5(lon, lat, annee, cache_dir)
+  meteo <- .rsen_forcage_era5(lon, lat, annee, cache_dir,
+                              emit = emit, category = category)
   microclimf::checkinputs(meteo, veg, soil, dtm)
   mp  <- microclimf::runpointmodel(meteo, reqhgt, dtm, veg, soil)
   mp  <- microclimf::subsetpointmodel(mp, tstep = "month", what = "tmax")
@@ -453,14 +536,18 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 }
 
 # Moyenne (et écart-type interannuel) d'une catégorie d'années. `emit`/`category`
-# publient un événement `regen_expo:era5` par année (progression fine ntfy).
+# publient un événement `regen_expo:era5` par année (progression fine ntfy), et
+# DESCENDENT jusqu'au téléchargement, qui en émet un par mois
+# (`regen_expo:era5_mois`). L'événement annuel est conservé — l'app et ntfy s'en
+# servent encore ; le mensuel s'ajoute, il ne remplace pas.
 .rsen_moyenne_categorie <- function(annees, ..., emit = NULL, category = NA) {
   dots <- list(...)
   n    <- length(annees)
   res  <- lapply(seq_len(n), function(k) {
     if (!is.null(emit)) emit(list(current = "regen_expo:era5",
       category = category, year = annees[[k]], i = k, n = n))
-    do.call(.rsen_traiter_annee, c(list(annees[[k]]), dots))
+    do.call(.rsen_traiter_annee, c(list(annees[[k]]), dots,
+                                   list(emit = emit, category = category)))
   })
   st_t <- terra::rast(lapply(res, `[[`, "tmax"))
   st_v <- terra::rast(lapply(res, `[[`, "vpd"))

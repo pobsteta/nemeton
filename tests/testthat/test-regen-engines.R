@@ -240,14 +240,16 @@ test_that(".rsen_forcage_era5 requests monthly (by_month=TRUE) to dodge the CDS 
   testthat::local_mocked_bindings(
     build_era5_request = function(..., start_time, by_month, outfile_name) {
       seen$by_month <- by_month; seen$outfile <- outfile_name
-      list(list(target = paste0(outfile_name, ".nc")))
+      # Cible MENSUELLE en .zip, comme le vrai build_era5_request(by_month=TRUE).
+      list(list(target = paste0(outfile_name, "_2018_6.zip")))
     },
     request_era5 = function(request, out_path, ...) {
-      # mcera5 nomme le combiné <outfile>_<annee>.nc (double année quand
-      # outfile = "era5_2018") + des mensuels <outfile>_<annee>_<mois>.nc.
-      file.create(file.path(out_path, paste0(seen$outfile, "_2018.nc")))
+      # mcera5 extrait chaque .zip sous le même radical en .nc.
       file.create(file.path(out_path, paste0(seen$outfile, "_2018_6.nc")))
     },
+    # Depuis la v0.190.0 c'est le cœur qui fusionne, une fois les douze mois
+    # réunis — request_era5() est appelé mois par mois avec combine = FALSE.
+    combine_netcdf = function(filenames, combined_name) file.create(combined_name),
     extract_clim = function(src, ...) { seen$src <- src; data.frame(obs_time = 1) },
     .package = "mcera5")
   out <- nemeton:::.rsen_forcage_era5(lon = 6, lat = 48, annee = 2018, cache_dir = cd)
@@ -572,4 +574,131 @@ test_that("engine guard messages carry no terminal hyperlink escapes (app-safe)"
       expect_false(grepl("\033]8;", m1, fixed = TRUE))
       expect_false(grepl("\033]8;", m2, fixed = TRUE))
     })
+})
+
+# --- ERA5 : progression mensuelle et reprise (v0.190.0) ----------------------
+# `request_era5()` boucle sur les 12 requêtes mensuelles en interne, n'accepte
+# aucun callback, et REFUSE de réécrire un `.zip` existant. D'où deux défauts :
+# 1 h 36 de téléchargement muet par année, et une année irrécupérable après une
+# interruption. Le cœur découpe donc la boucle lui-même.
+
+# Fausses requêtes mensuelles, à l'image de build_era5_request(by_month = TRUE).
+.rsen_req_factice <- function(annee = 2020L, n = 12L) {
+  lapply(seq_len(n), function(m) list(
+    target = sprintf("era5_%d_%d_%d.zip", annee, annee, m)))
+}
+
+test_that("the combined name reproduces mcera5's, and .rsen_era5_combined finds it", {
+  # CA-2. mcera5 calcule le nom du combiné par shared_substring() sur les 12
+  # cibles : avec outfile_name = "era5_<annee>", cela donne la DOUBLE année.
+  # S'en écarter d'un caractère et le cache ne se relit jamais.
+  cd <- withr::local_tempdir()
+  cible <- nemeton:::.rsen_era5_nom_combine(cd, 2020L)
+  expect_equal(basename(cible), "era5_2020_2020.nc")
+
+  file.create(cible)
+  expect_equal(normalizePath(nemeton:::.rsen_era5_combined(cd, 2020L)),
+               normalizePath(cible))
+
+  # Un mensuel ne doit jamais passer pour le combiné.
+  cd2 <- withr::local_tempdir()
+  file.create(file.path(cd2, "era5_2020_2020_12.nc"))
+  expect_true(is.na(nemeton:::.rsen_era5_combined(cd2, 2020L)))
+})
+
+test_that(".rsen_era5_mois_nc maps each monthly target onto its .nc", {
+  cd <- withr::local_tempdir()
+  f <- nemeton:::.rsen_era5_mois_nc(.rsen_req_factice(2020L), cd)
+  expect_length(f, 12L)
+  expect_equal(basename(f[[1]]), "era5_2020_2020_1.nc")
+  expect_equal(basename(f[[12]]), "era5_2020_2020_12.nc")
+})
+
+test_that("a full cache downloads nothing (CA-2) and a partial one resumes (CA-3)", {
+  req <- .rsen_req_factice(2020L)
+
+  # Cache COMPLET : les 12 .nc sont là, aucune requête ne part.
+  cd <- withr::local_tempdir()
+  for (f in nemeton:::.rsen_era5_mois_nc(req, cd)) file.create(f)
+  appels <- 0L
+  nemeton:::.rsen_era5_telecharger(
+    req, cd, 2020L,
+    requete  = function(rk, dir) appels <<- appels + 1L,
+    combiner = function(files, cible) file.create(cible))
+  expect_equal(appels, 0L)
+  expect_true(file.exists(nemeton:::.rsen_era5_nom_combine(cd, 2020L)))
+
+  # Cache PARTIEL : mois 1 à 6 acquis, .zip compris — c'est le cas qui faisait
+  # échouer tout le reste sur « Filename already exists », le .zip du mois 1
+  # traînant encore. Seuls les mois 7 à 12 repartent.
+  cd2 <- withr::local_tempdir()
+  ncs <- nemeton:::.rsen_era5_mois_nc(req, cd2)
+  for (k in 1:6) {
+    file.create(ncs[[k]])
+    file.create(sub("\\.nc$", ".zip", ncs[[k]]))   # le .zip n'est jamais purgé
+  }
+  demandes <- integer(0)
+  nemeton:::.rsen_era5_telecharger(
+    req, cd2, 2020L,
+    requete  = function(rk, dir) {
+      demandes <<- c(demandes, as.integer(sub(".*_(\\d+)\\.zip$", "\\1",
+                                              rk[[1]]$target)))
+    },
+    combiner = function(files, cible) file.create(cible))
+  expect_equal(demandes, 7:12)
+})
+
+test_that("one progress event per MONTH, carrying its category (CA-1)", {
+  req <- .rsen_req_factice(2022L)
+  cd <- withr::local_tempdir()
+  for (f in nemeton:::.rsen_era5_mois_nc(req, cd)) file.create(f)
+
+  vus <- list()
+  nemeton:::.rsen_era5_telecharger(
+    req, cd, 2022L, emit = function(p) vus[[length(vus) + 1L]] <<- p,
+    category = "canicule",
+    requete  = function(rk, dir) NULL,
+    combiner = function(files, cible) file.create(cible))
+
+  expect_length(vus, 12L)
+  expect_true(all(vapply(vus, function(p) p$current, "") == "regen_expo:era5_mois"))
+  expect_true(all(vapply(vus, function(p) p$category, "") == "canicule"))
+  expect_true(all(vapply(vus, function(p) p$year, 0L) == 2022L))
+  expect_equal(vapply(vus, function(p) p$mois_i, 0L), 1:12)
+  expect_true(all(vapply(vus, function(p) p$mois_n, 0L) == 12L))
+  # Émis même pour un mois déjà en cache : la barre parcourt les douze mois,
+  # elle ne saute pas.
+})
+
+test_that("emit = NULL stays a no-op (CA-4)", {
+  req <- .rsen_req_factice(2020L, n = 2L)
+  cd <- withr::local_tempdir()
+  for (f in nemeton:::.rsen_era5_mois_nc(req, cd)) file.create(f)
+  expect_silent(nemeton:::.rsen_era5_telecharger(
+    req, cd, 2020L, emit = NULL,
+    requete  = function(rk, dir) NULL,
+    combiner = function(files, cible) file.create(cible)))
+})
+
+test_that("emit and category reach the download from .rsen_moyenne_categorie (CA-5)", {
+  # Le chemin complet : la catégorie s'arrêtait à .rsen_moyenne_categorie(), si
+  # bien que l'app n'aurait pas su distinguer l'année moyenne de la canicule.
+  # L'événement ANNUEL doit survivre à l'ajout du mensuel.
+  vus <- list()
+  emit <- function(p) vus[[length(vus) + 1L]] <<- p
+  local_mocked_bindings(
+    .rsen_traiter_annee = function(annee, ..., emit = NULL, category = NA) {
+      if (!is.null(emit)) emit(list(current = "regen_expo:era5_mois",
+                                    category = category, year = annee,
+                                    mois_i = 1L, mois_n = 1L))
+      list(tmax = 1, vpd = 2)
+    })
+  res <- tryCatch(
+    nemeton:::.rsen_moyenne_categorie(list(2022L), emit = emit,
+                                      category = "canicule"),
+    error = function(e) NULL)          # terra::rast() sur des scalaires échoue
+  types <- vapply(vus, function(p) p$current, "")
+  expect_true("regen_expo:era5" %in% types)        # l'annuel est conservé
+  expect_true("regen_expo:era5_mois" %in% types)   # le mensuel descend
+  expect_true(all(vapply(vus, function(p) p$category, "") == "canicule"))
 })
