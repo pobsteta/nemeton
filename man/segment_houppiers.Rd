@@ -5,16 +5,21 @@
 \title{Segment tree crowns on a Canopy Height Model}
 \usage{
 segment_houppiers(
-  chm,
+  chm = NULL,
   aoi = NULL,
   ws = 5,
   hmin = 5,
-  algorithme = c("dalponte", "silva", "watershed"),
+  algorithme = c("dalponte", "silva", "watershed", "lsms"),
   emprise = c("intersecte", "decoupe"),
   marge_m = NULL,
   resolution = 0.5,
   max_cells = 2e+07,
-  h_range = c(1, 70)
+  h_range = c(1, 70),
+  image = NULL,
+  usage = c("martelage", "couvert"),
+  lsms = list(),
+  resolution_image = NULL,
+  budget_s = 600
 )
 }
 \arguments{
@@ -54,6 +59,35 @@ A CHM that is still too large after \code{resolution} is aggregated further.}
 
 \item{h_range}{Admissible apex heights, in metres (default \code{c(1, 70)}).
 Crowns outside are dropped rather than shipped — the phone rejects them.}
+
+\item{image}{Orthophoto (IRC or RGB) as a \code{SpatRaster} or a path.
+\strong{Required} by \code{algorithme = "lsms"}, which segments an image and
+not the CHM. Ignored by the other algorithms.}
+
+\item{usage}{LSMS only. \code{"martelage"} (default) \strong{requires} a CHM
+and fills \code{h_max} by a zonal max, as the CHM route does; without a CHM it
+refuses, because Marculus ignores any feature lacking a readable height --
+silently. \code{"couvert"} owns up to producing no height at all: crown area,
+stem density, canopy closure, and \strong{no \code{h_max} column} (absent,
+not \code{NA}, so no consumer reads it as a missing measurement).}
+
+\item{lsms}{LSMS only. Named list overriding \code{spatialr}, \code{ranger}
+and \code{minsize}. The defaults (\code{15 / 20 / 700}) are calibrated
+against the CHM route on the same window -- 7.88 m median equivalent diameter
+against 8.04 m, a 2 percent gap (spec 051 section 3.3). They are \emph{not}
+the OTB CookBook values, which over-segment by a factor of 15: at 2.4 m median
+diameter one segments crown facets, not trees. Calibration covers one stand
+type; a dense coppice will not want the same \code{spatialr}.}
+
+\item{resolution_image}{LSMS only. Working resolution, in metres, for the
+image before segmentation. The single lever with an order-of-magnitude effect
+on cost: coarsening 0.20 m to 0.50 m multiplies the affordable area by about
+6, at the cost of the spectral detail that justifies LSMS.}
+
+\item{budget_s}{LSMS only. Compute budget in seconds (default 600). The job is
+estimated \strong{before} OTB is called and refused above the budget, with the
+pixel count that would fit. LSMS costs about 70 times the CHM route at equal
+area, so the full extent of a massif is out of reach by design.}
 }
 \value{
 An \code{sf} of POLYGON, one row per crown, with:

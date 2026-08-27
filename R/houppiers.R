@@ -114,25 +114,62 @@
 #' @seealso [extract_h_dom()] for the stand-level dominant height, which
 #'   answers a different question on the same raster.
 #' @export
-segment_houppiers <- function(chm,
+segment_houppiers <- function(chm        = NULL,
                               aoi        = NULL,
                               ws         = 5,
                               hmin       = 5,
-                              algorithme = c("dalponte", "silva", "watershed"),
+                              algorithme = c("dalponte", "silva", "watershed",
+                                             "lsms"),
                               emprise    = c("intersecte", "decoupe"),
                               marge_m    = NULL,
                               resolution = 0.5,
                               max_cells  = 2e7,
-                              h_range    = c(1, 70)) {
+                              h_range    = c(1, 70),
+                              image      = NULL,
+                              usage      = c("martelage", "couvert"),
+                              lsms       = list(),
+                              resolution_image = NULL,
+                              budget_s   = 600) {
   algorithme <- match.arg(algorithme)
   emprise    <- match.arg(emprise)
+  usage      <- match.arg(usage)
+
+  # `usage` ne concerne que LSMS : la voie CHM produit toujours une hauteur,
+  # c'est son objet. Le dire plutot que de l'ignorer en silence.
+  if (!identical(algorithme, "lsms") && !identical(usage, "martelage")) {
+    cli::cli_abort(c(
+      "{.arg usage} only applies to {.code algorithme = \"lsms\"}.",
+      i = "The CHM route always measures a height \u2014 that is what it is for."
+    ))
+  }
+  if (identical(algorithme, "lsms")) {
+    lsms <- utils::modifyList(.LSMS_DEFAUTS, if (is.null(lsms)) list() else lsms)
+    if (is.null(image)) {
+      cli::cli_abort(c(
+        "{.code algorithme = \"lsms\"} segments an IMAGE, not the CHM.",
+        i = "Pass {.arg image}: an orthophoto (IRC or RGB) covering the {.arg aoi}."
+      ))
+    }
+    # D2 \u2014 deux usages separes, aucun entre-deux silencieux. Sans CHM il n'y a
+    # pas de hauteur, et une couche sans hauteur est ignoree SANS UN MOT par
+    # Marculus : la refuser vaut mieux que la livrer.
+    if (identical(usage, "martelage") && is.null(chm)) {
+      cli::cli_abort(c(
+        "{.code usage = \"martelage\"} requires a CHM: LSMS delineates, it does not measure height.",
+        i = "Marculus ignores any feature without a readable height, silently.",
+        i = "Pass {.arg chm}, or use {.code usage = \"couvert\"} \u2014 which owns up to producing none."
+      ))
+    }
+  } else if (is.null(chm)) {
+    cli::cli_abort("{.arg chm} is required for {.code algorithme = \"{algorithme}\"}.")
+  }
   if (is.null(marge_m)) marge_m <- 3 * ws
   if (!is.numeric(marge_m) || length(marge_m) != 1L || !is.finite(marge_m) ||
       marge_m < 0) {
     cli::cli_abort("{.arg marge_m} must be a single non-negative number of metres.")
   }
 
-  if (!requireNamespace("lidR", quietly = TRUE)) {
+  if (!identical(algorithme, "lsms") && !requireNamespace("lidR", quietly = TRUE)) {
     cli::cli_abort(c(
       "{.pkg lidR} is required to segment crowns on a CHM.",
       i = "Install it: {.code install.packages('lidR')}."
@@ -148,29 +185,54 @@ segment_houppiers <- function(chm,
     cli::cli_abort("{.arg h_range} must be two increasing numbers, in metres.")
   }
 
-  if (is.character(chm)) {
-    if (!file.exists(chm)) cli::cli_abort("CHM not found: {.path {chm}}.")
-    chm <- terra::rast(chm)
+  if (!is.null(chm)) {
+    if (is.character(chm)) {
+      if (!file.exists(chm)) cli::cli_abort("CHM not found: {.path {chm}}.")
+      chm <- terra::rast(chm)
+    }
+    if (!inherits(chm, "SpatRaster")) {
+      cli::cli_abort("{.arg chm} must be a {.cls SpatRaster} or a path to one.")
+    }
+    if (terra::nlyr(chm) > 1L) chm <- chm[[1L]]
   }
-  if (!inherits(chm, "SpatRaster")) {
-    cli::cli_abort("{.arg chm} must be a {.cls SpatRaster} or a path to one.")
-  }
-  if (terra::nlyr(chm) > 1L) chm <- chm[[1L]]
 
   # Re-stamp a degenerate WKT with its authority code. The Couchey CHM carries
   # the NAME "EPSG:2154" but no authority, so `sf::st_crs(x)$epsg` reads NA and
   # the GeoPackage would ship a CRS the phone cannot match to a known system.
   # Same class of defect as the cached WMS/LiDAR rasters — recoverable, and
   # cheaper to fix here than to explain downstream.
-  chm <- .normalize_crs(chm)
+  if (!is.null(chm)) {
+    chm <- .normalize_crs(chm)
 
-  # `ws` and `hmin` are metres; a geographic CRS would silently read them as
-  # degrees and locate one tree per stand.
-  if (isTRUE(terra::is.lonlat(chm))) {
-    cli::cli_abort(c(
-      "The CHM is in a geographic CRS (degrees).",
-      i = "{.arg ws} and {.arg hmin} are metres — reproject to a metric CRS first."
-    ))
+    # `ws` and `hmin` are metres; a geographic CRS would silently read them as
+    # degrees and locate one tree per stand.
+    if (isTRUE(terra::is.lonlat(chm))) {
+      cli::cli_abort(c(
+        "The CHM is in a geographic CRS (degrees).",
+        i = "{.arg ws} and {.arg hmin} are metres — reproject to a metric CRS first."
+      ))
+    }
+  }
+
+  # LSMS a sa propre geometrie de travail : il segmente l'IMAGE, pas le CHM.
+  # L'AOI est donc interpretee ici (meme semantique `intersecte`/`decoupe`) puis
+  # passee telle quelle, sans toucher au CHM qui ne sert plus qu'a la hauteur.
+  if (identical(algorithme, "lsms")) {
+    aoi_sel <- NULL
+    aoi_v   <- NULL
+    if (!is.null(aoi)) {
+      ref <- if (!is.null(chm)) terra::crs(chm) else NULL
+      aoi_sf <- sf::st_as_sf(aoi)
+      if (!is.null(ref)) aoi_sf <- sf::st_transform(aoi_sf, ref)
+      if (identical(emprise, "intersecte")) {
+        aoi_sel <- aoi_sf
+        aoi_v   <- terra::vect(sf::st_buffer(aoi_sf, marge_m))
+      } else {
+        aoi_v <- terra::vect(aoi_sf)
+      }
+    }
+    return(.houppier_lsms(chm, image, aoi_sel, aoi_v, usage, lsms,
+                          resolution_image, budget_s, h_range))
   }
 
   # 1. Clip FIRST. Everything below is sized by what survives here.

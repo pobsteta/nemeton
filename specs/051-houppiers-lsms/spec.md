@@ -1,7 +1,8 @@
 # Spec 051 — Houppiers par LSMS (OTB), cadré sur AOI
 
-**Statut :** cadrée le 2026-08-27, **non implémentée**. Décisions D1-D5 tranchées
-par Pascal sur mesures réelles (§4).
+**Statut :** cadrée puis **implémentée le 2026-08-27** (v0.191.0). Décisions
+D1-D5 tranchées par Pascal sur mesures réelles (§4). Deux points du cadrage se
+sont révélés faux à l'implémentation — corrigés en §8.
 
 **Origine :** brief `2026-08-24-houppiers-sans-lidar-otb-lsms.md` (session
 `nemetonshiny`), étude de faisabilité. Ce document en reprend les conclusions
@@ -153,9 +154,9 @@ valeur validée.
 - **D4** ✅ **Garde-fou en pixels**, budget par défaut **10 min ≈ 3,4 Mpx**.
   Au-delà, la fonction refuse et dit quoi faire : réduire l'AOI, ou
   rééchantillonner l'ortho (le tableau §3.1 chiffre les deux).
-- **D5** ✅ **OTB en `Suggests`**, détecté comme `dessertR`/`reticulate` le sont,
-  dégradation propre en son absence. Sortie en `.shp` puis relecture (le pilote
-  GPKG d'OTB 9.1.1 échoue).
+- **D5** ✅ **OTB détecté, dégradation propre en son absence.** Sortie en `.shp`
+  puis relecture (le pilote GPKG d'OTB 9.1.1 échoue). *Amendé §8.1 : « en
+  `Suggests` » était faux.*
 
 ## 5. Interface visée
 
@@ -196,3 +197,67 @@ Il ne remplace pas la voie CHM, qui reste l'algorithme d'emprise et le seul
 capable de couvrir un massif. LSMS est une **délimitation alternative sur une
 AOI**, à valider sur son propre argument (point 3 ci-dessus) avant d'être
 proposée à un utilisateur.
+
+
+---
+
+## 8. Corrections apportées en implémentant (v0.191.0)
+
+Deux affirmations de ce cadrage étaient fausses. Elles sont conservées ici, avec
+leur correction, plutôt que réécrites en silence.
+
+### 8.1 OTB n'est pas un `Suggests`
+
+Le §4 D5 annonçait « OTB en `Suggests`, détecté comme `dessertR`/`reticulate` le
+sont ». **OTB n'est pas un paquet R** : c'est un binaire externe, installé hors
+gestionnaire de paquets R. Il ne peut donc figurer ni en `Suggests` ni en
+`Imports`, et `requireNamespace()` ne le voit pas.
+
+Détection retenue : variable d'environnement **`OTB_DIR`** d'abord, puis chemins
+usuels — même idiome que la détection GRASS déjà présente dans le cœur
+(`GRASS_DIR`, `R/indicators-families.R`). C'est la variable qui est la voie
+normale, les candidats un confort.
+
+### 8.2 Le lanceur d'OTB ne se configure pas seul
+
+`otbcli_LargeScaleMeanShift` délègue à `otbcli`, dont le shebang est
+`#!/bin/sh` mais qui source `otbenv.profile` avec **`source`**, un mot-clé bash.
+Appelé sans environnement préalable, il échoue en deux temps :
+
+```
+otbcli: 96: .../otbenv.profile: source: not found
+ERROR: Could not find application "LargeScaleMeanShift"
+```
+
+L'environnement doit donc être posé **par l'appelant**. Le cœur invoque
+`bash -c '. <otb_dir>/otbenv.profile && otbcli_LargeScaleMeanShift …'`.
+
+### 8.3 Le modèle de coût intègre `spatialr`
+
+Le §3.1 ne modélisait que le nombre de pixels. Le balayage §3.3 montre que
+`spatialr` est le **poste de coût dominant** : 178 s à 15 contre 321 s à 20, à
+`minsize` égal, soit un coût en **carré du rayon** (exposant mesuré 2,04, sur
+deux points). Le modèle implémenté est donc
+`t = 160,5 × (P/1e6)^1,0787 × (spatialr/15)^2,04`.
+
+### 8.4 Ce que la validation de bout en bout a confirmé
+
+Sur la fenêtre de calibration, `segment_houppiers()` reproduit le balayage
+manuel **à moins de 1 %** :
+
+| | Balayage manuel | `segment_houppiers()` |
+|---|---|---|
+| Segments | 698 | 692 *(après filtre 1–70 m)* |
+| Densité | 174/ha | 173/ha |
+| Diamètre équivalent médian | 7,88 m | 7,92 m |
+
+`h_max` médian 35,9 m, tous dans la plage, CRS 2154 propre. **C'était le risque
+principal** : le `.prj` écrit par OTB hérite d'un CRS dégénéré quand l'entrée en
+a un, et ces rasters en ont un. Le ré-estampillage depuis l'image
+(`.normalize_crs()`) tient.
+
+`usage = "couvert"` rend 698 segments **sans colonne `h_max`** — les six de plus
+que `martelage` sont exactement ceux que le filtre de hauteur écarte.
+
+L'estimation de coût annonçait 160 s pour 143 s réelles : le modèle
+sur-estime, ce qui est le bon sens d'erreur pour un garde-fou.

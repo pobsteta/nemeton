@@ -195,6 +195,8 @@ reference:
       hauteur de son apex, pour pre-remplir la hauteur d'une tige au martelage
     contents:
     - segment_houppiers
+    - lsms_duree_estimee
+    - lsms_budget_pixels
 
   - title: "Variables biophysiques Sentinel-2 (spec 043)"
     desc: >

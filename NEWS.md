@@ -1,3 +1,71 @@
+# nemeton 0.191.0 (2026-08-27)
+
+### Added — houppiers par LSMS (OTB), bornés par un budget de calcul (spec 051)
+
+`segment_houppiers()` gagne `algorithme = "lsms"` : une délimitation portée par
+le **signal spectral** d'une orthophoto plutôt que par la forme du CHM. Deux
+houppiers voisins de même hauteur mais d'essences différentes se séparent en IRC
+là où un MNH lissé les fond — c'est l'argument du sujet, et il reste **une
+hypothèse non vérifiée** (spec 051 §6).
+
+**Ce n'est pas un algorithme d'emprise, et le code le sait.** Mesuré sur une
+fenêtre de 200 × 200 m en futaie fermée à 89 % : LSMS met **160,5 s** là où la
+voie CHM met **2,3 s** — environ **70×**. À 4 Mpx, 716 s. Sur l'emprise entière
+du massif de référence (292 Mpx), l'extrapolation donne **13 à 20 h**.
+
+Le garde-fou porte donc sur les **pixels**, pas sur les hectares, et c'est le
+point de conception : le budget achète des pixels, et la surface qu'ils couvrent
+dépend de la résolution. Un budget de 10 min (défaut) vaut **3,4 Mpx** — soit
+**13,6 ha à 0,20 m mais 84,9 ha à 0,50 m**. Rééchantillonner l'ortho
+(`resolution_image`) est le seul levier d'ordre de grandeur, au prix du détail
+spectral qui justifie LSMS : exposé, jamais imposé.
+
+Le refus intervient **avant** l'appel à OTB et dit *combien tient dans le
+budget*, pas « trop grand ». Deux fonctions exportées le rendent consultable :
+`lsms_duree_estimee()` et `lsms_budget_pixels()`, exactement inverses l'une de
+l'autre.
+
+**Deux usages séparés, aucun entre-deux silencieux.** LSMS délimite, il ne mesure
+pas : sans modèle de hauteur il produit des polygones sans `h_max`, et Marculus
+ignore **sans un mot** toute entité dépourvue de hauteur lisible.
+
+- `usage = "martelage"` (défaut) **exige** le CHM et refuse sans lui. `h_max`
+  vient d'une zonale, la mécanique que le cœur applique déjà à la voie CHM.
+- `usage = "couvert"` assume de ne produire aucune hauteur — surface de
+  houppier, densité de tiges, taux de couvert — et **n'expose pas** la colonne
+  `h_max` : absente, pas `NA`, pour qu'aucun consommateur ne la lise comme une
+  mesure manquante.
+
+**Défaut calibré `15 / 20 / 700`**, contre la voie CHM sur la même fenêtre
+(596 houppiers, 149/ha, 8,04 m de diamètre équivalent médian) : LSMS y rend
+7,88 m, soit **−0,15 m**. Ce ne sont **pas** les valeurs du CookBook OTB
+(`5/15/50`), qui sur-segmentent d'un facteur 15 — à 2,4 m de diamètre médian on
+segmente des facettes de houppier, pas des arbres. `spatialr = 20` est **dominé** :
+321 s contre 178 s à `minsize` égal, pour un résultat plus éloigné de la cible.
+
+**Validé de bout en bout** sur la fenêtre de calibration : `martelage` rend 692
+houppiers en 143 s (173/ha, 7,92 m, `h_max` médian 35,9 m, tous dans la plage
+1–70 m), `couvert` rend 698 segments sans colonne `h_max`. Les chiffres
+reproduisent le balayage manuel à moins de 1 % — l'aller-retour shapefile, le
+ré-estampillage du CRS et la zonale n'introduisent aucune dérive, ce qui était le
+risque principal.
+
+**Deux corrections apportées à la spec en l'implémentant.** (1) Elle annonçait
+OTB en `Suggests` : faux, OTB n'est pas un paquet R mais un **binaire externe**,
+détecté par `OTB_DIR` puis chemins usuels, comme GRASS. (2) Le lanceur d'OTB
+source `otbenv.profile` avec `source` — un mot-clé bash — sous un shebang
+`#!/bin/sh` : appelé tel quel il échoue sur « Could not find application ».
+L'environnement doit être posé par l'appelant.
+
+**Ce qui reste non mesuré** (spec 051 §6) : le gain qualitatif annoncé, le coût
+sur un peuplement clair, la valeur du filtre par hauteur (invisible sur une
+fenêtre fermée à 89 %), la stabilité du défaut entre types de peuplement, et le
+pilote GPKG d'OTB 9.1.1 — la sortie passe par un shapefile, repris du brief sans
+re-test.
+
+Sans OTB installé, `algorithme = "lsms"` échoue en nommant la variable à poser et
+l'algorithme de repli ; les trois voies CHM sont inchangées.
+
 # nemeton 0.190.0 (2026-08-27)
 
 ### Fixed — ERA5 : une année interrompue était irrécupérable
