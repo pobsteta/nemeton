@@ -133,7 +133,7 @@ test_that("indicator_labels() flattens the table consistently", {
     "family", "family_column", "code", "column_name",
     "label", "label_fr", "label_en",
     "tooltip", "tooltip_fr", "tooltip_en",
-    "doc_url"
+    "doc_url", "doc_url_fr", "doc_url_en", "doc_lang"
   ))
   expect_equal(nrow(ind), length(unlist(fams$indicators, use.names = FALSE)))
 
@@ -178,19 +178,86 @@ test_that("indicator_labels() porte l'URL de la fiche C1, et NA partout ailleurs
 
   # Une famille sans aucune fiche ne casse pas (indicator_docs absent).
   expect_true(all(is.na(indicator_labels("W")$doc_url)))
+
+  # C1 n'a qu'une fiche francaise : une demande en anglais rend la page
+  # francaise, et le dit (`doc_lang`). Le jour ou la fiche anglaise existe,
+  # c'est cette assertion qui signalera qu'il faut la mettre a jour.
+  en <- indicator_labels(lang = "en")
+  expect_equal(en$doc_url[en$code == "C1"], c1)
+  expect_equal(en$doc_lang[en$code == "C1"], "fr")
+  expect_equal(ind$doc_lang[ind$code == "C1"], "fr")
+
+  # doc_url_fr / doc_url_en sont presentes quelle que soit la langue demandee,
+  # comme label_fr / label_en.
+  expect_equal(en$doc_url_fr[en$code == "C1"], c1)
+  expect_true(all(is.na(ind$doc_lang[ind$code != "C1"])))
 })
 
-test_that(".family_doc_urls laisse passer une URL deja absolue", {
+test_that(".family_docs laisse passer une URL deja absolue", {
   fam <- list(
     indicators = c("X1", "X2"),
-    indicator_docs = list(X1 = "https://example.org/fiche.html")
+    indicator_docs = list(X1 = list(fr = "https://example.org/fiche.html"))
   )
-  out <- nemeton:::.family_doc_urls(fam, base = "https://pobsteta.github.io/nemeton/")
-  expect_equal(out, c("https://example.org/fiche.html", NA_character_))
+  out <- .family_docs(fam, "fr",
+                                base = "https://pobsteta.github.io/nemeton/")
+  expect_equal(out$url, c("https://example.org/fiche.html", NA_character_))
+  expect_equal(out$lang, c("fr", NA_character_))
+})
+
+test_that("une fiche absente dans la langue demandee retombe sur l'autre", {
+  # Le repli est deliberé : une fiche en francais vaut mieux que pas de fiche.
+  # `doc_lang` dit la langue REELLEMENT servie pour que l'interface le signale.
+  fam_fr <- list(
+    indicators = "X1",
+    indicator_docs = list(X1 = list(fr = "articles/x.html"))
+  )
+  en <- .family_docs(fam_fr, "en", base = "https://ex.org/")
+  expect_equal(en$url, "https://ex.org/articles/x.html")
+  expect_equal(en$lang, "fr")
+
+  # Les deux langues presentes : chacune sert la sienne, sans repli.
+  fam_both <- list(
+    indicators = "X1",
+    indicator_docs = list(X1 = list(fr = "articles/x_fr.html",
+                                    en = "articles/x_en.html"))
+  )
+  expect_equal(.family_docs(fam_both, "en", base = "https://ex.org/")$url,
+               "https://ex.org/articles/x_en.html")
+  expect_equal(.family_docs(fam_both, "en", base = "https://ex.org/")$lang,
+               "en")
+
+  # Entree vide ou malformee : NA des deux cotes, jamais une erreur.
+  fam_bad <- list(indicators = "X1", indicator_docs = list(X1 = list(fr = "")))
+  expect_true(is.na(.family_docs(fam_bad, "fr")$url))
+  expect_true(is.na(.family_docs(fam_bad, "fr")$lang))
+})
+
+test_that("toute entree indicator_docs est une liste nommee par langue", {
+  # Garde-fou de configuration : une entree ecrite en chaine nue
+  # (`C1 = "articles/x.html"`) resterait silencieusement invisible cote app.
+  # Ce test transforme la faute de frappe en echec de suite.
+  for (fam in INDICATOR_FAMILIES) {
+    docs <- fam$indicator_docs
+    if (is.null(docs)) next
+    expect_true(is.list(docs))
+    expect_true(all(nzchar(names(docs))))
+    expect_true(all(names(docs) %in% fam$indicators),
+                info = paste("famille", fam$code))
+    for (ic in names(docs)) {
+      entry <- docs[[ic]]
+      expect_true(is.list(entry), info = paste(fam$code, ic))
+      expect_true(length(entry) > 0L, info = paste(fam$code, ic))
+      expect_true(all(names(entry) %in% c("fr", "en")),
+                  info = paste(fam$code, ic))
+      expect_true(all(vapply(entry, function(h) {
+        is.character(h) && length(h) == 1L && !is.na(h) && nzchar(h)
+      }, logical(1))), info = paste(fam$code, ic))
+    }
+  }
 })
 
 test_that(".doc_base_url se termine toujours par une barre oblique", {
-  expect_match(nemeton:::.doc_base_url(), "/$")
+  expect_match(.doc_base_url(), "/$")
 })
 
 test_that("both languages are always returned, whatever lang", {

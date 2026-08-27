@@ -14,12 +14,23 @@ le **chemin CHM** de la spec 005 — celui qui sert aujourd'hui dès qu'un CHM M
 public (FORMS-T, FORMSpoT, Open-Canopy) est branché, c'est-à-dire le cas le plus
 courant en production.
 
-**Le mécanisme, plutôt que le lien.** `indicator_labels()` gagne une colonne
-**`doc_url`** : URL absolue de la fiche quand l'indicateur en a une, `NA` sinon.
-La base d'URL est lue dans le champ `URL` du `DESCRIPTION`, donc l'adresse du
-site pkgdown n'est déclarée qu'une fois. L'aval (`nemetonshiny`) teste
-`is.na(doc_url)` pour décider d'afficher un lien « fiche » à côté de
-l'infobulle — il ne code **ni l'URL, ni la liste des indicateurs documentés**.
+**Le mécanisme, plutôt que le lien.** `indicator_labels()` gagne quatre
+colonnes : **`doc_url`** (URL absolue de la fiche dans la langue demandée, `NA`
+sinon), **`doc_lang`**, **`doc_url_fr`** et **`doc_url_en`**. La base d'URL est
+lue dans le champ `URL` du `DESCRIPTION`, donc l'adresse du site pkgdown n'est
+déclarée qu'une fois. L'aval (`nemetonshiny`) teste `is.na(doc_url)` pour
+décider d'afficher un lien « fiche » à côté de l'infobulle — il ne code **ni
+l'URL, ni la liste des indicateurs documentés, ni la langue des fiches**.
+
+**Les fiches sont déclarées par langue, et le cœur dit laquelle il sert.**
+Quand la langue demandée n'a pas de page mais que l'autre en a une, c'est
+l'autre qui est rendue plutôt que `NA` : une fiche dans la mauvaise langue vaut
+mieux que pas de fiche. `doc_lang` nomme la langue réellement servie, pour
+qu'une interface puisse le signaler au lieu d'ouvrir du français sans prévenir.
+C'est le cas de C1 aujourd'hui : `indicator_labels(lang = "en")` rend la page
+française avec `doc_lang == "fr"`. Écrire la fiche anglaise se fera **sans
+toucher à l'app** — une vignette de plus et un `en = ...` dans l'entrée
+`indicator_docs`.
 
 Ajouter une fiche à un autre indicateur se fait donc **entièrement côté cœur** :
 écrire la vignette, l'ajouter au menu de `_pkgdown.yml`, déclarer une entrée

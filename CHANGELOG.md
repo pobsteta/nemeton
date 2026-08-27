@@ -18,12 +18,17 @@ For a narrative, per-feature description of each release, see
   `indicateur_c1_biomasse()` dans leur ordre de priorité réel, le calcul par
   niveau NDP, un exemple chiffré par chemin, un schéma entrées → cascade →
   livrables, et les pièges connus.
-- **Colonne `doc_url` dans `indicator_labels()`** : URL absolue de la fiche d'un
-  indicateur, `NA` quand il n'en a pas. La base d'URL vient du champ `URL` du
-  `DESCRIPTION` — l'aval n'a ni URL ni liste d'indicateurs documentés à coder en
-  dur, il teste `is.na()`.
+- **Colonnes `doc_url` / `doc_lang` / `doc_url_fr` / `doc_url_en` dans
+  `indicator_labels()`** : URL absolue de la fiche d'un indicateur dans la
+  langue demandée, `NA` quand il n'en a pas. La base d'URL vient du champ `URL`
+  du `DESCRIPTION` — l'aval n'a ni URL, ni liste d'indicateurs documentés, ni
+  langue à coder en dur ; il teste `is.na()`.
+- **Repli de langue explicite** : une fiche absente dans la langue demandée est
+  servie dans l'autre plutôt que masquée, et `doc_lang` dit laquelle — une
+  interface peut le signaler au lieu d'ouvrir du français sans prévenir.
 - **`INDICATOR_FAMILIES$<famille>$indicator_docs`** : point de déclaration d'une
-  fiche. Ajouter une fiche est désormais une opération purement cœur.
+  fiche, `list(<CODE> = list(fr = ..., en = ...))`. Ajouter ou traduire une
+  fiche est une opération purement cœur.
 - Brief app `specs/052-fiche-indicateur-c1/brief-nemetonshiny.md` (icône
   « fiche » à côté du « i », onglet Familles d'indicateurs).
 

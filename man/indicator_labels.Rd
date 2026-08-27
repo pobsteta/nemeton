@@ -16,8 +16,8 @@ indicator_labels(codes = NULL, lang = c("fr", "en"))
 \value{
 A \code{data.frame} with columns \code{family} (family code), \code{family_column}
 (family score column), \code{code} (indicator code), \code{column_name}, \code{label},
-\code{label_fr}, \code{label_en}, \code{tooltip}, \code{tooltip_fr}, \code{tooltip_en} and
-\code{doc_url}.
+\code{label_fr}, \code{label_en}, \code{tooltip}, \code{tooltip_fr}, \code{tooltip_en}, \code{doc_url},
+\code{doc_url_fr}, \code{doc_url_en} and \code{doc_lang}.
 }
 \description{
 One row per indicator, flattening \code{\link{indicator_families}}. Useful to build a
@@ -44,7 +44,11 @@ stats::setNames(ind$label, ind$column_name)[["indicateur_c1_biomasse"]]
 stats::setNames(ind$label_en, ind$code)[["C1"]]
 
 # Indicators that have a fact sheet, and where to read it
-ind[!is.na(ind$doc_url), c("code", "doc_url")]
+ind[!is.na(ind$doc_url), c("code", "doc_url", "doc_lang")]
+
+# A fact sheet served in a language other than the one requested
+en <- indicator_labels(lang = "en")
+en[!is.na(en$doc_lang) & en$doc_lang != "en", c("code", "doc_lang")]
 
 }
 \section{Indicator fact sheets (\code{doc_url})}{
@@ -55,6 +59,14 @@ indicator without one -- that \code{NA} is the condition a UI tests before
 offering a "read the fact sheet" link next to the tooltip, not an error.
 The base of the URL is the first entry of the package \code{URL} field, so the
 site address is declared once, in \code{DESCRIPTION}.
+
+A fact sheet is declared per language. When the requested language has no
+page but the other one does, that other page is returned rather than \code{NA}:
+a fact sheet in the wrong language beats no fact sheet. \code{doc_lang} names
+the language actually served, so an interface can say so instead of opening
+French without warning -- today \code{indicator_labels(lang = "en")} returns the
+French C1 page with \code{doc_lang == "fr"}. Compare \code{doc_lang} with the
+language you asked for; do not assume they match.
 }
 
 \seealso{

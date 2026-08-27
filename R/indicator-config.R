@@ -24,12 +24,17 @@ INDICATOR_FAMILIES <- list(
       )
     ),
     # Fiches longues (vignettes pkgdown) : une entree PAR indicateur qui en a
-    # une. L'aval (nemetonshiny) lit `doc_url` dans `indicator_labels()` pour
-    # decider s'il affiche un lien « fiche » a cote de l'infobulle. Un
-    # indicateur sans fiche n'a pas de cle ici et sort a NA : c'est la
-    # condition d'affichage, pas une erreur.
+    # une, et DANS CHAQUE LANGUE ou elle existe. L'aval (nemetonshiny) lit
+    # `doc_url` dans `indicator_labels()` pour decider s'il affiche un lien
+    # « fiche » a cote de l'infobulle. Un indicateur sans fiche n'a pas de cle
+    # ici et sort a NA : c'est la condition d'affichage, pas une erreur.
+    #
+    # C1 n'a qu'une fiche francaise a ce jour. Un appel en `lang = "en"` rend
+    # donc l'URL francaise, et `doc_lang` vaut "fr" : l'interface peut le dire
+    # au lecteur plutot que d'ouvrir du francais sans prevenir. Le jour ou
+    # `fiche-c1-biomasse_en.Rmd` existe, il suffit d'ajouter `en = ...` ici.
     indicator_docs = list(
-      C1 = "articles/fiche-c1-biomasse_fr.html"
+      C1 = list(fr = "articles/fiche-c1-biomasse_fr.html")
     )
   ),
   B = list(
@@ -672,22 +677,56 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
   sub("/?$", "/", first)
 }
 
-# URL absolue de la fiche de chaque indicateur d'une famille, NA quand
-# l'indicateur n'en a pas. `indicator_docs` porte des hrefs RELATIFS au site
-# pkgdown ; une entree deja absolue (http/https) est laissee telle quelle,
-# pour qu'une fiche hebergee ailleurs reste possible sans changer l'API.
-.family_doc_urls <- function(fam, base = .doc_base_url()) {
+# Resout UNE entree `indicator_docs` pour une langue demandee.
+#
+# L'entree est une liste nommee par langue : `list(fr = "...", en = "...")`.
+# Quand la langue demandee n'a pas de page mais que l'autre en a une, c'est
+# l'AUTRE qui est rendue : une fiche dans la mauvaise langue vaut mieux que
+# pas de fiche du tout. Le deuxieme element du retour dit laquelle, pour que
+# l'interface puisse le signaler au lecteur au lieu d'ouvrir du francais sans
+# prevenir.
+#
+# Retourne c(href, lang), les deux NA quand aucune page n'existe.
+.resolve_doc_entry <- function(entry, lang) {
+  none <- c(NA_character_, NA_character_)
+  if (is.null(entry) || !is.list(entry)) return(none)
+  for (l in c(lang, setdiff(c("fr", "en"), lang))) {
+    href <- entry[[l]]
+    if (is.null(href)) next
+    href <- as.character(href)[1]
+    if (is.na(href) || !nzchar(href)) next
+    return(c(href, l))
+  }
+  none
+}
+
+# URLs absolues des fiches d'une famille pour une langue, et langue reellement
+# servie. `indicator_docs` porte des hrefs RELATIFS au site pkgdown ; une
+# entree deja absolue (http/https) est laissee telle quelle, pour qu'une fiche
+# hebergee ailleurs reste possible sans changer l'API.
+#
+# Retourne une liste de deux vecteurs de longueur length(fam$indicators).
+.family_docs <- function(fam, lang, base = .doc_base_url()) {
   docs <- fam$indicator_docs
   # Le test d'appartenance, plutot que `docs[[ic]]` : la famille peut n'avoir
   # aucune fiche (`docs` NULL), et `[[` sur un nom absent n'a pas le meme
   # comportement selon le type du conteneur.
   known <- if (is.null(docs)) character(0) else names(docs)
-  vapply(fam$indicators, function(ic) {
-    if (!ic %in% known) return(NA_character_)
-    href <- as.character(docs[[ic]])[1]
-    if (is.na(href) || !nzchar(href)) return(NA_character_)
-    if (grepl("^https?://", href)) href else paste0(base, sub("^/", "", href))
-  }, character(1), USE.NAMES = FALSE)
+  resolved <- lapply(fam$indicators, function(ic) {
+    if (!ic %in% known) return(c(NA_character_, NA_character_))
+    hit <- .resolve_doc_entry(docs[[ic]], lang)
+    if (is.na(hit[1])) return(hit)
+    href <- if (grepl("^https?://", hit[1])) {
+      hit[1]
+    } else {
+      paste0(base, sub("^/", "", hit[1]))
+    }
+    c(href, hit[2])
+  })
+  list(
+    url = vapply(resolved, function(x) x[1], character(1), USE.NAMES = FALSE),
+    lang = vapply(resolved, function(x) x[2], character(1), USE.NAMES = FALSE)
+  )
 }
 
 
@@ -714,8 +753,8 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 #'
 #' @return A `data.frame` with columns `family` (family code), `family_column`
 #'   (family score column), `code` (indicator code), `column_name`, `label`,
-#'   `label_fr`, `label_en`, `tooltip`, `tooltip_fr`, `tooltip_en` and
-#'   `doc_url`.
+#'   `label_fr`, `label_en`, `tooltip`, `tooltip_fr`, `tooltip_en`, `doc_url`,
+#'   `doc_url_fr`, `doc_url_en` and `doc_lang`.
 #'
 #' @section Indicator fact sheets (`doc_url`):
 #' Some indicators have a long-form fact sheet published as a pkgdown article
@@ -724,6 +763,14 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 #' offering a "read the fact sheet" link next to the tooltip, not an error.
 #' The base of the URL is the first entry of the package `URL` field, so the
 #' site address is declared once, in `DESCRIPTION`.
+#'
+#' A fact sheet is declared per language. When the requested language has no
+#' page but the other one does, that other page is returned rather than `NA`:
+#' a fact sheet in the wrong language beats no fact sheet. `doc_lang` names
+#' the language actually served, so an interface can say so instead of opening
+#' French without warning — today `indicator_labels(lang = "en")` returns the
+#' French C1 page with `doc_lang == "fr"`. Compare `doc_lang` with the
+#' language you asked for; do not assume they match.
 #'
 #' @seealso [indicator_families()]
 #'
@@ -738,7 +785,11 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 #' stats::setNames(ind$label_en, ind$code)[["C1"]]
 #'
 #' # Indicators that have a fact sheet, and where to read it
-#' ind[!is.na(ind$doc_url), c("code", "doc_url")]
+#' ind[!is.na(ind$doc_url), c("code", "doc_url", "doc_lang")]
+#'
+#' # A fact sheet served in a language other than the one requested
+#' en <- indicator_labels(lang = "en")
+#' en[!is.na(en$doc_lang) & en$doc_lang != "en", c("code", "doc_lang")]
 #'
 #' @export
 indicator_labels <- function(codes = NULL, lang = c("fr", "en")) {
@@ -749,7 +800,7 @@ indicator_labels <- function(codes = NULL, lang = c("fr", "en")) {
     "family", "family_column", "code", "column_name",
     "label", "label_fr", "label_en",
     "tooltip", "tooltip_fr", "tooltip_en",
-    "doc_url"
+    "doc_url", "doc_url_fr", "doc_url_en", "doc_lang"
   )
 
   if (length(fams) == 0) {
@@ -773,9 +824,17 @@ indicator_labels <- function(codes = NULL, lang = c("fr", "en")) {
       label_en = unname(.family_texts(f, "indicator_labels", "en")),
       tooltip_fr = unname(.family_texts(f, "indicator_tooltips", "fr")),
       tooltip_en = unname(.family_texts(f, "indicator_tooltips", "en")),
-      doc_url = unname(.family_doc_urls(f, base = doc_base)),
       stringsAsFactors = FALSE
     )
+    # Les deux langues sont resolues une fois ; `doc_url` / `doc_lang` sont
+    # la vue de celle qui a ete demandee.
+    docs_fr <- .family_docs(f, "fr", base = doc_base)
+    docs_en <- .family_docs(f, "en", base = doc_base)
+    docs <- if (lang == "fr") docs_fr else docs_en
+    out$doc_url <- docs$url
+    out$doc_lang <- docs$lang
+    out$doc_url_fr <- docs_fr$url
+    out$doc_url_en <- docs_en$url
     out$label <- out[[paste0("label_", lang)]]
     out$tooltip <- out[[paste0("tooltip_", lang)]]
     out[, cols]

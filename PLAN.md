@@ -34,7 +34,7 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 |---|---|---|---|---|
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 | 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Rien à coder** — les tooltips viennent d'`INDICATOR_FAMILIES` et les rasters en cache restent valides — mais l'interface ne doit **ni classer ni moyenner B4/L3 entre projets** : les « spectral species » sont un k-means réajusté par run (spec 028 §10.6). Non accusé réception |
-| 7 | L'icône « fiche » à côté du « i » de C1, onglet Familles d'indicateurs | cœur **v0.192.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/052-fiche-indicateur-c1/brief-nemetonshiny.md`). Le cœur expose `doc_url` dans `indicator_labels()` (URL absolue, `NA` quand l'indicateur n'a pas de fiche) ; côté app, ~15 lignes dans `mod_family.R` + 1 clé i18n. **L'URL n'est vivante qu'après merge sur `main`** (déploiement pkgdown). Non accusé réception |
+| 7 | L'icône « fiche » à côté du « i » de C1, onglet Familles d'indicateurs | cœur **v0.192.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/052-fiche-indicateur-c1/brief-nemetonshiny.md`). Le cœur expose `doc_url` / `doc_lang` / `doc_url_fr` / `doc_url_en` dans `indicator_labels()` (URL absolue, `NA` quand l'indicateur n'a pas de fiche ; `doc_lang` = langue réellement servie) ; côté app, ~20 lignes dans `mod_family.R` + 3 clés i18n. **L'URL n'est vivante qu'après merge sur `main`** (déploiement pkgdown). Non accusé réception |
 
 **Trois écarts, et aucun ne se referme par une release cœur.** Le n° 3 attend
 une sortie sur un projet réel portant à la fois un nuage LiDAR et une desserte
@@ -141,14 +141,32 @@ Livré côté cœur :
   chaque NDP, un exemple chiffré par chemin, un schéma SVG entrées → cascade →
   livrables, et les pièges. Publiée en article pkgdown : l'URL est publique,
   versionnée et déployée à chaque push sur `main`.
-- `INDICATOR_FAMILIES$C$indicator_docs$C1` + colonne **`doc_url`** dans
-  `indicator_labels()` : URL absolue quand l'indicateur a une fiche, `NA`
-  sinon. La base d'URL est lue dans le champ `URL` du `DESCRIPTION` — une seule
-  source de vérité, comme pour les libellés (chantier v0.170.0 ci-dessous).
+- `INDICATOR_FAMILIES$C$indicator_docs$C1` + colonnes **`doc_url`**,
+  **`doc_lang`**, **`doc_url_fr`**, **`doc_url_en`** dans `indicator_labels()`.
+  La base d'URL est lue dans le champ `URL` du `DESCRIPTION` — une seule source
+  de vérité, comme pour les libellés (chantier v0.170.0 ci-dessous).
+- **Les fiches sont déclarées par langue.** Quand la langue demandée n'a pas de
+  page mais que l'autre en a une, c'est l'autre qui est servie plutôt que `NA`,
+  et `doc_lang` le dit. Sans ce détour, un lecteur anglophone aurait ouvert du
+  français sans prévenir — et l'argument « l'i18n vit dans l'app, donc les
+  fiches aussi » aurait tenu.
 - Brief app : `specs/052-fiche-indicateur-c1/brief-nemetonshiny.md`.
 
+**Placement tranché le 2026-08-27** : les fiches restent **dans le cœur**. Une
+fiche décrit comment un indicateur est calculé — elle cite des numéros de ligne
+de `R/`, des tables de `inst/extdata/`, un `ref_max` de `R/normalization.R`.
+C'est de la documentation de logique métier (règle 1), qui doit changer dans le
+même commit et sortir dans la même release que le code qu'elle décrit. Le
+contre-exemple est dans ce dépôt : `docs/TABLEAU_INDICATEURS_NDP.md`, resté à la
+v0.14.1, décrit C1 avec trois chemins alors qu'il en a cinq. Une fiche dans un
+dépôt à cadence de release distincte dérive de la même façon, en pire — un
+correctif du cœur (0.169.0, exposants du tarif IFN) ne toucherait plus le texte
+qui l'énonce. S'ajoute l'ADR-009 : une fiche côté app serait invisible depuis
+`vignette(..., package = "nemeton")`, donc pour quiconque appelle le cœur sans
+l'app.
+
 **Le point de conception** : l'app ne doit connaître **ni l'URL, ni la liste des
-indicateurs documentés**. Elle teste `is.na(row$doc_url)` et affiche l'icône ou
+indicateurs documentés, ni la langue des fiches**. Elle teste `is.na(row$doc_url)` et affiche l'icône ou
 non. Ajouter une fiche B2 demain se fait **entièrement côté cœur** — vignette,
 entrée `_pkgdown.yml`, entrée `indicator_docs` — et l'icône apparaît sans que
 l'app bouge. C'est le même raisonnement que l'export des familles : une
