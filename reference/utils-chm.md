@@ -1,8 +1,8 @@
 # CHM (Canopy Height Model) utilities
 
 Helpers to sanitize and exploit Canopy Height Model rasters produced by
-external sources such as the `opencanopy` package
-(pobsteta/opencanopynemeton) or LiDAR HD.
+external sources such as the `opencanopy` package (pobsteta/opencanopy)
+or LiDAR HD.
 
 ## Details
 

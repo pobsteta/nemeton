@@ -3,10 +3,10 @@
 Néméton projects accumulate digital terrain models (MNT / DEM / DTM) and
 canopy height models (MNH / CHM) from several sources — IGN RGE ALTI
 downloaded by tutorials, LiDAR HD MNT produced by \`lidR\`,
-\`opencanopynemeton\`'s \`dtm.tif\`, Open-Canopy CHM tiles — each
-landing under its own naming convention. These helpers walk a list of
-well-known locations in \*\*priority order\*\* (highest quality first)
-and return the first match, so callers don't have to hard-code paths.
+\`opencanopy\`'s \`dtm.tif\`, Open-Canopy CHM tiles — each landing under
+its own naming convention. These helpers walk a list of well-known
+locations in \*\*priority order\*\* (highest quality first) and return
+the first match, so callers don't have to hard-code paths.
 
 When multiple tiles sit in the same directory (e.g. several \`BD ALTI\`
 tiles), the raster returned is a virtual mosaic (\`terra::vrt()\`), so
@@ -87,7 +87,7 @@ attribute \`"nemeton_dem_layer"\` / \`"nemeton_chm_layer"\`.
 
 9.  \`\<project\>/cache/layers/mnt.tif\` — direct file (v0.25.5)
 
-10. \`\<project\>/dtm.tif\` — \`opencanopynemeton\` convention
+10. \`\<project\>/dtm.tif\` — \`opencanopy\` convention
 
 11. \`\<project\>/dem.tif\` — project root (v0.25.5)
 
@@ -126,7 +126,7 @@ if (FALSE) { # \dontrun{
 dem <- resolve_project_dem("C:/.../projects/20260416_112240_gomv",
                            verbose = TRUE)
 if (is.null(dem)) {
-  stop("No DEM found — download one with opencanopynemeton or happign.")
+  stop("No DEM found — download one with opencanopy or happign.")
 }
 attr(dem, "nemeton_dem_layer")  # "opencanopy DTM"
 plan <- create_sampling_plan(zone, mnt = dem, ...)

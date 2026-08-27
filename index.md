@@ -81,11 +81,11 @@ list_countries()                   # c("EU", "FR")
 
 Depuis la v0.16.0, nemeton exploite des Canopy Height Models (CHM)
 produits par le package amont
-[`opencanopy`](https://github.com/pobsteta/opencanopynemeton) pour
-affiner cinq indicateurs (P1 volume, P2 station, C1 biomasse, B2
-structure, R2 tempete) a partir de l’ortho IGN, sans besoin de LiDAR.
-L’ADR-011 amende le systeme NDP avec un flag vectoriel `augmented` qui
-preserve la confiance phi Fibonacci globale.
+[`opencanopy`](https://github.com/pobsteta/opencanopy) pour affiner cinq
+indicateurs (P1 volume, P2 station, C1 biomasse, B2 structure, R2
+tempete) a partir de l’ortho IGN, sans besoin de LiDAR. L’ADR-011 amende
+le systeme NDP avec un flag vectoriel `augmented` qui preserve la
+confiance phi Fibonacci globale.
 
 Exemple end-to-end :
 

@@ -199,7 +199,7 @@ repo. `PLAN.md` indique chaque fois quel package porte la livraison.
 
 Depuis la v0.16.0 (spec 005), `nemeton` consomme des Canopy Height
 Models (CHM) produits par le package amont `opencanopy`
-(pobsteta/opencanopynemeton). L’intégration suit l’ADR-011 amendé :
+(pobsteta/opencanopy). L’intégration suit l’ADR-011 amendé :
 
 - **Flag vectoriel `augmented`** dans le résultat de
   [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md).

@@ -276,7 +276,7 @@ platform_nemeton      → Documentation plateforme, ADR, glossaire.</code></pre>
 </div>
 <div class="section level2">
 <h2 id="ndp-augmenté-et-intégration-open-canopy-spec-005-v0160">NDP augmenté et intégration Open-Canopy (spec 005, v0.16.0)<a class="anchor" aria-label="anchor" href="#ndp-augment%C3%A9-et-int%C3%A9gration-open-canopy-spec-005-v0160"></a></h2>
-<p>Depuis la v0.16.0 (spec 005), <code>nemeton</code> consomme des Canopy Height Models (CHM) produits par le package amont <code>opencanopy</code> (pobsteta/opencanopynemeton). L’intégration suit l’ADR-011 amendé :</p>
+<p>Depuis la v0.16.0 (spec 005), <code>nemeton</code> consomme des Canopy Height Models (CHM) produits par le package amont <code>opencanopy</code> (pobsteta/opencanopy). L’intégration suit l’ADR-011 amendé :</p>
 <ul><li>
 <strong>Flag vectoriel <code>augmented</code></strong> dans le résultat de <code><a href="reference/detect_ndp.html">detect_ndp()</a></code>. Valeurs reconnues : <code>"height_ml"</code> (CHM ML d’Open-Canopy), <code>"species_ml"</code>, <code>"texture_ml"</code>. Le niveau NDP et la confiance φ Fibonacci globale restent inchangés : la granularité ML est exploitée par <code><a href="reference/compute_general_index_mixed.html">compute_general_index_mixed()</a></code>.</li>
 <li>

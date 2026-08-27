@@ -203,7 +203,7 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <div class="section level2">
 <h2 id="ndp-augmente--integration-open-canopy-v0160-spec-005">NDP augmente : integration Open-Canopy (v0.16.0, spec 005)<a class="anchor" aria-label="anchor" href="#ndp-augmente--integration-open-canopy-v0160-spec-005"></a>
 </h2>
-<p>Depuis la v0.16.0, nemeton exploite des Canopy Height Models (CHM) produits par le package amont <a href="https://github.com/pobsteta/opencanopynemeton" class="external-link"><code>opencanopy</code></a> pour affiner cinq indicateurs (P1 volume, P2 station, C1 biomasse, B2 structure, R2 tempete) a partir de l’ortho IGN, sans besoin de LiDAR. L’ADR-011 amende le systeme NDP avec un flag vectoriel <code>augmented</code> qui preserve la confiance phi Fibonacci globale.</p>
+<p>Depuis la v0.16.0, nemeton exploite des Canopy Height Models (CHM) produits par le package amont <a href="https://github.com/pobsteta/opencanopy" class="external-link"><code>opencanopy</code></a> pour affiner cinq indicateurs (P1 volume, P2 station, C1 biomasse, B2 structure, R2 tempete) a partir de l’ortho IGN, sans besoin de LiDAR. L’ADR-011 amende le systeme NDP avec un flag vectoriel <code>augmented</code> qui preserve la confiance phi Fibonacci globale.</p>
 <p>Exemple end-to-end :</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pobsteta.github.io/nemeton/">nemeton</a></span><span class="op">)</span></span>
