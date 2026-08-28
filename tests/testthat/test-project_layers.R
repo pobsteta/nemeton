@@ -112,7 +112,85 @@ test_that("resolve_project_chm finds cache/layers/chm/*.tif", {
   dir.create(file.path(proj, "cache", "layers", "chm"), recursive = TRUE)
   .write_tiny_tif(file.path(proj, "cache", "layers", "chm", "T31TFN.tif"))
   out <- resolve_project_chm(proj, load = FALSE)
-  expect_identical(attr(out, "nemeton_chm_layer"), "Open-Canopy CHM")
+  # Libelle neutre depuis v0.192.2 : Open-Canopy n'ecrit pas la.
+  expect_identical(attr(out, "nemeton_chm_layer"), "cache/layers/chm/")
+})
+
+
+# ---- Open-Canopy (cache/layers/opencanopy) ---------------------------
+#
+# L'app (nemetonshiny::download_chm_opencanopy) depose ses livrables dans
+# cache/layers/opencanopy/, que le resolveur ignorait jusqu'a v0.192.2.
+
+.write_opencanopy_project <- function(files) {
+  proj <- withr::local_tempdir(.local_envir = parent.frame())
+  oc <- file.path(proj, "cache", "layers", "opencanopy")
+  dir.create(oc, recursive = TRUE)
+  for (f in files) .write_tiny_tif(file.path(oc, f))
+  proj
+}
+
+test_that("resolve_project_chm finds the Open-Canopy 0.2 m CHM", {
+  skip_if_not_installed("terra")
+  proj <- .write_opencanopy_project("chm_predicted_0_2m.tif")
+  out <- resolve_project_chm(proj, load = FALSE)
+  expect_identical(attr(out, "nemeton_chm_layer"), "Open-Canopy CHM 0,2 m")
+  expect_length(out, 1L)
+  expect_match(out, "chm_predicted_0_2m\\.tif$")
+})
+
+test_that("resolve_project_chm prefers 0.2 m over 1.5 m and the witness", {
+  skip_if_not_installed("terra")
+  proj <- .write_opencanopy_project(c("chm_1_5m.tif",
+                                      "chm_predicted_1_5m.tif",
+                                      "chm_predicted_0_2m.tif"))
+  expect_identical(attr(resolve_project_chm(proj, load = FALSE),
+                        "nemeton_chm_layer"),
+                   "Open-Canopy CHM 0,2 m")
+
+  # Sans le 0,2 m, le 1,5 m predit passe devant le temoin.
+  file.remove(file.path(proj, "cache", "layers", "opencanopy",
+                        "chm_predicted_0_2m.tif"))
+  expect_identical(attr(resolve_project_chm(proj, load = FALSE),
+                        "nemeton_chm_layer"),
+                   "Open-Canopy CHM 1,5 m")
+
+  file.remove(file.path(proj, "cache", "layers", "opencanopy",
+                        "chm_predicted_1_5m.tif"))
+  expect_identical(attr(resolve_project_chm(proj, load = FALSE),
+                        "nemeton_chm_layer"),
+                   "Open-Canopy CHM (temoin)")
+})
+
+test_that("resolve_project_chm never mosaics orthos and indices with the CHM", {
+  skip_if_not_installed("terra")
+  # Le test qui compte : cache/layers/opencanopy/ contient aussi des
+  # orthophotos et des indices spectraux. Un candidat sans `file`
+  # rendrait un VRT de dix couches heterogenes.
+  proj <- .write_opencanopy_project(c("chm_predicted_0_2m.tif",
+                                      "chm_vegetation_0_2m.tif",
+                                      "ortho_rvb.tif", "ortho_irc.tif",
+                                      "ndvi.tif", "ndwi.tif",
+                                      "gndvi.tif", "savi.tif"))
+  paths <- resolve_project_chm(proj, load = FALSE)
+  expect_length(paths, 1L)
+  expect_match(paths, "chm_predicted_0_2m\\.tif$")
+  # Le derive vegetation n'est jamais choisi.
+  expect_false(any(grepl("chm_vegetation", paths)))
+
+  r <- resolve_project_chm(proj, load = TRUE)
+  expect_s4_class(r, "SpatRaster")
+  expect_equal(terra::nlyr(r), 1L)
+})
+
+test_that("resolve_project_chm prefers LiDAR HD MNH over Open-Canopy", {
+  skip_if_not_installed("terra")
+  # ADR-007 : le LiDAR local porte un NDP superieur au produit ML.
+  proj <- .write_opencanopy_project("chm_predicted_0_2m.tif")
+  dir.create(file.path(proj, "cache", "layers", "lidar_mnh"), recursive = TRUE)
+  .write_tiny_tif(file.path(proj, "cache", "layers", "lidar_mnh", "mnh.tif"))
+  out <- resolve_project_chm(proj, load = FALSE)
+  expect_identical(attr(out, "nemeton_chm_layer"), "LiDAR HD MNH")
 })
 
 
