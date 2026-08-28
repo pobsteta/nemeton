@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -209,7 +209,14 @@
 </td>
 <td><code>nemetonshiny</code></td>
 <td>Brief émis le 2026-08-27 (<code>specs/052-fiche-indicateur-c1/brief-nemetonshiny.md</code>). Le cœur expose <code>doc_url</code> / <code>doc_lang</code> / <code>doc_url_fr</code> / <code>doc_url_en</code> dans <code><a href="reference/indicator_labels.html">indicator_labels()</a></code> (URL absolue, <code>NA</code> quand l’indicateur n’a pas de fiche ; <code>doc_lang</code> = langue réellement servie) ; côté app, ~20 lignes dans <code>mod_family.R</code> + 3 clés i18n. <strong>L’URL n’est vivante qu’après merge sur <code>main</code></strong> (déploiement pkgdown). Non accusé réception</td>
-</tr></tbody></table><p><strong>Quatre écarts.</strong> Le n° 8 est le seul qui appelle un correctif <strong>dans le cœur</strong>, et le seul qui rende une valeur affichée fausse — les trois autres attendent l’aval ou le terrain. Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR et une desserte corrigée. Le n° 6 attend une lecture côté app : il n’appelle pas de code, il interdit un usage — et un interdit non lu ne protège de rien. Le n° 7, lui, attend bien du code côté app, mais quinze lignes : le cœur a livré la donnée (<code>doc_url</code>) et la page (article pkgdown), il ne peut pas poser l’icône lui-même.</p>
+</tr><tr><td>9</td>
+<td>Les deux replis applicatifs qui sondent <code>cache/layers/opencanopy/</code> à la place du cœur</td>
+<td>cœur <strong>v0.192.2</strong>
+</td>
+<td><code>nemetonshiny</code></td>
+<td>
+<code><a href="reference/resolve_project_layers.html">resolve_project_chm()</a></code> résout désormais les CHM Open-Canopy (0,2 m → 1,5 m → témoin) et remet le LiDAR HD en tête. Les contournements de <code>service_marculus.R</code> et de l’onglet <em>Terrain accessible</em> (<code>.project_chm()</code> / <code>.chm_exploitable()</code>) deviennent du code mort dès que <code>Imports: nemeton (&gt;= 0.192.2)</code> est posé. <strong>Rien ne casse s’ils restent</strong> — ils n’agissent que sur un <code>NULL</code> du cœur, qui ne vient plus. Non accusé réception</td>
+</tr></tbody></table><p><strong>Cinq écarts.</strong> Le n° 8 est le seul qui appelle un correctif <strong>dans le cœur</strong>, et le seul qui rende une valeur affichée fausse — les quatre autres attendent l’aval ou le terrain ; le n° 9 n’attend même qu’une suppression. Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR et une desserte corrigée. Le n° 6 attend une lecture côté app : il n’appelle pas de code, il interdit un usage — et un interdit non lu ne protège de rien. Le n° 7, lui, attend bien du code côté app, mais quinze lignes : le cœur a livré la donnée (<code>doc_url</code>) et la page (article pkgdown), il ne peut pas poser l’icône lui-même.</p>
 <p><strong>Les quatre autres sont refermés</strong>, vérifiés en lecture seule sur <code>nemetonshiny@5a1afd7c</code> le 2026-08-22 (détail dans l’entrée de journal du 2026-08-22, chantiers A et D) :</p>
 <table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th>#</th>
 <th>Écart</th>
@@ -1529,6 +1536,48 @@ Current Memory Usage: 17.1G</code></pre>
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-08-28--v01922--resolve_project_chm-ne-voyait-pas-les-chm-open-canopy">2026-08-28 — v0.192.2 : <code>resolve_project_chm()</code> ne voyait pas les CHM Open-Canopy<a class="anchor" aria-label="anchor" href="#id_2026-08-28--v01922--resolve_project_chm-ne-voyait-pas-les-chm-open-canopy"></a></h3>
+<p><strong>Le symptôme, mesuré par l’app</strong> (brief <code>BRIEF-nemeton-resolve-chm-opencanopy.md</code>, émis par <code>nemetonshiny@5fbe4b0e</code>). Sur le projet Couchey (75 UGF), <code>resolve_project_chm(verbose = TRUE)</code> égrenait ses dix candidats et rendait <code>NULL</code>, alors que le projet portait un modèle de hauteur parfaitement exploitable : <code>cache/layers/opencanopy/chm_predicted_0_2m.tif</code>, 0,2 m, EPSG:2154, 14 695 × 28 481, hauteurs 0 → 32,34 m.</p>
+<p><strong>La cause.</strong> Le candidat s’appelait « Open-Canopy CHM » mais sondait <code>cache/layers/chm/</code> — un répertoire qu’aucun producteur n’écrit, ni le cœur, ni l’app, ni les tutoriels (vérifié par grep sur les trois). Le producteur réel, <code>nemetonshiny::download_chm_opencanopy()</code>, dépose dans <code>cache/layers/opencanopy/</code>. Le libellé mentait, et le résolveur cherchait à un endroit vide.</p>
+<p><strong>Ce que ça coûtait en aval.</strong> Silencieusement, pas bruyamment : les appelants ne reçoivent pas d’erreur, ils reçoivent <code>NULL</code> et continuent sans hauteur. <code><a href="reference/create_sampling_plan.html">create_sampling_plan()</a></code> tirait ses placettes <strong>sans strate de hauteur</strong> sans le dire. Deux modules de l’app avaient déjà dû dupliquer le chemin — <code>service_marculus.R</code> (segmentation des houppiers), puis <code>.project_chm()</code> de l’onglet <em>Terrain accessible</em> : le deuxième appelant à réimplémenter une connaissance que le résolveur est censé porter. C’est le signal qu’il fallait corriger ici, pas là-bas.</p>
+<p><strong>Le piège évité.</strong> <code>.probe_raster_candidate()</code> prend <em>tous</em> les <code>.tif</code> du répertoire quand <code>cand$file</code> est absent, et <code>.materialise_raster()</code> en fait un <code><a href="https://rspatial.github.io/terra/reference/vrt.html" class="external-link">terra::vrt()</a></code>. Or <code>cache/layers/opencanopy/</code> contient aussi <code>ortho_rvb.tif</code>, <code>ortho_irc.tif</code>, <code>ndvi.tif</code>, <code>ndwi.tif</code>, <code>gndvi.tif</code>, <code>savi.tif</code> : un candidat « répertoire » aurait mosaïqué deux orthophotos et quatre indices spectraux avec les modèles de hauteur. Les trois entrées sont donc <strong>nommées fichier par fichier</strong>. Le dérivé <code>chm_vegetation_0_2m.tif</code> reste exclu : végétation masquée, pas hauteur de référence.</p>
+<p><strong>Ce qui est livré</strong> (<code>R/project_layers.R</code>) :</p>
+<ul><li>
+<code>chm_predicted_0_2m.tif</code> → <code>chm_predicted_1_5m.tif</code> → témoin <code>chm_1_5m.tif</code>, dans cet ordre (le plus fin d’abord) ;</li>
+<li>
+<code>"LiDAR HD MNH"</code> remonte <strong>en tête</strong> : l’ADR-007 donne au LiDAR local un NDP supérieur au produit ML, et la doc de la fonction l’affirmait déjà pendant que la liste faisait l’inverse ;</li>
+<li>
+<code>cache/layers/chm/</code> perd le rang hérité de son faux libellé, passe derrière Open-Canopy et s’appelle <code>"cache/layers/chm/"</code>.</li>
+</ul><p><strong>Vérifications, sur les vrais caches applicatifs</strong> (rappel : les projets de <code>~/.local/share/nemeton/projects/</code> portent les runs réels) :</p>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>Projet</th>
+<th>Contenu</th>
+<th>Résolu</th>
+</tr></thead><tbody><tr><td><code>20260825_210612_xkqi</code></td>
+<td>
+<code>opencanopy/</code> seul, 4 CHM + 2 orthos + 4 indices</td>
+<td>
+<strong>Open-Canopy CHM 0,2 m</strong>, 1 couche, 0,2 m, EPSG:2154, 14 695 × 28 481</td>
+</tr><tr><td><code>20260624_073705_armn</code></td>
+<td>
+<code>lidar_mnh/</code> (20 dalles) <strong>et</strong> <code>opencanopy/</code>
+</td>
+<td>
+<strong>LiDAR HD MNH</strong>, VRT 0,5 m — le LiDAR gagne</td>
+</tr></tbody></table><p>Quatre tests ajoutés à <code>test-project_layers.R</code> (43 assertions vertes), dont celui qui compte : répertoire contenant CHM + orthos + indices → <strong>une seule couche</strong>, pas un VRT. Sans lui, un retour à un candidat « répertoire » passerait inaperçu.</p>
+<p><strong>Suite côté app</strong> : rien n’est requis — <code>.project_chm()</code> interroge déjà le cœur d’abord. Une fois le plancher <code>Imports: nemeton (&gt;= 0.192.2)</code> relevé, les deux replis applicatifs (<code>service_marculus.R</code> et <em>Terrain accessible</em>) deviennent du code mort et peuvent partir. Écart n° 9 ci-dessus.</p>
+<hr></div>
+<div class="section level3">
+<h3 id="id_2026-08-28--app-nemetonshiny-v01422--chargement-projet-25-et-plan-de-placettes-débloqué">2026-08-28 — App <code>nemetonshiny</code> v0.142.2 : chargement projet 2,5× et plan de placettes débloqué<a class="anchor" aria-label="anchor" href="#id_2026-08-28--app-nemetonshiny-v01422--chargement-projet-25-et-plan-de-placettes-d%C3%A9bloqu%C3%A9"></a></h3>
+<p>Trois correctifs de performance sur le chemin « clic projet récent → parcelles à l’écran » (Couchey, 75 UGF / 223 tènements) : <strong>13,2 s → 5,1 s</strong> (médiane de 3 mesures Chrome piloté, dispersion ±0,5 s).</p>
+<ul><li>
+<code>ug_build_sf()</code> était appelée par <strong>sept reactives</strong> dans le même flush (<code>ug_sf_4326</code>, <code>units_sf</code> ×4 via <code>.resolve_project_aoi_2154</code>, <code>ugf_sf_r</code>, rendu carte <code>mod_ug</code>), leurs sorties portant <code>suspendWhenHidden = FALSE</code>. Mémoïsée, clé = hash du couple <code>(ugs, tenements)</code>.</li>
+<li>La dissolution faisait un <code>st_make_valid()</code> par UGF (75 appels, 695 ms) au lieu d’un seul sur les 223 tènements (97 ms) : <code>ug_build_sf()</code> passe de 2988 ms à ~950 ms, à résultat géométriquement identique (75/75 <code>st_equals</code>).</li>
+<li>
+<code>mod_ug</code> dessinait sa carte onglet fermé — travail que leaflet jette et que le module redessinait déjà à l’ouverture : 2 × 370 ms retirés.</li>
+</ul><p>Deux bugs de l’onglet <em>Terrain accessible</em> corrigés dans la foulée : <code>prep_sampling_raster()</code> comparait la résolution d’un MNT en EPSG:4326 (0,00025 degré) à <code>target_res_m = 5</code> mètres, d’où un facteur d’agrégation de 20 003 et un MNT réduit à <strong>une cellule</strong> — <code><a href="reference/create_sampling_plan.html">create_sampling_plan()</a></code> échouait sur « Stratification-valid candidate pool (0) is below n_base », 2108 candidats sur 2108 rejetés. Et le CHM Open-Canopy du projet était invisible pour le résolveur cœur (cf. brief <code>BRIEF-nemeton-resolve-chm-opencanopy.md</code>, <strong>corrigé le jour même en v0.192.2</strong>, entrée ci-dessus). Couchey passe d’une erreur bloquante à 112 placettes stratifiées hauteur × topographie.</p>
+<p>Suite app : 13 103 PASS, 0 FAIL. Cycle dev : <code>nemetonshiny@5fbe4b0e</code>.</p>
+<hr></div>
 <div class="section level3">
 <h3 id="id_2026-08-27--v01921--le-diagramme-de-c1-ne-saffichait-pas-et-40-fiches-nen-avaient-aucun">2026-08-27 — v0.192.1 : le diagramme de C1 ne s’affichait pas, et 40 fiches n’en avaient aucun<a class="anchor" aria-label="anchor" href="#id_2026-08-27--v01921--le-diagramme-de-c1-ne-saffichait-pas-et-40-fiches-nen-avaient-aucun"></a></h3>
 <p><strong>Le symptôme.</strong> Sur gh-pages 0.192.0, la fiche C1 montrait un cadre vide sous « 5. Diagramme d’ensemble », puis trois paragraphes de prose collée : « ENTRÉESAIGUILLAGE — PREMIER CHEMIN SERVI… ».</p>

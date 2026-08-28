@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,21 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.192.2" id="nemeton-01922-2026-08-28">nemeton 0.192.2 (2026-08-28)<a class="anchor" aria-label="anchor" href="#nemeton-01922-2026-08-28"></a></h2>
+<div class="section level4">
+<h4 id="fixed--resolve_project_chm-ne-voyait-pas-les-chm-open-canopy-0-192-2">Fixed — <code>resolve_project_chm()</code> ne voyait pas les CHM Open-Canopy<a class="anchor" aria-label="anchor" href="#fixed--resolve_project_chm-ne-voyait-pas-les-chm-open-canopy-0-192-2"></a></h4>
+<p>Le candidat baptisé « Open-Canopy CHM » sondait <code>cache/layers/chm/</code>, alors que le producteur Open-Canopy — <code>nemetonshiny::download_chm_opencanopy()</code> — dépose ses livrables dans <code>cache/layers/opencanopy/</code>. Sur un projet dont c’était la seule source de hauteur, le résolveur rendait donc <code>NULL</code> et les appelants travaillaient <strong>sans modèle de hauteur, en silence</strong> : côté app, <code><a href="../reference/create_sampling_plan.html">create_sampling_plan()</a></code> tirait ses placettes sans strate de hauteur sans rien signaler, et deux modules (<code>service_marculus.R</code>, puis l’onglet <em>Terrain accessible</em>) avaient dû dupliquer le chemin que le résolveur aurait dû porter.</p>
+<p>Trois entrées sont ajoutées, <strong>nommées fichier par fichier</strong> : <code>chm_predicted_0_2m.tif</code>, puis <code>chm_predicted_1_5m.tif</code>, puis le témoin <code>chm_1_5m.tif</code>. Le nommage explicite n’est pas cosmétique : <code>cache/layers/opencanopy/</code> contient aussi deux orthophotos (RVB, IRC) et quatre indices spectraux, qu’un candidat sans <code>file</code> aurait mosaïqués avec les modèles de hauteur (<code><a href="https://rspatial.github.io/terra/reference/vrt.html" class="external-link">terra::vrt()</a></code> sur tous les <code>.tif</code> du répertoire). Le dérivé <code>chm_vegetation_0_2m.tif</code> est délibérément exclu : c’est une végétation masquée, pas le modèle de hauteur de référence.</p>
+</div>
+<div class="section level4">
+<h4 id="changed--ordre-de-recherche-des-chm-conforme-à-ladr-0-192-2">Changed — ordre de recherche des CHM conforme à l’ADR-007<a class="anchor" aria-label="anchor" href="#changed--ordre-de-recherche-des-chm-conforme-%C3%A0-ladr-0-192-2"></a></h4>
+<p><code>"LiDAR HD MNH"</code> passe <strong>en tête</strong>, devant tout produit ML : le LiDAR local porte un NDP supérieur, ce que la documentation affirmait déjà alors que la liste disait l’inverse. Le répertoire <code>cache/layers/chm/</code> — sans producteur connu dans le cœur, l’app ni les tutoriels — perd son rang hérité de ce mauvais libellé et passe derrière les entrées Open-Canopy ; il s’appelle désormais <code>"cache/layers/chm/"</code>, puisque Open-Canopy n’écrit pas là.</p>
+<p>Nouvel ordre : <code>lidar_mnh/</code> → <code>mnh/</code> → Open-Canopy 0,2 m → 1,5 m → témoin → <code>chm/</code> → fichiers directs (inchangés).</p>
+<p><strong>Vérifié en réel</strong> sur deux projets du cache applicatif : celui du brief (0,2 m, EPSG:2154, 14 695 × 28 481) est désormais résolu en <strong>une seule couche</strong> malgré les six rasters non-CHM voisins ; celui qui porte à la fois <code>lidar_mnh/</code> (20 dalles) et <code>opencanopy/</code> rend bien le LiDAR.</p>
+<p>Brief à l’origine du correctif : <code>BRIEF-nemeton-resolve-chm-opencanopy.md</code> (émis par <code>nemetonshiny@5fbe4b0e</code>, v0.142.2).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.192.1" id="nemeton-01921-2026-08-27">nemeton 0.192.1 (2026-08-27)<a class="anchor" aria-label="anchor" href="#nemeton-01921-2026-08-27"></a></h2>
 <div class="section level4">
