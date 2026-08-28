@@ -1,3 +1,45 @@
+# nemeton 0.192.2 (2026-08-28)
+
+### Fixed — `resolve_project_chm()` ne voyait pas les CHM Open-Canopy
+
+Le candidat baptisé « Open-Canopy CHM » sondait `cache/layers/chm/`, alors que
+le producteur Open-Canopy — `nemetonshiny::download_chm_opencanopy()` — dépose
+ses livrables dans `cache/layers/opencanopy/`. Sur un projet dont c'était la
+seule source de hauteur, le résolveur rendait donc `NULL` et les appelants
+travaillaient **sans modèle de hauteur, en silence** : côté app,
+`create_sampling_plan()` tirait ses placettes sans strate de hauteur sans rien
+signaler, et deux modules (`service_marculus.R`, puis l'onglet *Terrain
+accessible*) avaient dû dupliquer le chemin que le résolveur aurait dû porter.
+
+Trois entrées sont ajoutées, **nommées fichier par fichier** :
+`chm_predicted_0_2m.tif`, puis `chm_predicted_1_5m.tif`, puis le témoin
+`chm_1_5m.tif`. Le nommage explicite n'est pas cosmétique :
+`cache/layers/opencanopy/` contient aussi deux orthophotos (RVB, IRC) et quatre
+indices spectraux, qu'un candidat sans `file` aurait mosaïqués avec les modèles
+de hauteur (`terra::vrt()` sur tous les `.tif` du répertoire). Le dérivé
+`chm_vegetation_0_2m.tif` est délibérément exclu : c'est une végétation masquée,
+pas le modèle de hauteur de référence.
+
+### Changed — ordre de recherche des CHM conforme à l'ADR-007
+
+`"LiDAR HD MNH"` passe **en tête**, devant tout produit ML : le LiDAR local
+porte un NDP supérieur, ce que la documentation affirmait déjà alors que la
+liste disait l'inverse. Le répertoire `cache/layers/chm/` — sans producteur
+connu dans le cœur, l'app ni les tutoriels — perd son rang hérité de ce
+mauvais libellé et passe derrière les entrées Open-Canopy ; il s'appelle
+désormais `"cache/layers/chm/"`, puisque Open-Canopy n'écrit pas là.
+
+Nouvel ordre : `lidar_mnh/` → `mnh/` → Open-Canopy 0,2 m → 1,5 m → témoin →
+`chm/` → fichiers directs (inchangés).
+
+**Vérifié en réel** sur deux projets du cache applicatif : celui du brief
+(0,2 m, EPSG:2154, 14 695 × 28 481) est désormais résolu en **une seule
+couche** malgré les six rasters non-CHM voisins ; celui qui porte à la fois
+`lidar_mnh/` (20 dalles) et `opencanopy/` rend bien le LiDAR.
+
+Brief à l'origine du correctif : `BRIEF-nemeton-resolve-chm-opencanopy.md`
+(émis par `nemetonshiny@5fbe4b0e`, v0.142.2).
+
 # nemeton 0.192.1 (2026-08-27)
 
 ### Fixed — le diagramme de la fiche C1 ne s'affichait pas sur le site

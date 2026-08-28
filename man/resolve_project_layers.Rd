@@ -86,9 +86,15 @@ calls transparently cover the full footprint.
 \section{Search order (CHM)}{
 
 \enumerate{
-  \item `<project>/cache/layers/chm/*.tif`        — Open-Canopy
   \item `<project>/cache/layers/lidar_mnh/*.tif`  — LiDAR HD MNH
   \item `<project>/cache/layers/mnh/*.tif`        — generic MNH cache
+  \item `<project>/cache/layers/opencanopy/chm_predicted_0_2m.tif`
+        — Open-Canopy CHM 0.2 m (v0.192.2)
+  \item `<project>/cache/layers/opencanopy/chm_predicted_1_5m.tif`
+        — Open-Canopy CHM 1.5 m (v0.192.2)
+  \item `<project>/cache/layers/opencanopy/chm_1_5m.tif`
+        — Open-Canopy CHM, completion witness (v0.192.2)
+  \item `<project>/cache/layers/chm/*.tif`        — generic CHM cache
   \item `<project>/cache/layers/chm.tif`          — direct file (v0.25.5)
   \item `<project>/cache/layers/mnh.tif`          — direct file (v0.25.5)
   \item `<project>/chm.tif`                        — single-file convention
@@ -96,6 +102,13 @@ calls transparently cover the full footprint.
   \item `<project>/data/chm.tif`                   — alt project layout
   \item `<project>/data/mnh.tif`                   — alt project layout
 }
+
+The Open-Canopy entries are named file by file on purpose:
+`cache/layers/opencanopy/` also holds orthophotos (`ortho_rvb.tif`,
+`ortho_irc.tif`) and spectral indices (`ndvi.tif`, `ndwi.tif`, ...),
+which a directory-wide candidate would mosaic together with the
+height models. `chm_vegetation_0_2m.tif` is excluded as well: it is
+a masked derivative, not the reference height model.
 }
 
 \examples{

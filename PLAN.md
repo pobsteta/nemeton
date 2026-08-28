@@ -36,10 +36,11 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Rien à coder** — les tooltips viennent d'`INDICATOR_FAMILIES` et les rasters en cache restent valides — mais l'interface ne doit **ni classer ni moyenner B4/L3 entre projets** : les « spectral species » sont un k-means réajusté par run (spec 028 §10.6). Non accusé réception |
 | 8 | **Le sens de `L1` est lu à l'envers par la normalisation** | relevé le 2026-08-27 en écrivant les fiches | cœur `nemeton` | Le calcul (`(SI−1)×25`, contraste bâti = 90), l'infobulle (« fragmentent l'habitat intérieur ») et `indicateur_n3_naturalite()` (`anti_frag = 100 − L1`) lisent tous **haut = beaucoup de lisière = défavorable**. Mais `indicateur_l1_effet_lisiere` est dans `.NORMALIZE_NATIVE_0_100` (`R/normalization.R:521`) et aucune inversion ne le rattrape : le radar et `famille_paysage` le lisent **haut = bon**. Une parcelle en lanière bordée de bâti obtient donc un score de paysage flatteur. **Même défaut que R5 avant la spec 048.** Correctif : retirer L1 (et l'alias `indicateur_l1_sylvosphere`) de `.NORMALIZE_NATIVE_0_100`, l'ajouter au bloc d'inversion. Aucune fonction d'indicateur ne change ; tout `famille_paysage` déjà calculé est à refaire. **Non corrigé — décision à prendre.** |
 | 7 | L'icône « fiche » à côté du « i » de C1, onglet Familles d'indicateurs | cœur **v0.192.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/052-fiche-indicateur-c1/brief-nemetonshiny.md`). Le cœur expose `doc_url` / `doc_lang` / `doc_url_fr` / `doc_url_en` dans `indicator_labels()` (URL absolue, `NA` quand l'indicateur n'a pas de fiche ; `doc_lang` = langue réellement servie) ; côté app, ~20 lignes dans `mod_family.R` + 3 clés i18n. **L'URL n'est vivante qu'après merge sur `main`** (déploiement pkgdown). Non accusé réception |
+| 9 | Les deux replis applicatifs qui sondent `cache/layers/opencanopy/` à la place du cœur | cœur **v0.192.2** | `nemetonshiny` | `resolve_project_chm()` résout désormais les CHM Open-Canopy (0,2 m → 1,5 m → témoin) et remet le LiDAR HD en tête. Les contournements de `service_marculus.R` et de l'onglet *Terrain accessible* (`.project_chm()` / `.chm_exploitable()`) deviennent du code mort dès que `Imports: nemeton (>= 0.192.2)` est posé. **Rien ne casse s'ils restent** — ils n'agissent que sur un `NULL` du cœur, qui ne vient plus. Non accusé réception |
 
-**Quatre écarts.** Le n° 8 est le seul qui appelle un correctif **dans le
-cœur**, et le seul qui rende une valeur affichée fausse — les trois autres
-attendent l'aval ou le terrain. Le n° 3 attend
+**Cinq écarts.** Le n° 8 est le seul qui appelle un correctif **dans le
+cœur**, et le seul qui rende une valeur affichée fausse — les quatre autres
+attendent l'aval ou le terrain ; le n° 9 n'attend même qu'une suppression. Le n° 3 attend
 une sortie sur un projet réel portant à la fois un nuage LiDAR et une desserte
 corrigée. Le n° 6 attend une lecture côté app : il n'appelle pas de code, il
 interdit un usage — et un interdit non lu ne protège de rien. Le n° 7, lui,
@@ -3517,6 +3518,101 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-08-28 — v0.192.2 : `resolve_project_chm()` ne voyait pas les CHM Open-Canopy
+
+**Le symptôme, mesuré par l'app** (brief `BRIEF-nemeton-resolve-chm-opencanopy.md`,
+émis par `nemetonshiny@5fbe4b0e`). Sur le projet Couchey (75 UGF),
+`resolve_project_chm(verbose = TRUE)` égrenait ses dix candidats et rendait
+`NULL`, alors que le projet portait un modèle de hauteur parfaitement
+exploitable : `cache/layers/opencanopy/chm_predicted_0_2m.tif`, 0,2 m,
+EPSG:2154, 14 695 × 28 481, hauteurs 0 → 32,34 m.
+
+**La cause.** Le candidat s'appelait « Open-Canopy CHM » mais sondait
+`cache/layers/chm/` — un répertoire qu'aucun producteur n'écrit, ni le cœur, ni
+l'app, ni les tutoriels (vérifié par grep sur les trois). Le producteur réel,
+`nemetonshiny::download_chm_opencanopy()`, dépose dans
+`cache/layers/opencanopy/`. Le libellé mentait, et le résolveur cherchait à un
+endroit vide.
+
+**Ce que ça coûtait en aval.** Silencieusement, pas bruyamment : les appelants
+ne reçoivent pas d'erreur, ils reçoivent `NULL` et continuent sans hauteur.
+`create_sampling_plan()` tirait ses placettes **sans strate de hauteur** sans le
+dire. Deux modules de l'app avaient déjà dû dupliquer le chemin —
+`service_marculus.R` (segmentation des houppiers), puis `.project_chm()` de
+l'onglet *Terrain accessible* : le deuxième appelant à réimplémenter une
+connaissance que le résolveur est censé porter. C'est le signal qu'il fallait
+corriger ici, pas là-bas.
+
+**Le piège évité.** `.probe_raster_candidate()` prend *tous* les `.tif` du
+répertoire quand `cand$file` est absent, et `.materialise_raster()` en fait un
+`terra::vrt()`. Or `cache/layers/opencanopy/` contient aussi `ortho_rvb.tif`,
+`ortho_irc.tif`, `ndvi.tif`, `ndwi.tif`, `gndvi.tif`, `savi.tif` : un candidat
+« répertoire » aurait mosaïqué deux orthophotos et quatre indices spectraux avec
+les modèles de hauteur. Les trois entrées sont donc **nommées fichier par
+fichier**. Le dérivé `chm_vegetation_0_2m.tif` reste exclu : végétation masquée,
+pas hauteur de référence.
+
+**Ce qui est livré** (`R/project_layers.R`) :
+
+- `chm_predicted_0_2m.tif` → `chm_predicted_1_5m.tif` → témoin `chm_1_5m.tif`,
+  dans cet ordre (le plus fin d'abord) ;
+- `"LiDAR HD MNH"` remonte **en tête** : l'ADR-007 donne au LiDAR local un NDP
+  supérieur au produit ML, et la doc de la fonction l'affirmait déjà pendant que
+  la liste faisait l'inverse ;
+- `cache/layers/chm/` perd le rang hérité de son faux libellé, passe derrière
+  Open-Canopy et s'appelle `"cache/layers/chm/"`.
+
+**Vérifications, sur les vrais caches applicatifs** (rappel : les projets de
+`~/.local/share/nemeton/projects/` portent les runs réels) :
+
+| Projet | Contenu | Résolu |
+|---|---|---|
+| `20260825_210612_xkqi` | `opencanopy/` seul, 4 CHM + 2 orthos + 4 indices | **Open-Canopy CHM 0,2 m**, 1 couche, 0,2 m, EPSG:2154, 14 695 × 28 481 |
+| `20260624_073705_armn` | `lidar_mnh/` (20 dalles) **et** `opencanopy/` | **LiDAR HD MNH**, VRT 0,5 m — le LiDAR gagne |
+
+Quatre tests ajoutés à `test-project_layers.R` (43 assertions vertes), dont
+celui qui compte : répertoire contenant CHM + orthos + indices → **une seule
+couche**, pas un VRT. Sans lui, un retour à un candidat « répertoire » passerait
+inaperçu.
+
+**Suite côté app** : rien n'est requis — `.project_chm()` interroge déjà le cœur
+d'abord. Une fois le plancher `Imports: nemeton (>= 0.192.2)` relevé, les deux
+replis applicatifs (`service_marculus.R` et *Terrain accessible*) deviennent du
+code mort et peuvent partir. Écart n° 9 ci-dessus.
+
+---
+
+### 2026-08-28 — App `nemetonshiny` v0.142.2 : chargement projet 2,5× et plan de placettes débloqué
+
+Trois correctifs de performance sur le chemin « clic projet récent → parcelles
+à l'écran » (Couchey, 75 UGF / 223 tènements) : **13,2 s → 5,1 s** (médiane de
+3 mesures Chrome piloté, dispersion ±0,5 s).
+
+- `ug_build_sf()` était appelée par **sept reactives** dans le même flush
+  (`ug_sf_4326`, `units_sf` ×4 via `.resolve_project_aoi_2154`, `ugf_sf_r`,
+  rendu carte `mod_ug`), leurs sorties portant `suspendWhenHidden = FALSE`.
+  Mémoïsée, clé = hash du couple `(ugs, tenements)`.
+- La dissolution faisait un `st_make_valid()` par UGF (75 appels, 695 ms) au
+  lieu d'un seul sur les 223 tènements (97 ms) : `ug_build_sf()` passe de
+  2988 ms à ~950 ms, à résultat géométriquement identique (75/75 `st_equals`).
+- `mod_ug` dessinait sa carte onglet fermé — travail que leaflet jette et que
+  le module redessinait déjà à l'ouverture : 2 × 370 ms retirés.
+
+Deux bugs de l'onglet *Terrain accessible* corrigés dans la foulée :
+`prep_sampling_raster()` comparait la résolution d'un MNT en EPSG:4326
+(0,00025 degré) à `target_res_m = 5` mètres, d'où un facteur d'agrégation de
+20 003 et un MNT réduit à **une cellule** — `create_sampling_plan()` échouait sur
+« Stratification-valid candidate pool (0) is below n_base », 2108 candidats sur
+2108 rejetés. Et le CHM Open-Canopy du projet était invisible pour le résolveur
+cœur (cf. brief `BRIEF-nemeton-resolve-chm-opencanopy.md`, **corrigé le jour
+même en v0.192.2**, entrée ci-dessus).
+Couchey passe d'une erreur bloquante à 112 placettes stratifiées hauteur ×
+topographie.
+
+Suite app : 13 103 PASS, 0 FAIL. Cycle dev : `nemetonshiny@5fbe4b0e`.
+
+---
 
 ### 2026-08-27 — v0.192.1 : le diagramme de C1 ne s'affichait pas, et 40 fiches n'en avaient aucun
 

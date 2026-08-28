@@ -36,9 +36,15 @@
 #'
 #' @section Search order (CHM):
 #' \enumerate{
-#'   \item `<project>/cache/layers/chm/*.tif`        — Open-Canopy
 #'   \item `<project>/cache/layers/lidar_mnh/*.tif`  — LiDAR HD MNH
 #'   \item `<project>/cache/layers/mnh/*.tif`        — generic MNH cache
+#'   \item `<project>/cache/layers/opencanopy/chm_predicted_0_2m.tif`
+#'         — Open-Canopy CHM 0.2 m (v0.192.2)
+#'   \item `<project>/cache/layers/opencanopy/chm_predicted_1_5m.tif`
+#'         — Open-Canopy CHM 1.5 m (v0.192.2)
+#'   \item `<project>/cache/layers/opencanopy/chm_1_5m.tif`
+#'         — Open-Canopy CHM, completion witness (v0.192.2)
+#'   \item `<project>/cache/layers/chm/*.tif`        — generic CHM cache
 #'   \item `<project>/cache/layers/chm.tif`          — direct file (v0.25.5)
 #'   \item `<project>/cache/layers/mnh.tif`          — direct file (v0.25.5)
 #'   \item `<project>/chm.tif`                        — single-file convention
@@ -46,6 +52,13 @@
 #'   \item `<project>/data/chm.tif`                   — alt project layout
 #'   \item `<project>/data/mnh.tif`                   — alt project layout
 #' }
+#'
+#' The Open-Canopy entries are named file by file on purpose:
+#' `cache/layers/opencanopy/` also holds orthophotos (`ortho_rvb.tif`,
+#' `ortho_irc.tif`) and spectral indices (`ndvi.tif`, `ndwi.tif`, ...),
+#' which a directory-wide candidate would mosaic together with the
+#' height models. `chm_vegetation_0_2m.tif` is excluded as well: it is
+#' a masked derivative, not the reference height model.
 #'
 #' @param project_path Character. Root of the Nemeton project tree.
 #' @param load Logical. When `TRUE` (default), open the raster via
@@ -248,13 +261,29 @@ resolve_project_chm <- function(project_path,
                                 try_compute_from_laz = TRUE) {
   .validate_project_path(project_path)
 
+  # ADR-007 : le LiDAR local prime sur un produit ML — il porte un NDP
+  # superieur. Les entrees Open-Canopy sont nommees fichier par fichier :
+  # `cache/layers/opencanopy/` contient aussi des orthophotos et des
+  # indices spectraux, qu'un candidat sans `file` mosaiquerait avec les
+  # modeles de hauteur (v0.192.2).
   candidates <- list(
-    list(label = "Open-Canopy CHM",
-         dir   = file.path(project_path, "cache", "layers", "chm")),
     list(label = "LiDAR HD MNH",
          dir   = file.path(project_path, "cache", "layers", "lidar_mnh")),
     list(label = "generic MNH cache",
          dir   = file.path(project_path, "cache", "layers", "mnh")),
+    list(label = "Open-Canopy CHM 0,2 m",
+         dir   = file.path(project_path, "cache", "layers", "opencanopy"),
+         file  = "chm_predicted_0_2m.tif"),
+    list(label = "Open-Canopy CHM 1,5 m",
+         dir   = file.path(project_path, "cache", "layers", "opencanopy"),
+         file  = "chm_predicted_1_5m.tif"),
+    list(label = "Open-Canopy CHM (temoin)",
+         dir   = file.path(project_path, "cache", "layers", "opencanopy"),
+         file  = "chm_1_5m.tif"),
+    # Repertoire sans producteur connu : le libelle ne dit plus
+    # « Open-Canopy », qui n'ecrit pas la (v0.192.2).
+    list(label = "cache/layers/chm/",
+         dir   = file.path(project_path, "cache", "layers", "chm")),
     # v0.25.5 — direct files under cache/layers/ (same rationale as
     # the DEM version above).
     list(label = "cache/layers/chm.tif",
