@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,7 +140,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstetar</h4>
             
-            <h4 data-toc-skip class="date">2026-08-27</h4>
+            <h4 data-toc-skip class="date">2026-08-28</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/fiche-l2-morcellement_fr.Rmd" class="external-link"><code>vignettes/fiche-l2-morcellement_fr.Rmd</code></a></small>
       <div class="d-none name"><code>fiche-l2-morcellement_fr.Rmd</code></div>
@@ -358,7 +358,38 @@ renommage.</li>
       +- create_family_index("L")  -&gt; famille_paysage = moy(L1, L2, L3)</code></pre>
 </div>
 <div class="section level2">
-<h2 id="références-internes">6. Références internes<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rences-internes"></a>
+<h2 id="diagramme-densemble">6. Diagramme d’ensemble<a class="anchor" aria-label="anchor" href="#diagramme-densemble"></a>
+</h2>
+<!-- diagramme:auto:debut -->
+<figure><svg viewbox="0 0 820 360" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de L2 : si landscapemetrics et une couche d'occupation du sol sont la, la continuite est mesuree sur un masque foret tamponne de 1 km et rend la meme valeur pour toutes les unites du projet ; sinon le calcul bascule sur un indice de forme, propre a chaque unite — deux grandeurs sous un seul nom."><defs><marker id="fd" viewbox="0 0 10 10" refx="9" refy="5" markerwidth="6" markerheight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path></marker></defs><g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55"><text x="10" y="16">ENTRÉES</text><text x="290" y="16">CALCUL — PREMIER
+CHEMIN SERVI</text><text x="588" y="16">AVAL</text></g><rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">landcover
++ landscapemetrics</text><text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">masque
+forêt binaire</text><text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">union
+des unités + 1 000 m</text><rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">Géométrie
+de l’unité seule</text><text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">périmètre
+et aire</text><rect x="288" y="34" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Métriques
+de paysage</text><text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">(COHESION
++ AI) / 2</text><text x="300" y="85" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">calculate_lsm(),
+déjà 0–100</text><rect x="288" y="126" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="145" font-size="12.5" font-weight="600" fill="currentColor">Indice
+de forme (repli)</text><text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">SI
+= P / (2√(π·A))</text><text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">min(100,
+100 / SI)</text><rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"></rect><text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_l2_morcellement</text><text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score
+0–100, natif</text><rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text><text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">écrêtage
+natif 0–100</text><rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“L”)</text><text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_paysage</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
+de L1 à L3</text><rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text><text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci
+· confiance φ</text><line x1="260" y1="63" x2="282" y2="63" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><path d="M260 127 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"></line><text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text><line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="155" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">Chemin
+1 : une seule valeur de paysage, recopiée sur toutes les unités du
+projet.</text><text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Les
+deux chemins mesurent des choses différentes et basculent sur la seule
+présence d’un paquet.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">indicateur_l2_fragmentation()
+reste un alias accepté (spec 045).</text></svg><figcaption style="font-size:.9em;opacity:.75">
+Le basculement ne dépend pas du terrain mais de l’installation : avec
+<code>landscapemetrics</code>, L2 décrit le massif ; sans lui, il décrit
+la forme du polygone. Deux lectures opposées de la même colonne.
+</figcaption></figure><!-- diagramme:auto:fin -->
+</div>
+<div class="section level2">
+<h2 id="références-internes">7. Références internes<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rences-internes"></a>
 </h2>
 <table class="table">
 <colgroup>

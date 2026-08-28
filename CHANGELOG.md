@@ -12,6 +12,24 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.192.1\] - 2026-08-27
+
+### Fixed
+
+- **Diagramme de la fiche C1 invisible sur gh-pages** : les lignes vides
+  à l’intérieur du bloc `<svg>` terminaient le bloc HTML brut de pandoc,
+  qui rendait la suite en markdown (balises jetées, textes du SVG en
+  paragraphes).
+
+### Added
+
+- **Un diagramme « entrées → calcul → aval » dans chacune des 41 fiches
+  indicateurs** (40 n’en avaient aucun), avec les pièges du § 4 portés
+  en bas de figure.
+- `data-raw/fiche_diagrams.R` + `data-raw/fiche_diagrams_data.R` :
+  générateur et données des diagrammes, injection idempotente entre
+  marqueurs, garde-fou contre toute ligne vide dans le SVG produit.
+
 ## \[0.192.0\] - 2026-08-27
 
 ### Added

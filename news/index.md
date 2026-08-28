@@ -1,5 +1,46 @@
 # Changelog
 
+## nemeton 0.192.1 (2026-08-27)
+
+#### Fixed — le diagramme de la fiche C1 ne s’affichait pas sur le site
+
+Sur gh-pages, la section « Diagramme d’ensemble » de
+`vignettes/fiche-c1-biomasse_fr.Rmd` rendait un cadre vide suivi de
+trois paragraphes de texte : « ENTRÉESAIGUILLAGE — PREMIER CHEMIN SERVI…
+». Ce n’était pas un défaut du SVG (bien formé, il s’affiche hors
+pandoc) mais une règle du lecteur markdown : **un bloc HTML brut se
+termine à la première ligne vide**. Le SVG en contenait huit, écrites
+pour aérer le code source ; pandoc reprenait donc la main en markdown à
+la première d’entre elles, jetait les balises et gardait le contenu des
+`<text>` comme prose.
+
+Les lignes vides ont été retirées du bloc, et le générateur refuse
+désormais d’écrire un SVG qui en contiendrait (`injecter()`, garde-fou
+explicite).
+
+#### Added — un diagramme dans chacune des 41 fiches
+
+Les 40 autres fiches n’avaient **aucun** diagramme. Chacune en porte
+désormais un, dans une nouvelle section « Diagramme d’ensemble », sur la
+même grammaire : **entrées → calcul → aval**, la chaîne de normalisation
+et d’agrégation familiale à droite, et en bas de figure les pièges du §
+4 qui se lisent sur le mécanisme — le terme constant de N1, le 50
+silencieux de B3 et de L1, le bonus qui sature W1, l’inversion de sens
+de R1 à R5 et de T3.
+
+Les diagrammes sont **générés**, pas dessinés à la main :
+
+- `data-raw/fiche_diagrams.R` — moteur de mise en page (colonnes,
+  cascades « sinon », termes cumulés « + », modes exclusifs « ou »,
+  étapes « puis »), avertissement de débordement de texte, et injection
+  idempotente entre les marqueurs `<!-- diagramme:auto:debut -->` /
+  `<!-- diagramme:auto:fin -->` ;
+- `data-raw/fiche_diagrams_data.R` — le contenu par indicateur, seul
+  fichier à éditer pour corriger un diagramme.
+
+Relancer : `Rscript data-raw/fiche_diagrams.R` (ou avec des codes en
+argument, `Rscript data-raw/fiche_diagrams.R c2 w1`).
+
 ## nemeton 0.192.0 (2026-08-27)
 
 #### Added — fiche indicateur C1, et le `doc_url` qui la rend atteignable depuis l’aval

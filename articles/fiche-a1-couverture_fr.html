@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,7 +140,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstetar</h4>
             
-            <h4 data-toc-skip class="date">2026-08-27</h4>
+            <h4 data-toc-skip class="date">2026-08-28</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/fiche-a1-couverture_fr.Rmd" class="external-link"><code>vignettes/fiche-a1-couverture_fr.Rmd</code></a></small>
       <div class="d-none name"><code>fiche-a1-couverture_fr.Rmd</code></div>
@@ -358,7 +358,41 @@ Vérifier la légende avant.</li>
       +- create_family_index("A")  -&gt; famille_air = moy(A1, A2, A3, A4, A5)</code></pre>
 </div>
 <div class="section level2">
-<h2 id="références-internes">6. Références internes<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rences-internes"></a>
+<h2 id="diagramme-densemble">6. Diagramme d’ensemble<a class="anchor" aria-label="anchor" href="#diagramme-densemble"></a>
+</h2>
+<!-- diagramme:auto:debut -->
+<figure><svg viewbox="0 0 820 360" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de A1 : l'unite est d'abord tamponnee de 1 km, puis la part boisee de ce voisinage est lue soit dans un raster de couvert vegetal, soit dans une occupation du sol dont les classes forestieres sont celles d'OSO — ce qui fait de A1 une mesure du voisinage, pas de l'unite."><defs><marker id="fd" viewbox="0 0 10 10" refx="9" refy="5" markerwidth="6" markerheight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path></marker></defs><g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55"><text x="10" y="16">ENTRÉES</text><text x="290" y="16">CALCUL — MODES
+EXCLUSIFS</text><text x="588" y="16">AVAL</text></g><rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">Unité
+tamponnée</text><text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">st_buffer(unité,
+buffer_radius)</text><text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">rayon
+1 000 m par défaut</text><rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">Raster
+FVC (argument fvc)</text><text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">fraction
+de couvert végétal</text><rect x="8" y="162" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="181" font-size="12.5" font-weight="600" fill="currentColor">Occupation
+du sol (OSO)</text><text x="20" y="197" font-size="11" fill="currentColor" opacity=".78">land_cover,
+classes 16/17/18</text><rect x="288" y="34" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Mode
+FVC</text><text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moy(FVC
+sur buffer) × 100</text><rect x="288" y="110" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="129" font-size="12.5" font-weight="600" fill="currentColor">Mode
+occupation du sol</text><text x="300" y="145" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">pixels
+forêt / pixels valides</text><text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">×
+100</text><rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"></rect><text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_a1_couverture</text><text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">pourcentage
+0–100</text><rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text><text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">écrêtage
+natif 0–100</text><rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“A”)</text><text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_air</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
+de A1 à A5</text><rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text><text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci
+· confiance φ</text><path d="M260 63 H271 V55 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 127 H271 V55 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 183 H271 V139 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><line x1="306" y1="78" x2="306" y2="104" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"></line><text x="312" y="94" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">ou</text><line x1="550" y1="55" x2="566" y2="55" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="139" x2="566" y2="139" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="55" x2="566" y2="139" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="55" x2="580" y2="55" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">A1
+décrit le voisinage : à 1 km de rayon, deux parcelles voisines rendent
+presque la même valeur.</text><text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Le
+buffer n’est pas soustrait de l’unité — son propre boisement compte dans
+son voisinage.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Les
+classes 16/17/18 sont celles d’OSO ; une autre nomenclature fausse le
+compte en silence.</text></svg><figcaption style="font-size:.9em;opacity:.75">
+Le buffer est le vrai sujet du calcul. Changer
+<code>buffer_radius</code> change ce que A1 mesure — contexte de massif
+à 1 km, situation de lisière à 200 m — sans que rien dans la colonne ne
+le dise.
+</figcaption></figure><!-- diagramme:auto:fin -->
+</div>
+<div class="section level2">
+<h2 id="références-internes">7. Références internes<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rences-internes"></a>
 </h2>
 <table class="table">
 <thead><tr class="header">

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -1529,6 +1529,18 @@ Current Memory Usage: 17.1G</code></pre>
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-08-27--v01921--le-diagramme-de-c1-ne-saffichait-pas-et-40-fiches-nen-avaient-aucun">2026-08-27 — v0.192.1 : le diagramme de C1 ne s’affichait pas, et 40 fiches n’en avaient aucun<a class="anchor" aria-label="anchor" href="#id_2026-08-27--v01921--le-diagramme-de-c1-ne-saffichait-pas-et-40-fiches-nen-avaient-aucun"></a></h3>
+<p><strong>Le symptôme.</strong> Sur gh-pages 0.192.0, la fiche C1 montrait un cadre vide sous « 5. Diagramme d’ensemble », puis trois paragraphes de prose collée : « ENTRÉESAIGUILLAGE — PREMIER CHEMIN SERVI… ».</p>
+<p><strong>La cause, vérifiée.</strong> Le SVG est bien formé et s’affiche hors pandoc (rendu headless de l’artifact d’origine : le schéma est complet). Ce qui casse, c’est la règle du lecteur markdown : <strong>un bloc HTML brut se termine à la première ligne vide</strong>. Le SVG en contenait huit — écrites pour aérer le source. Pandoc reprenait donc la main en markdown dès la première, jetait les balises et gardait le contenu des <code>&lt;text&gt;</code> comme paragraphes. Rien à voir avec le navigateur, le thème, ni la taille de la figure.</p>
+<p><strong>Le manque, mesuré.</strong> 40 fiches sur 41 n’avaient <strong>aucun</strong> <code>&lt;svg&gt;</code> : seule C1 en portait un. Les lots « fiches C2, B1…B4 », « W1…W4 », « A1…A5 », etc., avaient été écrits sur le modèle de C1 sans sa section de schéma.</p>
+<p><strong>Ce qui est livré.</strong></p>
+<ul><li>Les lignes vides retirées du bloc SVG de C1 ; <code>injecter()</code> refuse désormais d’écrire un bloc qui en contient — la régression ne peut plus revenir par copie.</li>
+<li>Un diagramme dans <strong>chacune des 41 fiches</strong>, section « Diagramme d’ensemble » (§ 6, les « Références internes » passent en § 7), même grammaire partout : entrées → calcul → aval, avec les pièges du § 4 en bas de figure.</li>
+<li>Deux fichiers <code>data-raw/</code> : <code>fiche_diagrams.R</code> (moteur de mise en page, cascades « sinon », cumuls « + », modes « ou », étapes « puis », garde-fou de débordement de texte, injection idempotente entre marqueurs) et <code>fiche_diagrams_data.R</code> (le contenu par indicateur — le seul fichier à éditer). Régénération : <code>Rscript data-raw/fiche_diagrams.R [codes…]</code>.</li>
+</ul><p><strong>Vérifications.</strong> Les 41 vignettes rendues par <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/render.html" class="external-link">rmarkdown::render()</a></code> : toutes contiennent <code>&lt;/svg&gt;</code> et un <code>&lt;figcaption&gt;</code> après pandoc (le test qui manquait au moment du bug). <code>test-indicator-families.R</code> : 670 assertions vertes — la correspondance fiche ↔︎ vignette et les <code>doc_url</code> tiennent après le renumérotage des sections.</p>
+<p><strong>Au passage, une erreur de doc corrigée dans le diagramme de T3</strong> : la normalisation n’inverse pas que R5 et T3 mais <strong>R1 à R5 et T3</strong> (spec 048, <code>R/normalization.R:659</code>). Le mémo « R5 est le seul inversé » est périmé.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-08-14--app-nemetonshiny--trois-livraisons-v012214-v01230-v01240">2026-08-14 — App <code>nemetonshiny</code> : trois livraisons (v0.122.14, v0.123.0, v0.124.0)<a class="anchor" aria-label="anchor" href="#id_2026-08-14--app-nemetonshiny--trois-livraisons-v012214-v01230-v01240"></a></h3>
 <p>Consigné d’après <code>specs/BRIEF-nemeton-plan-md-0.122-0.124.md</code>, émis par la session app — qui ne peut ni lire ni écrire ce fichier (règle 12 de son <code>CLAUDE.md</code>), d’où un brief qui livre le texte et laisse à la session cœur le placement. SHA et tags <strong>vérifiés</strong> ici en lecture seule : les trois tags existent, les trois commits sont sur <code>main</code> côté app.</p>

@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,7 +140,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstetar</h4>
             
-            <h4 data-toc-skip class="date">2026-08-27</h4>
+            <h4 data-toc-skip class="date">2026-08-28</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/fiche-w4-vpd_fr.Rmd" class="external-link"><code>vignettes/fiche-w4-vpd_fr.Rmd</code></a></small>
       <div class="d-none name"><code>fiche-w4-vpd_fr.Rmd</code></div>
@@ -366,7 +366,42 @@ convention.</li>
 <code><a href="../reference/microclimate_run.html">microclimate_run()</a></code> alimente les quatre.</p>
 </div>
 <div class="section level2">
-<h2 id="références-internes">6. Références internes<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rences-internes"></a>
+<h2 id="diagramme-densemble">6. Diagramme d’ensemble<a class="anchor" aria-label="anchor" href="#diagramme-densemble"></a>
+</h2>
+<!-- diagramme:auto:debut -->
+<figure><svg viewbox="0 0 820 360" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de W4 : Nemeton ne calcule pas le deficit de pression de vapeur, il extrait la couche vpd produite par le moteur microclimf puis la retourne sur une echelle decroissante de 4,0 a 0,5 kPa ; sans chaine microclimat, W4 vaut NA et la famille Eau se calcule sur W1 a W3 seuls."><defs><marker id="fd" viewbox="0 0 10 10" refx="9" refy="5" markerwidth="6" markerheight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path></marker></defs><g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55"><text x="10" y="16">ENTRÉES</text><text x="290" y="16">CALCUL — ÉTAPES
+SUCCESSIVES</text><text x="588" y="16">AVAL</text></g><rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">microclimate_run()
+— microclimf</text><text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">forçage
+ERA5-Land + CHM ML</text><text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">couche
+vpd, été</text><rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">Structure
+LiDAR HD ou drone</text><text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">canopée
+mieux décrite (NDP 1–2)</text><rect x="8" y="162" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"></rect><text x="20" y="181" font-size="12.5" font-weight="600" fill="currentColor">Chaîne
+microclimat non lancée</text><text x="20" y="197" font-size="11" fill="currentColor" opacity=".78">W4
+= NA — cas nominal</text><rect x="288" y="34" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Extraction
+zonale</text><text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">W4_vpd
+= moy(raster vpd)</text><text x="300" y="85" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">colonne
+annexe, en kPa</text><rect x="288" y="126" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="145" font-size="12.5" font-weight="600" fill="currentColor">Retournement
+d’échelle</text><text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">100
+× (4,0 - VPD)/(4,0 - 0,5)</text><text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">écrêté
+sur [0, 100]</text><rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"></rect><text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_w4_vpd</text><text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score
+0–100, natif</text><rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text><text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">écrêtage
+natif 0–100</text><rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“W”)</text><text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_eau</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
+de W1 à W4</text><rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text><text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci
+· confiance φ</text><line x1="260" y1="63" x2="282" y2="63" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><path d="M260 127 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 183 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">puis</text><line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="155" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">NA
+est le cas nominal, pas une anomalie : famille_eau se calcule alors sur
+W1–W3 (na.rm = TRUE).</text><text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Sens
+inversé : VPD élevé = air sec = défavorable. W4 = 90 signifie ambiance
+tamponnée.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Le
+drapeau microclimate_model dit « simulation » ; il ne monte pas le
+niveau NDP.</text></svg><figcaption style="font-size:.9em;opacity:.75">
+Un indicateur d’extraction, pas de calcul. Toute la physique est en
+amont, dans microclimf ; Néméton n’y ajoute qu’un retournement d’échelle
+— d’où l’inversion de lecture entre la colonne annexe
+<code>W4_vpd</code> et le score.
+</figcaption></figure><!-- diagramme:auto:fin -->
+</div>
+<div class="section level2">
+<h2 id="références-internes">7. Références internes<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rences-internes"></a>
 </h2>
 <table class="table">
 <thead><tr class="header">

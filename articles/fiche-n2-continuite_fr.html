@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,7 +140,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstetar</h4>
             
-            <h4 data-toc-skip class="date">2026-08-27</h4>
+            <h4 data-toc-skip class="date">2026-08-28</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/fiche-n2-continuite_fr.Rmd" class="external-link"><code>vignettes/fiche-n2-continuite_fr.Rmd</code></a></small>
       <div class="d-none name"><code>fiche-n2-continuite_fr.Rmd</code></div>
@@ -313,7 +313,39 @@ grandeur pèse alors dans <code>famille_naturalite</code>
       +- alimente N3 (poids 0,35) et T2 (proxy)</code></pre>
 </div>
 <div class="section level2">
-<h2 id="références-internes">6. Références internes<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rences-internes"></a>
+<h2 id="diagramme-densemble">6. Diagramme d’ensemble<a class="anchor" aria-label="anchor" href="#diagramme-densemble"></a>
+</h2>
+<!-- diagramme:auto:debut -->
+<figure><svg viewbox="0 0 820 360" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de N2 : le couvert forestier actuel est croise avec un couvert historique, mono-epoque ou multi-epoques ; une foret presente aux deux dates est continue, une foret recente sur ancienne terre agricole ne l'est pas, et l'absence des deux couches rend NA."><defs><marker id="fd" viewbox="0 0 10 10" refx="9" refy="5" markerwidth="6" markerheight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path></marker></defs><g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55"><text x="10" y="16">ENTRÉES</text><text x="290" y="16">CALCUL — ÉTAPES
+SUCCESSIVES</text><text x="588" y="16">AVAL</text></g><rect x="8" y="34" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">BD
+Forêt — couvert actuel</text><text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">bdforet
+(sf)</text><rect x="8" y="90" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="109" font-size="12.5" font-weight="600" fill="currentColor">Couche
+foret_ancienne</text><text x="20" y="125" font-size="11" fill="currentColor" opacity=".78">mono-époque
+: simple masque</text><text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">multi
+: colonne anciennete</text><rect x="8" y="162" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"></rect><text x="20" y="181" font-size="12.5" font-weight="600" fill="currentColor">Aucune
+des deux couches</text><text x="20" y="197" font-size="11" fill="currentColor" opacity=".78">N2
+= NA</text><rect x="288" y="34" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Croisement
+des deux époques</text><text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">présent
+aux deux = continu</text><text x="300" y="85" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">récent
+sur agricole = non</text><rect x="288" y="126" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"></rect><text x="300" y="145" font-size="12.5" font-weight="600" fill="currentColor">Pondération
+d’ancienneté</text><text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">weight_anciennete</text><text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">nb
+d’époques couvertes</text><rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"></rect><text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_n2_continuite</text><text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score
+0–100, natif</text><rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text><text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">écrêtage
+natif 0–100</text><rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“N”)</text><text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_naturalite</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
+de N1 à N3</text><rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text><text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci
+· confiance φ</text><path d="M260 55 H271 V63 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 119 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 183 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">puis</text><line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="155" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">La
+continuité n’est pas la naturalité : une plantation d’épicéa sur sol
+forestier ancien score haut.</text><text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">N2
+alimente aussi T2 en proxy de stabilité dès que la colonne est
+présente.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">La
+couche multi-époques vient de build_foret_ancienne_mask() — Corona et
+cartes d’état-major (spec 031).</text></svg><figcaption style="font-size:.9em;opacity:.75">
+Un croisement de deux dates, pas une mesure d’état. Ce que N2 sait,
+c’est que le sol est resté forestier — pas ce qui y pousse aujourd’hui.
+</figcaption></figure><!-- diagramme:auto:fin -->
+</div>
+<div class="section level2">
+<h2 id="références-internes">7. Références internes<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rences-internes"></a>
 </h2>
 <table class="table">
 <colgroup>

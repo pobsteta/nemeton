@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,7 +140,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstetar</h4>
             
-            <h4 data-toc-skip class="date">2026-08-27</h4>
+            <h4 data-toc-skip class="date">2026-08-28</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/fiche-b1-protection_fr.Rmd" class="external-link"><code>vignettes/fiche-b1-protection_fr.Rmd</code></a></small>
       <div class="d-none name"><code>fiche-b1-protection_fr.Rmd</code></div>
@@ -420,7 +420,39 @@ une colonne de type</strong>, quitte à la remplir d’une constante.</li>
 diagnostic, utiles pour expliquer un score à un propriétaire.</p>
 </div>
 <div class="section level2">
-<h2 id="références-internes">6. Références internes<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rences-internes"></a>
+<h2 id="diagramme-densemble">6. Diagramme d’ensemble<a class="anchor" aria-label="anchor" href="#diagramme-densemble"></a>
+</h2>
+<!-- diagramme:auto:debut -->
+<figure><svg viewbox="0 0 820 360" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de B1 : les zonages de protection qui recoupent l'unite donnent chacun un taux de couverture, moyenne pondere par la force du statut ; le denominateur etant la somme des poids, une unite entierement couverte obtient 100 quel que soit le statut, et le mode WFS ne rapatrie aujourd'hui aucune donnee."><defs><marker id="fd" viewbox="0 0 10 10" refx="9" refy="5" markerwidth="6" markerheight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path></marker></defs><g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55"><text x="10" y="16">ENTRÉES</text><text x="290" y="16">CALCUL — ÉTAPES
+SUCCESSIVES</text><text x="588" y="16">AVAL</text></g><rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">Couche
+de zonages fournie</text><text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">type
+lu dans type_protection,</text><text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">zone_type,
+type ou statut</text><rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"></rect><text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">source
+= “wfs” (INPN)</text><text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">n’interroge
+rien — NA en pratique</text><rect x="288" y="34" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Couverture
+par type</text><text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">min(1,
+aire(inter) / aire(u))</text><rect x="288" y="110" width="262" height="74" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="129" font-size="12.5" font-weight="600" fill="currentColor">Moyenne
+pondérée</text><text x="300" y="145" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Σ(couv
+× poids)/Σ(poids) × 100</text><text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">forte
+1,0 · moyenne 0,6</text><text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">faible
+0,3 · inconnue 0,5</text><rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"></rect><text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_b1_protection</text><text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score
+0–100, natif</text><rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text><text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">écrêtage
+natif 0–100</text><rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“B”)</text><text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_biodiversite</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
+de B1 à B4</text><rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text><text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci
+· confiance φ</text><path d="M260 63 H271 V55 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 127 H271 V147 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><line x1="306" y1="78" x2="306" y2="104" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="312" y="94" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">puis</text><line x1="550" y1="55" x2="566" y2="55" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="147" x2="566" y2="147" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="55" x2="566" y2="147" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="55" x2="580" y2="55" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">Le
+poids ne hiérarchise pas : 100 % en ZNIEFF 2 rend 100, comme 100 % en
+réserve intégrale.</text><text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Il
+ne joue qu’entre statuts croisés à couvertures différentes.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Indicateur
+le moins sensible au NDP : un statut est juridique, aucun capteur ne le
+produit.</text></svg><figcaption style="font-size:.9em;opacity:.75">
+Une moyenne, pas une somme. Le dénominateur <code>Σ(poids)</code> est ce
+qui fait que la force du statut disparaît dès qu’un seul statut couvre
+l’unité — le point à énoncer avant toute comparaison entre unités de
+statuts différents.
+</figcaption></figure><!-- diagramme:auto:fin -->
+</div>
+<div class="section level2">
+<h2 id="références-internes">7. Références internes<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rences-internes"></a>
 </h2>
 <table class="table">
 <colgroup>
