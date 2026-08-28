@@ -3518,6 +3518,49 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-08-27 — v0.192.1 : le diagramme de C1 ne s'affichait pas, et 40 fiches n'en avaient aucun
+
+**Le symptôme.** Sur gh-pages 0.192.0, la fiche C1 montrait un cadre vide sous
+« 5. Diagramme d'ensemble », puis trois paragraphes de prose collée :
+« ENTRÉESAIGUILLAGE — PREMIER CHEMIN SERVI… ».
+
+**La cause, vérifiée.** Le SVG est bien formé et s'affiche hors pandoc (rendu
+headless de l'artifact d'origine : le schéma est complet). Ce qui casse, c'est
+la règle du lecteur markdown : **un bloc HTML brut se termine à la première
+ligne vide**. Le SVG en contenait huit — écrites pour aérer le source. Pandoc
+reprenait donc la main en markdown dès la première, jetait les balises et
+gardait le contenu des `<text>` comme paragraphes. Rien à voir avec le
+navigateur, le thème, ni la taille de la figure.
+
+**Le manque, mesuré.** 40 fiches sur 41 n'avaient **aucun** `<svg>` : seule C1
+en portait un. Les lots « fiches C2, B1…B4 », « W1…W4 », « A1…A5 », etc.,
+avaient été écrits sur le modèle de C1 sans sa section de schéma.
+
+**Ce qui est livré.**
+
+- Les lignes vides retirées du bloc SVG de C1 ; `injecter()` refuse désormais
+  d'écrire un bloc qui en contient — la régression ne peut plus revenir par
+  copie.
+- Un diagramme dans **chacune des 41 fiches**, section « Diagramme d'ensemble »
+  (§ 6, les « Références internes » passent en § 7), même grammaire partout :
+  entrées → calcul → aval, avec les pièges du § 4 en bas de figure.
+- Deux fichiers `data-raw/` : `fiche_diagrams.R` (moteur de mise en page,
+  cascades « sinon », cumuls « + », modes « ou », étapes « puis », garde-fou de
+  débordement de texte, injection idempotente entre marqueurs) et
+  `fiche_diagrams_data.R` (le contenu par indicateur — le seul fichier à
+  éditer). Régénération : `Rscript data-raw/fiche_diagrams.R [codes…]`.
+
+**Vérifications.** Les 41 vignettes rendues par `rmarkdown::render()` : toutes
+contiennent `</svg>` et un `<figcaption>` après pandoc (le test qui manquait au
+moment du bug). `test-indicator-families.R` : 670 assertions vertes — la
+correspondance fiche ↔ vignette et les `doc_url` tiennent après le renumérotage
+des sections.
+
+**Au passage, une erreur de doc corrigée dans le diagramme de T3** : la
+normalisation n'inverse pas que R5 et T3 mais **R1 à R5 et T3** (spec 048,
+`R/normalization.R:659`). Le mémo « R5 est le seul inversé » est périmé.
+
+
 ### 2026-08-14 — App `nemetonshiny` : trois livraisons (v0.122.14, v0.123.0, v0.124.0)
 
 Consigné d'après `specs/BRIEF-nemeton-plan-md-0.122-0.124.md`, émis par la

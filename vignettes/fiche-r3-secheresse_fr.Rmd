@@ -92,7 +92,82 @@ indicateur_r3_secheresse()  ->  colonne R3 (0-100, haut = risque)
       +- create_family_index("R")  -> famille_risque
 ```
 
-## 6. Références internes
+## 6. Diagramme d'ensemble
+
+<!-- diagramme:auto:debut -->
+<figure>
+<svg viewBox="0 0 820 376" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de R3 : un bilan hydrique BILJOU court-circuite tout le reste quand il est fourni ; sinon le risque melange un terme climatique tire du SPEI — calcule en un seul point pour tout le projet, et remplace par 0,5 s'il echoue — et un terme topographique d'exposition, pente et TWI.">
+<defs>
+<marker id="fd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+</marker>
+</defs>
+<g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55">
+<text x="10" y="16">ENTRÉES</text>
+<text x="290" y="16">CALCUL — PREMIER CHEMIN SERVI</text>
+<text x="588" y="16">AVAL</text>
+</g>
+<rect x="8" y="34" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">Bilan hydrique BILJOU</text>
+<text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">argument biljou</text>
+<rect x="8" y="90" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="109" font-size="12.5" font-weight="600" fill="currentColor">SPEI-3</text>
+<text x="20" y="125" font-size="11" fill="currentColor" opacity=".78">un seul point : centroïde</text>
+<text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">de l'union des unités</text>
+<rect x="8" y="162" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="181" font-size="12.5" font-weight="600" fill="currentColor">MNT — exposition, pente, TWI</text>
+<text x="20" y="197" font-size="11" fill="currentColor" opacity=".78">terme topographique</text>
+<rect x="8" y="218" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"/>
+<text x="20" y="237" font-size="12.5" font-weight="600" fill="currentColor">Produit neige (optionnel)</text>
+<text x="20" y="253" font-size="11" fill="currentColor" opacity=".78">snow_relief_strength = 0,3</text>
+<rect x="288" y="34" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Chemin BILJOU</text>
+<text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">.r3_biljou_stress()</text>
+<text x="300" y="85" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">écrêté [0, 100]</text>
+<rect x="288" y="126" width="262" height="90" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="145" font-size="12.5" font-weight="600" fill="currentColor">Climat + topographie</text>
+<text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">climat = (-SPEI + 2)/4</text>
+<text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">topo = 0,4 asp + 0,3 pente</text>
+<text x="300" y="193" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">       + 0,3 twi</text>
+<text x="300" y="209" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">(0,6 clim + 0,4 topo) × 100</text>
+<rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"/>
+<text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_r3_secheresse</text>
+<text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">brut : haut = risque élevé</text>
+<rect x="586" y="98" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text>
+<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score = 100 - valeur</text>
+<text x="598" y="149" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">R1 à R5 (spec 048)</text>
+<rect x="586" y="178" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="197" font-size="12.5" font-weight="600" fill="currentColor">create_family_index("R")</text>
+<text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_risque</text>
+<text x="598" y="229" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne de R1 à R7</text>
+<rect x="586" y="258" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="277" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text>
+<text x="598" y="293" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci · confiance φ</text>
+<path d="M260 55 H271 V63 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 119 H271 V171 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 183 H271 V171 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 239 H271 V171 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"/>
+<text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text>
+<line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="550" y1="171" x2="566" y2="171" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="63" x2="566" y2="171" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="158" x2="699" y2="172" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="238" x2="699" y2="252" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">La composante climatique retombe sur 0,5 en dur quand le SPEI échoue : 60 % du score devient une constante.</text>
+<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Le SPEI est calculé au centroïde de l'union : toutes les unités partagent le même climat.</text>
+<text x="10" y="358" font-size="10.5" fill="currentColor" opacity=".62">Le chemin BILJOU court-circuite le reste — deux projets ne se comparent pas s'ils n'ont pas pris le même.</text>
+</svg>
+<figcaption style="font-size:.9em;opacity:.75">
+Deux chemins, deux natures. BILJOU produit un bilan hydrique par unité ; le chemin par défaut mélange un climat unique pour tout le projet et une topographie locale — seul le second terme distingue les unités.
+</figcaption>
+</figure>
+<!-- diagramme:auto:fin -->
+
+## 7. Références internes
 
 | Sujet | Fichier |
 |---|---|
