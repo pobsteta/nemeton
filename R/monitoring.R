@@ -341,10 +341,9 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   }
 
   # Local emitter — no-op when no callback is set, keeps the body free
-  # of `if (!is.null(progress_callback))` boilerplate.
-  emit <- function(payload) {
-    if (!is.null(progress_callback)) progress_callback(payload)
-  }
+  # of `if (!is.null(progress_callback))` boilerplate. Errors raised by
+  # the caller's callback are swallowed: see `.make_progress_emitter()`.
+  emit <- .make_progress_emitter(progress_callback)
 
   # Cooperative cancellation checker (no-op when cancel_path is NULL).
   cancelled <- .make_cancel_checker(cancel_path)
@@ -502,10 +501,20 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   # pre-warm the user just asked to stop. The helper polls `cancel_path`
   # between combinations, so a cancel arriving during pre-warm still
   # exits cleanly (the COGs already written stay valid in the D6 cache).
+  # Best-effort, and enforced as such at the call site: the scenes are
+  # cached and the ingestion is done: pre-warming is a nicety that must
+  # not turn a completed multi-hour run into a failure (v0.193.0).
   if (isTRUE(prewarm_alerts)) {
-    .prewarm_fast_alerts(con, zone_id, start, end,
-                         cache_dir, prewarm_mask_cache_dir,
-                         emit, cancelled)
+    tryCatch(
+      .prewarm_fast_alerts(con, zone_id, start, end,
+                           cache_dir, prewarm_mask_cache_dir,
+                           emit, cancelled),
+      error = function(e) {
+        cli::cli_warn(c(
+          "FAST alert pre-warming failed: {conditionMessage(e)}",
+          i = "The ingestion itself completed; the alert maps will be
+               computed on first display."))
+      })
   }
 
   .ingest_summary(
@@ -518,6 +527,43 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 
 
 # ---- Internal helpers ------------------------------------------------
+
+# Progress reporting must never kill the run it reports on.
+#
+# `progress_callback` is the caller's code — in practice a Shiny worker
+# writing a status file. It is invoked hundreds of times on a long
+# ingestion, and the payload SHAPE varies with the phase: the
+# `fast_prewarm:*` series carries neither `completed` nor `total`, which
+# a callback written against the per-scene payload can trip over. A
+# throw there used to propagate out of `ingest_sentinel2_timeseries()`
+# and fail a run whose work was already cached and persisted — the
+# 13 h 40 Couchey ingestion of 2026-08-30, reported by the app with
+# `ingest_run.json` at `done`, 183 scenes, and an error on top
+# (v0.193.0).
+#
+# `run_fordead_dieback()` already protected its emitter; this makes the
+# two engines symmetric. The first failure warns (silence would hide a
+# broken callback for good); the rest stay quiet, since a callback that
+# fails once usually fails every time and the flood would bury the run.
+.make_progress_emitter <- function(progress_callback) {
+  if (is.null(progress_callback)) {
+    return(function(payload) invisible(NULL))
+  }
+  warned <- FALSE
+  function(payload) {
+    tryCatch(progress_callback(payload), error = function(e) {
+      if (!warned) {
+        warned <<- TRUE
+        step <- if (is.null(payload$current)) NA_character_ else payload$current
+        cli::cli_warn(c(
+          "Progress callback failed on {.val {step}}: {conditionMessage(e)}",
+          i = "The run continues; further callback failures stay silent."))
+      }
+      invisible(NULL)
+    })
+  }
+}
+
 
 # Canonical one-row ingest summary. `status` is "success" on a normal
 # (or empty) run and "cancelled" when cooperative cancellation fired.

@@ -318,3 +318,119 @@ test_that("resolve_project_dem matches dtm.tif case-insensitively", {
   out <- resolve_project_dem(proj, load = FALSE)
   expect_identical(attr(out, "nemeton_dem_layer"), "opencanopy DTM")
 })
+
+
+# ---- validate : sauter un candidat inexploitable ---------------------
+#
+# v0.193.0. `resolve_project_*` rendait le premier chemin qui matche sans
+# regarder ce qu'il y a dedans : un MNH plat arretait la recherche, et les
+# appelants re-sondaient a la main pour trouver la source suivante.
+
+.write_flat_tif <- function(path, value = 0) {
+  skip_if_no_terra()
+  r <- terra::rast(nrows = 4, ncols = 4,
+                   xmin = 0, xmax = 40, ymin = 0, ymax = 40,
+                   crs = "EPSG:2154", vals = rep(value, 16))
+  terra::writeRaster(r, path, overwrite = TRUE)
+  invisible(path)
+}
+
+# Le garde de contenu de l'app : un modele de hauteur sans hauteur n'en
+# est pas un.
+.has_height <- function(r) {
+  v <- terra::values(r)
+  any(is.finite(v)) && max(v, na.rm = TRUE) >= 5
+}
+
+test_that("resolve_project_chm skips a flat candidate and falls through", {
+  skip_if_not_installed("terra")
+  proj <- withr::local_tempdir()
+  dir.create(file.path(proj, "cache", "layers", "lidar_mnh"), recursive = TRUE)
+  dir.create(file.path(proj, "cache", "layers", "opencanopy"), recursive = TRUE)
+  # Le LiDAR gagne au rang... mais ne porte aucune vegetation.
+  .write_flat_tif(file.path(proj, "cache", "layers", "lidar_mnh", "plat.tif"))
+  .write_tiny_tif(file.path(proj, "cache", "layers", "opencanopy",
+                            "chm_predicted_0_2m.tif"))
+
+  # Sans validate : le comportement d'avant, le plat gagne.
+  expect_identical(attr(resolve_project_chm(proj, load = FALSE),
+                        "nemeton_chm_layer"),
+                   "LiDAR HD MNH")
+
+  # Avec validate : le plat est saute, la source suivante sert.
+  out <- resolve_project_chm(proj, load = FALSE, validate = .has_height)
+  expect_identical(attr(out, "nemeton_chm_layer"), "Open-Canopy CHM 0,2 m")
+  expect_match(out, "chm_predicted_0_2m\\.tif$")
+
+  # load = TRUE rend bien le raster retenu, pas celui qui a echoue.
+  r <- resolve_project_chm(proj, validate = .has_height)
+  expect_s4_class(r, "SpatRaster")
+  expect_gte(max(terra::values(r), na.rm = TRUE), 5)
+})
+
+test_that("resolve_project_chm returns NULL when every candidate fails", {
+  skip_if_not_installed("terra")
+  proj <- withr::local_tempdir()
+  dir.create(file.path(proj, "cache", "layers", "opencanopy"), recursive = TRUE)
+  .write_flat_tif(file.path(proj, "cache", "layers", "opencanopy",
+                            "chm_predicted_0_2m.tif"))
+  expect_null(resolve_project_chm(proj, load = FALSE, validate = .has_height))
+})
+
+test_that("resolve_project_dem takes validate too", {
+  skip_if_not_installed("terra")
+  proj <- withr::local_tempdir()
+  dir.create(file.path(proj, "cache", "layers", "lidar_mnt"), recursive = TRUE)
+  .write_flat_tif(file.path(proj, "cache", "layers", "lidar_mnt", "nodata.tif"),
+                  value = NA)
+  .write_tiny_tif(file.path(proj, "dtm.tif"))
+  out <- resolve_project_dem(proj, load = FALSE,
+                             validate = function(r) any(is.finite(terra::values(r))))
+  expect_identical(attr(out, "nemeton_dem_layer"), "opencanopy DTM")
+})
+
+test_that("validate is checked, and a nonsense verdict is an error", {
+  skip_if_not_installed("terra")
+  proj <- withr::local_tempdir()
+  dir.create(file.path(proj, "cache", "layers", "opencanopy"), recursive = TRUE)
+  .write_tiny_tif(file.path(proj, "cache", "layers", "opencanopy",
+                            "chm_predicted_0_2m.tif"))
+  expect_error(resolve_project_chm(proj, validate = "oui"),
+               "must be a function")
+  expect_error(resolve_project_chm(proj, validate = function(r) NA),
+               "single .*TRUE")
+  # Une erreur du predicat remonte : au caller de decider si un fichier
+  # illisible vaut « suivant » ou « stop ».
+  expect_error(resolve_project_chm(proj, validate = function(r) stop("boom")),
+               "boom")
+})
+
+test_that("validate sees the mosaic, once per candidate — not once per tile", {
+  skip_if_not_installed("terra")
+  # Contrat fige avec la session app : sur un repertoire de dalles, le
+  # predicat recoit le SpatRaster TEL QU'IL SERAIT RENDU (le VRT), une
+  # seule fois. Appele dalle par dalle, une dalle de clairiere ferait
+  # rejeter une source valide.
+  proj <- withr::local_tempdir()
+  d <- file.path(proj, "cache", "layers", "lidar_mnh")
+  dir.create(d, recursive = TRUE)
+  mk <- function(path, xmin, vals) {
+    r <- terra::rast(nrows = 4, ncols = 4,
+                     xmin = xmin, xmax = xmin + 40, ymin = 0, ymax = 40,
+                     crs = "EPSG:2154", vals = vals)
+    terra::writeRaster(r, path, overwrite = TRUE)
+  }
+  mk(file.path(d, "clairiere.tif"), 0,  rep(0, 16))    # dalle sans hauteur
+  mk(file.path(d, "foret.tif"),     40, rep(20, 16))   # dalle boisee
+
+  seen <- list()
+  out <- resolve_project_chm(proj, load = FALSE, validate = function(r) {
+    seen[[length(seen) + 1L]] <<- terra::ncell(r)
+    max(terra::values(r), na.rm = TRUE) >= 5
+  })
+
+  expect_length(seen, 1L)                 # une fois, pas deux
+  expect_equal(seen[[1]], 32)             # les deux dalles, mosaiquees
+  expect_identical(attr(out, "nemeton_chm_layer"), "LiDAR HD MNH")
+  expect_length(out, 2L)                  # les deux chemins sont rendus
+})

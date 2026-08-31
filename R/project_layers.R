@@ -74,6 +74,19 @@
 #'   [`compute_dtm_chm_from_laz()`] (via `lasR`) and re-probe. Default
 #'   `TRUE`. The fallback is opportunistic: missing `lasR` simply skips
 #'   it without erroring.
+#' @param validate Function or `NULL` (default). A predicate taking the
+#'   candidate `SpatRaster` and returning a single `TRUE` / `FALSE`.
+#'   A candidate turned down is **skipped, and the search continues
+#'   with the next source** — which is the point: existence is not
+#'   usability, and a height model with no height above the ground is
+#'   not a height model. Callers used to re-probe by hand to work
+#'   around this; they no longer have to (v0.193.0). The predicate is
+#'   *theirs*, not the resolver's: a 5 m canopy threshold belongs to
+#'   whoever segments crowns, not to a path resolver. Note that
+#'   `validate` opens every probed candidate, and applies even when
+#'   `load = FALSE` (the paths are returned, but the raster is read to
+#'   judge it). Errors raised inside the predicate propagate: wrap it
+#'   yourself if a broken file should mean "skip" rather than "stop".
 #'
 #' @return When `load = TRUE`: a `SpatRaster`, or `NULL` if no
 #'   matching raster exists. When `load = FALSE`: a character vector
@@ -123,22 +136,74 @@ NULL
 }
 
 
-.materialise_raster <- function(paths, load, layer_label, attr_name) {
-  if (!load) {
-    attr(paths, attr_name) <- layer_label
-    return(paths)
-  }
+.open_raster <- function(paths) {
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required to load the resolved raster.")
   }
-  r <- if (length(paths) == 1L) {
+  if (length(paths) == 1L) {
     terra::rast(paths)
   } else {
     # Virtual mosaic — zero-copy, all downstream terra ops work.
     terra::vrt(paths)
   }
+}
+
+
+.materialise_raster <- function(paths, load, layer_label, attr_name) {
+  if (!load) {
+    attr(paths, attr_name) <- layer_label
+    return(paths)
+  }
+  r <- .open_raster(paths)
   attr(r, attr_name) <- layer_label
   r
+}
+
+
+.check_validate_arg <- function(validate) {
+  if (is.null(validate) || is.function(validate)) return(invisible(validate))
+  cli::cli_abort("{.arg validate} must be a function or {.code NULL}.")
+}
+
+
+# Walk the candidates in priority order and return the first match.
+# When `validate` is supplied, a candidate whose raster fails the
+# predicate is *skipped* and the search continues with the next source
+# — that is the whole point: a height model with no height is not a
+# height model, and the caller shouldn't have to re-probe by hand
+# (v0.193.0).
+.resolve_first_candidate <- function(candidates, load, attr_name,
+                                     validate, verbose) {
+  for (cand in candidates) {
+    hits <- .probe_raster_candidate(cand, verbose = verbose)
+    if (is.null(hits)) next
+    if (is.null(validate)) {
+      return(.materialise_raster(hits, load, cand$label, attr_name = attr_name))
+    }
+    r  <- .open_raster(hits)
+    ok <- validate(r)
+    if (!is.logical(ok) || length(ok) != 1L || is.na(ok)) {
+      cli::cli_abort(c(
+        "{.arg validate} must return a single {.code TRUE} or {.code FALSE}.",
+        i = "Candidate {.val {cand$label}} returned {.obj_type_friendly {ok}}."
+      ))
+    }
+    if (!ok) {
+      if (verbose) {
+        cli::cli_alert_info(
+          "Reject {.val {cand$label}}: turned down by {.arg validate}."
+        )
+      }
+      next
+    }
+    if (!load) {
+      attr(hits, attr_name) <- cand$label
+      return(hits)
+    }
+    attr(r, attr_name) <- cand$label
+    return(r)
+  }
+  NULL
 }
 
 
@@ -169,8 +234,10 @@ NULL
 resolve_project_dem <- function(project_path,
                                 load                 = TRUE,
                                 verbose              = FALSE,
-                                try_compute_from_laz = TRUE) {
+                                try_compute_from_laz = TRUE,
+                                validate             = NULL) {
   .validate_project_path(project_path)
+  .check_validate_arg(validate)
 
   candidates <- list(
     list(label = "LiDAR HD MNT",
@@ -220,25 +287,17 @@ resolve_project_dem <- function(project_path,
          file  = "mnt.tif")
   )
 
-  for (cand in candidates) {
-    hits <- .probe_raster_candidate(cand, verbose = verbose)
-    if (!is.null(hits)) {
-      return(.materialise_raster(hits, load, cand$label,
-                                 attr_name = "nemeton_dem_layer"))
-    }
-  }
+  found <- .resolve_first_candidate(candidates, load, "nemeton_dem_layer",
+                                   validate = validate, verbose = verbose)
+  if (!is.null(found)) return(found)
 
   # Fallback: derive MNT from <project>/cache/layers/lidar_nuage via lasR.
   if (isTRUE(try_compute_from_laz) &&
       .maybe_compute_lidar_rasters(project_path, target = "dtm",
                                    verbose = verbose)) {
-    for (cand in candidates) {
-      hits <- .probe_raster_candidate(cand, verbose = verbose)
-      if (!is.null(hits)) {
-        return(.materialise_raster(hits, load, cand$label,
-                                   attr_name = "nemeton_dem_layer"))
-      }
-    }
+    found <- .resolve_first_candidate(candidates, load, "nemeton_dem_layer",
+                                     validate = validate, verbose = verbose)
+    if (!is.null(found)) return(found)
   }
 
   if (verbose) {
@@ -258,8 +317,10 @@ resolve_project_dem <- function(project_path,
 resolve_project_chm <- function(project_path,
                                 load                 = TRUE,
                                 verbose              = FALSE,
-                                try_compute_from_laz = TRUE) {
+                                try_compute_from_laz = TRUE,
+                                validate             = NULL) {
   .validate_project_path(project_path)
+  .check_validate_arg(validate)
 
   # ADR-007 : le LiDAR local prime sur un produit ML — il porte un NDP
   # superieur. Les entrees Open-Canopy sont nommees fichier par fichier :
@@ -306,25 +367,17 @@ resolve_project_chm <- function(project_path,
          file  = "mnh.tif")
   )
 
-  for (cand in candidates) {
-    hits <- .probe_raster_candidate(cand, verbose = verbose)
-    if (!is.null(hits)) {
-      return(.materialise_raster(hits, load, cand$label,
-                                 attr_name = "nemeton_chm_layer"))
-    }
-  }
+  found <- .resolve_first_candidate(candidates, load, "nemeton_chm_layer",
+                                   validate = validate, verbose = verbose)
+  if (!is.null(found)) return(found)
 
   # Fallback: derive MNH from <project>/cache/layers/lidar_nuage via lasR.
   if (isTRUE(try_compute_from_laz) &&
       .maybe_compute_lidar_rasters(project_path, target = "chm",
                                    verbose = verbose)) {
-    for (cand in candidates) {
-      hits <- .probe_raster_candidate(cand, verbose = verbose)
-      if (!is.null(hits)) {
-        return(.materialise_raster(hits, load, cand$label,
-                                   attr_name = "nemeton_chm_layer"))
-      }
-    }
+    found <- .resolve_first_candidate(candidates, load, "nemeton_chm_layer",
+                                     validate = validate, verbose = verbose)
+    if (!is.null(found)) return(found)
   }
 
   if (verbose) {
