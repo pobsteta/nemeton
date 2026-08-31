@@ -36,11 +36,10 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Rien à coder** — les tooltips viennent d'`INDICATOR_FAMILIES` et les rasters en cache restent valides — mais l'interface ne doit **ni classer ni moyenner B4/L3 entre projets** : les « spectral species » sont un k-means réajusté par run (spec 028 §10.6). Non accusé réception |
 | 8 | **Le sens de `L1` est lu à l'envers par la normalisation** | relevé le 2026-08-27 en écrivant les fiches | cœur `nemeton` | Le calcul (`(SI−1)×25`, contraste bâti = 90), l'infobulle (« fragmentent l'habitat intérieur ») et `indicateur_n3_naturalite()` (`anti_frag = 100 − L1`) lisent tous **haut = beaucoup de lisière = défavorable**. Mais `indicateur_l1_effet_lisiere` est dans `.NORMALIZE_NATIVE_0_100` (`R/normalization.R:521`) et aucune inversion ne le rattrape : le radar et `famille_paysage` le lisent **haut = bon**. Une parcelle en lanière bordée de bâti obtient donc un score de paysage flatteur. **Même défaut que R5 avant la spec 048.** Correctif : retirer L1 (et l'alias `indicateur_l1_sylvosphere`) de `.NORMALIZE_NATIVE_0_100`, l'ajouter au bloc d'inversion. Aucune fonction d'indicateur ne change ; tout `famille_paysage` déjà calculé est à refaire. **Non corrigé — décision à prendre.** |
 | 7 | L'icône « fiche » à côté du « i » de C1, onglet Familles d'indicateurs | cœur **v0.192.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/052-fiche-indicateur-c1/brief-nemetonshiny.md`). Le cœur expose `doc_url` / `doc_lang` / `doc_url_fr` / `doc_url_en` dans `indicator_labels()` (URL absolue, `NA` quand l'indicateur n'a pas de fiche ; `doc_lang` = langue réellement servie) ; côté app, ~20 lignes dans `mod_family.R` + 3 clés i18n. **L'URL n'est vivante qu'après merge sur `main`** (déploiement pkgdown). Non accusé réception |
-| 9 | Les deux replis applicatifs qui sondent `cache/layers/opencanopy/` à la place du cœur | cœur **v0.192.2** | `nemetonshiny` | `resolve_project_chm()` résout désormais les CHM Open-Canopy (0,2 m → 1,5 m → témoin) et remet le LiDAR HD en tête. Les contournements de `service_marculus.R` et de l'onglet *Terrain accessible* (`.project_chm()` / `.chm_exploitable()`) deviennent du code mort dès que `Imports: nemeton (>= 0.192.2)` est posé. **Rien ne casse s'ils restent** — ils n'agissent que sur un `NULL` du cœur, qui ne vient plus. **2026-08-31** : demande transmise à la session app (`nemetonshiny-f4`). Deux constats en relisant son code : il n'y a **qu'un** repli, pas deux (`mod_sampling.R:371` appelle déjà `.project_chm()`, dé-dupliqué en app v0.142.2) ; et `.chm_exploitable()` n'est **pas** mort — c'est un garde de *contenu* (hauteur max ≥ 5 m), pas de chemin. Le retirer aurait coûté le repli **inter-sources** : un LiDAR HD plat rendrait `NULL` sans essayer l'Open-Canopy d'à côté. D'où `validate` au cœur (**v0.193.0**, entrée de journal du 2026-08-31) : l'app passe son prédicat, le cœur saute le candidat refusé et continue. Reste côté app : plancher `>= 0.193.0`, retrait de la boucle en dur, `validate = .chm_exploitable`. En attente du merge côté app |
 
-**Cinq écarts.** Le n° 8 est le seul qui appelle un correctif **dans le
-cœur**, et le seul qui rende une valeur affichée fausse — les quatre autres
-attendent l'aval ou le terrain ; le n° 9 n'attend même qu'une suppression. Le n° 3 attend
+**Quatre écarts.** Le n° 8 est le seul qui appelle un correctif **dans le
+cœur**, et le seul qui rende une valeur affichée fausse — les trois autres
+attendent l'aval ou le terrain. Le n° 3 attend
 une sortie sur un projet réel portant à la fois un nuage LiDAR et une desserte
 corrigée. Le n° 6 attend une lecture côté app : il n'appelle pas de code, il
 interdit un usage — et un interdit non lu ne protège de rien. Le n° 7, lui,
@@ -48,9 +47,10 @@ attend bien du code côté app, mais quinze lignes : le cœur a livré la donné
 (`doc_url`) et la page (article pkgdown), il ne peut pas poser l'icône
 lui-même.
 
-**Les quatre autres sont refermés**, vérifiés en lecture seule sur
-`nemetonshiny@5a1afd7c` le 2026-08-22 (détail dans l'entrée de journal du
-2026-08-22, chantiers A et D) :
+**Les cinq autres sont refermés.** Les n° 1, 2, 4 et 5 ont été vérifiés en
+lecture seule sur `nemetonshiny@5a1afd7c` le 2026-08-22 (détail dans l'entrée
+de journal du 2026-08-22, chantiers A et D) ; le n° 9 sur
+`nemetonshiny@d2442193` le 2026-08-31 :
 
 | # | Écart | Refermé par | Ce qui a été relu |
 |---|---|---|---|
@@ -58,6 +58,7 @@ lui-même.
 | 2 | `osm_hors_corridor` / `bdtopo_hors_corridor` | app **v0.127.0** | `DESCRIPTION:15` exige désormais `foretaccess (>= 2.4.0)` — le code lisait déjà le champ, c'est le plancher qui manquait |
 | 4 | `r5_status` (cause d'un R5 vide) | app **v0.126.0** (`c5887a5e`) | `service_r5.R:115-117` — le `out$r5_status <- NULL` n'est plus un rejet mais la **seconde ligne d'un renommage** vers `.r5_status`. À `v0.125.1` c'était bien une suppression sèche (`service_r5.R:86`) : le constat du 2026-08-15 était juste, il a été corrigé depuis |
 | 5 | `check_fordead_validity()` — « R5 est-il calculable ici ? » | app **v0.127.0** | `mod_sources_config.R:95,125` — `r5_applicabilite()` et `a5_applicabilite()` (cœur v0.175.0) rendent un badge **avant** le calcul, et court-circuitent `not_applicable` / `no_species` / `no_coverage`. `eligible_fordead_out_of_calibration` ne bloque **rien**, délibérément : hors zone de calibration le calcul reste juste, seules ses classes de confiance sont extrapolées |
+| 9 | Les replis applicatifs sondant `cache/layers/opencanopy/` à la place du cœur | app **v0.143.7** (`d2442193`), sur cœur **v0.193.0** | `service_marculus.R` — `.project_chm()` ne porte plus **aucun chemin en dur** : `resolve_project_chm(path, validate = .chm_exploitable, verbose = FALSE)`. `DESCRIPTION:15` exige `nemeton (>= 0.193.0)`. Le prédicat reste côté app, sa place. L'app a ajouté un **contre-test** de la boucle retirée (CHM exploitable sur le disque + cœur rendant `NULL` → `.project_chm()` doit rendre `NULL`) : il échoue si quelqu'un la remet. Et elle y a trouvé un vrai défaut au passage — son `tryCatch` ne couvrait que `spatSample()`, alors que le `v[[1]]` suivant pouvait lever « subscript out of bounds » sur un échantillon sans colonne ; inoffensif tant qu'elle appelait le prédicat elle-même, mais passé en `validate` il **arrêtait** la résolution au lieu de passer au candidat suivant. Prédicat rendu total, un test par forme d'échec |
 
 **Ce que l'écart n° 1 aura coûté et rapporté.** Ouvert le 2026-08-15 comme
 « non consommé, et désormais bloquant », il l'était : la copie de la table dans
@@ -3519,6 +3520,41 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-08-31 — App `nemetonshiny` v0.143.7 : le repli CHM en dur rendu au cœur
+
+Contrepartie applicative de la v0.193.0 cœur, livrée le jour même. `main` à
+`d2442193`, tag `v0.143.7`, cycle dev repris en `0.143.7.9000` (`655f5030`).
+
+- Plancher `Imports: nemeton (>= 0.193.0)`.
+- `.project_chm()` (`R/service_marculus.R`) ne porte plus **aucun chemin en
+  dur** : `resolve_project_chm(path, validate = .chm_exploitable,
+  verbose = FALSE)`. Le repli inter-sources est au cœur, le prédicat reste
+  côté app.
+- `.chm_exploitable()` gagne le roxygen qui manquait : son verdict **fait
+  foi** (le `TRUE` du doute *accepte* le candidat, il ne délègue plus à
+  personne), et il ne doit jamais lever.
+- Un **contre-test** de la boucle retirée : CHM exploitable sur le disque,
+  cœur rendant `NULL`, attente que `.project_chm()` rende `NULL`. Il échoue si
+  quelqu'un remet le sondage en dur. C'est la bonne forme — un test qui tombe
+  vaut mieux qu'un commentaire qui interdit.
+
+**Et un vrai défaut trouvé en faisant la passe**, qui justifie après coup le
+point de contrat « une erreur du prédicat remonte, à vous de l'emballer » : le
+`tryCatch` de `.chm_exploitable()` ne couvrait que l'appel `spatSample()`, or
+cette fonction peut aussi *rendre* un `data.frame` sans colonne, et le `v[[1]]`
+qui suivait levait « subscript out of bounds » **hors** du `tryCatch`. Tant que
+l'app appelait le prédicat elle-même, ça coûtait un candidat. Passé en
+`validate`, ça **arrêtait la résolution** sur ce candidat au lieu de passer au
+suivant — soit exactement le contraire du filet qu'on venait d'installer. Le
+prédicat est total maintenant, un test par forme d'échec.
+
+Suite app sur les modules touchés : `test-service_marculus.R` 114 PASS,
+`test-mod_sampling.R` 53 PASS, 0 FAIL.
+
+**Écart n° 9 refermé** — vérifié en lecture seule sur `nemetonshiny@d2442193`.
+
+---
+
 ### 2026-08-31 — v0.193.0 : `validate`, ou pourquoi retirer un contournement demande d'abord de comprendre ce qu'il tenait
 
 **Le point de départ.** La v0.192.2 ayant appris au cœur à résoudre les CHM
@@ -3590,9 +3626,21 @@ déjà le sien. Deux moteurs voisins, deux traitements opposés du même risque.
 Et la forme du payload **change** en fin de run : la série `fast_prewarm:*` ne
 porte ni `completed` ni `total`, contrairement aux payloads de scène. Un
 callback écrit pour la forme courante qui trébuche sur la dernière faisait
-remonter l'erreur hors du moteur — après 13 h 40, scènes cachées,
-`ingest_run.json` à `done`, 183 scènes. Le symptôme décrit par l'app à la
-virgule près.
+remonter l'erreur hors du moteur — un moteur qui, à ce stade, a fini son
+travail et l'a persisté.
+
+**Correction, le jour même** : ce mécanisme n'est **pas** la cause du run de
+13 h 40. La session app a relu son propre callback
+(`.build_ingest_progress_callback()`) et montré qu'il ne peut pas lever sur un
+payload `fast_prewarm:*` — écriture fichier sous `tryCatch`, lectures par
+`%||%`, et `total` touché seulement sous `current == "s2:scene"`. J'avais écrit
+« le symptôme décrit à la virgule près » : c'était une identification abusive,
+tirée d'un mécanisme plausible et d'une coïncidence de forme. Le correctif
+reste bon — l'asymétrie entre les deux moteurs était réelle, et un rapport de
+progression ne doit jamais pouvoir tuer un run — mais **FAST rejoint FORDEAD
+dans la colonne « non expliqué »**. Fermer un signal à moitié coûterait treize
+heures à la prochaine occurrence : les deux messages bruts du prochain run
+trancheront.
 
 Les deux moteurs partagent désormais `.make_progress_emitter()` : l'erreur est
 absorbée, le **premier** échec avertit (le silence total cacherait un callback
@@ -3601,8 +3649,9 @@ sous `tryCatch` **au point d'appel** : ses combinaisons se protégeaient une à
 une, mais rien ne garantissait que l'étape entière ne puisse pas lever, et elle
 tourne après que tout est caché.
 
-Ce qui n'est **pas** expliqué, et que je ne prétends pas avoir trouvé : FORDEAD
-rendant `status = "error"` après ses 51 alertes insérées. Son chemin
+Ce qui n'est **pas** expliqué (ni pour FAST, cf. la correction ci-dessus, ni
+pour FORDEAD) : FORDEAD rendant `status = "error"` après ses 51 alertes
+insérées. Son chemin
 post-insertion est protégé pièce par pièce (bundle, élagage, insertion), son
 émetteur l'était, il n'y a pas d'`unlink(output_dir)`. Le message brut du
 worker, que l'app v0.143.6 fait désormais remonter, tranchera — je le regarderai
