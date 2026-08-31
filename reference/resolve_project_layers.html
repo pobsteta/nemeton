@@ -29,7 +29,7 @@ calls transparently cover the full footprint."><meta property="og:image" content
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.192.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.193.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -153,14 +153,16 @@ calls transparently cover the full footprint.</p>
 <span>  <span class="va">project_path</span>,</span>
 <span>  load <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  try_compute_from_laz <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  try_compute_from_laz <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  validate <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">resolve_project_chm</span><span class="op">(</span></span>
 <span>  <span class="va">project_path</span>,</span>
 <span>  load <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  try_compute_from_laz <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  try_compute_from_laz <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  validate <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -192,6 +194,22 @@ tiles are present, attempt to derive them on the fly with
 [`compute_dtm_chm_from_laz()`] (via `lasR`) and re-probe. Default
 `TRUE`. The fallback is opportunistic: missing `lasR` simply skips
 it without erroring.</p></dd>
+
+
+<dt id="arg-validate">validate<a class="anchor" aria-label="anchor" href="#arg-validate"></a></dt>
+<dd><p>Function or `NULL` (default). A predicate taking the
+candidate `SpatRaster` and returning a single `TRUE` / `FALSE`.
+A candidate turned down is **skipped, and the search continues
+with the next source** — which is the point: existence is not
+usability, and a height model with no height above the ground is
+not a height model. Callers used to re-probe by hand to work
+around this; they no longer have to (v0.193.0). The predicate is
+*theirs*, not the resolver's: a 5 m canopy threshold belongs to
+whoever segments crowns, not to a path resolver. Note that
+`validate` opens every probed candidate, and applies even when
+`load = FALSE` (the paths are returned, but the raster is read to
+judge it). Errors raised inside the predicate propagate: wrap it
+yourself if a broken file should mean "skip" rather than "stop".</p></dd>
 
 </dl></div>
     <div class="section level2">

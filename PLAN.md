@@ -43,7 +43,7 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 6 | B4/L3 : les valeurs changent de sens et d’échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Rien à coder** — les tooltips viennent d’`INDICATOR_FAMILIES` et les rasters en cache restent valides — mais l’interface ne doit **ni classer ni moyenner B4/L3 entre projets** : les « spectral species » sont un k-means réajusté par run (spec 028 §10.6). Non accusé réception |
 | 8 | **Le sens de `L1` est lu à l’envers par la normalisation** | relevé le 2026-08-27 en écrivant les fiches | cœur `nemeton` | Le calcul (`(SI−1)×25`, contraste bâti = 90), l’infobulle (« fragmentent l’habitat intérieur ») et [`indicateur_n3_naturalite()`](https://pobsteta.github.io/nemeton/reference/indicateur_n3_naturalite.md) (`anti_frag = 100 − L1`) lisent tous **haut = beaucoup de lisière = défavorable**. Mais `indicateur_l1_effet_lisiere` est dans `.NORMALIZE_NATIVE_0_100` (`R/normalization.R:521`) et aucune inversion ne le rattrape : le radar et `famille_paysage` le lisent **haut = bon**. Une parcelle en lanière bordée de bâti obtient donc un score de paysage flatteur. **Même défaut que R5 avant la spec 048.** Correctif : retirer L1 (et l’alias `indicateur_l1_sylvosphere`) de `.NORMALIZE_NATIVE_0_100`, l’ajouter au bloc d’inversion. Aucune fonction d’indicateur ne change ; tout `famille_paysage` déjà calculé est à refaire. **Non corrigé — décision à prendre.** |
 | 7 | L’icône « fiche » à côté du « i » de C1, onglet Familles d’indicateurs | cœur **v0.192.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/052-fiche-indicateur-c1/brief-nemetonshiny.md`). Le cœur expose `doc_url` / `doc_lang` / `doc_url_fr` / `doc_url_en` dans [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md) (URL absolue, `NA` quand l’indicateur n’a pas de fiche ; `doc_lang` = langue réellement servie) ; côté app, ~20 lignes dans `mod_family.R` + 3 clés i18n. **L’URL n’est vivante qu’après merge sur `main`** (déploiement pkgdown). Non accusé réception |
-| 9 | Les deux replis applicatifs qui sondent `cache/layers/opencanopy/` à la place du cœur | cœur **v0.192.2** | `nemetonshiny` | [`resolve_project_chm()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md) résout désormais les CHM Open-Canopy (0,2 m → 1,5 m → témoin) et remet le LiDAR HD en tête. Les contournements de `service_marculus.R` et de l’onglet *Terrain accessible* (`.project_chm()` / `.chm_exploitable()`) deviennent du code mort dès que `Imports: nemeton (>= 0.192.2)` est posé. **Rien ne casse s’ils restent** — ils n’agissent que sur un `NULL` du cœur, qui ne vient plus. Non accusé réception |
+| 9 | Les deux replis applicatifs qui sondent `cache/layers/opencanopy/` à la place du cœur | cœur **v0.192.2** | `nemetonshiny` | [`resolve_project_chm()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md) résout désormais les CHM Open-Canopy (0,2 m → 1,5 m → témoin) et remet le LiDAR HD en tête. Les contournements de `service_marculus.R` et de l’onglet *Terrain accessible* (`.project_chm()` / `.chm_exploitable()`) deviennent du code mort dès que `Imports: nemeton (>= 0.192.2)` est posé. **Rien ne casse s’ils restent** — ils n’agissent que sur un `NULL` du cœur, qui ne vient plus. **2026-08-31** : demande transmise à la session app (`nemetonshiny-f4`). Deux constats en relisant son code : il n’y a **qu’un** repli, pas deux (`mod_sampling.R:371` appelle déjà `.project_chm()`, dé-dupliqué en app v0.142.2) ; et `.chm_exploitable()` n’est **pas** mort — c’est un garde de *contenu* (hauteur max ≥ 5 m), pas de chemin. Le retirer aurait coûté le repli **inter-sources** : un LiDAR HD plat rendrait `NULL` sans essayer l’Open-Canopy d’à côté. D’où `validate` au cœur (**v0.193.0**, entrée de journal du 2026-08-31) : l’app passe son prédicat, le cœur saute le candidat refusé et continue. Reste côté app : plancher `>= 0.193.0`, retrait de la boucle en dur, `validate = .chm_exploitable`. En attente du merge côté app |
 
 **Cinq écarts.** Le n° 8 est le seul qui appelle un correctif **dans le
 cœur**, et le seul qui rende une valeur affichée fausse — les quatre
@@ -4264,6 +4264,189 @@ cœur).
 ------------------------------------------------------------------------
 
 ## Journal
+
+### 2026-08-31 — v0.193.0 : `validate`, ou pourquoi retirer un contournement demande d’abord de comprendre ce qu’il tenait
+
+**Le point de départ.** La v0.192.2 ayant appris au cœur à résoudre les
+CHM Open-Canopy, les deux contournements applicatifs devenaient morts
+(écart n° 9) et il ne restait qu’à les supprimer. En relisant
+`nemetonshiny/R/service_marculus.R` avant de passer la commande à la
+session app, deux choses ne collaient pas.
+
+**Un seul repli, pas deux.** Le brief parlait de `service_marculus.R`
+*et* de l’onglet *Terrain accessible*. Mais `mod_sampling.R:371` appelle
+déjà `.project_chm()` : l’app avait dé-dupliqué en v0.142.2. Un seul
+bloc à retirer, deux appelants. (Au passage, sa liste de noms en dur —
+`chm_predicted_0_2m.tif`, `chm_predicted_1_5m.tif`, `chm.tif` — était
+fausse d’un tiers : le témoin s’appelle `chm_1_5m.tif`.)
+
+**Et surtout : `.chm_exploitable()` n’était pas mort.** Ce n’est pas un
+repli de *chemin* mais un garde de *contenu* — hauteur max ≥ 5 m sur 10⁵
+cellules échantillonnées. Le cœur n’a aucun équivalent : il rend le
+premier chemin qui **existe**, sans regarder ce qu’il y a dedans.
+Supprimer la boucle aurait donc coûté un filet réel : aujourd’hui, si le
+candidat de tête est plat, l’app repart sur une autre **source** ; après
+retrait, un LiDAR HD plat aurait rendu `NULL` avec un Open-Canopy
+exploitable à côté. C’est exactement le scénario « Fordead » que le
+docstring de l’app raconte, retourné.
+
+**Une erreur corrigée en cours de route.** J’avais proposé à la session
+app de reconstruire le filet avec `resolve_project_chm(load = FALSE)`, «
+qui rend tous les chemins candidats dans l’ordre ». Faux : la boucle
+[`return()`](https://rdrr.io/r/base/function.html) au **premier**
+candidat qui matche, `load = FALSE` ne rend que les fichiers de
+celui-là. Aucun moyen, avant aujourd’hui, d’énumérer les sources
+suivantes. Corrigé auprès d’elle avant qu’elle n’implémente quoi que ce
+soit.
+
+**Ce qui est livré.** `validate`, sur
+[`resolve_project_dem()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)
+**et**
+[`resolve_project_chm()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)
+: un prédicat qui reçoit le `SpatRaster` du candidat courant ; un
+candidat refusé est **sauté**, la recherche continue à la source
+suivante. Défaut `NULL` — comportement inchangé, aucun appelant existant
+ne bouge.
+
+Le partage des rôles est le point important : le **repli inter-sources**
+est la connaissance du résolveur, il remonte au cœur ; le **jugement**
+est la connaissance de l’appelant, il reste chez lui. Un seuil de
+houppier à 5 m appartient à qui segmente les houppiers, pas à un
+résolveur de chemins. C’est aussi ce qui empêche la prochaine liste de
+chemins en dur : l’app n’a plus rien à re-sonder, et son balayage couvre
+les six candidats du cœur au lieu de trois noms de fichiers écrits à la
+main.
+
+Deux points de contrat assumés et documentés : `validate` ouvre chaque
+candidat sondé et s’applique **aussi** quand `load = FALSE` (les chemins
+sont rendus, mais le raster est lu pour être jugé) ; une erreur levée
+dans le prédicat **remonte**, plutôt que d’être avalée en « candidat
+suivant » — c’est précisément l’avalement silencieux qui a produit toute
+cette famille de défauts.
+
+**Vérifications.** 53 assertions dans `test-project_layers.R` (dont :
+MNH plat en tête + Open-Canopy valide → la seconde source sert ; tous
+les candidats refusés → `NULL` ; `validate` sur le DEM ; prédicat
+non-fonction, verdict `NA` et prédicat qui lève → trois erreurs
+distinctes). Suite complète verte.
+
+**Suite côté app** : plancher `Imports: nemeton (>= 0.193.0)`, retrait
+de la boucle en dur, `validate = .chm_exploitable`. Écart n° 9.
+
+**Dans la même release, un second défaut, trouvé en instruisant le §4.1
+du brief app** (`BRIEF-nemeton-plan-md-0.142.3-0.143.6.md`) : « FAST et
+FORDEAD lèvent **après** avoir produit leur travail utile ». La session
+app avait écarté la piste OOM par les logs (6 676 lignes de `journalctl`
+sur 54 h, zéro `oom-kill`, zéro `Failed with result`) — l’espace de
+recherche était donc bien le code.
+
+Pour l’ingestion S2, il l’était :
+[`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md)
+appelait `progress_callback` **sans filet**, là où
+[`run_fordead_dieback()`](https://pobsteta.github.io/nemeton/reference/run_fordead_dieback.md)
+protégeait déjà le sien. Deux moteurs voisins, deux traitements opposés
+du même risque. Et la forme du payload **change** en fin de run : la
+série `fast_prewarm:*` ne porte ni `completed` ni `total`, contrairement
+aux payloads de scène. Un callback écrit pour la forme courante qui
+trébuche sur la dernière faisait remonter l’erreur hors du moteur —
+après 13 h 40, scènes cachées, `ingest_run.json` à `done`, 183 scènes.
+Le symptôme décrit par l’app à la virgule près.
+
+Les deux moteurs partagent désormais `.make_progress_emitter()` :
+l’erreur est absorbée, le **premier** échec avertit (le silence total
+cacherait un callback cassé pour de bon), les suivants se taisent. Et le
+pré-chauffage FAST passe sous `tryCatch` **au point d’appel** : ses
+combinaisons se protégeaient une à une, mais rien ne garantissait que
+l’étape entière ne puisse pas lever, et elle tourne après que tout est
+caché.
+
+Ce qui n’est **pas** expliqué, et que je ne prétends pas avoir trouvé :
+FORDEAD rendant `status = "error"` après ses 51 alertes insérées. Son
+chemin post-insertion est protégé pièce par pièce (bundle, élagage,
+insertion), son émetteur l’était, il n’y a pas d’`unlink(output_dir)`.
+Le message brut du worker, que l’app v0.143.6 fait désormais remonter,
+tranchera — je le regarderai avec, pas avant. Le §4.2
+(`vectoriser_reseau()` qui traite « zéro route nouvelle » comme une
+panne) est un sujet `foretaccess`, consigné, non ouvert.
+
+------------------------------------------------------------------------
+
+### 2026-08-28 → 08-31 — App `nemetonshiny` : « Tout calculer » (v0.143.0) et les six runs qui l’ont durcie (v0.142.3 → v0.143.6)
+
+**Le jalon.** Un seul bouton, dans la sidebar de l’onglet *Sélection*,
+enchaîne les seize calculs de l’application puis les deux générations
+IA. Une modale demande le périmètre (étapes cochables) et le **profil de
+l’analyste** parmi les quinze profils experts, appliqué à toutes les
+générations IA de la chaîne. Un panneau suit l’avancement ; un rapport
+final donne par étape son issue et sa durée. Une étape en échec
+**n’interrompt pas** la chaîne, et le rapport distingue `réussie` /
+`échec` / `sautée` / `annulée` — « trois sautées faute de configuration
+» ne doit pas se lire « trois en échec ».
+
+L’ordre encode ce qui alimente quoi : indicateurs (1) → accessibilité et
+correction LiDAR (2-3) → desserte, typage, intégrité (4-6) →
+reGénération, années E-OBS d’abord car elles **déterminent** ce que le
+gel et le moteur consomment (7-11) → Santé, surveillance rapide avant
+FORDEAD et RECONFORT qui lisent le cache Sentinel-2 qu’elle remplit
+(12-14) → perspective IA (15) → plan d’actions, bâti sur les
+commentaires que (15) vient d’écrire (16). La création des zones de
+suivi s’y est ajoutée en v0.143.2, en position 12 : les trois moteurs
+Santé exigent tous un `zone_id`. **Dix-sept étapes** au total.
+
+**Architecture — l’orchestrateur ne lance aucun moteur.** Il poste
+`app_state$pipeline_request` ; le module propriétaire répond sur
+`app_state$pipeline_answer`. Chaque moteur est un `ExtendedTask` dont
+les arguments viennent des inputs de son onglet ; un orchestrateur qui
+les appellerait directement redupliquerait tout et divergerait dès qu’un
+onglet gagne une option. Le corps de chaque observer de bouton est
+extrait en fonction locale, appelée par le bouton **et** par la chaîne.
+Aucun bloc dupliqué. **Aucune fonction cœur nouvelle n’est requise** :
+la chaîne rejoue les chemins d’appel existants.
+
+**Ce que six runs réels sur Couchey ont appris** — chaque release
+ci-dessous est née d’un run, pas d’une relecture.
+
+| Release | Ce que le run a montré |
+|----|----|
+| v0.143.1 | La chaîne restait bloquée sur « Indicateurs / En cours » : la réponse était posée depuis `poll_fn`, un callback [`later::later()`](https://later.r-lib.org/reference/later.html) donc **hors contexte réactif**, où lire un `reactiveVal` lève `Operation not allowed without an active reactive context`. Second défaut trouvé en vérifiant si le premier était isolé : dans les six autres modules les lectures étaient légales mais **abonnaient** l’observer de statut à la mémoire de requête — un `success` résiduel aurait rapporté une étape réussie **avant que le moteur ne redémarre**. Toutes les lectures sont isolées ; un test de source refuse toute lecture non isolée. |
+| v0.143.2 | « Perspective IA : Réussie » en **1 seconde**, pour ce qui demande treize appels LLM : le `tryCatch` rendait `NULL` mais la fonction continuait jusqu’à `invisible(TRUE)`. Un faux positif silencieux est pire qu’un échec. C’est aussi ce qui expliquait le Plan d’actions sauté juste après. Au passage : les 12 commentaires de famille n’étaient pas générés (la chaîne suivait un switch décoché par défaut). |
+| v0.143.3 | Santé sautée alors que les quatre zones venaient d’être créées en 9 s — la garde interrogeait `input$zone_id`, alimenté par `updateSelectInput()`, qui ne remonte au serveur **qu’après un aller-retour client**. **Troisième occurrence du même piège** dans cette chaîne (après les années E-OBS et `use_corrected`, tous deux pourtant commentés). Les gardes lisent désormais les zones **en base**. |
+| v0.143.4 | Le panneau de progression liste dix-sept étapes et repoussait le reste de la sidebar hors de l’écran : la section devient repliable comme ses voisines. |
+| v0.143.5 | « Échec du typage » affiché **en rouge** sur le meilleur résultat possible : 0 route nouvelle, 17 056 tronçons existants, **76 parcelles desservies sur 76**, coût glouton 0. Le réseau existant dessert déjà tout ; `foretaccess::vectoriser_reseau()` travaille sur les routes *nouvelles* et abandonne quand il n’y en a aucune (cf. §4.2 du brief). Cas désormais distingué **avant** l’appel, compté *Sautée*. Idem pour microclimf, qui annonçait « structure de végétation manquante » quand c’était la grille LiDAR (MNT/MNH non téléchargés) qui manquait. |
+| v0.143.6 | Le rapport affichait « Erreur » **sans jamais dire laquelle** — alors que `task$result()` re-lève l’erreur du worker, seul endroit où son message existe encore. Sur des moteurs qui tournent 13 h 40 (ingest FAST) et 4 h 10 (FORDEAD), c’était la seule information exploitable sans tout relancer. `pipeline_task_error()` l’extrait sur les sept réponses concernées, couvre aussi l’échec rendu **par valeur** (`list(status = "error", reason =, detail =)`), et tronque les tracebacks Python de FORDEAD à 300 caractères. |
+
+**Le mode de défaillance à connaître, pour tout module futur.** Tout
+chemin de code qui a reconnu une requête **DOIT** répondre. Un module
+qui se tait bloque la chaîne sur son étape, sans rien afficher. Les
+gardes internes (pas de zone monitoring, pas de clé API, lecture seule)
+faisaient exactement cela. Un test vérifie que **chaque étape déclarée a
+un écouteur** dans le module annoncé.
+
+**Aussi livré** (v0.142.3) : la carte UGF restait vide au premier
+passage sur son sous-onglet — `output$ug_map` était la seule des six
+cartes leaflet de l’app à rester suspendue onglet caché, et leaflet
+**jette silencieusement** les `leafletProxy()` adressés à une carte
+absente du DOM.
+
+Hors chaîne, volontairement : optimisation, OSM et détection (panneaux
+d’analyse annexes de la desserte), RVT et pré-build CVAT (préparation
+d’annotation).
+
+Suite app : 13 325 PASS, 0 FAIL (7 skips). Plancher
+`Imports: nemeton (>= 0.192.0)` inchangé. Cycle dev :
+`nemetonshiny@592dfaa9` (`0.143.6.9000`).
+
+> *Entrée fournie par la session app via*
+> `nemetonshiny/specs/BRIEF-nemeton-plan-md-0.142.3-0.143.6.md` *(§2),
+> collée telle quelle.* *§3 tranché côté cœur : **journal seul**, aucune
+> case cochée. La table « Partie B » de `PLAN.md:686` que le brief
+> propose comme alternative appartient au chantier FORDEAD couches
+> supplémentaires, clos ; ce n’est pas un suivi global de l’app. Et la
+> table du Walking Skeleton suit les livraisons **cœur** : « Tout
+> calculer » ne consomme aucune API cœur nouvelle, il n’y a rien à y
+> cocher. Le journal est le bon endroit.*
+
+------------------------------------------------------------------------
 
 ### 2026-08-28 — v0.192.2 : `resolve_project_chm()` ne voyait pas les CHM Open-Canopy
 

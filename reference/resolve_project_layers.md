@@ -20,14 +20,16 @@ resolve_project_dem(
   project_path,
   load = TRUE,
   verbose = FALSE,
-  try_compute_from_laz = TRUE
+  try_compute_from_laz = TRUE,
+  validate = NULL
 )
 
 resolve_project_chm(
   project_path,
   load = TRUE,
   verbose = FALSE,
-  try_compute_from_laz = TRUE
+  try_compute_from_laz = TRUE,
+  validate = NULL
 )
 ```
 
@@ -58,6 +60,22 @@ resolve_project_chm(
   \[\`compute_dtm_chm_from_laz()\`\] (via \`lasR\`) and re-probe.
   Default \`TRUE\`. The fallback is opportunistic: missing \`lasR\`
   simply skips it without erroring.
+
+- validate:
+
+  Function or \`NULL\` (default). A predicate taking the candidate
+  \`SpatRaster\` and returning a single \`TRUE\` / \`FALSE\`. A
+  candidate turned down is \*\*skipped, and the search continues with
+  the next source\*\* — which is the point: existence is not usability,
+  and a height model with no height above the ground is not a height
+  model. Callers used to re-probe by hand to work around this; they no
+  longer have to (v0.193.0). The predicate is \*theirs\*, not the
+  resolver's: a 5 m canopy threshold belongs to whoever segments crowns,
+  not to a path resolver. Note that \`validate\` opens every probed
+  candidate, and applies even when \`load = FALSE\` (the paths are
+  returned, but the raster is read to judge it). Errors raised inside
+  the predicate propagate: wrap it yourself if a broken file should mean
+  "skip" rather than "stop".
 
 ## Value
 
