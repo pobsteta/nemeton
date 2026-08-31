@@ -59,10 +59,14 @@ forme courante qui trébuche sur la dernière faisait remonter l’erreur
 hors du moteur — et échouer un run dont tout le travail était déjà en
 cache et en base.
 
-C’est le mode de défaillance signalé par l’app sur l’ingestion Couchey
-du 2026-08-30 : **13 h 40**, `ingest_run.json` à `done`, 183 scènes, et
-une erreur par-dessus. Le travail utile était fait et persisté ; ce qui
-a levé venait après.
+L’asymétrie entre les deux moteurs était réelle et le filet manquait ;
+mais **ce n’est pas** l’explication du run Couchey de 13 h 40 signalé
+par l’app (`ingest_run.json` à `done`, 183 scènes, et une erreur
+par-dessus). Vérification faite le jour même côté app, son callback ne
+peut pas lever sur un payload `fast_prewarm:*` : écriture fichier sous
+`tryCatch`, lectures par `%||%`, et `total` touché seulement sous
+`current == "s2:scene"`. La cause de ce run reste inconnue — corrigé ici
+avant que la formulation d’origine ne fasse croire le signal refermé.
 
 Les deux moteurs partagent désormais `.make_progress_emitter()` :
 l’erreur du callback est absorbée, le **premier** échec avertit (le
