@@ -1,3 +1,78 @@
+# nemeton 0.193.0 (2026-08-31)
+
+### Added — `validate` : sauter une source inexploitable au lieu de s'y arrêter
+
+`resolve_project_dem()` et `resolve_project_chm()` prennent un argument
+`validate` : un prédicat qui reçoit le `SpatRaster` du candidat courant et rend
+`TRUE` / `FALSE`. **Un candidat refusé est sauté et la recherche continue à la
+source suivante**, au lieu de s'arrêter là. Défaut `NULL` : comportement
+strictement inchangé.
+
+Ce que ça répare : les deux résolveurs rendaient le premier chemin qui
+*existe*, sans jamais regarder ce qu'il y a dedans. Or l'existence n'est pas
+l'exploitabilité — un MNH plat est un fichier valide et un modèle de hauteur
+nul. L'app avait dû, faute de mieux, re-sonder des chemins en dur pour trouver
+la source suivante ; elle n'a plus à le faire, et le balayage couvre désormais
+**tous** les candidats du résolveur, pas trois noms de fichiers écrits à la
+main.
+
+Le prédicat appartient à l'appelant, pas au résolveur : un seuil de houppier à
+5 m est la connaissance de qui segmente les houppiers, pas celle d'un
+résolveur de chemins.
+
+```r
+# Le LiDAR HD gagne au rang, mais ne porte aucune végétation :
+# la recherche passe à l'Open-Canopy d'à côté au lieu de rendre un MNH plat.
+chm <- resolve_project_chm(projet, validate = function(r) {
+  max(terra::values(r), na.rm = TRUE) >= 5
+})
+```
+
+Deux points de contrat, documentés : `validate` ouvre chaque candidat sondé et
+s'applique **aussi** quand `load = FALSE` (les chemins sont rendus, mais le
+raster est lu pour être jugé) ; et une erreur levée dans le prédicat **remonte**
+— à l'appelant de décider si un fichier illisible vaut « suivant » ou « stop ».
+Un verdict qui n'est pas un `TRUE` / `FALSE` unique est une erreur.
+
+Motivation : après la v0.192.2, retirer le contournement applicatif aurait
+supprimé un filet réel (un modèle de tête plat ne retombait plus sur la source
+suivante). Plutôt que de laisser l'app garder une liste de chemins en dur, le
+repli inter-sources remonte au cœur — sa place — et le jugement reste chez
+l'appelant.
+
+### Fixed — un callback de progression ne peut plus emporter un run de 13 heures
+
+`ingest_sentinel2_timeseries()` appelait `progress_callback` sans filet, là où
+`run_fordead_dieback()` protégeait déjà le sien. Sur une ingestion longue le
+callback est invoqué des centaines de fois, et la **forme** du payload change
+selon la phase : la série finale `fast_prewarm:*` ne porte ni `completed` ni
+`total`, contrairement aux payloads de scène. Un callback écrit pour la forme
+courante qui trébuche sur la dernière faisait remonter l'erreur hors du moteur
+— et échouer un run dont tout le travail était déjà en cache et en base.
+
+C'est le mode de défaillance signalé par l'app sur l'ingestion Couchey du
+2026-08-30 : **13 h 40**, `ingest_run.json` à `done`, 183 scènes, et une erreur
+par-dessus. Le travail utile était fait et persisté ; ce qui a levé venait
+après.
+
+Les deux moteurs partagent désormais `.make_progress_emitter()` : l'erreur du
+callback est absorbée, le **premier** échec avertit (le silence total cacherait
+un callback cassé pour de bon), les suivants se taisent — un callback qui
+échoue une fois échoue à chaque appel, et l'inondation enterrerait le run.
+
+Au même endroit, le pré-chauffage des cartes d'alerte FAST
+(`prewarm_alerts = TRUE`) est passé sous `tryCatch` **au point d'appel** : ses
+combinaisons se protégeaient déjà une à une, mais rien ne garantissait que
+l'étape entière ne puisse pas lever. Il s'exécute après que les scènes sont
+cachées ; c'est un confort, il ne doit pas transformer une ingestion terminée
+en échec.
+
+Cela n'explique pas encore le second signal de l'app — FORDEAD rendant
+`status = "error"` après avoir inséré ses 51 alertes. Son chemin post-insertion
+(bundle, élagage des sorties antérieures, insertion) est déjà protégé pièce par
+pièce, et son émetteur l'était. Le message exact du worker, que l'app fait
+désormais remonter, tranchera.
+
 # nemeton 0.192.2 (2026-08-28)
 
 ### Fixed — `resolve_project_chm()` ne voyait pas les CHM Open-Canopy

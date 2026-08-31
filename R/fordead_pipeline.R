@@ -414,11 +414,10 @@ run_fordead_dieback <- function(con,
   current_phase_idx <- 0L
   current_phase_name <- NA_character_
 
-  emit <- function(payload) {
-    if (is.null(progress_callback)) return(invisible(NULL))
-    tryCatch(progress_callback(payload),
-             error = function(e) invisible(NULL))
-  }
+  # Meme emetteur protege que l'ingestion S2 (v0.193.0) : un callback qui
+  # leve ne doit pas emporter un run de plusieurs heures, mais son premier
+  # echec s'annonce au lieu de disparaitre.
+  emit <- .make_progress_emitter(progress_callback)
   begin_phase <- function(name) {
     current_phase_idx <<- current_phase_idx + 1L
     current_phase_name <<- name
