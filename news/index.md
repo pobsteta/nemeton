@@ -1,5 +1,42 @@
 # Changelog
 
+## nemeton 0.193.1 (2026-09-01)
+
+#### Fixed — un `on.exit()` qui n’a jamais été exécuté
+
+Le script exécuté par l’enfant de
+[`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)
+fermait sa connexion DB par
+`on.exit(try(nemeton::db_disconnect(con), silent = TRUE), add = TRUE)`.
+Au **niveau top-level d’un Rscript**, un handler `on.exit` n’est jamais
+tiré — mesuré, et la mesure est maintenant un test. La ligne annonçait
+un nettoyage qui n’avait pas lieu : l’enfant ne fermait jamais sa
+connexion.
+
+Conséquence réelle : nulle, ou presque — le processus meurt aussitôt
+après et le serveur récupère la session. Ce qui est corrigé n’est pas
+une fuite, c’est une ligne qui mentait sur ce qu’elle faisait. La
+fermeture passe par `tryCatch(..., finally = )`, qui s’exécute, et
+l’erreur du corps continue de remonter au parent — c’est tout l’intérêt
+du processus plafonné.
+
+Le script est du code écrit sous forme de **chaînes de caractères** : ni
+`R CMD check`, ni `codetools`, ni aucune relecture d’éditeur ne le voit.
+Il est donc extrait dans `.capped_child_script()` et testé pour de bon :
+il parse, il ne contient plus aucun `on.exit`, il tourne de bout en bout
+dans un vrai `Rscript` (avec
+[`base::identity`](https://rdrr.io/r/base/identity.html), qui ne prend
+ni `con` ni `progress_callback` — le chemin exécuté est celui du vrai
+enfant), et une erreur du corps y produit bien un échec visible plutôt
+qu’un `result.rds` silencieux.
+
+Trouvé en instruisant, pour la session `nemetonshiny`, un défaut de la
+même famille chez elle : trois workers dont le handler de fermeture
+s’évaluait après un `rm(list = ls(envir = env), envir = env)` posé par
+un `on.exit` enregistré plus tôt — « objet `con` introuvable », après
+que le travail était fait et persisté. Deux paquets, deux endroits
+indépendants, le même jour, la même primitive.
+
 ## nemeton 0.193.0 (2026-08-31)
 
 #### Added — `validate` : sauter une source inexploitable au lieu de s’y arrêter

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.193.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.193.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,16 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.193.1" id="nemeton-01931-2026-09-01">nemeton 0.193.1 (2026-09-01)<a class="anchor" aria-label="anchor" href="#nemeton-01931-2026-09-01"></a></h2>
+<div class="section level4">
+<h4 id="fixed--un-onexit-qui-na-jamais-été-exécuté-0-193-1">Fixed — un <code>on.exit()</code> qui n’a jamais été exécuté<a class="anchor" aria-label="anchor" href="#fixed--un-onexit-qui-na-jamais-%C3%A9t%C3%A9-ex%C3%A9cut%C3%A9-0-193-1"></a></h4>
+<p>Le script exécuté par l’enfant de <code><a href="../reference/run_memory_capped.html">run_memory_capped()</a></code> fermait sa connexion DB par <code>on.exit(try(nemeton::db_disconnect(con), silent = TRUE), add = TRUE)</code>. Au <strong>niveau top-level d’un Rscript</strong>, un handler <code>on.exit</code> n’est jamais tiré — mesuré, et la mesure est maintenant un test. La ligne annonçait un nettoyage qui n’avait pas lieu : l’enfant ne fermait jamais sa connexion.</p>
+<p>Conséquence réelle : nulle, ou presque — le processus meurt aussitôt après et le serveur récupère la session. Ce qui est corrigé n’est pas une fuite, c’est une ligne qui mentait sur ce qu’elle faisait. La fermeture passe par <code>tryCatch(..., finally = )</code>, qui s’exécute, et l’erreur du corps continue de remonter au parent — c’est tout l’intérêt du processus plafonné.</p>
+<p>Le script est du code écrit sous forme de <strong>chaînes de caractères</strong> : ni <code>R CMD check</code>, ni <code>codetools</code>, ni aucune relecture d’éditeur ne le voit. Il est donc extrait dans <code>.capped_child_script()</code> et testé pour de bon : il parse, il ne contient plus aucun <code>on.exit</code>, il tourne de bout en bout dans un vrai <code>Rscript</code> (avec <code><a href="https://rdrr.io/r/base/identity.html" class="external-link">base::identity</a></code>, qui ne prend ni <code>con</code> ni <code>progress_callback</code> — le chemin exécuté est celui du vrai enfant), et une erreur du corps y produit bien un échec visible plutôt qu’un <code>result.rds</code> silencieux.</p>
+<p>Trouvé en instruisant, pour la session <code>nemetonshiny</code>, un défaut de la même famille chez elle : trois workers dont le handler de fermeture s’évaluait après un <code>rm(list = ls(envir = env), envir = env)</code> posé par un <code>on.exit</code> enregistré plus tôt — « objet <code>con</code> introuvable », après que le travail était fait et persisté. Deux paquets, deux endroits indépendants, le même jour, la même primitive.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.193.0" id="nemeton-01930-2026-08-31">nemeton 0.193.0 (2026-08-31)<a class="anchor" aria-label="anchor" href="#nemeton-01930-2026-08-31"></a></h2>
 <div class="section level4">
