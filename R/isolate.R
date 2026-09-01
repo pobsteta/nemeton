@@ -77,6 +77,49 @@
 }
 
 
+# Le script execute par l'enfant plafonne. Extrait pour etre testable :
+# c'est du code ecrit sous forme de chaines, qu'aucun `R CMD check` ni
+# aucune analyse statique ne relit (v0.193.1).
+.capped_child_script <- function() {
+  c(
+    'a <- readRDS(commandArgs(trailingOnly = TRUE)[1L])',
+    '.libPaths(a$libs)',
+    'suppressMessages(loadNamespace(a$package))',
+    '# `get(envir = asNamespace())` (not getExportedValue) so an INTERNAL',
+    '# function of `package` is reachable too — the reGénération engine worker',
+    '# is not exported from nemetonshiny (spec 035, brief-nemetonshiny-regen-capped).',
+    'f <- get(a$fun, envir = asNamespace(a$package))',
+    '# Options posées avant l\'appel : le worker peut lire des options de session',
+    '# (p.ex. nemeton.app_options via get_app_options()), qui ne franchissent pas',
+    '# la frontiere de process.',
+    'if (length(a$options)) do.call(base::options, a$options)',
+    '# Only inject what `f` actually takes: passing `con` or `progress_callback`',
+    '# to a function without them is an "unused argument" error mid-run.',
+    'takes <- function(arg) arg %in% names(formals(f))',
+    'extra <- list()',
+    'if (takes("con") && !is.null(a$db_url) && nzchar(a$db_url)) {',
+    '  con <- nemeton::db_connect(a$db_url)',
+    '  extra$con <- con',
+    '}',
+    'if (takes("progress_callback")) {',
+    '  cb <- nemeton:::.progress_file_writer(a$progress_path)',
+    '  if (!is.null(cb)) extra$progress_callback <- cb',
+    '}',
+    '# Fermeture de la connexion de l\'enfant. Ce fut un `on.exit()`, qui',
+    '# ne se tirait JAMAIS : au niveau top-level d\'un Rscript, un handler',
+    '# on.exit n\'est pas execute (mesure du 2026-09-01). La ligne annoncait',
+    '# un nettoyage qui n\'avait pas lieu. `finally` s\'execute, lui, y',
+    '# compris quand le corps leve — et l\'erreur remonte au parent comme',
+    '# avant, ce qui est tout l\'interet du process plafonne.',
+    'res <- tryCatch(',
+    '  do.call(f, c(extra, a$args)),',
+    '  finally = if (exists("con", inherits = FALSE))',
+    '    try(nemeton::db_disconnect(con), silent = TRUE))',
+    'saveRDS(res, commandArgs(trailingOnly = TRUE)[2L])'
+  )
+}
+
+
 #' Run a heavy pipeline in a memory-capped child process
 #'
 #' @description
@@ -189,34 +232,7 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
                options = options, progress_path = progress_path,
                libs = .libPaths()), f_in)
 
-  writeLines(c(
-    'a <- readRDS(commandArgs(trailingOnly = TRUE)[1L])',
-    '.libPaths(a$libs)',
-    'suppressMessages(loadNamespace(a$package))',
-    '# `get(envir = asNamespace())` (not getExportedValue) so an INTERNAL',
-    '# function of `package` is reachable too — the reGénération engine worker',
-    '# is not exported from nemetonshiny (spec 035, brief-nemetonshiny-regen-capped).',
-    'f <- get(a$fun, envir = asNamespace(a$package))',
-    '# Options posées avant l\'appel : le worker peut lire des options de session',
-    '# (p.ex. nemeton.app_options via get_app_options()), qui ne franchissent pas',
-    '# la frontiere de process.',
-    'if (length(a$options)) do.call(base::options, a$options)',
-    '# Only inject what `f` actually takes: passing `con` or `progress_callback`',
-    '# to a function without them is an "unused argument" error mid-run.',
-    'takes <- function(arg) arg %in% names(formals(f))',
-    'extra <- list()',
-    'if (takes("con") && !is.null(a$db_url) && nzchar(a$db_url)) {',
-    '  con <- nemeton::db_connect(a$db_url)',
-    '  on.exit(try(nemeton::db_disconnect(con), silent = TRUE), add = TRUE)',
-    '  extra$con <- con',
-    '}',
-    'if (takes("progress_callback")) {',
-    '  cb <- nemeton:::.progress_file_writer(a$progress_path)',
-    '  if (!is.null(cb)) extra$progress_callback <- cb',
-    '}',
-    'res <- do.call(f, c(extra, a$args))',
-    'saveRDS(res, commandArgs(trailingOnly = TRUE)[2L])'
-  ), f_script)
+  writeLines(.capped_child_script(), f_script)
 
   mm <- if (is.null(memory_max)) {
     .memory_ceiling()
