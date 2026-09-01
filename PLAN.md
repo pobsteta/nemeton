@@ -3520,6 +3520,132 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-09-01 — v0.193.1 : « objet 'con' introuvable », et un `on.exit` qui ne se tirait pas
+
+**Le signal.** Depuis le §4.1 du brief app, deux moteurs Santé échouaient
+**après** avoir fait et persisté leur travail. Le run Couchey du 31/08 a livré
+le message brut, identique sur les deux : **« objet 'con' introuvable »**.
+
+**Ce que la session app avait déjà éliminé, avec la mesure** :
+`codetools::findGlobals` sur l'intégralité des deux espaces de noms (aucune
+fonction ne référence `con` comme globale), les défauts auto-référents, le code
+construit dynamiquement, et `run_memory_capped` (qui ne concerne que FORDEAD et
+ne peut donc pas expliquer les deux). Elle avait en revanche **mesuré** qu'une
+erreur levée dans l'`on.exit` d'un `future` fait échouer la tâche alors que le
+corps a rendu son résultat — le dernier maillon.
+
+**La cause, trouvée ici et reproduite avant d'être annoncée.** Les handlers
+`on.exit` s'exécutent dans l'**ordre d'enregistrement**. Les workers Santé de
+l'app enregistrent d'abord `on.exit(.release_worker_memory(), add = TRUE)`,
+lequel fait `rm(list = ls(envir = env, all.names = TRUE), envir = env)` sur la
+frame du worker — `con` compris — puis, plus bas,
+`on.exit(close_monitoring_db_connection(con), add = TRUE)`. Au moment où le
+second s'évalue, la frame est vide.
+
+Reproduit en trente lignes, sans DB ni `future` : la forme fautive rend
+« object 'con' not found » **après** que le corps a affiché son travail et rendu
+`list(status = "success", n = 183)`.
+
+**Pourquoi aucune analyse statique ne pouvait le voir.** `con` n'est pas une
+globale : c'est une locale parfaitement liée au moment où le code l'écrit. Le
+défaut est **temporel**, pas lexical — la liaison est détruite entre
+l'enregistrement du handler et son évaluation. `findGlobals` n'a aucune prise
+là-dessus. La fouille de la session app était juste ; c'est la classe de défaut
+qui échappait à l'outil.
+
+**Trois corrections que la session app a apportées à mon diagnostic**, et qui
+valent d'être consignées :
+
+1. **Trois workers, pas deux.** J'avais écrit que le troisième
+   (`service_monitoring.R:149`) n'avait pas de `.release_worker_memory()` et
+   servait donc de contre-exemple. Faux : j'avais pris une ligne de fermeture
+   de connexion pour l'absence de libération — le `grep` donne 93, 564, 773.
+   RECONFORT était touché aussi ; sur la capture du run il était encore « En
+   cours », il n'infirmait rien. Le raisonnement n'était pas fragilisé, son
+   périmètre était sous-estimé.
+2. **Mon critère de confirmation était faux.** J'avais proposé « le prochain run
+   doit nommer `close_monitoring_db_connection(con)` dans `conditionCall()` ».
+   Mesuré : il nomme **la fonction worker**, pas l'appel interne — l'erreur naît
+   en évaluant l'expression `on.exit` dans la frame de la fonction. Un run
+   conforme aurait été lu comme une infirmation.
+3. **Le piège de l'évaluation paresseuse**, que la session app a relevé contre
+   elle-même : sa première reproduction concluait « pas de bug », parce que son
+   `fermer()` n'utilisait pas son argument — un handler qui ne force pas la
+   locale ne casse rien. Le test livré porte un `force()` explicite.
+
+Correctif côté app : `nemetonshiny` **v0.143.9** — les trois fermetures passent
+devant par `after = FALSE` plutôt que de déplacer la libération en fin de corps,
+qui l'aurait retirée des chemins d'échec précoce (le `stop("Monitoring DB not
+configured")` juste au-dessus), c'est-à-dire des cas où rendre la mémoire
+compte. Un **quatrième site** trouvé au passage : `close(.ws_log_conn)`, même
+défaut mais **silencieux** — son handler sous `tryCatch` avalait l'échec depuis
+le début, et la connexion de log ne se fermait jamais.
+
+**Et le même jour, la même primitive dans le cœur.** Le script exécuté par
+l'enfant de `run_memory_capped()` (`R/isolate.R`) posait
+`on.exit(try(nemeton::db_disconnect(con), silent = TRUE), add = TRUE)` au
+**niveau top-level d'un Rscript**, où un handler `on.exit` n'est jamais tiré.
+Mesuré, et la mesure est devenue un test. Conséquence pratique : nulle ou
+presque — le processus meurt aussitôt, le serveur récupère la session. Ce qui
+est corrigé, c'est une ligne qui mentait sur ce qu'elle faisait.
+
+La fermeture passe par `tryCatch(..., finally = )`, et l'erreur du corps
+continue de remonter au parent. Le script étant du code écrit **en chaînes de
+caractères** — invisible à `R CMD check`, à `codetools` et à toute relecture
+d'éditeur — il est extrait dans `.capped_child_script()` et réellement testé :
+il parse, il ne contient plus d'`on.exit`, il tourne de bout en bout dans un
+vrai `Rscript`, et une erreur du corps y produit un échec visible plutôt qu'un
+`result.rds` silencieux. 11 assertions.
+
+---
+
+### 2026-09-01 — App `nemetonshiny` v0.143.9 : la cause des échecs Santé, trouvée et reproduite
+
+Les moteurs Santé échouaient **après** avoir fait et persisté leur travail.
+Cause : les handlers `on.exit` s'exécutent dans l'ordre d'enregistrement, et
+`.release_worker_memory()` — enregistré en tête de corps dans les **trois**
+workers (`service_monitoring.R:93, 564, 773`) — fait
+`rm(list = ls(envir = env), envir = env)` sur la frame du worker, `con`
+compris. La fermeture de connexion, enregistrée après, s'évaluait sur une frame
+vide : « objet 'con' introuvable ». Diagnostic de la session cœur
+`nemeton-63`, vérifié et reproduit côté app avant correction.
+
+Les trois fermetures passent devant par `after = FALSE` plutôt que de déplacer
+la libération en fin de corps, qui l'aurait retirée des chemins d'échec
+précoce. Quatrième site trouvé au passage : `close(.ws_log_conn)`, même défaut
+mais **silencieux** (handler sous `tryCatch`), la connexion de log ne se fermait
+jamais.
+
+Aucune analyse statique ne pouvait le voir : `con` est une locale dont la
+liaison est détruite entre l'enregistrement du handler et son évaluation —
+défaut temporel, pas lexical. `nemetonshiny@dcec4019`.
+
+---
+
+### 2026-09-01 — App `nemetonshiny` v0.143.8 : le rapport nomme désormais l'appel fautif, pas seulement l'erreur
+
+Le run Couchey du 31/08 a livré la cause que la v0.143.6 était censée faire
+remonter — « objet 'con' introuvable », identique sur les deux moteurs Santé,
+après que le travail ait été fait et persisté (`ingest_run.json` à `done`,
+183 scènes). Le message seul n'a pas suffi : `codetools::findGlobals` sur
+l'intégralité des deux espaces de noms ne trouve **aucune** fonction référençant
+`con` comme globale, et ni les défauts auto-référents ni le code construit
+dynamiquement n'expliquent le symptôme. `run_memory_capped` ne concerne que
+FORDEAD et ne peut donc pas expliquer les deux.
+
+`pipeline_task_error()` ajoute `conditionCall()`, qui nomme l'appel et traverse
+la frontière `future` — vérifié de bout en bout sur un vrai worker. La même
+vérification a montré qu'**une erreur levée dans l'`on.exit` d'un future fait
+échouer la tâche alors que le corps a rendu son résultat** : c'est la forme
+exacte du symptôme, et la queue du worker (partagée par FAST et FORDEAD,
+contrairement à leur chemin d'exécution) devient la piste principale. Cause non
+établie ; le prochain run la nommera.
+
+Suite app : 13 332 PASS, 0 FAIL, 8 SKIP. `nemetonshiny@fc5fa059`, cycle dev
+`0.143.8.9000`.
+
+---
+
 ### 2026-08-31 — App `nemetonshiny` v0.143.7 : le repli CHM en dur rendu au cœur
 
 Contrepartie applicative de la v0.193.0 cœur, livrée le jour même. `main` à
