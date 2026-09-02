@@ -3520,6 +3520,79 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-09-01 — App `nemetonshiny` v0.143.10 : l'ingestion R de RECONFORT n'était plafonnée par rien
+
+Run Couchey : RECONFORT s'arrête à l'item **82 sur 203** de son ingestion,
+étape `crop`, **sans écrire le moindre événement d'erreur**. Il n'a pas levé —
+`systemd-oomd` a tué le **scope entier** (9 processus : RStudio, la session R,
+les workers), sur la **pression** (56,87 % > 50 % sur `user@1000.service`) et
+non sur un usage absolu, scope à 14,5 Go pour 31 Go de RAM.
+
+Le cœur ne plafonnait que le sous-processus Python (`.reconfort_run_py()` →
+`.reconfort_cap_memory()`), au motif que c'est lui le gourmand. Mais la boucle
+d'ingestion des 203 scènes Sentinel-2 est du **R pur**
+(`reconfort_ingest.R:402-476`) et le run est mort **avant** d'atteindre
+Python : cette phase était à découvert. RECONFORT passe en enfant plafonné
+(`nemeton::run_memory_capped()`), comme FORDEAD depuis v0.106.6. Le parent ne
+rejoue que la moitié ntfy — sous isolation l'enfant écrit lui-même les
+fichiers, et rejouer le composite dupliquerait chaque ligne NDJSON.
+
+Mesuré côté cœur à cette occasion : un `systemd-run --scope` imbriqué crée un
+scope **frère** sous `app.slice`, pas imbriqué — l'enfant sort donc du scope
+RStudio (sa mort n'emporte plus la session), mais **les plafonds ne composent
+pas**. Reste ouvert : le dimensionnement, `NEMETON_MEMORY_MAX=16G` (surcharge
+du `.Renviron` projet) restant au-dessus du point de mort observé.
+
+Suite app : 13 347 PASS, 0 FAIL, 7 SKIP. `nemetonshiny@41f79db5`, cycle dev
+`0.143.10.9000`.
+
+**Trois mesures du cœur, consignées ici parce qu'elles resserviront** (faites
+le 2026-09-01 pour répondre aux deux questions de conception de la session
+app) :
+
+1. **Scopes frères, pas imbriqués.** Un `systemd-run --user --scope` appelé
+   depuis un scope existant crée un scope sous `app.slice`, frère de
+   l'appelant : `/user@1000.service/app.slice/nest-outer-*.scope` puis
+   `/user@1000.service/app.slice/nest-inner-*.scope`. Bon côté : l'enfant
+   plafonné est **hors** du scope RStudio, sa mort n'emporte plus la session.
+   Mauvais côté : **les plafonds ne composent pas** — enfant R 15 G + Python
+   15 G = jusqu'à 30 G sous `app.slice`, que rien ne borne. Raisonner par
+   scope, jamais par chaîne.
+2. **`MemoryHigh` est un faux ami ici.** C'est la réponse apparemment évidente
+   à « oomd tue sur la pression » — étrangler le job avant que la PSI ne monte.
+   Mais il force la récupération de pages, et avec `MemorySwapMax=0` (que
+   `.reconfort_cap_memory()` pose délibérément) cette récupération n'a nulle
+   part où aller : elle tourne sur le cache et **génère** la pression qu'elle
+   devait éviter. Même piège que celui déjà documenté pour le swap, sous une
+   autre forme. Ne pas l'ajouter.
+3. **Dégradation sans bus, propre.** `env -u DBUS_SESSION_BUS_ADDRESS -u
+   XDG_RUNTIME_DIR` : `systemd-run` échoue (« Failed to connect to bus »), la
+   sonde `.reconfort_systemd_run()` rend `NULL`, et `run_memory_capped()`
+   bascule sur son avertissement « WITHOUT a memory ceiling » puis tourne quand
+   même. Rien à durcir.
+
+**Un critère de tri, tiré des deux incidents de 24 h** : *un run qui meurt sans
+écrire son événement d'erreur est un SIGKILL externe ; un `stop()` applicatif
+écrit toujours le sien.* Le 31/08, le NDJSON était bavard → défaut applicatif
+(`on.exit`). Le 01/09, coupé net à l'item 82 → oomd. Deux symptômes voisins,
+deux familles opposées, et le critère oriente l'enquête dès la première minute.
+
+**Reste ouvert — le dimensionnement.** Trois points de mesure : pic légitime le
+plus lourd **11,3 G** (RECONFORT/IOTA2, 13/07) ; points de mort oomd **17,1 G**
+(août) puis **14,5 G** (01/09) ; plafond politique **15 G** (50 % de MemTotal),
+mais plafond réellement appliqué à l'app **16 G**, par
+`nemetonshiny/.Renviron:15` — R lit le `.Renviron` du répertoire de travail
+avant celui du home, ce qui rend la surcharge invisible depuis une session
+`nemeton`. Le troisième point (14,5 G) passe **sous** le plafond : celui-ci
+redevient inerte, exactement le défaut que le passage de 70 % à 50 % avait
+corrigé. Proposition faite à Pascal : **40 %** (12,5 G ici), au-dessus du pic
+et sous les deux points de mort — *et* retrait de la surcharge, sans quoi la
+baisse n'a aucun effet sur l'app. Décision en attente. Réserve à garder en
+tête : oomd tue sur la pression, donc aucune fraction de `MemTotal` ne peut
+être *prouvée* correcte.
+
+---
+
 ### 2026-09-01 — v0.193.1 : « objet 'con' introuvable », et un `on.exit` qui ne se tirait pas
 
 **Le signal.** Depuis le §4.1 du brief app, deux moteurs Santé échouaient
