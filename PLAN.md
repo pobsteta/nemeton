@@ -3520,6 +3520,51 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-09-02 — v0.194.0 : le plafond mémoire passe à 40 %, parce que le point de mort bouge
+
+**Le fait nouveau.** Le 2026-09-01, `systemd-oomd` a tué la session de la
+station de référence à **14,5 Go** — sous les 15 Go que la règle des 50 %
+calcule sur cette machine de 31,2 Go. La politique, révisée trois semaines plus
+tôt précisément pour ne plus être inerte, l'était redevenue.
+
+**Ce que trois points de mesure disent, que deux ne disaient pas.** Le point de
+mort n'est pas une constante de la machine : **17,1 Go** (2026-08-15) puis
+**14,5 Go** (2026-09-01), selon le cache de pages, le swap et ce que le bureau
+fait par ailleurs — ce matin-là, deux suites de tests R en parallèle. Une
+politique calée sur *le* point de mort observé sera donc périmée à la première
+journée chargée. La règle correcte est : passer sous **tous** les points
+mesurés.
+
+**40 %, soit 12 Go ici** — au-dessus du pic légitime le plus lourd (11,3 Go,
+chaîne RECONFORT/IOTA2 du 2026-07-13), sous les deux points de mort. La marge
+au-dessus du pic est mince (11,3 → 12), et c'est assumé : c'est le prix pour
+rester sous une cible mobile.
+
+**Un test garde la politique, pas seulement le code.** Le vecteur des points de
+mort observés est dans `test-memory-ceiling.R` ; le défaut calculé doit passer
+sous leur minimum. Un quatrième incident plus bas fera tomber ce test, et le
+test dit où ajouter la mesure — plutôt que de laisser quelqu'un déduire la
+règle du seul chiffre `0.4`.
+
+**Ce qui ne se règle pas par une fraction.** oomd tue sur la **pression**, pas
+sur un usage absolu, et la pression est produite par toute la session
+utilisateur, pas par le travail plafonné seul. Aucune fraction de `MemTotal`
+n'est *prouvable* depuis R. C'est pourquoi la vraie correction du 01/09 est
+ailleurs : côté app, l'ingestion R de RECONFORT tournait sans cgroup du tout et
+le run est mort **avant** d'atteindre le Python plafonné. La couverture
+d'abord, le dimensionnement ensuite.
+
+**L'autre moitié, côté poste** (faite le 01/09 sur demande directe de Pascal,
+côté app) : `nemetonshiny/.Renviron` passe de `NEMETON_MEMORY_MAX=16G` à
+**12G**, et de `NEMETON_PARALLEL_WORKERS=6` à **4** sur 8 cœurs. Les workers
+`future` sont **persistants** et gardent ce qu'ils ont alloué entre deux
+tâches : six d'entre eux dans cet état sont le multiplicateur habituel de ces
+incidents. Sans ce retrait, la baisse côté cœur n'aurait rien changé pour
+l'app — R lit le `.Renviron` du répertoire de travail avant celui du home, ce
+qui rendait la surcharge invisible depuis une session `nemeton`.
+
+---
+
 ### 2026-09-01 — App `nemetonshiny` v0.143.10 : l'ingestion R de RECONFORT n'était plafonnée par rien
 
 Run Couchey : RECONFORT s'arrête à l'item **82 sur 203** de son ingestion,
@@ -3585,11 +3630,11 @@ mais plafond réellement appliqué à l'app **16 G**, par
 avant celui du home, ce qui rend la surcharge invisible depuis une session
 `nemeton`. Le troisième point (14,5 G) passe **sous** le plafond : celui-ci
 redevient inerte, exactement le défaut que le passage de 70 % à 50 % avait
-corrigé. Proposition faite à Pascal : **40 %** (12,5 G ici), au-dessus du pic
-et sous les deux points de mort — *et* retrait de la surcharge, sans quoi la
-baisse n'a aucun effet sur l'app. Décision en attente. Réserve à garder en
-tête : oomd tue sur la pression, donc aucune fraction de `MemTotal` ne peut
-être *prouvée* correcte.
+corrigé. **Tranché le 2026-09-02** : politique du cœur à **40 %** (12 Go ici,
+v0.194.0) *et* surcharge app ramenée à 12G avec 4 workers au lieu de 6 — les
+deux moitiés, sans quoi la première n'aurait rien changé pour l'app. Réserve
+maintenue : oomd tue sur la pression, donc aucune fraction de `MemTotal` ne
+peut être *prouvée* correcte.
 
 ---
 

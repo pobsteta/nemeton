@@ -1,3 +1,49 @@
+# nemeton 0.194.0 (2026-09-02)
+
+### Changed — le plafond mémoire par défaut passe de 50 % à 40 % de la RAM
+
+Un **troisième** point de mesure a déplacé la cible. Le 2026-09-01,
+`systemd-oomd` a de nouveau tué la session de la station de référence — cette
+fois à **14,5 Go**, soit **sous** les 15 Go que la règle des 50 % calcule sur
+cette machine de 31,2 Go :
+
+```
+Killed .../app-rstudio-1113027.scope due to memory pressure for
+user@1000.service being 56.87% > 50.00% for > 20s with reclaim activity
+```
+
+Le point de mort n'est donc pas une constante de la machine : **17,1 Go un
+jour, 14,5 Go un autre**, selon le cache de pages, le swap et ce que le bureau
+fait par ailleurs (ce matin-là, deux suites de tests R en parallèle). Les 50 %
+étaient redevenus inertes — exactement le défaut que le passage de 70 % à 50 %
+avait corrigé en v0.183.0.
+
+D'où **40 %**, soit **12 Go** ici : toujours au-dessus du run légitime le plus
+lourd mesuré (chaîne RECONFORT/IOTA2 complète, 11,3 Go le 2026-07-13), et
+désormais sous **les deux** points de mort. L'argument ne change pas — un
+plafond entre le pic observé et le point de mort observé — seules les mesures
+sur lesquelles il repose passent de deux à trois.
+
+**Ce que cette fraction ne peut pas faire**, et qu'il vaut mieux écrire que
+redécouvrir : oomd tue sur la **pression**, pas sur un usage absolu, et la
+pression est produite par toute la session utilisateur, pas par le seul travail
+plafonné. Aucune fraction de `MemTotal` ne peut donc être *prouvée* correcte
+depuis R. La marge au-dessus du pic est maintenant mince (11,3 → 12 Go) : c'est
+le prix à payer pour rester sous un point de mort qui bouge. Les deux
+échappatoires (`options(nemeton.memory_max)`, `NEMETON_MEMORY_MAX`) restent
+honorées partout.
+
+Un test garde la politique elle-même, pas seulement le code : le défaut doit
+passer sous **tous** les points de mort mesurés, et le vecteur qui les liste dit
+où ajouter le prochain.
+
+**Le correctif structurel est ailleurs**, et il a été fait le même jour côté
+app (`nemetonshiny` v0.143.10) : la boucle d'ingestion R de RECONFORT tournait
+dans le scope de la session, plafonnée par **rien** — le run est mort à l'item
+82 sur 203, avant même d'atteindre le sous-processus Python que
+`.reconfort_cap_memory()` protège. Aucune fraction, si basse soit-elle,
+n'aurait sauvé ce run. Le dimensionnement vient après la couverture, pas avant.
+
 # nemeton 0.193.1 (2026-09-01)
 
 ### Fixed — un `on.exit()` qui n'a jamais été exécuté
