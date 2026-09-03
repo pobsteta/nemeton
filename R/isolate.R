@@ -172,14 +172,16 @@
 #' @param progress_callback Parent-side callback, fed by replaying the child's
 #'   events (requires `progress_path`).
 #' @param memory_max Ceiling as a systemd size string (e.g. `"12G"`), or
-#'   `FALSE` to disable it. Default (`NULL`): **50% of `MemTotal`**, unless
+#'   `FALSE` to disable it. Default (`NULL`): **40% of `MemTotal`**, unless
 #'   `options(nemeton.memory_max)` or the `NEMETON_MEMORY_MAX` environment
 #'   variable says otherwise — one policy, shared with the RECONFORT subprocess
 #'   cap. The fraction is not a guess: on the reference workstation
-#'   `systemd-oomd` was observed killing the session at 17.1 GB of 31.2 GB,
-#'   which the former 70% default (21 GB) sat *above* — a ceiling that can only
-#'   trip after the OOM killer has acted is not a ceiling. See
-#'   `R/memory-ceiling.R` for the full argument and the escape hatches.
+#'   `systemd-oomd` was observed killing the session at 17.1 GB of 31.2 GB, then
+#'   at 14.5 GB three months later — a trip point that MOVES with what else the
+#'   desktop is doing. A ceiling that can only trip after the OOM killer has
+#'   acted is not a ceiling, so the fraction sits under both figures and above
+#'   the heaviest run measured here (11.3 GB). See `R/memory-ceiling.R` for the
+#'   full argument and the escape hatches.
 #' @param poll_ms How often to poll the child for progress, in milliseconds.
 #' @param quiet Suppress the child's console output.
 #'

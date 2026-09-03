@@ -1,8 +1,9 @@
 # Politique de plafond mémoire — une seule, partagée par les trois chemins
 # lourds (run_memory_capped, .reconfort_run_py, .reconfort_cap_memory).
-# Décision 2026-08-22 : 50 % de MemTotal, cf. l'en-tête de R/memory-ceiling.R.
+# Décision 2026-09-01 : 40 % de MemTotal (révise les 50 % du 2026-08-22, après
+# un TROISIÈME point de mesure), cf. l'en-tête de R/memory-ceiling.R.
 
-test_that(".memory_ceiling derives 50% of MemTotal by default", {
+test_that(".memory_ceiling derives 40% of MemTotal by default", {
   skip_if_not(file.exists("/proc/meminfo"), "Linux only")
   withr::local_options(nemeton.memory_max = NULL,
                        nemeton.reconfort_memory_max = NULL)
@@ -10,7 +11,7 @@ test_that(".memory_ceiling derives 50% of MemTotal by default", {
 
   kb  <- nemeton:::.mem_total_kb()
   skip_if(is.na(kb) || kb <= 0, "MemTotal unreadable")
-  expected_gb <- floor(kb / 1048576 * 0.5)
+  expected_gb <- floor(kb / 1048576 * 0.4)
 
   val <- nemeton:::.memory_ceiling()
   if (expected_gb < 4) {
@@ -22,19 +23,36 @@ test_that(".memory_ceiling derives 50% of MemTotal by default", {
   }
 })
 
-test_that("the default sits BELOW the level at which oomd was observed to act", {
-  # C'est tout l'argument du changement : l'ancien défaut (70 %) valait 21 Go
-  # sur la station de référence (31,2 Go), au-dessus des 17,1 Go auxquels
-  # systemd-oomd avait déjà tué la session. Un plafond qui ne se déclenche
-  # qu'après l'exécuteur n'est pas un plafond.
-  ref_total_kb <- 32764424            # /proc/meminfo de la station de l'incident
-  observed_kill_gb <- 17.1            # journal systemd-oomd du 2026-08-15
+test_that("the default sits BELOW EVERY level at which oomd was observed to act", {
+  # C'est tout l'argument de la politique : un plafond entre le pic legitime
+  # observe et le point de mort observe. Un plafond qui ne se declenche
+  # qu'apres l'executeur n'est pas un plafond — c'est ce qui condamnait les
+  # 70 % (21 Go, au-dessus des 17,1 Go du premier incident), puis les 50 %
+  # (15 Go, au-dessus des 14,5 Go du troisieme).
+  #
+  # Le point de mort n'est PAS une constante de la machine : 17,1 Go un jour,
+  # 14,5 Go un autre, selon le cache de pages, le swap et ce que le bureau
+  # fait par ailleurs. D'ou le pluriel : le defaut doit passer sous TOUS les
+  # points mesures, pas sous le dernier en date.
+  ref_total_kb <- 32764424        # /proc/meminfo de la station de reference
+  observed_kill_gb <- c(17.1,     # journal systemd-oomd du 2026-08-15
+                        14.5)     # journal systemd-oomd du 2026-09-01
+  heaviest_legit_gb <- 11.3       # chaine RECONFORT/IOTA2 complete, 2026-07-13
 
   ceiling_gb <- floor(ref_total_kb / 1048576 * nemeton:::.MEMORY_CEILING_FRACTION)
-  expect_lt(ceiling_gb, observed_kill_gb)
-  # ... et au-dessus du run légitime le plus lourd jamais mesuré ici
-  # (chaîne RECONFORT/IOTA2 complète, 11,3 Go le 2026-07-13).
-  expect_gt(ceiling_gb, 11.3)
+  expect_lt(ceiling_gb, min(observed_kill_gb))
+  expect_gt(ceiling_gb, heaviest_legit_gb)
+})
+
+test_that("un nouveau point de mort sous le plafond doit faire echouer ce test", {
+  # Garde-fou de la politique elle-meme, pas du code : si oomd est observe
+  # plus bas que le plafond calcule, la fraction est redevenue inerte et il
+  # faut la revoir. Ce test dit ou ajouter le point de mesure — dans le
+  # vecteur du test precedent — plutot que de laisser quelqu'un deduire la
+  # regle du seul chiffre 0.4.
+  ref_total_kb <- 32764424
+  ceiling_gb <- floor(ref_total_kb / 1048576 * nemeton:::.MEMORY_CEILING_FRACTION)
+  expect_equal(ceiling_gb, 12)   # 40 % de 31,2 Go
 })
 
 test_that("options() outrank the environment variable", {

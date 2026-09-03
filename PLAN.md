@@ -3520,6 +3520,142 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-09-02 — App `nemetonshiny` v0.143.13 : le moteur tournait sur 2018 / 2022 sans le dire
+
+Projet **Lajoux**, où la détection E-OBS est indisponible : l'étape s'affiche en
+*Sautée* avec la bonne consigne (« saisir les années manuellement »), puis le gel
+R7 et le moteur de reGénération s'affichent en **vert** — sans que rien n'indique
+sur quelles années ils ont tourné.
+
+`annees_pipeline()` n'est rempli que si l'étape E-OBS **réussit**. Sautée, il
+reste `NULL` et le `%||%` des deux lanceurs retombe sur les champs du
+formulaire, dont les valeurs d'usine sont `2018` et `2022`. Un run pouvait donc
+décrire une année moyenne et une canicule sans rapport avec le climat du site, et
+être rapporté réussi. C'est le mode de défaillance annoncé à la livraison de la
+chaîne (v0.143.0) pour le cas « E-OBS réussit » ; le cas « E-OBS est sauté »
+n'avait rien prévu.
+
+Les deux étapes consommatrices enregistrent désormais les années qu'elles vont
+utiliser **et leur provenance** ; le repli est nommé dans le rapport, avec ses
+valeurs. Pas de blocage : quelqu'un a pu saisir ses années exprès, et un résultat
+sur des années choisies vaut mieux qu'un refus — ce qui manquait n'était pas un
+garde-fou, c'était la visibilité. `detectees` n'est vrai que si les **deux**
+années viennent d'E-OBS, une seule suffirait à laisser passer un repli silencieux
+sur l'autre.
+
+Suite app : 13 392 PASS, 0 FAIL. `nemetonshiny@7886555d`.
+
+
+---
+
+### 2026-09-02 — App `nemetonshiny` v0.143.12 : une garde qui se sabotait à son premier usage
+
+La v0.143.11 devait empêcher la recréation des zones de suivi. Au premier
+lancement qui l'a suivie, sur Couchey, elle les a recréées quand même (ids
+49-52), et les **106 marqueurs de reprise** consolidés à la main sont repartis en
+orphelins.
+
+La cause est dans la garde. `.zones_a_jour()` exigeait le fichier de clé — or ce
+fichier n'est écrit qu'**après** un enregistrement réussi. Au premier run il
+n'existe pas encore : la garde répondait « périmées » sur des zones parfaitement
+valides. Une fois par projet, le correctif détruisait exactement ce qu'il
+protégeait.
+
+Des zones qui existent, portent une strate `_tot` et n'ont pas de clé sont
+désormais **adoptées** : on écrit la clé des sources courantes et on ne recrée
+rien, ce qui amorce la clé pour les runs suivants. Risque assumé et écrit dans le
+code — adopter une géométrie périmée si les UGF ont changé — borné par le fait
+que l'ancien comportement recréait les zones à *chaque* run (donc des zones
+présentes viennent du run précédent) et que le bouton de l'onglet réenregistre
+toujours.
+
+**Le motif, qui dépasse ce correctif** : une garde ne doit pas dépendre d'un
+artefact que seule l'action qu'elle évite sait produire. Le test initial
+vérifiait justement que l'absence de clé rendait `FALSE`, en croyant verrouiller
+la prudence — il verrouillait le défaut. Écrire le premier test dans le sens
+« projet neuf » plutôt que « clé déjà là » l'aurait montré.
+
+Suite app : 13 374 PASS, 0 FAIL. `nemetonshiny@28625639`.
+
+
+---
+
+### 2026-09-02 — v0.194.0 : le plafond mémoire passe à 40 %, parce que le point de mort bouge
+
+**Le fait nouveau.** Le 2026-09-01, `systemd-oomd` a tué la session de la
+station de référence à **14,5 Go** — sous les 15 Go que la règle des 50 %
+calcule sur cette machine de 31,2 Go. La politique, révisée trois semaines plus
+tôt précisément pour ne plus être inerte, l'était redevenue.
+
+**Ce que trois points de mesure disent, que deux ne disaient pas.** Le point de
+mort n'est pas une constante de la machine : **17,1 Go** (2026-08-15) puis
+**14,5 Go** (2026-09-01), selon le cache de pages, le swap et ce que le bureau
+fait par ailleurs — ce matin-là, deux suites de tests R en parallèle. Une
+politique calée sur *le* point de mort observé sera donc périmée à la première
+journée chargée. La règle correcte est : passer sous **tous** les points
+mesurés.
+
+**40 %, soit 12 Go ici** — au-dessus du pic légitime le plus lourd (11,3 Go,
+chaîne RECONFORT/IOTA2 du 2026-07-13), sous les deux points de mort. La marge
+au-dessus du pic est mince (11,3 → 12), et c'est assumé : c'est le prix pour
+rester sous une cible mobile.
+
+**Un test garde la politique, pas seulement le code.** Le vecteur des points de
+mort observés est dans `test-memory-ceiling.R` ; le défaut calculé doit passer
+sous leur minimum. Un quatrième incident plus bas fera tomber ce test, et le
+test dit où ajouter la mesure — plutôt que de laisser quelqu'un déduire la
+règle du seul chiffre `0.4`.
+
+**Ce qui ne se règle pas par une fraction.** oomd tue sur la **pression**, pas
+sur un usage absolu, et la pression est produite par toute la session
+utilisateur, pas par le travail plafonné seul. Aucune fraction de `MemTotal`
+n'est *prouvable* depuis R. C'est pourquoi la vraie correction du 01/09 est
+ailleurs : côté app, l'ingestion R de RECONFORT tournait sans cgroup du tout et
+le run est mort **avant** d'atteindre le Python plafonné. La couverture
+d'abord, le dimensionnement ensuite.
+
+**L'autre moitié, côté poste** (faite le 01/09 sur demande directe de Pascal,
+côté app) : `nemetonshiny/.Renviron` passe de `NEMETON_MEMORY_MAX=16G` à
+**12G**, et de `NEMETON_PARALLEL_WORKERS=6` à **4** sur 8 cœurs. Les workers
+`future` sont **persistants** et gardent ce qu'ils ont alloué entre deux
+tâches : six d'entre eux dans cet état sont le multiplicateur habituel de ces
+incidents. Sans ce retrait, la baisse côté cœur n'aurait rien changé pour
+l'app — R lit le `.Renviron` du répertoire de travail avant celui du home, ce
+qui rendait la surcharge invisible depuis une session `nemeton`.
+
+---
+
+### 2026-09-01 — App `nemetonshiny` v0.143.11 : deux caches rejoués pour rien
+
+Parti d'une question de l'utilisateur — « pourquoi le contrôle d'intégrité est-il
+rejoué en entier ? » — qui a mené à un défaut plus coûteux que celui qu'elle
+visait.
+
+**Contrôle d'intégrité de la desserte** : 51 min sur Couchey (17 056 tronçons), à
+chaque lancement de la chaîne, réseau inchangé. Le résultat était pourtant sur le
+disque (`integrite.rds`), relu — mais seulement pour réafficher le panneau à la
+réouverture du projet. Le lancement ne le consultait jamais, et son lecteur ne
+prenait **aucune clé** : il savait répondre « le fichier existe », pas « il est
+encore valable ». Contraste avec `.load_cached_desserte(project_path, params)`,
+qui compare les paramètres. Une clé de fraîcheur (mtime + taille du GeoPackage du
+réseau et de l'AOI) en sidecar comble le trou ; le bouton de l'onglet relance
+toujours.
+
+**Zones de suivi** : `build_project_monitoring_zones()` a `replace = TRUE` par
+défaut, et ce `replace` supprime puis réinsère — les identifiants changent à
+chaque appel. Tout ce qui est indexé dessus devenait orphelin. Mesuré sur
+Couchey, un seul projet, trois runs : `output_zone_37` (106 marqueurs, 3,5 Go),
+`_41` (81, 2,8 Go), `_45` (2, 1,4 Go) — **6,3 Go sous des zones qui n'existent
+plus**, vérifié en base. Le disque n'est pas le pire : les marqueurs
+d'idempotence de l'ingestion RECONFORT vivent sous ce répertoire, donc un nouvel
+identifiant = un répertoire vide = **tout re-téléchargé**. La reprise après arrêt
+était déjà écrite côté cœur ; c'est le renouvellement des identifiants qui
+l'annulait, run après run.
+
+Suite app : 13 367 PASS, 0 FAIL. `nemetonshiny@52a5327a`.
+
+---
+
 ### 2026-09-01 — App `nemetonshiny` v0.143.10 : l'ingestion R de RECONFORT n'était plafonnée par rien
 
 Run Couchey : RECONFORT s'arrête à l'item **82 sur 203** de son ingestion,
@@ -3585,11 +3721,11 @@ mais plafond réellement appliqué à l'app **16 G**, par
 avant celui du home, ce qui rend la surcharge invisible depuis une session
 `nemeton`. Le troisième point (14,5 G) passe **sous** le plafond : celui-ci
 redevient inerte, exactement le défaut que le passage de 70 % à 50 % avait
-corrigé. Proposition faite à Pascal : **40 %** (12,5 G ici), au-dessus du pic
-et sous les deux points de mort — *et* retrait de la surcharge, sans quoi la
-baisse n'a aucun effet sur l'app. Décision en attente. Réserve à garder en
-tête : oomd tue sur la pression, donc aucune fraction de `MemTotal` ne peut
-être *prouvée* correcte.
+corrigé. **Tranché le 2026-09-02** : politique du cœur à **40 %** (12 Go ici,
+v0.194.0) *et* surcharge app ramenée à 12G avec 4 workers au lieu de 6 — les
+deux moitiés, sans quoi la première n'aurait rien changé pour l'app. Réserve
+maintenue : oomd tue sur la pression, donc aucune fraction de `MemTotal` ne
+peut être *prouvée* correcte.
 
 ---
 

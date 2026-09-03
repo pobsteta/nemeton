@@ -7,8 +7,8 @@
 # different ceilings is not a policy, it is an accident waiting for the biggest
 # of the three.
 #
-# WHY 50 % AND NOT 70 % (decision 2026-08-22)
-# -------------------------------------------
+# WHY 40 % (decision 2026-09-01, revisant celle du 2026-08-22)
+# ------------------------------------------------------------
 # The ceiling exists so that an overshooting job dies ALONE. For that it must
 # trip BEFORE `systemd-oomd` acts on the user slice — and oomd does not act on
 # an absolute figure but on memory PRESSURE (PSI). On the reference workstation
@@ -19,28 +19,54 @@
 #   user@1000.service being 77.22% > 50.00% for > 20s
 #   Current Memory Usage: 17.1G
 #
-# The former default — 70 % of `MemTotal`, i.e. **21 GB** there — is ABOVE that
-# figure. A ceiling that can only trip after the executioner has acted is not a
-# ceiling; it never fired once, in either incident. 50 % gives **15 GB**: below
-# the observed trip point, and still above the heaviest run ever measured here
-# (RECONFORT/IOTA2 full chain, 11.3 GB on 2026-07-13). That is the whole
-# argument — an observed kill point and an observed peak, with the ceiling
-# placed between the two.
+# The 70 % default of the day — **21 GB** there — was ABOVE that figure. A
+# ceiling that can only trip after the executioner has acted is not a ceiling;
+# it never fired once, in either incident. 50 % gave **15 GB**: below the trip
+# point observed at the time, and above the heaviest run ever measured here
+# (RECONFORT/IOTA2 full chain, 11.3 GB on 2026-07-13).
 #
-# It remains a HEURISTIC: pressure depends on the page cache, on swap and on
-# what else the desktop is doing, so no fraction can be *proven* correct from
-# inside R. Hence two escape hatches, honoured everywhere (see below), and the
-# error message of `run_memory_capped()` names them.
+# A THIRD MEASUREMENT MOVED THE TARGET (2026-09-01)
+# -------------------------------------------------
+# On that day oomd fired again on the same workstation, at **14.5 GB** — i.e.
+# BELOW the 15 GB the 50 % rule computes:
+#
+#   Killed .../app-rstudio-1113027.scope due to memory pressure for
+#   user@1000.service being 56.87% > 50.00% for > 20s with reclaim activity
+#
+# So the trip point is not a property of the machine, it is a property of the
+# machine's mood: 17.1 GB one day, 14.5 GB another, depending on the page
+# cache, on swap, and on what else the desktop happens to be running (that
+# morning: two R test suites in parallel). 50 % had become inert again —
+# exactly the defect the 70 % -> 50 % change had been made to fix.
+#
+# Hence **40 %**, i.e. **12 GB** on this 31.2 GB machine: still above the
+# 11.3 GB peak, now below BOTH observed trip points. The argument is unchanged
+# — a ceiling between the observed peak and the observed kill — only the
+# measurements it rests on have grown from two to three.
+#
+# What this fraction CANNOT do, and it is worth stating rather than
+# rediscovering: oomd kills on PRESSURE, not on an absolute figure, and
+# pressure is produced by the whole user session, not by the capped job alone.
+# No fraction of `MemTotal` can therefore be *proven* correct from inside R.
+# The margin above the observed peak is now thin (11.3 -> 12 GB), which is the
+# price of staying under a trip point that moves. Hence two escape hatches,
+# honoured everywhere (see below), and the error message of
+# `run_memory_capped()` names them.
+#
+# The structural fix is elsewhere and was made the same day, in the app: every
+# heavy path must run in a capped child, so the kill takes the job and not the
+# session. RECONFORT's R ingestion loop was running in the session's own scope,
+# capped by nothing — no fraction, however low, would have saved that run.
 #
 # `MemTotal` and not `MemAvailable`, deliberately: sizing the ceiling on what
 # happens to be free would make two runs of the same job on the same data have
 # different odds of surviving, depending on which browser tabs were open.
 # ============================================================
 
-# 50 % of MemTotal. Below `.MEMORY_CEILING_MIN_GB` no ceiling is set at all:
+# 40 % of MemTotal. Below `.MEMORY_CEILING_MIN_GB` no ceiling is set at all:
 # on such a machine the cap would fail every legitimate job, and refusing to
 # pretend is more useful than a ceiling nothing can run under.
-.MEMORY_CEILING_FRACTION <- 0.5
+.MEMORY_CEILING_FRACTION <- 0.4
 .MEMORY_CEILING_MIN_GB   <- 4
 
 
@@ -92,7 +118,7 @@
 #' it never reaches this function.
 #'
 #' @param fraction Fraction of `MemTotal` for the computed default.
-#' @return A systemd size string (`"15G"`), or `NULL` for "no ceiling".
+#' @return A systemd size string (`"12G"`), or `NULL` for "no ceiling".
 #' @noRd
 .memory_ceiling <- function(fraction = .MEMORY_CEILING_FRACTION) {
   opt <- getOption("nemeton.memory_max",
