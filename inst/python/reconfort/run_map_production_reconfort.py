@@ -5,6 +5,7 @@ from utils.generate_cfg_file_classif_part1_sampling_2y_nov_test_1tile import gen
 from utils.generate_cfg_file_classif_part2_classification_2y_nov_test_1tile import generate_cfg as generate_cfg_part2
 import os
 import shutil
+import sys
 import iota2.Iota2 as Iota2
 import subprocess
 from utils.utils import load_config_variable
@@ -113,10 +114,27 @@ if __name__ == "__main__":
 		scheduler_type=scheduler_type,
 	)
 
+	# nemeton: neither `subprocess.run` below checked its return code. An IOTA2
+	# chain that died therefore went unnoticed here, the script carried on to the
+	# masking step, and the first visible error was a missing
+	# `final/Classif_Seed_0.tif` — a symptom three steps downstream of the cause.
+	# Combined with the child's output going to /dev/null under a future worker,
+	# that left a 20-hour run with no diagnosis at all (Couchey, 2026-09-03).
+	def run_iota2(part, argv):
+		completed = subprocess.run(argv)
+		if completed.returncode != 0:
+			print(
+				f"ERROR: IOTA2 {part} exited with code {completed.returncode}. "
+				"See IOTA2_tasks_status.txt and logs/ in the results dir.",
+				file=sys.stderr,
+			)
+			sys.exit(completed.returncode)
+		return completed
+
 	# run iota2 part 1
 	command_path = shutil.which('Iota2.py')
 	print(command_path)
-	subprocess.run([
+	run_iota2("part 1 (sampling)", [
 		"python", command_path,
 		'-config', 'generated_config_files/config_Labels_classif_part1_' + label_year + '_year_' + S2_year + '_2y_nov.cfg',
 		'-config_ressources', 'iota2/config/iota2_resources.cfg',
@@ -134,7 +152,7 @@ if __name__ == "__main__":
 		out_dir_files + '/iota2_results_classif_labels-' + label_year + '-S2_' + S2_year + '/model/'
 	)
 
-	subprocess.run([
+	run_iota2("part 2 (classification)", [
 		"python", command_path,
 		'-config', 'generated_config_files/config_Labels_classif_part2_' + label_year + '_year_' + S2_year + '_2y_nov.cfg',
 		'-config_ressources', 'iota2/config/iota2_resources.cfg',
@@ -143,10 +161,34 @@ if __name__ == "__main__":
 		'-scheduler_type', scheduler_type
 	])
 
+	# nemeton: a zero return code is not the same as a finished chain. IOTA2 can
+	# stop on a partial task graph and still exit 0 — in which case `final/` is
+	# empty and the masking below fails on a missing input, three steps away from
+	# the cause. Say what is actually there instead.
+	def require_final(path):
+		if os.path.exists(path):
+			return path
+		final_dir = os.path.dirname(path)
+		results_dir = os.path.dirname(final_dir.rstrip('/'))
+		def listing(d):
+			try:
+				return ', '.join(sorted(os.listdir(d))) or '(empty)'
+			except OSError:
+				return '(absent)'
+		print(
+			f"ERROR: IOTA2 produced no {os.path.basename(path)}.\n"
+			f"  final/: {listing(final_dir)}\n"
+			f"  classif/: {listing(os.path.join(results_dir, 'classif'))}\n"
+			"  The chain ended without assembling a final map — see "
+			"IOTA2_tasks_status.txt and logs/ in the results dir.",
+			file=sys.stderr,
+		)
+		sys.exit(3)
+
 	if dict_config['mask_final_maps'] == 'True' or dict_config['mask_final_maps'] is True:
 		dir_final_classif = out_dir_files + '/iota2_results_classif_labels-' + label_year + '-S2_' + S2_year + '/final/'
 		# mask classif map
-		src = dir_final_classif + 'Classif_Seed_0.tif'
+		src = require_final(dir_final_classif + 'Classif_Seed_0.tif')
 
 		if len(dict_config['path_to_binary_mask']) < 4:
 			print('Using available deciduous tree mask from OSO')
@@ -158,7 +200,7 @@ if __name__ == "__main__":
 		mask_rasters(src, src_mask, out_dir, 'uint8')
 
 		# mask proba maps
-		src = dir_final_classif + 'ProbabilityMap_seed_0.tif'
+		src = require_final(dir_final_classif + 'ProbabilityMap_seed_0.tif')
 		src_mask = 'masks/mask_oso_deciduous_compress.tif'
 		out_dir = dir_final_classif + 'Final_Proba_map_masked' + S2_year + '.tif'
 		mask_rasters(src, src_mask, out_dir, 'int16')
@@ -172,6 +214,6 @@ if __name__ == "__main__":
 		# if no mask is used, we only compute the continuous score
 		dir_final_classif = out_dir_files + '/iota2_results_classif_labels-' + label_year + '-S2_' + S2_year + '/final/'
 		# mask classif map
-		src = dir_final_classif + 'ProbabilityMap_seed_0.tif'
+		src = require_final(dir_final_classif + 'ProbabilityMap_seed_0.tif')
 		out_dir = dir_final_classif + 'Final_continuous_score_masked' + S2_year + '.tif'
 		compute_continuous_score(src, out_dir, 'int16')

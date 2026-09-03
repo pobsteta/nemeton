@@ -3520,6 +3520,104 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-09-03 — v0.195.0 : le run de 20 h qui est mort sans un mot
+
+Brief `nemetonshiny/specs/BRIEF-nemeton-trace-enfant-plafonne.md`, incident
+Couchey. Chaîne « Tout calculer » lancée le 2026-09-02 à 20:28, zone 49, tuile
+T31TFN. L'ingestion est **parfaite** (203/203 scènes, une première : les quatre
+tentatives précédentes plafonnaient entre 82 et 109). Puis RECONFORT tourne
+**20 h 19** et meurt sur :
+
+```
+"run_reconfort_dieback" failed in its capped child process (exit 1).
+```
+
+Rien d'autre. Pas de traceback, pas de message R, rien à quoi accrocher un
+diagnostic. Le brief demandait donc **(A)** de pouvoir capturer la sortie de
+l'enfant plafonné, et posait **(B)** une question ouverte : pourquoi IOTA² s'est
+arrêté après `classification`, sans rien dans `final/`.
+
+**La demande B n'était pas une hypothèse à confirmer, c'était une mesure à aller
+chercher.** Le journal systemd l'avait :
+
+```
+Sep 03 16:49:24 run-r459be71b….scope: A process of this unit has been killed by
+                                       the OOM killer.
+Sep 03 16:49:26 run-r459be71b….scope: Failed with result 'oom-kill'
+Sep 03 16:49:26 run-r459be71b….scope: Consumed 32min 52s CPU time,
+                                       11.5G memory peak
+```
+
+Ce n'est **pas** le scope de l'app (0,97 Go, jamais inquiété) : c'est le scope
+*interne*, celui que le cœur pose autour de `conda run … Iota2.py`. Les trois
+mesures du brief étaient justes ; elles regardaient l'autre cgroup. Le seul des
+deux qui pouvait déborder était aussi le seul à ne pas savoir demander son
+verdict à systemd — le correctif du 2026-08-23 n'avait équipé que
+`run_memory_capped()`.
+
+Le déroulé, reconstitué depuis `logs/ClassificationUsingOTB/` (le répertoire de
+travail était encore sur le disque) : chunk 2 classifié de 16:46:24 à 16:48:02,
+pic **11 457 Mo** sous un plafond de 12 Go ; chunk 0 démarré **7 s plus tard**,
+alors que dask tenait toujours 6,56 GiB de mémoire *unmanaged* non rendue à
+l'OS ; OOM à 16:49:24.
+
+Et la cause de fond était dans nos constantes : `.RECONFORT_ROWS_PER_CHUNK = 240`
+avait été calibré sur une AOI de **930** colonnes pour un pic de **13,4 Go** —
+soit **au-dessus** du plafond de 12 Go que le cœur calcule lui-même. La cible du
+découpeur et le plafond mémoire n'avaient jamais été mis face à face, et le pic
+suit l'**aire** du chunk, pas sa hauteur : à 1160 colonnes, Couchey demandait
+15 % de plus que le point de calibration.
+
+Livré :
+
+* **`run_memory_capped(log_path=)`** — capture (stdout + stderr fusionnés) au
+  lieu d'hériter des flux d'un worker `future` dont `parallelly` a fixé
+  `OUT=/dev/null`. Défaut inchangé. Le message d'échec cite le fichier et ses
+  cinq dernières lignes non vides.
+* **`.reconfort_run_py()` nomme son scope** et accroche le verdict systemd au
+  statut (`systemd_result`) ; `mapprod` passe par le même
+  `.capped_failure_message()` que l'enfant plafonné.
+* **`.reconfort_chunk_count()` respecte le plafond** : borne historique des 240
+  lignes jamais dépassée, plus un budget en pixels dérivé du plafond (7 chunks
+  de 127 lignes au lieu de 4 de 221 sur Couchey), et le découpage suit
+  `NEMETON_MEMORY_MAX`.
+* **La chaîne python cesse de se taire** : codes de retour d'IOTA² vérifiés,
+  `final/` exigé avant le masquage, et `.reconfort_iota2_diagnosis()` remonte
+  dans l'erreur l'état réel du run (chunks écrits / manquants, `final/` vide).
+
+Deux précisions de vocabulaire qui avaient égaré le diagnostic, vérifiées dans
+l'iota2 installé : `_SUBREGION_<n>` est un index de **chunk**
+(`for chunk in range(number_of_chunks)`), pas une sous-région de l'AOI ; et
+`IOTA2_tasks_status.txt` (un pickle) n'enregistre que les tâches **terminées** —
+« huit tâches, toutes `done` » ne veut donc pas dire « chaîne terminée ».
+
+**Validé le soir même** par un re-run complet de la zone 49 (mêmes 203 scènes,
+même plafond de 12 Go) : 7 chunks de 127 lignes, pic **10 250 Mo** contre 11 457
+auparavant, 16 tâches `done`, `final/` complet, 2492 alertes, **14,9 min**, zéro
+évènement oomd. La marge sous le plafond passe de 0,54 à **1,75 Go**.
+
+La mesure a aussi corrigé le modèle : deux points sur la même emprise
+(256 360 px → 11 457 Mo ; 147 320 px → 10 250 Mo) donnent
+`pic ≈ 8,42 GiB + 11,1 kB/px`. Le pic est donc **surtout un coût fixe** (modèle
+SharkRF déplié + pile gap-fillée par tuile) : diviser le chunk par deux a gagné
+1,2 Go, pas la moitié. **Le découpage ne peut pas descendre sous ~8,4 GiB** — un
+plafond proche de ce chiffre n'est atteignable par aucun nombre de chunks. Les
+constantes restent telles quelles (elles ont produit la configuration validée) ;
+seul leur commentaire a été corrigé, pour dire qu'elles sont une règle de
+dimensionnement pessimiste et non la loi mesurée.
+
+**Fragilité amont découverte** : forcer un part 1 complet (en écartant un
+`results/` antérieur) fait échouer `tiles_envelopes` **dans la chaîne** —
+`envelope/TMP/<tuile>.shp: No such file or directory` — alors que le même
+`generate_shape_tile()` hors chaîne produit une enveloppe **byte-identique** à
+celle du run précédent. Reproduit deux fois, contourné en inscrivant l'étape
+comme faite dans l'état de reprise d'iota2 (artefact vérifié identique).
+`-restart` la masquait en reprenant toujours un part 1 antérieur ; tout run
+repartant de zéro la rencontrera. C'est un défaut iota2, pas nemeton.
+
+**Côté app** : passer un `log_path` dans les trois chemins plafonnés (FAST,
+FORDEAD, RECONFORT) — voir `specs/053-trace-enfant-plafonnee/reponse-brief.md` §5.
+
 ### 2026-09-02 — App `nemetonshiny` v0.143.13 : le moteur tournait sur 2018 / 2022 sans le dire
 
 Projet **Lajoux**, où la détection E-OBS est indisponible : l'étape s'affiche en

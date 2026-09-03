@@ -108,3 +108,68 @@ test_that(".capped_scope_result and _reset answer safely when asked nothing", {
                                       timeout_ms = 200L)
   expect_true(is.na(r) || identical(r, "success"))
 })
+
+# --- Citer la trace de l'enfant quand elle a ete gardee -----------------
+# `log_path` (brief du 2026-09-03) ne sert a rien si le message d'echec ne dit
+# pas ou regarder. Et sans `log_path`, rien ne change : c'est le defaut.
+
+test_that("sans log_path, le message est exactement celui d'avant", {
+  msg <- nemeton:::.capped_failure_message("run_x", 1L, "15G", "success")
+  expect_length(msg, 1L)
+  expect_false(any(grepl("kept in", msg)))
+})
+
+test_that("le chemin est cite, et les dernieres lignes citees", {
+  withr::with_tempdir({
+    writeLines(c("blah", "", "Error in fp$fit(): out of memory"), "child.log")
+    msg <- nemeton:::.capped_failure_message("run_x", 1L, "15G", "success",
+                                             log_path = "child.log")
+    expect_match(msg[[1]], "exit 1")
+    expect_true(any(grepl("child.log", msg, fixed = TRUE)))
+    expect_true(any(grepl("Error in fp\\$fit", msg)))
+    # La ligne vide n'est pas citee : elle ne dit rien.
+    expect_false(any(msg == ""))
+  })
+})
+
+test_that("un verdict oom-kill cite AUSSI la trace", {
+  withr::with_tempdir({
+    writeLines("fordead: predict step 3/7", "child.log")
+    msg <- nemeton:::.capped_failure_message("run_x", -9L, "12G", "oom-kill",
+                                             log_path = "child.log")
+    expect_match(msg[[1]], "ran out of memory")
+    # Le verdict dit POURQUOI, la trace dit OU on en etait.
+    expect_true(any(grepl("predict step 3/7", msg, fixed = TRUE)))
+  })
+})
+
+test_that("un log absent ou vide ne fabrique pas de bullet trompeur", {
+  esc <- function(x) x
+  expect_length(nemeton:::.capped_log_bullets(NULL, esc), 0L)
+  # Fichier absent : on cite quand meme le chemin (l'enfant est peut-etre mort
+  # avant d'ecrire), mais rien de plus.
+  b <- nemeton:::.capped_log_bullets("nowhere/child.log", esc)
+  expect_length(b, 1L)
+  withr::with_tempdir({
+    file.create("empty.log")
+    expect_length(nemeton:::.capped_log_bullets("empty.log", esc), 1L)
+  })
+})
+
+test_that("une accolade dans le log ne devient pas une expression cli", {
+  withr::with_tempdir({
+    writeLines("KeyError: {'a': 1}", "child.log")
+    msg <- nemeton:::.capped_failure_message("run_x", 1L, "15G", "success",
+                                             log_path = "child.log")
+    expect_no_error(cli::format_inline(msg))
+  })
+})
+
+test_that("une ligne interminable est tronquee", {
+  withr::with_tempdir({
+    writeLines(strrep("x", 5000L), "child.log")
+    msg <- nemeton:::.capped_failure_message("run_x", 1L, "15G", "success",
+                                             log_path = "child.log")
+    expect_true(all(nchar(msg) < 500L))
+  })
+})

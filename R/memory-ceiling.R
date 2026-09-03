@@ -101,6 +101,23 @@
 }
 
 
+# A ceiling as a number of bytes, so a caller can SIZE its work against it
+# rather than merely hand it to systemd. Accepts what `.memory_ceiling()`
+# returns — a systemd size string or NULL — and the suffixes systemd itself
+# accepts (K/M/G/T, powers of 1024; bare digits are bytes). NA for "no ceiling"
+# or anything unparseable: the caller must then fall back on its own bound, not
+# on a number invented here.
+.memory_ceiling_bytes <- function(x = .memory_ceiling()) {
+  x <- .memory_ceiling_parse(x)
+  if (is.null(x)) return(NA_real_)
+  x <- toupper(trimws(x))
+  m <- regmatches(x, regexec("^([0-9]+(?:\\.[0-9]+)?)\\s*([KMGT]?)I?B?$", x))[[1L]]
+  if (length(m) != 3L) return(NA_real_)
+  as.numeric(m[[2L]]) * switch(m[[3L]], K = 1024, M = 1024^2, G = 1024^3,
+                               `T` = 1024^4, 1)
+}
+
+
 #' Memory ceiling for a capped child process
 #'
 #' Resolution order, from most to least specific:
@@ -213,6 +230,36 @@
 }
 
 
+# Bullets pointing at the child's captured output — the file, and its last
+# meaningful lines. Nothing when no `log_path` was asked for (the default), when
+# the file never appeared, or when it is empty: an `i` bullet saying "see this
+# empty file" is worse than silence.
+#
+# `n` is deliberately small. The point is not to reproduce the log in an error
+# message but to carry the ONE line that names the cause — a Python traceback's
+# last line, an R `Error in ...`. The file holds the rest, and is cited.
+#
+# `esc` comes from the caller so the escaping rule stays in one place: log
+# content is arbitrary text and may contain braces, which cli would otherwise
+# evaluate as expressions.
+.capped_log_bullets <- function(log_path, esc, n = 5L) {
+  if (is.null(log_path) || !nzchar(log_path)) return(character())
+  bullets <- c(i = esc(cli::format_inline(
+    "The child's output was kept in {.path {log_path}}.")))
+  if (!file.exists(log_path)) return(bullets)
+  lines <- tryCatch(readLines(log_path, warn = FALSE), error = function(e) character())
+  lines <- lines[nzchar(trimws(lines))]
+  if (!length(lines)) return(bullets)
+  tail_lines <- utils::tail(lines, n)
+  # Truncated per line: a single line of a Python traceback can be very long,
+  # and an error message that scrolls is an error message nobody reads.
+  tail_lines <- vapply(tail_lines, function(l)
+    if (nchar(l) > 200L) paste0(substr(l, 1L, 197L), "...") else l,
+    character(1L), USE.NAMES = FALSE)
+  c(bullets, stats::setNames(esc(tail_lines), rep(">", length(tail_lines))))
+}
+
+
 # The failure message of a capped child, decided from what we actually know.
 # Pure: `result` is systemd's verdict (NA when unavailable), `status` the exit
 # status seen by processx. Kept separate from `run_memory_capped()` so every
@@ -228,7 +275,8 @@
 # expressions evaluate in the *calling* frame, which does not hold `status` or
 # `signal`. Braces surviving in an interpolated value are escaped, so a function
 # name containing one cannot turn into an expression downstream.
-.capped_failure_message <- function(fun, status, ceiling, result = NA_character_) {
+.capped_failure_message <- function(fun, status, ceiling, result = NA_character_,
+                                    log_path = NULL) {
   status  <- as.integer(status)
   ceiling <- if (is.null(ceiling)) "none" else as.character(ceiling)
   killed  <- status %in% c(-9L, 137L, -15L, 143L)
@@ -236,6 +284,11 @@
 
   esc <- function(x) gsub("}", "}}", gsub("{", "{{", x, fixed = TRUE), fixed = TRUE)
   f   <- function(...) esc(cli::format_inline(...))
+
+  # Where the child's own words are, when the caller asked for them to be kept.
+  # Appended to every branch: even a verdict as clear as `oom-kill` leaves open
+  # WHICH step was running when the ceiling bit.
+  trace <- .capped_log_bullets(log_path, esc)
 
   hatches <- f("Raise it with {.arg memory_max}, {.envvar NEMETON_MEMORY_MAX} ",
                "(accepts {.val none}) or {.code options(nemeton.memory_max=)}, ",
@@ -246,7 +299,8 @@
     return(c(
       f("{.val {fun}} ran out of memory and was killed (ceiling: {ceiling})."),
       i = hatches,
-      i = spared
+      i = spared,
+      trace
     ))
   }
 
@@ -258,7 +312,8 @@
           } else {
             f("This is not the memory ceiling: systemd would have said {.val oom-kill}.")
           },
-      i = spared
+      i = spared,
+      trace
     ))
   }
 
@@ -268,9 +323,10 @@
       i = f("The memory ceiling ({ceiling}) is the usual cause \u2014 but a stopped ",
             "scope or an outside {.code kill} looks the same from here."),
       i = hatches,
-      i = spared
+      i = spared,
+      trace
     ))
   }
 
-  f("{.val {fun}} failed in its capped child process (exit {status}).")
+  c(f("{.val {fun}} failed in its capped child process (exit {status})."), trace)
 }

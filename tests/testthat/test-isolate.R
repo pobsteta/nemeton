@@ -166,3 +166,51 @@ test_that("the child's progress is replayed into the parent's callback", {
     expect_length(seen, 0L)
   })
 })
+
+# --- log_path : la sortie de l'enfant, gardée ---------------------------
+# Brief `nemetonshiny/specs/BRIEF-nemeton-trace-enfant-plafonne.md` (2026-09-03).
+# Sous un worker `future`, le parent a `OUT=/dev/null` : `""` (heriter) envoie
+# donc le traceback de l'enfant dans le vide. Apres 20 h de calcul, il ne
+# restait aucun message. `log_path` capture au lieu d'heriter.
+
+test_that("run_memory_capped refuse un log_path qui n'en est pas un", {
+  expect_error(run_memory_capped("x", log_path = c("a", "b")), "single non-empty path")
+  expect_error(run_memory_capped("x", log_path = ""), "single non-empty path")
+})
+
+test_that("log_path garde la sortie de l'enfant, succes compris", {
+  skip_on_cran()
+  skip_if_not_installed("processx")
+
+  withr::with_tempdir({
+    log <- file.path(getwd(), "sub", "child.log")   # le dossier n'existe pas
+    res <- suppressWarnings(run_memory_capped(
+      "print", args = list(x = "HELLO-FROM-CHILD"), package = "base",
+      memory_max = FALSE, log_path = log
+    ))
+    expect_true(file.exists(log))
+    expect_match(paste(readLines(log), collapse = "\n"), "HELLO-FROM-CHILD")
+  })
+})
+
+test_that("l'echec cite le fichier ET la derniere ligne de l'enfant", {
+  skip_on_cran()
+  skip_if_not_installed("processx")
+
+  withr::with_tempdir({
+    log <- file.path(getwd(), "child.log")
+    err <- tryCatch(
+      suppressWarnings(run_memory_capped(
+        "log", args = list(x = "BOOM-XYZ"), package = "base",
+        memory_max = FALSE, log_path = log
+      )),
+      error = function(e) e
+    )
+    expect_s3_class(err, "error")
+    msg <- conditionMessage(err)
+    expect_match(msg, "child.log", fixed = TRUE)   # ou regarder
+    # `log("BOOM-XYZ")` : l'erreur R de l'enfant part sur stderr, donc c'est la
+    # fusion 2>&1 qu'on lit ici autant que la capture.
+    expect_match(msg, "non-numeric argument")      # et ce qu'on y aurait lu
+  })
+})

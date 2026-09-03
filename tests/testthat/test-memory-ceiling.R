@@ -115,3 +115,32 @@ test_that("the RECONFORT alias and run_memory_capped share the one policy", {
     "conda", c("run", "-n", "e"), systemd_run = "/usr/bin/systemd-run")
   expect_true("--property=MemoryMax=13G" %in% out$args)
 })
+
+# --- Le plafond en octets : dimensionner son travail, pas seulement le subir ---
+# `.reconfort_chunk_count()` decoupe la classification IOTA2 pour rester sous le
+# plafond ; encore faut-il pouvoir lire le plafond comme un nombre.
+
+test_that(".memory_ceiling_bytes lit les suffixes de systemd", {
+  expect_equal(.memory_ceiling_bytes("12G"), 12 * 1024^3)
+  expect_equal(.memory_ceiling_bytes("512M"), 512 * 1024^2)
+  expect_equal(.memory_ceiling_bytes("1024"), 1024)       # nu = des octets
+  expect_equal(.memory_ceiling_bytes("12g"), 12 * 1024^3) # casse indifferente
+  expect_equal(.memory_ceiling_bytes("4Gi"), 4 * 1024^3)  # orthographe IEC
+})
+
+test_that(".memory_ceiling_bytes rend NA plutot qu'un nombre invente", {
+  # « pas de plafond » n'est pas « un plafond de zero » : l'appelant doit
+  # retomber sur sa propre borne, pas sur un chiffre fabrique ici.
+  expect_true(is.na(.memory_ceiling_bytes(NULL)))
+  expect_true(is.na(.memory_ceiling_bytes("none")))
+  expect_true(is.na(.memory_ceiling_bytes(FALSE)))
+  expect_true(is.na(.memory_ceiling_bytes("beaucoup")))
+})
+
+test_that(".memory_ceiling_bytes suit la politique en vigueur", {
+  withr::with_envvar(c(NEMETON_MEMORY_MAX = "8G"), {
+    withr::with_options(list(nemeton.memory_max = NULL, nemeton.reconfort_memory_max = NULL), {
+      expect_equal(.memory_ceiling_bytes(), 8 * 1024^3)
+    })
+  })
+})

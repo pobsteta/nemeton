@@ -14,7 +14,8 @@ run_memory_capped(
   progress_callback = NULL,
   memory_max = NULL,
   poll_ms = 500L,
-  quiet = FALSE
+  quiet = FALSE,
+  log_path = NULL
 )
 }
 \arguments{
@@ -55,6 +56,15 @@ full argument and the escape hatches.}
 \item{poll_ms}{How often to poll the child for progress, in milliseconds.}
 
 \item{quiet}{Suppress the child's console output.}
+
+\item{log_path}{Path of a file capturing the child's stdout \strong{and} stderr
+(merged). Default (\code{NULL}): the child's output follows the parent's, which
+is right on a console and \strong{wrong under a \code{future} worker} — \code{parallelly}
+starts those with \code{OUT=/dev/null}, so the child's traceback goes to the bit
+bucket and a 20-hour failure leaves no message at all (incident Couchey,
+2026-09-03). Give a path and the output is kept whatever becomes of the
+child; the failure message then cites the file and quotes its last lines.
+Takes precedence over \code{quiet}.}
 }
 \value{
 Whatever \code{fun} returned.
