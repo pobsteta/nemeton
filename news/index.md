@@ -1,5 +1,194 @@
 # Changelog
 
+## nemeton 0.195.0 (2026-09-03)
+
+#### Added — `run_memory_capped(log_path=)` : la sortie de l’enfant, gardée
+
+`processx` écrit `""` pour « hériter des flux du parent ». En console
+c’est ce qu’on veut : on voit le sous-processus travailler. Sous un
+worker `future`, le parent est lancé par `parallelly` avec
+`OUT=/dev/null` — **la sortie de l’enfant plafonné partait donc dans le
+vide**. Le 2026-09-03, après **20 h 19** de calcul RECONFORT sur le
+projet Couchey, il ne restait aucun message d’erreur : ni le traceback
+Python d’IOTA², ni l’erreur R du wrapper.
+
+[`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)
+accepte désormais `log_path` :
+
+- `NULL` (défaut) → comportement **strictement inchangé** ;
+- un chemin → `stdout = log_path`, `stderr = "2>&1"`, dossier parent
+  créé au besoin, fichier **conservé quel que soit le sort de
+  l’enfant**.
+
+Et le message d’échec cite le fichier, puis ses cinq dernières lignes
+non vides (tronquées à 200 caractères) : le but n’est pas de recopier un
+log dans une erreur, c’est de porter *la* ligne qui nomme la cause
+jusque dans ce que l’app affiche. Le contenu est échappé — un
+`KeyError: {'a': 1}` ne redevient pas une expression cli.
+
+#### Validé sur le run réel (Couchey, 2026-09-03)
+
+Re-run complet sur la zone 49, mêmes 203 scènes, même plafond de 12 Go :
+
+|  | avant (16:47) | après (21:1x) |
+|----|----|----|
+| Chunks | 4 × 221 lignes (256 360 px) | **7 × 127 lignes** (147 320 px) |
+| Pic RAM classification | **11 457 Mo** | **10 250 Mo** |
+| Marge sous le plafond | 0,54 Go | **1,75 Go** |
+| Issue | `oom-kill` du scope | 16 tâches `done`, `final/` complet |
+| Durée | 20 h 19 puis mort | **14,9 min**, 2492 alertes |
+
+Et une correction que seule la mesure pouvait apporter : **le modèle
+mémoire supposé était faux de forme.** Les deux points sur la même AOI
+
+    1160 x 221 = 256 360 px  ->  11 457 Mo   (mort)
+    1160 x 127 = 147 320 px  ->  10 250 Mo   (survécu)
+
+donnent `pic ≈ 8,42 GiB + 11,1 kB/px`. Le pic est donc **majoritairement
+un coût fixe** — le modèle SharkRF déplié et la pile gap-fillée par
+tuile — et seulement marginalement proportionnel au chunk : diviser le
+chunk par deux a gagné 1,2 Go, pas la moitié du pic. Conséquence à
+retenir : **le découpage ne peut pas descendre sous ~8,4 GiB**. Un
+plafond proche de ce chiffre n’est atteignable par aucun nombre de
+chunks ; les leviers deviennent moins de dates, une emprise plus petite,
+ou un plafond plus haut.
+
+Les constantes sont **laissées telles quelles** : elles ont produit la
+configuration validée. Les ajuster aux deux points exacts reviendrait à
+caler trois constantes sur une machine et une emprise — de la fausse
+précision sur la foi de deux mesures. Le commentaire dit maintenant ce
+qu’elles sont : une règle de dimensionnement volontairement pessimiste,
+pas la loi mesurée.
+
+**Fragilité amont relevée au passage** : forcer un part 1 complet (en
+écartant un `results/` antérieur) fait échouer `tiles_envelopes` dans la
+chaîne — `envelope/TMP/<tuile>.shp: No such file or directory` — alors
+que le même `generate_shape_tile()` appelé hors chaîne produit une
+enveloppe **byte-identique** à celle du run précédent. Reproduit deux
+fois. `-restart` le masquait jusqu’ici en reprenant toujours un part 1
+antérieur ; tout run repartant de zéro le rencontrera. Non corrigé ici
+(c’est iota2), mais désormais visible dans le message d’erreur au lieu
+d’être avalé.
+
+#### Fixed — le scope python de RECONFORT ne devine plus, il demande
+
+Le correctif du 2026-08-23 (demander son verdict à systemd plutôt que
+lire le code de sortie) n’avait équipé que
+[`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md).
+Son frère `.reconfort_run_py()`, qui plafonne `conda run … Iota2.py`,
+était resté sur la lecture de feuilles de thé — et c’est **lui** qui est
+mort à Couchey :
+
+    run-r459be71b….scope: A process of this unit has been killed by the OOM killer.
+    run-r459be71b….scope: Failed with result 'oom-kill'
+    run-r459be71b….scope: Consumed 32min 52s CPU time, 11.5G memory peak
+
+`conda run` a renvoyé **1** (un worker dask mort, pas l’interpréteur),
+et le message disait « exit 1 ». systemd avait la réponse depuis le
+début. Le scope est maintenant nommé, son verdict accroché au statut
+retourné (attribut `systemd_result`, que
+[`as.integer()`](https://rdrr.io/r/base/integer.html) laisse tomber —
+tous les appelants existants sont inchangés), et l’échec de `mapprod`
+passe par le même `.capped_failure_message()` que l’enfant plafonné.
+
+#### Fixed — le découpage IOTA² ignorait la largeur de l’AOI *et* le plafond
+
+`.RECONFORT_ROWS_PER_CHUNK = 240` avait été calibré sur une AOI de
+**930** colonnes, pour un pic mesuré de **13,4 Go** — c’est-à-dire
+**au-dessus** des 12 Go que `.memory_ceiling()` calcule sur la station
+de référence. La cible du découpeur et le plafond mémoire n’avaient
+jamais été mis face à face.
+
+Or le pic suit l’**aire** du chunk, pas sa hauteur. L’AOI de Couchey
+fait 1160 × 886 : 4 chunks de 221 lignes, soit 15 % de plus que le point
+de calibration. Le chunk 2 a fini à **11,46 Go** ; le chunk 0 est parti
+7 s plus tard, alors que dask tenait encore 6,56 GiB de mémoire
+*unmanaged* non rendue à l’OS. Le cgroup a tranché.
+
+`.reconfort_chunk_count()` prend donc deux bornes, la plus serrée gagne
+: la règle historique des 240 lignes, **jamais dépassée**, et un budget
+en pixels dérivé du plafond en vigueur (75 % du plafond, ~60 kB/px — le
+**pessimiste** des deux mesures disponibles). Sur Couchey à 12 Go : **7
+chunks de 127 lignes** au lieu de 4 de 221. Le découpage suit désormais
+`NEMETON_MEMORY_MAX` ; sans plafond lisible, seule la borne des 240
+lignes s’applique, comme avant.
+
+#### Fixed — la chaîne IOTA² ne se tait plus
+
+Trois silences empilés faisaient qu’un run de 20 h mourait sans un mot :
+
+1.  `run_map_production_reconfort.py` **ne lisait pas** le code de
+    retour de ses deux `subprocess.run([… Iota2.py …])`. Une chaîne
+    morte passait inaperçue et la première erreur visible était le
+    masquage sur un `final/Classif_Seed_0.tif` absent — un symptôme à
+    trois étapes de la cause. Les deux appels passent maintenant par un
+    `run_iota2()` qui sort avec le code d’IOTA², et `require_final()`
+    exige les rasters attendus avant le masquage, en listant `final/` et
+    `classif/` quand ils manquent.
+2.  Le verdict systemd du scope python n’était pas demandé (ci-dessus).
+3.  L’état d’IOTA² restait sur le disque :
+    `.reconfort_iota2_diagnosis()` le remonte désormais dans l’erreur —
+    chunks écrits sur chunks attendus, chunks manquants nommés, `final/`
+    vide ou non, emplacement du pickle de statuts et des logs par tâche.
+    Sur Couchey : *1 of 4 chunks written… Missing 3 chunks: 0, 1, and 3…
+    final holds no raster*.
+
+Au passage, une précision de vocabulaire qui avait égaré le diagnostic :
+`_SUBREGION_<n>` est un index de **chunk**
+(`for chunk in range(number_of_chunks)` dans `classification_otb.py`),
+pas une sous-région de l’AOI ; et `IOTA2_tasks_status.txt` n’enregistre
+que les tâches **terminées** — « toutes `done` » n’y veut pas dire «
+chaîne terminée ».
+
+Voir `specs/053-trace-enfant-plafonnee/reponse-brief.md`.
+
+## nemeton 0.194.0 (2026-09-02)
+
+#### Changed — le plafond mémoire par défaut passe de 50 % à 40 % de la RAM
+
+Un **troisième** point de mesure a déplacé la cible. Le 2026-09-01,
+`systemd-oomd` a de nouveau tué la session de la station de référence —
+cette fois à **14,5 Go**, soit **sous** les 15 Go que la règle des 50 %
+calcule sur cette machine de 31,2 Go :
+
+    Killed .../app-rstudio-1113027.scope due to memory pressure for
+    user@1000.service being 56.87% > 50.00% for > 20s with reclaim activity
+
+Le point de mort n’est donc pas une constante de la machine : **17,1 Go
+un jour, 14,5 Go un autre**, selon le cache de pages, le swap et ce que
+le bureau fait par ailleurs (ce matin-là, deux suites de tests R en
+parallèle). Les 50 % étaient redevenus inertes — exactement le défaut
+que le passage de 70 % à 50 % avait corrigé en v0.183.0.
+
+D’où **40 %**, soit **12 Go** ici : toujours au-dessus du run légitime
+le plus lourd mesuré (chaîne RECONFORT/IOTA2 complète, 11,3 Go le
+2026-07-13), et désormais sous **les deux** points de mort. L’argument
+ne change pas — un plafond entre le pic observé et le point de mort
+observé — seules les mesures sur lesquelles il repose passent de deux à
+trois.
+
+**Ce que cette fraction ne peut pas faire**, et qu’il vaut mieux écrire
+que redécouvrir : oomd tue sur la **pression**, pas sur un usage absolu,
+et la pression est produite par toute la session utilisateur, pas par le
+seul travail plafonné. Aucune fraction de `MemTotal` ne peut donc être
+*prouvée* correcte depuis R. La marge au-dessus du pic est maintenant
+mince (11,3 → 12 Go) : c’est le prix à payer pour rester sous un point
+de mort qui bouge. Les deux échappatoires
+(`options(nemeton.memory_max)`, `NEMETON_MEMORY_MAX`) restent honorées
+partout.
+
+Un test garde la politique elle-même, pas seulement le code : le défaut
+doit passer sous **tous** les points de mort mesurés, et le vecteur qui
+les liste dit où ajouter le prochain.
+
+**Le correctif structurel est ailleurs**, et il a été fait le même jour
+côté app (`nemetonshiny` v0.143.10) : la boucle d’ingestion R de
+RECONFORT tournait dans le scope de la session, plafonnée par **rien** —
+le run est mort à l’item 82 sur 203, avant même d’atteindre le
+sous-processus Python que `.reconfort_cap_memory()` protège. Aucune
+fraction, si basse soit-elle, n’aurait sauvé ce run. Le dimensionnement
+vient après la couverture, pas avant.
+
 ## nemeton 0.193.1 (2026-09-01)
 
 #### Fixed — un `on.exit()` qui n’a jamais été exécuté

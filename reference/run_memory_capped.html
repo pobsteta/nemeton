@@ -31,7 +31,7 @@ already caps the Python subprocess it spawns."><meta property="og:image" content
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.193.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.195.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -162,7 +162,8 @@ already caps the Python subprocess it spawns.</p>
 <span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  memory_max <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  poll_ms <span class="op">=</span> <span class="fl">500L</span>,</span>
-<span>  quiet <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  quiet <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  log_path <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -208,14 +209,16 @@ events (requires <code>progress_path</code>).</p></dd>
 
 <dt id="arg-memory-max">memory_max<a class="anchor" aria-label="anchor" href="#arg-memory-max"></a></dt>
 <dd><p>Ceiling as a systemd size string (e.g. <code>"12G"</code>), or
-<code>FALSE</code> to disable it. Default (<code>NULL</code>): <strong>50% of <code>MemTotal</code></strong>, unless
+<code>FALSE</code> to disable it. Default (<code>NULL</code>): <strong>40% of <code>MemTotal</code></strong>, unless
 <code>options(nemeton.memory_max)</code> or the <code>NEMETON_MEMORY_MAX</code> environment
 variable says otherwise — one policy, shared with the RECONFORT subprocess
 cap. The fraction is not a guess: on the reference workstation
-<code>systemd-oomd</code> was observed killing the session at 17.1 GB of 31.2 GB,
-which the former 70% default (21 GB) sat <em>above</em> — a ceiling that can only
-trip after the OOM killer has acted is not a ceiling. See
-<code>R/memory-ceiling.R</code> for the full argument and the escape hatches.</p></dd>
+<code>systemd-oomd</code> was observed killing the session at 17.1 GB of 31.2 GB, then
+at 14.5 GB three months later — a trip point that MOVES with what else the
+desktop is doing. A ceiling that can only trip after the OOM killer has
+acted is not a ceiling, so the fraction sits under both figures and above
+the heaviest run measured here (11.3 GB). See <code>R/memory-ceiling.R</code> for the
+full argument and the escape hatches.</p></dd>
 
 
 <dt id="arg-poll-ms">poll_ms<a class="anchor" aria-label="anchor" href="#arg-poll-ms"></a></dt>
@@ -224,6 +227,17 @@ trip after the OOM killer has acted is not a ceiling. See
 
 <dt id="arg-quiet">quiet<a class="anchor" aria-label="anchor" href="#arg-quiet"></a></dt>
 <dd><p>Suppress the child's console output.</p></dd>
+
+
+<dt id="arg-log-path">log_path<a class="anchor" aria-label="anchor" href="#arg-log-path"></a></dt>
+<dd><p>Path of a file capturing the child's stdout <strong>and</strong> stderr
+(merged). Default (<code>NULL</code>): the child's output follows the parent's, which
+is right on a console and <strong>wrong under a <code>future</code> worker</strong> — <code>parallelly</code>
+starts those with <code>OUT=/dev/null</code>, so the child's traceback goes to the bit
+bucket and a 20-hour failure leaves no message at all (incident Couchey,
+2026-09-03). Give a path and the output is kept whatever becomes of the
+child; the failure message then cites the file and quotes its last lines.
+Takes precedence over <code>quiet</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

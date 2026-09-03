@@ -31,7 +31,8 @@ run_memory_capped(
   progress_callback = NULL,
   memory_max = NULL,
   poll_ms = 500L,
-  quiet = FALSE
+  quiet = FALSE,
+  log_path = NULL
 )
 ```
 
@@ -77,14 +78,16 @@ run_memory_capped(
 - memory_max:
 
   Ceiling as a systemd size string (e.g. `"12G"`), or `FALSE` to disable
-  it. Default (`NULL`): **50% of `MemTotal`**, unless
+  it. Default (`NULL`): **40% of `MemTotal`**, unless
   `options(nemeton.memory_max)` or the `NEMETON_MEMORY_MAX` environment
   variable says otherwise — one policy, shared with the RECONFORT
   subprocess cap. The fraction is not a guess: on the reference
   workstation `systemd-oomd` was observed killing the session at 17.1 GB
-  of 31.2 GB, which the former 70% default (21 GB) sat *above* — a
-  ceiling that can only trip after the OOM killer has acted is not a
-  ceiling. See `R/memory-ceiling.R` for the full argument and the escape
+  of 31.2 GB, then at 14.5 GB three months later — a trip point that
+  MOVES with what else the desktop is doing. A ceiling that can only
+  trip after the OOM killer has acted is not a ceiling, so the fraction
+  sits under both figures and above the heaviest run measured here (11.3
+  GB). See `R/memory-ceiling.R` for the full argument and the escape
   hatches.
 
 - poll_ms:
@@ -94,6 +97,18 @@ run_memory_capped(
 - quiet:
 
   Suppress the child's console output.
+
+- log_path:
+
+  Path of a file capturing the child's stdout **and** stderr (merged).
+  Default (`NULL`): the child's output follows the parent's, which is
+  right on a console and **wrong under a `future` worker** —
+  `parallelly` starts those with `OUT=/dev/null`, so the child's
+  traceback goes to the bit bucket and a 20-hour failure leaves no
+  message at all (incident Couchey, 2026-09-03). Give a path and the
+  output is kept whatever becomes of the child; the failure message then
+  cites the file and quotes its last lines. Takes precedence over
+  `quiet`.
 
 ## Value
 
