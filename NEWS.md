@@ -21,6 +21,49 @@ erreur, c'est de porter *la* ligne qui nomme la cause jusque dans ce que l'app
 affiche. Le contenu est échappé — un `KeyError: {'a': 1}` ne redevient pas une
 expression cli.
 
+### Validé sur le run réel (Couchey, 2026-09-03)
+
+Re-run complet sur la zone 49, mêmes 203 scènes, même plafond de 12 Go :
+
+| | avant (16:47) | après (21:1x) |
+|---|---|---|
+| Chunks | 4 × 221 lignes (256 360 px) | **7 × 127 lignes** (147 320 px) |
+| Pic RAM classification | **11 457 Mo** | **10 250 Mo** |
+| Marge sous le plafond | 0,54 Go | **1,75 Go** |
+| Issue | `oom-kill` du scope | 16 tâches `done`, `final/` complet |
+| Durée | 20 h 19 puis mort | **14,9 min**, 2492 alertes |
+
+Et une correction que seule la mesure pouvait apporter : **le modèle mémoire
+supposé était faux de forme.** Les deux points sur la même AOI
+
+```
+1160 x 221 = 256 360 px  ->  11 457 Mo   (mort)
+1160 x 127 = 147 320 px  ->  10 250 Mo   (survécu)
+```
+
+donnent `pic ≈ 8,42 GiB + 11,1 kB/px`. Le pic est donc **majoritairement un coût
+fixe** — le modèle SharkRF déplié et la pile gap-fillée par tuile — et seulement
+marginalement proportionnel au chunk : diviser le chunk par deux a gagné 1,2 Go,
+pas la moitié du pic. Conséquence à retenir : **le découpage ne peut pas
+descendre sous ~8,4 GiB**. Un plafond proche de ce chiffre n'est atteignable par
+aucun nombre de chunks ; les leviers deviennent moins de dates, une emprise plus
+petite, ou un plafond plus haut.
+
+Les constantes sont **laissées telles quelles** : elles ont produit la
+configuration validée. Les ajuster aux deux points exacts reviendrait à caler
+trois constantes sur une machine et une emprise — de la fausse précision sur la
+foi de deux mesures. Le commentaire dit maintenant ce qu'elles sont : une règle
+de dimensionnement volontairement pessimiste, pas la loi mesurée.
+
+**Fragilité amont relevée au passage** : forcer un part 1 complet (en écartant
+un `results/` antérieur) fait échouer `tiles_envelopes` dans la chaîne
+— `envelope/TMP/<tuile>.shp: No such file or directory` — alors que le même
+`generate_shape_tile()` appelé hors chaîne produit une enveloppe
+**byte-identique** à celle du run précédent. Reproduit deux fois. `-restart` le
+masquait jusqu'ici en reprenant toujours un part 1 antérieur ; tout run
+repartant de zéro le rencontrera. Non corrigé ici (c'est iota2), mais désormais
+visible dans le message d'erreur au lieu d'être avalé.
+
 ### Fixed — le scope python de RECONFORT ne devine plus, il demande
 
 Le correctif du 2026-08-23 (demander son verdict à systemd plutôt que lire le

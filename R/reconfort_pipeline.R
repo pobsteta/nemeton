@@ -51,16 +51,39 @@
 #   run-r459be71b….scope: Consumed 32min 52s CPU time, 11.5G memory peak
 #
 # 0.5 GB of headroom under a 12 G ceiling is not headroom. Hence a chunk budget
-# expressed as a fraction of the ceiling, so a chunk aims at ~9 GB of a 12 GB
-# ceiling and leaves room for what the previous one has not yet handed back.
+# expressed as a fraction of the ceiling rather than a fixed row count.
+#
+# WHAT THE VALIDATION RUN MEASURED (2026-09-03, same AOI, same 203 scenes)
+# ------------------------------------------------------------------------
+# Re-run under this rule: 7 chunks of 127 rows, peak 10 250 MB, no OOM, chain
+# complete in 14.9 min. Two points on the same AOI now:
+#
+#   1160 x 221 = 256 360 px  ->  11 457 MB   (died)
+#   1160 x 127 = 147 320 px  ->  10 250 MB   (survived)
+#
+# which fit peak ~= 8.42 GiB + 11.1 kB/px. So the peak is mostly a FIXED cost —
+# the unpacked SharkRF model and the per-tile gap-filled stack — and only
+# marginally proportional to the chunk. Halving the chunk bought 1.2 GB, not
+# half the peak.
+#
+# Two consequences worth stating rather than rediscovering:
+#   * chunking cannot take the peak below ~8.4 GiB. A ceiling near that figure
+#     cannot be met by any chunk count; the levers are then fewer dates, a
+#     smaller AOI, or a higher ceiling.
+#   * the fraction and the per-pixel figure below are a conservative SIZING
+#     RULE, not that fitted law. They are kept as they are because they are what
+#     produced the validated configuration (7 chunks, 10.25 GB under 12 G, 1.75
+#     GB of margin). Fitting the two points exactly would tune three constants
+#     to one machine and one AOI — false precision on the strength of two
+#     measurements.
 .RECONFORT_CHUNK_PEAK_FRACTION <- 0.75
 
-# Bytes of peak memory per chunk pixel, from the calibration point above
-# (13.4 GB for 240 x 930 = 223 200 px -> ~60 kB/px). Deliberately the
-# PESSIMISTIC of the two measurements available: Couchey classified 256 360 px
-# for an 11.46 GB peak, i.e. ~45 kB/px. Sizing on the larger figure gives
-# smaller chunks, and the cost of being wrong that way is minutes of extra
-# feature preparation rather than a dead 20-hour run.
+# Bytes of peak memory per chunk pixel. Read as a sizing rule, not a law: the
+# figure comes from the 240-row calibration taken as if it were purely
+# proportional (13.4 GB for 240 x 930 = 223 200 px -> ~60 kB/px), which
+# overstates the marginal cost by a factor of five and therefore errs towards
+# SMALLER chunks. The cost of being wrong that way is minutes of extra feature
+# preparation; the cost of the other direction was a dead 20-hour run.
 .RECONFORT_BYTES_PER_CHUNK_PX <- 60e3
 
 

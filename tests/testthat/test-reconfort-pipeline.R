@@ -210,8 +210,11 @@ test_that("le nombre de chunks suit le plafond memoire, jamais au-dessus de 240 
   p <- file.path(withr::local_tempdir(), "mask.tif")
   terra::writeRaster(terra::rast(nrows = 886, ncols = 1160, vals = 1), p)
 
+  # 7 chunks de 127 lignes : la configuration VALIDEE par le re-run du
+  # 2026-09-03 (pic 10 250 Mo sous 12 Go, chaine complete). Cette valeur est
+  # une mesure, pas une preference — la changer demande une nouvelle mesure.
   n12 <- .reconfort_chunk_count(p, memory_max = "12G")
-  expect_gt(n12, 4L)
+  expect_identical(n12, 7L)
   # Un plafond plus large redecoupe moins fin...
   expect_lte(.reconfort_chunk_count(p, memory_max = "24G"), n12)
   # ...mais jamais moins que la regle historique des 240 lignes (ici 4).

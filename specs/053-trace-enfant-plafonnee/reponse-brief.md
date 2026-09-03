@@ -189,6 +189,57 @@ scopes frères de 12 Go n'ont pas mordu ensemble. Celui de l'app est resté à
 théorique — mais ce qui a tué le run, ce n'est pas la somme des plafonds, c'est
 qu'**un seul** des deux était dimensionné pour un travail plus gros que lui.
 
+## 3 bis. Le run de contrôle — fait, et ce qu'il a dit
+
+Rejoué le 2026-09-03 au soir sur la zone 49, mêmes 203 scènes, même plafond de
+12 Go. **Il est passé** : 16 tâches `done` dont les 7 chunks, `final/` complet
+(9 rasters, dont `Final_continuous_score_masked2025.tif`), 2492 alertes,
+**14,9 min**, zéro évènement oomd.
+
+| | 16:47 (mort) | 21:1x (ce run) |
+|---|---|---|
+| Chunks | 4 × 221 lignes (256 360 px) | **7 × 127 lignes** (147 320 px) |
+| Pic RAM classification | **11 457 Mo** | **10 250 Mo** |
+| Marge sous 12 Go | 0,54 Go | **1,75 Go** |
+| `classif/…_seed_0.tif` fusionné | absent | présent |
+
+### La mesure a corrigé le modèle
+
+Les deux points sur la même emprise donnent `pic ≈ 8,42 GiB + 11,1 kB/px`. Le
+pic est donc **majoritairement un coût fixe** — modèle SharkRF déplié et pile
+gap-fillée par tuile — et seulement marginalement proportionnel au chunk :
+diviser le chunk par deux a gagné 1,2 Go, pas la moitié du pic. J'avais annoncé
+« pic prédit ≈ 6,6 à 8,8 Go » : c'était faux, et c'est le run qui le dit.
+
+Conséquence à garder : **le découpage ne peut pas descendre sous ~8,4 GiB.** Un
+plafond proche de ce chiffre n'est atteignable par aucun nombre de chunks ; les
+leviers deviennent moins de dates, une emprise plus petite, ou un plafond plus
+haut. Les constantes sont laissées telles quelles — elles ont produit la
+configuration validée, et les caler sur deux points serait de la fausse
+précision ; seul leur commentaire a été corrigé.
+
+### Une fragilité amont, découverte en chemin
+
+Pour rejouer proprement il fallait écarter le `results/` du run raté : son
+pickle de reprise donnait le chunk 2 pour fait, avec l'ancienne géométrie (221
+lignes au lieu de 127). Ce part 1 reparti de zéro a échoué **deux fois** sur
+`tiles_envelopes` :
+
+```
+RuntimeError: …/envelope/TMP/T31TFN.shp: No such file or directory
+ValueError: The chain stopped prematurely.
+```
+
+Or le même `generate_shape_tile()` appelé hors chaîne, mêmes arguments, produit
+une enveloppe **byte-identique** (md5) à celle du run de 16:45. C'est donc un
+défaut d'iota2, déterministe dans la chaîne et absent hors chaîne, que
+`-restart` masquait en reprenant toujours un part 1 antérieur. **Tout run
+repartant de zéro le rencontrera.** Contourné ici en inscrivant l'étape comme
+faite dans l'état de reprise, artefact vérifié identique au préalable.
+
+Ce n'est pas nemeton, et je ne l'ai pas corrigé. Mais il est désormais *visible*
+— c'est exactement ce que les trois correctifs de la §2 servent à produire.
+
 ## 4. Pour rejouer
 
 Le cache d'ingestion est intact (203 scènes, marqueurs `.done`), un

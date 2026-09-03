@@ -3591,12 +3591,32 @@ l'iota2 installé : `_SUBREGION_<n>` est un index de **chunk**
 `IOTA2_tasks_status.txt` (un pickle) n'enregistre que les tâches **terminées** —
 « huit tâches, toutes `done` » ne veut donc pas dire « chaîne terminée ».
 
-**Reste à valider** : le redécoupage en 7 chunks est une prédiction, fondée sur
-une mesure (11,46 Go pour 256 360 px) et une extrapolation prudente. Le cache
-d'ingestion étant intact, le run de contrôle repart directement en `mapprod` et
-tranchera. **Côté app** : passer un `log_path` dans les trois chemins plafonnés
-(FAST, FORDEAD, RECONFORT) — voir
-`specs/053-trace-enfant-plafonnee/reponse-brief.md` §5.
+**Validé le soir même** par un re-run complet de la zone 49 (mêmes 203 scènes,
+même plafond de 12 Go) : 7 chunks de 127 lignes, pic **10 250 Mo** contre 11 457
+auparavant, 16 tâches `done`, `final/` complet, 2492 alertes, **14,9 min**, zéro
+évènement oomd. La marge sous le plafond passe de 0,54 à **1,75 Go**.
+
+La mesure a aussi corrigé le modèle : deux points sur la même emprise
+(256 360 px → 11 457 Mo ; 147 320 px → 10 250 Mo) donnent
+`pic ≈ 8,42 GiB + 11,1 kB/px`. Le pic est donc **surtout un coût fixe** (modèle
+SharkRF déplié + pile gap-fillée par tuile) : diviser le chunk par deux a gagné
+1,2 Go, pas la moitié. **Le découpage ne peut pas descendre sous ~8,4 GiB** — un
+plafond proche de ce chiffre n'est atteignable par aucun nombre de chunks. Les
+constantes restent telles quelles (elles ont produit la configuration validée) ;
+seul leur commentaire a été corrigé, pour dire qu'elles sont une règle de
+dimensionnement pessimiste et non la loi mesurée.
+
+**Fragilité amont découverte** : forcer un part 1 complet (en écartant un
+`results/` antérieur) fait échouer `tiles_envelopes` **dans la chaîne** —
+`envelope/TMP/<tuile>.shp: No such file or directory` — alors que le même
+`generate_shape_tile()` hors chaîne produit une enveloppe **byte-identique** à
+celle du run précédent. Reproduit deux fois, contourné en inscrivant l'étape
+comme faite dans l'état de reprise d'iota2 (artefact vérifié identique).
+`-restart` la masquait en reprenant toujours un part 1 antérieur ; tout run
+repartant de zéro la rencontrera. C'est un défaut iota2, pas nemeton.
+
+**Côté app** : passer un `log_path` dans les trois chemins plafonnés (FAST,
+FORDEAD, RECONFORT) — voir `specs/053-trace-enfant-plafonnee/reponse-brief.md` §5.
 
 ### 2026-09-02 — App `nemetonshiny` v0.143.13 : le moteur tournait sur 2018 / 2022 sans le dire
 
