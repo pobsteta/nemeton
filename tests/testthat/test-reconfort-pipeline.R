@@ -53,7 +53,9 @@ mock_pipeline <- function(calls_env, write_score = TRUE, exit = 0L) {
           writeLines("x", file.path(final, sprintf("Final_continuous_score_masked%s.tif", year)))
         }
       }
-      as.integer(exit)
+      # `as.integer()` deposerait l'attribut `systemd_result` que le vrai
+      # `.reconfort_run_py()` accroche au statut (verdict systemd).
+      exit
     }
   )
   # Bind the mocks to the *test's* environment so they survive past this
@@ -139,11 +141,88 @@ test_that("run_reconfort_dieback aborts on a non-zero map-production exit", {
   calls <- new.env(); calls$env <- environment()
   mock_pipeline(calls, exit = 1L)
 
-  expect_error(
+  err <- expect_error(
     run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
                           s2_year = 2024L, tiles = "T31UDP", quiet = TRUE),
-    "map production failed"
+    "RECONFORT map production"
   )
+  # Et l'etat d'IOTA2 voyage avec l'erreur : ici, pas meme de dossier results.
+  expect_match(conditionMessage(err), "chain died before writing one")
+})
+
+test_that("le verdict systemd du sous-processus python remonte dans l'erreur", {
+  # Le fond du brief du 2026-09-03 : `conda run` a renvoye 1 alors que le scope
+  # avait ete tue par l'OOM killer (pic 11,5 Go sous un plafond de 12 Go). Lire
+  # le code de sortie, c'est nommer le worker dask mort, pas la cause.
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls, exit = structure(1L, systemd_result = "oom-kill"))
+
+  err <- expect_error(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2024L, tiles = "T31UDP", quiet = TRUE),
+    "ran out of memory"
+  )
+  expect_match(conditionMessage(err), "NEMETON_MEMORY_MAX")
+})
+
+test_that(".reconfort_py_verdict lit l'attribut, et NA quand il n'y a rien", {
+  expect_identical(.reconfort_py_verdict(structure(1L, systemd_result = "oom-kill")),
+                   "oom-kill")
+  expect_true(is.na(.reconfort_py_verdict(1L)))
+  expect_true(is.na(.reconfort_py_verdict(structure(1L, systemd_result = NULL))))
+})
+
+test_that(".reconfort_iota2_diagnosis nomme les chunks manquants et le final vide", {
+  # L'etat exact du run Couchey (2026-09-03) : 4 chunks demandes, seul le
+  # SUBREGION_2 ecrit, `final/` vide. C'est ce que 20 h de calcul avaient
+  # laisse, et qu'il a fallu reconstituer a la main.
+  wd <- withr::local_tempdir()
+  res <- file.path(wd, "results", "iota2_results_classif_labels-z49-S2_2025")
+  dir.create(file.path(res, "classif"), recursive = TRUE)
+  dir.create(file.path(res, "final"), recursive = TRUE)
+  file.create(file.path(res, "classif",
+                        "Classif_T31TFN_model_1_seed_0_SUBREGION_2.tif"))
+  file.create(file.path(res, "IOTA2_tasks_status.txt"))
+
+  msg <- .reconfort_iota2_diagnosis(wd, "z49", 2025L, number_of_chunks = 4L)
+  expect_true(any(grepl("1 of 4 chunks", msg)))
+  expect_true(any(grepl("Missing 3 chunks: 0, 1, and 3", msg)))
+  expect_true(any(grepl("holds no raster", msg)))
+  expect_true(any(grepl("IOTA2_tasks_status.txt", msg, fixed = TRUE)))
+})
+
+test_that(".reconfort_iota2_diagnosis reste muet plutot que faux", {
+  wd <- withr::local_tempdir()
+  # Pas de dossier results : une seule ligne, et surtout pas d'inventaire vide
+  # presente comme un constat.
+  msg <- .reconfort_iota2_diagnosis(wd, "z49", 2025L, 4L)
+  expect_length(msg, 1L)
+  expect_match(msg[[1]], "died before writing one")
+})
+
+test_that("le nombre de chunks suit le plafond memoire, jamais au-dessus de 240 lignes", {
+  skip_if_not_installed("terra")
+  # L'AOI de Couchey : 1160 x 886. A 240 lignes fixes -> 4 chunks de 221 lignes,
+  # soit 256 360 px, mesures a 11,46 Go de pic sous un plafond de 12 Go. Le
+  # budget en pixels doit donc decouper plus fin que la regle des lignes.
+  p <- file.path(withr::local_tempdir(), "mask.tif")
+  terra::writeRaster(terra::rast(nrows = 886, ncols = 1160, vals = 1), p)
+
+  n12 <- .reconfort_chunk_count(p, memory_max = "12G")
+  expect_gt(n12, 4L)
+  # Un plafond plus large redecoupe moins fin...
+  expect_lte(.reconfort_chunk_count(p, memory_max = "24G"), n12)
+  # ...mais jamais moins que la regle historique des 240 lignes (ici 4).
+  expect_gte(.reconfort_chunk_count(p, memory_max = "64G"), 4L)
+  # Sans plafond lisible, on retombe exactement sur l'ancien comportement.
+  expect_identical(.reconfort_chunk_count(p, memory_max = NULL), 4L)
+})
+
+test_that(".reconfort_chunk_count reste prudent quand l'emprise est inconnue", {
+  expect_identical(.reconfort_chunk_count(NA_character_), 1L)
+  expect_identical(.reconfort_chunk_count("nowhere.tif"), 1L)
 })
 
 test_that("run_reconfort_dieback validates con and v_model", {

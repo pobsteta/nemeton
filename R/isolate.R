@@ -184,6 +184,14 @@
 #'   full argument and the escape hatches.
 #' @param poll_ms How often to poll the child for progress, in milliseconds.
 #' @param quiet Suppress the child's console output.
+#' @param log_path Path of a file capturing the child's stdout **and** stderr
+#'   (merged). Default (`NULL`): the child's output follows the parent's, which
+#'   is right on a console and **wrong under a `future` worker** — `parallelly`
+#'   starts those with `OUT=/dev/null`, so the child's traceback goes to the bit
+#'   bucket and a 20-hour failure leaves no message at all (incident Couchey,
+#'   2026-09-03). Give a path and the output is kept whatever becomes of the
+#'   child; the failure message then cites the file and quotes its last lines.
+#'   Takes precedence over `quiet`.
 #'
 #' @return Whatever `fun` returned.
 #'
@@ -204,7 +212,7 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
                               db_url = NULL, options = NULL,
                               progress_path = NULL, progress_callback = NULL,
                               memory_max = NULL, poll_ms = 500L,
-                              quiet = FALSE) {
+                              quiet = FALSE, log_path = NULL) {
   if (!is.character(fun) || length(fun) != 1L || !nzchar(fun)) {
     cli::cli_abort("{.arg fun} must be the name of a function in {.arg package}.")
   }
@@ -216,6 +224,10 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
   }
   if (!is.null(options) && (!is.list(options) || is.null(names(options)))) {
     cli::cli_abort("{.arg options} must be a named list or NULL.")
+  }
+  if (!is.null(log_path) &&
+      (!is.character(log_path) || length(log_path) != 1L || !nzchar(log_path))) {
+    cli::cli_abort("{.arg log_path} must be a single non-empty path, or NULL.")
   }
   if (!requireNamespace("processx", quietly = TRUE)) {
     cli::cli_abort(c(
@@ -280,8 +292,20 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
   # exit path, including the caller's interrupt.
   if (!is.null(cmd$unit)) on.exit(.capped_scope_reset(cmd$unit), add = TRUE)
 
-  std <- if (quiet) NULL else ""
-  px <- processx::process$new(cmd$command, cmd$args, stdout = std, stderr = std)
+  # `""` = inherit the parent's streams, `NULL` = discard, a path = capture.
+  # Inheriting is right on a console and useless under a `future` worker, whose
+  # own streams are `/dev/null` — hence `log_path`, which neither `quiet` nor a
+  # `sink()` in the worker could stand in for (a sink does not follow a
+  # SUBPROCESS). stderr is merged into stdout so the traceback and the output it
+  # comments on stay in reading order, in one file.
+  if (!is.null(log_path)) {
+    dir.create(dirname(log_path), recursive = TRUE, showWarnings = FALSE)
+    px <- processx::process$new(cmd$command, cmd$args,
+                                stdout = log_path, stderr = "2>&1")
+  } else {
+    std <- if (quiet) NULL else ""
+    px <- processx::process$new(cmd$command, cmd$args, stdout = std, stderr = std)
+  }
   on.exit(if (px$is_alive()) px$kill(), add = TRUE)
 
   ndjson <- if (is.null(progress_path)) NULL else .progress_ndjson_path(progress_path)
@@ -302,7 +326,8 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
     # answer (no cgroup, no systemctl, unit already gone).
     ceiling <- if (is.null(mm)) "none" else mm
     result  <- .capped_scope_result(cmd$unit)
-    cli::cli_abort(.capped_failure_message(fun, st, ceiling, result))
+    cli::cli_abort(.capped_failure_message(fun, st, ceiling, result,
+                                           log_path = log_path))
   }
   readRDS(f_out)
 }

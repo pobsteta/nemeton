@@ -290,13 +290,31 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 # Run a vendored RECONFORT python script in the conda env, from the
 # glue dir so its `from utils.utils import ...` resolves. Returns the
 # exit status (0 = success). Separated out so tests can mock it.
+#
+# The scope is NAMED, exactly as `run_memory_capped()` names its own, and for
+# the same reason: an exit status does not say whether the ceiling bit. This
+# sibling was left out of that fix (2026-08-23) and it cost a 20-hour run its
+# diagnosis — incident Couchey, 2026-09-03. IOTA2's own logs ended without an
+# error, `conda run` returned 1 (a dask worker died, not the interpreter), and
+# the R message said "exit 1". systemd, asked afterwards from the journal, had
+# the answer all along:
+#
+#   run-r459be71b….scope: A process of this unit has been killed by the OOM killer
+#   run-r459be71b….scope: Failed with result 'oom-kill'
+#   run-r459be71b….scope: Consumed 32min 52s CPU time, 11.5G memory peak
+#
+# So the verdict rides along on the returned status, as the `systemd_result`
+# attribute. `as.integer(st)` drops it, which is how every existing caller
+# comparing to `0L` keeps working unchanged.
 .reconfort_run_py <- function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
+  unit <- .capped_scope_unit(paste0("py-", basename(script)))
   cmd <- .reconfort_cap_memory(
     conda_bin,
     c("run", "-n", env, "python", basename(script),
-      "-config_file", shQuote(cfg))
+      "-config_file", shQuote(cfg)),
+    unit = unit
   )
-  withr::with_envvar(
+  st <- withr::with_envvar(
     c(PYTHONWARNINGS = .RECONFORT_PYWARN),
     withr::with_dir(workdir, {
       suppressWarnings(system2(
@@ -305,6 +323,20 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
       ))
     })
   )
+  if (!is.null(cmd$unit) && !identical(as.integer(st), 0L)) {
+    attr(st, "systemd_result") <- .capped_scope_result(cmd$unit)
+    .capped_scope_reset(cmd$unit)
+  }
+  st
+}
+
+
+# systemd's verdict on the scope of a python run, as carried by
+# `.reconfort_run_py()`. NA when the question could not be asked (no cgroup, no
+# systemctl) or when the status was mocked in a test.
+.reconfort_py_verdict <- function(st) {
+  v <- attr(st, "systemd_result", exact = TRUE)
+  if (is.null(v) || !length(v)) NA_character_ else as.character(v)[1L]
 }
 
 

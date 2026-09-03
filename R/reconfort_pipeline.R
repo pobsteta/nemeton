@@ -31,14 +31,80 @@
 # peaks at 13.4 GB.
 .RECONFORT_ROWS_PER_CHUNK <- 240L
 
-# Chunk count for an AOI-cropped run, from the height of the cropped mask.
+# Peak memory follows the chunk's AREA, not its height: 240 rows of a 930-column
+# AOI and 240 rows of a 1160-column one are not the same chunk, and holding the
+# ROW count fixed silently inflated the chunk by 15 % on the wider AOI. Hence
+# the two constants below, which express the bound in pixels.
+
+# Fraction of the memory ceiling a single chunk is allowed to reach. The 240-row
+# calibration was measured at a 13.4 GB peak, which is ABOVE the 12 GB ceiling
+# `.memory_ceiling()` computes on the reference workstation: the chunker's
+# target and the ceiling were never reconciled, and the two only coexisted
+# because no run had yet come close.
+#
+# One did, on 2026-09-03 (Couchey, zone 49, AOI 1160 x 886 -> 4 chunks of 221
+# rows). Chunk 2 finished at an 11.46 GB peak; chunk 0 started 7 s later, while
+# dask still held 6.56 GiB of "unmanaged" memory it had not returned to the OS,
+# and the scope was OOM-killed:
+#
+#   run-r459be71b….scope: Failed with result 'oom-kill'
+#   run-r459be71b….scope: Consumed 32min 52s CPU time, 11.5G memory peak
+#
+# 0.5 GB of headroom under a 12 G ceiling is not headroom. Hence a chunk budget
+# expressed as a fraction of the ceiling, so a chunk aims at ~9 GB of a 12 GB
+# ceiling and leaves room for what the previous one has not yet handed back.
+.RECONFORT_CHUNK_PEAK_FRACTION <- 0.75
+
+# Bytes of peak memory per chunk pixel, from the calibration point above
+# (13.4 GB for 240 x 930 = 223 200 px -> ~60 kB/px). Deliberately the
+# PESSIMISTIC of the two measurements available: Couchey classified 256 360 px
+# for an 11.46 GB peak, i.e. ~45 kB/px. Sizing on the larger figure gives
+# smaller chunks, and the cost of being wrong that way is minutes of extra
+# feature preparation rather than a dead 20-hour run.
+.RECONFORT_BYTES_PER_CHUNK_PX <- 60e3
+
+
+# Chunk count for an AOI-cropped run, from the size of the cropped mask and the
+# memory ceiling in force.
+#
+# Two bounds, and the tighter one wins:
+#   * the historical row count (240), never exceeded — this function may only
+#     make chunks smaller than before, never bigger;
+#   * a pixel budget derived from the ceiling, which is what makes the result
+#     depend on the AOI's WIDTH and on `NEMETON_MEMORY_MAX` rather than on a
+#     constant calibrated on one AOI of one shape.
+#
+# With no readable ceiling (non-Linux, ceiling disabled) only the row bound
+# applies: refusing to run is not an option, and the caller has already been
+# warned that nothing is capped.
 .reconfort_chunk_count <- function(mask_path,
-                                   rows_per_chunk = .RECONFORT_ROWS_PER_CHUNK) {
-  n <- if (length(mask_path) == 1L && !is.na(mask_path) && file.exists(mask_path)) {
-    tryCatch(terra::nrow(terra::rast(mask_path)), error = function(e) NA_integer_)
-  } else NA_integer_
+                                   rows_per_chunk = .RECONFORT_ROWS_PER_CHUNK,
+                                   memory_max = .memory_ceiling()) {
+  dims <- if (length(mask_path) == 1L && !is.na(mask_path) && file.exists(mask_path)) {
+    tryCatch({
+      r <- terra::rast(mask_path)
+      c(terra::nrow(r), terra::ncol(r))
+    }, error = function(e) c(NA_integer_, NA_integer_))
+  } else c(NA_integer_, NA_integer_)
+  n <- dims[[1L]]
   if (is.na(n) || n <= 0L) return(1L)   # unknown extent: stay on the safe path
-  max(1L, as.integer(ceiling(n / rows_per_chunk)))
+
+  rows <- as.integer(rows_per_chunk)
+  budget_px <- .reconfort_chunk_px_budget(memory_max)
+  ncol <- dims[[2L]]
+  if (!is.na(budget_px) && !is.na(ncol) && ncol > 0L) {
+    rows <- min(rows, max(1L, as.integer(floor(budget_px / ncol))))
+  }
+  max(1L, as.integer(ceiling(n / rows)))
+}
+
+
+# Pixels a chunk may cover under `memory_max` (a systemd size string, or NULL
+# for "no ceiling"). NA when there is nothing to divide by.
+.reconfort_chunk_px_budget <- function(memory_max) {
+  bytes <- .memory_ceiling_bytes(memory_max)
+  if (is.na(bytes)) return(NA_real_)
+  bytes * .RECONFORT_CHUNK_PEAK_FRACTION / .RECONFORT_BYTES_PER_CHUNK_PX
 }
 
 # Is the installed iota2 free of defect #11 (chunk 0 is falsy, so its region
@@ -156,6 +222,79 @@
     probability_masked = pick(sprintf("Final_Proba_map_masked%s.tif", s2_year)),
     continuous_score   = pick(sprintf("Final_continuous_score_masked%s.tif", s2_year))
   )
+}
+
+
+# What IOTA2 left behind, read from the results dir and turned into cli
+# bullets. Appended to the mapprod failure message so the error carries the
+# state of the chain instead of sending the reader digging.
+#
+# The digging in question, done by hand on 2026-09-03 after a 20-hour run died
+# with nothing but "exit 1": count the per-chunk rasters in `classif/`, compare
+# with `number_of_chunks`, look at whether `final/` holds anything. That is
+# mechanical, so it belongs here. In that incident it says, in three lines:
+# chunk 2 of 4 classified, chunks 0/1/3 missing, `final/` empty — i.e. the
+# chain died inside the chunked classification, before the merge step could
+# assemble anything.
+#
+# Note that `_SUBREGION_<n>` is a CHUNK index, not a sub-region of the AOI:
+# iota2 loops `for chunk in range(number_of_chunks)` and suffixes each
+# classification with it (`classification_otb.py`, `sk_classifications_merge.py`
+# rebuilds the same list to merge them). A gap in that series is therefore a
+# missing chunk, and the merge step needs every one of them.
+#
+# Best-effort by construction: this runs on the failure path, and must never
+# replace the failure it is describing with one of its own.
+.reconfort_iota2_diagnosis <- function(workdir, label, s2_year,
+                                       number_of_chunks = NA_integer_) {
+  tryCatch({
+    res <- file.path(
+      workdir, "results",
+      sprintf("iota2_results_classif_labels-%s-S2_%s", label, s2_year))
+    if (!dir.exists(res)) {
+      return(c(i = cli::format_inline(
+        "No IOTA2 results dir under {.path {res}} — the chain died before writing one.")))
+    }
+    out <- character()
+
+    chunks <- list.files(file.path(res, "classif"),
+                         pattern = "^Classif_.*_SUBREGION_[0-9]+\\.tif$")
+    done <- sort(unique(as.integer(sub(".*_SUBREGION_([0-9]+)\\.tif$", "\\1", chunks))))
+    n <- suppressWarnings(as.integer(number_of_chunks))
+    cdir <- file.path(res, "classif")
+    if (!is.na(n) && n > 0L) {
+      missing <- setdiff(seq_len(n) - 1L, done)
+      out <- c(out, i = cli::format_inline(
+        "Chunked classification: {length(done)} of {n} chunks written in {.path {cdir}}."))
+      if (length(missing)) {
+        out <- c(out, i = cli::format_inline(
+          "Missing {length(missing)} chunk{?s}: {missing}.",
+          " The merge step needs every one of them."))
+      }
+    } else if (length(done)) {
+      out <- c(out, i = cli::format_inline(
+        "Chunked classification: {length(done)} chunk{?s} written in ",
+        "{.path {cdir}}: {done}."))
+    }
+
+    fin <- list.files(file.path(res, "final"), pattern = "\\.tif$")
+    out <- c(out, i = if (length(fin)) {
+      cli::format_inline("{.path final/} holds {length(fin)} raster{?s}: {.file {fin}}.")
+    } else {
+      cli::format_inline("{.path {file.path(res, 'final')}} holds no raster",
+                         " — neither the merge nor the mosaic step completed.")
+    })
+
+    # The task-status file is a pickle, so it cannot be read here; say where it
+    # is rather than pretend. `logs/<Step>/<task>.err` holds the per-task output.
+    status <- file.path(res, "IOTA2_tasks_status.txt")
+    if (file.exists(status)) {
+      out <- c(out, i = cli::format_inline(
+        "IOTA2's own task states are in {.path {status}} (a python pickle)",
+        " and its per-task logs in {.path {file.path(res, 'logs')}}."))
+    }
+    out
+  }, error = function(e) character())
 }
 
 
@@ -501,7 +640,16 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
                             file.path(workdir, "run_map_production_reconfort.py"),
                             cfg, workdir, quiet = quiet)
     if (!identical(as.integer(st), 0L)) {
-      cli::cli_abort("RECONFORT map production failed for zone {.val {zone_id}} (exit {st}).")
+      # Ask systemd what became of the scope instead of reading the exit status
+      # (Couchey, 2026-09-03: `conda run` returned 1 while the scope had been
+      # OOM-killed at an 11.5 G peak under a 12 G ceiling — the status named the
+      # dead dask worker, not the cause), and carry IOTA2's own state along.
+      cli::cli_abort(c(
+        .capped_failure_message(
+          sprintf("RECONFORT map production (zone %s)", zone_id),
+          st, .reconfort_memory_max(), .reconfort_py_verdict(st)),
+        .reconfort_iota2_diagnosis(workdir, label, s2_year, number_of_chunks)
+      ))
     }
 
     # PHASE 8 — collect outputs ------------------------------------
@@ -512,7 +660,8 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     if (is.na(rasters$continuous_score)) {
       cli::cli_abort(c(
         "RECONFORT produced no continuous-score raster for zone {.val {zone_id}}.",
-        i = "Expected under {.path {rasters$final_dir}} — the IOTA2 run may have failed silently (RAM/scheduler/data)."
+        i = "Expected under {.path {rasters$final_dir}} — the IOTA2 run may have failed silently (RAM/scheduler/data).",
+        .reconfort_iota2_diagnosis(workdir, label, s2_year, number_of_chunks)
       ))
     }
 

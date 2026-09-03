@@ -1,3 +1,92 @@
+# nemeton 0.195.0 (2026-09-03)
+
+### Added — `run_memory_capped(log_path=)` : la sortie de l'enfant, gardée
+
+`processx` écrit `""` pour « hériter des flux du parent ». En console c'est ce
+qu'on veut : on voit le sous-processus travailler. Sous un worker `future`, le
+parent est lancé par `parallelly` avec `OUT=/dev/null` — **la sortie de l'enfant
+plafonné partait donc dans le vide**. Le 2026-09-03, après **20 h 19** de calcul
+RECONFORT sur le projet Couchey, il ne restait aucun message d'erreur : ni le
+traceback Python d'IOTA², ni l'erreur R du wrapper.
+
+`run_memory_capped()` accepte désormais `log_path` :
+
+* `NULL` (défaut) → comportement **strictement inchangé** ;
+* un chemin → `stdout = log_path`, `stderr = "2>&1"`, dossier parent créé au
+  besoin, fichier **conservé quel que soit le sort de l'enfant**.
+
+Et le message d'échec cite le fichier, puis ses cinq dernières lignes non vides
+(tronquées à 200 caractères) : le but n'est pas de recopier un log dans une
+erreur, c'est de porter *la* ligne qui nomme la cause jusque dans ce que l'app
+affiche. Le contenu est échappé — un `KeyError: {'a': 1}` ne redevient pas une
+expression cli.
+
+### Fixed — le scope python de RECONFORT ne devine plus, il demande
+
+Le correctif du 2026-08-23 (demander son verdict à systemd plutôt que lire le
+code de sortie) n'avait équipé que `run_memory_capped()`. Son frère
+`.reconfort_run_py()`, qui plafonne `conda run … Iota2.py`, était resté sur la
+lecture de feuilles de thé — et c'est **lui** qui est mort à Couchey :
+
+```
+run-r459be71b….scope: A process of this unit has been killed by the OOM killer.
+run-r459be71b….scope: Failed with result 'oom-kill'
+run-r459be71b….scope: Consumed 32min 52s CPU time, 11.5G memory peak
+```
+
+`conda run` a renvoyé **1** (un worker dask mort, pas l'interpréteur), et le
+message disait « exit 1 ». systemd avait la réponse depuis le début. Le scope
+est maintenant nommé, son verdict accroché au statut retourné (attribut
+`systemd_result`, que `as.integer()` laisse tomber — tous les appelants
+existants sont inchangés), et l'échec de `mapprod` passe par le même
+`.capped_failure_message()` que l'enfant plafonné.
+
+### Fixed — le découpage IOTA² ignorait la largeur de l'AOI *et* le plafond
+
+`.RECONFORT_ROWS_PER_CHUNK = 240` avait été calibré sur une AOI de **930**
+colonnes, pour un pic mesuré de **13,4 Go** — c'est-à-dire **au-dessus** des
+12 Go que `.memory_ceiling()` calcule sur la station de référence. La cible du
+découpeur et le plafond mémoire n'avaient jamais été mis face à face.
+
+Or le pic suit l'**aire** du chunk, pas sa hauteur. L'AOI de Couchey fait
+1160 × 886 : 4 chunks de 221 lignes, soit 15 % de plus que le point de
+calibration. Le chunk 2 a fini à **11,46 Go** ; le chunk 0 est parti 7 s plus
+tard, alors que dask tenait encore 6,56 GiB de mémoire *unmanaged* non rendue à
+l'OS. Le cgroup a tranché.
+
+`.reconfort_chunk_count()` prend donc deux bornes, la plus serrée gagne : la
+règle historique des 240 lignes, **jamais dépassée**, et un budget en pixels
+dérivé du plafond en vigueur (75 % du plafond, ~60 kB/px — le **pessimiste** des
+deux mesures disponibles). Sur Couchey à 12 Go : **7 chunks de 127 lignes** au
+lieu de 4 de 221. Le découpage suit désormais `NEMETON_MEMORY_MAX` ; sans
+plafond lisible, seule la borne des 240 lignes s'applique, comme avant.
+
+### Fixed — la chaîne IOTA² ne se tait plus
+
+Trois silences empilés faisaient qu'un run de 20 h mourait sans un mot :
+
+1. `run_map_production_reconfort.py` **ne lisait pas** le code de retour de ses
+   deux `subprocess.run([… Iota2.py …])`. Une chaîne morte passait inaperçue et
+   la première erreur visible était le masquage sur un `final/Classif_Seed_0.tif`
+   absent — un symptôme à trois étapes de la cause. Les deux appels passent
+   maintenant par un `run_iota2()` qui sort avec le code d'IOTA², et
+   `require_final()` exige les rasters attendus avant le masquage, en listant
+   `final/` et `classif/` quand ils manquent.
+2. Le verdict systemd du scope python n'était pas demandé (ci-dessus).
+3. L'état d'IOTA² restait sur le disque : `.reconfort_iota2_diagnosis()` le
+   remonte désormais dans l'erreur — chunks écrits sur chunks attendus, chunks
+   manquants nommés, `final/` vide ou non, emplacement du pickle de statuts et
+   des logs par tâche. Sur Couchey : *1 of 4 chunks written… Missing 3 chunks:
+   0, 1, and 3… final holds no raster*.
+
+Au passage, une précision de vocabulaire qui avait égaré le diagnostic :
+`_SUBREGION_<n>` est un index de **chunk** (`for chunk in
+range(number_of_chunks)` dans `classification_otb.py`), pas une sous-région de
+l'AOI ; et `IOTA2_tasks_status.txt` n'enregistre que les tâches **terminées** —
+« toutes `done` » n'y veut pas dire « chaîne terminée ».
+
+Voir `specs/053-trace-enfant-plafonnee/reponse-brief.md`.
+
 # nemeton 0.194.0 (2026-09-02)
 
 ### Changed — le plafond mémoire par défaut passe de 50 % à 40 % de la RAM
