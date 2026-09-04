@@ -251,10 +251,18 @@ systemd, chunks manquants, état de `final/`, et — si l'app passe un `log_path
 C'est la prédiction à valider. Elle repose sur une mesure (11,46 Go pour
 256 360 px) et une extrapolation prudente ; le run de contrôle tranchera.
 
-## 5. Côté app — ce qu'il reste à câbler
+## 5. Côté app — câblé (v0.143.16, 2026-09-03)
 
-Un seul point, et il est petit : passer `log_path` à `run_memory_capped()` dans
-les trois chemins plafonnés (FAST, FORDEAD, RECONFORT), par exemple
-`…/data/<pipeline>_child.log`, avec la même rotation que les
-`.ndjson.failed-<horodatage>` de la v0.143.15. Rien d'autre ne bouge : l'API est
-strictement additive, et sans `log_path` le comportement est celui d'aujourd'hui.
+Fait, et plus largement que je ne l'avais écrit : `log_path` est passé sur les
+**quatre** chemins plafonnés — FORDEAD, RECONFORT, le calcul des 31 indicateurs
+et le moteur de reGénération — vers `data/<pipeline>_child.log`. (J'avais écrit
+« les trois chemins (FAST, FORDEAD, RECONFORT) » : FAST n'est pas plafonné, et
+j'oubliais les indicateurs et la reGénération.)
+
+Nom stable avec rotation au **démarrage** (`.prev-<horodatage>`, cinq gardées) —
+la conséquence directe du fait que le cœur conserve le fichier *même en cas de
+succès* : sans rotation, le run suivant écraserait la trace du précédent. Le
+détail m'avait échappé et l'app l'a vu.
+
+Garde de capacité sur `formals()` côté app : sur un cœur antérieur à 0.195.0
+l'argument est simplement retiré de l'appel.
