@@ -3520,6 +3520,44 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
+### 2026-09-14 — v0.196.0 : le troisième bouton d'arrêt n'arrêtait rien
+
+Brief `nemetonshiny` du 2026-09-14 (`briefs/vers-nemeton/2026-09-14-reconfort-cancel-path.md`),
+en généralisant l'annulation côté app (v0.143.19). Le constat était net et sans
+appel : l'onglet Suivi sanitaire a trois boutons d'arrêt, deux interrompent
+réellement le worker, le troisième libère l'interface et laisse RECONFORT
+tourner jusqu'au bout. Pas un bug de calcul — un bouton qui ment.
+
+La cause tenait en une ligne manquante : `run_reconfort_dieback()` n'avait pas
+de `cancel_path`. Le mécanisme générique (`R/cancel.R`) existait depuis FAST,
+FORDEAD s'en servait déjà ; il n'y avait rien à concevoir, seulement à brancher.
+
+**Où scruter.** RECONFORT n'a pas de boucle R : le découpage en chunks est fait
+par IOTA2, dans le sous-processus Python. Le seul point de contrôle que R
+possède est la frontière de phase — le crochet `begin()` qui émettait déjà
+`reconfort:phase`. L'annulation est donc *coarse*, plus encore que celle de
+FORDEAD : une phase `mapprod` de quarante minutes va à son terme, l'arrêt prend
+effet à la phase suivante. C'est écrit dans le `@param`, parce que remplacer un
+bouton menteur par une page d'aide menteuse n'aurait rien réglé.
+
+**Ce qui reste après l'arrêt.** Un run annulé garde son répertoire de travail,
+`keep_workdir = FALSE` ou non : les scènes ingérées et ce qu'IOTA2 a déjà écrit
+restent relisibles par un re-run `skip_ingest = TRUE`. Sinon annuler coûterait
+exactement autant qu'échouer — et le bouton resterait inutilisé.
+
+Contrat de sortie aligné sur les deux autres : événement `reconfort:cancelled`
+portant la phase atteinte, résultat `status = "cancelled"` avec un champ
+`phase` (la dernière phase **terminée**). Cinq tests en miroir de ceux de
+FAST/FORDEAD : chemin `NULL` sans un seul appel au système de fichiers, flag
+résiduel désarmé, flag posé en cours de run, workdir conservé, chemin
+malformé lu comme « pas d'annulation ».
+
+**Suite côté app** (ordre cœur → app, règle 11) : `.reset_reconfort_run()`
+écrit `reconfort_cancel.flag`, `.invoke_reconfort()` passe
+`cancel_path = .reconfort_cancel_flag`, plancher `Imports: nemeton (>= 0.196.0)`.
+Le commentaire de `.reset_reconfort_run()` qui documentait l'asymétrie tombe
+avec le correctif.
+
 ### 2026-09-03 — App `nemetonshiny` v0.143.16 : le log de l'enfant plafonné, et RECONFORT qui va enfin au bout
 
 Complément de la v0.143.15, et dernière pièce du diagnostic Couchey. `log_path`

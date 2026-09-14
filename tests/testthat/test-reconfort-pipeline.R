@@ -259,3 +259,126 @@ test_that(".reconfort_stage_workdir copies the vendored glue", {
   expect_true(file.exists(file.path(wd, "run_map_production_reconfort.py")))
   expect_true(file.exists(file.path(wd, "iota2", "external_features", "custom_index.py")))
 })
+
+
+# ---- cooperative cancellation (brief 2026-09-14) ---------------------
+#
+# Mirror of the FAST / FORDEAD coverage in test-ingest-cancel.R, adapted
+# to RECONFORT's only checkpoint: the phase boundary.
+
+test_that("run_reconfort_dieback with cancel_path = NULL never polls the filesystem", {
+  skip_if_terra_write_broken()   # clustering post-process writes a TIF (runner anomaly)
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+
+  n_polls <- 0L
+  testthat::local_mocked_bindings(
+    .cancel_flag_exists = function(path) {
+      n_polls <<- n_polls + 1L
+      FALSE
+    })
+
+  res <- run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                               s2_year = 2024L, tiles = "T31UDP", quiet = TRUE,
+                               cancel_path = NULL)
+  expect_equal(res$status, "completed")
+  expect_identical(n_polls, 0L)   # historical path, zero fs calls
+})
+
+test_that("a flag present at entry is disarmed and the RECONFORT run goes to the end", {
+  skip_if_terra_write_broken()   # clustering post-process writes a TIF (runner anomaly)
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+
+  flag <- withr::local_tempfile(fileext = ".flag")
+  file.create(flag)              # leftover the caller forgot to clear
+
+  expect_warning(
+    res <- run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                                 s2_year = 2024L, tiles = "T31UDP",
+                                 quiet = TRUE, cancel_path = flag),
+    "already present at entry")
+  expect_equal(res$status, "completed")
+})
+
+test_that("a flag raised mid-run cancels at the next phase boundary", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+
+  flag   <- withr::local_tempfile(fileext = ".flag")
+  phases <- character(0)
+  events <- list()
+  cb <- function(p) {
+    events[[length(events) + 1L]] <<- p
+    if (identical(p$current, "reconfort:phase")) {
+      phases[[length(phases) + 1L]] <<- p$phase_name
+      # The user clicks "stop" while the mask phase runs.
+      if (identical(p$phase_name, "mask")) file.create(flag)
+    }
+  }
+
+  res <- run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                               s2_year = 2024L, tiles = "T31UDP", quiet = TRUE,
+                               cancel_path = flag, progress_callback = cb)
+
+  expect_equal(res$status, "cancelled")
+  expect_equal(res$phase, "mask")           # last phase that completed
+  # The run stopped there: "tiles" and everything after never started.
+  expect_equal(phases, c("env", "model", "mask"))
+  # IOTA2 was never invoked.
+  expect_null(calls$script)
+
+  currents <- vapply(events,
+                     function(e) if (is.null(e$current)) "" else e$current,
+                     character(1))
+  expect_true("reconfort:cancelled" %in% currents)
+  ev <- events[[which(currents == "reconfort:cancelled")[1]]]
+  expect_identical(ev$phase_name, "mask")
+  expect_identical(ev$completed, 3L)         # env, model, mask
+})
+
+test_that("a cancelled run keeps its working directory even with keep_workdir = FALSE", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+
+  flag <- withr::local_tempfile(fileext = ".flag")
+  cb <- function(p) {
+    if (identical(p$current, "reconfort:phase") &&
+        identical(p$phase_name, "ingest")) file.create(flag)
+  }
+
+  res <- run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                               s2_year = 2024L, tiles = "T31UDP", quiet = TRUE,
+                               keep_workdir = FALSE, cancel_path = flag,
+                               progress_callback = cb)
+
+  expect_equal(res$status, "cancelled")
+  expect_equal(res$phase, "ingest")
+  # Whatever the ingest produced survives — cancelling must not cost as
+  # much as failing (the scenes are re-read by a skip_ingest re-run).
+  expect_true(dir.exists(res$workdir))
+  expect_true(dir.exists(file.path(res$workdir, "s2_download", "extracted",
+                                   "T31UDP")))
+})
+
+test_that("a malformed cancel_path reads as 'no cancel', never as an error", {
+  skip_if_terra_write_broken()   # clustering post-process writes a TIF (runner anomaly)
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+
+  bad <- file.path(tempfile(), "nope", "reconfort_cancel.flag")
+  res <- run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                               s2_year = 2024L, tiles = "T31UDP", quiet = TRUE,
+                               cancel_path = bad)
+  expect_equal(res$status, "completed")
+})
