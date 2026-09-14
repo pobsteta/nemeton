@@ -426,6 +426,21 @@
 #' @param progress_callback Optional function called with a named list
 #'   at each phase (`current = "reconfort:phase"` / `"reconfort:..."`),
 #'   for wiring into an app progress bar.
+#' @param cancel_path Optional character path to a cooperative
+#'   cancellation flag file. When `NULL` (default) no polling happens
+#'   and behaviour is identical to before. When a path is given, the
+#'   worker checks `file.exists(cancel_path)` **at phase boundaries
+#'   only**: IOTA2 chunks inside the Python subprocess, so R never sees
+#'   the classification loop and there is nothing finer to poll. The
+#'   cancel therefore takes effect at the next phase change, not
+#'   immediately — a `mapprod` phase running for tens of minutes runs to
+#'   its end. The pipeline then returns `status = "cancelled"` with a
+#'   `phase` field naming the last completed phase, and the working
+#'   directory is **kept whatever `keep_workdir` says** so the scenes
+#'   and rasters already produced stay usable (a resumed run reads them
+#'   back with `skip_ingest = TRUE`). A flag already present at entry is
+#'   ignored as a stale leftover — the caller must delete it before each
+#'   call. A `reconfort:cancelled` progress event is emitted.
 #'
 #' @section Temporal window (`s2_year` -> analysis dates):
 #' RECONFORT does not diff two dates: it classifies a pixel's ~2-year
@@ -459,9 +474,14 @@
 #' (each run = a 2-year window ending end-October of its `s2_year`); the
 #' app stacks the resulting yearly maps.
 #'
-#' @return Invisibly, a list: `status`, `zone_id`, `tiles`, `s2_year`,
-#'   `v_model`, `species`, `workdir`, `rasters` (the collected output
-#'   paths), `meta` (path to `run_meta.json`) and `elapsed_sec`.
+#' @return Invisibly, a list: `status` (`"completed"` or
+#'   `"cancelled"`), `zone_id`, `tiles`, `s2_year`, `v_model`,
+#'   `species`, `workdir`, `rasters` (the collected output paths),
+#'   `meta` (path to `run_meta.json`) and `elapsed_sec`. A
+#'   `"cancelled"` result carries an extra `phase` field (the last
+#'   completed phase) and `NA` / `NULL` in place of the outputs the
+#'   cancelled phases would have produced. A genuine failure still
+#'   aborts rather than returning a status.
 #' @export
 run_reconfort_dieback <- function(con, zone_id, cache_dir,
                                   s2_year           = as.integer(format(Sys.Date(), "%Y")),
@@ -482,7 +502,8 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
                                   skip_ingest       = FALSE,
                                   keep_workdir      = TRUE,
                                   quiet             = FALSE,
-                                  progress_callback = NULL) {
+                                  progress_callback = NULL,
+                                  cancel_path       = NULL) {
   t0 <- Sys.time()
 
   # --- argument validation ----------------------------------------
@@ -501,6 +522,10 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
   if (is.null(date_from)) date_from <- sprintf("%d-01-01", s2_year - 1L)
   if (is.null(date_to))   date_to   <- sprintf("%d-12-31", s2_year)
 
+  # Cooperative cancellation checker (no-op when cancel_path is NULL).
+  # Polled at phase boundaries only — see .signal_cancel_reconfort().
+  cancelled <- .make_cancel_checker(cancel_path)
+
   label   <- paste0("z", zone_id)
   workdir <- output_dir %||%
     file.path(cache_dir, "reconfort", sprintf("run_z%s_S2%s", zone_id, s2_year))
@@ -514,8 +539,14 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     tryCatch(progress_callback(payload), error = function(e) invisible(NULL))
   }
   idx <- 0L
+  current_phase <- NA_character_
   begin <- function(name) {
+    # The only cancellation checkpoint the run has: the phase about to
+    # start is the first thing we can still decline to do. Raises the
+    # classed condition caught below, naming the phase just completed.
+    .signal_cancel_reconfort(cancelled, current_phase)
     idx <<- idx + 1L
+    current_phase <<- name
     if (!quiet) cli::cli_alert_info("RECONFORT [{idx}/{length(phases)}] {name} ...")
     emit(list(current = "reconfort:phase", phase_name = name,
               completed = as.integer(idx - 1L), total = length(phases)))
@@ -813,6 +844,30 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
          features_bundle = features_bundle,
          meta = meta_path, elapsed_sec = elapsed)
   },
+  nemeton_cancelled = function(cnd) {
+    # Cooperative cancellation observed at a phase boundary. The phase
+    # that was running finished; we decline the next one. Nothing is
+    # rolled back: the ingested scenes and whatever IOTA2 already wrote
+    # stay under `workdir` (kept below, `keep_workdir` notwithstanding)
+    # so the run can be resumed instead of restarted from scratch.
+    elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    if (!quiet) cli::cli_alert_info(
+      "RECONFORT: zone {.val {zone_id}} cancelled after phase {.val {cnd$phase}}.")
+    emit(list(current = "reconfort:cancelled", zone_id = zone_id,
+              phase_name = cnd$phase,
+              # `idx` was not incremented for the declined phase, so it
+              # is exactly the number of phases that ran to completion.
+              completed = as.integer(idx), total = length(phases),
+              elapsed_sec = elapsed))
+    list(status = "cancelled", phase = cnd$phase,
+         message = conditionMessage(cnd),
+         zone_id = zone_id, run_id = run_id,
+         tiles = tiles, s2_year = s2_year, v_model = v_model,
+         species = info$species, workdir = workdir, rasters = NULL,
+         n_alerts = NA_integer_, alerts_sf = NULL,
+         features_bundle = NA_character_,
+         meta = NA_character_, elapsed_sec = elapsed)
+  },
   error = function(e) {
     emit(list(current = "reconfort:error", zone_id = zone_id,
               error_message = conditionMessage(e)))
@@ -821,6 +876,12 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
                    parent = e)
   })
 
-  if (!keep_workdir && dir.exists(workdir)) unlink(workdir, recursive = TRUE)
+  # A cancelled run keeps its working directory whatever `keep_workdir`
+  # says: the point of a cooperative cancel is that what was already
+  # produced stays usable, otherwise cancelling costs as much as failing.
+  if (!keep_workdir && !identical(result$status, "cancelled") &&
+      dir.exists(workdir)) {
+    unlink(workdir, recursive = TRUE)
+  }
   invisible(result)
 }

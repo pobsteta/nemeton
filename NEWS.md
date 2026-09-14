@@ -1,3 +1,41 @@
+# nemeton 0.196.0 (2026-09-14)
+
+### Added — `run_reconfort_dieback(cancel_path=)` : le troisième bouton d'arrêt arrête enfin quelque chose
+
+L'onglet Suivi sanitaire a trois boutons d'arrêt — FAST, FORDEAD, RECONFORT.
+Les deux premiers écrivent un flag que le cœur scrute et le run sort proprement
+avec `status = "cancelled"`. Le troisième ne le pouvait pas : il n'y avait rien
+à passer, `run_reconfort_dieback()` s'arrêtant à `progress_callback`. L'app
+libérait donc l'interface pendant que le worker continuait — un bouton qui
+ment sur ce qu'il fait.
+
+`run_reconfort_dieback()` accepte désormais `cancel_path`, avec le même contrat
+que ses deux jumelles (`R/cancel.R`) :
+
+* `NULL` (défaut) → **aucun** appel au système de fichiers, comportement
+  strictement inchangé ;
+* un flag déjà présent **à l'entrée** est désarmé pour tout le run (avec un
+  avertissement) — garde anti-« phantom cancel » ;
+* un chemin invalide se lit comme « pas d'annulation », jamais comme une erreur.
+
+**L'annulation est *coarse*, et c'est écrit dans l'aide.** RECONFORT n'a pas de
+boucle R à scruter : le découpage en chunks se fait dans IOTA2, côté Python. Le
+seul point de contrôle que R possède est la frontière de phase — le crochet
+`begin()` qui émettait déjà `reconfort:phase`. Une phase `mapprod` de quarante
+minutes va donc à son terme ; l'arrêt prend effet à la phase suivante. Promettre
+mieux serait remplacer un bouton menteur par une page d'aide menteuse.
+
+À l'observation du flag : un événement `reconfort:cancelled` portant la phase
+atteinte, et un résultat `status = "cancelled"` avec un champ `phase` (la
+dernière phase **terminée**).
+
+### Changed — un run annulé garde son répertoire de travail
+
+`keep_workdir = FALSE` ne s'applique plus à un run annulé : les scènes déjà
+ingérées et ce qu'IOTA2 a déjà écrit restent sur disque, relisibles par un
+re-run `skip_ingest = TRUE`. Sinon annuler coûterait exactement autant
+qu'échouer, et personne n'appuierait sur le bouton.
+
 # nemeton 0.195.0 (2026-09-03)
 
 ### Added — `run_memory_capped(log_path=)` : la sortie de l'enfant, gardée

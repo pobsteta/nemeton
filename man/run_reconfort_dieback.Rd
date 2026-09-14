@@ -26,7 +26,8 @@ run_reconfort_dieback(
   skip_ingest = FALSE,
   keep_workdir = TRUE,
   quiet = FALSE,
-  progress_callback = NULL
+  progress_callback = NULL,
+  cancel_path = NULL
 )
 }
 \arguments{
@@ -120,11 +121,32 @@ Default `TRUE` (the rasters live there).}
 \item{progress_callback}{Optional function called with a named list
 at each phase (`current = "reconfort:phase"` / `"reconfort:..."`),
 for wiring into an app progress bar.}
+
+\item{cancel_path}{Optional character path to a cooperative
+cancellation flag file. When `NULL` (default) no polling happens
+and behaviour is identical to before. When a path is given, the
+worker checks `file.exists(cancel_path)` **at phase boundaries
+only**: IOTA2 chunks inside the Python subprocess, so R never sees
+the classification loop and there is nothing finer to poll. The
+cancel therefore takes effect at the next phase change, not
+immediately — a `mapprod` phase running for tens of minutes runs to
+its end. The pipeline then returns `status = "cancelled"` with a
+`phase` field naming the last completed phase, and the working
+directory is **kept whatever `keep_workdir` says** so the scenes
+and rasters already produced stay usable (a resumed run reads them
+back with `skip_ingest = TRUE`). A flag already present at entry is
+ignored as a stale leftover — the caller must delete it before each
+call. A `reconfort:cancelled` progress event is emitted.}
 }
 \value{
-Invisibly, a list: `status`, `zone_id`, `tiles`, `s2_year`,
-`v_model`, `species`, `workdir`, `rasters` (the collected output
-paths), `meta` (path to `run_meta.json`) and `elapsed_sec`.
+Invisibly, a list: `status` (`"completed"` or
+`"cancelled"`), `zone_id`, `tiles`, `s2_year`, `v_model`,
+`species`, `workdir`, `rasters` (the collected output paths),
+`meta` (path to `run_meta.json`) and `elapsed_sec`. A
+`"cancelled"` result carries an extra `phase` field (the last
+completed phase) and `NA` / `NULL` in place of the outputs the
+cancelled phases would have produced. A genuine failure still
+aborts rather than returning a status.
 }
 \description{
 Orchestrates a full RECONFORT run for one monitoring zone: validate

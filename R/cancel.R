@@ -1,5 +1,6 @@
 # Cooperative file-based cancellation for long-running workers
-# (`ingest_sentinel2_timeseries()`, `run_fordead_dieback()`).
+# (`ingest_sentinel2_timeseries()`, `run_fordead_dieback()`,
+# `run_reconfort_dieback()`).
 #
 # shiny::ExtendedTask has no cancellation API and the worker runs in a
 # separate `future::multisession` process, so the only channel the app
@@ -64,6 +65,25 @@
       class    = "nemeton_cancelled",
       phase    = phase,
       n_scenes = as.integer(n_scenes))
+  }
+  invisible(NULL)
+}
+
+# RECONFORT cancellation is coarser still than FORDEAD's. The run has no
+# R-side loop to poll: the chunking happens inside IOTA2, in the Python
+# subprocess, so the only checkpoint R ever gets is the phase boundary
+# already materialised by `run_reconfort_dieback()`'s `begin()` hook.
+# Same contract as FORDEAD: a classed condition caught *before* the
+# generic error handler, turned into a `status = "cancelled"` result.
+# `phase` names the last COMPLETED phase (the check fires on entering the
+# next one), and is `NA` when the flag appears before any phase ran.
+.signal_cancel_reconfort <- function(cancelled, phase) {
+  if (cancelled()) {
+    rlang::abort(
+      sprintf("RECONFORT run cancelled after phase '%s'.",
+              if (is.na(phase)) "<start>" else phase),
+      class = "nemeton_cancelled",
+      phase = phase)
   }
   invisible(NULL)
 }
