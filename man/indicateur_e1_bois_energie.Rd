@@ -38,7 +38,12 @@ When supplied and `volume_field` is absent, standing volume is
 auto-estimated by running P1 internally. Default `NULL`.}
 }
 \value{
-sf object with added columns: E1 (fuelwood potential tonnes DM/yr), E1_residues, E1_coppice
+sf object with added columns: E1 (fuelwood potential tonnes DM/ha/yr),
+E1_residues, E1_coppice. \strong{Higher = more fuelwood available =
+favourable}, not inverted; normalize_indicator() rescales it against a ref_max
+of 1.32 t DM/ha/yr -- the yield of a stand at P1's own ceiling (800 m3/ha,
+density 550), so E1, E2 and P1 score the same stand alike. See spec 048
+section 11.
 }
 \description{
 Calculates mobilizable fuelwood potential (tonnes dry matter/year) from

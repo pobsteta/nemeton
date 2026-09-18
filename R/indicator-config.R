@@ -433,12 +433,12 @@ INDICATOR_FAMILIES <- list(
     ),
     indicator_tooltips = list(
       E1 = list(
-        fr = "Potentiel de production de bois-\u00e9nergie (MWh/ha/an). Bas\u00e9 sur la biomasse disponible et l'accessibilit\u00e9.",
-        en = "Wood energy production potential (MWh/ha/year). Based on available biomass and accessibility."
+        fr = "Potentiel de production de bois-\u00e9nergie : r\u00e9manents de r\u00e9colte (2 %/an du volume, dont 30 % en r\u00e9manents) plus un forfait taillis, en tonnes de mati\u00e8re s\u00e8che par hectare et par an. Born\u00e9 \u00e0 1,32 t MS/ha/an, soit le gisement d'un peuplement au plafond de P1 : E1, E2 et P1 notent donc le m\u00eame peuplement pareil.",
+        en = "Fuelwood potential: harvest residues (2 %/yr of standing volume, 30 % of it as residues) plus a coppice allowance, in tonnes of dry matter per hectare per year. Bounded at 1.32 t DM/ha/yr, the yield of a stand at P1's ceiling, so E1, E2 and P1 score the same stand alike."
       ),
       E2 = list(
-        fr = "\u00c9missions de CO2 \u00e9vit\u00e9es par substitution aux \u00e9nergies fossiles (tCO2/ha/an). Contribution \u00e0 la transition \u00e9nerg\u00e9tique.",
-        en = "CO2 emissions avoided by substituting fossil fuels (tCO2/ha/year). Contribution to energy transition."
+        fr = "\u00c9missions de CO2 \u00e9vit\u00e9es par substitution aux \u00e9nergies fossiles (tCO2/ha/an), d\u00e9duites de E1 via les facteurs ADEME. M\u00eame borne que E1 (1,32) parce que c'est, \u00e0 0,1 % pr\u00e8s, la m\u00eame grandeur : 1 t MS = 4500 kWh = 0,999 tCO2 \u00e9vit\u00e9e face au gaz.",
+        en = "CO2 emissions avoided by substituting fossil fuels (tCO2/ha/year), derived from E1 via ADEME factors. Same bound as E1 (1.32) because it is, to within 0.1 %, the same quantity: 1 t DM = 4500 kWh = 0.999 tCO2 avoided against natural gas."
       )
     ),
     indicator_docs = list(

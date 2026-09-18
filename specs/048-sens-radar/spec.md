@@ -1,7 +1,7 @@
 # Spec 048 — Convention du radar : 0-100, haut = bon
 
-**Version** : 1.2.0
-**Date**    : 2026-08-20, §9 et §10 ajoutés le 2026-09-18
+**Version** : 1.3.0
+**Date**    : 2026-08-20, §9 à §11 ajoutés le 2026-09-18
 **Statut**  : **Décidée par Pascal le 2026-08-20**, énoncée ainsi : « tous les
 indicateurs doivent être calculés entre 0-100 pour le graphique radar, et plus
 l'indicateur est haut, meilleur il est. Si R1 est proche de 100, il y a peu de
@@ -314,3 +314,110 @@ une. Y inscrire un indicateur devrait demander la même justification que lui
 orientation et leur échelle ; les neuf indicateurs qui restent muets
 (`w4_vpd`, `a1`, `a3`, `a4`, `a5`, `p3`, `n1`, `n2`, `n3`) n'ont **pas** été
 relus ligne à ligne — comme au §8, la réserve est écrite pour être reprise.
+
+---
+
+## 11. Addendum — `E1` / `E2` : le même nombre, trois bornes (0.197.0)
+
+> Trouvé le 2026-09-18 **en dressant le tableau des 41 indicateurs** demandé par
+> Pascal — c'est-à-dire en mettant chaque borne à côté de son unité, ce que rien
+> n'obligeait à faire jusque-là. Borne décidée par Pascal le même jour.
+
+### 11.1 E2 **est** E1
+
+`indicateur_e2_evitement()` ne mesure rien d'indépendant : il se déduit de E1.
+
+```
+E2 = E1 × 4500 kWh/t × 0,222 kgCO₂/kWh ÷ 1000 = E1 × 0,999
+```
+
+À 0,1 % près, **E2 et E1 sont le même nombre**. Ils portaient pourtant
+`ref_max = 0,3` et `ref_max = 0,75` : les deux axes de la famille Énergie
+étaient en désaccord d'un facteur 2,5 sur ce que vaut « plein score », à partir
+d'une donnée identique. `famille_energie` en faisait la moyenne.
+
+### 11.2 Et tous deux sont P1
+
+E1 dérive linéairement du volume sur pied :
+
+```
+E1 = V × harvest_rate(0,02) × residue_fraction(0,3) × ρ/1000 × 0,5
+   = 0,00165 × V        (ρ = 550)
+```
+
+Trois colonnes strictement proportionnelles au même volume, qui saturaient à
+**182, 455 et 800 m³/ha** :
+
+| Volume | E1 | **E1 avant** | **E2 avant** | **P1** |
+|---|---|---|---|---|
+| 100 m³/ha | 0,165 t | 55 | 22 | 12,5 |
+| **182 m³/ha** | 0,300 t | **100** | 40 | 22,8 |
+| 400 m³/ha | 0,660 t | **100** | 88 | 50 |
+| 800 m³/ha | 1,320 t | **100** | **100** | 100 |
+
+À 182 m³/ha — un peuplement français très ordinaire, l'infobulle de P1 annonce
+100-400 m³/ha comme typique — la même parcelle était **au maximum** en
+bois-énergie et à **22,8/100** en volume. Elles ne pouvaient pas avoir raison
+toutes les trois.
+
+Le forfait taillis aggravait : `coppice_fraction × 2` t MS/ha/an, soit une
+fraction de taillis de **15 %** suffisant à elle seule à saturer E1, volume
+ignoré.
+
+### 11.3 Le correctif
+
+`ref_max(E1) = ref_max(E2) = **1,32 t**` — exactement E1 au plafond de P1
+(800 m³/ha, ρ = 550). Les deux bornes doivent être **égales** puisque les deux
+grandeurs le sont ; leur valeur commune est celle qui aligne la famille Énergie
+sur la famille Production.
+
+Vérification, après correctif — les trois axes notent le même peuplement à
+l'identique :
+
+| Volume | E1 | E2 | P1 |
+|---|---|---|---|
+| 100 m³/ha | 12,5 | 12,5 | 12,5 |
+| 182 m³/ha | 22,8 | 22,7 | 22,8 |
+| 400 m³/ha | 50,0 | 50,0 | 50,0 |
+| 800 m³/ha | 100,0 | 99,9 | 100,0 |
+
+Le résidu de 0,1 point à 800 m³/ha est le facteur 0,999, et le test l'énonce au
+lieu de le cacher dans une tolérance.
+
+### 11.4 Limite assumée
+
+Une borne fixe ne peut pas suivre les paramètres dont dépend la grandeur :
+
+- **densité de l'essence** — E1(800 m³/ha) vaut 0,96 t pour ρ = 400 (peuplier)
+  et 1,68 t pour ρ = 700 (chêne) ; la borne est ancrée sur ρ = 550, le défaut ;
+- **scénario de substitution** — E2 = E1 × 0,999 face au gaz, × 1,458 face au
+  fioul ; la borne est ancrée sur `vs_natural_gas`, le défaut.
+
+Une essence dense ou un scénario fioul saturent donc un peu plus tôt. C'est
+inhérent à un `ref_max` scalaire sur une grandeur paramétrée, et c'est écrit
+plutôt que découvert.
+
+### 11.5 Tests
+
+Trois verrous dans `test-normalization.R` : E1 et E2 portent la **même** borne ;
+E1, E2 et P1 notent le même peuplement pareil pour sept volumes de 50 à
+800 m³/ha ; et E1 **ne sature plus** sur 100-400 m³/ha, la plage que P1 annonce
+comme typique.
+
+### 11.6 Le tableau comme instrument
+
+Les §9 et §10 ont été trouvés en relisant un calcul. Le §11 l'a été autrement :
+en **mettant chaque borne à côté de son unité**, sur les 41 indicateurs d'un
+coup. Trois anomalies ont sauté aux yeux en une lecture (`E1`, `E2`, `W2`), dont
+deux réelles — `W2` sature à 5 % de couverture de zone humide, mais c'est une
+affirmation écologique cohérente, pas une erreur d'échelle.
+
+Ce n'est pas un hasard : une borne fausse est invisible dans le code, où elle
+n'est qu'un nombre dans un `switch`, et évidente dans un tableau, où elle est à
+côté de son unité. L'audit du §2 n'a pas dressé ce tableau.
+
+**Et la fiche E1 documentait déjà le défaut** depuis le 2026-08-27, en piège
+n° 1 : « *Le plafond de 0,3 t MS/ha/an sature dès 150 m³/ha environ. Un
+peuplement ordinaire atteint donc 100.* » Comme T1 au §10, il n'avait jamais été
+remonté dans la table des écarts. **Deux des trois défauts de cette release
+étaient écrits, datés, et non lus.**

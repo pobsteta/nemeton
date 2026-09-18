@@ -1,4 +1,4 @@
-# Brief `nemetonshiny` — `L1` change de sens, `T1` change d'échelle (spec 048 §9-§10)
+# Brief `nemetonshiny` — trois échelles changent : `L1`, `T1`, `E1`/`E2` (spec 048 §9-§11)
 
 **Cœur requis** : `nemeton (>= 0.197.0)`.
 **Portée app** : **aucun code à écrire**. Une chose à faire, une à ne surtout
@@ -124,3 +124,60 @@ haut.
 - Les **valeurs brutes** de T1 : toujours un âge en années.
 - Son sens : haut = plus ancien = mieux. **Ne pas inverser.**
 - `T2`, `T3` : inchangés (`T3` reste inversé, comme depuis la spec 030).
+
+
+---
+
+# Troisième partie — `E1` / `E2` s'alignent sur `P1` (spec 048 §11)
+
+Troisième défaut de la même famille, trouvé en dressant le tableau des 41
+indicateurs. Là encore ce n'est pas le **sens** qui était faux, c'est
+l'**échelle** — et cette fois elle était fausse de façon *incohérente entre
+deux axes de la même famille*.
+
+## Ce qui a changé dans le cœur
+
+`E2` ne mesure rien d'indépendant : il se déduit de `E1`
+(`E1 × 4500 kWh × 0,222 kgCO₂/kWh ÷ 1000` = **`E1 × 0,999`**). À 0,1 % près,
+c'est le même nombre. Les deux portaient pourtant des bornes de **0,3** et
+**0,75**.
+
+Et les deux dérivent linéairement du volume sur pied, donc de **P1**. Trois
+colonnes proportionnelles saturaient à **182, 455 et 800 m³/ha** : à 182 m³/ha,
+la même parcelle était à **100/100** en bois-énergie et **22,8/100** en volume.
+
+`ref_max(E1) = ref_max(E2) = 1,32 t MS/ha/an`, soit exactement E1 au plafond de
+P1. Les trois axes notent désormais le même peuplement à l'identique.
+
+## À faire — toujours le même recalcul
+
+`invalidate_indicators(project_id)` couvre les trois corrections d'un coup.
+**`famille_energie` change en plus de `famille_paysage` et
+`famille_temporelle`.**
+
+## À dire à l'utilisateur
+
+**L'axe « Énergie » va baisser franchement sur les peuplements ordinaires.**
+Avant, tout peuplement au-dessus de ~182 m³/ha était à 100 en bois-énergie.
+Maintenant il suit le volume : 100 m³/ha → 12,5 ; 400 m³/ha → 50 ; 800 m³/ha →
+100.
+
+C'est la même histoire que T1 : un axe qui était saturé se met à discriminer.
+Et c'est vérifiable d'un coup d'œil — **E1, E2 et P1 doivent désormais afficher
+la même valeur** sur une parcelle donnée. Si ce n'est pas le cas, quelque chose
+ne va pas.
+
+## Ce qui ne change pas
+
+- Les **valeurs brutes** de E1 et E2.
+- Leur sens : haut = plus de gisement = mieux. **Ne pas inverser.**
+- L'infobulle de E1 annonçait des **MWh/ha/an** alors que la grandeur est en
+  **tonnes de matière sèche** — corrigé côté cœur, l'app hérite du texte.
+
+## Contrôle
+
+| Contrôle | Attendu |
+|---|---|
+| E1, E2 et P1 sur une même parcelle | **valeurs identiques** (à 0,1 point près) |
+| `famille_energie` sur un peuplement ordinaire | **baisse** nettement |
+| `famille_energie` sur un peuplement à 800 m³/ha | reste à 100 |

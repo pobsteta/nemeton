@@ -27,7 +27,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 | Grandeur mesurée | Émissions fossiles évitées par substitution |
 | Unité brute | **tonnes CO₂eq / ha / an** |
 | Sens | Haut = favorable |
-| Normalisation | `ref_max = 0,75` → `score = min(100, t / 0,75 × 100)` |
+| Normalisation | `ref_max = 1,32` → `score = min(100, t / 1,32 × 100)` — identique à E1, aligné sur P1 |
 | Fonction | `indicateur_e2_evitement()` — `R/indicators-energy.R:130` |
 | Colonnes annexes | `E2_energy`, `E2_material` |
 
@@ -80,7 +80,7 @@ jusqu'au bilan carbone évité.
 ```
 indicateur_e2_evitement()  ->  colonnes E2, E2_energy, E2_material
       |
-      +- normalize_indicator()     -> min(100, t / 0,75 x 100)
+      +- normalize_indicator()     -> min(100, t / 1,32 x 100)
       +- create_family_index("E")  -> famille_energie = moy(E1, E2)
 ```
 
@@ -122,7 +122,7 @@ indicateur_e2_evitement()  ->  colonnes E2, E2_energy, E2_material
 <text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">t CO₂eq / ha / an</text>
 <rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
 <text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text>
-<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">min(100, t / 0,75 × 100)</text>
+<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">min(100, t / 1,32 × 100)</text>
 <rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
 <text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index("E")</text>
 <text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_energie</text>

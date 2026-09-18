@@ -1922,6 +1922,50 @@ test_that("T1 a bien une règle : pas de repli naïf, pas d'avertissement", {
   expect_true(nemeton:::.normalize_has_rule("indicateur_t1_anciennete"))
 })
 
+# --- E1 / E2 : le même nombre, donc la même borne (spec 048 §11) ----------
+# E2 se calcule DEPUIS E1 (E1 × 4500 kWh × 0,222 kgCO2/kWh / 1000 = E1 × 0,999)
+# et les deux dérivent linéairement du volume, donc de P1. Ils portaient
+# pourtant trois bornes différentes : E1 saturait à 182 m³/ha, E2 à 455, P1 à
+# 800. Bornes alignées sur P1 en 0.197.0.
+
+# E1 = V × harvest_rate × residue_fraction × rho/1000 × 0.5, defaults + rho 550.
+.e1_depuis_volume <- function(V) V * 0.02 * 0.3 * 550 / 1000 * 0.5
+
+test_that("E1 et E2 portent la même borne, puisqu'ils portent le même nombre", {
+  # Le facteur de conversion E1 -> E2 vaut 0,999 : à 0,1 % près, c'est la même
+  # grandeur. Deux bornes différentes étaient donc indéfendables.
+  v <- c(0, 0.33, 0.66, 1.32)
+  expect_equal(normalize_indicator("indicateur_e1_bois_energie", v),
+               normalize_indicator("indicateur_e2_evitement", v))
+  expect_equal(normalize_indicator("indicateur_e1_bois_energie", v),
+               c(0, 25, 50, 100))
+})
+
+test_that("E1, E2 et P1 notent le même peuplement pareil", {
+  # Les trois sont strictement proportionnels au volume sur pied. Le test qui
+  # aurait échoué avant la 0.197.0 : à 182 m³/ha, E1 valait 100 et P1 22,8.
+  for (V in c(50, 100, 182, 300, 400, 600, 800)) {
+    e1 <- .e1_depuis_volume(V)
+    expect_equal(normalize_indicator("indicateur_e1_bois_energie", e1),
+                 normalize_indicator("indicateur_p1_volume", V),
+                 tolerance = 1e-6, info = paste("V =", V))
+    # E2 = E1 × 0,999 : il reste 0,1 % d'écart, soit au plus 0,1 point sur
+    # l'échelle. On l'énonce, plutôt que de le cacher dans une tolérance.
+    ecart <- abs(normalize_indicator("indicateur_e2_evitement", e1 * 0.999) -
+                 normalize_indicator("indicateur_p1_volume", V))
+    expect_lt(ecart, 0.11)
+  }
+})
+
+test_that("E1 ne sature plus au milieu du domaine forestier courant", {
+  # 100-400 m³/ha est la plage que l'infobulle de P1 annonce comme typique :
+  # aucune de ses bornes ne doit rendre 100, sinon l'axe ne discrimine plus.
+  n <- normalize_indicator("indicateur_e1_bois_energie",
+                           vapply(c(100, 400), .e1_depuis_volume, numeric(1)))
+  expect_true(all(n < 100))
+  expect_lt(n[1], n[2])
+})
+
 test_that("indicateur_n3_naturalite lit le L1 BRUT, pas le normalisé", {
   # N3 applique sa PROPRE inversion (anti_frag = 100 - L1). Il lit la colonne
   # brute, que `create_family_index()` ne mute pas : sans ce verrou, quelqu'un

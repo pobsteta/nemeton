@@ -82,6 +82,60 @@ Spec 048 §10. Fiche T1 mise à jour. Les `@return` de L1, L2 et T1 déclarent
 désormais leur orientation et leur échelle — c'est leur silence qui avait
 laissé passer les deux défauts.
 
+### Fixed — `E1` / `E2` : le même nombre portait trois bornes différentes
+
+Trouvé **en dressant le tableau des 41 indicateurs**, c'est-à-dire en mettant
+chaque borne à côté de son unité.
+
+`indicateur_e2_evitement()` ne mesure rien d'indépendant : il se déduit de E1
+par `E1 × 4500 kWh × 0,222 kgCO₂/kWh ÷ 1000` = **`E1 × 0,999`**. À 0,1 % près,
+E2 *est* E1. Ils portaient pourtant `ref_max = 0,3` et `ref_max = 0,75` — un
+facteur 2,5 de désaccord entre les deux axes de la famille Énergie, sur une
+donnée identique.
+
+Et les deux dérivent linéairement du volume sur pied, donc de **P1** :
+`E1 = 0,00165 × V` à la densité par défaut. Trois colonnes proportionnelles qui
+saturaient à **182, 455 et 800 m³/ha** :
+
+| Volume | E1 avant | E2 avant | P1 |
+|---|---|---|---|
+| **182 m³/ha** | **100** | 40 | 22,8 |
+| 400 m³/ha | **100** | 88 | 50 |
+
+À 182 m³/ha — un peuplement très ordinaire, P1 annonce 100-400 m³/ha comme
+typique — la même parcelle était au maximum en bois-énergie et à 22,8/100 en
+volume. Le forfait taillis aggravait : 15 % de taillis suffisaient à saturer E1
+à eux seuls, volume ignoré.
+
+`ref_max(E1) = ref_max(E2) = **1,32 t MS/ha/an**` (décision Pascal,
+2026-09-18) — exactement E1 au plafond de P1 (800 m³/ha, ρ = 550). Les trois
+axes notent désormais le même peuplement à l'identique, au résidu de 0,1 point
+que laisse le facteur 0,999 et que le test énonce au lieu de le masquer.
+
+**Limite assumée** : une borne fixe ne suit ni la densité de l'essence
+(E1(800 m³/ha) = 0,96 t pour ρ = 400, 1,68 t pour ρ = 700) ni le scénario de
+substitution (× 1,458 en fioul au lieu de × 0,999 en gaz). Elle est ancrée sur
+les valeurs par défaut, qui sont celles servies.
+
+L'infobulle de E1 annonçait par ailleurs des **MWh/ha/an** quand la fonction
+rend des **tonnes de matière sèche** — corrigé au passage.
+
+**À annoncer** : tous les `famille_energie` déjà calculés changent, à la baisse
+sur les peuplements ordinaires.
+
+Spec 048 §11. Fiches E1 et E2 mises à jour.
+
+### Note de méthode
+
+Deux des trois défauts de cette release — T1 et E1 — étaient **écrits, datés et
+non lus** : leurs fiches indicateurs les documentaient en piège n° 1 depuis le
+2026-08-27, sans jamais remonter dans la table des écarts de `PLAN.md`.
+
+Et ils n'ont pas été trouvés de la même façon. L1 et T1 l'ont été en relisant un
+calcul ; E1/E2 en **mettant chaque borne à côté de son unité**, sur les 41
+indicateurs d'un coup. Une borne fausse est invisible dans le code, où elle
+n'est qu'un nombre dans un `switch`, et évidente dans un tableau.
+
 # nemeton 0.196.0 (2026-09-14)
 
 ### Added — `run_reconfort_dieback(cancel_path=)` : le troisième bouton d'arrêt arrête enfin quelque chose

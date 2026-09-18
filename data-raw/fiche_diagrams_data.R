@@ -818,9 +818,9 @@ FICHES <- list(
       list(titre = "Somme des deux gisements", lignes = "E1 = rémanents + taillis")
     ),
     aval = av("indicateur_e1_bois_energie", "t MS / ha / an",
-              "min(100, t / 0,3 × 100)", "E", "famille_energie", "E1 et E2"),
+              "min(100, t / 1,32 × 100)", "E", "famille_energie", "E1 et E2"),
     notes = c(
-      "Le plafond de 0,3 t MS/ha/an sature dès 150 m³/ha environ : la moitié du domaine forestier est à 100.",
+      "Borne alignée sur P1 (1,32 t MS/ha/an = E1 à 800 m³/ha) : E1, E2 et P1 notent le même peuplement pareil.",
       "Trois constantes portent le résultat — taux de récolte 2 %, fraction rémanents 30 %, forfait taillis 2 t.",
       "La récolte de 2 % est une hypothèse de gestion, pas une mesure de prélèvement réel."
     ),
@@ -849,7 +849,7 @@ FICHES <- list(
                                                        "× facteur ADEME"))
     ),
     aval = av("indicateur_e2_evitement", "t CO₂eq / ha / an",
-              "min(100, t / 0,75 × 100)", "E", "famille_energie", "E1 et E2"),
+              "min(100, t / 1,32 × 100)", "E", "famille_energie", "E1 et E2"),
     notes = c(
       "Chaîne multiplicative : taux de récolte, fraction rémanents, densité, PCI, facteur ADEME — chaque hypothèse s'y propage.",
       "Le facteur de substitution dépend de l'énergie remplacée : le scénario est paramétrable, et il compte.",

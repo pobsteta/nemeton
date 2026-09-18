@@ -36,16 +36,22 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Rien à coder** — les tooltips viennent d'`INDICATOR_FAMILIES` et les rasters en cache restent valides — mais l'interface ne doit **ni classer ni moyenner B4/L3 entre projets** : les « spectral species » sont un k-means réajusté par run (spec 028 §10.6). Non accusé réception |
 | 8 | **Le sens de `L1` est lu à l'envers par la normalisation** | cœur **v0.197.0** | `nemetonshiny` | **Corrigé côté cœur le 2026-09-18** (spec 048 §9). `indicateur_l1_effet_lisiere` quitte `.NORMALIZE_NATIVE_0_100` pour `.NORMALIZE_RULED` et rejoint le bloc d'inversion aux côtés de R1-R5 et T3. Brief émis : `specs/048-sens-radar/brief-nemetonshiny-l1.md`. **Reste à faire côté app** : un `invalidate_indicators()` à la montée de version, sinon `compute_all_indicators()` relira un `indicators.parquet` construit avec l'ancien sens. Aucun code, aucune ré-inversion. Non accusé réception. **Au passage, ce relevé désignait le mauvais slug** : celui qui porte les valeurs de L1 est `indicateur_l2_fragmentation`, pas `indicateur_l1_sylvosphere` (qui porte L2, « haut = bon »). Les deux noms de 0.176.0 étaient croisés — cf. spec 045. Les deux fiches indicateurs portaient la même inversion, corrigée |
 | 10 | **`T1` ancienneté : un âge en années était pris pour un score 0-100** | cœur **v0.197.0** | `nemetonshiny` | Trouvé le 2026-09-18 **en vérifiant le correctif de l'écart n° 8**. `indicateur_t1_anciennete()` rend un âge en années ; déclaré natif 0-100, il n'était qu'écrêté — 150 ans et 250 ans sortaient au même 100. Borne haute de **200 ans** décidée par Pascal le 2026-09-18 (seuil sylvicole : au-delà, l'ancienneté est maximale), pas d'inversion — le sens était juste. Spec 048 §10. Même brief que le n° 8, deuxième partie. **Reste à faire côté app** : le même `invalidate_indicators()`. Non accusé réception |
+| 11 | **`E1` / `E2` : le même nombre portait trois bornes différentes** | cœur **v0.197.0** | `nemetonshiny` | Trouvé le 2026-09-18 **en dressant le tableau des 41 indicateurs**. `E2 = E1 × 0,999` (il s'en déduit) et les deux dérivent linéairement du volume, donc de P1 — trois colonnes proportionnelles qui saturaient à **182, 455 et 800 m³/ha**. À 182 m³/ha, la même parcelle était à 100/100 en bois-énergie et 22,8/100 en volume. `ref_max(E1) = ref_max(E2) = 1,32 t` (= E1 au plafond de P1), décidé par Pascal le 2026-09-18. Spec 048 §11. Même brief, troisième partie. **Reste à faire côté app** : le même `invalidate_indicators()`. Non accusé réception |
 | 7 | L'icône « fiche » à côté du « i » de C1, onglet Familles d'indicateurs | cœur **v0.192.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/052-fiche-indicateur-c1/brief-nemetonshiny.md`). Le cœur expose `doc_url` / `doc_lang` / `doc_url_fr` / `doc_url_en` dans `indicator_labels()` (URL absolue, `NA` quand l'indicateur n'a pas de fiche ; `doc_lang` = langue réellement servie) ; côté app, ~20 lignes dans `mod_family.R` + 3 clés i18n. **L'URL n'est vivante qu'après merge sur `main`** (déploiement pkgdown). Non accusé réception |
 
-**Cinq écarts, aucun n'appelle plus de correctif dans le cœur.** Les n° 8 et
-n° 10 étaient les seuls à rendre une valeur affichée fausse ; tous deux sont
+**Six écarts, aucun n'appelle plus de correctif dans le cœur.** Les n° 8, 10 et
+11 étaient les seuls à rendre une valeur affichée fausse ; tous trois sont
 corrigés en v0.197.0 et attendent désormais, comme le n° 7, un geste côté app —
-ici un recalcul, pas du code. Le n° 10 n'était pas dans cette table : il a été
-trouvé **en vérifiant le n° 8**, et il était documenté depuis le 2026-08-27 dans
-la fiche T1 sans jamais être remonté ici. C'est le trou de la table, plus que
-celui du code : une fiche peut décrire un défaut pendant trois semaines sans que
-personne ne le voie. Le n° 3 attend
+ici un recalcul, pas du code.
+
+**Les n° 10 et 11 n'étaient pas dans cette table**, et c'est le constat le plus
+utile de la release. Le n° 10 a été trouvé en vérifiant le n° 8 ; le n° 11 en
+dressant le tableau des 41 indicateurs. Or **les deux étaient documentés depuis
+le 2026-08-27**, en piège n° 1 de leurs fiches respectives (T1 : « *120 ans et
+300 ans obtiennent le même score de 100* » ; E1 : « *Le plafond de 0,3 t
+MS/ha/an sature dès 150 m³/ha environ* »). Écrits, datés, jamais remontés ici.
+Une fiche peut décrire un défaut pendant trois semaines sans que personne ne le
+voie : **le trou était dans la table, pas dans le code.** Le n° 3 attend
 une sortie sur un projet réel portant à la fois un nuage LiDAR et une desserte
 corrigée. Le n° 6 attend une lecture côté app : il n'appelle pas de code, il
 interdit un usage — et un interdit non lu ne protège de rien. Le n° 7, lui,
@@ -3526,7 +3532,7 @@ providers Mistral/OpenAI/Voyage.
 
 ## Journal
 
-### 2026-09-18 — v0.197.0 : `L1` lu à l'envers, `T1` mesuré à la mauvaise échelle
+### 2026-09-18 — v0.197.0 : trois échelles fausses, et ce qui les a fait trouver
 
 Écart n° 8 de la table en tête de fichier, ouvert le 2026-08-27 en rédigeant la
 fiche L1. Le seul des quatre qui appelait un correctif **dans le cœur**, et le
@@ -3632,7 +3638,46 @@ piège n° 1, avec le bon exemple chiffré. Il n'avait simplement jamais été
 remonté dans la table des écarts. Une fiche peut décrire un défaut pendant trois
 semaines sans que personne ne le voie : c'est le trou de la table, pas du code.
 
-Spec 048 portée en 1.2.0 (§9 et §10). Fiches L1, L2, N3 et T1 mises à jour.
+**Et un troisième, trouvé autrement.** Pascal a demandé un tableau des 41
+indicateurs avec le sens de 0 à 100 sur le radar. Le dresser, c'est mettre
+chaque borne à côté de son unité — ce que rien n'obligeait à faire jusque-là.
+Trois anomalies ont sauté aux yeux en une lecture, dont deux réelles :
+
+- **`E2` *est* `E1`.** Il s'en déduit par `E1 × 4500 kWh × 0,222 kgCO₂/kWh
+  ÷ 1000` = `E1 × 0,999`. Les deux portaient pourtant `ref_max = 0,3` et
+  `ref_max = 0,75` : les deux axes de la famille Énergie en désaccord d'un
+  facteur 2,5 sur une donnée identique.
+- **Et tous deux sont P1.** `E1 = 0,00165 × V` à la densité par défaut. Trois
+  colonnes proportionnelles qui saturaient à **182, 455 et 800 m³/ha**. À
+  182 m³/ha — un peuplement très ordinaire — la même parcelle était à **100/100**
+  en bois-énergie et **22,8/100** en volume. Le forfait taillis aggravait :
+  15 % de taillis saturaient E1 à eux seuls, volume ignoré.
+- **`W2` n'est pas un défaut** : il sature à 5 % de couverture de zone humide,
+  mais c'est une affirmation écologique cohérente — 5 % dans une parcelle
+  forestière, c'est déjà remarquable — et la résolution est fine là où elle
+  compte. Vérifié, et écarté.
+
+Borne décidée par Pascal : **alignement sur P1**, `ref_max(E1) = ref_max(E2) =
+1,32 t`, soit exactement E1 au plafond de P1 (800 m³/ha, ρ = 550). Les trois
+axes notent désormais le même peuplement à l'identique, au résidu de 0,1 point
+que laisse le facteur 0,999 — le test l'énonce plutôt que de le noyer dans une
+tolérance. L'infobulle de E1 annonçait par ailleurs des MWh/ha/an quand la
+fonction rend des tonnes de matière sèche : corrigé au passage.
+
+**Ce que cette release apprend sur la méthode**, et qui vaut plus que les trois
+correctifs. Les défauts n'ont pas été trouvés de la même façon : L1 et T1 en
+**relisant un calcul**, E1/E2 en **mettant chaque borne à côté de son unité**.
+Une borne fausse est invisible dans le code — elle n'y est qu'un nombre dans un
+`switch` — et évidente dans un tableau. L'audit de la spec 048 n'avait dressé ni
+l'un ni l'autre : il comparait des *déclarations*.
+
+Et **deux des trois défauts étaient déjà écrits**. Les fiches T1 et E1 les
+documentaient en piège n° 1 depuis le 2026-08-27, avec les bons chiffres. Ils
+n'étaient simplement jamais remontés dans la table des écarts. Écrire un défaut
+dans une fiche ne le fait pas exister : seule la table est relue.
+
+Spec 048 portée en 1.3.0 (§9 à §11). Fiches L1, L2, N3, T1, E1 et E2 mises à
+jour.
 
 ### 2026-09-14 — v0.196.0 : le troisième bouton d'arrêt n'arrêtait rien
 

@@ -622,8 +622,28 @@ normalize_indicator <- function(indicator, values) {
     "indicateur_t1_anciennete" = 200,
     "indicateur_p1_volume" = 800,
     "indicateur_p2_station" = 15,
-    "indicateur_e1_bois_energie" = 0.3,
-    "indicateur_e2_evitement" = 0.75,
+    # E1 et E2 sont, a 0,1 % pres, LE MEME NOMBRE : E2 se calcule depuis E1
+    # (E1 x 4500 kWh x 0,222 kgCO2/kWh / 1000 = E1 x 0,999, scenario gaz par
+    # defaut). Ils portaient pourtant des bornes 2,5x differentes (0,3 et 0,75),
+    # si bien que les deux axes de la famille Energie etaient en desaccord sur
+    # ce que vaut « plein score » a partir d'une donnee identique.
+    #
+    # Les deux derivent lineairement du volume : E1 = V x 0,02 x 0,3 x rho/1000
+    # x 0,5, soit 0,00165 x V pour rho = 550. Avec l'ancien 0,3, E1 saturait des
+    # 182 m3/ha — un peuplement francais tres ordinaire (P1 annonce 100-400
+    # m3/ha comme typique) — la ou P1, sur le MEME volume, lisait 22,8/100.
+    # Trois colonnes proportionnelles qui saturaient a 182, 455 et 800 m3/ha.
+    #
+    # Borne alignee sur P1 (decision Pascal, 2026-09-18) : 1,32 t MS/ha/an est
+    # exactement E1 au plafond de P1 (800 m3/ha, rho = 550). Les trois axes
+    # disent desormais la meme chose du meme peuplement.
+    #
+    # Limite assumee : E1 depend de la densite de l'essence (0,96 pour rho=400,
+    # 1,68 pour rho=700) et E2 du scenario de substitution (x1,458 en fioul au
+    # lieu de x0,999 en gaz). Une borne fixe ne peut pas suivre ces parametres ;
+    # elle est ancree sur les valeurs par defaut, qui sont celles servies.
+    "indicateur_e1_bois_energie" = 1.32,
+    "indicateur_e2_evitement" = 1.32,
     NULL
   )
 
