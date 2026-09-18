@@ -40,6 +40,13 @@ indicateur_a4_tamponnement(units, micro = NULL, chm = NULL,
 `units` with `A4` (0-100), `A4_buffer` (raw °C), `A4_couverture_pct`,
 and the `"microclimate_model"` augmentation flag.
 
+**Higher = more thermal buffering = favourable**, and the raw quantity
+(the open-air minus under-canopy temperature gap, °C) already runs that
+way: 0 °C -\> 0, 10 °C -\> 100 (`.MICRO_BOUNDS$a4`,
+`decreasing = FALSE`). Unlike `A3` and `W4`, nothing is flipped.
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+passes it through (spec 048 section 12).
+
 ## See also
 
 [`indicateur_a3_microclimat`](https://pobsteta.github.io/nemeton/reference/indicateur_a3_microclimat.md),

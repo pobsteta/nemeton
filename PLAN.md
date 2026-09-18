@@ -4279,6 +4279,58 @@ cœur).
 
 ## Journal
 
+### 2026-09-18 — La réserve reprise : les sept indicateurs muets, et aucun défaut
+
+Suite directe de la v0.197.0. Le §10.6 de la spec 048 laissait une
+réserve écrite — « neuf indicateurs restent muets, réserve écrite pour
+être reprise ». Pascal l’a reprise le jour même.
+
+**Ils n’étaient pas neuf, mais sept.** `A5` déclarait déjà « *0-100,
+high = cooler than surroundings* » et `N1` « *100 = very remote* ». Ma
+liste de neuf venait d’un `grep` qui ne lisait que les deux premières
+lignes du bloc `\value{}` — le même genre de raccourci que celui qui
+avait fait désigner le mauvais slug de L1. Corrigé en relisant les
+`@return` entiers.
+
+**Résultat : aucun défaut parmi les sept.** `A1`, `A3`, `A4`, `W4`,
+`P3`, `N2` et `N3` sont tous réellement 0-100 et tous réellement
+orientés « haut = bon ». Le silence était documentaire, pas fonctionnel
+— contrairement à L1, T1 et E1/E2, où il recouvrait une erreur. C’est un
+résultat et non une absence de résultat : il borne ce que coûtait la
+réserve, et retire sept suspects.
+
+**Deux choses apprises quand même, et verrouillées par un test.**
+
+`A3` et `W4` **sont** orientés « haut = mauvais » à l’état brut — une
+température maximale, un déficit de pression de vapeur — mais ils sont
+retournés **à la source**, par `.micro_norm(decreasing = TRUE)` dans le
+module microclimat. Leur passthrough dans
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+est donc correct *parce qu’une inversion a déjà eu lieu ailleurs*, et
+une seconde les casserait. Rien ne le disait : le lecteur voyait un «
+0-100 » et un passthrough. C’est exactement la configuration qui a
+produit le défaut L1 — à ceci près qu’ici elle est juste. Un test le
+fixe désormais sur `.micro_norm()` et `.MICRO_BOUNDS`, sans donnée.
+
+`N2` a un **plancher de 15** : une unité sans aucun bois obtient 15, pas
+0 (le score est en paliers). N2 ne balaie donc jamais le bas de sa
+propre échelle, et un N2 faible n’est pas la même affirmation qu’un zéro
+— ce que le seul « score 0-100 » laissait croire. Même famille de fait
+que le terme urbain constant de N1. Testé.
+
+**Pas de release** : le changement est doc + tests, aucune ligne
+fonctionnelle. Il part sur le cycle dev `0.197.0.9000`, conformément à
+la règle « hors doc pure » des consignes de release.
+
+Spec 048 portée en 1.4.0 (§12). La réserve du §8, ouverte le 2026-08-20,
+est refermée — après avoir produit exactement ce pour quoi elle avait
+été écrite : **trois défauts trouvés, sept faux suspects écartés avec
+preuve.** Ce qu’elle ne referme pas : `.NORMALIZE_NATIVE_0_100` reste
+une affirmation que rien ne vérifie. Les `@return` disent maintenant
+vrai, mais un futur indicateur pourra toujours y être inscrit à tort, et
+le garde-fou de la spec 038 ne le verra pas — déclarer un indicateur
+natif, c’est précisément lui demander de se taire.
+
 ### 2026-09-18 — v0.197.0 : trois échelles fausses, et ce qui les a fait trouver
 
 Écart n° 8 de la table en tête de fichier, ouvert le 2026-08-27 en

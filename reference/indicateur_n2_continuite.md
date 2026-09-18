@@ -60,4 +60,14 @@ indicateur_n2_continuite(
 
 ## Value
 
-sf object with added column N2 (score 0-100)
+sf object with added column N2 (score 0-100).
+
+**Higher = older and more continuous woodland = favourable.** Scored in
+three tiers: ancient forest present -\> `60 + rate * 40` (60-100), else
+wooded -\> `30 + rate * 30` (30-60), else **15**.
+
+Note the floor: a unit carrying no woodland at all scores **15, not 0**.
+N2 therefore never spans the bottom of its own scale, and a low N2 is
+not the same statement as a zero.
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+passes it through (spec 048 section 12).

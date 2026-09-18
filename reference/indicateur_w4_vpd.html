@@ -156,6 +156,11 @@ Normalised 0-100 <strong>decreasing</strong> (moister air = more favourable = 10
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>units</code> with <code>W4</code> (0-100), <code>W4_vpd</code> (raw kPa),
 <code>W4_couverture_pct</code>, and the <code>"microclimate_model"</code> augmentation flag.</p>
+<p><strong>Higher = moister air under the canopy = favourable.</strong> The raw quantity
+(VPD, kPa) runs the other way, so <code>.micro_norm(decreasing = TRUE)</code> flips it
+here, at the source: 0.5 kPa -&gt; 100, 4.0 kPa -&gt; 0 (<code>.MICRO_BOUNDS$w4</code>).
+<code><a href="normalize_indicator.html">normalize_indicator()</a></code> therefore passes <code>W4</code> through unchanged and
+must <strong>not</strong> invert it a second time (spec 048 section 12).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

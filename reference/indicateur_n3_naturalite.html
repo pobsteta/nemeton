@@ -143,7 +143,15 @@ Falls back to 50 when L1 or B3 are unavailable.</p>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>sf object with added column N3 (score 0-100)</p>
+    <p>sf object with added column N3 (score 0-100), or <code>NA</code> when any of the four
+input columns is missing.</p>
+<p><strong>Higher = more natural = favourable.</strong> N3 is
+<code>0.35*N1 + 0.35*N2 + 0.15*(100 - L1) + 0.15*B3</code>; all four inputs are 0-100,
+so the composite is too, and <code><a href="normalize_indicator.html">normalize_indicator()</a></code> passes it through.</p>
+<p>N3 reads the <strong>raw</strong> <code>L1</code> column and applies its own inversion. That
+is deliberate and must stay: <code><a href="create_family_index.html">create_family_index()</a></code> works on a copy and
+does not mutate the source columns, so dropping the <code>100 - L1</code> to "align"
+N3 on the radar convention would invert L1 twice (spec 048 sections 9 and 12).</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

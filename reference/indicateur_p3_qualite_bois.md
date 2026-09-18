@@ -66,7 +66,14 @@ indicateur_p3_qualite_bois(
 
 ## Value
 
-sf object with added column: P3 (timber quality score 0-100)
+sf object with added column: P3 (timber quality score 0-100).
+
+**Higher = better timber = favourable.** P3 is a weighted mean of three
+components that are each already 0-100 and each already oriented that
+way (diameter against commercial thresholds, stem form, a defects
+penalty), so the composite is 0-100 by construction and
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+passes it through (spec 048 section 12).
 
 ## Details
 

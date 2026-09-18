@@ -165,7 +165,12 @@ expected in the CRS of <code>units</code>.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The input sf object with added column:</p><ul><li><p>A1: Forest coverage percentage (0-100) within buffer.</p></li>
-</ul></div>
+</ul><p><strong>Higher = more forest around the unit = favourable.</strong> A1 is a genuine
+percentage in both modes – <code>fvc_mean * 100</code> from the Theia fractional
+vegetation cover, or the share of forest pixels in the buffer – so
+<code><a href="normalize_indicator.html">normalize_indicator()</a></code> passes it through without a scale of its own
+(spec 048 section 12).</p>
+    </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>**Formula** (legacy mode): A1 = (forest_area_in_buffer / total_buffer_area) × 100</p>

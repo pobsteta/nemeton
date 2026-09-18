@@ -50,6 +50,12 @@ The input sf object with added column:
 
 - A1: Forest coverage percentage (0-100) within buffer.
 
+**Higher = more forest around the unit = favourable.** A1 is a genuine
+percentage in both modes – `fvc_mean * 100` from the Theia fractional
+vegetation cover, or the share of forest pixels in the buffer – so
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+passes it through without a scale of its own (spec 048 section 12).
+
 ## Details
 
 \*\*Formula\*\* (legacy mode): A1 = (forest_area_in_buffer /

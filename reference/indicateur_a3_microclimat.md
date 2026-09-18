@@ -43,6 +43,14 @@ indicateur_a3_microclimat(units, micro = NULL, chm = NULL,
 `A3_couverture_pct`, and `attr(., "augmented")` carrying
 `"microclimate_model"`.
 
+**Higher = cooler under the canopy = favourable.** The raw quantity
+(summer maximum temperature, °C) runs the other way, so
+`.micro_norm(decreasing = TRUE)` flips it here, at the source: 15 °C -\>
+100, 40 °C -\> 0 (`.MICRO_BOUNDS$a3`).
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+therefore passes `A3` through unchanged and must **not** invert it a
+second time (spec 048 section 12).
+
 ## See also
 
 [`indicateur_a4_tamponnement`](https://pobsteta.github.io/nemeton/reference/indicateur_a4_tamponnement.md),

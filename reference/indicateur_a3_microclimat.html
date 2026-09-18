@@ -159,6 +159,12 @@ the augmentation flag).</p></dd>
     <p><code>units</code> with columns <code>A3</code> (0-100), <code>A3_tmax</code> (raw °C),
 <code>A3_couverture_pct</code>, and <code>attr(., "augmented")</code> carrying
 <code>"microclimate_model"</code>.</p>
+<p><strong>Higher = cooler under the canopy = favourable.</strong> The raw quantity (summer
+maximum temperature, °C) runs the other way, so
+<code>.micro_norm(decreasing = TRUE)</code> flips it here, at the source: 15 °C -&gt; 100,
+40 °C -&gt; 0 (<code>.MICRO_BOUNDS$a3</code>). <code><a href="normalize_indicator.html">normalize_indicator()</a></code> therefore
+passes <code>A3</code> through unchanged and must <strong>not</strong> invert it a second time
+(spec 048 section 12).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -159,6 +159,11 @@ microsite from heat (spec 027, ADR-014). Normalised 0-100 <strong>increasing</st
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>units</code> with <code>A4</code> (0-100), <code>A4_buffer</code> (raw °C),
 <code>A4_couverture_pct</code>, and the <code>"microclimate_model"</code> augmentation flag.</p>
+<p><strong>Higher = more thermal buffering = favourable</strong>, and the raw quantity (the
+open-air minus under-canopy temperature gap, °C) already runs that way: 0 °C -&gt; 0,
+10 °C -&gt; 100 (<code>.MICRO_BOUNDS$a4</code>, <code>decreasing = FALSE</code>). Unlike
+<code>A3</code> and <code>W4</code>, nothing is flipped. <code><a href="normalize_indicator.html">normalize_indicator()</a></code> passes
+it through (spec 048 section 12).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
