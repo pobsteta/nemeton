@@ -64,16 +64,16 @@ lui-même. Et la déclaration « natif 0-100 » désarmait par surcroît le gard
 de la spec 038, qui n'avertit que pour un indicateur tombant au repli naïf
 **sans** être déclaré natif.
 
-T1 reçoit un `ref_max` de **1000 ans** (décision Pascal, 2026-09-18) :
-`0, 250, 500, 1000 → 0, 25, 50, 100`. **Pas d'inversion** — plus vieux = mieux,
+T1 reçoit un `ref_max` de **200 ans** (décision Pascal, 2026-09-18) :
+`0, 50, 100, 200 → 0, 25, 50, 100`. **Pas d'inversion** — plus vieux = mieux,
 le sens était juste, c'est l'échelle qui ne l'était pas. La fonction est
 inchangée et rend toujours un âge.
 
-**Ce que la borne coûte** : le domaine forestier ordinaire — 30 à 150 ans —
-occupe désormais le bas de l'échelle (3 à 15 sur 100). T1 devient un axe qui
-reste bas sur le radar, et c'est la lecture correcte d'un peuplement jeune
-rapporté à une forêt ancienne — le contraire du défaut précédent, où tout ce
-qui dépassait un siècle était uniformément excellent.
+200 ans est un **seuil sylvicole**, pas une borne physique : au-delà de deux
+siècles l'ancienneté est tenue pour maximale. Ce choix étale le domaine
+forestier courant — 30 à 150 ans → **15 à 75** — au lieu de l'écraser. Une
+borne lointaine aurait déplacé le défaut du haut de l'échelle vers le bas au
+lieu de le corriger.
 
 **À annoncer** : tous les `famille_temporelle` déjà calculés changent. Les
 valeurs brutes de T1 sont inchangées.

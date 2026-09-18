@@ -974,14 +974,14 @@ FICHES <- list(
       list(titre = "50 ans, en dur", lignes = "âge fabriqué, pas NA", tirets = TRUE)
     ),
     aval = av("indicateur_t1_anciennete", "âge, en années",
-              "âge / 1000 ans × 100", "T", "famille_temporel", "T1 à T3"),
+              "âge / 200 ans × 100", "T", "famille_temporel", "T1 à T3"),
     notes = c(
-      "L'unité est l'année : normalisée sur une borne de 1000 ans depuis la 0.197.0, plus par écrêtage à 100.",
+      "L'unité est l'année : normalisée sur une borne de 200 ans depuis la 0.197.0, plus par écrêtage à 100.",
       "Sans aucune donnée, T1 vaut 50 — un âge fabriqué qui ne se distingue pas d'un âge mesuré.",
       "Le chemin NDVI convertit de la verdeur en années : un peuplement vert et jeune y paraît vieux.",
       "L'âge TFV est une constante par type : toutes les futaies feuillues fermées ont le même âge."
     ),
-    legende = paste("Cinq issues pour une colonne en années. La borne de 1000 ans distingue enfin",
+    legende = paste("Cinq issues pour une colonne en années. La borne de 200 ans distingue enfin",
                     "une futaie de 110 ans d'une de 250 ans, mais le dernier recours — 50 ans en",
                     "dur — se lit toujours comme n'importe quelle autre valeur.")
   ),

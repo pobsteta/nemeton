@@ -529,7 +529,7 @@ invert_indicator <- function(data,
   # T1 n'est PLUS ici : il ne rend pas un score 0-100 mais un AGE EN ANNEES
   # (cf. son @return). Declare natif, il n'etait qu'ecrete : 150 ans et 250 ans
   # sortaient tous deux a 100, et 30 ans valait 30. Il a desormais un ref_max
-  # de 1000 ans. Cf. le switch ref_max et spec 048 §10.
+  # de 200 ans. Cf. le switch ref_max et spec 048 §10.
   "indicateur_t2_changement",
   # R1-R4 ne sont PLUS ici : ils sont 0-100 natifs mais orientés « haut =
   # mauvais », donc ils ont besoin d'une règle (inversion), pas d'un
@@ -613,11 +613,13 @@ normalize_indicator <- function(indicator, values) {
     # et saturait des qu'une vraie source etait branchee — mesure sur Couchey,
     # 46 110 habitants dans 5 km, soit 100/100 pour une bourgogne rurale.
     "indicateur_s3_population" = NULL,
-    # T1 porte un AGE EN ANNEES, pas un score. Borne haute 1000 ans (decision
-    # Pascal, 2026-09-18) : elle couvre les chenes et ifs multiseculaires sans
-    # ecraser le domaine courant contre le plafond, ce que faisait l'ecretage a
-    # 100. Sens conserve : plus vieux = mieux, pas d'inversion.
-    "indicateur_t1_anciennete" = 1000,
+    # T1 porte un AGE EN ANNEES, pas un score. Borne haute 200 ans (decision
+    # Pascal, 2026-09-18) : c'est le seuil sylvicole au-dela duquel l'anciennete
+    # est deja maximale — une futaie de 200 ans et une de 400 ans ne se
+    # distinguent plus utilement pour un gestionnaire — et il etale le domaine
+    # courant (30-150 ans -> 15-75) au lieu de l'ecraser. Sens conserve : plus
+    # vieux = mieux, pas d'inversion.
+    "indicateur_t1_anciennete" = 200,
     "indicateur_p1_volume" = 800,
     "indicateur_p2_station" = 15,
     "indicateur_e1_bois_energie" = 0.3,

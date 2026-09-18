@@ -96,9 +96,10 @@ ce n'est pas le **sens** de T1 qui était faux, c'est son **échelle**.
 déclaré natif 0-100, donc simplement écrêté : une futaie de 150 ans et une de
 250 ans sortaient au même **100**, et un peuplement de 30 ans était noté 30/100.
 
-T1 reçoit désormais une borne haute de **1000 ans** :
-`0, 250, 500, 1000 → 0, 25, 50, 100`. **Aucune inversion** — plus vieux = mieux,
-le sens était juste.
+T1 reçoit désormais une borne haute de **200 ans** :
+`0, 50, 100, 200 → 0, 25, 50, 100`. **Aucune inversion** — plus vieux = mieux,
+le sens était juste. 200 ans est un seuil sylvicole : au-delà, l'ancienneté est
+tenue pour maximale.
 
 ## À faire — le même recalcul
 
@@ -106,21 +107,17 @@ le sens était juste.
 geste, à la même montée de version. **Tous les `famille_temporelle` changent**
 en plus des `famille_paysage`.
 
-## À dire à l'utilisateur, et c'est le point qui va surprendre
+## À dire à l'utilisateur
 
-**T1 va tomber très bas sur le radar, et c'est correct.** Le domaine forestier
-ordinaire — 30 à 150 ans — occupe désormais le bas de l'échelle : **3 à 15 sur
-100**. Avant, tout ce qui dépassait un siècle était uniformément à 100.
+**T1 va baisser sur les peuplements de plus d'un siècle, et se mettre à
+discriminer en dessous.** Avant, tout ce qui dépassait 100 ans était
+uniformément à 100. Maintenant : 30 ans → 15, 80 ans → 40, 120 ans → 60,
+150 ans → 75, et 200 ans et plus → 100.
 
-Un utilisateur qui voit son axe « Ancienneté » s'effondrer va le lire comme une
-régression. Ce n'en est pas une : la borne de 1000 ans rapporte le peuplement à
-une forêt ancienne, et un peuplement jeune y est **effectivement** bas. Si
-l'interface commente les axes faibles, T1 mérite probablement un mot dédié —
-l'infobulle du cœur le dit déjà (« un peuplement jeune reste donc bas sur
-l'axe »), mais un axe à 5/100 attire l'œil plus qu'une infobulle.
-
-C'est le seul point de ce brief qui demande peut-être un arbitrage de votre
-côté : nous n'avons pas changé l'échelle du radar, seulement celle de T1.
+Autrement dit l'axe « Ancienneté » cesse d'être saturé et se met à séparer les
+peuplements. Sur un projet à peuplements âgés il baissera — ce n'est pas une
+régression, c'est la fin d'un plafond qui mettait tout le monde à égalité en
+haut.
 
 ## Ce qui ne change pas
 

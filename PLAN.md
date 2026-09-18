@@ -35,7 +35,7 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 | 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Rien à coder** — les tooltips viennent d'`INDICATOR_FAMILIES` et les rasters en cache restent valides — mais l'interface ne doit **ni classer ni moyenner B4/L3 entre projets** : les « spectral species » sont un k-means réajusté par run (spec 028 §10.6). Non accusé réception |
 | 8 | **Le sens de `L1` est lu à l'envers par la normalisation** | cœur **v0.197.0** | `nemetonshiny` | **Corrigé côté cœur le 2026-09-18** (spec 048 §9). `indicateur_l1_effet_lisiere` quitte `.NORMALIZE_NATIVE_0_100` pour `.NORMALIZE_RULED` et rejoint le bloc d'inversion aux côtés de R1-R5 et T3. Brief émis : `specs/048-sens-radar/brief-nemetonshiny-l1.md`. **Reste à faire côté app** : un `invalidate_indicators()` à la montée de version, sinon `compute_all_indicators()` relira un `indicators.parquet` construit avec l'ancien sens. Aucun code, aucune ré-inversion. Non accusé réception. **Au passage, ce relevé désignait le mauvais slug** : celui qui porte les valeurs de L1 est `indicateur_l2_fragmentation`, pas `indicateur_l1_sylvosphere` (qui porte L2, « haut = bon »). Les deux noms de 0.176.0 étaient croisés — cf. spec 045. Les deux fiches indicateurs portaient la même inversion, corrigée |
-| 10 | **`T1` ancienneté : un âge en années était pris pour un score 0-100** | cœur **v0.197.0** | `nemetonshiny` | Trouvé le 2026-09-18 **en vérifiant le correctif de l'écart n° 8**. `indicateur_t1_anciennete()` rend un âge en années ; déclaré natif 0-100, il n'était qu'écrêté — 150 ans et 250 ans sortaient au même 100. Borne haute de **1000 ans** décidée par Pascal le 2026-09-18, pas d'inversion (le sens était juste). Spec 048 §10. Même brief que le n° 8, deuxième partie. **Reste à faire côté app** : le même `invalidate_indicators()`, et **un mot à l'utilisateur** — T1 tombe à 3-15/100 sur le domaine forestier ordinaire, ce qui se lira comme une régression sans explication. Non accusé réception |
+| 10 | **`T1` ancienneté : un âge en années était pris pour un score 0-100** | cœur **v0.197.0** | `nemetonshiny` | Trouvé le 2026-09-18 **en vérifiant le correctif de l'écart n° 8**. `indicateur_t1_anciennete()` rend un âge en années ; déclaré natif 0-100, il n'était qu'écrêté — 150 ans et 250 ans sortaient au même 100. Borne haute de **200 ans** décidée par Pascal le 2026-09-18 (seuil sylvicole : au-delà, l'ancienneté est maximale), pas d'inversion — le sens était juste. Spec 048 §10. Même brief que le n° 8, deuxième partie. **Reste à faire côté app** : le même `invalidate_indicators()`. Non accusé réception |
 | 7 | L'icône « fiche » à côté du « i » de C1, onglet Familles d'indicateurs | cœur **v0.192.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/052-fiche-indicateur-c1/brief-nemetonshiny.md`). Le cœur expose `doc_url` / `doc_lang` / `doc_url_fr` / `doc_url_en` dans `indicator_labels()` (URL absolue, `NA` quand l'indicateur n'a pas de fiche ; `doc_lang` = langue réellement servie) ; côté app, ~20 lignes dans `mod_family.R` + 3 clés i18n. **L'URL n'est vivante qu'après merge sur `main`** (déploiement pkgdown). Non accusé réception |
 
 **Cinq écarts, aucun n'appelle plus de correctif dans le cœur.** Les n° 8 et
@@ -3604,15 +3604,18 @@ normalize_indicator("indicateur_t1_anciennete", c(30, 80, 150, 250))
 
 Une futaie de 150 ans et une de 250 ans sortaient au même 100, et un peuplement
 de 30 ans était noté 30/100 — une note d'ancienneté qui était l'âge lui-même.
-Pascal a tranché la borne le jour même : **1000 ans**. Pas d'inversion, le sens
-était juste. `0, 250, 500, 1000 → 0, 25, 50, 100`.
+Pascal a tranché la borne le jour même : **200 ans**. Pas d'inversion, le sens
+était juste. `0, 50, 100, 200 → 0, 25, 50, 100`.
 
-**Ce que la borne coûte, et qu'il faut assumer** : le domaine forestier
-ordinaire — 30 à 150 ans — passe à **3-15 sur 100**. T1 devient un axe qui reste
-bas sur le radar. C'est la lecture correcte d'un peuplement jeune rapporté à une
-forêt ancienne, et c'est le contraire du défaut précédent, où tout ce qui
-dépassait un siècle était uniformément excellent — mais un utilisateur le lira
-comme une régression si personne ne le lui dit. Le brief app insiste là-dessus.
+**Pourquoi 200 et pas une borne physique**, parce que le raisonnement mérite
+d'être gardé : 200 ans est un **seuil sylvicole**, pas l'âge maximal d'un arbre.
+Au-delà de deux siècles l'ancienneté est maximale — distinguer une futaie de
+200 ans d'une de 400 ans sur le radar reviendrait à noter la seconde
+« meilleure » sans qu'aucune décision n'en dépende. Et la borne décide surtout
+de l'**étalement du domaine courant** : à 200 ans, 30 à 150 ans s'étale sur
+15-75, soit l'essentiel de l'axe. Une borne à 1000 ans, un temps envisagée,
+aurait écrasé ce même domaine sur 3-15 : le défaut se serait déplacé du haut de
+l'échelle vers le bas au lieu d'être corrigé.
 
 **Le vrai enseignement des deux.** `.NORMALIZE_NATIVE_0_100` est le seul endroit
 du système de normalisation qui soit une **affirmation non vérifiée** — et elle

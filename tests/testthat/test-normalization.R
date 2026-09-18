@@ -1891,26 +1891,30 @@ test_that("create_family_index: beaucoup de lisière BAISSE famille_paysage", {
   expect_lt(expose$famille_paysage, abrite$famille_paysage)
 })
 
-# --- T1 : un ÂGE EN ANNÉES, borné à 1000 ans (spec 048 §10) ---------------
+# --- T1 : un ÂGE EN ANNÉES, borné à 200 ans (spec 048 §10) ----------------
 # T1 était déclaré natif 0-100 alors qu'il rend un âge. L'écrêtage faisait
 # sortir 150 ans et 250 ans au même 100, et notait un peuplement de 30 ans à
 # 30/100 — une note d'ancienneté qui était en fait l'âge lui-même.
 
-test_that("normalize_indicator borne T1 à 1000 ans, sans l'inverser", {
-  expect_equal(normalize_indicator("indicateur_t1_anciennete", c(0, 250, 500, 1000)),
+test_that("normalize_indicator borne T1 à 200 ans, sans l'inverser", {
+  expect_equal(normalize_indicator("indicateur_t1_anciennete", c(0, 50, 100, 200)),
                c(0, 25, 50, 100))
   # Code court, forme que `create_family_index()` détecte en premier.
-  expect_equal(normalize_indicator("T1", 250), 25)
-  # Au-delà de la borne : saturation, pas de dépassement.
-  expect_equal(normalize_indicator("T1", c(1500, -10)), c(100, 0))
+  expect_equal(normalize_indicator("T1", 50), 25)
+  # Au-delà de la borne : saturation, pas de dépassement. 200 ans est le seuil
+  # au-delà duquel l'ancienneté est tenue pour maximale — c'est délibéré.
+  expect_equal(normalize_indicator("T1", c(400, -10)), c(100, 0))
 })
 
-test_that("T1 n'est plus écrêté : 150 ans et 250 ans se distinguent", {
-  # Le défaut exact, verrouillé : sous l'ancien passthrough les deux rendaient
-  # 100. C'est le test qui aurait échoué avant la 0.197.0.
+test_that("T1 n'est plus écrêté : le domaine forestier courant s'étale", {
+  # Le défaut exact, verrouillé : sous l'ancien passthrough, 150 et 250 ans
+  # rendaient tous deux 100. C'est le test qui aurait échoué avant la 0.197.0.
   n <- normalize_indicator("indicateur_t1_anciennete", c(150, 250))
   expect_false(isTRUE(all.equal(n[1], n[2])))
   expect_lt(n[1], n[2])
+  # Et à l'intérieur du domaine courant, les âges se distinguent vraiment —
+  # c'est ce que la borne de 200 ans achète par rapport à une borne lointaine.
+  expect_equal(normalize_indicator("T1", c(30, 80, 120, 150)), c(15, 40, 60, 75))
 })
 
 test_that("T1 a bien une règle : pas de repli naïf, pas d'avertissement", {

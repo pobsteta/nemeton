@@ -258,8 +258,8 @@ INDICATOR_FAMILIES <- list(
     ),
     indicator_tooltips = list(
       T1 = list(
-        fr = "Anciennet\u00e9 de l'\u00e9tat bois\u00e9 depuis les cartes de Cassini (XVIIIe si\u00e8cle). Les for\u00eats anciennes abritent une biodiversit\u00e9 sp\u00e9cifique. Valeur brute en ann\u00e9es, ramen\u00e9e sur 0-100 avec une borne haute de 1000 ans : un peuplement jeune reste donc bas sur l'axe.",
-        en = "Age of wooded state since Cassini maps (18th century). Ancient forests harbor specific biodiversity. Raw value in years, rescaled to 0-100 against a 1000-year upper bound: a young stand therefore stays low on this axis."
+        fr = "Anciennet\u00e9 de l'\u00e9tat bois\u00e9 depuis les cartes de Cassini (XVIIIe si\u00e8cle). Les for\u00eats anciennes abritent une biodiversit\u00e9 sp\u00e9cifique. Valeur brute en ann\u00e9es, ramen\u00e9e sur 0-100 avec une borne haute de 200 ans : au-dela, l'anciennete est consid\u00e9r\u00e9e maximale.",
+        en = "Age of wooded state since Cassini maps (18th century). Ancient forests harbor specific biodiversity. Raw value in years, rescaled to 0-100 against a 200-year upper bound: beyond that, ancientness counts as maximal."
       ),
       T2 = list(
         fr = "Taux de changement de la couverture foresti\u00e8re sur les 30 derni\u00e8res ann\u00e9es. Valeurs positives = extension, n\u00e9gatives = r\u00e9gression.",

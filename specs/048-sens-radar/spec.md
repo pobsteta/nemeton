@@ -264,10 +264,10 @@ Il n'était simplement pas remonté dans la table des écarts.
 ### 10.3 Le correctif
 
 `indicateur_t1_anciennete` quitte `.NORMALIZE_NATIVE_0_100` pour
-`.NORMALIZE_RULED` et reçoit un `ref_max` de **1000 ans** :
+`.NORMALIZE_RULED` et reçoit un `ref_max` de **200 ans** :
 
 ```r
-normalize_indicator("indicateur_t1_anciennete", c(0, 250, 500, 1000, 1500))
+normalize_indicator("indicateur_t1_anciennete", c(0, 50, 100, 200, 400))
 #>   0  25  50  100  100
 ```
 
@@ -275,13 +275,17 @@ normalize_indicator("indicateur_t1_anciennete", c(0, 250, 500, 1000, 1500))
 qui ne l'était pas. La fonction d'indicateur est inchangée et rend toujours un
 âge en années.
 
-**Ce que la borne coûte, et qu'il faut assumer.** 1000 ans couvre les chênes et
-les ifs multiséculaires sans écraser le domaine courant contre le plafond,
-mais elle place le domaine forestier ordinaire — 30 à 150 ans — dans le bas de
-l'échelle : 3 à 15 sur 100. **T1 devient un axe qui reste bas sur le radar**,
-et c'est la lecture correcte d'un peuplement jeune rapporté à une forêt
-ancienne. C'est le contraire du défaut précédent, où tout ce qui dépassait un
-siècle était uniformément excellent.
+**Pourquoi 200 et pas une borne physique.** 200 ans est un **seuil sylvicole**,
+pas l'âge maximal d'un arbre : au-delà de deux siècles, l'ancienneté est tenue
+pour maximale — une futaie de 200 ans et une de 400 ans ne se distinguent plus
+utilement pour un gestionnaire, et les distinguer sur le radar reviendrait à
+noter la seconde « meilleure » sans qu'aucune décision n'en dépende.
+
+La borne décide surtout de **l'étalement du domaine courant**. À 200 ans, 30 à
+150 ans s'étale sur **15 à 75** — c'est-à-dire sur l'essentiel de l'axe, ce
+qu'on attend d'un indicateur discriminant. Une borne lointaine (1000 ans, un
+temps envisagée) aurait écrasé ce même domaine sur 3 à 15 : le défaut se serait
+déplacé du haut de l'échelle vers le bas, sans être corrigé.
 
 ### 10.4 Tests
 
