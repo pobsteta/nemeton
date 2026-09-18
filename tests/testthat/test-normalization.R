@@ -1836,6 +1836,99 @@ test_that("tout indicateur du radar est monotone croissant une fois normalisé",
   attendu <- c("indicateur_r1_feu", "indicateur_r2_tempete",
                "indicateur_r3_secheresse", "indicateur_r4_abroutissement",
                "indicateur_r5_deperissement", "indicateur_t3_coupes_rases",
-               "indicateur_s1_routes", "indicateur_s2_bati")
+               "indicateur_s1_routes", "indicateur_s2_bati",
+               # L1 rejoint la liste en 0.197.0 : le balayage de la spec 048 ne
+               # l'avait pas attrapé parce qu'il comparait le sens NORMALISÉ au
+               # sens DÉCLARÉ en roxygen, et le roxygen de L1 n'en déclare
+               # aucun (réserve du §8 de cette spec).
+               "indicateur_l1_effet_lisiere")
   expect_setequal(names(sens)[sens == "decroissant"], attendu)
+})
+
+
+# --- L1 sens : l'effet de lisière est « haut = mauvais » (spec 048.1) ------
+# Le calcul (SI croissant, bâti à 90 dans le contraste, exposition au vent et
+# au soleil), l'infobulle et `indicateur_n3_naturalite()` (anti_frag = 100 - L1)
+# le lisent tous ainsi. Jusqu'en 0.196.0 la normalisation était la seule à le
+# lire « haut = bon », et c'est elle qui décidait de l'affichage.
+
+test_that("normalize_indicator inverse L1 (beaucoup de lisière -> score bas)", {
+  v <- c(0, 25, 50, 75, 100)
+  expect_equal(normalize_indicator("indicateur_l1_effet_lisiere", v),
+               c(100, 75, 50, 25, 0))
+  # Code court, forme que `create_family_index()` détecte en premier.
+  expect_equal(normalize_indicator("L1", 80), 20)
+  # Écrêtage avant inversion, comme pour R1-R5 et T3.
+  expect_equal(normalize_indicator("L1", c(-10, 130)), c(100, 0))
+})
+
+test_that("les deux slugs retirés de la famille L sont CROISÉS (spec 045)", {
+  v <- c(0, 25, 50, 75, 100)
+  # `indicateur_l2_fragmentation` est l'ancien nom de L1 (effet de lisière) :
+  # il porte des valeurs « haut = mauvais » et s'inverse.
+  expect_equal(normalize_indicator("indicateur_l2_fragmentation", v),
+               c(100, 75, 50, 25, 0))
+  # `indicateur_l1_sylvosphere` est l'ancien nom de L2 (morcellement) : COHESION
+  # + AI, « haut = bon ». L'inverser retournerait des données déjà écrites.
+  expect_equal(normalize_indicator("indicateur_l1_sylvosphere", v), v)
+  expect_equal(normalize_indicator("indicateur_l2_morcellement", v), v)
+  expect_equal(normalize_indicator("L2", v), v)
+})
+
+test_that("create_family_index: beaucoup de lisière BAISSE famille_paysage", {
+  skip_if_not_installed("sf")
+  mk <- function(l1) {
+    sf::st_sf(
+      L1 = l1, L2 = 60, L3 = 0.25,
+      geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 4326)
+    )
+  }
+  # L3 brut 0,25 -> 0,25 / .L3_MAX_DISPERSION (0,5) * 100 = 50.
+  expose <- create_family_index(mk(85), method = "mean")  # lanière bordée de bâti
+  abrite <- create_family_index(mk(15), method = "mean")  # cœur de massif
+  expect_equal(expose$famille_paysage, mean(c(15, 60, 50)))
+  expect_equal(abrite$famille_paysage, mean(c(85, 60, 50)))
+  expect_lt(expose$famille_paysage, abrite$famille_paysage)
+})
+
+# --- T1 : un ÂGE EN ANNÉES, borné à 1000 ans (spec 048 §10) ---------------
+# T1 était déclaré natif 0-100 alors qu'il rend un âge. L'écrêtage faisait
+# sortir 150 ans et 250 ans au même 100, et notait un peuplement de 30 ans à
+# 30/100 — une note d'ancienneté qui était en fait l'âge lui-même.
+
+test_that("normalize_indicator borne T1 à 1000 ans, sans l'inverser", {
+  expect_equal(normalize_indicator("indicateur_t1_anciennete", c(0, 250, 500, 1000)),
+               c(0, 25, 50, 100))
+  # Code court, forme que `create_family_index()` détecte en premier.
+  expect_equal(normalize_indicator("T1", 250), 25)
+  # Au-delà de la borne : saturation, pas de dépassement.
+  expect_equal(normalize_indicator("T1", c(1500, -10)), c(100, 0))
+})
+
+test_that("T1 n'est plus écrêté : 150 ans et 250 ans se distinguent", {
+  # Le défaut exact, verrouillé : sous l'ancien passthrough les deux rendaient
+  # 100. C'est le test qui aurait échoué avant la 0.197.0.
+  n <- normalize_indicator("indicateur_t1_anciennete", c(150, 250))
+  expect_false(isTRUE(all.equal(n[1], n[2])))
+  expect_lt(n[1], n[2])
+})
+
+test_that("T1 a bien une règle : pas de repli naïf, pas d'avertissement", {
+  expect_no_warning(normalize_indicator("indicateur_t1_anciennete", c(30, 900)))
+  expect_true(nemeton:::.normalize_has_rule("indicateur_t1_anciennete"))
+})
+
+test_that("indicateur_n3_naturalite lit le L1 BRUT, pas le normalisé", {
+  # N3 applique sa PROPRE inversion (anti_frag = 100 - L1). Il lit la colonne
+  # brute, que `create_family_index()` ne mute pas : sans ce verrou, quelqu'un
+  # qui « harmoniserait » N3 sur la nouvelle convention l'inverserait deux fois.
+  skip_if_not_installed("sf")
+  units <- sf::st_sf(
+    N1 = 80, N2 = 60, L1 = 90, B3 = 40,
+    geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 4326)
+  )
+  out <- indicateur_n3_naturalite(units)
+  expect_equal(out$N3, 0.35 * 80 + 0.35 * 60 + 0.15 * (100 - 90) + 0.15 * 40)
+  # Et la colonne source n'a pas bougé.
+  expect_equal(out$L1, 90)
 })

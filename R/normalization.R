@@ -518,10 +518,19 @@ invert_indicator <- function(data,
   "indicateur_a1_couverture", "indicateur_a2_qualite_air", "indicateur_a3_microclimat",
   "indicateur_a4_tamponnement", "indicateur_a5_rafraichissement",
   "indicateur_f1_fertilite", "indicateur_f2_erosion",
-  "indicateur_l1_effet_lisiere", "indicateur_l2_morcellement",
-  # Slugs retires en 0.176.0 (spec 045), gardes pour les jeux non migres.
-  "indicateur_l1_sylvosphere", "indicateur_l2_fragmentation",
-  "indicateur_t1_anciennete", "indicateur_t2_changement",
+  # L1 n'est PLUS ici : comme R1-R5 et T3, il est 0-100 natif mais oriente
+  # « haut = mauvais » (beaucoup d'effet de lisiere), donc il a besoin d'une
+  # regle - une inversion -, pas d'un passthrough. Cf. le bloc d'inversion.
+  "indicateur_l2_morcellement",
+  # Slug retire en 0.176.0 (spec 045), garde pour les jeux non migres. Celui
+  # qui porte les valeurs de L1, `indicateur_l2_fragmentation`, s'inverse avec
+  # lui (les deux slugs sont CROISES : cf. .L_LEGACY_COLUMNS).
+  "indicateur_l1_sylvosphere",
+  # T1 n'est PLUS ici : il ne rend pas un score 0-100 mais un AGE EN ANNEES
+  # (cf. son @return). Declare natif, il n'etait qu'ecrete : 150 ans et 250 ans
+  # sortaient tous deux a 100, et 30 ans valait 30. Il a desormais un ref_max
+  # de 1000 ans. Cf. le switch ref_max et spec 048 §10.
+  "indicateur_t2_changement",
   # R1-R4 ne sont PLUS ici : ils sont 0-100 natifs mais orientés « haut =
   # mauvais », donc ils ont besoin d'une règle (inversion), pas d'un
   # passthrough. Cf. .NORMALIZE_RULED et le bloc d'inversion plus bas.
@@ -556,6 +565,8 @@ invert_indicator <- function(data,
   "indicateur_r4_abroutissement",
   "indicateur_r5_deperissement", "indicateur_t3_coupes_rases",
   "indicateur_r6_sensibilite", "indicateur_r7_gel",
+  "indicateur_l1_effet_lisiere", "indicateur_l2_fragmentation",
+  "indicateur_t1_anciennete",
   "indicateur_b4_div_spectrale", "indicateur_l3_het_spectrale",
   "sensibilite_score"
 )
@@ -602,6 +613,11 @@ normalize_indicator <- function(indicator, values) {
     # et saturait des qu'une vraie source etait branchee — mesure sur Couchey,
     # 46 110 habitants dans 5 km, soit 100/100 pour une bourgogne rurale.
     "indicateur_s3_population" = NULL,
+    # T1 porte un AGE EN ANNEES, pas un score. Borne haute 1000 ans (decision
+    # Pascal, 2026-09-18) : elle couvre les chenes et ifs multiseculaires sans
+    # ecraser le domaine courant contre le plafond, ce que faisait l'ecretage a
+    # 100. Sens conserve : plus vieux = mieux, pas d'inversion.
+    "indicateur_t1_anciennete" = 1000,
     "indicateur_p1_volume" = 800,
     "indicateur_p2_station" = 15,
     "indicateur_e1_bois_energie" = 0.3,
@@ -669,6 +685,32 @@ normalize_indicator <- function(indicator, values) {
   # clear-cutting) is inverted so its radar / famille_temporelle
   # contribution stays "high = good" like T1/T2 (cf. spec 030).
   if (indicator %in% c("indicateur_t3_coupes_rases", "T3")) {
+    return(pmin(100, pmax(0, 100 - values)))
+  }
+
+  # L1 effet de lisiere : comme R1-R5 et T3, la grandeur brute est orientee
+  # « haut = mauvais ». Ses TROIS composantes le disent (cf. spec 048 §9) :
+  # geometrie `(SI - 1) * 25` monte avec l'irregularite du contour, contraste
+  # de matrice code le bati a 90 et la foret a 0, exposition monte avec le vent
+  # et le soleil recus par la lisiere. `indicateur_n3_naturalite()` le lit dans
+  # ce sens-la aussi (`anti_frag = 100 - L1`), et l'infobulle egalement.
+  #
+  # Jusqu'en 0.196.0, L1 etait declare natif 0-100 et passait donc tel quel :
+  # une parcelle en laniere bordee de bati obtenait un `famille_paysage`
+  # flatteur, pendant que le MEME chiffre la penalisait dans N3. Trois lectures
+  # sur quatre disaient « haut = mauvais », la quatrieme decidait de
+  # l'affichage. C'est le defaut corrige pour R5 par la spec 048, que son §8
+  # laissait explicitement ouvert faute d'avoir relu les 28 fonctions.
+  #
+  # `indicateur_l2_fragmentation` est le slug RETIRE qui porte les valeurs de
+  # L1 (les deux noms de 0.176.0 etaient croises, cf. .L_LEGACY_COLUMNS) : il
+  # s'inverse avec lui. `indicateur_l1_sylvosphere`, lui, porte les valeurs de
+  # L2 (« haut = bon ») et reste en passthrough.
+  #
+  # N3 et les fonctions d'indicateur sont inchanges : ils lisent la colonne
+  # BRUTE, que `create_family_index()` ne mute pas.
+  if (indicator %in% c("indicateur_l1_effet_lisiere", "L1",
+                       "indicateur_l2_fragmentation")) {
     return(pmin(100, pmax(0, 100 - values)))
   }
 

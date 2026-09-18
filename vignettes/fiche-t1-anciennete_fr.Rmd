@@ -13,7 +13,11 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-> **Document de référence** — Néméton (package cœur), 2026-08-27.
+> **Document de référence** — Néméton (package cœur), 2026-08-27, révisé le
+> 2026-09-18. Le piège n° 1 que cette fiche relevait — un âge en années écrêté
+> à 100 — **est corrigé depuis la 0.197.0** : T1 a désormais une borne haute de
+> **1000 ans**. Tout `famille_temporelle` calculé avant cette date est à
+> refaire.
 
 ---
 
@@ -27,7 +31,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 | Grandeur mesurée | **Âge du peuplement, en années** |
 | Unité brute | **années** |
 | Sens | Haut = favorable |
-| Normalisation | **déclaré « natif 0–100 »** → simple écrêtage (cf. §4, piège n° 1) |
+| Normalisation | `ref_max = 1000` ans → `min(100, âge / 1000 × 100)`, sans inversion |
 | Fonction | `indicateur_t1_anciennete()` — `R/indicators-temporal.R:74` |
 
 ## 2. Quatre chemins, servis en cascade
@@ -46,12 +50,18 @@ attribue par exemple **100 ans** à une futaie fermée de feuillus.
 
 **Exemples chiffrés** (chemin NDVI) :
 
-| NDVI | Âge estimé | Score après écrêtage |
+| NDVI | Âge estimé | Score normalisé (borne 1000 ans) |
 |---|---|---|
-| 0,30 | 36,7 ans | **36,7** |
-| 0,50 | 70,0 ans | **70,0** |
-| 0,72 | 106,7 ans | **100,0** (écrêté) |
-| 0,85 | 128,3 ans | **100,0** (écrêté) |
+| 0,30 | 36,7 ans | **3,7** |
+| 0,50 | 70,0 ans | **7,0** |
+| 0,72 | 106,7 ans | **10,7** |
+| 0,85 | 128,3 ans | **12,8** |
+
+La borne de 1000 ans couvre les chênes et les ifs multiséculaires sans écraser
+le domaine courant contre le plafond. Sa contrepartie est que le domaine
+forestier ordinaire — 30 à 150 ans — occupe le bas de l'échelle : sur le radar,
+**T1 est un axe qui reste bas**, et c'est la lecture correcte d'un peuplement
+jeune à l'échelle d'une forêt ancienne.
 
 ## 3. Le calcul par niveau NDP
 
@@ -69,13 +79,18 @@ pas dans un capteur.
 
 ## 4. Quatre pièges
 
-1. **L'unité est l'année, la normalisation croit lire un score.**
-   `indicateur_t1_anciennete` figure dans `.NORMALIZE_NATIVE_0_100` : sa valeur
-   est donc simplement écrêtée à `[0, 100]`. En pratique cela signifie qu'un
-   peuplement de **120 ans et un de 300 ans obtiennent le même score de 100**,
-   et qu'un âge se lit directement comme un score. C'est utilisable — l'âge en
-   années est un proxy monotone acceptable — mais ce n'est pas une
-   normalisation : c'est une coïncidence d'échelle, et elle plafonne à 100 ans.
+1. **L'unité est l'année — la normalisation croyait lire un score.**
+   Jusqu'en 0.196.0, `indicateur_t1_anciennete` figurait dans
+   `.NORMALIZE_NATIVE_0_100` : sa valeur était simplement écrêtée à `[0, 100]`.
+   Un peuplement de **120 ans et un de 300 ans obtenaient le même score de
+   100**, et un âge se lisait directement comme un score. Ce n'était pas une
+   normalisation, c'était une coïncidence d'échelle qui plafonnait à 100 ans —
+   et la déclaration « natif 0-100 » désarmait par surcroît le garde-fou qui
+   aurait averti.
+
+   **Corrigé en 0.197.0** (spec 048 §10) : `ref_max = 1000` ans. Le sens est
+   conservé — plus vieux = mieux, aucune inversion. La fonction d'indicateur
+   est inchangée : elle rend toujours un âge en années.
 2. **Sans aucune donnée, T1 vaut 50 — un âge fabriqué.** Le dernier recours est
    `rep(50, n)` avec un simple `cli_alert_warning`. La valeur entre ensuite dans
    `famille_temporelle` comme un âge constaté. Même motif que B3 et L1.
@@ -150,7 +165,7 @@ T1 alimente aussi **T2** en repli (`t1_values`).
 <text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">âge, en années</text>
 <rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
 <text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text>
-<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">écrêtage à 100 (années)</text>
+<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">âge / 1000 ans × 100</text>
 <rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
 <text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index("T")</text>
 <text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_temporel</text>
@@ -181,13 +196,13 @@ T1 alimente aussi **T2** en repli (`t1_values`).
 <line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
 <line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
 <line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
-<text x="10" y="422" font-size="10.5" fill="currentColor" opacity=".62">L'unité est l'année, la normalisation croit lire un score : au-delà de 100 ans, tout est écrêté à 100.</text>
+<text x="10" y="422" font-size="10.5" fill="currentColor" opacity=".62">L'unité est l'année : normalisée sur une borne de 1000 ans depuis la 0.197.0, plus par écrêtage à 100.</text>
 <text x="10" y="438" font-size="10.5" fill="currentColor" opacity=".62">Sans aucune donnée, T1 vaut 50 — un âge fabriqué qui ne se distingue pas d'un âge mesuré.</text>
 <text x="10" y="454" font-size="10.5" fill="currentColor" opacity=".62">Le chemin NDVI convertit de la verdeur en années : un peuplement vert et jeune y paraît vieux.</text>
 <text x="10" y="470" font-size="10.5" fill="currentColor" opacity=".62">L'âge TFV est une constante par type : toutes les futaies feuillues fermées ont le même âge.</text>
 </svg>
 <figcaption style="font-size:.9em;opacity:.75">
-Cinq issues pour une colonne en années. L'écrêtage à 100 confond une futaie de 110 ans et une de 250 ans, et le dernier recours — 50 ans en dur — se lit comme n'importe quelle autre valeur.
+Cinq issues pour une colonne en années. La borne de 1000 ans distingue enfin une futaie de 110 ans d'une de 250 ans, mais le dernier recours — 50 ans en dur — se lit toujours comme n'importe quelle autre valeur.
 </figcaption>
 </figure>
 <!-- diagramme:auto:fin -->

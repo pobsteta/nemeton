@@ -24,7 +24,12 @@ indicateur_l1_effet_lisiere(
 \item{buffer}{Numeric. Buffer distance (meters) for contrast analysis. Default 50m.}
 }
 \value{
-Numeric vector of sylvosphere scores (0-100)
+Numeric vector of sylvosphere scores (0-100). \strong{Higher = more edge
+effect borne by the unit = less favourable}: all three components grow with it
+(boundary irregularity, hostile surrounding matrix, wind and sun exposure).
+The value is therefore INVERTED by normalize_indicator() so the radar
+convention holds (0-100, higher = better), like R1-R5 and T3. See spec 048
+section 9.
 }
 \description{
 Composite indicator (0-100) with 3 components:

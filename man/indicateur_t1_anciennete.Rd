@@ -31,7 +31,11 @@ Used as fallback if age_field not found.}
 Default uses current system year.}
 }
 \value{
-Numeric vector of estimated age in years (one per parcel).
+Numeric vector of estimated age in years (one per parcel) -- NOT a 0-100
+score. \strong{Higher = older = more favourable}, so it is not inverted;
+normalize_indicator() rescales it against a ref_max of 1000 years. Until
+0.196.0 it was wrongly declared natively 0-100 and merely clamped, so 150 and
+250 years both came out at 100. See spec 048 section 10.
   Default value is 50 when no data available.
 }
 \description{

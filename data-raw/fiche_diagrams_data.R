@@ -539,12 +539,12 @@ FICHES <- list(
       list(titre = "Exposition — 30 %", lignes = c("0,6 × vent + 0,4 × soleil",
                                                    "sans relief : 50"))
     ),
-    aval = av("indicateur_l1_effet_lisiere", "score 0–100, natif",
-              "écrêtage natif 0–100", "L", "famille_paysage", "L1 à L3"),
+    aval = av("indicateur_l1_effet_lisiere", "0–100, haut = mauvais",
+              "inversion 100 − L1", "L", "famille_paysage", "L1 à L3"),
     notes = c(
       "Deux composantes sur trois retombent sur 50 sans données : 70 % du score peut être une constante.",
       "La géométrie mesure la forme de l'UGF, pas celle du massif : le découpage cadastral pèse sur le score.",
-      "indicateur_l1_sylvosphere() reste un alias accepté (spec 045) ; la colonne, elle, a changé de nom."
+      "indicateur_l2_fragmentation() reste l'alias de L1 (spec 045) : les deux anciens noms étaient croisés."
     ),
     legende = paste("Trois composantes cumulées et deux valeurs par défaut. Avant de lire un L1,",
                     "vérifier quelles couches étaient présentes : le score reste plausible",
@@ -573,7 +573,7 @@ FICHES <- list(
     notes = c(
       "Chemin 1 : une seule valeur de paysage, recopiée sur toutes les unités du projet.",
       "Les deux chemins mesurent des choses différentes et basculent sur la seule présence d'un paquet.",
-      "indicateur_l2_fragmentation() reste un alias accepté (spec 045)."
+      "indicateur_l1_sylvosphere() reste l'alias de L2 (spec 045) : les deux anciens noms étaient croisés."
     ),
     legende = paste("Le basculement ne dépend pas du terrain mais de l'installation : avec",
                     "`landscapemetrics`, L2 décrit le massif ; sans lui, il décrit la forme du",
@@ -695,7 +695,7 @@ FICHES <- list(
     notes = c(
       "NA dès qu'une des quatre entrées manque : pas de calcul partiel, pas de valeur dégradée.",
       "Composite : N1 et N2 pèsent 70 %, et N1 porte déjà son terme urbain constant.",
-      "L1 entre inversé (100 - L1) alors que la normalisation, elle, le lit à l'endroit."
+      "L1 entre inversé (100 - L1) : N3 lit la colonne BRUTE, que create_family_index() ne mute pas."
     ),
     legende = paste("Un indicateur qui ne lit aucune donnée : ses quatre entrées sont des",
                     "colonnes. Les défauts de N1, L1 et B3 se propagent donc dans N3, avec",
@@ -974,16 +974,16 @@ FICHES <- list(
       list(titre = "50 ans, en dur", lignes = "âge fabriqué, pas NA", tirets = TRUE)
     ),
     aval = av("indicateur_t1_anciennete", "âge, en années",
-              "écrêtage à 100 (années)", "T", "famille_temporel", "T1 à T3"),
+              "âge / 1000 ans × 100", "T", "famille_temporel", "T1 à T3"),
     notes = c(
-      "L'unité est l'année, la normalisation croit lire un score : au-delà de 100 ans, tout est écrêté à 100.",
+      "L'unité est l'année : normalisée sur une borne de 1000 ans depuis la 0.197.0, plus par écrêtage à 100.",
       "Sans aucune donnée, T1 vaut 50 — un âge fabriqué qui ne se distingue pas d'un âge mesuré.",
       "Le chemin NDVI convertit de la verdeur en années : un peuplement vert et jeune y paraît vieux.",
       "L'âge TFV est une constante par type : toutes les futaies feuillues fermées ont le même âge."
     ),
-    legende = paste("Cinq issues pour une colonne en années. L'écrêtage à 100 confond une futaie",
-                    "de 110 ans et une de 250 ans, et le dernier recours — 50 ans en dur — se lit",
-                    "comme n'importe quelle autre valeur.")
+    legende = paste("Cinq issues pour une colonne en années. La borne de 1000 ans distingue enfin",
+                    "une futaie de 110 ans d'une de 250 ans, mais le dernier recours — 50 ans en",
+                    "dur — se lit toujours comme n'importe quelle autre valeur.")
   ),
 
   T2 = list(

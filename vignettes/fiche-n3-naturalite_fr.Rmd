@@ -13,8 +13,10 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-> **Document de référence** — Néméton (package cœur), 2026-08-27.
-> **Cette fiche documente une incohérence de sens active** (§4, piège n° 1).
+> **Document de référence** — Néméton (package cœur), 2026-08-27, révisé le
+> 2026-09-18. L'incohérence de sens sur L1 que cette fiche relevait (§4, piège
+> n° 1) **est corrigée depuis la 0.197.0**. N3 lui-même est inchangé : il lit
+> toujours le L1 **brut** et applique sa propre inversion.
 
 ---
 
@@ -60,26 +62,27 @@ N3 hérite du NDP le plus faible de ses quatre entrées. En pratique, c'est **B3
 qui le plafonne, puisqu'il exige la BD Forêt et trois paquets optionnels
 (cf. sa fiche).
 
-## 4. Trois pièges, dont une incohérence de sens
+## 4. Trois pièges
 
-1. **L1 est lu en sens inverse par N3 et par la normalisation.** N3 calcule
+1. **N3 inverse L1 lui-même, et lit pour cela la colonne BRUTE.** N3 calcule
    `anti_frag = 100 − L1`, ce qui suppose **L1 élevé = beaucoup de lisière =
    défavorable**. C'est cohérent avec le calcul de L1 (indice de forme élevé +
-   matrice contrastée + exposition → score élevé) et avec son infobulle
-   (« Proportion de la parcelle sous influence des lisières […] fragmentent
-   l'habitat intérieur »).
+   matrice contrastée + exposition → score élevé) et avec son infobulle.
 
-   Mais `indicateur_l1_effet_lisiere` est déclaré dans
-   `.NORMALIZE_NATIVE_0_100` : la normalisation le laisse passer tel quel,
-   **comme si un L1 élevé était favorable**. Le radar et `famille_paysage`
-   lisent donc L1 à l'endroit où N3, le calcul et l'infobulle le lisent à
-   l'envers.
+   Jusqu'en 0.196.0, `indicateur_l1_effet_lisiere` était déclaré dans
+   `.NORMALIZE_NATIVE_0_100` : la normalisation le laissait passer tel quel,
+   **comme si un L1 élevé était favorable**, et le radar lisait donc L1 à
+   l'endroit où N3, le calcul et l'infobulle le lisaient à l'envers. Une
+   parcelle en lanière bordée de bâti obtenait un bon score de paysage et un
+   mauvais N3, sur le même chiffre. **Corrigé en 0.197.0** (spec 048 §9) : L1
+   est désormais inversé à la normalisation, comme R1–R5 et T3.
 
-   > Conséquence : une parcelle en lanière bordée de bâti obtient un **L1
-   > élevé**, que le radar affiche comme un bon score de paysage — alors que le
-   > même chiffre, injecté dans N3, la pénalise. C'est exactement le défaut
-   > corrigé pour R5 en 0.181.0 (spec 048) et pour les noms de la famille L en
-   > 0.176.0 (spec 045), à un endroit qui n'a pas été revu.
+   > **Ce qui n'a pas changé, et ne doit pas changer** : N3 continue de lire la
+   > colonne `L1` **brute**, pas la valeur normalisée — `create_family_index()`
+   > travaille sur une copie et ne mute pas les colonnes source. Le
+   > `100 − L1` de N3 reste donc nécessaire. « Harmoniser » N3 sur la nouvelle
+   > convention en le retirant inverserait L1 deux fois. Un test verrouille ce
+   > point (`test-normalization.R`).
 
 2. **N3 est un composite, donc il double-compte.** N1 et N2 pèsent 35 % chacun
    dans N3 **et** un tiers chacun dans `famille_naturalite`, où N3 pèse aussi
@@ -161,7 +164,7 @@ indicateur_n3_naturalite()  ->  colonne N3 (0-100)
 <line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
 <text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">NA dès qu'une des quatre entrées manque : pas de calcul partiel, pas de valeur dégradée.</text>
 <text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Composite : N1 et N2 pèsent 70 %, et N1 porte déjà son terme urbain constant.</text>
-<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">L1 entre inversé (100 - L1) alors que la normalisation, elle, le lit à l'endroit.</text>
+<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">L1 entre inversé (100 - L1) : N3 lit la colonne BRUTE, que create_family_index() ne mute pas.</text>
 </svg>
 <figcaption style="font-size:.9em;opacity:.75">
 Un indicateur qui ne lit aucune donnée : ses quatre entrées sont des colonnes. Les défauts de N1, L1 et B3 se propagent donc dans N3, avec leurs poids — dont le +25 constant de N1.

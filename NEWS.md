@@ -1,3 +1,87 @@
+# nemeton 0.197.0 (2026-09-18)
+
+### Fixed — `L1` effet de lisière : la normalisation était la seule à le lire « haut = bon »
+
+`indicateur_l1_effet_lisiere()` mesure l'**effet de lisière subi** par une
+unité, et ses trois composantes montent toutes avec cet effet : la géométrie
+`(SI − 1) × 25` avec l'irrégularité du contour, le contraste de matrice qui
+code le **bâti à 90** et la forêt à 0, l'exposition avec le vent et le soleil
+reçus par la lisière. L'infobulle le dit (« fragmentent l'habitat intérieur »)
+et `indicateur_n3_naturalite()` aussi, qui calcule `anti_frag = 100 − L1`.
+
+La normalisation, elle, le déclarait natif 0-100 et le laissait **passer tel
+quel**. Une parcelle en lanière bordée de bâti obtenait donc un
+`famille_paysage` flatteur, pendant que le **même chiffre** la pénalisait dans
+N3 : trois lectures sur quatre disaient « haut = mauvais », la quatrième
+décidait de l'affichage.
+
+C'est le défaut corrigé pour R5 par la spec 048 — et que le §8 de cette même
+spec laissait explicitement ouvert : son audit comparait le sens **déclaré en
+roxygen** au sens **mesuré**, or le roxygen de L1 n'en déclare aucun. Le test
+de monotonie ne pouvait rien voir non plus, un passthrough étant parfaitement
+monotone — simplement dans le mauvais sens.
+
+`indicateur_l1_effet_lisiere` quitte `.NORMALIZE_NATIVE_0_100` pour
+`.NORMALIZE_RULED` et rejoint la branche d'inversion, aux côtés de R1-R5 et T3.
+
+**Le slug retiré qui s'inverse avec lui est `indicateur_l2_fragmentation`, pas
+`indicateur_l1_sylvosphere`** : les deux noms de 0.176.0 étaient **croisés**,
+c'est tout l'objet de la spec 045. `indicateur_l1_sylvosphere` porte les
+valeurs du morcellement (L2), COHESION + AI, déjà orientées « haut = bon » —
+l'inverser aurait fabriqué une seconde faute en réparant la première. La même
+inversion croisée s'était glissée dans les deux fiches indicateurs, corrigée
+ici aussi.
+
+Cinq verrous de non-régression : L1 s'inverse (nom long, code court,
+écrêtage avant inversion) ; les deux slugs retirés sont croisés ; un L1 de 85
+**baisse** `famille_paysage` ; le balayage des colonnes du radar attend
+désormais **neuf** inversés ; et `indicateur_n3_naturalite()` lit toujours le
+L1 **brut** — sans ce dernier test, quelqu'un qui « harmoniserait » N3 sur la
+nouvelle convention l'inverserait deux fois.
+
+**À annoncer** : tous les `famille_paysage` déjà calculés changent, et l'indice
+général avec eux. Les valeurs brutes de L1 et tous les N3 sont **inchangés** :
+seule la valeur normalisée bascule. Une comparaison de scores de paysage
+d'avant et d'après le 2026-09-18 n'a pas de sens. Côté app : rien à coder, et
+surtout **ne pas ré-inverser**.
+
+Spec 048 §9. Fiches L1, L2 et N3 mises à jour.
+
+### Fixed — `T1` ancienneté : un âge en années était pris pour un score 0-100
+
+Trouvé **en vérifiant le correctif ci-dessus**, pas en le cherchant.
+`indicateur_t1_anciennete()` rend un **âge en années** — son propre `@return` le
+disait — mais il était déclaré natif 0-100, donc simplement écrêté :
+
+```r
+normalize_indicator("indicateur_t1_anciennete", c(30, 80, 150, 250))
+#>  30  80  100  100      # avant 0.197.0
+```
+
+Une futaie de 150 ans et une de 250 ans sortaient au même 100, et un peuplement
+de 30 ans était noté 30/100 — une « note d'ancienneté » qui était l'âge
+lui-même. Et la déclaration « natif 0-100 » désarmait par surcroît le garde-fou
+de la spec 038, qui n'avertit que pour un indicateur tombant au repli naïf
+**sans** être déclaré natif.
+
+T1 reçoit un `ref_max` de **1000 ans** (décision Pascal, 2026-09-18) :
+`0, 250, 500, 1000 → 0, 25, 50, 100`. **Pas d'inversion** — plus vieux = mieux,
+le sens était juste, c'est l'échelle qui ne l'était pas. La fonction est
+inchangée et rend toujours un âge.
+
+**Ce que la borne coûte** : le domaine forestier ordinaire — 30 à 150 ans —
+occupe désormais le bas de l'échelle (3 à 15 sur 100). T1 devient un axe qui
+reste bas sur le radar, et c'est la lecture correcte d'un peuplement jeune
+rapporté à une forêt ancienne — le contraire du défaut précédent, où tout ce
+qui dépassait un siècle était uniformément excellent.
+
+**À annoncer** : tous les `famille_temporelle` déjà calculés changent. Les
+valeurs brutes de T1 sont inchangées.
+
+Spec 048 §10. Fiche T1 mise à jour. Les `@return` de L1, L2 et T1 déclarent
+désormais leur orientation et leur échelle — c'est leur silence qui avait
+laissé passer les deux défauts.
+
 # nemeton 0.196.0 (2026-09-14)
 
 ### Added — `run_reconfort_dieback(cancel_path=)` : le troisième bouton d'arrêt arrête enfin quelque chose

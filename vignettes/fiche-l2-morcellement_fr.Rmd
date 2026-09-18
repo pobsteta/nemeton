@@ -29,7 +29,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 | Sens | Haut = favorable (peu morcelé) |
 | Normalisation | **native 0–100**, écrêtage |
 | Fonction | `indicateur_l2_morcellement()` — `R/indicators-families.R:1865` |
-| Ancien nom | `indicateur_l2_fragmentation()` — alias conservé (spec 045) |
+| Ancien nom | `indicateur_l1_sylvosphere()` — alias conservé (spec 045) |
 
 ## 2. Deux chemins
 
@@ -75,10 +75,14 @@ d'agrégation, tous deux déjà sur 0–100.
    `Suggests`) et d'une couche d'occupation du sol. Un simple `cli_alert_warning`
    le signale. **Deux exécutions sur deux postes peuvent donc mesurer deux
    grandeurs différentes sous le même nom de colonne.**
-3. **Le nom a changé** (spec 045) : `indicateur_l2_fragmentation()` reste un
-   alias, et le slug historique reste reconnu par la normalisation. Attention au
-   sens : « fragmentation » suggère « haut = fragmenté », alors qu'un L2 élevé
-   signifie **peu** morcelé. C'est précisément la raison du renommage.
+3. **Le nom a changé, et les deux anciens noms étaient croisés** (spec 045) :
+   l'alias de L2 est `indicateur_l1_sylvosphere()` — celui qui *dit* L1 — et le
+   slug `indicateur_l1_sylvosphere` reste reconnu par la normalisation, en
+   passthrough comme L2. Ne pas le confondre avec
+   `indicateur_l2_fragmentation`, qui porte les valeurs de **L1** et s'inverse
+   depuis la 0.197.0 (spec 048 §9). Attention au sens, enfin :
+   « fragmentation » suggère « haut = fragmenté », alors qu'un L2 élevé signifie
+   **peu** morcelé. C'est précisément la raison du renommage.
 
 ## 5. Aval
 
@@ -145,7 +149,7 @@ indicateur_l2_morcellement()  ->  colonne indicateur_l2_morcellement
 <line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
 <text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">Chemin 1 : une seule valeur de paysage, recopiée sur toutes les unités du projet.</text>
 <text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Les deux chemins mesurent des choses différentes et basculent sur la seule présence d'un paquet.</text>
-<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">indicateur_l2_fragmentation() reste un alias accepté (spec 045).</text>
+<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">indicateur_l1_sylvosphere() reste l'alias de L2 (spec 045) : les deux anciens noms étaient croisés.</text>
 </svg>
 <figcaption style="font-size:.9em;opacity:.75">
 Le basculement ne dépend pas du terrain mais de l'installation : avec `landscapemetrics`, L2 décrit le massif ; sans lui, il décrit la forme du polygone. Deux lectures opposées de la même colonne.
@@ -158,6 +162,6 @@ Le basculement ne dépend pas du terrain mais de l'installation : avec `landscap
 | Sujet | Fichier |
 |---|---|
 | Fonction L2 | `R/indicators-families.R:1865-1960` |
-| Alias historique | `indicateur_l2_fragmentation()` — `:1962` |
+| Alias historique | `indicateur_l1_sylvosphere()` — `:1992` |
 | Migration des colonnes | `migrer_colonnes_l()` — `R/migration-famille-l.R` |
 | Renommage | `specs/045-renommage-famille-L/` |

@@ -222,8 +222,8 @@ INDICATOR_FAMILIES <- list(
     ),
     indicator_tooltips = list(
       L1 = list(
-        fr = "Proportion de la parcelle sous influence des lisi\u00e8res (sylvosph\u00e8re). Les lisi\u00e8res favorisent certaines esp\u00e8ces mais fragmentent l'habitat int\u00e9rieur.",
-        en = "Proportion of parcel under edge influence (sylvosphere). Edges favor some species but fragment interior habitat."
+        fr = "Intensit\u00e9 de l'effet de lisi\u00e8re subi par la parcelle (sylvosph\u00e8re) : forme du contour, contraste de la matrice voisine, exposition au vent et au soleil. Les lisi\u00e8res favorisent certaines esp\u00e8ces mais fragmentent l'habitat int\u00e9rieur. Sens invers\u00e9 : plus d'effet de lisi\u00e8re = indice plus bas.",
+        en = "Intensity of the edge effect borne by the parcel (sylvosphere): boundary shape, contrast of the surrounding matrix, wind and sun exposure. Edges favor some species but fragment interior habitat. Inverted sense: more edge effect = lower score."
       ),
       L2 = list(
         fr = "Niveau de fragmentation du paysage forestier environnant. Bas\u00e9 sur la taille et la connectivit\u00e9 des massifs forestiers proches.",
@@ -258,8 +258,8 @@ INDICATOR_FAMILIES <- list(
     ),
     indicator_tooltips = list(
       T1 = list(
-        fr = "Anciennet\u00e9 de l'\u00e9tat bois\u00e9 depuis les cartes de Cassini (XVIIIe si\u00e8cle). Les for\u00eats anciennes abritent une biodiversit\u00e9 sp\u00e9cifique.",
-        en = "Age of wooded state since Cassini maps (18th century). Ancient forests harbor specific biodiversity."
+        fr = "Anciennet\u00e9 de l'\u00e9tat bois\u00e9 depuis les cartes de Cassini (XVIIIe si\u00e8cle). Les for\u00eats anciennes abritent une biodiversit\u00e9 sp\u00e9cifique. Valeur brute en ann\u00e9es, ramen\u00e9e sur 0-100 avec une borne haute de 1000 ans : un peuplement jeune reste donc bas sur l'axe.",
+        en = "Age of wooded state since Cassini maps (18th century). Ancient forests harbor specific biodiversity. Raw value in years, rescaled to 0-100 against a 1000-year upper bound: a young stand therefore stays low on this axis."
       ),
       T2 = list(
         fr = "Taux de changement de la couverture foresti\u00e8re sur les 30 derni\u00e8res ann\u00e9es. Valeurs positives = extension, n\u00e9gatives = r\u00e9gression.",

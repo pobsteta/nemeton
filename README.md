@@ -32,7 +32,7 @@ maestro_nemeton         -> Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
 | **W** | Eau & Regulation | indicateur_w1_reseau, w2_zones_humides, w3_humidite |
 | **A** | Air & Microclimat | indicateur_a1_couverture, a2_qualite_air |
 | **F** | Fertilite Sols | indicateur_f1_fertilite, f2_erosion |
-| **L** | Paysage | indicateur_l1_sylvosphere, l2_fragmentation |
+| **L** | Paysage | indicateur_l1_effet_lisiere, l2_morcellement, l3_het_spectrale |
 | **T** | Temporel | indicateur_t1_anciennete, t2_changement |
 | **R** | Risques & Resilience | indicateur_r1_feu, r2_tempete, r3_secheresse, r4_abroutissement |
 | **S** | Social & Usages | indicateur_s1_routes, s2_bati, s3_population |

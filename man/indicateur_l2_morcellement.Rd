@@ -24,7 +24,10 @@ indicateur_l2_morcellement(
 \item{buffer}{Numeric. Buffer distance in meters around union of parcels.}
 }
 \value{
-Numeric vector of fragmentation scores (0-100)
+Numeric vector of fragmentation scores (0-100). \strong{Higher = less
+fragmented = favourable} (COHESION + AI, or the inverse shape index in the
+fallback): already oriented the right way, so normalize_indicator() passes it
+through and does NOT invert it -- unlike L1.
 }
 \description{
 Calculates landscape fragmentation using landscapemetrics (COHESION + AI)
