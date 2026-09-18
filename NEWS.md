@@ -1,3 +1,141 @@
+# nemeton 0.197.0 (2026-09-18)
+
+### Fixed — `L1` effet de lisière : la normalisation était la seule à le lire « haut = bon »
+
+`indicateur_l1_effet_lisiere()` mesure l'**effet de lisière subi** par une
+unité, et ses trois composantes montent toutes avec cet effet : la géométrie
+`(SI − 1) × 25` avec l'irrégularité du contour, le contraste de matrice qui
+code le **bâti à 90** et la forêt à 0, l'exposition avec le vent et le soleil
+reçus par la lisière. L'infobulle le dit (« fragmentent l'habitat intérieur »)
+et `indicateur_n3_naturalite()` aussi, qui calcule `anti_frag = 100 − L1`.
+
+La normalisation, elle, le déclarait natif 0-100 et le laissait **passer tel
+quel**. Une parcelle en lanière bordée de bâti obtenait donc un
+`famille_paysage` flatteur, pendant que le **même chiffre** la pénalisait dans
+N3 : trois lectures sur quatre disaient « haut = mauvais », la quatrième
+décidait de l'affichage.
+
+C'est le défaut corrigé pour R5 par la spec 048 — et que le §8 de cette même
+spec laissait explicitement ouvert : son audit comparait le sens **déclaré en
+roxygen** au sens **mesuré**, or le roxygen de L1 n'en déclare aucun. Le test
+de monotonie ne pouvait rien voir non plus, un passthrough étant parfaitement
+monotone — simplement dans le mauvais sens.
+
+`indicateur_l1_effet_lisiere` quitte `.NORMALIZE_NATIVE_0_100` pour
+`.NORMALIZE_RULED` et rejoint la branche d'inversion, aux côtés de R1-R5 et T3.
+
+**Le slug retiré qui s'inverse avec lui est `indicateur_l2_fragmentation`, pas
+`indicateur_l1_sylvosphere`** : les deux noms de 0.176.0 étaient **croisés**,
+c'est tout l'objet de la spec 045. `indicateur_l1_sylvosphere` porte les
+valeurs du morcellement (L2), COHESION + AI, déjà orientées « haut = bon » —
+l'inverser aurait fabriqué une seconde faute en réparant la première. La même
+inversion croisée s'était glissée dans les deux fiches indicateurs, corrigée
+ici aussi.
+
+Cinq verrous de non-régression : L1 s'inverse (nom long, code court,
+écrêtage avant inversion) ; les deux slugs retirés sont croisés ; un L1 de 85
+**baisse** `famille_paysage` ; le balayage des colonnes du radar attend
+désormais **neuf** inversés ; et `indicateur_n3_naturalite()` lit toujours le
+L1 **brut** — sans ce dernier test, quelqu'un qui « harmoniserait » N3 sur la
+nouvelle convention l'inverserait deux fois.
+
+**À annoncer** : tous les `famille_paysage` déjà calculés changent, et l'indice
+général avec eux. Les valeurs brutes de L1 et tous les N3 sont **inchangés** :
+seule la valeur normalisée bascule. Une comparaison de scores de paysage
+d'avant et d'après le 2026-09-18 n'a pas de sens. Côté app : rien à coder, et
+surtout **ne pas ré-inverser**.
+
+Spec 048 §9. Fiches L1, L2 et N3 mises à jour.
+
+### Fixed — `T1` ancienneté : un âge en années était pris pour un score 0-100
+
+Trouvé **en vérifiant le correctif ci-dessus**, pas en le cherchant.
+`indicateur_t1_anciennete()` rend un **âge en années** — son propre `@return` le
+disait — mais il était déclaré natif 0-100, donc simplement écrêté :
+
+```r
+normalize_indicator("indicateur_t1_anciennete", c(30, 80, 150, 250))
+#>  30  80  100  100      # avant 0.197.0
+```
+
+Une futaie de 150 ans et une de 250 ans sortaient au même 100, et un peuplement
+de 30 ans était noté 30/100 — une « note d'ancienneté » qui était l'âge
+lui-même. Et la déclaration « natif 0-100 » désarmait par surcroît le garde-fou
+de la spec 038, qui n'avertit que pour un indicateur tombant au repli naïf
+**sans** être déclaré natif.
+
+T1 reçoit un `ref_max` de **200 ans** (décision Pascal, 2026-09-18) :
+`0, 50, 100, 200 → 0, 25, 50, 100`. **Pas d'inversion** — plus vieux = mieux,
+le sens était juste, c'est l'échelle qui ne l'était pas. La fonction est
+inchangée et rend toujours un âge.
+
+200 ans est un **seuil sylvicole**, pas une borne physique : au-delà de deux
+siècles l'ancienneté est tenue pour maximale. Ce choix étale le domaine
+forestier courant — 30 à 150 ans → **15 à 75** — au lieu de l'écraser. Une
+borne lointaine aurait déplacé le défaut du haut de l'échelle vers le bas au
+lieu de le corriger.
+
+**À annoncer** : tous les `famille_temporelle` déjà calculés changent. Les
+valeurs brutes de T1 sont inchangées.
+
+Spec 048 §10. Fiche T1 mise à jour. Les `@return` de L1, L2 et T1 déclarent
+désormais leur orientation et leur échelle — c'est leur silence qui avait
+laissé passer les deux défauts.
+
+### Fixed — `E1` / `E2` : le même nombre portait trois bornes différentes
+
+Trouvé **en dressant le tableau des 41 indicateurs**, c'est-à-dire en mettant
+chaque borne à côté de son unité.
+
+`indicateur_e2_evitement()` ne mesure rien d'indépendant : il se déduit de E1
+par `E1 × 4500 kWh × 0,222 kgCO₂/kWh ÷ 1000` = **`E1 × 0,999`**. À 0,1 % près,
+E2 *est* E1. Ils portaient pourtant `ref_max = 0,3` et `ref_max = 0,75` — un
+facteur 2,5 de désaccord entre les deux axes de la famille Énergie, sur une
+donnée identique.
+
+Et les deux dérivent linéairement du volume sur pied, donc de **P1** :
+`E1 = 0,00165 × V` à la densité par défaut. Trois colonnes proportionnelles qui
+saturaient à **182, 455 et 800 m³/ha** :
+
+| Volume | E1 avant | E2 avant | P1 |
+|---|---|---|---|
+| **182 m³/ha** | **100** | 40 | 22,8 |
+| 400 m³/ha | **100** | 88 | 50 |
+
+À 182 m³/ha — un peuplement très ordinaire, P1 annonce 100-400 m³/ha comme
+typique — la même parcelle était au maximum en bois-énergie et à 22,8/100 en
+volume. Le forfait taillis aggravait : 15 % de taillis suffisaient à saturer E1
+à eux seuls, volume ignoré.
+
+`ref_max(E1) = ref_max(E2) = **1,32 t MS/ha/an**` (décision Pascal,
+2026-09-18) — exactement E1 au plafond de P1 (800 m³/ha, ρ = 550). Les trois
+axes notent désormais le même peuplement à l'identique, au résidu de 0,1 point
+que laisse le facteur 0,999 et que le test énonce au lieu de le masquer.
+
+**Limite assumée** : une borne fixe ne suit ni la densité de l'essence
+(E1(800 m³/ha) = 0,96 t pour ρ = 400, 1,68 t pour ρ = 700) ni le scénario de
+substitution (× 1,458 en fioul au lieu de × 0,999 en gaz). Elle est ancrée sur
+les valeurs par défaut, qui sont celles servies.
+
+L'infobulle de E1 annonçait par ailleurs des **MWh/ha/an** quand la fonction
+rend des **tonnes de matière sèche** — corrigé au passage.
+
+**À annoncer** : tous les `famille_energie` déjà calculés changent, à la baisse
+sur les peuplements ordinaires.
+
+Spec 048 §11. Fiches E1 et E2 mises à jour.
+
+### Note de méthode
+
+Deux des trois défauts de cette release — T1 et E1 — étaient **écrits, datés et
+non lus** : leurs fiches indicateurs les documentaient en piège n° 1 depuis le
+2026-08-27, sans jamais remonter dans la table des écarts de `PLAN.md`.
+
+Et ils n'ont pas été trouvés de la même façon. L1 et T1 l'ont été en relisant un
+calcul ; E1/E2 en **mettant chaque borne à côté de son unité**, sur les 41
+indicateurs d'un coup. Une borne fausse est invisible dans le code, où elle
+n'est qu'un nombre dans un `switch`, et évidente dans un tableau.
+
 # nemeton 0.196.0 (2026-09-14)
 
 ### Added — `run_reconfort_dieback(cancel_path=)` : le troisième bouton d'arrêt arrête enfin quelque chose

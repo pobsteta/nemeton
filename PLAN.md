@@ -34,12 +34,24 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 |---|---|---|---|---|
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 | 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Rien à coder** — les tooltips viennent d'`INDICATOR_FAMILIES` et les rasters en cache restent valides — mais l'interface ne doit **ni classer ni moyenner B4/L3 entre projets** : les « spectral species » sont un k-means réajusté par run (spec 028 §10.6). Non accusé réception |
-| 8 | **Le sens de `L1` est lu à l'envers par la normalisation** | relevé le 2026-08-27 en écrivant les fiches | cœur `nemeton` | Le calcul (`(SI−1)×25`, contraste bâti = 90), l'infobulle (« fragmentent l'habitat intérieur ») et `indicateur_n3_naturalite()` (`anti_frag = 100 − L1`) lisent tous **haut = beaucoup de lisière = défavorable**. Mais `indicateur_l1_effet_lisiere` est dans `.NORMALIZE_NATIVE_0_100` (`R/normalization.R:521`) et aucune inversion ne le rattrape : le radar et `famille_paysage` le lisent **haut = bon**. Une parcelle en lanière bordée de bâti obtient donc un score de paysage flatteur. **Même défaut que R5 avant la spec 048.** Correctif : retirer L1 (et l'alias `indicateur_l1_sylvosphere`) de `.NORMALIZE_NATIVE_0_100`, l'ajouter au bloc d'inversion. Aucune fonction d'indicateur ne change ; tout `famille_paysage` déjà calculé est à refaire. **Non corrigé — décision à prendre.** |
+| 8 | **Le sens de `L1` est lu à l'envers par la normalisation** | cœur **v0.197.0** | `nemetonshiny` | **Corrigé côté cœur le 2026-09-18** (spec 048 §9). `indicateur_l1_effet_lisiere` quitte `.NORMALIZE_NATIVE_0_100` pour `.NORMALIZE_RULED` et rejoint le bloc d'inversion aux côtés de R1-R5 et T3. Brief émis : `specs/048-sens-radar/brief-nemetonshiny-l1.md`. **Reste à faire côté app** : un `invalidate_indicators()` à la montée de version, sinon `compute_all_indicators()` relira un `indicators.parquet` construit avec l'ancien sens. Aucun code, aucune ré-inversion. Non accusé réception. **Au passage, ce relevé désignait le mauvais slug** : celui qui porte les valeurs de L1 est `indicateur_l2_fragmentation`, pas `indicateur_l1_sylvosphere` (qui porte L2, « haut = bon »). Les deux noms de 0.176.0 étaient croisés — cf. spec 045. Les deux fiches indicateurs portaient la même inversion, corrigée |
+| 10 | **`T1` ancienneté : un âge en années était pris pour un score 0-100** | cœur **v0.197.0** | `nemetonshiny` | Trouvé le 2026-09-18 **en vérifiant le correctif de l'écart n° 8**. `indicateur_t1_anciennete()` rend un âge en années ; déclaré natif 0-100, il n'était qu'écrêté — 150 ans et 250 ans sortaient au même 100. Borne haute de **200 ans** décidée par Pascal le 2026-09-18 (seuil sylvicole : au-delà, l'ancienneté est maximale), pas d'inversion — le sens était juste. Spec 048 §10. Même brief que le n° 8, deuxième partie. **Reste à faire côté app** : le même `invalidate_indicators()`. Non accusé réception |
+| 11 | **`E1` / `E2` : le même nombre portait trois bornes différentes** | cœur **v0.197.0** | `nemetonshiny` | Trouvé le 2026-09-18 **en dressant le tableau des 41 indicateurs**. `E2 = E1 × 0,999` (il s'en déduit) et les deux dérivent linéairement du volume, donc de P1 — trois colonnes proportionnelles qui saturaient à **182, 455 et 800 m³/ha**. À 182 m³/ha, la même parcelle était à 100/100 en bois-énergie et 22,8/100 en volume. `ref_max(E1) = ref_max(E2) = 1,32 t` (= E1 au plafond de P1), décidé par Pascal le 2026-09-18. Spec 048 §11. Même brief, troisième partie. **Reste à faire côté app** : le même `invalidate_indicators()`. Non accusé réception |
 | 7 | L'icône « fiche » à côté du « i » de C1, onglet Familles d'indicateurs | cœur **v0.192.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/052-fiche-indicateur-c1/brief-nemetonshiny.md`). Le cœur expose `doc_url` / `doc_lang` / `doc_url_fr` / `doc_url_en` dans `indicator_labels()` (URL absolue, `NA` quand l'indicateur n'a pas de fiche ; `doc_lang` = langue réellement servie) ; côté app, ~20 lignes dans `mod_family.R` + 3 clés i18n. **L'URL n'est vivante qu'après merge sur `main`** (déploiement pkgdown). Non accusé réception |
 
-**Quatre écarts.** Le n° 8 est le seul qui appelle un correctif **dans le
-cœur**, et le seul qui rende une valeur affichée fausse — les trois autres
-attendent l'aval ou le terrain. Le n° 3 attend
+**Six écarts, aucun n'appelle plus de correctif dans le cœur.** Les n° 8, 10 et
+11 étaient les seuls à rendre une valeur affichée fausse ; tous trois sont
+corrigés en v0.197.0 et attendent désormais, comme le n° 7, un geste côté app —
+ici un recalcul, pas du code.
+
+**Les n° 10 et 11 n'étaient pas dans cette table**, et c'est le constat le plus
+utile de la release. Le n° 10 a été trouvé en vérifiant le n° 8 ; le n° 11 en
+dressant le tableau des 41 indicateurs. Or **les deux étaient documentés depuis
+le 2026-08-27**, en piège n° 1 de leurs fiches respectives (T1 : « *120 ans et
+300 ans obtiennent le même score de 100* » ; E1 : « *Le plafond de 0,3 t
+MS/ha/an sature dès 150 m³/ha environ* »). Écrits, datés, jamais remontés ici.
+Une fiche peut décrire un défaut pendant trois semaines sans que personne ne le
+voie : **le trou était dans la table, pas dans le code.** Le n° 3 attend
 une sortie sur un projet réel portant à la fois un nuage LiDAR et une desserte
 corrigée. Le n° 6 attend une lecture côté app : il n'appelle pas de code, il
 interdit un usage — et un interdit non lu ne protège de rien. Le n° 7, lui,
@@ -3519,6 +3531,153 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+### 2026-09-18 — v0.197.0 : trois échelles fausses, et ce qui les a fait trouver
+
+Écart n° 8 de la table en tête de fichier, ouvert le 2026-08-27 en rédigeant la
+fiche L1. Le seul des quatre qui appelait un correctif **dans le cœur**, et le
+seul qui rendait une valeur affichée fausse.
+
+**Le défaut.** `indicateur_l1_effet_lisiere()` mesure l'effet de lisière
+**subi** par une unité, et ses trois composantes montent toutes avec : la
+géométrie `(SI − 1) × 25` avec l'irrégularité du contour, le contraste de
+matrice qui code le **bâti à 90** et la forêt à 0, l'exposition avec le vent et
+le soleil reçus par la lisière. L'infobulle le disait, et
+`indicateur_n3_naturalite()` aussi, qui calcule `anti_frag = 100 − L1`. La
+normalisation, seule, le déclarait natif 0-100 et le laissait passer tel quel :
+une parcelle en lanière bordée de bâti obtenait un `famille_paysage` flatteur
+pendant que le **même chiffre** la pénalisait dans N3. Trois lectures sur
+quatre disaient « haut = mauvais », la quatrième décidait de l'affichage.
+
+**Pourquoi l'audit de la spec 048 l'avait manqué.** Il comparait l'orientation
+**déclarée en roxygen** à l'orientation **mesurée**, et c'est ce qui a fait
+tomber R1-R4 : leur roxygen annonçait « *Higher = higher risk* », le désaccord
+était lisible sans ouvrir la fonction. Le roxygen de L1 n'annonce, lui, aucun
+sens. Le test de monotonie ne pouvait rien voir non plus : un passthrough est
+parfaitement monotone, simplement dans le mauvais sens. Le §8 de la spec 048
+énonçait d'ailleurs la réserve — orientation lue pour 13 indicateurs sur 41 — et
+c'est exactement là qu'elle s'est réalisée. La réserve écrite a tenu son rôle :
+elle a permis de reconnaître le défaut comme *prévu* plutôt que comme surprise.
+
+**Le correctif** : L1 quitte `.NORMALIZE_NATIVE_0_100` pour `.NORMALIZE_RULED`
+et rejoint la branche d'inversion, aux côtés de R1-R5 et T3. Aucune fonction
+d'indicateur ne change.
+
+**Ce que le relevé disait de faux, et qui aurait fabriqué une seconde faute.**
+L'écart n° 8 — comme la fiche L1 dont il était tiré — parlait de « l'alias
+`indicateur_l1_sylvosphere` » à retirer avec L1. C'est l'inverse : les deux
+noms retirés en 0.176.0 étaient **croisés**, c'est tout l'objet de la spec 045.
+`indicateur_l2_fragmentation` porte les valeurs de L1 et devait s'inverser ;
+`indicateur_l1_sylvosphere` porte celles du **morcellement** (L2), COHESION +
+AI, déjà « haut = bon ». Appliquer le correctif tel qu'il était écrit aurait
+retourné le morcellement sur tous les jeux non migrés. La même inversion
+traînait dans les deux fiches, chacune annonçant comme « ancien nom » le sien
+propre plutôt que celui de sa voisine — corrigé des deux côtés, générateur
+`data-raw/fiche_diagrams_data.R` inclus, diagrammes régénérés.
+
+C'est la deuxième fois que la famille L se fait prendre par ses noms croisés.
+La leçon vaut d'être écrite : **sur cette famille, ne jamais déduire le contenu
+d'une colonne de son nom** — passer par `.L_LEGACY_COLUMNS`, qui est la seule
+source de vérité de l'appariement.
+
+**Cinq verrous** dans `test-normalization.R` : L1 s'inverse (nom long, code
+court, écrêtage avant inversion) ; les deux slugs retirés sont croisés ; un L1
+de 85 **baisse** `famille_paysage` ; le balayage des colonnes du radar attend
+désormais **neuf** inversés ; et `indicateur_n3_naturalite()` lit toujours le L1
+**brut**. Ce dernier n'est pas décoratif : `create_family_index()` travaille sur
+une copie et ne mute pas les colonnes source, donc le `100 − L1` de N3 reste
+nécessaire — quelqu'un qui « harmoniserait » N3 sur la nouvelle convention
+l'inverserait deux fois, et rien d'autre ne l'aurait dit.
+
+**Suite** : brief `specs/048-sens-radar/brief-nemetonshiny-l1.md`, déposé dans
+`briefs/vers-nemetonshiny/2026-09-18-l1-sens-inverse.md`. Rien à coder côté app,
+mais un `invalidate_indicators()` à la montée de version — sans quoi
+`compute_all_indicators()` relira un `indicators.parquet` construit avec
+l'ancien sens et sautera le recalcul en croyant avoir déjà travaillé. Tous les
+`famille_paysage` déjà calculés changent ; les valeurs brutes de L1 et tous les
+N3 sont inchangés. L'écart n° 8 reste **ouvert** dans la table tant que l'app
+n'a pas suivi.
+
+**Et un second défaut, trouvé en vérifiant le premier.** L'audit qui a suivi la
+correction de L1 a passé en revue les indicateurs déclarés natifs 0-100 dont le
+roxygen n'annonce aucun sens. `indicateur_t1_anciennete()` en faisait partie —
+et il ne rend pas un score, il rend un **âge en années** :
+
+```r
+normalize_indicator("indicateur_t1_anciennete", c(30, 80, 150, 250))
+#>  30  80  100  100      # avant 0.197.0
+```
+
+Une futaie de 150 ans et une de 250 ans sortaient au même 100, et un peuplement
+de 30 ans était noté 30/100 — une note d'ancienneté qui était l'âge lui-même.
+Pascal a tranché la borne le jour même : **200 ans**. Pas d'inversion, le sens
+était juste. `0, 50, 100, 200 → 0, 25, 50, 100`.
+
+**Pourquoi 200 et pas une borne physique**, parce que le raisonnement mérite
+d'être gardé : 200 ans est un **seuil sylvicole**, pas l'âge maximal d'un arbre.
+Au-delà de deux siècles l'ancienneté est maximale — distinguer une futaie de
+200 ans d'une de 400 ans sur le radar reviendrait à noter la seconde
+« meilleure » sans qu'aucune décision n'en dépende. Et la borne décide surtout
+de l'**étalement du domaine courant** : à 200 ans, 30 à 150 ans s'étale sur
+15-75, soit l'essentiel de l'axe. Une borne à 1000 ans, un temps envisagée,
+aurait écrasé ce même domaine sur 3-15 : le défaut se serait déplacé du haut de
+l'échelle vers le bas au lieu d'être corrigé.
+
+**Le vrai enseignement des deux.** `.NORMALIZE_NATIVE_0_100` est le seul endroit
+du système de normalisation qui soit une **affirmation non vérifiée** — et elle
+ne se contente pas de laisser passer la valeur, elle **désarme le garde-fou** de
+la spec 038, qui n'avertit que pour un indicateur tombant au repli naïf *sans*
+être déclaré natif. Déclarer un indicateur natif, c'est affirmer qu'il n'a pas
+besoin de règle, et rien ne vérifie cette affirmation. Les `@return` de L1, L2
+et T1 déclarent désormais orientation et échelle ; neuf indicateurs restent
+muets (`w4_vpd`, `a1`, `a3`, `a4`, `a5`, `p3`, `n1`, `n2`, `n3`) et n'ont **pas**
+été relus — réserve écrite pour être reprise, comme celle du §8 l'a été ici.
+
+Et le défaut T1 était documenté **depuis le 2026-08-27** dans la fiche T1, en
+piège n° 1, avec le bon exemple chiffré. Il n'avait simplement jamais été
+remonté dans la table des écarts. Une fiche peut décrire un défaut pendant trois
+semaines sans que personne ne le voie : c'est le trou de la table, pas du code.
+
+**Et un troisième, trouvé autrement.** Pascal a demandé un tableau des 41
+indicateurs avec le sens de 0 à 100 sur le radar. Le dresser, c'est mettre
+chaque borne à côté de son unité — ce que rien n'obligeait à faire jusque-là.
+Trois anomalies ont sauté aux yeux en une lecture, dont deux réelles :
+
+- **`E2` *est* `E1`.** Il s'en déduit par `E1 × 4500 kWh × 0,222 kgCO₂/kWh
+  ÷ 1000` = `E1 × 0,999`. Les deux portaient pourtant `ref_max = 0,3` et
+  `ref_max = 0,75` : les deux axes de la famille Énergie en désaccord d'un
+  facteur 2,5 sur une donnée identique.
+- **Et tous deux sont P1.** `E1 = 0,00165 × V` à la densité par défaut. Trois
+  colonnes proportionnelles qui saturaient à **182, 455 et 800 m³/ha**. À
+  182 m³/ha — un peuplement très ordinaire — la même parcelle était à **100/100**
+  en bois-énergie et **22,8/100** en volume. Le forfait taillis aggravait :
+  15 % de taillis saturaient E1 à eux seuls, volume ignoré.
+- **`W2` n'est pas un défaut** : il sature à 5 % de couverture de zone humide,
+  mais c'est une affirmation écologique cohérente — 5 % dans une parcelle
+  forestière, c'est déjà remarquable — et la résolution est fine là où elle
+  compte. Vérifié, et écarté.
+
+Borne décidée par Pascal : **alignement sur P1**, `ref_max(E1) = ref_max(E2) =
+1,32 t`, soit exactement E1 au plafond de P1 (800 m³/ha, ρ = 550). Les trois
+axes notent désormais le même peuplement à l'identique, au résidu de 0,1 point
+que laisse le facteur 0,999 — le test l'énonce plutôt que de le noyer dans une
+tolérance. L'infobulle de E1 annonçait par ailleurs des MWh/ha/an quand la
+fonction rend des tonnes de matière sèche : corrigé au passage.
+
+**Ce que cette release apprend sur la méthode**, et qui vaut plus que les trois
+correctifs. Les défauts n'ont pas été trouvés de la même façon : L1 et T1 en
+**relisant un calcul**, E1/E2 en **mettant chaque borne à côté de son unité**.
+Une borne fausse est invisible dans le code — elle n'y est qu'un nombre dans un
+`switch` — et évidente dans un tableau. L'audit de la spec 048 n'avait dressé ni
+l'un ni l'autre : il comparait des *déclarations*.
+
+Et **deux des trois défauts étaient déjà écrits**. Les fiches T1 et E1 les
+documentaient en piège n° 1 depuis le 2026-08-27, avec les bons chiffres. Ils
+n'étaient simplement jamais remontés dans la table des écarts. Écrire un défaut
+dans une fiche ne le fait pas exister : seule la table est relue.
+
+Spec 048 portée en 1.3.0 (§9 à §11). Fiches L1, L2, N3, T1, E1 et E2 mises à
+jour.
 
 ### 2026-09-14 — v0.196.0 : le troisième bouton d'arrêt n'arrêtait rien
 

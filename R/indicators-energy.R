@@ -26,7 +26,12 @@ NULL
 #'   When supplied and `volume_field` is absent, standing volume is
 #'   auto-estimated by running P1 internally. Default `NULL`.
 #'
-#' @return sf object with added columns: E1 (fuelwood potential tonnes DM/yr), E1_residues, E1_coppice
+#' @return sf object with added columns: E1 (fuelwood potential tonnes DM/ha/yr),
+#' E1_residues, E1_coppice. **Higher = more fuelwood available =
+#' favourable**, not inverted; normalize_indicator() rescales it against a
+#' ref_max of 1.32 t DM/ha/yr -- the yield of a stand at P1's own ceiling
+#' (800 m3/ha, density 550), so E1, E2 and P1 score the same stand alike.
+#' See spec 048 section 11.
 #'
 #' @export
 indicateur_e1_bois_energie <- function(units,
@@ -124,7 +129,11 @@ indicateur_e1_bois_energie <- function(units,
 #' @param column_name Character. Name for output column. Default "E2".
 #' @param lang Character. Message language. Default "en".
 #'
-#' @return sf object with added columns: E2 (total CO2 avoided tCO2eq/yr), E2_energy, E2_material
+#' @return sf object with added columns: E2 (total CO2 avoided tCO2eq/ha/yr),
+#' E2_energy, E2_material. **Higher = more emissions avoided =
+#' favourable**, not inverted. Same ref_max as E1 (1.32) because it is, to
+#' within 0.1 %, the same quantity: E2 = E1 x 4500 kWh x 0.222 kgCO2/kWh /
+#' 1000 = E1 x 0.999. See spec 048 section 11.
 #'
 #' @export
 indicateur_e2_evitement <- function(units,

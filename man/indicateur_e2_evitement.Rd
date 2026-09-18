@@ -30,7 +30,11 @@ indicateur_e2_evitement(
 \item{lang}{Character. Message language. Default "en".}
 }
 \value{
-sf object with added columns: E2 (total CO2 avoided tCO2eq/yr), E2_energy, E2_material
+sf object with added columns: E2 (total CO2 avoided tCO2eq/ha/yr), E2_energy,
+E2_material. \strong{Higher = more emissions avoided = favourable}, not
+inverted. Same ref_max as E1 (1.32) because it is, to within 0.1 %, the same
+quantity: E2 = E1 x 4500 kWh x 0.222 kgCO2/kWh / 1000 = E1 x 0.999. See spec
+048 section 11.
 }
 \description{
 Calculates CO2 emission avoidance (tCO2eq/year) through wood energy and

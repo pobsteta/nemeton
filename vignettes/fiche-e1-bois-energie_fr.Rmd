@@ -27,7 +27,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 | Grandeur mesurée | Gisement annuel de bois-énergie mobilisable |
 | Unité brute | **tonnes de matière sèche / ha / an** |
 | Sens | Haut = favorable |
-| Normalisation | `ref_max = 0,3` → `score = min(100, t / 0,3 × 100)` |
+| Normalisation | `ref_max = 1,32` → `score = min(100, t / 1,32 × 100)` — aligné sur P1 |
 | Fonction | `indicateur_e1_bois_energie()` — `R/indicators-energy.R:32` |
 | Colonnes annexes | `E1_residues`, `E1_coppice` |
 
@@ -50,9 +50,13 @@ compris.
 
 | V sur pied | Récolte 2 % | Rémanents 30 % | E1 | Score |
 |---|---|---|---|---|
-| 200 m³/ha | 4,0 | 1,2 m³/ha | **0,41 t MS** | **100,0** (saturé) |
-| 120 m³/ha | 2,4 | 0,72 m³/ha | **0,24 t MS** | **81,6** |
-| 60 m³/ha | 1,2 | 0,36 m³/ha | **0,12 t MS** | **40,8** |
+| 200 m³/ha | 4,0 | 1,2 m³/ha | **0,41 t MS** | **30,9** |
+| 120 m³/ha | 2,4 | 0,72 m³/ha | **0,24 t MS** | **18,5** |
+| 60 m³/ha | 1,2 | 0,36 m³/ha | **0,12 t MS** | **9,3** |
+
+Les scores étaient respectivement **100,0 (saturé)**, 81,6 et 40,8 avant la
+0.197.0 : le plafond de 0,3 t MS/ha/an mettait une futaie de 200 m³/ha au
+maximum de l'axe.
 
 ## 3. Le calcul par niveau NDP
 
@@ -62,8 +66,28 @@ de source propre.
 
 ## 4. Trois pièges
 
-1. **Le plafond de 0,3 t MS/ha/an sature dès 150 m³/ha environ.** Un peuplement
-   ordinaire atteint donc 100. E1 discrimine surtout les peuplements pauvres.
+1. **Le plafond saturait au milieu du domaine forestier — corrigé en 0.197.0.**
+   `ref_max` valait **0,3 t MS/ha/an**, atteint dès ~182 m³/ha à la densité par
+   défaut : un peuplement ordinaire (P1 annonce 100-400 m³/ha comme typique)
+   était donc à 100, et E1 ne discriminait que les peuplements pauvres.
+
+   Le défaut était plus profond qu'un plafond mal placé. **E2 est le même
+   nombre que E1** — il s'en déduit par `E1 × 4500 kWh × 0,222 kgCO₂/kWh ÷ 1000`
+   = `E1 × 0,999` — et portait pourtant une borne de **0,75**. Les deux axes de
+   la famille Énergie étaient en désaccord sur ce que vaut « plein score » à
+   partir d'une donnée identique. Et comme les deux dérivent linéairement du
+   volume, donc de **P1** (`ref_max = 800`), trois colonnes proportionnelles
+   saturaient à **182, 455 et 800 m³/ha** : à 182 m³/ha, la même parcelle était
+   à 100/100 en bois-énergie et à 22,8/100 en volume.
+
+   **Correctif (spec 048 §11)** : `ref_max(E1) = ref_max(E2) = 1,32 t`, soit
+   exactement E1 au plafond de P1 (800 m³/ha, ρ = 550). Les trois axes notent
+   désormais le même peuplement à l'identique, à 0,1 % près — le résidu du
+   facteur 0,999.
+
+   **Limite assumée** : une borne fixe ne peut pas suivre la densité de
+   l'essence (E1(800 m³/ha) vaut 0,96 pour ρ = 400 et 1,68 pour ρ = 700). Elle
+   est ancrée sur la densité par défaut.
 2. **Trois constantes portent tout le résultat** : `harvest_rate = 2 %`,
    `residue_fraction = 30 %`, et le taillis à **2 t MS/ha/an en dur**. Aucune
    n'est calibrée localement ; les deux premières sont des arguments, la
@@ -78,7 +102,7 @@ de source propre.
 ```
 indicateur_e1_bois_energie()  ->  colonnes E1, E1_residues, E1_coppice
       |
-      +- normalize_indicator()     -> min(100, t / 0,3 x 100)
+      +- normalize_indicator()     -> min(100, t / 1,32 x 100)
       +- create_family_index("E")  -> famille_energie = moy(E1, E2)
       +- alimente E2 (fuelwood_field)
 ```
@@ -124,7 +148,7 @@ indicateur_e1_bois_energie()  ->  colonnes E1, E1_residues, E1_coppice
 <text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">t MS / ha / an</text>
 <rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
 <text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text>
-<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">min(100, t / 0,3 × 100)</text>
+<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">min(100, t / 1,32 × 100)</text>
 <rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
 <text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index("E")</text>
 <text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_energie</text>
@@ -147,7 +171,7 @@ indicateur_e1_bois_energie()  ->  colonnes E1, E1_residues, E1_coppice
 <line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
 <line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
 <line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
-<text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">Le plafond de 0,3 t MS/ha/an sature dès 150 m³/ha environ : la moitié du domaine forestier est à 100.</text>
+<text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">Borne alignée sur P1 (1,32 t MS/ha/an = E1 à 800 m³/ha) : E1, E2 et P1 notent le même peuplement pareil.</text>
 <text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Trois constantes portent le résultat — taux de récolte 2 %, fraction rémanents 30 %, forfait taillis 2 t.</text>
 <text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">La récolte de 2 % est une hypothèse de gestion, pas une mesure de prélèvement réel.</text>
 </svg>

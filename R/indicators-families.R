@@ -1661,7 +1661,12 @@ indicateur_f2_erosion <- function(units,
 #' @param forest_values Numeric vector. Land cover codes for forest
 #' @param buffer Numeric. Buffer distance (meters) for contrast analysis. Default 50m.
 #'
-#' @return Numeric vector of sylvosphere scores (0-100)
+#' @return Numeric vector of sylvosphere scores (0-100). **Higher = more edge effect
+#' borne by the unit = less favourable**: all three components grow with it
+#' (boundary irregularity, hostile surrounding matrix, wind and sun
+#' exposure). The value is therefore INVERTED by normalize_indicator() so the
+#' radar convention holds (0-100, higher = better), like R1-R5 and T3. See
+#' spec 048 section 9.
 #'
 #' @section Renamed in 0.176.0:
 #' This indicator used to be called `indicateur_l2_fragmentation()` — a name
@@ -1848,7 +1853,10 @@ indicateur_l1_effet_lisiere <- function(units,
 #' @param forest_values Numeric vector. Values representing forest in landcover.
 #' @param buffer Numeric. Buffer distance in meters around union of parcels.
 #'
-#' @return Numeric vector of fragmentation scores (0-100)
+#' @return Numeric vector of fragmentation scores (0-100). **Higher = less fragmented
+#' = favourable** (COHESION + AI, or the inverse shape index in the
+#' fallback): already oriented the right way, so normalize_indicator() passes
+#' it through and does NOT invert it -- unlike L1.
 #'
 #' @section Renamed in 0.176.0:
 #' This indicator used to be called `indicateur_l1_sylvosphere()` — a name that

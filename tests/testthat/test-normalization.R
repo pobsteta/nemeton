@@ -1836,6 +1836,147 @@ test_that("tout indicateur du radar est monotone croissant une fois normalisé",
   attendu <- c("indicateur_r1_feu", "indicateur_r2_tempete",
                "indicateur_r3_secheresse", "indicateur_r4_abroutissement",
                "indicateur_r5_deperissement", "indicateur_t3_coupes_rases",
-               "indicateur_s1_routes", "indicateur_s2_bati")
+               "indicateur_s1_routes", "indicateur_s2_bati",
+               # L1 rejoint la liste en 0.197.0 : le balayage de la spec 048 ne
+               # l'avait pas attrapé parce qu'il comparait le sens NORMALISÉ au
+               # sens DÉCLARÉ en roxygen, et le roxygen de L1 n'en déclare
+               # aucun (réserve du §8 de cette spec).
+               "indicateur_l1_effet_lisiere")
   expect_setequal(names(sens)[sens == "decroissant"], attendu)
+})
+
+
+# --- L1 sens : l'effet de lisière est « haut = mauvais » (spec 048.1) ------
+# Le calcul (SI croissant, bâti à 90 dans le contraste, exposition au vent et
+# au soleil), l'infobulle et `indicateur_n3_naturalite()` (anti_frag = 100 - L1)
+# le lisent tous ainsi. Jusqu'en 0.196.0 la normalisation était la seule à le
+# lire « haut = bon », et c'est elle qui décidait de l'affichage.
+
+test_that("normalize_indicator inverse L1 (beaucoup de lisière -> score bas)", {
+  v <- c(0, 25, 50, 75, 100)
+  expect_equal(normalize_indicator("indicateur_l1_effet_lisiere", v),
+               c(100, 75, 50, 25, 0))
+  # Code court, forme que `create_family_index()` détecte en premier.
+  expect_equal(normalize_indicator("L1", 80), 20)
+  # Écrêtage avant inversion, comme pour R1-R5 et T3.
+  expect_equal(normalize_indicator("L1", c(-10, 130)), c(100, 0))
+})
+
+test_that("les deux slugs retirés de la famille L sont CROISÉS (spec 045)", {
+  v <- c(0, 25, 50, 75, 100)
+  # `indicateur_l2_fragmentation` est l'ancien nom de L1 (effet de lisière) :
+  # il porte des valeurs « haut = mauvais » et s'inverse.
+  expect_equal(normalize_indicator("indicateur_l2_fragmentation", v),
+               c(100, 75, 50, 25, 0))
+  # `indicateur_l1_sylvosphere` est l'ancien nom de L2 (morcellement) : COHESION
+  # + AI, « haut = bon ». L'inverser retournerait des données déjà écrites.
+  expect_equal(normalize_indicator("indicateur_l1_sylvosphere", v), v)
+  expect_equal(normalize_indicator("indicateur_l2_morcellement", v), v)
+  expect_equal(normalize_indicator("L2", v), v)
+})
+
+test_that("create_family_index: beaucoup de lisière BAISSE famille_paysage", {
+  skip_if_not_installed("sf")
+  mk <- function(l1) {
+    sf::st_sf(
+      L1 = l1, L2 = 60, L3 = 0.25,
+      geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 4326)
+    )
+  }
+  # L3 brut 0,25 -> 0,25 / .L3_MAX_DISPERSION (0,5) * 100 = 50.
+  expose <- create_family_index(mk(85), method = "mean")  # lanière bordée de bâti
+  abrite <- create_family_index(mk(15), method = "mean")  # cœur de massif
+  expect_equal(expose$famille_paysage, mean(c(15, 60, 50)))
+  expect_equal(abrite$famille_paysage, mean(c(85, 60, 50)))
+  expect_lt(expose$famille_paysage, abrite$famille_paysage)
+})
+
+# --- T1 : un ÂGE EN ANNÉES, borné à 200 ans (spec 048 §10) ----------------
+# T1 était déclaré natif 0-100 alors qu'il rend un âge. L'écrêtage faisait
+# sortir 150 ans et 250 ans au même 100, et notait un peuplement de 30 ans à
+# 30/100 — une note d'ancienneté qui était en fait l'âge lui-même.
+
+test_that("normalize_indicator borne T1 à 200 ans, sans l'inverser", {
+  expect_equal(normalize_indicator("indicateur_t1_anciennete", c(0, 50, 100, 200)),
+               c(0, 25, 50, 100))
+  # Code court, forme que `create_family_index()` détecte en premier.
+  expect_equal(normalize_indicator("T1", 50), 25)
+  # Au-delà de la borne : saturation, pas de dépassement. 200 ans est le seuil
+  # au-delà duquel l'ancienneté est tenue pour maximale — c'est délibéré.
+  expect_equal(normalize_indicator("T1", c(400, -10)), c(100, 0))
+})
+
+test_that("T1 n'est plus écrêté : le domaine forestier courant s'étale", {
+  # Le défaut exact, verrouillé : sous l'ancien passthrough, 150 et 250 ans
+  # rendaient tous deux 100. C'est le test qui aurait échoué avant la 0.197.0.
+  n <- normalize_indicator("indicateur_t1_anciennete", c(150, 250))
+  expect_false(isTRUE(all.equal(n[1], n[2])))
+  expect_lt(n[1], n[2])
+  # Et à l'intérieur du domaine courant, les âges se distinguent vraiment —
+  # c'est ce que la borne de 200 ans achète par rapport à une borne lointaine.
+  expect_equal(normalize_indicator("T1", c(30, 80, 120, 150)), c(15, 40, 60, 75))
+})
+
+test_that("T1 a bien une règle : pas de repli naïf, pas d'avertissement", {
+  expect_no_warning(normalize_indicator("indicateur_t1_anciennete", c(30, 900)))
+  expect_true(nemeton:::.normalize_has_rule("indicateur_t1_anciennete"))
+})
+
+# --- E1 / E2 : le même nombre, donc la même borne (spec 048 §11) ----------
+# E2 se calcule DEPUIS E1 (E1 × 4500 kWh × 0,222 kgCO2/kWh / 1000 = E1 × 0,999)
+# et les deux dérivent linéairement du volume, donc de P1. Ils portaient
+# pourtant trois bornes différentes : E1 saturait à 182 m³/ha, E2 à 455, P1 à
+# 800. Bornes alignées sur P1 en 0.197.0.
+
+# E1 = V × harvest_rate × residue_fraction × rho/1000 × 0.5, defaults + rho 550.
+.e1_depuis_volume <- function(V) V * 0.02 * 0.3 * 550 / 1000 * 0.5
+
+test_that("E1 et E2 portent la même borne, puisqu'ils portent le même nombre", {
+  # Le facteur de conversion E1 -> E2 vaut 0,999 : à 0,1 % près, c'est la même
+  # grandeur. Deux bornes différentes étaient donc indéfendables.
+  v <- c(0, 0.33, 0.66, 1.32)
+  expect_equal(normalize_indicator("indicateur_e1_bois_energie", v),
+               normalize_indicator("indicateur_e2_evitement", v))
+  expect_equal(normalize_indicator("indicateur_e1_bois_energie", v),
+               c(0, 25, 50, 100))
+})
+
+test_that("E1, E2 et P1 notent le même peuplement pareil", {
+  # Les trois sont strictement proportionnels au volume sur pied. Le test qui
+  # aurait échoué avant la 0.197.0 : à 182 m³/ha, E1 valait 100 et P1 22,8.
+  for (V in c(50, 100, 182, 300, 400, 600, 800)) {
+    e1 <- .e1_depuis_volume(V)
+    expect_equal(normalize_indicator("indicateur_e1_bois_energie", e1),
+                 normalize_indicator("indicateur_p1_volume", V),
+                 tolerance = 1e-6, info = paste("V =", V))
+    # E2 = E1 × 0,999 : il reste 0,1 % d'écart, soit au plus 0,1 point sur
+    # l'échelle. On l'énonce, plutôt que de le cacher dans une tolérance.
+    ecart <- abs(normalize_indicator("indicateur_e2_evitement", e1 * 0.999) -
+                 normalize_indicator("indicateur_p1_volume", V))
+    expect_lt(ecart, 0.11)
+  }
+})
+
+test_that("E1 ne sature plus au milieu du domaine forestier courant", {
+  # 100-400 m³/ha est la plage que l'infobulle de P1 annonce comme typique :
+  # aucune de ses bornes ne doit rendre 100, sinon l'axe ne discrimine plus.
+  n <- normalize_indicator("indicateur_e1_bois_energie",
+                           vapply(c(100, 400), .e1_depuis_volume, numeric(1)))
+  expect_true(all(n < 100))
+  expect_lt(n[1], n[2])
+})
+
+test_that("indicateur_n3_naturalite lit le L1 BRUT, pas le normalisé", {
+  # N3 applique sa PROPRE inversion (anti_frag = 100 - L1). Il lit la colonne
+  # brute, que `create_family_index()` ne mute pas : sans ce verrou, quelqu'un
+  # qui « harmoniserait » N3 sur la nouvelle convention l'inverserait deux fois.
+  skip_if_not_installed("sf")
+  units <- sf::st_sf(
+    N1 = 80, N2 = 60, L1 = 90, B3 = 40,
+    geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 4326)
+  )
+  out <- indicateur_n3_naturalite(units)
+  expect_equal(out$N3, 0.35 * 80 + 0.35 * 60 + 0.15 * (100 - 90) + 0.15 * 40)
+  # Et la colonne source n'a pas bougé.
+  expect_equal(out$L1, 90)
 })

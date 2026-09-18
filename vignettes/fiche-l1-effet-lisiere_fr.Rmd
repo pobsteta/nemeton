@@ -13,10 +13,11 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-> **Document de référence** — Néméton (package cœur), 2026-08-27.
-> **Cette fiche documente une incohérence de sens active** (§4, piège n° 1) :
-> le calcul, l'infobulle et N3 lisent L1 « haut = beaucoup de lisière =
-> défavorable », la normalisation le lit « haut = favorable ».
+> **Document de référence** — Néméton (package cœur), 2026-08-27, révisé le
+> 2026-09-18. L'incohérence de sens que cette fiche relevait (§4, piège n° 1)
+> **est corrigée depuis la 0.197.0** : L1 est désormais inversé à la
+> normalisation, comme R1–R5 et T3. Tout `famille_paysage` calculé avant cette
+> date est à refaire.
 
 ---
 
@@ -29,10 +30,11 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 | Famille | **L — Paysage** (avec L2, L3) |
 | Grandeur mesurée | Intensité de l'effet de lisière subi par l'unité |
 | Unité brute | **score 0–100** |
-| Sens | Haut = favorable |
-| Normalisation | **native 0–100**, écrêtage |
+| Sens (brut) | **Haut = beaucoup d'effet de lisière = défavorable** |
+| Sens (normalisé) | Haut = favorable — convention du radar (spec 048) |
+| Normalisation | **inversion** `100 − valeur`, puis écrêtage |
 | Fonction | `indicateur_l1_effet_lisiere()` — `R/indicators-families.R:1682` |
-| Ancien nom | `indicateur_l1_sylvosphere()` — conservé en alias (spec 045) |
+| Ancien nom | `indicateur_l2_fragmentation()` — conservé en alias (spec 045) |
 
 ## 2. Le calcul — trois composantes pondérées
 
@@ -101,28 +103,38 @@ unités — soit 40 % du score figé sur une constante (cf. §4).
    **N3** aussi : il calcule `anti_frag = 100 − L1` avant de l'ajouter
    positivement à la naturalité.
 
-   Mais `indicateur_l1_effet_lisiere` figure dans `.NORMALIZE_NATIVE_0_100`
-   (`R/normalization.R:521`), et aucune branche d'inversion ne le rattrape. La
-   normalisation le laisse donc **passer tel quel, comme un score où haut =
+   Mais jusqu'en 0.196.0, `indicateur_l1_effet_lisiere` figurait dans
+   `.NORMALIZE_NATIVE_0_100` et aucune branche d'inversion ne le rattrapait :
+   la normalisation le laissait **passer tel quel, comme un score où haut =
    bon**.
 
-   > **Conséquence** : une parcelle en lanière bordée de bâti obtient un L1
-   > élevé, que le **radar affiche comme un bon score de paysage** et qui tire
-   > `famille_paysage` vers le haut — alors que le même chiffre, injecté dans
-   > N3, la pénalise. Trois sources sur quatre disent « haut = mauvais », la
-   > quatrième décide de l'affichage.
+   > **Ce que ça produisait** : une parcelle en lanière bordée de bâti
+   > obtenait un L1 élevé, que le **radar affichait comme un bon score de
+   > paysage** et qui tirait `famille_paysage` vers le haut — alors que le même
+   > chiffre, injecté dans N3, la pénalisait. Trois lectures sur quatre
+   > disaient « haut = mauvais », la quatrième décidait de l'affichage.
 
-   C'est exactement le défaut corrigé pour **R5** en 0.181.0 (spec 048 : « seul
-   R5 était inversé […] une UGF très exposée obtenait un `famille_risque`
-   élevé, c'est-à-dire flatteur ») et pour les **noms** de la famille L en
-   0.176.0 (spec 045 : « les deux noms historiques annonçaient l'inverse de ce
-   qu'ils calculaient »). Le sens de L1, lui, n'a pas été revu.
+   C'était exactement le défaut corrigé pour **R5** en 0.181.0 (spec 048 :
+   « seul R5 était inversé […] une UGF très exposée obtenait un
+   `famille_risque` élevé, c'est-à-dire flatteur ») et pour les **noms** de la
+   famille L en 0.176.0 (spec 045 : « les deux noms historiques annonçaient
+   l'inverse de ce qu'ils calculaient »). Le §8 de la spec 048 disait d'ailleurs
+   la réserve : l'orientation n'avait pu être lue que pour 13 indicateurs sur
+   41, les autres n'en déclarant aucune en roxygen. L1 était de ceux-là.
 
-   **Le correctif serait d'un mot** : retirer `indicateur_l1_effet_lisiere` (et
-   son alias `indicateur_l1_sylvosphere`) de `.NORMALIZE_NATIVE_0_100`, et
-   l'ajouter au bloc d'inversion aux côtés de R1–R5 et T3. Comme pour la spec
-   048, aucune fonction d'indicateur ne changerait — seule la valeur normalisée
-   basculerait, et tout `famille_paysage` déjà calculé serait à refaire.
+   **Corrigé en 0.197.0** (spec 048 §9) : `indicateur_l1_effet_lisiere` quitte
+   `.NORMALIZE_NATIVE_0_100` pour `.NORMALIZE_RULED` et rejoint le bloc
+   d'inversion aux côtés de R1–R5 et T3. Aucune fonction d'indicateur ne
+   change — seule la valeur normalisée bascule, et tout `famille_paysage`
+   calculé avant le 2026-09-18 est à refaire.
+
+   > **Piège dans le correctif lui-même** : le slug retiré qui s'inverse avec
+   > L1 est `indicateur_l2_fragmentation`, **pas** `indicateur_l1_sylvosphere`.
+   > Les deux noms de 0.176.0 étaient croisés — c'est tout l'objet de la spec
+   > 045 — et `indicateur_l1_sylvosphere` porte les valeurs du **morcellement**
+   > (L2), déjà orientées « haut = bon ». L'inverser aurait fabriqué une
+   > seconde faute en réparant la première. Cette fiche elle-même annonçait le
+   > mauvais alias jusqu'au 2026-09-18.
 
 2. **Deux composantes sur trois retombent sur 50 en l'absence de données**, sans
    avertissement — le contraste (40 %) et l'exposition (30 %). Sans occupation
@@ -135,9 +147,11 @@ unités — soit 40 % du score figé sur une constante (cf. §4).
    écologique n'existe : deux parcelles voisines au cœur d'un même massif
    continu peuvent obtenir des scores très différents pour une raison purement
    administrative.
-4. **Le nom a changé, l'ancien reste accepté.** `indicateur_l1_sylvosphere()`
-   est conservé comme alias (spec 045) et les slugs `indicateur_l1_sylvosphere`
-   restent reconnus par la normalisation pour les jeux non migrés. Les deux
+4. **Le nom a changé, l'ancien reste accepté.** `indicateur_l2_fragmentation()`
+   est conservé comme alias (spec 045) et le slug `indicateur_l2_fragmentation`
+   reste reconnu par la normalisation — et inversé avec L1 — pour les jeux non
+   migrés. Attention au croisement : `indicateur_l1_sylvosphere`, malgré son
+   nom, porte les valeurs de **L2**, pas de L1. Les deux
    noms historiques de la famille L « annonçaient l'inverse de ce qu'ils
    calculaient » — d'où le renommage.
 
@@ -189,10 +203,10 @@ indicateur_l1_effet_lisiere()  ->  colonne indicateur_l1_effet_lisiere
 <text x="300" y="269" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">sans relief : 50</text>
 <rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"/>
 <text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_l1_effet_lisiere</text>
-<text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score 0–100, natif</text>
+<text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">0–100, haut = mauvais</text>
 <rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
 <text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text>
-<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">écrêtage natif 0–100</text>
+<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">inversion 100 − L1</text>
 <rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
 <text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index("L")</text>
 <text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_paysage</text>
@@ -217,7 +231,7 @@ indicateur_l1_effet_lisiere()  ->  colonne indicateur_l1_effet_lisiere
 <line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
 <text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">Deux composantes sur trois retombent sur 50 sans données : 70 % du score peut être une constante.</text>
 <text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">La géométrie mesure la forme de l'UGF, pas celle du massif : le découpage cadastral pèse sur le score.</text>
-<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">indicateur_l1_sylvosphere() reste un alias accepté (spec 045) ; la colonne, elle, a changé de nom.</text>
+<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">indicateur_l2_fragmentation() reste l'alias de L1 (spec 045) : les deux anciens noms étaient croisés.</text>
 </svg>
 <figcaption style="font-size:.9em;opacity:.75">
 Trois composantes cumulées et deux valeurs par défaut. Avant de lire un L1, vérifier quelles couches étaient présentes : le score reste plausible lorsqu'il n'a été calculé que pour trois dixièmes.
@@ -230,5 +244,5 @@ Trois composantes cumulées et deux valeurs par défaut. Avant de lire un L1, v�
 | Sujet | Fichier |
 |---|---|
 | Fonction L1 | `R/indicators-families.R:1682-1860` |
-| Alias historique | `indicateur_l1_sylvosphere()` — `:1992` |
+| Alias historique | `indicateur_l2_fragmentation()` — `:1962` |
 | Renommage de la famille | `specs/045-renommage-famille-L/`, `migrer_colonnes_l()` |
