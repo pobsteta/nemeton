@@ -39,7 +39,10 @@ indicateur_l2_morcellement(
 
 ## Value
 
-Numeric vector of fragmentation scores (0-100)
+Numeric vector of fragmentation scores (0-100). **Higher = less
+fragmented = favourable** (COHESION + AI, or the inverse shape index in
+the fallback): already oriented the right way, so normalize_indicator()
+passes it through and does NOT invert it – unlike L1.
 
 ## Renamed in 0.176.0
 

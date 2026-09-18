@@ -429,7 +429,7 @@ ggplot(change_data, aes(x = C1_rate, y = B1_rate)) +
 sessionInfo()
 #> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.4 LTS
+#> Running under: Ubuntu 24.04.5 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -448,8 +448,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] sf_1.1-2             dplyr_1.2.1          ggplot2_4.0.3       
-#> [4] nemeton_0.195.0.9000
+#> [1] sf_1.1-3        dplyr_1.2.1     ggplot2_4.0.3   nemeton_0.197.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] utf8_1.2.6         sass_0.4.10        generics_0.1.4     tidyr_1.3.2       
@@ -462,9 +461,9 @@ sessionInfo()
 #> [29] tools_4.6.1        vctrs_0.7.3        R6_2.6.1           proxy_0.4-29      
 #> [33] lifecycle_1.0.5    classInt_0.4-11    fs_2.1.0           htmlwidgets_1.6.4 
 #> [37] ragg_1.5.2         pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.1     
-#> [41] terra_1.9-34       bslib_0.12.0       pillar_1.11.1      gtable_0.3.6      
-#> [45] glue_1.8.1         Rcpp_1.1.2         systemfonts_1.3.2  xfun_0.60         
-#> [49] tibble_3.3.1       tidyselect_1.2.1   knitr_1.51         farver_2.1.2      
-#> [53] htmltools_0.5.9    labeling_0.4.3     rmarkdown_2.31     compiler_4.6.1    
+#> [41] terra_1.9-50       bslib_0.12.0       pillar_1.11.1      gtable_0.3.6      
+#> [45] glue_1.8.1         Rcpp_1.1.2         systemfonts_1.3.2  xfun_0.61         
+#> [49] tibble_3.3.1       tidyselect_1.2.1   knitr_1.52         farver_2.1.2      
+#> [53] htmltools_0.5.9    labeling_0.4.3     rmarkdown_2.32     compiler_4.6.1    
 #> [57] S7_0.2.2
 ```

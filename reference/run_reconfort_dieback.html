@@ -23,7 +23,7 @@ continuous-score rasters (EPSG:2154) plus a `run_meta.json`."><meta property="og
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.195.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.197.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -162,7 +162,8 @@ continuous-score rasters (EPSG:2154) plus a `run_meta.json`.</p>
 <span>  skip_ingest <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  keep_workdir <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  quiet <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cancel_path <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -300,12 +301,35 @@ Default `TRUE` (the rasters live there).</p></dd>
 at each phase (`current = "reconfort:phase"` / `"reconfort:..."`),
 for wiring into an app progress bar.</p></dd>
 
+
+<dt id="arg-cancel-path">cancel_path<a class="anchor" aria-label="anchor" href="#arg-cancel-path"></a></dt>
+<dd><p>Optional character path to a cooperative
+cancellation flag file. When `NULL` (default) no polling happens
+and behaviour is identical to before. When a path is given, the
+worker checks `file.exists(cancel_path)` **at phase boundaries
+only**: IOTA2 chunks inside the Python subprocess, so R never sees
+the classification loop and there is nothing finer to poll. The
+cancel therefore takes effect at the next phase change, not
+immediately — a `mapprod` phase running for tens of minutes runs to
+its end. The pipeline then returns `status = "cancelled"` with a
+`phase` field naming the last completed phase, and the working
+directory is **kept whatever `keep_workdir` says** so the scenes
+and rasters already produced stay usable (a resumed run reads them
+back with `skip_ingest = TRUE`). A flag already present at entry is
+ignored as a stale leftover — the caller must delete it before each
+call. A `reconfort:cancelled` progress event is emitted.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Invisibly, a list: `status`, `zone_id`, `tiles`, `s2_year`,
-`v_model`, `species`, `workdir`, `rasters` (the collected output
-paths), `meta` (path to `run_meta.json`) and `elapsed_sec`.</p>
+    <p>Invisibly, a list: `status` (`"completed"` or
+`"cancelled"`), `zone_id`, `tiles`, `s2_year`, `v_model`,
+`species`, `workdir`, `rasters` (the collected output paths),
+`meta` (path to `run_meta.json`) and `elapsed_sec`. A
+`"cancelled"` result carries an extra `phase` field (the last
+completed phase) and `NA` / `NULL` in place of the outputs the
+cancelled phases would have produced. A genuine failure still
+aborts rather than returning a status.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

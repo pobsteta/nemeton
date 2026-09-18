@@ -9,7 +9,7 @@ when available, or shape index fallback. Returns a score 0-100."><meta property=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.195.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.197.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -154,7 +154,10 @@ when available, or shape index fallback. Returns a score 0-100.</p>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Numeric vector of fragmentation scores (0-100)</p>
+    <p>Numeric vector of fragmentation scores (0-100). <strong>Higher = less
+fragmented = favourable</strong> (COHESION + AI, or the inverse shape index in the
+fallback): already oriented the right way, so normalize_indicator() passes it
+through and does NOT invert it – unlike L1.</p>
     </div>
     <div class="section level2">
     <h2 id="renamed-in-">Renamed in 0.176.0<a class="anchor" aria-label="anchor" href="#renamed-in-"></a></h2>

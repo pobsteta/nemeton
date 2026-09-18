@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.195.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.197.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -160,7 +160,12 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Numeric vector of sylvosphere scores (0-100)</p>
+    <p>Numeric vector of sylvosphere scores (0-100). <strong>Higher = more edge
+effect borne by the unit = less favourable</strong>: all three components grow with it
+(boundary irregularity, hostile surrounding matrix, wind and sun exposure).
+The value is therefore INVERTED by normalize_indicator() so the radar
+convention holds (0-100, higher = better), like R1-R5 and T3. See spec 048
+section 9.</p>
     </div>
     <div class="section level2">
     <h2 id="renamed-in-">Renamed in 0.176.0<a class="anchor" aria-label="anchor" href="#renamed-in-"></a></h2>

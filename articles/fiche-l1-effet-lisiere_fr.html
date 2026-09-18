@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.195.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.197.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,7 +140,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstetar</h4>
             
-            <h4 data-toc-skip class="date">2026-09-04</h4>
+            <h4 data-toc-skip class="date">2026-09-18</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/fiche-l1-effet-lisiere_fr.Rmd" class="external-link"><code>vignettes/fiche-l1-effet-lisiere_fr.Rmd</code></a></small>
       <div class="d-none name"><code>fiche-l1-effet-lisiere_fr.Rmd</code></div>
@@ -150,10 +150,11 @@ Obstetar</h4>
     
 <blockquote>
 <p><strong>Document de référence</strong> — Néméton (package cœur),
-2026-08-27. <strong>Cette fiche documente une incohérence de sens
-active</strong> (§4, piège n° 1) : le calcul, l’infobulle et N3 lisent
-L1 « haut = beaucoup de lisière = défavorable », la normalisation le lit
-« haut = favorable ».</p>
+2026-08-27, révisé le 2026-09-18. L’incohérence de sens que cette fiche
+relevait (§4, piège n° 1) <strong>est corrigée depuis la
+0.197.0</strong> : L1 est désormais inversé à la normalisation, comme
+R1–R5 et T3. Tout <code>famille_paysage</code> calculé avant cette date
+est à refaire.</p>
 </blockquote>
 <hr>
 <div class="section level2">
@@ -191,25 +192,31 @@ L1 « haut = beaucoup de lisière = défavorable », la normalisation le lit
 <td><strong>score 0–100</strong></td>
 </tr>
 <tr class="even">
-<td>Sens</td>
-<td>Haut = favorable</td>
+<td>Sens (brut)</td>
+<td><strong>Haut = beaucoup d’effet de lisière =
+défavorable</strong></td>
 </tr>
 <tr class="odd">
-<td>Normalisation</td>
-<td>
-<strong>native 0–100</strong>, écrêtage</td>
+<td>Sens (normalisé)</td>
+<td>Haut = favorable — convention du radar (spec 048)</td>
 </tr>
 <tr class="even">
+<td>Normalisation</td>
+<td>
+<strong>inversion</strong> <code>100 − valeur</code>, puis
+écrêtage</td>
+</tr>
+<tr class="odd">
 <td>Fonction</td>
 <td>
 <code><a href="../reference/indicateur_l1_effet_lisiere.html">indicateur_l1_effet_lisiere()</a></code> —
 <code>R/indicators-families.R:1682</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Ancien nom</td>
 <td>
-<code><a href="../reference/indicateur_l1_sylvosphere.html">indicateur_l1_sylvosphere()</a></code> — conservé en alias (spec
+<code><a href="../reference/indicateur_l2_fragmentation.html">indicateur_l2_fragmentation()</a></code> — conservé en alias (spec
 045)</td>
 </tr>
 </tbody>
@@ -341,33 +348,44 @@ intérieur</strong>. »</p>
 <p><strong>N3</strong> aussi : il calcule
 <code>anti_frag = 100 − L1</code> avant de l’ajouter positivement à la
 naturalité.</p>
-<p>Mais <code>indicateur_l1_effet_lisiere</code> figure dans
-<code>.NORMALIZE_NATIVE_0_100</code>
-(<code>R/normalization.R:521</code>), et aucune branche d’inversion ne
-le rattrape. La normalisation le laisse donc <strong>passer tel quel,
-comme un score où haut = bon</strong>.</p>
+<p>Mais jusqu’en 0.196.0, <code>indicateur_l1_effet_lisiere</code>
+figurait dans <code>.NORMALIZE_NATIVE_0_100</code> et aucune branche
+d’inversion ne le rattrapait : la normalisation le laissait
+<strong>passer tel quel, comme un score où haut = bon</strong>.</p>
 <blockquote>
-<p><strong>Conséquence</strong> : une parcelle en lanière bordée de bâti
-obtient un L1 élevé, que le <strong>radar affiche comme un bon score de
-paysage</strong> et qui tire <code>famille_paysage</code> vers le haut —
-alors que le même chiffre, injecté dans N3, la pénalise. Trois sources
-sur quatre disent « haut = mauvais », la quatrième décide de
-l’affichage.</p>
+<p><strong>Ce que ça produisait</strong> : une parcelle en lanière
+bordée de bâti obtenait un L1 élevé, que le <strong>radar affichait
+comme un bon score de paysage</strong> et qui tirait
+<code>famille_paysage</code> vers le haut — alors que le même chiffre,
+injecté dans N3, la pénalisait. Trois lectures sur quatre disaient «
+haut = mauvais », la quatrième décidait de l’affichage.</p>
 </blockquote>
-<p>C’est exactement le défaut corrigé pour <strong>R5</strong> en
+<p>C’était exactement le défaut corrigé pour <strong>R5</strong> en
 0.181.0 (spec 048 : « seul R5 était inversé […] une UGF très exposée
 obtenait un <code>famille_risque</code> élevé, c’est-à-dire flatteur »)
 et pour les <strong>noms</strong> de la famille L en 0.176.0 (spec 045 :
 « les deux noms historiques annonçaient l’inverse de ce qu’ils
-calculaient »). Le sens de L1, lui, n’a pas été revu.</p>
-<p><strong>Le correctif serait d’un mot</strong> : retirer
-<code>indicateur_l1_effet_lisiere</code> (et son alias
-<code>indicateur_l1_sylvosphere</code>) de
-<code>.NORMALIZE_NATIVE_0_100</code>, et l’ajouter au bloc d’inversion
-aux côtés de R1–R5 et T3. Comme pour la spec 048, aucune fonction
-d’indicateur ne changerait — seule la valeur normalisée basculerait, et
-tout <code>famille_paysage</code> déjà calculé serait à
+calculaient »). Le §8 de la spec 048 disait d’ailleurs la réserve :
+l’orientation n’avait pu être lue que pour 13 indicateurs sur 41, les
+autres n’en déclarant aucune en roxygen. L1 était de ceux-là.</p>
+<p><strong>Corrigé en 0.197.0</strong> (spec 048 §9) :
+<code>indicateur_l1_effet_lisiere</code> quitte
+<code>.NORMALIZE_NATIVE_0_100</code> pour <code>.NORMALIZE_RULED</code>
+et rejoint le bloc d’inversion aux côtés de R1–R5 et T3. Aucune fonction
+d’indicateur ne change — seule la valeur normalisée bascule, et tout
+<code>famille_paysage</code> calculé avant le 2026-09-18 est à
 refaire.</p>
+<blockquote>
+<p><strong>Piège dans le correctif lui-même</strong> : le slug retiré
+qui s’inverse avec L1 est <code>indicateur_l2_fragmentation</code>,
+<strong>pas</strong> <code>indicateur_l1_sylvosphere</code>. Les deux
+noms de 0.176.0 étaient croisés — c’est tout l’objet de la spec 045 — et
+<code>indicateur_l1_sylvosphere</code> porte les valeurs du
+<strong>morcellement</strong> (L2), déjà orientées « haut = bon ».
+L’inverser aurait fabriqué une seconde faute en réparant la première.
+Cette fiche elle-même annonçait le mauvais alias jusqu’au
+2026-09-18.</p>
+</blockquote>
 </li>
 <li><p><strong>Deux composantes sur trois retombent sur 50 en l’absence
 de données</strong>, sans avertissement — le contraste (40 %) et
@@ -383,11 +401,14 @@ massif.</strong> Un découpage cadastral en lanières produit des SI
 voisines au cœur d’un même massif continu peuvent obtenir des scores
 très différents pour une raison purement administrative.</p></li>
 <li><p><strong>Le nom a changé, l’ancien reste accepté.</strong>
-<code><a href="../reference/indicateur_l1_sylvosphere.html">indicateur_l1_sylvosphere()</a></code> est conservé comme alias (spec
-045) et les slugs <code>indicateur_l1_sylvosphere</code> restent
-reconnus par la normalisation pour les jeux non migrés. Les deux noms
-historiques de la famille L « annonçaient l’inverse de ce qu’ils
-calculaient » — d’où le renommage.</p></li>
+<code><a href="../reference/indicateur_l2_fragmentation.html">indicateur_l2_fragmentation()</a></code> est conservé comme alias
+(spec 045) et le slug <code>indicateur_l2_fragmentation</code> reste
+reconnu par la normalisation — et inversé avec L1 — pour les jeux non
+migrés. Attention au croisement :
+<code>indicateur_l1_sylvosphere</code>, malgré son nom, porte les
+valeurs de <strong>L2</strong>, pas de L1. Les deux noms historiques de
+la famille L « annonçaient l’inverse de ce qu’ils calculaient » — d’où
+le renommage.</p></li>
 </ol>
 </div>
 <div class="section level2">
@@ -419,17 +440,17 @@ des pixels voisins</text><text x="300" y="177" font-size="11" font-family="ui-mo
 couche OSO : 50</text><rect x="288" y="218" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="237" font-size="12.5" font-weight="600" fill="currentColor">Exposition
 — 30 %</text><text x="300" y="253" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">0,6
 × vent + 0,4 × soleil</text><text x="300" y="269" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">sans
-relief : 50</text><rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"></rect><text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_l1_effet_lisiere</text><text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score
-0–100, natif</text><rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text><text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">écrêtage
-natif 0–100</text><rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“L”)</text><text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_paysage</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
+relief : 50</text><rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"></rect><text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_l1_effet_lisiere</text><text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">0–100,
+haut = mauvais</text><rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text><text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">inversion
+100 − L1</text><rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“L”)</text><text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_paysage</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
 de L1 à L3</text><rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text><text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci
 · confiance φ</text><path d="M260 55 H271 V63 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 119 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 183 H271 V247 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">+</text><line x1="306" y1="186" x2="306" y2="212" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="312" y="202" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">+</text><line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="155" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="247" x2="566" y2="247" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="566" y2="247" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">Deux
 composantes sur trois retombent sur 50 sans données : 70 % du score peut
 être une constante.</text><text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">La
 géométrie mesure la forme de l’UGF, pas celle du massif : le découpage
-cadastral pèse sur le score.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">indicateur_l1_sylvosphere()
-reste un alias accepté (spec 045) ; la colonne, elle, a changé de
-nom.</text></svg><figcaption style="font-size:.9em;opacity:.75">
+cadastral pèse sur le score.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">indicateur_l2_fragmentation()
+reste l’alias de L1 (spec 045) : les deux anciens noms étaient
+croisés.</text></svg><figcaption style="font-size:.9em;opacity:.75">
 Trois composantes cumulées et deux valeurs par défaut. Avant de lire un
 L1, vérifier quelles couches étaient présentes : le score reste
 plausible lorsqu’il n’a été calculé que pour trois dixièmes.
@@ -455,7 +476,7 @@ plausible lorsqu’il n’a été calculé que pour trois dixièmes.
 <tr class="even">
 <td>Alias historique</td>
 <td>
-<code><a href="../reference/indicateur_l1_sylvosphere.html">indicateur_l1_sylvosphere()</a></code> — <code>:1992</code>
+<code><a href="../reference/indicateur_l2_fragmentation.html">indicateur_l2_fragmentation()</a></code> — <code>:1962</code>
 </td>
 </tr>
 <tr class="odd">

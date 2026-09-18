@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.195.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.197.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,6 +110,79 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.197.0" id="nemeton-01970-2026-09-18">nemeton 0.197.0 (2026-09-18)<a class="anchor" aria-label="anchor" href="#nemeton-01970-2026-09-18"></a></h2>
+<div class="section level4">
+<h4 id="fixed--l1-effet-de-lisière--la-normalisation-était-la-seule-à-le-lire--haut--bon--0-197-0">Fixed — <code>L1</code> effet de lisière : la normalisation était la seule à le lire « haut = bon »<a class="anchor" aria-label="anchor" href="#fixed--l1-effet-de-lisi%C3%A8re--la-normalisation-%C3%A9tait-la-seule-%C3%A0-le-lire--haut--bon--0-197-0"></a></h4>
+<p><code><a href="../reference/indicateur_l1_effet_lisiere.html">indicateur_l1_effet_lisiere()</a></code> mesure l’<strong>effet de lisière subi</strong> par une unité, et ses trois composantes montent toutes avec cet effet : la géométrie <code>(SI − 1) × 25</code> avec l’irrégularité du contour, le contraste de matrice qui code le <strong>bâti à 90</strong> et la forêt à 0, l’exposition avec le vent et le soleil reçus par la lisière. L’infobulle le dit (« fragmentent l’habitat intérieur ») et <code><a href="../reference/indicateur_n3_naturalite.html">indicateur_n3_naturalite()</a></code> aussi, qui calcule <code>anti_frag = 100 − L1</code>.</p>
+<p>La normalisation, elle, le déclarait natif 0-100 et le laissait <strong>passer tel quel</strong>. Une parcelle en lanière bordée de bâti obtenait donc un <code>famille_paysage</code> flatteur, pendant que le <strong>même chiffre</strong> la pénalisait dans N3 : trois lectures sur quatre disaient « haut = mauvais », la quatrième décidait de l’affichage.</p>
+<p>C’est le défaut corrigé pour R5 par la spec 048 — et que le §8 de cette même spec laissait explicitement ouvert : son audit comparait le sens <strong>déclaré en roxygen</strong> au sens <strong>mesuré</strong>, or le roxygen de L1 n’en déclare aucun. Le test de monotonie ne pouvait rien voir non plus, un passthrough étant parfaitement monotone — simplement dans le mauvais sens.</p>
+<p><code>indicateur_l1_effet_lisiere</code> quitte <code>.NORMALIZE_NATIVE_0_100</code> pour <code>.NORMALIZE_RULED</code> et rejoint la branche d’inversion, aux côtés de R1-R5 et T3.</p>
+<p><strong>Le slug retiré qui s’inverse avec lui est <code>indicateur_l2_fragmentation</code>, pas <code>indicateur_l1_sylvosphere</code></strong> : les deux noms de 0.176.0 étaient <strong>croisés</strong>, c’est tout l’objet de la spec 045. <code>indicateur_l1_sylvosphere</code> porte les valeurs du morcellement (L2), COHESION + AI, déjà orientées « haut = bon » — l’inverser aurait fabriqué une seconde faute en réparant la première. La même inversion croisée s’était glissée dans les deux fiches indicateurs, corrigée ici aussi.</p>
+<p>Cinq verrous de non-régression : L1 s’inverse (nom long, code court, écrêtage avant inversion) ; les deux slugs retirés sont croisés ; un L1 de 85 <strong>baisse</strong> <code>famille_paysage</code> ; le balayage des colonnes du radar attend désormais <strong>neuf</strong> inversés ; et <code><a href="../reference/indicateur_n3_naturalite.html">indicateur_n3_naturalite()</a></code> lit toujours le L1 <strong>brut</strong> — sans ce dernier test, quelqu’un qui « harmoniserait » N3 sur la nouvelle convention l’inverserait deux fois.</p>
+<p><strong>À annoncer</strong> : tous les <code>famille_paysage</code> déjà calculés changent, et l’indice général avec eux. Les valeurs brutes de L1 et tous les N3 sont <strong>inchangés</strong> : seule la valeur normalisée bascule. Une comparaison de scores de paysage d’avant et d’après le 2026-09-18 n’a pas de sens. Côté app : rien à coder, et surtout <strong>ne pas ré-inverser</strong>.</p>
+<p>Spec 048 §9. Fiches L1, L2 et N3 mises à jour.</p>
+</div>
+<div class="section level4">
+<h4 id="fixed--t1-ancienneté--un-âge-en-années-était-pris-pour-un-score-0-197-0">Fixed — <code>T1</code> ancienneté : un âge en années était pris pour un score 0-100<a class="anchor" aria-label="anchor" href="#fixed--t1-anciennet%C3%A9--un-%C3%A2ge-en-ann%C3%A9es-%C3%A9tait-pris-pour-un-score-0-197-0"></a></h4>
+<p>Trouvé <strong>en vérifiant le correctif ci-dessus</strong>, pas en le cherchant. <code><a href="../reference/indicateur_t1_anciennete.html">indicateur_t1_anciennete()</a></code> rend un <strong>âge en années</strong> — son propre <code>@return</code> le disait — mais il était déclaré natif 0-100, donc simplement écrêté :</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/normalize_indicator.html">normalize_indicator</a></span><span class="op">(</span><span class="st">"indicateur_t1_anciennete"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">80</span>, <span class="fl">150</span>, <span class="fl">250</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;  30  80  100  100      # avant 0.197.0</span></span></code></pre></div>
+<p>Une futaie de 150 ans et une de 250 ans sortaient au même 100, et un peuplement de 30 ans était noté 30/100 — une « note d’ancienneté » qui était l’âge lui-même. Et la déclaration « natif 0-100 » désarmait par surcroît le garde-fou de la spec 038, qui n’avertit que pour un indicateur tombant au repli naïf <strong>sans</strong> être déclaré natif.</p>
+<p>T1 reçoit un <code>ref_max</code> de <strong>200 ans</strong> (décision Pascal, 2026-09-18) : <code>0, 50, 100, 200 → 0, 25, 50, 100</code>. <strong>Pas d’inversion</strong> — plus vieux = mieux, le sens était juste, c’est l’échelle qui ne l’était pas. La fonction est inchangée et rend toujours un âge.</p>
+<p>200 ans est un <strong>seuil sylvicole</strong>, pas une borne physique : au-delà de deux siècles l’ancienneté est tenue pour maximale. Ce choix étale le domaine forestier courant — 30 à 150 ans → <strong>15 à 75</strong> — au lieu de l’écraser. Une borne lointaine aurait déplacé le défaut du haut de l’échelle vers le bas au lieu de le corriger.</p>
+<p><strong>À annoncer</strong> : tous les <code>famille_temporelle</code> déjà calculés changent. Les valeurs brutes de T1 sont inchangées.</p>
+<p>Spec 048 §10. Fiche T1 mise à jour. Les <code>@return</code> de L1, L2 et T1 déclarent désormais leur orientation et leur échelle — c’est leur silence qui avait laissé passer les deux défauts.</p>
+</div>
+<div class="section level4">
+<h4 id="fixed--e1--e2--le-même-nombre-portait-trois-bornes-différentes-0-197-0">Fixed — <code>E1</code> / <code>E2</code> : le même nombre portait trois bornes différentes<a class="anchor" aria-label="anchor" href="#fixed--e1--e2--le-m%C3%AAme-nombre-portait-trois-bornes-diff%C3%A9rentes-0-197-0"></a></h4>
+<p>Trouvé <strong>en dressant le tableau des 41 indicateurs</strong>, c’est-à-dire en mettant chaque borne à côté de son unité.</p>
+<p><code><a href="../reference/indicateur_e2_evitement.html">indicateur_e2_evitement()</a></code> ne mesure rien d’indépendant : il se déduit de E1 par <code>E1 × 4500 kWh × 0,222 kgCO₂/kWh ÷ 1000</code> = <strong><code>E1 × 0,999</code></strong>. À 0,1 % près, E2 <em>est</em> E1. Ils portaient pourtant <code>ref_max = 0,3</code> et <code>ref_max = 0,75</code> — un facteur 2,5 de désaccord entre les deux axes de la famille Énergie, sur une donnée identique.</p>
+<p>Et les deux dérivent linéairement du volume sur pied, donc de <strong>P1</strong> : <code>E1 = 0,00165 × V</code> à la densité par défaut. Trois colonnes proportionnelles qui saturaient à <strong>182, 455 et 800 m³/ha</strong> :</p>
+<table class="table"><thead><tr><th>Volume</th>
+<th>E1 avant</th>
+<th>E2 avant</th>
+<th>P1</th>
+</tr></thead><tbody><tr><td><strong>182 m³/ha</strong></td>
+<td><strong>100</strong></td>
+<td>40</td>
+<td>22,8</td>
+</tr><tr><td>400 m³/ha</td>
+<td><strong>100</strong></td>
+<td>88</td>
+<td>50</td>
+</tr></tbody></table><p>À 182 m³/ha — un peuplement très ordinaire, P1 annonce 100-400 m³/ha comme typique — la même parcelle était au maximum en bois-énergie et à 22,8/100 en volume. Le forfait taillis aggravait : 15 % de taillis suffisaient à saturer E1 à eux seuls, volume ignoré.</p>
+<p><code>ref_max(E1) = ref_max(E2) = **1,32 t MS/ha/an**</code> (décision Pascal, 2026-09-18) — exactement E1 au plafond de P1 (800 m³/ha, ρ = 550). Les trois axes notent désormais le même peuplement à l’identique, au résidu de 0,1 point que laisse le facteur 0,999 et que le test énonce au lieu de le masquer.</p>
+<p><strong>Limite assumée</strong> : une borne fixe ne suit ni la densité de l’essence (E1(800 m³/ha) = 0,96 t pour ρ = 400, 1,68 t pour ρ = 700) ni le scénario de substitution (× 1,458 en fioul au lieu de × 0,999 en gaz). Elle est ancrée sur les valeurs par défaut, qui sont celles servies.</p>
+<p>L’infobulle de E1 annonçait par ailleurs des <strong>MWh/ha/an</strong> quand la fonction rend des <strong>tonnes de matière sèche</strong> — corrigé au passage.</p>
+<p><strong>À annoncer</strong> : tous les <code>famille_energie</code> déjà calculés changent, à la baisse sur les peuplements ordinaires.</p>
+<p>Spec 048 §11. Fiches E1 et E2 mises à jour.</p>
+</div>
+<div class="section level4">
+<h4 id="note-de-méthode-0-197-0">Note de méthode<a class="anchor" aria-label="anchor" href="#note-de-m%C3%A9thode-0-197-0"></a></h4>
+<p>Deux des trois défauts de cette release — T1 et E1 — étaient <strong>écrits, datés et non lus</strong> : leurs fiches indicateurs les documentaient en piège n° 1 depuis le 2026-08-27, sans jamais remonter dans la table des écarts de <code>PLAN.md</code>.</p>
+<p>Et ils n’ont pas été trouvés de la même façon. L1 et T1 l’ont été en relisant un calcul ; E1/E2 en <strong>mettant chaque borne à côté de son unité</strong>, sur les 41 indicateurs d’un coup. Une borne fausse est invisible dans le code, où elle n’est qu’un nombre dans un <code>switch</code>, et évidente dans un tableau.</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.196.0" id="nemeton-01960-2026-09-14">nemeton 0.196.0 (2026-09-14)<a class="anchor" aria-label="anchor" href="#nemeton-01960-2026-09-14"></a></h2>
+<div class="section level4">
+<h4 id="added--run_reconfort_diebackcancel_path--le-troisième-bouton-darrêt-arrête-enfin-quelque-chose-0-196-0">Added — <code>run_reconfort_dieback(cancel_path=)</code> : le troisième bouton d’arrêt arrête enfin quelque chose<a class="anchor" aria-label="anchor" href="#added--run_reconfort_diebackcancel_path--le-troisi%C3%A8me-bouton-darr%C3%AAt-arr%C3%AAte-enfin-quelque-chose-0-196-0"></a></h4>
+<p>L’onglet Suivi sanitaire a trois boutons d’arrêt — FAST, FORDEAD, RECONFORT. Les deux premiers écrivent un flag que le cœur scrute et le run sort proprement avec <code>status = "cancelled"</code>. Le troisième ne le pouvait pas : il n’y avait rien à passer, <code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> s’arrêtant à <code>progress_callback</code>. L’app libérait donc l’interface pendant que le worker continuait — un bouton qui ment sur ce qu’il fait.</p>
+<p><code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> accepte désormais <code>cancel_path</code>, avec le même contrat que ses deux jumelles (<code>R/cancel.R</code>) :</p>
+<ul><li>
+<code>NULL</code> (défaut) → <strong>aucun</strong> appel au système de fichiers, comportement strictement inchangé ;</li>
+<li>un flag déjà présent <strong>à l’entrée</strong> est désarmé pour tout le run (avec un avertissement) — garde anti-« phantom cancel » ;</li>
+<li>un chemin invalide se lit comme « pas d’annulation », jamais comme une erreur.</li>
+</ul><p><strong>L’annulation est <em>coarse</em>, et c’est écrit dans l’aide.</strong> RECONFORT n’a pas de boucle R à scruter : le découpage en chunks se fait dans IOTA2, côté Python. Le seul point de contrôle que R possède est la frontière de phase — le crochet <code>begin()</code> qui émettait déjà <code>reconfort:phase</code>. Une phase <code>mapprod</code> de quarante minutes va donc à son terme ; l’arrêt prend effet à la phase suivante. Promettre mieux serait remplacer un bouton menteur par une page d’aide menteuse.</p>
+<p>À l’observation du flag : un événement <code>reconfort:cancelled</code> portant la phase atteinte, et un résultat <code>status = "cancelled"</code> avec un champ <code>phase</code> (la dernière phase <strong>terminée</strong>).</p>
+</div>
+<div class="section level4">
+<h4 id="changed--un-run-annulé-garde-son-répertoire-de-travail-0-196-0">Changed — un run annulé garde son répertoire de travail<a class="anchor" aria-label="anchor" href="#changed--un-run-annul%C3%A9-garde-son-r%C3%A9pertoire-de-travail-0-196-0"></a></h4>
+<p><code>keep_workdir = FALSE</code> ne s’applique plus à un run annulé : les scènes déjà ingérées et ce qu’IOTA2 a déjà écrit restent sur disque, relisibles par un re-run <code>skip_ingest = TRUE</code>. Sinon annuler coûterait exactement autant qu’échouer, et personne n’appuierait sur le bouton.</p>
+</div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.195.0" id="nemeton-01950-2026-09-03">nemeton 0.195.0 (2026-09-03)<a class="anchor" aria-label="anchor" href="#nemeton-01950-2026-09-03"></a></h2>
 <div class="section level4">
 <h4 id="added--run_memory_cappedlog_path--la-sortie-de-lenfant-gardée-0-195-0">Added — <code>run_memory_capped(log_path=)</code> : la sortie de l’enfant, gardée<a class="anchor" aria-label="anchor" href="#added--run_memory_cappedlog_path--la-sortie-de-lenfant-gard%C3%A9e-0-195-0"></a></h4>
@@ -207,7 +280,7 @@ user@1000.service being 56.87% &gt; 50.00% for &gt; 20s with reclaim activity</c
 <p><code><a href="../reference/resolve_project_layers.html">resolve_project_dem()</a></code> et <code><a href="../reference/resolve_project_layers.html">resolve_project_chm()</a></code> prennent un argument <code>validate</code> : un prédicat qui reçoit le <code>SpatRaster</code> du candidat courant et rend <code>TRUE</code> / <code>FALSE</code>. <strong>Un candidat refusé est sauté et la recherche continue à la source suivante</strong>, au lieu de s’arrêter là. Défaut <code>NULL</code> : comportement strictement inchangé.</p>
 <p>Ce que ça répare : les deux résolveurs rendaient le premier chemin qui <em>existe</em>, sans jamais regarder ce qu’il y a dedans. Or l’existence n’est pas l’exploitabilité — un MNH plat est un fichier valide et un modèle de hauteur nul. L’app avait dû, faute de mieux, re-sonder des chemins en dur pour trouver la source suivante ; elle n’a plus à le faire, et le balayage couvre désormais <strong>tous</strong> les candidats du résolveur, pas trois noms de fichiers écrits à la main.</p>
 <p>Le prédicat appartient à l’appelant, pas au résolveur : un seuil de houppier à 5 m est la connaissance de qui segmente les houppiers, pas celle d’un résolveur de chemins.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Le LiDAR HD gagne au rang, mais ne porte aucune végétation :</span></span>
 <span><span class="co"># la recherche passe à l'Open-Canopy d'à côté au lieu de rendre un MNH plat.</span></span>
 <span><span class="va">chm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/resolve_project_layers.html">resolve_project_chm</a></span><span class="op">(</span><span class="va">projet</span>, validate <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">r</span><span class="op">)</span> <span class="op">{</span></span>
@@ -629,7 +702,7 @@ user@1000.service being 56.87% &gt; 50.00% for &gt; 20s with reclaim activity</c
 <div class="section level4">
 <h4 id="added--segment_houppiers--la-couche-houppier-de-marculus-0-184-0">Added — <code>segment_houppiers()</code> : la couche <code>houppier</code> de Marculus<a class="anchor" aria-label="anchor" href="#added--segment_houppiers--la-couche-houppier-de-marculus-0-184-0"></a></h4>
 <p>Implémente <code>nemetonshiny/specs/BRIEF-nemeton-houppiers-mnh.md</code> (§2 du rattrapage 2026-08-23). Segmente les couronnes sur un MNH et rend un <code>sf</code> de POLYGON, une entité par houppier, avec <code>h_max</code> en mètres — le nom canonique attendu par l’application de martelage, où la hauteur d’une tige est pré-remplie par un point-dans-polygone sur la position GNSS.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/segment_houppiers.html">segment_houppiers</a></span><span class="op">(</span><span class="va">chm</span>, aoi <span class="op">=</span> <span class="cn">NULL</span>, ws <span class="op">=</span> <span class="fl">5</span>, hmin <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>                  algorithme <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"dalponte"</span>, <span class="st">"silva"</span>, <span class="st">"watershed"</span><span class="op">)</span>,</span>
 <span>                  resolution <span class="op">=</span> <span class="fl">0.5</span>, max_cells <span class="op">=</span> <span class="fl">2e7</span>, h_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">70</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -844,7 +917,7 @@ ERROR: lazy loading failed for package 'microclimc'</code></pre>
 <div class="section level4">
 <h4 id="changed--croiser_parcelles_onf-part-désormais-des-ugf-spec-0-179-0">Changed — <code>croiser_parcelles_onf()</code> part désormais des UGF (spec 046 §7)<a class="anchor" aria-label="anchor" href="#changed--croiser_parcelles_onf-part-d%C3%A9sormais-des-ugf-spec-0-179-0"></a></h4>
 <p><strong>Changement d’API</strong>, un jour après l’introduction de la fonction et avant tout câblage côté app. L’orientation était à l’envers : on partait du cadastre. On part maintenant de la <strong>parcelle forestière</strong> — c’est elle l’unité de gestion, donc l’UGF — et on rend, pour chacune, le ou les <strong>tènements</strong> découpés dans les parcelles cadastrales qu’elle rencontre.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/croiser_parcelles_onf.html">croiser_parcelles_onf</a></span><span class="op">(</span><span class="va">parcelles_onf</span>, <span class="va">parcelles</span>,   <span class="co"># l'ordre a changé</span></span>
 <span>                      min_surface_ha <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>                      caler_sur_cadastre <span class="op">=</span> <span class="cn">FALSE</span>, seuil_calage <span class="op">=</span> <span class="fl">0.9</span>,</span>
@@ -918,7 +991,7 @@ ERROR: lazy loading failed for package 'microclimc'</code></pre>
 <h4 id="added--migrer_colonnes_l-0-176-0">Added — <code>migrer_colonnes_l()</code>
 <a class="anchor" aria-label="anchor" href="#added--migrer_colonnes_l-0-176-0"></a></h4>
 <p>Renomme les colonnes héritées d’un jeu calculé avant 0.176.0 — parquet de projet, table PostGIS, GeoPackage en cache — <strong>sans toucher aux valeurs</strong>, les variantes <code>_norm</code> comprises. Un jeu déjà migré ou étranger revient inchangé, donc l’appel se laisse poser dans un chemin de lecture. Quand ancienne et nouvelle colonne coexistent, la nouvelle est conservée et un avertissement nomme le conflit.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">projet</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/migrer_colonnes_l.html">migrer_colonnes_l</a></span><span class="op">(</span><span class="va">projet</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ✔ Renamed 2 legacy L columns: indicateur_l2_fragmentation -&gt;</span></span>
 <span><span class="co">#&gt;   indicateur_l1_effet_lisiere, indicateur_l1_sylvosphere -&gt;</span></span>
@@ -938,7 +1011,7 @@ ERROR: lazy loading failed for package 'microclimc'</code></pre>
 <div class="section level4">
 <h4 id="added--r5_applicabilite--savoir-avant-de-calculer-et-savoir-pourquoi-0-175-0">Added — <code>r5_applicabilite()</code> : savoir avant de calculer, et savoir pourquoi<a class="anchor" aria-label="anchor" href="#added--r5_applicabilite--savoir-avant-de-calculer-et-savoir-pourquoi-0-175-0"></a></h4>
 <p>Depuis les parcelles cadastrales seules, on peut désormais dire si R5 (dépérissement) s’applique — et, sinon, <strong>laquelle des deux conditions indépendantes bloque</strong>. La fonction reproduit le routage qu’<code><a href="../reference/indicateur_r5_deperissement.html">indicateur_r5_deperissement()</a></code> fait au moment du calcul, sans lancer ni FORDEAD ni RECONFORT.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/r5_applicabilite.html">r5_applicabilite</a></span><span class="op">(</span><span class="va">units</span>, bdforet <span class="op">=</span> <span class="va">bdforet</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $status "eligible_fordead_out_of_calibration"  $method "fordead"</span></span>
 <span><span class="co">#&gt; $in_calibration FALSE  $geo_pct 0  $n_fordead 30 / $n_units 30</span></span></code></pre></div>
@@ -966,7 +1039,7 @@ ERROR: lazy loading failed for package 'microclimc'</code></pre>
 <h4 id="added--a5_applicabilite--le-pendant-pour-le-rafraîchissement-urbain-0-175-0">Added — <code>a5_applicabilite()</code> : le pendant pour le rafraîchissement urbain<a class="anchor" aria-label="anchor" href="#added--a5_applicabilite--le-pendant-pour-le-rafra%C3%AEchissement-urbain-0-175-0"></a></h4>
 <p>Même question pour A5, avec une différence de nature qu’il faut nommer. Pour R5, les deux conditions se décident sur les <strong>parcelles seules</strong> (essence, géographie). Pour A5, la couverture ne se connaît qu’à la maille de la <strong>scène</strong> : une requête STAC répond sur des emprises, pas sur des pixels. Une UGF à 20 km d’une métropole couverte peut tomber dans la bbox d’une scène ECOSTRESS sans porter un seul pixel valide.</p>
 <p>D’où un verdict à deux niveaux :</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/a5_applicabilite.html">a5_applicabilite</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span>              <span class="co"># une requête catalogue, zéro téléchargement</span></span>
 <span><span class="fu"><a href="../reference/a5_applicabilite.html">a5_applicabilite</a></span><span class="op">(</span><span class="va">units</span>, lst <span class="op">=</span> <span class="va">lst</span><span class="op">)</span>   <span class="co"># le raster est en cache -&gt; verdict par UGF</span></span></code></pre></div>
 <p><code>status</code> ∈ <code>{"eligible", "eligible_partial", "no_coverage", "no_reference", "no_credentials", "error"}</code>. <strong><code>eligible_partial</code></strong> est le cas qui manquait : couverture réelle, mais seules quelques unités portent des pixels — l’app affichait un axe A5 à moitié vide sans pouvoir dire pourquoi.</p>
@@ -1066,7 +1139,7 @@ ERROR: lazy loading failed for package 'microclimc'</code></pre>
 <h4 id="added--theia_source_status--nommer-la-cause-au-lieu-de-rendre-null-0-173-1">Added — <code>theia_source_status()</code> : nommer la cause au lieu de rendre <code>NULL</code>
 <a class="anchor" aria-label="anchor" href="#added--theia_source_status--nommer-la-cause-au-lieu-de-rendre-null-0-173-1"></a></h4>
 <p>Le vrai défaut commun à SUFOSAT et à A5 n’était pas la donnée manquante, c’était le <strong>silence</strong>. Une source cassée et une source légitimement sans données sur l’emprise finissaient toutes deux en couche <code>NULL</code> et indicateur <code>NA</code>, sans signal : indiscernables depuis l’application.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/theia_source_status.html">theia_source_status</a></span><span class="op">(</span><span class="st">"theia_lst"</span>, <span class="va">aoi</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $available FALSE  $reason "no_asset_over_aoi"  $n_assets 0</span></span>
 <span><span class="co">#&gt; $collection "thermocity-lst"</span></span></code></pre></div>
@@ -1197,7 +1270,7 @@ ERROR: lazy loading failed for package 'microclimc'</code></pre>
 <div class="section level4">
 <h4 id="changed--résolution-de-travail-topographique-à-m-réglable-sans-release-0-169-0">Changed — résolution de travail topographique à 2 m, réglable sans release<a class="anchor" aria-label="anchor" href="#changed--r%C3%A9solution-de-travail-topographique-%C3%A0-m-r%C3%A9glable-sans-release-0-169-0"></a></h4>
 <p>La résolution de travail passe de 10 m à <strong>2 m</strong> et devient un réglage paquet plutôt qu’une constante recopiée dans huit signatures :</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>nemeton.topo_target_res <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>   <span class="co"># session</span></span>
 <span><span class="va">NEMETON_TOPO_TARGET_RES</span><span class="op">=</span><span class="fl">5</span>              <span class="co"># environnement</span></span></code></pre></div>
 <p>Le défaut de <code>dem_target_res</code> sur les huit indicateurs est l’appel <code>.topo_target_res()</code> : l’app peut ajuster sans nouvelle release du cœur, et <code>dem_target_res = NULL</code> reste l’échappatoire par appel (résolution native).</p>
@@ -3204,7 +3277,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 <p>Les paramètres clés (seuil, fenêtre temporelle, <code>window_days</code>) sont désormais lisibles directement dans le nom de fichier — deux cartes de même <code>INDEX</code>/<code>MODE</code> dans une même <code>zone_&lt;id&gt;</code> se distinguent à l’œil sans recalcul. Un extrait de 8 caractères du hash D6 (inchangé) continue de discriminer les entrées qui ne tiennent pas dans un nom : la liste des scènes S2 (change après ré-ingestion) et le polygone de masque UGF.</p>
 <p><strong>Idempotence préservée</strong> : mêmes paramètres → même nom → hit cache. Le hash sous-jacent (<code>.fast_raster_hash()</code>) est inchangé.</p>
 <p><strong>Anciens fichiers</strong> : les COG au format pré-0.65.2 (<code>fast_&lt;index&gt;_&lt;mode&gt;_&lt;hash_long&gt;.tif</code>) ne sont plus reconnus comme hits ; ils sont simplement recalculés à la 1re demande (cache idempotent) puis ramassés par la GC LRU (<code>nemeton.fast_raster_keep</code>). Pour récupérer l’espace tout de suite sur un projet existant :</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-f</span> <span class="op">&lt;</span>projet<span class="op">&gt;</span>/cache/layers/fast_alert/zone_<span class="pp">*</span>/fast_<span class="pp">*</span>_<span class="pp">[</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">][</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">]*</span>.tif</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-f</span> <span class="op">&lt;</span>projet<span class="op">&gt;</span>/cache/layers/fast_alert/zone_<span class="pp">*</span>/fast_<span class="pp">*</span>_<span class="pp">[</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">][</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9a</span><span class="pp">-</span><span class="ss">f</span><span class="pp">]*</span>.tif</span></code></pre></div>
 </div>
 </div>
     <div class="section level2">
@@ -4220,7 +4293,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 <ul><li><p><code>dates_training</code> defaults to <code>c("2018-01-01", "2020-12-31")</code> — a 2-year baseline anchored on the start of Sentinel-2 dense coverage, long enough to fit the harmonic model and short enough to keep the baseline free from recent disturbances.</p></li>
 <li>
 <p><code>dates_monitoring</code> defaults to a rolling 18-month window ending today:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span>, by <span class="op">=</span> <span class="st">"-18 months"</span>, length.out <span class="op">=</span> <span class="fl">2</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -4332,7 +4405,7 @@ Data variable: stackstac-&lt;hash&gt;</code></pre>
 </li>
 </ul><p>Callers (<code>nemetonshiny</code>, scripts) used to hard-code paths that broke as soon as a different producer was used. Most visibly, the <code>&lt;project&gt;/dtm.tif</code> convention from <code>opencanopynemeton</code> was recognised neither by <code>nemeton</code> nor by <code>nemetonshiny</code>, leading to the v0.25.1 “Stratification-valid candidate pool (0) is below <code>n_base</code>” failure even when the DTM was perfectly downloaded — the file was just never passed to <code>create_sampling_plan(mnt =)</code>.</p>
 <p>Two new exported helpers walk a priority-ordered list of well-known locations and return the first match:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">nemeton</span><span class="fu">::</span><span class="fu"><a href="../reference/resolve_project_layers.html">resolve_project_dem</a></span><span class="op">(</span><span class="va">project_path</span><span class="op">)</span></span>
 <span><span class="va">chm</span> <span class="op">&lt;-</span> <span class="fu">nemeton</span><span class="fu">::</span><span class="fu"><a href="../reference/resolve_project_layers.html">resolve_project_chm</a></span><span class="op">(</span><span class="va">project_path</span><span class="op">)</span></span>
 <span><span class="va">plan</span> <span class="op">&lt;-</span> <span class="fu">nemeton</span><span class="fu">::</span><span class="fu"><a href="../reference/create_sampling_plan.html">create_sampling_plan</a></span><span class="op">(</span><span class="va">zone</span>, mnt <span class="op">=</span> <span class="va">dem</span>, chm <span class="op">=</span> <span class="va">chm</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
@@ -4535,7 +4608,7 @@ no attribute 'ItemCollection'</code></pre>
 <li>
 <code>test-fordead-integration.R</code> adapted — env vars are now <code>NEMETON_DB_URL</code> + <code>NEMETON_FORDEAD_TEST_ZONE_ID</code> + <code>NEMETON_FORDEAD_TEST_CACHE_DIR</code> (was AOI path + cache dir).</li>
 </ul><p><strong>Migration path</strong> :</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># v0.23.0</span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_fordead_dieback.html">run_fordead_dieback</a></span><span class="op">(</span><span class="va">aoi</span>, <span class="va">scenes_df</span>, <span class="va">cache_dir</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
@@ -4609,7 +4682,7 @@ no attribute 'ItemCollection'</code></pre>
 </ul><p><strong>Migration notes for users on <code>v0.21.0..v0.22.5</code></strong> :</p>
 <ul><li>
 <p>Update your code to pass <code>scenes_df</code> and <code>cache_dir</code>:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_fordead_dieback.html">run_fordead_dieback</a></span><span class="op">(</span></span>
 <span>  aoi              <span class="op">=</span> <span class="va">aoi</span>,</span>
 <span>  scenes_df        <span class="op">=</span> <span class="va">scenes_df</span>,  <span class="co"># NEW (required)</span></span>
@@ -4748,7 +4821,7 @@ ERROR: No matching distribution found for fordead==2.1.4</code></pre>
 <div class="section level4">
 <h4 id="migration-notes-for-users-who-hit-the-bug-before-this-release-0-22-2">Migration notes for users who hit the bug before this release<a class="anchor" aria-label="anchor" href="#migration-notes-for-users-who-hit-the-bug-before-this-release-0-22-2"></a></h4>
 <p>If you tried to run FORDEAD against v0.22.1 (or earlier) and saw <code>No matching distribution found for fordead==2.1.4</code>, your virtualenv is in a half-installed state. After upgrading to v0.22.2 the recovery is automatic — the next call to <code><a href="../reference/run_fordead_dieback.html">run_fordead_dieback()</a></code> will detect the missing <code>fordead</code> and reinstall from the correct source. If you prefer a clean slate, you can still do:</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">reticulate</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/reticulate/reference/virtualenv-tools.html" class="external-link">virtualenv_remove</a></span><span class="op">(</span><span class="st">"nemeton-fordead"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level4">
@@ -4844,7 +4917,7 @@ Scene 9..26  → 403 → invalidate cache → resign href → retry → OK</code
 <code>terra::writeRaster(r, tmp, …)</code> finally triggers the byte-range reads on the COG over VSI. If the SAS token expired mid-scene, or Azure returned a 5xx / 429 on the range request, this step throws — <strong>past the retry budget</strong>.</li>
 <li>The <code>tryCatch</code> swallowed the error with a <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_warn()</a></code>, unlinked the partial <code>.tmp</code>, and returned — leaving the empty scene directory behind.</li>
 </ol><p>The fix moves the AOI crop <strong>and</strong> the pixel materialization into a <code>materialize</code> closure passed to <code>.terra_rast_with_pc_retry()</code>. Both steps now run <strong>inside</strong> the retry/refresh loop:</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">materialize</span> <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">r0</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">buf_native</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_transform.html" class="external-link">st_transform</a></span><span class="op">(</span><span class="va">buf_plots</span>, <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crs.html" class="external-link">crs</a></span><span class="op">(</span><span class="va">r0</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="va">r_cropped</span>  <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crop.html" class="external-link">crop</a></span><span class="op">(</span><span class="va">r0</span>, <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/ext.html" class="external-link">ext</a></span><span class="op">(</span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/vect.html" class="external-link">vect</a></span><span class="op">(</span><span class="va">buf_native</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -4882,7 +4955,7 @@ Scene 9..26  → 403 → invalidate cache → resign href → retry → OK</code
 <div class="section level4">
 <h4 id="fixed--every-s2-band-cache-hit-raised-cannot-coerce-type-s4-to-vector-of-type-double-0-21-8">Fixed — every S2 band cache hit raised “cannot coerce type ‘S4’ to vector of type ‘double’”<a class="anchor" aria-label="anchor" href="#fixed--every-s2-band-cache-hit-raised-cannot-coerce-type-s4-to-vector-of-type-double-0-21-8"></a></h4>
 <p><code>.ext_contains()</code> (introduced in v0.21.4 to decide whether a cached COG covers today’s AOI) did:</p>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">o</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">outer</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">outer</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, <span class="va">outer</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span>, <span class="va">outer</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><code>outer</code> is a <code><a href="https://rspatial.github.io/terra/reference/SpatExtent-class.html" class="external-link">terra::SpatExtent</a></code> (S4). <code>outer[1]</code> does NOT return a plain double — it returns a nested S4 element. <code><a href="https://rdrr.io/r/base/c.html" class="external-link">c()</a></code> accumulates those into an S4 list, and <code><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric()</a></code> then chokes with</p>
 <pre><code>cannot coerce type 'S4' to vector of type 'double'</code></pre>
@@ -5953,14 +6026,14 @@ docker compose up -d timescaledb</code></pre>
 <div class="section level5">
 <h5 id="migration-guide-0-6-0">Migration Guide<a class="anchor" aria-label="anchor" href="#migration-guide-0-6-0"></a></h5>
 <p><strong>Before (v0.1.0-v0.5.x):</strong></p>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Old API</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span></span>
 <span>  <span class="va">units</span>, <span class="va">layers</span>,</span>
 <span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span>, <span class="st">"water"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><strong>After (v0.6.0+):</strong></p>
-<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># New API with family-based indicators</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span></span>
 <span>  <span class="va">units</span>, <span class="va">layers</span>,</span>
@@ -7105,7 +7178,7 @@ docker compose up -d timescaledb</code></pre>
 </ul></div>
 <div class="section level4">
 <h4 id="quick-start-example-0-1-0">Quick Start Example<a class="anchor" aria-label="anchor" href="#quick-start-example-0-1-0"></a></h4>
-<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pobsteta.github.io/nemeton/">nemeton</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 5-line workflow</span></span>

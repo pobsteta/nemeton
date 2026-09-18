@@ -12,6 +12,27 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.196.0\] - 2026-09-14
+
+### Added
+
+- `run_reconfort_dieback(cancel_path=)` : annulation coopérative par
+  fichier flag, alignée sur FAST
+  ([`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md))
+  et FORDEAD
+  ([`run_fordead_dieback()`](https://pobsteta.github.io/nemeton/reference/run_fordead_dieback.md)).
+  Scrutation aux **frontières de phase** seulement (IOTA2 chunke côté
+  Python, R n’a pas de boucle à scruter) ; événement de progression
+  `reconfort:cancelled` ; résultat `status = "cancelled"` portant la
+  dernière phase terminée dans `phase`.
+- `.signal_cancel_reconfort()` (interne, `R/cancel.R`).
+
+### Changed
+
+- Un run RECONFORT annulé conserve son répertoire de travail même avec
+  `keep_workdir = FALSE` : ce qui a été produit reste exploitable par un
+  re-run `skip_ingest = TRUE`.
+
 ## \[0.192.1\] - 2026-08-27
 
 ### Fixed

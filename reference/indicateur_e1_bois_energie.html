@@ -9,7 +9,7 @@ forest harvest residues and coppice biomass."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.195.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.197.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -176,7 +176,12 @@ auto-estimated by running P1 internally. Default `NULL`.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>sf object with added columns: E1 (fuelwood potential tonnes DM/yr), E1_residues, E1_coppice</p>
+    <p>sf object with added columns: E1 (fuelwood potential tonnes DM/ha/yr),
+E1_residues, E1_coppice. <strong>Higher = more fuelwood available =
+favourable</strong>, not inverted; normalize_indicator() rescales it against a ref_max
+of 1.32 t DM/ha/yr – the yield of a stand at P1's own ceiling (800 m3/ha,
+density 550), so E1, E2 and P1 score the same stand alike. See spec 048
+section 11.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

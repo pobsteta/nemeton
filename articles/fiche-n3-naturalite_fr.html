@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.195.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.197.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,7 +140,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstetar</h4>
             
-            <h4 data-toc-skip class="date">2026-09-04</h4>
+            <h4 data-toc-skip class="date">2026-09-18</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/fiche-n3-naturalite_fr.Rmd" class="external-link"><code>vignettes/fiche-n3-naturalite_fr.Rmd</code></a></small>
       <div class="d-none name"><code>fiche-n3-naturalite_fr.Rmd</code></div>
@@ -150,8 +150,10 @@ Obstetar</h4>
     
 <blockquote>
 <p><strong>Document de référence</strong> — Néméton (package cœur),
-2026-08-27. <strong>Cette fiche documente une incohérence de sens
-active</strong> (§4, piège n° 1).</p>
+2026-08-27, révisé le 2026-09-18. L’incohérence de sens sur L1 que cette
+fiche relevait (§4, piège n° 1) <strong>est corrigée depuis la
+0.197.0</strong>. N3 lui-même est inchangé : il lit toujours le L1
+<strong>brut</strong> et applique sa propre inversion.</p>
 </blockquote>
 <hr>
 <div class="section level2">
@@ -265,29 +267,31 @@ c’est <strong>B3</strong> qui le plafonne, puisqu’il exige la BD Forêt
 et trois paquets optionnels (cf. sa fiche).</p>
 </div>
 <div class="section level2">
-<h2 id="trois-pièges-dont-une-incohérence-de-sens">4. Trois pièges, dont une incohérence de sens<a class="anchor" aria-label="anchor" href="#trois-pi%C3%A8ges-dont-une-incoh%C3%A9rence-de-sens"></a>
+<h2 id="trois-pièges">4. Trois pièges<a class="anchor" aria-label="anchor" href="#trois-pi%C3%A8ges"></a>
 </h2>
 <ol style="list-style-type: decimal">
 <li>
-<p><strong>L1 est lu en sens inverse par N3 et par la
-normalisation.</strong> N3 calcule <code>anti_frag = 100 − L1</code>, ce
-qui suppose <strong>L1 élevé = beaucoup de lisière =
-défavorable</strong>. C’est cohérent avec le calcul de L1 (indice de
-forme élevé + matrice contrastée + exposition → score élevé) et avec son
-infobulle (« Proportion de la parcelle sous influence des lisières […]
-fragmentent l’habitat intérieur »).</p>
-<p>Mais <code>indicateur_l1_effet_lisiere</code> est déclaré dans
-<code>.NORMALIZE_NATIVE_0_100</code> : la normalisation le laisse passer
-tel quel, <strong>comme si un L1 élevé était favorable</strong>. Le
-radar et <code>famille_paysage</code> lisent donc L1 à l’endroit où N3,
-le calcul et l’infobulle le lisent à l’envers.</p>
+<p><strong>N3 inverse L1 lui-même, et lit pour cela la colonne
+BRUTE.</strong> N3 calcule <code>anti_frag = 100 − L1</code>, ce qui
+suppose <strong>L1 élevé = beaucoup de lisière = défavorable</strong>.
+C’est cohérent avec le calcul de L1 (indice de forme élevé + matrice
+contrastée + exposition → score élevé) et avec son infobulle.</p>
+<p>Jusqu’en 0.196.0, <code>indicateur_l1_effet_lisiere</code> était
+déclaré dans <code>.NORMALIZE_NATIVE_0_100</code> : la normalisation le
+laissait passer tel quel, <strong>comme si un L1 élevé était
+favorable</strong>, et le radar lisait donc L1 à l’endroit où N3, le
+calcul et l’infobulle le lisaient à l’envers. Une parcelle en lanière
+bordée de bâti obtenait un bon score de paysage et un mauvais N3, sur le
+même chiffre. <strong>Corrigé en 0.197.0</strong> (spec 048 §9) : L1 est
+désormais inversé à la normalisation, comme R1–R5 et T3.</p>
 <blockquote>
-<p>Conséquence : une parcelle en lanière bordée de bâti obtient un
-<strong>L1 élevé</strong>, que le radar affiche comme un bon score de
-paysage — alors que le même chiffre, injecté dans N3, la pénalise. C’est
-exactement le défaut corrigé pour R5 en 0.181.0 (spec 048) et pour les
-noms de la famille L en 0.176.0 (spec 045), à un endroit qui n’a pas été
-revu.</p>
+<p><strong>Ce qui n’a pas changé, et ne doit pas changer</strong> : N3
+continue de lire la colonne <code>L1</code> <strong>brute</strong>, pas
+la valeur normalisée — <code><a href="../reference/create_family_index.html">create_family_index()</a></code> travaille sur
+une copie et ne mute pas les colonnes source. Le <code>100 − L1</code>
+de N3 reste donc nécessaire. « Harmoniser » N3 sur la nouvelle
+convention en le retirant inverserait L1 deux fois. Un test verrouille
+ce point (<code>test-normalization.R</code>).</p>
 </blockquote>
 </li>
 <li><p><strong>N3 est un composite, donc il double-compte.</strong> N1
@@ -336,8 +340,8 @@ dès qu’une des quatre entrées manque : pas de calcul partiel, pas de
 valeur dégradée.</text><text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Composite
 : N1 et N2 pèsent 70 %, et N1 porte déjà son terme urbain
 constant.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">L1
-entre inversé (100 - L1) alors que la normalisation, elle, le lit à
-l’endroit.</text></svg><figcaption style="font-size:.9em;opacity:.75">
+entre inversé (100 - L1) : N3 lit la colonne BRUTE, que
+create_family_index() ne mute pas.</text></svg><figcaption style="font-size:.9em;opacity:.75">
 Un indicateur qui ne lit aucune donnée : ses quatre entrées sont des
 colonnes. Les défauts de N1, L1 et B3 se propagent donc dans N3, avec
 leurs poids — dont le +25 constant de N1.

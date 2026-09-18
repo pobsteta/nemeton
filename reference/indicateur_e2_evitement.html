@@ -9,7 +9,7 @@ material substitution using ADEME emission factors."><meta property="og:image" c
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.195.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.197.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -164,7 +164,11 @@ material substitution using ADEME emission factors.</p>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>sf object with added columns: E2 (total CO2 avoided tCO2eq/yr), E2_energy, E2_material</p>
+    <p>sf object with added columns: E2 (total CO2 avoided tCO2eq/ha/yr), E2_energy,
+E2_material. <strong>Higher = more emissions avoided = favourable</strong>, not
+inverted. Same ref_max as E1 (1.32) because it is, to within 0.1 <!-- %, the same -->
+quantity: E2 = E1 x 4500 kWh x 0.222 kgCO2/kWh / 1000 = E1 x 0.999. See spec
+048 section 11.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

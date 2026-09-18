@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.195.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.197.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,7 +140,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstetar</h4>
             
-            <h4 data-toc-skip class="date">2026-09-04</h4>
+            <h4 data-toc-skip class="date">2026-09-18</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/fiche-l2-morcellement_fr.Rmd" class="external-link"><code>vignettes/fiche-l2-morcellement_fr.Rmd</code></a></small>
       <div class="d-none name"><code>fiche-l2-morcellement_fr.Rmd</code></div>
@@ -205,7 +205,7 @@ Obstetar</h4>
 <tr class="odd">
 <td>Ancien nom</td>
 <td>
-<code><a href="../reference/indicateur_l2_fragmentation.html">indicateur_l2_fragmentation()</a></code> — alias conservé (spec
+<code><a href="../reference/indicateur_l1_sylvosphere.html">indicateur_l1_sylvosphere()</a></code> — alias conservé (spec
 045)</td>
 </tr>
 </tbody>
@@ -341,12 +341,16 @@ deux postes peuvent donc mesurer deux grandeurs différentes sous le même
 nom de colonne.</strong>
 </li>
 <li>
-<strong>Le nom a changé</strong> (spec 045) :
-<code><a href="../reference/indicateur_l2_fragmentation.html">indicateur_l2_fragmentation()</a></code> reste un alias, et le slug
-historique reste reconnu par la normalisation. Attention au sens : «
-fragmentation » suggère « haut = fragmenté », alors qu’un L2 élevé
-signifie <strong>peu</strong> morcelé. C’est précisément la raison du
-renommage.</li>
+<strong>Le nom a changé, et les deux anciens noms étaient
+croisés</strong> (spec 045) : l’alias de L2 est
+<code><a href="../reference/indicateur_l1_sylvosphere.html">indicateur_l1_sylvosphere()</a></code> — celui qui <em>dit</em> L1 —
+et le slug <code>indicateur_l1_sylvosphere</code> reste reconnu par la
+normalisation, en passthrough comme L2. Ne pas le confondre avec
+<code>indicateur_l2_fragmentation</code>, qui porte les valeurs de
+<strong>L1</strong> et s’inverse depuis la 0.197.0 (spec 048 §9).
+Attention au sens, enfin : « fragmentation » suggère « haut = fragmenté
+», alors qu’un L2 élevé signifie <strong>peu</strong> morcelé. C’est
+précisément la raison du renommage.</li>
 </ol>
 </div>
 <div class="section level2">
@@ -381,8 +385,9 @@ de L1 à L3</text><rect x="586" y="242" width="226" height="42" rx="3" fill="non
 1 : une seule valeur de paysage, recopiée sur toutes les unités du
 projet.</text><text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Les
 deux chemins mesurent des choses différentes et basculent sur la seule
-présence d’un paquet.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">indicateur_l2_fragmentation()
-reste un alias accepté (spec 045).</text></svg><figcaption style="font-size:.9em;opacity:.75">
+présence d’un paquet.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">indicateur_l1_sylvosphere()
+reste l’alias de L2 (spec 045) : les deux anciens noms étaient
+croisés.</text></svg><figcaption style="font-size:.9em;opacity:.75">
 Le basculement ne dépend pas du terrain mais de l’installation : avec
 <code>landscapemetrics</code>, L2 décrit le massif ; sans lui, il décrit
 la forme du polygone. Deux lectures opposées de la même colonne.
@@ -408,7 +413,7 @@ la forme du polygone. Deux lectures opposées de la même colonne.
 <tr class="even">
 <td>Alias historique</td>
 <td>
-<code><a href="../reference/indicateur_l2_fragmentation.html">indicateur_l2_fragmentation()</a></code> — <code>:1962</code>
+<code><a href="../reference/indicateur_l1_sylvosphere.html">indicateur_l1_sylvosphere()</a></code> — <code>:1992</code>
 </td>
 </tr>
 <tr class="odd">
