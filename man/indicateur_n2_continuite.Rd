@@ -36,7 +36,16 @@ Default \code{TRUE}.}
 \item{lang}{Character. Message language. Default "en".}
 }
 \value{
-sf object with added column N2 (score 0-100)
+sf object with added column N2 (score 0-100).
+
+\strong{Higher = older and more continuous woodland = favourable.} Scored in
+three tiers: ancient forest present -> \code{60 + rate * 40} (60-100), else
+wooded -> \code{30 + rate * 30} (30-60), else \strong{15}.
+
+Note the floor: a unit carrying no woodland at all scores \strong{15, not 0}.
+N2 therefore never spans the bottom of its own scale, and a low N2 is not the
+same statement as a zero. \code{normalize_indicator()} passes it through
+(spec 048 section 12).
 }
 \description{
 Calculates forest continuity using BD Foret (current forest cover) and

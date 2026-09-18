@@ -1966,6 +1966,49 @@ test_that("E1 ne sature plus au milieu du domaine forestier courant", {
   expect_lt(n[1], n[2])
 })
 
+# --- Les orientations qui sont fixées À LA SOURCE (spec 048 §12) ----------
+# A3, A4 et W4 ne sont pas « natifs 0-100 par chance » : le module microclimat
+# les oriente lui-même via `.micro_norm(decreasing =)`. C'est ce qui rend leur
+# passthrough correct dans `normalize_indicator()` — et ce qui rendrait une
+# seconde inversion fausse. Ces tests verrouillent la moitié SOURCE de
+# l'affirmation ; le balayage des colonnes verrouille l'autre.
+
+test_that("A3 et W4 sont retournés à la source, A4 ne l'est pas", {
+  f <- nemeton:::.micro_norm
+  b <- nemeton:::.MICRO_BOUNDS
+  # A3 : T°max sous couvert — brut « haut = chaud = mauvais », donc retourné.
+  expect_equal(f(15, b$a3[["lo"]], b$a3[["hi"]], TRUE), 100)
+  expect_equal(f(40, b$a3[["lo"]], b$a3[["hi"]], TRUE), 0)
+  # W4 : VPD — brut « haut = air sec = mauvais », donc retourné.
+  expect_equal(f(0.5, b$w4[["lo"]], b$w4[["hi"]], TRUE), 100)
+  expect_equal(f(4.0, b$w4[["lo"]], b$w4[["hi"]], TRUE), 0)
+  # A4 : tamponnement — brut « haut = mieux protégé », déjà dans le bon sens.
+  expect_equal(f(0,  b$a4[["lo"]], b$a4[["hi"]], FALSE), 0)
+  expect_equal(f(10, b$a4[["lo"]], b$a4[["hi"]], FALSE), 100)
+})
+
+test_that("N2 a un PLANCHER de 15 : une unité sans bois ne vaut pas 0", {
+  # Documenté dans son @return depuis la 0.198.0. N2 ne balaie donc jamais le
+  # bas de son échelle, et un N2 faible n'est pas la même affirmation qu'un
+  # zéro — ce que le seul « score 0-100 » laissait croire.
+  skip_if_not_installed("sf")
+  unit <- sf::st_sf(
+    id = 1L,
+    geometry = sf::st_sfc(sf::st_polygon(list(matrix(
+      c(0, 0, 10, 0, 10, 10, 0, 10, 0, 0), ncol = 2, byrow = TRUE))), crs = 2154)
+  )
+  # Une couche « forêt ancienne » disjointe de l'unité : ni ancien, ni boisé.
+  loin <- sf::st_sf(
+    geometry = sf::st_sfc(sf::st_polygon(list(matrix(
+      c(1e4, 1e4, 1e4 + 10, 1e4, 1e4 + 10, 1e4 + 10, 1e4, 1e4 + 10, 1e4, 1e4),
+      ncol = 2, byrow = TRUE))), crs = 2154)
+  )
+  res <- suppressWarnings(indicateur_n2_continuite(unit, foret_ancienne = loin))
+  expect_equal(res$N2[[1]], 15)
+  # Et le plancher n'est pas écrasé par la normalisation.
+  expect_equal(normalize_indicator("indicateur_n2_continuite", 15), 15)
+})
+
 test_that("indicateur_n3_naturalite lit le L1 BRUT, pas le normalisé", {
   # N3 applique sa PROPRE inversion (anti_frag = 100 - L1). Il lit la colonne
   # brute, que `create_family_index()` ne mute pas : sans ce verrou, quelqu'un
