@@ -109,7 +109,16 @@ indicateur_n1_distance <- function(units,
 #'   layers. Default `TRUE`.
 #' @param lang Character. Message language. Default "en".
 #'
-#' @return sf object with added column N2 (score 0-100)
+#' @return sf object with added column N2 (score 0-100).
+#'
+#'   **Higher = older and more continuous woodland = favourable.** Scored in
+#'   three tiers: ancient forest present -> `60 + rate * 40` (60-100), else
+#'   wooded -> `30 + rate * 30` (30-60), else **15**.
+#'
+#'   Note the floor: a unit carrying no woodland at all scores **15, not 0**.
+#'   N2 therefore never spans the bottom of its own scale, and a low N2 is not
+#'   the same statement as a zero. `normalize_indicator()` passes it through
+#'   (spec 048 section 12).
 #'
 #' @export
 indicateur_n2_continuite <- function(units,
@@ -220,7 +229,18 @@ indicateur_n2_continuite <- function(units,
 #' @param column_name Character. Name for output column. Default "N3".
 #' @param lang Character. Message language. Default "en".
 #'
-#' @return sf object with added column N3 (score 0-100)
+#' @return sf object with added column N3 (score 0-100), or `NA` when any of
+#'   the four input columns is missing.
+#'
+#'   **Higher = more natural = favourable.** N3 is `0.35*N1 + 0.35*N2 +
+#'   0.15*(100 - L1) + 0.15*B3`; all four inputs are 0-100, so the composite
+#'   is too, and `normalize_indicator()` passes it through.
+#'
+#'   N3 reads the **raw** `L1` column and applies its own inversion. That is
+#'   deliberate and must stay: `create_family_index()` works on a copy and
+#'   does not mutate the source columns, so dropping the `100 - L1` to "align"
+#'   N3 on the radar convention would invert L1 twice (spec 048 sections 9
+#'   and 12).
 #'
 #' @export
 indicateur_n3_naturalite <- function(units,

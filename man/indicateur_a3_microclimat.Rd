@@ -26,6 +26,13 @@ the augmentation flag).}
 \code{units} with columns \code{A3} (0-100), \code{A3_tmax} (raw °C),
 \code{A3_couverture_pct}, and \code{attr(., "augmented")} carrying
 \code{"microclimate_model"}.
+
+\strong{Higher = cooler under the canopy = favourable.} The raw quantity (summer
+maximum temperature, °C) runs the other way, so
+\code{.micro_norm(decreasing = TRUE)} flips it here, at the source: 15 °C -> 100,
+40 °C -> 0 (\code{.MICRO_BOUNDS$a3}). \code{normalize_indicator()} therefore
+passes \code{A3} through unchanged and must \strong{not} invert it a second time
+(spec 048 section 12).
 }
 \description{
 Mean per-UGF summer (JJA) \strong{maximum temperature under the canopy}, the

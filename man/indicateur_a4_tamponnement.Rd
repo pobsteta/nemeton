@@ -23,6 +23,12 @@ indicateur_a4_tamponnement(units, micro = NULL, chm = NULL,
 \value{
 \code{units} with \code{A4} (0-100), \code{A4_buffer} (raw °C),
 \code{A4_couverture_pct}, and the \code{"microclimate_model"} augmentation flag.
+
+\strong{Higher = more thermal buffering = favourable}, and the raw quantity (the
+open-air minus under-canopy temperature gap, °C) already runs that way: 0 °C -> 0,
+10 °C -> 100 (\code{.MICRO_BOUNDS$a4}, \code{decreasing = FALSE}). Unlike
+\code{A3} and \code{W4}, nothing is flipped. \code{normalize_indicator()} passes
+it through (spec 048 section 12).
 }
 \description{
 Mean per-UGF \strong{buffering} = summer T°max in the open minus under the

@@ -23,6 +23,12 @@ indicateur_w4_vpd(units, micro = NULL, chm = NULL,
 \value{
 \code{units} with \code{W4} (0-100), \code{W4_vpd} (raw kPa),
 \code{W4_couverture_pct}, and the \code{"microclimate_model"} augmentation flag.
+
+\strong{Higher = moister air under the canopy = favourable.} The raw quantity
+(VPD, kPa) runs the other way, so \code{.micro_norm(decreasing = TRUE)} flips it
+here, at the source: 0.5 kPa -> 100, 4.0 kPa -> 0 (\code{.MICRO_BOUNDS$w4}).
+\code{normalize_indicator()} therefore passes \code{W4} through unchanged and
+must \strong{not} invert it a second time (spec 048 section 12).
 }
 \description{
 Mean per-UGF summer (JJA) \strong{VPD under the canopy} (kPa), the

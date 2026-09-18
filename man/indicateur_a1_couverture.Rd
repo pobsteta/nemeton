@@ -38,6 +38,12 @@ The input sf object with added column:
   \itemize{
     \item A1: Forest coverage percentage (0-100) within buffer.
   }
+
+\strong{Higher = more forest around the unit = favourable.} A1 is a genuine
+percentage in both modes -- \code{fvc_mean * 100} from the Theia fractional
+vegetation cover, or the share of forest pixels in the buffer -- so
+\code{normalize_indicator()} passes it through without a scale of its own
+(spec 048 section 12).
 }
 \description{
 Computes forest coverage percentage within a buffer around each parcel

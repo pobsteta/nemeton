@@ -114,6 +114,13 @@
 #' @return `units` with columns `A3` (0-100), `A3_tmax` (raw °C),
 #'   `A3_couverture_pct`, and `attr(., "augmented")` carrying
 #'   `"microclimate_model"`.
+#'
+#'   **Higher = cooler under the canopy = favourable.** The raw quantity
+#'   (summer maximum temperature, °C) runs the other way, so
+#'   `.micro_norm(decreasing = TRUE)` flips it here, at the source: 15 °C ->
+#'   100, 40 °C -> 0 (`.MICRO_BOUNDS$a3`). `normalize_indicator()` therefore
+#'   passes `A3` through unchanged and must **not** invert it a second time
+#'   (spec 048 section 12).
 #' @seealso [indicateur_a4_tamponnement()], [indicateur_w4_vpd()],
 #'   [microclimate_run()]
 #' @export
@@ -144,6 +151,12 @@ indicateur_a3_microclimat <- function(units, micro = NULL, chm = NULL,
 #'
 #' @return `units` with `A4` (0-100), `A4_buffer` (raw °C),
 #'   `A4_couverture_pct`, and the `"microclimate_model"` augmentation flag.
+#'
+#'   **Higher = more thermal buffering = favourable**, and the raw quantity
+#'   (the open-air minus under-canopy temperature gap, °C) already runs that
+#'   way: 0 °C -> 0, 10 °C -> 100 (`.MICRO_BOUNDS$a4`, `decreasing = FALSE`).
+#'   Unlike `A3` and `W4`, nothing is flipped. `normalize_indicator()` passes
+#'   it through (spec 048 section 12).
 #' @seealso [indicateur_a3_microclimat()], [microclimate_run()]
 #' @export
 indicateur_a4_tamponnement <- function(units, micro = NULL, chm = NULL,
@@ -174,6 +187,13 @@ indicateur_a4_tamponnement <- function(units, micro = NULL, chm = NULL,
 #'
 #' @return `units` with `W4` (0-100), `W4_vpd` (raw kPa),
 #'   `W4_couverture_pct`, and the `"microclimate_model"` augmentation flag.
+#'
+#'   **Higher = moister air under the canopy = favourable.** The raw quantity
+#'   (VPD, kPa) runs the other way, so `.micro_norm(decreasing = TRUE)` flips
+#'   it here, at the source: 0.5 kPa -> 100, 4.0 kPa -> 0
+#'   (`.MICRO_BOUNDS$w4`). `normalize_indicator()` therefore passes `W4`
+#'   through unchanged and must **not** invert it a second time
+#'   (spec 048 section 12).
 #' @seealso [indicateur_a3_microclimat()], [microclimate_run()]
 #' @export
 indicateur_w4_vpd <- function(units, micro = NULL, chm = NULL,

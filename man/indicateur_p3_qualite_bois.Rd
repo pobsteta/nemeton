@@ -38,7 +38,13 @@ Passed to `ensure_inventory_fields()` to auto-fill `dbh` from the
 CHM when the diameter field is missing. Default `NULL`.}
 }
 \value{
-sf object with added column: P3 (timber quality score 0-100)
+sf object with added column: P3 (timber quality score 0-100).
+
+\strong{Higher = better timber = favourable.} P3 is a weighted mean of three
+components that are each already 0-100 and each already oriented that way
+(diameter against commercial thresholds, stem form, a defects penalty), so the
+composite is 0-100 by construction and \code{normalize_indicator()} passes it
+through (spec 048 section 12).
 }
 \description{
 Calculates a timber quality score (0-100) based on tree form (straightness),

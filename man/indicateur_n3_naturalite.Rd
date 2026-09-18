@@ -14,7 +14,17 @@ indicateur_n3_naturalite(units, column_name = "N3", lang = "en")
 \item{lang}{Character. Message language. Default "en".}
 }
 \value{
-sf object with added column N3 (score 0-100)
+sf object with added column N3 (score 0-100), or \code{NA} when any of the four
+input columns is missing.
+
+\strong{Higher = more natural = favourable.} N3 is
+\code{0.35*N1 + 0.35*N2 + 0.15*(100 - L1) + 0.15*B3}; all four inputs are 0-100,
+so the composite is too, and \code{normalize_indicator()} passes it through.
+
+N3 reads the \strong{raw} \code{L1} column and applies its own inversion. That
+is deliberate and must stay: \code{create_family_index()} works on a copy and
+does not mutate the source columns, so dropping the \code{100 - L1} to "align"
+N3 on the radar convention would invert L1 twice (spec 048 sections 9 and 12).
 }
 \description{
 Calculates a composite naturalness index following tuto 04:

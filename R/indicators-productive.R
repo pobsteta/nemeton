@@ -463,7 +463,13 @@ indicateur_p2_station <- function(units,
 #'   Passed to `ensure_inventory_fields()` to auto-fill `dbh` from the
 #'   CHM when the diameter field is missing. Default `NULL`.
 #'
-#' @return sf object with added column: P3 (timber quality score 0-100)
+#' @return sf object with added column: P3 (timber quality score 0-100).
+#'
+#'   **Higher = better timber = favourable.** P3 is a weighted mean of three
+#'   components that are each already 0-100 and each already oriented that way
+#'   (diameter against commercial thresholds, stem form, a defects penalty),
+#'   so the composite is 0-100 by construction and `normalize_indicator()`
+#'   passes it through (spec 048 section 12).
 #'
 #' @details
 #' **Calculation**:

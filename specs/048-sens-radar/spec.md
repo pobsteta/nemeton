@@ -1,7 +1,7 @@
 # Spec 048 — Convention du radar : 0-100, haut = bon
 
-**Version** : 1.3.0
-**Date**    : 2026-08-20, §9 à §11 ajoutés le 2026-09-18
+**Version** : 1.4.0
+**Date**    : 2026-08-20, §9 à §12 ajoutés le 2026-09-18
 **Statut**  : **Décidée par Pascal le 2026-08-20**, énoncée ainsi : « tous les
 indicateurs doivent être calculés entre 0-100 pour le graphique radar, et plus
 l'indicateur est haut, meilleur il est. Si R1 est proche de 100, il y a peu de
@@ -421,3 +421,90 @@ n° 1 : « *Le plafond de 0,3 t MS/ha/an sature dès 150 m³/ha environ. Un
 peuplement ordinaire atteint donc 100.* » Comme T1 au §10, il n'avait jamais été
 remonté dans la table des écarts. **Deux des trois défauts de cette release
 étaient écrits, datés, et non lus.**
+
+---
+
+## 12. Addendum — la réserve reprise : les sept indicateurs muets
+
+> Ouverte au §10.6 (« *neuf indicateurs restent muets […] réserve écrite pour
+> être reprise* »), reprise le 2026-09-18 à la demande de Pascal.
+
+### 12.1 Ils n'étaient pas neuf
+
+Le §10.6 en annonçait neuf. À la relecture des `@return` complets — la première
+liste avait été tirée d'un `grep` trop grossier, qui ne lisait que les deux
+premières lignes du bloc `\value{}` — **deux déclaraient déjà leur orientation** :
+
+| | Ce qui était écrit |
+|---|---|
+| `A5` | *« 0-100, high = cooler than surroundings »* |
+| `N1` | *« score 0-100, 100 = very remote »* |
+
+Restent **sept** : `A1`, `A3`, `A4`, `W4`, `P3`, `N2`, `N3`.
+
+### 12.2 Résultat de l'audit : aucun défaut
+
+Les sept calculs ont été relus, et leur orientation vérifiée à l'exécution.
+**Tous sont réellement 0-100 et réellement orientés « haut = bon ».** Le silence
+était documentaire, pas fonctionnel — contrairement à `L1` (§9), `T1` (§10) et
+`E1`/`E2` (§11), où le silence recouvrait une erreur.
+
+C'est un résultat, pas une absence de résultat : il borne ce que coûtait la
+réserve du §10.6, et il retire sept candidats de la liste des suspects.
+
+| | Grandeur | Orientation | Fixée où |
+|---|---|---|---|
+| `A1` | % de couverture forestière dans le tampon | haut = plus de forêt | à la source, c'est un vrai pourcentage (`fvc × 100` ou part de pixels) |
+| `A3` | T°max estivale sous couvert (°C) | haut = plus frais | **retournée à la source** — `.micro_norm(decreasing = TRUE)`, 15 °C → 100, 40 °C → 0 |
+| `A4` | écart thermique découvert − sous couvert (°C) | haut = mieux tamponné | à la source, déjà dans le bon sens (`decreasing = FALSE`) |
+| `W4` | VPD estival sous couvert (kPa) | haut = air plus humide | **retournée à la source** — 0,5 kPa → 100, 4 kPa → 0 |
+| `P3` | composite diamètre / forme / défauts | haut = meilleur bois | à la source, moyenne pondérée de trois composantes déjà 0-100 |
+| `N2` | continuité boisée, trois paliers | haut = plus ancien et continu | à la source |
+| `N3` | composite N1/N2/L1/B3 | haut = plus naturel | à la source |
+
+### 12.3 Ce que l'audit a quand même appris
+
+**`A3` et `W4` sont retournés, mais pas par `normalize_indicator()`.** Leur
+grandeur brute est « haut = mauvais » — une température maximale, un déficit de
+pression de vapeur — et c'est le module microclimat qui les oriente lui-même,
+via `.micro_norm(decreasing = TRUE)`. Leur passthrough dans
+`normalize_indicator()` est donc correct *parce qu'une inversion a déjà eu lieu
+ailleurs*, et une seconde les casserait. Rien ne le disait : le lecteur voyait
+un « 0-100 » et un passthrough, et n'avait aucun moyen de savoir que le sens
+avait été fixé en amont. C'est exactement la configuration qui a produit le
+défaut `L1`, à ceci près qu'ici elle est juste.
+
+**`N2` a un plancher de 15.** Une unité sans aucun bois obtient **15, pas 0** :
+le score est en paliers (ancien → `60 + taux × 40` ; boisé → `30 + taux × 30` ;
+sinon 15). N2 ne balaie donc jamais le bas de sa propre échelle, et un N2 faible
+n'est pas la même affirmation qu'un zéro — ce que le seul « score 0-100 »
+laissait croire. Même famille de fait que le terme urbain constant de `N1`, déjà
+relevé dans sa fiche.
+
+### 12.4 Tests
+
+Deux verrous dans `test-normalization.R`, qui transforment en contrôle ce qui
+n'était qu'une affirmation de documentation :
+
+1. `A3` et `W4` sont retournés **à la source**, `A4` ne l'est pas — sur
+   `.micro_norm()` et `.MICRO_BOUNDS`, donc sans donnée ;
+2. `N2` rend **15** pour une unité sans bois, et la normalisation ne l'écrase
+   pas.
+
+Le balayage du §6.3 verrouillait déjà l'autre moitié de l'affirmation : aucun
+des sept n'est inversé une seconde fois par `normalize_indicator()`.
+
+### 12.5 État de la couverture
+
+Les 41 colonnes déclarent désormais leur orientation, et 5 d'entre elles
+(`L1`, `L2`, `T1`, `E1`, `E2`) déclarent aussi l'échelle qui leur avait manqué.
+La réserve du §8, ouverte le 2026-08-20, est refermée — après avoir produit
+exactement ce pour quoi elle avait été écrite : **trois défauts trouvés, et sept
+faux suspects écartés avec preuve.**
+
+Ce que cette release ne referme pas : `.NORMALIZE_NATIVE_0_100` reste une
+affirmation que rien ne vérifie, et le seul endroit du système de normalisation
+dans ce cas. Les `@return` disent maintenant la vérité, mais un futur
+indicateur pourra toujours y être inscrit à tort. Le garde-fou de la spec 038
+ne le verra pas : déclarer un indicateur natif, c'est précisément lui demander
+de se taire.
