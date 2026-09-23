@@ -61,10 +61,14 @@ makes the effective decline risk `alpha / 2` — see
 \item{cache_dir}{Path to the S2 COG cache.}
 
 \item{mask_cache_dir}{Path to the FAST mask cache root. The mask is
-written under `<mask_cache_dir>/zone_<id>/fast_alert_<ts>.tif`.
+written under
+`<mask_cache_dir>/zone_<id>/fast_alert_<INDEX>_<mode>_<hash16>.tif`.
 Defaults to a `fast/` sibling of `cache_dir` (i.e.
-`<project>/cache/layers/fast/`). Masks are timestamped (one file per
-call); at most `getOption("nemeton.fast_mask_keep", 20)` are kept per
+`<project>/cache/layers/fast/`). Since v0.198.0 the name is
+**content addressed** (hash of the grid and of the 0-4 values, plus
+index and mode): two identical calls return the same file without
+rewriting it, two different calls can never overwrite each other.
+At most `getOption("nemeton.fast_mask_keep", 20)` masks are kept per
 zone (LRU by mtime), so the directory does not grow unbounded.}
 
 \item{breaks}{Numeric vector of break points to discretise the

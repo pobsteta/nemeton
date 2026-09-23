@@ -181,7 +181,24 @@ read_s2_band_stack <- function(cache_dir, scenes_df, band) {
 #'   `furrr::future_map()` (set a `future::plan()` first); workers return
 #'   `terra::wrap()`-ed rasters that the main process unwraps. Default
 #'   `FALSE` (sequential, identical results). Falls back to sequential if
-#'   \pkg{furrr} is absent.
+#'   \pkg{furrr} is absent. In a Shiny process with no multisession
+#'   `future::plan()`, leave it `FALSE`: furrr then runs sequentially and
+#'   only adds the wrap/unwrap overhead. Prefer `cache_result = TRUE`.
+#' @param cache_result Logical (v0.198.0). When `TRUE`, the stack is
+#'   persisted as a content-addressed multi-layer GeoTIFF and a later
+#'   call with the same inputs reads it back without opening any band.
+#'   The key is a hash of `index`, the sorted `(scene_id, obs_date)`
+#'   pairs, the size and mtime of every cached band file the index needs
+#'   (so a re-ingested scene invalidates the entry) and `mask_polygon`.
+#'   The read-back object carries the same layer names, `terra::time()`,
+#'   `"index"` attribute and values (NA included) as the computed one.
+#'   Default `FALSE` (no disk I/O, historical behaviour).
+#' @param result_cache_dir Character or `NULL`. Where the cached stacks
+#'   are written, as `index_stack_<INDEX>_<hash16>.tif`. Defaults to an
+#'   `index_stack/` sibling of `cache_dir` (i.e.
+#'   `<project>/cache/layers/index_stack/`). At most
+#'   `getOption("nemeton.index_stack_keep", 8)` stacks are kept (LRU by
+#'   mtime).
 #'
 #' @return A multi-layer [terra::SpatRaster] in source CRS at 10 m,
 #'   values in `[-1, 1]` (NAs preserved), layers named by `obs_date`
@@ -215,9 +232,30 @@ read_s2_band_stack <- function(cache_dir, scenes_df, band) {
 build_index_stack <- function(cache_dir, scenes_df,
                               index = c("NDVI", "NBR", "NDMI", "NDRE"),
                               mask_polygon = NULL,
-                              parallel = FALSE) {
+                              parallel = FALSE,
+                              cache_result = FALSE,
+                              result_cache_dir = NULL) {
   index <- match.arg(index)
   .validate_scenes_df(scenes_df)
+
+  # v0.198.0 — cache disque adressé par contenu (brief nemetonshiny
+  # 2026-09-23 : ~9 s à chaque appel sur 327 scènes). Opt-in : sans
+  # `cache_result = TRUE`, comportement strictement inchangé.
+  cpath <- NULL
+  if (isTRUE(cache_result)) {
+    if (is.null(result_cache_dir)) {
+      result_cache_dir <- file.path(dirname(cache_dir), "index_stack")
+    }
+    cpath <- .index_stack_cache_path(result_cache_dir, cache_dir,
+                                     scenes_df, index, mask_polygon)
+    if (file.exists(cpath)) {
+      cached <- .index_stack_cache_read(cpath, index)
+      if (!is.null(cached)) {
+        Sys.setFileTime(cpath, Sys.time())   # LRU
+        return(cached)
+      }
+    }
+  }
 
   bands_needed <- switch(index,
     NDVI = c("B04", "B08"),
@@ -398,6 +436,7 @@ build_index_stack <- function(cache_dir, scenes_df,
   if (!is.null(mask_polygon)) {
     out <- .apply_zone_mask(out, mask_polygon)
   }
+  if (!is.null(cpath)) .index_stack_cache_write(out, cpath)
   out
 }
 
@@ -816,4 +855,99 @@ smooth_pixel_series <- function(ts, window_days = 45,
     ))
   }
   invisible(TRUE)
+}
+
+# ---- v0.198.0 : cache disque de build_index_stack() --------------------
+
+.index_stack_bands <- function(index) {
+  switch(index,
+    NDVI = c("B04", "B08"),
+    NBR  = c("B08", "B12"),
+    NDMI = c("B08", "B11"),
+    NDRE = c("B8A", "B05"))
+}
+
+# Chemin du GeoTIFF en cache : <result_cache_dir>/index_stack_<INDEX>_<h16>.tif.
+# La clé couvre l'indice, les couples (scene_id, obs_date) triés, la taille
+# et le mtime de chaque fichier de bande utilisé (une scène réingérée ou
+# complétée change la clé) et le polygone de masque (WKT). Un simple
+# file.info() par bande : quelques ms pour des centaines de scènes.
+.index_stack_cache_path <- function(result_cache_dir, cache_dir, scenes_df,
+                                    index, mask_polygon) {
+  ord   <- order(as.character(scenes_df$scene_id),
+                 as.character(as.Date(scenes_df$obs_date)))
+  sids  <- as.character(scenes_df$scene_id)[ord]
+  dates <- as.character(as.Date(scenes_df$obs_date))[ord]
+  bands <- .index_stack_bands(index)
+  paths <- as.vector(outer(bands, sids, function(b, s)
+    file.path(cache_dir, vapply(s, .s2_safe_scene_id, character(1)),
+              paste0(b, ".tif"))))
+  fi <- file.info(paths, extra_cols = FALSE)
+  mask_wkt <- if (is.null(mask_polygon)) NA_character_ else
+    tryCatch(paste(sf::st_as_text(sf::st_geometry(mask_polygon)),
+                   collapse = ";"),
+             error = function(e) NA_character_)
+  h <- rlang::hash(list(
+    index  = index,
+    scenes = paste(sids, dates, sep = "@"),
+    size   = fi$size,
+    mtime  = as.numeric(fi$mtime),
+    mask   = mask_wkt
+  ))
+  file.path(result_cache_dir,
+            sprintf("index_stack_%s_%s.tif", index, substr(h, 1L, 16L)))
+}
+
+# Relit un stack en cache et rétablit ce que le GeoTIFF ne porte pas :
+# noms de couches, terra::time() et attribut "index". Les dates sont
+# stockées dans un fichier compagnon (.dates) plutôt que dans les
+# métadonnées GDAL, pour une relecture exacte même avec des dates en
+# double (deux tuiles MGRS le même jour). NULL si illisible ou incohérent.
+.index_stack_cache_read <- function(cpath, index) {
+  dpath <- paste0(cpath, ".dates")
+  if (!file.exists(dpath)) return(NULL)
+  tryCatch({
+    dates <- readLines(dpath, warn = FALSE)
+    r <- terra::rast(cpath)
+    if (terra::nlyr(r) != length(dates)) return(NULL)
+    names(r)       <- dates
+    terra::time(r) <- as.Date(dates)
+    attr(r, "index") <- index
+    r
+  }, error = function(e) NULL)
+}
+
+# Écriture best-effort : un échec avertit sans casser l'appel. FLT8S pour
+# une relecture identique aux valeurs calculées (terra calcule en double) ;
+# fichier temporaire puis renommage pour ne jamais exposer un TIF partiel.
+.index_stack_cache_write <- function(out, cpath) {
+  dir <- dirname(cpath)
+  if (!dir.exists(dir)) dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  tmp <- tempfile(".index_stack_tmp_", tmpdir = dir, fileext = ".tif")
+  tryCatch({
+    terra::writeRaster(out, tmp, filetype = "GTiff", datatype = "FLT8S",
+                       names = names(out),
+                       gdal = c("COMPRESS=DEFLATE", "PREDICTOR=3",
+                                "TILED=YES", "BIGTIFF=IF_SAFER"))
+    writeLines(names(out), paste0(cpath, ".dates"))
+    if (!file.rename(tmp, cpath)) stop("rename failed")
+    .index_stack_gc(dir)
+  }, error = function(e) {
+    unlink(tmp)
+    unlink(paste0(cpath, ".dates"))
+    cli::cli_warn("Failed to cache index stack at {.path {cpath}}: {conditionMessage(e)}")
+  })
+  invisible(NULL)
+}
+
+# LRU par mtime, comme .fast_raster_gc() : au plus `keep` stacks.
+.index_stack_gc <- function(dir,
+                            keep = getOption("nemeton.index_stack_keep", 8L)) {
+  files <- list.files(dir, pattern = "^index_stack_.*\\.tif$",
+                      full.names = TRUE)
+  if (length(files) <= keep) return(invisible(NULL))
+  mt  <- file.info(files)$mtime
+  old <- files[order(mt, decreasing = TRUE)][-seq_len(keep)]
+  unlink(c(old, paste0(old, ".dates")))
+  invisible(NULL)
 }

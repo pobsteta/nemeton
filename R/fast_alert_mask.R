@@ -48,10 +48,14 @@
 #'   [read_fast_alert_raster()]). Ignored in count / rolling mode.
 #' @param cache_dir Path to the S2 COG cache.
 #' @param mask_cache_dir Path to the FAST mask cache root. The mask is
-#'   written under `<mask_cache_dir>/zone_<id>/fast_alert_<ts>.tif`.
+#'   written under
+#'   `<mask_cache_dir>/zone_<id>/fast_alert_<INDEX>_<mode>_<hash16>.tif`.
 #'   Defaults to a `fast/` sibling of `cache_dir` (i.e.
-#'   `<project>/cache/layers/fast/`). Masks are timestamped (one file per
-#'   call); at most `getOption("nemeton.fast_mask_keep", 20)` are kept per
+#'   `<project>/cache/layers/fast/`). Since v0.198.0 the name is
+#'   **content addressed** (hash of the grid and of the 0-4 values, plus
+#'   index and mode): two identical calls return the same file without
+#'   rewriting it, two different calls can never overwrite each other.
+#'   At most `getOption("nemeton.fast_mask_keep", 20)` masks are kept per
 #'   zone (LRU by mtime), so the directory does not grow unbounded.
 #' @param breaks Numeric vector of break points to discretise the
 #'   continuous alert raster into the 0-4 scale. **5 cut points** are
@@ -186,26 +190,63 @@ compute_fast_alert_mask <- function(con, zone_id,
   mask <- terra::as.int(mask)
   names(mask) <- "fast_alert_class"
 
-  ts <- format(Sys.time(), "%Y%m%dT%H%M%S")
-  out_path <- file.path(zone_dir, sprintf("fast_alert_%s.tif", ts))
-  tryCatch(
-    terra::writeRaster(mask, out_path,
-                       filetype  = "GTiff",
-                       overwrite = TRUE,
-                       datatype  = "INT1U",
-                       gdal      = c("COMPRESS=DEFLATE", "PREDICTOR=2",
-                                     "TILED=YES")),
-    error = function(e) {
+  # v0.198.0 — nom adressé par le contenu (brief nemetonshiny 2026-09-23).
+  # L'ancien horodatage à la seconde faisait tomber deux masques distincts
+  # calculés dans la même seconde (cache chaud : ~0,1 s par appel) sur le
+  # même fichier, le second écrasant le premier sous un SpatRaster déjà
+  # adossé au disque. Le hash porte sur la grille, les valeurs discrétisées
+  # et (index, mode) : deux appels identiques rendent le même fichier sans
+  # le réécrire, deux appels différents ne peuvent plus se télescoper.
+  out_path <- file.path(zone_dir, .fast_alert_mask_filename(mask, index, mode))
+  if (file.exists(out_path)) {
+    # Même contenu déjà persisté : on ne réécrit pas (un SpatRaster ouvert
+    # dessus reste valide) ; on rafraîchit seulement le mtime pour le LRU
+    # et pour que read_fast_alert_mask() le désigne comme le plus récent.
+    Sys.setFileTime(out_path, Sys.time())
+  } else {
+    # Écriture dans un fichier temporaire du même répertoire puis
+    # renommage : un lecteur concurrent ne voit jamais un TIF à moitié écrit.
+    # Le point initial le cache à list.files(), donc au GC et au lecteur.
+    tmp_path <- tempfile(".fast_alert_tmp_", tmpdir = zone_dir, fileext = ".tif")
+    tryCatch({
+      terra::writeRaster(mask, tmp_path,
+                         filetype  = "GTiff",
+                         datatype  = "INT1U",
+                         gdal      = c("COMPRESS=DEFLATE", "PREDICTOR=2",
+                                       "TILED=YES"))
+      if (!file.rename(tmp_path, out_path)) {
+        stop("rename failed")
+      }
+    }, error = function(e) {
+      unlink(tmp_path)
       cli::cli_warn("Failed to persist FAST alert mask at {.path {out_path}}: {conditionMessage(e)}")
       out_path <<- NA_character_
-    }
-  )
-  # Unlike the content-addressed continuous cache, masks are timestamped
-  # (`fast_alert_<ts>.tif`) so every call writes a new file and the dir
-  # grows unbounded. Trim to the most recent `keep` masks (LRU by mtime),
-  # mirroring `.fast_raster_gc()` for the continuous COGs.
+    })
+  }
+  # Trim to the most recent `keep` masks (LRU by mtime), mirroring
+  # `.fast_raster_gc()` for the continuous COGs.
   if (!is.na(out_path)) .fast_alert_mask_gc(zone_dir)
   invisible(out_path)
+}
+
+# v0.198.0 — nom de fichier adressé par le contenu d'un masque 0-4 :
+#   fast_alert_<INDEX>_<mode>_<hash16>.tif
+# Le hash couvre la grille (CRS, étendue, résolution) et les valeurs
+# discrétisées : il résume donc tout ce qui a produit le masque (scènes,
+# seuil, fenêtre, paramètres de tendance, bornes, polygone de masque)
+# sans avoir à en tenir la liste. `index` et `mode` sont repris en clair
+# pour la lisibilité et entrent aussi dans le hash.
+.fast_alert_mask_filename <- function(mask, index, mode) {
+  h <- rlang::hash(list(
+    index  = index,
+    mode   = mode,
+    crs    = terra::crs(mask),
+    ext    = as.vector(terra::ext(mask)),
+    res    = terra::res(mask),
+    values = terra::values(mask, mat = FALSE)
+  ))
+  sprintf("fast_alert_%s_%s_%s.tif", toupper(index), tolower(mode),
+          substr(h, 1L, 16L))
 }
 
 # Keep at most `keep` discretised 0-4 masks per zone directory (LRU by
@@ -245,9 +286,14 @@ compute_fast_alert_mask <- function(con, zone_id,
 #'
 #' Strict mirror of [read_fordead_dieback_mask()]: looks under
 #' `<cache_dir>/zone_<zone_id>/` for files matching
-#' `^fast_alert_[A-Za-z0-9._-]+\\.tif$` and returns the latest one
-#' (chronological by filename, fallback mtime). Pass `run_id` to read
-#' a specific persisted mask by its timestamp suffix.
+#' `^fast_alert_[A-Za-z0-9._-]+\\.tif$` and returns the most recently
+#' written or reused one (by mtime, ties broken by filename). Pass
+#' `run_id` to read a specific persisted mask by its filename suffix.
+#'
+#' "Most recent" means the mask of the **last call** to
+#' [compute_fast_alert_mask()] in that directory, whatever its index,
+#' mode or threshold. A caller that needs a given mask should keep the
+#' path returned by [compute_fast_alert_mask()] rather than rely on it.
 #'
 #' Returns `NULL` when the directory or any matching file is absent —
 #' the same dégradation pattern as [read_fordead_dieback_mask()] so
@@ -257,9 +303,11 @@ compute_fast_alert_mask <- function(con, zone_id,
 #'   from disk only) but kept in the signature for symmetry with
 #'   [read_fordead_dieback_mask()] and future SQL-side filtering.
 #' @param zone_id Integer scalar.
-#' @param run_id Optional character. Timestamp suffix used at write
-#'   time (`format(Sys.time(), "%Y%m%dT%H%M%S")`). When `NULL`, the
-#'   most recent persisted mask is returned.
+#' @param run_id Optional character. Filename suffix after
+#'   `fast_alert_`: `"<INDEX>_<mode>_<hash16>"` since v0.198.0 (content
+#'   addressed), or a `"%Y%m%dT%H%M%S"` timestamp for masks written by
+#'   earlier versions. When `NULL`, the most recent persisted mask is
+#'   returned.
 #' @param cache_dir Path to the FAST mask cache root (typically
 #'   `<project>/cache/layers/fast`).
 #'
@@ -303,7 +351,11 @@ read_fast_alert_mask <- function(con,
                         pattern    = "^fast_alert_[A-Za-z0-9._-]+\\.tif$",
                         full.names = TRUE)
     if (!length(files)) return(NULL)
-    files <- sort(files)
+    # v0.198.0 — le plus récent par mtime (les noms adressés par contenu ne
+    # sont plus chronologiques ; une réutilisation rafraîchit le mtime),
+    # départage par nom (anciens noms horodatés écrits dans la même seconde).
+    mt    <- file.info(files)$mtime
+    files <- files[order(mt, basename(files))]
     terra::rast(files[length(files)])
   }
 

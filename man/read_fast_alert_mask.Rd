@@ -20,9 +20,11 @@ from disk only) but kept in the signature for symmetry with
 
 \item{zone_id}{Integer scalar.}
 
-\item{run_id}{Optional character. Timestamp suffix used at write
-time (`format(Sys.time(), "%Y%m%dT%H%M%S")`). When `NULL`, the
-most recent persisted mask is returned.}
+\item{run_id}{Optional character. Filename suffix after
+`fast_alert_`: `"<INDEX>_<mode>_<hash16>"` since v0.198.0 (content
+addressed), or a `"\%Y\%m\%dT\%H\%M\%S"` timestamp for masks written by
+earlier versions. When `NULL`, the most recent persisted mask is
+returned.}
 
 \item{cache_dir}{Path to the FAST mask cache root (typically
 `<project>/cache/layers/fast`).}
@@ -34,11 +36,16 @@ A `terra::SpatRaster` (single layer, categorical 0-4) or
 \description{
 Strict mirror of [read_fordead_dieback_mask()]: looks under
 `<cache_dir>/zone_<zone_id>/` for files matching
-`^fast_alert_[A-Za-z0-9._-]+\\.tif$` and returns the latest one
-(chronological by filename, fallback mtime). Pass `run_id` to read
-a specific persisted mask by its timestamp suffix.
+`^fast_alert_[A-Za-z0-9._-]+\\.tif$` and returns the most recently
+written or reused one (by mtime, ties broken by filename). Pass
+`run_id` to read a specific persisted mask by its filename suffix.
 }
 \details{
+"Most recent" means the mask of the **last call** to
+[compute_fast_alert_mask()] in that directory, whatever its index,
+mode or threshold. A caller that needs a given mask should keep the
+path returned by [compute_fast_alert_mask()] rather than rely on it.
+
 Returns `NULL` when the directory or any matching file is absent —
 the same dégradation pattern as [read_fordead_dieback_mask()] so
 the app can `is.null(mask)` and show an empty state.

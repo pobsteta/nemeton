@@ -227,3 +227,88 @@ test_that(".fast_raster_gc never touches 0-4 masks (shared dir)", {
   expect_length(list.files(d, pattern = "^fast_NDVI_.*\\.tif$"), 20L)   # continuous trimmed
   expect_true(all(file.exists(masks)))                                  # masks untouched
 })
+
+
+# ---- v0.198.0 : masques adressés par contenu (brief nemetonshiny) ----
+
+# Raster continu factice, différent par indice, pour piloter
+# compute_fast_alert_mask() sans DB ni cache S2.
+.fake_cont <- function(index) {
+  vals <- switch(index,
+                 NDVI = c(0, 1, 2, 3, 5, 8, 13, 21, 34),
+                 NDMI = c(34, 21, 13, 8, 5, 3, 2, 1, 0))
+  r <- terra::rast(nrows = 3, ncols = 3, xmin = 0, xmax = 30,
+                   ymin = 0, ymax = 30, crs = "EPSG:2154", vals = vals)
+  r
+}
+
+test_that("compute_fast_alert_mask: two indices in the same second never share a file", {
+  skip_if_terra_write_broken()
+  local_mocked_bindings(
+    read_fast_alert_raster = function(..., index) .fake_cont(index))
+  td <- withr::local_tempdir()
+  args <- list(con = NULL, zone_id = 1L, date_from = "2025-01-01",
+               date_to = "2025-12-31", mode = "rolling",
+               cache_dir = file.path(td, "sentinel2"),
+               mask_cache_dir = td)
+
+  p1 <- do.call(compute_fast_alert_mask, c(args, index = "NDVI"))
+  v1 <- terra::values(terra::rast(p1), mat = FALSE)
+  r1 <- terra::rast(p1)                      # adossé au disque, comme l'app
+  p2 <- do.call(compute_fast_alert_mask, c(args, index = "NDMI"))
+
+  expect_false(identical(p1, p2))
+  expect_match(basename(p1), "^fast_alert_NDVI_rolling_[0-9a-f]{16}\\.tif$")
+  expect_match(basename(p2), "^fast_alert_NDMI_rolling_[0-9a-f]{16}\\.tif$")
+  # Le premier masque garde son contenu après le second appel.
+  expect_equal(terra::values(r1, mat = FALSE), v1)
+  expect_equal(terra::values(terra::rast(p1), mat = FALSE), v1)
+  expect_false(isTRUE(all.equal(
+    terra::values(terra::rast(p2), mat = FALSE), v1)))
+})
+
+test_that("compute_fast_alert_mask: identical calls return the same file, not rewritten", {
+  skip_if_terra_write_broken()
+  local_mocked_bindings(
+    read_fast_alert_raster = function(..., index) .fake_cont(index))
+  td <- withr::local_tempdir()
+  call <- function() compute_fast_alert_mask(
+    NULL, 1L, index = "NDVI", date_from = "2025-01-01",
+    date_to = "2025-12-31", cache_dir = file.path(td, "sentinel2"),
+    mask_cache_dir = td)
+
+  p1 <- call()
+  md5 <- tools::md5sum(p1)
+  Sys.setFileTime(p1, as.POSIXct("2020-01-01", tz = "UTC"))
+  p2 <- call()
+  expect_identical(p1, p2)
+  expect_identical(tools::md5sum(p2), md5)
+  # Réutilisé = rafraîchi pour le LRU et pour « le plus récent ».
+  expect_gt(as.numeric(file.info(p2)$mtime),
+            as.numeric(as.POSIXct("2021-01-01", tz = "UTC")))
+  zone_files <- list.files(file.path(td, "zone_1"), all.files = TRUE,
+                           no.. = TRUE)
+  expect_identical(zone_files, basename(p1))   # aucun temporaire résiduel
+})
+
+test_that("read_fast_alert_mask returns the last computed mask (mtime), and run_id reads a content-addressed one", {
+  skip_if_terra_write_broken()
+  local_mocked_bindings(
+    read_fast_alert_raster = function(..., index) .fake_cont(index))
+  td <- withr::local_tempdir()
+  run <- function(ix) compute_fast_alert_mask(
+    NULL, 1L, index = ix, date_from = "2025-01-01", date_to = "2025-12-31",
+    cache_dir = file.path(td, "sentinel2"), mask_cache_dir = td)
+  p_ndmi <- run("NDMI")
+  Sys.setFileTime(p_ndmi, Sys.time() - 60)
+  p_ndvi <- run("NDVI")
+
+  last <- read_fast_alert_mask(NULL, 1L, cache_dir = td,
+                               apply_zone_mask = FALSE)
+  expect_identical(normalizePath(terra::sources(last)), normalizePath(p_ndvi))
+
+  rid <- sub("^fast_alert_(.*)\\.tif$", "\\1", basename(p_ndmi))
+  m <- read_fast_alert_mask(NULL, 1L, run_id = rid, cache_dir = td,
+                            apply_zone_mask = FALSE)
+  expect_identical(normalizePath(terra::sources(m)), normalizePath(p_ndmi))
+})
