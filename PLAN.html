@@ -195,35 +195,10 @@
 <td>cœur <strong>v0.190.0</strong>
 </td>
 <td><code>nemetonshiny</code></td>
-<td>Brief émis le 2026-08-27 (<code>specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md</code>). <strong>Rien à coder</strong> — les tooltips viennent d’<code>INDICATOR_FAMILIES</code> et les rasters en cache restent valides — mais l’interface ne doit <strong>ni classer ni moyenner B4/L3 entre projets</strong> : les « spectral species » sont un k-means réajusté par run (spec 028 §10.6). Non accusé réception</td>
-</tr><tr><td>8</td>
-<td><strong>Le sens de <code>L1</code> est lu à l’envers par la normalisation</strong></td>
-<td>cœur <strong>v0.197.0</strong>
-</td>
-<td><code>nemetonshiny</code></td>
-<td>
-<strong>Corrigé côté cœur le 2026-09-18</strong> (spec 048 §9). <code>indicateur_l1_effet_lisiere</code> quitte <code>.NORMALIZE_NATIVE_0_100</code> pour <code>.NORMALIZE_RULED</code> et rejoint le bloc d’inversion aux côtés de R1-R5 et T3. Brief émis : <code>specs/048-sens-radar/brief-nemetonshiny-l1.md</code>. <strong>Reste à faire côté app</strong> : un <code>invalidate_indicators()</code> à la montée de version, sinon <code>compute_all_indicators()</code> relira un <code>indicators.parquet</code> construit avec l’ancien sens. Aucun code, aucune ré-inversion. Non accusé réception. <strong>Au passage, ce relevé désignait le mauvais slug</strong> : celui qui porte les valeurs de L1 est <code>indicateur_l2_fragmentation</code>, pas <code>indicateur_l1_sylvosphere</code> (qui porte L2, « haut = bon »). Les deux noms de 0.176.0 étaient croisés — cf. spec 045. Les deux fiches indicateurs portaient la même inversion, corrigée</td>
-</tr><tr><td>10</td>
-<td><strong><code>T1</code> ancienneté : un âge en années était pris pour un score 0-100</strong></td>
-<td>cœur <strong>v0.197.0</strong>
-</td>
-<td><code>nemetonshiny</code></td>
-<td>Trouvé le 2026-09-18 <strong>en vérifiant le correctif de l’écart n° 8</strong>. <code><a href="reference/indicateur_t1_anciennete.html">indicateur_t1_anciennete()</a></code> rend un âge en années ; déclaré natif 0-100, il n’était qu’écrêté — 150 ans et 250 ans sortaient au même 100. Borne haute de <strong>200 ans</strong> décidée par Pascal le 2026-09-18 (seuil sylvicole : au-delà, l’ancienneté est maximale), pas d’inversion — le sens était juste. Spec 048 §10. Même brief que le n° 8, deuxième partie. <strong>Reste à faire côté app</strong> : le même <code>invalidate_indicators()</code>. Non accusé réception</td>
-</tr><tr><td>11</td>
-<td><strong><code>E1</code> / <code>E2</code> : le même nombre portait trois bornes différentes</strong></td>
-<td>cœur <strong>v0.197.0</strong>
-</td>
-<td><code>nemetonshiny</code></td>
-<td>Trouvé le 2026-09-18 <strong>en dressant le tableau des 41 indicateurs</strong>. <code>E2 = E1 × 0,999</code> (il s’en déduit) et les deux dérivent linéairement du volume, donc de P1 — trois colonnes proportionnelles qui saturaient à <strong>182, 455 et 800 m³/ha</strong>. À 182 m³/ha, la même parcelle était à 100/100 en bois-énergie et 22,8/100 en volume. <code>ref_max(E1) = ref_max(E2) = 1,32 t</code> (= E1 au plafond de P1), décidé par Pascal le 2026-09-18. Spec 048 §11. Même brief, troisième partie. <strong>Reste à faire côté app</strong> : le même <code>invalidate_indicators()</code>. Non accusé réception</td>
-</tr><tr><td>7</td>
-<td>L’icône « fiche » à côté du « i » de C1, onglet Familles d’indicateurs</td>
-<td>cœur <strong>v0.192.0</strong>
-</td>
-<td><code>nemetonshiny</code></td>
-<td>Brief émis le 2026-08-27 (<code>specs/052-fiche-indicateur-c1/brief-nemetonshiny.md</code>). Le cœur expose <code>doc_url</code> / <code>doc_lang</code> / <code>doc_url_fr</code> / <code>doc_url_en</code> dans <code><a href="reference/indicator_labels.html">indicator_labels()</a></code> (URL absolue, <code>NA</code> quand l’indicateur n’a pas de fiche ; <code>doc_lang</code> = langue réellement servie) ; côté app, ~20 lignes dans <code>mod_family.R</code> + 3 clés i18n. <strong>L’URL n’est vivante qu’après merge sur <code>main</code></strong> (déploiement pkgdown). Non accusé réception</td>
-</tr></tbody></table><p><strong>Six écarts, aucun n’appelle plus de correctif dans le cœur.</strong> Les n° 8, 10 et 11 étaient les seuls à rendre une valeur affichée fausse ; tous trois sont corrigés en v0.197.0 et attendent désormais, comme le n° 7, un geste côté app — ici un recalcul, pas du code.</p>
-<p><strong>Les n° 10 et 11 n’étaient pas dans cette table</strong>, et c’est le constat le plus utile de la release. Le n° 10 a été trouvé en vérifiant le n° 8 ; le n° 11 en dressant le tableau des 41 indicateurs. Or <strong>les deux étaient documentés depuis le 2026-08-27</strong>, en piège n° 1 de leurs fiches respectives (T1 : « <em>120 ans et 300 ans obtiennent le même score de 100</em> » ; E1 : « <em>Le plafond de 0,3 t MS/ha/an sature dès 150 m³/ha environ</em> »). Écrits, datés, jamais remontés ici. Une fiche peut décrire un défaut pendant trois semaines sans que personne ne le voie : <strong>le trou était dans la table, pas dans le code.</strong> Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR et une desserte corrigée. Le n° 6 attend une lecture côté app : il n’appelle pas de code, il interdit un usage — et un interdit non lu ne protège de rien. Le n° 7, lui, attend bien du code côté app, mais quinze lignes : le cœur a livré la donnée (<code>doc_url</code>) et la page (article pkgdown), il ne peut pas poser l’icône lui-même.</p>
-<p><strong>Les cinq autres sont refermés.</strong> Les n° 1, 2, 4 et 5 ont été vérifiés en lecture seule sur <code>nemetonshiny@5a1afd7c</code> le 2026-08-22 (détail dans l’entrée de journal du 2026-08-22, chantiers A et D) ; le n° 9 sur <code>nemetonshiny@d2442193</code> le 2026-08-31 :</p>
+<td>Brief émis le 2026-08-27 (<code>specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md</code>). <strong>Interdit accusé réception le 2026-09-23</strong> (brief app <code>BRIEF-nemeton-plan-md-0.143.17-0.143.28.md</code>) : aucun écran ne classe, ne compare ni ne moyenne B4/L3 entre projets — l’app n’a pas de vue inter-projets. <strong>Reste ouvert sur un seul point : question B02 en attente côté app</strong> — B02 absente de l’espace k-means, remplacée par <code>ID</code> (point 4 du brief), pas encore instruite</td>
+</tr></tbody></table><p><strong>Deux écarts (n° 3, n° 6 résiduel), aucun n’appelle de correctif dans le cœur.</strong> Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR et une desserte corrigée. Le n° 6 a été lu côté app — l’interdit tient, faute de vue inter-projets où l’enfreindre — et ne reste ouvert que sur la question B02. Les n° 7, 8, 10 et 11 sont refermés le 2026-09-23 (relus sur <code>nemetonshiny@3869ffd8</code>, table ci-dessous).</p>
+<p><strong>Les n° 10 et 11 n’étaient pas dans cette table</strong>, et c’est le constat le plus utile de la release. Le n° 10 a été trouvé en vérifiant le n° 8 ; le n° 11 en dressant le tableau des 41 indicateurs. Or <strong>les deux étaient documentés depuis le 2026-08-27</strong>, en piège n° 1 de leurs fiches respectives (T1 : « <em>120 ans et 300 ans obtiennent le même score de 100</em> » ; E1 : « <em>Le plafond de 0,3 t MS/ha/an sature dès 150 m³/ha environ</em> »). Écrits, datés, jamais remontés ici. Une fiche peut décrire un défaut pendant trois semaines sans que personne ne le voie : <strong>le trou était dans la table, pas dans le code.</strong></p>
+<p><strong>Les neuf autres sont refermés.</strong> Les n° 1, 2, 4 et 5 ont été vérifiés en lecture seule sur <code>nemetonshiny@5a1afd7c</code> le 2026-08-22 (détail dans l’entrée de journal du 2026-08-22, chantiers A et D) ; le n° 9 sur <code>nemetonshiny@d2442193</code> le 2026-08-31 ; les n° 7, 8, 10 et 11 sur <code>nemetonshiny@3869ffd8</code> le 2026-09-23 (plancher <code>DESCRIPTION:15</code> : <code>nemeton (&gt;= 0.197.0)</code>) :</p>
 <table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th>#</th>
 <th>Écart</th>
 <th>Refermé par</th>
@@ -263,10 +238,30 @@
 </td>
 <td>
 <code>service_marculus.R</code> — <code>.project_chm()</code> ne porte plus <strong>aucun chemin en dur</strong> : <code>resolve_project_chm(path, validate = .chm_exploitable, verbose = FALSE)</code>. <code>DESCRIPTION:15</code> exige <code>nemeton (&gt;= 0.193.0)</code>. Le prédicat reste côté app, sa place. L’app a ajouté un <strong>contre-test</strong> de la boucle retirée (CHM exploitable sur le disque + cœur rendant <code>NULL</code> → <code>.project_chm()</code> doit rendre <code>NULL</code>) : il échoue si quelqu’un la remet. Et elle y a trouvé un vrai défaut au passage — son <code>tryCatch</code> ne couvrait que <code>spatSample()</code>, alors que le <code>v[[1]]</code> suivant pouvait lever « subscript out of bounds » sur un échantillon sans colonne ; inoffensif tant qu’elle appelait le prédicat elle-même, mais passé en <code>validate</code> il <strong>arrêtait</strong> la résolution au lieu de passer au candidat suivant. Prédicat rendu total, un test par forme d’échec</td>
+</tr><tr><td>7</td>
+<td>L’icône « fiche » à côté du « i » (cœur v0.192.0, spec 052)</td>
+<td>app <strong>v0.142.0</strong> (<code>819ab31c</code>, plancher <code>&gt;= 0.192.0</code> en <code>50043030</code>)</td>
+<td>
+<code>mod_family.R</code> pose l’icône « fiche » à côté du « i » ; <code>app_config.R:165-204</code> lit <code>doc_url</code> / <code>doc_lang</code> depuis <code><a href="reference/indicator_labels.html">indicator_labels()</a></code>. Rien de codé en dur : ajouter une fiche reste un geste 100 % cœur</td>
+</tr><tr><td>8</td>
+<td>Sens de <code>L1</code> lu à l’envers par la normalisation (cœur v0.197.0, spec 048 §9)</td>
+<td>app <strong>v0.143.25</strong> (<code>383a110c</code>)</td>
+<td>
+<code>R/migrate.R:149</code> — <code>INDICATOR_SENSE_VERSION &lt;- 3L</code>. <code>ensure_indicator_sense_current()</code> compare au marqueur <code>indicator_sense_version</code> des métadonnées projet et appelle <code>invalidate_indicators()</code> <strong>une seule fois</strong> à la première ouverture après montée de version (marqueur posé même sans rien à invalider, pour ne pas rejouer). Le message cite « v3 : inversion de L1… »</td>
+</tr><tr><td>10</td>
+<td>
+<code>T1</code> : un âge en années pris pour un score 0-100 (spec 048 §10)</td>
+<td>app <strong>v0.143.25</strong> (même commit)</td>
+<td>Même mécanisme, même palier v3 (« borne 200 ans sur T1 »)</td>
+</tr><tr><td>11</td>
+<td>
+<code>E1</code> / <code>E2</code> : trois bornes pour un même nombre (spec 048 §11)</td>
+<td>app <strong>v0.143.25</strong> (même commit)</td>
+<td>Même mécanisme, même palier v3 (« E1/E2 alignés sur P1 »)</td>
 </tr></tbody></table><p><strong>Ce que l’écart n° 1 aura coûté et rapporté.</strong> Ouvert le 2026-08-15 comme « non consommé, et désormais bloquant », il l’était : la copie de la table dans <code>app_config.R</code> déclarait 40 indicateurs contre 41, A5 était calculé puis filtré à l’affichage, et une troisième copie des libellés (les clés i18n <code>indicator_&lt;CODE&gt;</code>) avait F1 et F2 inversés — la carte d’érosion sortait « F1 - Fertilité des sols ». Le dé-fork a retiré la <strong>classe</strong> de bug : quatre jours plus tard, la correction du sens de la famille R (v0.181.0) puis le décroisement de F (v0.182.0) ont traversé l’app <strong>sans une ligne de table à toucher</strong>. C’est l’argument à opposer au prochain fork qui se présentera comme un raccourci.</p>
 <hr></div>
 <div class="section level1">
-<h1 id="brief-émis--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess">Brief émis — Onglet Desserte : rendre visibles les sorties (app + foretaccess)<a class="anchor" aria-label="anchor" href="#brief-%C3%A9mis--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess"></a></h1>
+<h1 id="chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess">Chantier CLOS — Onglet Desserte : rendre visibles les sorties (app + foretaccess)<a class="anchor" aria-label="anchor" href="#chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess"></a></h1>
 <blockquote>
 <p><strong>Émis le 2026-08-14</strong> : <code>specs/brief-nemetonshiny-desserte-visualisation.md</code>. Aucun impact cœur <code>nemeton</code> — tracé ici parce que le brief part d’ici.</p>
 </blockquote>
@@ -280,7 +275,8 @@
 <strong><code>foretaccess</code> : livré et publié en <code>v2.4.0</code></strong> (2026-08-15, PR #160 mergée). <code>hors()</code> rend désormais <code>list(long, parts)</code>, <code>.sf_hors()</code> assemble, le <code>st_cast()</code> est là. Vérifié ici en lecture seule, hors du dépôt : 15 assertions passent, dont la non-régression des quatre valeurs de <code>resume</code> et l’aller-retour GeoPackage sur un tronçon traversant.</li>
 <li>
 <strong>Dernier maillon fermé le 2026-08-18</strong> : <code>nemetonshiny</code> v0.127.0 monte le plancher à <code>foretaccess (&gt;= 2.4.0)</code> (<code>DESCRIPTION:15</code>, relu le 2026-08-22). Le calque lisait déjà <code>cmp$osm_hors_corridor</code> ; il ne dépendait plus que d’une ligne de <code>DESCRIPTION</code>. Écart n° 2 retiré de la table en tête de fichier — la chaîne <code>foretaccess</code> → app est complète pour ce brief.</li>
-</ul><hr></div>
+</ul><p><strong>Clos le 2026-09-23.</strong> Les écarts propres à ce chantier (n° 2, hors corridor) sont refermés depuis le 2026-08-18. Ne reste que la validation terrain du profil en travers — écart n° 3, suivi dans la table en tête de fichier, qui n’est pas un livrable de ce brief.</p>
+<hr></div>
 <div class="section level1">
 <h1 id="chantier-clos--fiche-indicateur-c1--son-lien-depuis-lapp-spec-052">Chantier CLOS — Fiche indicateur C1 + son lien depuis l’app (spec 052)<a class="anchor" aria-label="anchor" href="#chantier-clos--fiche-indicateur-c1--son-lien-depuis-lapp-spec-052"></a></h1>
 <p><strong>Journal</strong> — <em>2026-08-27</em> (<strong>v0.192.0</strong>) : <strong>la première fiche longue d’indicateur, et le mécanisme qui la rend atteignable depuis l’app.</strong></p>
@@ -1548,6 +1544,47 @@ Current Memory Usage: 17.1G</code></pre>
 </ol><hr></div>
 <div class="section level2">
 <h2 id="journal">Journal<a class="anchor" aria-label="anchor" href="#journal"></a></h2>
+<div class="section level3">
+<h3 id="id_2026-09-19--app-nemetonshiny-v014326--v014328--le-tour-guidé-tient-debout">2026-09-19 — App <code>nemetonshiny</code> v0.143.26 → v0.143.28 : le tour guidé tient debout<a class="anchor" aria-label="anchor" href="#id_2026-09-19--app-nemetonshiny-v014326--v014328--le-tour-guid%C3%A9-tient-debout"></a></h3>
+<p>Aucun impact cœur. Trois releases le même jour sur le tour guidé (driver.js) :</p>
+<ul><li>
+<strong>v0.143.26</strong> (<code>ce38faa4</code>) — le tour ne meurt plus à la bascule d’onglet et cadre la carte entière.</li>
+<li>
+<strong>v0.143.27</strong> (<code>8cb4abfc</code>) — il n’entre plus dans les onglets restreints ; ses ancres sont statiques.</li>
+<li>
+<strong>v0.143.28</strong> (<code>3869ffd8</code>) — l’étape « Plan d’action » s’ancre sur la carte « Tableau des actions », plus sur la sidebar (793 px de haut dans une fenêtre de 900). Face à une ancre presque aussi haute que la fenêtre, driver.js poussait son popover hors écran ; la page oscillait avec et sans barre de défilement, chaque bascule réveillait le <code>ResizeObserver</code> de bslib, qui redispatchait un <code>resize</code> que driver.js écoute pour se recadrer. Boucle auto-entretenue : <strong>326 <code>resize</code> en 6,4 s → 0</strong>.</li>
+</ul><p>Règle consignée dans <code>service_tour.R</code> : <strong>une ancre de tour ne doit pas remplir la fenêtre.</strong></p>
+</div>
+<div class="section level3">
+<h3 id="id_2026-09-18--app-nemetonshiny-v014325--spec-048-consommée-écarts-81011-refermés">2026-09-18 — App <code>nemetonshiny</code> v0.143.25 : spec 048 consommée, écarts 8/10/11 refermés<a class="anchor" aria-label="anchor" href="#id_2026-09-18--app-nemetonshiny-v014325--spec-048-consomm%C3%A9e-%C3%A9carts-81011-referm%C3%A9s"></a></h3>
+<p><code>59603c58</code> (commit fonctionnel <code>383a110c</code>). L’app consomme le cœur <strong>v0.197.0</strong> : <code>R/migrate.R</code> pose <code>INDICATOR_SENSE_VERSION &lt;- 3L</code> et <code>ensure_indicator_sense_current()</code> appelle <code>invalidate_indicators()</code> <strong>une seule fois</strong> par projet, à la première ouverture après montée de version — le marqueur <code>indicator_sense_version</code> est posé même quand il n’y a rien à invalider, pour ne pas rejouer. Un seul palier couvre les trois corrections (inversion de L1, borne 200 ans sur T1, E1/E2 alignés sur P1). Plancher <code>nemeton (&gt;= 0.197.0)</code>. Aucune ré-inversion côté app, conformément au brief <code>specs/048-sens-radar/brief-nemetonshiny-l1.md</code>. Écarts n° 8, 10 et 11 passés en « refermé » en tête de fichier, avec le n° 7 (app v0.142.0, jamais reporté ici jusqu’alors).</p>
+<p>Au passage : recadrage de la carte cadastrale au retour d’onglet, et puces du message d’invalidation rétablies (<code>cli_warn</code> au lieu de <code>cli_alert_warning</code>).</p>
+</div>
+<div class="section level3">
+<h3 id="id_2026-09-14--09-17--app-nemetonshiny-v014319--v014323--un-arrêt-est-un-arrêt-reconfort-chaîne-santé">2026-09-14 → 09-17 — App <code>nemetonshiny</code> v0.143.19 → v0.143.23 : un arrêt est un arrêt (RECONFORT, chaîne Santé)<a class="anchor" aria-label="anchor" href="#id_2026-09-14--09-17--app-nemetonshiny-v014319--v014323--un-arr%C3%AAt-est-un-arr%C3%AAt-reconfort-cha%C3%AEne-sant%C3%A9"></a></h3>
+<p>Pendant côté app de la v0.196.0 cœur (« le troisième bouton d’arrêt n’arrêtait rien ») :</p>
+<ul><li>
+<strong>v0.143.19</strong> (<code>0fc7a5e1</code>, 09-14) — <code>cancel_computation</code> devient <strong>le</strong> signal d’arrêt ; plus de bandeau S2 fantôme après annulation. Au passage : fond de carte dans le bouton « couches », étapes Santé nommées par moteur.</li>
+<li>
+<strong>v0.143.21</strong> (<code>048fe55d</code>, 09-14) — <strong>RECONFORT s’arrête pour de vrai</strong> : arrêt coopératif branché sur le chemin livré par le cœur v0.196.0 (brief <code>briefs/vers-nemeton/2026-09-14-reconfort-cancel-path.md</code>). Garde de version temporaire sur <code><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals()</a></code>, plancher non bumpé à ce stade.</li>
+<li>
+<strong>v0.143.22</strong> (<code>5d5863d5</code>, 09-17) — chaîne Santé : un moteur annulé n’est plus compté « ok » ; les rejets du curseur de chaîne sont explicités ; l’état de la chaîne est persisté sur disque.</li>
+<li>
+<strong>v0.143.23</strong> (<code>31327652</code>, 09-17) — plancher <code>nemeton (&gt;= 0.196.0)</code> : la garde <code><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals()</a></code> tombe.</li>
+</ul><p>Même schéma qu’en v0.143.16 : une garde de capacité est un échafaudage, retirée dès que le plancher peut monter.</p>
+</div>
+<div class="section level3">
+<h3 id="id_2026-09-04--09-18--app-nemetonshiny--v014317-v014318-v014320-v014324">2026-09-04 → 09-18 — App <code>nemetonshiny</code> : v0.143.17, v0.143.18, v0.143.20, v0.143.24<a class="anchor" aria-label="anchor" href="#id_2026-09-04--09-18--app-nemetonshiny--v014317-v014318-v014320-v014324"></a></h3>
+<ul><li>
+<strong>v0.143.17</strong> (<code>8de94ed0</code>, 09-04) — le « Tableau des actions » contient enfin les actions ; « Tout calculer » cède l’emphase pleine ; deux tests chrono fiabilisés.</li>
+<li>
+<strong>v0.143.18</strong> (<code>09b399ee</code>, 09-14) — LLM : modèle Mistral par défaut hors palier « premier », repli automatique sur refus de palier ou de quota.</li>
+<li>
+<strong>v0.143.20</strong> (<code>9ccffa37</code>, 09-14) — retrait de la copie morte de <code>mod_home_ui</code> dans <code>app_ui.R</code>.</li>
+<li>
+<strong>v0.143.24</strong> (<code>596cdf16</code>, 09-18) — consomme le verdict « CHM suspect » du cœur ; <code>R/service_python.R</code> : registre d’interpréteurs + runner isolé.</li>
+</ul><p>Les douze releases (0.143.17 → 0.143.28) sont taguées par <code>release.yml</code>. Cycle dev app courant : <code>0.143.28.9000</code>. Consigné depuis le brief <code>nemetonshiny/specs/BRIEF-nemeton-plan-md-0.143.17-0.143.28.md</code>, commits, tags, <code>DESCRIPTION:15</code>, <code>migrate.R:149</code> et <code>service_tour.R:41</code> relus en lecture seule.</p>
+</div>
 <div class="section level3">
 <h3 id="id_2026-09-18--la-réserve-reprise--les-sept-indicateurs-muets-et-aucun-défaut">2026-09-18 — La réserve reprise : les sept indicateurs muets, et aucun défaut<a class="anchor" aria-label="anchor" href="#id_2026-09-18--la-r%C3%A9serve-reprise--les-sept-indicateurs-muets-et-aucun-d%C3%A9faut"></a></h3>
 <p>Suite directe de la v0.197.0. Le §10.6 de la spec 048 laissait une réserve écrite — « neuf indicateurs restent muets, réserve écrite pour être reprise ». Pascal l’a reprise le jour même.</p>
