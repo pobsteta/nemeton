@@ -10,6 +10,13 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.199.2] - 2026-09-23
+
+### Fixed
+- `segment_houppiers()` : échec « st_crs(x) == st_crs(y) » sous un plan
+  `future` à >= 2 workers (lidR convertissait le CHM en `raster::raster`,
+  CRS PROJ4). lidR reçoit une copie `stars`, les sommets son CRS exact.
+
 ## [0.199.1] - 2026-09-23
 
 ### Fixed

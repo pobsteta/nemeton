@@ -362,40 +362,37 @@ segment_houppiers <- function(chm        = NULL,
   }
 
   # 3. Apexes, then crowns around them.
+  #
+  # v0.200.0 — lidR ne recoit PAS le SpatRaster, mais sa copie `stars`.
+  # `dalponte2016()`, `silva2016()` et `watershed()` passent le CHM par
+  # `convert_ondisk_spatraster_into_serializable_raster_if_necessary()`, qui le
+  # convertit en `raster::raster()` des qu'un plan `future` a >= 2 workers est
+  # actif — ce que l'app pose pour ses calculs. Le CRS du CHM devient alors une
+  # chaine PROJ4 (`+proj=lcc ... +towgs84=0,...`) que `sf` ne juge pas
+  # equivalente au WKT EPSG:2154 des sommets, et `crop_special_its()` meurt sur
+  # « st_crs(x) == st_crs(y) is not TRUE » (brief app 2026-09-23 : aucun
+  # houppier depuis fin aout). D'ou un echec qui dependait de l'etat du
+  # processus : plan sequentiel, succes ; plan multisession, echec. Cette
+  # conversion ne vise que les SpatRaster : un `stars` la traverse intact, et
+  # les sommets recoivent le MEME objet CRS que lui, sans rien laisser a
+  # l'appreciation de `CPL_crs_equivalent()`. Le plan `future` de l'appelant
+  # n'est pas touche (le changer arreterait ses workers en cours).
+  st_chm  <- stars::st_as_stars(chm)
+  crs_chm <- sf::st_crs(st_chm)
   seg <- if (identical(algorithme, "watershed")) {
-    lidR::watershed(chm, th_tree = hmin)()
+    lidR::watershed(st_chm, th_tree = hmin)()
   } else {
     tops <- lidR::locate_trees(chm, lidR::lmf(ws = ws, hmin = hmin))
     if (is.null(tops) || nrow(tops) == 0L)
       return(.houppier_flag(.houppier_empty(chm), degenere))
-    # Garde suggeree par le rapport du 2026-08-23 : la segmentation echouait
-    # sur « st_crs(x) == st_crs(y) is not TRUE », leve par un stopifnot() de
-    # `sf` DEPUIS lidR — un message qui decrit un symptome, pas une cause.
-    # L'hypothese du rapport : a grande echelle, `locate_trees()` peut rendre
-    # un objet non vide mais SANS CRS ; le garde ci-dessus ne couvre que le cas
-    # vide, et la comparaison suivante echoue alors avec ce message.
-    #
-    # Non reproduit ici (46 158 houppiers sur le raster incrimine de 418 M
-    # cellules, en 71 s) et le diff montre que le code n'avait pas change entre
-    # la version qui passait et celle qui echouait — mais le mode de defaillance
-    # est reel et sa parade coute deux lignes. Un CRS absent est REPARE depuis
-    # le raster, un CRS *different* est une anomalie qu'on nomme plutot que de
-    # la laisser sortir en langage `sf`.
-    if (is.na(sf::st_crs(tops))) {
-      sf::st_crs(tops) <- sf::st_crs(terra::crs(chm))
-    } else if (sf::st_crs(tops) != sf::st_crs(terra::crs(chm))) {
-      cli::cli_abort(c(
-        "Crown apexes came back in a different CRS than the CHM.",
-        i = "CHM: {.val {sf::st_crs(terra::crs(chm))$input}}; apexes: {.val {sf::st_crs(tops)$input}}.",
-        i = "This is a {.pkg lidR} anomaly, not a CHM defect — report it with the raster size."
-      ))
-    }
+    tops <- .houppier_aligner_crs(tops, crs_chm)
     if (identical(algorithme, "dalponte")) {
-      lidR::dalponte2016(chm, tops, th_tree = hmin)()
+      lidR::dalponte2016(st_chm, tops, th_tree = hmin)()
     } else {
-      lidR::silva2016(chm, tops, ID = "treeID")()
+      lidR::silva2016(st_chm, tops, ID = "treeID")()
     }
   }
+  seg <- .houppier_seg_terra(seg, chm)
   if (is.null(seg) || all(is.na(terra::minmax(seg)))) {
     return(.houppier_flag(.houppier_empty(chm), degenere))
   }
@@ -432,6 +429,56 @@ segment_houppiers <- function(chm        = NULL,
   )
   sf::st_agr(out) <- "constant"
   .houppier_flag(out, degenere)
+}
+
+
+# v0.200.0 — donne aux sommets EXACTEMENT l'objet CRS du CHM transmis a lidR.
+#
+# Deux CRS « equivalents mais pas identiques » ne passent le `==` de `sf` que
+# si `CPL_crs_equivalent()` (GDAL) le confirme, dans un `try()` qui rend FALSE
+# a la moindre erreur : un succes qui depend de l'etat du processus. On retire
+# la question en rendant les deux objets identiques. Un CRS absent est repare ;
+# un CRS dont le code EPSG CONTREDIT celui du CHM est une vraie anomalie, qu'on
+# nomme au lieu de la masquer par une reaffectation.
+.houppier_aligner_crs <- function(tops, crs_chm) {
+  cur <- sf::st_crs(tops)
+  if (!is.na(cur)) {
+    e_tops <- suppressWarnings(cur$epsg)
+    e_chm  <- suppressWarnings(crs_chm$epsg)
+    if (!is.null(e_tops) && !is.null(e_chm) && !is.na(e_tops) &&
+        !is.na(e_chm) && e_tops != e_chm) {
+      cli::cli_abort(c(
+        "Crown apexes came back in a different CRS than the CHM.",
+        i = "CHM: EPSG:{e_chm}; apexes: EPSG:{e_tops}.",
+        i = "This is a {.pkg lidR} anomaly, not a CHM defect — report it with the raster size."
+      ))
+    }
+  }
+  # Passer par NA evite l'avertissement « replacing crs does not reproject ».
+  sf::st_crs(tops) <- NA
+  sf::st_crs(tops) <- crs_chm
+  tops
+}
+
+# v0.200.0 — ramene la segmentation lidR (un `stars`, puisqu'on lui a donne un
+# `stars`) sur la grille exacte
+# du CHM terra : les etapes suivantes (`terra::zonal()`, `as.polygons()`)
+# exigent la meme geometrie. Les valeurs sont recopiees dans un clone du CHM
+# plutot que de faire confiance a une conversion de classe : l'ordre des
+# cellules de `stars` (x puis y, y descendant) est celui de terra.
+.houppier_seg_terra <- function(seg, chm) {
+  if (is.null(seg) || inherits(seg, "SpatRaster")) return(seg)
+  if (!inherits(seg, "stars")) {
+    cli::cli_abort("Unexpected segmentation class {.cls {class(seg)}} from {.pkg lidR}.")
+  }
+  vals <- as.vector(seg[[1L]])
+  if (length(vals) != terra::ncell(chm)) {
+    cli::cli_abort("lidR returned {length(vals)} cells for a CHM of {terra::ncell(chm)}.")
+  }
+  out <- terra::rast(chm)
+  terra::values(out) <- vals
+  names(out) <- "treeID"
+  out
 }
 
 
