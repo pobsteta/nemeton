@@ -324,3 +324,70 @@ test_that("le chemin par chemin de fichier vaut celui par objet", {
   expect_equal(nrow(par_objet), nrow(par_chemin))
   expect_equal(sort(round(par_objet$h_max, 3)), sort(round(par_chemin$h_max, 3)))
 })
+
+# --- v0.200.0 : un plan `future` multi-workers ne casse plus la segmentation --
+# Brief `briefs/vers-nemeton/2026-09-23-houppiers-aoi-etat.md`. Cause PROUVEE
+# (reproduite sur le MNH LiDAR HD de `ltcp` : plan sequentiel OK, plan
+# multisession x2 KO) : `dalponte2016()` / `silva2016()` / `watershed()`
+# convertissent un SpatRaster en `raster::raster()` des qu'un plan `future` a
+# >= 2 workers ; son CRS PROJ4 n'est pas « egal » au WKT des sommets pour `sf`.
+# On simule le plan en mockant le compteur de workers de lidR : meme branche,
+# sans lancer de processus.
+.plan_multi_workers <- function(env = parent.frame()) {
+  testthat::local_mocked_bindings(try_to_get_num_future_cores = function() 2L,
+                                  .package = "lidR", .env = env)
+}
+
+test_that("le mock declenche bien la conversion raster de lidR", {
+  skip_if_not_installed("lidR")
+  skip_if_not_installed("raster")
+  .plan_multi_workers()
+  conv <- lidR:::convert_ondisk_spatraster_into_serializable_raster_if_necessary(
+    .mnh_synthetique(c(25)))
+  expect_s4_class(conv, "RasterLayer")
+})
+
+test_that("sous un plan multi-workers, les houppiers sont ceux du plan sequentiel", {
+  skip_if_not_installed("lidR")
+  skip_if_not_installed("raster")
+  mnh <- .mnh_synthetique(c(25, 18, 12))
+  algos <- c("dalponte", "silva",
+             if (requireNamespace("EBImage", quietly = TRUE)) "watershed")
+  ref <- lapply(algos, function(a) segment_houppiers(mnh, ws = 4, hmin = 3,
+                                                     algorithme = a))
+  .plan_multi_workers()
+  for (i in seq_along(algos)) {
+    h <- segment_houppiers(mnh, ws = 4, hmin = 3, algorithme = algos[i])
+    expect_equal(sf::st_drop_geometry(h), sf::st_drop_geometry(ref[[i]]),
+                 info = algos[i])
+    expect_true(all(sf::st_equals(h, ref[[i]], sparse = FALSE) |> diag()),
+                info = algos[i])
+  }
+})
+
+test_that("un MNH 2154 recadre par l'aoi rend des houppiers sous plan multi-workers", {
+  skip_if_not_installed("lidR")
+  skip_if_not_installed("raster")
+  mnh <- .mnh_synthetique(c(25, 18, 12))
+  aoi <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_polygon(list(rbind(c(2, 20), c(38, 20), c(38, 40), c(2, 40), c(2, 20)))),
+    crs = 2154))
+  .plan_multi_workers()
+  h <- segment_houppiers(mnh, aoi = aoi, ws = 4, hmin = 3)
+  expect_equal(nrow(h), 2L)                       # les deux cones touches
+  expect_identical(sf::st_crs(h)$epsg, 2154L)
+})
+
+test_that("un echec provoque ne contamine pas l'appel suivant", {
+  skip_if_not_installed("lidR")
+  skip_if_not_installed("raster")
+  mnh <- .mnh_synthetique(c(25, 18))
+  loin <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_polygon(list(rbind(c(900, 900), c(950, 900), c(950, 950),
+                              c(900, 950), c(900, 900)))), crs = 2154))
+  .plan_multi_workers()
+  expect_error(segment_houppiers(mnh, aoi = loin, ws = 4, hmin = 3),
+               "does not intersect the CHM")
+  h <- segment_houppiers(mnh, aoi = NULL, ws = 4, hmin = 3)
+  expect_equal(nrow(h), 2L)
+})
