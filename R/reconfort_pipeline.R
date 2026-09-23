@@ -148,6 +148,27 @@
   identical(as.integer(status), 0L)
 }
 
+# v0.199.0 — Is the installed iota2 free of defect #12 (`probamap` inherits
+# the classification pixType uint8, so the 0..1000 class probabilities are
+# clamped at 255 and the continuous score is squashed to ~24..58)? Same
+# probe as `.reconfort_chunk_mask_fixed()`, on the uint16 override that
+# `repair_iota2_env.sh` inserts.
+.reconfort_probamap_fixed <- function(conda_bin, env) {
+  if (is.null(conda_bin) || !nzchar(conda_bin)) return(FALSE)
+  expr <- paste(
+    "import inspect, sys",
+    "import iota2.classification.image_classifier as m",
+    "src = inspect.getsource(m)",
+    "sys.exit(0 if '\"probamap\", common_pix_type_to_otb(\"uint16\")' in src else 1)",
+    sep = "; ")
+  status <- tryCatch(
+    suppressWarnings(system2(conda_bin,
+                             args = c("run", "-n", env, "python", "-c", shQuote(expr)),
+                             stdout = FALSE, stderr = FALSE)),
+    error = function(e) 1L)
+  identical(as.integer(status), 0L)
+}
+
 # Stage a self-contained working copy of the vendored glue into workdir.
 .reconfort_stage_workdir <- function(workdir, glue_dir) {
   dir.create(workdir, recursive = TRUE, showWarnings = FALSE)
@@ -559,6 +580,16 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     begin("env")
     env <- .ensure_reconfort_python(require_pygeodes = !skip_ingest, quiet = quiet)
     conda_bin <- .reconfort_conda_binary()
+    # defect #12: unpatched, the probability map is clamped at 255 and the
+    # continuous score comes out compressed (~24..58 instead of 1..100). The
+    # class map and the alerts are unaffected, so warn rather than abort.
+    if (!.reconfort_probamap_fixed(conda_bin, env)) {
+      cli::cli_warn(c(
+        "iota2 is missing the probability-map fix (defect #12) — probabilities will be clamped at 255.",
+        i = "The continuous score will be compressed (~24..58 instead of 1..100); classes and alerts are unaffected.",
+        i = "Run {.file repair_iota2_env.sh} on the {.val {env}} env, then re-run."
+      ))
+    }
 
     # PHASE 2 — model fetch ----------------------------------------
     begin("model")

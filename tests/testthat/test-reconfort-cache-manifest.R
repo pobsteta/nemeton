@@ -172,3 +172,102 @@ test_that("an explicit run_id not matching final/ falls back to zone_<id>", {
   expect_identical(m$id, "classification")
   expect_match(m$path, "reconfort_mask_20260628T080000\\.tif$")
 })
+
+
+# ---- v0.199.0 : brief app « include_range inerte » ----------------------
+
+# GeoTIFF sans statistiques stockées, comme ceux d'iota2 (hasMinMax FALSE) :
+# PROFILE=GeoTIFF envoie les stats dans un .aux.xml, qu'on supprime.
+write_tif_nostats <- function(path, vals, nlyr = 1L) {
+  skip_if_terra_write_broken()
+  r <- terra::rast(nrow = 4, ncol = 4, nlyr = nlyr, xmin = 700000,
+                   xmax = 700040, ymin = 6800000, ymax = 6800040,
+                   crs = "EPSG:2154")
+  terra::values(r) <- vals
+  terra::writeRaster(r, path, overwrite = TRUE, datatype = "INT2S",
+                     NAflag = 0, gdal = "PROFILE=GeoTIFF")
+  unlink(paste0(path, ".aux.xml"))
+  path
+}
+
+# final/ iota2 : score 1 bande, proba 3 bandes (sain, dépérissant, sévère).
+setup_final_nostats <- function(dir, zone_id = 9, proba = NULL) {
+  fin <- file.path(dir, sprintf("output_zone_%s", zone_id), "results",
+                   sprintf("iota2_results_classif_labels-z%s-S2_2025", zone_id),
+                   "final")
+  dir.create(fin, recursive = TRUE)
+  write_tif_nostats(file.path(fin, "Final_Classif_masked_2025.tif"),
+                    rep(1:3, length.out = 16))
+  write_tif_nostats(file.path(fin, "Final_continuous_score_masked2025.tif"),
+                    c(rep(24, 8), rep(58, 8)))
+  if (is.null(proba)) {
+    # Carte saine 0..1000 : P1 + P2 + P3 = 1000 par pixel ; le pixel 16 est
+    # masqué (0 partout = no-data) ; au pixel 1, P3 = 0 est une vraie valeur.
+    p1 <- c(1000, seq(900, 200, length.out = 14), 0)
+    p3 <- c(0, rep(50, 14), 0)
+    p2 <- c(0, 1000 - p1[2:15] - p3[2:15], 0)
+    proba <- c(p1, p2, p3)
+  }
+  write_tif_nostats(file.path(fin, "Final_Proba_map_masked2025.tif"),
+                    proba, nlyr = 3L)
+  fin
+}
+
+test_that("include_range reads the real range of a stat-less raster, silently", {
+  skip_if_no_terra()
+  d <- withr::local_tempdir()
+  fin <- setup_final_nostats(d)
+  expect_false(any(terra::hasMinMax(
+    terra::rast(file.path(fin, "Final_continuous_score_masked2025.tif")))))
+  expect_no_warning(
+    m <- reconfort_cache_manifest(d, 9, include_range = TRUE))
+  expect_equal(c(m$vmin[m$id == "score"], m$vmax[m$id == "score"]), c(24, 58))
+})
+
+test_that("probability is P(atteinte) = bands 2..n, single band, 0..1000", {
+  skip_if_no_terra()
+  d <- withr::local_tempdir()
+  fin <- setup_final_nostats(d)
+  expect_no_warning(m <- reconfort_cache_manifest(d, 9, include_range = TRUE))
+  p <- m$path[m$id == "probability"]
+  expect_match(basename(p), "^p_atteinte_Final_Proba_map_masked2025\\.tif$")
+  r <- terra::rast(p)
+  expect_equal(terra::nlyr(r), 1)
+  v <- terra::values(r, mat = FALSE)
+  src <- terra::values(terra::rast(file.path(fin, "Final_Proba_map_masked2025.tif")))
+  expect_equal(v[1], 0)                          # P2 = P3 = 0 : valide, pas NA
+  expect_true(is.na(v[16]))                      # masqué partout : no-data
+  expect_equal(v[2:15], rowSums(src[2:15, 2:3]))
+  expect_equal(m$vmin[m$id == "probability"], min(v, na.rm = TRUE))
+  expect_equal(m$vmax[m$id == "probability"], max(v, na.rm = TRUE))
+  # Le dérivé n'est pas re-sélectionné comme source au passage suivant.
+  m2 <- reconfort_cache_manifest(d, 9)
+  expect_identical(m2$path[m2$id == "probability"], p)
+  expect_length(list.files(fin, pattern = "atteinte"), 1L)
+})
+
+test_that("the derived layer is rebuilt when the source is newer", {
+  skip_if_no_terra()
+  d <- withr::local_tempdir()
+  fin <- setup_final_nostats(d)
+  p <- reconfort_cache_manifest(d, 9)$path[3]
+  Sys.setFileTime(p, Sys.time() - 3600)
+  src <- file.path(fin, "Final_Proba_map_masked2025.tif")
+  write_tif_nostats(src, c(rep(100, 16), rep(300, 16), rep(200, 16)), nlyr = 3L)
+  p2 <- reconfort_cache_manifest(d, 9)$path[3]
+  expect_identical(p2, p)
+  expect_true(all(terra::values(terra::rast(p2)) == 500))
+})
+
+test_that("a proba map clamped at 255 (iota2 #12) is reported once", {
+  skip_if_no_terra()
+  d <- withr::local_tempdir()
+  sat <- c(rep(255, 15), 0, rep(1, 15), 0, c(rep(1, 7), rep(255, 8)), 0)
+  setup_final_nostats(d, proba = sat)
+  expect_message(reconfort_cache_manifest(d, 9), "clamped at 255")
+  expect_no_message(reconfort_cache_manifest(d, 9))   # une fois par session
+  # Carte saine : aucun message.
+  d2 <- withr::local_tempdir()
+  setup_final_nostats(d2)
+  expect_no_message(reconfort_cache_manifest(d2, 9))
+})

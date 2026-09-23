@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.199.0] - 2026-09-23
+
+### Changed
+- Couche `probability` des manifestes RECONFORT = P(atteinte) (somme des
+  bandes 2..n, 0–1000), dérivée dans `p_atteinte_<source>.tif`.
+
+### Fixed
+- `reconfort_cache_manifest()` / `reconfort_layer_manifest()` :
+  `include_range = TRUE` calcule la plage (`minmax(compute = TRUE)`) des
+  rasters iota2 sans statistiques, sans avis `terra`.
+- `repair_iota2_env.sh` #12 : `probamap` d'iota2 en `uint16` (les
+  probabilités 0–1000 étaient écrêtées à 255, score compressé 24–58).
+  Garde-fou au lancement de `run_reconfort_dieback()`, signalement des
+  cartes écrêtées dans les manifestes.
+
 ## [0.198.0] - 2026-09-23
 
 ### Added

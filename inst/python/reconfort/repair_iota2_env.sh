@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # repair_iota2_env.sh — make a freshly-built RECONFORT conda env runnable.
 #
-# The `iota2` conda package (channels `iota2` + `iota2-deps`) ships two defects
+# The `iota2` conda package (channels `iota2` + `iota2-deps`) ships defects
 # that break the RECONFORT chain out of the box on a current install:
 #
 #   #9  iota2 calls `pandas.to_datetime(..., infer_datetime_format=...)`, an
@@ -22,6 +22,17 @@
 #       which makes the classification materialise the whole multi-date feature
 #       stack at once: > 20 GB on a 930x952 AOI, enough for systemd-oomd to
 #       kill the whole R session (2026-07-13). Fix the truthiness test.
+#   #12 `image_classifier.py` passes `pixType = uint8` to OTB ImageClassifier,
+#       and iota2's `create_application` applies `pixType` to EVERY output
+#       image parameter (`out`, `confmap`, `probamap`). `confmap` is set back
+#       to float right after; `probamap` is not, so the per-class
+#       probabilities (0..1000 scale, OTB/Shark) are written as uint8 and OTB
+#       clamps them to 255. Everything downstream is then wrong: the
+#       RECONFORT continuous score `(1001 - P1 + P2 + 2*P3) / 30` is squashed
+#       from 1..100 to ~24..58 (zone 9 of project ltcp, 2026-09-23). The class
+#       map is unaffected (computed separately). Force `probamap` to uint16,
+#       the type iota2 itself uses for probability maps everywhere else.
+#       Runs made before the patch must be re-run.
 #
 # Idempotent. Run once after creating the env:
 #   conda create -n nemeton-reconfort python=3.11 mamba
@@ -90,6 +101,38 @@ PY
 else
   echo "[repair] WARNING: neither the buggy nor the fixed guard found in" >&2
   echo "         $CLASSIFIER — the iota2 version may have moved on; re-check #11." >&2
+fi
+
+# --- #12 probamap inherits pixType uint8 -> probabilities clamped at 255 ----
+BUG12='        classifier.SetParameterOutputImagePixelType(
+            "confmap", common_pix_type_to_otb("float")
+        )
+'
+FIX12_MARK='# nemeton #12: probamap in uint16'
+if [ -z "$CLASSIFIER" ]; then
+  echo "[repair] WARNING: iota2/classification/image_classifier.py not found" >&2
+elif grep -qF "$FIX12_MARK" "$CLASSIFIER"; then
+  echo "[repair] image_classifier.py probamap uint16 already fixed (ok)"
+elif grep -qF 'SetParameterOutputImagePixelType(' "$CLASSIFIER" && \
+     grep -qF '"confmap", common_pix_type_to_otb("float")' "$CLASSIFIER"; then
+  echo "[repair] patching image_classifier.py: probamap clamped to uint8 (#12)"
+  cp -n "$CLASSIFIER" "$CLASSIFIER.nemeton.bak"
+  python3 - "$CLASSIFIER" "$BUG12" "$FIX12_MARK" <<'PY'
+import sys
+path, bug, mark = sys.argv[1], sys.argv[2], sys.argv[3]
+src = open(path).read()
+assert src.count(bug) == 1, f"expected exactly 1 occurrence, found {src.count(bug)}"
+fix = bug + (
+    f"        if self.output_files.proba:  {mark}\n"
+    "            classifier.SetParameterOutputImagePixelType(\n"
+    "                \"probamap\", common_pix_type_to_otb(\"uint16\")\n"
+    "            )\n")
+open(path, "w").write(src.replace(bug, fix))
+PY
+  echo "[repair] patched (backup: $(basename "$CLASSIFIER").nemeton.bak)"
+else
+  echo "[repair] WARNING: confmap pixel-type override not found in" >&2
+  echo "         $CLASSIFIER — the iota2 version may have moved on; re-check #12." >&2
 fi
 
 echo "[repair] done."
