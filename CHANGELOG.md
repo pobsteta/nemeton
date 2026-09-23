@@ -12,6 +12,16 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.199.2\] - 2026-09-23
+
+### Fixed
+
+- [`segment_houppiers()`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md)
+  : échec « st_crs(x) == st_crs(y) » sous un plan `future` à \>= 2
+  workers (lidR convertissait le CHM en
+  [`raster::raster`](https://rdrr.io/pkg/raster/man/raster.html), CRS
+  PROJ4). lidR reçoit une copie `stars`, les sommets son CRS exact.
+
 ## \[0.199.1\] - 2026-09-23
 
 ### Fixed

@@ -1,5 +1,54 @@
 # Changelog
 
+## nemeton 0.199.2 (2026-09-23)
+
+#### Fixed — `segment_houppiers()` échouait sous un plan `future` multi-workers
+
+Depuis fin août, l’app ne produisait plus aucun houppier : « st_crs(x)
+== st_crs(y) n’est pas TRUE », levé par `sf` depuis
+[`lidR::dalponte2016()`](https://rdrr.io/pkg/lidR/man/its_dalponte2016.html).
+Et l’échec semblait dépendre de l’état du processus : un appel qui
+passait dans un processus neuf échouait après `load_project()`.
+
+**Cause, reproduite sur le MNH LiDAR HD de `ltcp`** : `dalponte2016()`,
+`silva2016()` et
+[`watershed()`](https://rspatial.github.io/terra/reference/watershed.html)
+passent le CHM par
+`convert_ondisk_spatraster_into_serializable_raster_if_necessary()`, qui
+le convertit en
+[`raster::raster()`](https://rdrr.io/pkg/raster/man/raster.html) **dès
+qu’un plan `future` a au moins deux workers**, ce que l’app pose pour
+ses calculs. Le CRS du CHM devient alors une chaîne PROJ4
+(`+proj=lcc … +towgs84=0,…`) que `sf` ne juge pas équivalente au WKT
+EPSG:2154 des sommets, et `crop_special_its()` s’arrête sur son
+[`stopifnot()`](https://rdrr.io/r/base/stopifnot.html). Plan séquentiel
+: 17 611 houppiers ; plan `multisession` × 2 : l’erreur ; retour au
+séquentiel : 17 611. L’`aoi` n’était pas en cause (elle passe en
+séquentiel), le processus « neuf » du contournement de l’app (`callr`)
+réussissait parce qu’il n’hérite pas du plan.
+
+**Correctif** : lidR reçoit la copie `stars` du CHM, que cette
+conversion ne touche pas (elle ne vise que les SpatRaster), et les
+sommets reçoivent le **même objet CRS** qu’elle : plus rien n’est laissé
+au jugement de `CPL_crs_equivalent()`, dont l’échec est rendu `FALSE`
+sans bruit. La segmentation est ramenée sur la grille terra du CHM pour
+la suite. Le plan `future` de l’appelant n’est pas modifié : le changer
+arrêterait ses workers. Un sommet dont le code EPSG contredit celui du
+CHM reste une anomalie nommée.
+
+Mesuré sur `ltcp` (MNH 0,5 m, 1e8 cellules), sous plan `multisession` ×
+2 : **79 526** houppiers avec l’emprise du projet, **280 218** sans,
+soit les chiffres du plan séquentiel. Segmentations identiques cellule
+pour cellule entre les deux voies (étiquettes en bijection, mêmes NA) ;
+la voie `stars` n’est pas plus lente (dalponte 60 s contre 72 s sur 11 M
+cellules).
+
+Tests : le plan multi-workers est simulé en mockant le compteur de
+workers de lidR (même branche, sans lancer de processus). Houppiers
+identiques au plan séquentiel pour les trois algorithmes ; MNH 2154
+recadré par l’`aoi` ; appel `aoi = NULL` réussi après un échec provoqué.
+Les trois tests échouent sur le code précédent.
+
 ## nemeton 0.199.1 (2026-09-23)
 
 #### Fixed — messages de `build_index_stack()` : un `\` parasite en fin de ligne

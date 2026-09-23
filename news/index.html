@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.199.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.199.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.199.2" id="nemeton-01992-2026-09-23">nemeton 0.199.2 (2026-09-23)<a class="anchor" aria-label="anchor" href="#nemeton-01992-2026-09-23"></a></h2>
+<div class="section level4">
+<h4 id="fixed--segment_houppiers-échouait-sous-un-plan-future-multi-workers-0-199-2">Fixed — <code>segment_houppiers()</code> échouait sous un plan <code>future</code> multi-workers<a class="anchor" aria-label="anchor" href="#fixed--segment_houppiers-%C3%A9chouait-sous-un-plan-future-multi-workers-0-199-2"></a></h4>
+<p>Depuis fin août, l’app ne produisait plus aucun houppier : « st_crs(x) == st_crs(y) n’est pas TRUE », levé par <code>sf</code> depuis <code><a href="https://rdrr.io/pkg/lidR/man/its_dalponte2016.html" class="external-link">lidR::dalponte2016()</a></code>. Et l’échec semblait dépendre de l’état du processus : un appel qui passait dans un processus neuf échouait après <code>load_project()</code>.</p>
+<p><strong>Cause, reproduite sur le MNH LiDAR HD de <code>ltcp</code></strong> : <code>dalponte2016()</code>, <code>silva2016()</code> et <code><a href="https://rspatial.github.io/terra/reference/watershed.html" class="external-link">watershed()</a></code> passent le CHM par <code>convert_ondisk_spatraster_into_serializable_raster_if_necessary()</code>, qui le convertit en <code><a href="https://rdrr.io/pkg/raster/man/raster.html" class="external-link">raster::raster()</a></code> <strong>dès qu’un plan <code>future</code> a au moins deux workers</strong>, ce que l’app pose pour ses calculs. Le CRS du CHM devient alors une chaîne PROJ4 (<code>+proj=lcc … +towgs84=0,…</code>) que <code>sf</code> ne juge pas équivalente au WKT EPSG:2154 des sommets, et <code>crop_special_its()</code> s’arrête sur son <code><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot()</a></code>. Plan séquentiel : 17 611 houppiers ; plan <code>multisession</code> × 2 : l’erreur ; retour au séquentiel : 17 611. L’<code>aoi</code> n’était pas en cause (elle passe en séquentiel), le processus « neuf » du contournement de l’app (<code>callr</code>) réussissait parce qu’il n’hérite pas du plan.</p>
+<p><strong>Correctif</strong> : lidR reçoit la copie <code>stars</code> du CHM, que cette conversion ne touche pas (elle ne vise que les SpatRaster), et les sommets reçoivent le <strong>même objet CRS</strong> qu’elle : plus rien n’est laissé au jugement de <code>CPL_crs_equivalent()</code>, dont l’échec est rendu <code>FALSE</code> sans bruit. La segmentation est ramenée sur la grille terra du CHM pour la suite. Le plan <code>future</code> de l’appelant n’est pas modifié : le changer arrêterait ses workers. Un sommet dont le code EPSG contredit celui du CHM reste une anomalie nommée.</p>
+<p>Mesuré sur <code>ltcp</code> (MNH 0,5 m, 1e8 cellules), sous plan <code>multisession</code> × 2 : <strong>79 526</strong> houppiers avec l’emprise du projet, <strong>280 218</strong> sans, soit les chiffres du plan séquentiel. Segmentations identiques cellule pour cellule entre les deux voies (étiquettes en bijection, mêmes NA) ; la voie <code>stars</code> n’est pas plus lente (dalponte 60 s contre 72 s sur 11 M cellules).</p>
+<p>Tests : le plan multi-workers est simulé en mockant le compteur de workers de lidR (même branche, sans lancer de processus). Houppiers identiques au plan séquentiel pour les trois algorithmes ; MNH 2154 recadré par l’<code>aoi</code> ; appel <code>aoi = NULL</code> réussi après un échec provoqué. Les trois tests échouent sur le code précédent.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.199.1" id="nemeton-01991-2026-09-23">nemeton 0.199.1 (2026-09-23)<a class="anchor" aria-label="anchor" href="#nemeton-01991-2026-09-23"></a></h2>
 <div class="section level4">
