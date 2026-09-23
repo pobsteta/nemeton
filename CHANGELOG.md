@@ -10,6 +10,12 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.199.1] - 2026-09-23
+
+### Fixed
+- `build_index_stack()` : trois messages `cli::format_inline()` affichaient
+  un `\` de continuation parasite (assemblage par `paste0()`).
+
 ## [0.199.0] - 2026-09-23
 
 ### Changed

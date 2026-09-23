@@ -335,10 +335,10 @@ build_index_stack <- function(cache_dir, scenes_df,
     # (e.g. FORDEAD-only dates that carry B8A but no B08 never render
     # NDVI/NBR by construction), so an informational note is enough.
     rlang::inform(
-      cli::format_inline(
-        "build_index_stack: skipped {n_missing}/{n_total} scene{?s} \\
-         (incomplete cache for {.field {index}}); run \\
-         {.fn diagnose_s2_cache} to find the gaps."),
+      cli::format_inline(paste0(
+        "build_index_stack: skipped {n_missing}/{n_total} scene{?s} ",
+        "(incomplete cache for {.field {index}}); run ",
+        "{.fn diagnose_s2_cache} to find the gaps.")),
       .frequency    = "once",
       .frequency_id = "build_index_stack_skipped")
   }
@@ -368,9 +368,9 @@ build_index_stack <- function(cache_dir, scenes_df,
     valid_layers, function(l) terra::same.crs(l, ref), logical(1)))
   if (n_reproj > 0L) {
     rlang::inform(
-      cli::format_inline(
-        "build_index_stack: reprojecting {n_reproj} layer{?s} onto the \\
-         reference CRS before stacking (multi-zone AOI)."),
+      cli::format_inline(paste0(
+        "build_index_stack: reprojecting {n_reproj} layer{?s} onto the ",
+        "reference CRS before stacking (multi-zone AOI).")),
       .frequency    = "once",
       .frequency_id = "build_index_stack_reproject")
     valid_layers[crs_mismatch] <- lapply(
@@ -409,9 +409,9 @@ build_index_stack <- function(cache_dir, scenes_df,
                            function(l) terra::extend(l, target_ext))
   } else {
     rlang::inform(
-      cli::format_inline(
-        "build_index_stack: resampling layers onto a common grid \\
-         (extents/origins do not coincide)."),
+      cli::format_inline(paste0(
+        "build_index_stack: resampling layers onto a common grid ",
+        "(extents/origins do not coincide).")),
       .frequency    = "once",
       .frequency_id = "build_index_stack_resample")
     areas <- vapply(exts, function(e) {

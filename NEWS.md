@@ -1,3 +1,24 @@
+# nemeton 0.199.1 (2026-09-23)
+
+### Fixed — messages de `build_index_stack()` : un `\` parasite en fin de ligne
+
+Trois messages de `build_index_stack()` (scènes ignorées faute de bandes,
+reprojection multi-zone, rééchantillonnage sur grille commune) coupaient leur
+texte par une continuation `\` + retour à la ligne, sous
+`cli::format_inline()`. Or, contrairement à `cli_abort()` / `cli_warn()` /
+`cli_inform()` / `cli_alert_*()` et à glue, qui la traitent comme une
+continuation, `format_inline()` (cli 3.6.6) la **garde** : la console de l'app
+affichait « skipped 1/2 scenes \ (incomplete cache… ». Les chaînes sont
+désormais assemblées par `paste0()`.
+
+Le motif `\` en fin de ligne reste présent sur une quarantaine de lignes de messages
+du paquet (15 fichiers), mais tous passent par `cli_abort` / `cli_warn` /
+`cli_inform` / `cli_alert_*`, qui le rendent correctement : vérifié, non
+touchés. Seuls les trois appels à `format_inline()` étaient concernés.
+
+Test : le message « skipped » est capturé et ne contient plus de `\` ; il
+échoue sur le code précédent.
+
 # nemeton 0.199.0 (2026-09-23)
 
 ### Fixed — RECONFORT : `include_range = TRUE` n'avait aucun effet

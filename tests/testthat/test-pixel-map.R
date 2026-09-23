@@ -270,6 +270,26 @@ test_that("build_index_stack(NBR): incomplete scene (no B12) is skipped, never w
   expect_equal(terra::nlyr(stack_ndvi), 3L)
 })
 
+test_that("build_index_stack: the skip message carries no stray line-continuation backslash", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  scenes <- make_fixture_s2_cache(cache, scenes = 2L, with_b12 = TRUE)
+  unlink(file.path(cache, scenes$scene_id[2], "B12.tif"))
+  # cli::format_inline() garde le `\` de continuation (contrairement à
+  # cli_warn / cli_abort) : le message affichait « ... scene \\ (incomplete ».
+  withr::local_options(rlib_message_verbosity = "verbose")
+  msgs <- character()
+  withCallingHandlers(
+    build_index_stack(cache, scenes, "NBR"),
+    message = function(m) {
+      msgs <<- c(msgs, conditionMessage(m)); invokeRestart("muffleMessage")
+    })
+  msg <- grep("build_index_stack: skipped", msgs, value = TRUE)
+  expect_length(msg, 1L)
+  expect_false(grepl("\\\\", msg))
+  expect_match(msg, "skipped 1/2 scenes? \\(incomplete cache for")
+})
+
 test_that("build_index_stack: repeated call with incomplete cache emits no warning (dedupe)", {
   skip_if_not_installed("terra")
   # Regression: the old `cli_warn` fired on every reactive evaluation
