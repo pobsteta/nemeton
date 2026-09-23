@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.143.30** (release du 2026-09-23), `main` = `0.143.30`.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.143.31** (release du 2026-09-23), `main` = `0.143.31`.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -36,16 +36,14 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 |---|---|---|---|---|
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 | 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Interdit accusé réception le 2026-09-23** (brief app `BRIEF-nemeton-plan-md-0.143.17-0.143.28.md`) : aucun écran ne classe, ne compare ni ne moyenne B4/L3 entre projets — l'app n'a pas de vue inter-projets. **Reste ouvert sur un seul point : question B02 en attente côté app** — B02 absente de l'espace k-means, remplacée par `ID` (point 4 du brief), pas encore instruite |
-| 12 | **FAST : masques qui s'écrasent entre eux, stack d'indice jamais mis en cache** | cœur **v0.198.0** | `nemetonshiny` | Brief reçu de l'app le 2026-09-23 (`nemetonshiny/specs/BRIEF-nemeton-fast-masques-et-stack.md`), réponse `specs/017-fast-alert-raster-perf/reponse-brief-nemetonshiny-masques-et-stack.md` (copie déposée dans `briefs/vers-nemetonshiny/`). **Défaut A** : option « nom par contenu » retenue — `fast_alert_<INDEX>_<mode>_<hash16>.tif`, pas de réécriture d'un masque identique ; `read_fast_alert_mask()` choisit par mtime. **Défaut B** : `build_index_stack(..., parallel = FALSE, cache_result = FALSE, result_cache_dir = NULL)`, répertoire conseillé `<project>/cache/layers/index_stack` (le défaut quand `cache_dir` = `.../layers/sentinel2`). `parallel` : **non** dans Shiny sans `future::plan()` multisession. **Reste à faire côté app** : passer `cache_result = TRUE` à `build_index_stack()`, plancher `nemeton (>= 0.198.0)`, mettre à jour le commentaire de `.compute_fast_mask()`. Non accusé réception |
 
-**Trois écarts (n° 3, n° 6 résiduel, n° 12), aucun n'appelle plus de correctif dans le cœur.**
+**Deux écarts (n° 3, n° 6 résiduel), aucun n'appelle de correctif dans le cœur.**
 Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR
 et une desserte corrigée. Le n° 6 a été lu côté app — l'interdit tient, faute
 de vue inter-projets où l'enfreindre — et ne reste ouvert que sur la question
 B02. Les n° 7, 8, 10 et 11 sont refermés le 2026-09-23 (relus sur
 `nemetonshiny@3869ffd8`, table ci-dessous).
-Le n° 12, ouvert et livré côté cœur le même jour (v0.198.0), attend que l'app
-passe `cache_result = TRUE` et monte son plancher.
+Le n° 12 (FAST, cœur v0.198.0) est refermé le même jour par l'app v0.143.31.
 
 **Les n° 10 et 11 n'étaient pas dans cette table**, et c'est le constat le plus
 utile de la release. Le n° 10 a été trouvé en vérifiant le n° 8 ; le n° 11 en
@@ -56,12 +54,13 @@ MS/ha/an sature dès 150 m³/ha environ* »). Écrits, datés, jamais remontés 
 Une fiche peut décrire un défaut pendant trois semaines sans que personne ne le
 voie : **le trou était dans la table, pas dans le code.**
 
-**Les neuf autres sont refermés.** Les n° 1, 2, 4 et 5 ont été vérifiés en
+**Les dix autres sont refermés.** Les n° 1, 2, 4 et 5 ont été vérifiés en
 lecture seule sur `nemetonshiny@5a1afd7c` le 2026-08-22 (détail dans l'entrée
 de journal du 2026-08-22, chantiers A et D) ; le n° 9 sur
 `nemetonshiny@d2442193` le 2026-08-31 ; les n° 7, 8, 10 et 11 sur
 `nemetonshiny@3869ffd8` le 2026-09-23 (plancher `DESCRIPTION:15` :
-`nemeton (>= 0.197.0)`) :
+`nemeton (>= 0.197.0)`) ; le n° 12 sur `nemetonshiny@69cf0aeb` (tag v0.143.31)
+le 2026-09-23 (plancher `nemeton (>= 0.198.0)`) :
 
 | # | Écart | Refermé par | Ce qui a été relu |
 |---|---|---|---|
@@ -74,6 +73,7 @@ de journal du 2026-08-22, chantiers A et D) ; le n° 9 sur
 | 8 | Sens de `L1` lu à l'envers par la normalisation (cœur v0.197.0, spec 048 §9) | app **v0.143.25** (`383a110c`) | `R/migrate.R:149` — `INDICATOR_SENSE_VERSION <- 3L`. `ensure_indicator_sense_current()` compare au marqueur `indicator_sense_version` des métadonnées projet et appelle `invalidate_indicators()` **une seule fois** à la première ouverture après montée de version (marqueur posé même sans rien à invalider, pour ne pas rejouer). Le message cite « v3 : inversion de L1… » |
 | 10 | `T1` : un âge en années pris pour un score 0-100 (spec 048 §10) | app **v0.143.25** (même commit) | Même mécanisme, même palier v3 (« borne 200 ans sur T1 ») |
 | 11 | `E1` / `E2` : trois bornes pour un même nombre (spec 048 §11) | app **v0.143.25** (même commit) | Même mécanisme, même palier v3 (« E1/E2 alignés sur P1 ») |
+| 12 | FAST : masques qui s'écrasaient, stack d'indice sans cache (cœur v0.198.0, brief app 2026-09-23) | app **v0.143.31** (`69cf0aeb`, commit `50671fd6`) | `mod_monitoring_pixel_map.R:301` — `build_index_stack(..., cache_result = TRUE)`, `parallel = FALSE` ; commentaire de `.compute_fast_mask()` (`mod_monitoring_fast_alerts.R`) aligné sur `fast_alert_<INDEX>_<mode>_<hash16>.tif`. Mesure app sur `armn` (327 scènes) : **39,5 s → 0,22 s**, résultat identique |
 
 **Ce que l'écart n° 1 aura coûté et rapporté.** Ouvert le 2026-08-15 comme
 « non consommé, et désormais bloquant », il l'était : la copie de la table dans
