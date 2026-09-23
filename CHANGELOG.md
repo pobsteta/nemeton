@@ -12,6 +12,16 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.199.1\] - 2026-09-23
+
+### Fixed
+
+- [`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md)
+  : trois messages
+  [`cli::format_inline()`](https://cli.r-lib.org/reference/format_inline.html)
+  affichaient un `\` de continuation parasite (assemblage par
+  [`paste0()`](https://rdrr.io/r/base/paste.html)).
+
 ## \[0.199.0\] - 2026-09-23
 
 ### Changed

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.199.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.199.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.199.1" id="nemeton-01991-2026-09-23">nemeton 0.199.1 (2026-09-23)<a class="anchor" aria-label="anchor" href="#nemeton-01991-2026-09-23"></a></h2>
+<div class="section level4">
+<h4 id="fixed--messages-de-build_index_stack--un--parasite-en-fin-de-ligne-0-199-1">Fixed — messages de <code>build_index_stack()</code> : un <code>\</code> parasite en fin de ligne<a class="anchor" aria-label="anchor" href="#fixed--messages-de-build_index_stack--un--parasite-en-fin-de-ligne-0-199-1"></a></h4>
+<p>Trois messages de <code><a href="../reference/build_index_stack.html">build_index_stack()</a></code> (scènes ignorées faute de bandes, reprojection multi-zone, rééchantillonnage sur grille commune) coupaient leur texte par une continuation <code>\</code> + retour à la ligne, sous <code><a href="https://cli.r-lib.org/reference/format_inline.html" class="external-link">cli::format_inline()</a></code>. Or, contrairement à <code>cli_abort()</code> / <code>cli_warn()</code> / <code>cli_inform()</code> / <code>cli_alert_*()</code> et à glue, qui la traitent comme une continuation, <code>format_inline()</code> (cli 3.6.6) la <strong>garde</strong> : la console de l’app affichait « skipped 1/2 scenes  (incomplete cache… ». Les chaînes sont désormais assemblées par <code><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0()</a></code>.</p>
+<p>Le motif <code>\</code> en fin de ligne reste présent sur une quarantaine de lignes de messages du paquet (15 fichiers), mais tous passent par <code>cli_abort</code> / <code>cli_warn</code> / <code>cli_inform</code> / <code>cli_alert_*</code>, qui le rendent correctement : vérifié, non touchés. Seuls les trois appels à <code>format_inline()</code> étaient concernés.</p>
+<p>Test : le message « skipped » est capturé et ne contient plus de <code>\</code> ; il échoue sur le code précédent.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.199.0" id="nemeton-01990-2026-09-23">nemeton 0.199.0 (2026-09-23)<a class="anchor" aria-label="anchor" href="#nemeton-01990-2026-09-23"></a></h2>
 <div class="section level4">
