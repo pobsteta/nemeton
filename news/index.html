@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.197.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.198.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,29 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.198.0" id="nemeton-01980-2026-09-23">nemeton 0.198.0 (2026-09-23)<a class="anchor" aria-label="anchor" href="#nemeton-01980-2026-09-23"></a></h2>
+<div class="section level4">
+<h4 id="fixed--fast--deux-masques-distincts-ne-tombent-plus-sur-le-même-fichier-0-198-0">Fixed — FAST : deux masques distincts ne tombent plus sur le même fichier<a class="anchor" aria-label="anchor" href="#fixed--fast--deux-masques-distincts-ne-tombent-plus-sur-le-m%C3%AAme-fichier-0-198-0"></a></h4>
+<p><code><a href="../reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> nommait le masque 0-4 avec un horodatage <strong>à la seconde</strong> et l’écrivait avec <code>overwrite = TRUE</code>. Cache chaud, un appel dure ~0,1 s : deux masques différents calculés dans la même seconde (le pré-chauffage NDMI puis NDRE de l’app, un changement rapide d’indice) écrivaient le <strong>même chemin</strong>, le second écrasant le premier — sous un <code>SpatRaster</code> que l’app avait déjà ouvert dessus. Un clic sur la carte lisait alors la classe de l’autre masque. Mesuré sur <code>armn</code> (zone 5) : <code>rolling NDVI</code> et <code>trend NDMI</code> rendaient tous deux <code>fast_alert_20260923T094317.tif</code>.</p>
+<p>Le masque est désormais <strong>nommé par son contenu</strong> : <code>fast_alert_&lt;INDEX&gt;_&lt;mode&gt;_&lt;hash16&gt;.tif</code>, le hash portant sur la grille (CRS, étendue, résolution), les valeurs discrétisées, l’indice et le mode. Il résume ainsi tout ce qui a produit le masque — scènes, seuil, fenêtre, paramètres de tendance, bornes, polygone — sans en tenir la liste. Deux appels identiques rendent le même fichier <strong>sans le réécrire</strong> (seul son mtime est rafraîchi, pour le LRU) ; deux appels différents ne peuvent plus se télescoper. L’écriture passe par un temporaire caché puis un renommage : un lecteur ne voit jamais un TIF partiel. Le GC <code>.fast_alert_mask_gc()</code> (<code>keep = 20</code>) est conservé.</p>
+<p><code><a href="../reference/read_fast_alert_mask.html">read_fast_alert_mask()</a></code> désigne le « plus récent » par <strong>mtime</strong> (et non plus par tri des noms, qui ne sont plus chronologiques), départagé par le nom pour les anciens masques horodatés, toujours lus. <code>run_id</code> accepte le nouveau suffixe <code>&lt;INDEX&gt;_&lt;mode&gt;_&lt;hash16&gt;</code> comme l’ancien horodatage. La documentation dit désormais ce que « le plus récent » veut dire : le masque du <strong>dernier appel</strong>, quels qu’en soient l’indice ou le mode — un appelant qui veut un masque précis garde le chemin rendu par <code><a href="../reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code>. Au passage, le <code>%</code> non échappé de l’ancien <code>\item{run_id}</code> tronquait la ligne dans l’aide.</p>
+</div>
+<div class="section level4">
+<h4 id="added--build_index_stackcache_result--result_cache_dir--0-198-0">Added — <code>build_index_stack(cache_result =, result_cache_dir =)</code>
+<a class="anchor" aria-label="anchor" href="#added--build_index_stackcache_result--result_cache_dir--0-198-0"></a></h4>
+<p><code><a href="../reference/build_index_stack.html">build_index_stack()</a></code> relisait les bandes de chaque scène, recalculait l’indice et rééchantillonnait B11/B12 à <strong>chaque</strong> appel : ~9 s sur les 327 scènes d’<code>armn</code>, à l’identique, payées par la « Carte FAST » de l’app à chaque ouverture de session et à chaque changement d’indice, session Shiny gelée.</p>
+<p>Deux arguments optionnels, <strong>rétrocompatibles</strong> (défaut = comportement inchangé, aucune E/S disque) :</p>
+<ul><li>
+<code>cache_result = TRUE</code> persiste le stack en GeoTIFF multicouche adressé par contenu ; un appel identique le relit sans ouvrir une seule bande. La clé hache l’indice, les couples <code>(scene_id, obs_date)</code> triés, la <strong>taille et le mtime</strong> de chaque fichier de bande utilisé (une scène réingérée ou ajoutée invalide l’entrée) et le WKT de <code>mask_polygon</code>.</li>
+<li>
+<code>result_cache_dir</code> : défaut <code>&lt;cache_dir&gt;/../index_stack/</code>, soit <code>&lt;project&gt;/cache/layers/index_stack/</code>. LRU par mtime, <code>getOption("nemeton.index_stack_keep", 8)</code>.</li>
+</ul><p>Mesuré sur <code>armn</code> (327 scènes NDVI) : calcul + écriture <strong>15 s</strong>, relecture <strong>0,05 s</strong>, objet relu identique (noms, dates, attribut, valeurs). Un stack pèse ~233 Mo sur disque (double précision) : le LRU garde <strong>8</strong> stacks, de quoi couvrir les 4 indices avec marge (~1,9 Go au plus par projet).</p>
+<p>La relecture rend un objet <strong>identique</strong> au calcul : noms de couches, <code><a href="https://rspatial.github.io/terra/reference/time.html" class="external-link">terra::time()</a></code>, attribut <code>"index"</code> et valeurs, NA compris (stockage <code>FLT8S</code>, dates dans un fichier compagnon <code>.dates</code> pour rester exactes même quand deux tuiles MGRS partagent une date).</p>
+<p><code>parallel = TRUE</code> reste déconseillé dans un processus Shiny sans <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> multisession posé : furrr y tourne séquentiellement et n’ajoute que le coût de <code><a href="https://rspatial.github.io/terra/reference/wrap.html" class="external-link">wrap()</a></code>/<code><a href="https://rspatial.github.io/terra/reference/wrap.html" class="external-link">unwrap()</a></code>. La documentation le dit.</p>
+<p>Tests : deux indices dans la même seconde → deux chemins, le premier fichier intact et relu à l’identique ; appels identiques → même fichier, même md5, aucun temporaire résiduel ; lecteur « le plus récent » par mtime et <code>run_id</code> adressé par contenu ; second appel de <code><a href="../reference/build_index_stack.html">build_index_stack()</a></code> sans aucune relecture de bande (<code>read_s2_band_raster</code> compté par mock) et résultat identique ; scène ajoutée et scène réingérée invalident le cache ; <code>mask_polygon</code> entre dans la clé ; GC avec fichiers compagnons.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.197.0" id="nemeton-01970-2026-09-18">nemeton 0.197.0 (2026-09-18)<a class="anchor" aria-label="anchor" href="#nemeton-01970-2026-09-18"></a></h2>
 <div class="section level4">

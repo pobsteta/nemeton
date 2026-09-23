@@ -11,7 +11,9 @@ build_index_stack(
   scenes_df,
   index = c("NDVI", "NBR", "NDMI", "NDRE"),
   mask_polygon = NULL,
-  parallel = FALSE
+  parallel = FALSE,
+  cache_result = FALSE,
+  result_cache_dir = NULL
 )
 ```
 
@@ -41,7 +43,31 @@ build_index_stack(
   per-scene index computation runs in \`furrr::future_map()\` (set a
   \`future::plan()\` first); workers return \`terra::wrap()\`-ed rasters
   that the main process unwraps. Default \`FALSE\` (sequential,
-  identical results). Falls back to sequential if furrr is absent.
+  identical results). Falls back to sequential if furrr is absent. In a
+  Shiny process with no multisession \`future::plan()\`, leave it
+  \`FALSE\`: furrr then runs sequentially and only adds the wrap/unwrap
+  overhead. Prefer \`cache_result = TRUE\`.
+
+- cache_result:
+
+  Logical (v0.198.0). When \`TRUE\`, the stack is persisted as a
+  content-addressed multi-layer GeoTIFF and a later call with the same
+  inputs reads it back without opening any band. The key is a hash of
+  \`index\`, the sorted \`(scene_id, obs_date)\` pairs, the size and
+  mtime of every cached band file the index needs (so a re-ingested
+  scene invalidates the entry) and \`mask_polygon\`. The read-back
+  object carries the same layer names, \`terra::time()\`, \`"index"\`
+  attribute and values (NA included) as the computed one. Default
+  \`FALSE\` (no disk I/O, historical behaviour).
+
+- result_cache_dir:
+
+  Character or \`NULL\`. Where the cached stacks are written, as
+  \`index_stack\_\<INDEX\>\_\<hash16\>.tif\`. Defaults to an
+  \`index_stack/\` sibling of \`cache_dir\` (i.e.
+  \`\<project\>/cache/layers/index_stack/\`). At most
+  \`getOption("nemeton.index_stack_keep", 8)\` stacks are kept (LRU by
+  mtime).
 
 ## Value
 

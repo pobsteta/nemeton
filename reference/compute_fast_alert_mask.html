@@ -15,7 +15,7 @@ and **persists it to disk** so that downstream consumers
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.197.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.198.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -208,10 +208,14 @@ makes the effective decline risk `alpha / 2` — see
 
 <dt id="arg-mask-cache-dir">mask_cache_dir<a class="anchor" aria-label="anchor" href="#arg-mask-cache-dir"></a></dt>
 <dd><p>Path to the FAST mask cache root. The mask is
-written under `&lt;mask_cache_dir&gt;/zone_&lt;id&gt;/fast_alert_&lt;ts&gt;.tif`.
+written under
+`&lt;mask_cache_dir&gt;/zone_&lt;id&gt;/fast_alert_&lt;INDEX&gt;_&lt;mode&gt;_&lt;hash16&gt;.tif`.
 Defaults to a `fast/` sibling of `cache_dir` (i.e.
-`&lt;project&gt;/cache/layers/fast/`). Masks are timestamped (one file per
-call); at most `getOption("nemeton.fast_mask_keep", 20)` are kept per
+`&lt;project&gt;/cache/layers/fast/`). Since v0.198.0 the name is
+**content addressed** (hash of the grid and of the 0-4 values, plus
+index and mode): two identical calls return the same file without
+rewriting it, two different calls can never overwrite each other.
+At most `getOption("nemeton.fast_mask_keep", 20)` masks are kept per
 zone (LRU by mtime), so the directory does not grow unbounded.</p></dd>
 
 

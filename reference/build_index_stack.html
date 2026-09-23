@@ -9,7 +9,7 @@ computes the requested spectral index pixel-wise:"><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.197.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.198.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -124,7 +124,9 @@ computes the requested spectral index pixel-wise:</p>
 <span>  <span class="va">scenes_df</span>,</span>
 <span>  index <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NDVI"</span>, <span class="st">"NBR"</span>, <span class="st">"NDMI"</span>, <span class="st">"NDRE"</span><span class="op">)</span>,</span>
 <span>  mask_polygon <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  cache_result <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  result_cache_dir <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -156,7 +158,30 @@ installed, the per-scene index computation runs in
 `furrr::future_map()` (set a `future::plan()` first); workers return
 `terra::wrap()`-ed rasters that the main process unwraps. Default
 `FALSE` (sequential, identical results). Falls back to sequential if
-<span class="pkg">furrr</span> is absent.</p></dd>
+<span class="pkg">furrr</span> is absent. In a Shiny process with no multisession
+`future::plan()`, leave it `FALSE`: furrr then runs sequentially and
+only adds the wrap/unwrap overhead. Prefer `cache_result = TRUE`.</p></dd>
+
+
+<dt id="arg-cache-result">cache_result<a class="anchor" aria-label="anchor" href="#arg-cache-result"></a></dt>
+<dd><p>Logical (v0.198.0). When `TRUE`, the stack is
+persisted as a content-addressed multi-layer GeoTIFF and a later
+call with the same inputs reads it back without opening any band.
+The key is a hash of `index`, the sorted `(scene_id, obs_date)`
+pairs, the size and mtime of every cached band file the index needs
+(so a re-ingested scene invalidates the entry) and `mask_polygon`.
+The read-back object carries the same layer names, `terra::time()`,
+`"index"` attribute and values (NA included) as the computed one.
+Default `FALSE` (no disk I/O, historical behaviour).</p></dd>
+
+
+<dt id="arg-result-cache-dir">result_cache_dir<a class="anchor" aria-label="anchor" href="#arg-result-cache-dir"></a></dt>
+<dd><p>Character or `NULL`. Where the cached stacks
+are written, as `index_stack_&lt;INDEX&gt;_&lt;hash16&gt;.tif`. Defaults to an
+`index_stack/` sibling of `cache_dir` (i.e.
+`&lt;project&gt;/cache/layers/index_stack/`). At most
+`getOption("nemeton.index_stack_keep", 8)` stacks are kept (LRU by
+mtime).</p></dd>
 
 </dl></div>
     <div class="section level2">

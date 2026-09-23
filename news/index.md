@@ -1,5 +1,91 @@
 # Changelog
 
+## nemeton 0.198.0 (2026-09-23)
+
+#### Fixed — FAST : deux masques distincts ne tombent plus sur le même fichier
+
+[`compute_fast_alert_mask()`](https://pobsteta.github.io/nemeton/reference/compute_fast_alert_mask.md)
+nommait le masque 0-4 avec un horodatage **à la seconde** et l’écrivait
+avec `overwrite = TRUE`. Cache chaud, un appel dure ~0,1 s : deux
+masques différents calculés dans la même seconde (le pré-chauffage NDMI
+puis NDRE de l’app, un changement rapide d’indice) écrivaient le **même
+chemin**, le second écrasant le premier — sous un `SpatRaster` que l’app
+avait déjà ouvert dessus. Un clic sur la carte lisait alors la classe de
+l’autre masque. Mesuré sur `armn` (zone 5) : `rolling NDVI` et
+`trend NDMI` rendaient tous deux `fast_alert_20260923T094317.tif`.
+
+Le masque est désormais **nommé par son contenu** :
+`fast_alert_<INDEX>_<mode>_<hash16>.tif`, le hash portant sur la grille
+(CRS, étendue, résolution), les valeurs discrétisées, l’indice et le
+mode. Il résume ainsi tout ce qui a produit le masque — scènes, seuil,
+fenêtre, paramètres de tendance, bornes, polygone — sans en tenir la
+liste. Deux appels identiques rendent le même fichier **sans le
+réécrire** (seul son mtime est rafraîchi, pour le LRU) ; deux appels
+différents ne peuvent plus se télescoper. L’écriture passe par un
+temporaire caché puis un renommage : un lecteur ne voit jamais un TIF
+partiel. Le GC `.fast_alert_mask_gc()` (`keep = 20`) est conservé.
+
+[`read_fast_alert_mask()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_mask.md)
+désigne le « plus récent » par **mtime** (et non plus par tri des noms,
+qui ne sont plus chronologiques), départagé par le nom pour les anciens
+masques horodatés, toujours lus. `run_id` accepte le nouveau suffixe
+`<INDEX>_<mode>_<hash16>` comme l’ancien horodatage. La documentation
+dit désormais ce que « le plus récent » veut dire : le masque du
+**dernier appel**, quels qu’en soient l’indice ou le mode — un appelant
+qui veut un masque précis garde le chemin rendu par
+[`compute_fast_alert_mask()`](https://pobsteta.github.io/nemeton/reference/compute_fast_alert_mask.md).
+Au passage, le `%` non échappé de l’ancien `\item{run_id}` tronquait la
+ligne dans l’aide.
+
+#### Added — `build_index_stack(cache_result =, result_cache_dir =)`
+
+[`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md)
+relisait les bandes de chaque scène, recalculait l’indice et
+rééchantillonnait B11/B12 à **chaque** appel : ~9 s sur les 327 scènes
+d’`armn`, à l’identique, payées par la « Carte FAST » de l’app à chaque
+ouverture de session et à chaque changement d’indice, session Shiny
+gelée.
+
+Deux arguments optionnels, **rétrocompatibles** (défaut = comportement
+inchangé, aucune E/S disque) :
+
+- `cache_result = TRUE` persiste le stack en GeoTIFF multicouche adressé
+  par contenu ; un appel identique le relit sans ouvrir une seule bande.
+  La clé hache l’indice, les couples `(scene_id, obs_date)` triés, la
+  **taille et le mtime** de chaque fichier de bande utilisé (une scène
+  réingérée ou ajoutée invalide l’entrée) et le WKT de `mask_polygon`.
+- `result_cache_dir` : défaut `<cache_dir>/../index_stack/`, soit
+  `<project>/cache/layers/index_stack/`. LRU par mtime,
+  `getOption("nemeton.index_stack_keep", 8)`.
+
+Mesuré sur `armn` (327 scènes NDVI) : calcul + écriture **15 s**,
+relecture **0,05 s**, objet relu identique (noms, dates, attribut,
+valeurs). Un stack pèse ~233 Mo sur disque (double précision) : le LRU
+garde **8** stacks, de quoi couvrir les 4 indices avec marge (~1,9 Go au
+plus par projet).
+
+La relecture rend un objet **identique** au calcul : noms de couches,
+[`terra::time()`](https://rspatial.github.io/terra/reference/time.html),
+attribut `"index"` et valeurs, NA compris (stockage `FLT8S`, dates dans
+un fichier compagnon `.dates` pour rester exactes même quand deux tuiles
+MGRS partagent une date).
+
+`parallel = TRUE` reste déconseillé dans un processus Shiny sans
+[`future::plan()`](https://future.futureverse.org/reference/plan.html)
+multisession posé : furrr y tourne séquentiellement et n’ajoute que le
+coût de
+[`wrap()`](https://rspatial.github.io/terra/reference/wrap.html)/[`unwrap()`](https://rspatial.github.io/terra/reference/wrap.html).
+La documentation le dit.
+
+Tests : deux indices dans la même seconde → deux chemins, le premier
+fichier intact et relu à l’identique ; appels identiques → même fichier,
+même md5, aucun temporaire résiduel ; lecteur « le plus récent » par
+mtime et `run_id` adressé par contenu ; second appel de
+[`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md)
+sans aucune relecture de bande (`read_s2_band_raster` compté par mock)
+et résultat identique ; scène ajoutée et scène réingérée invalident le
+cache ; `mask_polygon` entre dans la clé ; GC avec fichiers compagnons.
+
 ## nemeton 0.197.0 (2026-09-18)
 
 #### Fixed — `L1` effet de lisière : la normalisation était la seule à le lire « haut = bon »
