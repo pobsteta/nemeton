@@ -13,8 +13,9 @@ reconfort_layer_manifest(result, include_range = FALSE)
 \code{result$n_alerts} are read.}
 
 \item{include_range}{If \code{TRUE}, override the nominal \code{vmin}/\code{vmax} of
-the continuous rasters with their actual \code{terra::minmax()}. Default
-\code{FALSE} (nominal domains, no file access).}
+the continuous rasters with the actual min/max of their displayed
+band (\code{terra::minmax(compute = TRUE)}). Default \code{FALSE} (nominal
+domains).}
 }
 \value{
 A \code{data.frame} with one row per available layer and the
@@ -68,9 +69,22 @@ the classification and probability layers the masked variant is
 preferred and the raw one is used as a fallback.
 
 Value domains are \emph{nominal} by default (score \code{1..100}, probability
-\code{0..1000}) — pure, file-free and testable. Pass \code{include_range = TRUE}
-to replace them with the actual per-raster min/max read via
-\pkg{terra} (best-effort: a read failure keeps the nominal domain).
+\code{0..1000}). Pass \code{include_range = TRUE} to replace them with the actual
+min/max of the displayed band, computed by \pkg{terra} even when the
+GeoTIFF stores no statistics (the IOTA² case; best-effort: a read
+failure or an all-NA raster keeps the nominal domain).
+
+The IOTA² probability map has \strong{one band per class} in the order of
+\code{\link{RECONFORT_CLASSES}} (healthy, dieback[, severe]), on a \code{0..1000}
+scale. Since v0.199.0 the \code{probability} row describes \strong{P(atteinte)},
+the probability that the pixel is affected: the sum of bands \code{2..n}
+(dieback + severe; dieback alone for pine), \code{0..1000}, high = bad. It
+is derived once into a single-band \verb{p_atteinte_<source>.tif} next to
+the source (rebuilt when the source is newer) and \code{path} points to it.
+A probability map clamped at 255 (runs made before the iota2 #12
+repair, see \code{inst/python/reconfort/repair_iota2_env.sh}) is reported
+once per session: its continuous score is compressed too, the run must
+be re-run.
 }
 \seealso{
 \code{\link{run_reconfort_dieback}}, \code{\link{RECONFORT_CLASSES}}

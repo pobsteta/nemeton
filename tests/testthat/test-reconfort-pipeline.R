@@ -18,6 +18,7 @@ mock_pipeline <- function(calls_env, write_score = TRUE, exit = 0L) {
   bindings <- list(
     .ensure_reconfort_python = function(...) "test-env",
     .reconfort_conda_binary  = function() "/opt/conda/bin/conda",
+    .reconfort_probamap_fixed = function(...) TRUE,
     ensure_reconfort_model   = function(version, cache_dir = NULL, quiet = FALSE) {
       d <- withr::local_tempdir(.local_envir = calls_env$env)
       p <- file.path(d, "model_1_seed_0.txt"); writeLines("model", p); p
@@ -104,6 +105,21 @@ test_that("run_reconfort_dieback writes a cfg with masking on by default", {
   expect_true(any(grepl("^list_tiles='T31UDP'", cfg)))
   expect_true(any(grepl("^mask_final_maps='True'", cfg)))
   expect_true(any(grepl("^S2_year='2024'", cfg)))
+})
+
+test_that("run_reconfort_dieback warns when iota2 lacks the probamap fix (#12), and runs on", {
+  skip_if_terra_write_broken()   # clustering post-process writes a TIF (runner anomaly)
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  testthat::local_mocked_bindings(.reconfort_probamap_fixed = function(...) FALSE)
+
+  expect_warning(
+    res <- run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                                 s2_year = 2024L, tiles = "T31UDP", quiet = TRUE),
+    "defect #12")
+  expect_equal(res$status, "completed")
 })
 
 test_that("run_reconfort_dieback with binary_mask = FALSE disables masking", {

@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.143.31** (release du 2026-09-23), `main` = `0.143.31`.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.144.0** (release du 2026-09-23), `main` = `0.144.0`.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -36,14 +36,17 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 |---|---|---|---|---|
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 | 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Interdit accusé réception le 2026-09-23** (brief app `BRIEF-nemeton-plan-md-0.143.17-0.143.28.md`) : aucun écran ne classe, ne compare ni ne moyenne B4/L3 entre projets — l'app n'a pas de vue inter-projets. **Reste ouvert sur un seul point : question B02 en attente côté app** — B02 absente de l'espace k-means, remplacée par `ID` (point 4 du brief), pas encore instruite |
+| 13 | **RECONFORT : `include_range` inerte, couche `probability` = P(sain), probabilités écrêtées à 255 (iota2 #12)** | cœur **v0.199.0** | `nemetonshiny` + **re-runs** | Brief reçu de l'app le 2026-09-23 (`briefs/traites/2026-09-23-reconfort-include-range-inerte.md`), réponse `specs/021-suivi-sanitaire-reconfort/reponse-brief-nemetonshiny-include-range.md`. Cœur : plage calculée sans avis ; `probability` = **P(atteinte) = P2 + P3, 0–1000** (choix Pascal) ; correctif iota2 **#12** dans `repair_iota2_env.sh`, appliqué à l'env local. **Reste à faire côté app** : libellé et infobulle de `reconfort_couche_proba` (« Probabilité d'atteinte », 0–1000, haut = mauvais — l'infobulle parle encore de « confiance »), plancher `nemeton (>= 0.199.0)`. **Reste à faire côté données** : relancer RECONFORT sur les **5 runs écrêtés** (armn z5 ×2, ltcp z9, hwuy z49, yuxn z53) — score et `stress_index` compressés (24–58 au lieu de 1–100) ; classes et alertes justes. Non accusé réception |
 
-**Deux écarts (n° 3, n° 6 résiduel), aucun n'appelle de correctif dans le cœur.**
+**Trois écarts (n° 3, n° 6 résiduel, n° 13), aucun n'appelle plus de correctif dans le cœur.**
 Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR
 et une desserte corrigée. Le n° 6 a été lu côté app — l'interdit tient, faute
 de vue inter-projets où l'enfreindre — et ne reste ouvert que sur la question
 B02. Les n° 7, 8, 10 et 11 sont refermés le 2026-09-23 (relus sur
 `nemetonshiny@3869ffd8`, table ci-dessous).
 Le n° 12 (FAST, cœur v0.198.0) est refermé le même jour par l'app v0.143.31.
+Le n° 13 (RECONFORT, cœur v0.199.0) attend l'app **et** la relance des cinq runs
+écrêtés par le défaut iota2 #12.
 
 **Les n° 10 et 11 n'étaient pas dans cette table**, et c'est le constat le plus
 utile de la release. Le n° 10 a été trouvé en vérifiant le n° 8 ; le n° 11 en

@@ -22,17 +22,31 @@
 #' preferred and the raw one is used as a fallback.
 #'
 #' Value domains are *nominal* by default (score `1..100`, probability
-#' `0..1000`) — pure, file-free and testable. Pass `include_range = TRUE`
-#' to replace them with the actual per-raster min/max read via
-#' \pkg{terra} (best-effort: a read failure keeps the nominal domain).
+#' `0..1000`). Pass `include_range = TRUE` to replace them with the actual
+#' min/max of the displayed band, computed by \pkg{terra} even when the
+#' GeoTIFF stores no statistics (the IOTA² case; best-effort: a read
+#' failure or an all-NA raster keeps the nominal domain).
+#'
+#' The IOTA² probability map has **one band per class** in the order of
+#' [`RECONFORT_CLASSES`] (healthy, dieback[, severe]), on a `0..1000`
+#' scale. Since v0.199.0 the `probability` row describes **P(atteinte)**,
+#' the probability that the pixel is affected: the sum of bands `2..n`
+#' (dieback + severe; dieback alone for pine), `0..1000`, high = bad. It
+#' is derived once into a single-band `p_atteinte_<source>.tif` next to
+#' the source (rebuilt when the source is newer) and `path` points to it.
+#' A probability map clamped at 255 (runs made before the iota2 #12
+#' repair, see `inst/python/reconfort/repair_iota2_env.sh`) is reported
+#' once per session: its continuous score is compressed too, the run must
+#' be re-run.
 #'
 #' @param result The list returned by [run_reconfort_dieback()]. Only
 #'   `result$rasters` (a named list of output paths, see
 #'   [run_reconfort_dieback()]) and, optionally, `result$alerts_sf` /
 #'   `result$n_alerts` are read.
 #' @param include_range If `TRUE`, override the nominal `vmin`/`vmax` of
-#'   the continuous rasters with their actual `terra::minmax()`. Default
-#'   `FALSE` (nominal domains, no file access).
+#'   the continuous rasters with the actual min/max of their displayed
+#'   band (`terra::minmax(compute = TRUE)`). Default `FALSE` (nominal
+#'   domains).
 #'
 #' @return A `data.frame` with one row per available layer and the
 #'   columns:
@@ -104,6 +118,8 @@ reconfort_layer_manifest <- function(result, include_range = FALSE) {
        role = "classification", categorical = TRUE, palette = NA_character_,
        reverse = FALSE, vmin = NA_real_, vmax = NA_real_,
        default_visible = FALSE, default_opacity = 0.8),
+  # v0.199.0 — P(atteinte) = P(dépérissant) + P(très dépérissant), 0..1000,
+  # dérivée par .reconfort_proba_atteinte() : « haut = mauvais ».
   list(id = "probability", label_key = "reconfort_couche_proba",
        role = "probability", categorical = FALSE, palette = "viridis",
        reverse = FALSE, vmin = 0, vmax = 1000, default_visible = FALSE,
@@ -133,11 +149,12 @@ reconfort_layer_manifest <- function(result, include_range = FALSE) {
     p <- paths[[d$id]]
     if (is.null(p) || is.na(p) || !nzchar(p)) next
     vmin <- d$vmin; vmax <- d$vmax
+    # v0.199.0 — la couche `probability` affiche P(atteinte) = somme des
+    # bandes 2..n (dépérissant + très dépérissant), dérivée une fois de la
+    # carte multibande iota2 (une bande par classe, échelle 0..1000).
+    if (identical(d$id, "probability")) p <- .reconfort_proba_atteinte(p)
     if (include_range && !d$categorical) {
-      rng <- tryCatch({
-        mm <- terra::minmax(terra::rast(p))
-        if (all(is.finite(mm))) c(mm[1L], mm[2L]) else NULL
-      }, error = function(e) NULL)
+      rng <- .reconfort_raster_range(p)
       if (!is.null(rng)) { vmin <- rng[1L]; vmax <- rng[2L] }
     }
     rows[[length(rows) + 1L]] <- data.frame(
@@ -164,6 +181,89 @@ reconfort_layer_manifest <- function(result, include_range = FALSE) {
 
   if (!length(rows)) return(.reconfort_empty_manifest())
   do.call(rbind, rows)
+}
+
+
+# v0.199.0 — plage réelle [min, max] de la PREMIÈRE bande d'un raster, NULL
+# si indisponible. Les GeoTIFF iota2 ne stockent pas de statistiques : sans
+# `compute = TRUE`, terra::minmax() émet un avis et rend NaN, et la plage
+# nominale du descripteur n'était jamais remplacée (brief app 2026-09-23).
+# Une seule bande : c'est celle que l'app affiche (`r[[1L]]`).
+.reconfort_raster_range <- function(path) {
+  tryCatch({
+    r  <- terra::rast(path)[[1L]]
+    mm <- terra::minmax(r, compute = TRUE)
+    if (all(is.finite(mm))) c(mm[1L], mm[2L]) else NULL
+  }, error = function(e) NULL)
+}
+
+
+# v0.199.0 — carte P(atteinte) dérivée de la carte de probabilité iota2.
+#
+# `Final_Proba_map_masked*.tif` / `ProbabilityMap_seed_0.tif` porte une bande
+# par classe RECONFORT dans l'ordre de `RECONFORT_CLASSES` (1-sain,
+# 2-deperissant[, 3-tres-deperissant]), échelle 0..1000 (OTB/Shark), 0 =
+# no-data. La couche d'affichage `probability` est la probabilité que le
+# pixel soit atteint : somme des bandes 2..n (P2 + P3 ; P2 seule pour le pin),
+# 0..1000, « haut = mauvais » comme le score. Écrite une fois à côté de la
+# source (`p_atteinte_<nom>.tif`, recalculée si la source est plus récente),
+# ou sous tempdir() si le répertoire n'est pas inscriptible. Un raster à une
+# seule bande est rendu tel quel. En cas d'échec : la source, inchangée.
+.reconfort_proba_atteinte <- function(path) {
+  tryCatch({
+    r <- terra::rast(path)
+    if (terra::nlyr(r) < 2L) return(path)
+    .reconfort_warn_if_saturated(r, path)
+    # Préfixe (pas suffixe) : `Final_Proba_map_masked*.tif` et
+    # `reconfort_*_<run>.tif` ne doivent pas re-sélectionner le dérivé.
+    out <- file.path(dirname(path), paste0("p_atteinte_", basename(path)))
+    if (file.exists(out) &&
+        file.info(out)$mtime >= file.info(path)$mtime) {
+      return(out)
+    }
+    if (file.access(dirname(out), 2L) != 0L) {
+      out <- file.path(tempdir(), basename(out))
+      if (file.exists(out) &&
+          file.info(out)$mtime >= file.info(path)$mtime) return(out)
+    }
+    # NoData = 0 sur chaque bande : une probabilité nulle est lue NA. Le
+    # pixel est valide dès qu'une bande l'est ; ses NA valent alors 0.
+    valid <- !is.na(max(r, na.rm = TRUE))
+    att <- sum(terra::subst(r[[2:terra::nlyr(r)]], NA, 0))
+    att <- terra::mask(att, valid, maskvalues = FALSE)
+    names(att) <- "p_atteinte"
+    tmp <- tempfile(".reconfort_atteinte_", tmpdir = dirname(out),
+                    fileext = ".tif")
+    terra::writeRaster(att, tmp, datatype = "INT2S", NAflag = -1,
+                       gdal = c("COMPRESS=DEFLATE", "TILED=YES"))
+    if (!file.rename(tmp, out)) { unlink(tmp); return(path) }
+    out
+  }, error = function(e) path)
+}
+
+
+# v0.199.0 — détecte une carte de probabilité écrêtée à 255 (défaut #12
+# d'iota2 : `probamap` écrit en uint8, cf. repair_iota2_env.sh). Sur une
+# carte saine (0..1000, somme des classes ~1000 par pixel), la classe
+# dominante dépasse largement 255 ; écrêtée, AUCUNE bande ne dépasse 255 et
+# plusieurs l'atteignent. Signale une fois par fichier et par session : le
+# score continu du même run est faux (compressé vers ~24..58) et le run est
+# à relancer après réparation de l'environnement.
+.reconfort_warn_if_saturated <- function(r, path) {
+  mx <- tryCatch(terra::minmax(r, compute = TRUE)[2L, ],
+                 error = function(e) NULL)
+  if (is.null(mx) || !all(is.finite(mx))) return(invisible(FALSE))
+  sat <- all(mx <= 255) && any(mx == 255)
+  if (sat) {
+    rlang::inform(
+      cli::format_inline(paste0(
+        "RECONFORT probability map clamped at 255 ({.path {basename(path)}}): ",
+        "the run predates the iota2 #12 repair, its continuous score is ",
+        "compressed. Run {.file repair_iota2_env.sh} then re-run RECONFORT.")),
+      .frequency = "once",
+      .frequency_id = paste0("reconfort_proba_saturated:", path))
+  }
+  invisible(sat)
 }
 
 
@@ -259,7 +359,9 @@ reconfort_layer_manifest <- function(result, include_range = FALSE) {
 #' @param run_id Run timestamp, or `NULL` (default) to pick the most
 #'   recent run in the zone cache.
 #' @param include_range If `TRUE`, fill `vmin`/`vmax` of the continuous
-#'   rasters with their actual `terra::minmax()`. Default `FALSE`.
+#'   rasters with the actual min/max of their displayed band
+#'   (`terra::minmax(compute = TRUE)`), see [reconfort_layer_manifest()].
+#'   Default `FALSE`.
 #'
 #' @return A `data.frame` with the same columns as
 #'   [reconfort_layer_manifest()] (one row per available display raster).

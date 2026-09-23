@@ -17,7 +17,9 @@ resolved at \code{<cache_dir>/zone_<zone_id>/} or, as a fallback,
 recent run in the zone cache.}
 
 \item{include_range}{If \code{TRUE}, fill \code{vmin}/\code{vmax} of the continuous
-rasters with their actual \code{terra::minmax()}. Default \code{FALSE}.}
+rasters with the actual min/max of their displayed band
+(\code{terra::minmax(compute = TRUE)}), see \code{\link[=reconfort_layer_manifest]{reconfort_layer_manifest()}}.
+Default \code{FALSE}.}
 }
 \value{
 A \code{data.frame} with the same columns as

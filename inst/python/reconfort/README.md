@@ -46,8 +46,8 @@ there). The ~54 MB OSO mask and the RF models are fetched on demand
 
 ## Réparation de l'environnement conda (`repair_iota2_env.sh`)
 
-Le paquet `iota2` (canaux `iota2` + `iota2-deps`) a deux défauts qui cassent la
-chaîne RECONFORT sur un install récent. Après avoir créé l'env conda, lancer
+Le paquet `iota2` (canaux `iota2` + `iota2-deps`) a quatre défauts qui cassent ou
+faussent la chaîne RECONFORT sur un install récent. Après avoir créé l'env conda, lancer
 **une fois** :
 
 ```bash
@@ -59,3 +59,11 @@ Idempotent. Il applique : (#9) `pandas < 3` — iota2 utilise
 exécutable `task_launcher.py` dans `$ENV/bin/` — iota2 l'invoque en commande nue
 mais ne l'expose pas comme console-script (les workers dask échouent sinon avec
 `task_launcher.py: not found`).
+(#11) `image_classifier.py` ne découpe pas le masque de région du chunk 0
+(`targeted_chunk` vaut 0, donc faux) — OTB échoue, ce qui forçait un chunk
+unique à plus de 20 Go ; (#12) `image_classifier.py` écrit la carte de
+probabilité (`probamap`) dans le `pixType` de la classification, `uint8` :
+les probabilités OTB (échelle 0–1000) sont écrêtées à 255 et le score continu
+sort compressé (~24–58 au lieu de 1–100). Correctif : `probamap` en `uint16`.
+Les runs faits avant ce correctif sont à relancer ; `reconfort_cache_manifest()`
+les signale (« probability map clamped at 255 »).
