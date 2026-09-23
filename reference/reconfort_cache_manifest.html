@@ -51,7 +51,7 @@ from the alert table independently)."><meta property="og:image" content="https:/
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.198.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.199.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -206,7 +206,9 @@ recent run in the zone cache.</p></dd>
 
 <dt id="arg-include-range">include_range<a class="anchor" aria-label="anchor" href="#arg-include-range"></a></dt>
 <dd><p>If <code>TRUE</code>, fill <code>vmin</code>/<code>vmax</code> of the continuous
-rasters with their actual <code><a href="https://rspatial.github.io/terra/reference/minmax.html" class="external-link">terra::minmax()</a></code>. Default <code>FALSE</code>.</p></dd>
+rasters with the actual min/max of their displayed band
+(<code>terra::minmax(compute = TRUE)</code>), see <code><a href="reconfort_layer_manifest.html">reconfort_layer_manifest()</a></code>.
+Default <code>FALSE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

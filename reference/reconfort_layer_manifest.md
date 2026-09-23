@@ -22,9 +22,22 @@ classification and probability layers the masked variant is preferred
 and the raw one is used as a fallback.
 
 Value domains are *nominal* by default (score `1..100`, probability
-`0..1000`) — pure, file-free and testable. Pass `include_range = TRUE`
-to replace them with the actual per-raster min/max read via terra
-(best-effort: a read failure keeps the nominal domain).
+`0..1000`). Pass `include_range = TRUE` to replace them with the actual
+min/max of the displayed band, computed by terra even when the GeoTIFF
+stores no statistics (the IOTA² case; best-effort: a read failure or an
+all-NA raster keeps the nominal domain).
+
+The IOTA² probability map has **one band per class** in the order of
+[`RECONFORT_CLASSES`](https://pobsteta.github.io/nemeton/reference/RECONFORT_CLASSES.md)
+(healthy, dieback\[, severe\]), on a `0..1000` scale. Since v0.199.0 the
+`probability` row describes **P(atteinte)**, the probability that the
+pixel is affected: the sum of bands `2..n` (dieback + severe; dieback
+alone for pine), `0..1000`, high = bad. It is derived once into a
+single-band `p_atteinte_<source>.tif` next to the source (rebuilt when
+the source is newer) and `path` points to it. A probability map clamped
+at 255 (runs made before the iota2 \#12 repair, see
+`inst/python/reconfort/repair_iota2_env.sh`) is reported once per
+session: its continuous score is compressed too, the run must be re-run.
 
 ## Usage
 
@@ -45,9 +58,8 @@ reconfort_layer_manifest(result, include_range = FALSE)
 - include_range:
 
   If `TRUE`, override the nominal `vmin`/`vmax` of the continuous
-  rasters with their actual
-  [`terra::minmax()`](https://rspatial.github.io/terra/reference/minmax.html).
-  Default `FALSE` (nominal domains, no file access).
+  rasters with the actual min/max of their displayed band
+  (`terra::minmax(compute = TRUE)`). Default `FALSE` (nominal domains).
 
 ## Value
 

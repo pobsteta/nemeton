@@ -58,9 +58,10 @@ reconfort_cache_manifest(cache_dir, zone_id, run_id = NULL, include_range = FALS
 
 - include_range:
 
-  If `TRUE`, fill `vmin`/`vmax` of the continuous rasters with their
-  actual
-  [`terra::minmax()`](https://rspatial.github.io/terra/reference/minmax.html).
+  If `TRUE`, fill `vmin`/`vmax` of the continuous rasters with the
+  actual min/max of their displayed band
+  (`terra::minmax(compute = TRUE)`), see
+  [`reconfort_layer_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_layer_manifest.md).
   Default `FALSE`.
 
 ## Value

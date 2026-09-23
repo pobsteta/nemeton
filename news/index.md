@@ -1,5 +1,81 @@
 # Changelog
 
+## nemeton 0.199.0 (2026-09-23)
+
+#### Fixed — RECONFORT : `include_range = TRUE` n’avait aucun effet
+
+Les GeoTIFF d’iota2 ne stockent pas de statistiques.
+[`terra::minmax()`](https://rspatial.github.io/terra/reference/minmax.html)
+sans `compute = TRUE` y émettait un avis (« min and max values not
+available ») et rendait `NaN` : `.reconfort_build_manifest()` gardait
+alors les bornes nominales du descripteur, silencieusement. L’app, qui
+passe `include_range = TRUE`, voyait deux avis par ouverture de projet
+et un score calé sur 1–100 alors que ses valeurs occupent 24–58 : la
+palette n’en utilisait qu’un tiers. La plage est désormais **calculée**
+(`minmax(compute = TRUE)`, ~0,02 s), sur la bande affichée, sans avis ;
+repli sur les bornes nominales si le calcul échoue ou si le raster est
+vide.
+
+#### Changed — la couche `probability` affiche P(atteinte)
+
+La carte de probabilité iota2 porte **une bande par classe**, dans
+l’ordre de `RECONFORT_CLASSES` (sain, dépérissant\[, très
+dépérissant\]), sur une échelle 0–1000. Le manifeste pointait la carte
+multibande et l’app affichait de fait la bande 1, P(sain), « haut = bon
+», à l’inverse du score. La couche `probability` décrit maintenant
+**P(atteinte) = P(dépérissant) + P(très dépérissant)** (P(dépérissant)
+seule pour le pin), 0–1000, « haut = mauvais », dérivée une fois dans
+`p_atteinte_<source>.tif` à côté de la source (recalculée si la source
+est plus récente) ; `path` pointe dessus. Choix de Pascal, 2026-09-23.
+Le préfixe évite que les globs `Final_Proba_map_masked*.tif` /
+`reconfort_*_<run>.tif` ne re-sélectionnent le dérivé. NoData = 0 étant
+déclaré sur chaque bande, une probabilité nulle est relue NA : le pixel
+est jugé valide dès qu’une de ses bandes l’est.
+
+#### Fixed — iota2 écrête les probabilités à 255 (défaut [\#12](https://github.com/pobsteta/nemeton/issues/12))
+
+En instruisant la question « 0–255 ou 0–1000 ? » du brief, la vraie
+cause est apparue en amont. `image_classifier.py` passe
+`pixType = "uint8"` à OTB `ImageClassifier`, et `create_application`
+d’iota2 l’applique à **toutes** les sorties image (`out`, `confmap`,
+`probamap`). `confmap` est remis en `float` juste après ; `probamap` ne
+l’est pas. Les probabilités (0–1000) sont donc écrites en `uint8` et OTB
+les écrête à 255 : sommes par pixel entre 257 et 765 au lieu de ~1000,
+médiane de P(sain) = 255.
+
+Tout ce qui en dérive est faux : le score continu
+`(1001 − P1 + P2 + 2·P3) / 30` sort dans **24–58** au lieu de 1–100 (ce
+sont exactement les bornes de la formule quand P ≤ 255), et le
+`stress_index` des alertes (moyenne du score par grappe) avec lui. La
+classification et donc la **géométrie des alertes ne sont pas touchées**
+(calculées séparément). Les **5 runs existants** (armn ×2, ltcp, hwuy,
+yuxn) sont tous écrêtés.
+
+- `repair_iota2_env.sh` gagne le correctif **\#12** : `probamap` forcé
+  en `uint16` (le type qu’iota2 utilise partout ailleurs pour ces
+  cartes). Idempotent, appliqué à l’env local `nemeton-reconfort`. Les
+  runs antérieurs sont **à relancer**.
+- [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+  vérifie le correctif au lancement (comme le
+  [\#11](https://github.com/pobsteta/nemeton/issues/11)) et **avertit**
+  sans bloquer s’il manque.
+- [`reconfort_cache_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_cache_manifest.md)
+  /
+  [`reconfort_layer_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_layer_manifest.md)
+  repèrent une carte écrêtée (aucune bande au-dessus de 255, au moins
+  une à 255) et le signalent une fois par session (message, pas
+  avertissement).
+
+Tests : raster sans statistiques → plage réelle sans aucun avis ;
+P(atteinte) = somme des bandes 2..n, une bande, pixel à P = 0 valide,
+pixel masqué NA ; dérivé non re-sélectionné, recalculé quand la source
+change ; carte écrêtée signalée une fois, carte saine muette ;
+[`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+avertit sans le correctif
+[\#12](https://github.com/pobsteta/nemeton/issues/12) et termine.
+Vérifié sur `ltcp` zone 9 : score 24–58 sans avis, `probability` 0–510
+(écrêtée, signalée).
+
 ## nemeton 0.198.0 (2026-09-23)
 
 #### Fixed — FAST : deux masques distincts ne tombent plus sur le même fichier

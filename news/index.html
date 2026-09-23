@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.198.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.199.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,29 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.199.0" id="nemeton-01990-2026-09-23">nemeton 0.199.0 (2026-09-23)<a class="anchor" aria-label="anchor" href="#nemeton-01990-2026-09-23"></a></h2>
+<div class="section level4">
+<h4 id="fixed--reconfort--include_range--true-navait-aucun-effet-0-199-0">Fixed — RECONFORT : <code>include_range = TRUE</code> n’avait aucun effet<a class="anchor" aria-label="anchor" href="#fixed--reconfort--include_range--true-navait-aucun-effet-0-199-0"></a></h4>
+<p>Les GeoTIFF d’iota2 ne stockent pas de statistiques. <code><a href="https://rspatial.github.io/terra/reference/minmax.html" class="external-link">terra::minmax()</a></code> sans <code>compute = TRUE</code> y émettait un avis (« min and max values not available ») et rendait <code>NaN</code> : <code>.reconfort_build_manifest()</code> gardait alors les bornes nominales du descripteur, silencieusement. L’app, qui passe <code>include_range = TRUE</code>, voyait deux avis par ouverture de projet et un score calé sur 1–100 alors que ses valeurs occupent 24–58 : la palette n’en utilisait qu’un tiers. La plage est désormais <strong>calculée</strong> (<code>minmax(compute = TRUE)</code>, ~0,02 s), sur la bande affichée, sans avis ; repli sur les bornes nominales si le calcul échoue ou si le raster est vide.</p>
+</div>
+<div class="section level4">
+<h4 id="changed--la-couche-probability-affiche-patteinte-0-199-0">Changed — la couche <code>probability</code> affiche P(atteinte)<a class="anchor" aria-label="anchor" href="#changed--la-couche-probability-affiche-patteinte-0-199-0"></a></h4>
+<p>La carte de probabilité iota2 porte <strong>une bande par classe</strong>, dans l’ordre de <code>RECONFORT_CLASSES</code> (sain, dépérissant[, très dépérissant]), sur une échelle 0–1000. Le manifeste pointait la carte multibande et l’app affichait de fait la bande 1, P(sain), « haut = bon », à l’inverse du score. La couche <code>probability</code> décrit maintenant <strong>P(atteinte) = P(dépérissant) + P(très dépérissant)</strong> (P(dépérissant) seule pour le pin), 0–1000, « haut = mauvais », dérivée une fois dans <code>p_atteinte_&lt;source&gt;.tif</code> à côté de la source (recalculée si la source est plus récente) ; <code>path</code> pointe dessus. Choix de Pascal, 2026-09-23. Le préfixe évite que les globs <code>Final_Proba_map_masked*.tif</code> / <code>reconfort_*_&lt;run&gt;.tif</code> ne re-sélectionnent le dérivé. NoData = 0 étant déclaré sur chaque bande, une probabilité nulle est relue NA : le pixel est jugé valide dès qu’une de ses bandes l’est.</p>
+</div>
+<div class="section level4">
+<h4 id="fixed--iota2-écrête-les-probabilités-à-défaut-0-199-0">Fixed — iota2 écrête les probabilités à 255 (défaut <a href="https://github.com/pobsteta/nemeton/issues/12" class="external-link">#12</a>)<a class="anchor" aria-label="anchor" href="#fixed--iota2-%C3%A9cr%C3%AAte-les-probabilit%C3%A9s-%C3%A0-d%C3%A9faut-0-199-0"></a></h4>
+<p>En instruisant la question « 0–255 ou 0–1000 ? » du brief, la vraie cause est apparue en amont. <code>image_classifier.py</code> passe <code>pixType = "uint8"</code> à OTB <code>ImageClassifier</code>, et <code>create_application</code> d’iota2 l’applique à <strong>toutes</strong> les sorties image (<code>out</code>, <code>confmap</code>, <code>probamap</code>). <code>confmap</code> est remis en <code>float</code> juste après ; <code>probamap</code> ne l’est pas. Les probabilités (0–1000) sont donc écrites en <code>uint8</code> et OTB les écrête à 255 : sommes par pixel entre 257 et 765 au lieu de ~1000, médiane de P(sain) = 255.</p>
+<p>Tout ce qui en dérive est faux : le score continu <code>(1001 − P1 + P2 + 2·P3) / 30</code> sort dans <strong>24–58</strong> au lieu de 1–100 (ce sont exactement les bornes de la formule quand P ≤ 255), et le <code>stress_index</code> des alertes (moyenne du score par grappe) avec lui. La classification et donc la <strong>géométrie des alertes ne sont pas touchées</strong> (calculées séparément). Les <strong>5 runs existants</strong> (armn ×2, ltcp, hwuy, yuxn) sont tous écrêtés.</p>
+<ul><li>
+<code>repair_iota2_env.sh</code> gagne le correctif <strong>#12</strong> : <code>probamap</code> forcé en <code>uint16</code> (le type qu’iota2 utilise partout ailleurs pour ces cartes). Idempotent, appliqué à l’env local <code>nemeton-reconfort</code>. Les runs antérieurs sont <strong>à relancer</strong>.</li>
+<li>
+<code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> vérifie le correctif au lancement (comme le <a href="https://github.com/pobsteta/nemeton/issues/11" class="external-link">#11</a>) et <strong>avertit</strong> sans bloquer s’il manque.</li>
+<li>
+<code><a href="../reference/reconfort_cache_manifest.html">reconfort_cache_manifest()</a></code> / <code><a href="../reference/reconfort_layer_manifest.html">reconfort_layer_manifest()</a></code> repèrent une carte écrêtée (aucune bande au-dessus de 255, au moins une à 255) et le signalent une fois par session (message, pas avertissement).</li>
+</ul><p>Tests : raster sans statistiques → plage réelle sans aucun avis ; P(atteinte) = somme des bandes 2..n, une bande, pixel à P = 0 valide, pixel masqué NA ; dérivé non re-sélectionné, recalculé quand la source change ; carte écrêtée signalée une fois, carte saine muette ; <code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> avertit sans le correctif <a href="https://github.com/pobsteta/nemeton/issues/12" class="external-link">#12</a> et termine. Vérifié sur <code>ltcp</code> zone 9 : score 24–58 sans avis, <code>probability</code> 0–510 (écrêtée, signalée).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.198.0" id="nemeton-01980-2026-09-23">nemeton 0.198.0 (2026-09-23)<a class="anchor" aria-label="anchor" href="#nemeton-01980-2026-09-23"></a></h2>
 <div class="section level4">

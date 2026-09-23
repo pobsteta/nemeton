@@ -17,9 +17,21 @@ alert row appears only when the run produced at least one alert. For
 the classification and probability layers the masked variant is
 preferred and the raw one is used as a fallback.
 Value domains are nominal by default (score 1..100, probability
-0..1000) — pure, file-free and testable. Pass include_range = TRUE
-to replace them with the actual per-raster min/max read via
-terra (best-effort: a read failure keeps the nominal domain)."><meta property="og:description" content="Translates the result of run_reconfort_dieback into a flat
+0..1000). Pass include_range = TRUE to replace them with the actual
+min/max of the displayed band, computed by terra even when the
+GeoTIFF stores no statistics (the IOTA² case; best-effort: a read
+failure or an all-NA raster keeps the nominal domain).
+The IOTA² probability map has one band per class in the order of
+RECONFORT_CLASSES (healthy, dieback[, severe]), on a 0..1000
+scale. Since v0.199.0 the probability row describes P(atteinte),
+the probability that the pixel is affected: the sum of bands 2..n
+(dieback + severe; dieback alone for pine), 0..1000, high = bad. It
+is derived once into a single-band p_atteinte_&amp;lt;source&amp;gt;.tif next to
+the source (rebuilt when the source is newer) and path points to it.
+A probability map clamped at 255 (runs made before the iota2 #12
+repair, see inst/python/reconfort/repair_iota2_env.sh) is reported
+once per session: its continuous score is compressed too, the run must
+be re-run."><meta property="og:description" content="Translates the result of run_reconfort_dieback into a flat
 data.frame describing the map layers a RECONFORT run exposes — the
 continuous dieback score, the per-pixel classification, the
 probability map, and the alert centroids — together with the
@@ -37,9 +49,21 @@ alert row appears only when the run produced at least one alert. For
 the classification and probability layers the masked variant is
 preferred and the raw one is used as a fallback.
 Value domains are nominal by default (score 1..100, probability
-0..1000) — pure, file-free and testable. Pass include_range = TRUE
-to replace them with the actual per-raster min/max read via
-terra (best-effort: a read failure keeps the nominal domain)."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
+0..1000). Pass include_range = TRUE to replace them with the actual
+min/max of the displayed band, computed by terra even when the
+GeoTIFF stores no statistics (the IOTA² case; best-effort: a read
+failure or an all-NA raster keeps the nominal domain).
+The IOTA² probability map has one band per class in the order of
+RECONFORT_CLASSES (healthy, dieback[, severe]), on a 0..1000
+scale. Since v0.199.0 the probability row describes P(atteinte),
+the probability that the pixel is affected: the sum of bands 2..n
+(dieback + severe; dieback alone for pine), 0..1000, high = bad. It
+is derived once into a single-band p_atteinte_&amp;lt;source&amp;gt;.tif next to
+the source (rebuilt when the source is newer) and path points to it.
+A probability map clamped at 255 (runs made before the iota2 #12
+repair, see inst/python/reconfort/repair_iota2_env.sh) is reported
+once per session: its continuous score is compressed too, the run must
+be re-run."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -47,7 +71,7 @@ terra (best-effort: a read failure keeps the nominal domain)."><meta property="o
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.198.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.199.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -169,9 +193,21 @@ alert row appears only when the run produced at least one alert. For
 the classification and probability layers the masked variant is
 preferred and the raw one is used as a fallback.</p>
 <p>Value domains are <em>nominal</em> by default (score <code>1..100</code>, probability
-<code>0..1000</code>) — pure, file-free and testable. Pass <code>include_range = TRUE</code>
-to replace them with the actual per-raster min/max read via
-<span class="pkg">terra</span> (best-effort: a read failure keeps the nominal domain).</p>
+<code>0..1000</code>). Pass <code>include_range = TRUE</code> to replace them with the actual
+min/max of the displayed band, computed by <span class="pkg">terra</span> even when the
+GeoTIFF stores no statistics (the IOTA² case; best-effort: a read
+failure or an all-NA raster keeps the nominal domain).</p>
+<p>The IOTA² probability map has <strong>one band per class</strong> in the order of
+<code><a href="RECONFORT_CLASSES.html">RECONFORT_CLASSES</a></code> (healthy, dieback[, severe]), on a <code>0..1000</code>
+scale. Since v0.199.0 the <code>probability</code> row describes <strong>P(atteinte)</strong>,
+the probability that the pixel is affected: the sum of bands <code>2..n</code>
+(dieback + severe; dieback alone for pine), <code>0..1000</code>, high = bad. It
+is derived once into a single-band <code>p_atteinte_&lt;source&gt;.tif</code> next to
+the source (rebuilt when the source is newer) and <code>path</code> points to it.
+A probability map clamped at 255 (runs made before the iota2 #12
+repair, see <code>inst/python/reconfort/repair_iota2_env.sh</code>) is reported
+once per session: its continuous score is compressed too, the run must
+be re-run.</p>
     </div>
 
     <div class="section level2">
@@ -192,8 +228,9 @@ to replace them with the actual per-raster min/max read via
 
 <dt id="arg-include-range">include_range<a class="anchor" aria-label="anchor" href="#arg-include-range"></a></dt>
 <dd><p>If <code>TRUE</code>, override the nominal <code>vmin</code>/<code>vmax</code> of
-the continuous rasters with their actual <code><a href="https://rspatial.github.io/terra/reference/minmax.html" class="external-link">terra::minmax()</a></code>. Default
-<code>FALSE</code> (nominal domains, no file access).</p></dd>
+the continuous rasters with the actual min/max of their displayed
+band (<code>terra::minmax(compute = TRUE)</code>). Default <code>FALSE</code> (nominal
+domains).</p></dd>
 
 </dl></div>
     <div class="section level2">
