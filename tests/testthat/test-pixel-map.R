@@ -571,3 +571,101 @@ test_that("extract_pixel_timeseries: validates xy", {
   expect_error(extract_pixel_timeseries(cache, scenes, "lng,lat"),
                "length-2")
 })
+
+
+# ---- v0.198.0 : cache disque de build_index_stack() -------------------
+
+test_that("build_index_stack(cache_result = TRUE): second call reads no band, identical result", {
+  skip_if_not_installed("terra")
+  cache  <- withr::local_tempdir()
+  rcache <- withr::local_tempdir()
+  scenes <- make_fixture_s2_cache(cache, scenes = 3L)
+  # Une valeur NA pour vérifier qu'elle survit à l'aller-retour disque.
+  b04 <- file.path(cache, scenes$scene_id[2], "B04.tif")
+  r <- terra::rast(b04) * 1; r[1] <- NA
+  terra::writeRaster(r, b04, overwrite = TRUE)
+
+  n_reads <- 0L
+  real_read <- read_s2_band_raster
+  local_mocked_bindings(read_s2_band_raster = function(...) {
+    n_reads <<- n_reads + 1L
+    real_read(...)
+  })
+
+  ref <- build_index_stack(cache, scenes, "NDVI")          # sans cache
+  n0 <- n_reads
+  s1 <- build_index_stack(cache, scenes, "NDVI",
+                          cache_result = TRUE, result_cache_dir = rcache)
+  n1 <- n_reads
+  s2 <- build_index_stack(cache, scenes, "NDVI",
+                          cache_result = TRUE, result_cache_dir = rcache)
+
+  expect_gt(n1, n0)
+  expect_identical(n_reads, n1)                           # 0 bande relue
+  expect_length(list.files(rcache, pattern = "^index_stack_NDVI_.*\\.tif$"), 1L)
+  for (s in list(s1, s2)) {
+    expect_identical(names(s), names(ref))
+    expect_identical(as.Date(terra::time(s)), as.Date(terra::time(ref)))
+    expect_identical(attr(s, "index"), attr(ref, "index"))
+    expect_identical(terra::values(s), terra::values(ref))
+  }
+  expect_true(anyNA(terra::values(s2)))
+})
+
+test_that("build_index_stack cache: a new or re-ingested scene invalidates the entry", {
+  skip_if_not_installed("terra")
+  cache  <- withr::local_tempdir()
+  rcache <- withr::local_tempdir()
+  scenes <- make_fixture_s2_cache(cache, scenes = 3L)
+  go <- function(sc) build_index_stack(cache, sc, "NDVI",
+                                       cache_result = TRUE,
+                                       result_cache_dir = rcache)
+
+  s3 <- go(scenes[1:2, ])
+  s_all <- go(scenes)                                     # scène ajoutée
+  expect_equal(terra::nlyr(s3), 2L)
+  expect_equal(terra::nlyr(s_all), 3L)
+
+  # Scène réingérée : même scene_id, nouvelles valeurs, nouveau mtime.
+  b08 <- file.path(cache, scenes$scene_id[1], "B08.tif")
+  r <- terra::rast(b08) * 0 + 0.9
+  terra::writeRaster(r, b08, overwrite = TRUE)
+  Sys.setFileTime(b08, Sys.time() + 5)
+  s_new <- go(scenes)
+  expect_false(isTRUE(all.equal(terra::values(s_new[[1]]),
+                                terra::values(s_all[[1]]))))
+  expect_equal(terra::values(s_new),
+               terra::values(build_index_stack(cache, scenes, "NDVI")))
+  expect_length(list.files(rcache, pattern = "\\.tif$"), 3L)
+})
+
+test_that("build_index_stack cache: mask_polygon is part of the key", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  cache  <- withr::local_tempdir()
+  rcache <- withr::local_tempdir()
+  scenes <- make_fixture_s2_cache(cache, scenes = 2L)
+  poly <- sf::st_sfc(sf::st_polygon(list(rbind(
+    c(644000, 5235000), c(644150, 5235000), c(644150, 5235150),
+    c(644000, 5235150), c(644000, 5235000)))), crs = 2154)
+  a <- build_index_stack(cache, scenes, "NDVI", cache_result = TRUE,
+                         result_cache_dir = rcache)
+  b <- build_index_stack(cache, scenes, "NDVI", mask_polygon = poly,
+                         cache_result = TRUE, result_cache_dir = rcache)
+  expect_gt(sum(is.na(terra::values(b))), sum(is.na(terra::values(a))))
+  expect_length(list.files(rcache, pattern = "\\.tif$"), 2L)
+})
+
+test_that(".index_stack_gc keeps the newest `keep` stacks with their sidecars", {
+  d <- withr::local_tempdir()
+  base <- as.POSIXct("2026-01-01", tz = "UTC")
+  for (k in 1:5) {
+    f <- file.path(d, sprintf("index_stack_NDVI_%016d.tif", k))
+    writeLines("x", f); writeLines("x", paste0(f, ".dates"))
+    Sys.setFileTime(f, base + k)
+  }
+  nemeton:::.index_stack_gc(d, keep = 2L)
+  left <- list.files(d)
+  expect_length(left, 4L)
+  expect_true(all(grepl("_000000000000000[45]\\.tif", left)))
+})

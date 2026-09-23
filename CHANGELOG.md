@@ -10,6 +10,22 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.198.0] - 2026-09-23
+
+### Added
+- `build_index_stack(cache_result = FALSE, result_cache_dir = NULL)` : cache
+  disque adressé par contenu (indice, scènes, taille + mtime des bandes,
+  polygone de masque), relecture identique au calcul, LRU
+  `nemeton.index_stack_keep` (8). Mesuré sur 327 scènes : 15 s (calcul + écriture, 233 Mo) → 0,05 s.
+
+### Fixed
+- `compute_fast_alert_mask()` : nom du masque adressé par contenu
+  (`fast_alert_<INDEX>_<mode>_<hash16>.tif`) au lieu d'un horodatage à la
+  seconde — deux masques distincts calculés dans la même seconde
+  s'écrasaient. Pas de réécriture d'un masque identique ; écriture atomique.
+- `read_fast_alert_mask()` : « le plus récent » par mtime ; `run_id` accepte
+  le suffixe adressé par contenu ; `%` échappé dans l'aide de `run_id`.
+
 ## [0.196.0] - 2026-09-14
 
 ### Added
