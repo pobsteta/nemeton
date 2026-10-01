@@ -109,6 +109,52 @@ opposer au prochain fork qui se présentera comme un raccourci.
 
 ------------------------------------------------------------------------
 
+# Chantier CADRÉ — Production IFN par petits domaines, Fay-Herriot (spec 054)
+
+**Journal** — *2026-10-01* (doc seule, pas de release) : **cadrage à
+partir d’Onwunji et al. (2026, Ann. For. Sci. 83:46)**, l’estimateur
+Fay-Herriot de la production IFN avec des covariables GEDI.
+
+Livré : `specs/054-production-fay-herriot/spec.md` et le brouillon
+`ADR-016-estimation-petits-domaines.md` (à reporter dans
+`platform_nemeton`).
+
+Constats vérifiés sur l’export IFN 2005-2024 : - **pas de colonne de
+production** ; elle se recalcule depuis `IR5` (en mètres) et `C13` ; -
+**PG exacte, PV demande une hypothèse** de croissance en hauteur ; -
+**pas de colonne de propriété** dans `PLACETTE`.
+
+Constat sur le code : **E1 récolte 2 % du stock**
+(`harvest_rate = 0.02`), pas un flux.
+
+Consommateurs : P2 (nouveau mode `ifn_fh`), ratio prélèvement/production
+(spec 040), P1/C1 (repli continu au lieu de la cascade `min_plac`),
+E1/E2 (le flux plafonne la récolte). B2 est conforté sans code ;
+T2/R3/R5 restent en prospective.
+
+**Décisions D1-D8 tranchées le 2026-10-01** (spec §9). Deux s’écartent
+de la recommandation initiale : - **D3** : on compare deux jeux de
+covariables, GEDI brut et FORMS-T + MNT, sur des critères fixés d’avance
+; - **D6** : dans E1, le flux remplace le stock
+(`production × taux_mobilisation`), en opt-in, avec un `ref_max` propre
+au mode flux.
+
+**Lot 0 fait le 2026-10-01** (spec §3.a) : - **référence IGN** : 87,9
+Mm³/an, soit 5,4 m³/ha/an (2014-2022) ; - **recrutement** : seuil de 7,5
+cm de diamètre, confirmé ; - **carottage partiel depuis 2014** : 47 % de
+la surface terrière est à imputer, d’où l’amendement de D7 ; -
+**contrôle national de la voie (a)** : PV 4,61 m³/ha/an (−15 %), PG 0,68
+— voie acceptée ; - **piège évité** : sans recalcul de la circonférence
+passée, l’imputation fait sortir silencieusement les arbres de la somme
+(PV tombait à 2,25) ; - **prélèvement** : l’IGN compte aussi les arbres
+coupés non vidangés (code 7) ; - **GEDI** : trou d’acquisition de mars
+2023 à avril 2024, aucun accès Earthdata configuré.
+
+**Prochaine étape** : lot 1 sur le jeu F (FORMS-T + MNT). Le jeu G
+attend un compte Earthdata (action de Pascal).
+
+------------------------------------------------------------------------
+
 # Chantier CLOS — Onglet Desserte : rendre visibles les sorties (app + foretaccess)
 
 > **Émis le 2026-08-14** :
