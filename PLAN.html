@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.205.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.205.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -342,7 +342,10 @@
 <strong>Coordonnées floutées à 700 m</strong> : la part en bordure est publiée.</li>
 <li>
 <strong>Limite</strong> : pour une UT (14 400 ha), γ ≈ 0,08, donc le résultat est proche de la SER. Piste lot 5-bis : utiliser les covariables propres au domaine (FORMS-T) avec les β du modèle national.</li>
-</ul><p><strong>Prochaine étape</strong> : - <strong>app</strong> : attendre le câblage du brief (§3 bis ajouté pour les domaines) ; - <strong>en parallèle, lot 1-ter</strong> : le jeu GEDI, dès que le compte Earthdata est configuré (action de Pascal).</p>
+</ul><p><strong>Journal</strong> — <em>2026-10-01</em> : <strong>lot 1-ter, comparaison GEDI / FORMS-T.</strong></p>
+<p>GEDI L2A a été acquis via NASA Harmony (une orbite sur 5, découpe au contour de la France, masque forêt FORMS-T). Comparaison sur les mêmes 252 domaines-années, 2019-2021 : - PV : RE 3,58 pour F contre 2,86 pour G ; - PG : 2,07 contre 1,97.</p>
+<p><strong>FORMS-T est confirmé</strong>, la table ne change pas. Il a fallu contourner trois problèmes : l’authentification Harmony (par jeton), le téléchargement des résultats (par <code>curl</code>), et un <code>~/.netrc</code> à nettoyer. L’extraction s’est arrêtée à la limite de 2 heures au milieu de 2022 ; elle est reprenable.</p>
+<p><strong>Prochaine étape</strong> : - <strong>app</strong> : attendre le câblage du brief (§3 bis ajouté pour les domaines) ; - <strong>en parallèle, lot 1-ter</strong> : le jeu GEDI, dès que le compte Earthdata est configuré (action de Pascal).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess">Chantier CLOS — Onglet Desserte : rendre visibles les sorties (app + foretaccess)<a class="anchor" aria-label="anchor" href="#chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess"></a></h1>
