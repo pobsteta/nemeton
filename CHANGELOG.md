@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.200.0] - 2026-10-01
+
+### Added
+- `estimer_fay_herriot()` : estimateur Fay-Herriot (EBLUP + MSE REML),
+  implémentation maison, égal à `sae::mseFH()` à 1e-14 (spec 054, ADR-016).
+- `ifn_production_ser()` / `ifn_production_reference()` : production
+  biologique IFN (PG, PV) par SER × campagne, recalculée depuis IR5, estimée par
+  Fay-Herriot (covariables FORMS-T + altitude + GRECO). Table
+  `inst/extdata/ifn_production_ser.csv`, construite par
+  `data-raw/build_ifn_production.R`.
+- `sae` en `Suggests` (test d'égalité uniquement).
+
 ## [0.199.2] - 2026-09-23
 
 ### Fixed

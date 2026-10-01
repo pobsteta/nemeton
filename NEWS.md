@@ -1,3 +1,54 @@
+# nemeton 0.200.0 (2026-10-01)
+
+### Added — production IFN par petits domaines (Fay-Herriot, spec 054 lot 1)
+
+Le cœur n'avait aucun **flux de production** mesuré : P2 lisait une table ONF de
+2021, E1 récoltait 2 % du stock. Il dispose maintenant d'une production
+biologique recalculée depuis les données brutes de l'IFN, par sylvoécorégion
+(SER) et par campagne, avec une incertitude par domaine. La méthode vient
+d'Onwunji et al. (2026, *Annals of Forest Science* 83:46).
+
+- **`estimer_fay_herriot()`** : estimateur Fay-Herriot au niveau du domaine
+  (EBLUP, MSE de Prasad-Rao avec correction REML). Il est écrit en R de base,
+  parce que `sae` et `JoSAE` sont sous GPL-2 stricte. Il reproduit
+  `sae::mseFH()` à 1e-14 près, et `sae` entre en `Suggests` pour ce test. Un
+  domaine sans estimation directe utilisable reçoit la prédiction synthétique,
+  marquée `nature = "synthetique"`, jamais présentée comme une mesure.
+- **`ifn_production_ser()`** : table `ifn_production_ser.csv` avec la production
+  en surface terrière (PG, exacte) et en volume (PV, forme et hauteur
+  constantes), par SER / GRECO / national × campagne × groupe (tous, feuillus,
+  résineux).
+- **`ifn_production_reference()`** : valeur à appliquer à une UGF, moyenne des 5
+  dernières campagnes de sa SER, avec repli GRECO puis national. Le niveau et la
+  nature de la valeur sont toujours déclarés.
+
+**Ce que les données imposaient, vérifié sur l'export 2005-2024.** L'export n'a
+pas de colonne de production : elle se recalcule depuis `IR5`, stocké en
+**mètres**. Depuis 2014, l'IGN ne carotte qu'un arbre par essence et par
+catégorie de dimension, si bien qu'environ 52 % des arbres n'ont pas d'IR5. Leur
+accroissement est imputé en cascade (placette × essence × catégorie, puis
+placette × essence, puis placette). Un piège a été mesuré au passage : pour un
+arbre imputé, la circonférence passée doit être recalculée depuis le taux
+imputé. Sinon le test de recrutement rend `NA` et l'arbre sort de la somme sans
+le moindre message ; la PV nationale tombait alors à 2,25 m³/ha/an au lieu de
+4,6.
+
+**Contrôle national** : PV 4,21 m³/ha/an sur les campagnes 2019-2023, soit 78 %
+de la référence IGN (5,4 m³/ha/an, période 2014-2022). L'écart est attendu :
+la production des arbres coupés manque, et la voie (a) ignore la croissance en
+hauteur. Un test verrouille la fourchette 70-100 %.
+
+**Fay-Herriot** sur SER × campagne 2019-2024 (515 domaines-années). Les
+covariables sont la hauteur FORMS-T (moyenne et écart-type sous masque ≥ 5 m,
+exacts à 10 m) et l'altitude IGN, avec la **GRECO en effet fixe** : sans elle,
+les résidus étaient autocorrélés entre SER voisines (I de Moran 0,16-0,34). Pour
+la PV, R² synthétique 0,83, efficacité relative globale 3,38, RSE médiane 8,2 %
+contre 11,1 % en direct. Les groupes feuillus et résineux restent en estimation
+directe dans ce lot.
+
+Rien ne consomme encore ces fonctions : P2 (lot 2), `completer_volume_ifn()`
+(lot 3) et E1 (lot 4) suivront. Aucun comportement existant ne change.
+
 # nemeton 0.199.2 (2026-09-23)
 
 ### Fixed — `segment_houppiers()` échouait sous un plan `future` multi-workers

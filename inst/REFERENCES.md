@@ -204,3 +204,33 @@ dupliquer un produit déjà validé. La visionneuse Earth Engine
 sert à l'exploration visuelle ; l'accès aux données passe par le catalogue Theia
 (collection STAC `sufosat`, cf. `inst/datasources/FR.json`).
 
+
+## Production IFN par petits domaines — Fay-Herriot (spec 054, lot 1)
+
+### Référence de méthode
+Onwunji I.C., Vega C., Durrieu S., Korhonen L., Tokola T., Massey A., Cordonnier
+T., Bouriaud O., Besic N., Belhoul S., Renaud J.-P. (2026). *Leveraging GEDI and
+NFI to inform on forest productivity at the level of the management units.*
+Annals of Forest Science 83:46. doi:10.1186/s13595-026-01358-2 (CC-BY 4.0).
+
+Fay R.E., Herriot R.A. (1979). Estimates of income for small places: an
+application of James-Stein procedures to census data. JASA 74:269-277.
+Rao J.N.K., Molina I. (2015). *Small Area Estimation*, 2ᵉ éd., Wiley.
+
+### Sources des données
+- IGN, données brutes de l'inventaire forestier 2005-2024 (Licence Ouverte
+  Etalab v2.0) ; variable `IR5` documentée dans `IGN_DB_doc_arbre.pdf` v2.4.
+- IGN, *La production annuelle en volume*, édition 2024 (référence nationale
+  5,4 m³/ha/an) ; *Méthodologie 2023* (recrutement à 7,5 cm, carottage
+  partiel depuis 2014).
+- Schwartz M. et al. (2023). FORMS-T, hauteur de canopée 2019-2024, Zenodo
+  15489231 (CC-BY 4.0).
+- Sylvoécorégions : couche `inrae:ser_l93` (WFS INRAE, IGN).
+- Altitude : WMS IGN `ELEVATION.ELEVATIONGRIDCOVERAGE`.
+
+### Prudence d'usage
+La PV est calculée à forme et hauteur constantes : elle sous-estime la
+production d'environ 20 % au niveau national (78 % de la référence IGN). La
+valeur d'une UGF est celle de sa **SER**, pas de sa station. La colonne `nature`
+distingue une estimation Fay-Herriot, une prédiction synthétique et une
+estimation directe : seule la dernière est une pure mesure d'échantillon.
