@@ -95,6 +95,41 @@ un raccourci.
 
 ---
 
+# Chantier CADRÉ — Production IFN par petits domaines, Fay-Herriot (spec 054)
+
+**Journal** — *2026-10-01* (doc seule, pas de release) : **cadrage à partir
+d'Onwunji et al. (2026, Ann. For. Sci. 83:46)**, l'estimateur Fay-Herriot de la
+production IFN avec des covariables GEDI.
+
+Livré : `specs/054-production-fay-herriot/spec.md` et le brouillon
+`ADR-016-estimation-petits-domaines.md` (à reporter dans `platform_nemeton`).
+
+Constats vérifiés sur l'export IFN 2005-2024 :
+- **pas de colonne de production** ; elle se recalcule depuis `IR5` (en mètres) et
+  `C13` ;
+- **PG exacte, PV demande une hypothèse** de croissance en hauteur ;
+- **pas de colonne de propriété** dans `PLACETTE`.
+
+Constat sur le code : **E1 récolte 2 % du stock** (`harvest_rate = 0.02`), pas un
+flux.
+
+Consommateurs : P2 (nouveau mode `ifn_fh`), ratio prélèvement/production (spec
+040), P1/C1 (repli continu au lieu de la cascade `min_plac`), E1/E2 (le flux
+plafonne la récolte). B2 est conforté sans code ; T2/R3/R5 restent en prospective.
+
+**Décisions D1-D8 tranchées le 2026-10-01** (spec §9). Deux s'écartent de la
+recommandation initiale :
+- **D3** : on compare deux jeux de covariables, GEDI brut et FORMS-T + MNT, sur des
+  critères fixés d'avance ;
+- **D6** : dans E1, le flux remplace le stock (`production × taux_mobilisation`),
+  en opt-in, avec un `ref_max` propre au mode flux.
+
+**Prochaine étape** : lot 0. Il faut relever le chiffre IGN de production
+nationale et la règle de recrutement, puis vérifier la couverture temporelle GEDI
+et l'accès Earthdata.
+
+---
+
 # Chantier CLOS — Onglet Desserte : rendre visibles les sorties (app + foretaccess)
 
 > **Émis le 2026-08-14** : `specs/brief-nemetonshiny-desserte-visualisation.md`.
