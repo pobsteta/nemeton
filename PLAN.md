@@ -178,9 +178,26 @@ Incident de précalcul : l’agrégation a d’abord été tuée par OOM sur les
 avec `journalctl`). Depuis, les sommes sont sauvées avant cette étape,
 et les bandes sont réduites à 125 lignes.
 
-**Prochaine étape** : - **lot 2** : P2 `source = "ifn_fh"` et le ratio
-prélèvement/production ; - **en parallèle, lot 1-ter** : le jeu GEDI,
-dès que le compte Earthdata est configuré (action de Pascal).
+**Journal** — *2026-10-01* (**v0.201.0**) : **lot 1-bis livré avant le
+lot 2.**
+
+Le ratio prélèvement/production sortait à 0,82, contre 0,61 pour l’IGN :
+la PV de la voie (a) était trop basse de 22 %. Deux ajouts : - **la
+croissance en hauteur**, par l’allométrie H ∝ D^β estimée dans l’IFN (β
+de 0,27 à 0,64 selon le groupe et la catégorie de dimension) ; - **la
+production des arbres coupés** entre deux passages.
+
+Contrôle national : - PV 5,26 m³/ha/an, soit 97 % de l’IGN ; -
+prélèvement 3,54, soit 107 % ; - ratio 0,67, contre 0,61 pour l’IGN
+(environ +10 % résiduels, documentés).
+
+Nouveaux attributs `prel` et `prel_vidange`. Pour la PV, l’efficacité
+relative du Fay-Herriot passe à 3,67.
+
+**Prochaine étape** : - **lot 2** : P2 `source = "ifn_fh"` et
+`ifn_taux_prelevement_production()`, calculé à partir de la table
+elle-même ; - **en parallèle, lot 1-ter** : le jeu GEDI, dès que le
+compte Earthdata est configuré (action de Pascal).
 
 ------------------------------------------------------------------------
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.200.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.201.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -301,7 +301,11 @@
 <p>Covariables du jeu F : - <strong>hauteur FORMS-T 2019-2024</strong>, 6 × 6,3 Go depuis Zenodo, en cache dans <code>~/.cache/nemeton/forms_t</code>, hors dépôt ; - <strong>altitude IGN</strong> à 250 m ; - <strong>GRECO en effet fixe</strong>, décision du jour : sans elle, les résidus sont autocorrélés entre SER voisines (Moran par contiguïté 0,16-0,34). Avec elle, l’autocorrélation n’est plus significative.</p>
 <p>Résultats pour la PV : - R² synthétique 0,83 ; - efficacité relative globale 3,38 ; - RSE médiane 8,2 % contre 11,1 % en estimation directe ; - contrôle national 4,21 m³/ha/an, soit 78 % de la référence IGN.</p>
 <p>Incident de précalcul : l’agrégation a d’abord été tuée par OOM sur les 6 cgroups de 4 Go, au moment de construire le raster de sortie (vérifié avec <code>journalctl</code>). Depuis, les sommes sont sauvées avant cette étape, et les bandes sont réduites à 125 lignes.</p>
-<p><strong>Prochaine étape</strong> : - <strong>lot 2</strong> : P2 <code>source = "ifn_fh"</code> et le ratio prélèvement/production ; - <strong>en parallèle, lot 1-ter</strong> : le jeu GEDI, dès que le compte Earthdata est configuré (action de Pascal).</p>
+<p><strong>Journal</strong> — <em>2026-10-01</em> (<strong>v0.201.0</strong>) : <strong>lot 1-bis livré avant le lot 2.</strong></p>
+<p>Le ratio prélèvement/production sortait à 0,82, contre 0,61 pour l’IGN : la PV de la voie (a) était trop basse de 22 %. Deux ajouts : - <strong>la croissance en hauteur</strong>, par l’allométrie H ∝ D^β estimée dans l’IFN (β de 0,27 à 0,64 selon le groupe et la catégorie de dimension) ; - <strong>la production des arbres coupés</strong> entre deux passages.</p>
+<p>Contrôle national : - PV 5,26 m³/ha/an, soit 97 % de l’IGN ; - prélèvement 3,54, soit 107 % ; - ratio 0,67, contre 0,61 pour l’IGN (environ +10 % résiduels, documentés).</p>
+<p>Nouveaux attributs <code>prel</code> et <code>prel_vidange</code>. Pour la PV, l’efficacité relative du Fay-Herriot passe à 3,67.</p>
+<p><strong>Prochaine étape</strong> : - <strong>lot 2</strong> : P2 <code>source = "ifn_fh"</code> et <code>ifn_taux_prelevement_production()</code>, calculé à partir de la table elle-même ; - <strong>en parallèle, lot 1-ter</strong> : le jeu GEDI, dès que le compte Earthdata est configuré (action de Pascal).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess">Chantier CLOS — Onglet Desserte : rendre visibles les sorties (app + foretaccess)<a class="anchor" aria-label="anchor" href="#chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess"></a></h1>

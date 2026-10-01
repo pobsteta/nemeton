@@ -5,12 +5,26 @@ from the IGN raw forest-inventory data, per sylvoecoregion (SER) and
 campaign, with a Fay-Herriot small-area estimate and its uncertainty
 (spec 054).
 
-Two attributes: `"pg"`, basal-area production (m2/ha/yr), exact; and
-`"pv"`, volume production (m3/ha/yr), computed under a constant form and
-height assumption, which biases it low (about 15-20 percent under the
-published IGN figure, see the `methode_pv` column and spec 054 §3.a).
+Four attributes, all per hectare and per year:
 
-Campaign `t` measures the growth of years `t-5` to `t-1`.
+- `"pg"`: basal-area production (m2/ha/yr), exact from the increment
+  cores;
+
+- `"pv"`: volume production (m3/ha/yr). Height growth follows diameter
+  growth through the height-diameter allometry estimated in the
+  inventory (`methode_pv = "allometrie_hauteur_diametre"`), and the
+  growth of trees felled between two visits is included, as in the IGN
+  definition. National check: 97 percent of the published IGN figure
+  (spec 054 section 3.c);
+
+- `"prel"`: harvested volume (m3/ha/yr), all felled trees (IGN
+  definition);
+
+- `"prel_vidange"`: harvested volume of trees felled **and extracted**
+  (`VEGET5 == "6"`), the definition used for forest roads (spec 040).
+
+Campaign `t` measures the growth of years `t-5` to `t-1`, and the
+harvest between the first visit of a plot (`t-5`) and its revisit (`t`).
 
 ## Usage
 
@@ -31,7 +45,7 @@ ifn_production_ser(ser = NULL, greco = NULL, campagne = NULL,
 
 - attribut:
 
-  Optional `"pg"` and/or `"pv"`.
+  Optional `"pg"`, `"pv"`, `"prel"` and/or `"prel_vidange"`.
 
 - groupe:
 
