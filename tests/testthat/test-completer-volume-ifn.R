@@ -63,3 +63,57 @@ test_that("missing columns are reported explicitly", {
 test_that("a non-sf input is refused", {
   expect_error(completer_volume_ifn(data.frame(P1 = 1)), "sf object")
 })
+
+# --- Mode Fay-Herriot (spec 054 lot 3) ---------------------------------------
+
+test_that("the Fay-Herriot volume table is positive and agrees with the direct", {
+  fh <- nemeton:::.ifn_vol_fh_table()
+  expect_true(all(c("ser", "espar", "n_plac_presence", "direct", "psi",
+                    "psi_source", "estimation", "mse", "rse", "gamma",
+                    "nature") %in% names(fh)))
+  expect_true(is.character(fh$espar))
+  expect_true("09" %in% fh$espar)     # zero non significatif conserve
+  f <- fh[fh$nature == "fay_herriot", ]
+  expect_gt(nrow(f), 4000)
+  # Echelle log : aucun volume negatif (45 en lineaire, spec 054 §7.3).
+  expect_true(all(f$estimation > 0))
+  # Le direct est exactement vol_ha_present de la spec 040.
+  v <- ifn_volume_essence_ser(niveau = "ser")
+  m <- merge(fh, v, by = c("ser", "espar"))
+  expect_equal(m$direct, m$vol_ha_present, tolerance = 1e-3)
+  # Pas de biais d'ensemble : moyenne ponderee a 2 % du direct.
+  expect_equal(weighted.mean(f$estimation, f$n_plac_presence),
+               weighted.mean(f$direct, f$n_plac_presence), tolerance = 0.02)
+})
+
+test_that("fay_herriot keeps a thin SER instead of jumping to the GRECO", {
+  # Epicea en B22 : 6 placettes -> la cascade prend la GRECO.
+  casc <- ifn_volume_reference("62", ser = "B22")
+  expect_equal(casc$niveau_utilise, "greco")
+  fh <- ifn_volume_reference("62", ser = "B22", methode = "fay_herriot")
+  expect_equal(fh$niveau_utilise, "ser")
+  expect_equal(fh$nature, "fay_herriot")
+  expect_true(is.finite(fh$rse))
+  # Essence absente de la SER : la cascade reste.
+  abs61 <- ifn_volume_reference("61", ser = "B22", methode = "fay_herriot")
+  expect_equal(abs61$nature, "cascade")
+  expect_equal(abs61$vol_ha, ifn_volume_reference("61", ser = "B22")$vol_ha)
+  # Sans SER, ou en mesure "maille" : pas de Fay-Herriot.
+  expect_true(all(ifn_volume_reference("09", methode = "fay_herriot")$nature == "cascade"))
+  expect_error(ifn_volume_reference("09", ser = "B22", mesure = "maille",
+                                    methode = "fay_herriot"), "stand-level")
+  # Le defaut ne change pas de forme.
+  expect_false("nature" %in% names(ifn_volume_reference("09", ser = "B22")))
+})
+
+test_that("completer_volume_ifn writes ifn_fh_ser and never overwrites a measure", {
+  u <- sf::st_sf(data.frame(P1 = c(250, NA), species = c("FASY", "PIAB")),
+                 geometry = sf::st_sfc(sf::st_point(c(0, 0)), sf::st_point(c(1, 1)),
+                                       crs = 2154))
+  r <- suppressMessages(completer_volume_ifn(u, ser = "B22", methode = "fay_herriot"))
+  expect_equal(r$volume_source, c("mesure", "ifn_fh_ser"))
+  expect_equal(r$P1[1], 250)
+  expect_equal(r$P1[2], ifn_volume_reference("62", ser = "B22", methode = "fay_herriot")$vol_ha)
+  r0 <- suppressMessages(completer_volume_ifn(u, ser = "B22"))
+  expect_equal(r0$volume_source, c("mesure", "ifn_greco"))
+})

@@ -1,11 +1,12 @@
 # Spec 054 — Production IFN par petits domaines (Fay-Herriot) et ses consommateurs
 
-**Version** : 0.5.0 (lot 2 livré)
+**Version** : 0.6.0 (lot 3 livré)
 **Date**    : 2026-10-01
-**Statut**  : **Lots 1, 1-bis et 2 livrés** (cœur v0.200.0, v0.201.0,
-v0.202.0, 2026-10-01). Moteur Fay-Herriot, table de production et de prélèvement,
-P2 `source = "ifn_fh"`, ratio prélèvement/production. Lots 3 à 5 ouverts ; le jeu
-GEDI (D3) attend un accès Earthdata. Résultats en §3.b, §3.c, §7.1 et §7.2.
+**Statut**  : **Lots 1, 1-bis, 2 et 3 livrés** (cœur v0.200.0 à v0.203.0,
+2026-10-01). Moteur Fay-Herriot, tables de production, de prélèvement et de
+volume par essence × SER, P2 `source = "ifn_fh"`, ratio prélèvement/production,
+`completer_volume_ifn(methode = "fay_herriot")`. Lots 4 et 5 ouverts ; le jeu
+GEDI (D3) attend un accès Earthdata. Résultats en §3.b, §3.c, §7.1 à §7.3.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — moteur Fay-Herriot, table de production IFN par
 SER × campagne, et branchement sur P2, P1/C1, E1/E2 et la spec 040.
@@ -577,8 +578,60 @@ par défaut. La provenance ligne à ligne de la spec 040 D8 gagne la valeur
 gain **sans modification de code**, dès que l'UGF reçoit un V complété par FH. Il
 faut seulement un test qui le vérifie.
 
+> **Correction (lot 3, 2026-10-01) : ce paragraphe était faux.** Vérifié dans le
+> code, `indicateur_c1_biomasse()` ne lit **jamais** P1 ni aucune colonne de
+> volume. Il calcule la biomasse depuis le CHM + diamètre + densité (chemin 0),
+> l'essence + âge + densité (chemin 1) ou le MNH LiDAR. Il n'hérite donc de rien.
+> Pour qu'il profite d'un P1 complété, il faudrait un nouveau chemin
+> « volume × ρ × BEF × C_frac » : c'est une piste, pas un livrable de cette spec.
+> E1, lui, lit bien une colonne de volume (`volume_field`) et profite du
+> complément (§7.4).
+
 L'article obtient pour V le meilleur ajustement de ses cinq attributs (R² 0,81 sur
 les agences, 0,72 sur les unités territoriales).
+
+**Livré au lot 3 (v0.203.0), décision du 2026-10-01 : un FH poolé essence × SER**,
+pas le grain `tous` / `feuillus` / `résineux` du paragraphe ci-dessus.
+`completer_volume_ifn()` travaille par essence, avec la moyenne sur les placettes de
+**présence**. Un grain groupe aurait perdu l'essence, et retrouvé la dilution
+rencontrée en P2 (§7.1).
+
+- **Enjeu mesuré** : 72 % des 5 139 cellules essence × SER ont moins de 30
+  placettes de présence. Elles ne pèsent que 7,6 % des placettes, mais ce sont
+  surtout des résineux (sapin, épicéa, douglas, pin maritime) dans à peu près la
+  moitié des SER : la cascade les envoyait sur la GRECO.
+- **Estimation directe** : exactement `vol_ha_present` de la spec 040, contrôlée par
+  le script de construction (écart < 1e-3).
+- **Modèle** : un seul FH sur tous les domaines. L'essence est en effet fixe (110
+  modalités ; les essences présentes dans moins de 10 SER sont regroupées en
+  `autre_feuillus` / `autre_resineux`), la GRECO aussi, et la hauteur FORMS-T de la
+  SER est moyennée sur 2019-2024. L'AIC retient h_sd + alt_mean.
+- **Échelle log**, mesurée contre le linéaire :
+  - le linéaire donnait 45 volumes négatifs (essences rares) et un biais de −6 %
+    sur les résineux, faute d'une variance propre à chaque essence ;
+  - le log ne donne aucun volume négatif, et une moyenne pondérée de 72,8 m³/ha
+    contre 72,7 en direct.
+  - On utilise ψ_log = ψ / direct² (méthode delta), on revient par exp(EBLUP), et
+    la MSE vaut est² × mse_log.
+- **GVF** (fonction de variance généralisée) : sous 10 placettes, ψ = s² / n, avec
+  s² la variance des volumes par placette de l'essence dans la GRECO (au moins 10
+  placettes, sinon le national). Sans GVF, 1 123 domaines à une seule placette
+  étaient purement synthétiques : leur mesure était perdue. La colonne
+  `psi_source` dit d'où vient ψ.
+- **Résultat** : 5 122 domaines ajustés, R² synthétique 0,90 (log, domaines d'au
+  moins 10 placettes), RSE médiane 26 % (32 % sous 30 placettes). 17 domaines
+  restent en estimation directe (volume nul, essence à une seule placette en
+  France).
+- **Exemple, SER B22** : l'épicéa (6 placettes) reçoit 162 m³/ha par FH contre
+  106 avec la GRECO ; le douglas (2 placettes) reçoit 195 contre 190. Une essence
+  absente de la SER garde la cascade.
+- **Interface** : `ifn_volume_reference(methode = "fay_herriot")` ajoute les
+  colonnes `nature` et `rse`. `completer_volume_ifn(methode = "fay_herriot")`
+  écrit la provenance `"ifn_fh_ser"`. Le défaut reste `"cascade"`, et sa sortie ne
+  change pas de forme. La mesure `"maille"` n'a pas de FH.
+- **Moteur** : `estimer_fay_herriot()` ne construit plus de matrice n × n (traces
+  et score en forme fermée). Le résultat reste identique à `sae` à 1e-8 près, et
+  5 000 domaines passent en moins d'une seconde.
 
 ### 7.4 E1 (bois-énergie) et E2 (évitement) — passer du stock au flux
 
@@ -739,7 +792,7 @@ Chaque lot = une release (consignes de release de `CLAUDE.md`).
 | 1-bis | ✅ v0.201.0 — voie (b) par allométrie hauteur-diamètre, production des arbres coupés, attributs `prel` et `prel_vidange` (§3.c) | minor | lot 1 |
 | 1-ter | Jeu G (GEDI L2A) et comparaison avec F selon §5.b | patch ou minor | accès Earthdata |
 | 2 | ✅ v0.202.0 — P2 `source = "ifn_fh"` + colonnes de provenance/RSE/nature ; `ifn_taux_prelevement_production()` ; `min_plac` (§7.1, §7.2) | minor | lot 1-bis, D5 |
-| 3 | `completer_volume_ifn(methode = "fay_herriot")` ; test d'héritage C1 | minor | lot 1 |
+| 3 | ✅ v0.203.0 — FH poolé essence × SER (log + GVF), `ifn_volume_reference()` / `completer_volume_ifn(methode = "fay_herriot")` ; C1 n'hérite pas, correction §7.3 | minor | lot 1 |
 | 4 | E1 `production_field` + `taux_mobilisation` + `ref_max` propre au mode flux ; détection du cas dégénéré FH-SER × `"ifn_ser"` (§7.4) ; test d'héritage E2 ; référence B2 ; brief app | minor | lot 2, D6 |
 | 5 | Domaines utilisateur (UT ONF, massif) | minor | lot 1, D2 |
 

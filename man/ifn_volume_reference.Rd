@@ -5,7 +5,7 @@
 \title{Reference standing volume, with a SER -> GRECO -> national fallback}
 \usage{
 ifn_volume_reference(espar, ser = NULL, min_plac = 30,
-  mesure = c("present", "maille"))
+  mesure = c("present", "maille"), methode = c("cascade", "fay_herriot"))
 }
 \arguments{
 \item{espar}{IFN species code(s), character.}
@@ -19,12 +19,22 @@ accepted. Default \code{30}.}
 \item{mesure}{Which volume column to return: \code{"present"} (default, the
 stand-level figure) or \code{"maille"} (the regional resource figure). See
 \code{\link{ifn_volume_essence_ser}}.}
+
+\item{methode}{\code{"cascade"} (default): the stepwise fallback above.
+\code{"fay_herriot"} (spec 054 lot 3): where the species occurs in the SER,
+its Fay-Herriot estimate replaces the step. A SER with few plots of the
+species keeps its own signal, shrunk towards the model, instead of being
+replaced by the GRECO figure. Species absent from the SER, and the
+\code{"maille"} measure, keep the cascade.}
 }
 \value{
 A data.frame with one row per \code{espar}: \code{espar},
 \code{libelle_essence}, \code{vol_ha}, \code{niveau_utilise}
 (\code{"ser"}/\code{"greco"}/\code{"national"}, or \code{NA} when no level
-qualified), \code{n_plac_presence}, \code{ser}, \code{greco}.
+qualified), \code{n_plac_presence}, \code{ser}, \code{greco}. With
+\code{methode = "fay_herriot"}, two more columns: \code{nature}
+(\code{"fay_herriot"} or \code{"cascade"}) and \code{rse} (percent,
+Fay-Herriot rows).
 }
 \description{
 Returns one reference volume per requested species, walking down the mesh
