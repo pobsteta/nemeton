@@ -233,9 +233,19 @@ relative du Fay-Herriot passe à 3,67.
   obstacles dans l’app : pas de colonne SER, P2 et E1 forcés en mode
   CHM, colonnes annexes jetées.
 
-**Prochaine étape** : - **app** : attendre le câblage du brief ; - **en
-parallèle, lot 1-ter** : le jeu GEDI, dès que le compte Earthdata est
-configuré (action de Pascal).
+**Journal** — *2026-10-01* (**v0.205.0**) : **lot 5 livré.**
+
+- **[`ifn_production_domaines()`](https://pobsteta.github.io/nemeton/reference/ifn_production_domaines.md)**
+  : composite à σᵥ² national, GVF, table des placettes embarquée (0,84
+  Mo).
+- **Coordonnées floutées à 700 m** : la part en bordure est publiée.
+- **Limite** : pour une UT (14 400 ha), γ ≈ 0,08, donc le résultat est
+  proche de la SER. Piste lot 5-bis : utiliser les covariables propres
+  au domaine (FORMS-T) avec les β du modèle national.
+
+**Prochaine étape** : - **app** : attendre le câblage du brief (§3 bis
+ajouté pour les domaines) ; - **en parallèle, lot 1-ter** : le jeu GEDI,
+dès que le compte Earthdata est configuré (action de Pascal).
 
 ------------------------------------------------------------------------
 

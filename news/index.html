@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.204.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.205.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,28 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.205.0" id="nemeton-02050-2026-10-01">nemeton 0.205.0 (2026-10-01)<a class="anchor" aria-label="anchor" href="#nemeton-02050-2026-10-01"></a></h2>
+<div class="section level4">
+<h4 id="added--production-ifn-dun-domaine-quelconque-spec-lot-0-205-0">Added — production IFN d’un domaine quelconque (spec 054 lot 5)<a class="anchor" aria-label="anchor" href="#added--production-ifn-dun-domaine-quelconque-spec-lot-0-205-0"></a></h4>
+<ul><li>
+<strong><code>ifn_production_domaines(domaines, attribut, id_col)</code></strong> : production annuelle d’une forêt, d’un massif ou d’une UT ONF. C’est un <strong>estimateur composite</strong> : la moyenne des placettes IFN du domaine (arbres vifs, plus les arbres coupés entre deux passages) est ramenée vers l’estimation Fay-Herriot de ses SER. Les SER sont pondérées par la part des placettes, sans appel réseau. Le poids vaut γ = (σᵥ² + MSE_SER) / (σᵥ² + MSE_SER + ψ), avec le σᵥ² du modèle national.
+<ul><li>Sous 10 placettes, la variance de la moyenne vient d’une <strong>fonction de variance généralisée</strong> : 2 placettes presque égales donnaient γ = 0,999.</li>
+<li>Un domaine sans placette reçoit sa SER dominante (<code>nature = "ser"</code>).</li>
+<li>
+<strong>Limites publiées avec le chiffre</strong> :
+<ul><li>
+<code>part_bordure</code> : les coordonnées IFN publiques sont celles du centre de la maille kilométrique, la placette réelle étant à 700 m au plus ;</li>
+<li>
+<code>poids_direct</code> : pour une UT de 14 400 ha, environ 11 placettes sur 5 ans, γ ≈ 0,08. La valeur est alors surtout celle de la SER : sans covariable au niveau du domaine, l’IFN public ne la distingue presque pas.</li>
+</ul></li>
+</ul></li>
+<li>
+<strong>Nouvelles tables</strong> : <code>ifn_production_placettes.csv.gz</code> (68 759 placettes 2019-2024 ; 0,84 Mo) et <code>ifn_production_modele.csv</code> (σᵥ² et qualité du modèle national).</li>
+<li>
+<strong>Brief app complété</strong> (§3 bis).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.204.0" id="nemeton-02040-2026-10-01">nemeton 0.204.0 (2026-10-01)<a class="anchor" aria-label="anchor" href="#nemeton-02040-2026-10-01"></a></h2>
 <div class="section level4">

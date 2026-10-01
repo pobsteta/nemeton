@@ -12,6 +12,16 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.205.0\] - 2026-10-01
+
+### Added
+
+- [`ifn_production_domaines()`](https://pobsteta.github.io/nemeton/reference/ifn_production_domaines.md)
+  : production IFN de domaines quelconques (estimateur composite à σᵥ²
+  national, GVF, part des placettes en bordure).
+- Tables `ifn_production_placettes.csv.gz` et
+  `ifn_production_modele.csv`.
+
 ## \[0.204.0\] - 2026-10-01
 
 ### Added
