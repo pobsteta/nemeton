@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.202.0] - 2026-10-01
+
+### Added
+- `indicateur_p2_station(source = "ifn_fh")` : production IFN de la SER
+  (Fay-Herriot), colonnes `P2_rse` / `P2_provenance` / `P2_nature` (opt-in).
+- `ifn_taux_prelevement_production()` : ratio prélèvement/production par SER,
+  définitions IGN et vidange.
+- `ifn_production_reference()` : arguments `niveaux` et `min_plac`, attributs
+  `prel` / `prel_vidange`.
+
 ## [0.201.0] - 2026-10-01
 
 ### Changed

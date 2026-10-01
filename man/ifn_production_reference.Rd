@@ -4,15 +4,18 @@
 \alias{ifn_production_reference}
 \title{Reference biological production to apply to a stand}
 \usage{
-ifn_production_reference(ser = NULL, attribut = c("pv", "pg"),
+ifn_production_reference(ser = NULL,
+  attribut = c("pv", "pg", "prel", "prel_vidange"),
   groupe = c("tous", "feuillus", "resineux"), n_campagnes = 5L,
-  campagnes = NULL)
+  campagnes = NULL, niveaux = c("ser", "greco", "national"), min_plac = 30)
 }
 \arguments{
 \item{ser}{SER code, a single string (e.g. \code{"C30"}), or \code{NULL} for
 the national figure.}
 
-\item{attribut}{\code{"pv"} (default, m3/ha/yr) or \code{"pg"} (m2/ha/yr).}
+\item{attribut}{\code{"pv"} (default, m3/ha/yr), \code{"pg"} (m2/ha/yr),
+\code{"prel"} or \code{"prel_vidange"} (harvest, m3/ha/yr; see
+\code{\link{ifn_production_ser}}).}
 
 \item{groupe}{\code{"tous"} (default), \code{"feuillus"} or
 \code{"resineux"}.}
@@ -21,6 +24,14 @@ the national figure.}
 \code{5}.}
 
 \item{campagnes}{Explicit campaign years; overrides \code{n_campagnes}.}
+
+\item{niveaux}{Levels the fallback may use, in this order. Default all
+three; restrict it to pin a level (e.g. to align two flows).}
+
+\item{min_plac}{Minimum number of plots, summed over the campaign window,
+for a \strong{direct} estimate to qualify a SER or GRECO level; below it
+the fallback moves up. Fay-Herriot estimates are not subject to it. Default
+\code{30}, as in \code{\link{ifn_volume_reference}}.}
 }
 \value{
 A one-row data.frame: \code{ser}, \code{attribut}, \code{groupe},

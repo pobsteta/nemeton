@@ -1,11 +1,11 @@
 # Spec 054 — Production IFN par petits domaines (Fay-Herriot) et ses consommateurs
 
-**Version** : 0.4.0 (lot 1-bis livré)
+**Version** : 0.5.0 (lot 2 livré)
 **Date**    : 2026-10-01
-**Statut**  : **Lots 1 et 1-bis livrés** (cœur v0.200.0 et v0.201.0,
-2026-10-01). Moteur Fay-Herriot, table `ifn_production_ser.csv` (production et
-prélèvement), accesseurs. Lots 2 à 5 ouverts ; le jeu GEDI (D3) attend un accès
-Earthdata. Résultats en §3.b et §3.c.
+**Statut**  : **Lots 1, 1-bis et 2 livrés** (cœur v0.200.0, v0.201.0,
+v0.202.0, 2026-10-01). Moteur Fay-Herriot, table de production et de prélèvement,
+P2 `source = "ifn_fh"`, ratio prélèvement/production. Lots 3 à 5 ouverts ; le jeu
+GEDI (D3) attend un accès Earthdata. Résultats en §3.b, §3.c, §7.1 et §7.2.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — moteur Fay-Herriot, table de production IFN par
 SER × campagne, et branchement sur P2, P1/C1, E1/E2 et la spec 040.
@@ -491,12 +491,53 @@ Garde-fous :
   site index module à l'intérieur du domaine. C'est la décision D5 ; par défaut,
   pas de combinaison au lot 2.
 
+**Livré au lot 2 (v0.202.0)**, avec deux écarts au plan :
+- **Les colonnes plutôt que des attributs** : `P2_rse`, `P2_provenance`
+  (`"ifn_prod_ser"`, `"ifn_prod_greco"`, `"ifn_prod_national"`) et `P2_nature`.
+  Elles varient d'une UGF à l'autre, et elles n'apparaissent **qu'en mode
+  `ifn_fh`**. Les modes historique et CHM gardent exactement leur sortie.
+- **Toujours le groupe `tous`**, pas le groupe de l'essence. Dans la table, la
+  production d'un groupe est rapportée à l'hectare de **toute** la forêt de la SER
+  (les placettes sans ce groupe comptent pour zéro), pour que les groupes
+  s'additionnent. C'est une contribution, pas la production d'un hectare de
+  peuplement de ce groupe. Une pessière de E10 aurait reçu 2,05 m³/ha/an
+  « résineux », contre 5,31 pour la SER entière. Une production par hectare de
+  peuplement du groupe demandera un dénominateur « placettes de présence », comme
+  `vol_ha_present` dans la spec 040 : c'est un lot ultérieur.
+
+La SER manquante ou vide passe au national, une SER inconnue à sa GRECO. Sur 5
+campagnes, la RSE de P2 vaut environ 2 à 3 % (borne basse, campagnes supposées
+indépendantes).
+
 ### 7.2 Spec 040 — le ratio prélèvement/production
 
 La spec 040 §5.a cite ce ratio comme forme de publication IFN, sans pouvoir le
 calculer : le cœur n'a que le stock et le prélèvement.
 `ifn_taux_prelevement_production()` le calcule par SER × groupe avec les mêmes clés
 que `ifn_prelevement_essence_ser.csv`.
+
+**Livré au lot 2 (v0.202.0).** Le prélèvement vient des attributs `prel`
+(définition IGN, codes 6 et 7) et `prel_vidange` (code 6) de la table du lot
+1-bis, et non de `ifn_prelevement_essence_ser.csv`. La raison : il est calculé par
+SER × campagne, sur la même fenêtre de croissance que la production et avec le
+même dénominateur. **C'est le prélèvement qui fixe le niveau** (SER, GRECO ou
+national). La production est prise au même niveau et sur les mêmes campagnes.
+
+**Garde-fou `min_plac = 30`**, ajouté à `ifn_production_reference()` : une
+estimation **directe** reposant sur moins de 30 placettes sur la fenêtre ne
+qualifie pas son niveau. Le cas qui l'a imposé est F13, les « Marais
+littoraux » : 2 à 3 placettes revisitées par campagne, une seule coupe donnait 79
+m³/ha/an et un ratio de 6,2. Le Fay-Herriot n'est pas soumis au seuil.
+
+**Résultat** : ratio national 0,68 (IGN 0,61). Sur les 86 SER, la médiane est de
+0,57 et le maximum de 1,51 (C11, RSE 24 %). Les SER au-dessus de 1 (C11, G23,
+E20, G21, G41, C12) sont dans le Nord-Est et l'Est, ce qui cadre avec les coupes
+sanitaires de la crise des scolytes. 85 SER ont un prélèvement qualifié, une
+remonte à sa GRECO.
+
+Le piège « fenêtres non alignées » ne se pose plus : le prélèvement de la
+campagne t (placettes revisitées en t) et la production de la campagne t (cernes
+t−5 à t−1) couvrent les mêmes saisons.
 
 **Trois pièges à traiter** :
 - **Le prélèvement IGN n'est pas celui de la spec 040.** L'IGN compte un arbre
@@ -697,7 +738,7 @@ Chaque lot = une release (consignes de release de `CLAUDE.md`).
 | 1 | ✅ v0.200.0 — `estimer_fay_herriot()` + tests (égalité `sae`, σᵥ² = 0, n = 1, domaine vide) ; `data-raw/build_ifn_production.R` ; PG/PV par placette ; jeu F ; FH SER × campagne + GRECO ; `ifn_production_ser.csv` + accesseurs ; contrôle national ; test de Moran (§3.b) | minor | D1, D3, D4, D7 |
 | 1-bis | ✅ v0.201.0 — voie (b) par allométrie hauteur-diamètre, production des arbres coupés, attributs `prel` et `prel_vidange` (§3.c) | minor | lot 1 |
 | 1-ter | Jeu G (GEDI L2A) et comparaison avec F selon §5.b | patch ou minor | accès Earthdata |
-| 2 | P2 `source = "ifn_fh"` + attributs de provenance/RSE ; ratio prélèvement/production (§7.2) | minor | lot 1, D5 |
+| 2 | ✅ v0.202.0 — P2 `source = "ifn_fh"` + colonnes de provenance/RSE/nature ; `ifn_taux_prelevement_production()` ; `min_plac` (§7.1, §7.2) | minor | lot 1-bis, D5 |
 | 3 | `completer_volume_ifn(methode = "fay_herriot")` ; test d'héritage C1 | minor | lot 1 |
 | 4 | E1 `production_field` + `taux_mobilisation` + `ref_max` propre au mode flux ; détection du cas dégénéré FH-SER × `"ifn_ser"` (§7.4) ; test d'héritage E2 ; référence B2 ; brief app | minor | lot 2, D6 |
 | 5 | Domaines utilisateur (UT ONF, massif) | minor | lot 1, D2 |

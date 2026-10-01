@@ -15,7 +15,9 @@ indicateur_p2_station(
   chm = NULL,
   age_field = "age",
   reference_age = 50,
-  h_dom_percentile = 0.9
+  h_dom_percentile = 0.9,
+  source = c("auto", "ifn_fh"),
+  ser_field = "ser"
 )
 }
 \arguments{
@@ -47,6 +49,16 @@ index is returned in CHM mode. Default \code{50}.}
 \item{h_dom_percentile}{Numeric in \code{[0, 1]}. Percentile
 of CHM pixels used to derive dominant height per unit.
 Default \code{0.9}.}
+
+\item{source}{\code{"auto"} (default): CHM mode when
+\code{chm} is supplied, legacy mode otherwise.
+\code{"ifn_fh"}: IFN production of the unit's
+sylvoecoregion (spec 054).}
+
+\item{ser_field}{Character. Column holding the SER code
+(e.g. \code{"C30"}), used by \code{source = "ifn_fh"}. A
+missing or unknown SER falls back to the GRECO, then to the
+national figure. Default \code{"ser"}.}
 }
 \value{
 sf object with one added column:
@@ -54,6 +66,9 @@ sf object with one added column:
     \item Legacy mode: \code{P2} = annual increment (m3/ha/yr).
     \item CHM mode:    \code{P2} = site index \eqn{H_0} (m) at
           \code{reference_age}.
+    \item IFN mode:    \code{P2} = IFN volume production of the
+          sylvoecoregion (m3/ha/yr), plus \code{P2_rse},
+          \code{P2_provenance}, \code{P2_nature}.
   }
 }
 \description{
@@ -74,7 +89,22 @@ Calculates a site productivity index in one of two modes:
 }
 }
 \details{
-The two modes answer the same forestry question (how
+A third mode, \code{source = "ifn_fh"} (spec 054), returns
+the biological volume production measured by the national
+forest inventory for the unit's sylvoecoregion, estimated by
+Fay-Herriot (\code{\link{ifn_production_reference}}), in
+\eqn{m^3/ha/yr}. It is the production of the \strong{domain},
+not of the stand's own site, all species together: the per-group
+figures of the table are diluted over the whole forest area. It adds
+three columns:
+\code{<column_name>_rse} (relative standard error, percent),
+\code{<column_name>_provenance} (\code{"ifn_prod_ser"},
+\code{"ifn_prod_greco"} or \code{"ifn_prod_national"}) and
+\code{<column_name>_nature} (\code{"fay_herriot"},
+\code{"direct"} or \code{"synthetique"}). It is opt-in: the
+default behaviour is unchanged.
+
+The modes answer the same forestry question (how
 productive is this site?) but in different units. Downstream
 callers should use \code{\link{compute_general_index_mixed}}
 or a mode-aware normalization when mixing units.

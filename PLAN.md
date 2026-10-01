@@ -181,9 +181,21 @@ Contrôle national :
 Nouveaux attributs `prel` et `prel_vidange`. Pour la PV, l'efficacité relative
 du Fay-Herriot passe à 3,67.
 
+**Journal** — *2026-10-01* (**v0.202.0**) : **lot 2 livré.**
+
+- **P2 `source = "ifn_fh"`** (opt-in), toujours avec le groupe `tous` : les
+  groupes de la table sont des contributions diluées sur toute la forêt de la
+  SER.
+- **`ifn_taux_prelevement_production()`** : ratio national 0,68 (IGN 0,61) ;
+  maximum par SER 1,51 (C11), et les SER au-dessus de 1 sont dans le Nord-Est et
+  l'Est (scolytes).
+- **`min_plac = 30`** pour les estimations directes : F13 (Marais littoraux)
+  donnait un ratio de 6,2 sur 3 placettes.
+
 **Prochaine étape** :
-- **lot 2** : P2 `source = "ifn_fh"` et `ifn_taux_prelevement_production()`,
-  calculé à partir de la table elle-même ;
+- **lot 3** : `completer_volume_ifn(methode = "fay_herriot")`, avec un test
+  d'héritage pour C1 ;
+- **lot 4** : E1 sur le flux, puis le brief app ;
 - **en parallèle, lot 1-ter** : le jeu GEDI, dès que le compte Earthdata est
   configuré (action de Pascal).
 

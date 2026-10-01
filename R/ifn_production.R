@@ -221,6 +221,13 @@
 #' Campaign `t` measures the growth of years `t-5` to `t-1`, and the harvest
 #' between the first visit of a plot (`t-5`) and its revisit (`t`).
 #'
+#' **Groups are contributions, not stand figures.** The `"feuillus"` and
+#' `"resineux"` rows are per hectare of the **whole** forest of the domain
+#' (plots without the group count as zero), so that the groups add up to
+#' `"tous"`. They are not the production of a hectare of broadleaf or
+#' conifer stand. Ratios between two attributes of the same group (e.g.
+#' harvest / production) remain meaningful.
+#'
 #' @param ser,greco Optional SER / GRECO codes to filter on.
 #' @param campagne Optional campaign year(s).
 #' @param attribut Optional `"pg"`, `"pv"`, `"prel"` and/or `"prel_vidange"`.
@@ -276,10 +283,17 @@ ifn_production_ser <- function(ser = NULL, greco = NULL, campagne = NULL,
 #'
 #' @param ser SER code, a single string (e.g. `"C30"`), or `NULL` for the
 #'   national figure.
-#' @param attribut `"pv"` (default, m3/ha/yr) or `"pg"` (m2/ha/yr).
+#' @param attribut `"pv"` (default, m3/ha/yr), `"pg"` (m2/ha/yr), `"prel"` or
+#'   `"prel_vidange"` (harvest, m3/ha/yr; see [ifn_production_ser()]).
 #' @param groupe `"tous"` (default), `"feuillus"` or `"resineux"`.
 #' @param n_campagnes Number of most recent campaigns to average. Default `5`.
 #' @param campagnes Explicit campaign years; overrides `n_campagnes`.
+#' @param niveaux Levels the fallback may use, in this order. Default all
+#'   three; restrict it to pin a level (e.g. to align two flows).
+#' @param min_plac Minimum number of plots, summed over the campaign window,
+#'   for a **direct** estimate to qualify a SER or GRECO level; below it the
+#'   fallback moves up. Fay-Herriot estimates are not subject to it. Default
+#'   `30`, as in [ifn_volume_reference()].
 #'
 #' @return A one-row data.frame: `ser`, `attribut`, `groupe`, `valeur`, `mse`,
 #'   `rse`, `niveau_utilise`, `nature` (the natures of the averaged rows,
@@ -293,11 +307,15 @@ ifn_production_ser <- function(ser = NULL, greco = NULL, campagne = NULL,
 #' ifn_production_reference("C30")
 #' ifn_production_reference("C30", attribut = "pg", groupe = "resineux")
 #' }
-ifn_production_reference <- function(ser = NULL, attribut = c("pv", "pg"),
+ifn_production_reference <- function(ser = NULL,
+                                     attribut = c("pv", "pg", "prel", "prel_vidange"),
                                      groupe = c("tous", "feuillus", "resineux"),
-                                     n_campagnes = 5L, campagnes = NULL) {
+                                     n_campagnes = 5L, campagnes = NULL,
+                                     niveaux = c("ser", "greco", "national"),
+                                     min_plac = 30) {
   attribut <- match.arg(attribut)
   groupe <- match.arg(groupe)
+  niveaux <- match.arg(niveaux, several.ok = TRUE)
   if (!is.null(ser) && (length(ser) != 1L || is.na(ser))) {
     cli::cli_abort("{.arg ser} must be a single SER code, or NULL.")
   }
@@ -309,7 +327,7 @@ ifn_production_reference <- function(ser = NULL, attribut = c("pv", "pg"),
                                    d$greco == substr(ser, 1L, 1L), ],
     national = d[d$niveau == "national", ]
   )
-  for (niv in names(echelons)) {
+  for (niv in intersect(names(echelons), niveaux)) {
     e <- echelons[[niv]]
     if (is.null(e) || nrow(e) == 0L) next
     e <- e[!is.na(e$estimation), , drop = FALSE]
@@ -321,6 +339,11 @@ ifn_production_reference <- function(ser = NULL, attribut = c("pv", "pg"),
       e <- e[e$campagne %in% dernieres, , drop = FALSE]
     }
     if (nrow(e) == 0L) next
+    # Une estimation directe sur trop peu de placettes ne qualifie pas le
+    # niveau (cascade de la spec 040) : en SER "Marais littoraux", une seule
+    # coupe sur 3 placettes donnait 79 m3/ha/an. Le Fay-Herriot, lui, tient.
+    if (niv != "national" && all(e$nature == "direct") &&
+        sum(e$n_plac, na.rm = TRUE) < min_plac) next
     k <- nrow(e)
     valeur <- mean(e$estimation)
     mse <- sum(e$mse) / k^2
@@ -338,4 +361,69 @@ ifn_production_reference <- function(ser = NULL, attribut = c("pv", "pg"),
              mse = NA_real_, rse = NA_real_, niveau_utilise = NA_character_,
              nature = NA_character_, campagnes = NA_character_,
              n_campagnes = 0L, stringsAsFactors = FALSE)
+}
+
+#' Harvest to production ratio by sylvoecoregion
+#'
+#' @description
+#' Divides the harvested volume by the biological volume production of a
+#' sylvoecoregion, over the same campaigns: both flows cover the same growing
+#' seasons (spec 054 section 7.2). A ratio above 1 means the domain harvests
+#' more than it grows (decapitalisation), below 1 that it capitalises.
+#'
+#' **Known bias.** Nationally the ratio is 0.67 against 0.61 published by the
+#' IGN for 2014-2022 (about +10 percent, spec 054 section 3.c). A ratio
+#' slightly above 1 is therefore not proof of decapitalisation.
+#'
+#' @param ser SER code, a single string, or `NULL` for the national figure.
+#' @param groupe `"tous"` (default), `"feuillus"` or `"resineux"`.
+#' @param definition `"ign"` (default): every felled tree, as the IGN counts
+#'   harvest; `"vidange"`: felled **and extracted** trees only, the definition
+#'   used for forest roads (spec 040).
+#' @param n_campagnes,campagnes,min_plac Campaign window and minimum number of
+#'   revisited plots, as in [ifn_production_reference()]. The harvest estimate
+#'   sets the level; the production is taken at the same level and campaigns.
+#'
+#' @return A one-row data.frame: `ser`, `groupe`, `definition`, `prelevement`
+#'   and `production` (m3/ha/yr), `ratio`, `rse` (percent, delta method under
+#'   independence of the two estimates), `niveau_utilise`, `campagnes`.
+#'
+#' @seealso [ifn_production_reference()], [ifn_taux_prelevement()].
+#' @export
+#' @examples
+#' \dontrun{
+#' ifn_taux_prelevement_production("C30")
+#' ifn_taux_prelevement_production(NULL)   # national, about 0.67
+#' }
+ifn_taux_prelevement_production <- function(ser = NULL,
+                                            groupe = c("tous", "feuillus", "resineux"),
+                                            definition = c("ign", "vidange"),
+                                            n_campagnes = 5L, campagnes = NULL,
+                                            min_plac = 30) {
+  groupe <- match.arg(groupe)
+  definition <- match.arg(definition)
+  att_prel <- if (definition == "ign") "prel" else "prel_vidange"
+  # Le prelevement (estimation directe) fixe le niveau ; la production est
+  # alignee sur ce niveau et sur ses campagnes : deux flux comparables.
+  prel <- ifn_production_reference(ser, att_prel, groupe, n_campagnes, campagnes,
+                                   min_plac = min_plac)
+  vide <- data.frame(ser = if (is.null(ser)) NA_character_ else ser,
+                     groupe = groupe, definition = definition,
+                     prelevement = NA_real_, production = NA_real_,
+                     ratio = NA_real_, rse = NA_real_,
+                     niveau_utilise = NA_character_, campagnes = NA_character_,
+                     stringsAsFactors = FALSE)
+  if (is.na(prel$valeur)) return(vide)
+  camp <- as.integer(strsplit(prel$campagnes, ",", fixed = TRUE)[[1]])
+  prod <- ifn_production_reference(ser, "pv", groupe, campagnes = camp,
+                                   niveaux = prel$niveau_utilise, min_plac = 0)
+  if (is.na(prod$valeur)) return(vide)
+  ratio <- prel$valeur / prod$valeur
+  data.frame(
+    ser = prel$ser, groupe = groupe, definition = definition,
+    prelevement = prel$valeur, production = prod$valeur, ratio = ratio,
+    rse = sqrt(prel$rse^2 + prod$rse^2),
+    niveau_utilise = prod$niveau_utilise, campagnes = prod$campagnes,
+    stringsAsFactors = FALSE
+  )
 }

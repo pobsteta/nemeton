@@ -54,6 +54,13 @@ extracted} (\code{VEGET5 == "6"}), the definition used for forest roads (spec
 Campaign \code{t} measures the growth of years \code{t-5} to \code{t-1}, and
 the harvest between the first visit of a plot (\code{t-5}) and its revisit
 (\code{t}).
+
+\strong{Groups are contributions, not stand figures.} The \code{"feuillus"}
+and \code{"resineux"} rows are per hectare of the \strong{whole} forest of the
+domain (plots without the group count as zero), so that the groups add up to
+\code{"tous"}. They are not the production of a hectare of broadleaf or
+conifer stand. Ratios between two attributes of the same group (e.g. harvest /
+production) remain meaningful.
 }
 \examples{
 \dontrun{

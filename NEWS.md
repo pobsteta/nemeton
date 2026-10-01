@@ -1,3 +1,28 @@
+# nemeton 0.202.0 (2026-10-01)
+
+### Added — P2 depuis la production IFN, ratio prélèvement/production (spec 054 lot 2)
+
+- **`indicateur_p2_station(source = "ifn_fh", ser_field = "ser")`** : un
+  troisième mode, opt-in, qui renvoie la production en volume de la
+  sylvoécorégion de l'UGF, estimée par Fay-Herriot (m³/ha/an, l'unité du mode
+  historique). Il ajoute `P2_rse`, `P2_provenance` (`ifn_prod_ser`, `_greco`,
+  `_national`) et `P2_nature`. C'est la production du **domaine**, toutes
+  essences confondues : les chiffres par groupe de la table sont dilués sur
+  toute la forêt de la SER, et une pessière aurait reçu 2,05 m³/ha/an au lieu de
+  5,31. Les modes historique et CHM sont strictement inchangés.
+- **`ifn_taux_prelevement_production()`** : ratio prélèvement/production par
+  SER, sur les mêmes campagnes et les mêmes saisons de croissance. Deux
+  définitions : `"ign"` (tous les arbres coupés) et `"vidange"` (coupés et
+  sortis, spec 040). RSE par la méthode delta. Ratio national 0,68 (IGN 0,61,
+  biais documenté) ; maximum par SER 1,51 (C11). Les SER au-dessus de 1 sont dans
+  le Nord-Est et l'Est, ce qui cadre avec la crise des scolytes.
+- **`ifn_production_reference()`** gagne `niveaux` (épingler un échelon) et
+  `min_plac = 30`. Une estimation **directe** sur moins de 30 placettes ne
+  qualifie pas son niveau. Les « Marais littoraux » (F13) donnaient un
+  prélèvement de 79 m³/ha/an, issu d'une seule coupe sur 3 placettes. Le
+  Fay-Herriot n'est pas soumis à ce seuil. Les attributs `prel` et
+  `prel_vidange` y sont acceptés.
+
 # nemeton 0.201.0 (2026-10-01)
 
 ### Changed — production IFN : la hauteur et les arbres coupés comptent (spec 054 lot 1-bis)
