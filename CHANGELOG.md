@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.201.0] - 2026-10-01
+
+### Changed
+- Production IFN (`ifn_production_ser()`) : PV avec croissance en hauteur
+  (allométrie H ~ D^beta estimée dans l'IFN) et production des arbres coupés
+  entre deux passages. Contrôle national 97 % de l'IGN (78 % en v0.200.0).
+
+### Added
+- Attributs `"prel"` (codes de coupe 6 et 7) et `"prel_vidange"` (code 6) dans
+  `ifn_production_ser.csv`, par SER/GRECO/national × campagne × groupe.
+
 ## [0.200.0] - 2026-10-01
 
 ### Added

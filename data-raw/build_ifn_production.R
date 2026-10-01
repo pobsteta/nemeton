@@ -35,52 +35,96 @@ dir.create(file.path(cache, "prod"), showWarnings = FALSE, recursive = TRUE)
 dir.create(file.path(cache, "ser"), showWarnings = FALSE, recursive = TRUE)
 annees_cov <- 2019:2024   # fenetre commune avec GEDI (spec 054 §5.b)
 REF_IGN_PV <- 5.4         # m3/ha/an, IGN flux2024, periode 2014-2022
+REF_IGN_PREL <- 3.3       # m3/ha/an, idem (prelevements, codes coupes 6 et 7)
 terraOptions(memfrac = 0.4, tempdir = file.path(cache, "prod"))
 
 # --- 1. Production par placette ---------------------------------------------
-f_plac <- file.path(cache, "prod", "placettes.rds")
+# Deux echantillons de placettes par campagne t (spec 054 §3.c) :
+#   A = placettes de 1re visite en t : croissance des arbres vifs (cernes t-5..t-1) ;
+#   B = placettes revisitees en t (1er passage en t-5) : arbres coupes entre les
+#       deux passages -> leur production avant coupe et le volume preleve.
+f_plac <- file.path(cache, "prod", "placettes_v2.rds")
 if (!file.exists(f_plac)) {
   src_dir <- Sys.getenv("NEMETON_IFN_SRC", unset = "data-raw/ifn")
   dat <- ifn_charger(c("ARBRE", "PLACETTE"), dest_dir = src_dir)
   millesime <- attr(dat, "millesime")
-  pl <- as.data.table(dat$PLACETTE)[as.character(VISITE) == "1", .(CAMPAGNE, IDP, SER)]
-  pl <- pl[!is.na(SER) & SER != ""]
-  ar <- as.data.table(dat$ARBRE)[VEGET == "0",
-                                 .(CAMPAGNE, IDP, ESPAR, C13, IR5, V, W)]
+  pla <- as.data.table(dat$PLACETTE)[, .(CAMPAGNE, IDP, VISITE = as.character(VISITE), SER)]
+  pla <- pla[!is.na(SER) & SER != ""]
+  pl1 <- pla[VISITE == "1", .(CAMPAGNE, IDP, SER)]
+  pl2 <- pla[VISITE == "2", .(CAMPAGNE, IDP, SER)]
+  arbre <- as.data.table(dat$ARBRE)
   rm(dat)
-  for (j in c("C13", "IR5", "V", "W")) set(ar, j = j, value = as.numeric(ar[[j]]))
+  ar <- arbre[VEGET == "0", .(CAMPAGNE, IDP, A, ESPAR, C13, HTOT, IR5, V, W)]
+  coupes <- arbre[VEGET5 %in% c("6", "7"), .(CAMPAGNE, IDP, A, VEGET5)]
+  rm(arbre)
+  for (j in c("C13", "HTOT", "IR5", "V", "W")) set(ar, j = j, value = as.numeric(ar[[j]]))
   ar <- ar[!is.na(C13) & !is.na(W) & C13 > 0]
   # Seuls les arbres des placettes de 1re visite (la revisite ne porte pas IR5).
-  ar <- ar[pl, on = .(CAMPAGNE, IDP), nomatch = NULL][, SER := NULL]
-  message(nrow(ar), " arbres vivants de 1re visite, ", nrow(pl), " placettes")
-  arb <- .ifn_production_arbres(as.data.frame(ar))
+  ar <- ar[pl1, on = .(CAMPAGNE, IDP), nomatch = NULL][, SER := NULL]
+  message(nrow(ar), " arbres vivants de 1re visite, ", nrow(pl1), " placettes ; ",
+          nrow(pl2), " placettes revisitees, ", nrow(coupes), " arbres coupes")
+
+  # Allometrie hauteur-diametre (voie (b), lot 1-bis).
+  beta <- .ifn_beta_hauteur(as.data.frame(ar))
+  message("beta hauteur-diametre :\n",
+          paste(sprintf("  %s %s : %.3f (n = %d)", beta$groupe, beta$cat, beta$beta, beta$n),
+                collapse = "\n"))
+  fwrite(beta, file.path(cache, "prod", "beta_hauteur.csv"))
+
+  arb <- .ifn_production_arbres(as.data.frame(ar), beta = beta)
   message(sprintf("G imputee : %.1f %% ; G sans valeur apres imputation : %.2f %%",
                   100 * sum(arb$W * arb$g * arb$ir5_impute) / sum(arb$W * arb$g),
                   100 * sum(arb$W * arb$g * is.na(arb$rg)) / sum(arb$W * arb$g)))
-  plac <- .ifn_production_placettes(arb, as.data.frame(pl))
+  plac <- .ifn_production_placettes(arb, as.data.frame(pl1))
   setDT(plac)
-  plac[, GRECO := substr(SER, 1L, 1L)]
   # Regle D7 : placette exclue si plus de 50 % de sa G reste sans valeur.
   excl <- plac[groupe == "tous" & g_tot > 0 & g_sans_valeur / g_tot > 0.5,
                .(CAMPAGNE, IDP)]
   message(nrow(excl), " placettes exclues (D7)")
   plac <- plac[!excl, on = .(CAMPAGNE, IDP)]
-  attr(plac, "millesime") <- millesime
-  saveRDS(plac, f_plac)
+
+  cp <- .ifn_production_coupes(arb, as.data.frame(coupes))
+  message(sprintf("%d arbres coupes rattaches a leur 1er passage (%.0f %%)",
+                  nrow(cp), 100 * nrow(cp) / nrow(coupes)))
+  plac_b <- .ifn_sommer_placettes(cp, as.data.frame(pl2),
+                                  c("pv_coupe", "pg_coupe", "prel", "prel_vidange"))
+  setDT(plac_b)
+  # Une placette revisitee dont le 1er passage a ete exclu (D7) l'est aussi.
+  excl_b <- excl[, .(CAMPAGNE = as.character(as.integer(CAMPAGNE) + 5L), IDP)]
+  plac_b <- plac_b[!excl_b, on = .(CAMPAGNE, IDP)]
+  plac[, GRECO := substr(SER, 1L, 1L)]
+  plac_b[, GRECO := substr(SER, 1L, 1L)]
+  saveRDS(list(a = plac, b = plac_b, beta = beta, millesime = millesime), f_plac)
 }
-plac <- readRDS(f_plac)
-millesime <- attr(plac, "millesime")
+pp <- readRDS(f_plac)
+plac <- pp$a
+plac_b <- pp$b
+millesime <- pp$millesime
 
 # --- 2. Estimations directes -------------------------------------------------
+# pg, pv : somme des deux echantillons independants (A vifs + B coupes),
+#          variances additionnees ; une campagne sans revisite n'a que A.
+# prel, prel_vidange : echantillon B seul.
 directs <- function(niveau, cle_dom) {
+  by <- c(cle_dom, "CAMPAGNE", "groupe")
+  stat <- function(d, col) d[, .(n = .N, m = mean(get(col)), v = var(get(col)) / .N), by = by]
   out <- list()
   for (att in c("pg", "pv")) {
-    d <- plac[, .(n_plac = .N, direct = mean(get(att)),
-                  psi = var(get(att)) / .N,
-                  part_g_imputee = sum(g_imputee) / max(sum(g_tot), 1e-12)),
-              by = c(cle_dom, "CAMPAGNE", "groupe")]
+    sa <- stat(plac, att)
+    sb <- stat(plac_b, paste0(att, "_coupe"))
+    setnames(sb, c("n", "m", "v"), c("n_b", "m_b", "v_b"))
+    d <- merge(sa, sb, by = by, all.x = TRUE)
+    d[is.na(m_b), `:=`(n_b = 0L, m_b = 0, v_b = 0)]
+    d[, `:=`(n_plac = n, direct = m + m_b, psi = v + v_b)]
+    imp <- plac[, .(part_g_imputee = sum(g_imputee) / max(sum(g_tot), 1e-12)), by = by]
+    d <- merge(d, imp, by = by)
     d[, attribut := att]
-    out[[att]] <- d
+    out[[att]] <- d[, c(by, "attribut", "n_plac", "direct", "psi", "part_g_imputee"), with = FALSE]
+  }
+  for (att in c("prel", "prel_vidange")) {
+    d <- stat(plac_b, att)
+    d[, `:=`(n_plac = n, direct = m, psi = v, part_g_imputee = NA_real_, attribut = att)]
+    out[[att]] <- d[, c(by, "attribut", "n_plac", "direct", "psi", "part_g_imputee"), with = FALSE]
   }
   r <- rbindlist(out)
   r[, niveau := niveau]
@@ -90,11 +134,15 @@ d_ser <- directs("ser", "SER")
 d_gre <- directs("greco", "GRECO")
 d_nat <- directs("national", character(0))
 
-ctrl <- d_nat[groupe == "tous" & attribut == "pv" &
-                as.integer(CAMPAGNE) %between% c(2019, 2023),
-              weighted.mean(direct, n_plac)]
-message(sprintf("Controle national PV (campagnes 2019-2023) : %.2f m3/ha/an, %.0f %% de la reference IGN",
-                ctrl, 100 * ctrl / REF_IGN_PV))
+ctrl <- function(att) d_nat[groupe == "tous" & attribut == att &
+                              as.integer(CAMPAGNE) %between% c(2019, 2023),
+                            weighted.mean(direct, n_plac)]
+message(sprintf(paste0("Controle national (campagnes 2019-2023, periode 2014-2022) : ",
+                       "PV %.2f m3/ha/an = %.0f %% de l'IGN (%.1f) ; prelevement %.2f = %.0f %% de l'IGN (%.1f) ; ",
+                       "ratio %.2f (IGN %.2f)"),
+                ctrl("pv"), 100 * ctrl("pv") / REF_IGN_PV, REF_IGN_PV,
+                ctrl("prel"), 100 * ctrl("prel") / REF_IGN_PREL, REF_IGN_PREL,
+                ctrl("prel") / ctrl("pv"), REF_IGN_PREL / REF_IGN_PV))
 
 # --- 3. Covariables du jeu F -------------------------------------------------
 ser_f <- file.path(cache, "ser", "ser_l93.json")
@@ -305,7 +353,7 @@ tab[hors, `:=`(estimation = direct, mse = psi, gamma = 1, nature = "direct",
 tab[hors, rse := 100 * sqrt(mse) / abs(estimation)]
 tab[, `:=`(ser = SER, greco = fifelse(niveau == "ser", substr(SER, 1, 1), GRECO),
            campagne = as.integer(CAMPAGNE),
-           methode_pv = fifelse(attribut == "pv", "forme_hauteur_constantes", NA_character_),
+           methode_pv = fifelse(attribut == "pv", "allometrie_hauteur_diametre", NA_character_),
            millesime = millesime,
            # Source courte : repetee sur chaque ligne (1,8 Mo en version longue).
            # Detail : ?ifn_production_ser et spec 054.

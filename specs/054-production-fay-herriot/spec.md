@@ -1,10 +1,11 @@
 # Spec 054 — Production IFN par petits domaines (Fay-Herriot) et ses consommateurs
 
-**Version** : 0.3.0 (lot 1 livré)
+**Version** : 0.4.0 (lot 1-bis livré)
 **Date**    : 2026-10-01
-**Statut**  : **Lot 1 livré** (cœur v0.200.0, 2026-10-01) : moteur Fay-Herriot,
-table `ifn_production_ser.csv`, accesseurs. Lots 2 à 5 ouverts ; le jeu GEDI (D3)
-attend un accès Earthdata. Résultats en §3.b.
+**Statut**  : **Lots 1 et 1-bis livrés** (cœur v0.200.0 et v0.201.0,
+2026-10-01). Moteur Fay-Herriot, table `ifn_production_ser.csv` (production et
+prélèvement), accesseurs. Lots 2 à 5 ouverts ; le jeu GEDI (D3) attend un accès
+Earthdata. Résultats en §3.b et §3.c.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — moteur Fay-Herriot, table de production IFN par
 SER × campagne, et branchement sur P2, P1/C1, E1/E2 et la spec 040.
@@ -254,6 +255,70 @@ parallélisée sur 6 cgroups de 4 Go, elle prend environ 1 h 10 pour les 6 anné
 Un premier essai a été tué par OOM sur les 6 cgroups (`journalctl`) au moment de
 construire le raster de sortie. Depuis, les sommes sont sauvées avant cette étape.
 
+### 3.c Lot 1-bis : hauteur, arbres coupés, prélèvement (2026-10-01, v0.201.0)
+
+**Pourquoi maintenant.** Au début du lot 2, le ratio prélèvement/production
+sortait à **0,82** au niveau national, contre **0,61** pour l'IGN (53,1 / 87,9
+Mm³/an, période 2014-2022). En cause, la PV de la voie (a), trop basse de 22 %. Un
+ratio aussi biaisé aurait fait passer la plupart des SER pour décapitalisées.
+Le lot 1-bis prévu par D1 est donc passé avant le lot 2.
+
+**Voie (b), hauteur.** La hauteur suit le diamètre selon l'allométrie H ∝ D^β,
+donc à forme constante V ∝ D^(2+β) et `rv = 1 − (1 − rg)^((2+β)/2)`.
+
+β est estimé dans l'IFN par régression de log H sur log C13, **à l'intérieur de
+chaque placette × essence** (au moins 3 arbres mesurés en hauteur, ce qui retire
+l'effet station), par groupe × catégorie de dimension. 623 000 arbres sont
+utilisés :
+
+| | PB | BM | GB | TGB |
+|---|---|---|---|---|
+| feuillus | 0,505 | 0,404 | 0,353 | 0,273 |
+| résineux | 0,642 | 0,497 | 0,528 | 0,483 |
+
+β décroît avec la taille, comme la croissance en hauteur des arbres âgés. Une
+réserve : la pente transversale, mesurée dans un peuplement, sert ici de proxy de
+la trajectoire individuelle d'un arbre. C'est la convention habituelle, mais
+c'est une hypothèse.
+
+**Arbres coupés.** Ce sont les arbres vifs au premier passage (campagne t−5),
+puis coupés avant la revisite (t), codes `VEGET5` 6 **et** 7 comme pour l'IGN.
+65 133 arbres sur 70 624 (92 %) sont rattachés à leur mesure de premier passage.
+On suppose la coupe à mi-période, comme l'IGN :
+- production avant coupe `V·rv·0,5/5` ;
+- volume prélevé actualisé `V·(1 + rv/2)/5`.
+
+**Deux échantillons par campagne t.** A est l'ensemble des placettes de première
+visite en t (arbres vifs), B celui des placettes revisitées en t (arbres coupés).
+Pour PG et PV, `direct = moyenne_A + moyenne_B` et `ψ = ψ_A + ψ_B`, les deux
+échantillons étant indépendants. Pour `prel` et `prel_vidange`, on n'utilise que
+B. Les campagnes 2005-2009 n'ont pas de revisite : leur production n'inclut pas
+les arbres coupés.
+
+**Contrôle national** (campagnes 2019-2023, période 2014-2022) :
+
+| | Lot 1 (voie a) | Lot 1-bis | IGN |
+|---|---|---|---|
+| PV (m³/ha/an) | 4,21 (78 %) | **5,26 (97 %)** | 5,4 |
+| Prélèvement (m³/ha/an) | — | 3,54 (107 %) | 3,3 |
+| Ratio prélèvement / production | 0,82 | **0,67** | 0,61 |
+
+Le prélèvement reste un peu haut (+7 %). Le dénominateur, l'ensemble des
+placettes revisitées, n'est pas exactement la surface de forêt de production de
+l'IGN, et l'actualisation de croissance est approchée. Le ratio garde donc
+environ **+10 % de biais** au niveau national, à afficher avec lui (§7.2).
+
+**Fay-Herriot** (même spécification que le lot 1, GRECO en effet fixe) :
+- PV : h_mean + h_sd + alt_mean, R² 0,83, RE 3,67, RSE médiane 8,2 % contre
+  10,9 % en direct ;
+- PG : h_sd + alt_mean, RE 2,38 ;
+- Moran : non significatif, sauf PV 2020 (p = 0,043).
+
+**Tests de verrouillage** (relevés) :
+- PV nationale entre 85 % et 110 % de l'IGN ;
+- prélèvement entre 85 % et 120 % ;
+- `prel_vidange` ≤ `prel`.
+
 ## 4. Le moteur Fay-Herriot — implémentation maison
 
 Pour un domaine i et une campagne t :
@@ -444,6 +509,10 @@ que `ifn_prelevement_essence_ser.csv`.
   assumée §5.c), alors que la production porte sur les 5 ans *avant* la campagne.
   Les deux fenêtres ne coïncident pas : il faut aligner sur des campagnes communes
   et le documenter.
+- **Le biais résiduel (lot 1-bis, §3.c).** Au niveau national, le ratio vaut
+  0,67, contre 0,61 pour l'IGN, soit environ +10 %. Il faut l'afficher avec
+  cette réserve. Un ratio de SER légèrement au-dessus de 1 ne prouve pas une
+  décapitalisation.
 - **L'incertitude du ratio.** La production a une MSE FH, le prélèvement n'a qu'une
   estimation directe. On propage par la méthode delta, en supposant
   l'indépendance, et on le dit. Un ratio supérieur à 1 n'est pas une erreur : c'est
@@ -626,6 +695,7 @@ Chaque lot = une release (consignes de release de `CLAUDE.md`).
 |---|---|---|---|
 | 0 | ✅ 2026-10-01 — relevés §3.a : chiffre IGN 87,9 Mm³/an (5,4 m³/ha/an), recrutement confirmé, carottage partiel depuis 2014 (D7 amendée), contrôle voie (a) à −15 %, trou GEDI 2023-2024, accès Earthdata non configuré | — (doc) | — |
 | 1 | ✅ v0.200.0 — `estimer_fay_herriot()` + tests (égalité `sae`, σᵥ² = 0, n = 1, domaine vide) ; `data-raw/build_ifn_production.R` ; PG/PV par placette ; jeu F ; FH SER × campagne + GRECO ; `ifn_production_ser.csv` + accesseurs ; contrôle national ; test de Moran (§3.b) | minor | D1, D3, D4, D7 |
+| 1-bis | ✅ v0.201.0 — voie (b) par allométrie hauteur-diamètre, production des arbres coupés, attributs `prel` et `prel_vidange` (§3.c) | minor | lot 1 |
 | 1-ter | Jeu G (GEDI L2A) et comparaison avec F selon §5.b | patch ou minor | accès Earthdata |
 | 2 | P2 `source = "ifn_fh"` + attributs de provenance/RSE ; ratio prélèvement/production (§7.2) | minor | lot 1, D5 |
 | 3 | `completer_volume_ifn(methode = "fay_herriot")` ; test d'héritage C1 | minor | lot 1 |

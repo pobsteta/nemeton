@@ -5,9 +5,16 @@
 # IR5 (accroissement radial sur 5 ans, en METRES dans la table) et C13.
 #
 #   PG (m2/ha/an) : exacte. C_passe = C13 - 2*pi*IR5, g = C^2 / (4*pi).
-#   PV (m3/ha/an) : voie (a) de la spec 054 D1, forme et hauteur constantes,
-#                   dV = V * (1 - (C_passe / C13)^2). Biais bas documente
-#                   (spec 054 §3.a : -15 % a -20 % de la reference IGN).
+#   PV (m3/ha/an) : voie (b) de la spec 054 D1 (lot 1-bis). La hauteur suit le
+#                   diametre selon l'allometrie H ~ D^beta, estimee dans
+#                   l'IFN par groupe x categorie de dimension, donc a forme
+#                   constante V ~ D^(2 + beta) :
+#                   dV = V * (1 - (C_passe / C13)^(2 + beta)).
+#                   beta = 0 redonne la voie (a) du lot 1 (biais -22 %).
+#   Arbres coupes : production des arbres vifs au 1er passage et coupes avant
+#                   la revisite (codes VEGET5 6 et 7, definition IGN), sur
+#                   2,5 ans en moyenne. Le volume preleve est actualise de
+#                   la meme croissance (methodo IGN 2023, p. 19).
 #   Recrutement   : arbre dont C_passe < 0,2356 m (diametre 7,5 cm, methodo IGN
 #                   2023) -> g et V entiers dans la production.
 #
@@ -36,11 +43,51 @@
       right = FALSE)
 }
 
+# Exposant beta de l'allometrie hauteur-diametre H ~ D^beta, par groupe x
+# categorie de dimension, estime DANS chaque placette x essence (au moins
+# 3 arbres mesures en hauteur) pour retirer l'effet station. `arbres` :
+# CAMPAGNE, IDP, ESPAR, C13, HTOT. Retour : groupe, cat, beta, n.
+.ifn_beta_hauteur <- function(arbres, min_arbres = 3L) {
+  a <- arbres[!is.na(arbres$HTOT) & arbres$HTOT > 1.3 & !is.na(arbres$C13) &
+                arbres$C13 > 0, , drop = FALSE]
+  a$groupe <- .ifn_groupe_espar(a$ESPAR)
+  a$cat <- .ifn_categorie_dimension(a$C13)
+  k <- paste(a$CAMPAGNE, a$IDP, a$ESPAR)
+  n <- ave(a$C13, k, FUN = length)
+  a <- a[n >= min_arbres, , drop = FALSE]
+  k <- k[n >= min_arbres]
+  lh <- log(a$HTOT)
+  lc <- log(a$C13)
+  lh0 <- lh - ave(lh, k)
+  lc0 <- lc - ave(lc, k)
+  cle <- paste(a$groupe, a$cat)
+  out <- data.frame(
+    groupe = tapply(a$groupe, cle, `[`, 1),
+    cat = tapply(as.character(a$cat), cle, `[`, 1),
+    beta = tapply(lh0 * lc0, cle, sum) / tapply(lc0^2, cle, sum),
+    n = as.integer(tapply(lh0, cle, length)),
+    stringsAsFactors = FALSE
+  )
+  rownames(out) <- NULL
+  out
+}
+
+# Exposant beta de chaque arbre : scalaire, ou table groupe x cat issue de
+# .ifn_beta_hauteur() (0 si la cellule manque, c'est-a-dire voie (a)).
+.ifn_beta_arbre <- function(groupe, cat, beta) {
+  if (is.numeric(beta) && length(beta) == 1L) return(rep(beta, length(groupe)))
+  b <- beta$beta[match(paste(groupe, cat), paste(beta$groupe, beta$cat))]
+  b[is.na(b)] <- 0
+  b
+}
+
 # Production par arbre. `arbres` : arbres vivants de 1re visite, colonnes
 # CAMPAGNE, IDP, ESPAR, C13, IR5, V, W (numeriques pour les quatre dernieres).
-# Ajoute : groupe, rg, ir5_impute, c_passe, recrute, pg, pv (par arbre et par
-# an, a multiplier par W pour passer a l'hectare).
-.ifn_production_arbres <- function(arbres) {
+# `beta` : exposant hauteur-diametre (scalaire ou table, cf. .ifn_beta_arbre).
+# Ajoute : groupe, rg (fraction de g produite en 5 ans), rv (idem en volume),
+# ir5_impute, c_passe, recrute, pg, pv (par arbre et par an, a multiplier par
+# W pour passer a l'hectare).
+.ifn_production_arbres <- function(arbres, beta = 0) {
   a <- arbres
   a$groupe <- .ifn_groupe_espar(a$ESPAR)
   a$cat <- .ifn_categorie_dimension(a$C13)
@@ -60,12 +107,70 @@
   # Le piege : C_passe se deduit de rg, pas de IR5 (vide pour un impute).
   a$c_passe <- a$C13 * sqrt(1 - a$rg)
   a$recrute <- a$c_passe < .IFN_C13_RECRUTEMENT
+  # Volume : V ~ D^(2 + beta) a forme constante, donc
+  # V_passe / V = (C_passe / C13)^(2 + beta) = (1 - rg)^((2 + beta) / 2).
+  a$beta <- .ifn_beta_arbre(a$groupe, a$cat, beta)
+  a$rv <- 1 - (1 - a$rg)^((2 + a$beta) / 2)
   g <- a$C13^2 / (4 * pi)
   v <- ifelse(is.na(a$V), 0, a$V)
   a$pg <- ifelse(a$recrute, g, g * a$rg) / 5
-  a$pv <- ifelse(a$recrute, v, v * a$rg) / 5
+  a$pv <- ifelse(a$recrute, v, v * a$rv) / 5
   a$g <- g
   a
+}
+
+# Arbres coupes entre le 1er passage (campagne t-5) et la revisite (t).
+# `arbres` : sortie de .ifn_production_arbres() sur les arbres de 1re visite,
+# avec la colonne A. `coupes` : IDP, A, VEGET5 ("6" coupe vidange, "7" coupe
+# non vidange), CAMPAGNE (de revisite). Par arbre et par an (x W pour l'ha) :
+#   pv_coupe, pg_coupe : croissance avant la coupe, 2,5 ans sur 5 en moyenne ;
+#   prel, prel_vidange : volume preleve actualise a la date mediane de coupe,
+#                        tous codes (definition IGN) ou code 6 seul (spec 040).
+.ifn_production_coupes <- function(arbres, coupes) {
+  cle_a <- paste(arbres$IDP, arbres$A)
+  i <- match(paste(coupes$IDP, coupes$A), cle_a)
+  ok <- !is.na(i)
+  a <- arbres[i[ok], , drop = FALSE]
+  a$CAMPAGNE <- coupes$CAMPAGNE[ok]
+  a$VEGET5 <- coupes$VEGET5[ok]
+  v <- ifelse(is.na(a$V), 0, a$V)
+  g <- a$C13^2 / (4 * pi)
+  rv <- ifelse(is.na(a$rv), 0, a$rv)
+  rg <- ifelse(is.na(a$rg), 0, a$rg)
+  a$pv_coupe <- v * rv * 0.5 / 5
+  a$pg_coupe <- g * rg * 0.5 / 5
+  a$prel <- v * (1 + rv / 2) / 5
+  a$prel_vidange <- ifelse(a$VEGET5 == "6", a$prel, 0)
+  a
+}
+
+# Sommes a l'hectare par placette x groupe pour des colonnes de valeurs
+# donnees ; une placette sans arbre vaut 0. Commun aux arbres vifs et coupes.
+.ifn_sommer_placettes <- function(arbres, placettes, colonnes) {
+  pl <- unique(placettes[, c("CAMPAGNE", "IDP", "SER")])
+  grille <- merge(pl, data.frame(groupe = c("tous", "feuillus", "resineux")),
+                  by = NULL)
+  if (nrow(arbres) == 0L) {
+    for (j in colonnes) grille[[j]] <- 0
+    return(grille)
+  }
+  w <- as.data.frame(lapply(arbres[colonnes], function(x) arbres$W * x))
+  parts <- list()
+  for (gr in c("tous", "feuillus", "resineux")) {
+    sel <- if (gr == "tous") rep(TRUE, nrow(arbres)) else arbres$groupe == gr
+    if (!any(sel)) next
+    cle <- paste(arbres$CAMPAGNE[sel], arbres$IDP[sel], sep = "|")
+    s <- rowsum(w[sel, , drop = FALSE], cle, na.rm = TRUE)
+    morceaux <- strsplit(rownames(s), "|", fixed = TRUE)
+    parts[[gr]] <- data.frame(CAMPAGNE = vapply(morceaux, `[`, "", 1L),
+                              IDP = vapply(morceaux, `[`, "", 2L),
+                              groupe = gr, s, stringsAsFactors = FALSE,
+                              row.names = NULL)
+  }
+  s <- do.call(rbind, parts)
+  out <- merge(grille, s, by = c("CAMPAGNE", "IDP", "groupe"), all.x = TRUE)
+  for (j in colonnes) out[[j]][is.na(out[[j]])] <- 0
+  out
 }
 
 # Production par placette et par groupe. `placettes` : placettes de 1re visite
@@ -76,38 +181,11 @@
 # colonnes CAMPAGNE, IDP, SER, groupe, pg, pv, g_tot, g_sans_valeur, g_imputee.
 .ifn_production_placettes <- function(arbres, placettes) {
   a <- arbres
-  a$w_g <- a$W * a$g
-  a$w_pg <- a$W * a$pg
-  a$w_pv <- a$W * a$pv
-  a$w_g_nv <- ifelse(is.na(a$rg), a$w_g, 0)
-  a$w_g_imp <- ifelse(a$ir5_impute, a$w_g, 0)
-  sommer <- function(d, groupe) {
-    if (nrow(d) == 0L) {
-      return(data.frame(CAMPAGNE = character(0), IDP = character(0),
-                        groupe = character(0), pg = numeric(0),
-                        pv = numeric(0), g_tot = numeric(0),
-                        g_sans_valeur = numeric(0), g_imputee = numeric(0)))
-    }
-    s <- stats::aggregate(
-      cbind(pg = w_pg, pv = w_pv, g_tot = w_g, g_sans_valeur = w_g_nv,
-            g_imputee = w_g_imp) ~ CAMPAGNE + IDP,
-      data = d, FUN = sum, na.rm = TRUE, na.action = stats::na.pass
-    )
-    s$groupe <- groupe
-    s
-  }
-  parts <- list(sommer(a, "tous"),
-                sommer(a[a$groupe == "feuillus", , drop = FALSE], "feuillus"),
-                sommer(a[a$groupe == "resineux", , drop = FALSE], "resineux"))
-  s <- do.call(rbind, parts)
-  pl <- unique(placettes[, c("CAMPAGNE", "IDP", "SER")])
-  grille <- merge(pl, data.frame(groupe = c("tous", "feuillus", "resineux")),
-                  by = NULL)
-  out <- merge(grille, s, by = c("CAMPAGNE", "IDP", "groupe"), all.x = TRUE)
-  for (j in c("pg", "pv", "g_tot", "g_sans_valeur", "g_imputee")) {
-    out[[j]][is.na(out[[j]])] <- 0
-  }
-  out
+  a$g_tot <- a$g
+  a$g_sans_valeur <- ifelse(is.na(a$rg), a$g, 0)
+  a$g_imputee <- ifelse(a$ir5_impute, a$g, 0)
+  .ifn_sommer_placettes(a, placettes,
+                        c("pg", "pv", "g_tot", "g_sans_valeur", "g_imputee"))
 }
 
 # Estimation directe par domaine : moyenne des placettes, variance de la
@@ -129,16 +207,23 @@
 #' the IGN raw forest-inventory data, per sylvoecoregion (SER) and campaign,
 #' with a Fay-Herriot small-area estimate and its uncertainty (spec 054).
 #'
-#' Two attributes: `"pg"`, basal-area production (m2/ha/yr), exact; and
-#' `"pv"`, volume production (m3/ha/yr), computed under a constant form and
-#' height assumption, which biases it low (about 15-20 percent under the
-#' published IGN figure, see the `methode_pv` column and spec 054 §3.a).
+#' Four attributes, all per hectare and per year:
+#' * `"pg"`: basal-area production (m2/ha/yr), exact from the increment cores;
+#' * `"pv"`: volume production (m3/ha/yr). Height growth follows diameter
+#'   growth through the height-diameter allometry estimated in the inventory
+#'   (`methode_pv = "allometrie_hauteur_diametre"`), and the growth of trees
+#'   felled between two visits is included, as in the IGN definition. National
+#'   check: 97 percent of the published IGN figure (spec 054 section 3.c);
+#' * `"prel"`: harvested volume (m3/ha/yr), all felled trees (IGN definition);
+#' * `"prel_vidange"`: harvested volume of trees felled **and extracted**
+#'   (`VEGET5 == "6"`), the definition used for forest roads (spec 040).
 #'
-#' Campaign `t` measures the growth of years `t-5` to `t-1`.
+#' Campaign `t` measures the growth of years `t-5` to `t-1`, and the harvest
+#' between the first visit of a plot (`t-5`) and its revisit (`t`).
 #'
 #' @param ser,greco Optional SER / GRECO codes to filter on.
 #' @param campagne Optional campaign year(s).
-#' @param attribut Optional `"pg"` and/or `"pv"`.
+#' @param attribut Optional `"pg"`, `"pv"`, `"prel"` and/or `"prel_vidange"`.
 #' @param groupe Optional `"tous"`, `"feuillus"` and/or `"resineux"`.
 #' @param niveau Optional `"ser"`, `"greco"` and/or `"national"`.
 #'
@@ -163,7 +248,8 @@ ifn_production_ser <- function(ser = NULL, greco = NULL, campagne = NULL,
     d <- d[d$niveau %in% niveau, , drop = FALSE]
   }
   if (!is.null(attribut)) {
-    attribut <- match.arg(attribut, c("pg", "pv"), several.ok = TRUE)
+    attribut <- match.arg(attribut, c("pg", "pv", "prel", "prel_vidange"),
+                          several.ok = TRUE)
     d <- d[d$attribut %in% attribut, , drop = FALSE]
   }
   if (!is.null(groupe)) {

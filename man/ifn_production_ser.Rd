@@ -12,7 +12,8 @@ ifn_production_ser(ser = NULL, greco = NULL, campagne = NULL,
 
 \item{campagne}{Optional campaign year(s).}
 
-\item{attribut}{Optional \code{"pg"} and/or \code{"pv"}.}
+\item{attribut}{Optional \code{"pg"}, \code{"pv"}, \code{"prel"} and/or
+\code{"prel_vidange"}.}
 
 \item{groupe}{Optional \code{"tous"}, \code{"feuillus"} and/or
 \code{"resineux"}.}
@@ -34,12 +35,25 @@ Returns the bundled table of annual biological production recomputed from the
 IGN raw forest-inventory data, per sylvoecoregion (SER) and campaign, with a
 Fay-Herriot small-area estimate and its uncertainty (spec 054).
 
-Two attributes: \code{"pg"}, basal-area production (m2/ha/yr), exact; and
-\code{"pv"}, volume production (m3/ha/yr), computed under a constant form and
-height assumption, which biases it low (about 15-20 percent under the
-published IGN figure, see the \code{methode_pv} column and spec 054 §3.a).
+Four attributes, all per hectare and per year:
+\itemize{
+\item \code{"pg"}: basal-area production (m2/ha/yr), exact from the increment
+cores;
+\item \code{"pv"}: volume production (m3/ha/yr). Height growth follows
+diameter growth through the height-diameter allometry estimated in the
+inventory (\code{methode_pv = "allometrie_hauteur_diametre"}), and the growth
+of trees felled between two visits is included, as in the IGN definition.
+National check: 97 percent of the published IGN figure (spec 054 section 3.c);
+\item \code{"prel"}: harvested volume (m3/ha/yr), all felled trees (IGN
+definition);
+\item \code{"prel_vidange"}: harvested volume of trees felled \strong{and
+extracted} (\code{VEGET5 == "6"}), the definition used for forest roads (spec
+040).
+}
 
-Campaign \code{t} measures the growth of years \code{t-5} to \code{t-1}.
+Campaign \code{t} measures the growth of years \code{t-5} to \code{t-1}, and
+the harvest between the first visit of a plot (\code{t-5}) and its revisit
+(\code{t}).
 }
 \examples{
 \dontrun{

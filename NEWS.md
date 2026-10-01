@@ -1,3 +1,36 @@
+# nemeton 0.201.0 (2026-10-01)
+
+### Changed — production IFN : la hauteur et les arbres coupés comptent (spec 054 lot 1-bis)
+
+La production en volume de la v0.200.0 sortait à 78 % de la référence IGN. Ça
+ne tenait pas pour le ratio prélèvement/production du lot 2 : il sortait à 0,82
+au niveau national, contre 0,61 pour l'IGN, et aurait fait passer la plupart des
+SER pour décapitalisées. Deux manques sont comblés.
+
+- **Croissance en hauteur.** La hauteur suit le diamètre selon l'allométrie
+  H ∝ D^β, estimée dans l'IFN à l'intérieur de chaque placette × essence, par
+  groupe × catégorie de dimension, sur 623 000 arbres. β vaut de 0,27 (très gros
+  bois feuillus) à 0,64 (petit bois résineux). À forme constante, le volume suit
+  donc D^(2+β) au lieu de D².
+- **Arbres coupés entre deux passages.** Leur croissance avant la coupe entre
+  dans la production, comme dans la définition IGN. La coupe est supposée à
+  mi-période, et le volume prélevé est actualisé de la même croissance.
+
+**Contrôle national** (période 2014-2022) : PV **5,26 m³/ha/an**, soit 97 % de
+l'IGN (5,4) ; prélèvement 3,54, soit 107 % (IGN 3,3) ; ratio 0,67 (IGN 0,61).
+Les tests verrouillent la PV entre 85 et 110 % et le prélèvement entre 85 et
+120 %.
+
+**Nouveaux attributs** de `ifn_production_ser()` : `"prel"` (tous les arbres
+coupés, définition IGN) et `"prel_vidange"` (coupés **et** sortis, la définition
+de la desserte, spec 040), par SER / GRECO / national × campagne × groupe, en
+estimation directe.
+
+Le Fay-Herriot de PV gagne en efficacité relative (3,38 → 3,67), avec une RSE
+médiane de 8,2 % contre 10,9 % en direct. Les valeurs de `ifn_production_ser()`
+et de `ifn_production_reference()` changent en conséquence : la PV augmente
+d'environ 25 %. Aucun indicateur ne les consommait encore.
+
 # nemeton 0.200.0 (2026-10-01)
 
 ### Added — production IFN par petits domaines (Fay-Herriot, spec 054 lot 1)
