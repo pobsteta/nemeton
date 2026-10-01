@@ -63,7 +63,8 @@ Etalab v2.0, doc `IGN_DB_doc_arbre.pdf` v2.4 du 14/10/2025) :
   l'accroissement radial cumulé des 5 derniers cernes complets, mesuré à la tarière
   au niveau de C13. **`IR5` est en mètres** dans la table, pas en dixièmes de mm
   (la doc le précise).
-- `IR5` est renseigné sur 854 804 lignes sur 2 363 567. Il est **absent** :
+- `IR5` est renseigné sur 854 804 lignes sur 2 363 567. Le carottage est partiel
+  depuis 2014 (§3.a, point 3). Il est **absent** :
   - sur les arbres simplifiés ;
   - sur les noyers (`ESPAR = 27C`) ;
   - sur le chêne vert (`ESPAR = 6`) depuis 2015 ;
@@ -96,17 +97,106 @@ L'accroissement en hauteur n'est pas mesuré. Deux voies :
   appliqué à `C_passé`, avec une hauteur passée modélisée.
 C'est la décision D1.
 
-**Recrutement.** Un arbre dont `C_passé` est sous le seuil de recensabilité
-(23,5 cm) est compté comme recruté : sa surface terrière et son volume entiers
-entrent dans la production. **Hypothèse à confirmer** contre la méthodologie IGN
-publiée avant le lot 1 (D1). La doc générale de l'export ne décrit pas le calcul de
-production.
+**Recrutement — confirmé au lot 0.** La méthodologie IGN 2023 (p. 18) définit le
+recrutement comme le volume des arbres « ayant atteint le diamètre de 7,5 cm durant
+les cinq dernières années ». En circonférence, cela fait 0,2356 m. Un arbre dont
+`C_passé` < 0,2356 m entre donc **en entier** dans la production.
 
-**Contrôle externe obligatoire** (même esprit que les 2,84 m³/ha/an de la spec
-040). La production nationale toutes essences recalculée doit tomber dans l'ordre
-de grandeur publié par l'IGN (Mémento de l'inventaire forestier, production
-biologique). **Le chiffre de référence est à relever dans le Mémento au lot 1, pas
-de mémoire.** Un test verrouille l'ordre de grandeur.
+**Contrôle externe** : voir §3.a.
+
+### 3.a Relevés du lot 0 (2026-10-01)
+
+**Sources.** IGN, *La production annuelle en volume*, édition 2024 (`flux2024.pdf`).
+IGN, *Méthodologie 2023 — pour bien comprendre les résultats publiés 2018-2022*,
+p. 18-19. Calculs exploratoires sur l'export 2005-2024 (scripts jetables, rien
+d'embarqué).
+
+**1. Chiffre de référence IGN**, période de végétation 2014-2022 :
+- production biologique **87,9 ± 1,3 Mm³/an**, soit **5,4 m³/ha/an** ;
+- Bourgogne-Franche-Comté : 10,3 ± 0,3 Mm³/an.
+
+Le chiffre IGN couvre la production des arbres vifs (accroissement + recrutement,
+environ 95 % du total) **plus la production des arbres coupés** (leur croissance
+pendant les 2,5 ans théoriques avant la coupe). Les arbres morts sont exclus,
+leur accroissement étant supposé nul.
+
+**2. Ce que mesure une campagne.** La campagne t mesure les cernes t-5 à t-1. Le
+résultat IGN publié est une moyenne pondérée sur 9 saisons, et ce lissage est
+voulu (§7.6).
+
+**3. Le carottage est partiel depuis 2014, et c'est voulu par l'IGN.** Depuis la
+campagne 2014, l'IGN ne carotte qu'**un arbre par essence et par catégorie de
+dimension, plus les gros bois** ; les autres arbres sont des arbres « simplifiés ».
+L'IGN modélise leur accroissement, mais **ces valeurs ne sont pas dans l'export
+brut**.
+
+Mesuré sur les arbres vivants de première visite :
+
+| Campagnes | Lignes avec IR5 | Arbres simplifiés | IR5 hors simplifiés |
+|---|---|---|---|
+| 2005-2008 | 98-100 % | 0 % | 98-100 % |
+| 2009-2013 | 74-76 % | 22-24 % | 97-98 % |
+| 2014-2024 | **36-42 %** | **52-61 %** | 85-88 % |
+
+Conséquence : l'imputation n'est **pas un cas marginal**, c'est le régime normal.
+Elle couvre **47 % de la surface terrière** sur 2015-2023. La règle initiale de D7
+(« exclure la placette si plus de 50 % de G sans IR5 ») aurait écarté la majorité
+des placettes récentes. **D7 est amendée** (§9).
+
+**4. Imputation testée.** Le taux d'accroissement relatif en surface terrière
+`rg = 1 − (C_passé/C13)²` des arbres carottés est reporté sur les simplifiés en
+cascade :
+1. placette × essence × catégorie de dimension (PB < 22,5 ≤ BM < 47,5 ≤ GB < 67,5 ≤
+   TGB, en cm de diamètre), ce qui épouse le plan de carottage IGN ;
+2. placette × essence ;
+3. placette.
+
+Résultat : 44,4 % de G imputés au premier échelon, 1,5 % au deuxième, 1,3 % au
+troisième. **Il reste 1,85 % de G sans valeur.** La circonférence passée des
+arbres imputés se déduit de `C_passé = C13·√(1 − rg)` (piège §8.9).
+
+**5. Contrôle national, voie (a)** : forme et hauteur constantes, recrutement
+compris, sans la production des arbres coupés. Moyenne sur les placettes de
+première visite avec arbres.
+
+| Campagnes | PV (m³/ha/an) | PG (m²/ha/an) | G (m²/ha) | V (m³/ha) | Part du recrutement dans PV |
+|---|---|---|---|---|---|
+| 2015-2023 | **4,61** | 0,681 | 24,6 | 196 | 8,0 % |
+| 2005-2013 | 4,53 | 0,699 | 23,5 | 178 | 8,3 % |
+
+L'écart avec la référence IGN (5,4) est de **−15 %**. Il s'explique par deux
+manques :
+- la production des arbres coupés, environ 5 % du total selon l'IGN ;
+- la croissance en hauteur, ignorée par la voie (a), soit environ 10 %.
+
+C'est un biais bas, documenté et du bon ordre. **La voie (a) est acceptée pour le
+lot 1.** Le dénominateur (placettes avec arbres, et non la surface de forêt de
+production) peut aussi peser de quelques pourcents ; il faut l'aligner sur l'IGN
+au lot 1.
+
+PG (0,68) est cohérente avec l'article (0,65 en forêts publiques de BFC).
+
+**Test de verrouillage (lot 1)** : la PV nationale de la voie (a) doit être
+comprise entre 80 % et 100 % du chiffre IGN, et la PG nationale entre 0,55 et 0,80
+m²/ha/an.
+
+**6. Couverture GEDI.** Le jeu G a trois contraintes :
+- **trou d'acquisition du 17 mars 2023 au 24 avril 2024** (instrument retiré de
+  l'ISS). Les campagnes IFN dont la fenêtre de cernes chevauche ce trou n'ont pas
+  de covariables GEDI de l'année. Le jeu G n'utilise que les années d'acquisition
+  complètes ;
+- **accès** : GEDI02_A V002 sur LP DAAC, avec un compte NASA Earthdata gratuit.
+  **Aucun identifiant n'est configuré sur la machine** (`~/.netrc` sans entrée
+  `urs.earthdata.nasa.gov`), et aucun lecteur HDF5 n'est installé en R (`hdf5r`,
+  `rhdf5` absents ; `arrow` présent) ;
+- **jeu prétraité de l'article** : le jeu GeoGEDI France entière (TETIS 2026) n'a
+  pas été trouvé en accès public. Le dépôt public GeoGEDI (doi:10.57745/EJ4CI3)
+  ne couvre que les Landes et les Vosges (158 000 tirs), ce qui ne suffit pas.
+
+Le jeu G demande donc une mise en place par Pascal : compte Earthdata, `~/.netrc`,
+et un lecteur HDF5 ou un sous-ensemble via le service Harmony de la NASA. Le jeu F
+n'en dépend pas. **Le lot 1 peut démarrer sur F**, et G le rejoint pour la
+comparaison dès que l'accès est prêt.
 
 ## 4. Le moteur Fay-Herriot — implémentation maison
 
@@ -237,7 +327,7 @@ indique le jeu retenu (`"forms_mnt"` ou `"gedi_l2a"`).
 |---|---|---|
 | `estimer_fay_herriot(direct, psi, X, domaine, annee, methode = "REML")` | exportée | Moteur générique (§4). Réutilisable pour V, G, Dg. |
 | `ifn_production_placettes()` | interne (`data-raw`) | PG/PV par placette depuis `ARBRE` (§3). |
-| `inst/extdata/ifn_production_ser.csv` | table | Une ligne par niveau × ser × campagne × attribut (`pg`, `pv`) et par essence groupée (`tous`, `feuillus`, `resineux`) : `direct`, `psi`, `n_plac`, `estimation`, `mse`, `rse`, `gamma`, `nature`, `methode_pv`, `covariables`, `millesime`, `source`. |
+| `inst/extdata/ifn_production_ser.csv` | table | Une ligne par niveau × ser × campagne × attribut (`pg`, `pv`) et par essence groupée (`tous`, `feuillus`, `resineux`) : `direct`, `psi`, `n_plac`, `estimation`, `mse`, `rse`, `gamma`, `nature`, `methode_pv`, `covariables`, `part_g_imputee`, `millesime`, `source`. |
 | `ifn_production_ser(ser, greco, campagne, attribut, groupe)` | exportée | Accesseur filtrant, même idiome que `ifn_volume_essence_ser()`. |
 | `ifn_production_reference(ser, attribut, groupe, campagnes)` | exportée | Valeur à appliquer à une UGF. Moyenne FH sur une fenêtre de campagnes, MSE propagée. Attributs `niveau` et `nature`. |
 | `ifn_taux_prelevement_production(ser, groupe)` | exportée | Ratio prélèvement/production avec son incertitude (§7.2). |
@@ -280,7 +370,13 @@ calculer : le cœur n'a que le stock et le prélèvement.
 `ifn_taux_prelevement_production()` le calcule par SER × groupe avec les mêmes clés
 que `ifn_prelevement_essence_ser.csv`.
 
-**Deux pièges à traiter** :
+**Trois pièges à traiter** :
+- **Le prélèvement IGN n'est pas celui de la spec 040.** L'IGN compte un arbre
+  coupé « que la grume soit vidangée ou non » (méthodologie 2023, p. 19), alors que
+  la spec 040 ne retient que `VEGET5 == "6"` (vidangé). Pour un ratio
+  prélèvement/production au sens IGN, il faut compter les codes 6 **et** 7, et
+  garder le code 6 seul pour la desserte. Le ratio expose les deux variantes,
+  nommées.
 - **Le prélèvement de la spec 040 est mesuré au premier passage** (approximation
   assumée §5.c), alors que la production porte sur les 5 ans *avant* la campagne.
   Les deux fenêtres ne coïncident pas : il faut aligner sur des campagnes communes
@@ -426,18 +522,23 @@ spatio-temporel (Rao & Yu 1994). C'est hors périmètre.
 8. **Masquage de forêt des covariables** : FORMS-T doit être agrégé **sous masque
    forêt**, pas sur toute la SER. Sinon, la hauteur moyenne mesure le taux de
    boisement.
+9. **Circonférence passée d'un arbre imputé.** `C_passé = C13 − 2π·IR5` est vide
+   quand IR5 l'est. Si on ne la recalcule pas par `C13·√(1 − rg)`, le test de
+   recrutement renvoie `NA` et l'arbre **sort silencieusement de la somme**.
+   Vérifié au lot 0 : ce bug fait tomber PV à 2,25 m³/ha/an au lieu de 4,61, car
+   47 % de G disparaît sans aucune erreur. Un test le verrouille.
 
 ## 9. Décisions — tranchées le 2026-10-01
 
 | # | Question | Décision |
 |---|---|---|
-| D1 | Méthode PV et règle de recrutement | **PG d'abord** (exacte). PV par la voie (a), forme et hauteur constantes, avec biais bas documenté. La voie (b), tarif du cœur + hauteur passée modélisée, passe en lot 1-bis si le contrôle national sort trop bas. Recrutement par seuil 23,5 cm, **après** relecture de la méthodo IGN (lot 0). |
+| D1 | Méthode PV et règle de recrutement | **PG d'abord** (exacte). PV par la voie (a), forme et hauteur constantes. Le lot 0 la mesure à **−15 %** de l'IGN (§3.a, point 5) : **acceptée**. Lot 1-bis : la voie (b) (hauteur) et la production des arbres coupés (revisite, croissance sur 2,5 ans), pour viser l'écart restant. Recrutement : diamètre 7,5 cm, **confirmé** par la méthodo IGN 2023. |
 | D2 | Domaines | SER × campagne au lot 1 ; domaines utilisateur (UT ONF, massif) au lot 5. |
 | D3 | Covariables | **Deux jeux, comparés** : GEDI L2A brut (G) et FORMS-T hauteur + MNT (F). Critères fixés à l'avance (§5.b) ; F en cas d'égalité. |
 | D4 | Moteur | **Maison**, en R de base ; `sae` en `Suggests` pour le test d'égalité (§4). |
 | D5 | P2 | FH seul au lot 2 ; combinaison avec le site index CHM plus tard, sur un cas réel. |
 | D6 | E1 | **Le flux remplace le stock** : `production × taux_mobilisation`, sans défaut inventé pour le taux (valeur explicite ou ratio IFN de la SER). Opt-in, `ref_max` propre au mode flux (§7.4). |
-| D7 | IR5 manquant | Imputer par le rapport PG/G du groupe dans la placette ; exclure la placette si plus de 50 % de sa surface terrière n'a pas d'IR5. |
+| D7 | IR5 manquant | **Amendée au lot 0** : l'imputation est le régime normal (47 % de G depuis 2014, plan de carottage IGN). On impute `rg` en cascade placette × essence × catégorie de dimension → placette × essence → placette. On n'exclut la placette que si plus de 50 % de sa G reste **sans valeur après imputation** (1,85 % de G au total). La part imputée est publiée par domaine (`part_g_imputee`). |
 | D8 | Fenêtre de `ifn_production_reference()` | 5 dernières campagnes, configurable par `campagnes`. |
 
 ## 10. Hors périmètre
@@ -458,7 +559,7 @@ Chaque lot = une release (consignes de release de `CLAUDE.md`).
 
 | Lot | Contenu | Bump | Prérequis |
 |---|---|---|---|
-| 0 | Cette spec + ADR-016 ; relevé du chiffre IGN de production nationale ; relecture de la méthodo de recrutement ; vérification de la couverture temporelle GEDI et de l'accès Earthdata | — (doc) | — |
+| 0 | ✅ 2026-10-01 — relevés §3.a : chiffre IGN 87,9 Mm³/an (5,4 m³/ha/an), recrutement confirmé, carottage partiel depuis 2014 (D7 amendée), contrôle voie (a) à −15 %, trou GEDI 2023-2024, accès Earthdata non configuré | — (doc) | — |
 | 1 | `estimer_fay_herriot()` + tests (égalité `sae`, σᵥ² = 0, n = 1, domaine vide) ; `data-raw/build_ifn_production.R` ; PG/PV par placette ; agrégats des jeux G et F ; comparaison selon §5.b ; FH SER × campagne avec le jeu retenu ; `ifn_production_ser.csv` + accesseurs ; contrôle national ; test de Moran | minor | D1, D3, D4, D7 |
 | 2 | P2 `source = "ifn_fh"` + attributs de provenance/RSE ; ratio prélèvement/production (§7.2) | minor | lot 1, D5 |
 | 3 | `completer_volume_ifn(methode = "fay_herriot")` ; test d'héritage C1 | minor | lot 1 |

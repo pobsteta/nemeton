@@ -124,9 +124,21 @@ recommandation initiale :
 - **D6** : dans E1, le flux remplace le stock (`production × taux_mobilisation`),
   en opt-in, avec un `ref_max` propre au mode flux.
 
-**Prochaine étape** : lot 0. Il faut relever le chiffre IGN de production
-nationale et la règle de recrutement, puis vérifier la couverture temporelle GEDI
-et l'accès Earthdata.
+**Lot 0 fait le 2026-10-01** (spec §3.a) :
+- **référence IGN** : 87,9 Mm³/an, soit 5,4 m³/ha/an (2014-2022) ;
+- **recrutement** : seuil de 7,5 cm de diamètre, confirmé ;
+- **carottage partiel depuis 2014** : 47 % de la surface terrière est à imputer,
+  d'où l'amendement de D7 ;
+- **contrôle national de la voie (a)** : PV 4,61 m³/ha/an (−15 %), PG 0,68 —
+  voie acceptée ;
+- **piège évité** : sans recalcul de la circonférence passée, l'imputation fait
+  sortir silencieusement les arbres de la somme (PV tombait à 2,25) ;
+- **prélèvement** : l'IGN compte aussi les arbres coupés non vidangés (code 7) ;
+- **GEDI** : trou d'acquisition de mars 2023 à avril 2024, aucun accès Earthdata
+  configuré.
+
+**Prochaine étape** : lot 1 sur le jeu F (FORMS-T + MNT). Le jeu G attend un
+compte Earthdata (action de Pascal).
 
 ---
 
