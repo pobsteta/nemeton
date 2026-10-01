@@ -25,7 +25,7 @@
 #' Rows where `volume_col` is already filled are left strictly untouched. Only
 #' `NA`s are completed. The added `source_col` records, per row, where each
 #' value came from: `"mesure"` for the original values, `"ifn_ser"`,
-#' `"ifn_greco"` or `"ifn_national"` for completed ones, and `NA` where no
+#' `"ifn_greco"`, `"ifn_national"` or `"ifn_fh_ser"` for completed ones, and `NA` where no
 #' reference could be found. Any downstream reader can therefore separate
 #' measured from imputed — which the caller **should** do before reporting.
 #'
@@ -47,6 +47,11 @@
 #' @param mesure `"present"` (default) or `"maille"`; see above.
 #' @param source_col Name of the added provenance column. Default
 #'   `"volume_source"`.
+#' @param methode `"cascade"` (default) or `"fay_herriot"` (spec 054 lot 3),
+#'   passed to [ifn_volume_reference()]. With `"fay_herriot"`, a species
+#'   present in the SER gets its Fay-Herriot estimate, written
+#'   `"ifn_fh_ser"` in `source_col`, instead of jumping to the GRECO when the
+#'   SER has fewer than `min_plac` plots of it.
 #'
 #' @return `units` with `volume_col` completed and `source_col` added.
 #'
@@ -64,11 +69,13 @@ completer_volume_ifn <- function(units,
                                  ser = NULL,
                                  min_plac = 30,
                                  mesure = c("present", "maille"),
-                                 source_col = "volume_source") {
+                                 source_col = "volume_source",
+                                 methode = c("cascade", "fay_herriot")) {
   if (!inherits(units, "sf")) {
     cli::cli_abort("{.arg units} must be an sf object.")
   }
   mesure <- match.arg(mesure)
+  methode <- match.arg(methode)
   if (!volume_col %in% names(units)) {
     cli::cli_abort(c(
       "Column {.val {volume_col}} not found in {.arg units}.",
@@ -102,10 +109,14 @@ completer_volume_ifn <- function(units,
   a_chercher <- unique(espar[manque & !is.na(espar)])
   if (length(a_chercher) > 0L) {
     ref <- ifn_volume_reference(a_chercher, ser = ser, min_plac = min_plac,
-                               mesure = mesure)
+                               mesure = mesure, methode = methode)
     idx <- match(espar, ref$espar)
     vol_ref <- ref$vol_ha[idx]
     niv_ref <- ref$niveau_utilise[idx]
+    if (methode == "fay_herriot") {
+      niv_ref <- ifelse(!is.na(ref$nature[idx]) & ref$nature[idx] == "fay_herriot",
+                        "fh_ser", niv_ref)
+    }
 
     comble <- manque & !is.na(vol_ref)
     vol[comble] <- vol_ref[comble]

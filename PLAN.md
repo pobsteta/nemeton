@@ -192,9 +192,20 @@ du Fay-Herriot passe à 3,67.
 - **`min_plac = 30`** pour les estimations directes : F13 (Marais littoraux)
   donnait un ratio de 6,2 sur 3 placettes.
 
+**Journal** — *2026-10-01* (**v0.203.0**) : **lot 3 livré.**
+
+- **FH poolé essence × SER** (décision du jour, plutôt que le grain par groupe),
+  en échelle log, avec GVF :
+  - 0 volume négatif (45 en linéaire) ;
+  - sans biais : 72,8 m³/ha contre 72,7 en direct ;
+  - R² synthétique 0,90 ;
+  - les 1 123 cellules à une seule placette ne sont plus purement synthétiques.
+- **`completer_volume_ifn(methode = "fay_herriot")`** écrit la provenance
+  `"ifn_fh_ser"`.
+- **Correction de la spec** : C1 ne lit pas P1, il n'en hérite donc pas.
+- **Moteur** sans matrice n × n.
+
 **Prochaine étape** :
-- **lot 3** : `completer_volume_ifn(methode = "fay_herriot")`, avec un test
-  d'héritage pour C1 ;
 - **lot 4** : E1 sur le flux, puis le brief app ;
 - **en parallèle, lot 1-ter** : le jeu GEDI, dès que le compte Earthdata est
   configuré (action de Pascal).

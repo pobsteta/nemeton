@@ -29,6 +29,12 @@
 
 .ifn_vol_table <- function() .ifn_table("ifn_volume_essence_ser.csv")
 .ifn_prelev_table <- function() .ifn_table("ifn_prelevement_essence_ser.csv")
+.ifn_vol_fh_table <- function() {
+  # espar et ser en texte : "09" ne doit pas devenir 9.
+  d <- .ifn_table("ifn_volume_fh_ser.csv")
+  d$espar <- as.character(d$espar)
+  d
+}
 
 # Filtre commun aux deux accesseurs (meme schema de cles).
 .ifn_filtrer <- function(d, espar, ser, greco, niveau) {
@@ -178,9 +184,18 @@ ifn_volume_essence_ser <- function(espar = NULL, ser = NULL, greco = NULL,
 #'   stand-level figure) or `"maille"` (the regional resource figure). See
 #'   [ifn_volume_essence_ser()].
 #'
+#' @param methode `"cascade"` (default): the stepwise fallback above.
+#'   `"fay_herriot"` (spec 054 lot 3): where the species occurs in the SER,
+#'   its Fay-Herriot estimate replaces the step. A SER with few plots of the
+#'   species keeps its own signal, shrunk towards the model, instead of being
+#'   replaced by the GRECO figure. Species absent from the SER, and the
+#'   `"maille"` measure, keep the cascade.
+#'
 #' @return A data.frame with one row per `espar`: `espar`, `libelle_essence`,
 #'   `vol_ha`, `niveau_utilise` (`"ser"`/`"greco"`/`"national"`, or `NA` when
-#'   no level qualified), `n_plac_presence`, `ser`, `greco`.
+#'   no level qualified), `n_plac_presence`, `ser`, `greco`. With
+#'   `methode = "fay_herriot"`, two more columns: `nature`
+#'   (`"fay_herriot"` or `"cascade"`) and `rse` (percent, Fay-Herriot rows).
 #'
 #' @seealso [ifn_volume_essence_ser()] for the raw table.
 #' @export
@@ -190,10 +205,35 @@ ifn_volume_essence_ser <- function(espar = NULL, ser = NULL, greco = NULL,
 #' ifn_volume_reference(c("09", "61"), ser = "C20")
 #' }
 ifn_volume_reference <- function(espar, ser = NULL, min_plac = 30,
-                                 mesure = c("present", "maille")) {
+                                 mesure = c("present", "maille"),
+                                 methode = c("cascade", "fay_herriot")) {
   mesure <- match.arg(mesure)
+  methode <- match.arg(methode)
   col <- if (identical(mesure, "present")) "vol_ha_present" else "vol_ha_maille"
-  .ifn_cascade(.ifn_vol_table(), espar, ser, min_plac, col, "vol_ha")
+  out <- .ifn_cascade(.ifn_vol_table(), espar, ser, min_plac, col, "vol_ha")
+  if (methode == "cascade") return(out)
+  if (mesure == "maille") {
+    cli::cli_abort(c(
+      "{.code methode = \"fay_herriot\"} estimates the stand-level figure only.",
+      "i" = "Use {.code mesure = \"present\"}, or the cascade for {.val maille}."
+    ))
+  }
+  out$nature <- ifelse(is.na(out$niveau_utilise), NA_character_, "cascade")
+  out$rse <- NA_real_
+  if (is.null(ser)) return(out)
+  # Seules les estimations Fay-Herriot remplacent la cascade : un domaine
+  # reste en "direct" dans la table quand il n'a pu entrer dans le modele
+  # (volume nul, essence a une seule placette en France).
+  fh <- .ifn_vol_fh_table()
+  fh <- fh[fh$ser == ser & fh$nature == "fay_herriot", , drop = FALSE]
+  i <- match(out$espar, fh$espar)
+  k <- !is.na(i)
+  out$vol_ha[k] <- fh$estimation[i[k]]
+  out$niveau_utilise[k] <- "ser"
+  out$n_plac_presence[k] <- fh$n_plac_presence[i[k]]
+  out$nature[k] <- "fay_herriot"
+  out$rse[k] <- fh$rse[i[k]]
+  out
 }
 
 #' IFN harvest by species and sylvoecoregion

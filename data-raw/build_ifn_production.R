@@ -368,3 +368,103 @@ tab <- tab[, .(niveau, ser, greco, campagne, attribut, groupe, n_plac, direct, p
 setorder(tab, niveau, ser, greco, attribut, groupe, campagne)
 fwrite(tab, "inst/extdata/ifn_production_ser.csv", na = "")
 message(nrow(tab), " lignes -> inst/extdata/ifn_production_ser.csv")
+
+# --- 7. Volume sur pied par essence x SER, Fay-Herriot poole (lot 3) ---------
+# Meme estimation directe que vol_ha_present de la spec 040 (moyenne sur les
+# placettes ou l'essence est presente, toutes campagnes). Un seul modele sur
+# tous les domaines essence x SER : essence et GRECO en effets fixes,
+# covariables FORMS-T de la SER (moyennes 2019-2024).
+#
+# Deux choix mesures (spec 054 §7.3, 2026-10-01) :
+# * Echelle LOG : en lineaire, 45 estimations negatives (essences rares) et un
+#   biais de -6 % sur les resineux (variance commune a toutes les essences).
+#   En log : aucune negative, moyenne ponderee egale au direct (72,8 / 72,7).
+#   psi_log = psi / direct^2 (delta), retour exp(EBLUP), MSE = est^2 * mse_log.
+# * GVF (fonction de variance generalisee) : sous 10 placettes, la variance
+#   directe est instable, et incalculable a 1 placette (1 123 domaines etaient
+#   purement synthetiques). psi = s2 / n, avec s2 la variance des volumes par
+#   placette de l'essence dans la GRECO (au moins 10 placettes), sinon au
+#   niveau national.
+f_vol <- file.path(cache, "prod", "vol_plac.rds")
+if (!file.exists(f_vol)) {
+  src_dir <- Sys.getenv("NEMETON_IFN_SRC", unset = "data-raw/ifn")
+  dat <- ifn_charger(c("ARBRE", "PLACETTE"), dest_dir = src_dir)
+  pl1v <- as.data.table(dat$PLACETTE)[as.character(VISITE) == "1", .(CAMPAGNE, IDP, SER)]
+  pl1v <- pl1v[!is.na(SER) & SER != ""]
+  arv <- as.data.table(dat$ARBRE)[VEGET == "0", .(CAMPAGNE, IDP, ESPAR, V, W)]
+  rm(dat)
+  arv[, `:=`(V = as.numeric(V), W = as.numeric(W))]
+  arv <- arv[!is.na(V) & !is.na(W) & ESPAR != ""]
+  arv <- merge(arv, pl1v[, .(CAMPAGNE, IDP)], by = c("CAMPAGNE", "IDP"))
+  vol_plac <- arv[, .(val = sum(V * W)), by = .(IDP, ESPAR)]
+  vol_plac <- merge(vol_plac, unique(pl1v[, .(IDP, SER)]), by = "IDP")
+  saveRDS(vol_plac, f_vol)
+}
+vol_plac <- readRDS(f_vol)
+vol_plac[, GRECO := substr(SER, 1L, 1L)]
+dv <- vol_plac[, .(n_plac_presence = .N, direct = mean(val),
+                   s2 = if (.N > 1) var(val) else NA_real_), by = .(SER, GRECO, ESPAR)]
+
+# Controle : la moyenne directe EST vol_ha_present de la table spec 040.
+ref040 <- as.data.table(ifn_volume_essence_ser(niveau = "ser"))
+chk <- merge(dv, ref040[, .(SER = ser, ESPAR = espar, vol_ha_present)], by = c("SER", "ESPAR"))
+stopifnot(nrow(chk) == nrow(dv), max(abs(chk$direct - chk$vol_ha_present)) < 1e-3)
+
+# GVF.
+s2g <- vol_plac[, .(s2_greco = var(val), n_greco = .N), by = .(GRECO, ESPAR)]
+s2n <- vol_plac[, .(s2_nat = var(val)), by = ESPAR]
+dv <- merge(merge(dv, s2g, by = c("GRECO", "ESPAR"), all.x = TRUE), s2n, by = "ESPAR", all.x = TRUE)
+dv[, s2_gvf := fifelse(!is.na(s2_greco) & n_greco >= 10, s2_greco, s2_nat)]
+dv[, psi_source := fifelse(n_plac_presence >= 10 & !is.na(s2), "direct", "gvf")]
+dv[, psi := fifelse(psi_source == "direct", s2, s2_gvf) / n_plac_presence]
+
+# Covariables de la SER, moyennees sur les annees FORMS-T.
+cov_ser <- cov[, lapply(.SD, mean), by = SER, .SDcols = vars]
+dv <- merge(dv, cov_ser, by = "SER")
+# Essence en effet fixe ; les essences presentes dans moins de 10 SER sont
+# regroupees par groupe (une modalite par essence rare surajusterait).
+n_ser_ess <- dv[, .N, by = ESPAR]
+dv[, ess_mod := fifelse(ESPAR %in% n_ser_ess[N >= 10, ESPAR], ESPAR,
+                        paste0("autre_", .ifn_groupe_espar(ESPAR)))]
+# Volume nul (essence presente sous la decoupe bois fort) : pas de log, direct.
+fit <- dv[direct > 0 & !is.na(psi) & psi > 0]
+fit[, `:=`(y_log = log(direct), psi_log = psi / direct^2)]
+combis <- unlist(lapply(1:3, function(k) combn(vars, k, simplify = FALSE)), recursive = FALSE)
+aic <- vapply(combis, function(v) {
+  AIC(lm(reformulate(c(v, "ess_mod", "GRECO"), "y_log"), data = fit))
+}, numeric(1))
+best_v <- combis[[which.min(aic)]]
+Xv <- cbind(scale(as.matrix(fit[, ..best_v])),
+            model.matrix(~ ess_mod + GRECO, fit)[, -1, drop = FALSE])
+fhv <- estimer_fay_herriot(fit$y_log, fit$psi_log, Xv)
+fit[, `:=`(estimation = exp(fhv$estimation), mse_log = fhv$mse,
+           gamma = fhv$gamma, nature = fhv$nature)]
+fit[, `:=`(mse = estimation^2 * mse_log, rse = 100 * sqrt(mse_log))]
+okv <- fit$nature == "fay_herriot"
+# R2 simple sur les domaines a variance directe (n >= 10) : la correction par
+# psi deraille en log, ou psi_log explose pour les petits volumes.
+kd <- fit$psi_source == "direct"
+r2v <- stats::cor(fit$y_log[kd], fhv$synthetique[kd])^2
+message(sprintf(paste0("Volume essence x SER (log + GVF) : %d domaines ajustes, %d modalites essence ; ",
+                       "covariables %s + essence + GRECO ; sigma2_v(log) = %.3f ; R2 synthetique (n >= 10) %.2f ; ",
+                       "RSE mediane %.1f %% (cellules < 30 placettes : %.1f %%) ; moyenne ponderee %.1f vs direct %.1f"),
+                nrow(fit), uniqueN(fit$ess_mod), paste(best_v, collapse = " + "),
+                attr(fhv, "sigma2_v"), r2v, median(fit$rse),
+                median(fit$rse[fit$n_plac_presence < 30]),
+                weighted.mean(fit$estimation, fit$n_plac_presence),
+                weighted.mean(fit$direct, fit$n_plac_presence)))
+tv <- merge(dv, fit[, .(SER, ESPAR, estimation, mse, rse, gamma, nature)],
+            by = c("SER", "ESPAR"), all.x = TRUE)
+tv[is.na(nature), `:=`(estimation = direct, mse = psi, gamma = 1, nature = "direct",
+                      rse = fifelse(direct > 0, 100 * sqrt(psi) / direct, NA_real_))]
+tv <- tv[, .(ser = SER, espar = ESPAR, n_plac_presence,
+             direct = signif(direct, 5), psi = signif(psi, 5), psi_source,
+             estimation = signif(estimation, 5), mse = signif(mse, 5),
+             rse = signif(rse, 5), gamma = signif(gamma, 5), nature,
+             covariables = paste0("forms_mnt:", paste(best_v, collapse = "+"),
+                                  "+essence+greco;log"),
+             millesime = millesime,
+             source = "IGN IFN brut (Etalab 2.0) ; FORMS-T (CC-BY 4.0) ; spec 054 lot 3")]
+setorder(tv, ser, espar)
+fwrite(tv, "inst/extdata/ifn_volume_fh_ser.csv", na = "")
+message(nrow(tv), " lignes -> inst/extdata/ifn_volume_fh_ser.csv")

@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.203.0] - 2026-10-01
+
+### Added
+- `ifn_volume_reference()` / `completer_volume_ifn()` : `methode =
+  "fay_herriot"` (FH poolé essence × SER, échelle log, GVF), provenance
+  `"ifn_fh_ser"`. Table `inst/extdata/ifn_volume_fh_ser.csv`.
+
+### Changed
+- `estimer_fay_herriot()` : REML sans matrice n × n ; erreurs explicites sur
+  divergence et valeurs non finies.
+
 ## [0.202.0] - 2026-10-01
 
 ### Added

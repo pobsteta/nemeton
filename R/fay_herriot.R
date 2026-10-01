@@ -76,6 +76,9 @@ estimer_fay_herriot <- function(direct, psi, X, methode = "REML",
     cli::cli_abort("{.arg X} must be numeric with one row per domain.")
   }
   if (anyNA(X)) cli::cli_abort("{.arg X} must not contain {.val NA}.")
+  if (any(!is.na(direct) & !is.finite(direct)) || any(!is.na(psi) & !is.finite(psi))) {
+    cli::cli_abort("{.arg direct} and {.arg psi} must be finite (or NA).")
+  }
   if (is.null(colnames(X))) colnames(X) <- paste0("x", seq_len(ncol(X)))
   Xc <- cbind("(Intercept)" = 1, X)
 
@@ -90,19 +93,33 @@ estimer_fay_herriot <- function(direct, psi, X, methode = "REML",
   Xs <- Xc[ok, , drop = FALSE]
   ps <- psi[ok]
 
-  # REML par score de Fisher (meme schema que sae::eblupFH).
+  # REML par score de Fisher (meme schema que sae::eblupFH), sans matrice
+  # n x n : avec P = V^-1 - V^-1 X Q X' V^-1 (V diagonale),
+  #   tr(P)   = sum(vi) - tr(Q X'V^-2 X)
+  #   tr(P^2) = sum(vi^2) - 2 tr(Q X'V^-3 X) + tr((Q X'V^-2 X)^2)
+  #   P y     = vi * (y - X beta)
+  # 5 000 domaines tiennent en quelques Mo au lieu d'environ 1 Go par iteration.
   A <- stats::median(ps)
   it <- 0L
   converge <- FALSE
   for (it in seq_len(max_iter)) {
     vi <- 1 / (A + ps)
-    xtvi <- t(Xs * vi)
-    Q <- solve(xtvi %*% Xs)
-    P <- diag(vi) - t(xtvi) %*% Q %*% xtvi
-    Py <- P %*% y
-    s <- -0.5 * sum(diag(P)) + 0.5 * sum(Py^2)
-    fisher <- 0.5 * sum(P * t(P))
+    Q <- solve(crossprod(Xs * vi, Xs))
+    beta_k <- Q %*% crossprod(Xs, vi * y)
+    Py <- vi * (y - drop(Xs %*% beta_k))
+    M2 <- Q %*% crossprod(Xs * vi^2, Xs)
+    M3 <- Q %*% crossprod(Xs * vi^3, Xs)
+    trP <- sum(vi) - sum(diag(M2))
+    trP2 <- sum(vi^2) - 2 * sum(diag(M3)) + sum(M2 * t(M2))
+    s <- -0.5 * trP + 0.5 * sum(Py^2)
+    fisher <- 0.5 * trP2
     A_new <- A + s / fisher
+    if (!is.finite(A_new)) {
+      cli::cli_abort(c(
+        "REML diverged (non-finite variance at iteration {it}).",
+        "i" = "Check {.arg direct}, {.arg psi} and {.arg X} for extreme or non-finite values."
+      ))
+    }
     if (abs(A_new - A) / max(abs(A), 1e-12) < tol) {
       A <- A_new
       converge <- TRUE
@@ -122,9 +139,8 @@ estimer_fay_herriot <- function(direct, psi, X, methode = "REML",
   }
 
   vi <- 1 / (A + ps)
-  xtvi <- t(Xs * vi)
-  Q <- solve(xtvi %*% Xs)
-  beta <- drop(Q %*% xtvi %*% y)
+  Q <- solve(crossprod(Xs * vi, Xs))
+  beta <- drop(Q %*% crossprod(Xs, vi * y))
   names(beta) <- colnames(Xc)
 
   synth <- drop(Xc %*% beta)

@@ -72,3 +72,14 @@ test_that("inputs are validated", {
   expect_error(estimer_fay_herriot(s$y[1:3], s$psi[1:3], s$X[1:3, ]),
                "usable direct")
 })
+
+test_that("a large pool fits without n x n matrices, and divergence is named", {
+  set.seed(9)
+  n <- 5000
+  X <- cbind(a = rnorm(n), b = runif(n))
+  psi <- runif(n, 0.5, 4)
+  y <- 1 + drop(X %*% c(2, -1)) + rnorm(n, 0, 1.5) + rnorm(n, 0, sqrt(psi))
+  fh <- estimer_fay_herriot(y, psi, X)
+  expect_equal(attr(fh, "sigma2_v"), 2.25, tolerance = 0.15)
+  expect_error(estimer_fay_herriot(c(y[-1], Inf), psi, X), "finite")
+})

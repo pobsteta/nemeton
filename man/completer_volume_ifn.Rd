@@ -6,7 +6,7 @@
 \usage{
 completer_volume_ifn(units, volume_col = "P1", species_field = "species",
   ser = NULL, min_plac = 30, mesure = c("present", "maille"),
-  source_col = "volume_source")
+  source_col = "volume_source", methode = c("cascade", "fay_herriot"))
 }
 \arguments{
 \item{units}{An \code{sf} object.}
@@ -26,6 +26,13 @@ national references.}
 
 \item{source_col}{Name of the added provenance column. Default
 \code{"volume_source"}.}
+
+\item{methode}{\code{"cascade"} (default) or \code{"fay_herriot"} (spec 054
+lot 3), passed to \code{\link{ifn_volume_reference}}. With
+\code{"fay_herriot"}, a species present in the SER gets its Fay-Herriot
+estimate, written \code{"ifn_fh_ser"} in \code{source_col}, instead of
+jumping to the GRECO when the SER has fewer than \code{min_plac} plots of
+it.}
 }
 \value{
 \code{units} with \code{volume_col} completed and \code{source_col} added.
@@ -46,7 +53,7 @@ a hole — provided nobody mistakes it for a measurement, hence
 Rows where \code{volume_col} is already filled are left strictly untouched.
 Only \code{NA}s are completed. The added \code{source_col} records, per row,
 where each value came from: \code{"mesure"} for the original values,
-\code{"ifn_ser"}, \code{"ifn_greco"} or \code{"ifn_national"} for completed
+\code{"ifn_ser"}, \code{"ifn_greco"}, \code{"ifn_national"} or \code{"ifn_fh_ser"} for completed
 ones, and \code{NA} where no reference could be found. Any downstream reader
 can therefore separate measured from imputed — which the caller \strong{should}
 do before reporting.
