@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.202.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.203.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -312,7 +312,21 @@
 <strong><code><a href="reference/ifn_taux_prelevement_production.html">ifn_taux_prelevement_production()</a></code></strong> : ratio national 0,68 (IGN 0,61) ; maximum par SER 1,51 (C11), et les SER au-dessus de 1 sont dans le Nord-Est et l’Est (scolytes).</li>
 <li>
 <strong><code>min_plac = 30</code></strong> pour les estimations directes : F13 (Marais littoraux) donnait un ratio de 6,2 sur 3 placettes.</li>
-</ul><p><strong>Prochaine étape</strong> : - <strong>lot 3</strong> : <code>completer_volume_ifn(methode = "fay_herriot")</code>, avec un test d’héritage pour C1 ; - <strong>lot 4</strong> : E1 sur le flux, puis le brief app ; - <strong>en parallèle, lot 1-ter</strong> : le jeu GEDI, dès que le compte Earthdata est configuré (action de Pascal).</p>
+</ul><p><strong>Journal</strong> — <em>2026-10-01</em> (<strong>v0.203.0</strong>) : <strong>lot 3 livré.</strong></p>
+<ul><li>
+<strong>FH poolé essence × SER</strong> (décision du jour, plutôt que le grain par groupe), en échelle log, avec GVF :
+<ul><li>0 volume négatif (45 en linéaire) ;</li>
+<li>sans biais : 72,8 m³/ha contre 72,7 en direct ;</li>
+<li>R² synthétique 0,90 ;</li>
+<li>les 1 123 cellules à une seule placette ne sont plus purement synthétiques.</li>
+</ul></li>
+<li>
+<strong><code>completer_volume_ifn(methode = "fay_herriot")</code></strong> écrit la provenance <code>"ifn_fh_ser"</code>.</li>
+<li>
+<strong>Correction de la spec</strong> : C1 ne lit pas P1, il n’en hérite donc pas.</li>
+<li>
+<strong>Moteur</strong> sans matrice n × n.</li>
+</ul><p><strong>Prochaine étape</strong> : - <strong>lot 4</strong> : E1 sur le flux, puis le brief app ; - <strong>en parallèle, lot 1-ter</strong> : le jeu GEDI, dès que le compte Earthdata est configuré (action de Pascal).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess">Chantier CLOS — Onglet Desserte : rendre visibles les sorties (app + foretaccess)<a class="anchor" aria-label="anchor" href="#chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess"></a></h1>

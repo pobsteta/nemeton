@@ -16,7 +16,7 @@ mistakes it for a measurement, hence `source_col`.
 ``` r
 completer_volume_ifn(units, volume_col = "P1", species_field = "species",
   ser = NULL, min_plac = 30, mesure = c("present", "maille"),
-  source_col = "volume_source")
+  source_col = "volume_source", methode = c("cascade", "fay_herriot"))
 ```
 
 ## Arguments
@@ -53,6 +53,15 @@ completer_volume_ifn(units, volume_col = "P1", species_field = "species",
 
   Name of the added provenance column. Default `"volume_source"`.
 
+- methode:
+
+  `"cascade"` (default) or `"fay_herriot"` (spec 054 lot 3), passed to
+  [`ifn_volume_reference`](https://pobsteta.github.io/nemeton/reference/ifn_volume_reference.md).
+  With `"fay_herriot"`, a species present in the SER gets its
+  Fay-Herriot estimate, written `"ifn_fh_ser"` in `source_col`, instead
+  of jumping to the GRECO when the SER has fewer than `min_plac` plots
+  of it.
+
 ## Value
 
 `units` with `volume_col` completed and `source_col` added.
@@ -62,9 +71,10 @@ completer_volume_ifn(units, volume_col = "P1", species_field = "species",
 Rows where `volume_col` is already filled are left strictly untouched.
 Only `NA`s are completed. The added `source_col` records, per row, where
 each value came from: `"mesure"` for the original values, `"ifn_ser"`,
-`"ifn_greco"` or `"ifn_national"` for completed ones, and `NA` where no
-reference could be found. Any downstream reader can therefore separate
-measured from imputed — which the caller **should** do before reporting.
+`"ifn_greco"`, `"ifn_national"` or `"ifn_fh_ser"` for completed ones,
+and `NA` where no reference could be found. Any downstream reader can
+therefore separate measured from imputed — which the caller **should**
+do before reporting.
 
 ## Which figure is substituted
 

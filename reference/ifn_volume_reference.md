@@ -15,7 +15,7 @@ than return a figure resting on three plots.
 
 ``` r
 ifn_volume_reference(espar, ser = NULL, min_plac = 30,
-  mesure = c("present", "maille"))
+  mesure = c("present", "maille"), methode = c("cascade", "fay_herriot"))
 ```
 
 ## Arguments
@@ -40,11 +40,22 @@ ifn_volume_reference(espar, ser = NULL, min_plac = 30,
   figure) or `"maille"` (the regional resource figure). See
   [`ifn_volume_essence_ser`](https://pobsteta.github.io/nemeton/reference/ifn_volume_essence_ser.md).
 
+- methode:
+
+  `"cascade"` (default): the stepwise fallback above. `"fay_herriot"`
+  (spec 054 lot 3): where the species occurs in the SER, its Fay-Herriot
+  estimate replaces the step. A SER with few plots of the species keeps
+  its own signal, shrunk towards the model, instead of being replaced by
+  the GRECO figure. Species absent from the SER, and the `"maille"`
+  measure, keep the cascade.
+
 ## Value
 
 A data.frame with one row per `espar`: `espar`, `libelle_essence`,
 `vol_ha`, `niveau_utilise` (`"ser"`/`"greco"`/`"national"`, or `NA` when
-no level qualified), `n_plac_presence`, `ser`, `greco`.
+no level qualified), `n_plac_presence`, `ser`, `greco`. With
+`methode = "fay_herriot"`, two more columns: `nature` (`"fay_herriot"`
+or `"cascade"`) and `rse` (percent, Fay-Herriot rows).
 
 ## See also
 

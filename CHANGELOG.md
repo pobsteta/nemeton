@@ -12,6 +12,23 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.203.0\] - 2026-10-01
+
+### Added
+
+- [`ifn_volume_reference()`](https://pobsteta.github.io/nemeton/reference/ifn_volume_reference.md)
+  /
+  [`completer_volume_ifn()`](https://pobsteta.github.io/nemeton/reference/completer_volume_ifn.md)
+  : `methode = "fay_herriot"` (FH poolé essence × SER, échelle log,
+  GVF), provenance `"ifn_fh_ser"`. Table
+  `inst/extdata/ifn_volume_fh_ser.csv`.
+
+### Changed
+
+- [`estimer_fay_herriot()`](https://pobsteta.github.io/nemeton/reference/estimer_fay_herriot.md)
+  : REML sans matrice n × n ; erreurs explicites sur divergence et
+  valeurs non finies.
+
 ## \[0.202.0\] - 2026-10-01
 
 ### Added

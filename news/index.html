@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.202.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.203.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,25 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.203.0" id="nemeton-02030-2026-10-01">nemeton 0.203.0 (2026-10-01)<a class="anchor" aria-label="anchor" href="#nemeton-02030-2026-10-01"></a></h2>
+<div class="section level4">
+<h4 id="added--volume-de-référence-par-fay-herriot-essence--ser-spec-lot-0-203-0">Added — volume de référence par Fay-Herriot, essence × SER (spec 054 lot 3)<a class="anchor" aria-label="anchor" href="#added--volume-de-r%C3%A9f%C3%A9rence-par-fay-herriot-essence--ser-spec-lot-0-203-0"></a></h4>
+<p>En NDP 0, <code><a href="../reference/completer_volume_ifn.html">completer_volume_ifn()</a></code> comble P1 avec le volume IFN de l’essence dans sa SER. Mais 72 % des 5 139 cellules essence × SER ont moins de 30 placettes, et la cascade les remplaçait par le chiffre de toute la GRECO. C’est le cas de l’épicéa, du sapin, du douglas et du pin maritime dans à peu près la moitié des SER.</p>
+<ul><li>
+<strong><code>ifn_volume_reference(methode = "fay_herriot")</code></strong> et <strong><code>completer_volume_ifn(methode = "fay_herriot")</code></strong> : là où l’essence est présente dans la SER, son estimation Fay-Herriot remplace la cascade. La SER garde son propre signal, ramené vers le modèle selon sa précision. Provenance <code>"ifn_fh_ser"</code>, colonnes <code>nature</code> et <code>rse</code>. Le défaut reste <code>"cascade"</code>, avec une sortie inchangée.</li>
+<li>
+<strong>Table <code>ifn_volume_fh_ser.csv</code></strong> : un seul Fay-Herriot sur tous les domaines essence × SER, avec l’essence (110 modalités) et la GRECO en effets fixes et la hauteur FORMS-T de la SER. Deux choix y ont été mesurés :
+<ul><li>l’<strong>échelle log</strong> : le linéaire donnait 45 volumes négatifs et −6 % sur les résineux ; le log n’en donne aucun et reste sans biais (72,8 contre 72,7 m³/ha) ;</li>
+<li>une <strong>fonction de variance généralisée</strong> : les 1 123 cellules à une seule placette n’étaient que synthétiques, elles utilisent maintenant leur mesure.</li>
+</ul>
+R² synthétique 0,90.</li>
+<li>
+<strong><code><a href="../reference/estimer_fay_herriot.html">estimer_fay_herriot()</a></code></strong> ne construit plus de matrice n × n : 5 000 domaines passent en moins d’une seconde, avec un résultat identique à <code>sae</code>. Il nomme aussi une divergence et refuse les valeurs non finies.</li>
+</ul><p>Exemple, SER B22 : l’épicéa (6 placettes) reçoit 162 m³/ha au lieu de 106 avec la GRECO.</p>
+<p><strong>Correction de la spec 054 (§7.3)</strong> : C1 ne lit jamais P1 et n’hérite donc pas de ce complément, contrairement à ce qu’annonçait la spec.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.202.0" id="nemeton-02020-2026-10-01">nemeton 0.202.0 (2026-10-01)<a class="anchor" aria-label="anchor" href="#nemeton-02020-2026-10-01"></a></h2>
 <div class="section level4">

@@ -1,5 +1,46 @@
 # Changelog
 
+## nemeton 0.203.0 (2026-10-01)
+
+#### Added — volume de référence par Fay-Herriot, essence × SER (spec 054 lot 3)
+
+En NDP 0,
+[`completer_volume_ifn()`](https://pobsteta.github.io/nemeton/reference/completer_volume_ifn.md)
+comble P1 avec le volume IFN de l’essence dans sa SER. Mais 72 % des 5
+139 cellules essence × SER ont moins de 30 placettes, et la cascade les
+remplaçait par le chiffre de toute la GRECO. C’est le cas de l’épicéa,
+du sapin, du douglas et du pin maritime dans à peu près la moitié des
+SER.
+
+- **`ifn_volume_reference(methode = "fay_herriot")`** et
+  **`completer_volume_ifn(methode = "fay_herriot")`** : là où l’essence
+  est présente dans la SER, son estimation Fay-Herriot remplace la
+  cascade. La SER garde son propre signal, ramené vers le modèle selon
+  sa précision. Provenance `"ifn_fh_ser"`, colonnes `nature` et `rse`.
+  Le défaut reste `"cascade"`, avec une sortie inchangée.
+- **Table `ifn_volume_fh_ser.csv`** : un seul Fay-Herriot sur tous les
+  domaines essence × SER, avec l’essence (110 modalités) et la GRECO en
+  effets fixes et la hauteur FORMS-T de la SER. Deux choix y ont été
+  mesurés :
+  - l’**échelle log** : le linéaire donnait 45 volumes négatifs et −6 %
+    sur les résineux ; le log n’en donne aucun et reste sans biais (72,8
+    contre 72,7 m³/ha) ;
+  - une **fonction de variance généralisée** : les 1 123 cellules à une
+    seule placette n’étaient que synthétiques, elles utilisent
+    maintenant leur mesure.
+
+  R² synthétique 0,90.
+- **[`estimer_fay_herriot()`](https://pobsteta.github.io/nemeton/reference/estimer_fay_herriot.md)**
+  ne construit plus de matrice n × n : 5 000 domaines passent en moins
+  d’une seconde, avec un résultat identique à `sae`. Il nomme aussi une
+  divergence et refuse les valeurs non finies.
+
+Exemple, SER B22 : l’épicéa (6 placettes) reçoit 162 m³/ha au lieu de
+106 avec la GRECO.
+
+**Correction de la spec 054 (§7.3)** : C1 ne lit jamais P1 et n’hérite
+donc pas de ce complément, contrairement à ce qu’annonçait la spec.
+
 ## nemeton 0.202.0 (2026-10-01)
 
 #### Added — P2 depuis la production IFN, ratio prélèvement/production (spec 054 lot 2)
