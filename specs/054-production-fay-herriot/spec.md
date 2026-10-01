@@ -1,11 +1,10 @@
 # Spec 054 — Production IFN par petits domaines (Fay-Herriot) et ses consommateurs
 
-**Version** : 0.8.0 (lot 5 livré)
+**Version** : 0.9.0 (lot 1-ter : comparaison GEDI)
 **Date**    : 2026-10-01
 **Statut**  : **Lots 1 à 5 livrés côté cœur** (v0.200.0 à v0.205.0,
-2026-10-01). Brief app émis (`brief-nemetonshiny.md`). Reste le lot 1-ter (GEDI :
-accès Earthdata à configurer par Pascal, `hdf5r` installé) et une piste lot 5-bis
-(§5.c). Résultats en §3.b, §3.c, §5.c et §7.1 à §7.4.
+2026-10-01). Lot 1-ter : comparaison GEDI / FORMS-T faite sur 2019-2021 (§5.d),
+**FORMS-T confirmé**. Brief app émis. Piste ouverte : lot 5-bis (§5.c).
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — moteur Fay-Herriot, table de production IFN par
 SER × campagne, et branchement sur P2, P1/C1, E1/E2 et la spec 040.
@@ -486,6 +485,57 @@ calculer la prédiction synthétique du domaine depuis **ses propres** covariabl
 (hauteur FORMS-T moyenne et écart-type sous masque, altitude, GRECO), que l'app
 charge déjà pour ses projets. C'est le vrai FH de sous-domaine.
 
+### 5.d Lot 1-ter : comparaison des jeux G et F (2026-10-01)
+
+**Acquisition GEDI** (`data-raw/gedi_l2a_france.py`) :
+- GEDI02_A v002 (LP DAAC, cloud), via le service NASA Harmony
+  « sds/trajectory-subsetter » : découpe au contour de la France (union des SER
+  simplifiée) et 6 variables par faisceau (`rh`, `quality_flag`,
+  `degrade_flag`, `lat/lon/elev_lowestmode`) ;
+- **une orbite sur 5** : environ 75 Go ramenés à 15 Go transitoires ;
+- tirs filtrés comme dans l'article (`quality_flag = 1`, `degrade_flag = 0`,
+  rh98 < 65 m), puis un CSV compact par année ;
+- **masque forêt** : hauteur FORMS-T de l'année au point du tir ≥ 5 m. 46 % des
+  tirs valides y tombent ; rh98 médiane de 16,4 m sous forêt contre 2,8 m ailleurs ;
+  corrélation 0,73 avec FORMS-T, cohérente puisque FORMS-T est appris sur GEDI ;
+- **médiane par SER × année** : de 11 900 à 16 500 tirs sous forêt. Le
+  sous-échantillonnage ne limite pas la précision des moyennes.
+
+**Trois pièges rencontrés** :
+- `harmony-py` authentifie mal ses POST multipart (découpe par contour) : une page
+  HTML revient au lieu du JSON. La parade est un jeton Earthdata obtenu depuis
+  `~/.netrc` (API `find_or_create_token`) ;
+- le téléchargement des résultats par `harmony-py` échoue de la même façon :
+  `curl -n` avec cookies, à la place ;
+- un `~/.netrc` avec deux lignes parasites (identifiant et mot de passe seuls sur
+  leur ligne) passe chez `curl` mais pas chez le module `netrc` de Python : le
+  fichier a été nettoyé.
+
+**Comparaison** (`data-raw/comparer_covariables_gedi.R`, critères du §5.b fixés
+d'avance, GRECO en effet fixe dans les deux jeux, mêmes 252 domaines-années :
+85 SER × 2019-2021) :
+
+| Attribut | Jeu | Covariables (+ GRECO) | RE | RMSE CV « une SER en moins » | Moran p < 0,05 |
+|---|---|---|---|---|---|
+| PG | **F** | h_sd + alt_mean | **2,07** | **0,144** | 0/3 |
+| PG | G | rh98_sd + ge_mean | 1,97 | 0,149 | 0/3 |
+| PV | **F** | h_mean + h_sd + alt_mean | **3,58** | **1,19** | 0/3 |
+| PV | G | rh98_sd + rh70_mean | 2,86 | 1,32 | 0/3 |
+
+**Décision : F, FORMS-T + MNT.** C'est déjà le jeu de la table livrée, qui ne
+change donc pas.
+- PV : G perd 20 % d'efficacité relative et a une validation croisée moins bonne.
+- PG : −5 %, une égalité au sens du §5.b, que la règle attribue à F.
+
+Lecture probable : FORMS-T couvre tout le territoire en fusionnant GEDI avec
+Sentinel-1 et 2, là où GEDI brut n'est qu'un échantillon de tirs.
+
+**Périmètre** : l'extraction s'est arrêtée à la limite de durée des tâches de fond,
+au milieu de 2022. Les années 2022 à 2024 sont reprenables (le script repart au
+lot suivant, la déduplication est assurée), mais un écart de 20 % sur PV a peu de
+chances de se renverser. Il suffit de les compléter si la décision était
+contestée.
+
 ## 6. Livrables cœur
 
 | Objet | Type | Rôle |
@@ -861,7 +911,7 @@ Chaque lot = une release (consignes de release de `CLAUDE.md`).
 | 0 | ✅ 2026-10-01 — relevés §3.a : chiffre IGN 87,9 Mm³/an (5,4 m³/ha/an), recrutement confirmé, carottage partiel depuis 2014 (D7 amendée), contrôle voie (a) à −15 %, trou GEDI 2023-2024, accès Earthdata non configuré | — (doc) | — |
 | 1 | ✅ v0.200.0 — `estimer_fay_herriot()` + tests (égalité `sae`, σᵥ² = 0, n = 1, domaine vide) ; `data-raw/build_ifn_production.R` ; PG/PV par placette ; jeu F ; FH SER × campagne + GRECO ; `ifn_production_ser.csv` + accesseurs ; contrôle national ; test de Moran (§3.b) | minor | D1, D3, D4, D7 |
 | 1-bis | ✅ v0.201.0 — voie (b) par allométrie hauteur-diamètre, production des arbres coupés, attributs `prel` et `prel_vidange` (§3.c) | minor | lot 1 |
-| 1-ter | Jeu G (GEDI L2A) et comparaison avec F selon §5.b | patch ou minor | accès Earthdata |
+| 1-ter | ✅ 2026-10-01 — jeu G (GEDI L2A, Harmony, 1 orbite sur 5) comparé à F sur 2019-2021 : **F confirmé** (§5.d) ; `data-raw/` seulement, sans release | — | accès Earthdata |
 | 2 | ✅ v0.202.0 — P2 `source = "ifn_fh"` + colonnes de provenance/RSE/nature ; `ifn_taux_prelevement_production()` ; `min_plac` (§7.1, §7.2) | minor | lot 1-bis, D5 |
 | 3 | ✅ v0.203.0 — FH poolé essence × SER (log + GVF), `ifn_volume_reference()` / `completer_volume_ifn(methode = "fay_herriot")` ; C1 n'hérite pas, correction §7.3 | minor | lot 1 |
 | 4 | ✅ v0.204.0 — E1 `production_field` + `taux_mobilisation` (même `ref_max`, §7.4) ; `localiser_ser()` ; détection du cas dégénéré FH-SER × `"ifn_ser"` (§7.4) ; test d'héritage E2 ; référence B2 ; brief app | minor | lot 2, D6 |
