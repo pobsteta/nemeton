@@ -226,6 +226,19 @@ du Fay-Herriot passe à 3,67.
   la SER. Piste lot 5-bis : utiliser les covariables propres au domaine (FORMS-T)
   avec les β du modèle national.
 
+**Journal** — *2026-10-01* : **lot 1-ter, comparaison GEDI / FORMS-T.**
+
+GEDI L2A a été acquis via NASA Harmony (une orbite sur 5, découpe au contour de
+la France, masque forêt FORMS-T). Comparaison sur les mêmes 252
+domaines-années, 2019-2021 :
+- PV : RE 3,58 pour F contre 2,86 pour G ;
+- PG : 2,07 contre 1,97.
+
+**FORMS-T est confirmé**, la table ne change pas. Il a fallu contourner trois
+problèmes : l'authentification Harmony (par jeton), le téléchargement des
+résultats (par `curl`), et un `~/.netrc` à nettoyer. L'extraction s'est arrêtée à
+la limite de 2 heures au milieu de 2022 ; elle est reprenable.
+
 **Prochaine étape** :
 - **app** : attendre le câblage du brief (§3 bis ajouté pour les domaines) ;
 - **en parallèle, lot 1-ter** : le jeu GEDI, dès que le compte Earthdata est
