@@ -25,9 +25,37 @@ NULL
 #' @param chm Optional `terra::SpatRaster` canopy height model (spec 005).
 #'   When supplied and `volume_field` is absent, standing volume is
 #'   auto-estimated by running P1 internally. Default `NULL`.
+#' @param production_field Character or `NULL` (default). Column holding the
+#'   annual volume production (m3/ha/yr), e.g. P2 computed with
+#'   `indicateur_p2_station(source = "ifn_fh")`. When supplied, E1 switches
+#'   to **flux mode** (spec 054 lot 4): the annual harvest is
+#'   `production x taux_mobilisation` instead of 2 percent of the standing
+#'   stock, and `volume_field` / `harvest_rate` are not used.
+#' @param taux_mobilisation Required in flux mode, no default on purpose:
+#'   either a number in `[0, 1]` (share of the production harvested), or
+#'   `"ifn_ser"` to use the harvest / production ratio observed by the IFN in
+#'   the unit's sylvoecoregion ([ifn_taux_prelevement_production()], capped at
+#'   1).
+#' @param ser_field Character. SER column used by
+#'   `taux_mobilisation = "ifn_ser"`. Default `"ser"`.
+#'
+#' @section Stock mode and flux mode:
+#' The default (**stock mode**) harvests 2 percent of the standing volume
+#' every year, whatever the stand: a capitalised, slow-growing stand yields
+#' more fuelwood than a young stand in full production. **Flux mode** ties the
+#' harvest to what the forest grows. Both modes return the same physical
+#' quantity (t DM/ha/yr) and share the same normalisation ceiling.
+#'
+#' One combination is degenerate: a production taken from the IFN for the
+#' SER (provenance `"ifn_prod_*"`, as written by P2 in IFN mode) multiplied
+#' by the SER's own harvest / production ratio is simply the **observed
+#' harvest** of the SER, identical for every unit of the domain. E1 then
+#' warns and writes `E1_mode = "recolte_observee"` instead of
+#' `"ressource_flux"`, so that it is not presented as a potential.
 #'
 #' @return sf object with added columns: E1 (fuelwood potential tonnes DM/ha/yr),
-#' E1_residues, E1_coppice. **Higher = more fuelwood available =
+#' E1_residues, E1_coppice; in flux mode also `E1_mode`
+#' (`"ressource_flux"` or `"recolte_observee"`). **Higher = more fuelwood available =
 #' favourable**, not inverted; normalize_indicator() rescales it against a
 #' ref_max of 1.32 t DM/ha/yr -- the yield of a stand at P1's own ceiling
 #' (800 m3/ha, density 550), so E1, E2 and P1 score the same stand alike.
@@ -42,8 +70,69 @@ indicateur_e1_bois_energie <- function(units,
                                       coppice_area_field = NULL,
                                       column_name = "E1",
                                       lang = "en",
-                                      chm = NULL) {
+                                      chm = NULL,
+                                      production_field = NULL,
+                                      taux_mobilisation = NULL,
+                                      ser_field = "ser") {
   if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
+
+  # ---- Mode flux (spec 054 lot 4) : la recolte suit la production ----
+  if (!is.null(production_field)) {
+    if (!production_field %in% names(units)) {
+      stop("Required field missing: ", production_field, call. = FALSE)
+    }
+    if (is.null(taux_mobilisation)) {
+      # Pas de defaut invente : un taux suppose serait une decision cachee.
+      cli::cli_abort(c(
+        "Flux mode needs {.arg taux_mobilisation}.",
+        "i" = "Give a share in [0, 1], or {.val ifn_ser} for the IFN harvest / production ratio of the SER."
+      ))
+    }
+    if (!missing(harvest_rate)) {
+      cli::cli_warn("{.arg harvest_rate} is ignored in flux mode: the harvest follows {.arg production_field}.")
+    }
+    production <- as.numeric(units[[production_field]])
+    mode <- rep("ressource_flux", nrow(units))
+    if (identical(taux_mobilisation, "ifn_ser")) {
+      ser <- if (ser_field %in% names(units)) as.character(units[[ser_field]]) else rep(NA_character_, nrow(units))
+      ser[!is.na(ser) & !nzchar(ser)] <- NA_character_
+      cle <- ifelse(is.na(ser), "<national>", ser)
+      r <- vapply(unique(cle), function(k) {
+        ifn_taux_prelevement_production(if (k == "<national>") NULL else k)$ratio
+      }, numeric(1))
+      taux <- pmin(r[cle], 1)
+      # Cas degenere : production de la SER x ratio de la SER = prelevement
+      # observe de la SER (spec 054 §7.4).
+      prov_col <- paste0(production_field, "_provenance")
+      if (prov_col %in% names(units)) {
+        degen <- grepl("^ifn_prod_", as.character(units[[prov_col]]))
+        if (any(degen)) {
+          cli::cli_warn(c(
+            "{sum(degen)} unit{?s}: IFN production of the SER x IFN harvest ratio of the SER = the SER's observed harvest.",
+            "i" = "E1 is then not a potential; flagged {.val recolte_observee} in {.field E1_mode}."
+          ))
+          mode[degen] <- "recolte_observee"
+        }
+      }
+    } else {
+      if (!is.numeric(taux_mobilisation) || any(is.na(taux_mobilisation)) ||
+          any(taux_mobilisation < 0 | taux_mobilisation > 1) ||
+          !length(taux_mobilisation) %in% c(1L, nrow(units))) {
+        cli::cli_abort("{.arg taux_mobilisation} must be in [0, 1] (one value or one per unit), or {.val ifn_ser}.")
+      }
+      taux <- rep_len(taux_mobilisation, nrow(units))
+    }
+    units[["..volume_flux.."]] <- production * taux
+    res <- indicateur_e1_bois_energie(units, volume_field = "..volume_flux..",
+                                      species_field = species_field,
+                                      harvest_rate = 1,
+                                      residue_fraction = residue_fraction,
+                                      coppice_area_field = coppice_area_field,
+                                      column_name = column_name, lang = lang)
+    res[["..volume_flux.."]] <- NULL
+    res$E1_mode <- ifelse(is.na(res[[column_name]]), NA_character_, mode)
+    return(res)
+  }
 
   # Auto-estimate volume from CHM when missing: run P1 internally with
   # the same chm (which in turn synthesises dbh/density from the CHM

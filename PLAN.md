@@ -205,8 +205,20 @@ du Fay-Herriot passe à 3,67.
 - **Correction de la spec** : C1 ne lit pas P1, il n'en hérite donc pas.
 - **Moteur** sans matrice n × n.
 
+**Journal** — *2026-10-01* (**v0.204.0**) : **lot 4 livré, brief app émis.**
+
+- **E1 en mode flux**, opt-in, sans taux par défaut. Le cas dégénéré « récolte
+  observée » est détecté.
+- **Même `ref_max` dans les deux modes** : c'est un écart à ce qu'annonçait D6,
+  justifié en §7.4 (même grandeur physique).
+- **`localiser_ser()`** : l'app n'avait aucune colonne SER, ce qui bloquait tout le
+  câblage.
+- **Brief** : `specs/054-production-fay-herriot/brief-nemetonshiny.md`, avec une
+  copie dans `briefs/vers-nemetonshiny/`. Il signale trois obstacles dans l'app :
+  pas de colonne SER, P2 et E1 forcés en mode CHM, colonnes annexes jetées.
+
 **Prochaine étape** :
-- **lot 4** : E1 sur le flux, puis le brief app ;
+- **app** : attendre le câblage du brief ;
 - **en parallèle, lot 1-ter** : le jeu GEDI, dès que le compte Earthdata est
   configuré (action de Pascal).
 

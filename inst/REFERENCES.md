@@ -234,3 +234,11 @@ production d'environ 20 % au niveau national (78 % de la référence IGN). La
 valeur d'une UGF est celle de sa **SER**, pas de sa station. La colonne `nature`
 distingue une estimation Fay-Herriot, une prédiction synthétique et une
 estimation directe : seule la dernière est une pure mesure d'échantillon.
+
+### Structure verticale et productivité (B2, spec 054 §7.5)
+L'article d'Onwunji et al. (2026) montre que l'hétérogénéité de hauteur de la
+canopée (écart-type du rh98 GEDI) explique la productivité à l'échelle des unités
+territoriales ONF. Elle est aussi retenue par l'AIC dans les modèles Fay-Herriot
+de PG et de PV du lot 1 (`h_sd`). C'est la justification empirique de la
+composante CV(CHM) d'`indicateur_b2_structure()`. Voir aussi Cordonnier et al.
+(2018) et Bouvier et al. (2015), cités par l'article.

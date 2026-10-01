@@ -10,6 +10,14 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.204.0] - 2026-10-01
+
+### Added
+- `indicateur_e1_bois_energie()` : mode flux (`production_field`,
+  `taux_mobilisation` sans défaut, `"ifn_ser"`), colonne `E1_mode`, détection
+  du cas dégénéré (récolte observée).
+- `localiser_ser()` : code SER par plus grande intersection (WFS INRAE).
+
 ## [0.203.0] - 2026-10-01
 
 ### Added

@@ -728,3 +728,73 @@ test_that("indicateur_e2_evitement with custom column_name", {
   result <- indicateur_e2_evitement(units, column_name = "co2_avoided")
   expect_true("co2_avoided" %in% names(result))
 })
+
+# ==============================================================================
+# E1 mode flux (spec 054 lot 4)
+# ==============================================================================
+
+e1_unites <- function() {
+  sf::st_sf(data.frame(volume = c(250, 800, NA), species = "FASY",
+                       ser = c("C30", "E10", NA), production = c(6, 4, 5)),
+            geometry = sf::st_sfc(lapply(1:3, function(i) sf::st_point(c(i, i))),
+                                  crs = 2154))
+}
+
+test_that("flux mode harvests production x taux, whatever the standing stock", {
+  u <- e1_unites()
+  s <- suppressMessages(indicateur_e1_bois_energie(u))
+  f <- suppressMessages(indicateur_e1_bois_energie(u, production_field = "production",
+                                                   taux_mobilisation = 0.5))
+  # Meme formule que le mode stock, avec une recolte de production x taux.
+  u2 <- u
+  u2$volume <- u$production * 0.5
+  ref <- suppressMessages(indicateur_e1_bois_energie(u2, harvest_rate = 1))
+  expect_equal(f$E1, ref$E1)
+  expect_equal(f$E1_mode, rep("ressource_flux", 3))
+  # Le stock ne pilote plus : 800 m3/ha produisant 4 rend moins que 250 produisant 6.
+  expect_gt(f$E1[1], f$E1[2])
+  expect_lt(s$E1[1], s$E1[2])
+  expect_false(is.na(f$E1[3]))           # le volume NA ne compte plus
+  expect_false("E1_mode" %in% names(s))  # le mode stock ne change pas de forme
+})
+
+test_that("flux mode has no invented default and validates its rate", {
+  u <- e1_unites()
+  expect_error(indicateur_e1_bois_energie(u, production_field = "production"),
+               "taux_mobilisation")
+  expect_error(indicateur_e1_bois_energie(u, production_field = "production",
+                                          taux_mobilisation = 1.5), "\\[0, 1\\]")
+  expect_error(indicateur_e1_bois_energie(u, production_field = "absente",
+                                          taux_mobilisation = 0.5), "absente")
+  expect_warning(suppressMessages(indicateur_e1_bois_energie(
+    u, production_field = "production", taux_mobilisation = 0.5, harvest_rate = 0.03)),
+    "ignored")
+})
+
+test_that("ifn_ser uses the SER ratio, capped at 1, and flags the degenerate case", {
+  u <- e1_unites()
+  f <- suppressMessages(indicateur_e1_bois_energie(u, production_field = "production",
+                                                   taux_mobilisation = "ifn_ser"))
+  r <- ifn_taux_prelevement_production("E10")$ratio
+  u2 <- u[2, ]
+  u2$volume <- u2$production * min(r, 1)
+  expect_equal(f$E1[2], suppressMessages(indicateur_e1_bois_energie(u2, harvest_rate = 1))$E1)
+  expect_equal(f$E1_mode, rep("ressource_flux", 3))
+  # Production IFN de la SER x ratio IFN de la SER = recolte observee.
+  p <- suppressMessages(indicateur_p2_station(u, source = "ifn_fh"))
+  expect_warning(g <- suppressMessages(indicateur_e1_bois_energie(
+    p, production_field = "P2", taux_mobilisation = "ifn_ser")), "observed harvest")
+  expect_equal(g$E1_mode, rep("recolte_observee", 3))
+})
+
+test_that("E2 follows E1 in flux mode without any change of its own", {
+  u <- e1_unites()
+  f <- suppressMessages(indicateur_e1_bois_energie(u, production_field = "production",
+                                                   taux_mobilisation = 0.5))
+  e2 <- suppressMessages(indicateur_e2_evitement(f))
+  s <- suppressMessages(indicateur_e1_bois_energie(u))
+  e2s <- suppressMessages(indicateur_e2_evitement(s))
+  expect_equal(e2$E2[1:2] / f$E1[1:2], e2s$E2[1:2] / s$E1[1:2], tolerance = 1e-9,
+               ignore_attr = TRUE)
+  expect_false(isTRUE(all.equal(e2$E2[1:2], e2s$E2[1:2])))
+})

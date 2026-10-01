@@ -276,6 +276,7 @@ reference:
     - ifn_production_ser
     - ifn_production_reference
     - ifn_taux_prelevement_production
+    - localiser_ser
 
   - title: "Acces aux donnees brutes IFN"
     desc: >
