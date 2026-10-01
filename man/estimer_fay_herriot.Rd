@@ -28,7 +28,9 @@ A data.frame with one row per domain, in input order: \code{direct},
 \code{mse}, \code{rse} (relative standard error, percent), \code{nature}
 (\code{"fay_herriot"} or \code{"synthetique"}). Attributes: \code{beta}
 (named coefficients), \code{sigma2_v} (estimated random-effect variance
-\code{A}), \code{iterations}, \code{converge}.
+\code{A}), \code{vcov_beta} (covariance matrix of \code{beta}, for the MSE
+of a synthetic prediction \code{x' beta} outside the fit:
+\code{x' vcov_beta x}), \code{iterations}, \code{converge}.
 }
 \description{
 Combines, domain by domain, a design-based direct estimate (unbiased but noisy

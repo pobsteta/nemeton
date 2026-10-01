@@ -308,6 +308,8 @@ moran_contiguite <- function(res, sers, n_perm = 999L) {
 set.seed(54L)
 fh_res <- list()
 modele <- list()
+coefs <- list()
+vcovs <- list()
 for (att in c("pg", "pv")) {
   d <- d_ser[groupe == "tous" & attribut == att & as.integer(CAMPAGNE) %in% disp]
   d[, `:=`(annee = as.integer(CAMPAGNE), GRECO = substr(SER, 1L, 1L))]
@@ -341,6 +343,17 @@ for (att in c("pg", "pv")) {
            covariables = paste0("forms_mnt:", paste(best, collapse = "+"), "+greco"))]
   fh_res[[att]] <- d[, .(SER, CAMPAGNE, attribut, groupe, estimation, mse, rse,
                          gamma, nature, covariables)]
+  # Coefficients pour la prediction d'un domaine quelconque (lot 5-bis) :
+  # beta sur covariables centrees-reduites + GRECO, mise a l'echelle, Q.
+  sc <- scale(as.matrix(d[, ..best]))
+  b <- attr(fh, "beta")
+  coefs[[att]] <- data.table(
+    attribut = att, terme = names(b), beta = unname(b),
+    centre = c(NA, attr(sc, "scaled:center"), rep(NA, length(b) - 1L - length(best))),
+    echelle = c(NA, attr(sc, "scaled:scale"), rep(NA, length(b) - 1L - length(best))))
+  V <- attr(fh, "vcov_beta")
+  vcovs[[att]] <- data.table(attribut = att, terme_1 = rep(rownames(V), ncol(V)),
+                             terme_2 = rep(colnames(V), each = nrow(V)), valeur = as.vector(V))
   modele[[att]] <- data.table(attribut = att, sigma2_v = attr(fh, "sigma2_v"),
                               covariables = paste(best, collapse = "+"),
                               r2_synthetique = r2, re_globale = mean(d$psi[ok]) / mean(fh$mse[ok]),
@@ -486,6 +499,8 @@ message(nrow(tv), " lignes -> inst/extdata/ifn_volume_fh_ser.csv")
 # Seules les campagnes du modele FH sont embarquees (taille).
 fwrite(rbindlist(modele)[, millesime := millesime],
        "inst/extdata/ifn_production_modele.csv")
+fwrite(rbindlist(coefs), "inst/extdata/ifn_production_modele_coef.csv")
+fwrite(rbindlist(vcovs), "inst/extdata/ifn_production_modele_vcov.csv")
 src_dir <- Sys.getenv("NEMETON_IFN_SRC", unset = "data-raw/ifn")
 coord <- as.data.table(ifn_charger("PLACETTE", dest_dir = src_dir)$PLACETTE)[
   , .(CAMPAGNE, IDP, xl = as.numeric(XL), yl = as.numeric(YL))]

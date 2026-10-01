@@ -5,7 +5,7 @@
 \title{IFN production of user-defined domains}
 \usage{
 ifn_production_domaines(domaines, attribut = c("pv", "pg"), id_col = NULL,
-  n_campagnes = 5L, campagnes = NULL, ser_layer = NULL)
+  n_campagnes = 5L, campagnes = NULL, ser_layer = NULL, covariables = NULL)
 }
 \arguments{
 \item{domaines}{An \code{sf} of polygons with a defined CRS.}
@@ -21,6 +21,9 @@ model are available (2019-2024).}
 
 \item{ser_layer}{Optional SER outlines passed to \code{\link{localiser_ser}},
 used only for a domain without any plot.}
+
+\item{covariables}{Optional output of \code{\link{ifn_covariables_domaines}}
+(same \code{id}s). Enables the \code{"hybride"} prediction for \code{"pv"}.}
 }
 \value{
 A data.frame with one row per domain: \code{id}, \code{attribut},
@@ -28,36 +31,48 @@ A data.frame with one row per domain: \code{id}, \code{attribut},
 plots over the window), \code{poids_direct} (mean \code{gamma}),
 \code{part_bordure} (share of plots within 700 m of the boundary), \code{ser}
 (SER weights, e.g. \code{"C30:0.80,C20:0.20"}), \code{surface_ha},
-\code{nature} (\code{"composite"}, or \code{"ser"} for a domain without plots),
-\code{campagnes}. The per-campaign detail is in the \code{detail} attribute.
+\code{predicteur} (\code{"ser"} or \code{"hybride"}), \code{variance_domaine}
+(\code{A(S)}), \code{hors_calibrage}, \code{nature} (\code{"composite"}, or
+\code{"prediction"} for a domain without plots), \code{campagnes}. The
+per-campaign detail is in the \code{detail} attribute.
 }
 \description{
 Estimates the annual biological production of arbitrary domains (forest
 management units, massifs, forests) from the national forest inventory plots
-that fall inside them, combined with the Fay-Herriot estimate of their
-sylvoecoregion(s) (spec 054 lot 5).
+that fall inside them, combined with a prediction drawn from their
+sylvoecoregion(s) (spec 054 lots 5 and 5-bis).
 
 For each domain and campaign, the direct mean of its plots is shrunk towards
-the SER estimate with the weight \code{gamma = (A + m_s) / (A + m_s + psi)},
-where \code{psi} is the sampling variance of the direct mean, \code{m_s} the
-MSE of the SER estimate and \code{A} the between-domain variance of the
-national model. A domain with many plots keeps its own figure; a domain with
-few plots leans on its SER. Campaigns are then averaged as in
+the prediction with the weight \code{gamma = A(S) / (A(S) + psi)}, where
+\code{psi} is the sampling variance of the direct mean and \code{A(S)} the
+error of the prediction for a domain of area \code{S}, calibrated on grid cells
+of 15 to 100 km. A domain with many plots keeps its own figure; a domain with
+few plots leans on the prediction. Campaigns are then averaged as in
 \code{\link{ifn_production_reference}}.
+
+Two predictions:
+\itemize{
+\item \code{"ser"}: the Fay-Herriot estimates of the domain's
+sylvoecoregions, weighted by the share of its plots in each.
+\item \code{"hybride"} (volume production only, when \code{covariables} is
+supplied): the same, corrected by the national model coefficients for the
+gap between the domain's covariates and those of its sylvoecoregions.
+Validated against the inventory on grid cells: 19 to 35 percent lower error
+than \code{"ser"} for \code{"pv"}, but no gain for \code{"pg"}, which
+therefore keeps \code{"ser"}.
+}
 }
 \section{Limits to state alongside the figures}{
 
 \itemize{
+\item \code{A(S)} is calibrated between 22 500 ha (15 km cells) and 1 million
+ha; outside that range it is extrapolated (\code{hors_calibrage = TRUE}).
 \item Below 10 plots in a campaign, the sampling variance of the direct mean
 is taken from the plot-level variance of the domain's SER (generalised
 variance function), the direct variance being unstable.
-\item \code{A} was estimated \strong{between sylvoecoregions}. Using it for
-sub-domains of a SER is an approximation; the true between-domain variance
-at that scale may differ.
 \item The public IFN coordinates are the centre of the 1 km grid cell, the
 real plot lying within 700 m of it. Plots near a domain boundary may be
 assigned to the wrong side; their share is reported in \code{part_bordure}.
-Below a few thousand hectares, prefer the SER figure.
 }
 }
 
@@ -68,5 +83,6 @@ ifn_production_domaines(ut, id_col = "code_ut")
 }
 }
 \seealso{
-\code{\link{ifn_production_reference}}, \code{\link{localiser_ser}}.
+\code{\link{ifn_covariables_domaines}}, \code{\link{ifn_production_reference}},
+\code{\link{localiser_ser}}.
 }

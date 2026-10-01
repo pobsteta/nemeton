@@ -39,7 +39,9 @@
 #'   `psi`, `synthetique` (x' beta), `gamma`, `estimation`, `mse`, `rse`
 #'   (relative standard error, percent), `nature` (`"fay_herriot"` or
 #'   `"synthetique"`). Attributes: `beta` (named coefficients), `sigma2_v`
-#'   (estimated random-effect variance `A`), `iterations`, `converge`.
+#'   (estimated random-effect variance `A`), `vcov_beta` (covariance matrix
+#'   of `beta`, for the MSE of a synthetic prediction `x' beta` outside the
+#'   fit: `x' vcov_beta x`), `iterations`, `converge`.
 #'
 #' @details
 #' When the REML estimate of `A` is not positive, it is truncated to 0 with a
@@ -170,6 +172,9 @@ estimer_fay_herriot <- function(direct, psi, X, methode = "REML",
     stringsAsFactors = FALSE
   )
   attr(out, "beta") <- beta
+  # Covariance de beta (Q = (X' V^-1 X)^-1) : sert a la MSE d'une prediction
+  # synthetique pour un domaine hors ajustement (g2 = x' Q x).
+  attr(out, "vcov_beta") <- structure(Q, dimnames = list(names(beta), names(beta)))
   attr(out, "sigma2_v") <- A
   attr(out, "iterations") <- it
   attr(out, "converge") <- converge

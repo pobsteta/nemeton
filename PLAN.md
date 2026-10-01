@@ -239,8 +239,21 @@ problèmes : l'authentification Harmony (par jeton), le téléchargement des
 résultats (par `curl`), et un `~/.netrc` à nettoyer. L'extraction s'est arrêtée à
 la limite de 2 heures au milieu de 2022 ; elle est reprenable.
 
+**Journal** — *2026-10-01* (**v0.206.0**) : **lot 5-bis livré, spec close côté
+cœur.**
+
+Validation sur des mailles de 15 à 100 km :
+- le modèle appliqué aux seules covariables du domaine fait pire que la SER
+  (−30 à −96 %) ;
+- l'**hybride** (SER + β × écart des covariables) fait mieux pour PV (+19 à
+  +35 %), pas pour PG ;
+- le **σᵥ² national sous-estimait l'erreur des petits domaines**, d'où une
+  variance calée selon la surface, qui change les valeurs du lot 5.
+
+Nouvelle fonction `ifn_covariables_domaines()`. Le brief app est complété.
+
 **Prochaine étape** :
-- **app** : attendre le câblage du brief (§3 bis ajouté pour les domaines) ;
+- **app** : attendre le câblage du brief (§3 bis, domaines et covariables) ;
 - **en parallèle, lot 1-ter** : le jeu GEDI, dès que le compte Earthdata est
   configuré (action de Pascal).
 
