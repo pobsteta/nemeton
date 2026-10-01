@@ -10,6 +10,13 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.205.0] - 2026-10-01
+
+### Added
+- `ifn_production_domaines()` : production IFN de domaines quelconques
+  (estimateur composite à σᵥ² national, GVF, part des placettes en bordure).
+- Tables `ifn_production_placettes.csv.gz` et `ifn_production_modele.csv`.
+
 ## [0.204.0] - 2026-10-01
 
 ### Added

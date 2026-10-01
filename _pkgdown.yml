@@ -275,6 +275,7 @@ reference:
     - estimer_fay_herriot
     - ifn_production_ser
     - ifn_production_reference
+    - ifn_production_domaines
     - ifn_taux_prelevement_production
     - localiser_ser
 
