@@ -202,6 +202,8 @@ incertitude (spec 054, ADR-016)
   : Reference biological production to apply to a stand
 - [`ifn_taux_prelevement_production()`](https://pobsteta.github.io/nemeton/reference/ifn_taux_prelevement_production.md)
   : Harvest to production ratio by sylvoecoregion
+- [`localiser_ser()`](https://pobsteta.github.io/nemeton/reference/localiser_ser.md)
+  : Attach each unit to its sylvoecoregion (SER)
 
 ## Acces aux donnees brutes IFN
 

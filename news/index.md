@@ -1,5 +1,32 @@
 # Changelog
 
+## nemeton 0.204.0 (2026-10-01)
+
+#### Added — E1 sur le flux de production, localisation des SER (spec 054 lot 4)
+
+- **`indicateur_e1_bois_energie(production_field, taux_mobilisation)`**
+  : un **mode flux**, opt-in. Le mode par défaut récolte 2 % du stock
+  sur pied chaque année : un peuplement capitalisé à croissance lente
+  fournit alors plus de bois-énergie qu’un jeune peuplement en pleine
+  production. En mode flux, la récolte vaut
+  `production × taux_mobilisation`.
+  - **Le taux n’a pas de défaut** : une part entre 0 et 1, ou
+    `"ifn_ser"` (ratio prélèvement/production de la SER, plafonné à 1).
+    Sans taux, E1 s’arrête avec une erreur.
+  - **Cas dégénéré signalé** : la production IFN de la SER multipliée
+    par le ratio IFN de la SER n’est que la **récolte observée** de la
+    SER, identique pour toutes les UGF. E1 avertit et écrit
+    `E1_mode = "recolte_observee"`, au lieu de `"ressource_flux"`.
+  - **Même normalisation dans les deux modes** (1,32 t MS/ha/an) : c’est
+    la même grandeur physique. Le mode stock garde exactement sa sortie.
+    E2 suit E1 sans changement.
+- **`localiser_ser(units)`** : rattache chaque unité à sa
+  sylvoécorégion, celle qui la couvre le plus, via le WFS INRAE
+  `inrae:ser_l93`. C’est le préalable des références IFN par SER dans
+  l’app, dont les parcelles n’avaient aucune colonne SER.
+- **Brief app** :
+  `specs/054-production-fay-herriot/brief-nemetonshiny.md`.
+
 ## nemeton 0.203.0 (2026-10-01)
 
 #### Added — volume de référence par Fay-Herriot, essence × SER (spec 054 lot 3)

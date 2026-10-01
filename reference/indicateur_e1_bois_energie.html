@@ -9,7 +9,7 @@ forest harvest residues and coppice biomass."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.203.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.204.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -128,7 +128,10 @@ forest harvest residues and coppice biomass.</p>
 <span>  coppice_area_field <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  column_name <span class="op">=</span> <span class="st">"E1"</span>,</span>
 <span>  lang <span class="op">=</span> <span class="st">"en"</span>,</span>
-<span>  chm <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  chm <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  production_field <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  taux_mobilisation <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ser_field <span class="op">=</span> <span class="st">"ser"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -173,15 +176,54 @@ forest harvest residues and coppice biomass.</p>
 When supplied and `volume_field` is absent, standing volume is
 auto-estimated by running P1 internally. Default `NULL`.</p></dd>
 
+
+<dt id="arg-production-field">production_field<a class="anchor" aria-label="anchor" href="#arg-production-field"></a></dt>
+<dd><p>Character or <code>NULL</code> (default). Column holding the
+annual volume production (m3/ha/yr), e.g. P2 computed with
+<code>indicateur_p2_station(source = "ifn_fh")</code>. When supplied, E1 switches
+to <strong>flux mode</strong> (spec 054 lot 4): the annual harvest is
+<code>production x taux_mobilisation</code> instead of 2 percent of the standing
+stock, and <code>volume_field</code> / <code>harvest_rate</code> are not used.</p></dd>
+
+
+<dt id="arg-taux-mobilisation">taux_mobilisation<a class="anchor" aria-label="anchor" href="#arg-taux-mobilisation"></a></dt>
+<dd><p>Required in flux mode, no default on purpose:
+either a number in <code>[0, 1]</code> (share of the production harvested), or
+<code>"ifn_ser"</code> to use the harvest / production ratio observed by the IFN in
+the unit's sylvoecoregion (<code><a href="ifn_taux_prelevement_production.html">ifn_taux_prelevement_production</a></code>,
+capped at 1).</p></dd>
+
+
+<dt id="arg-ser-field">ser_field<a class="anchor" aria-label="anchor" href="#arg-ser-field"></a></dt>
+<dd><p>Character. SER column used by
+<code>taux_mobilisation = "ifn_ser"</code>. Default <code>"ser"</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>sf object with added columns: E1 (fuelwood potential tonnes DM/ha/yr),
-E1_residues, E1_coppice. <strong>Higher = more fuelwood available =
+E1_residues, E1_coppice; in flux mode also <code>E1_mode</code>
+(<code>"ressource_flux"</code> or <code>"recolte_observee"</code>). <strong>Higher = more fuelwood available =
 favourable</strong>, not inverted; normalize_indicator() rescales it against a ref_max
 of 1.32 t DM/ha/yr – the yield of a stand at P1's own ceiling (800 m3/ha,
 density 550), so E1, E2 and P1 score the same stand alike. See spec 048
 section 11.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="stock-mode-and-flux-mode">Stock mode and flux mode<a class="anchor" aria-label="anchor" href="#stock-mode-and-flux-mode"></a></h2>
+
+
+<p>The default (<strong>stock mode</strong>) harvests 2 percent of the standing volume
+every year, whatever the stand: a capitalised, slow-growing stand yields
+more fuelwood than a young stand in full production. <strong>Flux mode</strong> ties
+the harvest to what the forest grows. Both modes return the same physical
+quantity (t DM/ha/yr) and share the same normalisation ceiling.</p>
+<p>One combination is degenerate: a production taken from the IFN for the SER
+(provenance <code>"ifn_prod_*"</code>, as written by P2 in IFN mode) multiplied by
+the SER's own harvest / production ratio is simply the <strong>observed
+harvest</strong> of the SER, identical for every unit of the domain. E1 then warns
+and writes <code>E1_mode = "recolte_observee"</code> instead of
+<code>"ressource_flux"</code>, so that it is not presented as a potential.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

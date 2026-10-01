@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.203.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.204.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,25 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.204.0" id="nemeton-02040-2026-10-01">nemeton 0.204.0 (2026-10-01)<a class="anchor" aria-label="anchor" href="#nemeton-02040-2026-10-01"></a></h2>
+<div class="section level4">
+<h4 id="added--e1-sur-le-flux-de-production-localisation-des-ser-spec-lot-0-204-0">Added — E1 sur le flux de production, localisation des SER (spec 054 lot 4)<a class="anchor" aria-label="anchor" href="#added--e1-sur-le-flux-de-production-localisation-des-ser-spec-lot-0-204-0"></a></h4>
+<ul><li>
+<strong><code>indicateur_e1_bois_energie(production_field, taux_mobilisation)</code></strong> : un <strong>mode flux</strong>, opt-in. Le mode par défaut récolte 2 % du stock sur pied chaque année : un peuplement capitalisé à croissance lente fournit alors plus de bois-énergie qu’un jeune peuplement en pleine production. En mode flux, la récolte vaut <code>production × taux_mobilisation</code>.
+<ul><li>
+<strong>Le taux n’a pas de défaut</strong> : une part entre 0 et 1, ou <code>"ifn_ser"</code> (ratio prélèvement/production de la SER, plafonné à 1). Sans taux, E1 s’arrête avec une erreur.</li>
+<li>
+<strong>Cas dégénéré signalé</strong> : la production IFN de la SER multipliée par le ratio IFN de la SER n’est que la <strong>récolte observée</strong> de la SER, identique pour toutes les UGF. E1 avertit et écrit <code>E1_mode = "recolte_observee"</code>, au lieu de <code>"ressource_flux"</code>.</li>
+<li>
+<strong>Même normalisation dans les deux modes</strong> (1,32 t MS/ha/an) : c’est la même grandeur physique. Le mode stock garde exactement sa sortie. E2 suit E1 sans changement.</li>
+</ul></li>
+<li>
+<strong><code>localiser_ser(units)</code></strong> : rattache chaque unité à sa sylvoécorégion, celle qui la couvre le plus, via le WFS INRAE <code>inrae:ser_l93</code>. C’est le préalable des références IFN par SER dans l’app, dont les parcelles n’avaient aucune colonne SER.</li>
+<li>
+<strong>Brief app</strong> : <code>specs/054-production-fay-herriot/brief-nemetonshiny.md</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.203.0" id="nemeton-02030-2026-10-01">nemeton 0.203.0 (2026-10-01)<a class="anchor" aria-label="anchor" href="#nemeton-02030-2026-10-01"></a></h2>
 <div class="section level4">

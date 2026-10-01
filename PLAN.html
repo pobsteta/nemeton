@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.203.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.204.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -326,7 +326,16 @@
 <strong>Correction de la spec</strong> : C1 ne lit pas P1, il n’en hérite donc pas.</li>
 <li>
 <strong>Moteur</strong> sans matrice n × n.</li>
-</ul><p><strong>Prochaine étape</strong> : - <strong>lot 4</strong> : E1 sur le flux, puis le brief app ; - <strong>en parallèle, lot 1-ter</strong> : le jeu GEDI, dès que le compte Earthdata est configuré (action de Pascal).</p>
+</ul><p><strong>Journal</strong> — <em>2026-10-01</em> (<strong>v0.204.0</strong>) : <strong>lot 4 livré, brief app émis.</strong></p>
+<ul><li>
+<strong>E1 en mode flux</strong>, opt-in, sans taux par défaut. Le cas dégénéré « récolte observée » est détecté.</li>
+<li>
+<strong>Même <code>ref_max</code> dans les deux modes</strong> : c’est un écart à ce qu’annonçait D6, justifié en §7.4 (même grandeur physique).</li>
+<li>
+<strong><code><a href="reference/localiser_ser.html">localiser_ser()</a></code></strong> : l’app n’avait aucune colonne SER, ce qui bloquait tout le câblage.</li>
+<li>
+<strong>Brief</strong> : <code>specs/054-production-fay-herriot/brief-nemetonshiny.md</code>, avec une copie dans <code>briefs/vers-nemetonshiny/</code>. Il signale trois obstacles dans l’app : pas de colonne SER, P2 et E1 forcés en mode CHM, colonnes annexes jetées.</li>
+</ul><p><strong>Prochaine étape</strong> : - <strong>app</strong> : attendre le câblage du brief ; - <strong>en parallèle, lot 1-ter</strong> : le jeu GEDI, dès que le compte Earthdata est configuré (action de Pascal).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess">Chantier CLOS — Onglet Desserte : rendre visibles les sorties (app + foretaccess)<a class="anchor" aria-label="anchor" href="#chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess"></a></h1>

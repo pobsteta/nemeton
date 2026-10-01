@@ -12,6 +12,17 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.204.0\] - 2026-10-01
+
+### Added
+
+- [`indicateur_e1_bois_energie()`](https://pobsteta.github.io/nemeton/reference/indicateur_e1_bois_energie.md)
+  : mode flux (`production_field`, `taux_mobilisation` sans défaut,
+  `"ifn_ser"`), colonne `E1_mode`, détection du cas dégénéré (récolte
+  observée).
+- [`localiser_ser()`](https://pobsteta.github.io/nemeton/reference/localiser_ser.md)
+  : code SER par plus grande intersection (WFS INRAE).
+
 ## \[0.203.0\] - 2026-10-01
 
 ### Added
