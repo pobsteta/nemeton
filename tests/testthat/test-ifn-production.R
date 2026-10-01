@@ -178,3 +178,36 @@ test_that("the reference walks SER -> GRECO -> national and says so", {
   expect_equal(r3$niveau_utilise, "national")
   expect_error(ifn_production_reference(c("C30", "C20")), "single SER")
 })
+
+test_that("a direct estimate on too few plots does not qualify its level", {
+  # F13 (marais littoraux) : 2-3 placettes revisitees par campagne.
+  r <- ifn_production_reference("F13", "prel", "tous")
+  expect_equal(r$niveau_utilise, "greco")
+  r0 <- ifn_production_reference("F13", "prel", "tous", min_plac = 0)
+  expect_equal(r0$niveau_utilise, "ser")
+  # Le Fay-Herriot n'est pas soumis au seuil.
+  expect_equal(ifn_production_reference("F13", "pv", "tous")$niveau_utilise, "ser")
+  # niveaux epingle un echelon.
+  expect_equal(ifn_production_reference("C30", niveaux = "national")$niveau_utilise,
+               "national")
+})
+
+test_that("harvest / production ratio aligns both flows and sits near the IGN", {
+  n <- ifn_taux_prelevement_production(NULL)
+  # IGN 2014-2022 : 53,1 / 87,9 = 0,60 ; mesure lot 2 : 0,68 (biais documente).
+  expect_gt(n$ratio, 0.55)
+  expect_lt(n$ratio, 0.80)
+  expect_equal(n$niveau_utilise, "national")
+  r <- ifn_taux_prelevement_production("C30")
+  expect_equal(r$ratio, r$prelevement / r$production)
+  expect_equal(r$production,
+               ifn_production_reference("C30", "pv",
+                                        campagnes = as.integer(strsplit(r$campagnes, ",")[[1]]))$valeur)
+  v <- ifn_taux_prelevement_production("C30", definition = "vidange")
+  expect_lte(v$prelevement, r$prelevement)
+  # F13 : le prelevement remonte a la GRECO, la production le suit.
+  f <- ifn_taux_prelevement_production("F13")
+  expect_equal(f$niveau_utilise, "greco")
+  expect_lt(f$ratio, 2)
+  expect_true(is.finite(f$rse))
+})

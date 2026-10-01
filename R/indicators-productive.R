@@ -262,7 +262,22 @@ indicateur_p1_volume <- function(units,
 #'         increment in \eqn{m^3/ha/yr}.
 #' }
 #'
-#' The two modes answer the same forestry question (how
+#' A third mode, \code{source = "ifn_fh"} (spec 054), returns
+#' the biological volume production measured by the national
+#' forest inventory for the unit's sylvoecoregion, estimated by
+#' Fay-Herriot (\code{\link{ifn_production_reference}}), in
+#' \eqn{m^3/ha/yr}. It is the production of the \strong{domain},
+#' not of the stand's own site, all species together: the per-group
+#' figures of the table are diluted over the whole forest area. It adds
+#' three columns:
+#' \code{<column_name>_rse} (relative standard error, percent),
+#' \code{<column_name>_provenance} (\code{"ifn_prod_ser"},
+#' \code{"ifn_prod_greco"} or \code{"ifn_prod_national"}) and
+#' \code{<column_name>_nature} (\code{"fay_herriot"},
+#' \code{"direct"} or \code{"synthetique"}). It is opt-in: the
+#' default behaviour is unchanged.
+#'
+#' The modes answer the same forestry question (how
 #' productive is this site?) but in different units. Downstream
 #' callers should use \code{\link{compute_general_index_mixed}}
 #' or a mode-aware normalization when mixing units.
@@ -285,12 +300,23 @@ indicateur_p1_volume <- function(units,
 #' @param h_dom_percentile Numeric in \code{[0, 1]}. Percentile
 #'   of CHM pixels used to derive dominant height per unit.
 #'   Default \code{0.9}.
+#' @param source \code{"auto"} (default): CHM mode when
+#'   \code{chm} is supplied, legacy mode otherwise.
+#'   \code{"ifn_fh"}: IFN production of the unit's
+#'   sylvoecoregion (spec 054).
+#' @param ser_field Character. Column holding the SER code
+#'   (e.g. \code{"C30"}), used by \code{source = "ifn_fh"}. A
+#'   missing or unknown SER falls back to the GRECO, then to the
+#'   national figure. Default \code{"ser"}.
 #'
 #' @return sf object with one added column:
 #'   \itemize{
 #'     \item Legacy mode: \code{P2} = annual increment (m3/ha/yr).
 #'     \item CHM mode:    \code{P2} = site index \eqn{H_0} (m) at
 #'           \code{reference_age}.
+#'     \item IFN mode:    \code{P2} = IFN volume production of the
+#'           sylvoecoregion (m3/ha/yr), plus \code{P2_rse},
+#'           \code{P2_provenance}, \code{P2_nature}.
 #'   }
 #'
 #' @details
@@ -341,10 +367,43 @@ indicateur_p2_station <- function(units,
                                          chm = NULL,
                                          age_field = "age",
                                          reference_age = 50,
-                                         h_dom_percentile = 0.9) {
+                                         h_dom_percentile = 0.9,
+                                         source = c("auto", "ifn_fh"),
+                                         ser_field = "ser") {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
+  }
+  source <- match.arg(source)
+
+  # ---- IFN mode (spec 054) : production de la SER, Fay-Herriot ----
+  if (source == "ifn_fh") {
+    if (!ser_field %in% names(units)) {
+      stop("Missing required field for IFN mode: ", ser_field, call. = FALSE)
+    }
+    ser <- as.character(units[[ser_field]])
+    ser[!nzchar(ser)] <- NA_character_
+    # Toujours le groupe "tous" : dans la table, la production d'un groupe est
+    # rapportee a l'hectare de TOUTE la foret de la SER (sa contribution),
+    # pas a l'hectare de peuplement de ce groupe. Une pessiere de E10 aurait
+    # recu 2,05 m3/ha/an "resineux", dilue par les placettes sans resineux.
+    cle <- ifelse(is.na(ser), "<national>", ser)
+    refs <- lapply(unique(cle), function(k) {
+      ifn_production_reference(if (k == "<national>") NULL else k, "pv", "tous")
+    })
+    names(refs) <- unique(cle)
+    r <- do.call(rbind, refs[cle])
+    result <- units
+    result[[column_name]] <- r$valeur
+    result[[paste0(column_name, "_rse")]] <- r$rse
+    result[[paste0(column_name, "_provenance")]] <-
+      ifelse(is.na(r$niveau_utilise), NA_character_,
+             paste0("ifn_prod_", r$niveau_utilise))
+    result[[paste0(column_name, "_nature")]] <- r$nature
+    cli::cli_alert_success(
+      "Calculated {column_name}: IFN volume production of the sylvoecoregion (m3/ha/yr)"
+    )
+    return(result)
   }
 
   # ---- CHM mode (spec 005 phase 2) ---------------------------

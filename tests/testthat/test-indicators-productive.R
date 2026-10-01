@@ -1110,3 +1110,35 @@ test_that("indicateur_p1_volume result preserves original columns", {
   expect_true("extra_col" %in% names(result))
   expect_equal(result$extra_col[1], "keep_me")
 })
+
+# ==============================================================================
+# indicateur_p2_station (P2), mode IFN (spec 054 lot 2)
+# ==============================================================================
+
+test_that("P2 IFN mode returns the SER production with its provenance", {
+  u <- make_sf(list(ser = c("C30", "E10", NA, ""), species = c("FASY", "PIAB", "QUPE", "XX")))
+  r <- suppressMessages(indicateur_p2_station(u, source = "ifn_fh"))
+  ref <- ifn_production_reference("C30", "pv", "tous")
+  expect_equal(r$P2[1], ref$valeur)
+  expect_equal(r$P2_rse[1], ref$rse)
+  expect_equal(r$P2_provenance, c("ifn_prod_ser", "ifn_prod_ser",
+                                  "ifn_prod_national", "ifn_prod_national"))
+  expect_equal(r$P2_nature[1:2], c("fay_herriot", "fay_herriot"))
+  # Toujours "tous" : l'essence ne dilue pas la production (spec 054 §7.1).
+  expect_equal(r$P2[3], r$P2[4])
+  expect_true(all(r$P2 > 1 & r$P2 < 15))
+})
+
+test_that("P2 IFN mode falls back to the GRECO for an unknown SER", {
+  u <- make_sf(list(ser = "C99"))
+  r <- suppressMessages(indicateur_p2_station(u, source = "ifn_fh"))
+  expect_equal(r$P2_provenance, "ifn_prod_greco")
+})
+
+test_that("P2 IFN mode requires the SER column; the default mode is unchanged", {
+  u <- make_sf(list(species = "FASY", fertility = 1, climate = "temperate_oceanic"))
+  expect_error(indicateur_p2_station(u, source = "ifn_fh"), "ser")
+  r <- suppressMessages(indicateur_p2_station(u))
+  expect_false(any(c("P2_rse", "P2_provenance", "P2_nature") %in% names(r)))
+  expect_error(indicateur_p2_station(u, source = "autre"))
+})

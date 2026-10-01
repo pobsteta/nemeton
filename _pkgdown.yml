@@ -275,6 +275,7 @@ reference:
     - estimer_fay_herriot
     - ifn_production_ser
     - ifn_production_reference
+    - ifn_taux_prelevement_production
 
   - title: "Acces aux donnees brutes IFN"
     desc: >
