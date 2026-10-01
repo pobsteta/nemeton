@@ -307,6 +307,7 @@ moran_contiguite <- function(res, sers, n_perm = 999L) {
 }
 set.seed(54L)
 fh_res <- list()
+modele <- list()
 for (att in c("pg", "pv")) {
   d <- d_ser[groupe == "tous" & attribut == att & as.integer(CAMPAGNE) %in% disp]
   d[, `:=`(annee = as.integer(CAMPAGNE), GRECO = substr(SER, 1L, 1L))]
@@ -340,6 +341,10 @@ for (att in c("pg", "pv")) {
            covariables = paste0("forms_mnt:", paste(best, collapse = "+"), "+greco"))]
   fh_res[[att]] <- d[, .(SER, CAMPAGNE, attribut, groupe, estimation, mse, rse,
                          gamma, nature, covariables)]
+  modele[[att]] <- data.table(attribut = att, sigma2_v = attr(fh, "sigma2_v"),
+                              covariables = paste(best, collapse = "+"),
+                              r2_synthetique = r2, re_globale = mean(d$psi[ok]) / mean(fh$mse[ok]),
+                              n_domaines = sum(ok), campagnes = paste(range(d$annee), collapse = "-"))
 }
 fh_res <- rbindlist(fh_res)
 
@@ -468,3 +473,34 @@ tv <- tv[, .(ser = SER, espar = ESPAR, n_plac_presence,
 setorder(tv, ser, espar)
 fwrite(tv, "inst/extdata/ifn_volume_fh_ser.csv", na = "")
 message(nrow(tv), " lignes -> inst/extdata/ifn_volume_fh_ser.csv")
+
+
+# --- 8. Domaines utilisateur (lot 5) : modele national et placettes ----------
+# L'estimateur composite de ifn_production_domaines() a besoin, a l'execution :
+#   - de sigma2_v du modele national par attribut (part de variance entre
+#     domaines que les covariables n'expliquent pas) ;
+#   - des productions PAR PLACETTE, avec leurs coordonnees, pour l'estimation
+#     directe d'un domaine quelconque. XL/YL sont le centre de la maille
+#     kilometrique (placette reelle a 700 m au plus, doc PLACETTE v2.4) :
+#     coordonnees deja floutees par l'IGN, redistribuables (Etalab 2.0).
+# Seules les campagnes du modele FH sont embarquees (taille).
+fwrite(rbindlist(modele)[, millesime := millesime],
+       "inst/extdata/ifn_production_modele.csv")
+src_dir <- Sys.getenv("NEMETON_IFN_SRC", unset = "data-raw/ifn")
+coord <- as.data.table(ifn_charger("PLACETTE", dest_dir = src_dir)$PLACETTE)[
+  , .(CAMPAGNE, IDP, xl = as.numeric(XL), yl = as.numeric(YL))]
+coord <- unique(coord, by = c("CAMPAGNE", "IDP"))
+pa <- merge(plac[groupe == "tous" & as.integer(CAMPAGNE) %in% disp,
+                 .(CAMPAGNE, IDP, ser = SER, echantillon = "vif", pg, pv)],
+            coord, by = c("CAMPAGNE", "IDP"))
+pb <- merge(plac_b[groupe == "tous" & as.integer(CAMPAGNE) %in% disp,
+                   .(CAMPAGNE, IDP, ser = SER, echantillon = "coupe",
+                     pg = pg_coupe, pv = pv_coupe)],
+            coord, by = c("CAMPAGNE", "IDP"))
+tp <- rbindlist(list(pa, pb))[, .(campagne = as.integer(CAMPAGNE), xl, yl, ser,
+                                  echantillon, pg = signif(pg, 4), pv = signif(pv, 4))]
+stopifnot(!anyNA(tp$xl), !anyNA(tp$yl))
+setorder(tp, campagne, echantillon, ser)
+f_tp <- "inst/extdata/ifn_production_placettes.csv.gz"
+fwrite(tp, f_tp)
+message(nrow(tp), " placettes -> ", f_tp, " (", round(file.size(f_tp) / 1e6, 2), " Mo)")

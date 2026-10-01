@@ -1,3 +1,28 @@
+# nemeton 0.205.0 (2026-10-01)
+
+### Added — production IFN d'un domaine quelconque (spec 054 lot 5)
+
+- **`ifn_production_domaines(domaines, attribut, id_col)`** : production
+  annuelle d'une forêt, d'un massif ou d'une UT ONF. C'est un **estimateur
+  composite** : la moyenne des placettes IFN du domaine (arbres vifs, plus les
+  arbres coupés entre deux passages) est ramenée vers l'estimation Fay-Herriot
+  de ses SER. Les SER sont pondérées par la part des placettes, sans appel
+  réseau. Le poids vaut γ = (σᵥ² + MSE_SER) / (σᵥ² + MSE_SER + ψ), avec le σᵥ²
+  du modèle national.
+  - Sous 10 placettes, la variance de la moyenne vient d'une **fonction de
+    variance généralisée** : 2 placettes presque égales donnaient γ = 0,999.
+  - Un domaine sans placette reçoit sa SER dominante (`nature = "ser"`).
+  - **Limites publiées avec le chiffre** :
+    - `part_bordure` : les coordonnées IFN publiques sont celles du centre de la
+      maille kilométrique, la placette réelle étant à 700 m au plus ;
+    - `poids_direct` : pour une UT de 14 400 ha, environ 11 placettes sur 5 ans,
+      γ ≈ 0,08. La valeur est alors surtout celle de la SER : sans covariable au
+      niveau du domaine, l'IFN public ne la distingue presque pas.
+- **Nouvelles tables** : `ifn_production_placettes.csv.gz` (68 759 placettes
+  2019-2024 ; 0,84 Mo) et `ifn_production_modele.csv` (σᵥ² et qualité du modèle
+  national).
+- **Brief app complété** (§3 bis).
+
 # nemeton 0.204.0 (2026-10-01)
 
 ### Added — E1 sur le flux de production, localisation des SER (spec 054 lot 4)

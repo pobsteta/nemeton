@@ -1,11 +1,11 @@
 # Spec 054 — Production IFN par petits domaines (Fay-Herriot) et ses consommateurs
 
-**Version** : 0.7.0 (lot 4 livré)
+**Version** : 0.8.0 (lot 5 livré)
 **Date**    : 2026-10-01
-**Statut**  : **Lots 1 à 4 livrés côté cœur** (v0.200.0 à v0.204.0,
-2026-10-01). Brief app émis (`brief-nemetonshiny.md`). Reste le lot 5 (domaines
-utilisateur) et le lot 1-ter (GEDI, qui attend un accès Earthdata). Résultats en
-§3.b, §3.c et §7.1 à §7.4.
+**Statut**  : **Lots 1 à 5 livrés côté cœur** (v0.200.0 à v0.205.0,
+2026-10-01). Brief app émis (`brief-nemetonshiny.md`). Reste le lot 1-ter (GEDI :
+accès Earthdata à configurer par Pascal, `hdf5r` installé) et une piste lot 5-bis
+(§5.c). Résultats en §3.b, §3.c, §5.c et §7.1 à §7.4.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — moteur Fay-Herriot, table de production IFN par
 SER × campagne, et branchement sur P2, P1/C1, E1/E2 et la spec 040.
@@ -442,6 +442,50 @@ en base (ADR-002). Le run sur la France entière se lance dans un cgroup plafonn
 (cf. mémoire « isoler les jobs lourds »). La colonne `covariables` de la table
 indique le jeu retenu (`"forms_mnt"` ou `"gedi_l2a"`).
 
+### 5.c Lot 5 livré : domaines utilisateur (v0.205.0, 2026-10-01)
+
+**Décisions du 2026-10-01** : un estimateur composite à σᵥ² national, et une table
+des placettes embarquée.
+
+**`ifn_production_domaines(domaines, attribut, id_col, …)`**. Pour chaque domaine
+et chaque campagne :
+- direct = moyenne des placettes vives du domaine + moyenne des placettes
+  revisitées (arbres coupés), comme au lot 1-bis ;
+- synthétique = estimations FH des SER, pondérées par la part des placettes du
+  domaine dans chaque SER. L'échantillon IFN est systématique, donc ce poids est
+  proportionnel à la surface, sans appel réseau ;
+- `γ = (A + m_s) / (A + m_s + ψ)`, `estimation = γ·direct + (1−γ)·synthétique`,
+  `MSE = γ·ψ`. C'est l'EBLUP à A connu, avec A = σᵥ² du modèle national
+  (`ifn_production_modele.csv`) et m_s la MSE de l'estimation SER ;
+- sous 10 placettes, **GVF** : ψ = s² des placettes des SER du domaine pour la
+  campagne, divisé par n. Sans elle, 2 placettes presque égales donnaient
+  ψ = 0,0003 et γ = 0,999 ;
+- un domaine sans placette reçoit la SER dominante de son contour
+  (`localiser_ser()`), avec `nature = "ser"`.
+
+**Données embarquées** : `ifn_production_placettes.csv.gz`, 68 759 placettes des
+campagnes 2019-2024, vives et revisitées, avec `XL`/`YL`, PG et PV ; 0,84 Mo.
+
+**Coordonnées floutées** : `XL`/`YL` sont le centre de la maille kilométrique, la
+placette réelle étant à 700 m au plus (doc PLACETTE v2.4). La part des placettes à
+moins de 700 m du contour est publiée (`part_bordure`).
+
+**Ce qu'on observe.**
+- Sur 30 carrés de 14 400 ha tirés dans C30 (la taille d'une UT ONF moyenne) :
+  médiane de 11 placettes vives sur 5 campagnes, γ médian 0,08, `part_bordure`
+  médiane 0,21.
+- Une SER entière prise comme domaine (C30, 781 placettes) : γ = 0,87, et 5,11
+  contre 5,18 pour sa référence FH.
+
+**Limite de fond.** À l'échelle d'une UT, l'IFN public seul ne distingue presque
+pas le domaine de sa SER (γ ≈ 0,08). L'article y parvient grâce à des covariables
+**au niveau de l'UT** (GEDI).
+
+**Piste lot 5-bis** : stocker β et la mise à l'échelle du modèle national, puis
+calculer la prédiction synthétique du domaine depuis **ses propres** covariables
+(hauteur FORMS-T moyenne et écart-type sous masque, altitude, GRECO), que l'app
+charge déjà pour ses projets. C'est le vrai FH de sous-domaine.
+
 ## 6. Livrables cœur
 
 | Objet | Type | Rôle |
@@ -821,7 +865,7 @@ Chaque lot = une release (consignes de release de `CLAUDE.md`).
 | 2 | ✅ v0.202.0 — P2 `source = "ifn_fh"` + colonnes de provenance/RSE/nature ; `ifn_taux_prelevement_production()` ; `min_plac` (§7.1, §7.2) | minor | lot 1-bis, D5 |
 | 3 | ✅ v0.203.0 — FH poolé essence × SER (log + GVF), `ifn_volume_reference()` / `completer_volume_ifn(methode = "fay_herriot")` ; C1 n'hérite pas, correction §7.3 | minor | lot 1 |
 | 4 | ✅ v0.204.0 — E1 `production_field` + `taux_mobilisation` (même `ref_max`, §7.4) ; `localiser_ser()` ; détection du cas dégénéré FH-SER × `"ifn_ser"` (§7.4) ; test d'héritage E2 ; référence B2 ; brief app | minor | lot 2, D6 |
-| 5 | Domaines utilisateur (UT ONF, massif) | minor | lot 1, D2 |
+| 5 | ✅ v0.205.0 — `ifn_production_domaines()`, estimateur composite à σᵥ² national, GVF, table des placettes embarquée (§5.c) | minor | lot 1, D2 |
 
 ## 12. Références
 

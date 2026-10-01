@@ -5,7 +5,7 @@
 > **Nature** : câblage de trois modes **opt-in** du cœur, plus l'affichage de leur
 > incertitude. **Aucune logique métier à écrire côté app** (règles 1 à 3) : tout
 > calcul passe par des fonctions exportées de `nemeton`.
-> **Prérequis côté cœur** : `nemeton` ≥ **0.204.0**.
+> **Prérequis côté cœur** : `nemeton` ≥ **0.204.0** (§1 à §3), ≥ **0.205.0** pour les domaines (§3 bis).
 > **Contexte de rédaction** : lecture seule de `nemetonshiny@237429b0`
 > (0.151.4.9000). Les numéros de ligne cités en dépendent.
 
@@ -92,6 +92,26 @@ ne les active pas.
 aujourd'hui (grep négatif, relu le 2026-10-01). Si elle comble P1 un jour, utiliser
 `methode = "fay_herriot"` et **afficher la provenance** (`volume_source`) : une
 valeur `"ifn_*"` est une référence régionale, pas une mesure.
+
+## 3 bis. Production d'un massif, d'une forêt ou d'une UT ONF (`nemeton` ≥ 0.205.0)
+
+`nemeton::ifn_production_domaines(domaines, id_col = …)` estime la production d'un
+**ensemble de parcelles fourni en polygones** : une forêt, un massif, ou une UT
+ONF issue du parcellaire de la spec 046. La fonction combine les placettes IFN du
+domaine avec l'estimation de sa ou ses SER. Elle renvoie, par domaine, `valeur`,
+`rse`, `n_placettes`, `poids_direct`, `part_bordure` et `surface_ha`.
+
+**À afficher.**
+- **`poids_direct`** : sous environ 0,2, la valeur est essentiellement celle de la
+  SER. C'est le cas typique d'une UT de 15 000 ha, avec une dizaine de placettes
+  sur 5 ans. Le dire, plutôt que présenter le chiffre comme propre au domaine.
+- **`part_bordure`** : les coordonnées publiques de l'IFN sont floutées à 700 m.
+  Une part élevée signifie que le domaine est petit au regard de ce flou.
+- Sous quelques milliers d'hectares, préférer la valeur de la SER (P2 en mode
+  IFN).
+
+**Usage suggéré** : un panneau « production du massif » dans la vue projet, en
+passant l'union des UGF du projet comme domaine.
 
 ## 4. Clés i18n à prévoir (FR/EN)
 
