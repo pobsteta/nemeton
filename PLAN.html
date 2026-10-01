@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.199.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.200.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -114,7 +114,7 @@
 
 <p><strong>Source unique de vérité</strong> pour la séquence des épaississements (E1, E2, …) du <strong>package cœur <code>nemeton</code></strong> et leur état d’avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. <em>Consignes de release</em> étape 8 dans CLAUDE.md).</p>
 <blockquote>
-<p><strong>Version <code>nemetonshiny</code> publiée</strong> (vérifiée sur GitHub à chaque merge, <code>gh release list -R pobsteta/nemetonshiny</code>) : <strong>v0.144.2</strong> (release du 2026-09-23), <code>main</code> = <code>0.144.2</code>.</p>
+<p><strong>Version <code>nemetonshiny</code> publiée</strong> (vérifiée sur GitHub à chaque merge, <code>gh release list -R pobsteta/nemetonshiny</code>) : <strong>v0.151.4</strong> (release du 2026-09-25), relevée le 2026-10-01.</p>
 </blockquote>
 <blockquote>
 <p><strong>Scope</strong> : ce fichier ne suit que les chantiers du repo <code>nemeton</code> (cœur métier). Les épaississements portés côté app (<code>nemetonshiny</code>) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.</p>
@@ -288,7 +288,7 @@
 </tr></tbody></table><p><strong>Ce que l’écart n° 1 aura coûté et rapporté.</strong> Ouvert le 2026-08-15 comme « non consommé, et désormais bloquant », il l’était : la copie de la table dans <code>app_config.R</code> déclarait 40 indicateurs contre 41, A5 était calculé puis filtré à l’affichage, et une troisième copie des libellés (les clés i18n <code>indicator_&lt;CODE&gt;</code>) avait F1 et F2 inversés — la carte d’érosion sortait « F1 - Fertilité des sols ». Le dé-fork a retiré la <strong>classe</strong> de bug : quatre jours plus tard, la correction du sens de la famille R (v0.181.0) puis le décroisement de F (v0.182.0) ont traversé l’app <strong>sans une ligne de table à toucher</strong>. C’est l’argument à opposer au prochain fork qui se présentera comme un raccourci.</p>
 <hr></div>
 <div class="section level1">
-<h1 id="chantier-cadré--production-ifn-par-petits-domaines-fay-herriot-spec-054">Chantier CADRÉ — Production IFN par petits domaines, Fay-Herriot (spec 054)<a class="anchor" aria-label="anchor" href="#chantier-cadr%C3%A9--production-ifn-par-petits-domaines-fay-herriot-spec-054"></a></h1>
+<h1 id="chantier-en-cours--production-ifn-par-petits-domaines-fay-herriot-spec-054">Chantier EN COURS — Production IFN par petits domaines, Fay-Herriot (spec 054)<a class="anchor" aria-label="anchor" href="#chantier-en-cours--production-ifn-par-petits-domaines-fay-herriot-spec-054"></a></h1>
 <p><strong>Journal</strong> — <em>2026-10-01</em> (doc seule, pas de release) : <strong>cadrage à partir d’Onwunji et al. (2026, Ann. For. Sci. 83:46)</strong>, l’estimateur Fay-Herriot de la production IFN avec des covariables GEDI.</p>
 <p>Livré : <code>specs/054-production-fay-herriot/spec.md</code> et le brouillon <code>ADR-016-estimation-petits-domaines.md</code> (à reporter dans <code>platform_nemeton</code>).</p>
 <p>Constats vérifiés sur l’export IFN 2005-2024 : - <strong>pas de colonne de production</strong> ; elle se recalcule depuis <code>IR5</code> (en mètres) et <code>C13</code> ; - <strong>PG exacte, PV demande une hypothèse</strong> de croissance en hauteur ; - <strong>pas de colonne de propriété</strong> dans <code>PLACETTE</code>.</p>
@@ -296,7 +296,12 @@
 <p>Consommateurs : P2 (nouveau mode <code>ifn_fh</code>), ratio prélèvement/production (spec 040), P1/C1 (repli continu au lieu de la cascade <code>min_plac</code>), E1/E2 (le flux plafonne la récolte). B2 est conforté sans code ; T2/R3/R5 restent en prospective.</p>
 <p><strong>Décisions D1-D8 tranchées le 2026-10-01</strong> (spec §9). Deux s’écartent de la recommandation initiale : - <strong>D3</strong> : on compare deux jeux de covariables, GEDI brut et FORMS-T + MNT, sur des critères fixés d’avance ; - <strong>D6</strong> : dans E1, le flux remplace le stock (<code>production × taux_mobilisation</code>), en opt-in, avec un <code>ref_max</code> propre au mode flux.</p>
 <p><strong>Lot 0 fait le 2026-10-01</strong> (spec §3.a) : - <strong>référence IGN</strong> : 87,9 Mm³/an, soit 5,4 m³/ha/an (2014-2022) ; - <strong>recrutement</strong> : seuil de 7,5 cm de diamètre, confirmé ; - <strong>carottage partiel depuis 2014</strong> : 47 % de la surface terrière est à imputer, d’où l’amendement de D7 ; - <strong>contrôle national de la voie (a)</strong> : PV 4,61 m³/ha/an (−15 %), PG 0,68 — voie acceptée ; - <strong>piège évité</strong> : sans recalcul de la circonférence passée, l’imputation fait sortir silencieusement les arbres de la somme (PV tombait à 2,25) ; - <strong>prélèvement</strong> : l’IGN compte aussi les arbres coupés non vidangés (code 7) ; - <strong>GEDI</strong> : trou d’acquisition de mars 2023 à avril 2024, aucun accès Earthdata configuré.</p>
-<p><strong>Prochaine étape</strong> : lot 1 sur le jeu F (FORMS-T + MNT). Le jeu G attend un compte Earthdata (action de Pascal).</p>
+<p><strong>Journal</strong> — <em>2026-10-01</em> (<strong>v0.200.0</strong>) : <strong>lot 1 livré.</strong></p>
+<p>Livré : - <strong><code><a href="reference/estimer_fay_herriot.html">estimer_fay_herriot()</a></code></strong>, implémentation maison, égale à <code><a href="https://rdrr.io/pkg/sae/man/mseFH.html" class="external-link">sae::mseFH</a></code> à 1e-14 ; - <strong><code><a href="reference/ifn_production_ser.html">ifn_production_ser()</a></code> et <code><a href="reference/ifn_production_reference.html">ifn_production_reference()</a></code></strong> ; - <strong>la table <code>ifn_production_ser.csv</code></strong> (11 754 lignes, 2 Mo) ; - <strong>le script <code>data-raw/build_ifn_production.R</code></strong>.</p>
+<p>Covariables du jeu F : - <strong>hauteur FORMS-T 2019-2024</strong>, 6 × 6,3 Go depuis Zenodo, en cache dans <code>~/.cache/nemeton/forms_t</code>, hors dépôt ; - <strong>altitude IGN</strong> à 250 m ; - <strong>GRECO en effet fixe</strong>, décision du jour : sans elle, les résidus sont autocorrélés entre SER voisines (Moran par contiguïté 0,16-0,34). Avec elle, l’autocorrélation n’est plus significative.</p>
+<p>Résultats pour la PV : - R² synthétique 0,83 ; - efficacité relative globale 3,38 ; - RSE médiane 8,2 % contre 11,1 % en estimation directe ; - contrôle national 4,21 m³/ha/an, soit 78 % de la référence IGN.</p>
+<p>Incident de précalcul : l’agrégation a d’abord été tuée par OOM sur les 6 cgroups de 4 Go, au moment de construire le raster de sortie (vérifié avec <code>journalctl</code>). Depuis, les sommes sont sauvées avant cette étape, et les bandes sont réduites à 125 lignes.</p>
+<p><strong>Prochaine étape</strong> : - <strong>lot 2</strong> : P2 <code>source = "ifn_fh"</code> et le ratio prélèvement/production ; - <strong>en parallèle, lot 1-ter</strong> : le jeu GEDI, dès que le compte Earthdata est configuré (action de Pascal).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess">Chantier CLOS — Onglet Desserte : rendre visibles les sorties (app + foretaccess)<a class="anchor" aria-label="anchor" href="#chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess"></a></h1>

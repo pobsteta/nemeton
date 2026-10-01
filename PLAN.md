@@ -7,8 +7,8 @@ CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25).
 chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
-> merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.144.2**
-> (release du 2026-09-23), `main` = `0.144.2`.
+> merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.151.4**
+> (release du 2026-09-25), relevée le 2026-10-01.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
 > (cœur métier). Les épaississements portés côté app (`nemetonshiny`)
@@ -109,7 +109,7 @@ opposer au prochain fork qui se présentera comme un raccourci.
 
 ------------------------------------------------------------------------
 
-# Chantier CADRÉ — Production IFN par petits domaines, Fay-Herriot (spec 054)
+# Chantier EN COURS — Production IFN par petits domaines, Fay-Herriot (spec 054)
 
 **Journal** — *2026-10-01* (doc seule, pas de release) : **cadrage à
 partir d’Onwunji et al. (2026, Ann. For. Sci. 83:46)**, l’estimateur
@@ -150,8 +150,37 @@ passée, l’imputation fait sortir silencieusement les arbres de la somme
 coupés non vidangés (code 7) ; - **GEDI** : trou d’acquisition de mars
 2023 à avril 2024, aucun accès Earthdata configuré.
 
-**Prochaine étape** : lot 1 sur le jeu F (FORMS-T + MNT). Le jeu G
-attend un compte Earthdata (action de Pascal).
+**Journal** — *2026-10-01* (**v0.200.0**) : **lot 1 livré.**
+
+Livré : -
+**[`estimer_fay_herriot()`](https://pobsteta.github.io/nemeton/reference/estimer_fay_herriot.md)**,
+implémentation maison, égale à
+[`sae::mseFH`](https://rdrr.io/pkg/sae/man/mseFH.html) à 1e-14 ; -
+**[`ifn_production_ser()`](https://pobsteta.github.io/nemeton/reference/ifn_production_ser.md)
+et
+[`ifn_production_reference()`](https://pobsteta.github.io/nemeton/reference/ifn_production_reference.md)**
+; - **la table `ifn_production_ser.csv`** (11 754 lignes, 2 Mo) ; - **le
+script `data-raw/build_ifn_production.R`**.
+
+Covariables du jeu F : - **hauteur FORMS-T 2019-2024**, 6 × 6,3 Go
+depuis Zenodo, en cache dans `~/.cache/nemeton/forms_t`, hors dépôt ; -
+**altitude IGN** à 250 m ; - **GRECO en effet fixe**, décision du jour :
+sans elle, les résidus sont autocorrélés entre SER voisines (Moran par
+contiguïté 0,16-0,34). Avec elle, l’autocorrélation n’est plus
+significative.
+
+Résultats pour la PV : - R² synthétique 0,83 ; - efficacité relative
+globale 3,38 ; - RSE médiane 8,2 % contre 11,1 % en estimation directe
+; - contrôle national 4,21 m³/ha/an, soit 78 % de la référence IGN.
+
+Incident de précalcul : l’agrégation a d’abord été tuée par OOM sur les
+6 cgroups de 4 Go, au moment de construire le raster de sortie (vérifié
+avec `journalctl`). Depuis, les sommes sont sauvées avant cette étape,
+et les bandes sont réduites à 125 lignes.
+
+**Prochaine étape** : - **lot 2** : P2 `source = "ifn_fh"` et le ratio
+prélèvement/production ; - **en parallèle, lot 1-ter** : le jeu GEDI,
+dès que le compte Earthdata est configuré (action de Pascal).
 
 ------------------------------------------------------------------------
 

@@ -406,6 +406,19 @@ atteint
 - [`completer_volume_ifn()`](https://pobsteta.github.io/nemeton/reference/completer_volume_ifn.md)
   : Fill missing P1 volumes with the IFN regional reference
 
+## Production IFN par petits domaines (Fay-Herriot)
+
+Production biologique recalculee depuis les donnees brutes IFN (IR5),
+par sylvoecoregion et campagne, estimee par Fay-Herriot avec son
+incertitude (spec 054, ADR-016)
+
+- [`estimer_fay_herriot()`](https://pobsteta.github.io/nemeton/reference/estimer_fay_herriot.md)
+  : Fay-Herriot area-level estimator (EBLUP and its MSE)
+- [`ifn_production_ser()`](https://pobsteta.github.io/nemeton/reference/ifn_production_ser.md)
+  : IFN biological production by sylvoecoregion and campaign
+- [`ifn_production_reference()`](https://pobsteta.github.io/nemeton/reference/ifn_production_reference.md)
+  : Reference biological production to apply to a stand
+
 ## Acces aux donnees brutes IFN
 
 Telechargement et chargement de l’export annuel de l’IGN (Licence

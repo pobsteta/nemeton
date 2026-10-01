@@ -12,6 +12,23 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.200.0\] - 2026-10-01
+
+### Added
+
+- [`estimer_fay_herriot()`](https://pobsteta.github.io/nemeton/reference/estimer_fay_herriot.md)
+  : estimateur Fay-Herriot (EBLUP + MSE REML), implémentation maison,
+  égal à [`sae::mseFH()`](https://rdrr.io/pkg/sae/man/mseFH.html) à
+  1e-14 (spec 054, ADR-016).
+- [`ifn_production_ser()`](https://pobsteta.github.io/nemeton/reference/ifn_production_ser.md)
+  /
+  [`ifn_production_reference()`](https://pobsteta.github.io/nemeton/reference/ifn_production_reference.md)
+  : production biologique IFN (PG, PV) par SER × campagne, recalculée
+  depuis IR5, estimée par Fay-Herriot (covariables FORMS-T + altitude +
+  GRECO). Table `inst/extdata/ifn_production_ser.csv`, construite par
+  `data-raw/build_ifn_production.R`.
+- `sae` en `Suggests` (test d’égalité uniquement).
+
 ## \[0.199.2\] - 2026-09-23
 
 ### Fixed
