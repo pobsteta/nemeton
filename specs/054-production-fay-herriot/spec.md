@@ -1,12 +1,11 @@
 # Spec 054 — Production IFN par petits domaines (Fay-Herriot) et ses consommateurs
 
-**Version** : 0.6.0 (lot 3 livré)
+**Version** : 0.7.0 (lot 4 livré)
 **Date**    : 2026-10-01
-**Statut**  : **Lots 1, 1-bis, 2 et 3 livrés** (cœur v0.200.0 à v0.203.0,
-2026-10-01). Moteur Fay-Herriot, tables de production, de prélèvement et de
-volume par essence × SER, P2 `source = "ifn_fh"`, ratio prélèvement/production,
-`completer_volume_ifn(methode = "fay_herriot")`. Lots 4 et 5 ouverts ; le jeu
-GEDI (D3) attend un accès Earthdata. Résultats en §3.b, §3.c, §7.1 à §7.3.
+**Statut**  : **Lots 1 à 4 livrés côté cœur** (v0.200.0 à v0.204.0,
+2026-10-01). Brief app émis (`brief-nemetonshiny.md`). Reste le lot 5 (domaines
+utilisateur) et le lot 1-ter (GEDI, qui attend un accès Earthdata). Résultats en
+§3.b, §3.c et §7.1 à §7.4.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — moteur Fay-Herriot, table de production IFN par
 SER × campagne, et branchement sur P2, P1/C1, E1/E2 et la spec 040.
@@ -693,6 +692,34 @@ marqué, absorbé par l'opt-in.
 **E2** (`R/indicators-energy.R:139`) lit `E1` (`fuelwood_field = "E1"`) : il
 hérite, sans modification de code.
 
+**Livré au lot 4 (v0.204.0)** :
+- **`indicateur_e1_bois_energie(production_field, taux_mobilisation, ser_field)`**.
+  En mode flux, `récolte = production × taux`, et le volume sur pied comme
+  `harvest_rate` ne servent plus (`harvest_rate` explicite → avertissement). Le
+  reste de la formule (résidus, densité, taillis) est inchangé : le mode flux
+  appelle le mode stock avec la récolte en guise de volume et un taux de 1.
+- **`taux_mobilisation` est sans défaut** : un nombre dans [0, 1] (un par UGF
+  possible), ou `"ifn_ser"` (ratio de la SER, plafonné à 1). En son absence,
+  erreur explicite.
+- **Cas dégénéré détecté** quand la colonne `<production_field>_provenance` vaut
+  `ifn_prod_*` (P2 en mode IFN) **et** que le taux vaut `"ifn_ser"` : avertissement
+  et `E1_mode = "recolte_observee"`. Sinon `E1_mode = "ressource_flux"`. La colonne
+  `E1_mode` n'existe qu'en mode flux, et le mode stock garde sa sortie.
+- **Écart à D6 sur la normalisation** : on garde le **même `ref_max`** (1,32 t
+  MS/ha/an) dans les deux modes, contrairement au « `ref_max` propre au mode flux »
+  annoncé. Les deux modes mesurent la **même grandeur physique**. Un plafond
+  différent ferait valoir 100/100 à deux quantités de bois différentes selon le
+  mode, et le mode flux est opt-in, donc aucun score existant ne bouge. Les
+  ordres de grandeur sont d'ailleurs voisins : 250 m³/ha × 2 % = 5 m³/an en stock,
+  contre 5,2 × 0,68 ≈ 3,5 m³/an en flux au niveau national. Le flux donne des
+  valeurs plus basses pour les peuplements capitalisés, et c'est précisément la
+  correction voulue.
+- **`localiser_ser(units)`**, nouveau, nécessaire à l'app : ses parcelles n'ont
+  aucune colonne SER, et le cœur ne savait pas en produire une (spec 040 §5.a,
+  point 1). La fonction rattache chaque unité à la SER qui la couvre le plus
+  (WFS INRAE `inrae:ser_l93`, borné à l'emprise ; couche injectable hors ligne) ;
+  hors SER, elle renvoie `NA`.
+
 ### 7.5 B2 (structure) — conforté, pas modifié
 
 L'article montre que l'hétérogénéité verticale (rh98_sd) explique la productivité à
@@ -793,7 +820,7 @@ Chaque lot = une release (consignes de release de `CLAUDE.md`).
 | 1-ter | Jeu G (GEDI L2A) et comparaison avec F selon §5.b | patch ou minor | accès Earthdata |
 | 2 | ✅ v0.202.0 — P2 `source = "ifn_fh"` + colonnes de provenance/RSE/nature ; `ifn_taux_prelevement_production()` ; `min_plac` (§7.1, §7.2) | minor | lot 1-bis, D5 |
 | 3 | ✅ v0.203.0 — FH poolé essence × SER (log + GVF), `ifn_volume_reference()` / `completer_volume_ifn(methode = "fay_herriot")` ; C1 n'hérite pas, correction §7.3 | minor | lot 1 |
-| 4 | E1 `production_field` + `taux_mobilisation` + `ref_max` propre au mode flux ; détection du cas dégénéré FH-SER × `"ifn_ser"` (§7.4) ; test d'héritage E2 ; référence B2 ; brief app | minor | lot 2, D6 |
+| 4 | ✅ v0.204.0 — E1 `production_field` + `taux_mobilisation` (même `ref_max`, §7.4) ; `localiser_ser()` ; détection du cas dégénéré FH-SER × `"ifn_ser"` (§7.4) ; test d'héritage E2 ; référence B2 ; brief app | minor | lot 2, D6 |
 | 5 | Domaines utilisateur (UT ONF, massif) | minor | lot 1, D2 |
 
 ## 12. Références
