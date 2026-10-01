@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.201.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.202.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -305,7 +305,14 @@
 <p>Le ratio prélèvement/production sortait à 0,82, contre 0,61 pour l’IGN : la PV de la voie (a) était trop basse de 22 %. Deux ajouts : - <strong>la croissance en hauteur</strong>, par l’allométrie H ∝ D^β estimée dans l’IFN (β de 0,27 à 0,64 selon le groupe et la catégorie de dimension) ; - <strong>la production des arbres coupés</strong> entre deux passages.</p>
 <p>Contrôle national : - PV 5,26 m³/ha/an, soit 97 % de l’IGN ; - prélèvement 3,54, soit 107 % ; - ratio 0,67, contre 0,61 pour l’IGN (environ +10 % résiduels, documentés).</p>
 <p>Nouveaux attributs <code>prel</code> et <code>prel_vidange</code>. Pour la PV, l’efficacité relative du Fay-Herriot passe à 3,67.</p>
-<p><strong>Prochaine étape</strong> : - <strong>lot 2</strong> : P2 <code>source = "ifn_fh"</code> et <code>ifn_taux_prelevement_production()</code>, calculé à partir de la table elle-même ; - <strong>en parallèle, lot 1-ter</strong> : le jeu GEDI, dès que le compte Earthdata est configuré (action de Pascal).</p>
+<p><strong>Journal</strong> — <em>2026-10-01</em> (<strong>v0.202.0</strong>) : <strong>lot 2 livré.</strong></p>
+<ul><li>
+<strong>P2 <code>source = "ifn_fh"</code></strong> (opt-in), toujours avec le groupe <code>tous</code> : les groupes de la table sont des contributions diluées sur toute la forêt de la SER.</li>
+<li>
+<strong><code><a href="reference/ifn_taux_prelevement_production.html">ifn_taux_prelevement_production()</a></code></strong> : ratio national 0,68 (IGN 0,61) ; maximum par SER 1,51 (C11), et les SER au-dessus de 1 sont dans le Nord-Est et l’Est (scolytes).</li>
+<li>
+<strong><code>min_plac = 30</code></strong> pour les estimations directes : F13 (Marais littoraux) donnait un ratio de 6,2 sur 3 placettes.</li>
+</ul><p><strong>Prochaine étape</strong> : - <strong>lot 3</strong> : <code>completer_volume_ifn(methode = "fay_herriot")</code>, avec un test d’héritage pour C1 ; - <strong>lot 4</strong> : E1 sur le flux, puis le brief app ; - <strong>en parallèle, lot 1-ter</strong> : le jeu GEDI, dès que le compte Earthdata est configuré (action de Pascal).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess">Chantier CLOS — Onglet Desserte : rendre visibles les sorties (app + foretaccess)<a class="anchor" aria-label="anchor" href="#chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess"></a></h1>

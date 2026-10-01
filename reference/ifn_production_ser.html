@@ -19,7 +19,13 @@ extracted (VEGET5 == "6"), the definition used for forest roads (spec
 
 Campaign t measures the growth of years t-5 to t-1, and
 the harvest between the first visit of a plot (t-5) and its revisit
-(t).'><meta property="og:description" content='Returns the bundled table of annual biological production recomputed from the
+(t).
+Groups are contributions, not stand figures. The "feuillus"
+and "resineux" rows are per hectare of the whole forest of the
+domain (plots without the group count as zero), so that the groups add up to
+"tous". They are not the production of a hectare of broadleaf or
+conifer stand. Ratios between two attributes of the same group (e.g. harvest /
+production) remain meaningful.'><meta property="og:description" content='Returns the bundled table of annual biological production recomputed from the
 IGN raw forest-inventory data, per sylvoecoregion (SER) and campaign, with a
 Fay-Herriot small-area estimate and its uncertainty (spec 054).
 Four attributes, all per hectare and per year:
@@ -39,7 +45,13 @@ extracted (VEGET5 == "6"), the definition used for forest roads (spec
 
 Campaign t measures the growth of years t-5 to t-1, and
 the harvest between the first visit of a plot (t-5) and its revisit
-(t).'><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
+(t).
+Groups are contributions, not stand figures. The "feuillus"
+and "resineux" rows are per hectare of the whole forest of the
+domain (plots without the group count as zero), so that the groups add up to
+"tous". They are not the production of a hectare of broadleaf or
+conifer stand. Ratios between two attributes of the same group (e.g. harvest /
+production) remain meaningful.'><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -47,7 +59,7 @@ the harvest between the first visit of a plot (t-5) and its revisit
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.201.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.202.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -169,6 +181,12 @@ extracted</strong> (<code>VEGET5 == "6"</code>), the definition used for forest 
 </ul><p>Campaign <code>t</code> measures the growth of years <code>t-5</code> to <code>t-1</code>, and
 the harvest between the first visit of a plot (<code>t-5</code>) and its revisit
 (<code>t</code>).</p>
+<p><strong>Groups are contributions, not stand figures.</strong> The <code>"feuillus"</code>
+and <code>"resineux"</code> rows are per hectare of the <strong>whole</strong> forest of the
+domain (plots without the group count as zero), so that the groups add up to
+<code>"tous"</code>. They are not the production of a hectare of broadleaf or
+conifer stand. Ratios between two attributes of the same group (e.g. harvest /
+production) remain meaningful.</p>
     </div>
 
     <div class="section level2">

@@ -35,7 +35,7 @@ Legacy mode — when chm is NULL
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.201.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.202.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -166,7 +166,9 @@ Legacy mode — when chm is NULL
 <span>  chm <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  age_field <span class="op">=</span> <span class="st">"age"</span>,</span>
 <span>  reference_age <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  h_dom_percentile <span class="op">=</span> <span class="fl">0.9</span></span>
+<span>  h_dom_percentile <span class="op">=</span> <span class="fl">0.9</span>,</span>
+<span>  source <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"ifn_fh"</span><span class="op">)</span>,</span>
+<span>  ser_field <span class="op">=</span> <span class="st">"ser"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -224,16 +226,47 @@ index is returned in CHM mode. Default <code>50</code>.</p></dd>
 of CHM pixels used to derive dominant height per unit.
 Default <code>0.9</code>.</p></dd>
 
+
+<dt id="arg-source">source<a class="anchor" aria-label="anchor" href="#arg-source"></a></dt>
+<dd><p><code>"auto"</code> (default): CHM mode when
+<code>chm</code> is supplied, legacy mode otherwise.
+<code>"ifn_fh"</code>: IFN production of the unit's
+sylvoecoregion (spec 054).</p></dd>
+
+
+<dt id="arg-ser-field">ser_field<a class="anchor" aria-label="anchor" href="#arg-ser-field"></a></dt>
+<dd><p>Character. Column holding the SER code
+(e.g. <code>"C30"</code>), used by <code>source = "ifn_fh"</code>. A
+missing or unknown SER falls back to the GRECO, then to the
+national figure. Default <code>"ser"</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>sf object with one added column:</p><ul><li><p>Legacy mode: <code>P2</code> = annual increment (m3/ha/yr).</p></li>
 <li><p>CHM mode:    <code>P2</code> = site index \(H_0\) (m) at
           <code>reference_age</code>.</p></li>
+<li><p>IFN mode:    <code>P2</code> = IFN volume production of the
+          sylvoecoregion (m3/ha/yr), plus <code>P2_rse</code>,
+          <code>P2_provenance</code>, <code>P2_nature</code>.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The two modes answer the same forestry question (how
+    <p>A third mode, <code>source = "ifn_fh"</code> (spec 054), returns
+the biological volume production measured by the national
+forest inventory for the unit's sylvoecoregion, estimated by
+Fay-Herriot (<code><a href="ifn_production_reference.html">ifn_production_reference</a></code>), in
+\(m^3/ha/yr\). It is the production of the <strong>domain</strong>,
+not of the stand's own site, all species together: the per-group
+figures of the table are diluted over the whole forest area. It adds
+three columns:
+<code>&lt;column_name&gt;_rse</code> (relative standard error, percent),
+<code>&lt;column_name&gt;_provenance</code> (<code>"ifn_prod_ser"</code>,
+<code>"ifn_prod_greco"</code> or <code>"ifn_prod_national"</code>) and
+<code>&lt;column_name&gt;_nature</code> (<code>"fay_herriot"</code>,
+<code>"direct"</code> or <code>"synthetique"</code>). It is opt-in: the
+default behaviour is unchanged.</p>
+<p>The modes answer the same forestry question (how
 productive is this site?) but in different units. Downstream
 callers should use <code><a href="compute_general_index_mixed.html">compute_general_index_mixed</a></code>
 or a mode-aware normalization when mixing units.</p>

@@ -17,7 +17,7 @@ the production of its SER."><meta property="og:image" content="https://pobsteta.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.201.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.202.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -131,9 +131,10 @@ the production of its SER.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ifn_production_reference</span><span class="op">(</span>ser <span class="op">=</span> <span class="cn">NULL</span>, attribut <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pv"</span>, <span class="st">"pg"</span><span class="op">)</span>,</span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ifn_production_reference</span><span class="op">(</span>ser <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  attribut <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pv"</span>, <span class="st">"pg"</span>, <span class="st">"prel"</span>, <span class="st">"prel_vidange"</span><span class="op">)</span>,</span>
 <span>  groupe <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"tous"</span>, <span class="st">"feuillus"</span>, <span class="st">"resineux"</span><span class="op">)</span>, n_campagnes <span class="op">=</span> <span class="fl">5L</span>,</span>
-<span>  campagnes <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span>  campagnes <span class="op">=</span> <span class="cn">NULL</span>, niveaux <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ser"</span>, <span class="st">"greco"</span>, <span class="st">"national"</span><span class="op">)</span>, min_plac <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -146,7 +147,9 @@ the national figure.</p></dd>
 
 
 <dt id="arg-attribut">attribut<a class="anchor" aria-label="anchor" href="#arg-attribut"></a></dt>
-<dd><p><code>"pv"</code> (default, m3/ha/yr) or <code>"pg"</code> (m2/ha/yr).</p></dd>
+<dd><p><code>"pv"</code> (default, m3/ha/yr), <code>"pg"</code> (m2/ha/yr),
+<code>"prel"</code> or <code>"prel_vidange"</code> (harvest, m3/ha/yr; see
+<code><a href="ifn_production_ser.html">ifn_production_ser</a></code>).</p></dd>
 
 
 <dt id="arg-groupe">groupe<a class="anchor" aria-label="anchor" href="#arg-groupe"></a></dt>
@@ -161,6 +164,18 @@ the national figure.</p></dd>
 
 <dt id="arg-campagnes">campagnes<a class="anchor" aria-label="anchor" href="#arg-campagnes"></a></dt>
 <dd><p>Explicit campaign years; overrides <code>n_campagnes</code>.</p></dd>
+
+
+<dt id="arg-niveaux">niveaux<a class="anchor" aria-label="anchor" href="#arg-niveaux"></a></dt>
+<dd><p>Levels the fallback may use, in this order. Default all
+three; restrict it to pin a level (e.g. to align two flows).</p></dd>
+
+
+<dt id="arg-min-plac">min_plac<a class="anchor" aria-label="anchor" href="#arg-min-plac"></a></dt>
+<dd><p>Minimum number of plots, summed over the campaign window,
+for a <strong>direct</strong> estimate to qualify a SER or GRECO level; below it
+the fallback moves up. Fay-Herriot estimates are not subject to it. Default
+<code>30</code>, as in <code><a href="ifn_volume_reference.html">ifn_volume_reference</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

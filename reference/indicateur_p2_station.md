@@ -28,7 +28,9 @@ indicateur_p2_station(
   chm = NULL,
   age_field = "age",
   reference_age = 50,
-  h_dom_percentile = 0.9
+  h_dom_percentile = 0.9,
+  source = c("auto", "ifn_fh"),
+  ser_field = "ser"
 )
 ```
 
@@ -86,6 +88,18 @@ indicateur_p2_station(
   Numeric in `[0, 1]`. Percentile of CHM pixels used to derive dominant
   height per unit. Default `0.9`.
 
+- source:
+
+  `"auto"` (default): CHM mode when `chm` is supplied, legacy mode
+  otherwise. `"ifn_fh"`: IFN production of the unit's sylvoecoregion
+  (spec 054).
+
+- ser_field:
+
+  Character. Column holding the SER code (e.g. `"C30"`), used by
+  `source = "ifn_fh"`. A missing or unknown SER falls back to the GRECO,
+  then to the national figure. Default `"ser"`.
+
 ## Value
 
 sf object with one added column:
@@ -94,9 +108,25 @@ sf object with one added column:
 
 - CHM mode: `P2` = site index \\H_0\\ (m) at `reference_age`.
 
+- IFN mode: `P2` = IFN volume production of the sylvoecoregion
+  (m3/ha/yr), plus `P2_rse`, `P2_provenance`, `P2_nature`.
+
 ## Details
 
-The two modes answer the same forestry question (how productive is this
+A third mode, `source = "ifn_fh"` (spec 054), returns the biological
+volume production measured by the national forest inventory for the
+unit's sylvoecoregion, estimated by Fay-Herriot
+([`ifn_production_reference`](https://pobsteta.github.io/nemeton/reference/ifn_production_reference.md)),
+in \\m^3/ha/yr\\. It is the production of the **domain**, not of the
+stand's own site, all species together: the per-group figures of the
+table are diluted over the whole forest area. It adds three columns:
+`<column_name>_rse` (relative standard error, percent),
+`<column_name>_provenance` (`"ifn_prod_ser"`, `"ifn_prod_greco"` or
+`"ifn_prod_national"`) and `<column_name>_nature` (`"fay_herriot"`,
+`"direct"` or `"synthetique"`). It is opt-in: the default behaviour is
+unchanged.
+
+The modes answer the same forestry question (how productive is this
 site?) but in different units. Downstream callers should use
 [`compute_general_index_mixed`](https://pobsteta.github.io/nemeton/reference/compute_general_index_mixed.md)
 or a mode-aware normalization when mixing units.

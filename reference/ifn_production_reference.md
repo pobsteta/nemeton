@@ -11,9 +11,10 @@ the production of its SER.
 ## Usage
 
 ``` r
-ifn_production_reference(ser = NULL, attribut = c("pv", "pg"),
+ifn_production_reference(ser = NULL,
+  attribut = c("pv", "pg", "prel", "prel_vidange"),
   groupe = c("tous", "feuillus", "resineux"), n_campagnes = 5L,
-  campagnes = NULL)
+  campagnes = NULL, niveaux = c("ser", "greco", "national"), min_plac = 30)
 ```
 
 ## Arguments
@@ -25,7 +26,9 @@ ifn_production_reference(ser = NULL, attribut = c("pv", "pg"),
 
 - attribut:
 
-  `"pv"` (default, m3/ha/yr) or `"pg"` (m2/ha/yr).
+  `"pv"` (default, m3/ha/yr), `"pg"` (m2/ha/yr), `"prel"` or
+  `"prel_vidange"` (harvest, m3/ha/yr; see
+  [`ifn_production_ser`](https://pobsteta.github.io/nemeton/reference/ifn_production_ser.md)).
 
 - groupe:
 
@@ -38,6 +41,19 @@ ifn_production_reference(ser = NULL, attribut = c("pv", "pg"),
 - campagnes:
 
   Explicit campaign years; overrides `n_campagnes`.
+
+- niveaux:
+
+  Levels the fallback may use, in this order. Default all three;
+  restrict it to pin a level (e.g. to align two flows).
+
+- min_plac:
+
+  Minimum number of plots, summed over the campaign window, for a
+  **direct** estimate to qualify a SER or GRECO level; below it the
+  fallback moves up. Fay-Herriot estimates are not subject to it.
+  Default `30`, as in
+  [`ifn_volume_reference`](https://pobsteta.github.io/nemeton/reference/ifn_volume_reference.md).
 
 ## Value
 

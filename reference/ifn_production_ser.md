@@ -26,6 +26,13 @@ Four attributes, all per hectare and per year:
 Campaign `t` measures the growth of years `t-5` to `t-1`, and the
 harvest between the first visit of a plot (`t-5`) and its revisit (`t`).
 
+**Groups are contributions, not stand figures.** The `"feuillus"` and
+`"resineux"` rows are per hectare of the **whole** forest of the domain
+(plots without the group count as zero), so that the groups add up to
+`"tous"`. They are not the production of a hectare of broadleaf or
+conifer stand. Ratios between two attributes of the same group (e.g.
+harvest / production) remain meaningful.
+
 ## Usage
 
 ``` r
