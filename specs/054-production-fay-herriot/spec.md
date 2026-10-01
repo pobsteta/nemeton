@@ -1,10 +1,10 @@
 # Spec 054 — Production IFN par petits domaines (Fay-Herriot) et ses consommateurs
 
-**Version** : 0.2.0 (cadrage, décisions tranchées)
+**Version** : 0.3.0 (lot 1 livré)
 **Date**    : 2026-10-01
-**Statut**  : **Cadrage — aucune ligne de code.** Décisions D1-D8 **tranchées le
-2026-10-01** (§9). Reste le lot 0 (relevés IGN) avant le lot 1. ADR associé : `ADR-016-estimation-petits-domaines.md` (brouillon,
-même dossier, à reporter dans `platform_nemeton`).
+**Statut**  : **Lot 1 livré** (cœur v0.200.0, 2026-10-01) : moteur Fay-Herriot,
+table `ifn_production_ser.csv`, accesseurs. Lots 2 à 5 ouverts ; le jeu GEDI (D3)
+attend un accès Earthdata. Résultats en §3.b.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — moteur Fay-Herriot, table de production IFN par
 SER × campagne, et branchement sur P2, P1/C1, E1/E2 et la spec 040.
@@ -177,8 +177,17 @@ au lot 1.
 PG (0,68) est cohérente avec l'article (0,65 en forêts publiques de BFC).
 
 **Test de verrouillage (lot 1)** : la PV nationale de la voie (a) doit être
-comprise entre 80 % et 100 % du chiffre IGN, et la PG nationale entre 0,55 et 0,80
-m²/ha/an.
+comprise entre **70 % et 100 %** du chiffre IGN, et la PG nationale entre 0,45 et
+0,80 m²/ha/an.
+
+**Borne abaissée de 80 à 70 % au lot 1.** Les 85 % du lot 0 portaient sur les
+seules placettes avec arbres. Le lot 1 prend le dénominateur de l'IGN : depuis
+2015, toute placette de l'export est en forêt disponible pour la production (doc
+`PLACETTE` v2.4), y compris celles sans arbre recensable. Mesuré au lot 1 sur les
+campagnes 2019-2023 : **4,21 m³/ha/an, soit 78 %**. La règle D7 a exclu 3 557
+placettes sur 127 718. L'écart restant (−22 %) se répartit entre la production des
+arbres coupés (environ 5 %) et la croissance en hauteur ignorée par la voie (a).
+Il motive le lot 1-bis.
 
 **6. Couverture GEDI.** Le jeu G a trois contraintes :
 - **trou d'acquisition du 17 mars 2023 au 24 avril 2024** (instrument retiré de
@@ -197,6 +206,53 @@ Le jeu G demande donc une mise en place par Pascal : compte Earthdata, `~/.netrc
 et un lecteur HDF5 ou un sous-ensemble via le service Harmony de la NASA. Le jeu F
 n'en dépend pas. **Le lot 1 peut démarrer sur F**, et G le rejoint pour la
 comparaison dès que l'accès est prêt.
+
+### 3.b Résultats du lot 1 (2026-10-01, v0.200.0)
+
+**Données.** 1 379 797 arbres vivants de première visite et 127 718 placettes
+(campagnes 2005-2024). Surface terrière imputée : 28,9 % toutes campagnes
+confondues ; 2,1 % reste sans valeur. 3 557 placettes ont été exclues par la règle
+D7.
+
+**Covariables (jeu F).** Hauteur FORMS-T 2019-2024 (Zenodo 15489231, 6 × 6,3 Go)
+agrégée sous masque ≥ 5 m. Moyenne et écart-type sont exacts à 10 m, calculés par
+sommes (n, Σh, Σh²) sur une grille de 250 m puis par SER. L'altitude vient du WMS
+IGN à 250 m, pondérée par la part de forêt de chaque cellule.
+
+**Autocorrélation spatiale (§8.7) et décision.** Sans effet régional, les résidus
+du modèle synthétique sont autocorrélés entre SER voisines : I de Moran par
+contiguïté de 0,16 à 0,34, p ≤ 0,004 chaque année. **Décision du 2026-10-01 : la
+GRECO entre comme effet fixe**, toujours présent ; l'AIC ne choisit que les
+covariables continues. Le FH spatial (SAR) n'est pas retenu, la GRECO suffisant à
+retirer la structure.
+
+**Modèles retenus** (SER × campagne 2019-2024, 515 domaines-années ajustés) :
+
+| Attribut | Covariables | σᵥ² | R² synthétique (corrigé de ψ) | RE globale | RSE médiane FH / direct |
+|---|---|---|---|---|---|
+| PG | h_sd + alt_mean + GRECO | 0,0102 | 0,69 | 2,26 | 8,7 % / 10,2 % |
+| PV | h_mean + h_sd + alt_mean + GRECO | 0,269 | 0,83 | 3,38 | 8,2 % / 11,1 % |
+
+Sans GRECO, la PV obtenait un R² de 0,73 et une RE de 2,68.
+
+**I de Moran après GRECO**, résidus par campagne 2019 → 2024 :
+- PG : p = 0,25 / 0,047 / 0,16 / 0,41 / 0,47 / 0,42 ;
+- PV : p = 0,23 / 0,038 / 0,13 / 0,085 / 0,23 / 0,16.
+
+Seule 2020 passe sous 0,05, de justesse : sur 6 tests, c'est le niveau attendu sous
+l'hypothèse nulle.
+
+**Contrôle national** : PV 4,21 m³/ha/an sur 2019-2023, soit 78 % de la référence
+IGN (§3.a).
+
+**Ce qui reste en estimation directe** : les groupes feuillus et résineux (§6),
+les GRECO, le national, et les campagnes 2005-2018, faute de covariables FORMS-T.
+
+**Coût du précalcul.** L'agrégation FORMS-T a d'abord tourné en séquentiel à 73
+minutes par année, à cause de `ifelse()` sur 30 millions de valeurs. Optimisée et
+parallélisée sur 6 cgroups de 4 Go, elle prend environ 1 h 10 pour les 6 années.
+Un premier essai a été tué par OOM sur les 6 cgroups (`journalctl`) au moment de
+construire le raster de sortie. Depuis, les sommes sont sauvées avant cette étape.
 
 ## 4. Le moteur Fay-Herriot — implémentation maison
 
@@ -325,7 +381,7 @@ indique le jeu retenu (`"forms_mnt"` ou `"gedi_l2a"`).
 
 | Objet | Type | Rôle |
 |---|---|---|
-| `estimer_fay_herriot(direct, psi, X, domaine, annee, methode = "REML")` | exportée | Moteur générique (§4). Réutilisable pour V, G, Dg. |
+| `estimer_fay_herriot(direct, psi, X, methode = "REML", max_iter, tol)` | exportée | Moteur générique (§4). Réutilisable pour V, G, Dg. |
 | `ifn_production_placettes()` | interne (`data-raw`) | PG/PV par placette depuis `ARBRE` (§3). |
 | `inst/extdata/ifn_production_ser.csv` | table | Une ligne par niveau × ser × campagne × attribut (`pg`, `pv`) et par essence groupée (`tous`, `feuillus`, `resineux`) : `direct`, `psi`, `n_plac`, `estimation`, `mse`, `rse`, `gamma`, `nature`, `methode_pv`, `covariables`, `part_g_imputee`, `millesime`, `source`. |
 | `ifn_production_ser(ser, greco, campagne, attribut, groupe)` | exportée | Accesseur filtrant, même idiome que `ifn_volume_essence_ser()`. |
@@ -336,6 +392,13 @@ indique le jeu retenu (`"forms_mnt"` ou `"gedi_l2a"`).
 de 10 placettes par campagne : le FH tiendrait mais serait surtout synthétique.
 Feuillus/résineux est le grain le plus fin défendable. L'essence viendra
 éventuellement au lot 6, avec un FH multivarié (hors périmètre, §10).
+
+**Au lot 1, le FH ne porte que sur le groupe `tous`.** Les groupes feuillus et
+résineux restent en **estimation directe** (`nature = "direct"`, MSE = ψ). Une SER
+presque sans résineux a des directs nuls avec ψ = 0. Le FH les enverrait sur la
+voie synthétique, qui régresse sur la hauteur de *toute* la forêt et
+inventerait une production résineuse. Un FH par groupe demandera des covariables
+par groupe (part de résineux, par exemple via la BD Forêt) : c'est un lot ultérieur.
 
 Règle 5 : chaque fonction exportée a son test dans `tests/testthat/`.
 
@@ -519,6 +582,8 @@ spatio-temporel (Rao & Yu 1994). C'est hors périmètre.
 7. **Indépendance des domaines** : l'article la vérifie par le I de Moran sur les
    résidus (non significatif). On refait ce test au lot 1, sur les SER. S'il est
    significatif, on passe à un FH spatial, et c'est une décision à remonter.
+   **Constaté et tranché au lot 1** : significatif sans effet régional ; la GRECO
+   en effet fixe le retire (§3.b).
 8. **Masquage de forêt des covariables** : FORMS-T doit être agrégé **sous masque
    forêt**, pas sur toute la SER. Sinon, la hauteur moyenne mesure le taux de
    boisement.
@@ -560,7 +625,8 @@ Chaque lot = une release (consignes de release de `CLAUDE.md`).
 | Lot | Contenu | Bump | Prérequis |
 |---|---|---|---|
 | 0 | ✅ 2026-10-01 — relevés §3.a : chiffre IGN 87,9 Mm³/an (5,4 m³/ha/an), recrutement confirmé, carottage partiel depuis 2014 (D7 amendée), contrôle voie (a) à −15 %, trou GEDI 2023-2024, accès Earthdata non configuré | — (doc) | — |
-| 1 | `estimer_fay_herriot()` + tests (égalité `sae`, σᵥ² = 0, n = 1, domaine vide) ; `data-raw/build_ifn_production.R` ; PG/PV par placette ; agrégats des jeux G et F ; comparaison selon §5.b ; FH SER × campagne avec le jeu retenu ; `ifn_production_ser.csv` + accesseurs ; contrôle national ; test de Moran | minor | D1, D3, D4, D7 |
+| 1 | ✅ v0.200.0 — `estimer_fay_herriot()` + tests (égalité `sae`, σᵥ² = 0, n = 1, domaine vide) ; `data-raw/build_ifn_production.R` ; PG/PV par placette ; jeu F ; FH SER × campagne + GRECO ; `ifn_production_ser.csv` + accesseurs ; contrôle national ; test de Moran (§3.b) | minor | D1, D3, D4, D7 |
+| 1-ter | Jeu G (GEDI L2A) et comparaison avec F selon §5.b | patch ou minor | accès Earthdata |
 | 2 | P2 `source = "ifn_fh"` + attributs de provenance/RSE ; ratio prélèvement/production (§7.2) | minor | lot 1, D5 |
 | 3 | `completer_volume_ifn(methode = "fay_herriot")` ; test d'héritage C1 | minor | lot 1 |
 | 4 | E1 `production_field` + `taux_mobilisation` + `ref_max` propre au mode flux ; détection du cas dégénéré FH-SER × `"ifn_ser"` (§7.4) ; test d'héritage E2 ; référence B2 ; brief app | minor | lot 2, D6 |

@@ -266,6 +266,16 @@ reference:
     - resoudre_espar
     - completer_volume_ifn
 
+  - title: "Production IFN par petits domaines (Fay-Herriot)"
+    desc: >
+      Production biologique recalculee depuis les donnees brutes IFN (IR5),
+      par sylvoecoregion et campagne, estimee par Fay-Herriot avec son
+      incertitude (spec 054, ADR-016)
+    contents:
+    - estimer_fay_herriot
+    - ifn_production_ser
+    - ifn_production_reference
+
   - title: "Acces aux donnees brutes IFN"
     desc: >
       Telechargement et chargement de l'export annuel de l'IGN
