@@ -1,3 +1,29 @@
+# nemeton 0.207.1 (2026-10-02)
+
+### Fixed — un run RECONFORT ne resservait plus que l'ancienne classification
+
+Les deux parties d'IOTA² tournent avec `-restart`, pour qu'un run mort ou
+annulé reprenne là où il s'est arrêté. Mais une fois un run **terminé**, le
+fichier d'état d'IOTA² marque toutes les tâches comme faites : le run suivant
+sur la même zone et la même année ne refaisait presque rien. La fusion et la
+mosaïque gardaient leurs rasters, et `final/` était reconstruit à partir d'eux.
+
+Constaté sur la zone 9 du projet ltcp, relancée le 2026-09-23 après le
+correctif iota2 #12 : deux morceaux recalculés en uint16, jusqu'à 1000, mais
+`final/` masqué depuis la mosaïque de juillet, écrêtée à 255 (score 24 à 58).
+**Aucun run ne pouvait donc profiter d'un correctif de l'environnement, du
+modèle ou des scènes S2**, et le correctif #12 n'avait en réalité jamais été
+exercé jusqu'au bout.
+
+`run_reconfort_dieback()` efface désormais, avant la production de cartes, le
+dossier de résultats IOTA² d'un run terminé (repéré par `final/run_meta.json`,
+écrit seulement en fin de run). Un run mort ou annulé n'en a pas et reprend
+toujours. Les sorties déjà publiées sous `zone_<id>/run_<horodatage>/` ne sont
+pas touchées.
+
+**À faire** : relancer les cinq runs écrêtés (écart n° 13) ; ils recalculeront
+cette fois la classification.
+
 # nemeton 0.207.0 (2026-10-02)
 
 ### Fixed — P2 en mode CHM ne sature plus à la normalisation (écart n° 17)

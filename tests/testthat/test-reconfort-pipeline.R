@@ -218,6 +218,32 @@ test_that(".reconfort_iota2_diagnosis reste muet plutot que faux", {
   expect_match(msg[[1]], "died before writing one")
 })
 
+test_that(".reconfort_reset_finished_results efface un run termine, garde un run a reprendre", {
+  # Run termine (final/run_meta.json present) : sous -restart, IOTA2 sauterait
+  # toutes ses taches et resservirait l'ancienne mosaique (ltcp, 2026-09-23).
+  wd <- withr::local_tempdir()
+  res <- file.path(wd, "results", "iota2_results_classif_labels-z9-S2_2025")
+  autre <- file.path(wd, "results", "iota2_results_classif_labels-z9-S2_2026")
+  dir.create(file.path(res, "final"), recursive = TRUE)
+  dir.create(file.path(autre, "final"), recursive = TRUE)
+  file.create(file.path(res, "final", "run_meta.json"))
+  file.create(file.path(autre, "final", "run_meta.json"))
+
+  expect_true(.reconfort_reset_finished_results(wd, "z9", 2025L, quiet = TRUE))
+  expect_false(dir.exists(res))
+  # Une autre annee du meme label n'est pas touchee.
+  expect_true(file.exists(file.path(autre, "final", "run_meta.json")))
+
+  # Run mort ou annule : pas de run_meta.json, on garde tout pour la reprise.
+  dir.create(file.path(res, "classif"), recursive = TRUE)
+  file.create(file.path(res, "IOTA2_tasks_status.txt"))
+  expect_false(.reconfort_reset_finished_results(wd, "z9", 2025L, quiet = TRUE))
+  expect_true(file.exists(file.path(res, "IOTA2_tasks_status.txt")))
+
+  # Aucun dossier : rien a faire, pas d'erreur.
+  expect_false(.reconfort_reset_finished_results(wd, "z53", 2025L, quiet = TRUE))
+})
+
 test_that("le nombre de chunks suit le plafond memoire, jamais au-dessus de 240 lignes", {
   skip_if_not_installed("terra")
   # L'AOI de Couchey : 1160 x 886. A 240 lignes fixes -> 4 chunks de 221 lignes,
