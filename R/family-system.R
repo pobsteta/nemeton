@@ -256,7 +256,12 @@ create_family_index <- function(data,
         indicator_data[, j] <- pmin(100, pmax(0, raw))
         next
       }
-      normed <- normalize_indicator(col_name, raw)
+      # Statut d'unite porte par une colonne compagne (`p2_status`, ou
+      # `.p2_status` comme la conserve l'app) : P2 en mode CHM est en metres.
+      code <- tolower(sub("^indicateur_([a-z][0-9]+)_.*$", "\\1", col_name))
+      st_col <- intersect(paste0(c("", "."), code, "_status"), names(data))
+      statut <- if (length(st_col)) as.character(data[[st_col[1]]]) else NULL
+      normed <- normalize_indicator(col_name, raw, statut = statut)
       # Garde-fou : quand aucune règle explicite ne s'applique, la normalisation
       # retombe sur un écrêtage naïf. Sur une colonne dont les valeurs sortent de
       # [0, 100], cet écrêtage est une mutilation silencieuse — le score de

@@ -10,6 +10,13 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.207.0] - 2026-10-02
+
+### Fixed
+- P2 en mode CHM (indice de station en mètres) normalisé contre 40 m au lieu de
+  15 : colonne `p2_status`, argument `statut` de `normalize_indicator()`, lu
+  par `create_family_index()`.
+
 ## [0.206.0] - 2026-10-01
 
 ### Changed

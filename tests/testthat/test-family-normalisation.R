@@ -129,3 +129,18 @@ test_that("massif_demo_units uses its own _norm columns", {
   attendu <- (massif_demo_units$C1_norm + massif_demo_units$C2_norm) / 2
   expect_equal(out$famille_carbone, attendu, tolerance = 1e-6)
 })
+
+test_that("P2 uses a 40 m ceiling for a site index, 15 for a production (ecart 17)", {
+  expect_equal(normalize_indicator("indicateur_p2_station", 18.5, statut = "indice_station_m"), 46.25)
+  expect_equal(normalize_indicator("P2", 18.5), 100)          # production : inchange
+  expect_equal(normalize_indicator("P2", 7.5), 50)
+  expect_equal(normalize_indicator("P2", c(7.5, 20), statut = c(NA, "indice_station_m")), c(50, 50))
+  # create_family_index lit la colonne compagne, avec ou sans point (app).
+  for (col in c("p2_status", ".p2_status")) {
+    d <- data.frame(P2 = c(20, 20), stringsAsFactors = FALSE)
+    d[[col]] <- c("indice_station_m", NA)
+    u <- sf::st_sf(d, geometry = sf::st_sfc(sf::st_point(c(0, 0)), sf::st_point(c(1, 1)), crs = 2154))
+    f <- suppressMessages(create_family_index(u))
+    expect_equal(f$famille_production, c(50, 100))
+  }
+})
