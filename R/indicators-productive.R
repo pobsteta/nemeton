@@ -313,7 +313,9 @@ indicateur_p1_volume <- function(units,
 #'   \itemize{
 #'     \item Legacy mode: \code{P2} = annual increment (m3/ha/yr).
 #'     \item CHM mode:    \code{P2} = site index \eqn{H_0} (m) at
-#'           \code{reference_age}.
+#'           \code{reference_age}, plus \code{p2_status =
+#'           "indice_station_m"} so that normalisation uses a 40 m
+#'           ceiling (\code{\link{normalize_indicator}}).
 #'     \item IFN mode:    \code{P2} = IFN volume production of the
 #'           sylvoecoregion (m3/ha/yr), plus \code{P2_rse},
 #'           \code{P2_provenance}, \code{P2_nature}.
@@ -429,6 +431,10 @@ indicateur_p2_station <- function(units,
 
     result <- units
     result[[column_name]] <- site_index
+    # Unite de P2 dans ce mode : des metres, pas des m3/ha/an. La colonne de
+    # statut voyage jusqu'a la normalisation (normalize_indicator(statut =),
+    # create_family_index()) ; l'app la conserve en `.p2_status` (ecart n. 17).
+    result$p2_status <- ifelse(is.na(site_index), NA_character_, "indice_station_m")
 
     cli::cli_alert_success(
       "Calculated {column_name}: site index H0 at {reference_age} years (m) via CHM"

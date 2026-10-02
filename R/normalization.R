@@ -545,6 +545,12 @@ invert_indicator <- function(data,
 #'
 #' @param indicator Character. Indicator name (NMT convention).
 #' @param values Numeric vector. Raw indicator values.
+#' @param statut Optional character vector (one value per element of
+#'   `values`, or one for all) telling what a value measures when an
+#'   indicator has several units. Used for P2: `"indice_station_m"` marks a
+#'   site index in metres (CHM mode of [indicateur_p2_station()], status
+#'   column `p2_status`), normalised against 40 m instead of the 15 m3/ha/yr
+#'   of the production modes. `NULL` (default) keeps the production scale.
 #'
 #' @return Numeric vector. Normalized values (0-100).
 #'
@@ -596,7 +602,7 @@ invert_indicator <- function(data,
   if (length(hit) == 1L) hit else indicator
 }
 
-normalize_indicator <- function(indicator, values) {
+normalize_indicator <- function(indicator, values, statut = NULL) {
   # Les deux écritures (courte et longue) suivent la même règle.
   indicator <- .normalize_resolve_alias(indicator)
 
@@ -621,6 +627,11 @@ normalize_indicator <- function(indicator, values) {
     # vieux = mieux, pas d'inversion.
     "indicateur_t1_anciennete" = 200,
     "indicateur_p1_volume" = 800,
+    # P2 en m3/ha/an (modes historique et IFN) : 15 est le maximum de
+    # productivity_tables.csv (3,2 a 15). En mode CHM, P2 est un indice de
+    # station H0 en METRES (9 a 37 m, courbes Duplat) : avec 15, la plupart des
+    # peuplements saturaient a 100 (ecart n. 17, 2026-10-02). Plafond 40 m
+    # applique ligne a ligne selon `statut` (colonne p2_status), plus bas.
     "indicateur_p2_station" = 15,
     # E1 et E2 sont, a 0,1 % pres, LE MEME NOMBRE : E2 se calcule depuis E1
     # (E1 x 4500 kWh x 0,222 kgCO2/kWh / 1000 = E1 x 0,999, scenario gaz par
@@ -784,6 +795,11 @@ normalize_indicator <- function(indicator, values) {
   # every unit into the bottom half of the scale for a second time.
   if (indicator %in% c("indicateur_l3_het_spectrale", "L3")) {
     return(pmin(100, pmax(0, values / .L3_MAX_DISPERSION * 100)))
+  }
+
+  if (identical(indicator, "indicateur_p2_station") && !is.null(statut)) {
+    statut <- rep_len(as.character(statut), length(values))
+    ref_max <- ifelse(!is.na(statut) & statut == "indice_station_m", 40, ref_max)
   }
 
   if (!is.null(ref_max)) {

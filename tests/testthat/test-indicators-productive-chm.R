@@ -365,3 +365,17 @@ test_that("P1 CHM mode correlates with legacy mode on varied stands", {
   )
   expect_true(rho > 0.7)
 })
+
+test_that("CHM mode flags its unit so normalisation does not saturate (ecart 17)", {
+  skip_if_not_installed("terra")
+  chm   <- make_fixture_chm(add_artefacts = FALSE)
+  units <- .make_units_over_chm(chm, n = 4,
+                                species = c("FASY", "PIAB", "QUPE", "PSME"),
+                                age = c(60, 45, 80, 30))
+  res <- suppressMessages(indicateur_p2_station(units, chm = chm))
+  expect_true("p2_status" %in% names(res))
+  expect_true(all(res$p2_status[!is.na(res$P2)] == "indice_station_m"))
+  # Plafond 40 m au lieu de 15 : un H0 de 20 m ne vaut plus 100.
+  n <- normalize_indicator("indicateur_p2_station", res$P2, statut = res$p2_status)
+  expect_equal(n, pmin(100, res$P2 / 40 * 100))
+})

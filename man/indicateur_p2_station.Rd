@@ -65,7 +65,9 @@ sf object with one added column:
   \itemize{
     \item Legacy mode: \code{P2} = annual increment (m3/ha/yr).
     \item CHM mode:    \code{P2} = site index \eqn{H_0} (m) at
-          \code{reference_age}.
+          \code{reference_age}, plus \code{p2_status =
+          "indice_station_m"} so that normalisation uses a 40 m
+          ceiling (\code{\link{normalize_indicator}}).
     \item IFN mode:    \code{P2} = IFN volume production of the
           sylvoecoregion (m3/ha/yr), plus \code{P2_rse},
           \code{P2_provenance}, \code{P2_nature}.

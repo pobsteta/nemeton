@@ -4,12 +4,19 @@
 \alias{normalize_indicator}
 \title{Normalize a single indicator to 0-100 scale}
 \usage{
-normalize_indicator(indicator, values)
+normalize_indicator(indicator, values, statut = NULL)
 }
 \arguments{
 \item{indicator}{Character. Indicator name (NMT convention).}
 
 \item{values}{Numeric vector. Raw indicator values.}
+
+\item{statut}{Optional character vector (one value per element of
+\code{values}, or one for all) telling what a value measures when an
+indicator has several units. Used for P2: \code{"indice_station_m"} marks a
+site index in metres (CHM mode of \code{\link{indicateur_p2_station}}, status
+column \code{p2_status}), normalised against 40 m instead of the 15 m3/ha/yr
+of the production modes. \code{NULL} (default) keeps the production scale.}
 }
 \value{
 Numeric vector. Normalized values (0-100).
