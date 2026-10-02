@@ -10917,7 +10917,7 @@ when the AOI’s edge candidates fell on NA pixels.
 
 Root cause : `.stratify()` produced strata strings like `"NA_FEU_BAS"`
 for candidates with `mean_height = NA` or `mean_tpi = NA`.
-[`spsurvey::grts()`](https://usepa.github.io/spsurvey/reference/grts.html)
+[`spsurvey::grts()`](https://rdrr.io/pkg/spsurvey/man/grts.html)
 silently dropped those rows from the frame, leaving a downstream size
 mismatch on the `[<-` assignment that brought the size back to the full
 pool.
@@ -12532,7 +12532,7 @@ Total suite: 5994 PASS / 0 FAIL.
     and falls back to free text when the region is unknown.
   - `generate_health_validation_plots(alerts_sf, n, method, crs)` —
     stratified draw on `confidence_class`. Uses
-    [`spsurvey::grts()`](https://usepa.github.io/spsurvey/reference/grts.html)
+    [`spsurvey::grts()`](https://rdrr.io/pkg/spsurvey/man/grts.html)
     when available, falls back to per-stratum random sampling otherwise
     (the `sampling_method` column of the result tracks which path ran).
     Internal `.allocate_health_strata()` distributes the budget with a
@@ -12942,8 +12942,8 @@ Total suite: 5994 PASS / 0 FAIL.
   listing the concrete reasons —
   e.g. `"Skipping GRTS: no usable stratification (single stratum, no CHM, no DEM, no BD Foret 'tfv' field). Falling back to LPM2 / random."`
   The two already-reported cases (thin strata and
-  [`spsurvey::grts`](https://usepa.github.io/spsurvey/reference/grts.html)
-  errors) are unchanged.
+  [`spsurvey::grts`](https://rdrr.io/pkg/spsurvey/man/grts.html) errors)
+  are unchanged.
 
 ## nemeton 0.19.7 (2026-04-24)
 
@@ -13156,8 +13156,8 @@ Total suite: 5994 PASS / 0 FAIL.
   function. It builds a candidate grid, applies terrain constraints
   (slope / forest cover), stratifies on CHM height quartiles / BD Forêt
   tfv / TPI terciles, and draws plots via
-  [`spsurvey::grts`](https://usepa.github.io/spsurvey/reference/grts.html)
-  when strata are viable, falling back to
+  [`spsurvey::grts`](https://rdrr.io/pkg/spsurvey/man/grts.html) when
+  strata are viable, falling back to
   [`BalancedSampling::lpm2`](https://rdrr.io/pkg/BalancedSampling/man/lpm.html),
   then to a plain spatial random draw — each step surfaced via an
   attached `"method"` attribute on the result.
@@ -13981,7 +13981,7 @@ All legacy indicators had superior replacements available since v0.2.0
     (rayon 100m)
 - **Tirage GRTS stratifié** - Échantillonnage spatialement équilibré
   - Package
-    [`spsurvey::grts()`](https://usepa.github.io/spsurvey/reference/grts.html)
+    [`spsurvey::grts()`](https://rdrr.io/pkg/spsurvey/man/grts.html)
     avec allocation proportionnelle
   - Oversample par strate pour placettes de remplacement
   - Fallback

@@ -46,7 +46,7 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 | 6 | B4/L3 : les valeurs changent de sens et d’échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Interdit accusé réception le 2026-09-23** (brief app `BRIEF-nemeton-plan-md-0.143.17-0.143.28.md`) : aucun écran ne classe, ne compare ni ne moyenne B4/L3 entre projets — l’app n’a pas de vue inter-projets. **Reste ouvert sur un seul point : question B02 en attente côté app** — B02 absente de l’espace k-means, remplacée par `ID` (point 4 du brief), pas encore instruite |
 | 13 | **RECONFORT : 5 runs écrêtés par le défaut iota2 \#12, à relancer** (la partie app — `include_range`, couche P(atteinte), libellés — est refermée) | cœur **v0.199.0** + **v0.207.1** + app **v0.144.2** | **re-runs** (données) | Correctif \#12 appliqué à l’env `nemeton-reconfort` le 2026-09-23. **Reste** : relancer RECONFORT sur armn z5 (2025 et 2026), ltcp z9, hwuy z49, yuxn z53 — tous encore écrêtés (max des bandes = 255, score 24–58), relu le 2026-09-23. Score continu et `stress_index` faux d’ici là ; classes et alertes justes. Premier run post-correctif : vérifier max des bandes ~1000 et score jusqu’à ~100. **2026-10-02 (cœur v0.207.1)** : le run ltcp du 2026-09-23 au soir, postérieur au correctif, **n’avait rien recalculé** — `-restart` sautait toutes les tâches d’un run terminé et resservait la mosaïque de juillet (deux chunks neufs en uint16 jusqu’à 1000, `final/` toujours à 255). Corrigé : un run terminé voit ses résultats IOTA² effacés avant la relance. **Les relances n’ont de sens qu’avec un cœur ≥ 0.207.1** installé côté app. **Relances du 2026-10-02 (cœur 0.207.1)** : ltcp z9 2025 ✅ (2 658 alertes, proba max 1000, score 1–98), yuxn z53 2025 ✅ (936, 999, 94), armn z5 2025 ✅ (1 805, 1000, 96), hwuy z49 2025 ✅ (2 492, 1000, 97). **Correctif \#12 validé.** Reste **armn z5 2026** (ingestion de 170 scènes 2026, en cours). hwuy a échoué deux fois dans le pipeline à l’étape IOTA² *tile’s envelope* (`envelope/TMP/T31TFN.shp` jamais écrit) ; la même étape passe isolée, sous l’environnement exact du run, et dans la partie 1 lancée à la main — c’est ce qui a débloqué. **Cause non trouvée**, à instrumenter si elle revient |
-| 16 | Validation §6 du brief production IFN sur un projet réel | app **v0.152.0** | terrain | Vérifiée seulement sur deux UGF synthétiques en C51 (P2 = 5,37 m³/ha/an, RSE 2,6 % ; E1 `"ifn_ser"` → `recolte_observee`, E1 à 0,6 → `ressource_flux`). Inclure un chargement FORMS-T réel (prédicteur `"hybride"` attendu dans le panneau du massif) : non vérifié, clé Theia du poste de dev en 403 au 2026-10-02 |
+| 16 | Validation §6 du brief production IFN sur un projet réel | app **v0.152.0** | terrain | Vérifiée seulement sur deux UGF synthétiques en C51 (P2 = 5,37 m³/ha/an, RSE 2,6 % ; E1 `"ifn_ser"` → `recolte_observee`, E1 à 0,6 → `ressource_flux`). Chargement FORMS-T **vérifié en réel** le 2026-10-02 (Dabo : prévision hybride 6,58 contre 7,56 m³/ha/an en SER). Reste la validation métier dans l’app sur un projet recalculé en mode IFN |
 
 **Quatre écarts (n° 3, n° 6 résiduel, n° 13 résiduel, n° 16), aucun
 n’appelle plus de correctif dans le cœur.** Les n° 15 et 17 sont
@@ -341,10 +341,20 @@ merge `546a2d74`, cycle `0.152.0.9000` → `0.152.1`) : **écarts n° 15 et
   Chargement FORMS-T non vérifié en réel (clé Theia du poste refusée,
   403).
 
+**Journal** — *2026-10-02* (doc seule, app v0.152.1 inchangée) :
+**chargement FORMS-T vérifié en réel** après renouvellement de la clé
+Theia du poste de dev. Sur Dabo (774 ha, SER D11, MNT LiDAR 0,5 m), la
+production du massif passe de 7,56 (prévision SER) à **6,58 m³/ha/an**
+en prévision **hybride** (FORMS-T 2024, RSE 10,5 %, 1 placette,
+`hors_calibrage = TRUE`), en 24 s. Recoupé côté cœur :
+`load_theia_source("forms_t", asset = "height")` signe et lit une
+emprise de 2 × 2 km en 10 s. Reste la validation métier §6 (écart n°
+16).
+
 **Prochaine étape** : - **app** : brief câblé en entier (v0.152.0 +
-v0.152.1). Reste la validation §6 sur un projet réel (écart n° 16), qui
-doit inclure un premier chargement réel de FORMS-T (prédicteur
-`"hybride"` attendu dans le panneau du massif).
+v0.152.1). Reste la validation §6 sur un projet réel (écart n° 16) : un
+utilisateur juge la plausibilité de P2 IFN et E1 flux dans l’app
+(FORMS-T vérifié en réel le 2026-10-02).
 
 ------------------------------------------------------------------------
 
@@ -13275,7 +13285,7 @@ changement cœur `nemeton`.
   v0.25.0), donc le bump correct était `v0.25.0 → v0.25.1`. **Cause
   racine** : `.stratify()` (R/sampling_plan.R:169-210) produit des
   chaînes type `"NA_FEU_BAS"` quand `mean_height` ou `mean_tpi` est NA.
-  [`spsurvey::grts()`](https://usepa.github.io/spsurvey/reference/grts.html)
+  [`spsurvey::grts()`](https://rdrr.io/pkg/spsurvey/man/grts.html)
   reçoit la frame complète avec ces strates “NA\_\*” et drop
   silencieusement ces rows ; l’assignment downstream `[<-` détecte la
   mismatch et plante en français (msg système R). **Fix** dans
@@ -14274,8 +14284,8 @@ changement cœur `nemeton`.
   (avec fallback texte si la config régionale est absente). (2)
   `generate_health_validation_plots(alerts_sf, n, method, crs)` : tirage
   stratifié par `confidence_class`, GRTS via
-  [`spsurvey::grts()`](https://usepa.github.io/spsurvey/reference/grts.html)
-  quand le package est disponible (repli silencieux sur tirage aléatoire
+  [`spsurvey::grts()`](https://rdrr.io/pkg/spsurvey/man/grts.html) quand
+  le package est disponible (repli silencieux sur tirage aléatoire
   intra-strate sinon, taggé dans `sampling_method`), helper
   `.allocate_health_strata()` qui distribue le budget `n` à la
   largest-remainder method en respectant la capacité par strate et
