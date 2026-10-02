@@ -15,7 +15,7 @@ owner of the IFN tarif. This function only converts and weights."><meta property
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.207.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -227,7 +227,9 @@ mechanically over-weighting large parcels.</p></li>
 
 <p><code>taux_prelevement</code> is a <strong>yearly flux</strong> in m3/ha/year, not a fraction,
 so <code>horizon_ans</code> is required with it:
-<code>volume = P1 x taux x horizon_ans</code>. A harvest rate describes what
+<code>volume = taux x horizon_ans</code>, capped by the standing volume P1 (which
+also carries the <code>NA</code> of an uninventoried parcel). Before 0.208.0 the rate
+was multiplied by P1 as well, mixing a stock and a flux. A harvest rate describes what
 <strong>has been</strong> removed, not what <strong>should</strong> be; sizing a road network on
 it assumes management carries on unchanged.</p>
 <p><code>taux_prelevement = NULL</code> resolves the rate from the IFN species x

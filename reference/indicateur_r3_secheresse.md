@@ -40,7 +40,8 @@ indicateur_r3_secheresse(
 
   Optional list with `precip` (monthly precipitation vector in mm) and
   `temp` (list with `tmin` and `tmax` monthly vectors in degrees C). If
-  NULL, uses simulated data.
+  NULL, the climate component is excluded and R3 rests on topography
+  alone.
 
 - snow:
 

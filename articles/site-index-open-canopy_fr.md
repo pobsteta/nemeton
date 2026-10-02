@@ -327,7 +327,7 @@ units_b2 <- sf::st_sf(
 )
 # Contribution CHM pondérée (20 % par défaut)
 indicateur_b2_structure(units_b2, chm = chm_het)$B2
-#> [1] 33.6
+#> [1] 100
 ```
 
 Le poids du CHM est réglable via `cv_chm_weight` (0 à 1). Une analyse de

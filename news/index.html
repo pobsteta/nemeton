@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.207.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,39 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.208.0" id="nemeton-02080-2026-10-02">nemeton 0.208.0 (2026-10-02)<a class="anchor" aria-label="anchor" href="#nemeton-02080-2026-10-02"></a></h2>
+<p>Première vague de l’audit de pré-version 1.0 : <strong>corrections de calcul</strong>. Dix défauts qui donnaient des valeurs fausses sans erreur ; les tests ne les voyaient pas parce qu’ils injectaient des valeurs déjà correctes. <strong>Plusieurs valeurs changent</strong> : les projets doivent être recalculés.</p>
+<div class="section level4">
+<h4 id="fixed--valeurs-fausses-0-208-0">Fixed — valeurs fausses<a class="anchor" aria-label="anchor" href="#fixed--valeurs-fausses-0-208-0"></a></h4>
+<ul><li>
+<strong>B2 (structure)</strong> : le chemin strates / classes d’âge fabriquait un score à partir de la diversité du <strong>lot entier</strong>, plus un terme <code>(i %% 4)</code> qui dépendait du <strong>numéro de ligne</strong> — trier les unités changeait B2. Une seule catégorie par unité ne décrit aucune diversité : B2 se mesure désormais sur la hauteur (CHM, puis MNH LiDAR) ou le NDVI, et vaut <code>NA</code> sans eux. <code>cv_chm_weight = 0</code> ignore le CHM.</li>
+<li>
+<strong>R3 (sécheresse)</strong> : sans <code>climate_data</code>, la composante climat (poids 0,6) était calculée sur une série <strong>simulée</strong>, identique pour tout projet, après un <code>set.seed(42)</code> qui écrasait le générateur aléatoire de l’appelant ; sans SPEI, un 0,5 constant ajoutait 30 points. La composante est désormais exclue : R3 repose sur la topographie seule.</li>
+<li>
+<strong>Indice de priorité de régénération</strong> : l’exposition lisait <code>sensibilite</code>, un z-score (~ -4 à +4) écrit par <code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code>, comme une échelle 0-100. Bornée, elle s’effondrait ; la priorité se réduisait au stress hydrique / 2 et <code>parcelle_sensible</code> était toujours <code>FALSE</code>. Elle lit maintenant <code>100 - sensibilite_score</code>, sinon <code>d_tmax</code> / <code>d_vpd</code> ; un z-score seul est refusé (NA + avertissement).</li>
+<li>
+<strong><code><a href="../reference/volume_mobilisable.html">volume_mobilisable()</a></code></strong> : <code>P1 × taux × horizon</code> multipliait un stock par un flux (P1 = 200 m³/ha, 2,84 m³/ha/an, 10 ans → 5 680 « m³/ha »). Le volume est désormais <code>taux × horizon</code>, plafonné par P1 (28,4 m³/ha dans l’exemple).</li>
+<li>
+<strong>R4, données de chasse</strong> : <code>read.csv</code> lisait le département « 03 » comme 3 dans sept fichiers sur huit (le sanglier, avec la Corse, restait en texte) : départements 01-09 dédoublés et jointure ADMIN EXPRESS ratée, d’où une pression nationale médiane imputée en silence. Codes normalisés sur deux caractères ; les départements imputés sont signalés.</li>
+<li>
+<strong><code><a href="../reference/nemeton_compute.html">nemeton_compute()</a></code></strong> : chaque indicateur recevait les unités d’origine, si bien que N3 et E2 valaient toujours <code>NA</code> et que T2 retombait sur 50. Les composites (T2, E2, N3) sont calculés en dernier et voient les codes courts déjà calculés ; B1 et B3 reçoivent <code>protected_areas</code>, <code>bdforet</code> et <code>dem</code> depuis le catalogue <code>layers</code>. L’erreur d’un indicateur est affichée.</li>
+<li>
+<strong><code><a href="../reference/create_family_index.html">create_family_index()</a></code> / <code><a href="../reference/normalize_indicators.html">normalize_indicators()</a></code></strong> : le chemin documenté « normaliser puis agréger » préférait le <code>_norm</code> (min-max du lot, sans inversion) et ré-inversait R1-R5, T3, L1, S1 et S2 ; <code>by_family = TRUE</code> normalisait en place, d’où une <strong>double normalisation</strong> (P1 = 200/400 m³/ha → 0/12,5 au lieu de 25/50). La colonne brute l’emporte désormais (règle absolue de <code><a href="../reference/normalize_indicator.html">normalize_indicator()</a></code>) ; un <code>_norm</code> seul, sans sa colonne brute, est pris comme score final ; <code>by_family</code> est ignoré avec un avertissement. La famille carbone de <code>massif_demo_units</code> est désormais calculée sur C1/C2 bruts, et non plus sur ses <code>_norm</code> min-max.</li>
+<li>
+<strong>Tuile Sentinel-2</strong> : <code>.s2_mgrs_tile()</code> prenait le 5ᵉ champ de l’identifiant, qui est l’<strong>orbite</strong> au format ESA/CDSE. FAST regroupait les scènes par orbite (double comptage entre tuiles d’une même orbite). Lecture par motif <code>T##XXX</code>.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="fixed--perte-de-données-0-208-0">Fixed — perte de données<a class="anchor" aria-label="anchor" href="#fixed--perte-de-donn%C3%A9es-0-208-0"></a></h4>
+<ul><li><p><strong>Validations terrain</strong> : un re-run FORDEAD ou RECONFORT supprimait toutes les alertes de la zone, y compris celles <strong>déjà validées sur le terrain</strong>. Seules les alertes <code>pending</code> sont désormais remplacées ; une nouvelle alerte à moins de 50 m d’une alerte validée n’est pas réinsérée.</p></li>
+<li><p><strong><code><a href="../reference/cluster_parcels.html">cluster_parcels()</a></code></strong> : une famille constante (ou entièrement NA) rendait <code><a href="https://rspatial.github.io/terra/reference/scale.html" class="external-link">scale()</a></code> NaN et faisait planter <code><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans()</a></code>. Elle est écartée avec un avertissement.</p></li>
+</ul></div>
+<div class="section level4">
+<h4 id="fixed--compatibilité-0-208-0">Fixed — compatibilité<a class="anchor" aria-label="anchor" href="#fixed--compatibilit%C3%A9-0-208-0"></a></h4>
+<ul><li>
+<strong><code>%||%</code></strong> n’était ni défini ni importé : le paquet cassait sous R 4.1 à 4.3 alors que <code>DESCRIPTION</code> annonce <code>R (&gt;= 4.1.0)</code>. Importé depuis rlang.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.207.1" id="nemeton-02071-2026-10-02">nemeton 0.207.1 (2026-10-02)<a class="anchor" aria-label="anchor" href="#nemeton-02071-2026-10-02"></a></h2>
 <div class="section level4">

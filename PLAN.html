@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.207.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -299,6 +299,40 @@
 <td>
 <code>service_project.R:601-603</code> — <code>.indicator_status_col(cc)</code> puis <code>normalize_indicator(cc, v, statut = st)</code>. <strong>En plus du brief</strong> : <code>service_compute.R:4286-4287</code> retire le statut d’un calcul précédent (sinon un P2 repassé CHM → IFN gardait <code>indice_station_m</code> et ses m³/ha/an étaient notés sur 40)</td>
 </tr></tbody></table><p><strong>Ce que l’écart n° 1 aura coûté et rapporté.</strong> Ouvert le 2026-08-15 comme « non consommé, et désormais bloquant », il l’était : la copie de la table dans <code>app_config.R</code> déclarait 40 indicateurs contre 41, A5 était calculé puis filtré à l’affichage, et une troisième copie des libellés (les clés i18n <code>indicator_&lt;CODE&gt;</code>) avait F1 et F2 inversés — la carte d’érosion sortait « F1 - Fertilité des sols ». Le dé-fork a retiré la <strong>classe</strong> de bug : quatre jours plus tard, la correction du sens de la famille R (v0.181.0) puis le décroisement de F (v0.182.0) ont traversé l’app <strong>sans une ligne de table à toucher</strong>. C’est l’argument à opposer au prochain fork qui se présentera comme un raccourci.</p>
+<hr></div>
+<div class="section level1">
+<h1 id="chantier-en-cours--pré-version-10-audit-du-2026-10-02">Chantier EN COURS — Pré-version 1.0 (audit du 2026-10-02)<a class="anchor" aria-label="anchor" href="#chantier-en-cours--pr%C3%A9-version-10-audit-du-2026-10-02"></a></h1>
+<blockquote>
+<p>Audit complet du dépôt (8 revues en lecture seule, constats critiques vérifiés à la main) : ~190 constats, 8 critiques, ~100 majeurs. Rapport : <a href="https://claude.ai/artifact/EDFFCM5SmJ78DAAeuzTYs2" class="external-link uri">https://claude.ai/artifact/EDFFCM5SmJ78DAAeuzTYs2</a> (copie de travail <code>specs/audit-1.0/</code>). État mesuré : 0 échec sur 11 220 expectations, mais 8 WARNING au <code>R CMD check --as-cran</code>, et 41 indicateurs (pas 31).</p>
+</blockquote>
+<table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th>Vague</th>
+<th>Contenu</th>
+<th>Release</th>
+<th>État</th>
+</tr></thead><tbody><tr><td>1</td>
+<td>Corrections de calcul : B2, R3, priorité reGénération, <code>volume_mobilisable</code>, chasse, <code>nemeton_compute</code>, normalisation/familles, tuile MGRS, validations terrain, <code>%||%</code>
+</td>
+<td><strong>v0.208.0</strong></td>
+<td>✅ livré, brief app émis</td>
+</tr><tr><td>2</td>
+<td>Robustesse des données : clés de cache (ERA5, microclimat, vent, S2 par emprise, <code>.done</code> RECONFORT), téléchargements atomiques, étés incomplets, transactions, migration 0007, <code>prune_orphan_zone_caches</code>
+</td>
+<td>0.209</td>
+<td>⬜</td>
+</tr><tr><td>3</td>
+<td>Sécurité : <code>eval</code> du cfg Python, <code>verify=False</code> pygeodes, manifeste RAG, <code>format_citations</code>, <code>project_name</code>, <code>zone_id</code>/<code>output_dir</code>, URL de base dans les messages</td>
+<td>0.210</td>
+<td>⬜</td>
+</tr><tr><td>4</td>
+<td>Paquet propre : <code>.Rbuildignore</code> (archive de 5,4 Go dans <code>data/</code>), DESCRIPTION, <code>.Rd</code> (8 WARNING → 0), roxygen détachés, non-ASCII, CI</td>
+<td>0.211</td>
+<td>⬜</td>
+</tr><tr><td>5</td>
+<td>Contrat d’API : retours vecteur / <code>sf</code>, <code>lang</code>, 313 exports à trier</td>
+<td>0.212</td>
+<td>⬜</td>
+</tr></tbody></table><p><strong>Journal</strong> — <em>2026-10-02</em> (<strong>v0.208.0</strong>) : vague 1 livrée, dix correctifs, chacun avec un test qui échouait avant. Valeurs changées côté app : volumes de desserte (<code>taux × horizon</code> au lieu de <code>P1 × taux × horizon</code>), indice de priorité de régénération (le volet exposition compte enfin), R3 sans climat, R4 des départements 01-09. Brief : <code>specs/audit-1.0/brief-nemetonshiny-0.208.0.md</code>.</p>
+<p><strong>Prochaine étape</strong> : vague 2 (robustesse des données).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-clos-côté-cœur--production-ifn-par-petits-domaines-fay-herriot-spec-054">Chantier CLOS côté cœur — Production IFN par petits domaines, Fay-Herriot (spec 054)<a class="anchor" aria-label="anchor" href="#chantier-clos-c%C3%B4t%C3%A9-c%C5%93ur--production-ifn-par-petits-domaines-fay-herriot-spec-054"></a></h1>

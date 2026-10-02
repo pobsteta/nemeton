@@ -90,22 +90,26 @@ result_pareto <- identify_pareto_optimal(
 table(result_pareto$is_optimal)
 #> 
 #> FALSE  TRUE 
-#>    12     8
+#>     8    12
 
 # Quelles parcelles sont optimales ?
 result_pareto |>
   sf::st_drop_geometry() |>
   filter(is_optimal) |>
   select(parcel_id, famille_carbone, famille_biodiversite, famille_production, is_optimal)
-#>   parcel_id famille_carbone famille_biodiversite famille_production is_optimal
-#> 1       P02        56.03319             53.97732           94.52489       TRUE
-#> 2       P05        58.05154             59.15995           72.58841       TRUE
-#> 3       P06        85.69484             36.87325           70.93276       TRUE
-#> 4       P07        69.22355             54.04608           75.04341       TRUE
-#> 5       P08        35.29203             84.20560           50.81916       TRUE
-#> 6       P10        80.60898             65.43590           49.38143       TRUE
-#> 7       P15        29.36510             66.97349           68.08899       TRUE
-#> 8       P17        74.72492             49.60679           76.11791       TRUE
+#>    parcel_id famille_carbone famille_biodiversite famille_production is_optimal
+#> 1        P01        92.12094             66.16412           44.72688       TRUE
+#> 2        P03        85.17838             56.43859           64.07632       TRUE
+#> 3        P04        93.40005             83.78110           37.31140       TRUE
+#> 4        P06        80.42635             75.70870           52.75013       TRUE
+#> 5        P08        70.06103             77.89580           42.09618       TRUE
+#> 6        P09        78.40909             86.22965           42.06288       TRUE
+#> 7        P11        87.12787             51.97402           54.25472       TRUE
+#> 8        P13        76.64325             57.61056           72.82957       TRUE
+#> 9        P14        73.50749             75.74440           64.71013       TRUE
+#> 10       P16        89.98748             79.34696           39.34267       TRUE
+#> 11       P19        92.19804             58.99109           41.60903       TRUE
+#> 12       P20        83.35336             57.17851           55.74474       TRUE
 ```
 
 ### Visualisation Spatiale
@@ -140,24 +144,19 @@ result_mixed <- identify_pareto_optimal(
 table(result_mixed$is_optimal)
 #> 
 #> FALSE  TRUE 
-#>    10    10
+#>    15     5
 
 # Profil des parcelles optimales
 result_mixed |>
   sf::st_drop_geometry() |>
   filter(is_optimal) |>
   select(parcel_id, famille_carbone, famille_biodiversite, R1, is_optimal)
-#>    parcel_id famille_carbone famille_biodiversite       R1 is_optimal
-#> 1        P03       16.100344             68.45678 21.35271       TRUE
-#> 2        P04       63.078203             65.15011 32.38454       TRUE
-#> 3        P06       85.694843             36.87325 84.81116       TRUE
-#> 4        P07       69.223549             54.04608 38.67201       TRUE
-#> 5        P08       35.292032             84.20560 77.36057       TRUE
-#> 6        P10       80.608984             65.43590 70.05888       TRUE
-#> 7        P12        9.858009             30.43549 10.19025       TRUE
-#> 8        P15       29.365103             66.97349 64.02557       TRUE
-#> 9        P16       70.892118             61.72952 48.42976       TRUE
-#> 10       P17       74.724920             49.60679 52.70630       TRUE
+#>   parcel_id famille_carbone famille_biodiversite       R1 is_optimal
+#> 1       P03        85.17838             56.43859 21.35271       TRUE
+#> 2       P04        93.40005             83.78110 32.38454       TRUE
+#> 3       P09        78.40909             86.22965 67.79274       TRUE
+#> 4       P12        89.33165             54.36786 10.19025       TRUE
+#> 5       P13        76.64325             57.61056 22.83439       TRUE
 ```
 
 ## 2. Clustering de Parcelles
@@ -181,15 +180,15 @@ result_kmeans <- cluster_parcels(
 table(result_kmeans$cluster)
 #> 
 #> 1 2 3 
-#> 8 4 8
+#> 5 9 6
 
 # Profil moyen de chaque cluster
 profiles <- attr(result_kmeans, "cluster_profile")
 print(profiles)
 #>   famille_carbone famille_biodiversite famille_production famille_social
-#> 1        60.15456             63.28843           58.87746       32.81139
-#> 2         9.01867             40.19858           15.80131       40.17970
-#> 3        51.76739             46.68146           54.21323       63.11771
+#> 1        66.90702             69.90963           52.70083       98.67075
+#> 2        86.22386             71.99157           41.90641       99.40109
+#> 3        77.10689             55.19689           58.12760       99.54355
 ```
 
 ### Visualisation des Clusters
@@ -224,15 +223,15 @@ result_auto <- cluster_parcels(
 # K optimal déterminé
 optimal_k <- attr(result_auto, "optimal_k")
 print(paste("K optimal:", optimal_k))
-#> [1] "K optimal: 6"
+#> [1] "K optimal: 8"
 
 # Scores de silhouette pour chaque k testé
 silhouette_scores <- attr(result_auto, "silhouette_scores")
 print(silhouette_scores)
 #>         2         3         4         5         6         7         8         9 
-#> 0.2496183 0.3141765 0.3056635 0.3055408 0.3276885 0.3162228 0.3180381 0.3027051 
+#> 0.2421619 0.2318144 0.2270917 0.2362701 0.2387887 0.2595732 0.2846920 0.2835764 
 #>        10 
-#> 0.2944059
+#> 0.2797768
 
 # Visualiser les scores de silhouette
 k_values <- as.integer(names(silhouette_scores))
@@ -269,9 +268,9 @@ comparison <- data.frame(
 table(comparison)
 #>       hierarchical
 #> kmeans 1 2 3
-#>      1 0 8 0
-#>      2 0 0 4
-#>      3 7 1 0
+#>      1 0 3 2
+#>      2 1 8 0
+#>      3 4 0 2
 ```
 
 ### Interprétation des Clusters
@@ -302,24 +301,24 @@ for (i in seq_len(nrow(profiles_kmeans))) {
 }
 #> 
 #> === Cluster 1 ===
-#> Carbone (C): 60.15 
-#> Biodiversité (B): 63.29 
-#> Production (P): 58.88 
-#> Social (S): 32.81 
+#> Carbone (C): 66.91 
+#> Biodiversité (B): 69.91 
+#> Production (P): 52.7 
+#> Social (S): 98.67 
 #> → Type: Haute conservation
 #> 
 #> === Cluster 2 ===
-#> Carbone (C): 9.02 
-#> Biodiversité (B): 40.2 
-#> Production (P): 15.8 
-#> Social (S): 40.18 
+#> Carbone (C): 86.22 
+#> Biodiversité (B): 71.99 
+#> Production (P): 41.91 
+#> Social (S): 99.4 
 #> → Type: Haute conservation
 #> 
 #> === Cluster 3 ===
-#> Carbone (C): 51.77 
-#> Biodiversité (B): 46.68 
-#> Production (P): 54.21 
-#> Social (S): 63.12 
+#> Carbone (C): 77.11 
+#> Biodiversité (B): 55.2 
+#> Production (P): 58.13 
+#> Social (S): 99.54 
 #> → Type: Haute conservation
 ```
 
@@ -475,7 +474,7 @@ conservation_pareto <- identify_pareto_optimal(
 # Combien de parcelles Pareto-optimales ?
 n_optimal <- sum(conservation_pareto$is_optimal)
 cat("Nombre de parcelles Pareto-optimales:", n_optimal, "\n")
-#> Nombre de parcelles Pareto-optimales: 4
+#> Nombre de parcelles Pareto-optimales: 7
 
 # Étape 2: Classer les parcelles Pareto-optimales par score composite
 conservation_subset <- conservation_pareto |>
@@ -490,15 +489,17 @@ top5 |>
   sf::st_drop_geometry() |>
   select(parcel_id, famille_biodiversite, famille_carbone, famille_naturalite, composite_score)
 #>   parcel_id famille_biodiversite famille_carbone famille_naturalite
-#> 1       P10             65.43590        80.60898           62.37741
-#> 2       P04             65.15011        63.07820           76.78733
-#> 3       P06             36.87325        85.69484           52.72370
-#> 4       P08             84.20560        35.29203           54.80803
+#> 1       P16             79.34696        89.98748           70.85911
+#> 2       P07             75.01756        76.70610           84.31215
+#> 3       P10             65.43884        90.08013           79.61180
+#> 4       P04             83.78110        93.40005           54.20287
+#> 5       P09             86.22965        78.40909           66.26338
 #>   composite_score
-#> 1        69.47410
-#> 2        68.33855
-#> 3        58.43060
-#> 4        58.10189
+#> 1        80.06452
+#> 2        78.67861
+#> 3        78.37692
+#> 4        77.12801
+#> 5        76.96737
 ```
 
 ### Visualisation de la Sélection
@@ -568,15 +569,15 @@ zonage <- cluster_parcels(
 profiles_zonage <- attr(zonage, "cluster_profile")
 print(profiles_zonage)
 #>   famille_carbone famille_biodiversite famille_eau famille_naturalite
-#> 1        68.96946             57.85770    23.88478           60.21410
-#> 2        59.86002             47.63249    60.48261           48.03608
-#> 3         9.01867             40.19858    36.50350           40.63162
-#> 4        26.91916             73.21196    50.95595           41.39627
+#> 1        71.71201             74.08238    92.73146           65.78582
+#> 2        83.88399             55.99635    97.27934           66.46906
+#> 3        56.45354             57.97610    66.41595           49.53191
+#> 4        83.72735             78.06684    93.00943           66.73795
 #>   famille_production famille_energie famille_social famille_air
-#> 1           39.15252        62.88334       33.40508    81.53488
-#> 2           65.32307        86.34995       55.40481    69.29675
-#> 3           15.80131        12.27891       40.17970    36.47150
-#> 4           53.40261        28.90418       45.05641    21.72117
+#> 1           50.52202             100       98.68145    35.69920
+#> 2           51.88368             100       99.48972    38.94574
+#> 3           57.57089             100       99.05773    40.62771
+#> 4           42.85470             100       99.41097    26.44804
 
 # Attribuer des noms de zones selon les profils
 zonage <- zonage |>
@@ -593,9 +594,9 @@ zonage <- zonage |>
 table(zonage$zone_name)
 #> 
 #> Conservation intégrale          Gestion mixte     Production durable 
-#>                      4                      3                      9 
+#>                      4                      6                      8 
 #>        Usage récréatif 
-#>                      4
+#>                      2
 ```
 
 ### Carte du Zonage
@@ -632,10 +633,10 @@ zonage |>
 #> # A tibble: 4 × 7
 #>   zone_name              n_parcelles C_mean B_mean P_mean S_mean N_mean
 #>   <chr>                        <dbl>  <dbl>  <dbl>  <dbl>  <dbl>  <dbl>
-#> 1 Conservation intégrale           4  69.0    57.9   39.2   33.4   60.2
-#> 2 Gestion mixte                    3  26.9    73.2   53.4   45.1   41.4
-#> 3 Production durable               9  59.9    47.6   65.3   55.4   48.0
-#> 4 Usage récréatif                  4   9.02   40.2   15.8   40.2   40.6
+#> 1 Conservation intégrale           4   71.7   74.1   50.5   98.7   65.8
+#> 2 Gestion mixte                    6   83.7   78.1   42.8   99.4   66.7
+#> 3 Production durable               8   83.9   56     51.9   99.5   66.5
+#> 4 Usage récréatif                  2   56.4   58.0   57.6   99.1   49.5
 ```
 
 ## Conclusion

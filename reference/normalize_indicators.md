@@ -58,10 +58,10 @@ normalize_indicators(
 
 - by_family:
 
-  Logical. If TRUE, normalize indicators within each family using
-  family-wide parameters (e.g., all Carbon indicators C1, C2 share the
-  same min/max). This makes indicators within a family directly
-  comparable. Default FALSE.
+  Deprecated, ignored with a warning since 0.208.0. It was documented as
+  family-wide normalisation but only normalised in place, which made
+  [`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)
+  normalise the values a second time.
 
 ## Value
 

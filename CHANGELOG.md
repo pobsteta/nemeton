@@ -12,6 +12,31 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.208.0\] - 2026-10-02
+
+### Fixed
+
+- B2 ne fabrique plus de score depuis la diversité du lot et le numéro
+  de ligne ; mesure sur CHM / MNH / NDVI, NA sinon.
+- R3 sans `climate_data` : plus de série simulée ni de `set.seed(42)`
+  global ; topographie seule.
+- [`indice_priorite_regen()`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md)
+  : exposition depuis `sensibilite_score`, plus le z-score.
+- [`volume_mobilisable()`](https://pobsteta.github.io/nemeton/reference/volume_mobilisable.md)
+  : `taux x horizon` plafonné par P1 (plus P1 x flux).
+- Données de chasse : codes département normalisés (« 03 »).
+- [`nemeton_compute()`](https://pobsteta.github.io/nemeton/reference/nemeton_compute.md)
+  : composites (T2, E2, N3) calculés en dernier sur les codes courts ;
+  B1/B3 alimentés depuis `layers`.
+- [`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)
+  : colonne brute prioritaire, `_norm` seul = score final ;
+  `normalize_indicators(by_family)` ignoré (double normalisation).
+- Tuile MGRS lue par motif (orbite en CDSE).
+- [`cluster_parcels()`](https://pobsteta.github.io/nemeton/reference/cluster_parcels.md)
+  : famille sans variance écartée au lieu de planter.
+- Re-run FORDEAD/RECONFORT : alertes validées sur le terrain conservées.
+- `%||%` importé depuis rlang (R \< 4.4).
+
 ## \[0.207.1\] - 2026-10-02
 
 ### Fixed

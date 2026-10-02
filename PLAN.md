@@ -115,6 +115,34 @@ opposer au prochain fork qui se présentera comme un raccourci.
 
 ------------------------------------------------------------------------
 
+# Chantier EN COURS — Pré-version 1.0 (audit du 2026-10-02)
+
+> Audit complet du dépôt (8 revues en lecture seule, constats critiques
+> vérifiés à la main) : ~190 constats, 8 critiques, ~100 majeurs.
+> Rapport : <https://claude.ai/artifact/EDFFCM5SmJ78DAAeuzTYs2> (copie
+> de travail `specs/audit-1.0/`). État mesuré : 0 échec sur 11 220
+> expectations, mais 8 WARNING au `R CMD check --as-cran`, et 41
+> indicateurs (pas 31).
+
+| Vague | Contenu | Release | État |
+|----|----|----|----|
+| 1 | Corrections de calcul : B2, R3, priorité reGénération, `volume_mobilisable`, chasse, `nemeton_compute`, normalisation/familles, tuile MGRS, validations terrain, `%||%` | **v0.208.0** | ✅ livré, brief app émis |
+| 2 | Robustesse des données : clés de cache (ERA5, microclimat, vent, S2 par emprise, `.done` RECONFORT), téléchargements atomiques, étés incomplets, transactions, migration 0007, `prune_orphan_zone_caches` | 0.209 | ⬜ |
+| 3 | Sécurité : `eval` du cfg Python, `verify=False` pygeodes, manifeste RAG, `format_citations`, `project_name`, `zone_id`/`output_dir`, URL de base dans les messages | 0.210 | ⬜ |
+| 4 | Paquet propre : `.Rbuildignore` (archive de 5,4 Go dans `data/`), DESCRIPTION, `.Rd` (8 WARNING → 0), roxygen détachés, non-ASCII, CI | 0.211 | ⬜ |
+| 5 | Contrat d’API : retours vecteur / `sf`, `lang`, 313 exports à trier | 0.212 | ⬜ |
+
+**Journal** — *2026-10-02* (**v0.208.0**) : vague 1 livrée, dix
+correctifs, chacun avec un test qui échouait avant. Valeurs changées
+côté app : volumes de desserte (`taux × horizon` au lieu de
+`P1 × taux × horizon`), indice de priorité de régénération (le volet
+exposition compte enfin), R3 sans climat, R4 des départements 01-09.
+Brief : `specs/audit-1.0/brief-nemetonshiny-0.208.0.md`.
+
+**Prochaine étape** : vague 2 (robustesse des données).
+
+------------------------------------------------------------------------
+
 # Chantier CLOS côté cœur — Production IFN par petits domaines, Fay-Herriot (spec 054)
 
 > *(relu le 2026-10-02)* Cœur livré (v0.200.0 → v0.207.0), app câblée

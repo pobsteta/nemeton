@@ -111,8 +111,10 @@ semantics, and neither raises an error on the wrong one:
 ## Harvest rate
 
 `taux_prelevement` is a **yearly flux** in m3/ha/year, not a fraction,
-so `horizon_ans` is required with it:
-`volume = P1 x taux x horizon_ans`. A harvest rate describes what **has
+so `horizon_ans` is required with it: `volume = taux x horizon_ans`,
+capped by the standing volume P1 (which also carries the `NA` of an
+uninventoried parcel). Before 0.208.0 the rate was multiplied by P1 as
+well, mixing a stock and a flux. A harvest rate describes what **has
 been** removed, not what **should** be; sizing a road network on it
 assumes management carries on unchanged.
 

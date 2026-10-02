@@ -15,7 +15,7 @@ This is a head-of-tab score, not a radar axis."><meta property="og:image" conten
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.207.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -181,8 +181,9 @@ and <code>regen_hydrique</code> (the two 0-100 sub-scores), <code>parcelle_sensi
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The function <strong>consumes</strong> the engine output columns already on <code>units</code>
-(the §7 contract): exposure from <code>sensibilite</code> (0-100) — or derived from
-<code>d_tmax</code>/<code>d_vpd</code> — and water stress from <code>njstress</code> / <code>istress</code>
+(the §7 contract): exposure from <code>sensibilite_score</code> (R6, 0-100, high =
+favourable, inverted here) — or derived from <code>d_tmax</code>/<code>d_vpd</code> — or, last,
+a caller-supplied 0-100 <code>sensibilite</code> (a z-score is refused) — and water stress from <code>njstress</code> / <code>istress</code>
 / <code>rew_min</code>. Each volet is a renormalised mean over the columns present, so
 a partially populated <code>units</code> still yields a score.</p>
 <p>By default the index is <strong>generic</strong> (no species). Passing <code>species</code>
@@ -199,7 +200,7 @@ intolerant species on a hot, dry microsite is more urgent).</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span>  <span class="va">units</span> <span class="op">&lt;-</span> <span class="fu"><a href="regen_sensibilite.html">regen_sensibilite</a></span><span class="op">(</span><span class="va">units</span>, <span class="va">...</span><span class="op">)</span>      <span class="co"># microclimf -&gt; sensibilite</span></span></span>
+<span class="r-in"><span>  <span class="va">units</span> <span class="op">&lt;-</span> <span class="fu"><a href="regen_sensibilite.html">regen_sensibilite</a></span><span class="op">(</span><span class="va">units</span>, <span class="va">...</span><span class="op">)</span>      <span class="co"># microclimf -&gt; sensibilite_score, d_tmax, d_vpd</span></span></span>
 <span class="r-in"><span>  <span class="va">units</span> <span class="op">&lt;-</span> <span class="fu"><a href="regen_bilan_hydrique.html">regen_bilan_hydrique</a></span><span class="op">(</span><span class="va">units</span>, <span class="va">...</span><span class="op">)</span>   <span class="co"># biljouR   -&gt; njstress, rew_min</span></span></span>
 <span class="r-in"><span>  <span class="va">units</span> <span class="op">&lt;-</span> <span class="fu">indice_priorite_regen</span><span class="op">(</span><span class="va">units</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>

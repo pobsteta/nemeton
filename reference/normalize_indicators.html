@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.207.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -166,9 +166,9 @@ Useful for normalizing new data using parameters from a reference dataset.</p></
 
 
 <dt id="arg-by-family">by_family<a class="anchor" aria-label="anchor" href="#arg-by-family"></a></dt>
-<dd><p>Logical. If TRUE, normalize indicators within each family using
-family-wide parameters (e.g., all Carbon indicators C1, C2 share the same min/max).
-This makes indicators within a family directly comparable. Default FALSE.</p></dd>
+<dd><p>Deprecated, ignored with a warning since 0.208.0. It was
+documented as family-wide normalisation but only normalised in place, which
+made <code><a href="create_family_index.html">create_family_index()</a></code> normalise the values a second time.</p></dd>
 
 </dl></div>
     <div class="section level2">

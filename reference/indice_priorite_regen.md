@@ -61,10 +61,12 @@ indice_priorite_regen(
 ## Details
 
 The function **consumes** the engine output columns already on `units`
-(the §7 contract): exposure from `sensibilite` (0-100) — or derived from
-`d_tmax`/`d_vpd` — and water stress from `njstress` / `istress` /
-`rew_min`. Each volet is a renormalised mean over the columns present,
-so a partially populated `units` still yields a score.
+(the §7 contract): exposure from `sensibilite_score` (R6, 0-100, high =
+favourable, inverted here) — or derived from `d_tmax`/`d_vpd` — or,
+last, a caller-supplied 0-100 `sensibilite` (a z-score is refused) — and
+water stress from `njstress` / `istress` / `rew_min`. Each volet is a
+renormalised mean over the columns present, so a partially populated
+`units` still yields a score.
 
 By default the index is **generic** (no species). Passing `species`
 enables the **optional** per-species tuning (decision §10.1): where the
@@ -82,7 +84,7 @@ is more urgent).
 
 ``` r
 if (FALSE) { # \dontrun{
-  units <- regen_sensibilite(units, ...)      # microclimf -> sensibilite
+  units <- regen_sensibilite(units, ...)      # microclimf -> sensibilite_score, d_tmax, d_vpd
   units <- regen_bilan_hydrique(units, ...)   # biljouR   -> njstress, rew_min
   units <- indice_priorite_regen(units)
 } # }
