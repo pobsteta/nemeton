@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.206.0] - 2026-10-01
+
+### Changed
+- `ifn_production_domaines()` : variance du domaine calée selon sa surface (au
+  lieu du σᵥ² national) ; `nature = "prediction"` pour un domaine sans
+  placette ; colonnes `predicteur`, `variance_domaine` et `hors_calibrage`.
+
+### Added
+- `ifn_covariables_domaines()` ; prédicteur hybride pour PV
+  (`covariables = …`) ; attribut `vcov_beta` d'`estimer_fay_herriot()`.
+- Tables de coefficients, de calibrage par échelle et de covariables par SER.
+
 ## [0.205.0] - 2026-10-01
 
 ### Added

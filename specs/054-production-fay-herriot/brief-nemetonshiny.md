@@ -5,7 +5,7 @@
 > **Nature** : câblage de trois modes **opt-in** du cœur, plus l'affichage de leur
 > incertitude. **Aucune logique métier à écrire côté app** (règles 1 à 3) : tout
 > calcul passe par des fonctions exportées de `nemeton`.
-> **Prérequis côté cœur** : `nemeton` ≥ **0.204.0** (§1 à §3), ≥ **0.205.0** pour les domaines (§3 bis).
+> **Prérequis côté cœur** : `nemeton` ≥ **0.204.0** (§1 à §3), ≥ **0.205.0** pour les domaines (§3 bis), ≥ **0.206.0** pour les covariables de domaine.
 > **Contexte de rédaction** : lecture seule de `nemetonshiny@237429b0`
 > (0.151.4.9000). Les numéros de ligne cités en dépendent.
 
@@ -112,6 +112,17 @@ domaine avec l'estimation de sa ou ses SER. Elle renvoie, par domaine, `valeur`,
 
 **Usage suggéré** : un panneau « production du massif » dans la vue projet, en
 passant l'union des UGF du projet comme domaine.
+
+**Depuis `nemeton` 0.206.0**, pour PV seulement :
+- passer aussi les covariables du domaine,
+  `nemeton::ifn_covariables_domaines(domaines, hauteur = <FORMS-T du projet>,
+  altitude = <MNT du projet>)`, puis
+  `ifn_production_domaines(…, covariables = cov)` ;
+- l'erreur baisse de 19 à 35 % selon la taille du domaine (validation sur
+  mailles) ;
+- **seulement avec la hauteur FORMS-T**, pas un CHM LiDAR ou Open-Canopy : le
+  modèle est calé sur FORMS-T ;
+- afficher `hors_calibrage` : sous 22 500 ha, la variance est extrapolée.
 
 ## 4. Clés i18n à prévoir (FR/EN)
 

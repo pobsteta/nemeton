@@ -1,10 +1,10 @@
 # Spec 054 — Production IFN par petits domaines (Fay-Herriot) et ses consommateurs
 
-**Version** : 0.9.0 (lot 1-ter : comparaison GEDI)
+**Version** : 0.10.0 (lot 5-bis livré)
 **Date**    : 2026-10-01
-**Statut**  : **Lots 1 à 5 livrés côté cœur** (v0.200.0 à v0.205.0,
-2026-10-01). Lot 1-ter : comparaison GEDI / FORMS-T faite sur 2019-2021 (§5.d),
-**FORMS-T confirmé**. Brief app émis. Piste ouverte : lot 5-bis (§5.c).
+**Statut**  : **Spec close côté cœur** : lots 1 à 5 et 5-bis livrés (v0.200.0 à
+v0.206.0, 2026-10-01), lot 1-ter conclu (FORMS-T confirmé, §5.d). Brief app émis
+et complété. Reste le câblage côté `nemetonshiny`.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` — moteur Fay-Herriot, table de production IFN par
 SER × campagne, et branchement sur P2, P1/C1, E1/E2 et la spec 040.
@@ -536,6 +536,67 @@ lot suivant, la déduplication est assurée), mais un écart de 20 % sur PV a pe
 chances de se renverser. Il suffit de les compléter si la décision était
 contestée.
 
+### 5.e Lot 5-bis : prédiction du domaine et variance calée (v0.206.0, 2026-10-01)
+
+**Protocole de validation** (`data-raw/calibrer_domaines.R`), avant toute
+interface :
+- pseudo-domaines : mailles carrées de 15 à 100 km sur toute la France ;
+- vérité : l'estimation directe IFN de la maille, moyennée sur 2020-2024 ;
+- critère : MSE débiaisée = moyenne((direct − P)² − ψ).
+
+Trois prédicteurs P comparés :
+- **SER** : les SER pondérées par les placettes (lot 5) ;
+- **domaine** : β national appliqué aux seules covariables de la maille ;
+- **hybride** : SER + β·(covariables de la maille − covariables de ses SER).
+
+Contrôle préalable : β appliqué aux covariables des SER reproduit leur estimation
+FH (corrélation 0,97 pour PV, 0,89 pour PG).
+
+**Résultats** (gain en MSE par rapport à SER) :
+
+| | Domaine | Hybride |
+|---|---|---|
+| PV, mailles de 100 / 50 / 30 / 20 / 15 km | −96 % (50 km), −30 % (20 km) | **+19 % / +21 % / +22 % / +29 % / +35 %** |
+| PG, mêmes mailles | −259 % (50 km), −162 % (20 km) | −17 % / −7 % / −16 % / −7 % / −3 % |
+
+1. **Le prédicteur « domaine » est bien pire.** Chaque SER a un niveau propre que
+   les covariables n'expliquent pas (σᵥ²), et la piste naïve du lot 5-bis (§5.c)
+   le perdait.
+2. **L'hybride améliore PV à toutes les échelles, pas PG.** PG dépend surtout de
+   l'écart-type de hauteur, la mesure la plus bruitée à petite échelle. Il garde
+   donc la SER.
+3. **Le σᵥ² national du lot 5 sous-estimait l'erreur des petits domaines.** Pour
+   PV, l'erreur mesurée vaut 0,16 à 100 km, 0,29 à 50 km, 0,67 à 20 km et 0,95 à
+   15 km, contre 0,43 pour le σᵥ² national. Le lot 5 sous-pondérait donc la mesure
+   directe des petits domaines.
+
+**Livré** :
+- **`A(S)`** : log A = a + b·log(surface_ha), ajusté en moindres carrés pondérés
+  sur les 5 échelles, par attribut × prédicteur. b vaut −0,41 à −0,48 ; la table
+  `ifn_production_echelle.csv` indique aussi quels prédicteurs sont servis.
+  A(S) est la MSE du prédicteur face à la vérité du domaine : `γ = A/(A + ψ)`,
+  `MSE = γ·ψ`, sans terme m_s séparé. Elle remplace le σᵥ² national pour tous
+  les domaines, ce qui **change les valeurs du lot 5** : pour une UT de 14 400 ha,
+  γ passe de 0,08 à 0,18.
+- **Plage calibrée** de 22 500 à 1 000 000 ha ; au-delà, A(S) est extrapolée et
+  `hors_calibrage = TRUE`.
+- **`ifn_covariables_domaines(domaines, hauteur, altitude)`** : covariables
+  calculées exactement comme celles des SER (sommes n, Σh, Σh² des pixels ≥ 5 m ;
+  altitude pondérée par ces pixels). Elle exige la hauteur FORMS-T : un autre
+  modèle de hauteur biaiserait la prédiction.
+- **`ifn_production_domaines(…, covariables = …)`** : prédicteur `"hybride"` pour
+  PV ; colonnes `predicteur`, `variance_domaine` et `hors_calibrage`. `nature`
+  vaut `"prediction"` (au lieu de `"ser"`) pour un domaine sans placette.
+- **Tables** : `ifn_production_modele_coef.csv` (β, centre, échelle),
+  `ifn_production_modele_vcov.csv` (covariance de β, désormais en attribut
+  `vcov_beta` d'`estimer_fay_herriot()`) et `ifn_production_covariables_ser.csv`
+  (covariables des SER, 2020-2024).
+
+**Réserve.** Les covariables des SER sont moyennées sur 2020-2024, et celles du
+domaine portent sur l'année FORMS-T fournie par l'appelant. Les écarts
+inter-annuels sont faibles devant les écarts entre domaines, mais c'est une
+approximation.
+
 ## 6. Livrables cœur
 
 | Objet | Type | Rôle |
@@ -911,6 +972,7 @@ Chaque lot = une release (consignes de release de `CLAUDE.md`).
 | 0 | ✅ 2026-10-01 — relevés §3.a : chiffre IGN 87,9 Mm³/an (5,4 m³/ha/an), recrutement confirmé, carottage partiel depuis 2014 (D7 amendée), contrôle voie (a) à −15 %, trou GEDI 2023-2024, accès Earthdata non configuré | — (doc) | — |
 | 1 | ✅ v0.200.0 — `estimer_fay_herriot()` + tests (égalité `sae`, σᵥ² = 0, n = 1, domaine vide) ; `data-raw/build_ifn_production.R` ; PG/PV par placette ; jeu F ; FH SER × campagne + GRECO ; `ifn_production_ser.csv` + accesseurs ; contrôle national ; test de Moran (§3.b) | minor | D1, D3, D4, D7 |
 | 1-bis | ✅ v0.201.0 — voie (b) par allométrie hauteur-diamètre, production des arbres coupés, attributs `prel` et `prel_vidange` (§3.c) | minor | lot 1 |
+| 5-bis | ✅ v0.206.0 — variance calée selon la surface (remplace σᵥ² national), prédicteur hybride pour PV, `ifn_covariables_domaines()` (§5.e) | minor | lot 5 |
 | 1-ter | ✅ 2026-10-01 — jeu G (GEDI L2A, Harmony, 1 orbite sur 5) comparé à F sur 2019-2021 : **F confirmé** (§5.d) ; `data-raw/` seulement, sans release | — | accès Earthdata |
 | 2 | ✅ v0.202.0 — P2 `source = "ifn_fh"` + colonnes de provenance/RSE/nature ; `ifn_taux_prelevement_production()` ; `min_plac` (§7.1, §7.2) | minor | lot 1-bis, D5 |
 | 3 | ✅ v0.203.0 — FH poolé essence × SER (log + GVF), `ifn_volume_reference()` / `completer_volume_ifn(methode = "fay_herriot")` ; C1 n'hérite pas, correction §7.3 | minor | lot 1 |

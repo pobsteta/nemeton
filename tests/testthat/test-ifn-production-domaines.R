@@ -32,7 +32,9 @@ test_that("a large domain keeps its own plots and lands near its SER", {
   det <- attr(r, "detail")
   expect_equal(nrow(det), 5L)
   expect_true(all(det$gamma >= 0 & det$gamma <= 1))
-  expect_equal(det$estimation, det$gamma * det$direct + (1 - det$gamma) * det$ser)
+  expect_equal(det$estimation, det$gamma * det$direct + (1 - det$gamma) * det$prediction)
+  expect_equal(det$prediction, det$ser)          # sans covariables : la SER
+  expect_equal(r$predicteur, "ser")
 })
 
 test_that("a small domain leans on its SER (generalised variance, not 2-plot psi)", {
@@ -42,6 +44,11 @@ test_that("a small domain leans on its SER (generalised variance, not 2-plot psi
     sf::st_buffer(sf::st_point(c0[1, ]), 6000, endCapStyle = "SQUARE"), crs = 2154))
   r <- ifn_production_domaines(ut)
   expect_lt(r$poids_direct, 0.5)
+  # Variance calee selon la surface : 14 400 ha est sous la plage calibree.
+  ech <- nemeton:::.ifn_prod_echelle()
+  e <- ech[ech$attribut == "pv" & ech$predicteur == "ser", ]
+  expect_equal(r$variance_domaine, exp(e$a + e$b * log(14400)))
+  expect_true(r$hors_calibrage)
   expect_equal(r$surface_ha, 14400, tolerance = 1e-6)
   expect_true(r$part_bordure >= 0 && r$part_bordure <= 1)
   det <- attr(r, "detail")
@@ -58,7 +65,7 @@ test_that("a domain without plots takes its SER, through the outlines", {
   couche <- sf::st_sf(codeser = "C30", geometry = sf::st_geometry(d))
   r <- ifn_production_domaines(mini, ser_layer = couche)
   expect_equal(r$n_placettes, 0L)
-  expect_equal(r$nature, "ser")
+  expect_equal(r$nature, "prediction")
   expect_equal(r$poids_direct, 0)
   s <- ifn_production_ser(ser = "C30", attribut = "pv", groupe = "tous",
                           campagne = as.integer(strsplit(r$campagnes, ",")[[1]]))
@@ -71,4 +78,56 @@ test_that("inputs are validated", {
   expect_error(ifn_production_domaines(d, id_col = "absente"), "absente")
   expect_error(ifn_production_domaines(d, campagnes = 1990), "No campaign")
   expect_equal(ifn_production_domaines(d, attribut = "pg")$attribut, "pg")
+})
+
+test_that("the calibrated variance shrinks with the domain area", {
+  ech <- nemeton:::.ifn_prod_echelle()
+  expect_true(all(ech$b < 0))
+  expect_true(all(ech$servi[ech$predicteur == "ser"]))
+  expect_equal(ech$servi[ech$predicteur == "hybride"], ech$attribut[ech$predicteur == "hybride"] == "pv")
+})
+
+test_that("domain covariates are computed like the SER ones", {
+  r <- terra::rast(nrows = 100, ncols = 100, xmin = 0, xmax = 1000, ymin = 0, ymax = 1000,
+                   crs = "EPSG:2154")
+  h <- r; terra::values(h) <- c(rep(300, 5000), rep(c(1000, 2000), 2500))  # cm
+  a <- r; terra::values(a) <- rep(c(100, 300), each = 5000)
+  dom <- sf::st_sf(code = "x", geometry = sf::st_sfc(sf::st_polygon(list(
+    matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))), crs = 2154))
+  cv <- ifn_covariables_domaines(dom, h, a, id_col = "code")
+  expect_equal(cv$id, "x")
+  expect_equal(cv$h_mean, 15, tolerance = 1e-6)     # 3 m hors foret, 10 et 20 m dedans
+  expect_equal(cv$h_sd, 5, tolerance = 1e-6)
+  expect_equal(cv$alt_mean, 300, tolerance = 1e-6)  # seuls les pixels de foret
+  expect_equal(cv$part_foret, 0.5, tolerance = 1e-6)
+  expect_equal(ifn_covariables_domaines(dom, h / 100, a, unite_hauteur = "m")$h_mean, 15,
+               tolerance = 1e-6)
+  expect_error(ifn_covariables_domaines(dom, as.matrix(h), a), "SpatRaster")
+})
+
+test_that("the hybrid prediction moves with the domain covariates, for PV only", {
+  d <- domaine_ser("C30")
+  c0 <- sf::st_coordinates(sf::st_point_on_surface(sf::st_geometry(d)))[1, ]
+  ut <- sf::st_sf(id = "ut", geometry = sf::st_sfc(
+    sf::st_buffer(sf::st_point(c0), 6000, endCapStyle = "SQUARE"), crs = 2154))
+  cs <- nemeton:::.ifn_prod_cov_ser()
+  cs <- cs[cs$ser == "C30", ]
+  # Covariables egales a celles de la SER : la correction est nulle.
+  cv0 <- data.frame(id = "1", h_mean = cs$h_mean, h_sd = cs$h_sd,
+                    alt_mean = cs$alt_mean, alt_sd = cs$alt_sd)
+  r0 <- ifn_production_domaines(ut, covariables = cv0)
+  expect_equal(r0$predicteur, "hybride")
+  det0 <- attr(r0, "detail")
+  w_c30 <- grepl("^C30:1.00$", r0$ser)
+  if (w_c30) expect_equal(det0$prediction, det0$ser)
+  # Une hauteur plus forte change la prediction dans le sens de beta.
+  cf <- nemeton:::.ifn_prod_coef()
+  b <- cf$beta[cf$attribut == "pv" & cf$terme == "h_mean"]
+  cv1 <- cv0; cv1$h_mean <- cv0$h_mean + 5
+  r1 <- ifn_production_domaines(ut, covariables = cv1)
+  expect_equal(sign(mean(attr(r1, "detail")$prediction - det0$prediction)), sign(b))
+  # PG : covariables ignorees.
+  expect_message(rg <- ifn_production_domaines(ut, attribut = "pg", covariables = cv0), "unused")
+  expect_equal(rg$predicteur, "ser")
+  expect_error(ifn_production_domaines(ut, covariables = data.frame(id = "1")), "ifn_covariables_domaines")
 })
