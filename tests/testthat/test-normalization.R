@@ -695,48 +695,14 @@ test_that("normalize_vector zscore with zero sd returns zeros", {
 
 # --- normalize_indicators: by_family=TRUE path ---
 
-test_that("normalize_indicators with by_family=TRUE normalizes in-place", {
-  test_data <- data.frame(
-    id = 1:5,
-    C1 = c(10, 20, 30, 40, 50),
-    C2 = c(100, 200, 300, 400, 500)
-  )
-
-  normalized <- normalize_indicators(
-    test_data,
-    indicators = c("C1", "C2"),
-    method = "minmax",
-    by_family = TRUE
-  )
-
-  # When by_family=TRUE with default suffix, suffix becomes "" and keep_original=FALSE
-
-  # So values are replaced in-place
-  expect_true("C1" %in% names(normalized))
-  expect_true("C2" %in% names(normalized))
-  # Values should now be normalized 0-100
-  expect_equal(min(normalized$C1), 0)
-  expect_equal(max(normalized$C1), 100)
-  expect_equal(min(normalized$C2), 0)
-  expect_equal(max(normalized$C2), 100)
-})
-
-test_that("normalize_indicators by_family=TRUE with explicit suffix uses that suffix", {
-  test_data <- data.frame(
-    id = 1:3,
-    C1 = c(10, 20, 30)
-  )
-
-  normalized <- normalize_indicators(
-    test_data,
-    indicators = "C1",
-    method = "minmax",
-    by_family = TRUE,
-    suffix = "_scaled"
-  )
-
-  # Explicit suffix overrides the default "_norm" -> "" behavior
-  expect_true("C1_scaled" %in% names(normalized))
+test_that("by_family est ignoré avec un avertissement et ne normalise plus en place (audit 1.0)", {
+  test_data <- data.frame(id = 1:5, C1 = c(10, 20, 30, 40, 50))
+  expect_warning(
+    normalized <- normalize_indicators(test_data, indicators = "C1",
+                                       method = "minmax", by_family = TRUE),
+    "by_family")
+  expect_equal(normalized$C1, test_data$C1)          # brut conservé
+  expect_equal(range(normalized$C1_norm), c(0, 100))
 })
 
 # --- normalize_indicators: reference_data with missing indicator ---
@@ -1121,27 +1087,6 @@ test_that("normalize_indicators() auto-detects famille_ columns", {
   expect_true("famille_eau_norm" %in% names(result))
 })
 
-test_that("normalize_indicators() by_family=TRUE changes suffix to '' and keep_original=FALSE", {
-  units <- create_test_units(n_features = 5)
-  units$C1 <- c(10, 20, 30, 40, 50)
-  units$W1 <- c(5, 10, 15, 20, 25)
-
-  result <- nemeton::normalize_indicators(
-    units,
-    indicators = c("C1", "W1"),
-    method = "minmax",
-    by_family = TRUE
-  )
-
-  # When by_family=TRUE and suffix="_norm" (default), suffix becomes "" and keep_original=FALSE
-
-  # So columns should be replaced in place with normalized values
-  expect_true("C1" %in% names(result))
-  expect_true("W1" %in% names(result))
-  # The values should be normalized (0-100)
-  expect_equal(min(result$C1), 0)
-  expect_equal(max(result$C1), 100)
-})
 
 test_that("normalize_indicators() with reference_data uses external parameters", {
   units <- create_test_units(n_features = 5)

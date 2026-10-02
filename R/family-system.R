@@ -214,10 +214,20 @@ create_family_index <- function(data,
       # normalisait en amont voyait donc son travail ignoré — sans dommage, la
       # fonction normalisant elle-même les colonnes brutes, mais sans effet non
       # plus.
+      #
+      # Depuis 0.208.0 la colonne BRUTE l'emporte quand elle existe : elle passe
+      # par normalize_indicator(), qui applique la vraie règle de l'indicateur
+      # (borne absolue, sens). Un `_norm` venu de normalize_indicators() n'est
+      # qu'un min-max du lot, sans inversion : le préférer ré-inversait R1-R5,
+      # T3, L1 et S1/S2 sur le chemin documenté « normaliser puis agréger », et
+      # rendait le score relatif au lot (audit 1.0). Le `_norm` ne sert plus
+      # que lorsque la colonne brute est absente.
       unique_bases <- unique(sub("_norm$", "", fam_indicators))
       preferred_indicators <- vapply(unique_bases, function(base) {
         norm_version <- paste0(base, "_norm")
-        if (norm_version %in% names(data) && is.numeric(data[[norm_version]])) {
+        if (base %in% names(data) && is.numeric(data[[base]])) {
+          base
+        } else if (norm_version %in% names(data) && is.numeric(data[[norm_version]])) {
           norm_version
         } else {
           base
@@ -251,9 +261,13 @@ create_family_index <- function(data,
       col_name <- indicators[j]
       raw <- indicator_data[, j]
       if (grepl("_norm$", col_name)) {
-        # Déjà normalisée par l'appelant : simple écrêtage, pas de seconde
-        # normalisation (qui mutilerait une échelle déjà correcte).
-        indicator_data[, j] <- pmin(100, pmax(0, raw))
+        # Déjà normalisée par l'appelant (colonne brute absente) : écrêtage, et
+        # inversion pour les indicateurs « haut = mauvais » que
+        # normalize_indicator() retourne (R1-R5, T3, L1, S1, S2…). Le sens est
+        # lu sur la règle elle-même, pas sur une liste recopiée.
+        v <- pmin(100, pmax(0, raw))
+        if (.normalize_is_decreasing(sub("_norm$", "", col_name))) v <- 100 - v
+        indicator_data[, j] <- v
         next
       }
       # Statut d'unite porte par une colonne compagne (`p2_status`, ou

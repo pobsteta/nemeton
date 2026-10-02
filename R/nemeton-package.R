@@ -83,7 +83,7 @@
 #' )
 #'
 #' # Normalize by family
-#' normalized <- normalize_indicators(results, by_family = TRUE)
+#' normalized <- normalize_indicators(results)
 #'
 #' # Create family indices
 #' family_scores <- create_family_index(normalized)
