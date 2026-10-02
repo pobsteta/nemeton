@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.205.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.206.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,24 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.206.0" id="nemeton-02060-2026-10-01">nemeton 0.206.0 (2026-10-01)<a class="anchor" aria-label="anchor" href="#nemeton-02060-2026-10-01"></a></h2>
+<div class="section level4">
+<h4 id="changed--production-des-domaines--variance-calée-et-prédiction-propre-au-domaine-spec-lot-bis-0-206-0">Changed — production des domaines : variance calée et prédiction propre au domaine (spec 054 lot 5-bis)<a class="anchor" aria-label="anchor" href="#changed--production-des-domaines--variance-cal%C3%A9e-et-pr%C3%A9diction-propre-au-domaine-spec-lot-bis-0-206-0"></a></h4>
+<p>Le lot 5 combinait les placettes d’un domaine à l’estimation de ses SER avec le σᵥ² du modèle national, estimé entre SER, et je l’avais signalé comme une approximation. Une validation sur des mailles de 15 à 100 km couvrant la France l’a chiffrée : pour PV, l’erreur réelle de la prédiction SER vaut 0,67 à 20 km et 0,95 à 15 km, contre 0,43. <strong>Le lot 5 sous-pondérait la mesure directe des petits domaines.</strong></p>
+<ul><li>
+<strong><code><a href="../reference/ifn_production_domaines.html">ifn_production_domaines()</a></code> utilise désormais une variance calée selon la surface</strong> : log A = a + b·log(surface), avec b ≈ −0,4 à −0,5, ajustée sur ces mailles. Elle remplace le σᵥ² national. <strong>Les valeurs du lot 5 changent</strong> : pour une UT de 14 400 ha, le poids de la mesure directe passe de 0,08 à 0,18. Hors de la plage calibrée (22 500 à 1 000 000 ha), <code>hors_calibrage = TRUE</code>.</li>
+<li>
+<strong>Prédicteur hybride pour PV</strong> (<code>covariables = …</code>) : l’estimation des SER est corrigée de l’écart entre les covariables du domaine (hauteur FORMS-T, altitude) et celles de ses SER, avec les coefficients du modèle national. Validé : 19 à 35 % d’erreur en moins selon l’échelle. Pas de gain pour PG, qui garde la SER. La piste naïve (le modèle appliqué aux seules covariables du domaine) faisait 30 à 96 % <strong>pire</strong>, faute de l’effet propre de chaque SER.</li>
+<li>
+<strong><code>ifn_covariables_domaines(domaines, hauteur, altitude)</code></strong>, nouvelle : calcule ces covariables exactement comme pour les SER, à partir de la hauteur FORMS-T.</li>
+<li>
+<strong><code><a href="../reference/estimer_fay_herriot.html">estimer_fay_herriot()</a></code></strong> expose la covariance de β (<code>vcov_beta</code>).</li>
+<li>
+<strong>Tables</strong> : <code>ifn_production_echelle.csv</code>, <code>ifn_production_modele_coef.csv</code>, <code>ifn_production_modele_vcov.csv</code> et <code>ifn_production_covariables_ser.csv</code>.</li>
+<li>Nouvelles colonnes <code>predicteur</code>, <code>variance_domaine</code> et <code>hors_calibrage</code> ; un domaine sans placette a <code>nature = "prediction"</code>, et non plus <code>"ser"</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.205.0" id="nemeton-02050-2026-10-01">nemeton 0.205.0 (2026-10-01)<a class="anchor" aria-label="anchor" href="#nemeton-02050-2026-10-01"></a></h2>
 <div class="section level4">

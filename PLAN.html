@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.205.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.206.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -345,7 +345,10 @@
 </ul><p><strong>Journal</strong> — <em>2026-10-01</em> : <strong>lot 1-ter, comparaison GEDI / FORMS-T.</strong></p>
 <p>GEDI L2A a été acquis via NASA Harmony (une orbite sur 5, découpe au contour de la France, masque forêt FORMS-T). Comparaison sur les mêmes 252 domaines-années, 2019-2021 : - PV : RE 3,58 pour F contre 2,86 pour G ; - PG : 2,07 contre 1,97.</p>
 <p><strong>FORMS-T est confirmé</strong>, la table ne change pas. Il a fallu contourner trois problèmes : l’authentification Harmony (par jeton), le téléchargement des résultats (par <code>curl</code>), et un <code>~/.netrc</code> à nettoyer. L’extraction s’est arrêtée à la limite de 2 heures au milieu de 2022 ; elle est reprenable.</p>
-<p><strong>Prochaine étape</strong> : - <strong>app</strong> : attendre le câblage du brief (§3 bis ajouté pour les domaines) ; - <strong>en parallèle, lot 1-ter</strong> : le jeu GEDI, dès que le compte Earthdata est configuré (action de Pascal).</p>
+<p><strong>Journal</strong> — <em>2026-10-01</em> (<strong>v0.206.0</strong>) : <strong>lot 5-bis livré, spec close côté cœur.</strong></p>
+<p>Validation sur des mailles de 15 à 100 km : - le modèle appliqué aux seules covariables du domaine fait pire que la SER (−30 à −96 %) ; - l’<strong>hybride</strong> (SER + β × écart des covariables) fait mieux pour PV (+19 à +35 %), pas pour PG ; - le <strong>σᵥ² national sous-estimait l’erreur des petits domaines</strong>, d’où une variance calée selon la surface, qui change les valeurs du lot 5.</p>
+<p>Nouvelle fonction <code><a href="reference/ifn_covariables_domaines.html">ifn_covariables_domaines()</a></code>. Le brief app est complété.</p>
+<p><strong>Prochaine étape</strong> : - <strong>app</strong> : attendre le câblage du brief (§3 bis, domaines et covariables) ; - <strong>en parallèle, lot 1-ter</strong> : le jeu GEDI, dès que le compte Earthdata est configuré (action de Pascal).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess">Chantier CLOS — Onglet Desserte : rendre visibles les sorties (app + foretaccess)<a class="anchor" aria-label="anchor" href="#chantier-clos--onglet-desserte--rendre-visibles-les-sorties-app--foretaccess"></a></h1>

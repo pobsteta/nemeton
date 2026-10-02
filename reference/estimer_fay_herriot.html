@@ -25,7 +25,7 @@ nature = &quot;synthetique&quot;, never presented as a measurement."><meta prope
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.205.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.206.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -182,7 +182,9 @@ without intercept (one is added). No <code>NA</code> allowed.</p></dd>
 <code>mse</code>, <code>rse</code> (relative standard error, percent), <code>nature</code>
 (<code>"fay_herriot"</code> or <code>"synthetique"</code>). Attributes: <code>beta</code>
 (named coefficients), <code>sigma2_v</code> (estimated random-effect variance
-<code>A</code>), <code>iterations</code>, <code>converge</code>.</p>
+<code>A</code>), <code>vcov_beta</code> (covariance matrix of <code>beta</code>, for the MSE
+of a synthetic prediction <code>x' beta} outside the fit:
+\code{x' vcov_beta x</code>), <code>iterations</code>, <code>converge</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

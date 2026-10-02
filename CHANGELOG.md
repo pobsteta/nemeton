@@ -12,6 +12,24 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.206.0\] - 2026-10-01
+
+### Changed
+
+- [`ifn_production_domaines()`](https://pobsteta.github.io/nemeton/reference/ifn_production_domaines.md)
+  : variance du domaine calée selon sa surface (au lieu du σᵥ² national)
+  ; `nature = "prediction"` pour un domaine sans placette ; colonnes
+  `predicteur`, `variance_domaine` et `hors_calibrage`.
+
+### Added
+
+- [`ifn_covariables_domaines()`](https://pobsteta.github.io/nemeton/reference/ifn_covariables_domaines.md)
+  ; prédicteur hybride pour PV (`covariables = …`) ; attribut
+  `vcov_beta`
+  d’[`estimer_fay_herriot()`](https://pobsteta.github.io/nemeton/reference/estimer_fay_herriot.md).
+- Tables de coefficients, de calibrage par échelle et de covariables par
+  SER.
+
 ## \[0.205.0\] - 2026-10-01
 
 ### Added

@@ -52,7 +52,10 @@ A data.frame with one row per domain, in input order: `direct`, `psi`,
 `synthetique` (x' beta), `gamma`, `estimation`, `mse`, `rse` (relative
 standard error, percent), `nature` (`"fay_herriot"` or `"synthetique"`).
 Attributes: `beta` (named coefficients), `sigma2_v` (estimated
-random-effect variance `A`), `iterations`, `converge`.
+random-effect variance `A`), `vcov_beta` (covariance matrix of `beta`,
+for the MSE of a synthetic prediction
+`x' beta} outside the fit: \code{x' vcov_beta x`), `iterations`,
+`converge`.
 
 ## Details
 

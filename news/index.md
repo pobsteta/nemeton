@@ -1,5 +1,42 @@
 # Changelog
 
+## nemeton 0.206.0 (2026-10-01)
+
+#### Changed — production des domaines : variance calée et prédiction propre au domaine (spec 054 lot 5-bis)
+
+Le lot 5 combinait les placettes d’un domaine à l’estimation de ses SER
+avec le σᵥ² du modèle national, estimé entre SER, et je l’avais signalé
+comme une approximation. Une validation sur des mailles de 15 à 100 km
+couvrant la France l’a chiffrée : pour PV, l’erreur réelle de la
+prédiction SER vaut 0,67 à 20 km et 0,95 à 15 km, contre 0,43. **Le lot
+5 sous-pondérait la mesure directe des petits domaines.**
+
+- **[`ifn_production_domaines()`](https://pobsteta.github.io/nemeton/reference/ifn_production_domaines.md)
+  utilise désormais une variance calée selon la surface** : log A = a +
+  b·log(surface), avec b ≈ −0,4 à −0,5, ajustée sur ces mailles. Elle
+  remplace le σᵥ² national. **Les valeurs du lot 5 changent** : pour une
+  UT de 14 400 ha, le poids de la mesure directe passe de 0,08 à 0,18.
+  Hors de la plage calibrée (22 500 à 1 000 000 ha),
+  `hors_calibrage = TRUE`.
+- **Prédicteur hybride pour PV** (`covariables = …`) : l’estimation des
+  SER est corrigée de l’écart entre les covariables du domaine (hauteur
+  FORMS-T, altitude) et celles de ses SER, avec les coefficients du
+  modèle national. Validé : 19 à 35 % d’erreur en moins selon l’échelle.
+  Pas de gain pour PG, qui garde la SER. La piste naïve (le modèle
+  appliqué aux seules covariables du domaine) faisait 30 à 96 %
+  **pire**, faute de l’effet propre de chaque SER.
+- **`ifn_covariables_domaines(domaines, hauteur, altitude)`**, nouvelle
+  : calcule ces covariables exactement comme pour les SER, à partir de
+  la hauteur FORMS-T.
+- **[`estimer_fay_herriot()`](https://pobsteta.github.io/nemeton/reference/estimer_fay_herriot.md)**
+  expose la covariance de β (`vcov_beta`).
+- **Tables** : `ifn_production_echelle.csv`,
+  `ifn_production_modele_coef.csv`, `ifn_production_modele_vcov.csv` et
+  `ifn_production_covariables_ser.csv`.
+- Nouvelles colonnes `predicteur`, `variance_domaine` et
+  `hors_calibrage` ; un domaine sans placette a `nature = "prediction"`,
+  et non plus `"ser"`.
+
 ## nemeton 0.205.0 (2026-10-01)
 
 #### Added — production IFN d’un domaine quelconque (spec 054 lot 5)

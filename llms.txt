@@ -420,6 +420,8 @@ incertitude (spec 054, ADR-016)
   : Reference biological production to apply to a stand
 - [`ifn_production_domaines()`](https://pobsteta.github.io/nemeton/reference/ifn_production_domaines.md)
   : IFN production of user-defined domains
+- [`ifn_covariables_domaines()`](https://pobsteta.github.io/nemeton/reference/ifn_covariables_domaines.md)
+  : Covariates of user-defined domains for the IFN production model
 - [`ifn_taux_prelevement_production()`](https://pobsteta.github.io/nemeton/reference/ifn_taux_prelevement_production.md)
   : Harvest to production ratio by sylvoecoregion
 - [`localiser_ser()`](https://pobsteta.github.io/nemeton/reference/localiser_ser.md)
