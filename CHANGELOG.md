@@ -25,6 +25,7 @@ For a narrative, per-feature description of each release, see
 - `create_family_index()` : colonne brute prioritaire, `_norm` seul = score final ;
   `normalize_indicators(by_family)` ignoré (double normalisation).
 - Tuile MGRS lue par motif (orbite en CDSE).
+- `cluster_parcels()` : famille sans variance écartée au lieu de planter.
 - Re-run FORDEAD/RECONFORT : alertes validées sur le terrain conservées.
 - `%||%` importé depuis rlang (R < 4.4).
 

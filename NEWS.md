@@ -58,6 +58,10 @@ valeurs changent** : les projets doivent être recalculés.
   Seules les alertes `pending` sont désormais remplacées ; une nouvelle alerte
   à moins de 50 m d'une alerte validée n'est pas réinsérée.
 
+- **`cluster_parcels()`** : une famille constante (ou entièrement NA) rendait
+  `scale()` NaN et faisait planter `kmeans()`. Elle est écartée avec un
+  avertissement.
+
 ### Fixed — compatibilité
 
 - **`%||%`** n'était ni défini ni importé : le paquet cassait sous R 4.1 à 4.3

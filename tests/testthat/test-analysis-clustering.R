@@ -854,3 +854,12 @@ test_that("when k is provided, optimal_k and silhouette_scores are not set", {
   expect_equal(attr(result, "method"), "kmeans")
   expect_true(!is.null(attr(result, "cluster_profile")))
 })
+
+test_that("une famille constante est écartée au lieu de faire planter kmeans (audit 1.0)", {
+  set.seed(1)
+  d <- data.frame(famille_carbone = runif(12, 0, 100),
+                  famille_eau = runif(12, 0, 100),
+                  famille_air = rep(50, 12))
+  expect_warning(res <- cluster_parcels(d, families = names(d), k = 3), "no variance")
+  expect_length(unique(res$cluster), 3L)
+})
