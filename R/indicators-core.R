@@ -129,6 +129,16 @@ nemeton_compute <- function(units,
     layers <- crop_to_units(layers, units, buffer = 0)
   }
 
+  # Les indicateurs composites lisent des valeurs déjà calculées sous leur code
+  # court : T2 lit N2, E2 lit E1, N3 lit N1/N2/L1/B3. On les calcule en dernier
+  # et on leur passe `work`, une copie des unités enrichie des codes courts au
+  # fil de la boucle. Avant 0.208.0, chaque indicateur recevait les unités
+  # d'origine : N3 et E2 valaient toujours NA et T2 retombait sur 50 (audit 1.0).
+  composites <- c("indicateur_t2_changement", "indicateur_e2_evitement",
+                  "indicateur_n3_naturalite")
+  indicators <- c(setdiff(indicators, composites), intersect(composites, indicators))
+  work <- units
+
   # Initialize result as copy of units
   results <- units
 
@@ -150,15 +160,18 @@ nemeton_compute <- function(units,
     tryCatch(
       {
         # Dispatch to appropriate indicator function
-        values <- compute_indicator(ind, units, layers, ...)
+        values <- compute_indicator(ind, work, layers, ...)
 
         # Add to results
         results[[ind]] <- values
+        code <- .indicator_short_code(ind)
+        if (!is.na(code) && !code %in% names(units)) work[[code]] <- values
 
         computed_indicators <- c(computed_indicators, ind)
       },
       error = function(e) {
         msg_warn("indicator_failed", ind)
+        cli::cli_alert_info("{ind}: {conditionMessage(e)}")
         msg_info("indicator_set_na", ind)
         results[[ind]] <<- rep(NA_real_, nrow(results))
       }
@@ -182,6 +195,19 @@ nemeton_compute <- function(units,
   msg_success("indicator_computed", n_computed, n_total)
 
   results
+}
+
+# Couches du catalogue à passer aux indicateurs sans argument `layers`.
+.INDICATOR_LAYER_ARGS <- list(
+  indicateur_b1_protection   = list(protected_areas = c("vector", "protected_areas")),
+  indicateur_b3_connectivite = list(bdforet = c("vector", "bdforet"),
+                                    dem     = c("raster", "dem"))
+)
+
+# Code court d'un indicateur NMT : "indicateur_n1_distance" -> "N1".
+.indicator_short_code <- function(indicator) {
+  m <- regmatches(indicator, regexec("^indicateur_([a-z][0-9]+)_", indicator))[[1]]
+  if (length(m) < 2L) NA_character_ else toupper(m[[2]])
 }
 
 #' Dispatch indicator calculation to appropriate function
@@ -216,6 +242,18 @@ compute_indicator <- function(indicator, units, layers, ...) {
   func      <- get(func_name, mode = "function")
   call_args <- list(units = units, layers = layers, ...)
   fmls      <- names(formals(func))
+  # Indicateurs qui n'acceptent pas `layers` mais prennent leurs couches en
+  # arguments nommés : on les alimente depuis le catalogue, sans écraser un
+  # argument passé explicitement. Sans cela B1 et B3 rendaient NA alors que
+  # `layers$bdforet` existait (audit 1.0).
+  depuis_layers <- .INDICATOR_LAYER_ARGS[[indicator]]
+  for (arg in names(depuis_layers)) {
+    if (!arg %in% fmls || !is.null(call_args[[arg]])) next
+    spec <- depuis_layers[[arg]]
+    val <- if (identical(spec[[1]], "raster")) resolve_raster_layer(layers, spec[[2]])
+           else resolve_vector_layer(layers, spec[[2]])
+    if (!is.null(val)) call_args[[arg]] <- val
+  }
   if (!"..." %in% fmls) {
     call_args <- call_args[names(call_args) %in% fmls]
   }

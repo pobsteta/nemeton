@@ -853,3 +853,33 @@ test_that("get_global_cache_dir returns path string", {
   expect_type(result, "character")
   expect_true(nchar(result) > 0)
 })
+
+test_that("nemeton_compute passe les codes courts déjà calculés aux composites (audit 1.0)", {
+  skip_if_not_installed("terra")
+  # Avant 0.208.0, E2 recevait les unités d'origine (sans E1) et valait NA ;
+  # T2 ne voyait jamais N2. Les composites sont aussi réordonnés en dernier.
+  units <- nemeton_units(create_test_units(n_features = 3))
+  temp_files <- create_temp_test_files()
+  layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
+  vus <- new.env()
+  local_mocked_bindings(
+    indicateur_e1_bois_energie = function(units, ...) { units$E1 <- c(1, 2, 3); units },
+    indicateur_n2_continuite = function(units, ...) { units$N2 <- c(10, 50, 90); units },
+    .package = "nemeton"
+  )
+  res <- suppressMessages(nemeton_compute(
+    units, layers,
+    indicators = c("indicateur_e2_evitement", "indicateur_t2_changement",
+                   "indicateur_e1_bois_energie", "indicateur_n2_continuite"),
+    preprocess = FALSE, progress = FALSE))
+  expect_false(anyNA(res$indicateur_e2_evitement))
+  expect_equal(res$indicateur_t2_changement, c(10, 50, 90))
+  # Les codes courts de travail ne fuient pas dans le résultat.
+  expect_false(any(c("E1", "N2") %in% names(res)))
+})
+
+test_that(".indicator_short_code extrait le code court", {
+  expect_identical(nemeton:::.indicator_short_code("indicateur_n1_distance"), "N1")
+  expect_identical(nemeton:::.indicator_short_code("indicateur_a5_rafraichissement"), "A5")
+  expect_true(is.na(nemeton:::.indicator_short_code("autre")))
+})
