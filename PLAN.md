@@ -138,7 +138,7 @@ recommandation initiale :
   sortir silencieusement les arbres de la somme (PV tombait à 2,25) ;
 - **prélèvement** : l'IGN compte aussi les arbres coupés non vidangés (code 7) ;
 - **GEDI** : trou d'acquisition de mars 2023 à avril 2024, aucun accès Earthdata
-  configuré.
+  configuré (configuré depuis, cf. lot 1-ter).
 
 **Journal** — *2026-10-01* (**v0.200.0**) : **lot 1 livré.**
 
@@ -292,13 +292,17 @@ lignes à 40 m (H₀ maximal des courbes Duplat : 37,3). `create_family_index()`
 lit la colonne compagne. L'app la transporte déjà ; reste à la passer dans
 `.add_normalized_indicators()` (brief émis).
 
+**Journal** — *2026-10-02* (doc seule) : **lot 1-ter refermé.** La « prochaine
+étape » GEDI était périmée : Earthdata est configuré et la comparaison est faite
+depuis le 2026-10-01 (journal ci-dessus, FORMS-T confirmé). L'extraction GEDI
+2022, arrêtée à mi-année, n'est pas reprise : elle ne peut pas changer le
+verdict. **Plus aucun travail cœur ouvert sur la spec 054.**
+
 **Prochaine étape** :
 - **app** : §1 à §3 bis câblés en v0.152.0. Restent les covariables de domaine
   (v0.206.0 publiée, écart n° 15) et la validation §6 sur un projet réel (écart
   n° 16) ;
-- **app** : passer `.p2_status` à `normalize_indicator()` (écart n° 17, cœur v0.207.0) ;
-- **en parallèle, lot 1-ter** : le jeu GEDI, dès que le compte Earthdata est
-  configuré (action de Pascal).
+- **app** : passer `.p2_status` à `normalize_indicator()` (écart n° 17, cœur v0.207.0).
 
 ---
 
