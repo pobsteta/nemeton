@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.206.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.207.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,20 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.207.0" id="nemeton-02070-2026-10-02">nemeton 0.207.0 (2026-10-02)<a class="anchor" aria-label="anchor" href="#nemeton-02070-2026-10-02"></a></h2>
+<div class="section level4">
+<h4 id="fixed--p2-en-mode-chm-ne-sature-plus-à-la-normalisation-écart-n-0-207-0">Fixed — P2 en mode CHM ne sature plus à la normalisation (écart n° 17)<a class="anchor" aria-label="anchor" href="#fixed--p2-en-mode-chm-ne-sature-plus-%C3%A0-la-normalisation-%C3%A9cart-n-0-207-0"></a></h4>
+<p><code><a href="../reference/normalize_indicator.html">normalize_indicator()</a></code> bornait P2 à 15 quelle que soit sa source. 15 est le maximum des tables de production du mode historique, en <strong>m³/ha/an</strong>, ce qui convient aussi au mode IFN, de même unité. Mais en mode CHM, le mode par défaut de l’app, P2 est un <strong>indice de station H₀ en mètres</strong>, de 9 à 37 m selon les courbes Duplat (médiane 18,5). Avec un plafond de 15, la plupart des peuplements sortaient à 100/100. Relevé le 2026-10-02 en répondant à une question de l’app.</p>
+<ul><li>
+<strong><code><a href="../reference/indicateur_p2_station.html">indicateur_p2_station()</a></code> en mode CHM</strong> ajoute la colonne <code>p2_status = "indice_station_m"</code>. Les modes historique et IFN ne changent pas.</li>
+<li>
+<strong><code>normalize_indicator(indicator, values, statut = NULL)</code></strong> : pour P2, le plafond vaut <strong>40 m</strong> sur les lignes de statut <code>"indice_station_m"</code>, et 15 ailleurs. Sans statut, le comportement est inchangé. H₀ = 18,5 m donne désormais 46/100.</li>
+<li>
+<strong><code><a href="../reference/create_family_index.html">create_family_index()</a></code></strong> lit la colonne compagne (<code>p2_status</code>, ou <code>.p2_status</code> comme la conserve l’app) et la transmet.</li>
+</ul><p>L’app transporte déjà <code>p2_status</code> en <code>.p2_status</code>, par son mécanisme générique des colonnes de statut. Elle doit seulement le passer à <code><a href="../reference/normalize_indicator.html">normalize_indicator()</a></code> dans <code>.add_normalized_indicators()</code> : brief <code>vers-nemetonshiny/</code> du 2026-10-02.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.206.0" id="nemeton-02060-2026-10-01">nemeton 0.206.0 (2026-10-01)<a class="anchor" aria-label="anchor" href="#nemeton-02060-2026-10-01"></a></h2>
 <div class="section level4">

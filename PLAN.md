@@ -48,16 +48,17 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 13 | **RECONFORT : 5 runs écrêtés par le défaut iota2 \#12, à relancer** (la partie app — `include_range`, couche P(atteinte), libellés — est refermée) | cœur **v0.199.0** + app **v0.144.2** | **re-runs** (données) | Correctif \#12 appliqué à l’env `nemeton-reconfort` le 2026-09-23. **Reste** : relancer RECONFORT sur armn z5 (2025 et 2026), ltcp z9, hwuy z49, yuxn z53 — tous encore écrêtés (max des bandes = 255, score 24–58), relu le 2026-09-23. Score continu et `stress_index` faux d’ici là ; classes et alertes justes. Premier run post-correctif : vérifier max des bandes ~1000 et score jusqu’à ~100 (le correctif \#12 n’a pas encore été validé par un vrai run). Lancer dans un cgroup plafonné |
 | 15 | Covariables de domaine FORMS-T pour la production du massif ([`ifn_covariables_domaines()`](https://pobsteta.github.io/nemeton/reference/ifn_covariables_domaines.md), hybride PV : 19 à 35 % d’erreur en moins) | cœur **v0.206.0** (publiée le 2026-10-02 à 02 h 44) | `nemetonshiny` | L’app (v0.152.0, plancher `nemeton (>= 0.205.0)`) ne les câble pas encore. Le brief app du 2026-10-02 les croyait bloquées par une release cœur non publiée ; **v0.206.0 était déjà publiée** quatre heures avant la release de l’app, donc rien n’attend plus le cœur. À câbler : hauteur FORMS-T seulement (pas de CHM LiDAR ni Open-Canopy), affichage de `hors_calibrage`, plancher `nemeton (>= 0.206.0)`. **La variance calée selon la surface de v0.206.0 change déjà les valeurs** du panneau du massif livré en v0.152.0, dès que l’app installe v0.206.0 |
 | 16 | Validation §6 du brief production IFN sur un projet réel | app **v0.152.0** | terrain | Vérifiée seulement sur deux UGF synthétiques en C51 (P2 = 5,37 m³/ha/an, RSE 2,6 % ; E1 `"ifn_ser"` → `recolte_observee`, E1 à 0,6 → `ressource_flux`) |
-| 17 | P2 en mode CHM saturé : indice de station H₀ (m, de 9 à 37) normalisé avec un plafond de 15 pensé pour des m³/ha/an | cœur (antérieur à la spec 054) | **décision Pascal** | Relevé le 2026-10-02 en répondant à l’app. [`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md) ne voit que les valeurs, pas le mode : un plafond propre au mode CHM demande un signal (colonne ou attribut) ou une sortie P2 dans une seule unité |
+| 17 | P2 en mode CHM saturé : indice de station H₀ (m, de 9 à 37) normalisé avec un plafond de 15 pensé pour des m³/ha/an | cœur **v0.207.0** | `nemetonshiny` | **Côté cœur, réglé le 2026-10-02** (décision Pascal : plafond propre au mode CHM). P2 CHM écrit `p2_status = "indice_station_m"`, et `normalize_indicator(statut =)` applique 40 m (H₀ = 18,5 m → 46/100 au lieu de 100) ; [`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md) lit `p2_status` ou `.p2_status`. L’app transporte déjà `.p2_status` (mécanisme générique des statuts), mais **ne le passe pas encore** à [`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md) dans `.add_normalized_indicators()`. Brief émis le 2026-10-02 |
 
-**Six écarts (n° 3, n° 6 résiduel, n° 13 résiduel, n° 15, n° 16, n° 17).
-Seul le n° 17 appelle un correctif dans le cœur, après décision.** Le n°
-3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR
-et une desserte corrigée. Le n° 6 a été lu côté app — l’interdit tient,
-faute de vue inter-projets où l’enfreindre — et ne reste ouvert que sur
-la question B02. Les n° 7, 8, 10 et 11 sont refermés le 2026-09-23
-(relus sur `nemetonshiny@3869ffd8`, table ci-dessous). Le n° 12 (FAST,
-cœur v0.198.0) est refermé le même jour par l’app v0.143.31. Le n° 13
+**Six écarts (n° 3, n° 6 résiduel, n° 13 résiduel, n° 15, n° 16, n° 17),
+aucun n’appelle plus de correctif dans le cœur.** Le n° 17 est réglé
+côté cœur (v0.207.0) et attend l’app. Le n° 3 attend une sortie sur un
+projet réel portant à la fois un nuage LiDAR et une desserte corrigée.
+Le n° 6 a été lu côté app — l’interdit tient, faute de vue inter-projets
+où l’enfreindre — et ne reste ouvert que sur la question B02. Les n° 7,
+8, 10 et 11 sont refermés le 2026-09-23 (relus sur
+`nemetonshiny@3869ffd8`, table ci-dessous). Le n° 12 (FAST, cœur
+v0.198.0) est refermé le même jour par l’app v0.143.31. Le n° 13
 (RECONFORT, cœur v0.199.0) est refermé côté app par la v0.144.2 et ne
 reste ouvert que sur la relance des cinq runs écrêtés par le défaut
 iota2 \#12. Le n° 14 (houppiers, cœur v0.199.2) est refermé par l’app
@@ -307,12 +308,22 @@ plupart des peuplements saturent à 100/100, alors que c’est le mode par
 défaut de l’app. **Décision à prendre** (écart n° 17, ouvert le
 2026-10-02).
 
+**Journal** — *2026-10-02* (**v0.207.0**) : **écart n° 17 réglé côté
+cœur.** Décision de Pascal : un plafond propre au mode CHM. P2 en mode
+CHM écrit `p2_status = "indice_station_m"`, et
+`normalize_indicator(statut =)` borne ces lignes à 40 m (H₀ maximal des
+courbes Duplat : 37,3).
+[`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)
+lit la colonne compagne. L’app la transporte déjà ; reste à la passer
+dans `.add_normalized_indicators()` (brief émis).
+
 **Prochaine étape** : - **app** : §1 à §3 bis câblés en v0.152.0.
 Restent les covariables de domaine (v0.206.0 publiée, écart n° 15) et la
-validation §6 sur un projet réel (écart n° 16) ; - **cœur** :
-normalisation de P2 en mode CHM (écart n° 17, décision à prendre) ; -
-**en parallèle, lot 1-ter** : le jeu GEDI, dès que le compte Earthdata
-est configuré (action de Pascal).
+validation §6 sur un projet réel (écart n° 16) ; - **app** : passer
+`.p2_status` à
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+(écart n° 17, cœur v0.207.0) ; - **en parallèle, lot 1-ter** : le jeu
+GEDI, dès que le compte Earthdata est configuré (action de Pascal).
 
 ------------------------------------------------------------------------
 

@@ -1,5 +1,35 @@
 # Changelog
 
+## nemeton 0.207.0 (2026-10-02)
+
+#### Fixed — P2 en mode CHM ne sature plus à la normalisation (écart n° 17)
+
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+bornait P2 à 15 quelle que soit sa source. 15 est le maximum des tables
+de production du mode historique, en **m³/ha/an**, ce qui convient aussi
+au mode IFN, de même unité. Mais en mode CHM, le mode par défaut de
+l’app, P2 est un **indice de station H₀ en mètres**, de 9 à 37 m selon
+les courbes Duplat (médiane 18,5). Avec un plafond de 15, la plupart des
+peuplements sortaient à 100/100. Relevé le 2026-10-02 en répondant à une
+question de l’app.
+
+- **[`indicateur_p2_station()`](https://pobsteta.github.io/nemeton/reference/indicateur_p2_station.md)
+  en mode CHM** ajoute la colonne `p2_status = "indice_station_m"`. Les
+  modes historique et IFN ne changent pas.
+- **`normalize_indicator(indicator, values, statut = NULL)`** : pour P2,
+  le plafond vaut **40 m** sur les lignes de statut
+  `"indice_station_m"`, et 15 ailleurs. Sans statut, le comportement est
+  inchangé. H₀ = 18,5 m donne désormais 46/100.
+- **[`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)**
+  lit la colonne compagne (`p2_status`, ou `.p2_status` comme la
+  conserve l’app) et la transmet.
+
+L’app transporte déjà `p2_status` en `.p2_status`, par son mécanisme
+générique des colonnes de statut. Elle doit seulement le passer à
+[`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+dans `.add_normalized_indicators()` : brief `vers-nemetonshiny/` du
+2026-10-02.
+
 ## nemeton 0.206.0 (2026-10-01)
 
 #### Changed — production des domaines : variance calée et prédiction propre au domaine (spec 054 lot 5-bis)

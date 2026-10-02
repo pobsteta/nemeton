@@ -35,7 +35,7 @@ Legacy mode — when chm is NULL
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.206.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.207.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -245,7 +245,9 @@ national figure. Default <code>"ser"</code>.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>sf object with one added column:</p><ul><li><p>Legacy mode: <code>P2</code> = annual increment (m3/ha/yr).</p></li>
 <li><p>CHM mode:    <code>P2</code> = site index \(H_0\) (m) at
-          <code>reference_age</code>.</p></li>
+          <code>reference_age</code>, plus <code>p2_status =
+          "indice_station_m"</code> so that normalisation uses a 40 m
+          ceiling (<code><a href="normalize_indicator.html">normalize_indicator</a></code>).</p></li>
 <li><p>IFN mode:    <code>P2</code> = IFN volume production of the
           sylvoecoregion (m3/ha/yr), plus <code>P2_rse</code>,
           <code>P2_provenance</code>, <code>P2_nature</code>.</p></li>

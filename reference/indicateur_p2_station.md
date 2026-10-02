@@ -106,7 +106,10 @@ sf object with one added column:
 
 - Legacy mode: `P2` = annual increment (m3/ha/yr).
 
-- CHM mode: `P2` = site index \\H_0\\ (m) at `reference_age`.
+- CHM mode: `P2` = site index \\H_0\\ (m) at `reference_age`, plus
+  `p2_status = "indice_station_m"` so that normalisation uses a 40 m
+  ceiling
+  ([`normalize_indicator`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)).
 
 - IFN mode: `P2` = IFN volume production of the sylvoecoregion
   (m3/ha/yr), plus `P2_rse`, `P2_provenance`, `P2_nature`.

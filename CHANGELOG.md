@@ -12,6 +12,16 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.207.0\] - 2026-10-02
+
+### Fixed
+
+- P2 en mode CHM (indice de station en mètres) normalisé contre 40 m au
+  lieu de 15 : colonne `p2_status`, argument `statut` de
+  [`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md),
+  lu par
+  [`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md).
+
 ## \[0.206.0\] - 2026-10-01
 
 ### Changed
