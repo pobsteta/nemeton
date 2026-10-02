@@ -45,11 +45,11 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 |----|----|----|----|----|
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 | 6 | B4/L3 : les valeurs changent de sens et d’échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Interdit accusé réception le 2026-09-23** (brief app `BRIEF-nemeton-plan-md-0.143.17-0.143.28.md`) : aucun écran ne classe, ne compare ni ne moyenne B4/L3 entre projets — l’app n’a pas de vue inter-projets. **Reste ouvert sur un seul point : question B02 en attente côté app** — B02 absente de l’espace k-means, remplacée par `ID` (point 4 du brief), pas encore instruite |
-| 13 | **RECONFORT : 5 runs écrêtés par le défaut iota2 \#12, à relancer** (la partie app — `include_range`, couche P(atteinte), libellés — est refermée) | cœur **v0.199.0** + **v0.207.1** + app **v0.144.2** | **re-runs** (données) | Correctif \#12 appliqué à l’env `nemeton-reconfort` le 2026-09-23. **Reste** : relancer RECONFORT sur armn z5 (2025 et 2026), ltcp z9, hwuy z49, yuxn z53 — tous encore écrêtés (max des bandes = 255, score 24–58), relu le 2026-09-23. Score continu et `stress_index` faux d’ici là ; classes et alertes justes. Premier run post-correctif : vérifier max des bandes ~1000 et score jusqu’à ~100. **2026-10-02 (cœur v0.207.1)** : le run ltcp du 2026-09-23 au soir, postérieur au correctif, **n’avait rien recalculé** — `-restart` sautait toutes les tâches d’un run terminé et resservait la mosaïque de juillet (deux chunks neufs en uint16 jusqu’à 1000, `final/` toujours à 255). Corrigé : un run terminé voit ses résultats IOTA² effacés avant la relance. **Les relances n’ont de sens qu’avec un cœur ≥ 0.207.1** installé côté app. **Relances du 2026-10-02 (cœur 0.207.1)** : ltcp z9 2025 ✅ (2 658 alertes, proba max 1000, score 1–98), yuxn z53 2025 ✅ (936, 999, 94), armn z5 2025 ✅ (1 805, 1000, 96), hwuy z49 2025 ✅ (2 492, 1000, 97). **Correctif \#12 validé.** Reste **armn z5 2026** (ingestion de 170 scènes 2026, en cours). hwuy a échoué deux fois dans le pipeline à l’étape IOTA² *tile’s envelope* (`envelope/TMP/T31TFN.shp` jamais écrit) ; la même étape passe isolée, sous l’environnement exact du run, et dans la partie 1 lancée à la main — c’est ce qui a débloqué. **Cause non trouvée**, à instrumenter si elle revient |
 | 16 | Validation §6 du brief production IFN sur un projet réel | app **v0.152.0** | terrain | Vérifiée seulement sur deux UGF synthétiques en C51 (P2 = 5,37 m³/ha/an, RSE 2,6 % ; E1 `"ifn_ser"` → `recolte_observee`, E1 à 0,6 → `ressource_flux`). Chargement FORMS-T **vérifié en réel** le 2026-10-02 (Dabo : prévision hybride 6,58 contre 7,56 m³/ha/an en SER). Reste la validation métier dans l’app sur un projet recalculé en mode IFN |
 
-**Quatre écarts (n° 3, n° 6 résiduel, n° 13 résiduel, n° 16), aucun
-n’appelle plus de correctif dans le cœur.** Les n° 15 et 17 sont
+**Trois écarts (n° 3, n° 6 résiduel, n° 16), aucun n’appelle plus de
+correctif dans le cœur.** Le n° 13 est refermé le 2026-10-02 (cinq
+relances RECONFORT propres, table ci-dessous). Les n° 15 et 17 sont
 refermés par l’app v0.152.1 le 2026-10-02 (table ci-dessous). Le n° 3
 attend une sortie sur un projet réel portant à la fois un nuage LiDAR et
 une desserte corrigée. Le n° 6 a été lu côté app — l’interdit tient,
@@ -72,17 +72,17 @@ respectives (T1 : « *120 ans et 300 ans obtiennent le même score de 100*
 pendant trois semaines sans que personne ne le voie : **le trou était
 dans la table, pas dans le code.**
 
-**Les treize autres sont refermés** (et la partie app du n° 13). Les n°
-1, 2, 4 et 5 ont été vérifiés en lecture seule sur
-`nemetonshiny@5a1afd7c` le 2026-08-22 (détail dans l’entrée de journal
-du 2026-08-22, chantiers A et D) ; le n° 9 sur `nemetonshiny@d2442193`
-le 2026-08-31 ; les n° 7, 8, 10 et 11 sur `nemetonshiny@3869ffd8` le
-2026-09-23 (plancher `DESCRIPTION:15` : `nemeton (>= 0.197.0)`) ; le n°
-12 sur `nemetonshiny@69cf0aeb` (tag v0.143.31) le 2026-09-23 (plancher
-`nemeton (>= 0.198.0)`) ; le n° 14 et la partie app du n° 13 sur
-`nemetonshiny@9b9c4b98` (tag v0.144.2) le 2026-09-23 (plancher
-`nemeton (>= 0.199.2)`) ; les n° 15 et 17 sur `nemetonshiny@546a2d74`
-(tag v0.152.1) le 2026-10-02 (plancher `nemeton (>= 0.207.0)`) :
+**Les quatorze autres sont refermés.** Les n° 1, 2, 4 et 5 ont été
+vérifiés en lecture seule sur `nemetonshiny@5a1afd7c` le 2026-08-22
+(détail dans l’entrée de journal du 2026-08-22, chantiers A et D) ; le
+n° 9 sur `nemetonshiny@d2442193` le 2026-08-31 ; les n° 7, 8, 10 et 11
+sur `nemetonshiny@3869ffd8` le 2026-09-23 (plancher `DESCRIPTION:15` :
+`nemeton (>= 0.197.0)`) ; le n° 12 sur `nemetonshiny@69cf0aeb` (tag
+v0.143.31) le 2026-09-23 (plancher `nemeton (>= 0.198.0)`) ; le n° 14 et
+la partie app du n° 13 sur `nemetonshiny@9b9c4b98` (tag v0.144.2) le
+2026-09-23 (plancher `nemeton (>= 0.199.2)`) ; les n° 15 et 17 sur
+`nemetonshiny@546a2d74` (tag v0.152.1) le 2026-10-02 (plancher
+`nemeton (>= 0.207.0)`) :
 
 | \# | Écart | Refermé par | Ce qui a été relu |
 |----|----|----|----|
@@ -97,6 +97,7 @@ le 2026-08-31 ; les n° 7, 8, 10 et 11 sur `nemetonshiny@3869ffd8` le
 | 11 | `E1` / `E2` : trois bornes pour un même nombre (spec 048 §11) | app **v0.143.25** (même commit) | Même mécanisme, même palier v3 (« E1/E2 alignés sur P1 ») |
 | 12 | FAST : masques qui s’écrasaient, stack d’indice sans cache (cœur v0.198.0, brief app 2026-09-23) | app **v0.143.31** (`69cf0aeb`, commit `50671fd6`) | `mod_monitoring_pixel_map.R:301` — `build_index_stack(..., cache_result = TRUE)`, `parallel = FALSE` ; commentaire de `.compute_fast_mask()` (`mod_monitoring_fast_alerts.R`) aligné sur `fast_alert_<INDEX>_<mode>_<hash16>.tif`. Mesure app sur `armn` (327 scènes) : **39,5 s → 0,22 s**, résultat identique |
 | 13 (app) | RECONFORT : `include_range` inerte, couche `probability` = P(sain) (cœur v0.199.0) | app **v0.144.2** (`9b9c4b98`) | `utils_i18n.R` — `reconfort_couche_proba` = « Probabilité d’atteinte » / « Probability of dieback », infobulle P2 + P3 sur 0–1000 ; aucune ligne de code : le manifeste pointe déjà `p_atteinte_*.tif`. Le volet données (5 re-runs) reste ouvert en tête |
+| 13 (données) | RECONFORT : 5 runs écrêtés par le défaut iota2 \#12 (cœur v0.199.0) | relances du 2026-10-02, cœur **v0.207.1** | Le correctif \#12 n’avait jamais été exercé : `-restart` resservait la mosaïque d’un run terminé (corrigé en v0.207.1). Après relance : ltcp z9 2025 (2 658 alertes, proba max 1000, score max 98), yuxn z53 2025 (936, 999, 94), armn z5 2025 (1 805, 1000, 96), hwuy z49 2025 (2 492, 1000, 97), armn z5 2026 (1 428, 1000, 95 ; 170 scènes, 280 min). Reste non expliqué : l’échec de l’étape IOTA² *tile’s envelope* de hwuy dans le pipeline (deux fois), contourné en lançant la partie 1 à la main |
 | 14 | Houppiers : échec sous plan `future` multi-workers (cœur v0.199.2) | app **v0.144.2** (`9b9c4b98`) | `service_marculus.R:624` — `nemeton::segment_houppiers(chm, aoi = aoi)` dans le processus ; plus de [`callr::r()`](https://callr.r-lib.org/reference/r.html) ni de `st_filter()` d’emprise applicatif ; `st_make_valid()` en 2154 gardé (`.marculus_aoi()`) ; plancher `DESCRIPTION` `nemeton (>= 0.199.2)` |
 | 15 | Covariables de domaine FORMS-T pour la production du massif (cœur v0.206.0) | app **v0.152.1** (`546a2d74`, fix `35ddc536`) | `service_production_ifn.R:369` — `.massif_covariables()` appelle `nemeton::ifn_covariables_domaines(dom, h$height, dem, unite_hauteur = "cm")` (hauteur FORMS-T seule, altitude = MNT du projet) ; ligne 307, `ifn_production_domaines(covariables = cov)`. Rien n’est passé si une covariable manque. Chargement FORMS-T réel non vérifié (403 Theia sur le poste), suivi par le n° 16 |
 | 17 | P2 en mode CHM normalisé contre 40 m (cœur v0.207.0) | app **v0.152.1** (`546a2d74`) | `service_project.R:601-603` — `.indicator_status_col(cc)` puis `normalize_indicator(cc, v, statut = st)`. **En plus du brief** : `service_compute.R:4286-4287` retire le statut d’un calcul précédent (sinon un P2 repassé CHM → IFN gardait `indice_station_m` et ses m³/ha/an étaient notés sur 40) |
@@ -13285,7 +13286,7 @@ changement cœur `nemeton`.
   v0.25.0), donc le bump correct était `v0.25.0 → v0.25.1`. **Cause
   racine** : `.stratify()` (R/sampling_plan.R:169-210) produit des
   chaînes type `"NA_FEU_BAS"` quand `mean_height` ou `mean_tpi` est NA.
-  [`spsurvey::grts()`](https://rdrr.io/pkg/spsurvey/man/grts.html)
+  [`spsurvey::grts()`](https://usepa.github.io/spsurvey/reference/grts.html)
   reçoit la frame complète avec ces strates “NA\_\*” et drop
   silencieusement ces rows ; l’assignment downstream `[<-` détecte la
   mismatch et plante en français (msg système R). **Fix** dans
@@ -14284,8 +14285,8 @@ changement cœur `nemeton`.
   (avec fallback texte si la config régionale est absente). (2)
   `generate_health_validation_plots(alerts_sf, n, method, crs)` : tirage
   stratifié par `confidence_class`, GRTS via
-  [`spsurvey::grts()`](https://rdrr.io/pkg/spsurvey/man/grts.html) quand
-  le package est disponible (repli silencieux sur tirage aléatoire
+  [`spsurvey::grts()`](https://usepa.github.io/spsurvey/reference/grts.html)
+  quand le package est disponible (repli silencieux sur tirage aléatoire
   intra-strate sinon, taggé dans `sampling_method`), helper
   `.allocate_health_strata()` qui distribue le budget `n` à la
   largest-remainder method en respectant la capacité par strate et
