@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.152.0** (release du 2026-10-02), relevée le 2026-10-02.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.152.1** (release du 2026-10-02), relevée le 2026-10-02.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -37,11 +37,9 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 | 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Interdit accusé réception le 2026-09-23** (brief app `BRIEF-nemeton-plan-md-0.143.17-0.143.28.md`) : aucun écran ne classe, ne compare ni ne moyenne B4/L3 entre projets — l'app n'a pas de vue inter-projets. **Reste ouvert sur un seul point : question B02 en attente côté app** — B02 absente de l'espace k-means, remplacée par `ID` (point 4 du brief), pas encore instruite |
 | 13 | **RECONFORT : 5 runs écrêtés par le défaut iota2 #12, à relancer** (la partie app — `include_range`, couche P(atteinte), libellés — est refermée) | cœur **v0.199.0** + **v0.207.1** + app **v0.144.2** | **re-runs** (données) | Correctif #12 appliqué à l'env `nemeton-reconfort` le 2026-09-23. **Reste** : relancer RECONFORT sur armn z5 (2025 et 2026), ltcp z9, hwuy z49, yuxn z53 — tous encore écrêtés (max des bandes = 255, score 24–58), relu le 2026-09-23. Score continu et `stress_index` faux d'ici là ; classes et alertes justes. Premier run post-correctif : vérifier max des bandes ~1000 et score jusqu'à ~100. **2026-10-02 (cœur v0.207.1)** : le run ltcp du 2026-09-23 au soir, postérieur au correctif, **n'avait rien recalculé** — `-restart` sautait toutes les tâches d'un run terminé et resservait la mosaïque de juillet (deux chunks neufs en uint16 jusqu'à 1000, `final/` toujours à 255). Corrigé : un run terminé voit ses résultats IOTA² effacés avant la relance. **Les relances n'ont de sens qu'avec un cœur ≥ 0.207.1** installé côté app. Lancer dans un cgroup plafonné |
-| 15 | Covariables de domaine FORMS-T pour la production du massif (`ifn_covariables_domaines()`, hybride PV : 19 à 35 % d'erreur en moins) | cœur **v0.206.0** (publiée le 2026-10-02 à 02 h 44) | `nemetonshiny` | L'app (v0.152.0, plancher `nemeton (>= 0.205.0)`) ne les câble pas encore. Le brief app du 2026-10-02 les croyait bloquées par une release cœur non publiée ; **v0.206.0 était déjà publiée** quatre heures avant la release de l'app, donc rien n'attend plus le cœur. À câbler : hauteur FORMS-T seulement (pas de CHM LiDAR ni Open-Canopy), affichage de `hors_calibrage`, plancher `nemeton (>= 0.206.0)`. **La variance calée selon la surface de v0.206.0 change déjà les valeurs** du panneau du massif livré en v0.152.0, dès que l'app installe v0.206.0 |
-| 16 | Validation §6 du brief production IFN sur un projet réel | app **v0.152.0** | terrain | Vérifiée seulement sur deux UGF synthétiques en C51 (P2 = 5,37 m³/ha/an, RSE 2,6 % ; E1 `"ifn_ser"` → `recolte_observee`, E1 à 0,6 → `ressource_flux`) |
-| 17 | P2 en mode CHM saturé : indice de station H₀ (m, de 9 à 37) normalisé avec un plafond de 15 pensé pour des m³/ha/an | cœur **v0.207.0** | `nemetonshiny` | **Côté cœur, réglé le 2026-10-02** (décision Pascal : plafond propre au mode CHM). P2 CHM écrit `p2_status = "indice_station_m"`, et `normalize_indicator(statut =)` applique 40 m (H₀ = 18,5 m → 46/100 au lieu de 100) ; `create_family_index()` lit `p2_status` ou `.p2_status`. L'app transporte déjà `.p2_status` (mécanisme générique des statuts), mais **ne le passe pas encore** à `normalize_indicator()` dans `.add_normalized_indicators()`. Brief émis le 2026-10-02 |
+| 16 | Validation §6 du brief production IFN sur un projet réel | app **v0.152.0** | terrain | Vérifiée seulement sur deux UGF synthétiques en C51 (P2 = 5,37 m³/ha/an, RSE 2,6 % ; E1 `"ifn_ser"` → `recolte_observee`, E1 à 0,6 → `ressource_flux`). Inclure un chargement FORMS-T réel (prédicteur `"hybride"` attendu dans le panneau du massif) : non vérifié, clé Theia du poste de dev en 403 au 2026-10-02 |
 
-**Six écarts (n° 3, n° 6 résiduel, n° 13 résiduel, n° 15, n° 16, n° 17), aucun n'appelle plus de correctif dans le cœur.** Le n° 17 est réglé côté cœur (v0.207.0) et attend l'app.
+**Quatre écarts (n° 3, n° 6 résiduel, n° 13 résiduel, n° 16), aucun n'appelle plus de correctif dans le cœur.** Les n° 15 et 17 sont refermés par l'app v0.152.1 le 2026-10-02 (table ci-dessous).
 Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR
 et une desserte corrigée. Le n° 6 a été lu côté app — l'interdit tient, faute
 de vue inter-projets où l'enfreindre — et ne reste ouvert que sur la question
@@ -61,14 +59,15 @@ MS/ha/an sature dès 150 m³/ha environ* »). Écrits, datés, jamais remontés 
 Une fiche peut décrire un défaut pendant trois semaines sans que personne ne le
 voie : **le trou était dans la table, pas dans le code.**
 
-**Les onze autres sont refermés** (et la partie app du n° 13). Les n° 1, 2, 4 et 5 ont été vérifiés en
+**Les treize autres sont refermés** (et la partie app du n° 13). Les n° 1, 2, 4 et 5 ont été vérifiés en
 lecture seule sur `nemetonshiny@5a1afd7c` le 2026-08-22 (détail dans l'entrée
 de journal du 2026-08-22, chantiers A et D) ; le n° 9 sur
 `nemetonshiny@d2442193` le 2026-08-31 ; les n° 7, 8, 10 et 11 sur
 `nemetonshiny@3869ffd8` le 2026-09-23 (plancher `DESCRIPTION:15` :
 `nemeton (>= 0.197.0)`) ; le n° 12 sur `nemetonshiny@69cf0aeb` (tag v0.143.31)
 le 2026-09-23 (plancher `nemeton (>= 0.198.0)`) ; le n° 14 et la partie app du n° 13 sur
-`nemetonshiny@9b9c4b98` (tag v0.144.2) le 2026-09-23 (plancher `nemeton (>= 0.199.2)`) :
+`nemetonshiny@9b9c4b98` (tag v0.144.2) le 2026-09-23 (plancher `nemeton (>= 0.199.2)`) ; les n° 15 et 17 sur
+`nemetonshiny@546a2d74` (tag v0.152.1) le 2026-10-02 (plancher `nemeton (>= 0.207.0)`) :
 
 | # | Écart | Refermé par | Ce qui a été relu |
 |---|---|---|---|
@@ -84,6 +83,8 @@ le 2026-09-23 (plancher `nemeton (>= 0.198.0)`) ; le n° 14 et la partie app du 
 | 12 | FAST : masques qui s'écrasaient, stack d'indice sans cache (cœur v0.198.0, brief app 2026-09-23) | app **v0.143.31** (`69cf0aeb`, commit `50671fd6`) | `mod_monitoring_pixel_map.R:301` — `build_index_stack(..., cache_result = TRUE)`, `parallel = FALSE` ; commentaire de `.compute_fast_mask()` (`mod_monitoring_fast_alerts.R`) aligné sur `fast_alert_<INDEX>_<mode>_<hash16>.tif`. Mesure app sur `armn` (327 scènes) : **39,5 s → 0,22 s**, résultat identique |
 | 13 (app) | RECONFORT : `include_range` inerte, couche `probability` = P(sain) (cœur v0.199.0) | app **v0.144.2** (`9b9c4b98`) | `utils_i18n.R` — `reconfort_couche_proba` = « Probabilité d'atteinte » / « Probability of dieback », infobulle P2 + P3 sur 0–1000 ; aucune ligne de code : le manifeste pointe déjà `p_atteinte_*.tif`. Le volet données (5 re-runs) reste ouvert en tête |
 | 14 | Houppiers : échec sous plan `future` multi-workers (cœur v0.199.2) | app **v0.144.2** (`9b9c4b98`) | `service_marculus.R:624` — `nemeton::segment_houppiers(chm, aoi = aoi)` dans le processus ; plus de `callr::r()` ni de `st_filter()` d'emprise applicatif ; `st_make_valid()` en 2154 gardé (`.marculus_aoi()`) ; plancher `DESCRIPTION` `nemeton (>= 0.199.2)` |
+| 15 | Covariables de domaine FORMS-T pour la production du massif (cœur v0.206.0) | app **v0.152.1** (`546a2d74`, fix `35ddc536`) | `service_production_ifn.R:369` — `.massif_covariables()` appelle `nemeton::ifn_covariables_domaines(dom, h$height, dem, unite_hauteur = "cm")` (hauteur FORMS-T seule, altitude = MNT du projet) ; ligne 307, `ifn_production_domaines(covariables = cov)`. Rien n'est passé si une covariable manque. Chargement FORMS-T réel non vérifié (403 Theia sur le poste), suivi par le n° 16 |
+| 17 | P2 en mode CHM normalisé contre 40 m (cœur v0.207.0) | app **v0.152.1** (`546a2d74`) | `service_project.R:601-603` — `.indicator_status_col(cc)` puis `normalize_indicator(cc, v, statut = st)`. **En plus du brief** : `service_compute.R:4286-4287` retire le statut d'un calcul précédent (sinon un P2 repassé CHM → IFN gardait `indice_station_m` et ses m³/ha/an étaient notés sur 40) |
 
 **Ce que l'écart n° 1 aura coûté et rapporté.** Ouvert le 2026-08-15 comme
 « non consommé, et désormais bloquant », il l'était : la copie de la table dans
@@ -298,11 +299,24 @@ depuis le 2026-10-01 (journal ci-dessus, FORMS-T confirmé). L'extraction GEDI
 2022, arrêtée à mi-année, n'est pas reprise : elle ne peut pas changer le
 verdict. **Plus aucun travail cœur ouvert sur la spec 054.**
 
+**Journal** — *2026-10-02* (**app v0.152.1**, `nemetonshiny@35ddc536`, merge
+`546a2d74`, cycle `0.152.0.9000` → `0.152.1`) : **écarts n° 15 et 17 refermés
+côté app.** Plancher `nemeton (>= 0.207.0)`.
+
+- **Écart n° 17** : `.p2_status` passé à `normalize_indicator(statut =)` ;
+  statut d'un calcul précédent retiré à chaque recalcul (sinon P2 CHM → IFN
+  était noté sur 40 m). Les scores P2 des projets en mode CHM baissent ; un
+  projet calculé avant cœur 0.207.0 doit recalculer P2.
+- **Écart n° 15** : covariables FORMS-T + MNT du massif passées à
+  `ifn_production_domaines()` (prévision hybride) ; rien n'est passé si une
+  covariable manque ; panneau : prévision nommée, `hors_calibrage`,
+  `nature = "prediction"`. Chargement FORMS-T non vérifié en réel (clé Theia
+  du poste refusée, 403).
+
 **Prochaine étape** :
-- **app** : §1 à §3 bis câblés en v0.152.0. Restent les covariables de domaine
-  (v0.206.0 publiée, écart n° 15) et la validation §6 sur un projet réel (écart
-  n° 16) ;
-- **app** : passer `.p2_status` à `normalize_indicator()` (écart n° 17, cœur v0.207.0).
+- **app** : brief câblé en entier (v0.152.0 + v0.152.1). Reste la validation
+  §6 sur un projet réel (écart n° 16), qui doit inclure un premier chargement
+  réel de FORMS-T (prédicteur `"hybride"` attendu dans le panneau du massif).
 
 ---
 
