@@ -246,6 +246,35 @@
 }
 
 
+# Clear the IOTA2 results of a FINISHED run before launching a new one.
+#
+# Both IOTA2 parts run with `-restart` so that a crashed or cancelled run
+# resumes where it stopped instead of redoing hours of work. But once a run has
+# completed, IOTA2's task-status pickle marks every task done, and the next run
+# under the same label and year re-executes almost nothing: the merge and
+# mosaic keep their old rasters, and `final/` is rebuilt from them. Found on
+# 2026-09-23 (zone 9 of project ltcp): the run after the iota2 #12 fix wrote two
+# fresh uint16 chunks reaching 1000, while `final/` was still masked from the
+# July mosaic, clamped at 255 (score 24-58). Without this, no run can ever pick
+# up a fix to the environment, the model or the S2 scenes.
+#
+# The marker is `final/run_meta.json`, written only when the pipeline
+# completes. A run that died or was cancelled leaves none, so it still resumes.
+.reconfort_reset_finished_results <- function(workdir, label, s2_year,
+                                              quiet = FALSE) {
+  res <- file.path(
+    workdir, "results",
+    sprintf("iota2_results_classif_labels-%s-S2_%s", label, s2_year))
+  if (!file.exists(file.path(res, "final", "run_meta.json"))) {
+    return(invisible(FALSE))
+  }
+  unlink(res, recursive = TRUE)
+  if (!quiet) cli::cli_alert_info(
+    "RECONFORT: previous run for {.val {label}} / {.val {s2_year}} completed; its IOTA2 results are cleared so the classification is recomputed.")
+  invisible(TRUE)
+}
+
+
 # Collect the IOTA2 final rasters from the results dir. Missing files
 # come back as NA (the masked/score files only exist when masking ran).
 .reconfort_collect_outputs <- function(workdir, label, s2_year) {
@@ -721,7 +750,8 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
 
     # PHASE 7 — map production (IOTA2 x2 + mask + score) -----------
     begin("mapprod")
-    st <- .reconfort_run_py(conda_bin, env,
+    .reconfort_reset_finished_results(workdir, label, s2_year, quiet = quiet)
+    st <-.reconfort_run_py(conda_bin, env,
                             file.path(workdir, "run_map_production_reconfort.py"),
                             cfg, workdir, quiet = quiet)
     if (!identical(as.integer(st), 0L)) {
