@@ -307,9 +307,11 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 #' @param zone_id Integer. Target monitoring zone.
 #' @param alert_type Character. `"fordead_dieback"` or
 #'   `"reconfort_dieback"`.
-#' @param replace Logical. When `TRUE` (default) every prior
+#' @param replace Logical. When `TRUE` (default) every prior **pending**
 #'   `(zone_id, alert_type)` alert is deleted before insertion, making the
-#'   call idempotent across re-runs. When `FALSE`, rows are appended (the
+#'   call idempotent across re-runs. Alerts already validated in the field are
+#'   kept, and a new alert within 50 m of one of them is not re-inserted
+#'   (since 0.208.0). When `FALSE`, rows are appended (the
 #'   caller is then responsible for avoiding key collisions).
 #'
 #' @return Number of rows inserted (integer).
@@ -365,11 +367,43 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
   }
   if (!nrow(staging)) return(0L)
 
-  # cluster_id = séquence intra-insert → unicité garantie de la clé
-  # (zone_id, alert_type, trigger_date, cluster_id) au sein du run.
-  staging$cluster_id <- seq_len(nrow(staging))
-
   inserted <- DBI::dbWithTransaction(con, {
+    # Les alertes déjà VALIDÉES sur le terrain (validation G4 via QField) ne
+    # sont jamais supprimées : avant 0.208.0, le DELETE ci-dessous les
+    # emportait à chaque re-run, et le travail terrain disparaissait sans
+    # message (audit 1.0). Seules les alertes `pending` sont remplacées ; une
+    # nouvelle alerte située à moins de `.ALERT_KEEP_VALIDATED_M` d'une alerte
+    # validée est le même foyer, déjà tranché, et n'est pas réinsérée.
+    if (isTRUE(replace)) {
+      .db_execute(con,
+        "DELETE FROM alert WHERE zone_id = $1 AND alert_type = $2
+           AND (validation_status IS NULL OR validation_status = 'pending')",
+        params = list(zid, alert_type))
+      gardees <- .db_get_query(con,
+        "SELECT geom_wkt, cluster_id FROM alert
+          WHERE zone_id = $1 AND alert_type = $2",
+        params = list(zid, alert_type))
+      if (nrow(gardees)) {
+        deja <- .alerts_near_kept(staging$geom_wkt, gardees$geom_wkt,
+                                  .ALERT_KEEP_VALIDATED_M)
+        if (any(deja)) {
+          cli::cli_inform(c(
+            "i" = "{sum(deja)} {alert_type} alert{?s} fall{?s/} within \
+                   {(.ALERT_KEEP_VALIDATED_M)} m of an alert already validated in \
+                   the field; the validated row{?s} {?is/are} kept."))
+          staging <- staging[!deja, , drop = FALSE]
+        }
+      }
+      offset <- if (nrow(gardees)) max(c(0L, as.integer(gardees$cluster_id)), na.rm = TRUE) else 0L
+    } else {
+      offset <- 0L
+    }
+    # cluster_id = séquence intra-insert (décalée au-delà des lignes validées
+    # conservées) → unicité de (zone_id, alert_type, trigger_date, cluster_id).
+    # Pas de return() ici : sortir de la fonction depuis le bloc de
+    # dbWithTransaction() court-circuiterait le COMMIT de la purge.
+    staging$cluster_id <- offset + seq_len(nrow(staging))
+
     # Remplacement complet (idempotence inter-runs) : on purge TOUTES les
     # alertes antérieures de la zone pour ce type avant ré-insertion, dans
     # la même transaction. Une purge par fenêtre ne suffit pas pour FORDEAD
@@ -377,18 +411,29 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
     # de monitoring → lignes non purgées → violation de la clé UNIQUE au
     # ré-insert). cluster_id n'étant pas stable d'un run à l'autre, seul le
     # remplacement complet (zone_id, alert_type) est idempotent.
-    if (isTRUE(replace)) {
-      .db_execute(con,
-        "DELETE FROM alert WHERE zone_id = $1 AND alert_type = $2",
-        params = list(zid, alert_type))
-    }
     # Insertion directe : après le DELETE et avec cluster_id séquentiel,
     # aucun conflit possible → pas besoin de table de staging temporaire
     # ni de `ON CONFLICT` (et on évite les écueils de grammaire SQLite).
-    DBI::dbAppendTable(con, "alert", staging)
+    if (nrow(staging)) DBI::dbAppendTable(con, "alert", staging)
     nrow(staging)
   })
   as.integer(inserted)
+}
+
+
+# Distance (m) sous laquelle une nouvelle alerte est le même foyer qu'une
+# alerte déjà validée : 50 m, comme le rattachement terrain de
+# ingest_health_validation().
+.ALERT_KEEP_VALIDATED_M <- 50
+
+# Pour chaque WKT de `new_wkt` (EPSG:4326), TRUE s'il est à moins de `dist_m`
+# d'un des WKT de `kept_wkt`. Distances calculées en Lambert-93.
+.alerts_near_kept <- function(new_wkt, kept_wkt, dist_m) {
+  kept_wkt <- kept_wkt[!is.na(kept_wkt) & nzchar(kept_wkt)]
+  if (!length(new_wkt) || !length(kept_wkt)) return(rep(FALSE, length(new_wkt)))
+  a <- sf::st_transform(sf::st_as_sfc(new_wkt, crs = 4326), 2154)
+  b <- sf::st_transform(sf::st_as_sfc(kept_wkt, crs = 4326), 2154)
+  lengths(sf::st_is_within_distance(a, b, dist = dist_m)) > 0L
 }
 
 
