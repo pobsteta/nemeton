@@ -81,11 +81,12 @@ test_that("indicateur_b2_structure calculates Shannon diversity", {
     weights = c(strata = 0.4, age = 0.3, species = 0.3)
   )
 
-  # Tests
+  # Une catégorie par unité ne décrit aucune diversité intra-unité : sans
+  # CHM/MNH/NDVI, B2 est NA (plus de score fabriqué, v0.208.0).
   expect_s3_class(result, "sf")
   expect_true("B2" %in% names(result))
   expect_type(result$B2, "double")
-  expect_true(all(result$B2 >= 0 & result$B2 <= 100, na.rm = TRUE))
+  expect_true(all(is.na(result$B2)))
 })
 
 test_that("indicateur_b2_structure handles monoculture", {
@@ -103,8 +104,7 @@ test_that("indicateur_b2_structure handles monoculture", {
     age_class_field = "age_classes"
   )
 
-  # Low diversity should yield low scores
-  expect_true(all(result$B2 < 30, na.rm = TRUE))
+  expect_true(all(is.na(result$B2)))
 })
 
 # ==============================================================================
@@ -504,10 +504,8 @@ test_that("indicateur_b2_structure with strata and age and species fields", {
 
   expect_s3_class(result, "sf")
   expect_true("B2" %in% names(result))
-  expect_true(all(result$B2 >= 0 & result$B2 <= 100))
-  # With diverse strata (4 categories), age (4 categories), species (5):
-  # Should not be monoculture capped
-  expect_true(any(result$B2 > 20))
+  # Les colonnes catégorielles ne fabriquent plus de score.
+  expect_true(all(is.na(result$B2)))
 })
 
 test_that("indicateur_b2_structure without strata/age falls back to NA (no layers)", {
@@ -543,8 +541,7 @@ test_that("indicateur_b2_structure monoculture with species", {
 
   expect_s3_class(result, "sf")
   expect_true("B2" %in% names(result))
-  # Monoculture should be capped at 20
-  expect_true(all(result$B2 <= 23))  # 20 + max 3 variation
+  expect_true(all(is.na(result$B2)))
 })
 
 # --- B3: indicateur_b3_connectivite sub-component coverage ---
@@ -845,17 +842,33 @@ test_that("B2 with species field uses 3-component weighting", {
   units$species <- c("Quercus robur", "Fagus sylvatica", "Pinus sylvestris", "Picea abies")
 
   result <- nemeton::indicateur_b2_structure(units, species_field = "species")
-  expect_true(all(result$B2 >= 0 & result$B2 <= 100))
+  expect_true(all(is.na(result$B2)))
 })
 
-test_that("B2 monoculture capped at 20", {
+test_that("B2 ne dépend ni de l'ordre des lignes ni de la diversité du lot", {
   skip_if_not_installed("terra")
-  units <- create_test_units(n_features = 3)
-  units$strata <- rep("Dominant", 3)
-  units$age_class <- rep("mature", 3)
-
-  result <- nemeton::indicateur_b2_structure(units)
-  expect_true(all(result$B2 <= 20))
+  # Régression audit 1.0 : l'ancien chemin ajoutait `(i %% 4)` et calculait le
+  # score sur la diversité de TOUT le lot. Trier le sf changeait B2.
+  set.seed(7)
+  ndvi <- terra::rast(nrows = 40, ncols = 40, xmin = 0, xmax = 400,
+                      ymin = 0, ymax = 400, crs = "EPSG:2154",
+                      vals = stats::runif(1600, 0.3, 0.9))
+  mk <- function(x0) sf::st_polygon(list(rbind(c(x0, 10), c(x0 + 80, 10),
+    c(x0 + 80, 390), c(x0, 390), c(x0, 10))))
+  units <- sf::st_sf(id = 1:4,
+    strata = c("Dominant", "Emergent", "Dominant", "Suppressed"),
+    age_class = c("mature", "young", "old", "mature"),
+    geometry = sf::st_sfc(lapply(c(10, 100, 200, 300), mk), crs = 2154))
+  layers <- list(rasters = list(ndvi = list(object = ndvi)))
+  class(layers) <- "nemeton_layers"
+  a <- nemeton::indicateur_b2_structure(units, layers = layers)
+  b <- nemeton::indicateur_b2_structure(units[4:1, ], layers = layers)
+  expect_true(all(is.finite(a$B2)))
+  expect_equal(a$B2[order(a$id)], b$B2[order(b$id)])
+  # Changer la diversité du lot ne change pas le score d'une unité.
+  units$strata <- "Dominant"
+  c2 <- nemeton::indicateur_b2_structure(units, layers = layers)
+  expect_equal(c2$B2, a$B2)
 })
 
 test_that("B2 falls back to NDVI when no strata/age fields", {
@@ -1075,8 +1088,8 @@ test_that("B2 CHM mode increases score on heterogeneous stands", {
   b_het  <- indicateur_b2_structure(units, chm = chm_het)$B2
   b_hom  <- indicateur_b2_structure(units, chm = chm_hom)$B2
 
-  expect_true(b_het > b_base)
-  expect_true(b_hom <= b_base)
+  expect_true(is.na(b_base))
+  expect_true(b_het > b_hom)
 })
 
 test_that("B2 CHM mode respects cv_chm_weight", {
@@ -1098,11 +1111,10 @@ test_that("B2 CHM mode respects cv_chm_weight", {
   b_w0  <- indicateur_b2_structure(units, chm = chm, cv_chm_weight = 0)$B2
   b_w1  <- indicateur_b2_structure(units, chm = chm, cv_chm_weight = 1)$B2
 
-  # Weight 0 -> ignore CHM entirely -> legacy score
-  b_base <- indicateur_b2_structure(units)$B2
-  expect_equal(b_w0, b_base, tolerance = 0.1)
-  # Weight 1 -> output is purely the CV score (100 for this CHM)
-  expect_true(b_w1 > b_base)
+  # Weight 0 -> CHM ignoré -> pas d'autre source -> NA
+  expect_true(is.na(b_w0))
+  # Weight > 0 -> score CV(CHM) pur (100 pour ce CHM)
+  expect_true(b_w1 > 90)
 })
 
 test_that("B2 rejects invalid cv_chm_weight", {
