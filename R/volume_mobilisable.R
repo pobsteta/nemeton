@@ -37,7 +37,10 @@
 #'
 #' @section Harvest rate:
 #' `taux_prelevement` is a **yearly flux** in m3/ha/year, not a fraction, so
-#' `horizon_ans` is required with it: `volume = P1 x taux x horizon_ans`.
+#' `horizon_ans` is required with it: `volume = taux x horizon_ans`, capped by
+#' the standing volume P1 (which also carries the `NA` of an uninventoried
+#' parcel). Before 0.208.0 the rate was multiplied by P1 as well, mixing a stock
+#' and a flux.
 #' A harvest rate describes what **has been** removed, not what **should** be;
 #' sizing a road network on it assumes management carries on unchanged.
 #'
@@ -176,7 +179,7 @@ volume_mobilisable <- function(units,
     cli::cli_abort(c(
       "{.arg horizon_ans} is required with {.arg taux_prelevement}.",
       "i" = "The rate is a yearly flux (m3/ha/year), not a fraction: \\
-             volume = P1 x rate x horizon."
+             volume = rate x horizon, capped by P1."
     ))
   }
   if (!is.numeric(horizon_ans) || length(horizon_ans) != 1L ||
@@ -235,8 +238,13 @@ volume_mobilisable <- function(units,
     }
   }
 
-  # Densité mobilisable, m3/ha sur l'horizon.
-  vol_ha <- p1 * taux_prelevement * horizon_ans
+  # Densité mobilisable, m3/ha sur l'horizon : un flux annuel (m3/ha/an)
+  # cumulé sur l'horizon, plafonné par le volume sur pied P1. Avant 0.208.0 le
+  # code multipliait P1 (un stock) par le taux (un flux) : avec P1 = 200 et
+  # 2,84 m3/ha/an sur 10 ans, 5 680 « m3/ha » au lieu de 28,4 (audit 1.0).
+  # P1 reste le garde-fou : NA (parcelle non inventoriée) ou 0 selon
+  # na_policy, et plafond de ce qui peut sortir de la parcelle.
+  vol_ha <- pmin(taux_prelevement * horizon_ans, p1)
 
   vol_ha[taux_na] <- NA_real_
 

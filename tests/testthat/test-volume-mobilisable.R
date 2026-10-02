@@ -15,16 +15,16 @@
 
 test_that("m3_total multiplies the density by the area", {
   u <- .vm_units(c(100, 100))
-  out <- volume_mobilisable(u, taux_prelevement = 1, horizon_ans = 1)
-  # 100 m3/ha x 1 x 1 an x 2 ha = 200 ; x 1 ha = 100
-  expect_equal(out$volume_mobilisable, c(200, 100), tolerance = 1e-6)
+  out <- volume_mobilisable(u, taux_prelevement = 4, horizon_ans = 10)
+  # 4 m3/ha/an x 10 ans = 40 m3/ha ; x 2 ha = 80 ; x 1 ha = 40
+  expect_equal(out$volume_mobilisable, c(80, 40), tolerance = 1e-6)
 })
 
 test_that("m3_ha is independent of the area", {
   u <- .vm_units(c(100, 100))
   out <- volume_mobilisable(u, unite = "m3_ha",
-                            taux_prelevement = 1, horizon_ans = 1)
-  expect_equal(out$volume_mobilisable, c(100, 100), tolerance = 1e-6)
+                            taux_prelevement = 4, horizon_ans = 10)
+  expect_equal(out$volume_mobilisable, c(40, 40), tolerance = 1e-6)
 })
 
 test_that("the two units differ exactly by the area ratio (spec 040 §3)", {
@@ -53,7 +53,20 @@ test_that("a per-unit rate vector is applied element-wise", {
   u <- .vm_units(c(100, 100))
   out <- volume_mobilisable(u, unite = "m3_ha",
                             taux_prelevement = c(1, 4), horizon_ans = 2)
-  expect_equal(out$volume_mobilisable, c(200, 800), tolerance = 1e-6)
+  expect_equal(out$volume_mobilisable, c(2, 8), tolerance = 1e-6)
+})
+
+test_that("le volume est un flux cumulé, pas P1 x flux, et P1 le plafonne", {
+  # Régression audit 1.0 : P1 (stock) était multiplié par le taux (flux).
+  u <- .vm_units(c(200, 30))
+  out <- volume_mobilisable(u, unite = "m3_ha",
+                            taux_prelevement = 2.84, horizon_ans = 10)
+  # 2,84 x 10 = 28,4 m3/ha (et non 200 x 2,84 x 10 = 5 680) ;
+  # la seconde parcelle est plafonnée par son volume sur pied (30 -> 28,4 < 30).
+  expect_equal(out$volume_mobilisable, c(28.4, 28.4), tolerance = 1e-6)
+  out2 <- volume_mobilisable(u, unite = "m3_ha",
+                             taux_prelevement = 5, horizon_ans = 10)
+  expect_equal(out2$volume_mobilisable, c(50, 30), tolerance = 1e-6)
 })
 
 test_that("a rate vector of the wrong length is rejected", {
@@ -150,8 +163,8 @@ test_that("an out-of-domain P1 warns without aborting", {
                               horizon_ans = 1),
     "above 800 m3/ha"
   )
-  # Le calcul aboutit quand même.
-  expect_equal(out$volume_mobilisable, c(1500, 200), tolerance = 1e-6)
+  # Le calcul aboutit quand même (1 m3/ha/an x 1 an).
+  expect_equal(out$volume_mobilisable, c(1, 1), tolerance = 1e-6)
 })
 
 test_that("a plausible P1 raises no unit warning", {
@@ -237,7 +250,7 @@ test_that("an explicit rate still bypasses the table entirely", {
   u <- .vm_units_espar()
   out <- volume_mobilisable(u, unite = "m3_ha", taux_prelevement = 2,
                             horizon_ans = 1)
-  expect_equal(out$volume_mobilisable, c(200, 200), tolerance = 1e-6)
+  expect_equal(out$volume_mobilisable, c(2, 2), tolerance = 1e-6)
   expect_null(attr(out, "niveau_prelevement"))
 })
 
