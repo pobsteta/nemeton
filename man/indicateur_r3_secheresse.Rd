@@ -27,7 +27,7 @@ indicateur_r3_secheresse(
 
 \item{climate_data}{Optional list with \code{precip} (monthly precipitation
 vector in mm) and \code{temp} (list with \code{tmin} and \code{tmax}
-monthly vectors in degrees C). If NULL, uses simulated data.}
+monthly vectors in degrees C). If NULL, the climate component is excluded and R3 rests on topography alone.}
 
 \item{snow}{Optional \code{SpatRaster} of snow-cover duration in
 days per year (the Theia \code{theia_snow}

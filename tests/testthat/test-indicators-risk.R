@@ -771,6 +771,21 @@ test_that("R3 with DEM computes drought risk", {
   expect_true(all(result$R3 >= 0 & result$R3 <= 100, na.rm = TRUE))
 })
 
+test_that("R3 sans climat ne simule rien et ne touche pas au RNG de l'appelant", {
+  skip_if_not_installed("terra")
+  # Régression audit 1.0 : R3 simulait une série climatique après set.seed(42).
+  units <- create_test_units(n_features = 3)
+  dem <- create_test_raster(values = seq(100, 400, length.out = 2400))
+  set.seed(123); attendu <- stats::runif(1)
+  set.seed(123)
+  r <- suppressMessages(nemeton::indicateur_r3_secheresse(units, dem = dem))
+  expect_identical(stats::runif(1), attendu)
+  expect_true(all(r$R3 >= 0 & r$R3 <= 100, na.rm = TRUE))
+  # Sans climat, R3 = topographie seule : deux appels donnent le même score.
+  r2 <- suppressMessages(nemeton::indicateur_r3_secheresse(units, dem = dem))
+  expect_equal(r$R3, r2$R3)
+})
+
 test_that("R3 from layers extracts DEM", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
