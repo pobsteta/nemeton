@@ -58,13 +58,18 @@ The input sf object with added column:
   }
 }
 \description{
-Computes forest structural diversity using Shannon diversity index applied
-to canopy strata and age class distributions.
+Computes forest vertical structural diversity from canopy height
+variability (CHM or LiDAR MNH), or NDVI variability as a fallback.
 }
 \details{
-**Formula**: B2 = w1 × H_strata_norm + w2 × H_age_norm
+**Measure**: vertical structure, in this order of preference — the
+coefficient of variation of the supplied \code{chm}, the standard deviation of the
+LiDAR MNH (\code{layers$lidar_mnh}), then the coefficient of variation of NDVI.
+Without any of them B2 is \code{NA}.
 
-Where H is Shannon diversity index, normalized to 0-100 scale.
+\code{strata_field}, \code{age_class_field}, \code{species_field}, \code{method}, \code{weights} and
+\code{use_height_cv} are kept for compatibility and no longer change the score:
+one category per unit carries no within-unit diversity (since 0.208.0).
 
 **Interpretation**: Multi-layered, multi-age stands score high (>75).
 Monocultures or even-aged stands score low (<25).

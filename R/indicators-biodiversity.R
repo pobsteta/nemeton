@@ -230,8 +230,8 @@ indicateur_b1_protection <- function(units,
 
 #' Calculate Structural Diversity (B2)
 #'
-#' Computes forest structural diversity using Shannon diversity index applied
-#' to canopy strata and age class distributions.
+#' Computes forest vertical structural diversity from canopy height
+#' variability (CHM or LiDAR MNH), or NDVI variability as a fallback.
 #'
 #' @param units An sf object with forest parcels.
 #' @param layers A nemeton_layers object. Used as fallback for structural
@@ -263,9 +263,14 @@ indicateur_b1_protection <- function(units,
 #'   }
 #'
 #' @details
-#' **Formula**: B2 = w1 × H_strata_norm + w2 × H_age_norm
+#' **Measure**: vertical structure, in this order of preference — the
+#' coefficient of variation of the supplied `chm`, the standard deviation of the
+#' LiDAR MNH (`layers$lidar_mnh`), then the coefficient of variation of NDVI.
+#' Without any of them B2 is `NA`.
 #'
-#' Where H is Shannon diversity index, normalized to 0-100 scale.
+#' `strata_field`, `age_class_field`, `species_field`, `method`, `weights` and
+#' `use_height_cv` are kept for compatibility and no longer change the score:
+#' one category per unit carries no within-unit diversity (since 0.208.0).
 #'
 #' **Interpretation**: Multi-layered, multi-age stands score high (>75).
 #' Monocultures or even-aged stands score low (<25).
@@ -351,15 +356,24 @@ indicateur_b2_structure <- function(units,
     cv_chm_score <- pmin(cv / 0.4, 1) * 100
   }
 
-  # Check fields exist - if missing, use NDVI std dev as proxy for structural diversity
+  # Les colonnes strate / classe d'âge portent UNE valeur par unité : elles ne
+  # décrivent aucune répartition intra-unité, donc aucune diversité (Shannon d'une
+  # seule catégorie = 0). L'ancien chemin fabriquait un score à partir de la
+  # diversité du LOT entier, plus un terme dépendant du numéro de ligne
+  # (`i %% 4`) : trier le sf changeait B2 (audit 1.0, v0.208.0). La structure se
+  # mesure donc sur la hauteur (CHM / MNH) ou, à défaut, sur le NDVI.
   has_strata <- strata_field %in% names(units)
   has_age <- age_class_field %in% names(units)
+  if (has_strata || has_age) {
+    cli::cli_alert_info(
+      "B2: strata/age columns hold one value per unit (no within-unit distribution); structure is measured on canopy height or NDVI instead.")
+  }
 
-  if (!has_strata || !has_age) {
+  {
     # Fallback 0: use CHM from the direct `chm` argument
     # (spec 005 phase 4). Same formula as the LiDAR MNH path
     # below, but computed from the supplied SpatRaster.
-    if (!is.null(cv_chm_score)) {
+    if (!is.null(cv_chm_score) && cv_chm_weight > 0) {
       cli::cli_alert_info("B2: Using direct CHM (spec 005 phase 4)")
       units$B2 <- cv_chm_score
       return(units)
@@ -398,96 +412,11 @@ indicateur_b2_structure <- function(units,
       # Scale CV (0-0.5) to B2 score (0-100)
       units$B2 <- pmin(cv / 0.4, 1) * 100
     } else {
-      cli::cli_alert_warning("B2: No strata/age/MNH/NDVI data available")
+      cli::cli_alert_warning("B2: no CHM, LiDAR MNH or NDVI available; B2 is NA")
       units$B2 <- rep(NA_real_, nrow(units))
     }
     return(units)
   }
-
-  # Species field is optional
-  has_species <- !is.null(species_field) && species_field %in% names(units)
-
-  # Calculate Shannon diversity for each parcel
-  units$B2 <- numeric(nrow(units))
-
-  for (i in seq_len(nrow(units))) {
-    # For simplicity, assume each row represents a parcel with single values
-    # In real BD Forêt data, might have distribution of strata/ages within parcel
-
-    # Simplified: Convert categorical to diversity score
-    # For MVP, use presence/absence as proxy (1 = present)
-    strata_value <- units[[strata_field]][i]
-    age_value <- units[[age_class_field]][i]
-
-    # Create dummy proportions (in real implementation, would have actual distributions)
-    # For now, single category = H=0, assume some minimal diversity
-    strata_h <- 0
-    age_h <- 0
-    species_h <- 0
-
-    # Get species diversity if available
-    if (has_species) {
-      species_value <- units[[species_field]][i]
-    }
-
-    # Normalize to 0-100 (H_max for 4 strata = log(4) ≈ 1.386)
-    strata_h_norm <- (strata_h / 1.386) * 100
-    age_h_norm <- (age_h / 1.609) * 100 # H_max for 5 age classes = log(5)
-    species_h_norm <- if (has_species) (species_h / 1.609) * 100 else 0
-
-    # Weighted combination (adjust weights if no species)
-    if (has_species) {
-      units$B2[i] <- weights["strata"] * strata_h_norm +
-        weights["age"] * age_h_norm +
-        weights["species"] * species_h_norm
-    } else {
-      # Reweight without species component
-      w_adj <- c(strata = 0.6, age = 0.4)
-      units$B2[i] <- w_adj["strata"] * strata_h_norm + w_adj["age"] * age_h_norm
-    }
-  }
-
-  # For MVP: Use simplified scoring based on category diversity
-  # Convert to numeric: more categories observed nearby = higher diversity
-  # This is a placeholder - real implementation would use actual Shannon H from distributions
-
-  # Create diversity score per parcel based on variation
-  # Count unique values per parcel (for single-row parcels, use global diversity as proxy)
-  n_strata_categories <- length(unique(units[[strata_field]]))
-  n_age_categories <- length(unique(units[[age_class_field]]))
-  n_species_categories <- if (has_species) length(unique(units[[species_field]])) else 0
-
-  # Calculate base score from dataset-wide diversity
-  # Normalize to 0-100: 4 strata classes max, 5 age classes max, 5 species max
-  strata_score <- (n_strata_categories / 4) * 40
-  age_score <- (n_age_categories / 5) * 30
-  species_score <- if (has_species) (n_species_categories / 5) * 30 else 0
-  base_score <- strata_score + age_score + species_score
-
-  # For monoculture (single category for all components), cap at low value
-  is_monoculture <- n_strata_categories == 1 && n_age_categories == 1
-  if (has_species) {
-    is_monoculture <- is_monoculture && n_species_categories == 1
-  }
-  if (is_monoculture) {
-    base_score <- min(base_score, 20) # Cap monoculture at 20
-  }
-
-  # Apply score to all parcels with small variation
-  for (i in seq_len(nrow(units))) {
-    # Add small variation based on parcel index (max 3 points)
-    variation <- (i %% 4) * 1 # Varies 0, 1, 2, 3
-    units$B2[i] <- pmin(base_score + variation, 100)
-  }
-
-  # CV(CHM) augmentation (spec 005 phase 4).
-  if (!is.null(cv_chm_score) && cv_chm_weight > 0) {
-    units <- .blend_cv_chm(units, cv_chm_score, cv_chm_weight)
-  }
-
-  msg_info("indicateur_b2_structure")
-
-  units
 }
 
 

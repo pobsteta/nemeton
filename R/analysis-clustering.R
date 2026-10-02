@@ -152,6 +152,19 @@ cluster_parcels <- function(data,
   } else {
     fam_matrix <- as.matrix(data[, families, drop = FALSE])
   }
+  # Une famille constante (aucune donnée -> même valeur partout) ou entièrement
+  # NA rend scale() NaN, et kmeans() plante (« NA/NaN/Inf in foreign function
+  # call »). Elle ne discrimine aucune unité : on l'écarte en le disant
+  # (audit 1.0).
+  sds <- apply(fam_matrix, 2, stats::sd, na.rm = TRUE)
+  inertes <- colnames(fam_matrix)[!is.finite(sds) | sds == 0]
+  if (length(inertes)) {
+    cli::cli_warn("Families with no variance across units are left out of the clustering: {.field {inertes}}.")
+    fam_matrix <- fam_matrix[, setdiff(colnames(fam_matrix), inertes), drop = FALSE]
+    if (!ncol(fam_matrix)) {
+      cli::cli_abort("No family varies across units; clustering is not possible.")
+    }
+  }
   fam_scaled <- scale(fam_matrix)
 
   # === AUTO K DETERMINATION ===

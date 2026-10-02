@@ -214,10 +214,20 @@ create_family_index <- function(data,
       # normalisait en amont voyait donc son travail ignoré — sans dommage, la
       # fonction normalisant elle-même les colonnes brutes, mais sans effet non
       # plus.
+      #
+      # Depuis 0.208.0 la colonne BRUTE l'emporte quand elle existe : elle passe
+      # par normalize_indicator(), qui applique la vraie règle de l'indicateur
+      # (borne absolue, sens). Un `_norm` venu de normalize_indicators() n'est
+      # qu'un min-max du lot, sans inversion : le préférer ré-inversait R1-R5,
+      # T3, L1 et S1/S2 sur le chemin documenté « normaliser puis agréger », et
+      # rendait le score relatif au lot (audit 1.0). Le `_norm` ne sert plus
+      # que lorsque la colonne brute est absente.
       unique_bases <- unique(sub("_norm$", "", fam_indicators))
       preferred_indicators <- vapply(unique_bases, function(base) {
         norm_version <- paste0(base, "_norm")
-        if (norm_version %in% names(data) && is.numeric(data[[norm_version]])) {
+        if (base %in% names(data) && is.numeric(data[[base]])) {
+          base
+        } else if (norm_version %in% names(data) && is.numeric(data[[norm_version]])) {
           norm_version
         } else {
           base
@@ -251,8 +261,11 @@ create_family_index <- function(data,
       col_name <- indicators[j]
       raw <- indicator_data[, j]
       if (grepl("_norm$", col_name)) {
-        # Déjà normalisée par l'appelant : simple écrêtage, pas de seconde
-        # normalisation (qui mutilerait une échelle déjà correcte).
+        # Colonne brute absente : le `_norm` est pris comme score FINAL (0-100,
+        # haut = mieux), seulement écrêté. Pas d'inversion : selon son
+        # producteur, il est déjà orienté (normalize_indicator(), côté app) ou
+        # non (min-max de normalize_indicators(), qui garde toujours la brute,
+        # laquelle l'emporte alors ci-dessus).
         indicator_data[, j] <- pmin(100, pmax(0, raw))
         next
       }

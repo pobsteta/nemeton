@@ -180,13 +180,27 @@ test_that("normalize_indicators can normalize by family", {
     normalize_indicators(units, method = "minmax", by_family = TRUE)
   )
 
-  # Both should be normalized to 0-100 independently
-  expect_true(all(result$C1 >= 0 & result$C1 <= 100))
-  expect_true(all(result$C2 >= 0 & result$C2 <= 100))
+  # by_family est ignoré (0.208.0) : normalisation par colonne, suffixe _norm.
+  expect_equal(min(result$C1_norm), 0, tolerance = 0.01)
+  expect_equal(max(result$C1_norm), 100, tolerance = 0.01)
+  expect_equal(result$C1, units$C1)
+})
 
-  # Min/max should be 0/100 within family
-  expect_equal(min(result$C1), 0, tolerance = 0.01)
-  expect_equal(max(result$C1), 100, tolerance = 0.01)
+test_that("normaliser puis agréger ne ré-inverse pas les risques ni ne renormalise (audit 1.0)", {
+  units <- create_test_units(n_features = 3)
+  units$R1 <- c(10, 50, 90)
+  units$P1 <- c(200, 400, 300)
+  direct <- create_family_index(units, family_codes = c("R", "P"))
+  apres <- create_family_index(suppressMessages(normalize_indicators(units,
+    indicators = c("R1", "P1"))), family_codes = c("R", "P"))
+  expect_equal(apres$famille_risque, direct$famille_risque)
+  expect_equal(apres$famille_production, direct$famille_production)
+  expect_equal(direct$famille_risque, c(90, 50, 10))
+  # Un _norm seul (colonne brute absente) est pris comme score final.
+  seul <- units[, setdiff(names(units), c("R1", "P1"))]
+  seul$R1_norm <- c(0, 50, 100)
+  out <- create_family_index(seul, family_codes = "R")
+  expect_equal(out$famille_risque, c(0, 50, 100))
 })
 
 test_that("normalize_indicators maintains backward compatibility", {
@@ -608,18 +622,13 @@ test_that("create_family_index warns when weights don't match all indicators", {
   )
 })
 
-test_that("create_family_index prefers _norm columns when available", {
+test_that("create_family_index préfère la colonne brute à son _norm (0.208.0)", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
-  units$C1 <- c(500, 600)  # Raw values
-  units$C1_norm <- c(50, 60)  # Normalized values
-  units$C2 <- c(70, 80)
-
+  units$C1 <- c(75, 150)        # tC/ha brut -> 50 et 100 (borne 150)
+  units$C1_norm <- c(0, 100)    # min-max du lot, ignoré
   result <- create_family_index(units, family_codes = "C")
-
-  # Should use normalized C1_norm, not raw C1
-  # So famille_carbone should be closer to (50+70)/2 = 60 than (500+70)/2 = 285
-  expect_true(result$famille_carbone[1] < 100)
+  expect_equal(result$famille_carbone, c(50, 100))
 })
 
 test_that("get_family_name returns family names", {

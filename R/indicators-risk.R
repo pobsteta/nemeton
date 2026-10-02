@@ -517,7 +517,7 @@ indicateur_r2_tempete <- function(units,
 #' @param dem A SpatRaster with digital elevation model (meters).
 #' @param climate_data Optional list with \code{precip} (monthly precipitation
 #'   vector in mm) and \code{temp} (list with \code{tmin} and \code{tmax}
-#'   monthly vectors in degrees C). If NULL, uses simulated data.
+#'   monthly vectors in degrees C). If NULL, the climate component is excluded and R3 rests on topography alone.
 #' @param snow Optional \code{SpatRaster} of snow-cover duration in
 #'   days per year (the Theia \code{theia_snow}
 #'   \code{snow_cover_duration} product, loaded via
@@ -706,36 +706,28 @@ indicateur_r3_secheresse <- function(units,
   }
 
   # --- Component 1: Climate SPEI (weight 0.6) ---
-  r3_climat <- 0.5  # Default scalar fallback
-
-  if (requireNamespace("SPEI", quietly = TRUE)) {
+  # Sans série climatique fournie, la composante est EXCLUE et R3 repose sur la
+  # topographie seule. Avant 0.208.0, une série « représentative » était simulée
+  # (même série pour tout projet, poids 0,6) après un `set.seed(42)` qui écrasait
+  # le générateur aléatoire de l'appelant ; sans SPEI, un 0,5 constant ajoutait 30
+  # points à tous les projets. Audit 1.0.
+  r3_climat <- NULL
+  has_climate <- !is.null(climate_data) && !is.null(climate_data$precip) &&
+    !is.null(climate_data$temp)
+  if (!has_climate) {
+    cli::cli_alert_info("R3: no climate_data; drought risk from topography alone (climate component excluded).")
+  } else if (!requireNamespace("SPEI", quietly = TRUE)) {
+    cli::cli_alert_warning("R3: SPEI package not available; climate component excluded.")
+  } else {
     tryCatch({
       # Get latitude for Hargreaves PET
       centroid <- suppressWarnings(sf::st_centroid(sf::st_union(units)))
       coords <- sf::st_coordinates(sf::st_transform(centroid, 4326))
       lat_mean <- coords[1, 2]
 
-      if (!is.null(climate_data) &&
-          !is.null(climate_data$precip) &&
-          !is.null(climate_data$temp)) {
-        # Use provided monthly data
-        precip <- climate_data$precip
-        tmin <- climate_data$temp$tmin
-        tmax <- climate_data$temp$tmax
-      } else {
-        # Simulated data (same as tuto 03) - representative Mediterranean/continental
-        cli::cli_alert_info("R3: Using simulated climate data for SPEI")
-        set.seed(42)
-        n_months <- 60  # 5 years
-        # Monthly precipitation pattern (dry summers)
-        base_precip <- rep(c(60, 55, 50, 45, 50, 30, 20, 25, 40, 55, 65, 70), length.out = n_months)
-        precip <- pmax(0, base_precip + stats::rnorm(n_months, 0, 15))
-        # Temperature pattern
-        base_tmax <- rep(c(8, 10, 14, 18, 22, 27, 30, 29, 24, 18, 12, 8), length.out = n_months)
-        base_tmin <- rep(c(0, 1, 4, 7, 11, 15, 18, 17, 13, 8, 4, 1), length.out = n_months)
-        tmax <- base_tmax + stats::rnorm(n_months, 0, 2)
-        tmin <- base_tmin + stats::rnorm(n_months, 0, 2)
-      }
+      precip <- climate_data$precip
+      tmin <- climate_data$temp$tmin
+      tmax <- climate_data$temp$tmax
 
       # Compute PET with Hargreaves
       utils::capture.output(
@@ -756,12 +748,12 @@ indicateur_r3_secheresse <- function(units,
         # Convert SPEI to risk: SPEI -2 = max risk (1), SPEI +2 = no risk (0)
         r3_climat <- max(0, min(1, (-spei_recent + 2) / 4))
         cli::cli_alert_info("R3: SPEI-3 = {round(spei_recent, 2)}, climate risk = {round(r3_climat, 2)}")
+      } else {
+        cli::cli_alert_warning("R3: no valid SPEI value; climate component excluded.")
       }
     }, error = function(e) {
-      cli::cli_alert_warning("R3: SPEI computation failed ({e$message}), using default 0.5")
+      cli::cli_alert_warning("R3: SPEI computation failed ({conditionMessage(e)}); climate component excluded.")
     })
-  } else {
-    cli::cli_alert_info("R3: SPEI package not available, using default climate risk 0.5")
   }
 
   # --- Component 2: Topographic modulation (weight 0.4) ---
@@ -801,9 +793,9 @@ indicateur_r3_secheresse <- function(units,
   # Composite topographic risk
   topo_risk <- 0.4 * aspect_risk + 0.3 * pente_risk + 0.3 * twi_risk
 
-  # --- Final R3: climate (0.6) + topo (0.4) ---
-  # r3_climat is a scalar, topo_risk is a raster
-  r3_raster <- 0.6 * r3_climat + 0.4 * topo_risk
+  # --- Final R3: climate (0.6) + topo (0.4), topo alone without climate ---
+  # r3_climat is a scalar (or NULL), topo_risk is a raster
+  r3_raster <- if (is.null(r3_climat)) topo_risk else 0.6 * r3_climat + 0.4 * topo_risk
 
   r3_mean <- safe_extract(r3_raster,
     as_pure_sf(units), fun = "mean", progress = FALSE)

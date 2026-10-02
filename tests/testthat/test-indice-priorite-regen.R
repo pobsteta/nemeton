@@ -49,6 +49,24 @@ test_that("exposure falls back to d_tmax/d_vpd when sensibilite absent", {
   expect_equal(out$regen_exposition[[1]], 50, tolerance = 1e-6)
 })
 
+test_that("la sortie de regen_sensibilite() donne une exposition 0-100 (pas le z-score)", {
+  # Régression audit 1.0 : `sensibilite` (z-score ~ -4..+4) était lue comme
+  # 0-100, l'exposition s'effondrait et parcelle_sensible restait FALSE.
+  u <- .pr_units(sensibilite = c(-1.8, 0.1, 2.4),
+                 sensibilite_score = c(85, 50, 10),
+                 d_tmax = c(0.5, 2, 4), d_vpd = c(0.1, 0.5, 1.2),
+                 njstress = 30, rew_min = 0.5, n = 3)
+  out <- indice_priorite_regen(u)
+  expect_equal(out$regen_exposition, c(15, 50, 90), tolerance = 1e-6)
+  expect_identical(out$parcelle_sensible, c(FALSE, TRUE, TRUE))
+})
+
+test_that("un z-score seul dans sensibilite est refusé (NA + avertissement)", {
+  u <- .pr_units(sensibilite = c(-1, 0.5, 1.5), njstress = 30, n = 3)
+  expect_warning(out <- indice_priorite_regen(u), "z-score")
+  expect_true(all(is.na(out$regen_exposition)))
+})
+
 test_that("water stress renormalises over available metrics", {
   # only rew_min present -> H from rew alone ; rew 0.25 -> 75
   u <- .pr_units(sensibilite = 40, rew_min = 0.25)

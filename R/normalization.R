@@ -16,9 +16,9 @@
 #' @param na.rm Logical. Remove NA values before normalization? Default TRUE.
 #' @param reference_data Optional data.frame with reference values for normalization.
 #'   Useful for normalizing new data using parameters from a reference dataset.
-#' @param by_family Logical. If TRUE, normalize indicators within each family using
-#'   family-wide parameters (e.g., all Carbon indicators C1, C2 share the same min/max).
-#'   This makes indicators within a family directly comparable. Default FALSE.
+#' @param by_family Deprecated, ignored with a warning since 0.208.0. It was
+#'   documented as family-wide normalisation but only normalised in place, which
+#'   made [create_family_index()] normalise the values a second time.
 #'
 #' @return The input data with added normalized columns
 #'
@@ -80,10 +80,14 @@ normalize_indicators <- function(data,
   # Match method argument
   method <- match.arg(method)
 
-  # When by_family = TRUE and suffix not explicitly set, normalize in-place
-  if (by_family && suffix == "_norm") {
-    suffix <- ""
-    keep_original <- FALSE
+  # `by_family` n'a jamais été implémenté : il ne faisait que normaliser EN
+  # PLACE (suffixe vide), si bien que create_family_index() renormalisait
+  # ensuite des valeurs déjà ramenées à 0-100 (P1 = 200/400 m3/ha -> 0/12,5 au
+  # lieu de 25/50). Ignoré depuis 0.208.0 (audit 1.0).
+  if (isTRUE(by_family)) {
+    cli::cli_warn(c(
+      "{.arg by_family} is not implemented and is ignored.",
+      "i" = "Columns are normalized one by one with the {.val {suffix}} suffix; raw columns are kept."))
   }
 
   # Auto-detect indicators if not specified

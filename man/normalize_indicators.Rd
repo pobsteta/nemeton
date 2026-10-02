@@ -37,9 +37,9 @@ If NULL, auto-detects indicator columns.}
 \item{reference_data}{Optional data.frame with reference values for normalization.
 Useful for normalizing new data using parameters from a reference dataset.}
 
-\item{by_family}{Logical. If TRUE, normalize indicators within each family using
-family-wide parameters (e.g., all Carbon indicators C1, C2 share the same min/max).
-This makes indicators within a family directly comparable. Default FALSE.}
+\item{by_family}{Deprecated, ignored with a warning since 0.208.0. It was
+documented as family-wide normalisation but only normalised in place, which
+made \code{\link[=create_family_index]{create_family_index()}} normalise the values a second time.}
 }
 \value{
 The input data with added normalized columns

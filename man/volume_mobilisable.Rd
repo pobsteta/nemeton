@@ -84,7 +84,9 @@ mechanically over-weighting large parcels.
 
 \code{taux_prelevement} is a \strong{yearly flux} in m3/ha/year, not a fraction,
 so \code{horizon_ans} is required with it:
-\code{volume = P1 x taux x horizon_ans}. A harvest rate describes what
+\code{volume = taux x horizon_ans}, capped by the standing volume P1 (which
+also carries the \code{NA} of an uninventoried parcel). Before 0.208.0 the rate
+was multiplied by P1 as well, mixing a stock and a flux. A harvest rate describes what
 \strong{has been} removed, not what \strong{should} be; sizing a road network on
 it assumes management carries on unchanged.
 

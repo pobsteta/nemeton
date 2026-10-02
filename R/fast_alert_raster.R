@@ -1383,10 +1383,15 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
 }
 
 
-# Extract the MGRS tile code (5th underscore-separated field) from an
-# S2 product id. Handles both the 6-field Planetary Computer form and
-# the 7-field ESA `.SAFE` form (cf. v0.41.2 `.s2_split_product_id`).
+# Extract the MGRS tile code (`T` + 2 digits + 3 letters) from an S2
+# product id. Matched by pattern, not by position: in the 6-field Planetary
+# Computer form it is the 5th field, but in the 7-field ESA/CDSE form
+# (`..._N0509_R008_T31TFM_...`) the 5th field is the relative ORBIT. Taking
+# the 5th field grouped CDSE scenes by orbit — two tiles of one orbit stacked
+# together (double count on the overlap), one tile split across orbits
+# (audit 1.0, v0.208.0). Same rule as `.s2_split_product_id()`.
 .s2_mgrs_tile <- function(scene_id) {
   parts <- strsplit(scene_id, "_", fixed = TRUE)[[1L]]
-  if (length(parts) >= 5L) parts[[5L]] else NA_character_
+  tile <- parts[grepl("^T[0-9]{2}[A-Z]{3}$", parts)]
+  if (length(tile) == 1L) tile else NA_character_
 }

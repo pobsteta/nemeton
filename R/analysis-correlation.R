@@ -3,6 +3,7 @@
 # MVP v0.3.0 - Multi-Family Indicator Extension
 
 #' @importFrom rlang .data
+#' @importFrom rlang %||%
 NULL
 
 #' Compute Correlation Matrix Between Family Indices

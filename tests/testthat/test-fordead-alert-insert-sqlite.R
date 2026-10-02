@@ -59,6 +59,35 @@ test_that(".insert_fordead_alerts is idempotent via full zone+type replace", {
   })
 })
 
+test_that("un re-run conserve les alertes validées sur le terrain (audit 1.0)", {
+  skip_if_not_installed("sf")
+  with_sqlite_monitoring_db(function(con) {
+    pts <- function(xy) sf::st_sf(
+      trigger_date     = as.Date("2026-05-20"),
+      confidence_class = "3-forte",
+      stress_index     = 0.8,
+      geometry = sf::st_sfc(lapply(xy, sf::st_point), crs = 2154))
+    # Run 1 : deux foyers distants de 1 km.
+    nemeton:::.insert_fordead_alerts(
+      con, pts(list(c(900000, 6500000), c(901000, 6500000))), zone_id = 1L)
+    # Validation terrain du premier foyer.
+    id1 <- DBI::dbGetQuery(con, "SELECT id FROM alert ORDER BY id LIMIT 1")$id
+    DBI::dbExecute(con, "UPDATE alert SET validation_status = 'confirmed',
+      validation_cause = 'scolyte', validated_by = 'agent' WHERE id = ?",
+      params = list(id1))
+    # Run 2 : le premier foyer re-détecté à 8 m, le second disparu, un nouveau.
+    n <- nemeton:::.insert_fordead_alerts(
+      con, pts(list(c(900008, 6500000), c(905000, 6500000))), zone_id = 1L)
+    got <- DBI::dbGetQuery(con,
+      "SELECT id, validation_status, validation_cause FROM alert ORDER BY id")
+    expect_equal(n, 1L)                         # seul le nouveau foyer est inséré
+    expect_equal(nrow(got), 2L)                 # validé conservé + nouveau
+    expect_true(id1 %in% got$id)
+    expect_equal(got$validation_cause[got$id == id1], "scolyte")
+    expect_equal(sum(got$validation_status == "pending"), 1L)
+  })
+})
+
 # db_migrate's `INSERT INTO schema_migration ... ON CONFLICT DO NOTHING`
 # (no conflict target) is only valid on SQLite >= 3.35.0; the fix routes
 # SQLite through `INSERT OR IGNORE`. A fresh migrate must populate
