@@ -85,12 +85,15 @@ ifn_covariables_domaines <- function(domaines, hauteur, altitude, id_col = NULL,
   h <- terra::crop(hauteur[[1]], terra::vect(dom), snap = "out") * k
   foret <- terra::ifel(!is.na(h) & h >= seuil_m, 1, 0)
   hf <- terra::ifel(foret == 1, h, 0)
-  # Reprojeter seulement si besoin : certaines versions de terra/GDAL echouent
-  # sur une projection vers le meme CRS ("could not find valid method", CI
-  # 2026-10-01).
+  # Reprojeter / reechantillonner seulement si besoin : sur le runner CI,
+  # terra/GDAL echoue sur un warp qui ne change rien ("could not find valid
+  # method", 2026-10-01), que ce soit project() vers le meme CRS ou
+  # resample() vers la meme grille.
   alt <- altitude[[1]]
   if (!terra::same.crs(alt, h)) alt <- terra::project(alt, terra::crs(h))
-  alt <- terra::resample(alt, h, method = "bilinear")
+  if (!terra::compareGeom(alt, h, stopOnError = FALSE)) {
+    alt <- terra::resample(alt, h, method = "bilinear")
+  }
   af <- terra::ifel(foret == 1 & !is.na(alt), alt, 0)
   nalt <- terra::ifel(foret == 1 & !is.na(alt), 1, 0)
   st <- c(foret, hf, hf^2, nalt, af, af^2)
