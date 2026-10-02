@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.207.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.207.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -202,11 +202,11 @@
 </tr><tr><td>13</td>
 <td>
 <strong>RECONFORT : 5 runs écrêtés par le défaut iota2 #12, à relancer</strong> (la partie app — <code>include_range</code>, couche P(atteinte), libellés — est refermée)</td>
-<td>cœur <strong>v0.199.0</strong> + app <strong>v0.144.2</strong>
+<td>cœur <strong>v0.199.0</strong> + <strong>v0.207.1</strong> + app <strong>v0.144.2</strong>
 </td>
 <td>
 <strong>re-runs</strong> (données)</td>
-<td>Correctif #12 appliqué à l’env <code>nemeton-reconfort</code> le 2026-09-23. <strong>Reste</strong> : relancer RECONFORT sur armn z5 (2025 et 2026), ltcp z9, hwuy z49, yuxn z53 — tous encore écrêtés (max des bandes = 255, score 24–58), relu le 2026-09-23. Score continu et <code>stress_index</code> faux d’ici là ; classes et alertes justes. Premier run post-correctif : vérifier max des bandes ~1000 et score jusqu’à ~100 (le correctif #12 n’a pas encore été validé par un vrai run). Lancer dans un cgroup plafonné</td>
+<td>Correctif #12 appliqué à l’env <code>nemeton-reconfort</code> le 2026-09-23. <strong>Reste</strong> : relancer RECONFORT sur armn z5 (2025 et 2026), ltcp z9, hwuy z49, yuxn z53 — tous encore écrêtés (max des bandes = 255, score 24–58), relu le 2026-09-23. Score continu et <code>stress_index</code> faux d’ici là ; classes et alertes justes. Premier run post-correctif : vérifier max des bandes ~1000 et score jusqu’à ~100. <strong>2026-10-02 (cœur v0.207.1)</strong> : le run ltcp du 2026-09-23 au soir, postérieur au correctif, <strong>n’avait rien recalculé</strong> — <code>-restart</code> sautait toutes les tâches d’un run terminé et resservait la mosaïque de juillet (deux chunks neufs en uint16 jusqu’à 1000, <code>final/</code> toujours à 255). Corrigé : un run terminé voit ses résultats IOTA² effacés avant la relance. <strong>Les relances n’ont de sens qu’avec un cœur ≥ 0.207.1</strong> installé côté app. Lancer dans un cgroup plafonné</td>
 </tr><tr><td>15</td>
 <td>Covariables de domaine FORMS-T pour la production du massif (<code><a href="reference/ifn_covariables_domaines.html">ifn_covariables_domaines()</a></code>, hybride PV : 19 à 35 % d’erreur en moins)</td>
 <td>cœur <strong>v0.206.0</strong> (publiée le 2026-10-02 à 02 h 44)</td>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.207.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.207.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,16 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.207.1" id="nemeton-02071-2026-10-02">nemeton 0.207.1 (2026-10-02)<a class="anchor" aria-label="anchor" href="#nemeton-02071-2026-10-02"></a></h2>
+<div class="section level4">
+<h4 id="fixed--un-run-reconfort-ne-resservait-plus-que-lancienne-classification-0-207-1">Fixed — un run RECONFORT ne resservait plus que l’ancienne classification<a class="anchor" aria-label="anchor" href="#fixed--un-run-reconfort-ne-resservait-plus-que-lancienne-classification-0-207-1"></a></h4>
+<p>Les deux parties d’IOTA² tournent avec <code>-restart</code>, pour qu’un run mort ou annulé reprenne là où il s’est arrêté. Mais une fois un run <strong>terminé</strong>, le fichier d’état d’IOTA² marque toutes les tâches comme faites : le run suivant sur la même zone et la même année ne refaisait presque rien. La fusion et la mosaïque gardaient leurs rasters, et <code>final/</code> était reconstruit à partir d’eux.</p>
+<p>Constaté sur la zone 9 du projet ltcp, relancée le 2026-09-23 après le correctif iota2 <a href="https://github.com/pobsteta/nemeton/issues/12" class="external-link">#12</a> : deux morceaux recalculés en uint16, jusqu’à 1000, mais <code>final/</code> masqué depuis la mosaïque de juillet, écrêtée à 255 (score 24 à 58). <strong>Aucun run ne pouvait donc profiter d’un correctif de l’environnement, du modèle ou des scènes S2</strong>, et le correctif <a href="https://github.com/pobsteta/nemeton/issues/12" class="external-link">#12</a> n’avait en réalité jamais été exercé jusqu’au bout.</p>
+<p><code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> efface désormais, avant la production de cartes, le dossier de résultats IOTA² d’un run terminé (repéré par <code>final/run_meta.json</code>, écrit seulement en fin de run). Un run mort ou annulé n’en a pas et reprend toujours. Les sorties déjà publiées sous <code>zone_&lt;id&gt;/run_&lt;horodatage&gt;/</code> ne sont pas touchées.</p>
+<p><strong>À faire</strong> : relancer les cinq runs écrêtés (écart n° 13) ; ils recalculeront cette fois la classification.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.207.0" id="nemeton-02070-2026-10-02">nemeton 0.207.0 (2026-10-02)<a class="anchor" aria-label="anchor" href="#nemeton-02070-2026-10-02"></a></h2>
 <div class="section level4">

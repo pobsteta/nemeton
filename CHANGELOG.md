@@ -12,6 +12,14 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.207.1\] - 2026-10-02
+
+### Fixed
+
+- RECONFORT : un nouveau run sur une zone déjà calculée recalcule la
+  classification IOTA² au lieu de resservir l’ancienne mosaïque
+  (`-restart` sautait toutes les tâches d’un run terminé).
+
 ## \[0.207.0\] - 2026-10-02
 
 ### Fixed
