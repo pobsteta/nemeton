@@ -619,3 +619,15 @@ test_that("end-to-end smoke test against villards (count mode)", {
   expect_true(rng[1, 1] >= 0)
   expect_true(rng[2, 1] <= 130)  # bounded by the # of NDVI scenes in window
 })
+
+test_that(".s2_mgrs_tile lit la tuile, pas l'orbite, sur les identifiants CDSE (audit 1.0)", {
+  # Forme ESA/CDSE à 7 champs : le 5e champ est l'orbite relative.
+  expect_identical(
+    nemeton:::.s2_mgrs_tile("S2A_MSIL2A_20210814T103031_N0509_R108_T31TFM_20230128T045356"),
+    "T31TFM")
+  # Forme Planetary Computer à 6 champs.
+  expect_identical(
+    nemeton:::.s2_mgrs_tile("S2B_MSIL2A_20200605T103629_R008_T31UFQ_20200824T231019"),
+    "T31UFQ")
+  expect_true(is.na(nemeton:::.s2_mgrs_tile("pas_un_identifiant")))
+})
