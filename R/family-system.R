@@ -261,13 +261,12 @@ create_family_index <- function(data,
       col_name <- indicators[j]
       raw <- indicator_data[, j]
       if (grepl("_norm$", col_name)) {
-        # Déjà normalisée par l'appelant (colonne brute absente) : écrêtage, et
-        # inversion pour les indicateurs « haut = mauvais » que
-        # normalize_indicator() retourne (R1-R5, T3, L1, S1, S2…). Le sens est
-        # lu sur la règle elle-même, pas sur une liste recopiée.
-        v <- pmin(100, pmax(0, raw))
-        if (.normalize_is_decreasing(sub("_norm$", "", col_name))) v <- 100 - v
-        indicator_data[, j] <- v
+        # Colonne brute absente : le `_norm` est pris comme score FINAL (0-100,
+        # haut = mieux), seulement écrêté. Pas d'inversion : selon son
+        # producteur, il est déjà orienté (normalize_indicator(), côté app) ou
+        # non (min-max de normalize_indicators(), qui garde toujours la brute,
+        # laquelle l'emporte alors ci-dessus).
+        indicator_data[, j] <- pmin(100, pmax(0, raw))
         next
       }
       # Statut d'unite porte par une colonne compagne (`p2_status`, ou

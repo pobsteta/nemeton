@@ -10,6 +10,24 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.208.0] - 2026-10-02
+
+### Fixed
+- B2 ne fabrique plus de score depuis la diversité du lot et le numéro de ligne ;
+  mesure sur CHM / MNH / NDVI, NA sinon.
+- R3 sans `climate_data` : plus de série simulée ni de `set.seed(42)` global ;
+  topographie seule.
+- `indice_priorite_regen()` : exposition depuis `sensibilite_score`, plus le z-score.
+- `volume_mobilisable()` : `taux x horizon` plafonné par P1 (plus P1 x flux).
+- Données de chasse : codes département normalisés (« 03 »).
+- `nemeton_compute()` : composites (T2, E2, N3) calculés en dernier sur les codes
+  courts ; B1/B3 alimentés depuis `layers`.
+- `create_family_index()` : colonne brute prioritaire, `_norm` seul = score final ;
+  `normalize_indicators(by_family)` ignoré (double normalisation).
+- Tuile MGRS lue par motif (orbite en CDSE).
+- Re-run FORDEAD/RECONFORT : alertes validées sur le terrain conservées.
+- `%||%` importé depuis rlang (R < 4.4).
+
 ## [0.207.1] - 2026-10-02
 
 ### Fixed

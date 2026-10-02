@@ -196,11 +196,11 @@ test_that("normaliser puis agréger ne ré-inverse pas les risques ni ne renorma
   expect_equal(apres$famille_risque, direct$famille_risque)
   expect_equal(apres$famille_production, direct$famille_production)
   expect_equal(direct$famille_risque, c(90, 50, 10))
-  # Un _norm seul (colonne brute absente) est réorienté pour R1.
+  # Un _norm seul (colonne brute absente) est pris comme score final.
   seul <- units[, setdiff(names(units), c("R1", "P1"))]
   seul$R1_norm <- c(0, 50, 100)
   out <- create_family_index(seul, family_codes = "R")
-  expect_equal(out$famille_risque, c(100, 50, 0))
+  expect_equal(out$famille_risque, c(0, 50, 100))
 })
 
 test_that("normalize_indicators maintains backward compatibility", {

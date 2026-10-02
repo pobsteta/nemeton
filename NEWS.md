@@ -1,3 +1,68 @@
+# nemeton 0.208.0 (2026-10-02)
+
+Première vague de l'audit de pré-version 1.0 : **corrections de calcul**. Dix
+défauts qui donnaient des valeurs fausses sans erreur ; les tests ne les
+voyaient pas parce qu'ils injectaient des valeurs déjà correctes. **Plusieurs
+valeurs changent** : les projets doivent être recalculés.
+
+### Fixed — valeurs fausses
+
+- **B2 (structure)** : le chemin strates / classes d'âge fabriquait un score à
+  partir de la diversité du **lot entier**, plus un terme `(i %% 4)` qui
+  dépendait du **numéro de ligne** — trier les unités changeait B2. Une seule
+  catégorie par unité ne décrit aucune diversité : B2 se mesure désormais sur
+  la hauteur (CHM, puis MNH LiDAR) ou le NDVI, et vaut `NA` sans eux.
+  `cv_chm_weight = 0` ignore le CHM.
+- **R3 (sécheresse)** : sans `climate_data`, la composante climat (poids 0,6)
+  était calculée sur une série **simulée**, identique pour tout projet, après
+  un `set.seed(42)` qui écrasait le générateur aléatoire de l'appelant ; sans
+  SPEI, un 0,5 constant ajoutait 30 points. La composante est désormais
+  exclue : R3 repose sur la topographie seule.
+- **Indice de priorité de régénération** : l'exposition lisait `sensibilite`,
+  un z-score (~ -4 à +4) écrit par `regen_sensibilite()`, comme une échelle
+  0-100. Bornée, elle s'effondrait ; la priorité se réduisait au stress
+  hydrique / 2 et `parcelle_sensible` était toujours `FALSE`. Elle lit
+  maintenant `100 - sensibilite_score`, sinon `d_tmax` / `d_vpd` ; un z-score
+  seul est refusé (NA + avertissement).
+- **`volume_mobilisable()`** : `P1 × taux × horizon` multipliait un stock par un
+  flux (P1 = 200 m³/ha, 2,84 m³/ha/an, 10 ans → 5 680 « m³/ha »). Le volume est
+  désormais `taux × horizon`, plafonné par P1 (28,4 m³/ha dans l'exemple).
+- **R4, données de chasse** : `read.csv` lisait le département « 03 » comme 3
+  dans sept fichiers sur huit (le sanglier, avec la Corse, restait en texte) :
+  départements 01-09 dédoublés et jointure ADMIN EXPRESS ratée, d'où une
+  pression nationale médiane imputée en silence. Codes normalisés sur deux
+  caractères ; les départements imputés sont signalés.
+- **`nemeton_compute()`** : chaque indicateur recevait les unités d'origine,
+  si bien que N3 et E2 valaient toujours `NA` et que T2 retombait sur 50. Les
+  composites (T2, E2, N3) sont calculés en dernier et voient les codes courts
+  déjà calculés ; B1 et B3 reçoivent `protected_areas`, `bdforet` et `dem`
+  depuis le catalogue `layers`. L'erreur d'un indicateur est affichée.
+- **`create_family_index()` / `normalize_indicators()`** : le chemin documenté
+  « normaliser puis agréger » préférait le `_norm` (min-max du lot, sans
+  inversion) et ré-inversait R1-R5, T3, L1, S1 et S2 ; `by_family = TRUE`
+  normalisait en place, d'où une **double normalisation** (P1 = 200/400 m³/ha
+  → 0/12,5 au lieu de 25/50). La colonne brute l'emporte désormais (règle
+  absolue de `normalize_indicator()`) ; un `_norm` seul, sans sa colonne
+  brute, est pris comme score final ; `by_family` est ignoré avec un
+  avertissement. La famille carbone de `massif_demo_units` est désormais
+  calculée sur C1/C2 bruts, et non plus sur ses `_norm` min-max.
+- **Tuile Sentinel-2** : `.s2_mgrs_tile()` prenait le 5ᵉ champ de l'identifiant,
+  qui est l'**orbite** au format ESA/CDSE. FAST regroupait les scènes par
+  orbite (double comptage entre tuiles d'une même orbite). Lecture par motif
+  `T##XXX`.
+
+### Fixed — perte de données
+
+- **Validations terrain** : un re-run FORDEAD ou RECONFORT supprimait toutes
+  les alertes de la zone, y compris celles **déjà validées sur le terrain**.
+  Seules les alertes `pending` sont désormais remplacées ; une nouvelle alerte
+  à moins de 50 m d'une alerte validée n'est pas réinsérée.
+
+### Fixed — compatibilité
+
+- **`%||%`** n'était ni défini ni importé : le paquet cassait sous R 4.1 à 4.3
+  alors que `DESCRIPTION` annonce `R (>= 4.1.0)`. Importé depuis rlang.
+
 # nemeton 0.207.1 (2026-10-02)
 
 ### Fixed — un run RECONFORT ne resservait plus que l'ancienne classification

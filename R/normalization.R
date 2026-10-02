@@ -583,14 +583,6 @@ invert_indicator <- function(data,
 
 # TRUE quand la colonne est ramenée sur 0-100 par une règle explicite ou par
 # déclaration (« native 0-100 »), les deux écritures étant acceptées.
-# TRUE si normalize_indicator() inverse le sens de l'indicateur (une valeur
-# brute plus grande donne un score plus bas). Sondé sur la règle elle-même.
-.normalize_is_decreasing <- function(indicator) {
-  v <- tryCatch(suppressWarnings(normalize_indicator(indicator, c(1, 50))),
-                error = function(e) c(NA_real_, NA_real_))
-  isTRUE(v[1] > v[2])
-}
-
 .normalize_has_rule <- function(indicator) {
   ind <- .normalize_resolve_alias(indicator)
   ind %in% .NORMALIZE_RULED || ind %in% .NORMALIZE_NATIVE_0_100

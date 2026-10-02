@@ -53,20 +53,20 @@ test_that("family scores aggregate NORMALIZED values, not raw units", {
   expect_equal(out$famille_production[1], mean(c(0, 72.667)), tolerance = 1e-3)
 })
 
-test_that("a pre-normalized _norm column is used and not normalized twice", {
-  # La préférence `_norm` existait mais ne s'appliquait jamais aux noms longs :
-  # aucune stratégie de sélection ne retenait ces colonnes.
-  units <- .units_from(c(
-    indicateur_c1_biomasse = 0.062,
-    indicateur_c2_ndvi     = -0.109
-  ))
-  units$indicateur_c1_biomasse_norm <- rep(80, nrow(units))
-  units$indicateur_c2_ndvi_norm     <- rep(60, nrow(units))
-
+test_that("la colonne brute l'emporte sur son _norm ; un _norm seul est pris tel quel (0.208.0)", {
+  # Audit 1.0 : préférer le `_norm` (min-max du lot de normalize_indicators(),
+  # sans inversion) ré-inversait les risques et rendait le score relatif au lot.
+  units <- .units_from(c(indicateur_c1_biomasse = 75, indicateur_c2_ndvi = 0.6))
+  units$indicateur_c1_biomasse_norm <- rep(10, nrow(units))
   out <- suppressWarnings(create_family_index(units, method = "mean"))
-  # 80 et 60 sont repris tels quels : une seconde normalisation les écraserait
-  # (80 tC/ha -> 53, par exemple).
-  expect_equal(out$famille_carbone[1], 70)
+  expect_equal(out$famille_carbone[1], (50 + 60) / 2)   # 75/150 et 0,6 x 100
+  # Sans la brute, le _norm est un score final, non renormalisé.
+  seul <- units[, setdiff(names(units), c("indicateur_c1_biomasse", "indicateur_c2_ndvi",
+                                          "indicateur_c1_biomasse_norm"))]
+  seul$C1_norm <- rep(80, nrow(units))
+  seul$C2_norm <- rep(60, nrow(units))
+  out2 <- suppressWarnings(create_family_index(seul, method = "mean"))
+  expect_equal(out2$famille_carbone[1], 70)
 })
 
 test_that("an out-of-range column with no rule warns instead of being clamped in silence", {
@@ -118,15 +118,11 @@ test_that("short codes normalize like their long-form name", {
   expect_equal(suppressWarnings(normalize_indicator("Z9", 42)), 42)
 })
 
-test_that("massif_demo_units uses its own _norm columns", {
-  # La fixture de référence embarque C1_norm / C2_norm. Avant la correction de
-  # la préférence `_norm`, elles étaient ignorées et les colonnes brutes étaient
-  # écrêtées : famille_carbone valait 80,5 au lieu de 46,6.
+test_that("massif_demo_units : famille carbone calculée sur les colonnes brutes (0.208.0)", {
   data(massif_demo_units, package = "nemeton")
-  expect_true(all(c("C1_norm", "C2_norm") %in% names(massif_demo_units)))
-
   out <- suppressWarnings(create_family_index(massif_demo_units, method = "mean"))
-  attendu <- (massif_demo_units$C1_norm + massif_demo_units$C2_norm) / 2
+  attendu <- (normalize_indicator("C1", massif_demo_units$C1) +
+              normalize_indicator("C2", massif_demo_units$C2)) / 2
   expect_equal(out$famille_carbone, attendu, tolerance = 1e-6)
 })
 
