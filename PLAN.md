@@ -115,7 +115,11 @@ opposer au prochain fork qui se présentera comme un raccourci.
 
 ------------------------------------------------------------------------
 
-# Chantier EN COURS — Production IFN par petits domaines, Fay-Herriot (spec 054)
+# Chantier CLOS côté cœur — Production IFN par petits domaines, Fay-Herriot (spec 054)
+
+> *(relu le 2026-10-02)* Cœur livré (v0.200.0 → v0.207.0), app câblée
+> (v0.152.0 + v0.152.1), FORMS-T vérifié en réel. Seul reste la
+> validation métier dans l’app (écart n° 16).
 
 **Journal** — *2026-10-01* (doc seule, pas de release) : **cadrage à
 partir d’Onwunji et al. (2026, Ann. For. Sci. 83:46)**, l’estimateur
@@ -671,7 +675,7 @@ encore eu lieu.
 
 ------------------------------------------------------------------------
 
-# Chantier CADRÉ — Crop à l’ingestion S2 (spec 021, optimisation disque)
+# Chantier CLOS — Crop à l’ingestion S2 (spec 021, optimisation disque)
 
 > **Cadré le 2026-06-27** (paperwork avant code). Doc :
 > `specs/021-suivi-sanitaire-reconfort/L2b-crop-ingestion-cadrage.md`.
@@ -784,11 +788,15 @@ DL→extract→crop→delete + idempotence, manifeste vide → abort) ; pipeline
 **Statut** : ✅ **livré v0.95.0** (+ patchs v0.95.1, v0.96.0, v0.96.1 ;
 helper d’affichage v0.97.0). Streaming validé (140/140) ; classification
 IOTA² à valider en mode `debug` (run en cours) ; affichage des couches à
-câbler côté `nemetonshiny` (manifeste cœur prêt).
+câbler côté `nemetonshiny` (manifeste cœur prêt). *(relu le 2026-10-02)*
+Les deux restes sont faits : la classification tourne en production
+(cinq runs propres le 2026-10-02, écart n° 13) et l’app consomme
+[`reconfort_layer_manifest()`](https://pobsteta.github.io/nemeton/reference/reconfort_layer_manifest.md)
+(`mod_monitoring_reconfort_map.R`).
 
 ------------------------------------------------------------------------
 
-# Chantier EN COURS — RECONFORT AOI-scoped (spec 021, productionisation)
+# Chantier CLOS — RECONFORT AOI-scoped (spec 021, productionisation)
 
 > **2026-06-24.** RECONFORT (dépérissement feuillus, IOTA²/v3) ne
 > tournait jamais de bout en bout sur ce poste. Après ~12
@@ -822,7 +830,11 @@ wrapper `task_launcher.py` dans `$ENV/bin/` (absent du build iota2).
 `persist (features bundle) failed: number of rows/columns` (n’empêche
 pas les alertes) ; validité OTB 10 vs OTB 8 de calibration à confirmer
 avec les auteurs RECONFORT (résultat cohérent : ~23 % feuillus, ~13 % en
-dépérissement). Voir mémoire `project_reconfort_iota2_version`.
+dépérissement). Voir mémoire `project_reconfort_iota2_version`. *(relu
+le 2026-10-02)* Le warning `persist (features bundle)` n’apparaît dans
+aucun des cinq runs du 2026-10-02 (logs `reconfort_child_rerun*.log`).
+Seule la question de calibration OTB 10 / OTB 8 reste ouverte, et elle
+est externe (auteurs RECONFORT).
 
 **Journal** — *2026-07-01 (garde-fou année `s2_year` — v0.104.0)* : le
 `s2_year` (dernière année de la série ~2 ans) n’avait aucune borne «
@@ -946,7 +958,7 @@ recalculer).
 
 ------------------------------------------------------------------------
 
-# Chantier EN COURS — Dette post-coupe-rase (items 1-4)
+# Chantier CLOS — Dette post-coupe-rase (items 1-4)
 
 > **Ouvert le 2026-07-01.** Inventaire de dette autour du correctif
 > CHM/coupe rase. 4 items : (1) un CHM cassé (tout à 0) est
@@ -959,7 +971,10 @@ recalculer).
 `extract_indicator_value(result, indicator, exclude)` exportée =
 **source unique** de la convention de nommage (code court → nom NMT →
 motif). `compute_indicator()` délègue. Reste : câbler `nemetonshiny`
-dessus (supprimer son `col_map`, dépend de `nemeton >= 0.108.0`). Tests
+dessus (supprimer son `col_map`, dépend de `nemeton >= 0.108.0`). *(relu
+le 2026-10-02)* Fait côté app : `service_compute.R:4615` appelle
+[`nemeton::extract_indicator_value()`](https://pobsteta.github.io/nemeton/reference/extract_indicator_value.md),
+plus aucun `col_map` (`nemetonshiny@550e6355`). Tests
 `test-indicators-core-dispatch.R`.
 
 **\#1 / \#2 / \#3 — cœur livré (v0.109.0)** : spec 005 §3.5
@@ -1058,7 +1073,7 @@ modale). Consomme
 
 ------------------------------------------------------------------------
 
-# Chantier EN COURS — Carte FORDEAD : 3 couches additionnelles
+# Chantier CLOS — Carte FORDEAD : 3 couches additionnelles
 
 > **Cadré le 2026-06-19.** La Carte FORDEAD n’affiche que le masque 0-4.
 > On ajoute 3 couches pixel pertinentes, sélectionnables et masquées par
@@ -1155,7 +1170,7 @@ l’extract-then-delete annoté `NOTE (nemeton)`, off par défaut. 41 tests
 
 ------------------------------------------------------------------------
 
-# Chantier EN COURS — Suivi sanitaire : découplage de la placette (Phase A)
+# Chantier CLOS — Suivi sanitaire : découplage de la placette (Phases A, B, B.2)
 
 > **Cadré le 2026-06-18** (spec 008 **§15**, ADR-013 amendement **A5**,
 > décision **D2**). Déclencheur : incident **Mouthe** (zone 5
@@ -3522,7 +3537,7 @@ côté app).
 
 ------------------------------------------------------------------------
 
-# Chantier — Suivi sanitaire : graphe trend par pixel + plan sanitaire (spec 023 / 025)
+# Chantier CLOS — Suivi sanitaire : graphe trend par pixel + plan sanitaire (spec 023 / 025)
 
 **Spec 023 — Trajectoire de déclin par pixel (graphe trend)** cœur
 [`extract_pixel_trend()`](https://pobsteta.github.io/nemeton/reference/extract_pixel_trend.md) +
@@ -3545,7 +3560,10 @@ v0.100.4**
 
 ------------------------------------------------------------------------
 
-# Chantier en cours — RECONFORT : suivi sanitaire feuillus (spec 021, ADR-013 A4)
+# Chantier CLOS — RECONFORT : suivi sanitaire feuillus (spec 021, ADR-013 A4)
+
+> *(relu le 2026-10-02)* Les lots L1 à L6 sont tous ✅. La production
+> est validée par les relances du 2026-10-02 (écart n° 13).
 
 **Cadré** : 2026-06-10 (paperwork :
 `specs/021-suivi-sanitaire-reconfort/` plan.md + spec.md ; ADR-013
@@ -3786,7 +3804,7 @@ indicateurs (R5 conditionnel).
 
 ------------------------------------------------------------------------
 
-# Chantier EN COURS — reGénération : microclimat sous couvert (spec 027, ADR-014)
+# Chantier CLOS côté cœur — reGénération : microclimat sous couvert (spec 027, ADR-014)
 
 **Cadré** : 2026-06-30 (paperwork :
 `specs/027-regeneration-microclimat/spec.md` + ADR-014 dans
