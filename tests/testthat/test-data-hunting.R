@@ -80,6 +80,19 @@ test_that("download_hunting_data handles 'all' species correctly", {
 # Tests for standardize_hunting_columns()
 # ==============================================================================
 
+test_that("les codes département sont normalisés sur deux caractères (audit 1.0)", {
+  expect_identical(nemeton:::.normaliser_code_dept(c(3, 33, NA)), c("03", "33", NA))
+  expect_identical(nemeton:::.normaliser_code_dept(c("3", "03", "2A", "974", " 5")),
+                   c("03", "03", "2A", "974", "05"))
+  # Deux fichiers lus différemment par read.csv (entier vs texte) se recollent.
+  a <- nemeton:::standardize_hunting_columns(
+    data.frame(dept = c(3L, 33L), annee = 2020L, prelevements = c(10L, 20L)), "chevreuil")
+  b <- nemeton:::standardize_hunting_columns(
+    data.frame(dept = c("03", "2A"), annee = 2020L, prelevements = c(5L, 7L)), "sanglier")
+  both <- rbind(a, b)
+  expect_setequal(unique(both$code_dept), c("03", "33", "2A"))
+})
+
 test_that("standardize_hunting_columns standardizes column names", {
   # Create mock data with various column name patterns
   mock_data <- data.frame(

@@ -287,6 +287,15 @@ download_hunting_data <- function(species = "all",
   }
 }
 
+# Code département INSEE sur deux caractères ("3" -> "03", 3 -> "03"), sans
+# toucher aux codes alphanumériques (2A, 2B) ni aux DOM à trois chiffres.
+.normaliser_code_dept <- function(x) {
+  x <- trimws(as.character(x))
+  court <- !is.na(x) & grepl("^[0-9]$", x)
+  x[court] <- paste0("0", x[court])
+  x
+}
+
 #' Standardize Hunting Data Column Names
 #' @noRd
 standardize_hunting_columns <- function(data, species_name) {
@@ -312,6 +321,14 @@ standardize_hunting_columns <- function(data, species_name) {
   }
 
   names(data) <- new_names
+
+  # Code département sur deux caractères. read.csv lit "03" comme l'entier 3
+  # dans les fichiers sans Corse, et le garde en texte dans celui du sanglier
+  # (« 2A »/« 2B ») : le rbind mélangeait "3" et "03", d'où des départements
+  # 01-09 dédoublés et une jointure ADMIN EXPRESS ratée (audit 1.0).
+  if ("code_dept" %in% names(data)) {
+    data$code_dept <- .normaliser_code_dept(data$code_dept)
+  }
 
   # Add species column
   data$espece <- species_name
@@ -625,7 +642,10 @@ get_game_pressure_raster <- function(units,
   # Transform to same CRS as units
   dept_boundaries <- sf::st_transform(dept_boundaries, sf::st_crs(units))
 
-  # Join pressure data
+  # Join pressure data (codes alignés des deux côtés : "03", pas 3)
+  dept_boundaries$code_dept <- .normaliser_code_dept(dept_boundaries$code_dept)
+  pressure_data$code_dept <- .normaliser_code_dept(pressure_data$code_dept)
+  n_sans <- sum(!dept_boundaries$code_dept %in% pressure_data$code_dept)
   dept_boundaries <- merge(
     dept_boundaries,
     pressure_data[, c("code_dept", "pressure_index")],
@@ -633,7 +653,10 @@ get_game_pressure_raster <- function(units,
     all.x = TRUE
   )
 
-  # Fill missing with median
+  # Fill missing with median — et le dire : une valeur imputée n'est pas une mesure.
+  if (n_sans > 0L) {
+    cli::cli_alert_info("Game pressure: {n_sans} department{?s} without hunting data get the national median.")
+  }
   median_pressure <- median(pressure_data$pressure_index, na.rm = TRUE)
   dept_boundaries$pressure_index[is.na(dept_boundaries$pressure_index)] <- median_pressure
 
