@@ -11,8 +11,13 @@
 # testable sur `sf` synthétique.
 #
 # Contrat d'entrée (au moins une colonne par volet) :
-#   exposition : `sensibilite` (0-100, haut = plus exposé) — sinon dérivée de
-#                `d_tmax` / `d_vpd` (aggravation canicule vs moyenne).
+#   exposition : `sensibilite_score` (R6 borné 0-100, haut = FAVORABLE, posé par
+#                regen_sensibilite()) inversé — sinon dérivée de `d_tmax` /
+#                `d_vpd` (aggravation canicule vs moyenne) — sinon, en dernier
+#                recours, `sensibilite` fournie par l'appelant en 0-100 (haut =
+#                plus exposé). ATTENTION : regen_sensibilite() écrit dans
+#                `sensibilite` un z-score centré-réduit (~ -4..+4) qui sert au
+#                rang ; il n'est jamais lu comme une échelle 0-100 (v0.208.0).
 #   hydrique   : `njstress` (jours), `istress` (intensité), `rew_min` (réserve
 #                en eau relative 0-1, bas = plus sec).
 
@@ -205,9 +210,15 @@ regen_species_choices <- function(units = NULL, species_col = NULL,
 }
 
 # Sous-score d'EXPOSITION (0-100, haut = plus exposé).
+#
+# Avant 0.208.0, `sensibilite` passait en premier et était lue comme 0-100 ; or
+# regen_sensibilite() y écrit un z-score (somme de deux centrés-réduits). Bornée
+# à [0, 100], l'exposition valait 0 pour la moitié des unités et au plus ~4 pour
+# les autres : la priorité se réduisait au stress hydrique / 2, et
+# `parcelle_sensible` (E >= 50) était toujours FALSE. Audit 1.0.
 .regen_exposition <- function(units) {
-  if ("sensibilite" %in% names(units)) {
-    return(pmin(100, pmax(0, as.numeric(units$sensibilite))))
+  if ("sensibilite_score" %in% names(units)) {
+    return(pmin(100, pmax(0, 100 - as.numeric(units$sensibilite_score))))
   }
   comps <- list()
   if ("d_tmax" %in% names(units)) {
@@ -218,9 +229,23 @@ regen_species_choices <- function(units = NULL, species_col = NULL,
     b <- .REGEN_STRESS_BOUNDS$d_vpd
     comps$d_vpd <- .regen_norm_up(as.numeric(units$d_vpd), b[["lo"]], b[["hi"]])
   }
-  if (!length(comps)) return(rep(NA_real_, nrow(units)))
-  mat <- matrix(unlist(comps), ncol = length(comps))
-  .regen_row_mean(mat, rep(1, length(comps)))
+  if (length(comps)) {
+    mat <- matrix(unlist(comps), ncol = length(comps))
+    return(.regen_row_mean(mat, rep(1, length(comps))))
+  }
+  if ("sensibilite" %in% names(units)) {
+    v <- as.numeric(units$sensibilite)
+    # Un z-score (valeurs négatives) n'est pas une échelle 0-100 : on refuse de
+    # le borner plutôt que de fabriquer une exposition quasi nulle.
+    if (any(v < 0, na.rm = TRUE)) {
+      cli::cli_warn(c(
+        "{.field sensibilite} looks like a centred z-score (negative values), not a 0-100 score.",
+        "i" = "Pass {.field sensibilite_score} or {.field d_tmax}/{.field d_vpd} (as written by {.fn regen_sensibilite}); exposure is NA."))
+      return(rep(NA_real_, nrow(units)))
+    }
+    return(pmin(100, pmax(0, v)))
+  }
+  rep(NA_real_, nrow(units))
 }
 
 # Sous-score de STRESS HYDRIQUE (0-100, haut = plus sec).
@@ -256,8 +281,9 @@ regen_species_choices <- function(units = NULL, species_col = NULL,
 #' a head-of-tab score, **not** a radar axis.
 #'
 #' The function **consumes** the engine output columns already on `units`
-#' (the §7 contract): exposure from `sensibilite` (0-100) — or derived from
-#' `d_tmax`/`d_vpd` — and water stress from `njstress` / `istress` /
+#' (the §7 contract): exposure from `sensibilite_score` (R6, 0-100, high =
+#' favourable, inverted here) — or derived from `d_tmax`/`d_vpd` — or, last,
+#' a caller-supplied 0-100 `sensibilite` (a z-score is refused) — and water stress from `njstress` / `istress` /
 #' `rew_min`. Each volet is a renormalised mean over the columns present, so a
 #' partially populated `units` still yields a score.
 #'
@@ -286,7 +312,7 @@ regen_species_choices <- function(units = NULL, species_col = NULL,
 #' @seealso [regeneration_tolerances()], [indicateur_r6_sensibilite()]
 #' @examples
 #' \dontrun{
-#'   units <- regen_sensibilite(units, ...)      # microclimf -> sensibilite
+#'   units <- regen_sensibilite(units, ...)      # microclimf -> sensibilite_score, d_tmax, d_vpd
 #'   units <- regen_bilan_hydrique(units, ...)   # biljouR   -> njstress, rew_min
 #'   units <- indice_priorite_regen(units)
 #' }

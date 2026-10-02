@@ -46,8 +46,9 @@ This is a head-of-tab score, \strong{not} a radar axis.
 }
 \details{
 The function \strong{consumes} the engine output columns already on \code{units}
-(the §7 contract): exposure from \code{sensibilite} (0-100) — or derived from
-\code{d_tmax}/\code{d_vpd} — and water stress from \code{njstress} / \code{istress}
+(the §7 contract): exposure from \code{sensibilite_score} (R6, 0-100, high =
+favourable, inverted here) — or derived from \code{d_tmax}/\code{d_vpd} — or, last,
+a caller-supplied 0-100 \code{sensibilite} (a z-score is refused) — and water stress from \code{njstress} / \code{istress}
 / \code{rew_min}. Each volet is a renormalised mean over the columns present, so
 a partially populated \code{units} still yields a score.
 
@@ -59,7 +60,7 @@ intolerant species on a hot, dry microsite is more urgent).
 }
 \examples{
 \dontrun{
-  units <- regen_sensibilite(units, ...)      # microclimf -> sensibilite
+  units <- regen_sensibilite(units, ...)      # microclimf -> sensibilite_score, d_tmax, d_vpd
   units <- regen_bilan_hydrique(units, ...)   # biljouR   -> njstress, rew_min
   units <- indice_priorite_regen(units)
 }
