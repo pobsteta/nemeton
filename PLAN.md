@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.151.4** (release du 2026-09-25), relevée le 2026-10-01.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.152.0** (release du 2026-10-02), relevée le 2026-10-02.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -37,8 +37,11 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 | 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Interdit accusé réception le 2026-09-23** (brief app `BRIEF-nemeton-plan-md-0.143.17-0.143.28.md`) : aucun écran ne classe, ne compare ni ne moyenne B4/L3 entre projets — l'app n'a pas de vue inter-projets. **Reste ouvert sur un seul point : question B02 en attente côté app** — B02 absente de l'espace k-means, remplacée par `ID` (point 4 du brief), pas encore instruite |
 | 13 | **RECONFORT : 5 runs écrêtés par le défaut iota2 #12, à relancer** (la partie app — `include_range`, couche P(atteinte), libellés — est refermée) | cœur **v0.199.0** + app **v0.144.2** | **re-runs** (données) | Correctif #12 appliqué à l'env `nemeton-reconfort` le 2026-09-23. **Reste** : relancer RECONFORT sur armn z5 (2025 et 2026), ltcp z9, hwuy z49, yuxn z53 — tous encore écrêtés (max des bandes = 255, score 24–58), relu le 2026-09-23. Score continu et `stress_index` faux d'ici là ; classes et alertes justes. Premier run post-correctif : vérifier max des bandes ~1000 et score jusqu'à ~100 (le correctif #12 n'a pas encore été validé par un vrai run). Lancer dans un cgroup plafonné |
+| 15 | Covariables de domaine FORMS-T pour la production du massif (`ifn_covariables_domaines()`, hybride PV : 19 à 35 % d'erreur en moins) | cœur **v0.206.0** (publiée le 2026-10-02 à 02 h 44) | `nemetonshiny` | L'app (v0.152.0, plancher `nemeton (>= 0.205.0)`) ne les câble pas encore. Le brief app du 2026-10-02 les croyait bloquées par une release cœur non publiée ; **v0.206.0 était déjà publiée** quatre heures avant la release de l'app, donc rien n'attend plus le cœur. À câbler : hauteur FORMS-T seulement (pas de CHM LiDAR ni Open-Canopy), affichage de `hors_calibrage`, plancher `nemeton (>= 0.206.0)`. **La variance calée selon la surface de v0.206.0 change déjà les valeurs** du panneau du massif livré en v0.152.0, dès que l'app installe v0.206.0 |
+| 16 | Validation §6 du brief production IFN sur un projet réel | app **v0.152.0** | terrain | Vérifiée seulement sur deux UGF synthétiques en C51 (P2 = 5,37 m³/ha/an, RSE 2,6 % ; E1 `"ifn_ser"` → `recolte_observee`, E1 à 0,6 → `ressource_flux`) |
+| 17 | P2 en mode CHM saturé : indice de station H₀ (m, de 9 à 37) normalisé avec un plafond de 15 pensé pour des m³/ha/an | cœur (antérieur à la spec 054) | **décision Pascal** | Relevé le 2026-10-02 en répondant à l'app. `normalize_indicator()` ne voit que les valeurs, pas le mode : un plafond propre au mode CHM demande un signal (colonne ou attribut) ou une sortie P2 dans une seule unité |
 
-**Trois écarts (n° 3, n° 6 résiduel, n° 13 résiduel), aucun n'appelle plus de correctif dans le cœur.**
+**Six écarts (n° 3, n° 6 résiduel, n° 13 résiduel, n° 15, n° 16, n° 17). Seul le n° 17 appelle un correctif dans le cœur, après décision.**
 Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR
 et une desserte corrigée. Le n° 6 a été lu côté app — l'interdit tient, faute
 de vue inter-projets où l'enfreindre — et ne reste ouvert que sur la question
@@ -252,8 +255,41 @@ Validation sur des mailles de 15 à 100 km :
 
 Nouvelle fonction `ifn_covariables_domaines()`. Le brief app est complété.
 
+**Journal** — *2026-10-02* (**app v0.152.0**, `nemetonshiny@2c4f73ca`, merge
+`0abaf80e`, cycle `0.151.4.9000` → `0.152.0`) : **brief app câblé, §1 à §3 bis
+hors covariables.**
+
+- **Modes opt-in par projet** : P2 CHM ou IFN, E1 stock ou flux, part choisie ou
+  `"ifn_ser"`. Plancher `nemeton (>= 0.205.0)`.
+- **SER localisée une fois par UGF**, en cache (clé UGF + empreinte de géométrie ;
+  un échec n'est pas mis en cache).
+- **P2 IFN et E1 flux calculés sans CHM** ; colonnes annexes conservées (`.p2_*`,
+  `.e1_mode`, `.e1_taux`) ; recalcul à la reprise si le mode change.
+- **Affichage** : bandeau P2 (RSE, échelon, « ce n'est pas la station ») ; E1
+  « récolte observée » jamais présenté comme un potentiel ; panneau du massif et
+  ratios.
+- **Non câblé** : `ifn_covariables_domaines()` (v0.206.0, écart n° 15).
+- **Non fait** : validation §6 sur un projet réel (écart n° 16).
+
+**Question de l'app sur le `ref_max` de P2, tranchée côté cœur le 2026-10-02.**
+Le brief supposait que le 15 de `normalize_indicator("indicateur_p2_station")`
+avait été pensé pour un indice de station en mètres. **C'est l'inverse.** 15 est
+exactement le maximum de `productivity_tables.csv` (accroissement du mode
+historique, de 3,2 à 15 **m³/ha/an**).
+- **Mode IFN** : même unité, donc même plafond. Cohérent, comme pour E1 (§7.4) :
+  5,37 donne 36/100, parce qu'une moyenne de SER est en deçà du potentiel d'une
+  essence sur une bonne station.
+- **Le défaut est dans le mode CHM**, et il est antérieur à la spec 054. P2 y est
+  un indice de station H₀ à 50 ans **en mètres** (courbes Duplat : de 9 à 37 m,
+  médiane 18,5). Avec un plafond de 15, la plupart des peuplements saturent à
+  100/100, alors que c'est le mode par défaut de l'app. **Décision à prendre**
+  (écart n° 17, ouvert le 2026-10-02).
+
 **Prochaine étape** :
-- **app** : attendre le câblage du brief (§3 bis, domaines et covariables) ;
+- **app** : §1 à §3 bis câblés en v0.152.0. Restent les covariables de domaine
+  (v0.206.0 publiée, écart n° 15) et la validation §6 sur un projet réel (écart
+  n° 16) ;
+- **cœur** : normalisation de P2 en mode CHM (écart n° 17, décision à prendre) ;
 - **en parallèle, lot 1-ter** : le jeu GEDI, dès que le compte Earthdata est
   configuré (action de Pascal).
 
