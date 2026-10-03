@@ -314,7 +314,11 @@ get_or_compute_twi <- function(dem, cache_dir = NULL,
 #' @param layers nemeton_layers object (optional for future integration)
 #' @param species_col Character. Column name for species (default "species")
 #' @param age_col Character. Column name for stand age (default "age")
-#' @param density_col Character. Column name for stand density 0-1 (default "density")
+#' @param density_col Character. Column name for stand density as a 0-1
+#'   canopy-cover FRACTION (default "density"), as returned by
+#'   \code{\link{enrich_parcels_bdforet}}. Not stems/ha (unlike the
+#'   \code{density_field} of \code{\link{indicateur_p1_volume}}): values
+#'   outside 0-1 are set to NA with a warning.
 #' @param chm Optional \code{SpatRaster} of canopy heights in
 #'   metres. When supplied together with \code{dbh_col} and
 #'   \code{species_col}, activates CHM mode (spec 005 phase 4):
@@ -377,7 +381,8 @@ indicateur_c1_biomasse <- function(units,
     if (stems_col %in% names(units)) {
       stems_ha <- as.numeric(units[[stems_col]])
     } else if (density_col %in% names(units)) {
-      stems_ha <- as.numeric(units[[density_col]]) * 500
+      stems_ha <- .check_density_unit(units[[density_col]], "fraction",
+                                      "C1") * 500
     } else {
       stems_ha <- rep(300, nrow(units))
     }
@@ -413,7 +418,8 @@ indicateur_c1_biomasse <- function(units,
   if (has_inventory) {
     species <- units[[species_col]]
     age <- units[[age_col]]
-    density <- units[[density_col]]
+    # `density` est ici une fraction de couvert 0-1 (pas des tiges/ha)
+    density <- .check_density_unit(units[[density_col]], "fraction", "C1")
 
     biomass <- calculate_allometric_biomass(species, age, density)
     msg_info("indicateur_c1_biomasse")
