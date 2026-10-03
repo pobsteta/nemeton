@@ -142,6 +142,36 @@ test_that("ewm_depuis_soilgrids degrades to NULL when no layer can be loaded", {
   expect_null(ewm_depuis_soilgrids(units))
 })
 
+test_that("ewm_depuis_soilgrids falls back to NULL when one horizon is missing (audit 1.0)", {
+  units <- sf::st_sf(
+    id = 1L,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(rbind(c(0, 0), c(1, 0), c(1, 1), c(0, 1), c(0, 0)))),
+      crs = 2154))
+  # Horizon 5-15 non charge : la somme partielle sous-estimerait la reserve
+  local_mocked_bindings(.sg_property_by_unit = function(units, property, interval, country = "FR") {
+    if (interval == "5-15") return(NULL)
+    switch(property, clay = 20, sand = 40, soc = 25, cfvo = 0)
+  })
+  expect_warning(res <- ewm_depuis_soilgrids(units, rooting_depth_cm = 30),
+                 "5-15")
+  expect_null(res)
+})
+
+test_that("ewm_depuis_soilgrids warns when organic carbon is missing", {
+  units <- sf::st_sf(
+    id = 1L,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(rbind(c(0, 0), c(1, 0), c(1, 1), c(0, 1), c(0, 0)))),
+      crs = 2154))
+  local_mocked_bindings(.sg_property_by_unit = function(units, property, interval, country = "FR") {
+    switch(property, clay = 20, sand = 40, soc = NULL, cfvo = 0)
+  })
+  expect_warning(res <- ewm_depuis_soilgrids(units, rooting_depth_cm = 30),
+                 "Organic\\s+carbon")
+  expect_true(is.numeric(res) && is.finite(res))
+})
+
 test_that("ewm integrates AWC over the rooting depth, in mm", {
   units <- sf::st_sf(
     id = 1L,
