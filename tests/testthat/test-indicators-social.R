@@ -1639,7 +1639,7 @@ test_that("S1 sees a road lying just outside the DEM extent", {
   expect_lt(res2$S2, 300)
 })
 
-test_that("S1 is NA when no road lies within max_dist", {
+test_that("S1 is censored at max_dist when no road lies within it", {
   skip_if_not_installed("terra")
   dem <- terra::rast(xmin = 700000, xmax = 700500, ymin = 6600000,
                      ymax = 6600500, resolution = 10, crs = "EPSG:2154",
@@ -1654,7 +1654,8 @@ test_that("S1 is NA when no road lies within max_dist", {
   res <- suppressMessages(
     indicateur_s1_routes(units, roads = roads, dem = dem, max_dist = 1000)
   )
-  expect_true(is.na(res$S1))
+  # Route à ~4,5 km : « au moins 1000 m », pas une donnée manquante.
+  expect_equal(res$S1, 1000)
   expect_error(indicateur_s1_routes(units, roads = roads, dem = dem,
                                     max_dist = -1), "max_dist")
 })

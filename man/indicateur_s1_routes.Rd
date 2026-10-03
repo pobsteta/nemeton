@@ -42,8 +42,9 @@ resolution.}
 2000 m (the distance at which the normalised score reaches 0). The
 working grid covers the units' extent widened by \code{max_dist}, not the DEM
 extent, so features just outside the DEM are no longer ignored. Distances
-are exact up to \code{max_dist} and censored at \code{max_dist} beyond; with no
-feature within \code{max_dist}, the indicator is \code{NA}.}
+are exact up to \code{max_dist} and censored at \code{max_dist} beyond (a unit
+with no feature within \code{max_dist} gets \code{max_dist}, i.e. "at least
+\code{max_dist}"); with no feature at all, the indicator is \code{NA}.}
 }
 \value{
 sf object with added column: S1 (mean distance to nearest road in metres)

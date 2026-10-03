@@ -34,8 +34,9 @@ NULL
 #'   2000 m (the distance at which the normalised score reaches 0). The
 #'   working grid covers the units' extent widened by `max_dist`, not the DEM
 #'   extent, so features just outside the DEM are no longer ignored. Distances
-#'   are exact up to `max_dist` and censored at `max_dist` beyond; with no
-#'   feature within `max_dist`, the indicator is `NA`.
+#'   are exact up to `max_dist` and censored at `max_dist` beyond (a unit
+#'   with no feature within `max_dist` gets `max_dist`, i.e. "at least
+#'   `max_dist`"); with no feature at all, the indicator is `NA`.
 #'
 #' @return sf object with added column: S1 (mean distance to nearest road in metres)
 #'
@@ -135,8 +136,9 @@ indicateur_s1_routes <- function(units,
 #'   2000 m (the distance at which the normalised score reaches 0). The
 #'   working grid covers the units' extent widened by `max_dist`, not the DEM
 #'   extent, so features just outside the DEM are no longer ignored. Distances
-#'   are exact up to `max_dist` and censored at `max_dist` beyond; with no
-#'   feature within `max_dist`, the indicator is `NA`.
+#'   are exact up to `max_dist` and censored at `max_dist` beyond (a unit
+#'   with no feature within `max_dist` gets `max_dist`, i.e. "at least
+#'   `max_dist`"); with no feature at all, the indicator is `NA`.
 #'
 #' @return sf object with added column: S2 (mean distance to nearest building in metres)
 #'
@@ -219,8 +221,10 @@ indicateur_s2_bati <- function(units,
 # surestime pour les unites de bordure. Toute entite hors de cette fenetre
 # est a plus de `max_dist` de chaque unite ; les distances sont donc exactes
 # jusqu'a `max_dist` et censurees a `max_dist` au-dela (la normalisation
-# sature de toute facon a 2000 m). Sans aucune entite dans la fenetre, la
-# distance n'est pas determinable depuis la couche fournie : NA.
+# sature de toute facon a 2000 m). Une couche non vide sans entite dans la
+# fenetre dit que l'entite la plus proche est a plus de `max_dist` : valeur
+# censuree a `max_dist` (et non NA, qui ferait passer un score certain de 0
+# pour une donnee manquante). Une couche vide est traitee en amont (NA).
 .distance_moyenne_entites <- function(units, entites, dem, max_dist, code) {
   crs_d <- terra::crs(dem)
   units_d <- sf::st_transform(as_pure_sf(units), crs_d)
@@ -239,10 +243,10 @@ indicateur_s2_bati <- function(units,
 
   entites_r <- safe_rasterize(entites, gabarit, field = 1, background = NA)
   if (!isTRUE(terra::global(entites_r, "notNA")[1, 1] > 0)) {
-    cli::cli_alert_warning(
-      "{code}: no feature within {max_dist} m of the units, returning NA"
+    cli::cli_alert_info(
+      "{code}: no feature within {max_dist} m of the units, distance censored at {max_dist} m"
     )
-    return(rep(NA_real_, nrow(units)))
+    return(rep(as.numeric(max_dist), nrow(units)))
   }
   d <- terra::distance(entites_r)
   d <- terra::clamp(d, upper = max_dist, values = TRUE)
