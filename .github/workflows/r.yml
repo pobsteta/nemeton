@@ -155,9 +155,13 @@ jobs:
           #   passe en local) — non reproductible et non liée au code.
           # `--no-build-vignettes` : vignettes (calcul spatial lourd) montées
           #   par pkgdown, pas ici.
-          args: 'c("--no-manual", "--no-tests", "--no-vignettes", "--no-build-vignettes", "--as-cran")'
+          # `--ignore-vignettes` : les vignettes sont construites par le job pkgdown ;
+          # sans lui, `--no-build-vignettes` produit deux WARNING factices (inst/doc
+          # absent) qui empêchaient d'échouer sur les vrais warnings.
+          args: 'c("--no-manual", "--no-tests", "--ignore-vignettes", "--no-build-vignettes", "--as-cran")'
           build_args: 'c("--no-manual", "--no-build-vignettes")'
-          error-on: '"error"'
+          # Depuis 0.211.0 (audit 1.0) : 0 WARNING, la CI échoue au premier.
+          error-on: '"warning"'
           upload-snapshots: true
 
   # ============================================================

@@ -4,6 +4,7 @@
 
 #' @importFrom rlang .data
 #' @importFrom rlang %||%
+#' @importFrom stats ave
 NULL
 
 #' Compute Correlation Matrix Between Family Indices
