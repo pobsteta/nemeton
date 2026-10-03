@@ -441,11 +441,50 @@ test_that("ingest_sentinel2_timeseries emits search_done when STAC silent", {
     for (b in unique(c(req_bands, optional_bands))) {
       p <- nemeton:::.s2_band_cache_path(cache_dir, scene$scene_id, b)
       dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
-      file.create(p)
+      # Depuis l'audit 1.0 le saut « en cache » vérifie l'emprise : le
+      # mock écrit un vrai raster couvrant l'AOI des tests (4..5, 47..48).
+      .write_band_stub(p, c(3.9, 5.1, 46.9, 48.1), crs = "EPSG:4326")
     }
     length(req_bands)
   }
 }
+
+# Petit GeoTIFF d'emprise `ext` (xmin, xmax, ymin, ymax) : stub de COG en cache.
+.write_band_stub <- function(path, ext, crs) {
+  r <- terra::rast(terra::ext(ext), nrows = 4, ncols = 4, crs = crs, vals = 1)
+  terra::writeRaster(r, path, overwrite = TRUE)
+  invisible(path)
+}
+
+test_that(".scene_cogs_cached(aoi=) only reports a hit when the COG covers the AOI (audit 1.0)", {
+  skip_if_not_installed("terra"); skip_if_not_installed("sf")
+  skip_if_terra_write_broken()
+  cache <- withr::local_tempdir()
+  aoi <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 4, ymin = 47, xmax = 5, ymax = 48), crs = 4326)))
+  # Cache rempli par une PETITE zone (quart sud-ouest de l'AOI).
+  for (b in c("B04", "B08")) {
+    p <- nemeton:::.s2_band_cache_path(cache, "S2_X", b)
+    dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
+    .write_band_stub(p, c(4, 4.5, 47, 47.5), crs = "EPSG:4326")
+  }
+  # Sans AOI : comportement historique (présence du fichier).
+  expect_true(nemeton:::.scene_cogs_cached(cache, "S2_X", c("B04", "B08")))
+  # Avec l'AOI de la grande zone : pas de saut.
+  expect_false(nemeton:::.scene_cogs_cached(cache, "S2_X", c("B04", "B08"),
+                                            aoi = aoi))
+  # Un COG couvrant toute l'AOI est bien sauté.
+  for (b in c("B04", "B08")) {
+    .write_band_stub(nemeton:::.s2_band_cache_path(cache, "S2_X", b),
+                     c(3.9, 5.1, 46.9, 48.1), crs = "EPSG:4326")
+  }
+  expect_true(nemeton:::.scene_cogs_cached(cache, "S2_X", c("B04", "B08"),
+                                           aoi = aoi))
+  # Fichier illisible (stub vide) : pas de saut.
+  file.create(nemeton:::.s2_band_cache_path(cache, "S2_X", "B04"))
+  expect_false(nemeton:::.scene_cogs_cached(cache, "S2_X", c("B04", "B08"),
+                                            aoi = aoi))
+})
 
 test_that("skip_cached skips scenes whose band COGs are already cached", {
   skip_if_no_timescaledb()
