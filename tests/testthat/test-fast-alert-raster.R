@@ -282,6 +282,29 @@ test_that(".fast_raster_filename normalises index/mode case", {
     "^fast_NDVI_count_")
 })
 
+test_that(".fast_raster_cache_write never leaves a partial COG under the cache name (audit 1.0)", {
+  skip_if_not_installed("terra")
+  dir   <- withr::local_tempdir()
+  cpath <- file.path(dir, "fast_NDVI_count_thr0.30_a_b_w30_deadbeef.tif")
+  r <- terra::rast(nrows = 2, ncols = 2, vals = 1:4)
+
+  # Écriture interrompue à mi-course : des octets écrits puis une erreur.
+  partial <- function(x, filename, ...) {
+    writeLines("half-written", filename)
+    stop("disk full")
+  }
+  expect_warning(nemeton:::.fast_raster_cache_write(r, cpath, writer = partial),
+                 "Failed to cache")
+  expect_false(file.exists(cpath))
+  expect_length(list.files(dir, all.files = TRUE, no.. = TRUE), 0L)
+
+  # Écriture complète : le COG apparaît sous son nom, sans temporaire résiduel.
+  nemeton:::.fast_raster_cache_write(r, cpath)
+  expect_true(file.exists(cpath))
+  expect_equal(list.files(dir, all.files = TRUE, no.. = TRUE), basename(cpath))
+  expect_equal(as.vector(terra::values(terra::rast(cpath))), 1:4)
+})
+
 test_that("read_fast_alert_raster(cache_result = FALSE) writes nothing", {
   skip_if_terra_write_broken()
   skip_if_not_installed("terra")
