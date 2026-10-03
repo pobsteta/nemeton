@@ -44,7 +44,11 @@ temporary directory).}
 \code{output_dir} already contains the diversity rasters from a prior
 run, reuse them instead of re-running the (expensive) biodivMapR
 pipeline. Pass a persistent \code{output_dir} (e.g. a project cache)
-to benefit; the default \code{tempfile()} directory never hits.}
+to benefit; the default \code{tempfile()} directory never hits. Reuse
+requires the cache key written by that prior run (a hash of the
+reflectance and mask fingerprints, \code{window_size} and
+\code{options}) to match the current inputs; otherwise the pipeline is
+re-run.}
 }
 \value{
 A list with:

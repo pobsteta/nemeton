@@ -438,13 +438,49 @@ validate_knowledge_manifest <- function(manifest) {
   if (nzchar(url) && grepl("\\.pdf$", url, ignore.case = TRUE)) {
     if (!dir.exists(pdf_dir)) dir.create(pdf_dir, recursive = TRUE, showWarnings = FALSE)
     dest <- file.path(pdf_dir, paste0(row$doc_id, ".pdf"))
-    if (!file.exists(dest)) {
+    # Un PDF en cache n'est resservi que s'il porte la signature %PDF : une
+    # page HTML servie en 200 (paywall, Cloudflare) ou un fichier tronqué à
+    # vide est supprimé puis retéléchargé. Le téléchargement passe par un
+    # temporaire, renommé seulement après vérification.
+    if (!.cache_valid_or_drop(dest, .pdf_signature_ok)) {
       ok <- tryCatch({
-        utils::download.file(url, dest, mode = "wb", quiet = TRUE); TRUE
+        .atomic_write(dest, function(tmp) .corpus_download(url, tmp),
+                      validate = .pdf_signature_ok)
+        TRUE
       }, error = function(e) FALSE)
       if (!ok) return(NULL)
     }
     return(dest)
+  }
+  NULL
+}
+
+# Point d'appel unique du téléchargement (substituable dans les tests).
+.corpus_download <- function(url, dest) {
+  utils::download.file(url, dest, mode = "wb", quiet = TRUE)
+}
+
+# Signature d'un PDF : "%PDF-" dans le premier kilo-octet (la norme tolère
+# quelques octets parasites avant l'en-tête).
+.pdf_signature_ok <- function(path) {
+  isTRUE(tryCatch({
+    b <- readBin(path, "raw", n = 1024L)
+    length(b) >= 5L && grepl("%PDF-", rawToChar(b[b != as.raw(0)]), fixed = TRUE)
+  }, error = function(e) FALSE))
+}
+
+# Plan d'un dry run : aucune lecture réseau, aucun téléchargement. Renvoie
+# le type de source ("pdf", "text", "pdf (to download)") ou NULL.
+.plan_manifest_source <- function(row, pdf_dir) {
+  lp <- row$local_path
+  if (nzchar(lp) && file.exists(lp)) {
+    return(if (grepl("\\.pdf$", lp, ignore.case = TRUE)) "pdf" else "text")
+  }
+  url <- row$source_url
+  if (nzchar(url) && grepl("^https?://[^/[:space:]]+/\\S*\\.pdf$", url,
+                           ignore.case = TRUE)) {
+    dest <- file.path(pdf_dir, paste0(row$doc_id, ".pdf"))
+    return(if (file.exists(dest)) "pdf" else "pdf (to download)")
   }
   NULL
 }
@@ -516,9 +552,13 @@ validate_knowledge_manifest <- function(manifest) {
 #' @param fresh Logical. Delete every existing document first. Default
 #'   `FALSE`.
 #' @param dry_run Logical. Parse and plan only — no DB connection, no
-#'   embedding API calls. Default `FALSE`.
+#'   embedding API calls, no download: a `full` row is planned from the
+#'   existence of its `local_path` or the shape of its PDF `source_url`
+#'   (reason `"pdf (to download)"` when not yet cached). Default `FALSE`.
 #' @param pdf_dir Directory for downloaded PDFs. Default a per-user cache
-#'   dir under [tools::R_user_dir()].
+#'   dir under [tools::R_user_dir()]. A cached file is reused only when it
+#'   carries the PDF file signature; downloads are written to a temporary file
+#'   and moved into place once checked.
 #' @param api_key Optional embedding API key (else the provider's
 #'   environment variable).
 #' @param progress Optional callback `function(i, n, row, report_row)`
@@ -582,11 +622,12 @@ build_knowledge_corpus <- function(con = NULL,
         mode <- if (!is.null(.manifest_abstract(r))) "abstract_only" else "link_only"
         return(emit(i, .corpus_report_row(r$doc_id, "planned", reason = mode, mode = mode)))
       }
-      src <- .resolve_manifest_source(r, pdf_dir)
-      if (is.null(src)) {
+      # Un dry run ne télécharge rien : il ne teste que l'existence de
+      # `local_path` et la forme de l'URL.
+      kind <- .plan_manifest_source(r, pdf_dir)
+      if (is.null(kind)) {
         return(emit(i, .corpus_report_row(r$doc_id, "skipped", reason = "no ingestible source")))
       }
-      kind <- if (file.exists(src) && grepl("\\.pdf$", src, ignore.case = TRUE)) "pdf" else "text"
       emit(i, .corpus_report_row(r$doc_id, "planned", reason = kind, mode = "full"))
     })
     return(do.call(rbind, c(list(.empty_corpus_report()), rows)))

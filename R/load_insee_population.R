@@ -101,7 +101,9 @@ load_insee_population_source <- function(aoi,
   dir <- .insee_cache_dir(cache_dir, millesime, maille)
   gpkg <- file.path(dir, paste0(couche, ".gpkg"))
 
-  if (!file.exists(gpkg)) {
+  # Un .gpkg en cache qui n'expose plus sa couche (fichier tronqué, écriture
+  # interrompue) est supprimé : il serait sinon resservi indéfiniment.
+  if (!.cache_valid_or_drop(gpkg, function(p) couche %in% sf::st_layers(p)$name)) {
     ok <- .insee_telecharger(cfg$url, dir)
     if (!isTRUE(ok) || !file.exists(gpkg)) {
       cli::cli_warn(c(
@@ -118,7 +120,13 @@ load_insee_population_source <- function(aoi,
     sf::st_read(gpkg, query = sprintf('SELECT * FROM "%s"', couche),
                 wkt_filter = sf::st_as_text(emprise), quiet = TRUE),
     error = function(e) {
-      cli::cli_warn("Reading the INSEE grid failed: {conditionMessage(e)}")
+      # Le cache se lit mal (données tronquées au-delà de l'en-tête) : on le
+      # supprime pour que l'appel suivant le retélécharge.
+      cli::cli_warn(c(
+        "Reading the INSEE grid failed: {conditionMessage(e)}",
+        i = "The cached file was removed; it will be downloaded again."
+      ))
+      unlink(gpkg, force = TRUE)
       NULL
     })
   if (is.null(g) || nrow(g) == 0L) return(NULL)
@@ -136,19 +144,42 @@ load_insee_population_source <- function(aoi,
 }
 
 
+# Point d'appel unique du telechargement (substituable dans les tests).
+.insee_download <- function(url, dest) {
+  utils::download.file(url, dest, mode = "wb", quiet = TRUE)
+}
+
+
 # Telechargement + decompression, best-effort. Retourne TRUE/FALSE.
+# Tout se fait dans un dossier temporaire voisin de `dir` : seuls des .gpkg
+# extraits en entier et relisibles sont renommes dans le cache. Un
+# telechargement ou une decompression interrompus ne laissent rien sous un
+# nom definitif.
 .insee_telecharger <- function(url, dir) {
   dir.create(dir, recursive = TRUE, showWarnings = FALSE)
-  zip <- file.path(dir, "download.zip")
+  staging <- .atomic_tmp_path(file.path(dir, "staging"))
+  dir.create(staging, recursive = TRUE, showWarnings = FALSE)
+  on.exit(unlink(staging, recursive = TRUE, force = TRUE), add = TRUE)
+  zip <- file.path(staging, "download.zip")
   cli::cli_alert_info("Downloading the INSEE population grid (~52 MB, once per machine)...")
+  # 60 s par defaut : trop court pour ~52 Mo. Releve localement.
+  old <- options(timeout = max(1800, getOption("timeout")))
+  on.exit(options(old), add = TRUE)
   ok <- tryCatch({
-    utils::download.file(url, zip, mode = "wb", quiet = TRUE)
-    utils::unzip(zip, exdir = dir)
+    .insee_download(url, zip)
+    utils::unzip(zip, exdir = staging)
+    gpkgs <- list.files(staging, pattern = "\\.gpkg$", recursive = TRUE,
+                        full.names = TRUE)
+    lisibles <- vapply(gpkgs, function(p) isTRUE(tryCatch(
+      nrow(sf::st_layers(p)) > 0L, error = function(e) FALSE)), logical(1))
+    if (length(gpkgs) == 0L || !all(lisibles)) {
+      stop("the archive holds no readable GeoPackage", call. = FALSE)
+    }
+    for (p in gpkgs) .atomic_promote(p, file.path(dir, basename(p)))
     TRUE
   }, error = function(e) {
     cli::cli_warn("INSEE download failed: {conditionMessage(e)}")
     FALSE
   })
-  unlink(zip)
   isTRUE(ok) && length(list.files(dir, pattern = "\\.gpkg$")) > 0L
 }

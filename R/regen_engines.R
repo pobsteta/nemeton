@@ -417,6 +417,55 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   mcera5::combine_netcdf(filenames = fichiers, combined_name = cible)
 }
 
+# Un .nc ERA5 (mensuel ou combiné) n'est accepté comme cache que s'il est
+# complet. Un fichier tronqué (téléchargement coupé, fusion interrompue) ou
+# une page d'erreur servie à la place était sinon resservi à chaque run,
+# et extract_clim échouait ou lisait des zéros.
+#
+# Contrôles : signature NetCDF (classique « CDF » ou NetCDF-4/HDF5), puis
+# ouverture et lecture de la DERNIÈRE valeur de chaque variable ; pour le
+# format classique, dont la lecture au-delà de la fin du fichier renvoie
+# des zéros sans erreur, la taille doit couvrir au moins le volume des
+# données annoncé par l'en-tête. ncdf4 arrive avec mcera5 (seul chemin qui
+# produit ces fichiers) ; sans lui, repli sur une lecture terra.
+.rsen_era5_nc_complet <- function(path) {
+  isTRUE(tryCatch({
+    sig <- readBin(path, "raw", n = 8L)
+    classique <- length(sig) >= 4L && identical(sig[1:3], charToRaw("CDF"))
+    hdf5 <- length(sig) == 8L &&
+      identical(sig, as.raw(c(0x89, 0x48, 0x44, 0x46, 0x0d, 0x0a, 0x1a, 0x0a)))
+    if (!classique && !hdf5) return(FALSE)
+    if (!requireNamespace("ncdf4", quietly = TRUE)) return(.raster_lisible(path))
+    nc_open  <- getExportedValue("ncdf4", "nc_open")
+    nc_close <- getExportedValue("ncdf4", "nc_close")
+    ncvar_get <- getExportedValue("ncdf4", "ncvar_get")
+    nc <- nc_open(path)
+    on.exit(nc_close(nc), add = TRUE)
+    if (!length(nc$var)) return(FALSE)
+    octets <- c(byte = 1, char = 1, short = 2, int = 4, integer = 4,
+                float = 4, double = 8)
+    volume <- 0
+    for (v in nc$var) {
+      dl <- v$varsize
+      z <- ncvar_get(nc, v, start = dl, count = rep(1L, length(dl)))
+      if (length(z) != 1L) return(FALSE)
+      taille <- unname(octets[v$prec])
+      volume <- volume + prod(as.numeric(dl)) * (if (is.na(taille)) 1 else taille)
+    }
+    # Variables de coordonnées (longitude, latitude, time) : en double.
+    for (d in nc$dim) {
+      if (isTRUE(d$create_dimvar)) volume <- volume + 8 * length(d$vals)
+    }
+    !classique || file.size(path) >= volume
+  }, error = function(e) FALSE))
+}
+
+# Vrai si `path` est un cache ERA5 utilisable ; un fichier présent mais
+# incomplet est supprimé (il sera retéléchargé / refusionné).
+.rsen_era5_cache_ok <- function(path) {
+  !is.na(path) && .cache_valid_or_drop(path, .rsen_era5_nc_complet)
+}
+
 # Téléchargement ERA5 mois par mois, avec progression et reprise.
 #
 # Pourquoi découper la boucle que `request_era5()` fait déjà en interne. Deux
@@ -452,13 +501,16 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     if (!is.null(emit)) emit(list(current = "regen_expo:era5_mois",
                                   category = category, year = annee,
                                   mois_i = k, mois_n = n))
-    if (file.exists(fichiers[[k]])) next
+    if (.rsen_era5_cache_ok(fichiers[[k]])) next
     # `req[k]` et non `req[[k]]` : `request_era5()` attend une LISTE de requêtes
     # et itère dessus.
     .rsen_era5_with_retry(function() requete(req[k], cache_dir))
   }
   cible <- .rsen_era5_nom_combine(cache_dir, annee, lon, lat)
-  combiner(fichiers, cible)
+  # Fusion dans un temporaire (même dossier, extension .nc conservée), promue
+  # seulement une fois relisible : jamais de combiné à moitié écrit.
+  .atomic_write(cible, function(tmp) combiner(fichiers, tmp),
+                validate = .rsen_era5_nc_complet)
   cible
 }
 
@@ -470,7 +522,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   combined <- .rsen_era5_combined(cache_dir, annee, lon, lat)
   st  <- as.POSIXct(sprintf("%d-01-01 00:00", annee), tz = "UTC")
   en  <- as.POSIXct(sprintf("%d-12-31 23:00", annee), tz = "UTC")
-  if (is.na(combined)) {
+  if (!.rsen_era5_cache_ok(combined)) {
     if (!requireNamespace("mcera5", quietly = TRUE)) {
       cli::cli_abort(c(
         "regen_sensibilite() engine needs {.pkg mcera5} to fetch ERA5 forcing.",

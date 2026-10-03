@@ -29,12 +29,18 @@
 #'   sibling `lidar_mnh/` of `laz_dir`.
 #' @param res Numeric. Output raster resolution in metres. Default 1
 #'   to match IGN LiDAR HD MNH / MNT native resolution.
-#' @param aoi Optional `sf` / `sfc`. When supplied, the output rasters
-#'   are cropped (and masked) to this AOI.
+#' @param aoi Optional `sf` / `sfc`. When supplied, the returned rasters
+#'   are cropped (and masked) copies written under `aoi/` in the output
+#'   directories, keyed by the AOI; the shared `dtm.tif` / `chm.tif` cache
+#'   always keeps the full tile extent.
 #' @param ncores Integer. Number of cores passed to `lasR::exec()`.
 #'   Default 1 — set to `parallel::detectCores() - 1` for large blocks.
 #' @param overwrite Logical. Re-derive even if `dtm.tif` / `chm.tif`
-#'   already exist in the output directories. Default `FALSE`.
+#'   already exist in the output directories. Default `FALSE`. An existing
+#'   pair is reused only when its `.key` sidecar matches the current tiles
+#'   and resolution and both rasters read back; otherwise it is rebuilt.
+#'   Outputs are written to temporary files and moved into place only once
+#'   complete.
 #' @param verbose Logical. When `TRUE`, log each stage via `cli`.
 #'   Default `TRUE`.
 #'
@@ -114,92 +120,154 @@ compute_dtm_chm_from_laz <- function(laz_dir,
   dtm_path <- file.path(dtm_dir, "dtm.tif")
   chm_path <- file.path(chm_dir, "chm.tif")
 
-  if (!overwrite && file.exists(dtm_path) && file.exists(chm_path)) {
+  # Le cache dtm.tif / chm.tif couvre TOUJOURS l'emprise complète des dalles
+  # et n'est resservi que si sa clé (dalles + résolution) correspond et que
+  # les deux rasters se relisent. Un cache sans clé (antérieur à ce
+  # correctif, possiblement rogné en place sur une autre AOI) est rebâti.
+  key <- .lasr_cache_key(laz_files, res)
+  reuse <- !overwrite && .lasr_cache_valide(dtm_path, chm_path, key)
+
+  if (reuse) {
     if (verbose) {
       cli::cli_alert_info(
         "DTM/CHM already exist (use {.code overwrite = TRUE} to rebuild). Skipping."
       )
     }
-    return(invisible(list(
-      dtm = dtm_path, chm = chm_path,
-      n_tiles = length(laz_files), elapsed = as.difftime(0, units = "secs")
-    )))
-  }
-
-  if (verbose) {
-    cli::cli_alert_info("lasR pipeline on {length(laz_files)} tile{?s} \\
-                         (res = {res} m, ncores = {ncores}) ...")
-  }
-
-  # ---- lasR pipeline ------------------------------------------------
-  # Atoms used (lasR >= 0.10):
-  #   reader_las()      : read all tiles
-  #   triangulate()     : ground TIN (LAS class 2)
-  #   rasterize(res, tri, ofile): DTM via TIN interpolation
-  #   transform_with(tri): subtract TIN from z (height normalization)
-  #   rasterize(res, "max", ofile): CHM as max normalized z
-  read  <- lasR::reader_las()
-  tri   <- lasR::triangulate(filter = lasR::keep_class(2L))
-  dtm_s <- lasR::rasterize(res, tri,   ofile = dtm_path)
-  norm  <- lasR::transform_with(tri)
-  chm_s <- lasR::rasterize(res, "max", ofile = chm_path)
-
-  pipeline <- read + tri + dtm_s + norm + chm_s
-
-  t0 <- Sys.time()
-  ans <- tryCatch(
-    lasR::exec(pipeline, on = laz_files,
-               with = list(ncores = lasR::concurrent_files(ncores))),
-    error = function(e) {
-      cli::cli_warn(c(
-        "lasR pipeline failed: {conditionMessage(e)}",
-        i = "Outputs may be partial — check {.path {dtm_dir}} and {.path {chm_dir}}."
-      ))
-      NULL
+    elapsed <- as.difftime(0, units = "secs")
+  } else {
+    if (verbose) {
+      cli::cli_alert_info("lasR pipeline on {length(laz_files)} tile{?s} \\
+                           (res = {res} m, ncores = {ncores}) ...")
     }
-  )
-  elapsed <- difftime(Sys.time(), t0, units = "secs")
+    # lasR écrit dans des temporaires voisins ; ils ne sont promus sous
+    # dtm.tif / chm.tif qu'une fois tous deux complets et relisibles. Un
+    # pipeline interrompu ne laisse donc jamais de cache partiel.
+    dtm_tmp <- .atomic_tmp_path(dtm_path)
+    chm_tmp <- .atomic_tmp_path(chm_path)
+    on.exit(unlink(c(dtm_tmp, chm_tmp), force = TRUE), add = TRUE)
+    unlink(paste0(c(dtm_path, chm_path), ".key"), force = TRUE)
 
-  if (is.null(ans)) {
-    return(invisible(NULL))
+    t0 <- Sys.time()
+    ans <- tryCatch(
+      .lasr_derive(laz_files, dtm_tmp, chm_tmp, res = res, ncores = ncores),
+      error = function(e) {
+        cli::cli_warn(c(
+          "lasR pipeline failed: {conditionMessage(e)}",
+          i = "No partial output was kept."
+        ))
+        NULL
+      }
+    )
+    elapsed <- difftime(Sys.time(), t0, units = "secs")
+
+    if (is.null(ans)) {
+      return(invisible(NULL))
+    }
+    produits <- c(dtm = dtm_tmp, chm = chm_tmp)
+    lisibles <- vapply(produits, .raster_lisible, logical(1))
+    if (!all(lisibles)) {
+      cli::cli_warn(
+        "lasR output unreadable ({.val {names(produits)[!lisibles]}}); nothing cached."
+      )
+      return(invisible(NULL))
+    }
+    .atomic_promote(dtm_tmp, dtm_path)
+    .atomic_promote(chm_tmp, chm_path)
+    # Clés écrites en dernier : un cache sans clé n'est jamais resservi.
+    for (p in c(dtm_path, chm_path)) {
+      .atomic_write(paste0(p, ".key"), function(tmp) writeLines(key, tmp))
+    }
   }
+
+  dtm_out <- dtm_path
+  chm_out <- chm_path
 
   # ---- optional crop to AOI -----------------------------------------
+  # On ne rogne JAMAIS le cache partagé en place : la découpe va dans une
+  # copie propre à l'AOI (sous-dossier `aoi/`, invisible pour
+  # resolve_project_dem / resolve_project_chm qui ne listent que le
+  # premier niveau), indexée par l'AOI et la clé du cache complet.
   if (!is.null(aoi)) {
     if (!requireNamespace("terra", quietly = TRUE) ||
         !requireNamespace("sf", quietly = TRUE)) {
       cli::cli_warn("Skipping AOI crop: {.pkg terra} and {.pkg sf} required.")
     } else {
-      .crop_to_aoi <- function(path, aoi) {
-        if (!file.exists(path)) return(invisible(NULL))
-        r <- terra::rast(path)
-        a <- sf::st_transform(sf::st_as_sf(aoi), terra::crs(r))
-        v <- terra::vect(a)
-        r2 <- terra::mask(terra::crop(r, v), v)
-        tmp <- tempfile(fileext = ".tif")
-        terra::writeRaster(r2, tmp, overwrite = TRUE,
-                           gdal = c("TILED=YES", "COMPRESS=DEFLATE"))
-        file.copy(tmp, path, overwrite = TRUE)
-        unlink(tmp)
-      }
-      .crop_to_aoi(dtm_path, aoi)
-      .crop_to_aoi(chm_path, aoi)
+      aoi_key <- .lasr_aoi_key(aoi, key)
+      dtm_out <- .lasr_crop_copy(dtm_path, aoi, aoi_key, "dtm")
+      chm_out <- .lasr_crop_copy(chm_path, aoi, aoi_key, "chm")
     }
   }
 
-  if (verbose) {
+  if (verbose && !reuse) {
     cli::cli_alert_success(
       "lasR done in {format_duration(as.numeric(elapsed))} — \\
-       DTM: {.path {dtm_path}} | CHM: {.path {chm_path}}"
+       DTM: {.path {dtm_out}} | CHM: {.path {chm_out}}"
     )
   }
 
   invisible(list(
-    dtm     = if (file.exists(dtm_path)) dtm_path else NULL,
-    chm     = if (file.exists(chm_path)) chm_path else NULL,
+    dtm     = if (file.exists(dtm_out)) dtm_out else NULL,
+    chm     = if (file.exists(chm_out)) chm_out else NULL,
     n_tiles = length(laz_files),
     elapsed = elapsed
   ))
+}
+
+
+# ---- internal helpers: lasR pipeline & cache keys -------------------
+
+# Pipeline lasR (substituable dans les tests). Atomes (lasR >= 0.10) :
+#   reader_las()      : lecture de toutes les dalles
+#   triangulate()     : TIN du sol (classe LAS 2)
+#   rasterize(res, tri, ofile): MNT par interpolation du TIN
+#   transform_with(tri): soustraction du TIN (normalisation des hauteurs)
+#   rasterize(res, "max", ofile): MNH = z normalisé maximal
+.lasr_derive <- function(laz_files, dtm_file, chm_file, res, ncores) {
+  read  <- lasR::reader_las()
+  tri   <- lasR::triangulate(filter = lasR::keep_class(2L))
+  dtm_s <- lasR::rasterize(res, tri,   ofile = dtm_file)
+  norm  <- lasR::transform_with(tri)
+  chm_s <- lasR::rasterize(res, "max", ofile = chm_file)
+  pipeline <- read + tri + dtm_s + norm + chm_s
+  lasR::exec(pipeline, on = laz_files,
+             with = list(ncores = lasR::concurrent_files(ncores)))
+}
+
+# Clé du cache complet : jeu de dalles (noms + tailles) et résolution.
+.lasr_cache_key <- function(laz_files, res) {
+  f <- sort(laz_files)
+  rlang::hash(list(basename(f), unname(file.size(f)), as.numeric(res)))
+}
+
+.lasr_cache_valide <- function(dtm_path, chm_path, key) {
+  cle_ok <- function(p) {
+    k <- paste0(p, ".key")
+    file.exists(k) &&
+      identical(tryCatch(readLines(k, warn = FALSE)[1], error = function(e) NA), key)
+  }
+  cle_ok(dtm_path) && cle_ok(chm_path) &&
+    .raster_lisible(dtm_path) && .raster_lisible(chm_path)
+}
+
+# Clé de la découpe : géométrie de l'AOI (WKB), son CRS, et la clé du cache
+# complet dont elle dérive.
+.lasr_aoi_key <- function(aoi, key) {
+  g <- sf::st_geometry(sf::st_as_sf(aoi))
+  substr(rlang::hash(list(sf::st_as_binary(g), sf::st_crs(g)$wkt, key)), 1L, 16L)
+}
+
+.lasr_crop_copy <- function(path, aoi, aoi_key, prefix) {
+  out <- file.path(dirname(path), "aoi", sprintf("%s_%s.tif", prefix, aoi_key))
+  if (.cache_valid_or_drop(out, .raster_lisible)) return(out)
+  r <- terra::rast(path)
+  a <- sf::st_transform(sf::st_as_sf(aoi), terra::crs(r))
+  v <- terra::vect(a)
+  r2 <- terra::mask(terra::crop(r, v), v)
+  .atomic_write(out, function(tmp) {
+    terra::writeRaster(r2, tmp, overwrite = TRUE,
+                       gdal = c("TILED=YES", "COMPRESS=DEFLATE"))
+  }, validate = .raster_lisible)
+  out
 }
 
 
