@@ -316,7 +316,62 @@ test_that(".rsen_traiter_annee derives summer months from mp$weather$obs_time (m
   expect_equal(unname(terra::minmax(res$tmax)[, 1]), c(40, 40))
   expect_s4_class(res$vpd, "SpatRaster")
   expect_equal(terra::nlyr(res$vpd), 1L)
-  expect_true(file.exists(file.path(cd, "cache_2018_tmax.tif")))
+  expect_length(list.files(cd, pattern = "^cache_2018_[0-9a-f]{12}_tmax\\.tif$"), 1L)
+})
+
+# --- Audit 1.0 : cache microclimat indexé par une clé, plus par la seule année -
+test_that(".rsen_micro_cache_key changes with extent, reqhgt, mois_ete, point and PAI", {
+  skip_if_not_installed("terra")
+  dtm <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 50, ymin = 0, ymax = 50,
+                     crs = "EPSG:2154"); terra::values(dtm) <- 1
+  pai <- dtm; terra::values(pai) <- 3
+  base <- nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 2, 48, pai, "lidar")
+  expect_match(base, "^[0-9a-f]{12}$")
+  # Déterministe, et un PAI relu du cache vaut un PAI LiDAR.
+  expect_identical(nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 2, 48, pai, "cache"), base)
+  dtm2 <- terra::rast(nrows = 5, ncols = 5, xmin = 100, xmax = 150, ymin = 0,
+                      ymax = 50, crs = "EPSG:2154"); terra::values(dtm2) <- 1
+  pai2 <- pai; terra::values(pai2) <- 5
+  autres <- c(
+    nemeton:::.rsen_micro_cache_key(dtm2, 0.5, 6:8, 2, 48, pai, "lidar"),
+    nemeton:::.rsen_micro_cache_key(dtm, 1.0, 6:8, 2, 48, pai, "lidar"),
+    nemeton:::.rsen_micro_cache_key(dtm, 0.5, 7:8, 2, 48, pai, "lidar"),
+    nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 3, 48, pai, "lidar"),
+    nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 2, 48, pai, "raster"),
+    nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 2, 48, pai2, "lidar"))
+  expect_false(any(autres == base))
+})
+
+test_that(".rsen_traiter_annee does not reuse a cache built for other summer months", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("microclimf")
+  dtm <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 50, ymin = 0, ymax = 50,
+                     crs = "EPSG:2154"); terra::values(dtm) <- 1; names(dtm) <- "dtm"
+  obs <- as.POSIXct(c("2018-06-01", "2018-07-01", "2018-08-01"), tz = "UTC")
+  Tz <- array(rep(c(10, 20, 30), each = 25), dim = c(5, 5, 3))
+  RH <- array(50, dim = c(5, 5, 3))
+  runs <- 0L
+  testthat::local_mocked_bindings(
+    .rsen_forcage_era5 = function(...) data.frame(obs_time = obs))
+  testthat::local_mocked_bindings(
+    checkinputs      = function(...) invisible(NULL),
+    runpointmodel    = function(...) list(x = 1),
+    subsetpointmodel = function(pointmodel, ...) list(weather = list(obs_time = obs)),
+    runmicro         = function(...) { runs <<- runs + 1L
+                                       list(Tz = Tz, relhum = RH) },
+    .package = "microclimf")
+  cd <- withr::local_tempdir()
+  a <- nemeton:::.rsen_traiter_annee(2018L, lon = 2, lat = 48, dtm = dtm,
+         veg = list(), soil = list(), reqhgt = 0.5, mois_ete = 6:8, cache_dir = cd)
+  b <- nemeton:::.rsen_traiter_annee(2018L, lon = 2, lat = 48, dtm = dtm,
+         veg = list(), soil = list(), reqhgt = 0.5, mois_ete = 6, cache_dir = cd)
+  expect_equal(runs, 2L)                                  # pas de relecture croisée
+  expect_equal(unname(terra::minmax(a$tmax)[2, 1]), 30)   # max juin-août
+  expect_equal(unname(terra::minmax(b$tmax)[2, 1]), 10)   # juin seul
+  # Même configuration -> cache relu, pas de nouveau run.
+  nemeton:::.rsen_traiter_annee(2018L, lon = 2, lat = 48, dtm = dtm,
+    veg = list(), soil = list(), reqhgt = 0.5, mois_ete = 6:8, cache_dir = cd)
+  expect_equal(runs, 2L)
 })
 
 # --- microclimf : grille de calcul bornée mémoire --------------------------

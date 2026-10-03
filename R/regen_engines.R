@@ -517,12 +517,40 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   meteo
 }
 
+# Clé du cache microclimat d'une année (audit 1.0). L'ancien nom
+# `cache_<annee>_tmax.tif` ne dépendait que de l'année : un `cache_dir` partagé
+# entre deux emprises, deux `mois_ete` ou deux PAI relisait les rasters du
+# premier run. La clé hache tout ce qui conditionne la sortie microclimf :
+# emprise + résolution + CRS de la grille, `reqhgt`, `mois_ete`, point ERA5
+# (lon/lat) et source du PAI (provenance + empreinte de ses valeurs ; un PAI
+# relu du cache `pai.tif` vaut un PAI LiDAR).
+.rsen_micro_cache_key <- function(dtm, reqhgt, mois_ete, lon, lat,
+                                  pai = NULL, pai_source = NA) {
+  pai_empreinte <- if (inherits(pai, "SpatRaster")) {
+    round(unlist(terra::global(pai[[1]], c("mean", "sd"), na.rm = TRUE)), 4)
+  } else NA_real_
+  src <- if (identical(pai_source, "cache")) "lidar" else as.character(pai_source)
+  substr(rlang::hash(list(
+    ext      = round(as.vector(terra::ext(dtm)), 2),
+    res      = round(terra::res(dtm), 4),
+    crs      = terra::crs(dtm),
+    reqhgt   = as.numeric(reqhgt),
+    mois_ete = sort(unique(as.integer(mois_ete))),
+    lonlat   = round(c(lon, lat), 4),
+    pai_src  = src,
+    pai      = unname(pai_empreinte))), 1, 12)
+}
+
 # Une année -> rasters d'été (T°max sous couvert, VPD moyen), mis en cache tif.
+# Le nom du cache porte la clé `.rsen_micro_cache_key()` en plus de l'année.
 .rsen_traiter_annee <- function(annee, lon, lat, dtm, veg, soil,
                                 reqhgt, mois_ete, cache_dir, emit = NULL,
-                                category = NA) {
-  ft <- file.path(cache_dir, sprintf("cache_%d_tmax.tif", annee))
-  fv <- file.path(cache_dir, sprintf("cache_%d_vpd.tif", annee))
+                                category = NA, pai_source = NA) {
+  cle <- .rsen_micro_cache_key(dtm, reqhgt, mois_ete, lon, lat,
+                               pai = if (is.list(veg)) veg$pai else NULL,
+                               pai_source = pai_source)
+  ft <- file.path(cache_dir, sprintf("cache_%d_%s_tmax.tif", annee, cle))
+  fv <- file.path(cache_dir, sprintf("cache_%d_%s_vpd.tif", annee, cle))
   if (file.exists(ft) && file.exists(fv))
     return(list(tmax = terra::rast(ft), vpd = terra::rast(fv)))
   meteo <- .rsen_forcage_era5(lon, lat, annee, cache_dir,
@@ -642,7 +670,9 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #'   `NULL` (default) uses `getOption("nemeton.micro_max_cells", 5e4)`.
 #' @param cache_dir Directory for the ERA5 `.nc` and per-year microclimate `.tif`
 #'   caches. `NULL` (default) uses a session temp dir; pass a persistent path to
-#'   reuse expensive runs.
+#'   reuse expensive runs. Microclimate `.tif` caches are keyed by year AND a
+#'   hash of the grid (extent, resolution, CRS), `reqhgt`, `mois_ete`, the
+#'   ERA5 point and the PAI source, so a shared directory is safe.
 #' @param progress_callback Optional function called at each step with a
 #'   `list(current = <key>, …)` payload (monitoring pattern). Keys:
 #'   `"regen_expo:pai"` (`source` = `"lidar"`/`"cache"`/`"raster"`, once, when the
@@ -811,11 +841,13 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   emit(list(current = "regen_expo:microclimf", category = "moyenne"))
   M <- .rsen_moyenne_categorie(annees_moy, lon = lon, lat = lat, dtm = dtm,
          veg = veg, soil = soil, reqhgt = reqhgt, mois_ete = mois_ete,
-         cache_dir = cache_dir, emit = emit, category = "moyenne")
+         cache_dir = cache_dir, emit = emit, category = "moyenne",
+         pai_source = pai_source)
   emit(list(current = "regen_expo:microclimf", category = "canicule"))
   C <- .rsen_moyenne_categorie(annees_canic, lon = lon, lat = lat, dtm = dtm,
          veg = veg, soil = soil, reqhgt = reqhgt, mois_ete = mois_ete,
-         cache_dir = cache_dir, emit = emit, category = "canicule")
+         cache_dir = cache_dir, emit = emit, category = "canicule",
+         pai_source = pai_source)
 
   # 3. Écarts et robustesse signal/bruit (si >= 2 années par catégorie).
   d_tmax <- C$tmax_moy - M$tmax_moy
