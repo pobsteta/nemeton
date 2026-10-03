@@ -93,7 +93,11 @@ stratum (capped at the number of candidates). Default 2.}
 An sf POINT with columns \code{plot_id}, \code{type} (Base
   or Over), \code{visit_order}, \code{stratum}, and optionally
   \code{strat_height} / \code{strat_type} / \code{strat_topo} when
-  the relevant input was supplied. A \code{"method"} attribute
+  the relevant input was supplied. The design columns \code{ip}
+  (inclusion probability) and \code{wgt} (design weight, \code{1 / ip})
+  are always returned: taken from \pkg{spsurvey} for a GRTS draw
+  (unequal across strata), \code{n_base / N} for the equal-probability
+  LPM2 / random fallbacks. They are required for unbiased estimation. A \code{"method"} attribute
   records how the draw was performed (\code{"grts"}, \code{"lpm2"}
   or \code{"random"}).
 }

@@ -32,7 +32,7 @@ test_that("nemeton_temporal creates valid temporal dataset from multiple periods
   expect_s3_class(temporal$periods[["2020"]], "sf")
 
   # Test metadata
-  expect_named(temporal$metadata, c("dates", "period_labels", "alignment", "n_periods", "n_units", "n_complete"))
+  expect_named(temporal$metadata, c("dates", "period_labels", "alignment", "n_periods", "n_units", "n_complete", "id_column"))
   expect_equal(temporal$metadata$n_periods, 2)
   expect_equal(temporal$metadata$n_units, 5)
   expect_equal(temporal$metadata$period_labels, c("Baseline", "Current"))
@@ -1142,4 +1142,47 @@ test_that("print.nemeton_temporal() returns invisible x", {
 
   result <- withVisible(capture.output(ret <- print(temporal)))
   expect_identical(ret, temporal)
+})
+
+test_that("calculate_change_rate aligns units on the identifier, not by position (audit 1.0)", {
+  data(massif_demo_units)
+  u15 <- massif_demo_units[1:3, ]
+  u15$nemeton_id <- c("A", "B", "C")
+  u15$C1 <- c(50, 60, 70)
+  # Periode de fin dans un autre ordre, et une unite en moins
+  u20 <- massif_demo_units[c(3, 1), ]
+  u20$nemeton_id <- c("C", "A")
+  u20$C1 <- c(80, 55)
+
+  # id_column non fourni : nemeton_id detecte automatiquement
+  temporal <- suppressWarnings(suppressMessages(nemeton_temporal(
+    periods = list("2015" = u15, "2020" = u20),
+    dates = c("2015-01-01", "2020-01-01")
+  )))
+  expect_equal(temporal$metadata$id_column, "nemeton_id")
+
+  rates <- suppressMessages(
+    calculate_change_rate(temporal, indicators = "C1", type = "absolute")
+  )
+  # C : (80 - 70) / 5 = 2 ; A : (55 - 50) / 5 = 1
+  expect_equal(rates$C1_rate_abs, c(2, 1), tolerance = 0.01)
+})
+
+test_that("calculate_change_rate refuses a positional alignment of unequal periods", {
+  data(massif_demo_units)
+  u15 <- massif_demo_units[1:3, ]
+  u15$parcel_id <- NULL
+  u15$C1 <- c(50, 60, 70)
+  u20 <- massif_demo_units[1:2, ]
+  u20$parcel_id <- NULL
+  u20$C1 <- c(55, 65)
+  temporal <- suppressWarnings(suppressMessages(nemeton_temporal(
+    periods = list("2015" = u15, "2020" = u20),
+    dates = c("2015-01-01", "2020-01-01")
+  )))
+  expect_true(is.na(temporal$metadata$id_column))
+  expect_error(
+    suppressMessages(calculate_change_rate(temporal, indicators = "C1")),
+    "Cannot\\s+align"
+  )
 })

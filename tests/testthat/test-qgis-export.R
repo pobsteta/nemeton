@@ -101,6 +101,33 @@ test_that("create_qgis_project produces a .qgz with the expected layers", {
   })
 })
 
+test_that("create_qgis_project keeps the design weights through the QField round trip (audit 1.0)", {
+  skip_if_no_sf()
+
+  pts <- make_sample_plots(n_base = 3, n_over = 1)
+  pts$wgt <- c(10, 20, 30, 40)
+  pts$ip <- 1 / pts$wgt
+  pts$stratum <- c("H1", "H2", "H3", "H1")
+  withr::with_tempdir({
+    qgz <- create_qgis_project(pts, output_dir = ".", project_name = "poids")
+    unz_dir <- file.path(getwd(), "unz_poids")
+    dir.create(unz_dir)
+    utils::unzip(qgz, exdir = unz_dir)
+
+    back <- import_qgis_gpkg(file.path(unz_dir, "poids.gpkg"))$placettes
+    back <- back[match(pts$plot_id, back$plot_id), ]
+    expect_equal(back$wgt, pts$wgt)
+    expect_equal(back$ip, pts$ip)
+    expect_equal(back$stratum, pts$stratum)
+
+    # Champs caches du formulaire QGIS (non saisissables)
+    qgs <- paste(readLines(file.path(unz_dir, "poids.qgs"), warn = FALSE),
+                 collapse = "\n")
+    expect_match(qgs, "name=\"wgt\"")
+    expect_match(qgs, "type=\"Hidden\"")
+  })
+})
+
 test_that("create_qgis_project embeds zone_etude and parcours_tsp when provided", {
   skip_if_no_sf()
 

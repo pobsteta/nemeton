@@ -17,8 +17,11 @@ NULL
 #'   (e.g., c("2015-01-01", "2020-01-01")). Optional.
 #' @param labels Character vector of descriptive labels for periods
 #'   (e.g., c("Baseline", "Current")). Optional, defaults to period names.
-#' @param id_column Character. Name of the column containing unit IDs.
-#'   Default "parcel_id".
+#' @param id_column Character or NULL. Name of the column containing unit
+#'   IDs, used to align units across periods. If NULL (default), the first of
+#'   \code{"nemeton_id"} (the identifier carried by nemeton units) and
+#'   \code{"parcel_id"} present in every period is used; without such a
+#'   column, units are aligned by row position.
 #'
 #' @return A nemeton_temporal object (list) with components:
 #'   \describe{
@@ -44,7 +47,7 @@ NULL
 nemeton_temporal <- function(periods,
                              dates = NULL,
                              labels = NULL,
-                             id_column = "parcel_id") {
+                             id_column = NULL) {
   # Validate inputs
   if (length(periods) == 0) {
     stop("No periods provided", call. = FALSE)
@@ -55,6 +58,10 @@ nemeton_temporal <- function(periods,
   if (!all(periods_are_sf)) {
     stop("All periods must be sf objects", call. = FALSE)
   }
+
+  # Colonne identifiant : explicite, sinon nemeton_id / parcel_id si presente
+  # dans toutes les periodes (les unites nemeton portent nemeton_id)
+  if (is.null(id_column)) id_column <- .temporal_id_column(periods)
 
   # Validate dates if provided
   if (!is.null(dates)) {
@@ -84,11 +91,11 @@ nemeton_temporal <- function(periods,
 
   # Extract IDs from each period
   period_ids <- lapply(periods, function(p) {
-    if (id_column %in% names(p)) {
+    if (!is.na(id_column) && id_column %in% names(p)) {
       as.character(p[[id_column]])
     } else {
       # Generate IDs if column doesn't exist
-      seq_len(nrow(p))
+      as.character(seq_len(nrow(p)))
     }
   })
 
@@ -122,7 +129,8 @@ nemeton_temporal <- function(periods,
       alignment = alignment,
       n_periods = n_periods,
       n_units = nrow(alignment),
-      n_complete = n_complete
+      n_complete = n_complete,
+      id_column = id_column
     )
   )
 
@@ -233,13 +241,35 @@ calculate_change_rate <- function(temporal,
     # Filter to numeric columns that look like indicators
     indicators <- common_cols[vapply(common_cols, function(col) {
       is.numeric(data_start[[col]]) &&
-        !col %in% c("geometry", "geom", "parcel_id", "unit_id")
+        !col %in% c("geometry", "geom", "parcel_id", "unit_id", "nemeton_id")
     }, logical(1))]
   }
 
-  # Merge data by geometry or ID
-  # Use the end period as base (to preserve most recent geometry)
+  # Alignement des unites sur l'identifiant (jamais par position quand un
+  # identifiant commun existe) ; base = periode de fin (geometrie la plus recente)
   result <- data_end
+  id_column <- temporal$metadata$id_column
+  if (is.null(id_column)) {
+    id_column <- .temporal_id_column(list(data_start, data_end))
+  }
+  if (!is.na(id_column) && id_column %in% names(data_start) &&
+      id_column %in% names(data_end)) {
+    ids_start <- as.character(data_start[[id_column]])
+    ids_end <- as.character(data_end[[id_column]])
+    if (anyDuplicated(ids_start[!is.na(ids_start)]) ||
+        anyDuplicated(ids_end[!is.na(ids_end)])) {
+      cli::cli_abort("Identifier column {.field {id_column}} has duplicated values.")
+    }
+    idx_start <- match(ids_end, ids_start)
+  } else {
+    if (nrow(data_start) != nrow(data_end)) {
+      cli::cli_abort(c(
+        "Cannot align periods {.val {period_start}} ({nrow(data_start)} unit{?s}) and {.val {period_end}} ({nrow(data_end)} unit{?s}) by position.",
+        "i" = "Provide a shared identifier column via {.arg id_column} in {.fn nemeton_temporal}."
+      ))
+    }
+    idx_start <- seq_len(nrow(data_end))
+  }
 
   # Calculate change rates for each indicator
   for (ind in indicators) {
@@ -250,7 +280,8 @@ calculate_change_rate <- function(temporal,
       next
     }
 
-    values_start <- data_start[[ind]]
+    # Unites absentes de la periode de depart -> NA
+    values_start <- data_start[[ind]][idx_start]
     values_end <- data_end[[ind]]
 
     # Absolute change rate
@@ -270,6 +301,21 @@ calculate_change_rate <- function(temporal,
   msg_info("temporal_change_calculated", length(indicators))
 
   result
+}
+
+#' Resolve the identifier column shared by all periods
+#'
+#' @param periods List of data frames / sf objects.
+#' @return The first of `nemeton_id`, `parcel_id` present in every period,
+#'   or `NA_character_` (alignment by position).
+#' @noRd
+.temporal_id_column <- function(periods) {
+  for (col in c("nemeton_id", "parcel_id")) {
+    if (all(vapply(periods, function(p) col %in% names(p), logical(1)))) {
+      return(col)
+    }
+  }
+  NA_character_
 }
 
 #' Print Method for nemeton_temporal Objects

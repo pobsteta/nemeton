@@ -1,4 +1,6 @@
-# Vendored from RECONFORT (fl.mouret/reconfort, main 25198c9).
+# Vendored from RECONFORT (fl.mouret/reconfort, main 25198c9), modified by
+# nemeton: continuous score bounded to [1, 100] with no-data = all bands 0,
+# and 2-class probability maps supported (see PATCHES.md).
 # License: Apache-2.0 (see inst/NOTICE). Driven by run_map_production_reconfort.py.
 #
 from rasterio.windows import from_bounds
@@ -42,6 +44,35 @@ def mask_rasters(src, src_mask, out_dir, selected_dtype):
                 dst.write(data_map[i, :, :], i + 1)
 
 
+def continuous_score_from_probas(data_map):
+    # NOTE (nemeton): pure numpy core of compute_continuous_score(), split out
+    # so it can be tested without rasterio.
+    # score = (1001 - p_sain + p_deperissant + 2 * p_tres_deperissant) / 30,
+    # probabilities in per-mille (0-1000).
+    # - nemeton: a 2-class model (e.g. v3_pine) has no third band -> p3 = 0
+    #   (upstream indexed band 2 and crashed).
+    # - nemeton: the score is bounded to [1, 100] before writing. Upstream
+    #   truncated very healthy pixels (score < 1) to 0, i.e. no-data.
+    # - nemeton: no-data = every probability band is 0 (pixel masked by
+    #   mask_rasters). Upstream used `sum_proba == 0`, which also blanked valid
+    #   pixels (e.g. p_sain == p_deperissant, p_tres == 0).
+    data_map = np.asarray(data_map)
+    n_bands = data_map.shape[0]
+    if n_bands < 2:
+        raise ValueError('Probability map must have at least 2 bands, got %d' % n_bands)
+    p1 = data_map[0, :, :].astype(np.float64)
+    p2 = data_map[1, :, :].astype(np.float64)
+    p3 = data_map[2, :, :].astype(np.float64) if n_bands >= 3 else np.zeros_like(p1)
+
+    sum_proba = - p1 + p2 + 2 * p3
+    continuous_score = (1001 + sum_proba) / 30
+    # troncature identique au cast entier d'origine, puis bornage [1, 100]
+    continuous_score = np.clip(np.floor(continuous_score), 1, 100)
+    nodata = np.all(data_map == 0, axis=0)
+    continuous_score[nodata] = 0
+    return continuous_score
+
+
 def compute_continuous_score(src, out_dir, selected_dtype):
 
     if selected_dtype == 'uint8':
@@ -60,14 +91,9 @@ def compute_continuous_score(src, out_dir, selected_dtype):
     # assuming a 3 bands raster score = (1001 - sum probas each class) / 30
     # the score range between 1 (healthy) and 100 (very declining)
     # values = 0 is no data
-
-    sum_proba = - data_map[0, :, :] + data_map[1, :, :] + 2 * data_map[2, :, :]
-
-    continuous_score = 1001 + sum_proba
-    continuous_score = continuous_score / 30
-    continuous_score = np.where(continuous_score == 0, 1, continuous_score)
-    continuous_score[sum_proba == 0] = 0
-    # continuous_score = data_mask * continuous_score
+    # NOTE (nemeton): computed by continuous_score_from_probas() (bounded
+    # score, no-data = all bands 0, 2-band maps supported).
+    continuous_score = continuous_score_from_probas(data_map)
 
     # Register GDAL format drivers and configuration options with a
     # context manager.
@@ -85,7 +111,7 @@ def compute_continuous_score(src, out_dir, selected_dtype):
         with rasterio.open(out_dir, 'w', **profile) as dst:
             # dst.write(data_mask.astype(dtype), 1)
             for i in range(n_bands):
-                dst.write(continuous_score, 1)
+                dst.write(continuous_score.astype(dtype), 1)
 
 
 if __name__ == "__main__":

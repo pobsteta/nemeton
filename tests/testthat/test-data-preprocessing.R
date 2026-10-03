@@ -210,3 +210,59 @@ test_that("mask_to_units requires valid inputs", {
     "must be an.*sf.*object"
   )
 })
+
+
+# --- Audit 1.0 : couches categorielles et CRS sans code EPSG ---------------
+
+.layers_en_memoire <- function(rasters) {
+  layers <- nemeton_layers(
+    rasters = stats::setNames(as.list(rep("absent.tif", length(rasters))), names(rasters)),
+    validate = FALSE
+  )
+  for (nm in names(rasters)) {
+    layers$rasters[[nm]]$object <- rasters[[nm]]
+    layers$rasters[[nm]]$loaded <- TRUE
+  }
+  layers
+}
+
+test_that("harmonize_crs reprojects a categorical layer by nearest neighbour", {
+  skip_if_not_installed("terra")
+  set.seed(1)
+  lc <- terra::rast(xmin = 566400, xmax = 567000, ymin = 6615100, ymax = 6615500,
+                    resolution = 10, crs = "EPSG:2154")
+  terra::values(lc) <- sample(c(1, 5, 9), terra::ncell(lc), replace = TRUE)
+  layers <- .layers_en_memoire(list(landcover = lc))
+
+  out <- harmonize_crs(layers, sf::st_crs(4326), verbose = FALSE)
+  v <- stats::na.omit(terra::values(out$rasters$landcover$object)[, 1])
+  # Bilineaire : classes fractionnaires inexistantes ; plus proche voisin : non
+  expect_true(all(v %in% c(1, 5, 9)))
+})
+
+test_that("harmonize_crs keeps bilinear resampling for continuous layers", {
+  skip_if_not_installed("terra")
+  r <- terra::rast(xmin = 566400, xmax = 567000, ymin = 6615100, ymax = 6615500,
+                   resolution = 10, crs = "EPSG:2154")
+  terra::values(r) <- seq(0, 1, length.out = terra::ncell(r))
+  expect_false(.is_categorical_raster(r, "biomass"))
+  int_r <- r
+  terra::values(int_r) <- rep(1:4, length.out = terra::ncell(r))
+  expect_true(.is_categorical_raster(int_r, "foo"))
+  expect_true(.is_categorical_raster(r, "landcover"))
+})
+
+test_that("harmonize_crs reprojects a raster whose CRS has no EPSG code", {
+  skip_if_not_installed("terra")
+  # Lambert-93 decrit par une chaine PROJ, sans code EPSG
+  proj_l93 <- paste(
+    "+proj=lcc +lat_0=46.5 +lon_0=3 +lat_1=49 +lat_2=44 +x_0=700000",
+    "+y_0=6600000 +ellps=GRS80 +units=m +no_defs")
+  r <- terra::rast(xmin = 566400, xmax = 567000, ymin = 6615100, ymax = 6615500,
+                   resolution = 10, crs = proj_l93)
+  terra::values(r) <- seq(0, 1, length.out = terra::ncell(r))
+  layers <- .layers_en_memoire(list(biomass = r))
+
+  out <- harmonize_crs(layers, sf::st_crs(4326), verbose = FALSE)
+  expect_true(sf::st_crs(terra::crs(out$rasters$biomass$object)) == sf::st_crs(4326))
+})

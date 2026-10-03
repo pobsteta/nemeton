@@ -1313,8 +1313,11 @@ units_add_species_from_raster <- function(units, species_raster, class_map,
     agg <- agg[!is.na(agg)]
     if (length(agg) == 0) return(NA_character_)
     mode_class <- names(agg)[which.max(agg)]
+    # Classe absente du map -> NA (un vecteur nomme leve sinon
+    # « subscript out of bounds » avec [[)
+    if (!mode_class %in% names(class_map)) return(NA_character_)
     code <- class_map[[mode_class]]
-    if (is.null(code) || is.na(code)) NA_character_ else as.character(code)
+    if (is.null(code) || length(code) != 1L || is.na(code)) NA_character_ else as.character(code)
   }, character(1))
 
   units[[species_col]] <- dominant

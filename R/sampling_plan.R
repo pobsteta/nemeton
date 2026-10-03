@@ -156,13 +156,39 @@ NULL
 }
 
 
-.extract_mean <- function(raster, buffers) {
-  if (is.null(raster) || !requireNamespace("exactextractr", quietly = TRUE)) {
+# Moyenne d'un raster dans les tampons des candidats. Les CRS sont alignes en
+# amont (tampons reprojetes dans le CRS du raster) et une erreur d'extraction
+# est propagee : la renvoyer en NA desactivait en silence la contrainte de
+# pente (ou la stratification) demandee.
+.extract_mean <- function(raster, buffers, what = "raster") {
+  if (is.null(raster)) {
     return(rep(NA_real_, nrow(buffers)))
   }
-  tryCatch(exactextractr::exact_extract(raster, buffers, "mean",
-                                        progress = FALSE),
-           error = function(e) rep(NA_real_, nrow(buffers)))
+  if (!requireNamespace("exactextractr", quietly = TRUE)) {
+    cli::cli_abort(c(
+      "Package {.pkg exactextractr} is required to use the {.arg {what}} raster.",
+      i = "Install it, or drop the {.arg {what}} argument."
+    ))
+  }
+  r_crs <- if (inherits(raster, "SpatRaster")) terra::crs(raster) else ""
+  if (inherits(raster, "SpatRaster") && !nzchar(r_crs)) {
+    cli::cli_abort("The {.arg {what}} raster has no CRS; cannot align it on the candidate plots.")
+  }
+  if (nzchar(r_crs) && !is.na(sf::st_crs(buffers))) {
+    crs_r <- sf::st_crs(r_crs)
+    if (!isTRUE(sf::st_crs(buffers) == crs_r)) {
+      buffers <- sf::st_transform(buffers, crs_r)
+    }
+  }
+  tryCatch(
+    exactextractr::exact_extract(raster, buffers, "mean", progress = FALSE),
+    error = function(e) {
+      cli::cli_abort(c(
+        "Extraction of the {.arg {what}} raster over the candidate plots failed.",
+        x = conditionMessage(e)
+      ), parent = e)
+    }
+  )
 }
 
 
@@ -405,7 +431,11 @@ dplyr_case_simple <- function(tfv) {
 #' @return An sf POINT with columns \code{plot_id}, \code{type} (Base
 #'   or Over), \code{visit_order}, \code{stratum}, and optionally
 #'   \code{strat_height} / \code{strat_type} / \code{strat_topo} when
-#'   the relevant input was supplied. A \code{"method"} attribute
+#'   the relevant input was supplied. The design columns \code{ip}
+#'   (inclusion probability) and \code{wgt} (design weight, \code{1 / ip})
+#'   are always returned: taken from \pkg{spsurvey} for a GRTS draw
+#'   (unequal across strata), \code{n_base / N} for the equal-probability
+#'   LPM2 / random fallbacks. They are required for unbiased estimation. A \code{"method"} attribute
 #'   records how the draw was performed (\code{"grts"}, \code{"lpm2"}
 #'   or \code{"random"}).
 #'
@@ -489,8 +519,16 @@ create_sampling_plan <- function(zone,
 
   # --- Apply terrain constraints ---------------------------------------
   grid$forest_cover <- .compute_forest_cover(buffers, forest_mask)
-  grid$mean_slope   <- .extract_mean(slope, buffers)
-  grid$mean_height  <- .extract_mean(chm,   buffers)
+  grid$mean_slope   <- .extract_mean(slope, buffers, what = "slope")
+  grid$mean_height  <- .extract_mean(chm,   buffers, what = "chm")
+  # Raster de pente fourni mais sans recouvrement : la contrainte max_slope
+  # ne peut pas s'appliquer -> on le dit au lieu de l'ignorer en silence.
+  if (!is.null(slope) && all(is.na(grid$mean_slope))) {
+    cli::cli_warn(c(
+      "The {.arg slope} raster does not cover any candidate plot: the {.arg max_slope} constraint is not applied.",
+      i = "Check the extent / CRS of {.arg slope} against {.arg zone}."
+    ))
+  }
 
   if (!is.null(mnt) && requireNamespace("terra", quietly = TRUE)) {
     tpi <- tryCatch({
@@ -498,7 +536,7 @@ create_sampling_plan <- function(zone,
       terra::focal(mnt, w = w, fun = "mean", na.rm = TRUE) -> mnt_f
       mnt - mnt_f
     }, error = function(e) NULL)
-    grid$mean_tpi <- .extract_mean(tpi, buffers)
+    grid$mean_tpi <- .extract_mean(tpi, buffers, what = "mnt")
   } else {
     grid$mean_tpi <- NA_real_
   }
@@ -663,6 +701,21 @@ create_sampling_plan <- function(zone,
     sample_all <- draw
   }
 
+  # --- Poids de sondage --------------------------------------------------
+  # GRTS : `ip` (probabilite d'inclusion) et `wgt` (= 1 / ip) sont fournis
+  # par spsurvey et conserves tels quels (stratification a allocation non
+  # proportionnelle -> poids inegaux, indispensables a une estimation sans
+  # biais). LPM2 / aleatoire : plan a probabilites egales, ip = n_base / N
+  # pour toute placette entrant dans l'echantillon (une placette Over ne
+  # remplace une Base qu'a probabilite egale).
+  if (!identical(method, "grts") || !all(c("wgt", "ip") %in% names(sample_all))) {
+    n_frame_draw <- nrow(frame)
+    n_b_eff <- sum(sample_all$type == "Base")
+    ip_eq <- if (n_frame_draw > 0L) n_b_eff / n_frame_draw else NA_real_
+    sample_all$ip  <- rep(ip_eq, nrow(sample_all))
+    sample_all$wgt <- 1 / sample_all$ip
+  }
+
   # --- Finalise ---------------------------------------------------------
   # Reorder Base plots into a short walking tour (nearest-neighbor +
   # 2-opt). Over (replacement) plots keep their draw-priority order
@@ -679,7 +732,7 @@ create_sampling_plan <- function(zone,
 
   # Keep the useful columns only
   keep <- c("plot_id", "type", "visit_order", "stratum",
-            "strat_height", "strat_type", "strat_topo")
+            "strat_height", "strat_type", "strat_topo", "wgt", "ip")
   keep <- intersect(keep, names(sample_all))
   sample_all <- sample_all[, c(keep, attr(sample_all, "sf_column"))]
 

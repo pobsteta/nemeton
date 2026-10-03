@@ -163,9 +163,12 @@ awc_saxton_rawls <- function(clay, sand, om, coarse = NULL) {
 #'   and `list(current = "ewm:complete")` at the end (monitoring pattern).
 #'
 #' @return Numeric vector of `ewm` in mm, length `nrow(units)`. `NA` for a unit
-#'   whose soil data could not be resolved. `NULL` if **no** depth interval could
-#'   be loaded at all (graceful degradation — the caller falls back to a uniform
-#'   `ewm`).
+#'   whose soil data could not be resolved. `NULL` if **any** depth interval
+#'   within `rooting_depth_cm` could not be loaded (clay or sand missing; a
+#'   partial sum would underestimate the reserve), with a warning naming the
+#'   missing intervals (graceful degradation — the caller falls back to a
+#'   uniform `ewm`). Missing organic carbon or coarse fragments only trigger a
+#'   warning (assumed zero).
 #' @references
 #' Poggio L. et al. (2021). SoilGrids 2.0. *SOIL* 7:217-240.
 #' @seealso [awc_saxton_rawls()], [build_biljou_soil()]
@@ -203,6 +206,11 @@ ewm_depuis_soilgrids <- function(units, rooting_depth_cm = 100,
   n <- nrow(units)
   ewm <- rep(0, n)
   any_layer <- FALSE
+  # Horizons non charges : texture (clay/sand) -> reserve incalculable sur
+  # l'horizon ; soc/cfvo -> hypotheses (OM = 0, pas de correction des
+  # elements grossiers). Comptes et signales, jamais sautes en silence.
+  missing_texture <- character(0)
+  missing_aux <- character(0)
 
   for (i in seq_len(nrow(d))) {
     itv <- d$interval[i]
@@ -213,8 +221,12 @@ ewm_depuis_soilgrids <- function(units, rooting_depth_cm = 100,
     soc  <- .sg_property_by_unit(units, "soc",  itv, country)  # g/kg
     cfvo <- .sg_property_by_unit(units, "cfvo", itv, country)  # vol %
 
-    if (is.null(clay) || is.null(sand)) next
+    if (is.null(clay) || is.null(sand)) {
+      missing_texture <- c(missing_texture, itv)
+      next
+    }
     any_layer <- TRUE
+    if (is.null(soc) || is.null(cfvo)) missing_aux <- c(missing_aux, itv)
 
     # SoilGrids -> unites de la PTF : texture en fractions, OM en % massique.
     # soc est en g/kg apres mise a l'echelle -> %OC = soc / 10.
@@ -229,6 +241,23 @@ ewm_depuis_soilgrids <- function(units, rooting_depth_cm = 100,
   if (!any_layer) {
     emit(list(current = "ewm:unavailable"))
     return(NULL)
+  }
+  # Un horizon manquant dans la profondeur racinaire sous-estimerait la
+  # reserve utile (somme partielle) : on prefere le repli (NULL) a une
+  # valeur fausse.
+  if (length(missing_texture)) {
+    cli::cli_warn(c(
+      "{length(missing_texture)} of {nrow(d)} SoilGrids depth interval{?s} could not be loaded: {.val {missing_texture}}.",
+      i = "The available water capacity would be underestimated; returning {.code NULL} (caller fallback)."
+    ))
+    emit(list(current = "ewm:unavailable", missing = missing_texture))
+    return(NULL)
+  }
+  if (length(missing_aux)) {
+    cli::cli_warn(c(
+      "Organic carbon or coarse fragments missing for {length(missing_aux)} depth interval{?s}: {.val {missing_aux}}.",
+      i = "Assumed no organic matter / no coarse fragments there."
+    ))
   }
   emit(list(current = "ewm:complete", n_layers = nrow(d)))
   ewm[!is.finite(ewm)] <- NA_real_

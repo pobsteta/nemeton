@@ -49,10 +49,12 @@ NULL
 }
 
 
-# THEIA/MUSCATE SCL-like cloud & shadow classes to mask out, when an SCL
-# band is supplied (Sen2Cor classes: 3 shadow, 8/9 cloud med/high,
-# 10 cirrus, 11 snow). Best-effort: if no SCL is available the raw index
-# is kept.
+# Sen2Cor SCL cloud & shadow classes to mask out, when an SCL band is
+# supplied (3 shadow, 8/9 cloud med/high, 10 cirrus, 11 snow). The THEIA /
+# MUSCATE products used by RECONFORT carry no SCL but a bit-coded cloud mask
+# `MASKS/*_CLM_R1.tif` (10 m) / `*_CLM_R2.tif` (20 m) : any non-zero value
+# flags a cloud / shadow / cirrus, see `clm` below. Best-effort: without any
+# mask the raw index is kept.
 .RECONFORT_SCL_MASK_CLASSES <- c(3L, 8L, 9L, 10L, 11L)
 
 
@@ -66,7 +68,12 @@ NULL
 #'
 #' @param scenes A list; each element is
 #'   `list(obs_date = <Date>, B04=, B05=, B06=, B8A=, B11=, B12=,
-#'   scl = NULL)`. Bands are `SpatRaster`s or single file paths.
+#'   clm = NULL, scl = NULL, tile = NULL)`. Bands are `SpatRaster`s or
+#'   single file paths. `clm` is the MUSCATE bit-coded cloud mask (pixel
+#'   masked when non-zero), `scl` a Sen2Cor scene classification (masked on
+#'   [.RECONFORT_SCL_MASK_CLASSES]). Several scenes of the same date (one per
+#'   MGRS tile) are merged into a single layer; every scene is aligned onto
+#'   the grid of the first one.
 #' @return `list(crswir = <SpatRaster>, crre = <SpatRaster>,
 #'   dates = <Date>)`, or `NULL` when `scenes` is empty.
 #' @keywords internal
@@ -101,8 +108,16 @@ NULL
       i = "Point the scratch dir elsewhere with {.code options(nemeton.scratch_dir=)} or {.envvar NEMETON_SCRATCH_DIR}."
     ))
   }
-  crswir_files <- character(length(scenes))
-  crre_files   <- character(length(scenes))
+  # Une couche par DATE : les scenes d'une meme date sur plusieurs tuiles MGRS
+  # sont fusionnees (premiere valeur non NA), toutes alignees sur la grille de
+  # la premiere scene (sinon empilement impossible ou pixels de tuiles
+  # differentes melanges).
+  udates <- unique(dates)
+  crswir_files <- character(length(udates))
+  crre_files   <- character(length(udates))
+  ref <- NULL
+  cw_d <- NULL
+  cr_d <- NULL
   for (i in seq_along(scenes)) {
     s   <- scenes[[i]]
     b4  <- load_one(s$B04)
@@ -120,6 +135,15 @@ NULL
     b12 <- ali(load_one(s$B12))
     cw <- .reconfort_crswir(b8a, b11, b12)
     cr <- .reconfort_crre(b4, b5, b6)
+    # Masque nuages MUSCATE (CLM, code par bits) : tout pixel non nul est
+    # nuage / ombre / cirrus. Lu au plus proche voisin sur la grille de B04.
+    clm <- ali(load_one(s$clm), method = "near")
+    if (!is.null(clm)) {
+      bad <- clm != 0
+      cw <- terra::mask(cw, bad, maskvalues = 1, updatevalue = NA)
+      cr <- terra::mask(cr, bad, maskvalues = 1, updatevalue = NA)
+      rm(bad)
+    }
     scl <- ali(load_one(s$scl), method = "near")
     if (!is.null(scl)) {
       # terra::mask() streams; the previous values()/ifelse() route pulled scl,
@@ -129,12 +153,33 @@ NULL
       cr <- terra::mask(cr, scl, maskvalues = .RECONFORT_SCL_MASK_CLASSES,
                         updatevalue = NA)
     }
-    crswir_files[i] <- file.path(tmpdir, sprintf("crswir_%04d.tif", i))
-    crre_files[i]   <- file.path(tmpdir, sprintf("crre_%04d.tif", i))
-    terra::writeRaster(cw, crswir_files[i], overwrite = TRUE)
-    terra::writeRaster(cr, crre_files[i], overwrite = TRUE)
-    rm(b4, b5, b6, b8a, b11, b12, cw, cr, scl)
+    # Grille de reference = celle de la premiere scene ; une scene d'une autre
+    # tuile y est reprojetee / reechantillonnee.
+    if (is.null(ref)) {
+      ref <- terra::rast(b4)
+    } else if (!isTRUE(tryCatch(
+      terra::compareGeom(cw, ref, crs = TRUE, ext = TRUE, rowcol = TRUE,
+                         stopOnError = FALSE),
+      error = function(e) FALSE))) {
+      cw <- terra::project(cw, ref, method = "bilinear")
+      cr <- terra::project(cr, ref, method = "bilinear")
+    }
+    # Fusion des scenes de la meme date (plusieurs tuiles)
+    cw_d <- if (is.null(cw_d)) cw else terra::cover(cw_d, cw)
+    cr_d <- if (is.null(cr_d)) cr else terra::cover(cr_d, cr)
+    last_of_date <- i == length(scenes) || dates[i + 1L] != dates[i]
+    if (last_of_date) {
+      k <- match(dates[i], udates)
+      crswir_files[k] <- file.path(tmpdir, sprintf("crswir_%04d.tif", k))
+      crre_files[k]   <- file.path(tmpdir, sprintf("crre_%04d.tif", k))
+      terra::writeRaster(cw_d, crswir_files[k], overwrite = TRUE)
+      terra::writeRaster(cr_d, crre_files[k], overwrite = TRUE)
+      cw_d <- NULL
+      cr_d <- NULL
+    }
+    rm(b4, b5, b6, b8a, b11, b12, cw, cr, scl, clm)
   }
+  dates <- udates
   # File-backed stacks: terra reads them by window, nothing is held in RAM.
   crswir <- terra::rast(crswir_files)
   crre   <- terra::rast(crre_files)
@@ -185,10 +230,14 @@ NULL
 #' the scene list consumed by [.build_reconfort_feature_stacks()].
 #'
 #' **Layout assumption — validate on a real run.** Band files are
-#' matched by the `*_FRE_B<band>.tif` THEIA convention and the
-#' acquisition date by the leading `..._YYYYMMDD-...` token. If the real
-#' MUSCATE naming differs, this returns an empty list and the `persist`
-#' phase skips (best-effort) — the run is never harmed.
+#' matched by the `*_FRE_B<band>.tif` THEIA convention, the acquisition
+#' date by the leading `..._YYYYMMDD-...` token and the MGRS tile by the
+#' `_T<zone><square>_` token; bands are grouped by **date and tile** (two
+#' tiles acquired the same day are two scenes). The cloud mask is the
+#' MUSCATE `MASKS/*_CLM_R1.tif` (10 m, else `*_CLM_R2.tif`) of the same date
+#' and tile, falling back to a Sen2Cor `*_SCL*.tif` when present. If the
+#' real MUSCATE naming differs, this returns an empty list and the
+#' `persist` phase skips (best-effort) — the run is never harmed.
 #'
 #' @param s2_root Directory holding the ingested S2 (recursive search).
 #' @return A list of scenes (possibly empty).
@@ -216,20 +265,49 @@ NULL
     if (grepl("^[0-9]$", tok)) tok <- paste0("0", tok)   # B4 -> B04
     paste0("B", tok)
   }
+  # Tuile MGRS (`_T31UDP_`) ; "" quand le nom n'en porte pas.
+  tile_of <- function(f) {
+    m <- regmatches(basename(f), regexpr("_T[0-9]{2}[A-Z]{3}_", basename(f)))
+    if (length(m)) gsub("_", "", m) else ""
+  }
   df <- data.frame(path = files,
                    date = vapply(files, date_chr, character(1)),
                    band = vapply(files, band_of, character(1)),
+                   tile = vapply(files, tile_of, character(1)),
                    stringsAsFactors = FALSE)
   df <- df[!is.na(df$date) & df$band %in% bands, , drop = FALSE]
+  if (!nrow(df)) return(list())
+
+  # Masques nuages : MUSCATE CLM (MASKS/*_CLM_R1.tif a 10 m, sinon R2 a
+  # 20 m), Sen2Cor SCL en repli. Le masque doit porter la meme date ET la
+  # meme tuile que la scene.
+  mask_files <- list.files(s2_root, pattern = "(_CLM_R[12]|_SCL[^/]*)\\.tif$",
+                           recursive = TRUE, full.names = TRUE,
+                           ignore.case = TRUE)
+  mdf <- data.frame(path = mask_files,
+                    date = vapply(mask_files, date_chr, character(1)),
+                    tile = vapply(mask_files, tile_of, character(1)),
+                    stringsAsFactors = FALSE)
+  pick_mask <- function(dch, tl, motif) {
+    cand <- mdf$path[!is.na(mdf$date) & mdf$date == dch & mdf$tile == tl &
+                       grepl(motif, basename(mdf$path), ignore.case = TRUE)]
+    if (length(cand)) sort(cand)[1L] else NULL
+  }
+
+  keys <- unique(df[order(df$date, df$tile), c("date", "tile")])
   scenes <- list()
-  for (dch in sort(unique(df$date))) {
-    sub <- df[df$date == dch, , drop = FALSE]
+  for (k in seq_len(nrow(keys))) {
+    dch <- keys$date[k]
+    tl  <- keys$tile[k]
+    sub <- df[df$date == dch & df$tile == tl, , drop = FALSE]
     if (!all(bands %in% sub$band)) next            # require all six bands
     bset <- stats::setNames(
       lapply(bands, function(b) sub$path[match(b, sub$band)]), bands)
-    scl <- list.files(s2_root, pattern = sprintf("%s.*_SCL.*\\.tif$", dch),
-                      recursive = TRUE, full.names = TRUE, ignore.case = TRUE)
-    bset$scl <- if (length(scl)) scl[1L] else NULL
+    clm <- pick_mask(dch, tl, "_CLM_R1\\.tif$")
+    if (is.null(clm)) clm <- pick_mask(dch, tl, "_CLM_R2\\.tif$")
+    bset$clm <- clm
+    bset$scl <- if (is.null(clm)) pick_mask(dch, tl, "_SCL") else NULL
+    bset$tile <- if (nzchar(tl)) tl else NULL
     bset$obs_date <- as.Date(dch, format = "%Y%m%d")
     scenes[[length(scenes) + 1L]] <- bset
   }

@@ -213,7 +213,9 @@ plot_tradeoff <- function(data,
         color = "red",
         linetype = "dashed",
         alpha = 0.7,
-        direction = "vh"
+        direction = "vh",
+        # la ligne de front n'herite pas des mappings couleur/taille des points
+        inherit.aes = FALSE
       )
 
     # Add optimal points
@@ -224,10 +226,17 @@ plot_tradeoff <- function(data,
         size = 3,
         alpha = 0.8
       )
-    } else {
+    } else if (is.null(size)) {
       p <- p + ggplot2::geom_point(
         data = optimal_data,
-        size = if (is.null(size)) 3 else ggplot2::aes(size = .data[[size]]),
+        size = 3,
+        alpha = 0.8
+      )
+    } else {
+      # La taille est un mapping (herite de l'aes de base), pas un parametre :
+      # passer un aes() a `size =` faisait planter le rendu
+      p <- p + ggplot2::geom_point(
+        data = optimal_data,
         alpha = 0.8
       )
     }

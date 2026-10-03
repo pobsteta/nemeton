@@ -334,6 +334,21 @@ test_that("plot_tradeoff with size parameter", {
   expect_true(inherits(p, "ggplot"))
 })
 
+test_that("plot_tradeoff renders a Pareto frontier with a size mapping (audit 1.0)", {
+  units <- create_test_units(n_features = 10)
+  set.seed(42)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  units$area_ha <- runif(10, 1, 50)
+  units$is_optimal <- c(TRUE, TRUE, rep(FALSE, 8))
+  p <- plot_tradeoff(units,
+    x = "famille_carbone", y = "famille_biodiversite",
+    size = "area_ha", pareto_frontier = TRUE
+  )
+  # Avant le correctif, le rendu levait une erreur (aes() passe a `size =`)
+  expect_no_error(ggplot2::ggplot_build(p))
+})
+
 test_that("plot_tradeoff errors on missing size variable", {
   units <- create_test_units(n_features = 5)
   units$famille_carbone <- 1:5
