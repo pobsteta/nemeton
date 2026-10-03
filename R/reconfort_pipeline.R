@@ -169,6 +169,130 @@
   identical(as.integer(status), 0L)
 }
 
+# --- garde-fous du workdir (audit 1.0, sécurité) -------------------------
+
+# Validate a monitoring-zone id: a strictly positive integer (numeric or
+# digit string). It is interpolated into paths the run may delete.
+.reconfort_check_zone_id <- function(zone_id) {
+  ok <- length(zone_id) == 1L && !is.list(zone_id) && !isTRUE(is.na(zone_id))
+  if (ok && is.numeric(zone_id)) {
+    ok <- is.finite(zone_id) && zone_id >= 1 && zone_id == round(zone_id) &&
+      zone_id <= .Machine$integer.max
+  } else if (ok && is.character(zone_id)) {
+    ok <- grepl("^[1-9][0-9]{0,9}$", zone_id) &&
+      as.numeric(zone_id) <= .Machine$integer.max
+  } else {
+    ok <- FALSE
+  }
+  if (!isTRUE(ok)) {
+    cli::cli_abort("{.arg zone_id} must be a single strictly positive integer.")
+  }
+  as.integer(zone_id)
+}
+
+# Validate Sentinel-2 MGRS tile codes (`T31UDP` or `31UDP`): they become
+# directory names under the workdir, re-created with unlink(recursive = TRUE).
+.reconfort_check_tiles <- function(tiles) {
+  if (!is.character(tiles) || !length(tiles) ||
+      any(is.na(tiles) | !grepl("^T?[0-9]{2}[A-Z]{3}$", tiles))) {
+    cli::cli_abort(c(
+      "{.arg tiles} must be Sentinel-2 MGRS tile codes (e.g. {.val T31UDP}).",
+      x = "Got {.val {tiles}}."))
+  }
+  invisible(tiles)
+}
+
+# Marqueur d'appartenance : seul un workdir qui le porte peut être supprimé.
+.RECONFORT_WORKDIR_MARKER <- ".nemeton-reconfort-workdir"
+
+# Create the run workdir and mark it as owned by nemeton. A directory that
+# already existed is marked only when `adopt = TRUE` (the default
+# `<cache_dir>/reconfort/run_z<id>_S2<year>` path, fully under our control);
+# a pre-existing caller-supplied `output_dir` is never marked, hence never
+# deleted. Returns TRUE when the directory was created by this call.
+.reconfort_claim_workdir <- function(workdir, adopt = FALSE) {
+  created <- !dir.exists(workdir)
+  if (created) dir.create(workdir, recursive = TRUE, showWarnings = FALSE)
+  if (!dir.exists(workdir)) {
+    cli::cli_abort("Cannot create the RECONFORT working directory {.path {workdir}}.")
+  }
+  if (created || isTRUE(adopt)) {
+    marker <- file.path(workdir, .RECONFORT_WORKDIR_MARKER)
+    if (!file.exists(marker)) {
+      writeLines(c("RECONFORT working directory created by nemeton.",
+                   "It may be removed by run_reconfort_dieback(keep_workdir = FALSE)."),
+                 marker)
+    }
+  }
+  invisible(created)
+}
+
+# TRUE when the workdir may be deleted recursively: it carries the nemeton
+# marker and it is neither `cache_dir` itself nor one of its ancestors.
+.reconfort_workdir_removable <- function(workdir, cache_dir) {
+  if (!dir.exists(workdir) ||
+      !file.exists(file.path(workdir, .RECONFORT_WORKDIR_MARKER))) {
+    return(FALSE)
+  }
+  norm <- function(p) {
+    p <- normalizePath(p, winslash = "/", mustWork = FALSE)
+    paste0(sub("/+$", "", p), "/")
+  }
+  wd <- norm(workdir)
+  cd <- norm(cache_dir)
+  # wd préfixe de cd <=> wd == cd ou wd ancêtre de cd.
+  !startsWith(cd, wd)
+}
+
+# Is the process `pid` alive? Unix: signal 0. Elsewhere, assume it is
+# (conservative: a lock is then only cleared by hand).
+.reconfort_pid_alive <- function(pid) {
+  if (.Platform$OS.type != "unix") return(TRUE)
+  isTRUE(suppressWarnings(tools::pskill(pid, 0L)))
+}
+
+# Take the workdir lock (`<workdir>/.lock`, holding the PID). Created
+# atomically through a hard link; a lock left by a dead process (or by this
+# very process, whose calls are sequential) is stale and replaced. Aborts
+# when another live process holds it. Returns the lock path.
+.reconfort_lock_workdir <- function(workdir) {
+  lock <- file.path(workdir, ".lock")
+  me <- Sys.getpid()
+  for (attempt in 1:2) {
+    tmp <- tempfile(".lock-", tmpdir = workdir)
+    writeLines(as.character(me), tmp)
+    ok <- isTRUE(suppressWarnings(file.link(tmp, lock)))
+    if (!ok && !file.exists(lock)) {
+      # Système de fichiers sans liens durs : repli non atomique.
+      ok <- isTRUE(file.rename(tmp, lock))
+    }
+    unlink(tmp, force = TRUE)
+    if (ok) return(lock)
+    holder <- tryCatch(
+      suppressWarnings(as.integer(readLines(lock, n = 1L, warn = FALSE))),
+      error = function(e) NA_integer_)
+    if (length(holder) == 1L && !is.na(holder) && holder != me &&
+        .reconfort_pid_alive(holder)) {
+      cli::cli_abort(c(
+        "The RECONFORT working directory {.path {workdir}} is in use by another process (PID {holder}).",
+        i = "Wait for that run to finish, or remove {.path {lock}} if it is stale."))
+    }
+    unlink(lock, force = TRUE)   # verrou périmé
+  }
+  cli::cli_abort("Could not lock the RECONFORT working directory {.path {workdir}}.")
+}
+
+# Release the workdir lock if this process still holds it.
+.reconfort_unlock_workdir <- function(lock) {
+  if (is.null(lock) || !file.exists(lock)) return(invisible(FALSE))
+  holder <- tryCatch(
+    suppressWarnings(as.integer(readLines(lock, n = 1L, warn = FALSE))),
+    error = function(e) NA_integer_)
+  if (identical(holder, Sys.getpid())) unlink(lock, force = TRUE)
+  invisible(TRUE)
+}
+
+
 # Stage a self-contained working copy of the vendored glue into workdir.
 .reconfort_stage_workdir <- function(workdir, glue_dir) {
   dir.create(workdir, recursive = TRUE, showWarnings = FALSE)
@@ -405,7 +529,8 @@
 #'
 #' @param con A `DBIConnection` to the monitoring database.
 #' @param zone_id Scalar monitoring-zone id (see
-#'   [`.get_zone_aoi`][nemeton] resolution via `monitoring_zone`).
+#'   [`.get_zone_aoi`][nemeton] resolution via `monitoring_zone`). Must be a
+#'   strictly positive integer.
 #' @param cache_dir Project cache root. The per-run working directory is
 #'   created under `<cache_dir>/reconfort/` (same caller-supplied
 #'   convention as FORDEAD's `cache_dir`).
@@ -461,7 +586,10 @@
 #'   PENDING : à revoir après alignement de la version d'iota2.
 #' @param nb_parallel_tasks IOTA2 parallel-task count. Default `1`.
 #' @param output_dir Explicit per-run working directory. Default
-#'   `<cache_dir>/reconfort/run_z<zone_id>_S2<s2_year>`.
+#'   `<cache_dir>/reconfort/run_z<zone_id>_S2<s2_year>`. The directory is
+#'   locked (`.lock`, holding the PID) for the duration of the run; a second
+#'   run on a directory held by a live process aborts. A pre-existing
+#'   `output_dir` is never deleted, whatever `keep_workdir` says.
 #' @param geodes_config Path to `pygeodes-config.json` (see
 #'   [reconfort_ingest_s2()]). Default resolves the option / user dir.
 #' @param model_cache_dir,mask_cache_dir Override caches for the model /
@@ -471,7 +599,9 @@
 #' @param skip_ingest Reuse an already-ingested S2 layout under the
 #'   working dir instead of downloading. Default `FALSE`.
 #' @param keep_workdir Keep the staged working directory after the run.
-#'   Default `TRUE` (the rasters live there).
+#'   Default `TRUE` (the rasters live there). With `FALSE`, only a
+#'   directory created (or, for the default path, owned) by nemeton is
+#'   removed, never `cache_dir` or one of its ancestors.
 #' @param quiet Suppress progress + subprocess output. Default `FALSE`.
 #' @param progress_callback Optional function called with a named list
 #'   at each phase (`current = "reconfort:phase"` / `"reconfort:..."`),
@@ -560,12 +690,18 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
   if (!inherits(con, "DBIConnection")) {
     cli::cli_abort("{.arg con} must be a {.cls DBIConnection}.")
   }
-  if (length(zone_id) != 1L || is.na(zone_id)) {
-    cli::cli_abort("{.arg zone_id} must be a scalar non-NA identifier.")
-  }
+  # zone_id est interpolé dans le workdir (supprimé récursivement quand
+  # keep_workdir = FALSE) : entier strictement positif, rien d'autre.
+  zone_id <- .reconfort_check_zone_id(zone_id)
   if (missing(cache_dir) || !is.character(cache_dir) || length(cache_dir) != 1L) {
     cli::cli_abort("{.arg cache_dir} must be a single directory path.")
   }
+  if (!is.null(output_dir) &&
+      (!is.character(output_dir) || length(output_dir) != 1L ||
+       is.na(output_dir) || !nzchar(output_dir))) {
+    cli::cli_abort("{.arg output_dir} must be NULL or a single directory path.")
+  }
+  if (!is.null(tiles)) .reconfort_check_tiles(tiles)
   info    <- reconfort_model_info(v_model)            # validates v_model
   s2_year <- as.integer(s2_year)
   if (is.na(s2_year)) cli::cli_abort("{.arg s2_year} must be an integer year.")
@@ -578,8 +714,16 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
 
   label   <- paste0("z", zone_id)
   workdir <- output_dir %||%
-    file.path(cache_dir, "reconfort", sprintf("run_z%s_S2%s", zone_id, s2_year))
+    file.path(cache_dir, "reconfort", sprintf("run_z%d_S2%d", zone_id, s2_year))
   run_id  <- format(Sys.time(), "%Y%m%dT%H%M%S")
+
+  # Le run ne supprimera (keep_workdir = FALSE / erreur) que le workdir qu'il
+  # possède : marqueur posé à sa création (ou sur le chemin par défaut, sous
+  # notre contrôle), jamais un output_dir préexistant. Verrou PID : deux runs
+  # ne partagent jamais un même workdir.
+  .reconfort_claim_workdir(workdir, adopt = is.null(output_dir))
+  lock <- .reconfort_lock_workdir(workdir)
+  on.exit(.reconfort_unlock_workdir(lock), add = TRUE)
 
   # --- progress plumbing ------------------------------------------
   phases <- c("env", "model", "mask", "tiles", "ingest", "stage", "mapprod",
@@ -668,6 +812,7 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       if (length(tiles) == 0L) {
         cli::cli_abort("Zone {.val {zone_id}} resolved to no Sentinel-2 tile.")
       }
+      .reconfort_check_tiles(tiles)
     }
 
     # PHASE 5 — ingest S2 ------------------------------------------
@@ -932,7 +1077,9 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
   error = function(e) {
     emit(list(current = "reconfort:error", zone_id = zone_id,
               error_message = conditionMessage(e)))
-    if (!keep_workdir && dir.exists(workdir)) unlink(workdir, recursive = TRUE)
+    if (!keep_workdir && .reconfort_workdir_removable(workdir, cache_dir)) {
+      unlink(workdir, recursive = TRUE)
+    }
     cli::cli_abort(c("RECONFORT dieback run failed.", x = conditionMessage(e)),
                    parent = e)
   })
@@ -941,7 +1088,7 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
   # says: the point of a cooperative cancel is that what was already
   # produced stays usable, otherwise cancelling costs as much as failing.
   if (!keep_workdir && !identical(result$status, "cancelled") &&
-      dir.exists(workdir)) {
+      .reconfort_workdir_removable(workdir, cache_dir)) {
     unlink(workdir, recursive = TRUE)
   }
   invisible(result)
