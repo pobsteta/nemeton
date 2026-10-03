@@ -181,6 +181,25 @@ test_that("format_citations can emit HTML", {
   expect_match(html, 'id="cite-1"')
 })
 
+test_that("format_citations(html) escapes fields and only links http(s) (audit 1.0)", {
+  df <- nemeton:::.empty_retrieval()
+  df[1, ] <- list(1L, 1L, "<script>alert(1)</script>", "O'Brien & <b>X</b>",
+                  as.Date("2020-01-01"), "https://ex.org/a?b=1&c=\"><img>",
+                  "fr", 0L, NA_integer_, "body", 0.9)
+  df[2, ] <- list(2L, 2L, "T2", "A", as.Date("2020-01-01"),
+                  "javascript:alert(1)", "fr", 0L, NA_integer_, "body", 0.8)
+  html <- format_citations(df, format = "html")
+  expect_false(grepl("<script>", html, fixed = TRUE))
+  expect_false(grepl("<b>", html, fixed = TRUE))
+  expect_false(grepl("<img>", html, fixed = TRUE))
+  expect_match(html, "&lt;script&gt;", fixed = TRUE)
+  expect_match(html, "O&#39;Brien &amp; &lt;b&gt;", fixed = TRUE)
+  expect_match(html, 'href="https://ex.org/a?b=1&amp;c=&quot;&gt;&lt;img&gt;"', fixed = TRUE)
+  # pas de lien javascript:
+  expect_false(grepl("javascript:", html, fixed = TRUE))
+  expect_equal(lengths(regmatches(html, gregexpr("<a ", html, fixed = TRUE))), 1L)
+})
+
 
 # ---- Integration: schema + ingest ------------------------------------
 

@@ -975,6 +975,18 @@ delete_knowledge_document <- function(con, document_id) {
 }
 
 
+# Échappement HTML minimal (texte et valeurs d'attribut entre guillemets),
+# sans dépendre de htmltools.
+.html_escape <- function(x) {
+  x <- as.character(x)
+  x <- gsub("&", "&amp;", x, fixed = TRUE)
+  x <- gsub("<", "&lt;", x, fixed = TRUE)
+  x <- gsub(">", "&gt;", x, fixed = TRUE)
+  x <- gsub('"', "&quot;", x, fixed = TRUE)
+  gsub("'", "&#39;", x, fixed = TRUE)
+}
+
+
 #' Format retrieved chunks as a citation block
 #'
 #' Renders the result of [retrieve_knowledge()] as a numbered Markdown
@@ -983,7 +995,9 @@ delete_knowledge_document <- function(con, document_id) {
 #'
 #' @param retrieved_chunks A `data.frame` returned by
 #'   [retrieve_knowledge()].
-#' @param format One of `"markdown"` (default) or `"html"`.
+#' @param format One of `"markdown"` (default) or `"html"`. In HTML,
+#'   every field is HTML-escaped and a link is emitted only for an
+#'   `http://` / `https://` `source_url`.
 #' @param lang Language for the section heading. `"fr"` (default) ->
 #'   "Sources documentaires"; anything else -> "Sources".
 #'
@@ -1030,14 +1044,18 @@ format_citations <- function(retrieved_chunks,
   }
 
   if (identical(format, "html")) {
+    # Titre, auteur et URL viennent du corpus (manifeste éditable) : tout
+    # est échappé, et seul un lien http(s) devient un href (pas de
+    # javascript:, data:, file:...).
     items <- vapply(entries, function(e) {
-      body <- e$text
-      if (!is.na(e$url)) {
-        body <- sprintf('%s <a href="%s">[lien]</a>', body, e$url)
+      body <- .html_escape(e$text)
+      if (!is.na(e$url) && grepl("^https?://", e$url, ignore.case = TRUE)) {
+        body <- sprintf('%s <a href="%s" rel="noopener noreferrer">[lien]</a>',
+                        body, .html_escape(e$url))
       }
       sprintf('  <li id="cite-%d">%s</li>', e$idx, body)
     }, character(1))
-    return(sprintf("<h2>%s</h2>\n<ol>\n%s\n</ol>", heading,
+    return(sprintf("<h2>%s</h2>\n<ol>\n%s\n</ol>", .html_escape(heading),
                    paste(items, collapse = "\n")))
   }
 
