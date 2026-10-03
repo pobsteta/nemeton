@@ -1093,7 +1093,11 @@ calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
 #' Three data sources are supported via \code{source}:
 #' \itemize{
 #'   \item \code{"layer"} (default) — read a raster or polygon layer from
-#'     \code{layers}, min-max normalised per call (relative score).
+#'     \code{layers} and map its values linearly from
+#'     \code{fertility_range} to 0-100 (absolute score: a unit's value does
+#'     not depend on the other units of the call). Polygon layers are
+#'     area-weighted over the polygons that carry a value; units with no
+#'     valued polygon are NA.
 #'   \item \code{"soilgrids"} — fetch the 250 m SoilGrids 2.0 Cation
 #'     Exchange Capacity raster (0-5 cm topsoil, mean) declared as
 #'     \code{soilgrids_cec} in \code{inst/datasources/FR.json}, extract
@@ -1141,6 +1145,11 @@ calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
 #'   \code{coarse_elements} (the Theia \code{theia_soil} products,
 #'   loaded via \code{\link{load_raster_source}}). Required when
 #'   \code{source = "theia_soil"}, ignored otherwise.
+#' @param fertility_range Numeric of length 2. Value range of the soil
+#'   layer in \code{"layer"} mode, mapped linearly to 0-100 (lowest =
+#'   least fertile). Default \code{c(0, 100)}: the layer is already a 0-100
+#'   score. For fertility classes 1-5, pass \code{c(1, 5)}. Values outside
+#'   the range are set to NA with a warning. Ignored by the other sources.
 #'
 #' @return Numeric vector of fertility scores (0-100 scale, higher = more fertile)
 #'
@@ -1168,7 +1177,8 @@ indicateur_f1_fertilite <- function(units,
                                                 "theia_soil"),
                                      country = "FR",
                                      rpf_code_col = "rpf_code",
-                                     texture = NULL) {
+                                     texture = NULL,
+                                     fertility_range = c(0, 100)) {
   source <- match.arg(source)
 
   if (!inherits(units, "sf")) {
@@ -1215,9 +1225,11 @@ indicateur_f1_fertilite <- function(units,
   }
 
   if (is_raster) {
-    fertility <- extract_fertility_from_raster(units, layers, soil_layer, fertility_col)
+    fertility <- extract_fertility_from_raster(units, layers, soil_layer,
+                                               fertility_col, fertility_range)
   } else {
-    fertility <- extract_fertility_from_vector(units, layers, soil_layer, fertility_col)
+    fertility <- extract_fertility_from_vector(units, layers, soil_layer,
+                                               fertility_col, fertility_range)
   }
 
   msg_info("indicateur_f1_fertilite")
@@ -1228,7 +1240,8 @@ indicateur_f1_fertilite <- function(units,
 #' Extract fertility from raster layer
 #' @keywords internal
 #' @noRd
-extract_fertility_from_raster <- function(units, layers, soil_layer, fertility_col) {
+extract_fertility_from_raster <- function(units, layers, soil_layer, fertility_col,
+                                          fertility_range = c(0, 100)) {
   # Get soil raster (resolve lazy-load)
   soil_raster <- resolve_raster_layer(layers, soil_layer)
 
@@ -1240,27 +1253,46 @@ extract_fertility_from_raster <- function(units, layers, soil_layer, fertility_c
     progress = FALSE
   )
 
-  # Convert to 0-100 fertility scale
-  # Assuming input values are categorical (e.g., 1-5) or continuous
-  # Normalize to 0-100 scale
-  min_val <- min(soil_values, na.rm = TRUE)
-  max_val <- max(soil_values, na.rm = TRUE)
+  # Echelle ABSOLUE (fertility_range -> 0-100). L'ancien min-max sur le lot
+  # rendait un score relatif : 0 et 100 aux extremes du lot quelle que soit
+  # la fertilite reelle, 50 pour une unite seule.
+  .f1_rescale(soil_values, fertility_range)
+}
 
-  if (max_val == min_val) {
-    # All values identical
-    fertility <- rep(50, length(soil_values)) # Neutral value
-  } else {
-    # Linear scaling to 0-100
-    fertility <- ((soil_values - min_val) / (max_val - min_val)) * 100
+#' Map F1 soil-layer values from `fertility_range` to 0-100
+#'
+#' Linear and absolute; values outside the range are NA (with a warning).
+#' @keywords internal
+#' @noRd
+.f1_rescale <- function(v, fertility_range = c(0, 100)) {
+  if (!is.numeric(fertility_range) || length(fertility_range) != 2L ||
+      anyNA(fertility_range) || fertility_range[2] <= fertility_range[1]) {
+    cli::cli_abort("{.arg fertility_range} must be two increasing numbers.")
   }
-
-  fertility
+  v <- as.numeric(v)
+  v[is.nan(v)] <- NA_real_
+  lo <- fertility_range[1]
+  hi <- fertility_range[2]
+  tol <- 1e-9 * (hi - lo)
+  out <- !is.na(v) & (v < lo - tol | v > hi + tol)
+  if (any(out)) {
+    cli::cli_warn(c(
+      "!" = "F1: {sum(out)} soil value{?s} outside {.arg fertility_range} \
+             [{lo}, {hi}]; set to NA.",
+      "i" = "Set {.arg fertility_range} to the value range of the soil layer \
+             (e.g. {.code c(1, 5)} for fertility classes)."
+    ))
+    v[out] <- NA_real_
+  }
+  score <- (v - lo) / (hi - lo) * 100
+  pmin(pmax(score, 0), 100)
 }
 
 #' Extract fertility from vector layer
 #' @keywords internal
 #' @noRd
-extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_col) {
+extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_col,
+                                          fertility_range = c(0, 100)) {
   # Get soil vector layer (resolve lazy-load)
   soil_vector <- resolve_vector_layer(layers, soil_layer)
 
@@ -1284,24 +1316,27 @@ extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_c
     intersected <- suppressWarnings(sf::st_intersection(soil_vector, unit_geom))
 
     if (nrow(intersected) > 0) {
-      # Calculate area-weighted average fertility
-      intersected$area <- as.numeric(sf::st_area(intersected))
-      total_area <- sum(intersected$area)
-
-      fertility_values <- intersected[[fertility_col]]
-      weights <- intersected$area / total_area
-
-      fertility[i] <- sum(fertility_values * weights, na.rm = TRUE)
+      # Moyenne ponderee par la surface des seuls polygones renseignes : une
+      # surface sans valeur ne doit pas entrer au denominateur (elle tirait le
+      # score vers 0), et une unite sans aucune valeur est NA, pas 0.
+      area <- as.numeric(sf::st_area(intersected))
+      fertility_values <- suppressWarnings(
+        as.numeric(intersected[[fertility_col]])
+      )
+      ok <- !is.na(fertility_values) & area > 0
+      fertility[i] <- if (any(ok)) {
+        sum(fertility_values[ok] * area[ok]) / sum(area[ok])
+      } else {
+        NA_real_
+      }
     } else {
       # No intersection - assign NA or default value
       fertility[i] <- NA_real_
     }
   }
 
-  # Ensure 0-100 scale
-  fertility <- pmin(pmax(fertility, 0), 100)
-
-  fertility
+  # Echelle absolue fertility_range -> 0-100 (valeurs hors plage -> NA)
+  .f1_rescale(fertility, fertility_range)
 }
 
 #' Map SoilGrids CEC values to a 0-100 fertility score
