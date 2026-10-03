@@ -32,7 +32,11 @@ create_qfield_project(
 \arguments{
 \item{placettes}{An sf object with POINT geometry. Must contain the
 \code{plot_id} column. A \code{type} column (values \code{"Base"},
-\code{"Over"}) triggers categorised symbology.}
+\code{"Over"}) triggers categorised symbology. Sampling-design
+columns (\code{wgt}, \code{ip}, \code{stratum}, \code{strat_height},
+\code{strat_type}, \code{strat_topo}), when present, are kept in the
+GeoPackage as hidden form fields, so that the design weights survive
+the QField round trip (\code{\link{import_qgis_gpkg}}).}
 
 \item{zone_etude}{Optional sf polygon of the study area.}
 

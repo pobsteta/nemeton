@@ -127,6 +127,35 @@ test_that("max_slope constraint reduces the candidate frame", {
 
 
 # ------------------------------------------------------------
+# Audit 1.0 : poids de sondage et contrainte de pente non silencieuse
+# ------------------------------------------------------------
+
+test_that("create_sampling_plan keeps the GRTS design weights (wgt, ip)", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
+  skip_if_not_installed("spsurvey")
+
+  res <- create_sampling_plan(make_zone(), n_base = 16, n_over = 4,
+                              chm = make_chm(), seed = 42)
+  expect_equal(attr(res, "method"), "grts")
+  expect_true(all(c("wgt", "ip") %in% names(res)))
+  base <- res[res$type == "Base", ]
+  expect_true(all(is.finite(base$wgt) & base$wgt > 0))
+  expect_equal(base$wgt, 1 / base$ip, tolerance = 1e-8)
+})
+
+test_that("create_sampling_plan gives equal-probability weights in the fallback draw", {
+  skip_if_not_installed("sf")
+  res <- create_sampling_plan(make_zone(), n_base = 10, n_over = 3, seed = 1)
+  expect_true(all(c("wgt", "ip") %in% names(res)))
+  expect_length(unique(res$ip), 1L)
+  # Grille de 50 m sur 1 km x 1 km : 400 candidats
+  expect_equal(unique(res$ip), 10 / 400)
+  expect_equal(unique(res$wgt), 40)
+})
+
+# ------------------------------------------------------------
 # Error surfaces
 # ------------------------------------------------------------
 

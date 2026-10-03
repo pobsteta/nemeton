@@ -405,7 +405,11 @@ dplyr_case_simple <- function(tfv) {
 #' @return An sf POINT with columns \code{plot_id}, \code{type} (Base
 #'   or Over), \code{visit_order}, \code{stratum}, and optionally
 #'   \code{strat_height} / \code{strat_type} / \code{strat_topo} when
-#'   the relevant input was supplied. A \code{"method"} attribute
+#'   the relevant input was supplied. The design columns \code{ip}
+#'   (inclusion probability) and \code{wgt} (design weight, \code{1 / ip})
+#'   are always returned: taken from \pkg{spsurvey} for a GRTS draw
+#'   (unequal across strata), \code{n_base / N} for the equal-probability
+#'   LPM2 / random fallbacks. They are required for unbiased estimation. A \code{"method"} attribute
 #'   records how the draw was performed (\code{"grts"}, \code{"lpm2"}
 #'   or \code{"random"}).
 #'
@@ -663,6 +667,21 @@ create_sampling_plan <- function(zone,
     sample_all <- draw
   }
 
+  # --- Poids de sondage --------------------------------------------------
+  # GRTS : `ip` (probabilite d'inclusion) et `wgt` (= 1 / ip) sont fournis
+  # par spsurvey et conserves tels quels (stratification a allocation non
+  # proportionnelle -> poids inegaux, indispensables a une estimation sans
+  # biais). LPM2 / aleatoire : plan a probabilites egales, ip = n_base / N
+  # pour toute placette entrant dans l'echantillon (une placette Over ne
+  # remplace une Base qu'a probabilite egale).
+  if (!identical(method, "grts") || !all(c("wgt", "ip") %in% names(sample_all))) {
+    n_frame_draw <- nrow(frame)
+    n_b_eff <- sum(sample_all$type == "Base")
+    ip_eq <- if (n_frame_draw > 0L) n_b_eff / n_frame_draw else NA_real_
+    sample_all$ip  <- rep(ip_eq, nrow(sample_all))
+    sample_all$wgt <- 1 / sample_all$ip
+  }
+
   # --- Finalise ---------------------------------------------------------
   # Reorder Base plots into a short walking tour (nearest-neighbor +
   # 2-opt). Over (replacement) plots keep their draw-priority order
@@ -679,7 +698,7 @@ create_sampling_plan <- function(zone,
 
   # Keep the useful columns only
   keep <- c("plot_id", "type", "visit_order", "stratum",
-            "strat_height", "strat_type", "strat_topo")
+            "strat_height", "strat_type", "strat_topo", "wgt", "ip")
   keep <- intersect(keep, names(sample_all))
   sample_all <- sample_all[, c(keep, attr(sample_all, "sf_column"))]
 
