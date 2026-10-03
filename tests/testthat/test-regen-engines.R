@@ -232,6 +232,103 @@ test_that(".pai_keep_xy_filter builds a buffered -keep_xy from various zones", {
   expect_match(nemeton:::.pai_keep_xy_filter(.re_units(2)), "^-keep_xy ")  # sf
 })
 
+# --- Cache ERA5 : seuls des .nc complets font foi (audit 1.0) ---------------
+
+# Écrit un vrai petit NetCDF (classique par défaut) à `path`. Depuis l'audit
+# 1.0, un fichier vide ne passe plus pour un cache ERA5.
+.nc_ok <- function(path, v4 = FALSE) {
+  skip_if_not_installed("ncdf4")
+  x <- ncdf4::ncdim_def("longitude", "degrees_east", c(5.95, 6.05))
+  y <- ncdf4::ncdim_def("latitude", "degrees_north", c(47.95, 48.05))
+  t <- ncdf4::ncdim_def("time", "hours since 1900-01-01", 1:48, unlim = TRUE)
+  v <- ncdf4::ncvar_def("t2m", "K", list(x, y, t), prec = "float")
+  nc <- ncdf4::nc_create(path, list(v), force_v4 = v4)
+  ncdf4::ncvar_put(nc, v, rep(285, 2 * 2 * 48))
+  ncdf4::nc_close(nc)
+  invisible(TRUE)
+}
+
+.tronquer <- function(path, part = 0.6) {
+  b <- readBin(path, "raw", file.size(path))
+  writeBin(b[seq_len(floor(length(b) * part))], path)
+}
+
+# Requêtes mensuelles factices (cf. .rsen_req_factice plus bas).
+.req_mois <- function(annee, n) {
+  lapply(seq_len(n), function(m) list(
+    target = sprintf("era5_%d_%d_%d.zip", annee, annee, m)))
+}
+
+test_that(".rsen_era5_nc_complet rejects truncated or foreign files", {
+  cd <- withr::local_tempdir()
+  for (v4 in c(FALSE, TRUE)) {
+    f <- file.path(cd, sprintf("v4_%s.nc", v4))
+    .nc_ok(f, v4 = v4)
+    expect_true(nemeton:::.rsen_era5_nc_complet(f))
+    .tronquer(f)
+    expect_false(nemeton:::.rsen_era5_nc_complet(f))
+  }
+  html <- file.path(cd, "erreur.nc")
+  writeLines("<html>403 Forbidden</html>", html)
+  expect_false(nemeton:::.rsen_era5_nc_complet(html))
+  file.create(file.path(cd, "vide.nc"))
+  expect_false(nemeton:::.rsen_era5_nc_complet(file.path(cd, "vide.nc")))
+})
+
+test_that("a truncated monthly .nc is dropped and downloaded again", {
+  req <- .req_mois(2020L, 3L)
+  cd <- withr::local_tempdir()
+  ncs <- nemeton:::.rsen_era5_mois_nc(req, cd)
+  for (f in ncs) .nc_ok(f)
+  .tronquer(ncs[[2]])                       # mois 2 coupé en plein transfert
+  demandes <- integer(0)
+  nemeton:::.rsen_era5_telecharger(
+    req, cd, 2020L,
+    requete  = function(rk, dir) {
+      demandes <<- c(demandes, as.integer(sub(".*_(\\d+)\\.zip$", "\\1",
+                                              rk[[1]]$target)))
+      .nc_ok(file.path(dir, sub("\\.zip$", ".nc", rk[[1]]$target)))
+    },
+    combiner = function(files, cible) .nc_ok(cible))
+  expect_equal(demandes, 2L)
+  expect_true(nemeton:::.rsen_era5_nc_complet(ncs[[2]]))
+})
+
+test_that("a half-written combine never lands under the combined name", {
+  req <- .req_mois(2020L, 2L)
+  cd <- withr::local_tempdir()
+  for (f in nemeton:::.rsen_era5_mois_nc(req, cd)) .nc_ok(f)
+  expect_error(nemeton:::.rsen_era5_telecharger(
+    req, cd, 2020L,
+    requete  = function(rk, dir) NULL,
+    combiner = function(files, cible) { .nc_ok(cible); .tronquer(cible) }),
+    "integrity")
+  expect_false(file.exists(nemeton:::.rsen_era5_nom_combine(cd, 2020L)))
+  expect_length(list.files(cd, pattern = "^\\.", all.files = TRUE, no.. = TRUE), 0L)
+})
+
+test_that("a truncated combined cache is not reused: it is rebuilt", {
+  skip_if_not_installed("mcera5")
+  cd <- withr::local_tempdir()
+  comb <- file.path(cd, "era5_2019_2019.nc")
+  .nc_ok(comb); .tronquer(comb)              # fusion interrompue d'un run passé
+  called <- 0L
+  testthat::local_mocked_bindings(
+    build_era5_request = function(..., outfile_name) {
+      list(list(target = paste0(outfile_name, "_2019_1.zip")))
+    },
+    request_era5 = function(request, out_path, ...) {
+      called <<- called + 1L
+      .nc_ok(file.path(out_path, sub("\\.zip$", ".nc", request[[1]]$target)))
+    },
+    combine_netcdf = function(filenames, combined_name) .nc_ok(combined_name),
+    extract_clim = function(src, ...) data.frame(obs_time = 1),
+    .package = "mcera5")
+  nemeton:::.rsen_forcage_era5(lon = 6, lat = 48, annee = 2019, cache_dir = cd)
+  expect_equal(called, 1L)
+  expect_true(nemeton:::.rsen_era5_nc_complet(comb))
+})
+
 # --- Régression CDS : requête ERA5 mensuelle (by_month=TRUE) ----------------
 test_that(".rsen_forcage_era5 requests monthly (by_month=TRUE) to dodge the CDS cost limit", {
   skip_if_not_installed("mcera5")
@@ -245,11 +342,11 @@ test_that(".rsen_forcage_era5 requests monthly (by_month=TRUE) to dodge the CDS 
     },
     request_era5 = function(request, out_path, ...) {
       # mcera5 extrait chaque .zip sous le même radical en .nc.
-      file.create(file.path(out_path, paste0(seen$outfile, "_2018_6.nc")))
+      .nc_ok(file.path(out_path, paste0(seen$outfile, "_2018_6.nc")))
     },
     # Depuis la v0.190.0 c'est le cœur qui fusionne, une fois les douze mois
     # réunis — request_era5() est appelé mois par mois avec combine = FALSE.
-    combine_netcdf = function(filenames, combined_name) file.create(combined_name),
+    combine_netcdf = function(filenames, combined_name) .nc_ok(combined_name),
     extract_clim = function(src, ...) { seen$src <- src; data.frame(obs_time = 1) },
     .package = "mcera5")
   out <- nemeton:::.rsen_forcage_era5(lon = 6, lat = 48, annee = 2018, cache_dir = cd)
@@ -262,7 +359,7 @@ test_that(".rsen_forcage_era5 requests monthly (by_month=TRUE) to dodge the CDS 
 test_that(".rsen_forcage_era5 reuses the combined cache without re-downloading", {
   skip_if_not_installed("mcera5")
   cd <- withr::local_tempdir()
-  file.create(file.path(cd, "era5_2019_2019.nc"))          # combiné déjà en cache
+  .nc_ok(file.path(cd, "era5_2019_2019.nc"))          # combiné déjà en cache
   called <- 0L
   testthat::local_mocked_bindings(
     request_era5 = function(...) { called <<- called + 1L; NULL },
@@ -619,12 +716,12 @@ test_that("a full cache downloads nothing (CA-2) and a partial one resumes (CA-3
 
   # Cache COMPLET : les 12 .nc sont là, aucune requête ne part.
   cd <- withr::local_tempdir()
-  for (f in nemeton:::.rsen_era5_mois_nc(req, cd)) file.create(f)
+  for (f in nemeton:::.rsen_era5_mois_nc(req, cd)) .nc_ok(f)
   appels <- 0L
   nemeton:::.rsen_era5_telecharger(
     req, cd, 2020L,
     requete  = function(rk, dir) appels <<- appels + 1L,
-    combiner = function(files, cible) file.create(cible))
+    combiner = function(files, cible) .nc_ok(cible))
   expect_equal(appels, 0L)
   expect_true(file.exists(nemeton:::.rsen_era5_nom_combine(cd, 2020L)))
 
@@ -634,7 +731,7 @@ test_that("a full cache downloads nothing (CA-2) and a partial one resumes (CA-3
   cd2 <- withr::local_tempdir()
   ncs <- nemeton:::.rsen_era5_mois_nc(req, cd2)
   for (k in 1:6) {
-    file.create(ncs[[k]])
+    .nc_ok(ncs[[k]])
     file.create(sub("\\.nc$", ".zip", ncs[[k]]))   # le .zip n'est jamais purgé
   }
   demandes <- integer(0)
@@ -644,21 +741,21 @@ test_that("a full cache downloads nothing (CA-2) and a partial one resumes (CA-3
       demandes <<- c(demandes, as.integer(sub(".*_(\\d+)\\.zip$", "\\1",
                                               rk[[1]]$target)))
     },
-    combiner = function(files, cible) file.create(cible))
+    combiner = function(files, cible) .nc_ok(cible))
   expect_equal(demandes, 7:12)
 })
 
 test_that("one progress event per MONTH, carrying its category (CA-1)", {
   req <- .rsen_req_factice(2022L)
   cd <- withr::local_tempdir()
-  for (f in nemeton:::.rsen_era5_mois_nc(req, cd)) file.create(f)
+  for (f in nemeton:::.rsen_era5_mois_nc(req, cd)) .nc_ok(f)
 
   vus <- list()
   nemeton:::.rsen_era5_telecharger(
     req, cd, 2022L, emit = function(p) vus[[length(vus) + 1L]] <<- p,
     category = "canicule",
     requete  = function(rk, dir) NULL,
-    combiner = function(files, cible) file.create(cible))
+    combiner = function(files, cible) .nc_ok(cible))
 
   expect_length(vus, 12L)
   expect_true(all(vapply(vus, function(p) p$current, "") == "regen_expo:era5_mois"))
@@ -673,11 +770,11 @@ test_that("one progress event per MONTH, carrying its category (CA-1)", {
 test_that("emit = NULL stays a no-op (CA-4)", {
   req <- .rsen_req_factice(2020L, n = 2L)
   cd <- withr::local_tempdir()
-  for (f in nemeton:::.rsen_era5_mois_nc(req, cd)) file.create(f)
+  for (f in nemeton:::.rsen_era5_mois_nc(req, cd)) .nc_ok(f)
   expect_silent(nemeton:::.rsen_era5_telecharger(
     req, cd, 2020L, emit = NULL,
     requete  = function(rk, dir) NULL,
-    combiner = function(files, cible) file.create(cible)))
+    combiner = function(files, cible) .nc_ok(cible)))
 })
 
 test_that("emit and category reach the download from .rsen_moyenne_categorie (CA-5)", {
