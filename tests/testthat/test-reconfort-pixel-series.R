@@ -162,6 +162,53 @@ test_that(".enumerate_reconfort_s2_scenes groups FRE bands by date", {
   expect_true(all(c("B04", "B11", "B12") %in% names(scenes[[1]])))
 })
 
+test_that(".enumerate_reconfort_s2_scenes groups by date AND tile and finds the MUSCATE CLM mask (audit 1.0)", {
+  root <- withr::local_tempdir()
+  for (tl in c("T31UDP", "T31UEP")) {
+    prod <- file.path(root, "2024", tl,
+                      sprintf("SENTINEL2A_20240615-103000-456_L2A_%s_C_V1-0", tl))
+    dir.create(file.path(prod, "MASKS"), recursive = TRUE)
+    for (b in c("B4", "B5", "B6", "B8A", "B11", "B12")) {
+      file.create(file.path(prod,
+        sprintf("SENTINEL2A_20240615-103000-456_L2A_%s_C_V1-0_FRE_%s.tif", tl, b)))
+    }
+    for (r in c("R1", "R2")) {
+      file.create(file.path(prod, "MASKS",
+        sprintf("SENTINEL2A_20240615-103000-456_L2A_%s_C_V1-0_CLM_%s.tif", tl, r)))
+    }
+  }
+  scenes <- nemeton:::.enumerate_reconfort_s2_scenes(root)
+  # Avant : une seule scene (date), bandes piochees au hasard entre tuiles
+  expect_equal(length(scenes), 2L)
+  expect_setequal(vapply(scenes, `[[`, "", "tile"), c("T31UDP", "T31UEP"))
+  for (sc in scenes) {
+    # toutes les bandes et le masque viennent de la tuile de la scene
+    expect_true(all(grepl(sc$tile, unlist(sc[c("B04", "B8A", "B12")]))))
+    # masque MUSCATE 10 m (R1) de la meme tuile ; plus de recherche *_SCL*
+    expect_match(sc$clm, paste0(sc$tile, ".*_CLM_R1\\.tif$"))
+    expect_null(sc$scl)
+  }
+})
+
+test_that(".build_reconfort_feature_stacks masks CLM != 0 and merges same-date tiles", {
+  skip_if_no_terra()
+  clm <- band_raster(0L)
+  terra::values(clm) <- c(1L, 2L, rep(0L, 23L)) # deux pixels nuageux (bits)
+  sc1 <- make_scene("2024-06-01", .11, .17, .21, .31, .19, .24)
+  sc1$clm <- clm
+  st <- nemeton:::.build_reconfort_feature_stacks(list(sc1))
+  v <- terra::values(st$crswir)[, 1]
+  expect_true(all(is.na(v[1:2])))
+  expect_true(all(!is.na(v[3:25])))
+
+  # Deux tuiles le meme jour : une seule couche datee, trous combles
+  sc2 <- make_scene("2024-06-01", .11, .17, .21, .31, .19, .24)
+  st2 <- nemeton:::.build_reconfort_feature_stacks(list(sc1, sc2))
+  expect_equal(terra::nlyr(st2$crswir), 1L)
+  expect_equal(st2$dates, as.Date("2024-06-01"))
+  expect_false(anyNA(terra::values(st2$crswir)[, 1]))
+})
+
 test_that(".enumerate_reconfort_s2_scenes on a missing root returns empty", {
   expect_equal(length(nemeton:::.enumerate_reconfort_s2_scenes("/no/such/dir")),
                0L)
