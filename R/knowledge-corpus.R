@@ -35,8 +35,11 @@ NULL
 .KNOWLEDGE_STATUSES   <- c("cleared", "to_confirm")
 .KNOWLEDGE_STRATEGIES <- c("full", "abstract_only", "link_only")
 .KNOWLEDGE_LANGS      <- c("fr", "en")
+# Vocabulaire unique des types de document, partagé par la validation du
+# manifeste ET par l'ingestion (rag.R::.validate_doc_metadata) : un type
+# accepté par l'un ne peut plus être refusé par l'autre.
 .KNOWLEDGE_DOC_TYPES  <- c("manual", "note", "paper", "regulation", "report",
-                           "guide", "law", "dataset_doc")
+                           "guide", "law", "dataset_doc", "web")
 
 # The 15 acteur profiles (short forms, cf. CLAUDE.md) + the wildcard.
 .KNOWLEDGE_PROFILES <- c(

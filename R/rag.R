@@ -387,7 +387,8 @@ enable_rag <- function(con) {
   if (length(miss)) {
     cli::cli_abort("Missing required {.arg metadata} field{?s}: {.val {miss}}.")
   }
-  valid_types <- c("paper", "report", "regulation", "manual", "note", "web")
+  # Liste partagée avec le manifeste (knowledge-corpus.R).
+  valid_types <- .KNOWLEDGE_DOC_TYPES
   if (!metadata$doc_type %in% valid_types) {
     cli::cli_abort(c(
       "Invalid {.field doc_type}: {.val {metadata$doc_type}}.",
@@ -521,8 +522,9 @@ enable_rag <- function(con) {
 #'   path). PDFs are split one segment per page so chunks carry a
 #'   `page_number`.
 #' @param metadata Named list. Required: `title`, `lang` (ISO 639-1),
-#'   `doc_type` (one of `paper`, `report`, `regulation`, `manual`,
-#'   `note`, `web`). Optional: `author`, `publisher`, `pub_date`,
+#'   `doc_type` (one of `knowledge_manifest_vocab()$doc_types`:
+#'   `manual`, `note`, `paper`, `regulation`, `report`, `guide`, `law`,
+#'   `dataset_doc`, `web`). Optional: `author`, `publisher`, `pub_date`,
 #'   `source_url`, `license` (default `"unknown"`), `family_codes`,
 #'   `profile_codes`, `ingested_by`, and `extra` (a list stored as JSON
 #'   `metadata`).

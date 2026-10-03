@@ -24,8 +24,9 @@ path). PDFs are split one segment per page so chunks carry a
 `page_number`.}
 
 \item{metadata}{Named list. Required: `title`, `lang` (ISO 639-1),
-`doc_type` (one of `paper`, `report`, `regulation`, `manual`,
-`note`, `web`). Optional: `author`, `publisher`, `pub_date`,
+`doc_type` (one of `knowledge_manifest_vocab()$doc_types`:
+`manual`, `note`, `paper`, `regulation`, `report`, `guide`, `law`,
+`dataset_doc`, `web`). Optional: `author`, `publisher`, `pub_date`,
 `source_url`, `license` (default `"unknown"`), `family_codes`,
 `profile_codes`, `ingested_by`, and `extra` (a list stored as JSON
 `metadata`).}

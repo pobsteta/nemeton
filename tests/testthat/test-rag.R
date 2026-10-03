@@ -446,3 +446,16 @@ test_that("a reference-only document is retrievable and cites cleanly", {
   expect_match(cit, "Beven & Kirkby")
   expect_match(cit, "https://doi.org/twi", fixed = TRUE)
 })
+
+
+# ---- Audit 1.0 : vocabulaire doc_type partagé --------------------------
+
+test_that("ingestion accepts every manifest doc_type (single shared vocabulary)", {
+  for (dt in knowledge_manifest_vocab()$doc_types) {
+    m <- nemeton:::.validate_doc_metadata(list(title = "T", lang = "fr", doc_type = dt))
+    expect_identical(m$doc_type, dt)
+  }
+  # guide / law / dataset_doc étaient refusés à l'ingestion avant l'unification
+  expect_true(all(c("guide", "law", "dataset_doc", "web") %in%
+                    knowledge_manifest_vocab()$doc_types))
+})
