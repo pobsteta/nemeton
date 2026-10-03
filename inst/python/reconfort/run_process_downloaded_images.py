@@ -1,4 +1,5 @@
-# Vendored verbatim from RECONFORT (fl.mouret/reconfort, main 25198c9).
+# Vendored from RECONFORT (fl.mouret/reconfort, main 25198c9), modified by
+# nemeton: archive glob widened, optional extract-then-delete (see PATCHES.md).
 # License: Apache-2.0 (see inst/NOTICE). Driven by R/reconfort_ingest.R.
 #
 from argparse import RawTextHelpFormatter

@@ -1,4 +1,5 @@
-# Vendored verbatim from RECONFORT (fl.mouret/reconfort, main 25198c9).
+# Vendored from RECONFORT (fl.mouret/reconfort, main 25198c9), modified by
+# nemeton: TLS certificate verification forced for GEODES (see PATCHES.md).
 # License: Apache-2.0 (see inst/NOTICE). Driven by R/reconfort_ingest.R.
 #
 from pygeodes import Geodes

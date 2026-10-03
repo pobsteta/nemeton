@@ -1,4 +1,5 @@
-# Vendored from RECONFORT (see ../PATCHES.md), modified by nemeton:
+# Vendored from RECONFORT (fl.mouret/reconfort, main 25198c9), modified by
+# nemeton (see ../PATCHES.md):
 # load_config_variable() no longer eval()s the cfg values (code injection
 # through any value written in the cfg). Values are parsed as JSON (format
 # written by nemeton's .reconfort_write_cfg), with a fallback to
