@@ -123,12 +123,13 @@ validate_field_data <- function(placettes, arbres = NULL,
                 warnings = .empty_issues()))
   }
 
-  # Missing plot_id
+  # Missing plot_id : on rapporte le numéro de LIGNE fautive (`miss`), pas
+  # le rang dans la liste des fautes.
   miss <- which(is.na(placettes$plot_id) | !nzchar(as.character(placettes$plot_id)))
   if (length(miss)) {
-    issues <- c(issues, list(.mk_issue(issue = "plot_id is missing.",
+    issues <- c(issues, list(.mk_issue(issue = sprintf("plot_id is missing (row %d).", miss),
                                        field = "plot_id",
-                                       plot_id = as.character(seq_along(miss)))))
+                                       plot_id = as.character(miss))))
   }
 
   # Duplicate plot_id
@@ -161,9 +162,21 @@ validate_field_data <- function(placettes, arbres = NULL,
         )))
       }
 
-      # Duplicate (plot_id, tree_id)
+      # tree_id obligatoire (champ requis du schéma) : NA ou vide
+      no_tid <- is.na(arbres$tree_id) | !nzchar(trimws(as.character(arbres$tree_id)))
+      if (any(no_tid)) {
+        rows <- which(no_tid)
+        issues <- c(issues, list(.mk_issue(
+          plot_id = as.character(arbres$plot_id[rows]),
+          field = "tree_id",
+          issue = sprintf("tree_id is missing (arbres row %d).", rows)
+        )))
+      }
+
+      # Duplicate (plot_id, tree_id) — les tree_id manquants sont déjà
+      # signalés ci-dessus et ne comptent pas comme doublons.
       key <- paste(arbres$plot_id, arbres$tree_id, sep = "/")
-      dup <- which(duplicated(key) & !orphans)
+      dup <- which(duplicated(key) & !orphans & !no_tid)
       if (length(dup)) {
         issues <- c(issues, list(.mk_issue(
           plot_id = as.character(arbres$plot_id[dup]),
@@ -235,8 +248,9 @@ validate_field_data <- function(placettes, arbres = NULL,
 #' For each placette, summarises the trees it contains into a set of
 #' dendrometric aggregates that downstream indicators can consume:
 #' \itemize{
-#'   \item \code{n_trees}: total tree records.
-#'   \item \code{n_trees_alive}: trees whose \code{statut == "vivant"}.
+#'   \item \code{n_trees}: total tree records (all statuses).
+#'   \item \code{n_trees_alive}: trees whose \code{statut} is in
+#'     \code{statuts_vivants} (or missing).
 #'   \item \code{dbh_mean_cm}: arithmetic mean DBH.
 #'   \item \code{dg_cm}: quadratic mean diameter (sqrt(mean(DBH^2))).
 #'   \item \code{h_mean_m}: mean height of measured trees.
@@ -248,6 +262,11 @@ validate_field_data <- function(placettes, arbres = NULL,
 #'     mean) used by the B2 structural diversity component.
 #' }
 #'
+#' Every aggregate except \code{n_trees} is computed on living trees
+#' only (\code{statuts_vivants}): dead, windthrown or cut trees no longer
+#' belong to the standing stock. A plot whose trees are all dead gets
+#' \code{g_ha = 0} and NA for the other aggregates.
+#'
 #' Placettes with no trees receive NA for every aggregate and
 #' \code{n_trees = 0L}.
 #'
@@ -257,6 +276,10 @@ validate_field_data <- function(placettes, arbres = NULL,
 #'   dbh_cm, h_m, statut).
 #' @param plot_radius Numeric. Plot radius (m) used to compute basal
 #'   area per hectare. Default 15.
+#' @param statuts_vivants Character vector of \code{statut} values
+#'   counted as living trees. Trees with a missing \code{statut} (or an
+#'   \code{arbres} table without that column) are treated as living.
+#'   Default \code{"vivant"}.
 #'
 #' @return An sf object identical to \code{placettes} plus the
 #'   aggregate columns (prefixed \code{field_} to make them easy to
@@ -264,7 +287,8 @@ validate_field_data <- function(placettes, arbres = NULL,
 #'
 #' @export
 aggregate_plot_metrics <- function(placettes, arbres = NULL,
-                                   plot_radius = 15) {
+                                   plot_radius = 15,
+                                   statuts_vivants = "vivant") {
   if (!inherits(placettes, "sf")) {
     cli::cli_abort("{.arg placettes} must be an sf object.")
   }
@@ -300,11 +324,21 @@ aggregate_plot_metrics <- function(placettes, arbres = NULL,
     sub <- trees[rows, , drop = FALSE]
 
     n_trees <- nrow(sub)
-    n_alive <- if ("statut" %in% names(sub)) sum(sub$statut == "vivant", na.rm = TRUE) else n_trees
+    # Les métriques de peuplement (G, Dg, H0, CV) ne portent que sur les
+    # arbres vivants : un mort, un chablis ou une souche de coupe ne fait
+    # plus partie du peuplement sur pied. Statut absent ou NA = vivant
+    # (valeur par défaut du formulaire QField).
+    vivant <- if ("statut" %in% names(sub)) {
+      is.na(sub$statut) | sub$statut %in% statuts_vivants
+    } else {
+      rep(TRUE, n_trees)
+    }
+    n_alive <- sum(vivant)
+    sub <- sub[vivant, , drop = FALSE]
 
     dbh <- sub$dbh_cm
-    dbh_mean <- mean(dbh, na.rm = TRUE)
-    dg <- sqrt(mean(dbh^2, na.rm = TRUE))
+    dbh_mean <- if (length(dbh)) mean(dbh, na.rm = TRUE) else NA_real_
+    dg <- if (length(dbh)) sqrt(mean(dbh^2, na.rm = TRUE)) else NA_real_
     cv_dbh <- if (length(dbh) > 1 && dbh_mean > 0) sd(dbh, na.rm = TRUE) / dbh_mean else NA_real_
 
     h <- if ("h_m" %in% names(sub)) sub$h_m[!is.na(sub$h_m)] else numeric(0)

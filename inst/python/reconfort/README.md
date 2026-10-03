@@ -1,15 +1,20 @@
 # Vendored RECONFORT Python glue
 
-These files are **vendored verbatim** from the upstream RECONFORT
-repository (https://framagit.org/fl.mouret/reconfort, branch `main`,
-commit `25198c9`), which is licensed **Apache-2.0** (see
-`inst/NOTICE` for attribution). Apache-2.0 is permissive and allows
-redistribution with attribution, so the chain is bundled here rather
-than fetched at runtime.
+These files are **vendored** from the upstream RECONFORT repository
+(https://framagit.org/fl.mouret/reconfort, branch `main`, commit
+`25198c9`), which is licensed **Apache-2.0** (see `inst/NOTICE` for
+attribution). Apache-2.0 is permissive and allows redistribution with
+attribution, so the chain is bundled here rather than fetched at runtime.
 
-Do **not** edit these files by hand — re-vendor from upstream if it
-changes, so the computation stays bit-for-bit identical to the
-calibrated model's expectations.
+Several vendored files are **modified by nemeton** (recent iota2/OTB
+compatibility, GEODES archive naming, failure reporting, security fixes).
+Each one says so in its header, and `PATCHES.md` lists every change
+(Apache-2.0 §4(b)). Keep the RF computation itself untouched so it stays
+identical to the calibrated model's expectations; any new change must be
+recorded in `PATCHES.md`, and re-vendoring from upstream must re-apply it.
+
+`list_s2_items.py`, `download_s2_item.py` and `utils/tls.py` are
+nemeton-authored (GPL-3), not RECONFORT code.
 
 ## Currently vendored
 

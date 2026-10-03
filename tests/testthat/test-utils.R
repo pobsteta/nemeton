@@ -3132,4 +3132,63 @@ test_that("NEMETON_CACHE_DIR redirige le cache global (suite hermétique)", {
   withr::local_envvar(NEMETON_CACHE_DIR = file.path(d, "c"))
   expect_identical(get_global_cache_dir(), file.path(d, "c"))
   expect_true(dir.exists(file.path(d, "c")))
+
+# --- .unzip_safe (audit 1.0, sécurité : zip slip) ---------------------------
+
+# Archive dont une entrée porte le nom `evil` (même longueur que `decoy`) :
+# on zippe `decoy`, puis on réécrit son nom dans l'en-tête local et le
+# répertoire central (le CRC ne porte que sur le contenu).
+.zip_with_entry <- function(evil, decoy = strrep("a", nchar(evil, "bytes"))) {
+  src <- tempfile(); dir.create(src)
+  dir.create(file.path(src, dirname(decoy)), recursive = TRUE, showWarnings = FALSE)
+  writeLines("payload", file.path(src, decoy))
+  writeLines("ok", file.path(src, "good.nc"))
+  z <- tempfile(fileext = ".zip")
+  withr::with_dir(src, utils::zip(z, c(decoy, "good.nc"), flags = "-q"))
+  b <- readBin(z, "raw", file.size(z))
+  pat <- charToRaw(decoy); rep <- charToRaw(evil)
+  n <- length(pat)
+  for (i in seq_len(length(b) - n + 1L)) {
+    if (identical(b[i:(i + n - 1L)], pat)) b[i:(i + n - 1L)] <- rep
+  }
+  writeBin(b, z)
+  z
+}
+
+test_that(".zip_entry_safe flags absolute and parent-relative entries", {
+  expect_identical(
+    .zip_entry_safe(c("a.nc", "d/e/f.tif", "d/", "../x", "a/../../x", "/etc/x",
+                      "C:/x", "a\\..\\x", "..")),
+    c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE))
+})
+
+test_that(".unzip_safe refuses a zip-slip archive and writes nothing", {
+  skip_if(!nzchar(Sys.which("zip")), "zip utility not available")
+  z <- .zip_with_entry("../evil.txt")
+  expect_true("../evil.txt" %in% utils::unzip(z, list = TRUE)$Name)
+  root <- tempfile(); dir.create(root)
+  ex <- file.path(root, "ex"); dir.create(ex)
+  expect_error(.unzip_safe(z, exdir = ex), "unsafe entry")
+  expect_false(file.exists(file.path(root, "evil.txt")))
+  expect_length(list.files(ex, recursive = TRUE), 0L)
+  # Même filtré sur les .nc, une archive hostile est refusée en bloc.
+  expect_error(.unzip_safe(z, exdir = ex, pattern = "\\.nc$"), "unsafe entry")
+
+  z_abs <- .zip_with_entry("/tmp/evil.txt")
+  expect_error(.unzip_safe(z_abs, exdir = ex), "unsafe entry")
+})
+
+test_that(".unzip_safe extracts everything, a pattern, or named files", {
+  skip_if(!nzchar(Sys.which("zip")), "zip utility not available")
+  z <- .zip_with_entry("sub/a.txt", decoy = "sub/a.txt")
+  ex <- tempfile(); dir.create(ex)
+  out <- .unzip_safe(z, exdir = ex, pattern = "\\.nc$")
+  expect_identical(basename(out), "good.nc")
+  expect_false(file.exists(file.path(ex, "sub", "a.txt")))
+  expect_length(.unzip_safe(z, exdir = ex, pattern = "\\.zzz$"), 0L)
+  out <- .unzip_safe(z, exdir = ex, files = "sub/a.txt")
+  expect_true(file.exists(file.path(ex, "sub", "a.txt")))
+  expect_error(.unzip_safe(z, exdir = ex, files = "nope.csv"), "not found")
+  ex2 <- tempfile(); dir.create(ex2)
+  expect_length(.unzip_safe(z, exdir = ex2), 2L)
 })

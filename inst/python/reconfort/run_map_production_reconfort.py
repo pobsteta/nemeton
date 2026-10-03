@@ -1,4 +1,5 @@
-# Vendored from RECONFORT (fl.mouret/reconfort, main 25198c9).
+# Vendored from RECONFORT (fl.mouret/reconfort, main 25198c9), modified by
+# nemeton: IOTA2 exit codes and final rasters checked (see PATCHES.md).
 # License: Apache-2.0 (see inst/NOTICE). Driven by R/reconfort_pipeline.R.
 #
 from utils.generate_cfg_file_classif_part1_sampling_2y_nov_test_1tile import generate_cfg as generate_cfg_part1

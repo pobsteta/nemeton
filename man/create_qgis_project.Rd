@@ -42,8 +42,9 @@ create_qfield_project(
 needed).}
 
 \item{project_name}{Character. Name of the \code{.qgz} file (without
-extension) and the project title in QGIS. Default
-\code{"echantillon"}.}
+extension) and the project title in QGIS. Must match
+\code{^[A-Za-z0-9_-]+$} (it builds file paths and the zip command
+line). Default \code{"echantillon"}.}
 
 \item{crs}{Integer EPSG code. Must match the CRS of \code{placettes}.
 Default 2154 (Lambert-93).}
