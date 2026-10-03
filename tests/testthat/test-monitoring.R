@@ -1172,6 +1172,47 @@ test_that(".terra_rast_with_pc_retry: 403 that survives refresh emits band_fetch
   expect_match(failed[[1]]$error_message, "403 Forbidden")
 })
 
+test_that(".redact_url strips signed query strings, keeps plain text", {
+  expect_identical(
+    nemeton:::.redact_url("https://a.blob.core.windows.net/c/X.tif?se=2026&sp=r&sig=SECRET"),
+    "https://a.blob.core.windows.net/c/X.tif")
+  expect_identical(
+    nemeton:::.redact_url("Cannot open '/vsicurl/https://h/x.tif?X-Amz-Signature=abc&t=1': 403"),
+    "Cannot open '/vsicurl/https://h/x.tif': 403")
+  expect_identical(nemeton:::.redact_url("Is this ok? yes"), "Is this ok? yes")
+  expect_identical(nemeton:::.redact_url(c("a?k=v", NA)), c("a", NA))
+  expect_null(nemeton:::.redact_url(NULL))
+})
+
+test_that(".terra_rast_with_pc_retry never leaks the SAS token in events or errors (audit 1.0)", {
+  skip_if_not_installed("terra")
+  pc_href <- "https://sentinel2l2a01.blob.core.windows.net/c/X.tif?se=x&sig=SECRETOLD"
+  testthat::local_mocked_bindings(
+    rast = function(x, ...) stop(sprintf("HTTP error code: 403 Forbidden on '%s'", x)),
+    .package = "terra"
+  )
+  testthat::local_mocked_bindings(
+    .pc_collection_token = function(collection, ...) "se=fresh&sig=SECRETNEW",
+    .package = "nemeton"
+  )
+  events <- list()
+  err <- NULL
+  logs <- capture.output(type = "message", suppressWarnings(
+    err <- tryCatch(
+      nemeton:::.terra_rast_with_pc_retry(
+        pc_href,
+        emit_fn  = function(p) events[[length(events) + 1L]] <<- p,
+        scene_id = "S", band = "B04", max_tries = 2L),
+      error = function(e) e)))
+  expect_s3_class(err, "error")
+  expect_false(grepl("SECRET", conditionMessage(err)))
+  expect_false(any(grepl("SECRET", unlist(events))))
+  expect_false(any(grepl("SECRET", logs)))
+  failed <- Filter(function(p) p$current == "s2:band_fetch_failed", events)
+  expect_identical(failed[[1]]$href,
+                   "https://sentinel2l2a01.blob.core.windows.net/c/X.tif")
+})
+
 
 # ---- transient network retry (v0.21.9) -------------------------------
 

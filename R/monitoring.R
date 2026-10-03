@@ -1097,7 +1097,7 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
     terra::ext(r_full)
   }, error = function(e) {
     .s2_cache_log("Tile-ext memoize: terra::rast(href) failed for ",
-                  tile_code, ": ", conditionMessage(e))
+                  tile_code, ": ", .redact_url(conditionMessage(e)))
     NULL
   })
   if (!is.null(ext_native)) {
@@ -1155,9 +1155,17 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       emit_fn(list(current       = "s2:band_fetch_failed",
                    scene_id      = scene_id,
                    band          = band,
-                   href          = href,
-                   error_message = msg))
+                   href          = .redact_url(href),
+                   error_message = .redact_url(msg)))
     }
+  }
+
+  # Le message d'erreur GDAL/terra embarque souvent l'URL signée : on le
+  # nettoie avant de relancer la condition (les appelants l'émettent en
+  # événement `error_message` et le loguent).
+  stop_redacted <- function(err) {
+    err$message <- .redact_url(conditionMessage(err))
+    stop(err)
   }
 
   current_href <- href
@@ -1201,7 +1209,7 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       fresh_href <- .pc_resign_href(href, collection)
       if (is.null(fresh_href)) {
         emit_failure(paste0(err_msg, " (token refresh failed)"))
-        stop(last_err)
+        stop_redacted(last_err)
       }
       if (!is.null(emit_fn)) {
         emit_fn(list(current    = "s2:pc_token_refreshed",
@@ -1222,10 +1230,10 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
                      attempt        = as.integer(attempt),
                      max_tries      = as.integer(max_tries),
                      retry_in_sec   = as.integer(sleep_s),
-                     error_message  = err_msg))
+                     error_message  = .redact_url(err_msg)))
       }
       cli::cli_alert_info(c(
-        "Transient S2 fetch error ({.val {scene_id}}/{band}, attempt {attempt}/{max_tries}): {err_msg}",
+        "Transient S2 fetch error ({.val {scene_id}}/{band}, attempt {attempt}/{max_tries}): {(.redact_url(err_msg))}",
         i = "Retrying in {sleep_s}s."
       ))
       Sys.sleep(sleep_s)
@@ -1234,16 +1242,26 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
 
     # Non-recoverable (404, malformed COG, etc.) — propagate.
     emit_failure(err_msg)
-    stop(last_err)
+    stop_redacted(last_err)
   }
 
   # All attempts exhausted.
   emit_failure(conditionMessage(last_err))
   cli::cli_warn(c(
     "S2 band fetch gave up on {.val {scene_id}}/{band} after {max_tries} attempts.",
-    i = "Last error: {conditionMessage(last_err)}"
+    i = "Last error: {(.redact_url(conditionMessage(last_err)))}"
   ))
-  stop(last_err)
+  stop_redacted(last_err)
+}
+
+# Retire les query strings (jeton SAS Planetary Computer, signature
+# Theia/S3 pré-signée…) des URL contenues dans `x` avant de les émettre en
+# événement ou de les loguer (audit 1.0) : le jeton donne accès aux données
+# tant qu'il n'a pas expiré. Ne touche qu'un `?` suivi d'une affectation
+# `clé=valeur` (pas les « ? » du texte libre). Vectorisé ; NULL/NA passent.
+.redact_url <- function(x) {
+  if (!is.character(x)) return(x)
+  gsub("\\?[^[:space:]'\"`<>]*=[^[:space:]'\"`<>]*", "", x, perl = TRUE)
 }
 
 # Return the (cropped) terra SpatRaster for one S2 band. Reads from
@@ -1433,7 +1451,7 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
     signed <- .theia_signed_read(href)
     if (!is.null(signed)) href <- signed[[1]]
   }
-  .s2_cache_log("FETCH href=", href)
+  .s2_cache_log("FETCH href=", .redact_url(href))
   r <- .terra_rast_with_pc_retry(
     href,
     emit_fn    = emit_fn,
