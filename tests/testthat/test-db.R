@@ -29,6 +29,27 @@ test_that(".parse_pg_url rejects malformed URLs", {
                "Invalid PostgreSQL URL")
 })
 
+test_that("DB URL error messages never print the password (audit 1.0)", {
+  msg <- function(expr) tryCatch({ expr; "" },
+                                 error = function(e) conditionMessage(e))
+  # URL PG sans nom de base (invalide) portant un mot de passe.
+  m1 <- msg(nemeton:::.parse_pg_url("postgresql://nemeton:s3cr3t@db.host:5432"))
+  expect_match(m1, "Invalid PostgreSQL URL")
+  expect_false(grepl("s3cr3t", m1, fixed = TRUE))
+  expect_match(m1, "nemeton:***@db.host", fixed = TRUE)
+  # Schéma inconnu.
+  m2 <- msg(nemeton:::.detect_driver("mysql://root:hunter2@h/db"))
+  expect_match(m2, "Unrecognised DB URL")
+  expect_false(grepl("hunter2", m2, fixed = TRUE))
+
+  expect_identical(nemeton:::.mask_db_url("postgresql://u:p%40ss@h:5432/db"),
+                   "postgresql://u:***@h:5432/db")
+  expect_identical(nemeton:::.mask_db_url("postgresql://u@h/db"),
+                   "postgresql://u@h/db")
+  expect_identical(nemeton:::.mask_db_url("sqlite:///tmp/x.sqlite"),
+                   "sqlite:///tmp/x.sqlite")
+})
+
 test_that(".detect_driver classifies URLs correctly", {
   expect_equal(nemeton:::.detect_driver("postgresql://u:p@h/db"), "pg")
   expect_equal(nemeton:::.detect_driver("postgres://u:p@h/db"),   "pg")

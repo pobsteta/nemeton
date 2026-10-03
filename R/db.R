@@ -34,6 +34,15 @@ NULL
 
 # ---- Driver selection ------------------------------------------------
 
+# Masque le mot de passe d'une URL de base avant de l'afficher dans un
+# message (audit 1.0) : `postgresql://user:secret@host/db` devient
+# `postgresql://user:***@host/db`. Les URL sans identifiants (SQLite,
+# `user@host`) sont rendues telles quelles.
+.mask_db_url <- function(url) {
+  if (!is.character(url)) return(url)
+  sub("^([A-Za-z][A-Za-z0-9+.-]*://[^:/@]*):[^@]*@", "\\1:***@", url)
+}
+
 # Inspect a URL and return the backend identifier. Recognised values:
 #   "pg"     for postgres:// or postgresql://
 #   "sqlite" for sqlite: (any number of slashes) or a bare path
@@ -56,7 +65,7 @@ NULL
     ))
   }
   cli::cli_abort(c(
-    "Unrecognised DB URL: {.val {url}}.",
+    "Unrecognised DB URL: {.val {(.mask_db_url(url))}}.",
     "i" = "Expected {.val postgresql://...} or {.val sqlite:///path.sqlite}."
   ))
 }
@@ -355,7 +364,7 @@ db_migrate <- function(con,
     url
   ))[[1]]
   if (length(m) < 6) {
-    cli::cli_abort("Invalid PostgreSQL URL: {.val {url}}.")
+    cli::cli_abort("Invalid PostgreSQL URL: {.val {(.mask_db_url(url))}}.")
   }
   list(
     user     = m[2],
@@ -377,7 +386,7 @@ db_migrate <- function(con,
 .parse_sqlite_url <- function(url) {
   path <- sub("^sqlite:(?://)?", "", url, ignore.case = TRUE)
   if (!nzchar(path)) {
-    cli::cli_abort("Empty SQLite path in URL: {.val {url}}.")
+    cli::cli_abort("Empty SQLite path in URL: {.val {(.mask_db_url(url))}}.")
   }
   path
 }
