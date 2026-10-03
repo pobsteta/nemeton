@@ -273,6 +273,47 @@ test_that("db_migrate applies the SQLite migrations on a fresh file", {
   })
 })
 
+test_that("db_migrate refuses 0007 (DROP TABLE alert) on a non-empty alert table (SQLite)", {
+  # Audit 1.0 : 0007 recrée `alert` par DROP + CREATE en supposant la
+  # table vide ; des lignes présentes doivent bloquer la migration.
+  skip_if_not_installed("RSQLite")
+  src <- system.file("db/migrations/sqlite", package = "nemeton")
+  withr::with_tempdir({
+    pre <- file.path(getwd(), "pre"); dir.create(pre)
+    all_sql <- sort(list.files(src, pattern = "\\.sql$", full.names = TRUE))
+    file.copy(all_sql[basename(all_sql) < "0007"], pre)
+
+    con <- db_connect(sprintf("sqlite:///%s", file.path(getwd(), "m.sqlite")))
+    on.exit(db_disconnect(con), add = TRUE)
+    db_migrate(con, migrations_dir = pre)
+    DBI::dbExecute(con, paste0(
+      "INSERT INTO monitoring_zone (id, name, zone_wkt) VALUES (1, 'z', 'POINT(0 0)')"))
+    DBI::dbExecute(con, paste0(
+      "INSERT INTO plot (id, zone_id, plot_id, geom_wkt) VALUES (1, 1, 'p1', 'POINT(0 0)')"))
+    DBI::dbExecute(con, paste0(
+      "INSERT INTO alert (plot_id, alert_type, trigger_date, validation_status) ",
+      "VALUES (1, 'fordead', '2024-06-01', 'confirmed')"))
+
+    expect_error(db_migrate(con, migrations_dir = src), "Refusing to apply")
+    # Rien n'est perdu ni enregistré comme appliqué.
+    expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM alert")$n, 1L)
+    expect_false("0007_alert_pixel_geometry" %in%
+                   DBI::dbGetQuery(con, "SELECT version FROM schema_migration")$version)
+
+    # Table vidée : la migration passe.
+    DBI::dbExecute(con, "DELETE FROM alert")
+    applied <- db_migrate(con, migrations_dir = src)
+    expect_true("0007_alert_pixel_geometry" %in% applied)
+    expect_true("geom_wkt" %in% DBI::dbListFields(con, "alert"))
+
+    # Base déjà migrée : des alertes présentes ne gênent plus rien.
+    DBI::dbExecute(con, paste0(
+      "INSERT INTO alert (zone_id, alert_type, trigger_date) ",
+      "VALUES (1, 'fordead', '2024-06-01')"))
+    expect_length(db_migrate(con, migrations_dir = src), 0)
+  })
+})
+
 test_that("SQLite $n placeholders round-trip through the db wrappers", {
   skip_if_not_installed("RSQLite")
   withr::with_tempfile("dbf", fileext = ".sqlite", {

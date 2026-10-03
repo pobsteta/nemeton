@@ -310,6 +310,7 @@ db_migrate <- function(con,
   newly_applied <- character(0)
   for (f in to_apply) {
     version <- .migration_version(f)
+    .migration_preflight(con, version)
     sql <- paste(readLines(f, warn = FALSE), collapse = "\n")
     DBI::dbWithTransaction(con, {
       if (is_pg) {
@@ -459,6 +460,30 @@ db_migrate <- function(con,
 
 .migration_version <- function(path) {
   tools::file_path_sans_ext(basename(path))
+}
+
+# Contrôles préalables à une migration destructive, joués AVANT d'ouvrir
+# sa transaction. 0007 fait `DROP TABLE IF EXISTS alert` (D-B3) en
+# supposant la table vide (contrat Phase A) : si elle contient des lignes
+# (alertes à valider, validations terrain), on refuse plutôt que de les
+# détruire. Sous PG la migration porte en plus son propre garde-fou
+# (bloc DO … RAISE EXCEPTION) ; SQLite n'a pas de DO, d'où ce contrôle
+# côté R, appliqué aux deux moteurs. Une base déjà migrée n'est pas
+# concernée : 0007 n'est jamais rejouée.
+.migration_preflight <- function(con, version) {
+  if (identical(version, "0007_alert_pixel_geometry") &&
+      DBI::dbExistsTable(con, "alert")) {
+    n <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM alert")$n[1L]
+    n <- as.numeric(n)
+    if (!is.na(n) && n > 0) {
+      cli::cli_abort(c(
+        "Refusing to apply migration {.val {version}}: table {.code alert} holds {n} row{?s}.",
+        "x" = "This migration drops and recreates {.code alert}; its rows would be lost.",
+        "i" = "Back up and empty {.code alert} (e.g. {.code DELETE FROM alert}) before migrating."
+      ))
+    }
+  }
+  invisible(TRUE)
 }
 
 .applied_migrations <- function(con) {
