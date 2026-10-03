@@ -39,6 +39,89 @@ test_that("compute_dtm_chm_from_laz warns + NULL when no .laz tiles exist", {
 })
 
 
+# ---- cache complet, atomique, jamais rogné en place (audit 1.0) -----------
+
+# Projet factice : une dalle .laz (contenu sans importance, lasR est mocké)
+# et un faux pipeline qui écrit deux rasters 100 x 100 m en Lambert-93.
+.faux_projet_lidar <- function() {
+  root <- withr::local_tempdir(.local_envir = parent.frame())
+  laz_dir <- file.path(root, "lidar_nuage")
+  dir.create(laz_dir)
+  writeBin(as.raw(1:10), file.path(laz_dir, "dalle.copc.laz"))
+  list(root = root, laz_dir = laz_dir,
+       dtm = file.path(root, "lidar_mnt", "dtm.tif"),
+       chm = file.path(root, "lidar_mnh", "chm.tif"))
+}
+
+.faux_lasr <- function(compteur_env) {
+  function(laz_files, dtm_file, chm_file, res, ncores) {
+    compteur_env$n <- compteur_env$n + 1L
+    r <- terra::rast(xmin = 0, xmax = 100, ymin = 0, ymax = 100,
+                     resolution = 1, crs = "EPSG:2154", vals = 1)
+    terra::writeRaster(r, dtm_file)
+    terra::writeRaster(r * 20, chm_file)
+    list(ok = TRUE)
+  }
+}
+
+test_that("an interrupted lasR run leaves no partial cache (audit 1.0)", {
+  skip_if_not_installed("lasR")
+  p <- .faux_projet_lidar()
+  local_mocked_bindings(.lasr_derive = function(laz_files, dtm_file, chm_file, ...) {
+    # MNT écrit, puis coupure avant le MNH.
+    terra::writeRaster(terra::rast(nrows = 5, ncols = 5, vals = 1), dtm_file)
+    stop("killed")
+  })
+  expect_warning(out <- compute_dtm_chm_from_laz(p$laz_dir, verbose = FALSE),
+                 "lasR pipeline failed")
+  expect_null(out)
+  expect_false(file.exists(p$dtm))
+  expect_length(list.files(dirname(p$dtm), all.files = TRUE, no.. = TRUE), 0L)
+})
+
+test_that("the shared cache is never cropped in place (audit 1.0)", {
+  skip_if_not_installed("lasR")
+  p <- .faux_projet_lidar()
+  cpt <- new.env(); cpt$n <- 0L
+  local_mocked_bindings(.lasr_derive = .faux_lasr(cpt))
+  carre <- function(x0) sf::st_sfc(sf::st_polygon(list(rbind(
+    c(x0, 0), c(x0 + 20, 0), c(x0 + 20, 20), c(x0, 20), c(x0, 0)))),
+    crs = 2154)
+
+  a <- compute_dtm_chm_from_laz(p$laz_dir, aoi = carre(0), verbose = FALSE)
+  b <- compute_dtm_chm_from_laz(p$laz_dir, aoi = carre(60), verbose = FALSE)
+  expect_identical(cpt$n, 1L)  # le cache complet a servi au second appel
+
+  # Le cache partagé garde l'emprise complète des dalles.
+  expect_equal(unname(as.vector(terra::ext(terra::rast(p$chm)))),
+               c(0, 100, 0, 100))
+  # Chaque AOI reçoit sa propre découpe, à sa propre emprise.
+  expect_false(identical(a$chm, b$chm))
+  expect_equal(terra::xmin(terra::rast(b$chm)), 60)
+  # Les découpes ne sont pas visibles du résolveur (premier niveau seul).
+  expect_identical(list.files(dirname(p$chm), pattern = "\\.tif$"), "chm.tif")
+})
+
+test_that("a cache without a matching key is rebuilt (audit 1.0)", {
+  skip_if_not_installed("lasR")
+  p <- .faux_projet_lidar()
+  # Cache hérité d'une version antérieure (sans clé, possiblement rogné).
+  dir.create(dirname(p$dtm)); dir.create(dirname(p$chm))
+  petit <- terra::rast(xmin = 0, xmax = 10, ymin = 0, ymax = 10,
+                       resolution = 1, crs = "EPSG:2154", vals = 1)
+  terra::writeRaster(petit, p$dtm); terra::writeRaster(petit, p$chm)
+  cpt <- new.env(); cpt$n <- 0L
+  local_mocked_bindings(.lasr_derive = .faux_lasr(cpt))
+  compute_dtm_chm_from_laz(p$laz_dir, verbose = FALSE)
+  expect_identical(cpt$n, 1L)
+  expect_equal(terra::xmax(terra::rast(p$chm)), 100)
+
+  # Une autre résolution ne resservira pas ce cache.
+  compute_dtm_chm_from_laz(p$laz_dir, res = 2, verbose = FALSE)
+  expect_identical(cpt$n, 2L)
+})
+
+
 # ---- integration with resolve_project_dem / resolve_project_chm ----------
 
 test_that("resolve_project_dem does not error when fallback has no .laz", {
