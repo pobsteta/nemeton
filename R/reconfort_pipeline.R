@@ -100,15 +100,23 @@
 # With no readable ceiling (non-Linux, ceiling disabled) only the row bound
 # applies: refusing to run is not an option, and the caller has already been
 # warned that nothing is capped.
+#
+# Sans masque (`binary_mask = FALSE`), `mask_path` est NA : les dimensions sont
+# alors prises dans `aoi_dims` (fenetre AOI a 10 m, cf. .reconfort_aoi_dims()).
+# Avant, ce cas retombait sur une tranche unique, soit le pic memoire > 20 Go.
 .reconfort_chunk_count <- function(mask_path,
                                    rows_per_chunk = .RECONFORT_ROWS_PER_CHUNK,
-                                   memory_max = .memory_ceiling()) {
+                                   memory_max = .memory_ceiling(),
+                                   aoi_dims = NULL) {
   dims <- if (length(mask_path) == 1L && !is.na(mask_path) && file.exists(mask_path)) {
     tryCatch({
       r <- terra::rast(mask_path)
       c(terra::nrow(r), terra::ncol(r))
     }, error = function(e) c(NA_integer_, NA_integer_))
   } else c(NA_integer_, NA_integer_)
+  if (is.na(dims[[1L]]) && length(aoi_dims) == 2L && !anyNA(aoi_dims)) {
+    dims <- as.integer(aoi_dims)
+  }
   n <- dims[[1L]]
   if (is.na(n) || n <= 0L) return(1L)   # unknown extent: stay on the safe path
 
@@ -121,6 +129,19 @@
   max(1L, as.integer(ceiling(n / rows)))
 }
 
+
+# Dimensions (lignes, colonnes) a 10 m de la fenetre AOI que verra IOTA2 :
+# meme fenetre que le decoupage des scenes (.reconfort_aoi_window(), EPSG:2154,
+# tampon .RECONFORT_AOI_BUFFER_M). NA si l'AOI est absente ou illisible.
+.reconfort_aoi_dims <- function(aoi, res = 10, target_crs = 2154,
+                                buffer_m = .RECONFORT_AOI_BUFFER_M) {
+  if (is.null(aoi)) return(c(NA_integer_, NA_integer_))
+  win <- tryCatch(.reconfort_aoi_window(aoi, target_crs, buffer_m),
+                  error = function(e) NULL)
+  if (is.null(win)) return(c(NA_integer_, NA_integer_))
+  c(as.integer(ceiling((win[["ymax"]] - win[["ymin"]]) / res)),
+    as.integer(ceiling((win[["xmax"]] - win[["xmin"]]) / res)))
+}
 
 # Pixels a chunk may cover under `memory_max` (a systemd size string, or NULL
 # for "no ceiling"). NA when there is nothing to divide by.
@@ -844,7 +865,7 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       # chunk rather than abort the run for those.
       if (isTRUE(number_of_chunks == 200L)) {
         number_of_chunks <- if (.reconfort_chunk_mask_fixed(conda_bin, env)) {
-          .reconfort_chunk_count(mask_path)
+          .reconfort_chunk_count(mask_path, aoi_dims = .reconfort_aoi_dims(aoi))
         } else {
           cli::cli_warn(c(
             "iota2 is missing the chunk-0 mask fix (defect #11) \u2014 classifying in a single chunk.",
