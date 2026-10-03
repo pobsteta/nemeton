@@ -21,7 +21,8 @@ load_biljou_forcing(
 \arguments{
 \item{aoi}{An \pkg{sf}/\pkg{sfc} of the management units (their centroids are sampled).}
 
-\item{years}{Integer year(s) to fetch.}
+\item{years}{Integer year(s) to fetch: whole years between 1940 and the
+current year. Required unless \code{raw} is given (then \code{NULL} keeps every year).}
 
 \item{source}{\code{"safran"} (default, France, GéoSAS OGC API-EDR, no key) or
 \code{"era5"} (fallback, \pkg{mcera5}, needs a CDS key).}
@@ -44,14 +45,17 @@ Penman estimate (\code{latitude} defaults to the AOI centroid).}
 \code{list(current = <key>, ...)} payload (monitoring pattern). Keys:
 \code{"biljou:safran_unit"} (\code{i}/\code{n}/\code{id}),
 \code{"biljou:era5_download"} (\code{i}/\code{n}/\code{id}/\code{year}),
-\code{"biljou:complete"}, \code{"biljou:unavailable"}. The app maps these to
-bottom-right notifications during the forcing download.}
+\code{"biljou:complete"} (\code{n_units}, \code{missing_ids}),
+\code{"biljou:unavailable"} (\code{reason}, \code{missing_ids}). The app maps these to
+bottom-right notifications during the forcing download. A callback error is
+never fatal.}
 
 \item{...}{Ignored (forward-compat).}
 }
 \value{
 A per-unit named list of \code{meteo} data frames (or a single \code{data.frame}),
-or \code{NULL} on graceful degradation.
+or \code{NULL} on graceful degradation. Units whose SAFRAN request failed are
+left out of the list, with a warning naming their ids.
 }
 \description{
 Produce the \code{meteo} input of \code{\link{regen_bilan_hydrique}} — a daily

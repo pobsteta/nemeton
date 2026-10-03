@@ -3077,3 +3077,52 @@ test_that("units_add_species_from_raster validates its inputs", {
     "class_map must be"
   )
 })
+
+# --- Écriture atomique des caches (audit 1.0) ------------------------------
+
+test_that(".atomic_write promotes only a complete, validated file", {
+  d <- tempfile(); dir.create(d)
+  cible <- file.path(d, "cache.txt")
+
+  .atomic_write(cible, function(tmp) writeLines("ok", tmp))
+  expect_identical(readLines(cible), "ok")
+
+  # Échec du writer : la cible garde son état précédent, pas de temporaire.
+  expect_error(.atomic_write(cible, function(tmp) {
+    writeLines("moitié", tmp); stop("coupure")
+  }), "coupure")
+  expect_identical(readLines(cible), "ok")
+  expect_identical(list.files(d, all.files = TRUE, no.. = TRUE), "cache.txt")
+
+  # Échec de la validation : idem.
+  expect_error(.atomic_write(cible, function(tmp) writeLines("ko", tmp),
+                             validate = function(p) FALSE), "integrity")
+  expect_identical(readLines(cible), "ok")
+  expect_identical(list.files(d, all.files = TRUE, no.. = TRUE), "cache.txt")
+})
+
+test_that(".atomic_tmp_path keeps the extension and the directory", {
+  p <- .atomic_tmp_path("/a/b/dtm.tif")
+  expect_identical(dirname(p), "/a/b")
+  expect_match(basename(p), "^\\.dtm\\.part-.*\\.tif$")
+})
+
+test_that(".cache_valid_or_drop deletes an unreadable cache", {
+  d <- tempfile(); dir.create(d)
+  f <- file.path(d, "x.zip")
+  writeBin(as.raw(1:4), f)
+  expect_false(.cache_valid_or_drop(f, .zip_lisible))
+  expect_false(file.exists(f))
+  expect_false(.cache_valid_or_drop(f, .zip_lisible))
+})
+
+test_that(".raster_lisible rejects a truncated GeoTIFF", {
+  skip_if_terra_write_broken()
+  d <- tempfile(); dir.create(d)
+  f <- file.path(d, "r.tif")
+  terra::writeRaster(terra::rast(nrows = 300, ncols = 300, vals = runif(9e4)), f)
+  expect_true(.raster_lisible(f))
+  b <- readBin(f, "raw", file.size(f))
+  writeBin(b[seq_len(length(b) %/% 2)], f)
+  expect_false(.raster_lisible(f))
+})

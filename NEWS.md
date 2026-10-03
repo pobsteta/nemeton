@@ -1,3 +1,72 @@
+# nemeton 0.209.0 (2026-10-03)
+
+Deuxième vague de l'audit de pré-version 1.0 : **robustesse des données**.
+Vingt-cinq correctifs : caches qui servaient les données d'un autre point ou
+d'une autre emprise, fichiers partiels pris pour complets, transactions
+manquantes, pertes de données silencieuses.
+
+### Fixed — caches qui servaient les données d'un autre point
+
+- **ERA5** : le fichier combiné était retrouvé par la seule année ; deux
+  points (ou deux projets) partageant un cache lisaient le forçage du premier.
+  Nom `era5_<lon>_<lat>_<annee>…`, et cache par point dans BILJOU.
+- **Microclimat** : `cache_<annee>_tmax.tif` ne dépendait que de l'année. La
+  clé couvre désormais emprise, résolution, CRS, `reqhgt`, `mois_ete`,
+  position et source du PAI.
+- **Vent NASA POWER** (L1, R2) : `nasapower_wind.rds` est indexé par la
+  position.
+- **Scènes Sentinel-2 en cache** : le saut « scène déjà en cache » ne
+  vérifiait que l'existence du fichier, pas son emprise. Une petite zone
+  ingérée d'abord privait la zone `_tot` de pixels. L'emprise est contrôlée.
+- **RECONFORT** : le marqueur d'idempotence `.done` dépend de la fenêtre AOI et
+  du CRS ; une scène est recadrée dans un dossier temporaire puis renommée.
+- **Diversité spectrale** (B4, L3) : `reuse_existing` ne réutilise que si la clé
+  des entrées (réflectance, masque, fenêtre, options) correspond.
+- **LiDAR** : le MNT/MNH en cache porte une clé (dalles, résolution) ; le
+  rognage AOI se fait sur une copie, plus sur le cache partagé.
+
+### Fixed — fichiers partiels pris pour complets
+
+Écriture atomique (temporaire voisin, vérification, renommage) et cache
+illisible supprimé au lieu d'être resservi : archive IFN (timeout relevé,
+`campagne` validée), carroyage INSEE, NetCDF ERA5 mensuels et combinés, COG
+FAST, PDF du corpus (signature `%PDF` vérifiée).
+
+### Fixed — séries climatiques
+
+- **E-OBS** : un été couvert à moins de 90 % est écarté avec un avertissement
+  (avant : moyenne de juin seul, cumul de pluie sur un mois) ; des années à
+  cheval sur deux blocs CDS donnent un résultat au lieu de `NULL` ; les
+  erreurs gardent leur message (avertissement et champ `message` de
+  `eobs:unavailable`).
+- **Tendances E-OBS** : `tendances_estivales_eobs()` rendait une pente **par
+  an** alors que `eobs_downscale()` et `eobs_trend_fit()` sont par décennie.
+  Les trois partagent désormais un seul calcul, **par décennie** (valeurs × 10).
+- **Diagramme ombrothermique** : un jour manquant comptait 0 mm ; seuls les
+  mois complets sont cumulés.
+- **BILJOU** : un `lai_max` NA par unité prend la valeur par défaut du type de
+  peuplement (avec avertissement) ; une requête SAFRAN en échec est signalée
+  avec les unités manquantes (`missing_ids`, `reason`) ; `years` est validé.
+
+### Fixed — base de données et suivi sanitaire
+
+- Suppression et recréation des zones d'un projet dans **une seule
+  transaction** ; placettes insérées dans la transaction de leur zone ;
+  validations terrain dans une transaction, `validated_at` en UTC.
+- `prune_orphan_zone_caches()` refuse de purger quand la base connectée ne
+  connaît aucune zone (nouveaux arguments `project_uuid`, `force`).
+- Migration 0007 : refusée si la table `alert` existante contient des lignes
+  (au lieu de la supprimer).
+- `ingest_health_validation()` : un stade inconnu (ou `"sain "` avec une
+  espace) ne vaut plus « dépérissement confirmé » ; `reason = "unknown_stade"`.
+- Un run FORDEAD ou RECONFORT réussi **sans alerte** purge les alertes
+  `pending` précédentes (les validées restent).
+
+### Security
+
+- URL signées (jetons SAS/Theia) retirées des événements et des journaux.
+- Mot de passe masqué dans les messages d'erreur sur l'URL de base.
+
 # nemeton 0.208.0 (2026-10-02)
 
 Première vague de l'audit de pré-version 1.0 : **corrections de calcul**. Dix

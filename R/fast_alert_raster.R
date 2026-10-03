@@ -419,16 +419,30 @@ read_fast_alert_raster <- function(con, zone_id,
     if (!dir.exists(zone_dir)) {
       dir.create(zone_dir, recursive = TRUE, showWarnings = FALSE)
     }
-    tryCatch({
-      terra::writeRaster(out, cpath, filetype = "GTiff", overwrite = TRUE,
-                         gdal = c("COMPRESS=DEFLATE", "PREDICTOR=2",
-                                  "TILED=YES"))
-      .fast_raster_gc(zone_dir)
-    }, error = function(e) {
-      cli::cli_warn("Failed to cache FAST alert raster at {.path {cpath}}: {conditionMessage(e)}")
-    })
+    .fast_raster_cache_write(out, cpath)
   }
   out
+}
+
+# Persistance best-effort du COG résultat. Fichier temporaire du même
+# répertoire puis renommage (audit 1.0) : un lecteur concurrent (ou un
+# crash en cours d'écriture) ne doit jamais trouver un COG partiel sous le
+# nom adressé par contenu, qui serait ensuite servi comme cache valide. Le
+# point initial soustrait le temporaire au motif du GC (`^fast_[A-Z]`).
+# `writer` n'existe que pour les tests (simulation d'écriture partielle).
+.fast_raster_cache_write <- function(out, cpath, writer = terra::writeRaster) {
+  zone_dir <- dirname(cpath)
+  tmp <- tempfile(".fast_raster_tmp_", tmpdir = zone_dir, fileext = ".tif")
+  tryCatch({
+    writer(out, tmp, filetype = "GTiff", overwrite = TRUE,
+           gdal = c("COMPRESS=DEFLATE", "PREDICTOR=2", "TILED=YES"))
+    if (!file.rename(tmp, cpath)) stop("rename failed")
+    .fast_raster_gc(zone_dir)
+  }, error = function(e) {
+    unlink(tmp)
+    cli::cli_warn("Failed to cache FAST alert raster at {.path {cpath}}: {conditionMessage(e)}")
+  })
+  invisible(NULL)
 }
 
 

@@ -113,15 +113,27 @@ HEALTH_VALIDATION_CAUSES_FEUILLUS <- c(
 # rule is class-dependent because the rapport ONF/DSF 2024
 # explicitly notes that 1-faible and 2-moyenne tend to false-flag
 # clearcuts as dieback.
+#
+# Returns `list(status, cause, known)`. A stage outside the two DSF
+# vocabularies (typo, stray value) yields `known = FALSE` and NA
+# status/cause: it must never fall through to "confirmed".
 .health_stade_to_status <- function(stade, confidence_class = NA_character_,
                                     method = "fordead") {
-  stade  <- tolower(as.character(stade))
+  # trimws : "sain " saisi sur tablette doit rester "sain" (audit 1.0).
+  stade  <- tolower(trimws(as.character(stade)))
   cls    <- as.character(confidence_class)
   status <- NA_character_
   cause  <- NA_character_
 
   if (is.na(stade) || !nzchar(stade)) {
-    return(list(status = NA_character_, cause = NA_character_))
+    return(list(status = NA_character_, cause = NA_character_, known = FALSE))
+  }
+  # Stade hors vocabulaire : aucune décision (auparavant la branche
+  # finale le classait « confirmé »). Union des deux vocabulaires : une
+  # même campagne peut mêler formulaires résineux et feuillus.
+  if (!stade %in% c(HEALTH_VALIDATION_STADES,
+                    HEALTH_VALIDATION_STADES_FEUILLUS)) {
+    return(list(status = NA_character_, cause = NA_character_, known = FALSE))
   }
 
   if (stade == "sain") {
@@ -146,7 +158,7 @@ HEALTH_VALIDATION_CAUSES_FEUILLUS <- c(
     cause  <- stade
   }
 
-  list(status = status, cause = cause)
+  list(status = status, cause = cause, known = TRUE)
 }
 
 
@@ -388,9 +400,13 @@ generate_health_validation_plots <- function(alerts_sf,
 #' field observation to the nearest alert of the given `zone_id`
 #' (within `snap_distance_m`), maps the observer-selected
 #' `stade_deperissement` to `validation_status` /
-#' `validation_cause`, and issues an `UPDATE alert` per match.
-#' Observations without a `stade_deperissement` are skipped (never
-#' edited in the field).
+#' `validation_cause`, and issues an `UPDATE alert` per match. All
+#' updates are applied in a single transaction; `validated_at` is
+#' written in UTC. Observations without a `stade_deperissement` are
+#' skipped (never edited in the field), as are observations whose stage
+#' (after trimming whitespace, case-insensitive) is not one of
+#' [`HEALTH_VALIDATION_STADES`] / [`HEALTH_VALIDATION_STADES_FEUILLUS`]
+#' (`reason = "unknown_stade"`, with a warning).
 #'
 #' Since spec 008 §15 Phase B the match is against the alert's **own
 #' pixel centroid** (`alert.geom_wkt`), not a plot: G4 no longer
@@ -414,7 +430,8 @@ generate_health_validation_plots <- function(alerts_sf,
 #'     `n_false_positive` (int);
 #'   * `n_unmatched` (int) — plots without an alert within
 #'     `snap_distance_m`;
-#'   * `n_skipped` (int) — plots with no `stade_deperissement`;
+#'   * `n_skipped` (int) — plots with no or an unknown
+#'     `stade_deperissement`;
 #'   * `details` — a data.frame with one row per processed plot.
 #'
 #' @export
@@ -463,8 +480,12 @@ ingest_health_validation <- function(con,
   n_unmatched <- 0L
   n_skipped <- 0L
 
+  # UPDATE différés : appliqués en une seule transaction après la boucle.
+  updates <- list()
+  unknown_stades <- character(0)
+
   for (i in seq_len(nrow(plots_m))) {
-    stade <- plots_m$stade_deperissement[i]
+    stade <- trimws(as.character(plots_m$stade_deperissement[i]))
     if (is.na(stade) || !nzchar(stade)) {
       n_skipped <- n_skipped + 1L
       details <- rbind(details, .health_detail_row(
@@ -472,6 +493,17 @@ ingest_health_validation <- function(con,
         alert_id = NA_integer_, distance_m = NA_real_,
         stade = NA_character_, status = NA_character_,
         cause = NA_character_, reason = "missing_stade"))
+      next
+    }
+    # Stade hors vocabulaire DSF (faute de frappe…) : aucune mise à jour.
+    if (!isTRUE(.health_stade_to_status(stade)$known)) {
+      n_skipped <- n_skipped + 1L
+      unknown_stades <- c(unknown_stades, stade)
+      details <- rbind(details, .health_detail_row(
+        plot_id = .plot_label(plots_m, i),
+        alert_id = NA_integer_, distance_m = NA_real_,
+        stade = stade, status = NA_character_,
+        cause = NA_character_, reason = "unknown_stade"))
       next
     }
     d <- as.numeric(sf::st_distance(plots_m[i, ], alerts_sf))
@@ -512,17 +544,8 @@ ingest_health_validation <- function(con,
       map$cause
     }
 
-    # `validated_at` : timestamp fourni par R (portable PG/SQLite ; SQLite
-    # n'a pas la fonction `now()`).
-    .db_execute(con,
-      "UPDATE alert
-          SET validation_status = $2,
-              validation_cause  = $3,
-              validated_by      = $4,
-              validated_at      = $5
-        WHERE id = $1",
-      params = list(alert_id, status, field_cause, obs_by,
-                    format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
+    updates[[length(updates) + 1L]] <- list(alert_id, status, field_cause,
+                                            obs_by)
 
     if (status == "confirmed") n_confirmed <- n_confirmed + 1L
     if (status == "false_positive") n_false_positive <- n_false_positive + 1L
@@ -532,6 +555,34 @@ ingest_health_validation <- function(con,
       alert_id = alert_id, distance_m = dmin,
       stade = stade, status = status,
       cause = field_cause, reason = "ok"))
+  }
+
+  if (length(unknown_stades)) {
+    cli::cli_warn(c(
+      "{length(unknown_stades)} observation{?s} with an unknown {.field stade_deperissement} skipped: {.val {unique(unknown_stades)}}.",
+      "i" = "Expected one of {.val {unique(c(HEALTH_VALIDATION_STADES, HEALTH_VALIDATION_STADES_FEUILLUS))}}."))
+  }
+
+  # Toutes les mises à jour dans une seule transaction (audit 1.0) : un
+  # échec en cours de route n'applique pas une validation partielle.
+  # `validated_at` : horodatage fourni par R (portable PG/SQLite ; SQLite
+  # n'a pas `now()`), en UTC — RPostgres ouvre ses sessions en UTC, la
+  # chaîne est donc interprétée correctement par la colonne TIMESTAMPTZ.
+  # Pas de return() dans ce bloc (court-circuiterait le COMMIT).
+  if (length(updates)) {
+    validated_at <- format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = "UTC")
+    DBI::dbWithTransaction(con, {
+      for (u in updates) {
+        .db_execute(con,
+          "UPDATE alert
+              SET validation_status = $2,
+                  validation_cause  = $3,
+                  validated_by      = $4,
+                  validated_at      = $5
+            WHERE id = $1",
+          params = c(u, list(validated_at)))
+      }
+    })
   }
 
   n_updated <- n_confirmed + n_false_positive

@@ -67,6 +67,74 @@
   primary[order(nchar(basename(primary)))][1]
 }
 
+# --- Clé du cache biodivMapR (audit 1.0) ---------------------------------
+#
+# `reuse_existing` ne doit resservir un dossier que s'il a été produit à
+# partir des MÊMES entrées. La clé hache l'empreinte de la réflectance et du
+# masque, `window_size` et `options` ; elle est écrite dans `output_dir`
+# après un run complet.
+
+.SPECTRAL_CACHE_KEY_FILE <- "nemeton_cache_key.txt"
+
+# Au-delà de ce nombre de valeurs, une SpatRaster est identifiée par ses
+# sources et sa géométrie plutôt que par le hachage de toutes ses valeurs.
+.SPECTRAL_HASH_MAX_VALUES <- 5e7
+
+# Empreinte d'une entrée raster : chemin + taille + date pour un fichier ;
+# géométrie + valeurs pour une SpatRaster (ses sources sont souvent des
+# temporaires au nom aléatoire, inutilisables comme identité).
+.raster_fingerprint <- function(x, what) {
+  if (is.null(x)) return(NULL)
+  if (inherits(x, "SpatRaster")) {
+    geo <- list(as.vector(terra::ext(x)), terra::res(x), terra::crs(x),
+                terra::nlyr(x), names(x))
+    n <- as.numeric(terra::ncell(x)) * terra::nlyr(x)
+    vals <- if (n <= .SPECTRAL_HASH_MAX_VALUES) {
+      rlang::hash(terra::values(x, mat = TRUE))
+    } else {
+      src <- terra::sources(x)
+      src <- src[nzchar(src)]
+      list(normalizePath(src, mustWork = FALSE), unname(file.size(src)),
+           as.numeric(file.mtime(src)))
+    }
+    return(rlang::hash(list("rast", geo, vals)))
+  }
+  if (is.character(x) && length(x) == 1L && file.exists(x)) {
+    return(rlang::hash(list("file", normalizePath(x), unname(file.size(x)),
+                            as.numeric(file.mtime(x)))))
+  }
+  if (identical(what, "reflectance")) {
+    stop("reflectance must be a SpatRaster or an existing raster file path",
+         call. = FALSE)
+  }
+  stop("mask must be NULL, a SpatRaster, or an existing raster file path",
+       call. = FALSE)
+}
+
+.spectral_cache_key <- function(reflectance, mask, window_size, options) {
+  rlang::hash(list(
+    reflectance = .raster_fingerprint(reflectance, "reflectance"),
+    mask        = .raster_fingerprint(mask, "mask"),
+    window_size = as.integer(window_size),
+    options     = options
+  ))
+}
+
+.read_cache_key <- function(path) {
+  if (!file.exists(path)) return(NA_character_)
+  tryCatch(readLines(path, n = 1L, warn = FALSE)[1], error = function(e) NA_character_)
+}
+
+# Appel biodivMapR (substituable dans les tests).
+.run_biodivmapr <- function(...) {
+  if (!requireNamespace("biodivMapR", quietly = TRUE)) {
+    stop("Package 'biodivMapR' is required for spectral diversity (B4/L3). ",
+         "Install it with remotes::install_github('jbferet/biodivMapR').",
+         call. = FALSE)
+  }
+  biodivMapR::biodivMapR_full(...)
+}
+
 #' Compute spectral diversity rasters (alpha & beta) via biodivMapR
 #'
 #' Runs the biodivMapR spectral-diversity pipeline on an optical
@@ -99,7 +167,11 @@
 #'   \code{output_dir} already contains the diversity rasters from a prior
 #'   run, reuse them instead of re-running the (expensive) biodivMapR
 #'   pipeline. Pass a persistent \code{output_dir} (e.g. a project cache)
-#'   to benefit; the default \code{tempfile()} directory never hits.
+#'   to benefit; the default \code{tempfile()} directory never hits. Reuse
+#'   requires the cache key written by that prior run (a hash of the
+#'   reflectance and mask fingerprints, \code{window_size} and
+#'   \code{options}) to match the current inputs; otherwise the pipeline is
+#'   re-run.
 #'
 #' @return A list with:
 #'   \describe{
@@ -128,24 +200,28 @@ compute_spectral_diversity <- function(reflectance,
     stop("Package 'terra' is required.", call. = FALSE)
   }
 
+  # Clé du cache : empreinte des entrées (réflectance, masque) et des
+  # paramètres qui changent le résultat. Calculée avant tout, elle valide
+  # aussi la forme des arguments.
+  key <- .spectral_cache_key(reflectance, mask, window_size, options)
+  key_file <- file.path(output_dir, .SPECTRAL_CACHE_KEY_FILE)
+
   # Cache-hit: when the caller passes a persistent `output_dir` (e.g. a
   # project cache) that already holds the diversity rasters from a prior
   # run, reuse them instead of re-running the expensive biodivMapR
   # PCA + k-means. The default tempfile() dir is always fresh, so this
   # never fires by accident. `biodivMapR` is not even needed on reuse.
-  if (isTRUE(reuse_existing) && dir.exists(output_dir)) {
+  # Les rasters ne sont resservis que si la clé écrite par le run qui les a
+  # produits correspond aux entrées courantes : un dossier d'une autre
+  # scène, d'un autre masque ou d'autres options (ou sans clé) est recalculé.
+  if (isTRUE(reuse_existing) && dir.exists(output_dir) &&
+      identical(.read_cache_key(key_file), key)) {
     a <- .find_diversity_raster(output_dir, "shannon")
     b <- .find_diversity_raster(output_dir, "beta")
     if (!is.na(a) && !is.na(b)) {
       return(list(alpha = terra::rast(a), beta = terra::rast(b),
                   output_dir = output_dir, reused = TRUE))
     }
-  }
-
-  if (!requireNamespace("biodivMapR", quietly = TRUE)) {
-    stop("Package 'biodivMapR' is required for spectral diversity (B4/L3). ",
-         "Install it with remotes::install_github('jbferet/biodivMapR').",
-         call. = FALSE)
   }
 
   # Resolve the reflectance to a file path (biodivMapR works on files).
@@ -174,8 +250,11 @@ compute_spectral_diversity <- function(reflectance,
   }
 
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  # Clé retirée avant le run : un run interrompu ne laisse jamais un dossier
+  # que la clé précédente ferait passer pour valide.
+  unlink(key_file, force = TRUE)
 
-  biodivMapR::biodivMapR_full(
+  .run_biodivmapr(
     input_raster_path = reflectance_path,
     input_mask_path   = mask_path,
     output_dir        = output_dir,
@@ -186,6 +265,11 @@ compute_spectral_diversity <- function(reflectance,
 
   alpha_path <- .find_diversity_raster(output_dir, "shannon")
   beta_path  <- .find_diversity_raster(output_dir, "beta")
+
+  # Clé écrite en dernier, et seulement pour un run complet.
+  if (!is.na(alpha_path) && !is.na(beta_path)) {
+    .atomic_write(key_file, function(tmp) writeLines(key, tmp))
+  }
 
   list(
     alpha      = if (!is.na(alpha_path)) terra::rast(alpha_path) else NULL,

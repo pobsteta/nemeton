@@ -102,3 +102,61 @@ test_that("l'echelle de normalisation discrimine le domaine forestier", {
   expect_equal(n(3000), 100)
   expect_equal(n(0), 0)
 })
+
+# --- Cache complet ou rien (audit 1.0) --------------------------------------
+
+# Écrit un vrai GeoPackage Filosofi minimal (couche métropole) à `f`.
+.faux_gpkg_insee <- function(f, n = 2000) {
+  g <- sf::st_sf(
+    ind = seq_len(n), i_est_1km = 0,
+    geometry = sf::st_sfc(lapply(seq_len(n), function(i)
+      sf::st_point(c(900000 + i, 6700000))), crs = 2154))
+  sf::st_write(g, f, layer = "carreaux_1km_met", quiet = TRUE)
+  invisible(f)
+}
+
+.faux_zip_insee <- function(dest, tronque = FALSE) {
+  src <- tempfile(); dir.create(src)
+  f <- .faux_gpkg_insee(file.path(src, "carreaux_1km_met.gpkg"))
+  if (tronque) {
+    b <- readBin(f, "raw", file.size(f))
+    writeBin(b[seq_len(length(b) %/% 2)], f)
+  }
+  old <- setwd(src); on.exit(setwd(old))
+  utils::zip(normalizePath(dest, mustWork = FALSE), "carreaux_1km_met.gpkg",
+             flags = "-q")
+}
+
+test_that("un .gpkg tronque en cache est supprime puis retelecharge", {
+  skip_if(!nzchar(Sys.which("zip")), "zip utility not available")
+  cache <- withr::local_tempdir()
+  dir <- nemeton:::.insee_cache_dir(cache, 2021, "1km")
+  dir.create(dir, recursive = TRUE)
+  gpkg <- file.path(dir, "carreaux_1km_met.gpkg")
+  writeBin(as.raw(1:64), gpkg)  # reliquat d'une extraction interrompue
+  appels <- 0L
+  testthat::local_mocked_bindings(.insee_download = function(url, dest) {
+    appels <<- appels + 1L
+    .faux_zip_insee(dest)
+  })
+  u <- sf::st_sf(geometry = sf::st_sfc(sf::st_point(c(900500, 6700000)), crs = 2154))
+  r <- suppressWarnings(suppressMessages(
+    load_insee_population_source(u, buffer_m = 2000, cache_dir = cache)))
+  expect_identical(appels, 1L)
+  expect_s3_class(r, "sf")
+  expect_gt(nrow(r), 0L)
+  # Pas de reliquat de dossier temporaire dans le cache.
+  expect_identical(list.files(dir, all.files = TRUE, no.. = TRUE),
+                   "carreaux_1km_met.gpkg")
+})
+
+test_that("une archive au .gpkg tronque ne laisse rien dans le cache", {
+  skip_if(!nzchar(Sys.which("zip")), "zip utility not available")
+  dir <- file.path(withr::local_tempdir(), "filosofi2021_1km")
+  testthat::local_mocked_bindings(.insee_download = function(url, dest) {
+    .faux_zip_insee(dest, tronque = TRUE)
+  })
+  expect_false(suppressWarnings(suppressMessages(
+    nemeton:::.insee_telecharger("http://example.invalid/x.zip", dir))))
+  expect_length(list.files(dir, all.files = TRUE, no.. = TRUE), 0L)
+})

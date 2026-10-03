@@ -380,6 +380,15 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 }
 
 
+# Clé courte (hexadécimale) de la fenêtre AOI et du CRS cible, portée par le
+# marqueur d'idempotence `<item>.<clé>.done`.
+.reconfort_window_key <- function(win, target_crs) {
+  substr(rlang::hash(list(
+    unname(round(as.numeric(win[c("xmin", "ymin", "xmax", "ymax")]), 6)),
+    as.character(target_crs))), 1L, 12L)
+}
+
+
 #' Acquire Sentinel-2 scenes for an AOI into the IOTA² layout
 #'
 # Stream one tile's S2 ingestion: one GEODES search -> per item
@@ -397,6 +406,10 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
     tryCatch(progress_callback(payload), error = function(e) invisible(NULL))
   }
   win          <- .reconfort_aoi_window(aoi, target_crs, buffer_m)
+  # Le marqueur d'idempotence porte la fenêtre et le CRS cible : une scène
+  # recadrée pour une autre fenêtre (autre AOI, autre tampon) ne compte pas
+  # et est recadrée de nouveau.
+  win_key      <- .reconfort_window_key(win, target_crs)
   manifest_dir <- file.path(s2_root, "manifest", tile)
   marker_dir   <- file.path(s2_root, "ingested", tile)
   scratch_root <- file.path(s2_root, "scratch", tile)
@@ -444,7 +457,7 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
     item_json <- as.character(manifest$json[i])
     item_date <- item_dates[i]
     safe      <- gsub("[^A-Za-z0-9._-]", "_", item_id)
-    marker    <- file.path(marker_dir, paste0(safe, ".done"))
+    marker    <- file.path(marker_dir, paste0(safe, ".", win_key, ".done"))
     if (file.exists(marker)) {                                   # idempotence
       n_skip <- n_skip + 1L
       emit(list(current = "reconfort:ingest_item", tile = tile, step = "cached",
@@ -497,11 +510,27 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
       unlink(tmp_zip, force = TRUE); unlink(scratch, recursive = TRUE, force = TRUE)
       next
     }
+    # Recadrage dans un dossier de préparation (sous scratch/, hors de
+    # extracted/), puis renommage des scènes complètes : une scène à moitié
+    # recadrée n'apparaît jamais dans extracted/ où IOTA² la lirait.
+    staging <- file.path(scratch_root, paste0(safe, ".crop"))
+    unlink(staging, recursive = TRUE, force = TRUE)
     for (sc in sub_scenes) {
-      .reconfort_crop_scene_to_aoi(sc, file.path(out_dir, basename(sc)),
+      .reconfort_crop_scene_to_aoi(sc, file.path(staging, basename(sc)),
                                    win, target_crs)
     }
+    for (sc in sub_scenes) {
+      .atomic_promote(file.path(staging, basename(sc)),
+                      file.path(out_dir, basename(sc)))
+    }
     unlink(tmp_zip, force = TRUE); unlink(scratch, recursive = TRUE, force = TRUE)
+    unlink(staging, recursive = TRUE, force = TRUE)
+    # Un seul marqueur valide par scène : ceux d'une autre fenêtre (et le
+    # marqueur historique sans clé) sont retirés.
+    unlink(list.files(marker_dir, full.names = TRUE,
+                      pattern = paste0("^", gsub(".", "\\.", safe, fixed = TRUE),
+                                       "(\\.[0-9a-f]+)?\\.done$")),
+           force = TRUE)
     file.create(marker)
     n_done <- n_done + 1L
     if (!quiet) cli::cli_alert_info("RECONFORT: {tile} {i}/{n_items} cropped to AOI.")

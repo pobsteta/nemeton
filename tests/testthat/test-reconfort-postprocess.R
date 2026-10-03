@@ -260,8 +260,28 @@ test_that(".insert_reconfort_alerts inserts reconfort_dieback, idempotent", {
 
 test_that(".insert_reconfort_alerts on empty / NULL input is a no-op", {
   empty <- sf::st_sf(geometry = sf::st_sfc(crs = 2154))
-  expect_equal(nemeton:::.insert_reconfort_alerts(NULL, empty, zone_id = 1L),
+  expect_equal(nemeton:::.insert_reconfort_alerts(NULL, empty, zone_id = 1L,
+                                                  replace = FALSE),
                0L)
+  expect_equal(nemeton:::.insert_reconfort_alerts(NULL, NULL, zone_id = 1L),
+               0L)
+})
+
+test_that("a RECONFORT run without patch purges the previous pending alerts (SQLite, audit 1.0)", {
+  skip_if_not_installed("sf")
+  with_sqlite_monitoring_db(function(con) {
+    DBI::dbExecute(con, paste0(
+      "INSERT INTO alert (zone_id, alert_type, trigger_date, geom_wkt, validation_status) VALUES ",
+      "(1, 'reconfort_dieback', '2025-08-01', 'POINT(6 46)', 'pending'), ",
+      "(1, 'reconfort_dieback', '2025-08-01', 'POINT(6.1 46)', 'confirmed'), ",
+      "(1, 'fordead_dieback',   '2025-08-01', 'POINT(6.2 46)', 'pending')"))
+    empty <- sf::st_sf(geometry = sf::st_sfc(crs = 2154))
+    expect_equal(nemeton:::.insert_reconfort_alerts(con, empty, zone_id = 1L), 0L)
+    got <- DBI::dbGetQuery(con,
+      "SELECT alert_type, validation_status FROM alert ORDER BY id")
+    expect_equal(got$alert_type, c("reconfort_dieback", "fordead_dieback"))
+    expect_equal(got$validation_status, c("confirmed", "pending"))
+  })
 })
 
 test_that("the alert_type index exists after migration", {

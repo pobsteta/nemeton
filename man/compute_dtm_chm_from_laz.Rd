@@ -28,14 +28,20 @@ sibling `lidar_mnh/` of `laz_dir`.}
 \item{res}{Numeric. Output raster resolution in metres. Default 1
 to match IGN LiDAR HD MNH / MNT native resolution.}
 
-\item{aoi}{Optional `sf` / `sfc`. When supplied, the output rasters
-are cropped (and masked) to this AOI.}
+\item{aoi}{Optional `sf` / `sfc`. When supplied, the returned rasters
+are cropped (and masked) copies written under `aoi/` in the output
+directories, keyed by the AOI; the shared `dtm.tif` / `chm.tif` cache
+always keeps the full tile extent.}
 
 \item{ncores}{Integer. Number of cores passed to `lasR::exec()`.
 Default 1 — set to `parallel::detectCores() - 1` for large blocks.}
 
 \item{overwrite}{Logical. Re-derive even if `dtm.tif` / `chm.tif`
-already exist in the output directories. Default `FALSE`.}
+already exist in the output directories. Default `FALSE`. An existing
+pair is reused only when its `.key` sidecar matches the current tiles
+and resolution and both rasters read back; otherwise it is rebuilt.
+Outputs are written to temporary files and moved into place only once
+complete.}
 
 \item{verbose}{Logical. When `TRUE`, log each stage via `cli`.
 Default `TRUE`.}

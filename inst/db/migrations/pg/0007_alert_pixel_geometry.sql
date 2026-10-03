@@ -14,6 +14,22 @@
 --
 -- PRÉ-VOL DE DÉPLOIEMENT : vérifier `SELECT count(*) FROM alert = 0`
 -- avant d'appliquer cette migration sur une base de production.
+--
+-- Garde-fou (audit 1.0) : le pré-vol est imposé ci-dessous — la
+-- migration échoue (et la transaction de db_migrate() est annulée) si
+-- `alert` existe et contient des lignes. Les deux IF sont imbriqués pour
+-- que `SELECT … FROM alert` ne soit préparé que si la table existe.
+-- db_migrate() fait le même contrôle côté R (seul garde-fou sous SQLite).
+
+DO $$
+BEGIN
+    IF to_regclass('alert') IS NOT NULL THEN
+        IF EXISTS (SELECT 1 FROM alert) THEN
+            RAISE EXCEPTION 'migration 0007: table alert is not empty; back up and empty it before migrating (DROP TABLE would lose its rows)';
+        END IF;
+    END IF;
+END
+$$;
 
 DROP TABLE IF EXISTS alert;
 

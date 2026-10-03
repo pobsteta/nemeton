@@ -100,7 +100,8 @@ eobs_summer_series <- function(stack, point) {
 #' Twelve-month climatology (averaged over `years`) of an E-OBS variable at a
 #' location, for the ombrothermic (Gaussen-Bagnouls) diagram — chart 4 of the
 #' regional-context click panel (spec 036). Precipitation is summed within each
-#' month then averaged across years (mm/month); temperature is the monthly mean
+#' month then averaged across years (mm/month), counting only complete months (a
+#' month with a missing day is `NA` for that year); temperature is the monthly mean
 #' (°C). Reads the full-year daily field (a `SpatRaster` with `terra::time` set,
 #' or a cached netCDF path), so tx/rr need no new acquisition; the Gaussen diagram
 #' proper wants mean temperature (`tg`), which has its own netCDF (spec 036 §5.4).
@@ -143,13 +144,20 @@ eobs_monthly_climatology <- function(daily, point, var, years = NULL) {
   vals <- .eobs_extract_point(daily, point)
   keep <- is.finite(vals)
   if (!is.null(years)) keep <- keep & (yr %in% as.integer(years))
-  vals <- vals[keep]; mo <- mo[keep]; yr <- yr[keep]
+  vals <- vals[keep]; mo <- mo[keep]; yr <- yr[keep]; dates <- dates[keep]
   month_value <- function(m) {
     sel <- mo == m
     if (!any(sel)) return(NA_real_)
     if (identical(reducer, "sum")) {
       # Précip : cumul MENSUEL par année, puis moyenne inter-annuelle (mm/mois).
-      mean(tapply(vals[sel], yr[sel], sum), na.rm = TRUE)
+      # Audit 1.0 : seuls les mois COMPLETS (tous les jours présents et finis)
+      # sont cumulés — un jour NA comptait 0 mm et sous-estimait le cumul. Un
+      # mois incomplet vaut NA et sort de la moyenne ; aucun complet -> NA.
+      cumuls <- vapply(split(which(sel), yr[sel]), function(ii) {
+        n_att <- .eobs_jours_attendus(yr[ii[1]], m)
+        if (length(unique(dates[ii])) < n_att) NA_real_ else sum(vals[ii])
+      }, numeric(1))
+      if (all(is.na(cumuls))) NA_real_ else mean(cumuls, na.rm = TRUE)
     } else {
       # Température : moyenne des valeurs journalières du mois sur toutes les années.
       mean(vals[sel])

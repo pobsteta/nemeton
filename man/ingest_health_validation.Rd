@@ -38,7 +38,8 @@ A list:
     `n_false_positive` (int);
   * `n_unmatched` (int) — plots without an alert within
     `snap_distance_m`;
-  * `n_skipped` (int) — plots with no `stade_deperissement`;
+  * `n_skipped` (int) — plots with no or an unknown
+    `stade_deperissement`;
   * `details` — a data.frame with one row per processed plot.
 }
 \description{
@@ -47,7 +48,11 @@ edited in QGIS Desktop or in QField on a tablet), snaps each
 plot to the nearest alert of the given `zone_id` (within
 `snap_distance_m`), maps the observer-selected
 `stade_deperissement` to `validation_status` /
-`validation_cause`, and issues an `UPDATE alert` per match.
-Plots without a `stade_deperissement` are skipped (never edited
-in the field).
+`validation_cause`, and issues an `UPDATE alert` per match. All
+updates are applied in a single transaction; `validated_at` is
+written in UTC. Plots without a `stade_deperissement` are skipped
+(never edited in the field), as are plots whose stage (after
+trimming whitespace, case-insensitive) is not one of
+[`HEALTH_VALIDATION_STADES`] / [`HEALTH_VALIDATION_STADES_FEUILLUS`]
+(`reason = "unknown_stade"`, with a warning).
 }

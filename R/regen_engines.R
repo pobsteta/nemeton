@@ -69,6 +69,23 @@
   stats::setNames(as.list(x), as.character(ids))
 }
 
+# Remplace les `lai_max` manquants (NULL / NA / non fini) d'une liste per-UGF
+# par le défaut du type de peuplement, avec un avertissement qui nomme les ids.
+# Un scalaire (partagé) est laissé tel quel : son cas NA est traité en amont.
+.regen_lai_fill_na <- function(lai_max, lai_def) {
+  if (!is.list(lai_max)) return(lai_max)
+  manq <- vapply(lai_max, function(v)
+    is.null(v) || length(v) != 1L ||
+      !is.finite(suppressWarnings(as.numeric(v))), logical(1))
+  if (!any(manq)) return(lai_max)
+  ids <- names(lai_max)[manq]
+  lai_max[manq] <- list(lai_def)
+  cli::cli_warn(c(
+    "regen_bilan_hydrique(): {length(ids)} unit{?s} without {.arg lai_max}; using the stand-type default ({.val {lai_def}}).",
+    i = "Unit id{?s}: {.val {ids}}."))
+  lai_max
+}
+
 
 # Rattache des colonnes per-unité `precomputed` (data.frame / liste nommée) à
 # `units`, restreintes à `allowed`. Longueur = nrow(units) ou 1 (recyclé).
@@ -130,6 +147,8 @@
 #'   fractions `roots`, …).
 #' @param lai_max Per-unit maximum LAI (e.g. derived from `pai_depuis_nuage()`):
 #'   a scalar, a length-`nrow(units)` vector, or a named list by id.
+#'   `NULL`/`NA` (globally or for a given unit) falls back to a stand-type
+#'   default (5 broadleaved, 4.5 coniferous) with a warning.
 #' @param forest_type Phenology: `"feuillu"`/`"broadleaved"` or
 #'   `"resineux"`/`"coniferous"` (mapped to BILJOU's `broadleaved`/`coniferous`).
 #' @param years Optional integer years to keep from the BILJOU indices before
@@ -184,8 +203,9 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   # faute de clé CDS, et repli LAI satellite non déclenché (grid non nul) ->
   # sans ce garde-fou, BILJOU ne tournait pas et la carte restait vide. L'app
   # doit privilégier une valeur pilotée par la donnée (PAI LiDAR / LAI S2).
+  lai_def <- if (identical(ft, "coniferous")) 4.5 else 5
   if (is.null(lai_max) || (length(lai_max) == 1 && is.na(lai_max))) {
-    lai_max <- if (identical(ft, "coniferous")) 4.5 else 5
+    lai_max <- lai_def
     cli::cli_warn(c(
       "regen_bilan_hydrique(): no {.arg lai_max} supplied; using a stand-type default ({.val {lai_max}}).",
       i = "Provide a LiDAR-derived PAI ({.code pai_depuis_nuage()}) or Sentinel-2/PROSAIL LAI ({.code lai_sentinel2()}) for a data-driven value."))
@@ -200,6 +220,10 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   # sinon biljou_run_grid() le passe entier a chaque point (corruption
   # silencieuse sur resineux). Idem pour un sol per-UGF.
   lai_max <- .regen_per_unit_list(lai_max, points$id, "lai_max")
+  # Audit 1.0 : un NA PAR UNITÉ (UGF sans pixel de canopée dans
+  # lai_max_depuis_pai()) partait tel quel dans BILJOU. On le remplace par le
+  # même défaut par type de peuplement, en nommant les unités concernées.
+  lai_max <- .regen_lai_fill_na(lai_max, lai_def)
   sol     <- .regen_per_unit_list(sol, points$id, "sol")
 
   emit(list(current = "regen_biljou:start", n = nrow(points),
@@ -314,30 +338,43 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   stop(last_err)
 }
 
-# Fichier ERA5 combiné (mensuels fusionnés par mcera5) pour une année, ou NA.
-# mcera5 nomme le combiné `<outfile>_<annee>.nc` et les mensuels
-# `<outfile>_<annee>_<mois>.nc` : le combiné se termine donc par `_<annee>.nc`.
-# On le repère par CE suffixe (robuste au préfixe `outfile`) : avec
-# `outfile_name = "era5_<annee>"`, mcera5 écrit `era5_<annee>_<annee>.nc`
-# (double année) — que l'ancien lookup `era5_<annee>.nc` ne trouvait jamais, d'où
-# un re-téléchargement des 24 mois à chaque run malgré le cache.
-.rsen_era5_combined <- function(cache_dir, annee) {
-  hit <- list.files(cache_dir, pattern = sprintf("_%d\\.nc$", annee),
-                    full.names = TRUE)
-  if (length(hit)) hit[[1]] else NA_character_
+# Radical des fichiers ERA5 d'une année : `era5_<lon>_<lat>_<annee>` (audit 1.0).
+# Le cache était retrouvé par le seul suffixe `_<annee>.nc` : un `cache_dir`
+# partagé (projet multi-sites, forçage BILJOU par unité) relisait le forçage du
+# PREMIER point téléchargé pour tous les autres. lon/lat arrondis à 0.01°
+# (~1 km, très en deçà de la boîte ±0.05° demandée et de la maille ERA5 ~0.25°),
+# encodés sans `.` ni `-` (`6.12` -> `6p12`, `-1.5` -> `m1p50`).
+# lon/lat NULL -> radical historique `era5_<annee>` (helpers seuls ; le chemin
+# moteur passe toujours un point).
+.rsen_era5_radical <- function(annee, lon = NULL, lat = NULL) {
+  if (is.null(lon) || is.null(lat)) return(sprintf("era5_%d", annee))
+  enc <- function(x) {
+    v <- sprintf("%.2f", round(as.numeric(x), 2) + 0)   # + 0 : pas de "-0.00"
+    sub(".", "p", sub("^-", "m", v), fixed = TRUE)
+  }
+  sprintf("era5_%s_%s_%d", enc(lon), enc(lat), annee)
+}
+
+# Fichier ERA5 combiné d'une année et d'un point, ou NA. Nom EXACT (cf.
+# `.rsen_era5_nom_combine()`) : l'ancienne recherche par suffixe `_<annee>.nc`
+# acceptait le combiné de n'importe quel point.
+.rsen_era5_combined <- function(cache_dir, annee, lon = NULL, lat = NULL) {
+  cible <- .rsen_era5_nom_combine(cache_dir, annee, lon, lat)
+  if (file.exists(cible)) cible else NA_character_
 }
 
 # Fichier ERA5 à LIRE pour une année (entrée d'extract_clim) : le combiné s'il
-# existe, sinon repli défensif = le nom le PLUS COURT parmi les `era5_<annee>*.nc`
-# (le combiné `era5_<annee>_<annee>.nc` est plus court que les mensuels
-# `era5_<annee>_<annee>_<mois>.nc`). `nchar()` est INDÉPENDANT de la locale,
-# contrairement à `sort()`/`[1]` : selon la locale (FR notamment), le combiné ne
-# trie PAS forcément avant les mensuels ('.' vs '_'), donc `[1]` pouvait piocher
-# un mensuel (1 mois au lieu de 12). Renvoie NA si rien.
-.rsen_era5_src <- function(cache_dir, annee) {
-  comb <- .rsen_era5_combined(cache_dir, annee)
+# existe, sinon repli défensif = le nom le PLUS COURT parmi les `<radical>_*.nc`
+# du MÊME point (le combiné `<radical>_<annee>.nc` est plus court que les
+# mensuels `<radical>_<annee>_<mois>.nc`). `nchar()` est INDÉPENDANT de la
+# locale, contrairement à `sort()`/`[1]` : selon la locale (FR notamment), le
+# combiné ne trie PAS forcément avant les mensuels ('.' vs '_'), donc `[1]`
+# pouvait piocher un mensuel (1 mois au lieu de 12). Renvoie NA si rien.
+.rsen_era5_src <- function(cache_dir, annee, lon = NULL, lat = NULL) {
+  comb <- .rsen_era5_combined(cache_dir, annee, lon, lat)
   if (!is.na(comb)) return(comb)
-  cands <- list.files(cache_dir, pattern = sprintf("^era5_%d.*\\.nc$", annee),
+  rad <- .rsen_era5_radical(annee, lon, lat)
+  cands <- list.files(cache_dir, pattern = sprintf("^%s_.*\\.nc$", rad),
                       full.names = TRUE)
   if (!length(cands)) return(NA_character_)
   cands[order(nchar(basename(cands)), basename(cands))][1]
@@ -356,12 +393,13 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 # aurait écrit — sinon le cache ne se relit jamais.
 #
 # mcera5 le calcule par `shared_substring()` sur les 12 cibles puis coupe le `_`
-# final : avec `outfile_name = "era5_<annee>"`, les mensuels sont
-# `era5_<annee>_<annee>_<mois>.nc`, le préfixe commun `era5_<annee>_<annee>_`,
-# donc le combiné est `era5_<annee>_<annee>.nc` — double année. C'est
-# exactement ce que `.rsen_era5_combined()` cherche via `_<annee>\.nc$`.
-.rsen_era5_nom_combine <- function(cache_dir, annee) {
-  file.path(cache_dir, sprintf("era5_%d_%d.nc", annee, annee))
+# final : avec `outfile_name = <radical>`, les mensuels sont
+# `<radical>_<annee>_<mois>.nc`, le préfixe commun `<radical>_<annee>_`, donc le
+# combiné est `<radical>_<annee>.nc` — double année (`era5_<lon>_<lat>_<annee>_
+# <annee>.nc`, ou `era5_<annee>_<annee>.nc` sans point).
+.rsen_era5_nom_combine <- function(cache_dir, annee, lon = NULL, lat = NULL) {
+  file.path(cache_dir, sprintf("%s_%d.nc", .rsen_era5_radical(annee, lon, lat),
+                               annee))
 }
 
 # Une requête mensuelle. `overwrite = TRUE` est ESSENTIEL : `request_era5()`
@@ -377,6 +415,55 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 
 .rsen_era5_combiner <- function(fichiers, cible) {
   mcera5::combine_netcdf(filenames = fichiers, combined_name = cible)
+}
+
+# Un .nc ERA5 (mensuel ou combiné) n'est accepté comme cache que s'il est
+# complet. Un fichier tronqué (téléchargement coupé, fusion interrompue) ou
+# une page d'erreur servie à la place était sinon resservi à chaque run,
+# et extract_clim échouait ou lisait des zéros.
+#
+# Contrôles : signature NetCDF (classique « CDF » ou NetCDF-4/HDF5), puis
+# ouverture et lecture de la DERNIÈRE valeur de chaque variable ; pour le
+# format classique, dont la lecture au-delà de la fin du fichier renvoie
+# des zéros sans erreur, la taille doit couvrir au moins le volume des
+# données annoncé par l'en-tête. ncdf4 arrive avec mcera5 (seul chemin qui
+# produit ces fichiers) ; sans lui, repli sur une lecture terra.
+.rsen_era5_nc_complet <- function(path) {
+  isTRUE(tryCatch({
+    sig <- readBin(path, "raw", n = 8L)
+    classique <- length(sig) >= 4L && identical(sig[1:3], charToRaw("CDF"))
+    hdf5 <- length(sig) == 8L &&
+      identical(sig, as.raw(c(0x89, 0x48, 0x44, 0x46, 0x0d, 0x0a, 0x1a, 0x0a)))
+    if (!classique && !hdf5) return(FALSE)
+    if (!requireNamespace("ncdf4", quietly = TRUE)) return(.raster_lisible(path))
+    nc_open  <- getExportedValue("ncdf4", "nc_open")
+    nc_close <- getExportedValue("ncdf4", "nc_close")
+    ncvar_get <- getExportedValue("ncdf4", "ncvar_get")
+    nc <- nc_open(path)
+    on.exit(nc_close(nc), add = TRUE)
+    if (!length(nc$var)) return(FALSE)
+    octets <- c(byte = 1, char = 1, short = 2, int = 4, integer = 4,
+                float = 4, double = 8)
+    volume <- 0
+    for (v in nc$var) {
+      dl <- v$varsize
+      z <- ncvar_get(nc, v, start = dl, count = rep(1L, length(dl)))
+      if (length(z) != 1L) return(FALSE)
+      taille <- unname(octets[v$prec])
+      volume <- volume + prod(as.numeric(dl)) * (if (is.na(taille)) 1 else taille)
+    }
+    # Variables de coordonnées (longitude, latitude, time) : en double.
+    for (d in nc$dim) {
+      if (isTRUE(d$create_dimvar)) volume <- volume + 8 * length(d$vals)
+    }
+    !classique || file.size(path) >= volume
+  }, error = function(e) FALSE))
+}
+
+# Vrai si `path` est un cache ERA5 utilisable ; un fichier présent mais
+# incomplet est supprimé (il sera retéléchargé / refusionné).
+.rsen_era5_cache_ok <- function(path) {
+  !is.na(path) && .cache_valid_or_drop(path, .rsen_era5_nc_complet)
 }
 
 # Téléchargement ERA5 mois par mois, avec progression et reprise.
@@ -404,7 +491,8 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 .rsen_era5_telecharger <- function(req, cache_dir, annee, emit = NULL,
                                    category = NA,
                                    requete = .rsen_era5_requete,
-                                   combiner = .rsen_era5_combiner) {
+                                   combiner = .rsen_era5_combiner,
+                                   lon = NULL, lat = NULL) {
   n <- length(req)
   fichiers <- .rsen_era5_mois_nc(req, cache_dir)
   for (k in seq_len(n)) {
@@ -413,13 +501,16 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     if (!is.null(emit)) emit(list(current = "regen_expo:era5_mois",
                                   category = category, year = annee,
                                   mois_i = k, mois_n = n))
-    if (file.exists(fichiers[[k]])) next
+    if (.rsen_era5_cache_ok(fichiers[[k]])) next
     # `req[k]` et non `req[[k]]` : `request_era5()` attend une LISTE de requêtes
     # et itère dessus.
     .rsen_era5_with_retry(function() requete(req[k], cache_dir))
   }
-  cible <- .rsen_era5_nom_combine(cache_dir, annee)
-  combiner(fichiers, cible)
+  cible <- .rsen_era5_nom_combine(cache_dir, annee, lon, lat)
+  # Fusion dans un temporaire (même dossier, extension .nc conservée), promue
+  # seulement une fois relisible : jamais de combiné à moitié écrit.
+  .atomic_write(cible, function(tmp) combiner(fichiers, tmp),
+                validate = .rsen_era5_nc_complet)
   cible
 }
 
@@ -427,10 +518,11 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 .rsen_forcage_era5 <- function(lon, lat, annee, cache_dir, emit = NULL,
                                category = NA) {
   if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
-  combined <- .rsen_era5_combined(cache_dir, annee)   # NA si aucun combiné en cache
+  # NA si aucun combiné en cache POUR CE POINT (lon/lat arrondis dans le nom).
+  combined <- .rsen_era5_combined(cache_dir, annee, lon, lat)
   st  <- as.POSIXct(sprintf("%d-01-01 00:00", annee), tz = "UTC")
   en  <- as.POSIXct(sprintf("%d-12-31 23:00", annee), tz = "UTC")
-  if (is.na(combined)) {
+  if (!.rsen_era5_cache_ok(combined)) {
     if (!requireNamespace("mcera5", quietly = TRUE)) {
       cli::cli_abort(c(
         "regen_sensibilite() engine needs {.pkg mcera5} to fetch ERA5 forcing.",
@@ -438,7 +530,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     }
     # mcera5 >= 0.4 : build_era5_request() construit, request_era5() exécute.
     # by_month = TRUE : 12 requêtes MENSUELLES que mcera5 fusionne (combine=TRUE)
-    # en un `era5_<annee>.nc`. Chaque mensuel (~9 000 champs) reste SOUS la limite
+    # en un `<radical>_<annee>.nc`. Chaque mensuel (~9 000 champs) reste SOUS la limite
     # de coût par requête du nouveau CDS. Une requête ANNUELLE (by_month=FALSE,
     # ~105 000 champs) est rejetée `403 cost limits exceeded / request too large`
     # → aucun run microclimf n'aboutissait depuis la bascule v0.143.0. Le retry/
@@ -446,12 +538,13 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     req <- mcera5::build_era5_request(
       xmin = lon - 0.05, xmax = lon + 0.05, ymin = lat - 0.05, ymax = lat + 0.05,
       start_time = st, end_time = en, by_month = TRUE,
-      outfile_name = sprintf("era5_%d", annee))
-    .rsen_era5_telecharger(req, cache_dir, annee, emit = emit, category = category)
+      outfile_name = .rsen_era5_radical(annee, lon, lat))
+    .rsen_era5_telecharger(req, cache_dir, annee, emit = emit, category = category,
+                           lon = lon, lat = lat)
   }
   # Combiné si trouvé, sinon repli défensif (nom le plus court = le combiné,
   # indépendant de la locale — cf. .rsen_era5_src).
-  src <- .rsen_era5_src(cache_dir, annee)
+  src <- .rsen_era5_src(cache_dir, annee, lon, lat)
   # format "microclimf" -> colonnes prêtes (obs_time/temp/relhum/pres/swdown/
   # difrad/lwdown/windspeed/winddir/precip), précip incluse, pression en kPa.
   meteo <- mcera5::extract_clim(src, long = lon, lat = lat,
@@ -493,12 +586,40 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   meteo
 }
 
+# Clé du cache microclimat d'une année (audit 1.0). L'ancien nom
+# `cache_<annee>_tmax.tif` ne dépendait que de l'année : un `cache_dir` partagé
+# entre deux emprises, deux `mois_ete` ou deux PAI relisait les rasters du
+# premier run. La clé hache tout ce qui conditionne la sortie microclimf :
+# emprise + résolution + CRS de la grille, `reqhgt`, `mois_ete`, point ERA5
+# (lon/lat) et source du PAI (provenance + empreinte de ses valeurs ; un PAI
+# relu du cache `pai.tif` vaut un PAI LiDAR).
+.rsen_micro_cache_key <- function(dtm, reqhgt, mois_ete, lon, lat,
+                                  pai = NULL, pai_source = NA) {
+  pai_empreinte <- if (inherits(pai, "SpatRaster")) {
+    round(unlist(terra::global(pai[[1]], c("mean", "sd"), na.rm = TRUE)), 4)
+  } else NA_real_
+  src <- if (identical(pai_source, "cache")) "lidar" else as.character(pai_source)
+  substr(rlang::hash(list(
+    ext      = round(as.vector(terra::ext(dtm)), 2),
+    res      = round(terra::res(dtm), 4),
+    crs      = terra::crs(dtm),
+    reqhgt   = as.numeric(reqhgt),
+    mois_ete = sort(unique(as.integer(mois_ete))),
+    lonlat   = round(c(lon, lat), 4),
+    pai_src  = src,
+    pai      = unname(pai_empreinte))), 1, 12)
+}
+
 # Une année -> rasters d'été (T°max sous couvert, VPD moyen), mis en cache tif.
+# Le nom du cache porte la clé `.rsen_micro_cache_key()` en plus de l'année.
 .rsen_traiter_annee <- function(annee, lon, lat, dtm, veg, soil,
                                 reqhgt, mois_ete, cache_dir, emit = NULL,
-                                category = NA) {
-  ft <- file.path(cache_dir, sprintf("cache_%d_tmax.tif", annee))
-  fv <- file.path(cache_dir, sprintf("cache_%d_vpd.tif", annee))
+                                category = NA, pai_source = NA) {
+  cle <- .rsen_micro_cache_key(dtm, reqhgt, mois_ete, lon, lat,
+                               pai = if (is.list(veg)) veg$pai else NULL,
+                               pai_source = pai_source)
+  ft <- file.path(cache_dir, sprintf("cache_%d_%s_tmax.tif", annee, cle))
+  fv <- file.path(cache_dir, sprintf("cache_%d_%s_vpd.tif", annee, cle))
   if (file.exists(ft) && file.exists(fv))
     return(list(tmax = terra::rast(ft), vpd = terra::rast(fv)))
   meteo <- .rsen_forcage_era5(lon, lat, annee, cache_dir,
@@ -618,7 +739,9 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #'   `NULL` (default) uses `getOption("nemeton.micro_max_cells", 5e4)`.
 #' @param cache_dir Directory for the ERA5 `.nc` and per-year microclimate `.tif`
 #'   caches. `NULL` (default) uses a session temp dir; pass a persistent path to
-#'   reuse expensive runs.
+#'   reuse expensive runs. Microclimate `.tif` caches are keyed by year AND a
+#'   hash of the grid (extent, resolution, CRS), `reqhgt`, `mois_ete`, the
+#'   ERA5 point and the PAI source, so a shared directory is safe.
 #' @param progress_callback Optional function called at each step with a
 #'   `list(current = <key>, …)` payload (monitoring pattern). Keys:
 #'   `"regen_expo:pai"` (`source` = `"lidar"`/`"cache"`/`"raster"`, once, when the
@@ -787,11 +910,13 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   emit(list(current = "regen_expo:microclimf", category = "moyenne"))
   M <- .rsen_moyenne_categorie(annees_moy, lon = lon, lat = lat, dtm = dtm,
          veg = veg, soil = soil, reqhgt = reqhgt, mois_ete = mois_ete,
-         cache_dir = cache_dir, emit = emit, category = "moyenne")
+         cache_dir = cache_dir, emit = emit, category = "moyenne",
+         pai_source = pai_source)
   emit(list(current = "regen_expo:microclimf", category = "canicule"))
   C <- .rsen_moyenne_categorie(annees_canic, lon = lon, lat = lat, dtm = dtm,
          veg = veg, soil = soil, reqhgt = reqhgt, mois_ete = mois_ete,
-         cache_dir = cache_dir, emit = emit, category = "canicule")
+         cache_dir = cache_dir, emit = emit, category = "canicule",
+         pai_source = pai_source)
 
   # 3. Écarts et robustesse signal/bruit (si >= 2 années par catégorie).
   d_tmax <- C$tmax_moy - M$tmax_moy

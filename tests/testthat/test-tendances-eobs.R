@@ -36,6 +36,36 @@ test_that("trends recover the per-cell linear slope", {
   expect_true(all(out$trend_precip < 0, na.rm = TRUE))    # drying
 })
 
+test_that("trends are per DECADE, like eobs_downscale and eobs_trend_fit (audit 1.0)", {
+  skip_if_not_installed("terra")
+  tx <- .eobs_stack(base = 20, slope_scale = 0.1)     # 0.1*i °C/an
+  rr <- .eobs_stack(base = 300, slope_scale = -2)     # -2*i mm/an
+  out <- tendances_estivales_eobs(.eobs_aoi(), tx = tx, rr = rr, buffer_m = 25000)
+  # Toutes les pentes/an sont des multiples de 0.1 (tx) / -2 (rr) : par décennie,
+  # des multiples ENTIERS de 1 / -20.
+  expect_equal(out$trend_tmax, round(out$trend_tmax), tolerance = 1e-8)
+  expect_true(all(out$trend_tmax > 1 - 1e-8))        # >= 1 °C/décennie, pas 0.1
+  expect_equal(out$trend_precip / -20, round(out$trend_precip / -20),
+               tolerance = 1e-8)
+  # Même valeur que la pente du graphe au clic (eobs_trend_fit) sur une maille.
+  v <- as.numeric(terra::values(tx)[1, ])
+  fit <- eobs_trend_fit(data.frame(year = seq_along(v), value = v))
+  expect_equal(fit$slope_decade, 1, tolerance = 1e-8)          # maille 1 : 0.1/an
+  expect_equal(nemeton:::.eobs_slope_decade(v, seq_along(v)), fit$slope_decade)
+})
+
+test_that("default years come from terra::time() (a missing year keeps the slope right)", {
+  skip_if_not_installed("terra")
+  yrs <- c(2011, 2012, 2014, 2015, 2016)        # 2013 absente
+  tx <- .eobs_stack(nyear = 5); rr <- .eobs_stack(base = 300, nyear = 5)
+  # Valeurs = base + 0.1*i*(année - 2010) : pente 0.1*i/an sur les VRAIES années.
+  sl <- (1:16) * 0.1
+  terra::values(tx) <- vapply(yrs, function(y) 20 + sl * (y - 2010), numeric(16))
+  terra::time(tx) <- as.Date(sprintf("%d-07-15", yrs))
+  out <- tendances_estivales_eobs(.eobs_aoi(), tx = tx, rr = rr, buffer_m = 25000)
+  expect_equal(out$trend_tmax, round(out$trend_tmax), tolerance = 1e-8)
+})
+
 test_that("classes are 1-3 and the bivariate class is 1-9", {
   skip_if_not_installed("terra")
   tx <- .eobs_stack(slope_scale = 0.1)

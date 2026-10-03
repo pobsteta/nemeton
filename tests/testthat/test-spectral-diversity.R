@@ -170,6 +170,79 @@ test_that("compute_spectral_diversity validates its reflectance argument", {
     "SpatRaster or an existing raster file path")
 })
 
+# --- reuse_existing indexé par les entrées (audit 1.0) -----------------------
+
+# Faux biodivMapR : écrit shannon / beta dans output_dir et compte les appels.
+.faux_biodivmapr <- function(st) {
+  function(input_raster_path, input_mask_path, output_dir, window_size,
+           nbCPU, options) {
+    st$n <- st$n + 1L
+    r <- terra::rast(input_raster_path)[[1]]
+    terra::writeRaster(r * 0 + st$n, file.path(output_dir, "shannon_mean.tiff"),
+                       overwrite = TRUE)
+    terra::writeRaster(c(r, r, r) * 0 + st$n, file.path(output_dir, "beta.tiff"),
+                       overwrite = TRUE)
+    invisible(NULL)
+  }
+}
+
+.cube_s2 <- function(v) terra::rast(nrows = 20, ncols = 20, nlyrs = 3,
+                                    xmin = 0, xmax = 200, ymin = 0, ymax = 200,
+                                    crs = "EPSG:2154", vals = v)
+
+test_that("reuse_existing only reuses outputs of the same inputs", {
+  skip_if_terra_write_broken()
+  st <- new.env(); st$n <- 0L
+  local_mocked_bindings(.run_biodivmapr = .faux_biodivmapr(st))
+  out <- withr::local_tempdir()
+
+  r1 <- compute_spectral_diversity(.cube_s2(1), output_dir = out)
+  expect_false(r1$reused)
+  r2 <- compute_spectral_diversity(.cube_s2(1), output_dir = out)
+  expect_true(r2$reused)
+  expect_identical(st$n, 1L)
+
+  # Autre scène dans le même dossier : recalcul, pas de B4/L3 périmés.
+  r3 <- compute_spectral_diversity(.cube_s2(2), output_dir = out)
+  expect_false(r3$reused)
+  expect_identical(st$n, 2L)
+  expect_equal(terra::global(r3$alpha, "max")[[1]], 2)
+
+  # Autre window_size, autres options, autre masque : recalcul aussi.
+  compute_spectral_diversity(.cube_s2(2), output_dir = out, window_size = 5L)
+  expect_identical(st$n, 3L)
+  compute_spectral_diversity(.cube_s2(2), output_dir = out, window_size = 5L,
+                             options = list(nbclusters = 20))
+  expect_identical(st$n, 4L)
+  m <- .cube_s2(1)[[1]]
+  compute_spectral_diversity(.cube_s2(2), output_dir = out, window_size = 5L,
+                             options = list(nbclusters = 20), mask = m)
+  expect_identical(st$n, 5L)
+})
+
+test_that("a legacy output_dir without a cache key is recomputed", {
+  skip_if_terra_write_broken()
+  st <- new.env(); st$n <- 0L
+  local_mocked_bindings(.run_biodivmapr = .faux_biodivmapr(st))
+  out <- withr::local_tempdir()
+  r <- .cube_s2(1)[[1]]
+  terra::writeRaster(r, file.path(out, "shannon_mean.tiff"))
+  terra::writeRaster(c(r, r, r), file.path(out, "beta.tiff"))
+  res <- compute_spectral_diversity(.cube_s2(1), output_dir = out)
+  expect_false(res$reused)
+  expect_identical(st$n, 1L)
+})
+
+test_that("a file-path reflectance is keyed by its path and content stamp", {
+  skip_if_terra_write_broken()
+  f <- withr::local_tempfile(fileext = ".tif")
+  terra::writeRaster(.cube_s2(1), f)
+  k1 <- .spectral_cache_key(f, NULL, 10L, NULL)
+  expect_identical(k1, .spectral_cache_key(f, NULL, 10L, NULL))
+  expect_false(identical(k1, .spectral_cache_key(f, NULL, 11L, NULL)))
+  expect_error(.spectral_cache_key(f, 42, 10L, NULL), "mask must be")
+})
+
 test_that("normalize_indicator scales B4 (Shannon) and L3 (PCoA dispersion)", {
   # B4: high = good, bound [0, log(10)] -- ten effective spectral species
   # per window (spec 028 D3 recalibrated on the reference run, §10).

@@ -88,6 +88,45 @@ test_that("un re-run conserve les alertes validées sur le terrain (audit 1.0)",
   })
 })
 
+test_that("un run sans alerte purge les alertes pending précédentes (audit 1.0)", {
+  skip_if_not_installed("sf")
+  with_sqlite_monitoring_db(function(con) {
+    pts <- function(xy, dt = as.Date("2026-05-20")) sf::st_sf(
+      trigger_date     = dt,
+      confidence_class = "3-forte",
+      stress_index     = 0.8,
+      geometry = sf::st_sfc(lapply(xy, sf::st_point), crs = 2154))
+    nemeton:::.insert_fordead_alerts(
+      con, pts(list(c(900000, 6500000), c(901000, 6500000))), zone_id = 1L)
+    id1 <- DBI::dbGetQuery(con, "SELECT id FROM alert ORDER BY id LIMIT 1")$id
+    DBI::dbExecute(con,
+      "UPDATE alert SET validation_status = 'confirmed' WHERE id = ?",
+      params = list(id1))
+
+    # NULL = post-traitement en échec : rien n'est touché.
+    expect_equal(nemeton:::.insert_fordead_alerts(con, NULL, zone_id = 1L), 0L)
+    expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM alert")$n, 2L)
+
+    # Run réussi sans alerte : la pending disparaît, la validée reste.
+    empty <- pts(list(c(0, 0)))[0, ]
+    expect_equal(nemeton:::.insert_fordead_alerts(con, empty, zone_id = 1L), 0L)
+    got <- DBI::dbGetQuery(con, "SELECT id, validation_status FROM alert")
+    expect_equal(got$id, id1)
+    expect_equal(got$validation_status, "confirmed")
+
+    # Toutes les lignes écartées (trigger_date NA) : purge appliquée aussi.
+    nemeton:::.insert_fordead_alerts(
+      con, pts(list(c(905000, 6500000))), zone_id = 1L)
+    expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM alert")$n, 2L)
+    expect_warning(
+      n <- nemeton:::.insert_fordead_alerts(
+        con, pts(list(c(906000, 6500000)), dt = as.Date(NA)), zone_id = 1L),
+      "trigger_date")
+    expect_equal(n, 0L)
+    expect_equal(DBI::dbGetQuery(con, "SELECT id FROM alert")$id, id1)
+  })
+})
+
 # db_migrate's `INSERT INTO schema_migration ... ON CONFLICT DO NOTHING`
 # (no conflict target) is only valid on SQLite >= 3.35.0; the fix routes
 # SQLite through `INSERT OR IGNORE`. A fresh migrate must populate

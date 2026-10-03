@@ -151,6 +151,44 @@ test_that("build_project_monitoring_zones re-build survives FK + child rows (SQL
   })
 })
 
+test_that("build_project_monitoring_zones rolls back the delete when re-creation fails (SQLite)", {
+  # Audit 1.0 : suppression et recréation étaient commitées séparément ;
+  # un échec en cours de recréation laissait le projet sans zone.
+  skip_if_no_sqlite()
+  skip_if_not_installed("sf")
+  fx <- .cascade_fixtures()
+  withr::with_tempfile("dbf", fileext = ".sqlite", {
+    con <- db_connect(paste0("sqlite:///", dbf))
+    on.exit(db_disconnect(con), add = TRUE)
+    db_migrate(con)
+
+    uuid <- "proj-atomic-1"
+    suppressWarnings(
+      build_project_monitoring_zones(con, "Forêt de Mouthe", uuid,
+                                     fx$ugf, fx$bdforet))
+    zones1 <- find_zones_by_project(con, uuid)
+    expect_gt(nrow(zones1), 1L)
+
+    # La 2e insertion échoue : tout doit être annulé, anciennes zones comprises.
+    n_calls <- 0L
+    real_insert <- nemeton:::.insert_monitoring_zone
+    testthat::local_mocked_bindings(
+      .insert_monitoring_zone = function(...) {
+        n_calls <<- n_calls + 1L
+        if (n_calls >= 2L) stop("boom")
+        real_insert(...)
+      },
+      .package = "nemeton")
+    expect_error(suppressWarnings(
+      build_project_monitoring_zones(con, "Forêt de Mouthe", uuid,
+                                     fx$ugf, fx$bdforet)), "boom")
+
+    zones2 <- find_zones_by_project(con, uuid)
+    expect_equal(zones2$id, zones1$id)
+    expect_equal(zones2$name, zones1$name)
+  })
+})
+
 
 # ---- PostgreSQL: parity (cascade is also present at the schema level) -
 

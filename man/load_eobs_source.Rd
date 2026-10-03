@@ -28,7 +28,8 @@ load_eobs_source(
 
 \item{years}{Optional integer years to keep (default: all years present).}
 
-\item{months}{Summer months to reduce over (default \code{6:8}, JJA).}
+\item{months}{Summer months to reduce over (default \code{6:8}, JJA). A year
+with less than 90\% of the days of these months is dropped with a warning.}
 
 \item{source}{\code{"cds"} for the automatic Copernicus download, anything else
 requires \code{nc}.}
@@ -46,19 +47,21 @@ normalised to the CDS underscore form, e.g. \code{30_0e}) and grid
 resolution (default \code{"0.1deg"}) for the CDS request.}
 
 \item{period}{Optional explicit CDS period block (e.g. \code{"2011_2024"});
-inferred from \code{years} when \code{NULL}.}
+inferred from \code{years} when \code{NULL}; years spanning several CDS blocks
+are downloaded block by block and merged.}
 
 \item{progress_callback}{Optional function called at each step with a
 \code{list(current = <key>, ...)} payload (monitoring pattern). Keys:
 \code{"eobs:cds_request"}, \code{"eobs:cds_download_done"}, \code{"eobs:unzip"},
 \code{"eobs:read"}, \code{"eobs:reduce"}, \code{"eobs:complete"},
-\code{"eobs:unavailable"}. The app maps these to bottom-right notifications.}
+\code{"eobs:unavailable"} (\code{reason}, and \code{message} = the underlying
+error). The app maps these to bottom-right notifications.}
 
 \item{...}{Ignored (forward-compat).}
 }
 \value{
 A per-year summer \code{SpatRaster} (layers named by year), or \code{NULL} on
-graceful degradation.
+graceful degradation (with a warning carrying the underlying error message).
 }
 \description{
 Build the per-year summer \code{SpatRaster} (one layer per year, named by year)

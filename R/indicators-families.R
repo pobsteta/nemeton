@@ -16,6 +16,16 @@ NULL
 # Package-level nasapower wind cache (avoids re-downloading for L1, R2)
 .wind_cache <- new.env(parent = emptyenv())
 
+# Nom du fichier cache du vent NASA POWER pour un point (lon/lat déjà arrondis
+# ou non : arrondi à 0.01° ici).
+.nasapower_wind_cache_file <- function(lon, lat) {
+  enc <- function(x) {
+    v <- sprintf("%.2f", round(as.numeric(x), 2) + 0)   # + 0 : pas de "-0.00"
+    sub(".", "p", sub("^-", "m", v), fixed = TRUE)
+  }
+  sprintf("nasapower_wind_%s_%s.rds", enc(lon), enc(lat))
+}
+
 #' Get wind climatology from NASA POWER with caching
 #'
 #' Downloads monthly wind direction (WD10M) and speed (WS10M) climatology from
@@ -49,7 +59,11 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
   if (is.null(cache_dir)) {
     cache_dir <- file.path(get_global_cache_dir(), "nasapower")
   }
-  cache_file <- file.path(cache_dir, "nasapower_wind.rds")
+  # Audit 1.0 : le fichier s'appelait `nasapower_wind.rds` quelle que soit la
+  # position -> avec le cache global, le vent du premier projet était relu pour
+  # tous les autres. Le nom porte désormais lon/lat arrondis (0.01°, comme la
+  # clé mémoire), encodés sans `.` ni `-` (`4.5` -> `4p50`, `-1.2` -> `m1p20`).
+  cache_file <- file.path(cache_dir, .nasapower_wind_cache_file(lon, lat))
 
   if (file.exists(cache_file)) {
     tryCatch({

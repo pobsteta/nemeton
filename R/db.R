@@ -34,6 +34,15 @@ NULL
 
 # ---- Driver selection ------------------------------------------------
 
+# Masque le mot de passe d'une URL de base avant de l'afficher dans un
+# message (audit 1.0) : `postgresql://user:secret@host/db` devient
+# `postgresql://user:***@host/db`. Les URL sans identifiants (SQLite,
+# `user@host`) sont rendues telles quelles.
+.mask_db_url <- function(url) {
+  if (!is.character(url)) return(url)
+  sub("^([A-Za-z][A-Za-z0-9+.-]*://[^:/@]*):[^@]*@", "\\1:***@", url)
+}
+
 # Inspect a URL and return the backend identifier. Recognised values:
 #   "pg"     for postgres:// or postgresql://
 #   "sqlite" for sqlite: (any number of slashes) or a bare path
@@ -56,7 +65,7 @@ NULL
     ))
   }
   cli::cli_abort(c(
-    "Unrecognised DB URL: {.val {url}}.",
+    "Unrecognised DB URL: {.val {(.mask_db_url(url))}}.",
     "i" = "Expected {.val postgresql://...} or {.val sqlite:///path.sqlite}."
   ))
 }
@@ -310,6 +319,7 @@ db_migrate <- function(con,
   newly_applied <- character(0)
   for (f in to_apply) {
     version <- .migration_version(f)
+    .migration_preflight(con, version)
     sql <- paste(readLines(f, warn = FALSE), collapse = "\n")
     DBI::dbWithTransaction(con, {
       if (is_pg) {
@@ -354,7 +364,7 @@ db_migrate <- function(con,
     url
   ))[[1]]
   if (length(m) < 6) {
-    cli::cli_abort("Invalid PostgreSQL URL: {.val {url}}.")
+    cli::cli_abort("Invalid PostgreSQL URL: {.val {(.mask_db_url(url))}}.")
   }
   list(
     user     = m[2],
@@ -376,7 +386,7 @@ db_migrate <- function(con,
 .parse_sqlite_url <- function(url) {
   path <- sub("^sqlite:(?://)?", "", url, ignore.case = TRUE)
   if (!nzchar(path)) {
-    cli::cli_abort("Empty SQLite path in URL: {.val {url}}.")
+    cli::cli_abort("Empty SQLite path in URL: {.val {(.mask_db_url(url))}}.")
   }
   path
 }
@@ -459,6 +469,30 @@ db_migrate <- function(con,
 
 .migration_version <- function(path) {
   tools::file_path_sans_ext(basename(path))
+}
+
+# Contrôles préalables à une migration destructive, joués AVANT d'ouvrir
+# sa transaction. 0007 fait `DROP TABLE IF EXISTS alert` (D-B3) en
+# supposant la table vide (contrat Phase A) : si elle contient des lignes
+# (alertes à valider, validations terrain), on refuse plutôt que de les
+# détruire. Sous PG la migration porte en plus son propre garde-fou
+# (bloc DO … RAISE EXCEPTION) ; SQLite n'a pas de DO, d'où ce contrôle
+# côté R, appliqué aux deux moteurs. Une base déjà migrée n'est pas
+# concernée : 0007 n'est jamais rejouée.
+.migration_preflight <- function(con, version) {
+  if (identical(version, "0007_alert_pixel_geometry") &&
+      DBI::dbExistsTable(con, "alert")) {
+    n <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM alert")$n[1L]
+    n <- as.numeric(n)
+    if (!is.na(n) && n > 0) {
+      cli::cli_abort(c(
+        "Refusing to apply migration {.val {version}}: table {.code alert} holds {n} row{?s}.",
+        "x" = "This migration drops and recreates {.code alert}; its rows would be lost.",
+        "i" = "Back up and empty {.code alert} (e.g. {.code DELETE FROM alert}) before migrating."
+      ))
+    }
+  }
+  invisible(TRUE)
 }
 
 .applied_migrations <- function(con) {

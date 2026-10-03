@@ -267,6 +267,42 @@ test_that("runs the 6 phases in order on the success path", {
   expect_match(out$rasters$model_dir, "model_[0-9]{8}T[0-9]{6}$")
 })
 
+test_that("a run without alert still calls the insert (pending purge); a failed post-process does not (audit 1.0)", {
+  skip_if_not_installed("terra")
+  skip_if_no_reticulate(); skip_if_no_sf()
+
+  run_once <- function(fail_postprocess) {
+    fk <- make_fake_fordead_2x_module()
+    helpers <- .mock_pipeline_helpers(fail_postprocess = fail_postprocess)
+    helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+    calls <- list()
+    helpers$.insert_fordead_alerts <- function(con, alerts_sf, zone_id, ...) {
+      calls[[length(calls) + 1L]] <<- alerts_sf
+      0L
+    }
+    testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+    out <- run_fordead_dieback(
+      con              = make_fake_con(),
+      zone_id          = 1L,
+      cache_dir        = make_cache_dir(),
+      dates_training   = c("2016-01-01", "2017-12-31"),
+      dates_monitoring = c("2018-01-01", "2018-12-31"),
+      verbose          = FALSE)
+    list(out = out, calls = calls)
+  }
+
+  # Run réussi sans alerte : l'insertion reçoit un sf à 0 ligne (purge).
+  r <- run_once(FALSE)
+  expect_length(r$calls, 1L)
+  expect_s3_class(r$calls[[1]], "sf")
+  expect_equal(nrow(r$calls[[1]]), 0L)
+  expect_null(r$out$alerts_sf)          # convention mémoire inchangée
+
+  # Post-traitement en échec : la base n'est pas touchée.
+  r <- suppressWarnings(run_once(TRUE))
+  expect_length(r$calls, 0L)
+})
+
 
 # ---- cooperative cancellation ----------------------------------------
 
