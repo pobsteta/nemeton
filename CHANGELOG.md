@@ -10,6 +10,24 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.209.0] - 2026-10-03
+
+### Fixed
+- Caches indexés sur leurs vraies entrées : ERA5 (lon/lat), microclimat (emprise,
+  paramètres, PAI), vent NASA POWER, scènes S2 (emprise), RECONFORT `.done`
+  (fenêtre AOI), diversité spectrale, MNT/MNH LiDAR.
+- Écritures atomiques et caches illisibles supprimés : IFN, INSEE, ERA5, COG FAST,
+  PDF du corpus.
+- E-OBS : étés incomplets écartés, blocs CDS multiples, erreurs explicites ;
+  tendances par décennie partout ; ombrothermique sur mois complets.
+- BILJOU : `lai_max` NA remplacé, unités SAFRAN manquantes signalées, `years` validé.
+- Transactions : zones, placettes, validations terrain ; migration 0007 gardée ;
+  `prune_orphan_zone_caches()` protégé ; stade de validation inconnu refusé ; purge
+  des alertes `pending` sur un run sans alerte.
+
+### Security
+- URL signées et mots de passe de base retirés des messages et journaux.
+
 ## [0.208.0] - 2026-10-02
 
 ### Fixed

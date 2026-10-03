@@ -184,8 +184,8 @@ test_that(".biljou_forcing_era5 does not hand the first unit's ERA5 file to the 
       list(list(target = paste0(outfile_name, "_2018_6.zip")))
     },
     request_era5 = function(request, out_path, ...)
-      file.create(file.path(out_path, paste0(seen$outfile, "_2018_6.nc"))),
-    combine_netcdf = function(filenames, combined_name) file.create(combined_name),
+      .nc_ok(file.path(out_path, paste0(seen$outfile, "_2018_6.nc"))),
+    combine_netcdf = function(filenames, combined_name) .nc_ok(combined_name),
     # Température horaire = longitude du point lu dans le NOM du fichier.
     extract_clim = function(src, ...) {
       lon <- as.numeric(sub("p", ".", sub("^era5_([0-9p]+)_.*", "\\1", basename(src))))

@@ -236,17 +236,6 @@ test_that(".pai_keep_xy_filter builds a buffered -keep_xy from various zones", {
 
 # Écrit un vrai petit NetCDF (classique par défaut) à `path`. Depuis l'audit
 # 1.0, un fichier vide ne passe plus pour un cache ERA5.
-.nc_ok <- function(path, v4 = FALSE) {
-  skip_if_not_installed("ncdf4")
-  x <- ncdf4::ncdim_def("longitude", "degrees_east", c(5.95, 6.05))
-  y <- ncdf4::ncdim_def("latitude", "degrees_north", c(47.95, 48.05))
-  t <- ncdf4::ncdim_def("time", "hours since 1900-01-01", 1:48, unlim = TRUE)
-  v <- ncdf4::ncvar_def("t2m", "K", list(x, y, t), prec = "float")
-  nc <- ncdf4::nc_create(path, list(v), force_v4 = v4)
-  ncdf4::ncvar_put(nc, v, rep(285, 2 * 2 * 48))
-  ncdf4::nc_close(nc)
-  invisible(TRUE)
-}
 
 .tronquer <- function(path, part = 0.6) {
   b <- readBin(path, "raw", file.size(path))
