@@ -25,7 +25,7 @@ simply has no ~1850 forest.
 load_foret_ancienne_source(
   aoi,
   crs = 2154,
-  layer = "BDCARTO_ETAT-MAJOR.NIVEAU3:c_1_1_ocs_ancien",
+  layer = .FORET_ANCIENNE_WFS_LAYER,
   ...
 )
 ```

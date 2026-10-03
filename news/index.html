@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,33 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.211.0" id="nemeton-02110-2026-10-03">nemeton 0.211.0 (2026-10-03)<a class="anchor" aria-label="anchor" href="#nemeton-02110-2026-10-03"></a></h2>
+<p>Quatrième vague de l’audit de pré-version 1.0 : <strong>paquet propre</strong>. <code>R CMD check --as-cran</code> passe à <strong>0 WARNING</strong> et la CI échoue désormais au premier warning.</p>
+<div class="section level4">
+<h4 id="changed-0-211-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-211-0"></a></h4>
+<ul><li>
+<strong>Release conditionnée au check</strong> : <code>release.yml</code> ne part plus au simple push sur <code>main</code> mais quand le workflow R-CMD-check (check, tests, couverture) a réussi, et tague le commit vérifié.</li>
+<li>
+<strong>Dépendances</strong> : <code>ggrepel</code> et <code>signal</code> passent en Suggests (leurs usages étaient déjà protégés) ; <code>methods</code>, <code>stats</code>, <code>utils</code>, <code>graphics</code>, <code>tools</code> et <code>parallel</code> sont déclarés ; <code>prosail</code>, <code>EBImage</code> et <code>ncdf4</code> aussi. <code>smooth = "light"</code> du diagnostic pixel exige toujours <code>signal</code>.</li>
+<li>
+<strong><code><a href="../reference/get_global_cache_dir.html">get_global_cache_dir()</a></code></strong> honore la variable <code>NEMETON_CACHE_DIR</code> ; la suite de tests s’en sert pour ne plus écrire dans le cache réel.</li>
+<li>Les scripts de développement (<code>inst/scripts/</code>) sont déplacés dans <code>tools/</code>, hors du paquet installé.</li>
+<li>
+<code>normalize_indicators(by_family = TRUE)</code> est retiré de l’exemple du paquet.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="fixed-0-211-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-211-0"></a></h4>
+<ul><li>
+<strong>Archive de 5,4 Go</strong> (<code>data/i2_training_data.tar.bz2</code>) : ignorée par git mais pas par <code>.Rbuildignore</code>, elle partait dans tout <code>R CMD build</code> local. Exclue, comme <code>__pycache__</code>, <code>*.pyc</code> et <code>.Renviron(.example)</code>.</li>
+<li>
+<strong>Documentation</strong> : trois blocs roxygen détachés de leur fonction (<code><a href="../reference/normalize_indicator.html">normalize_indicator()</a></code>, <code><a href="../reference/indicateur_r3_secheresse.html">indicateur_r3_secheresse()</a></code>, <code><a href="../reference/check_fordead_validity.html">check_fordead_validity()</a></code>) — le premier <code><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">devtools::document()</a></code> aurait retiré trois exports ; six pages d’aide à la signature fausse et dix arguments non documentés corrigés (<code><a href="https://rdrr.io/r/tools/codoc.html" class="external-link">tools::codoc</a></code> et <code>checkDocFiles</code> à zéro).</li>
+<li>Caractères non ASCII du code échappés (<code>\uXXXX</code>) ; un fichier Python vendorisé renommé (chemin de plus de 100 octets).</li>
+<li>
+<code>DESCRIPTION</code> décrit le paquet actuel (41 indicateurs, plus d’application Shiny ici) ; README à 41 indicateurs.</li>
+<li>Dépôt : <code>docs/</code> (site pkgdown figé en v0.13.0) et les sorties de vignettes ne sont plus suivis par git ; <code>create-release.sh</code> supprimé ; <code>cran-comments.md</code> réécrit.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.210.0" id="nemeton-02100-2026-10-03">nemeton 0.210.0 (2026-10-03)<a class="anchor" aria-label="anchor" href="#nemeton-02100-2026-10-03"></a></h2>
 <p>Troisième vague de l’audit de pré-version 1.0 : <strong>sécurité</strong>. Dix-sept correctifs ; aucune injection SQL n’avait été trouvée par l’audit, les points traités ici sont l’exécution de code, la fuite de secrets et la confiance accordée à des entrées éditables.</p>

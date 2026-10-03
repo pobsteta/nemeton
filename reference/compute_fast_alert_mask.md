@@ -123,6 +123,16 @@ compute_fast_alert_mask(
   Passed through to \[read_fast_alert_raster()\] (spec 017 D4): optional
   multi-core per-scene raster compute via furrr.
 
+- apply_zone_mask:
+
+  Logical. When `TRUE` (default), pixels outside the monitoring zone
+  polygon (the managed UGF perimeter) are set to `NA`.
+
+- mask_polygon:
+
+  Optional `sf`/`sfc` polygon used as the zone mask instead of the
+  polygon stored for the zone in the database.
+
 ## Value
 
 Invisibly, the absolute path to the persisted TIF, or \`NULL\` if

@@ -10,7 +10,7 @@ deliberately pessimistic.
 ## Usage
 
 ``` r
-lsms_duree_estimee(n_pixels, spatialr = 15L)
+lsms_duree_estimee(n_pixels, spatialr = .LSMS_DEFAUTS$spatialr)
 ```
 
 ## Arguments

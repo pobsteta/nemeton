@@ -221,13 +221,13 @@ CEC brute**. Quelques lectures utiles :
 
 ## Reproduire la calibration
 
-Le pipeline complet est shipé dans `inst/scripts/calibrate_uts_rmqs.R`.
-Il est idempotent et met en cache les 4 fichiers RMQS (≈ 2.5 Mo) dans
-`tools::R_user_dir("nemeton", "cache")`.
+Le pipeline complet est dans le script de dépôt
+`tools/calibrate_uts_rmqs.R`. Il est idempotent et met en cache les 4
+fichiers RMQS (≈ 2.5 Mo) dans `tools::R_user_dir("nemeton", "cache")`.
 
 ``` sh
 # Depuis la racine du projet
-Rscript inst/scripts/calibrate_uts_rmqs.R
+Rscript tools/calibrate_uts_rmqs.R
 ```
 
 Le script écrit `inst/extdata/uts_fertilite_rmqs_calibration.csv`. Il

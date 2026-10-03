@@ -129,7 +129,7 @@ opposer au prochain fork qui se présentera comme un raccourci.
 | 1 | Corrections de calcul : B2, R3, priorité reGénération, `volume_mobilisable`, chasse, `nemeton_compute`, normalisation/familles, tuile MGRS, validations terrain, `%||%` | **v0.208.0** | ✅ livré, brief app émis |
 | 2 | Robustesse des données : clés de cache (ERA5, microclimat, vent, S2 par emprise, `.done` RECONFORT), téléchargements atomiques, étés incomplets, transactions, migration 0007, `prune_orphan_zone_caches` | **v0.209.0** | ✅ livré, brief app émis |
 | 3 | Sécurité : `eval` du cfg Python, `verify=False` pygeodes, manifeste RAG, `format_citations`, `project_name`, `zone_id`/`output_dir`, URL de base dans les messages | **v0.210.0** | ✅ livré, brief app émis |
-| 4 | Paquet propre : `.Rbuildignore` (archive de 5,4 Go dans `data/`), DESCRIPTION, `.Rd` (8 WARNING → 0), roxygen détachés, non-ASCII, CI | 0.211 | ⬜ |
+| 4 | Paquet propre : `.Rbuildignore` (archive de 5,4 Go dans `data/`), DESCRIPTION, `.Rd` (8 WARNING → 0), roxygen détachés, non-ASCII, CI | **v0.211.0** | ✅ livré : 0 WARNING, CI en échec sur warning |
 | 5 | Contrat d’API : retours vecteur / `sf`, `lang`, 313 exports à trier | 0.212 | ⬜ |
 
 **Journal** — *2026-10-02* (**v0.208.0**) : vague 1 livrée, dix
@@ -154,8 +154,15 @@ Côté app : mesures terrain recalculées sur les seuls vivants, `tree_id`
 obligatoire, `NEMETON_CORPUS_ROOT` à poser pour le worker du corpus.
 Brief : `specs/audit-1.0/brief-nemetonshiny-0.210.0.md`.
 
-**Prochaine étape** : vague 4 (paquet propre), déjà avancée sur sa
-branche.
+**Journal** — *2026-10-03* (**v0.211.0**) : vague 4 livrée.
+`R CMD check --as-cran` à 0 WARNING ; la CI échoue au premier warning
+(`--ignore-vignettes`, les vignettes étant construites par pkgdown) ; la
+release ne part qu’après un R-CMD-check réussi. Restent hors de cette
+vague : tutoriels 07/08 (données exclues du build), guide de l’app dans
+les vignettes, exports à trier.
+
+**Prochaine étape** : vague 5 (contrat d’API) et reliquat majeur de
+l’audit.
 
 ------------------------------------------------------------------------
 
@@ -6661,8 +6668,10 @@ hybride
 ([`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md),
 spec 033), et la **même machinerie** produit les trois autres —
 `train_prosail_inversion(parms_to_estimate=)` accepte `"fCover"` (FVC),
-`"CCC"`, et `prosail::Compute_fAPAR()` calcule le fAPAR analytiquement.
-D’où la v2 : **calcul interne** (généraliser
+`"CCC"`, et
+[`prosail::Compute_fAPAR()`](https://rdrr.io/pkg/prosail/man/deprecated.html)
+calcule le fAPAR analytiquement. D’où la v2 : **calcul interne**
+(généraliser
 [`lai_sentinel2()`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md)
 →
 [`biophysique_sentinel2()`](https://pobsteta.github.io/nemeton/reference/biophysique_sentinel2.md)),

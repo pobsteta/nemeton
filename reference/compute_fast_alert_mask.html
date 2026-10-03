@@ -15,7 +15,7 @@ and **persists it to disk** so that downstream consumers
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -244,6 +244,15 @@ underlying continuous raster as a content-addressed COG, and where.</p></dd>
 <dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
 <dd><p>Passed through to [read_fast_alert_raster()] (spec 017
 D4): optional multi-core per-scene raster compute via <span class="pkg">furrr</span>.</p></dd>
+
+<dt id="arg-apply-zone-mask">apply_zone_mask<a class="anchor" aria-label="anchor" href="#arg-apply-zone-mask"></a></dt>
+<dd><p>Logical. When <code>TRUE</code> (default), pixels outside the
+monitoring zone polygon (the managed UGF perimeter) are set to <code>NA</code>.</p></dd>
+
+
+<dt id="arg-mask-polygon">mask_polygon<a class="anchor" aria-label="anchor" href="#arg-mask-polygon"></a></dt>
+<dd><p>Optional <code>sf</code>/<code>sfc</code> polygon used as the zone mask
+instead of the polygon stored for the zone in the database.</p></dd>
 
 </dl></div>
     <div class="section level2">

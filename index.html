@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -150,7 +150,7 @@
 <div class="section level2">
 <h2 id="architecture-adr-009">Architecture (ADR-009)<a class="anchor" aria-label="anchor" href="#architecture-adr-009"></a>
 </h2>
-<pre><code>nemeton (ce repo)       -&gt; Package coeur R (GPL-3). 31 indicateurs, 12 familles, NDP, radar.
+<pre><code>nemeton (ce repo)       -&gt; Package coeur R (GPL-3). 41 indicateurs, 12 familles, NDP, radar.
 nemetonshiny            -&gt; Application Shiny (EUPL v1.2). Interface web interactive.
 tree_sat_nemeton        -&gt; Classification d'essences Sentinel-1/2. NDP 0. MIT.
 maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.</code></pre>
@@ -158,7 +158,7 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <div class="section level2">
 <h2 id="fonctionnalites">Fonctionnalites<a class="anchor" aria-label="anchor" href="#fonctionnalites"></a>
 </h2>
-<p><strong>12 familles d’indicateurs</strong> avec 31 sous-indicateurs (convention NMT) :</p>
+<p><strong>12 familles d’indicateurs</strong> avec 41 sous-indicateurs (convention NMT), dont certains conditionnels (calculés seulement quand leur source est fournie : R5 FORDEAD/RECONFORT, T3 SUFOSAT, A5 LST, R7 SAFRAN) :</p>
 <table class="table">
 <colgroup>
 <col width="21%">
@@ -174,7 +174,7 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <tr>
 <td><strong>B</strong></td>
 <td>Biodiversite</td>
-<td>indicateur_b1_protection, b2_structure, b3_connectivite</td>
+<td>indicateur_b1_protection, b2_structure, b3_connectivite, b4_div_spectrale</td>
 </tr>
 <tr>
 <td><strong>C</strong></td>
@@ -184,12 +184,12 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <tr>
 <td><strong>W</strong></td>
 <td>Eau &amp; Regulation</td>
-<td>indicateur_w1_reseau, w2_zones_humides, w3_humidite</td>
+<td>indicateur_w1_reseau, w2_zones_humides, w3_humidite, w4_vpd</td>
 </tr>
 <tr>
 <td><strong>A</strong></td>
 <td>Air &amp; Microclimat</td>
-<td>indicateur_a1_couverture, a2_qualite_air</td>
+<td>indicateur_a1_couverture, a2_qualite_air, a3_microclimat, a4_tamponnement, a5_rafraichissement</td>
 </tr>
 <tr>
 <td><strong>F</strong></td>
@@ -204,12 +204,12 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <tr>
 <td><strong>T</strong></td>
 <td>Temporel</td>
-<td>indicateur_t1_anciennete, t2_changement</td>
+<td>indicateur_t1_anciennete, t2_changement, t3_coupes_rases</td>
 </tr>
 <tr>
 <td><strong>R</strong></td>
 <td>Risques &amp; Resilience</td>
-<td>indicateur_r1_feu, r2_tempete, r3_secheresse, r4_abroutissement</td>
+<td>indicateur_r1_feu, r2_tempete, r3_secheresse, r4_abroutissement, r5_deperissement, r6_sensibilite, r7_gel</td>
 </tr>
 <tr>
 <td><strong>S</strong></td>
@@ -320,7 +320,7 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <p>L’application permet de :</p>
 <ul>
 <li>Rechercher et selectionner des parcelles cadastrales par commune</li>
-<li>Calculer automatiquement les 31 indicateurs (12 familles)</li>
+<li>Calculer automatiquement les 41 indicateurs (12 familles)</li>
 <li>Visualiser les resultats (radar avec NDP, cartes, tableaux)</li>
 <li>Generer des perspectives IA par profil d’acteur (18 profils)</li>
 <li>Exporter en PDF ou GeoPackage</li>

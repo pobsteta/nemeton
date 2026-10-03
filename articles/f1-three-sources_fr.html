@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -403,12 +403,12 @@ score.</li>
 <div class="section level2">
 <h2 id="reproduire-la-calibration">Reproduire la calibration<a class="anchor" aria-label="anchor" href="#reproduire-la-calibration"></a>
 </h2>
-<p>Le pipeline complet est shipé dans
-<code>inst/scripts/calibrate_uts_rmqs.R</code>. Il est idempotent et met
-en cache les 4 fichiers RMQS (≈ 2.5 Mo) dans
+<p>Le pipeline complet est dans le script de dépôt
+<code>tools/calibrate_uts_rmqs.R</code>. Il est idempotent et met en
+cache les 4 fichiers RMQS (≈ 2.5 Mo) dans
 <code>tools::R_user_dir("nemeton", "cache")</code>.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Depuis la racine du projet</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="ex">Rscript</span> inst/scripts/calibrate_uts_rmqs.R</span></code></pre></div>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="ex">Rscript</span> tools/calibrate_uts_rmqs.R</span></code></pre></div>
 <p>Le script écrit
 <code>inst/extdata/uts_fertilite_rmqs_calibration.csv</code>. Il signale
 à la console les UTS non appariées (classes absentes de la V1 experte :

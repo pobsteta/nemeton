@@ -87,7 +87,8 @@ A \`list\` with:
 if (FALSE) { # \dontrun{
 # Inspect one failing MNT tile:
 probe_ign_lidar_tile(
-  "https://data.geopf.fr/telechargement/download/LIDAR-HD/MNT/LHD_FXX_0929_6592_MNT_O_0M50_LAMB93_IGN69.tif"
+  paste0("https://data.geopf.fr/telechargement/download/LIDAR-HD/MNT/",
+         "LHD_FXX_0929_6592_MNT_O_0M50_LAMB93_IGN69.tif")
 )
 # $ok: FALSE, $status: 404, $category: "not_found"
 # → dalle MNT pas encore publiée par IGN

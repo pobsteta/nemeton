@@ -15,7 +15,7 @@ leaflet `input$map_click`) to each scene's source CRS internally."><meta propert
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -169,6 +169,15 @@ happens internally on a per-scene basis.</p></dd>
 `"NDRE"` (red-edge, spec 022) requires the B05 / B8A bands in the
 cache; a cache holding none aborts (internal
 `.assert_cache_has_bands()` guard).</p></dd>
+
+<dt id="arg-zone-polygon">zone_polygon<a class="anchor" aria-label="anchor" href="#arg-zone-polygon"></a></dt>
+<dd><p>Optional <code>sf</code>/<code>sfc</code> UGF polygon. When supplied with
+<code>warn_outside_zone = TRUE</code>, a warning is raised if <code>xy</code> lies outside it
+(the series is still returned).</p></dd>
+
+
+<dt id="arg-warn-outside-zone">warn_outside_zone<a class="anchor" aria-label="anchor" href="#arg-warn-outside-zone"></a></dt>
+<dd><p>Logical. Warn when <code>xy</code> is outside <code>zone_polygon</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

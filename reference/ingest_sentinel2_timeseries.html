@@ -21,7 +21,7 @@ independent of the validation sampling plan (placettes)."><meta property="og:ima
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -300,8 +300,8 @@ Phases emitted, in order:</p><dl><dt>`s2:search`</dt>
   <dt>`fast_prewarm:&lt;index&gt;_&lt;mode&gt;`</dt>
 <dd><p>(spec 018, only when
     `prewarm_alerts = TRUE`) emitted at the start / end of each of
-    the eight pre-computed FAST maps: `NDVI, NBR, NDMI x
-    count, rolling` (spec 019) plus `NDMI, NDRE x trend`
+    the eight pre-computed FAST maps: NDVI, NBR and NDMI in
+    `count` and `rolling` modes (spec 019) plus NDMI and NDRE in `trend` mode
     (spec 023). The bare key signals "started",
     a `_done` suffix "map ready", a `_failed` suffix "skipped"
     (with `error_message`). Every event carries `index` and `mode`

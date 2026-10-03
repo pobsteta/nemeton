@@ -149,6 +149,16 @@ read_fast_alert_raster(
   across cores (set a \`future::plan()\` first). Default \`FALSE\`;
   results are identical to sequential.
 
+- apply_zone_mask:
+
+  Logical. When `TRUE` (default), pixels outside the monitoring zone
+  polygon (the managed UGF perimeter) are set to `NA`.
+
+- mask_polygon:
+
+  Optional `sf`/`sfc` polygon used as the zone mask instead of the
+  polygon stored for the zone in the database.
+
 ## Value
 
 A \`terra::SpatRaster\` (single layer, EPSG:2154) when at least one

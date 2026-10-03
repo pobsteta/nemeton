@@ -44,6 +44,16 @@ read_fast_alert_mask(
   Path to the FAST mask cache root (typically
   \`\<project\>/cache/layers/fast\`).
 
+- apply_zone_mask:
+
+  Logical. When `TRUE` (default), pixels outside the monitoring zone
+  polygon (the managed UGF perimeter) are set to `NA`.
+
+- mask_polygon:
+
+  Optional `sf`/`sfc` polygon used as the zone mask instead of the
+  polygon stored for the zone in the database.
+
 ## Value
 
 A \`terra::SpatRaster\` (single layer, categorical 0-4) or \`NULL\`.

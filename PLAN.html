@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -325,8 +325,8 @@
 <td>✅ livré, brief app émis</td>
 </tr><tr><td>4</td>
 <td>Paquet propre : <code>.Rbuildignore</code> (archive de 5,4 Go dans <code>data/</code>), DESCRIPTION, <code>.Rd</code> (8 WARNING → 0), roxygen détachés, non-ASCII, CI</td>
-<td>0.211</td>
-<td>⬜</td>
+<td><strong>v0.211.0</strong></td>
+<td>✅ livré : 0 WARNING, CI en échec sur warning</td>
 </tr><tr><td>5</td>
 <td>Contrat d’API : retours vecteur / <code>sf</code>, <code>lang</code>, 313 exports à trier</td>
 <td>0.212</td>
@@ -334,7 +334,8 @@
 </tr></tbody></table><p><strong>Journal</strong> — <em>2026-10-02</em> (<strong>v0.208.0</strong>) : vague 1 livrée, dix correctifs, chacun avec un test qui échouait avant. Valeurs changées côté app : volumes de desserte (<code>taux × horizon</code> au lieu de <code>P1 × taux × horizon</code>), indice de priorité de régénération (le volet exposition compte enfin), R3 sans climat, R4 des départements 01-09. Brief : <code>specs/audit-1.0/brief-nemetonshiny-0.208.0.md</code>.</p>
 <p><strong>Journal</strong> — <em>2026-10-03</em> (<strong>v0.209.0</strong>) : vague 2 livrée, 25 correctifs menés par trois agents en parallèle (worktrees isolés) puis fusionnés ; un conflit dans <code>regen_engines.R</code> (nom de cache ERA5 par point × écriture atomique validée). Côté app : <code>prune_orphan_zone_caches(project_uuid =)</code> à câbler, purge des alertes <code>pending</code> sur un run sans alerte, tendances E-OBS par décennie. Brief : <code>specs/audit-1.0/brief-nemetonshiny-0.209.0.md</code>.</p>
 <p><strong>Journal</strong> — <em>2026-10-03</em> (<strong>v0.210.0</strong>) : vague 3 livrée, 17 correctifs (deux agents en parallèle, fusion sans conflit). Faille d’exécution de code confirmée et fermée (<code>eval</code> du <code>.cfg</code> RECONFORT). Côté app : mesures terrain recalculées sur les seuls vivants, <code>tree_id</code> obligatoire, <code>NEMETON_CORPUS_ROOT</code> à poser pour le worker du corpus. Brief : <code>specs/audit-1.0/brief-nemetonshiny-0.210.0.md</code>.</p>
-<p><strong>Prochaine étape</strong> : vague 4 (paquet propre), déjà avancée sur sa branche.</p>
+<p><strong>Journal</strong> — <em>2026-10-03</em> (<strong>v0.211.0</strong>) : vague 4 livrée. <code>R CMD check --as-cran</code> à 0 WARNING ; la CI échoue au premier warning (<code>--ignore-vignettes</code>, les vignettes étant construites par pkgdown) ; la release ne part qu’après un R-CMD-check réussi. Restent hors de cette vague : tutoriels 07/08 (données exclues du build), guide de l’app dans les vignettes, exports à trier.</p>
+<p><strong>Prochaine étape</strong> : vague 5 (contrat d’API) et reliquat majeur de l’audit.</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-clos-côté-cœur--production-ifn-par-petits-domaines-fay-herriot-spec-054">Chantier CLOS côté cœur — Production IFN par petits domaines, Fay-Herriot (spec 054)<a class="anchor" aria-label="anchor" href="#chantier-clos-c%C3%B4t%C3%A9-c%C5%93ur--production-ifn-par-petits-domaines-fay-herriot-spec-054"></a></h1>
@@ -2309,7 +2310,7 @@ Sep 03 16:49:26 run-r459be71b….scope: Consumed 32min 52s CPU time,
 <div class="section level3">
 <h3 id="id_2026-07-24--spec-042-v2--produits-biophysiques-calculés-en-interne-depuis-s2">2026-07-24 — Spec 042 (v2) : produits biophysiques calculés en interne depuis S2<a class="anchor" aria-label="anchor" href="#id_2026-07-24--spec-042-v2--produits-biophysiques-calcul%C3%A9s-en-interne-depuis-s2"></a></h3>
 <p>Question de Pascal : ajouter LAI/fAPAR/FVC/CCC renforce-t-il la cohérence ? Cadré, <strong>non implémenté</strong>, <code>specs/042-produits-biophysiques-geodes/spec.md</code>.</p>
-<p><strong>Pivot v1 → v2.</strong> La v1 proposait de <em>consommer</em> le produit national CNES/GEODES (bloquée sur D1 : mécanisme d’accès inconnu). Vérification faite du code : <code>nemeton</code> <strong>calcule déjà</strong> LAI par inversion PROSAIL hybride (<code><a href="reference/lai_sentinel2.html">lai_sentinel2()</a></code>, spec 033), et la <strong>même machinerie</strong> produit les trois autres — <code>train_prosail_inversion(parms_to_estimate=)</code> accepte <code>"fCover"</code> (FVC), <code>"CCC"</code>, et <code>prosail::Compute_fAPAR()</code> calcule le fAPAR analytiquement. D’où la v2 : <strong>calcul interne</strong> (généraliser <code><a href="reference/lai_sentinel2.html">lai_sentinel2()</a></code> → <code><a href="reference/biophysique_sentinel2.html">biophysique_sentinel2()</a></code>), plus cohérent (une méthode, source S2 MUSCATE déjà câblée, NDP maîtrisé) et <strong>sans dépendance d’accès</strong>. <strong>D1 dissous</strong> ; GEODES rétrogradé de <em>source</em> à <em>référence de validation</em>.</p>
+<p><strong>Pivot v1 → v2.</strong> La v1 proposait de <em>consommer</em> le produit national CNES/GEODES (bloquée sur D1 : mécanisme d’accès inconnu). Vérification faite du code : <code>nemeton</code> <strong>calcule déjà</strong> LAI par inversion PROSAIL hybride (<code><a href="reference/lai_sentinel2.html">lai_sentinel2()</a></code>, spec 033), et la <strong>même machinerie</strong> produit les trois autres — <code>train_prosail_inversion(parms_to_estimate=)</code> accepte <code>"fCover"</code> (FVC), <code>"CCC"</code>, et <code><a href="https://rdrr.io/pkg/prosail/man/deprecated.html" class="external-link">prosail::Compute_fAPAR()</a></code> calcule le fAPAR analytiquement. D’où la v2 : <strong>calcul interne</strong> (généraliser <code><a href="reference/lai_sentinel2.html">lai_sentinel2()</a></code> → <code><a href="reference/biophysique_sentinel2.html">biophysique_sentinel2()</a></code>), plus cohérent (une méthode, source S2 MUSCATE déjà câblée, NDP maîtrisé) et <strong>sans dépendance d’accès</strong>. <strong>D1 dissous</strong> ; GEODES rétrogradé de <em>source</em> à <em>référence de validation</em>.</p>
 <p><strong>Toujours PAS quatre indicateurs.</strong> LAI/fAPAR/FVC colinéaires → trois dans la famille C tripleraient le poids de la verdeur (Fibonacci). La valeur : raffiner des proxys — FVC→A1 (déjà câblé), fAPAR→C2 (NDVI sature), LAI→C1 (<code>ndvi×150</code>), CCC = seul signal neuf (santé), candidat R5.</p>
 <p><strong>Deux réserves survivent au pivot</strong> (à ne pas masquer) : le mal-posé du CCC est <strong>inhérent à S2</strong> — l’inverser localement ne le fiabilise pas ; et on perd la validation + le masque qualité « gratuits » de GEODES → soit valider contre lui (lot 3), soit construire une <strong>confiance par pixel</strong> interne modulant φ (D5, le vrai chantier). D2 (usage CCC), D3 (bandes red-edge par variable) ouvertes.</p>
 </div>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -495,7 +495,7 @@ R/utils_i18n.R                → Traductions FR/EN (liste TRANSLATIONS, source 
 </div>
 <div class="section level1">
 <h1 id="consignes-de-release-pour-ce-projet">Consignes de release pour ce projet<a class="anchor" aria-label="anchor" href="#consignes-de-release-pour-ce-projet"></a></h1>
-<p><strong>Le tag et la release GitHub sont AUTOMATISÉS</strong> par <code>.github/workflows/release.yml</code> : au push sur <code>main</code>, il lit <code>Version:</code> dans DESCRIPTION et, si c’est une version <strong>stable <code>X.Y.Z</code></strong> dont le tag <code>vX.Y.Z</code> n’existe pas encore, crée le tag annoté + la release GitHub (<code>--generate-notes</code>). <strong>Ne plus faire <code>git tag</code> / <code>git push origin vX.Y.Z</code> / <code>gh release create</code> à la main.</strong></p>
+<p><strong>Le tag et la release GitHub sont AUTOMATISÉS</strong> par <code>.github/workflows/release.yml</code> : quand le workflow R-CMD-check réussit sur <code>main</code> (check, tests et couverture), il lit <code>Version:</code> dans DESCRIPTION et, si c’est une version <strong>stable <code>X.Y.Z</code></strong> dont le tag <code>vX.Y.Z</code> n’existe pas encore, crée le tag annoté + la release GitHub (<code>--generate-notes</code>). <strong>Ne plus faire <code>git tag</code> / <code>git push origin vX.Y.Z</code> / <code>gh release create</code> à la main.</strong></p>
 <p>À chaque push qui modifie le code fonctionnel (hors doc pure, hors CI), Claude doit :</p>
 <ol style="list-style-type: decimal"><li><p>Déterminer le type de changement selon Conventional Commits (feat: / fix: / BREAKING CHANGE:) → bump semver correspondant (minor / patch / major).</p></li>
 <li>

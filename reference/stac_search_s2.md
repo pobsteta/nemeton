@@ -12,7 +12,7 @@ stac_search_s2(
   start,
   end,
   max_cloud = 20,
-  source = c("cdse", "pc"),
+  source = c("cdse", "pc", "muscate"),
   limit = 10000L
 )
 ```

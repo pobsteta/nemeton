@@ -9,7 +9,7 @@ flag):
 ## Usage
 
 ``` r
-classify_disturbance(alerts_df, window_days = 30L)
+classify_disturbance(alerts_df, window_days = 30L, radius_m = 100)
 ```
 
 ## Arguments
@@ -23,6 +23,11 @@ classify_disturbance(alerts_df, window_days = 30L)
 - window_days:
 
   Integer. Half-width of the join window in days. Default 30.
+
+- radius_m:
+
+  Numeric. Max centroid-to-centroid distance (m) for two alerts to be
+  considered co-located. Default 100.
 
 ## Value
 

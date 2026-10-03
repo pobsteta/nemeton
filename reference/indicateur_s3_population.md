@@ -9,7 +9,8 @@ estimate visitor pressure potential and recreational use intensity.
 indicateur_s3_population(
   units,
   population_grid = NULL,
-  method = c("proxy", "insee", "local"),
+  population_field = NULL,
+  method = c("insee", "local", "proxy"),
   buffer_radii = c(5000, 10000, 20000),
   column_name = "S3",
   lang = "en"
@@ -29,7 +30,7 @@ indicateur_s3_population(
 - method:
 
   Character. Data source: "insee" (INSEE Carroyage), "local", or
-  "proxy". Default "proxy".
+  "proxy". Default "insee".
 
 - buffer_radii:
 
@@ -43,6 +44,12 @@ indicateur_s3_population(
 - lang:
 
   Character. Message language. Default "en".
+
+- population_field:
+
+  Character or `NULL`. Name of the population column of
+  `population_grid` when it is an `sf`. `NULL` (default) looks for
+  `ind`, `pop` or `population` (INSEE Filosofi names it `ind`).
 
 ## Value
 

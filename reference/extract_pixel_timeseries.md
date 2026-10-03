@@ -49,6 +49,16 @@ extract_pixel_timeseries(
   requires the B05 / B8A bands in the cache; a cache holding none aborts
   (internal \`.assert_cache_has_bands()\` guard).
 
+- zone_polygon:
+
+  Optional `sf`/`sfc` UGF polygon. When supplied with
+  `warn_outside_zone = TRUE`, a warning is raised if `xy` lies outside
+  it (the series is still returned).
+
+- warn_outside_zone:
+
+  Logical. Warn when `xy` is outside `zone_polygon`.
+
 ## Value
 
 A \`data.frame\` with columns \`obs_date\` (Date), \`index\` (character)

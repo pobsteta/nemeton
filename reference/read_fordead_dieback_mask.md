@@ -43,6 +43,16 @@ read_fordead_dieback_mask(
   this release, so the argument is exposed directly. Pass the same path
   the app uses for its UI.
 
+- apply_zone_mask:
+
+  Logical. When `TRUE` (default), pixels outside the monitoring zone
+  polygon (the managed UGF perimeter) are set to `NA`.
+
+- mask_polygon:
+
+  Optional `sf`/`sfc` polygon used as the zone mask instead of the
+  polygon stored for the zone in the database.
+
 ## Value
 
 A \`terra::SpatRaster\` with a single integer band, or \`NULL\` when no

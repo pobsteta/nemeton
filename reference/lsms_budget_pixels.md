@@ -8,7 +8,7 @@ is not "too big" but "how much fits".
 ## Usage
 
 ``` r
-lsms_budget_pixels(budget_s, spatialr = 15L)
+lsms_budget_pixels(budget_s, spatialr = .LSMS_DEFAUTS$spatialr)
 ```
 
 ## Arguments

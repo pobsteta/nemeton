@@ -15,7 +15,7 @@ flag):"><meta property="og:image" content="https://pobsteta.github.io/nemeton/lo
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -128,7 +128,7 @@ flag):</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">classify_disturbance</span><span class="op">(</span><span class="va">alerts_df</span>, window_days <span class="op">=</span> <span class="fl">30L</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">classify_disturbance</span><span class="op">(</span><span class="va">alerts_df</span>, window_days <span class="op">=</span> <span class="fl">30L</span>, radius_m <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -144,6 +144,10 @@ flag):</p>
 <dt id="arg-window-days">window_days<a class="anchor" aria-label="anchor" href="#arg-window-days"></a></dt>
 <dd><p>Integer. Half-width of the join window in
 days. Default 30.</p></dd>
+
+<dt id="arg-radius-m">radius_m<a class="anchor" aria-label="anchor" href="#arg-radius-m"></a></dt>
+<dd><p>Numeric. Max centroid-to-centroid distance (m) for two
+alerts to be considered co-located. Default 100.</p></dd>
 
 </dl></div>
     <div class="section level2">
