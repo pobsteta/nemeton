@@ -606,7 +606,9 @@ indicateur_c2_ndvi <- function(units,
 #' @param proximity_m Numeric. Maximum distance (m) for proximity bonus. Default 500.
 #' @param proximity_ref Numeric. Equivalent density bonus (m/ha) at distance 0. Default 50.
 #'
-#' @return Numeric vector of network density (m/ha)
+#' @return Numeric vector of network density (m/ha). NA for every unit when
+#'   the watercourse layer is missing (no measurement); a supplied but empty
+#'   layer gives 0.
 #'
 #' @export
 #' @examples
@@ -631,9 +633,12 @@ indicateur_w1_reseau <- function(units,
 
   # Get watercourse vector layer (resolve lazy-load)
   watercourses <- resolve_vector_layer(layers, watercourse_layer)
+  # Couche absente = pas de mesure : NA, pas 0. Le 0 disait « aucun cours
+  # d'eau » et tirait la famille Eau vers le bas ; une couche fournie mais
+  # vide reste, elle, une mesure (0).
   if (is.null(watercourses)) {
-    cli::cli_warn("W1: No watercourse data available for this area. Returning 0.")
-    return(rep(0, nrow(units)))
+    cli::cli_warn("W1: No watercourse data available for this area. Returning NA (no measurement made).")
+    return(rep(NA_real_, nrow(units)))
   }
 
   # Ensure CRS match

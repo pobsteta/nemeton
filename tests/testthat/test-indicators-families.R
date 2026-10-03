@@ -1791,15 +1791,14 @@ test_that("indicateur_w1_reseau: non-nemeton_layers errors", {
   )
 })
 
-test_that("indicateur_w1_reseau: missing watercourse layer returns 0", {
+test_that("indicateur_w1_reseau: missing watercourse layer returns NA", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   layers <- create_test_layers(vectors = list())
-  # The real indicateur_w1_reseau warns and returns 0 instead of erroring
-  # when no watercourse layer is found.
+  # Couche absente : avertissement et NA (pas de mesure), plus 0.
   result <- suppressWarnings(nemeton:::indicateur_w1_reseau(units, layers))
   expect_length(result, 1)
-  expect_equal(result, 0)
+  expect_true(is.na(result))
 })
 
 test_that("indicateur_w1_reseau: buffer parameter increases capture area", {
@@ -3076,4 +3075,13 @@ test_that("W2 is NA where every source is NA (no fabricated 0)", {
                                 water_occurrence = wo)
   )
   expect_true(is.na(res))
+})
+
+test_that("W1 is NA, not 0, when no watercourse layer is available", {
+  units <- create_test_units(n_features = 2)
+  expect_warning(
+    res <- suppressMessages(indicateur_w1_reseau(units, layers = make_mock_layers())),
+    "Returning\\s+NA"
+  )
+  expect_equal(res, c(NA_real_, NA_real_))
 })

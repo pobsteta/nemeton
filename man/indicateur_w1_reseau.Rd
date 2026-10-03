@@ -27,7 +27,9 @@ indicateur_w1_reseau(
 \item{proximity_ref}{Numeric. Equivalent density bonus (m/ha) at distance 0. Default 50.}
 }
 \value{
-Numeric vector of network density (m/ha)
+Numeric vector of network density (m/ha). NA for every unit when
+  the watercourse layer is missing (no measurement); a supplied but empty
+  layer gives 0.
 }
 \description{
 Calculates stream/river network length density within or near forest parcels.
