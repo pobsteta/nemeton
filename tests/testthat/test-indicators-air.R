@@ -477,3 +477,43 @@ test_that("indicateur_a1_couverture rejects a non-raster fvc", {
     "fvc must be a SpatRaster"
   )
 })
+
+# ==============================================================================
+# Audit 1.0 — A2 proxy sur borne absolue, urban_areas signale, A5 n == 0
+# ==============================================================================
+
+test_that("A2 proxy uses an absolute bound, not the batch maximum", {
+  units <- create_test_units(n_features = 1)  # centroide (566500, 6615200)
+  # Autoroute a 100 m au nord du centroide
+  roads <- sf::st_sf(
+    nature = "Type autoroutier",
+    geometry = sf::st_sfc(sf::st_linestring(matrix(c(
+      566000, 6615300, 567000, 6615300
+    ), ncol = 2, byrow = TRUE)), crs = 2154)
+  )
+  res <- suppressMessages(indicateur_a2_qualite_air(units, roads = roads,
+                                                    method = "proxy"))
+  # P = 1 / (100 / 100)^2 = 1 -> 100 * (1 - log1p(1) / log1p(100)) ; avant : 0
+  expect_equal(res$A2, round(100 * (1 - log1p(1) / log1p(100)), 1))
+
+  # Le score d'une unite ne depend pas des autres unites du lot
+  units2 <- create_test_units(n_features = 3)
+  res2 <- suppressMessages(indicateur_a2_qualite_air(units2, roads = roads,
+                                                     method = "proxy"))
+  res2_1 <- suppressMessages(indicateur_a2_qualite_air(units2[2, ], roads = roads,
+                                                       method = "proxy"))
+  expect_equal(res2$A2[2], res2_1$A2)
+})
+
+test_that("A2 warns that urban_areas is not used", {
+  units <- create_test_units(n_features = 1)
+  roads <- sf::st_sf(geometry = sf::st_sfc(sf::st_linestring(matrix(c(
+    566000, 6615300, 567000, 6615300
+  ), ncol = 2, byrow = TRUE)), crs = 2154))
+  expect_warning(
+    suppressMessages(indicateur_a2_qualite_air(units, roads = roads,
+                                               urban_areas = roads,
+                                               method = "proxy")),
+    "not\\s+used"
+  )
+})
