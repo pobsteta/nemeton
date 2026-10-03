@@ -1153,10 +1153,10 @@
       "url": "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1",
       "description": "OSO - Occupation du Sol (Theia/CESBIO)",
       "resolution_m": 10,
+      "nomenclature": "OSO 23 classes (Theia/CESBIO, 2018+); no mixed-forest class",
       "forest_classes": {
-        "17": "deciduous",
-        "18": "coniferous",
-        "19": "mixed"
+        "16": "deciduous",
+        "17": "coniferous"
       }
     },
     "hunting": {

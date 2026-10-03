@@ -21,9 +21,10 @@ NULL
 #' @param land_cover A SpatRaster with land cover classification.
 #'   Required in legacy mode; may be \code{NULL} when \code{fvc} is
 #'   supplied.
-#' @param forest_classes Numeric vector. Land cover class codes for forests
-#'   (OSO codes: 16 = coniferous, 17 = broadleaf, 18 = mixed).
-#'   Default c(16, 17, 18).
+#' @param forest_classes Numeric vector. Land cover class codes for forests.
+#'   Default c(16, 17): OSO 23-class nomenclature (Theia/CESBIO),
+#'   16 = broadleaf forest, 17 = coniferous forest (OSO has no mixed-forest
+#'   class; 18 is natural grassland).
 #' @param buffer_radius Numeric. Buffer radius in meters. Default 1000.
 #' @param fvc Optional \code{SpatRaster} of Fractional Vegetation
 #'   Cover in \code{[0, 1]} (typically the Theia
@@ -80,7 +81,7 @@ NULL
 #' }
 indicateur_a1_couverture <- function(units,
                                    land_cover = NULL,
-                                   forest_classes = c(16, 17, 18),
+                                   forest_classes = c(16, 17),
                                    buffer_radius = 1000,
                                    fvc = NULL) {
   # Validate inputs
@@ -171,10 +172,16 @@ indicateur_a1_couverture <- function(units,
 # T049: A2 - Air Quality Index
 # ==============================================================================
 
+# Borne absolue de l'indice de pollution routiere de A2 (methode proxy) :
+# P = sum(w / (d / 100)^2) vaut 100 pour une autoroute (w = 1) a la distance
+# plancher de 10 m. A2 = 100 * (1 - log1p(P) / log1p(A2_POLLUTION_REF)),
+# borne a [0, 100] : le score ne depend plus du maximum du lot.
+A2_POLLUTION_REF <- 100
+
 #' Calculate Air Quality Index (A2)
 #'
 #' Computes air quality score using direct ATMO station data (if available)
-#' or proxy method based on distance to pollution sources (roads, urban areas).
+#' or proxy method based on distance to pollution sources (roads).
 #'
 #' @param units An sf object with forest parcels.
 #' @param layers A nemeton_layers object. If provided, roads are extracted
@@ -182,7 +189,8 @@ indicateur_a1_couverture <- function(units,
 #' @param atmo_data An sf object with ATMO air quality stations (points).
 #'   Must contain columns: NO2 (µg/m³), PM10 (µg/m³). Can be NULL.
 #' @param roads An sf object with road network (lines). Used for proxy method.
-#' @param urban_areas An sf object with urban zones (polygons). Used for proxy method.
+#' @param urban_areas Currently unused: the proxy method only reads roads.
+#'   Kept for backward compatibility; a warning is emitted when supplied.
 #' @param method Character. Method to use:
 #'   \itemize{
 #'     \item "auto" (default): Use direct if atmo_data available, else proxy
@@ -201,9 +209,14 @@ indicateur_a1_couverture <- function(units,
 #' - Interpolate NO2 and PM10 from nearest stations
 #' - Convert to quality score: low pollution = high score
 #'
-#' **Proxy Method** (distance-based):
-#' - Calculate distance to nearest road and urban area
-#' - Far from pollution sources = high score
+#' **Proxy Method** (distance-based, roads only):
+#' - Road pollution index P = sum over roads within 2 km of
+#'   w / (d / 100)^2, with w the traffic weight of the BD TOPO road type and
+#'   d the distance (m, floored at 10 m) to the unit centroid
+#' - A2 = 100 * (1 - log1p(P) / log1p(100)), bounded to 0-100: the reference
+#'   P = 100 is a motorway at 10 m. The score is absolute (it does not depend
+#'   on the other units of the call); a unit with no road within 2 km
+#'   scores 100.
 #'
 #' @family air-indicators
 #' @export
@@ -221,8 +234,7 @@ indicateur_a1_couverture <- function(units,
 #'
 #' # Proxy method
 #' roads <- st_read("path/to/roads.gpkg")
-#' urban <- st_read("path/to/urban_areas.gpkg")
-#' result <- indicateur_a2_qualite_air(units, roads = roads, urban_areas = urban, method = "proxy")
+#' result <- indicateur_a2_qualite_air(units, roads = roads, method = "proxy")
 #' }
 indicateur_a2_qualite_air <- function(units,
                                   layers = NULL,
@@ -232,6 +244,14 @@ indicateur_a2_qualite_air <- function(units,
                                   method = "auto") {
   # Validate inputs
   validate_sf(units)
+
+  # `urban_areas` n'a jamais ete lu : le signaler plutot que de laisser
+  # croire qu'il entre dans le score.
+  if (!is.null(urban_areas)) {
+    cli::cli_warn(
+      "A2: {.arg urban_areas} is not used by the proxy method (roads only); ignored."
+    )
+  }
 
   # Extract roads from layers if not provided directly
   if (is.null(roads) && !is.null(layers)) {
@@ -372,13 +392,10 @@ indicateur_a2_qualite_air <- function(units,
       }
     }
 
-    # Normalize across all parcels using log transform
-    max_score <- max(pollution_scores, na.rm = TRUE)
-    if (max_score > 0) {
-      pollution_norm <- log1p(pollution_scores) / log1p(max_score)
-    } else {
-      pollution_norm <- rep(0, nrow(units))
-    }
+    # Normalisation log sur une borne ABSOLUE (A2_POLLUTION_REF). L'ancien
+    # max du lot donnait 0 a l'unite la plus exposee quelle que soit sa
+    # pollution reelle, et 0 a une unite seule pres d'une route.
+    pollution_norm <- pmin(log1p(pollution_scores) / log1p(A2_POLLUTION_REF), 1)
 
     # A2: higher = better air quality (invert pollution)
     units$A2 <- round(pmin(pmax((1 - pollution_norm) * 100, 0), 100), 1)
@@ -601,6 +618,7 @@ indicateur_a5_rafraichissement <- function(units, lst = NULL,
   }
   if (n == 0L) {
     units$A5 <- numeric(0); units$A5_delta <- numeric(0)
+    units$a5_status <- character(0)
     return(units)
   }
 

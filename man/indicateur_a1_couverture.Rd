@@ -7,7 +7,7 @@
 indicateur_a1_couverture(
   units,
   land_cover = NULL,
-  forest_classes = c(16, 17, 18),
+  forest_classes = c(16, 17),
   buffer_radius = 1000,
   fvc = NULL
 )
@@ -19,9 +19,10 @@ indicateur_a1_couverture(
 Required in legacy mode; may be \code{NULL} when \code{fvc} is
 supplied.}
 
-\item{forest_classes}{Numeric vector. Land cover class codes for forests
-(OSO codes: 16 = coniferous, 17 = broadleaf, 18 = mixed).
-Default c(16, 17, 18).}
+\item{forest_classes}{Numeric vector. Land cover class codes for forests.
+Default c(16, 17): OSO 23-class nomenclature (Theia/CESBIO),
+16 = broadleaf forest, 17 = coniferous forest (OSO has no mixed-forest
+class; 18 is natural grassland).}
 
 \item{buffer_radius}{Numeric. Buffer radius in meters. Default 1000.}
 

@@ -28,7 +28,10 @@ indicateur_p1_volume(
 
 \item{height_field}{Character. Column name containing tree height (m). Optional, can be estimated.}
 
-\item{density_field}{Character. Column name containing tree density (stems/ha). Default "density".}
+\item{density_field}{Character. Column name containing tree density in
+STEMS PER HECTARE. Default "density". Not a 0-1 cover fraction (unlike
+the \code{density_col} of \code{\link{indicateur_c1_biomasse}}): values
+in (0, 1) are set to NA with a warning.}
 
 \item{method}{Character. Volume calculation method. Only "ifn_tarif" (the IFN
 combined-variable tariff \code{V = a x D^2 x H}) is implemented; "allometric" is
