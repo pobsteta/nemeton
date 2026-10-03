@@ -71,12 +71,12 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 | 5 | `R/data-hunting.R:255-278` | **C** Les départements 01-09 sont lus `3` ou `"03"` selon le fichier : lignes en double, R4 faux sur 9 départements **[corrigé 0.208.0]** |
 | 6 | `R/fordead_postprocess.R:380-383` | **C** Un re-run FORDEAD supprime les alertes **déjà validées sur le terrain** **[vérifié]** **[corrigé 0.208.0]** |
 | 7 | `%||%` dans 29 fichiers | **C** Ni défini ni importé : le paquet casse sous R 4.1-4.3 alors que DESCRIPTION dit `R (>= 4.1.0)` **[vérifié]** **[corrigé 0.208.0]** |
-| 8 | `data/` + `.Rbuildignore` | **C** `i2_training_data.tar.bz2` (5,4 Go) serait embarqué par un `R CMD build` local **[vérifié]** |
+| 8 | `data/` + `.Rbuildignore` | **C** `i2_training_data.tar.bz2` (5,4 Go) serait embarqué par un `R CMD build` local **[vérifié]** **[corrigé 0.211.0]** |
 | 9 | `R/indicators-core.R:153` | **M** `nemeton_compute()` passe les `units` d'origine : N3 et E2 valent toujours NA, T2 vaut 50, A1 échoue ; B1, B3, A1 n'acceptent pas `layers` **[corrigé 0.208.0]** |
 | 10 | `R/family-system.R:253-264` + `normalization.R:84` | **M** Le chemin documenté « normaliser puis agréger » ré-inverse R1-R5/T3/L1 ; `by_family = TRUE` normalise deux fois (exemple du package) **[corrigé 0.208.0]** |
 | 11 | `R/fast_alert_raster.R:1389` | **M** La tuile MGRS est lue sur l'orbite pour les identifiants CDSE : piles mélangées, double comptage **[vérifié]** **[corrigé 0.208.0]** |
 | 12 | `inst/db/migrations/*/0007` | **M** `DROP TABLE IF EXISTS alert` sans garde : une base ancienne restaurée perd ses alertes **[corrigé 0.209.0]** |
-| 13 | 3 blocs roxygen détachés (`normalization.R:541`, `indicators-risk.R:509`, `fordead_validity.R:119`) | **M** Le premier `devtools::document()` supprimera trois exports |
+| 13 | 3 blocs roxygen détachés (`normalization.R:541`, `indicators-risk.R:509`, `fordead_validity.R:119`) | **M** Le premier `devtools::document()` supprimera trois exports **[corrigé 0.211.0]** |
 | 14 | `man/*.Rd` | **M** 8 WARNING R CMD check (signatures fausses, arguments non documentés, non-ASCII, dépendances `methods`/`prosail` non déclarées) |
 | 15 | `.github/workflows/release.yml` | **M** La release se déclenche même si le check échoue ; `r.yml` n'échoue que sur ERROR |
 
@@ -92,7 +92,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 **R/normalization.R**
 - **M bug** `390-405` — Moyenne géométrique avec `na.rm` : les poids ne sont pas réalignés, d'où 57,6 au lieu de 60,3 et un warning de recyclage.
 - **M bug** `19-21, 84-87` — `by_family` est documenté mais pas implémenté, et normalise sur place → double normalisation. **[corrigé 0.208.0]**
-- **M qualité** `541-564` — Le roxygen de `normalize_indicator()` est rattaché à `.NORMALIZE_RULED` (perte de l'export au prochain `document()`).
+- **M qualité** `541-564` — Le roxygen de `normalize_indicator()` est rattaché à `.NORMALIZE_RULED` (perte de l'export au prochain `document()`). **[corrigé 0.211.0]**
 - **m bug** `208-214` — Un seul NA avec `na.rm = FALSE` → tout le vecteur vaut 50.
 - **m bug** `98-99` — L'auto-détection `^[A-Z][0-9]` capte `C1_norm`, ce qui crée `C1_norm_norm`.
 - **m qualité** `113-116` — Code mort après `msg_error()`.
@@ -165,7 +165,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **C bug** `718-738` — R3 utilise un climat simulé et `set.seed(42)` global **[vérifié]**. **[corrigé 0.208.0]**
 - **M bug** `972` — L'appétence de R4 est lue sur le premier polygone intersecté, pas sur le polygone majoritaire.
 - **M bug** `283-308` — Repli R1 : le proxy NDVI a un poids nul, et il reste un facteur constant de 50.
-- **M qualité** `509-618` — Le roxygen de R3 est rattaché à `.R3_BILJOU_BOUNDS`.
+- **M qualité** `509-618` — Le roxygen de R3 est rattaché à `.R3_BILJOU_BOUNDS`. **[corrigé 0.211.0]**
 - **m bug** `489-491, 796-799` — TRI et TWI sont normalisés par le max de l'emprise ; un gibier NA est remplacé par 50 ; les messages disent « 50 » alors que la valeur est NA.
 
 **R/indicators-families.R**
@@ -388,7 +388,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m bug** `311-319` — Le `.ndjson` de progression n'est pas tronqué, d'où des événements rejoués. **[corrigé 0.210.0]**
 
 **R/fordead_validity.R, R/fordead_mask.R**
-- **M qualité** `fordead_validity.R:119-167` — Roxygen détaché (perte de l'export de `check_fordead_validity`).
+- **M qualité** `fordead_validity.R:119-167` — Roxygen détaché (perte de l'export de `check_fordead_validity`). **[corrigé 0.211.0]**
 - **m qualité** `fordead_mask.R:13-30` — La doc dit le masque « à venir » alors qu'il est persisté.
 
 **R/sentinel2.R, R/fordead_python.R**
@@ -498,47 +498,47 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m qualité** `77-80` — `alpha = NA` donne une erreur brute ; `@keywords internal` sur un export.
 
 **inst/scripts/**
-- **m qualité** — Outils de dev installés avec le paquet → les déplacer dans `tools/`.
+- **m qualité** — Outils de dev installés avec le paquet → les déplacer dans `tools/`. **[corrigé 0.211.0]**
 
 ### Paquet, CI, documentation
 
 **data/ et .Rbuildignore**
-- **C qualité** — L'archive de 5,4 Go n'est pas exclue du build **[vérifié]** ; `area_interest.geojson` déclenche un WARNING.
-- **M qualité** — `__pycache__/*.pyc` et `.Renviron.example` partent dans le tarball.
+- **C qualité** — L'archive de 5,4 Go n'est pas exclue du build **[vérifié]** ; `area_interest.geojson` déclenche un WARNING. **[corrigé 0.211.0]**
+- **M qualité** — `__pycache__/*.pyc` et `.Renviron.example` partent dans le tarball. **[corrigé 0.211.0]**
 - **M bug** — `aba.model` et `coregistration` sont exclus du build alors que les tutoriels 07 et 08 les lisent.
 - **m qualité** — Un nom de fichier de plus de 100 octets dans `inst/python`.
 
 **man/*.Rd**
-- **M qualité** — 6 `.Rd` ont une signature fausse (`classify_disturbance`, `indicateur_s3_population`, `stac_search_s2`, `load_foret_ancienne_source`, `lsms_budget_pixels`, `lsms_duree_estimee`).
-- **M qualité** — Arguments non documentés (`apply_zone_mask`, `mask_polygon`, `zone_polygon`, `warn_outside_zone`).
-- **m qualité** — NOTE « Lost braces » et lignes d'exemple trop longues.
+- **M qualité** — 6 `.Rd` ont une signature fausse (`classify_disturbance`, `indicateur_s3_population`, `stac_search_s2`, `load_foret_ancienne_source`, `lsms_budget_pixels`, `lsms_duree_estimee`). **[corrigé 0.211.0]**
+- **M qualité** — Arguments non documentés (`apply_zone_mask`, `mask_polygon`, `zone_polygon`, `warn_outside_zone`). **[corrigé 0.211.0]**
+- **m qualité** — NOTE « Lost braces » et lignes d'exemple trop longues. **[corrigé 0.211.0]**
 
 **DESCRIPTION**
-- **M bug** — `methods` et `prosail` ne sont pas déclarés (WARNING).
-- **M qualité** — Description obsolète (« Includes nemetonApp »).
-- **m qualité** — Doublons dans Suggests ; `ggrepel`, `signal`, `tidyr` et `cluster` pourraient passer en Suggests ; `stats::ave` non importé.
+- **M bug** — `methods` et `prosail` ne sont pas déclarés (WARNING). **[corrigé 0.211.0]**
+- **M qualité** — Description obsolète (« Includes nemetonApp »). **[corrigé 0.211.0]**
+- **m qualité** — Doublons dans Suggests ; `ggrepel`, `signal`, `tidyr` et `cluster` pourraient passer en Suggests ; `stats::ave` non importé. **[corrigé 0.211.0]**
 - **m qualité** — Faisabilité CRAN : `Remotes`, 6 Suggests hors dépôt, tarball de 10,5 Mo.
 
 **R/ (portabilité)**
-- **M qualité** — Caractères non ASCII dans le code de 18 fichiers (WARNING).
+- **M qualité** — Caractères non ASCII dans le code de 18 fichiers (WARNING). **[corrigé 0.211.0]**
 
 **.github/workflows**
-- **M qualité** `release.yml:21-27` — La release ne dépend pas du succès du check.
+- **M qualité** `release.yml:21-27` — La release ne dépend pas du succès du check. **[corrigé 0.211.0]**
 - **M qualité** `r.yml:156-159` — `--no-tests` et `error-on: error` : les WARNING passent sans bruit.
 - **m sécu** — Actions épinglées par tag, pas par SHA ; `pkgdown.yaml` a `contents: write` sur les PR.
-- **m qualité** `r.yml:33` — `version-consistency` lit le premier numéro de version venu dans NEWS.
+- **m qualité** `r.yml:33` — `version-consistency` lit le premier numéro de version venu dans NEWS. **[corrigé 0.211.0]**
 
 **tests/testthat/**
 - **M qualité** — La suite écrit dans `~/.local/share/nemeton/cache` et télécharge un CPython (160 Mo) via reticulate/uv.
 - **m qualité** — `EBImage` n'est pas déclaré ; 29 warnings ; 9 exports sans test (`FORDEAD_VALIDITY_SPECIES`, `RECONFORT_VALIDITY_SPECIES`, `bai_drift_factor`, `charru_bai_drift_table`, `charru_selfthinning_table`, `n_max_selfthinning`, `get_metric_crs`, `get_storage_crs`, `microclimate_run`).
 
 **docs/, vignettes/**
-- **M qualité** — `docs/` est suivi par git et figé en v0.13.0 (503 fichiers, 19 Mo).
+- **M qualité** — `docs/` est suivi par git et figé en v0.13.0 (503 fichiers, 19 Mo). **[corrigé 0.211.0]**
 - **m qualité** — HTML et R des vignettes commités ; le guide de l'app (`nemetonapp-guide_fr.Rmd`) n'a plus sa place ici.
 
 **README.md, CLAUDE.md, cran-comments.md, create-release.sh, LICENSE**
-- **M qualité** — « 31 indicateurs » alors que le code en déclare 41.
-- **m qualité** — `cran-comments.md` obsolète ; `create-release.sh` contredit la release automatisée ; CLAUDE.md renvoie à un fichier `LICENSE` qui n'existe pas (c'est `LICENSE.md`) ; URL codecov en 301.
+- **M qualité** — « 31 indicateurs » alors que le code en déclare 41. **[corrigé 0.211.0]**
+- **m qualité** — `cran-comments.md` obsolète ; `create-release.sh` contredit la release automatisée ; CLAUDE.md renvoie à un fichier `LICENSE` qui n'existe pas (c'est `LICENSE.md`) ; URL codecov en 301. **[corrigé 0.211.0]**
 
 ---
 
