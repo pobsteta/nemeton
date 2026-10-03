@@ -150,6 +150,16 @@ Table `inst/extdata/ifn_espar_correspondance.csv` (193 lignes), exposée par
 affecté (`lookup_ifn_equation()` apparie sur le code), mais le nom scientifique
 publié était erroné.
 
+Audit 1.0 : la ligne `PIME` faisait doublon avec la ligne `PSME` (deux tarifs
+Douglas divergents, a = 0,000044 contre 0,000045) et, prise en premier par le
+pont, donnait `code_p1 = PIME` alors que tout le code emploie `PSME`
+(`resoudre_espar("PSME")` rendait NA). Elle est supprimée ; `PSME` est le seul
+code Douglas de `ifn_volume_equations.csv`, `wood_density.csv`,
+`productivity_tables.csv` et `ifn_espar_correspondance.csv`. La ligne conservée
+est celle que P1 consommait déjà : aucun des deux tarifs ne se rattache à une
+publication IGN distincte (tous deux étiquetés `IFN_tarifs_2016`, tarif à
+facteur de forme `V = a·D²·H`), garder `PSME` laisse P1 inchangé.
+
 ---
 
 ## SUFOSAT — coupes rases par Sentinel-1 (spec 030, indicateur T3)

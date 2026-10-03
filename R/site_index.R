@@ -74,7 +74,7 @@ read_site_index_curves <- function() {
 
 # Known conifer species codes in IFN style (used for fallback).
 .conifer_codes <- c(
-  "ABAL", "PIAB", "PISY", "PINI", "PIPI", "PIME",
+  "ABAL", "PIAB", "PISY", "PINI", "PIPI",
   "PSME", "LADE", "CEAT", "CEDE", "JUCO"
 )
 

@@ -156,7 +156,7 @@ espar,lib_espar,espece_sci,code_p1,code_tolerances,millesime,source
 61,Sapin pectiné,Abies alba,ABAL,abies_alba,2005-2024,"IGN espar-cdref13 (Etalab v2.0), pivot nom latin"
 62,Épicéa commun,Picea abies subsp. abies,PIAB,picea_abies,2005-2024,"IGN espar-cdref13 (Etalab v2.0), pivot nom latin"
 63,Mélèze d'Europe,Larix decidua subsp. decidua,LADE,larix_decidua,2005-2024,"IGN espar-cdref13 (Etalab v2.0), pivot nom latin"
-64,Douglas,Pseudotsuga menziesii,PIME,pseudotsuga_menziesii,2005-2024,"IGN espar-cdref13 (Etalab v2.0), pivot nom latin"
+64,Douglas,Pseudotsuga menziesii,PSME,pseudotsuga_menziesii,2005-2024,"IGN espar-cdref13 (Etalab v2.0), pivot nom latin"
 65,Cèdre de l'Atlas,Cedrus atlantica,,cedrus_atlantica,2005-2024,"IGN espar-cdref13 (Etalab v2.0), pivot nom latin"
 66,Cyprès de Provence,Cupressus sempervirens,,cupressus_sempervirens,2005-2024,"IGN espar-cdref13 (Etalab v2.0), pivot nom latin"
 67,If,Taxus baccata,,taxus_baccata,2005-2024,"IGN espar-cdref13 (Etalab v2.0), pivot nom latin"

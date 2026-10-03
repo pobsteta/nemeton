@@ -17,9 +17,9 @@ ABAL,Abies alba,3,mountainous,5.5,110,6.8,ONF_Tables_Production_2021
 PISY,Pinus sylvestris,1,temperate_continental,7.5,100,8.5,ONF_Tables_Production_2021
 PISY,Pinus sylvestris,2,temperate_continental,5.2,110,6.2,ONF_Tables_Production_2021
 PISY,Pinus sylvestris,3,temperate_continental,3.5,120,4.5,ONF_Tables_Production_2021
-PIME,Pinus menziesii,1,temperate_oceanic,15.0,50,17.5,ONF_Tables_Production_2021
-PIME,Pinus menziesii,2,temperate_oceanic,11.0,60,13.2,ONF_Tables_Production_2021
-PIME,Pinus menziesii,3,temperate_oceanic,8.0,70,9.8,ONF_Tables_Production_2021
+PSME,Pseudotsuga menziesii,1,temperate_oceanic,15.0,50,17.5,ONF_Tables_Production_2021
+PSME,Pseudotsuga menziesii,2,temperate_oceanic,11.0,60,13.2,ONF_Tables_Production_2021
+PSME,Pseudotsuga menziesii,3,temperate_oceanic,8.0,70,9.8,ONF_Tables_Production_2021
 PIPI,Pinus pinaster,1,atlantic,12.0,45,14.0,ONF_Tables_Production_2021
 PIPI,Pinus pinaster,2,atlantic,8.5,50,10.2,ONF_Tables_Production_2021
 PIPI,Pinus pinaster,3,atlantic,6.0,55,7.5,ONF_Tables_Production_2021

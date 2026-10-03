@@ -9,7 +9,7 @@ FASY,Fagus sylvatica,680,IFN_2020,0.50,European beech - hardwood
 FREX,Fraxinus excelsior,670,IFN_2020,0.50,European ash - hardwood
 LADE,Larix decidua,550,IFN_2020,0.50,European larch - softwood
 PIAB,Picea abies,450,IFN_2020,0.50,Norway spruce - softwood
-PIME,Pinus menziesii,490,IFN_2020,0.50,Douglas fir - softwood
+PSME,Pseudotsuga menziesii,490,IFN_2020,0.50,Douglas fir - softwood
 PINI,Pinus nigra,520,IFN_2020,0.50,Black pine - softwood
 PIPI,Pinus pinaster,510,IFN_2020,0.50,Maritime pine - softwood
 PISY,Pinus sylvestris,510,IFN_2020,0.50,Scots pine - softwood
