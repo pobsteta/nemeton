@@ -878,12 +878,15 @@ indicateur_r3_secheresse <- function(units,
 #'   }
 #'
 #' @details
-#' **Formula**: R4 = 0.35*palatability + 0.30*vulnerability + 0.20*edge + 0.15*density
+#' **Formula**: R4 = 0.35*palatability + 0.30*vulnerability + 0.20*edge + 0.15*density.
+#' A component that cannot be evaluated (no BD Foret, no LiDAR MNH, unit outside
+#' the game density raster) is \code{NA} and propagates to R4.
 #'
 #' **Components**:
 #' \itemize{
 #'   \item palatability: From BD Foret species intersection (pattern matching on
-#'     essence names). Quercus=90, Abies=85, Fagus=70, Pinus=30.
+#'     essence names). Quercus=90, Abies=85, Fagus=70, Pinus=30. Averaged over
+#'     the intersected BD Foret polygons, weighted by intersected area.
 #'   \item vulnerability: From LiDAR MNH mean height per parcel.
 #'     <2m = 100, 2-10m = decreasing, >10m = 0.
 #'   \item edge_exposure: Proportion of parcel within buffer of forest edge.
@@ -956,17 +959,22 @@ indicateur_r4_abroutissement <- function(units,
         }, error = function(e) NULL)
 
         if (!is.null(inter) && nrow(inter) > 0) {
-          essence <- tolower(as.character(inter[[essence_col]][1]))
-          # Use get_species_palatability for pattern matching
-          score <- get_species_palatability(essence)
-          if (!is.na(score)) {
-            palatability_factor[i] <- score
+          # Moyenne des appetences ponderee par la surface intersectee : lire
+          # le premier polygone retourne (ordre arbitraire de la BD Foret)
+          # attribuait a l'UGF l'essence d'un liseré de quelques m2.
+          scores <- get_species_palatability(
+            tolower(as.character(inter[[essence_col]]))
+          )
+          areas <- as.numeric(sf::st_area(inter))
+          ok <- !is.na(scores) & is.finite(areas) & areas > 0
+          if (any(ok)) {
+            palatability_factor[i] <- sum(scores[ok] * areas[ok]) / sum(areas[ok])
           }
         }
       }
     }
   } else {
-    cli::cli_alert_info("R4: No BD For\u00eat data, using default palatability 50")
+    cli::cli_alert_info("R4: No BD For\u00eat data, palatability is NA")
   }
   units$R4_palatability <- palatability_factor
 
@@ -987,7 +995,7 @@ indicateur_r4_abroutissement <- function(units,
     # Tuto formula: (10 - zmean) / 8 * 100
     vulnerability_factor <- pmax(0, pmin(100, (10 - mnh_mean) / 8 * 100))
   } else {
-    cli::cli_alert_info("R4: No LiDAR MNH, using default vulnerability 50")
+    cli::cli_alert_info("R4: No LiDAR MNH, vulnerability is NA")
   }
   units$R4_vulnerability <- vulnerability_factor
 
@@ -1034,7 +1042,9 @@ indicateur_r4_abroutissement <- function(units,
   if (!is.null(game_density) && inherits(game_density, "SpatRaster")) {
     # Use provided raster
     density_values <- terra::extract(game_density, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
-    density_values[is.na(density_values) | is.nan(density_values)] <- 50
+    # Une unite hors du raster de gibier reste NA : densite inconnue, pas
+    # « moyenne » (un 50 donnait un R4 d'apparence mesuree).
+    density_values[is.nan(density_values)] <- NA_real_
     density_factor <- pmin(pmax(density_values, 0), 100)
     cli::cli_alert_info("R4: Using provided game density raster")
   } else {
@@ -1045,12 +1055,12 @@ indicateur_r4_abroutissement <- function(units,
         # Match CRS to avoid terra extract warning
         units_ext <- sf::st_transform(units, terra::crs(game_raster))
         density_values <- terra::extract(game_raster, units_ext, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
-        density_values[is.na(density_values) | is.nan(density_values)] <- 50
+        density_values[is.nan(density_values)] <- NA_real_
         density_factor <- pmin(pmax(density_values, 0), 100)
         cli::cli_alert_info("R4: Game density computed from hunting data (data.gouv.fr)")
       }
     }, error = function(e) {
-      cli::cli_alert_info("R4: Could not fetch hunting data ({e$message}), using default density 50")
+      cli::cli_alert_info("R4: Could not fetch hunting data ({e$message}), game density is NA")
     })
   }
 
