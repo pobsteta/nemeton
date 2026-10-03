@@ -618,6 +618,7 @@ indicateur_a5_rafraichissement <- function(units, lst = NULL,
   }
   if (n == 0L) {
     units$A5 <- numeric(0); units$A5_delta <- numeric(0)
+    units$a5_status <- character(0)
     return(units)
   }
 

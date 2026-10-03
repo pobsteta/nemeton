@@ -517,3 +517,13 @@ test_that("A2 warns that urban_areas is not used", {
     "not\\s+used"
   )
 })
+
+test_that("A5 sets a5_status even with zero units", {
+  units <- create_test_units(n_features = 1)[0, ]
+  lst <- terra::rast(xmin = 566000, xmax = 567000, ymin = 6614800,
+                     ymax = 6615800, resolution = 10, crs = "EPSG:2154")
+  terra::values(lst) <- 300
+  res <- indicateur_a5_rafraichissement(units, lst = lst)
+  expect_true("a5_status" %in% names(res))
+  expect_length(res$a5_status, 0)
+})
