@@ -293,7 +293,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **M bug** `53-56` — Un été incomplet est accepté (moyenne de juin seul, cumul de pluie sur 30 jours). **[corrigé 0.209.0]**
 - **M bug** `129-144` — Des années à cheval sur deux blocs du CDS renvoient NULL sans message. **[corrigé 0.209.0]**
 - **M qualité** `105-107, 218-244` — Toutes les erreurs deviennent NULL sans message (cf. incident de juillet). **[corrigé 0.209.0]**
-- **m sécu** `112` — `unzip` sans contrôle des chemins.
+- **m sécu** `112` — `unzip` sans contrôle des chemins. **[corrigé 0.210.0]**
 
 **R/tendances_eobs.R / R/eobs_click_series.R**
 - **M bug** `tendances_eobs.R:149-150` — Pente par an, alors que la doc et le graphique au clic parlent de pente par décennie (facteur 10). **[corrigé 0.209.0]**
@@ -384,8 +384,8 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m bug** `122-184` — `BEGIN` différé sous SQLite : `SQLITE_BUSY` au lieu de `ok = FALSE`.
 
 **R/isolate.R**
-- **m sécu** `239-249` — `call.rds` (avec l'URL de base) et `run.R` sont écrits dans un chemin prévisible, en 0644, si le scratch est partagé.
-- **m bug** `311-319` — Le `.ndjson` de progression n'est pas tronqué, d'où des événements rejoués.
+- **m sécu** `239-249` — `call.rds` (avec l'URL de base) et `run.R` sont écrits dans un chemin prévisible, en 0644, si le scratch est partagé. **[corrigé 0.210.0]**
+- **m bug** `311-319` — Le `.ndjson` de progression n'est pas tronqué, d'où des événements rejoués. **[corrigé 0.210.0]**
 
 **R/fordead_validity.R, R/fordead_mask.R**
 - **M qualité** `fordead_validity.R:119-167` — Roxygen détaché (perte de l'export de `check_fordead_validity`).
@@ -402,8 +402,8 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 **R/reconfort_pipeline.R**
 - **M bug** `537, 570-573` — Aucun garde-fou de saison sur `s2_year` (run d'une année incomplète, `trigger_date` dans le futur).
 - **M bug** `700-711` — Sans masque, une seule tranche est utilisée → risque d'OOM.
-- **M sécu** `579-581, 935, 945` — `zone_id` et `output_dir` ne sont pas contrôlés avant `unlink(recursive = TRUE)`.
-- **M bug** `752-756` — Pas de verrou sur le workdir, alors qu'un IOTA² orphelin survit dans son scope systemd.
+- **M sécu** `579-581, 935, 945` — `zone_id` et `output_dir` ne sont pas contrôlés avant `unlink(recursive = TRUE)`. **[corrigé 0.210.0]**
+- **M bug** `752-756` — Pas de verrou sur le workdir, alors qu'un IOTA² orphelin survit dans son scope systemd. **[corrigé 0.210.0]**
 - **m bug** `263-275` — La remise à zéro dépend d'un `run_meta.json` écrit en best-effort.
 - **m bug** `700` — Le contrôle du défaut #11 n'est fait qu'en mode découpé.
 - **m bug** `681-685` — `skip_ingest = TRUE` ne vérifie pas les dossiers extraits.
@@ -411,10 +411,10 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 **R/reconfort_ingest.R**
 - **M bug** `446-448, 500-505` — Le marqueur `.done` ne dépend pas de la fenêtre AOI. **[corrigé 0.209.0]**
 - **M bug** `313-314` — `conda run` sans `--no-capture-output` : sortie perdue si le scope est tué.
-- **M sécu** `217` — pygeodes en `verify=False` (clé GEODES exposée à un MITM, archive non vérifiée), et l'avertissement est masqué.
-- **M sécu** `100-109` + `utils/utils.py:6-7` — Le `.cfg` est relu avec `eval()` côté Python ; un chemin contenant `\'` injecte du code.
+- **M sécu** `217` — pygeodes en `verify=False` (clé GEODES exposée à un MITM, archive non vérifiée), et l'avertissement est masqué. **[corrigé 0.210.0]**
+- **M sécu** `100-109` + `utils/utils.py:6-7` — Le `.cfg` est relu avec `eval()` côté Python ; un chemin contenant `\'` injecte du code. **[corrigé 0.210.0]**
 - **m bug** `314` — Chemin de cfg relatif sous `with_dir`.
-- **m sécu** `488` — `unzip` d'une archive distante sans contrôle des entrées.
+- **m sécu** `488` — `unzip` d'une archive distante sans contrôle des entrées. **[corrigé 0.210.0]**
 - **m qualité** `352, 369` — `__pycache__` écrit dans le dossier installé du paquet.
 - **m bug** `479-505` — Une scène à moitié recadrée reste dans `extracted/`. **[corrigé 0.209.0]**
 
@@ -423,7 +423,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **M bug** `64` — Trois bandes supposées : `v3_pine` (2 classes) plante.
 
 **inst/python/reconfort/ (traçabilité)**
-- **M qualité** — Fichiers annoncés « verbatim » alors qu'au moins 5 sont modifiés, sans PATCHES ni NOTICE (Apache-2.0 §4b) ; deux scripts se déclarent MIT alors que le paquet est GPL-3.
+- **M qualité** — Fichiers annoncés « verbatim » alors qu'au moins 5 sont modifiés, sans PATCHES ni NOTICE (Apache-2.0 §4b) ; deux scripts se déclarent MIT alors que le paquet est GPL-3. **[corrigé 0.210.0]**
 - **m qualité** `repair_iota2_env.sh` — Les correctifs #9 et #10 ne sont pas sondés côté R.
 
 **R/reconfort_outputs.R**
@@ -437,9 +437,9 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m bug** `291-304` — Choix du run par ordre alphabétique, et non par date.
 
 **R/theia_stac.R**
-- **m bug** `149` — `signed[[u]] %||% u` sur un vecteur atomique lève une erreur.
+- **m bug** `149` — `signed[[u]] %||% u` sur un vecteur atomique lève une erreur. **[corrigé 0.210.0]**
 - **m qualité** `437-476, 643-647` — Roxygen sans titre et obsolète (`/vsis3/`, SDK).
-- **m bug** `139-144` — Signature sans timeout ni retry, endpoint `http` accepté.
+- **m bug** `139-144` — Signature sans timeout ni retry, endpoint `http` accepté. **[corrigé 0.210.0]**
 
 **R/lai_prosail.R**
 - **m bug** `73-78` — `geom_acq` absent de la clé du cache ; le modèle livré l'emporte.
@@ -447,9 +447,9 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 ### RAG, QGIS/QField, échantillonnage
 
 **R/knowledge-corpus.R**
-- **M sécu** `427-447` — Le manifeste éditable (onglet admin) peut faire ingérer n'importe quel fichier local, ou une URL `file://`, et envoyer son contenu au fournisseur d'embeddings.
-- **m sécu** `440` — `doc_id` non revalidé : écriture hors de `pdf_dir` possible.
-- **M bug** `38-39` × `rag.R:390` — Les vocabulaires `doc_type` divergent (guide, law, dataset_doc refusés à l'ingestion).
+- **M sécu** `427-447` — Le manifeste éditable (onglet admin) peut faire ingérer n'importe quel fichier local, ou une URL `file://`, et envoyer son contenu au fournisseur d'embeddings. **[corrigé 0.210.0]**
+- **m sécu** `440` — `doc_id` non revalidé : écriture hors de `pdf_dir` possible. **[corrigé 0.210.0]**
+- **M bug** `38-39` × `rag.R:390` — Les vocabulaires `doc_type` divergent (guide, law, dataset_doc refusés à l'ingestion). **[corrigé 0.210.0]**
 - **M bug** `585, 589` — `dry_run` télécharge réellement les PDF. **[corrigé 0.209.0]**
 - **M qualité** `429` — `local_path` est relatif à `data-raw` (exclu du build) : 58 sur 60 sources ne sont pas résolues depuis le paquet installé.
 - **m bug** `604, 612` — L'idempotence repose sur le titre.
@@ -457,26 +457,26 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m qualité** `600-604` — `fresh = TRUE` vide le corpus hors transaction.
 
 **R/rag.R**
-- **M sécu** `1021-1044` — `format_citations(html)` n'échappe rien (XSS si l'app rend ce HTML).
-- **M bug** `361-371` — Un chemin inexistant est ingéré comme texte.
-- **M bug** `897-915` — Pas de contrôle du provider ni de la dimension entre requête et corpus.
-- **m qualité** `888-895` — Pas d'argument `api_key` dans `retrieve_knowledge()`.
+- **M sécu** `1021-1044` — `format_citations(html)` n'échappe rien (XSS si l'app rend ce HTML). **[corrigé 0.210.0]**
+- **M bug** `361-371` — Un chemin inexistant est ingéré comme texte. **[corrigé 0.210.0]**
+- **M bug** `897-915` — Pas de contrôle du provider ni de la dimension entre requête et corpus. **[corrigé 0.210.0]**
+- **m qualité** `888-895` — Pas d'argument `api_key` dans `retrieve_knowledge()`. **[corrigé 0.210.0]**
 - **m qualité** `872, 906` — Bornes de `min_similarity` différentes entre doc et code ; `lang` jamais utilisé.
 - **m bug** `296-327` — Échappement incomplet des tableaux texte.
 - **m qualité** `475-505` — Une ré-ingestion duplique les chunks.
 - **m bug** `99-119` — UTF-8 invalide → `nchar()` lève une erreur.
 
 **R/qgis_export.R**
-- **M bug** `357` — `if (NA)` sur un CRS sans code EPSG : l'export plante.
-- **M sécu** `363-470` — `project_name` non validé (traversée de chemin, option `zip`).
+- **M bug** `357` — `if (NA)` sur un CRS sans code EPSG : l'export plante. **[corrigé 0.210.0]**
+- **M sécu** `363-470` — `project_name` non validé (traversée de chemin, option `zip`). **[corrigé 0.210.0]**
 - **M bug** `409-411` — Les poids d'inclusion et les colonnes métier sont perdus à l'aller-retour QField.
-- **m qualité** `364-369, 468-471` — `setwd` global et dépendance au binaire `zip`.
+- **m qualité** `364-369, 468-471` — `setwd` global et dépendance au binaire `zip`. **[corrigé 0.210.0]**
 - **m qualité** `483-486` — La dépréciation annoncée « one-shot » avertit à chaque appel.
 
 **R/qgis_import.R**
-- **M bug** `293-316` — `g_ha`, `dg` et `h_dom` sont calculés sur les arbres morts et coupés.
-- **m bug** `127-131` — Mauvais numéros de ligne dans le rapport.
-- **m bug** `144-174` — `tree_id` et les champs obligatoires ne sont pas contrôlés.
+- **M bug** `293-316` — `g_ha`, `dg` et `h_dom` sont calculés sur les arbres morts et coupés. **[corrigé 0.210.0]**
+- **m bug** `127-131` — Mauvais numéros de ligne dans le rapport. **[corrigé 0.210.0]**
+- **m bug** `144-174` — `tree_id` et les champs obligatoires ne sont pas contrôlés. **[corrigé 0.210.0]**
 - **m bug** `293` — Colonne `dbh_cm` absente → erreur brute.
 - **m bug** `403` — Repli sur un identifiant non unique.
 

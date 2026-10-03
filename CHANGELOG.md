@@ -10,6 +10,20 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.211.0] - 2026-10-03
+
+### Changed
+- Release déclenchée par la réussite de R-CMD-check ; CI en échec sur warning.
+- `ggrepel`, `signal` en Suggests ; dépendances de base déclarées.
+- `get_global_cache_dir()` : variable `NEMETON_CACHE_DIR`.
+- `inst/scripts/` déplacé dans `tools/`.
+
+### Fixed
+- `.Rbuildignore` : archive de 5,4 Go, `__pycache__`, `.Renviron`.
+- Roxygen détachés, pages d'aide fausses, arguments non documentés.
+- Non-ASCII du code, chemin Python trop long.
+- DESCRIPTION et README à jour ; `docs/` et sorties de vignettes détrackés.
+
 ## [0.210.0] - 2026-10-03
 
 ### Security
