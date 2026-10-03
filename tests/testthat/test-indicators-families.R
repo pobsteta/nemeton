@@ -1157,7 +1157,7 @@ test_that("get_nasapower_wind loads from file cache", {
   temp_cache <- file.path(tempdir(), "nasapower_file_test")
   if (dir.exists(temp_cache)) unlink(temp_cache, recursive = TRUE)
   dir.create(temp_cache, recursive = TRUE)
-  saveRDS(225, file.path(temp_cache, "nasapower_wind.rds"))
+  saveRDS(225, file.path(temp_cache, "nasapower_wind_3p00_47p00.rds"))
 
   units <- sf::st_sf(
     id = 1,
@@ -1169,6 +1169,29 @@ test_that("get_nasapower_wind loads from file cache", {
   expect_equal(result, 225)
 
   unlink(temp_cache, recursive = TRUE)
+})
+
+test_that("get_nasapower_wind never reads the file cache of another location (audit 1.0)", {
+  skip_if_not_installed("sf")
+  wind_cache <- get(".wind_cache", envir = asNamespace("nemeton"))
+  rm(list = ls(wind_cache), envir = wind_cache)
+  withr::defer(rm(list = ls(wind_cache), envir = wind_cache))
+
+  expect_equal(nemeton:::.nasapower_wind_cache_file(4.5, -1.234),
+               "nasapower_wind_4p50_m1p23.rds")
+
+  temp_cache <- withr::local_tempdir()
+  # Cache d'un AUTRE point (3, 47) + ancien nom sans position.
+  saveRDS(225, file.path(temp_cache, "nasapower_wind_3p00_47p00.rds"))
+  saveRDS(225, file.path(temp_cache, "nasapower_wind.rds"))
+  units <- sf::st_sf(id = 1,
+                     geometry = sf::st_sfc(sf::st_point(c(6.0, 44.0)), crs = 4326))
+  # nasapower absent -> défaut ; surtout PAS les 225° de l'autre point.
+  local_mocked_bindings(
+    requireNamespace = function(pkg, ...) if (identical(pkg, "nasapower")) FALSE else TRUE,
+    .package = "base")
+  expect_equal(nemeton:::get_nasapower_wind(units, default_dir = 270,
+                                            cache_dir = temp_cache), 270)
 })
 
 # ==============================================================================
@@ -2140,7 +2163,7 @@ test_that("get_nasapower_wind: file cache hit returns cached value", {
   withr::with_tempdir({
     cache_dir <- file.path(getwd(), "wind_file_cache")
     dir.create(cache_dir, recursive = TRUE)
-    saveRDS(225, file.path(cache_dir, "nasapower_wind.rds"))
+    saveRDS(225, file.path(cache_dir, "nasapower_wind_4p00_45p00.rds"))
 
     units <- sf::st_sf(
       id = 1,
