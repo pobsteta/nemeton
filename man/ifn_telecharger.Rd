@@ -9,10 +9,14 @@ ifn_telecharger(dest_dir, campagne = NULL, force = FALSE)
 \arguments{
 \item{dest_dir}{Directory holding the cached archive. Created if needed.}
 
-\item{campagne}{Campaign year to fetch. \code{NULL} (default) resolves the most
-recent one via \code{\link{ifn_campagne_disponible}}.}
+\item{campagne}{Campaign year to fetch: a single year, 2005 or later.
+\code{NULL} (default) resolves the most recent one via
+\code{\link{ifn_campagne_disponible}}.}
 
-\item{force}{Re-download even when the archive is already cached.}
+\item{force}{Re-download even when the archive is already cached. A cached
+archive that cannot be read back (truncated download) is discarded and
+downloaded again; a download is written to a temporary file and moved
+into place only once its zip directory reads back.}
 }
 \value{
 The path to the cached \code{.zip}, invisibly, with attributes

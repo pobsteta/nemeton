@@ -16,6 +16,11 @@
   sprintf("%s/export_dataifn_2005_%d.zip", .IFN_BASE_URL, as.integer(campagne))
 }
 
+# Point d'appel unique du téléchargement (substituable dans les tests).
+.ifn_download <- function(url, dest) {
+  utils::download.file(url, dest, mode = "wb", quiet = TRUE)
+}
+
 .ifn_url_existe <- function(url) {
   if (!requireNamespace("curl", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg curl} is required to probe the IFN export.")
@@ -75,9 +80,13 @@ ifn_campagne_disponible <- function(depuis = NULL, back = 5L) {
 #' argument: `force = FALSE` reuses, `force = TRUE` re-downloads.
 #'
 #' @param dest_dir Directory holding the cached archive. Created if needed.
-#' @param campagne Campaign year to fetch. `NULL` (default) resolves the most
-#'   recent one via [ifn_campagne_disponible()].
-#' @param force Re-download even when the archive is already cached.
+#' @param campagne Campaign year to fetch: a single year, 2005 or later.
+#'   `NULL` (default) resolves the most recent one via
+#'   [ifn_campagne_disponible()].
+#' @param force Re-download even when the archive is already cached. A cached
+#'   archive that cannot be read back (truncated download) is discarded and
+#'   downloaded again; a download is written to a temporary file and moved
+#'   into place only once its zip directory reads back.
 #'
 #' @return The path to the cached `.zip`, invisibly, with attributes
 #'   `campagne` and `millesime`.
@@ -91,6 +100,17 @@ ifn_telecharger <- function(dest_dir, campagne = NULL, force = FALSE) {
   if (missing(dest_dir) || !is.character(dest_dir) || length(dest_dir) != 1L) {
     cli::cli_abort("{.arg dest_dir} must be a single directory path.")
   }
+  if (!is.null(campagne)) {
+    # Une campagne est une année unique : 2005 (première campagne annuelle)
+    # au plus tôt, l'année en cours au plus tard.
+    an_max <- as.integer(format(Sys.Date(), "%Y"))
+    if (!is.numeric(campagne) || length(campagne) != 1L || is.na(campagne) ||
+        campagne != round(campagne) || campagne < 2005 || campagne > an_max) {
+      cli::cli_abort(
+        "{.arg campagne} must be a single year between 2005 and {an_max}."
+      )
+    }
+  }
   info <- if (is.null(campagne)) {
     ifn_campagne_disponible()
   } else {
@@ -101,11 +121,24 @@ ifn_telecharger <- function(dest_dir, campagne = NULL, force = FALSE) {
   dir.create(dest_dir, showWarnings = FALSE, recursive = TRUE)
   path <- file.path(dest_dir, basename(info$url))
 
-  if (file.exists(path) && !isTRUE(force)) {
+  # Une archive en cache n'est resservie que si son répertoire central se
+  # lit : un zip tronqué (téléchargement interrompu) est supprimé puis
+  # retéléchargé, au lieu de faire échouer `ifn_charger()` indéfiniment.
+  if (!isTRUE(force) && .cache_valid_or_drop(path, .zip_lisible)) {
     cli::cli_alert_info("Using cached IFN export {.file {basename(path)}}.")
   } else {
     cli::cli_alert_info("Downloading IFN export {info$millesime} (~65 MB).")
-    utils::download.file(info$url, path, mode = "wb", quiet = TRUE)
+    # Le délai par défaut de R (60 s) coupe un export de ~65 Mo sur une
+    # connexion modeste : relevé localement, sans toucher l'option globale.
+    old <- options(timeout = max(1800, getOption("timeout")))
+    on.exit(options(old), add = TRUE)
+    # Téléchargement vers un temporaire du même dossier, promu seulement
+    # si l'archive se relit : jamais de zip partiel sous le nom définitif.
+    .atomic_write(
+      path,
+      writer = function(tmp) .ifn_download(info$url, tmp),
+      validate = .zip_lisible
+    )
   }
   attr(path, "campagne")  <- info$campagne
   attr(path, "millesime") <- info$millesime

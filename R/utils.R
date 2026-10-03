@@ -1434,3 +1434,98 @@ scratch_dir <- function(subdir = NULL) {
   if (is.na(kb)) return(NA_real_)
   kb / 1048576
 }
+
+
+# --- Écriture atomique des caches ------------------------------------------
+# Principe : un fichier de cache n'est valide que s'il est complet. On écrit
+# dans un temporaire du MÊME répertoire (le rename reste alors atomique, pas
+# de copie inter-volumes), on vérifie, puis on renomme sur la cible. Un
+# échec en cours de route ne laisse jamais de fichier partiel sous le nom
+# définitif.
+
+# Chemin temporaire voisin de `path`, en conservant l'extension (terra et sf
+# choisissent leur pilote d'après elle).
+.atomic_tmp_path <- function(path) {
+  ext <- tools::file_ext(path)
+  base <- basename(path)
+  stem <- if (nzchar(ext)) substr(base, 1L, nchar(base) - nchar(ext) - 1L) else base
+  tag <- basename(tempfile(pattern = ""))
+  file.path(dirname(path),
+            paste0(".", stem, ".part-", Sys.getpid(), "-", tag,
+                   if (nzchar(ext)) paste0(".", ext) else ""))
+}
+
+# Écrit `path` de façon atomique. `writer(tmp)` produit le fichier (ou le
+# dossier) temporaire ; `validate(tmp)`, optionnel, doit renvoyer TRUE pour
+# que le résultat soit promu. Tout échec supprime le temporaire et laisse
+# `path` inchangé (absent ou dans son état précédent). Renvoie `path`.
+.atomic_write <- function(path, writer, validate = NULL) {
+  dir.create(dirname(path), showWarnings = FALSE, recursive = TRUE)
+  tmp <- .atomic_tmp_path(path)
+  promu <- FALSE
+  on.exit(if (!promu) unlink(tmp, recursive = TRUE, force = TRUE), add = TRUE)
+  writer(tmp)
+  if (!file.exists(tmp)) {
+    cli::cli_abort("Cache file {.path {basename(path)}} was not written.")
+  }
+  if (!is.null(validate) &&
+      !isTRUE(tryCatch(validate(tmp), error = function(e) FALSE))) {
+    cli::cli_abort("Cache file {.path {basename(path)}} failed its integrity check.")
+  }
+  .atomic_promote(tmp, path)
+  promu <- TRUE
+  invisible(path)
+}
+
+# Remplace `path` par `tmp` (déjà complet). file.rename écrase un fichier
+# mais pas un dossier existant : on supprime alors la cible d'abord.
+.atomic_promote <- function(tmp, path) {
+  if (dir.exists(path)) unlink(path, recursive = TRUE, force = TRUE)
+  if (!file.rename(tmp, path)) {
+    # Dernier recours (systèmes de fichiers exotiques) : copie puis suppression.
+    ok <- if (dir.exists(tmp)) {
+      dir.create(path, showWarnings = FALSE, recursive = TRUE)
+      file.copy(list.files(tmp, full.names = TRUE, all.files = TRUE,
+                           no.. = TRUE), path, recursive = TRUE)
+    } else {
+      file.copy(tmp, path, overwrite = TRUE)
+    }
+    unlink(tmp, recursive = TRUE, force = TRUE)
+    if (!isTRUE(all(ok))) {
+      unlink(path, recursive = TRUE, force = TRUE)
+      cli::cli_abort("Cannot move the cache file into place at {.path {path}}.")
+    }
+  }
+  invisible(path)
+}
+
+# Un cache existant n'est resservi que s'il passe `validate` ; illisible, il
+# est supprimé (l'appelant le recalcule) au lieu d'être resservi
+# indéfiniment. Renvoie TRUE si le cache est utilisable.
+.cache_valid_or_drop <- function(path, validate) {
+  if (!file.exists(path)) return(FALSE)
+  ok <- isTRUE(tryCatch(validate(path), error = function(e) FALSE))
+  if (!ok) {
+    cli::cli_alert_warning("Discarding unreadable cache file {.path {basename(path)}}.")
+    unlink(path, recursive = TRUE, force = TRUE)
+  }
+  ok
+}
+
+# Validateurs usuels (renvoient TRUE/FALSE, jamais d'erreur).
+.zip_lisible <- function(path) {
+  isTRUE(tryCatch(nrow(utils::unzip(path, list = TRUE)) > 0L,
+                  error = function(e) FALSE, warning = function(w) FALSE))
+}
+
+.raster_lisible <- function(path) {
+  isTRUE(tryCatch({
+    r <- terra::rast(path)
+    # Lire la première ET la dernière ligne force l'accès aux données (un
+    # fichier tronqué perd ses derniers blocs, l'en-tête reste lisible).
+    n <- terra::nrow(r)
+    terra::ncell(r) > 0L &&
+      length(terra::values(r[[1]], row = 1, nrows = 1)) > 0L &&
+      length(terra::values(r[[1]], row = n, nrows = 1)) > 0L
+  }, error = function(e) FALSE))
+}
