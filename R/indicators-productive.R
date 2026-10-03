@@ -622,10 +622,12 @@ indicateur_p3_qualite_bois <- function(units,
     # Score based on commercial thresholds
     if (species_field %in% names(units)) {
       species_code <- units[[species_field]][i]
-      # Simple heuristic: conifer vs broadleaf thresholds
-      is_conifer <- grepl("^P[IML]", toupper(species_code)) # PI*, PM*, PL* (pines)
-      sawlog_threshold <- if (is_conifer) 30 else 40
-      pulp_threshold <- if (is_conifer) 15 else 20
+      # Seuils resineux / feuillus : definition unique du paquet. L'ancien
+      # motif ^P[IML] ratait ABAL, PSME, LADE, CEAT et prenait PLAC
+      # (platane) pour un pin.
+      resineux <- is_conifer(species_code)
+      sawlog_threshold <- if (resineux) 30 else 40
+      pulp_threshold <- if (resineux) 15 else 20
     } else {
       sawlog_threshold <- 35 # Generic
       pulp_threshold <- 18

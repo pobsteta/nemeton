@@ -57,9 +57,17 @@ NULL
 #' E1_residues, E1_coppice; in flux mode also `E1_mode`
 #' (`"ressource_flux"` or `"recolte_observee"`). **Higher = more fuelwood available =
 #' favourable**, not inverted; normalize_indicator() rescales it against a
-#' ref_max of 1.32 t DM/ha/yr -- the yield of a stand at P1's own ceiling
+#' ref_max of 2.64 t DM/ha/yr -- the yield of a stand at P1's own ceiling
 #' (800 m3/ha, density 550), so E1, E2 and P1 score the same stand alike.
-#' See spec 048 section 11.
+#' See spec 048 section 11. A unit with no volume gets `NA` in E1,
+#' E1_residues and E1_coppice.
+#'
+#' @section Wood density:
+#' Residue volume is converted to dry matter with the species density of
+#' `inst/extdata/wood_density.csv` (`density_kg_m3`), an air-dry density
+#' (about 12 percent moisture), used as is as a dry-matter density -- as C1
+#' does. Versions up to 0.211.0 multiplied it by a further 0.5 ("dry matter =
+#' 50 percent of fresh weight"), which halved E1.
 #'
 #' @export
 indicateur_e1_bois_energie <- function(units,
@@ -167,7 +175,11 @@ indicateur_e1_bois_energie <- function(units,
   for (i in seq_len(nrow(units))) {
     volume_m3_ha <- units[[volume_field]][i]
     if (is.na(volume_m3_ha)) {
+      # Unite non evaluee : les colonnes de detail suivent le total (un 0
+      # laisse en place se lisait « aucun remanent »).
       e1_values[i] <- NA_real_
+      e1_residues[i] <- NA_real_
+      e1_coppice[i] <- NA_real_
       next
     }
 
@@ -179,7 +191,13 @@ indicateur_e1_bois_energie <- function(units,
     # Calculate harvest residues
     annual_harvest_m3_ha <- volume_m3_ha * harvest_rate
     residues_m3_ha <- annual_harvest_m3_ha * residue_fraction
-    residues_tonnes_dm <- residues_m3_ha * density_kg_m3 / 1000 * 0.5 # DM = 50% of fresh weight
+    # `density_kg_m3` (inst/extdata/wood_density.csv) est une densite de bois
+    # SEC a l'air (~12 % d'humidite : chene 690, hetre 680, epicea 450), pas
+    # une densite de bois vert. C1 l'emploie d'ailleurs telle quelle comme
+    # masse seche par m3. L'ancien facteur « x 0.5 (MS = 50 % du poids frais) »
+    # appliquait une correction d'humidite a une densite deja seche et divisait
+    # E1 par deux.
+    residues_tonnes_dm <- residues_m3_ha * density_kg_m3 / 1000
 
     # Calculate coppice biomass (if applicable)
     coppice_tonnes_dm <- 0
@@ -193,9 +211,13 @@ indicateur_e1_bois_energie <- function(units,
     e1_residues[i] <- residues_tonnes_dm
     e1_coppice[i] <- coppice_tonnes_dm
     e1_values[i] <- residues_tonnes_dm + coppice_tonnes_dm
-
-    msg_info("energy_fuelwood_calculated", e1_values[i], residues_tonnes_dm, coppice_tonnes_dm)
   }
+
+  # Un seul message agrege pour l'emprise (auparavant un message par unite).
+  msg_info("energy_fuelwood_calculated",
+           sum(e1_values, na.rm = TRUE),
+           sum(e1_residues, na.rm = TRUE),
+           sum(e1_coppice, na.rm = TRUE))
 
   result$E1_residues <- e1_residues
   result$E1_coppice <- e1_coppice
@@ -212,15 +234,23 @@ indicateur_e1_bois_energie <- function(units,
 #'
 #' @param units sf object (POLYGON) of spatial units to assess
 #' @param fuelwood_field Character. Column name for fuelwood potential (tonnes DM/yr). Default "E1".
-#' @param volume_field Character. Column name for construction timber volume (m³/ha). Optional.
+#' @param volume_field Character. Column name for the standing construction
+#'   timber volume (m³/ha, a stock). Optional; used only with
+#'   `material_scenario`, and then annualised by `taux_recolte_materiau`.
 #' @param energy_scenario Character. Energy substitution scenario: "vs_natural_gas", "vs_fuel_oil". Default "vs_natural_gas".
 #' @param material_scenario Character. Material substitution: "vs_concrete", "vs_steel", NULL. Default NULL (no material substitution).
 #' @param column_name Character. Name for output column. Default "E2".
 #' @param lang Character. Message language. Default "en".
+#' @param taux_recolte_materiau Numeric in `[0, 1]`, one value or one per
+#'   unit: share of `volume_field` harvested as construction timber each
+#'   year. Required with `material_scenario` + `volume_field`, no default on
+#'   purpose: E2 is an annual flux, and adding the standing stock (m³/ha) to
+#'   the yearly energy substitution, as versions up to 0.211.0 did, mixed a
+#'   stock and a flux.
 #'
 #' @return sf object with added columns: E2 (total CO2 avoided tCO2eq/ha/yr),
 #' E2_energy, E2_material. **Higher = more emissions avoided =
-#' favourable**, not inverted. Same ref_max as E1 (1.32) because it is, to
+#' favourable**, not inverted. Same ref_max as E1 (2.64) because it is, to
 #' within 0.1 %, the same quantity: E2 = E1 x 4500 kWh x 0.222 kgCO2/kWh /
 #' 1000 = E1 x 0.999. See spec 048 section 11.
 #'
@@ -231,8 +261,29 @@ indicateur_e2_evitement <- function(units,
                                        energy_scenario = "vs_natural_gas",
                                        material_scenario = NULL,
                                        column_name = "E2",
-                                       lang = "en") {
+                                       lang = "en",
+                                       taux_recolte_materiau = NULL) {
   if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
+
+  # Substitution materiau : `volume_field` est un STOCK sur pied (m3/ha). E2
+  # est un flux annuel ; on n'additionne au flux energie que la part recoltee
+  # chaque annee. Pas de taux par defaut : une hypothese de recolte cachee
+  # serait une decision non dite (meme principe que `taux_mobilisation` de E1).
+  materiau_actif <- !is.null(material_scenario) && !is.null(volume_field)
+  if (materiau_actif) {
+    if (is.null(taux_recolte_materiau)) {
+      cli::cli_abort(c(
+        "Material substitution needs {.arg taux_recolte_materiau}.",
+        "i" = "{.arg volume_field} is a standing stock (m3/ha) and E2 an annual flux: give the share harvested each year as construction timber, in [0, 1]."
+      ))
+    }
+    if (!is.numeric(taux_recolte_materiau) || anyNA(taux_recolte_materiau) ||
+        any(taux_recolte_materiau < 0 | taux_recolte_materiau > 1) ||
+        !length(taux_recolte_materiau) %in% c(1L, nrow(units))) {
+      cli::cli_abort("{.arg taux_recolte_materiau} must be in [0, 1] (one value or one per unit).")
+    }
+    taux_materiau <- rep_len(taux_recolte_materiau, nrow(units))
+  }
 
   result <- units
   e2_energy <- numeric(nrow(units))
@@ -265,13 +316,13 @@ indicateur_e2_evitement <- function(units,
     }
 
     # Material substitution (if applicable)
-    if (!is.null(material_scenario) && !is.null(volume_field) && volume_field %in% names(units)) {
+    if (materiau_actif && volume_field %in% names(units)) {
       construction_volume <- units[[volume_field]][i]
       if (!is.na(construction_volume)) {
         material_factor <- lookup_ademe_factor("wood_construction", material_scenario)
         if (!is.null(material_factor)) {
-          # Convert volume to mass (assuming 500 kg/m³ average)
-          wood_mass_kg <- construction_volume * 500
+          # Flux annuel de bois d'oeuvre (m3/ha/an), puis masse (500 kg/m3)
+          wood_mass_kg <- construction_volume * taux_materiau[i] * 500
           e2_material[i] <- wood_mass_kg * as.numeric(material_factor$emission_factor_kgCO2eq_per_unit) / 1000
           e2_calcule[i] <- TRUE
         }

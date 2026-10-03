@@ -154,7 +154,11 @@ NULL
 #' annular kernel of \code{fire_exp()} costs \code{(2 * t_dist / res)^2}
 #' operations per cell: at 2 m it is ~52 000x the cost at 30 m.
 #'
-#' **Fallback method**: R1 = w1*slope + w2*species_flammability + w3*climate_dryness
+#' **Fallback method**: R1 = w1*slope + w2*species_flammability + w3*climate_dryness.
+#' Without a species field, an NDVI-based proxy (\code{100 - 100 * NDVI}) takes
+#' the species component when an NDVI layer is available. A component that
+#' cannot be computed drops out and its weight is redistributed proportionally;
+#' with no usable component, R1 is \code{NA}.
 #'
 #' @family risk-indicators
 #' @export
@@ -270,53 +274,44 @@ indicateur_r1_feu <- function(units,
   # fireexposuR aboutit, elle n'a pas lieu d'être payée.
   dem <- .dem_working_res(dem, target_res = dem_target_res, context = "R1")
 
-  # Normalize weights
-  weights <- weights / sum(weights)
-
-  # Component 1: Slope factor
+  # Composantes disponibles seulement : une composante absente sort du calcul
+  # et son poids est redistribue au prorata (cf. .r1_weighted_score), plutot
+  # que d etre remplacee par un 50 constant. Le proxy NDVI tient lieu de
+  # composante « essence » quand le champ essence manque : il garde donc le
+  # poids `species` (avant correction, il etait calcule puis pondere a 0).
   slope_factor <- .r1_slope_factor(dem, units)
   if (is.null(slope_factor)) {
-    cli::cli_alert_warning("R1: slope could not be derived, using a neutral value")
-    slope_factor <- rep(50, nrow(units))
+    cli::cli_alert_warning("R1: slope could not be derived, component dropped")
   }
 
-  # Component 2: Species flammability (or NDVI-based proxy)
+  species_factor <- NULL
   if (species_field %in% names(units)) {
-    species <- units[[species_field]]
-    species_factor <- get_species_flammability(species)
+    species_factor <- get_species_flammability(units[[species_field]])
   } else {
     ndvi_raster_r1 <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
     if (!is.null(ndvi_raster_r1)) {
       ndvi_mean <- safe_extract(ndvi_raster_r1,
         as_pure_sf(units), fun = "mean", progress = FALSE)
       species_factor <- pmax(0, pmin(100, 100 - ndvi_mean * 100))
-    } else {
-      species_factor <- rep(50, nrow(units))
     }
-    weights["slope"] <- weights["slope"] + weights["species"] / 2
-    weights["climate"] <- weights["climate"] + weights["species"] / 2
-    weights["species"] <- 0
   }
 
-  # Component 3: Climate dryness (if available)
   climate_factor <- .r1_climate_factor(climate, units)
-  if (is.null(climate_factor)) {
-    climate_factor <- rep(50, nrow(units))
-    weights["slope"] <- weights["slope"] + weights["climate"] / 2
-    weights["species"] <- weights["species"] + weights["climate"] / 2
-    weights["climate"] <- 0
+
+  scored <- .r1_weighted_score(
+    list(slope = slope_factor, species = species_factor,
+         climate = climate_factor),
+    weights
+  )
+  if (is.null(scored)) {
+    cli::cli_alert_warning("R1: no usable fallback component, returning NA")
+    units$R1 <- rep(NA_real_, nrow(units))
+    return(units)
   }
-
-  # Renormalize weights
-  total_w <- sum(weights)
-  if (total_w > 0) weights <- weights / total_w
-
-  # Composite R1
-  units$R1 <- weights["slope"] * slope_factor +
-    weights["species"] * species_factor +
-    weights["climate"] * climate_factor
-
-  units$R1 <- pmin(pmax(units$R1, 0), 100)
+  cli::cli_alert_info(
+    "R1: fallback score = {paste(sprintf('%.2f x %s', scored$weights, names(scored$weights)), collapse = ' + ')}"
+  )
+  units$R1 <- scored$score
   msg_info("indicateur_r1_feu")
   units
 }
@@ -883,12 +878,15 @@ indicateur_r3_secheresse <- function(units,
 #'   }
 #'
 #' @details
-#' **Formula**: R4 = 0.35*palatability + 0.30*vulnerability + 0.20*edge + 0.15*density
+#' **Formula**: R4 = 0.35*palatability + 0.30*vulnerability + 0.20*edge + 0.15*density.
+#' A component that cannot be evaluated (no BD Foret, no LiDAR MNH, unit outside
+#' the game density raster) is \code{NA} and propagates to R4.
 #'
 #' **Components**:
 #' \itemize{
 #'   \item palatability: From BD Foret species intersection (pattern matching on
-#'     essence names). Quercus=90, Abies=85, Fagus=70, Pinus=30.
+#'     essence names). Quercus=90, Abies=85, Fagus=70, Pinus=30. Averaged over
+#'     the intersected BD Foret polygons, weighted by intersected area.
 #'   \item vulnerability: From LiDAR MNH mean height per parcel.
 #'     <2m = 100, 2-10m = decreasing, >10m = 0.
 #'   \item edge_exposure: Proportion of parcel within buffer of forest edge.
@@ -961,17 +959,22 @@ indicateur_r4_abroutissement <- function(units,
         }, error = function(e) NULL)
 
         if (!is.null(inter) && nrow(inter) > 0) {
-          essence <- tolower(as.character(inter[[essence_col]][1]))
-          # Use get_species_palatability for pattern matching
-          score <- get_species_palatability(essence)
-          if (!is.na(score)) {
-            palatability_factor[i] <- score
+          # Moyenne des appetences ponderee par la surface intersectee : lire
+          # le premier polygone retourne (ordre arbitraire de la BD Foret)
+          # attribuait a l'UGF l'essence d'un liseré de quelques m2.
+          scores <- get_species_palatability(
+            tolower(as.character(inter[[essence_col]]))
+          )
+          areas <- as.numeric(sf::st_area(inter))
+          ok <- !is.na(scores) & is.finite(areas) & areas > 0
+          if (any(ok)) {
+            palatability_factor[i] <- sum(scores[ok] * areas[ok]) / sum(areas[ok])
           }
         }
       }
     }
   } else {
-    cli::cli_alert_info("R4: No BD For\u00eat data, using default palatability 50")
+    cli::cli_alert_info("R4: No BD For\u00eat data, palatability is NA")
   }
   units$R4_palatability <- palatability_factor
 
@@ -992,7 +995,7 @@ indicateur_r4_abroutissement <- function(units,
     # Tuto formula: (10 - zmean) / 8 * 100
     vulnerability_factor <- pmax(0, pmin(100, (10 - mnh_mean) / 8 * 100))
   } else {
-    cli::cli_alert_info("R4: No LiDAR MNH, using default vulnerability 50")
+    cli::cli_alert_info("R4: No LiDAR MNH, vulnerability is NA")
   }
   units$R4_vulnerability <- vulnerability_factor
 
@@ -1039,7 +1042,9 @@ indicateur_r4_abroutissement <- function(units,
   if (!is.null(game_density) && inherits(game_density, "SpatRaster")) {
     # Use provided raster
     density_values <- terra::extract(game_density, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
-    density_values[is.na(density_values) | is.nan(density_values)] <- 50
+    # Une unite hors du raster de gibier reste NA : densite inconnue, pas
+    # « moyenne » (un 50 donnait un R4 d'apparence mesuree).
+    density_values[is.nan(density_values)] <- NA_real_
     density_factor <- pmin(pmax(density_values, 0), 100)
     cli::cli_alert_info("R4: Using provided game density raster")
   } else {
@@ -1050,12 +1055,12 @@ indicateur_r4_abroutissement <- function(units,
         # Match CRS to avoid terra extract warning
         units_ext <- sf::st_transform(units, terra::crs(game_raster))
         density_values <- terra::extract(game_raster, units_ext, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
-        density_values[is.na(density_values) | is.nan(density_values)] <- 50
+        density_values[is.nan(density_values)] <- NA_real_
         density_factor <- pmin(pmax(density_values, 0), 100)
         cli::cli_alert_info("R4: Game density computed from hunting data (data.gouv.fr)")
       }
     }, error = function(e) {
-      cli::cli_alert_info("R4: Could not fetch hunting data ({e$message}), using default density 50")
+      cli::cli_alert_info("R4: Could not fetch hunting data ({e$message}), game density is NA")
     })
   }
 

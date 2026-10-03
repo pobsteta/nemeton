@@ -50,7 +50,9 @@ which a unit carries no merchantable stock (\code{dbh} /
 The input \code{sf} with \code{dbh_field} and
   \code{density_field} filled (when possible). The
   \code{inventory_source} attribute is set to "synthetic_ml" iff
-  at least one field was filled from the CHM.
+  at least one field was filled from the CHM; the attribute
+  \code{hors_domaine} then carries the per-unit clamping flag of
+  \code{\link{estimate_synthetic_inventory}}.
 }
 \description{
 Convenience wrapper around

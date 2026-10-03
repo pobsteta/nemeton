@@ -126,7 +126,11 @@ h_to_dq_params <- function() {
 #' @return Numeric vector of estimated \eqn{D_g} in cm, clamped
 #'   to each species' observed range. \code{NA} when
 #'   \code{H_dom} is \code{NA}, non-positive or below 6 m
-#'   (stands too young for this allometry).
+#'   (stands too young for this allometry). The clamping is not silent:
+#'   the attribute \code{hors_domaine} (logical, same length) is
+#'   \code{TRUE} where the raw allometric value fell outside the species
+#'   range and was clamped (e.g. an old oak stand capped at the 30 cm
+#'   upper bound of QUPE), \code{NA} where no value was computed.
 #'
 #' @examples
 #' estimate_dq_from_hdom(H_dom = 25, species = "FASY")
@@ -144,6 +148,9 @@ estimate_dq_from_hdom <- function(H_dom, species) {
 
   tab <- .h_to_dq_params
   out <- rep(NA_real_, n)
+  # Bornage signale, pas silencieux : TRUE quand la valeur allometrique brute
+  # sortait du domaine observe de l'essence et a ete ramenee a sa borne.
+  hors_domaine <- rep(NA, n)
 
   for (i in seq_len(n)) {
     h <- H_dom[i]
@@ -157,8 +164,8 @@ estimate_dq_from_hdom <- function(H_dom, species) {
       a <- if (is_conifer(s)) .h_to_dq_fallback[["conifer"]]
            else .h_to_dq_fallback[["broadleaf"]]
       b <- 0.9
-      lo <- if (is_conifer(s)) 15 else 15
-      hi <- if (is_conifer(s)) 50 else 50
+      lo <- 15
+      hi <- 50
     } else {
       a  <- tab$a[idx]
       b  <- tab$b[idx]
@@ -168,7 +175,9 @@ estimate_dq_from_hdom <- function(H_dom, species) {
 
     dq_raw <- a * h^b
     out[i] <- pmin(pmax(dq_raw, lo), hi)
+    hors_domaine[i] <- dq_raw < lo || dq_raw > hi
   }
+  attr(out, "hors_domaine") <- hors_domaine
   out
 }
 
@@ -224,8 +233,13 @@ estimate_dq_from_hdom <- function(H_dom, species) {
 #'
 #' @return A data.frame with one row per unit containing
 #'   \code{H_dom} (m), \code{dbh} (cm, the quadratic mean
-#'   diameter), \code{density} (stems / ha), and \code{source}
-#'   (always "synthetic_ml") columns. Units below
+#'   diameter), \code{density} (stems / ha), \code{source}
+#'   (always "synthetic_ml") and \code{hors_domaine} columns.
+#'   \code{hors_domaine} is \code{TRUE} when \eqn{D_g} (Charru / IFN
+#'   allometry) or \eqn{N_{max}} (Charru 2012) was clamped to the
+#'   species' calibration range, \code{FALSE} otherwise (and for
+#'   non-merchantable units), \code{NA} when \eqn{D_g} is unknown; a
+#'   message reports how many units are concerned. Units below
 #'   \code{min_merchantable_height} get \code{dbh = 0} and
 #'   \code{density = 0}. The attribute \code{chm_suspect} (logical)
 #'   flags a likely degenerate CHM (see \code{suspect_frac}).
@@ -282,7 +296,12 @@ estimate_synthetic_inventory <- function(units, chm, species,
 
   dq <- estimate_dq_from_hdom(h_dom, species)
   n_max <- n_max_selfthinning(dq, species)
-  density <- stocking * n_max
+  # Bornage de D_g ou de N_max au domaine de calibration : signale par unite
+  # (colonne `hors_domaine`) au lieu d'etre applique en silence.
+  hors_domaine <- attr(dq, "hors_domaine") | attr(n_max, "hors_domaine")
+  hors_domaine[is.na(dq)] <- NA
+  dq <- as.numeric(dq)
+  density <- stocking * as.numeric(n_max)
 
   # spec 005 amendment (v0.109.0) — "no merchantable stock" regime.
   # A unit whose H_dom is *observed* (non-NA) but below the mature-stand
@@ -300,6 +319,14 @@ estimate_synthetic_inventory <- function(units, chm, species,
   no_merch <- !is.na(h_dom) & h_dom < min_merchantable_height
   dq[no_merch]      <- 0
   density[no_merch] <- 0
+  hors_domaine[no_merch] <- FALSE
+
+  n_hors <- sum(hors_domaine, na.rm = TRUE)
+  if (n_hors > 0) {
+    cli::cli_alert_info(
+      "Synthetic inventory: D_g or N_max clamped to the species calibration range for {n_hors} unit{?s} (see column {.field hors_domaine})."
+    )
+  }
 
   # #1 degenerate-CHM guard. When nearly every observed unit is below
   # the merchantable height AND the CHM's own maximum is itself near
@@ -334,6 +361,7 @@ estimate_synthetic_inventory <- function(units, chm, species,
     dbh     = dq,
     density = density,
     source  = rep("synthetic_ml", n),
+    hors_domaine = hors_domaine,
     stringsAsFactors = FALSE
   )
   attr(out, "chm_suspect") <- chm_suspect
@@ -376,7 +404,9 @@ estimate_synthetic_inventory <- function(units, chm, species,
 #' @return The input \code{sf} with \code{dbh_field} and
 #'   \code{density_field} filled (when possible). The
 #'   \code{inventory_source} attribute is set to "synthetic_ml" iff
-#'   at least one field was filled from the CHM.
+#'   at least one field was filled from the CHM; the attribute
+#'   \code{hors_domaine} then carries the per-unit clamping flag of
+#'   \code{\link{estimate_synthetic_inventory}}.
 #'
 #' @keywords internal
 #' @export
@@ -426,6 +456,8 @@ ensure_inventory_fields <- function(units,
   }
   # Propagate the degenerate-CHM flag (#1) so callers/UI can surface it.
   attr(units, "chm_suspect") <- isTRUE(attr(inv, "chm_suspect"))
+  # Idem pour le bornage au domaine de calibration (par unite).
+  if (filled) attr(units, "hors_domaine") <- inv$hors_domaine
   if (filled) {
     attr(units, "inventory_source") <- "synthetic_ml"
     cli::cli_alert_info(

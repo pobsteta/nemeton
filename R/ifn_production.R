@@ -27,12 +27,11 @@
 # Seuil de recensabilite IFN : diametre 7,5 cm a 1,30 m.
 .IFN_C13_RECRUTEMENT <- 7.5 / 100 * pi
 
-# Groupe d'essence : un code IFN dont le prefixe numerique est entre 51 et 79
-# est un resineux (51 pin maritime ... 78) ; tout le reste est feuillu, chenes
-# a un chiffre (5, 6, 7) et hetre (9 / 09) compris. Verifie sur espar-cdref13.
+# Groupe d'essence : definition unique du paquet (R/resineux.R) ; sur un code
+# espar, un prefixe numerique entre 51 et 79 est un resineux, tout le reste est
+# feuillu (chenes 02-07 et hetre 09 compris). Verifie sur espar-cdref13.
 .ifn_groupe_espar <- function(espar) {
-  n <- suppressWarnings(as.integer(sub("^([0-9]+).*$", "\\1", as.character(espar))))
-  ifelse(!is.na(n) & n >= 51L & n <= 79L, "resineux", "feuillus")
+  ifelse(.est_resineux(espar), "resineux", "feuillus")
 }
 
 # Categorie de dimension IFN (diametre en cm) : PB < 22,5 <= BM < 47,5 <=

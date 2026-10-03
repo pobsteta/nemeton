@@ -1873,13 +1873,14 @@ test_that("T1 a bien une règle : pas de repli naïf, pas d'avertissement", {
 # pourtant trois bornes différentes : E1 saturait à 182 m³/ha, E2 à 455, P1 à
 # 800. Bornes alignées sur P1 en 0.197.0.
 
-# E1 = V × harvest_rate × residue_fraction × rho/1000 × 0.5, defaults + rho 550.
-.e1_depuis_volume <- function(V) V * 0.02 * 0.3 * 550 / 1000 * 0.5
+# E1 = V × harvest_rate × residue_fraction × rho/1000, defaults + rho 550
+# (densité déjà sèche : le facteur 0,5 a été retiré à l'audit 1.0).
+.e1_depuis_volume <- function(V) V * 0.02 * 0.3 * 550 / 1000
 
 test_that("E1 et E2 portent la même borne, puisqu'ils portent le même nombre", {
   # Le facteur de conversion E1 -> E2 vaut 0,999 : à 0,1 % près, c'est la même
   # grandeur. Deux bornes différentes étaient donc indéfendables.
-  v <- c(0, 0.33, 0.66, 1.32)
+  v <- c(0, 0.66, 1.32, 2.64)
   expect_equal(normalize_indicator("indicateur_e1_bois_energie", v),
                normalize_indicator("indicateur_e2_evitement", v))
   expect_equal(normalize_indicator("indicateur_e1_bois_energie", v),

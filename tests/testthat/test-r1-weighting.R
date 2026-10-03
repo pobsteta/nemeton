@@ -190,3 +190,36 @@ test_that(".fire_exp_working_dem passes through a missing DEM", {
   expect_null(.fire_exp_working_dem(NULL))
   expect_identical(.fire_exp_working_dem("pas un raster"), "pas un raster")
 })
+
+# --- Repli : composantes absentes exclues, proxy NDVI pondéré ----------------
+
+test_that("R1 fallback weights the NDVI proxy instead of zeroing it", {
+  skip_if_not_installed("terra")
+  units <- create_test_units(n_features = 3)
+  ndvi <- terra::rast(
+    xmin = 566400, xmax = 567000, ymin = 6615100, ymax = 6615500,
+    resolution = 10, crs = "EPSG:2154", vals = 0.2
+  )
+  layers <- structure(list(rasters = list(ndvi = ndvi)),
+                      class = "nemeton_layers")
+  local_mocked_bindings(.r1_slope_factor = function(dem, units) c(20, 40, 60))
+
+  res <- suppressMessages(indicateur_r1_feu(
+    units, dem = make_sloped_dem(), layers = layers,
+    species_field = "absent"
+  ))
+  # Proxy NDVI = 100 - 0.2 * 100 = 80, pondéré à parts égales avec la pente
+  # (climat absent, sorti du calcul). Avant correction : poids nul -> pente seule.
+  expect_equal(res$R1, (c(20, 40, 60) + 80) / 2)
+})
+
+test_that("R1 fallback with no usable component returns NA, not 50", {
+  skip_if_not_installed("terra")
+  units <- create_test_units(n_features = 2)
+  local_mocked_bindings(.r1_slope_factor = function(dem, units) NULL)
+
+  res <- suppressMessages(indicateur_r1_feu(
+    units, dem = make_sloped_dem(), species_field = "absent"
+  ))
+  expect_true(all(is.na(res$R1)))
+})

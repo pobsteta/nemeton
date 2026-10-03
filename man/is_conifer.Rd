@@ -10,8 +10,9 @@ is_conifer(species)
 \item{species}{Character. Species code (IFN style).}
 }
 \value{
-Logical scalar. \code{TRUE} if the code is on the
-  known conifer list.
+Logical, same length as \code{species}. \code{TRUE} if the
+code is a conifer (single package-wide definition, shared with P3 and
+the IFN tables).
 }
 \description{
 Small helper used by the genus-level fallback logic in both

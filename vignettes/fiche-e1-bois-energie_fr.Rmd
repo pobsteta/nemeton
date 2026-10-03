@@ -27,7 +27,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 | Grandeur mesurée | Gisement annuel de bois-énergie mobilisable |
 | Unité brute | **tonnes de matière sèche / ha / an** |
 | Sens | Haut = favorable |
-| Normalisation | `ref_max = 1,32` → `score = min(100, t / 1,32 × 100)` — aligné sur P1 |
+| Normalisation | `ref_max = 2,64` → `score = min(100, t / 2,64 × 100)` — aligné sur P1 |
 | Fonction | `indicateur_e1_bois_energie()` — `R/indicators-energy.R:32` |
 | Colonnes annexes | `E1_residues`, `E1_coppice` |
 
@@ -36,13 +36,15 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 recolte_annuelle = V_sur_pied x harvest_rate                 defaut 2 % / an
 remanents        = recolte_annuelle x residue_fraction       defaut 30 %
-t_MS_remanents   = remanents x rho / 1000 x 0,5              MS = 50 % du poids frais
+t_MS_remanents   = remanents x rho / 1000                    rho = densite seche a l'air
 t_MS_taillis     = fraction_taillis x 2                      2 t MS / ha / an, en dur
 E1               = t_MS_remanents + t_MS_taillis
 ```
 
 `rho` vient de `wood_density.csv` (défaut **550 kg/m³** si l'essence est
-inconnue). Le volume sur pied est **P1**, calculé à la volée si la colonne
+inconnue). C'est une densité de bois **sec à l'air** (~12 % d'humidité), que
+C1 emploie aussi telle quelle : jusqu'à la 0.211.0, E1 la multipliait encore
+par 0,5 (« MS = 50 % du poids frais »), ce qui divisait le gisement par deux. Le volume sur pied est **P1**, calculé à la volée si la colonne
 manque — E1 hérite donc de toutes les propriétés de P1, correctif 0.169.0
 compris.
 
@@ -50,9 +52,9 @@ compris.
 
 | V sur pied | Récolte 2 % | Rémanents 30 % | E1 | Score |
 |---|---|---|---|---|
-| 200 m³/ha | 4,0 | 1,2 m³/ha | **0,41 t MS** | **30,9** |
-| 120 m³/ha | 2,4 | 0,72 m³/ha | **0,24 t MS** | **18,5** |
-| 60 m³/ha | 1,2 | 0,36 m³/ha | **0,12 t MS** | **9,3** |
+| 200 m³/ha | 4,0 | 1,2 m³/ha | **0,82 t MS** | **30,9** |
+| 120 m³/ha | 2,4 | 0,72 m³/ha | **0,49 t MS** | **18,5** |
+| 60 m³/ha | 1,2 | 0,36 m³/ha | **0,24 t MS** | **9,3** |
 
 Les scores étaient respectivement **100,0 (saturé)**, 81,6 et 40,8 avant la
 0.197.0 : le plafond de 0,3 t MS/ha/an mettait une futaie de 200 m³/ha au
@@ -80,13 +82,14 @@ de source propre.
    saturaient à **182, 455 et 800 m³/ha** : à 182 m³/ha, la même parcelle était
    à 100/100 en bois-énergie et à 22,8/100 en volume.
 
-   **Correctif (spec 048 §11)** : `ref_max(E1) = ref_max(E2) = 1,32 t`, soit
-   exactement E1 au plafond de P1 (800 m³/ha, ρ = 550). Les trois axes notent
+   **Correctif (spec 048 §11)** : `ref_max(E1) = ref_max(E2)` = exactement E1
+   au plafond de P1 (800 m³/ha, ρ = 550), soit **2,64 t** depuis la correction
+   de densité de l'audit 1.0 (1,32 t avant, avec le facteur 0,5 à tort). Les trois axes notent
    désormais le même peuplement à l'identique, à 0,1 % près — le résidu du
    facteur 0,999.
 
    **Limite assumée** : une borne fixe ne peut pas suivre la densité de
-   l'essence (E1(800 m³/ha) vaut 0,96 pour ρ = 400 et 1,68 pour ρ = 700). Elle
+   l'essence (E1(800 m³/ha) vaut 1,92 pour ρ = 400 et 3,36 pour ρ = 700). Elle
    est ancrée sur la densité par défaut.
 2. **Trois constantes portent tout le résultat** : `harvest_rate = 2 %`,
    `residue_fraction = 30 %`, et le taillis à **2 t MS/ha/an en dur**. Aucune
@@ -102,7 +105,7 @@ de source propre.
 ```
 indicateur_e1_bois_energie()  ->  colonnes E1, E1_residues, E1_coppice
       |
-      +- normalize_indicator()     -> min(100, t / 1,32 x 100)
+      +- normalize_indicator()     -> min(100, t / 2,64 x 100)
       +- create_family_index("E")  -> famille_energie = moy(E1, E2)
       +- alimente E2 (fuelwood_field)
 ```
@@ -139,7 +142,7 @@ indicateur_e1_bois_energie()  ->  colonnes E1, E1_residues, E1_coppice
 <rect x="288" y="126" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
 <text x="300" y="145" font-size="12.5" font-weight="600" fill="currentColor">Rémanents en matière sèche</text>
 <text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">récolte × 30 %</text>
-<text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">× ρ/1000 × 0,5</text>
+<text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">× ρ/1000</text>
 <rect x="288" y="218" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
 <text x="300" y="237" font-size="12.5" font-weight="600" fill="currentColor">Somme des deux gisements</text>
 <text x="300" y="253" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">E1 = rémanents + taillis</text>
@@ -148,7 +151,7 @@ indicateur_e1_bois_energie()  ->  colonnes E1, E1_residues, E1_coppice
 <text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">t MS / ha / an</text>
 <rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
 <text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text>
-<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">min(100, t / 1,32 × 100)</text>
+<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">min(100, t / 2,64 × 100)</text>
 <rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
 <text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index("E")</text>
 <text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_energie</text>
@@ -171,7 +174,7 @@ indicateur_e1_bois_energie()  ->  colonnes E1, E1_residues, E1_coppice
 <line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
 <line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
 <line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
-<text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">Borne alignée sur P1 (1,32 t MS/ha/an = E1 à 800 m³/ha) : E1, E2 et P1 notent le même peuplement pareil.</text>
+<text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">Borne alignée sur P1 (2,64 t MS/ha/an = E1 à 800 m³/ha) : E1, E2 et P1 notent le même peuplement pareil.</text>
 <text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Trois constantes portent le résultat — taux de récolte 2 %, fraction rémanents 30 %, forfait taillis 2 t.</text>
 <text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">La récolte de 2 % est une hypothèse de gestion, pas une mesure de prélèvement réel.</text>
 </svg>

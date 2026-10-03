@@ -24,6 +24,9 @@
     m <- tmin_mat[, cols, drop = FALSE]
     rowSums(m < threshold, na.rm = TRUE)
   }, numeric(nrow(tmin_mat)))
+  # Avec une seule UGF, vapply rend un vecteur (une valeur par annee) et non
+  # une matrice : rowMeans planterait. On force la forme UGF x annees.
+  per_year <- matrix(per_year, nrow = nrow(tmin_mat))
   # moyenne des gelées tardives par an ; NA si aucune donnée valide sur l'UGF.
   all_na <- rowSums(!is.na(tmin_mat[, in_window, drop = FALSE])) == 0
   out <- rowMeans(per_year, na.rm = TRUE)

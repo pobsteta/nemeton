@@ -100,7 +100,10 @@ charru_selfthinning_table <- function() {
 #'
 #' @return Numeric vector of maximum stems/ha. \code{NA} when the
 #'   species cannot be resolved or \code{dq} is \code{NA} / non-
-#'   positive.
+#'   positive. The attribute \code{hors_domaine} (logical, same length)
+#'   is \code{TRUE} where \code{dq} lay outside the species range and was
+#'   clamped (\code{clamp = TRUE} only), \code{NA} where no value was
+#'   computed.
 #'
 #' @examples
 #' # Common beech, D_g = 30 cm
@@ -121,6 +124,8 @@ n_max_selfthinning <- function(dq, species, clamp = TRUE) {
 
   tab <- .charru_selfthinning
   out <- rep(NA_real_, n)
+  # Bornage signale (attribut), pas silencieux.
+  hors_domaine <- rep(NA, n)
 
   for (i in seq_len(n)) {
     d <- dq[i]
@@ -132,9 +137,11 @@ n_max_selfthinning <- function(dq, species, clamp = TRUE) {
 
     row <- tab[tab$species == sp_key, ]
     d_use <- if (clamp) pmin(pmax(d, row$dg_min), row$dg_max) else d
+    hors_domaine[i] <- clamp && d_use != d
     ld <- log(d_use)
     out[i] <- exp(row$a + row$b * ld + row$c * ld^2)
   }
+  attr(out, "hors_domaine") <- hors_domaine
   out
 }
 

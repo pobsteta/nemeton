@@ -18,7 +18,10 @@ observed range of the species.}
 \value{
 Numeric vector of maximum stems/ha. \code{NA} when the
   species cannot be resolved or \code{dq} is \code{NA} / non-
-  positive.
+  positive. The attribute \code{hors_domaine} (logical, same length)
+  is \code{TRUE} where \code{dq} lay outside the species range and was
+  clamped (\code{clamp = TRUE} only), \code{NA} where no value was
+  computed.
 }
 \description{
 Returns the upper boundary of the stems-per-hectare / quadratic-

@@ -78,7 +78,11 @@ The hazard grid is bounded to \code{fire_exp_res} (30 m) because the
 annular kernel of \code{fire_exp()} costs \code{(2 * t_dist / res)^2}
 operations per cell: at 2 m it is ~52 000x the cost at 30 m.
 
-**Fallback method**: R1 = w1*slope + w2*species_flammability + w3*climate_dryness
+**Fallback method**: R1 = w1*slope + w2*species_flammability + w3*climate_dryness.
+Without a species field, an NDVI-based proxy (\code{100 - 100 * NDVI}) takes
+the species component when an NDVI layer is available. A component that
+cannot be computed drops out and its weight is redistributed proportionally;
+with no usable component, R1 is \code{NA}.
 }
 \examples{
 \dontrun{
