@@ -172,6 +172,40 @@ test_that("aggregate_plot_metrics discards trees with non-positive DBH", {
 })
 
 
+test_that("aggregate_plot_metrics computes stand metrics on living trees only (audit 1.0)", {
+  pl <- make_placettes()
+  tr <- make_arbres(include_bad = FALSE)   # P002 : T01 vivant (31 cm), T02 mort (39 cm)
+  agg <- aggregate_plot_metrics(pl, tr, plot_radius = 15)
+  p2 <- agg[agg$plot_id == "P002", , drop = FALSE]
+  surface <- pi * 15^2 / 10000
+  expect_equal(p2$field_n_trees, 2L)
+  expect_equal(p2$field_n_trees_alive, 1L)
+  expect_equal(p2$field_dg_cm, 31)
+  expect_equal(p2$field_h_dom_m, 16)
+  expect_equal(p2$field_g_ha, pi * (31 / 200)^2 / surface)
+
+  # chablis et coupe exclus aussi ; statut NA = vivant (défaut du formulaire)
+  tr$statut <- c("chablis", "coupe", NA, "vivant", "mort")
+  agg <- aggregate_plot_metrics(pl, tr, plot_radius = 15)
+  p1 <- agg[agg$plot_id == "P001", , drop = FALSE]
+  expect_equal(p1$field_n_trees, 3L)
+  expect_equal(p1$field_n_trees_alive, 1L)
+  expect_equal(p1$field_dbh_mean_cm, 55)
+
+  # placette sans arbre vivant : G nulle, autres métriques NA
+  tr$statut <- "mort"
+  agg <- aggregate_plot_metrics(pl, tr, plot_radius = 15)
+  p1 <- agg[agg$plot_id == "P001", , drop = FALSE]
+  expect_equal(p1$field_g_ha, 0)
+  expect_true(is.na(p1$field_dg_cm))
+  expect_true(is.na(p1$field_h_dom_m))
+
+  # statuts_vivants paramétrable
+  agg <- aggregate_plot_metrics(pl, tr, statuts_vivants = c("vivant", "mort"))
+  expect_equal(agg$field_n_trees_alive[agg$plot_id == "P001"], 3L)
+})
+
+
 # ------------------------------------------------------------
 # Attach to units
 # ------------------------------------------------------------
