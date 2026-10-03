@@ -136,12 +136,10 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
   # check whether every requested band already has a COG on disk. The
   # app uses this counter to drive the "X/Y scenes ready, Z to fetch"
   # toast before the per-scene loop starts emitting.
+  # Audit 1.0 : la présence du fichier ne suffit pas, son emprise doit
+  # couvrir l'AOI de la zone (cache S2 partagé entre zones d'un projet).
   scene_fully_cached <- vapply(seq_len(total_scenes), function(i) {
-    sc <- scenes[i, , drop = FALSE]
-    all(vapply(bands, function(b) {
-      p <- .s2_band_cache_path(cache_dir, sc$scene_id, b)
-      !is.null(p) && file.exists(p)
-    }, logical(1)))
+    .scene_cogs_cached(cache_dir, scenes$scene_id[i], bands, aoi = aoi_zone)
   }, logical(1))
   n_cached_scenes <- sum(scene_fully_cached)
   emit(list(current      = "s2:cache_lookup",

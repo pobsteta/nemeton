@@ -63,6 +63,14 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
   zone_4326 <- sf::st_transform(zone_polygon, 4326)
   zone_wkt  <- sf::st_as_text(sf::st_geometry(zone_4326)[[1]])
 
+  # Placettes préparées hors transaction (aucune écriture).
+  pts <- sf::st_transform(placettes, 4326)
+  geoms <- sf::st_geometry(pts)
+  type <- if ("type" %in% names(pts)) as.character(pts$type) else rep(NA_character_, nrow(pts))
+
+  # Zone ET placettes dans une seule transaction (audit 1.0) : un échec
+  # d'insertion d'une placette ne doit pas laisser une zone orpheline
+  # commitée. Pas de return() dans ce bloc (court-circuiterait le COMMIT).
   zone_id <- DBI::dbWithTransaction(con, {
     if (is.null(project_uuid)) {
       .db_execute(con,
@@ -83,23 +91,20 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
         "SELECT id FROM monitoring_zone WHERE project_uuid = $1 AND name = $2",
         params = list(project_uuid, zone_name))
     }
-    rs$id[1]
+    zid <- rs$id[1]
+    for (i in seq_len(nrow(pts))) {
+      .db_execute(con,
+        paste0("INSERT INTO plot (zone_id, plot_id, plot_type, geom_wkt, radius_m) ",
+               "VALUES ($1, $2, $3, $4, $5) ",
+               "ON CONFLICT (zone_id, plot_id) DO NOTHING"),
+        params = list(zid,
+                      as.character(pts$plot_id[i]),
+                      type[i],
+                      sf::st_as_text(geoms[[i]]),
+                      radius_m))
+    }
+    zid
   })
-
-  pts <- sf::st_transform(placettes, 4326)
-  geoms <- sf::st_geometry(pts)
-  type <- if ("type" %in% names(pts)) as.character(pts$type) else rep(NA_character_, nrow(pts))
-  for (i in seq_len(nrow(pts))) {
-    .db_execute(con,
-      paste0("INSERT INTO plot (zone_id, plot_id, plot_type, geom_wkt, radius_m) ",
-             "VALUES ($1, $2, $3, $4, $5) ",
-             "ON CONFLICT (zone_id, plot_id) DO NOTHING"),
-      params = list(zone_id,
-                    as.character(pts$plot_id[i]),
-                    type[i],
-                    sf::st_as_text(geoms[[i]]),
-                    radius_m))
-  }
   invisible(as.integer(zone_id))
 }
 
@@ -410,7 +415,8 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   if (isTRUE(skip_cached)) {
     cached_scene <- vapply(
       seq_len(total_scenes),
-      function(i) .scene_cogs_cached(cache_dir, scenes$scene_id[i], req_bands),
+      function(i) .scene_cogs_cached(cache_dir, scenes$scene_id[i], req_bands,
+                                     aoi = aoi_zone),
       logical(1))
     n_cached_scenes <- sum(cached_scene)
     emit(list(current      = "s2:cache_lookup",
@@ -722,16 +728,56 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 
 # TRUE when every required band COG for `scene_id` already exists under
 # `cache_dir`. DB-free scene-level skip used by
-# `ingest_sentinel2_timeseries()` to avoid re-fetching scenes whose
-# bands are already cached. Always FALSE without an on-disk cache.
-.scene_cogs_cached <- function(cache_dir, scene_id, req_bands) {
+# `ingest_sentinel2_timeseries()` / `ingest_s2_raw_bands_to_cache()` to
+# avoid re-fetching scenes whose bands are already cached. Always FALSE
+# without an on-disk cache.
+#
+# `aoi` (sf, optional) : quand il est fourni, chaque COG doit aussi
+# COUVRIR l'AOI (audit 1.0). Le cache S2 est partagé par scène entre les
+# zones d'un projet (`_tot`, `_feu`, `_res`…) : un fichier découpé sur une
+# petite zone existe bien, mais ne couvre pas une zone plus large ; le
+# saut le laissait en place et la carte de la grande zone restait
+# tronquée. Un COG qui ne couvre pas n'est PAS sauté : la scène repasse
+# par `.get_s2_band_raster()`, qui fait la validation complète (dont la
+# seconde chance par emprise de tuile MGRS) et re-télécharge si besoin.
+.scene_cogs_cached <- function(cache_dir, scene_id, req_bands, aoi = NULL) {
   if (is.null(cache_dir) || !nzchar(cache_dir) || !length(req_bands)) {
     return(FALSE)
   }
   all(vapply(req_bands, function(b) {
     p <- .s2_band_cache_path(cache_dir, scene_id, b)
-    !is.null(p) && file.exists(p)
+    !is.null(p) && file.exists(p) &&
+      (is.null(aoi) || .cached_band_covers_aoi(p, aoi, scene_id))
   }, logical(1)))
+}
+
+# L'emprise du COG en cache `path` couvre-t-elle `aoi` ? Même prédicat que
+# le cache-hit de `.get_s2_band_raster()` (grille du COG, tolérance 1 px),
+# lecture d'en-tête seule (pas de décodage de pixels). Seconde chance par
+# emprise de tuile MGRS uniquement si elle est DÉJÀ mémorisée (aucun accès
+# réseau ici) ; à défaut on répond FALSE et le lecteur de bande tranchera.
+.cached_band_covers_aoi <- function(path, aoi, scene_id = NA_character_) {
+  if (.cache_skip_validation()) return(TRUE)
+  tryCatch({
+    r <- terra::rast(path)
+    needed <- terra::ext(terra::vect(sf::st_transform(aoi, terra::crs(r))))
+    res <- max(terra::res(r))
+    if (.ext_contains_at_grid(terra::ext(r), needed, res = res,
+                              tol_pixels = 1L)$ok) {
+      return(TRUE)
+    }
+    tile <- .s2_mgrs_tile(scene_id)
+    if (is.null(tile) || is.na(tile) ||
+        !exists(tile, envir = .s2_tile_ext_cache, inherits = FALSE)) {
+      return(FALSE)
+    }
+    tile_ext <- get(tile, envir = .s2_tile_ext_cache)
+    if (is.null(tile_ext)) return(FALSE)
+    needed_in_tile <- terra::intersect(needed, tile_ext)
+    !is.null(needed_in_tile) && !is.na(terra::xmin(needed_in_tile)) &&
+      .ext_contains_at_grid(terra::ext(r), needed_in_tile, res = res,
+                            tol_pixels = 1L)$ok
+  }, error = function(e) FALSE)
 }
 
 #' Diagnose an S2 band cache directory
@@ -1051,7 +1097,7 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
     terra::ext(r_full)
   }, error = function(e) {
     .s2_cache_log("Tile-ext memoize: terra::rast(href) failed for ",
-                  tile_code, ": ", conditionMessage(e))
+                  tile_code, ": ", .redact_url(conditionMessage(e)))
     NULL
   })
   if (!is.null(ext_native)) {
@@ -1109,9 +1155,17 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       emit_fn(list(current       = "s2:band_fetch_failed",
                    scene_id      = scene_id,
                    band          = band,
-                   href          = href,
-                   error_message = msg))
+                   href          = .redact_url(href),
+                   error_message = .redact_url(msg)))
     }
+  }
+
+  # Le message d'erreur GDAL/terra embarque souvent l'URL signée : on le
+  # nettoie avant de relancer la condition (les appelants l'émettent en
+  # événement `error_message` et le loguent).
+  stop_redacted <- function(err) {
+    err$message <- .redact_url(conditionMessage(err))
+    stop(err)
   }
 
   current_href <- href
@@ -1155,7 +1209,7 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       fresh_href <- .pc_resign_href(href, collection)
       if (is.null(fresh_href)) {
         emit_failure(paste0(err_msg, " (token refresh failed)"))
-        stop(last_err)
+        stop_redacted(last_err)
       }
       if (!is.null(emit_fn)) {
         emit_fn(list(current    = "s2:pc_token_refreshed",
@@ -1176,10 +1230,10 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
                      attempt        = as.integer(attempt),
                      max_tries      = as.integer(max_tries),
                      retry_in_sec   = as.integer(sleep_s),
-                     error_message  = err_msg))
+                     error_message  = .redact_url(err_msg)))
       }
       cli::cli_alert_info(c(
-        "Transient S2 fetch error ({.val {scene_id}}/{band}, attempt {attempt}/{max_tries}): {err_msg}",
+        "Transient S2 fetch error ({.val {scene_id}}/{band}, attempt {attempt}/{max_tries}): {(.redact_url(err_msg))}",
         i = "Retrying in {sleep_s}s."
       ))
       Sys.sleep(sleep_s)
@@ -1188,16 +1242,26 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
 
     # Non-recoverable (404, malformed COG, etc.) — propagate.
     emit_failure(err_msg)
-    stop(last_err)
+    stop_redacted(last_err)
   }
 
   # All attempts exhausted.
   emit_failure(conditionMessage(last_err))
   cli::cli_warn(c(
     "S2 band fetch gave up on {.val {scene_id}}/{band} after {max_tries} attempts.",
-    i = "Last error: {conditionMessage(last_err)}"
+    i = "Last error: {(.redact_url(conditionMessage(last_err)))}"
   ))
-  stop(last_err)
+  stop_redacted(last_err)
+}
+
+# Retire les query strings (jeton SAS Planetary Computer, signature
+# Theia/S3 pré-signée…) des URL contenues dans `x` avant de les émettre en
+# événement ou de les loguer (audit 1.0) : le jeton donne accès aux données
+# tant qu'il n'a pas expiré. Ne touche qu'un `?` suivi d'une affectation
+# `clé=valeur` (pas les « ? » du texte libre). Vectorisé ; NULL/NA passent.
+.redact_url <- function(x) {
+  if (!is.character(x)) return(x)
+  gsub("\\?[^[:space:]'\"`<>]*=[^[:space:]'\"`<>]*", "", x, perl = TRUE)
 }
 
 # Return the (cropped) terra SpatRaster for one S2 band. Reads from
@@ -1387,7 +1451,7 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
     signed <- .theia_signed_read(href)
     if (!is.null(signed)) href <- signed[[1]]
   }
-  .s2_cache_log("FETCH href=", href)
+  .s2_cache_log("FETCH href=", .redact_url(href))
   r <- .terra_rast_with_pc_retry(
     href,
     emit_fn    = emit_fn,

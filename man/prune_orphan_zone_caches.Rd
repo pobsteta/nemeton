@@ -9,7 +9,9 @@ prune_orphan_zone_caches(
   cache_root,
   subdirs = c("fast_alert", "fast_alert_mask", "fast_sampling", "fast", "fast_raster",
     "fordead"),
-  dry_run = FALSE
+  dry_run = FALSE,
+  project_uuid = NULL,
+  force = FALSE
 )
 }
 \arguments{
@@ -26,11 +28,21 @@ prune_orphan_zone_caches(
 
 \item{dry_run}{Logical. When `TRUE`, report what would be removed
 without deleting anything. Default `FALSE`.}
+
+\item{project_uuid}{Optional character scalar (or `NULL`, default). The
+project owning `cache_root`. When given, the prune is refused unless
+at least one zone of this project exists in `monitoring_zone`.}
+
+\item{force}{Logical. Safety override, default `FALSE`. Unless `TRUE`,
+nothing is deleted (a warning is raised and an empty result returned)
+when `monitoring_zone` is empty, or when `project_uuid` is given and
+none of its zones is found: both indicate a connection to another (or
+a reset) database, which would make every cache look orphaned.}
 }
 \value{
 A `data.frame` (`path`, `zone_id`, `removed`) of the orphan
   directories found, invisibly. `removed` is `FALSE` on a dry-run or a
-  failed unlink.
+  failed unlink. Zero rows when the prune is refused.
 }
 \description{
 Scans the per-zone cache directories under `cache_root` and removes

@@ -348,3 +348,86 @@ test_that("details data.frame has one row per processed plot", {
                     c("ok", "ok", "missing_stade"))
   })
 })
+
+
+# ---- audit 1.0 : stade inconnu, espaces, transaction, UTC -------------
+
+.seed_two_sqlite_alerts <- function(con) {
+  DBI::dbExecute(con, paste0(
+    "INSERT INTO alert (zone_id, alert_type, trigger_date, geom_wkt, ",
+    "confidence_class, stress_index) VALUES ",
+    "(1, 'fordead_dieback', '2024-06-15', 'POINT(6 46)', '3-forte', 1.5), ",
+    "(1, 'fordead_dieback', '2024-06-15', 'POINT(6.01 46)', '3-forte', 1.5)"))
+  sf::st_coordinates(sf::st_transform(sf::st_sfc(
+    sf::st_point(c(6, 46)), sf::st_point(c(6.01, 46)), crs = 4326), 2154))
+}
+
+test_that("an unknown stade is skipped, never 'confirmed'; trailing spaces are trimmed (SQLite)", {
+  skip_if_not_installed("sf")
+  with_sqlite_monitoring_db(function(con) {
+    xy <- .seed_two_sqlite_alerts(con)
+    gpkg <- write_health_gpkg(
+      coords = xy[, 1:2, drop = FALSE],
+      stades = c("sian", "sain "))     # faute de frappe + espace finale
+
+    expect_warning(
+      res <- ingest_health_validation(con, gpkg, zone_id = 1L),
+      "unknown")
+    expect_equal(res$n_updated, 1L)
+    expect_equal(res$n_confirmed, 0L)
+    expect_equal(res$n_false_positive, 1L)
+    expect_equal(res$n_skipped, 1L)
+    expect_equal(res$details$reason, c("unknown_stade", "ok"))
+
+    rows <- DBI::dbGetQuery(con,
+      "SELECT validation_status FROM alert ORDER BY id")
+    expect_equal(rows$validation_status, c("pending", "false_positive"))
+  })
+})
+
+test_that(".health_stade_to_status flags unknown stades and trims spaces", {
+  m <- nemeton:::.health_stade_to_status("scolyte_vret")
+  expect_true(is.na(m$status))
+  expect_false(m$known)
+  m <- nemeton:::.health_stade_to_status(" Sain ")
+  expect_equal(m$status, "false_positive")
+  expect_true(m$known)
+})
+
+test_that("validation UPDATEs are atomic and validated_at is UTC (SQLite)", {
+  skip_if_not_installed("sf")
+  with_sqlite_monitoring_db(function(con) {
+    xy <- .seed_two_sqlite_alerts(con)
+    gpkg <- write_health_gpkg(coords = xy[, 1:2, drop = FALSE],
+                              stades = c("scolyte_vert", "scolyte_rouge"))
+
+    # Échec à la 2e mise à jour : la 1re ne doit pas rester appliquée.
+    n_upd <- 0L
+    real_exec <- nemeton:::.db_execute
+    local({
+      testthat::local_mocked_bindings(
+        .db_execute = function(con, sql, params = NULL) {
+          if (grepl("UPDATE alert", sql, fixed = TRUE)) {
+            n_upd <<- n_upd + 1L
+            if (n_upd >= 2L) stop("update failed")
+          }
+          real_exec(con, sql, params)
+        },
+        .package = "nemeton")
+      expect_error(ingest_health_validation(con, gpkg, zone_id = 1L),
+                   "update failed")
+    })
+    expect_equal(DBI::dbGetQuery(con,
+      "SELECT validation_status FROM alert ORDER BY id")$validation_status,
+      c("pending", "pending"))
+
+    # Horodatage écrit en UTC, quel que soit le fuseau de la session R.
+    withr::local_timezone("Pacific/Kiritimati")   # UTC+14
+    before <- as.POSIXct(format(Sys.time(), tz = "UTC"), tz = "UTC")
+    res <- ingest_health_validation(con, gpkg, zone_id = 1L)
+    expect_equal(res$n_confirmed, 2L)
+    va <- DBI::dbGetQuery(con, "SELECT validated_at FROM alert")$validated_at
+    va <- as.POSIXct(va, tz = "UTC")
+    expect_true(all(abs(as.numeric(difftime(va, before, units = "mins"))) < 5))
+  })
+})

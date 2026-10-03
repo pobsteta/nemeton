@@ -8,7 +8,9 @@
 --
 -- Mécanique D-B3 : DROP + CREATE (table vide, contrat Phase A ; aucun
 -- enfant FK). DROP TABLE supprime aussi ses index. PRÉ-VOL : la table
--- doit être vide avant déploiement.
+-- doit être vide avant déploiement. SQLite n'ayant pas de bloc DO, ce
+-- pré-vol est imposé côté R par db_migrate() (.migration_preflight) :
+-- la migration est refusée si `alert` contient des lignes.
 
 DROP TABLE IF EXISTS alert;
 

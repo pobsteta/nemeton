@@ -241,6 +241,47 @@ test_that("scene fetch failure is counted as scene_skipped", {
 })
 
 
+# Petit GeoTIFF EPSG:2154 d'emprise `ext` (xmin, xmax, ymin, ymax).
+.write_aoi_stub <- function(path, ext) {
+  r <- terra::rast(terra::ext(ext), nrows = 4, ncols = 4,
+                   crs = "EPSG:2154", vals = 1)
+  terra::writeRaster(r, path, overwrite = TRUE)
+  invisible(path)
+}
+
+test_that("a cached scene whose COG does not cover the zone AOI is re-processed (audit 1.0)", {
+  skip_if_no_sf(); skip_if_no_terra()
+
+  d <- tempfile("raw-bands-"); dir.create(d, recursive = TRUE)
+  # Cache laissé par une zone plus petite : seul le quart sud-ouest de l'AOI.
+  dir.create(file.path(d, "S2A_FAKE_01"), recursive = TRUE)
+  for (b in c("B04", "B12")) {
+    .write_aoi_stub(file.path(d, "S2A_FAKE_01", paste0(b, ".tif")),
+                    c(1000000, 1000500, 6800000, 6800500))
+  }
+
+  fetched <- character(0)
+  testthat::local_mocked_bindings(
+    .fetch_plots_sf = function(con, zone_id) make_fake_plots(),
+    .get_zone_aoi   = function(con, zone_id) make_fake_aoi(),
+    stac_search_s2  = function(...) make_fake_scenes(1L),
+    .get_s2_band_raster = function(scene, band, buf_plots, cache_dir, emit) {
+      fetched <<- c(fetched, paste(scene$scene_id, band, sep = "/"))
+      NULL
+    },
+    .package = "nemeton"
+  )
+
+  res <- ingest_s2_raw_bands_to_cache(
+    con = make_fake_con(), zone_id = 1L, bands = c("B04", "B12"),
+    start = "2020-01-01", end = "2020-12-31", cache_dir = d)
+
+  # La scène n'est pas sautée : le lecteur de bande est appelé (il
+  # validera l'emprise et re-téléchargera).
+  expect_setequal(fetched, c("S2A_FAKE_01/B04", "S2A_FAKE_01/B12"))
+})
+
+
 test_that("fully cached scenes emit s2:scene_cached and skip the band loop", {
   skip_if_no_sf(); skip_if_no_terra()
 
@@ -255,7 +296,9 @@ test_that("fully cached scenes emit s2:scene_cached and skip the band loop", {
   for (sid in c("S2A_FAKE_01", "S2A_FAKE_02")) {
     dir.create(file.path(d, sid), recursive = TRUE)
     for (b in c("B04", "B12")) {
-      file.create(file.path(d, sid, paste0(b, ".tif")))
+      # Raster réel couvrant make_fake_aoi() : le saut vérifie l'emprise.
+      .write_aoi_stub(file.path(d, sid, paste0(b, ".tif")),
+                      c(999900, 1001100, 6799900, 6801100))
     }
   }
 

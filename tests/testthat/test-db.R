@@ -29,6 +29,27 @@ test_that(".parse_pg_url rejects malformed URLs", {
                "Invalid PostgreSQL URL")
 })
 
+test_that("DB URL error messages never print the password (audit 1.0)", {
+  msg <- function(expr) tryCatch({ expr; "" },
+                                 error = function(e) conditionMessage(e))
+  # URL PG sans nom de base (invalide) portant un mot de passe.
+  m1 <- msg(nemeton:::.parse_pg_url("postgresql://nemeton:s3cr3t@db.host:5432"))
+  expect_match(m1, "Invalid PostgreSQL URL")
+  expect_false(grepl("s3cr3t", m1, fixed = TRUE))
+  expect_match(m1, "nemeton:***@db.host", fixed = TRUE)
+  # Schéma inconnu.
+  m2 <- msg(nemeton:::.detect_driver("mysql://root:hunter2@h/db"))
+  expect_match(m2, "Unrecognised DB URL")
+  expect_false(grepl("hunter2", m2, fixed = TRUE))
+
+  expect_identical(nemeton:::.mask_db_url("postgresql://u:p%40ss@h:5432/db"),
+                   "postgresql://u:***@h:5432/db")
+  expect_identical(nemeton:::.mask_db_url("postgresql://u@h/db"),
+                   "postgresql://u@h/db")
+  expect_identical(nemeton:::.mask_db_url("sqlite:///tmp/x.sqlite"),
+                   "sqlite:///tmp/x.sqlite")
+})
+
 test_that(".detect_driver classifies URLs correctly", {
   expect_equal(nemeton:::.detect_driver("postgresql://u:p@h/db"), "pg")
   expect_equal(nemeton:::.detect_driver("postgres://u:p@h/db"),   "pg")
@@ -270,6 +291,47 @@ test_that("db_migrate applies the SQLite migrations on a fresh file", {
 
     # Re-running is a no-op.
     expect_length(db_migrate(con), 0)
+  })
+})
+
+test_that("db_migrate refuses 0007 (DROP TABLE alert) on a non-empty alert table (SQLite)", {
+  # Audit 1.0 : 0007 recrée `alert` par DROP + CREATE en supposant la
+  # table vide ; des lignes présentes doivent bloquer la migration.
+  skip_if_not_installed("RSQLite")
+  src <- system.file("db/migrations/sqlite", package = "nemeton")
+  withr::with_tempdir({
+    pre <- file.path(getwd(), "pre"); dir.create(pre)
+    all_sql <- sort(list.files(src, pattern = "\\.sql$", full.names = TRUE))
+    file.copy(all_sql[basename(all_sql) < "0007"], pre)
+
+    con <- db_connect(sprintf("sqlite:///%s", file.path(getwd(), "m.sqlite")))
+    on.exit(db_disconnect(con), add = TRUE)
+    db_migrate(con, migrations_dir = pre)
+    DBI::dbExecute(con, paste0(
+      "INSERT INTO monitoring_zone (id, name, zone_wkt) VALUES (1, 'z', 'POINT(0 0)')"))
+    DBI::dbExecute(con, paste0(
+      "INSERT INTO plot (id, zone_id, plot_id, geom_wkt) VALUES (1, 1, 'p1', 'POINT(0 0)')"))
+    DBI::dbExecute(con, paste0(
+      "INSERT INTO alert (plot_id, alert_type, trigger_date, validation_status) ",
+      "VALUES (1, 'fordead', '2024-06-01', 'confirmed')"))
+
+    expect_error(db_migrate(con, migrations_dir = src), "Refusing to apply")
+    # Rien n'est perdu ni enregistré comme appliqué.
+    expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM alert")$n, 1L)
+    expect_false("0007_alert_pixel_geometry" %in%
+                   DBI::dbGetQuery(con, "SELECT version FROM schema_migration")$version)
+
+    # Table vidée : la migration passe.
+    DBI::dbExecute(con, "DELETE FROM alert")
+    applied <- db_migrate(con, migrations_dir = src)
+    expect_true("0007_alert_pixel_geometry" %in% applied)
+    expect_true("geom_wkt" %in% DBI::dbListFields(con, "alert"))
+
+    # Base déjà migrée : des alertes présentes ne gênent plus rien.
+    DBI::dbExecute(con, paste0(
+      "INSERT INTO alert (zone_id, alert_type, trigger_date) ",
+      "VALUES (1, 'fordead', '2024-06-01')"))
+    expect_length(db_migrate(con, migrations_dir = src), 0)
   })
 })
 

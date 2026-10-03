@@ -133,6 +133,42 @@ test_that("register_monitoring_zone keeps plot rows unique within a zone", {
   })
 })
 
+test_that("register_monitoring_zone rolls back the zone when a plot insert fails (SQLite)", {
+  # Audit 1.0 : les placettes étaient insérées hors de la transaction de
+  # la zone ; un échec laissait une zone commitée sans ses placettes.
+  skip_if_no_sqlite()
+  skip_if_not_installed("sf")
+  withr::with_tempdir({
+    con <- db_connect(sprintf("sqlite:///%s", file.path(getwd(), "r.sqlite")))
+    on.exit(db_disconnect(con), add = TRUE)
+    db_migrate(con)
+    pol <- sf::st_as_sfc(sf::st_bbox(
+      c(xmin = 4, ymin = 47, xmax = 5, ymax = 48), crs = 4326))
+    placettes <- sf::st_sf(
+      plot_id  = c("P01", "P02"),
+      geometry = sf::st_sfc(sf::st_point(c(4.5, 47.5)),
+                            sf::st_point(c(4.6, 47.6)), crs = 4326))
+
+    n_plot <- 0L
+    real_exec <- nemeton:::.db_execute
+    testthat::local_mocked_bindings(
+      .db_execute = function(con, sql, params = NULL) {
+        if (grepl("INSERT INTO plot", sql, fixed = TRUE)) {
+          n_plot <<- n_plot + 1L
+          if (n_plot >= 2L) stop("plot insert failed")
+        }
+        real_exec(con, sql, params)
+      },
+      .package = "nemeton")
+    expect_error(register_monitoring_zone(con, "Zrb", pol, placettes),
+                 "plot insert failed")
+
+    expect_equal(DBI::dbGetQuery(con,
+      "SELECT COUNT(*) n FROM monitoring_zone")$n, 0L)
+    expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM plot")$n, 0L)
+  })
+})
+
 
 # ---- integration: ingest_sentinel2_timeseries -----------------------
 
@@ -405,11 +441,50 @@ test_that("ingest_sentinel2_timeseries emits search_done when STAC silent", {
     for (b in unique(c(req_bands, optional_bands))) {
       p <- nemeton:::.s2_band_cache_path(cache_dir, scene$scene_id, b)
       dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
-      file.create(p)
+      # Depuis l'audit 1.0 le saut « en cache » vérifie l'emprise : le
+      # mock écrit un vrai raster couvrant l'AOI des tests (4..5, 47..48).
+      .write_band_stub(p, c(3.9, 5.1, 46.9, 48.1), crs = "EPSG:4326")
     }
     length(req_bands)
   }
 }
+
+# Petit GeoTIFF d'emprise `ext` (xmin, xmax, ymin, ymax) : stub de COG en cache.
+.write_band_stub <- function(path, ext, crs) {
+  r <- terra::rast(terra::ext(ext), nrows = 4, ncols = 4, crs = crs, vals = 1)
+  terra::writeRaster(r, path, overwrite = TRUE)
+  invisible(path)
+}
+
+test_that(".scene_cogs_cached(aoi=) only reports a hit when the COG covers the AOI (audit 1.0)", {
+  skip_if_not_installed("terra"); skip_if_not_installed("sf")
+  skip_if_terra_write_broken()
+  cache <- withr::local_tempdir()
+  aoi <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 4, ymin = 47, xmax = 5, ymax = 48), crs = 4326)))
+  # Cache rempli par une PETITE zone (quart sud-ouest de l'AOI).
+  for (b in c("B04", "B08")) {
+    p <- nemeton:::.s2_band_cache_path(cache, "S2_X", b)
+    dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
+    .write_band_stub(p, c(4, 4.5, 47, 47.5), crs = "EPSG:4326")
+  }
+  # Sans AOI : comportement historique (présence du fichier).
+  expect_true(nemeton:::.scene_cogs_cached(cache, "S2_X", c("B04", "B08")))
+  # Avec l'AOI de la grande zone : pas de saut.
+  expect_false(nemeton:::.scene_cogs_cached(cache, "S2_X", c("B04", "B08"),
+                                            aoi = aoi))
+  # Un COG couvrant toute l'AOI est bien sauté.
+  for (b in c("B04", "B08")) {
+    .write_band_stub(nemeton:::.s2_band_cache_path(cache, "S2_X", b),
+                     c(3.9, 5.1, 46.9, 48.1), crs = "EPSG:4326")
+  }
+  expect_true(nemeton:::.scene_cogs_cached(cache, "S2_X", c("B04", "B08"),
+                                           aoi = aoi))
+  # Fichier illisible (stub vide) : pas de saut.
+  file.create(nemeton:::.s2_band_cache_path(cache, "S2_X", "B04"))
+  expect_false(nemeton:::.scene_cogs_cached(cache, "S2_X", c("B04", "B08"),
+                                            aoi = aoi))
+})
 
 test_that("skip_cached skips scenes whose band COGs are already cached", {
   skip_if_no_timescaledb()
@@ -1095,6 +1170,47 @@ test_that(".terra_rast_with_pc_retry: 403 that survives refresh emits band_fetch
   failed <- Filter(function(p) p$current == "s2:band_fetch_failed", events)
   expect_length(failed, 1L)
   expect_match(failed[[1]]$error_message, "403 Forbidden")
+})
+
+test_that(".redact_url strips signed query strings, keeps plain text", {
+  expect_identical(
+    nemeton:::.redact_url("https://a.blob.core.windows.net/c/X.tif?se=2026&sp=r&sig=SECRET"),
+    "https://a.blob.core.windows.net/c/X.tif")
+  expect_identical(
+    nemeton:::.redact_url("Cannot open '/vsicurl/https://h/x.tif?X-Amz-Signature=abc&t=1': 403"),
+    "Cannot open '/vsicurl/https://h/x.tif': 403")
+  expect_identical(nemeton:::.redact_url("Is this ok? yes"), "Is this ok? yes")
+  expect_identical(nemeton:::.redact_url(c("a?k=v", NA)), c("a", NA))
+  expect_null(nemeton:::.redact_url(NULL))
+})
+
+test_that(".terra_rast_with_pc_retry never leaks the SAS token in events or errors (audit 1.0)", {
+  skip_if_not_installed("terra")
+  pc_href <- "https://sentinel2l2a01.blob.core.windows.net/c/X.tif?se=x&sig=SECRETOLD"
+  testthat::local_mocked_bindings(
+    rast = function(x, ...) stop(sprintf("HTTP error code: 403 Forbidden on '%s'", x)),
+    .package = "terra"
+  )
+  testthat::local_mocked_bindings(
+    .pc_collection_token = function(collection, ...) "se=fresh&sig=SECRETNEW",
+    .package = "nemeton"
+  )
+  events <- list()
+  err <- NULL
+  logs <- capture.output(type = "message", suppressWarnings(
+    err <- tryCatch(
+      nemeton:::.terra_rast_with_pc_retry(
+        pc_href,
+        emit_fn  = function(p) events[[length(events) + 1L]] <<- p,
+        scene_id = "S", band = "B04", max_tries = 2L),
+      error = function(e) e)))
+  expect_s3_class(err, "error")
+  expect_false(grepl("SECRET", conditionMessage(err)))
+  expect_false(any(grepl("SECRET", unlist(events))))
+  expect_false(any(grepl("SECRET", logs)))
+  failed <- Filter(function(p) p$current == "s2:band_fetch_failed", events)
+  expect_identical(failed[[1]]$href,
+                   "https://sentinel2l2a01.blob.core.windows.net/c/X.tif")
 })
 
 
