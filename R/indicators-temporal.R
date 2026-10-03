@@ -13,18 +13,20 @@ NULL
 
 #' Calculate Stand Age Index (T1)
 #'
-#' Estimates stand age from BD Forêt TFV (Type de Formation Végétale) field
-#' using area-weighted spatial intersection, following tuto 04 methodology.
-#' Falls back to direct age field, establishment year, or NDVI proxy.
+#' Estimates stand age per unit, a measured age taking precedence over an
+#' estimate: direct age field, then establishment year, then BD Forêt TFV
+#' (Type de Formation Végétale, area-weighted, tuto 04 methodology), then an
+#' NDVI proxy. Each source only fills the units left \code{NA} by the
+#' previous ones.
 #'
 #' @param units An sf object with forest parcels.
 #' @param layers A nemeton_layers object (optional). Used to resolve bdforet.
 #' @param bdforet An sf object with BD Forêt V2 polygons. If NULL and layers
 #'   provided, resolved from layers.
 #' @param age_field Character. Column name with stand age (years). Default "age".
-#'   Used as fallback if BD Forêt not available.
+#'   A measured age takes precedence over every estimate.
 #' @param establishment_year_field Character. Column name with establishment year.
-#'   Used as fallback if age_field not found.
+#'   Used for units with no measured age.
 #' @param current_year Integer. Current year for age calculation from establishment year.
 #'   Default uses current system year.
 #'
@@ -34,10 +36,13 @@ NULL
 #' years, beyond which ancientness counts as maximal. Until 0.196.0 it was
 #' wrongly declared natively 0-100 and merely clamped, so 150 and 250 years
 #' both came out at 100. See spec 048 section 10.
-#'   Default value is 50 when no data available.
+#'   \code{NA} for a unit no source can date (no default age).
 #'
 #' @details
-#' **Primary method** (BD Forêt TFV):
+#' **Order of precedence** (per unit): measured age, establishment year,
+#' BD Forêt TFV, NDVI proxy.
+#'
+#' **BD Forêt TFV method**:
 #' \itemize{
 #'   \item Spatial intersection of parcels with BD Forêt polygons
 #'   \item Age estimated from vegetation type (TFV field):
@@ -46,15 +51,9 @@ NULL
 #'     - Forêt ouverte / Taillis: 45 years
 #'     - Peupleraie: 20 years
 #'     - Jeune peuplement / Lande boisée: 15 years
-#'     - Other: 50 years (default)
-#'   \item Area-weighted average across overlapping polygons
-#' }
-#'
-#' **Fallback methods** (in order):
-#' \enumerate{
-#'   \item Direct age column in units
-#'   \item Establishment year column
-#'   \item NDVI-based maturity estimate
+#'     - Other: not recognised, left out (no default age)
+#'   \item Area-weighted average across overlapping polygons with a
+#'     recognised TFV
 #' }
 #'
 #' @family temporal-indicators
@@ -84,98 +83,98 @@ indicateur_t1_anciennete <- function(units,
                                    current_year = NULL) {
   # Validate inputs
   validate_sf(units)
+  n <- nrow(units)
 
-  # --- Priority 1: BD Forêt TFV (tuto 04 method) ---
-  if (is.null(bdforet) && !is.null(layers) && inherits(layers, "nemeton_layers")) {
-    bdforet <- resolve_vector_layer(layers, "bdforet")
-  }
+  # Cascade PAR UNITE : une mesure (age, annee d'installation) passe avant
+  # une estimation (TFV de la BD Foret, puis NDVI) ; chaque source ne comble
+  # que les unites restees NA. Auparavant, la seule presence d'une BD Foret
+  # faisait ignorer un age mesure, et un TFV non reconnu valait 50 ans.
+  age_values <- rep(NA_real_, n)
+  a_combler <- function() is.na(age_values)
 
-  if (!is.null(bdforet) && inherits(bdforet, "sf") && nrow(bdforet) > 0) {
-    # Ensure matching CRS
-    if (!identical(sf::st_crs(bdforet), sf::st_crs(units))) {
-      bdforet <- sf::st_transform(bdforet, sf::st_crs(units))
-    }
-
-    # Find TFV field
-    tfv_field <- NULL
-    for (field in c("TFV", "tfv", "CODE_TFV", "code_tfv", "ESSENCE", "essence",
-                    "LIB_FV", "lib_fv", "LIBELLE", "libelle")) {
-      if (field %in% names(bdforet)) {
-        tfv_field <- field
-        break
-      }
-    }
-
-    if (!is.null(tfv_field)) {
-      cli::cli_alert_info("T1: Using BD For\u00eat field '{tfv_field}' for age estimation")
-
-      age_values <- numeric(nrow(units))
-
-      for (i in seq_len(nrow(units))) {
-        inter <- suppressWarnings(
-          tryCatch(sf::st_intersection(bdforet, units[i, ]),
-                   error = function(e) NULL)
-        )
-
-        if (!is.null(inter) && nrow(inter) > 0) {
-          inter$..area.. <- as.numeric(sf::st_area(inter))
-          inter$..age_est.. <- .estimate_age_tfv(inter[[tfv_field]])
-
-          total_area <- sum(inter$..area..)
-          if (total_area > 0) {
-            age_values[i] <- sum(inter$..area.. * inter$..age_est..) / total_area
-          } else {
-            age_values[i] <- 50.0
-          }
-        } else {
-          age_values[i] <- 50.0
-        }
-      }
-
-      msg_info("indicateur_t1_anciennete")
-      return(age_values)
-    }
-  }
-
-  # --- Priority 2: Direct age field ---
+  # --- 1. Age mesure ---
   if (!is.null(age_field) && age_field %in% names(units)) {
-    age_values <- units[[age_field]]
-    msg_info("indicateur_t1_anciennete")
-    return(age_values)
+    age_values <- suppressWarnings(as.numeric(units[[age_field]]))
   }
 
-  # --- Priority 3: Establishment year ---
-  if (!is.null(establishment_year_field) && establishment_year_field %in% names(units)) {
+  # --- 2. Annee d'installation ---
+  if (any(a_combler()) && !is.null(establishment_year_field) &&
+      establishment_year_field %in% names(units)) {
     if (is.null(current_year)) {
       current_year <- as.integer(format(Sys.Date(), "%Y"))
     }
-    age_values <- current_year - units[[establishment_year_field]]
-    msg_info("indicateur_t1_anciennete")
-    return(age_values)
+    depuis_annee <- current_year -
+      suppressWarnings(as.numeric(units[[establishment_year_field]]))
+    k <- a_combler()
+    age_values[k] <- depuis_annee[k]
   }
 
-  # --- Priority 4: NDVI proxy ---
-  ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
-  if (!is.null(ndvi_raster)) {
-    cli::cli_alert_info("T1: No BD For\u00eat or age data; estimating maturity from NDVI")
-    ndvi_mean <- safe_extract(ndvi_raster,
-      as_pure_sf(units), fun = "mean", progress = FALSE)
-    # NDVI 0.2 ~ young (20yr), NDVI 0.8 ~ mature (120yr)
-    age_values <- 20 + pmax(0, ndvi_mean - 0.2) / 0.6 * 100
-    msg_info("indicateur_t1_anciennete")
-    return(age_values)
+  # --- 3. BD Foret TFV (tuto 04), moyenne ponderee par la surface ---
+  if (any(a_combler())) {
+    if (is.null(bdforet) && !is.null(layers) && inherits(layers, "nemeton_layers")) {
+      bdforet <- resolve_vector_layer(layers, "bdforet")
+    }
+    if (!is.null(bdforet) && inherits(bdforet, "sf") && nrow(bdforet) > 0) {
+      if (!identical(sf::st_crs(bdforet), sf::st_crs(units))) {
+        bdforet <- sf::st_transform(bdforet, sf::st_crs(units))
+      }
+      tfv_field <- NULL
+      for (field in c("TFV", "tfv", "CODE_TFV", "code_tfv", "ESSENCE", "essence",
+                      "LIB_FV", "lib_fv", "LIBELLE", "libelle")) {
+        if (field %in% names(bdforet)) {
+          tfv_field <- field
+          break
+        }
+      }
+      if (!is.null(tfv_field)) {
+        cli::cli_alert_info("T1: Using BD For\u00eat field '{tfv_field}' for age estimation")
+        for (i in which(a_combler())) {
+          inter <- suppressWarnings(
+            tryCatch(sf::st_intersection(bdforet, units[i, ]),
+                     error = function(e) NULL)
+          )
+          if (is.null(inter) || nrow(inter) == 0) next
+          aire <- as.numeric(sf::st_area(inter))
+          age_est <- .estimate_age_tfv(inter[[tfv_field]])
+          # Seule la surface dont le TFV est reconnu entre dans la moyenne :
+          # un TFV inconnu n'est pas « 50 ans ».
+          ok <- !is.na(age_est) & is.finite(aire) & aire > 0
+          if (any(ok)) {
+            age_values[i] <- sum(aire[ok] * age_est[ok]) / sum(aire[ok])
+          }
+        }
+      }
+    }
   }
 
-  # --- Fallback: default 50 ---
-  cli::cli_alert_warning("T1: No data available, returning default age (50)")
-  rep(50.0, nrow(units))
+  # --- 4. Proxy NDVI ---
+  if (any(a_combler())) {
+    ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
+    if (!is.null(ndvi_raster)) {
+      cli::cli_alert_info("T1: Estimating maturity from NDVI where no age data")
+      ndvi_mean <- safe_extract(ndvi_raster,
+        as_pure_sf(units), fun = "mean", progress = FALSE)
+      # NDVI 0.2 ~ young (20yr), NDVI 0.8 ~ mature (120yr)
+      depuis_ndvi <- 20 + pmax(0, ndvi_mean - 0.2) / 0.6 * 100
+      k <- a_combler()
+      age_values[k] <- depuis_ndvi[k]
+    }
+  }
+
+  if (all(is.na(age_values))) {
+    cli::cli_alert_warning("T1: No age data available, returning NA")
+  } else {
+    msg_info("indicateur_t1_anciennete")
+  }
+  age_values
 }
 
 
 #' Estimate age from BD Forêt TFV (vegetation type) field
 #'
 #' @param tfv Character vector of TFV values.
-#' @return Numeric vector of estimated ages in years.
+#' @return Numeric vector of estimated ages in years; NA for an
+#'   unrecognised TFV.
 #' @noRd
 .estimate_age_tfv <- function(tfv) {
   tfv_lower <- tolower(as.character(tfv))
@@ -183,7 +182,7 @@ indicateur_t1_anciennete <- function(units,
     ifelse(grepl("ferm.*conif|futaie.*conif", tfv_lower), 80,
       ifelse(grepl("ouvert|taillis", tfv_lower), 45,
         ifelse(grepl("peupler", tfv_lower), 20,
-          ifelse(grepl("jeune|lande.*bois", tfv_lower), 15, 50)
+          ifelse(grepl("jeune|lande.*bois", tfv_lower), 15, NA_real_)
         )
       )
     )

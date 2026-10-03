@@ -952,38 +952,37 @@ FICHES <- list(
   # ======================================================== T — Temporel =====
   T1 = list(
     code = "T1", fichier = "fiche-t1-anciennete_fr.Rmd",
-    titre = paste("Chaine de calcul de T1 : quatre chemins essayes en cascade — age",
-                  "typologique de la BD Foret, colonne d'age, annee d'installation,",
-                  "conversion du NDVI en annees — et, si aucun ne repond, un age de",
-                  "50 ans ecrit en dur ; la colonne est en annees mais la",
-                  "normalisation la traite comme un score."),
+    titre = paste("Chaine de calcul de T1 : quatre chemins essayes en cascade, unite",
+                  "par unite — colonne d'age, annee d'installation, age typologique",
+                  "de la BD Foret, conversion du NDVI en annees — une mesure passant",
+                  "avant une estimation ; si aucun ne repond, T1 vaut NA."),
     entrees = list(
+      list(titre = "Colonne age", lignes = "âge d'inventaire, tel quel", vers = 1),
+      list(titre = "establishment_year_field", lignes = "année courante - installation", vers = 2),
       list(titre = "BD Forêt — champ TFV", lignes = c("TFV, CODE_TFV, ESSENCE, LIB_FV…",
-                                                      ".estimate_age_tfv()"), vers = 1),
-      list(titre = "Colonne age", lignes = "âge d'inventaire, tel quel", vers = 2),
-      list(titre = "establishment_year_field", lignes = "année courante - installation", vers = 3),
+                                                      ".estimate_age_tfv()"), vers = 3),
       list(titre = "Couche ndvi", lignes = "Sentinel-2, 10 m", vers = 4),
-      list(titre = "Aucun des quatre", lignes = "50 ans en dur + avertissement", tirets = TRUE, vers = 5)
+      list(titre = "Aucun des quatre", lignes = "NA + avertissement", tirets = TRUE, vers = 5)
     ),
     chemins = list(
-      list(titre = "Âge typologique", lignes = c("constante par type",
-                                                 "futaie feuillue fermée : 100 ans")),
       list(titre = "Âge d'inventaire", lignes = "valeur reprise sans calcul"),
       list(titre = "Année d'installation", lignes = "âge = année - installation"),
+      list(titre = "Âge typologique", lignes = c("constante par type", "TFV inconnu écarté",
+                                                 "futaie feuillue fermée : 100 ans")),
       list(titre = "Conversion du NDVI", lignes = "20 + max(0, NDVI-0,2)/0,6 × 100"),
-      list(titre = "50 ans, en dur", lignes = "âge fabriqué, pas NA", tirets = TRUE)
+      list(titre = "NA", lignes = "aucun âge inventé", tirets = TRUE)
     ),
     aval = av("indicateur_t1_anciennete", "âge, en années",
               "âge / 200 ans × 100", "T", "famille_temporel", "T1 à T3"),
     notes = c(
       "L'unité est l'année : normalisée sur une borne de 200 ans depuis la 0.197.0, plus par écrêtage à 100.",
-      "Sans aucune donnée, T1 vaut 50 — un âge fabriqué qui ne se distingue pas d'un âge mesuré.",
+      "Une mesure passe avant une estimation ; sans aucune source, T1 vaut NA (50 ans en dur jusqu'à la 0.211.0).",
       "Le chemin NDVI convertit de la verdeur en années : un peuplement vert et jeune y paraît vieux.",
       "L'âge TFV est une constante par type : toutes les futaies feuillues fermées ont le même âge."
     ),
-    legende = paste("Cinq issues pour une colonne en années. La borne de 200 ans distingue enfin",
-                    "une futaie de 110 ans d'une de 250 ans, mais le dernier recours — 50 ans en",
-                    "dur — se lit toujours comme n'importe quelle autre valeur.")
+    legende = paste("Cinq issues pour une colonne en années. La borne de 200 ans distingue",
+                    "une futaie de 110 ans d'une de 250 ans ; une unité qu'aucune source ne",
+                    "date reste NA au lieu de recevoir un âge fabriqué.")
   ),
 
   T2 = list(
