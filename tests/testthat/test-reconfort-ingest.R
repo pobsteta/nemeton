@@ -379,6 +379,114 @@ test_that("reconfort_ingest_s2 AOI streaming: download->extract->crop->delete, i
   expect_equal(dl_calls, 1L)
 })
 
+# --- Marqueur lié à la fenêtre, recadrage atomique (audit 1.0) --------------
+
+# Monte le décor du streaming (scène MUSCATE zippée + mocks GEODES) et
+# renvoie un environnement avec le compteur de téléchargements.
+.decor_streaming <- function(env = parent.frame()) {
+  root <- withr::local_tempdir(.local_envir = env)
+  nm   <- "SENTINEL2A_20250101-104724-247_L2A_T31UFQ_C_V4-0"
+  bld  <- file.path(root, "build", nm)
+  dir.create(file.path(bld, "MASKS"), recursive = TRUE)
+  r <- terra::rast(nrows = 80, ncols = 80, xmin = 900000, xmax = 900800,
+                   ymin = 6500000, ymax = 6500800, crs = "EPSG:2154")
+  terra::values(r) <- seq_len(terra::ncell(r))
+  terra::writeRaster(r, file.path(bld, paste0(nm, "_FRE_B2.tif")))
+  terra::writeRaster(r, file.path(bld, "MASKS", paste0(nm, "_CLM_R2.tif")))
+  writeLines("<meta/>", file.path(bld, paste0(nm, "_MTD.xml")))
+  prebuilt <- file.path(root, "prebuilt.zip")
+  withr::with_dir(file.path(root, "build"),
+                  utils::zip(prebuilt, nm, flags = "-r9Xq"))
+  st <- new.env()
+  st$dl <- 0L; st$root <- root; st$nm <- nm; st$s2 <- file.path(root, "s2")
+  testthat::local_mocked_bindings(
+    .ensure_reconfort_python = function(...) "test-env",
+    .reconfort_conda_binary  = function() "/opt/conda/bin/conda",
+    .reconfort_geodes_config = function(path = NULL) "/tmp/geodes.json",
+    .reconfort_account_with_download_dir = function(account, download_dir) {
+      file.path(download_dir, ".acct.json")
+    },
+    .reconfort_list_s2_items = function(conda_bin, env, glue, cfg, manifest_dir,
+                                        quiet = FALSE) {
+      dir.create(manifest_dir, recursive = TRUE, showWarnings = FALSE)
+      j <- file.path(manifest_dir, "item0.json")
+      writeLines("{}", j)
+      data.frame(idx = 0L, item_id = "URN:ITEM:1", datetime = "2025-01-01",
+                 filesize = 10L, json = j, stringsAsFactors = FALSE)
+    },
+    .reconfort_download_s2_item = function(conda_bin, env, glue, account,
+                                           item_json, outfile, quiet = FALSE) {
+      st$dl <- st$dl + 1L
+      file.copy(prebuilt, outfile, overwrite = TRUE)
+      0L
+    },
+    .env = env
+  )
+  st
+}
+
+.aoi_carre <- function(x0) sf::st_as_sfc(sf::st_bbox(
+  c(xmin = x0, ymin = 6500200, xmax = x0 + 200, ymax = 6500400), crs = 2154))
+
+test_that("AOI streaming: a marker from another AOI window does not count", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  skip_if(Sys.which("zip") == "", "needs an external zip program")
+  st <- .decor_streaming()
+  ingest <- function(aoi) reconfort_ingest_s2(
+    aoi = aoi, tiles = "T31UFQ", date_from = "2025-01-01",
+    date_to = "2026-12-31", s2_root = st$s2, buffer_m = 0, quiet = TRUE)
+  fre <- file.path(st$s2, "extracted", "T31UFQ", st$nm,
+                   paste0(st$nm, "_FRE_B2.tif"))
+
+  ingest(.aoi_carre(900000))
+  expect_equal(st$dl, 1L)
+  expect_equal(terra::xmin(terra::rast(fre)), 900000)
+
+  # Autre fenêtre : la scène est retéléchargée et recadrée sur la nouvelle.
+  ingest(.aoi_carre(900400))
+  expect_equal(st$dl, 2L)
+  expect_equal(terra::xmin(terra::rast(fre)), 900400)
+  # Un seul marqueur valide pour la scène.
+  expect_length(list.files(file.path(st$s2, "ingested", "T31UFQ")), 1L)
+
+  # Même fenêtre : idempotent.
+  ingest(.aoi_carre(900400))
+  expect_equal(st$dl, 2L)
+})
+
+test_that("AOI streaming: a half-cropped scene never lands in extracted/", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  skip_if(Sys.which("zip") == "", "needs an external zip program")
+  st <- .decor_streaming()
+  testthat::local_mocked_bindings(
+    .reconfort_crop_scene_to_aoi = function(scene, out_scene_dir, win,
+                                            target_crs = 2154) {
+      dir.create(out_scene_dir, recursive = TRUE, showWarnings = FALSE)
+      writeLines("partiel", file.path(out_scene_dir, "B2.tif"))
+      stop("gdalwarp killed")
+    }
+  )
+  expect_error(reconfort_ingest_s2(
+    aoi = .aoi_carre(900000), tiles = "T31UFQ", date_from = "2025-01-01",
+    date_to = "2026-12-31", s2_root = st$s2, buffer_m = 0, quiet = TRUE),
+    "gdalwarp killed")
+  expect_length(list.dirs(file.path(st$s2, "extracted", "T31UFQ"),
+                          recursive = FALSE), 0L)
+  expect_length(list.files(file.path(st$s2, "ingested", "T31UFQ")), 0L)
+})
+
+test_that(".reconfort_window_key depends on the window and the CRS", {
+  w <- c(xmin = 0, ymin = 0, xmax = 100, ymax = 100)
+  expect_identical(.reconfort_window_key(w, 2154), .reconfort_window_key(w, 2154))
+  expect_false(identical(.reconfort_window_key(w, 2154),
+                         .reconfort_window_key(w, 3035)))
+  expect_false(identical(.reconfort_window_key(w, 2154),
+                         .reconfort_window_key(w + 20, 2154)))
+  expect_match(.reconfort_window_key(w, 2154), "^[0-9a-f]{12}$")
+})
+
 test_that("reconfort_ingest_s2 AOI streaming aborts when the manifest is empty", {
   skip_if_not_installed("sf")
   testthat::local_mocked_bindings(
