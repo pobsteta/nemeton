@@ -41,7 +41,7 @@ mock_pipeline <- function(calls_env, write_score = TRUE, exit = 0L) {
       calls_env$script <- basename(script)
       if (identical(as.integer(exit), 0L)) {
         kv <- calls_env$cfg
-        getv <- function(k) sub(paste0("^", k, "='?([^']*)'?$"), "\\1",
+        getv <- function(k) sub(paste0("^", k, '="?([^"]*)"?$'), "\\1",
                                 grep(paste0("^", k, "="), kv, value = TRUE))
         label <- getv("label"); year <- getv("S2_year")
         final <- file.path(workdir, "results",
@@ -101,10 +101,10 @@ test_that("run_reconfort_dieback writes a cfg with masking on by default", {
   run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
                         s2_year = 2024L, tiles = "T31UDP", quiet = TRUE)
   cfg <- calls$cfg
-  expect_true(any(grepl("^v_model='v3'", cfg)))
-  expect_true(any(grepl("^list_tiles='T31UDP'", cfg)))
-  expect_true(any(grepl("^mask_final_maps='True'", cfg)))
-  expect_true(any(grepl("^S2_year='2024'", cfg)))
+  expect_true(any(grepl('^v_model="v3"', cfg)))
+  expect_true(any(grepl('^list_tiles="T31UDP"', cfg)))
+  expect_true(any(grepl('^mask_final_maps="True"', cfg)))
+  expect_true(any(grepl('^S2_year="2024"', cfg)))
 })
 
 test_that("run_reconfort_dieback warns when iota2 lacks the probamap fix (#12), and runs on", {
@@ -132,7 +132,7 @@ test_that("run_reconfort_dieback with binary_mask = FALSE disables masking", {
   run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
                         s2_year = 2024L, tiles = "T31UDP",
                         binary_mask = FALSE, quiet = TRUE)
-  expect_true(any(grepl("^mask_final_maps='False'", calls$cfg)))
+  expect_true(any(grepl('^mask_final_maps="False"', calls$cfg)))
   # no mask staged
   wd <- file.path(cache, "reconfort", "run_z1_S22024")
   expect_false(file.exists(file.path(wd, "masks", RECONFORT_OSO_MASK$file)))

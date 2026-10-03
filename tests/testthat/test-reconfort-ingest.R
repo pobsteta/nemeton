@@ -60,21 +60,61 @@ test_that("reconfort_aoi_tiles repairs a degenerate AOI ring (duplicate vertex)"
   expect_true(all(grepl("^T3[01][A-Z]{3}$", tiles)))
 })
 
-test_that(".reconfort_py_literal serialises R values to Python literals", {
-  expect_equal(nemeton:::.reconfort_py_literal("31TCJ"), "'31TCJ'")
-  expect_equal(nemeton:::.reconfort_py_literal(c("31TCJ", "T31TCJ")),
-               "['31TCJ', 'T31TCJ']")
-  expect_equal(nemeton:::.reconfort_py_literal(200L), "200")
+test_that(".reconfort_cfg_value serialises R values to JSON literals", {
+  expect_equal(nemeton:::.reconfort_cfg_value("31TCJ"), "\"31TCJ\"")
+  expect_equal(nemeton:::.reconfort_cfg_value(c("31TCJ", "T31TCJ")),
+               "[\"31TCJ\",\"T31TCJ\"]")
+  expect_equal(nemeton:::.reconfort_cfg_value(200L), "200")
+  # Quote, antislash, saut de ligne : échappés, jamais du code Python.
+  expect_equal(nemeton:::.reconfort_cfg_value("a'b\\c\nd"),
+               "\"a'b\\\\c\\nd\"")
 })
 
-test_that(".reconfort_write_cfg writes a python-eval'able key=value file", {
+test_that(".reconfort_write_cfg writes a JSON-valued key=value file", {
   f <- withr::local_tempfile(fileext = ".cfg")
   nemeton:::.reconfort_write_cfg(f, list(
     tile = c("31TCJ", "T31TCJ"), start = "2021-01-01", zip_path = "/tmp/z"))
   lines <- readLines(f)
-  expect_match(lines[grep("^tile=", lines)], "['31TCJ', 'T31TCJ']", fixed = TRUE)
-  expect_match(lines[grep("^start=", lines)], "'2021-01-01'", fixed = TRUE)
+  expect_match(lines[grep("^tile=", lines)], "[\"31TCJ\",\"T31TCJ\"]", fixed = TRUE)
+  expect_match(lines[grep("^start=", lines)], "\"2021-01-01\"", fixed = TRUE)
   expect_length(lines, 3L)
+  expect_error(nemeton:::.reconfort_write_cfg(f, list(`a=b` = 1)), "Invalid")
+})
+
+test_that("load_config_variable parses the cfg without evaluating code", {
+  py <- Sys.which("python3")
+  skip_if(!nzchar(py), "python3 not available")
+  utils_dir <- system.file("python", "reconfort", package = "nemeton")
+  skip_if(!nzchar(utils_dir), "vendored RECONFORT python not found")
+  sentinel <- file.path(withr::local_tempdir(), "pwned")
+  # Charge utile qui aurait été exécutée par l'ancien eval() (échappement
+  # R limité à `'` : un antislash final cassait la chaîne).
+  py_str <- function(s) sprintf("bytes([%s]).decode()",
+                                paste(as.integer(charToRaw(s)), collapse = ","))
+  payload <- paste0("x\\', __import__(", py_str("os"), ").system(",
+                    py_str(paste("touch", sentinel)), ") #'")
+  f <- withr::local_tempfile(fileext = ".cfg")
+  nemeton:::.reconfort_write_cfg(f, list(
+    label = payload, tile = c("31TCJ", "T31TCJ"), n = 3L,
+    flag = TRUE, eq = "a=b"))
+  # Ligne au format amont (littéral Python) : toujours lisible, sans eval.
+  cat("legacy='abc'\n", file = f, append = TRUE)
+  script <- withr::local_tempfile(fileext = ".py")
+  writeLines(c(
+    "import json, sys",
+    sprintf("sys.path.insert(0, %s)", jsonlite::toJSON(utils_dir, auto_unbox = TRUE)),
+    "from utils.utils import load_config_variable",
+    "print(json.dumps(load_config_variable(sys.argv[1])))"
+  ), script)
+  out <- system2(py, c(shQuote(script), shQuote(f)), stdout = TRUE)
+  got <- jsonlite::fromJSON(paste(out, collapse = ""))
+  expect_false(file.exists(sentinel))
+  expect_identical(got$label, payload)
+  expect_identical(got$tile, c("31TCJ", "T31TCJ"))
+  expect_identical(got$n, 3L)
+  expect_true(got$flag)
+  expect_identical(got$eq, "a=b")
+  expect_identical(got$legacy, "abc")
 })
 
 test_that(".reconfort_geodes_config resolves option / explicit path, aborts on miss", {
@@ -104,7 +144,7 @@ test_that("reconfort_ingest_s2 orchestrates download+process per tile (mocked)",
     .reconfort_run_py = function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
       calls[[length(calls) + 1L]] <<- basename(script)
       kv <- readLines(cfg)
-      getv <- function(k) sub(paste0("^", k, "='?([^']*)'?$"), "\\1",
+      getv <- function(k) sub(paste0("^", k, '="?([^"]*)"?$'), "\\1",
                               grep(paste0("^", k, "="), kv, value = TRUE))
       if (basename(script) == "run_geodes_download.py") {
         file.create(file.path(getv("zip_path"), "SENTINEL2C_test_T31UDP.zip"))
@@ -161,7 +201,7 @@ test_that("reconfort_ingest_s2 aborts when unzip yields no scene (exit 0)", {
     .reconfort_run_py = function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
       if (basename(script) == "run_geodes_download.py") {
         kv <- readLines(cfg)
-        zp <- sub("^zip_path='?([^']*)'?$", "\\1",
+        zp <- sub('^zip_path="?([^"]*)"?$', "\\1",
                   grep("^zip_path=", kv, value = TRUE))
         file.create(file.path(zp, "SENTINEL2C_test.zip"))
       }
@@ -225,14 +265,6 @@ test_that("reconfort_ingest_s2 needs aoi or tiles", {
   )
 })
 
-test_that(".reconfort_py_literal serialises R logicals to Python booleans", {
-  expect_equal(.reconfort_py_literal(TRUE), "True")
-  expect_equal(.reconfort_py_literal(FALSE), "False")
-  # And strings/numbers/lists still behave.
-  expect_equal(.reconfort_py_literal("a"), "'a'")
-  expect_equal(.reconfort_py_literal(c("a", "b")), "['a', 'b']")
-})
-
 test_that("reconfort_ingest_s2 writes delete_zip_after_extract from keep_zips", {
   seen_cfg <- NULL
   mocks <- list(
@@ -245,11 +277,11 @@ test_that("reconfort_ingest_s2 writes delete_zip_after_extract from keep_zips", 
     .reconfort_run_py = function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
       kv <- readLines(cfg)
       if (basename(script) == "run_geodes_download.py") {
-        zp <- sub("^zip_path='?([^']*)'?$", "\\1", grep("^zip_path=", kv, value = TRUE))
+        zp <- sub('^zip_path="?([^"]*)"?$', "\\1", grep("^zip_path=", kv, value = TRUE))
         file.create(file.path(zp, "SENTINEL2C_test.zip"))
       } else {
         seen_cfg <<- kv
-        od <- sub("^out_dir='?([^']*)'?$", "\\1", grep("^out_dir=", kv, value = TRUE))
+        od <- sub('^out_dir="?([^"]*)"?$', "\\1", grep("^out_dir=", kv, value = TRUE))
         dir.create(file.path(od, "scene"), recursive = TRUE, showWarnings = FALSE)
       }
       0L
@@ -260,14 +292,14 @@ test_that("reconfort_ingest_s2 writes delete_zip_after_extract from keep_zips", 
   reconfort_ingest_s2(tiles = "T31UDP", date_from = "2021-01-01",
                       date_to = "2022-12-31",
                       s2_root = withr::local_tempdir(), quiet = TRUE)
-  expect_true(any(seen_cfg == "delete_zip_after_extract=True"))
+  expect_true(any(seen_cfg == "delete_zip_after_extract=true"))
 
   seen_cfg <- NULL
   do.call(testthat::local_mocked_bindings, mocks)
   reconfort_ingest_s2(tiles = "T31UDP", date_from = "2021-01-01",
                       date_to = "2022-12-31", keep_zips = TRUE,
                       s2_root = withr::local_tempdir(), quiet = TRUE)
-  expect_true(any(seen_cfg == "delete_zip_after_extract=False"))
+  expect_true(any(seen_cfg == "delete_zip_after_extract=false"))
 })
 
 test_that(".reconfort_crop_scene_to_aoi clips to window, drops SRE, keeps masks+xml", {
@@ -524,7 +556,7 @@ test_that("reconfort_ingest_s2 aborts before extraction when disk is too small",
     .reconfort_run_py = function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
       if (basename(script) == "run_geodes_download.py") {
         kv <- readLines(cfg)
-        zp <- sub("^zip_path='?([^']*)'?$", "\\1", grep("^zip_path=", kv, value = TRUE))
+        zp <- sub('^zip_path="?([^"]*)"?$', "\\1", grep("^zip_path=", kv, value = TRUE))
         # A non-empty archive so the guard's size estimate is > 0.
         writeBin(raw(2048), file.path(zp, "SENTINEL2C_test.zip"))
       } else {

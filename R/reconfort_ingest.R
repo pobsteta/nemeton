@@ -95,25 +95,38 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 }
 
 
-# Serialise an R value to a Python literal for a RECONFORT `.cfg` file
-# (`load_config_variable` eval()s each value). Length>1 -> Python list.
-.reconfort_py_literal <- function(x) {
-  scal <- function(v) {
-    if (is.character(v)) paste0("'", gsub("'", "\\\\'", v), "'")
-    # R `TRUE`/`FALSE` -> Python `True`/`False` (eval()ed upstream).
-    else if (is.logical(v)) if (isTRUE(v)) "True" else "False"
-    else as.character(v)
+# Sérialise une valeur R en littéral JSON pour un `.cfg` RECONFORT.
+# Le lecteur Python (`load_config_variable`, utils/utils.py) parse chaque
+# valeur avec `json.loads` : plus d'`eval()`, donc une valeur contenant une
+# quote, un saut de ligne ou du code Python reste une simple chaîne.
+# Longueur 1 -> scalaire JSON ; longueur != 1 -> tableau JSON (liste Python).
+.reconfort_cfg_value <- function(x) {
+  if (is.factor(x)) x <- as.character(x)
+  if (is.null(x) || !is.atomic(x)) {
+    cli::cli_abort("RECONFORT cfg values must be atomic vectors.")
   }
-  if (length(x) != 1L) paste0("[", paste(vapply(x, scal, ""), collapse = ", "), "]")
-  else scal(x)
+  out <- if (length(x) == 1L) {
+    jsonlite::toJSON(unname(x), auto_unbox = TRUE, digits = NA, na = "null")
+  } else {
+    jsonlite::toJSON(unname(x), auto_unbox = FALSE, digits = NA, na = "null")
+  }
+  as.character(out)
 }
 
 
-#' Write a RECONFORT `.cfg` file (`key=<python-literal>` per line)
+#' Write a RECONFORT `.cfg` file (`key=<json-literal>` per line)
+#'
+#' Keys must be Python identifiers; values are JSON-encoded so that the
+#' Python reader (`load_config_variable`) never evaluates them as code.
 #' @keywords internal
 .reconfort_write_cfg <- function(path, kv) {
-  lines <- vapply(names(kv),
-                  function(k) paste0(k, "=", .reconfort_py_literal(kv[[k]])),
+  keys <- names(kv)
+  if (length(kv) && (is.null(keys) ||
+                     any(!grepl("^[A-Za-z_][A-Za-z0-9_]*$", keys)))) {
+    cli::cli_abort("Invalid RECONFORT cfg key(s): {.val {keys}}.")
+  }
+  lines <- vapply(keys,
+                  function(k) paste0(k, "=", .reconfort_cfg_value(kv[[k]])),
                   character(1))
   writeLines(lines, path)
   invisible(path)
