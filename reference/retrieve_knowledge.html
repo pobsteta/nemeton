@@ -13,7 +13,7 @@ it is computed in R."><meta property="og:image" content="https://pobsteta.github
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -133,7 +133,8 @@ it is computed in R.</p>
 <span>  profile_codes <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  min_similarity <span class="op">=</span> <span class="fl">0.7</span>,</span>
 <span>  lang <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  embed_provider <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mistral"</span>, <span class="st">"openai"</span>, <span class="st">"voyage"</span><span class="op">)</span></span>
+<span>  embed_provider <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mistral"</span>, <span class="st">"openai"</span>, <span class="st">"voyage"</span><span class="op">)</span>,</span>
+<span>  api_key <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -175,7 +176,15 @@ language.</p></dd>
 
 <dt id="arg-embed-provider">embed_provider<a class="anchor" aria-label="anchor" href="#arg-embed-provider"></a></dt>
 <dd><p>One of `"mistral"` (default), `"openai"`,
-`"voyage"`. Must match the provider used at ingestion.</p></dd>
+`"voyage"`. Must match the provider used at ingestion: the call
+aborts when the corpus' `embed_model` values do not include this
+provider's model (a mixed corpus only warns).</p></dd>
+
+
+<dt id="arg-api-key">api_key<a class="anchor" aria-label="anchor" href="#arg-api-key"></a></dt>
+<dd><p>Character or `NULL` (default). Embedding API key passed
+to [embed_query()]; `NULL` falls back to the provider's environment
+variable.</p></dd>
 
 </dl></div>
     <div class="section level2">

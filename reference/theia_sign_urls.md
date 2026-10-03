@@ -41,7 +41,9 @@ theia_sign_urls(
 
   Signing gateway base URL (default `services$theia_signing$endpoint`
   from the country config, else
-  `https://signing.stac.teledetection.fr`).
+  `https://signing.stac.teledetection.fr`). Must be an `https://` URL:
+  the API key travels in the request headers. Requests time out after 60
+  s and are retried on 429/5xx (see `NEMETON_STAC_MAX_TRIES`).
 
 - country:
 

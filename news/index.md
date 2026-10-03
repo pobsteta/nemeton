@@ -1,5 +1,83 @@
 # Changelog
 
+## nemeton 0.210.0 (2026-10-03)
+
+Troisième vague de l’audit de pré-version 1.0 : **sécurité**. Dix-sept
+correctifs ; aucune injection SQL n’avait été trouvée par l’audit, les
+points traités ici sont l’exécution de code, la fuite de secrets et la
+confiance accordée à des entrées éditables.
+
+#### Security
+
+- **RECONFORT, configuration relue par
+  [`eval()`](https://rdrr.io/r/base/eval.html)** : le fichier `.cfg`
+  était relu côté Python avec
+  [`eval()`](https://rdrr.io/r/base/eval.html), et l’échappement R ne
+  traitait que `'` ; une valeur finissant par `\` exécutait du code
+  (reproduit). Les valeurs sont écrites en JSON et relues par
+  `json.loads` (repli `ast.literal_eval` pour les anciens fichiers),
+  plus aucun `eval`.
+- **pygeodes sans vérification TLS** : la clé GEODES partait vers un
+  serveur dont le certificat n’était pas vérifié (`verify=False` par
+  défaut dans pygeodes), et l’avertissement était masqué. La
+  vérification est forcée (certifi, sinon magasin système) dans les
+  trois scripts qui appellent GEODES.
+- **Extraction d’archives** : `unzip` sans contrôle des entrées
+  (Sentinel-2 GEODES, E-OBS, INSEE, IFN). Une archive contenant un
+  chemin absolu ou `..` est refusée en entier ; seuls les fichiers
+  voulus sont extraits.
+- **[`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)**
+  : `zone_id` et `tiles` sont validés (ils servaient à construire un
+  chemin ensuite supprimé), seul un dossier de travail créé par le run
+  peut être supprimé (jamais un `output_dir` préexistant ni le cache),
+  et un verrou empêche deux runs sur le même dossier.
+- **[`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)**
+  : l’URL de base (mot de passe compris) n’est plus écrite dans
+  `call.rds` mais passée à l’enfant par variable d’environnement ; le
+  dossier d’échange est imprévisible et privé (0700/0600).
+- **[`theia_sign_urls()`](https://pobsteta.github.io/nemeton/reference/theia_sign_urls.md)**
+  : endpoint non `https` refusé avant l’envoi des clés, timeout et
+  reprises ; une URL absente de la réponse n’interrompt plus la
+  signature.
+- **Corpus RAG** : le manifeste éditable depuis l’app ne peut plus faire
+  lire un fichier hors de la racine du corpus (`nemeton.corpus_root` /
+  `NEMETON_CORPUS_ROOT`, liens et `..` résolus) ni une URL `file://` ;
+  extensions limitées, `doc_id` revalidé.
+- **`format_citations(format = "html")`** : titre, auteur et URL sont
+  échappés, et un lien n’est émis que pour `http(s)://`.
+- **[`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)**
+  : `project_name` doit respecter `^[A-Za-z0-9_-]+$` (il servait à
+  construire des chemins et un argument de `zip`).
+
+#### Fixed
+
+- **[`aggregate_plot_metrics()`](https://pobsteta.github.io/nemeton/reference/aggregate_plot_metrics.md)**
+  : G/ha, Dg, H₀ et les CV étaient calculés sur tous les arbres, souches
+  et chablis compris. Ils ne portent plus que sur les vivants
+  (`statuts_vivants = "vivant"` ; un statut absent compte vivant) :
+  **les valeurs baissent** sur les placettes contenant des arbres morts.
+- **[`validate_field_data()`](https://pobsteta.github.io/nemeton/reference/validate_field_data.md)**
+  : un `tree_id` manquant est une erreur ; les lignes signalées sont les
+  vraies lignes du fichier.
+- **[`retrieve_knowledge()`](https://pobsteta.github.io/nemeton/reference/retrieve_knowledge.md)**
+  : refuse une requête dont le modèle d’embedding n’est pas celui du
+  corpus (les vecteurs étaient tronqués ou complétés en silence) ;
+  nouvel argument `api_key`.
+- **RAG** : un chemin de fichier inexistant n’est plus ingéré comme du
+  texte ; vocabulaire `doc_type` unique entre le manifeste et
+  l’ingestion.
+- **[`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)**
+  : plus de plantage sur un CRS sans code EPSG ; l’ancien `.qgz` n’est
+  remplacé qu’une fois le nouveau construit ; plus de
+  [`setwd()`](https://rdrr.io/r/base/getwd.html) global.
+
+#### Traçabilité
+
+- Le code Python repris de RECONFORT porte désormais ses modifications :
+  en-têtes « modified by nemeton », `inst/python/reconfort/PATCHES.md`,
+  et mention dans `inst/NOTICE` (Apache-2.0 §4b). Les deux scripts
+  écrits par nemeton passent sous GPL-3, comme le paquet.
+
 ## nemeton 0.209.0 (2026-10-03)
 
 Deuxième vague de l’audit de pré-version 1.0 : **robustesse des

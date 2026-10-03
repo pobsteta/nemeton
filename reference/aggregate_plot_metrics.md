@@ -3,9 +3,10 @@
 For each placette, summarises the trees it contains into a set of
 dendrometric aggregates that downstream indicators can consume:
 
-- `n_trees`: total tree records.
+- `n_trees`: total tree records (all statuses).
 
-- `n_trees_alive`: trees whose `statut == "vivant"`.
+- `n_trees_alive`: trees whose `statut` is in `statuts_vivants` (or
+  missing).
 
 - `dbh_mean_cm`: arithmetic mean DBH.
 
@@ -25,7 +26,12 @@ dendrometric aggregates that downstream indicators can consume:
 ## Usage
 
 ``` r
-aggregate_plot_metrics(placettes, arbres = NULL, plot_radius = 15)
+aggregate_plot_metrics(
+  placettes,
+  arbres = NULL,
+  plot_radius = 15,
+  statuts_vivants = "vivant"
+)
 ```
 
 ## Arguments
@@ -44,6 +50,12 @@ aggregate_plot_metrics(placettes, arbres = NULL, plot_radius = 15)
   Numeric. Plot radius (m) used to compute basal area per hectare.
   Default 15.
 
+- statuts_vivants:
+
+  Character vector of `statut` values counted as living trees. Trees
+  with a missing `statut` (or an `arbres` table without that column) are
+  treated as living. Default `"vivant"`.
+
 ## Value
 
 An sf object identical to `placettes` plus the aggregate columns
@@ -51,6 +63,11 @@ An sf object identical to `placettes` plus the aggregate columns
 remote-sensing metrics downstream).
 
 ## Details
+
+Every aggregate except `n_trees` is computed on living trees only
+(`statuts_vivants`): dead, windthrown or cut trees no longer belong to
+the standing stock. A plot whose trees are all dead gets `g_ha = 0` and
+NA for the other aggregates.
 
 Placettes with no trees receive NA for every aggregate and
 `n_trees = 0L`.

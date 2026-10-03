@@ -23,7 +23,7 @@ theia_configure_s3 needed."><meta property="og:image" content="https://pobsteta.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -167,7 +167,9 @@ one at <a href="https://gate.stac.teledetection.fr" class="external-link">https:
 <dt id="arg-endpoint">endpoint<a class="anchor" aria-label="anchor" href="#arg-endpoint"></a></dt>
 <dd><p>Signing gateway base URL (default
 <code>services$theia_signing$endpoint</code> from the country config, else
-<code>https://signing.stac.teledetection.fr</code>).</p></dd>
+<code>https://signing.stac.teledetection.fr</code>). Must be an <code>https://</code> URL:
+the API key travels in the request headers. Requests time out after 60 s and
+are retried on 429/5xx (see <code class="env">NEMETON_STAC_MAX_TRIES</code>).</p></dd>
 
 
 <dt id="arg-country">country<a class="anchor" aria-label="anchor" href="#arg-country"></a></dt>

@@ -19,7 +19,9 @@ format_citations(retrieved_chunks, format = c("markdown", "html"), lang = "fr")
 
 - format:
 
-  One of \`"markdown"\` (default) or \`"html"\`.
+  One of \`"markdown"\` (default) or \`"html"\`. In HTML, every field is
+  HTML-escaped and a link is emitted only for an \`http://\` /
+  \`https://\` \`source_url\`.
 
 - lang:
 

@@ -16,7 +16,8 @@ retrieve_knowledge(
   profile_codes = NULL,
   min_similarity = 0.7,
   lang = NULL,
-  embed_provider = c("mistral", "openai", "voyage")
+  embed_provider = c("mistral", "openai", "voyage"),
+  api_key = NULL
 )
 ```
 
@@ -56,7 +57,15 @@ retrieve_knowledge(
 - embed_provider:
 
   One of \`"mistral"\` (default), \`"openai"\`, \`"voyage"\`. Must match
-  the provider used at ingestion.
+  the provider used at ingestion: the call aborts when the corpus'
+  \`embed_model\` values do not include this provider's model (a mixed
+  corpus only warns).
+
+- api_key:
+
+  Character or \`NULL\` (default). Embedding API key passed to
+  \[embed_query()\]; \`NULL\` falls back to the provider's environment
+  variable.
 
 ## Value
 

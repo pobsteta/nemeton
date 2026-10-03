@@ -61,7 +61,8 @@ create_qfield_project(
 - project_name:
 
   Character. Name of the `.qgz` file (without extension) and the project
-  title in QGIS. Default `"echantillon"`.
+  title in QGIS. Must match `^[A-Za-z0-9_-]+$` (it builds file paths and
+  the zip command line). Default `"echantillon"`.
 
 - crs:
 

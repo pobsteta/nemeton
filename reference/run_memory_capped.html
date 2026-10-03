@@ -31,7 +31,7 @@ already caps the Python subprocess it spawns."><meta property="og:image" content
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -188,7 +188,9 @@ no closures, no <code>SpatRaster</code> — pass file paths.</p></dd>
 
 <dt id="arg-db-url">db_url<a class="anchor" aria-label="anchor" href="#arg-db-url"></a></dt>
 <dd><p>Database URL. When given, the child opens a connection and
-passes it to <code>fun</code> as <code>con</code> (only if <code>fun</code> takes a <code>con</code> argument).</p></dd>
+passes it to <code>fun</code> as <code>con</code> (only if <code>fun</code> takes a <code>con</code> argument). It reaches the child through an
+environment variable (removed by the child as soon as it is read), never
+through the call file on disk.</p></dd>
 
 
 <dt id="arg-options">options<a class="anchor" aria-label="anchor" href="#arg-options"></a></dt>

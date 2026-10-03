@@ -53,7 +53,7 @@ run_reconfort_dieback(
 - zone_id:
 
   Scalar monitoring-zone id (resolved to an AOI via the
-  \`monitoring_zone\` table).
+  \`monitoring_zone\` table). Must be a strictly positive integer.
 
 - cache_dir:
 
@@ -142,7 +142,11 @@ run_reconfort_dieback(
 - output_dir:
 
   Explicit per-run working directory. Default
-  \`\<cache_dir\>/reconfort/run_z\<zone_id\>\_S2\<s2_year\>\`.
+  \`\<cache_dir\>/reconfort/run_z\<zone_id\>\_S2\<s2_year\>\`. The
+  directory is locked (\`.lock\`, holding the PID) for the duration of
+  the run; a second run on a directory held by a live process aborts. A
+  pre-existing \`output_dir\` is never deleted, whatever
+  \`keep_workdir\` says.
 
 - geodes_config:
 
@@ -167,7 +171,9 @@ run_reconfort_dieback(
 - keep_workdir:
 
   Keep the staged working directory after the run. Default \`TRUE\` (the
-  rasters live there).
+  rasters live there). With \`FALSE\`, only a directory created (or, for
+  the default path, owned) by nemeton is removed, never \`cache_dir\` or
+  one of its ancestors.
 
 - quiet:
 

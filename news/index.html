@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,48 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.210.0" id="nemeton-02100-2026-10-03">nemeton 0.210.0 (2026-10-03)<a class="anchor" aria-label="anchor" href="#nemeton-02100-2026-10-03"></a></h2>
+<p>Troisième vague de l’audit de pré-version 1.0 : <strong>sécurité</strong>. Dix-sept correctifs ; aucune injection SQL n’avait été trouvée par l’audit, les points traités ici sont l’exécution de code, la fuite de secrets et la confiance accordée à des entrées éditables.</p>
+<div class="section level4">
+<h4 id="security-0-210-0">Security<a class="anchor" aria-label="anchor" href="#security-0-210-0"></a></h4>
+<ul><li>
+<strong>RECONFORT, configuration relue par <code><a href="https://rdrr.io/r/base/eval.html" class="external-link">eval()</a></code></strong> : le fichier <code>.cfg</code> était relu côté Python avec <code><a href="https://rdrr.io/r/base/eval.html" class="external-link">eval()</a></code>, et l’échappement R ne traitait que <code>'</code> ; une valeur finissant par <code>\</code> exécutait du code (reproduit). Les valeurs sont écrites en JSON et relues par <code>json.loads</code> (repli <code>ast.literal_eval</code> pour les anciens fichiers), plus aucun <code>eval</code>.</li>
+<li>
+<strong>pygeodes sans vérification TLS</strong> : la clé GEODES partait vers un serveur dont le certificat n’était pas vérifié (<code>verify=False</code> par défaut dans pygeodes), et l’avertissement était masqué. La vérification est forcée (certifi, sinon magasin système) dans les trois scripts qui appellent GEODES.</li>
+<li>
+<strong>Extraction d’archives</strong> : <code>unzip</code> sans contrôle des entrées (Sentinel-2 GEODES, E-OBS, INSEE, IFN). Une archive contenant un chemin absolu ou <code>..</code> est refusée en entier ; seuls les fichiers voulus sont extraits.</li>
+<li>
+<strong><code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code></strong> : <code>zone_id</code> et <code>tiles</code> sont validés (ils servaient à construire un chemin ensuite supprimé), seul un dossier de travail créé par le run peut être supprimé (jamais un <code>output_dir</code> préexistant ni le cache), et un verrou empêche deux runs sur le même dossier.</li>
+<li>
+<strong><code><a href="../reference/run_memory_capped.html">run_memory_capped()</a></code></strong> : l’URL de base (mot de passe compris) n’est plus écrite dans <code>call.rds</code> mais passée à l’enfant par variable d’environnement ; le dossier d’échange est imprévisible et privé (0700/0600).</li>
+<li>
+<strong><code><a href="../reference/theia_sign_urls.html">theia_sign_urls()</a></code></strong> : endpoint non <code>https</code> refusé avant l’envoi des clés, timeout et reprises ; une URL absente de la réponse n’interrompt plus la signature.</li>
+<li>
+<strong>Corpus RAG</strong> : le manifeste éditable depuis l’app ne peut plus faire lire un fichier hors de la racine du corpus (<code>nemeton.corpus_root</code> / <code>NEMETON_CORPUS_ROOT</code>, liens et <code>..</code> résolus) ni une URL <code>file://</code> ; extensions limitées, <code>doc_id</code> revalidé.</li>
+<li>
+<strong><code>format_citations(format = "html")</code></strong> : titre, auteur et URL sont échappés, et un lien n’est émis que pour <code>http(s)://</code>.</li>
+<li>
+<strong><code><a href="../reference/create_qgis_project.html">create_qgis_project()</a></code></strong> : <code>project_name</code> doit respecter <code>^[A-Za-z0-9_-]+$</code> (il servait à construire des chemins et un argument de <code>zip</code>).</li>
+</ul></div>
+<div class="section level4">
+<h4 id="fixed-0-210-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-210-0"></a></h4>
+<ul><li>
+<strong><code><a href="../reference/aggregate_plot_metrics.html">aggregate_plot_metrics()</a></code></strong> : G/ha, Dg, H₀ et les CV étaient calculés sur tous les arbres, souches et chablis compris. Ils ne portent plus que sur les vivants (<code>statuts_vivants = "vivant"</code> ; un statut absent compte vivant) : <strong>les valeurs baissent</strong> sur les placettes contenant des arbres morts.</li>
+<li>
+<strong><code><a href="../reference/validate_field_data.html">validate_field_data()</a></code></strong> : un <code>tree_id</code> manquant est une erreur ; les lignes signalées sont les vraies lignes du fichier.</li>
+<li>
+<strong><code><a href="../reference/retrieve_knowledge.html">retrieve_knowledge()</a></code></strong> : refuse une requête dont le modèle d’embedding n’est pas celui du corpus (les vecteurs étaient tronqués ou complétés en silence) ; nouvel argument <code>api_key</code>.</li>
+<li>
+<strong>RAG</strong> : un chemin de fichier inexistant n’est plus ingéré comme du texte ; vocabulaire <code>doc_type</code> unique entre le manifeste et l’ingestion.</li>
+<li>
+<strong><code><a href="../reference/create_qgis_project.html">create_qgis_project()</a></code></strong> : plus de plantage sur un CRS sans code EPSG ; l’ancien <code>.qgz</code> n’est remplacé qu’une fois le nouveau construit ; plus de <code><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd()</a></code> global.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="traçabilité-0-210-0">Traçabilité<a class="anchor" aria-label="anchor" href="#tra%C3%A7abilit%C3%A9-0-210-0"></a></h4>
+<ul><li>Le code Python repris de RECONFORT porte désormais ses modifications : en-têtes « modified by nemeton », <code>inst/python/reconfort/PATCHES.md</code>, et mention dans <code>inst/NOTICE</code> (Apache-2.0 §4b). Les deux scripts écrits par nemeton passent sous GPL-3, comme le paquet.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.209.0" id="nemeton-02090-2026-10-03">nemeton 0.209.0 (2026-10-03)<a class="anchor" aria-label="anchor" href="#nemeton-02090-2026-10-03"></a></h2>
 <p>Deuxième vague de l’audit de pré-version 1.0 : <strong>robustesse des données</strong>. Vingt-cinq correctifs : caches qui servaient les données d’un autre point ou d’une autre emprise, fichiers partiels pris pour complets, transactions manquantes, pertes de données silencieuses.</p>

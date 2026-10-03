@@ -21,7 +21,7 @@ and emits a one-shot deprecation warning. New code should call
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -187,8 +187,9 @@ needed).</p></dd>
 
 <dt id="arg-project-name">project_name<a class="anchor" aria-label="anchor" href="#arg-project-name"></a></dt>
 <dd><p>Character. Name of the <code>.qgz</code> file (without
-extension) and the project title in QGIS. Default
-<code>"echantillon"</code>.</p></dd>
+extension) and the project title in QGIS. Must match
+<code>^[A-Za-z0-9_-]+$</code> (it builds file paths and the zip command
+line). Default <code>"echantillon"</code>.</p></dd>
 
 
 <dt id="arg-crs">crs<a class="anchor" aria-label="anchor" href="#arg-crs"></a></dt>

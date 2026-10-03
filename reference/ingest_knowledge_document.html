@@ -15,7 +15,7 @@ cleanly."><meta property="og:image" content="https://pobsteta.github.io/nemeton/
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -150,15 +150,19 @@ cleanly.</p>
 
 <dt id="arg-source">source<a class="anchor" aria-label="anchor" href="#arg-source"></a></dt>
 <dd><p>Character. A path to a `.pdf` / `.txt` / `.md` file, or
-a raw text string (used directly when it is not an existing file
-path). PDFs are split one segment per page so chunks carry a
-`page_number`.</p></dd>
+a raw text string. PDFs are split one segment per page so chunks
+carry a `page_number`. A single-line string that looks like a file
+path (ends with a supported extension, starts with `/`, `./`, `~/`,
+..., or is a space-free path with an extension) must name an
+existing supported file, otherwise an error is raised instead of
+embedding the path itself as text.</p></dd>
 
 
 <dt id="arg-metadata">metadata<a class="anchor" aria-label="anchor" href="#arg-metadata"></a></dt>
 <dd><p>Named list. Required: `title`, `lang` (ISO 639-1),
-`doc_type` (one of `paper`, `report`, `regulation`, `manual`,
-`note`, `web`). Optional: `author`, `publisher`, `pub_date`,
+`doc_type` (one of `knowledge_manifest_vocab()$doc_types`:
+`manual`, `note`, `paper`, `regulation`, `report`, `guide`, `law`,
+`dataset_doc`, `web`). Optional: `author`, `publisher`, `pub_date`,
 `source_url`, `license` (default `"unknown"`), `family_codes`,
 `profile_codes`, `ingested_by`, and `extra` (a list stored as JSON
 `metadata`).</p></dd>

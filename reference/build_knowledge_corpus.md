@@ -88,6 +88,18 @@ ingest a reference-only chunk via \[ingest_knowledge_reference()\].
 Documents whose \`title\` is already in the base are skipped (idempotent
 re-runs).
 
+## Security
+
+The manifest is editable from an application, so its paths are not
+trusted. A \`local_path\` must have an allowed extension (\`.pdf\`,
+\`.txt\`, \`.md\`, \`.markdown\`, \`.rmd\`, \`.qmd\`) and resolve
+(symbolic links and \`..\` included) under the corpus root: option
+\`nemeton.corpus_root\`, else the \`NEMETON_CORPUS_ROOT\` environment
+variable, else the working directory. Relative paths are resolved
+against that root. Only \`http://\` / \`https://\` \`source_url\`s are
+downloaded. A row breaking these rules, or whose \`doc_id\` is not a
+slug (\`^\[a-z0-9\_\]+\$\`), is reported with \`action = "error"\`.
+
 ## See also
 
 \[read_knowledge_manifest()\], \[ingest_knowledge_document()\],

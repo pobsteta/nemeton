@@ -56,7 +56,9 @@ run_memory_capped(
 - db_url:
 
   Database URL. When given, the child opens a connection and passes it
-  to `fun` as `con` (only if `fun` takes a `con` argument).
+  to `fun` as `con` (only if `fun` takes a `con` argument). It reaches
+  the child through an environment variable (removed by the child as
+  soon as it is read), never through the call file on disk.
 
 - options:
 

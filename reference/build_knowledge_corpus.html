@@ -17,7 +17,7 @@ drive it asynchronously and render progress."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -211,6 +211,20 @@ rows ingest their body via [ingest_knowledge_document()]; `abstract_only`
 / `link_only` rows ingest a reference-only chunk via
 [ingest_knowledge_reference()]. Documents whose `title` is already in the
 base are skipped (idempotent re-runs).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="security">Security<a class="anchor" aria-label="anchor" href="#security"></a></h2>
+
+
+<p>The manifest is editable from an application, so its paths are not
+trusted. A `local_path` must have an allowed extension (`.pdf`, `.txt`,
+`.md`, `.markdown`, `.rmd`, `.qmd`) and resolve (symbolic links and
+`..` included) under the corpus root: option `nemeton.corpus_root`,
+else the `NEMETON_CORPUS_ROOT` environment variable, else the working
+directory. Relative paths are resolved against that root. Only
+`http://` / `https://` `source_url`s are downloaded. A row breaking
+these rules, or whose `doc_id` is not a slug (`^[a-z0-9_]+$`), is
+reported with `action = "error"`.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

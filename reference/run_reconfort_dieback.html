@@ -23,7 +23,7 @@ continuous-score rasters (EPSG:2154) plus a `run_meta.json`."><meta property="og
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.210.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -177,7 +177,7 @@ continuous-score rasters (EPSG:2154) plus a `run_meta.json`.</p>
 
 <dt id="arg-zone-id">zone_id<a class="anchor" aria-label="anchor" href="#arg-zone-id"></a></dt>
 <dd><p>Scalar monitoring-zone id (resolved to an AOI via the
-`monitoring_zone` table).</p></dd>
+`monitoring_zone` table). Must be a strictly positive integer.</p></dd>
 
 
 <dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>
@@ -264,7 +264,10 @@ PENDING : à revoir après alignement de la version d'iota2.</p></dd>
 
 <dt id="arg-output-dir">output_dir<a class="anchor" aria-label="anchor" href="#arg-output-dir"></a></dt>
 <dd><p>Explicit per-run working directory. Default
-`&lt;cache_dir&gt;/reconfort/run_z&lt;zone_id&gt;_S2&lt;s2_year&gt;`.</p></dd>
+`&lt;cache_dir&gt;/reconfort/run_z&lt;zone_id&gt;_S2&lt;s2_year&gt;`. The directory is locked
+(`.lock`, holding the PID) for the duration of the run; a second run on a
+directory held by a live process aborts. A pre-existing `output_dir` is never
+deleted, whatever `keep_workdir` says.</p></dd>
 
 
 <dt id="arg-geodes-config">geodes_config<a class="anchor" aria-label="anchor" href="#arg-geodes-config"></a></dt>
@@ -289,7 +292,9 @@ working dir instead of downloading. Default `FALSE`.</p></dd>
 
 <dt id="arg-keep-workdir">keep_workdir<a class="anchor" aria-label="anchor" href="#arg-keep-workdir"></a></dt>
 <dd><p>Keep the staged working directory after the run.
-Default `TRUE` (the rasters live there).</p></dd>
+Default `TRUE` (the rasters live there). With `FALSE`, only a directory
+created (or, for the default path, owned) by nemeton is removed, never
+`cache_dir` or one of its ancestors.</p></dd>
 
 
 <dt id="arg-quiet">quiet<a class="anchor" aria-label="anchor" href="#arg-quiet"></a></dt>
