@@ -59,6 +59,66 @@ test_that("dry_run plans without DB or embeddings", {
   })
 })
 
+test_that("dry_run never downloads a PDF (audit 1.0)", {
+  skip_if_not_installed("withr")
+  withr::with_tempdir({
+    man <- .mini_manifest(getwd())
+    man$local_path[1] <- ""
+    man$source_url[1] <- "https://example.org/rapport.pdf"
+    testthat::local_mocked_bindings(.corpus_download = function(url, dest) {
+      stop("dry_run must not download")
+    })
+    pdf_dir <- file.path(getwd(), "pdfs")
+    rep <- build_knowledge_corpus(con = NULL, manifest = man, dry_run = TRUE,
+                                  pdf_dir = pdf_dir)
+    expect_equal(rep$action[rep$doc_id == "doc_full"], "planned")
+    expect_equal(rep$reason[rep$doc_id == "doc_full"], "pdf (to download)")
+    expect_false(dir.exists(pdf_dir))
+
+    # Une URL mal formée n'est pas planifiée.
+    man$source_url[1] <- "file:///etc/rapport.pdf"
+    rep <- build_knowledge_corpus(con = NULL, manifest = man, dry_run = TRUE,
+                                  pdf_dir = pdf_dir)
+    expect_equal(rep$reason[rep$doc_id == "doc_full"], "no ingestible source")
+  })
+})
+
+# ---- cache PDF (audit 1.0) -------------------------------------------
+
+.ligne_pdf <- function(doc_id = "doc_pdf") {
+  data.frame(doc_id = doc_id, local_path = "",
+             source_url = "https://example.org/doc.pdf",
+             stringsAsFactors = FALSE)
+}
+
+test_that("an HTML page served as the PDF is not cached", {
+  pdf_dir <- withr::local_tempdir()
+  testthat::local_mocked_bindings(.corpus_download = function(url, dest) {
+    writeLines("<html><body>Just a moment...</body></html>", dest)
+    0L
+  })
+  expect_null(.resolve_manifest_source(.ligne_pdf(), pdf_dir))
+  expect_length(list.files(pdf_dir, all.files = TRUE, no.. = TRUE), 0L)
+})
+
+test_that("a corrupt cached PDF is discarded and downloaded again", {
+  pdf_dir <- withr::local_tempdir()
+  dest <- file.path(pdf_dir, "doc_pdf.pdf")
+  writeLines("<html>403</html>", dest)  # reliquat d'une version antérieure
+  n <- 0L
+  testthat::local_mocked_bindings(.corpus_download = function(url, dest) {
+    n <<- n + 1L
+    writeBin(c(charToRaw("%PDF-1.7\n"), as.raw(1:20)), dest)
+    0L
+  })
+  expect_identical(.resolve_manifest_source(.ligne_pdf(), pdf_dir), dest)
+  expect_true(.pdf_signature_ok(dest))
+  expect_identical(n, 1L)
+  # Valide : resservi sans nouveau téléchargement.
+  .resolve_manifest_source(.ligne_pdf(), pdf_dir)
+  expect_identical(n, 1L)
+})
+
 
 # ---- real build ------------------------------------------------------
 
