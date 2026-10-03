@@ -989,8 +989,8 @@ FICHES <- list(
     code = "T2", fichier = "fiche-t2-changement_fr.Rmd",
     titre = paste("Chaine de calcul de T2 : l'indicateur ne mesure rien en propre, il",
                   "recopie la continuite N2 quand elle existe, sinon l'age T1",
-                  "plafonne a 100, et remplace les ages inconnus par 50 — d'ou un",
-                  "double comptage possible dans la famille temporelle."),
+                  "plafonne a 100 (age inconnu : NA) — d'ou un double comptage",
+                  "possible dans la famille temporelle."),
     entrees = list(
       list(titre = "Colonne N2 — continuité", lignes = "ou N2_anciennete / N2_anciennet", vers = 1),
       list(titre = "t1_values — âge T1", lignes = "utilisé seulement sans N2", vers = 2)
@@ -998,12 +998,12 @@ FICHES <- list(
     chemins = list(
       list(titre = "N2 comme proxy", lignes = "T2 = N2, écrêté [0, 100]"),
       list(titre = "T1 plafonné", lignes = c("T2 = min(100, âge)",
-                                             "NA remplacés par 50"))
+                                             "NA conservés (plus de 50)"))
     ),
     aval = av("indicateur_t2_changement", "score 0–100, natif",
               "écrêtage natif 0–100", "T", "famille_temporel", "T1 à T3"),
     notes = c(
-      "NA devient 50 sur le chemin 2 : une unité d'âge inconnu se lit comme une unité moyennement stable.",
+      "Un âge inconnu reste NA sur le chemin 2 (il devenait 50 jusqu'à la 0.211.0).",
       "Quand T2 recopie T1, famille_temporel compte deux fois la même grandeur.",
       "Le nom annonce un changement, la valeur mesure une stabilité — haut = stable."
     ),

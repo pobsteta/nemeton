@@ -153,12 +153,15 @@ test_that("indicateur_t2_changement returns numeric vector 0-100", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
-  # No N2 or T1 -> default 50
+  # Ni N2 ni T1 -> NA (plus de 50 par défaut, audit 1.0)
+  units$N2 <- NULL
+  units$N2_anciennete <- NULL
+  units$T1 <- NULL
   result <- indicateur_t2_changement(units)
 
   expect_type(result, "double")
   expect_length(result, 5)
-  expect_true(all(result >= 0 & result <= 100))
+  expect_true(all(is.na(result)))
 })
 
 test_that("indicateur_t2_changement uses N2 column as proxy", {
@@ -217,7 +220,7 @@ test_that("indicateur_t2_changement uses T1 column from units", {
 
   result <- indicateur_t2_changement(units)
 
-  expect_equal(result, c(40, 100, 50))  # NA -> 50 default
+  expect_equal(result, c(40, 100, NA))  # âge inconnu -> NA, plus 50
 })
 
 test_that("indicateur_t2_changement validates inputs", {
@@ -636,7 +639,7 @@ test_that("T2 with N2 column containing values > 100 are capped", {
   expect_equal(result, c(0, 50, 100))
 })
 
-test_that("T2 fallback to t1_values with NA values replaced by 50", {
+test_that("T2 fallback to t1_values keeps unknown ages NA", {
   skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 4)
   # No N2 columns
@@ -644,8 +647,8 @@ test_that("T2 fallback to t1_values with NA values replaced by 50", {
 
   result <- nemeton::indicateur_t2_changement(test_units, t1_values = t1)
 
-  # t1_values used: capped at 100, NA -> 50
-  expect_equal(result, c(30, 50, 100, 50))
+  # t1_values utilisés, plafonnés à 100 ; âge inconnu -> NA (plus 50)
+  expect_equal(result, c(30, NA, 100, NA))
 })
 
 test_that("T2 with T1 column in units (not t1_values argument)", {
@@ -655,11 +658,11 @@ test_that("T2 with T1 column in units (not t1_values argument)", {
 
   result <- nemeton::indicateur_t2_changement(test_units)
 
-  # T1 column used: capped at 100, NA -> 50
-  expect_equal(result, c(25, 50, 90))
+  # Colonne T1 utilisée, plafonnée à 100 ; NA conservé
+  expect_equal(result, c(25, NA, 90))
 })
 
-test_that("T2 default 50 when no N2 or T1 available", {
+test_that("T2 is NA when no N2 or T1 available", {
   skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 5)
 
@@ -667,7 +670,7 @@ test_that("T2 default 50 when no N2 or T1 available", {
 
   expect_type(result, "double")
   expect_length(result, 5)
-  expect_true(all(result == 50))
+  expect_true(all(is.na(result)))
 })
 
 test_that("T2 t1_values wrong length is ignored, falls through", {
@@ -677,8 +680,8 @@ test_that("T2 t1_values wrong length is ignored, falls through", {
   # t1_values has wrong length (2 instead of 3) -> not used
   result <- nemeton::indicateur_t2_changement(test_units, t1_values = c(40, 80))
 
-  # Falls through to T1 column (not present) -> default 50
-  expect_true(all(result == 50))
+  # Pas de colonne T1 non plus -> NA
+  expect_true(all(is.na(result)))
 })
 
 test_that("T2 t1_values non-numeric is ignored", {
@@ -688,8 +691,8 @@ test_that("T2 t1_values non-numeric is ignored", {
   # t1_values is character -> not numeric -> not used
   result <- nemeton::indicateur_t2_changement(test_units, t1_values = c("a", "b"))
 
-  # Falls through to default 50
-  expect_true(all(result == 50))
+  # Aucune source exploitable -> NA
+  expect_true(all(is.na(result)))
 })
 
 test_that("T2 N2_anciennete takes priority over N2", {

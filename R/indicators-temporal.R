@@ -194,28 +194,35 @@ indicateur_t1_anciennete <- function(units,
 # T039: T2 - Stability / Change Rate Index
 # ==============================================================================
 
-#' Calculate Stability / Change Rate Index (T2)
+#' Calculate Temporal Stability Proxy (T2)
 #'
-#' Measures forest stability using N2 (forest continuity/antiquity) as proxy,
-#' following tuto 04 methodology. Falls back to T1 age capped at 100.
+#' Despite its name (\code{changement}), T2 does **not** measure a rate of
+#' change: no time series is read. It is a temporal **stability proxy**
+#' derived from other indicators -- a copy of N2 (forest continuity) when
+#' present, otherwise the T1 stand age capped at 100 -- following tuto 04.
+#' It therefore carries no information of its own, and in the T family it
+#' may duplicate T1.
 #'
 #' @param units An sf object with forest parcels. May contain pre-computed
 #'   columns: N2 (forest continuity) or T1 (stand age).
 #' @param layers A nemeton_layers object (optional). Not directly used but
 #'   kept for interface consistency.
 #' @param t1_values Numeric vector. Pre-computed T1 age values (same length
-#'   as nrow(units)). If NULL and units has no T1 column, T2 defaults to 50.
+#'   as nrow(units)). If NULL and units has no T1 column, T2 is \code{NA}.
 #'
-#' @return Numeric vector of stability scores (0-100).
-#'   100 = very stable (ancient forest), 0 = recent change.
+#' @return Numeric vector of stability proxy scores (0-100), 100 = very
+#'   stable (ancient forest). \code{NA} where the source (N2 or T1) is
+#'   unknown -- no default value.
 #'
 #' @details
-#' **Primary method**: Use N2 (forest continuity/antiquity) column if present
-#' in units. N2 measures continuous forest cover duration, serving as a direct
-#' proxy for temporal stability.
+#' **Primary method**: copy of the N2 (forest continuity/antiquity) column if
+#' present in units, clamped to 0-100.
 #'
-#' **Fallback**: Use T1 stand age capped at 100. Older forests are assumed
-#' more stable.
+#' **Fallback**: T1 stand age (years) capped at 100. Older forests are
+#' assumed more stable.
+#'
+#' A genuine change-rate indicator (e.g. a Sentinel-2 change detection) is
+#' not implemented in T2.
 #'
 #' @family temporal-indicators
 #' @export
@@ -260,8 +267,8 @@ indicateur_t2_changement <- function(units,
   # Try t1_values argument first
   if (!is.null(t1_values) && is.numeric(t1_values) && length(t1_values) == nrow(units)) {
     cli::cli_alert_info("T2: Estimated from T1 age values")
+    # Age inconnu -> NA : pas de stabilite « moyenne » inventee.
     t2 <- pmin(100, t1_values)
-    t2[is.na(t2)] <- 50
     msg_info("indicateur_t2_changement")
     return(t2)
   }
@@ -270,14 +277,13 @@ indicateur_t2_changement <- function(units,
   if ("T1" %in% names(units)) {
     cli::cli_alert_info("T2: Estimated from T1 column")
     t2 <- pmin(100, units$T1)
-    t2[is.na(t2)] <- 50
     msg_info("indicateur_t2_changement")
     return(t2)
   }
 
-  # --- Fallback: default 50 ---
-  cli::cli_alert_warning("T2: No N2 or T1 data available, returning default (50)")
-  rep(50.0, nrow(units))
+  # --- Aucune source : NA (plus de 50 par defaut) ---
+  cli::cli_alert_warning("T2: No N2 or T1 data available, returning NA")
+  rep(NA_real_, nrow(units))
 }
 
 
