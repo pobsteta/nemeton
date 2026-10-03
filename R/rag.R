@@ -353,19 +353,46 @@ enable_rag <- function(con) {
   pdftools::pdf_text(path)
 }
 
+# Une chaîne « ressemble à un chemin » quand elle tient sur une ligne et
+# soit se termine par une extension ingérable, soit commence comme un
+# chemin (/, ./, ../, ~/, C:\), soit est un mot sans espace contenant un
+# séparateur et terminé par une extension. Un texte brut (multi-lignes, ou
+# phrase sans extension finale) n'est pas concerné.
+.looks_like_path <- function(x) {
+  if (grepl("[\r\n]", x) || nchar(x, type = "bytes") > 4096L) return(FALSE)
+  if (grepl("\\.(pdf|txt|md|markdown|rmd|qmd)$", x, ignore.case = TRUE)) return(TRUE)
+  if (grepl("\\s", x)) return(FALSE)
+  grepl("^(/|\\./|\\.\\./|~/|[A-Za-z]:[\\/])", x) ||
+    (grepl("[/\\]", x) && grepl("\\.[A-Za-z0-9]{1,8}$", x) &&
+       !grepl("^[A-Za-z][A-Za-z0-9+.-]*://", x))
+}
+
 # Turn a source argument into a list of segments (text + page number).
 # PDFs become one segment per page; .txt/.md and raw text become a
-# single segment with page = NA.
+# single segment with page = NA. A string that looks like a path but does
+# not name an existing, supported file is an error (it used to be
+# embedded verbatim as if it were the document text).
 .source_to_segments <- function(source) {
   is_path <- is.character(source) && length(source) == 1L && !is.na(source)
-  if (is_path && grepl("\\.pdf$", source, ignore.case = TRUE) && file.exists(source)) {
-    pages <- .pdf_to_text(source)
-    return(Map(function(t, p) list(text = t, page = p), pages, seq_along(pages)))
-  }
-  if (is_path && grepl("\\.(txt|md|markdown)$", source, ignore.case = TRUE) &&
-      file.exists(source)) {
-    txt <- paste(readLines(source, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
-    return(list(list(text = txt, page = NA_integer_)))
+  if (is_path && .looks_like_path(source)) {
+    if (!file.exists(source) || dir.exists(source)) {
+      cli::cli_abort(c(
+        "{.arg source} looks like a file path but {.path {source}} does not exist.",
+        "i" = "Pass an existing .pdf / .txt / .md file, or the raw text itself."
+      ))
+    }
+    if (grepl("\\.pdf$", source, ignore.case = TRUE)) {
+      pages <- .pdf_to_text(source)
+      return(Map(function(t, p) list(text = t, page = p), pages, seq_along(pages)))
+    }
+    if (grepl("\\.(txt|md|markdown|rmd|qmd)$", source, ignore.case = TRUE)) {
+      txt <- paste(readLines(source, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+      return(list(list(text = txt, page = NA_integer_)))
+    }
+    cli::cli_abort(c(
+      "Unsupported file type for {.arg source}: {.path {source}}.",
+      "i" = "Supported: .pdf, .txt, .md, .markdown, .rmd, .qmd."
+    ))
   }
   txt <- paste(as.character(source), collapse = "\n")
   list(list(text = txt, page = NA_integer_))
@@ -518,9 +545,12 @@ enable_rag <- function(con) {
 #' @param con A `DBIConnection`. RAG schema must be enabled
 #'   ([enable_rag()]).
 #' @param source Character. A path to a `.pdf` / `.txt` / `.md` file, or
-#'   a raw text string (used directly when it is not an existing file
-#'   path). PDFs are split one segment per page so chunks carry a
-#'   `page_number`.
+#'   a raw text string. PDFs are split one segment per page so chunks
+#'   carry a `page_number`. A single-line string that looks like a file
+#'   path (ends with a supported extension, starts with `/`, `./`, `~/`,
+#'   ..., or is a space-free path with an extension) must name an
+#'   existing supported file, otherwise an error is raised instead of
+#'   embedding the path itself as text.
 #' @param metadata Named list. Required: `title`, `lang` (ISO 639-1),
 #'   `doc_type` (one of `knowledge_manifest_vocab()$doc_types`:
 #'   `manual`, `note`, `paper`, `regulation`, `report`, `guide`, `law`,

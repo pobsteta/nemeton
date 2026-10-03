@@ -201,6 +201,45 @@ test_that("format_citations(html) escapes fields and only links http(s) (audit 1
 })
 
 
+# ---- Unit: source resolution (audit 1.0) -----------------------------
+
+test_that(".source_to_segments refuses a missing or unsupported file path", {
+  expect_error(nemeton:::.source_to_segments("data-raw/absent.pdf"), "looks like a file path")
+  expect_error(nemeton:::.source_to_segments("/tmp/nope/absent.txt"), "looks like a file path")
+  expect_error(nemeton:::.source_to_segments("refs/rapport.docx"), "looks like a file path")
+  docx <- withr::local_tempfile(fileext = ".docx")
+  writeLines("x", docx)
+  expect_error(nemeton:::.source_to_segments(docx), "Unsupported file type")
+})
+
+test_that(".source_to_segments still embeds legitimate raw text", {
+  raw <- c(
+    "le scolyte de l'epicea, detection fordead crswir",
+    "Mise a jour v1.2 du protocole",
+    "Titre. Auteur, 2020. Source: https://doi.org/x.\n\nAbstract: y",
+    "voir https://example.org/page"
+  )
+  for (t in raw) {
+    seg <- nemeton:::.source_to_segments(t)
+    expect_identical(seg[[1]]$text, t)
+  }
+  md <- withr::local_tempfile(fileext = ".md")
+  writeLines("alpha", md)
+  expect_identical(nemeton:::.source_to_segments(md)[[1]]$text, "alpha")
+})
+
+test_that("ingest_knowledge_document aborts on a missing file path", {
+  con <- local_rag_con()
+  testthat::local_mocked_bindings(
+    .embed_texts = function(texts, ...) stop("must not embed"), .package = "nemeton")
+  expect_error(
+    ingest_knowledge_document(con, "data-raw/references/absent.pdf",
+      metadata = list(title = "T", lang = "fr", doc_type = "paper")),
+    "looks like a file path")
+  expect_equal(nrow(list_knowledge_documents(con)), 0L)
+})
+
+
 # ---- Integration: schema + ingest ------------------------------------
 
 test_that("enable_rag creates the knowledge tables (idempotent)", {

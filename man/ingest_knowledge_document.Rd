@@ -19,9 +19,12 @@ ingest_knowledge_document(
 ([enable_rag()]).}
 
 \item{source}{Character. A path to a `.pdf` / `.txt` / `.md` file, or
-a raw text string (used directly when it is not an existing file
-path). PDFs are split one segment per page so chunks carry a
-`page_number`.}
+a raw text string. PDFs are split one segment per page so chunks
+carry a `page_number`. A single-line string that looks like a file
+path (ends with a supported extension, starts with `/`, `./`, `~/`,
+..., or is a space-free path with an extension) must name an
+existing supported file, otherwise an error is raised instead of
+embedding the path itself as text.}
 
 \item{metadata}{Named list. Required: `title`, `lang` (ISO 639-1),
 `doc_type` (one of `knowledge_manifest_vocab()$doc_types`:
