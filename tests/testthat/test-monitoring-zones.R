@@ -206,7 +206,7 @@ test_that("prune_orphan_zone_caches dry_run reports without deleting", {
     .db_get_query   = function(con, sql, ...) data.frame(id = integer(0)),
     .package = "nemeton")
 
-  res <- prune_orphan_zone_caches(NULL, root, dry_run = TRUE)
+  res <- prune_orphan_zone_caches(NULL, root, dry_run = TRUE, force = TRUE)
   expect_equal(res$zone_id, 99L)
   expect_false(any(res$removed))
   expect_true(dir.exists(d))           # untouched on dry-run
@@ -219,10 +219,55 @@ test_that("prune_orphan_zone_caches ignores non-zone dirs and a missing root", {
     .assert_db_pkgs = function(...) invisible(NULL),
     .db_get_query   = function(con, sql, ...) data.frame(id = integer(0)),
     .package = "nemeton")
-  expect_equal(nrow(prune_orphan_zone_caches(NULL, root)), 0L)   # sentinel2 untouched
+  expect_equal(nrow(prune_orphan_zone_caches(NULL, root, force = TRUE)), 0L)   # sentinel2 untouched
   expect_true(dir.exists(file.path(root, "sentinel2", "S2A_xyz")))
 
   testthat::local_mocked_bindings(
     .assert_db_pkgs = function(...) invisible(NULL), .package = "nemeton")
   expect_equal(nrow(prune_orphan_zone_caches(NULL, file.path(root, "nope-xyz"))), 0L)
+})
+
+test_that("prune_orphan_zone_caches refuses when monitoring_zone is empty (audit 1.0)", {
+  # Base vide = probablement une AUTRE base : tout le cache paraîtrait
+  # orphelin. Rien ne doit être supprimé sans force = TRUE.
+  root <- withr::local_tempdir()
+  d1 <- .mk_zone_dir(root, "fast_alert", 3L)
+  d2 <- .mk_zone_dir(root, "fordead", 4L)
+  testthat::local_mocked_bindings(
+    .assert_db_pkgs = function(...) invisible(NULL),
+    .db_get_query   = function(con, sql, ...) data.frame(id = integer(0)),
+    .package = "nemeton")
+
+  expect_warning(res <- prune_orphan_zone_caches(NULL, root), "Refusing to prune")
+  expect_equal(nrow(res), 0L)
+  expect_true(dir.exists(d1)); expect_true(dir.exists(d2))
+
+  # force = TRUE : comportement historique.
+  res <- prune_orphan_zone_caches(NULL, root, force = TRUE)
+  expect_setequal(res$zone_id, c(3L, 4L))
+  expect_false(dir.exists(d1)); expect_false(dir.exists(d2))
+})
+
+test_that("prune_orphan_zone_caches refuses when the project has no zone (audit 1.0)", {
+  root <- withr::local_tempdir()
+  d <- .mk_zone_dir(root, "fast_alert", 7L)
+  testthat::local_mocked_bindings(
+    .assert_db_pkgs = function(...) invisible(NULL),
+    .db_get_query   = function(con, sql, ...) data.frame(id = c(1L, 2L)),
+    find_zones_by_project = function(con, project_uuid) {
+      if (identical(project_uuid, "known"))
+        data.frame(id = 1L, name = "x_tot") else
+        data.frame(id = integer(0), name = character(0))
+    },
+    .package = "nemeton")
+
+  expect_warning(
+    res <- prune_orphan_zone_caches(NULL, root, project_uuid = "unknown"),
+    "Refusing to prune")
+  expect_equal(nrow(res), 0L)
+  expect_true(dir.exists(d))
+
+  res <- prune_orphan_zone_caches(NULL, root, project_uuid = "known")
+  expect_equal(res$zone_id, 7L)
+  expect_false(dir.exists(d))
 })

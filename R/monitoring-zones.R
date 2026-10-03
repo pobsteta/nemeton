@@ -347,10 +347,18 @@ build_project_monitoring_zones <- function(con, project_name, project_uuid,
 #'   (`fordead`) caches.
 #' @param dry_run Logical. When `TRUE`, report what would be removed
 #'   without deleting anything. Default `FALSE`.
+#' @param project_uuid Optional character scalar (or `NULL`, default). The
+#'   project owning `cache_root`. When given, the prune is refused unless
+#'   at least one zone of this project exists in `monitoring_zone`.
+#' @param force Logical. Safety override, default `FALSE`. Unless `TRUE`,
+#'   nothing is deleted (a warning is raised and an empty result returned)
+#'   when `monitoring_zone` is empty, or when `project_uuid` is given and
+#'   none of its zones is found: both indicate a connection to another (or
+#'   a reset) database, which would make every cache look orphaned.
 #'
 #' @return A `data.frame` (`path`, `zone_id`, `removed`) of the orphan
 #'   directories found, invisibly. `removed` is `FALSE` on a dry-run or a
-#'   failed unlink.
+#'   failed unlink. Zero rows when the prune is refused.
 #'
 #' @seealso [build_project_monitoring_zones()] (the upsert that strands
 #'   the caches), [find_zones_by_project()].
@@ -360,7 +368,9 @@ prune_orphan_zone_caches <- function(con, cache_root,
                                      subdirs = c("fast_alert", "fast_alert_mask",
                                                  "fast_sampling", "fast",
                                                  "fast_raster", "fordead"),
-                                     dry_run = FALSE) {
+                                     dry_run = FALSE,
+                                     project_uuid = NULL,
+                                     force = FALSE) {
   .assert_db_pkgs()
   if (!is.character(cache_root) || length(cache_root) != 1L ||
       is.na(cache_root) || !nzchar(cache_root)) {
@@ -370,8 +380,34 @@ prune_orphan_zone_caches <- function(con, cache_root,
                       removed = logical(0), stringsAsFactors = FALSE)
   if (!dir.exists(cache_root)) return(invisible(empty))
 
+  if (!is.null(project_uuid) &&
+      (!is.character(project_uuid) || length(project_uuid) != 1L ||
+       is.na(project_uuid) || !nzchar(project_uuid))) {
+    cli::cli_abort("{.arg project_uuid} must be a non-empty character scalar or {.code NULL}.")
+  }
+
   rs <- .db_get_query(con, "SELECT id FROM monitoring_zone")
   valid <- if (nrow(rs)) as.integer(rs$id) else integer(0)
+
+  # Garde-fou (audit 1.0) : une base qui ne connaît aucune zone (ou aucune
+  # zone de ce projet) est le signe d'une connexion vers une AUTRE base
+  # (ou d'une base réinitialisée) ; tout le cache passerait pour orphelin
+  # et serait détruit. On refuse alors, sauf force = TRUE explicite.
+  if (!isTRUE(force)) {
+    if (!length(valid)) {
+      cli::cli_warn(c(
+        "Refusing to prune zone caches under {.path {cache_root}}: {.code monitoring_zone} is empty.",
+        "i" = "The connection may point to another database; pass {.code force = TRUE} to prune anyway."))
+      return(invisible(empty))
+    }
+    if (!is.null(project_uuid) &&
+        !nrow(find_zones_by_project(con, project_uuid))) {
+      cli::cli_warn(c(
+        "Refusing to prune zone caches under {.path {cache_root}}: no zone of project {.val {project_uuid}} in {.code monitoring_zone}.",
+        "i" = "The connection may point to another database; pass {.code force = TRUE} to prune anyway."))
+      return(invisible(empty))
+    }
+  }
 
   found <- empty
   for (sd in subdirs) {
