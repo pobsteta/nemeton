@@ -221,6 +221,25 @@ test_that("create_qgis_project rejects an unsafe project_name (audit 1.0)", {
   expect_length(list.files(out), 0L)
 })
 
+test_that("create_qgis_project handles a CRS without EPSG code (audit 1.0)", {
+  skip_if_no_sf()
+  pts <- make_sample_plots()
+  # Lambert-93 décrit en PROJ, sans code EPSG : $epsg vaut NA
+  l93 <- sf::st_crs(paste(
+    "+proj=lcc +lat_0=46.5 +lon_0=3 +lat_1=49 +lat_2=44",
+    "+x_0=700000 +y_0=6600000 +ellps=GRS80 +units=m +no_defs"))
+  pts_proj <- sf::st_transform(pts, l93)
+  expect_true(is.na(sf::st_crs(pts_proj)$epsg))
+  out <- withr::local_tempdir()
+  qgz <- create_qgis_project(pts_proj, output_dir = out, project_name = "noepsg")
+  expect_true(file.exists(qgz))
+
+  # sans CRS du tout : erreur explicite
+  pts_na <- sf::st_set_crs(pts, NA)
+  expect_error(create_qgis_project(pts_na, output_dir = out, project_name = "nocrs"),
+               "no CRS")
+})
+
 test_that("create_qgis_project rejects placettes without plot_id", {
   skip_if_no_sf()
 

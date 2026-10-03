@@ -365,8 +365,16 @@ create_qgis_project <- function(placettes,
       "x" = "Got {.val {project_name}}."
     ))
   }
-  if (sf::st_crs(placettes)$epsg %||% NA != crs) {
-    placettes <- sf::st_transform(placettes, crs)
+  # Comparaison sur les objets crs (et non sur $epsg, NA pour un CRS sans
+  # code EPSG, ce qui faisait planter le `if`). Sans CRS, la reprojection
+  # est impossible : erreur explicite.
+  crs_cible <- sf::st_crs(crs)
+  crs_placettes <- sf::st_crs(placettes)
+  if (is.na(crs_placettes)) {
+    cli::cli_abort("{.arg placettes} has no CRS; set it with {.fn sf::st_set_crs} first.")
+  }
+  if (crs_placettes != crs_cible) {
+    placettes <- sf::st_transform(placettes, crs_cible)
   }
 
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
