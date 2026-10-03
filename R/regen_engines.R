@@ -69,6 +69,23 @@
   stats::setNames(as.list(x), as.character(ids))
 }
 
+# Remplace les `lai_max` manquants (NULL / NA / non fini) d'une liste per-UGF
+# par le défaut du type de peuplement, avec un avertissement qui nomme les ids.
+# Un scalaire (partagé) est laissé tel quel : son cas NA est traité en amont.
+.regen_lai_fill_na <- function(lai_max, lai_def) {
+  if (!is.list(lai_max)) return(lai_max)
+  manq <- vapply(lai_max, function(v)
+    is.null(v) || length(v) != 1L ||
+      !is.finite(suppressWarnings(as.numeric(v))), logical(1))
+  if (!any(manq)) return(lai_max)
+  ids <- names(lai_max)[manq]
+  lai_max[manq] <- list(lai_def)
+  cli::cli_warn(c(
+    "regen_bilan_hydrique(): {length(ids)} unit{?s} without {.arg lai_max}; using the stand-type default ({.val {lai_def}}).",
+    i = "Unit id{?s}: {.val {ids}}."))
+  lai_max
+}
+
 
 # Rattache des colonnes per-unité `precomputed` (data.frame / liste nommée) à
 # `units`, restreintes à `allowed`. Longueur = nrow(units) ou 1 (recyclé).
@@ -130,6 +147,8 @@
 #'   fractions `roots`, …).
 #' @param lai_max Per-unit maximum LAI (e.g. derived from `pai_depuis_nuage()`):
 #'   a scalar, a length-`nrow(units)` vector, or a named list by id.
+#'   `NULL`/`NA` (globally or for a given unit) falls back to a stand-type
+#'   default (5 broadleaved, 4.5 coniferous) with a warning.
 #' @param forest_type Phenology: `"feuillu"`/`"broadleaved"` or
 #'   `"resineux"`/`"coniferous"` (mapped to BILJOU's `broadleaved`/`coniferous`).
 #' @param years Optional integer years to keep from the BILJOU indices before
@@ -184,8 +203,9 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   # faute de clé CDS, et repli LAI satellite non déclenché (grid non nul) ->
   # sans ce garde-fou, BILJOU ne tournait pas et la carte restait vide. L'app
   # doit privilégier une valeur pilotée par la donnée (PAI LiDAR / LAI S2).
+  lai_def <- if (identical(ft, "coniferous")) 4.5 else 5
   if (is.null(lai_max) || (length(lai_max) == 1 && is.na(lai_max))) {
-    lai_max <- if (identical(ft, "coniferous")) 4.5 else 5
+    lai_max <- lai_def
     cli::cli_warn(c(
       "regen_bilan_hydrique(): no {.arg lai_max} supplied; using a stand-type default ({.val {lai_max}}).",
       i = "Provide a LiDAR-derived PAI ({.code pai_depuis_nuage()}) or Sentinel-2/PROSAIL LAI ({.code lai_sentinel2()}) for a data-driven value."))
@@ -200,6 +220,10 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   # sinon biljou_run_grid() le passe entier a chaque point (corruption
   # silencieuse sur resineux). Idem pour un sol per-UGF.
   lai_max <- .regen_per_unit_list(lai_max, points$id, "lai_max")
+  # Audit 1.0 : un NA PAR UNITÉ (UGF sans pixel de canopée dans
+  # lai_max_depuis_pai()) partait tel quel dans BILJOU. On le remplace par le
+  # même défaut par type de peuplement, en nommant les unités concernées.
+  lai_max <- .regen_lai_fill_na(lai_max, lai_def)
   sol     <- .regen_per_unit_list(sol, points$id, "sol")
 
   emit(list(current = "regen_biljou:start", n = nrow(points),
