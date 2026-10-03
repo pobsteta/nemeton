@@ -133,8 +133,9 @@ fallback, never an error.
 \item \code{engine = "meteoland"} — the station-based interpolator (\pkg{meteoland},
 Thornton 1997 + elevation, microclimat brief Option A / chantier P4). It
 interpolates the \strong{daily} SAFRAN pseudo-station series (from
-\code{\link{build_safran_stations}}) onto the DEM grid, aggregates each summer to an
-annual max, then reduces to the requested \code{statistic} — same output contract
+\code{\link{build_safran_stations}}) onto the DEM grid, aggregates each summer to the
+mean of daily maximum temperature (the same quantity as the E-OBS input of
+the KED engine), then reduces to the requested \code{statistic} — same output contract
 as KED, plus a \code{meta$cv} cross-validation block. Whenever \pkg{meteoland} is
 absent, GéoSAS is down, or too few pseudo-stations resolve, it \strong{falls back
 to KED}, so the caller never branches on the engine. For a \strong{daily} raster

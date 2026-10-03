@@ -392,6 +392,10 @@ build_safran_stations <- function(aoi, buffer_m, years, dem,
   stk
 }
 
+# Agregation estivale des Tmax journalieres interpolees par meteoland : la
+# moyenne, alignee sur la voie KED (moyenne estivale E-OBS de tx).
+.METEOLAND_SUMMER_FUN <- "mean"
+
 .eobs_ds_run_meteoland <- function(var, eobs, dem, aoi, buffer_m, resolution,
                                    covariates, statistic, years, max_cells,
                                    cache_path, min_stations = 5L,
@@ -428,8 +432,13 @@ build_safran_stations <- function(aoi, buffer_m, years, dem,
     interp <- .meteoland_build_interpolator(meteo, calibrate = calibrate,
                                             variable = "MaxTemperature")
     grid <- .eobs_ds_stars_grid(dem_n, aoi_buf, max_cells)
-    # var = "tx" -> Tmax estival (max journalier agrégé à l'année).
-    stk <- .meteoland_annual_stack(interp, grid, yrs, "MaxTemperature", "max")
+    # var = "tx" -> moyenne estivale de la Tmax journaliere, comme l'entree
+    # E-OBS de la voie KED (.eobs_summer_by_year, reducer = "mean") : meme
+    # grandeur sous le meme libelle, quel que soit le moteur. (Agreger par
+    # `max` donnait le jour le plus chaud de l'ete, plusieurs degres au-dessus,
+    # sous le libelle « T°max estivale moyenne ».)
+    stk <- .meteoland_annual_stack(interp, grid, yrs, "MaxTemperature",
+                                   .METEOLAND_SUMMER_FUN)
 
     # Même sémantique de réduction que KED. "value" sur pile multi-années -> moyenne.
     reduce_as <- if (identical(statistic, "value")) "mean" else statistic
@@ -821,8 +830,9 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 #' * `engine = "meteoland"` — the station-based interpolator (\pkg{meteoland},
 #'   Thornton 1997 + elevation, microclimat brief Option A / chantier P4). It
 #'   interpolates the **daily** SAFRAN pseudo-station series (from
-#'   [build_safran_stations()]) onto the DEM grid, aggregates each summer to an
-#'   annual max, then reduces to the requested `statistic` — same output contract
+#'   [build_safran_stations()]) onto the DEM grid, aggregates each summer to the
+#'   mean of daily maximum temperature (the same quantity as the E-OBS input of
+#'   the KED engine), then reduces to the requested `statistic` — same output contract
 #'   as KED, plus a `meta$cv` cross-validation block. Whenever \pkg{meteoland} is
 #'   absent, GéoSAS is down, or too few pseudo-stations resolve, it **falls back
 #'   to KED**, so the caller never branches on the engine. For a **daily** raster

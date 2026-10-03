@@ -518,3 +518,29 @@ test_that("eobs_bivariate_n exposes the current per-axis class count", {
   expect_identical(as.integer(nemeton:::.EOBS_BIVARIATE_N), n)
   expect_length(nemeton:::.EOBS_BIVARIATE_COLORS, n * n)
 })
+
+test_that("engine = 'meteoland' aggregates summers by the mean, like KED (audit 1.0)", {
+  skip_if_not_installed("meteoland")
+  skip_if_not_installed("stars")
+  # Meme grandeur que l'entree E-OBS de la voie KED (moyenne estivale de tx),
+  # sous le meme libelle : pas le jour le plus chaud (`max`).
+  expect_identical(.METEOLAND_SUMMER_FUN, "mean")
+  captured <- new.env()
+  testthat::local_mocked_bindings(
+    .meteoland_resolve_dem = function(dem, ...) dem,
+    build_safran_stations = function(...) list(points = data.frame(id = 1:10)),
+    .meteoland_meteo_sf = function(...) data.frame(a = 1:3),
+    .meteoland_build_interpolator = function(...) "interp",
+    .eobs_ds_stars_grid = function(...) "grid",
+    .meteoland_annual_stack = function(interp, grid, years, variable, fun) {
+      assign("fun", fun, envir = captured)
+      stop("arret du test")
+    }
+  )
+  out <- suppressWarnings(.eobs_ds_run_meteoland(
+    "tx", eobs = make_eobs(nyr = 2), dem = make_dem(), aoi = make_aoi(),
+    buffer_m = 20000, resolution = NULL, covariates = "dem",
+    statistic = "mean", years = 2010:2011, max_cells = 2000, cache_path = NULL))
+  expect_null(out)
+  expect_identical(captured$fun, "mean")
+})
