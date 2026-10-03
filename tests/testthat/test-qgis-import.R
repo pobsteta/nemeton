@@ -122,6 +122,29 @@ test_that("validate_field_data warns for species outside the region domain", {
   expect_true(any(v$warnings$field == "espece"))
 })
 
+test_that("validate_field_data reports the actual row of a missing plot_id (audit 1.0)", {
+  pl <- make_placettes()
+  pl$plot_id[3] <- NA
+  v <- validate_field_data(pl, NULL)
+  iss <- v$errors[v$errors$field == "plot_id", , drop = FALSE]
+  expect_equal(nrow(iss), 1L)
+  expect_identical(iss$plot_id, "3")   # et non "1"
+  expect_match(iss$issue, "row 3")
+})
+
+test_that("validate_field_data flags missing or empty tree_id (audit 1.0)", {
+  pl <- make_placettes()
+  tr <- make_arbres(include_bad = FALSE)
+  tr$tree_id[2] <- NA
+  tr$tree_id[4] <- "  "
+  v <- validate_field_data(pl, tr, region = "BFC")
+  expect_false(v$ok)
+  iss <- v$errors[v$errors$field == "tree_id", , drop = FALSE]
+  expect_equal(nrow(iss), 2L)
+  expect_true(all(grepl("tree_id is missing", iss$issue)))
+  expect_identical(iss$plot_id, c("P001", "P002"))
+})
+
 test_that("validate_field_data is happy with clean input", {
   pl <- make_placettes()
   tr <- make_arbres(include_bad = FALSE)

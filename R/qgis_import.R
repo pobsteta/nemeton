@@ -123,12 +123,13 @@ validate_field_data <- function(placettes, arbres = NULL,
                 warnings = .empty_issues()))
   }
 
-  # Missing plot_id
+  # Missing plot_id : on rapporte le numéro de LIGNE fautive (`miss`), pas
+  # le rang dans la liste des fautes.
   miss <- which(is.na(placettes$plot_id) | !nzchar(as.character(placettes$plot_id)))
   if (length(miss)) {
-    issues <- c(issues, list(.mk_issue(issue = "plot_id is missing.",
+    issues <- c(issues, list(.mk_issue(issue = sprintf("plot_id is missing (row %d).", miss),
                                        field = "plot_id",
-                                       plot_id = as.character(seq_along(miss)))))
+                                       plot_id = as.character(miss))))
   }
 
   # Duplicate plot_id
@@ -161,9 +162,21 @@ validate_field_data <- function(placettes, arbres = NULL,
         )))
       }
 
-      # Duplicate (plot_id, tree_id)
+      # tree_id obligatoire (champ requis du schéma) : NA ou vide
+      no_tid <- is.na(arbres$tree_id) | !nzchar(trimws(as.character(arbres$tree_id)))
+      if (any(no_tid)) {
+        rows <- which(no_tid)
+        issues <- c(issues, list(.mk_issue(
+          plot_id = as.character(arbres$plot_id[rows]),
+          field = "tree_id",
+          issue = sprintf("tree_id is missing (arbres row %d).", rows)
+        )))
+      }
+
+      # Duplicate (plot_id, tree_id) — les tree_id manquants sont déjà
+      # signalés ci-dessus et ne comptent pas comme doublons.
       key <- paste(arbres$plot_id, arbres$tree_id, sep = "/")
-      dup <- which(duplicated(key) & !orphans)
+      dup <- which(duplicated(key) & !orphans & !no_tid)
       if (length(dup)) {
         issues <- c(issues, list(.mk_issue(
           plot_id = as.character(arbres$plot_id[dup]),
