@@ -30,7 +30,8 @@ jobs:
             echo "Cycle dev ($desc) — garde-fou de cohérence sauté."
             exit 0
           fi
-          news=$(grep -m1 -oE '[0-9]+\.[0-9]+\.[0-9]+' NEWS.md)
+          # En-tête « # nemeton X.Y.Z », pas le premier numéro venu du fichier.
+          news=$(grep -m1 -E '^# nemeton ' NEWS.md | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
           cff=$(grep -m1 -E '^version:' CITATION.cff | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
           echo "DESCRIPTION=$desc  NEWS=$news  CITATION=$cff"
           if [ -z "$desc" ] || [ "$desc" != "$news" ] || [ "$desc" != "$cff" ]; then

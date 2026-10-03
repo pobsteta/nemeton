@@ -323,7 +323,8 @@ R/utils_i18n.R                → Traductions FR/EN (liste TRANSLATIONS, source 
 # Consignes de release pour ce projet
 
 **Le tag et la release GitHub sont AUTOMATISÉS** par
-`.github/workflows/release.yml` : au push sur `main`, il lit `Version:`
+`.github/workflows/release.yml` : quand le workflow R-CMD-check réussit sur
+`main` (check, tests et couverture), il lit `Version:`
 dans DESCRIPTION et, si c'est une version **stable `X.Y.Z`** dont le tag
 `vX.Y.Z` n'existe pas encore, crée le tag annoté + la release GitHub
 (`--generate-notes`). **Ne plus faire `git tag` / `git push origin vX.Y.Z`

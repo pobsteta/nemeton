@@ -1,7 +1,7 @@
 # tests/testthat/test-uts-calibration-rmqs.R
 # Integrity checks on the F1 calibration artifact
 # inst/extdata/uts_fertilite_rmqs_calibration.csv produced by
-# inst/scripts/calibrate_uts_rmqs.R from the RMQS dataset
+# tools/calibrate_uts_rmqs.R from the RMQS dataset
 # (DOI 10.15454/QSXKGA, Etalab 2.0). This test validates the CSV
 # itself — it does NOT re-download RMQS nor re-run the pipeline.
 
