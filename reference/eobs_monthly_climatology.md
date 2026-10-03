@@ -3,9 +3,10 @@
 Twelve-month climatology (averaged over `years`) of an E-OBS variable at
 a location, for the ombrothermic (Gaussen-Bagnouls) diagram — chart 4 of
 the regional-context click panel (spec 036). Precipitation is summed
-within each month then averaged across years (mm/month); temperature is
-the monthly mean (°C). Reads the full-year daily field (a `SpatRaster`
-with
+within each month then averaged across years (mm/month), counting only
+complete months (a month with a missing day is `NA` for that year);
+temperature is the monthly mean (°C). Reads the full-year daily field (a
+`SpatRaster` with
 [`terra::time`](https://rspatial.github.io/terra/reference/time.html)
 set, or a cached netCDF path), so tx/rr need no new acquisition; the
 Gaussen diagram proper wants mean temperature (`tg`), which has its own

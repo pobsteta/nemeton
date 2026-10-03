@@ -122,7 +122,9 @@ regen_sensibilite(
 
   Directory for the ERA5 `.nc` and per-year microclimate `.tif` caches.
   `NULL` (default) uses a session temp dir; pass a persistent path to
-  reuse expensive runs.
+  reuse expensive runs. Microclimate `.tif` caches are keyed by year AND
+  a hash of the grid (extent, resolution, CRS), `reqhgt`, `mois_ete`,
+  the ERA5 point and the PAI source, so a shared directory is safe.
 
 - progress_callback:
 

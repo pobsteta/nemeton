@@ -51,12 +51,16 @@ build_knowledge_corpus(
 - dry_run:
 
   Logical. Parse and plan only — no DB connection, no embedding API
-  calls. Default \`FALSE\`.
+  calls, no download: a \`full\` row is planned from the existence of
+  its \`local_path\` or the shape of its PDF \`source_url\` (reason
+  \`"pdf (to download)"\` when not yet cached). Default \`FALSE\`.
 
 - pdf_dir:
 
   Directory for downloaded PDFs. Default a per-user cache dir under
-  \[tools::R_user_dir()\].
+  \[tools::R_user_dir()\]. A cached file is reused only when it carries
+  the PDF file signature; downloads are written to a temporary file and
+  moved into place once checked.
 
 - api_key:
 

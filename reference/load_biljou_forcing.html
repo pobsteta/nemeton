@@ -33,7 +33,7 @@ can fall back."><meta property="og:image" content="https://pobsteta.github.io/ne
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -179,7 +179,8 @@ can fall back.</p>
 
 
 <dt id="arg-years">years<a class="anchor" aria-label="anchor" href="#arg-years"></a></dt>
-<dd><p>Integer year(s) to fetch.</p></dd>
+<dd><p>Integer year(s) to fetch: whole years between 1940 and the
+current year. Required unless <code>raw</code> is given (then <code>NULL</code> keeps every year).</p></dd>
 
 
 <dt id="arg-source">source<a class="anchor" aria-label="anchor" href="#arg-source"></a></dt>
@@ -216,8 +217,10 @@ Penman estimate (<code>latitude</code> defaults to the AOI centroid).</p></dd>
 <code>list(current = &lt;key&gt;, ...)</code> payload (monitoring pattern). Keys:
 <code>"biljou:safran_unit"</code> (<code>i</code>/<code>n</code>/<code>id</code>),
 <code>"biljou:era5_download"</code> (<code>i</code>/<code>n</code>/<code>id</code>/<code>year</code>),
-<code>"biljou:complete"</code>, <code>"biljou:unavailable"</code>. The app maps these to
-bottom-right notifications during the forcing download.</p></dd>
+<code>"biljou:complete"</code> (<code>n_units</code>, <code>missing_ids</code>),
+<code>"biljou:unavailable"</code> (<code>reason</code>, <code>missing_ids</code>). The app maps these to
+bottom-right notifications during the forcing download. A callback error is
+never fatal.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -227,7 +230,8 @@ bottom-right notifications during the forcing download.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A per-unit named list of <code>meteo</code> data frames (or a single <code>data.frame</code>),
-or <code>NULL</code> on graceful degradation.</p>
+or <code>NULL</code> on graceful degradation. Units whose SAFRAN request failed are
+left out of the list, with a warning naming their ids.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

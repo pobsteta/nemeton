@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -317,8 +317,8 @@
 </tr><tr><td>2</td>
 <td>Robustesse des données : clés de cache (ERA5, microclimat, vent, S2 par emprise, <code>.done</code> RECONFORT), téléchargements atomiques, étés incomplets, transactions, migration 0007, <code>prune_orphan_zone_caches</code>
 </td>
-<td>0.209</td>
-<td>⬜</td>
+<td><strong>v0.209.0</strong></td>
+<td>✅ livré, brief app émis</td>
 </tr><tr><td>3</td>
 <td>Sécurité : <code>eval</code> du cfg Python, <code>verify=False</code> pygeodes, manifeste RAG, <code>format_citations</code>, <code>project_name</code>, <code>zone_id</code>/<code>output_dir</code>, URL de base dans les messages</td>
 <td>0.210</td>
@@ -332,7 +332,8 @@
 <td>0.212</td>
 <td>⬜</td>
 </tr></tbody></table><p><strong>Journal</strong> — <em>2026-10-02</em> (<strong>v0.208.0</strong>) : vague 1 livrée, dix correctifs, chacun avec un test qui échouait avant. Valeurs changées côté app : volumes de desserte (<code>taux × horizon</code> au lieu de <code>P1 × taux × horizon</code>), indice de priorité de régénération (le volet exposition compte enfin), R3 sans climat, R4 des départements 01-09. Brief : <code>specs/audit-1.0/brief-nemetonshiny-0.208.0.md</code>.</p>
-<p><strong>Prochaine étape</strong> : vague 2 (robustesse des données).</p>
+<p><strong>Journal</strong> — <em>2026-10-03</em> (<strong>v0.209.0</strong>) : vague 2 livrée, 25 correctifs menés par trois agents en parallèle (worktrees isolés) puis fusionnés ; un conflit dans <code>regen_engines.R</code> (nom de cache ERA5 par point × écriture atomique validée). Côté app : <code>prune_orphan_zone_caches(project_uuid =)</code> à câbler, purge des alertes <code>pending</code> sur un run sans alerte, tendances E-OBS par décennie. Brief : <code>specs/audit-1.0/brief-nemetonshiny-0.209.0.md</code>.</p>
+<p><strong>Prochaine étape</strong> : vague 3 (sécurité).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-clos-côté-cœur--production-ifn-par-petits-domaines-fay-herriot-spec-054">Chantier CLOS côté cœur — Production IFN par petits domaines, Fay-Herriot (spec 054)<a class="anchor" aria-label="anchor" href="#chantier-clos-c%C3%B4t%C3%A9-c%C5%93ur--production-ifn-par-petits-domaines-fay-herriot-spec-054"></a></h1>

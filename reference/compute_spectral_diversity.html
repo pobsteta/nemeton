@@ -17,7 +17,7 @@ result to both indicator functions to avoid running biodivMapR twice."><meta pro
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -188,7 +188,11 @@ temporary directory).</p></dd>
 <code>output_dir</code> already contains the diversity rasters from a prior
 run, reuse them instead of re-running the (expensive) biodivMapR
 pipeline. Pass a persistent <code>output_dir</code> (e.g. a project cache)
-to benefit; the default <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile()</a></code> directory never hits.</p></dd>
+to benefit; the default <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile()</a></code> directory never hits. Reuse
+requires the cache key written by that prior run (a hash of the
+reflectance and mask fingerprints, <code>window_size</code> and
+<code>options</code>) to match the current inputs; otherwise the pipeline is
+re-run.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -46,6 +46,8 @@ regen_bilan_hydrique(
   Per-unit maximum LAI (e.g. derived from
   [`pai_depuis_nuage()`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md)):
   a scalar, a length-`nrow(units)` vector, or a named list by id.
+  `NULL`/`NA` (globally or for a given unit) falls back to a stand-type
+  default (5 broadleaved, 4.5 coniferous) with a warning.
 
 - forest_type:
 

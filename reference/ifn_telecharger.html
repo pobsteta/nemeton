@@ -11,7 +11,7 @@ asking the user a question — see the note below."><meta property="og:image" co
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -134,12 +134,16 @@ asking the user a question — see the note below.</p>
 
 
 <dt id="arg-campagne">campagne<a class="anchor" aria-label="anchor" href="#arg-campagne"></a></dt>
-<dd><p>Campaign year to fetch. <code>NULL</code> (default) resolves the most
-recent one via <code><a href="ifn_campagne_disponible.html">ifn_campagne_disponible</a></code>.</p></dd>
+<dd><p>Campaign year to fetch: a single year, 2005 or later.
+<code>NULL</code> (default) resolves the most recent one via
+<code><a href="ifn_campagne_disponible.html">ifn_campagne_disponible</a></code>.</p></dd>
 
 
 <dt id="arg-force">force<a class="anchor" aria-label="anchor" href="#arg-force"></a></dt>
-<dd><p>Re-download even when the archive is already cached.</p></dd>
+<dd><p>Re-download even when the archive is already cached. A cached
+archive that cannot be read back (truncated download) is discarded and
+downloaded again; a download is written to a temporary file and moved
+into place only once its zip directory reads back.</p></dd>
 
 </dl></div>
     <div class="section level2">

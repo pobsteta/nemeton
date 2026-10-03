@@ -15,7 +15,7 @@ its biljou argument) and indice_priorite_regen."><meta property="og:image" conte
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -162,7 +162,8 @@ root fractions <code>roots</code>, …).</p></dd>
 <dt id="arg-lai-max">lai_max<a class="anchor" aria-label="anchor" href="#arg-lai-max"></a></dt>
 <dd><p>Per-unit maximum LAI (e.g. derived from
 <code><a href="pai_depuis_nuage.html">pai_depuis_nuage()</a></code>): a scalar, a length-<code>nrow(units)</code> vector, or a
-named list by id.</p></dd>
+named list by id. <code>NULL</code>/<code>NA</code> (globally or for a given unit) falls back to
+a stand-type default (5 broadleaved, 4.5 coniferous) with a warning.</p></dd>
 
 
 <dt id="arg-forest-type">forest_type<a class="anchor" aria-label="anchor" href="#arg-forest-type"></a></dt>

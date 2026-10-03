@@ -45,7 +45,8 @@ load_biljou_forcing(
 
 - years:
 
-  Integer year(s) to fetch.
+  Integer year(s) to fetch: whole years between 1940 and the current
+  year. Required unless `raw` is given (then `NULL` keeps every year).
 
 - source:
 
@@ -85,9 +86,10 @@ load_biljou_forcing(
   Optional function called at each step with a
   `list(current = <key>, ...)` payload (monitoring pattern). Keys:
   `"biljou:safran_unit"` (`i`/`n`/`id`), `"biljou:era5_download"`
-  (`i`/`n`/`id`/`year`), `"biljou:complete"`, `"biljou:unavailable"`.
-  The app maps these to bottom-right notifications during the forcing
-  download.
+  (`i`/`n`/`id`/`year`), `"biljou:complete"` (`n_units`, `missing_ids`),
+  `"biljou:unavailable"` (`reason`, `missing_ids`). The app maps these
+  to bottom-right notifications during the forcing download. A callback
+  error is never fatal.
 
 - ...:
 
@@ -96,7 +98,8 @@ load_biljou_forcing(
 ## Value
 
 A per-unit named list of `meteo` data frames (or a single `data.frame`),
-or `NULL` on graceful degradation.
+or `NULL` on graceful degradation. Units whose SAFRAN request failed are
+left out of the list, with a warning naming their ids.
 
 ## See also
 

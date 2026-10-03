@@ -17,7 +17,7 @@ bivariate map."><meta property="og:image" content="https://pobsteta.github.io/ne
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -161,8 +161,8 @@ year). Engine path.</p></dd>
 
 
 <dt id="arg-years">years<a class="anchor" aria-label="anchor" href="#arg-years"></a></dt>
-<dd><p>Optional numeric years matching the raster layers (default
-<code>seq_len(nlyr)</code>).</p></dd>
+<dd><p>Optional numeric years matching the raster layers (default:
+the years of <code>terra::time(tx)</code>, else <code>seq_len(nlyr)</code>).</p></dd>
 
 
 <dt id="arg-buffer-m">buffer_m<a class="anchor" aria-label="anchor" href="#arg-buffer-m"></a></dt>
@@ -172,11 +172,11 @@ year). Engine path.</p></dd>
 
 <dt id="arg-breaks">breaks<a class="anchor" aria-label="anchor" href="#arg-breaks"></a></dt>
 <dd><p>Optional <code>list(tmax=, precip=)</code> of two cut points each for a
-fixed classification; <code>NULL</code> → tertiles.</p></dd>
+fixed classification, in °C/decade and mm/decade; <code>NULL</code> → tertiles.</p></dd>
 
 
 <dt id="arg-precomputed">precomputed<a class="anchor" aria-label="anchor" href="#arg-precomputed"></a></dt>
-<dd><p>Optional pre-built trends: an <code>sf</code> with <code>trend_tmax</code>
+<dd><p>Optional pre-built trends (per decade): an <code>sf</code> with <code>trend_tmax</code>
 / <code>trend_precip</code>, or a 2-layer <code>SpatRaster</code> named
 <code>trend_tmax</code>/<code>trend_precip</code>.</p></dd>
 
@@ -188,13 +188,15 @@ fixed classification; <code>NULL</code> → tertiles.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An <code>sf</code> of E-OBS cell-centre points within the buffered area, with
-<code>trend_tmax</code>, <code>trend_precip</code>, <code>classe_tmax</code>, <code>classe_precip</code>
-(1-3) and <code>classe_bivariee</code> (1-9).</p>
+<code>trend_tmax</code> (°C/decade), <code>trend_precip</code> (mm/decade),
+<code>classe_tmax</code>, <code>classe_precip</code> (1-3) and <code>classe_bivariee</code> (1-9).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Trends are the least-squares slope of the per-year summer values against the
-year. Classes are tertiles by default (data-driven over the cropped area), or
+year, expressed <strong>per decade</strong> (°C/decade for <code>trend_tmax</code>, mm/decade
+for <code>trend_precip</code>) — the same unit as <code><a href="eobs_downscale.html">eobs_downscale</a></code> and
+<code><a href="eobs_trend_fit.html">eobs_trend_fit</a></code>. Classes are tertiles by default (data-driven over the cropped area), or
 fixed <code>breaks</code>. <code>classe_bivariee</code> runs 1-9 with
 <code>(classe_tmax - 1) * 3 + classe_precip</code>; "hot &amp; dry" is
 <code>classe_tmax == 3 &amp; classe_precip == 1</code>.</p>

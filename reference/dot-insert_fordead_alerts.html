@@ -11,7 +11,7 @@ snapping (spec 008 §15 Phase B).'><meta property="og:image" content="https://po
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -136,7 +136,10 @@ snapping (spec 008 §15 Phase B).</p>
 <dt id="arg-alerts-sf">alerts_sf<a class="anchor" aria-label="anchor" href="#arg-alerts-sf"></a></dt>
 <dd><p>An sf POINT (centroids) with columns `trigger_date`,
 `confidence_class`, `stress_index` and, when available, `n_pixels`,
-`area_m2`. CRS assumed EPSG:2154 when absent.</p></dd>
+`area_m2`. CRS assumed EPSG:2154 when absent. A zero-row sf means a
+successful run without alert: with `replace = TRUE` the prior
+**pending** alerts are still purged. `NULL` (failed
+post-processing) leaves the table untouched.</p></dd>
 
 
 <dt id="arg-zone-id">zone_id<a class="anchor" aria-label="anchor" href="#arg-zone-id"></a></dt>
@@ -144,9 +147,12 @@ snapping (spec 008 §15 Phase B).</p>
 
 
 <dt id="arg-replace">replace<a class="anchor" aria-label="anchor" href="#arg-replace"></a></dt>
-<dd><p>Logical. When `TRUE` (default) every prior
+<dd><p>Logical. When `TRUE` (default) every prior **pending**
 `(zone_id, alert_type)` alert is deleted before insertion, making the
-call idempotent across re-runs. When `FALSE`, rows are appended.</p></dd>
+call idempotent across re-runs. Alerts already validated in the field are
+kept, and a new alert within 50 m of one of them is not re-inserted
+(since 0.208.0). When `FALSE`, rows are appended (the
+caller is then responsible for avoiding key collisions).</p></dd>
 
 </dl></div>
     <div class="section level2">

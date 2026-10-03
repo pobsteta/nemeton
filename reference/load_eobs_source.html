@@ -29,7 +29,7 @@ as ERA5). Not runnable in CI; validated on real data. Degrades to NULL.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -181,7 +181,8 @@ as ERA5). Not runnable in CI; validated on real data. Degrades to <code>NULL</co
 
 
 <dt id="arg-months">months<a class="anchor" aria-label="anchor" href="#arg-months"></a></dt>
-<dd><p>Summer months to reduce over (default <code>6:8</code>, JJA).</p></dd>
+<dd><p>Summer months to reduce over (default <code>6:8</code>, JJA). A year
+with less than 90% of the days of these months is dropped with a warning.</p></dd>
 
 
 <dt id="arg-source">source<a class="anchor" aria-label="anchor" href="#arg-source"></a></dt>
@@ -211,7 +212,8 @@ resolution (default <code>"0.1deg"</code>) for the CDS request.</p></dd>
 
 <dt id="arg-period">period<a class="anchor" aria-label="anchor" href="#arg-period"></a></dt>
 <dd><p>Optional explicit CDS period block (e.g. <code>"2011_2024"</code>);
-inferred from <code>years</code> when <code>NULL</code>.</p></dd>
+inferred from <code>years</code> when <code>NULL</code>; years spanning several CDS blocks
+are downloaded block by block and merged.</p></dd>
 
 
 <dt id="arg-progress-callback">progress_callback<a class="anchor" aria-label="anchor" href="#arg-progress-callback"></a></dt>
@@ -219,7 +221,8 @@ inferred from <code>years</code> when <code>NULL</code>.</p></dd>
 <code>list(current = &lt;key&gt;, ...)</code> payload (monitoring pattern). Keys:
 <code>"eobs:cds_request"</code>, <code>"eobs:cds_download_done"</code>, <code>"eobs:unzip"</code>,
 <code>"eobs:read"</code>, <code>"eobs:reduce"</code>, <code>"eobs:complete"</code>,
-<code>"eobs:unavailable"</code>. The app maps these to bottom-right notifications.</p></dd>
+<code>"eobs:unavailable"</code> (<code>reason</code>, and <code>message</code> = the underlying
+error). The app maps these to bottom-right notifications.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -229,7 +232,7 @@ inferred from <code>years</code> when <code>NULL</code>.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A per-year summer <code>SpatRaster</code> (layers named by year), or <code>NULL</code> on
-graceful degradation.</p>
+graceful degradation (with a warning carrying the underlying error message).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -127,7 +127,7 @@ opposer au prochain fork qui se présentera comme un raccourci.
 | Vague | Contenu | Release | État |
 |----|----|----|----|
 | 1 | Corrections de calcul : B2, R3, priorité reGénération, `volume_mobilisable`, chasse, `nemeton_compute`, normalisation/familles, tuile MGRS, validations terrain, `%||%` | **v0.208.0** | ✅ livré, brief app émis |
-| 2 | Robustesse des données : clés de cache (ERA5, microclimat, vent, S2 par emprise, `.done` RECONFORT), téléchargements atomiques, étés incomplets, transactions, migration 0007, `prune_orphan_zone_caches` | 0.209 | ⬜ |
+| 2 | Robustesse des données : clés de cache (ERA5, microclimat, vent, S2 par emprise, `.done` RECONFORT), téléchargements atomiques, étés incomplets, transactions, migration 0007, `prune_orphan_zone_caches` | **v0.209.0** | ✅ livré, brief app émis |
 | 3 | Sécurité : `eval` du cfg Python, `verify=False` pygeodes, manifeste RAG, `format_citations`, `project_name`, `zone_id`/`output_dir`, URL de base dans les messages | 0.210 | ⬜ |
 | 4 | Paquet propre : `.Rbuildignore` (archive de 5,4 Go dans `data/`), DESCRIPTION, `.Rd` (8 WARNING → 0), roxygen détachés, non-ASCII, CI | 0.211 | ⬜ |
 | 5 | Contrat d’API : retours vecteur / `sf`, `lang`, 313 exports à trier | 0.212 | ⬜ |
@@ -139,7 +139,15 @@ côté app : volumes de desserte (`taux × horizon` au lieu de
 exposition compte enfin), R3 sans climat, R4 des départements 01-09.
 Brief : `specs/audit-1.0/brief-nemetonshiny-0.208.0.md`.
 
-**Prochaine étape** : vague 2 (robustesse des données).
+**Journal** — *2026-10-03* (**v0.209.0**) : vague 2 livrée, 25
+correctifs menés par trois agents en parallèle (worktrees isolés) puis
+fusionnés ; un conflit dans `regen_engines.R` (nom de cache ERA5 par
+point × écriture atomique validée). Côté app :
+`prune_orphan_zone_caches(project_uuid =)` à câbler, purge des alertes
+`pending` sur un run sans alerte, tendances E-OBS par décennie. Brief :
+`specs/audit-1.0/brief-nemetonshiny-0.209.0.md`.
+
+**Prochaine étape** : vague 3 (sécurité).
 
 ------------------------------------------------------------------------
 

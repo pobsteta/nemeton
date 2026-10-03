@@ -17,7 +17,7 @@ drive it asynchronously and render progress."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -174,12 +174,16 @@ only after personally clearing their licenses. Default `FALSE`.</p></dd>
 
 <dt id="arg-dry-run">dry_run<a class="anchor" aria-label="anchor" href="#arg-dry-run"></a></dt>
 <dd><p>Logical. Parse and plan only — no DB connection, no
-embedding API calls. Default `FALSE`.</p></dd>
+embedding API calls, no download: a `full` row is planned from the
+existence of its `local_path` or the shape of its PDF `source_url`
+(reason `"pdf (to download)"` when not yet cached). Default `FALSE`.</p></dd>
 
 
 <dt id="arg-pdf-dir">pdf_dir<a class="anchor" aria-label="anchor" href="#arg-pdf-dir"></a></dt>
 <dd><p>Directory for downloaded PDFs. Default a per-user cache
-dir under [tools::R_user_dir()].</p></dd>
+dir under [tools::R_user_dir()]. A cached file is reused only when it
+carries the PDF file signature; downloads are written to a temporary file
+and moved into place once checked.</p></dd>
 
 
 <dt id="arg-api-key">api_key<a class="anchor" aria-label="anchor" href="#arg-api-key"></a></dt>

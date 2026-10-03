@@ -62,8 +62,10 @@ compute_dtm_chm_from_laz(
 
 - aoi:
 
-  Optional \`sf\` / \`sfc\`. When supplied, the output rasters are
-  cropped (and masked) to this AOI.
+  Optional \`sf\` / \`sfc\`. When supplied, the returned rasters are
+  cropped (and masked) copies written under \`aoi/\` in the output
+  directories, keyed by the AOI; the shared \`dtm.tif\` / \`chm.tif\`
+  cache always keeps the full tile extent.
 
 - ncores:
 
@@ -73,7 +75,11 @@ compute_dtm_chm_from_laz(
 - overwrite:
 
   Logical. Re-derive even if \`dtm.tif\` / \`chm.tif\` already exist in
-  the output directories. Default \`FALSE\`.
+  the output directories. Default \`FALSE\`. An existing pair is reused
+  only when its \`.key\` sidecar matches the current tiles and
+  resolution and both rasters read back; otherwise it is rebuilt.
+  Outputs are written to temporary files and moved into place only once
+  complete.
 
 - verbose:
 

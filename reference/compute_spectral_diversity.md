@@ -64,7 +64,9 @@ compute_spectral_diversity(
   the (expensive) biodivMapR pipeline. Pass a persistent `output_dir`
   (e.g. a project cache) to benefit; the default
   [`tempfile()`](https://rdrr.io/r/base/tempfile.html) directory never
-  hits.
+  hits. Reuse requires the cache key written by that prior run (a hash
+  of the reflectance and mask fingerprints, `window_size` and `options`)
+  to match the current inputs; otherwise the pipeline is re-run.
 
 ## Value
 

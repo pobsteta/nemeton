@@ -53,7 +53,8 @@ load_eobs_source(
 
 - months:
 
-  Summer months to reduce over (default `6:8`, JJA).
+  Summer months to reduce over (default `6:8`, JJA). A year with less
+  than 90% of the days of these months is dropped with a warning.
 
 - source:
 
@@ -84,7 +85,8 @@ load_eobs_source(
 - period:
 
   Optional explicit CDS period block (e.g. `"2011_2024"`); inferred from
-  `years` when `NULL`.
+  `years` when `NULL`; years spanning several CDS blocks are downloaded
+  block by block and merged.
 
 - progress_callback:
 
@@ -92,8 +94,8 @@ load_eobs_source(
   `list(current = <key>, ...)` payload (monitoring pattern). Keys:
   `"eobs:cds_request"`, `"eobs:cds_download_done"`, `"eobs:unzip"`,
   `"eobs:read"`, `"eobs:reduce"`, `"eobs:complete"`,
-  `"eobs:unavailable"`. The app maps these to bottom-right
-  notifications.
+  `"eobs:unavailable"` (`reason`, and `message` = the underlying error).
+  The app maps these to bottom-right notifications.
 
 - ...:
 
@@ -102,7 +104,8 @@ load_eobs_source(
 ## Value
 
 A per-year summer `SpatRaster` (layers named by year), or `NULL` on
-graceful degradation.
+graceful degradation (with a warning carrying the underlying error
+message).
 
 ## See also
 

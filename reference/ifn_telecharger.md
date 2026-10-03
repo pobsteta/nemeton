@@ -18,13 +18,16 @@ ifn_telecharger(dest_dir, campagne = NULL, force = FALSE)
 
 - campagne:
 
-  Campaign year to fetch. `NULL` (default) resolves the most recent one
-  via
+  Campaign year to fetch: a single year, 2005 or later. `NULL` (default)
+  resolves the most recent one via
   [`ifn_campagne_disponible`](https://pobsteta.github.io/nemeton/reference/ifn_campagne_disponible.md).
 
 - force:
 
-  Re-download even when the archive is already cached.
+  Re-download even when the archive is already cached. A cached archive
+  that cannot be read back (truncated download) is discarded and
+  downloaded again; a download is written to a temporary file and moved
+  into place only once its zip directory reads back.
 
 ## Value
 

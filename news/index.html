@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,57 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.209.0" id="nemeton-02090-2026-10-03">nemeton 0.209.0 (2026-10-03)<a class="anchor" aria-label="anchor" href="#nemeton-02090-2026-10-03"></a></h2>
+<p>Deuxième vague de l’audit de pré-version 1.0 : <strong>robustesse des données</strong>. Vingt-cinq correctifs : caches qui servaient les données d’un autre point ou d’une autre emprise, fichiers partiels pris pour complets, transactions manquantes, pertes de données silencieuses.</p>
+<div class="section level4">
+<h4 id="fixed--caches-qui-servaient-les-données-dun-autre-point-0-209-0">Fixed — caches qui servaient les données d’un autre point<a class="anchor" aria-label="anchor" href="#fixed--caches-qui-servaient-les-donn%C3%A9es-dun-autre-point-0-209-0"></a></h4>
+<ul><li>
+<strong>ERA5</strong> : le fichier combiné était retrouvé par la seule année ; deux points (ou deux projets) partageant un cache lisaient le forçage du premier. Nom <code>era5_&lt;lon&gt;_&lt;lat&gt;_&lt;annee&gt;…</code>, et cache par point dans BILJOU.</li>
+<li>
+<strong>Microclimat</strong> : <code>cache_&lt;annee&gt;_tmax.tif</code> ne dépendait que de l’année. La clé couvre désormais emprise, résolution, CRS, <code>reqhgt</code>, <code>mois_ete</code>, position et source du PAI.</li>
+<li>
+<strong>Vent NASA POWER</strong> (L1, R2) : <code>nasapower_wind.rds</code> est indexé par la position.</li>
+<li>
+<strong>Scènes Sentinel-2 en cache</strong> : le saut « scène déjà en cache » ne vérifiait que l’existence du fichier, pas son emprise. Une petite zone ingérée d’abord privait la zone <code>_tot</code> de pixels. L’emprise est contrôlée.</li>
+<li>
+<strong>RECONFORT</strong> : le marqueur d’idempotence <code>.done</code> dépend de la fenêtre AOI et du CRS ; une scène est recadrée dans un dossier temporaire puis renommée.</li>
+<li>
+<strong>Diversité spectrale</strong> (B4, L3) : <code>reuse_existing</code> ne réutilise que si la clé des entrées (réflectance, masque, fenêtre, options) correspond.</li>
+<li>
+<strong>LiDAR</strong> : le MNT/MNH en cache porte une clé (dalles, résolution) ; le rognage AOI se fait sur une copie, plus sur le cache partagé.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="fixed--fichiers-partiels-pris-pour-complets-0-209-0">Fixed — fichiers partiels pris pour complets<a class="anchor" aria-label="anchor" href="#fixed--fichiers-partiels-pris-pour-complets-0-209-0"></a></h4>
+<p>Écriture atomique (temporaire voisin, vérification, renommage) et cache illisible supprimé au lieu d’être resservi : archive IFN (timeout relevé, <code>campagne</code> validée), carroyage INSEE, NetCDF ERA5 mensuels et combinés, COG FAST, PDF du corpus (signature <code>%PDF</code> vérifiée).</p>
+</div>
+<div class="section level4">
+<h4 id="fixed--séries-climatiques-0-209-0">Fixed — séries climatiques<a class="anchor" aria-label="anchor" href="#fixed--s%C3%A9ries-climatiques-0-209-0"></a></h4>
+<ul><li>
+<strong>E-OBS</strong> : un été couvert à moins de 90 % est écarté avec un avertissement (avant : moyenne de juin seul, cumul de pluie sur un mois) ; des années à cheval sur deux blocs CDS donnent un résultat au lieu de <code>NULL</code> ; les erreurs gardent leur message (avertissement et champ <code>message</code> de <code>eobs:unavailable</code>).</li>
+<li>
+<strong>Tendances E-OBS</strong> : <code><a href="../reference/tendances_estivales_eobs.html">tendances_estivales_eobs()</a></code> rendait une pente <strong>par an</strong> alors que <code><a href="../reference/eobs_downscale.html">eobs_downscale()</a></code> et <code><a href="../reference/eobs_trend_fit.html">eobs_trend_fit()</a></code> sont par décennie. Les trois partagent désormais un seul calcul, <strong>par décennie</strong> (valeurs × 10).</li>
+<li>
+<strong>Diagramme ombrothermique</strong> : un jour manquant comptait 0 mm ; seuls les mois complets sont cumulés.</li>
+<li>
+<strong>BILJOU</strong> : un <code>lai_max</code> NA par unité prend la valeur par défaut du type de peuplement (avec avertissement) ; une requête SAFRAN en échec est signalée avec les unités manquantes (<code>missing_ids</code>, <code>reason</code>) ; <code>years</code> est validé.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="fixed--base-de-données-et-suivi-sanitaire-0-209-0">Fixed — base de données et suivi sanitaire<a class="anchor" aria-label="anchor" href="#fixed--base-de-donn%C3%A9es-et-suivi-sanitaire-0-209-0"></a></h4>
+<ul><li>Suppression et recréation des zones d’un projet dans <strong>une seule transaction</strong> ; placettes insérées dans la transaction de leur zone ; validations terrain dans une transaction, <code>validated_at</code> en UTC.</li>
+<li>
+<code><a href="../reference/prune_orphan_zone_caches.html">prune_orphan_zone_caches()</a></code> refuse de purger quand la base connectée ne connaît aucune zone (nouveaux arguments <code>project_uuid</code>, <code>force</code>).</li>
+<li>Migration 0007 : refusée si la table <code>alert</code> existante contient des lignes (au lieu de la supprimer).</li>
+<li>
+<code><a href="../reference/ingest_health_validation.html">ingest_health_validation()</a></code> : un stade inconnu (ou <code>"sain "</code> avec une espace) ne vaut plus « dépérissement confirmé » ; <code>reason = "unknown_stade"</code>.</li>
+<li>Un run FORDEAD ou RECONFORT réussi <strong>sans alerte</strong> purge les alertes <code>pending</code> précédentes (les validées restent).</li>
+</ul></div>
+<div class="section level4">
+<h4 id="security-0-209-0">Security<a class="anchor" aria-label="anchor" href="#security-0-209-0"></a></h4>
+<ul><li>URL signées (jetons SAS/Theia) retirées des événements et des journaux.</li>
+<li>Mot de passe masqué dans les messages d’erreur sur l’URL de base.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.208.0" id="nemeton-02080-2026-10-02">nemeton 0.208.0 (2026-10-02)<a class="anchor" aria-label="anchor" href="#nemeton-02080-2026-10-02"></a></h2>
 <p>Première vague de l’audit de pré-version 1.0 : <strong>corrections de calcul</strong>. Dix défauts qui donnaient des valeurs fausses sans erreur ; les tests ne les voyaient pas parce qu’ils injectaient des valeurs déjà correctes. <strong>Plusieurs valeurs changent</strong> : les projets doivent être recalculés.</p>

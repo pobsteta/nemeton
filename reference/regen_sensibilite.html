@@ -15,7 +15,7 @@ indice_priorite_regen."><meta property="og:image" content="https://pobsteta.gith
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.208.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.209.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -236,7 +236,10 @@ ranking. <code>NULL</code> (default) uses <code>getOption("nemeton.micro_max_cel
 <dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>
 <dd><p>Directory for the ERA5 <code>.nc</code> and per-year microclimate
 <code>.tif</code> caches. <code>NULL</code> (default) uses a session temp dir; pass a
-persistent path to reuse expensive runs.</p></dd>
+persistent path to reuse expensive runs. Microclimate <code>.tif</code> caches are
+keyed by year AND a hash of the grid (extent, resolution, CRS), <code>reqhgt</code>,
+<code>mois_ete</code>, the ERA5 point and the PAI source, so a shared directory is
+safe.</p></dd>
 
 
 <dt id="arg-progress-callback">progress_callback<a class="anchor" aria-label="anchor" href="#arg-progress-callback"></a></dt>
