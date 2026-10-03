@@ -133,6 +133,42 @@ test_that("register_monitoring_zone keeps plot rows unique within a zone", {
   })
 })
 
+test_that("register_monitoring_zone rolls back the zone when a plot insert fails (SQLite)", {
+  # Audit 1.0 : les placettes étaient insérées hors de la transaction de
+  # la zone ; un échec laissait une zone commitée sans ses placettes.
+  skip_if_no_sqlite()
+  skip_if_not_installed("sf")
+  withr::with_tempdir({
+    con <- db_connect(sprintf("sqlite:///%s", file.path(getwd(), "r.sqlite")))
+    on.exit(db_disconnect(con), add = TRUE)
+    db_migrate(con)
+    pol <- sf::st_as_sfc(sf::st_bbox(
+      c(xmin = 4, ymin = 47, xmax = 5, ymax = 48), crs = 4326))
+    placettes <- sf::st_sf(
+      plot_id  = c("P01", "P02"),
+      geometry = sf::st_sfc(sf::st_point(c(4.5, 47.5)),
+                            sf::st_point(c(4.6, 47.6)), crs = 4326))
+
+    n_plot <- 0L
+    real_exec <- nemeton:::.db_execute
+    testthat::local_mocked_bindings(
+      .db_execute = function(con, sql, params = NULL) {
+        if (grepl("INSERT INTO plot", sql, fixed = TRUE)) {
+          n_plot <<- n_plot + 1L
+          if (n_plot >= 2L) stop("plot insert failed")
+        }
+        real_exec(con, sql, params)
+      },
+      .package = "nemeton")
+    expect_error(register_monitoring_zone(con, "Zrb", pol, placettes),
+                 "plot insert failed")
+
+    expect_equal(DBI::dbGetQuery(con,
+      "SELECT COUNT(*) n FROM monitoring_zone")$n, 0L)
+    expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM plot")$n, 0L)
+  })
+})
+
 
 # ---- integration: ingest_sentinel2_timeseries -----------------------
 

@@ -63,6 +63,14 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
   zone_4326 <- sf::st_transform(zone_polygon, 4326)
   zone_wkt  <- sf::st_as_text(sf::st_geometry(zone_4326)[[1]])
 
+  # Placettes préparées hors transaction (aucune écriture).
+  pts <- sf::st_transform(placettes, 4326)
+  geoms <- sf::st_geometry(pts)
+  type <- if ("type" %in% names(pts)) as.character(pts$type) else rep(NA_character_, nrow(pts))
+
+  # Zone ET placettes dans une seule transaction (audit 1.0) : un échec
+  # d'insertion d'une placette ne doit pas laisser une zone orpheline
+  # commitée. Pas de return() dans ce bloc (court-circuiterait le COMMIT).
   zone_id <- DBI::dbWithTransaction(con, {
     if (is.null(project_uuid)) {
       .db_execute(con,
@@ -83,23 +91,20 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
         "SELECT id FROM monitoring_zone WHERE project_uuid = $1 AND name = $2",
         params = list(project_uuid, zone_name))
     }
-    rs$id[1]
+    zid <- rs$id[1]
+    for (i in seq_len(nrow(pts))) {
+      .db_execute(con,
+        paste0("INSERT INTO plot (zone_id, plot_id, plot_type, geom_wkt, radius_m) ",
+               "VALUES ($1, $2, $3, $4, $5) ",
+               "ON CONFLICT (zone_id, plot_id) DO NOTHING"),
+        params = list(zid,
+                      as.character(pts$plot_id[i]),
+                      type[i],
+                      sf::st_as_text(geoms[[i]]),
+                      radius_m))
+    }
+    zid
   })
-
-  pts <- sf::st_transform(placettes, 4326)
-  geoms <- sf::st_geometry(pts)
-  type <- if ("type" %in% names(pts)) as.character(pts$type) else rep(NA_character_, nrow(pts))
-  for (i in seq_len(nrow(pts))) {
-    .db_execute(con,
-      paste0("INSERT INTO plot (zone_id, plot_id, plot_type, geom_wkt, radius_m) ",
-             "VALUES ($1, $2, $3, $4, $5) ",
-             "ON CONFLICT (zone_id, plot_id) DO NOTHING"),
-      params = list(zone_id,
-                    as.character(pts$plot_id[i]),
-                    type[i],
-                    sf::st_as_text(geoms[[i]]),
-                    radius_m))
-  }
   invisible(as.integer(zone_id))
 }
 
