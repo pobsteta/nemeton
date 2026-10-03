@@ -1672,7 +1672,12 @@ indicateur_f2_erosion <- function(units,
 #' @param units nemeton_units object
 #' @param layers nemeton_layers object containing land cover (optional)
 #' @param landcover_layer Character. Name of land cover layer
-#' @param forest_values Numeric vector. Land cover codes for forest
+#' @param forest_values Numeric vector. Land cover codes for forest; their
+#'   matrix contrast is 0. Default \code{c(16, 17)}: OSO broadleaf and
+#'   coniferous forest (23-class Theia/CESBIO nomenclature). Other codes are
+#'   read with the OSO contrast table (built-up 90, roads 75, crops 50,
+#'   orchards/vineyards 45, water 30, grassland 20, moorland 15; 50 for codes
+#'   outside the nomenclature).
 #' @param buffer Numeric. Buffer distance (meters) for contrast analysis. Default 50m.
 #'
 #' @return Numeric vector of sylvosphere scores (0-100). **Higher = more edge effect
@@ -1701,7 +1706,7 @@ indicateur_f2_erosion <- function(units,
 indicateur_l1_effet_lisiere <- function(units,
                                               layers = NULL,
                                               landcover_layer = "landcover",
-                                              forest_values = seq(1, 6),
+                                              forest_values = c(16, 17),
                                               buffer = 50) {
   # Validate inputs
   if (!inherits(units, "sf")) {
@@ -1723,17 +1728,12 @@ indicateur_l1_effet_lisiere <- function(units,
   }
 
   # --- Component 2: Matrix contrast (40%) ---
-  # OSO contrast table
-  oso_contrast <- c(
-    "16" = 0, "17" = 0, "18" = 0,    # Forest (conif, broadleaf, mixed)
-    "19" = 15,                         # Landes
-    "20" = 20,                         # Prairies
-    "21" = 50, "22" = 50, "23" = 50,  # Cultures
-    "24" = 45,                         # Vignes
-    "25" = 90, "26" = 90, "27" = 90, "28" = 90,  # Built-up
-    "29" = 75,                         # Roads
-    "30" = 30                          # Water
-  )
+  # Table de contraste derivee de la nomenclature OSO 23 classes partagee
+  # (l'ancienne table etait decalee : 16-18 « foret » alors que 18 = pelouses,
+  # 19-30 hors nomenclature). Les codes `forest_values` ont un contraste nul.
+  oso_contrast <- stats::setNames(OSO_NOMENCLATURE$contraste_l1,
+                                  as.character(OSO_NOMENCLATURE$code))
+  oso_contrast[as.character(forest_values)] <- 0
 
   l1_contraste <- numeric(nrow(units))
   has_landcover <- FALSE
@@ -1865,6 +1865,9 @@ indicateur_l1_effet_lisiere <- function(units,
 #' @param layers nemeton_layers object (optional, for raster-based metrics)
 #' @param landcover_layer Character. Name of landcover layer in layers.
 #' @param forest_values Numeric vector. Values representing forest in landcover.
+#'   Default \code{c(16, 17)}: OSO broadleaf and coniferous forest (23-class
+#'   Theia/CESBIO nomenclature, the \code{forest_cover} layer). Pass the codes
+#'   of your own raster when it uses another nomenclature.
 #' @param buffer Numeric. Buffer distance in meters around union of parcels.
 #'
 #' @return Numeric vector of fragmentation scores (0-100). **Higher = less fragmented
@@ -1886,7 +1889,7 @@ indicateur_l1_effet_lisiere <- function(units,
 #' }
 indicateur_l2_morcellement <- function(units, layers = NULL,
                                      landcover_layer = "landcover",
-                                     forest_values = seq(1, 6),
+                                     forest_values = c(16, 17),
                                      buffer = 1000) {
   # Validate inputs
   if (!inherits(units, "sf")) {
@@ -1984,7 +1987,7 @@ indicateur_l2_morcellement <- function(units, layers = NULL,
 indicateur_l2_fragmentation <- function(units,
                                         layers = NULL,
                                         landcover_layer = "landcover",
-                                        forest_values = seq(1, 6),
+                                        forest_values = c(16, 17),
                                         buffer = 50) {
   .Deprecated("indicateur_l1_effet_lisiere", package = "nemeton")
   indicateur_l1_effet_lisiere(
@@ -2013,7 +2016,7 @@ indicateur_l2_fragmentation <- function(units,
 #' @export
 indicateur_l1_sylvosphere <- function(units, layers = NULL,
                                       landcover_layer = "landcover",
-                                      forest_values = seq(1, 6),
+                                      forest_values = c(16, 17),
                                       buffer = 1000) {
   .Deprecated("indicateur_l2_morcellement", package = "nemeton")
   indicateur_l2_morcellement(

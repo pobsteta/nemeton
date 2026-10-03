@@ -212,7 +212,7 @@
 #' @return `out_path`, invisibly.
 #' @keywords internal
 .reconfort_oso_broadleaf_mask <- function(oso_path, aoi, out_path,
-                                          broadleaf_class = 16L,
+                                          broadleaf_class = OSO_CLASSE_FEUILLUS,
                                           target_crs = 2154,
                                           buffer_m = .RECONFORT_AOI_BUFFER_M) {
   win  <- .reconfort_aoi_window(aoi, target_crs, buffer_m)
