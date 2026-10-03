@@ -4,7 +4,12 @@
 \alias{aggregate_plot_metrics}
 \title{Compute per-plot aggregates from field data}
 \usage{
-aggregate_plot_metrics(placettes, arbres = NULL, plot_radius = 15)
+aggregate_plot_metrics(
+  placettes,
+  arbres = NULL,
+  plot_radius = 15,
+  statuts_vivants = "vivant"
+)
 }
 \arguments{
 \item{placettes}{sf POINT of placettes (with a \code{plot_id}
@@ -15,6 +20,11 @@ dbh_cm, h_m, statut).}
 
 \item{plot_radius}{Numeric. Plot radius (m) used to compute basal
 area per hectare. Default 15.}
+
+\item{statuts_vivants}{Character vector of \code{statut} values
+counted as living trees. Trees with a missing \code{statut} (or an
+\code{arbres} table without that column) are treated as living.
+Default \code{"vivant"}.}
 }
 \value{
 An sf object identical to \code{placettes} plus the
@@ -25,8 +35,9 @@ An sf object identical to \code{placettes} plus the
 For each placette, summarises the trees it contains into a set of
 dendrometric aggregates that downstream indicators can consume:
 \itemize{
-  \item \code{n_trees}: total tree records.
-  \item \code{n_trees_alive}: trees whose \code{statut == "vivant"}.
+  \item \code{n_trees}: total tree records (all statuses).
+  \item \code{n_trees_alive}: trees whose \code{statut} is in
+    \code{statuts_vivants} (or missing).
   \item \code{dbh_mean_cm}: arithmetic mean DBH.
   \item \code{dg_cm}: quadratic mean diameter (sqrt(mean(DBH^2))).
   \item \code{h_mean_m}: mean height of measured trees.
@@ -39,6 +50,11 @@ dendrometric aggregates that downstream indicators can consume:
 }
 }
 \details{
+Every aggregate except \code{n_trees} is computed on living trees
+only (\code{statuts_vivants}): dead, windthrown or cut trees no longer
+belong to the standing stock. A plot whose trees are all dead gets
+\code{g_ha = 0} and NA for the other aggregates.
+
 Placettes with no trees receive NA for every aggregate and
 \code{n_trees = 0L}.
 }

@@ -310,8 +310,9 @@ col2rgb_str <- function(hex) {
 #' @param output_dir Character. Destination directory (created if
 #'   needed).
 #' @param project_name Character. Name of the \code{.qgz} file (without
-#'   extension) and the project title in QGIS. Default
-#'   \code{"echantillon"}.
+#'   extension) and the project title in QGIS. Must match
+#'   \code{^[A-Za-z0-9_-]+$} (it builds file paths and the zip command
+#'   line). Default \code{"echantillon"}.
 #' @param crs Integer EPSG code. Must match the CRS of \code{placettes}.
 #'   Default 2154 (Lambert-93).
 #' @param region Character. Species region used to populate the
@@ -354,18 +355,36 @@ create_qgis_project <- function(placettes,
   if (!"plot_id" %in% names(placettes)) {
     cli::cli_abort("{.arg placettes} must contain a {.val plot_id} column.")
   }
-  if (sf::st_crs(placettes)$epsg %||% NA != crs) {
-    placettes <- sf::st_transform(placettes, crs)
+  # project_name compose des chemins (.qgz, .gpkg, .qgs), la datasource
+  # QGIS et un argument de la commande zip : un nom libre permettrait une
+  # traversée de chemin ou l'injection d'options. On impose un slug strict.
+  if (!is.character(project_name) || length(project_name) != 1L ||
+      is.na(project_name) || !grepl("^[A-Za-z0-9_-]+$", project_name)) {
+    cli::cli_abort(c(
+      "{.arg project_name} must be a single name made of letters, digits, {.val _} or {.val -}.",
+      "x" = "Got {.val {project_name}}."
+    ))
+  }
+  # Comparaison sur les objets crs (et non sur $epsg, NA pour un CRS sans
+  # code EPSG, ce qui faisait planter le `if`). Sans CRS, la reprojection
+  # est impossible : erreur explicite.
+  crs_cible <- sf::st_crs(crs)
+  crs_placettes <- sf::st_crs(placettes)
+  if (is.na(crs_placettes)) {
+    cli::cli_abort("{.arg placettes} has no CRS; set it with {.fn sf::st_set_crs} first.")
+  }
+  if (crs_placettes != crs_cible) {
+    placettes <- sf::st_transform(placettes, crs_cible)
   }
 
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
   output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
   qgz_path <- file.path(output_dir, paste0(project_name, ".qgz"))
-  if (file.exists(qgz_path)) {
-    if (!overwrite) {
-      cli::cli_abort("File {.path {qgz_path}} already exists (overwrite = FALSE).")
-    }
-    file.remove(qgz_path)
+  # Le .qgz existant n'est PAS supprimé ici : il n'est remplacé qu'une fois
+  # le nouveau construit (cf. .atomic_write plus bas), pour ne rien perdre
+  # si la construction échoue.
+  if (file.exists(qgz_path) && !overwrite) {
+    cli::cli_abort("File {.path {qgz_path}} already exists (overwrite = FALSE).")
   }
 
   # Stage in a temp dir, then zip into .qgz with relative paths.
@@ -465,13 +484,22 @@ create_qgis_project <- function(placettes,
   writeLines(qgs_xml, qgs_path, useBytes = TRUE)
 
   # --- Zip into .qgz --------------------------------------------------
-  owd <- setwd(stage); on.exit(setwd(owd), add = TRUE)
-  files_rel <- c(basename(qgs_path), gpkg_rel)
-  zip_rc <- utils::zip(zipfile = qgz_path, files = files_rel,
-                       flags = "-q -X", zip = Sys.getenv("R_ZIPCMD", "zip"))
-  if (zip_rc != 0 || !file.exists(qgz_path)) {
-    cli::cli_abort("Failed to build {.path {qgz_path}} (zip return code {zip_rc}).")
-  }
+  # Pas de setwd() global : `-j` stocke les fichiers sous leur seul nom
+  # (ils sont tous à la racine de `stage`). L'archive est écrite dans un
+  # temporaire voisin puis promue sur `qgz_path` seulement si zip a réussi.
+  files_abs <- c(qgs_path, gpkg_path)
+  zip_rc <- NA_integer_
+  tryCatch(
+    .atomic_write(qgz_path, function(tmp) {
+      zip_rc <<- utils::zip(zipfile = tmp, files = files_abs,
+                            flags = "-q -X -j", zip = Sys.getenv("R_ZIPCMD", "zip"))
+      if (!identical(as.integer(zip_rc), 0L)) unlink(tmp)
+    }),
+    error = function(e) {
+      cli::cli_abort("Failed to build {.path {qgz_path}} (zip return code {zip_rc}).",
+                     parent = e)
+    }
+  )
 
   cli::cli_alert_success("QGIS project created: {.path {qgz_path}}")
   invisible(qgz_path)
