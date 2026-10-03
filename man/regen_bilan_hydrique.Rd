@@ -27,7 +27,8 @@ root fractions \code{roots}, …).}
 
 \item{lai_max}{Per-unit maximum LAI (e.g. derived from
 \code{pai_depuis_nuage()}): a scalar, a length-\code{nrow(units)} vector, or a
-named list by id.}
+named list by id. \code{NULL}/\code{NA} (globally or for a given unit) falls back to
+a stand-type default (5 broadleaved, 4.5 coniferous) with a warning.}
 
 \item{forest_type}{Phenology: \code{"feuillu"}/\code{"broadleaved"} or
 \code{"resineux"}/\code{"coniferous"} (mapped to BILJOU's

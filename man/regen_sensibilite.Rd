@@ -81,7 +81,10 @@ ranking. \code{NULL} (default) uses \code{getOption("nemeton.micro_max_cells", 5
 
 \item{cache_dir}{Directory for the ERA5 \code{.nc} and per-year microclimate
 \code{.tif} caches. \code{NULL} (default) uses a session temp dir; pass a
-persistent path to reuse expensive runs.}
+persistent path to reuse expensive runs. Microclimate \code{.tif} caches are
+keyed by year AND a hash of the grid (extent, resolution, CRS), \code{reqhgt},
+\code{mois_ete}, the ERA5 point and the PAI source, so a shared directory is
+safe.}
 
 \item{progress_callback}{Optional function called at each step with a
 \code{list(current = <key>, …)} payload (monitoring pattern). Keys:

@@ -23,16 +23,16 @@ year). Engine path.}
 
 \item{rr}{Per-year summer precipitation \code{SpatRaster} (one layer per year).}
 
-\item{years}{Optional numeric years matching the raster layers (default
-\code{seq_len(nlyr)}).}
+\item{years}{Optional numeric years matching the raster layers (default:
+the years of \code{terra::time(tx)}, else \code{seq_len(nlyr)}).}
 
 \item{buffer_m}{Numeric buffer radius in metres around the units. Default
 \code{25000} (§10.4).}
 
 \item{breaks}{Optional \code{list(tmax=, precip=)} of two cut points each for a
-fixed classification; \code{NULL} → tertiles.}
+fixed classification, in °C/decade and mm/decade; \code{NULL} → tertiles.}
 
-\item{precomputed}{Optional pre-built trends: an \code{sf} with \code{trend_tmax}
+\item{precomputed}{Optional pre-built trends (per decade): an \code{sf} with \code{trend_tmax}
 / \code{trend_precip}, or a 2-layer \code{SpatRaster} named
 \code{trend_tmax}/\code{trend_precip}.}
 
@@ -40,8 +40,8 @@ fixed classification; \code{NULL} → tertiles.}
 }
 \value{
 An \code{sf} of E-OBS cell-centre points within the buffered area, with
-\code{trend_tmax}, \code{trend_precip}, \code{classe_tmax}, \code{classe_precip}
-(1-3) and \code{classe_bivariee} (1-9).
+\code{trend_tmax} (°C/decade), \code{trend_precip} (mm/decade),
+\code{classe_tmax}, \code{classe_precip} (1-3) and \code{classe_bivariee} (1-9).
 }
 \description{
 Per-cell \strong{summer trend} of maximum temperature and precipitation from
@@ -53,7 +53,9 @@ bivariate map.
 }
 \details{
 Trends are the least-squares slope of the per-year summer values against the
-year. Classes are tertiles by default (data-driven over the cropped area), or
+year, expressed \strong{per decade} (°C/decade for \code{trend_tmax}, mm/decade
+for \code{trend_precip}) — the same unit as \code{\link{eobs_downscale}} and
+\code{\link{eobs_trend_fit}}. Classes are tertiles by default (data-driven over the cropped area), or
 fixed \code{breaks}. \code{classe_bivariee} runs 1-9 with
 \code{(classe_tmax - 1) * 3 + classe_precip}; "hot & dry" is
 \code{classe_tmax == 3 & classe_precip == 1}.

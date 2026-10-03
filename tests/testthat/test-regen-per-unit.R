@@ -221,3 +221,34 @@ test_that(".rsen_clamp_flux preserves NA and tolerates missing columns", {
 test_that(".rsen_clamp_flux passes non-data.frame input through", {
   expect_null(.rsen_clamp_flux(NULL))
 })
+
+# --- Audit 1.0 : lai_max NA par unité remplacé par le défaut du type ---
+
+test_that(".regen_lai_fill_na replaces per-unit NA by the default and warns", {
+  l <- stats::setNames(list(3, NA_real_, 7), c("1", "2", "3"))
+  expect_warning(out <- .regen_lai_fill_na(l, 4.5), "stand-type default")
+  expect_equal(unlist(out), c(`1` = 3, `2` = 4.5, `3` = 7))
+  # Rien à remplacer -> pas d'avertissement, liste inchangée.
+  ok <- stats::setNames(list(3, 5), c("1", "2"))
+  expect_no_warning(res <- .regen_lai_fill_na(ok, 5))
+  expect_identical(res, ok)
+  # Scalaire partagé : laissé tel quel.
+  expect_identical(.regen_lai_fill_na(5, 4.5), 5)
+})
+
+test_that("regen_bilan_hydrique never hands a per-unit NA lai_max to BILJOU", {
+  skip_if_not_installed("biljouR")
+  u <- make_units(3)
+  vu <- NULL
+  local_mocked_bindings(
+    biljou_run_grid = function(points, lai_max, ...) {
+      vu <<- lai_max
+      data.frame(id = points$id, indicator = "NJstress", value = 1)
+    },
+    .package = "biljouR")
+  expect_warning(
+    regen_bilan_hydrique(u, meteo = data.frame(x = 1), sol = structure(list(), class = "biljou_soil"),
+                         lai_max = c(3, NA, 6), forest_type = "resineux"),
+    "1 unit without")
+  expect_equal(unlist(vu), c(`1` = 3, `2` = 4.5, `3` = 6))
+})

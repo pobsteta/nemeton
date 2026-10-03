@@ -12,15 +12,8 @@
 # peu de mailles E-OBS, la fonction dégrade en `trend_only` (dérive de régression
 # sans krigeage des résidus) — un fallback DEMANDÉ, pas une erreur.
 
-# Pente OLS de v sur x, réutilisée de tendances_eobs (tendance par maille).
-.eobs_ds_slope <- function(v, x) {
-  ok <- is.finite(v) & is.finite(x)
-  if (sum(ok) < 2L) return(NA_real_)
-  xx <- x[ok]; yy <- v[ok]
-  mx <- mean(xx); denom <- sum((xx - mx)^2)
-  if (denom == 0) return(NA_real_)
-  sum((xx - mx) * (yy - mean(yy))) / denom
-}
+# Pente OLS par décennie : helper UNIQUE `.eobs_slope_decade()` de
+# tendances_eobs.R (l'ancienne copie `.eobs_ds_slope` a été retirée, audit 1.0).
 
 # Années depuis terra::time() (sinon index 1..n) — pour une pente en °C/décennie.
 .eobs_ds_years <- function(r, years = NULL) {
@@ -46,7 +39,7 @@
   }
   # trend : pente OLS par pixel sur les années, ramenée à la décennie.
   yrs <- .eobs_ds_years(eobs, years)
-  terra::app(eobs, function(v) .eobs_ds_slope(v, yrs) * 10)
+  terra::app(eobs, function(v) .eobs_slope_decade(v, yrs))
 }
 
 # Facteur d'agrégation carré pour borner la grille sous `max_cells`.

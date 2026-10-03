@@ -254,22 +254,58 @@ test_that(".rsen_forcage_era5 requests monthly (by_month=TRUE) to dodge the CDS 
     .package = "mcera5")
   out <- nemeton:::.rsen_forcage_era5(lon = 6, lat = 48, annee = 2018, cache_dir = cd)
   expect_true(isTRUE(seen$by_month))                        # mensuel, pas annuel
-  expect_equal(basename(seen$src), "era5_2018_2018.nc")     # combiné (pas un mensuel)
-  expect_true(file.exists(file.path(cd, "era5_2018_2018.nc")))
+  expect_equal(basename(seen$src), "era5_6p00_48p00_2018_2018.nc")     # combiné (pas un mensuel)
+  expect_true(file.exists(file.path(cd, "era5_6p00_48p00_2018_2018.nc")))
   expect_s3_class(out, "data.frame")
 })
 
 test_that(".rsen_forcage_era5 reuses the combined cache without re-downloading", {
   skip_if_not_installed("mcera5")
   cd <- withr::local_tempdir()
-  file.create(file.path(cd, "era5_2019_2019.nc"))          # combiné déjà en cache
+  file.create(file.path(cd, "era5_6p00_48p00_2019_2019.nc"))  # combiné en cache
   called <- 0L
   testthat::local_mocked_bindings(
     request_era5 = function(...) { called <<- called + 1L; NULL },
     extract_clim = function(src, ...) data.frame(obs_time = 1),
     .package = "mcera5")
-  nemeton:::.rsen_forcage_era5(lon = 6, lat = 48, annee = 2019, cache_dir = cd)
+  # 6.001 / 48.004 arrondis à 0.01° -> même point de cache.
+  nemeton:::.rsen_forcage_era5(lon = 6.001, lat = 48.004, annee = 2019, cache_dir = cd)
   expect_equal(called, 0L)                                  # pas de re-téléchargement
+})
+
+# --- Audit 1.0 : cache ERA5 indexé par lon/lat, plus par la seule année -----
+test_that(".rsen_era5_radical encodes the rounded point in the file names", {
+  expect_equal(nemeton:::.rsen_era5_radical(2020L, 6.123, 48.456), "era5_6p12_48p46_2020")
+  expect_equal(nemeton:::.rsen_era5_radical(2020L, -1.5, 43), "era5_m1p50_43p00_2020")
+  expect_equal(nemeton:::.rsen_era5_radical(2020L, -0.001, 45), "era5_0p00_45p00_2020")
+  expect_equal(nemeton:::.rsen_era5_radical(2020L), "era5_2020")   # sans point
+  expect_equal(basename(nemeton:::.rsen_era5_nom_combine("x", 2020L, 6, 48)),
+               "era5_6p00_48p00_2020_2020.nc")
+})
+
+test_that("an ERA5 file cached for one point is never read for another point", {
+  skip_if_not_installed("mcera5")
+  cd <- withr::local_tempdir()
+  # Combiné d'un AUTRE point (et l'ancien nom sans point) : ni l'un ni l'autre
+  # ne doit servir pour (2, 45).
+  file.create(file.path(cd, "era5_6p00_48p00_2019_2019.nc"))
+  file.create(file.path(cd, "era5_2019_2019.nc"))
+  expect_true(is.na(nemeton:::.rsen_era5_combined(cd, 2019L, 2, 45)))
+  expect_true(is.na(nemeton:::.rsen_era5_src(cd, 2019L, 2, 45)))
+  seen <- new.env()
+  testthat::local_mocked_bindings(
+    build_era5_request = function(..., outfile_name) {
+      seen$outfile <- outfile_name
+      list(list(target = paste0(outfile_name, "_2019_6.zip")))
+    },
+    request_era5 = function(request, out_path, ...)
+      file.create(file.path(out_path, paste0(seen$outfile, "_2019_6.nc"))),
+    combine_netcdf = function(filenames, combined_name) file.create(combined_name),
+    extract_clim = function(src, ...) { seen$src <- src; data.frame(obs_time = 1) },
+    .package = "mcera5")
+  nemeton:::.rsen_forcage_era5(lon = 2, lat = 45, annee = 2019, cache_dir = cd)
+  expect_equal(seen$outfile, "era5_2p00_45p00_2019")
+  expect_equal(basename(seen$src), "era5_2p00_45p00_2019_2019.nc")
 })
 
 test_that(".rsen_era5_src prefers the combined, falls back to shortest (locale-safe)", {
@@ -316,7 +352,62 @@ test_that(".rsen_traiter_annee derives summer months from mp$weather$obs_time (m
   expect_equal(unname(terra::minmax(res$tmax)[, 1]), c(40, 40))
   expect_s4_class(res$vpd, "SpatRaster")
   expect_equal(terra::nlyr(res$vpd), 1L)
-  expect_true(file.exists(file.path(cd, "cache_2018_tmax.tif")))
+  expect_length(list.files(cd, pattern = "^cache_2018_[0-9a-f]{12}_tmax\\.tif$"), 1L)
+})
+
+# --- Audit 1.0 : cache microclimat indexé par une clé, plus par la seule année -
+test_that(".rsen_micro_cache_key changes with extent, reqhgt, mois_ete, point and PAI", {
+  skip_if_not_installed("terra")
+  dtm <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 50, ymin = 0, ymax = 50,
+                     crs = "EPSG:2154"); terra::values(dtm) <- 1
+  pai <- dtm; terra::values(pai) <- 3
+  base <- nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 2, 48, pai, "lidar")
+  expect_match(base, "^[0-9a-f]{12}$")
+  # Déterministe, et un PAI relu du cache vaut un PAI LiDAR.
+  expect_identical(nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 2, 48, pai, "cache"), base)
+  dtm2 <- terra::rast(nrows = 5, ncols = 5, xmin = 100, xmax = 150, ymin = 0,
+                      ymax = 50, crs = "EPSG:2154"); terra::values(dtm2) <- 1
+  pai2 <- pai; terra::values(pai2) <- 5
+  autres <- c(
+    nemeton:::.rsen_micro_cache_key(dtm2, 0.5, 6:8, 2, 48, pai, "lidar"),
+    nemeton:::.rsen_micro_cache_key(dtm, 1.0, 6:8, 2, 48, pai, "lidar"),
+    nemeton:::.rsen_micro_cache_key(dtm, 0.5, 7:8, 2, 48, pai, "lidar"),
+    nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 3, 48, pai, "lidar"),
+    nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 2, 48, pai, "raster"),
+    nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 2, 48, pai2, "lidar"))
+  expect_false(any(autres == base))
+})
+
+test_that(".rsen_traiter_annee does not reuse a cache built for other summer months", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("microclimf")
+  dtm <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 50, ymin = 0, ymax = 50,
+                     crs = "EPSG:2154"); terra::values(dtm) <- 1; names(dtm) <- "dtm"
+  obs <- as.POSIXct(c("2018-06-01", "2018-07-01", "2018-08-01"), tz = "UTC")
+  Tz <- array(rep(c(10, 20, 30), each = 25), dim = c(5, 5, 3))
+  RH <- array(50, dim = c(5, 5, 3))
+  runs <- 0L
+  testthat::local_mocked_bindings(
+    .rsen_forcage_era5 = function(...) data.frame(obs_time = obs))
+  testthat::local_mocked_bindings(
+    checkinputs      = function(...) invisible(NULL),
+    runpointmodel    = function(...) list(x = 1),
+    subsetpointmodel = function(pointmodel, ...) list(weather = list(obs_time = obs)),
+    runmicro         = function(...) { runs <<- runs + 1L
+                                       list(Tz = Tz, relhum = RH) },
+    .package = "microclimf")
+  cd <- withr::local_tempdir()
+  a <- nemeton:::.rsen_traiter_annee(2018L, lon = 2, lat = 48, dtm = dtm,
+         veg = list(), soil = list(), reqhgt = 0.5, mois_ete = 6:8, cache_dir = cd)
+  b <- nemeton:::.rsen_traiter_annee(2018L, lon = 2, lat = 48, dtm = dtm,
+         veg = list(), soil = list(), reqhgt = 0.5, mois_ete = 6, cache_dir = cd)
+  expect_equal(runs, 2L)                                  # pas de relecture croisée
+  expect_equal(unname(terra::minmax(a$tmax)[2, 1]), 30)   # max juin-août
+  expect_equal(unname(terra::minmax(b$tmax)[2, 1]), 10)   # juin seul
+  # Même configuration -> cache relu, pas de nouveau run.
+  nemeton:::.rsen_traiter_annee(2018L, lon = 2, lat = 48, dtm = dtm,
+    veg = list(), soil = list(), reqhgt = 0.5, mois_ete = 6:8, cache_dir = cd)
+  expect_equal(runs, 2L)
 })
 
 # --- microclimf : grille de calcul bornée mémoire --------------------------

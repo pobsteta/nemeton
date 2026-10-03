@@ -4,20 +4,25 @@
 # chemin PUR (réduction estivale par année depuis un raster quotidien daté),
 # l'injection `nc`, la dégradation, et l'alimentation des deux consommateurs.
 
-# Raster quotidien synthétique daté sur 2 ans (JJA + un peu de printemps).
-.eobs_daily <- function(years = c(2014, 2018), months = 5:8, per_month = 3,
+# Raster quotidien synthétique daté sur 2 ans (mai-août, TOUS les jours : un
+# été incomplet est désormais écarté — audit 1.0). `per_month` borne le nombre
+# de jours par mois pour fabriquer un été lacunaire.
+.eobs_daily <- function(years = c(2014, 2018), months = 5:8, per_month = 31,
                         base = 20) {
-  dates <- do.call(c, lapply(years, function(y)
-    as.Date(sprintf("%d-%02d-%02d", y, rep(months, each = per_month),
-                    rep(seq_len(per_month) * 5, times = length(months))))))
+  dates <- do.call(c, lapply(years, function(y) {
+    d <- seq(as.Date(sprintf("%d-01-01", y)), as.Date(sprintf("%d-12-31", y)),
+             by = "day")
+    d <- d[as.integer(format(d, "%m")) %in% months]
+    d[as.integer(format(d, "%d")) <= per_month]
+  }))
   n <- length(dates)
   r <- terra::rast(nrows = 4, ncols = 4, xmin = 3, xmax = 4, ymin = 45, ymax = 46,
                    nlyrs = n, crs = "EPSG:4326")
   # valeur = base + (année - min) * 5 + mois (l'été 2018 plus chaud que 2014).
   yy <- as.integer(format(dates, "%Y")); mm <- as.integer(format(dates, "%m"))
-  for (i in seq_len(n)) {
-    terra::values(r[[i]]) <- base + (yy[i] - min(years)) * 5 + mm[i]
-  }
+  v <- base + (yy - min(years)) * 5 + mm
+  # Une colonne par couche (vectorisé : ~120 couches par an).
+  terra::values(r) <- matrix(rep(v, each = terra::ncell(r)), ncol = n)
   terra::time(r) <- dates
   r
 }
@@ -40,7 +45,7 @@ test_that(".eobs_summer_by_year honours months and reducers", {
   # juillet seul (mois 7) : moyenne = base + dyear + 7.
   jul <- nemeton:::.eobs_summer_by_year(daily, years = 2014, months = 7, reducer = "mean")
   expect_equal(terra::global(jul, "mean", na.rm = TRUE)[[1]][1], 20 + 0 + 7)
-  # sum sur JJA (3 mois × 3 valeurs = 9 couches) != mean.
+  # sum sur JJA (92 jours) != mean.
   s <- nemeton:::.eobs_summer_by_year(daily, years = 2014, months = 6:8, reducer = "sum")
   expect_gt(terra::global(s, "mean", na.rm = TRUE)[[1]][1], 100)
 })
@@ -117,9 +122,11 @@ test_that(".eobs_cds_fetch normalise version/résolution en underscore pour le C
   testthat::local_mocked_bindings(
     wf_request = function(request, ...) { captured <<- request; NULL },
     .package = "ecmwfr")
-  nemeton:::.eobs_cds_fetch("maximum_temperature", years = 2022L,
+  # wf_request factice ne renvoie rien -> erreur explicite (plus de NULL muet).
+  expect_error(nemeton:::.eobs_cds_fetch("maximum_temperature", years = 2022L,
                             cache_dir = withr::local_tempdir(),
-                            version = "30.0e", resolution = "0.1deg")
+                            version = "30.0e", resolution = "0.1deg"),
+               "returned no\\s+file")
   expect_identical(captured$version, "30_0e")          # point -> underscore
   expect_identical(captured$grid_resolution, "0_1deg")
   expect_identical(captured$period, "2011_2022")       # borne haute = année demandée
@@ -142,4 +149,77 @@ test_that(".eobs_cds_fetch reuses a cached block without re-downloading", {
                                    version = "30.0e", resolution = "0.1deg")
   expect_identical(normalizePath(out), normalizePath(ncf)) # cache-hit renvoyé
   expect_false(called)                                     # AUCUN re-téléchargement
+})
+
+# --- Audit 1.0 : été incomplet, années à cheval, erreurs non muettes ---------
+
+test_that(".eobs_summer_by_year drops an incomplete summer with a warning", {
+  skip_if_not_installed("terra")
+  # 2014 complet ; 2018 réduit à juin (cas de l'été en cours).
+  full <- .eobs_daily(years = 2014)
+  juin <- .eobs_daily(years = 2018, months = 6)
+  daily <- c(full, juin)
+  expect_warning(
+    out <- nemeton:::.eobs_summer_by_year(daily, months = 6:8),
+    "incomplete summer.*2018 \\(30/92 days\\)")
+  expect_identical(names(out), "2014")
+  # 90 % des jours suffit : 28 jours sur 31 par mois (84/92 = 91 %) -> gardé.
+  presque <- .eobs_daily(years = 2014, months = 6:8, per_month = 28)
+  expect_no_warning(ok <- nemeton:::.eobs_summer_by_year(presque, months = 6:8))
+  expect_identical(names(ok), "2014")
+  # Que des étés incomplets -> erreur explicite.
+  expect_error(suppressWarnings(nemeton:::.eobs_summer_by_year(juin, months = 6:8)),
+               "No E-OBS summer layers")
+})
+
+test_that(".eobs_cds_periods splits years across CDS blocks", {
+  expect_identical(nemeton:::.eobs_cds_periods(c(2008, 2015)),
+                   c("1995_2010", "2011_2015"))
+  expect_identical(nemeton:::.eobs_cds_periods(2014:2020), "2011_2020")
+  expect_error(nemeton:::.eobs_cds_periods(1940), "out of range")
+})
+
+test_that(".eobs_cds_fetch fetches every block for years spanning two blocks", {
+  skip_if_not_installed("ecmwfr")
+  cache_dir <- withr::local_tempdir()
+  f1 <- nemeton:::.eobs_cache_file("maximum_temperature", "1995_2010",
+                                   "30.0e", "0.1deg", cache_dir)
+  f2 <- nemeton:::.eobs_cache_file("maximum_temperature", "2011_2015",
+                                   "30.0e", "0.1deg", cache_dir)
+  writeLines("stub", f1); writeLines("stub", f2)
+  expect_message(
+    out <- nemeton:::.eobs_cds_fetch("maximum_temperature", years = c(2008, 2015),
+                                     cache_dir = cache_dir, version = "30.0e",
+                                     resolution = "0.1deg"),
+    "2 CDS blocks")
+  expect_identical(normalizePath(out), normalizePath(c(f1, f2)))
+})
+
+test_that("load_eobs_source keeps the CDS error message in a warning and the payload", {
+  skip_if_not_installed("terra")
+  local_mocked_bindings(.eobs_cds_fetch = function(...)
+    stop("403 required licences not accepted"))
+  seen <- list()
+  expect_warning(
+    out <- load_eobs_source(aoi = NULL, years = 2018, source = "cds",
+                            progress_callback = function(p) seen[[length(seen) + 1L]] <<- p),
+    "licences not accepted")
+  expect_null(out)
+  fin <- seen[[length(seen)]]
+  expect_identical(fin$current, "eobs:unavailable")
+  expect_identical(fin$reason, "cds")
+  expect_match(fin$message, "licences not accepted")
+})
+
+test_that("load_eobs_source reports a reduce failure with its message", {
+  skip_if_not_installed("terra")
+  seen <- list()
+  expect_warning(
+    out <- load_eobs_source(aoi = NULL, years = 2018, source = "nc",
+                            nc = .eobs_daily(years = 2014),
+                            progress_callback = function(p) seen[[length(seen) + 1L]] <<- p),
+    "No E-OBS summer layers")
+  expect_null(out)
+  expect_identical(seen[[length(seen)]]$reason, "reduce_error")
+  expect_match(seen[[length(seen)]]$message, "No E-OBS summer layers")
 })
