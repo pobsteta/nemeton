@@ -132,6 +132,32 @@ test_that(".eobs_cds_fetch normalise version/résolution en underscore pour le C
   expect_identical(captured$period, "2011_2022")       # borne haute = année demandée
 })
 
+test_that(".eobs_cds_fetch refuses a zip-slip CDS archive (audit 1.0, sécurité)", {
+  skip_if_not_installed("ecmwfr")
+  skip_if(!nzchar(Sys.which("zip")), "zip utility not available")
+  root <- withr::local_tempdir()
+  cache_dir <- file.path(root, "cache"); dir.create(cache_dir)
+  # Archive hostile : une entrée `../evil.nc` (nom réécrit après zip).
+  src <- withr::local_tempdir()
+  writeLines("x", file.path(src, "aaaaaaa.nc"))
+  z <- file.path(root, "cds.zip")
+  withr::with_dir(src, utils::zip(z, "aaaaaaa.nc", flags = "-q"))
+  b <- readBin(z, "raw", file.size(z))
+  pat <- charToRaw("aaaaaaa.nc"); n <- length(pat)
+  for (i in seq_len(length(b) - n + 1L)) {
+    if (identical(b[i:(i + n - 1L)], pat)) b[i:(i + n - 1L)] <- charToRaw("../evil.nc")
+  }
+  writeBin(b, z)
+  testthat::local_mocked_bindings(
+    wf_request = function(request, ...) z, .package = "ecmwfr")
+  expect_error(
+    nemeton:::.eobs_cds_fetch("maximum_temperature", years = 2022L,
+                              cache_dir = cache_dir,
+                              version = "30.0e", resolution = "0.1deg"),
+    "unsafe entry")
+  expect_false(file.exists(file.path(root, "evil.nc")))
+})
+
 test_that(".eobs_cds_fetch reuses a cached block without re-downloading", {
   skip_if_not_installed("ecmwfr")
   cache_dir <- withr::local_tempdir()

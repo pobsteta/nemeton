@@ -167,7 +167,7 @@ load_insee_population_source <- function(aoi,
   on.exit(options(old), add = TRUE)
   ok <- tryCatch({
     .insee_download(url, zip)
-    utils::unzip(zip, exdir = staging)
+    .unzip_safe(zip, exdir = staging)
     gpkgs <- list.files(staging, pattern = "\\.gpkg$", recursive = TRUE,
                         full.names = TRUE)
     lisibles <- vapply(gpkgs, function(p) isTRUE(tryCatch(

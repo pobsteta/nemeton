@@ -507,7 +507,13 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
     emit(list(current = "reconfort:ingest_item", tile = tile, step = "crop",
               completed = as.integer(i), total = as.integer(n_items),
               item_date = item_date))
-    suppressWarnings(utils::unzip(tmp_zip, exdir = scratch))
+    # Extraction contrôlée (pas de chemin absolu ni de `..`) ; une archive
+    # refusée retombe dans la branche « archive vide/corrompue » ci-dessous.
+    tryCatch(suppressWarnings(.unzip_safe(tmp_zip, exdir = scratch)),
+             error = function(e) {
+               if (!quiet) cli::cli_alert_warning(conditionMessage(e))
+               unlink(scratch, recursive = TRUE, force = TRUE)
+             })
     sub_scenes <- list.dirs(scratch, recursive = FALSE)
     if (length(sub_scenes) == 0L) {
       if (!quiet) cli::cli_alert_warning(

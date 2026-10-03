@@ -1518,6 +1518,57 @@ scratch_dir <- function(subdir = NULL) {
                   error = function(e) FALSE, warning = function(w) FALSE))
 }
 
+# TRUE pour une entrée d'archive sûre : relative, sans composant `..`, sans
+# lettre de lecteur. Les deux séparateurs sont considérés (archives Windows).
+.zip_entry_safe <- function(name) {
+  parts <- strsplit(name, "[/\\\\]")
+  !is.na(name) & nzchar(name) &
+    !grepl("^[/\\\\]", name) & !grepl("^[A-Za-z]:", name) &
+    !grepl("\\x00", name, useBytes = TRUE) &
+    vapply(parts, function(p) !any(p == ".."), logical(1))
+}
+
+# Extract a zip archive without path traversal ("zip slip").
+#
+# Lists the archive first and aborts if ANY entry is absolute or holds a `..`
+# component; then extracts either everything, the entries named in `files`,
+# or the entries whose name matches `pattern` (directories excluded). Returns
+# the extracted paths, as utils::unzip() does.
+.unzip_safe <- function(zipfile, exdir, files = NULL, pattern = NULL) {
+  listing <- tryCatch(utils::unzip(zipfile, list = TRUE),
+                      error = function(e) cli::cli_abort(
+                        "Cannot read the zip archive {.path {basename(zipfile)}}: {conditionMessage(e)}",
+                        parent = e))
+  entries <- as.character(listing$Name)
+  bad <- entries[!.zip_entry_safe(entries)]
+  if (length(bad)) {
+    cli::cli_abort(c(
+      "Refusing to extract {.path {basename(zipfile)}}: unsafe entry path{?s}.",
+      x = "{.val {utils::head(bad, 5L)}}",
+      i = "Archive entries must be relative and must not contain {.val ..}."))
+  }
+  wanted <- NULL
+  if (!is.null(files)) {
+    missing <- setdiff(files, entries)
+    if (length(missing)) {
+      zname <- basename(zipfile)
+      cli::cli_abort("Entries not found in {.path {zname}}: {.val {missing}}.")
+    }
+    wanted <- files
+  }
+  if (!is.null(pattern)) {
+    sel <- entries[grepl(pattern, entries) & !grepl("[/\\\\]$", entries)]
+    wanted <- if (is.null(wanted)) sel else intersect(wanted, sel)
+    # Filtre ne retenant rien : rien à extraire (pas « tout extraire »).
+    if (!length(wanted)) return(character(0))
+  }
+  if (is.null(wanted)) {
+    utils::unzip(zipfile, exdir = exdir)
+  } else {
+    utils::unzip(zipfile, files = wanted, exdir = exdir)
+  }
+}
+
 .raster_lisible <- function(path) {
   isTRUE(tryCatch({
     r <- terra::rast(path)
