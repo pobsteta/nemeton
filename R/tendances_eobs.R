@@ -20,6 +20,12 @@
   sum((xx - mx) * (yy - mean(yy))) / denom
 }
 
+# Pente par DÉCENNIE (audit 1.0) : unité unique des tendances E-OBS du cœur —
+# tendances_estivales_eobs(), eobs_downscale() / eobs_downscale_bivariate()
+# (bornes fixes en °C et mm par décennie) et eobs_trend_fit() (graphe au clic).
+# tendances_estivales_eobs() rendait auparavant une pente PAR AN (facteur 10).
+.eobs_slope_decade <- function(v, x) .eobs_slope(v, x) * 10
+
 # Classe 1-3 par tertiles (ou bornes fixes `br`). NA -> NA.
 .eobs_class3 <- function(v, br = NULL) {
   if (is.null(br)) {
@@ -66,7 +72,9 @@
 #' core computes the trends and classes; the app renders the bivariate map.
 #'
 #' Trends are the least-squares slope of the per-year summer values against the
-#' year. Classes are tertiles by default (data-driven over the cropped area),
+#' year, expressed **per decade** (°C/decade for `trend_tmax`, mm/decade for
+#' `trend_precip`) — the same unit as [eobs_downscale()] and [eobs_trend_fit()].
+#' Classes are tertiles by default (data-driven over the cropped area),
 #' or fixed `breaks`. `classe_bivariee` runs 1-9 with
 #' `(classe_tmax - 1) * 3 + classe_precip`; "hot & dry" is
 #' `classe_tmax == 3 & classe_precip == 1`.
@@ -81,19 +89,20 @@
 #' @param tx Per-year summer maximum-temperature `SpatRaster` (one layer per
 #'   year). Engine path.
 #' @param rr Per-year summer precipitation `SpatRaster` (one layer per year).
-#' @param years Optional numeric years matching the raster layers (default
-#'   `seq_len(nlyr)`).
+#' @param years Optional numeric years matching the raster layers (default:
+#'   the years of `terra::time(tx)`, else `seq_len(nlyr)`).
 #' @param buffer_m Numeric buffer radius in metres around the units. Default
 #'   `25000` (§10.4).
 #' @param breaks Optional `list(tmax=, precip=)` of two cut points each for a
-#'   fixed classification; `NULL` → tertiles.
-#' @param precomputed Optional pre-built trends: an `sf` with `trend_tmax` /
-#'   `trend_precip`, or a 2-layer `SpatRaster` named `trend_tmax`/`trend_precip`.
+#'   fixed classification, in °C/decade and mm/decade; `NULL` → tertiles.
+#' @param precomputed Optional pre-built trends (per decade): an `sf` with
+#'   `trend_tmax` / `trend_precip`, or a 2-layer `SpatRaster` named
+#'   `trend_tmax`/`trend_precip`.
 #' @param ... Reserved.
 #'
 #' @return An `sf` of E-OBS cell-centre points within the buffered area, with
-#'   `trend_tmax`, `trend_precip`, `classe_tmax`, `classe_precip` (1-3) and
-#'   `classe_bivariee` (1-9).
+#'   `trend_tmax` (°C/decade), `trend_precip` (mm/decade), `classe_tmax`,
+#'   `classe_precip` (1-3) and `classe_bivariee` (1-9).
 #' @seealso [indice_priorite_regen()]
 #' @export
 tendances_estivales_eobs <- function(aoi, tx = NULL, rr = NULL, years = NULL,
@@ -135,7 +144,9 @@ tendances_estivales_eobs <- function(aoi, tx = NULL, rr = NULL, years = NULL,
   if (!inherits(tx, "SpatRaster") || !inherits(rr, "SpatRaster")) {
     stop("tx and rr must be terra SpatRasters (one layer per year)", call. = FALSE)
   }
-  if (is.null(years)) years <- seq_len(terra::nlyr(tx))
+  # Années réelles depuis terra::time() (posé par load_eobs_source()), sinon
+  # index 1..n : la pente reste ainsi par décennie même si une année manque.
+  if (is.null(years)) years <- .eobs_ds_years(tx)
   if (length(years) != terra::nlyr(tx) || terra::nlyr(tx) != terra::nlyr(rr)) {
     stop("years, tx and rr must all describe the same number of years",
          call. = FALSE)
@@ -146,8 +157,8 @@ tendances_estivales_eobs <- function(aoi, tx = NULL, rr = NULL, years = NULL,
   tx <- terra::crop(tx, box, snap = "out")
   rr <- terra::crop(rr, box, snap = "out")
 
-  tt <- terra::app(tx, function(v) .eobs_slope(v, years))
-  tp <- terra::app(rr, function(v) .eobs_slope(v, years))
+  tt <- terra::app(tx, function(v) .eobs_slope_decade(v, years))
+  tp <- terra::app(rr, function(v) .eobs_slope_decade(v, years))
   names(tt) <- "trend_tmax"; names(tp) <- "trend_precip"
 
   df <- terra::as.data.frame(c(tt, tp), xy = TRUE, na.rm = FALSE)
