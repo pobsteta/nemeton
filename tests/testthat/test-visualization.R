@@ -2025,3 +2025,56 @@ test_that("nemeton_radar lookup by nemeton_id column", {
   p <- nemeton::nemeton_radar(data, unit_id = "P02")
   expect_s3_class(p, "ggplot")
 })
+
+test_that("nemeton_radar family mode keeps absolute 0-100 scores by default (audit 1.0)", {
+  skip_if_not_installed("terra")
+  data <- create_test_units(n_features = 3)
+  data$famille_carbone <- c(90, 50, 10)
+  data$famille_eau <- c(20, 40, 60)
+
+  # Une seule unite : avant le correctif, min-max entre unites -> 50 partout
+  p1 <- nemeton::nemeton_radar(data[2, ], unit_id = 1, mode = "family")
+  expect_equal(p1$data$value[p1$data$indicator == "famille_carbone"], 50)
+  expect_equal(p1$data$value[p1$data$indicator == "famille_eau"], 40)
+
+  # 90/50/10 reste 90 (et non 100 apres min-max)
+  p2 <- nemeton::nemeton_radar(data, unit_id = 1, mode = "family")
+  expect_equal(p2$data$value[p2$data$indicator == "famille_carbone"], 90)
+
+  # Ecretage 0-100 en mode famille sans renormalisation
+  data$famille_eau[1] <- 130
+  p3 <- nemeton::nemeton_radar(data, unit_id = 1, mode = "family", normalize = FALSE)
+  expect_equal(p3$data$value[p3$data$indicator == "famille_eau"], 100)
+
+  # Renormalisation toujours possible explicitement
+  p4 <- nemeton::nemeton_radar(data, unit_id = 1, mode = "family", normalize = TRUE)
+  expect_equal(p4$data$value[p4$data$indicator == "famille_carbone"], 100)
+})
+
+test_that("plot_difference_map joins on the identifier, not by position (audit 1.0)", {
+  skip_if_not_installed("terra")
+  d1 <- create_test_units(n_features = 3)
+  d1$val <- c(10, 20, 30)
+  # Meme unites, ordre inverse
+  d2 <- d1[3:1, ]
+  d2$val <- c(33, 22, 11) # unit_003 = 33, unit_002 = 22, unit_001 = 11
+
+  p <- nemeton::plot_difference_map(d1, d2, indicator = "val")
+  expect_equal(p$data$difference, c(1, 2, 3))
+
+  # Unite sans correspondance -> NA + avertissement
+  d3 <- d2[1:2, ]
+  expect_warning(
+    p2 <- nemeton::plot_difference_map(d1, d3, indicator = "val"),
+    "no\\s+match"
+  )
+  expect_equal(p2$data$difference, c(NA, 2, 3))
+
+  # Sans identifiant commun : nombre de lignes different -> erreur
+  d1$id <- NULL
+  d3$id <- NULL
+  expect_error(
+    nemeton::plot_difference_map(d1, d3, indicator = "val"),
+    "Cannot\\s+align"
+  )
+})
