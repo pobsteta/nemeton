@@ -310,8 +310,9 @@ col2rgb_str <- function(hex) {
 #' @param output_dir Character. Destination directory (created if
 #'   needed).
 #' @param project_name Character. Name of the \code{.qgz} file (without
-#'   extension) and the project title in QGIS. Default
-#'   \code{"echantillon"}.
+#'   extension) and the project title in QGIS. Must match
+#'   \code{^[A-Za-z0-9_-]+$} (it builds file paths and the zip command
+#'   line). Default \code{"echantillon"}.
 #' @param crs Integer EPSG code. Must match the CRS of \code{placettes}.
 #'   Default 2154 (Lambert-93).
 #' @param region Character. Species region used to populate the
@@ -353,6 +354,16 @@ create_qgis_project <- function(placettes,
   }
   if (!"plot_id" %in% names(placettes)) {
     cli::cli_abort("{.arg placettes} must contain a {.val plot_id} column.")
+  }
+  # project_name compose des chemins (.qgz, .gpkg, .qgs), la datasource
+  # QGIS et un argument de la commande zip : un nom libre permettrait une
+  # traversée de chemin ou l'injection d'options. On impose un slug strict.
+  if (!is.character(project_name) || length(project_name) != 1L ||
+      is.na(project_name) || !grepl("^[A-Za-z0-9_-]+$", project_name)) {
+    cli::cli_abort(c(
+      "{.arg project_name} must be a single name made of letters, digits, {.val _} or {.val -}.",
+      "x" = "Got {.val {project_name}}."
+    ))
   }
   if (sf::st_crs(placettes)$epsg %||% NA != crs) {
     placettes <- sf::st_transform(placettes, crs)

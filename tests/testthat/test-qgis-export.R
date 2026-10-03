@@ -207,6 +207,20 @@ test_that("create_qgis_project rejects non-sf placettes", {
   )
 })
 
+test_that("create_qgis_project rejects an unsafe project_name (audit 1.0)", {
+  skip_if_no_sf()
+  pts <- make_sample_plots()
+  out <- withr::local_tempdir()
+  for (bad in c("../evil", "a/b", "-x -T", "nom avec espace", "", NA_character_)) {
+    expect_error(
+      create_qgis_project(pts, output_dir = out, project_name = bad),
+      "project_name"
+    )
+  }
+  expect_length(list.files(dirname(out), pattern = "^evil"), 0L)
+  expect_length(list.files(out), 0L)
+})
+
 test_that("create_qgis_project rejects placettes without plot_id", {
   skip_if_no_sf()
 
