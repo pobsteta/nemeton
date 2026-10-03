@@ -168,8 +168,9 @@ indicateur_r5_deperissement <- function(units,
 }
 
 
-# Confidence-weighted fraction of one unit covered by the clusters
-# whose centroid falls inside it, capped at 1 and rescaled to 0-100.
+# Confidence-weighted fraction of one unit covered by the alert clusters,
+# capped at 1 and rescaled to 0-100. Only the part of each cluster that lies
+# inside the unit counts.
 .r5_score <- function(unit_m, alerts_m, weights, unit_area) {
   if (is.null(alerts_m) || nrow(alerts_m) == 0L) return(0)
   in_ugf <- sf::st_intersects(alerts_m, unit_m, sparse = FALSE)[, 1]
@@ -177,9 +178,33 @@ indicateur_r5_deperissement <- function(units,
   sub <- alerts_m[in_ugf, , drop = FALSE]
   w <- as.numeric(weights[as.character(sub$confidence_class)])
   w[is.na(w)] <- 0
-  weighted_area <- sum(w * as.numeric(sub$area_m2))
+  # Un cluster a cheval sur deux UGF etait compte EN ENTIER dans chacune
+  # (double comptage). On ne retient que la part de sa surface declaree
+  # (`area_m2`) qui tombe dans l'UGF, au prorata de la surface geometrique
+  # intersectee. Les alertes ponctuelles (sans surface geometrique) gardent
+  # leur `area_m2` entier : un point n'appartient qu'a une UGF.
+  part <- .r5_part_dans_ugf(sub, unit_m)
+  weighted_area <- sum(w * as.numeric(sub$area_m2) * part)
   raw <- if (unit_area > 0) weighted_area / unit_area else 0
   min(raw, 1) * 100
+}
+
+# Part (0-1) de chaque alerte situee dans l'UGF : surface intersectee /
+# surface geometrique de l'alerte. 1 pour une geometrie sans surface (point).
+.r5_part_dans_ugf <- function(alerts, unit_m) {
+  aire_tot <- as.numeric(sf::st_area(alerts))
+  part <- rep(1, nrow(alerts))
+  surf <- is.finite(aire_tot) & aire_tot > 0
+  if (!any(surf)) return(part)
+  ugf_geom <- sf::st_geometry(unit_m)
+  aire_in <- vapply(which(surf), function(k) {
+    inter <- suppressWarnings(
+      sf::st_intersection(sf::st_geometry(alerts)[k], ugf_geom)
+    )
+    if (length(inter) == 0L) 0 else sum(as.numeric(sf::st_area(inter)))
+  }, numeric(1))
+  part[surf] <- pmin(aire_in / aire_tot[surf], 1)
+  part
 }
 
 
