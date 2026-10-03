@@ -15,7 +15,7 @@
 ## Architecture (ADR-009)
 
 ```
-nemeton (ce repo)       -> Package coeur R (GPL-3). 31 indicateurs, 12 familles, NDP, radar.
+nemeton (ce repo)       -> Package coeur R (GPL-3). 41 indicateurs, 12 familles, NDP, radar.
 nemetonshiny            -> Application Shiny (EUPL v1.2). Interface web interactive.
 tree_sat_nemeton        -> Classification d'essences Sentinel-1/2. NDP 0. MIT.
 maestro_nemeton         -> Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
@@ -23,18 +23,20 @@ maestro_nemeton         -> Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
 
 ## Fonctionnalites
 
-**12 familles d'indicateurs** avec 31 sous-indicateurs (convention NMT) :
+**12 familles d'indicateurs** avec 41 sous-indicateurs (convention NMT), dont certains
+conditionnels (calculés seulement quand leur source est fournie : R5 FORDEAD/RECONFORT,
+T3 SUFOSAT, A5 LST, R7 SAFRAN) :
 
 | Code | Famille | Indicateurs |
 |------|---------|-------------|
-| **B** | Biodiversite | indicateur_b1_protection, b2_structure, b3_connectivite |
+| **B** | Biodiversite | indicateur_b1_protection, b2_structure, b3_connectivite, b4_div_spectrale |
 | **C** | Carbone & Vitalite | indicateur_c1_biomasse, c2_ndvi |
-| **W** | Eau & Regulation | indicateur_w1_reseau, w2_zones_humides, w3_humidite |
-| **A** | Air & Microclimat | indicateur_a1_couverture, a2_qualite_air |
+| **W** | Eau & Regulation | indicateur_w1_reseau, w2_zones_humides, w3_humidite, w4_vpd |
+| **A** | Air & Microclimat | indicateur_a1_couverture, a2_qualite_air, a3_microclimat, a4_tamponnement, a5_rafraichissement |
 | **F** | Fertilite Sols | indicateur_f1_fertilite, f2_erosion |
 | **L** | Paysage | indicateur_l1_effet_lisiere, l2_morcellement, l3_het_spectrale |
-| **T** | Temporel | indicateur_t1_anciennete, t2_changement |
-| **R** | Risques & Resilience | indicateur_r1_feu, r2_tempete, r3_secheresse, r4_abroutissement |
+| **T** | Temporel | indicateur_t1_anciennete, t2_changement, t3_coupes_rases |
+| **R** | Risques & Resilience | indicateur_r1_feu, r2_tempete, r3_secheresse, r4_abroutissement, r5_deperissement, r6_sensibilite, r7_gel |
 | **S** | Social & Usages | indicateur_s1_routes, s2_bati, s3_population |
 | **P** | Production & Economie | indicateur_p1_volume, p2_station, p3_qualite_bois |
 | **E** | Energie & Climat | indicateur_e1_bois_energie, e2_evitement |
@@ -145,7 +147,7 @@ nemetonshiny::run_app(language = "fr")
 L'application permet de :
 
 - Rechercher et selectionner des parcelles cadastrales par commune
-- Calculer automatiquement les 31 indicateurs (12 familles)
+- Calculer automatiquement les 41 indicateurs (12 familles)
 - Visualiser les resultats (radar avec NDP, cartes, tableaux)
 - Generer des perspectives IA par profil d'acteur (18 profils)
 - Exporter en PDF ou GeoPackage
