@@ -1,4 +1,5 @@
-# Vendored verbatim from RECONFORT (fl.mouret/reconfort, main 25198c9).
+# Vendored from RECONFORT (fl.mouret/reconfort, main 25198c9), modified by
+# nemeton: TLS certificate verification forced for GEODES (see PATCHES.md).
 # License: Apache-2.0 (see inst/NOTICE). Driven by R/reconfort_ingest.R.
 #
 from pygeodes import Geodes
@@ -7,6 +8,7 @@ from pygeodes.utils.datetime_utils import complete_datetime_from_str
 from argparse import RawTextHelpFormatter
 import argparse
 from utils.utils import load_config_variable
+from utils.tls import enforce_tls_verification
 
 if __name__ == "__main__":
 
@@ -40,6 +42,8 @@ if __name__ == "__main__":
     print(dict_config)
 
     conf = Config.from_file(dict_config['path_to_cfg_geodes_account'])
+    # nemeton: force TLS verification (pygeodes disables it by default).
+    enforce_tls_verification(conf)
     geodes = Geodes(conf=conf)
 
     #Example:

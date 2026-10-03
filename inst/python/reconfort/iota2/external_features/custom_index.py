@@ -1,8 +1,9 @@
 # ------------------------------------------------------------------
 # Vendored from RECONFORT (https://framagit.org/fl.mouret/reconfort,
 # main 25198c9), file iota2/external_features/custom_index.py.
-# License: Apache-2.0 (see inst/NOTICE). Verbatim — do not edit here;
-# re-vendor from upstream if it changes.
+# License: Apache-2.0 (see inst/NOTICE). Modified by nemeton: features
+# labelled with I2TemporalLabel for the recent iota2, computation unchanged
+# (see ../../PATCHES.md).
 #
 # IOTA2 `external_features` hooks computing the two RECONFORT
 # continuum-removal indices on the gap-filled Sentinel-2 series:

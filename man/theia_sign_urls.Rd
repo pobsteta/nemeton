@@ -22,7 +22,9 @@ one at \url{https://gate.stac.teledetection.fr}).}
 
 \item{endpoint}{Signing gateway base URL (default
 \code{services$theia_signing$endpoint} from the country config, else
-\code{https://signing.stac.teledetection.fr}).}
+\code{https://signing.stac.teledetection.fr}). Must be an \code{https://} URL:
+the API key travels in the request headers. Requests time out after 60 s and
+are retried on 429/5xx (see \env{NEMETON_STAC_MAX_TRIES}).}
 
 \item{country}{Country config key (default \code{"FR"}).}
 }

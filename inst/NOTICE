@@ -161,6 +161,17 @@ Usage    : Random-Forest dieback models and the OSO 2021 deciduous
            under `iota2/`; spec 021 L2b.1–L2b.3). SYCOMORE programme,
            Université d'Orléans / CESBIO, funded by the Région
            Centre-Val de Loire.
+Changes  : Apache-2.0 §4(b) notice — several vendored files are
+           MODIFIED by nemeton (compatibility with the recent iota2/OTB
+           and GEODES archive naming, extract-then-delete, explicit
+           IOTA² failure reporting, JSON cfg parsing without eval(),
+           forced TLS verification for GEODES). Each modified file
+           carries a "modified by nemeton" header and inline
+           `nemeton:` comments; the full list is in
+           `inst/python/reconfort/PATCHES.md`. The nemeton-authored
+           scripts in the same directory (`list_s2_items.py`,
+           `download_s2_item.py`, `utils/tls.py`) are not RECONFORT
+           code and are licensed GPL-3 with the rest of the package.
 
 Third-party attributions in source code
 ---------------------------------------

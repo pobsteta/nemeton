@@ -1,4 +1,5 @@
-# Vendored from RECONFORT (fl.mouret/reconfort, main 25198c9).
+# Vendored from RECONFORT (fl.mouret/reconfort, main 25198c9), modified by
+# nemeton: builder class name I2Classification (see PATCHES.md).
 # License: Apache-2.0 (see inst/NOTICE). Driven by run_map_production_reconfort.py.
 #
 import argparse
