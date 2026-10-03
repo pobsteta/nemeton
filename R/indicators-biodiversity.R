@@ -11,6 +11,11 @@ NULL
 # T019: B1 - Protected Area Coverage
 # ==============================================================================
 
+# Borne absolue du nombre de statuts de protection superposes (B1) :
+# empilement courant en France = ZNIEFF 1 + ZNIEFF 2 + Natura 2000 + parc ou
+# reserve. Au-dela, le sous-score est plafonne a 100.
+B1_NB_STATUTS_MAX <- 4L
+
 #' Calculate Protected Area Coverage (B1)
 #'
 #' Computes the percentage of each forest parcel covered by designated protected
@@ -25,16 +30,29 @@ NULL
 #'   when using WFS. Default c("ZNIEFF1", "ZNIEFF2", "N2000_SCI").
 #' @param preprocess Logical. If TRUE, harmonize CRS automatically. Default TRUE.
 #'
-#' @return The input sf object with added column:
+#' @return The input sf object with added columns:
 #'   \itemize{
-#'     \item B1: Percentage of parcel area in protected zones (0-100)
+#'     \item B1: protection score (0-100)
+#'     \item B1_pct: weighted protected coverage of the parcel (0-100)
+#'     \item B1_nb: number of distinct protection statuses intersecting
+#'       the parcel
 #'   }
 #'
 #' @details
-#' **Calculation**: B1 = (area_protected / area_total) × 100
+#' **Calculation**: with a protection-type column (`type_protection`,
+#' `zone_type`, `type` or `statut`),
+#' B1 = 0.7 * B1_pct + 0.3 * min(B1_nb, 4) / 4 * 100, where B1_pct is the
+#' coverage of each status averaged with weights by protection strength
+#' (strong 1.0, medium 0.6, weak 0.3, unknown 0.5). The number of statuses is
+#' scaled by a fixed bound of 4 stacked statuses (ZNIEFF 1 + ZNIEFF 2 +
+#' Natura 2000 + park/reserve), so the score of a parcel does not depend on
+#' the other parcels of the batch. Without a type column, B1 = B1_pct
+#' (plain coverage; the number of statuses is unknown).
+#'
+#' A NULL `protected_areas` gives NA (no measurement; the `"wfs"` source is
+#' not fetched by this function); an empty `protected_areas` gives 0.
 #'
 #' **Interpretation**: Higher values indicate better protection status.
-#' Parcels with B1 > 75\\% are highly protected.
 #'
 #' @family biodiversity-indicators
 #' @export
@@ -168,7 +186,8 @@ indicateur_b1_protection <- function(units,
       if (!is.null(inter) && length(inter) > 0 && !all(sf::st_is_empty(inter))) {
         pct <- min(100, as.numeric(sum(sf::st_area(inter))) / parcel_area * 100)
       }
-      units$B1[i] <- pct * 0.5
+      # Sans type : la couverture seule (le nombre de statuts est inconnu)
+      units$B1[i] <- pct
       units$B1_pct[i] <- pct
       units$B1_nb[i] <- 0L
       next
@@ -208,12 +227,14 @@ indicateur_b1_protection <- function(units,
     units$B1_nb[i] <- as.integer(nb_types)
   }
 
-  # Combined score: 70% weighted coverage + 30% number of statuses (normalized)
-  max_statuts <- max(units$B1_nb, na.rm = TRUE)
-  if (max_statuts > 0) {
-    units$B1 <- 0.7 * units$B1_pct + 0.3 * (units$B1_nb / max_statuts * 100)
-  } else {
-    units$B1 <- units$B1_pct
+  # Score combine : 70 % couverture ponderee + 30 % nombre de statuts.
+  # Le nombre de statuts est rapporte a une borne ABSOLUE (B1_NB_STATUTS_MAX),
+  # pas au maximum du lot : une unite seule ou un lot homogene ne doit pas
+  # obtenir 100 pour un unique statut, et le score d'une unite ne doit pas
+  # dependre de ses voisines.
+  if (!is.null(type_col)) {
+    nb_score <- pmin(units$B1_nb, B1_NB_STATUTS_MAX) / B1_NB_STATUTS_MAX * 100
+    units$B1 <- 0.7 * units$B1_pct + 0.3 * nb_score
   }
 
   # Cap at 100%

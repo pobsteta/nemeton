@@ -1233,3 +1233,20 @@ test_that("B2 CHM mode is backward-compatible without chm arg", {
   b <- indicateur_b2_structure(units)$B2
   expect_identical(a, b)
 })
+
+test_that("B1 scales the number of statuses by an absolute bound, not the batch max", {
+  units <- create_test_units(n_features = 3)
+  # Une ZNIEFF 1 couvrant uniquement la premiere unite
+  pa <- sf::st_sf(
+    type_protection = "ZNIEFF1",
+    geometry = sf::st_buffer(sf::st_geometry(units)[1], 5)
+  )
+  res <- suppressMessages(indicateur_b1_protection(units, protected_areas = pa))
+  # 0.7 * 100 + 0.3 * 1/4 * 100 (avant : 100, le statut unique etait le max du lot)
+  expect_equal(res$B1[1], 0.7 * 100 + 0.3 * 25)
+  expect_equal(res$B1[2:3], c(0, 0))
+
+  # Le score d'une unite ne depend pas des autres unites du lot
+  seul <- suppressMessages(indicateur_b1_protection(units[1, ], protected_areas = pa))
+  expect_equal(seul$B1, res$B1[1])
+})
