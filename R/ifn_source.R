@@ -227,7 +227,7 @@ ifn_charger <- function(tables = c("ARBRE", "PLACETTE"), campagne = NULL,
   tmp <- file.path(tempdir(), paste0("ifn_", basename(tempfile())))
   dir.create(tmp, showWarnings = FALSE, recursive = TRUE)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
-  utils::unzip(zip, files = voulus, exdir = tmp)
+  .unzip_safe(zip, files = voulus, exdir = tmp)
 
   lire_une <- function(nom) {
     f <- file.path(tmp, paste0(nom, ".csv"))

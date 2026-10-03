@@ -10,7 +10,9 @@ format_citations(retrieved_chunks, format = c("markdown", "html"), lang = "fr")
 \item{retrieved_chunks}{A `data.frame` returned by
 [retrieve_knowledge()].}
 
-\item{format}{One of `"markdown"` (default) or `"html"`.}
+\item{format}{One of `"markdown"` (default) or `"html"`. In HTML,
+every field is HTML-escaped and a link is emitted only for an
+`http://` / `https://` `source_url`.}
 
 \item{lang}{Language for the section heading. `"fr"` (default) ->
 "Sources documentaires"; anything else -> "Sources".}

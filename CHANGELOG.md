@@ -10,6 +10,23 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.210.0] - 2026-10-03
+
+### Security
+- RECONFORT : plus d'`eval()` du `.cfg` côté Python (JSON) ; TLS vérifié pour
+  pygeodes ; `zone_id`/`tiles` validés, suppression bornée au workdir créé, verrou.
+- Extraction d'archives contrôlée (chemins absolus et `..` refusés).
+- `run_memory_capped()` : URL de base hors de `call.rds`, dossier d'échange privé.
+- `theia_sign_urls()` : https obligatoire, timeout, reprises.
+- Corpus RAG : `local_path` sous la racine du corpus, pas de `file://`, `doc_id` revalidé.
+- `format_citations(html)` échappé ; `project_name` validé à l'export QGIS.
+
+### Fixed
+- `aggregate_plot_metrics()` sur les arbres vivants seulement.
+- `validate_field_data()` : `tree_id` obligatoire, vraies lignes signalées.
+- `retrieve_knowledge()` : modèle d'embedding vérifié, argument `api_key`.
+- Export QGIS : CRS sans EPSG, remplacement atomique du `.qgz`.
+
 ## [0.209.0] - 2026-10-03
 
 ### Fixed

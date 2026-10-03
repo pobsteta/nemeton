@@ -1,4 +1,4 @@
-# nemeton-authored glue (not vendored from RECONFORT). MIT, with the rest
+# nemeton-authored glue (not vendored from RECONFORT). GPL-3, with the rest
 # of the nemeton R package. Driven by R/reconfort_ingest.R.
 #
 # One GEODES search for a tile + date range, persisting every matching STAC
@@ -13,6 +13,7 @@ import argparse
 import json
 import os
 from pygeodes import Geodes, Config
+from utils.tls import enforce_tls_verification
 from pygeodes.utils.datetime_utils import complete_datetime_from_str
 from utils.utils import load_config_variable
 
@@ -38,6 +39,8 @@ if __name__ == "__main__":
     os.makedirs(manifest_dir, exist_ok=True)
 
     conf = Config.from_file(dict_config["path_to_cfg_geodes_account"])
+    # Vérification TLS forcée (pygeodes la coupe par défaut).
+    enforce_tls_verification(conf)
     geodes = Geodes(conf=conf)
 
     query = {

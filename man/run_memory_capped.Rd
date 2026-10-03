@@ -29,7 +29,9 @@ no closures, no \code{SpatRaster} — pass file paths.}
 \code{"nemeton"}. Use e.g. \code{"nemetonshiny"} to cap an app-side worker.}
 
 \item{db_url}{Database URL. When given, the child opens a connection and
-passes it to \code{fun} as \code{con} (only if \code{fun} takes a \code{con} argument).}
+passes it to \code{fun} as \code{con} (only if \code{fun} takes a \code{con} argument). It reaches the child through an
+environment variable (removed by the child as soon as it is read), never
+through the call file on disk.}
 
 \item{options}{Named list of session options set in the child (via
 \code{\link{options}}) before calling \code{fun}. Use for options the worker reads but that

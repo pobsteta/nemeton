@@ -95,25 +95,38 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 }
 
 
-# Serialise an R value to a Python literal for a RECONFORT `.cfg` file
-# (`load_config_variable` eval()s each value). Length>1 -> Python list.
-.reconfort_py_literal <- function(x) {
-  scal <- function(v) {
-    if (is.character(v)) paste0("'", gsub("'", "\\\\'", v), "'")
-    # R `TRUE`/`FALSE` -> Python `True`/`False` (eval()ed upstream).
-    else if (is.logical(v)) if (isTRUE(v)) "True" else "False"
-    else as.character(v)
+# Sérialise une valeur R en littéral JSON pour un `.cfg` RECONFORT.
+# Le lecteur Python (`load_config_variable`, utils/utils.py) parse chaque
+# valeur avec `json.loads` : plus d'`eval()`, donc une valeur contenant une
+# quote, un saut de ligne ou du code Python reste une simple chaîne.
+# Longueur 1 -> scalaire JSON ; longueur != 1 -> tableau JSON (liste Python).
+.reconfort_cfg_value <- function(x) {
+  if (is.factor(x)) x <- as.character(x)
+  if (is.null(x) || !is.atomic(x)) {
+    cli::cli_abort("RECONFORT cfg values must be atomic vectors.")
   }
-  if (length(x) != 1L) paste0("[", paste(vapply(x, scal, ""), collapse = ", "), "]")
-  else scal(x)
+  out <- if (length(x) == 1L) {
+    jsonlite::toJSON(unname(x), auto_unbox = TRUE, digits = NA, na = "null")
+  } else {
+    jsonlite::toJSON(unname(x), auto_unbox = FALSE, digits = NA, na = "null")
+  }
+  as.character(out)
 }
 
 
-#' Write a RECONFORT `.cfg` file (`key=<python-literal>` per line)
+#' Write a RECONFORT `.cfg` file (`key=<json-literal>` per line)
+#'
+#' Keys must be Python identifiers; values are JSON-encoded so that the
+#' Python reader (`load_config_variable`) never evaluates them as code.
 #' @keywords internal
 .reconfort_write_cfg <- function(path, kv) {
-  lines <- vapply(names(kv),
-                  function(k) paste0(k, "=", .reconfort_py_literal(kv[[k]])),
+  keys <- names(kv)
+  if (length(kv) && (is.null(keys) ||
+                     any(!grepl("^[A-Za-z_][A-Za-z0-9_]*$", keys)))) {
+    cli::cli_abort("Invalid RECONFORT cfg key(s): {.val {keys}}.")
+  }
+  lines <- vapply(keys,
+                  function(k) paste0(k, "=", .reconfort_cfg_value(kv[[k]])),
                   character(1))
   writeLines(lines, path)
   invisible(path)
@@ -202,19 +215,15 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 }
 
 
-# `PYTHONWARNINGS` filter silencing two floods of benign warnings from the
-# downloader's deps that would otherwise drown real messages:
-#   - pygeodes' per-item "file with same content already exists, skipping
-#     download" `UserWarning` (one per cached scene — up to 140/tile);
-#   - urllib3's `InsecureRequestWarning` (pygeodes calls the CNES GEODES
-#     portal with TLS verification disabled — upstream's choice).
-# The urllib3 warning is matched by *message* ("Unverified HTTPS request"),
-# not by category: a `category::module` filter referencing `urllib3.exceptions`
-# is rejected at interpreter startup ("Invalid -W option ignored: invalid
-# module name") because the third-party module is not importable that early.
-# A message filter needs no import. Python errors, tracebacks and the scripts'
-# own stdout are untouched, so genuine failures still surface.
-.RECONFORT_PYWARN <- "ignore::UserWarning,ignore:Unverified HTTPS request"
+# `PYTHONWARNINGS` filter silencing a flood of benign warnings from the
+# downloader's deps that would otherwise drown real messages: pygeodes'
+# per-item "file with same content already exists, skipping download"
+# `UserWarning` (one per cached scene — up to 140/tile).
+# urllib3's `InsecureRequestWarning` is deliberately NOT silenced any more:
+# the GEODES scripts force TLS verification (utils/tls.py), so that warning
+# can only show up if verification fell back to off — it must stay visible.
+# Python errors, tracebacks and the scripts' own stdout are untouched.
+.RECONFORT_PYWARN <- "ignore::UserWarning"
 
 
 # Memory ceiling for the IOTA2 subprocess, as a systemd size string.
@@ -498,7 +507,13 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
     emit(list(current = "reconfort:ingest_item", tile = tile, step = "crop",
               completed = as.integer(i), total = as.integer(n_items),
               item_date = item_date))
-    suppressWarnings(utils::unzip(tmp_zip, exdir = scratch))
+    # Extraction contrôlée (pas de chemin absolu ni de `..`) ; une archive
+    # refusée retombe dans la branche « archive vide/corrompue » ci-dessous.
+    tryCatch(suppressWarnings(.unzip_safe(tmp_zip, exdir = scratch)),
+             error = function(e) {
+               if (!quiet) cli::cli_alert_warning(conditionMessage(e))
+               unlink(scratch, recursive = TRUE, force = TRUE)
+             })
     sub_scenes <- list.dirs(scratch, recursive = FALSE)
     if (length(sub_scenes) == 0L) {
       if (!quiet) cli::cli_alert_warning(

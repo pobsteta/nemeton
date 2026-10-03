@@ -162,7 +162,8 @@
   emit(list(current = "eobs:cds_download_done", file = basename(zip)))
   emit(list(current = "eobs:unzip"))
   nc <- tryCatch({
-    files <- utils::unzip(zip, exdir = cache_dir)
+    # Extraction contrôlée : entrées relatives seulement, netCDF seulement.
+    files <- .unzip_safe(zip, exdir = cache_dir, pattern = "\\.nc$")
     files[grepl("\\.nc$", files)][1]
   }, error = function(e) cli::cli_abort(
     "Cannot unzip the E-OBS archive {.path {basename(zip)}}: {conditionMessage(e)}",

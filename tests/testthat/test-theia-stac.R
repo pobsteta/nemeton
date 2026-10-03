@@ -129,6 +129,8 @@ test_that("resolve_theia_assets errors on an unconfirmed STAC collection", {
 })
 
 test_that("resolve_theia_assets returns /vsis3/ paths", {
+  # Sans clés de signature (sinon le poste qui en a signe ou tente de signer).
+  withr::local_envvar(TLD_ACCESS_KEY = NA, TLD_SECRET_KEY = NA)
   skip_if_not_installed("sf")
   skip_if_not_installed("httr2")
   skip_if_not_installed("jsonlite")
@@ -220,6 +222,8 @@ test_that("stac_get_item rejects an empty stac_api", {
 })
 
 test_that("resolve_theia_assets targets a single year via item id", {
+  # Sans clés de signature (sinon le poste qui en a signe ou tente de signer).
+  withr::local_envvar(TLD_ACCESS_KEY = NA, TLD_SECRET_KEY = NA)
   skip_if_not_installed("sf")
   skip_if_not_installed("httr2")
   skip_if_not_installed("jsonlite")

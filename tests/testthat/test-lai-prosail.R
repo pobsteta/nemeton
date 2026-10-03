@@ -168,6 +168,65 @@ test_that("theia_sign_urls errors without credentials", {
   expect_length(theia_sign_urls(character(0)), 0L)
 })
 
+# --- audit 1.0, sécurité : endpoint https, délai, reprise, passe-plat --------
+
+.fake_sign_resp <- function(hrefs, status = 200L) {
+  httr2::response(
+    status_code = status,
+    headers = list(`content-type` = "application/json"),
+    body = charToRaw(jsonlite::toJSON(list(hrefs = hrefs), auto_unbox = TRUE)))
+}
+
+test_that("theia_sign_urls refuses a non-https signing endpoint", {
+  skip_if_not_installed("httr2")
+  withr::local_envvar(TLD_ACCESS_KEY = "ak", TLD_SECRET_KEY = "sk")
+  called <- FALSE
+  httr2::local_mocked_responses(function(req) { called <<- TRUE; .fake_sign_resp(list()) })
+  expect_error(
+    theia_sign_urls("https://x.meso.umontpellier.fr/b/k.tif",
+                    endpoint = "http://signing.example"),
+    "https://")
+  expect_false(called)   # les clés ne sont jamais parties
+})
+
+test_that("theia_sign_urls passes through URLs the gateway does not return", {
+  skip_if_not_installed("httr2")
+  skip_if_not_installed("jsonlite")
+  withr::local_envvar(TLD_ACCESS_KEY = "ak", TLD_SECRET_KEY = "sk")
+  meso  <- "https://x.meso.umontpellier.fr/b/k.tif"
+  other <- "https://example.org/other.tif"
+  seen_timeout <- NULL
+  httr2::local_mocked_responses(function(req) {
+    seen_timeout <<- req$options$timeout_ms
+    # La gateway ne renvoie que l'URL MESO : l'ancien `signed[[u]] %||% u`
+    # levait « subscript out of bounds » sur l'autre.
+    .fake_sign_resp(stats::setNames(list(paste0(meso, "?X-Amz-Signature=s")), meso))
+  })
+  out <- theia_sign_urls(c(meso, other), endpoint = "https://signing.example")
+  expect_identical(unname(out), c(paste0(meso, "?X-Amz-Signature=s"), other))
+  expect_identical(names(out), c(meso, other))
+  expect_false(is.null(seen_timeout))   # délai borné posé sur la requête
+})
+
+test_that("theia_sign_urls carries the shared STAC retry policy", {
+  skip_if_not_installed("httr2")
+  skip_if_not_installed("jsonlite")
+  withr::local_envvar(TLD_ACCESS_KEY = "ak", TLD_SECRET_KEY = "sk",
+                      NEMETON_STAC_MAX_TRIES = "3")
+  meso <- "https://x.meso.umontpellier.fr/b/k.tif"
+  # Les réponses simulées court-circuitent la boucle de reprise de httr2 :
+  # on vérifie donc la politique posée sur la requête elle-même.
+  pol <- NULL
+  httr2::local_mocked_responses(function(req) {
+    pol <<- req$policies
+    .fake_sign_resp(stats::setNames(list(paste0(meso, "?sig")), meso))
+  })
+  theia_sign_urls(meso, endpoint = "https://signing.example")
+  expect_identical(as.integer(pol$retry_max_tries), 3L)
+  expect_true(is.function(pol$retry_is_transient))
+  expect_true(pol$retry_is_transient(httr2::response(status_code = 504L)))
+})
+
 # --- biophysique_sentinel2() : généralisation (spec 042) ---
 
 test_that("lai_sentinel2 est un alias strict de biophysique_sentinel2('lai')", {

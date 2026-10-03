@@ -41,7 +41,7 @@ mock_pipeline <- function(calls_env, write_score = TRUE, exit = 0L) {
       calls_env$script <- basename(script)
       if (identical(as.integer(exit), 0L)) {
         kv <- calls_env$cfg
-        getv <- function(k) sub(paste0("^", k, "='?([^']*)'?$"), "\\1",
+        getv <- function(k) sub(paste0("^", k, '="?([^"]*)"?$'), "\\1",
                                 grep(paste0("^", k, "="), kv, value = TRUE))
         label <- getv("label"); year <- getv("S2_year")
         final <- file.path(workdir, "results",
@@ -101,10 +101,10 @@ test_that("run_reconfort_dieback writes a cfg with masking on by default", {
   run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
                         s2_year = 2024L, tiles = "T31UDP", quiet = TRUE)
   cfg <- calls$cfg
-  expect_true(any(grepl("^v_model='v3'", cfg)))
-  expect_true(any(grepl("^list_tiles='T31UDP'", cfg)))
-  expect_true(any(grepl("^mask_final_maps='True'", cfg)))
-  expect_true(any(grepl("^S2_year='2024'", cfg)))
+  expect_true(any(grepl('^v_model="v3"', cfg)))
+  expect_true(any(grepl('^list_tiles="T31UDP"', cfg)))
+  expect_true(any(grepl('^mask_final_maps="True"', cfg)))
+  expect_true(any(grepl('^S2_year="2024"', cfg)))
 })
 
 test_that("run_reconfort_dieback warns when iota2 lacks the probamap fix (#12), and runs on", {
@@ -132,7 +132,7 @@ test_that("run_reconfort_dieback with binary_mask = FALSE disables masking", {
   run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
                         s2_year = 2024L, tiles = "T31UDP",
                         binary_mask = FALSE, quiet = TRUE)
-  expect_true(any(grepl("^mask_final_maps='False'", calls$cfg)))
+  expect_true(any(grepl('^mask_final_maps="False"', calls$cfg)))
   # no mask staged
   wd <- file.path(cache, "reconfort", "run_z1_S22024")
   expect_false(file.exists(file.path(wd, "masks", RECONFORT_OSO_MASK$file)))
@@ -423,4 +423,112 @@ test_that("a malformed cancel_path reads as 'no cancel', never as an error", {
                                s2_year = 2024L, tiles = "T31UDP", quiet = TRUE,
                                cancel_path = bad)
   expect_equal(res$status, "completed")
+})
+
+# --- garde-fous du workdir (audit 1.0, sécurité) ---------------------------
+
+test_that(".reconfort_check_zone_id only accepts strictly positive integers", {
+  expect_identical(.reconfort_check_zone_id(7L), 7L)
+  expect_identical(.reconfort_check_zone_id(7), 7L)
+  expect_identical(.reconfort_check_zone_id("12"), 12L)
+  for (bad in list("../../etc", "1/../..", "1 ", 0L, -3L, 1.5, NA, NA_integer_,
+                   c(1L, 2L), integer(0), list(1L), TRUE, 1e12, "007")) {
+    expect_error(.reconfort_check_zone_id(bad), "strictly positive integer")
+  }
+})
+
+test_that("run_reconfort_dieback rejects a path-like zone_id or tile before touching disk", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  expect_error(
+    run_reconfort_dieback(con = con, zone_id = "../..", cache_dir = cache,
+                          s2_year = 2024L, tiles = "T31UDP", quiet = TRUE),
+    "strictly positive integer")
+  expect_error(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2024L, tiles = "../../x", quiet = TRUE),
+    "MGRS")
+  expect_length(list.files(cache, all.files = TRUE, no.. = TRUE), 0L)
+})
+
+test_that("a failed run with keep_workdir = FALSE never deletes a pre-existing output_dir", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  # output_dir préexistant ET égal au cache : l'ancien code l'effaçait.
+  writeLines("precious", file.path(cache, "keep_me.txt"))
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls, exit = 1L)
+  expect_error(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2024L, tiles = "T31UDP", quiet = TRUE,
+                          output_dir = cache, keep_workdir = FALSE),
+    "RECONFORT dieback run failed")
+  expect_true(file.exists(file.path(cache, "keep_me.txt")))
+  # Le verrou est rendu même en cas d'échec.
+  expect_false(file.exists(file.path(cache, ".lock")))
+})
+
+test_that("a failed run with keep_workdir = FALSE removes the default workdir it created", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls, exit = 1L)
+  expect_error(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2024L, tiles = "T31UDP", quiet = TRUE,
+                          keep_workdir = FALSE),
+    "RECONFORT dieback run failed")
+  expect_false(dir.exists(file.path(cache, "reconfort", "run_z1_S22024")))
+  expect_true(dir.exists(cache))
+})
+
+test_that(".reconfort_workdir_removable needs the marker and spares cache_dir and its ancestors", {
+  root <- withr::local_tempdir()
+  cache <- file.path(root, "proj", "cache")
+  dir.create(cache, recursive = TRUE)
+  wd <- file.path(cache, "reconfort", "run_z1_S22024")
+  # Sans marqueur : jamais.
+  dir.create(wd, recursive = TRUE)
+  expect_false(.reconfort_workdir_removable(wd, cache))
+  .reconfort_claim_workdir(wd, adopt = TRUE)
+  expect_true(.reconfort_workdir_removable(wd, cache))
+  # Marqueur posé sur le cache lui-même ou un ancêtre : jamais.
+  for (d in c(cache, dirname(cache), root)) {
+    .reconfort_claim_workdir(d, adopt = TRUE)
+    expect_false(.reconfort_workdir_removable(d, cache))
+  }
+  # Un output_dir préexistant n'est pas adopté.
+  other <- file.path(root, "other")
+  dir.create(other)
+  expect_false(.reconfort_claim_workdir(other, adopt = FALSE))
+  expect_false(.reconfort_workdir_removable(other, cache))
+})
+
+test_that("the workdir lock refuses a live holder and replaces a stale one", {
+  skip_on_os("windows")
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  wd <- file.path(cache, "reconfort", "run_z1_S22024")
+  dir.create(wd, recursive = TRUE)
+
+  # Détenteur vivant : un `sleep` lancé pour l'occasion.
+  pid <- as.integer(system("sleep 60 > /dev/null 2>&1 & echo $!", intern = TRUE))
+  withr::defer(tools::pskill(pid))
+  writeLines(as.character(pid), file.path(wd, ".lock"))
+  expect_error(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2024L, tiles = "T31UDP", quiet = TRUE),
+    "in use by")
+  expect_identical(readLines(file.path(wd, ".lock")), as.character(pid))
+
+  # Verrou périmé (processus terminé) : repris, puis rendu en fin de run.
+  dead <- as.integer(system("sh -c 'echo $$'", intern = TRUE))
+  writeLines(as.character(dead), file.path(wd, ".lock"))
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls, exit = 1L)
+  expect_error(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2024L, tiles = "T31UDP", quiet = TRUE),
+    "RECONFORT dieback run failed")
+  expect_false(file.exists(file.path(wd, ".lock")))
 })

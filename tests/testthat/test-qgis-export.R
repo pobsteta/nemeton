@@ -175,11 +175,8 @@ test_that("create_qgis_project refuses overwriting when overwrite=FALSE", {
   skip_if_no_sf()
 
   pts <- make_sample_plots()
-  # Use an ABSOLUTE output_dir rather than "." inside with_tempdir:
-  # create_qgis_project() does an internal setwd(stage) for the zip
-  # step, so a cwd-relative output_dir makes this test depend on every
-  # prior test perfectly restoring the process working directory. An
-  # absolute path is immune to that cross-test coupling.
+  # Use an ABSOLUTE output_dir rather than "." inside with_tempdir, so the
+  # test does not depend on prior tests restoring the working directory.
   out  <- withr::local_tempdir()
   qgz  <- file.path(out, "once.qgz")
 
@@ -199,12 +196,65 @@ test_that("create_qgis_project refuses overwriting when overwrite=FALSE", {
   )
 })
 
+test_that("a failed rebuild keeps the existing .qgz intact (audit 1.0)", {
+  skip_if_no_sf()
+  pts <- make_sample_plots()
+  out <- withr::local_tempdir()
+  qgz <- create_qgis_project(pts, output_dir = out, project_name = "garde")
+  avant <- unname(tools::md5sum(qgz))
+  owd <- getwd()
+  # Commande zip qui échoue : l'ancien .qgz était supprimé avant le zip.
+  withr::local_envvar(R_ZIPCMD = "false")
+  expect_error(
+    create_qgis_project(pts, output_dir = out, project_name = "garde"),
+    "Failed to build"
+  )
+  expect_true(file.exists(qgz))
+  expect_identical(unname(tools::md5sum(qgz)), avant)
+  expect_identical(getwd(), owd)
+  # aucun temporaire laissé dans output_dir
+  expect_identical(list.files(out, all.files = TRUE, no.. = TRUE), "garde.qgz")
+})
+
 test_that("create_qgis_project rejects non-sf placettes", {
   expect_error(
     create_qgis_project(data.frame(plot_id = "P01"),
                           output_dir = tempdir()),
     "must be an sf object"
   )
+})
+
+test_that("create_qgis_project rejects an unsafe project_name (audit 1.0)", {
+  skip_if_no_sf()
+  pts <- make_sample_plots()
+  out <- withr::local_tempdir()
+  for (bad in c("../evil", "a/b", "-x -T", "nom avec espace", "", NA_character_)) {
+    expect_error(
+      create_qgis_project(pts, output_dir = out, project_name = bad),
+      "project_name"
+    )
+  }
+  expect_length(list.files(dirname(out), pattern = "^evil"), 0L)
+  expect_length(list.files(out), 0L)
+})
+
+test_that("create_qgis_project handles a CRS without EPSG code (audit 1.0)", {
+  skip_if_no_sf()
+  pts <- make_sample_plots()
+  # Lambert-93 décrit en PROJ, sans code EPSG : $epsg vaut NA
+  l93 <- sf::st_crs(paste(
+    "+proj=lcc +lat_0=46.5 +lon_0=3 +lat_1=49 +lat_2=44",
+    "+x_0=700000 +y_0=6600000 +ellps=GRS80 +units=m +no_defs"))
+  pts_proj <- sf::st_transform(pts, l93)
+  expect_true(is.na(sf::st_crs(pts_proj)$epsg))
+  out <- withr::local_tempdir()
+  qgz <- create_qgis_project(pts_proj, output_dir = out, project_name = "noepsg")
+  expect_true(file.exists(qgz))
+
+  # sans CRS du tout : erreur explicite
+  pts_na <- sf::st_set_crs(pts, NA)
+  expect_error(create_qgis_project(pts_na, output_dir = out, project_name = "nocrs"),
+               "no CRS")
 })
 
 test_that("create_qgis_project rejects placettes without plot_id", {

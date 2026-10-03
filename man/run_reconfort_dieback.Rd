@@ -34,7 +34,7 @@ run_reconfort_dieback(
 \item{con}{A `DBIConnection` to the monitoring database.}
 
 \item{zone_id}{Scalar monitoring-zone id (resolved to an AOI via the
-`monitoring_zone` table).}
+`monitoring_zone` table). Must be a strictly positive integer.}
 
 \item{cache_dir}{Project cache root. The per-run working directory is
 created under `<cache_dir>/reconfort/` (same caller-supplied
@@ -99,7 +99,10 @@ PENDING : à revoir après alignement de la version d'iota2.}
 \item{nb_parallel_tasks}{IOTA2 parallel-task count. Default `1`.}
 
 \item{output_dir}{Explicit per-run working directory. Default
-`<cache_dir>/reconfort/run_z<zone_id>_S2<s2_year>`.}
+`<cache_dir>/reconfort/run_z<zone_id>_S2<s2_year>`. The directory is locked
+(`.lock`, holding the PID) for the duration of the run; a second run on a
+directory held by a live process aborts. A pre-existing `output_dir` is never
+deleted, whatever `keep_workdir` says.}
 
 \item{geodes_config}{Path to `pygeodes-config.json` (see
 \code{\link{reconfort_ingest_s2}}). Default resolves the option / user dir.}
@@ -114,7 +117,9 @@ when `NULL`.}
 working dir instead of downloading. Default `FALSE`.}
 
 \item{keep_workdir}{Keep the staged working directory after the run.
-Default `TRUE` (the rasters live there).}
+Default `TRUE` (the rasters live there). With `FALSE`, only a directory
+created (or, for the default path, owned) by nemeton is removed, never
+`cache_dir` or one of its ancestors.}
 
 \item{quiet}{Suppress progress + subprocess output. Default `FALSE`.}
 
