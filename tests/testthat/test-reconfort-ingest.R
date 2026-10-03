@@ -671,6 +671,16 @@ test_that("GEODES scripts force TLS verification and the warning is not silenced
 test_that("enforce_tls_verification points pygeodes to a CA bundle", {
   py <- Sys.which("python3")
   skip_if(!nzchar(py), "python3 not available")
+  # Le python3 du PATH peut être un interpréteur provisionné par reticulate,
+  # sans certifi ni magasin système : le helper retombe alors (à raison) sur
+  # « pas de bundle ». Ce test vérifie le cas où un bundle existe.
+  a_bundle <- suppressWarnings(system2(py, c("-c", shQuote(paste(
+    "import ssl, os, importlib.util;",
+    "c = importlib.util.find_spec('certifi') is not None;",
+    "p = ssl.get_default_verify_paths();",
+    "print(c or any(os.path.exists(x or '') for x in (p.cafile, p.openssl_cafile)))"))),
+    stdout = TRUE))
+  skip_if(!identical(a_bundle, "True"), "no CA bundle visible to this python3")
   glue <- normalizePath(.reconfort_glue_dir())
   # Faux paquet pygeodes : reproduit la constante lue par RequestMaker.
   stub <- withr::local_tempdir()
