@@ -99,6 +99,26 @@ test_that("eobs_monthly_climatology (precip) sums per month then averages years"
   expect_identical(attr(out, "reducer"), "sum")
 })
 
+test_that("eobs_monthly_climatology does not count a missing day as 0 mm (audit 1.0)", {
+  d <- make_daily(2011:2012, precip = TRUE)
+  tt <- terra::time(d)
+  # Un jour NA en janvier 2011 : ce mois-là devient NA et sort de la moyenne.
+  i <- which(as.Date(tt) == as.Date("2011-01-15"))
+  d[[i]] <- terra::setValues(d[[i]], NA_real_)
+  terra::time(d) <- tt
+  # Un jour ABSENT en mars 2011 (couche supprimée) : même traitement.
+  j <- which(as.Date(tt) == as.Date("2011-03-10"))
+  d2 <- d[[-j]]
+  terra::time(d2) <- tt[-j]
+  out <- eobs_monthly_climatology(d2, pt, var = "rr")
+  expect_equal(out$value[1], 31)             # janvier 2012 seul, pas (30+31)/2
+  expect_equal(out$value[3], 31)             # mars 2012 seul
+  # Aucun mois complet -> NA (et non un cumul partiel).
+  out11 <- eobs_monthly_climatology(d2, pt, var = "rr", years = 2011)
+  expect_true(is.na(out11$value[1]))
+  expect_equal(out11$value[4], 30)           # avril 2011 complet
+})
+
 test_that("eobs_monthly_climatology honours the years filter", {
   d <- make_daily(2011:2012, precip = TRUE)
   out <- eobs_monthly_climatology(d, pt, var = "rr", years = 2012)

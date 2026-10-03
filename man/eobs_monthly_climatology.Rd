@@ -25,7 +25,8 @@ month has no data). Attributes: \code{var}, \code{unit}, \code{reducer}.
 Twelve-month climatology (averaged over \code{years}) of an E-OBS variable at a
 location, for the ombrothermic (Gaussen-Bagnouls) diagram — chart 4 of the
 regional-context click panel (spec 036). Precipitation is summed within each
-month then averaged across years (mm/month); temperature is the monthly mean
+month then averaged across years (mm/month), counting only complete months (a
+month with a missing day is \code{NA} for that year); temperature is the monthly mean
 (°C). Reads the full-year daily field (a \code{SpatRaster} with \code{terra::time} set,
 or a cached netCDF path), so tx/rr need no new acquisition; the Gaussen diagram
 proper wants mean temperature (\code{tg}), which has its own netCDF (spec 036 §5.4).
