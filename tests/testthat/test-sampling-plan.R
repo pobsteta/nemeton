@@ -155,6 +155,49 @@ test_that("create_sampling_plan gives equal-probability weights in the fallback 
   expect_equal(unique(res$wgt), 40)
 })
 
+test_that("an extraction error is propagated instead of silently disabling max_slope", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
+  slope <- terra::rast(xmin = 899900, xmax = 901100,
+                       ymin = 6499900, ymax = 6501100,
+                       resolution = 10, crs = "EPSG:2154", vals = 45)
+  local_mocked_bindings(
+    exact_extract = function(...) stop("boom"),
+    .package = "exactextractr"
+  )
+  expect_error(
+    create_sampling_plan(make_zone(), n_base = 5, slope = slope, seed = 1),
+    "slope.*raster"
+  )
+})
+
+test_that("a slope raster in another CRS is aligned, one without overlap warns", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
+  slope <- terra::rast(xmin = 899900, xmax = 901100,
+                       ymin = 6499900, ymax = 6501100,
+                       resolution = 10, crs = "EPSG:2154")
+  xs <- terra::init(slope, fun = "x")
+  slope[] <- ifelse(terra::values(xs) < 900500, 45, 5)
+  slope_3857 <- terra::project(slope, "EPSG:3857", method = "near")
+
+  res <- suppressWarnings(create_sampling_plan(
+    make_zone(), n_base = 30, n_over = 0,
+    slope = slope_3857, max_slope = 30, seed = 11))
+  expect_true(mean(sf::st_coordinates(res)[, "X"] > 900500) >= 0.8)
+
+  # Raster sans recouvrement : la contrainte ne s'applique pas -> avertissement
+  loin <- terra::rast(xmin = 0, xmax = 1000, ymin = 0, ymax = 1000,
+                      resolution = 10, crs = "EPSG:2154", vals = 45)
+  expect_warning(
+    create_sampling_plan(make_zone(), n_base = 5, slope = loin, seed = 1),
+    "max_slope"
+  )
+})
+
+
 # ------------------------------------------------------------
 # Error surfaces
 # ------------------------------------------------------------

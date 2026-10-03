@@ -156,13 +156,39 @@ NULL
 }
 
 
-.extract_mean <- function(raster, buffers) {
-  if (is.null(raster) || !requireNamespace("exactextractr", quietly = TRUE)) {
+# Moyenne d'un raster dans les tampons des candidats. Les CRS sont alignes en
+# amont (tampons reprojetes dans le CRS du raster) et une erreur d'extraction
+# est propagee : la renvoyer en NA desactivait en silence la contrainte de
+# pente (ou la stratification) demandee.
+.extract_mean <- function(raster, buffers, what = "raster") {
+  if (is.null(raster)) {
     return(rep(NA_real_, nrow(buffers)))
   }
-  tryCatch(exactextractr::exact_extract(raster, buffers, "mean",
-                                        progress = FALSE),
-           error = function(e) rep(NA_real_, nrow(buffers)))
+  if (!requireNamespace("exactextractr", quietly = TRUE)) {
+    cli::cli_abort(c(
+      "Package {.pkg exactextractr} is required to use the {.arg {what}} raster.",
+      i = "Install it, or drop the {.arg {what}} argument."
+    ))
+  }
+  r_crs <- if (inherits(raster, "SpatRaster")) terra::crs(raster) else ""
+  if (inherits(raster, "SpatRaster") && !nzchar(r_crs)) {
+    cli::cli_abort("The {.arg {what}} raster has no CRS; cannot align it on the candidate plots.")
+  }
+  if (nzchar(r_crs) && !is.na(sf::st_crs(buffers))) {
+    crs_r <- sf::st_crs(r_crs)
+    if (!isTRUE(sf::st_crs(buffers) == crs_r)) {
+      buffers <- sf::st_transform(buffers, crs_r)
+    }
+  }
+  tryCatch(
+    exactextractr::exact_extract(raster, buffers, "mean", progress = FALSE),
+    error = function(e) {
+      cli::cli_abort(c(
+        "Extraction of the {.arg {what}} raster over the candidate plots failed.",
+        x = conditionMessage(e)
+      ), parent = e)
+    }
+  )
 }
 
 
@@ -493,8 +519,16 @@ create_sampling_plan <- function(zone,
 
   # --- Apply terrain constraints ---------------------------------------
   grid$forest_cover <- .compute_forest_cover(buffers, forest_mask)
-  grid$mean_slope   <- .extract_mean(slope, buffers)
-  grid$mean_height  <- .extract_mean(chm,   buffers)
+  grid$mean_slope   <- .extract_mean(slope, buffers, what = "slope")
+  grid$mean_height  <- .extract_mean(chm,   buffers, what = "chm")
+  # Raster de pente fourni mais sans recouvrement : la contrainte max_slope
+  # ne peut pas s'appliquer -> on le dit au lieu de l'ignorer en silence.
+  if (!is.null(slope) && all(is.na(grid$mean_slope))) {
+    cli::cli_warn(c(
+      "The {.arg slope} raster does not cover any candidate plot: the {.arg max_slope} constraint is not applied.",
+      i = "Check the extent / CRS of {.arg slope} against {.arg zone}."
+    ))
+  }
 
   if (!is.null(mnt) && requireNamespace("terra", quietly = TRUE)) {
     tpi <- tryCatch({
@@ -502,7 +536,7 @@ create_sampling_plan <- function(zone,
       terra::focal(mnt, w = w, fun = "mean", na.rm = TRUE) -> mnt_f
       mnt - mnt_f
     }, error = function(e) NULL)
-    grid$mean_tpi <- .extract_mean(tpi, buffers)
+    grid$mean_tpi <- .extract_mean(tpi, buffers, what = "mnt")
   } else {
     grid$mean_tpi <- NA_real_
   }
