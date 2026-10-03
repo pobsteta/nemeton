@@ -90,9 +90,9 @@ test_that("indicateur_e1_bois_energie handles NA volume values", {
   expect_false(is.na(result$E1[1]))
   expect_true(is.na(result$E1[2]))
   expect_false(is.na(result$E1[3]))
-  # E1_residues and E1_coppice should remain 0 for the NA row (default numeric(n))
-  expect_equal(result$E1_residues[2], 0)
-  expect_equal(result$E1_coppice[2], 0)
+  # Unité non évaluée : les colonnes de détail suivent le total (NA, pas 0)
+  expect_true(is.na(result$E1_residues[2]))
+  expect_true(is.na(result$E1_coppice[2]))
 })
 
 test_that("indicateur_e1_bois_energie uses species-specific density when species field present", {
@@ -196,8 +196,9 @@ test_that("indicateur_e1_bois_energie uses default density 550 when lookup retur
   # Manually verify: volume=200, harvest_rate=0.02, residue_fraction=0.3, density=550
   # annual_harvest = 200 * 0.02 = 4
   # residues_m3 = 4 * 0.3 = 1.2
-  # residues_tonnes_dm = 1.2 * 550 / 1000 * 0.5 = 0.33
-  expect_equal(result$E1_residues[1], 1.2 * 550 / 1000 * 0.5)
+  # residues_tonnes_dm = 1.2 * 550 / 1000 = 0.66 : la densité de
+  # wood_density.csv est déjà sèche (plus de facteur 0,5 depuis l'audit 1.0)
+  expect_equal(result$E1_residues[1], 1.2 * 550 / 1000)
 })
 
 test_that("indicateur_e1_bois_energie uses custom harvest rate and residue fraction", {

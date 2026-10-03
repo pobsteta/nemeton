@@ -57,9 +57,17 @@ NULL
 #' E1_residues, E1_coppice; in flux mode also `E1_mode`
 #' (`"ressource_flux"` or `"recolte_observee"`). **Higher = more fuelwood available =
 #' favourable**, not inverted; normalize_indicator() rescales it against a
-#' ref_max of 1.32 t DM/ha/yr -- the yield of a stand at P1's own ceiling
+#' ref_max of 2.64 t DM/ha/yr -- the yield of a stand at P1's own ceiling
 #' (800 m3/ha, density 550), so E1, E2 and P1 score the same stand alike.
-#' See spec 048 section 11.
+#' See spec 048 section 11. A unit with no volume gets `NA` in E1,
+#' E1_residues and E1_coppice.
+#'
+#' @section Wood density:
+#' Residue volume is converted to dry matter with the species density of
+#' `inst/extdata/wood_density.csv` (`density_kg_m3`), an air-dry density
+#' (about 12 percent moisture), used as is as a dry-matter density -- as C1
+#' does. Versions up to 0.211.0 multiplied it by a further 0.5 ("dry matter =
+#' 50 percent of fresh weight"), which halved E1.
 #'
 #' @export
 indicateur_e1_bois_energie <- function(units,
@@ -167,7 +175,11 @@ indicateur_e1_bois_energie <- function(units,
   for (i in seq_len(nrow(units))) {
     volume_m3_ha <- units[[volume_field]][i]
     if (is.na(volume_m3_ha)) {
+      # Unite non evaluee : les colonnes de detail suivent le total (un 0
+      # laisse en place se lisait « aucun remanent »).
       e1_values[i] <- NA_real_
+      e1_residues[i] <- NA_real_
+      e1_coppice[i] <- NA_real_
       next
     }
 
@@ -179,7 +191,13 @@ indicateur_e1_bois_energie <- function(units,
     # Calculate harvest residues
     annual_harvest_m3_ha <- volume_m3_ha * harvest_rate
     residues_m3_ha <- annual_harvest_m3_ha * residue_fraction
-    residues_tonnes_dm <- residues_m3_ha * density_kg_m3 / 1000 * 0.5 # DM = 50% of fresh weight
+    # `density_kg_m3` (inst/extdata/wood_density.csv) est une densite de bois
+    # SEC a l'air (~12 % d'humidite : chene 690, hetre 680, epicea 450), pas
+    # une densite de bois vert. C1 l'emploie d'ailleurs telle quelle comme
+    # masse seche par m3. L'ancien facteur « x 0.5 (MS = 50 % du poids frais) »
+    # appliquait une correction d'humidite a une densite deja seche et divisait
+    # E1 par deux.
+    residues_tonnes_dm <- residues_m3_ha * density_kg_m3 / 1000
 
     # Calculate coppice biomass (if applicable)
     coppice_tonnes_dm <- 0
@@ -193,9 +211,13 @@ indicateur_e1_bois_energie <- function(units,
     e1_residues[i] <- residues_tonnes_dm
     e1_coppice[i] <- coppice_tonnes_dm
     e1_values[i] <- residues_tonnes_dm + coppice_tonnes_dm
-
-    msg_info("energy_fuelwood_calculated", e1_values[i], residues_tonnes_dm, coppice_tonnes_dm)
   }
+
+  # Un seul message agrege pour l'emprise (auparavant un message par unite).
+  msg_info("energy_fuelwood_calculated",
+           sum(e1_values, na.rm = TRUE),
+           sum(e1_residues, na.rm = TRUE),
+           sum(e1_coppice, na.rm = TRUE))
 
   result$E1_residues <- e1_residues
   result$E1_coppice <- e1_coppice
@@ -220,7 +242,7 @@ indicateur_e1_bois_energie <- function(units,
 #'
 #' @return sf object with added columns: E2 (total CO2 avoided tCO2eq/ha/yr),
 #' E2_energy, E2_material. **Higher = more emissions avoided =
-#' favourable**, not inverted. Same ref_max as E1 (1.32) because it is, to
+#' favourable**, not inverted. Same ref_max as E1 (2.64) because it is, to
 #' within 0.1 %, the same quantity: E2 = E1 x 4500 kWh x 0.222 kgCO2/kWh /
 #' 1000 = E1 x 0.999. See spec 048 section 11.
 #'

@@ -814,13 +814,13 @@ FICHES <- list(
     chemins = list(
       list(titre = "Récolte annuelle", lignes = c("V × harvest_rate", "défaut 2 % / an")),
       list(titre = "Rémanents en matière sèche", lignes = c("récolte × 30 %",
-                                                            "× ρ/1000 × 0,5")),
+                                                            "× ρ/1000")),
       list(titre = "Somme des deux gisements", lignes = "E1 = rémanents + taillis")
     ),
     aval = av("indicateur_e1_bois_energie", "t MS / ha / an",
-              "min(100, t / 1,32 × 100)", "E", "famille_energie", "E1 et E2"),
+              "min(100, t / 2,64 × 100)", "E", "famille_energie", "E1 et E2"),
     notes = c(
-      "Borne alignée sur P1 (1,32 t MS/ha/an = E1 à 800 m³/ha) : E1, E2 et P1 notent le même peuplement pareil.",
+      "Borne alignée sur P1 (2,64 t MS/ha/an = E1 à 800 m³/ha) : E1, E2 et P1 notent le même peuplement pareil.",
       "Trois constantes portent le résultat — taux de récolte 2 %, fraction rémanents 30 %, forfait taillis 2 t.",
       "La récolte de 2 % est une hypothèse de gestion, pas une mesure de prélèvement réel."
     ),
@@ -849,7 +849,7 @@ FICHES <- list(
                                                        "× facteur ADEME"))
     ),
     aval = av("indicateur_e2_evitement", "t CO₂eq / ha / an",
-              "min(100, t / 1,32 × 100)", "E", "famille_energie", "E1 et E2"),
+              "min(100, t / 2,64 × 100)", "E", "famille_energie", "E1 et E2"),
     notes = c(
       "Chaîne multiplicative : taux de récolte, fraction rémanents, densité, PCI, facteur ADEME — chaque hypothèse s'y propage.",
       "Le facteur de substitution dépend de l'énergie remplacée : le scénario est paramétrable, et il compte.",
