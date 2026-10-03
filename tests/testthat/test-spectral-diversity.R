@@ -191,6 +191,7 @@ test_that("compute_spectral_diversity validates its reflectance argument", {
                                     crs = "EPSG:2154", vals = v)
 
 test_that("reuse_existing only reuses outputs of the same inputs", {
+  skip_if_terra_write_broken()
   st <- new.env(); st$n <- 0L
   local_mocked_bindings(.run_biodivmapr = .faux_biodivmapr(st))
   out <- withr::local_tempdir()
@@ -220,6 +221,7 @@ test_that("reuse_existing only reuses outputs of the same inputs", {
 })
 
 test_that("a legacy output_dir without a cache key is recomputed", {
+  skip_if_terra_write_broken()
   st <- new.env(); st$n <- 0L
   local_mocked_bindings(.run_biodivmapr = .faux_biodivmapr(st))
   out <- withr::local_tempdir()
@@ -232,6 +234,7 @@ test_that("a legacy output_dir without a cache key is recomputed", {
 })
 
 test_that("a file-path reflectance is keyed by its path and content stamp", {
+  skip_if_terra_write_broken()
   f <- withr::local_tempfile(fileext = ".tif")
   terra::writeRaster(.cube_s2(1), f)
   k1 <- .spectral_cache_key(f, NULL, 10L, NULL)

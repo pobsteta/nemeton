@@ -3117,6 +3117,7 @@ test_that(".cache_valid_or_drop deletes an unreadable cache", {
 })
 
 test_that(".raster_lisible rejects a truncated GeoTIFF", {
+  skip_if_terra_write_broken()
   d <- tempfile(); dir.create(d)
   f <- file.path(d, "r.tif")
   terra::writeRaster(terra::rast(nrows = 300, ncols = 300, vals = runif(9e4)), f)
