@@ -506,6 +506,57 @@ indicateur_r2_tempete <- function(units,
 # T033: R3 - Drought Stress Index
 # ==============================================================================
 
+# BILJOU stress normalisation bounds (spec 027). Documented, revisable on
+# BILJOU calibration (§9.2); consistent with .REGEN_STRESS_BOUNDS.
+.R3_BILJOU_BOUNDS <- list(njstress = c(lo = 0, hi = 60),   # days
+                          istress  = c(lo = 0, hi = 50))   # intensity index
+
+# Resolve BILJOU per-unit metrics from `biljou` (data.frame/list) or, failing
+# that, from same-named columns of `units`. Returns a named list of numeric
+# vectors (length nrow(units)) for the metrics found, or NULL if none.
+.r3_resolve_biljou <- function(biljou, units) {
+  n <- nrow(units)
+  pick <- function(nm) {
+    v <- NULL
+    if (!is.null(biljou) && (is.data.frame(biljou) || is.list(biljou)))
+      v <- biljou[[nm]]
+    if (is.null(v) && nm %in% names(units)) v <- units[[nm]]
+    if (is.null(v)) return(NULL)
+    rep(as.numeric(v), length.out = n)
+  }
+  out <- list(njstress = pick("njstress"), istress = pick("istress"),
+              deb_stress = pick("deb_stress"))
+  if (all(vapply(out, is.null, logical(1)))) return(NULL)
+  out
+}
+
+# BILJOU stress score 0-100 (high = more stress), renormalised mean of the
+# available njstress / istress components. NULL if neither is present.
+.r3_biljou_stress <- function(b) {
+  comps <- list()
+  if (!is.null(b$njstress)) {
+    bd <- .R3_BILJOU_BOUNDS$njstress
+    comps$nj <- 100 * pmin(1, pmax(0, (b$njstress - bd[["lo"]]) / (bd[["hi"]] - bd[["lo"]])))
+  }
+  if (!is.null(b$istress)) {
+    bd <- .R3_BILJOU_BOUNDS$istress
+    comps$is <- 100 * pmin(1, pmax(0, (b$istress - bd[["lo"]]) / (bd[["hi"]] - bd[["lo"]])))
+  }
+  if (!length(comps)) return(NULL)
+  mat <- matrix(unlist(comps), ncol = length(comps))
+  s <- rowMeans(mat, na.rm = TRUE)
+  s[is.nan(s)] <- NA_real_
+  s
+}
+
+# Attach the raw BILJOU metrics to `units` (exposed for compliance, §5.1).
+.r3_expose_biljou <- function(units, b) {
+  if (!is.null(b$njstress))   units$r3_njstress   <- b$njstress
+  if (!is.null(b$istress))    units$r3_istress    <- b$istress
+  if (!is.null(b$deb_stress)) units$r3_deb_stress <- b$deb_stress
+  units
+}
+
 #' Calculate Drought Stress Index (R3)
 #'
 #' Computes drought stress combining a climate component (SPEI-3 index)
@@ -612,57 +663,6 @@ indicateur_r2_tempete <- function(units,
 #' result <- indicateur_r3_secheresse(units, dem = dem)
 #' summary(result$R3)
 #' }
-# BILJOU stress normalisation bounds (spec 027). Documented, revisable on
-# BILJOU calibration (§9.2); consistent with .REGEN_STRESS_BOUNDS.
-.R3_BILJOU_BOUNDS <- list(njstress = c(lo = 0, hi = 60),   # days
-                          istress  = c(lo = 0, hi = 50))   # intensity index
-
-# Resolve BILJOU per-unit metrics from `biljou` (data.frame/list) or, failing
-# that, from same-named columns of `units`. Returns a named list of numeric
-# vectors (length nrow(units)) for the metrics found, or NULL if none.
-.r3_resolve_biljou <- function(biljou, units) {
-  n <- nrow(units)
-  pick <- function(nm) {
-    v <- NULL
-    if (!is.null(biljou) && (is.data.frame(biljou) || is.list(biljou)))
-      v <- biljou[[nm]]
-    if (is.null(v) && nm %in% names(units)) v <- units[[nm]]
-    if (is.null(v)) return(NULL)
-    rep(as.numeric(v), length.out = n)
-  }
-  out <- list(njstress = pick("njstress"), istress = pick("istress"),
-              deb_stress = pick("deb_stress"))
-  if (all(vapply(out, is.null, logical(1)))) return(NULL)
-  out
-}
-
-# BILJOU stress score 0-100 (high = more stress), renormalised mean of the
-# available njstress / istress components. NULL if neither is present.
-.r3_biljou_stress <- function(b) {
-  comps <- list()
-  if (!is.null(b$njstress)) {
-    bd <- .R3_BILJOU_BOUNDS$njstress
-    comps$nj <- 100 * pmin(1, pmax(0, (b$njstress - bd[["lo"]]) / (bd[["hi"]] - bd[["lo"]])))
-  }
-  if (!is.null(b$istress)) {
-    bd <- .R3_BILJOU_BOUNDS$istress
-    comps$is <- 100 * pmin(1, pmax(0, (b$istress - bd[["lo"]]) / (bd[["hi"]] - bd[["lo"]])))
-  }
-  if (!length(comps)) return(NULL)
-  mat <- matrix(unlist(comps), ncol = length(comps))
-  s <- rowMeans(mat, na.rm = TRUE)
-  s[is.nan(s)] <- NA_real_
-  s
-}
-
-# Attach the raw BILJOU metrics to `units` (exposed for compliance, §5.1).
-.r3_expose_biljou <- function(units, b) {
-  if (!is.null(b$njstress))   units$r3_njstress   <- b$njstress
-  if (!is.null(b$istress))    units$r3_istress    <- b$istress
-  if (!is.null(b$deb_stress)) units$r3_deb_stress <- b$deb_stress
-  units
-}
-
 indicateur_r3_secheresse <- function(units,
                                    layers = NULL,
                                    dem = NULL,
