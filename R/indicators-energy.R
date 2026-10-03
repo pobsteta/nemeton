@@ -234,11 +234,19 @@ indicateur_e1_bois_energie <- function(units,
 #'
 #' @param units sf object (POLYGON) of spatial units to assess
 #' @param fuelwood_field Character. Column name for fuelwood potential (tonnes DM/yr). Default "E1".
-#' @param volume_field Character. Column name for construction timber volume (m³/ha). Optional.
+#' @param volume_field Character. Column name for the standing construction
+#'   timber volume (m³/ha, a stock). Optional; used only with
+#'   `material_scenario`, and then annualised by `taux_recolte_materiau`.
 #' @param energy_scenario Character. Energy substitution scenario: "vs_natural_gas", "vs_fuel_oil". Default "vs_natural_gas".
 #' @param material_scenario Character. Material substitution: "vs_concrete", "vs_steel", NULL. Default NULL (no material substitution).
 #' @param column_name Character. Name for output column. Default "E2".
 #' @param lang Character. Message language. Default "en".
+#' @param taux_recolte_materiau Numeric in `[0, 1]`, one value or one per
+#'   unit: share of `volume_field` harvested as construction timber each
+#'   year. Required with `material_scenario` + `volume_field`, no default on
+#'   purpose: E2 is an annual flux, and adding the standing stock (m³/ha) to
+#'   the yearly energy substitution, as versions up to 0.211.0 did, mixed a
+#'   stock and a flux.
 #'
 #' @return sf object with added columns: E2 (total CO2 avoided tCO2eq/ha/yr),
 #' E2_energy, E2_material. **Higher = more emissions avoided =
@@ -253,8 +261,29 @@ indicateur_e2_evitement <- function(units,
                                        energy_scenario = "vs_natural_gas",
                                        material_scenario = NULL,
                                        column_name = "E2",
-                                       lang = "en") {
+                                       lang = "en",
+                                       taux_recolte_materiau = NULL) {
   if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
+
+  # Substitution materiau : `volume_field` est un STOCK sur pied (m3/ha). E2
+  # est un flux annuel ; on n'additionne au flux energie que la part recoltee
+  # chaque annee. Pas de taux par defaut : une hypothese de recolte cachee
+  # serait une decision non dite (meme principe que `taux_mobilisation` de E1).
+  materiau_actif <- !is.null(material_scenario) && !is.null(volume_field)
+  if (materiau_actif) {
+    if (is.null(taux_recolte_materiau)) {
+      cli::cli_abort(c(
+        "Material substitution needs {.arg taux_recolte_materiau}.",
+        "i" = "{.arg volume_field} is a standing stock (m3/ha) and E2 an annual flux: give the share harvested each year as construction timber, in [0, 1]."
+      ))
+    }
+    if (!is.numeric(taux_recolte_materiau) || anyNA(taux_recolte_materiau) ||
+        any(taux_recolte_materiau < 0 | taux_recolte_materiau > 1) ||
+        !length(taux_recolte_materiau) %in% c(1L, nrow(units))) {
+      cli::cli_abort("{.arg taux_recolte_materiau} must be in [0, 1] (one value or one per unit).")
+    }
+    taux_materiau <- rep_len(taux_recolte_materiau, nrow(units))
+  }
 
   result <- units
   e2_energy <- numeric(nrow(units))
@@ -287,13 +316,13 @@ indicateur_e2_evitement <- function(units,
     }
 
     # Material substitution (if applicable)
-    if (!is.null(material_scenario) && !is.null(volume_field) && volume_field %in% names(units)) {
+    if (materiau_actif && volume_field %in% names(units)) {
       construction_volume <- units[[volume_field]][i]
       if (!is.na(construction_volume)) {
         material_factor <- lookup_ademe_factor("wood_construction", material_scenario)
         if (!is.null(material_factor)) {
-          # Convert volume to mass (assuming 500 kg/m³ average)
-          wood_mass_kg <- construction_volume * 500
+          # Flux annuel de bois d'oeuvre (m3/ha/an), puis masse (500 kg/m3)
+          wood_mass_kg <- construction_volume * taux_materiau[i] * 500
           e2_material[i] <- wood_mass_kg * as.numeric(material_factor$emission_factor_kgCO2eq_per_unit) / 1000
           e2_calcule[i] <- TRUE
         }

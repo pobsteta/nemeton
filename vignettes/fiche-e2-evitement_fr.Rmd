@@ -39,7 +39,8 @@ Substitution ENERGIE :
   CO2 evite    = kWh x facteur_ADEME / 1000                 defaut 0,222 kgCO2eq/kWh
 
 Substitution MATERIAU :
-  a partir du volume de bois d'oeuvre, facteur ADEME correspondant
+  flux_oeuvre  = V_oeuvre_sur_pied x taux_recolte_materiau  m3/ha/an, taux requis
+  CO2 evite    = flux_oeuvre x 500 kg/m3 x facteur_ADEME / 1000
 
 E2 = E2_energy + E2_material
 ```
