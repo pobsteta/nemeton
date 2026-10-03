@@ -107,7 +107,9 @@ NULL
 #'   one at <https://gate.stac.teledetection.fr>).
 #' @param endpoint Signing gateway base URL (default
 #'   `services$theia_signing$endpoint` from the country config, else
-#'   `https://signing.stac.teledetection.fr`).
+#'   `https://signing.stac.teledetection.fr`). Must be an `https://` URL:
+#'   the API key travels in the request headers. Requests time out after 60 s
+#'   and are retried on 429/5xx (see \env{NEMETON_STAC_MAX_TRIES}).
 #' @param country Country config key (default `"FR"`).
 #'
 #' @return A named character vector mapping each input URL to its signed
@@ -131,6 +133,14 @@ theia_sign_urls <- function(urls, access_key = NULL, secret_key = NULL,
       "https://signing.stac.teledetection.fr"
   }
   endpoint <- sub("/+$", "", endpoint)
+  # Les clés partent en en-têtes : jamais vers un endpoint en clair.
+  if (!is.character(endpoint) || length(endpoint) != 1L ||
+      !grepl("^https://[^/]+", endpoint, ignore.case = TRUE)) {
+    cli::cli_abort(c(
+      "The THEIA signing endpoint must be an {.code https://} URL.",
+      x = "Got {.val {endpoint}}.",
+      i = "The API key is sent in the request headers; plain HTTP would expose it."))
+  }
   todo <- unique(urls)
   signed <- stats::setNames(character(0), character(0))
   # La gateway accepte jusqu'à 64 URLs par requête (MAX_URLS du SDK).
@@ -141,12 +151,20 @@ theia_sign_urls <- function(urls, access_key = NULL, secret_key = NULL,
                                `secret-key` = secret_key,
                                Accept = "application/json")
     resp <- httr2::req_body_json(resp, list(urls = as.list(chunk)))
+    # Délai borné + reprise sur 429/5xx (politique STAC commune) : une
+    # gateway muette ne doit plus figer le run.
+    resp <- httr2::req_timeout(resp, 60L)
+    resp <- .with_stac_retry(resp)
     body <- httr2::resp_body_json(httr2::req_perform(resp))
     hrefs <- body$hrefs %||% list()
     signed <- c(signed, unlist(hrefs))
   }
-  # Passe-plat pour les URLs hors domaine (la gateway les renvoie inchangées).
-  out <- vapply(urls, function(u) signed[[u]] %||% u, character(1))
+  # Passe-plat pour les URLs que la gateway ne renvoie pas (hors domaine).
+  # `[[` sur un vecteur atomique lève une erreur pour un nom absent : tester
+  # l'appartenance plutôt que compter sur `%||%`.
+  out <- vapply(urls, function(u) {
+    if (u %in% names(signed)) signed[[u]] else u
+  }, character(1))
   stats::setNames(out, urls)
 }
 
