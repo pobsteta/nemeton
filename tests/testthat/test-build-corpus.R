@@ -83,6 +83,107 @@ test_that("dry_run never downloads a PDF (audit 1.0)", {
   })
 })
 
+# ---- sécurité du manifeste éditable (audit 1.0) ----------------------
+
+test_that("a local_path outside the corpus root is refused, never read", {
+  skip_if_not_installed("withr")
+  outside <- withr::local_tempdir()
+  secret <- file.path(outside, "secret.md")
+  writeLines("alpha secret", secret)
+  root <- withr::local_tempdir()
+  withr::local_options(nemeton.corpus_root = root)
+  man <- .mini_manifest(root)
+  man$local_path[1] <- secret
+  rep <- build_knowledge_corpus(con = NULL, manifest = man, dry_run = TRUE)
+  expect_equal(rep$action[rep$doc_id == "doc_full"], "error")
+  expect_match(rep$reason[rep$doc_id == "doc_full"], "outside the corpus")
+  # traversée relative
+  man$local_path[1] <- file.path("..", basename(outside), "secret.md")
+  rep <- build_knowledge_corpus(con = NULL, manifest = man, dry_run = TRUE)
+  expect_equal(rep$action[rep$doc_id == "doc_full"], "error")
+  expect_error(.resolve_manifest_source(man[1, ], tempdir()), "outside the corpus")
+})
+
+test_that("a symlink escaping the corpus root is refused", {
+  skip_if_not_installed("withr")
+  skip_on_os("windows")
+  outside <- withr::local_tempdir()
+  writeLines("alpha secret", file.path(outside, "secret.md"))
+  root <- withr::local_tempdir()
+  file.symlink(file.path(outside, "secret.md"), file.path(root, "lien.md"))
+  withr::local_options(nemeton.corpus_root = root)
+  row <- .mini_manifest(root)[1, ]
+  row$local_path <- "lien.md"
+  expect_error(.resolve_manifest_source(row, tempdir()), "outside the corpus")
+})
+
+test_that("a local_path with a non-text extension is refused", {
+  skip_if_not_installed("withr")
+  root <- withr::local_tempdir()
+  writeLines("x", file.path(root, "id_rsa"))
+  withr::local_options(nemeton.corpus_root = root)
+  row <- .mini_manifest(root)[1, ]
+  row$local_path <- "id_rsa"
+  expect_error(.resolve_manifest_source(row, tempdir()), "extension not allowed")
+})
+
+test_that("relative local_path resolves against the corpus root", {
+  skip_if_not_installed("withr")
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, "refs"))
+  writeLines(c("# T", "alpha beta prose."), file.path(root, "refs", "a.md"))
+  withr::local_envvar(NEMETON_CORPUS_ROOT = root)
+  withr::local_options(nemeton.corpus_root = NULL)
+  row <- .mini_manifest(root)[1, ]
+  row$local_path <- "refs/a.md"
+  expect_match(.resolve_manifest_source(row, tempdir()), "alpha beta")
+})
+
+test_that("a file:// source_url is never downloaded and fails validation", {
+  skip_if_not_installed("withr")
+  pdf_dir <- withr::local_tempdir()
+  testthat::local_mocked_bindings(.corpus_download = function(url, dest) {
+    stop("must not download ", url)
+  })
+  row <- data.frame(doc_id = "doc_pdf", local_path = "", source_url = "", stringsAsFactors = FALSE)
+  row$source_url <- "file:///etc/rapport.pdf"
+  expect_null(.resolve_manifest_source(row, pdf_dir))
+  man <- .mini_manifest(pdf_dir)
+  man$source_url[1] <- "file:///etc/rapport.pdf"
+  iss <- validate_knowledge_manifest(man)
+  expect_true(any(iss$field == "source_url" & iss$severity == "error"))
+})
+
+test_that("build_knowledge_corpus revalidates doc_id (no write outside pdf_dir)", {
+  skip_if_not_installed("withr")
+  withr::with_tempdir({
+    man <- .mini_manifest(getwd())
+    man$doc_id[1] <- "../../evil"
+    rep <- build_knowledge_corpus(con = NULL, manifest = man, dry_run = TRUE)
+    expect_equal(rep$action[1], "error")
+    expect_match(rep$reason[1], "invalid doc_id")
+  })
+  row <- data.frame(doc_id = "../evil", local_path = "", source_url = "https://example.org/doc.pdf", stringsAsFactors = FALSE)
+  expect_error(.resolve_manifest_source(row, withr::local_tempdir()), "doc_id")
+})
+
+test_that("real build reports a refused local_path as an error row", {
+  con <- .local_corpus_con()
+  testthat::local_mocked_bindings(
+    .embed_texts = function(texts, ...) stop("must not embed"),
+    .package = "nemeton")
+  outside <- withr::local_tempdir()
+  writeLines("alpha secret", file.path(outside, "secret.md"))
+  withr::with_tempdir({
+    man <- .mini_manifest(getwd())
+    man$local_path[1] <- file.path(outside, "secret.md")
+    rep <- build_knowledge_corpus(con, manifest = man)
+    expect_equal(rep$action[rep$doc_id == "doc_full"], "error")
+    expect_equal(nrow(list_knowledge_documents(con)), 0L)
+  })
+})
+
+
 # ---- cache PDF (audit 1.0) -------------------------------------------
 
 .ligne_pdf <- function(doc_id = "doc_pdf") {

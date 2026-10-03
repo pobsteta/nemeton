@@ -393,9 +393,16 @@ validate_knowledge_manifest <- function(manifest) {
     }
     # ---- a declared local_path has an ingestible extension
     if (nzchar(m$local_path[i]) &&
-        !grepl("\\.(pdf|rmd|md|markdown|qmd)$", m$local_path[i], ignore.case = TRUE)) {
+        !grepl(.KNOWLEDGE_LOCAL_EXT_RE, m$local_path[i], ignore.case = TRUE)) {
       add(i, id, "warning", "local_path",
           sprintf("non-ingestible local_path extension: %s", m$local_path[i]))
+    }
+    # ---- seul http(s) est téléchargeable (pas de file://)
+    if (nzchar(m$source_url[i]) &&
+        !grepl(.KNOWLEDGE_URL_RE, m$source_url[i], ignore.case = TRUE)) {
+      add(i, id, "error", "source_url",
+          sprintf("source_url must start with http:// or https://, got '%s'",
+                  m$source_url[i]))
     }
   }
 
@@ -424,11 +431,68 @@ validate_knowledge_manifest <- function(manifest) {
   txt
 }
 
+# ---- Garde-fous de sécurité (audit 1.0) -------------------------------
+#
+# Le manifeste est éditable depuis l'onglet admin de l'app : sans garde-fou,
+# un `local_path` arbitraire (ou une URL file://) ferait lire n'importe quel
+# fichier du serveur et l'enverrait au fournisseur d'embeddings.
+
+# Extensions de `local_path` lisibles par l'ingestion (prose uniquement).
+.KNOWLEDGE_LOCAL_EXT_RE <- "\\.(pdf|txt|md|markdown|rmd|qmd)$"
+
+# Seuls les schémas http(s) sont téléchargés (pas de file://, ftp://...).
+.KNOWLEDGE_URL_RE <- "^https?://"
+
+# Racine sous laquelle un `local_path` doit se trouver : option
+# `nemeton.corpus_root`, sinon `NEMETON_CORPUS_ROOT`, sinon le répertoire
+# de travail (comportement historique : les chemins du manifeste empaqueté
+# sont relatifs à la racine du dépôt, d'où le script data-raw est lancé).
+.knowledge_corpus_root <- function() {
+  root <- getOption("nemeton.corpus_root", NULL)
+  if (is.null(root) || !nzchar(root)) root <- Sys.getenv("NEMETON_CORPUS_ROOT", "")
+  if (!nzchar(root)) root <- getwd()
+  normalizePath(path.expand(root), winslash = "/", mustWork = FALSE)
+}
+
+.is_absolute_path <- function(p) grepl("^(/|~|[A-Za-z]:[\\/]|\\\\)", p)
+
+# Résout `local_path` sous la racine autorisée. Renvoie le chemin absolu
+# (existant ou non) ; abandonne si l'extension n'est pas autorisée ou si le
+# chemin résolu (liens symboliques et `..` compris) sort de la racine.
+.resolve_local_path <- function(lp, root = .knowledge_corpus_root()) {
+  if (!grepl(.KNOWLEDGE_LOCAL_EXT_RE, lp, ignore.case = TRUE)) {
+    cli::cli_abort(c(
+      "Refusing {.field local_path} {.path {lp}}: extension not allowed.",
+      "i" = "Allowed: .pdf, .txt, .md, .markdown, .rmd, .qmd."
+    ))
+  }
+  full <- if (.is_absolute_path(lp)) path.expand(lp) else file.path(root, lp)
+  # normalizePath résout `..` et les liens symboliques quand le fichier
+  # existe ; sinon on normalise le parent (s'il existe).
+  full <- normalizePath(full, winslash = "/", mustWork = FALSE)
+  if (!file.exists(full)) {
+    parent <- normalizePath(dirname(full), winslash = "/", mustWork = FALSE)
+    full <- file.path(parent, basename(full))
+  }
+  root_slash <- if (endsWith(root, "/")) root else paste0(root, "/")
+  # Un chemin non résolu (parent inexistant) peut encore contenir `..` :
+  # il est refusé par prudence.
+  if (!startsWith(full, root_slash) || grepl("(^|/)\\.\\.(/|$)", full)) {
+    cli::cli_abort(c(
+      "Refusing {.field local_path} {.path {lp}}: outside the corpus root.",
+      "i" = "Corpus root: {.path {root}} (option {.code nemeton.corpus_root} or {.envvar NEMETON_CORPUS_ROOT})."
+    ))
+  }
+  full
+}
+
 # Return either a text string (embed directly), a file path (PDF, handed to
 # ingest_knowledge_document for extraction), or NULL when nothing ingestible
-# (e.g. a landing-page URL with no downloadable document).
+# (e.g. a landing-page URL with no downloadable document). Aborts when the
+# row's `local_path` is not allowed (see .resolve_local_path()).
 .resolve_manifest_source <- function(row, pdf_dir) {
   lp <- row$local_path
+  if (nzchar(lp)) lp <- .resolve_local_path(lp)
   if (nzchar(lp) && file.exists(lp)) {
     if (grepl("\\.pdf$", lp, ignore.case = TRUE)) return(lp)
     txt <- paste(readLines(lp, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
@@ -438,7 +502,14 @@ validate_knowledge_manifest <- function(manifest) {
     return(txt)
   }
   url <- row$source_url
-  if (nzchar(url) && grepl("\\.pdf$", url, ignore.case = TRUE)) {
+  # Seul http(s) est téléchargé : download.file() lirait aussi file://.
+  if (nzchar(url) && grepl(.KNOWLEDGE_URL_RE, url, ignore.case = TRUE) &&
+      grepl("\\.pdf$", url, ignore.case = TRUE)) {
+    # Le doc_id nomme le fichier en cache : un slug strict, sinon on
+    # écrirait hors de `pdf_dir`.
+    if (!grepl("^[a-z0-9_]+$", row$doc_id)) {
+      cli::cli_abort("Invalid {.field doc_id} {.val {row$doc_id}} (must match ^[a-z0-9_]+$).")
+    }
     if (!dir.exists(pdf_dir)) dir.create(pdf_dir, recursive = TRUE, showWarnings = FALSE)
     dest <- file.path(pdf_dir, paste0(row$doc_id, ".pdf"))
     # Un PDF en cache n'est resservi que s'il porte la signature %PDF : une
@@ -476,6 +547,7 @@ validate_knowledge_manifest <- function(manifest) {
 # le type de source ("pdf", "text", "pdf (to download)") ou NULL.
 .plan_manifest_source <- function(row, pdf_dir) {
   lp <- row$local_path
+  if (nzchar(lp)) lp <- .resolve_local_path(lp)
   if (nzchar(lp) && file.exists(lp)) {
     return(if (grepl("\\.pdf$", lp, ignore.case = TRUE)) "pdf" else "text")
   }
@@ -558,6 +630,17 @@ validate_knowledge_manifest <- function(manifest) {
 #'   embedding API calls, no download: a `full` row is planned from the
 #'   existence of its `local_path` or the shape of its PDF `source_url`
 #'   (reason `"pdf (to download)"` when not yet cached). Default `FALSE`.
+#' @section Security:
+#' The manifest is editable from an application, so its paths are not
+#' trusted. A `local_path` must have an allowed extension (`.pdf`, `.txt`,
+#' `.md`, `.markdown`, `.rmd`, `.qmd`) and resolve (symbolic links and
+#' `..` included) under the corpus root: option `nemeton.corpus_root`,
+#' else the `NEMETON_CORPUS_ROOT` environment variable, else the working
+#' directory. Relative paths are resolved against that root. Only
+#' `http://` / `https://` `source_url`s are downloaded. A row breaking
+#' these rules, or whose `doc_id` is not a slug (`^[a-z0-9_]+$`), is
+#' reported with `action = "error"`.
+#'
 #' @param pdf_dir Directory for downloaded PDFs. Default a per-user cache
 #'   dir under [tools::R_user_dir()]. A cached file is reused only when it
 #'   carries the PDF file signature; downloads are written to a temporary file
@@ -612,10 +695,25 @@ build_knowledge_corpus <- function(con = NULL,
     rep_row
   }
 
+  # Le doc_id sert à nommer le PDF en cache : il est revalidé ici, et pas
+  # seulement dans validate_knowledge_manifest(), car l'appelant peut passer
+  # un manifeste jamais validé (écriture hors de `pdf_dir` sinon).
+  bad_id <- !grepl("^[a-z0-9_]+$", man$doc_id)
+  invalid_id_row <- function(i) {
+    emit(i, .corpus_report_row(man$doc_id[i], "error",
+                               reason = "invalid doc_id (must match ^[a-z0-9_]+$)"))
+  }
+  # Une source refusée (local_path hors racine, extension interdite) devient
+  # une ligne d'erreur du rapport au lieu d'interrompre tout le build.
+  as_error_row <- function(i, e) {
+    emit(i, .corpus_report_row(man$doc_id[i], "error", reason = conditionMessage(e)))
+  }
+
   # ---- dry run: plan only, no DB / embeddings
   if (isTRUE(dry_run)) {
     rows <- lapply(seq_len(n), function(i) {
       r <- man[i, , drop = FALSE]
+      if (bad_id[i]) return(invalid_id_row(i))
       if (!eligible[i]) {
         rr <- .corpus_report_row(r$doc_id, "skipped",
           reason = sprintf("not eligible (status=%s)", r$status))
@@ -627,7 +725,9 @@ build_knowledge_corpus <- function(con = NULL,
       }
       # Un dry run ne télécharge rien : il ne teste que l'existence de
       # `local_path` et la forme de l'URL.
-      kind <- .plan_manifest_source(r, pdf_dir)
+      kind <- tryCatch(.plan_manifest_source(r, pdf_dir),
+                       error = function(e) e)
+      if (inherits(kind, "error")) return(as_error_row(i, kind))
       if (is.null(kind)) {
         return(emit(i, .corpus_report_row(r$doc_id, "skipped", reason = "no ingestible source")))
       }
@@ -649,6 +749,7 @@ build_knowledge_corpus <- function(con = NULL,
 
   rows <- lapply(seq_len(n), function(i) {
     r <- man[i, , drop = FALSE]
+    if (bad_id[i]) return(invalid_id_row(i))
     if (!eligible[i]) {
       return(emit(i, .corpus_report_row(r$doc_id, "skipped",
         reason = sprintf("not eligible (status=%s)", r$status))))
@@ -657,7 +758,9 @@ build_knowledge_corpus <- function(con = NULL,
       return(emit(i, .corpus_report_row(r$doc_id, "skipped", reason = "already ingested")))
     }
     reference <- .is_reference_strategy(r$ingest_strategy)
-    src <- if (reference) NULL else .resolve_manifest_source(r, pdf_dir)
+    src <- if (reference) NULL else tryCatch(.resolve_manifest_source(r, pdf_dir),
+                                             error = function(e) e)
+    if (inherits(src, "error")) return(as_error_row(i, src))
     if (!reference && is.null(src)) {
       return(emit(i, .corpus_report_row(r$doc_id, "skipped", reason = "no ingestible source")))
     }
