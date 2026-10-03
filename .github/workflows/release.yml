@@ -18,8 +18,13 @@ name: release
 # `version-consistency` (r.yml) garantit en amont DESCRIPTION = NEWS =
 # CITATION avant que ce workflow ne taggue.
 
+# Déclenché par la FIN du workflow R-CMD-check sur `main`, et seulement s'il a
+# réussi : avant 0.211.0 la release partait sur le simple push, donc pouvait
+# tagger un commit dont le check ou les tests échouaient (audit 1.0).
 on:
-  push:
+  workflow_run:
+    workflows: ["R-CMD-check"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -29,11 +34,18 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
     steps:
       - name: Checkout (full history + tags)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Le commit vérifié par R-CMD-check, pas la tête de main au moment
+          # où ce workflow démarre.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Resolve version from DESCRIPTION
         id: ver

@@ -480,6 +480,10 @@ build_index_stack <- function(cache_dir, scenes_df,
 #'   cache; a cache holding none aborts (internal
 #'   `.assert_cache_has_bands()` guard).
 #'
+#' @param zone_polygon Optional `sf`/`sfc` UGF polygon. When supplied with
+#'   `warn_outside_zone = TRUE`, a warning is raised if `xy` lies outside it
+#'   (the series is still returned).
+#' @param warn_outside_zone Logical. Warn when `xy` is outside `zone_polygon`.
 #' @return A `data.frame` with columns `obs_date` (Date), `index`
 #'   (character) and `value` (numeric, possibly NA), sorted by
 #'   `(obs_date, index)`. `nrow` = `nrow(scenes_df) * length(indices)`.

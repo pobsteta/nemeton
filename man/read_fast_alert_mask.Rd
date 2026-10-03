@@ -28,6 +28,11 @@ returned.}
 
 \item{cache_dir}{Path to the FAST mask cache root (typically
 `<project>/cache/layers/fast`).}
+\item{apply_zone_mask}{Logical. When \code{TRUE} (default), pixels outside the
+monitoring zone polygon (the managed UGF perimeter) are set to \code{NA}.}
+
+\item{mask_polygon}{Optional \code{sf}/\code{sfc} polygon used as the zone mask
+instead of the polygon stored for the zone in the database.}
 }
 \value{
 A `terra::SpatRaster` (single layer, categorical 0-4) or

@@ -270,7 +270,7 @@ segment_houppiers <- function(chm        = NULL,
     if (isTRUE(terra::is.lonlat(chm))) {
       cli::cli_abort(c(
         "The CHM is in a geographic CRS (degrees).",
-        i = "{.arg ws} and {.arg hmin} are metres — reproject to a metric CRS first."
+        i = "{.arg ws} and {.arg hmin} are metres \u2014 reproject to a metric CRS first."
       ))
     }
   }
@@ -450,7 +450,7 @@ segment_houppiers <- function(chm        = NULL,
       cli::cli_abort(c(
         "Crown apexes came back in a different CRS than the CHM.",
         i = "CHM: EPSG:{e_chm}; apexes: EPSG:{e_tops}.",
-        i = "This is a {.pkg lidR} anomaly, not a CHM defect — report it with the raster size."
+        i = "This is a {.pkg lidR} anomaly, not a CHM defect \u2014 report it with the raster size."
       ))
     }
   }

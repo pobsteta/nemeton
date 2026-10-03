@@ -196,7 +196,7 @@ trajectory with a pre-trained model. One run is driven entirely by
     computes CRswir + CRre per date. The per-pixel feature vector is the
     full two-year trajectory of both indices.
   \item \strong{Classification}: the SharkRF `v_model` labels each pixel
-    `{1 healthy, 2 declining, 3 severely declining}` (2 classes for pine)
+    classes 1 healthy, 2 declining, 3 severely declining (2 classes for pine)
     plus a continuous score.
 }
 

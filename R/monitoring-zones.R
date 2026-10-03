@@ -10,7 +10,7 @@
 .nmt_slug <- function(x) {
   s <- tolower(as.character(x)[1L])
   if (is.na(s) || !nzchar(s)) return("projet")
-  s <- chartr("àâäéèêëîïôöùûüç",
+  s <- chartr("\u00e0\u00e2\u00e4\u00e9\u00e8\u00ea\u00eb\u00ee\u00ef\u00f4\u00f6\u00f9\u00fb\u00fc\u00e7",
               "aaaeeeeiioouuuc", s)
   s <- gsub("[^a-z0-9]+", "_", s)
   s <- gsub("^_+|_+$", "", s)
@@ -37,7 +37,7 @@
     e <- tolower(as.character(bdforet$essence[na]))
     r <- rep("autre", length(e))
     r[!is.na(e) & grepl("feuillus", e)]             <- "feuillu"
-    r[!is.na(e) & grepl("sapin|épicéa|conif", e)] <- "resineux"
+    r[!is.na(e) & grepl("sapin|\u00e9pic\u00e9a|conif", e)] <- "resineux"
     r[!is.na(e) & grepl("mixte", e)]                <- "mixte"
     out[na] <- r
   }
@@ -294,7 +294,7 @@ build_project_monitoring_zones <- function(con, project_name, project_uuid,
     empty <- is.null(g) || all(sf::st_is_empty(g)) ||
       as.numeric(sum(sf::st_area(g))) <= 0
     if (empty) {
-      cli::cli_warn("FAST/FORDEAD stratum {.val {s}} is empty for {.val {project_name}} — zone not created.")
+      cli::cli_warn("FAST/FORDEAD stratum {.val {s}} is empty for {.val {project_name}} \u2014 zone not created.")
       next
     }
     poly <- sf::st_transform(

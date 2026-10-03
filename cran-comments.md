@@ -1,20 +1,15 @@
-## R CMD check results
+## Submission status
 
-0 errors | 0 warnings | 1 note
+`nemeton` is not submitted to CRAN. Blocking points, by design:
 
-* This is a new submission.
+- several Suggests are not on CRAN (`biodivMapR`, `microclimf`, `microclima`,
+  `mcera5`, `biljouR`, `lasR`, `prosail`), installed from the `Remotes` field;
+- the source tarball is about 11 MB (embedded reference tables in
+  `inst/extdata`), above the CRAN 5 MB guideline;
+- `.onLoad` sets `terra` memory options for heavy raster pipelines.
 
-## Test environments
+## R CMD check
 
-- Local Ubuntu 24.04, R 4.5.2
-- GitHub Actions (ubuntu-latest, R release)
-
-## Notes
-
-- The package includes a Shiny application (`run_app()`) for interactive
-  forest analysis. The app requires optional packages listed in Suggests.
-- Large spatial datasets (rasters, geopackages) used for indicator computation
-  are not bundled with the package. Users download them as needed via
-  `download_hunting_data()` and similar functions.
-- Some examples use `\donttest{}` because they require spatial data files
-  or take more than a few seconds to run.
+Run in CI on every pull request (`.github/workflows/r.yml`,
+`--as-cran --no-manual`). The release workflow only tags a version once that
+check has passed on `main`.

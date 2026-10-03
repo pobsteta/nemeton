@@ -76,3 +76,8 @@ tests/testthat/testthat-problems.rds
 # enough. Re-fetch from https://github.com/Bruciamacchie/DataForet/raw/master/data/
 # (IFNarbres.rda, IFNplacettes.rda, CodesEssIFN.rda) into data-raw/ifn/.
 data-raw/ifn/
+
+# Site pkgdown : construit et déployé par la CI sur gh-pages (audit 1.0).
+docs/
+vignettes/*.html
+vignettes/*.R

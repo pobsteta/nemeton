@@ -96,12 +96,12 @@ test_that("a local_path outside the corpus root is refused, never read", {
   man$local_path[1] <- secret
   rep <- build_knowledge_corpus(con = NULL, manifest = man, dry_run = TRUE)
   expect_equal(rep$action[rep$doc_id == "doc_full"], "error")
-  expect_match(rep$reason[rep$doc_id == "doc_full"], "outside the corpus")
+  expect_match(rep$reason[rep$doc_id == "doc_full"], "outside\\s+the\\s+corpus")
   # traversée relative
   man$local_path[1] <- file.path("..", basename(outside), "secret.md")
   rep <- build_knowledge_corpus(con = NULL, manifest = man, dry_run = TRUE)
   expect_equal(rep$action[rep$doc_id == "doc_full"], "error")
-  expect_error(.resolve_manifest_source(man[1, ], tempdir()), "outside the corpus")
+  expect_error(.resolve_manifest_source(man[1, ], tempdir()), "outside\\s+the\\s+corpus")
 })
 
 test_that("a symlink escaping the corpus root is refused", {
@@ -114,7 +114,7 @@ test_that("a symlink escaping the corpus root is refused", {
   withr::local_options(nemeton.corpus_root = root)
   row <- .mini_manifest(root)[1, ]
   row$local_path <- "lien.md"
-  expect_error(.resolve_manifest_source(row, tempdir()), "outside the corpus")
+  expect_error(.resolve_manifest_source(row, tempdir()), "outside\\s+the\\s+corpus")
 })
 
 test_that("a local_path with a non-text extension is refused", {
@@ -161,7 +161,7 @@ test_that("build_knowledge_corpus revalidates doc_id (no write outside pdf_dir)"
     man$doc_id[1] <- "../../evil"
     rep <- build_knowledge_corpus(con = NULL, manifest = man, dry_run = TRUE)
     expect_equal(rep$action[1], "error")
-    expect_match(rep$reason[1], "invalid doc_id")
+    expect_match(rep$reason[1], "invalid\\s+doc_id")
   })
   row <- data.frame(doc_id = "../evil", local_path = "", source_url = "https://example.org/doc.pdf", stringsAsFactors = FALSE)
   expect_error(.resolve_manifest_source(row, withr::local_tempdir()), "doc_id")

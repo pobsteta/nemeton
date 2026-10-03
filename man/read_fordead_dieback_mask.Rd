@@ -28,6 +28,11 @@ typically `<project>/cache/layers/fordead`. Required — the
 spec'd signature `(con, zone_id, run_id)` cannot derive this from
 the connection in this release, so the argument is exposed
 directly. Pass the same path the app uses for its UI.}
+\item{apply_zone_mask}{Logical. When \code{TRUE} (default), pixels outside the
+monitoring zone polygon (the managed UGF perimeter) are set to \code{NA}.}
+
+\item{mask_polygon}{Optional \code{sf}/\code{sfc} polygon used as the zone mask
+instead of the polygon stored for the zone in the database.}
 }
 \value{
 A `terra::SpatRaster` with a single integer band, or

@@ -3,7 +3,7 @@
 # License: Apache-2.0 (see inst/NOTICE). Driven by R/reconfort_pipeline.R.
 #
 from utils.generate_cfg_file_classif_part1_sampling_2y_nov_test_1tile import generate_cfg as generate_cfg_part1
-from utils.generate_cfg_file_classif_part2_classification_2y_nov_test_1tile import generate_cfg as generate_cfg_part2
+from utils.generate_cfg_file_classif_part2_classif_2y_nov_test_1tile import generate_cfg as generate_cfg_part2
 import os
 import shutil
 import sys

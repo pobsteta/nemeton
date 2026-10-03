@@ -452,7 +452,7 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
     ))
   }
   if (!quiet) cli::cli_alert_info(
-    "RECONFORT: tile {.val {tile}} — {n_items} S2 scene{?s} to ingest.")
+    "RECONFORT: tile {.val {tile}} \u2014 {n_items} S2 scene{?s} to ingest.")
   emit(list(current = "reconfort:ingest_listed", tile = tile,
             total = as.integer(n_items)))
 
@@ -563,7 +563,7 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
     ))
   }
   if (!quiet) cli::cli_alert_success(
-    "RECONFORT: tile {.val {tile}} — {length(scenes)} scene{?s} cropped to AOI ({n_skip} cached, {n_fail} failed).")
+    "RECONFORT: tile {.val {tile}} \u2014 {length(scenes)} scene{?s} cropped to AOI ({n_skip} cached, {n_fail} failed).")
   out_dir
 }
 
@@ -739,7 +739,7 @@ reconfort_ingest_s2 <- function(aoi = NULL, tiles = NULL,
       ))
     }
     if (!quiet) cli::cli_alert_success(
-      "RECONFORT: tile {.val {tile}} — {length(zips)} archive{?s}, {length(scenes)} scene{?s}.")
+      "RECONFORT: tile {.val {tile}} \u2014 {length(zips)} archive{?s}, {length(scenes)} scene{?s}.")
     extracted <- c(extracted, out_dir)
   }
 

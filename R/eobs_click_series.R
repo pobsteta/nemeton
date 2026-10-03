@@ -11,7 +11,7 @@
 
 # Unité d'affichage par variable E-OBS (pour l'axe des graphes).
 .eobs_var_unit <- function(var) {
-  switch(var, tx = , tg = "°C", rr = "mm",
+  switch(var, tx = , tg = "\u00b0C", rr = "mm",
          cli::cli_abort("Unknown E-OBS {.arg var} {.val {var}}; use \"tx\", \"tg\" or \"rr\"."))
 }
 

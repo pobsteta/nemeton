@@ -1,18 +1,22 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 0.210.0
+Version: 0.211.0
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
 Author: Pascal Obstétar [aut, cre]
 Maintainer: Pascal Obstétar <pascal.obstetar@gmail.com>
 Description: Implement the Nemeton method for systemic forest territory analysis.
-    Calculate multi-family biophysical indicators across 12 ecosystem service
-    families (carbon, water, soil, landscape, biodiversity, etc.), perform
-    temporal analysis, normalize to composite indices, and visualize results.
-    Includes nemetonApp, a Shiny application for interactive parcel selection
-    and analysis. Designed for foresters, ecologists, and land managers.
+    Calculate 41 biophysical indicators grouped in 12 ecosystem service
+    families (carbon, water, soil, landscape, biodiversity, risks, etc.),
+    weight them by data precision level (NDP, Fibonacci weighting), normalize
+    them to composite indices and visualize the results. Also provides forest
+    health monitoring (FAST, FORDEAD, RECONFORT), small-area estimation of
+    forest production from the French national forest inventory, and
+    regeneration and microclimate tools. The Shiny application lives in the
+    separate 'nemetonshiny' package. Designed for foresters, ecologists and
+    land managers.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
@@ -28,10 +32,18 @@ Imports:
     glue (>= 1.6.0),
     rlang,
     cluster (>= 2.1.0),
-    ggrepel (>= 0.9.0),
     jsonlite (>= 1.8.0),
-    signal (>= 0.7-6)
+    graphics,
+    methods,
+    parallel,
+    stats,
+    tools,
+    utils
 Suggests:
+    ggrepel (>= 0.9.0),
+    signal (>= 0.7-6),
+    prosail,
+    EBImage,
     biodivMapR (>= 2.0.0),
     testthat (>= 3.0.0),
     pkgload (>= 1.3.0),

@@ -7,7 +7,8 @@
 indicateur_s3_population(
   units,
   population_grid = NULL,
-  method = c("proxy", "insee", "local"),
+  population_field = NULL,
+  method = c("insee", "local", "proxy"),
   buffer_radii = c(5000, 10000, 20000),
   column_name = "S3",
   lang = "en"
@@ -18,13 +19,16 @@ indicateur_s3_population(
 
 \item{population_grid}{sf object or SpatRaster of population data. If NULL, uses proxy.}
 
-\item{method}{Character. Data source: "insee" (INSEE Carroyage), "local", or "proxy". Default "proxy".}
+\item{method}{Character. Data source: "insee" (INSEE Carroyage), "local", or "proxy". Default "insee".}
 
 \item{buffer_radii}{Numeric vector. Buffer distances (m) for population counts. Default c(5000, 10000, 20000).}
 
 \item{column_name}{Character. Name for output column (main indicator). Default "S3".}
 
 \item{lang}{Character. Message language. Default "en".}
+\item{population_field}{Character or \code{NULL}. Name of the population column of
+\code{population_grid} when it is an \code{sf}. \code{NULL} (default) looks for
+\code{ind}, \code{pop} or \code{population} (INSEE Filosofi names it \code{ind}).}
 }
 \value{
 sf object with added columns: S3 (population within primary buffer), S3_5km, S3_10km, S3_20km

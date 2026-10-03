@@ -43,3 +43,10 @@
 ^CITATION\.cff$
 ^docker-compose\.yml$
 ^PLAN\.md$
+^data/i2_training_data\.tar\.bz2$
+^data/area_interest\.geojson$
+__pycache__
+\.pyc$
+^\.Renviron$
+^\.Renviron\.example$
+^tools$

@@ -108,7 +108,7 @@ load_insee_population_source <- function(aoi,
     if (!isTRUE(ok) || !file.exists(gpkg)) {
       cli::cli_warn(c(
         "INSEE population grid unavailable; returning NULL.",
-        i = "S3 will be {.val NA} — no fabricated fallback (spec 050)."
+        i = "S3 will be {.val NA} \u2014 no fabricated fallback (spec 050)."
       ))
       return(NULL)
     }

@@ -4,7 +4,7 @@
 \alias{lsms_duree_estimee}
 \title{Estimate the LSMS compute time for a pixel count}
 \usage{
-lsms_duree_estimee(n_pixels, spatialr = 15L)
+lsms_duree_estimee(n_pixels, spatialr = .LSMS_DEFAUTS$spatialr)
 }
 \arguments{
 \item{n_pixels}{Number of pixels of the image LSMS would segment.}

@@ -76,6 +76,10 @@
 #' @param parallel Passed through to [read_fast_alert_raster()] (spec 017
 #'   D4): optional multi-core per-scene raster compute via \pkg{furrr}.
 #'
+#' @param apply_zone_mask Logical. When `TRUE` (default), pixels outside the
+#'   monitoring zone polygon (the managed UGF perimeter) are set to `NA`.
+#' @param mask_polygon Optional `sf`/`sfc` polygon used as the zone mask
+#'   instead of the polygon stored for the zone in the database.
 #' @return Invisibly, the absolute path to the persisted TIF, or
 #'   `NULL` if [read_fast_alert_raster()] returned `NULL` (no scene
 #'   in the window or empty cache).
@@ -311,6 +315,10 @@ compute_fast_alert_mask <- function(con, zone_id,
 #' @param cache_dir Path to the FAST mask cache root (typically
 #'   `<project>/cache/layers/fast`).
 #'
+#' @param apply_zone_mask Logical. When `TRUE` (default), pixels outside the
+#'   monitoring zone polygon (the managed UGF perimeter) are set to `NA`.
+#' @param mask_polygon Optional `sf`/`sfc` polygon used as the zone mask
+#'   instead of the polygon stored for the zone in the database.
 #' @return A `terra::SpatRaster` (single layer, categorical 0-4) or
 #'   `NULL`.
 #'

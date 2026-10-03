@@ -542,23 +542,6 @@ invert_indicator <- function(data,
   "indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite"
 )
 
-#' Normalize a single indicator to 0-100 scale
-#'
-#' Converts raw indicator values to a common 0-100 scale using
-#' indicator-specific reference maxima and special handling rules.
-#'
-#' @param indicator Character. Indicator name (NMT convention).
-#' @param values Numeric vector. Raw indicator values.
-#' @param statut Optional character vector (one value per element of
-#'   `values`, or one for all) telling what a value measures when an
-#'   indicator has several units. Used for P2: `"indice_station_m"` marks a
-#'   site index in metres (CHM mode of [indicateur_p2_station()], status
-#'   column `p2_status`), normalised against 40 m instead of the 15 m3/ha/yr
-#'   of the production modes. `NULL` (default) keeps the production scale.
-#'
-#' @return Numeric vector. Normalized values (0-100).
-#'
-#' @export
 # Indicateurs pour lesquels `normalize_indicator()` applique une règle EXPLICITE
 # (ref_max, échelle dédiée, inversion de sens). Hors de cette liste et hors de
 # `.NORMALIZE_NATIVE_0_100`, la normalisation se réduit à un écrêtage naïf — ce
@@ -606,6 +589,23 @@ invert_indicator <- function(data,
   if (length(hit) == 1L) hit else indicator
 }
 
+#' Normalize a single indicator to 0-100 scale
+#'
+#' Converts raw indicator values to a common 0-100 scale using
+#' indicator-specific reference maxima and special handling rules.
+#'
+#' @param indicator Character. Indicator name (NMT convention).
+#' @param values Numeric vector. Raw indicator values.
+#' @param statut Optional character vector (one value per element of
+#'   `values`, or one for all) telling what a value measures when an
+#'   indicator has several units. Used for P2: `"indice_station_m"` marks a
+#'   site index in metres (CHM mode of [indicateur_p2_station()], status
+#'   column `p2_status`), normalised against 40 m instead of the 15 m3/ha/yr
+#'   of the production modes. `NULL` (default) keeps the production scale.
+#'
+#' @return Numeric vector. Normalized values (0-100).
+#'
+#' @export
 normalize_indicator <- function(indicator, values, statut = NULL) {
   # Les deux écritures (courte et longue) suivent la même règle.
   indicator <- .normalize_resolve_alias(indicator)

@@ -1,3 +1,43 @@
+# nemeton 0.211.0 (2026-10-03)
+
+Quatrième vague de l'audit de pré-version 1.0 : **paquet propre**.
+`R CMD check --as-cran` passe à **0 WARNING** et la CI échoue désormais au
+premier warning.
+
+### Changed
+
+- **Release conditionnée au check** : `release.yml` ne part plus au simple
+  push sur `main` mais quand le workflow R-CMD-check (check, tests,
+  couverture) a réussi, et tague le commit vérifié.
+- **Dépendances** : `ggrepel` et `signal` passent en Suggests (leurs usages
+  étaient déjà protégés) ; `methods`, `stats`, `utils`, `graphics`, `tools`
+  et `parallel` sont déclarés ; `prosail`, `EBImage` et `ncdf4` aussi.
+  `smooth = "light"` du diagnostic pixel exige toujours `signal`.
+- **`get_global_cache_dir()`** honore la variable `NEMETON_CACHE_DIR` ; la
+  suite de tests s'en sert pour ne plus écrire dans le cache réel.
+- Les scripts de développement (`inst/scripts/`) sont déplacés dans `tools/`,
+  hors du paquet installé.
+- `normalize_indicators(by_family = TRUE)` est retiré de l'exemple du paquet.
+
+### Fixed
+
+- **Archive de 5,4 Go** (`data/i2_training_data.tar.bz2`) : ignorée par git
+  mais pas par `.Rbuildignore`, elle partait dans tout `R CMD build` local.
+  Exclue, comme `__pycache__`, `*.pyc` et `.Renviron(.example)`.
+- **Documentation** : trois blocs roxygen détachés de leur fonction
+  (`normalize_indicator()`, `indicateur_r3_secheresse()`,
+  `check_fordead_validity()`) — le premier `devtools::document()` aurait
+  retiré trois exports ; six pages d'aide à la signature fausse et dix
+  arguments non documentés corrigés (`tools::codoc` et `checkDocFiles` à
+  zéro).
+- Caractères non ASCII du code échappés (`\uXXXX`) ; un fichier Python
+  vendorisé renommé (chemin de plus de 100 octets).
+- `DESCRIPTION` décrit le paquet actuel (41 indicateurs, plus d'application
+  Shiny ici) ; README à 41 indicateurs.
+- Dépôt : `docs/` (site pkgdown figé en v0.13.0) et les sorties de vignettes
+  ne sont plus suivis par git ; `create-release.sh` supprimé ;
+  `cran-comments.md` réécrit.
+
 # nemeton 0.210.0 (2026-10-03)
 
 Troisième vague de l'audit de pré-version 1.0 : **sécurité**. Dix-sept

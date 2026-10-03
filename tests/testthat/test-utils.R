@@ -3127,6 +3127,13 @@ test_that(".raster_lisible rejects a truncated GeoTIFF", {
   expect_false(.raster_lisible(f))
 })
 
+test_that("NEMETON_CACHE_DIR redirige le cache global (suite hermétique)", {
+  d <- withr::local_tempdir()
+  withr::local_envvar(NEMETON_CACHE_DIR = file.path(d, "c"))
+  expect_identical(get_global_cache_dir(), file.path(d, "c"))
+  expect_true(dir.exists(file.path(d, "c")))
+})
+
 # --- .unzip_safe (audit 1.0, sécurité : zip slip) ---------------------------
 
 # Archive dont une entrée porte le nom `evil` (même longueur que `decoy`) :

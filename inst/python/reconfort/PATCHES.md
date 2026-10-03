@@ -16,12 +16,13 @@ patches below (or drop the ones upstream has fixed).
 |------|--------|-----|----------------|
 | `run_process_downloaded_images.py` | Archive glob widened from `SENTINEL*D.zip` to `SENTINEL*.zip`. | Current MUSCATE/GEODES archives end in `_C_V4-0.zip`; the legacy glob extracted nothing. | `4e17c43d6` |
 | `run_process_downloaded_images.py` | Optional extract-then-delete driven by the `delete_zip_after_extract` cfg key (absent key = upstream behaviour). | A full tile over two years filled the disk (zips + extracted scenes). | `de6dc2368` |
-| `utils/generate_cfg_file_classif_part1_sampling_2y_nov_test_1tile.py`, `utils/generate_cfg_file_classif_part2_classification_2y_nov_test_1tile.py` | `builders_class_name` set to `I2Classification`. | The installed iota2 exposes the CamelCase class, not the module name. | `ae8121f48` |
+| `utils/generate_cfg_file_classif_part1_sampling_2y_nov_test_1tile.py`, `utils/generate_cfg_file_classif_part2_classif_2y_nov_test_1tile.py` | `builders_class_name` set to `I2Classification`. | The installed iota2 exposes the CamelCase class, not the module name. | `ae8121f48` |
 | `iota2/config/iota2_resources.cfg` | Keys `name` / `process_min` / `nb_chunk` removed from the step blocks. | Rejected by the `TaskResources` dataclass of the recent iota2. | `8477b705c` |
 | `iota2/external_features/custom_index.py` | Feature labels built as `I2TemporalLabel(...)` instead of strings. Computation and column order unchanged. | The recent iota2 requires `I2Label`/`I2TemporalLabel` labels. | `8477b705c` |
 | `run_map_production_reconfort.py` | IOTA² return codes checked (`run_iota2()`), presence of the `final/` rasters checked (`require_final()`), explicit error on stderr. | A failed IOTA² chain went unnoticed and surfaced three steps later as a missing file. | `75bdf9c3a` |
 | `utils/utils.py` | `load_config_variable()` no longer `eval()`s cfg values: `split("=", 1)` then `json.loads`, with an `ast.literal_eval` fallback for hand-written upstream cfg files; blank/comment lines skipped. | Code injection: any cfg value was executed as Python. | audit 1.0 (security) |
 | `run_geodes_download.py` | Calls `utils.tls.enforce_tls_verification(conf)` before building `Geodes`. | pygeodes disables TLS certificate verification by default. | audit 1.0 (security) |
+| `utils/generate_cfg_file_classif_part2_classification_2y_nov_test_1tile.py` | Renamed to `generate_cfg_file_classif_part2_classif_2y_nov_test_1tile.py` (import updated in `run_map_production_reconfort.py`). | Path exceeded the 100 bytes allowed in an R package tarball (`R CMD check` NOTE, 1.0 audit). | v0.211.0 |
 
 Files vendored without modification (besides the header):
 `mask_and_compress_rasters.py`, `utils/__init__.py`, `iota2/colorFile.txt`,

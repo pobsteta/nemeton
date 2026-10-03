@@ -134,6 +134,10 @@
 #'   compute fans across cores (set a `future::plan()` first). Default
 #'   `FALSE`; results are identical to sequential.
 #'
+#' @param apply_zone_mask Logical. When `TRUE` (default), pixels outside the
+#'   monitoring zone polygon (the managed UGF perimeter) are set to `NA`.
+#' @param mask_polygon Optional `sf`/`sfc` polygon used as the zone mask
+#'   instead of the polygon stored for the zone in the database.
 #' @return A `terra::SpatRaster` (single layer, EPSG:2154) when at least
 #'   one usable scene is found, or `NULL` when no scene matches. The
 #'   layer name is `alert_count` or `alert_deficit` depending on `mode`;

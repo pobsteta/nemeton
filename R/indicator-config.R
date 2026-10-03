@@ -318,11 +318,11 @@ INDICATOR_FAMILIES <- list(
         en = "Dieback detected by FORDEAD (conifers) or RECONFORT (broadleaves) on Sentinel-2 / CRSWIR, weighted by ONF/DSF 2024 detection accuracy. NA outside the validity zone or for non-targeted species. High score = low dieback (good forest health)."
       ),
       R6 = list(
-        fr = "Sensibilité du microsite à une année chaude (Δ stress entre un été canicule et un été moyen, canopée figée). Microclimf, augmenté LiDAR. Score élevé = peu sensible (plus résilient). Fiable en relatif entre parcelles.",
+        fr = "Sensibilit\u00e9 du microsite \u00e0 une ann\u00e9e chaude (\u0394 stress entre un \u00e9t\u00e9 canicule et un \u00e9t\u00e9 moyen, canop\u00e9e fig\u00e9e). Microclimf, augment\u00e9 LiDAR. Score \u00e9lev\u00e9 = peu sensible (plus r\u00e9silient). Fiable en relatif entre parcelles.",
         en = "Microsite sensitivity to a hot year (stress change between a heatwave and an average summer, canopy fixed). Microclimf, LiDAR-augmented. High score = low sensitivity (more resilient). Reliable in relative ranking."
       ),
       R7 = list(
-        fr = "Risque de gel tardif : fréquence des gelées printanières après débourrement (Tmin < seuil), déterminant de l'échec de régénération (chêne, hêtre, douglas). Série Tmin downscalée meteoland/SAFRAN. NA sans donnée Tmin. Score élevé = faible risque (peu de gel).",
+        fr = "Risque de gel tardif : fr\u00e9quence des gel\u00e9es printani\u00e8res apr\u00e8s d\u00e9bourrement (Tmin < seuil), d\u00e9terminant de l'\u00e9chec de r\u00e9g\u00e9n\u00e9ration (ch\u00eane, h\u00eatre, douglas). S\u00e9rie Tmin downscal\u00e9e meteoland/SAFRAN. NA sans donn\u00e9e Tmin. Score \u00e9lev\u00e9 = faible risque (peu de gel).",
         en = "Late-frost risk: frequency of spring frosts after budburst (Tmin below threshold), a driver of regeneration failure (oak, beech, Douglas fir). meteoland/SAFRAN-downscaled Tmin series. NA without Tmin data. High score = low risk (few frosts)."
       )
     ),
@@ -942,5 +942,4 @@ get_column_family_map <- function() {
   }
   result
 }
-
 

@@ -4,7 +4,7 @@
 \alias{classify_disturbance}
 \title{Tag each alert with the disturbance type it most likely reflects (G2)}
 \usage{
-classify_disturbance(alerts_df, window_days = 30L)
+classify_disturbance(alerts_df, window_days = 30L, radius_m = 100)
 }
 \arguments{
 \item{alerts_df}{A data frame with columns `plot_id`,
@@ -13,6 +13,8 @@ classify_disturbance(alerts_df, window_days = 30L)
 
 \item{window_days}{Integer. Half-width of the join window in
 days. Default 30.}
+\item{radius_m}{Numeric. Max centroid-to-centroid distance (m) for two
+alerts to be considered co-located. Default 100.}
 }
 \value{
 The input enriched with a `disturbance_type` column and a logical
