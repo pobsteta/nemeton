@@ -216,11 +216,14 @@ indicateur_s2_bati <- function(units,
 #'
 #' @param units sf object (POLYGON) of spatial units to assess
 #' @param population_grid sf object or SpatRaster of population data. If NULL, uses proxy.
-#' @param method Character. Data source: "insee" (INSEE Carroyage), "local", or "proxy". Default "proxy".
+#' @param method Character. Data source: "insee" (INSEE Carroyage), "local", or "proxy". Default "insee".
 #' @param buffer_radii Numeric vector. Buffer distances (m) for population counts. Default c(5000, 10000, 20000).
 #' @param column_name Character. Name for output column (main indicator). Default "S3".
 #' @param lang Character. Message language. Default "en".
 #'
+#' @param population_field Character or `NULL`. Name of the population column of
+#'   `population_grid` when it is an `sf`. `NULL` (default) looks for `ind`,
+#'   `pop` or `population` (INSEE Filosofi names it `ind`).
 #' @return sf object with added columns: S3 (population within primary buffer), S3_5km, S3_10km, S3_20km
 #'
 #' @details

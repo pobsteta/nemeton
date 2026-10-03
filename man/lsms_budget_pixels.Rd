@@ -4,7 +4,7 @@
 \alias{lsms_budget_pixels}
 \title{Pixel budget affordable within a compute budget}
 \usage{
-lsms_budget_pixels(budget_s, spatialr = 15L)
+lsms_budget_pixels(budget_s, spatialr = .LSMS_DEFAUTS$spatialr)
 }
 \arguments{
 \item{budget_s}{Compute budget, in seconds.}

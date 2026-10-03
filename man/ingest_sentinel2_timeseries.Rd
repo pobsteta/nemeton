@@ -125,8 +125,8 @@ Phases emitted, in order:
     `completed = total`, `total`, `n_scenes_cached`.}
   \item{`fast_prewarm:<index>_<mode>`}{(spec 018, only when
     `prewarm_alerts = TRUE`) emitted at the start / end of each of
-    the eight pre-computed FAST maps: `{NDVI, NBR, NDMI} x
-    {count, rolling}` (spec 019) plus `{NDMI, NDRE} x {trend}`
+    the eight pre-computed FAST maps: NDVI, NBR and NDMI in
+    `count` and `rolling` modes (spec 019) plus NDMI and NDRE in `trend` mode
     (spec 023). The bare key signals "started",
     a `_done` suffix "map ready", a `_failed` suffix "skipped"
     (with `error_message`). Every event carries `index` and `mode`

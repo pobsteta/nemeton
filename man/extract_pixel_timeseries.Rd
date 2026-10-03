@@ -32,6 +32,11 @@ happens internally on a per-scene basis.}
 `"NDRE"` (red-edge, spec 022) requires the B05 / B8A bands in the
 cache; a cache holding none aborts (internal
 `.assert_cache_has_bands()` guard).}
+\item{zone_polygon}{Optional \code{sf}/\code{sfc} UGF polygon. When supplied with
+\code{warn_outside_zone = TRUE}, a warning is raised if \code{xy} lies outside it
+(the series is still returned).}
+
+\item{warn_outside_zone}{Logical. Warn when \code{xy} is outside \code{zone_polygon}.}
 }
 \value{
 A `data.frame` with columns `obs_date` (Date), `index`

@@ -91,6 +91,11 @@ underlying continuous raster as a content-addressed COG, and where.}
 
 \item{parallel}{Passed through to [read_fast_alert_raster()] (spec 017
 D4): optional multi-core per-scene raster compute via \pkg{furrr}.}
+\item{apply_zone_mask}{Logical. When \code{TRUE} (default), pixels outside the
+monitoring zone polygon (the managed UGF perimeter) are set to \code{NA}.}
+
+\item{mask_polygon}{Optional \code{sf}/\code{sfc} polygon used as the zone mask
+instead of the polygon stored for the zone in the database.}
 }
 \value{
 Invisibly, the absolute path to the persisted TIF, or

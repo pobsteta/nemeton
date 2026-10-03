@@ -41,6 +41,10 @@
 #'   the connection in this release, so the argument is exposed
 #'   directly. Pass the same path the app uses for its UI.
 #'
+#' @param apply_zone_mask Logical. When `TRUE` (default), pixels outside the
+#'   monitoring zone polygon (the managed UGF perimeter) are set to `NA`.
+#' @param mask_polygon Optional `sf`/`sfc` polygon used as the zone mask
+#'   instead of the polygon stored for the zone in the database.
 #' @return A `terra::SpatRaster` with a single integer band, or
 #'   `NULL` when no mask is available (no `cache_dir` provided, the
 #'   directory doesn't exist, or no file matches).
