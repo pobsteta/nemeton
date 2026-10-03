@@ -154,7 +154,11 @@ NULL
 #' annular kernel of \code{fire_exp()} costs \code{(2 * t_dist / res)^2}
 #' operations per cell: at 2 m it is ~52 000x the cost at 30 m.
 #'
-#' **Fallback method**: R1 = w1*slope + w2*species_flammability + w3*climate_dryness
+#' **Fallback method**: R1 = w1*slope + w2*species_flammability + w3*climate_dryness.
+#' Without a species field, an NDVI-based proxy (\code{100 - 100 * NDVI}) takes
+#' the species component when an NDVI layer is available. A component that
+#' cannot be computed drops out and its weight is redistributed proportionally;
+#' with no usable component, R1 is \code{NA}.
 #'
 #' @family risk-indicators
 #' @export
@@ -270,53 +274,44 @@ indicateur_r1_feu <- function(units,
   # fireexposuR aboutit, elle n'a pas lieu d'être payée.
   dem <- .dem_working_res(dem, target_res = dem_target_res, context = "R1")
 
-  # Normalize weights
-  weights <- weights / sum(weights)
-
-  # Component 1: Slope factor
+  # Composantes disponibles seulement : une composante absente sort du calcul
+  # et son poids est redistribue au prorata (cf. .r1_weighted_score), plutot
+  # que d etre remplacee par un 50 constant. Le proxy NDVI tient lieu de
+  # composante « essence » quand le champ essence manque : il garde donc le
+  # poids `species` (avant correction, il etait calcule puis pondere a 0).
   slope_factor <- .r1_slope_factor(dem, units)
   if (is.null(slope_factor)) {
-    cli::cli_alert_warning("R1: slope could not be derived, using a neutral value")
-    slope_factor <- rep(50, nrow(units))
+    cli::cli_alert_warning("R1: slope could not be derived, component dropped")
   }
 
-  # Component 2: Species flammability (or NDVI-based proxy)
+  species_factor <- NULL
   if (species_field %in% names(units)) {
-    species <- units[[species_field]]
-    species_factor <- get_species_flammability(species)
+    species_factor <- get_species_flammability(units[[species_field]])
   } else {
     ndvi_raster_r1 <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
     if (!is.null(ndvi_raster_r1)) {
       ndvi_mean <- safe_extract(ndvi_raster_r1,
         as_pure_sf(units), fun = "mean", progress = FALSE)
       species_factor <- pmax(0, pmin(100, 100 - ndvi_mean * 100))
-    } else {
-      species_factor <- rep(50, nrow(units))
     }
-    weights["slope"] <- weights["slope"] + weights["species"] / 2
-    weights["climate"] <- weights["climate"] + weights["species"] / 2
-    weights["species"] <- 0
   }
 
-  # Component 3: Climate dryness (if available)
   climate_factor <- .r1_climate_factor(climate, units)
-  if (is.null(climate_factor)) {
-    climate_factor <- rep(50, nrow(units))
-    weights["slope"] <- weights["slope"] + weights["climate"] / 2
-    weights["species"] <- weights["species"] + weights["climate"] / 2
-    weights["climate"] <- 0
+
+  scored <- .r1_weighted_score(
+    list(slope = slope_factor, species = species_factor,
+         climate = climate_factor),
+    weights
+  )
+  if (is.null(scored)) {
+    cli::cli_alert_warning("R1: no usable fallback component, returning NA")
+    units$R1 <- rep(NA_real_, nrow(units))
+    return(units)
   }
-
-  # Renormalize weights
-  total_w <- sum(weights)
-  if (total_w > 0) weights <- weights / total_w
-
-  # Composite R1
-  units$R1 <- weights["slope"] * slope_factor +
-    weights["species"] * species_factor +
-    weights["climate"] * climate_factor
-
-  units$R1 <- pmin(pmax(units$R1, 0), 100)
+  cli::cli_alert_info(
+    "R1: fallback score = {paste(sprintf('%.2f x %s', scored$weights, names(scored$weights)), collapse = ' + ')}"
+  )
+  units$R1 <- scored$score
   msg_info("indicateur_r1_feu")
   units
 }
