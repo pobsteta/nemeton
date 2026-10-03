@@ -59,8 +59,13 @@ warning is emitted and the returned data.frame carries
 \value{
 A data.frame with one row per unit containing
   \code{H_dom} (m), \code{dbh} (cm, the quadratic mean
-  diameter), \code{density} (stems / ha), and \code{source}
-  (always "synthetic_ml") columns. Units below
+  diameter), \code{density} (stems / ha), \code{source}
+  (always "synthetic_ml") and \code{hors_domaine} columns.
+  \code{hors_domaine} is \code{TRUE} when \eqn{D_g} (Charru / IFN
+  allometry) or \eqn{N_{max}} (Charru 2012) was clamped to the
+  species' calibration range, \code{FALSE} otherwise (and for
+  non-merchantable units), \code{NA} when \eqn{D_g} is unknown; a
+  message reports how many units are concerned. Units below
   \code{min_merchantable_height} get \code{dbh = 0} and
   \code{density = 0}. The attribute \code{chm_suspect} (logical)
   flags a likely degenerate CHM (see \code{suspect_frac}).

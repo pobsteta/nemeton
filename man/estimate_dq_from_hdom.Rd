@@ -16,7 +16,11 @@ estimate_dq_from_hdom(H_dom, species)
 Numeric vector of estimated \eqn{D_g} in cm, clamped
   to each species' observed range. \code{NA} when
   \code{H_dom} is \code{NA}, non-positive or below 6 m
-  (stands too young for this allometry).
+  (stands too young for this allometry). The clamping is not silent:
+the attribute \code{hors_domaine} (logical, same length) is
+\code{TRUE} where the raw allometric value fell outside the species
+range and was clamped (e.g. an old oak stand capped at the 30 cm
+upper bound of QUPE), \code{NA} where no value was computed.
 }
 \description{
 Applies a species-specific power-law allometry

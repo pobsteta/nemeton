@@ -72,6 +72,39 @@ test_that("estimate_dq_from_hdom clamps to species Dg range on extreme H_dom", {
 })
 
 
+test_that("Dg and N_max clamping is flagged, not silent (hors_domaine)", {
+  # Vieille chênaie : H_dom = 35 m -> D_g brut ~ 42 cm, plafonné à 30 (QUPE).
+  dq <- estimate_dq_from_hdom(c(35, 22, 5), c("QUPE", "QUPE", "QUPE"))
+  expect_equal(as.numeric(dq[1]), 30)
+  expect_identical(attr(dq, "hors_domaine"), c(TRUE, FALSE, NA))
+
+  nm <- n_max_selfthinning(c(60, 25, NA), "FASY")
+  expect_identical(attr(nm, "hors_domaine"), c(TRUE, FALSE, NA))
+  nm_libre <- n_max_selfthinning(60, "FASY", clamp = FALSE)
+  expect_false(attr(nm_libre, "hors_domaine"))
+})
+
+test_that("estimate_synthetic_inventory exposes a hors_domaine column", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  chm <- terra::rast(xmin = 0, xmax = 300, ymin = 0, ymax = 100,
+                     resolution = 10, crs = "EPSG:2154", vals = 30)
+  sq <- function(x0) sf::st_polygon(list(rbind(
+    c(x0, 0), c(x0 + 100, 0), c(x0 + 100, 100), c(x0, 100), c(x0, 0))))
+  units <- sf::st_sf(species = c("QUPE", "QUPE", "QUPE"),
+                     H_dom = c(35, 22, 4),
+                     geometry = sf::st_sfc(sq(0), sq(100), sq(200),
+                                           crs = 2154))
+  expect_message(
+    inv <- estimate_synthetic_inventory(units, chm, species = units$species),
+    "clamped"
+  )
+  # 35 m : D_g plafonné ; 22 m : dans le domaine ; 4 m : non marchand.
+  expect_identical(inv$hors_domaine, c(TRUE, FALSE, FALSE))
+  expect_null(attributes(inv$dbh))
+  expect_null(attributes(inv$density))
+})
+
 test_that("h_to_dq_params exposes the calibration table", {
   tab <- h_to_dq_params()
   expect_s3_class(tab, "data.frame")
