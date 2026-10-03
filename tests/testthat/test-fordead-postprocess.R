@@ -457,7 +457,12 @@ test_that(".insert_fordead_alerts on empty input is a no-op", {
     cluster_id       = integer(0),
     geometry         = sf::st_sfc(crs = 2154)
   )
-  # No DB call at all — short-circuit on empty.
-  expect_equal(nemeton:::.insert_fordead_alerts(NULL, empty, zone_id = 1),
+  # Sans purge (replace = FALSE) : aucun appel DB. Avec replace = TRUE,
+  # un sf vide purge les alertes pending (cf. test SQLite, audit 1.0).
+  expect_equal(nemeton:::.insert_fordead_alerts(NULL, empty, zone_id = 1,
+                                                replace = FALSE),
+               0L)
+  # NULL (post-traitement en échec) : aucun appel DB, même avec replace.
+  expect_equal(nemeton:::.insert_fordead_alerts(NULL, NULL, zone_id = 1),
                0L)
 })

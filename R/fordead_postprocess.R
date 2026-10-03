@@ -303,7 +303,10 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 #' @param con A `DBIConnection`.
 #' @param alerts_sf An sf POINT (centroids) with columns `trigger_date`,
 #'   `confidence_class`, `stress_index` and, when available, `n_pixels`,
-#'   `area_m2`. CRS assumed EPSG:2154 when absent.
+#'   `area_m2`. CRS assumed EPSG:2154 when absent. A zero-row sf means a
+#'   successful run without alert: with `replace = TRUE` the prior
+#'   **pending** alerts are still purged. `NULL` (failed
+#'   post-processing) leaves the table untouched.
 #' @param zone_id Integer. Target monitoring zone.
 #' @param alert_type Character. `"fordead_dieback"` or
 #'   `"reconfort_dieback"`.
@@ -319,8 +322,19 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 .insert_health_alerts <- function(con, alerts_sf, zone_id, alert_type,
                                   replace = TRUE) {
   .assert_db_pkgs()
-  if (!inherits(alerts_sf, "sf") || !nrow(alerts_sf)) return(0L)
+  # NULL / non-sf = post-traitement en échec : on ne touche à rien (une
+  # purge effacerait les alertes du run précédent sans les remplacer).
+  if (!inherits(alerts_sf, "sf")) return(0L)
   zid <- as.integer(zone_id)
+  # Un run réussi SANS alerte (sf à 0 ligne) doit quand même purger les
+  # alertes `pending` du run précédent (audit 1.0) : sinon la base garde
+  # des foyers que la carte du nouveau run ne montre plus.
+  if (!nrow(alerts_sf)) {
+    if (isTRUE(replace)) {
+      DBI::dbWithTransaction(con, .purge_pending_alerts(con, zid, alert_type))
+    }
+    return(0L)
+  }
 
   # Centroïde en EPSG:4326 (D-B2), cohérent avec plot.geom_wkt /
   # monitoring_zone.zone_wkt. Les centroïdes arrivent dans le CRS du
@@ -365,7 +379,6 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
       "Dropped {n_dropped} {alert_type} alert{?s} with a missing {.field trigger_date}.",
       i = "Usual cause: the first-anomaly date raster could not be derived."))
   }
-  if (!nrow(staging)) return(0L)
 
   inserted <- DBI::dbWithTransaction(con, {
     # Les alertes déjà VALIDÉES sur le terrain (validation G4 via QField) ne
@@ -374,16 +387,15 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
     # message (audit 1.0). Seules les alertes `pending` sont remplacées ; une
     # nouvelle alerte située à moins de `.ALERT_KEEP_VALIDATED_M` d'une alerte
     # validée est le même foyer, déjà tranché, et n'est pas réinsérée.
+    # Si toutes les lignes ont été écartées (trigger_date NA), la purge
+    # s'applique quand même : le run remplace le précédent (audit 1.0).
     if (isTRUE(replace)) {
-      .db_execute(con,
-        "DELETE FROM alert WHERE zone_id = $1 AND alert_type = $2
-           AND (validation_status IS NULL OR validation_status = 'pending')",
-        params = list(zid, alert_type))
+      .purge_pending_alerts(con, zid, alert_type)
       gardees <- .db_get_query(con,
         "SELECT geom_wkt, cluster_id FROM alert
           WHERE zone_id = $1 AND alert_type = $2",
         params = list(zid, alert_type))
-      if (nrow(gardees)) {
+      if (nrow(gardees) && nrow(staging)) {
         deja <- .alerts_near_kept(staging$geom_wkt, gardees$geom_wkt,
                                   .ALERT_KEEP_VALIDATED_M)
         if (any(deja)) {
@@ -418,6 +430,17 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
     nrow(staging)
   })
   as.integer(inserted)
+}
+
+
+# Purge des alertes `pending` (ou sans statut) d'une zone pour un type :
+# les alertes déjà validées sur le terrain sont conservées. Sans
+# transaction propre : à appeler dans celle de l'appelant.
+.purge_pending_alerts <- function(con, zone_id, alert_type) {
+  .db_execute(con,
+    "DELETE FROM alert WHERE zone_id = $1 AND alert_type = $2
+       AND (validation_status IS NULL OR validation_status = 'pending')",
+    params = list(as.integer(zone_id), alert_type))
 }
 
 

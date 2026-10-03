@@ -652,6 +652,11 @@ run_fordead_dieback <- function(con,
         NULL
       }
     )
+    # `alerts_db` garde la distinction « échec » (NULL : la base n'est pas
+    # touchée) / « run réussi sans alerte » (sf à 0 ligne : les alertes
+    # pending du run précédent sont purgées — audit 1.0). Le résultat en
+    # mémoire conserve, lui, la convention historique NULL si vide.
+    alerts_db <- alerts_sf
     if (!is.null(alerts_sf) && !nrow(alerts_sf)) alerts_sf <- NULL
     end_phase("postprocess")
 
@@ -754,9 +759,9 @@ run_fordead_dieback <- function(con,
     # un re-run efface toutes les alertes fordead_dieback antérieures de la
     # zone avant ré-insertion. `alerts_sf` reste aussi renvoyé en mémoire
     # (consommé par R5, inchangé).
-    if (!is.null(alerts_sf)) {
+    if (!is.null(alerts_db)) {
       n_inserted <- tryCatch(
-        .insert_fordead_alerts(con, alerts_sf, zone_id = zone_id,
+        .insert_fordead_alerts(con, alerts_db, zone_id = zone_id,
                                replace = replace),
         error = function(e) {
           cli::cli_alert_warning(

@@ -11,13 +11,19 @@
 
 \item{alerts_sf}{An sf POINT (centroids) with columns `trigger_date`,
 `confidence_class`, `stress_index` and, when available, `n_pixels`,
-`area_m2`. CRS assumed EPSG:2154 when absent.}
+`area_m2`. CRS assumed EPSG:2154 when absent. A zero-row sf means a
+successful run without alert: with `replace = TRUE` the prior
+**pending** alerts are still purged. `NULL` (failed
+post-processing) leaves the table untouched.}
 
 \item{zone_id}{Integer. Target monitoring zone.}
 
-\item{replace}{Logical. When `TRUE` (default) every prior
+\item{replace}{Logical. When `TRUE` (default) every prior **pending**
 `(zone_id, alert_type)` alert is deleted before insertion, making the
-call idempotent across re-runs. When `FALSE`, rows are appended.}
+call idempotent across re-runs. Alerts already validated in the field are
+kept, and a new alert within 50 m of one of them is not re-inserted
+(since 0.208.0). When `FALSE`, rows are appended (the
+caller is then responsible for avoiding key collisions).}
 }
 \value{
 Number of rows inserted (integer).
