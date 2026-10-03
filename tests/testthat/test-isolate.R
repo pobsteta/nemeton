@@ -214,3 +214,85 @@ test_that("l'echec cite le fichier ET la derniere ligne de l'enfant", {
     expect_match(msg, "non-numeric argument")      # et ce qu'on y aurait lu
   })
 })
+
+# --- audit 1.0, sécurité : dossier d'échange privé, db_url hors disque -------
+
+test_that("the exchange dir is private and unpredictable, db_url never on disk", {
+  skip_on_cran()
+  skip_on_os("windows")
+  skip_if_not_installed("processx")
+  secret <- "postgresql://u:S3cr3t-pw@127.0.0.1:1/db"
+  # Script enfant de substitution : il décrit ce qu'il reçoit au lieu de
+  # lancer la fonction (aucune base n'est ouverte).
+  testthat::local_mocked_bindings(.capped_child_script = function() c(
+    'args <- commandArgs(trailingOnly = TRUE)',
+    'a <- readRDS(args[1L])',
+    'raw <- readBin(args[1L], "raw", file.size(args[1L]))',
+    'saveRDS(list(',
+    '  rds_db_url = a$db_url,',
+    '  rds_has_secret = grepl("S3cr3t", rawToChar(memDecompress(raw, "gzip")[',
+    '    memDecompress(raw, "gzip") != as.raw(0)]), fixed = TRUE),',
+    '  env = Sys.getenv("NEMETON_CAPPED_DB_URL"),',
+    '  dir = dirname(args[1L]),',
+    '  dir_mode = format(file.info(dirname(args[1L]))$mode),',
+    '  in_mode = format(file.info(args[1L])$mode)), args[2L])'
+  ))
+  scratch <- withr::local_tempdir()
+  withr::local_options(nemeton.scratch_dir = scratch)
+  out <- suppressWarnings(run_memory_capped(
+    "identity", args = list(x = 1L), package = "base", db_url = secret,
+    memory_max = FALSE, quiet = TRUE))
+  expect_null(out$rds_db_url)
+  expect_false(out$rds_has_secret)
+  expect_identical(out$env, secret)
+  expect_identical(out$dir_mode, "700")
+  expect_identical(out$in_mode, "600")
+  # Nom imprévisible (tempfile), plus le chemin `capped_<fun>_<pid>`.
+  expect_false(identical(basename(out$dir),
+                         sprintf("capped_identity_%d", Sys.getpid())))
+  expect_match(basename(out$dir), "^capped_identity_.+")
+  expect_identical(dirname(normalizePath(out$dir, mustWork = FALSE)),
+                   normalizePath(scratch))
+  # Le dossier d'échange disparaît, et la variable n'a pas fui dans le parent.
+  expect_false(dir.exists(out$dir))
+  expect_identical(Sys.getenv("NEMETON_CAPPED_DB_URL"), "")
+})
+
+test_that("the real child script reads db_url from the environment and drops it", {
+  skip_on_cran()
+  skip_if_not_installed("processx")
+  skip_if_not_installed("RSQLite")
+  # `Sys.getenv` ne prend pas `con` : la variable doit être retirée AVANT
+  # l'appel, sans quoi les sous-processus de l'enfant en hériteraient.
+  val <- suppressWarnings(run_memory_capped(
+    "Sys.getenv", args = list(x = "NEMETON_CAPPED_DB_URL"), package = "base",
+    db_url = "postgresql://u:pw@127.0.0.1:1/db", memory_max = FALSE, quiet = TRUE))
+  expect_identical(val, "")
+
+  # `db_disconnect(con)` prend `con` : l'enfant ouvre la base reçue par
+  # l'environnement (SQLite jetable, aucun serveur).
+  db <- file.path(withr::local_tempdir(), "child.sqlite")
+  res <- suppressWarnings(run_memory_capped(
+    "db_disconnect", db_url = paste0("sqlite:///", db),
+    memory_max = FALSE, quiet = TRUE))
+  expect_true(file.exists(db))
+})
+
+test_that("a stale progress journal is truncated, not replayed", {
+  skip_on_cran()
+  skip_if_not_installed("processx")
+  skip_if_not_installed("jsonlite")
+  withr::with_tempdir({
+    pp <- file.path(getwd(), "progress.json")
+    # Journal laissé par un run précédent.
+    writeLines('{"current":"stale:event"}', .progress_ndjson_path(pp))
+    seen <- list()
+    res <- suppressWarnings(run_memory_capped(
+      "identity", args = list(x = 1L), package = "base",
+      progress_path = pp,
+      progress_callback = function(ev) seen[[length(seen) + 1L]] <<- ev,
+      memory_max = FALSE, quiet = TRUE))
+    expect_identical(res, 1L)
+    expect_length(seen, 0L)
+  })
+})

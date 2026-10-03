@@ -97,8 +97,14 @@
     '# to a function without them is an "unused argument" error mid-run.',
     'takes <- function(arg) arg %in% names(formals(f))',
     'extra <- list()',
-    'if (takes("con") && !is.null(a$db_url) && nzchar(a$db_url)) {',
-    '  con <- nemeton::db_connect(a$db_url)',
+    '# URL de base (mot de passe compris) transmise par l\'environnement, pas',
+    '# par call.rds ; retiree aussitot pour que les sous-processus (conda,',
+    '# IOTA2) n\'en heritent pas. `a$db_url` reste lu (appel d\'un ancien parent).',
+    'db_url <- Sys.getenv("NEMETON_CAPPED_DB_URL", "")',
+    'Sys.unsetenv("NEMETON_CAPPED_DB_URL")',
+    'if (!nzchar(db_url) && !is.null(a$db_url) && !is.na(a$db_url)) db_url <- a$db_url',
+    'if (takes("con") && nzchar(db_url)) {',
+    '  con <- nemeton::db_connect(db_url)',
     '  extra$con <- con',
     '}',
     'if (takes("progress_callback")) {',
@@ -163,7 +169,9 @@
 #' @param package Package the child loads and resolves `fun` from. Default
 #'   `"nemeton"`. Use e.g. `"nemetonshiny"` to cap an app-side worker.
 #' @param db_url Database URL. When given, the child opens a connection and
-#'   passes it to `fun` as `con` (only if `fun` takes a `con` argument).
+#'   passes it to `fun` as `con` (only if `fun` takes a `con` argument). It reaches the
+#'   child through an environment variable (removed by the child as soon as it
+#'   is read), never through the call file on disk.
 #' @param options Named list of session options set in the child (via
 #'   [options()]) before calling `fun`. Use for options the worker reads but that
 #'   do not cross the process boundary, e.g. `list(nemeton.app_options = ...)`.
@@ -236,17 +244,44 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
     ))
   }
 
-  dir <- scratch_dir(sprintf("capped_%s_%d", fun, as.integer(Sys.getpid())))
+  # Dossier d'échange au nom imprévisible (tempfile) et privé (0700) : il
+  # porte le script exécuté par l'enfant et ses arguments. L'ancien chemin
+  # `capped_<fun>_<pid>` était devinable et lisible par tous (0644).
+  dir <- tempfile(sprintf("capped_%s_", gsub("[^A-Za-z0-9_.]", "_", fun)),
+                  tmpdir = scratch_dir())
+  # umask 077 le temps d'écrire les fichiers d'échange seulement : l'enfant
+  # (IOTA², rasters) doit garder le umask de la session.
+  old_umask <- Sys.umask("077")
+  umask_restored <- FALSE
+  restore_umask <- function() {
+    if (!umask_restored) Sys.umask(old_umask)
+    umask_restored <<- TRUE
+  }
+  on.exit(restore_umask(), add = TRUE)
+  ok_dir <- dir.create(dir, mode = "0700", showWarnings = FALSE)
   on.exit(unlink(dir, recursive = TRUE, force = TRUE), add = TRUE)
+  if (!isTRUE(ok_dir)) {
+    cli::cli_abort("Cannot create the private exchange directory {.path {dir}}.")
+  }
+  Sys.chmod(dir, "0700", use_umask = FALSE)
   f_in     <- file.path(dir, "call.rds")
   f_out    <- file.path(dir, "result.rds")
   f_script <- file.path(dir, "run.R")
 
-  saveRDS(list(fun = fun, args = args, package = package, db_url = db_url,
+  # `db_url` (mot de passe compris) ne va PAS dans call.rds : il passe à
+  # l'enfant par variable d'environnement, que le script retire aussitôt lue
+  # (les sous-processus de l'enfant — conda, IOTA² — n'en héritent pas).
+  saveRDS(list(fun = fun, args = args, package = package, db_url = NULL,
                options = options, progress_path = progress_path,
                libs = .libPaths()), f_in)
-
   writeLines(.capped_child_script(), f_script)
+  restore_umask()
+  db_env <- if (is.null(db_url) || !length(db_url) || is.na(db_url[[1L]])) {
+    ""
+  } else {
+    as.character(db_url[[1L]])
+  }
+  child_env <- c("current", NEMETON_CAPPED_DB_URL = db_env)
 
   mm <- if (is.null(memory_max)) {
     .memory_ceiling()
@@ -298,17 +333,25 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
   # `sink()` in the worker could stand in for (a sink does not follow a
   # SUBPROCESS). stderr is merged into stdout so the traceback and the output it
   # comments on stay in reading order, in one file.
+  # Journal de progression tronqué AVANT le lancement : un `.ndjson` laissé par
+  # un run précédent serait sinon rejoué (seen = 0) dans le callback.
+  ndjson <- if (is.null(progress_path)) NULL else .progress_ndjson_path(progress_path)
+  if (!is.null(ndjson) && file.exists(ndjson)) {
+    tryCatch(close(file(ndjson, open = "w")), error = function(e) invisible(NULL))
+  }
+
   if (!is.null(log_path)) {
     dir.create(dirname(log_path), recursive = TRUE, showWarnings = FALSE)
     px <- processx::process$new(cmd$command, cmd$args,
-                                stdout = log_path, stderr = "2>&1")
+                                stdout = log_path, stderr = "2>&1",
+                                env = child_env)
   } else {
     std <- if (quiet) NULL else ""
-    px <- processx::process$new(cmd$command, cmd$args, stdout = std, stderr = std)
+    px <- processx::process$new(cmd$command, cmd$args, stdout = std, stderr = std,
+                                env = child_env)
   }
   on.exit(if (px$is_alive()) px$kill(), add = TRUE)
 
-  ndjson <- if (is.null(progress_path)) NULL else .progress_ndjson_path(progress_path)
   seen <- 0L
   repeat {
     px$wait(timeout = as.integer(poll_ms))
