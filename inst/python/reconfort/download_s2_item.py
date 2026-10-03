@@ -1,4 +1,4 @@
-# nemeton-authored glue (not vendored from RECONFORT). MIT, with the rest
+# nemeton-authored glue (not vendored from RECONFORT). GPL-3, with the rest
 # of the nemeton R package. Driven by R/reconfort_ingest.R.
 #
 # Download ONE Sentinel-2 archive, reconstructed from the STAC JSON that
@@ -11,6 +11,7 @@ from argparse import RawTextHelpFormatter
 import argparse
 import json
 from pygeodes import Geodes, Config
+from utils.tls import enforce_tls_verification
 from pygeodes.utils.stac import Item
 
 if __name__ == "__main__":
@@ -28,6 +29,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     conf = Config.from_file(args.account)
+    # Vérification TLS forcée (pygeodes la coupe par défaut).
+    enforce_tls_verification(conf)
     geodes = Geodes(conf=conf)
 
     with open(args.item_json) as fh:

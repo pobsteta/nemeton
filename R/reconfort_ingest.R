@@ -215,19 +215,15 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 }
 
 
-# `PYTHONWARNINGS` filter silencing two floods of benign warnings from the
-# downloader's deps that would otherwise drown real messages:
-#   - pygeodes' per-item "file with same content already exists, skipping
-#     download" `UserWarning` (one per cached scene — up to 140/tile);
-#   - urllib3's `InsecureRequestWarning` (pygeodes calls the CNES GEODES
-#     portal with TLS verification disabled — upstream's choice).
-# The urllib3 warning is matched by *message* ("Unverified HTTPS request"),
-# not by category: a `category::module` filter referencing `urllib3.exceptions`
-# is rejected at interpreter startup ("Invalid -W option ignored: invalid
-# module name") because the third-party module is not importable that early.
-# A message filter needs no import. Python errors, tracebacks and the scripts'
-# own stdout are untouched, so genuine failures still surface.
-.RECONFORT_PYWARN <- "ignore::UserWarning,ignore:Unverified HTTPS request"
+# `PYTHONWARNINGS` filter silencing a flood of benign warnings from the
+# downloader's deps that would otherwise drown real messages: pygeodes'
+# per-item "file with same content already exists, skipping download"
+# `UserWarning` (one per cached scene — up to 140/tile).
+# urllib3's `InsecureRequestWarning` is deliberately NOT silenced any more:
+# the GEODES scripts force TLS verification (utils/tls.py), so that warning
+# can only show up if verification fell back to off — it must stay visible.
+# Python errors, tracebacks and the scripts' own stdout are untouched.
+.RECONFORT_PYWARN <- "ignore::UserWarning"
 
 
 # Memory ceiling for the IOTA2 subprocess, as a systemd size string.

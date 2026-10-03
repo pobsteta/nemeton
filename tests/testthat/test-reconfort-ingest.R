@@ -652,3 +652,47 @@ test_that(".reconfort_run_py runs the command produced by .reconfort_cap_memory"
   expect_identical(seen$command, "conda")
   expect_true(all(c("run", "-n", "envx", "python", "s.py") %in% seen$args))
 })
+
+test_that("GEODES scripts force TLS verification and the warning is not silenced", {
+  # Plus de filtre masquant InsecureRequestWarning côté R.
+  expect_false(grepl("Unverified HTTPS", .RECONFORT_PYWARN, fixed = TRUE))
+  glue <- .reconfort_glue_dir()
+  # Chaque script GEODES appelle enforce_tls_verification() AVANT Geodes().
+  for (s in c("list_s2_items.py", "download_s2_item.py",
+              "run_geodes_download.py")) {
+    src <- readLines(file.path(glue, s))
+    i_tls <- grep("enforce_tls_verification(conf)", src, fixed = TRUE)
+    i_geo <- grep("Geodes(conf=conf)", src, fixed = TRUE)
+    expect_length(i_tls, 1L)
+    expect_true(length(i_geo) == 1L && i_tls < i_geo, info = s)
+  }
+})
+
+test_that("enforce_tls_verification points pygeodes to a CA bundle", {
+  py <- Sys.which("python3")
+  skip_if(!nzchar(py), "python3 not available")
+  glue <- normalizePath(.reconfort_glue_dir())
+  # Faux paquet pygeodes : reproduit la constante lue par RequestMaker.
+  stub <- withr::local_tempdir()
+  dir.create(file.path(stub, "pygeodes", "utils"), recursive = TRUE)
+  file.create(file.path(stub, "pygeodes", "__init__.py"),
+              file.path(stub, "pygeodes", "utils", "__init__.py"))
+  writeLines('SSL_CERT_PATH = ""',
+             file.path(stub, "pygeodes", "utils", "request.py"))
+  script <- withr::local_tempfile(fileext = ".py")
+  writeLines(c(
+    "import os, sys",
+    sprintf("sys.path[:0] = [%s, %s]",
+            jsonlite::toJSON(stub, auto_unbox = TRUE),
+            jsonlite::toJSON(glue, auto_unbox = TRUE)),
+    "from utils.tls import enforce_tls_verification",
+    "import pygeodes.utils.request as rq",
+    "class C: use_async_requests = True",
+    "c = C()",
+    "ca = enforce_tls_verification(c)",
+    "print(ca is not None and os.path.isfile(rq.SSL_CERT_PATH) and rq.SSL_CERT_PATH == ca)",
+    "print(c.use_async_requests)"
+  ), script)
+  out <- system2(py, shQuote(script), stdout = TRUE)
+  expect_identical(out, c("True", "False"))
+})
