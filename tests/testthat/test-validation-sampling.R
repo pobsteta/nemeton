@@ -125,6 +125,81 @@ test_that("create_validation_sampling_plan weighting favours higher classes", {
 })
 
 
+# ---- audit 1.0 : zone respectee, ponderation par cellule, reliquat --------
+
+test_that(".allocate_caty_n gives a per-cell probability proportional to the class value", {
+  # 90 cellules de classe 3, 10 de classe 4, n = 20
+  a <- nemeton:::.allocate_caty_n(c(90, 10), c(3, 4), 20L)
+  expect_equal(sum(a), 20L)
+  # Probabilite par cellule : classe 4 > classe 3 (l'ancienne allocation
+  # n * v / sum(v) donnait 11 points a 10 cellules -> plafonnees, inversee)
+  expect_gt(a[2] / 10, a[1] / 90)
+  expect_equal(a, c(17L, 3L))
+})
+
+test_that(".allocate_caty_n redistributes the surplus of a capped class", {
+  # Classe 2 : 3 cellules seulement ; son surplus revient a la classe 1
+  a <- nemeton:::.allocate_caty_n(c(5, 3), c(1, 4), 7L)
+  expect_equal(a, c(4L, 3L))
+  # Pas assez de cellules : tout est pris, sans depasser les effectifs
+  expect_equal(nemeton:::.allocate_caty_n(c(2, 3), c(3, 4), 10L), c(2L, 3L))
+  # Poids nul : jamais tire
+  expect_equal(nemeton:::.allocate_caty_n(c(5, 5), c(0, 4), 3L), c(0L, 3L))
+})
+
+test_that("create_validation_sampling_plan meets n_validation when a class is scarce", {
+  skip_if_not_installed("terra")
+  testthat::skip_if_not_installed("spsurvey")
+  m <- matrix(3L, 10, 10)
+  m[1, 1:3] <- 4L # 3 cellules de classe 4 seulement
+  r <- terra::rast(m, crs = "EPSG:2154")
+  terra::ext(r) <- terra::ext(0, 100, 0, 100)
+  zone <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 0, ymin = 0, xmax = 100, ymax = 100), crs = 2154)))
+
+  plan <- create_validation_sampling_plan(
+    zone, r, n_validation = 10L, n_control = 0L,
+    classes = c(3L, 4L), seed = 1L)
+  # Avant : 6 points alloues a la classe 4, plafonnes a 3, reliquat perdu -> 7
+  expect_equal(sum(plan$type == "Validation"), 10L)
+})
+
+test_that("create_validation_sampling_plan never draws outside the zone", {
+  skip_if_not_installed("terra")
+  testthat::skip_if_not_installed("spsurvey")
+  # Alertes et cellules saines des deux cotes ; la zone n'en couvre que la moitie ouest
+  m <- matrix(0L, 20, 20)
+  m[, c(2:4, 16:18)] <- 4L
+  r <- terra::rast(m, crs = "EPSG:2154")
+  terra::ext(r) <- terra::ext(0, 200, 0, 200)
+  zone <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 0, ymin = 0, xmax = 100, ymax = 200), crs = 2154)))
+
+  plan <- create_validation_sampling_plan(
+    zone, r, n_validation = 15L, n_control = 10L,
+    classes = 4L, seed = 3L)
+  x <- sf::st_coordinates(plan)[, "X"]
+  expect_true(all(x <= 100))
+  expect_true(all(c("Validation", "Temoin") %in% plan$type))
+
+  # Zone dans un autre CRS : reprojetee sur le raster
+  zone_4326 <- sf::st_transform(zone, 4326)
+  plan2 <- create_validation_sampling_plan(
+    zone_4326, r, n_validation = 10L, n_control = 5L,
+    classes = 4L, seed = 3L)
+  expect_true(all(sf::st_coordinates(plan2)[, "X"] <= 101))
+
+  # Zone sans alerte -> masque vide type
+  zone_vide <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 60, ymin = 0, xmax = 140, ymax = 200), crs = 2154)))
+  expect_error(
+    create_validation_sampling_plan(zone_vide, r, n_validation = 5L,
+                                    classes = 4L, seed = 1L),
+    class = "nemeton_empty_alert_mask"
+  )
+})
+
+
 test_that("create_validation_sampling_plan warns when no cell in control_classes (v0.49.1)", {
   skip_if_not_installed("terra")
   testthat::skip_if_not_installed("spsurvey")

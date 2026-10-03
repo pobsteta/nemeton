@@ -21,10 +21,12 @@
 #' `mask_timestamp`, `generated_at`) is **not** added here — it lives
 #' upstream in the app layer.
 #'
-#' @param zone An `sf` POLYGON in EPSG:2154. Defines the geographic AOI
-#'   of the monitoring zone (used to intersect candidate cells; not
-#'   used for the alert/control selection itself, which comes from
-#'   `alert_raster`).
+#' @param zone An `sf` / `sfc` POLYGON (typically EPSG:2154; reprojected
+#'   onto the `alert_raster` CRS if different). Defines the geographic AOI of
+#'   the monitoring zone: both the alert (validation) and the healthy
+#'   (control) candidate cells are restricted to the cells inside `zone`, so
+#'   no plot is drawn outside it. The class selection itself comes from
+#'   `alert_raster`.
 #' @param alert_raster A `terra::SpatRaster` (single layer) with
 #'   integer class values in `[0, 4]`. Typically
 #'   [read_fordead_dieback_mask()] or [read_fast_alert_mask()].
@@ -46,8 +48,13 @@
 #'   `classes = c(2, 3)`, `control_classes = c(1)`.
 #' @param weighting One of `"uniform"` (default) or `"continuous"`.
 #'   `"uniform"` keeps the historical behaviour: the validation draw is a
-#'   per-class unequal-probability GRTS (a class-4 cell outweighs a class-3
-#'   one). `"continuous"` instead weights the inclusion probability by an
+#'   per-class unequal-probability GRTS where the **per-cell** inclusion
+#'   probability is proportional to the class value (a class-4 cell is drawn
+#'   4/3 as often as a class-3 cell, whatever the number of cells in each
+#'   class). Per-class sample sizes are allocated accordingly; a class with
+#'   fewer cells than its allocation is fully taken and the surplus is
+#'   redistributed to the other classes, so the target `n_validation` is met
+#'   whenever enough candidate cells exist. `"continuous"` instead weights the inclusion probability by an
 #'   **external continuous severity raster** (`weight_raster`), so two cells in
 #'   the same class are still separated by their raw severity — parity with
 #'   [create_trend_sanitary_plan()] (which does this for FAST via `|slope|`).
@@ -163,10 +170,18 @@ create_validation_sampling_plan <- function(zone,
     set.seed(as.integer(seed))
   }
 
+  # --- 0. Restriction a la zone ----------------------------------------
+  # `zone` etait valide mais jamais utilise : des placettes (alerte comme
+  # temoin) etaient tirees hors de l'UGF. On masque le raster d'alerte par la
+  # zone avant toute selection de cellules.
+  alert_raster <- .mask_raster_to_zone(alert_raster, zone)
+
   # --- 1. Build the alert-priority raster (A1) ----------------------
   priority <- fordead_alert_mask(alert_raster,
                                  classes  = classes,
                                  buffer_m = buffer_m)
+  # La dilatation (buffer_m) peut deborder de la zone : on re-masque.
+  priority <- .mask_raster_to_zone(priority, zone)
   n_alert_cells <- sum(terra::global(priority, "notNA")[[1L]], na.rm = TRUE)
   if (n_alert_cells == 0L) {
     cli::cli_abort(
@@ -568,29 +583,23 @@ create_trend_sanitary_plan <- function(con, zone_id,
   if (nrow(pts_sf) == 0L) return(NULL)
 
   # Unequal-probability via `caty_var` / `caty_n`. Each distinct alert
-  # class becomes a category; we allocate `n` proportionally to
-  # class weight (= class value), so higher classes draw more.
+  # class becomes a category. The PER-CELL inclusion probability must be
+  # proportional to the class value : the allocation of class c is
+  # n * v_c * N_c / sum(v * N). (L'ancienne allocation n * v_c / sum(v)
+  # ignorait les effectifs : une classe 4 tres etendue avait une probabilite
+  # par cellule plus faible qu'une classe 3 rare — ponderation inversee.)
   pts_sf$caty <- as.character(pts_sf$alert_class)
   classes_present <- sort(unique(pts_sf$alert_class))
-  weights <- as.numeric(classes_present)
-  alloc_raw <- n * weights / sum(weights)
-  # Largest-remainder rounding so we always sum to n.
-  alloc_int <- floor(alloc_raw)
-  remainder <- n - sum(alloc_int)
-  if (remainder > 0L) {
-    frac_order <- order(alloc_raw - alloc_int, decreasing = TRUE)
-    alloc_int[frac_order[seq_len(remainder)]] <-
-      alloc_int[frac_order[seq_len(remainder)]] + 1L
-  }
-  caty_n <- stats::setNames(as.integer(alloc_int),
-                            as.character(classes_present))
-  # Cap each category by available candidates.
-  for (cls in names(caty_n)) {
-    avail <- sum(pts_sf$caty == cls)
-    if (caty_n[[cls]] > avail) caty_n[[cls]] <- as.integer(avail)
-  }
+  counts <- vapply(classes_present, function(cl) sum(pts_sf$alert_class == cl),
+                   numeric(1))
+  caty_n <- stats::setNames(
+    .allocate_caty_n(counts, as.numeric(classes_present), n),
+    as.character(classes_present))
   caty_n <- caty_n[caty_n > 0L]
   if (!length(caty_n)) return(NULL)
+  # spsurvey refuse une categorie de la base absente de caty_n : on retire
+  # les cellules des classes a allocation nulle
+  pts_sf <- pts_sf[pts_sf$caty %in% names(caty_n), ]
 
   # spsurvey::grts wants a named *vector* for caty_n (not a list), and
   # its stdout chatter must be silenced separately from the call itself
@@ -625,6 +634,58 @@ create_trend_sanitary_plan <- function(con, zone_id,
   sites[, c("alert_class", "geometry"), drop = FALSE]
 }
 
+
+# Allocation par classe pour un tirage dont la probabilite d'inclusion par
+# cellule est proportionnelle au poids de la classe. Une classe plafonnee par
+# son effectif est prise entierement et le reliquat est redistribue aux autres
+# (remplissage iteratif), puis arrondi au plus fort reste sans jamais depasser
+# les effectifs. Total = min(n, cellules eligibles).
+.allocate_caty_n <- function(counts, weights, n) {
+  k <- length(counts)
+  eligible <- weights > 0 & counts > 0
+  total <- min(n, sum(counts[eligible]))
+  alloc <- numeric(k)
+  capped <- rep(FALSE, k)
+  n_left <- total
+  repeat {
+    free <- eligible & !capped
+    if (!any(free) || n_left <= 0) break
+    mass <- weights[free] * counts[free]
+    raw <- n_left * mass / sum(mass)
+    over <- raw >= counts[free]
+    if (!any(over)) {
+      alloc[free] <- raw
+      break
+    }
+    idx <- which(free)[over]
+    alloc[idx] <- counts[idx]
+    capped[idx] <- TRUE
+    n_left <- n_left - sum(counts[idx])
+  }
+  ai <- floor(alloc + 1e-9)
+  rem <- total - sum(ai)
+  while (rem > 0) {
+    room <- which(eligible & ai < counts)
+    if (!length(room)) break
+    take <- room[order(alloc[room] - ai[room], decreasing = TRUE)]
+    take <- take[seq_len(min(rem, length(take)))]
+    ai[take] <- ai[take] + 1
+    rem <- total - sum(ai)
+  }
+  as.integer(ai)
+}
+
+# Restreint un raster aux cellules de `zone` (reprojetee dans le CRS du raster
+# si besoin) ; les cellules hors zone passent a NA.
+.mask_raster_to_zone <- function(r, zone) {
+  g <- sf::st_geometry(zone)
+  rc <- terra::crs(r)
+  if (nzchar(rc) && !is.na(sf::st_crs(g)) &&
+      !isTRUE(sf::st_crs(g) == sf::st_crs(rc))) {
+    g <- sf::st_transform(g, sf::st_crs(rc))
+  }
+  terra::mask(r, terra::vect(g))
+}
 
 # spec 025 — draw `n` points with inclusion probability proportional to the
 # CONTINUOUS cell value (`|slope|`) of `priority_raster` (NA = excluded), via
