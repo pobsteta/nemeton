@@ -61,18 +61,18 @@
     list(
       unit = switch(statistic, trend = "mm/decade", "mm"),
       value_label = switch(statistic,
-                           trend = "Tendance précipitations estivales",
-                           mean  = "Précipitations estivales moyennes",
-                           "Précipitations estivales"),
+                           trend = "Tendance pr\u00e9cipitations estivales",
+                           mean  = "Pr\u00e9cipitations estivales moyennes",
+                           "Pr\u00e9cipitations estivales"),
       sense = "dry_unfavorable",
       reliability = "low")
   } else {
     list(
-      unit = switch(statistic, trend = "°C/decade", "°C"),
+      unit = switch(statistic, trend = "\u00b0C/decade", "\u00b0C"),
       value_label = switch(statistic,
-                           trend = "Tendance T°max estivale",
-                           mean  = "T°max estivale moyenne",
-                           "T°max estivale"),
+                           trend = "Tendance T\u00b0max estivale",
+                           mean  = "T\u00b0max estivale moyenne",
+                           "T\u00b0max estivale"),
       sense = "hot_unfavorable",
       reliability = "high")
   }
@@ -409,7 +409,7 @@ build_safran_stations <- function(aoi, buffer_m, years, dem,
     if (is.null(dem_n)) {
       cli::cli_warn(c(
         "eobs_downscale(engine = \"meteoland\"): too few SAFRAN pseudo-stations; falling back to KED.",
-        i = "Widen {.arg buffer_m} or check the GéoSAS SAFRAN service."))
+        i = "Widen {.arg buffer_m} or check the G\u00e9oSAS SAFRAN service."))
       return(NULL)
     }
     aoi_buf <- .eobs_aoi_buffer(aoi, buffer_m, sf::st_crs(dem_n))
@@ -419,7 +419,7 @@ build_safran_stations <- function(aoi, buffer_m, years, dem,
     if (is.null(stations) || nrow(stations$points) < min_stations) {
       cli::cli_warn(c(
         "eobs_downscale(engine = \"meteoland\"): too few SAFRAN pseudo-stations; falling back to KED.",
-        i = "Widen {.arg buffer_m} or check the GéoSAS SAFRAN service."))
+        i = "Widen {.arg buffer_m} or check the G\u00e9oSAS SAFRAN service."))
       return(NULL)
     }
     meteo <- .meteoland_meteo_sf(stations)
@@ -881,7 +881,7 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 #'   **output contract** the app renders against: `status`
 #'   (`"ok"`/`"insufficient_data"`), `engine` (the engine that
 #'   actually ran), `method` (`"ked"`/`"trend_only"`), `var`, `statistic`,
-#'   `crs` (EPSG code), `unit` (e.g. `"°C/decade"` for `tx`, `"mm/decade"` for
+#'   `crs` (EPSG code), `unit` (e.g. `"\u00b0C/decade"` for `tx`, `"mm/decade"` for
 #'   `rr`), `value_label`, `reliability` (`"high"` for `tx`, `"low"` for `rr`),
 #'   `palette` (`low`/`high` quantile bounds and `sense` — `"hot_unfavorable"`
 #'   for `tx`, high = warm = red; `"dry_unfavorable"` for `rr`, low = drying =
@@ -1018,8 +1018,8 @@ eobs_bivariate_n <- function() .EOBS_BIVARIATE_N
 # Libellés 5×5 dérivés (ct = T°max frais->chaud ; cp = précip sec->humide),
 # ordonnés comme (ct-1)*N + cp (cp varie le plus vite).
 .EOBS_BIVARIATE_LABELS <- local({
-  temp <- c("Refroidit", "Réch. faible", "Réch. modéré", "Réch. fort", "Réch. très fort")
-  prec <- c("assèch. fort", "assèch. modéré", "assèch. faible", "humidif. faible", "humidif.")
+  temp <- c("Refroidit", "R\u00e9ch. faible", "R\u00e9ch. mod\u00e9r\u00e9", "R\u00e9ch. fort", "R\u00e9ch. tr\u00e8s fort")
+  prec <- c("ass\u00e8ch. fort", "ass\u00e8ch. mod\u00e9r\u00e9", "ass\u00e8ch. faible", "humidif. faible", "humidif.")
   g <- expand.grid(cp = prec, ct = temp, stringsAsFactors = FALSE)
   stats::setNames(sprintf("%s / %s", g$ct, g$cp),
                   as.character(seq_len(nrow(g))))
@@ -1163,7 +1163,7 @@ eobs_downscale_bivariate <- function(tx, rr, dem = NULL, aoi, buffer_m = 25000,
     status = "ok", var = "bivariate", statistic = "trend",
     crs = txr$meta$crs, dem_source = txr$meta$dem_source,
     n_points = txr$meta$n_points, reliability = "low",
-    value_label = "Tendance bivariée (T°max estivale × précipitations)",
+    value_label = "Tendance bivari\u00e9e (T\u00b0max estivale \u00d7 pr\u00e9cipitations)",
     breaks = list(tmax = brt, precip = brp),
     palette = list(classes = seq_len(N * N),
                    colors = unname(.EOBS_BIVARIATE_COLORS),

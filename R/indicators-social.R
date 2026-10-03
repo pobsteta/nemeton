@@ -272,7 +272,7 @@ indicateur_s3_population <- function(units,
   if (identical(method, "proxy")) {
     cli::cli_abort(c(
       "{.val proxy} no longer exists: it never read a population grid.",
-      i = "It returned buffer area x 100 inhabitants/km2 — a number that varied \\
+      i = "It returned buffer area x 100 inhabitants/km2 \u2014 a number that varied \\
            plausibly with unit size and therefore looked measured.",
       i = "Pass a {.arg population_grid} (INSEE Filosofi carreaux carry {.field ind}), \\
            or omit {.arg method} to get {.val NA} where nothing can be measured."

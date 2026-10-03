@@ -41,7 +41,7 @@
   if (active && .cancel_flag_exists(cancel_path)) {
     cli::cli_warn(c(
       "Cancel flag already present at entry: {.path {cancel_path}}.",
-      i = "Ignoring it for this run — delete the flag before {.fn invoke} \\
+      i = "Ignoring it for this run \u2014 delete the flag before {.fn invoke} \\
            to arm cooperative cancellation."
     ))
     active <- FALSE

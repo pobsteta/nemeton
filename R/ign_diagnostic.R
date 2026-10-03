@@ -138,10 +138,10 @@ probe_ign_lidar_tile <- function(url,
   cl_num <- suppressWarnings(as.numeric(cl_raw))
 
   pretty_msg <- switch(cat,
-    ok           = sprintf("HTTP %d — tile reachable.", status),
-    not_found    = sprintf("HTTP %d — dalle absente (probable production retardée côté IGN).", status),
-    forbidden    = sprintf("HTTP %d — accès refusé (quota / auth).", status),
-    server_error = sprintf("HTTP %d — erreur serveur IGN.", status),
+    ok           = sprintf("HTTP %d \u2014 tile reachable.", status),
+    not_found    = sprintf("HTTP %d \u2014 dalle absente (probable production retard\u00e9e c\u00f4t\u00e9 IGN).", status),
+    forbidden    = sprintf("HTTP %d \u2014 acc\u00e8s refus\u00e9 (quota / auth).", status),
+    server_error = sprintf("HTTP %d \u2014 erreur serveur IGN.", status),
     sprintf("HTTP %d.", status)
   )
 

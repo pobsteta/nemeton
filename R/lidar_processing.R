@@ -200,7 +200,7 @@ compute_dtm_chm_from_laz <- function(laz_dir,
 
   if (verbose && !reuse) {
     cli::cli_alert_success(
-      "lasR done in {format_duration(as.numeric(elapsed))} — \\
+      "lasR done in {format_duration(as.numeric(elapsed))} \u2014 \\
        DTM: {.path {dtm_out}} | CHM: {.path {chm_out}}"
     )
   }
@@ -307,7 +307,7 @@ compute_dtm_chm_from_laz <- function(laz_dir,
 
   if (verbose) {
     cli::cli_alert_info(
-      "No pre-rasterized {.val {toupper(target)}} found — falling back to \\
+      "No pre-rasterized {.val {toupper(target)}} found \u2014 falling back to \\
        lasR derivation from {length(laz_files)} .laz tile{?s}."
     )
   }

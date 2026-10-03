@@ -450,7 +450,7 @@
       sprintf("iota2_results_classif_labels-%s-S2_%s", label, s2_year))
     if (!dir.exists(res)) {
       return(c(i = cli::format_inline(
-        "No IOTA2 results dir under {.path {res}} — the chain died before writing one.")))
+        "No IOTA2 results dir under {.path {res}} \u2014 the chain died before writing one.")))
     }
     out <- character()
 
@@ -479,7 +479,7 @@
       cli::format_inline("{.path final/} holds {length(fin)} raster{?s}: {.file {fin}}.")
     } else {
       cli::format_inline("{.path {file.path(res, 'final')}} holds no raster",
-                         " — neither the merge nor the mosaic step completed.")
+                         " \u2014 neither the merge nor the mosaic step completed.")
     })
 
     # The task-status file is a pickle, so it cannot be read here; say where it
@@ -758,7 +758,7 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     # class map and the alerts are unaffected, so warn rather than abort.
     if (!.reconfort_probamap_fixed(conda_bin, env)) {
       cli::cli_warn(c(
-        "iota2 is missing the probability-map fix (defect #12) — probabilities will be clamped at 255.",
+        "iota2 is missing the probability-map fix (defect #12) \u2014 probabilities will be clamped at 255.",
         i = "The continuous score will be compressed (~24..58 instead of 1..100); classes and alerts are unaffected.",
         i = "Run {.file repair_iota2_env.sh} on the {.val {env}} env, then re-run."
       ))
@@ -847,7 +847,7 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
           .reconfort_chunk_count(mask_path)
         } else {
           cli::cli_warn(c(
-            "iota2 is missing the chunk-0 mask fix (defect #11) — classifying in a single chunk.",
+            "iota2 is missing the chunk-0 mask fix (defect #11) \u2014 classifying in a single chunk.",
             i = "Peak memory goes past 20 GB and may get this session killed by the OOM killer.",
             i = "Run {.file repair_iota2_env.sh} on the {.val {env}} env to enable chunking."
           ))
@@ -920,7 +920,7 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     if (is.na(rasters$continuous_score)) {
       cli::cli_abort(c(
         "RECONFORT produced no continuous-score raster for zone {.val {zone_id}}.",
-        i = "Expected under {.path {rasters$final_dir}} — the IOTA2 run may have failed silently (RAM/scheduler/data).",
+        i = "Expected under {.path {rasters$final_dir}} \u2014 the IOTA2 run may have failed silently (RAM/scheduler/data).",
         .reconfort_iota2_diagnosis(workdir, label, s2_year, number_of_chunks)
       ))
     }
@@ -997,7 +997,7 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     features_bundle <- tryCatch({
       scenes <- .enumerate_reconfort_s2_scenes(file.path(workdir, "S2_data"))
       if (!length(scenes)) {
-        cli::cli_warn("RECONFORT persist: no S2 scene enumerable under {.path {file.path(workdir, 'S2_data')}} — pixel diagnostic skipped.")
+        cli::cli_warn("RECONFORT persist: no S2 scene enumerable under {.path {file.path(workdir, 'S2_data')}} \u2014 pixel diagnostic skipped.")
         NA_character_
       } else {
         stacks <- .build_reconfort_feature_stacks(scenes)

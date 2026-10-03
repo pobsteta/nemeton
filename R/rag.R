@@ -657,7 +657,7 @@ ingest_knowledge_document <- function(con,
   tail <- if (has_abstract) {
     paste0("Abstract: ", abstract)
   } else {
-    sprintf("[Reference only — full text not redistributed (license: %s).]",
+    sprintf("[Reference only \u2014 full text not redistributed (license: %s).]",
             if (nzchar(g("license"))) g("license") else "unknown")
   }
   paste0(cite, ".\n\n", tail)

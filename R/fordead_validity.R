@@ -295,7 +295,7 @@ r5_applicabilite <- function(units,
       any(!is.na(enriched$species))) {
     units$species <- enriched$species
     cli::cli_alert_info(
-      "Species column derived from BD Forêt V2 (no column on {.arg units})."
+      "Species column derived from BD For\u00eat V2 (no column on {.arg units})."
     )
   }
   units

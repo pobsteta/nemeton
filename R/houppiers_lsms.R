@@ -177,7 +177,7 @@ lsms_budget_pixels <- function(budget_s, spatialr = .LSMS_DEFAUTS$spatialr) {
   if (isTRUE(terra::is.lonlat(image))) {
     cli::cli_abort(c(
       "The {.arg image} is in a geographic CRS (degrees).",
-      i = "{.arg minsize} counts pixels and the budget assumes metres — reproject first."
+      i = "{.arg minsize} counts pixels and the budget assumes metres \u2014 reproject first."
     ))
   }
 
@@ -211,7 +211,7 @@ lsms_budget_pixels <- function(budget_s, spatialr = .LSMS_DEFAUTS$spatialr) {
       "The LSMS job is estimated at {round(est)} s, over the {round(budget_s)} s budget.",
       i = "Image: {n_px} pixels at {round(res_m, 2)} m ({round(n_px * res_m^2 / 1e4, 1)} ha).",
       i = "Budget affords ~{round(tenable)} pixels ({round(tenable * res_m^2 / 1e4, 1)} ha at this resolution).",
-      i = "Either shrink the {.arg aoi}, or raise {.arg resolution_image} — coarsening 0.20 m to 0.50 m buys ~6x the area.",
+      i = "Either shrink the {.arg aoi}, or raise {.arg resolution_image} \u2014 coarsening 0.20 m to 0.50 m buys ~6x the area.",
       i = "Raise {.arg budget_s} to accept the wait. The estimate is an upper bound (spec 051 section 3.1)."
     ))
   }

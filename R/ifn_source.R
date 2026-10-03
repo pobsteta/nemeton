@@ -238,7 +238,7 @@ ifn_charger <- function(tables = c("ARBRE", "PLACETTE"), campagne = NULL,
       d <- utils::read.csv2(f, stringsAsFactors = FALSE, colClasses = "character")
     }
     # Le premier en-tête porte un BOM UTF-8 dans l'export IGN.
-    names(d) <- sub("^﻿", "", names(d))
+    names(d) <- sub("^\ufeff", "", names(d))
     d
   }
 

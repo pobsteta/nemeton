@@ -171,7 +171,7 @@ create_validation_sampling_plan <- function(zone,
   if (n_alert_cells == 0L) {
     cli::cli_abort(
       c("No alert cell in {.arg alert_raster} for {.arg classes} = {.val {classes}}.",
-        i = "Zone may be currently healthy — nothing to validate."),
+        i = "Zone may be currently healthy \u2014 nothing to validate."),
       class = "nemeton_empty_alert_mask"
     )
   }
@@ -200,7 +200,7 @@ create_validation_sampling_plan <- function(zone,
     rng <- range(finite)
     if (rng[2L] - rng[1L] <= 0) {
       cli::cli_abort(
-        c("{.arg weight_raster} is constant over the alert cells — no gradient to weight by.",
+        c("{.arg weight_raster} is constant over the alert cells \u2014 no gradient to weight by.",
           i = "Use {.code weighting = \"uniform\"} or provide a varying severity raster."),
         class = "nemeton_empty_alert_mask")
     }
