@@ -387,6 +387,40 @@ test_that("retrieve_knowledge warns on a mixed-provider corpus", {
                  "mixes")
 })
 
+test_that("retrieve_knowledge refuses a query provider that does not match the corpus", {
+  con <- local_rag_con()
+  ingest_fake(con, "scolyte epicea",
+    metadata = list(title = "M", lang = "fr", doc_type = "note"), provider = "mistral")
+  called <- FALSE
+  testthat::local_mocked_bindings(
+    .embed_texts = function(texts, ...) { called <<- TRUE; fake_embed(texts) },
+    .package = "nemeton")
+  expect_error(
+    retrieve_knowledge(con, "scolyte", min_similarity = 0.1, embed_provider = "openai"),
+    "does not match the")
+  # refus avant tout appel d'API d'embedding
+  expect_false(called)
+  # le bon provider passe
+  expect_gt(nrow(retrieve_knowledge(con, "scolyte", min_similarity = 0.1)), 0L)
+})
+
+test_that("retrieve_knowledge forwards api_key to embed_query", {
+  con <- local_rag_con()
+  ingest_fake(con, "scolyte epicea",
+    metadata = list(title = "M", lang = "fr", doc_type = "note"))
+  seen <- NULL
+  testthat::local_mocked_bindings(
+    .embed_texts = function(texts, provider, api_key = NULL, ...) {
+      seen <<- api_key
+      fake_embed(texts)
+    },
+    .package = "nemeton")
+  retrieve_knowledge(con, "scolyte", min_similarity = 0.1, api_key = "sk-test")
+  expect_identical(seen, "sk-test")
+  retrieve_knowledge(con, "scolyte", min_similarity = 0.1)
+  expect_null(seen)
+})
+
 
 # ---- Integration: listing + deletion ---------------------------------
 

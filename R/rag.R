@@ -803,12 +803,31 @@ embed_query <- function(text,
   )
 }
 
-.warn_if_mixed_providers <- function(con) {
-  models <- tryCatch(
+.corpus_embed_models <- function(con) {
+  tryCatch(
     DBI::dbGetQuery(con,
       "SELECT DISTINCT embed_model FROM knowledge_document WHERE embed_model IS NOT NULL")$embed_model,
     error = function(e) character(0)
   )
+}
+
+# Refuse une requête embarquée par un autre modèle que celui du corpus :
+# les dimensions seraient tronquées / complétées de zéros en silence et la
+# similarité cosinus n'aurait aucun sens. Un corpus vide passe.
+.assert_query_model_matches <- function(con, embed_provider) {
+  models <- .corpus_embed_models(con)
+  expected <- paste0(embed_provider, ":", .provider_default_model(embed_provider))
+  if (length(models) && !expected %in% models) {
+    cli::cli_abort(c(
+      "Query embedding model {.val {expected}} does not match the knowledge corpus.",
+      "i" = "Corpus embedded with: {.val {models}}.",
+      "i" = "Pass the matching {.arg embed_provider}, or re-embed the corpus."
+    ))
+  }
+  invisible(models)
+}
+
+.warn_if_mixed_providers <- function(con, models = .corpus_embed_models(con)) {
   if (length(models) >= 2L) {
     cli::cli_warn(c(
       "The knowledge corpus mixes {length(models)} embedding models: {.val {models}}.",
@@ -906,7 +925,12 @@ embed_query <- function(text,
 #' @param lang Optional ISO 639-1 code. Keep only documents in this
 #'   language.
 #' @param embed_provider One of `"mistral"` (default), `"openai"`,
-#'   `"voyage"`. Must match the provider used at ingestion.
+#'   `"voyage"`. Must match the provider used at ingestion: the call
+#'   aborts when the corpus' `embed_model` values do not include this
+#'   provider's model (a mixed corpus only warns).
+#' @param api_key Character or `NULL` (default). Embedding API key passed
+#'   to [embed_query()]; `NULL` falls back to the provider's environment
+#'   variable.
 #'
 #' @return A `data.frame` sorted by descending `similarity` with columns
 #'   `chunk_id`, `document_id`, `title`, `author`, `pub_date`,
@@ -924,7 +948,8 @@ retrieve_knowledge <- function(con,
                                profile_codes = NULL,
                                min_similarity = 0.7,
                                lang = NULL,
-                               embed_provider = c("mistral", "openai", "voyage")) {
+                               embed_provider = c("mistral", "openai", "voyage"),
+                               api_key = NULL) {
   .assert_rag_schema(con)
   embed_provider <- match.arg(embed_provider)
   if (!is.character(query) || length(query) != 1L || is.na(query) || !nzchar(query)) {
@@ -938,8 +963,11 @@ retrieve_knowledge <- function(con,
       is.na(min_similarity) || min_similarity < -1 || min_similarity > 1) {
     cli::cli_abort("{.arg min_similarity} must be a single number in [-1, 1].")
   }
-  .warn_if_mixed_providers(con)
-  qvec <- embed_query(query, provider = embed_provider)
+  # Contrôle avant l'appel d'API : pas de dépense d'embedding pour une
+  # requête incomparable avec le corpus.
+  models <- .assert_query_model_matches(con, embed_provider)
+  .warn_if_mixed_providers(con, models)
+  qvec <- embed_query(query, provider = embed_provider, api_key = api_key)
   if (.rag_is_pg(con)) {
     .retrieve_pg(con, qvec, top_k, family_codes, profile_codes, min_similarity, lang)
   } else {
