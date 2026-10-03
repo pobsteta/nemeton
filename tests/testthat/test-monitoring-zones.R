@@ -74,19 +74,25 @@ test_that("build_project_monitoring_zones builds tot/feu/res, skips empty mix", 
     .mk_square(50, 100, tfv_g11 = "Forêt fermée conifères"))  # right half
   # no "mixte" polygon -> _mix stratum empty -> skipped (D4)
 
+  skip_if_no_sqlite()
+  # Connexion SQLite vide : seule la transaction englobante l'utilise,
+  # les écritures elles-mêmes sont mockées.
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  on.exit(DBI::dbDisconnect(con), add = TRUE)
   captured <- list(); deleted <- FALSE
   testthat::local_mocked_bindings(
-    .assert_db_pkgs       = function(...) invisible(NULL),
-    .delete_project_zones = function(con, project_uuid) { deleted <<- TRUE },
-    create_monitoring_zone = function(con, zone_name, zone_polygon,
-                                      project_uuid = NULL) {
-      captured[[zone_name]] <<- as.numeric(sum(sf::st_area(zone_polygon)))
+    .assert_db_pkgs           = function(...) invisible(NULL),
+    .delete_project_zones_sql = function(con, project_uuid) { deleted <<- TRUE },
+    .insert_monitoring_zone   = function(con, zone_name, zone_wkt,
+                                         project_uuid = NULL) {
+      g <- sf::st_transform(sf::st_as_sfc(zone_wkt, crs = 4326), 2154)
+      captured[[zone_name]] <<- as.numeric(sum(sf::st_area(g)))
       length(captured)
     },
     .package = "nemeton")
 
   ids <- expect_warning(
-    build_project_monitoring_zones(NULL, "Mouthe", "uuid-1", ugf, bdf),
+    build_project_monitoring_zones(con, "Mouthe", "uuid-1", ugf, bdf),
     "empty")
 
   expect_true(deleted)                                      # D5 upsert

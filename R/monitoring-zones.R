@@ -91,26 +91,35 @@ create_monitoring_zone <- function(con, zone_name, zone_polygon,
   zone_4326 <- sf::st_transform(zone_polygon, 4326)
   zone_wkt  <- sf::st_as_text(sf::st_geometry(zone_4326)[[1L]])
 
-  zone_id <- DBI::dbWithTransaction(con, {
-    if (is.null(project_uuid)) {
-      .db_execute(con,
-        "INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg) VALUES ($1, $2, 4326)",
-        params = list(zone_name, zone_wkt))
-      rs <- .db_get_query(con,
-        "SELECT id FROM monitoring_zone WHERE name = $1 ORDER BY id DESC LIMIT 1",
-        params = list(zone_name))
-    } else {
-      .db_execute(con,
-        paste0("INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg, project_uuid) ",
-               "VALUES ($1, $2, 4326, $3)"),
-        params = list(zone_name, zone_wkt, project_uuid))
-      rs <- .db_get_query(con,
-        "SELECT id FROM monitoring_zone WHERE project_uuid = $1 AND name = $2",
-        params = list(project_uuid, zone_name))
-    }
-    rs$id[1L]
-  })
+  zone_id <- DBI::dbWithTransaction(con,
+    .insert_monitoring_zone(con, zone_name, zone_wkt, project_uuid))
   invisible(as.integer(zone_id))
+}
+
+# INSERT d'une zone + relecture de son id, SANS ouvrir de transaction :
+# l'appelant fournit la transaction englobante (create_monitoring_zone()
+# pour un appel isolé, build_project_monitoring_zones() pour l'upsert
+# suppression + recréation atomique). Ni SQLite ni PG n'acceptent un
+# dbBegin() imbriqué, d'où cette séparation.
+.insert_monitoring_zone <- function(con, zone_name, zone_wkt,
+                                    project_uuid = NULL) {
+  if (is.null(project_uuid)) {
+    .db_execute(con,
+      "INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg) VALUES ($1, $2, 4326)",
+      params = list(zone_name, zone_wkt))
+    rs <- .db_get_query(con,
+      "SELECT id FROM monitoring_zone WHERE name = $1 ORDER BY id DESC LIMIT 1",
+      params = list(zone_name))
+  } else {
+    .db_execute(con,
+      paste0("INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg, project_uuid) ",
+             "VALUES ($1, $2, 4326, $3)"),
+      params = list(zone_name, zone_wkt, project_uuid))
+    rs <- .db_get_query(con,
+      "SELECT id FROM monitoring_zone WHERE project_uuid = $1 AND name = $2",
+      params = list(project_uuid, zone_name))
+  }
+  as.integer(rs$id[1L])
 }
 
 
@@ -159,24 +168,29 @@ find_zones_by_project <- function(con, project_uuid) {
 # (on PG the extra child deletes are simply redundant with the cascade).
 # Used by the D5 upsert path; no-op when the project has no zone.
 .delete_project_zones <- function(con, project_uuid) {
-  DBI::dbWithTransaction(con, {
-    # 1. alerts attached to the project's plots (deepest child first)
-    .db_execute(con, paste0(
-      "DELETE FROM alert WHERE plot_id IN (",
-      "SELECT p.id FROM plot p ",
-      "JOIN monitoring_zone z ON z.id = p.zone_id ",
-      "WHERE z.project_uuid = $1)"),
-      params = list(project_uuid))
-    # 2. plots of the project's zones
-    .db_execute(con, paste0(
-      "DELETE FROM plot WHERE zone_id IN (",
-      "SELECT id FROM monitoring_zone WHERE project_uuid = $1)"),
-      params = list(project_uuid))
-    # 3. the zones themselves
-    .db_execute(con,
-      "DELETE FROM monitoring_zone WHERE project_uuid = $1",
-      params = list(project_uuid))
-  })
+  DBI::dbWithTransaction(con, .delete_project_zones_sql(con, project_uuid))
+  invisible(NULL)
+}
+
+# Corps de .delete_project_zones() sans transaction propre : réutilisé par
+# build_project_monitoring_zones() dans SA transaction englobante.
+.delete_project_zones_sql <- function(con, project_uuid) {
+  # 1. alerts attached to the project's plots (deepest child first)
+  .db_execute(con, paste0(
+    "DELETE FROM alert WHERE plot_id IN (",
+    "SELECT p.id FROM plot p ",
+    "JOIN monitoring_zone z ON z.id = p.zone_id ",
+    "WHERE z.project_uuid = $1)"),
+    params = list(project_uuid))
+  # 2. plots of the project's zones
+  .db_execute(con, paste0(
+    "DELETE FROM plot WHERE zone_id IN (",
+    "SELECT id FROM monitoring_zone WHERE project_uuid = $1)"),
+    params = list(project_uuid))
+  # 3. the zones themselves
+  .db_execute(con,
+    "DELETE FROM monitoring_zone WHERE project_uuid = $1",
+    params = list(project_uuid))
   invisible(NULL)
 }
 
@@ -272,11 +286,9 @@ build_project_monitoring_zones <- function(con, project_name, project_uuid,
                 res = .stratum_inter("resineux"),
                 mix = .stratum_inter("mixte"))
 
-  # D5 — upsert: drop the project's existing zones before recreating.
-  if (isTRUE(replace)) .delete_project_zones(con, project_uuid)
-
+  # Préparation des strates (hors transaction : aucune écriture).
   base <- .nmt_slug(project_name)
-  ids  <- list()
+  todo <- list()
   for (s in strata) {
     g <- geoms[[s]]
     empty <- is.null(g) || all(sf::st_is_empty(g)) ||
@@ -285,14 +297,28 @@ build_project_monitoring_zones <- function(con, project_name, project_uuid,
       cli::cli_warn("FAST/FORDEAD stratum {.val {s}} is empty for {.val {project_name}} — zone not created.")
       next
     }
-    ids[[s]] <- create_monitoring_zone(
-      con,
-      zone_name    = paste0(base, "_", s),
-      zone_polygon = sf::st_sf(geometry = sf::st_sfc(sf::st_union(g),
-                                                     crs = work_crs)),
-      project_uuid = project_uuid)
+    poly <- sf::st_transform(
+      sf::st_sfc(sf::st_union(g), crs = work_crs), 4326)
+    todo[[s]] <- sf::st_as_text(poly[[1L]])
   }
-  ids
+
+  # D5 — upsert : suppression des anciennes zones ET recréation dans UNE
+  # seule transaction. Auparavant la suppression était commitée seule :
+  # un échec de recréation laissait le projet sans zone (la cascade ayant
+  # déjà emporté placettes et alertes). Pas de return() dans ce bloc : il
+  # court-circuiterait le COMMIT de dbWithTransaction().
+  DBI::dbWithTransaction(con, {
+    if (isTRUE(replace)) .delete_project_zones_sql(con, project_uuid)
+    ids <- list()
+    for (s in names(todo)) {
+      ids[[s]] <- .insert_monitoring_zone(
+        con,
+        zone_name    = paste0(base, "_", s),
+        zone_wkt     = todo[[s]],
+        project_uuid = project_uuid)
+    }
+    ids
+  })
 }
 
 
