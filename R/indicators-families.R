@@ -695,15 +695,20 @@ indicateur_w1_reseau <- function(units,
 #' Wetland Coverage (W2)
 #'
 #' Calculates percentage of parcel area classified as wetland or riparian zone.
-#' Coverage is summed over several optional sources: BD TOPO water surfaces,
-#' a TWI threshold, OSO land-cover wetland codes, and — when supplied — the
-#' Theia \code{theia_water} water-occurrence product.
+#' The wetland area is the UNION of several optional sources (a pixel counted
+#' by two sources is counted once): BD TOPO water surfaces, a TWI threshold,
+#' land-cover codes listed in \code{wetland_values}, and — when supplied — the
+#' Theia \code{theia_water} water-occurrence product. Sources are evaluated
+#' on a regular grid of points inside each unit; points where every source is
+#' NA are left out, and a unit with no known point is NA.
 #'
 #' @param units nemeton_units object
 #' @param layers nemeton_layers object containing land cover raster or wetland vector
 #' @param wetland_layer Character. Name of wetland layer in layers object
 #' @param wetland_values Numeric vector. Land cover codes representing wetlands.
-#'   Default NULL (auto-detect if possible).
+#'   Default NULL: the land-cover source is not used (there is no
+#'   auto-detection; the OSO nomenclature has no wetland class, only water,
+#'   code 23).
 #' @param water_occurrence Optional \code{SpatRaster} of water-occurrence
 #'   frequency in percent (0-100) — the Theia \code{theia_water}
 #'   \code{water_occurrence} product, loaded via
@@ -746,89 +751,46 @@ indicateur_w2_zones_humides <- function(units,
     stop("layers must be a nemeton_layers object", call. = FALSE)
   }
 
-  coverage <- numeric(nrow(units))
-  has_any_source <- FALSE
+  # Les quatre sources se recouvrent (une mare BD TOPO est aussi un TWI eleve
+  # et une forte occurrence d'eau) : additionner leurs couvertures comptait
+  # plusieurs fois la meme surface. W2 est desormais la couverture de
+  # l'UNION des masques, evaluee sur une grille reguliere de points par unite
+  # (robuste aux CRS differents des sources).
 
-  # Source 1: BD TOPO water surfaces (mares, retenues, étangs)
+  # Source 1: BD TOPO water surfaces (mares, retenues, etangs)
+  water_union <- NULL
   water_surfaces_sf <- resolve_vector_layer(layers, "water_surfaces")
   if (!is.null(water_surfaces_sf) && nrow(water_surfaces_sf) > 0) {
     cli::cli_alert_info("W2: Adding BD TOPO water surfaces coverage")
-    has_any_source <- TRUE
-
-    if (!sf::st_crs(units) == sf::st_crs(water_surfaces_sf)) {
-      water_surfaces_sf <- sf::st_transform(water_surfaces_sf, sf::st_crs(units))
-    }
-
-    for (i in seq_len(nrow(units))) {
-      unit_geom <- units[i, ]
-      parcel_area <- as.numeric(sf::st_area(unit_geom))
-
-      intersected <- tryCatch(
-        suppressWarnings(sf::st_intersection(water_surfaces_sf, unit_geom)),
-        error = function(e) NULL
-      )
-
-      if (!is.null(intersected) && nrow(intersected) > 0) {
-        wetland_area <- sum(as.numeric(sf::st_area(intersected)))
-        coverage[i] <- coverage[i] + (wetland_area / parcel_area) * 100
-      }
-    }
+    water_union <- sf::st_union(sf::st_make_valid(
+      sf::st_geometry(water_surfaces_sf)
+    ))
   }
+
+  # Masques raster : liste de fonctions (valeur -> humide TRUE/FALSE)
+  raster_sources <- list()
 
   # Source 2: TWI threshold (TWI > 12 = potential wetland zones)
   dem <- .dem_working_res(get_dem_raster(layers),
                           target_res = dem_target_res, context = "W2")
   if (!is.null(dem)) {
     cli::cli_alert_info("W2: Adding TWI-based wetland zones (threshold > 12)")
-    has_any_source <- TRUE
     # `twi_target_res` suit la résolution de travail : les deux grilles
     # coïncident, le TWI n'est jamais rééchantillonné vers du plus fin.
     twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir,
                                      twi_target_res = dem_target_res)
-
-    for (i in seq_len(nrow(units))) {
-      twi_vals <- safe_extract(
-        twi_raster,
-        as_pure_sf(units[i, ]),
-        fun = NULL,
-        progress = FALSE
-      )[[1]]
-
-      if (nrow(twi_vals) > 0) {
-        wetland_frac <- sum(twi_vals$coverage_fraction[twi_vals$value > 12], na.rm = TRUE)
-        total_frac <- sum(twi_vals$coverage_fraction, na.rm = TRUE)
-        if (total_frac > 0) {
-          coverage[i] <- coverage[i] + (wetland_frac / total_frac) * 100
-        }
-      }
-    }
+    raster_sources$twi <- list(r = twi_raster, wet = function(v) v > 12)
   }
 
-  # Source 3: OSO landcover wetland codes (if provided)
+  # Source 3: land-cover wetland codes (only when wetland_values is given)
   lc_raster <- resolve_raster_layer(layers, wetland_layer)
   if (is.null(lc_raster)) lc_raster <- resolve_raster_layer(layers, "landcover")
   if (is.null(lc_raster)) lc_raster <- resolve_raster_layer(layers, "forest_cover")
   if (!is.null(wetland_values) && !is.null(lc_raster)) {
-    cli::cli_alert_info("W2: Adding OSO landcover wetland coverage")
-    has_any_source <- TRUE
-
-    for (i in seq_len(nrow(units))) {
-      lc_values <- safe_extract(
-        lc_raster,
-        as_pure_sf(units[i, ]),
-        fun = NULL,
-        progress = FALSE
-      )[[1]]
-
-      if (nrow(lc_values) > 0) {
-        wetland_mask <- lc_values$value %in% wetland_values
-        wetland_fraction <- sum(lc_values$coverage_fraction[wetland_mask], na.rm = TRUE)
-        total_fraction <- sum(lc_values$coverage_fraction, na.rm = TRUE)
-        if (total_fraction > 0) {
-          coverage[i] <- coverage[i] + (wetland_fraction / total_fraction) * 100
-        }
-      }
-    }
+    cli::cli_alert_info("W2: Adding land-cover wetland coverage")
+    raster_sources$landcover <- list(
+      r = lc_raster, wet = function(v) v %in% wetland_values
+    )
   }
 
   # Source 4: Theia theia_water occurrence frequency (phase 3d)
@@ -837,34 +799,63 @@ indicateur_w2_zones_humides <- function(units,
       stop("water_occurrence must be a terra SpatRaster", call. = FALSE)
     }
     cli::cli_alert_info("W2: Adding Theia theia_water occurrence coverage")
-    has_any_source <- TRUE
-
-    for (i in seq_len(nrow(units))) {
-      occ <- safe_extract(
-        water_occurrence,
-        as_pure_sf(units[i, ]),
-        fun = NULL,
-        progress = FALSE
-      )[[1]]
-
-      if (!is.null(occ) && nrow(occ) > 0) {
-        wet_mask <- occ$value >= occurrence_threshold
-        wet_frac <- sum(occ$coverage_fraction[wet_mask], na.rm = TRUE)
-        total_frac <- sum(occ$coverage_fraction, na.rm = TRUE)
-        if (total_frac > 0) {
-          coverage[i] <- coverage[i] + (wet_frac / total_frac) * 100
-        }
-      }
-    }
+    raster_sources$occurrence <- list(
+      r = water_occurrence, wet = function(v) v >= occurrence_threshold
+    )
   }
 
-  if (!has_any_source) {
+  if (is.null(water_union) && length(raster_sources) == 0) {
     cli::cli_alert_warning("W2: No wetland data available (no vectors, DEM, or landcover)")
     return(rep(NA_real_, nrow(units)))
   }
 
+  coverage <- vapply(seq_len(nrow(units)), function(i) {
+    .w2_union_coverage(sf::st_geometry(units)[i], water_union, raster_sources)
+  }, numeric(1))
+
   msg_info("indicateur_w2_zones_humides")
   pmin(coverage, 100)
+}
+
+#' W2: percentage of a unit covered by the union of wetland masks
+#'
+#' Evaluates every source on a regular grid of points inside the unit. A
+#' point is wet when any source says so, dry when no source says wet and at
+#' least one source has a value, unknown when every source is NA. Returns
+#' 100 * wet / known, or NA when no point is known.
+#' @noRd
+.w2_union_coverage <- function(geom, water_union, raster_sources,
+                               n_points = 4000) {
+  geom <- sf::st_make_valid(geom)
+  # Grille de points en metres (CRS geographique -> ETRS89-LAEA)
+  g_m <- if (isTRUE(sf::st_is_longlat(geom))) sf::st_transform(geom, 3035) else geom
+  pts <- suppressMessages(sf::st_sample(g_m, size = n_points, type = "regular"))
+  if (length(pts) == 0) pts <- suppressWarnings(sf::st_point_on_surface(g_m))
+  pts <- sf::st_transform(pts, sf::st_crs(geom))
+  n <- length(pts)
+
+  wet <- rep(FALSE, n)
+  known <- rep(FALSE, n)
+
+  if (!is.null(water_union)) {
+    pts_v <- sf::st_transform(pts, sf::st_crs(water_union))
+    wet <- wet | lengths(sf::st_intersects(pts_v, water_union)) > 0
+    known[] <- TRUE
+  }
+
+  for (src in raster_sources) {
+    r_crs <- terra::crs(src$r)
+    pts_r <- if (nzchar(r_crs)) sf::st_transform(pts, r_crs) else pts
+    v <- terra::extract(src$r, terra::vect(pts_r), ID = FALSE)[, 1]
+    ok <- !is.na(v)
+    w <- rep(FALSE, n)
+    w[ok] <- as.logical(src$wet(v[ok]))
+    wet <- wet | (ok & w)
+    known <- known | ok
+  }
+
+  if (!any(known)) return(NA_real_)
+  sum(wet & known) / sum(known) * 100
 }
 
 #' Topographic Wetness Index (W3)

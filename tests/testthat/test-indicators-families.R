@@ -3034,3 +3034,46 @@ test_that("indicateur_w2_zones_humides rejects a non-raster water_occurrence", {
     "water_occurrence must be a terra SpatRaster"
   )
 })
+
+# ==============================================================================
+# Audit 1.0 — W2 : union des masques, pas somme des sources
+# ==============================================================================
+
+test_that("W2 takes the union of overlapping sources instead of summing them", {
+  units <- create_test_units(n_features = 1)  # carre 566450-566550 x 6615150-6615250
+  # Moitie ouest couverte par une surface en eau BD TOPO...
+  west <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(matrix(c(
+    566450, 6615150, 566500, 6615150, 566500, 6615250, 566450, 6615250,
+    566450, 6615150
+  ), ncol = 2, byrow = TRUE))), crs = 2154))
+  layers <- make_mock_layers(vectors = list(water_surfaces = west))
+  # ... et la meme moitie ouest en occurrence d'eau elevee
+  wo <- terra::rast(xmin = 566400, xmax = 566600, ymin = 6615100,
+                    ymax = 6615300, resolution = 10, crs = "EPSG:2154")
+  terra::values(wo) <- ifelse(terra::xFromCell(wo, seq_len(terra::ncell(wo))) < 566500, 80, 0)
+
+  res <- suppressMessages(
+    indicateur_w2_zones_humides(units, layers = layers, water_occurrence = wo)
+  )
+  # Avant : 50 + 50 = 100 ; union : 50
+  expect_equal(res, 50, tolerance = 0.03)
+
+  # Sources disjointes : les couvertures s'ajoutent (ouest + est = 100)
+  terra::values(wo) <- ifelse(terra::xFromCell(wo, seq_len(terra::ncell(wo))) < 566500, 0, 80)
+  res2 <- suppressMessages(
+    indicateur_w2_zones_humides(units, layers = layers, water_occurrence = wo)
+  )
+  expect_equal(res2, 100, tolerance = 0.03)
+})
+
+test_that("W2 is NA where every source is NA (no fabricated 0)", {
+  units <- create_test_units(n_features = 1)
+  wo <- terra::rast(xmin = 566400, xmax = 566600, ymin = 6615100,
+                    ymax = 6615300, resolution = 10, crs = "EPSG:2154")
+  terra::values(wo) <- NA_real_
+  res <- suppressMessages(
+    indicateur_w2_zones_humides(units, layers = make_mock_layers(),
+                                water_occurrence = wo)
+  )
+  expect_true(is.na(res))
+})
