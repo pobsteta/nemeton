@@ -254,22 +254,58 @@ test_that(".rsen_forcage_era5 requests monthly (by_month=TRUE) to dodge the CDS 
     .package = "mcera5")
   out <- nemeton:::.rsen_forcage_era5(lon = 6, lat = 48, annee = 2018, cache_dir = cd)
   expect_true(isTRUE(seen$by_month))                        # mensuel, pas annuel
-  expect_equal(basename(seen$src), "era5_2018_2018.nc")     # combiné (pas un mensuel)
-  expect_true(file.exists(file.path(cd, "era5_2018_2018.nc")))
+  expect_equal(basename(seen$src), "era5_6p00_48p00_2018_2018.nc")     # combiné (pas un mensuel)
+  expect_true(file.exists(file.path(cd, "era5_6p00_48p00_2018_2018.nc")))
   expect_s3_class(out, "data.frame")
 })
 
 test_that(".rsen_forcage_era5 reuses the combined cache without re-downloading", {
   skip_if_not_installed("mcera5")
   cd <- withr::local_tempdir()
-  file.create(file.path(cd, "era5_2019_2019.nc"))          # combiné déjà en cache
+  file.create(file.path(cd, "era5_6p00_48p00_2019_2019.nc"))  # combiné en cache
   called <- 0L
   testthat::local_mocked_bindings(
     request_era5 = function(...) { called <<- called + 1L; NULL },
     extract_clim = function(src, ...) data.frame(obs_time = 1),
     .package = "mcera5")
-  nemeton:::.rsen_forcage_era5(lon = 6, lat = 48, annee = 2019, cache_dir = cd)
+  # 6.001 / 48.004 arrondis à 0.01° -> même point de cache.
+  nemeton:::.rsen_forcage_era5(lon = 6.001, lat = 48.004, annee = 2019, cache_dir = cd)
   expect_equal(called, 0L)                                  # pas de re-téléchargement
+})
+
+# --- Audit 1.0 : cache ERA5 indexé par lon/lat, plus par la seule année -----
+test_that(".rsen_era5_radical encodes the rounded point in the file names", {
+  expect_equal(nemeton:::.rsen_era5_radical(2020L, 6.123, 48.456), "era5_6p12_48p46_2020")
+  expect_equal(nemeton:::.rsen_era5_radical(2020L, -1.5, 43), "era5_m1p50_43p00_2020")
+  expect_equal(nemeton:::.rsen_era5_radical(2020L, -0.001, 45), "era5_0p00_45p00_2020")
+  expect_equal(nemeton:::.rsen_era5_radical(2020L), "era5_2020")   # sans point
+  expect_equal(basename(nemeton:::.rsen_era5_nom_combine("x", 2020L, 6, 48)),
+               "era5_6p00_48p00_2020_2020.nc")
+})
+
+test_that("an ERA5 file cached for one point is never read for another point", {
+  skip_if_not_installed("mcera5")
+  cd <- withr::local_tempdir()
+  # Combiné d'un AUTRE point (et l'ancien nom sans point) : ni l'un ni l'autre
+  # ne doit servir pour (2, 45).
+  file.create(file.path(cd, "era5_6p00_48p00_2019_2019.nc"))
+  file.create(file.path(cd, "era5_2019_2019.nc"))
+  expect_true(is.na(nemeton:::.rsen_era5_combined(cd, 2019L, 2, 45)))
+  expect_true(is.na(nemeton:::.rsen_era5_src(cd, 2019L, 2, 45)))
+  seen <- new.env()
+  testthat::local_mocked_bindings(
+    build_era5_request = function(..., outfile_name) {
+      seen$outfile <- outfile_name
+      list(list(target = paste0(outfile_name, "_2019_6.zip")))
+    },
+    request_era5 = function(request, out_path, ...)
+      file.create(file.path(out_path, paste0(seen$outfile, "_2019_6.nc"))),
+    combine_netcdf = function(filenames, combined_name) file.create(combined_name),
+    extract_clim = function(src, ...) { seen$src <- src; data.frame(obs_time = 1) },
+    .package = "mcera5")
+  nemeton:::.rsen_forcage_era5(lon = 2, lat = 45, annee = 2019, cache_dir = cd)
+  expect_equal(seen$outfile, "era5_2p00_45p00_2019")
+  expect_equal(basename(seen$src), "era5_2p00_45p00_2019_2019.nc")
 })
 
 test_that(".rsen_era5_src prefers the combined, falls back to shortest (locale-safe)", {

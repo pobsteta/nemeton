@@ -338,30 +338,43 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   stop(last_err)
 }
 
-# Fichier ERA5 combiné (mensuels fusionnés par mcera5) pour une année, ou NA.
-# mcera5 nomme le combiné `<outfile>_<annee>.nc` et les mensuels
-# `<outfile>_<annee>_<mois>.nc` : le combiné se termine donc par `_<annee>.nc`.
-# On le repère par CE suffixe (robuste au préfixe `outfile`) : avec
-# `outfile_name = "era5_<annee>"`, mcera5 écrit `era5_<annee>_<annee>.nc`
-# (double année) — que l'ancien lookup `era5_<annee>.nc` ne trouvait jamais, d'où
-# un re-téléchargement des 24 mois à chaque run malgré le cache.
-.rsen_era5_combined <- function(cache_dir, annee) {
-  hit <- list.files(cache_dir, pattern = sprintf("_%d\\.nc$", annee),
-                    full.names = TRUE)
-  if (length(hit)) hit[[1]] else NA_character_
+# Radical des fichiers ERA5 d'une année : `era5_<lon>_<lat>_<annee>` (audit 1.0).
+# Le cache était retrouvé par le seul suffixe `_<annee>.nc` : un `cache_dir`
+# partagé (projet multi-sites, forçage BILJOU par unité) relisait le forçage du
+# PREMIER point téléchargé pour tous les autres. lon/lat arrondis à 0.01°
+# (~1 km, très en deçà de la boîte ±0.05° demandée et de la maille ERA5 ~0.25°),
+# encodés sans `.` ni `-` (`6.12` -> `6p12`, `-1.5` -> `m1p50`).
+# lon/lat NULL -> radical historique `era5_<annee>` (helpers seuls ; le chemin
+# moteur passe toujours un point).
+.rsen_era5_radical <- function(annee, lon = NULL, lat = NULL) {
+  if (is.null(lon) || is.null(lat)) return(sprintf("era5_%d", annee))
+  enc <- function(x) {
+    v <- sprintf("%.2f", round(as.numeric(x), 2) + 0)   # + 0 : pas de "-0.00"
+    sub(".", "p", sub("^-", "m", v), fixed = TRUE)
+  }
+  sprintf("era5_%s_%s_%d", enc(lon), enc(lat), annee)
+}
+
+# Fichier ERA5 combiné d'une année et d'un point, ou NA. Nom EXACT (cf.
+# `.rsen_era5_nom_combine()`) : l'ancienne recherche par suffixe `_<annee>.nc`
+# acceptait le combiné de n'importe quel point.
+.rsen_era5_combined <- function(cache_dir, annee, lon = NULL, lat = NULL) {
+  cible <- .rsen_era5_nom_combine(cache_dir, annee, lon, lat)
+  if (file.exists(cible)) cible else NA_character_
 }
 
 # Fichier ERA5 à LIRE pour une année (entrée d'extract_clim) : le combiné s'il
-# existe, sinon repli défensif = le nom le PLUS COURT parmi les `era5_<annee>*.nc`
-# (le combiné `era5_<annee>_<annee>.nc` est plus court que les mensuels
-# `era5_<annee>_<annee>_<mois>.nc`). `nchar()` est INDÉPENDANT de la locale,
-# contrairement à `sort()`/`[1]` : selon la locale (FR notamment), le combiné ne
-# trie PAS forcément avant les mensuels ('.' vs '_'), donc `[1]` pouvait piocher
-# un mensuel (1 mois au lieu de 12). Renvoie NA si rien.
-.rsen_era5_src <- function(cache_dir, annee) {
-  comb <- .rsen_era5_combined(cache_dir, annee)
+# existe, sinon repli défensif = le nom le PLUS COURT parmi les `<radical>_*.nc`
+# du MÊME point (le combiné `<radical>_<annee>.nc` est plus court que les
+# mensuels `<radical>_<annee>_<mois>.nc`). `nchar()` est INDÉPENDANT de la
+# locale, contrairement à `sort()`/`[1]` : selon la locale (FR notamment), le
+# combiné ne trie PAS forcément avant les mensuels ('.' vs '_'), donc `[1]`
+# pouvait piocher un mensuel (1 mois au lieu de 12). Renvoie NA si rien.
+.rsen_era5_src <- function(cache_dir, annee, lon = NULL, lat = NULL) {
+  comb <- .rsen_era5_combined(cache_dir, annee, lon, lat)
   if (!is.na(comb)) return(comb)
-  cands <- list.files(cache_dir, pattern = sprintf("^era5_%d.*\\.nc$", annee),
+  rad <- .rsen_era5_radical(annee, lon, lat)
+  cands <- list.files(cache_dir, pattern = sprintf("^%s_.*\\.nc$", rad),
                       full.names = TRUE)
   if (!length(cands)) return(NA_character_)
   cands[order(nchar(basename(cands)), basename(cands))][1]
@@ -380,12 +393,13 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 # aurait écrit — sinon le cache ne se relit jamais.
 #
 # mcera5 le calcule par `shared_substring()` sur les 12 cibles puis coupe le `_`
-# final : avec `outfile_name = "era5_<annee>"`, les mensuels sont
-# `era5_<annee>_<annee>_<mois>.nc`, le préfixe commun `era5_<annee>_<annee>_`,
-# donc le combiné est `era5_<annee>_<annee>.nc` — double année. C'est
-# exactement ce que `.rsen_era5_combined()` cherche via `_<annee>\.nc$`.
-.rsen_era5_nom_combine <- function(cache_dir, annee) {
-  file.path(cache_dir, sprintf("era5_%d_%d.nc", annee, annee))
+# final : avec `outfile_name = <radical>`, les mensuels sont
+# `<radical>_<annee>_<mois>.nc`, le préfixe commun `<radical>_<annee>_`, donc le
+# combiné est `<radical>_<annee>.nc` — double année (`era5_<lon>_<lat>_<annee>_
+# <annee>.nc`, ou `era5_<annee>_<annee>.nc` sans point).
+.rsen_era5_nom_combine <- function(cache_dir, annee, lon = NULL, lat = NULL) {
+  file.path(cache_dir, sprintf("%s_%d.nc", .rsen_era5_radical(annee, lon, lat),
+                               annee))
 }
 
 # Une requête mensuelle. `overwrite = TRUE` est ESSENTIEL : `request_era5()`
@@ -428,7 +442,8 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 .rsen_era5_telecharger <- function(req, cache_dir, annee, emit = NULL,
                                    category = NA,
                                    requete = .rsen_era5_requete,
-                                   combiner = .rsen_era5_combiner) {
+                                   combiner = .rsen_era5_combiner,
+                                   lon = NULL, lat = NULL) {
   n <- length(req)
   fichiers <- .rsen_era5_mois_nc(req, cache_dir)
   for (k in seq_len(n)) {
@@ -442,7 +457,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     # et itère dessus.
     .rsen_era5_with_retry(function() requete(req[k], cache_dir))
   }
-  cible <- .rsen_era5_nom_combine(cache_dir, annee)
+  cible <- .rsen_era5_nom_combine(cache_dir, annee, lon, lat)
   combiner(fichiers, cible)
   cible
 }
@@ -451,7 +466,8 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 .rsen_forcage_era5 <- function(lon, lat, annee, cache_dir, emit = NULL,
                                category = NA) {
   if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
-  combined <- .rsen_era5_combined(cache_dir, annee)   # NA si aucun combiné en cache
+  # NA si aucun combiné en cache POUR CE POINT (lon/lat arrondis dans le nom).
+  combined <- .rsen_era5_combined(cache_dir, annee, lon, lat)
   st  <- as.POSIXct(sprintf("%d-01-01 00:00", annee), tz = "UTC")
   en  <- as.POSIXct(sprintf("%d-12-31 23:00", annee), tz = "UTC")
   if (is.na(combined)) {
@@ -462,7 +478,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     }
     # mcera5 >= 0.4 : build_era5_request() construit, request_era5() exécute.
     # by_month = TRUE : 12 requêtes MENSUELLES que mcera5 fusionne (combine=TRUE)
-    # en un `era5_<annee>.nc`. Chaque mensuel (~9 000 champs) reste SOUS la limite
+    # en un `<radical>_<annee>.nc`. Chaque mensuel (~9 000 champs) reste SOUS la limite
     # de coût par requête du nouveau CDS. Une requête ANNUELLE (by_month=FALSE,
     # ~105 000 champs) est rejetée `403 cost limits exceeded / request too large`
     # → aucun run microclimf n'aboutissait depuis la bascule v0.143.0. Le retry/
@@ -470,12 +486,13 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     req <- mcera5::build_era5_request(
       xmin = lon - 0.05, xmax = lon + 0.05, ymin = lat - 0.05, ymax = lat + 0.05,
       start_time = st, end_time = en, by_month = TRUE,
-      outfile_name = sprintf("era5_%d", annee))
-    .rsen_era5_telecharger(req, cache_dir, annee, emit = emit, category = category)
+      outfile_name = .rsen_era5_radical(annee, lon, lat))
+    .rsen_era5_telecharger(req, cache_dir, annee, emit = emit, category = category,
+                           lon = lon, lat = lat)
   }
   # Combiné si trouvé, sinon repli défensif (nom le plus court = le combiné,
   # indépendant de la locale — cf. .rsen_era5_src).
-  src <- .rsen_era5_src(cache_dir, annee)
+  src <- .rsen_era5_src(cache_dir, annee, lon, lat)
   # format "microclimf" -> colonnes prêtes (obs_time/temp/relhum/pres/swdown/
   # difrad/lwdown/windspeed/winddir/precip), précip incluse, pression en kPa.
   meteo <- mcera5::extract_clim(src, long = lon, lat = lat,
