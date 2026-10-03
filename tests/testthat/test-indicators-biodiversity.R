@@ -579,13 +579,77 @@ test_that(".b3_cost_distance returns numeric score", {
     geometry = bdforet_geom
   )
 
-  result <- tryCatch(
-    nemeton:::.b3_cost_distance(bdforet, units, dem = NULL),
-    error = function(e) 50
-  )
+  # Plus de tryCatch -> 50 : l'appel a costDist doit aboutir
+  result <- nemeton:::.b3_cost_distance(bdforet, units, dem = NULL)
 
   expect_type(result, "double")
   expect_true(result >= 0 && result <= 100)
+})
+
+test_that(".b3_cost_distance measures cost (no more constant 50)", {
+  skip_if_not_installed("terra")
+  units <- create_test_units(n_features = 3)
+
+  # Foret couvrant toutes les unites : cout nul -> 100
+  inside <- sf::st_sf(
+    code = "F", geometry = sf::st_buffer(sf::st_as_sfc(sf::st_bbox(units)), 50)
+  )
+  expect_equal(nemeton:::.b3_cost_distance(inside, units), 100)
+
+  # Foret a ~300 m a l'est : cout > 0 -> score < 100, et pas 50 par defaut
+  far <- sf::st_sf(code = "F", geometry = sf::st_sfc(
+    sf::st_buffer(sf::st_point(c(567200, 6615300)), 20), crs = 2154
+  ))
+  res_far <- nemeton:::.b3_cost_distance(far, units)
+  expect_true(is.finite(res_far))
+  expect_lt(res_far, 100)
+  expect_false(isTRUE(all.equal(res_far, 50)))
+})
+
+test_that(".b3_local keeps distance 0 when the centroid lies in forest", {
+  units <- create_test_units(n_features = 1)
+  # Un polygone contenant l'unite, un second a 500 m
+  bdforet <- sf::st_sf(code = c("in", "far"), geometry = c(
+    sf::st_buffer(sf::st_geometry(units)[1], 10),
+    sf::st_sfc(sf::st_buffer(sf::st_point(c(567100, 6615200)), 10), crs = 2154)
+  ))
+  expect_equal(nemeton:::.b3_local(bdforet, units), 100)
+})
+
+test_that(".b3_combine excludes unmeasured components and renormalises", {
+  # Toutes les composantes mesurees : 0.7 * moyenne + 0.3 * local
+  expect_equal(
+    nemeton:::.b3_combine(c(a = 80, b = 80, c = 80, d = 80), c(40, 100)),
+    c(0.7 * 80 + 0.3 * 40, 0.7 * 80 + 0.3 * 100)
+  )
+  # Deux composantes non mesurees : exclues, pas comptees 50
+  expect_message(
+    res <- nemeton:::.b3_combine(c(a = 80, b = NA, c = 80, d = NA), 20),
+    "not\\s+measurable"
+  )
+  expect_equal(res, (0.35 * 80 + 0.3 * 20) / 0.65)
+  # Rien de mesure -> NA
+  expect_true(is.na(suppressMessages(
+    nemeton:::.b3_combine(c(a = NA_real_, b = NA_real_), NA_real_)
+  )))
+})
+
+test_that("B3 in a geographic CRS is computed in metres", {
+  skip_if_not_installed("terra")
+  units <- create_test_units(n_features = 3)
+  bdforet <- sf::st_sf(code = "F", geometry = sf::st_buffer(
+    sf::st_as_sfc(sf::st_bbox(units)), 50
+  ))
+  res_m <- suppressWarnings(suppressMessages(
+    indicateur_b3_connectivite(units, bdforet = bdforet)
+  ))
+  res_ll <- suppressWarnings(suppressMessages(indicateur_b3_connectivite(
+    sf::st_transform(units, 4326), bdforet = sf::st_transform(bdforet, 4326)
+  )))
+  # Le resultat est rattache aux unites d'origine (CRS conserve)
+  expect_true(sf::st_is_longlat(res_ll))
+  expect_true(all(is.finite(res_ll$B3)))
+  expect_equal(res_ll$B3, res_m$B3, tolerance = 0.05)
 })
 
 test_that(".b3_structural returns numeric score", {
@@ -664,7 +728,7 @@ test_that(".b3_graph returns 100 for single patch", {
   expect_equal(result, 100)
 })
 
-test_that(".b3_kernel returns score or 50 for too few parcels", {
+test_that(".b3_kernel returns NA for too few parcels", {
   skip_if_not_installed("terra")
   skip_if_not_installed("adehabitatHR")
   skip_if_not_installed("sp")
@@ -678,15 +742,10 @@ test_that(".b3_kernel returns score or 50 for too few parcels", {
     geometry = bdforet_geom
   )
 
-  # With only 3 units and likely fewer than 5 intersecting bdforet,
-  # should return 50 (fallback)
-  result <- tryCatch(
-    nemeton:::.b3_kernel(bdforet, units),
-    error = function(e) 50
-  )
+  # Moins de 5 unites forestieres : non mesurable -> NA (plus 50)
+  result <- nemeton:::.b3_kernel(bdforet, units)
 
-  expect_type(result, "double")
-  expect_true(result >= 0 && result <= 100)
+  expect_true(is.na(result))
 })
 
 test_that(".b3_kernel computes kernel with enough intersecting parcels", {
