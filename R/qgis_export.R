@@ -380,11 +380,11 @@ create_qgis_project <- function(placettes,
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
   output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
   qgz_path <- file.path(output_dir, paste0(project_name, ".qgz"))
-  if (file.exists(qgz_path)) {
-    if (!overwrite) {
-      cli::cli_abort("File {.path {qgz_path}} already exists (overwrite = FALSE).")
-    }
-    file.remove(qgz_path)
+  # Le .qgz existant n'est PAS supprimé ici : il n'est remplacé qu'une fois
+  # le nouveau construit (cf. .atomic_write plus bas), pour ne rien perdre
+  # si la construction échoue.
+  if (file.exists(qgz_path) && !overwrite) {
+    cli::cli_abort("File {.path {qgz_path}} already exists (overwrite = FALSE).")
   }
 
   # Stage in a temp dir, then zip into .qgz with relative paths.
@@ -484,13 +484,22 @@ create_qgis_project <- function(placettes,
   writeLines(qgs_xml, qgs_path, useBytes = TRUE)
 
   # --- Zip into .qgz --------------------------------------------------
-  owd <- setwd(stage); on.exit(setwd(owd), add = TRUE)
-  files_rel <- c(basename(qgs_path), gpkg_rel)
-  zip_rc <- utils::zip(zipfile = qgz_path, files = files_rel,
-                       flags = "-q -X", zip = Sys.getenv("R_ZIPCMD", "zip"))
-  if (zip_rc != 0 || !file.exists(qgz_path)) {
-    cli::cli_abort("Failed to build {.path {qgz_path}} (zip return code {zip_rc}).")
-  }
+  # Pas de setwd() global : `-j` stocke les fichiers sous leur seul nom
+  # (ils sont tous à la racine de `stage`). L'archive est écrite dans un
+  # temporaire voisin puis promue sur `qgz_path` seulement si zip a réussi.
+  files_abs <- c(qgs_path, gpkg_path)
+  zip_rc <- NA_integer_
+  tryCatch(
+    .atomic_write(qgz_path, function(tmp) {
+      zip_rc <<- utils::zip(zipfile = tmp, files = files_abs,
+                            flags = "-q -X -j", zip = Sys.getenv("R_ZIPCMD", "zip"))
+      if (!identical(as.integer(zip_rc), 0L)) unlink(tmp)
+    }),
+    error = function(e) {
+      cli::cli_abort("Failed to build {.path {qgz_path}} (zip return code {zip_rc}).",
+                     parent = e)
+    }
+  )
 
   cli::cli_alert_success("QGIS project created: {.path {qgz_path}}")
   invisible(qgz_path)

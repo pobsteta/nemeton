@@ -175,11 +175,8 @@ test_that("create_qgis_project refuses overwriting when overwrite=FALSE", {
   skip_if_no_sf()
 
   pts <- make_sample_plots()
-  # Use an ABSOLUTE output_dir rather than "." inside with_tempdir:
-  # create_qgis_project() does an internal setwd(stage) for the zip
-  # step, so a cwd-relative output_dir makes this test depend on every
-  # prior test perfectly restoring the process working directory. An
-  # absolute path is immune to that cross-test coupling.
+  # Use an ABSOLUTE output_dir rather than "." inside with_tempdir, so the
+  # test does not depend on prior tests restoring the working directory.
   out  <- withr::local_tempdir()
   qgz  <- file.path(out, "once.qgz")
 
@@ -197,6 +194,26 @@ test_that("create_qgis_project refuses overwriting when overwrite=FALSE", {
                         overwrite = FALSE),
     "already\\s+exists"
   )
+})
+
+test_that("a failed rebuild keeps the existing .qgz intact (audit 1.0)", {
+  skip_if_no_sf()
+  pts <- make_sample_plots()
+  out <- withr::local_tempdir()
+  qgz <- create_qgis_project(pts, output_dir = out, project_name = "garde")
+  avant <- unname(tools::md5sum(qgz))
+  owd <- getwd()
+  # Commande zip qui échoue : l'ancien .qgz était supprimé avant le zip.
+  withr::local_envvar(R_ZIPCMD = "false")
+  expect_error(
+    create_qgis_project(pts, output_dir = out, project_name = "garde"),
+    "Failed to build"
+  )
+  expect_true(file.exists(qgz))
+  expect_identical(unname(tools::md5sum(qgz)), avant)
+  expect_identical(getwd(), owd)
+  # aucun temporaire laissé dans output_dir
+  expect_identical(list.files(out, all.files = TRUE, no.. = TRUE), "garde.qgz")
 })
 
 test_that("create_qgis_project rejects non-sf placettes", {
