@@ -12,4 +12,7 @@ Character. Path to the global cache directory.
 \description{
 Returns the path to a global cache directory shared across all projects.
 Used for large datasets like OSO, TWI caches, and nasapower wind data.
+
+The environment variable \code{NEMETON_CACHE_DIR}, when set, takes precedence
+(used by the test suite to stay out of the user's real cache).
 }

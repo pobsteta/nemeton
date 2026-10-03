@@ -3126,3 +3126,10 @@ test_that(".raster_lisible rejects a truncated GeoTIFF", {
   writeBin(b[seq_len(length(b) %/% 2)], f)
   expect_false(.raster_lisible(f))
 })
+
+test_that("NEMETON_CACHE_DIR redirige le cache global (suite hermétique)", {
+  d <- withr::local_tempdir()
+  withr::local_envvar(NEMETON_CACHE_DIR = file.path(d, "c"))
+  expect_identical(get_global_cache_dir(), file.path(d, "c"))
+  expect_true(dir.exists(file.path(d, "c")))
+})
