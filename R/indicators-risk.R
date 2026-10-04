@@ -32,6 +32,30 @@ NULL
 # où il a raison de l'être (R2, R3, W3 sur MNT LiDAR).
 .NEMETON_FIRE_EXP_RES <- 30
 
+# Plafond du nombre de poids de la fenêtre annulaire de `fire_exp()`,
+# ~(2 * t_dist / res)^2. À 30 m : ~1 100 poids ; à 2 m (échappatoire
+# `fire_exp_res = NULL`) : ~251 000. Au-delà d'un million (résolution sous le
+# mètre), la fenêtre n'a plus de sens pour un modèle calibré à 30 m et son
+# allocation devient démesurée.
+#
+# Le 2026-10-04 (projets Couchey et Aumur), le MNT de repli IGN arrivait en
+# EPSG:4326 : `terra::res()` valait 2,5e-4 (degrés), la borne métrique de 30 m
+# était ignorée (pas d'agrégation sur une grille lon/lat) et `fire_exp()`
+# matérialisait 500 « unités » en cellules de 2,5e-4, soit une fenêtre de
+# 4e6 x 4e6 : « cannot allocate vector of size 59622.1 Gb ». Le `tryCatch`
+# basculait sur le repli à chaque calcul, sans trace hors console.
+.NEMETON_FIRE_EXP_MAX_WEIGHTS <- 1e6
+
+# CRS métrique de travail du chemin fireexposuR : celui des unités s'il est
+# projeté, sinon ETRS89-LAEA (EPSG:3035, ADR-008).
+.fire_exp_metric_crs <- function(units = NULL) {
+  if (!is.null(units) && inherits(units, "sf")) {
+    crs <- sf::st_crs(units)
+    if (!is.na(crs) && !isTRUE(sf::st_is_longlat(units))) return(crs$wkt)
+  }
+  "EPSG:3035"
+}
+
 # MNT ramené à la grille de travail de `fire_exp()`. La grille est au moins
 # aussi grossière que la borne feu ET que la résolution topographique de travail,
 # mais jamais plus fine que le MNT natif : le `max()` évite de ré-agréger pour
@@ -40,15 +64,65 @@ NULL
 # (0,5 m -> 30 m) au lieu de deux, sur des dizaines de millions de cellules.
 # `fire_exp_res = NULL` retombe sur `dem_target_res`, soit le comportement
 # d'avant la borne ; les deux à NULL gardent la résolution native.
+#
+# Un MNT en coordonnées géographiques est d'abord reprojeté dans `crs` (métrique)
+# à la résolution native que choisit terra : la fenêtre de `fire_exp()` et les
+# bornes ci-dessus sont en mètres, pas en degrés.
 .fire_exp_working_dem <- function(dem, fire_exp_res = .NEMETON_FIRE_EXP_RES,
-                                  dem_target_res = .topo_target_res()) {
+                                  dem_target_res = .topo_target_res(),
+                                  crs = "EPSG:3035") {
   if (is.null(dem) || !inherits(dem, "SpatRaster")) return(dem)
+  if (terra::is.lonlat(dem)) {
+    deg <- terra::res(dem)[1]
+    dem <- terra::project(dem, crs, method = "bilinear")
+    cli::cli_alert_info(
+      "R1/fire_exp: lon/lat DEM ({signif(deg, 3)} deg) projected to a metric grid ({round(terra::res(dem)[1], 1)}m)"
+    )
+  }
   bounds <- c(fire_exp_res, dem_target_res)
   bounds <- bounds[is.finite(bounds) & bounds > 0]
   if (length(bounds) == 0L) return(dem)
   cur <- terra::res(dem)[1]
   target <- max(bounds, if (is.finite(cur)) cur else numeric(0))
   .dem_working_res(dem, target_res = target, context = "R1/fire_exp")
+}
+
+# Grille du `hazard` : celle du MNT de travail, élargie de `t_dist` dans la
+# limite de l'emprise de la BD Forêt. `fire_exp()` rend NA toute la bande de
+# `t_dist` au bord de sa grille (fenêtre incomplète) : calée sur le MNT, elle
+# privait d'exposition les unités proches du bord (Couchey, 2026-10-04 : 38 %
+# des cellules NA, 2 parcelles sur 23 à R1 = NA). Le `hazard` ne dépend que de
+# la BD Forêt, dont l'emprise déborde en général celle des unités ; au-delà de
+# cette emprise, on ne fabrique pas de « non-combustible » par défaut.
+.fire_exp_hazard_template <- function(hazard_dem, bdforet, t_dist) {
+  bd <- terra::vect(as_pure_sf(bdforet))
+  if (nzchar(terra::crs(bd)) && !terra::same.crs(bd, hazard_dem)) {
+    bd <- terra::project(bd, terra::crs(hazard_dem))
+  }
+  wanted <- terra::extend(terra::ext(hazard_dem), t_dist)
+  target <- terra::intersect(wanted, terra::union(terra::ext(bd), terra::ext(hazard_dem)))
+  if (is.null(target)) return(hazard_dem)
+  terra::extend(terra::rast(hazard_dem), target, snap = "out")
+}
+
+# Contrôle de la grille remise à `fire_exp()`, AVANT l'appel : une grille en
+# degrés ou trop fine pour `t_dist` lève une erreur lisible (rattrapée par le
+# repli de R1, et tracée dans `r1_fallback_reason`) au lieu d'une allocation de
+# plusieurs téraoctets.
+.fire_exp_check_grid <- function(hazard, t_dist,
+                                 max_weights = .NEMETON_FIRE_EXP_MAX_WEIGHTS) {
+  if (terra::is.lonlat(hazard)) {
+    stop("hazard grid is in geographic coordinates (degrees), fire_exp() needs metres")
+  }
+  res <- terra::res(hazard)[1]
+  n_weights <- (2 * t_dist / res)^2
+  if (!is.finite(n_weights) || n_weights > max_weights) {
+    stop(sprintf(
+      "fire_exp() window too large: %.3g weights for t_dist = %g m at %g m resolution (max %.3g)",
+      n_weights, t_dist, res, max_weights
+    ))
+  }
+  invisible(n_weights)
 }
 
 # --- Composantes partagées entre le chemin fireexposuR et le repli ------------
@@ -141,9 +215,17 @@ NULL
 #'   drops out and its weight is redistributed proportionally.
 #'   \code{c(exposure = 1)} restores the raw exposure.
 #'
-#' @return The input sf object with added column:
+#' @return The input sf object with added columns:
 #'   \itemize{
 #'     \item R1: Fire risk index (0-100). Higher = higher risk.
+#'     \item r1_status: method that produced R1: \code{"fire_exp"};
+#'       \code{"fallback_no_fireexposur"}, \code{"fallback_no_bdforet"} or
+#'       \code{"fallback_fire_exp_failed"} (slope + species + climate);
+#'       \code{"skipped_no_dem"} or \code{"skipped_no_component"} when R1 is
+#'       \code{NA}.
+#'     \item r1_fallback_reason: why the \pkg{fireexposuR} path was not used
+#'       (not installed, no BD Foret layer, or the error it raised);
+#'       \code{NA} when it was.
 #'   }
 #'
 #' @details
@@ -152,7 +234,11 @@ NULL
 #' with a 500m transmission distance. The 0-1 exposure is scaled to 0-100.
 #' The hazard grid is bounded to \code{fire_exp_res} (30 m) because the
 #' annular kernel of \code{fire_exp()} costs \code{(2 * t_dist / res)^2}
-#' operations per cell: at 2 m it is ~52 000x the cost at 30 m.
+#' operations per cell: at 2 m it is ~52 000x the cost at 30 m. A DEM in
+#' geographic coordinates is first projected to a metric CRS (the units' CRS
+#' when projected, EPSG:3035 otherwise); a hazard grid still in degrees, or whose
+#' annular window would exceed 10^6 weights, is rejected before
+#' \code{fire_exp()} is called and R1 falls back, with the reason recorded.
 #'
 #' **Fallback method**: R1 = w1*slope + w2*species_flammability + w3*climate_dryness.
 #' Without a species field, an NDVI-based proxy (\code{100 - 100 * NDVI}) takes
@@ -200,6 +286,8 @@ indicateur_r1_feu <- function(units,
   if (is.null(dem) || !inherits(dem, "SpatRaster")) {
     cli::cli_alert_warning("R1: No DEM available for fire risk, returning NA")
     units$R1 <- rep(NA_real_, nrow(units))
+    units$r1_status <- rep("skipped_no_dem", nrow(units))
+    units$r1_fallback_reason <- rep("no DEM", nrow(units))
     return(units)
   }
 
@@ -210,18 +298,23 @@ indicateur_r1_feu <- function(units,
 
   # --- Primary method: fireexposuR + BD Foret ---
   has_fireexposur <- requireNamespace("fireexposuR", quietly = TRUE)
+  fallback_status <- NA_character_
+  fallback_reason <- NA_character_
   if (has_fireexposur && !is.null(bdforet) && inherits(bdforet, "sf") && nrow(bdforet) > 0) {
     tryCatch({
       cli::cli_alert_info("R1: Using fireexposuR with BD For\u00eat hazard layer")
       # Grille du hazard bornée à ~30 m : le noyau annulaire de fire_exp() coûte
       # (2 * t_dist / res)^2 par cellule (cf. .fire_exp_working_dem). Le repli,
       # lui, garde la résolution topographique de travail.
-      hazard_dem <- .fire_exp_working_dem(dem, fire_exp_res, dem_target_res)
+      hazard_dem <- .fire_exp_working_dem(dem, fire_exp_res, dem_target_res,
+                                          crs = .fire_exp_metric_crs(units))
       # Rasterize BD Foret onto DEM grid: forest = 1 (fuel), non-forest = 0.
       # `safe_rasterize` aligne le CRS : la BD Forêt arrive en EPSG:4326 du WFS
       # IGN quand le MNT LiDAR est en Lambert-93, et `terra::rasterize()` ne
       # reprojette pas — il rend silencieusement un raster tout-à-`background`.
-      hazard <- safe_rasterize(bdforet, hazard_dem, field = 1, background = 0)
+      hazard <- safe_rasterize(bdforet,
+        .fire_exp_hazard_template(hazard_dem, bdforet, t_dist = 500),
+        field = 1, background = 0)
       # Un `hazard` sans une seule cellule de combustible n'est pas un « risque
       # nul » : c'est une absence de donnée (emprises disjointes, BD Forêt vide).
       # On bascule sur le repli plutôt que de rendre 0 partout — c'est ce qu'a
@@ -229,7 +322,9 @@ indicateur_r1_feu <- function(units,
       if (!isTRUE(terra::global(hazard, "max", na.rm = TRUE)[1, 1] > 0)) {
         stop("BD For\u00eat does not overlap the DEM grid (hazard has no fuel cell)")
       }
-      # Fire exposure with 500m transmission distance
+      # Fire exposure with 500m transmission distance. Grille contrôlée avant
+      # l'appel : métrique, et fenêtre annulaire de taille raisonnable.
+      .fire_exp_check_grid(hazard, t_dist = 500)
       exposure <- fireexposuR::fire_exp(hazard, t_dist = 500)
       # Extract mean exposure per parcel (0-1 scale)
       exposure_mean <- safe_extract(exposure,
@@ -256,15 +351,30 @@ indicateur_r1_feu <- function(units,
         "R1: fire_exp score = {paste(sprintf('%.2f x %s', scored$weights, names(scored$weights)), collapse = ' + ')}"
       )
       units$R1 <- scored$score
+      units$r1_status <- rep("fire_exp", nrow(units))
+      units$r1_fallback_reason <- rep(NA_character_, nrow(units))
       msg_info("indicateur_r1_feu")
       return(units)
     }, error = function(e) {
-      cli::cli_alert_warning("R1: fireexposuR failed ({e$message}), using fallback")
+      fallback_status <<- "fallback_fire_exp_failed"
+      fallback_reason <<- paste("fireexposuR failed:", conditionMessage(e))
+      cli::cli_alert_warning("R1: fireexposuR failed ({conditionMessage(e)}), using fallback")
     })
   }
 
   # --- Fallback method: slope + species + climate ---
-  if (!has_fireexposur || is.null(bdforet)) {
+  # Le motif du repli est porté par le résultat (`r1_status`, catégoriel, que
+  # l'app transporte comme les autres `<code>_status` ; `r1_fallback_reason`,
+  # texte), pas seulement par la console : un rapport doit pouvoir dire quelle
+  # méthode a produit R1.
+  if (is.na(fallback_reason)) {
+    if (!has_fireexposur) {
+      fallback_status <- "fallback_no_fireexposur"
+      fallback_reason <- "fireexposuR not installed"
+    } else {
+      fallback_status <- "fallback_no_bdforet"
+      fallback_reason <- "no BD For\u00eat layer"
+    }
     cli::cli_alert_info("R1: Using fallback method (slope + species + climate)")
   }
 
@@ -306,12 +416,17 @@ indicateur_r1_feu <- function(units,
   if (is.null(scored)) {
     cli::cli_alert_warning("R1: no usable fallback component, returning NA")
     units$R1 <- rep(NA_real_, nrow(units))
+    units$r1_status <- rep("skipped_no_component", nrow(units))
+    units$r1_fallback_reason <- rep(
+      paste0(fallback_reason, "; no usable fallback component"), nrow(units))
     return(units)
   }
   cli::cli_alert_info(
     "R1: fallback score = {paste(sprintf('%.2f x %s', scored$weights, names(scored$weights)), collapse = ' + ')}"
   )
   units$R1 <- scored$score
+  units$r1_status <- rep(fallback_status, nrow(units))
+  units$r1_fallback_reason <- rep(fallback_reason, nrow(units))
   msg_info("indicateur_r1_feu")
   units
 }

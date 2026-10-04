@@ -67,9 +67,13 @@ test_that(".fire_exp_working_dem falls back to dem_target_res without a bound", 
       0.5
     )
   }
-  # Un DEM en degrés : la borne est métrique, l'agrégation n'a pas de sens.
+  # Un DEM en degrés est reprojeté en métrique avant la borne (cf.
+  # test-r1-lonlat-dem.R) : la grille rendue n'est plus en degrés.
   lonlat <- make_dem(res = 0.001, crs = "EPSG:4326")
-  expect_equal(terra::res(.fire_exp_working_dem(lonlat))[1], 0.001)
+  lonlat <- terra::shift(lonlat, dx = 5, dy = 47)
+  out <- suppressMessages(.fire_exp_working_dem(lonlat))
+  expect_false(terra::is.lonlat(out))
+  expect_gte(terra::res(out)[1], 30)
   # Pas de DEM du tout : passe-plat.
   expect_null(.fire_exp_working_dem(NULL))
 })
@@ -117,7 +121,8 @@ test_that("indicateur_r1_feu hands fire_exp a hazard raster bounded to 30 m", {
   expect_true(any(grepl("R1/fire_exp: DEM aggregated 0\\.5m -> 30m", msgs)))
   expect_false(any(grepl("R1: DEM aggregated", msgs)))
   # 600 x 400 m à 0,5 m = 1200 x 800 cellules -> 20 x 14 à 30 m (dernière ligne
-  # partielle), soit 3 400x moins de cellules dans le focal.
+  # partielle), soit 3 400x moins de cellules dans le focal. La grille du hazard
+  # n'est élargie que dans l'emprise de la BD Forêt, ici celle des unités.
   expect_equal(seen$ncell, 20 * 14)
   # CA-4 (bornes) : le score reste dans [0, 100].
   expect_true(all(result$R1 >= 0 & result$R1 <= 100, na.rm = TRUE))

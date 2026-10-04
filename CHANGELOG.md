@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.212.0] - 2026-10-03
+
+### Fixed
+- B3 (coût, distance locale, composantes absentes, CRS), B1 (borne fixe).
+- Nomenclature OSO commune : L1, L2, A1, RECONFORT, FR.json.
+- W1 (NA sans couche), W2 (union des masques), F1 (échelle absolue), A2 (borne absolue), A5.
+- R1 (repli), R4 (appétence pondérée), R5 (surface répartie), R7 (une unité).
+- R1 `fireexposuR` : MNT lon/lat reprojeté (allocation de ~59 600 Go), grille contrôlée avant `fire_exp()`, hazard élargi de `t_dist` ; colonnes `r1_status` et `r1_fallback_reason`.
+- E1 (densité sèche), E2 (matériau annualisé), S1/S2 (emprise), T1 (priorité à l'âge), T2 (NA).
+- Douglas `PSME`, définition unique des résineux, contrôle d'unité de `density`, bornage Dg/N_max signalé.
+- Radar, taux de variation, carte de différence, tradeoff, `class_map`.
+- Plans de validation et d'échantillonnage (zone, pondération, poids d'inclusion, extraction).
+- Réserve utile, reprojection catégorielle, E-OBS meteoland.
+- RECONFORT : score, masque nuages MUSCATE, tranches sans masque.
+
 ## [0.211.0] - 2026-10-03
 
 ### Changed
