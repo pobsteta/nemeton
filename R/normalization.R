@@ -643,22 +643,25 @@ normalize_indicator <- function(indicator, values, statut = NULL) {
     # si bien que les deux axes de la famille Energie etaient en desaccord sur
     # ce que vaut « plein score » a partir d'une donnee identique.
     #
-    # Les deux derivent lineairement du volume : E1 = V x 0,02 x 0,3 x rho/1000
-    # x 0,5, soit 0,00165 x V pour rho = 550. Avec l'ancien 0,3, E1 saturait des
+    # Les deux derivent lineairement du volume : E1 = V x 0,02 x 0,3 x rho/1000,
+    # soit 0,0033 x V pour rho = 550 (0,00165 x V avant l'audit 1.0, qui a
+    # retire un « x 0,5 » applique a tort a une densite deja seche). Avec l'ancien 0,3, E1 saturait des
     # 182 m3/ha — un peuplement francais tres ordinaire (P1 annonce 100-400
     # m3/ha comme typique) — la ou P1, sur le MEME volume, lisait 22,8/100.
     # Trois colonnes proportionnelles qui saturaient a 182, 455 et 800 m3/ha.
     #
-    # Borne alignee sur P1 (decision Pascal, 2026-09-18) : 1,32 t MS/ha/an est
-    # exactement E1 au plafond de P1 (800 m3/ha, rho = 550). Les trois axes
-    # disent desormais la meme chose du meme peuplement.
+    # Borne alignee sur P1 (decision Pascal, 2026-09-18) : la borne est E1 au
+    # plafond de P1 (800 m3/ha, rho = 550), soit 2,64 t MS/ha/an depuis la
+    # correction de densite de l'audit 1.0 (1,32 avant). La decision porte sur
+    # le peuplement de reference, pas sur le nombre : les scores normalises
+    # sont inchanges, seules les valeurs brutes de E1/E2 doublent.
     #
-    # Limite assumee : E1 depend de la densite de l'essence (0,96 pour rho=400,
-    # 1,68 pour rho=700) et E2 du scenario de substitution (x1,458 en fioul au
+    # Limite assumee : E1 depend de la densite de l'essence (1,92 pour rho=400,
+    # 3,36 pour rho=700) et E2 du scenario de substitution (x1,458 en fioul au
     # lieu de x0,999 en gaz). Une borne fixe ne peut pas suivre ces parametres ;
     # elle est ancree sur les valeurs par defaut, qui sont celles servies.
-    "indicateur_e1_bois_energie" = 1.32,
-    "indicateur_e2_evitement" = 1.32,
+    "indicateur_e1_bois_energie" = 2.64,
+    "indicateur_e2_evitement" = 2.64,
     NULL
   )
 

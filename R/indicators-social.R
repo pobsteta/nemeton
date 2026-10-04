@@ -30,14 +30,23 @@ NULL
 #'   package-wide topographic working resolution, 2 m — see
 #'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
 #'   resolution.
+#' @param max_dist Numeric. Search radius (metres) around the units, default
+#'   2000 m (the distance at which the normalised score reaches 0). The
+#'   working grid covers the units' extent widened by `max_dist`, not the DEM
+#'   extent, so features just outside the DEM are no longer ignored. Distances
+#'   are exact up to `max_dist` and censored at `max_dist` beyond (a unit
+#'   with no feature within `max_dist` gets `max_dist`, i.e. "at least
+#'   `max_dist`"); with no feature at all, the indicator is `NA`.
 #'
 #' @return sf object with added column: S1 (mean distance to nearest road in metres)
 #'
 #' @details
 #' **Calculation** (tuto 03 method):
 #' \itemize{
-#'   \item Rasterize road geometries onto the DEM grid
-#'   \item Compute distance raster via \code{terra::distance()}
+#'   \item Rasterize road geometries onto a grid with the DEM resolution,
+#'     covering the units' extent widened by \code{max_dist}
+#'   \item Compute distance raster via \code{terra::distance()}, censored at
+#'     \code{max_dist}
 #'   \item Extract mean distance per spatial unit
 #' }
 #'
@@ -58,7 +67,8 @@ indicateur_s1_routes <- function(units,
                                     layers = NULL,
                                     column_name = "S1",
                                     lang = "en",
-                                    dem_target_res = .topo_target_res()) {
+                                    dem_target_res = .topo_target_res(),
+                                    max_dist = 2000) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -93,17 +103,9 @@ indicateur_s1_routes <- function(units,
     return(result)
   }
 
-  # Rasterize roads onto DEM grid
-  roads_vect <- terra::vect(sf::st_transform(roads, terra::crs(dem)))
-  roads_rast <- terra::rasterize(roads_vect, dem, field = 1, background = NA)
-
-  # Compute distance to nearest road (metres)
-  s1_raster <- terra::distance(roads_rast)
-
-  # Extract mean distance per unit
-  s1_values <- safe_extract(s1_raster, units, fun = "mean", progress = FALSE)
-
-  result[[column_name]] <- as.numeric(s1_values)
+  .check_max_dist(max_dist)
+  result[[column_name]] <- .distance_moyenne_entites(units, roads, dem,
+                                                     max_dist, "S1")
 
   cli::cli_alert_success("Calculated {column_name}: Distance to roads (m)")
 
@@ -130,14 +132,23 @@ indicateur_s1_routes <- function(units,
 #'   package-wide topographic working resolution, 2 m — see
 #'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
 #'   resolution.
+#' @param max_dist Numeric. Search radius (metres) around the units, default
+#'   2000 m (the distance at which the normalised score reaches 0). The
+#'   working grid covers the units' extent widened by `max_dist`, not the DEM
+#'   extent, so features just outside the DEM are no longer ignored. Distances
+#'   are exact up to `max_dist` and censored at `max_dist` beyond (a unit
+#'   with no feature within `max_dist` gets `max_dist`, i.e. "at least
+#'   `max_dist`"); with no feature at all, the indicator is `NA`.
 #'
 #' @return sf object with added column: S2 (mean distance to nearest building in metres)
 #'
 #' @details
 #' **Calculation** (tuto 03 method):
 #' \itemize{
-#'   \item Rasterize building geometries onto the DEM grid
-#'   \item Compute distance raster via \code{terra::distance()}
+#'   \item Rasterize building geometries onto a grid with the DEM resolution,
+#'     covering the units' extent widened by \code{max_dist}
+#'   \item Compute distance raster via \code{terra::distance()}, censored at
+#'     \code{max_dist}
 #'   \item Extract mean distance per spatial unit
 #' }
 #'
@@ -158,7 +169,8 @@ indicateur_s2_bati <- function(units,
                                            layers = NULL,
                                            column_name = "S2",
                                            lang = "en",
-                                           dem_target_res = .topo_target_res()) {
+                                           dem_target_res = .topo_target_res(),
+                                           max_dist = 2000) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -192,21 +204,61 @@ indicateur_s2_bati <- function(units,
     return(result)
   }
 
-  # Rasterize buildings onto DEM grid
-  bat_vect <- terra::vect(sf::st_transform(buildings, terra::crs(dem)))
-  bat_rast <- terra::rasterize(bat_vect, dem, field = 1, background = NA)
-
-  # Compute distance to nearest building (metres)
-  s2_raster <- terra::distance(bat_rast)
-
-  # Extract mean distance per unit
-  s2_values <- safe_extract(s2_raster, units, fun = "mean", progress = FALSE)
-
-  result[[column_name]] <- as.numeric(s2_values)
+  .check_max_dist(max_dist)
+  result[[column_name]] <- .distance_moyenne_entites(units, buildings, dem,
+                                                     max_dist, "S2")
 
   cli::cli_alert_success("Calculated {column_name}: Distance to buildings (m)")
 
   return(result)
+}
+
+# Distance moyenne de chaque unite a l'entite la plus proche (routes, bati).
+#
+# Le MNT ne fournit que la resolution et le CRS de travail. Le gabarit couvre
+# l'emprise des unites elargie de `max_dist`, et non l'emprise du MNT : une
+# route ou un batiment juste hors du MNT etait ignore, d'ou un S1/S2 NA ou
+# surestime pour les unites de bordure. Toute entite hors de cette fenetre
+# est a plus de `max_dist` de chaque unite ; les distances sont donc exactes
+# jusqu'a `max_dist` et censurees a `max_dist` au-dela (la normalisation
+# sature de toute facon a 2000 m). Une couche non vide sans entite dans la
+# fenetre dit que l'entite la plus proche est a plus de `max_dist` : valeur
+# censuree a `max_dist` (et non NA, qui ferait passer un score certain de 0
+# pour une donnee manquante). Une couche vide est traitee en amont (NA).
+.distance_moyenne_entites <- function(units, entites, dem, max_dist, code) {
+  crs_d <- terra::crs(dem)
+  units_d <- sf::st_transform(as_pure_sf(units), crs_d)
+  bb <- sf::st_bbox(units_d)
+  marge_x <- marge_y <- max_dist
+  if (isTRUE(terra::is.lonlat(dem))) {
+    # Grille en degres : marge convertie a la latitude de l'emprise.
+    lat <- mean(c(bb[["ymin"]], bb[["ymax"]]))
+    marge_y <- max_dist / 111320
+    marge_x <- max_dist / (111320 * max(cos(lat * pi / 180), 0.01))
+  }
+  fenetre <- terra::ext(bb[["xmin"]] - marge_x, bb[["xmax"]] + marge_x,
+                        bb[["ymin"]] - marge_y, bb[["ymax"]] + marge_y)
+  fenetre <- terra::align(fenetre, dem, snap = "out")
+  gabarit <- terra::rast(fenetre, resolution = terra::res(dem), crs = crs_d)
+
+  entites_r <- safe_rasterize(entites, gabarit, field = 1, background = NA)
+  if (!isTRUE(terra::global(entites_r, "notNA")[1, 1] > 0)) {
+    cli::cli_alert_info(
+      "{code}: no feature within {max_dist} m of the units, distance censored at {max_dist} m"
+    )
+    return(rep(as.numeric(max_dist), nrow(units)))
+  }
+  d <- terra::distance(entites_r)
+  d <- terra::clamp(d, upper = max_dist, values = TRUE)
+  as.numeric(safe_extract(d, units, fun = "mean", progress = FALSE))
+}
+
+.check_max_dist <- function(max_dist) {
+  if (!is.numeric(max_dist) || length(max_dist) != 1L || is.na(max_dist) ||
+      max_dist <= 0) {
+    cli::cli_abort("{.arg max_dist} must be a single positive number (metres).")
+  }
+  invisible(max_dist)
 }
 
 #' S3: Population Proximity Indicator

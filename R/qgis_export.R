@@ -293,6 +293,12 @@ col2rgb_str <- function(hex) {
 }
 
 
+# Colonnes du plan de sondage conservees a l'export QGIS / QField (hors
+# schema de saisie) : poids d'inclusion et strates de create_sampling_plan().
+.placette_design_columns <- c("wgt", "ip", "stratum",
+                              "strat_height", "strat_type", "strat_topo")
+
+
 # ---- Public API -------------------------------------------------------
 
 #' Create a QGIS project from a sampling plan
@@ -304,7 +310,11 @@ col2rgb_str <- function(hex) {
 #'
 #' @param placettes An sf object with POINT geometry. Must contain the
 #'   \code{plot_id} column. A \code{type} column (values \code{"Base"},
-#'   \code{"Over"}) triggers categorised symbology.
+#'   \code{"Over"}) triggers categorised symbology. Sampling-design
+#'   columns (\code{wgt}, \code{ip}, \code{stratum}, \code{strat_height},
+#'   \code{strat_type}, \code{strat_topo}), when present, are kept in the
+#'   GeoPackage as hidden form fields, so that the design weights survive
+#'   the QField round trip (\code{\link{import_qgis_gpkg}}).
 #' @param zone_etude Optional sf polygon of the study area.
 #' @param parcours_tsp Optional sf linestring of the TSP route.
 #' @param output_dir Character. Destination directory (created if
@@ -426,8 +436,19 @@ create_qgis_project <- function(placettes,
     }
   }
   p_names <- vapply(visible_p, `[[`, character(1), "name")
-  sf::st_write(placettes[c(p_names, attr(placettes, "sf_column"))],
+  # Colonnes de plan de sondage (poids d'inclusion GRTS, strates) : hors
+  # schema de saisie, mais indispensables a l'estimation sans biais au
+  # retour du terrain. Elles etaient perdues a l'aller-retour QField ; on les
+  # conserve dans le GPKG, en champs caches du formulaire.
+  design_cols <- setdiff(
+    intersect(.placette_design_columns, names(placettes)), p_names)
+  sf::st_write(placettes[c(p_names, design_cols, attr(placettes, "sf_column"))],
                gpkg_path, layer = "placettes", quiet = TRUE, append = FALSE)
+  placette_layer_schema <- c(placette_schema, lapply(design_cols, function(col) {
+    list(name = col, type = if (is.numeric(placettes[[col]])) "double" else "character",
+         widget = "hidden", qgis_widget = "Hidden", label = col,
+         domain = NULL, required = FALSE, min = NULL, max = NULL, default = NULL)
+  }))
 
   # Empty arbres layer with correct schema.
   arbres_empty <- empty_sf_from_schema(arbre_schema, crs = crs)
@@ -450,7 +471,7 @@ create_qgis_project <- function(placettes,
   layers_meta <- list(
     list(id = "placettes_01", name = "Placettes", gpkg_rel = gpkg_rel,
          layername = "placettes", geometry = "Point",
-         schema = placette_schema,
+         schema = placette_layer_schema,
          bbox = placettes_bbox,
          renderer = NULL,
          readonly = FALSE),

@@ -12,6 +12,7 @@ plot_difference_map(
   palette = "RdBu",
   title = NULL,
   legend_title = NULL,
+  id_column = NULL,
   ...
 )
 }
@@ -29,6 +30,13 @@ plot_difference_map(
 \item{title}{Plot title}
 
 \item{legend_title}{Legend title}
+
+\item{id_column}{Character or NULL. Identifier column shared by
+\code{data1} and \code{data2}, used to align units before subtracting.
+If NULL (default), the first of \code{"nemeton_id"}, \code{"parcel_id"},
+\code{"id"} present in both is used. Without a shared identifier, both
+datasets must have the same number of rows and are aligned by position.
+Units of \code{data1} without a match get a NA difference (with a warning).}
 
 \item{...}{Additional arguments}
 }

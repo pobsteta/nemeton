@@ -814,13 +814,13 @@ FICHES <- list(
     chemins = list(
       list(titre = "Récolte annuelle", lignes = c("V × harvest_rate", "défaut 2 % / an")),
       list(titre = "Rémanents en matière sèche", lignes = c("récolte × 30 %",
-                                                            "× ρ/1000 × 0,5")),
+                                                            "× ρ/1000")),
       list(titre = "Somme des deux gisements", lignes = "E1 = rémanents + taillis")
     ),
     aval = av("indicateur_e1_bois_energie", "t MS / ha / an",
-              "min(100, t / 1,32 × 100)", "E", "famille_energie", "E1 et E2"),
+              "min(100, t / 2,64 × 100)", "E", "famille_energie", "E1 et E2"),
     notes = c(
-      "Borne alignée sur P1 (1,32 t MS/ha/an = E1 à 800 m³/ha) : E1, E2 et P1 notent le même peuplement pareil.",
+      "Borne alignée sur P1 (2,64 t MS/ha/an = E1 à 800 m³/ha) : E1, E2 et P1 notent le même peuplement pareil.",
       "Trois constantes portent le résultat — taux de récolte 2 %, fraction rémanents 30 %, forfait taillis 2 t.",
       "La récolte de 2 % est une hypothèse de gestion, pas une mesure de prélèvement réel."
     ),
@@ -849,7 +849,7 @@ FICHES <- list(
                                                        "× facteur ADEME"))
     ),
     aval = av("indicateur_e2_evitement", "t CO₂eq / ha / an",
-              "min(100, t / 1,32 × 100)", "E", "famille_energie", "E1 et E2"),
+              "min(100, t / 2,64 × 100)", "E", "famille_energie", "E1 et E2"),
     notes = c(
       "Chaîne multiplicative : taux de récolte, fraction rémanents, densité, PCI, facteur ADEME — chaque hypothèse s'y propage.",
       "Le facteur de substitution dépend de l'énergie remplacée : le scénario est paramétrable, et il compte.",
@@ -952,46 +952,45 @@ FICHES <- list(
   # ======================================================== T — Temporel =====
   T1 = list(
     code = "T1", fichier = "fiche-t1-anciennete_fr.Rmd",
-    titre = paste("Chaine de calcul de T1 : quatre chemins essayes en cascade — age",
-                  "typologique de la BD Foret, colonne d'age, annee d'installation,",
-                  "conversion du NDVI en annees — et, si aucun ne repond, un age de",
-                  "50 ans ecrit en dur ; la colonne est en annees mais la",
-                  "normalisation la traite comme un score."),
+    titre = paste("Chaine de calcul de T1 : quatre chemins essayes en cascade, unite",
+                  "par unite — colonne d'age, annee d'installation, age typologique",
+                  "de la BD Foret, conversion du NDVI en annees — une mesure passant",
+                  "avant une estimation ; si aucun ne repond, T1 vaut NA."),
     entrees = list(
+      list(titre = "Colonne age", lignes = "âge d'inventaire, tel quel", vers = 1),
+      list(titre = "establishment_year_field", lignes = "année courante - installation", vers = 2),
       list(titre = "BD Forêt — champ TFV", lignes = c("TFV, CODE_TFV, ESSENCE, LIB_FV…",
-                                                      ".estimate_age_tfv()"), vers = 1),
-      list(titre = "Colonne age", lignes = "âge d'inventaire, tel quel", vers = 2),
-      list(titre = "establishment_year_field", lignes = "année courante - installation", vers = 3),
+                                                      ".estimate_age_tfv()"), vers = 3),
       list(titre = "Couche ndvi", lignes = "Sentinel-2, 10 m", vers = 4),
-      list(titre = "Aucun des quatre", lignes = "50 ans en dur + avertissement", tirets = TRUE, vers = 5)
+      list(titre = "Aucun des quatre", lignes = "NA + avertissement", tirets = TRUE, vers = 5)
     ),
     chemins = list(
-      list(titre = "Âge typologique", lignes = c("constante par type",
-                                                 "futaie feuillue fermée : 100 ans")),
       list(titre = "Âge d'inventaire", lignes = "valeur reprise sans calcul"),
       list(titre = "Année d'installation", lignes = "âge = année - installation"),
+      list(titre = "Âge typologique", lignes = c("constante par type", "TFV inconnu écarté",
+                                                 "futaie feuillue fermée : 100 ans")),
       list(titre = "Conversion du NDVI", lignes = "20 + max(0, NDVI-0,2)/0,6 × 100"),
-      list(titre = "50 ans, en dur", lignes = "âge fabriqué, pas NA", tirets = TRUE)
+      list(titre = "NA", lignes = "aucun âge inventé", tirets = TRUE)
     ),
     aval = av("indicateur_t1_anciennete", "âge, en années",
               "âge / 200 ans × 100", "T", "famille_temporel", "T1 à T3"),
     notes = c(
       "L'unité est l'année : normalisée sur une borne de 200 ans depuis la 0.197.0, plus par écrêtage à 100.",
-      "Sans aucune donnée, T1 vaut 50 — un âge fabriqué qui ne se distingue pas d'un âge mesuré.",
+      "Une mesure passe avant une estimation ; sans aucune source, T1 vaut NA (50 ans en dur jusqu'à la 0.211.0).",
       "Le chemin NDVI convertit de la verdeur en années : un peuplement vert et jeune y paraît vieux.",
       "L'âge TFV est une constante par type : toutes les futaies feuillues fermées ont le même âge."
     ),
-    legende = paste("Cinq issues pour une colonne en années. La borne de 200 ans distingue enfin",
-                    "une futaie de 110 ans d'une de 250 ans, mais le dernier recours — 50 ans en",
-                    "dur — se lit toujours comme n'importe quelle autre valeur.")
+    legende = paste("Cinq issues pour une colonne en années. La borne de 200 ans distingue",
+                    "une futaie de 110 ans d'une de 250 ans ; une unité qu'aucune source ne",
+                    "date reste NA au lieu de recevoir un âge fabriqué.")
   ),
 
   T2 = list(
     code = "T2", fichier = "fiche-t2-changement_fr.Rmd",
     titre = paste("Chaine de calcul de T2 : l'indicateur ne mesure rien en propre, il",
                   "recopie la continuite N2 quand elle existe, sinon l'age T1",
-                  "plafonne a 100, et remplace les ages inconnus par 50 — d'ou un",
-                  "double comptage possible dans la famille temporelle."),
+                  "plafonne a 100 (age inconnu : NA) — d'ou un double comptage",
+                  "possible dans la famille temporelle."),
     entrees = list(
       list(titre = "Colonne N2 — continuité", lignes = "ou N2_anciennete / N2_anciennet", vers = 1),
       list(titre = "t1_values — âge T1", lignes = "utilisé seulement sans N2", vers = 2)
@@ -999,12 +998,12 @@ FICHES <- list(
     chemins = list(
       list(titre = "N2 comme proxy", lignes = "T2 = N2, écrêté [0, 100]"),
       list(titre = "T1 plafonné", lignes = c("T2 = min(100, âge)",
-                                             "NA remplacés par 50"))
+                                             "NA conservés (plus de 50)"))
     ),
     aval = av("indicateur_t2_changement", "score 0–100, natif",
               "écrêtage natif 0–100", "T", "famille_temporel", "T1 à T3"),
     notes = c(
-      "NA devient 50 sur le chemin 2 : une unité d'âge inconnu se lit comme une unité moyennement stable.",
+      "Un âge inconnu reste NA sur le chemin 2 (il devenait 50 jusqu'à la 0.211.0).",
       "Quand T2 recopie T1, famille_temporel compte deux fois la même grandeur.",
       "Le nom annonce un changement, la valeur mesure une stabilité — haut = stable."
     ),

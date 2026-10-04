@@ -475,6 +475,12 @@ plot_comparison_map <- function(data1,
 #' @param palette Color palette. Default "RdBu" (diverging red-blue)
 #' @param title Plot title
 #' @param legend_title Legend title
+#' @param id_column Character or NULL. Identifier column shared by
+#'   \code{data1} and \code{data2}, used to align units before subtracting.
+#'   If NULL (default), the first of \code{"nemeton_id"}, \code{"parcel_id"},
+#'   \code{"id"} present in both is used. Without a shared identifier, both
+#'   datasets must have the same number of rows and are aligned by position.
+#'   Units of \code{data1} without a match get a NA difference (with a warning).
 #' @param ... Additional arguments
 #'
 #' @return A ggplot object showing differences
@@ -498,6 +504,7 @@ plot_difference_map <- function(data1,
                                 palette = "RdBu",
                                 title = NULL,
                                 legend_title = NULL,
+                                id_column = NULL,
                                 ...) {
   type <- match.arg(type)
 
@@ -510,15 +517,50 @@ plot_difference_map <- function(data1,
     msg_error("viz_indicator_missing_both", indicator)
   }
 
+  # Alignement des deux jeux : jointure sur l'identifiant, jamais par position
+  if (is.null(id_column)) {
+    candidates <- c("nemeton_id", "parcel_id", "id")
+    found <- candidates[candidates %in% names(data1) & candidates %in% names(data2)]
+    id_column <- if (length(found) > 0) found[1] else NA_character_
+  } else if (!id_column %in% names(data1) || !id_column %in% names(data2)) {
+    cli::cli_abort("{.arg id_column} {.field {id_column}} must exist in both datasets.")
+  }
+
+  if (!is.na(id_column)) {
+    ids1 <- as.character(data1[[id_column]])
+    ids2 <- as.character(data2[[id_column]])
+    if (anyDuplicated(ids1[!is.na(ids1)]) || anyDuplicated(ids2[!is.na(ids2)])) {
+      cli::cli_abort("Identifier column {.field {id_column}} has duplicated values.")
+    }
+    idx <- match(ids1, ids2)
+    n_unmatched <- sum(is.na(idx))
+    if (n_unmatched > 0) {
+      cli::cli_warn(
+        "{n_unmatched} unit{?s} of {.arg data1} ha{?s/ve} no match in {.arg data2} on {.field {id_column}}: difference set to NA."
+      )
+    }
+    v2 <- data2[[indicator]][idx]
+  } else {
+    if (nrow(data1) != nrow(data2)) {
+      cli::cli_abort(c(
+        "Cannot align {.arg data1} ({nrow(data1)} row{?s}) and {.arg data2} ({nrow(data2)} row{?s}).",
+        "i" = "Provide a shared identifier column via {.arg id_column}."
+      ))
+    }
+    # Pas d'identifiant commun : alignement par position (meme nombre de lignes)
+    v2 <- data2[[indicator]]
+  }
+  v1 <- data1[[indicator]]
+
   # Calculate difference
   diff_data <- data1
 
   if (type == "absolute") {
-    diff_data$difference <- data2[[indicator]] - data1[[indicator]]
+    diff_data$difference <- v2 - v1
     if (is.null(legend_title)) legend_title <- "Absolute Change"
   } else {
     # Relative (percentage change)
-    diff_data$difference <- ((data2[[indicator]] - data1[[indicator]]) / data1[[indicator]]) * 100
+    diff_data$difference <- ((v2 - v1) / v1) * 100
     if (is.null(legend_title)) legend_title <- "Relative Change (%)"
   }
 
@@ -569,7 +611,13 @@ plot_difference_map <- function(data1,
 #' @param mode Character. Display mode: "indicator" for individual indicators (default)
 #'   or "family" for family indices (famille_carbone, famille_eau, etc.). When mode = "family",
 #'   supports 4-12 family axes dynamically.
-#' @param normalize Logical. If TRUE (default), normalizes values to 0-100 scale.
+#' @param normalize Logical or NULL. If TRUE, applies a min-max rescaling of
+#'   each axis across the units of \code{data} (0-100). If NULL (default),
+#'   resolves to TRUE in \code{mode = "indicator"} and FALSE in
+#'   \code{mode = "family"}: family indices are already on an absolute 0-100
+#'   scale, and a between-unit min-max would distort them (a single unit would
+#'   plot at 50 on every axis). In family mode without normalization, values
+#'   are clipped to 0-100 and the radar keeps a fixed 0-100 scale.
 #' @param title Optional plot title. If NULL, auto-generated based on unit_id.
 #' @param fill_color Color to fill the radar polygon. Default "#3182bd" (blue).
 #' @param fill_alpha Transparency of the fill (0-1). Default 0.3.
@@ -585,8 +633,10 @@ plot_difference_map <- function(data1,
 #' overlaid polygons for comparing units side-by-side.
 #' If \code{unit_id} is NULL, the chart shows the mean values across all units.
 #'
-#' Normalization is recommended when indicators have different scales. The function
-#' applies min-max normalization to scale all values to 0-100.
+#' Normalization is recommended when raw indicators have different scales. The
+#' function then applies a between-unit min-max normalization to scale all
+#' values to 0-100. It is disabled by default in family mode, where the
+#' indices are already absolute 0-100 scores.
 #'
 #' **v0.3.0 Enhancements**: Supports 9-12 family axes and comparison mode for
 #' multiple units.
@@ -629,7 +679,7 @@ nemeton_radar <- function(data,
                           unit_id = NULL,
                           indicators = NULL,
                           mode = c("indicator", "family"),
-                          normalize = TRUE,
+                          normalize = NULL,
                           title = NULL,
                           fill_color = "#3182bd",
                           fill_alpha = 0.3) {
@@ -640,6 +690,12 @@ nemeton_radar <- function(data,
 
   # Match mode argument
   mode <- match.arg(mode)
+
+  # Les indices de famille sont deja sur une echelle absolue 0-100 : un
+  # min-max entre unites les deforme (une seule unite -> 50 partout,
+  # 90/50/10 -> 100/50/0). Par defaut, pas de renormalisation en mode famille.
+  if (is.null(normalize)) normalize <- mode != "family"
+  fixed_scale <- mode == "family" && !isTRUE(normalize)
 
   # Auto-detect indicators if not specified
   if (is.null(indicators)) {
@@ -761,6 +817,11 @@ nemeton_radar <- function(data,
         }
       }
 
+      # Mode famille sans renormalisation : ecretage a l'echelle 0-100
+      if (fixed_scale) {
+        radar_data_multi$value <- pmin(pmax(radar_data_multi$value, 0), 100)
+      }
+
       # Clean indicator names and compute angles
       radar_data_multi$indicator_clean <- sapply(radar_data_multi$indicator, clean_indicator_name)
       n_indicators <- length(unique(radar_data_multi$indicator))
@@ -770,7 +831,7 @@ nemeton_radar <- function(data,
       radar_data_multi$y <- radar_data_multi$value * sin(radar_data_multi$angle)
 
       # Create comparison plot (return early with comparison mode)
-      max_value <- if (normalize) 100 else max(radar_data_multi$value, na.rm = TRUE) * 1.2
+      max_value <- if (normalize || fixed_scale) 100 else max(radar_data_multi$value, na.rm = TRUE) * 1.2
 
       # Create axis data
       unique_indicators <- unique(radar_data_multi$indicator)
@@ -896,6 +957,9 @@ nemeton_radar <- function(data,
     }
   }
 
+  # Mode famille sans renormalisation : ecretage a l'echelle 0-100
+  if (fixed_scale) values <- pmin(pmax(values, 0), 100)
+
   # Create data frame for plotting
   radar_data <- data.frame(
     indicator = indicators,
@@ -918,7 +982,7 @@ nemeton_radar <- function(data,
   radar_polygon <- rbind(radar_data, radar_data[1, ])
 
   # Create axis lines data (from center to max value for each indicator)
-  max_value <- if (normalize) 100 else max(values, na.rm = TRUE) * 1.2
+  max_value <- if (normalize || fixed_scale) 100 else max(values, na.rm = TRUE) * 1.2
   axis_data <- data.frame(
     x0 = 0,
     y0 = 0,

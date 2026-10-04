@@ -4,7 +4,7 @@
 \alias{nemeton_temporal}
 \title{Create Multi-Period Temporal Dataset}
 \usage{
-nemeton_temporal(periods, dates = NULL, labels = NULL, id_column = "parcel_id")
+nemeton_temporal(periods, dates = NULL, labels = NULL, id_column = NULL)
 }
 \arguments{
 \item{periods}{Named list of nemeton_units objects, one per period.
@@ -16,8 +16,11 @@ Names should be period labels (e.g., "2015", "2020").}
 \item{labels}{Character vector of descriptive labels for periods
 (e.g., c("Baseline", "Current")). Optional, defaults to period names.}
 
-\item{id_column}{Character. Name of the column containing unit IDs.
-Default "parcel_id".}
+\item{id_column}{Character or NULL. Name of the column containing unit
+IDs, used to align units across periods. If NULL (default), the first of
+\code{"nemeton_id"} (the identifier carried by nemeton units) and
+\code{"parcel_id"} present in every period is used; without such a
+column, units are aligned by row position.}
 }
 \value{
 A nemeton_temporal object (list) with components:

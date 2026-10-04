@@ -2,7 +2,7 @@
 % Please edit documentation in R/indicators-temporal.R
 \name{indicateur_t2_changement}
 \alias{indicateur_t2_changement}
-\title{Calculate Stability / Change Rate Index (T2)}
+\title{Calculate Temporal Stability Proxy (T2)}
 \usage{
 indicateur_t2_changement(units, layers = NULL, t1_values = NULL)
 }
@@ -14,23 +14,30 @@ columns: N2 (forest continuity) or T1 (stand age).}
 kept for interface consistency.}
 
 \item{t1_values}{Numeric vector. Pre-computed T1 age values (same length
-as nrow(units)). If NULL and units has no T1 column, T2 defaults to 50.}
+as nrow(units)). If NULL and units has no T1 column, T2 is \code{NA}.}
 }
 \value{
-Numeric vector of stability scores (0-100).
-  100 = very stable (ancient forest), 0 = recent change.
+Numeric vector of stability proxy scores (0-100), 100 = very
+stable (ancient forest). \code{NA} where the source (N2 or T1) is
+unknown -- no default value.
 }
 \description{
-Measures forest stability using N2 (forest continuity/antiquity) as proxy,
-following tuto 04 methodology. Falls back to T1 age capped at 100.
+Despite its name (\code{changement}), T2 does \strong{not} measure a rate of
+change: no time series is read. It is a temporal \strong{stability proxy}
+derived from other indicators -- a copy of N2 (forest continuity) when
+present, otherwise the T1 stand age capped at 100 -- following tuto 04.
+It therefore carries no information of its own, and in the T family it
+may duplicate T1.
 }
 \details{
-**Primary method**: Use N2 (forest continuity/antiquity) column if present
-in units. N2 measures continuous forest cover duration, serving as a direct
-proxy for temporal stability.
+\strong{Primary method}: copy of the N2 (forest continuity/antiquity) column if
+present in units, clamped to 0-100.
 
-**Fallback**: Use T1 stand age capped at 100. Older forests are assumed
-more stable.
+\strong{Fallback}: T1 stand age (years) capped at 100. Older forests are
+assumed more stable.
+
+A genuine change-rate indicator (e.g. a Sentinel-2 change detection) is
+not implemented in T2.
 }
 \examples{
 \dontrun{

@@ -314,7 +314,11 @@ get_or_compute_twi <- function(dem, cache_dir = NULL,
 #' @param layers nemeton_layers object (optional for future integration)
 #' @param species_col Character. Column name for species (default "species")
 #' @param age_col Character. Column name for stand age (default "age")
-#' @param density_col Character. Column name for stand density 0-1 (default "density")
+#' @param density_col Character. Column name for stand density as a 0-1
+#'   canopy-cover FRACTION (default "density"), as returned by
+#'   \code{\link{enrich_parcels_bdforet}}. Not stems/ha (unlike the
+#'   \code{density_field} of \code{\link{indicateur_p1_volume}}): values
+#'   outside 0-1 are set to NA with a warning.
 #' @param chm Optional \code{SpatRaster} of canopy heights in
 #'   metres. When supplied together with \code{dbh_col} and
 #'   \code{species_col}, activates CHM mode (spec 005 phase 4):
@@ -377,7 +381,8 @@ indicateur_c1_biomasse <- function(units,
     if (stems_col %in% names(units)) {
       stems_ha <- as.numeric(units[[stems_col]])
     } else if (density_col %in% names(units)) {
-      stems_ha <- as.numeric(units[[density_col]]) * 500
+      stems_ha <- .check_density_unit(units[[density_col]], "fraction",
+                                      "C1") * 500
     } else {
       stems_ha <- rep(300, nrow(units))
     }
@@ -413,7 +418,8 @@ indicateur_c1_biomasse <- function(units,
   if (has_inventory) {
     species <- units[[species_col]]
     age <- units[[age_col]]
-    density <- units[[density_col]]
+    # `density` est ici une fraction de couvert 0-1 (pas des tiges/ha)
+    density <- .check_density_unit(units[[density_col]], "fraction", "C1")
 
     biomass <- calculate_allometric_biomass(species, age, density)
     msg_info("indicateur_c1_biomasse")
@@ -606,7 +612,9 @@ indicateur_c2_ndvi <- function(units,
 #' @param proximity_m Numeric. Maximum distance (m) for proximity bonus. Default 500.
 #' @param proximity_ref Numeric. Equivalent density bonus (m/ha) at distance 0. Default 50.
 #'
-#' @return Numeric vector of network density (m/ha)
+#' @return Numeric vector of network density (m/ha). NA for every unit when
+#'   the watercourse layer is missing (no measurement); a supplied but empty
+#'   layer gives 0.
 #'
 #' @export
 #' @examples
@@ -631,9 +639,12 @@ indicateur_w1_reseau <- function(units,
 
   # Get watercourse vector layer (resolve lazy-load)
   watercourses <- resolve_vector_layer(layers, watercourse_layer)
+  # Couche absente = pas de mesure : NA, pas 0. Le 0 disait « aucun cours
+  # d'eau » et tirait la famille Eau vers le bas ; une couche fournie mais
+  # vide reste, elle, une mesure (0).
   if (is.null(watercourses)) {
-    cli::cli_warn("W1: No watercourse data available for this area. Returning 0.")
-    return(rep(0, nrow(units)))
+    cli::cli_warn("W1: No watercourse data available for this area. Returning NA (no measurement made).")
+    return(rep(NA_real_, nrow(units)))
   }
 
   # Ensure CRS match
@@ -695,15 +706,20 @@ indicateur_w1_reseau <- function(units,
 #' Wetland Coverage (W2)
 #'
 #' Calculates percentage of parcel area classified as wetland or riparian zone.
-#' Coverage is summed over several optional sources: BD TOPO water surfaces,
-#' a TWI threshold, OSO land-cover wetland codes, and — when supplied — the
-#' Theia \code{theia_water} water-occurrence product.
+#' The wetland area is the UNION of several optional sources (a pixel counted
+#' by two sources is counted once): BD TOPO water surfaces, a TWI threshold,
+#' land-cover codes listed in \code{wetland_values}, and — when supplied — the
+#' Theia \code{theia_water} water-occurrence product. Sources are evaluated
+#' on a regular grid of points inside each unit; points where every source is
+#' NA are left out, and a unit with no known point is NA.
 #'
 #' @param units nemeton_units object
 #' @param layers nemeton_layers object containing land cover raster or wetland vector
 #' @param wetland_layer Character. Name of wetland layer in layers object
 #' @param wetland_values Numeric vector. Land cover codes representing wetlands.
-#'   Default NULL (auto-detect if possible).
+#'   Default NULL: the land-cover source is not used (there is no
+#'   auto-detection; the OSO nomenclature has no wetland class, only water,
+#'   code 23).
 #' @param water_occurrence Optional \code{SpatRaster} of water-occurrence
 #'   frequency in percent (0-100) — the Theia \code{theia_water}
 #'   \code{water_occurrence} product, loaded via
@@ -746,89 +762,46 @@ indicateur_w2_zones_humides <- function(units,
     stop("layers must be a nemeton_layers object", call. = FALSE)
   }
 
-  coverage <- numeric(nrow(units))
-  has_any_source <- FALSE
+  # Les quatre sources se recouvrent (une mare BD TOPO est aussi un TWI eleve
+  # et une forte occurrence d'eau) : additionner leurs couvertures comptait
+  # plusieurs fois la meme surface. W2 est desormais la couverture de
+  # l'UNION des masques, evaluee sur une grille reguliere de points par unite
+  # (robuste aux CRS differents des sources).
 
-  # Source 1: BD TOPO water surfaces (mares, retenues, étangs)
+  # Source 1: BD TOPO water surfaces (mares, retenues, etangs)
+  water_union <- NULL
   water_surfaces_sf <- resolve_vector_layer(layers, "water_surfaces")
   if (!is.null(water_surfaces_sf) && nrow(water_surfaces_sf) > 0) {
     cli::cli_alert_info("W2: Adding BD TOPO water surfaces coverage")
-    has_any_source <- TRUE
-
-    if (!sf::st_crs(units) == sf::st_crs(water_surfaces_sf)) {
-      water_surfaces_sf <- sf::st_transform(water_surfaces_sf, sf::st_crs(units))
-    }
-
-    for (i in seq_len(nrow(units))) {
-      unit_geom <- units[i, ]
-      parcel_area <- as.numeric(sf::st_area(unit_geom))
-
-      intersected <- tryCatch(
-        suppressWarnings(sf::st_intersection(water_surfaces_sf, unit_geom)),
-        error = function(e) NULL
-      )
-
-      if (!is.null(intersected) && nrow(intersected) > 0) {
-        wetland_area <- sum(as.numeric(sf::st_area(intersected)))
-        coverage[i] <- coverage[i] + (wetland_area / parcel_area) * 100
-      }
-    }
+    water_union <- sf::st_union(sf::st_make_valid(
+      sf::st_geometry(water_surfaces_sf)
+    ))
   }
+
+  # Masques raster : liste de fonctions (valeur -> humide TRUE/FALSE)
+  raster_sources <- list()
 
   # Source 2: TWI threshold (TWI > 12 = potential wetland zones)
   dem <- .dem_working_res(get_dem_raster(layers),
                           target_res = dem_target_res, context = "W2")
   if (!is.null(dem)) {
     cli::cli_alert_info("W2: Adding TWI-based wetland zones (threshold > 12)")
-    has_any_source <- TRUE
     # `twi_target_res` suit la résolution de travail : les deux grilles
     # coïncident, le TWI n'est jamais rééchantillonné vers du plus fin.
     twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir,
                                      twi_target_res = dem_target_res)
-
-    for (i in seq_len(nrow(units))) {
-      twi_vals <- safe_extract(
-        twi_raster,
-        as_pure_sf(units[i, ]),
-        fun = NULL,
-        progress = FALSE
-      )[[1]]
-
-      if (nrow(twi_vals) > 0) {
-        wetland_frac <- sum(twi_vals$coverage_fraction[twi_vals$value > 12], na.rm = TRUE)
-        total_frac <- sum(twi_vals$coverage_fraction, na.rm = TRUE)
-        if (total_frac > 0) {
-          coverage[i] <- coverage[i] + (wetland_frac / total_frac) * 100
-        }
-      }
-    }
+    raster_sources$twi <- list(r = twi_raster, wet = function(v) v > 12)
   }
 
-  # Source 3: OSO landcover wetland codes (if provided)
+  # Source 3: land-cover wetland codes (only when wetland_values is given)
   lc_raster <- resolve_raster_layer(layers, wetland_layer)
   if (is.null(lc_raster)) lc_raster <- resolve_raster_layer(layers, "landcover")
   if (is.null(lc_raster)) lc_raster <- resolve_raster_layer(layers, "forest_cover")
   if (!is.null(wetland_values) && !is.null(lc_raster)) {
-    cli::cli_alert_info("W2: Adding OSO landcover wetland coverage")
-    has_any_source <- TRUE
-
-    for (i in seq_len(nrow(units))) {
-      lc_values <- safe_extract(
-        lc_raster,
-        as_pure_sf(units[i, ]),
-        fun = NULL,
-        progress = FALSE
-      )[[1]]
-
-      if (nrow(lc_values) > 0) {
-        wetland_mask <- lc_values$value %in% wetland_values
-        wetland_fraction <- sum(lc_values$coverage_fraction[wetland_mask], na.rm = TRUE)
-        total_fraction <- sum(lc_values$coverage_fraction, na.rm = TRUE)
-        if (total_fraction > 0) {
-          coverage[i] <- coverage[i] + (wetland_fraction / total_fraction) * 100
-        }
-      }
-    }
+    cli::cli_alert_info("W2: Adding land-cover wetland coverage")
+    raster_sources$landcover <- list(
+      r = lc_raster, wet = function(v) v %in% wetland_values
+    )
   }
 
   # Source 4: Theia theia_water occurrence frequency (phase 3d)
@@ -837,34 +810,63 @@ indicateur_w2_zones_humides <- function(units,
       stop("water_occurrence must be a terra SpatRaster", call. = FALSE)
     }
     cli::cli_alert_info("W2: Adding Theia theia_water occurrence coverage")
-    has_any_source <- TRUE
-
-    for (i in seq_len(nrow(units))) {
-      occ <- safe_extract(
-        water_occurrence,
-        as_pure_sf(units[i, ]),
-        fun = NULL,
-        progress = FALSE
-      )[[1]]
-
-      if (!is.null(occ) && nrow(occ) > 0) {
-        wet_mask <- occ$value >= occurrence_threshold
-        wet_frac <- sum(occ$coverage_fraction[wet_mask], na.rm = TRUE)
-        total_frac <- sum(occ$coverage_fraction, na.rm = TRUE)
-        if (total_frac > 0) {
-          coverage[i] <- coverage[i] + (wet_frac / total_frac) * 100
-        }
-      }
-    }
+    raster_sources$occurrence <- list(
+      r = water_occurrence, wet = function(v) v >= occurrence_threshold
+    )
   }
 
-  if (!has_any_source) {
+  if (is.null(water_union) && length(raster_sources) == 0) {
     cli::cli_alert_warning("W2: No wetland data available (no vectors, DEM, or landcover)")
     return(rep(NA_real_, nrow(units)))
   }
 
+  coverage <- vapply(seq_len(nrow(units)), function(i) {
+    .w2_union_coverage(sf::st_geometry(units)[i], water_union, raster_sources)
+  }, numeric(1))
+
   msg_info("indicateur_w2_zones_humides")
   pmin(coverage, 100)
+}
+
+#' W2: percentage of a unit covered by the union of wetland masks
+#'
+#' Evaluates every source on a regular grid of points inside the unit. A
+#' point is wet when any source says so, dry when no source says wet and at
+#' least one source has a value, unknown when every source is NA. Returns
+#' 100 * wet / known, or NA when no point is known.
+#' @noRd
+.w2_union_coverage <- function(geom, water_union, raster_sources,
+                               n_points = 4000) {
+  geom <- sf::st_make_valid(geom)
+  # Grille de points en metres (CRS geographique -> ETRS89-LAEA)
+  g_m <- if (isTRUE(sf::st_is_longlat(geom))) sf::st_transform(geom, 3035) else geom
+  pts <- suppressMessages(sf::st_sample(g_m, size = n_points, type = "regular"))
+  if (length(pts) == 0) pts <- suppressWarnings(sf::st_point_on_surface(g_m))
+  pts <- sf::st_transform(pts, sf::st_crs(geom))
+  n <- length(pts)
+
+  wet <- rep(FALSE, n)
+  known <- rep(FALSE, n)
+
+  if (!is.null(water_union)) {
+    pts_v <- sf::st_transform(pts, sf::st_crs(water_union))
+    wet <- wet | lengths(sf::st_intersects(pts_v, water_union)) > 0
+    known[] <- TRUE
+  }
+
+  for (src in raster_sources) {
+    r_crs <- terra::crs(src$r)
+    pts_r <- if (nzchar(r_crs)) sf::st_transform(pts, r_crs) else pts
+    v <- terra::extract(src$r, terra::vect(pts_r), ID = FALSE)[, 1]
+    ok <- !is.na(v)
+    w <- rep(FALSE, n)
+    w[ok] <- as.logical(src$wet(v[ok]))
+    wet <- wet | (ok & w)
+    known <- known | ok
+  }
+
+  if (!any(known)) return(NA_real_)
+  sum(wet & known) / sum(known) * 100
 }
 
 #' Topographic Wetness Index (W3)
@@ -1091,7 +1093,11 @@ calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
 #' Three data sources are supported via \code{source}:
 #' \itemize{
 #'   \item \code{"layer"} (default) — read a raster or polygon layer from
-#'     \code{layers}, min-max normalised per call (relative score).
+#'     \code{layers} and map its values linearly from
+#'     \code{fertility_range} to 0-100 (absolute score: a unit's value does
+#'     not depend on the other units of the call). Polygon layers are
+#'     area-weighted over the polygons that carry a value; units with no
+#'     valued polygon are NA.
 #'   \item \code{"soilgrids"} — fetch the 250 m SoilGrids 2.0 Cation
 #'     Exchange Capacity raster (0-5 cm topsoil, mean) declared as
 #'     \code{soilgrids_cec} in \code{inst/datasources/FR.json}, extract
@@ -1139,6 +1145,11 @@ calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
 #'   \code{coarse_elements} (the Theia \code{theia_soil} products,
 #'   loaded via \code{\link{load_raster_source}}). Required when
 #'   \code{source = "theia_soil"}, ignored otherwise.
+#' @param fertility_range Numeric of length 2. Value range of the soil
+#'   layer in \code{"layer"} mode, mapped linearly to 0-100 (lowest =
+#'   least fertile). Default \code{c(0, 100)}: the layer is already a 0-100
+#'   score. For fertility classes 1-5, pass \code{c(1, 5)}. Values outside
+#'   the range are set to NA with a warning. Ignored by the other sources.
 #'
 #' @return Numeric vector of fertility scores (0-100 scale, higher = more fertile)
 #'
@@ -1166,7 +1177,8 @@ indicateur_f1_fertilite <- function(units,
                                                 "theia_soil"),
                                      country = "FR",
                                      rpf_code_col = "rpf_code",
-                                     texture = NULL) {
+                                     texture = NULL,
+                                     fertility_range = c(0, 100)) {
   source <- match.arg(source)
 
   if (!inherits(units, "sf")) {
@@ -1213,9 +1225,11 @@ indicateur_f1_fertilite <- function(units,
   }
 
   if (is_raster) {
-    fertility <- extract_fertility_from_raster(units, layers, soil_layer, fertility_col)
+    fertility <- extract_fertility_from_raster(units, layers, soil_layer,
+                                               fertility_col, fertility_range)
   } else {
-    fertility <- extract_fertility_from_vector(units, layers, soil_layer, fertility_col)
+    fertility <- extract_fertility_from_vector(units, layers, soil_layer,
+                                               fertility_col, fertility_range)
   }
 
   msg_info("indicateur_f1_fertilite")
@@ -1226,7 +1240,8 @@ indicateur_f1_fertilite <- function(units,
 #' Extract fertility from raster layer
 #' @keywords internal
 #' @noRd
-extract_fertility_from_raster <- function(units, layers, soil_layer, fertility_col) {
+extract_fertility_from_raster <- function(units, layers, soil_layer, fertility_col,
+                                          fertility_range = c(0, 100)) {
   # Get soil raster (resolve lazy-load)
   soil_raster <- resolve_raster_layer(layers, soil_layer)
 
@@ -1238,27 +1253,46 @@ extract_fertility_from_raster <- function(units, layers, soil_layer, fertility_c
     progress = FALSE
   )
 
-  # Convert to 0-100 fertility scale
-  # Assuming input values are categorical (e.g., 1-5) or continuous
-  # Normalize to 0-100 scale
-  min_val <- min(soil_values, na.rm = TRUE)
-  max_val <- max(soil_values, na.rm = TRUE)
+  # Echelle ABSOLUE (fertility_range -> 0-100). L'ancien min-max sur le lot
+  # rendait un score relatif : 0 et 100 aux extremes du lot quelle que soit
+  # la fertilite reelle, 50 pour une unite seule.
+  .f1_rescale(soil_values, fertility_range)
+}
 
-  if (max_val == min_val) {
-    # All values identical
-    fertility <- rep(50, length(soil_values)) # Neutral value
-  } else {
-    # Linear scaling to 0-100
-    fertility <- ((soil_values - min_val) / (max_val - min_val)) * 100
+#' Map F1 soil-layer values from `fertility_range` to 0-100
+#'
+#' Linear and absolute; values outside the range are NA (with a warning).
+#' @keywords internal
+#' @noRd
+.f1_rescale <- function(v, fertility_range = c(0, 100)) {
+  if (!is.numeric(fertility_range) || length(fertility_range) != 2L ||
+      anyNA(fertility_range) || fertility_range[2] <= fertility_range[1]) {
+    cli::cli_abort("{.arg fertility_range} must be two increasing numbers.")
   }
-
-  fertility
+  v <- as.numeric(v)
+  v[is.nan(v)] <- NA_real_
+  lo <- fertility_range[1]
+  hi <- fertility_range[2]
+  tol <- 1e-9 * (hi - lo)
+  out <- !is.na(v) & (v < lo - tol | v > hi + tol)
+  if (any(out)) {
+    cli::cli_warn(c(
+      "!" = "F1: {sum(out)} soil value{?s} outside {.arg fertility_range} \
+             [{lo}, {hi}]; set to NA.",
+      "i" = "Set {.arg fertility_range} to the value range of the soil layer \
+             (e.g. {.code c(1, 5)} for fertility classes)."
+    ))
+    v[out] <- NA_real_
+  }
+  score <- (v - lo) / (hi - lo) * 100
+  pmin(pmax(score, 0), 100)
 }
 
 #' Extract fertility from vector layer
 #' @keywords internal
 #' @noRd
-extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_col) {
+extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_col,
+                                          fertility_range = c(0, 100)) {
   # Get soil vector layer (resolve lazy-load)
   soil_vector <- resolve_vector_layer(layers, soil_layer)
 
@@ -1282,24 +1316,27 @@ extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_c
     intersected <- suppressWarnings(sf::st_intersection(soil_vector, unit_geom))
 
     if (nrow(intersected) > 0) {
-      # Calculate area-weighted average fertility
-      intersected$area <- as.numeric(sf::st_area(intersected))
-      total_area <- sum(intersected$area)
-
-      fertility_values <- intersected[[fertility_col]]
-      weights <- intersected$area / total_area
-
-      fertility[i] <- sum(fertility_values * weights, na.rm = TRUE)
+      # Moyenne ponderee par la surface des seuls polygones renseignes : une
+      # surface sans valeur ne doit pas entrer au denominateur (elle tirait le
+      # score vers 0), et une unite sans aucune valeur est NA, pas 0.
+      area <- as.numeric(sf::st_area(intersected))
+      fertility_values <- suppressWarnings(
+        as.numeric(intersected[[fertility_col]])
+      )
+      ok <- !is.na(fertility_values) & area > 0
+      fertility[i] <- if (any(ok)) {
+        sum(fertility_values[ok] * area[ok]) / sum(area[ok])
+      } else {
+        NA_real_
+      }
     } else {
       # No intersection - assign NA or default value
       fertility[i] <- NA_real_
     }
   }
 
-  # Ensure 0-100 scale
-  fertility <- pmin(pmax(fertility, 0), 100)
-
-  fertility
+  # Echelle absolue fertility_range -> 0-100 (valeurs hors plage -> NA)
+  .f1_rescale(fertility, fertility_range)
 }
 
 #' Map SoilGrids CEC values to a 0-100 fertility score
@@ -1672,7 +1709,12 @@ indicateur_f2_erosion <- function(units,
 #' @param units nemeton_units object
 #' @param layers nemeton_layers object containing land cover (optional)
 #' @param landcover_layer Character. Name of land cover layer
-#' @param forest_values Numeric vector. Land cover codes for forest
+#' @param forest_values Numeric vector. Land cover codes for forest; their
+#'   matrix contrast is 0. Default \code{c(16, 17)}: OSO broadleaf and
+#'   coniferous forest (23-class Theia/CESBIO nomenclature). Other codes are
+#'   read with the OSO contrast table (built-up 90, roads 75, crops 50,
+#'   orchards/vineyards 45, water 30, grassland 20, moorland 15; 50 for codes
+#'   outside the nomenclature).
 #' @param buffer Numeric. Buffer distance (meters) for contrast analysis. Default 50m.
 #'
 #' @return Numeric vector of sylvosphere scores (0-100). **Higher = more edge effect
@@ -1701,7 +1743,7 @@ indicateur_f2_erosion <- function(units,
 indicateur_l1_effet_lisiere <- function(units,
                                               layers = NULL,
                                               landcover_layer = "landcover",
-                                              forest_values = seq(1, 6),
+                                              forest_values = c(16, 17),
                                               buffer = 50) {
   # Validate inputs
   if (!inherits(units, "sf")) {
@@ -1723,17 +1765,12 @@ indicateur_l1_effet_lisiere <- function(units,
   }
 
   # --- Component 2: Matrix contrast (40%) ---
-  # OSO contrast table
-  oso_contrast <- c(
-    "16" = 0, "17" = 0, "18" = 0,    # Forest (conif, broadleaf, mixed)
-    "19" = 15,                         # Landes
-    "20" = 20,                         # Prairies
-    "21" = 50, "22" = 50, "23" = 50,  # Cultures
-    "24" = 45,                         # Vignes
-    "25" = 90, "26" = 90, "27" = 90, "28" = 90,  # Built-up
-    "29" = 75,                         # Roads
-    "30" = 30                          # Water
-  )
+  # Table de contraste derivee de la nomenclature OSO 23 classes partagee
+  # (l'ancienne table etait decalee : 16-18 « foret » alors que 18 = pelouses,
+  # 19-30 hors nomenclature). Les codes `forest_values` ont un contraste nul.
+  oso_contrast <- stats::setNames(OSO_NOMENCLATURE$contraste_l1,
+                                  as.character(OSO_NOMENCLATURE$code))
+  oso_contrast[as.character(forest_values)] <- 0
 
   l1_contraste <- numeric(nrow(units))
   has_landcover <- FALSE
@@ -1865,6 +1902,9 @@ indicateur_l1_effet_lisiere <- function(units,
 #' @param layers nemeton_layers object (optional, for raster-based metrics)
 #' @param landcover_layer Character. Name of landcover layer in layers.
 #' @param forest_values Numeric vector. Values representing forest in landcover.
+#'   Default \code{c(16, 17)}: OSO broadleaf and coniferous forest (23-class
+#'   Theia/CESBIO nomenclature, the \code{forest_cover} layer). Pass the codes
+#'   of your own raster when it uses another nomenclature.
 #' @param buffer Numeric. Buffer distance in meters around union of parcels.
 #'
 #' @return Numeric vector of fragmentation scores (0-100). **Higher = less fragmented
@@ -1886,7 +1926,7 @@ indicateur_l1_effet_lisiere <- function(units,
 #' }
 indicateur_l2_morcellement <- function(units, layers = NULL,
                                      landcover_layer = "landcover",
-                                     forest_values = seq(1, 6),
+                                     forest_values = c(16, 17),
                                      buffer = 1000) {
   # Validate inputs
   if (!inherits(units, "sf")) {
@@ -1984,7 +2024,7 @@ indicateur_l2_morcellement <- function(units, layers = NULL,
 indicateur_l2_fragmentation <- function(units,
                                         layers = NULL,
                                         landcover_layer = "landcover",
-                                        forest_values = seq(1, 6),
+                                        forest_values = c(16, 17),
                                         buffer = 50) {
   .Deprecated("indicateur_l1_effet_lisiere", package = "nemeton")
   indicateur_l1_effet_lisiere(
@@ -2013,7 +2053,7 @@ indicateur_l2_fragmentation <- function(units,
 #' @export
 indicateur_l1_sylvosphere <- function(units, layers = NULL,
                                       landcover_layer = "landcover",
-                                      forest_values = seq(1, 6),
+                                      forest_values = c(16, 17),
                                       buffer = 1000) {
   .Deprecated("indicateur_l2_morcellement", package = "nemeton")
   indicateur_l2_morcellement(

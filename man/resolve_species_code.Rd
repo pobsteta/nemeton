@@ -22,7 +22,6 @@ Given a raw species code, returns the code actually available
 in the reference CSV. If the species is directly present,
 returns it unchanged. Otherwise falls back to
 \code{CONIFER_GENUS} or \code{BROADLEAF_GENUS} based on the
-internal \code{.conifer_codes} list (used by
-\code{\link{is_conifer}}).
+package-wide conifer definition (\code{\link{is_conifer}}).
 }
 \keyword{internal}

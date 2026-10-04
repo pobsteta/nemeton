@@ -26,7 +26,11 @@ indicateur_c1_biomasse(
 
 \item{age_col}{Character. Column name for stand age (default "age")}
 
-\item{density_col}{Character. Column name for stand density 0-1 (default "density")}
+\item{density_col}{Character. Column name for stand density as a 0-1
+canopy-cover FRACTION (default "density"), as returned by
+\code{\link{enrich_parcels_bdforet}}. Not stems/ha (unlike the
+\code{density_field} of \code{\link{indicateur_p1_volume}}): values
+outside 0-1 are set to NA with a warning.}
 
 \item{chm}{Optional \code{SpatRaster} of canopy heights in
 metres. When supplied together with \code{dbh_col} and

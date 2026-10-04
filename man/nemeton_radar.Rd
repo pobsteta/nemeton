@@ -9,7 +9,7 @@ nemeton_radar(
   unit_id = NULL,
   indicators = NULL,
   mode = c("indicator", "family"),
-  normalize = TRUE,
+  normalize = NULL,
   title = NULL,
   fill_color = "#3182bd",
   fill_alpha = 0.3
@@ -29,7 +29,13 @@ If NULL, auto-detects based on mode.}
 or "family" for family indices (famille_carbone, famille_eau, etc.). When mode = "family",
 supports 4-12 family axes dynamically.}
 
-\item{normalize}{Logical. If TRUE (default), normalizes values to 0-100 scale.}
+\item{normalize}{Logical or NULL. If TRUE, applies a min-max rescaling of
+each axis across the units of \code{data} (0-100). If NULL (default),
+resolves to TRUE in \code{mode = "indicator"} and FALSE in
+\code{mode = "family"}: family indices are already on an absolute 0-100
+scale, and a between-unit min-max would distort them (a single unit would
+plot at 50 on every axis). In family mode without normalization, values
+are clipped to 0-100 and the radar keeps a fixed 0-100 scale.}
 
 \item{title}{Optional plot title. If NULL, auto-generated based on unit_id.}
 
@@ -53,8 +59,10 @@ If \code{unit_id} is a vector (v0.3.0+), creates a comparison chart with multipl
 overlaid polygons for comparing units side-by-side.
 If \code{unit_id} is NULL, the chart shows the mean values across all units.
 
-Normalization is recommended when indicators have different scales. The function
-applies min-max normalization to scale all values to 0-100.
+Normalization is recommended when raw indicators have different scales. The
+function then applies a between-unit min-max normalization to scale all
+values to 0-100. It is disabled by default in family mode, where the
+indices are already absolute 0-100 scores.
 
 **v0.3.0 Enhancements**: Supports 9-12 family axes and comparison mode for
 multiple units.

@@ -978,13 +978,19 @@ test_that("extract_fertility_from_raster with uniform values", {
 
   units <- create_test_units(n_features = 3)
   soil_raster <- create_test_raster(values = "constant", res = 10)
-  # All same value -> all fertility = 50 (neutral)
+  # Echelle absolue : classe 3 sur 1-5 -> 50 pour toutes les unites (avant :
+  # 50 « neutre » parce que les valeurs du lot etaient identiques)
   terra::values(soil_raster) <- 3
 
   layers <- make_mock_layers(rasters = list(soil = soil_raster))
-  result <- nemeton:::extract_fertility_from_raster(units, layers, "soil", "fertility")
+  result <- nemeton:::extract_fertility_from_raster(units, layers, "soil",
+                                                    "fertility", c(1, 5))
   expect_length(result, 3)
   expect_true(all(result == 50))
+  # Meme valeur, autre plage : le score suit la plage, pas le lot
+  result2 <- nemeton:::extract_fertility_from_raster(units, layers, "soil",
+                                                     "fertility", c(0, 3))
+  expect_true(all(result2 == 100))
 })
 
 test_that("extract_fertility_from_raster with varying values", {
@@ -1791,15 +1797,14 @@ test_that("indicateur_w1_reseau: non-nemeton_layers errors", {
   )
 })
 
-test_that("indicateur_w1_reseau: missing watercourse layer returns 0", {
+test_that("indicateur_w1_reseau: missing watercourse layer returns NA", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   layers <- create_test_layers(vectors = list())
-  # The real indicateur_w1_reseau warns and returns 0 instead of erroring
-  # when no watercourse layer is found.
+  # Couche absente : avertissement et NA (pas de mesure), plus 0.
   result <- suppressWarnings(nemeton:::indicateur_w1_reseau(units, layers))
   expect_length(result, 1)
-  expect_equal(result, 0)
+  expect_true(is.na(result))
 })
 
 test_that("indicateur_w1_reseau: buffer parameter increases capture area", {
@@ -2321,7 +2326,7 @@ test_that("get_or_compute_twi: file cache hit returns cached", {
 # 11. extract_fertility_from_raster and extract_fertility_from_vector
 # ==============================================================================
 
-test_that("extract_fertility_from_raster: uniform values yield neutral 50", {
+test_that("extract_fertility_from_raster: uniform values keep their absolute score", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   soil <- create_test_raster(values = "constant", res = 10)
@@ -2330,8 +2335,8 @@ test_that("extract_fertility_from_raster: uniform values yield neutral 50", {
   layers <- create_test_layers(rasters = list(soil = soil))
   result <- nemeton:::extract_fertility_from_raster(units, layers, "soil", "fertility")
   expect_length(result, 3)
-  # All same value -> neutral score 50
-  expect_true(all(result == 50))
+  # Valeur 5 sur l'echelle par defaut 0-100 -> 5 (plus de 50 « neutre »)
+  expect_true(all(result == 5))
 })
 
 test_that("extract_fertility_from_raster: gradient values produce range 0-100", {
@@ -3033,4 +3038,115 @@ test_that("indicateur_w2_zones_humides rejects a non-raster water_occurrence", {
     ),
     "water_occurrence must be a terra SpatRaster"
   )
+})
+
+# ==============================================================================
+# Audit 1.0 — W2 : union des masques, pas somme des sources
+# ==============================================================================
+
+test_that("W2 takes the union of overlapping sources instead of summing them", {
+  units <- create_test_units(n_features = 1)  # carre 566450-566550 x 6615150-6615250
+  # Moitie ouest couverte par une surface en eau BD TOPO...
+  west <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(matrix(c(
+    566450, 6615150, 566500, 6615150, 566500, 6615250, 566450, 6615250,
+    566450, 6615150
+  ), ncol = 2, byrow = TRUE))), crs = 2154))
+  layers <- make_mock_layers(vectors = list(water_surfaces = west))
+  # ... et la meme moitie ouest en occurrence d'eau elevee
+  wo <- terra::rast(xmin = 566400, xmax = 566600, ymin = 6615100,
+                    ymax = 6615300, resolution = 10, crs = "EPSG:2154")
+  terra::values(wo) <- ifelse(terra::xFromCell(wo, seq_len(terra::ncell(wo))) < 566500, 80, 0)
+
+  res <- suppressMessages(
+    indicateur_w2_zones_humides(units, layers = layers, water_occurrence = wo)
+  )
+  # Avant : 50 + 50 = 100 ; union : 50
+  expect_equal(res, 50, tolerance = 0.03)
+
+  # Sources disjointes : les couvertures s'ajoutent (ouest + est = 100)
+  terra::values(wo) <- ifelse(terra::xFromCell(wo, seq_len(terra::ncell(wo))) < 566500, 0, 80)
+  res2 <- suppressMessages(
+    indicateur_w2_zones_humides(units, layers = layers, water_occurrence = wo)
+  )
+  expect_equal(res2, 100, tolerance = 0.03)
+})
+
+test_that("W2 is NA where every source is NA (no fabricated 0)", {
+  units <- create_test_units(n_features = 1)
+  wo <- terra::rast(xmin = 566400, xmax = 566600, ymin = 6615100,
+                    ymax = 6615300, resolution = 10, crs = "EPSG:2154")
+  terra::values(wo) <- NA_real_
+  res <- suppressMessages(
+    indicateur_w2_zones_humides(units, layers = make_mock_layers(),
+                                water_occurrence = wo)
+  )
+  expect_true(is.na(res))
+})
+
+test_that("W1 is NA, not 0, when no watercourse layer is available", {
+  units <- create_test_units(n_features = 2)
+  expect_warning(
+    res <- suppressMessages(indicateur_w1_reseau(units, layers = make_mock_layers())),
+    "Returning\\s+NA"
+  )
+  expect_equal(res, c(NA_real_, NA_real_))
+})
+
+# ==============================================================================
+# Audit 1.0 — F1 mode "layer" : echelle absolue, NA hors denominateur
+# ==============================================================================
+
+test_that("F1 vector: polygons without value stay out of the denominator", {
+  units <- create_test_units(n_features = 1)  # 566450-566550 x 6615150-6615250
+  half <- function(x0, x1) sf::st_polygon(list(matrix(c(
+    x0, 6615100, x1, 6615100, x1, 6615300, x0, 6615300, x0, 6615100
+  ), ncol = 2, byrow = TRUE)))
+  soil <- sf::st_sf(
+    fertility = c(80, NA),
+    geometry = sf::st_sfc(half(566400, 566500), half(566500, 566600), crs = 2154)
+  )
+  layers <- make_mock_layers(vectors = list(soil = soil))
+  # Avant : 80 * 0.5 + NA ignore = 40
+  expect_equal(suppressMessages(indicateur_f1_fertilite(units, layers)), 80)
+
+  # Aucune valeur : NA, pas 0
+  soil$fertility <- NA_real_
+  layers <- make_mock_layers(vectors = list(soil = soil))
+  expect_true(is.na(suppressMessages(indicateur_f1_fertilite(units, layers))))
+})
+
+test_that("F1 layer mode rescales classes with fertility_range", {
+  units <- create_test_units(n_features = 1)
+  soil <- sf::st_sf(
+    fertility = 4,
+    geometry = sf::st_as_sfc(sf::st_bbox(sf::st_buffer(units, 50)))
+  )
+  layers <- make_mock_layers(vectors = list(soil = soil))
+  # Classe 4 sur 1-5 -> 75 (avant : 4, laissee telle quelle)
+  expect_equal(
+    suppressMessages(indicateur_f1_fertilite(units, layers,
+                                             fertility_range = c(1, 5))),
+    75
+  )
+  # Hors plage -> NA avec avertissement
+  expect_warning(
+    res <- suppressMessages(indicateur_f1_fertilite(units, layers,
+                                                    fertility_range = c(0, 3))),
+    "outside"
+  )
+  expect_true(is.na(res))
+  expect_error(.f1_rescale(1, c(5, 1)), "increasing")
+})
+
+test_that("F1 raster: score is absolute, not min-max over the batch", {
+  units <- create_test_units(n_features = 2)
+  r <- terra::rast(xmin = 566400, xmax = 566800, ymin = 6615100,
+                   ymax = 6615500, resolution = 10, crs = "EPSG:2154")
+  terra::values(r) <- 60
+  layers <- make_mock_layers(rasters = list(soil = r))
+  # Avant : valeurs identiques -> 50 « neutre » ; une seule unite -> 50
+  res <- suppressMessages(indicateur_f1_fertilite(units, layers))
+  expect_equal(res, c(60, 60))
+  res1 <- suppressMessages(indicateur_f1_fertilite(units[1, ], layers))
+  expect_equal(res1, 60)
 })

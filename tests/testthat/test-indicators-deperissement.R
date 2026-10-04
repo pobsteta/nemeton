@@ -107,6 +107,25 @@ test_that("multi-class coverage adds up linearly (3-forte + 4-sol-nu)", {
   expect_equal(out$R5, 38.6, tolerance = 1e-6)
 })
 
+test_that("a cluster straddling two units counts only its intersected part", {
+  skip_if_not_installed("terra")
+  sq <- function(x0, y0, s) sf::st_polygon(list(rbind(
+    c(x0, y0), c(x0 + s, y0), c(x0 + s, y0 + s), c(x0, y0 + s), c(x0, y0))))
+  # Deux UGF jointives de 1 km² ; un cluster de 200 x 200 m à cheval sur la
+  # limite, moitié dans chacune.
+  u <- sf::st_sf(id = 1:2, essence_dominante = "EPC",
+                 geometry = sf::st_sfc(sq(950000, 6790000, 1000),
+                                       sq(951000, 6790000, 1000), crs = 2154))
+  fr <- list(alerts_sf = sf::st_sf(
+    cluster_id = 1L, confidence_class = "3-forte", area_m2 = 40000,
+    stress_index = 1,
+    geometry = sf::st_sfc(sq(950900, 6790400, 200), crs = 2154)))
+  out <- indicateur_r5_deperissement(u, fr)
+  # 0.82 x 20 000 m² / 1 000 000 m² = 1,64 % par UGF. Avant correction : le
+  # cluster entier (40 000 m²) était compté dans CHACUNE, soit 3,28.
+  expect_equal(out$R5, c(1.64, 1.64), tolerance = 1e-6)
+})
+
 test_that("oak unit routes to RECONFORT → skipped_no_reconfort when no run", {
   skip_if_not_installed("terra")
   u <- make_units(n = 1L, species = "Quercus petraea")

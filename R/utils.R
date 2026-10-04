@@ -633,6 +633,51 @@ calculate_allometric_biomass <- function(species, age, density) {
   biomass
 }
 
+#' Validate the unit of a `density` column (C1 fraction vs P1 stems/ha)
+#'
+#' The name `density` carries two units in the package: a 0-1 canopy-cover
+#' fraction in C1 (and in `enrich_parcels_bdforet()`), a number of stems per
+#' hectare in P1 (and in the synthetic inventory). A value that is clearly in
+#' the other unit is set to NA with a warning instead of producing an absurd
+#' result (250^c for C1, a volume divided by ~300 for P1).
+#'
+#' @param x Numeric vector of densities.
+#' @param expected `"fraction"` (valid range 0-1) or `"stems_ha"` (0, or
+#'   at least 1 stem/ha).
+#' @param indicator Character label used in the warning.
+#' @return `x` as numeric, with out-of-unit values replaced by NA.
+#' @keywords internal
+#' @noRd
+.check_density_unit <- function(x, expected = c("fraction", "stems_ha"),
+                                indicator = "") {
+  expected <- match.arg(expected)
+  x <- suppressWarnings(as.numeric(x))
+  if (expected == "fraction") {
+    # Fraction de couvert : hors [0, 1] = vraisemblablement des tiges/ha
+    bad <- !is.na(x) & (x < 0 | x > 1)
+    if (any(bad)) {
+      cli::cli_warn(c(
+        "!" = "{indicator}: `density` outside 0-1 for {sum(bad)} unit{?s} \
+               (max {signif(max(x[bad]), 3)}): this looks like stems/ha; set to NA.",
+        "i" = "{indicator} expects a 0-1 canopy-cover fraction in `density`."
+      ))
+    }
+  } else {
+    # Tiges/ha : une valeur dans ]0, 1[ est vraisemblablement une fraction
+    # (1 reste admis : un arbre par hectare, utilise pour le cubage unitaire)
+    bad <- !is.na(x) & (x < 0 | (x > 0 & x < 1))
+    if (any(bad)) {
+      cli::cli_warn(c(
+        "!" = "{indicator}: `density` in (0, 1) for {sum(bad)} unit{?s}: \
+               this looks like a 0-1 cover fraction; set to NA.",
+        "i" = "{indicator} expects a number of stems per hectare in `density`."
+      ))
+    }
+  }
+  x[bad] <- NA_real_
+  x
+}
+
 #' Detect Indicator Family from Column Name
 #'
 #' Extracts family code from indicator column name (e.g., "C1" -> "C",
@@ -1268,8 +1313,11 @@ units_add_species_from_raster <- function(units, species_raster, class_map,
     agg <- agg[!is.na(agg)]
     if (length(agg) == 0) return(NA_character_)
     mode_class <- names(agg)[which.max(agg)]
+    # Classe absente du map -> NA (un vecteur nomme leve sinon
+    # « subscript out of bounds » avec [[)
+    if (!mode_class %in% names(class_map)) return(NA_character_)
     code <- class_map[[mode_class]]
-    if (is.null(code) || is.na(code)) NA_character_ else as.character(code)
+    if (is.null(code) || length(code) != 1L || is.na(code)) NA_character_ else as.character(code)
   }, character(1))
 
   units[[species_col]] <- dominant

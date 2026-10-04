@@ -24,14 +24,21 @@ harmonize_crs <- function(layers, target_crs, verbose = TRUE) {
       layer$loaded <- TRUE
     }
 
-    # Check CRS
-    layer_crs <- terra::crs(layer$object, describe = TRUE)$code
-
-    if (!is.na(layer_crs) && layer_crs != target_crs$epsg) {
+    # Comparaison sur les objets CRS (et non sur les codes EPSG : un CRS sans
+    # code EPSG donnait NA et la reprojection etait sautee).
+    layer_wkt <- terra::crs(layer$object)
+    if (!nzchar(layer_wkt)) {
+      cli::cli_warn("Raster layer {.val {name}} has no CRS; left as is (cannot reproject it).")
+    } else if (!isTRUE(sf::st_crs(layer_wkt) == target_crs)) {
+      # Couche categorielle (occupation du sol, essences, masques...) :
+      # plus proche voisin, sinon l'interpolation fabrique des classes
+      # fractionnaires inexistantes.
+      method <- if (.is_categorical_raster(layer$object, name)) "near" else "bilinear"
       if (verbose) {
-        message_nemeton("Reprojecting raster ", name, " from EPSG:", layer_crs, " to EPSG:", target_crs$epsg)
+        message_nemeton("Reprojecting raster ", name, " to ",
+                        .crs_label(target_crs), " (method: ", method, ")")
       }
-      layer$object <- terra::project(layer$object, paste0("EPSG:", target_crs$epsg))
+      layer$object <- terra::project(layer$object, target_crs$wkt, method = method)
     }
 
     layers$rasters[[name]] <- layer
@@ -50,9 +57,9 @@ harmonize_crs <- function(layers, target_crs, verbose = TRUE) {
     # Check CRS
     layer_crs <- sf::st_crs(layer$object)
 
-    if (!is.na(layer_crs) && !sf::st_crs(layer_crs) == target_crs) {
+    if (!is.na(layer_crs) && !isTRUE(layer_crs == target_crs)) {
       if (verbose) {
-        message_nemeton("Reprojecting vector ", name, " to ", target_crs$input)
+        message_nemeton("Reprojecting vector ", name, " to ", .crs_label(target_crs))
       }
       layer$object <- sf::st_transform(layer$object, target_crs)
     }
@@ -61,6 +68,41 @@ harmonize_crs <- function(layers, target_crs, verbose = TRUE) {
   }
 
   layers
+}
+
+# Libelle lisible d'un CRS (code EPSG si connu, sinon son nom).
+.crs_label <- function(crs) {
+  if (!is.na(crs$epsg)) paste0("EPSG:", crs$epsg) else as.character(crs$Name %||% crs$input)
+}
+
+#' Detect a categorical raster
+#'
+#' A raster is treated as categorical (to be resampled by nearest neighbour)
+#' when it is a factor raster, when its layer name matches a known
+#' categorical product, or when a sample of its values holds only integers
+#' with few distinct values.
+#'
+#' @param r A `SpatRaster`.
+#' @param name Layer name in the `nemeton_layers` object.
+#' @param max_classes Maximum number of distinct integer values for the
+#'   value-based detection.
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+.is_categorical_raster <- function(r, name = "", max_classes = 64L) {
+  if (any(terra::is.factor(r))) return(TRUE)
+  categorical_names <- paste0(
+    "landcover|land_cover|occupation|oso|corine|clc|species|essence|",
+    "classif|class|mask|masque|tfv|forest_type|type_foret|bdforet")
+  noms <- tolower(c(name, names(r)))
+  if (any(grepl(categorical_names, noms))) return(TRUE)
+  v <- tryCatch(
+    terra::spatSample(r[[1]], size = 2000, method = "regular",
+                      na.rm = TRUE, warn = FALSE)[[1]],
+    error = function(e) NULL)
+  v <- v[is.finite(v)]
+  if (!length(v)) return(FALSE)
+  all(v == round(v)) && length(unique(v)) <= max_classes
 }
 
 #' Crop layers to extent of units

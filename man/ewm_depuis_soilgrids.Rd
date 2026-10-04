@@ -29,9 +29,12 @@ and \code{list(current = "ewm:complete")} at the end (monitoring pattern).}
 }
 \value{
 Numeric vector of \code{ewm} in mm, length \code{nrow(units)}. \code{NA} for a unit
-whose soil data could not be resolved. \code{NULL} if \strong{no} depth interval could
-be loaded at all (graceful degradation — the caller falls back to a uniform
-\code{ewm}).
+whose soil data could not be resolved. \code{NULL} if \strong{any} depth interval
+within \code{rooting_depth_cm} could not be loaded (clay or sand missing; a
+partial sum would underestimate the reserve), with a warning naming the
+missing intervals (graceful degradation — the caller falls back to a
+uniform \code{ewm}). Missing organic carbon or coarse fragments only trigger a
+warning (assumed zero).
 }
 \description{
 Per-unit \strong{maximum extractable water} (\code{ewm}, mm) — the plant-available water

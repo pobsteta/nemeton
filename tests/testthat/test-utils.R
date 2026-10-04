@@ -3061,6 +3061,23 @@ test_that("units_add_species_from_raster fills a species column", {
   expect_true(all(result$species %in% c("QUPE", "FASY", NA)))
 })
 
+test_that("units_add_species_from_raster gives NA for a class absent from class_map (audit 1.0)", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
+
+  units <- create_test_units(n_features = 2)
+  sp <- create_test_raster(values = "constant")
+  terra::values(sp) <- 7 # classe inconnue du crosswalk
+
+  # Vecteur nomme : leve « subscript out of bounds » sans le correctif
+  result <- units_add_species_from_raster(units, sp, class_map = c("1" = "QUPE"))
+  expect_true(all(is.na(result$species)))
+
+  result_list <- units_add_species_from_raster(units, sp, class_map = list("1" = "QUPE"))
+  expect_true(all(is.na(result_list$species)))
+})
+
 test_that("units_add_species_from_raster validates its inputs", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")

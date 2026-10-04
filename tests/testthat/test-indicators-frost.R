@@ -34,6 +34,16 @@ test_that("R7 scores late frost: exposed unit low, mild unit high", {
   expect_equal(d$r7_gel_days[2], 0)
 })
 
+test_that(".frost_late_days works with a single unit over several years", {
+  # Une seule UGF : vapply rendait un vecteur et rowMeans plantait.
+  doy <- rep(101:103, 2)
+  year <- rep(c(2020, 2021), each = 3)
+  tmin <- matrix(c(-1, 5, 5, -1, -1, 5), nrow = 1)
+  out <- .frost_late_days(tmin, doy, year, budburst_doy = 100,
+                          threshold = 0, window_end_doy = 180)
+  expect_equal(out, 1.5)
+})
+
 test_that("R7 skips (NA) without a tmin series", {
   res <- indicateur_r7_gel(make_units2())
   expect_true(all(is.na(res$R7)))

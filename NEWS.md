@@ -1,3 +1,100 @@
+# nemeton 0.212.0 (2026-10-03)
+
+Cinquième vague de l'audit de pré-version 1.0 : **seconde passe sur les
+calculs**. Trente et un correctifs majeurs, menés par trois agents en
+parallèle. **Beaucoup de valeurs changent** : les projets doivent être
+recalculés. Les calibrages nouveaux sont signalés « à valider ».
+
+### Fixed — indicateurs (valeurs qui changent)
+
+- **B3 (connectivité)** : la composante coût valait toujours 50
+  (`terra::costDist()` appelé avec un raster comme cible, erreur avalée) ; une
+  parcelle en forêt prenait la distance au polygone suivant ; une composante en
+  échec valait 50. Composantes absentes exclues et poids renormalisés ; calcul
+  en EPSG:3035 quand les unités sont en coordonnées géographiques.
+- **B1** : nombre de statuts rapporté à une borne fixe de 4 (ZNIEFF 1 et 2,
+  Natura 2000, parc ou réserve), plus au maximum du lot. *À valider.*
+- **Nomenclature OSO commune** (`OSO_NOMENCLATURE`, 23 classes ; forêt =
+  16 feuillus et 17 conifères) : L2 calculait la cohésion du **bâti et des
+  cultures** (`forest_values = 1:6`), A1 et L1 comptaient les pelouses (18)
+  comme forêt, L1 lisait le bâti comme un code inconnu. L1 monte près du bâti
+  et des routes, A1 baisse, L2 mesure enfin la forêt.
+- **W2** : union des masques au lieu de la somme de quatre sources qui se
+  recouvrent (baisse là où elles se recouvraient). **W1** : NA au lieu de 0
+  sans couche de cours d'eau.
+- **F1 (mode `layer`)** : échelle absolue (`fertility_range`), plus de min-max
+  relatif au lot ; surfaces sans valeur exclues du dénominateur.
+- **A2 (proxy)** : borne absolue (`A2_POLLUTION_REF`, *à valider*) au lieu du
+  maximum du lot, qui forçait l'unité la plus exposée à 0.
+- **R1 (repli)** : composantes absentes exclues et poids redistribués ; NA sans
+  aucune composante.
+- **R1 (`fireexposuR`)** : le chemin principal n'aboutissait sur **aucun**
+  projet journalisé. Le MNT de repli IGN arrive en EPSG:4326 : la borne de 30 m
+  était ignorée et `fire_exp()` matérialisait une fenêtre de 500 m en cellules
+  de 2,5e-4 degré (« cannot allocate vector of size 59622.1 Gb », Couchey et
+  Aumur), puis le repli prenait la main sans trace. Le MNT est désormais
+  reprojeté en métrique (CRS des unités, sinon EPSG:3035) ; la grille est
+  contrôlée avant l'appel (degrés ou fenêtre > 10^6 poids : erreur lisible) ;
+  la grille du `hazard` est élargie de 500 m dans l'emprise de la BD Forêt (la
+  bande de bord que `fire_exp()` laisse à NA privait d'exposition les unités
+  proches du bord). Couchey : 23/23 parcelles en `fire_exp`, 1,6 s. Nouvelles
+  colonnes **`r1_status`** (`fire_exp`, `fallback_no_fireexposur`,
+  `fallback_no_bdforet`, `fallback_fire_exp_failed`, `skipped_no_dem`,
+  `skipped_no_component`) et **`r1_fallback_reason`** (texte) : la méthode
+  qui a produit R1 est portée par le résultat. **Les R1 changent** sur tous
+  les projets où le repli tournait. **R4** : appétence pondérée par la surface de chaque
+  polygone BD Forêt (au lieu du premier venu) ; NA hors du raster de gibier.
+- **R5** : la surface d'un cluster est répartie entre les UGF qu'il touche (fin
+  du double comptage). **R7** : ne plante plus sur une seule unité.
+- **E1** : le facteur × 0,5 appliqué à une densité **déjà sèche** est retiré ;
+  la borne de normalisation suit (2,64, toujours « E1 au plafond de P1 ») : les
+  scores normalisés ne changent pas, hors part taillis. **E2** : la
+  substitution matériau, qui ajoutait un stock à un flux, exige
+  `taux_recolte_materiau`.
+- **S1, S2** : routes et bâtiments hors de l'emprise du MNT sont pris en
+  compte (distance censurée à `max_dist`).
+- **T1** : un âge mesuré l'emporte sur le TFV ; TFV inconnu exclu ; NA sans
+  source. **T2** : documenté pour ce qu'il est (proxy de stabilité), NA au lieu
+  de 50.
+- **Douglas** : `PSME` partout (le code `PIME` le rendait introuvable :
+  densité de repli feuillu, P2 au genre, `resoudre_espar("PSME")` à NA).
+  **Résineux** : une seule définition (`.est_resineux()`) pour la hauteur,
+  P1, P3, C1, R2 et l'IFN ; P3 reconnaît sapin, Douglas, mélèze et cèdre.
+- **`density`** : contrôle d'unité (fraction en C1, tiges/ha en P1), NA si la
+  valeur est manifestement dans l'autre unité.
+- **Dg et N_max** de l'inventaire synthétique : bornage signalé
+  (`hors_domaine`), plus silencieux.
+
+### Fixed — analyse, échantillonnage, climat
+
+- **`nemeton_radar()`** en mode famille ne refait plus de min-max entre unités
+  (une unité seule valait 50 partout).
+- **`calculate_change_rate()`, `plot_difference_map()`** : appariement par
+  identifiant, plus par position.
+- **`plot_tradeoff(size =)`** ne plante plus ; **classes raster** absentes de
+  `class_map` → NA.
+- **Plan de validation** : `zone` enfin appliquée (plus de placettes hors
+  zone) ; pondération « uniform » conforme à sa documentation, reliquat
+  redistribué.
+- **Plan d'échantillonnage** : poids d'inclusion `wgt` et `ip` conservés, y
+  compris dans le GeoPackage QField ; une extraction en échec n'efface plus en
+  silence la contrainte de pente.
+- **Réserve utile SoilGrids** : un horizon manquant renvoie au repli au lieu
+  d'une valeur sous-estimée.
+- **Reprojection** : couches catégorielles en plus proche voisin (la couverture
+  du sol était interpolée en classes fractionnaires).
+- **E-OBS, moteur meteoland** : moyenne estivale, comme KED (c'était le jour le
+  plus chaud) : les valeurs baissent.
+
+### Fixed — RECONFORT
+
+- Score : les pixels très sains valent 1 au lieu de « pas de donnée » ; un
+  pixel valide n'est plus masqué ; le modèle `v3_pine` (2 classes) ne plante
+  plus (score maximal 66 avec P3 = 0, formule d'origine).
+- Série pixel CRswir/CRre enfin masquée des nuages (masque MUSCATE `CLM`),
+  scènes regroupées par date et par tuile.
+- Sans masque, la classification est découpée en tranches (mémoire).
+
 # nemeton 0.211.0 (2026-10-03)
 
 Quatrième vague de l'audit de pré-version 1.0 : **paquet propre**.

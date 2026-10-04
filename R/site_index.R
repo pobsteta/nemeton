@@ -72,11 +72,8 @@ read_site_index_curves <- function() {
 # Species lookup and fallback
 # ============================================================
 
-# Known conifer species codes in IFN style (used for fallback).
-.conifer_codes <- c(
-  "ABAL", "PIAB", "PISY", "PINI", "PIPI", "PIME",
-  "PSME", "LADE", "CEAT", "CEDE", "JUCO"
-)
+# La liste des resineux vit dans R/resineux.R (.CODES_RESINEUX /
+# .est_resineux), source unique partagee avec P3 et les tables IFN.
 
 
 #' Is a species code a conifer?
@@ -86,13 +83,13 @@ read_site_index_curves <- function() {
 #' \code{\link{indicateur_p1_volume}}.
 #'
 #' @param species Character. Species code (IFN style).
-#' @return Logical scalar. \code{TRUE} if the code is on the
-#'   known conifer list.
+#' @return Logical, same length as \code{species}. \code{TRUE} if the
+#'   code is a conifer (single package-wide definition, shared with P3 and
+#'   the IFN tables).
 #'
 #' @keywords internal
 is_conifer <- function(species) {
-  if (is.na(species)) return(FALSE)
-  toupper(species) %in% .conifer_codes
+  .est_resineux(species)
 }
 
 
@@ -102,8 +99,7 @@ is_conifer <- function(species) {
 #' in the reference CSV. If the species is directly present,
 #' returns it unchanged. Otherwise falls back to
 #' \code{CONIFER_GENUS} or \code{BROADLEAF_GENUS} based on the
-#' internal \code{.conifer_codes} list (used by
-#' \code{\link{is_conifer}}).
+#' package-wide conifer definition (\code{\link{is_conifer}}).
 #'
 #' @param species Character. Species code (length 1).
 #' @param available Character vector of species codes present in
@@ -119,7 +115,7 @@ resolve_species_code <- function(species, available) {
   sp <- toupper(species)
   if (sp %in% available) return(sp)
 
-  if (sp %in% .conifer_codes) {
+  if (is_conifer(sp)) {
     if ("CONIFER_GENUS" %in% available) return("CONIFER_GENUS")
   } else {
     if ("BROADLEAF_GENUS" %in% available) return("BROADLEAF_GENUS")

@@ -1142,3 +1142,50 @@ test_that("P2 IFN mode requires the SER column; the default mode is unchanged", 
   expect_false(any(c("P2_rse", "P2_provenance", "P2_nature") %in% names(r)))
   expect_error(indicateur_p2_station(u, source = "autre"))
 })
+
+# ==============================================================================
+# Audit 1.0 — `density` : fraction 0-1 en C1, tiges/ha en P1
+# ==============================================================================
+
+test_that(".check_density_unit flags values in the other unit", {
+  expect_warning(
+    x <- .check_density_unit(c(0.7, 250, NA), "fraction", "C1"),
+    "looks\\s+like\\s+stems/ha"
+  )
+  expect_equal(x, c(0.7, NA, NA))
+  expect_warning(
+    y <- .check_density_unit(c(0.7, 250, 0, 1), "stems_ha", "P1"),
+    "cover\\s+fraction"
+  )
+  expect_equal(y, c(NA, 250, 0, 1))
+  expect_silent(.check_density_unit(c(0, 0.5, 1), "fraction", "C1"))
+  expect_silent(.check_density_unit(c(0, 150, 900), "stems_ha", "P1"))
+})
+
+test_that("C1 sets a stems/ha density to NA instead of an absurd biomass", {
+  units <- create_test_units(n_features = 2)
+  units$species <- c("Quercus", "Fagus")
+  units$age <- c(80, 60)
+  units$density <- c(0.7, 400)  # la seconde est en tiges/ha
+  expect_warning(
+    res <- suppressMessages(indicateur_c1_biomasse(units)),
+    "stems/ha"
+  )
+  expect_true(is.finite(res[1]))
+  expect_true(is.na(res[2]))
+})
+
+test_that("P1 sets a 0-1 cover fraction density to NA instead of a tiny volume", {
+  u <- make_sf(list(
+    id = 1:2, species = c("FASY", "FASY"), dbh = c(30, 30),
+    height = c(25, 25), density = c(400, 0.7)
+  ))
+  expect_warning(
+    res <- indicateur_p1_volume(u, height_field = "height"),
+    "cover\\s+fraction"
+  )
+  expect_true(res$P1[1] > 250)
+  expect_true(is.na(res$P1[2]))
+  # La colonne d'entree n'est pas modifiee
+  expect_equal(res$density, c(400, 0.7))
+})

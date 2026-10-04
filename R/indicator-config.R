@@ -262,8 +262,8 @@ INDICATOR_FAMILIES <- list(
         en = "Age of wooded state since Cassini maps (18th century). Ancient forests harbor specific biodiversity. Raw value in years, rescaled to 0-100 against a 200-year upper bound: beyond that, ancientness counts as maximal."
       ),
       T2 = list(
-        fr = "Taux de changement de la couverture foresti\u00e8re sur les 30 derni\u00e8res ann\u00e9es. Valeurs positives = extension, n\u00e9gatives = r\u00e9gression.",
-        en = "Rate of forest cover change over the last 30 years. Positive values = expansion, negative = regression."
+        fr = "Indicateur de stabilit\u00e9 temporelle d\u00e9riv\u00e9, et non un taux de changement : copie de la continuit\u00e9 foresti\u00e8re N2 quand elle existe, sinon \u00e2ge T1 plafonn\u00e9 \u00e0 100. Aucune s\u00e9rie temporelle n'est lue. 100 = for\u00eat ancienne et stable ; vide si N2 et T1 sont inconnus.",
+        en = "Derived temporal stability proxy, not a change rate: a copy of forest continuity N2 when available, otherwise T1 stand age capped at 100. No time series is read. 100 = ancient, stable forest; empty when both N2 and T1 are unknown."
       ),
       T3 = list(
         fr = "Pression de coupe rase (produit SUFOSAT, radar Sentinel-1). Fraction r\u00e9cente coup\u00e9e \u00e0 blanc, pond\u00e9r\u00e9e par r\u00e9cence. Sens invers\u00e9 : plus de coupe = indice plus bas.",
@@ -433,12 +433,12 @@ INDICATOR_FAMILIES <- list(
     ),
     indicator_tooltips = list(
       E1 = list(
-        fr = "Potentiel de production de bois-\u00e9nergie : r\u00e9manents de r\u00e9colte (2 %/an du volume, dont 30 % en r\u00e9manents) plus un forfait taillis, en tonnes de mati\u00e8re s\u00e8che par hectare et par an. Born\u00e9 \u00e0 1,32 t MS/ha/an, soit le gisement d'un peuplement au plafond de P1 : E1, E2 et P1 notent donc le m\u00eame peuplement pareil.",
-        en = "Fuelwood potential: harvest residues (2 %/yr of standing volume, 30 % of it as residues) plus a coppice allowance, in tonnes of dry matter per hectare per year. Bounded at 1.32 t DM/ha/yr, the yield of a stand at P1's ceiling, so E1, E2 and P1 score the same stand alike."
+        fr = "Potentiel de production de bois-\u00e9nergie : r\u00e9manents de r\u00e9colte (2 %/an du volume, dont 30 % en r\u00e9manents) plus un forfait taillis, en tonnes de mati\u00e8re s\u00e8che par hectare et par an. Born\u00e9 \u00e0 2,64 t MS/ha/an, soit le gisement d'un peuplement au plafond de P1 : E1, E2 et P1 notent donc le m\u00eame peuplement pareil.",
+        en = "Fuelwood potential: harvest residues (2 %/yr of standing volume, 30 % of it as residues) plus a coppice allowance, in tonnes of dry matter per hectare per year. Bounded at 2.64 t DM/ha/yr, the yield of a stand at P1's ceiling, so E1, E2 and P1 score the same stand alike."
       ),
       E2 = list(
-        fr = "\u00c9missions de CO2 \u00e9vit\u00e9es par substitution aux \u00e9nergies fossiles (tCO2/ha/an), d\u00e9duites de E1 via les facteurs ADEME. M\u00eame borne que E1 (1,32) parce que c'est, \u00e0 0,1 % pr\u00e8s, la m\u00eame grandeur : 1 t MS = 4500 kWh = 0,999 tCO2 \u00e9vit\u00e9e face au gaz.",
-        en = "CO2 emissions avoided by substituting fossil fuels (tCO2/ha/year), derived from E1 via ADEME factors. Same bound as E1 (1.32) because it is, to within 0.1 %, the same quantity: 1 t DM = 4500 kWh = 0.999 tCO2 avoided against natural gas."
+        fr = "\u00c9missions de CO2 \u00e9vit\u00e9es par substitution aux \u00e9nergies fossiles (tCO2/ha/an), d\u00e9duites de E1 via les facteurs ADEME. M\u00eame borne que E1 (2,64) parce que c'est, \u00e0 0,1 % pr\u00e8s, la m\u00eame grandeur : 1 t MS = 4500 kWh = 0,999 tCO2 \u00e9vit\u00e9e face au gaz.",
+        en = "CO2 emissions avoided by substituting fossil fuels (tCO2/ha/year), derived from E1 via ADEME factors. Same bound as E1 (2.64) because it is, to within 0.1 %, the same quantity: 1 t DM = 4500 kWh = 0.999 tCO2 avoided against natural gas."
       )
     ),
     indicator_docs = list(

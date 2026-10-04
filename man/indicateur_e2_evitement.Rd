@@ -11,7 +11,8 @@ indicateur_e2_evitement(
   energy_scenario = "vs_natural_gas",
   material_scenario = NULL,
   column_name = "E2",
-  lang = "en"
+  lang = "en",
+  taux_recolte_materiau = NULL
 )
 }
 \arguments{
@@ -19,7 +20,9 @@ indicateur_e2_evitement(
 
 \item{fuelwood_field}{Character. Column name for fuelwood potential (tonnes DM/yr). Default "E1".}
 
-\item{volume_field}{Character. Column name for construction timber volume (m³/ha). Optional.}
+\item{volume_field}{Character. Column name for the standing construction
+timber volume (m³/ha, a stock). Optional; used only with
+\code{material_scenario}, and then annualised by \code{taux_recolte_materiau}.}
 
 \item{energy_scenario}{Character. Energy substitution scenario: "vs_natural_gas", "vs_fuel_oil". Default "vs_natural_gas".}
 
@@ -28,11 +31,18 @@ indicateur_e2_evitement(
 \item{column_name}{Character. Name for output column. Default "E2".}
 
 \item{lang}{Character. Message language. Default "en".}
+
+\item{taux_recolte_materiau}{Numeric in \verb{[0, 1]}, one value or one per
+unit: share of \code{volume_field} harvested as construction timber each
+year. Required with \code{material_scenario} + \code{volume_field}, no default on
+purpose: E2 is an annual flux, and adding the standing stock (m³/ha) to
+the yearly energy substitution, as versions up to 0.211.0 did, mixed a
+stock and a flux.}
 }
 \value{
 sf object with added columns: E2 (total CO2 avoided tCO2eq/ha/yr), E2_energy,
 E2_material. \strong{Higher = more emissions avoided = favourable}, not
-inverted. Same ref_max as E1 (1.32) because it is, to within 0.1 %, the same
+inverted. Same ref_max as E1 (2.64) because it is, to within 0.1 %, the same
 quantity: E2 = E1 x 4500 kWh x 0.222 kgCO2/kWh / 1000 = E1 x 0.999. See spec
 048 section 11.
 }

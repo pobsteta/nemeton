@@ -8,7 +8,7 @@ indicateur_l1_sylvosphere(
   units,
   layers = NULL,
   landcover_layer = "landcover",
-  forest_values = seq(1, 6),
+  forest_values = c(16, 17),
   buffer = 1000
 )
 }
@@ -19,7 +19,10 @@ indicateur_l1_sylvosphere(
 
 \item{landcover_layer}{Character. Name of landcover layer in layers.}
 
-\item{forest_values}{Numeric vector. Values representing forest in landcover.}
+\item{forest_values}{Numeric vector. Values representing forest in landcover.
+Default \code{c(16, 17)}: OSO broadleaf and coniferous forest (23-class
+Theia/CESBIO nomenclature, the \code{forest_cover} layer). Pass the codes
+of your own raster when it uses another nomenclature.}
 
 \item{buffer}{Numeric. Buffer distance in meters around union of parcels.}
 }

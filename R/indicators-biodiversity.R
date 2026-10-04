@@ -11,6 +11,11 @@ NULL
 # T019: B1 - Protected Area Coverage
 # ==============================================================================
 
+# Borne absolue du nombre de statuts de protection superposes (B1) :
+# empilement courant en France = ZNIEFF 1 + ZNIEFF 2 + Natura 2000 + parc ou
+# reserve. Au-dela, le sous-score est plafonne a 100.
+B1_NB_STATUTS_MAX <- 4L
+
 #' Calculate Protected Area Coverage (B1)
 #'
 #' Computes the percentage of each forest parcel covered by designated protected
@@ -25,16 +30,29 @@ NULL
 #'   when using WFS. Default c("ZNIEFF1", "ZNIEFF2", "N2000_SCI").
 #' @param preprocess Logical. If TRUE, harmonize CRS automatically. Default TRUE.
 #'
-#' @return The input sf object with added column:
+#' @return The input sf object with added columns:
 #'   \itemize{
-#'     \item B1: Percentage of parcel area in protected zones (0-100)
+#'     \item B1: protection score (0-100)
+#'     \item B1_pct: weighted protected coverage of the parcel (0-100)
+#'     \item B1_nb: number of distinct protection statuses intersecting
+#'       the parcel
 #'   }
 #'
 #' @details
-#' **Calculation**: B1 = (area_protected / area_total) × 100
+#' **Calculation**: with a protection-type column (`type_protection`,
+#' `zone_type`, `type` or `statut`),
+#' B1 = 0.7 * B1_pct + 0.3 * min(B1_nb, 4) / 4 * 100, where B1_pct is the
+#' coverage of each status averaged with weights by protection strength
+#' (strong 1.0, medium 0.6, weak 0.3, unknown 0.5). The number of statuses is
+#' scaled by a fixed bound of 4 stacked statuses (ZNIEFF 1 + ZNIEFF 2 +
+#' Natura 2000 + park/reserve), so the score of a parcel does not depend on
+#' the other parcels of the batch. Without a type column, B1 = B1_pct
+#' (plain coverage; the number of statuses is unknown).
+#'
+#' A NULL `protected_areas` gives NA (no measurement; the `"wfs"` source is
+#' not fetched by this function); an empty `protected_areas` gives 0.
 #'
 #' **Interpretation**: Higher values indicate better protection status.
-#' Parcels with B1 > 75\\% are highly protected.
 #'
 #' @family biodiversity-indicators
 #' @export
@@ -168,7 +186,8 @@ indicateur_b1_protection <- function(units,
       if (!is.null(inter) && length(inter) > 0 && !all(sf::st_is_empty(inter))) {
         pct <- min(100, as.numeric(sum(sf::st_area(inter))) / parcel_area * 100)
       }
-      units$B1[i] <- pct * 0.5
+      # Sans type : la couverture seule (le nombre de statuts est inconnu)
+      units$B1[i] <- pct
       units$B1_pct[i] <- pct
       units$B1_nb[i] <- 0L
       next
@@ -208,12 +227,14 @@ indicateur_b1_protection <- function(units,
     units$B1_nb[i] <- as.integer(nb_types)
   }
 
-  # Combined score: 70% weighted coverage + 30% number of statuses (normalized)
-  max_statuts <- max(units$B1_nb, na.rm = TRUE)
-  if (max_statuts > 0) {
-    units$B1 <- 0.7 * units$B1_pct + 0.3 * (units$B1_nb / max_statuts * 100)
-  } else {
-    units$B1 <- units$B1_pct
+  # Score combine : 70 % couverture ponderee + 30 % nombre de statuts.
+  # Le nombre de statuts est rapporte a une borne ABSOLUE (B1_NB_STATUTS_MAX),
+  # pas au maximum du lot : une unite seule ou un lot homogene ne doit pas
+  # obtenir 100 pour un unique statut, et le score d'une unite ne doit pas
+  # dependre de ses voisines.
+  if (!is.null(type_col)) {
+    nb_score <- pmin(units$B1_nb, B1_NB_STATUTS_MAX) / B1_NB_STATUTS_MAX * 100
+    units$B1 <- 0.7 * units$B1_pct + 0.3 * nb_score
   }
 
   # Cap at 100%
@@ -457,8 +478,8 @@ indicateur_b2_structure <- function(units,
 #' Uses BD Foret data and DEM when available.
 #'
 #' @param units An sf object with forest parcels.
-#' @param bdforet An sf object with BD Foret V2 polygons. If NULL, returns
-#'   fallback score of 50 for all parcels. Default NULL.
+#' @param bdforet An sf object with BD Foret V2 polygons. If NULL, B3 is NA
+#'   for all parcels (connectivity not measurable). Default NULL.
 #' @param dem A SpatRaster with digital elevation model. Used for cost distance
 #'   refinement. Default NULL.
 #' @param max_distance Numeric. Maximum distance threshold (meters) for local
@@ -481,7 +502,15 @@ indicateur_b2_structure <- function(units,
 #' }
 #'
 #' Final score: B3 = 0.7 * B3_global + 0.3 * local_connectivity
-#' where local_connectivity is distance-based (sf) per-parcel adjustment.
+#' where local_connectivity is distance-based (sf) per-parcel adjustment
+#' (distance from the unit centroid to the nearest forest polygon, 0 when the
+#' centroid lies inside forest).
+#'
+#' A component that cannot be measured (missing package, error, fewer than 5
+#' forest units for the kernel) is NA: it is excluded and the remaining
+#' weights are renormalised, instead of entering the mean as a fixed 50.
+#' Computations run in metres: geographic inputs are projected to
+#' ETRS89-LAEA (EPSG:3035) and the result is attached to the original units.
 #'
 #' @family biodiversity-indicators
 #' @export
@@ -506,10 +535,14 @@ indicateur_b3_connectivite <- function(units,
     stop("bdforet must be an sf object when provided", call. = FALSE)
   }
 
-  # Ensure same CRS
-  if (!sf::st_crs(units) == sf::st_crs(bdforet)) {
-    bdforet <- sf::st_transform(bdforet, sf::st_crs(units))
-  }
+  # Toutes les composantes travaillent en metres (grille 25 m, tampons 1-2 km,
+  # seuils de distance). En CRS geographique, ces constantes etaient lues en
+  # degres : grille de 25 degres, tampon de 2000 degres. On calcule donc dans
+  # une projection metrique (ETRS89-LAEA, ADR-008) et on rattache le resultat
+  # aux unites d'origine.
+  units_orig <- units
+  units <- .b3_metric(units)
+  bdforet <- sf::st_transform(bdforet, sf::st_crs(units))
 
   # Crop bdforet to study area with buffer (2km like tutorial)
   study_bbox <- sf::st_bbox(units)
@@ -526,168 +559,178 @@ indicateur_b3_connectivite <- function(units,
   # « moyenne ».
   if (nrow(bdforet_local) == 0) {
     msg_warn("biodiversity_no_bdforet")
-    units$B3 <- rep(NA_real_, nrow(units))
-    return(units)
+    units_orig$B3 <- rep(NA_real_, nrow(units_orig))
+    return(units_orig)
   }
 
   n_parcels <- nrow(units)
 
-  # --------------------------------------------------------------------------
-  # Component 1: Structural connectivity (landscapemetrics) — 25%
-  # --------------------------------------------------------------------------
+  # Chaque composante vaut NA quand elle n'a pas pu etre mesuree (paquet
+  # absent, erreur, donnees insuffisantes). L'ancien repli a 50 entrait dans
+  # la moyenne comme une mesure ; il est exclu et les poids sont renormalises.
+
+  # Component 1: Structural connectivity (landscapemetrics)
   structural_score <- tryCatch({
     if (!requireNamespace("landscapemetrics", quietly = TRUE)) {
-      50
+      NA_real_
     } else {
       .b3_structural(bdforet_local, units)
     }
-  }, error = function(e) 50)
+  }, error = function(e) NA_real_)
 
-  # --------------------------------------------------------------------------
-  # Component 2: Cost distance (terra) — 25%
-  # --------------------------------------------------------------------------
+  # Component 2: Cost distance (terra)
   cost_score <- tryCatch({
     .b3_cost_distance(bdforet_local, units, dem)
-  }, error = function(e) 50)
+  }, error = function(e) NA_real_)
 
-  # --------------------------------------------------------------------------
-  # Component 3: Graph connectivity (igraph) — 25%
-  # --------------------------------------------------------------------------
+  # Component 3: Graph connectivity (igraph)
   graph_score <- tryCatch({
     if (!requireNamespace("igraph", quietly = TRUE)) {
-      50
+      NA_real_
     } else {
       .b3_graph(bdforet_local, units, threshold = 500)
     }
-  }, error = function(e) 50)
+  }, error = function(e) NA_real_)
 
-  # --------------------------------------------------------------------------
-  # Component 4: Kernel dispersal (adehabitatHR) — 25%
-  # --------------------------------------------------------------------------
+  # Component 4: Kernel dispersal (adehabitatHR)
   kernel_score <- tryCatch({
     if (!requireNamespace("adehabitatHR", quietly = TRUE) ||
         !requireNamespace("sp", quietly = TRUE)) {
-      50
+      NA_real_
     } else {
       .b3_kernel(bdforet_local, units)
     }
-  }, error = function(e) 50)
+  }, error = function(e) NA_real_)
 
-  # --------------------------------------------------------------------------
   # Local connectivity (sf distance) — per-parcel adjustment
-  # --------------------------------------------------------------------------
   local_connectivity <- tryCatch({
     .b3_local(bdforet_local, units, max_distance)
-  }, error = function(e) rep(50, n_parcels))
+  }, error = function(e) rep(NA_real_, n_parcels))
 
-  # --------------------------------------------------------------------------
-  # B3 global = 25% per component (landscape-level scores)
-  # --------------------------------------------------------------------------
-  B3_global <- 0.25 * structural_score + 0.25 * cost_score +
-               0.25 * graph_score + 0.25 * kernel_score
-
-  # B3 per parcel = 70% global + 30% local (like tutorial)
-  units$B3 <- pmin(100, pmax(0, 0.7 * B3_global + 0.3 * local_connectivity))
+  units_orig$B3 <- .b3_combine(
+    c(structural = structural_score, cost = cost_score,
+      graph = graph_score, kernel = kernel_score),
+    local_connectivity
+  )
 
   msg_info("indicateur_b3_connectivite")
   msg_info("biodiversity_b3_components",
-           round(mean(structural_score)), round(mean(cost_score)),
-           round(mean(graph_score)), round(mean(kernel_score)))
+           format(round(structural_score)), format(round(cost_score)),
+           format(round(graph_score)), format(round(kernel_score)))
 
-  units
+  units_orig
+}
+
+#' Project to a metric CRS when the input is geographic (ETRS89-LAEA)
+#' @noRd
+.b3_metric <- function(x) {
+  if (isTRUE(sf::st_is_longlat(x))) sf::st_transform(x, 3035) else x
+}
+
+#' Combine B3 components, excluding unmeasured ones
+#'
+#' B3 = 0.7 * mean(global components) + 0.3 * local, i.e. weight 0.175 per
+#' landscape component and 0.3 for the local one, renormalised over the
+#' components actually measured (NA = not measured).
+#' @noRd
+.b3_combine <- function(global, local) {
+  w_global <- ifelse(is.na(global), 0, 0.7 / length(global))
+  g_val <- ifelse(is.na(global), 0, global)
+  b3 <- vapply(seq_along(local), function(i) {
+    loc <- local[i]
+    w_loc <- if (is.na(loc)) 0 else 0.3
+    w_tot <- sum(w_global) + w_loc
+    if (w_tot == 0) return(NA_real_)
+    (sum(w_global * g_val) + w_loc * (if (is.na(loc)) 0 else loc)) / w_tot
+  }, numeric(1))
+
+  missing <- names(global)[is.na(global)]
+  if (length(missing) > 0) {
+    cli::cli_alert_warning(
+      "B3: component{?s} {.val {missing}} not measurable, excluded and weights renormalised."
+    )
+  }
+  pmin(100, pmax(0, b3))
 }
 
 # --- B3 sub-components (internal) ---
 
-#' Structural connectivity via landscapemetrics
+#' Metric 25 m template covering the units plus a 1 km buffer
 #' @noRd
-.b3_structural <- function(bdforet, units) {
-  # Create binary forest raster at 25m resolution
+.b3_template <- function(units, value) {
+  if (isTRUE(sf::st_is_longlat(units))) {
+    cli::cli_abort("B3 rasters need a projected (metric) CRS.")
+  }
   bbox <- sf::st_bbox(sf::st_buffer(sf::st_as_sfc(sf::st_bbox(units)), 1000))
   template <- terra::rast(
     xmin = bbox["xmin"], xmax = bbox["xmax"],
     ymin = bbox["ymin"], ymax = bbox["ymax"],
     res = 25, crs = sf::st_crs(units)$wkt
   )
-  terra::values(template) <- 0L
+  terra::values(template) <- value
+  template
+}
 
-  # Rasterize forest polygons
-  forest_rast <- tryCatch(
-    terra::rasterize(terra::vect(bdforet), template, field = 1, background = 0),
-    error = function(e) template
-  )
+#' Structural connectivity via landscapemetrics
+#'
+#' Weighted mean of cohesion (0.4), ENN (0.3), aggregation index (0.2) and
+#' number of patches (0.1); a metric that cannot be computed (e.g. ENN with a
+#' single patch) is excluded and the weights renormalised. NA if none.
+#' @noRd
+.b3_structural <- function(bdforet, units) {
+  template <- .b3_template(units, 0L)
 
-  # Cohesion (0-100)
-  cohesion_val <- tryCatch({
-    res <- landscapemetrics::lsm_c_cohesion(forest_rast)
+  # Rasterisation de la foret ; un echec rend la composante non mesurable
+  forest_rast <- terra::rasterize(terra::vect(bdforet), template,
+                                  field = 1, background = 0)
+
+  lsm_value <- function(fun) {
+    res <- tryCatch(fun(forest_rast), error = function(e) NULL)
+    if (is.null(res)) return(NA_real_)
     res <- res[res$class == 1, ]
-    val <- if (nrow(res) > 0) res$value[1] else 50
-    if (is.na(val) || is.nan(val)) 50 else val
-  }, error = function(e) 50)
+    if (nrow(res) == 0 || !is.finite(res$value[1])) NA_real_ else res$value[1]
+  }
 
-  # ENN mean (Euclidean nearest-neighbour distance)
-  # NaN when only 1 patch exists (no neighbour)
-  enn_norm <- tryCatch({
-    res <- landscapemetrics::lsm_c_enn_mn(forest_rast)
-    res <- res[res$class == 1, ]
-    if (nrow(res) > 0 && !is.na(res$value[1]) && !is.nan(res$value[1])) {
-      pmax(0, 100 - res$value[1] / 10)
-    } else 50
-  }, error = function(e) 50)
+  cohesion_val <- lsm_value(landscapemetrics::lsm_c_cohesion)
+  # ENN : NaN avec un seul massif (pas de voisin) -> exclu
+  enn <- lsm_value(landscapemetrics::lsm_c_enn_mn)
+  enn_norm <- if (is.na(enn)) NA_real_ else max(0, 100 - enn / 10)
+  ai_val <- lsm_value(landscapemetrics::lsm_c_ai)
+  # Nombre de taches : 1 -> 100, 51+ -> 0
+  np <- lsm_value(landscapemetrics::lsm_c_np)
+  np_norm <- if (is.na(np)) NA_real_ else max(0, 100 - (np - 1) * 2)
 
-  # Aggregation index (0-100)
-  ai_val <- tryCatch({
-    res <- landscapemetrics::lsm_c_ai(forest_rast)
-    res <- res[res$class == 1, ]
-    val <- if (nrow(res) > 0) res$value[1] else 50
-    if (is.na(val) || is.nan(val)) 50 else val
-  }, error = function(e) 50)
-
-  # Number of patches (1 patch -> 100, 50+ -> 0)
-  np_norm <- tryCatch({
-    res <- landscapemetrics::lsm_c_np(forest_rast)
-    res <- res[res$class == 1, ]
-    if (nrow(res) > 0 && !is.na(res$value[1])) {
-      pmax(0, 100 - (res$value[1] - 1) * 2)
-    } else 50
-  }, error = function(e) 50)
-
-  # Combined structural score (landscape-level, same for all parcels)
-  score <- 0.4 * cohesion_val + 0.3 * enn_norm + 0.2 * ai_val + 0.1 * np_norm
-  if (is.na(score) || is.nan(score)) return(50)
+  vals <- c(cohesion_val, enn_norm, ai_val, np_norm)
+  w <- c(0.4, 0.3, 0.2, 0.1)
+  ok <- !is.na(vals)
+  if (!any(ok)) return(NA_real_)
+  score <- sum(w[ok] * vals[ok]) / sum(w[ok])
   pmin(100, pmax(0, score))
 }
 
 #' Cost distance connectivity via terra
+#'
+#' Friction raster (forest = target, open land = 10 per metre); the
+#' accumulated cost from each unit centroid to the nearest forest cell is
+#' averaged over the units and mapped to 0-100 (100 - cost / 10). NA when no
+#' centroid reaches a forest cell.
 #' @noRd
 .b3_cost_distance <- function(bdforet, units, dem = NULL) {
-  # Create resistance raster: forest=1, non-forest=10
-  bbox <- sf::st_bbox(sf::st_buffer(sf::st_as_sfc(sf::st_bbox(units)), 1000))
-  template <- terra::rast(
-    xmin = bbox["xmin"], xmax = bbox["xmax"],
-    ymin = bbox["ymin"], ymax = bbox["ymax"],
-    res = 25, crs = sf::st_crs(units)$wkt
-  )
-  terra::values(template) <- 10L
+  # Friction : 0 sur les cellules forestieres (cibles de terra::costDist,
+  # `target` est une VALEUR, pas un raster), 10 hors foret.
+  template <- .b3_template(units, 10)
+  friction <- terra::rasterize(terra::vect(bdforet), template,
+                               field = 0, background = 10)
 
-  resistance <- terra::rasterize(terra::vect(bdforet), template, field = 1, background = 10)
+  cost_dist <- terra::costDist(friction, target = 0)
 
-  # Source raster: forest cells as targets
-  forest_source <- resistance
-  terra::values(forest_source) <- ifelse(terra::values(resistance) == 1, 1, NA)
-
-  cost_dist <- tryCatch(
-    terra::costDist(resistance, target = forest_source),
-    error = function(e) NULL
-  )
-
-  if (is.null(cost_dist)) return(50)
-
-  # Extract cost at parcel centroids
-  centroids <- suppressWarnings(sf::st_centroid(units))
+  # Cout au centroide de chaque unite
+  centroids <- suppressWarnings(sf::st_centroid(sf::st_geometry(units)))
   costs <- terra::extract(cost_dist, terra::vect(centroids))
-  mean_cost <- if (ncol(costs) >= 2) mean(costs[[2]], na.rm = TRUE) else 0
-  if (is.na(mean_cost)) mean_cost <- 0
+  vals <- costs[[ncol(costs)]]
+  vals[!is.finite(vals)] <- NA_real_
+  if (all(is.na(vals))) return(NA_real_)
+  mean_cost <- mean(vals, na.rm = TRUE)
 
   # Normalize: low cost = high connectivity (landscape-level)
   pmin(100, pmax(0, 100 - mean_cost / 10))
@@ -730,7 +773,8 @@ indicateur_b3_connectivite <- function(units,
   forest_idx <- lengths(sf::st_intersects(units, bdforet)) > 0
   parcelles_forest <- units[forest_idx, ]
 
-  if (nrow(parcelles_forest) < 5) return(50)
+  # Moins de 5 unites forestieres : estimation a noyau non significative
+  if (nrow(parcelles_forest) < 5) return(NA_real_)
 
   # Reproject to metric CRS if needed (adehabitatHR needs meters)
   centroids_sf <- suppressWarnings(sf::st_centroid(parcelles_forest))
@@ -773,17 +817,20 @@ indicateur_b3_connectivite <- function(units,
 }
 
 #' Local connectivity via sf distance (per-parcel)
+#'
+#' Distance from each unit centroid to the nearest forest polygon (0 when the
+#' centroid lies inside forest), mapped to 0-100 as 100 - d / 20.
 #' @noRd
 .b3_local <- function(bdforet, units, max_distance = 5000) {
-  # Distance from each parcel centroid to nearest forest polygon
-  centroids <- suppressWarnings(sf::st_centroid(units))
+  centroids <- suppressWarnings(sf::st_centroid(sf::st_geometry(units)))
   dist_to_forest <- sf::st_distance(centroids, bdforet)
-  min_dist <- apply(dist_to_forest, 1, function(x) {
-    pos <- x[x > 0]
-    if (length(pos) > 0) min(pos) else 0
+  # Une distance nulle (centroide en foret) est une vraie mesure : elle ne
+  # doit pas etre ecartee au profit du polygone suivant.
+  min_dist <- apply(matrix(as.numeric(dist_to_forest),
+                           nrow = length(centroids)), 1, function(x) {
+    x <- x[is.finite(x)]
+    if (length(x) > 0) min(x) else NA_real_
   })
-  min_dist <- as.numeric(min_dist)
-  min_dist[is.infinite(min_dist)] <- 0
 
   # Normalize: 0m -> 100, like tutorial: 100 - (min_dist / 20)
   pmax(0, 100 - min_dist / 20)

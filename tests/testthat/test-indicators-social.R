@@ -1607,3 +1607,55 @@ test_that("S1/S2 recover a degenerate authorityless DEM CRS (no all-NA)", {
   s2 <- indicateur_s2_bati(units = units, buildings = buildings, dem = dem)
   expect_false(all(is.na(s2$S2)))
 })
+
+# --- S1/S2 : entités hors de l'emprise du MNT (audit 1.0) --------------------
+
+test_that("S1 sees a road lying just outside the DEM extent", {
+  skip_if_not_installed("terra")
+  # MNT de 500 x 500 m ; unité de 100 x 100 m à l'intérieur ; route verticale
+  # à 150 m À L'EST du bord du MNT, donc hors de sa grille.
+  dem <- terra::rast(xmin = 700000, xmax = 700500, ymin = 6600000,
+                     ymax = 6600500, resolution = 10, crs = "EPSG:2154",
+                     vals = 100)
+  units <- sf::st_sf(id = 1, geometry = sf::st_sfc(sf::st_polygon(list(
+    matrix(c(700400, 6600200, 700500, 6600200, 700500, 6600300,
+             700400, 6600300, 700400, 6600200), ncol = 2, byrow = TRUE))),
+    crs = 2154))
+  roads <- sf::st_sf(id = 1, geometry = sf::st_sfc(sf::st_linestring(
+    matrix(c(700650, 6599000, 700650, 6601500), ncol = 2, byrow = TRUE)),
+    crs = 2154))
+
+  res <- suppressMessages(indicateur_s1_routes(units, roads = roads, dem = dem))
+  # Distance moyenne de l'unité (x de 700400 à 700500) à x = 700650 : ~200 m.
+  # Avant correction : route hors grille -> raster vide -> NA.
+  expect_equal(res$S1, 200, tolerance = 0.06)
+
+  bati <- sf::st_sf(id = 1, geometry = sf::st_sfc(sf::st_polygon(list(
+    matrix(c(700640, 6600240, 700660, 6600240, 700660, 6600260,
+             700640, 6600260, 700640, 6600240), ncol = 2, byrow = TRUE))),
+    crs = 2154))
+  res2 <- suppressMessages(indicateur_s2_bati(units, buildings = bati, dem = dem))
+  expect_false(is.na(res2$S2))
+  expect_lt(res2$S2, 300)
+})
+
+test_that("S1 is censored at max_dist when no road lies within it", {
+  skip_if_not_installed("terra")
+  dem <- terra::rast(xmin = 700000, xmax = 700500, ymin = 6600000,
+                     ymax = 6600500, resolution = 10, crs = "EPSG:2154",
+                     vals = 100)
+  units <- sf::st_sf(id = 1, geometry = sf::st_sfc(sf::st_polygon(list(
+    matrix(c(700400, 6600200, 700500, 6600200, 700500, 6600300,
+             700400, 6600300, 700400, 6600200), ncol = 2, byrow = TRUE))),
+    crs = 2154))
+  roads <- sf::st_sf(id = 1, geometry = sf::st_sfc(sf::st_linestring(
+    matrix(c(705000, 6599000, 705000, 6601500), ncol = 2, byrow = TRUE)),
+    crs = 2154))
+  res <- suppressMessages(
+    indicateur_s1_routes(units, roads = roads, dem = dem, max_dist = 1000)
+  )
+  # Route à ~4,5 km : « au moins 1000 m », pas une donnée manquante.
+  expect_equal(res$S1, 1000)
+  expect_error(indicateur_s1_routes(units, roads = roads, dem = dem,
+                                    max_dist = -1), "max_dist")
+})

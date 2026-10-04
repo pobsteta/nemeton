@@ -1181,3 +1181,53 @@ test_that("indicateur_r3_secheresse rejects a non-raster soil_moisture", {
     "soil_moisture must be a terra SpatRaster"
   )
 })
+
+# ==============================================================================
+# R4 : appétence pondérée par la surface, gibier inconnu = NA (audit 1.0)
+# ==============================================================================
+
+r4_square <- function(xmin, xmax, ymin = 6615150, ymax = 6615250) {
+  sf::st_polygon(list(matrix(c(
+    xmin, ymin, xmax, ymin, xmax, ymax, xmin, ymax, xmin, ymin
+  ), ncol = 2, byrow = TRUE)))
+}
+
+test_that("R4 palatability is the area-weighted mean over BD Foret polygons", {
+  skip_if_not_installed("terra")
+  units <- sf::st_sf(id = 1, geometry = sf::st_sfc(
+    r4_square(566450, 566550), crs = 2154))
+  # Le liseré de pin (10 % de l'UGF) est listé en premier : avant correction,
+  # l'UGF prenait son appétence (30) au lieu de celle du chêne majoritaire.
+  bdforet <- sf::st_sf(
+    essence = c("pinus", "quercus"),
+    geometry = sf::st_sfc(r4_square(566450, 566460), r4_square(566460, 566550),
+                          crs = 2154)
+  )
+  game <- terra::rast(xmin = 566400, xmax = 567000, ymin = 6615100,
+                      ymax = 6615500, resolution = 10, crs = "EPSG:2154",
+                      vals = 40)
+  res <- suppressMessages(
+    indicateur_r4_abroutissement(units, bdforet = bdforet, game_density = game)
+  )
+  expect_equal(res$R4_palatability, 0.1 * 30 + 0.9 * 90, tolerance = 1e-6)
+})
+
+test_that("R4 is NA for a unit outside the game density raster, not 50", {
+  skip_if_not_installed("terra")
+  units <- sf::st_sf(id = 1, geometry = sf::st_sfc(
+    r4_square(566450, 566550), crs = 2154))
+  bdforet <- sf::st_sf(essence = "quercus", geometry = sf::st_sfc(
+    r4_square(566400, 566600), crs = 2154))
+  game <- terra::rast(xmin = 566400, xmax = 567000, ymin = 6615100,
+                      ymax = 6615500, resolution = 10, crs = "EPSG:2154",
+                      vals = NA_real_)
+  mnh <- terra::rast(xmin = 566400, xmax = 567000, ymin = 6615100,
+                     ymax = 6615500, resolution = 10, crs = "EPSG:2154",
+                     vals = 5)
+  layers <- structure(list(rasters = list(lidar_mnh = mnh)),
+                      class = "nemeton_layers")
+  res <- suppressMessages(indicateur_r4_abroutissement(
+    units, layers = layers, bdforet = bdforet, game_density = game))
+  expect_false(is.na(res$R4_palatability))
+  expect_true(is.na(res$R4))
+})

@@ -270,6 +270,22 @@ test_that(".reconfort_chunk_count reste prudent quand l'emprise est inconnue", {
   expect_identical(.reconfort_chunk_count("nowhere.tif"), 1L)
 })
 
+test_that("sans masque, le decoupage suit la fenetre AOI a 10 m (audit 1.0)", {
+  # AOI de 5 km x 5 km en Lambert-93 : fenetre + tampon 3 km = 11 km -> 1100 x 1100
+  aoi <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+    c(900000, 6600000), c(905000, 6600000), c(905000, 6605000),
+    c(900000, 6605000), c(900000, 6600000)))), crs = 2154))
+  dims <- .reconfort_aoi_dims(aoi)
+  expect_identical(dims, c(1100L, 1100L))
+  expect_identical(.reconfort_aoi_dims(NULL), c(NA_integer_, NA_integer_))
+
+  # binary_mask = FALSE -> mask_path NA : avant, une seule tranche
+  n <- .reconfort_chunk_count(NA_character_, memory_max = NULL, aoi_dims = dims)
+  expect_identical(n, 5L) # ceiling(1100 / 240)
+  expect_gt(.reconfort_chunk_count(NA_character_, memory_max = "12G",
+                                   aoi_dims = dims), 1L)
+})
+
 test_that("run_reconfort_dieback validates con and v_model", {
   expect_error(
     run_reconfort_dieback(con = list(), zone_id = 1L, cache_dir = tempdir(),

@@ -90,9 +90,9 @@ test_that("indicateur_e1_bois_energie handles NA volume values", {
   expect_false(is.na(result$E1[1]))
   expect_true(is.na(result$E1[2]))
   expect_false(is.na(result$E1[3]))
-  # E1_residues and E1_coppice should remain 0 for the NA row (default numeric(n))
-  expect_equal(result$E1_residues[2], 0)
-  expect_equal(result$E1_coppice[2], 0)
+  # Unité non évaluée : les colonnes de détail suivent le total (NA, pas 0)
+  expect_true(is.na(result$E1_residues[2]))
+  expect_true(is.na(result$E1_coppice[2]))
 })
 
 test_that("indicateur_e1_bois_energie uses species-specific density when species field present", {
@@ -196,8 +196,9 @@ test_that("indicateur_e1_bois_energie uses default density 550 when lookup retur
   # Manually verify: volume=200, harvest_rate=0.02, residue_fraction=0.3, density=550
   # annual_harvest = 200 * 0.02 = 4
   # residues_m3 = 4 * 0.3 = 1.2
-  # residues_tonnes_dm = 1.2 * 550 / 1000 * 0.5 = 0.33
-  expect_equal(result$E1_residues[1], 1.2 * 550 / 1000 * 0.5)
+  # residues_tonnes_dm = 1.2 * 550 / 1000 = 0.66 : la densité de
+  # wood_density.csv est déjà sèche (plus de facteur 0,5 depuis l'audit 1.0)
+  expect_equal(result$E1_residues[1], 1.2 * 550 / 1000)
 })
 
 test_that("indicateur_e1_bois_energie uses custom harvest rate and residue fraction", {
@@ -428,7 +429,8 @@ test_that("indicateur_e2_evitement E2 total = E2_energy + E2_material", {
     test_units,
     fuelwood_field = "E1",
     volume_field = "construction_volume",
-    material_scenario = "vs_concrete"
+    material_scenario = "vs_concrete",
+    taux_recolte_materiau = 0.01
   )
 
   for (i in seq_len(nrow(result))) {
@@ -449,7 +451,8 @@ test_that("indicateur_e2_evitement works with material substitution", {
     test_units,
     fuelwood_field = "E1",
     volume_field = "construction_volume",
-    material_scenario = "vs_concrete"
+    material_scenario = "vs_concrete",
+    taux_recolte_materiau = 0.01
   )
 
   expect_true("E2" %in% names(result))
@@ -471,7 +474,8 @@ test_that("indicateur_e2_evitement handles NA construction volume in material ca
     test_units,
     fuelwood_field = "E1",
     volume_field = "construction_volume",
-    material_scenario = "vs_concrete"
+    material_scenario = "vs_concrete",
+    taux_recolte_materiau = 0.01
   )
 
   # First row: NA construction_volume => E2_material = 0
@@ -503,6 +507,33 @@ test_that("indicateur_e2_evitement with unknown energy scenario warns and uses d
   expect_equal(result$E2_energy[1], 5.0 * 4500 * 0.222 / 1000)
 })
 
+test_that("E2 material substitution is an annual flux, not the standing stock", {
+  skip_if_not_installed("sf")
+  test_units <- make_energy_sf(1, list(E1 = 0, construction_volume = 200))
+
+  # Sans taux de récolte : refus explicite (avant : 200 m3/ha de stock
+  # additionnés à un flux annuel, soit ~114 tCO2eq/ha/an).
+  expect_error(
+    indicateur_e2_evitement(test_units, volume_field = "construction_volume",
+                            material_scenario = "vs_concrete"),
+    "taux_recolte_materiau"
+  )
+  expect_error(
+    indicateur_e2_evitement(test_units, volume_field = "construction_volume",
+                            material_scenario = "vs_concrete",
+                            taux_recolte_materiau = 2),
+    "must\\s+be\\s+in"
+  )
+
+  res <- suppressMessages(indicateur_e2_evitement(
+    test_units, volume_field = "construction_volume",
+    material_scenario = "vs_concrete", taux_recolte_materiau = 0.01
+  ))
+  # 200 m3/ha x 1 %/an x 500 kg/m3 x 1,14 kgCO2eq/kg / 1000
+  expect_equal(res$E2_material, 200 * 0.01 * 500 * 1.14 / 1000)
+  expect_equal(res$E2, res$E2_material)
+})
+
 test_that("indicateur_e2_evitement with material_scenario but missing volume_field in data", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
@@ -514,7 +545,8 @@ test_that("indicateur_e2_evitement with material_scenario but missing volume_fie
     test_units,
     fuelwood_field = "E1",
     volume_field = "nonexistent_col",
-    material_scenario = "vs_concrete"
+    material_scenario = "vs_concrete",
+    taux_recolte_materiau = 0.01
   )
 
   # Material contribution should be 0 because volume_field not found
@@ -622,7 +654,8 @@ test_that("E1 + E2 chain with coppice and material substitution", {
     indicateur_e2_evitement(
       fuelwood_field = "E1",
       volume_field = "construction_volume",
-      material_scenario = "vs_concrete"
+      material_scenario = "vs_concrete",
+      taux_recolte_materiau = 0.01
     )
 
   expect_true(all(c("E1", "E2") %in% names(result)))

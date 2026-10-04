@@ -11,7 +11,8 @@ indicateur_s2_bati(
   layers = NULL,
   column_name = "S2",
   lang = "en",
-  dem_target_res = .topo_target_res()
+  dem_target_res = .topo_target_res(),
+  max_dist = 2000
 )
 }
 \arguments{
@@ -36,6 +37,14 @@ transform cost gigabytes for a mean distance per unit. Default: the
 package-wide topographic working resolution, 2 m --- see
 \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
 resolution.}
+
+\item{max_dist}{Numeric. Search radius (metres) around the units, default
+2000 m (the distance at which the normalised score reaches 0). The
+working grid covers the units' extent widened by \code{max_dist}, not the DEM
+extent, so features just outside the DEM are no longer ignored. Distances
+are exact up to \code{max_dist} and censored at \code{max_dist} beyond (a unit
+with no feature within \code{max_dist} gets \code{max_dist}, i.e. "at least
+\code{max_dist}"); with no feature at all, the indicator is \code{NA}.}
 }
 \value{
 sf object with added column: S2 (mean distance to nearest building in metres)
@@ -47,8 +56,10 @@ nearest building, using rasterized building data and \code{terra::distance()}.
 \details{
 **Calculation** (tuto 03 method):
 \itemize{
-  \item Rasterize building geometries onto the DEM grid
-  \item Compute distance raster via \code{terra::distance()}
+  \item Rasterize building geometries onto a grid with the DEM resolution,
+    covering the units' extent widened by \code{max_dist}
+  \item Compute distance raster via \code{terra::distance()}, censored at
+    \code{max_dist}
   \item Extract mean distance per spatial unit
 }
 

@@ -12,7 +12,8 @@ indicateur_f1_fertilite(
   source = c("layer", "soilgrids", "gissol", "theia_soil"),
   country = "FR",
   rpf_code_col = "rpf_code",
-  texture = NULL
+  texture = NULL,
+  fertility_range = c(0, 100)
 )
 }
 \arguments{
@@ -44,6 +45,12 @@ elements \code{clay}, \code{silt}, \code{sand} and optionally
 \code{coarse_elements} (the Theia \code{theia_soil} products,
 loaded via \code{\link{load_raster_source}}). Required when
 \code{source = "theia_soil"}, ignored otherwise.}
+
+\item{fertility_range}{Numeric of length 2. Value range of the soil
+layer in \code{"layer"} mode, mapped linearly to 0-100 (lowest =
+least fertile). Default \code{c(0, 100)}: the layer is already a 0-100
+score. For fertility classes 1-5, pass \code{c(1, 5)}. Values outside
+the range are set to NA with a warning. Ignored by the other sources.}
 }
 \value{
 Numeric vector of fertility scores (0-100 scale, higher = more fertile)
@@ -58,7 +65,11 @@ polygon layer joined to the UTS → fertility crosswalk shipped in
 Three data sources are supported via \code{source}:
 \itemize{
   \item \code{"layer"} (default) — read a raster or polygon layer from
-    \code{layers}, min-max normalised per call (relative score).
+    \code{layers} and map its values linearly from
+    \code{fertility_range} to 0-100 (absolute score: a unit's value does
+    not depend on the other units of the call). Polygon layers are
+    area-weighted over the polygons that carry a value; units with no
+    valued polygon are NA.
   \item \code{"soilgrids"} — fetch the 250 m SoilGrids 2.0 Cation
     Exchange Capacity raster (0-5 cm topsoil, mean) declared as
     \code{soilgrids_cec} in \code{inst/datasources/FR.json}, extract

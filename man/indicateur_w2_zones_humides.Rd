@@ -22,7 +22,9 @@ indicateur_w2_zones_humides(
 \item{wetland_layer}{Character. Name of wetland layer in layers object}
 
 \item{wetland_values}{Numeric vector. Land cover codes representing wetlands.
-Default NULL (auto-detect if possible).}
+Default NULL: the land-cover source is not used (there is no
+auto-detection; the OSO nomenclature has no wetland class, only water,
+code 23).}
 
 \item{water_occurrence}{Optional \code{SpatRaster} of water-occurrence
 frequency in percent (0-100) — the Theia \code{theia_water}
@@ -49,9 +51,12 @@ Numeric vector of wetland coverage (0-100\%)
 }
 \description{
 Calculates percentage of parcel area classified as wetland or riparian zone.
-Coverage is summed over several optional sources: BD TOPO water surfaces,
-a TWI threshold, OSO land-cover wetland codes, and — when supplied — the
-Theia \code{theia_water} water-occurrence product.
+The wetland area is the UNION of several optional sources (a pixel counted
+by two sources is counted once): BD TOPO water surfaces, a TWI threshold,
+land-cover codes listed in \code{wetland_values}, and — when supplied — the
+Theia \code{theia_water} water-occurrence product. Sources are evaluated
+on a regular grid of points inside each unit; points where every source is
+NA are left out, and a unit with no known point is NA.
 }
 \examples{
 \dontrun{

@@ -46,9 +46,30 @@ test_that("the autonym rescues infraspecific IGN names", {
 test_that("Douglas maps to Pseudotsuga, not Pinus", {
   # ifn_volume_equations.csv portait "Pinus menziesii" — corrige en
   # "Pseudotsuga menziesii" grace a ce croisement.
-  expect_identical(resoudre_espar("PIME"), "64")
+  # Le code PIME (doublon historique) a disparu : le Douglas est PSME
+  # partout, comme dans tout le code (audit 1.0). resoudre_espar("PSME")
+  # rendait NA.
+  expect_identical(resoudre_espar("PSME"), "64")
+  expect_true(is.na(resoudre_espar("PIME")))
   d <- ifn_espar_correspondance(espar = "64")
   expect_match(d$espece_sci, "^Pseudotsuga")
+  expect_identical(d$code_p1, "PSME")
+})
+
+test_that("PSME is the single Douglas code across the reference tables", {
+  lire <- function(f) utils::read.csv(
+    system.file("extdata", f, package = "nemeton"), stringsAsFactors = FALSE)
+  for (f in c("ifn_volume_equations.csv", "wood_density.csv",
+              "productivity_tables.csv")) {
+    tab <- lire(f)
+    expect_false("PIME" %in% tab$species_code, info = f)
+    expect_true("PSME" %in% tab$species_code, info = f)
+  }
+  # Une seule ligne de tarif pour le Douglas.
+  eq <- lire("ifn_volume_equations.csv")
+  expect_equal(sum(grepl("^Pseudotsuga", eq$species_name)), 1L)
+  # Densité propre du Douglas, et non plus le repli feuillu (620).
+  expect_equal(lookup_species_threshold("PSME", "density_kg_m3"), 490)
 })
 
 test_that("unknown codes yield NA, never a guess", {

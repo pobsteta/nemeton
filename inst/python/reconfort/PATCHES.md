@@ -22,10 +22,11 @@ patches below (or drop the ones upstream has fixed).
 | `run_map_production_reconfort.py` | IOTA² return codes checked (`run_iota2()`), presence of the `final/` rasters checked (`require_final()`), explicit error on stderr. | A failed IOTA² chain went unnoticed and surfaced three steps later as a missing file. | `75bdf9c3a` |
 | `utils/utils.py` | `load_config_variable()` no longer `eval()`s cfg values: `split("=", 1)` then `json.loads`, with an `ast.literal_eval` fallback for hand-written upstream cfg files; blank/comment lines skipped. | Code injection: any cfg value was executed as Python. | audit 1.0 (security) |
 | `run_geodes_download.py` | Calls `utils.tls.enforce_tls_verification(conf)` before building `Geodes`. | pygeodes disables TLS certificate verification by default. | audit 1.0 (security) |
+| `mask_and_compress_rasters.py` | Continuous score computed by a new pure `continuous_score_from_probas()`: bounded to [1, 100] (floor, as the former integer cast) before writing; no-data = every probability band is 0; a 2-band map gets `p3 = 0`. | Very healthy pixels (score < 1) were truncated to 0 = no-data, `sum_proba == 0` blanked valid pixels, and the 2-class `v3_pine` model crashed on band 3. | audit 1.0 (numerical) |
 | `utils/generate_cfg_file_classif_part2_classification_2y_nov_test_1tile.py` | Renamed to `generate_cfg_file_classif_part2_classif_2y_nov_test_1tile.py` (import updated in `run_map_production_reconfort.py`). | Path exceeded the 100 bytes allowed in an R package tarball (`R CMD check` NOTE, 1.0 audit). | v0.211.0 |
 
 Files vendored without modification (besides the header):
-`mask_and_compress_rasters.py`, `utils/__init__.py`, `iota2/colorFile.txt`,
+`utils/__init__.py`, `iota2/colorFile.txt`,
 `iota2/nomenclature.txt`, `iota2/vector_db/random_points.*`.
 
 Not RECONFORT code (nemeton-authored, GPL-3): `list_s2_items.py`,

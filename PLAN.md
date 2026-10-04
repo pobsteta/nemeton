@@ -113,7 +113,8 @@ un raccourci.
 | 2 | Robustesse des données : clés de cache (ERA5, microclimat, vent, S2 par emprise, `.done` RECONFORT), téléchargements atomiques, étés incomplets, transactions, migration 0007, `prune_orphan_zone_caches` | **v0.209.0** | ✅ livré, brief app émis |
 | 3 | Sécurité : `eval` du cfg Python, `verify=False` pygeodes, manifeste RAG, `format_citations`, `project_name`, `zone_id`/`output_dir`, URL de base dans les messages | **v0.210.0** | ✅ livré, brief app émis |
 | 4 | Paquet propre : `.Rbuildignore` (archive de 5,4 Go dans `data/`), DESCRIPTION, `.Rd` (8 WARNING → 0), roxygen détachés, non-ASCII, CI | **v0.211.0** | ✅ livré : 0 WARNING, CI en échec sur warning |
-| 5 | Contrat d'API : retours vecteur / `sf`, `lang`, 313 exports à trier | 0.212 | ⬜ |
+| 5 | Seconde passe sur les calculs : 31 constats majeurs (indicateurs, échantillonnage, climat, RECONFORT) | **v0.212.0** | ✅ livré, brief app émis |
+| 6 | Contrat d'API : retours vecteur / `sf`, `lang`, 313 exports à trier ; reliquat de l'audit | 0.213 | ⬜ |
 
 **Journal** — *2026-10-02* (**v0.208.0**) : vague 1 livrée, dix correctifs,
 chacun avec un test qui échouait avant. Valeurs changées côté app : volumes
@@ -142,7 +143,21 @@ les vignettes étant construites par pkgdown) ; la release ne part qu'après un
 R-CMD-check réussi. Restent hors de cette vague : tutoriels 07/08 (données
 exclues du build), guide de l'app dans les vignettes, exports à trier.
 
-**Prochaine étape** : vague 5 (contrat d'API) et reliquat majeur de l'audit.
+**Journal** — *2026-10-03* (**v0.212.0**) : vague 5 (seconde passe sur les
+calculs) livrée, 35 commits de trois agents, fusion sans conflit. Calibrages
+nouveaux à valider par Pascal : borne B1 = 4 statuts, sévérité du coût B3
+(`100 − coût/10`), référence de pollution A2 = 100, contrastes OSO de L1,
+borne E1/E2 = 2,64. `map_oso_class()` et `inst/species/BFC.json` gardent
+l'ancienne lecture 17/18/19 (API exportée, à traiter). Brief :
+`specs/audit-1.0/brief-nemetonshiny-0.212.0.md`.
+Ajout du 2026-10-04 (brief aigora-nemeton) : le chemin `fireexposuR` de R1
+n'aboutissait jamais (MNT de repli IGN en EPSG:4326 → fenêtre de ~59 600 Go,
+repli silencieux). Reprojection métrique, contrôle de grille avant l'appel,
+hazard élargi de 500 m ; `r1_status` / `r1_fallback_reason` dans le résultat.
+Vérifié sur Couchey (23/23 en `fire_exp`). T2 : l'app ne lui passe ni T1 ni
+N2, il sort NA depuis 0.212.0 — câblage app dans le brief.
+
+**Prochaine étape** : vague 6 (contrat d'API, reliquat).
 
 ---
 

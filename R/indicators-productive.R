@@ -25,7 +25,10 @@ NULL
 #' @param species_field Character. Column name containing species codes (IFN format). Default "species".
 #' @param dbh_field Character. Column name containing diameter at breast height (cm). Default "dbh".
 #' @param height_field Character. Column name containing tree height (m). Optional, can be estimated.
-#' @param density_field Character. Column name containing tree density (stems/ha). Default "density".
+#' @param density_field Character. Column name containing tree density in
+#'   STEMS PER HECTARE. Default "density". Not a 0-1 cover fraction (unlike
+#'   the \code{density_col} of \code{\link{indicateur_c1_biomasse}}): values
+#'   in (0, 1) are set to NA with a warning.
 #' @param method Character. Volume calculation method. Only "ifn_tarif" (the
 #'   IFN combined-variable tariff \code{V = a x D^2 x H}) is implemented;
 #'   "allometric" is accepted for backward compatibility but has no effect and
@@ -168,6 +171,9 @@ indicateur_p1_volume <- function(units,
     h_chm <- extract_h_dom(chm, units, percentile = h_dom_percentile)
   }
 
+  # `density` est ici en tiges/ha (pas une fraction de couvert comme en C1)
+  dens_vec <- .check_density_unit(units[[density_field]], "stems_ha", "P1")
+
   result <- units
   p1_values <- numeric(nrow(units))
 
@@ -175,7 +181,7 @@ indicateur_p1_volume <- function(units,
   for (i in seq_len(nrow(units))) {
     species_code <- units[[species_field]][i]
     dbh_cm <- units[[dbh_field]][i]
-    density_ha <- units[[density_field]][i]
+    density_ha <- dens_vec[i]
 
     # Skip if missing data
     if (is.na(species_code) || is.na(dbh_cm) || is.na(density_ha)) {
@@ -616,10 +622,12 @@ indicateur_p3_qualite_bois <- function(units,
     # Score based on commercial thresholds
     if (species_field %in% names(units)) {
       species_code <- units[[species_field]][i]
-      # Simple heuristic: conifer vs broadleaf thresholds
-      is_conifer <- grepl("^P[IML]", toupper(species_code)) # PI*, PM*, PL* (pines)
-      sawlog_threshold <- if (is_conifer) 30 else 40
-      pulp_threshold <- if (is_conifer) 15 else 20
+      # Seuils resineux / feuillus : definition unique du paquet. L'ancien
+      # motif ^P[IML] ratait ABAL, PSME, LADE, CEAT et prenait PLAC
+      # (platane) pour un pin.
+      resineux <- is_conifer(species_code)
+      sawlog_threshold <- if (resineux) 30 else 40
+      pulp_threshold <- if (resineux) 15 else 20
     } else {
       sawlog_threshold <- 35 # Generic
       pulp_threshold <- 18
