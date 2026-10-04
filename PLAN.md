@@ -37,8 +37,10 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 | 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Interdit accusé réception le 2026-09-23** (brief app `BRIEF-nemeton-plan-md-0.143.17-0.143.28.md`) : aucun écran ne classe, ne compare ni ne moyenne B4/L3 entre projets — l'app n'a pas de vue inter-projets. **Reste ouvert sur un seul point : question B02 en attente côté app** — B02 absente de l'espace k-means, remplacée par `ID` (point 4 du brief), pas encore instruite |
 | 16 | Validation §6 du brief production IFN sur un projet réel | app **v0.152.0** | terrain | Vérifiée seulement sur deux UGF synthétiques en C51 (P2 = 5,37 m³/ha/an, RSE 2,6 % ; E1 `"ifn_ser"` → `recolte_observee`, E1 à 0,6 → `ressource_flux`). Chargement FORMS-T **vérifié en réel** le 2026-10-02 (Dabo : prévision hybride 6,58 contre 7,56 m³/ha/an en SER). Reste la validation métier dans l'app sur un projet recalculé en mode IFN |
+| 18 | T2 sort NA sur tous les projets : l'app ne lui passe ni `T1` ni `N2` (N2 calculé après T2) | cœur **v0.212.0** (T2 = NA sans source) | `nemetonshiny` | Brief 0.212.0 §4 lu ; câblage à faire dans `service_compute.R` (`.units_for_indicator()` : injecter `T1`, calculer N2 avant T2). Prévu au cycle app 0.154.0.9xxx |
+| 19 | `r1_status` (méthode de R1) non traduit ni affiché ; `r1_fallback_reason` non transporté | cœur **v0.212.0** (ajout du 2026-10-04) | `nemetonshiny` | `.r1_status` déjà transporté dans le parquet par `.capture_status_attr()` ; reste i18n FR/EN + explication des `skipped_*` dans `mod_family.R` |
 
-**Trois écarts (n° 3, n° 6 résiduel, n° 16), aucun n'appelle plus de correctif dans le cœur.** Le n° 13 est refermé le 2026-10-02 (cinq relances RECONFORT propres, table ci-dessous). Les n° 15 et 17 sont refermés par l'app v0.152.1 le 2026-10-02 (table ci-dessous).
+**Cinq écarts (n° 3, n° 6 résiduel, n° 16, n° 18, n° 19), aucun n'appelle plus de correctif dans le cœur.** Le n° 13 est refermé le 2026-10-02 (cinq relances RECONFORT propres, table ci-dessous). Les n° 15 et 17 sont refermés par l'app v0.152.1 le 2026-10-02 (table ci-dessous).
 Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR
 et une desserte corrigée. Le n° 6 a été lu côté app — l'interdit tient, faute
 de vue inter-projets où l'enfreindre — et ne reste ouvert que sur la question
@@ -157,7 +159,18 @@ hazard élargi de 500 m ; `r1_status` / `r1_fallback_reason` dans le résultat.
 Vérifié sur Couchey (23/23 en `fire_exp`). T2 : l'app ne lui passe ni T1 ni
 N2, il sort NA depuis 0.212.0 — câblage app dans le brief.
 
-**Prochaine étape** : vague 6 (contrat d'API, reliquat).
+**Journal** — *2026-10-04* (**app v0.153.0**, `nemetonshiny@c284bad2`, PR #216) :
+phase 3 de l'audit côté app (contrat public et packaging). `run_app(options =)`
+réellement utilisable (port, hôte), `CONTRAT.md` (contrat public de la 1.0),
+licence GPL-3+ alignée partout, image Docker reconstruite et vérifiée,
+`R CMD check` sans WARNING ni NOTE, `main` protégée. `opencanopy` résolu à
+l'exécution (retiré des `Suggests`). L'app v0.154.0 (PR #217 : API hors
+interface, plancher `nemeton (>= 0.212.0)`) n'est pas encore mergée : son
+entrée sera ajoutée à la release.
+
+**Prochaine étape** : vague 6 (contrat d'API, reliquat). L'app consomme 135
+des 313 exports et lit 21 symboles internes : ne rien retirer ni changer de
+signature parmi eux sans brief app (`specs/audit-1.0/exports-consommes-app.md`).
 
 ---
 
