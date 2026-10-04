@@ -1,8 +1,10 @@
 # Calculate Stand Age Index (T1)
 
-Estimates stand age from BD Forêt TFV (Type de Formation Végétale) field
-using area-weighted spatial intersection, following tuto 04 methodology.
-Falls back to direct age field, establishment year, or NDVI proxy.
+Estimates stand age per unit, a measured age taking precedence over an
+estimate: direct age field, then establishment year, then BD Forêt TFV
+(Type de Formation Végétale, area-weighted, tuto 04 methodology), then
+an NDVI proxy. Each source only fills the units left `NA` by the
+previous ones.
 
 ## Usage
 
@@ -34,13 +36,13 @@ indicateur_t1_anciennete(
 
 - age_field:
 
-  Character. Column name with stand age (years). Default "age". Used as
-  fallback if BD Forêt not available.
+  Character. Column name with stand age (years). Default "age". A
+  measured age takes precedence over every estimate.
 
 - establishment_year_field:
 
-  Character. Column name with establishment year. Used as fallback if
-  age_field not found.
+  Character. Column name with establishment year. Used for units with no
+  measured age.
 
 - current_year:
 
@@ -54,12 +56,15 @@ score. **Higher = older = more favourable**, so it is not inverted;
 normalize_indicator() rescales it against a ref_max of 200 years, beyond
 which ancientness counts as maximal. Until 0.196.0 it was wrongly
 declared natively 0-100 and merely clamped, so 150 and 250 years both
-came out at 100. See spec 048 section 10. Default value is 50 when no
-data available.
+came out at 100. See spec 048 section 10. `NA` for a unit no source can
+date (no default age).
 
 ## Details
 
-\*\*Primary method\*\* (BD Forêt TFV):
+\*\*Order of precedence\*\* (per unit): measured age, establishment
+year, BD Forêt TFV, NDVI proxy.
+
+\*\*BD Forêt TFV method\*\*:
 
 - Spatial intersection of parcels with BD Forêt polygons
 
@@ -67,17 +72,10 @@ data available.
   feuillus / Futaie feuillus: 100 years - Forêt fermée conifères /
   Futaie conifères: 80 years - Forêt ouverte / Taillis: 45 years -
   Peupleraie: 20 years - Jeune peuplement / Lande boisée: 15 years -
-  Other: 50 years (default)
+  Other: not recognised, left out (no default age)
 
-- Area-weighted average across overlapping polygons
-
-\*\*Fallback methods\*\* (in order):
-
-1.  Direct age column in units
-
-2.  Establishment year column
-
-3.  NDVI-based maturity estimate
+- Area-weighted average across overlapping polygons with a recognised
+  TFV
 
 ## See also
 

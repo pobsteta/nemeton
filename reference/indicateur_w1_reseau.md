@@ -46,7 +46,9 @@ indicateur_w1_reseau(
 
 ## Value
 
-Numeric vector of network density (m/ha)
+Numeric vector of network density (m/ha). NA for every unit when the
+watercourse layer is missing (no measurement); a supplied but empty
+layer gives 0.
 
 ## Examples
 

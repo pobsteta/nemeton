@@ -85,9 +85,18 @@ indicateur_r1_feu(
 
 ## Value
 
-The input sf object with added column:
+The input sf object with added columns:
 
 - R1: Fire risk index (0-100). Higher = higher risk.
+
+- r1_status: method that produced R1: `"fire_exp"`;
+  `"fallback_no_fireexposur"`, `"fallback_no_bdforet"` or
+  `"fallback_fire_exp_failed"` (slope + species + climate);
+  `"skipped_no_dem"` or `"skipped_no_component"` when R1 is `NA`.
+
+- r1_fallback_reason: why the fireexposuR path was not used (not
+  installed, no BD Foret layer, or the error it raised); `NA` when it
+  was.
 
 ## Details
 
@@ -96,10 +105,17 @@ Foret as a hazard layer, then computes fire exposure with a 500m
 transmission distance. The 0-1 exposure is scaled to 0-100. The hazard
 grid is bounded to `fire_exp_res` (30 m) because the annular kernel of
 `fire_exp()` costs `(2 * t_dist / res)^2` operations per cell: at 2 m it
-is ~52 000x the cost at 30 m.
+is ~52 000x the cost at 30 m. A DEM in geographic coordinates is first
+projected to a metric CRS (the units' CRS when projected, EPSG:3035
+otherwise); a hazard grid still in degrees, or whose annular window
+would exceed 10^6 weights, is rejected before `fire_exp()` is called and
+R1 falls back, with the reason recorded.
 
 \*\*Fallback method\*\*: R1 = w1\*slope + w2\*species_flammability +
-w3\*climate_dryness
+w3\*climate_dryness. Without a species field, an NDVI-based proxy
+(`100 - 100 * NDVI`) takes the species component when an NDVI layer is
+available. A component that cannot be computed drops out and its weight
+is redistributed proportionally; with no usable component, R1 is `NA`.
 
 ## See also
 

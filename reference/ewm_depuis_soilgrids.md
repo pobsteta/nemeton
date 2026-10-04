@@ -47,9 +47,12 @@ ewm_depuis_soilgrids(
 ## Value
 
 Numeric vector of `ewm` in mm, length `nrow(units)`. `NA` for a unit
-whose soil data could not be resolved. `NULL` if **no** depth interval
-could be loaded at all (graceful degradation — the caller falls back to
-a uniform `ewm`).
+whose soil data could not be resolved. `NULL` if **any** depth interval
+within `rooting_depth_cm` could not be loaded (clay or sand missing; a
+partial sum would underestimate the reserve), with a warning naming the
+missing intervals (graceful degradation — the caller falls back to a
+uniform `ewm`). Missing organic carbon or coarse fragments only trigger
+a warning (assumed zero).
 
 ## Details
 

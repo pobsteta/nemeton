@@ -24,9 +24,12 @@ create_validation_sampling_plan(
 
 - zone:
 
-  An \`sf\` POLYGON in EPSG:2154. Defines the geographic AOI of the
-  monitoring zone (used to intersect candidate cells; not used for the
-  alert/control selection itself, which comes from \`alert_raster\`).
+  An \`sf\` / \`sfc\` POLYGON (typically EPSG:2154; reprojected onto the
+  \`alert_raster\` CRS if different). Defines the geographic AOI of the
+  monitoring zone: both the alert (validation) and the healthy (control)
+  candidate cells are restricted to the cells inside \`zone\`, so no
+  plot is drawn outside it. The class selection itself comes from
+  \`alert_raster\`.
 
 - alert_raster:
 
@@ -75,9 +78,13 @@ create_validation_sampling_plan(
 - weighting:
 
   One of \`"uniform"\` (default) or \`"continuous"\`. \`"uniform"\`
-  keeps the historical per-class unequal-probability GRTS.
-  \`"continuous"\` weights inclusion by an external continuous severity
-  raster (\`weight_raster\`) — parity with
+  keeps the historical per-class unequal-probability GRTS, where the
+  per-cell inclusion probability is proportional to the class value (a
+  class-4 cell is drawn 4/3 as often as a class-3 cell, whatever the
+  number of cells in each class); a class with fewer cells than its
+  allocation is fully taken and the surplus is redistributed to the
+  other classes. \`"continuous"\` weights inclusion by an external
+  continuous severity raster (\`weight_raster\`) — parity with
   \[create_trend_sanitary_plan()\] (FAST \`\|slope\|\`).
 
 - weight_raster:

@@ -111,7 +111,7 @@ Anciennete des peuplements et changements d’occupation
 - [`indicateur_t1_anciennete()`](https://pobsteta.github.io/nemeton/reference/indicateur_t1_anciennete.md)
   : Calculate Stand Age Index (T1)
 - [`indicateur_t2_changement()`](https://pobsteta.github.io/nemeton/reference/indicateur_t2_changement.md)
-  : Calculate Stability / Change Rate Index (T2)
+  : Calculate Temporal Stability Proxy (T2)
 - [`indicateur_t3_coupes_rases()`](https://pobsteta.github.io/nemeton/reference/indicateur_t3_coupes_rases.md)
   : Calculate Clear-cut Pressure Index (T3)
 

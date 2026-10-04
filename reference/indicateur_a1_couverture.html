@@ -9,7 +9,7 @@ to assess local air quality and microclimate regulation potential."><meta proper
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -122,7 +122,7 @@ to assess local air quality and microclimate regulation potential.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">indicateur_a1_couverture</span><span class="op">(</span></span>
 <span>  <span class="va">units</span>,</span>
 <span>  land_cover <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  forest_classes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">16</span>, <span class="fl">17</span>, <span class="fl">18</span><span class="op">)</span>,</span>
+<span>  forest_classes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">16</span>, <span class="fl">17</span><span class="op">)</span>,</span>
 <span>  buffer_radius <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  fvc <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -143,9 +143,10 @@ supplied.</p></dd>
 
 
 <dt id="arg-forest-classes">forest_classes<a class="anchor" aria-label="anchor" href="#arg-forest-classes"></a></dt>
-<dd><p>Numeric vector. Land cover class codes for forests
-(OSO codes: 16 = coniferous, 17 = broadleaf, 18 = mixed).
-Default c(16, 17, 18).</p></dd>
+<dd><p>Numeric vector. Land cover class codes for forests.
+Default c(16, 17): OSO 23-class nomenclature (Theia/CESBIO),
+16 = broadleaf forest, 17 = coniferous forest (OSO has no mixed-forest
+class; 18 is natural grassland).</p></dd>
 
 
 <dt id="arg-buffer-radius">buffer_radius<a class="anchor" aria-label="anchor" href="#arg-buffer-radius"></a></dt>

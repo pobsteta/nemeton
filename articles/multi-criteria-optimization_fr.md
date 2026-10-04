@@ -569,15 +569,15 @@ zonage <- cluster_parcels(
 profiles_zonage <- attr(zonage, "cluster_profile")
 print(profiles_zonage)
 #>   famille_carbone famille_biodiversite famille_eau famille_naturalite
-#> 1        71.71201             74.08238    92.73146           65.78582
+#> 1        56.45354             57.97610    66.41595           49.53191
 #> 2        83.88399             55.99635    97.27934           66.46906
-#> 3        56.45354             57.97610    66.41595           49.53191
-#> 4        83.72735             78.06684    93.00943           66.73795
+#> 3        67.47313             71.38550   100.00000           53.65151
+#> 4        80.19323             77.03834    92.10916           67.76883
 #>   famille_production famille_energie famille_social famille_air
-#> 1           50.52202             100       98.68145    35.69920
-#> 2           51.88368             100       99.48972    38.94574
-#> 3           57.57089             100       99.05773    40.62771
-#> 4           42.85470             100       99.41097    26.44804
+#> 1           57.57089       100.00000       99.05773    40.62771
+#> 2           51.88368        99.67225       99.48972    38.94574
+#> 3           43.40296        92.97315       98.48458    36.70354
+#> 4           46.20148        99.94170       99.18967    29.42016
 
 # Attribuer des noms de zones selon les profils
 zonage <- zonage |>
@@ -594,9 +594,9 @@ zonage <- zonage |>
 table(zonage$zone_name)
 #> 
 #> Conservation intégrale          Gestion mixte     Production durable 
-#>                      4                      6                      8 
+#>                      2                      9                      8 
 #>        Usage récréatif 
-#>                      2
+#>                      1
 ```
 
 ### Carte du Zonage
@@ -633,10 +633,10 @@ zonage |>
 #> # A tibble: 4 × 7
 #>   zone_name              n_parcelles C_mean B_mean P_mean S_mean N_mean
 #>   <chr>                        <dbl>  <dbl>  <dbl>  <dbl>  <dbl>  <dbl>
-#> 1 Conservation intégrale           4   71.7   74.1   50.5   98.7   65.8
-#> 2 Gestion mixte                    6   83.7   78.1   42.8   99.4   66.7
+#> 1 Conservation intégrale           2   56.4   58.0   57.6   99.1   49.5
+#> 2 Gestion mixte                    9   80.2   77.0   46.2   99.2   67.8
 #> 3 Production durable               8   83.9   56     51.9   99.5   66.5
-#> 4 Usage récréatif                  2   56.4   58.0   57.6   99.1   49.5
+#> 4 Usage récréatif                  1   67.5   71.4   43.4   98.5   53.6
 ```
 
 ## Conclusion

@@ -11,7 +11,7 @@ allometric equations from IGN/IFN literature. Requires BD Forêt v2 data
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -157,7 +157,11 @@ allometric equations from IGN/IFN literature. Requires BD Forêt v2 data
 
 
 <dt id="arg-density-col">density_col<a class="anchor" aria-label="anchor" href="#arg-density-col"></a></dt>
-<dd><p>Character. Column name for stand density 0-1 (default "density")</p></dd>
+<dd><p>Character. Column name for stand density as a 0-1
+canopy-cover FRACTION (default "density"), as returned by
+<code><a href="enrich_parcels_bdforet.html">enrich_parcels_bdforet</a></code>. Not stems/ha (unlike the
+<code>density_field</code> of <code><a href="indicateur_p1_volume.html">indicateur_p1_volume</a></code>): values
+outside 0-1 are set to NA with a warning.</p></dd>
 
 
 <dt id="arg-chm">chm<a class="anchor" aria-label="anchor" href="#arg-chm"></a></dt>

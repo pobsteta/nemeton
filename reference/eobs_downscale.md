@@ -179,12 +179,13 @@ for a **regional context** map, not stand-scale precision.
   Thornton 1997 + elevation, microclimat brief Option A / chantier P4).
   It interpolates the **daily** SAFRAN pseudo-station series (from
   [`build_safran_stations`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md))
-  onto the DEM grid, aggregates each summer to an annual max, then
-  reduces to the requested `statistic` — same output contract as KED,
-  plus a `meta$cv` cross-validation block. Whenever meteoland is absent,
-  GéoSAS is down, or too few pseudo-stations resolve, it **falls back to
-  KED**, so the caller never branches on the engine. For a **daily**
-  raster stack (e.g. the Tmin series feeding
+  onto the DEM grid, aggregates each summer to the mean of daily maximum
+  temperature (the same quantity as the E-OBS input of the KED engine),
+  then reduces to the requested `statistic` — same output contract as
+  KED, plus a `meta$cv` cross-validation block. Whenever meteoland is
+  absent, GéoSAS is down, or too few pseudo-stations resolve, it **falls
+  back to KED**, so the caller never branches on the engine. For a
+  **daily** raster stack (e.g. the Tmin series feeding
   [`indicateur_r7_gel`](https://pobsteta.github.io/nemeton/reference/indicateur_r7_gel.md)),
   use
   [`meteoland_daily_grid`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)

@@ -12,7 +12,7 @@ indicateur_l1_sylvosphere(
   units,
   layers = NULL,
   landcover_layer = "landcover",
-  forest_values = seq(1, 6),
+  forest_values = c(16, 17),
   buffer = 1000
 )
 ```
@@ -33,7 +33,10 @@ indicateur_l1_sylvosphere(
 
 - forest_values:
 
-  Numeric vector. Values representing forest in landcover.
+  Numeric vector. Values representing forest in landcover. Default
+  `c(16, 17)`: OSO broadleaf and coniferous forest (23-class
+  Theia/CESBIO nomenclature, the `forest_cover` layer). Pass the codes
+  of your own raster when it uses another nomenclature.
 
 - buffer:
 

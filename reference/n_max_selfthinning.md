@@ -29,7 +29,10 @@ n_max_selfthinning(dq, species, clamp = TRUE)
 ## Value
 
 Numeric vector of maximum stems/ha. `NA` when the species cannot be
-resolved or `dq` is `NA` / non- positive.
+resolved or `dq` is `NA` / non- positive. The attribute `hors_domaine`
+(logical, same length) is `TRUE` where `dq` lay outside the species
+range and was clamped (`clamp = TRUE` only), `NA` where no value was
+computed.
 
 ## Details
 
@@ -52,6 +55,8 @@ calibrated only over that range and extrapolates poorly.
 # Common beech, D_g = 30 cm
 n_max_selfthinning(dq = 30, species = "FASY")
 #> [1] 581.6271
+#> attr(,"hors_domaine")
+#> [1] FALSE
 
 # Vector input
 n_max_selfthinning(
@@ -59,4 +64,6 @@ n_max_selfthinning(
   species = c("QUPE", "FASY", "PIAB")
 )
 #> [1] 1049.5908  581.6271  462.9191
+#> attr(,"hors_domaine")
+#> [1] FALSE FALSE FALSE
 ```

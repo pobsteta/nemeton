@@ -3,8 +3,8 @@
 Given a raw species code, returns the code actually available in the
 reference CSV. If the species is directly present, returns it unchanged.
 Otherwise falls back to `CONIFER_GENUS` or `BROADLEAF_GENUS` based on
-the internal `.conifer_codes` list (used by
-[`is_conifer`](https://pobsteta.github.io/nemeton/reference/is_conifer.md)).
+the package-wide conifer definition
+([`is_conifer`](https://pobsteta.github.io/nemeton/reference/is_conifer.md)).
 
 ## Usage
 

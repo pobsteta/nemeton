@@ -21,7 +21,7 @@ and emits a one-shot deprecation warning. New code should call
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -169,7 +169,11 @@ and emits a one-shot deprecation warning. New code should call
 <dl><dt id="arg-placettes">placettes<a class="anchor" aria-label="anchor" href="#arg-placettes"></a></dt>
 <dd><p>An sf object with POINT geometry. Must contain the
 <code>plot_id</code> column. A <code>type</code> column (values <code>"Base"</code>,
-<code>"Over"</code>) triggers categorised symbology.</p></dd>
+<code>"Over"</code>) triggers categorised symbology. Sampling-design
+columns (<code>wgt</code>, <code>ip</code>, <code>stratum</code>, <code>strat_height</code>,
+<code>strat_type</code>, <code>strat_topo</code>), when present, are kept in the
+GeoPackage as hidden form fields, so that the design weights survive
+the QField round trip (<code><a href="import_qgis_gpkg.html">import_qgis_gpkg</a></code>).</p></dd>
 
 
 <dt id="arg-zone-etude">zone_etude<a class="anchor" aria-label="anchor" href="#arg-zone-etude"></a></dt>

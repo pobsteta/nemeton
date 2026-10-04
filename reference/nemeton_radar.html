@@ -9,7 +9,7 @@ of indicators for a specific unit or the average across all units."><meta proper
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -124,7 +124,7 @@ of indicators for a specific unit or the average across all units.</p>
 <span>  unit_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  indicators <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"indicator"</span>, <span class="st">"family"</span><span class="op">)</span>,</span>
-<span>  normalize <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  normalize <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  title <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fill_color <span class="op">=</span> <span class="st">"#3182bd"</span>,</span>
 <span>  fill_alpha <span class="op">=</span> <span class="fl">0.3</span></span>
@@ -157,7 +157,13 @@ supports 4-12 family axes dynamically.</p></dd>
 
 
 <dt id="arg-normalize">normalize<a class="anchor" aria-label="anchor" href="#arg-normalize"></a></dt>
-<dd><p>Logical. If TRUE (default), normalizes values to 0-100 scale.</p></dd>
+<dd><p>Logical or NULL. If TRUE, applies a min-max rescaling of
+each axis across the units of <code>data</code> (0-100). If NULL (default),
+resolves to TRUE in <code>mode = "indicator"</code> and FALSE in
+<code>mode = "family"</code>: family indices are already on an absolute 0-100
+scale, and a between-unit min-max would distort them (a single unit would
+plot at 50 on every axis). In family mode without normalization, values
+are clipped to 0-100 and the radar keeps a fixed 0-100 scale.</p></dd>
 
 
 <dt id="arg-title">title<a class="anchor" aria-label="anchor" href="#arg-title"></a></dt>
@@ -184,8 +190,10 @@ Each axis represents one indicator, with values scaled from center (0) to edge (
 If <code>unit_id</code> is a vector (v0.3.0+), creates a comparison chart with multiple
 overlaid polygons for comparing units side-by-side.
 If <code>unit_id</code> is NULL, the chart shows the mean values across all units.</p>
-<p>Normalization is recommended when indicators have different scales. The function
-applies min-max normalization to scale all values to 0-100.</p>
+<p>Normalization is recommended when raw indicators have different scales. The
+function then applies a between-unit min-max normalization to scale all
+values to 0-100. It is disabled by default in family mode, where the
+indices are already absolute 0-100 scores.</p>
 <p>**v0.3.0 Enhancements**: Supports 9-12 family axes and comparison mode for
 multiple units.</p>
     </div>

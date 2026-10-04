@@ -42,16 +42,30 @@ indicateur_b1_protection(
 
 ## Value
 
-The input sf object with added column:
+The input sf object with added columns:
 
-- B1: Percentage of parcel area in protected zones (0-100)
+- B1: protection score (0-100)
+
+- B1_pct: weighted protected coverage of the parcel (0-100)
+
+- B1_nb: number of distinct protection statuses intersecting the parcel
 
 ## Details
 
-\*\*Calculation\*\*: B1 = (area_protected / area_total) × 100
+\*\*Calculation\*\*: with a protection-type column (`type_protection`,
+`zone_type`, `type` or `statut`), B1 = 0.7 \* B1_pct + 0.3 \* min(B1_nb,
+4) / 4 \* 100, where B1_pct is the coverage of each status averaged with
+weights by protection strength (strong 1.0, medium 0.6, weak 0.3,
+unknown 0.5). The number of statuses is scaled by a fixed bound of 4
+stacked statuses (ZNIEFF 1 + ZNIEFF 2 + Natura 2000 + park/reserve), so
+the score of a parcel does not depend on the other parcels of the batch.
+Without a type column, B1 = B1_pct (plain coverage; the number of
+statuses is unknown).
+
+A NULL `protected_areas` gives NA (no measurement; the `"wfs"` source is
+not fetched by this function); an empty `protected_areas` gives 0.
 
 \*\*Interpretation\*\*: Higher values indicate better protection status.
-Parcels with B1 \> 75\\
 
 ## See also
 

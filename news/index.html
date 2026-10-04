@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,69 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.212.0" id="nemeton-02120-2026-10-03">nemeton 0.212.0 (2026-10-03)<a class="anchor" aria-label="anchor" href="#nemeton-02120-2026-10-03"></a></h2>
+<p>Cinquième vague de l’audit de pré-version 1.0 : <strong>seconde passe sur les calculs</strong>. Trente et un correctifs majeurs, menés par trois agents en parallèle. <strong>Beaucoup de valeurs changent</strong> : les projets doivent être recalculés. Les calibrages nouveaux sont signalés « à valider ».</p>
+<div class="section level4">
+<h4 id="fixed--indicateurs-valeurs-qui-changent-0-212-0">Fixed — indicateurs (valeurs qui changent)<a class="anchor" aria-label="anchor" href="#fixed--indicateurs-valeurs-qui-changent-0-212-0"></a></h4>
+<ul><li>
+<strong>B3 (connectivité)</strong> : la composante coût valait toujours 50 (<code><a href="https://rspatial.github.io/terra/reference/costDist.html" class="external-link">terra::costDist()</a></code> appelé avec un raster comme cible, erreur avalée) ; une parcelle en forêt prenait la distance au polygone suivant ; une composante en échec valait 50. Composantes absentes exclues et poids renormalisés ; calcul en EPSG:3035 quand les unités sont en coordonnées géographiques.</li>
+<li>
+<strong>B1</strong> : nombre de statuts rapporté à une borne fixe de 4 (ZNIEFF 1 et 2, Natura 2000, parc ou réserve), plus au maximum du lot. <em>À valider.</em>
+</li>
+<li>
+<strong>Nomenclature OSO commune</strong> (<code>OSO_NOMENCLATURE</code>, 23 classes ; forêt = 16 feuillus et 17 conifères) : L2 calculait la cohésion du <strong>bâti et des cultures</strong> (<code>forest_values = 1:6</code>), A1 et L1 comptaient les pelouses (18) comme forêt, L1 lisait le bâti comme un code inconnu. L1 monte près du bâti et des routes, A1 baisse, L2 mesure enfin la forêt.</li>
+<li>
+<strong>W2</strong> : union des masques au lieu de la somme de quatre sources qui se recouvrent (baisse là où elles se recouvraient). <strong>W1</strong> : NA au lieu de 0 sans couche de cours d’eau.</li>
+<li>
+<strong>F1 (mode <code>layer</code>)</strong> : échelle absolue (<code>fertility_range</code>), plus de min-max relatif au lot ; surfaces sans valeur exclues du dénominateur.</li>
+<li>
+<strong>A2 (proxy)</strong> : borne absolue (<code>A2_POLLUTION_REF</code>, <em>à valider</em>) au lieu du maximum du lot, qui forçait l’unité la plus exposée à 0.</li>
+<li>
+<strong>R1 (repli)</strong> : composantes absentes exclues et poids redistribués ; NA sans aucune composante.</li>
+<li>
+<strong>R1 (<code>fireexposuR</code>)</strong> : le chemin principal n’aboutissait sur <strong>aucun</strong> projet journalisé. Le MNT de repli IGN arrive en EPSG:4326 : la borne de 30 m était ignorée et <code>fire_exp()</code> matérialisait une fenêtre de 500 m en cellules de 2,5e-4 degré (« cannot allocate vector of size 59622.1 Gb », Couchey et Aumur), puis le repli prenait la main sans trace. Le MNT est désormais reprojeté en métrique (CRS des unités, sinon EPSG:3035) ; la grille est contrôlée avant l’appel (degrés ou fenêtre &gt; 10^6 poids : erreur lisible) ; la grille du <code>hazard</code> est élargie de 500 m dans l’emprise de la BD Forêt (la bande de bord que <code>fire_exp()</code> laisse à NA privait d’exposition les unités proches du bord). Couchey : 23/23 parcelles en <code>fire_exp</code>, 1,6 s. Nouvelles colonnes <strong><code>r1_status</code></strong> (<code>fire_exp</code>, <code>fallback_no_fireexposur</code>, <code>fallback_no_bdforet</code>, <code>fallback_fire_exp_failed</code>, <code>skipped_no_dem</code>, <code>skipped_no_component</code>) et <strong><code>r1_fallback_reason</code></strong> (texte) : la méthode qui a produit R1 est portée par le résultat. <strong>Les R1 changent</strong> sur tous les projets où le repli tournait. <strong>R4</strong> : appétence pondérée par la surface de chaque polygone BD Forêt (au lieu du premier venu) ; NA hors du raster de gibier.</li>
+<li>
+<strong>R5</strong> : la surface d’un cluster est répartie entre les UGF qu’il touche (fin du double comptage). <strong>R7</strong> : ne plante plus sur une seule unité.</li>
+<li>
+<strong>E1</strong> : le facteur × 0,5 appliqué à une densité <strong>déjà sèche</strong> est retiré ; la borne de normalisation suit (2,64, toujours « E1 au plafond de P1 ») : les scores normalisés ne changent pas, hors part taillis. <strong>E2</strong> : la substitution matériau, qui ajoutait un stock à un flux, exige <code>taux_recolte_materiau</code>.</li>
+<li>
+<strong>S1, S2</strong> : routes et bâtiments hors de l’emprise du MNT sont pris en compte (distance censurée à <code>max_dist</code>).</li>
+<li>
+<strong>T1</strong> : un âge mesuré l’emporte sur le TFV ; TFV inconnu exclu ; NA sans source. <strong>T2</strong> : documenté pour ce qu’il est (proxy de stabilité), NA au lieu de 50.</li>
+<li>
+<strong>Douglas</strong> : <code>PSME</code> partout (le code <code>PIME</code> le rendait introuvable : densité de repli feuillu, P2 au genre, <code>resoudre_espar("PSME")</code> à NA). <strong>Résineux</strong> : une seule définition (<code>.est_resineux()</code>) pour la hauteur, P1, P3, C1, R2 et l’IFN ; P3 reconnaît sapin, Douglas, mélèze et cèdre.</li>
+<li>
+<strong><code>density</code></strong> : contrôle d’unité (fraction en C1, tiges/ha en P1), NA si la valeur est manifestement dans l’autre unité.</li>
+<li>
+<strong>Dg et N_max</strong> de l’inventaire synthétique : bornage signalé (<code>hors_domaine</code>), plus silencieux.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="fixed--analyse-échantillonnage-climat-0-212-0">Fixed — analyse, échantillonnage, climat<a class="anchor" aria-label="anchor" href="#fixed--analyse-%C3%A9chantillonnage-climat-0-212-0"></a></h4>
+<ul><li>
+<strong><code><a href="../reference/nemeton_radar.html">nemeton_radar()</a></code></strong> en mode famille ne refait plus de min-max entre unités (une unité seule valait 50 partout).</li>
+<li>
+<strong><code><a href="../reference/calculate_change_rate.html">calculate_change_rate()</a></code>, <code><a href="../reference/plot_difference_map.html">plot_difference_map()</a></code></strong> : appariement par identifiant, plus par position.</li>
+<li>
+<strong><code>plot_tradeoff(size =)</code></strong> ne plante plus ; <strong>classes raster</strong> absentes de <code>class_map</code> → NA.</li>
+<li>
+<strong>Plan de validation</strong> : <code>zone</code> enfin appliquée (plus de placettes hors zone) ; pondération « uniform » conforme à sa documentation, reliquat redistribué.</li>
+<li>
+<strong>Plan d’échantillonnage</strong> : poids d’inclusion <code>wgt</code> et <code>ip</code> conservés, y compris dans le GeoPackage QField ; une extraction en échec n’efface plus en silence la contrainte de pente.</li>
+<li>
+<strong>Réserve utile SoilGrids</strong> : un horizon manquant renvoie au repli au lieu d’une valeur sous-estimée.</li>
+<li>
+<strong>Reprojection</strong> : couches catégorielles en plus proche voisin (la couverture du sol était interpolée en classes fractionnaires).</li>
+<li>
+<strong>E-OBS, moteur meteoland</strong> : moyenne estivale, comme KED (c’était le jour le plus chaud) : les valeurs baissent.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="fixed--reconfort-0-212-0">Fixed — RECONFORT<a class="anchor" aria-label="anchor" href="#fixed--reconfort-0-212-0"></a></h4>
+<ul><li>Score : les pixels très sains valent 1 au lieu de « pas de donnée » ; un pixel valide n’est plus masqué ; le modèle <code>v3_pine</code> (2 classes) ne plante plus (score maximal 66 avec P3 = 0, formule d’origine).</li>
+<li>Série pixel CRswir/CRre enfin masquée des nuages (masque MUSCATE <code>CLM</code>), scènes regroupées par date et par tuile.</li>
+<li>Sans masque, la classification est découpée en tranches (mémoire).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.211.0" id="nemeton-02110-2026-10-03">nemeton 0.211.0 (2026-10-03)<a class="anchor" aria-label="anchor" href="#nemeton-02110-2026-10-03"></a></h2>
 <p>Quatrième vague de l’audit de pré-version 1.0 : <strong>paquet propre</strong>. <code>R CMD check --as-cran</code> passe à <strong>0 WARNING</strong> et la CI échoue désormais au premier warning.</p>

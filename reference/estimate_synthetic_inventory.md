@@ -83,10 +83,14 @@ estimate_synthetic_inventory(
 ## Value
 
 A data.frame with one row per unit containing `H_dom` (m), `dbh` (cm,
-the quadratic mean diameter), `density` (stems / ha), and `source`
-(always "synthetic_ml") columns. Units below `min_merchantable_height`
-get `dbh = 0` and `density = 0`. The attribute `chm_suspect` (logical)
-flags a likely degenerate CHM (see `suspect_frac`).
+the quadratic mean diameter), `density` (stems / ha), `source` (always
+"synthetic_ml") and `hors_domaine` columns. `hors_domaine` is `TRUE`
+when \\D_g\\ (Charru / IFN allometry) or \\N\_{max}\\ (Charru 2012) was
+clamped to the species' calibration range, `FALSE` otherwise (and for
+non-merchantable units), `NA` when \\D_g\\ is unknown; a message reports
+how many units are concerned. Units below `min_merchantable_height` get
+`dbh = 0` and `density = 0`. The attribute `chm_suspect` (logical) flags
+a likely degenerate CHM (see `suspect_frac`).
 
 ## Examples
 

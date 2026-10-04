@@ -9,7 +9,7 @@ nearest building, using rasterized building data and terra::distance()."><meta p
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -126,7 +126,8 @@ nearest building, using rasterized building data and <code><a href="https://rspa
 <span>  layers <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  column_name <span class="op">=</span> <span class="st">"S2"</span>,</span>
 <span>  lang <span class="op">=</span> <span class="st">"en"</span>,</span>
-<span>  dem_target_res <span class="op">=</span> <span class="fu">.topo_target_res</span><span class="op">(</span><span class="op">)</span></span>
+<span>  dem_target_res <span class="op">=</span> <span class="fu">.topo_target_res</span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  max_dist <span class="op">=</span> <span class="fl">2000</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -169,6 +170,16 @@ package-wide topographic working resolution, 2 m — see
 <code>options("nemeton.topo_target_res")</code>; <code>NULL</code> keeps the native
 resolution.</p></dd>
 
+
+<dt id="arg-max-dist">max_dist<a class="anchor" aria-label="anchor" href="#arg-max-dist"></a></dt>
+<dd><p>Numeric. Search radius (metres) around the units, default
+2000 m (the distance at which the normalised score reaches 0). The
+working grid covers the units' extent widened by <code>max_dist</code>, not the DEM
+extent, so features just outside the DEM are no longer ignored. Distances
+are exact up to <code>max_dist</code> and censored at <code>max_dist</code> beyond (a unit
+with no feature within <code>max_dist</code> gets <code>max_dist</code>, i.e. "at least
+<code>max_dist</code>"); with no feature at all, the indicator is <code>NA</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -176,8 +187,10 @@ resolution.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>**Calculation** (tuto 03 method):</p><ul><li><p>Rasterize building geometries onto the DEM grid</p></li>
-<li><p>Compute distance raster via <code><a href="https://rspatial.github.io/terra/reference/distance.html" class="external-link">terra::distance()</a></code></p></li>
+    <p>**Calculation** (tuto 03 method):</p><ul><li><p>Rasterize building geometries onto a grid with the DEM resolution,
+    covering the units' extent widened by <code>max_dist</code></p></li>
+<li><p>Compute distance raster via <code><a href="https://rspatial.github.io/terra/reference/distance.html" class="external-link">terra::distance()</a></code>, censored at
+    <code>max_dist</code></p></li>
 <li><p>Extract mean distance per spatial unit</p></li>
 </ul><p>Returns NA when DEM or buildings are unavailable.</p>
     </div>

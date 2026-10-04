@@ -94,9 +94,10 @@ sf object with added columns: E1 (fuelwood potential tonnes DM/ha/yr),
 E1_residues, E1_coppice; in flux mode also `E1_mode` (`"ressource_flux"`
 or `"recolte_observee"`). **Higher = more fuelwood available =
 favourable**, not inverted; normalize_indicator() rescales it against a
-ref_max of 1.32 t DM/ha/yr – the yield of a stand at P1's own ceiling
+ref_max of 2.64 t DM/ha/yr – the yield of a stand at P1's own ceiling
 (800 m3/ha, density 550), so E1, E2 and P1 score the same stand alike.
-See spec 048 section 11.
+See spec 048 section 11. A unit with no volume gets `NA` in E1,
+E1_residues and E1_coppice.
 
 ## Stock mode and flux mode
 
@@ -112,3 +113,11 @@ by the SER's own harvest / production ratio is simply the **observed
 harvest** of the SER, identical for every unit of the domain. E1 then
 warns and writes `E1_mode = "recolte_observee"` instead of
 `"ressource_flux"`, so that it is not presented as a potential.
+
+## Wood density
+
+Residue volume is converted to dry matter with the species density of
+`inst/extdata/wood_density.csv` (`density_kg_m3`), an air-dry density
+(about 12 percent moisture), used as is as a dry-matter density – as C1
+does. Versions up to 0.211.0 multiplied it by a further 0.5 ("dry matter
+= 50 percent of fresh weight"), which halved E1.

@@ -14,7 +14,8 @@ indicateur_s2_bati(
   layers = NULL,
   column_name = "S2",
   lang = "en",
-  dem_target_res = .topo_target_res()
+  dem_target_res = .topo_target_res(),
+  max_dist = 2000
 )
 ```
 
@@ -56,6 +57,16 @@ indicateur_s2_bati(
   `options("nemeton.topo_target_res")`; `NULL` keeps the native
   resolution.
 
+- max_dist:
+
+  Numeric. Search radius (metres) around the units, default 2000 m (the
+  distance at which the normalised score reaches 0). The working grid
+  covers the units' extent widened by `max_dist`, not the DEM extent, so
+  features just outside the DEM are no longer ignored. Distances are
+  exact up to `max_dist` and censored at `max_dist` beyond (a unit with
+  no feature within `max_dist` gets `max_dist`, i.e. "at least
+  `max_dist`"); with no feature at all, the indicator is `NA`.
+
 ## Value
 
 sf object with added column: S2 (mean distance to nearest building in
@@ -65,10 +76,12 @@ metres)
 
 \*\*Calculation\*\* (tuto 03 method):
 
-- Rasterize building geometries onto the DEM grid
+- Rasterize building geometries onto a grid with the DEM resolution,
+  covering the units' extent widened by `max_dist`
 
 - Compute distance raster via
-  [`terra::distance()`](https://rspatial.github.io/terra/reference/distance.html)
+  [`terra::distance()`](https://rspatial.github.io/terra/reference/distance.html),
+  censored at `max_dist`
 
 - Extract mean distance per spatial unit
 

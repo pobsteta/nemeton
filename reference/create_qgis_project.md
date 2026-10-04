@@ -44,7 +44,11 @@ create_qfield_project(
 
   An sf object with POINT geometry. Must contain the `plot_id` column. A
   `type` column (values `"Base"`, `"Over"`) triggers categorised
-  symbology.
+  symbology. Sampling-design columns (`wgt`, `ip`, `stratum`,
+  `strat_height`, `strat_type`, `strat_topo`), when present, are kept in
+  the GeoPackage as hidden form fields, so that the design weights
+  survive the QField round trip
+  ([`import_qgis_gpkg`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)).
 
 - zone_etude:
 

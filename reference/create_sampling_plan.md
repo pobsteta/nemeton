@@ -127,9 +127,12 @@ create_sampling_plan(
 
 An sf POINT with columns `plot_id`, `type` (Base or Over),
 `visit_order`, `stratum`, and optionally `strat_height` / `strat_type` /
-`strat_topo` when the relevant input was supplied. A `"method"`
-attribute records how the draw was performed (`"grts"`, `"lpm2"` or
-`"random"`).
+`strat_topo` when the relevant input was supplied. The design columns
+`ip` (inclusion probability) and `wgt` (design weight, `1 / ip`) are
+always returned: taken from spsurvey for a GRTS draw (unequal across
+strata), `n_base / N` for the equal-probability LPM2 / random fallbacks.
+They are required for unbiased estimation. A `"method"` attribute
+records how the draw was performed (`"grts"`, `"lpm2"` or `"random"`).
 
 ## Details
 

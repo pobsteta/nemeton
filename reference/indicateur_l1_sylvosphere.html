@@ -11,7 +11,7 @@ indicateur_l2_morcellement, which returns the same values."><meta property="og:i
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -126,7 +126,7 @@ function computes the L2 fragmentation metric. Use
 <span>  <span class="va">units</span>,</span>
 <span>  layers <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  landcover_layer <span class="op">=</span> <span class="st">"landcover"</span>,</span>
-<span>  forest_values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">6</span><span class="op">)</span>,</span>
+<span>  forest_values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">16</span>, <span class="fl">17</span><span class="op">)</span>,</span>
 <span>  buffer <span class="op">=</span> <span class="fl">1000</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -148,7 +148,10 @@ function computes the L2 fragmentation metric. Use
 
 
 <dt id="arg-forest-values">forest_values<a class="anchor" aria-label="anchor" href="#arg-forest-values"></a></dt>
-<dd><p>Numeric vector. Values representing forest in landcover.</p></dd>
+<dd><p>Numeric vector. Values representing forest in landcover.
+Default <code>c(16, 17)</code>: OSO broadleaf and coniferous forest (23-class
+Theia/CESBIO nomenclature, the <code>forest_cover</code> layer). Pass the codes
+of your own raster when it uses another nomenclature.</p></dd>
 
 
 <dt id="arg-buffer">buffer<a class="anchor" aria-label="anchor" href="#arg-buffer"></a></dt>

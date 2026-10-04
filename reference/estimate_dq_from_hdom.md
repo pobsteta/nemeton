@@ -29,7 +29,11 @@ estimate_dq_from_hdom(H_dom, species)
 
 Numeric vector of estimated \\D_g\\ in cm, clamped to each species'
 observed range. `NA` when `H_dom` is `NA`, non-positive or below 6 m
-(stands too young for this allometry).
+(stands too young for this allometry). The clamping is not silent: the
+attribute `hors_domaine` (logical, same length) is `TRUE` where the raw
+allometric value fell outside the species range and was clamped (e.g. an
+old oak stand capped at the 30 cm upper bound of QUPE), `NA` where no
+value was computed.
 
 ## Details
 
@@ -45,9 +49,13 @@ very large \\H\_{dom}\\.
 ``` r
 estimate_dq_from_hdom(H_dom = 25, species = "FASY")
 #> [1] 27.59599
+#> attr(,"hors_domaine")
+#> [1] FALSE
 estimate_dq_from_hdom(
   H_dom   = c(18, 25, 30),
   species = c("QUPE", "FASY", "PIAB")
 )
 #> [1] 18.21380 27.59599 35.14301
+#> attr(,"hors_domaine")
+#> [1] FALSE FALSE FALSE
 ```

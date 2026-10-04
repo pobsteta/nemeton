@@ -23,8 +23,8 @@ indicateur_b3_connectivite(
 
 - bdforet:
 
-  An sf object with BD Foret V2 polygons. If NULL, returns fallback
-  score of 50 for all parcels. Default NULL.
+  An sf object with BD Foret V2 polygons. If NULL, B3 is NA for all
+  parcels (connectivity not measurable). Default NULL.
 
 - dem:
 
@@ -58,7 +58,16 @@ Four components are combined (25
     connectivity.
 
 Final score: B3 = 0.7 \* B3_global + 0.3 \* local_connectivity where
-local_connectivity is distance-based (sf) per-parcel adjustment.
+local_connectivity is distance-based (sf) per-parcel adjustment
+(distance from the unit centroid to the nearest forest polygon, 0 when
+the centroid lies inside forest).
+
+A component that cannot be measured (missing package, error, fewer than
+5 forest units for the kernel) is NA: it is excluded and the remaining
+weights are renormalised, instead of entering the mean as a fixed 50.
+Computations run in metres: geographic inputs are projected to
+ETRS89-LAEA (EPSG:3035) and the result is attached to the original
+units.
 
 ## See also
 

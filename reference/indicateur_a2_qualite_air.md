@@ -1,8 +1,7 @@
 # Calculate Air Quality Index (A2)
 
 Computes air quality score using direct ATMO station data (if available)
-or proxy method based on distance to pollution sources (roads, urban
-areas).
+or proxy method based on distance to pollution sources (roads).
 
 ## Usage
 
@@ -39,7 +38,8 @@ indicateur_a2_qualite_air(
 
 - urban_areas:
 
-  An sf object with urban zones (polygons). Used for proxy method.
+  Currently unused: the proxy method only reads roads. Kept for backward
+  compatibility; a warning is emitted when supplied.
 
 - method:
 
@@ -64,8 +64,13 @@ The input sf object with added columns:
 \*\*Direct Method\*\* (ATMO data): - Interpolate NO2 and PM10 from
 nearest stations - Convert to quality score: low pollution = high score
 
-\*\*Proxy Method\*\* (distance-based): - Calculate distance to nearest
-road and urban area - Far from pollution sources = high score
+\*\*Proxy Method\*\* (distance-based, roads only): - Road pollution
+index P = sum over roads within 2 km of w / (d / 100)^2, with w the
+traffic weight of the BD TOPO road type and d the distance (m, floored
+at 10 m) to the unit centroid - A2 = 100 \* (1 - log1p(P) / log1p(100)),
+bounded to 0-100: the reference P = 100 is a motorway at 10 m. The score
+is absolute (it does not depend on the other units of the call); a unit
+with no road within 2 km scores 100.
 
 ## See also
 
@@ -87,7 +92,6 @@ result <- indicateur_a2_qualite_air(units, atmo_data = atmo_data, method = "dire
 
 # Proxy method
 roads <- st_read("path/to/roads.gpkg")
-urban <- st_read("path/to/urban_areas.gpkg")
-result <- indicateur_a2_qualite_air(units, roads = roads, urban_areas = urban, method = "proxy")
+result <- indicateur_a2_qualite_air(units, roads = roads, method = "proxy")
 } # }
 ```

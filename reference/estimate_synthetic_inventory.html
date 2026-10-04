@@ -23,7 +23,7 @@ n_max_selfthinning (Charru 2012) times a
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -213,8 +213,13 @@ warning is emitted and the returned data.frame carries
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data.frame with one row per unit containing
   <code>H_dom</code> (m), <code>dbh</code> (cm, the quadratic mean
-  diameter), <code>density</code> (stems / ha), and <code>source</code>
-  (always "synthetic_ml") columns. Units below
+  diameter), <code>density</code> (stems / ha), <code>source</code>
+  (always "synthetic_ml") and <code>hors_domaine</code> columns.
+  <code>hors_domaine</code> is <code>TRUE</code> when \(D_g\) (Charru / IFN
+  allometry) or \(N_{max}\) (Charru 2012) was clamped to the
+  species' calibration range, <code>FALSE</code> otherwise (and for
+  non-merchantable units), <code>NA</code> when \(D_g\) is unknown; a
+  message reports how many units are concerned. Units below
   <code>min_merchantable_height</code> get <code>dbh = 0</code> and
   <code>density = 0</code>. The attribute <code>chm_suspect</code> (logical)
   flags a likely degenerate CHM (see <code>suspect_frac</code>).</p>

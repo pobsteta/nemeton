@@ -11,7 +11,7 @@ edge exposure, and local game density from hunting statistics."><meta property="
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -168,9 +168,12 @@ Default 50.</p></dd>
     <p>Aligned with tuto 03 methodology: BD Foret intersection for palatability,
 LiDAR MNH for vulnerability, hunting data (data.gouv.fr) for density.</p>
 
-<p>**Formula**: R4 = 0.35*palatability + 0.30*vulnerability + 0.20*edge + 0.15*density</p>
+<p>**Formula**: R4 = 0.35*palatability + 0.30*vulnerability + 0.20*edge + 0.15*density.
+A component that cannot be evaluated (no BD Foret, no LiDAR MNH, unit outside
+the game density raster) is <code>NA</code> and propagates to R4.</p>
 <p>**Components**:</p><ul><li><p>palatability: From BD Foret species intersection (pattern matching on
-    essence names). Quercus=90, Abies=85, Fagus=70, Pinus=30.</p></li>
+    essence names). Quercus=90, Abies=85, Fagus=70, Pinus=30. Averaged over
+    the intersected BD Foret polygons, weighted by intersected area.</p></li>
 <li><p>vulnerability: From LiDAR MNH mean height per parcel.
     &lt;2m = 100, 2-10m = decreasing, &gt;10m = 0.</p></li>
 <li><p>edge_exposure: Proportion of parcel within buffer of forest edge.</p></li>

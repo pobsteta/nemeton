@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,7 +140,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstetar</h4>
             
-            <h4 data-toc-skip class="date">2026-10-03</h4>
+            <h4 data-toc-skip class="date">2026-10-04</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/fiche-e1-bois-energie_fr.Rmd" class="external-link"><code>vignettes/fiche-e1-bois-energie_fr.Rmd</code></a></small>
       <div class="d-none name"><code>fiche-e1-bois-energie_fr.Rmd</code></div>
@@ -194,8 +194,8 @@ Obstetar</h4>
 <tr class="odd">
 <td>Normalisation</td>
 <td>
-<code>ref_max = 1,32</code> →
-<code>score = min(100, t / 1,32 × 100)</code> — aligné sur P1</td>
+<code>ref_max = 2,64</code> →
+<code>score = min(100, t / 2,64 × 100)</code> — aligné sur P1</td>
 </tr>
 <tr class="even">
 <td>Fonction</td>
@@ -218,14 +218,17 @@ Obstetar</h4>
 </h2>
 <pre><code>recolte_annuelle = V_sur_pied x harvest_rate                 defaut 2 % / an
 remanents        = recolte_annuelle x residue_fraction       defaut 30 %
-t_MS_remanents   = remanents x rho / 1000 x 0,5              MS = 50 % du poids frais
+t_MS_remanents   = remanents x rho / 1000                    rho = densite seche a l'air
 t_MS_taillis     = fraction_taillis x 2                      2 t MS / ha / an, en dur
 E1               = t_MS_remanents + t_MS_taillis</code></pre>
 <p><code>rho</code> vient de <code>wood_density.csv</code> (défaut
-<strong>550 kg/m³</strong> si l’essence est inconnue). Le volume sur
-pied est <strong>P1</strong>, calculé à la volée si la colonne manque —
-E1 hérite donc de toutes les propriétés de P1, correctif 0.169.0
-compris.</p>
+<strong>550 kg/m³</strong> si l’essence est inconnue). C’est une densité
+de bois <strong>sec à l’air</strong> (~12 % d’humidité), que C1 emploie
+aussi telle quelle : jusqu’à la 0.211.0, E1 la multipliait encore par
+0,5 (« MS = 50 % du poids frais »), ce qui divisait le gisement par
+deux. Le volume sur pied est <strong>P1</strong>, calculé à la volée si
+la colonne manque — E1 hérite donc de toutes les propriétés de P1,
+correctif 0.169.0 compris.</p>
 <p><strong>Exemples chiffrés</strong> (hêtre, ρ = 680) :</p>
 <table class="table">
 <thead><tr class="header">
@@ -240,21 +243,21 @@ compris.</p>
 <td>200 m³/ha</td>
 <td>4,0</td>
 <td>1,2 m³/ha</td>
-<td><strong>0,41 t MS</strong></td>
+<td><strong>0,82 t MS</strong></td>
 <td><strong>30,9</strong></td>
 </tr>
 <tr class="even">
 <td>120 m³/ha</td>
 <td>2,4</td>
 <td>0,72 m³/ha</td>
-<td><strong>0,24 t MS</strong></td>
+<td><strong>0,49 t MS</strong></td>
 <td><strong>18,5</strong></td>
 </tr>
 <tr class="odd">
 <td>60 m³/ha</td>
 <td>1,2</td>
 <td>0,36 m³/ha</td>
-<td><strong>0,12 t MS</strong></td>
+<td><strong>0,24 t MS</strong></td>
 <td><strong>9,3</strong></td>
 </tr>
 </tbody>
@@ -292,12 +295,13 @@ proportionnelles saturaient à <strong>182, 455 et 800 m³/ha</strong> : à
 182 m³/ha, la même parcelle était à 100/100 en bois-énergie et à
 22,8/100 en volume.</p>
 <p><strong>Correctif (spec 048 §11)</strong> :
-<code>ref_max(E1) = ref_max(E2) = 1,32 t</code>, soit exactement E1 au
-plafond de P1 (800 m³/ha, ρ = 550). Les trois axes notent désormais le
-même peuplement à l’identique, à 0,1 % près — le résidu du facteur
-0,999.</p>
+<code>ref_max(E1) = ref_max(E2)</code> = exactement E1 au plafond de P1
+(800 m³/ha, ρ = 550), soit <strong>2,64 t</strong> depuis la correction
+de densité de l’audit 1.0 (1,32 t avant, avec le facteur 0,5 à tort).
+Les trois axes notent désormais le même peuplement à l’identique, à 0,1
+% près — le résidu du facteur 0,999.</p>
 <p><strong>Limite assumée</strong> : une borne fixe ne peut pas suivre
-la densité de l’essence (E1(800 m³/ha) vaut 0,96 pour ρ = 400 et 1,68
+la densité de l’essence (E1(800 m³/ha) vaut 1,92 pour ρ = 400 et 3,36
 pour ρ = 700). Elle est ancrée sur la densité par défaut.</p>
 </li>
 <li><p><strong>Trois constantes portent tout le résultat</strong> :
@@ -316,7 +320,7 @@ annuel qu’une futaie en production.</p></li>
 </h2>
 <pre><code>indicateur_e1_bois_energie()  -&gt;  colonnes E1, E1_residues, E1_coppice
       |
-      +- normalize_indicator()     -&gt; min(100, t / 1,32 x 100)
+      +- normalize_indicator()     -&gt; min(100, t / 2,64 x 100)
       +- create_family_index("E")  -&gt; famille_energie = moy(E1, E2)
       +- alimente E2 (fuelwood_field)</code></pre>
 </div>
@@ -338,14 +342,14 @@ annuelle</text><text x="300" y="69" font-size="11" font-family="ui-monospace,SFM
 2 % / an</text><rect x="288" y="126" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="145" font-size="12.5" font-weight="600" fill="currentColor">Rémanents
 en matière sèche</text><text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">récolte
 × 30 %</text><text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">×
-ρ/1000 × 0,5</text><rect x="288" y="218" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="237" font-size="12.5" font-weight="600" fill="currentColor">Somme
+ρ/1000</text><rect x="288" y="218" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="237" font-size="12.5" font-weight="600" fill="currentColor">Somme
 des deux gisements</text><text x="300" y="253" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">E1
 = rémanents + taillis</text><rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"></rect><text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_e1_bois_energie</text><text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">t
 MS / ha / an</text><rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text><text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">min(100,
-t / 1,32 × 100)</text><rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“E”)</text><text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_energie</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
+t / 2,64 × 100)</text><rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“E”)</text><text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_energie</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
 de E1 et E2</text><rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text><text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci
 · confiance φ</text><line x1="260" y1="63" x2="282" y2="63" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><path d="M260 127 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 183 H271 V239 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">puis</text><line x1="306" y1="186" x2="306" y2="212" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="312" y="202" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">puis</text><line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="155" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="239" x2="566" y2="239" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="566" y2="239" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">Borne
-alignée sur P1 (1,32 t MS/ha/an = E1 à 800 m³/ha) : E1, E2 et P1 notent
+alignée sur P1 (2,64 t MS/ha/an = E1 à 800 m³/ha) : E1, E2 et P1 notent
 le même peuplement pareil.</text><text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Trois
 constantes portent le résultat — taux de récolte 2 %, fraction rémanents
 30 %, forfait taillis 2 t.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">La

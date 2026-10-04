@@ -13,7 +13,7 @@ inst/extdata/uts_fertilite_fr.csv."><meta property="og:image" content="https://p
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -133,7 +133,8 @@ polygon layer joined to the UTS → fertility crosswalk shipped in
 <span>  source <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"layer"</span>, <span class="st">"soilgrids"</span>, <span class="st">"gissol"</span>, <span class="st">"theia_soil"</span><span class="op">)</span>,</span>
 <span>  country <span class="op">=</span> <span class="st">"FR"</span>,</span>
 <span>  rpf_code_col <span class="op">=</span> <span class="st">"rpf_code"</span>,</span>
-<span>  texture <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  texture <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fertility_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">100</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -185,6 +186,14 @@ elements <code>clay</code>, <code>silt</code>, <code>sand</code> and optionally
 loaded via <code><a href="load_raster_source.html">load_raster_source</a></code>). Required when
 <code>source = "theia_soil"</code>, ignored otherwise.</p></dd>
 
+
+<dt id="arg-fertility-range">fertility_range<a class="anchor" aria-label="anchor" href="#arg-fertility-range"></a></dt>
+<dd><p>Numeric of length 2. Value range of the soil
+layer in <code>"layer"</code> mode, mapped linearly to 0-100 (lowest =
+least fertile). Default <code>c(0, 100)</code>: the layer is already a 0-100
+score. For fertility classes 1-5, pass <code>c(1, 5)</code>. Values outside
+the range are set to NA with a warning. Ignored by the other sources.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -193,7 +202,11 @@ loaded via <code><a href="load_raster_source.html">load_raster_source</a></code>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Three data sources are supported via <code>source</code>:</p><ul><li><p><code>"layer"</code> (default) — read a raster or polygon layer from
-    <code>layers</code>, min-max normalised per call (relative score).</p></li>
+    <code>layers</code> and map its values linearly from
+    <code>fertility_range</code> to 0-100 (absolute score: a unit's value does
+    not depend on the other units of the call). Polygon layers are
+    area-weighted over the polygons that carry a value; units with no
+    valued polygon are NA.</p></li>
 <li><p><code>"soilgrids"</code> — fetch the 250 m SoilGrids 2.0 Cation
     Exchange Capacity raster (0-5 cm topsoil, mean) declared as
     <code>soilgrids_cec</code> in <code>inst/datasources/FR.json</code>, extract

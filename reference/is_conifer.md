@@ -19,4 +19,5 @@ is_conifer(species)
 
 ## Value
 
-Logical scalar. `TRUE` if the code is on the known conifer list.
+Logical, same length as `species`. `TRUE` if the code is a conifer
+(single package-wide definition, shared with P3 and the IFN tables).

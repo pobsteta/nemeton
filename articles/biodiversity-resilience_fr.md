@@ -82,7 +82,7 @@ result <- indicateur_b1_protection(
 
 summary(result$B1)
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>    0.00    0.00    0.00   24.72   35.40  100.00
+#>    0.00    0.00    0.00   17.97   18.53   77.50
 ```
 
 **Interprétation** : Les parcelles avec B1 \> 50% bénéficient d’une
@@ -273,8 +273,8 @@ result_norm |>
   select(parcel_id, famille_biodiversite, famille_risque, famille_temporel, famille_air) |>
   head()
 #>   parcel_id famille_biodiversite famille_risque famille_temporel famille_air
-#> 1       P01             47.20474       42.90290         29.29272    68.60472
-#> 2       P02            100.00000       53.24949         14.78589    61.09951
+#> 1       P01             24.70474       42.90290         29.29272    68.60472
+#> 2       P02             77.50000       53.24949         14.78589    61.09951
 #> 3       P03              0.00000       51.98818         26.34500    65.80530
 #> 4       P04              0.00000       69.73375         37.20828    64.81898
 #> 5       P05              0.00000       64.68221         20.40241    61.84649
@@ -420,7 +420,7 @@ if (nrow(hotspots_bio) > 0) {
     head()
 }
 #>   parcel_id famille_biodiversite  T1 famille_risque
-#> 1       P07                  100 150       50.87911
+#> 1       P07                 77.5 150       50.87911
 ```
 
 ### Parcelles vulnérables multi-risques
@@ -529,12 +529,12 @@ summary_table <- result_complete |>
   head(5)
 
 summary_table
-#>   parcel_id        B1 B2 B3 famille_biodiversite       R1       R2       R3
-#> 1       P01  47.20474 NA NA             47.20474 44.25188 47.07114 73.04010
-#> 2       P02 100.00000 NA NA            100.00000 65.53830 30.47225 68.09509
-#> 3       P03   0.00000 NA NA              0.00000 29.74880 71.66821 29.17421
-#> 4       P04   0.00000 NA NA              0.00000 55.26992 28.43826 20.55258
-#> 5       P05   0.00000 NA NA              0.00000 35.67475 48.22051 39.90999
+#>   parcel_id       B1 B2 B3 famille_biodiversite       R1       R2       R3
+#> 1       P01 24.70474 NA NA             24.70474 44.25188 47.07114 73.04010
+#> 2       P02 77.50000 NA NA             77.50000 65.53830 30.47225 68.09509
+#> 3       P03  0.00000 NA NA              0.00000 29.74880 71.66821 29.17421
+#> 4       P04  0.00000 NA NA              0.00000 55.26992 28.43826 20.55258
+#> 5       P05  0.00000 NA NA              0.00000 35.67475 48.22051 39.90999
 #>         R4 famille_risque  T1         T2 famille_temporel       A1       A2
 #> 1 64.02529       42.90290  80 18.5854441         29.29272 74.83550 62.37394
 #> 2 22.89638       53.24949  45  7.0717841         14.78589 57.46452 64.73451

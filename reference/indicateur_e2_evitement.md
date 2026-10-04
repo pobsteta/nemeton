@@ -13,7 +13,8 @@ indicateur_e2_evitement(
   energy_scenario = "vs_natural_gas",
   material_scenario = NULL,
   column_name = "E2",
-  lang = "en"
+  lang = "en",
+  taux_recolte_materiau = NULL
 )
 ```
 
@@ -30,8 +31,9 @@ indicateur_e2_evitement(
 
 - volume_field:
 
-  Character. Column name for construction timber volume (m³/ha).
-  Optional.
+  Character. Column name for the standing construction timber volume
+  (m³/ha, a stock). Optional; used only with `material_scenario`, and
+  then annualised by `taux_recolte_materiau`.
 
 - energy_scenario:
 
@@ -51,10 +53,19 @@ indicateur_e2_evitement(
 
   Character. Message language. Default "en".
 
+- taux_recolte_materiau:
+
+  Numeric in `[0, 1]`, one value or one per unit: share of
+  `volume_field` harvested as construction timber each year. Required
+  with `material_scenario` + `volume_field`, no default on purpose: E2
+  is an annual flux, and adding the standing stock (m³/ha) to the yearly
+  energy substitution, as versions up to 0.211.0 did, mixed a stock and
+  a flux.
+
 ## Value
 
 sf object with added columns: E2 (total CO2 avoided tCO2eq/ha/yr),
 E2_energy, E2_material. **Higher = more emissions avoided =
-favourable**, not inverted. Same ref_max as E1 (1.32) because it is, to
+favourable**, not inverted. Same ref_max as E1 (2.64) because it is, to
 within 0.1 quantity: E2 = E1 x 4500 kWh x 0.222 kgCO2/kWh / 1000 = E1 x
 0.999. See spec 048 section 11.

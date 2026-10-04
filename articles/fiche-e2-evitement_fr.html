@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,7 +140,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstetar</h4>
             
-            <h4 data-toc-skip class="date">2026-10-03</h4>
+            <h4 data-toc-skip class="date">2026-10-04</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/fiche-e2-evitement_fr.Rmd" class="external-link"><code>vignettes/fiche-e2-evitement_fr.Rmd</code></a></small>
       <div class="d-none name"><code>fiche-e2-evitement_fr.Rmd</code></div>
@@ -193,8 +193,8 @@ Obstetar</h4>
 <tr class="odd">
 <td>Normalisation</td>
 <td>
-<code>ref_max = 1,32</code> →
-<code>score = min(100, t / 1,32 × 100)</code> — identique à E1, aligné
+<code>ref_max = 2,64</code> →
+<code>score = min(100, t / 2,64 × 100)</code> — identique à E1, aligné
 sur P1</td>
 </tr>
 <tr class="even">
@@ -221,7 +221,8 @@ sur P1</td>
   CO2 evite    = kWh x facteur_ADEME / 1000                 defaut 0,222 kgCO2eq/kWh
 
 Substitution MATERIAU :
-  a partir du volume de bois d'oeuvre, facteur ADEME correspondant
+  flux_oeuvre  = V_oeuvre_sur_pied x taux_recolte_materiau  m3/ha/an, taux requis
+  CO2 evite    = flux_oeuvre x 500 kg/m3 x facteur_ADEME / 1000
 
 E2 = E2_energy + E2_material</code></pre>
 <p>Les facteurs viennent de
@@ -239,22 +240,22 @@ si la table ne répond pas.</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td>0,12</td>
-<td>540</td>
-<td><strong>0,12 t</strong></td>
-<td><strong>16,0</strong></td>
-</tr>
-<tr class="even">
 <td>0,24</td>
 <td>1 080</td>
 <td><strong>0,24 t</strong></td>
-<td><strong>32,0</strong></td>
+<td><strong>9,1</strong></td>
+</tr>
+<tr class="even">
+<td>0,49</td>
+<td>2 205</td>
+<td><strong>0,49 t</strong></td>
+<td><strong>18,5</strong></td>
 </tr>
 <tr class="odd">
-<td>0,41</td>
-<td>1 845</td>
-<td><strong>0,41 t</strong></td>
-<td><strong>54,6</strong></td>
+<td>0,82</td>
+<td>3 690</td>
+<td><strong>0,82 t</strong></td>
+<td><strong>30,9</strong></td>
 </tr>
 </tbody>
 </table>
@@ -273,9 +274,11 @@ l’estimation de hauteur se propage jusqu’au bilan carbone évité.</p>
 <li>
 <strong>La chaîne d’hypothèses est longue et
 multiplicative.</strong> Taux de récolte (2 %), fraction de rémanents
-(30 %), matière sèche (50 %), pouvoir calorifique (4 500 kWh/t), facteur
+(30 %), densité du bois, pouvoir calorifique (4 500 kWh/t), facteur
 d’émission (0,222) : cinq constantes en cascade. Une erreur de 20 % sur
-chacune donne un facteur 2,5 sur E2.</li>
+chacune donne un facteur 2,5 sur E2. (Une sixième, « matière sèche = 50
+% », s’appliquait à tort à une densité déjà sèche jusqu’à la 0.211.0 et
+divisait E1 et E2 par deux.)</li>
 <li>
 <strong>Le facteur de substitution énergétique dépend de l’énergie
 remplacée.</strong> 0,222 kgCO₂eq/kWh correspond à un mix ; remplacer du
@@ -293,7 +296,7 @@ double comptage.</li>
 </h2>
 <pre><code>indicateur_e2_evitement()  -&gt;  colonnes E2, E2_energy, E2_material
       |
-      +- normalize_indicator()     -&gt; min(100, t / 1,32 x 100)
+      +- normalize_indicator()     -&gt; min(100, t / 2,64 x 100)
       +- create_family_index("E")  -&gt; famille_energie = moy(E1, E2)</code></pre>
 </div>
 <div class="section level2">
@@ -315,7 +318,7 @@ matériau</text><text x="300" y="161" font-size="11" font-family="ui-monospace,S
 bois d’œuvre</text><text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">×
 facteur ADEME</text><rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"></rect><text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_e2_evitement</text><text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">t
 CO₂eq / ha / an</text><rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text><text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">min(100,
-t / 1,32 × 100)</text><rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“E”)</text><text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_energie</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
+t / 2,64 × 100)</text><rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“E”)</text><text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_energie</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
 de E1 et E2</text><rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text><text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci
 · confiance φ</text><path d="M260 55 H271 V63 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 111 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 175 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">+</text><line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="155" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">Chaîne
 multiplicative : taux de récolte, fraction rémanents, densité, PCI,

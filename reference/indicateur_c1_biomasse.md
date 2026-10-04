@@ -41,7 +41,12 @@ indicateur_c1_biomasse(
 
 - density_col:
 
-  Character. Column name for stand density 0-1 (default "density")
+  Character. Column name for stand density as a 0-1 canopy-cover
+  FRACTION (default "density"), as returned by
+  [`enrich_parcels_bdforet`](https://pobsteta.github.io/nemeton/reference/enrich_parcels_bdforet.md).
+  Not stems/ha (unlike the `density_field` of
+  [`indicateur_p1_volume`](https://pobsteta.github.io/nemeton/reference/indicateur_p1_volume.md)):
+  values outside 0-1 are set to NA with a warning.
 
 - chm:
 

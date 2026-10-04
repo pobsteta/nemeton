@@ -11,7 +11,7 @@ when fireexposuR or BD Foret data is unavailable."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -203,7 +203,15 @@ drops out and its weight is redistributed proportionally.
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The input sf object with added column:</p><ul><li><p>R1: Fire risk index (0-100). Higher = higher risk.</p></li>
+    <p>The input sf object with added columns:</p><ul><li><p>R1: Fire risk index (0-100). Higher = higher risk.</p></li>
+<li><p>r1_status: method that produced R1: <code>"fire_exp"</code>;
+      <code>"fallback_no_fireexposur"</code>, <code>"fallback_no_bdforet"</code> or
+      <code>"fallback_fire_exp_failed"</code> (slope + species + climate);
+      <code>"skipped_no_dem"</code> or <code>"skipped_no_component"</code> when R1 is
+      <code>NA</code>.</p></li>
+<li><p>r1_fallback_reason: why the <span class="pkg">fireexposuR</span> path was not used
+      (not installed, no BD Foret layer, or the error it raised);
+      <code>NA</code> when it was.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -212,8 +220,16 @@ Rasterizes BD Foret as a hazard layer, then computes fire exposure
 with a 500m transmission distance. The 0-1 exposure is scaled to 0-100.
 The hazard grid is bounded to <code>fire_exp_res</code> (30 m) because the
 annular kernel of <code>fire_exp()</code> costs <code>(2 * t_dist / res)^2</code>
-operations per cell: at 2 m it is ~52 000x the cost at 30 m.</p>
-<p>**Fallback method**: R1 = w1*slope + w2*species_flammability + w3*climate_dryness</p>
+operations per cell: at 2 m it is ~52 000x the cost at 30 m. A DEM in
+geographic coordinates is first projected to a metric CRS (the units' CRS
+when projected, EPSG:3035 otherwise); a hazard grid still in degrees, or whose
+annular window would exceed 10^6 weights, is rejected before
+<code>fire_exp()</code> is called and R1 falls back, with the reason recorded.</p>
+<p>**Fallback method**: R1 = w1*slope + w2*species_flammability + w3*climate_dryness.
+Without a species field, an NDVI-based proxy (<code>100 - 100 * NDVI</code>) takes
+the species component when an NDVI layer is available. A component that
+cannot be computed drops out and its weight is redistributed proportionally;
+with no usable component, R1 is <code>NA</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

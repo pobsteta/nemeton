@@ -10,7 +10,7 @@ indicateur_l1_effet_lisiere(
   units,
   layers = NULL,
   landcover_layer = "landcover",
-  forest_values = seq(1, 6),
+  forest_values = c(16, 17),
   buffer = 50
 )
 ```
@@ -31,7 +31,12 @@ indicateur_l1_effet_lisiere(
 
 - forest_values:
 
-  Numeric vector. Land cover codes for forest
+  Numeric vector. Land cover codes for forest; their matrix contrast
+  is 0. Default `c(16, 17)`: OSO broadleaf and coniferous forest
+  (23-class Theia/CESBIO nomenclature). Other codes are read with the
+  OSO contrast table (built-up 90, roads 75, crops 50,
+  orchards/vineyards 45, water 30, grassland 20, moorland 15; 50 for
+  codes outside the nomenclature).
 
 - buffer:
 

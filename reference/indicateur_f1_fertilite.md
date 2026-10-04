@@ -16,7 +16,8 @@ indicateur_f1_fertilite(
   source = c("layer", "soilgrids", "gissol", "theia_soil"),
   country = "FR",
   rpf_code_col = "rpf_code",
-  texture = NULL
+  texture = NULL,
+  fertility_range = c(0, 100)
 )
 ```
 
@@ -66,6 +67,14 @@ indicateur_f1_fertilite(
   [`load_raster_source`](https://pobsteta.github.io/nemeton/reference/load_raster_source.md)).
   Required when `source = "theia_soil"`, ignored otherwise.
 
+- fertility_range:
+
+  Numeric of length 2. Value range of the soil layer in `"layer"` mode,
+  mapped linearly to 0-100 (lowest = least fertile). Default
+  `c(0, 100)`: the layer is already a 0-100 score. For fertility classes
+  1-5, pass `c(1, 5)`. Values outside the range are set to NA with a
+  warning. Ignored by the other sources.
+
 ## Value
 
 Numeric vector of fertility scores (0-100 scale, higher = more fertile)
@@ -74,8 +83,11 @@ Numeric vector of fertility scores (0-100 scale, higher = more fertile)
 
 Three data sources are supported via `source`:
 
-- `"layer"` (default) — read a raster or polygon layer from `layers`,
-  min-max normalised per call (relative score).
+- `"layer"` (default) — read a raster or polygon layer from `layers` and
+  map its values linearly from `fertility_range` to 0-100 (absolute
+  score: a unit's value does not depend on the other units of the call).
+  Polygon layers are area-weighted over the polygons that carry a value;
+  units with no valued polygon are NA.
 
 - `"soilgrids"` — fetch the 250 m SoilGrids 2.0 Cation Exchange Capacity
   raster (0-5 cm topsoil, mean) declared as `soilgrids_cec` in

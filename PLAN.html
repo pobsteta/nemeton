@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -328,14 +328,19 @@
 <td><strong>v0.211.0</strong></td>
 <td>✅ livré : 0 WARNING, CI en échec sur warning</td>
 </tr><tr><td>5</td>
-<td>Contrat d’API : retours vecteur / <code>sf</code>, <code>lang</code>, 313 exports à trier</td>
-<td>0.212</td>
+<td>Seconde passe sur les calculs : 31 constats majeurs (indicateurs, échantillonnage, climat, RECONFORT)</td>
+<td><strong>v0.212.0</strong></td>
+<td>✅ livré, brief app émis</td>
+</tr><tr><td>6</td>
+<td>Contrat d’API : retours vecteur / <code>sf</code>, <code>lang</code>, 313 exports à trier ; reliquat de l’audit</td>
+<td>0.213</td>
 <td>⬜</td>
 </tr></tbody></table><p><strong>Journal</strong> — <em>2026-10-02</em> (<strong>v0.208.0</strong>) : vague 1 livrée, dix correctifs, chacun avec un test qui échouait avant. Valeurs changées côté app : volumes de desserte (<code>taux × horizon</code> au lieu de <code>P1 × taux × horizon</code>), indice de priorité de régénération (le volet exposition compte enfin), R3 sans climat, R4 des départements 01-09. Brief : <code>specs/audit-1.0/brief-nemetonshiny-0.208.0.md</code>.</p>
 <p><strong>Journal</strong> — <em>2026-10-03</em> (<strong>v0.209.0</strong>) : vague 2 livrée, 25 correctifs menés par trois agents en parallèle (worktrees isolés) puis fusionnés ; un conflit dans <code>regen_engines.R</code> (nom de cache ERA5 par point × écriture atomique validée). Côté app : <code>prune_orphan_zone_caches(project_uuid =)</code> à câbler, purge des alertes <code>pending</code> sur un run sans alerte, tendances E-OBS par décennie. Brief : <code>specs/audit-1.0/brief-nemetonshiny-0.209.0.md</code>.</p>
 <p><strong>Journal</strong> — <em>2026-10-03</em> (<strong>v0.210.0</strong>) : vague 3 livrée, 17 correctifs (deux agents en parallèle, fusion sans conflit). Faille d’exécution de code confirmée et fermée (<code>eval</code> du <code>.cfg</code> RECONFORT). Côté app : mesures terrain recalculées sur les seuls vivants, <code>tree_id</code> obligatoire, <code>NEMETON_CORPUS_ROOT</code> à poser pour le worker du corpus. Brief : <code>specs/audit-1.0/brief-nemetonshiny-0.210.0.md</code>.</p>
 <p><strong>Journal</strong> — <em>2026-10-03</em> (<strong>v0.211.0</strong>) : vague 4 livrée. <code>R CMD check --as-cran</code> à 0 WARNING ; la CI échoue au premier warning (<code>--ignore-vignettes</code>, les vignettes étant construites par pkgdown) ; la release ne part qu’après un R-CMD-check réussi. Restent hors de cette vague : tutoriels 07/08 (données exclues du build), guide de l’app dans les vignettes, exports à trier.</p>
-<p><strong>Prochaine étape</strong> : vague 5 (contrat d’API) et reliquat majeur de l’audit.</p>
+<p><strong>Journal</strong> — <em>2026-10-03</em> (<strong>v0.212.0</strong>) : vague 5 (seconde passe sur les calculs) livrée, 35 commits de trois agents, fusion sans conflit. Calibrages nouveaux à valider par Pascal : borne B1 = 4 statuts, sévérité du coût B3 (<code>100 − coût/10</code>), référence de pollution A2 = 100, contrastes OSO de L1, borne E1/E2 = 2,64. <code><a href="reference/map_oso_class.html">map_oso_class()</a></code> et <code>inst/species/BFC.json</code> gardent l’ancienne lecture 17/18/19 (API exportée, à traiter). Brief : <code>specs/audit-1.0/brief-nemetonshiny-0.212.0.md</code>. Ajout du 2026-10-04 (brief aigora-nemeton) : le chemin <code>fireexposuR</code> de R1 n’aboutissait jamais (MNT de repli IGN en EPSG:4326 → fenêtre de ~59 600 Go, repli silencieux). Reprojection métrique, contrôle de grille avant l’appel, hazard élargi de 500 m ; <code>r1_status</code> / <code>r1_fallback_reason</code> dans le résultat. Vérifié sur Couchey (23/23 en <code>fire_exp</code>). T2 : l’app ne lui passe ni T1 ni N2, il sort NA depuis 0.212.0 — câblage app dans le brief.</p>
+<p><strong>Prochaine étape</strong> : vague 6 (contrat d’API, reliquat).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-clos-côté-cœur--production-ifn-par-petits-domaines-fay-herriot-spec-054">Chantier CLOS côté cœur — Production IFN par petits domaines, Fay-Herriot (spec 054)<a class="anchor" aria-label="anchor" href="#chantier-clos-c%C3%B4t%C3%A9-c%C5%93ur--production-ifn-par-petits-domaines-fay-herriot-spec-054"></a></h1>

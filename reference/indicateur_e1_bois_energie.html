@@ -9,7 +9,7 @@ forest harvest residues and coppice biomass."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -205,9 +205,10 @@ capped at 1).</p></dd>
 E1_residues, E1_coppice; in flux mode also <code>E1_mode</code>
 (<code>"ressource_flux"</code> or <code>"recolte_observee"</code>). <strong>Higher = more fuelwood available =
 favourable</strong>, not inverted; normalize_indicator() rescales it against a ref_max
-of 1.32 t DM/ha/yr – the yield of a stand at P1's own ceiling (800 m3/ha,
+of 2.64 t DM/ha/yr – the yield of a stand at P1's own ceiling (800 m3/ha,
 density 550), so E1, E2 and P1 score the same stand alike. See spec 048
-section 11.</p>
+section 11. A unit with no volume gets <code>NA</code> in E1,
+E1_residues and E1_coppice.</p>
     </div>
     <div class="section level2">
     <h2 id="stock-mode-and-flux-mode">Stock mode and flux mode<a class="anchor" aria-label="anchor" href="#stock-mode-and-flux-mode"></a></h2>
@@ -224,6 +225,16 @@ the SER's own harvest / production ratio is simply the <strong>observed
 harvest</strong> of the SER, identical for every unit of the domain. E1 then warns
 and writes <code>E1_mode = "recolte_observee"</code> instead of
 <code>"ressource_flux"</code>, so that it is not presented as a potential.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="wood-density">Wood density<a class="anchor" aria-label="anchor" href="#wood-density"></a></h2>
+
+
+<p>Residue volume is converted to dry matter with the species density of
+<code>inst/extdata/wood_density.csv</code> (<code>density_kg_m3</code>), an air-dry density
+(about 12 percent moisture), used as is as a dry-matter density – as C1
+does. Versions up to 0.211.0 multiplied it by a further 0.5 ("dry matter =
+50 percent of fresh weight"), which halved E1.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

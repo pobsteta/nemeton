@@ -6,7 +6,7 @@ a temporal dataset structure for longitudinal analysis.
 ## Usage
 
 ``` r
-nemeton_temporal(periods, dates = NULL, labels = NULL, id_column = "parcel_id")
+nemeton_temporal(periods, dates = NULL, labels = NULL, id_column = NULL)
 ```
 
 ## Arguments
@@ -28,8 +28,11 @@ nemeton_temporal(periods, dates = NULL, labels = NULL, id_column = "parcel_id")
 
 - id_column:
 
-  Character. Name of the column containing unit IDs. Default
-  "parcel_id".
+  Character or NULL. Name of the column containing unit IDs, used to
+  align units across periods. If NULL (default), the first of
+  `"nemeton_id"` (the identifier carried by nemeton units) and
+  `"parcel_id"` present in every period is used; without such a column,
+  units are aligned by row position.
 
 ## Value
 

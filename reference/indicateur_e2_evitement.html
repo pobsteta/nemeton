@@ -9,7 +9,7 @@ material substitution using ADEME emission factors."><meta property="og:image" c
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -126,7 +126,8 @@ material substitution using ADEME emission factors.</p>
 <span>  energy_scenario <span class="op">=</span> <span class="st">"vs_natural_gas"</span>,</span>
 <span>  material_scenario <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  column_name <span class="op">=</span> <span class="st">"E2"</span>,</span>
-<span>  lang <span class="op">=</span> <span class="st">"en"</span></span>
+<span>  lang <span class="op">=</span> <span class="st">"en"</span>,</span>
+<span>  taux_recolte_materiau <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -143,7 +144,9 @@ material substitution using ADEME emission factors.</p>
 
 
 <dt id="arg-volume-field">volume_field<a class="anchor" aria-label="anchor" href="#arg-volume-field"></a></dt>
-<dd><p>Character. Column name for construction timber volume (m³/ha). Optional.</p></dd>
+<dd><p>Character. Column name for the standing construction
+timber volume (m³/ha, a stock). Optional; used only with
+<code>material_scenario</code>, and then annualised by <code>taux_recolte_materiau</code>.</p></dd>
 
 
 <dt id="arg-energy-scenario">energy_scenario<a class="anchor" aria-label="anchor" href="#arg-energy-scenario"></a></dt>
@@ -161,12 +164,21 @@ material substitution using ADEME emission factors.</p>
 <dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
 <dd><p>Character. Message language. Default "en".</p></dd>
 
+
+<dt id="arg-taux-recolte-materiau">taux_recolte_materiau<a class="anchor" aria-label="anchor" href="#arg-taux-recolte-materiau"></a></dt>
+<dd><p>Numeric in <code>[0, 1]</code>, one value or one per
+unit: share of <code>volume_field</code> harvested as construction timber each
+year. Required with <code>material_scenario</code> + <code>volume_field</code>, no default on
+purpose: E2 is an annual flux, and adding the standing stock (m³/ha) to
+the yearly energy substitution, as versions up to 0.211.0 did, mixed a
+stock and a flux.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>sf object with added columns: E2 (total CO2 avoided tCO2eq/ha/yr), E2_energy,
 E2_material. <strong>Higher = more emissions avoided = favourable</strong>, not
-inverted. Same ref_max as E1 (1.32) because it is, to within 0.1 <!-- %, the same -->
+inverted. Same ref_max as E1 (2.64) because it is, to within 0.1 <!-- %, the same -->
 quantity: E2 = E1 x 4500 kWh x 0.222 kgCO2/kWh / 1000 = E1 x 0.999. See spec
 048 section 11.</p>
     </div>

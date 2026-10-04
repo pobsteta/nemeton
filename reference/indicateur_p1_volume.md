@@ -45,8 +45,11 @@ indicateur_p1_volume(
 
 - density_field:
 
-  Character. Column name containing tree density (stems/ha). Default
-  "density".
+  Character. Column name containing tree density in STEMS PER HECTARE.
+  Default "density". Not a 0-1 cover fraction (unlike the `density_col`
+  of
+  [`indicateur_c1_biomasse`](https://pobsteta.github.io/nemeton/reference/indicateur_c1_biomasse.md)):
+  values in (0, 1) are set to NA with a warning.
 
 - method:
 

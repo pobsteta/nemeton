@@ -57,12 +57,15 @@ palatability, LiDAR MNH for vulnerability, hunting data (data.gouv.fr)
 for density.
 
 \*\*Formula\*\*: R4 = 0.35\*palatability + 0.30\*vulnerability +
-0.20\*edge + 0.15\*density
+0.20\*edge + 0.15\*density. A component that cannot be evaluated (no BD
+Foret, no LiDAR MNH, unit outside the game density raster) is `NA` and
+propagates to R4.
 
 \*\*Components\*\*:
 
 - palatability: From BD Foret species intersection (pattern matching on
-  essence names). Quercus=90, Abies=85, Fagus=70, Pinus=30.
+  essence names). Quercus=90, Abies=85, Fagus=70, Pinus=30. Averaged
+  over the intersected BD Foret polygons, weighted by intersected area.
 
 - vulnerability: From LiDAR MNH mean height per parcel. \<2m = 100,
   2-10m = decreasing, \>10m = 0.

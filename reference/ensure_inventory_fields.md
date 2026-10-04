@@ -74,4 +74,6 @@ ensure_inventory_fields(
 
 The input `sf` with `dbh_field` and `density_field` filled (when
 possible). The `inventory_source` attribute is set to "synthetic_ml" iff
-at least one field was filled from the CHM.
+at least one field was filled from the CHM; the attribute `hors_domaine`
+then carries the per-unit clamping flag of
+[`estimate_synthetic_inventory`](https://pobsteta.github.io/nemeton/reference/estimate_synthetic_inventory.md).

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -124,6 +124,7 @@
 <span>  palette <span class="op">=</span> <span class="st">"RdBu"</span>,</span>
 <span>  title <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  legend_title <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  id_column <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -158,6 +159,15 @@
 
 <dt id="arg-legend-title">legend_title<a class="anchor" aria-label="anchor" href="#arg-legend-title"></a></dt>
 <dd><p>Legend title</p></dd>
+
+
+<dt id="arg-id-column">id_column<a class="anchor" aria-label="anchor" href="#arg-id-column"></a></dt>
+<dd><p>Character or NULL. Identifier column shared by
+<code>data1</code> and <code>data2</code>, used to align units before subtracting.
+If NULL (default), the first of <code>"nemeton_id"</code>, <code>"parcel_id"</code>,
+<code>"id"</code> present in both is used. Without a shared identifier, both
+datasets must have the same number of rows and are aligned by position.
+Units of <code>data1</code> without a match get a NA difference (with a warning).</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

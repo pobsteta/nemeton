@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.211.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,7 +140,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstetar</h4>
             
-            <h4 data-toc-skip class="date">2026-10-03</h4>
+            <h4 data-toc-skip class="date">2026-10-04</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/fiche-t1-anciennete_fr.Rmd" class="external-link"><code>vignettes/fiche-t1-anciennete_fr.Rmd</code></a></small>
       <div class="d-none name"><code>fiche-t1-anciennete_fr.Rmd</code></div>
@@ -214,6 +214,11 @@ date est à refaire.</p>
 <div class="section level2">
 <h2 id="quatre-chemins-servis-en-cascade">2. Quatre chemins, servis en cascade<a class="anchor" aria-label="anchor" href="#quatre-chemins-servis-en-cascade"></a>
 </h2>
+<p>La cascade se joue <strong>unité par unité</strong> : chaque chemin
+ne comble que les unités restées <code>NA</code> après les précédents,
+et une <strong>mesure passe avant une estimation</strong> (audit 1.0 ;
+jusqu’à la 0.211.0, la seule présence d’une BD Forêt faisait ignorer un
+âge relevé).</p>
 <table class="table">
 <colgroup>
 <col width="25%">
@@ -230,23 +235,24 @@ date est à refaire.</p>
 <tbody>
 <tr class="odd">
 <td>1</td>
-<td><strong>BD Forêt / TFV</strong></td>
-<td>couche <code>bdforet</code> avec un champ TFV reconnu</td>
-<td>âge typologique via <code>.estimate_age_tfv()</code>
-</td>
+<td><strong>Champ d’âge</strong></td>
+<td>colonne <code>age</code> renseignée</td>
+<td>tel quel</td>
 </tr>
 <tr class="even">
 <td>2</td>
-<td><strong>Champ d’âge</strong></td>
-<td>colonne <code>age</code> présente</td>
-<td>tel quel</td>
-</tr>
-<tr class="odd">
-<td>3</td>
 <td><strong>Année d’installation</strong></td>
 <td>
 <code>establishment_year_field</code> fourni</td>
 <td><code>année_courante − année_installation</code></td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td><strong>BD Forêt / TFV</strong></td>
+<td>couche <code>bdforet</code> avec un champ TFV reconnu</td>
+<td>âge typologique via <code>.estimate_age_tfv()</code>, moyenne
+pondérée par la surface des TFV <strong>reconnus</strong>
+</td>
 </tr>
 <tr class="even">
 <td>4</td>
@@ -260,7 +266,7 @@ date est à refaire.</p>
 <td><em>aucun</em></td>
 <td>—</td>
 <td>
-<strong>50 en dur</strong> + avertissement</td>
+<strong>NA</strong> + avertissement</td>
 </tr>
 </tbody>
 </table>
@@ -325,28 +331,29 @@ aurait fait par le bas.</p>
 <tbody>
 <tr class="odd">
 <td><strong>0</strong></td>
-<td>4 (NDVI) ou 1 (BD Forêt)</td>
+<td>4 (NDVI) ou 3 (BD Forêt)</td>
 <td>âge <strong>typologique</strong>, pas mesuré</td>
 </tr>
 <tr class="even">
 <td><strong>1</strong></td>
-<td>1</td>
+<td>3</td>
 <td>inchangé — l’âge ne se lit pas au LiDAR</td>
 </tr>
 <tr class="odd">
 <td><strong>2</strong></td>
-<td>1</td>
+<td>3</td>
 <td>—</td>
 </tr>
 <tr class="even">
 <td><strong>3</strong></td>
-<td>2 ou 3 : <strong>âge relevé sur le terrain</strong>
+<td>1 ou 2 : <strong>âge relevé sur le terrain</strong>
 </td>
-<td>seule vraie mesure (sondage, archives, carottage)</td>
+<td>seule vraie mesure (sondage, archives, carottage), prioritaire sur
+la BD Forêt</td>
 </tr>
 <tr class="odd">
 <td><strong>4</strong></td>
-<td>2</td>
+<td>1</td>
 <td>—</td>
 </tr>
 </tbody>
@@ -374,11 +381,10 @@ aurait averti.</p>
 mieux, aucune inversion. La fonction d’indicateur est inchangée : elle
 rend toujours un âge en années.</p>
 </li>
-<li><p><strong>Sans aucune donnée, T1 vaut 50 — un âge
-fabriqué.</strong> Le dernier recours est <code>rep(50, n)</code> avec
-un simple <code>cli_alert_warning</code>. La valeur entre ensuite dans
-<code>famille_temporelle</code> comme un âge constaté. Même motif que B3
-et L1.</p></li>
+<li><p><strong>Sans aucune donnée, T1 valait 50 — un âge fabriqué.
+Corrigé à l’audit 1.0</strong> : le dernier recours est désormais
+<code>NA</code>, et un TFV non reconnu est écarté de la moyenne au lieu
+de compter pour 50 ans.</p></li>
 <li><p><strong>Le chemin NDVI convertit de la verdeur en
 années.</strong> <code>20 + (NDVI − 0,2) / 0,6 × 100</code> n’a aucun
 fondement dendrométrique : c’est un étalement arbitraire de
@@ -404,43 +410,43 @@ type.</p></li>
 <h2 id="diagramme-densemble">6. Diagramme d’ensemble<a class="anchor" aria-label="anchor" href="#diagramme-densemble"></a>
 </h2>
 <!-- diagramme:auto:debut -->
-<figure><svg viewbox="0 0 820 488" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de T1 : quatre chemins essayes en cascade — age typologique de la BD Foret, colonne d'age, annee d'installation, conversion du NDVI en annees — et, si aucun ne repond, un age de 50 ans ecrit en dur ; la colonne est en annees mais la normalisation la traite comme un score."><defs><marker id="fd" viewbox="0 0 10 10" refx="9" refy="5" markerwidth="6" markerheight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path></marker></defs><g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55"><text x="10" y="16">ENTRÉES</text><text x="290" y="16">CALCUL — PREMIER
-CHEMIN SERVI</text><text x="588" y="16">AVAL</text></g><rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">BD
-Forêt — champ TFV</text><text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">TFV,
-CODE_TFV, ESSENCE, LIB_FV…</text><text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">.estimate_age_tfv()</text><rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">Colonne
-age</text><text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">âge
-d’inventaire, tel quel</text><rect x="8" y="162" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="181" font-size="12.5" font-weight="600" fill="currentColor">establishment_year_field</text><text x="20" y="197" font-size="11" fill="currentColor" opacity=".78">année
-courante - installation</text><rect x="8" y="218" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="237" font-size="12.5" font-weight="600" fill="currentColor">Couche
+<figure><svg viewbox="0 0 820 504" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de T1 : quatre chemins essayes en cascade, unite par unite — colonne d'age, annee d'installation, age typologique de la BD Foret, conversion du NDVI en annees — une mesure passant avant une estimation ; si aucun ne repond, T1 vaut NA."><defs><marker id="fd" viewbox="0 0 10 10" refx="9" refy="5" markerwidth="6" markerheight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path></marker></defs><g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55"><text x="10" y="16">ENTRÉES</text><text x="290" y="16">CALCUL — PREMIER
+CHEMIN SERVI</text><text x="588" y="16">AVAL</text></g><rect x="8" y="34" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">Colonne
+age</text><text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">âge
+d’inventaire, tel quel</text><rect x="8" y="90" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="109" font-size="12.5" font-weight="600" fill="currentColor">establishment_year_field</text><text x="20" y="125" font-size="11" fill="currentColor" opacity=".78">année
+courante - installation</text><rect x="8" y="146" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="165" font-size="12.5" font-weight="600" fill="currentColor">BD
+Forêt — champ TFV</text><text x="20" y="181" font-size="11" fill="currentColor" opacity=".78">TFV,
+CODE_TFV, ESSENCE, LIB_FV…</text><text x="20" y="197" font-size="11" fill="currentColor" opacity=".78">.estimate_age_tfv()</text><rect x="8" y="218" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="237" font-size="12.5" font-weight="600" fill="currentColor">Couche
 ndvi</text><text x="20" y="253" font-size="11" fill="currentColor" opacity=".78">Sentinel-2,
 10 m</text><rect x="8" y="274" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"></rect><text x="20" y="293" font-size="12.5" font-weight="600" fill="currentColor">Aucun
-des quatre</text><text x="20" y="309" font-size="11" fill="currentColor" opacity=".78">50
-ans en dur + avertissement</text><rect x="288" y="34" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Âge
-typologique</text><text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">constante
-par type</text><text x="300" y="85" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">futaie
-feuillue fermée : 100 ans</text><rect x="288" y="126" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="145" font-size="12.5" font-weight="600" fill="currentColor">Âge
-d’inventaire</text><text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">valeur
-reprise sans calcul</text><rect x="288" y="202" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="221" font-size="12.5" font-weight="600" fill="currentColor">Année
-d’installation</text><text x="300" y="237" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">âge
-= année - installation</text><rect x="288" y="278" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="297" font-size="12.5" font-weight="600" fill="currentColor">Conversion
-du NDVI</text><text x="300" y="313" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">20
-+ max(0, NDVI-0,2)/0,6 × 100</text><rect x="288" y="354" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"></rect><text x="300" y="373" font-size="12.5" font-weight="600" fill="currentColor">50
-ans, en dur</text><text x="300" y="389" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">âge
-fabriqué, pas NA</text><rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"></rect><text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_t1_anciennete</text><text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">âge,
+des quatre</text><text x="20" y="309" font-size="11" fill="currentColor" opacity=".78">NA
++ avertissement</text><rect x="288" y="34" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Âge
+d’inventaire</text><text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">valeur
+reprise sans calcul</text><rect x="288" y="110" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="129" font-size="12.5" font-weight="600" fill="currentColor">Année
+d’installation</text><text x="300" y="145" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">âge
+= année - installation</text><rect x="288" y="186" width="262" height="74" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="205" font-size="12.5" font-weight="600" fill="currentColor">Âge
+typologique</text><text x="300" y="221" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">constante
+par type</text><text x="300" y="237" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">TFV
+inconnu écarté</text><text x="300" y="253" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">futaie
+feuillue fermée : 100 ans</text><rect x="288" y="294" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="313" font-size="12.5" font-weight="600" fill="currentColor">Conversion
+du NDVI</text><text x="300" y="329" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">20
++ max(0, NDVI-0,2)/0,6 × 100</text><rect x="288" y="370" width="262" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"></rect><text x="300" y="389" font-size="12.5" font-weight="600" fill="currentColor">NA</text><text x="300" y="405" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">aucun
+âge inventé</text><rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"></rect><text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_t1_anciennete</text><text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">âge,
 en années</text><rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text><text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">âge
 / 200 ans × 100</text><rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“T”)</text><text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_temporel</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
 de T1 à T3</text><rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text><text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci
-· confiance φ</text><line x1="260" y1="63" x2="282" y2="63" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><path d="M260 127 H271 V147 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 183 H271 V223 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 239 H271 V299 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 295 H271 V375 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"></line><text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text><line x1="306" y1="170" x2="306" y2="196" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"></line><text x="312" y="186" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text><line x1="306" y1="246" x2="306" y2="272" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"></line><text x="312" y="262" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text><line x1="306" y1="322" x2="306" y2="348" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"></line><text x="312" y="338" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text><line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="147" x2="566" y2="147" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="223" x2="566" y2="223" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="299" x2="566" y2="299" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="375" x2="566" y2="375" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="566" y2="375" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="10" y="422" font-size="10.5" fill="currentColor" opacity=".62">L’unité
+· confiance φ</text><line x1="260" y1="55" x2="282" y2="55" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><path d="M260 111 H271 V131 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 175 H271 V223 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 239 H271 V315 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 295 H271 V391 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><line x1="306" y1="78" x2="306" y2="104" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"></line><text x="312" y="94" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text><line x1="306" y1="154" x2="306" y2="180" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"></line><text x="312" y="170" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text><line x1="306" y1="262" x2="306" y2="288" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"></line><text x="312" y="278" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text><line x1="306" y1="338" x2="306" y2="364" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"></line><text x="312" y="354" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text><line x1="550" y1="55" x2="566" y2="55" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="131" x2="566" y2="131" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="223" x2="566" y2="223" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="315" x2="566" y2="315" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="391" x2="566" y2="391" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="55" x2="566" y2="391" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="55" x2="580" y2="55" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="10" y="438" font-size="10.5" fill="currentColor" opacity=".62">L’unité
 est l’année : normalisée sur une borne de 200 ans depuis la 0.197.0,
-plus par écrêtage à 100.</text><text x="10" y="438" font-size="10.5" fill="currentColor" opacity=".62">Sans
-aucune donnée, T1 vaut 50 — un âge fabriqué qui ne se distingue pas d’un
-âge mesuré.</text><text x="10" y="454" font-size="10.5" fill="currentColor" opacity=".62">Le
+plus par écrêtage à 100.</text><text x="10" y="454" font-size="10.5" fill="currentColor" opacity=".62">Une
+mesure passe avant une estimation ; sans aucune source, T1 vaut NA (50
+ans en dur jusqu’à la 0.211.0).</text><text x="10" y="470" font-size="10.5" fill="currentColor" opacity=".62">Le
 chemin NDVI convertit de la verdeur en années : un peuplement vert et
-jeune y paraît vieux.</text><text x="10" y="470" font-size="10.5" fill="currentColor" opacity=".62">L’âge
+jeune y paraît vieux.</text><text x="10" y="486" font-size="10.5" fill="currentColor" opacity=".62">L’âge
 TFV est une constante par type : toutes les futaies feuillues fermées
 ont le même âge.</text></svg><figcaption style="font-size:.9em;opacity:.75">
 Cinq issues pour une colonne en années. La borne de 200 ans distingue
-enfin une futaie de 110 ans d’une de 250 ans, mais le dernier recours —
-50 ans en dur — se lit toujours comme n’importe quelle autre valeur.
+une futaie de 110 ans d’une de 250 ans ; une unité qu’aucune source ne
+date reste NA au lieu de recevoir un âge fabriqué.
 </figcaption></figure><!-- diagramme:auto:fin -->
 </div>
 <div class="section level2">
