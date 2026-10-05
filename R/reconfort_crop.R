@@ -84,23 +84,25 @@
                                          target_crs = 2154) {
   dir.create(file.path(out_scene_dir, "MASKS"), recursive = TRUE,
              showWarnings = FALSE)
-  tifs <- c(list.files(scene, pattern = "\\.tif$", full.names = TRUE),
-            list.files(file.path(scene, "MASKS"), pattern = "\\.tif$",
-                       full.names = TRUE))
+  # Chemins relatifs a la scene construits directement (racine + MASKS/) :
+  # le chemin de la scene n'est plus utilise comme expression reguliere, ce
+  # qui cassait sur un `+` ou une parenthese (audit 1.0).
+  rel_files <- function(pattern) {
+    c(list.files(scene, pattern = pattern),
+      file.path("MASKS", list.files(file.path(scene, "MASKS"), pattern = pattern)))
+  }
+  tifs <- rel_files("\\.tif$")
   tifs <- tifs[!grepl("SRE_.*\\.tif$", basename(tifs))]
   n_tif <- 0L
-  for (tif in tifs) {
-    rel <- sub(paste0("^", scene, "/?"), "", tif)
-    .reconfort_warp_one(tif, file.path(out_scene_dir, rel), win, target_crs)
+  for (rel in tifs) {
+    .reconfort_warp_one(file.path(scene, rel), file.path(out_scene_dir, rel),
+                        win, target_crs)
     n_tif <- n_tif + 1L
   }
   # metadata (MTD XML etc.) copied verbatim — IOTA2 reads dates from it
-  xmls <- c(list.files(scene, pattern = "\\.xml$", full.names = TRUE),
-            list.files(file.path(scene, "MASKS"), pattern = "\\.xml$",
-                       full.names = TRUE))
-  for (x in xmls) {
-    rel <- sub(paste0("^", scene, "/?"), "", x)
-    file.copy(x, file.path(out_scene_dir, rel), overwrite = TRUE)
+  for (rel in rel_files("\\.xml$")) {
+    file.copy(file.path(scene, rel), file.path(out_scene_dir, rel),
+              overwrite = TRUE)
   }
   n_tif
 }
