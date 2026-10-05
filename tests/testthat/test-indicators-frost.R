@@ -71,3 +71,16 @@ test_that("family R now carries R1..R7", {
   expect_false(is.null(INDICATOR_FAMILIES$R$indicator_labels$R7))
   expect_false(is.null(INDICATOR_FAMILIES$R$indicator_tooltips$R7))
 })
+
+test_that("R7 : une UGF plus petite qu'une maille SAFRAN n'est pas NA", {
+  # Audit 1.0 (constat m bug frost) : une UGF qui ne couvre aucun centre de
+  # maille rendrait NA avec un extract strict. terra (small = TRUE par defaut)
+  # retient la maille touchee ; ce test verrouille ce comportement.
+  petite <- sf::st_sf(id = 1L, geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+    c(41, 41), c(44, 41), c(44, 44), c(41, 44), c(41, 41)))), crs = 2154))
+  res <- indicateur_r7_gel(petite, tmin = make_tmin(),
+                           budburst_doy = 100, window_end_doy = 180)
+  expect_equal(res$r7_status, "calculated")
+  expect_false(is.na(res$R7))
+  expect_gt(res$r7_gel_days, 0)
+})
