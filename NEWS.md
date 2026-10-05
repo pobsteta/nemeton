@@ -1,3 +1,21 @@
+# nemeton 0.212.2 (2026-10-05)
+
+### Fixed
+
+- **`map_oso_class()` et `inst/species/BFC.json`** lisaient encore l'ancienne
+  nomenclature OSO (17 feuillus, 18 conifères, 19 mixte), laissée de côté par
+  la 0.212.0 qui avait aligné L1, L2, A1 et RECONFORT. Dans la nomenclature
+  2018+ (`OSO_NOMENCLATURE`), 17 est la forêt de **conifères** et 18 la
+  **pelouse** : les conifères recevaient des essences feuillues et les
+  pelouses des résineux. Désormais 16 = feuillus, 17 = conifères,
+  `essence_mixte` sous les deux (OSO n'a pas de classe mixte), et **aucune
+  essence** (`character(0)`) pour un code non forestier, au lieu de
+  `"essence_mixte"`. Un test lie les codes de `BFC.json` à
+  `OSO_CLASSES_FORET`. Fonction non appelée par l'app.
+- **Tutoriels 02 et 07** : table des classes OSO et masque forêt alignés sur la
+  même nomenclature (le masque du 07 prenait 18 et 19, pelouses et landes,
+  pour de la forêt ; le 02 comptait les pelouses dans A1).
+
 # nemeton 0.212.1 (2026-10-05)
 
 ### Fixed

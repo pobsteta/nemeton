@@ -946,19 +946,25 @@ L'indicateur **A1** caractérise l'**occupation du sol** de chaque parcelle en u
 - **OSO** (Occupation du Sol) de Theia/CESBIO : classification à 10m
 - **pzabove2** (LiDAR) : ajustement de la densité de canopée forestière
 
-**Classes OSO principales :**
+**Classes OSO** (nomenclature 2018+, 23 classes, la même que le cœur) :
 
 | Code | Classe | Code | Classe |
 |------|--------|------|--------|
-| 1 | Cultures annuelles | 16 | Feuillus |
-| 2 | Cultures pérennes | 17 | Conifères |
-| 3 | Prairies | 18 | Forêt mixte |
-| 4 | Vignes | 19 | Landes |
-| 5 | Vergers | 20 | Pelouses naturelles |
-| 11 | Urbain dense | 21 | Plages et dunes |
-| 12 | Urbain diffus | 22 | Roches nues |
-| 13 | Zones industrielles | 23 | Eau |
-| 14 | Surfaces minérales | 31 | Neige/Glace |
+| 1 | Bâti dense | 13 | Prairies |
+| 2 | Bâti diffus | 14 | Vergers |
+| 3 | Zones industrielles et commerciales | 15 | Vignes |
+| 4 | Routes | **16** | **Forêt de feuillus** |
+| 5 | Colza | **17** | **Forêt de conifères** |
+| 6 | Céréales à paille | 18 | Pelouses |
+| 7 | Protéagineux | 19 | Landes ligneuses |
+| 8 | Soja | 20 | Surfaces minérales |
+| 9 | Tournesol | 21 | Plages et dunes |
+| 10 | Maïs | 22 | Glaciers et neiges éternelles |
+| 11 | Riz | 23 | Eau |
+| 12 | Tubercules | | |
+
+Il n'y a **pas de classe « forêt mixte »** : un peuplement mélangé est classé
+feuillus ou conifères selon l'essence dominante du pixel.
 
 > **Note** : OSO doit être téléchargé depuis [Recherche Data Gouv](https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1) et placé dans `~/.local/share/nemeton/tutorial_data/oso_cache/oso.tif`
 
@@ -1081,18 +1087,22 @@ if (!file.exists(oso_path)) {
   })
 }
 
-# Classes OSO et leurs noms
+# Classes OSO et leurs noms : nomenclature OSO 2018+ (23 classes, Theia /
+# CESBIO), la meme que le coeur (OSO_NOMENCLATURE). La foret y est 16
+# (feuillus) et 17 (coniferes) ; il n'y a pas de classe « foret mixte », et 18
+# est la pelouse.
 oso_classes <- data.frame(
-  code = c(1, 2, 3, 4, 5, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 31),
-  nom = c("Cultures_annuelles", "Cultures_perennes", "Prairies", "Vignes", "Vergers",
-          "Urbain_dense", "Urbain_diffus", "Industriel", "Mineral",
-          "Feuillus", "Coniferes", "Foret_mixte", "Landes", "Pelouses",
-          "Plages_dunes", "Roches", "Eau", "Neige"),
+  code = 1:23,
+  nom = c("Bati_dense", "Bati_diffus", "Zones_industrielles", "Routes",
+          "Colza", "Cereales_paille", "Proteagineux", "Soja", "Tournesol",
+          "Mais", "Riz", "Tubercules", "Prairies", "Vergers", "Vignes",
+          "Feuillus", "Coniferes", "Pelouses", "Landes_ligneuses",
+          "Surfaces_minerales", "Plages_dunes", "Glaciers_neiges", "Eau"),
   stringsAsFactors = FALSE
 )
 
 # Classes forestières pour le calcul de A1
-foret_codes <- c(16, 17, 18)
+foret_codes <- c(16, 17)
 
 if (file.exists(oso_path)) {
   cat("1. Chargement et découpage OSO...\n")
@@ -1149,7 +1159,6 @@ if (file.exists(oso_path)) {
   cat("   Forêt moyenne:", round(mean(parcelles$OSO_Foret_total, na.rm = TRUE), 1), "%\n")
   cat("   - Feuillus:", round(mean(parcelles$OSO_Feuillus, na.rm = TRUE), 1), "%\n")
   cat("   - Conifères:", round(mean(parcelles$OSO_Coniferes, na.rm = TRUE), 1), "%\n")
-  cat("   - Mixte:", round(mean(parcelles$OSO_Foret_mixte, na.rm = TRUE), 1), "%\n")
 
   # A1 basé sur OSO_Foret_total
   parcelles$A1 <- parcelles$OSO_Foret_total

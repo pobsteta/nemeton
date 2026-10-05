@@ -7,19 +7,32 @@
 map_oso_class(oso_class, region = "BFC")
 }
 \arguments{
-\item{oso_class}{Integer. OSO class code (17, 18, or 19).}
+\item{oso_class}{Integer. OSO class code; only the forest codes 16 and 17
+map to species classes.}
 
 \item{region}{Character. Region code. Default "BFC".}
 }
 \value{
-Character vector of possible NMT species class codes.
+Character vector of possible NMT species class codes; empty
+(\code{character(0)}) for a non-forest code or a region without OSO
+mapping.
 }
 \description{
-Returns the list of possible species classes for a given OSO
-land cover code (17=deciduous, 18=coniferous, 19=mixed).
+Returns the species classes a pixel of the given OSO land-cover code may
+hold. OSO (2018 onwards, 23 classes) splits forest into broadleaf (16) and
+coniferous (17) and has no mixed-forest class: a mixed stand falls in
+either, so \code{"essence_mixte"} is listed under both.
+}
+\details{
+Before 0.212.2 the mapping read an obsolete nomenclature
+(17 = deciduous, 18 = coniferous, 19 = mixed): under the current one,
+17 is coniferous forest and 18 is grassland, so broadleaf species were
+returned for conifers and conifers for grassland. Any non-forest code
+also returned \code{"essence_mixte"}.
 }
 \examples{
-map_oso_class(17, "BFC")  # feuillus possibles
-map_oso_class(18, "BFC")  # coniferes possibles
+map_oso_class(16, "BFC")  # feuillus possibles
+map_oso_class(17, "BFC")  # coniferes possibles
+map_oso_class(4, "BFC")   # routes : aucune essence
 
 }

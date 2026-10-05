@@ -144,28 +144,40 @@ map_bdforet_essence <- function(essence, region = "BFC") {
 
 #' Map OSO class to possible NMT species classes
 #'
-#' Returns the list of possible species classes for a given OSO
-#' land cover code (17=deciduous, 18=coniferous, 19=mixed).
+#' Returns the species classes a pixel of the given OSO land-cover code may
+#' hold. OSO (2018 onwards, 23 classes) splits forest into broadleaf (16) and
+#' coniferous (17) and has no mixed-forest class: a mixed stand falls in
+#' either, so \code{"essence_mixte"} is listed under both.
 #'
-#' @param oso_class Integer. OSO class code (17, 18, or 19).
+#' @param oso_class Integer. OSO class code; only the forest codes 16 and 17
+#'   map to species classes.
 #' @param region Character. Region code. Default "BFC".
 #'
-#' @return Character vector of possible NMT species class codes.
+#' @return Character vector of possible NMT species class codes; empty
+#'   (\code{character(0)}) for a non-forest code or a region without OSO
+#'   mapping.
+#'
+#' @details Before 0.212.2 the mapping read an obsolete nomenclature
+#'   (17 = deciduous, 18 = coniferous, 19 = mixed): under the current one,
+#'   17 is coniferous forest and 18 is grassland, so broadleaf species were
+#'   returned for conifers and conifers for grassland. Any non-forest code
+#'   also returned \code{"essence_mixte"}.
 #'
 #' @examples
-#' map_oso_class(17, "BFC")  # feuillus possibles
-#' map_oso_class(18, "BFC")  # coniferes possibles
+#' map_oso_class(16, "BFC")  # feuillus possibles
+#' map_oso_class(17, "BFC")  # coniferes possibles
+#' map_oso_class(4, "BFC")   # routes : aucune essence
 #'
 #' @export
 map_oso_class <- function(oso_class, region = "BFC") {
   config <- get_species_config(region)
 
-  if (is.null(config$oso_mapping)) return("essence_mixte")
-
+  # Hors des codes forêt de la nomenclature OSO commune, aucune essence : un
+  # pixel de route ou de pelouse n'est pas une « forêt mixte ».
+  if (is.null(config$oso_mapping)) return(character(0))
   key <- as.character(oso_class)
   classes <- config$oso_mapping[[key]]
-
-  if (is.null(classes)) return("essence_mixte")
+  if (is.null(classes)) return(character(0))
   unlist(classes)
 }
 
