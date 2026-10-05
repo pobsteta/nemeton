@@ -148,6 +148,15 @@
 #' back to cadastral selection. A 0-row `sf` is returned when the AOI simply
 #' holds no public forest.
 #'
+#' @section Transport security:
+#' The ONF WFS is only served over **plain HTTP** (`https://ws.carmencarto.fr`
+#' does not answer, checked 2026-08-18): the request and the response travel
+#' unencrypted and unauthenticated. No credential is sent and the data are
+#' public, but the parcels cannot be guaranteed against tampering in transit.
+#' A response that is an HTML page, an OWS exception report or unreadable GML
+#' is rejected (`NULL`). Treat the layer as a NDP 0 seed to be checked against
+#' the management plan, not as an authoritative boundary.
+#'
 #' @param aoi An `sf`/`sfc` project extent (must have a defined CRS).
 #' @param crs Target EPSG of the returned layer. Default `2154`.
 #' @param domanialite Ownership filter: `"toutes"` (default), `"domaniale"`
