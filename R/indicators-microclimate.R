@@ -288,8 +288,10 @@ indicateur_r6_sensibilite <- function(units, micro_moyenne = NULL,
 #' @param cache_dir Optional cache directory for the microclimate rasters.
 #' @param quiet Suppress progress messages.
 #'
-#' @return A named list of `terra::SpatRaster` — `tmax_understorey`,
-#'   `tmax_open`, `vpd`, `rh` (summer JJA) — the `micro` contract.
+#' @return Nothing for now: the function **always raises an error** (missing
+#'   Suggests, or orchestration not wired yet). Once wired, it will return a
+#'   named list of `terra::SpatRaster` — `tmax_understorey`, `tmax_open`,
+#'   `vpd`, `rh` (summer JJA) — the `micro` contract.
 #' @seealso [indicateur_a3_microclimat()]
 #' @export
 microclimate_run <- function(aoi, year, structure = c("lidarhd", "opencanopy"),
