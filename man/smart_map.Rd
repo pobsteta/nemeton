@@ -37,7 +37,8 @@ Default is `"medium"`. Ignored if `threshold` is explicitly set.}
 trigger parallel execution. If NULL (default), uses value from `complexity`.}
 
 \item{workers}{Integer. Number of parallel workers. Default is
-`min(4, parallel::detectCores() - 1)`.}
+`min(4, parallel::detectCores() - 1)`, at least 1 (1 when the number of
+cores cannot be detected).}
 
 \item{progress}{Logical. Show progress bar? Default TRUE for n > 50.}
 

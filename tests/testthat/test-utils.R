@@ -694,6 +694,15 @@ test_that("message_nemeton handles multi-part messages", {
 # smart_map
 # ==============================================================================
 
+test_that("workers par défaut de smart_map : 1 si detectCores() vaut NA (audit 1.0)", {
+  local_mocked_bindings(detectCores = function(...) NA_integer_, .package = "parallel")
+  expect_identical(.smart_map_default_workers(), 1L)
+  local_mocked_bindings(detectCores = function(...) 16L, .package = "parallel")
+  expect_identical(.smart_map_default_workers(), 4L)
+  local_mocked_bindings(detectCores = function(...) 1L, .package = "parallel")
+  expect_identical(.smart_map_default_workers(), 1L)
+})
+
 test_that("smart_map works in sequential mode", {
   skip_if_not_installed("terra")
   result <- nemeton:::smart_map(1:5, function(x) x * 2, threshold = 100, .type = "dbl")

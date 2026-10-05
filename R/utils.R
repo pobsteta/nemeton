@@ -23,6 +23,15 @@
   very_high = 20L
 )
 
+# Nombre de workers par défaut de smart_map() : min(4, coeurs - 1), au moins 1.
+# parallel::detectCores() peut renvoyer NA (plateforme non reconnue) : sans ce
+# garde-fou, `max(1L, NA)` donnait NA workers (audit 1.0).
+.smart_map_default_workers <- function() {
+  n_cores <- suppressWarnings(as.integer(parallel::detectCores()))
+  if (length(n_cores) != 1L || is.na(n_cores)) return(1L)
+  as.integer(min(4L, max(1L, n_cores - 1L)))
+}
+
 #' Smart Map with Adaptive Parallelization
 #'
 #' Applies a function over elements with automatic decision between sequential
@@ -46,7 +55,8 @@
 #' @param threshold Integer or NULL. Explicit minimum number of elements to
 #'   trigger parallel execution. If NULL (default), uses value from `complexity`.
 #' @param workers Integer. Number of parallel workers. Default is
-#'   `min(4, parallel::detectCores() - 1)`.
+#'   `min(4, parallel::detectCores() - 1)`, at least 1 (1 when the number of
+#'   cores cannot be detected).
 #' @param progress Logical. Show progress bar? Default TRUE for n > 50.
 #' @param .type Character. Return type: "list" (default), "dbl", "chr", "lgl", "int".
 #'   Determines the output format and uses appropriate map variant.
@@ -104,7 +114,7 @@ smart_map <- function(x,
 
   # Default workers
   if (is.null(workers)) {
-    workers <- min(4L, max(1L, parallel::detectCores() - 1L))
+    workers <- .smart_map_default_workers()
   }
 
   # Default progress (show for n > 50)
