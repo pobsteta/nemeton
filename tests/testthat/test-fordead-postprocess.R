@@ -206,6 +206,25 @@ test_that("classify_disturbance: lone fordead → progressive, paired → mechan
   expect_true(is.na(out$disturbance_type[3]))
 })
 
+test_that("classify_disturbance: une trigger_date NA ne fait pas planter la fusion (audit 1.0)", {
+  df <- data.frame(
+    plot_id      = c(1L, 1L, 2L, 2L),
+    alert_type   = c("fordead_dieback", "ndvi_drop",
+                     "fordead_dieback", "ndvi_drop"),
+    trigger_date = as.Date(c(NA, "2024-06-20", "2024-06-15", NA)),
+    stringsAsFactors = FALSE
+  )
+  out <- classify_disturbance(df, window_days = 30)
+  # Sans date, on ne peut pas trancher : NA plutôt qu'un verdict inventé.
+  expect_true(is.na(out$disturbance_type[1]))
+  expect_true(is.na(out$disturbance_type[4]))
+  expect_true(is.na(out$method_overlap[1]))
+  # Une alerte datée n'est appariée à aucune alerte non datée.
+  expect_equal(out$disturbance_type[2], "recent_event")
+  expect_equal(out$disturbance_type[3], "progressive")
+  expect_false(out$method_overlap[3])
+})
+
 test_that("classify_disturbance: lone ndvi_drop → recent_event", {
   skip_if_not_installed("terra")
   df <- data.frame(

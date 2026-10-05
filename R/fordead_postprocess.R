@@ -494,7 +494,9 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 #'   \item `"recent_event"` — a lone FAST drop without any diagnostic
 #'     echo. Recent perturbation, no confirmed dieback.
 #'   \item `NA_character_` — a FAST drop already paired with a
-#'     diagnostic alert (the diagnostic row carries the verdict).
+#'     diagnostic alert (the diagnostic row carries the verdict), or an
+#'     alert whose `trigger_date` is `NA` (no verdict can be drawn; its
+#'     `method_overlap` is `NA` too, and it pairs with no other alert).
 #' }
 #'
 #' `method_overlap` is `TRUE` on a diagnostic alert when **both**
@@ -571,7 +573,13 @@ classify_disturbance <- function(alerts_df, window_days = 30L,
   diagnostic_types <- c("fordead_dieback", "reconfort_dieback")
 
   res <- lapply(seq_len(n), function(i) {
+    # trigger_date NA (audit 1.0) : sans date on ne peut ni apparier ni
+    # trancher mécanique / progressif -> NA plutôt qu'un verdict inventé.
+    if (is.na(td[i])) {
+      return(list(type = NA_character_, overlap = NA))
+    }
     in_window  <- abs(as.numeric(td - td[i])) <= win
+    in_window[is.na(in_window)] <- FALSE  # une alerte non datée n'apparie rien
     candidates <- near[i, ] & in_window
     candidates[i] <- FALSE  # don't pair with self
 
