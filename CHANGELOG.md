@@ -12,6 +12,15 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.212.2\] - 2026-10-05
+
+### Fixed
+
+- [`map_oso_class()`](https://pobsteta.github.io/nemeton/reference/map_oso_class.md)
+  / `BFC.json` : nomenclature OSO 2018+ (16 feuillus, 17 conifères),
+  aucune essence hors forêt.
+- Tutoriels 02 et 07 : classes OSO et masque forêt alignés.
+
 ## \[0.212.1\] - 2026-10-05
 
 ### Fixed

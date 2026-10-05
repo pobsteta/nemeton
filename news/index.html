@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,16 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.212.2" id="nemeton-02122-2026-10-05">nemeton 0.212.2 (2026-10-05)<a class="anchor" aria-label="anchor" href="#nemeton-02122-2026-10-05"></a></h2>
+<div class="section level4">
+<h4 id="fixed-0-212-2">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-212-2"></a></h4>
+<ul><li>
+<strong><code><a href="../reference/map_oso_class.html">map_oso_class()</a></code> et <code>inst/species/BFC.json</code></strong> lisaient encore l’ancienne nomenclature OSO (17 feuillus, 18 conifères, 19 mixte), laissée de côté par la 0.212.0 qui avait aligné L1, L2, A1 et RECONFORT. Dans la nomenclature 2018+ (<code>OSO_NOMENCLATURE</code>), 17 est la forêt de <strong>conifères</strong> et 18 la <strong>pelouse</strong> : les conifères recevaient des essences feuillues et les pelouses des résineux. Désormais 16 = feuillus, 17 = conifères, <code>essence_mixte</code> sous les deux (OSO n’a pas de classe mixte), et <strong>aucune essence</strong> (<code>character(0)</code>) pour un code non forestier, au lieu de <code>"essence_mixte"</code>. Un test lie les codes de <code>BFC.json</code> à <code>OSO_CLASSES_FORET</code>. Fonction non appelée par l’app.</li>
+<li>
+<strong>Tutoriels 02 et 07</strong> : table des classes OSO et masque forêt alignés sur la même nomenclature (le masque du 07 prenait 18 et 19, pelouses et landes, pour de la forêt ; le 02 comptait les pelouses dans A1).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.212.1" id="nemeton-02121-2026-10-05">nemeton 0.212.1 (2026-10-05)<a class="anchor" aria-label="anchor" href="#nemeton-02121-2026-10-05"></a></h2>
 <div class="section level4">
