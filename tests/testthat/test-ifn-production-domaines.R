@@ -105,6 +105,27 @@ test_that("domain covariates are computed like the SER ones", {
   expect_error(ifn_covariables_domaines(dom, as.matrix(h), a), "SpatRaster")
 })
 
+test_that("une covariable NA ne s'annonce pas « hybride »", {
+  # Audit 1.0 : delta = 0 en silence, predicteur = "hybride" quand meme.
+  d <- domaine_ser("C30")
+  c0 <- sf::st_coordinates(sf::st_point_on_surface(sf::st_geometry(d)))[1, ]
+  ut <- sf::st_sf(id = "ut", geometry = sf::st_sfc(
+    sf::st_buffer(sf::st_point(c0), 6000, endCapStyle = "SQUARE"), crs = 2154))
+  cs <- nemeton:::.ifn_prod_cov_ser()
+  cs <- cs[cs$ser == "C30", ]
+  cv_na <- data.frame(id = "1", h_mean = NA_real_, h_sd = cs$h_sd,
+                      alt_mean = cs$alt_mean, alt_sd = cs$alt_sd)
+  expect_warning(r <- ifn_production_domaines(ut, covariables = cv_na), "covariates")
+  ref <- ifn_production_domaines(ut)
+  expect_equal(r$predicteur, "ser")
+  expect_equal(r$valeur, ref$valeur)
+  expect_equal(r$variance_domaine, ref$variance_domaine)
+  # Covariable absente (id inconnu) : meme repli.
+  cv_autre <- cv_na; cv_autre$id <- "zz"; cv_autre$h_mean <- cs$h_mean
+  expect_warning(r2 <- ifn_production_domaines(ut, covariables = cv_autre), "covariates")
+  expect_equal(r2$predicteur, "ser")
+})
+
 test_that("part_foret reste une part (0-1) sur un raster en degres", {
   # Audit 1.0 : l'aire des pixels etait res_x * res_y (degres carres) divisee
   # par une aire de domaine en m2, d'ou une part_foret quasi nulle.
