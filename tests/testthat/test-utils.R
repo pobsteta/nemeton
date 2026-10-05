@@ -3148,7 +3148,24 @@ test_that("NEMETON_CACHE_DIR redirige le cache global (suite hermétique)", {
   d <- withr::local_tempdir()
   withr::local_envvar(NEMETON_CACHE_DIR = file.path(d, "c"))
   expect_identical(get_global_cache_dir(), file.path(d, "c"))
-  expect_true(dir.exists(file.path(d, "c")))
+})
+
+test_that("get_global_cache_dir ne crée aucun dossier (audit 1.0, sécu)", {
+  # Le simple appel ne doit rien écrire chez l'utilisateur : ce sont les
+  # appelants qui créent le sous-dossier au moment d'y écrire.
+  d <- withr::local_tempdir()
+  withr::local_envvar(NEMETON_CACHE_DIR = file.path(d, "force"))
+  expect_identical(get_global_cache_dir(), file.path(d, "force"))
+  expect_false(dir.exists(file.path(d, "force")))
+
+  skip_if_not_installed("rappdirs")
+  withr::local_envvar(NEMETON_CACHE_DIR = "")
+  local_mocked_bindings(
+    user_data_dir = function(...) file.path(d, "userdata"),
+    .package = "rappdirs"
+  )
+  expect_identical(get_global_cache_dir(), file.path(d, "userdata", "cache"))
+  expect_false(dir.exists(file.path(d, "userdata")))
 })
 
 # --- .unzip_safe (audit 1.0, sécurité : zip slip) ---------------------------
