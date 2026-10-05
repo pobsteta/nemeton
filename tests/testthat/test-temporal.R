@@ -392,14 +392,12 @@ test_that("calculate_change_rate warns when period names are not years and no da
   # Remove auto-generated dates (period names aren't year-like so dates=NULL)
   temporal$metadata$dates <- NULL
 
-  # Should warn about assuming 1 year
+  # Duree inconnue : avertissement et taux NA (plus de « 1 an » invente)
   expect_warning(
     rates <- calculate_change_rate(temporal, indicators = "C1", type = "absolute"),
-    "Cannot determine time difference|1 year"
+    "Cannot determine time difference"
   )
-
-  # With time_diff=1, rate = (60-50)/1 = 10
-  expect_equal(rates$C1_rate_abs[1], 10, tolerance = 0.01)
+  expect_true(all(is.na(rates$C1_rate_abs)))
 })
 
 # --- calculate_change_rate: relative-only type ---

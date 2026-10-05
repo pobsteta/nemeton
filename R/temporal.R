@@ -241,11 +241,19 @@ calculate_change_rate <- function(temporal,
     )) / 365.25 # Years
   } else {
     # Try to parse years from period names
-    year_start <- as.numeric(period_start)
-    year_end <- as.numeric(period_end)
+    # Noms non numeriques attendus ici : la coercition en NA est le test.
+    year_start <- suppressWarnings(as.numeric(period_start))
+    year_end <- suppressWarnings(as.numeric(period_end))
     if (is.na(year_start) || is.na(year_end)) {
-      time_diff <- 1 # Default to 1 year if can't determine
-      warning("Cannot determine time difference, assuming 1 year", call. = FALSE)
+      # Duree inconnue : des taux NA plutot qu'un « 1 an » invente, qui
+      # rendait un taux annuel faux d'un facteur egal a la vraie duree.
+      time_diff <- NA_real_
+      warning(
+        "Cannot determine time difference between periods (no dates, ",
+        "non-numeric period names): change rates are NA. Supply `dates` to ",
+        "nemeton_temporal().",
+        call. = FALSE
+      )
     } else {
       time_diff <- year_end - year_start
     }

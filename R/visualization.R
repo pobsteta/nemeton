@@ -128,9 +128,7 @@ plot_indicators_map <- function(data,
     ))
 
     if (length(indicators) == 0) {
-      msg_error("viz_no_indicators")
-      cli::cli_inform("i" = msg("viz_specify_indicators"))
-      cli::cli_abort("")
+      cli::cli_abort(c(msg("viz_no_indicators"), "i" = msg("viz_specify_indicators")))
     }
 
     if (length(indicators) > 1) {

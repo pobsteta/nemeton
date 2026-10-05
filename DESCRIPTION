@@ -38,7 +38,8 @@ Imports:
     parallel,
     stats,
     tools,
-    utils
+    utils,
+    withr
 Suggests:
     ggrepel (>= 0.9.0),
     signal (>= 0.7-6),
@@ -52,7 +53,6 @@ Suggests:
     knitr,
     rmarkdown,
     covr,
-    withr,
     units,
     here,
     dplyr (>= 1.1.0),
