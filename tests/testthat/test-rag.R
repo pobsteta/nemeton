@@ -551,3 +551,34 @@ test_that("ingestion accepts every manifest doc_type (single shared vocabulary)"
   expect_true(all(c("guide", "law", "dataset_doc", "web") %in%
                     knowledge_manifest_vocab()$doc_types))
 })
+
+# ---- audit 1.0, constats mineurs ---------------------------------------
+
+test_that("les tableaux texte PG font l'aller-retour (virgule, guillemet, antislash)", {
+  x <- c("plain", "a,b", "x\"y", "back\\slash", "fin\\")
+  lit <- nemeton:::.pg_text_array(x)
+  expect_identical(nemeton:::.decode_any_array(lit), x)
+  # Litteral PG renvoye par le serveur : elements nus et NULL.
+  expect_identical(nemeton:::.decode_any_array("{C1,R5,NULL,\"a b\"}"),
+                   c("C1", "R5", "a b"))
+  expect_identical(nemeton:::.decode_any_array("{}"), character(0))
+})
+
+test_that("un texte en UTF-8 invalide est decoupe sans erreur", {
+  # Fichier latin-1 lu comme UTF-8 (readLines(encoding = "UTF-8")).
+  latin <- "for\xeat de ch\xeanes \xe9lev\xe9e"
+  Encoding(latin) <- "UTF-8"
+  expect_false(validUTF8(latin))
+  expect_no_error(chunks <- nemeton:::.chunk_text(latin, size = 50L, overlap = 5L))
+  expect_true(all(validUTF8(chunks)))
+  expect_match(chunks[1], "forêt")
+  expect_no_error(n <- nemeton:::.estimate_tokens(latin))
+  expect_gt(n, 0L)
+
+  d <- withr::local_tempdir()
+  f <- file.path(d, "latin1.txt")
+  writeBin(charToRaw("ch\xeane p\xe9doncul\xe9"), f)
+  segs <- nemeton:::.source_to_segments(f)
+  expect_true(validUTF8(segs[[1]]$text))
+  expect_identical(segs[[1]]$text, "chêne pédonculé")
+})
