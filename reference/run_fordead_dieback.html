@@ -15,7 +15,7 @@ STAC `ItemCollection` over local hrefs, and runs FORDEAD `fit()` +
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -296,7 +296,9 @@ before each call. A `fordead:cancelled` progress event is emitted.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list with the following fields:</p><dl><dt>status</dt>
-<dd><p>`"success"`, `"cancelled"`, or `"error"`.</p></dd>
+<dd><p>`"success"`, `"cancelled"`, or `"error"`. A run whose
+      post-processing or alert insertion failed is `"error"` (with a
+      `message`), while keeping the rasters it did persist.</p></dd>
 
     <dt>message</dt>
 <dd><p>Optional human-readable message.</p></dd>

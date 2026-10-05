@@ -17,7 +17,7 @@ missing bands are skipped with a warning (aggregated, one
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -152,7 +152,8 @@ missing bands are skipped with a warning (aggregated, one
 <dd><p>A `data.frame` (or tibble) with at minimum the
 columns `scene_id` (character) and `obs_date` (Date or coercible).
 Exact `scene_id` duplicates and ESA reprocessing duplicates (same
-acquisition, newer processing baseline) are silently removed.</p></dd>
+acquisition, newer processing baseline) are silently removed. Scenes sharing a date (an AOI
+straddling two MGRS tiles) are mosaicked into one item per date.</p></dd>
 
 
 <dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>
@@ -170,7 +171,7 @@ covers CRSWIR + cloud / shadow / soil masks.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A Python `simplestac.utils.ItemCollection` object. The
   number of items equals the number of scenes whose bands are
-  all present.</p>
+  all present, counted once per date.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

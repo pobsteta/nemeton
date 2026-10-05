@@ -57,7 +57,8 @@ indicateur_e1_bois_energie(
 
 - lang:
 
-  Character. Message language. Default "en".
+  Character. Currently unused (messages are in English); kept for
+  backward compatibility. Default "en".
 
 - chm:
 

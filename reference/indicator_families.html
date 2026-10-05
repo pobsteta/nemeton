@@ -19,7 +19,7 @@ future worker."><meta property="og:image" content="https://pobsteta.github.io/ne
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -212,12 +212,15 @@ tooltips in <code>lang</code>, named by indicator code.</p></dd>
 
 <p><code>indicators</code> and <code>column_names</code> are always the same length and are paired
 <strong>by position</strong>: <code>column_names[[i]]</code> is the column produced for
-<code>indicators[[i]]</code>. Do <strong>not</strong> derive one from the other by string
-manipulation: <strong>one</strong> family still carries a legacy naming swap, where the
-short code and the column slug disagree.</p><ul><li><p><code>F1</code> is <code>indicateur_f2_erosion</code> and <code>F2</code> is <code>indicateur_f1_fertilite</code>.</p></li>
-</ul><p>The labels follow the short code <strong>and</strong> the values the paired column
-carries, so <code>labels[["F1"]]</code> describes erosion – consistent with the paired
-column, not with the column's own slug.</p>
+<code>indicators[[i]]</code>. Since 0.182.0 the short code and the column slug agree
+in every family (<code>F1</code> is <code>indicateur_f1_fertilite</code>, <code>F2</code> is
+<code>indicateur_f2_erosion</code>), and the labels follow both. Still read the pairing
+by position rather than deriving one from the other by string manipulation:
+the slugs are not a naming contract.</p>
+<p>Family F carried a legacy swap until 0.182.0 (spec 049): this table paired
+<code>F1</code> with <code>indicateur_f2_erosion</code> and <code>F2</code> with <code>indicateur_f1_fertilite</code>,
+while the alias resolver read the codes the other way. Code written against
+that pairing must be checked.</p>
 <p>Family L was in the same state until 0.176.0, for a reason worth
 remembering: a column is named after the function that fills it
 (<code>compute_indicator()</code> looks the function up by the indicator name), and

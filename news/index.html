@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,53 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.213.0" id="nemeton-02130-2026-10-05">nemeton 0.213.0 (2026-10-05)<a class="anchor" aria-label="anchor" href="#nemeton-02130-2026-10-05"></a></h2>
+<p>Sixième vague de l’audit de pré-version 1.0 : <strong>reliquat des constats majeurs</strong>. Les 53 constats « M » encore sans marque dans <code>specs/audit-1.0/rapport-audit.md</code> ont été revérifiés un à un contre le code (quatre agents en parallèle) : 34 étaient déjà corrigés (surtout en 0.212.0, sans mise à jour du rapport), 14 le sont ici avec un test qui échouait avant, 5 attendent une décision (voir « Décisions ouvertes »). Le rapport porte désormais une marque sur chacun.</p>
+<div class="section level4">
+<h4 id="changed-0-213-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-213-0"></a></h4>
+<ul><li>
+<strong>Erreurs des indicateurs</strong> : toutes les erreurs de validation passent par <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_abort()</a></code> (classe <code>rlang_error</code>), au lieu d’un mélange <code><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop()</a></code> / <code>cli_abort()</code>. Le texte est inchangé ; l’erreur de <code><a href="../reference/extract_indicator_value.html">extract_indicator_value()</a></code> tient sur deux lignes. Les <code><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop()</a></code> internes de R1, rattrapés par le repli et tracés dans <code>r1_fallback_reason</code>, restent.</li>
+<li>
+<strong><code>lang</code></strong> est documenté comme inutilisé dans les indicateurs qui l’acceptent (E1, E2, N1-N3, P1-P3, S1-S3).</li>
+<li>
+<strong><code><a href="../reference/run_fordead_dieback.html">run_fordead_dieback()</a></code></strong> : un échec du post-traitement ou de l’insertion des alertes rend <code>status = "error"</code> avec un <code>message</code> (et l’événement <code>fordead:error</code>), au lieu de « success ». Masque et bundle restent persistés.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="fixed-0-213-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-213-0"></a></h4>
+<ul><li>
+<strong><code>create_composite_index(aggregation = "geometric_mean", na.rm = TRUE)</code></strong> : les poids suivent leurs indicateurs et sont renormalisés après retrait des NA (valeur fausse et warning de recyclage avant). Avec <code>na.rm = FALSE</code>, un NA rend NA.</li>
+<li>
+<strong>FORDEAD, AOI à cheval sur deux tuiles MGRS</strong> : une seule observation par date, mosaïquée (VRT par bande), au lieu de deux items de même identifiant couvrant chacun une demi-AOI. <strong>Les sorties FORDEAD peuvent changer sur ces zones</strong> (villards par exemple).</li>
+<li>
+<strong><code><a href="../reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code></strong> : <code>s2_year</code> postérieur à l’année en cours → erreur ; saison pas encore close → avertissement ; la date de déclenchement des alertes ne dépasse plus le jour du run (elle valait <code>s2_year-12-31</code>).</li>
+<li>
+<strong>RECONFORT</strong> : <code>conda run --no-capture-output</code>, la sortie Python n’est plus perdue quand le scope est tué.</li>
+<li>
+<strong><code>segment_houppiers(algorithme = "lsms")</code></strong> sans CHM : l’AOI est reprojetée dans le CRS de l’image (abandon « does not intersect » à tort avant).</li>
+<li>
+<strong><code><a href="../reference/sanitize_chm.html">sanitize_chm()</a></code></strong> compte les cellules par blocs, sans charger le CHM en mémoire (jusqu’à cinq copies avant) ; valeurs inchangées.</li>
+<li>
+<strong><code><a href="../reference/build_knowledge_corpus.html">build_knowledge_corpus()</a></code></strong> : un <code>local_path</code> introuvable est nommé dans le rapport, avec la racine du corpus et <code>NEMETON_CORPUS_ROOT</code>.</li>
+<li>
+<strong>Documentation</strong> : <code><a href="../reference/compute_general_index.html">compute_general_index()</a></code> décrite comme moyenne simple en NDP uniforme (poids Fibonacci égaux) ; section « Column pairing » de <code><a href="../reference/indicator_families.html">indicator_families()</a></code> alignée sur le décroisement F de la 0.182.0.</li>
+<li>
+<strong>Tests hermétiques</strong> : la suite n’initialise plus Python et ne télécharge plus de CPython (<code>test-fordead-pipeline.R</code> mocké, <code>RETICULATE_USE_MANAGED_VENV=no</code>).</li>
+</ul></div>
+<div class="section level4">
+<h4 id="décisions-ouvertes-pascal-0-213-0">Décisions ouvertes (Pascal)<a class="anchor" aria-label="anchor" href="#d%C3%A9cisions-ouvertes-pascal-0-213-0"></a></h4>
+<ul><li>
+<strong>Offset radiométrique Sentinel-2</strong> (<code>BOA_ADD_OFFSET = -1000</code>, baseline ≥ 04.00, scènes traitées après le 25/01/2022) : <strong>confirmé, non corrigé</strong>. Les indices (NDVI, NBR…) des scènes récentes sont calculés sur les comptes bruts : NDVI d’un pixel forestier en été ≈ 0,49 au lieu de 0,84, d’où une fausse chute au passage de 2022 (FAST, cartes pixel, séries). La correction dépend de la source (Planetary / CDSE : offset ; MUSCATE : non) et déplace les seuils FAST.</li>
+<li>
+<strong>Contrat de retour</strong> des indicateurs (vecteur ou <code>sf</code>) et retrait de <code>lang</code>.</li>
+<li>
+<strong><code>.onLoad</code></strong> règle <code>memfrac</code> / <code>memmax</code> de terra (garde-fou OOM, contraire à la politique CRAN).</li>
+<li>
+<strong>Données des tutoriels 07 et 08</strong> (<code>aba.model</code>, <code>coregistration</code>) exclues du build.</li>
+<li>
+<strong>Corpus RAG</strong> : emplacement des PDF pour une installation hors dépôt.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.212.2" id="nemeton-02122-2026-10-05">nemeton 0.212.2 (2026-10-05)<a class="anchor" aria-label="anchor" href="#nemeton-02122-2026-10-05"></a></h2>
 <div class="section level4">

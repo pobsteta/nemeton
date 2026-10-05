@@ -43,7 +43,8 @@ indicateur_s3_population(
 
 - lang:
 
-  Character. Message language. Default "en".
+  Character. Currently unused (messages are in English); kept for
+  backward compatibility. Default "en".
 
 - population_field:
 

@@ -172,7 +172,9 @@ A list with the following fields:
 
 - status:
 
-  \`"success"\`, \`"cancelled"\`, or \`"error"\`.
+  \`"success"\`, \`"cancelled"\`, or \`"error"\`. A run whose
+  post-processing or alert insertion failed is \`"error"\` (with a
+  \`message\`), while keeping the rasters it did persist.
 
 - message:
 

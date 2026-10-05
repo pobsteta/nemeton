@@ -12,6 +12,24 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.213.0\] - 2026-10-05
+
+### Changed
+
+- Erreurs de validation des indicateurs via
+  [`cli::cli_abort()`](https://cli.r-lib.org/reference/cli_abort.html)
+  partout ; `lang` documenté inutilisé.
+- [`run_fordead_dieback()`](https://pobsteta.github.io/nemeton/reference/run_fordead_dieback.md)
+  : `status = "error"` quand le post-traitement ou l’insertion échoue.
+
+### Fixed
+
+- Moyenne géométrique pondérée avec NA ; FORDEAD sur deux tuiles MGRS ;
+  garde-fou de saison RECONFORT ; `conda run --no-capture-output` ; LSMS
+  sans CHM ;
+  [`sanitize_chm()`](https://pobsteta.github.io/nemeton/reference/sanitize_chm.md)
+  par blocs ; `local_path` RAG signalé ; tests sans Python.
+
 ## \[0.212.2\] - 2026-10-05
 
 ### Fixed

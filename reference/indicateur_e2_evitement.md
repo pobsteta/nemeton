@@ -51,7 +51,8 @@ indicateur_e2_evitement(
 
 - lang:
 
-  Character. Message language. Default "en".
+  Character. Currently unused (messages are in English); kept for
+  backward compatibility. Default "en".
 
 - taux_recolte_materiau:
 

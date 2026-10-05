@@ -23,7 +23,7 @@ continuous-score rasters (EPSG:2154) plus a `run_meta.json`."><meta property="og
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -191,7 +191,11 @@ convention as FORDEAD's `cache_dir`).</p></dd>
 series – the single temporal control of a run (the app exposes only this,
 as a year picker). Default the current year. The download window, the
 analysis window and the output names all derive from it; see
-<em>Temporal window</em> below.</p></dd>
+<em>Temporal window</em> below. A future year is refused; a year whose
+model analysis window has not yet elapsed (see
+<code><a href="reconfort_latest_complete_year.html">reconfort_latest_complete_year()</a></code>) runs with a warning
+(truncated last season). The alert trigger date never lies after the day
+of the run.</p></dd>
 
 
 <dt id="arg-date-from-date-to">date_from, date_to<a class="anchor" aria-label="anchor" href="#arg-date-from-date-to"></a></dt>

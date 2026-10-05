@@ -67,7 +67,11 @@ run_reconfort_dieback(
   single temporal control of a run (the app exposes only this, as a year
   picker). Default the current year. The download window, the analysis
   window and the output names all derive from it; see *Temporal window*
-  below.
+  below. A future year is refused; a year whose model analysis window
+  has not yet elapsed (see
+  [`reconfort_latest_complete_year()`](https://pobsteta.github.io/nemeton/reference/reconfort_latest_complete_year.md))
+  runs with a warning (truncated last season). The alert trigger date
+  never lies after the day of the run.
 
 - date_from, date_to:
 

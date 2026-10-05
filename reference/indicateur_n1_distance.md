@@ -44,7 +44,8 @@ indicateur_n1_distance(
 
 - lang:
 
-  Character. Message language. Default "en".
+  Character. Currently unused (messages are in English); kept for
+  backward compatibility. Default "en".
 
 ## Value
 

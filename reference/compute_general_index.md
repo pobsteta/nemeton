@@ -1,7 +1,13 @@
-# Compute Fibonacci-weighted general index
+# Compute the general index (uniform NDP)
 
-Computes the global score as a Fibonacci-weighted mean of family scores.
-The NDP determines the weight and confidence level.
+Computes the global score as the arithmetic mean of the available family
+scores. With a single NDP for the whole dataset, every family carries
+the same Fibonacci weight, so the Fibonacci-weighted mean reduces to a
+plain mean: the NDP does not change `score`, it only sets the returned
+`weight` and `confidence`. Use
+[`compute_general_index_mixed`](https://pobsteta.github.io/nemeton/reference/compute_general_index_mixed.md)
+when indicators come from different NDP levels: the Fibonacci weights
+then differ and are applied.
 
 ## Usage
 
@@ -27,7 +33,8 @@ A list with:
 
 - score:
 
-  Numeric. The weighted general index (0-100).
+  Numeric. Mean of the non-missing family scores (0-100), rounded to one
+  decimal.
 
 - ndp:
 

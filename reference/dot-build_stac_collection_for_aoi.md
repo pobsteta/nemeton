@@ -30,7 +30,8 @@ wrapped in a \`simplestac.ItemCollection\`.
   A \`data.frame\` (or tibble) with at minimum the columns \`scene_id\`
   (character) and \`obs_date\` (Date or coercible). Exact \`scene_id\`
   duplicates and ESA reprocessing duplicates (same acquisition, newer
-  processing baseline) are silently removed.
+  processing baseline) are silently removed. Scenes sharing a date (an
+  AOI straddling two MGRS tiles) are mosaicked into one item per date.
 
 - cache_dir:
 
@@ -46,7 +47,8 @@ wrapped in a \`simplestac.ItemCollection\`.
 ## Value
 
 A Python \`simplestac.utils.ItemCollection\` object. The number of items
-equals the number of scenes whose bands are all present.
+equals the number of scenes whose bands are all present, counted once
+per date.
 
 ## Details
 

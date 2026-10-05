@@ -56,7 +56,8 @@ indicateur_p3_qualite_bois(
 
 - lang:
 
-  Character. Message language. Default "en".
+  Character. Currently unused (messages are in English); kept for
+  backward compatibility. Default "en".
 
 - chm:
 

@@ -45,7 +45,8 @@ indicateur_s1_routes(
 
 - lang:
 
-  Character. Message language ("en" or "fr"). Default "en".
+  Character. Currently unused (messages are in English); kept for
+  backward compatibility. Default "en".
 
 - dem_target_res:
 

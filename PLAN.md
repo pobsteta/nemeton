@@ -133,7 +133,8 @@ opposer au prochain fork qui se présentera comme un raccourci.
 | 3 | Sécurité : `eval` du cfg Python, `verify=False` pygeodes, manifeste RAG, `format_citations`, `project_name`, `zone_id`/`output_dir`, URL de base dans les messages | **v0.210.0** | ✅ livré, brief app émis |
 | 4 | Paquet propre : `.Rbuildignore` (archive de 5,4 Go dans `data/`), DESCRIPTION, `.Rd` (8 WARNING → 0), roxygen détachés, non-ASCII, CI | **v0.211.0** | ✅ livré : 0 WARNING, CI en échec sur warning |
 | 5 | Seconde passe sur les calculs : 31 constats majeurs (indicateurs, échantillonnage, climat, RECONFORT) | **v0.212.0** | ✅ livré, brief app émis |
-| 6 | Contrat d’API : retours vecteur / `sf`, `lang`, 313 exports à trier ; reliquat de l’audit | 0.213 | ⬜ |
+| 6 | Reliquat des constats majeurs (53 « M » revérifiés : 34 déjà corrigés, 14 corrigés, 5 en décision) | **v0.213.0** | ✅ livré |
+| 7 | Contrat d’API : retours vecteur / `sf`, `lang`, 313 exports à trier ; offset S2 ; constats « m » | 0.214 | ⬜ décisions Pascal |
 
 **Journal** — *2026-10-02* (**v0.208.0**) : vague 1 livrée, dix
 correctifs, chacun avec un test qui échouait avant. Valeurs changées
@@ -230,10 +231,28 @@ de l’audit recensé : 53 constats « M » sans marque de correction dans
 `rapport-audit.md` (une partie déjà corrigée en 0.212.0 sans mise à jour
 du rapport), triés en vague 6.
 
-**Prochaine étape** : vague 6 (contrat d’API, reliquat). L’app consomme
-135 des 313 exports et lit 21 symboles internes : ne rien retirer ni
-changer de signature parmi eux sans brief app
-(`specs/audit-1.0/exports-consommes-app.md`).
+**Journal** — *2026-10-05* (**v0.213.0**) : vague 6, reliquat des 53
+constats « M » non marqués de `rapport-audit.md`, revérifiés par quatre
+agents (socle et paquet, indicateurs, production-climat-santé,
+RECONFORT-RAG-QGIS). 34 déjà corrigés (0.209 à 0.212, rapport jamais mis
+à jour), 14 corrigés avec un test qui échouait avant, 5 en décision ;
+chaque ligne du rapport porte désormais sa marque. Brief app non
+nécessaire : FORDEAD `status = "error"` est déjà traité par
+`mod_monitoring.R`, aucun export consommé ne change de signature. Même
+jour, hors release : spec 047 (comparaison R1 / firexpovulnR,
+recommandation de rejet de l’ADR-016, décision à Pascal).
+
+**Décisions ouvertes** (Pascal) : **offset radiométrique S2** (confirmé
+: NDVI des scènes post-25/01/2022 sous-estimé, ≈ 0,49 au lieu de 0,84 en
+forêt l’été — touche FAST, cartes pixel, séries ; correction par source
+et seuils FAST) ; contrat de retour des indicateurs et `lang` ;
+`.onLoad` et options terra ; données des tutoriels 07/08 ; emplacement
+des PDF du corpus RAG ; ADR-016 ; calibrages 0.212.
+
+**Prochaine étape** : vague 7 (contrat d’API, offset S2 si validé,
+constats « m »). L’app consomme 135 des 313 exports et lit 21 symboles
+internes : ne rien retirer ni changer de signature parmi eux sans brief
+app (`specs/audit-1.0/exports-consommes-app.md`).
 
 ------------------------------------------------------------------------
 

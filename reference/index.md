@@ -295,7 +295,7 @@ Ponderation Fibonacci et confiance phi
 - [`get_ndp_confidence()`](https://pobsteta.github.io/nemeton/reference/get_ndp_confidence.md)
   : Get NDP confidence ratio
 - [`compute_general_index()`](https://pobsteta.github.io/nemeton/reference/compute_general_index.md)
-  : Compute Fibonacci-weighted general index
+  : Compute the general index (uniform NDP)
 - [`compute_general_index_mixed()`](https://pobsteta.github.io/nemeton/reference/compute_general_index_mixed.md)
   : Compute general index with mixed NDP per indicator
 - [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)

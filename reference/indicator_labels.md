@@ -9,7 +9,8 @@ Rows follow the canonical family order, and within a family the
 declaration order of the indicators. `column_name` is the column paired
 with `code` – see the *Column pairing* section of
 [`indicator_families`](https://pobsteta.github.io/nemeton/reference/indicator_families.md)
-for the two families where the short code and the column slug disagree.
+for the history of the F and L families, where the short code and the
+column slug used to disagree.
 
 As in
 [`indicator_families`](https://pobsteta.github.io/nemeton/reference/indicator_families.md),
