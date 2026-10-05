@@ -71,3 +71,21 @@ test_that("field_qfield is declared in inst/datasources/FR.json", {
   expect_true("field_qfield" %in% names(ds$datasets))
   expect_equal(ds$datasets$field_qfield$required_crs, "EPSG:2154")
 })
+
+test_that("detect_ndp tolère des comptages terrain NA (audit 1.0)", {
+  # Avant : `if (NA >= 1L)` faisait planter detect_ndp().
+  df <- data.frame(x = 1)
+  attr(df, "field_plots_count") <- NA
+  r <- detect_ndp(df)
+  expect_identical(r$level, 0L)
+  expect_false("field_qfield" %in% r$sources)
+
+  # Placettes connues, arbres inconnus : on garde le palier « placettes »
+  # (NDP 2) sans inventer de densité d'arbres.
+  df2 <- data.frame(x = 1)
+  attr(df2, "field_plots_count") <- 3L
+  attr(df2, "field_trees_count") <- NA_integer_
+  r2 <- detect_ndp(df2)
+  expect_identical(r2$level, 2L)
+  expect_true("field_qfield" %in% r2$sources)
+})

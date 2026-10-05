@@ -198,9 +198,29 @@ test_that("compute_general_index_mixed weights by Fibonacci", {
 test_that("compute_general_index_mixed handles no common families", {
   scores <- c(C = 50)
   ndps <- c(B = 0L)
-  result <- compute_general_index_mixed(scores, ndps)
+  # Le NA n'est plus silencieux (audit 1.0).
+  expect_warning(
+    result <- compute_general_index_mixed(scores, ndps),
+    "ignored"
+  )
   expect_true(is.na(result$score))
   expect_equal(result$n_families, 0L)
+})
+
+test_that("compute_general_index_mixed signale noms absents et familles écartées (audit 1.0)", {
+  expect_warning(
+    r <- compute_general_index_mixed(c(50, 60), c(C = 1L, B = 0L)),
+    "named"
+  )
+  expect_true(is.na(r$score))
+  # Une famille sans NDP est écartée, et on le dit.
+  expect_warning(
+    r2 <- compute_general_index_mixed(c(C = 100, B = 0, W = 50), c(C = 2L, B = 0L)),
+    "W"
+  )
+  expect_equal(r2$score, 66.7)
+  # Noms concordants : aucun avertissement.
+  expect_no_warning(compute_general_index_mixed(c(C = 100, B = 0), c(C = 2L, B = 0L)))
 })
 
 test_that("compute_general_index_mixed handles famille_ prefix", {
