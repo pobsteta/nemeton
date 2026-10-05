@@ -47,7 +47,7 @@ test_that(".draw_grts_continuous draws from the >0 cells, weighted", {
   r <- make_trend_raster()
   priority <- terra::ifel(r > 0, r, NA_real_)
 
-  pts <- nemeton:::.draw_grts_continuous(priority, n = 10L, seed = 7L)
+  pts <- withr::with_seed(7L, nemeton:::.draw_grts_continuous(priority, n = 10L))
   expect_s3_class(pts, "sf")
   expect_true("alert_value" %in% names(pts))
   expect_lte(nrow(pts), 10L)
@@ -182,4 +182,33 @@ test_that("create_trend_sanitary_plan accepts an explicit mask_polygon", {
     n_plots = 5L, n_control = 2L, mask_polygon = poly, seed = 1L))
   expect_s3_class(plan, "sf")
   expect_true(any(plan$type == "Sanitaire"))
+})
+
+
+# ---- audit 1.0, constats mineurs -------------------------------------
+
+test_that("create_trend_sanitary_plan : NA -> message clair (audit 1.0)", {
+  skip_if_not_installed("terra")
+  expect_error(
+    create_trend_sanitary_plan(.fake_con(), 1L, "2017-01-01", "2024-12-31",
+                               cache_dir = ".", n_plots = NA),
+    "n_plots")
+  expect_error(
+    create_trend_sanitary_plan(.fake_con(), 1L, "2017-01-01", "2024-12-31",
+                               cache_dir = ".", n_control = NA_integer_),
+    "n_control")
+})
+
+test_that("create_trend_sanitary_plan ne touche pas a la graine globale (audit 1.0)", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("spsurvey")
+  testthat::local_mocked_bindings(
+    read_fast_alert_raster = function(con, zone_id, ...) make_trend_raster(),
+    .package = "nemeton")
+  set.seed(2024)
+  avant <- .Random.seed
+  suppressMessages(create_trend_sanitary_plan(
+    .fake_con(), 1L, "2017-01-01", "2024-12-31", cache_dir = ".",
+    n_plots = 5L, n_control = 2L, seed = 99L, apply_zone_mask = FALSE))
+  expect_true(identical(.Random.seed, avant))
 })

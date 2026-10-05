@@ -97,7 +97,23 @@ enable_rag <- function(con) {
 # Rough token estimate: ~4 characters per token holds well for FR/EN
 # under the Mistral/OpenAI tokenizers.
 .estimate_tokens <- function(text) {
-  as.integer(ceiling(nchar(text) / 4))
+  as.integer(ceiling(nchar(.as_valid_utf8(text)) / 4))
+}
+
+# Rend un texte en UTF-8 valide. Un fichier latin-1 / CP1252 lu comme UTF-8
+# (readLines(encoding = "UTF-8"), PDF mal encode) faisait echouer nchar() et
+# les regex ; ses octets sont relus en CP1252 (latin-1 en dernier recours),
+# l'encodage le plus probable d'un texte francais non UTF-8 (audit 1.0).
+.as_valid_utf8 <- function(x) {
+  x <- as.character(x)
+  bad <- !is.na(x) & !validUTF8(x)
+  if (any(bad)) {
+    conv <- iconv(x[bad], from = "CP1252", to = "UTF-8")
+    miss <- is.na(conv)
+    if (any(miss)) conv[miss] <- iconv(x[bad][miss], from = "latin1", to = "UTF-8")
+    x[bad] <- conv
+  }
+  x
 }
 
 # Sliding-window chunker over whitespace-delimited words, sized by
@@ -111,7 +127,7 @@ enable_rag <- function(con) {
   if (is.na(overlap) || overlap < 0L || overlap >= size) {
     cli::cli_abort("{.arg chunk_overlap} must be in [0, chunk_size).")
   }
-  text <- paste(as.character(text), collapse = "\n")
+  text <- paste(.as_valid_utf8(text), collapse = "\n")
   words <- unlist(strsplit(text, "[[:space:]]+"))
   words <- words[nzchar(words)]
   n <- length(words)
@@ -248,7 +264,7 @@ enable_rag <- function(con) {
 
 # Single entry point for embedding text (batched). Mocked in tests.
 .embed_texts <- function(texts, provider = "mistral", api_key = NULL,
-                         lang = NULL, batch_size = 32L) {
+                         batch_size = 32L) {
   provider <- match.arg(provider, c("mistral", "openai", "voyage"))
   texts <- as.character(texts)
   if (!length(texts)) {
@@ -293,9 +309,55 @@ enable_rag <- function(con) {
   as.numeric(jsonlite::fromJSON(x))
 }
 
+# Litteral tableau texte PostgreSQL. Dans un element entre guillemets, PG
+# exige d'echapper l'antislash ET le guillemet : seul le guillemet l'etait,
+# un code finissant par `\` cassait le litteral (audit 1.0).
 .pg_text_array <- function(x) {
-  inner <- paste0('"', gsub('"', '\\\\"', x), '"', collapse = ",")
-  paste0("{", inner, "}")
+  x <- gsub("\\", "\\\\", as.character(x), fixed = TRUE)
+  x <- gsub('"', '\\"', x, fixed = TRUE)
+  paste0("{", paste0('"', x, '"', collapse = ","), "}")
+}
+
+# Inverse de .pg_text_array() pour un litteral `{...}` : elements entre
+# guillemets (virgules et echappements `\` compris) ou nus (NULL ignore).
+.parse_pg_text_array <- function(s) {
+  inner <- substr(s, 2L, nchar(s) - 1L)
+  if (!nzchar(inner)) return(character(0))
+  chars <- strsplit(inner, "", fixed = TRUE)[[1]]
+  out <- character(0)
+  buf <- character(0)
+  quoted <- FALSE
+  in_q <- FALSE
+  emit <- function() {
+    val <- paste(buf, collapse = "")
+    if (!quoted) {
+      val <- trimws(val)
+      if (identical(toupper(val), "NULL")) return(out)
+    }
+    c(out, val)
+  }
+  i <- 1L
+  n <- length(chars)
+  while (i <= n) {
+    ch <- chars[i]
+    if (ch == "\\" && i < n) {
+      buf <- c(buf, chars[i + 1L])
+      i <- i + 2L
+      next
+    }
+    if (ch == '"') {
+      in_q <- !in_q
+      quoted <- TRUE
+    } else if (ch == "," && !in_q) {
+      out <- emit()
+      buf <- character(0)
+      quoted <- FALSE
+    } else {
+      buf <- c(buf, ch)
+    }
+    i <- i + 1L
+  }
+  emit()
 }
 
 .json_str_array <- function(x) {
@@ -321,10 +383,7 @@ enable_rag <- function(con) {
     return(as.character(jsonlite::fromJSON(s)))
   }
   if (startsWith(s, "{") && endsWith(s, "}")) {
-    inner <- substr(s, 2L, nchar(s) - 1L)
-    if (!nzchar(inner)) return(character(0))
-    parts <- strsplit(inner, ",", fixed = TRUE)[[1]]
-    return(gsub('^"|"$', "", trimws(parts)))
+    return(.parse_pg_text_array(s))
   }
   s
 }
@@ -373,6 +432,7 @@ enable_rag <- function(con) {
 # not name an existing, supported file is an error (it used to be
 # embedded verbatim as if it were the document text).
 .source_to_segments <- function(source) {
+  if (is.character(source)) source <- .as_valid_utf8(source)
   is_path <- is.character(source) && length(source) == 1L && !is.na(source)
   if (is_path && .looks_like_path(source)) {
     if (!file.exists(source) || dir.exists(source)) {
@@ -382,11 +442,12 @@ enable_rag <- function(con) {
       ))
     }
     if (grepl("\\.pdf$", source, ignore.case = TRUE)) {
-      pages <- .pdf_to_text(source)
+      pages <- .as_valid_utf8(.pdf_to_text(source))
       return(Map(function(t, p) list(text = t, page = p), pages, seq_along(pages)))
     }
     if (grepl("\\.(txt|md|markdown|rmd|qmd)$", source, ignore.case = TRUE)) {
-      txt <- paste(readLines(source, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+      txt <- paste(.as_valid_utf8(readLines(source, warn = FALSE, encoding = "UTF-8")),
+                   collapse = "\n")
       return(list(list(text = txt, page = NA_integer_)))
     }
     cli::cli_abort(c(
@@ -598,8 +659,7 @@ ingest_knowledge_document <- function(con,
   }
   texts <- vapply(chunks, function(c) c$text, character(1))
 
-  emb <- .embed_texts(texts, provider = embed_provider, api_key = api_key,
-                      lang = meta$lang)
+  emb <- .embed_texts(texts, provider = embed_provider, api_key = api_key)
   if (is.null(dim(emb))) emb <- matrix(emb, nrow = 1L)
   if (nrow(emb) != length(texts)) {
     cli::cli_abort(
@@ -760,7 +820,7 @@ embed_query <- function(text,
   if (!is.character(text) || length(text) != 1L || is.na(text) || !nzchar(text)) {
     cli::cli_abort("{.arg text} must be a non-empty character scalar.")
   }
-  m <- .embed_texts(text, provider = provider, api_key = api_key, lang = lang)
+  m <- .embed_texts(text, provider = provider, api_key = api_key)
   if (is.null(dim(m))) return(as.numeric(m))
   as.numeric(m[1L, ])
 }
@@ -920,7 +980,7 @@ embed_query <- function(text,
 #'   tagged with at least one of these family / indicator codes.
 #' @param profile_codes Optional character vector. Keep only documents
 #'   tagged with at least one of these actor-profile codes.
-#' @param min_similarity Numeric in `[0, 1]`. Drop chunks below this
+#' @param min_similarity Numeric in `[-1, 1]` (cosine similarity). Drop chunks below this
 #'   cosine similarity. Default 0.7.
 #' @param lang Optional ISO 639-1 code. Keep only documents in this
 #'   language.

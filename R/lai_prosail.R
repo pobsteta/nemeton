@@ -37,6 +37,14 @@
        max = data.frame(tto = 10, tts = 55, psi = 180))
 }
 
+# Signature numerique d'une plage de geometrie (min/max de tto, tts, psi),
+# insensible au type (entier/double) et a l'ordre des colonnes.
+.lai_geom_signature <- function(geom_acq) {
+  pick <- function(d) as.numeric(unlist(d[1L, c("tto", "tts", "psi")]))
+  stats::setNames(c(pick(geom_acq$min), pick(geom_acq$max)),
+                  paste0(rep(c("min_", "max_"), each = 3L), c("tto", "tts", "psi")))
+}
+
 # Réduction temporelle d'un stack -> une couche nommée `name` (p90 défaut, D1).
 # `name` défaut "lai" : rétrocompatibilité stricte du chemin LAI historique.
 .lai_reduce <- function(r, reducer = "p90", name = "lai") {
@@ -70,9 +78,17 @@
 # clé et parms_to_estimate identiques à l'historique -> modèle LAI livré trouvé.
 .lai_prosail_train <- function(srf, geom_acq, selected_bands, cache_dir,
                                parm = "lai") {
+  # La geometrie d'acquisition entre dans la cle : le modele livre (et la cle
+  # historique) n'est valable que pour la plage par defaut, avec laquelle il a
+  # ete entraine (data-raw/prosail_lai_model.R). Une autre plage recevait
+  # avant le modele livre ou le cache d'une autre geometrie (audit 1.0).
+  geom_vec <- .lai_geom_signature(geom_acq)
+  is_default <- isTRUE(all.equal(geom_vec, .lai_geom_signature(.lai_default_geom())))
   key <- paste0("prosail_", parm, "_", srf$sensor, "_",
-                paste(selected_bands, collapse = "-"), ".rds")
-  shipped <- system.file("extdata", key, package = "nemeton")
+                paste(selected_bands, collapse = "-"),
+                if (is_default) "" else paste0("_g", rlang::hash(geom_vec)),
+                ".rds")
+  shipped <- if (is_default) system.file("extdata", key, package = "nemeton") else ""
   if (nzchar(shipped) && file.exists(shipped)) return(readRDS(shipped))
   f <- file.path(cache_dir, key)
   if (file.exists(f)) return(readRDS(f))

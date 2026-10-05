@@ -26,7 +26,9 @@ create_sampling_plan(
 }
 \arguments{
 \item{zone}{sf polygon of the study area (any CRS; result uses
-\code{zone}'s CRS).}
+\code{zone}'s CRS). A geographic (longitude/latitude) zone is worked
+in its UTM zone, since \code{grid_step} and \code{plot_radius} are
+metres.}
 
 \item{n_base}{Integer. Number of base (primary) plots. Optional
 when \code{target_error} and \code{cv} are provided — in that
@@ -87,7 +89,9 @@ be retained. Default 30.}
 \item{min_per_stratum}{Integer. Minimum number of base plots in each
 stratum (capped at the number of candidates). Default 2.}
 
-\item{seed}{Integer random seed. Default 42.}
+\item{seed}{Integer random seed, applied locally: the session's global
+random state is restored on exit. \code{NULL} draws unseeded.
+Default 42.}
 }
 \value{
 An sf POINT with columns \code{plot_id}, \code{type} (Base

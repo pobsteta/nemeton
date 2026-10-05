@@ -437,3 +437,44 @@ test_that("weighting='continuous' assembles Validation + Temoin with alert_weigh
   expect_true("alert_weight" %in% names(plan))
   expect_true(all(is.finite(plan$alert_weight)))   # renseigné sur les 2 types
 })
+
+
+# ---- audit 1.0, constats mineurs -------------------------------------
+
+test_that("create_validation_sampling_plan : NA ou vecteur -> message clair (audit 1.0)", {
+  skip_if_not_installed("terra")
+  r <- make_alert_raster_20x20()
+  zone <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 0, ymin = 0, xmax = 200, ymax = 200), crs = 2154)))
+  expect_error(create_validation_sampling_plan(zone, r, n_validation = NA),
+               "n_validation")
+  expect_error(create_validation_sampling_plan(zone, r, n_validation = 5L,
+                                               n_control = NA),
+               "n_control")
+  expect_error(create_validation_sampling_plan(zone, r, n_validation = c(5, 6)),
+               "n_validation")
+})
+
+test_that("create_validation_sampling_plan ne touche pas a la graine globale (audit 1.0)", {
+  skip_if_not_installed("terra")
+  testthat::skip_if_not_installed("spsurvey")
+  r <- make_alert_raster_20x20()
+  zone <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 0, ymin = 0, xmax = 200, ymax = 200), crs = 2154)))
+  set.seed(2024)
+  avant <- .Random.seed
+  create_validation_sampling_plan(zone, r, n_validation = 5L, n_control = 2L,
+                                  seed = 123L)
+  expect_true(identical(.Random.seed, avant))
+})
+
+test_that("le plan de validation est dans le CRS du raster d'alerte (doc, audit 1.0)", {
+  skip_if_not_installed("terra")
+  testthat::skip_if_not_installed("spsurvey")
+  r <- make_alert_raster_20x20(crs = "EPSG:32631")
+  zone <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 0, ymin = 0, xmax = 200, ymax = 200), crs = 32631)))
+  plan <- create_validation_sampling_plan(zone, r, n_validation = 3L,
+                                          n_control = 1L, seed = 1L)
+  expect_equal(as.integer(sf::st_crs(plan)$epsg), 32631L)
+})

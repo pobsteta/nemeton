@@ -88,7 +88,8 @@ goes past 20 GB even on a small AOI (the R session was killed by
 systemd-oomd on 2026-07-13; 13.4 GB once chunked). Chunking requires an
 iota2 patched for defect #11 (`repair_iota2_env.sh`) — without it, chunk 0
 keeps an uncut region mask and OTB aborts; the run then falls back to a
-single chunk with a warning. An explicit value is respected.}
+single chunk with a warning, with or without `aoi_crop`. An explicit value
+is respected (a warning announces the expected chunk-0 abort).}
 
 \item{scheduler_type}{IOTA2 scheduler. Default `"localCluster"`.
 IOTA2's `Iota2.py` only accepts `debug`, `cluster`, `PBS`, `Slurm`,
@@ -118,7 +119,8 @@ mask fetches. Default per-user nemeton caches.}
 when `NULL`.}
 
 \item{skip_ingest}{Reuse an already-ingested S2 layout under the
-working dir instead of downloading. Default `FALSE`.}
+working dir instead of downloading. Default `FALSE`. Aborts before
+staging when a tile has no extracted scene.}
 
 \item{keep_workdir}{Keep the staged working directory after the run.
 Default `TRUE` (the rasters live there). With `FALSE`, only a directory

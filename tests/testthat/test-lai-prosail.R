@@ -262,3 +262,40 @@ test_that("une variable inconnue est rejetée", {
   skip_if_not_installed("terra")
   expect_error(biophysique_sentinel2("zzz", precomputed = .lai_stack(1)))
 })
+
+test_that("une geometrie d'acquisition non par defaut n'herite ni du modele livre ni du cache par defaut (audit 1.0)", {
+  skip_if_not_installed("prosail")
+  cache <- withr::local_tempdir()
+  srf <- list(sensor = "Sentinel_2A")
+  bands <- c("B4", "B5", "B8")
+  n_train <- 0L
+  testthat::local_mocked_bindings(
+    set_options_prosail = function(...) list(),
+    train_prosail_inversion = function(geom_acq, ...) {
+      n_train <<- n_train + 1L
+      list(lai = "entraine", geom = geom_acq)
+    },
+    .package = "prosail")
+
+  # Geometrie par defaut : le modele livre (inst/extdata) est servi.
+  m0 <- .lai_prosail_train(srf, .lai_default_geom(), bands, cache)
+  expect_identical(n_train, 0L)
+  expect_false(identical(m0$lai, "entraine"))
+
+  # Autre geometrie : entrainement dedie, puis cache sous une cle distincte.
+  geo <- list(min = data.frame(tto = 0, tts = 60, psi = 0),
+              max = data.frame(tto = 10, tts = 75, psi = 180))
+  m1 <- .lai_prosail_train(srf, geo, bands, cache)
+  expect_identical(m1$lai, "entraine")
+  expect_identical(m1$geom, geo)
+  expect_identical(n_train, 1L)
+  m1b <- .lai_prosail_train(srf, geo, bands, cache)
+  expect_identical(n_train, 1L)          # relu depuis le cache
+  expect_identical(m1b$geom, geo)
+
+  # Une troisieme geometrie ne relit pas le cache de la deuxieme.
+  geo2 <- geo; geo2$max$tts <- 80
+  m2 <- .lai_prosail_train(srf, geo2, bands, cache)
+  expect_identical(n_train, 2L)
+  expect_identical(m2$geom, geo2)
+})

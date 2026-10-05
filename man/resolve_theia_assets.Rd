@@ -2,11 +2,7 @@
 % Please edit documentation in R/theia_stac.R
 \name{resolve_theia_assets}
 \alias{resolve_theia_assets}
-\title{Looks up a Theia datasource declared in
-\code{inst/datasources/<country>.json} and returns the matching
-asset paths normalised to \code{/vsis3/} so that GDAL reads the
-objects directly from the S3 store (call
-\code{\link{theia_configure_s3}} once first to authenticate).}
+\title{Resolve the asset paths of a THEIA datasource}
 \usage{
 resolve_theia_assets(
   source_key,
@@ -48,10 +44,20 @@ from \code{services$theia_stac}.}
 mode. Default \code{50}.}
 }
 \value{
-A character vector of \code{/vsis3/} asset paths (length 1
-  in year-targeting mode).
+A character vector of asset paths (length 1 in year-targeting
+  mode): signed \code{/vsicurl/} URLs, or unsigned \code{/vsis3/} paths
+  when signing is unavailable.
 }
 \description{
+Looks up a Theia datasource declared in
+\code{inst/datasources/<country>.json} and returns GDAL-readable paths
+to the matching assets. Each asset is signed through the teledetection
+gateway (\code{\link{theia_sign_urls}}, keys \code{TLD_ACCESS_KEY} /
+\code{TLD_SECRET_KEY}) and returned as a \code{/vsicurl/} pre-signed
+URL, the only form the MESO store accepts. When signing is unavailable
+(no keys, gateway down) the unsigned \code{/vsis3/} paths are returned
+instead; they are only readable on a direct-S3 setup.
+
 Two access modes:
 \itemize{
   \item \strong{Year targeting} — when \code{year} is supplied and

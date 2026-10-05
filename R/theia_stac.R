@@ -370,7 +370,7 @@ theia_configure_s3 <- function(access_key = NULL, secret_key = NULL,
 }
 
 
-#' Resolve a signed THEIA asset URL via the teledetection SDK
+#' Resolve a signed THEIA asset URL via the teledetection gateway
 #'
 #' Returns a ready-to-read, signed URL for one asset of a THEIA
 #' datasource. THEIA asset objects require an authenticated,
@@ -452,11 +452,18 @@ theia_signed_href <- function(source_key, year = NULL, asset = NULL,
   }
   signed[[1]]
 }
+
+
+#' Resolve the asset paths of a THEIA datasource
+#'
 #' Looks up a Theia datasource declared in
-#' \code{inst/datasources/<country>.json} and returns the matching
-#' asset paths normalised to \code{/vsis3/} so that GDAL reads the
-#' objects directly from the S3 store (call
-#' \code{\link{theia_configure_s3}} once first to authenticate).
+#' \code{inst/datasources/<country>.json} and returns GDAL-readable paths
+#' to the matching assets. Each asset is signed through the teledetection
+#' gateway (\code{\link{theia_sign_urls}}, keys \code{TLD_ACCESS_KEY} /
+#' \code{TLD_SECRET_KEY}) and returned as a \code{/vsicurl/} pre-signed
+#' URL, the only form the MESO store accepts. When signing is unavailable
+#' (no keys, gateway down) the unsigned \code{/vsis3/} paths are returned
+#' instead; they are only readable on a direct-S3 setup.
 #'
 #' Two access modes:
 #' \itemize{
@@ -488,8 +495,9 @@ theia_signed_href <- function(source_key, year = NULL, asset = NULL,
 #' @param limit Integer. Maximum number of items to resolve in search
 #'   mode. Default \code{50}.
 #'
-#' @return A character vector of \code{/vsis3/} asset paths (length 1
-#'   in year-targeting mode).
+#' @return A character vector of asset paths (length 1 in year-targeting
+#'   mode): signed \code{/vsicurl/} URLs, or unsigned \code{/vsis3/} paths
+#'   when signing is unavailable.
 #'
 #' @export
 resolve_theia_assets <- function(source_key, aoi, asset = NULL,
@@ -655,13 +663,13 @@ theia_source_status <- function(source_key, aoi, country = "FR",
 #' the AOI. Two modes:
 #' \itemize{
 #'   \item \strong{Year targeting} (\code{year} supplied) — the
-#'     asset URL is signed through the \code{teledetection} SDK (see
-#'     \code{\link{theia_signed_href}}) and read via \code{/vsicurl/}.
-#'     This is the authenticated path that THEIA assets require.
-#'   \item \strong{Spatial search} — resolves \code{/vsis3/} asset
-#'     paths via \code{\link{resolve_theia_assets}}; call
-#'     \code{\link{theia_configure_s3}} first. Reserved for direct-S3
-#'     setups.
+#'     asset URL is signed through the teledetection gateway (see
+#'     \code{\link{theia_signed_href}}) and read via \code{/vsicurl/};
+#'     an asset that cannot be signed aborts.
+#'   \item \strong{Spatial search} — the intersecting assets are
+#'     resolved and signed by \code{\link{resolve_theia_assets}}, then
+#'     mosaicked; unsigned \code{/vsis3/} paths (no keys) are only
+#'     readable on a direct-S3 setup.
 #' }
 #'
 #' @inheritParams resolve_theia_assets
@@ -670,7 +678,7 @@ theia_source_status <- function(source_key, aoi, country = "FR",
 #'
 #' @examples
 #' \dontrun{
-#' # FORMSpoT canopy height for 2023 (signed via the teledetection SDK)
+#' # FORMSpoT canopy height for 2023 (signed via the teledetection gateway)
 #' chm <- load_theia_source("formspot", aoi, year = 2023)
 #' }
 #'
@@ -680,7 +688,7 @@ load_theia_source <- function(source_key, aoi, asset = NULL,
                               country = "FR",
                               stac_api = NULL, limit = 50L) {
   if (!is.null(year)) {
-    # Authenticated path: teledetection SDK signs the asset URL.
+    # Authenticated path: the teledetection gateway signs the asset URL.
     rast <- terra::rast(
       theia_signed_href(source_key, year = year, asset = asset,
                         country = country, stac_api = stac_api)

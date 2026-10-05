@@ -324,3 +324,68 @@ test_that("real build requires a connection", {
       "DBIConnection")
   })
 })
+
+# ---- audit 1.0, constats mineurs ---------------------------------------
+
+test_that("l'idempotence repose sur doc_id, pas sur le titre (audit 1.0)", {
+  con <- .local_corpus_con()
+  testthat::local_mocked_bindings(
+    .embed_texts = function(texts, ...) .fake_embed_bc(texts),
+    .package = "nemeton")
+  withr::with_tempdir({
+    man <- .mini_manifest(getwd())[1, ]
+    build_knowledge_corpus(con, manifest = man)
+    expect_equal(nrow(list_knowledge_documents(con)), 1L)
+
+    # Titre corrige dans le manifeste, meme doc_id : pas de doublon.
+    man2 <- man; man2$title <- "Full Doc (2e edition du titre)"
+    rep <- build_knowledge_corpus(con, manifest = man2)
+    expect_equal(rep$reason, "already ingested")
+    expect_equal(nrow(list_knowledge_documents(con)), 1L)
+
+    # Autre document portant le meme titre : il est ingere.
+    man3 <- man; man3$doc_id <- "doc_homonyme"
+    rep <- build_knowledge_corpus(con, manifest = man3)
+    expect_equal(rep$action, "ingested")
+    expect_equal(nrow(list_knowledge_documents(con)), 2L)
+  })
+})
+
+test_that("un document ingere hors manifeste (sans doc_id) reste reconnu par son titre", {
+  con <- .local_corpus_con()
+  testthat::local_mocked_bindings(
+    .embed_texts = function(texts, ...) .fake_embed_bc(texts),
+    .package = "nemeton")
+  withr::with_tempdir({
+    ingest_knowledge_document(con, "alpha beta gamma",
+      metadata = list(title = "Full Doc", lang = "fr", doc_type = "manual"))
+    man <- .mini_manifest(getwd())[1, ]
+    rep <- build_knowledge_corpus(con, manifest = man)
+    expect_equal(rep$reason, "already ingested")
+  })
+})
+
+test_that("fresh = TRUE vide le corpus dans une transaction (audit 1.0)", {
+  con <- .local_corpus_con()
+  testthat::local_mocked_bindings(
+    .embed_texts = function(texts, ...) .fake_embed_bc(texts),
+    .package = "nemeton")
+  withr::with_tempdir({
+    man <- .mini_manifest(getwd())
+    build_knowledge_corpus(con, manifest = man, include_to_confirm = TRUE)
+    expect_equal(nrow(list_knowledge_documents(con)), 2L)
+
+    real_delete <- delete_knowledge_document
+    n_calls <- 0L
+    testthat::local_mocked_bindings(
+      delete_knowledge_document = function(con, document_id) {
+        n_calls <<- n_calls + 1L
+        if (n_calls == 2L) stop("coupure reseau")
+        real_delete(con, document_id)
+      })
+    expect_error(build_knowledge_corpus(con, manifest = man, fresh = TRUE),
+                 "coupure")
+    # Rien n'est supprime : la purge est annulee en bloc.
+    expect_equal(nrow(list_knowledge_documents(con)), 2L)
+  })
+})

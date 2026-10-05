@@ -270,12 +270,23 @@ dplyr_case_simple <- function(tfv) {
 
 
 .allocate_per_stratum <- function(strata_counts, n_main, min_per_stratum) {
-  alloc <- round(as.numeric(strata_counts) / sum(strata_counts) * n_main)
+  counts <- as.integer(strata_counts)
+  quota <- as.numeric(counts) / sum(counts) * n_main
+  alloc <- round(quota)
   alloc <- pmax(alloc, min_per_stratum)
-  alloc <- pmin(alloc, as.integer(strata_counts))
+  alloc <- pmin(alloc, counts)
   while (sum(alloc) > n_main) {
     idx <- which.max(alloc)
     alloc[idx] <- alloc[idx] - 1
+  }
+  # Complement de l'arrondi (plus forts restes) : round() pouvait laisser
+  # 9 placettes pour 10 demandees, sans depasser l'effectif d'une strate
+  # (audit 1.0).
+  while (sum(alloc) < n_main) {
+    libre <- which(alloc < counts)
+    if (!length(libre)) break
+    idx <- libre[which.max((quota - alloc)[libre])]
+    alloc[idx] <- alloc[idx] + 1
   }
   stats::setNames(as.integer(alloc), names(strata_counts))
 }
@@ -381,7 +392,9 @@ dplyr_case_simple <- function(tfv) {
 #' The return is ready for \code{\link{create_qgis_project}}.
 #'
 #' @param zone sf polygon of the study area (any CRS; result uses
-#'   \code{zone}'s CRS).
+#'   \code{zone}'s CRS). A geographic (longitude/latitude) zone is worked
+#'   in its UTM zone, since \code{grid_step} and \code{plot_radius} are
+#'   metres.
 #' @param n_base Integer. Number of base (primary) plots. Optional
 #'   when \code{target_error} and \code{cv} are provided — in that
 #'   case \code{n_base} is computed via
@@ -426,7 +439,9 @@ dplyr_case_simple <- function(tfv) {
 #'   be retained. Default 30.
 #' @param min_per_stratum Integer. Minimum number of base plots in each
 #'   stratum (capped at the number of candidates). Default 2.
-#' @param seed Integer random seed. Default 42.
+#' @param seed Integer random seed, applied locally: the session's global
+#'   random state is restored on exit. \code{NULL} draws unseeded.
+#'   Default 42.
 #'
 #' @return An sf POINT with columns \code{plot_id}, \code{type} (Base
 #'   or Over), \code{visit_order}, \code{stratum}, and optionally
@@ -499,11 +514,37 @@ create_sampling_plan <- function(zone,
   if (is.null(n_base)) {
     cli::cli_abort("Either {.arg n_base} or ({.arg target_error} + {.arg cv}) must be provided.")
   }
+  # Entrees scalaires entieres : NA, vecteur ou negatif donnaient une erreur
+  # brute (« missing value where TRUE/FALSE needed ») (audit 1.0).
+  if (length(n_base) != 1L || is.na(suppressWarnings(as.integer(n_base)))) {
+    cli::cli_abort("{.arg n_base} must be a single positive integer.")
+  }
+  if (is.null(n_over)) n_over <- 0L
+  if (length(n_over) != 1L || is.na(suppressWarnings(as.integer(n_over))) ||
+      n_over < 0) {
+    cli::cli_abort("{.arg n_over} must be a single integer >= 0.")
+  }
   n_base <- as.integer(n_base)
   n_over <- as.integer(n_over)
   if (n_base < 1) cli::cli_abort("{.arg n_base} must be >= 1.")
 
-  set.seed(seed)
+  # Graine locale : la graine globale de la session est restauree en sortie
+  # (set.seed() la modifiait pour tout le reste de la session) (audit 1.0).
+  if (!is.null(seed)) withr::local_seed(seed)
+
+  # Zone en coordonnees geographiques : grid_step et plot_radius sont des
+  # metres, on travaille donc dans la projection UTM de la zone et on
+  # reprojette le resultat (avant : un pas de 50 degres) (audit 1.0).
+  out_crs <- NULL
+  if (isTRUE(sf::st_is_longlat(zone))) {
+    out_crs <- zone_crs
+    work_crs <- .utm_crs_for(zone)
+    zone <- sf::st_transform(zone, work_crs)
+    if (!is.null(forest_mask) && !is.na(sf::st_crs(forest_mask)) &&
+        !isTRUE(sf::st_crs(forest_mask) == sf::st_crs(work_crs))) {
+      forest_mask <- sf::st_transform(forest_mask, work_crs)
+    }
+  }
 
   # --- Build candidate grid ---------------------------------------------
   grid <- sf::st_make_grid(zone, cellsize = grid_step, what = "centers")
@@ -736,7 +777,21 @@ create_sampling_plan <- function(zone,
   keep <- intersect(keep, names(sample_all))
   sample_all <- sample_all[, c(keep, attr(sample_all, "sf_column"))]
 
+  if (!is.null(out_crs)) sample_all <- sf::st_transform(sample_all, out_crs)
+
   attr(sample_all, "method")      <- method
   attr(sample_all, "sample_size") <- sample_size_result
   sample_all
+}
+
+
+# EPSG de la zone UTM (WGS84) contenant le centroide d'une zone en
+# coordonnees geographiques.
+.utm_crs_for <- function(zone) {
+  ctr <- suppressWarnings(sf::st_coordinates(
+    sf::st_centroid(sf::st_union(sf::st_geometry(sf::st_transform(zone, 4326))))))
+  lon <- ctr[1, "X"]
+  lat <- ctr[1, "Y"]
+  fuseau <- min(60L, max(1L, as.integer(floor((lon + 180) / 6)) + 1L))
+  as.integer((if (lat >= 0) 32600L else 32700L) + fuseau)
 }

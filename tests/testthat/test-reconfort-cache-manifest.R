@@ -271,3 +271,26 @@ test_that("a proba map clamped at 255 (iota2 #12) is reported once", {
   setup_final_nostats(d2)
   expect_no_message(reconfort_cache_manifest(d2, 9))
 })
+
+test_that(".reconfort_locate_final_dir choisit le run le plus recent, pas le dernier par ordre alphabetique (audit 1.0)", {
+  cache <- withr::local_tempdir()
+  mk <- function(year, when, meta = TRUE) {
+    f <- file.path(cache, "reconfort", sprintf("run_z9_S2%d", year), "results",
+                   sprintf("iota2_results_classif_labels-z9-S2_%d", year), "final")
+    dir.create(f, recursive = TRUE)
+    if (meta) {
+      writeLines("{}", file.path(f, "run_meta.json"))
+      Sys.setFileTime(file.path(f, "run_meta.json"), when)
+    }
+    Sys.setFileTime(f, when)
+    normalizePath(f)
+  }
+  f25 <- mk(2025L, as.POSIXct("2026-01-10 10:00:00"))
+  f24 <- mk(2024L, as.POSIXct("2026-03-02 10:00:00"))   # relance plus recente
+  expect_identical(normalizePath(.reconfort_locate_final_dir(cache, 9L)), f24)
+
+  # Un run sans run_meta.json (mort ou en cours) ne masque pas un run termine,
+  # meme plus recent.
+  f23 <- mk(2023L, as.POSIXct("2026-05-01 10:00:00"), meta = FALSE)
+  expect_identical(normalizePath(.reconfort_locate_final_dir(cache, 9L)), f24)
+})
