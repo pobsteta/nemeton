@@ -389,13 +389,16 @@ indicateur_s3_population <- function(units,
     }
     grille <- sf::st_transform(population_grid, sf::st_crs(buffers))
     aire_carreau <- as.numeric(sf::st_area(grille))
+    # Identifiant de ligne porte a travers l'intersection : le carreau etait
+    # retrouve par sa VALEUR de population, donc deux carreaux de meme effectif
+    # se confondaient (audit 1.0).
+    grille$.s3_row <- seq_len(nrow(grille))
     vapply(seq_len(nrow(buffers)), function(i) {
       inter <- suppressWarnings(sf::st_intersection(grille, buffers[i, ]))
       if (nrow(inter) == 0L) return(0)
       # Part de chaque carreau reellement dans le tampon : un carreau a cheval
       # ne compte pas pour sa population entiere.
-      idx <- match(
-        sf::st_drop_geometry(inter)[[champ]], sf::st_drop_geometry(grille)[[champ]])
+      idx <- inter$.s3_row
       part <- as.numeric(sf::st_area(inter)) /
         ifelse(is.na(idx), NA_real_, aire_carreau[idx])
       part[!is.finite(part)] <- 1
