@@ -19,6 +19,7 @@ mock_pipeline <- function(calls_env, write_score = TRUE, exit = 0L) {
     .ensure_reconfort_python = function(...) "test-env",
     .reconfort_conda_binary  = function() "/opt/conda/bin/conda",
     .reconfort_probamap_fixed = function(...) TRUE,
+    .reconfort_chunk_mask_fixed = function(...) TRUE,
     ensure_reconfort_model   = function(version, cache_dir = NULL, quiet = FALSE) {
       d <- withr::local_tempdir(.local_envir = calls_env$env)
       p <- file.path(d, "model_1_seed_0.txt"); writeLines("model", p); p
@@ -584,4 +585,93 @@ test_that("run_reconfort_dieback guards the s2_year season", {
   expect_true(any(grepl("incomplete", warns)))
   expect_equal(res$status, "completed")
   expect_identical(seen_trigger, as.Date("2024-07-01"))
+})
+
+# --- audit 1.0, constats mineurs ------------------------------------------
+
+# Evalue `expr` en collectant ses avertissements (le mock ne pose aucune
+# scene : la phase persist avertit aussi, en plus de celui qu'on teste).
+collect_warnings <- function(expr) {
+  warns <- character(0)
+  withCallingHandlers(expr, warning = function(w) {
+    warns <<- c(warns, conditionMessage(w))
+    invokeRestart("muffleWarning")
+  })
+  warns
+}
+
+test_that("run_meta.json reste un marqueur de fin quand la serialisation echoue", {
+  # La remise a zero d'un run termine repose sur final/run_meta.json : une
+  # ecriture best-effort ratee en silence laissait le run suivant resservir
+  # l'ancienne mosaique sous -restart.
+  wd <- withr::local_tempdir()
+  final <- file.path(wd, "results", "iota2_results_classif_labels-z1-S2_2024", "final")
+  dir.create(final, recursive = TRUE)
+  testthat::local_mocked_bindings(
+    write_json = function(...) stop("objet non serialisable"),
+    .package = "jsonlite")
+
+  expect_warning(
+    .reconfort_write_run_meta(file.path(final, "run_meta.json"), list(a = 1)),
+    "run_meta")
+  expect_true(file.exists(file.path(final, "run_meta.json")))
+  expect_true(.reconfort_reset_finished_results(wd, "z1", 2024L, quiet = TRUE))
+})
+
+test_that("le defaut #11 est sonde aussi sans decoupage AOI", {
+  skip_if_terra_write_broken()
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  testthat::local_mocked_bindings(.reconfort_chunk_mask_fixed = function(...) FALSE)
+
+  # tiles= fourni, pas d'AOI -> pas de decoupage ; iota2 non patche : les
+  # 200 chunks par defaut font avorter OTB sur le chunk 0.
+  warns <- collect_warnings(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2024L, tiles = "T31UDP", quiet = TRUE))
+  expect_true(any(grepl("defect #11", warns)))
+  expect_true(any(grepl('^number_of_chunks="1"', calls$cfg)))
+})
+
+test_that("un nombre de chunks explicite sur iota2 non patche est signale", {
+  skip_if_terra_write_broken()
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  testthat::local_mocked_bindings(.reconfort_chunk_mask_fixed = function(...) FALSE)
+
+  warns <- collect_warnings(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2024L, tiles = "T31UDP", quiet = TRUE,
+                          number_of_chunks = 8L))
+  expect_true(any(grepl("defect #11", warns)))
+  # Valeur explicite respectee.
+  expect_true(any(grepl('^number_of_chunks="8"', calls$cfg)))
+})
+
+test_that("skip_ingest = TRUE refuse des dossiers extraits absents ou vides", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+
+  expect_error(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2024L, tiles = "T31UDP", quiet = TRUE,
+                          skip_ingest = TRUE),
+    "skip_ingest")
+  expect_null(calls$cfg)   # IOTA2 jamais lance
+
+  # Dossier present mais vide : meme refus.
+  wd <- file.path(cache, "reconfort", "run_z1_S22024")
+  dir.create(file.path(wd, "s2_download", "extracted", "T31UDP"), recursive = TRUE)
+  expect_error(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2024L, tiles = "T31UDP", quiet = TRUE,
+                          skip_ingest = TRUE),
+    "skip_ingest")
+  expect_null(calls$cfg)
 })

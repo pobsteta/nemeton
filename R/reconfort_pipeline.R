@@ -522,11 +522,31 @@
 
 # Write run_meta.json next to the results (parity with FORDEAD's run
 # metadata). Best-effort: never aborts the run on a write failure.
+#
+# Le fichier est aussi le marqueur de fin lu par
+# .reconfort_reset_finished_results() : s'il manque, le run suivant reprend
+# sous -restart et ressert l'ancienne mosaique. Un echec de serialisation
+# (meta non convertible en JSON) laisse donc un marqueur minimal, et tout
+# echec est signale au lieu d'etre avale (audit 1.0).
 .reconfort_write_run_meta <- function(path, meta) {
-  tryCatch(
-    jsonlite::write_json(meta, path, auto_unbox = TRUE, pretty = TRUE, null = "null"),
-    error = function(e) invisible(NULL)
-  )
+  tryCatch({
+    jsonlite::write_json(meta, path, auto_unbox = TRUE, pretty = TRUE, null = "null")
+    TRUE
+  }, error = function(e) {
+    fallback <- tryCatch({
+      writeLines('{"tool": "reconfort", "status": "completed"}', path)
+      TRUE
+    }, error = function(e2) FALSE)
+    cli::cli_warn(c(
+      "RECONFORT: full {.file run_meta.json} could not be written: {conditionMessage(e)}",
+      if (fallback) {
+        c(i = "A minimal completion marker was written instead.")
+      } else {
+        c(x = "No completion marker either: the next run on this year will resume (-restart) instead of recomputing; delete {.path {dirname(path)}} by hand.")
+      }
+    ))
+    FALSE
+  })
   path
 }
 
@@ -603,7 +623,8 @@
 #'   systemd-oomd on 2026-07-13; 13.4 GB once chunked). Chunking requires an
 #'   iota2 patched for defect #11 (`repair_iota2_env.sh`) — without it, chunk 0
 #'   keeps an uncut region mask and OTB aborts; the run then falls back to a
-#'   single chunk with a warning. An explicit value is respected.
+#'   single chunk with a warning, with or without `aoi_crop`. An explicit value
+#'   is respected (a warning announces the expected chunk-0 abort).
 #' @param scheduler_type IOTA2 scheduler. Default `"localCluster"`.
 #'   IOTA2's `Iota2.py` only accepts `debug`, `cluster`, `PBS`, `Slurm`,
 #'   `localCluster` (note the lower-case `l`) — `"LocalCluster"` 400s.
@@ -626,7 +647,8 @@
 #' @param tiles Explicit MGRS tile code(s); resolved from the zone AOI
 #'   when `NULL`.
 #' @param skip_ingest Reuse an already-ingested S2 layout under the
-#'   working dir instead of downloading. Default `FALSE`.
+#'   working dir instead of downloading. Default `FALSE`. Aborts before
+#'   staging when a tile has no extracted scene.
 #' @param keep_workdir Keep the staged working directory after the run.
 #'   Default `TRUE` (the rasters live there). With `FALSE`, only a
 #'   directory created (or, for the default path, owned) by nemeton is
@@ -873,6 +895,16 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       # Streaming ingest writes the AOI-cropped scenes straight into
       # extracted/<tile>/, so a resumed run reads them as-is.
       extracted <- file.path(s2_dl_root, "extracted", tiles)
+      # Reprise : chaque tuile doit avoir des scenes extraites, sinon IOTA2
+      # tournerait des heures sur une serie vide (audit 1.0).
+      vides <- tiles[!dir.exists(extracted) |
+                       lengths(lapply(extracted, list.files)) == 0L]
+      if (length(vides)) {
+        cli::cli_abort(c(
+          "{.arg skip_ingest} = TRUE but no extracted scene for tile{?s} {.val {vides}}.",
+          i = "Expected under {.path {file.path(s2_dl_root, 'extracted')}}; re-run with {.code skip_ingest = FALSE}."
+        ))
+      }
     } else {
       ing <- reconfort_ingest_s2(aoi = if (do_crop) aoi else NULL,
                                  tiles = tiles, date_from = date_from,
@@ -881,25 +913,37 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
                                  progress_callback = progress_callback)
       extracted <- ing$extracted
     }
-    if (do_crop) {
-      # Chunk by rows — the only lever that caps the classification's peak
-      # memory (a single chunk goes past 20 GB on a 930x952 AOI and gets the R
-      # session killed by systemd-oomd). Safe only on an iota2 patched for
-      # defect #11: unpatched, chunk 0 keeps an uncut region mask and OTB
-      # aborts on a dimension mismatch. Stay on the (memory-hungry) single
-      # chunk rather than abort the run for those.
-      if (isTRUE(number_of_chunks == 200L)) {
-        number_of_chunks <- if (.reconfort_chunk_mask_fixed(conda_bin, env)) {
-          .reconfort_chunk_count(mask_path, aoi_dims = .reconfort_aoi_dims(aoi))
-        } else {
-          cli::cli_warn(c(
-            "iota2 is missing the chunk-0 mask fix (defect #11) \u2014 classifying in a single chunk.",
-            i = "Peak memory goes past 20 GB and may get this session killed by the OOM killer.",
-            i = "Run {.file repair_iota2_env.sh} on the {.val {env}} env to enable chunking."
-          ))
-          1L
-        }
+    # Chunk by rows — the only lever that caps the classification's peak
+    # memory (a single chunk goes past 20 GB on a 930x952 AOI and gets the R
+    # session killed by systemd-oomd). Safe only on an iota2 patched for
+    # defect #11: unpatched, chunk 0 keeps an uncut region mask and OTB
+    # aborts on a dimension mismatch. Stay on the (memory-hungry) single
+    # chunk rather than abort the run for those.
+    # La sonde #11 vaut pour tout decoupage (> 1 chunk), avec ou sans AOI :
+    # avant, elle n'etait faite qu'en mode decoupe et les 200 chunks par
+    # defaut d'un run pleine tuile avortaient sur le chunk 0 (audit 1.0).
+    default_chunks <- isTRUE(number_of_chunks == 200L)
+    if (isTRUE(as.integer(number_of_chunks) > 1L) &&
+        !.reconfort_chunk_mask_fixed(conda_bin, env)) {
+      if (default_chunks) {
+        cli::cli_warn(c(
+          "iota2 is missing the chunk-0 mask fix (defect #11) \u2014 classifying in a single chunk.",
+          i = "Peak memory goes past 20 GB and may get this session killed by the OOM killer.",
+          i = "Run {.file repair_iota2_env.sh} on the {.val {env}} env to enable chunking."
+        ))
+        number_of_chunks <- 1L
+      } else {
+        # Valeur explicite respectee, mais l'echec previsible est annonce.
+        cli::cli_warn(c(
+          "iota2 is missing the chunk-0 mask fix (defect #11) but {.arg number_of_chunks} = {.val {number_of_chunks}}.",
+          i = "OTB is expected to abort on chunk 0; run {.file repair_iota2_env.sh} on the {.val {env}} env, or pass {.code number_of_chunks = 1}."
+        ))
       }
+    } else if (default_chunks && do_crop) {
+      number_of_chunks <- .reconfort_chunk_count(mask_path,
+                                                 aoi_dims = .reconfort_aoi_dims(aoi))
+    }
+    if (do_crop) {
       # NOTE: this does NOT disable the Dask cluster — IOTA2 spawns
       # `distributed.worker`s whatever the scheduler_type (seen in the OTB
       # classification logs on 2026-07-13, cfg said "debug"). Kept because
