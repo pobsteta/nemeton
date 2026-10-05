@@ -436,3 +436,61 @@ test_that(".fit_stratum skips combos that degenerate to a single stratum", {
   expect_false(is.null(fit))
   expect_true(length(fit$counts) > 1L)
 })
+
+# ------------------------------------------------------------
+# Audit 1.0, constats mineurs
+# ------------------------------------------------------------
+
+test_that(".allocate_per_stratum complete l'arrondi jusqu'a n_main (audit 1.0)", {
+  # round(10/3) * 3 = 9 : il manquait une placette.
+  alloc <- nemeton:::.allocate_per_stratum(c(A = 30, B = 30, C = 30),
+                                           n_main = 10, min_per_stratum = 0)
+  expect_equal(sum(alloc), 10)
+  expect_true(all(alloc >= 3))
+  # Le complement ne depasse jamais l'effectif d'une strate.
+  alloc <- nemeton:::.allocate_per_stratum(c(A = 3, B = 3, C = 100),
+                                           n_main = 10, min_per_stratum = 0)
+  expect_equal(sum(alloc), 10)
+  expect_true(alloc[["A"]] <= 3 && alloc[["B"]] <= 3)
+  # Capacite totale insuffisante : on s'arrete a la capacite.
+  alloc <- nemeton:::.allocate_per_stratum(c(A = 2, B = 2), n_main = 10,
+                                           min_per_stratum = 0)
+  expect_equal(sum(alloc), 4)
+})
+
+test_that("create_sampling_plan ne touche pas a la graine globale (audit 1.0)", {
+  skip_if_not_installed("sf")
+  set.seed(2024)
+  avant <- .Random.seed
+  create_sampling_plan(make_zone(), n_base = 5, n_over = 1, seed = 7)
+  expect_identical(.Random.seed, avant)
+  # Et le tirage reste reproductible a graine egale.
+  a <- create_sampling_plan(make_zone(), n_base = 5, n_over = 1, seed = 7)
+  b <- create_sampling_plan(make_zone(), n_base = 5, n_over = 1, seed = 7)
+  expect_identical(sf::st_coordinates(a), sf::st_coordinates(b))
+})
+
+test_that("une zone en EPSG:4326 est echantillonnee en metres (audit 1.0)", {
+  skip_if_not_installed("sf")
+  # ~1 km x 1 km pres de Dijon, en degres.
+  zone <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+    c(5.000, 47.000), c(5.013, 47.000), c(5.013, 47.009),
+    c(5.000, 47.009), c(5.000, 47.000)))), crs = 4326))
+  res <- suppressWarnings(create_sampling_plan(zone, n_base = 10, n_over = 2,
+                                               seed = 1))
+  expect_equal(nrow(res), 12L)
+  expect_equal(as.integer(sf::st_crs(res)$epsg), 4326L)
+  expect_true(all(sf::st_within(res, zone, sparse = FALSE)[, 1]))
+  # Placettes distinctes, espacees d'au moins un pas de grille (50 m).
+  d <- sf::st_distance(sf::st_transform(res, 2154))
+  expect_gte(min(as.numeric(d[upper.tri(d)])), 49)
+})
+
+test_that("create_sampling_plan valide n_base et n_over (audit 1.0)", {
+  skip_if_not_installed("sf")
+  zone <- make_zone()
+  expect_error(create_sampling_plan(zone, n_base = 5, n_over = -1), "n_over")
+  expect_error(create_sampling_plan(zone, n_base = 5, n_over = NA), "n_over")
+  expect_error(create_sampling_plan(zone, n_base = 5, n_over = c(1, 2)), "n_over")
+  expect_error(create_sampling_plan(zone, n_base = NA), "n_base")
+})
