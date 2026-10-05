@@ -225,7 +225,10 @@ test_that(".trend_fit_cells matches the per-cell Theil-Sen / Mann-Kendall path",
       sd <- file.path(cache, sid)
       dir.create(sd, recursive = TRUE, showWarnings = FALSE)
       for (b in c("B08", "B11")) {
-        val <- if (b == "B08") b08 else b11
+        # Comptes numériques L2A, comme le vrai cache : réflectance x 10000,
+        # +1000 pour les scènes à baseline >= 04.00 (spec 055).
+        val <- round((if (b == "B08") b08 else b11) * 10000) -
+          nemeton:::.s2_boa_offset(sid)
         r <- terra::rast(nrows = 8, ncols = 8,
                          xmin = 644000, xmax = 644160,
                          ymin = 5235000, ymax = 5235160,

@@ -936,7 +936,10 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
                     as.integer(window_days) else NA_integer_,
     date_from   = as.character(date_from),
     date_to     = as.character(date_to),
-    mask        = if (is.null(mask_wkt)) NA_character_ else mask_wkt
+    mask        = if (is.null(mask_wkt)) NA_character_ else mask_wkt,
+    # Spec 055 : version de la radiométrie lue (offset L2A retiré). Sans elle,
+    # les cartes calculées sur les comptes biaisés seraient resservies.
+    harmonize   = "boa_offset_v1"
   )
   # Trend-only parameters are appended ONLY for trend, so the hash of a
   # count / rolling raster is byte-identical to pre-spec-023 — existing

@@ -35,6 +35,20 @@
 #'   (NIR, 10 m), `"B12"` (SWIR2, 20 m), `"B11"` (SWIR1, 20 m, used by
 #'   NDMI), `"B05"` (Red-edge 1, 20 m) or `"B8A"` (NIR narrow, 20 m,
 #'   both used by NDRE, spec 022).
+#' @param harmonize Logical(1). Remove the L2A radiometric offset
+#'   (`BOA_ADD_OFFSET = -1000`) of scenes processed with baseline
+#'   04.00 or later (from 2022-01-25, reprocessed archive included), so
+#'   that every scene is on the pre-2022 digital-number scale:
+#'   `max(DN - 1000, 0)`. The baseline is read from `scene_id`
+#'   (Planetary Computer processing timestamp, ESA `N####` field;
+#'   MUSCATE products carry no offset). Default `TRUE`; `FALSE` returns
+#'   the raw cached digital numbers. Spec 055.
+#'
+#' @section Radiometric offset:
+#' Before 0.215.0 the offset was never removed: every index computed
+#' from scenes processed after 2022-01-25 was biased low (summer forest
+#' NDVI about 0.55 instead of 0.84), which produced a spurious drop in
+#' FAST maps and pixel series.
 #'
 #' @return A 1-layer [terra::SpatRaster] in the source CRS (typically
 #'   EPSG:32631 or 32632 — UTM zones over France), or `NULL` if the
@@ -55,7 +69,7 @@
 #'   for per-pixel time series, [diagnose_s2_cache()] to inspect what's
 #'   on disk, [ingest_sentinel2_timeseries()] for the write path.
 #' @export
-read_s2_band_raster <- function(cache_dir, scene_id, band) {
+read_s2_band_raster <- function(cache_dir, scene_id, band, harmonize = TRUE) {
   if (!is.character(cache_dir) || length(cache_dir) != 1L ||
       is.na(cache_dir) || !nzchar(cache_dir)) {
     stop("`cache_dir` must be a single non-empty character path.",
@@ -71,7 +85,11 @@ read_s2_band_raster <- function(cache_dir, scene_id, band) {
   path <- file.path(cache_dir, .s2_safe_scene_id(scene_id),
                     paste0(band, ".tif"))
   if (!file.exists(path)) return(NULL)
-  terra::rast(path)
+  r <- terra::rast(path)
+  # Offset radiométrique L2A (spec 055) : toutes les lectures R du cache
+  # (piles, indices, séries pixel, FAST) passent par ici.
+  if (isTRUE(harmonize)) r <- .s2_harmonize_band(r, scene_id)
+  r
 }
 
 #' Read a multi-temporal stack for one Sentinel-2 band
@@ -891,8 +909,11 @@ smooth_pixel_series <- function(ts, window_days = 45,
     tryCatch(paste(sf::st_as_text(sf::st_geometry(mask_polygon)),
                    collapse = ";"),
              error = function(e) NA_character_)
+  # `harmonize` (spec 055) : version de la radiométrie lue. Sans elle, les
+  # piles calculées avant le retrait de l'offset L2A seraient resservies.
   h <- rlang::hash(list(
     index  = index,
+    harmonize = "boa_offset_v1",
     scenes = paste(sids, dates, sep = "@"),
     size   = fi$size,
     mtime  = as.numeric(fi$mtime),

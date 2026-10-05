@@ -10,6 +10,14 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.215.0] - 2026-10-05
+
+### Added
+- `read_s2_band_raster(harmonize = TRUE)`.
+
+### Fixed
+- Offset radiométrique Sentinel-2 L2A (baseline >= 04.00) retiré à la lecture du cache ; clé du cache des piles versionnée ; offset déclaré dans le STAC local de FORDEAD (spec 055).
+
 ## [0.214.0] - 2026-10-05
 
 ### Changed
