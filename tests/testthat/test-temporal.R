@@ -1196,7 +1196,7 @@ test_that("nemeton_temporal nomme des periods non nommées (audit 1.0)", {
   u2 <- u1[c(1, 2), ]
   u2$C1 <- c(55, 65)
   temporal <- suppressWarnings(suppressMessages(
-    nemeton_temporal(periods = list(u1, u2))
+    nemeton_temporal(periods = list(u1, u2), dates = c("2015-01-01", "2020-01-01"))
   ))
   expect_identical(names(temporal$periods), c("Period1", "Period2"))
   al <- temporal$metadata$alignment
