@@ -57,10 +57,13 @@ obtained — it never falls back to sampling the full S2 tile. Pass
 `mask_polygon` explicitly (the zone `sf` you already hold) to skip the
 DB round-trip.}
 
-\item{seed}{Integer or `NULL`. Makes the GRTS draw reproducible.}
+\item{seed}{Integer or `NULL`. Makes the GRTS draw reproducible. The seed
+is applied locally: the session's global random state is restored on
+exit.}
 }
 \value{
-An `sf` POINT object in EPSG:2154 with columns `plot_id`
+An `sf` POINT object in the CRS of the trend raster returned by
+  [read_fast_alert_raster()] with columns `plot_id`
   (`S01…` sanitary, `T01…` control), `type` (`"Sanitaire"` / `"Temoin"`),
   `alert_value` (the `|slope|` at the plot; `0` for controls), `index`,
   `source` (`"FAST_TREND"`) and `seed`. Sanitary plots come first, ordered

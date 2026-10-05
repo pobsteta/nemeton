@@ -463,7 +463,7 @@ test_that("create_sampling_plan ne touche pas a la graine globale (audit 1.0)", 
   set.seed(2024)
   avant <- .Random.seed
   create_sampling_plan(make_zone(), n_base = 5, n_over = 1, seed = 7)
-  expect_identical(.Random.seed, avant)
+  expect_true(identical(.Random.seed, avant))
   # Et le tirage reste reproductible a graine egale.
   a <- create_sampling_plan(make_zone(), n_base = 5, n_over = 1, seed = 7)
   b <- create_sampling_plan(make_zone(), n_base = 5, n_over = 1, seed = 7)
