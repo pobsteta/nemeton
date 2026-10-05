@@ -14,7 +14,9 @@ identifier as previously passed to [register_monitoring_zone()].}
 }
 \value{
 An integer of length 1 (the zone id) when found, or
-  `integer(0)` when no zone matches.
+  `integer(0)` when no zone matches. When the project owns several
+  zones (spec 020), the oldest one (lowest id) is returned; use
+  [find_zones_by_project()] to list them all.
 }
 \description{
 Looks up `monitoring_zone.project_uuid` and returns the matching

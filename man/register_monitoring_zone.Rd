@@ -19,7 +19,8 @@ register_monitoring_zone(
 \item{zone_name}{Character. Display name for the zone.}
 
 \item{zone_polygon}{An sf POLYGON (any CRS — re-projected to WGS84
-internally for storage).}
+internally for storage). Several features are unioned into one
+(MULTI)POLYGON.}
 
 \item{placettes}{An sf POINT object with at least the columns
 `plot_id` (character) and optionally `type`.}

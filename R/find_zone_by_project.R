@@ -18,7 +18,9 @@
 #'   identifier as previously passed to [register_monitoring_zone()].
 #'
 #' @return An integer of length 1 (the zone id) when found, or
-#'   `integer(0)` when no zone matches.
+#'   `integer(0)` when no zone matches. When the project owns several
+#'   zones (spec 020), the oldest one (lowest id) is returned; use
+#'   [find_zones_by_project()] to list them all.
 #'
 #' @seealso [register_monitoring_zone()] for the writer side of the
 #'   binding.
@@ -30,8 +32,12 @@ find_zone_by_project <- function(con, project_uuid) {
       is.na(project_uuid) || !nzchar(project_uuid)) {
     cli::cli_abort("{.arg project_uuid} must be a non-empty character scalar.")
   }
+  # ORDER BY id (audit 1.0) : depuis la spec 020 un projet porte plusieurs
+  # zones ; sans tri, la ligne « première » dépendait du plan d'exécution
+  # (index unique (project_uuid, name) -> ordre alphabétique sous SQLite).
+  # On renvoie la plus ancienne, de façon déterministe.
   rs <- .db_get_query(con,
-    "SELECT id FROM monitoring_zone WHERE project_uuid = $1",
+    "SELECT id FROM monitoring_zone WHERE project_uuid = $1 ORDER BY id LIMIT 1",
     params = list(project_uuid))
   if (!nrow(rs)) {
     return(integer(0))

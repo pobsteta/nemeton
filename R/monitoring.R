@@ -27,7 +27,8 @@ NULL
 #' @param con A `DBIConnection` returned by [db_connect()].
 #' @param zone_name Character. Display name for the zone.
 #' @param zone_polygon An sf POLYGON (any CRS — re-projected to WGS84
-#'   internally for storage).
+#'   internally for storage). Several features are unioned into one
+#'   (MULTI)POLYGON.
 #' @param placettes An sf POINT object with at least the columns
 #'   `plot_id` (character) and optionally `type`.
 #' @param radius_m Numeric. Sampling radius around each placette in
@@ -60,8 +61,8 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
     }
   }
 
-  zone_4326 <- sf::st_transform(zone_polygon, 4326)
-  zone_wkt  <- sf::st_as_text(sf::st_geometry(zone_4326)[[1]])
+  # Multi-entités fusionnées, pas tronquées à la première (audit 1.0).
+  zone_wkt <- .zone_wkt_4326(zone_polygon)
 
   # Placettes préparées hors transaction (aucune écriture).
   pts <- sf::st_transform(placettes, 4326)
@@ -72,26 +73,9 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
   # d'insertion d'une placette ne doit pas laisser une zone orpheline
   # commitée. Pas de return() dans ce bloc (court-circuiterait le COMMIT).
   zone_id <- DBI::dbWithTransaction(con, {
-    if (is.null(project_uuid)) {
-      .db_execute(con,
-        "INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg) VALUES ($1, $2, 4326)",
-        params = list(zone_name, zone_wkt))
-      rs <- .db_get_query(con,
-        "SELECT id FROM monitoring_zone WHERE name = $1 ORDER BY id DESC LIMIT 1",
-        params = list(zone_name))
-    } else {
-      .db_execute(con,
-        paste0("INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg, project_uuid) ",
-               "VALUES ($1, $2, 4326, $3)"),
-        params = list(zone_name, zone_wkt, project_uuid))
-      # Since spec 020 a project may own several zones (different names),
-      # so the id of the row just inserted must be fetched by the full
-      # (project_uuid, name) key, not by project_uuid alone.
-      rs <- .db_get_query(con,
-        "SELECT id FROM monitoring_zone WHERE project_uuid = $1 AND name = $2",
-        params = list(project_uuid, zone_name))
-    }
-    zid <- rs$id[1]
+    # Id lu via RETURNING (audit 1.0), pas relu par nom : cf.
+    # .insert_monitoring_zone().
+    zid <- .insert_monitoring_zone(con, zone_name, zone_wkt, project_uuid)
     for (i in seq_len(nrow(pts))) {
       .db_execute(con,
         paste0("INSERT INTO plot (zone_id, plot_id, plot_type, geom_wkt, radius_m) ",
