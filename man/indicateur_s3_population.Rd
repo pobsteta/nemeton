@@ -17,9 +17,12 @@ indicateur_s3_population(
 \arguments{
 \item{units}{sf object (POLYGON) of spatial units to assess}
 
-\item{population_grid}{sf object or SpatRaster of population data. If NULL, uses proxy.}
+\item{population_grid}{sf object (polygons carrying a population count) or
+SpatRaster of population counts. If NULL, S3 is NA (no measurement).}
 
-\item{method}{Character. Data source: "insee" (INSEE Carroyage), "local", or "proxy". Default "insee".}
+\item{method}{Character. \code{"insee"} (default) or \code{"local"}: both read
+\code{population_grid} the same way (the label is informative). \code{"proxy"}
+no longer exists and raises an error.}
 
 \item{buffer_radii}{Numeric vector. Buffer distances (m) for population counts. Default c(5000, 10000, 20000).}
 
@@ -32,33 +35,43 @@ backward compatibility. Default "en".}
 \code{ind}, \code{pop} or \code{population} (INSEE Filosofi names it \code{ind}).}
 }
 \value{
-sf object with added columns: S3 (population within primary buffer), S3_5km, S3_10km, S3_20km
+sf object with added columns: \code{S3} (named after \code{column_name},
+population density in inhabitants/km2 within the first buffer),
+\code{S3_densite} (same value), and the population counts \code{S3_5km},
+\code{S3_10km}, \code{S3_20km} within the three buffers of
+\code{buffer_radii} (the names are kept whatever the radii). Without
+\code{population_grid}, \code{S3} and the counts are NA and
+\code{S3_densite} is not added.
 }
 \description{
-Calculates population counts within buffer zones (5km, 10km, 20km) to estimate
-visitor pressure potential and recreational use intensity.
+Calculates the population density around each unit (and population counts
+within buffer zones of 5, 10 and 20 km) to estimate visitor pressure
+potential and recreational use intensity.
 }
 \details{
 **Calculation**:
 \itemize{
-  \item Create buffer zones around each unit (5km, 10km, 20km)
-  \item Sum population within each buffer from INSEE Carroyage 1km grid
-  \item S3 = population within closest buffer (highest pressure)
+  \item Create buffer zones around each unit (\code{buffer_radii}, default
+    5, 10 and 20 km)
+  \item Sum the population within each buffer; a grid cell straddling the
+    buffer counts for the share of its area inside it
+  \item S3 = population of the first buffer / its area (inhabitants/km2)
 }
 
 **Data Sources**:
 \itemize{
-  \item INSEE Carroyage 1km or 200m population grids (France)
+  \item INSEE Filosofi gridded population, 200 m or 1 km cells (France;
+    count field \code{ind})
   \item WorldPop or GPW for international applications
-  \item Proxy: Distance to nearest urban area if no population data
 }
 }
 \examples{
 \dontrun{
 data(massif_demo_units)
+carreaux <- sf::st_read("path/to/filosofi_carreaux_200m.gpkg")
 result <- indicateur_s3_population(
   units = massif_demo_units,
-  method = "proxy",
+  population_grid = carreaux,
   buffer_radii = c(5000, 10000, 20000)
 )
 }
