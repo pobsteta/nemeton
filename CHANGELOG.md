@@ -10,6 +10,14 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.214.0] - 2026-10-05
+
+### Changed
+- `withr` en Imports (graines locales) ; `list_alerts()` typé sous SQLite ; `db_migrate()` sérialisé, `db_connect()` décode l'URL ; CI pkgdown en lecture seule.
+
+### Fixed
+- Audit 1.0, vague 7 : ~90 constats mineurs (R5 pin, S3, familles pondérées, normalisation NA, taux de variation, CV, IFN domaines, CHM lasR, échantillonnage, SAFRAN, santé/base, RECONFORT, RAG, QGIS, docs, tests).
+
 ## [0.213.0] - 2026-10-05
 
 ### Changed
