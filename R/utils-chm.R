@@ -121,7 +121,7 @@ sanitize_chm <- function(chm,
   }
 
   steps <- character(0)
-  n_valid_before <- sum(!is.na(terra::values(chm)))
+  n_valid_before <- .n_valid_cells(chm)
 
   chm_out <- chm
 
@@ -141,7 +141,7 @@ sanitize_chm <- function(chm,
   # single offending step when the overall ratio looks suspicious.
   log_step <- function(name) {
     if (!verbose) return(invisible(NULL))
-    n_now <- sum(!is.na(terra::values(chm_out)))
+    n_now <- .n_valid_cells(chm_out)
     pct   <- if (n_valid_before > 0) 1 - (n_now / n_valid_before) else 0
     cli::cli_alert_info(
       "sanitize_chm step '{name}': {round(100 * pct, 1)}% cumulative masked"
@@ -214,7 +214,7 @@ sanitize_chm <- function(chm,
     log_step("slope")
   }
 
-  n_valid_after <- sum(!is.na(terra::values(chm_out)))
+  n_valid_after <- .n_valid_cells(chm_out)
   pct_masked <- if (n_valid_before > 0) {
     1 - (n_valid_after / n_valid_before)
   } else {
@@ -312,13 +312,23 @@ sanitize_chm <- function(chm,
 
   if (inherits(mask, "SpatRaster")) {
     aligned <- .align_to(mask, chm)
-    vals <- terra::values(aligned)
-    total <- length(vals)
+    total <- terra::ncell(aligned) * terra::nlyr(aligned)
     if (total == 0) return(NA_real_)
-    return(sum(!is.na(vals) & vals != 0) / total)
+    # Cellules non NA et non nulles, comptees par blocs (pas de values()).
+    n_on <- sum(terra::global(aligned != 0, "sum", na.rm = TRUE)[, 1],
+                na.rm = TRUE)
+    return(n_on / total)
   }
 
   NA_real_
+}
+
+
+# Nombre de cellules non NA, toutes couches confondues. terra::global() lit
+# le raster par blocs : terra::values() le materialisait en entier, jusqu'a
+# cinq fois par appel de sanitize_chm() (OOM sur un CHM a 0,2 m).
+.n_valid_cells <- function(r) {
+  sum(terra::global(r, "notNA")[, 1], na.rm = TRUE)
 }
 
 
