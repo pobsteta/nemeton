@@ -194,6 +194,13 @@ changer côté app. Brief retour : `specs/audit-1.0/brief-nemetonshiny-retour-0.
 CI : l'envoi Codecov (TLS refusé depuis le 2026-10-05) ne bloque plus le
 workflow ni la release.
 
+**Journal** — *2026-10-05* (**v0.212.2**) : `map_oso_class()` et
+`inst/species/BFC.json` alignés sur la nomenclature OSO 2018+ (16 feuillus,
+17 conifères, aucune essence hors forêt) — le reliquat « 17/18/19 » signalé à
+la 0.212.0 ; tutoriels 02 et 07 alignés. Reliquat de l'audit recensé : 53
+constats « M » sans marque de correction dans `rapport-audit.md` (une partie
+déjà corrigée en 0.212.0 sans mise à jour du rapport), triés en vague 6.
+
 **Prochaine étape** : vague 6 (contrat d'API, reliquat). L'app consomme 135
 des 313 exports et lit 21 symboles internes : ne rien retirer ni changer de
 signature parmi eux sans brief app (`specs/audit-1.0/exports-consommes-app.md`).
