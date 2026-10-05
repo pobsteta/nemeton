@@ -13,6 +13,9 @@
 #'     \item "Greens" - Green sequential
 #'     \item "Blues" - Blue sequential
 #'   }
+#'   When not given, raw risk indicators (R1-R5, high = more risk) get
+#'   "YlOrRd" and \code{famille_risque} (high = lower risk) gets "RdYlGn",
+#'   so red always marks the riskiest units.
 #' @param direction Numeric. Direction of color scale: 1 (default) or -1 (reversed)
 #' @param title Character. Plot title. If NULL, auto-generated.
 #' @param legend_title Character. Legend title. If NULL, uses "Value" or indicator name.
@@ -137,9 +140,21 @@ plot_indicators_map <- function(data,
     }
   }
 
-  # Auto-select YlOrRd palette for risk indicators
-  if (!user_palette && all(grepl("^R[1-4]|^famille_risque|^R[1-4]_norm|^risk_", indicators))) {
-    palette <- "YlOrRd"
+  # Palette automatique des risques, selon le SENS de la colonne (audit 1.0) :
+  # - R1-R5 bruts (haut = plus de risque) -> YlOrRd, rouge = risqué ;
+  # - famille_risque, orientée « haut = bon » (normalize_indicator() inverse
+  #   R1-R5) -> RdYlGn, rouge = risqué aussi. YlOrRd y peignait en rouge les
+  #   unités les MOINS exposées.
+  # Les `R*_norm` restent sur la palette par défaut : leur sens dépend de leur
+  # producteur (min-max non inversé de normalize_indicators(), ou score inversé
+  # de normalize_indicator()).
+  if (!user_palette) {
+    if (all(grepl("^(R[1-5]|indicateur_r[1-5]_[a-z_]+|risk_.*)$", indicators) &
+            !grepl("_norm$", indicators))) {
+      palette <- "YlOrRd"
+    } else if (all(grepl("^famille_risque$", indicators))) {
+      palette <- "RdYlGn"
+    }
   }
 
   # Validate indicators exist
@@ -160,7 +175,7 @@ plot_indicators_map <- function(data,
       ggplot2::geom_sf(
         ggplot2::aes(fill = .data[[indicator_col]]),
         color = border_color,
-        size = border_size,
+        linewidth = border_size,
         alpha = alpha,
         show.legend = TRUE
       )
@@ -194,7 +209,7 @@ plot_indicators_map <- function(data,
       ggplot2::geom_sf(
         ggplot2::aes(fill = value),
         color = border_color,
-        size = border_size,
+        linewidth = border_size,
         alpha = alpha,
         show.legend = TRUE
       ) +
@@ -432,7 +447,7 @@ plot_comparison_map <- function(data1,
     ggplot2::geom_sf(
       ggplot2::aes(fill = .data[[indicator]]),
       color = "white",
-      size = 0.3,
+      linewidth = 0.3,
       alpha = 0.9
     ) +
     ggplot2::facet_wrap(~scenario, ncol = 2)
@@ -569,7 +584,7 @@ plot_difference_map <- function(data1,
     ggplot2::geom_sf(
       ggplot2::aes(fill = difference),
       color = "white",
-      size = 0.3,
+      linewidth = 0.3,
       alpha = 0.9
     )
 

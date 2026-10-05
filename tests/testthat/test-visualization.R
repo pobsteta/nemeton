@@ -2078,3 +2078,48 @@ test_that("plot_difference_map joins on the identifier, not by position (audit 1
     "Cannot\\s+align"
   )
 })
+
+test_that("les cartes passent la largeur de bordure en linewidth, pas size (audit 1.0)", {
+  # `geom_sf(size =)` pour une bordure de polygone est déprécié depuis
+  # ggplot2 3.4.0 : on vérifie le paramètre transmis à chaque couche.
+  d1 <- create_test_units(n_features = 3)
+  d1$val <- c(10, 20, 30)
+  d1$val2 <- c(5, 6, 7)
+  d2 <- d1
+  d2$val <- c(12, 18, 33)
+  plots <- list(
+    suppressMessages(plot_indicators_map(d1, indicators = "val")),
+    suppressMessages(plot_indicators_map(d1, indicators = c("val", "val2"))),
+    plot_comparison_map(d1, d2, indicator = "val"),
+    plot_difference_map(d1, d2, indicator = "val")
+  )
+  for (p in plots) {
+    prm <- p$layers[[1]]$aes_params
+    expect_null(prm$size)
+    expect_false(is.null(prm$linewidth))
+  }
+})
+
+test_that("plot_indicators_map : palette de risque selon le sens (audit 1.0)", {
+  # Brut R1-R5 (haut = risqué) -> YlOrRd ; famille_risque est orientée
+  # « haut = bon » (normalize_indicator inverse R1-R5) -> RdYlGn, sinon le
+  # rouge marquait les unités les MOINS risquées.
+  d <- create_test_units(n_features = 3)
+  d$famille_risque <- c(10, 50, 90)
+  d$R1 <- c(10, 50, 90)
+  d$R5 <- c(1, 2, 3)
+  pal_of <- function(p) p$scales$get_scales("fill")$palette(c(0, 0.5, 1))
+  ref_rdylgn <- pal_of(suppressMessages(
+    plot_indicators_map(d, indicators = "famille_risque", palette = "RdYlGn")))
+  ref_ylorrd <- pal_of(suppressMessages(
+    plot_indicators_map(d, indicators = "R1", palette = "YlOrRd")))
+  expect_identical(
+    pal_of(suppressMessages(plot_indicators_map(d, indicators = "famille_risque"))),
+    ref_rdylgn)
+  expect_identical(
+    pal_of(suppressMessages(plot_indicators_map(d, indicators = "R1"))),
+    ref_ylorrd)
+  expect_identical(
+    pal_of(suppressMessages(plot_indicators_map(d, indicators = "R5"))),
+    ref_ylorrd)
+})
