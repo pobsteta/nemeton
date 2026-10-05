@@ -278,3 +278,25 @@ test_that("extract_h_dom returns NA when fewer than min_pixels", {
   expect_length(h, 1)
   expect_true(is.na(h))
 })
+
+# ---- comptages sans charger le raster en memoire (audit 1.0) ----
+
+test_that("sanitize_chm counts valid cells without terra::values()", {
+  skip_if_not_installed("terra")
+  chm <- make_fixture_chm(size_m = 60, add_artefacts = TRUE)
+  masks <- make_fixture_masks(chm)
+  forest_mask <- masks$forest_mask
+  # Reference calculee avant de neutraliser terra::values().
+  ref <- suppressWarnings(sanitize_chm(chm, forest_mask = forest_mask,
+                                       verbose = FALSE))
+  # terra::values() materialise tout le raster (OOM sur un CHM a 0,2 m) : le
+  # comptage doit passer par terra::global(), qui lit par blocs.
+  local_mocked_bindings(
+    values = function(...) stop("terra::values() would load the whole raster"),
+    .package = "terra"
+  )
+  res <- suppressWarnings(sanitize_chm(chm, forest_mask = forest_mask,
+                                       verbose = TRUE))
+  expect_equal(res$pct_masked, ref$pct_masked)
+  expect_equal(res$steps_applied, ref$steps_applied)
+})

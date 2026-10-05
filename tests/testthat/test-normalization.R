@@ -806,6 +806,41 @@ test_that("create_composite_index geometric_mean with NA values", {
   expect_false(is.na(result$composite_index[1]))
 })
 
+test_that("create_composite_index geometric_mean realigns weights on NA (audit 1.0)", {
+  # Poids inégaux et NA en tête : les poids des valeurs restantes doivent
+  # être ceux de LEURS indicateurs, renormalisés à 1.
+  test_data <- data.frame(
+    id = 1:2,
+    ind1 = c(NA, 20),
+    ind2 = c(50, 50),
+    ind3 = c(80, 80)
+  )
+
+  expect_no_warning(
+    result <- create_composite_index(
+      test_data,
+      indicators = c("ind1", "ind2", "ind3"),
+      weights = c(2, 1, 1),
+      aggregation = "geometric_mean",
+      na.rm = TRUE
+    )
+  )
+
+  # Ligne 1 : ind2 et ind3 à poids égaux -> sqrt(50 * 80)
+  expect_equal(result$composite_index[1], sqrt(50 * 80), tolerance = 1e-8)
+  # Ligne 2 : complète -> 20^0.5 * 50^0.25 * 80^0.25
+  expect_equal(result$composite_index[2], 20^0.5 * 50^0.25 * 80^0.25,
+               tolerance = 1e-8)
+  # Sans na.rm, un NA donne NA
+  res_na <- create_composite_index(
+    test_data,
+    indicators = c("ind1", "ind2", "ind3"),
+    aggregation = "geometric_mean",
+    na.rm = FALSE
+  )
+  expect_true(is.na(res_na$composite_index[1]))
+})
+
 # --- create_composite_index: with sf data ---
 
 test_that("create_composite_index works with sf data", {

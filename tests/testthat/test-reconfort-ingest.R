@@ -706,3 +706,30 @@ test_that("enforce_tls_verification points pygeodes to a CA bundle", {
   out <- system2(py, shQuote(script), stdout = TRUE)
   expect_identical(out, c("True", "False"))
 })
+
+test_that("conda run streams the python output (--no-capture-output)", {
+  # Sans --no-capture-output, `conda run` retient stdout/stderr jusqu'à la
+  # fin du processus : si le scope systemd est tué (OOM), tout est perdu.
+  skip_on_os("windows")
+  wd <- withr::local_tempdir()
+  seen <- NULL
+  testthat::local_mocked_bindings(
+    .reconfort_cap_memory = function(command, args, ...) {
+      seen <<- list(command = command, args = args)
+      list(command = "true", args = character())
+    }
+  )
+  nemeton:::.reconfort_run_py("conda", "envx", "s.py", "cfg.cfg", wd, quiet = TRUE)
+  expect_identical(seen$args[1:2], c("run", "--no-capture-output"))
+
+  # Téléchargement d'une archive : faux binaire conda qui consigne ses
+  # arguments.
+  log <- file.path(wd, "args.txt")
+  fake <- file.path(wd, "fake_conda.sh")
+  writeLines(c("#!/bin/sh", sprintf("printf '%%s\\n' \"$@\" > '%s'", log)), fake)
+  Sys.chmod(fake, "0755")
+  nemeton:::.reconfort_download_s2_item(fake, "envx", wd, "acct", "item.json",
+                                        file.path(wd, "out.zip"), quiet = TRUE)
+  args <- readLines(log)
+  expect_identical(args[1:2], c("run", "--no-capture-output"))
+})

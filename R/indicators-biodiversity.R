@@ -340,7 +340,7 @@ indicateur_b2_structure <- function(units,
 
   if (!is.numeric(cv_chm_weight) || length(cv_chm_weight) != 1L ||
       cv_chm_weight < 0 || cv_chm_weight > 1) {
-    stop("cv_chm_weight must be a scalar in [0, 1]", call. = FALSE)
+    cli::cli_abort("cv_chm_weight must be a scalar in [0, 1]")
   }
 
   # Precompute CV(CHM) once (spec 005 phase 4). Applied as an
@@ -349,7 +349,7 @@ indicateur_b2_structure <- function(units,
   cv_chm_score <- NULL
   if (!is.null(chm)) {
     if (!inherits(chm, "SpatRaster")) {
-      stop("chm must be a terra SpatRaster", call. = FALSE)
+      cli::cli_abort("chm must be a terra SpatRaster")
     }
     units_proj <- sf::st_transform(as_pure_sf(units), terra::crs(chm))
     if (requireNamespace("exactextractr", quietly = TRUE)) {
@@ -532,7 +532,7 @@ indicateur_b3_connectivite <- function(units,
   }
 
   if (!inherits(bdforet, "sf")) {
-    stop("bdforet must be an sf object when provided", call. = FALSE)
+    cli::cli_abort("bdforet must be an sf object when provided")
   }
 
   # Toutes les composantes travaillent en metres (grille 25 m, tampons 1-2 km,

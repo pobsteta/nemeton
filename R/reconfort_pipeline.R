@@ -190,6 +190,10 @@
   identical(as.integer(status), 0L)
 }
 
+# Date du jour, isolée pour que les tests puissent la fixer (garde-fou de
+# saison de `s2_year`, date de déclenchement des alertes).
+.reconfort_today <- function() Sys.Date()
+
 # --- garde-fous du workdir (audit 1.0, sécurité) -------------------------
 
 # Validate a monitoring-zone id: a strictly positive integer (numeric or
@@ -559,7 +563,11 @@
 #'   series — the single temporal control of a run (the app exposes only
 #'   this, as a year picker). Default the current year. The download
 #'   window, the analysis window and the output names all derive from it;
-#'   see *Temporal window* below.
+#'   see *Temporal window* below. A future year is refused; a year whose
+#'   model analysis window has not yet elapsed (see
+#'   [reconfort_latest_complete_year()]) runs with a warning (truncated
+#'   last season). The alert trigger date never lies after the day of the
+#'   run.
 #' @param date_from,date_to Sentinel-2 **download** window
 #'   (`"YYYY-MM-DD"`). `NULL` (default) derives a two-calendar-year window
 #'   from `s2_year`: `date_from = (s2_year-1)-01-01`,
@@ -726,6 +734,23 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
   info    <- reconfort_model_info(v_model)            # validates v_model
   s2_year <- as.integer(s2_year)
   if (is.na(s2_year)) cli::cli_abort("{.arg s2_year} must be an integer year.")
+  # Garde-fou de saison : une année future n'a aucune donnée Sentinel-2 ;
+  # une année dont la fenêtre d'analyse du modèle (fin `edate`) n'est pas
+  # écoulée donne une dernière saison tronquée. Avertissement seulement
+  # dans ce second cas (le défaut `s2_year` = année courante y tombe).
+  today <- .reconfort_today()
+  if (s2_year > as.integer(format(today, "%Y"))) {
+    cli::cli_abort(c(
+      "{.arg s2_year} = {.val {s2_year}} is in the future: no Sentinel-2 data yet.",
+      i = "Latest complete season for {.val {v_model}}: {.val {reconfort_latest_complete_year(v_model, today = today)}}."
+    ))
+  }
+  if (s2_year > reconfort_latest_complete_year(v_model, today = today)) {
+    cli::cli_warn(c(
+      "RECONFORT season {.val {s2_year}} is incomplete: the {.val {v_model}} analysis window ends on {.val {sprintf('%d-%s', s2_year, info$edate)}}.",
+      i = "The last season is truncated and the classification degraded; prefer {.code s2_year = {reconfort_latest_complete_year(v_model, today = today)}} (see {.fn reconfort_year_bounds})."
+    ))
+  }
   if (is.null(date_from)) date_from <- sprintf("%d-01-01", s2_year - 1L)
   if (is.null(date_to))   date_to   <- sprintf("%d-12-31", s2_year)
 
@@ -959,7 +984,10 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     begin("postprocess")
     classif_for_alerts <- if (!is.na(rasters$classif_masked))
       rasters$classif_masked else rasters$classif
-    trigger_date <- tryCatch(as.Date(date_to), error = function(e) Sys.Date())
+    # Fin de la fenêtre de téléchargement, jamais postérieure au jour du run
+    # (date_to vaut s2_year-12-31 par défaut : alertes datées dans le futur).
+    trigger_date <- tryCatch(as.Date(date_to), error = function(e) today)
+    if (is.na(trigger_date) || trigger_date > today) trigger_date <- today
     alerts_sf <- tryCatch(
       .postprocess_reconfort_rasters(
         list(classif = classif_for_alerts,

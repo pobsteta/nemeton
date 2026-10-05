@@ -282,7 +282,18 @@ segment_houppiers <- function(chm        = NULL,
     aoi_sel <- NULL
     aoi_v   <- NULL
     if (!is.null(aoi)) {
-      ref <- if (!is.null(chm)) terra::crs(chm) else NULL
+      # Sans CHM, le CRS de reference est celui de l'image : l'AOI y est
+      # reprojetee AVANT le tampon `marge_m` (metres) et le test d'intersection.
+      ref <- if (!is.null(chm)) {
+        terra::crs(chm)
+      } else if (inherits(image, "SpatRaster")) {
+        terra::crs(.normalize_crs(image))
+      } else if (is.character(image) && length(image) == 1L && file.exists(image)) {
+        terra::crs(.normalize_crs(terra::rast(image)))
+      } else {
+        NULL
+      }
+      if (!is.null(ref) && !nzchar(ref)) ref <- NULL
       aoi_sf <- sf::st_as_sf(aoi)
       if (!is.null(ref)) aoi_sf <- sf::st_transform(aoi_sf, ref)
       if (identical(emprise, "intersecte")) {

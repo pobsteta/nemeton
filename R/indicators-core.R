@@ -228,9 +228,10 @@ compute_indicator <- function(indicator, units, layers, ...) {
 
   # Check if function exists
   if (!exists(func_name, mode = "function")) {
-    stop("Unknown indicator: ", indicator,
-         "\nAvailable indicators: ", paste(list_indicators(), collapse = ", "),
-         call. = FALSE)
+    cli::cli_abort(c(
+      "Unknown indicator: {indicator}",
+      "i" = "Available indicators: {paste(list_indicators(), collapse = ', ')}"
+    ))
   }
 
   # Call the indicator function dynamically. Match the supplied
@@ -317,9 +318,11 @@ extract_indicator_value <- function(result, indicator,
     if (length(code_cols) >= 1L) {
       return(result[[code_cols[1]]])
     }
-    stop("Indicator '", indicator,
-         "' returned a data frame with no recognizable value column",
-         call. = FALSE)
+    # Message court sur deux lignes : cli replie a la largeur du terminal
+    cli::cli_abort(c(
+      "Indicator '{indicator}' returned a data frame",
+      "x" = "It has no recognizable value column."
+    ))
   }
 
   result

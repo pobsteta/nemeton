@@ -21,7 +21,8 @@ NULL
 #' @param residue_fraction Numeric. Fraction of harvest available as residues. Default 0.3 (30 percent).
 #' @param coppice_area_field Character. Column name for coppice area fraction. Optional.
 #' @param column_name Character. Name for output column. Default "E1".
-#' @param lang Character. Message language. Default "en".
+#' @param lang Character. Currently unused (messages are in English); kept for
+#'   backward compatibility. Default "en".
 #' @param chm Optional `terra::SpatRaster` canopy height model (spec 005).
 #'   When supplied and `volume_field` is absent, standing volume is
 #'   auto-estimated by running P1 internally. Default `NULL`.
@@ -82,12 +83,12 @@ indicateur_e1_bois_energie <- function(units,
                                       production_field = NULL,
                                       taux_mobilisation = NULL,
                                       ser_field = "ser") {
-  if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
+  if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   # ---- Mode flux (spec 054 lot 4) : la recolte suit la production ----
   if (!is.null(production_field)) {
     if (!production_field %in% names(units)) {
-      stop("Required field missing: ", production_field, call. = FALSE)
+      cli::cli_abort("Required field missing: {production_field}")
     }
     if (is.null(taux_mobilisation)) {
       # Pas de defaut invente : un taux suppose serait une decision cachee.
@@ -164,7 +165,7 @@ indicateur_e1_bois_energie <- function(units,
   }
 
   if (!volume_field %in% names(units)) {
-    stop(paste("Required field missing:", volume_field), call. = FALSE)
+    cli::cli_abort("Required field missing: {volume_field}")
   }
 
   result <- units
@@ -240,7 +241,8 @@ indicateur_e1_bois_energie <- function(units,
 #' @param energy_scenario Character. Energy substitution scenario: "vs_natural_gas", "vs_fuel_oil". Default "vs_natural_gas".
 #' @param material_scenario Character. Material substitution: "vs_concrete", "vs_steel", NULL. Default NULL (no material substitution).
 #' @param column_name Character. Name for output column. Default "E2".
-#' @param lang Character. Message language. Default "en".
+#' @param lang Character. Currently unused (messages are in English); kept for
+#'   backward compatibility. Default "en".
 #' @param taux_recolte_materiau Numeric in `[0, 1]`, one value or one per
 #'   unit: share of `volume_field` harvested as construction timber each
 #'   year. Required with `material_scenario` + `volume_field`, no default on
@@ -263,7 +265,7 @@ indicateur_e2_evitement <- function(units,
                                        column_name = "E2",
                                        lang = "en",
                                        taux_recolte_materiau = NULL) {
-  if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
+  if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   # Substitution materiau : `volume_field` est un STOCK sur pied (m3/ha). E2
   # est un flux annuel ; on n'additionne au flux energie que la part recoltee

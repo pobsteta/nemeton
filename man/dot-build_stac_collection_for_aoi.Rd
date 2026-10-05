@@ -18,7 +18,8 @@
 \item{scenes_df}{A `data.frame` (or tibble) with at minimum the
 columns `scene_id` (character) and `obs_date` (Date or coercible).
 Exact `scene_id` duplicates and ESA reprocessing duplicates (same
-acquisition, newer processing baseline) are silently removed.}
+acquisition, newer processing baseline) are silently removed. Scenes sharing a date (an AOI
+straddling two MGRS tiles) are mosaicked into one item per date.}
 
 \item{cache_dir}{Character(1). Root directory of the COG cache,
 typically `<project>/cache/layers/sentinel2`.}
@@ -30,7 +31,7 @@ covers CRSWIR + cloud / shadow / soil masks.}
 \value{
 A Python `simplestac.utils.ItemCollection` object. The
   number of items equals the number of scenes whose bands are
-  all present.
+  all present, counted once per date.
 }
 \description{
 Walks `scenes_df`, locates `<cache_dir>/<safe_scene_id>/<band>.tif`

@@ -136,6 +136,55 @@ make_fake_fordead_2x_module <- function(fail_at = NULL) {
 # %||% — null coalesce (rlang-free local copy)
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
+# Les deux appels reticulate du pipeline qui ne passent pas par un helper
+# nemeton (py_capture_output, import("fordead.utils")) sont neutralisés pour
+# tout le fichier : sans venv FORDEAD, ils initialisaient Python et
+# reticulate >= 1.41 téléchargeait un CPython via uv (audit 1.0).
+if (requireNamespace("reticulate", quietly = TRUE)) {
+  testthat::local_mocked_bindings(
+    py_capture_output = function(expr, type = c("stdout", "stderr")) {
+      force(expr)
+      ""
+    },
+    import = function(module, ...) {
+      stop("Python is not available in the test suite (", module, ")")
+    },
+    .package = "reticulate"
+  )
+}
+
+
+test_that("the orchestration tests never start a Python interpreter (audit 1.0)", {
+  # Sans venv FORDEAD, py_capture_output() et import("fordead.utils")
+  # initialisaient Python : reticulate >= 1.41 téléchargeait alors un CPython
+  # (~160 Mo, via uv) pendant la suite. Toute découverte d'interpréteur est
+  # ici une erreur.
+  skip_if_not_installed("terra")
+  skip_if_no_reticulate(); skip_if_no_sf()
+  skip_if(reticulate::py_available(initialize = FALSE),
+          "Python already initialised by an earlier test file")
+
+  testthat::local_mocked_bindings(
+    py_discover_config = function(...) stop("PYTHON_DISCOVERY_ATTEMPTED"),
+    .package = "reticulate"
+  )
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers()
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  out <- run_fordead_dieback(
+    con              = make_fake_con(),
+    zone_id          = 1L,
+    cache_dir        = make_cache_dir(),
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2018-12-31"),
+    verbose          = FALSE
+  )
+  expect_identical(out$status, "success")
+  expect_false(reticulate::py_available(initialize = FALSE))
+})
+
 
 # ---- argument validation ---------------------------------------------
 
@@ -301,6 +350,49 @@ test_that("a run without alert still calls the insert (pending purge); a failed 
   # Post-traitement en échec : la base n'est pas touchée.
   r <- suppressWarnings(run_once(TRUE))
   expect_length(r$calls, 0L)
+})
+
+test_that("a failed post-process or alert insertion is not reported as success (audit 1.0)", {
+  skip_if_not_installed("terra")
+  skip_if_no_reticulate(); skip_if_no_sf()
+
+  run_once <- function(fail_postprocess = FALSE, fail_insert = FALSE) {
+    fk <- make_fake_fordead_2x_module()
+    helpers <- .mock_pipeline_helpers(fail_postprocess = fail_postprocess)
+    helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+    if (fail_insert) {
+      helpers$.insert_fordead_alerts <- function(...) stop("simulated DB failure")
+    }
+    events <- list()
+    testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+    out <- run_fordead_dieback(
+      con               = make_fake_con(),
+      zone_id           = 1L,
+      cache_dir         = make_cache_dir(),
+      dates_training    = c("2016-01-01", "2017-12-31"),
+      dates_monitoring  = c("2018-01-01", "2018-12-31"),
+      progress_callback = function(e) events[[length(events) + 1L]] <<- e,
+      verbose           = FALSE)
+    out$events <- vapply(events, function(e) e$current %||% NA_character_,
+                         character(1))
+    out
+  }
+
+  # Post-traitement en échec : la base n'a pas été mise à jour, le run ne
+  # peut pas se dire réussi.
+  out <- suppressWarnings(run_once(fail_postprocess = TRUE))
+  expect_identical(out$status, "error")
+  expect_match(out$message, "post-process", ignore.case = TRUE)
+  expect_true("fordead:error" %in% out$events)
+  expect_false("fordead:complete" %in% out$events)
+  # Les sorties disque déjà persistées restent référencées.
+  expect_match(out$rasters$model_dir, "model_[0-9]{8}T[0-9]{6}$")
+
+  # Insertion en échec : idem, et le nombre inséré est inconnu (NA).
+  out <- suppressWarnings(run_once(fail_insert = TRUE))
+  expect_identical(out$status, "error")
+  expect_match(out$message, "insertion", ignore.case = TRUE)
+  expect_true(is.na(out$n_alerts_inserted))
 })
 
 
@@ -906,3 +998,4 @@ test_that("FORDEAD completion message uses qty() (no 'Multiple quantities')", {
   expect_match(msg(1L, 5),  "1 pixel alert ")
   expect_match(msg(7L, 9),  "7 pixel alerts")
 })
+

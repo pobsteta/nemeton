@@ -221,3 +221,28 @@ test_that("a healthy segmentation carries chm_suspect = FALSE, not NULL", {
   expect_false(is.null(attr(out, "chm_suspect")))
   expect_false(attr(out, "chm_suspect"))
 })
+
+# --- AOI dans un autre CRS, sans CHM (audit 1.0) ------------------------------
+# Sans CHM, l'AOI n'était pas reprojetée : son emprise en degrés était comparée
+# à celle de l'image en Lambert-93 et l'abandon « aoi does not intersect »
+# tombait à tort.
+test_that("LSMS without CHM reprojects an AOI given in another CRS", {
+  skip_if_not_installed("terra")
+  local_mocked_bindings(.lsms_otb_dir = function() "/otb/factice")
+  # 2000 x 2000 px à 0,20 m (16 ha) : au-delà d'un budget minuscule, le
+  # garde-fou de budget (en aval du contrôle d'intersection) doit répondre.
+  r <- terra::rast(nrows = 2000, ncols = 2000,
+                   xmin = 700000, xmax = 700400, ymin = 6600000,
+                   ymax = 6600400, crs = "EPSG:2154")
+  terra::values(r) <- 1L
+  aoi_l93 <- sf::st_as_sfc(sf::st_bbox(c(xmin = 700050, ymin = 6600050,
+                                         xmax = 700350, ymax = 6600350),
+                                       crs = sf::st_crs(2154)))
+  aoi_wgs <- sf::st_transform(aoi_l93, 4326)
+  err <- tryCatch(
+    segment_houppiers(chm = NULL, algorithme = "lsms", image = r,
+                      usage = "couvert", aoi = aoi_wgs, budget_s = 1e-6),
+    error = function(e) conditionMessage(e))
+  expect_false(grepl("does not intersect", err))
+  expect_match(err, "over the")
+})
