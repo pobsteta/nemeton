@@ -35,7 +35,8 @@ columns as \code{cv_typology()}).}
 \value{
 A list with:
   \itemize{
-    \item \code{cv}: the aggregated CV (numeric fraction).
+    \item \code{cv}: the aggregated CV (numeric fraction), averaged over
+      the classes whose CV is known; \code{NA} when none is.
     \item \code{position}: the bound used.
     \item \code{coverage}: total mapped area / total input area
       (sanity check — how much of the AOI was classified).

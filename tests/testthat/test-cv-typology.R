@@ -58,6 +58,30 @@ test_that("cv_from_bdforet aggregates per-polygon CV by area", {
 })
 
 
+test_that("cv_from_bdforet : un CV inconnu n'est pas compte comme 0", {
+  # Audit 1.0 : sum(cv * share, na.rm = TRUE) comptait un CV NA pour 0 et
+  # sous-estimait le CV, donc la taille d'echantillon.
+  skip_if_not_installed("sf")
+  p1 <- sf::st_polygon(list(rbind(c(0,0), c(100,0), c(100,200),
+                                  c(0,200), c(0,0))))
+  p2 <- sf::st_polygon(list(rbind(c(200,0), c(300,0), c(300,200),
+                                  c(200,200), c(200,0))))
+  bd <- sf::st_sf(TFV = c("FF2-64-64", "FF1G01-01"),
+                  geometry = sf::st_sfc(p1, p2, crs = 2154))
+  ref <- cv_from_bdforet(bd)
+  k_feuillu <- ref$summary$context_key[ref$summary$tfv_code == "FF1G01-01"]
+  vrai_lookup <- cv_lookup
+  local_mocked_bindings(cv_lookup = function(context_key, ...) {
+    if (identical(context_key, k_feuillu)) stop("contexte absent")
+    vrai_lookup(context_key, ...)
+  })
+  res <- cv_from_bdforet(bd)
+  expect_equal(res$cv, 0.275, tolerance = 1e-6)   # Douglas seul, pas 0.1375
+  # Aucun CV connu -> NA, pas 0.
+  local_mocked_bindings(cv_lookup = function(...) stop("absent"))
+  expect_true(is.na(cv_from_bdforet(bd)$cv))
+})
+
 test_that("cv_from_bdforet drops unmappable classes (FF0, LA4) from the CV", {
   skip_if_not_installed("sf")
   # 2 ha Douglas + 2 ha of FF0 (non-forest in mapping).
