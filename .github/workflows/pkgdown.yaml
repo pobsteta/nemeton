@@ -22,8 +22,11 @@ jobs:
       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    # Le build exécute le code du paquet (y compris celui d'une PR) : il ne
+    # reçoit qu'un jeton en lecture. L'écriture sur gh-pages est isolée dans
+    # le job `deploy`, qui ne tourne jamais sur une pull_request (audit 1.0).
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -133,12 +136,39 @@ jobs:
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
 
-      - name: Deploy to GitHub pages 🚀
-        # Deploy only on push to main / published release — never on a
-        # pull_request or a manual workflow_dispatch (which build-only, so the
-        # site can be validated from a branch without publishing it).
+      - name: Upload site
+        # Transmis au job `deploy` (seul à disposer du droit d'écriture).
         if: github.event_name == 'push' || github.event_name == 'release'
-        uses: JamesIves/github-pages-deploy-action@v4.5.0
+        uses: actions/upload-artifact@v4
+        with:
+          name: pkgdown-site
+          path: docs
+          retention-days: 1
+
+  deploy:
+    # Deploy only on push to main / published release — never on a
+    # pull_request or a manual workflow_dispatch (which build-only, so the
+    # site can be validated from a branch without publishing it).
+    if: github.event_name == 'push' || github.event_name == 'release'
+    needs: pkgdown
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: pkgdown-deploy
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download site
+        uses: actions/download-artifact@v4
+        with:
+          name: pkgdown-site
+          path: docs
+
+      - name: Deploy to GitHub pages 🚀
+        # Action tierce dotée du droit d'écriture : épinglée par SHA (v4.5.0).
+        uses: JamesIves/github-pages-deploy-action@65b5dfd4f5bcd3a7403bbc2959c144256167464e # v4.5.0
         with:
           clean: false
           branch: gh-pages
