@@ -274,14 +274,16 @@ croiser_parcelles_onf <- function(parcelles_onf, parcelles,
     frags$surface_ha <- as.numeric(sf::st_area(frags)) / 1e4
   }
 
-  if (min_surface_ha > 0) {
-    frags <- .croiser_absorber(frags, min_surface_ha)
-    frags$surface_ha <- as.numeric(sf::st_area(frags)) / 1e4
-  }
-
+  # Le hors UGF est retire AVANT l'absorption : sinon une echarde d'UGF qui ne
+  # touchait que lui y etait fondue, puis disparaissait avec lui (audit 1.0).
   if (!isTRUE(inclure_reste)) {
     frags <- frags[!frags$hors_ugf, , drop = FALSE]
     if (nrow(frags) == 0L) return(.croiser_vide(crs_sortie, n_concernees, nrow(cad)))
+  }
+
+  if (min_surface_ha > 0) {
+    frags <- .croiser_absorber(frags, min_surface_ha)
+    frags$surface_ha <- as.numeric(sf::st_area(frags)) / 1e4
   }
 
   frags$part_cadastrale <- frags$surface_ha * 1e4 /

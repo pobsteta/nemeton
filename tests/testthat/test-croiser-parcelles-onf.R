@@ -115,6 +115,16 @@ test_that("a sliver is absorbed by the largest tenement of the same parcel", {
   expect_equal(out$part_cadastrale, 1)
 })
 
+test_that("une echarde d'UGF n'est pas perdue dans le reste quand inclure_reste = FALSE", {
+  # Audit 1.0 : l'echarde de U2 ne touchait que la partie hors UGF, elle y
+  # etait absorbee, puis le hors UGF etait retire : 0,01 ha d'UGF perdus.
+  onf <- .cx_onf(list(c(0, 60, 0, 100), c(90, 91, 0, 100)))
+  cad <- .cx_cad("A", list(c(0, 100, 0, 100)))
+  out <- croiser_parcelles_onf(onf, cad, min_surface_ha = 0.05)
+  expect_false(any(out$hors_ugf))
+  expect_equal(sum(out$surface_ha), 0.61, tolerance = 1e-9)
+})
+
 test_that("caler_sur_cadastre snaps the UGF edge onto the parcel edge", {
   # U1 tient 95 % de A : au-dessus du seuil, elle prend A en entier.
   onf <- .cx_onf(list(c(0, 95, 0, 100)))
