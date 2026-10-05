@@ -285,7 +285,9 @@ NULL
 #'
 #' @return A list with the following fields:
 #'   \describe{
-#'     \item{status}{`"success"`, `"cancelled"`, or `"error"`.}
+#'     \item{status}{`"success"`, `"cancelled"`, or `"error"`. A run whose
+#'       post-processing or alert insertion failed is `"error"` (with a
+#'       `message`), while keeping the rasters it did persist.}
 #'     \item{message}{Optional human-readable message.}
 #'     \item{phase}{Present only on a `"cancelled"` result — the phase
 #'       (`"ingest"`, `"fit"`, `"predict"`) after which the run stopped.}
@@ -633,6 +635,11 @@ run_fordead_dieback <- function(con,
       model_dir          = NA_character_   # set in the persist phase
     )
 
+    # Échecs du post-traitement ou de l'insertion : le run va jusqu'au bout
+    # (masque et bundle persistés) mais ne se déclare pas « success », la
+    # table `alert` n'ayant pas été mise à jour (audit 1.0).
+    echecs <- character(0)
+
     # 4. postprocess (1.x helper reused — input shape unchanged)
     begin_phase("postprocess")
     if (verbose) cli::cli_alert_info("Step: postprocess")
@@ -649,6 +656,8 @@ run_fordead_dieback <- function(con,
       ),
       error = function(e) {
         cli::cli_alert_warning("Post-processing failed: {conditionMessage(e)}")
+        echecs <<- c(echecs, paste0("FORDEAD post-processing failed: ",
+                                    conditionMessage(e)))
         NULL
       }
     )
@@ -766,26 +775,43 @@ run_fordead_dieback <- function(con,
         error = function(e) {
           cli::cli_alert_warning(
             "FORDEAD alert insertion failed: {conditionMessage(e)}")
+          echecs <<- c(echecs, paste0("FORDEAD alert insertion failed: ",
+                                      conditionMessage(e)))
           NA_integer_
         })
     }
     end_phase("persist")
 
     duration_sec <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
-    if (verbose) {
-      cli::cli_alert_success(
-        "FORDEAD diagnostic complete: {cli::qty(n_inserted)} {n_inserted} pixel alert{?s} persisted in {format_duration(duration_sec)}."
-      )
+    run_ok <- !length(echecs)
+    if (run_ok) {
+      if (verbose) {
+        cli::cli_alert_success(
+          "FORDEAD diagnostic complete: {cli::qty(n_inserted)} {n_inserted} pixel alert{?s} persisted in {format_duration(duration_sec)}."
+        )
+      }
+      emit(list(current           = "fordead:complete",
+                completed         = as.integer(total_phases),
+                total             = as.integer(total_phases),
+                n_alerts_inserted = as.integer(n_inserted),
+                duration_sec      = duration_sec))
+    } else {
+      if (verbose) {
+        cli::cli_alert_danger(
+          "FORDEAD pipeline failed: {paste(echecs, collapse = '; ')}")
+      }
+      emit(list(current       = "fordead:error",
+                phase_name    = current_phase_name,
+                error_message = paste(echecs, collapse = "; "),
+                duration_sec  = duration_sec))
     }
-    emit(list(current           = "fordead:complete",
-              completed         = as.integer(total_phases),
-              total             = as.integer(total_phases),
-              n_alerts_inserted = as.integer(n_inserted),
-              duration_sec      = duration_sec))
 
+    # Échec partiel : même forme de résultat (rasters persistés compris),
+    # statut "error" et message explicite.
     list(
-      status            = "success",
-      message           = NA_character_,
+      status            = if (run_ok) "success" else "error",
+      message           = if (run_ok) NA_character_ else
+                            paste(echecs, collapse = "; "),
       output_dir        = output_dir,
       zone_id           = zone_id,
       n_scenes          = nrow(scenes_df),
