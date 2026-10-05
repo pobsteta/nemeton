@@ -302,6 +302,10 @@ test_that("create_qfield_project still works as a deprecated alias", {
   skip_if_no_sf()
 
   pts <- make_sample_plots()
+  # Etat de session remis a zero (l'avertissement n'est emis qu'une fois).
+  st <- get(".qgis_export_state", envir = asNamespace("nemeton"))
+  st$qfield_deprecation_warned <- FALSE
+  withr::defer(st$qfield_deprecation_warned <- FALSE)
   withr::with_tempdir({
     expect_warning(
       qgz <- create_qfield_project(pts, output_dir = ".",
@@ -310,5 +314,9 @@ test_that("create_qfield_project still works as a deprecated alias", {
     )
     expect_true(file.exists(qgz))
     expect_match(qgz, "deprecated_alias\\.qgz$")
+    # Annonce « une fois » : le deuxieme appel n'avertit plus (audit 1.0).
+    expect_no_warning(
+      create_qfield_project(pts, output_dir = ".",
+                            project_name = "deprecated_alias2"))
   })
 })

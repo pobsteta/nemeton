@@ -73,7 +73,7 @@ open in QGIS Desktop and to push to QField via QFieldSync.
 
 `create_qfield_project()` is a deprecated alias kept for
 backwards compatibility. It forwards to [create_qgis_project()]
-and emits a one-shot deprecation warning. New code should call
+and emits a deprecation warning once per session. New code should call
 [create_qgis_project()] directly.
 }
 \examples{

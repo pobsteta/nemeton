@@ -527,11 +527,14 @@ create_qgis_project <- function(placettes,
 }
 
 
+# Etat de session du module (avertissement de depreciation deja emis).
+.qgis_export_state <- new.env(parent = emptyenv())
+
 #' @rdname create_qgis_project
 #' @description
 #' `create_qfield_project()` is a deprecated alias kept for
 #' backwards compatibility. It forwards to [create_qgis_project()]
-#' and emits a one-shot deprecation warning. New code should call
+#' and emits a deprecation warning once per session. New code should call
 #' [create_qgis_project()] directly.
 #'
 #' @export
@@ -544,7 +547,16 @@ create_qfield_project <- function(placettes,
                                   region = "BFC",
                                   lang = "fr",
                                   overwrite = TRUE) {
-  .Deprecated("create_qgis_project", package = "nemeton")
+  # Avertissement une fois par session, comme annonce : .Deprecated()
+  # avertissait a chaque appel (l'app l'appelle a chaque export) (audit 1.0).
+  if (!isTRUE(.qgis_export_state$qfield_deprecation_warned)) {
+    .qgis_export_state$qfield_deprecation_warned <- TRUE
+    warning(warningCondition(
+      paste0("'create_qfield_project' is deprecated.\n",
+             "Use 'create_qgis_project' instead.\n",
+             "See help(\"Deprecated\")"),
+      class = "deprecatedWarning", call = sys.call()))
+  }
   create_qgis_project(placettes      = placettes,
                       zone_etude     = zone_etude,
                       parcours_tsp   = parcours_tsp,
