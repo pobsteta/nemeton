@@ -389,6 +389,7 @@ reference:
     - normalize_indicator
     - create_composite_index
     - create_family_index
+    - aggregate_family_scores
     - invert_indicator
     - migrer_colonnes_l
 
@@ -486,6 +487,7 @@ reference:
     - build_biljou_soil
     - build_foret_ancienne_mask
     - build_index_stack
+    - build_ndvi_season_composite
     - build_knowledge_corpus
     - build_project_monitoring_zones
     - cec_to_fertility_score
@@ -655,6 +657,7 @@ reference:
     - eobs_bivariate_n
     - eobs_summer_series
     - eobs_monthly_climatology
+    - climate_ombrothermic_indices
     - eobs_trend_fit
     - build_safran_stations
     - meteoland_daily_grid
