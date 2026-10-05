@@ -309,6 +309,19 @@ msg_error <- function(key, ...) {
     indicateur_n2_continuite = "Forest continuity (N: Naturalness & Wilderness)",
     indicateur_n3_naturalite = "Wilderness composite index (N: Naturalness & Wilderness)",
 
+    # Indicateurs ajoutes apres 0.4.0 (libelles manquants, audit 1.0)
+    indicateur_b4_div_spectrale = "Spectral alpha diversity (B: Biodiversity/Vivant)",
+    indicateur_w4_vpd = "Under-canopy vapour pressure deficit (W: Water/Infiltr\u00e9e)",
+    indicateur_a3_microclimat = "Under-canopy microclimate (A: Air Quality/Vaporeuse)",
+    indicateur_a4_tamponnement = "Canopy thermal buffering (A: Air Quality/Vaporeuse)",
+    indicateur_a5_rafraichissement = "Urban cooling effect (A: Air Quality/Vaporeuse)",
+    indicateur_l3_het_spectrale = "Spectral heterogeneity (L: Landscape/Esth\u00e9tique)",
+    indicateur_t3_coupes_rases = "Clear-cut pressure (T: Temporal Dynamics/Nervur\u00e9e)",
+    indicateur_r4_abroutissement = "Browsing pressure (R: Risk & Resilience/Flexible)",
+    indicateur_r5_deperissement = "Forest dieback (R: Risk & Resilience/Flexible)",
+    indicateur_r6_sensibilite = "Microclimatic sensitivity (R: Risk & Resilience/Flexible)",
+    indicateur_r7_gel = "Late frost risk (R: Risk & Resilience/Flexible)",
+
     # v0.4.0 - Advanced Analysis (US7)
     # Pareto analysis
     msg_pareto_computing = "Computing Pareto optimality for %d parcels across %d objectives...",
@@ -408,7 +421,7 @@ msg_error <- function(key, ...) {
     demo_install_first = "Installez d'abord le package : devtools::install()",
     demo_dir_not_found = "R\u00e9pertoire de donn\u00e9es d\u00e9mo introuvable : %s",
     demo_reinstall = "R\u00e9installez le package pour inclure les donn\u00e9es d\u00e9mo",
-    demo_files_missing = "Fichier%s de donn\u00e9es d\u00e9mo manquant%s : %s",
+    demo_files_missing = "Fichier%s de donn\u00e9es d\u00e9mo manquant(s) : %s",
 
     # v0.2.0 - Analyse temporelle
     temporal_created = "Dataset temporel cr\u00e9\u00e9 : %d p\u00e9riodes, %d unit\u00e9s",
@@ -527,6 +540,19 @@ msg_error <- function(key, ...) {
     indicateur_n1_distance = "Distance infrastructures (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
     indicateur_n2_continuite = "Continuit\u00e9 foresti\u00e8re (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
     indicateur_n3_naturalite = "Indice composite wilderness (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
+
+    # Indicateurs ajoutes apres 0.4.0 (libelles manquants, audit 1.0)
+    indicateur_b4_div_spectrale = "Diversit\u00e9 spectrale alpha (B: Biodiversit\u00e9/Vivant)",
+    indicateur_w4_vpd = "D\u00e9ficit de pression de vapeur sous couvert (W: Water/Infiltr\u00e9e)",
+    indicateur_a3_microclimat = "Microclimat sous couvert (A: Air/Vaporeuse)",
+    indicateur_a4_tamponnement = "Tamponnement thermique de la canop\u00e9e (A: Air/Vaporeuse)",
+    indicateur_a5_rafraichissement = "Rafra\u00eechissement urbain (A: Air/Vaporeuse)",
+    indicateur_l3_het_spectrale = "H\u00e9t\u00e9rog\u00e9n\u00e9it\u00e9 spectrale (L: Landscape/Esth\u00e9tique)",
+    indicateur_t3_coupes_rases = "Pression de coupes rases (T: Trame/Nervur\u00e9e)",
+    indicateur_r4_abroutissement = "Pression d'abroutissement (R: R\u00e9silience/Flexible)",
+    indicateur_r5_deperissement = "D\u00e9p\u00e9rissement (R: R\u00e9silience/Flexible)",
+    indicateur_r6_sensibilite = "Sensibilit\u00e9 microclimatique (R: R\u00e9silience/Flexible)",
+    indicateur_r7_gel = "Risque de gel tardif (R: R\u00e9silience/Flexible)",
 
     # v0.4.0 - Analyse Avanc\u00e9e (US7)
     # Analyse Pareto
