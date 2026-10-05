@@ -14,6 +14,8 @@
 #' @param suffix Character. Suffix to add to normalized column names. Default "_norm".
 #' @param keep_original Logical. Keep original indicator columns? Default TRUE.
 #' @param na.rm Logical. Remove NA values before normalization? Default TRUE.
+#'   With `FALSE`, a single NA in the reference makes the bounds unknown and
+#'   the whole normalized column is NA.
 #' @param reference_data Optional data.frame with reference values for normalization.
 #'   Useful for normalizing new data using parameters from a reference dataset.
 #' @param by_family Deprecated, ignored with a warning since 0.208.0. It was
@@ -113,11 +115,19 @@ normalize_indicators <- function(data,
       family_index_indicators
     ))
 
+    # Une colonne déjà normalisée (`C1_norm`, `famille_carbone_norm`) matche
+    # aussi les motifs ci-dessus : sans ce filtre, elle était renormalisée en
+    # `C1_norm_norm` (audit 1.0).
+    deja_norm <- endsWith(indicators, "_norm")
+    if (nzchar(suffix)) deja_norm <- deja_norm | endsWith(indicators, suffix)
+    indicators <- indicators[!deja_norm]
+
     if (length(indicators) == 0) {
-      msg_error("viz_no_indicators")
-      cli::cli_inform("i" = msg("viz_specify_indicators"))
-      cli::cli_inform(">" = "Example: indicators = c('carbon', 'water') or c('C1', 'W1')")
-      cli::cli_abort("")
+      cli::cli_abort(c(
+        msg("viz_no_indicators"),
+        "i" = msg("viz_specify_indicators"),
+        ">" = "Example: {.code indicators = c('carbon', 'water')} or {.code c('C1', 'W1')}"
+      ))
     }
 
     n_ind <- length(indicators)
@@ -204,6 +214,12 @@ normalize_indicators <- function(data,
 normalize_vector <- function(x, method, reference = x, na.rm = TRUE) {
   # Check if all values are NA
   if (all(is.na(reference))) {
+    return(rep(NA_real_, length(x)))
+  }
+  # na.rm = FALSE : un NA dans la référence rend les bornes inconnues. On
+  # renvoie NA plutôt que le 50 (min-max) ou le 0 (z-score) de la branche
+  # « valeurs identiques », qui inventait un score (audit 1.0).
+  if (!isTRUE(na.rm) && anyNA(reference)) {
     return(rep(NA_real_, length(x)))
   }
 
@@ -601,7 +617,9 @@ invert_indicator <- function(data,
 #' Converts raw indicator values to a common 0-100 scale using
 #' indicator-specific reference maxima and special handling rules.
 #'
-#' @param indicator Character. Indicator name (NMT convention).
+#' @param indicator Character string. Indicator name (NMT convention, long
+#'   name or short code). Anything else than a single non-missing string is
+#'   an error.
 #' @param values Numeric vector. Raw indicator values.
 #' @param statut Optional character vector (one value per element of
 #'   `values`, or one for all) telling what a value measures when an
@@ -614,6 +632,13 @@ invert_indicator <- function(data,
 #'
 #' @export
 normalize_indicator <- function(indicator, values, statut = NULL) {
+  # Un nom numérique passait dans `switch()` comme un INDEX (3 -> 3e borne,
+  # soit W1 = 50) : on exige une chaîne unique non NA (audit 1.0).
+  if (!is.character(indicator) || length(indicator) != 1L ||
+      is.na(indicator) || !nzchar(indicator)) {
+    cli::cli_abort(
+      "{.arg indicator} must be a single non-missing character string.")
+  }
   # Les deux écritures (courte et longue) suivent la même règle.
   indicator <- .normalize_resolve_alias(indicator)
 

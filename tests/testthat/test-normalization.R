@@ -2004,3 +2004,47 @@ test_that("indicateur_n3_naturalite lit le L1 BRUT, pas le normalisé", {
   # Et la colonne source n'a pas bougé.
   expect_equal(out$L1, 90)
 })
+
+# --- Audit 1.0, constats mineurs du socle -----------------------------------
+
+test_that("normalize_vector : avec na.rm = FALSE, un NA rend NA (pas 50 ni 0)", {
+  # Avant : min(..., na.rm = FALSE) valait NA et la branche « valeurs
+  # identiques » renvoyait 50 pour TOUT le vecteur (0 en z-score).
+  x <- c(10, NA, 30)
+  expect_true(all(is.na(
+    suppressWarnings(nemeton:::normalize_vector(x, "minmax", na.rm = FALSE))
+  )))
+  expect_true(all(is.na(
+    suppressWarnings(nemeton:::normalize_vector(x, "zscore", na.rm = FALSE))
+  )))
+  expect_true(all(is.na(
+    nemeton:::normalize_vector(x, "quantile", na.rm = FALSE)
+  )))
+  # na.rm = TRUE inchangé
+  expect_equal(nemeton:::normalize_vector(x, "minmax"), c(0, NA, 100))
+})
+
+test_that("normalize_indicators : l'auto-détection ignore les colonnes déjà normalisées", {
+  units <- create_test_units(n_features = 3)
+  units$C1 <- c(10, 20, 30)
+  units$C1_norm <- c(0, 50, 100)
+  units$famille_carbone <- c(10, 20, 30)
+  units$famille_carbone_norm <- c(0, 50, 100)
+  result <- suppressMessages(normalize_indicators(units, method = "minmax"))
+  expect_false("C1_norm_norm" %in% names(result))
+  expect_false("famille_carbone_norm_norm" %in% names(result))
+  expect_true("C1_norm" %in% names(result))
+})
+
+test_that("normalize_indicators : erreur explicite quand rien n'est détecté", {
+  test_data <- data.frame(id = 1:3, score = c(10, 20, 30))
+  err <- expect_error(normalize_indicators(test_data))
+  expect_match(conditionMessage(err), "indicators =", fixed = TRUE)
+})
+
+test_that("normalize_indicator valide `indicator` (une chaîne non NA)", {
+  expect_error(normalize_indicator(3, 1:3), "indicator")
+  expect_error(normalize_indicator(NA_character_, 1:3), "indicator")
+  expect_error(normalize_indicator(c("a", "b"), 1:3), "indicator")
+  expect_error(normalize_indicator(NULL, 1:3), "indicator")
+})
