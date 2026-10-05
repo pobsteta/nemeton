@@ -23,6 +23,15 @@
   very_high = 20L
 )
 
+# Nombre de workers par défaut de smart_map() : min(4, coeurs - 1), au moins 1.
+# parallel::detectCores() peut renvoyer NA (plateforme non reconnue) : sans ce
+# garde-fou, `max(1L, NA)` donnait NA workers (audit 1.0).
+.smart_map_default_workers <- function() {
+  n_cores <- suppressWarnings(as.integer(parallel::detectCores()))
+  if (length(n_cores) != 1L || is.na(n_cores)) return(1L)
+  as.integer(min(4L, max(1L, n_cores - 1L)))
+}
+
 #' Smart Map with Adaptive Parallelization
 #'
 #' Applies a function over elements with automatic decision between sequential
@@ -46,7 +55,8 @@
 #' @param threshold Integer or NULL. Explicit minimum number of elements to
 #'   trigger parallel execution. If NULL (default), uses value from `complexity`.
 #' @param workers Integer. Number of parallel workers. Default is
-#'   `min(4, parallel::detectCores() - 1)`.
+#'   `min(4, parallel::detectCores() - 1)`, at least 1 (1 when the number of
+#'   cores cannot be detected).
 #' @param progress Logical. Show progress bar? Default TRUE for n > 50.
 #' @param .type Character. Return type: "list" (default), "dbl", "chr", "lgl", "int".
 #'   Determines the output format and uses appropriate map variant.
@@ -104,7 +114,7 @@ smart_map <- function(x,
 
   # Default workers
   if (is.null(workers)) {
-    workers <- min(4L, max(1L, parallel::detectCores() - 1L))
+    workers <- .smart_map_default_workers()
   }
 
   # Default progress (show for n > 50)
@@ -1350,24 +1360,23 @@ map_essence_to_species <- function(essence) {
 #' The environment variable `NEMETON_CACHE_DIR`, when set, takes precedence
 #' (used by the test suite to stay out of the user's real cache).
 #'
-#' @return Character. Path to the global cache directory.
+#' The function only computes the path: it never creates the directory.
+#' Callers create the sub-directory they need when they first write to it.
+#'
+#' @return Character. Path to the global cache directory (which may not
+#'   exist yet).
 #' @export
 get_global_cache_dir <- function() {
+  # Pure fonction de chemin : aucun dossier n'est créé ici (audit 1.0, sécu).
+  # Chaque appelant crée son sous-dossier au moment d'y écrire.
   forced <- Sys.getenv("NEMETON_CACHE_DIR", "")
-  if (nzchar(forced)) {
-    if (!dir.exists(forced)) dir.create(forced, recursive = TRUE)
-    return(forced)
-  }
+  if (nzchar(forced)) return(forced)
   if (requireNamespace("rappdirs", quietly = TRUE)) {
     base_dir <- rappdirs::user_data_dir("nemeton", "nemeton")
   } else {
     base_dir <- file.path(Sys.getenv("HOME"), ".nemeton")
   }
-  cache_dir <- file.path(base_dir, "cache")
-  if (!dir.exists(cache_dir)) {
-    dir.create(cache_dir, recursive = TRUE)
-  }
-  cache_dir
+  file.path(base_dir, "cache")
 }
 
 

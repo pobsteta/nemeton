@@ -250,15 +250,15 @@ test_that("indicateur_b1_protection returns 0 when source='local' and no protect
   expect_true(all(is.na(result$B1)))
 })
 
-test_that("indicateur_b1_protection handles WFS source with fallback", {
+test_that("indicateur_b1_protection : source = 'wfs' sans effet, rend NA", {
   skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
-  # WFS source without protected_areas should warn but work
-  expect_warning(
-    result <- indicateur_b1_protection(units, source = "wfs"),
-    "WFS"
+  # Aucune requete INPN n'est implementee : plus de faux « fetching » ni de
+  # « repli sur les donnees locales » (audit 1.0, B1 code mort).
+  expect_no_warning(
+    result <- suppressMessages(indicateur_b1_protection(units, source = "wfs"))
   )
 
   expect_s3_class(result, "sf")

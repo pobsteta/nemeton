@@ -59,6 +59,18 @@ firewall rejection, OWS exception, unknown territory) so the caller can fall
 back to cadastral selection. A 0-row \pkg{sf} is returned when the AOI simply
 holds no public forest.
 }
+\section{Transport security}{
+
+The ONF WFS is only served over \strong{plain HTTP}
+(\verb{https://ws.carmencarto.fr} does not answer, checked 2026-08-18): the
+request and the response travel unencrypted and unauthenticated. No
+credential is sent and the data are public, but the parcels cannot be
+guaranteed against tampering in transit. A response that is an HTML page, an OWS
+exception report or unreadable GML is rejected (\code{NULL}). Treat the layer as
+a NDP 0 seed to be checked against the management plan, not as an
+authoritative boundary.
+}
+
 \seealso{
 \code{\link{load_foret_ancienne_source}}, \code{\link{get_layer_service}}
 }

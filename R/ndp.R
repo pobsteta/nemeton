@@ -271,8 +271,14 @@ detect_ndp <- function(data) {
   # Heuristic:
   #   * >=1 placette recorded        -> at least NDP 2 (Exploration)
   #   * >=10 trees per plot on avg   -> NDP 3 (Diagnostic)
-  field_plots <- as.integer(attr(data, "field_plots_count") %||% 0L)
-  field_trees <- as.integer(attr(data, "field_trees_count") %||% 0L)
+  # Un comptage NA (ou non numérique) vaut « inconnu » : aucun palier n'est
+  # accordé sur sa base, au lieu de faire planter le `if` (audit 1.0).
+  .count_attr <- function(x) {
+    n <- suppressWarnings(as.integer(x %||% 0L))[1]
+    if (is.na(n)) 0L else n
+  }
+  field_plots <- .count_attr(attr(data, "field_plots_count"))
+  field_trees <- .count_attr(attr(data, "field_trees_count"))
   if (field_plots >= 1L) {
     trees_per_plot <- field_trees / max(1L, field_plots)
     field_level <- if (trees_per_plot >= 10) 3L else 2L
@@ -293,8 +299,7 @@ detect_ndp <- function(data) {
     sources <- c(sources, "scanner_terrestre")
   }
   if (isTRUE(attr(data, "has_modele_3d"))) sources <- c(sources, "modele_3d")
-  n_plots_attr <- attr(data, "field_plots_count")
-  if (!is.null(n_plots_attr) && as.integer(n_plots_attr) > 0L) {
+  if (field_plots > 0L) {
     sources <- c(sources, "field_qfield")
   }
 
@@ -659,7 +664,9 @@ compute_general_index <- function(family_scores, ndp = 0L) {
 #'
 #' @param family_scores Named numeric vector of family scores (0-100).
 #' @param ndp_per_indicator Named integer vector mapping family codes
-#'   to NDP levels (0-4). Names must match \code{family_scores} names.
+#'   to NDP levels (0-4). Names must match \code{family_scores} names;
+#'   families present in only one of the two vectors are dropped with a
+#'   warning, and unnamed inputs give an NA score with a warning.
 #'
 #' @return A list with:
 #'   \describe{
@@ -695,8 +702,22 @@ compute_general_index_mixed <- function(family_scores, ndp_per_indicator) {
     names(ndp_per_indicator) <- ndp_nms
   }
 
-  # Garder seulement les familles presentes dans les deux vecteurs
+  # Garder seulement les familles presentes dans les deux vecteurs. Les
+  # familles sans correspondance etaient ecartees en silence (jusqu'a un NA
+  # quand aucun nom ne concordait) : on le signale (audit 1.0).
+  if (is.null(names(family_scores)) || is.null(names(ndp_per_indicator))) {
+    cli::cli_warn(c(
+      "{.arg family_scores} and {.arg ndp_per_indicator} must both be named by family.",
+      i = "The general index is NA."))
+  }
   common <- intersect(names(family_scores), names(ndp_per_indicator))
+  unmatched <- setdiff(union(names(family_scores), names(ndp_per_indicator)),
+                       common)
+  if (length(unmatched) > 0 && !is.null(names(family_scores)) &&
+      !is.null(names(ndp_per_indicator))) {
+    cli::cli_warn(c(
+      "Families without a match in both {.arg family_scores} and {.arg ndp_per_indicator} are ignored: {.val {unmatched}}."))
+  }
   if (length(common) == 0) {
     return(list(
       score = NA_real_,

@@ -10,7 +10,9 @@ compute_general_index_mixed(family_scores, ndp_per_indicator)
 \item{family_scores}{Named numeric vector of family scores (0-100).}
 
 \item{ndp_per_indicator}{Named integer vector mapping family codes
-to NDP levels (0-4). Names must match \code{family_scores} names.}
+to NDP levels (0-4). Names must match \code{family_scores} names;
+families present in only one of the two vectors are dropped with a
+warning, and unnamed inputs give an NA score with a warning.}
 }
 \value{
 A list with:

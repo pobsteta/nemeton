@@ -20,18 +20,20 @@ list_alerts(
 \item{classes}{Character vector of `confidence_class` values to
 include. Default `c("3-forte", "4-sol-nu")`. Use `NULL` to
 include everything (including alerts without a class, i.e. the
-rolling-window ones).}
+rolling-window ones). An empty vector keeps only the alerts
+without a class.}
 
 \item{validation_status}{Character vector or `NULL`. Filter on
 `alert.validation_status`. `NULL` (default) returns every
-status.}
+status; an empty vector matches no alert.}
 
 \item{period}{A length-2 Date / character vector or `NULL`.
 Filter on `trigger_date`. `NULL` (default) returns every date.}
 }
 \value{
 An sf POINT layer (CRS WGS84) ready to be drawn on a
-  leaflet map. Empty sf when no alert matches.
+  leaflet map. Empty sf when no alert matches. `trigger_date` is a
+`Date` and `validated_at` a UTC `POSIXct` on both backends.
 }
 \description{
 Default behaviour applies garde-fou G1: returns only the

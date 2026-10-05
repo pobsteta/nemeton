@@ -427,16 +427,13 @@ extract_h_dom <- function(chm, units, percentile = 0.9,
 
   units_proj <- sf::st_transform(units, terra::crs(chm))
 
-  if (requireNamespace("exactextractr", quietly = TRUE)) {
-    vals <- exactextractr::exact_extract(
-      chm, units_proj, progress = FALSE,
-      include_cell = FALSE
-    )
-  } else {
-    vals <- terra::extract(chm, terra::vect(units_proj),
-                           touches = TRUE)
-    vals <- split(vals[, 2], vals[, 1])
-  }
+  # exactextractr est en Imports : l'ancienne branche terra::extract etait
+  # morte, et fausse (split() perdait les unites sans pixel, d'ou un vecteur
+  # plus court que `units`).
+  vals <- exactextractr::exact_extract(
+    chm, units_proj, progress = FALSE,
+    include_cell = FALSE
+  )
 
   vapply(vals, function(v) {
     x <- if (is.data.frame(v)) v$value else v

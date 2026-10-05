@@ -59,7 +59,9 @@ supplied): the same, corrected by the national model coefficients for the
 gap between the domain's covariates and those of its sylvoecoregions.
 Validated against the inventory on grid cells: 19 to 35 percent lower error
 than \code{"ser"} for \code{"pv"}, but no gain for \code{"pg"}, which
-therefore keeps \code{"ser"}.
+therefore keeps \code{"ser"}. A domain whose covariates are missing or NA
+falls back to \code{"ser"} (with its own \code{A(S)}), with a warning;
+\code{predicteur} says which one was used.
 }
 }
 \section{Limits to state alongside the figures}{

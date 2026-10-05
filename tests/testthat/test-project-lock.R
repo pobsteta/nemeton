@@ -88,6 +88,46 @@ test_that("a second holder is refused while the lock is fresh", {
   expect_equal(r$holder_label, "Alice")
 })
 
+test_that("SQLite : acquisition concurrente -> ok = FALSE, pas SQLITE_BUSY (audit 1.0)", {
+  skip_on_cran()
+  skip_if_not_installed("callr")
+  skip_if_not_installed("RSQLite")
+  dir  <- withr::local_tempdir()
+  path <- file.path(dir, "lock.sqlite")
+  flag <- file.path(dir, "ecrivain_pret")
+  con <- new_lock_db(path); withr::defer(DBI::dbDisconnect(con))
+  invisible(DBI::dbGetQuery(con, "PRAGMA journal_mode = WAL"))
+  invisible(DBI::dbGetQuery(con, "PRAGMA busy_timeout = 10000"))
+
+  # Un autre processus prend le verrou d'écriture, insère « bob », signale
+  # qu'il est prêt, attend puis valide : l'acquisition d'« alice » arrive
+  # pendant sa transaction.
+  bg <- callr::r_bg(function(path, flag) {
+    con <- DBI::dbConnect(RSQLite::SQLite(), path)
+    DBI::dbGetQuery(con, "PRAGMA busy_timeout = 10000")
+    DBI::dbExecute(con, "BEGIN IMMEDIATE")
+    DBI::dbExecute(con, paste(
+      "INSERT INTO project_lock (project_id, holder_id, holder_label)",
+      "VALUES ('proj1', 'bob@x', 'Bob')"))
+    file.create(flag)
+    Sys.sleep(1.5)
+    DBI::dbExecute(con, "COMMIT")
+    DBI::dbDisconnect(con)
+    TRUE
+  }, args = list(path = path, flag = flag))
+  withr::defer(bg$kill())
+  t0 <- Sys.time()
+  while (!file.exists(flag) && difftime(Sys.time(), t0, units = "secs") < 20) {
+    Sys.sleep(0.05)
+  }
+  skip_if_not(file.exists(flag), "background writer did not start")
+
+  r <- project_lock_acquire(con, "proj1", "alice@x", "Alice")
+  expect_false(r$ok)
+  expect_equal(r$holder_id, "bob@x")
+  bg$wait(10000)
+})
+
 test_that("re-acquiring one's own lock is re-entrant and refreshes it", {
   con <- new_lock_db(); withr::defer(DBI::dbDisconnect(con))
   a <- project_lock_acquire(con, "proj1", "alice@x", "Alice")

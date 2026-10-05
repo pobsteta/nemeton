@@ -36,9 +36,10 @@ merges neighbours.}
 
 \item{hmin}{Minimum apex height, in metres. Below it, no tree is located.}
 
-\item{algorithme}{\code{"dalponte"} (default), \code{"silva"} or \code{"watershed"}. The
-first two grow regions from located apexes; \code{"watershed"} ignores them and
-floods the inverted surface.}
+\item{algorithme}{\code{"dalponte"} (default), \code{"silva"}, \code{"watershed"} or
+\code{"lsms"}. The first two grow regions from located apexes; \code{"watershed"}
+ignores them and floods the inverted surface; \code{"lsms"} segments the
+orthophoto \code{image} with the OTB Large-Scale Mean-Shift.}
 
 \item{emprise}{How \code{aoi} is honoured. \code{"intersecte"} (default) segments on
 the AOI grown by \code{marge_m}, then keeps \strong{whole} every crown that meets the

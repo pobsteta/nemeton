@@ -17,7 +17,8 @@ indicateur_n2_continuite(
 \arguments{
 \item{units}{sf object (POLYGON) of spatial units to assess}
 
-\item{bdforet}{sf object. Current forest cover (BD Foret V2). NULL = default score 50.}
+\item{bdforet}{sf object. Current forest cover (BD Foret V2). NULL together
+with a NULL \code{foret_ancienne} gives N2 = NA.}
 
 \item{foret_ancienne}{sf object. Historical forest cover. A single-epoch layer
 (e.g. état-major ~1850) or a \strong{tiered} layer from

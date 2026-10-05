@@ -392,14 +392,12 @@ test_that("calculate_change_rate warns when period names are not years and no da
   # Remove auto-generated dates (period names aren't year-like so dates=NULL)
   temporal$metadata$dates <- NULL
 
-  # Should warn about assuming 1 year
+  # Duree inconnue : avertissement et taux NA (plus de « 1 an » invente)
   expect_warning(
     rates <- calculate_change_rate(temporal, indicators = "C1", type = "absolute"),
-    "Cannot determine time difference|1 year"
+    "Cannot determine time difference"
   )
-
-  # With time_diff=1, rate = (60-50)/1 = 10
-  expect_equal(rates$C1_rate_abs[1], 10, tolerance = 0.01)
+  expect_true(all(is.na(rates$C1_rate_abs)))
 })
 
 # --- calculate_change_rate: relative-only type ---
@@ -1184,5 +1182,36 @@ test_that("calculate_change_rate refuses a positional alignment of unequal perio
   expect_error(
     suppressMessages(calculate_change_rate(temporal, indicators = "C1")),
     "Cannot\\s+align"
+  )
+})
+
+test_that("nemeton_temporal nomme des periods non nommées (audit 1.0)", {
+  # Avant : names(periods) = NULL donnait la même colonne `in_` pour toutes
+  # les périodes (écrasée), et calculate_change_rate() n'avait aucun nom.
+  data(massif_demo_units)
+  u1 <- massif_demo_units[1:3, ]
+  u1$C1 <- c(50, 60, 70)
+  u2 <- u1[c(1, 2), ]
+  u2$C1 <- c(55, 65)
+  temporal <- suppressWarnings(suppressMessages(
+    nemeton_temporal(periods = list(u1, u2), dates = c("2015-01-01", "2020-01-01"))
+  ))
+  expect_identical(names(temporal$periods), c("Period1", "Period2"))
+  al <- temporal$metadata$alignment
+  expect_true(all(c("in_Period1", "in_Period2") %in% names(al)))
+  expect_equal(temporal$metadata$n_complete, 2L)
+  rates <- suppressMessages(
+    calculate_change_rate(temporal, indicators = "C1", type = "absolute")
+  )
+  expect_s3_class(rates, "sf")
+
+  # Des labels fournis servent de noms ; des noms dupliqués sont refusés.
+  t2 <- suppressWarnings(suppressMessages(
+    nemeton_temporal(periods = list(u1, u2), labels = c("avant", "apres"))
+  ))
+  expect_identical(names(t2$periods), c("avant", "apres"))
+  expect_error(
+    nemeton_temporal(periods = list(a = u1, a = u2)),
+    "unique"
   )
 })

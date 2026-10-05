@@ -13,7 +13,8 @@ create_monitoring_zone(con, zone_name, zone_polygon, project_uuid = NULL)
 `project_uuid` since migration 0005).}
 
 \item{zone_polygon}{An `sf`/`sfc` object carrying the zone polygon (any
-CRS; reprojected to 4326 on insert).}
+CRS; reprojected to 4326 on insert). Several features are unioned
+into one (MULTI)POLYGON.}
 
 \item{project_uuid}{Optional character scalar (or `NULL`, default).
 Opaque project identifier; uniqueness is on `(project_uuid, name)`.}

@@ -862,3 +862,22 @@ test_that("plot_correlation_matrix with color method", {
 test_that("plot_correlation_matrix errors on non-matrix", {
   expect_error(plot_correlation_matrix("not_a_matrix"), "matrix")
 })
+
+test_that("plot_correlation_matrix garde le nom d'une colonne sans code famille (audit 1.0)", {
+  # get_famille_code() rend NA (jamais NULL) : `%||%` ne retombait pas et la
+  # heatmap affichait « NA ».
+  m <- matrix(c(1, 0.3, 0.3, 1), 2,
+              dimnames = list(c("famille_carbone", "mon_score"),
+                              c("famille_carbone", "mon_score")))
+  p <- plot_correlation_matrix(m)
+  expect_setequal(unique(as.character(p$data$Family1)), c("C", "mon_score"))
+  expect_false(any(is.na(p$data$Family1) | p$data$Family1 == "NA"))
+})
+
+test_that("plot_correlation_matrix : palette viridis sans viridisLite -> erreur claire (audit 1.0)", {
+  m <- matrix(c(1, 0.3, 0.3, 1), 2,
+              dimnames = list(c("famille_carbone", "famille_eau"),
+                              c("famille_carbone", "famille_eau")))
+  local_mocked_bindings(.has_viridislite = function() FALSE)
+  expect_error(plot_correlation_matrix(m, palette = "viridis"), "viridisLite")
+})

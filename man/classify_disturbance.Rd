@@ -38,7 +38,9 @@ flag):
   \item `"recent_event"` — a lone FAST drop without any diagnostic
     echo. Recent perturbation, no confirmed dieback.
   \item `NA_character_` — a FAST drop already paired with a
-    diagnostic alert (the diagnostic row carries the verdict).
+    diagnostic alert (the diagnostic row carries the verdict), or an
+    alert whose `trigger_date` is `NA` (no verdict can be drawn; its
+    `method_overlap` is `NA` too, and it pairs with no other alert).
 }
 
 `method_overlap` is `TRUE` on a diagnostic alert when both FORDEAD

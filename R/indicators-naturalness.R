@@ -18,14 +18,19 @@ NULL
 #' to 0-100 and combined with weights (40% roads, 35% buildings, 25% urban).
 #'
 #' @param units sf object (POLYGON) of spatial units to assess
-#' @param roads sf object (LINESTRING/MULTILINESTRING). Road network (BD TOPO). NULL = default 1000m.
-#' @param buildings sf object (POLYGON/MULTIPOLYGON). Buildings. NULL = default 500m.
+#' @param roads sf object (LINESTRING/MULTILINESTRING). Road network (BD TOPO).
+#'   NULL (and none in `layers`) gives N1 = NA.
+#' @param buildings sf object (POLYGON/MULTIPOLYGON). Buildings. NULL (and none
+#'   in `layers`) gives N1 = NA.
 #' @param layers nemeton_layers object. Used to resolve roads/buildings if not provided directly.
 #' @param column_name Character. Name for output column. Default "N1".
 #' @param lang Character. Currently unused (messages are in English); kept for
 #'   backward compatibility. Default "en".
 #'
-#' @return sf object with added column N1 (score 0-100, 100 = very remote)
+#' @return sf object with added column N1 (score 0-100, 100 = very remote).
+#'   Each distance is scored `min(100, d / 20)` (2 km or more = 100). The
+#'   urban term has no data layer: its distance is a constant 2000 m, so it
+#'   always adds 25 points and N1 ranges over 25-100.
 #'
 #' @export
 indicateur_n1_distance <- function(units,
@@ -97,7 +102,8 @@ indicateur_n1_distance <- function(units,
 #' - No forest: score = 15
 #'
 #' @param units sf object (POLYGON) of spatial units to assess
-#' @param bdforet sf object. Current forest cover (BD Foret V2). NULL = default score 50.
+#' @param bdforet sf object. Current forest cover (BD Foret V2). NULL together
+#'   with a NULL `foret_ancienne` gives N2 = NA.
 #' @param foret_ancienne sf object. Historical forest cover. A single-epoch layer
 #'   (e.g. état-major ~1850) or a **tiered** layer from
 #'   [build_foret_ancienne_mask()] with an `anciennete` column (multi-epoch
@@ -225,7 +231,7 @@ indicateur_n2_continuite <- function(units,
 #'
 #' Calculates a composite naturalness index following tuto 04:
 #' N3 = 0.35 * N1 + 0.35 * N2 + 0.15 * (100 - L1) + 0.15 * B3
-#' Falls back to 50 when L1 or B3 are unavailable.
+#' NA when any of N1, N2, L1 or B3 is unavailable.
 #'
 #' @param units sf object with N1 and N2 columns (optionally L1, B3)
 #' @param column_name Character. Name for output column. Default "N3".

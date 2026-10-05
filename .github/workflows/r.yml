@@ -371,7 +371,8 @@ jobs:
         # sur `main`, donc la release (release.yml attend son succès). La
         # couverture est calculée ci-dessus ; son envoi ne doit rien bloquer.
         continue-on-error: true
-        uses: codecov/codecov-action@v4
+        # Épinglé par SHA (action tierce qui reçoit CODECOV_TOKEN) : v4.6.0.
+        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
         with:
           files: ./cobertura.xml
           fail_ci_if_error: false

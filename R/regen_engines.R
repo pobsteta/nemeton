@@ -1118,6 +1118,10 @@ pai_depuis_nuage <- function(dossier_las = NULL, grille = NULL, res = 2,
   res_arg <- if (is.na(fenetre)) res else c(res, fenetre)
   f_sol <- tempfile(fileext = ".tif")
   f_veg <- tempfile(fileext = ".tif")
+  # Comptages intermédiaires supprimés en sortie (audit 1.0) : le PAI
+  # renvoyé est recalculé (resample/mask) et ne pointe plus sur ces fichiers.
+  on.exit(unlink(c(f_sol, f_veg, paste0(c(f_sol, f_veg), ".aux.xml"))),
+          add = TRUE)
 
   # Clip spatial de la lecture à l'emprise de travail (parcelle si fournie, sinon
   # la grille — déjà tamponnée à l'AOI par l'appelant), marge = quelques cellules

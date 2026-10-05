@@ -12,7 +12,9 @@ NULL
 #' a temporal dataset structure for longitudinal analysis.
 #'
 #' @param periods Named list of nemeton_units objects, one per period.
-#'   Names should be period labels (e.g., "2015", "2020").
+#'   Names should be period labels (e.g., "2015", "2020") and must be unique.
+#'   Unnamed periods are named after `labels` when usable, otherwise
+#'   "Period1", "Period2", ...
 #' @param dates Character vector of ISO dates corresponding to each period
 #'   (e.g., c("2015-01-01", "2020-01-01")). Optional.
 #' @param labels Character vector of descriptive labels for periods
@@ -57,6 +59,24 @@ nemeton_temporal <- function(periods,
   periods_are_sf <- vapply(periods, function(x) inherits(x, "sf"), logical(1))
   if (!all(periods_are_sf)) {
     stop("All periods must be sf objects", call. = FALSE)
+  }
+
+  # Noms de periode : indispensables (colonnes `in_<nom>` de l'alignement,
+  # selection par calculate_change_rate()). Des periods non nommees
+  # ecrasaient toutes la meme colonne `in_` (audit 1.0) : on les nomme
+  # d'apres `labels` s'il convient, sinon Period1, Period2...
+  p_names <- names(periods)
+  if (is.null(p_names) || any(is.na(p_names) | !nzchar(p_names))) {
+    p_names <- if (!is.null(labels) && length(labels) == length(periods) &&
+                     !anyDuplicated(labels) && all(nzchar(labels))) {
+      as.character(labels)
+    } else {
+      paste0("Period", seq_along(periods))
+    }
+    names(periods) <- p_names
+  }
+  if (anyDuplicated(p_names)) {
+    stop("Period names must be unique", call. = FALSE)
   }
 
   # Colonne identifiant : explicite, sinon nemeton_id / parcel_id si presente
@@ -221,11 +241,19 @@ calculate_change_rate <- function(temporal,
     )) / 365.25 # Years
   } else {
     # Try to parse years from period names
-    year_start <- as.numeric(period_start)
-    year_end <- as.numeric(period_end)
+    # Noms non numeriques attendus ici : la coercition en NA est le test.
+    year_start <- suppressWarnings(as.numeric(period_start))
+    year_end <- suppressWarnings(as.numeric(period_end))
     if (is.na(year_start) || is.na(year_end)) {
-      time_diff <- 1 # Default to 1 year if can't determine
-      warning("Cannot determine time difference, assuming 1 year", call. = FALSE)
+      # Duree inconnue : des taux NA plutot qu'un « 1 an » invente, qui
+      # rendait un taux annuel faux d'un facteur egal a la vraie duree.
+      time_diff <- NA_real_
+      warning(
+        "Cannot determine time difference between periods (no dates, ",
+        "non-numeric period names): change rates are NA. Supply `dates` to ",
+        "nemeton_temporal().",
+        call. = FALSE
+      )
     } else {
       time_diff <- year_end - year_start
     }

@@ -11,7 +11,12 @@
 #'   number of clusters is determined automatically using silhouette analysis.
 #' @param method Character string specifying clustering method: \code{"kmeans"}
 #'   (default) or \code{"hierarchical"} (Ward's linkage)
-#' @param max_k Maximum number of clusters to test when k is NULL (default: 10)
+#' @param max_k Maximum number of clusters to test when k is NULL (default: 10).
+#'   Automatic k needs \code{max_k >= 2} and at least 3 units.
+#' @param seed Optional integer. When given, the random initialisation of
+#'   k-means is made reproducible with a local seed; the caller's random
+#'   number stream is left untouched. \code{NULL} (default) uses the current
+#'   RNG state.
 #'
 #' @return The input data with an additional \code{cluster} integer column
 #'   indicating cluster assignment. The result also has attributes:
@@ -94,7 +99,12 @@ cluster_parcels <- function(data,
                             families,
                             k = NULL,
                             method = "kmeans",
-                            max_k = 10) {
+                            max_k = 10,
+                            seed = NULL) {
+  # Graine locale : le k-means (centres initiaux aléatoires) devient
+  # reproductible sans altérer le RNG de l'appelant (audit 1.0).
+  if (!is.null(seed)) withr::local_seed(seed)
+
   # === VALIDATION ===
 
   # Check data
@@ -141,6 +151,17 @@ cluster_parcels <- function(data,
       stop(sprintf(msg("error_k_too_large"), n),
         call. = FALSE
       )
+    }
+  } else {
+    # k automatique : il faut tester au moins k = 2 avec k < n. Sinon
+    # `2:max_test_k` itérait à rebours (2:1) et indexait silhouette_scores[0]
+    # (audit 1.0).
+    if (n < 3) {
+      cli::cli_abort(
+        "Automatic {.arg k} needs at least 3 units ({n} given); supply {.arg k} or more units.")
+    }
+    if (max_k < 2) {
+      cli::cli_abort("{.arg max_k} must be at least 2 (got {max_k}).")
     }
   }
 

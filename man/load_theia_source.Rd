@@ -51,18 +51,18 @@ Loads a Theia datasource for an area of interest and crops it to
 the AOI. Two modes:
 \itemize{
   \item \strong{Year targeting} (\code{year} supplied) — the
-    asset URL is signed through the \code{teledetection} SDK (see
-    \code{\link{theia_signed_href}}) and read via \code{/vsicurl/}.
-    This is the authenticated path that THEIA assets require.
-  \item \strong{Spatial search} — resolves \code{/vsis3/} asset
-    paths via \code{\link{resolve_theia_assets}}; call
-    \code{\link{theia_configure_s3}} first. Reserved for direct-S3
-    setups.
+    asset URL is signed through the teledetection gateway (see
+    \code{\link{theia_signed_href}}) and read via \code{/vsicurl/};
+    an asset that cannot be signed aborts.
+  \item \strong{Spatial search} — the intersecting assets are
+    resolved and signed by \code{\link{resolve_theia_assets}}, then
+    mosaicked; unsigned \code{/vsis3/} paths (no keys) are only
+    readable on a direct-S3 setup.
 }
 }
 \examples{
 \dontrun{
-# FORMSpoT canopy height for 2023 (signed via the teledetection SDK)
+# FORMSpoT canopy height for 2023 (signed via the teledetection gateway)
 chm <- load_theia_source("formspot", aoi, year = 2023)
 }
 

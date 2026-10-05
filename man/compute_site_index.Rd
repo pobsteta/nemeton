@@ -31,7 +31,10 @@ A numeric vector of the same length as the recycled
   \code{reference_age}) in metres. \code{NA} is returned when
   \code{H_dom} or \code{age} is missing, when \code{H_dom} is below
   \code{min_stand_height}, when \code{age} is outside the tabulated
-  range, or when the species cannot be resolved.
+  range, or when the species cannot be resolved. A height above the
+  tallest (class 1) or below the shortest (class 5) curve at the observed
+  age is \strong{clamped} to that class: the site index returned is then the
+  class 1 or class 5 height at \code{reference_age}, not an extrapolation.
 }
 \description{
 Given an observed dominant height \code{H_dom} (typically

@@ -314,6 +314,16 @@ aggregate_plot_metrics <- function(placettes, arbres = NULL,
 
   # Work on a plain data.frame to avoid sf overhead per group.
   trees <- if (inherits(arbres, "sf")) sf::st_drop_geometry(arbres) else as.data.frame(arbres)
+  # Colonnes indispensables : sans elles, `trees$dbh_cm` vaut NULL et tous
+  # les arbres etaient ecartes en silence (agregats vides) (audit 1.0).
+  manquantes <- setdiff(c("plot_id", "dbh_cm"), names(trees))
+  if (length(manquantes)) {
+    cli::cli_warn(c(
+      "{.arg arbres} is missing column{?s} {.val {manquantes}}: no field aggregate computed.",
+      i = "Check the layer with {.fn validate_field_data}."
+    ))
+    return(out)
+  }
   keep <- !is.na(trees$plot_id) & !is.na(trees$dbh_cm) & trees$dbh_cm > 0
   trees <- trees[keep, , drop = FALSE]
   if (nrow(trees) == 0) return(out)
@@ -431,21 +441,27 @@ attach_field_data_to_units <- function(units, field_agg) {
     return(units)
   }
 
-  joined <- sf::st_join(units, field_agg[, field_cols], join = sf::st_intersects,
-                        left = TRUE)
+  # Regroupement par numero de ligne de l'unite : le repli sur la premiere
+  # colonne (faute de `ug_id`) melangeait les agregats d'unites partageant
+  # une meme valeur (nom de foret...) (audit 1.0).
+  row_col <- "..unit_row"
+  keyed <- units
+  keyed[[row_col]] <- seq_len(nrow(units))
+  joined <- sf::st_join(keyed[, row_col], field_agg[, field_cols],
+                        join = sf::st_intersects, left = TRUE)
   # The st_join may explode rows if a unit contains several plots; aggregate back.
-  id_col <- if ("ug_id" %in% names(units)) "ug_id" else names(units)[1]
   joined_df <- sf::st_drop_geometry(joined)
 
   agg <- lapply(field_cols, function(col) {
-    tapply(joined_df[[col]], joined_df[[id_col]],
+    tapply(joined_df[[col]], joined_df[[row_col]],
            function(x) if (all(is.na(x))) NA_real_ else mean(x, na.rm = TRUE))
   })
   names(agg) <- field_cols
 
   out <- units
   for (col in field_cols) {
-    out[[col]] <- as.numeric(agg[[col]])[match(out[[id_col]], names(agg[[col]]))]
+    out[[col]] <- as.numeric(agg[[col]])[match(seq_len(nrow(units)),
+                                               as.integer(names(agg[[col]])))]
   }
   # field_n_trees: zero (not NA) when nothing landed in the unit
   if ("field_n_trees" %in% field_cols) {

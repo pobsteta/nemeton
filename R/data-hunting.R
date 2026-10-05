@@ -49,7 +49,11 @@ resolve_hunting_urls_from_api <- function() {
 
   result <- tryCatch(
     {
-      resp <- jsonlite::fromJSON(api_url, simplifyDataFrame = FALSE)
+      # Un avertissement (fin de ligne incomplete...) n'invalide pas la
+      # reponse : on le laisse passer au lieu d'abandonner la resolution.
+      resp <- suppressWarnings(
+        jsonlite::fromJSON(api_url, simplifyDataFrame = FALSE)
+      )
       resources <- resp$resources
 
       if (is.null(resources) || length(resources) == 0) {
@@ -73,8 +77,7 @@ resolve_hunting_urls_from_api <- function() {
         if (length(urls) > 0) urls else NULL
       }
     },
-    error = function(e) NULL,
-    warning = function(w) NULL
+    error = function(e) NULL
   )
 
   if (!is.null(result)) {

@@ -68,10 +68,11 @@
 #'   reprojectable raises a typed `validation_weight_raster_mismatch` error.
 #'   Ignored when `weighting = "uniform"`.
 #' @param seed Integer or `NULL`. When non-`NULL`, makes the GRTS draw
-#'   reproducible.
+#'   reproducible. The seed is applied locally: the session's global random
+#'   state is restored on exit.
 #'
-#' @return An `sf` POINT object in EPSG:2154 with the following
-#'   columns:
+#' @return An `sf` POINT object in the CRS of `alert_raster` (EPSG:2154 for
+#'   the FORDEAD / RECONFORT caches) with the following columns:
 #'   \describe{
 #'     \item{`plot_id`}{Character. Identifier `V01`, `V02`, ... for
 #'       validation plots, `T01`, `T02`, ... for controls.}
@@ -155,20 +156,9 @@ create_validation_sampling_plan <- function(zone,
       cli::cli_abort("{.arg weight_raster} must be a {.cls SpatRaster}.")
     }
   }
-  n_validation <- as.integer(n_validation)
-  n_control    <- as.integer(n_control)
-  if (n_validation < 1L) {
-    cli::cli_abort("{.arg n_validation} must be >= 1.")
-  }
-  if (n_control < 0L) {
-    cli::cli_abort("{.arg n_control} must be >= 0.")
-  }
-  if (!is.null(seed)) {
-    if (!is.numeric(seed) || length(seed) != 1L || is.na(seed)) {
-      cli::cli_abort("{.arg seed} must be a single integer or NULL.")
-    }
-    set.seed(as.integer(seed))
-  }
+  n_validation <- .check_plot_count(n_validation, "n_validation", 1L)
+  n_control    <- .check_plot_count(n_control, "n_control", 0L)
+  .local_plan_seed(seed)
 
   # --- 0. Restriction a la zone ----------------------------------------
   # `zone` etait valide mais jamais utilise : des placettes (alerte comme
@@ -225,9 +215,9 @@ create_validation_sampling_plan <- function(zone,
     norm[!is.finite(wv)] <- NA_real_
     wnorm <- priority
     terra::values(wnorm) <- norm
-    validation_pts <- .draw_grts_continuous(wnorm, n_validation, seed = seed)
+    validation_pts <- .draw_grts_continuous(wnorm, n_validation)
   } else {
-    validation_pts <- .draw_grts_weighted(priority, n_validation, seed = seed)
+    validation_pts <- .draw_grts_weighted(priority, n_validation)
   }
   if (is.null(validation_pts) || nrow(validation_pts) == 0L) {
     cli::cli_abort(
@@ -283,7 +273,7 @@ create_validation_sampling_plan <- function(zone,
       ))
       NULL
     } else {
-      .draw_grts_equiprobable(healthy, n_control, seed = seed)
+      .draw_grts_equiprobable(healthy, n_control)
     }
   } else NULL
 
@@ -380,9 +370,12 @@ create_validation_sampling_plan <- function(zone,
 #'   obtained — it never falls back to sampling the full S2 tile. Pass
 #'   `mask_polygon` explicitly (the zone `sf` you already hold) to skip the
 #'   DB round-trip.
-#' @param seed Integer or `NULL`. Makes the GRTS draw reproducible.
+#' @param seed Integer or `NULL`. Makes the GRTS draw reproducible. The seed
+#'   is applied locally: the session's global random state is restored on
+#'   exit.
 #'
-#' @return An `sf` POINT object in EPSG:2154 with columns `plot_id`
+#' @return An `sf` POINT object in the CRS of the trend raster returned by
+#'   [read_fast_alert_raster()] with columns `plot_id`
 #'   (`S01…` sanitary, `T01…` control), `type` (`"Sanitaire"` / `"Temoin"`),
 #'   `alert_value` (the `|slope|` at the plot; `0` for controls), `index`,
 #'   `source` (`"FAST_TREND"`) and `seed`. Sanitary plots come first, ordered
@@ -428,16 +421,9 @@ create_trend_sanitary_plan <- function(con, zone_id,
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
   }
-  n_plots   <- as.integer(n_plots)
-  n_control <- as.integer(n_control)
-  if (n_plots < 1L)   cli::cli_abort("{.arg n_plots} must be >= 1.")
-  if (n_control < 0L) cli::cli_abort("{.arg n_control} must be >= 0.")
-  if (!is.null(seed)) {
-    if (!is.numeric(seed) || length(seed) != 1L || is.na(seed)) {
-      cli::cli_abort("{.arg seed} must be a single integer or NULL.")
-    }
-    set.seed(as.integer(seed))
-  }
+  n_plots   <- .check_plot_count(n_plots, "n_plots", 1L)
+  n_control <- .check_plot_count(n_control, "n_control", 0L)
+  .local_plan_seed(seed)
 
   # --- 1. Resolve the UGF mask up front and REQUIRE it --------------------
   # A sanitary plan must stay inside the monitoring zone. `read_fast_alert_
@@ -484,7 +470,7 @@ create_trend_sanitary_plan <- function(con, zone_id,
   }
 
   # --- 4. Continuous-probability GRTS for the sanitary plots ---------------
-  sanitary_pts <- .draw_grts_continuous(priority, n_plots, seed = seed)
+  sanitary_pts <- .draw_grts_continuous(priority, n_plots)
   if (is.null(sanitary_pts) || nrow(sanitary_pts) == 0L) {
     cli::cli_abort(
       c("Failed to draw any sanitary plot from the {.field {index}} trend.",
@@ -501,7 +487,7 @@ create_trend_sanitary_plan <- function(con, zone_id,
         i = "Skipping {n_control} control plot{?s}."))
       NULL
     } else {
-      .draw_grts_equiprobable(stable, n_control, seed = seed)
+      .draw_grts_equiprobable(stable, n_control)
     }
   } else NULL
 
@@ -563,11 +549,36 @@ create_trend_sanitary_plan <- function(con, zone_id,
   aligned
 }
 
+# Nombre de placettes : un entier >= `min` (NA, vecteur ou texte donnaient
+# une erreur brute « missing value where TRUE/FALSE needed ») (audit 1.0).
+.check_plot_count <- function(x, name, min) {
+  v <- if (length(x) == 1L && (is.numeric(x) || is.character(x))) {
+    suppressWarnings(as.integer(x))
+  } else NA_integer_
+  if (is.na(v) || v < min) {
+    cli::cli_abort("{.arg {name}} must be a single integer >= {min}.")
+  }
+  v
+}
+
+# Graine du tirage, locale a l'appelant : la graine globale de la session est
+# restauree a sa sortie (set.seed() la modifiait durablement) (audit 1.0).
+# Les tirages GRTS (.draw_grts_*) consomment ce flux ; ils n'ont plus de
+# parametre `seed`, qu'ils ignoraient.
+.local_plan_seed <- function(seed, envir = parent.frame()) {
+  if (is.null(seed)) return(invisible(NULL))
+  if (!is.numeric(seed) || length(seed) != 1L || is.na(seed)) {
+    cli::cli_abort("{.arg seed} must be a single integer or NULL.")
+  }
+  withr::local_seed(as.integer(seed), .local_envir = envir)
+  invisible(NULL)
+}
+
 # Draw `n` points with inclusion probability proportional to the cell
 # value of `priority_raster` (NA = excluded). Returns an `sf` POINT
 # object in the raster's CRS, with an `alert_class` column copied from
 # the priority value.
-.draw_grts_weighted <- function(priority_raster, n, seed = NULL) {
+.draw_grts_weighted <- function(priority_raster, n) {
   if (!requireNamespace("spsurvey", quietly = TRUE)) {
     cli::cli_abort(c(
       "Package {.pkg spsurvey} required for weighted GRTS.",
@@ -694,7 +705,7 @@ create_trend_sanitary_plan <- function(con, zone_id,
 # raw magnitude drives inclusion, so the steepest declines are favoured
 # proportionally — without losing resolution to quartile classes. Returns an
 # `sf` POINT in the raster CRS with the `alert_value` column preserved.
-.draw_grts_continuous <- function(priority_raster, n, seed = NULL) {
+.draw_grts_continuous <- function(priority_raster, n) {
   if (!requireNamespace("spsurvey", quietly = TRUE)) {
     cli::cli_abort(c(
       "Package {.pkg spsurvey} required for continuous-probability GRTS.",
@@ -735,7 +746,7 @@ create_trend_sanitary_plan <- function(con, zone_id,
 
 # Draw `n` equiprobable points from the non-NA cells of `raster`.
 # Returns an `sf` POINT object in the raster's CRS.
-.draw_grts_equiprobable <- function(raster, n, seed = NULL) {
+.draw_grts_equiprobable <- function(raster, n) {
   if (!requireNamespace("spsurvey", quietly = TRUE)) {
     cli::cli_abort(c(
       "Package {.pkg spsurvey} required for GRTS.",

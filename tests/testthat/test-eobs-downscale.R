@@ -240,6 +240,19 @@ test_that(".safran_to_meteoland maps raw SAFRAN columns and sums precipitation",
   expect_s3_class(d$dates, "Date")
 })
 
+test_that(".safran_to_meteoland: un jour SAFRAN manquant reste NA, pas 0 mm (audit 1.0)", {
+  raw <- data.frame(
+    time = c("2020-06-01", "2020-06-02", "2020-06-03"),
+    T_Q = c(18, NA, 20), TINF_H_Q = c(12, NA, 14), TSUP_H_Q = c(24, NA, 27),
+    PRELIQ_Q = c(3, NA, NA), PRENEI_Q = c(1, NA, 2), HU_Q = c(80, NA, 60),
+    FF_Q = c(2, NA, 3), SSI_Q = c(1800, NA, 2000), check.names = FALSE)
+  d <- .safran_to_meteoland(raw)
+  # Jour 2 : ni pluie ni neige renseignées -> NA (et non 0 mm inventé).
+  # Jour 3 : une seule des deux composantes renseignée -> on garde la somme
+  # partielle (la composante absente est traitée comme nulle).
+  expect_equal(d$Precipitation, c(4, NA, 2))
+})
+
 test_that(".meteoland_meteo_sf builds a long sf (station × day)", {
   st <- build_safran_stations(make_aoi(), buffer_m = 20000, years = 2020,
                               dem = make_dem(), spacing_m = 8000,

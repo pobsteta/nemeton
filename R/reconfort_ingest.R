@@ -296,6 +296,21 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 }
 
 
+# Variables d'environnement des sous-processus python RECONFORT.
+# PYTHONDONTWRITEBYTECODE : les scripts tournent depuis le dossier installe du
+# paquet (inst/python/reconfort) ; sans elle, python y ecrit ses __pycache__
+# (dossier partage, parfois en lecture seule) (audit 1.0).
+.reconfort_py_envvars <- function() {
+  c(PYTHONWARNINGS = .RECONFORT_PYWARN, PYTHONDONTWRITEBYTECODE = "1")
+}
+
+# Chemin absolu, que le fichier existe ou non (normalizePath() rend tel quel
+# un chemin relatif inexistant).
+.reconfort_abs_path <- function(path) {
+  file.path(normalizePath(dirname(path), mustWork = FALSE), basename(path))
+}
+
+
 # Run a vendored RECONFORT python script in the conda env, from the
 # glue dir so its `from utils.utils import ...` resolves. Returns the
 # exit status (0 = success). Separated out so tests can mock it.
@@ -317,6 +332,9 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 # comparing to `0L` keeps working unchanged.
 .reconfort_run_py <- function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
   unit <- .capped_scope_unit(paste0("py-", basename(script)))
+  # Le sous-processus tourne sous with_dir(workdir) : un cfg relatif au
+  # repertoire courant de R y designerait un autre fichier (audit 1.0).
+  cfg <- .reconfort_abs_path(cfg)
   # --no-capture-output : la sortie de python est relayée au fil de l'eau.
   # Sans lui, `conda run` la retient jusqu'à la fin du processus et la perd
   # si le scope est tué (OOM) : plus aucun journal du run.
@@ -327,7 +345,7 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
     unit = unit
   )
   st <- withr::with_envvar(
-    c(PYTHONWARNINGS = .RECONFORT_PYWARN),
+    .reconfort_py_envvars(),
     withr::with_dir(workdir, {
       suppressWarnings(system2(
         cmd$command, args = cmd$args,
@@ -376,8 +394,12 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 # filter as the bulk runner. Returns the exit status. Mockable in tests.
 .reconfort_download_s2_item <- function(conda_bin, env, glue, account, item_json,
                                         outfile, quiet = FALSE) {
+  # Chemins absolus : le script tourne depuis `glue` (cf. .reconfort_run_py()).
+  account   <- .reconfort_abs_path(account)
+  item_json <- .reconfort_abs_path(item_json)
+  outfile   <- .reconfort_abs_path(outfile)
   withr::with_envvar(
-    c(PYTHONWARNINGS = .RECONFORT_PYWARN),
+    .reconfort_py_envvars(),
     withr::with_dir(glue, {
       suppressWarnings(system2(
         conda_bin,

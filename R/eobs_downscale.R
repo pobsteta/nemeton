@@ -273,9 +273,14 @@ build_safran_stations <- function(aoi, buffer_m, years, dem,
 # Mappe un data.frame SAFRAN brut (.biljou_forcing_safran, cols time + `*_Q`) vers
 # les variables meteoland (with_meteo). Précip = liquide + neige. SSI_Q (J/cm²) ->
 # MJ/m² (× 0.01) pour Radiation. Températures/HU/vent tels quels (°C/%/m·s⁻¹).
+# Précip NA quand liquide ET neige manquent (jamais 0 mm inventé).
 .safran_to_meteoland <- function(raw) {
   num <- function(v) suppressWarnings(as.numeric(v))
-  precip <- rowSums(cbind(num(raw$PRELIQ_Q), num(raw$PRENEI_Q)), na.rm = TRUE)
+  pq <- cbind(num(raw$PRELIQ_Q), num(raw$PRENEI_Q))
+  precip <- rowSums(pq, na.rm = TRUE)
+  # Jour sans aucune composante renseignée (audit 1.0) : NA, pas 0 mm --
+  # rowSums(na.rm = TRUE) inventait un jour sec.
+  precip[rowSums(!is.na(pq)) == 0L] <- NA_real_
   data.frame(
     dates                = as.Date(substr(raw$time, 1, 10)),
     MinTemperature       = num(raw$TINF_H_Q),
@@ -863,8 +868,12 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 #' @param buffer_m Context buffer around the AOI, in metres (default 25000).
 #' @param resolution Optional target resolution (DEM units). `NULL` keeps the
 #'   DEM resolution (aggregated if the grid would exceed `max_cells`).
+#'   KED engine only: ignored by `engine = "meteoland"`, whose grid is the
+#'   DEM capped at `max_cells`.
 #' @param covariates Terrain covariates among `"dem"`, `"slope"`, `"aspect"`
 #'   (entered as northness), `"twi"` (best-effort). Default all four.
+#'   KED engine only: `engine = "meteoland"` ignores it and always uses
+#'   elevation, slope and aspect (its own interpolator covariates).
 #' @param statistic What to downscale: `"trend"` (per-decade OLS slope over the
 #'   E-OBS years), `"mean"`, or `"value"` (a pre-reduced single layer).
 #' @param variogram_model Optional `gstat::vgm()` model; `NULL` auto-fits.

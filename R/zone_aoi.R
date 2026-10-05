@@ -30,20 +30,35 @@
     "SELECT id, zone_wkt, crs_epsg FROM monitoring_zone WHERE id = $1",
     params = list(zone_id))
 
+  # Erreurs « zone » typées (audit 1.0) : l'appelant peut distinguer une
+  # zone inconnue ou sans géométrie exploitable (repli documenté) d'une
+  # erreur de base (connexion perdue…), qui doit, elle, remonter.
   if (!nrow(row)) {
     cli::cli_abort(c(
       "Unknown monitoring zone.",
       x = "zone_id = {.val {zone_id}}",
       i = "Check with {.fn register_monitoring_zone}."
-    ))
+    ), class = c("nemeton_zone_unknown", "nemeton_zone_aoi_error"))
   }
 
-  srid <- as.integer(row$crs_epsg[[1L]])
-  geom <- sf::st_as_sfc(row$zone_wkt[[1L]], crs = srid)
-  aoi  <- sf::st_sf(geometry = geom, crs = srid)
-  if (!identical(sf::st_crs(aoi)$epsg, 2154L)) {
-    aoi <- sf::st_transform(aoi, 2154L)
-  }
+  aoi <- tryCatch({
+    wkt  <- row$zone_wkt[[1L]]
+    if (is.null(wkt) || is.na(wkt) || !nzchar(trimws(wkt))) {
+      stop("empty zone_wkt")
+    }
+    srid <- as.integer(row$crs_epsg[[1L]])
+    geom <- sf::st_as_sfc(wkt, crs = srid)
+    a    <- sf::st_sf(geometry = geom, crs = srid)
+    if (!identical(sf::st_crs(a)$epsg, 2154L)) {
+      a <- sf::st_transform(a, 2154L)
+    }
+    a
+  }, error = function(e) {
+    cli::cli_abort(c(
+      "Monitoring zone {.val {zone_id}} has no usable geometry.",
+      x = conditionMessage(e)
+    ), class = c("nemeton_zone_no_geometry", "nemeton_zone_aoi_error"))
+  })
   aoi
 }
 

@@ -1,138 +1,91 @@
 #' Massif Demo - Example Forest Dataset
 #'
-#' Synthetic forest dataset for demonstrating the nemeton package functionality.
-#' Contains 20 forest parcels with associated spatial layers covering a 5km x 5km
-#' area in France (Lambert-93 projection).
+#' Synthetic forest dataset for demonstrating the nemeton package
+#' functionality: 20 forest parcels covering a 5 km x 5 km area in France
+#' (Lambert-93), with stand attributes, raw indicator values, their
+#' normalised versions and the 12 family indices.
 #'
-#' @format An \code{sf} object with 20 features and 5 fields:
+#' @format An \code{sf} object with 20 features (POLYGON, EPSG:2154) and 90
+#'   columns (89 fields + geometry):
 #' \describe{
-#'   \item{parcel_id}{Character. Unique parcel identifier (P01-P20)}
-#'   \item{forest_type}{Character. Forest type:
-#'     \itemize{
-#'       \item "Futaie feuillue" - Broadleaf high forest
-#'       \item "Futaie résineuse" - Coniferous high forest
-#'       \item "Futaie mixte" - Mixed high forest
-#'       \item "Taillis" - Coppice
-#'     }}
-#'   \item{age_class}{Character. Stand age class:
-#'     \itemize{
-#'       \item "Jeune" - Young (< 40 years)
-#'       \item "Moyen" - Middle-aged (40-80 years)
-#'       \item "Mature" - Mature (80-120 years)
-#'       \item "Surannée" - Over-mature (> 120 years)
-#'     }}
-#'   \item{management}{Character. Management objective:
-#'     \itemize{
-#'       \item "Production" - Timber production
-#'       \item "Conservation" - Biodiversity conservation
-#'       \item "Mixte" - Mixed objectives
-#'     }}
-#'   \item{surface_ha}{Numeric. Parcel area in hectares}
-#'   \item{geometry}{sfc_POLYGON. Parcel boundaries (EPSG:2154)}
+#'   \item{parcel_id}{Character. Unique parcel identifier (P01-P20).}
+#'   \item{forest_type}{Character. Forest type: "Futaie feuillue",
+#'     "Futaie résineuse", "Futaie mixte" or "Taillis".}
+#'   \item{age_class}{Character. Stand age class: "Jeune", "Moyen",
+#'     "Mature" or "Surannée".}
+#'   \item{management}{Character. Management objective: "Production",
+#'     "Conservation" or "Mixte".}
+#'   \item{species}{Character. Two-digit IFN species code (e.g. "03", "09",
+#'     "64").}
+#'   \item{age}{Integer. Stand age (years).}
+#'   \item{establishment_year}{Numeric. Stand establishment year.}
+#'   \item{density}{Integer. Stem density (stems/ha).}
+#'   \item{height}{Numeric. Mean height (m).}
+#'   \item{dbh}{Numeric. Mean diameter at breast height (cm).}
+#'   \item{volume}{Numeric. Standing volume.}
+#'   \item{strata}{Integer. Stratum code.}
+#'   \item{fertility}{Integer. Fertility class.}
+#'   \item{climate}{Character. Climate type (e.g. "atlantique",
+#'     "continental").}
+#'   \item{surface_ha}{Numeric. Parcel area (ha).}
+#'   \item{C1, C2, B1, B2, B3, W1, W2, W3, A1, A2, F1, F2, L1, L2, T1, T2, R1,
+#'     R2, R3, R4, S1, S2, S3, P1, P2, P3, E1, E2, N1, N2, N3}{Numeric. Raw
+#'     values of the 31 base indicators available when the fixture was
+#'     generated; see \code{indicator_labels()} for their meaning and
+#'     \code{indicator_families()} for their family.}
+#'   \item{C1_norm, ..., N3_norm}{Numeric. The same 31 indicators normalised
+#'     to 0-100.}
+#'   \item{famille_carbone, famille_biodiversite, famille_eau, famille_air,
+#'     famille_sol, famille_paysage, famille_temporel, famille_risque,
+#'     famille_social, famille_production, famille_energie,
+#'     famille_naturalite}{Numeric. Family indices (0-100).}
+#'   \item{geometry}{sfc_POLYGON. Parcel boundaries (EPSG:2154).}
 #' }
 #'
 #' @details
-#' The dataset includes:
+#' The fixture predates the indicators added since (for instance B4, W4,
+#' A3-A5, L3, T3, R5-R7): their columns are absent, and the family indices
+#' are computed from the 31 indicators listed above only.
 #'
-#' **Parcels** (\code{massif_demo_units}):
-#' - 20 forest parcels (2-20 ha each, 136 ha total)
-#' - Realistic spatial clustering and irregular shapes
-#' - Diverse forest types and management regimes
-#'
-#' **Rasters** (25m resolution, in \code{inst/extdata/}):
-#' - \code{massif_demo_biomass.tif}: Aboveground biomass (50-400 Mg/ha)
-#' - \code{massif_demo_dem.tif}: Digital Elevation Model (350-700m)
-#' - \code{massif_demo_landcover.tif}: Land cover (6 classes, 85\% forest)
-#' - \code{massif_demo_species_richness.tif}: Species richness (5-45 species)
-#'
-#' **Vector layers** (in \code{inst/extdata/}):
-#' - \code{massif_demo_roads.gpkg}: 5 roads (types: Départementale, Forestière, Chemin)
-#' - \code{massif_demo_water.gpkg}: 3 water courses (types: Ruisseau, Rivière, Torrent)
-#'
-#' All spatial data use Lambert-93 projection (EPSG:2154).
-#' Generated with \code{set.seed(42)} for reproducibility.
-#'
-#' @section Data Generation:
-#' The dataset was created synthetically to represent typical French forest landscapes:
-#' - Biomass: Spatial gradient with patches and noise
-#' - Topography: Realistic elevation with gentle slopes
-#' - Land cover: Spatially coherent forest/non-forest classes
-#' - Species richness: Correlated with biomass and habitat diversity
-#' - Infrastructure: Sinuous roads and topography-following streams
-#'
-#' @section Usage:
-#' Use \code{\link{massif_demo_layers}} to load all associated spatial layers:
-#'
-#' \preformatted{
-#' # Load parcels
-#' data(massif_demo_units)
-#'
-#' # Load all layers
-#' layers <- massif_demo_layers()
-#'
-#' # Compute indicators
-#' results <- nemeton_compute(massif_demo_units, layers, indicators = "all")
+#' Associated layers (25 m rasters and vector layers in \code{inst/extdata/})
+#' are loaded with \code{\link{massif_demo_layers}}:
+#' \itemize{
+#'   \item \code{massif_demo_biomass.tif}: aboveground biomass (50-400 Mg/ha)
+#'   \item \code{massif_demo_dem.tif}: digital elevation model (350-700 m)
+#'   \item \code{massif_demo_landcover.tif}: land cover (6 classes)
+#'   \item \code{massif_demo_species_richness.tif}: species richness
+#'   \item \code{massif_demo_roads.gpkg}, \code{massif_demo_water.gpkg}:
+#'     roads and water courses
 #' }
 #'
-#' @source Synthetic data generated with \code{data-raw/massif_demo.R}
+#' All values are synthetic (generated with \code{set.seed(42)}); they are
+#' meant for examples, tests and vignettes, not for analysis.
 #'
-#' @seealso \code{\link{massif_demo_layers}}, \code{\link{nemeton_compute}}
+#' @source Synthetic data generated with \code{data-raw/massif_demo.R}.
+#'
+#' @seealso \code{\link{massif_demo_layers}}, \code{\link{nemeton_compute}},
+#'   \code{\link{nemeton_radar}}, \code{\link{create_family_index}}
 #'
 #' @examples
-#' # Load the demo dataset
 #' data(massif_demo_units)
 #'
-#' # Inspect parcels
-#' print(massif_demo_units)
+#' # Stand attributes
 #' summary(massif_demo_units$surface_ha)
 #' table(massif_demo_units$forest_type)
 #'
-#' # Plot parcels
-#' if (require("ggplot2")) {
-#'   ggplot(massif_demo_units) +
-#'     geom_sf(aes(fill = forest_type)) +
-#'     theme_minimal() +
-#'     labs(title = "Massif Demo - Forest Types")
-#' }
+#' # Family indices
+#' summary(sf::st_drop_geometry(massif_demo_units)[, c(
+#'   "famille_carbone", "famille_production", "famille_naturalite"
+#' )])
 #'
 #' \dontrun{
-#' # Complete workflow example
-#' library(nemeton)
+#' # 12-axis family radar for parcel 1
+#' nemeton_radar(massif_demo_units, unit_id = 1, mode = "family")
 #'
-#' # 1. Load data
-#' data(massif_demo_units)
+#' # Recompute indicators from the demo layers
 #' layers <- massif_demo_layers()
-#'
-#' # 2. Compute all indicators
-#' results <- nemeton_compute(
-#'   massif_demo_units,
-#'   layers,
-#'   indicators = "all",
-#'   preprocess = TRUE
-#' )
-#'
-#' # 3. Normalize indicators
-#' normalized <- normalize_indicators(
-#'   results,
-#'   indicators = c("carbon", "biodiversity", "water"),
-#'   method = "minmax"
-#' )
-#'
-#' # 4. Create ecosystem health index
-#' health <- create_composite_index(
-#'   normalized,
-#'   indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),
-#'   weights = c(0.4, 0.4, 0.2),
-#'   name = "ecosystem_health"
-#' )
-#'
-#' # 5. Visualize
-#' plot_indicators_map(
-#'   health,
-#'   indicators = "ecosystem_health",
-#'   palette = "RdYlGn",
-#'   title = "Ecosystem Health - Massif Demo"
-#' )
+#' results <- nemeton_compute(massif_demo_units, layers, indicators = "all")
 #' }
 #'
+#' @keywords datasets
 "massif_demo_units"

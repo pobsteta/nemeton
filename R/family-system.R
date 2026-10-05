@@ -105,7 +105,9 @@ get_famille_code <- function(col_name) {
 #'   "harmonic", "min" (v0.3.0+). Default "mean".
 #' @param weights Named list of weight vectors per family. E.g.,
 #'   \code{list(C = c(C1 = 0.6, C2 = 0.4), W = c(W1 = 0.5, W2 = 0.3, W3 = 0.2))}.
-#'   If NULL, equal weights are used.
+#'   If NULL, equal weights are used. Weights named by the raw indicator
+#'   (`C1`) also apply to its `_norm` column. They are used by "mean",
+#'   "weighted", "geometric" and "harmonic"; "min" ignores them with a warning.
 #' @param na.rm Logical. If TRUE, NA values are removed before aggregation. Default TRUE.
 #' @param family_codes Character vector. Family codes to process. Default NULL (auto-detect).
 #'
@@ -126,8 +128,8 @@ get_famille_code <- function(col_name) {
 #' \itemize{
 #'   \item mean: Simple arithmetic mean
 #'   \item weighted: Weighted average using provided weights
-#'   \item geometric: Geometric mean (product^(1/n))
-#'   \item harmonic: Harmonic mean (n / sum(1/x))
+#'   \item geometric: Weighted geometric mean (exp(sum(w log x)); product^(1/n) with equal weights)
+#'   \item harmonic: Weighted harmonic mean (1 / sum(w / x); n / sum(1/x) with equal weights)
 #'   \item min: Minimum value (worst-case, most conservative) - v0.3.0+
 #' }
 #'
@@ -295,6 +297,20 @@ create_family_index <- function(data,
     if (!is.null(weights) && fam %in% names(weights)) {
       fam_weights <- weights[[fam]]
 
+      # Les poids sont nommés par indicateur (`C1`), mais la colonne retenue
+      # peut être sa version `_norm` quand la brute manque : on rapproche par
+      # le nom de base, sinon les poids étaient ignorés (audit 1.0).
+      if (!is.null(names(fam_weights))) {
+        bases <- sub("_norm$", "", indicators)
+        alias <- !indicators %in% names(fam_weights) &
+          bases %in% names(fam_weights)
+        if (any(alias)) {
+          extra <- fam_weights[bases[alias]]
+          names(extra) <- indicators[alias]
+          fam_weights <- c(fam_weights, extra)
+        }
+      }
+
       # Ensure weights match indicators
       if (!all(indicators %in% names(fam_weights))) {
         warning(sprintf(
@@ -336,16 +352,21 @@ create_family_index <- function(data,
         sum(valid_values * valid_weights)
       })
     } else if (method == "geometric") {
-      # Geometric mean: (product of values)^(1/n)
+      # Weighted geometric mean: exp(sum(w * log(x)) / sum(w)). With equal
+      # weights it is (product of values)^(1/n). Les poids étaient ignorés
+      # jusqu'à l'audit 1.0.
       family_score <- apply(indicator_data, 1, function(row) {
         if (all(is.na(row))) {
           return(NA_real_)
         }
 
-        valid_values <- row[!is.na(row)]
+        valid_idx <- !is.na(row)
+        valid_values <- row[valid_idx]
         if (length(valid_values) == 0) {
           return(NA_real_)
         }
+        valid_weights <- fam_weights[valid_idx]
+        valid_weights <- valid_weights / sum(valid_weights)
 
         # Handle negative values
         if (any(valid_values <= 0)) {
@@ -355,19 +376,23 @@ create_family_index <- function(data,
           valid_values <- abs(valid_values)
         }
 
-        exp(mean(log(valid_values)))
+        exp(sum(valid_weights * log(valid_values)))
       })
     } else if (method == "harmonic") {
-      # Harmonic mean: n / sum(1/x)
+      # Weighted harmonic mean: sum(w) / sum(w / x). With equal weights it is
+      # n / sum(1/x). Les poids étaient ignorés jusqu'à l'audit 1.0.
       family_score <- apply(indicator_data, 1, function(row) {
         if (all(is.na(row))) {
           return(NA_real_)
         }
 
-        valid_values <- row[!is.na(row)]
+        valid_idx <- !is.na(row)
+        valid_values <- row[valid_idx]
         if (length(valid_values) == 0) {
           return(NA_real_)
         }
+        valid_weights <- fam_weights[valid_idx]
+        valid_weights <- valid_weights / sum(valid_weights)
 
         # Handle zeros
         if (any(valid_values == 0)) {
@@ -377,9 +402,15 @@ create_family_index <- function(data,
           valid_values[valid_values == 0] <- 1e-6
         }
 
-        length(valid_values) / sum(1 / valid_values)
+        1 / sum(valid_weights / valid_values)
       })
     } else if (method == "min") {
+      # Le minimum n'a pas de forme pondérée : on le signale plutôt que
+      # d'ignorer les poids en silence (audit 1.0).
+      if (!is.null(weights) && fam %in% names(weights)) {
+        cli::cli_warn(
+          "{.arg weights} for family {.val {fam}} are ignored by {.code method = \"min\"}.")
+      }
       # Minimum: worst-case indicator (most conservative)
       family_score <- apply(indicator_data, 1, function(row) {
         if (all(is.na(row))) {
@@ -406,40 +437,18 @@ create_family_index <- function(data,
   result
 }
 
-#' Detect Indicator Family from Name
-#'
-#' Extracts the family code from an indicator name (e.g., "C1" -> "C").
-#'
-#' @param indicator_name Character. Indicator name.
-#'
-#' @return Character. Family code (C, W, F, L, etc.) or NA if not detected.
-#'
-#' @keywords internal
-detect_indicator_family <- function(indicator_name) {
-  # Match pattern: family letter + digit (e.g., C1, B2)
-  if (grepl("^[A-Z][0-9]", indicator_name)) {
-    return(substr(indicator_name, 1, 1))
-  }
-
-  # Match long-form column names via INDICATOR_FAMILIES config
-  col_map <- get_column_family_map()
-  # Strip _norm suffix for matching
-  base_name <- sub("_norm$", "", indicator_name)
-  if (base_name %in% names(col_map)) {
-    return(col_map[[base_name]])
-  }
-
-  NA_character_
-}
+# detect_indicator_family() vit dans R/utils.R. Une seconde définition, ici,
+# était masquée par celle-là à l'ordre de chargement (code mort, audit 1.0).
 
 #' Get Family Name from Code
 #'
-#' Returns the full family name for a given family code.
+#' Returns the family name for a given family code, read from
+#' `INDICATOR_FAMILIES` (`name_fr` / `name_en`), the single source of truth.
 #'
 #' @param family_code Character. Family code (C, W, F, etc.).
 #' @param lang Character. Language ("en" or "fr"). Default uses current locale.
 #'
-#' @return Character. Full family name.
+#' @return Character. Family name, or the code itself when unknown.
 #'
 #' @usage get_family_name(family_code, lang = NULL)
 #'
@@ -448,42 +457,11 @@ get_family_name <- function(family_code, lang = NULL) {
   if (is.null(lang)) {
     lang <- get_language()
   }
-
-  family_names_en <- c(
-    B = "Biodiversity",
-    W = "Water Regulation",
-    A = "Air Quality & Microclimate",
-    F = "Soil Fertility",
-    C = "Carbon & Vitality",
-    L = "Landscape & Aesthetics",
-    T = "Temporal Dynamics & Trame",
-    R = "Risk Management & Resilience",
-    S = "Social & Recreational",
-    P = "Productive & Economic",
-    E = "Energy & Climate",
-    N = "Naturalness & Wilderness"
-  )
-
-  family_names_fr <- c(
-    B = "B \u2013 Biodiversit\u00e9 / V - Vivant",
-    W = "W \u2013 Water (eau) / I - Infiltr\u00e9e",
-    A = "A \u2013 Air (microclimat) / V \u2013 Vaporeuse",
-    F = "F \u2013 Fertilit\u00e9 / R - Riche",
-    C = "C \u2013 Carbone / E \u2013 \u00c9nerg\u00e9tique",
-    L = "L \u2013 Landscape (paysage) / E \u2013 Esth\u00e9tique",
-    T = "T \u2013 Trame / N - Nervur\u00e9e",
-    R = "R \u2013 R\u00e9silience / F - Flexible",
-    S = "S \u2013 Social / U \u2013 Usages r\u00e9cr\u00e9atifs",
-    P = "P \u2013 Productif / \u00c9 \u2013 \u00c9conomie foresti\u00e8re",
-    E = "E \u2013 \u00c9nergie / C \u2013 Climat",
-    N = "N \u2013 Naturalit\u00e9 / S \u2013 Sauvage"
-  )
-
-  names_list <- if (lang == "fr") family_names_fr else family_names_en
-
-  if (family_code %in% names(names_list)) {
-    return(names_list[[family_code]])
+  # Lecture de INDICATOR_FAMILIES : la table codée en dur divergeait
+  # (« Water Regulation » contre « Water », etc., audit 1.0).
+  fam <- INDICATOR_FAMILIES[[family_code]]
+  if (is.null(fam)) {
+    return(family_code) # Return code if name not found
   }
-
-  family_code # Return code if name not found
+  if (identical(lang, "fr")) fam$name_fr else fam$name_en
 }

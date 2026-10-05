@@ -300,7 +300,15 @@ reconfort_layer_manifest <- function(result, include_range = FALSE) {
   finals <- unique(Sys.glob(globs))
   finals <- finals[dir.exists(finals)]
   if (!length(finals)) return(NULL)
-  sort(finals)[length(finals)]
+  # Le run le plus recent, et non le dernier par ordre alphabetique (qui
+  # privilegiait l'annee la plus haute ou la disposition `reconfort/`) :
+  # d'abord les runs termines (run_meta.json), puis la date de ce marqueur
+  # (a defaut celle du dossier), le nom ne departageant que les ex aequo.
+  meta  <- file.path(finals, "run_meta.json")
+  done  <- file.exists(meta)
+  when  <- as.numeric(file.mtime(ifelse(done, meta, finals)))
+  when[is.na(when)] <- -Inf
+  finals[order(done, when, finals)][length(finals)]
 }
 
 # Newest file matching `pattern` in `dir` (lexicographic), or NA.

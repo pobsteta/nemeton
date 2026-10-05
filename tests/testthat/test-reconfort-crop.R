@@ -33,3 +33,24 @@ test_that(".reconfort_aoi_window reprojects the AOI to the target CRS", {
   expect_gt(win[["xmin"]], 9e5); expect_lt(win[["xmin"]], 1e6)
   expect_gt(win[["ymin"]], 6.5e6); expect_lt(win[["ymin"]], 6.7e6)
 })
+
+test_that(".reconfort_crop_scene_to_aoi garde la structure quand le chemin contient des metacaracteres (audit 1.0)", {
+  # Le chemin de la scene servait d'expression reguliere : avec un `+` ou une
+  # parenthese, le prefixe n'etait pas retire et la sortie partait ailleurs.
+  root <- withr::local_tempdir()
+  scene <- file.path(root, "run+1 (bis)", "SENTINEL2A_X")
+  dir.create(file.path(scene, "MASKS"), recursive = TRUE)
+  file.create(file.path(scene, "SENTINEL2A_X_FRE_B4.tif"),
+              file.path(scene, "MASKS", "SENTINEL2A_X_CLM_R1.tif"),
+              file.path(scene, "SENTINEL2A_X_MTD_ALL.xml"))
+  out <- file.path(root, "out")
+  dest <- character()
+  testthat::local_mocked_bindings(
+    .reconfort_warp_one = function(src, dst, ...) dest <<- c(dest, dst))
+
+  n <- .reconfort_crop_scene_to_aoi(scene, out, win = c(xmin = 0, ymin = 0, xmax = 1, ymax = 1))
+  expect_identical(n, 2L)
+  expect_setequal(dest, c(file.path(out, "SENTINEL2A_X_FRE_B4.tif"),
+                          file.path(out, "MASKS", "SENTINEL2A_X_CLM_R1.tif")))
+  expect_true(file.exists(file.path(out, "SENTINEL2A_X_MTD_ALL.xml")))
+})

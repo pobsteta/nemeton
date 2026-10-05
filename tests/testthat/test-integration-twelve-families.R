@@ -273,15 +273,12 @@ test_that("create_composite_index works with 12-family dataset", {
 })
 
 test_that("family names are correct for new families S, P, E, N", {
-  # Test English names
+  # get_family_name() lit INDICATOR_FAMILIES depuis l'audit 1.0 : la table
+  # codée en dur divergeait de la source de vérité.
+  for (code in c("S", "P", "E", "N")) {
+    expect_equal(get_family_name(code, lang = "en"), INDICATOR_FAMILIES[[code]]$name_en)
+    expect_equal(get_family_name(code, lang = "fr"), INDICATOR_FAMILIES[[code]]$name_fr)
+  }
   expect_equal(get_family_name("S", lang = "en"), "Social & Recreational")
-  expect_equal(get_family_name("P", lang = "en"), "Productive & Economic")
-  expect_equal(get_family_name("E", lang = "en"), "Energy & Climate")
-  expect_equal(get_family_name("N", lang = "en"), "Naturalness & Wilderness")
-
-  # Test French names
-  expect_equal(get_family_name("S", lang = "fr"), "S – Social / U – Usages récréatifs")
-  expect_equal(get_family_name("P", lang = "fr"), "P – Productif / É – Économie forestière")
-  expect_equal(get_family_name("E", lang = "fr"), "E – Énergie / C – Climat")
-  expect_equal(get_family_name("N", lang = "fr"), "N – Naturalité / S – Sauvage")
+  expect_equal(get_family_name("Z", lang = "en"), "Z")
 })

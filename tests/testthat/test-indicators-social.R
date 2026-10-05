@@ -1659,3 +1659,22 @@ test_that("S1 is censored at max_dist when no road lies within it", {
   expect_error(indicateur_s1_routes(units, roads = roads, dem = dem,
                                     max_dist = -1), "max_dist")
 })
+
+test_that("S3 : la part d'un carreau se lit sur CE carreau, pas sur sa valeur", {
+  # Audit 1.0 : le carreau intersecte etait retrouve par sa valeur de
+  # population (`match`). Deux carreaux de meme effectif mais d'aires
+  # differentes : le petit, lointain, donnait l'aire de reference du grand.
+  carre <- function(x0, y0, cote) sf::st_polygon(list(matrix(
+    c(x0, y0, x0 + cote, y0, x0 + cote, y0 + cote, x0, y0 + cote, x0, y0),
+    ncol = 2, byrow = TRUE)))
+  units <- sf::st_sf(id = 1, geometry = sf::st_sfc(carre(0, 0, 10), crs = 2154))
+  grille <- sf::st_sf(
+    ind = c(1e6, 1e6),
+    geometry = sf::st_sfc(carre(5000, 5000, 10), carre(-1000, -1000, 2000),
+                          crs = 2154))
+  res <- suppressMessages(indicateur_s3_population(
+    units, population_grid = grille, buffer_radii = c(100, 200, 300)))
+  aire_tampon <- as.numeric(sf::st_area(sf::st_buffer(units, 100)))
+  attendu <- round(1e6 * aire_tampon / 4e6)
+  expect_equal(res$S3_5km, attendu)
+})

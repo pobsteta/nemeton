@@ -115,7 +115,8 @@ un raccourci.
 | 4 | Paquet propre : `.Rbuildignore` (archive de 5,4 Go dans `data/`), DESCRIPTION, `.Rd` (8 WARNING → 0), roxygen détachés, non-ASCII, CI | **v0.211.0** | ✅ livré : 0 WARNING, CI en échec sur warning |
 | 5 | Seconde passe sur les calculs : 31 constats majeurs (indicateurs, échantillonnage, climat, RECONFORT) | **v0.212.0** | ✅ livré, brief app émis |
 | 6 | Reliquat des constats majeurs (53 « M » revérifiés : 34 déjà corrigés, 14 corrigés, 5 en décision) | **v0.213.0** | ✅ livré |
-| 7 | Contrat d'API : retours vecteur / `sf`, `lang`, 313 exports à trier ; offset S2 ; constats « m » | 0.214 | ⬜ décisions Pascal |
+| 7 | Constats mineurs « m » (~111 revérifiés : ~90 corrigés, le reste déjà corrigé, non retenu ou en décision) | **v0.214.0** | ✅ livré |
+| 8 | Décisions ouvertes (offset S2, contrat d'API, migrations SQL…) puis 1.0.0 | 0.215+ | ⬜ décisions Pascal |
 
 **Journal** — *2026-10-02* (**v0.208.0**) : vague 1 livrée, dix correctifs,
 chacun avec un test qui échouait avant. Valeurs changées côté app : volumes
@@ -219,7 +220,19 @@ contrat de retour des indicateurs et `lang` ; `.onLoad` et options terra ;
 données des tutoriels 07/08 ; emplacement des PDF du corpus RAG ; ADR-016 ;
 calibrages 0.212.
 
-**Prochaine étape** : vague 7 (contrat d'API, offset S2 si validé, constats « m »). L'app consomme 135
+**Journal** — *2026-10-05* (**v0.214.0**) : vague 7, les ~111 constats
+mineurs du rapport revérifiés par quatre agents ; environ 90 corrigés, chacun
+avec un test qui échouait avant pour les bugs. **Le rapport d'audit n'a plus
+aucun constat sans marque.** `withr` passe en Imports (il était utilisé dans le
+code sans être déclaré). Aucune signature d'export consommé par l'app ne
+change ; `list_alerts()` change de types sous SQLite seulement (alignés sur
+PostgreSQL ; l'app le lit via `sf`, sans impact constaté).
+
+**Ce qui sépare de la 1.0.0** : les décisions listées dans NEWS 0.214.0
+(offset S2 en premier : il fausse les indices des scènes post-2022), la
+recalibration éventuelle, puis le recalcul des projets côté app.
+
+**Prochaine étape** : décisions de Pascal (vague 8), puis 1.0.0. L'app consomme 135
 des 313 exports et lit 21 symboles internes : ne rien retirer ni changer de
 signature parmi eux sans brief app (`specs/audit-1.0/exports-consommes-app.md`).
 

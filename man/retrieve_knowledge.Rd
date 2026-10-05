@@ -29,7 +29,7 @@ tagged with at least one of these family / indicator codes.}
 \item{profile_codes}{Optional character vector. Keep only documents
 tagged with at least one of these actor-profile codes.}
 
-\item{min_similarity}{Numeric in `[0, 1]`. Drop chunks below this
+\item{min_similarity}{Numeric in `[-1, 1]` (cosine similarity). Drop chunks below this
 cosine similarity. Default 0.7.}
 
 \item{lang}{Optional ISO 639-1 code. Keep only documents in this

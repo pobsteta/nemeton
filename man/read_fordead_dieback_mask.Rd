@@ -14,8 +14,8 @@ read_fordead_dieback_mask(
 )
 }
 \arguments{
-\item{con}{A `DBI` connection. Reserved (see above) — pass it for
-forward compatibility ; `NULL` is also accepted in this release.}
+\item{con}{A `DBI` connection, or `NULL`. Only used to read the zone
+polygon for `apply_zone_mask` (see above).}
 
 \item{zone_id}{Integer. `monitoring_zone.id`.}
 
@@ -53,25 +53,22 @@ most recent file (lexicographic order on the YYYYMMDDTHHMMSS suffix
 }
 \section{Path convention }{
 
-Mask files are written by the postprocess phase of
-[run_fordead_dieback()] (in a future release ; see PLAN.md) to the
-conventional layout :
+Mask files are written by the persist phase of
+[run_fordead_dieback()] to the conventional layout :
 \preformatted{<cache_dir>/
   zone_<zone_id>/
     dieback_mask_<YYYYMMDDTHHMMSS>.tif}
 
-Until the persist hook lands, this function returns `NULL` unless
-the caller has manually placed a categorical GeoTIFF at that
-location.
+With `replace = TRUE` (default) a run prunes the masks of earlier
+runs of the zone, so the directory usually holds a single file.
 }
 
 \section{`con` parameter }{
 
-The `con` argument is reserved for a future `fordead_run` tracking
-table (DB-side index of completed runs per zone). It is **not**
-consulted in this release — discovery is filesystem-based. The
-argument is kept in the signature for forward compatibility so the
-call sites don't need to change once the tracking table lands.
+Discovery of the mask is filesystem-based: `con` is **not** used to
+find it. It is only read to fetch the zone polygon when
+`apply_zone_mask = TRUE` and no `mask_polygon` is given; with
+`con = NULL` the zone mask is then skipped.
 }
 
 \examples{

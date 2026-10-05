@@ -65,6 +65,17 @@ test_that("missing micro / layer yields NA score and zero coverage", {
   # A4 needs both layers — only one present -> NA
   a4 <- indicateur_a4_tamponnement(u, micro = list(tmax_understorey = mk_r(24)))
   expect_true(is.na(a4$A4))
+  # Un resultat NA ne revendique pas l'augmentation « microclimate_model »
+  # (audit 1.0) ; un drapeau deja present est conserve.
+  expect_false("microclimate_model" %in% attr(a3, "augmented"))
+  expect_false("microclimate_model" %in% attr(a4, "augmented"))
+  r6 <- indicateur_r6_sensibilite(u, micro_moyenne = NULL,
+                                  micro_canicule = list(tmax_understorey = mk_r(30)))
+  expect_false("microclimate_model" %in% attr(r6, "augmented"))
+  u_aug <- u
+  attr(u_aug, "augmented") <- "height_ml"
+  expect_equal(attr(indicateur_w4_vpd(u_aug, micro = NULL), "augmented"),
+               "height_ml")
 })
 
 test_that("partial raster coverage lowers couverture_pct", {
@@ -107,4 +118,14 @@ test_that("R6 is NA when a year's micro layer is missing", {
     micro_canicule = list(tmax_understorey = mk_r(31), vpd = mk_r(2.5)))
   expect_true(is.na(out$R6))
   expect_equal(out$R6_couverture_pct, 0)
+})
+
+test_that("microclimate_run : scaffold qui refuse proprement (audit 1.0, export sans test)", {
+  aoi <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_buffer(sf::st_point(c(900000, 6700000)), 100), crs = 2154))
+  # Structure inconnue : match.arg()
+  expect_error(microclimate_run(aoi, 2022, structure = "drone"))
+  # Sans les paquets lourds, ou tant que l'orchestration n'est pas câblée,
+  # l'appel s'arrête en renvoyant vers un `micro` précalculé.
+  expect_error(microclimate_run(aoi, 2022), "micro")
 })

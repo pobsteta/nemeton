@@ -29,6 +29,19 @@ test_that("invalid input errors clearly", {
   expect_error(microclimate_detect_years(eobs = c("2020" = 22)), "named numeric")
 })
 
+test_that("< 2 années exploitables après retrait des NA -> erreur (audit 1.0)", {
+  # Le contrôle `length >= 2` était fait avant le retrait des NA : une même
+  # année revenait alors comme « moyenne » ET « canicule », sans message.
+  expect_error(microclimate_detect_years(c("2019" = 21.5, "2020" = NA)),
+               "usable")
+  expect_error(microclimate_detect_years(c("2019" = 21.5, "x" = 22)),
+               "usable")
+  # year_window qui ne laisse qu'une année candidate.
+  expect_error(microclimate_detect_years(c("2019" = 21, "2020" = 22,
+                                           "2021" = 23), year_window = 1),
+               "usable")
+})
+
 # --- chemin SpatRaster (extraction estivale par an sur l'AOI, spec 027 L2) ---
 
 .mcy_rast <- function(vals, years, left = NULL, right = NULL) {

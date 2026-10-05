@@ -76,11 +76,12 @@ raises a typed `validation_weight_raster_mismatch` error. Ignored when
 `weighting = "uniform"`.}
 
 \item{seed}{Integer or `NULL`. When non-`NULL`, makes the GRTS draw
-reproducible.}
+reproducible. The seed is applied locally: the session's global random
+state is restored on exit.}
 }
 \value{
-An `sf` POINT object in EPSG:2154 with the following
-  columns:
+An `sf` POINT object in the CRS of `alert_raster` (EPSG:2154 for
+  the FORDEAD / RECONFORT caches) with the following columns:
   \describe{
     \item{`plot_id`}{Character. Identifier `V01`, `V02`, ... for
       validation plots, `T01`, `T02`, ... for controls.}

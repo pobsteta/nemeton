@@ -22,12 +22,13 @@ B1_NB_STATUTS_MAX <- 4L
 #' areas (ZNIEFF, Natura2000, National/Regional Parks).
 #'
 #' @param units An sf object with forest parcels (POLYGON or MULTIPOLYGON).
-#' @param protected_areas An sf object with protected area polygons. If NULL and
-#'   source="wfs", will attempt to fetch from INPN WFS service.
-#' @param source Character. Data source: "local" (use protected_areas parameter)
-#'   or "wfs" (fetch from INPN). Default "local".
-#' @param protection_types Character vector. Types of protected areas to include
-#'   when using WFS. Default c("ZNIEFF1", "ZNIEFF2", "N2000_SCI").
+#' @param protected_areas An sf object with protected area polygons (for
+#'   instance the `protected_areas` layer of the data catalog). `NULL` gives NA.
+#' @param source Kept for backward compatibility; has no effect. `"wfs"` does
+#'   not fetch anything: this function never queries the INPN WFS, and the
+#'   protected areas must be supplied through `protected_areas`.
+#' @param protection_types Kept for backward compatibility; has no effect (all
+#'   the features of `protected_areas` are used).
 #' @param preprocess Logical. If TRUE, harmonize CRS automatically. Default TRUE.
 #'
 #' @return The input sf object with added columns:
@@ -65,19 +66,11 @@ B1_NB_STATUTS_MAX <- 4L
 #' # Load demo data
 #' data(massif_demo_units)
 #'
-#' # Option A: Use local protected area data
+#' # Protected areas supplied by the caller (e.g. the catalog layer)
 #' protected_zones <- st_read("path/to/protected_areas.shp")
 #' result <- indicateur_b1_protection(
 #'   massif_demo_units,
-#'   protected_areas = protected_zones,
-#'   source = "local"
-#' )
-#'
-#' # Option B: Fetch from INPN WFS (requires internet)
-#' result <- indicateur_b1_protection(
-#'   massif_demo_units,
-#'   source = "wfs",
-#'   protection_types = c("ZNIEFF1", "ZNIEFF2", "N2000_SCI")
+#'   protected_areas = protected_zones
 #' )
 #'
 #' # View results
@@ -107,18 +100,12 @@ indicateur_b1_protection <- function(units,
   #
   # A protected_areas WITH ZERO ROWS, supplied by the caller, keeps returning
   # 0: that one IS a measurement.
+  # `source = "wfs"` n'a jamais été implémenté (aucune requête INPN) : on ne
+  # prétend plus « récupérer » puis « se replier sur le local ».
   if (is.null(protected_areas)) {
-    if (source == "wfs") {
-      msg_info("biodiversity_wfs_fetching")
-      msg_warn("biodiversity_wfs_failed")
-      cli::cli_alert_info(
-        "B1: INPN WFS fetch unavailable, returning NA (no measurement made)."
-      )
-    } else {
-      cli::cli_alert_info(
-        "B1: no protected-areas data provided, returning NA (no measurement made)."
-      )
-    }
+    cli::cli_alert_info(
+      "B1: no protected-areas data provided, returning NA (no measurement made)."
+    )
     units$B1 <- rep(NA_real_, nrow(units))
     return(units)
   }

@@ -34,7 +34,10 @@ If NULL and multiple indicators present, creates faceted plot.}
   \item "YlOrRd" - Yellow-Orange-Red sequential
   \item "Greens" - Green sequential
   \item "Blues" - Blue sequential
-}}
+}
+When not given, raw risk indicators (R1-R5, high = more risk) get
+"YlOrRd" and \code{famille_risque} (high = lower risk) gets "RdYlGn",
+so red always marks the riskiest units.}
 
 \item{direction}{Numeric. Direction of color scale: 1 (default) or -1 (reversed)}
 

@@ -21,7 +21,9 @@ microclimate_run(aoi, year, structure = c("lidarhd", "opencanopy"),
 \item{quiet}{Suppress progress messages.}
 }
 \value{
-A named list of \code{terra::SpatRaster} — \code{tmax_understorey},
+Nothing for now: the function \strong{always raises an error} (missing
+Suggests, or orchestration not wired yet). Once wired, it will return a
+named list of \code{terra::SpatRaster} — \code{tmax_understorey},
 \code{tmax_open}, \code{vpd}, \code{rh} (summer JJA) — the \code{micro} contract.
 }
 \description{

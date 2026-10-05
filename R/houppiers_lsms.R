@@ -219,7 +219,10 @@ lsms_budget_pixels <- function(budget_s, spatialr = .LSMS_DEFAUTS$spatialr) {
     ))
   }
 
-  tmp <- withr::local_tempdir()
+  # Repertoire temporaire en base R : withr n'est qu'en Suggests (audit 1.0).
+  tmp <- tempfile("lsms_")
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
   img_path <- file.path(tmp, "lsms_in.tif")
   terra::writeRaster(image, img_path, overwrite = TRUE)
   shp <- file.path(tmp, "lsms_out.shp")

@@ -4,7 +4,14 @@
 \alias{cluster_parcels}
 \title{Cluster Parcels by Multi-Family Profiles}
 \usage{
-cluster_parcels(data, families, k = NULL, method = "kmeans", max_k = 10)
+cluster_parcels(
+  data,
+  families,
+  k = NULL,
+  method = "kmeans",
+  max_k = 10,
+  seed = NULL
+)
 }
 \arguments{
 \item{data}{An sf object or data.frame containing the parcels to cluster}
@@ -18,7 +25,13 @@ number of clusters is determined automatically using silhouette analysis.}
 \item{method}{Character string specifying clustering method: \code{"kmeans"}
 (default) or \code{"hierarchical"} (Ward's linkage)}
 
-\item{max_k}{Maximum number of clusters to test when k is NULL (default: 10)}
+\item{max_k}{Maximum number of clusters to test when k is NULL (default: 10).
+Automatic k needs \code{max_k >= 2} and at least 3 units.}
+
+\item{seed}{Optional integer. When given, the random initialisation of
+k-means is made reproducible with a local seed; the caller's random
+number stream is left untouched. \code{NULL} (default) uses the current
+RNG state.}
 }
 \value{
 The input data with an additional \code{cluster} integer column

@@ -248,6 +248,65 @@ test_that("prune_orphan_zone_caches refuses when monitoring_zone is empty (audit
   expect_false(dir.exists(d1)); expect_false(dir.exists(d2))
 })
 
+test_that("un sf multi-entités n'est plus tronqué à la première entité (audit 1.0)", {
+  skip_if_not_installed("sf")
+  with_sqlite_monitoring_db(function(con) {
+    sq <- function(x0) sf::st_polygon(list(matrix(
+      c(x0, 47, x0 + 0.1, 47, x0 + 0.1, 47.1, x0, 47.1, x0, 47),
+      ncol = 2, byrow = TRUE)))
+    deux <- sf::st_sf(id = 1:2, geometry = sf::st_sfc(sq(4), sq(5), crs = 4326))
+    placettes <- sf::st_sf(plot_id = "P1",
+      geometry = sf::st_sfc(sf::st_point(c(4.05, 47.05)), crs = 4326))
+
+    z1 <- create_monitoring_zone(con, "multi_tot", deux, project_uuid = "u-multi")
+    z2 <- register_monitoring_zone(con, "multi_reg", deux, placettes)
+    for (z in c(z1, z2)) {
+      wkt <- DBI::dbGetQuery(con,
+        "SELECT zone_wkt FROM monitoring_zone WHERE id = ?", params = list(z))$zone_wkt
+      g <- sf::st_as_sfc(wkt, crs = 4326)
+      # Les deux carrés sont conservés : l'emprise couvre 4.0 -> 5.1.
+      bb <- sf::st_bbox(g)
+      expect_equal(unname(bb[["xmin"]]), 4)
+      expect_equal(unname(bb[["xmax"]]), 5.1)
+    }
+  })
+})
+
+test_that("l'id d'une zone créée vient de RETURNING, pas d'une relecture par nom (audit 1.0)", {
+  skip_if_not_installed("sf")
+  with_sqlite_monitoring_db(function(con) {
+    # Un déclencheur insère une homonyme juste après chaque insertion :
+    # simule une insertion concurrente entre l'INSERT et la relecture.
+    DBI::dbExecute(con, paste(
+      "CREATE TRIGGER zone_concurrente AFTER INSERT ON monitoring_zone",
+      "WHEN NEW.zone_wkt <> 'POINT(9 9)' BEGIN",
+      "INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg)",
+      "VALUES (NEW.name, 'POINT(9 9)', 4326); END"))
+    pol <- sf::st_as_sfc(sf::st_bbox(
+      c(xmin = 4, ymin = 47, xmax = 5, ymax = 48), crs = 4326))
+    placettes <- sf::st_sf(plot_id = "P1",
+      geometry = sf::st_sfc(sf::st_point(c(4.5, 47.5)), crs = 4326))
+    for (z in list(create_monitoring_zone(con, "homonyme", pol),
+                   register_monitoring_zone(con, "homonyme2", pol, placettes))) {
+      wkt <- DBI::dbGetQuery(con,
+        "SELECT zone_wkt FROM monitoring_zone WHERE id = ?", params = list(z))$zone_wkt
+      expect_false(identical(wkt, "POINT(9 9)"))
+    }
+  })
+})
+
+test_that("find_zone_by_project renvoie la zone la plus ancienne, de façon déterministe (audit 1.0)", {
+  skip_if_not_installed("sf")
+  with_sqlite_monitoring_db(function(con) {
+    pol <- sf::st_as_sfc(sf::st_bbox(
+      c(xmin = 4, ymin = 47, xmax = 5, ymax = 48), crs = 4326))
+    z_b <- create_monitoring_zone(con, "proj_tot", pol, project_uuid = "u-ord")
+    z_a <- create_monitoring_zone(con, "proj_feu", pol, project_uuid = "u-ord")
+    expect_lt(z_b, z_a)
+    expect_identical(find_zone_by_project(con, "u-ord"), as.integer(z_b))
+  })
+})
+
 test_that("prune_orphan_zone_caches refuses when the project has no zone (audit 1.0)", {
   root <- withr::local_tempdir()
   d <- .mk_zone_dir(root, "fast_alert", 7L)

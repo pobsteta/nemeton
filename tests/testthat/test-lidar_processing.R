@@ -185,6 +185,33 @@ test_that("probe_ign_lidar_tile returns a connection-failure result on bad host"
   expect_true(nzchar(res$message))
 })
 
+test_that("le CHM lasR exclut les classes de bruit (7 et 18)", {
+  # Audit 1.0 : le rasterize « max » du CHM prenait tous les points, bruit
+  # bas (7) et haut (18) compris, d'ou des pics aberrants.
+  skip_if_not_installed("lasR")
+  vus <- list()
+  local_mocked_bindings(
+    reader_las = function(...) 1,
+    triangulate = function(...) 1,
+    transform_with = function(...) 1,
+    keep_class = function(x) paste("keep", paste(x, collapse = ",")),
+    drop_class = function(x) paste("drop", paste(x, collapse = ",")),
+    rasterize = function(res, operators = "max", filter = "", ofile = "") {
+      vus[[length(vus) + 1L]] <<- list(operators = operators, filter = filter)
+      1
+    },
+    concurrent_files = function(n) n,
+    exec = function(...) TRUE,
+    .package = "lasR"
+  )
+  nemeton:::.lasr_derive("a.laz", "dtm.tif", "chm.tif", res = 1, ncores = 1L)
+  chm <- Filter(function(v) identical(v$operators, "max"), vus)
+  expect_length(chm, 1L)
+  expect_match(chm[[1]]$filter, "drop")
+  expect_match(chm[[1]]$filter, "7")
+  expect_match(chm[[1]]$filter, "18")
+})
+
 test_that("probe_ign_lidar_tiles returns an empty data.frame for length-0 input", {
   skip_if_not_installed("httr2")
   out <- probe_ign_lidar_tiles(character(0))

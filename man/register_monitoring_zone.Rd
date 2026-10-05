@@ -19,7 +19,8 @@ register_monitoring_zone(
 \item{zone_name}{Character. Display name for the zone.}
 
 \item{zone_polygon}{An sf POLYGON (any CRS — re-projected to WGS84
-internally for storage).}
+internally for storage). Several features are unioned into one
+(MULTI)POLYGON.}
 
 \item{placettes}{An sf POINT object with at least the columns
 `plot_id` (character) and optionally `type`.}
@@ -31,9 +32,11 @@ metres. Default 15.}
 Opaque project identifier used by callers (`nemetonshiny`) to
 stably bind a project to its monitoring zone. When non-`NULL`,
 stored on `monitoring_zone.project_uuid` and queryable via
-[find_zone_by_project()]. UNIQUE on non-`NULL` values — registering
-a second zone with the same `project_uuid` raises a DB error.
-Available since spec 011 (migration `0003_project_uuid`).}
+[find_zone_by_project()]. Since migration `0005` (spec 020) the
+uniqueness is on `(project_uuid, zone_name)`: a project may own several
+zones, but registering the same `zone_name` twice for one
+`project_uuid` raises a DB error. Available since spec 011 (migration
+`0003_project_uuid`).}
 }
 \value{
 The `zone_id` (integer) of the registered zone.

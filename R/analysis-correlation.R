@@ -335,8 +335,15 @@ plot_correlation_matrix <- function(corr_matrix,
   names(corr_df) <- c("Family1", "Family2", "Correlation")
 
   # Afficher le code lettre pour lisibilite
-  corr_df$Family1 <- vapply(corr_df$Family1, function(n) get_famille_code(n) %||% n, character(1))
-  corr_df$Family2 <- vapply(corr_df$Family2, function(n) get_famille_code(n) %||% n, character(1))
+  # get_famille_code() rend NA (jamais NULL) pour un nom inconnu : `%||%` ne
+  # retombait donc jamais et la heatmap affichait « NA » (audit 1.0).
+  .code_ou_nom <- function(x) {
+    x <- as.character(x)
+    code <- get_famille_code(x)
+    ifelse(is.na(code), x, code)
+  }
+  corr_df$Family1 <- .code_ou_nom(corr_df$Family1)
+  corr_df$Family2 <- .code_ou_nom(corr_df$Family2)
 
   # Generate title if not provided
   if (is.null(title)) {
@@ -353,6 +360,12 @@ plot_correlation_matrix <- function(corr_matrix,
       "#FDDBC7", "#F4A582", "#D6604D", "#B2182B"
     )
   } else {
+    # viridisLite est en Suggests : on vérifie sa présence (audit 1.0).
+    if (!.has_viridislite()) {
+      cli::cli_abort(c(
+        "Package {.pkg viridisLite} is required for {.code palette = \"{palette}\"}.",
+        i = "Install it, or use {.code palette = \"RdBu\"}."))
+    }
     colors <- viridisLite::viridis(9)
   }
 
@@ -403,4 +416,9 @@ plot_correlation_matrix <- function(corr_matrix,
   p <- p + ggplot2::coord_fixed()
 
   return(p)
+}
+
+# Présence de viridisLite (Suggests) ; isolé pour être simulable en test.
+.has_viridislite <- function() {
+  requireNamespace("viridisLite", quietly = TRUE)
 }

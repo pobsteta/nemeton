@@ -32,7 +32,9 @@ If NULL, auto-detects indicator columns.}
 
 \item{keep_original}{Logical. Keep original indicator columns? Default TRUE.}
 
-\item{na.rm}{Logical. Remove NA values before normalization? Default TRUE.}
+\item{na.rm}{Logical. Remove NA values before normalization? Default TRUE.
+With \code{FALSE}, a single NA in the reference makes the bounds unknown and
+the whole normalized column is NA.}
 
 \item{reference_data}{Optional data.frame with reference values for normalization.
 Useful for normalizing new data using parameters from a reference dataset.}

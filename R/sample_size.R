@@ -74,7 +74,8 @@ compute_sample_size <- function(cv,
       is.na(target_error) || target_error <= 0) {
     cli::cli_abort("{.arg target_error} must be a positive scalar.")
   }
-  if (!is.numeric(alpha) || length(alpha) != 1L ||
+  # is.na() : alpha = NA_real_ donnait une erreur brute (audit 1.0).
+  if (!is.numeric(alpha) || length(alpha) != 1L || is.na(alpha) ||
       alpha <= 0 || alpha >= 1) {
     cli::cli_abort("{.arg alpha} must be in (0, 1).")
   }

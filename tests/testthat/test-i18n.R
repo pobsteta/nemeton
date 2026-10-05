@@ -501,5 +501,22 @@ test_that("msg falls back to English when key missing in French", {
   expect_true(nchar(result) > 0)
 })
 
+test_that("chaque indicateur déclaré a son libellé FR et EN (audit 1.0)", {
+  m <- nemeton:::.messages
+  cols <- get_all_column_names()
+  expect_identical(setdiff(cols, names(m$en)), character(0))
+  expect_identical(setdiff(cols, names(m$fr)), character(0))
+})
+
+test_that("les messages FR et EN ont le même nombre de paramètres (audit 1.0)", {
+  # demo_files_missing avait 2 `%s` en anglais et 3 en français : sprintf()
+  # échouait en français avec les arguments de l'anglais.
+  m <- nemeton:::.messages
+  n_args <- function(s) lengths(regmatches(s, gregexpr("%[^%]", s)))
+  k <- intersect(names(m$en), names(m$fr))
+  diff <- k[vapply(m$en[k], n_args, 1) != vapply(m$fr[k], n_args, 1)]
+  expect_identical(diff, character(0))
+})
+
 # Reset language to English at end of tests
 nemeton::nemeton_set_language("en")
