@@ -154,7 +154,8 @@ cv_lookup <- function(context_key,
 #'
 #' @return A list with:
 #'   \itemize{
-#'     \item \code{cv}: the aggregated CV (numeric fraction).
+#'     \item \code{cv}: the aggregated CV (numeric fraction), averaged over
+#'       the classes whose CV is known; \code{NA} when none is.
 #'     \item \code{position}: the bound used.
 #'     \item \code{coverage}: total mapped area / total input area
 #'       (sanity check — how much of the AOI was classified).
@@ -271,7 +272,15 @@ cv_from_bdforet <- function(bdforet_sf,
   df_forest$share <- df_forest$area_m2 / forest_area
   df_forest <- df_forest[order(-df_forest$area_m2), , drop = FALSE]
 
-  cv <- sum(df_forest$cv * df_forest$share, na.rm = TRUE)
+  # Moyenne ponderee sur les seules classes dont le CV est connu : un CV NA
+  # compte pour 0 avec `na.rm = TRUE` sous-estimait le CV, donc la taille
+  # d'echantillon (audit 1.0). Aucun CV connu -> NA.
+  cv_ok <- !is.na(df_forest$cv)
+  cv <- if (any(cv_ok)) {
+    sum(df_forest$cv[cv_ok] * df_forest$share[cv_ok]) / sum(df_forest$share[cv_ok])
+  } else {
+    NA_real_
+  }
   coverage <- if (total_area > 0) forest_area / total_area else NA_real_
   ambiguous <- df_forest[!is.na(df_forest$confidence) &
                           df_forest$confidence == "ambiguous",

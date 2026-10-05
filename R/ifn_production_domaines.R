@@ -96,18 +96,22 @@ ifn_covariables_domaines <- function(domaines, hauteur, altitude, id_col = NULL,
   }
   af <- terra::ifel(foret == 1 & !is.na(alt), alt, 0)
   nalt <- terra::ifel(foret == 1 & !is.na(alt), 1, 0)
-  st <- c(foret, hf, hf^2, nalt, af, af^2)
-  names(st) <- c("n", "s1", "s2", "na", "a1", "a2")
+  # Aire de foret en m2 via l'aire reelle de chaque pixel : res_x * res_y
+  # rendait des degres carres sur un raster en longitude/latitude, divises
+  # ensuite par une aire de domaine en m2 (audit 1.0).
+  # (transform = FALSE : aire planaire en CRS projete, comme sf::st_area).
+  aire_foret <- foret * terra::cellSize(h, unit = "m", transform = FALSE)
+  st <- c(foret, hf, hf^2, nalt, af, af^2, aire_foret)
+  names(st) <- c("n", "s1", "s2", "na", "a1", "a2", "aire")
   e <- exactextractr::exact_extract(st, dom, "sum", progress = FALSE)
   names(e) <- names(st)
-  aire_pix <- prod(terra::res(h))
   data.frame(
     id = ids,
     h_mean = ifelse(e$n > 0, e$s1 / e$n, NA_real_),
     h_sd = ifelse(e$n > 0, sqrt(pmax(e$s2 / e$n - (e$s1 / e$n)^2, 0)), NA_real_),
     alt_mean = ifelse(e$na > 0, e$a1 / e$na, NA_real_),
     alt_sd = ifelse(e$na > 0, sqrt(pmax(e$a2 / e$na - (e$a1 / e$na)^2, 0)), NA_real_),
-    part_foret = e$n * aire_pix / as.numeric(sf::st_area(dom)),
+    part_foret = e$aire / as.numeric(sf::st_area(dom)),
     stringsAsFactors = FALSE
   )
 }
@@ -136,6 +140,8 @@ ifn_covariables_domaines <- function(domaines, hauteur, altitude, id_col = NULL,
 #'   the domain's covariates and those of its sylvoecoregions. Validated
 #'   against the inventory on grid cells: 19 to 35 percent lower error than
 #'   `"ser"` for `"pv"`, but no gain for `"pg"`, which therefore keeps `"ser"`.
+#'   A domain whose covariates are missing or NA falls back to `"ser"` (with
+#'   its own `A(S)`), with a warning; `predicteur` says which one was used.
 #'
 #' @section Limits to state alongside the figures:
 #' * `A(S)` is calibrated between 22 500 ha (15 km cells) and 1 million ha;
@@ -205,7 +211,11 @@ ifn_production_domaines <- function(domaines, attribut = c("pv", "pg"),
   if (!is.null(covariables) && !hybride) {
     cli::cli_inform("{.arg covariables} unused for {.val {attribut}}: the hybrid prediction did not beat the SER one in validation.")
   }
-  e_pred <- ech[ech$predicteur == if (hybride) "hybride" else "ser", , drop = FALSE]
+  # Les deux lignes de calage : un domaine sans covariable exploitable retombe
+  # sur le predicteur SER, avec SA variance A(S).
+  e_ser <- ech[ech$predicteur == "ser", , drop = FALSE]
+  e_hyb <- if (hybride) ech[ech$predicteur == "hybride", , drop = FALSE] else NULL
+  sans_cov <- character(0)
   if (hybride) {
     if (!all(c("id", "h_mean", "h_sd", "alt_mean", "alt_sd") %in% names(covariables))) {
       cli::cli_abort("{.arg covariables} must come from {.fn ifn_covariables_domaines}.")
@@ -230,8 +240,6 @@ ifn_production_domaines <- function(domaines, attribut = c("pv", "pg"),
     p <- pl[k, , drop = FALSE]
     vif <- p[p$echantillon == "vif", , drop = FALSE]
     surface <- as.numeric(sf::st_area(geom[d])) / 1e4
-    A <- exp(e_pred$a + e_pred$b * log(surface))
-    hors <- surface < e_pred$surface_min_ha || surface > e_pred$surface_max_ha
 
     # Poids des SER : part des placettes vives (echantillon systematique, donc
     # proportionnelle a la surface). Sans placette : SER dominante du contour.
@@ -243,7 +251,11 @@ ifn_production_domaines <- function(domaines, attribut = c("pv", "pg"),
     }
 
     # Correction hybride : beta x (covariables du domaine - celles de ses SER).
+    # `hyb_d` : la correction a-t-elle vraiment ete appliquee a CE domaine ?
+    # Une covariable absente ou NA donnait delta = 0 tout en annoncant
+    # « hybride » (audit 1.0) : le domaine est alors rendu en « ser ».
     delta <- 0
+    hyb_d <- FALSE
     if (hybride && !is.null(w)) {
       xd <- covariables[match(ids[d], as.character(covariables$id)), , drop = FALSE]
       xs <- cov_ser[match(names(w), cov_ser$ser), , drop = FALSE]
@@ -254,9 +266,16 @@ ifn_production_domaines <- function(domaines, attribut = c("pv", "pg"),
           v <- cf$terme[j]
           cf$beta[j] * (xd[[v]] - sum(ww * xs[[v]][ok])) / cf$echelle[j]
         }, numeric(1))
-        if (all(is.finite(termes))) delta <- sum(termes)
+        if (all(is.finite(termes))) {
+          delta <- sum(termes)
+          hyb_d <- TRUE
+        }
       }
     }
+    if (hybride && !hyb_d && !is.null(w)) sans_cov <- c(sans_cov, ids[d])
+    e_pred <- if (hyb_d) e_hyb else e_ser
+    A <- exp(e_pred$a + e_pred$b * log(surface))
+    hors <- surface < e_pred$surface_min_ha || surface > e_pred$surface_max_ha
 
     # Part des placettes a moins de 700 m du contour (coordonnees floutees).
     bord <- if (nrow(vif) > 0L) {
@@ -304,7 +323,7 @@ ifn_production_domaines <- function(domaines, attribut = c("pv", "pg"),
                        mse = NA_real_, rse = NA_real_, n_placettes = nrow(vif),
                        poids_direct = NA_real_, part_bordure = bord,
                        ser = NA_character_, surface_ha = surface,
-                       predicteur = if (hybride) "hybride" else "ser",
+                       predicteur = if (hyb_d) "hybride" else "ser",
                        variance_domaine = A, hors_calibrage = hors,
                        nature = NA_character_, campagnes = NA_character_,
                        stringsAsFactors = FALSE)
@@ -321,6 +340,13 @@ ifn_production_domaines <- function(domaines, attribut = c("pv", "pg"),
     base$nature <- if (nrow(vif) > 0L) "composite" else "prediction"
     base$campagnes <- paste(dc$campagne, collapse = ",")
     lignes[[d]] <- base
+  }
+  if (length(sans_cov)) {
+    cli::cli_warn(c(
+      "Hybrid prediction not applied to {length(sans_cov)} domain{?s} \
+       ({.val {sans_cov}}): missing or NA covariates.",
+      i = "Those domains fall back to the SER prediction ({.field predicteur} = {.val ser})."
+    ))
   }
   out <- do.call(rbind, lignes)
   rownames(out) <- NULL

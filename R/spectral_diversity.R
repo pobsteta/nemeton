@@ -410,10 +410,23 @@ indicateur_b4_div_spectrale <- function(units,
     .aggregate_diversity(spectral$alpha, units)
   }
   units[[column_name]] <- values
-  cli::cli_alert_success(
-    "Calculated {column_name}: spectral alpha diversity (Shannon) via biodivMapR"
-  )
+  .spectral_message(values, column_name,
+                    "spectral alpha diversity (Shannon) via biodivMapR")
   units
+}
+
+# Message de fin : « Calculated » seulement si au moins une valeur existe.
+# Tout NA (pas de `spectral` ni de `reflectance`, aucune fenetre couverte)
+# n'est pas un calcul (audit 1.0).
+.spectral_message <- function(values, column_name, quoi) {
+  if (any(!is.na(values))) {
+    cli::cli_alert_success("Calculated {column_name}: {quoi}")
+  } else {
+    cli::cli_alert_info(
+      "{column_name}: no spectral diversity available, returning NA (no measurement made)."
+    )
+  }
+  invisible(NULL)
 }
 
 
@@ -466,9 +479,7 @@ indicateur_l3_het_spectrale <- function(units,
     .aggregate_beta_dispersion(spectral$beta, units, min_windows = min_windows)
   }
   units[[column_name]] <- values
-  cli::cli_alert_success(
-    "Calculated {column_name}: spectral beta diversity \\
-     (Bray-Curtis PCoA dispersion) via biodivMapR"
-  )
+  .spectral_message(values, column_name,
+                    "spectral beta diversity (Bray-Curtis PCoA dispersion) via biodivMapR")
   units
 }

@@ -657,3 +657,22 @@ test_that("standardize_hunting_columns handles code_dept pattern", {
   expect_equal(result$espece[1], "cerf")
   expect_true("code_dept" %in% names(result))
 })
+
+test_that("un simple warning jsonlite ne fait pas perdre la resolution des URL", {
+  # Audit 1.0 : `warning = function(w) NULL` dans le tryCatch abandonnait la
+  # reponse de l'API au premier avertissement (ex. fin de ligne incomplete).
+  cache <- nemeton:::.hunting_urls_cache
+  ancien <- cache$urls
+  cache$urls <- NULL
+  on.exit(cache$urls <- ancien, add = TRUE)
+  url <- "https://static.data.gouv.fr/x/20250605/chevreuil-departement.csv"
+  local_mocked_bindings(
+    fromJSON = function(...) {
+      warning("incomplete final line found")
+      list(resources = list(list(title = "chevreuil-departement.csv", url = url)))
+    },
+    .package = "jsonlite"
+  )
+  res <- suppressWarnings(nemeton:::resolve_hunting_urls_from_api())
+  expect_equal(res$chevreuil, url)
+})

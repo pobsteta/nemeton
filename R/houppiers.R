@@ -135,9 +135,10 @@
 #'   of the dominant trees: too small splits a crown into several, too large
 #'   merges neighbours.
 #' @param hmin Minimum apex height, in metres. Below it, no tree is located.
-#' @param algorithme `"dalponte"` (default), `"silva"` or `"watershed"`. The
-#'   first two grow regions from located apexes; `"watershed"` ignores them and
-#'   floods the inverted surface.
+#' @param algorithme `"dalponte"` (default), `"silva"`, `"watershed"` or
+#'   `"lsms"`. The first two grow regions from located apexes; `"watershed"`
+#'   ignores them and floods the inverted surface; `"lsms"` segments the
+#'   orthophoto `image` with the OTB Large-Scale Mean-Shift.
 #' @param emprise How `aoi` is honoured. `"intersecte"` (default) segments on
 #'   the AOI grown by `marge_m`, then keeps **whole** every crown that meets the
 #'   AOI: a tree on the boundary is a tree, not a fraction of one. `"decoupe"`
@@ -153,6 +154,30 @@
 #'   A CHM that is still too large after `resolution` is aggregated further.
 #' @param h_range Admissible apex heights, in metres (default `c(1, 70)`).
 #'   Crowns outside are dropped rather than shipped — the phone rejects them.
+#' @param image Orthophoto (IRC or RGB) as a `SpatRaster` or a path.
+#'   **Required** by `algorithme = "lsms"`, which segments an image and not
+#'   the CHM. Ignored by the other algorithms.
+#' @param usage LSMS only. `"martelage"` (default) **requires** a CHM and
+#'   fills `h_max` by a zonal max, as the CHM route does; without a CHM it
+#'   refuses, because Marculus ignores any feature lacking a readable height
+#'   -- silently. `"couvert"` owns up to producing no height at all: crown
+#'   area, stem density, canopy closure, and **no `h_max` column** (absent,
+#'   not `NA`, so no consumer reads it as a missing measurement).
+#' @param lsms LSMS only. Named list overriding `spatialr`, `ranger` and
+#'   `minsize`. The defaults (`15 / 20 / 700`) are calibrated against the CHM
+#'   route on the same window -- 7.88 m median equivalent diameter against
+#'   8.04 m, a 2 percent gap (spec 051 section 3.3). They are *not* the OTB
+#'   CookBook values, which over-segment by a factor of 15: at 2.4 m median
+#'   diameter one segments crown facets, not trees. Calibration covers one
+#'   stand type; a dense coppice will not want the same `spatialr`.
+#' @param resolution_image LSMS only. Working resolution, in metres, for the
+#'   image before segmentation. The single lever with an order-of-magnitude
+#'   effect on cost: coarsening 0.20 m to 0.50 m multiplies the affordable
+#'   area by about 6, at the cost of the spectral detail that justifies LSMS.
+#' @param budget_s LSMS only. Compute budget in seconds (default 600). The job
+#'   is estimated **before** OTB is called and refused above the budget, with
+#'   the pixel count that would fit. LSMS costs about 70 times the CHM route
+#'   at equal area, so the full extent of a massif is out of reach by design.
 #'
 #' @return An `sf` of POLYGON, one row per crown, with:
 #'   \describe{

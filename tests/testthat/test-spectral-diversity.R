@@ -49,6 +49,13 @@ test_that("B4 / L3 aggregate a precomputed alpha/beta raster per unit", {
   # A NULL raster in the spectral object -> NA (metric not produced).
   b4_na <- indicateur_b4_div_spectrale(u, spectral = list(alpha = NULL))
   expect_true(all(is.na(b4_na$B4)))
+
+  # Tout NA : pas de message « Calculated » (audit 1.0).
+  msgs <- testthat::capture_messages(indicateur_b4_div_spectrale(u))
+  expect_false(any(grepl("Calculated", msgs)))
+  expect_true(any(grepl("returning NA", msgs)))
+  msgs <- testthat::capture_messages(indicateur_l3_het_spectrale(u))
+  expect_false(any(grepl("Calculated", msgs)))
 })
 
 test_that("L3 reads a MULTI-BAND beta raster as a dispersion, not a position", {

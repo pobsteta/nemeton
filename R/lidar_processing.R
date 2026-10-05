@@ -227,7 +227,10 @@ compute_dtm_chm_from_laz <- function(laz_dir,
   tri   <- lasR::triangulate(filter = lasR::keep_class(2L))
   dtm_s <- lasR::rasterize(res, tri,   ofile = dtm_file)
   norm  <- lasR::transform_with(tri)
-  chm_s <- lasR::rasterize(res, "max", ofile = chm_file)
+  # Bruit bas (7) et haut (18, ASPRS) hors du CHM : un seul point aberrant
+  # suffisait a creer un pic dans un rasterize « max » (audit 1.0).
+  chm_s <- lasR::rasterize(res, "max", filter = lasR::drop_class(c(7L, 18L)),
+                           ofile = chm_file)
   pipeline <- read + tri + dtm_s + norm + chm_s
   lasR::exec(pipeline, on = laz_files,
              with = list(ncores = lasR::concurrent_files(ncores)))

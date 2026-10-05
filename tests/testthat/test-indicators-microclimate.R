@@ -65,6 +65,17 @@ test_that("missing micro / layer yields NA score and zero coverage", {
   # A4 needs both layers — only one present -> NA
   a4 <- indicateur_a4_tamponnement(u, micro = list(tmax_understorey = mk_r(24)))
   expect_true(is.na(a4$A4))
+  # Un resultat NA ne revendique pas l'augmentation « microclimate_model »
+  # (audit 1.0) ; un drapeau deja present est conserve.
+  expect_false("microclimate_model" %in% attr(a3, "augmented"))
+  expect_false("microclimate_model" %in% attr(a4, "augmented"))
+  r6 <- indicateur_r6_sensibilite(u, micro_moyenne = NULL,
+                                  micro_canicule = list(tmax_understorey = mk_r(30)))
+  expect_false("microclimate_model" %in% attr(r6, "augmented"))
+  u_aug <- u
+  attr(u_aug, "augmented") <- "height_ml"
+  expect_equal(attr(indicateur_w4_vpd(u_aug, micro = NULL), "augmented"),
+               "height_ml")
 })
 
 test_that("partial raster coverage lowers couverture_pct", {

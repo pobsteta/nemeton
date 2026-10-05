@@ -85,7 +85,8 @@
 #'   [load_onf_parcelles_source()]. These are the UGF.
 #' @param parcelles An `sf` of cadastral parcels. Its identifier column is taken
 #'   from `id_col`, or auto-detected among `id`, `nemeton_id`, `geo_parcelle`,
-#'   `idu`.
+#'   `idu`. Rows sharing an identifier are merged into one parcel, with a
+#'   warning.
 #' @param min_surface_ha Parts strictly smaller than this are treated as
 #'   slivers and absorbed. Default `0.05` (500 m²) — inside the natural gap
 #'   measured between slivers (≤ 0.035 ha) and real tenements (≥ 0.12 ha). Use
@@ -198,6 +199,25 @@ croiser_parcelles_onf <- function(parcelles_onf, parcelles,
   }
 
   cad_id <- as.character(cad[[col]])
+  # Un identifiant en double (parcelle livree en plusieurs morceaux) : l'aire
+  # de reference etait celle de la premiere ligne seule. On fusionne les
+  # morceaux par identifiant, en le disant (audit 1.0).
+  if (anyDuplicated(cad_id)) {
+    doublons <- unique(cad_id[duplicated(cad_id)])
+    cli::cli_warn(c(
+      "{length(doublons)} cadastral identifier{?s} appear{?s/} on several rows \\
+       ({.val {utils::head(doublons, 5)}}); their geometries are merged.",
+      i = "Pass {.arg id_col} if another column is the real parcel identifier."
+    ))
+    groupes <- split(seq_along(cad_id), factor(cad_id, levels = unique(cad_id)))
+    geo_cad <- do.call(c, lapply(groupes, function(i) {
+      g <- sf::st_geometry(cad)[i]
+      if (length(i) == 1L) g else sf::st_union(g)
+    }))
+    cad <- cad[vapply(groupes, `[`, integer(1), 1L), , drop = FALSE]
+    sf::st_geometry(cad) <- sf::st_cast(geo_cad, "MULTIPOLYGON")
+    cad_id <- as.character(cad[[col]])
+  }
   aire_cad <- stats::setNames(as.numeric(sf::st_area(cad)), cad_id)
   aire_onf <- stats::setNames(as.numeric(sf::st_area(onf)), onf$id)
 
@@ -274,14 +294,16 @@ croiser_parcelles_onf <- function(parcelles_onf, parcelles,
     frags$surface_ha <- as.numeric(sf::st_area(frags)) / 1e4
   }
 
-  if (min_surface_ha > 0) {
-    frags <- .croiser_absorber(frags, min_surface_ha)
-    frags$surface_ha <- as.numeric(sf::st_area(frags)) / 1e4
-  }
-
+  # Le hors UGF est retire AVANT l'absorption : sinon une echarde d'UGF qui ne
+  # touchait que lui y etait fondue, puis disparaissait avec lui (audit 1.0).
   if (!isTRUE(inclure_reste)) {
     frags <- frags[!frags$hors_ugf, , drop = FALSE]
     if (nrow(frags) == 0L) return(.croiser_vide(crs_sortie, n_concernees, nrow(cad)))
+  }
+
+  if (min_surface_ha > 0) {
+    frags <- .croiser_absorber(frags, min_surface_ha)
+    frags$surface_ha <- as.numeric(sf::st_area(frags)) / 1e4
   }
 
   frags$part_cadastrale <- frags$surface_ha * 1e4 /

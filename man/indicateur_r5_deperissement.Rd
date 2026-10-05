@@ -34,8 +34,11 @@ least a species column (one of `essence_dominante`,
 Default [`FORDEAD_CONFIDENCE_WEIGHTS`].}
 
 \item{weights_reconfort}{Named numeric vector. Per-class RECONFORT
-weights (dieback classes). Default = the oak subset of
-[`RECONFORT_CONFIDENCE_WEIGHTS`] (provisional, see that object).}
+weights (dieback classes). When not supplied, the weights of the species of
+the run (`reconfort_results$species`: `"CHE"`, `"CHT"` or `"PS"`) are taken
+from [`RECONFORT_CONFIDENCE_WEIGHTS`] (provisional, see that object); the
+oak weights are used when the run carries no known species. A supplied
+vector applies to every RECONFORT unit.}
 
 \item{min_resineux}{Numeric in `[0, 1]`. Minimum conifer share to
 route a unit to FORDEAD. Default 0.3.}

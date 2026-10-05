@@ -16,9 +16,11 @@ indicateur_n1_distance(
 \arguments{
 \item{units}{sf object (POLYGON) of spatial units to assess}
 
-\item{roads}{sf object (LINESTRING/MULTILINESTRING). Road network (BD TOPO). NULL = default 1000m.}
+\item{roads}{sf object (LINESTRING/MULTILINESTRING). Road network (BD TOPO).
+NULL (and none in \code{layers}) gives N1 = NA.}
 
-\item{buildings}{sf object (POLYGON/MULTIPOLYGON). Buildings. NULL = default 500m.}
+\item{buildings}{sf object (POLYGON/MULTIPOLYGON). Buildings. NULL (and none
+in \code{layers}) gives N1 = NA.}
 
 \item{layers}{nemeton_layers object. Used to resolve roads/buildings if not provided directly.}
 
@@ -28,7 +30,10 @@ indicateur_n1_distance(
 backward compatibility. Default "en".}
 }
 \value{
-sf object with added column N1 (score 0-100, 100 = very remote)
+sf object with added column N1 (score 0-100, 100 = very remote).
+Each distance is scored \code{min(100, d / 20)} (2 km or more = 100). The
+urban term has no data layer: its distance is a constant 2000 m, so it
+always adds 25 points and N1 ranges over 25-100.
 }
 \description{
 Calculates distance to infrastructure (roads, buildings, urban zones)

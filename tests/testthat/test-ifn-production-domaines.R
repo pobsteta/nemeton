@@ -105,6 +105,41 @@ test_that("domain covariates are computed like the SER ones", {
   expect_error(ifn_covariables_domaines(dom, as.matrix(h), a), "SpatRaster")
 })
 
+test_that("une covariable NA ne s'annonce pas « hybride »", {
+  # Audit 1.0 : delta = 0 en silence, predicteur = "hybride" quand meme.
+  d <- domaine_ser("C30")
+  c0 <- sf::st_coordinates(sf::st_point_on_surface(sf::st_geometry(d)))[1, ]
+  ut <- sf::st_sf(id = "ut", geometry = sf::st_sfc(
+    sf::st_buffer(sf::st_point(c0), 6000, endCapStyle = "SQUARE"), crs = 2154))
+  cs <- nemeton:::.ifn_prod_cov_ser()
+  cs <- cs[cs$ser == "C30", ]
+  cv_na <- data.frame(id = "1", h_mean = NA_real_, h_sd = cs$h_sd,
+                      alt_mean = cs$alt_mean, alt_sd = cs$alt_sd)
+  expect_warning(r <- ifn_production_domaines(ut, covariables = cv_na), "covariates")
+  ref <- ifn_production_domaines(ut)
+  expect_equal(r$predicteur, "ser")
+  expect_equal(r$valeur, ref$valeur)
+  expect_equal(r$variance_domaine, ref$variance_domaine)
+  # Covariable absente (id inconnu) : meme repli.
+  cv_autre <- cv_na; cv_autre$id <- "zz"; cv_autre$h_mean <- cs$h_mean
+  expect_warning(r2 <- ifn_production_domaines(ut, covariables = cv_autre), "covariates")
+  expect_equal(r2$predicteur, "ser")
+})
+
+test_that("part_foret reste une part (0-1) sur un raster en degres", {
+  # Audit 1.0 : l'aire des pixels etait res_x * res_y (degres carres) divisee
+  # par une aire de domaine en m2, d'ou une part_foret quasi nulle.
+  r <- terra::rast(nrows = 20, ncols = 20, xmin = 5, xmax = 5.02,
+                   ymin = 45, ymax = 45.02, crs = "EPSG:4326")
+  h <- r; terra::values(h) <- 1500                     # tout en foret (cm)
+  a <- r; terra::values(a) <- 400
+  dom <- sf::st_sf(code = "g", geometry = sf::st_sfc(sf::st_polygon(list(
+    matrix(c(5, 45, 5.02, 45, 5.02, 45.02, 5, 45.02, 5, 45), ncol = 2,
+           byrow = TRUE))), crs = 4326))
+  cv <- ifn_covariables_domaines(dom, h, a, id_col = "code")
+  expect_equal(cv$part_foret, 1, tolerance = 0.01)
+})
+
 test_that("the hybrid prediction moves with the domain covariates, for PV only", {
   d <- domaine_ser("C30")
   c0 <- sf::st_coordinates(sf::st_point_on_surface(sf::st_geometry(d)))[1, ]

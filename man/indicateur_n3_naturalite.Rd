@@ -30,5 +30,5 @@ N3 on the radar convention would invert L1 twice (spec 048 sections 9 and 12).
 \description{
 Calculates a composite naturalness index following tuto 04:
 N3 = 0.35 * N1 + 0.35 * N2 + 0.15 * (100 - L1) + 0.15 * B3
-Falls back to 50 when L1 or B3 are unavailable.
+NA when any of N1, N2, L1 or B3 is unavailable.
 }
