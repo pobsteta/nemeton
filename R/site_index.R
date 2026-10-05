@@ -241,7 +241,10 @@ site_index_reference_points <- function() {
 #'   \code{reference_age}) in metres. \code{NA} is returned when
 #'   \code{H_dom} or \code{age} is missing, when \code{H_dom} is below
 #'   \code{min_stand_height}, when \code{age} is outside the tabulated
-#'   range, or when the species cannot be resolved.
+#'   range, or when the species cannot be resolved. A height above the
+#'   tallest (class 1) or below the shortest (class 5) curve at the observed
+#'   age is **clamped** to that class: the site index returned is then the
+#'   class 1 or class 5 height at \code{reference_age}, not an extrapolation.
 #'
 #' @examples
 #' # Sessile oak: 20 m at 80 years -> site index at 50 years
@@ -357,8 +360,9 @@ compute_site_index <- function(H_dom,
 
 # Helper: given an observed H and the 5 heights at a given age
 # (ordered class 1 = tallest to class 5 = shortest), return a
-# fractional class index in [1, 5]. Returns NA if H is outside
-# the extrapolation range (clamped).
+# fractional class index in [1, 5]. A height outside the tabulated
+# range is CLAMPED to class 1 or 5 (it is not NA); NA only for a
+# degenerate (non-monotone) set of curves.
 #
 # @keywords internal
 .frac_class <- function(h, h_classes) {
