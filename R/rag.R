@@ -264,7 +264,7 @@ enable_rag <- function(con) {
 
 # Single entry point for embedding text (batched). Mocked in tests.
 .embed_texts <- function(texts, provider = "mistral", api_key = NULL,
-                         lang = NULL, batch_size = 32L) {
+                         batch_size = 32L) {
   provider <- match.arg(provider, c("mistral", "openai", "voyage"))
   texts <- as.character(texts)
   if (!length(texts)) {
@@ -659,8 +659,7 @@ ingest_knowledge_document <- function(con,
   }
   texts <- vapply(chunks, function(c) c$text, character(1))
 
-  emb <- .embed_texts(texts, provider = embed_provider, api_key = api_key,
-                      lang = meta$lang)
+  emb <- .embed_texts(texts, provider = embed_provider, api_key = api_key)
   if (is.null(dim(emb))) emb <- matrix(emb, nrow = 1L)
   if (nrow(emb) != length(texts)) {
     cli::cli_abort(
@@ -821,7 +820,7 @@ embed_query <- function(text,
   if (!is.character(text) || length(text) != 1L || is.na(text) || !nzchar(text)) {
     cli::cli_abort("{.arg text} must be a non-empty character scalar.")
   }
-  m <- .embed_texts(text, provider = provider, api_key = api_key, lang = lang)
+  m <- .embed_texts(text, provider = provider, api_key = api_key)
   if (is.null(dim(m))) return(as.numeric(m))
   as.numeric(m[1L, ])
 }
@@ -981,7 +980,7 @@ embed_query <- function(text,
 #'   tagged with at least one of these family / indicator codes.
 #' @param profile_codes Optional character vector. Keep only documents
 #'   tagged with at least one of these actor-profile codes.
-#' @param min_similarity Numeric in `[0, 1]`. Drop chunks below this
+#' @param min_similarity Numeric in `[-1, 1]` (cosine similarity). Drop chunks below this
 #'   cosine similarity. Default 0.7.
 #' @param lang Optional ISO 639-1 code. Keep only documents in this
 #'   language.
