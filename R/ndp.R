@@ -572,10 +572,15 @@ detect_ndp_from_cache <- function(project_path) {
 # compute_general_index
 # ================================================================
 
-#' Compute Fibonacci-weighted general index
+#' Compute the general index (uniform NDP)
 #'
-#' Computes the global score as a Fibonacci-weighted mean of family scores.
-#' The NDP determines the weight and confidence level.
+#' Computes the global score as the arithmetic mean of the available family
+#' scores. With a single NDP for the whole dataset, every family carries the
+#' same Fibonacci weight, so the Fibonacci-weighted mean reduces to a plain
+#' mean: the NDP does not change \code{score}, it only sets the returned
+#' \code{weight} and \code{confidence}. Use
+#' \code{\link{compute_general_index_mixed}} when indicators come from
+#' different NDP levels: the Fibonacci weights then differ and are applied.
 #'
 #' @param family_scores Named numeric vector of family scores (0-100).
 #'   Names should be family codes (e.g., "C", "B", "W") or
@@ -584,7 +589,8 @@ detect_ndp_from_cache <- function(project_path) {
 #'
 #' @return A list with:
 #'   \describe{
-#'     \item{score}{Numeric. The weighted general index (0-100).}
+#'     \item{score}{Numeric. Mean of the non-missing family scores (0-100),
+#'       rounded to one decimal.}
 #'     \item{ndp}{Integer. The NDP level used.}
 #'     \item{confidence}{Numeric. The confidence phi ratio.}
 #'     \item{weight}{Integer. The Fibonacci weight.}
@@ -630,10 +636,9 @@ compute_general_index <- function(family_scores, ndp = 0L) {
 
   valid_scores <- family_scores[valid]
 
-  # Indice general : moyenne ponderee Fibonacci
-
-  # En mode uniforme, toutes les familles ont le meme poids Fibonacci,
-  # donc le score est simplement la moyenne des scores
+  # Indice general : en NDP uniforme, toutes les familles ont le meme poids
+  # Fibonacci, la moyenne ponderee se reduit donc a la moyenne simple. La
+  # ponderation effective est dans compute_general_index_mixed().
   score <- round(mean(valid_scores, na.rm = TRUE), 1)
 
   list(
