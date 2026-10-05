@@ -134,6 +134,33 @@ NULL
 }
 
 
+# Élagage des sorties FORDEAD d'une zone (idempotence disque, replace) :
+# supprime les `dieback_mask_<id>.tif` et `model_<id>/` des runs
+# ANTÉRIEURS au run courant `run_ts` (horodatage YYYYMMDDTHHMMSS, ordre
+# lexicographique = ordre chronologique). Les sorties d'un run plus récent
+# -- un run concurrent lancé après celui-ci sur la même zone -- ne sont
+# jamais touchées : c'est lui qui élaguera à sa fin (audit 1.0).
+.prune_fordead_outputs <- function(zone_dir, run_ts, prune_mask = TRUE,
+                                   prune_bundle = TRUE) {
+  run_of <- function(x, prefix, suffix = "") {
+    sub(paste0("^", prefix, "(.*)", suffix, "$"), "\\1", basename(x))
+  }
+  if (isTRUE(prune_mask)) {
+    old <- list.files(zone_dir, pattern = "^dieback_mask_.*\\.tif$",
+                      full.names = TRUE)
+    old <- old[run_of(old, "dieback_mask_", "\\.tif") < run_ts]
+    if (length(old)) unlink(old)
+  }
+  if (isTRUE(prune_bundle)) {
+    old <- list.dirs(zone_dir, recursive = FALSE)
+    old <- old[grepl("^model_", basename(old))]
+    old <- old[run_of(old, "model_") < run_ts]
+    if (length(old)) unlink(old, recursive = TRUE)
+  }
+  invisible(TRUE)
+}
+
+
 #' Build the structured return value for [run_fordead_dieback()]
 #' @keywords internal
 .empty_fordead_result <- function(output_dir, python_env, status = "success",
@@ -757,23 +784,12 @@ run_fordead_dieback <- function(con,
     # Best-effort : un échec d'élagage avertit mais n'avorte pas le run.
     if (isTRUE(replace) && dir.exists(zone_dir)) {
       tryCatch({
-        mask_ok <- !is.null(rasters$dieback_mask) &&
-                   !is.na(rasters$dieback_mask)
-        if (mask_ok) {
-          keep <- paste0("dieback_mask_", run_ts, ".tif")
-          old  <- list.files(zone_dir, pattern = "^dieback_mask_.*\\.tif$",
-                             full.names = TRUE)
-          old  <- old[basename(old) != keep]
-          if (length(old)) unlink(old)
-        }
-        bundle_ok <- !is.null(rasters$model_dir) && !is.na(rasters$model_dir)
-        if (bundle_ok) {
-          keep <- paste0("model_", run_ts)
-          old  <- list.dirs(zone_dir, recursive = FALSE)
-          old  <- old[grepl("^model_", basename(old)) &
-                      basename(old) != keep]
-          if (length(old)) unlink(old, recursive = TRUE)
-        }
+        .prune_fordead_outputs(
+          zone_dir, run_ts,
+          prune_mask   = !is.null(rasters$dieback_mask) &&
+                         !is.na(rasters$dieback_mask),
+          prune_bundle = !is.null(rasters$model_dir) &&
+                         !is.na(rasters$model_dir))
       }, error = function(e) {
         cli::cli_alert_warning(
           "Stale FORDEAD output pruning failed: {conditionMessage(e)}")

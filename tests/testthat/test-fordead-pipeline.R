@@ -327,6 +327,34 @@ test_that("fin de suivi NA acceptée et dates `Date` normalisées dès la valida
     "dates_monitoring")
 })
 
+test_that("l'élagage replace ne supprime pas les sorties d'un run plus récent (audit 1.0)", {
+  skip_if_not_installed("terra")
+  skip_if_no_reticulate(); skip_if_no_sf()
+
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers()
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  mcd <- withr::local_tempdir()
+  zone_dir <- file.path(mcd, "zone_1")
+  ancien   <- file.path(zone_dir, "model_19990101T000000")
+  recent   <- file.path(zone_dir, "model_29990101T000000")  # run concurrent
+  dir.create(ancien, recursive = TRUE)
+  dir.create(recent, recursive = TRUE)
+
+  out <- run_fordead_dieback(
+    con = make_fake_con(), zone_id = 1L, cache_dir = make_cache_dir(),
+    mask_cache_dir   = mcd,
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2018-12-31"),
+    verbose = FALSE)
+  expect_identical(out$status, "success")
+  expect_true(dir.exists(out$rasters$model_dir))   # sortie du run courant
+  expect_false(dir.exists(ancien))                  # run antérieur : élagué
+  expect_true(dir.exists(recent))                   # run plus récent : intact
+})
+
 
 # ---- successful orchestration ----------------------------------------
 
