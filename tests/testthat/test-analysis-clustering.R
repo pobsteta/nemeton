@@ -863,3 +863,29 @@ test_that("une famille constante est écartée au lieu de faire planter kmeans (
   expect_warning(res <- cluster_parcels(d, families = names(d), k = 3), "no variance")
   expect_length(unique(res$cluster), 3L)
 })
+
+test_that("cluster_parcels : k automatique impossible sous 3 unités ou max_k < 2 (audit 1.0)", {
+  # Avant : 2:1 itérait à rebours (test_k = 2 puis 1) et indexait
+  # silhouette_scores[0].
+  d2 <- data.frame(famille_carbone = c(10, 90), famille_eau = c(20, 80))
+  expect_error(suppressMessages(cluster_parcels(d2, families = names(d2))),
+               "at least 3")
+  d <- make_cluster_df(4)
+  expect_error(
+    suppressMessages(cluster_parcels(d, families = c("famille_carbone", "famille_social"),
+                                     max_k = 1)),
+    "max_k"
+  )
+})
+
+test_that("cluster_parcels : `seed` rend le k-means reproductible sans toucher au RNG global (audit 1.0)", {
+  d <- make_cluster_df(5)
+  fam <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
+  set.seed(1)
+  avant <- stats::runif(1)
+  set.seed(1)
+  r1 <- suppressMessages(cluster_parcels(d, families = fam, k = 4, seed = 42))
+  expect_identical(stats::runif(1), avant)  # RNG de l'appelant intact
+  r2 <- suppressMessages(cluster_parcels(d, families = fam, k = 4, seed = 42))
+  expect_identical(r1$cluster, r2$cluster)
+})
