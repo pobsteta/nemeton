@@ -560,6 +560,22 @@ validate_knowledge_manifest <- function(manifest) {
   NULL
 }
 
+# Motif de rapport d'une ligne sans source ingérable. Un `local_path` déclaré
+# mais introuvable sous la racine du corpus est nommé, avec la racine : le
+# manifeste empaqueté porte des chemins `data-raw/...` relatifs au dépôt, non
+# résolus depuis le paquet installé sans `nemeton.corpus_root` /
+# `NEMETON_CORPUS_ROOT` pointant sur un clone.
+.no_source_reason <- function(row) {
+  lp <- row$local_path
+  if (!nzchar(lp)) return("no ingestible source")
+  root <- .knowledge_corpus_root()
+  full <- tryCatch(.resolve_local_path(lp, root), error = function(e) NA_character_)
+  if (is.na(full) || file.exists(full)) return("no ingestible source")
+  sprintf(paste0("no ingestible source: local_path not found (%s) under the ",
+                 "corpus root %s; set option nemeton.corpus_root or ",
+                 "NEMETON_CORPUS_ROOT"), lp, root)
+}
+
 .manifest_abstract <- function(row) {
   if ("abstract" %in% names(row) && nzchar(row$abstract)) row$abstract else NULL
 }
@@ -653,7 +669,9 @@ validate_knowledge_manifest <- function(manifest) {
 #' @return A data.frame report, one row per manifest row, with columns
 #'   `doc_id`, `action` (`"ingested"`, `"skipped"`, `"error"`, or
 #'   `"planned"` in a dry run), `reason`, `mode`, `n_chunks`,
-#'   `document_id`, `duration_sec`.
+#'   `document_id`, `duration_sec`. A row skipped because its declared
+#'   `local_path` is not found under the corpus root names that path and
+#'   the root in `reason`.
 #'
 #' @seealso [read_knowledge_manifest()], [ingest_knowledge_document()],
 #'   [ingest_knowledge_reference()], [list_knowledge_documents()].
@@ -729,7 +747,8 @@ build_knowledge_corpus <- function(con = NULL,
                        error = function(e) e)
       if (inherits(kind, "error")) return(as_error_row(i, kind))
       if (is.null(kind)) {
-        return(emit(i, .corpus_report_row(r$doc_id, "skipped", reason = "no ingestible source")))
+        return(emit(i, .corpus_report_row(r$doc_id, "skipped",
+                                          reason = .no_source_reason(r))))
       }
       emit(i, .corpus_report_row(r$doc_id, "planned", reason = kind, mode = "full"))
     })
@@ -762,7 +781,8 @@ build_knowledge_corpus <- function(con = NULL,
                                              error = function(e) e)
     if (inherits(src, "error")) return(as_error_row(i, src))
     if (!reference && is.null(src)) {
-      return(emit(i, .corpus_report_row(r$doc_id, "skipped", reason = "no ingestible source")))
+      return(emit(i, .corpus_report_row(r$doc_id, "skipped",
+                                        reason = .no_source_reason(r))))
     }
     meta <- .manifest_row_metadata(r)
     res <- tryCatch(

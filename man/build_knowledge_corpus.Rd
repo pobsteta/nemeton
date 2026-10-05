@@ -51,7 +51,9 @@ invoked after each manifest row, for progress reporting.}
 A data.frame report, one row per manifest row, with columns
   `doc_id`, `action` (`"ingested"`, `"skipped"`, `"error"`, or
   `"planned"` in a dry run), `reason`, `mode`, `n_chunks`,
-  `document_id`, `duration_sec`.
+  `document_id`, `duration_sec`. A row skipped because its declared
+  `local_path` is not found under the corpus root names that path and
+  the root in `reason`.
 }
 \description{
 Iterates over the manifest and ingests every eligible document into the
