@@ -507,6 +507,31 @@ test_that("get_datasource_product errors on a source with no products", {
   )
 })
 
+test_that("FR.json et les constantes des chargeurs ne divergent pas (audit 1.0)", {
+  skip_if_not_installed("terra")
+  cfg <- get_country_config("FR")
+  # INSEE Filosofi (1 km et 200 m).
+  base <- cfg$services$insee_files$base_url
+  expect_identical(paste0(base, cfg$layers$population_insee$file),
+                   nemeton:::.INSEE_FILOSOFI[["1km"]]$url)
+  expect_identical(paste0(base, cfg$layers$population_insee_200m$file),
+                   nemeton:::.INSEE_FILOSOFI[["200m"]]$url)
+  # SAFRAN EDR (GéoSAS).
+  expect_identical(cfg$services$safran_edr$url, nemeton:::.BILJOU_SAFRAN_EDR)
+  # E-OBS : jeu CDS et variables.
+  eobs <- cfg$datasets$eobs
+  expect_identical(eobs$provenance$cds_dataset, nemeton:::.EOBS_CDS_DATASET)
+  for (v in c("tx", "tg", "rr")) {
+    spec <- nemeton:::.eobs_var_spec(v)
+    expect_identical(eobs$products[[v]]$cds_variable, spec$cds)
+    expect_identical(eobs$products[[v]]$summer_reducer, spec$reducer)
+  }
+  expect_identical(eobs$provenance$default_version,
+                   formals(load_eobs_source)$version)
+  expect_identical(eobs$provenance$default_resolution,
+                   formals(load_eobs_source)$resolution)
+})
+
 test_that("get_datasource_product errors on unknown datasource", {
   skip_if_not_installed("terra")
   expect_error(

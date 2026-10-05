@@ -56,6 +56,14 @@
       "base_url": "https://www.insee.fr/fr/statistiques/fichier/",
       "licence": "Licence Ouverte / Open Licence 2.0",
       "description": "Fichiers INSEE en telechargement direct (pas de service OGC)"
+    },
+    "safran_edr": {
+      "type": "ogc_api_edr",
+      "url": "https://api.geosas.fr/edr/collections/safran-isba/position",
+      "provider": "GéoSAS / INRAE — Météo-France SIM (SAFRAN-ISBA) daily, 1958-present",
+      "auth": "none",
+      "note": "Point (position) queries, one per unit centroid. Consumed by load_biljou_forcing(source = \"safran\") / regen_bilan_hydrique() (BILJOU forcing) and by the meteoland engine of eobs_downscale(). The loaders keep this URL as a constant (.BILJOU_SAFRAN_EDR) — a test checks both stay identical.",
+      "license": "Météo-France SIM data redistributed by GéoSAS — cite the producers."
     }
   },
   "layers": {
@@ -150,6 +158,14 @@
       "crs": 2154,
       "variable": "ind",
       "description": "Carroyage de population INSEE Filosofi 2021, maille 1 km (374 511 carreaux, 62,6 M hab.) — alimente S3. Geometrie en Lambert-93 malgre l'identifiant INSPIRE du carreau."
+    },
+    "population_insee_200m": {
+      "service": "insee_files",
+      "file": "8735162/Filosofi2021_carreaux_200m_gpkg.zip",
+      "layer": "carreaux_200m_met",
+      "crs": 2154,
+      "variable": "ind",
+      "description": "Carroyage de population INSEE Filosofi 2021, maille 200 m (load_insee_population(maille = \"200m\")). Geometrie en Lambert-93."
     }
   },
   "datasets": {
@@ -1205,12 +1221,34 @@
     "eobs": {
       "type": "climate_gridded",
       "format": "netcdf",
-      "description": "E-OBS gridded summer (JJA) temperature series, used to frame the 'average' vs 'heatwave' years of R6 sensitivity (spec 027 §6bis).",
+      "description": "E-OBS gridded daily observations (ECA&D / Copernicus): summer (JJA) series of max/mean temperature and precipitation, used to frame the 'average' vs 'heatwave' years of R6 sensitivity (spec 027 §6bis), the summer trend maps (spec 034) and their downscaling.",
       "required_crs": "EPSG:4326",
-      "unit": "degC",
+      "unit": "various",
       "temporal_resolution": "daily",
       "provenance": {
-        "service": "Copernicus / ECA&D E-OBS"
+        "service": "Copernicus / ECA&D E-OBS",
+        "cds_dataset": "insitu-gridded-observations-europe",
+        "product_type": "ensemble_mean",
+        "default_version": "30.0e",
+        "default_resolution": "0.1deg",
+        "note": "Downloaded with ecmwfr (same CDS key as ERA5) by load_eobs_source(source = \"cds\"); the dataset licence must be accepted once on the CDS. A test checks these values against the loader constants."
+      },
+      "products": {
+        "tx": {
+          "cds_variable": "maximum_temperature",
+          "unit": "degC",
+          "summer_reducer": "mean"
+        },
+        "tg": {
+          "cds_variable": "mean_temperature",
+          "unit": "degC",
+          "summer_reducer": "mean"
+        },
+        "rr": {
+          "cds_variable": "precipitation_amount",
+          "unit": "mm",
+          "summer_reducer": "sum"
+        }
       },
       "license": {
         "eobs": "Non-commercial research/education use (ECA&D) — see inst/NOTICE"
