@@ -21,7 +21,8 @@ croiser_parcelles_onf(
 
 \item{parcelles}{An \pkg{sf} of cadastral parcels. Its identifier column is
 taken from \code{id_col}, or auto-detected among \code{id},
-\code{nemeton_id}, \code{geo_parcelle}, \code{idu}.}
+\code{nemeton_id}, \code{geo_parcelle}, \code{idu}. Rows sharing an
+identifier are merged into one parcel, with a warning.}
 
 \item{min_surface_ha}{Parts strictly smaller than this are treated as
 slivers and absorbed. Default \code{0.05} (500 m²) — inside the natural gap
