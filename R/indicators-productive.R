@@ -116,7 +116,7 @@ indicateur_p1_volume <- function(units,
                                         use_climate_drift = FALSE) {
   # Validate inputs
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
 
   method <- match.arg(method)
@@ -151,14 +151,14 @@ indicateur_p1_volume <- function(units,
   missing_fields <- setdiff(required_fields, names(units))
 
   if (length(missing_fields) > 0) {
-    stop(paste("Missing required fields:", paste(missing_fields, collapse = ", ")), call. = FALSE)
+    cli::cli_abort("Missing required fields: {paste(missing_fields, collapse = ', ')}")
   }
 
   # ---- CHM mode height precomputation (spec 005 phase 3) ------
   h_chm <- NULL
   if (!is.null(chm)) {
     if (!inherits(chm, "SpatRaster")) {
-      stop("chm must be a terra SpatRaster", call. = FALSE)
+      cli::cli_abort("chm must be a terra SpatRaster")
     }
     if (!is.null(pct_masked) && is.numeric(pct_masked) &&
         length(pct_masked) == 1L && !is.na(pct_masked) &&
@@ -380,14 +380,14 @@ indicateur_p2_station <- function(units,
                                          ser_field = "ser") {
   # Validate inputs
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
   source <- match.arg(source)
 
   # ---- IFN mode (spec 054) : production de la SER, Fay-Herriot ----
   if (source == "ifn_fh") {
     if (!ser_field %in% names(units)) {
-      stop("Missing required field for IFN mode: ", ser_field, call. = FALSE)
+      cli::cli_abort("Missing required field for IFN mode: {ser_field}")
     }
     ser <- as.character(units[[ser_field]])
     ser[!nzchar(ser)] <- NA_character_
@@ -417,14 +417,14 @@ indicateur_p2_station <- function(units,
   # ---- CHM mode (spec 005 phase 2) ---------------------------
   if (!is.null(chm)) {
     if (!inherits(chm, "SpatRaster")) {
-      stop("chm must be a terra SpatRaster", call. = FALSE)
+      cli::cli_abort("chm must be a terra SpatRaster")
     }
     required_fields <- c(species_field, age_field)
     missing_fields  <- setdiff(required_fields, names(units))
     if (length(missing_fields) > 0) {
-      stop(paste("Missing required fields for CHM mode:",
-                 paste(missing_fields, collapse = ", ")),
-           call. = FALSE)
+      cli::cli_abort(
+        "Missing required fields for CHM mode: {paste(missing_fields, collapse = ', ')}"
+      )
     }
 
     h_dom <- extract_h_dom(chm, units, percentile = h_dom_percentile)
@@ -455,7 +455,7 @@ indicateur_p2_station <- function(units,
   missing_fields <- setdiff(required_fields, names(units))
 
   if (length(missing_fields) > 0) {
-    stop(paste("Missing required fields:", paste(missing_fields, collapse = ", ")), call. = FALSE)
+    cli::cli_abort("Missing required fields: {paste(missing_fields, collapse = ', ')}")
   }
 
   # Load productivity reference table
@@ -463,7 +463,7 @@ indicateur_p2_station <- function(units,
     prod_path <- system.file("extdata", "productivity_tables.csv", package = "nemeton")
 
     if (!file.exists(prod_path)) {
-      stop("Productivity tables not found: ", prod_path, call. = FALSE)
+      cli::cli_abort("Productivity tables not found: {prod_path}")
     }
 
     productivity_table <- utils::read.csv(prod_path, stringsAsFactors = FALSE)
@@ -588,7 +588,7 @@ indicateur_p3_qualite_bois <- function(units,
                                          chm = NULL) {
   # Validate inputs
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
 
   # Auto-fill dbh from the CHM when missing (NDP 1 synthetic, see
@@ -603,7 +603,7 @@ indicateur_p3_qualite_bois <- function(units,
   )
 
   if (!dbh_field %in% names(units)) {
-    stop(paste("Required field missing:", dbh_field), call. = FALSE)
+    cli::cli_abort("Required field missing: {dbh_field}")
   }
 
   result <- units

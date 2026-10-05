@@ -71,7 +71,7 @@ indicateur_s1_routes <- function(units,
                                     max_dist = 2000) {
   # Validate inputs
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
 
   # Resolve roads from layers if not provided
@@ -173,7 +173,7 @@ indicateur_s2_bati <- function(units,
                                            max_dist = 2000) {
   # Validate inputs
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
 
   # Resolve buildings from layers if not provided
@@ -312,7 +312,7 @@ indicateur_s3_population <- function(units,
                                        lang = "en") {
   # Validate inputs
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
 
   method <- match.arg(method)

@@ -33,7 +33,7 @@ indicateur_n1_distance <- function(units,
                                            layers = NULL,
                                            column_name = "N1",
                                            lang = "en") {
-  if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
+  if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   result <- units
   centroids <- suppressWarnings(sf::st_centroid(units))
@@ -128,7 +128,7 @@ indicateur_n2_continuite <- function(units,
                                              column_name = "N2",
                                              weight_anciennete = TRUE,
                                              lang = "en") {
-  if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
+  if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   result <- units
 
@@ -246,7 +246,7 @@ indicateur_n2_continuite <- function(units,
 indicateur_n3_naturalite <- function(units,
                                             column_name = "N3",
                                             lang = "en") {
-  if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
+  if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   result <- units
 

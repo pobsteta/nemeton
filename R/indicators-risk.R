@@ -535,7 +535,7 @@ indicateur_r2_tempete <- function(units,
   canopy_factor <- NULL
   if (!is.null(chm)) {
     if (!inherits(chm, "SpatRaster")) {
-      stop("chm must be a terra SpatRaster", call. = FALSE)
+      cli::cli_abort("chm must be a terra SpatRaster")
     }
     h_dom <- extract_h_dom(chm, units, percentile = h_dom_percentile)
     sp    <- if (species_field %in% names(units)) units[[species_field]] else NA
@@ -930,7 +930,7 @@ indicateur_r3_secheresse <- function(units,
   # --- Snow attenuation (Theia theia_snow, phase 3c) ---
   if (!is.null(snow)) {
     if (!inherits(snow, "SpatRaster")) {
-      stop("snow must be a terra SpatRaster", call. = FALSE)
+      cli::cli_abort("snow must be a terra SpatRaster")
     }
     cli::cli_alert_info("R3: drought stress attenuated by snowpack (Theia theia_snow)")
     snow_days <- safe_extract(snow,
@@ -946,7 +946,7 @@ indicateur_r3_secheresse <- function(units,
   # --- Soil-moisture attenuation (Theia theia_soil_moisture, phase 3d) ---
   if (!is.null(soil_moisture)) {
     if (!inherits(soil_moisture, "SpatRaster")) {
-      stop("soil_moisture must be a terra SpatRaster", call. = FALSE)
+      cli::cli_abort("soil_moisture must be a terra SpatRaster")
     }
     cli::cli_alert_info("R3: drought stress attenuated by soil moisture (Theia theia_soil_moisture)")
     sm_vals <- safe_extract(soil_moisture,

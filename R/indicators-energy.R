@@ -82,12 +82,12 @@ indicateur_e1_bois_energie <- function(units,
                                       production_field = NULL,
                                       taux_mobilisation = NULL,
                                       ser_field = "ser") {
-  if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
+  if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   # ---- Mode flux (spec 054 lot 4) : la recolte suit la production ----
   if (!is.null(production_field)) {
     if (!production_field %in% names(units)) {
-      stop("Required field missing: ", production_field, call. = FALSE)
+      cli::cli_abort("Required field missing: {production_field}")
     }
     if (is.null(taux_mobilisation)) {
       # Pas de defaut invente : un taux suppose serait une decision cachee.
@@ -164,7 +164,7 @@ indicateur_e1_bois_energie <- function(units,
   }
 
   if (!volume_field %in% names(units)) {
-    stop(paste("Required field missing:", volume_field), call. = FALSE)
+    cli::cli_abort("Required field missing: {volume_field}")
   }
 
   result <- units
@@ -263,7 +263,7 @@ indicateur_e2_evitement <- function(units,
                                        column_name = "E2",
                                        lang = "en",
                                        taux_recolte_materiau = NULL) {
-  if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
+  if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   # Substitution materiau : `volume_field` est un STOCK sur pied (m3/ha). E2
   # est un flux annuel ; on n'additionne au flux energie que la part recoltee

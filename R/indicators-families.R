@@ -364,7 +364,7 @@ indicateur_c1_biomasse <- function(units,
                                      bef = 1.30) {
   # Validate inputs
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
 
   # --- Path 0: CHM + DBH + species (spec 005 phase 4) -----------
@@ -372,7 +372,7 @@ indicateur_c1_biomasse <- function(units,
       species_col %in% names(units) &&
       dbh_col %in% names(units)) {
     if (!inherits(chm, "SpatRaster")) {
-      stop("chm must be a terra SpatRaster", call. = FALSE)
+      cli::cli_abort("chm must be a terra SpatRaster")
     }
     cli::cli_alert_info("C1: computing biomass via CHM + DBH (spec 005 phase 4)")
     h_dom <- extract_h_dom(chm, units, percentile = h_dom_percentile)
@@ -542,17 +542,17 @@ indicateur_c2_ndvi <- function(units,
                                   fapar = NULL) {
   # Validate inputs
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
 
   if (!inherits(layers, "nemeton_layers")) {
-    stop("layers must be a nemeton_layers object", call. = FALSE)
+    cli::cli_abort("layers must be a nemeton_layers object")
   }
 
   # --- FAPAR mode (Theia s2_biophysical, phase 3a) --------------
   if (!is.null(fapar)) {
     if (!inherits(fapar, "SpatRaster")) {
-      stop("fapar must be a terra SpatRaster", call. = FALSE)
+      cli::cli_abort("fapar must be a terra SpatRaster")
     }
     cli::cli_alert_info("C2: vitality from FAPAR (Theia s2_biophysical)")
     fapar_mean <- safe_extract(
@@ -568,7 +568,7 @@ indicateur_c2_ndvi <- function(units,
   # Get NDVI raster (resolve lazy-load)
   ndvi_raster <- resolve_raster_layer(layers, ndvi_layer)
   if (is.null(ndvi_raster)) {
-    stop(sprintf("NDVI layer '%s' not found in layers", ndvi_layer), call. = FALSE)
+    cli::cli_abort("NDVI layer '{ndvi_layer}' not found in layers")
   }
 
   # Extract mean NDVI for each unit
@@ -630,11 +630,11 @@ indicateur_w1_reseau <- function(units,
                                     proximity_ref = 50) {
   # Validate inputs
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
 
   if (!inherits(layers, "nemeton_layers")) {
-    stop("layers must be a nemeton_layers object", call. = FALSE)
+    cli::cli_abort("layers must be a nemeton_layers object")
   }
 
   # Get watercourse vector layer (resolve lazy-load)
@@ -755,11 +755,11 @@ indicateur_w2_zones_humides <- function(units,
                                      dem_target_res = .topo_target_res()) {
   # Validate inputs
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
 
   if (!inherits(layers, "nemeton_layers")) {
-    stop("layers must be a nemeton_layers object", call. = FALSE)
+    cli::cli_abort("layers must be a nemeton_layers object")
   }
 
   # Les quatre sources se recouvrent (une mare BD TOPO est aussi un TWI eleve
@@ -807,7 +807,7 @@ indicateur_w2_zones_humides <- function(units,
   # Source 4: Theia theia_water occurrence frequency (phase 3d)
   if (!is.null(water_occurrence)) {
     if (!inherits(water_occurrence, "SpatRaster")) {
-      stop("water_occurrence must be a terra SpatRaster", call. = FALSE)
+      cli::cli_abort("water_occurrence must be a terra SpatRaster")
     }
     cli::cli_alert_info("W2: Adding Theia theia_water occurrence coverage")
     raster_sources$occurrence <- list(
@@ -906,11 +906,11 @@ indicateur_w3_humidite <- function(units,
                                 dem_target_res = .topo_target_res()) {
   # Validate inputs
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
 
   if (!inherits(layers, "nemeton_layers")) {
-    stop("layers must be a nemeton_layers object", call. = FALSE)
+    cli::cli_abort("layers must be a nemeton_layers object")
   }
 
   # Match and validate method
@@ -922,7 +922,7 @@ indicateur_w3_humidite <- function(units,
     dem <- .normalize_crs(resolve_raster_layer(layers, dem_layer))
   }
   if (is.null(dem)) {
-    stop(sprintf("No DEM layer available (tried lidar_mnt, %s)", dem_layer), call. = FALSE)
+    cli::cli_abort("No DEM layer available (tried lidar_mnt, {dem_layer})")
   }
   dem <- .dem_working_res(dem, target_res = dem_target_res, context = "W3")
 
@@ -1010,7 +1010,7 @@ calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
   # (target_res = NULL) pour éviter une double agrégation.
   dem <- .twi_aggregate_dem(dem, target_res)
   if (!requireNamespace("fasterRaster", quietly = TRUE)) {
-    stop("fasterRaster package required for GRASS TWI calculation", call. = FALSE)
+    cli::cli_abort("fasterRaster package required for GRASS TWI calculation")
   }
 
   # Detect GRASS installation
@@ -1182,7 +1182,7 @@ indicateur_f1_fertilite <- function(units,
   source <- match.arg(source)
 
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
 
   if (identical(source, "soilgrids")) {
@@ -1193,8 +1193,7 @@ indicateur_f1_fertilite <- function(units,
 
   if (identical(source, "theia_soil")) {
     if (is.null(texture)) {
-      stop("source = 'theia_soil' requires a 'texture' list of rasters",
-           call. = FALSE)
+      cli::cli_abort("source = 'theia_soil' requires a 'texture' list of rasters")
     }
     cli::cli_alert_info("F1: fertility from soil texture (Theia theia_soil)")
     fertility <- extract_fertility_from_theia_soil(units, texture)
@@ -1204,7 +1203,7 @@ indicateur_f1_fertilite <- function(units,
 
   if (identical(source, "gissol")) {
     if (!inherits(layers, "nemeton_layers")) {
-      stop("layers must be a nemeton_layers object", call. = FALSE)
+      cli::cli_abort("layers must be a nemeton_layers object")
     }
     fertility <- extract_fertility_from_gissol(units, layers,
                                                soil_layer = soil_layer,
@@ -1214,14 +1213,14 @@ indicateur_f1_fertilite <- function(units,
   }
 
   if (!inherits(layers, "nemeton_layers")) {
-    stop("layers must be a nemeton_layers object", call. = FALSE)
+    cli::cli_abort("layers must be a nemeton_layers object")
   }
 
   is_raster <- !is.null(resolve_raster_layer(layers, soil_layer))
   is_vector <- !is.null(resolve_vector_layer(layers, soil_layer))
 
   if (!is_raster && !is_vector) {
-    stop(sprintf("Soil layer '%s' not found in layers", soil_layer), call. = FALSE)
+    cli::cli_abort("Soil layer '{soil_layer}' not found in layers")
   }
 
   if (is_raster) {
@@ -1303,7 +1302,7 @@ extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_c
 
   # Check if fertility column exists
   if (!fertility_col %in% names(soil_vector)) {
-    stop(sprintf("Fertility column '%s' not found in soil layer", fertility_col), call. = FALSE)
+    cli::cli_abort("Fertility column '{fertility_col}' not found in soil layer")
   }
 
   # Intersect units with soil polygons and extract fertility
@@ -1465,20 +1464,21 @@ texture_to_erosion_resistance <- function(clay, silt, sand) {
 #' @noRd
 .extract_texture_means <- function(units, texture) {
   if (!is.list(texture)) {
-    stop("texture must be a named list of SpatRasters", call. = FALSE)
+    cli::cli_abort("texture must be a named list of SpatRasters")
   }
   required <- c("clay", "silt", "sand")
   missing <- setdiff(required, names(texture))
   if (length(missing) > 0) {
-    stop(sprintf("texture is missing raster(s): %s",
-                 paste(missing, collapse = ", ")), call. = FALSE)
+    cli::cli_abort(
+      "texture is missing raster(s): {paste(missing, collapse = ', ')}"
+    )
   }
   units_sf <- as_pure_sf(units)
   pick <- function(key) {
     r <- texture[[key]]
     if (is.null(r)) return(NULL)
     if (!inherits(r, "SpatRaster")) {
-      stop(sprintf("texture$%s must be a SpatRaster", key), call. = FALSE)
+      cli::cli_abort("texture${key} must be a SpatRaster")
     }
     safe_extract(r, units_sf, fun = "mean", progress = FALSE)
   }
@@ -1531,12 +1531,12 @@ extract_fertility_from_gissol <- function(units, layers,
                                           rpf_code_col = "rpf_code") {
   rrp <- resolve_vector_layer(layers, soil_layer)
   if (is.null(rrp)) {
-    stop(sprintf("Soil layer '%s' not found in layers", soil_layer),
-         call. = FALSE)
+    cli::cli_abort("Soil layer '{soil_layer}' not found in layers")
   }
   if (!rpf_code_col %in% names(rrp)) {
-    stop(sprintf("RRP column '%s' not found in layer '%s'",
-                 rpf_code_col, soil_layer), call. = FALSE)
+    cli::cli_abort(
+      "RRP column '{rpf_code_col}' not found in layer '{soil_layer}'"
+    )
   }
 
   if (!sf::st_crs(units) == sf::st_crs(rrp)) {
@@ -1638,11 +1638,11 @@ indicateur_f2_erosion <- function(units,
                                    dem_target_res = .topo_target_res()) {
   # Validate inputs
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
 
   if (!inherits(layers, "nemeton_layers")) {
-    stop("layers must be a nemeton_layers object", call. = FALSE)
+    cli::cli_abort("layers must be a nemeton_layers object")
   }
 
   # Get best available DEM (prefer LiDAR HD MNT over BD ALTI)
@@ -1651,7 +1651,7 @@ indicateur_f2_erosion <- function(units,
     dem <- .normalize_crs(resolve_raster_layer(layers, dem_layer))
   }
   if (is.null(dem)) {
-    stop(sprintf("No DEM layer available (tried lidar_mnt, %s)", dem_layer), call. = FALSE)
+    cli::cli_abort("No DEM layer available (tried lidar_mnt, {dem_layer})")
   }
   dem <- .dem_working_res(dem, target_res = dem_target_res, context = "F2")
 
@@ -1747,7 +1747,7 @@ indicateur_l1_effet_lisiere <- function(units,
                                               buffer = 50) {
   # Validate inputs
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
 
   # --- Component 1: Geometry (30%) ---
@@ -1930,11 +1930,11 @@ indicateur_l2_morcellement <- function(units, layers = NULL,
                                      buffer = 1000) {
   # Validate inputs
   if (!inherits(units, "sf")) {
-    stop("units must be an sf object", call. = FALSE)
+    cli::cli_abort("units must be an sf object")
   }
 
   if (nrow(units) == 0) {
-    stop("units is empty (no features)", call. = FALSE)
+    cli::cli_abort("units is empty (no features)")
   }
 
   # Try landscapemetrics approach if layers available
