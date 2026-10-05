@@ -1609,3 +1609,55 @@ test_that(".get_s2_band_raster: writeRaster is called with filetype = 'GTiff'", 
   # Final cached file exists with the right (.tif) extension.
   expect_true(file.exists(file.path(cache, scene_id, "B04.tif")))
 })
+
+test_that("une erreur base sur la zone n'est pas prise pour « zone sans géométrie » (audit 1.0)", {
+  skip_if_not_installed("terra")
+  with_sqlite_monitoring_db(function(con) {
+    stac_calls <- 0L
+    testthat::local_mocked_bindings(
+      stac_search_s2 = function(...) {
+        stac_calls <<- stac_calls + 1L
+        data.frame(scene_id = character(0), obs_date = as.Date(character(0)),
+                   cloud_pct = numeric(0), stringsAsFactors = FALSE)
+      },
+      .get_zone_aoi = function(con, zone_id) stop("server closed the connection unexpectedly")
+    )
+    # FAST : plus de repli silencieux sur l'emprise des placettes.
+    expect_error(
+      suppressMessages(ingest_sentinel2_timeseries(
+        con, zone_id = 1L, start = "2025-06-01", end = "2025-06-30",
+        bands = "NDVI", skip_cached = FALSE)),
+      "closed the connection")
+    # FORDEAD : plus de « zone sans zone_wkt » + résumé vide.
+    expect_error(
+      suppressMessages(ingest_s2_raw_bands_to_cache(
+        con, zone_id = 1L, bands = c("B04", "B08"),
+        start = "2025-06-01", end = "2025-06-30",
+        cache_dir = withr::local_tempdir())),
+      "closed the connection")
+    expect_equal(stac_calls, 0L)
+  })
+})
+
+test_that("une zone_wkt vide garde le repli documenté (audit 1.0)", {
+  skip_if_not_installed("terra")
+  with_sqlite_monitoring_db(function(con) {
+    DBI::dbExecute(con, "UPDATE monitoring_zone SET zone_wkt = '' WHERE id = 1")
+    testthat::local_mocked_bindings(
+      stac_search_s2 = function(...) {
+        data.frame(scene_id = character(0), obs_date = as.Date(character(0)),
+                   cloud_pct = numeric(0), stringsAsFactors = FALSE)
+      })
+    expect_warning(
+      suppressMessages(ingest_sentinel2_timeseries(
+        con, zone_id = 1L, start = "2025-06-01", end = "2025-06-30",
+        bands = "NDVI", skip_cached = FALSE)),
+      "falling back to per-plot bbox")
+    expect_warning(
+      suppressMessages(ingest_s2_raw_bands_to_cache(
+        con, zone_id = 1L, bands = c("B04", "B08"),
+        start = "2025-06-01", end = "2025-06-30",
+        cache_dir = withr::local_tempdir())),
+      "no usable")
+  })
+})

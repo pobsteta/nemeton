@@ -368,7 +368,11 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   # correctly-registered zone aborted with a misleading "No plots
   # registered" and could never prime its cache — e.g. as soon as the
   # requested window extended beyond the already-cached scenes.
-  aoi_zone <- tryCatch(.get_zone_aoi(con, zone_id), error = function(e) NULL)
+  # Seules les erreurs « zone » (inconnue, géométrie inexploitable) mènent
+  # au repli ; une erreur de base remonte au lieu d'être prise pour une
+  # zone sans géométrie (audit 1.0).
+  aoi_zone <- tryCatch(.get_zone_aoi(con, zone_id),
+                       nemeton_zone_aoi_error = function(e) NULL)
   if (is.null(aoi_zone)) {
     if (!nrow(plots)) {
       cli::cli_warn(c(
