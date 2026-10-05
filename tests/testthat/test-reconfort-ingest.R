@@ -733,3 +733,40 @@ test_that("conda run streams the python output (--no-capture-output)", {
   args <- readLines(log)
   expect_identical(args[1:2], c("run", "--no-capture-output"))
 })
+
+test_that("les chemins passes a python sont absolus, et aucun __pycache__ n'est ecrit (audit 1.0)", {
+  # Le sous-processus tourne sous with_dir(workdir) : un chemin relatif au
+  # repertoire courant de R y pointait ailleurs. Et python, lance depuis le
+  # dossier installe du paquet, y ecrivait ses __pycache__.
+  skip_on_os("windows")
+  base <- normalizePath(withr::local_tempdir())
+  wd <- file.path(base, "work"); dir.create(wd)
+  log <- file.path(base, "log.txt")
+  fake <- file.path(base, "fake_conda.sh")
+  writeLines(c("#!/bin/sh",
+               sprintf("echo \"bytecode=$PYTHONDONTWRITEBYTECODE\" > '%s'", log),
+               sprintf("printf '%%s\\n' \"$@\" >> '%s'", log)), fake)
+  Sys.chmod(fake, "0755")
+  testthat::local_mocked_bindings(.reconfort_memory_max = function() NULL)
+
+  withr::with_dir(base, {
+    file.create("rel.cfg")
+    nemeton:::.reconfort_run_py(fake, "envx", "s.py", "rel.cfg", wd, quiet = TRUE)
+  })
+  out <- readLines(log)
+  expect_identical(out[1], "bytecode=1")
+  cfg_arg <- out[which(out == "-config_file") + 1L]
+  expect_identical(cfg_arg, file.path(base, "rel.cfg"))
+
+  withr::with_dir(base, {
+    file.create(c("acct.json", "item.json"))
+    nemeton:::.reconfort_download_s2_item(fake, "envx", wd, "acct.json",
+                                          "item.json", "out.zip", quiet = TRUE)
+  })
+  out <- readLines(log)
+  expect_identical(out[1], "bytecode=1")
+  for (flag in c("-account", "-item_json", "-outfile")) {
+    p <- out[which(out == flag) + 1L]
+    expect_identical(dirname(p), base, info = flag)
+  }
+})
