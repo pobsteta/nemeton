@@ -211,7 +211,8 @@ NULL
 #' @param scenes_df A `data.frame` (or tibble) with at minimum the
 #'   columns `scene_id` (character) and `obs_date` (Date or coercible).
 #'   Exact `scene_id` duplicates and ESA reprocessing duplicates (same
-#'   acquisition, newer processing baseline) are silently removed.
+#'   acquisition, newer processing baseline) are silently removed. Scenes sharing a date (an AOI
+#'   straddling two MGRS tiles) are mosaicked into one item per date.
 #' @param cache_dir Character(1). Root directory of the COG cache,
 #'   typically `<project>/cache/layers/sentinel2`.
 #' @param bands_required Character vector of band codes required by
@@ -220,7 +221,7 @@ NULL
 #'
 #' @return A Python `simplestac.utils.ItemCollection` object. The
 #'   number of items equals the number of scenes whose bands are
-#'   all present.
+#'   all present, counted once per date.
 #' @keywords internal
 .build_stac_collection_for_aoi <- function(aoi,
                                            scenes_df,
@@ -279,9 +280,10 @@ NULL
   items   <- list()
   skipped <- character(0)
 
+  # 1. Scènes complètes (toutes les bandes en cache).
+  complete <- list()
   for (i in seq_len(nrow(scenes_df))) {
     sid <- as.character(scenes_df$scene_id[i])
-    dt  <- scenes_df$obs_date[i]
     safe_sid  <- .s2_safe_scene_id(sid)
     scene_dir <- file.path(cache_dir, safe_sid)
 
@@ -293,6 +295,26 @@ NULL
                                     paste(bands_required[missing], collapse = ",")))
       next
     }
+    complete[[length(complete) + 1L]] <- list(
+      sid = sid, dt = scenes_df$obs_date[i], band_paths = band_paths)
+  }
+
+  # 2. Un item par DATE (audit 1.0). Une AOI à cheval sur deux tuiles MGRS
+  # (ou deux orbites relatives) donne plusieurs scènes le même jour, chacune
+  # rognée à sa tuile : FORDEAD recevait deux items de même id
+  # `fordead_<date>` et de même datetime, chacun couvrant une partie de
+  # l'AOI. Les scènes d'une même date sont mosaïquées (VRT par bande).
+  dates_c <- vapply(complete, function(s) format(s$dt, "%Y%m%d"), character(1))
+  per_date <- lapply(unique(dates_c), function(d) {
+    grp <- complete[dates_c == d]
+    if (length(grp) == 1L) return(grp[[1L]])
+    .fordead_mosaic_same_date(grp, bands_required)
+  })
+
+  for (sc in per_date) {
+    sid        <- sc$sid
+    dt         <- sc$dt
+    band_paths <- sc$band_paths
 
     iso_dt <- pydt$datetime$fromisoformat(
       paste0(format(dt, "%Y-%m-%d"), "T00:00:00+00:00")
@@ -329,6 +351,48 @@ NULL
   }
 
   simplestac$ItemCollection(items)
+}
+
+
+# Mosaïque des scènes d'une même date (audit 1.0) : un VRT par bande, dans
+# un dossier temporaire de session (le cache S2 n'est pas touché). Les
+# sources sont empilées avec nodata = 0 (convention L2A) : les marges hors
+# fauchée d'une tuile n'écrasent pas les pixels de l'autre. Si les scènes
+# ne partagent pas le même CRS (AOI à cheval sur deux fuseaux UTM), un VRT
+# est impossible : on garde la scène la plus étendue et on le signale.
+# `grp` : liste d'éléments list(sid, dt, band_paths), même date.
+.fordead_mosaic_same_date <- function(grp, bands_required) {
+  sids <- vapply(grp, `[[`, character(1), "sid")
+  r1   <- lapply(grp, function(s) terra::rast(s$band_paths[[1L]]))
+  same_crs <- all(vapply(r1, function(r) terra::same.crs(r, r1[[1L]]),
+                         logical(1)))
+  if (!same_crs) {
+    aires <- vapply(r1, function(r) {
+      e <- terra::ext(r)
+      (terra::xmax(e) - terra::xmin(e)) * (terra::ymax(e) - terra::ymin(e))
+    }, numeric(1))
+    garde <- which.max(aires)
+    cli::cli_warn(c(
+      "FORDEAD: {length(grp)} scenes on {format(grp[[1L]]$dt)} are in different CRSs and cannot be mosaicked.",
+      i = "Kept {.val {sids[garde]}}; dropped {.val {sids[-garde]}}."
+    ))
+    return(grp[[garde]])
+  }
+
+  d <- file.path(tempdir(), "fordead_mosaic",
+                 paste0(format(grp[[1L]]$dt, "%Y%m%d"), "_",
+                        substr(rlang::hash(sort(sids)), 1L, 12L)))
+  dir.create(d, recursive = TRUE, showWarnings = FALSE)
+  vrts <- vapply(seq_along(bands_required), function(k) {
+    srcs <- vapply(grp, function(s) s$band_paths[[k]], character(1))
+    out  <- file.path(d, paste0(bands_required[k], ".vrt"))
+    terra::vrt(srcs, filename = out,
+               options = c("-srcnodata", "0", "-vrtnodata", "0"),
+               overwrite = TRUE, return_filename = TRUE)
+    out
+  }, character(1))
+  list(sid = paste(sids, collapse = "+"), dt = grp[[1L]]$dt,
+       band_paths = vrts)
 }
 
 
