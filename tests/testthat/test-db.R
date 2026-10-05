@@ -56,6 +56,23 @@ test_that("db_connect transmet les options de la query string à libpq (audit 1.
   expect_equal(sum(names(seen) == "dbname"), 1L)
 })
 
+test_that("db_migrate revérifie sous verrou : pas de double application (audit 1.0)", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    con <- db_connect(sprintf("sqlite:///%s", file.path(getwd(), "m.sqlite")))
+    on.exit(db_disconnect(con), add = TRUE)
+    suppressMessages(db_migrate(con))
+    n0 <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM schema_migration")$n
+    # Course simulée : la liste « déjà appliquées » lue hors verrou est
+    # périmée (un autre processus vient de tout migrer).
+    local_mocked_bindings(.applied_migrations = function(con) character(0))
+    out <- suppressMessages(db_migrate(con))
+    expect_length(out, 0L)
+    expect_equal(
+      DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM schema_migration")$n, n0)
+  })
+})
+
 test_that(".parse_pg_url rejects malformed URLs", {
   expect_error(nemeton:::.parse_pg_url("not-a-url"),
                "Invalid PostgreSQL URL")

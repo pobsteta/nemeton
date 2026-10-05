@@ -30,4 +30,10 @@ Postgres, `sqlite/` for SQLite.
 Migrations are executed in a single transaction per file and the
 filename (basename without extension) is recorded as the version
 identifier.
+
+Concurrent calls (e.g. a Shiny session and a worker process) are
+serialised: each file's transaction takes a lock first (a PostgreSQL
+transaction-level advisory lock, `BEGIN IMMEDIATE` on SQLite) and
+re-checks `schema_migration`, so a migration applied meanwhile by
+another connection is skipped instead of being run twice.
 }
