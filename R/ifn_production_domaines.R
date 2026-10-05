@@ -96,18 +96,22 @@ ifn_covariables_domaines <- function(domaines, hauteur, altitude, id_col = NULL,
   }
   af <- terra::ifel(foret == 1 & !is.na(alt), alt, 0)
   nalt <- terra::ifel(foret == 1 & !is.na(alt), 1, 0)
-  st <- c(foret, hf, hf^2, nalt, af, af^2)
-  names(st) <- c("n", "s1", "s2", "na", "a1", "a2")
+  # Aire de foret en m2 via l'aire reelle de chaque pixel : res_x * res_y
+  # rendait des degres carres sur un raster en longitude/latitude, divises
+  # ensuite par une aire de domaine en m2 (audit 1.0).
+  # (transform = FALSE : aire planaire en CRS projete, comme sf::st_area).
+  aire_foret <- foret * terra::cellSize(h, unit = "m", transform = FALSE)
+  st <- c(foret, hf, hf^2, nalt, af, af^2, aire_foret)
+  names(st) <- c("n", "s1", "s2", "na", "a1", "a2", "aire")
   e <- exactextractr::exact_extract(st, dom, "sum", progress = FALSE)
   names(e) <- names(st)
-  aire_pix <- prod(terra::res(h))
   data.frame(
     id = ids,
     h_mean = ifelse(e$n > 0, e$s1 / e$n, NA_real_),
     h_sd = ifelse(e$n > 0, sqrt(pmax(e$s2 / e$n - (e$s1 / e$n)^2, 0)), NA_real_),
     alt_mean = ifelse(e$na > 0, e$a1 / e$na, NA_real_),
     alt_sd = ifelse(e$na > 0, sqrt(pmax(e$a2 / e$na - (e$a1 / e$na)^2, 0)), NA_real_),
-    part_foret = e$n * aire_pix / as.numeric(sf::st_area(dom)),
+    part_foret = e$aire / as.numeric(sf::st_area(dom)),
     stringsAsFactors = FALSE
   )
 }
