@@ -1186,3 +1186,34 @@ test_that("calculate_change_rate refuses a positional alignment of unequal perio
     "Cannot\\s+align"
   )
 })
+
+test_that("nemeton_temporal nomme des periods non nommées (audit 1.0)", {
+  # Avant : names(periods) = NULL donnait la même colonne `in_` pour toutes
+  # les périodes (écrasée), et calculate_change_rate() n'avait aucun nom.
+  data(massif_demo_units)
+  u1 <- massif_demo_units[1:3, ]
+  u1$C1 <- c(50, 60, 70)
+  u2 <- u1[c(1, 2), ]
+  u2$C1 <- c(55, 65)
+  temporal <- suppressWarnings(suppressMessages(
+    nemeton_temporal(periods = list(u1, u2))
+  ))
+  expect_identical(names(temporal$periods), c("Period1", "Period2"))
+  al <- temporal$metadata$alignment
+  expect_true(all(c("in_Period1", "in_Period2") %in% names(al)))
+  expect_equal(temporal$metadata$n_complete, 2L)
+  rates <- suppressMessages(
+    calculate_change_rate(temporal, indicators = "C1", type = "absolute")
+  )
+  expect_s3_class(rates, "sf")
+
+  # Des labels fournis servent de noms ; des noms dupliqués sont refusés.
+  t2 <- suppressWarnings(suppressMessages(
+    nemeton_temporal(periods = list(u1, u2), labels = c("avant", "apres"))
+  ))
+  expect_identical(names(t2$periods), c("avant", "apres"))
+  expect_error(
+    nemeton_temporal(periods = list(a = u1, a = u2)),
+    "unique"
+  )
+})

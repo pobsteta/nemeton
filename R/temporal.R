@@ -12,7 +12,9 @@ NULL
 #' a temporal dataset structure for longitudinal analysis.
 #'
 #' @param periods Named list of nemeton_units objects, one per period.
-#'   Names should be period labels (e.g., "2015", "2020").
+#'   Names should be period labels (e.g., "2015", "2020") and must be unique.
+#'   Unnamed periods are named after `labels` when usable, otherwise
+#'   "Period1", "Period2", ...
 #' @param dates Character vector of ISO dates corresponding to each period
 #'   (e.g., c("2015-01-01", "2020-01-01")). Optional.
 #' @param labels Character vector of descriptive labels for periods
@@ -57,6 +59,24 @@ nemeton_temporal <- function(periods,
   periods_are_sf <- vapply(periods, function(x) inherits(x, "sf"), logical(1))
   if (!all(periods_are_sf)) {
     stop("All periods must be sf objects", call. = FALSE)
+  }
+
+  # Noms de periode : indispensables (colonnes `in_<nom>` de l'alignement,
+  # selection par calculate_change_rate()). Des periods non nommees
+  # ecrasaient toutes la meme colonne `in_` (audit 1.0) : on les nomme
+  # d'apres `labels` s'il convient, sinon Period1, Period2...
+  p_names <- names(periods)
+  if (is.null(p_names) || any(is.na(p_names) | !nzchar(p_names))) {
+    p_names <- if (!is.null(labels) && length(labels) == length(periods) &&
+                     !anyDuplicated(labels) && all(nzchar(labels))) {
+      as.character(labels)
+    } else {
+      paste0("Period", seq_along(periods))
+    }
+    names(periods) <- p_names
+  }
+  if (anyDuplicated(p_names)) {
+    stop("Period names must be unique", call. = FALSE)
   }
 
   # Colonne identifiant : explicite, sinon nemeton_id / parcel_id si presente

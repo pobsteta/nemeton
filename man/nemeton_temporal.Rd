@@ -8,7 +8,9 @@ nemeton_temporal(periods, dates = NULL, labels = NULL, id_column = NULL)
 }
 \arguments{
 \item{periods}{Named list of nemeton_units objects, one per period.
-Names should be period labels (e.g., "2015", "2020").}
+Names should be period labels (e.g., "2015", "2020") and must be unique.
+Unnamed periods are named after \code{labels} when usable, otherwise
+"Period1", "Period2", ...}
 
 \item{dates}{Character vector of ISO dates corresponding to each period
 (e.g., c("2015-01-01", "2020-01-01")). Optional.}
