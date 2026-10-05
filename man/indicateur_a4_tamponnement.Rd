@@ -22,7 +22,7 @@ indicateur_a4_tamponnement(units, micro = NULL, chm = NULL,
 }
 \value{
 \code{units} with \code{A4} (0-100), \code{A4_buffer} (raw °C),
-\code{A4_couverture_pct}, and the \code{"microclimate_model"} augmentation flag.
+\code{A4_couverture_pct}, and the \code{"microclimate_model"} augmentation flag (only when at least one value is computed).
 
 \strong{Higher = more thermal buffering = favourable}, and the raw quantity (the
 open-air minus under-canopy temperature gap, °C) already runs that way: 0 °C -> 0,

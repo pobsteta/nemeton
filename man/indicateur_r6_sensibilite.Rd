@@ -24,7 +24,7 @@ year (same layers). \code{NULL}/missing layers → \code{R6 = NA}.}
 \value{
 \code{units} with \code{R6} (0-100, higher = less sensitive), \code{R6_dtmax}
 (raw ΔT°max, °C), \code{R6_dvpd} (raw ΔVPD, kPa), \code{R6_couverture_pct}, and
-the \code{"microclimate_model"} augmentation flag.
+the \code{"microclimate_model"} augmentation flag (only when at least one value is computed).
 }
 \description{
 Per-UGF \strong{sensitivity} of the under-canopy microsite to a hot year

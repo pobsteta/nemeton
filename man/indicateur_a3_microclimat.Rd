@@ -25,7 +25,7 @@ the augmentation flag).}
 \value{
 \code{units} with columns \code{A3} (0-100), \code{A3_tmax} (raw °C),
 \code{A3_couverture_pct}, and \code{attr(., "augmented")} carrying
-\code{"microclimate_model"}.
+\code{"microclimate_model"} (only when at least one value is computed).
 
 \strong{Higher = cooler under the canopy = favourable.} The raw quantity (summer
 maximum temperature, °C) runs the other way, so

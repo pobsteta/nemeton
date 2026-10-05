@@ -70,7 +70,11 @@
 }
 
 # Augmentation flag for these indicators (ADR-011 amended, ADR-014).
-.micro_augmented <- function(units, micro) {
+# Le drapeau n'est pose que si l'indicateur `code` porte au moins une valeur :
+# un resultat tout NA (pas de `micro`, couche absente) ne revendique pas une
+# precision augmentee qu'il n'a pas (audit 1.0).
+.micro_augmented <- function(units, micro, code) {
+  if (!any(!is.na(units[[code]]))) return(units)
   attr(units, "augmented") <- union(attr(units, "augmented"),
                                     "microclimate_model")
   units
@@ -113,7 +117,7 @@
 #'
 #' @return `units` with columns `A3` (0-100), `A3_tmax` (raw °C),
 #'   `A3_couverture_pct`, and `attr(., "augmented")` carrying
-#'   `"microclimate_model"`.
+#'   `"microclimate_model"` (only when at least one value is computed).
 #'
 #'   **Higher = cooler under the canopy = favourable.** The raw quantity
 #'   (summer maximum temperature, °C) runs the other way, so
@@ -129,7 +133,7 @@ indicateur_a3_microclimat <- function(units, micro = NULL, chm = NULL,
   r <- .micro_layer(micro, "tmax_understorey")
   units <- .micro_indicator(units, r, "A3", "A3_tmax",
                             bounds[["lo"]], bounds[["hi"]], decreasing = TRUE)
-  .micro_augmented(units, micro)
+  .micro_augmented(units, micro, "A3")
 }
 
 
@@ -150,7 +154,7 @@ indicateur_a3_microclimat <- function(units, micro = NULL, chm = NULL,
 #' @param ... Unused.
 #'
 #' @return `units` with `A4` (0-100), `A4_buffer` (raw °C),
-#'   `A4_couverture_pct`, and the `"microclimate_model"` augmentation flag.
+#'   `A4_couverture_pct`, and the `"microclimate_model"` augmentation flag (only when at least one value is computed).
 #'
 #'   **Higher = more thermal buffering = favourable**, and the raw quantity
 #'   (the open-air minus under-canopy temperature gap, °C) already runs that
@@ -166,7 +170,7 @@ indicateur_a4_tamponnement <- function(units, micro = NULL, chm = NULL,
   d  <- if (!is.null(ru) && !is.null(ro)) ro - ru else NULL
   units <- .micro_indicator(units, d, "A4", "A4_buffer",
                             bounds[["lo"]], bounds[["hi"]], decreasing = FALSE)
-  .micro_augmented(units, micro)
+  .micro_augmented(units, micro, "A4")
 }
 
 
@@ -186,7 +190,7 @@ indicateur_a4_tamponnement <- function(units, micro = NULL, chm = NULL,
 #' @param ... Unused.
 #'
 #' @return `units` with `W4` (0-100), `W4_vpd` (raw kPa),
-#'   `W4_couverture_pct`, and the `"microclimate_model"` augmentation flag.
+#'   `W4_couverture_pct`, and the `"microclimate_model"` augmentation flag (only when at least one value is computed).
 #'
 #'   **Higher = moister air under the canopy = favourable.** The raw quantity
 #'   (VPD, kPa) runs the other way, so `.micro_norm(decreasing = TRUE)` flips
@@ -201,7 +205,7 @@ indicateur_w4_vpd <- function(units, micro = NULL, chm = NULL,
   r <- .micro_layer(micro, "vpd")
   units <- .micro_indicator(units, r, "W4", "W4_vpd",
                             bounds[["lo"]], bounds[["hi"]], decreasing = TRUE)
-  .micro_augmented(units, micro)
+  .micro_augmented(units, micro, "W4")
 }
 
 
@@ -231,7 +235,7 @@ indicateur_w4_vpd <- function(units, micro = NULL, chm = NULL,
 #'
 #' @return `units` with `R6` (0-100, higher = less sensitive), `R6_dtmax`
 #'   (raw ΔT°max, °C), `R6_dvpd` (raw ΔVPD, kPa), `R6_couverture_pct`, and
-#'   the `"microclimate_model"` augmentation flag.
+#'   the `"microclimate_model"` augmentation flag (only when at least one value is computed).
 #' @seealso [microclimate_detect_years()], [indicateur_a3_microclimat()]
 #' @export
 indicateur_r6_sensibilite <- function(units, micro_moyenne = NULL,
@@ -247,7 +251,7 @@ indicateur_r6_sensibilite <- function(units, micro_moyenne = NULL,
     units$R6_dtmax <- NA_real_
     units$R6_dvpd <- NA_real_
     units$R6_couverture_pct <- 0
-    return(.micro_augmented(units, micro_canicule))
+    return(.micro_augmented(units, micro_canicule, "R6"))
   }
   exT <- .micro_extract(units, tc - tm)   # ΔT°max (canicule − moyenne)
   exV <- .micro_extract(units, vc - vm)   # ΔVPD
@@ -257,7 +261,7 @@ indicateur_r6_sensibilite <- function(units, micro_moyenne = NULL,
   sV <- pmin(1, pmax(0, exV$mean / bounds[["scale_v"]]))
   units$R6 <- 100 * (1 - (0.5 * sT + 0.5 * sV))
   units$R6_couverture_pct <- 100 * pmin(exT$cover, exV$cover, na.rm = FALSE)
-  .micro_augmented(units, micro_canicule)
+  .micro_augmented(units, micro_canicule, "R6")
 }
 
 
