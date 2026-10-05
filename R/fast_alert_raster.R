@@ -356,6 +356,7 @@ read_fast_alert_raster <- function(con, zone_id,
   scenes_df$mgrs <- vapply(as.character(scenes_df$scene_id),
                            .s2_mgrs_tile, character(1))
   tiles <- unique(scenes_df$mgrs[!is.na(scenes_df$mgrs)])
+  .warn_scenes_sans_tuile(scenes_df)
 
   method <- if (mode == "count") "near" else "bilinear"
   per_tile <- lapply(tiles, function(tile) {
@@ -699,6 +700,7 @@ extract_trend_series <- function(con, zone_id,
   scenes_df$mgrs <- vapply(as.character(scenes_df$scene_id),
                            .s2_mgrs_tile, character(1))
   tiles <- unique(scenes_df$mgrs[!is.na(scenes_df$mgrs)])
+  .warn_scenes_sans_tuile(scenes_df)
 
   tile_rows <- lapply(tiles, function(tile) {
     sub <- scenes_df[!is.na(scenes_df$mgrs) & scenes_df$mgrs == tile, ,
@@ -1408,6 +1410,20 @@ extract_pixel_trend <- function(cache_dir, scenes_df, xy, crs = 4326,
 # the 5th field grouped CDSE scenes by orbit — two tiles of one orbit stacked
 # together (double count on the overlap), one tile split across orbits
 # (audit 1.0, v0.208.0). Same rule as `.s2_split_product_id()`.
+# Scènes dont l'identifiant ne porte pas de tuile MGRS lisible : elles ne
+# peuvent être rattachées à aucune pile par tuile et sont écartées -- mais
+# plus en silence (audit 1.0), le diagnostic perdant alors des dates.
+.warn_scenes_sans_tuile <- function(scenes_df) {
+  sans_tuile <- scenes_df$scene_id[is.na(scenes_df$mgrs)]
+  if (length(sans_tuile)) {
+    extrait <- utils::head(sans_tuile, 3L)
+    cli::cli_warn(c(
+      "{length(sans_tuile)} cached scene{?s} skipped: no MGRS tile (T##XXX) in the scene id.",
+      i = "First skipped: {.val {extrait}}."))
+  }
+  invisible(length(sans_tuile))
+}
+
 .s2_mgrs_tile <- function(scene_id) {
   parts <- strsplit(scene_id, "_", fixed = TRUE)[[1L]]
   tile <- parts[grepl("^T[0-9]{2}[A-Z]{3}$", parts)]
