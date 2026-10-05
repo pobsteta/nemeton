@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.153.0** (release du 2026-10-04), relevée le 2026-10-04.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.154.0** (release du 2026-10-05), relevée le 2026-10-05.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -164,9 +164,19 @@ phase 3 de l'audit côté app (contrat public et packaging). `run_app(options =)
 réellement utilisable (port, hôte), `CONTRAT.md` (contrat public de la 1.0),
 licence GPL-3+ alignée partout, image Docker reconstruite et vérifiée,
 `R CMD check` sans WARNING ni NOTE, `main` protégée. `opencanopy` résolu à
-l'exécution (retiré des `Suggests`). L'app v0.154.0 (PR #217 : API hors
-interface, plancher `nemeton (>= 0.212.0)`) n'est pas encore mergée : son
-entrée sera ajoutée à la release.
+l'exécution (retiré des `Suggests`).
+
+**Journal** — *2026-10-05* (**app v0.154.0**, `nemetonshiny@db6ff3a9`, PR #217) :
+**API hors interface** (brief aigora-nemeton du 2026-10-04). Neuf fonctions
+exportées (`?api_hors_interface`) : `projets_lister`, `projet_etat`,
+`projet_lire` (aucune écriture ; erreur classée `nemetonshiny_projet_perime` si
+une migration serait nécessaire), `projet_migrer`, `parcelles_commune`,
+`projet_creer`, `projet_calculer`, `projet_rapport`, `projet_gpkg`.
+**Sûreté** : l'invalidation des indicateurs renomme
+(`indicators.perime-v<n>-<date>.parquet`, deux générations) au lieu de
+supprimer — un `load_project()` sur un projet au sens v2 détruisait ses
+indicateurs (Couchey) ; un projet neuf porte le marqueur de sens courant.
+Plancher `Imports: nemeton (>= 0.212.0)` (borne E1/E2 = 2,64, tests alignés).
 
 **Prochaine étape** : vague 6 (contrat d'API, reliquat). L'app consomme 135
 des 313 exports et lit 21 symboles internes : ne rien retirer ni changer de
