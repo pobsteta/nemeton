@@ -625,15 +625,17 @@ classify_disturbance <- function(alerts_df, window_days = 30L,
 #' @param classes Character vector of `confidence_class` values to
 #'   include. Default `c("3-forte", "4-sol-nu")`. Use `NULL` to
 #'   include everything (including alerts without a class, i.e. the
-#'   rolling-window ones).
+#'   rolling-window ones). An empty vector keeps only the alerts
+#'   without a class.
 #' @param validation_status Character vector or `NULL`. Filter on
 #'   `alert.validation_status`. `NULL` (default) returns every
-#'   status.
+#'   status; an empty vector matches no alert.
 #' @param period A length-2 Date / character vector or `NULL`.
 #'   Filter on `trigger_date`. `NULL` (default) returns every date.
 #'
 #' @return An sf POINT layer (CRS WGS84) ready to be drawn on a
-#'   leaflet map. Empty sf when no alert matches.
+#'   leaflet map. Empty sf when no alert matches. `trigger_date` is a
+#'   `Date` and `validated_at` a UTC `POSIXct` on both backends.
 #'
 #' @export
 list_alerts <- function(con, zone_id,
@@ -660,15 +662,23 @@ list_alerts <- function(con, zone_id,
     placeholders <- vapply(vals, add_param, character(1))
     sprintf("(%s)", paste(placeholders, collapse = ", "))
   }
+  # Un vecteur vide produisait `IN ()`, refusé par PostgreSQL (audit 1.0).
+  # classes = character(0) : aucune classe retenue -> seules les alertes
+  # sans classe (FAST) passent ; validation_status = character(0) : aucun
+  # statut retenu -> aucune ligne.
   if (!is.null(classes)) {
     where <- c(where,
-               sprintf("(a.confidence_class IS NULL OR a.confidence_class IN %s)",
-                       add_in_clause(classes)))
+               if (length(classes)) {
+                 sprintf("(a.confidence_class IS NULL OR a.confidence_class IN %s)",
+                         add_in_clause(classes))
+               } else "(a.confidence_class IS NULL)")
   }
   if (!is.null(validation_status)) {
     where <- c(where,
-               sprintf("a.validation_status IN %s",
-                       add_in_clause(validation_status)))
+               if (length(validation_status)) {
+                 sprintf("a.validation_status IN %s",
+                         add_in_clause(validation_status))
+               } else "1 = 0")
   }
   if (!is.null(period)) {
     if (length(period) != 2L) {
@@ -723,6 +733,12 @@ list_alerts <- function(con, zone_id,
       geometry = sf::st_sfc(crs = 4326)
     ))
   }
+  # Types alignés sur PostgreSQL (audit 1.0) : SQLite rend DATE et
+  # TIMESTAMP sous forme de chaînes ; on les convertit en Date / POSIXct UTC
+  # pour que l'appelant ne dépende pas du moteur. No-op sous PG.
+  rs$trigger_date <- .as_date_db(rs$trigger_date)
+  rs$validated_at <- .as_utc_time_db(rs$validated_at)
+
   # Rows whose geometry is missing on both sides (should not happen for
   # Phase B alerts, which always carry a centroid) get an empty POINT.
   wkt <- rs$geom_wkt
@@ -731,4 +747,28 @@ list_alerts <- function(con, zone_id,
   geom_sfc <- do.call(c, geoms)
   rs$geom_wkt <- NULL
   sf::st_sf(rs, geometry = geom_sfc, crs = 4326)
+}
+
+
+# Conversion portable d'une colonne DATE lue en base (Date sous PG,
+# chaîne ISO ou nombre de jours sous SQLite) en `Date`.
+.as_date_db <- function(x) {
+  if (inherits(x, "Date")) return(x)
+  if (is.numeric(x)) return(as.Date(x, origin = "1970-01-01"))
+  as.Date(substr(as.character(x), 1L, 10L))
+}
+
+# Conversion portable d'une colonne TIMESTAMP(TZ) en POSIXct UTC. Les
+# horodatages SQLite sont écrits en UTC (CURRENT_TIMESTAMP, ingestion
+# santé) ; une valeur illisible devient NA.
+.as_utc_time_db <- function(x) {
+  if (inherits(x, "POSIXct")) return(x)
+  if (is.numeric(x)) return(as.POSIXct(x, origin = "1970-01-01", tz = "UTC"))
+  x <- sub("Z$", "", sub("T", " ", as.character(x), fixed = TRUE))
+  out <- as.POSIXct(x, tz = "UTC", format = "%Y-%m-%d %H:%M:%OS")
+  miss <- is.na(out) & !is.na(x)
+  if (any(miss)) {
+    out[miss] <- as.POSIXct(x[miss], tz = "UTC", format = "%Y-%m-%d")
+  }
+  out
 }
