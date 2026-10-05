@@ -279,6 +279,54 @@ test_that("rejects dates_monitoring starting before dates_training", {
   )
 })
 
+test_that("fin de suivi NA acceptée et dates `Date` normalisées dès la validation (audit 1.0)", {
+  skip_if_not_installed("terra")
+  skip_if_no_reticulate(); skip_if_no_sf()
+
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers()
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+  # Le vrai validateur de .build_fordead_config() est rejoué sur ce que le
+  # pipeline lui transmet (après ingestion, donc après le téléchargement).
+  seen <- list()
+  helpers$.build_fordead_config <- function(dates_training, dates_monitoring, ...) {
+    seen[[length(seen) + 1L]] <<- list(tr = dates_training, mon = dates_monitoring)
+    nemeton:::.check_dates_pair(dates_training, "dates_training")
+    nemeton:::.check_dates_pair(dates_monitoring, "dates_monitoring",
+                                allow_open_end = TRUE)
+    list(`__class__` = "FordeadConfig")
+  }
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  # 1. Fin de suivi NA (« ouverte », documentée) : acceptée.
+  out <- run_fordead_dieback(
+    con = make_fake_con(), zone_id = 1L, cache_dir = make_cache_dir(),
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", NA),
+    verbose = FALSE)
+  expect_identical(out$status, "success")
+  expect_true(is.na(seen[[1]]$mon[2]))
+
+  # 2. Vecteurs `Date` : acceptés en entrée ET transmis en ISO texte.
+  out <- run_fordead_dieback(
+    con = make_fake_con(), zone_id = 1L, cache_dir = make_cache_dir(),
+    dates_training   = as.Date(c("2016-01-01", "2017-12-31")),
+    dates_monitoring = as.Date(c("2018-01-01", "2018-12-31")),
+    verbose = FALSE)
+  expect_identical(out$status, "success")
+  expect_identical(seen[[2]]$tr, c("2016-01-01", "2017-12-31"))
+  expect_identical(seen[[2]]$mon, c("2018-01-01", "2018-12-31"))
+
+  # 3. Une fin illisible (≠ NA) reste refusée d'emblée.
+  expect_error(
+    run_fordead_dieback(
+      con = make_fake_con(), zone_id = 1L, cache_dir = make_cache_dir(),
+      dates_training   = c("2016-01-01", "2017-12-31"),
+      dates_monitoring = c("2018-01-01", "pas-une-date"),
+      verbose = FALSE),
+    "dates_monitoring")
+})
+
 
 # ---- successful orchestration ----------------------------------------
 
