@@ -262,3 +262,43 @@ test_that("attach_field_data_to_units lifts placette aggregates onto polygons", 
   expect_false(is.na(ug1$field_g_ha))
   expect_equal(ug2$field_n_trees, 0L)
 })
+
+test_that("aggregate_plot_metrics nomme la colonne manquante (audit 1.0)", {
+  skip_if_not_installed("sf")
+  # Avant : agregats vides en silence. Desormais un avertissement nomme la
+  # colonne, et les agregats restent a leurs valeurs par defaut (l'app
+  # appelle cette fonction : pas d'erreur nouvelle).
+  arb <- sf::st_drop_geometry(make_arbres(include_bad = FALSE))
+  expect_warning(
+    out <- aggregate_plot_metrics(make_placettes(), arb[, setdiff(names(arb), "dbh_cm")]),
+    "dbh_cm")
+  expect_equal(out$field_n_trees, c(0L, 0L, 0L))
+  expect_true(all(is.na(out$field_g_ha)))
+  expect_warning(
+    aggregate_plot_metrics(make_placettes(), arb[, setdiff(names(arb), "plot_id")]),
+    "plot_id")
+})
+
+test_that("attach_field_data_to_units ne regroupe pas des unites sans identifiant unique (audit 1.0)", {
+  skip_if_not_installed("sf")
+  poly_a <- sf::st_polygon(list(rbind(
+    c(899950, 6499950), c(900150, 6499950),
+    c(900150, 6500150), c(899950, 6500150), c(899950, 6499950))))
+  poly_b <- sf::st_polygon(list(rbind(
+    c(900150, 6500150), c(900350, 6500150),
+    c(900350, 6500350), c(900150, 6500350), c(900150, 6500150))))
+  # Pas de ug_id ; la premiere colonne n'est pas un identifiant unique.
+  units <- sf::st_sf(nom = c("Foret X", "Foret X"),
+                     geometry = sf::st_sfc(poly_a, poly_b, crs = 2154))
+  agg <- aggregate_plot_metrics(make_placettes(),
+                                make_arbres(include_bad = FALSE),
+                                plot_radius = 15)
+  out <- attach_field_data_to_units(units, agg)
+  expect_equal(nrow(out), 2L)
+  expect_gt(out$field_n_trees[1], 0)
+  expect_equal(out$field_n_trees[2], 0)
+  expect_true(is.na(out$field_g_ha[2]))
+  # Aucune colonne technique ne fuit dans le resultat.
+  expect_setequal(setdiff(names(out), grep("^field_", names(out), value = TRUE)),
+                  names(units))
+})
