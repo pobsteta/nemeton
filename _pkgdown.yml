@@ -433,7 +433,6 @@ reference:
     - smart_map
     - smart_map_sf
     - get_global_cache_dir
-    - detect_indicator_family
     - get_family_name
 
   - title: "Internal documentation"
