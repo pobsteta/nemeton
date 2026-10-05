@@ -239,3 +239,10 @@ test_that("thresholds + advisory flag are echoed back in the result", {
   expect_equal(res$thresholds$min_target, 0.4)
   expect_true(res$advisory)
 })
+
+test_that("RECONFORT_VALIDITY_SPECIES : chêne, châtaignier, pin, reconnus par le contrôle (audit 1.0)", {
+  expect_identical(RECONFORT_VALIDITY_SPECIES, c("CHE", "CHT", "PS"))
+  aoi <- make_aoi(PT_LOIRET[1], PT_LOIRET[2])
+  res <- check_reconfort_validity(aoi, make_units(RECONFORT_VALIDITY_SPECIES))
+  expect_true(res$species_valid)
+})

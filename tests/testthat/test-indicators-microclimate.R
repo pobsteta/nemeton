@@ -108,3 +108,13 @@ test_that("R6 is NA when a year's micro layer is missing", {
   expect_true(is.na(out$R6))
   expect_equal(out$R6_couverture_pct, 0)
 })
+
+test_that("microclimate_run : scaffold qui refuse proprement (audit 1.0, export sans test)", {
+  aoi <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_buffer(sf::st_point(c(900000, 6700000)), 100), crs = 2154))
+  # Structure inconnue : match.arg()
+  expect_error(microclimate_run(aoi, 2022, structure = "drone"))
+  # Sans les paquets lourds, ou tant que l'orchestration n'est pas câblée,
+  # l'appel s'arrête en renvoyant vers un `micro` précalculé.
+  expect_error(microclimate_run(aoi, 2022), "micro")
+})

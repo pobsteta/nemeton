@@ -514,3 +514,13 @@ test_that("get_datasource_product errors on unknown datasource", {
     "Unknown datasource"
   )
 })
+
+test_that("get_storage_crs et get_metric_crs (audit 1.0, exports sans test)", {
+  # Stockage paneuropéen (ADR-008), calcul métrique en CRS national.
+  expect_identical(get_storage_crs(), 3035L)
+  expect_identical(get_metric_crs("FR"), 2154L)
+  expect_identical(get_metric_crs(), get_metric_crs("FR"))
+  # Pays sans configuration : repli EU (LAEA) avec avertissement.
+  expect_warning(crs <- get_metric_crs("DE"), "fallback")
+  expect_identical(crs, 3035L)
+})

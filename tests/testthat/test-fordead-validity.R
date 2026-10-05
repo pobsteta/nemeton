@@ -272,3 +272,10 @@ test_that("thresholds are echoed back in the result", {
   expect_equal(res$thresholds$species, 0.8)
   expect_equal(res$thresholds$min_resineux, 0.4)
 })
+
+test_that("FORDEAD_VALIDITY_SPECIES : épicéa et sapin, reconnus par le contrôle (audit 1.0)", {
+  expect_identical(FORDEAD_VALIDITY_SPECIES, c("EPC", "SAP"))
+  aoi <- make_aoi(PT_VOSGES[1], PT_VOSGES[2])
+  res <- check_fordead_validity(aoi, make_units(FORDEAD_VALIDITY_SPECIES))
+  expect_true(res$species_valid)
+})
