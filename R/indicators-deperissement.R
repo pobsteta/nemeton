@@ -50,8 +50,11 @@
 #' @param weights Named numeric vector. Per-class FORDEAD weights.
 #'   Default [`FORDEAD_CONFIDENCE_WEIGHTS`].
 #' @param weights_reconfort Named numeric vector. Per-class RECONFORT
-#'   weights (dieback classes). Default = the oak subset of
-#'   [`RECONFORT_CONFIDENCE_WEIGHTS`] (provisional).
+#'   weights (dieback classes). When not supplied, the weights of the
+#'   species of the run (`reconfort_results$species`: `"CHE"`, `"CHT"` or
+#'   `"PS"`) are taken from [`RECONFORT_CONFIDENCE_WEIGHTS`] (provisional);
+#'   the oak weights are used when the run carries no known species. A
+#'   supplied vector applies to every RECONFORT unit.
 #' @param min_resineux Numeric in `[0, 1]`. Minimum conifer share to
 #'   route a unit to FORDEAD. Default 0.3.
 #' @param min_feuillus Numeric in `[0, 1]`. Minimum oak/chestnut/Scots-pine
@@ -118,6 +121,11 @@ indicateur_r5_deperissement <- function(units,
   reconfort_alerts <- .r5_prepare_alerts(
     reconfort_results, classes = RECONFORT_ALERT_CLASSES,
     arg = "reconfort_results")
+  # Poids de l'essence du run RECONFORT (un run = une essence) : les poids
+  # du chene etaient appliques au pin sylvestre (audit 1.0).
+  if (missing(weights_reconfort)) {
+    weights_reconfort <- .r5_reconfort_weights(reconfort_results$species)
+  }
 
   units$R5 <- NA_real_
   units$r5_status <- "skipped_no_method"
@@ -142,6 +150,16 @@ indicateur_r5_deperissement <- function(units,
   }
 
   units
+}
+
+
+# Poids RECONFORT par classe pour l'essence d'un run (hors classe saine).
+# Essence absente ou inconnue -> poids du chene (comportement historique).
+.r5_reconfort_weights <- function(species) {
+  sp <- if (length(species) == 1L && !is.na(species)) toupper(as.character(species)) else ""
+  w <- RECONFORT_CONFIDENCE_WEIGHTS[[sp]]
+  if (is.null(w)) w <- RECONFORT_CONFIDENCE_WEIGHTS$CHE
+  w[names(w) != "1-sain"]
 }
 
 

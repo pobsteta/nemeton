@@ -298,6 +298,15 @@ test_that("Scots pine routes to RECONFORT (PS)", {
   out <- indicateur_r5_deperissement(u, reconfort_results = rr)
   expect_equal(out$r5_status, "calculated_reconfort")
   expect_equal(out$R5, 25, tolerance = 1e-6)        # 0.50 * 0.5 (flat default)
+
+  # Run RECONFORT pin sylvestre : poids PS (0.55), plus ceux du chene.
+  rr$species <- "PS"
+  out <- indicateur_r5_deperissement(u, reconfort_results = rr)
+  expect_equal(out$R5, 27.5, tolerance = 1e-6)      # 0.55 * 0.5
+  # Des poids fournis s'appliquent tels quels.
+  out <- indicateur_r5_deperissement(u, reconfort_results = rr,
+                                     weights_reconfort = c("2-deperissant" = 1))
+  expect_equal(out$R5, 50, tolerance = 1e-6)
 })
 
 test_that("mixed zone routes EPC→FORDEAD and oak→RECONFORT", {
