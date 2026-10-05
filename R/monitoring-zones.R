@@ -61,7 +61,8 @@
 #' @param zone_name Non-empty character scalar. Zone name (unique per
 #'   `project_uuid` since migration 0005).
 #' @param zone_polygon An `sf`/`sfc` object carrying the zone polygon (any
-#'   CRS; reprojected to 4326 on insert).
+#'   CRS; reprojected to 4326 on insert). Several features are unioned
+#'   into one (MULTI)POLYGON.
 #' @param project_uuid Optional character scalar (or `NULL`, default).
 #'   Opaque project identifier; uniqueness is on `(project_uuid, name)`.
 #'
@@ -88,8 +89,7 @@ create_monitoring_zone <- function(con, zone_name, zone_polygon,
     }
   }
 
-  zone_4326 <- sf::st_transform(zone_polygon, 4326)
-  zone_wkt  <- sf::st_as_text(sf::st_geometry(zone_4326)[[1L]])
+  zone_wkt <- .zone_wkt_4326(zone_polygon)
 
   zone_id <- DBI::dbWithTransaction(con,
     .insert_monitoring_zone(con, zone_name, zone_wkt, project_uuid))
@@ -103,23 +103,29 @@ create_monitoring_zone <- function(con, zone_name, zone_polygon,
 # dbBegin() imbriqué, d'où cette séparation.
 .insert_monitoring_zone <- function(con, zone_name, zone_wkt,
                                     project_uuid = NULL) {
-  if (is.null(project_uuid)) {
-    .db_execute(con,
-      "INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg) VALUES ($1, $2, 4326)",
+  # `RETURNING id` (audit 1.0) : l'id relu par nom pouvait être celui d'une
+  # homonyme insérée entre-temps par une autre connexion (nom non unique
+  # sans project_uuid). Supporté par PostgreSQL et SQLite >= 3.35.
+  rs <- if (is.null(project_uuid)) {
+    .db_get_query(con,
+      paste0("INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg) ",
+             "VALUES ($1, $2, 4326) RETURNING id"),
       params = list(zone_name, zone_wkt))
-    rs <- .db_get_query(con,
-      "SELECT id FROM monitoring_zone WHERE name = $1 ORDER BY id DESC LIMIT 1",
-      params = list(zone_name))
   } else {
-    .db_execute(con,
+    .db_get_query(con,
       paste0("INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg, project_uuid) ",
-             "VALUES ($1, $2, 4326, $3)"),
+             "VALUES ($1, $2, 4326, $3) RETURNING id"),
       params = list(zone_name, zone_wkt, project_uuid))
-    rs <- .db_get_query(con,
-      "SELECT id FROM monitoring_zone WHERE project_uuid = $1 AND name = $2",
-      params = list(project_uuid, zone_name))
   }
   as.integer(rs$id[1L])
+}
+
+# WKT EPSG:4326 d'un polygone de zone. Un sf/sfc multi-entités est fusionné
+# (st_union) au lieu d'être tronqué à sa première entité (audit 1.0).
+.zone_wkt_4326 <- function(zone_polygon) {
+  g <- sf::st_geometry(sf::st_transform(zone_polygon, 4326))
+  if (length(g) > 1L) g <- sf::st_union(g)
+  sf::st_as_text(g[[1L]])
 }
 
 

@@ -490,6 +490,37 @@ test_that("read_fast_alert_raster covers the full multi-tile AOI (per-tile mosai
 })
 
 
+test_that("les scènes sans tuile MGRS lisible sont signalées, pas écartées en silence (audit 1.0)", {
+  skip_if_terra_write_broken()
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  write_scene <- function(sid) {
+    d <- file.path(cache, .s2_safe_scene_id(sid))
+    dir.create(d, recursive = TRUE, showWarnings = FALSE)
+    for (b in c("B04", "B08")) {
+      val <- switch(b, B04 = 0.05, B08 = 0.50)
+      r <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 100,
+                       ymin = 0, ymax = 100, crs = "EPSG:32631",
+                       vals = rep(val, 100))
+      terra::writeRaster(r, file.path(d, paste0(b, ".tif")),
+                         filetype = "GTiff", overwrite = TRUE)
+    }
+  }
+  write_scene("S2A_MSIL2A_20250530T103041_R108_T31TFM_20250530T180000")
+  write_scene("S2A_MSIL2A_20250604T103041_R108_SANSTUILE_20250604T180000")
+
+  con <- structure(list(), class = c("FakeConn", "DBIConnection"))
+  expect_warning(
+    r <- suppressMessages(read_fast_alert_raster(
+      con, zone_id = 1L, index = "NDVI",
+      date_from = "2025-05-01", date_to = "2025-06-30",
+      mode = "count", cache_dir = cache, cache_result = FALSE,
+      apply_zone_mask = FALSE)),
+    "MGRS")
+  expect_s4_class(r, "SpatRaster")
+})
+
+
 test_that(".mosaic_per_tile snaps mismatched-resolution tiles before mosaic", {
   skip_if_terra_write_broken()
   skip_if_not_installed("terra")

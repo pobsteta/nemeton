@@ -382,7 +382,11 @@ generate_health_validation_plots <- function(alerts_sf,
     if (!nm %in% names(out)) out[[nm]] <- schema_cols[[nm]]
   }
 
-  if (sf::st_crs(out)$epsg != crs) out <- sf::st_transform(out, crs)
+  # Comparaison sur les objets CRS (audit 1.0) : `$epsg` vaut NA pour un CRS
+  # sans code EPSG (WKT/PROJ), et `NA != crs` faisait planter le `if`.
+  if (!isTRUE(sf::st_crs(out) == sf::st_crs(crs))) {
+    out <- sf::st_transform(out, crs)
+  }
 
   keep <- c("plot_id", "alert_id", "confidence_class",
             intersect(c("stress_index", "trigger_date", "alert_type"),
@@ -412,6 +416,14 @@ generate_health_validation_plots <- function(alerts_sf,
 #' pixel centroid** (`alert.geom_wkt`), not a plot: G4 no longer
 #' depends on the `plot` table (D-B4, Phase B.2).
 #'
+#' When the layer carries an `alert_id` column (as written by
+#' [generate_health_validation_plots()]), a non-`NA` `alert_id` designates
+#' the validated alert directly and takes precedence over the nearest
+#' neighbour (no `snap_distance_m` check). An `alert_id` that is not an
+#' alert of `zone_id` is counted as unmatched
+#' (`reason = "alert_id_not_in_zone"`). Rows without `alert_id` keep the
+#' nearest-alert snapping.
+#'
 #' @param con A `DBIConnection` to a TimescaleDB instance.
 #' @param gpkg_path Character. Path to the GPKG returned by the
 #'   field crew.
@@ -429,7 +441,7 @@ generate_health_validation_plots <- function(alerts_sf,
 #'   * `n_updated` (int), `n_confirmed` (int),
 #'     `n_false_positive` (int);
 #'   * `n_unmatched` (int) — plots without an alert within
-#'     `snap_distance_m`;
+#'     `snap_distance_m`, or whose `alert_id` is not an alert of the zone;
 #'   * `n_skipped` (int) — plots with no or an unknown
 #'     `stade_deperissement`;
 #'   * `details` — a data.frame with one row per processed plot.
@@ -483,6 +495,7 @@ ingest_health_validation <- function(con,
   # UPDATE différés : appliqués en une seule transaction après la boucle.
   updates <- list()
   unknown_stades <- character(0)
+  has_alert_id <- "alert_id" %in% names(plots_m)
 
   for (i in seq_len(nrow(plots_m))) {
     stade <- trimws(as.character(plots_m$stade_deperissement[i]))
@@ -506,10 +519,30 @@ ingest_health_validation <- function(con,
         cause = NA_character_, reason = "unknown_stade"))
       next
     }
-    d <- as.numeric(sf::st_distance(plots_m[i, ], alerts_sf))
-    j <- which.min(d)
-    dmin <- d[j]
-    if (dmin > snap_distance_m) {
+    # La placette tirée par generate_health_validation_plots() porte
+    # l'`alert_id` qu'elle valide : il prime sur le plus proche voisin
+    # (audit 1.0 -- deux alertes voisines de moins de `snap_distance_m`
+    # recevaient la validation de la mauvaise). Un alert_id inconnu de la
+    # zone n'est pas « rattrapé » par proximité.
+    aid <- if (has_alert_id) suppressWarnings(as.integer(plots_m$alert_id[i])) else NA_integer_
+    if (!is.na(aid)) {
+      j <- match(aid, as.integer(alerts_sf$id))
+      if (is.na(j)) {
+        n_unmatched <- n_unmatched + 1L
+        details <- rbind(details, .health_detail_row(
+          plot_id = .plot_label(plots_m, i),
+          alert_id = aid, distance_m = NA_real_,
+          stade = stade, status = NA_character_,
+          cause = NA_character_, reason = "alert_id_not_in_zone"))
+        next
+      }
+      dmin <- as.numeric(sf::st_distance(plots_m[i, ], alerts_sf[j, ]))
+    } else {
+      d <- as.numeric(sf::st_distance(plots_m[i, ], alerts_sf))
+      j <- which.min(d)
+      dmin <- d[j]
+    }
+    if (is.na(aid) && dmin > snap_distance_m) {
       n_unmatched <- n_unmatched + 1L
       details <- rbind(details, .health_detail_row(
         plot_id = .plot_label(plots_m, i),

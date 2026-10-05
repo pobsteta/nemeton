@@ -75,21 +75,29 @@ NULL
                                    vegetation_index,
                                    threshold_anomaly,
                                    output_dir) {
-  .check_dates <- function(x, name) {
+  # `allow_open_end` : une fin NA (saisie comme NA, pas une chaîne
+  # illisible) signifie « ouverte / dernière scène » -- documenté pour
+  # dates_monitoring mais refusé jusqu'ici (audit 1.0).
+  .check_dates <- function(x, name, allow_open_end = FALSE) {
     if (length(x) != 2L) {
       cli::cli_abort("{.arg {name}} must be a length-2 vector.")
     }
-    d <- tryCatch(as.Date(x), error = function(e) NA)
-    if (any(is.na(d))) {
+    d <- tryCatch(suppressWarnings(as.Date(x)),
+                  error = function(e) as.Date(c(NA, NA)))
+    open_end <- isTRUE(allow_open_end) && is.na(x[2L])
+    bad <- is.na(d)
+    if (open_end) bad[2L] <- FALSE
+    if (any(bad)) {
       cli::cli_abort("{.arg {name}} contains values that cannot be parsed as dates.")
     }
-    if (d[2] < d[1]) {
+    if (!is.na(d[2]) && d[2] < d[1]) {
       cli::cli_abort("{.arg {name}}[2] must be on or after {.arg {name}}[1].")
     }
     d
   }
   d_train <- .check_dates(dates_training,   "dates_training")
-  d_mon   <- .check_dates(dates_monitoring, "dates_monitoring")
+  d_mon   <- .check_dates(dates_monitoring, "dates_monitoring",
+                          allow_open_end = TRUE)
   if (d_mon[1] < d_train[1]) {
     cli::cli_abort("{.arg dates_monitoring}[1] must be on or after {.arg dates_training}[1].")
   }
@@ -113,10 +121,43 @@ NULL
       !nzchar(output_dir)) {
     cli::cli_abort("{.arg output_dir} must be a non-empty string.")
   }
+  # Forme canonique ISO texte, seule acceptée en aval par
+  # .build_fordead_config() : des `Date` passaient ici puis étaient
+  # refusées après l'ingestion, soit après des heures de téléchargement
+  # (audit 1.0).
   invisible(list(
-    dates_training_d   = d_train,
-    dates_monitoring_d = d_mon
+    dates_training_d     = d_train,
+    dates_monitoring_d   = d_mon,
+    dates_training_chr   = format(d_train, "%Y-%m-%d"),
+    dates_monitoring_chr = format(d_mon, "%Y-%m-%d")
   ))
+}
+
+
+# Élagage des sorties FORDEAD d'une zone (idempotence disque, replace) :
+# supprime les `dieback_mask_<id>.tif` et `model_<id>/` des runs
+# ANTÉRIEURS au run courant `run_ts` (horodatage YYYYMMDDTHHMMSS, ordre
+# lexicographique = ordre chronologique). Les sorties d'un run plus récent
+# -- un run concurrent lancé après celui-ci sur la même zone -- ne sont
+# jamais touchées : c'est lui qui élaguera à sa fin (audit 1.0).
+.prune_fordead_outputs <- function(zone_dir, run_ts, prune_mask = TRUE,
+                                   prune_bundle = TRUE) {
+  run_of <- function(x, prefix, suffix = "") {
+    sub(paste0("^", prefix, "(.*)", suffix, "$"), "\\1", basename(x))
+  }
+  if (isTRUE(prune_mask)) {
+    old <- list.files(zone_dir, pattern = "^dieback_mask_.*\\.tif$",
+                      full.names = TRUE)
+    old <- old[run_of(old, "dieback_mask_", "\\.tif") < run_ts]
+    if (length(old)) unlink(old)
+  }
+  if (isTRUE(prune_bundle)) {
+    old <- list.dirs(zone_dir, recursive = FALSE)
+    old <- old[grepl("^model_", basename(old))]
+    old <- old[run_of(old, "model_") < run_ts]
+    if (length(old)) unlink(old, recursive = TRUE)
+  }
+  invisible(TRUE)
 }
 
 
@@ -350,9 +391,13 @@ run_fordead_dieback <- function(con,
                                 cancel_path = NULL) {
   t0 <- Sys.time()
 
-  .validate_fordead_args(dates_training, dates_monitoring,
-                         vegetation_index, threshold_anomaly,
-                         output_dir)
+  dates_ok <- .validate_fordead_args(dates_training, dates_monitoring,
+                                     vegetation_index, threshold_anomaly,
+                                     output_dir)
+  # Dates normalisées en ISO texte (fin de suivi NA conservée) pour tout
+  # l'aval : fenêtres d'ingestion, config FORDEAD, run_meta.
+  dates_training   <- dates_ok$dates_training_chr
+  dates_monitoring <- dates_ok$dates_monitoring_chr
 
   if (!inherits(con, "DBIConnection")) {
     cli::cli_abort("{.arg con} must be a {.cls DBIConnection}.")
@@ -739,23 +784,12 @@ run_fordead_dieback <- function(con,
     # Best-effort : un échec d'élagage avertit mais n'avorte pas le run.
     if (isTRUE(replace) && dir.exists(zone_dir)) {
       tryCatch({
-        mask_ok <- !is.null(rasters$dieback_mask) &&
-                   !is.na(rasters$dieback_mask)
-        if (mask_ok) {
-          keep <- paste0("dieback_mask_", run_ts, ".tif")
-          old  <- list.files(zone_dir, pattern = "^dieback_mask_.*\\.tif$",
-                             full.names = TRUE)
-          old  <- old[basename(old) != keep]
-          if (length(old)) unlink(old)
-        }
-        bundle_ok <- !is.null(rasters$model_dir) && !is.na(rasters$model_dir)
-        if (bundle_ok) {
-          keep <- paste0("model_", run_ts)
-          old  <- list.dirs(zone_dir, recursive = FALSE)
-          old  <- old[grepl("^model_", basename(old)) &
-                      basename(old) != keep]
-          if (length(old)) unlink(old, recursive = TRUE)
-        }
+        .prune_fordead_outputs(
+          zone_dir, run_ts,
+          prune_mask   = !is.null(rasters$dieback_mask) &&
+                         !is.na(rasters$dieback_mask),
+          prune_bundle = !is.null(rasters$model_dir) &&
+                         !is.na(rasters$model_dir))
       }, error = function(e) {
         cli::cli_alert_warning(
           "Stale FORDEAD output pruning failed: {conditionMessage(e)}")

@@ -104,7 +104,10 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
   # (`monitoring_zone.zone_wkt`), so a FORDEAD pre-fetch warms the FAST cache
   # and vice versa. A zone without a usable `zone_wkt` is a registration
   # error — there is NO per-plot bbox fallback (FORDEAD never reads `plot`).
-  aoi_zone <- tryCatch(.get_zone_aoi(con, zone_id), error = function(e) NULL)
+  # Erreur de base != zone sans géométrie : seule la seconde est absorbée
+  # (audit 1.0).
+  aoi_zone <- tryCatch(.get_zone_aoi(con, zone_id),
+                       nemeton_zone_aoi_error = function(e) NULL)
   if (is.null(aoi_zone)) {
     cli::cli_warn(c(
       "Zone {.val {zone_id}} has no usable {.field zone_wkt}.",

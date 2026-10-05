@@ -128,6 +128,39 @@ test_that("ingest_health_validation matches an alert by its pixel centroid (SQLi
 })
 
 
+test_that("l'alert_id du GPKG prime sur le plus proche voisin (SQLite, audit 1.0)", {
+  skip_if_not_installed("sf")
+  with_sqlite_monitoring_db(function(con) {
+    # Deux alertes à ~20 m l'une de l'autre ; la placette tirée pour
+    # l'alerte 1 est relevée plus près de l'alerte 2.
+    DBI::dbExecute(con, paste0(
+      "INSERT INTO alert (id, zone_id, alert_type, trigger_date, geom_wkt, ",
+      "confidence_class) VALUES ",
+      "(1, 1, 'fordead_dieback', '2024-06-15', 'POINT(6 46)', '3-forte'), ",
+      "(2, 1, 'fordead_dieback', '2024-06-16', 'POINT(6.00026 46)', '3-forte')"))
+    xy2 <- sf::st_coordinates(sf::st_transform(
+      sf::st_sfc(sf::st_point(c(6.00026, 46)), crs = 4326), 2154))
+    gpkg <- tempfile(fileext = ".gpkg")
+    sf::st_write(sf::st_sf(
+      plot_id = c("HV-0001", "HV-0002"),
+      alert_id = c(1L, 99L),            # 99 : alerte hors zone
+      stade_deperissement = c("scolyte_vert", "scolyte_vert"),
+      geometry = sf::st_sfc(sf::st_point(c(xy2[1] - 2, xy2[2])),
+                            sf::st_point(c(xy2[1] + 2, xy2[2])), crs = 2154)),
+      gpkg, layer = "placettes", quiet = TRUE)
+
+    res <- ingest_health_validation(con, gpkg, zone_id = 1L)
+    st <- DBI::dbGetQuery(con,
+      "SELECT id, validation_status FROM alert ORDER BY id")
+    # L'alerte 1 (désignée) est validée, pas sa voisine.
+    expect_equal(st$validation_status, c("confirmed", "pending"))
+    expect_equal(res$details$alert_id[1], 1L)
+    # Un alert_id inconnu de la zone n'est pas « rattrapé » par proximité.
+    expect_equal(res$n_unmatched, 1L)
+    expect_equal(res$details$reason[2], "alert_id_not_in_zone")
+  })
+})
+
 test_that("scolyte stages flag alerts as confirmed/scolyte_terrain", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {

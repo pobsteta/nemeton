@@ -118,7 +118,11 @@ NULL
 #' @param url Character. Connection URL. Two schemes are
 #'   supported:
 #'   * `postgresql://user:password@host:port/dbname` — opens a
-#'     [RPostgres::Postgres()] connection.
+#'     [RPostgres::Postgres()] connection. Reserved characters in the
+#'     user, password or database name are percent-encoded (`%40` for
+#'     `@`) and decoded before reaching libpq; an optional query string
+#'     (`?sslmode=require&application_name=x`) is passed through as libpq
+#'     parameters (explicit arguments such as `connect_timeout` win).
 #'   * `sqlite:///absolute/path/to/file.sqlite` — opens a
 #'     [RSQLite::SQLite()] connection on the given file in WAL mode
 #'     (the local backend). The file is created if it does not exist. A
@@ -197,8 +201,9 @@ db_connect <- function(url = Sys.getenv("NEMETON_DB_URL"),
       # `connect_timeout` is a libpq connection parameter (seconds): it
       # bounds the wait when the Postgres host is unreachable instead of
       # hanging on the default OS TCP timeout.
-      DBI::dbConnect(
-        RPostgres::Postgres(),
+      # Les paramètres libpq de la query string (sslmode, application_name…)
+      # sont transmis tels quels ; les paramètres explicites priment.
+      args <- list(
         host            = parts$host,
         port            = parts$port,
         dbname          = parts$dbname,
@@ -206,6 +211,8 @@ db_connect <- function(url = Sys.getenv("NEMETON_DB_URL"),
         password        = parts$password,
         connect_timeout = as.integer(connect_timeout)
       )
+      extra <- parts$options[setdiff(names(parts$options), names(args))]
+      do.call(DBI::dbConnect, c(list(RPostgres::Postgres()), args, extra))
     },
     sqlite = {
       path <- .parse_sqlite_url(url)
@@ -280,6 +287,12 @@ db_disconnect <- function(con) {
 #' filename (basename without extension) is recorded as the version
 #' identifier.
 #'
+#' Concurrent calls (e.g. a Shiny session and a worker process) are
+#' serialised: each file's transaction takes a lock first (a PostgreSQL
+#' transaction-level advisory lock, `BEGIN IMMEDIATE` on SQLite) and
+#' re-checks `schema_migration`, so a migration applied meanwhile by
+#' another connection is skipped instead of being run twice.
+#'
 #' @param con A `DBIConnection` returned by [db_connect()].
 #' @param migrations_dir Character or `NULL`. Path to the migrations
 #'   directory. Defaults to the bundled `inst/db/migrations/<driver>/`.
@@ -319,36 +332,46 @@ db_migrate <- function(con,
   newly_applied <- character(0)
   for (f in to_apply) {
     version <- .migration_version(f)
-    .migration_preflight(con, version)
     sql <- paste(readLines(f, warn = FALSE), collapse = "\n")
-    DBI::dbWithTransaction(con, {
-      if (is_pg) {
-        # Without immediate = TRUE, RPostgres prepares the statement and
-        # PostgreSQL rejects it with "cannot insert multiple commands into
-        # a prepared statement".
-        DBI::dbExecute(con, sql, immediate = TRUE)
+    # Verrou + revérification (audit 1.0) : deux processus (session Shiny et
+    # worker) lançant db_migrate() en même temps appliquaient tous deux la
+    # même migration (« duplicate column », voire 0007 rejouée). Sous le
+    # verrou, une migration appliquée entre-temps est sautée.
+    applied_now <- .with_migration_lock(con, is_pg, {
+      if (.migration_is_applied(con, version)) {
+        FALSE
       } else {
-        # The migration files are hand-written and use no exotic literal
-        # forms, so a naive split on `;` is sufficient.
-        for (stmt in .split_sql_statements(sql)) {
-          if (nzchar(stmt)) DBI::dbExecute(con, stmt)
+        .migration_preflight(con, version)
+        if (is_pg) {
+          # Without immediate = TRUE, RPostgres prepares the statement and
+          # PostgreSQL rejects it with "cannot insert multiple commands into
+          # a prepared statement".
+          DBI::dbExecute(con, sql, immediate = TRUE)
+        } else {
+          # The migration files are hand-written and use no exotic literal
+          # forms, so a naive split on `;` is sufficient.
+          for (stmt in .split_sql_statements(sql)) {
+            if (nzchar(stmt)) DBI::dbExecute(con, stmt)
+          }
         }
-      }
-      # `ON CONFLICT DO NOTHING` with no conflict-target is valid on
-      # PostgreSQL but only on SQLite >= 3.35.0; older SQLite engines
-      # raise `near "DO": syntax error`. `INSERT OR IGNORE` is the
-      # portable SQLite-native form and behaves identically on every
-      # 3.x. Branch by backend so each engine gets its own idiom.
-      if (is_pg) {
-        .db_execute(con,
-          "INSERT INTO schema_migration (version) VALUES ($1) ON CONFLICT DO NOTHING",
-          params = list(version))
-      } else {
-        .db_execute(con,
-          "INSERT OR IGNORE INTO schema_migration (version) VALUES ($1)",
-          params = list(version))
+        # `ON CONFLICT DO NOTHING` with no conflict-target is valid on
+        # PostgreSQL but only on SQLite >= 3.35.0; older SQLite engines
+        # raise `near "DO": syntax error`. `INSERT OR IGNORE` is the
+        # portable SQLite-native form and behaves identically on every
+        # 3.x. Branch by backend so each engine gets its own idiom.
+        if (is_pg) {
+          .db_execute(con,
+            "INSERT INTO schema_migration (version) VALUES ($1) ON CONFLICT DO NOTHING",
+            params = list(version))
+        } else {
+          .db_execute(con,
+            "INSERT OR IGNORE INTO schema_migration (version) VALUES ($1)",
+            params = list(version))
+        }
+        TRUE
       }
     })
+    if (!isTRUE(applied_now)) next
     cli::cli_alert_success("Applied migration {.val {version}}.")
     newly_applied <- c(newly_applied, version)
   }
@@ -356,22 +379,81 @@ db_migrate <- function(con,
 }
 
 
+# Transaction de migration sérialisée entre processus (audit 1.0).
+# PostgreSQL : verrou consultatif de transaction (relâché au COMMIT /
+# ROLLBACK). SQLite : BEGIN IMMEDIATE prend le verrou d'écriture dès
+# l'ouverture (un BEGIN différé ne le prend qu'à la première écriture,
+# trop tard pour la revérification).
+.MIGRATION_LOCK_KEY <- 7036372L  # clé arbitraire, propre à nemeton
+
+.with_migration_lock <- function(con, is_pg, code) {
+  if (is_pg) {
+    return(DBI::dbWithTransaction(con, {
+      DBI::dbGetQuery(con, sprintf("SELECT pg_advisory_xact_lock(%d)",
+                                   .MIGRATION_LOCK_KEY))
+      force(code)
+    }))
+  }
+  DBI::dbExecute(con, "BEGIN IMMEDIATE")
+  ok <- FALSE
+  on.exit(if (!ok) try(DBI::dbExecute(con, "ROLLBACK"), silent = TRUE),
+          add = TRUE)
+  res <- force(code)
+  DBI::dbExecute(con, "COMMIT")
+  ok <- TRUE
+  res
+}
+
+# Revérification, sous verrou, qu'une version n'a pas été appliquée
+# entre-temps par une autre connexion.
+.migration_is_applied <- function(con, version) {
+  if (!DBI::dbExistsTable(con, "schema_migration")) return(FALSE)
+  rs <- .db_get_query(con,
+    "SELECT COUNT(*) AS n FROM schema_migration WHERE version = $1",
+    params = list(version))
+  isTRUE(as.numeric(rs$n[1L]) > 0)
+}
+
+
 # ---- Internal helpers ------------------------------------------------
 
 .parse_pg_url <- function(url) {
-  m <- regmatches(url, regexec(
+  # Query string (`?sslmode=require&…`) séparée AVANT l'analyse (audit
+  # 1.0) : elle se collait sinon au nom de base.
+  query <- ""
+  qpos <- regexpr("?", url, fixed = TRUE)
+  base <- url
+  if (qpos > 0L) {
+    query <- substring(url, qpos + 1L)
+    base  <- substr(url, 1L, qpos - 1L)
+  }
+  m <- regmatches(base, regexec(
     "^postgres(?:ql)?://([^:@]+)(?::([^@]*))?@([^:/]+)(?::([0-9]+))?/(.+)$",
-    url
+    base
   ))[[1]]
   if (length(m) < 6) {
     cli::cli_abort("Invalid PostgreSQL URL: {.val {(.mask_db_url(url))}}.")
   }
+  # Décodage des %XX (audit 1.0) : un mot de passe contenant `@`, `:` ou `/`
+  # doit être encodé dans l'URL (RFC 3986) et transmis décodé à libpq.
+  dec <- function(x) utils::URLdecode(x)
+  options <- list()
+  if (nzchar(query)) {
+    for (kv in strsplit(query, "&", fixed = TRUE)[[1]]) {
+      if (!nzchar(kv)) next
+      eq <- regexpr("=", kv, fixed = TRUE)
+      key <- if (eq > 0L) substr(kv, 1L, eq - 1L) else kv
+      val <- if (eq > 0L) substring(kv, eq + 1L) else ""
+      options[[dec(key)]] <- dec(val)
+    }
+  }
   list(
-    user     = m[2],
-    password = m[3],
-    host     = m[4],
+    user     = dec(m[2]),
+    password = dec(m[3]),
+    host     = dec(m[4]),
     port     = if (nzchar(m[5])) as.integer(m[5]) else 5432L,
-    dbname   = m[6]
+    dbname   = dec(m[6]),
+    options  = options
   )
 }
 

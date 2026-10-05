@@ -61,6 +61,25 @@
   }
 }
 
+# Transaction d'acquisition. PostgreSQL : transaction ordinaire, la ligne
+# étant verrouillée par FOR UPDATE. SQLite : BEGIN IMMEDIATE (audit 1.0) --
+# un BEGIN différé lisait la table puis tentait d'écrire avec un instantané
+# périmé dès qu'un autre processus avait écrit entre-temps, d'où une erreur
+# SQLITE_BUSY (« database is locked ») au lieu d'un refus `ok = FALSE`.
+# Avec le verrou d'écriture pris d'emblée, le second acquéreur attend
+# (busy_timeout) puis lit l'état à jour.
+.lock_transaction <- function(con, code) {
+  if (.lock_is_pg(con)) return(DBI::dbWithTransaction(con, code))
+  DBI::dbExecute(con, "BEGIN IMMEDIATE")
+  ok <- FALSE
+  on.exit(if (!ok) try(DBI::dbExecute(con, "ROLLBACK"), silent = TRUE),
+          add = TRUE)
+  res <- force(code)
+  DBI::dbExecute(con, "COMMIT")
+  ok <- TRUE
+  res
+}
+
 .lock_na_chr <- function(x) if (length(x) == 0L || is.na(x)) NA_character_ else as.character(x)
 
 # Canonical row read (post-mutation), for authoritative timestamps. Portable —
@@ -93,7 +112,7 @@
 #' Fails when another holder's lock is still fresh.
 #'
 #' The whole decision runs in one transaction with a row lock (`FOR UPDATE`
-#' on PostgreSQL), so two concurrent acquisitions on a free project yield
+#' on PostgreSQL, `BEGIN IMMEDIATE` on SQLite), so two concurrent acquisitions on a free project yield
 #' exactly one winner. Expiry is judged against the database clock.
 #'
 #' @param con A `DBIConnection` (PostgreSQL server, or SQLite for local/test).
@@ -119,7 +138,7 @@ project_lock_acquire <- function(con, project_id, holder_id,
   for_update <- if (.lock_is_pg(con)) " FOR UPDATE" else ""
   label <- if (is.null(holder_label)) NA_character_ else as.character(holder_label)
 
-  DBI::dbWithTransaction(con, {
+  .lock_transaction(con, {
     cur <- DBI::dbGetQuery(
       con,
       sprintf("SELECT holder_id, holder_label, acquired_at, heartbeat_at,

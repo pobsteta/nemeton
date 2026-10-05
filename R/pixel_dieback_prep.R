@@ -209,7 +209,10 @@ prepare_pixel_dieback_series <- function(df, grid_step = 10L,
                stringsAsFactors = FALSE)
   }
 
-  gaps <- .pdb_gaps(dates, gap_flag_days)
+  # Trous calculés sur les seules observations RÉELLES (union des deux
+  # indices), pas sur toutes les dates : une date masquée (NA, nuage)
+  # bouchait sinon le trou que l'interpolation comble (audit 1.0).
+  gaps <- .pdb_gaps(c(obs_swir$date, obs_re$date), gap_flag_days)
 
   out <- list(
     grid_swir = grid_swir, grid_re = grid_re,

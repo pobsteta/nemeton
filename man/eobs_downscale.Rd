@@ -52,10 +52,14 @@ regional context.}
 \item{buffer_m}{Context buffer around the AOI, in metres (default 25000).}
 
 \item{resolution}{Optional target resolution (DEM units). \code{NULL} keeps the
-DEM resolution (aggregated if the grid would exceed \code{max_cells}).}
+DEM resolution (aggregated if the grid would exceed \code{max_cells}).
+KED engine only: ignored by \code{engine = "meteoland"}, whose grid is the
+DEM capped at \code{max_cells}.}
 
 \item{covariates}{Terrain covariates among \code{"dem"}, \code{"slope"}, \code{"aspect"}
-(entered as northness), \code{"twi"} (best-effort). Default all four.}
+(entered as northness), \code{"twi"} (best-effort). Default all four.
+KED engine only: \code{engine = "meteoland"} ignores it and always uses
+elevation, slope and aspect (its own interpolator covariates).}
 
 \item{statistic}{What to downscale: \code{"trend"} (per-decade OLS slope over the
 E-OBS years), \code{"mean"}, or \code{"value"} (a pre-reduced single layer).}

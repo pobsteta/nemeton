@@ -27,7 +27,8 @@ NULL
 #' @param con A `DBIConnection` returned by [db_connect()].
 #' @param zone_name Character. Display name for the zone.
 #' @param zone_polygon An sf POLYGON (any CRS — re-projected to WGS84
-#'   internally for storage).
+#'   internally for storage). Several features are unioned into one
+#'   (MULTI)POLYGON.
 #' @param placettes An sf POINT object with at least the columns
 #'   `plot_id` (character) and optionally `type`.
 #' @param radius_m Numeric. Sampling radius around each placette in
@@ -36,9 +37,11 @@ NULL
 #'   Opaque project identifier used by callers (`nemetonshiny`) to
 #'   stably bind a project to its monitoring zone. When non-`NULL`,
 #'   stored on `monitoring_zone.project_uuid` and queryable via
-#'   [find_zone_by_project()]. UNIQUE on non-`NULL` values — registering
-#'   a second zone with the same `project_uuid` raises a DB error.
-#'   Available since spec 011 (migration `0003_project_uuid`).
+#'   [find_zone_by_project()]. Since migration `0005` (spec 020) the
+#'   uniqueness is on `(project_uuid, zone_name)`: a project may own several
+#'   zones, but registering the same `zone_name` twice for one
+#'   `project_uuid` raises a DB error. Available since spec 011 (migration
+#'   `0003_project_uuid`).
 #'
 #' @return The `zone_id` (integer) of the registered zone.
 #'
@@ -60,8 +63,8 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
     }
   }
 
-  zone_4326 <- sf::st_transform(zone_polygon, 4326)
-  zone_wkt  <- sf::st_as_text(sf::st_geometry(zone_4326)[[1]])
+  # Multi-entités fusionnées, pas tronquées à la première (audit 1.0).
+  zone_wkt <- .zone_wkt_4326(zone_polygon)
 
   # Placettes préparées hors transaction (aucune écriture).
   pts <- sf::st_transform(placettes, 4326)
@@ -72,26 +75,9 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
   # d'insertion d'une placette ne doit pas laisser une zone orpheline
   # commitée. Pas de return() dans ce bloc (court-circuiterait le COMMIT).
   zone_id <- DBI::dbWithTransaction(con, {
-    if (is.null(project_uuid)) {
-      .db_execute(con,
-        "INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg) VALUES ($1, $2, 4326)",
-        params = list(zone_name, zone_wkt))
-      rs <- .db_get_query(con,
-        "SELECT id FROM monitoring_zone WHERE name = $1 ORDER BY id DESC LIMIT 1",
-        params = list(zone_name))
-    } else {
-      .db_execute(con,
-        paste0("INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg, project_uuid) ",
-               "VALUES ($1, $2, 4326, $3)"),
-        params = list(zone_name, zone_wkt, project_uuid))
-      # Since spec 020 a project may own several zones (different names),
-      # so the id of the row just inserted must be fetched by the full
-      # (project_uuid, name) key, not by project_uuid alone.
-      rs <- .db_get_query(con,
-        "SELECT id FROM monitoring_zone WHERE project_uuid = $1 AND name = $2",
-        params = list(project_uuid, zone_name))
-    }
-    zid <- rs$id[1]
+    # Id lu via RETURNING (audit 1.0), pas relu par nom : cf.
+    # .insert_monitoring_zone().
+    zid <- .insert_monitoring_zone(con, zone_name, zone_wkt, project_uuid)
     for (i in seq_len(nrow(pts))) {
       .db_execute(con,
         paste0("INSERT INTO plot (zone_id, plot_id, plot_type, geom_wkt, radius_m) ",
@@ -284,8 +270,8 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'   cache_dir   = cache
 #' )
 #'
-#' # Subsequent runs: skip_cached short-circuits at the DB level,
-#' # cache_dir only kicks in when a genuine re-extraction is needed.
+#' # Subsequent runs: skip_cached (default TRUE) skips every scene whose
+#' # band COGs are already under cache_dir; only new scenes are fetched.
 #' ingest_sentinel2_timeseries(
 #'   con, zone_id, "2026-01-01", "2026-06-30",
 #'   bands     = c("NDVI", "NBR"),
@@ -368,7 +354,11 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   # correctly-registered zone aborted with a misleading "No plots
   # registered" and could never prime its cache — e.g. as soon as the
   # requested window extended beyond the already-cached scenes.
-  aoi_zone <- tryCatch(.get_zone_aoi(con, zone_id), error = function(e) NULL)
+  # Seules les erreurs « zone » (inconnue, géométrie inexploitable) mènent
+  # au repli ; une erreur de base remonte au lieu d'être prise pour une
+  # zone sans géométrie (audit 1.0).
+  aoi_zone <- tryCatch(.get_zone_aoi(con, zone_id),
+                       nemeton_zone_aoi_error = function(e) NULL)
   if (is.null(aoi_zone)) {
     if (!nrow(plots)) {
       cli::cli_warn(c(
@@ -1507,7 +1497,11 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       )
       sz <- if (file.exists(tmp)) file.info(tmp)$size else NA_integer_
       .s2_cache_log("WRITE ok size=", sz, " bytes")
-      file.rename(tmp, cached_path)
+      # Retour de file.rename() vérifié (audit 1.0) : un échec laissait le
+      # .tmp orphelin et annonçait pourtant la bande comme mise en cache.
+      if (!file.rename(tmp, cached_path)) {
+        stop("cannot rename ", basename(tmp), " to ", basename(cached_path))
+      }
       .s2_cache_log("RENAME ok -> ", cached_path)
       emit_fn(list(current  = "s2:band_fetched",
                    scene_id = scene_id,

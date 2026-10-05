@@ -225,6 +225,8 @@
 #' @param extinction_k Beer-Lambert extinction coefficient for `lai_col`
 #'   (default 0.5).
 #' @param id_col Unit id column (default `"ug_id"`; falls back to the row index).
+#' @param include_atlas Also list the JRC-Atlas species in the default pool
+#'   (default `FALSE`).
 #' @param ... Reserved.
 #'
 #' @return A long `data.frame`, one row per `(unit × rank)`: `ug_id`, `rank`,

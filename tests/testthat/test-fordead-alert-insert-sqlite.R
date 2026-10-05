@@ -141,3 +141,44 @@ test_that("db_migrate records versions on SQLite via INSERT OR IGNORE", {
     expect_length(out, 0L)
   })
 })
+
+test_that("list_alerts : mêmes types de sortie sous SQLite que sous PG (audit 1.0)", {
+  skip_if_not_installed("sf")
+  with_sqlite_monitoring_db(function(con) {
+    alerts_sf <- sf::st_sf(
+      trigger_date     = as.Date("2026-05-20"),
+      confidence_class = "3-forte",
+      stress_index     = 0.8,
+      geometry = sf::st_sfc(sf::st_point(c(900000, 6500000)), crs = 2154)
+    )
+    nemeton:::.insert_fordead_alerts(con, alerts_sf, zone_id = 1L)
+    DBI::dbExecute(con, "UPDATE alert SET validated_at = '2026-06-01 08:30:00'")
+    out <- list_alerts(con, 1L)
+    # SQLite rendait des chaînes : Date / POSIXct UTC comme sous PG.
+    expect_s3_class(out$trigger_date, "Date")
+    expect_equal(out$trigger_date, as.Date("2026-05-20"))
+    expect_s3_class(out$validated_at, "POSIXct")
+    expect_equal(format(out$validated_at, tz = "UTC"), "2026-06-01 08:30:00")
+  })
+})
+
+test_that("list_alerts : classes / validation_status vides sans liste IN vide (audit 1.0)", {
+  skip_if_not_installed("sf")
+  seen <- character(0)
+  local_mocked_bindings(
+    .assert_db_pkgs = function(...) invisible(TRUE),
+    .db_get_query = function(con, sql, params = NULL) {
+      seen <<- c(seen, sql)
+      data.frame()
+    })
+  list_alerts(structure(list(), class = "FakeConn"), 1L,
+              classes = character(0))
+  list_alerts(structure(list(), class = "FakeConn"), 1L,
+              classes = NULL, validation_status = character(0))
+  expect_length(seen, 2L)
+  expect_false(any(grepl("IN\\s*\\(\\s*\\)", seen)))
+  # classes = character(0) : seules les alertes sans classe (FAST) passent.
+  expect_match(seen[1], "(a.confidence_class IS NULL)", fixed = TRUE)
+  # validation_status = character(0) : aucun statut retenu -> aucune ligne.
+  expect_match(seen[2], "1 = 0", fixed = TRUE)
+})
