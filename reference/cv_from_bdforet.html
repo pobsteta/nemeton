@@ -17,7 +17,7 @@ with aoi when provided). Polygons mapped to NA
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -177,7 +177,8 @@ columns as <code><a href="cv_typology.html">cv_typology()</a></code>).</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list with:</p><ul><li><p><code>cv</code>: the aggregated CV (numeric fraction).</p></li>
+    <p>A list with:</p><ul><li><p><code>cv</code>: the aggregated CV (numeric fraction), averaged over
+      the classes whose CV is known; <code>NA</code> when none is.</p></li>
 <li><p><code>position</code>: the bound used.</p></li>
 <li><p><code>coverage</code>: total mapped area / total input area
       (sanity check — how much of the AOI was classified).</p></li>

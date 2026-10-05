@@ -15,7 +15,7 @@ the site index in French forestry."><meta property="og:image" content="https://p
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -170,7 +170,10 @@ clamped to the worst site class.</p></dd>
   <code>reference_age</code>) in metres. <code>NA</code> is returned when
   <code>H_dom</code> or <code>age</code> is missing, when <code>H_dom</code> is below
   <code>min_stand_height</code>, when <code>age</code> is outside the tabulated
-  range, or when the species cannot be resolved.</p>
+  range, or when the species cannot be resolved. A height above the
+  tallest (class 1) or below the shortest (class 5) curve at the observed
+  age is <strong>clamped</strong> to that class: the site index returned is then the
+  class 1 or class 5 height at <code>reference_age</code>, not an extrapolation.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

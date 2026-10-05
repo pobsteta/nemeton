@@ -33,7 +33,7 @@ holds no public forest.'><meta property="og:image" content="https://pobsteta.git
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -208,6 +208,19 @@ intersect it. Default <code>FALSE</code> — a UGF is normally the entire parcel
 <code>parcelle</code>, <code>domaniale</code>, <code>nom_ugf</code>, <code>contenance</code> (m²,
 computed in the territory's projected CRS) and <code>surface_ha</code>; a 0-row
 <span class="pkg">sf</span> if none; <code>NULL</code> on failure.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="transport-security">Transport security<a class="anchor" aria-label="anchor" href="#transport-security"></a></h2>
+
+
+<p>The ONF WFS is only served over <strong>plain HTTP</strong>
+(<code>https://ws.carmencarto.fr</code> does not answer, checked 2026-08-18): the
+request and the response travel unencrypted and unauthenticated. No
+credential is sent and the data are public, but the parcels cannot be
+guaranteed against tampering in transit. A response that is an HTML page, an OWS
+exception report or unreadable GML is rejected (<code>NULL</code>). Treat the layer as
+a NDP 0 seed to be checked against the management plan, not as an
+authoritative boundary.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

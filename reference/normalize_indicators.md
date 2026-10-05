@@ -49,7 +49,9 @@ normalize_indicators(
 
 - na.rm:
 
-  Logical. Remove NA values before normalization? Default TRUE.
+  Logical. Remove NA values before normalization? Default TRUE. With
+  `FALSE`, a single NA in the reference makes the bounds unknown and the
+  whole normalized column is NA.
 
 - reference_data:
 

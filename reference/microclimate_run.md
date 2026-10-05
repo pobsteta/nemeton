@@ -48,7 +48,9 @@ microclimate_run(aoi, year, structure = c("lidarhd", "opencanopy"),
 
 ## Value
 
-A named list of
+Nothing for now: the function **always raises an error** (missing
+Suggests, or orchestration not wired yet). Once wired, it will return a
+named list of
 [`terra::SpatRaster`](https://rspatial.github.io/terra/reference/SpatRaster-class.html)
 — `tmax_understorey`, `tmax_open`, `vpd`, `rh` (summer JJA) — the
 `micro` contract.

@@ -1,5 +1,139 @@
 # Changelog
 
+## nemeton 0.214.0 (2026-10-05)
+
+Septième vague de l’audit de pré-version 1.0 : **constats mineurs**. Les
+~111 constats « m » (bug, sécu, qualité) de
+`specs/audit-1.0/rapport-audit.md` revérifiés par quatre agents :
+environ 90 corrigés (chaque bug avec un test qui échouait avant), une
+quinzaine déjà corrigés, quelques-uns non retenus (stylistiques ou non
+reproduits), le reste en décision. **Tous les constats du rapport
+portent désormais une marque.** Aucune signature d’export consommé par
+l’app ne change.
+
+#### Changed
+
+- **`withr`** passe de `Suggests` à `Imports` : il était déjà utilisé
+  dans le code du paquet (RECONFORT), et les tirages aléatoires (plans
+  d’échantillonnage et de validation,
+  [`cluster_parcels()`](https://pobsteta.github.io/nemeton/reference/cluster_parcels.md))
+  utilisent désormais une graine locale
+  ([`withr::local_seed()`](https://withr.r-lib.org/reference/with_seed.html))
+  au lieu de modifier celle de la session.
+- **[`list_alerts()`](https://pobsteta.github.io/nemeton/reference/list_alerts.md)
+  sous SQLite** : `trigger_date` en `Date`, `validated_at` en `POSIXct`
+  UTC, comme sous PostgreSQL.
+- **[`db_migrate()`](https://pobsteta.github.io/nemeton/reference/db_migrate.md)**
+  sérialisé (verrou consultatif PostgreSQL, `BEGIN IMMEDIATE` SQLite) ;
+  [`project_lock_acquire()`](https://pobsteta.github.io/nemeton/reference/project_lock_acquire.md)
+  en `BEGIN IMMEDIATE` sous SQLite ;
+  [`db_connect()`](https://pobsteta.github.io/nemeton/reference/db_connect.md)
+  décode les `%XX` de l’URL et transmet la query string (`sslmode`…) à
+  libpq.
+- **CI** : build pkgdown à jeton en lecture seule (déploiement séparé),
+  actions tierces épinglées par SHA.
+
+#### Fixed — valeurs qui peuvent changer
+
+- **R5** : poids RECONFORT de l’essence du run (pin sylvestre : 0,55 au
+  lieu de 0,50 pour « 2-dépérissant »).
+- **S3** : le carreau INSEE intersecté est retrouvé par sa ligne, plus
+  par sa population (surestimation possible avant).
+- **[`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)**
+  : les poids nommés `C1` s’appliquent à `C1_norm` ; moyennes
+  géométrique et harmonique pondérées ; `min` avertit qu’il ignore les
+  poids.
+- **[`normalize_indicators()`](https://pobsteta.github.io/nemeton/reference/normalize_indicators.md)**
+  : avec `na.rm = FALSE`, un NA rend la colonne NA (50 ou 0 avant) ;
+  plus de `C1_norm_norm`.
+- **[`calculate_change_rate()`](https://pobsteta.github.io/nemeton/reference/calculate_change_rate.md)**
+  : durée indéterminable → taux NA (un « 1 an » était inventé).
+- **[`cv_from_bdforet()`](https://pobsteta.github.io/nemeton/reference/cv_from_bdforet.md)**
+  : un CV inconnu n’est plus compté 0 (CV et taille d’échantillon
+  sous-estimés avant).
+- **[`ifn_covariables_domaines()`](https://pobsteta.github.io/nemeton/reference/ifn_covariables_domaines.md)**
+  : `part_foret` juste sur un raster en degrés ;
+  **[`ifn_production_domaines()`](https://pobsteta.github.io/nemeton/reference/ifn_production_domaines.md)**
+  : sans covariable, domaine rendu en « ser » (et non « hybride » à
+  correction nulle).
+- **CHM lasR** : points de bruit (classes 7 et 18) exclus (pics
+  supprimés ; caches reconstruits seulement avec `overwrite`).
+- **[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)**
+  : échardes d’UGF conservées, identifiants cadastraux en double
+  fusionnés.
+- **[`create_sampling_plan()`](https://pobsteta.github.io/nemeton/reference/create_sampling_plan.md)**
+  : `n_base` atteint exactement, zone en EPSG:4326 acceptée (travail en
+  UTM).
+- **Forçage SAFRAN** : un jour sans précipitation renseignée reste NA (0
+  mm avant).
+- **[`prepare_pixel_dieback_series()`](https://pobsteta.github.io/nemeton/reference/prepare_pixel_dieback_series.md)**
+  : trous longs repérés sur les seules observations valides.
+- **[`ingest_health_validation()`](https://pobsteta.github.io/nemeton/reference/ingest_health_validation.md)**
+  : l’`alert_id` porté par la placette prime sur le plus proche voisin.
+
+#### Fixed — robustesse et messages
+
+- Santé et base :
+  [`classify_disturbance()`](https://pobsteta.github.io/nemeton/reference/classify_disturbance.md)
+  tolère une date NA ;
+  [`list_alerts()`](https://pobsteta.github.io/nemeton/reference/list_alerts.md)
+  sans `IN ()` vide ; FORDEAD accepte une fin NA et n’élague que les
+  runs antérieurs ; FAST signale les scènes sans tuile MGRS ; une erreur
+  de base n’est plus prise pour « zone sans géométrie » ; zones
+  multi-entités fusionnées, id par `RETURNING` (SQLite ≥ 3.35), zone la
+  plus ancienne renvoyée de façon déterministe.
+- RECONFORT : marqueur de fin robuste, défauts iota2
+  [\#9](https://github.com/pobsteta/nemeton/issues/9)-#11 sondés côté R,
+  `skip_ingest` contrôlé, chemins absolus, pas de `__pycache__`,
+  recadrage sans regex, run le plus récent servi au rechargement ;
+  modèle LAI PROSAIL propre à chaque géométrie d’acquisition.
+- RAG : corpus idempotent par `doc_id`, `fresh = TRUE` transactionnel,
+  tableaux texte PostgreSQL échappés, UTF-8 invalide toléré.
+- QGIS/QField : dépréciation de
+  [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
+  une fois par session, agrégats sans `dbh_cm` signalés, unités
+  regroupées par ligne.
+- [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)
+  tolère des comptages NA ;
+  [`compute_general_index_mixed()`](https://pobsteta.github.io/nemeton/reference/compute_general_index_mixed.md)
+  avertit ;
+  [`nemeton_temporal()`](https://pobsteta.github.io/nemeton/reference/nemeton_temporal.md)
+  nomme les périodes ;
+  [`cluster_parcels()`](https://pobsteta.github.io/nemeton/reference/cluster_parcels.md)
+  borne k et gagne `seed` ;
+  [`smart_map()`](https://pobsteta.github.io/nemeton/reference/smart_map.md)
+  sans `detectCores()` ; heatmap sans « NA » ; `linewidth` au lieu de
+  `size` ; palette de risque selon le sens ;
+  [`get_global_cache_dir()`](https://pobsteta.github.io/nemeton/reference/get_global_cache_dir.md)
+  ne crée plus de dossier ; 11 libellés i18n manquants ;
+  [`microclimate_detect_years()`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md)
+  contrôle 2 années après retrait des NA ; B1 `source = "wfs"` sans faux
+  message.
+- Documentation alignée sur le code : S3, N1-N3, P1,
+  `compute_site_index`, `microclimate_run`, `segment_houppiers`,
+  chargeur ONF (HTTP en clair), `massif_demo_units`, `eobs_downscale`,
+  `read_fordead_dieback_mask`, page du paquet ; `FR.json` complété
+  (E-OBS, SAFRAN EDR, INSEE 200 m).
+- Tests : 9 exports qui n’en avaient aucun sont couverts.
+
+#### Décisions ouvertes (Pascal)
+
+Offset radiométrique S2 (déjà signalé en 0.213.0) ;
+[`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
+sans les 8 indicateurs conditionnels ; bornes TRI/TWI de R2/R3 ;
+fenêtres TWI W3/F2 ; terme +25 de N1 ; scores par défaut de P3 ; NA hors
+courbe dans
+[`compute_site_index()`](https://pobsteta.github.io/nemeton/reference/compute_site_index.md)
+; dé-export de
+[`microclimate_run()`](https://pobsteta.github.io/nemeton/reference/microclimate_run.md)
+; cache vers
+[`tools::R_user_dir()`](https://rdrr.io/r/tools/userdir.html) ;
+stratégie CRAN ; guide de l’app à déplacer ; dédoublonnage de
+[`ingest_knowledge_document()`](https://pobsteta.github.io/nemeton/reference/ingest_knowledge_document.md)
+; migrations SQL (TimescaleDB optionnel, `validation_status` NOT NULL
+sous SQLite) ; versions Python de FORDEAD ; contournement `globalenv` de
+microclimf ; fixture à 41 indicateurs.
+
 ## nemeton 0.213.0 (2026-10-05)
 
 Sixième vague de l’audit de pré-version 1.0 : **reliquat des constats
@@ -14944,8 +15078,8 @@ enhances the family aggregation and visualization system.
 
 #### Helper Functions (Internal)
 
-- **[`detect_indicator_family()`](https://pobsteta.github.io/nemeton/reference/detect_indicator_family.md)** -
-  Extract family code from indicator name
+- **`detect_indicator_family()`** - Extract family code from indicator
+  name
 - **[`get_family_name()`](https://pobsteta.github.io/nemeton/reference/get_family_name.md)** -
   Full family name from code (bilingual FR/EN)
 
@@ -15305,8 +15439,8 @@ enhances the family aggregation and visualization system.
   - `get_allometric_coefficients()` - Species-specific coefficient
     lookup
   - `calculate_allometric_biomass()` - Vectorized biomass calculation
-  - [`detect_indicator_family()`](https://pobsteta.github.io/nemeton/reference/detect_indicator_family.md) -
-    Extract family code from indicator name
+  - `detect_indicator_family()` - Extract family code from indicator
+    name
   - [`get_family_name()`](https://pobsteta.github.io/nemeton/reference/get_family_name.md) -
     Full family name from code
 

@@ -1,12 +1,15 @@
 # nemeton: Systemic Forest Analysis Using the Nemeton Method
 
 Implement the Nemeton method for systemic forest territory analysis.
-Calculate multi-family biophysical indicators across 12 ecosystem
-service families (carbon, water, soil, landscape, biodiversity, etc.),
-perform temporal analysis, normalize to composite indices, and visualize
-results. Includes nemetonApp, a Shiny application for interactive parcel
-selection and analysis. Designed for foresters, ecologists, and land
-managers.
+Calculate 41 biophysical indicators grouped in 12 ecosystem service
+families (carbon, water, soil, landscape, biodiversity, risks, etc.),
+weight them by data precision level (NDP, Fibonacci weighting),
+normalize them to composite indices and visualize the results. Also
+provides forest health monitoring (FAST, FORDEAD, RECONFORT), small-area
+estimation of forest production from the French national forest
+inventory, and regeneration and microclimate tools. The Shiny
+application lives in the separate 'nemetonshiny' package. Designed for
+foresters, ecologists and land managers.
 
 The nemeton package implements the Nemeton method for comprehensive
 forest ecosystem analysis. It provides tools to calculate, normalize,
@@ -17,19 +20,34 @@ service dimensions.
 
 **Multi-Family Indicator System:**
 
-- **C - Carbon/Vitality**: Biomass stock (C1), NDVI vitality (C2)
+- **C - Carbon & Vitality**: C1-C2
 
-- **W - Water**: Network density (W1), wetlands (W2), TWI (W3)
+- **B - Biodiversity**: B1-B4
 
-- **F - Soil Fertility**: Fertility (F1), erosion risk (F2)
+- **W - Water**: W1-W4
 
-- **L - Landscape**: Fragmentation (L1), edge ratio (L2)
+- **A - Air & Microclimate**: A1-A5
 
-- **B - Biodiversity**: Planned for v0.3.0+
+- **F - Soil Fertility**: fertility (F1), erosion risk (F2)
 
-- **R - Resilience/Risks**: Planned for v0.3.0+
+- **L - Landscape**: edge effect (L1), fragmentation (L2), spectral
+  heterogeneity (L3)
 
-- Plus 6 additional families in future versions
+- **T - Temporal Dynamics**: T1-T3
+
+- **R - Risks & Resilience**: R1-R7
+
+- **S - Social & Recreational**: S1-S3
+
+- **P - Production**: P1-P3
+
+- **E - Energy & Climate**: E1-E2
+
+- **N - Naturalness**: N1-N3
+
+- Some indicators are conditional on optional sources (R5 FORDEAD, T3
+  SUFOSAT, A5 LST, R7 SAFRAN); see
+  [`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md).
 
 **Temporal Analysis:**
 
@@ -67,14 +85,14 @@ service dimensions.
 
 See the vignettes for comprehensive guides:
 
-- `vignette("getting-started", package = "nemeton")` - Introduction to
-  basic workflows with demo data
+- [`vignette("getting-started_fr", package = "nemeton")`](https://pobsteta.github.io/nemeton/articles/getting-started_fr.md) -
+  Introduction to basic workflows with demo data
 
-- `vignette("temporal-analysis", package = "nemeton")` - Multi-period
-  analysis and change detection
+- [`vignette("temporal-analysis_fr", package = "nemeton")`](https://pobsteta.github.io/nemeton/articles/temporal-analysis_fr.md) -
+  Multi-period analysis and change detection
 
-- `vignette("indicator-families", package = "nemeton")` - Complete
-  reference for the 12-family system
+- [`vignette("indicator-families_fr", package = "nemeton")`](https://pobsteta.github.io/nemeton/articles/indicator-families_fr.md) -
+  Complete reference for the 12-family system
 
 - [`vignette("internationalization", package = "nemeton")`](https://pobsteta.github.io/nemeton/articles/internationalization.md) -
   Bilingual support (French/English)
@@ -128,13 +146,13 @@ See the vignettes for comprehensive guides:
   Topographic Wetness Index (W3)
 
 - [`indicateur_f1_fertilite`](https://pobsteta.github.io/nemeton/reference/indicateur_f1_fertilite.md) -
-  Soil fertility (F2)
+  Soil fertility (F1)
 
 - [`indicateur_f2_erosion`](https://pobsteta.github.io/nemeton/reference/indicateur_f2_erosion.md) -
-  Erosion risk (F1)
+  Erosion risk (F2)
 
 - [`indicateur_l1_effet_lisiere`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_effet_lisiere.md) -
-  Sylvosphere, edge effect (L1)
+  Edge effect (L1)
 
 - [`indicateur_l2_morcellement`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_morcellement.md) -
   Landscape fragmentation (L2)
@@ -209,19 +227,13 @@ families representing key dimensions of forest functioning.
 
 ## Version History
 
-- **v0.2.0 (2026-01-05):** Multi-family system, temporal analysis, 5
-  families implemented (C, W, F, L + infrastructure), 661 tests passing
-
-- **v0.1.0 (2026-01-04):** Initial release with 5 basic indicators, 225
-  tests passing
+See `news(package = "nemeton")` (NEWS.md) for the release history.
 
 ## Links
 
 - GitHub: <https://github.com/pobsteta/nemeton>
 
 - Bug Reports: <https://github.com/pobsteta/nemeton/issues>
-
-- Development: Branch `001-mvp-v0.2.0`
 
 ## See also
 
@@ -235,11 +247,14 @@ Useful links:
 
 **Vignettes:**
 
-- `vignette("getting-started")` - Introduction and basic workflows
+- [`vignette("getting-started_fr")`](https://pobsteta.github.io/nemeton/articles/getting-started_fr.md) -
+  Introduction and basic workflows
 
-- `vignette("temporal-analysis")` - Multi-period analysis guide
+- [`vignette("temporal-analysis_fr")`](https://pobsteta.github.io/nemeton/articles/temporal-analysis_fr.md) -
+  Multi-period analysis guide
 
-- `vignette("indicator-families")` - 12-family reference guide
+- [`vignette("indicator-families_fr")`](https://pobsteta.github.io/nemeton/articles/indicator-families_fr.md) -
+  12-family reference guide
 
 - [`vignette("internationalization")`](https://pobsteta.github.io/nemeton/articles/internationalization.md) -
   Bilingual support

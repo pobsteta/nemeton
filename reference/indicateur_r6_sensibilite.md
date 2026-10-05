@@ -49,7 +49,8 @@ indicateur_r6_sensibilite(units, micro_moyenne = NULL, micro_canicule = NULL,
 
 `units` with `R6` (0-100, higher = less sensitive), `R6_dtmax` (raw
 ΔT°max, °C), `R6_dvpd` (raw ΔVPD, kPa), `R6_couverture_pct`, and the
-`"microclimate_model"` augmentation flag.
+`"microclimate_model"` augmentation flag (only when at least one value
+is computed).
 
 ## See also
 

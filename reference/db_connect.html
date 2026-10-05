@@ -11,7 +11,7 @@ connection. Use [db_disconnect()] to close it."><meta property="og:image" conten
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -137,7 +137,11 @@ connection. Use [db_disconnect()] to close it.</p>
 <dd><p>Character. Connection URL. Two schemes are
   supported:
   * `postgresql://user:password@host:port/dbname` — opens a
-    [RPostgres::Postgres()] connection.
+    [RPostgres::Postgres()] connection. Reserved characters in the
+    user, password or database name are percent-encoded (`%40` for
+    `@`) and decoded before reaching libpq; an optional query string
+    (`?sslmode=require&amp;application_name=x`) is passed through as libpq
+    parameters (explicit arguments such as `connect_timeout` win).
   * `sqlite:///absolute/path/to/file.sqlite` — opens a
     [RSQLite::SQLite()] connection on the given file in WAL mode
     (the local backend). The file is created if it does not exist. A

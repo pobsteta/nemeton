@@ -11,7 +11,7 @@ per-indicator Fibonacci weights."><meta property="og:image" content="https://pob
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -135,7 +135,9 @@ per-indicator Fibonacci weights.</p>
 
 <dt id="arg-ndp-per-indicator">ndp_per_indicator<a class="anchor" aria-label="anchor" href="#arg-ndp-per-indicator"></a></dt>
 <dd><p>Named integer vector mapping family codes
-to NDP levels (0-4). Names must match <code>family_scores</code> names.</p></dd>
+to NDP levels (0-4). Names must match <code>family_scores</code> names;
+families present in only one of the two vectors are dropped with a
+warning, and unnamed inputs give an NA score with a warning.</p></dd>
 
 </dl></div>
     <div class="section level2">

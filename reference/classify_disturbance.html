@@ -15,7 +15,7 @@ flag):"><meta property="og:image" content="https://pobsteta.github.io/nemeton/lo
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -167,7 +167,9 @@ alerts to be considered co-located. Default 100.</p></dd>
 <li><p>`"recent_event"` — a lone FAST drop without any diagnostic
     echo. Recent perturbation, no confirmed dieback.</p></li>
 <li><p>`NA_character_` — a FAST drop already paired with a
-    diagnostic alert (the diagnostic row carries the verdict).</p></li>
+    diagnostic alert (the diagnostic row carries the verdict), or an
+    alert whose `trigger_date` is `NA` (no verdict can be drawn; its
+    `method_overlap` is `NA` too, and it pairs with no other alert).</p></li>
 </ul><p>`method_overlap` is `TRUE` on a diagnostic alert when both FORDEAD
 and RECONFORT fired on the same plot/window (mixed fringe): the type
 stays `"progressive"` but the flag says "do not double-count".</p>

@@ -13,7 +13,7 @@ clusters, capped at 1 and rescaled to 0-100."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -168,8 +168,11 @@ Default [`FORDEAD_CONFIDENCE_WEIGHTS`].</p></dd>
 
 <dt id="arg-weights-reconfort">weights_reconfort<a class="anchor" aria-label="anchor" href="#arg-weights-reconfort"></a></dt>
 <dd><p>Named numeric vector. Per-class RECONFORT
-weights (dieback classes). Default = the oak subset of
-[`RECONFORT_CONFIDENCE_WEIGHTS`] (provisional, see that object).</p></dd>
+weights (dieback classes). When not supplied, the weights of the species of
+the run (`reconfort_results$species`: `"CHE"`, `"CHT"` or `"PS"`) are taken
+from [`RECONFORT_CONFIDENCE_WEIGHTS`] (provisional, see that object); the
+oak weights are used when the run carries no known species. A supplied
+vector applies to every RECONFORT unit.</p></dd>
 
 
 <dt id="arg-min-resineux">min_resineux<a class="anchor" aria-label="anchor" href="#arg-min-resineux"></a></dt>

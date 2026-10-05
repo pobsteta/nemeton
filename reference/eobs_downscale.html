@@ -15,7 +15,7 @@ already produces from microclimf + HD LiDAR."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -193,12 +193,16 @@ regional context.</p></dd>
 
 <dt id="arg-resolution">resolution<a class="anchor" aria-label="anchor" href="#arg-resolution"></a></dt>
 <dd><p>Optional target resolution (DEM units). <code>NULL</code> keeps the
-DEM resolution (aggregated if the grid would exceed <code>max_cells</code>).</p></dd>
+DEM resolution (aggregated if the grid would exceed <code>max_cells</code>).
+KED engine only: ignored by <code>engine = "meteoland"</code>, whose grid is the
+DEM capped at <code>max_cells</code>.</p></dd>
 
 
 <dt id="arg-covariates">covariates<a class="anchor" aria-label="anchor" href="#arg-covariates"></a></dt>
 <dd><p>Terrain covariates among <code>"dem"</code>, <code>"slope"</code>, <code>"aspect"</code>
-(entered as northness), <code>"twi"</code> (best-effort). Default all four.</p></dd>
+(entered as northness), <code>"twi"</code> (best-effort). Default all four.
+KED engine only: <code>engine = "meteoland"</code> ignores it and always uses
+elevation, slope and aspect (its own interpolator covariates).</p></dd>
 
 
 <dt id="arg-statistic">statistic<a class="anchor" aria-label="anchor" href="#arg-statistic"></a></dt>

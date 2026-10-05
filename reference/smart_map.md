@@ -59,7 +59,8 @@ smart_map(
 - workers:
 
   Integer. Number of parallel workers. Default is \`min(4,
-  parallel::detectCores() - 1)\`.
+  parallel::detectCores() - 1)\`, at least 1 (1 when the number of cores
+  cannot be detected).
 
 - progress:
 

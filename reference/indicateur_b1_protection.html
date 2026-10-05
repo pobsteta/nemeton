@@ -9,7 +9,7 @@ areas (ZNIEFF, Natura2000, National/Regional Parks)."><meta property="og:image" 
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -137,18 +137,20 @@ areas (ZNIEFF, Natura2000, National/Regional Parks).</p>
 
 
 <dt id="arg-protected-areas">protected_areas<a class="anchor" aria-label="anchor" href="#arg-protected-areas"></a></dt>
-<dd><p>An sf object with protected area polygons. If NULL and
-source="wfs", will attempt to fetch from INPN WFS service.</p></dd>
+<dd><p>An sf object with protected area polygons (for
+instance the <code>protected_areas</code> layer of the data catalog). <code>NULL</code>
+gives NA.</p></dd>
 
 
 <dt id="arg-source">source<a class="anchor" aria-label="anchor" href="#arg-source"></a></dt>
-<dd><p>Character. Data source: "local" (use protected_areas parameter)
-or "wfs" (fetch from INPN). Default "local".</p></dd>
+<dd><p>Kept for backward compatibility; has no effect. <code>"wfs"</code>
+does not fetch anything: this function never queries the INPN WFS, and the
+protected areas must be supplied through <code>protected_areas</code>.</p></dd>
 
 
 <dt id="arg-protection-types">protection_types<a class="anchor" aria-label="anchor" href="#arg-protection-types"></a></dt>
-<dd><p>Character vector. Types of protected areas to include
-when using WFS. Default c("ZNIEFF1", "ZNIEFF2", "N2000_SCI").</p></dd>
+<dd><p>Kept for backward compatibility; has no effect (all
+the features of <code>protected_areas</code> are used).</p></dd>
 
 
 <dt id="arg-preprocess">preprocess<a class="anchor" aria-label="anchor" href="#arg-preprocess"></a></dt>
@@ -193,19 +195,11 @@ not fetched by this function); an empty <code>protected_areas</code> gives 0.</p
 <span class="r-in"><span><span class="co"># Load demo data</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Option A: Use local protected area data</span></span></span>
+<span class="r-in"><span><span class="co"># Protected areas supplied by the caller (e.g. the catalog layer)</span></span></span>
 <span class="r-in"><span><span class="va">protected_zones</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"path/to/protected_areas.shp"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">indicateur_b1_protection</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">massif_demo_units</span>,</span></span>
-<span class="r-in"><span>  protected_areas <span class="op">=</span> <span class="va">protected_zones</span>,</span></span>
-<span class="r-in"><span>  source <span class="op">=</span> <span class="st">"local"</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Option B: Fetch from INPN WFS (requires internet)</span></span></span>
-<span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">indicateur_b1_protection</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">massif_demo_units</span>,</span></span>
-<span class="r-in"><span>  source <span class="op">=</span> <span class="st">"wfs"</span>,</span></span>
-<span class="r-in"><span>  protection_types <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ZNIEFF1"</span>, <span class="st">"ZNIEFF2"</span>, <span class="st">"N2000_SCI"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  protected_areas <span class="op">=</span> <span class="va">protected_zones</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># View results</span></span></span>

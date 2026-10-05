@@ -19,7 +19,9 @@ compute_general_index_mixed(family_scores, ndp_per_indicator)
 - ndp_per_indicator:
 
   Named integer vector mapping family codes to NDP levels (0-4). Names
-  must match `family_scores` names.
+  must match `family_scores` names; families present in only one of the
+  two vectors are dropped with a warning, and unnamed inputs give an NA
+  score with a warning.
 
 ## Value
 

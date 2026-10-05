@@ -54,7 +54,8 @@ cv_from_bdforet(
 
 A list with:
 
-- `cv`: the aggregated CV (numeric fraction).
+- `cv`: the aggregated CV (numeric fraction), averaged over the classes
+  whose CV is known; `NA` when none is.
 
 - `position`: the bound used.
 

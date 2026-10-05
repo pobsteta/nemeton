@@ -37,7 +37,8 @@ indicateur_w4_vpd(units, micro = NULL, chm = NULL,
 ## Value
 
 `units` with `W4` (0-100), `W4_vpd` (raw kPa), `W4_couverture_pct`, and
-the `"microclimate_model"` augmentation flag.
+the `"microclimate_model"` augmentation flag (only when at least one
+value is computed).
 
 **Higher = moister air under the canopy = favourable.** The raw quantity
 (VPD, kPa) runs the other way, so `.micro_norm(decreasing = TRUE)` flips

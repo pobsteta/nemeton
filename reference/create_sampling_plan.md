@@ -33,7 +33,9 @@ create_sampling_plan(
 
 - zone:
 
-  sf polygon of the study area (any CRS; result uses `zone`'s CRS).
+  sf polygon of the study area (any CRS; result uses `zone`'s CRS). A
+  geographic (longitude/latitude) zone is worked in its UTM zone, since
+  `grid_step` and `plot_radius` are metres.
 
 - n_base:
 
@@ -121,7 +123,8 @@ create_sampling_plan(
 
 - seed:
 
-  Integer random seed. Default 42.
+  Integer random seed, applied locally: the session's global random
+  state is restored on exit. `NULL` draws unseeded. Default 42.
 
 ## Value
 

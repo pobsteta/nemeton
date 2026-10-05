@@ -100,11 +100,13 @@ create_validation_sampling_plan(
 - seed:
 
   Integer or \`NULL\`. When non-\`NULL\`, makes the GRTS draw
-  reproducible.
+  reproducible. The seed is applied locally: the session's global random
+  state is restored on exit.
 
 ## Value
 
-An \`sf\` POINT object in EPSG:2154 with the following columns:
+An \`sf\` POINT object in the CRS of \`alert_raster\` (EPSG:2154 for the
+FORDEAD / RECONFORT caches) with the following columns:
 
 - \`plot_id\`:
 

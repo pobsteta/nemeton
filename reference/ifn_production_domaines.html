@@ -18,7 +18,9 @@ supplied): the same, corrected by the national model coefficients for the
 gap between the domain's covariates and those of its sylvoecoregions.
 Validated against the inventory on grid cells: 19 to 35 percent lower error
 than &quot;ser&quot; for &quot;pv&quot;, but no gain for &quot;pg&quot;, which
-therefore keeps &quot;ser&quot;.
+therefore keeps &quot;ser&quot;. A domain whose covariates are missing or NA
+falls back to &quot;ser&quot; (with its own A(S)), with a warning;
+predicteur says which one was used.
 
 "><meta property="og:description" content="Estimates the annual biological production of arbitrary domains (forest
 management units, massifs, forests) from the national forest inventory plots
@@ -39,7 +41,9 @@ supplied): the same, corrected by the national model coefficients for the
 gap between the domain's covariates and those of its sylvoecoregions.
 Validated against the inventory on grid cells: 19 to 35 percent lower error
 than &quot;ser&quot; for &quot;pv&quot;, but no gain for &quot;pg&quot;, which
-therefore keeps &quot;ser&quot;.
+therefore keeps &quot;ser&quot;. A domain whose covariates are missing or NA
+falls back to &quot;ser&quot; (with its own A(S)), with a warning;
+predicteur says which one was used.
 
 "><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -49,7 +53,7 @@ therefore keeps &quot;ser&quot;.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -171,7 +175,9 @@ supplied): the same, corrected by the national model coefficients for the
 gap between the domain's covariates and those of its sylvoecoregions.
 Validated against the inventory on grid cells: 19 to 35 percent lower error
 than <code>"ser"</code> for <code>"pv"</code>, but no gain for <code>"pg"</code>, which
-therefore keeps <code>"ser"</code>.</p></li>
+therefore keeps <code>"ser"</code>. A domain whose covariates are missing or NA
+falls back to <code>"ser"</code> (with its own <code>A(S)</code>), with a warning;
+<code>predicteur</code> says which one was used.</p></li>
 </ul></div>
 
     <div class="section level2">

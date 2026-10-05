@@ -1,8 +1,8 @@
 # N3: Composite Naturalness Index
 
 Calculates a composite naturalness index following tuto 04: N3 = 0.35 \*
-N1 + 0.35 \* N2 + 0.15 \* (100 - L1) + 0.15 \* B3 Falls back to 50 when
-L1 or B3 are unavailable.
+N1 + 0.35 \* N2 + 0.15 \* (100 - L1) + 0.15 \* B3 NA when any of N1, N2,
+L1 or B3 is unavailable.
 
 ## Usage
 

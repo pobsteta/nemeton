@@ -53,9 +53,10 @@ segment_houppiers(
 
 - algorithme:
 
-  `"dalponte"` (default), `"silva"` or `"watershed"`. The first two grow
-  regions from located apexes; `"watershed"` ignores them and floods the
-  inverted surface.
+  `"dalponte"` (default), `"silva"`, `"watershed"` or `"lsms"`. The
+  first two grow regions from located apexes; `"watershed"` ignores them
+  and floods the inverted surface; `"lsms"` segments the orthophoto
+  `image` with the OTB Large-Scale Mean-Shift.
 
 - emprise:
 

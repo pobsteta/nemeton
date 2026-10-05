@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -213,13 +213,14 @@ raises a typed `validation_weight_raster_mismatch` error. Ignored when
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
 <dd><p>Integer or `NULL`. When non-`NULL`, makes the GRTS draw
-reproducible.</p></dd>
+reproducible. The seed is applied locally: the session's global random
+state is restored on exit.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>An `sf` POINT object in EPSG:2154 with the following
-  columns:</p><dl><dt>`plot_id`</dt>
+    <p>An `sf` POINT object in the CRS of `alert_raster` (EPSG:2154 for
+  the FORDEAD / RECONFORT caches) with the following columns:</p><dl><dt>`plot_id`</dt>
 <dd><p>Character. Identifier `V01`, `V02`, ... for
       validation plots, `T01`, `T02`, ... for controls.</p></dd>
 

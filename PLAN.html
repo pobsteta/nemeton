@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -336,8 +336,12 @@
 <td><strong>v0.213.0</strong></td>
 <td>✅ livré</td>
 </tr><tr><td>7</td>
-<td>Contrat d’API : retours vecteur / <code>sf</code>, <code>lang</code>, 313 exports à trier ; offset S2 ; constats « m »</td>
-<td>0.214</td>
+<td>Constats mineurs « m » (~111 revérifiés : ~90 corrigés, le reste déjà corrigé, non retenu ou en décision)</td>
+<td><strong>v0.214.0</strong></td>
+<td>✅ livré</td>
+</tr><tr><td>8</td>
+<td>Décisions ouvertes (offset S2, contrat d’API, migrations SQL…) puis 1.0.0</td>
+<td>0.215+</td>
 <td>⬜ décisions Pascal</td>
 </tr></tbody></table><p><strong>Journal</strong> — <em>2026-10-02</em> (<strong>v0.208.0</strong>) : vague 1 livrée, dix correctifs, chacun avec un test qui échouait avant. Valeurs changées côté app : volumes de desserte (<code>taux × horizon</code> au lieu de <code>P1 × taux × horizon</code>), indice de priorité de régénération (le volet exposition compte enfin), R3 sans climat, R4 des départements 01-09. Brief : <code>specs/audit-1.0/brief-nemetonshiny-0.208.0.md</code>.</p>
 <p><strong>Journal</strong> — <em>2026-10-03</em> (<strong>v0.209.0</strong>) : vague 2 livrée, 25 correctifs menés par trois agents en parallèle (worktrees isolés) puis fusionnés ; un conflit dans <code>regen_engines.R</code> (nom de cache ERA5 par point × écriture atomique validée). Côté app : <code>prune_orphan_zone_caches(project_uuid =)</code> à câbler, purge des alertes <code>pending</code> sur un run sans alerte, tendances E-OBS par décennie. Brief : <code>specs/audit-1.0/brief-nemetonshiny-0.209.0.md</code>.</p>
@@ -351,7 +355,9 @@
 <p><strong>Journal</strong> — <em>2026-10-05</em> (<strong>v0.212.2</strong>) : <code><a href="reference/map_oso_class.html">map_oso_class()</a></code> et <code>inst/species/BFC.json</code> alignés sur la nomenclature OSO 2018+ (16 feuillus, 17 conifères, aucune essence hors forêt) — le reliquat « 17/18/19 » signalé à la 0.212.0 ; tutoriels 02 et 07 alignés. Reliquat de l’audit recensé : 53 constats « M » sans marque de correction dans <code>rapport-audit.md</code> (une partie déjà corrigée en 0.212.0 sans mise à jour du rapport), triés en vague 6.</p>
 <p><strong>Journal</strong> — <em>2026-10-05</em> (<strong>v0.213.0</strong>) : vague 6, reliquat des 53 constats « M » non marqués de <code>rapport-audit.md</code>, revérifiés par quatre agents (socle et paquet, indicateurs, production-climat-santé, RECONFORT-RAG-QGIS). 34 déjà corrigés (0.209 à 0.212, rapport jamais mis à jour), 14 corrigés avec un test qui échouait avant, 5 en décision ; chaque ligne du rapport porte désormais sa marque. Brief app non nécessaire : FORDEAD <code>status = "error"</code> est déjà traité par <code>mod_monitoring.R</code>, aucun export consommé ne change de signature. Même jour, hors release : spec 047 (comparaison R1 / firexpovulnR, recommandation de rejet de l’ADR-016, décision à Pascal).</p>
 <p><strong>Décisions ouvertes</strong> (Pascal) : <strong>offset radiométrique S2</strong> (confirmé : NDVI des scènes post-25/01/2022 sous-estimé, ≈ 0,49 au lieu de 0,84 en forêt l’été — touche FAST, cartes pixel, séries ; correction par source et seuils FAST) ; contrat de retour des indicateurs et <code>lang</code> ; <code>.onLoad</code> et options terra ; données des tutoriels 07/08 ; emplacement des PDF du corpus RAG ; ADR-016 ; calibrages 0.212.</p>
-<p><strong>Prochaine étape</strong> : vague 7 (contrat d’API, offset S2 si validé, constats « m »). L’app consomme 135 des 313 exports et lit 21 symboles internes : ne rien retirer ni changer de signature parmi eux sans brief app (<code>specs/audit-1.0/exports-consommes-app.md</code>).</p>
+<p><strong>Journal</strong> — <em>2026-10-05</em> (<strong>v0.214.0</strong>) : vague 7, les ~111 constats mineurs du rapport revérifiés par quatre agents ; environ 90 corrigés, chacun avec un test qui échouait avant pour les bugs. <strong>Le rapport d’audit n’a plus aucun constat sans marque.</strong> <code>withr</code> passe en Imports (il était utilisé dans le code sans être déclaré). Aucune signature d’export consommé par l’app ne change ; <code><a href="reference/list_alerts.html">list_alerts()</a></code> change de types sous SQLite seulement (alignés sur PostgreSQL ; l’app le lit via <code>sf</code>, sans impact constaté).</p>
+<p><strong>Ce qui sépare de la 1.0.0</strong> : les décisions listées dans NEWS 0.214.0 (offset S2 en premier : il fausse les indices des scènes post-2022), la recalibration éventuelle, puis le recalcul des projets côté app.</p>
+<p><strong>Prochaine étape</strong> : décisions de Pascal (vague 8), puis 1.0.0. L’app consomme 135 des 313 exports et lit 21 symboles internes : ne rien retirer ni changer de signature parmi eux sans brief app (<code>specs/audit-1.0/exports-consommes-app.md</code>).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-clos-côté-cœur--production-ifn-par-petits-domaines-fay-herriot-spec-054">Chantier CLOS côté cœur — Production IFN par petits domaines, Fay-Herriot (spec 054)<a class="anchor" aria-label="anchor" href="#chantier-clos-c%C3%B4t%C3%A9-c%C5%93ur--production-ifn-par-petits-domaines-fay-herriot-spec-054"></a></h1>

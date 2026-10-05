@@ -26,12 +26,13 @@ indicateur_n1_distance(
 
 - roads:
 
-  sf object (LINESTRING/MULTILINESTRING). Road network (BD TOPO). NULL =
-  default 1000m.
+  sf object (LINESTRING/MULTILINESTRING). Road network (BD TOPO). NULL
+  (and none in `layers`) gives N1 = NA.
 
 - buildings:
 
-  sf object (POLYGON/MULTIPOLYGON). Buildings. NULL = default 500m.
+  sf object (POLYGON/MULTIPOLYGON). Buildings. NULL (and none in
+  `layers`) gives N1 = NA.
 
 - layers:
 
@@ -49,4 +50,7 @@ indicateur_n1_distance(
 
 ## Value
 
-sf object with added column N1 (score 0-100, 100 = very remote)
+sf object with added column N1 (score 0-100, 100 = very remote). Each
+distance is scored `min(100, d / 20)` (2 km or more = 100). The urban
+term has no data layer: its distance is a constant 2000 m, so it always
+adds 25 points and N1 ranges over 25-100.

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,65 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.214.0" id="nemeton-02140-2026-10-05">nemeton 0.214.0 (2026-10-05)<a class="anchor" aria-label="anchor" href="#nemeton-02140-2026-10-05"></a></h2>
+<p>Septième vague de l’audit de pré-version 1.0 : <strong>constats mineurs</strong>. Les ~111 constats « m » (bug, sécu, qualité) de <code>specs/audit-1.0/rapport-audit.md</code> revérifiés par quatre agents : environ 90 corrigés (chaque bug avec un test qui échouait avant), une quinzaine déjà corrigés, quelques-uns non retenus (stylistiques ou non reproduits), le reste en décision. <strong>Tous les constats du rapport portent désormais une marque.</strong> Aucune signature d’export consommé par l’app ne change.</p>
+<div class="section level4">
+<h4 id="changed-0-214-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-214-0"></a></h4>
+<ul><li>
+<strong><code>withr</code></strong> passe de <code>Suggests</code> à <code>Imports</code> : il était déjà utilisé dans le code du paquet (RECONFORT), et les tirages aléatoires (plans d’échantillonnage et de validation, <code><a href="../reference/cluster_parcels.html">cluster_parcels()</a></code>) utilisent désormais une graine locale (<code><a href="https://withr.r-lib.org/reference/with_seed.html" class="external-link">withr::local_seed()</a></code>) au lieu de modifier celle de la session.</li>
+<li>
+<strong><code><a href="../reference/list_alerts.html">list_alerts()</a></code> sous SQLite</strong> : <code>trigger_date</code> en <code>Date</code>, <code>validated_at</code> en <code>POSIXct</code> UTC, comme sous PostgreSQL.</li>
+<li>
+<strong><code><a href="../reference/db_migrate.html">db_migrate()</a></code></strong> sérialisé (verrou consultatif PostgreSQL, <code>BEGIN IMMEDIATE</code> SQLite) ; <code><a href="../reference/project_lock_acquire.html">project_lock_acquire()</a></code> en <code>BEGIN IMMEDIATE</code> sous SQLite ; <code><a href="../reference/db_connect.html">db_connect()</a></code> décode les <code>%XX</code> de l’URL et transmet la query string (<code>sslmode</code>…) à libpq.</li>
+<li>
+<strong>CI</strong> : build pkgdown à jeton en lecture seule (déploiement séparé), actions tierces épinglées par SHA.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="fixed--valeurs-qui-peuvent-changer-0-214-0">Fixed — valeurs qui peuvent changer<a class="anchor" aria-label="anchor" href="#fixed--valeurs-qui-peuvent-changer-0-214-0"></a></h4>
+<ul><li>
+<strong>R5</strong> : poids RECONFORT de l’essence du run (pin sylvestre : 0,55 au lieu de 0,50 pour « 2-dépérissant »).</li>
+<li>
+<strong>S3</strong> : le carreau INSEE intersecté est retrouvé par sa ligne, plus par sa population (surestimation possible avant).</li>
+<li>
+<strong><code><a href="../reference/create_family_index.html">create_family_index()</a></code></strong> : les poids nommés <code>C1</code> s’appliquent à <code>C1_norm</code> ; moyennes géométrique et harmonique pondérées ; <code>min</code> avertit qu’il ignore les poids.</li>
+<li>
+<strong><code><a href="../reference/normalize_indicators.html">normalize_indicators()</a></code></strong> : avec <code>na.rm = FALSE</code>, un NA rend la colonne NA (50 ou 0 avant) ; plus de <code>C1_norm_norm</code>.</li>
+<li>
+<strong><code><a href="../reference/calculate_change_rate.html">calculate_change_rate()</a></code></strong> : durée indéterminable → taux NA (un « 1 an » était inventé).</li>
+<li>
+<strong><code><a href="../reference/cv_from_bdforet.html">cv_from_bdforet()</a></code></strong> : un CV inconnu n’est plus compté 0 (CV et taille d’échantillon sous-estimés avant).</li>
+<li>
+<strong><code><a href="../reference/ifn_covariables_domaines.html">ifn_covariables_domaines()</a></code></strong> : <code>part_foret</code> juste sur un raster en degrés ; <strong><code><a href="../reference/ifn_production_domaines.html">ifn_production_domaines()</a></code></strong> : sans covariable, domaine rendu en « ser » (et non « hybride » à correction nulle).</li>
+<li>
+<strong>CHM lasR</strong> : points de bruit (classes 7 et 18) exclus (pics supprimés ; caches reconstruits seulement avec <code>overwrite</code>).</li>
+<li>
+<strong><code><a href="../reference/croiser_parcelles_onf.html">croiser_parcelles_onf()</a></code></strong> : échardes d’UGF conservées, identifiants cadastraux en double fusionnés.</li>
+<li>
+<strong><code><a href="../reference/create_sampling_plan.html">create_sampling_plan()</a></code></strong> : <code>n_base</code> atteint exactement, zone en EPSG:4326 acceptée (travail en UTM).</li>
+<li>
+<strong>Forçage SAFRAN</strong> : un jour sans précipitation renseignée reste NA (0 mm avant).</li>
+<li>
+<strong><code><a href="../reference/prepare_pixel_dieback_series.html">prepare_pixel_dieback_series()</a></code></strong> : trous longs repérés sur les seules observations valides.</li>
+<li>
+<strong><code><a href="../reference/ingest_health_validation.html">ingest_health_validation()</a></code></strong> : l’<code>alert_id</code> porté par la placette prime sur le plus proche voisin.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="fixed--robustesse-et-messages-0-214-0">Fixed — robustesse et messages<a class="anchor" aria-label="anchor" href="#fixed--robustesse-et-messages-0-214-0"></a></h4>
+<ul><li>Santé et base : <code><a href="../reference/classify_disturbance.html">classify_disturbance()</a></code> tolère une date NA ; <code><a href="../reference/list_alerts.html">list_alerts()</a></code> sans <code>IN ()</code> vide ; FORDEAD accepte une fin NA et n’élague que les runs antérieurs ; FAST signale les scènes sans tuile MGRS ; une erreur de base n’est plus prise pour « zone sans géométrie » ; zones multi-entités fusionnées, id par <code>RETURNING</code> (SQLite ≥ 3.35), zone la plus ancienne renvoyée de façon déterministe.</li>
+<li>RECONFORT : marqueur de fin robuste, défauts iota2 <a href="https://github.com/pobsteta/nemeton/issues/9" class="external-link">#9</a>-#11 sondés côté R, <code>skip_ingest</code> contrôlé, chemins absolus, pas de <code>__pycache__</code>, recadrage sans regex, run le plus récent servi au rechargement ; modèle LAI PROSAIL propre à chaque géométrie d’acquisition.</li>
+<li>RAG : corpus idempotent par <code>doc_id</code>, <code>fresh = TRUE</code> transactionnel, tableaux texte PostgreSQL échappés, UTF-8 invalide toléré.</li>
+<li>QGIS/QField : dépréciation de <code><a href="../reference/create_qgis_project.html">create_qfield_project()</a></code> une fois par session, agrégats sans <code>dbh_cm</code> signalés, unités regroupées par ligne.</li>
+<li>
+<code><a href="../reference/detect_ndp.html">detect_ndp()</a></code> tolère des comptages NA ; <code><a href="../reference/compute_general_index_mixed.html">compute_general_index_mixed()</a></code> avertit ; <code><a href="../reference/nemeton_temporal.html">nemeton_temporal()</a></code> nomme les périodes ; <code><a href="../reference/cluster_parcels.html">cluster_parcels()</a></code> borne k et gagne <code>seed</code> ; <code><a href="../reference/smart_map.html">smart_map()</a></code> sans <code>detectCores()</code> ; heatmap sans « NA » ; <code>linewidth</code> au lieu de <code>size</code> ; palette de risque selon le sens ; <code><a href="../reference/get_global_cache_dir.html">get_global_cache_dir()</a></code> ne crée plus de dossier ; 11 libellés i18n manquants ; <code><a href="../reference/microclimate_detect_years.html">microclimate_detect_years()</a></code> contrôle 2 années après retrait des NA ; B1 <code>source = "wfs"</code> sans faux message.</li>
+<li>Documentation alignée sur le code : S3, N1-N3, P1, <code>compute_site_index</code>, <code>microclimate_run</code>, <code>segment_houppiers</code>, chargeur ONF (HTTP en clair), <code>massif_demo_units</code>, <code>eobs_downscale</code>, <code>read_fordead_dieback_mask</code>, page du paquet ; <code>FR.json</code> complété (E-OBS, SAFRAN EDR, INSEE 200 m).</li>
+<li>Tests : 9 exports qui n’en avaient aucun sont couverts.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="décisions-ouvertes-pascal-0-214-0">Décisions ouvertes (Pascal)<a class="anchor" aria-label="anchor" href="#d%C3%A9cisions-ouvertes-pascal-0-214-0"></a></h4>
+<p>Offset radiométrique S2 (déjà signalé en 0.213.0) ; <code><a href="../reference/list_indicators.html">list_indicators()</a></code> sans les 8 indicateurs conditionnels ; bornes TRI/TWI de R2/R3 ; fenêtres TWI W3/F2 ; terme +25 de N1 ; scores par défaut de P3 ; NA hors courbe dans <code><a href="../reference/compute_site_index.html">compute_site_index()</a></code> ; dé-export de <code><a href="../reference/microclimate_run.html">microclimate_run()</a></code> ; cache vers <code><a href="https://rdrr.io/r/tools/userdir.html" class="external-link">tools::R_user_dir()</a></code> ; stratégie CRAN ; guide de l’app à déplacer ; dédoublonnage de <code><a href="../reference/ingest_knowledge_document.html">ingest_knowledge_document()</a></code> ; migrations SQL (TimescaleDB optionnel, <code>validation_status</code> NOT NULL sous SQLite) ; versions Python de FORDEAD ; contournement <code>globalenv</code> de microclimf ; fixture à 41 indicateurs.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.213.0" id="nemeton-02130-2026-10-05">nemeton 0.213.0 (2026-10-05)<a class="anchor" aria-label="anchor" href="#nemeton-02130-2026-10-05"></a></h2>
 <p>Sixième vague de l’audit de pré-version 1.0 : <strong>reliquat des constats majeurs</strong>. Les 53 constats « M » encore sans marque dans <code>specs/audit-1.0/rapport-audit.md</code> ont été revérifiés un à un contre le code (quatre agents en parallèle) : 34 étaient déjà corrigés (surtout en 0.212.0, sans mise à jour du rapport), 14 le sont ici avec un test qui échouait avant, 5 attendent une décision (voir « Décisions ouvertes »). Le rapport porte désormais une marque sur chacun.</p>
@@ -7101,7 +7160,7 @@ docker compose up -d timescaledb</code></pre>
 <div class="section level4">
 <h4 id="helper-functions-internal-0-2-0">Helper Functions (Internal)<a class="anchor" aria-label="anchor" href="#helper-functions-internal-0-2-0"></a></h4>
 <ul><li>
-<strong><code><a href="../reference/detect_indicator_family.html">detect_indicator_family()</a></code></strong> - Extract family code from indicator name</li>
+<strong><code>detect_indicator_family()</code></strong> - Extract family code from indicator name</li>
 <li>
 <strong><code><a href="../reference/get_family_name.html">get_family_name()</a></code></strong> - Full family name from code (bilingual FR/EN)</li>
 </ul></div>
@@ -7506,7 +7565,7 @@ docker compose up -d timescaledb</code></pre>
 <li>
 <code>calculate_allometric_biomass()</code> - Vectorized biomass calculation</li>
 <li>
-<code><a href="../reference/detect_indicator_family.html">detect_indicator_family()</a></code> - Extract family code from indicator name</li>
+<code>detect_indicator_family()</code> - Extract family code from indicator name</li>
 <li>
 <code><a href="../reference/get_family_name.html">get_family_name()</a></code> - Full family name from code</li>
 </ul></li>

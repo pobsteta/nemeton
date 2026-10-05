@@ -14,7 +14,9 @@ nemeton_temporal(periods, dates = NULL, labels = NULL, id_column = NULL)
 - periods:
 
   Named list of nemeton_units objects, one per period. Names should be
-  period labels (e.g., "2015", "2020").
+  period labels (e.g., "2015", "2020") and must be unique. Unnamed
+  periods are named after `labels` when usable, otherwise "Period1",
+  "Period2", ...
 
 - dates:
 

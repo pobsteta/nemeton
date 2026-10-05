@@ -27,8 +27,8 @@ indicateur_n2_continuite(
 
 - bdforet:
 
-  sf object. Current forest cover (BD Foret V2). NULL = default score
-  50.
+  sf object. Current forest cover (BD Foret V2). NULL together with a
+  NULL `foret_ancienne` gives N2 = NA.
 
 - foret_ancienne:
 

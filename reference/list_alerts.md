@@ -30,12 +30,14 @@ list_alerts(
 
   Character vector of \`confidence_class\` values to include. Default
   \`c("3-forte", "4-sol-nu")\`. Use \`NULL\` to include everything
-  (including alerts without a class, i.e. the rolling-window ones).
+  (including alerts without a class, i.e. the rolling-window ones). An
+  empty vector keeps only the alerts without a class.
 
 - validation_status:
 
   Character vector or \`NULL\`. Filter on \`alert.validation_status\`.
-  \`NULL\` (default) returns every status.
+  \`NULL\` (default) returns every status; an empty vector matches no
+  alert.
 
 - period:
 
@@ -45,7 +47,8 @@ list_alerts(
 ## Value
 
 An sf POINT layer (CRS WGS84) ready to be drawn on a leaflet map. Empty
-sf when no alert matches.
+sf when no alert matches. \`trigger_date\` is a \`Date\` and
+\`validated_at\` a UTC \`POSIXct\` on both backends.
 
 ## Details
 

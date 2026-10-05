@@ -19,7 +19,7 @@ independent zones."><meta property="og:image" content="https://pobsteta.github.i
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -158,7 +158,8 @@ independent zones.</p>
 
 <dt id="arg-zone-polygon">zone_polygon<a class="anchor" aria-label="anchor" href="#arg-zone-polygon"></a></dt>
 <dd><p>An sf POLYGON (any CRS — re-projected to WGS84
-internally for storage).</p></dd>
+internally for storage). Several features are unioned into one
+(MULTI)POLYGON.</p></dd>
 
 
 <dt id="arg-placettes">placettes<a class="anchor" aria-label="anchor" href="#arg-placettes"></a></dt>
@@ -176,9 +177,11 @@ metres. Default 15.</p></dd>
 Opaque project identifier used by callers (`nemetonshiny`) to
 stably bind a project to its monitoring zone. When non-`NULL`,
 stored on `monitoring_zone.project_uuid` and queryable via
-[find_zone_by_project()]. UNIQUE on non-`NULL` values — registering
-a second zone with the same `project_uuid` raises a DB error.
-Available since spec 011 (migration `0003_project_uuid`).</p></dd>
+[find_zone_by_project()]. Since migration `0005` (spec 020) the
+uniqueness is on `(project_uuid, zone_name)`: a project may own several
+zones, but registering the same `zone_name` twice for one
+`project_uuid` raises a DB error. Available since spec 011 (migration
+`0003_project_uuid`).</p></dd>
 
 </dl></div>
     <div class="section level2">

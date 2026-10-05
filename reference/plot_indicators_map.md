@@ -49,6 +49,10 @@ plot_indicators_map(
 
   - "Blues" - Blue sequential
 
+  When not given, raw risk indicators (R1-R5, high = more risk) get
+  "YlOrRd" and `famille_risque` (high = lower risk) gets "RdYlGn", so
+  red always marks the riskiest units.
+
 - direction:
 
   Numeric. Direction of color scale: 1 (default) or -1 (reversed)

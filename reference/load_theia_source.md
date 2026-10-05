@@ -4,16 +4,15 @@ Loads a Theia datasource for an area of interest and crops it to the
 AOI. Two modes:
 
 - **Year targeting** (`year` supplied) — the asset URL is signed through
-  the `teledetection` SDK (see
+  the teledetection gateway (see
   [`theia_signed_href`](https://pobsteta.github.io/nemeton/reference/theia_signed_href.md))
-  and read via `/vsicurl/`. This is the authenticated path that THEIA
-  assets require.
+  and read via `/vsicurl/`; an asset that cannot be signed aborts.
 
-- **Spatial search** — resolves `/vsis3/` asset paths via
-  [`resolve_theia_assets`](https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.md);
-  call
-  [`theia_configure_s3`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-  first. Reserved for direct-S3 setups.
+- **Spatial search** — the intersecting assets are resolved and signed
+  by
+  [`resolve_theia_assets`](https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.md),
+  then mosaicked; unsigned `/vsis3/` paths (no keys) are only readable
+  on a direct-S3 setup.
 
 ## Usage
 
@@ -81,7 +80,7 @@ A `SpatRaster` cropped to `aoi`.
 
 ``` r
 if (FALSE) { # \dontrun{
-# FORMSpoT canopy height for 2023 (signed via the teledetection SDK)
+# FORMSpoT canopy height for 2023 (signed via the teledetection gateway)
 chm <- load_theia_source("formspot", aoi, year = 2023)
 } # }
 ```

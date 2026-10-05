@@ -28,7 +28,8 @@ create_monitoring_zone(con, zone_name, zone_polygon, project_uuid = NULL)
 - zone_polygon:
 
   An \`sf\`/\`sfc\` object carrying the zone polygon (any CRS;
-  reprojected to 4326 on insert).
+  reprojected to 4326 on insert). Several features are unioned into one
+  (MULTI)POLYGON.
 
 - project_uuid:
 

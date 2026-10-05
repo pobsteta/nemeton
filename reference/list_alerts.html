@@ -11,7 +11,7 @@ have no `confidence_class`, so they pass through)."><meta property="og:image" co
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -147,13 +147,14 @@ have no `confidence_class`, so they pass through).</p>
 <dd><p>Character vector of `confidence_class` values to
 include. Default `c("3-forte", "4-sol-nu")`. Use `NULL` to
 include everything (including alerts without a class, i.e. the
-rolling-window ones).</p></dd>
+rolling-window ones). An empty vector keeps only the alerts
+without a class.</p></dd>
 
 
 <dt id="arg-validation-status">validation_status<a class="anchor" aria-label="anchor" href="#arg-validation-status"></a></dt>
 <dd><p>Character vector or `NULL`. Filter on
 `alert.validation_status`. `NULL` (default) returns every
-status.</p></dd>
+status; an empty vector matches no alert.</p></dd>
 
 
 <dt id="arg-period">period<a class="anchor" aria-label="anchor" href="#arg-period"></a></dt>
@@ -164,7 +165,8 @@ Filter on `trigger_date`. `NULL` (default) returns every date.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An sf POINT layer (CRS WGS84) ready to be drawn on a
-  leaflet map. Empty sf when no alert matches.</p>
+  leaflet map. Empty sf when no alert matches. `trigger_date` is a
+`Date` and `validated_at` a UTC `POSIXct` on both backends.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

@@ -47,7 +47,9 @@ The input enriched with a \`disturbance_type\` column and a logical
   Recent perturbation, no confirmed dieback.
 
 - \`NA_character\_\` — a FAST drop already paired with a diagnostic
-  alert (the diagnostic row carries the verdict).
+  alert (the diagnostic row carries the verdict), or an alert whose
+  \`trigger_date\` is \`NA\` (no verdict can be drawn; its
+  \`method_overlap\` is \`NA\` too, and it pairs with no other alert).
 
 \`method_overlap\` is \`TRUE\` on a diagnostic alert when both FORDEAD
 and RECONFORT fired on the same plot/window (mixed fringe): the type

@@ -47,8 +47,8 @@ retrieve_knowledge(
 
 - min_similarity:
 
-  Numeric in \`\[0, 1\]\`. Drop chunks below this cosine similarity.
-  Default 0.7.
+  Numeric in \`\[-1, 1\]\` (cosine similarity). Drop chunks below this
+  cosine similarity. Default 0.7.
 
 - lang:
 

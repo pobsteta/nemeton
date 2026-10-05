@@ -32,7 +32,10 @@ create_family_index(
 
   Named list of weight vectors per family. E.g.,
   `list(C = c(C1 = 0.6, C2 = 0.4), W = c(W1 = 0.5, W2 = 0.3, W3 = 0.2))`.
-  If NULL, equal weights are used.
+  If NULL, equal weights are used. Weights named by the raw indicator
+  (`C1`) also apply to its `_norm` column. They are used by "mean",
+  "weighted", "geometric" and "harmonic"; "min" ignores them with a
+  warning.
 
 - na.rm:
 
@@ -70,9 +73,11 @@ famille_carbone, famille_eau).
 
 - weighted: Weighted average using provided weights
 
-- geometric: Geometric mean (product^(1/n))
+- geometric: Weighted geometric mean (exp(sum(w log x)); product^(1/n)
+  with equal weights)
 
-- harmonic: Harmonic mean (n / sum(1/x))
+- harmonic: Weighted harmonic mean (1 / sum(w / x); n / sum(1/x) with
+  equal weights)
 
 - min: Minimum value (worst-case, most conservative) - v0.3.0+
 

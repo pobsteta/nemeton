@@ -13,7 +13,8 @@ normalize_indicator(indicator, values, statut = NULL)
 
 - indicator:
 
-  Character. Indicator name (NMT convention).
+  Character string. Indicator name (NMT convention, long name or short
+  code). Anything else than a single non-missing string is an error.
 
 - values:
 

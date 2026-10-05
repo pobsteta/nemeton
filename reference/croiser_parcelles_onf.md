@@ -63,7 +63,8 @@ croiser_parcelles_onf(
 
   An sf of cadastral parcels. Its identifier column is taken from
   `id_col`, or auto-detected among `id`, `nemeton_id`, `geo_parcelle`,
-  `idu`.
+  `idu`. Rows sharing an identifier are merged into one parcel, with a
+  warning.
 
 - min_surface_ha:
 

@@ -669,8 +669,6 @@ Fonctions de traitement parallele
   : Smart Map for Spatial Data with Row Indices
 - [`get_global_cache_dir()`](https://pobsteta.github.io/nemeton/reference/get_global_cache_dir.md)
   : Get global shared cache directory
-- [`detect_indicator_family()`](https://pobsteta.github.io/nemeton/reference/detect_indicator_family.md)
-  : Detect Indicator Family from Name
 - [`get_family_name()`](https://pobsteta.github.io/nemeton/reference/get_family_name.md)
   : Get Family Name from Code
 
@@ -1101,12 +1099,7 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
   : Discover the best available DEM / CHM raster in a Nemeton project
 
 - [`resolve_theia_assets()`](https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.md)
-  :
-
-  Looks up a Theia datasource declared in
-  `inst/datasources/<country>.json` and returns the matching asset paths
-  normalised to `/vsis3/` so that GDAL reads the objects directly from
-  the S3 store (call `theia_configure_s3` once first to authenticate).
+  : Resolve the asset paths of a THEIA datasource
 
 - [`retrieve_knowledge()`](https://pobsteta.github.io/nemeton/reference/retrieve_knowledge.md)
   : Retrieve the most relevant knowledge chunks for a query

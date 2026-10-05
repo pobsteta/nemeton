@@ -49,8 +49,11 @@ indicateur_r5_deperissement(
 - weights_reconfort:
 
   Named numeric vector. Per-class RECONFORT weights (dieback classes).
-  Default = the oak subset of \[\`RECONFORT_CONFIDENCE_WEIGHTS\`\]
-  (provisional, see that object).
+  When not supplied, the weights of the species of the run
+  (\`reconfort_results\$species\`: \`"CHE"\`, \`"CHT"\` or \`"PS"\`) are
+  taken from \[\`RECONFORT_CONFIDENCE_WEIGHTS\`\] (provisional, see that
+  object); the oak weights are used when the run carries no known
+  species. A supplied vector applies to every RECONFORT unit.
 
 - min_resineux:
 

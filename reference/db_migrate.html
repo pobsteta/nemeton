@@ -13,7 +13,7 @@ files that have not yet been applied. The first run also creates
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -154,6 +154,11 @@ Postgres, `sqlite/` for SQLite.</p>
 <p>Migrations are executed in a single transaction per file and the
 filename (basename without extension) is recorded as the version
 identifier.</p>
+<p>Concurrent calls (e.g. a Shiny session and a worker process) are
+serialised: each file's transaction takes a lock first (a PostgreSQL
+transaction-level advisory lock, `BEGIN IMMEDIATE` on SQLite) and
+re-checks `schema_migration`, so a migration applied meanwhile by
+another connection is skipped instead of being run twice.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

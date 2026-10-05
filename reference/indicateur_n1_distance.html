@@ -13,7 +13,7 @@ to 0-100 and combined with weights (40"><meta property="og:image" content="https
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -144,11 +144,13 @@ to 0-100 and combined with weights (40<!-- % roads, 35% buildings, 25% urban). -
 
 
 <dt id="arg-roads">roads<a class="anchor" aria-label="anchor" href="#arg-roads"></a></dt>
-<dd><p>sf object (LINESTRING/MULTILINESTRING). Road network (BD TOPO). NULL = default 1000m.</p></dd>
+<dd><p>sf object (LINESTRING/MULTILINESTRING). Road network (BD TOPO).
+NULL (and none in <code>layers</code>) gives N1 = NA.</p></dd>
 
 
 <dt id="arg-buildings">buildings<a class="anchor" aria-label="anchor" href="#arg-buildings"></a></dt>
-<dd><p>sf object (POLYGON/MULTIPOLYGON). Buildings. NULL = default 500m.</p></dd>
+<dd><p>sf object (POLYGON/MULTIPOLYGON). Buildings. NULL (and none
+in <code>layers</code>) gives N1 = NA.</p></dd>
 
 
 <dt id="arg-layers">layers<a class="anchor" aria-label="anchor" href="#arg-layers"></a></dt>
@@ -166,7 +168,10 @@ backward compatibility. Default "en".</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>sf object with added column N1 (score 0-100, 100 = very remote)</p>
+    <p>sf object with added column N1 (score 0-100, 100 = very remote).
+Each distance is scored <code>min(100, d / 20)</code> (2 km or more = 100). The
+urban term has no data layer: its distance is a constant 2000 m, so it
+always adds 25 points and N1 ranges over 25-100.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

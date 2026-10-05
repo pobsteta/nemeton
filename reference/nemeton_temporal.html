@@ -9,7 +9,7 @@ a temporal dataset structure for longitudinal analysis."><meta property="og:imag
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -128,7 +128,9 @@ a temporal dataset structure for longitudinal analysis.</p>
 
 <dl><dt id="arg-periods">periods<a class="anchor" aria-label="anchor" href="#arg-periods"></a></dt>
 <dd><p>Named list of nemeton_units objects, one per period.
-Names should be period labels (e.g., "2015", "2020").</p></dd>
+Names should be period labels (e.g., "2015", "2020") and must be unique.
+Unnamed periods are named after <code>labels</code> when usable, otherwise
+"Period1", "Period2", ...</p></dd>
 
 
 <dt id="arg-dates">dates<a class="anchor" aria-label="anchor" href="#arg-dates"></a></dt>

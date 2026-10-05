@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -157,7 +157,9 @@ If NULL, auto-detects indicator columns.</p></dd>
 
 
 <dt id="arg-na-rm">na.rm<a class="anchor" aria-label="anchor" href="#arg-na-rm"></a></dt>
-<dd><p>Logical. Remove NA values before normalization? Default TRUE.</p></dd>
+<dd><p>Logical. Remove NA values before normalization? Default TRUE.
+With <code>FALSE</code>, a single NA in the reference makes the bounds unknown and
+the whole normalized column is NA.</p></dd>
 
 
 <dt id="arg-reference-data">reference_data<a class="anchor" aria-label="anchor" href="#arg-reference-data"></a></dt>

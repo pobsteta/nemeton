@@ -20,7 +20,11 @@ db_connect(
 
   Character. Connection URL. Two schemes are supported: \*
   \`postgresql://user:password@host:port/dbname\` — opens a
-  \[RPostgres::Postgres()\] connection. \*
+  \[RPostgres::Postgres()\] connection. Reserved characters in the user,
+  password or database name are percent-encoded (\`%40\` for \`@\`) and
+  decoded before reaching libpq; an optional query string
+  (\`?sslmode=require&application_name=x\`) is passed through as libpq
+  parameters (explicit arguments such as \`connect_timeout\` win). \*
   \`sqlite:///absolute/path/to/file.sqlite\` — opens a
   \[RSQLite::SQLite()\] connection on the given file in WAL mode (the
   local backend). The file is created if it does not exist. A bare path

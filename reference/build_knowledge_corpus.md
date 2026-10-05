@@ -46,7 +46,8 @@ build_knowledge_corpus(
 
 - fresh:
 
-  Logical. Delete every existing document first. Default \`FALSE\`.
+  Logical. Delete every existing document first, in a single transaction
+  (a failure leaves the corpus untouched). Default \`FALSE\`.
 
 - dry_run:
 
@@ -87,8 +88,9 @@ A row is eligible when its \`ingest_strategy\` is known and its
 TRUE\`). \`full\` rows ingest their body via
 \[ingest_knowledge_document()\]; \`abstract_only\` / \`link_only\` rows
 ingest a reference-only chunk via \[ingest_knowledge_reference()\].
-Documents whose \`title\` is already in the base are skipped (idempotent
-re-runs).
+Documents whose manifest \`doc_id\` is already in the base are skipped
+(idempotent re-runs); a document ingested outside the manifest (no
+\`doc_id\` in its metadata) is matched on its \`title\`.
 
 ## Security
 

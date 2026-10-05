@@ -71,6 +71,17 @@ An sf of forest parcels in `crs` with columns `id`
 `domaniale`, `nom_ugf`, `contenance` (m², computed in the territory's
 projected CRS) and `surface_ha`; a 0-row sf if none; `NULL` on failure.
 
+## Transport security
+
+The ONF WFS is only served over **plain HTTP**
+(`https://ws.carmencarto.fr` does not answer, checked 2026-08-18): the
+request and the response travel unencrypted and unauthenticated. No
+credential is sent and the data are public, but the parcels cannot be
+guaranteed against tampering in transit. A response that is an HTML
+page, an OWS exception report or unreadable GML is rejected (`NULL`).
+Treat the layer as a NDP 0 seed to be checked against the management
+plan, not as an authoritative boundary.
+
 ## See also
 
 [`load_foret_ancienne_source`](https://pobsteta.github.io/nemeton/reference/load_foret_ancienne_source.md),

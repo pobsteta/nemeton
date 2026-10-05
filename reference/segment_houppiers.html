@@ -13,7 +13,7 @@ point-in-polygon on the GNSS position."><meta property="og:image" content="https
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -170,9 +170,10 @@ merges neighbours.</p></dd>
 
 
 <dt id="arg-algorithme">algorithme<a class="anchor" aria-label="anchor" href="#arg-algorithme"></a></dt>
-<dd><p><code>"dalponte"</code> (default), <code>"silva"</code> or <code>"watershed"</code>. The
-first two grow regions from located apexes; <code>"watershed"</code> ignores them and
-floods the inverted surface.</p></dd>
+<dd><p><code>"dalponte"</code> (default), <code>"silva"</code>, <code>"watershed"</code> or
+<code>"lsms"</code>. The first two grow regions from located apexes; <code>"watershed"</code>
+ignores them and floods the inverted surface; <code>"lsms"</code> segments the
+orthophoto <code>image</code> with the OTB Large-Scale Mean-Shift.</p></dd>
 
 
 <dt id="arg-emprise">emprise<a class="anchor" aria-label="anchor" href="#arg-emprise"></a></dt>

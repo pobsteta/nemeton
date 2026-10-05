@@ -124,8 +124,9 @@ run_reconfort_dieback(
   systemd-oomd on 2026-07-13; 13.4 GB once chunked). Chunking requires
   an iota2 patched for defect \#11 (\`repair_iota2_env.sh\`) — without
   it, chunk 0 keeps an uncut region mask and OTB aborts; the run then
-  falls back to a single chunk with a warning. An explicit value is
-  respected.
+  falls back to a single chunk with a warning, with or without
+  \`aoi_crop\`. An explicit value is respected (a warning announces the
+  expected chunk-0 abort).
 
 - scheduler_type:
 
@@ -170,7 +171,8 @@ run_reconfort_dieback(
 - skip_ingest:
 
   Reuse an already-ingested S2 layout under the working dir instead of
-  downloading. Default \`FALSE\`.
+  downloading. Default \`FALSE\`. Aborts before staging when a tile has
+  no extracted scene.
 
 - keep_workdir:
 

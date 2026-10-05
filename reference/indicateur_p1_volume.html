@@ -9,7 +9,7 @@ based on species, diameter (DBH), and height data."><meta property="og:image" co
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -164,7 +164,7 @@ in (0, 1) are set to NA with a warning.</p></dd>
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>Character. Volume calculation method. Only "ifn_tarif" (the IFN
-combined-variable tariff <code>V = a x D^2 x H</code>) is implemented; "allometric" is
+tariff <code>V = a x DBH^b x H^c</code>, see Details) is implemented; "allometric" is
 accepted for backward compatibility but has no effect and emits a warning.
 Default "ifn_tarif".</p></dd>
 

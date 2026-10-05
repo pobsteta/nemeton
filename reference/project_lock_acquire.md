@@ -7,8 +7,9 @@ heartbeat is older than `ttl_seconds`** (expired — the lock is stolen).
 Fails when another holder's lock is still fresh.
 
 The whole decision runs in one transaction with a row lock (`FOR UPDATE`
-on PostgreSQL), so two concurrent acquisitions on a free project yield
-exactly one winner. Expiry is judged against the database clock.
+on PostgreSQL, \`BEGIN IMMEDIATE\` on SQLite), so two concurrent
+acquisitions on a free project yield exactly one winner. Expiry is
+judged against the database clock.
 
 ## Usage
 

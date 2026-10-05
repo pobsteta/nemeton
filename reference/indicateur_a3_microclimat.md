@@ -41,7 +41,7 @@ indicateur_a3_microclimat(units, micro = NULL, chm = NULL,
 
 `units` with columns `A3` (0-100), `A3_tmax` (raw °C),
 `A3_couverture_pct`, and `attr(., "augmented")` carrying
-`"microclimate_model"`.
+`"microclimate_model"` (only when at least one value is computed).
 
 **Higher = cooler under the canopy = favourable.** The raw quantity
 (summer maximum temperature, °C) runs the other way, so

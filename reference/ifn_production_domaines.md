@@ -24,7 +24,9 @@ Two predictions:
   between the domain's covariates and those of its sylvoecoregions.
   Validated against the inventory on grid cells: 19 to 35 percent lower
   error than `"ser"` for `"pv"`, but no gain for `"pg"`, which therefore
-  keeps `"ser"`.
+  keeps `"ser"`. A domain whose covariates are missing or NA falls back
+  to `"ser"` (with its own `A(S)`), with a warning; `predicteur` says
+  which one was used.
 
 ## Usage
 

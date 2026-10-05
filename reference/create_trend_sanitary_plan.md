@@ -84,11 +84,14 @@ create_trend_sanitary_plan(
 
 - seed:
 
-  Integer or \`NULL\`. Makes the GRTS draw reproducible.
+  Integer or \`NULL\`. Makes the GRTS draw reproducible. The seed is
+  applied locally: the session's global random state is restored on
+  exit.
 
 ## Value
 
-An \`sf\` POINT object in EPSG:2154 with columns \`plot_id\` (\`S01…\`
+An \`sf\` POINT object in the CRS of the trend raster returned by
+\[read_fast_alert_raster()\] with columns \`plot_id\` (\`S01…\`
 sanitary, \`T01…\` control), \`type\` (\`"Sanitaire"\` / \`"Temoin"\`),
 \`alert_value\` (the \`\|slope\|\` at the plot; \`0\` for controls),
 \`index\`, \`source\` (\`"FAST_TREND"\`) and \`seed\`. Sanitary plots

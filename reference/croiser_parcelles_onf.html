@@ -67,7 +67,7 @@ never take a parcel — dropping forest is not a correction.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -227,7 +227,8 @@ never take a parcel — dropping forest is not a correction.</p></li>
 <dt id="arg-parcelles">parcelles<a class="anchor" aria-label="anchor" href="#arg-parcelles"></a></dt>
 <dd><p>An <span class="pkg">sf</span> of cadastral parcels. Its identifier column is
 taken from <code>id_col</code>, or auto-detected among <code>id</code>,
-<code>nemeton_id</code>, <code>geo_parcelle</code>, <code>idu</code>.</p></dd>
+<code>nemeton_id</code>, <code>geo_parcelle</code>, <code>idu</code>. Rows sharing an
+identifier are merged into one parcel, with a warning.</p></dd>
 
 
 <dt id="arg-min-surface-ha">min_surface_ha<a class="anchor" aria-label="anchor" href="#arg-min-surface-ha"></a></dt>

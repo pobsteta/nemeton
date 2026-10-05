@@ -10,7 +10,14 @@ written in UTC. Plots without a `stade_deperissement` are skipped
 (never edited in the field), as are plots whose stage (after
 trimming whitespace, case-insensitive) is not one of
 [`HEALTH_VALIDATION_STADES`] / [`HEALTH_VALIDATION_STADES_FEUILLUS`]
-(`reason = "unknown_stade"`, with a warning).'><meta property="og:description" content='Reads the `placettes` layer of `gpkg_path` (typically a GPKG
+(`reason = "unknown_stade"`, with a warning).
+When the layer carries an `alert_id` column (as written by
+[generate_health_validation_plots()]), a non-`NA` `alert_id` designates
+the validated alert directly and takes precedence over the nearest
+neighbour (no `snap_distance_m` check). An `alert_id` that is not an
+alert of `zone_id` is counted as unmatched
+(`reason = "alert_id_not_in_zone"`). Rows without `alert_id` keep the
+nearest-alert snapping.'><meta property="og:description" content='Reads the `placettes` layer of `gpkg_path` (typically a GPKG
 edited in QGIS Desktop or in QField on a tablet), snaps each
 plot to the nearest alert of the given `zone_id` (within
 `snap_distance_m`), maps the observer-selected
@@ -21,7 +28,14 @@ written in UTC. Plots without a `stade_deperissement` are skipped
 (never edited in the field), as are plots whose stage (after
 trimming whitespace, case-insensitive) is not one of
 [`HEALTH_VALIDATION_STADES`] / [`HEALTH_VALIDATION_STADES_FEUILLUS`]
-(`reason = "unknown_stade"`, with a warning).'><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
+(`reason = "unknown_stade"`, with a warning).
+When the layer carries an `alert_id` column (as written by
+[generate_health_validation_plots()]), a non-`NA` `alert_id` designates
+the validated alert directly and takes precedence over the nearest
+neighbour (no `snap_distance_m` check). An `alert_id` that is not an
+alert of `zone_id` is counted as unmatched
+(`reason = "alert_id_not_in_zone"`). Rows without `alert_id` keep the
+nearest-alert snapping.'><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -29,7 +43,7 @@ trimming whitespace, case-insensitive) is not one of
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -145,6 +159,13 @@ written in UTC. Plots without a `stade_deperissement` are skipped
 trimming whitespace, case-insensitive) is not one of
 [`HEALTH_VALIDATION_STADES`] / [`HEALTH_VALIDATION_STADES_FEUILLUS`]
 (`reason = "unknown_stade"`, with a warning).</p>
+<p>When the layer carries an `alert_id` column (as written by
+[generate_health_validation_plots()]), a non-`NA` `alert_id` designates
+the validated alert directly and takes precedence over the nearest
+neighbour (no `snap_distance_m` check). An `alert_id` that is not an
+alert of `zone_id` is counted as unmatched
+(`reason = "alert_id_not_in_zone"`). Rows without `alert_id` keep the
+nearest-alert snapping.</p>
     </div>
 
     <div class="section level2">
@@ -199,7 +220,7 @@ the alert (typically the OAuth subject of the ingesting user
   * `n_updated` (int), `n_confirmed` (int),
     `n_false_positive` (int);
   * `n_unmatched` (int) — plots without an alert within
-    `snap_distance_m`;
+    `snap_distance_m`, or whose `alert_id` is not an alert of the zone;
   * `n_skipped` (int) — plots with no or an unknown
     `stade_deperissement`;
   * `details` — a data.frame with one row per processed plot.</p>

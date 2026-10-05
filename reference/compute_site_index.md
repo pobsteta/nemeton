@@ -45,7 +45,10 @@ A numeric vector of the same length as the recycled inputs, giving the
 site index (dominant height at `reference_age`) in metres. `NA` is
 returned when `H_dom` or `age` is missing, when `H_dom` is below
 `min_stand_height`, when `age` is outside the tabulated range, or when
-the species cannot be resolved.
+the species cannot be resolved. A height above the tallest (class 1) or
+below the shortest (class 5) curve at the observed age is **clamped** to
+that class: the site index returned is then the class 1 or class 5
+height at `reference_age`, not an extrapolation.
 
 ## Details
 

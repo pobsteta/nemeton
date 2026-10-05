@@ -74,12 +74,16 @@ eobs_downscale(
 - resolution:
 
   Optional target resolution (DEM units). `NULL` keeps the DEM
-  resolution (aggregated if the grid would exceed `max_cells`).
+  resolution (aggregated if the grid would exceed `max_cells`). KED
+  engine only: ignored by `engine = "meteoland"`, whose grid is the DEM
+  capped at `max_cells`.
 
 - covariates:
 
   Terrain covariates among `"dem"`, `"slope"`, `"aspect"` (entered as
-  northness), `"twi"` (best-effort). Default all four.
+  northness), `"twi"` (best-effort). Default all four. KED engine only:
+  `engine = "meteoland"` ignores it and always uses elevation, slope and
+  aspect (its own interpolator covariates).
 
 - statistic:
 

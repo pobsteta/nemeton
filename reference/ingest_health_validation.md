@@ -13,6 +13,14 @@ one of \[\`HEALTH_VALIDATION_STADES\`\] /
 \[\`HEALTH_VALIDATION_STADES_FEUILLUS\`\] (\`reason = "unknown_stade"\`,
 with a warning).
 
+When the layer carries an \`alert_id\` column (as written by
+\[generate_health_validation_plots()\]), a non-\`NA\` \`alert_id\`
+designates the validated alert directly and takes precedence over the
+nearest neighbour (no \`snap_distance_m\` check). An \`alert_id\` that
+is not an alert of \`zone_id\` is counted as unmatched (\`reason =
+"alert_id_not_in_zone"\`). Rows without \`alert_id\` keep the
+nearest-alert snapping.
+
 ## Usage
 
 ``` r
@@ -59,6 +67,7 @@ ingest_health_validation(
 
 A list: \* \`n_updated\` (int), \`n_confirmed\` (int),
 \`n_false_positive\` (int); \* \`n_unmatched\` (int) — plots without an
-alert within \`snap_distance_m\`; \* \`n_skipped\` (int) — plots with no
-or an unknown \`stade_deperissement\`; \* \`details\` — a data.frame
-with one row per processed plot.
+alert within \`snap_distance_m\`, or whose \`alert_id\` is not an alert
+of the zone; \* \`n_skipped\` (int) — plots with no or an unknown
+\`stade_deperissement\`; \* \`details\` — a data.frame with one row per
+processed plot.

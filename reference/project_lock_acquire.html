@@ -5,14 +5,14 @@ Succeeds when the project is free, already held by holder_id
 heartbeat is older than ttl_seconds (expired — the lock is stolen).
 Fails when another holder's lock is still fresh.
 The whole decision runs in one transaction with a row lock (FOR UPDATE
-on PostgreSQL), so two concurrent acquisitions on a free project yield
+on PostgreSQL, `BEGIN IMMEDIATE` on SQLite), so two concurrent acquisitions on a free project yield
 exactly one winner. Expiry is judged against the database clock."><meta property="og:description" content="Try to take the single-writer edit lock on project_id for holder_id.
 Succeeds when the project is free, already held by holder_id
 (re-entrant — the heartbeat is refreshed), or held by a lock whose
 heartbeat is older than ttl_seconds (expired — the lock is stolen).
 Fails when another holder's lock is still fresh.
 The whole decision runs in one transaction with a row lock (FOR UPDATE
-on PostgreSQL), so two concurrent acquisitions on a free project yield
+on PostgreSQL, `BEGIN IMMEDIATE` on SQLite), so two concurrent acquisitions on a free project yield
 exactly one winner. Expiry is judged against the database clock."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
@@ -21,7 +21,7 @@ exactly one winner. Expiry is judged against the database clock."><meta property
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -131,7 +131,7 @@ Succeeds when the project is <strong>free</strong>, <strong>already held by <cod
 heartbeat is older than <code>ttl_seconds</code></strong> (expired — the lock is stolen).
 Fails when another holder's lock is still fresh.</p>
 <p>The whole decision runs in one transaction with a row lock (<code>FOR UPDATE</code>
-on PostgreSQL), so two concurrent acquisitions on a free project yield
+on PostgreSQL, `BEGIN IMMEDIATE` on SQLite), so two concurrent acquisitions on a free project yield
 exactly one winner. Expiry is judged against the database clock.</p>
     </div>
 

@@ -17,7 +17,7 @@ drive it asynchronously and render progress."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -168,8 +168,8 @@ only after personally clearing their licenses. Default `FALSE`.</p></dd>
 
 
 <dt id="arg-fresh">fresh<a class="anchor" aria-label="anchor" href="#arg-fresh"></a></dt>
-<dd><p>Logical. Delete every existing document first. Default
-`FALSE`.</p></dd>
+<dd><p>Logical. Delete every existing document first, in a single
+transaction (a failure leaves the corpus untouched). Default `FALSE`.</p></dd>
 
 
 <dt id="arg-dry-run">dry_run<a class="anchor" aria-label="anchor" href="#arg-dry-run"></a></dt>
@@ -211,8 +211,10 @@ invoked after each manifest row, for progress reporting.</p></dd>
 is `cleared` (or `to_confirm` when `include_to_confirm = TRUE`). `full`
 rows ingest their body via [ingest_knowledge_document()]; `abstract_only`
 / `link_only` rows ingest a reference-only chunk via
-[ingest_knowledge_reference()]. Documents whose `title` is already in the
-base are skipped (idempotent re-runs).</p>
+[ingest_knowledge_reference()]. Documents whose manifest `doc_id` is
+already in the base are skipped (idempotent re-runs); a document ingested
+outside the manifest (no `doc_id` in its metadata) is matched on its
+`title`.</p>
     </div>
     <div class="section level2">
     <h2 id="security">Security<a class="anchor" aria-label="anchor" href="#security"></a></h2>

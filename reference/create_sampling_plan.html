@@ -13,7 +13,7 @@ to BalancedSampling LPM2, then to a plain spatial random draw."><meta property="
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.213.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -152,7 +152,9 @@ to <span class="pkg">BalancedSampling</span> LPM2, then to a plain spatial rando
 
 <dl><dt id="arg-zone">zone<a class="anchor" aria-label="anchor" href="#arg-zone"></a></dt>
 <dd><p>sf polygon of the study area (any CRS; result uses
-<code>zone</code>'s CRS).</p></dd>
+<code>zone</code>'s CRS). A geographic (longitude/latitude) zone is worked
+in its UTM zone, since <code>grid_step</code> and <code>plot_radius</code> are
+metres.</p></dd>
 
 
 <dt id="arg-n-base">n_base<a class="anchor" aria-label="anchor" href="#arg-n-base"></a></dt>
@@ -245,7 +247,9 @@ stratum (capped at the number of candidates). Default 2.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
-<dd><p>Integer random seed. Default 42.</p></dd>
+<dd><p>Integer random seed, applied locally: the session's global
+random state is restored on exit. <code>NULL</code> draws unseeded.
+Default 42.</p></dd>
 
 </dl></div>
     <div class="section level2">

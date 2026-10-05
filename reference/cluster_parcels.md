@@ -8,7 +8,14 @@ analysis.
 ## Usage
 
 ``` r
-cluster_parcels(data, families, k = NULL, method = "kmeans", max_k = 10)
+cluster_parcels(
+  data,
+  families,
+  k = NULL,
+  method = "kmeans",
+  max_k = 10,
+  seed = NULL
+)
 ```
 
 ## Arguments
@@ -34,7 +41,14 @@ cluster_parcels(data, families, k = NULL, method = "kmeans", max_k = 10)
 
 - max_k:
 
-  Maximum number of clusters to test when k is NULL (default: 10)
+  Maximum number of clusters to test when k is NULL (default: 10).
+  Automatic k needs `max_k >= 2` and at least 3 units.
+
+- seed:
+
+  Optional integer. When given, the random initialisation of k-means is
+  made reproducible with a local seed; the caller's random number stream
+  is left untouched. `NULL` (default) uses the current RNG state.
 
 ## Value
 

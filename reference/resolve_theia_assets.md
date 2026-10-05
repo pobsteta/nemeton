@@ -1,4 +1,13 @@
-# Looks up a Theia datasource declared in `inst/datasources/<country>.json` and returns the matching asset paths normalised to `/vsis3/` so that GDAL reads the objects directly from the S3 store (call [`theia_configure_s3`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md) once first to authenticate).
+# Resolve the asset paths of a THEIA datasource
+
+Looks up a Theia datasource declared in
+`inst/datasources/<country>.json` and returns GDAL-readable paths to the
+matching assets. Each asset is signed through the teledetection gateway
+([`theia_sign_urls`](https://pobsteta.github.io/nemeton/reference/theia_sign_urls.md),
+keys `TLD_ACCESS_KEY` / `TLD_SECRET_KEY`) and returned as a `/vsicurl/`
+pre-signed URL, the only form the MESO store accepts. When signing is
+unavailable (no keys, gateway down) the unsigned `/vsis3/` paths are
+returned instead; they are only readable on a direct-S3 setup.
 
 Two access modes:
 
@@ -70,5 +79,6 @@ resolve_theia_assets(
 
 ## Value
 
-A character vector of `/vsis3/` asset paths (length 1 in year-targeting
-mode).
+A character vector of asset paths (length 1 in year-targeting mode):
+signed `/vsicurl/` URLs, or unsigned `/vsis3/` paths when signing is
+unavailable.

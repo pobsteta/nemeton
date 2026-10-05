@@ -1,7 +1,8 @@
 # S3: Population Proximity Indicator
 
-Calculates population counts within buffer zones (5km, 10km, 20km) to
-estimate visitor pressure potential and recreational use intensity.
+Calculates the population density around each unit (and population
+counts within buffer zones of 5, 10 and 20 km) to estimate visitor
+pressure potential and recreational use intensity.
 
 ## Usage
 
@@ -25,12 +26,14 @@ indicateur_s3_population(
 
 - population_grid:
 
-  sf object or SpatRaster of population data. If NULL, uses proxy.
+  sf object (polygons carrying a population count) or SpatRaster of
+  population counts. If NULL, S3 is NA (no measurement).
 
 - method:
 
-  Character. Data source: "insee" (INSEE Carroyage), "local", or
-  "proxy". Default "insee".
+  Character. `"insee"` (default) or `"local"`: both read
+  `population_grid` the same way (the label is informative). `"proxy"`
+  no longer exists and raises an error.
 
 - buffer_radii:
 
@@ -54,35 +57,41 @@ indicateur_s3_population(
 
 ## Value
 
-sf object with added columns: S3 (population within primary buffer),
-S3_5km, S3_10km, S3_20km
+sf object with added columns: `S3` (named after `column_name`,
+population density in inhabitants/km2 within the first buffer),
+`S3_densite` (same value), and the population counts `S3_5km`,
+`S3_10km`, `S3_20km` within the three buffers of `buffer_radii` (the
+names are kept whatever the radii). Without `population_grid`, `S3` and
+the counts are NA and `S3_densite` is not added.
 
 ## Details
 
 \*\*Calculation\*\*:
 
-- Create buffer zones around each unit (5km, 10km, 20km)
+- Create buffer zones around each unit (`buffer_radii`, default 5, 10
+  and 20 km)
 
-- Sum population within each buffer from INSEE Carroyage 1km grid
+- Sum the population within each buffer; a grid cell straddling the
+  buffer counts for the share of its area inside it
 
-- S3 = population within closest buffer (highest pressure)
+- S3 = population of the first buffer / its area (inhabitants/km2)
 
 \*\*Data Sources\*\*:
 
-- INSEE Carroyage 1km or 200m population grids (France)
+- INSEE Filosofi gridded population, 200 m or 1 km cells (France; count
+  field `ind`)
 
 - WorldPop or GPW for international applications
-
-- Proxy: Distance to nearest urban area if no population data
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
 data(massif_demo_units)
+carreaux <- sf::st_read("path/to/filosofi_carreaux_200m.gpkg")
 result <- indicateur_s3_population(
   units = massif_demo_units,
-  method = "proxy",
+  population_grid = carreaux,
   buffer_radii = c(5000, 10000, 20000)
 )
 } # }

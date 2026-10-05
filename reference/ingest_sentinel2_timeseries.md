@@ -264,8 +264,8 @@ ingest_sentinel2_timeseries(
   cache_dir   = cache
 )
 
-# Subsequent runs: skip_cached short-circuits at the DB level,
-# cache_dir only kicks in when a genuine re-extraction is needed.
+# Subsequent runs: skip_cached (default TRUE) skips every scene whose
+# band COGs are already under cache_dir; only new scenes are fetched.
 ingest_sentinel2_timeseries(
   con, zone_id, "2026-01-01", "2026-06-30",
   bands     = c("NDVI", "NBR"),

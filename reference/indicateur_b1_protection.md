@@ -23,18 +23,19 @@ indicateur_b1_protection(
 
 - protected_areas:
 
-  An sf object with protected area polygons. If NULL and source="wfs",
-  will attempt to fetch from INPN WFS service.
+  An sf object with protected area polygons (for instance the
+  `protected_areas` layer of the data catalog). `NULL` gives NA.
 
 - source:
 
-  Character. Data source: "local" (use protected_areas parameter) or
-  "wfs" (fetch from INPN). Default "local".
+  Kept for backward compatibility; has no effect. `"wfs"` does not fetch
+  anything: this function never queries the INPN WFS, and the protected
+  areas must be supplied through `protected_areas`.
 
 - protection_types:
 
-  Character vector. Types of protected areas to include when using WFS.
-  Default c("ZNIEFF1", "ZNIEFF2", "N2000_SCI").
+  Kept for backward compatibility; has no effect (all the features of
+  `protected_areas` are used).
 
 - preprocess:
 
@@ -83,19 +84,11 @@ library(sf)
 # Load demo data
 data(massif_demo_units)
 
-# Option A: Use local protected area data
+# Protected areas supplied by the caller (e.g. the catalog layer)
 protected_zones <- st_read("path/to/protected_areas.shp")
 result <- indicateur_b1_protection(
   massif_demo_units,
-  protected_areas = protected_zones,
-  source = "local"
-)
-
-# Option B: Fetch from INPN WFS (requires internet)
-result <- indicateur_b1_protection(
-  massif_demo_units,
-  source = "wfs",
-  protection_types = c("ZNIEFF1", "ZNIEFF2", "N2000_SCI")
+  protected_areas = protected_zones
 )
 
 # View results
