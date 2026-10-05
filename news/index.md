@@ -1,5 +1,41 @@
 # Changelog
 
+## nemeton 0.215.0 (2026-10-05)
+
+#### Fixed — offset radiométrique Sentinel-2 (spec 055)
+
+- Depuis la *processing baseline* 04.00 (25/01/2022, archive retraitée
+  comprise), les L2A portent `BOA_ADD_OFFSET = -1000` : comptes
+  numériques +1000. **Le cœur ne le retirait jamais** : tous les indices
+  des scènes récentes (NDVI, NBR, NDMI, NDRE) étaient écrasés (NDVI
+  d’une forêt d’été ≈ 0,55 au lieu de 0,84), d’où une fausse chute au
+  passage de 2022.
+- **[`read_s2_band_raster()`](https://pobsteta.github.io/nemeton/reference/read_s2_band_raster.md)**
+  retire désormais l’offset (`max(DN - 1000, 0)`) des scènes concernées,
+  repérées par leur identifiant (horodatage de traitement Planetary
+  Computer, baseline `N####` ESA ; MUSCATE jamais). Nouvel argument
+  `harmonize = TRUE` (`FALSE` rend les comptes bruts). Toutes les
+  lectures du cache en héritent :
+  [`read_s2_band_stack()`](https://pobsteta.github.io/nemeton/reference/read_s2_band_stack.md),
+  [`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md),
+  [`extract_pixel_timeseries()`](https://pobsteta.github.io/nemeton/reference/extract_pixel_timeseries.md),
+  FAST. Le cache n’est pas réécrit.
+- **Caches de résultats** : les clés des piles d’indices
+  (`build_index_stack(cache_result = TRUE)`) et des cartes FAST
+  ([`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md),
+  dossier `fast_raster/`) portent une version de radiométrie : les
+  résultats biaisés ne sont plus relus.
+- **FORDEAD** : le STAC local déclare `raster:bands.offset = -1000` sur
+  les scènes concernées (lu par `stackstac`) ; une date dont les tuiles
+  n’ont pas le même offset n’est plus mosaïquée.
+- **Mesure** (projet Reconfort, 115 830 pixels) : `count` NDVI
+  2022-2025, 53,1 → 17,9 dates sous le seuil par pixel (témoin 2017-2021
+  : 22,6) ; `trend` NDMI, **44,7 % → 5,5 %** de pixels en alerte ;
+  `trend` NDVI, 20,0 % → 1,3 %. **Seuils FAST inchangés** : c’étaient
+  les données qui étaient fausses.
+- **Valeurs qui changent** : cartes FAST, séries pixel, résultats
+  FORDEAD. Recalculer les cartes FAST et relancer FORDEAD.
+
 ## nemeton 0.214.0 (2026-10-05)
 
 Septième vague de l’audit de pré-version 1.0 : **constats mineurs**. Les

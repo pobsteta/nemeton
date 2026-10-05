@@ -13,7 +13,7 @@ non-NULL `cache_dir`."><meta property="og:image" content="https://pobsteta.githu
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.215.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -125,7 +125,7 @@ non-NULL `cache_dir`.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_s2_band_raster</span><span class="op">(</span><span class="va">cache_dir</span>, <span class="va">scene_id</span>, <span class="va">band</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_s2_band_raster</span><span class="op">(</span><span class="va">cache_dir</span>, <span class="va">scene_id</span>, <span class="va">band</span>, harmonize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -150,6 +150,17 @@ directory name is its sanitized form (cf.
 NDMI), `"B05"` (Red-edge 1, 20 m) or `"B8A"` (NIR narrow, 20 m,
 both used by NDRE, spec 022).</p></dd>
 
+
+<dt id="arg-harmonize">harmonize<a class="anchor" aria-label="anchor" href="#arg-harmonize"></a></dt>
+<dd><p>Logical(1). Remove the L2A radiometric offset
+(`BOA_ADD_OFFSET = -1000`) of scenes processed with baseline
+04.00 or later (from 2022-01-25, reprocessed archive included), so
+that every scene is on the pre-2022 digital-number scale:
+`max(DN - 1000, 0)`. The baseline is read from `scene_id`
+(Planetary Computer processing timestamp, ESA `N####` field;
+MUSCATE products carry no offset). Default `TRUE`; `FALSE` returns
+the raw cached digital numbers. Spec 055.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -163,6 +174,15 @@ both used by NDRE, spec 022).</p></dd>
     <p>Returns `NULL` (not an error) when the file is absent — callers like
 [read_s2_band_stack()] use this to skip missing scenes silently and
 emit a single aggregated warning.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="radiometric-offset">Radiometric offset<a class="anchor" aria-label="anchor" href="#radiometric-offset"></a></h2>
+
+
+<p>Before 0.215.0 the offset was never removed: every index computed
+from scenes processed after 2022-01-25 was biased low (summer forest
+NDVI about 0.55 instead of 0.84), which produced a spurious drop in
+FAST maps and pixel series.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

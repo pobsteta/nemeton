@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.215.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -357,7 +357,8 @@
 <p><strong>Décisions ouvertes</strong> (Pascal) : <strong>offset radiométrique S2</strong> (confirmé : NDVI des scènes post-25/01/2022 sous-estimé, ≈ 0,49 au lieu de 0,84 en forêt l’été — touche FAST, cartes pixel, séries ; correction par source et seuils FAST) ; contrat de retour des indicateurs et <code>lang</code> ; <code>.onLoad</code> et options terra ; données des tutoriels 07/08 ; emplacement des PDF du corpus RAG ; ADR-016 ; calibrages 0.212.</p>
 <p><strong>Journal</strong> — <em>2026-10-05</em> (<strong>v0.214.0</strong>) : vague 7, les ~111 constats mineurs du rapport revérifiés par quatre agents ; environ 90 corrigés, chacun avec un test qui échouait avant pour les bugs. <strong>Le rapport d’audit n’a plus aucun constat sans marque.</strong> <code>withr</code> passe en Imports (il était utilisé dans le code sans être déclaré). Aucune signature d’export consommé par l’app ne change ; <code><a href="reference/list_alerts.html">list_alerts()</a></code> change de types sous SQLite seulement (alignés sur PostgreSQL ; l’app le lit via <code>sf</code>, sans impact constaté).</p>
 <p><strong>Ce qui sépare de la 1.0.0</strong> : les décisions listées dans NEWS 0.214.0 (offset S2 en premier : il fausse les indices des scènes post-2022), la recalibration éventuelle, puis le recalcul des projets côté app.</p>
-<p><strong>Prochaine étape</strong> : décisions de Pascal (vague 8), puis 1.0.0. L’app consomme 135 des 313 exports et lit 21 symboles internes : ne rien retirer ni changer de signature parmi eux sans brief app (<code>specs/audit-1.0/exports-consommes-app.md</code>).</p>
+<p><strong>Journal</strong> — <em>2026-10-05</em> (<strong>v0.215.0</strong>) : <strong>offset radiométrique S2</strong> corrigé (spec 055, décision Pascal « commence par l’offset »). Règle par identifiant de scène validée sur 1 040 scènes ; correction à la lecture du cache (<code>read_s2_band_raster(harmonize = TRUE)</code>), clé du cache des piles versionnée, offset déclaré dans le STAC local de FORDEAD (vérifié de bout en bout avec <code>stackstac</code>). Sur Reconfort, <code>trend</code> NDMI passe de 44,7 % à 5,5 % de pixels en alerte : l’offset fabriquait l’essentiel des déclins. Seuils FAST inchangés. Brief app : recalcul des cartes FAST, relance FORDEAD.</p>
+<p><strong>Prochaine étape</strong> : décisions restantes de Pascal (vague 8), puis 1.0.0. L’app consomme 135 des 313 exports et lit 21 symboles internes : ne rien retirer ni changer de signature parmi eux sans brief app (<code>specs/audit-1.0/exports-consommes-app.md</code>).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-clos-côté-cœur--production-ifn-par-petits-domaines-fay-herriot-spec-054">Chantier CLOS côté cœur — Production IFN par petits domaines, Fay-Herriot (spec 054)<a class="anchor" aria-label="anchor" href="#chantier-clos-c%C3%B4t%C3%A9-c%C5%93ur--production-ifn-par-petits-domaines-fay-herriot-spec-054"></a></h1>

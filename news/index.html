@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.214.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.215.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,23 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.215.0" id="nemeton-02150-2026-10-05">nemeton 0.215.0 (2026-10-05)<a class="anchor" aria-label="anchor" href="#nemeton-02150-2026-10-05"></a></h2>
+<div class="section level4">
+<h4 id="fixed--offset-radiométrique-sentinel-spec-0-215-0">Fixed — offset radiométrique Sentinel-2 (spec 055)<a class="anchor" aria-label="anchor" href="#fixed--offset-radiom%C3%A9trique-sentinel-spec-0-215-0"></a></h4>
+<ul><li>Depuis la <em>processing baseline</em> 04.00 (25/01/2022, archive retraitée comprise), les L2A portent <code>BOA_ADD_OFFSET = -1000</code> : comptes numériques +1000. <strong>Le cœur ne le retirait jamais</strong> : tous les indices des scènes récentes (NDVI, NBR, NDMI, NDRE) étaient écrasés (NDVI d’une forêt d’été ≈ 0,55 au lieu de 0,84), d’où une fausse chute au passage de 2022.</li>
+<li>
+<strong><code><a href="../reference/read_s2_band_raster.html">read_s2_band_raster()</a></code></strong> retire désormais l’offset (<code>max(DN - 1000, 0)</code>) des scènes concernées, repérées par leur identifiant (horodatage de traitement Planetary Computer, baseline <code>N####</code> ESA ; MUSCATE jamais). Nouvel argument <code>harmonize = TRUE</code> (<code>FALSE</code> rend les comptes bruts). Toutes les lectures du cache en héritent : <code><a href="../reference/read_s2_band_stack.html">read_s2_band_stack()</a></code>, <code><a href="../reference/build_index_stack.html">build_index_stack()</a></code>, <code><a href="../reference/extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code>, FAST. Le cache n’est pas réécrit.</li>
+<li>
+<strong>Caches de résultats</strong> : les clés des piles d’indices (<code>build_index_stack(cache_result = TRUE)</code>) et des cartes FAST (<code><a href="../reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code>, dossier <code>fast_raster/</code>) portent une version de radiométrie : les résultats biaisés ne sont plus relus.</li>
+<li>
+<strong>FORDEAD</strong> : le STAC local déclare <code>raster:bands.offset = -1000</code> sur les scènes concernées (lu par <code>stackstac</code>) ; une date dont les tuiles n’ont pas le même offset n’est plus mosaïquée.</li>
+<li>
+<strong>Mesure</strong> (projet Reconfort, 115 830 pixels) : <code>count</code> NDVI 2022-2025, 53,1 → 17,9 dates sous le seuil par pixel (témoin 2017-2021 : 22,6) ; <code>trend</code> NDMI, <strong>44,7 % → 5,5 %</strong> de pixels en alerte ; <code>trend</code> NDVI, 20,0 % → 1,3 %. <strong>Seuils FAST inchangés</strong> : c’étaient les données qui étaient fausses.</li>
+<li>
+<strong>Valeurs qui changent</strong> : cartes FAST, séries pixel, résultats FORDEAD. Recalculer les cartes FAST et relancer FORDEAD.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.214.0" id="nemeton-02140-2026-10-05">nemeton 0.214.0 (2026-10-05)<a class="anchor" aria-label="anchor" href="#nemeton-02140-2026-10-05"></a></h2>
 <p>Septième vague de l’audit de pré-version 1.0 : <strong>constats mineurs</strong>. Les ~111 constats « m » (bug, sécu, qualité) de <code>specs/audit-1.0/rapport-audit.md</code> revérifiés par quatre agents : environ 90 corrigés (chaque bug avec un test qui échouait avant), une quinzaine déjà corrigés, quelques-uns non retenus (stylistiques ou non reproduits), le reste en décision. <strong>Tous les constats du rapport portent désormais une marque.</strong> Aucune signature d’export consommé par l’app ne change.</p>

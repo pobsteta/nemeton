@@ -8,7 +8,7 @@ non-NULL \`cache_dir\`.
 ## Usage
 
 ``` r
-read_s2_band_raster(cache_dir, scene_id, band)
+read_s2_band_raster(cache_dir, scene_id, band, harmonize = TRUE)
 ```
 
 ## Arguments
@@ -31,6 +31,16 @@ read_s2_band_raster(cache_dir, scene_id, band)
   \`"B05"\` (Red-edge 1, 20 m) or \`"B8A"\` (NIR narrow, 20 m, both used
   by NDRE, spec 022).
 
+- harmonize:
+
+  Logical(1). Remove the L2A radiometric offset (\`BOA_ADD_OFFSET =
+  -1000\`) of scenes processed with baseline 04.00 or later (from
+  2022-01-25, reprocessed archive included), so that every scene is on
+  the pre-2022 digital-number scale: \`max(DN - 1000, 0)\`. The baseline
+  is read from \`scene_id\` (Planetary Computer processing timestamp,
+  ESA \`N####\` field; MUSCATE products carry no offset). Default
+  \`TRUE\`; \`FALSE\` returns the raw cached digital numbers. Spec 055.
+
 ## Value
 
 A 1-layer \[terra::SpatRaster\] in the source CRS (typically EPSG:32631
@@ -43,6 +53,13 @@ downstream.
 Returns \`NULL\` (not an error) when the file is absent — callers like
 \[read_s2_band_stack()\] use this to skip missing scenes silently and
 emit a single aggregated warning.
+
+## Radiometric offset
+
+Before 0.215.0 the offset was never removed: every index computed from
+scenes processed after 2022-01-25 was biased low (summer forest NDVI
+about 0.55 instead of 0.84), which produced a spurious drop in FAST maps
+and pixel series.
 
 ## See also
 
