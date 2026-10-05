@@ -12,6 +12,12 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.212.1\] - 2026-10-05
+
+### Fixed
+
+- T2 : repli N2 → T1 unité par unité (une unité à N2 = NA prend son T1).
+
 ## \[0.212.0\] - 2026-10-03
 
 ### Fixed

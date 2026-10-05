@@ -41,8 +41,11 @@ default value.
 **Primary method**: copy of the N2 (forest continuity/antiquity) column
 if present in units, clamped to 0-100.
 
-**Fallback**: T1 stand age (years) capped at 100. Older forests are
-assumed more stable.
+**Fallback**: T1 stand age (years) capped at 100 (`t1_values`, then a
+`T1` column). Older forests are assumed more stable.
+
+The fallback applies **unit by unit**: a unit whose N2 is `NA` takes its
+T1 age when known.
 
 A genuine change-rate indicator (e.g. a Sentinel-2 change detection) is
 not implemented in T2.

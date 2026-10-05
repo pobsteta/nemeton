@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.212.1" id="nemeton-02121-2026-10-05">nemeton 0.212.1 (2026-10-05)<a class="anchor" aria-label="anchor" href="#nemeton-02121-2026-10-05"></a></h2>
+<div class="section level4">
+<h4 id="fixed-0-212-1">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-212-1"></a></h4>
+<ul><li>
+<strong>T2 (stabilité)</strong> : le repli N2 → T1 se fait désormais <strong>unité par unité</strong>. La colonne N2 était prise entière dès qu’elle existait, NA compris : une unité à N2 = NA restait à T2 = NA même avec un âge T1 connu. Relevé en relisant la PR <a href="https://github.com/pobsteta/nemeton/issues/218" class="external-link">#218</a> de <code>nemetonshiny</code>, qui écartait une N2 toute NA pour s’en sortir (ce filtre reste inoffensif). Ordre inchangé : N2, puis <code>t1_values</code>, puis la colonne <code>T1</code>. Les T2 changent seulement là où N2 était NA et T1 connu.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.212.0" id="nemeton-02120-2026-10-03">nemeton 0.212.0 (2026-10-03)<a class="anchor" aria-label="anchor" href="#nemeton-02120-2026-10-03"></a></h2>
 <p>Cinquième vague de l’audit de pré-version 1.0 : <strong>seconde passe sur les calculs</strong>. Trente et un correctifs majeurs, menés par trois agents en parallèle. <strong>Beaucoup de valeurs changent</strong> : les projets doivent être recalculés. Les calibrages nouveaux sont signalés « à valider ».</p>

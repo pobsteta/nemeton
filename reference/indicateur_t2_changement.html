@@ -17,7 +17,7 @@ may duplicate T1."><meta property="og:image" content="https://pobsteta.github.io
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.212.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -163,8 +163,10 @@ unknown – no default value.</p>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><strong>Primary method</strong>: copy of the N2 (forest continuity/antiquity) column if
 present in units, clamped to 0-100.</p>
-<p><strong>Fallback</strong>: T1 stand age (years) capped at 100. Older forests are
-assumed more stable.</p>
+<p><strong>Fallback</strong>: T1 stand age (years) capped at 100 (<code>t1_values</code>, then a
+<code>T1</code> column). Older forests are assumed more stable.</p>
+<p>The fallback applies <strong>unit by unit</strong>: a unit whose N2 is <code>NA</code> takes
+its T1 age when known.</p>
 <p>A genuine change-rate indicator (e.g. a Sentinel-2 change detection) is
 not implemented in T2.</p>
     </div>
