@@ -105,7 +105,9 @@ get_famille_code <- function(col_name) {
 #'   "harmonic", "min" (v0.3.0+). Default "mean".
 #' @param weights Named list of weight vectors per family. E.g.,
 #'   \code{list(C = c(C1 = 0.6, C2 = 0.4), W = c(W1 = 0.5, W2 = 0.3, W3 = 0.2))}.
-#'   If NULL, equal weights are used.
+#'   If NULL, equal weights are used. Weights named by the raw indicator
+#'   (`C1`) also apply to its `_norm` column. They are used by "mean",
+#'   "weighted", "geometric" and "harmonic"; "min" ignores them with a warning.
 #' @param na.rm Logical. If TRUE, NA values are removed before aggregation. Default TRUE.
 #' @param family_codes Character vector. Family codes to process. Default NULL (auto-detect).
 #'
@@ -126,8 +128,8 @@ get_famille_code <- function(col_name) {
 #' \itemize{
 #'   \item mean: Simple arithmetic mean
 #'   \item weighted: Weighted average using provided weights
-#'   \item geometric: Geometric mean (product^(1/n))
-#'   \item harmonic: Harmonic mean (n / sum(1/x))
+#'   \item geometric: Weighted geometric mean (exp(sum(w log x)); product^(1/n) with equal weights)
+#'   \item harmonic: Weighted harmonic mean (1 / sum(w / x); n / sum(1/x) with equal weights)
 #'   \item min: Minimum value (worst-case, most conservative) - v0.3.0+
 #' }
 #'
@@ -295,6 +297,20 @@ create_family_index <- function(data,
     if (!is.null(weights) && fam %in% names(weights)) {
       fam_weights <- weights[[fam]]
 
+      # Les poids sont nommés par indicateur (`C1`), mais la colonne retenue
+      # peut être sa version `_norm` quand la brute manque : on rapproche par
+      # le nom de base, sinon les poids étaient ignorés (audit 1.0).
+      if (!is.null(names(fam_weights))) {
+        bases <- sub("_norm$", "", indicators)
+        alias <- !indicators %in% names(fam_weights) &
+          bases %in% names(fam_weights)
+        if (any(alias)) {
+          extra <- fam_weights[bases[alias]]
+          names(extra) <- indicators[alias]
+          fam_weights <- c(fam_weights, extra)
+        }
+      }
+
       # Ensure weights match indicators
       if (!all(indicators %in% names(fam_weights))) {
         warning(sprintf(
@@ -336,16 +352,21 @@ create_family_index <- function(data,
         sum(valid_values * valid_weights)
       })
     } else if (method == "geometric") {
-      # Geometric mean: (product of values)^(1/n)
+      # Weighted geometric mean: exp(sum(w * log(x)) / sum(w)). With equal
+      # weights it is (product of values)^(1/n). Les poids étaient ignorés
+      # jusqu'à l'audit 1.0.
       family_score <- apply(indicator_data, 1, function(row) {
         if (all(is.na(row))) {
           return(NA_real_)
         }
 
-        valid_values <- row[!is.na(row)]
+        valid_idx <- !is.na(row)
+        valid_values <- row[valid_idx]
         if (length(valid_values) == 0) {
           return(NA_real_)
         }
+        valid_weights <- fam_weights[valid_idx]
+        valid_weights <- valid_weights / sum(valid_weights)
 
         # Handle negative values
         if (any(valid_values <= 0)) {
@@ -355,19 +376,23 @@ create_family_index <- function(data,
           valid_values <- abs(valid_values)
         }
 
-        exp(mean(log(valid_values)))
+        exp(sum(valid_weights * log(valid_values)))
       })
     } else if (method == "harmonic") {
-      # Harmonic mean: n / sum(1/x)
+      # Weighted harmonic mean: sum(w) / sum(w / x). With equal weights it is
+      # n / sum(1/x). Les poids étaient ignorés jusqu'à l'audit 1.0.
       family_score <- apply(indicator_data, 1, function(row) {
         if (all(is.na(row))) {
           return(NA_real_)
         }
 
-        valid_values <- row[!is.na(row)]
+        valid_idx <- !is.na(row)
+        valid_values <- row[valid_idx]
         if (length(valid_values) == 0) {
           return(NA_real_)
         }
+        valid_weights <- fam_weights[valid_idx]
+        valid_weights <- valid_weights / sum(valid_weights)
 
         # Handle zeros
         if (any(valid_values == 0)) {
@@ -377,9 +402,15 @@ create_family_index <- function(data,
           valid_values[valid_values == 0] <- 1e-6
         }
 
-        length(valid_values) / sum(1 / valid_values)
+        1 / sum(valid_weights / valid_values)
       })
     } else if (method == "min") {
+      # Le minimum n'a pas de forme pondérée : on le signale plutôt que
+      # d'ignorer les poids en silence (audit 1.0).
+      if (!is.null(weights) && fam %in% names(weights)) {
+        cli::cli_warn(
+          "{.arg weights} for family {.val {fam}} are ignored by {.code method = \"min\"}.")
+      }
       # Minimum: worst-case indicator (most conservative)
       family_score <- apply(indicator_data, 1, function(row) {
         if (all(is.na(row))) {

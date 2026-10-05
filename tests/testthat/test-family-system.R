@@ -56,6 +56,38 @@ test_that("create_family_index supports custom weights per indicator", {
   expect_equal(result$famille_carbone, expected_C, tolerance = 0.01)
 })
 
+test_that("create_family_index : poids nommés par code court sur des colonnes _norm (audit 1.0)", {
+  # Seules les colonnes `_norm` existent : les poids `C1`/`C2` ne
+  # correspondaient plus et retombaient sur des poids égaux, avec un warning.
+  units <- create_test_units(n_features = 3)
+  units$C1_norm <- c(20, 40, 60)
+  units$C2_norm <- c(80, 60, 40)
+  expect_no_warning(
+    result <- suppressMessages(create_family_index(
+      units, weights = list(C = c(C1 = 0.75, C2 = 0.25))
+    ))
+  )
+  expect_equal(result$famille_carbone, c(20, 40, 60) * 0.75 + c(80, 60, 40) * 0.25)
+})
+
+test_that("create_family_index applique les poids en geometric et harmonic (audit 1.0)", {
+  units <- create_test_units(n_features = 3)
+  units$C1_norm <- c(20, 40, 60)
+  units$C2_norm <- c(80, 60, 40)
+  w <- list(C = c(C1 = 0.75, C2 = 0.25))
+  geo <- suppressMessages(create_family_index(units, method = "geometric", weights = w))
+  expect_equal(geo$famille_carbone,
+               exp(0.75 * log(c(20, 40, 60)) + 0.25 * log(c(80, 60, 40))))
+  har <- suppressMessages(create_family_index(units, method = "harmonic", weights = w))
+  expect_equal(har$famille_carbone,
+               1 / (0.75 / c(20, 40, 60) + 0.25 / c(80, 60, 40)))
+  # min n'a pas de forme pondérée : on le dit au lieu d'ignorer en silence.
+  expect_warning(
+    suppressMessages(create_family_index(units, method = "min", weights = w)),
+    "ignored"
+  )
+})
+
 test_that("create_family_index handles partial families", {
   skip_if_not_installed("terra")
   # Use clean test units without pre-existing indicator columns
