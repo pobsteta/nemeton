@@ -85,6 +85,18 @@ test_that("long winter gaps are flagged, short ones are not", {
   expect_equal(nrow(g0), 0L)
 })
 
+test_that("les dates masquées (NA) ne bouchent pas les trous d'interpolation (audit 1.0)", {
+  df <- make_series()
+  # Même trou de 90 jours, mais les lignes restent présentes, masquées
+  # (nuage) : NA sur les deux indices.
+  hole <- df$obs_date >= as.Date("2023-11-15") & df$obs_date <= as.Date("2024-02-15")
+  df$crswir_obs[hole] <- NA
+  df$crre_obs[hole]   <- NA
+  g <- prepare_pixel_dieback_series(df, gap_flag_days = 45L)$gaps
+  expect_gte(nrow(g), 1L)
+  expect_true(any(as.integer(g$to - g$from) > 45L))
+})
+
 test_that("attributes from the input series are carried over", {
   df <- make_series()
   attr(df, "species") <- "CHE"
