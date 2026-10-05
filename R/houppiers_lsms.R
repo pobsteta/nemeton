@@ -182,10 +182,13 @@ lsms_budget_pixels <- function(budget_s, spatialr = .LSMS_DEFAUTS$spatialr) {
   }
 
   if (!is.null(aoi_v)) {
+    # Emprises comparees dans le CRS de l'image (une AOI en degres face a une
+    # image en Lambert-93 ne l'intersecte jamais, a tort).
+    aoi_v <- terra::project(aoi_v, terra::crs(image))
     if (!terra::relate(terra::ext(image), terra::ext(aoi_v), "intersects")) {
       cli::cli_abort("The {.arg aoi} does not intersect the {.arg image}.")
     }
-    image <- terra::crop(image, terra::project(aoi_v, terra::crs(image)))
+    image <- terra::crop(image, aoi_v)
   }
 
   # Rééchantillonnage : le SEUL levier d'ordre de grandeur sur le coût. Passer
