@@ -579,9 +579,12 @@ test_that("read_fast_alert_raster: NDRE trend over two MGRS tiles mosaics (no re
     sid <- sprintf("S2A_MSIL2A_%sT103041_R108_%s_%sT180000", ymd, tile, ymd)
     d <- file.path(cache, .s2_safe_scene_id(sid))
     dir.create(d, recursive = TRUE, showWarnings = FALSE)
+    # Comptes numériques L2A, comme le vrai cache : réflectance x 10000,
+    # +1000 pour les scènes à baseline >= 04.00 (spec 055).
     mk <- function(val) terra::rast(xmin = 0, xmax = xmax, ymin = 0, ymax = 200,
                                     resolution = 20, crs = "EPSG:32631",
-                                    vals = val)
+                                    vals = round(val * 10000) -
+                                      .s2_boa_offset(sid))
     terra::writeRaster(mk(0.2), file.path(d, "B05.tif"),
                        filetype = "GTiff", overwrite = TRUE)
     terra::writeRaster(mk(b8a), file.path(d, "B8A.tif"),

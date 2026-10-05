@@ -524,6 +524,67 @@ stac_search_s2_theia_muscate <- function(bbox, start, end,
   }
 }
 
+# ---- Offset radiométrique L2A (spec 055) --------------------------------
+#
+# Depuis la processing baseline 04.00 de Sen2Cor (25/01/2022), les L2A portent
+# `BOA_ADD_OFFSET = -1000` : les comptes numériques valent +1000 par rapport
+# aux produits antérieurs, archive retraitée comprise (une scène de 2017
+# retraitée en 2024 l'a aussi). Non retiré, il écrase tous les indices
+# normalisés (NDVI forêt ≈ 0,55 au lieu de 0,84) et fabrique une fausse
+# chute au passage de 2022.
+#
+# Le cache ne garde que l'identifiant de scène, qui suffit :
+#   - Planetary Computer (6 champs) : horodatage de traitement >= 20220125 ;
+#   - ESA / CDSE (7 champs, `N####`) : baseline >= N0400 ;
+#   - MUSCATE / MAJA (`SENTINEL2…`) : jamais d'offset ;
+#   - autre : inconnu -> NA (l'appelant ne corrige pas et le signale).
+# Règle validée le 2026-10-05 sur 1 040 scènes de trois projets contre le
+# plancher des pixels sombres de B04 (1 036 concordances, 4 scènes sans
+# offset à plancher naturellement haut : neige, voile).
+.S2_BOA_OFFSET <- -1000
+.S2_BOA_OFFSET_SINCE <- "20220125"
+
+.s2_boa_offset <- function(scene_id) {
+  vapply(as.character(scene_id), function(sid) {
+    if (is.na(sid) || !nzchar(sid)) return(NA_real_)
+    if (grepl("^SENTINEL2", sid)) return(0)
+    parts <- strsplit(sub("\\.SAFE$", "", sid), "_", fixed = TRUE)[[1]]
+    if (!length(parts) || !grepl("^S2[A-D]$", parts[1L]) ||
+        !any(grepl("^MSIL2A$", parts))) {
+      return(NA_real_)
+    }
+    baseline <- parts[grepl("^N[0-9]{4}$", parts)]
+    if (length(baseline) == 1L) {
+      return(if (as.integer(substring(baseline, 2L)) >= 400L) .S2_BOA_OFFSET else 0)
+    }
+    ts <- parts[grepl("^[0-9]{8}T[0-9]{6}$", parts)]
+    if (length(ts) >= 2L) {
+      proc_day <- substr(ts[length(ts)], 1L, 8L)
+      return(if (proc_day >= .S2_BOA_OFFSET_SINCE) .S2_BOA_OFFSET else 0)
+    }
+    NA_real_
+  }, numeric(1), USE.NAMES = FALSE)
+}
+
+# Retire l'offset d'une bande lue du cache : max(DN - 1000, 0), la convention
+# de Planetary Computer (`clip(1000) - 1000`). Le nodata (0 ou NA) reste
+# nodata. Offset inconnu : bande rendue telle quelle, avertissement une fois
+# par session et par format.
+.s2_harmonize_band <- function(r, scene_id) {
+  off <- .s2_boa_offset(scene_id)
+  if (is.na(off)) {
+    rlang::warn(
+      sprintf(paste0("Sentinel-2 scene id %s: processing baseline not ",
+                     "recognised, BOA offset not removed."), scene_id),
+      .frequency = "once",
+      .frequency_id = paste0("s2_boa_unknown_", sub("_.*$", "", scene_id)))
+    return(r)
+  }
+  if (off == 0) return(r)
+  # Le nodata 0 donne -1000, ramené à 0 : il reste nodata. Un NA reste NA.
+  terra::clamp(r + off, lower = 0, values = TRUE)
+}
+
 # Drop Sentinel-2 reprocessing duplicates from a scenes data.frame,
 # keeping for each acquisition the row with the most recent
 # processing baseline. Rows whose `scene_id` is not a recognisable

@@ -232,7 +232,16 @@ PostgreSQL ; l'app le lit via `sf`, sans impact constaté).
 (offset S2 en premier : il fausse les indices des scènes post-2022), la
 recalibration éventuelle, puis le recalcul des projets côté app.
 
-**Prochaine étape** : décisions de Pascal (vague 8), puis 1.0.0. L'app consomme 135
+**Journal** — *2026-10-05* (**v0.215.0**) : **offset radiométrique S2**
+corrigé (spec 055, décision Pascal « commence par l'offset »). Règle par
+identifiant de scène validée sur 1 040 scènes ; correction à la lecture du
+cache (`read_s2_band_raster(harmonize = TRUE)`), clé du cache des piles
+versionnée, offset déclaré dans le STAC local de FORDEAD (vérifié de bout en
+bout avec `stackstac`). Sur Reconfort, `trend` NDMI passe de 44,7 % à 5,5 %
+de pixels en alerte : l'offset fabriquait l'essentiel des déclins. Seuils FAST
+inchangés. Brief app : recalcul des cartes FAST, relance FORDEAD.
+
+**Prochaine étape** : décisions restantes de Pascal (vague 8), puis 1.0.0. L'app consomme 135
 des 313 exports et lit 21 symboles internes : ne rien retirer ni changer de
 signature parmi eux sans brief app (`specs/audit-1.0/exports-consommes-app.md`).
 

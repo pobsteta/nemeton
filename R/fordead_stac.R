@@ -315,6 +315,12 @@ NULL
     sid        <- sc$sid
     dt         <- sc$dt
     band_paths <- sc$band_paths
+    boa_offset <- sc$boa_offset %||% .s2_boa_offset(sid)
+    if (is.na(boa_offset)) {
+      cli::cli_warn(
+        "FORDEAD: processing baseline of {.val {sid}} not recognised, radiometric offset not declared."
+      )
+    }
 
     iso_dt <- pydt$datetime$fromisoformat(
       paste0(format(dt, "%Y-%m-%d"), "T00:00:00+00:00")
@@ -332,6 +338,12 @@ NULL
       # Reads the COG header (no pixel read) and returns a dict with
       # proj:* + raster:* fields needed by simplestac's filter_assets.
       asset_info <- simplestac_local$stac_asset_info_from_raster(href)
+      # Offset L2A (spec 055) : FORDEAD lit par stackstac (`rescale = True`),
+      # qui applique `raster:bands.offset`. Sans lui, le modèle ajusté sur les
+      # années sans offset prédisait sur des scènes biaisées de +1000.
+      if (!is.na(boa_offset) && boa_offset != 0) {
+        asset_info <- .fordead_py_helpers()$set_boa_offset(asset_info, boa_offset)
+      }
       asset <- pystac$Asset$from_dict(asset_info)
       item$add_asset(b, asset)
     }
@@ -379,6 +391,24 @@ NULL
     return(grp[[garde]])
   }
 
+  # Offset radiométrique L2A (spec 055) : déclaré par item dans le STAC
+  # local, donc commun à toutes les scènes mosaïquées. Deux traitements
+  # différents le même jour (une tuile retraitée, l'autre non) ne se
+  # mosaïquent pas : on garde la scène la plus étendue, comme pour deux CRS.
+  offs <- .s2_boa_offset(sids)
+  if (length(unique(offs)) > 1L) {
+    aires <- vapply(r1, function(r) {
+      e <- terra::ext(r)
+      (terra::xmax(e) - terra::xmin(e)) * (terra::ymax(e) - terra::ymin(e))
+    }, numeric(1))
+    garde <- which.max(aires)
+    cli::cli_warn(c(
+      "FORDEAD: {length(grp)} scenes on {format(grp[[1L]]$dt)} have different radiometric offsets and cannot be mosaicked.",
+      i = "Kept {.val {sids[garde]}}; dropped {.val {sids[-garde]}}."
+    ))
+    return(grp[[garde]])
+  }
+
   d <- file.path(tempdir(), "fordead_mosaic",
                  paste0(format(grp[[1L]]$dt, "%Y%m%d"), "_",
                         substr(rlang::hash(sort(sids)), 1L, 12L)))
@@ -392,7 +422,7 @@ NULL
     out
   }, character(1))
   list(sid = paste(sids, collapse = "+"), dt = grp[[1L]]$dt,
-       band_paths = vrts)
+       band_paths = vrts, boa_offset = offs[[1L]])
 }
 
 
@@ -427,3 +457,27 @@ NULL
   }
   invisible(TRUE)
 }
+
+
+# Petit module Python (spec 055) : pose l'offset L2A sur le `raster:bands` d'un
+# dict d'asset produit par simplestac. Défini une fois par session.
+.fordead_py_helpers <- local({
+  mod <- NULL
+  function() {
+    if (is.null(mod)) {
+      mod <<- reticulate::py_run_string("
+def set_boa_offset(info, off):
+    rbs = info.get('raster:bands') or [{}]
+    for rb in rbs:
+        rb['offset'] = float(rb.get('offset') or 0) + float(off)
+        if rb.get('scale') is None:
+            rb['scale'] = 1.0
+        if rb.get('nodata') is None:
+            rb['nodata'] = 0
+    info['raster:bands'] = rbs
+    return info
+", local = TRUE, convert = FALSE)
+    }
+    mod
+  }
+})

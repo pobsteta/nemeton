@@ -348,7 +348,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 
 **R/monitoring.R, R/sentinel2_cache.R**
 - **M bug** `monitoring.R:727-735`, `sentinel2_cache.R:139-145` — Le saut des scènes en cache ne vérifie pas l'emprise (zones `_feu`, `_res`, `_tot`). **[corrigé 0.209.0]**
-- **M bug (à confirmer)** `pixel-map.R:~286-302` — L'offset radiométrique S2 `BOA_ADD_OFFSET = -1000` (baseline ≥ 04.00, depuis 2022) n'est pas géré : risque de faux déclin général du NDVI. **[confirmé — décision : correction par source, seuils FAST]**
+- **M bug (à confirmer)** `pixel-map.R:~286-302` — L'offset radiométrique S2 `BOA_ADD_OFFSET = -1000` (baseline ≥ 04.00, depuis 2022) n'est pas géré : risque de faux déclin général du NDVI. **[corrigé 0.215.0 — spec 055]**
 - **m sécu** `1112, 1390` — L'URL signée (avec son jeton) part dans les événements et les logs. **[corrigé 0.209.0]**
 - **m bug** `366` — Une erreur DB est confondue avec « zone sans géométrie ». **[corrigé 0.214.0]**
 - **m qualité** `1446` — Le retour de `file.rename` n'est pas vérifié. **[corrigé 0.214.0]**
