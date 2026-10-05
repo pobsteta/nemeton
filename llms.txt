@@ -601,6 +601,8 @@ Transformer et combiner les indicateurs
   : Create composite index from multiple indicators
 - [`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)
   : Create Family Composite Indices
+- [`aggregate_family_scores()`](https://pobsteta.github.io/nemeton/reference/aggregate_family_scores.md)
+  : Aggregate family scores over a set of units
 - [`invert_indicator()`](https://pobsteta.github.io/nemeton/reference/invert_indicator.md)
   : Invert indicator values
 - [`migrer_colonnes_l()`](https://pobsteta.github.io/nemeton/reference/migrer_colonnes_l.md)
@@ -767,6 +769,9 @@ de connaissances, helpers CHM / echantillonnage et utilitaires.
 - [`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md)
   : Build a multi-temporal NDVI or NBR stack from cached Sentinel-2
   bands
+
+- [`build_ndvi_season_composite()`](https://pobsteta.github.io/nemeton/reference/build_ndvi_season_composite.md)
+  : Season NDVI composite from cached Sentinel-2 scenes
 
 - [`build_knowledge_corpus()`](https://pobsteta.github.io/nemeton/reference/build_knowledge_corpus.md)
   : Build (or grow) the RAG knowledge base from the manifest
@@ -1288,6 +1293,9 @@ Primitives et indicateurs recents (a recategoriser par famille/theme)
 
 - [`eobs_monthly_climatology()`](https://pobsteta.github.io/nemeton/reference/eobs_monthly_climatology.md)
   : Monthly E-OBS climatology at a point (month -\> value)
+
+- [`climate_ombrothermic_indices()`](https://pobsteta.github.io/nemeton/reference/climate_ombrothermic_indices.md)
+  : Gaussen-Bagnouls dry months and De Martonne aridity index
 
 - [`eobs_trend_fit()`](https://pobsteta.github.io/nemeton/reference/eobs_trend_fit.md)
   : Linear trend of an E-OBS summer series (per decade)

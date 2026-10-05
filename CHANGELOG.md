@@ -12,6 +12,15 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[0.216.0\] - 2026-10-05
+
+### Added
+
+- [`build_ndvi_season_composite()`](https://pobsteta.github.io/nemeton/reference/build_ndvi_season_composite.md),
+  [`climate_ombrothermic_indices()`](https://pobsteta.github.io/nemeton/reference/climate_ombrothermic_indices.md),
+  [`aggregate_family_scores()`](https://pobsteta.github.io/nemeton/reference/aggregate_family_scores.md)
+  (calculs rapatriés de l’app, audit 1.0 n° 64-66).
+
 ## \[0.215.0\] - 2026-10-05
 
 ### Added

@@ -1,5 +1,27 @@
 # Changelog
 
+## nemeton 0.216.0 (2026-10-05)
+
+#### Added — logique métier rapatriée de l’app (audit 1.0 de l’app, n° 64-66)
+
+Trois calculs que `nemetonshiny` faisait lui-même, contre la règle «
+aucune logique métier dans l’app », passent dans le cœur :
+
+- **[`build_ndvi_season_composite()`](https://pobsteta.github.io/nemeton/reference/build_ndvi_season_composite.md)**
+  : composite NDVI Sentinel-2 qui nourrit C2 — scènes de saison (1er
+  juin - 30 septembre), 12 plus récentes au plus, médiane par pixel,
+  bornage à \[0, 1\]. Hérite du retrait de l’offset L2A (0.215.0).
+- **[`climate_ombrothermic_indices()`](https://pobsteta.github.io/nemeton/reference/climate_ombrothermic_indices.md)**
+  : mois secs de Gaussen-Bagnouls (`P < 2 T`) et indice de De Martonne
+  (`sum(P) / (mean(T) + 10)`), sûrs face aux NA.
+- **[`aggregate_family_scores()`](https://pobsteta.github.io/nemeton/reference/aggregate_family_scores.md)**
+  : agrégation des scores de famille sur les unités, **pondérée par la
+  surface** par défaut (`surface_m2`, sinon la géométrie) ; sans surface
+  exploitable, moyenne simple avec avertissement. Quand l’app
+  l’adoptera, **les scores affichés des projets changeront** : une UGF
+  de 0,5 ha ne pèse plus autant qu’une de 50 ha. Les valeurs des
+  indicateurs, elles, ne changent pas.
+
 ## nemeton 0.215.0 (2026-10-05)
 
 #### Fixed — offset radiométrique Sentinel-2 (spec 055)

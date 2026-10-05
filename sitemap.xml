@@ -82,6 +82,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_VALIDITY_DEPARTMENTS.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_VALIDITY_SPECIES.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/a5_applicabilite.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/aggregate_family_scores.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/aggregate_plot_metrics.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/attach_field_data_to_units.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/awc_saxton_rawls.html</loc></url>
@@ -94,6 +95,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/build_foret_ancienne_mask.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/build_index_stack.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/build_knowledge_corpus.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/build_ndvi_season_composite.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/build_project_monitoring_zones.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/build_safran_stations.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/calculate_change_rate.html</loc></url>
@@ -105,6 +107,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/check_fordead_validity.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/check_reconfort_validity.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/classify_disturbance.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/climate_ombrothermic_indices.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/cluster_parcels.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/completer_volume_ifn.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/compute_dtm_chm_from_laz.html</loc></url>

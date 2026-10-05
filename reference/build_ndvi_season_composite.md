@@ -1,0 +1,76 @@
+# Season NDVI composite from cached Sentinel-2 scenes
+
+Builds the single-layer NDVI composite that feeds indicator C2 from the
+on-disk Sentinel-2 cache: scenes of the growing season (1 June - 30
+September by default) are selected, at most the \`max_scenes\` most
+recent are kept, their NDVI is computed by \[build_index_stack()\] and
+reduced to the per-pixel \*\*median\*\*, then clamped to \`\[0, 1\]\`.
+
+The median rather than the mean: a residual cloud veil is an outlier,
+not centred noise. The lower bound 0 matches the ortho-derived NDVI: a
+negative value means water or bare soil and would drag the unit mean
+down. Outside the season, a broadleaf NDVI describes a bare crown, a
+different quantity; when no scene falls in the season, every scene is
+used.
+
+Bands are read through \[read_s2_band_raster()\], so the L2A radiometric
+offset of scenes processed since 2022-01-25 is removed (spec 055).
+
+## Usage
+
+``` r
+build_ndvi_season_composite(
+  cache_dir,
+  scenes = NULL,
+  mask_polygon = NULL,
+  season_doy = c(152L, 273L),
+  max_scenes = 12L,
+  clamp = c(0, 1)
+)
+```
+
+## Arguments
+
+- cache_dir:
+
+  Character(1). Sentinel-2 cache root, i.e.
+  \`\<project\>/cache/layers/sentinel2\` (one sub-directory per scene).
+
+- scenes:
+
+  Optional \`data.frame\` with \`scene_id\` and \`obs_date\`. \`NULL\`
+  (default) lists the populated scene directories of \`cache_dir\`.
+
+- mask_polygon:
+
+  Optional \`sf\`/\`sfc\` polygon; pixels outside become NA.
+
+- season_doy:
+
+  Integer(2). Day-of-year window of the growing season. Default \`c(152,
+  273)\` (1 June - 30 September).
+
+- max_scenes:
+
+  Integer(1). Maximum number of (most recent) scenes kept. Default 12.
+
+- clamp:
+
+  Numeric(2) or \`NULL\`. Bounds applied to the composite. Default
+  \`c(0, 1)\`; \`NULL\` disables clamping.
+
+## Value
+
+A single-layer \[terra::SpatRaster\] named \`"ndvi"\`, with attribute
+\`"scenes"\` (the \`scene_id\` / \`obs_date\` used), or \`NULL\` when no
+scene is usable.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+ndvi <- build_ndvi_season_composite("project/cache/layers/sentinel2",
+                                    mask_polygon = aoi)
+attr(ndvi, "scenes")
+} # }
+```

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.215.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,19 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.216.0" id="nemeton-02160-2026-10-05">nemeton 0.216.0 (2026-10-05)<a class="anchor" aria-label="anchor" href="#nemeton-02160-2026-10-05"></a></h2>
+<div class="section level4">
+<h4 id="added--logique-métier-rapatriée-de-lapp-audit-de-lapp-n-0-216-0">Added — logique métier rapatriée de l’app (audit 1.0 de l’app, n° 64-66)<a class="anchor" aria-label="anchor" href="#added--logique-m%C3%A9tier-rapatri%C3%A9e-de-lapp-audit-de-lapp-n-0-216-0"></a></h4>
+<p>Trois calculs que <code>nemetonshiny</code> faisait lui-même, contre la règle « aucune logique métier dans l’app », passent dans le cœur :</p>
+<ul><li>
+<strong><code><a href="../reference/build_ndvi_season_composite.html">build_ndvi_season_composite()</a></code></strong> : composite NDVI Sentinel-2 qui nourrit C2 — scènes de saison (1er juin - 30 septembre), 12 plus récentes au plus, médiane par pixel, bornage à [0, 1]. Hérite du retrait de l’offset L2A (0.215.0).</li>
+<li>
+<strong><code><a href="../reference/climate_ombrothermic_indices.html">climate_ombrothermic_indices()</a></code></strong> : mois secs de Gaussen-Bagnouls (<code>P &lt; 2 T</code>) et indice de De Martonne (<code>sum(P) / (mean(T) + 10)</code>), sûrs face aux NA.</li>
+<li>
+<strong><code><a href="../reference/aggregate_family_scores.html">aggregate_family_scores()</a></code></strong> : agrégation des scores de famille sur les unités, <strong>pondérée par la surface</strong> par défaut (<code>surface_m2</code>, sinon la géométrie) ; sans surface exploitable, moyenne simple avec avertissement. Quand l’app l’adoptera, <strong>les scores affichés des projets changeront</strong> : une UGF de 0,5 ha ne pèse plus autant qu’une de 50 ha. Les valeurs des indicateurs, elles, ne changent pas.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.215.0" id="nemeton-02150-2026-10-05">nemeton 0.215.0 (2026-10-05)<a class="anchor" aria-label="anchor" href="#nemeton-02150-2026-10-05"></a></h2>
 <div class="section level4">
