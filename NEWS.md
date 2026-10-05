@@ -1,3 +1,70 @@
+# nemeton 0.213.0 (2026-10-05)
+
+Sixième vague de l'audit de pré-version 1.0 : **reliquat des constats
+majeurs**. Les 53 constats « M » encore sans marque dans
+`specs/audit-1.0/rapport-audit.md` ont été revérifiés un à un contre le code
+(quatre agents en parallèle) : 34 étaient déjà corrigés (surtout en 0.212.0,
+sans mise à jour du rapport), 14 le sont ici avec un test qui échouait avant,
+5 attendent une décision (voir « Décisions ouvertes »). Le rapport porte
+désormais une marque sur chacun.
+
+### Changed
+
+- **Erreurs des indicateurs** : toutes les erreurs de validation passent par
+  `cli::cli_abort()` (classe `rlang_error`), au lieu d'un mélange `stop()` /
+  `cli_abort()`. Le texte est inchangé ; l'erreur de
+  `extract_indicator_value()` tient sur deux lignes. Les `stop()` internes de
+  R1, rattrapés par le repli et tracés dans `r1_fallback_reason`, restent.
+- **`lang`** est documenté comme inutilisé dans les indicateurs qui
+  l'acceptent (E1, E2, N1-N3, P1-P3, S1-S3).
+- **`run_fordead_dieback()`** : un échec du post-traitement ou de l'insertion
+  des alertes rend `status = "error"` avec un `message` (et l'événement
+  `fordead:error`), au lieu de « success ». Masque et bundle restent persistés.
+
+### Fixed
+
+- **`create_composite_index(aggregation = "geometric_mean", na.rm = TRUE)`** :
+  les poids suivent leurs indicateurs et sont renormalisés après retrait des
+  NA (valeur fausse et warning de recyclage avant). Avec `na.rm = FALSE`, un NA
+  rend NA.
+- **FORDEAD, AOI à cheval sur deux tuiles MGRS** : une seule observation par
+  date, mosaïquée (VRT par bande), au lieu de deux items de même identifiant
+  couvrant chacun une demi-AOI. **Les sorties FORDEAD peuvent changer sur ces
+  zones** (villards par exemple).
+- **`run_reconfort_dieback()`** : `s2_year` postérieur à l'année en cours →
+  erreur ; saison pas encore close → avertissement ; la date de déclenchement
+  des alertes ne dépasse plus le jour du run (elle valait `s2_year-12-31`).
+- **RECONFORT** : `conda run --no-capture-output`, la sortie Python n'est plus
+  perdue quand le scope est tué.
+- **`segment_houppiers(algorithme = "lsms")`** sans CHM : l'AOI est reprojetée
+  dans le CRS de l'image (abandon « does not intersect » à tort avant).
+- **`sanitize_chm()`** compte les cellules par blocs, sans charger le CHM en
+  mémoire (jusqu'à cinq copies avant) ; valeurs inchangées.
+- **`build_knowledge_corpus()`** : un `local_path` introuvable est nommé dans
+  le rapport, avec la racine du corpus et `NEMETON_CORPUS_ROOT`.
+- **Documentation** : `compute_general_index()` décrite comme moyenne simple en
+  NDP uniforme (poids Fibonacci égaux) ; section « Column pairing » de
+  `indicator_families()` alignée sur le décroisement F de la 0.182.0.
+- **Tests hermétiques** : la suite n'initialise plus Python et ne télécharge
+  plus de CPython (`test-fordead-pipeline.R` mocké,
+  `RETICULATE_USE_MANAGED_VENV=no`).
+
+### Décisions ouvertes (Pascal)
+
+- **Offset radiométrique Sentinel-2** (`BOA_ADD_OFFSET = -1000`, baseline
+  ≥ 04.00, scènes traitées après le 25/01/2022) : **confirmé, non corrigé**.
+  Les indices (NDVI, NBR…) des scènes récentes sont calculés sur les comptes
+  bruts : NDVI d'un pixel forestier en été ≈ 0,49 au lieu de 0,84, d'où une
+  fausse chute au passage de 2022 (FAST, cartes pixel, séries). La correction
+  dépend de la source (Planetary / CDSE : offset ; MUSCATE : non) et déplace
+  les seuils FAST.
+- **Contrat de retour** des indicateurs (vecteur ou `sf`) et retrait de `lang`.
+- **`.onLoad`** règle `memfrac` / `memmax` de terra (garde-fou OOM, contraire à
+  la politique CRAN).
+- **Données des tutoriels 07 et 08** (`aba.model`, `coregistration`) exclues du
+  build.
+- **Corpus RAG** : emplacement des PDF pour une installation hors dépôt.
+
 # nemeton 0.212.2 (2026-10-05)
 
 ### Fixed

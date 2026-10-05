@@ -90,7 +90,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **C bug** — `%||%` est utilisé dans 29 fichiers (`ndp.R:274`, `visualization.R:175`, `indicators-naturalness.R:374`…), sans définition ni `importFrom(rlang, "%||%")`. Sous R < 4.4 : « could not find function ». → importer depuis rlang. **[corrigé 0.208.0]**
 
 **R/normalization.R**
-- **M bug** `390-405` — Moyenne géométrique avec `na.rm` : les poids ne sont pas réalignés, d'où 57,6 au lieu de 60,3 et un warning de recyclage.
+- **M bug** `390-405` — Moyenne géométrique avec `na.rm` : les poids ne sont pas réalignés, d'où 57,6 au lieu de 60,3 et un warning de recyclage. **[corrigé 0.213.0]**
 - **M bug** `19-21, 84-87` — `by_family` est documenté mais pas implémenté, et normalise sur place → double normalisation. **[corrigé 0.208.0]**
 - **M qualité** `541-564` — Le roxygen de `normalize_indicator()` est rattaché à `.NORMALIZE_RULED` (perte de l'export au prochain `document()`). **[corrigé 0.211.0]**
 - **m bug** `208-214` — Un seul NA avec `na.rm = FALSE` → tout le vecteur vaut 50.
@@ -104,21 +104,21 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m qualité** `405` — `detect_indicator_family()` est défini deux fois (avec `utils.R:646`) et code mort ; `get_family_name()` diverge de `INDICATOR_FAMILIES`.
 
 **R/ndp.R**
-- **M qualité** `575-578, 633-637` — `compute_general_index()` est documentée « Fibonacci-weighted » mais calcule `mean()`. CLAUDE.md dit la même chose à tort.
+- **M qualité** `575-578, 633-637` — `compute_general_index()` est documentée « Fibonacci-weighted » mais calcule `mean()`. CLAUDE.md dit la même chose à tort. **[corrigé 0.213.0 — doc]**
 - **m bug** `274-297` — L'attribut `field_plots_count = NA` fait planter `detect_ndp()`.
 - **m qualité** `673-702` — `compute_general_index_mixed()` renvoie silencieusement NA sur des noms absents.
 
 **R/indicator-config.R**
-- **M qualité** `564-575, 813-845` — La doc « Column pairing » inverse encore F1 et F2 (faux depuis 0.182.0), et le `.Rd` aussi.
+- **M qualité** `564-575, 813-845` — La doc « Column pairing » inverse encore F1 et F2 (faux depuis 0.182.0), et le `.Rd` aussi. **[corrigé 0.213.0 — doc]**
 
 **R/visualization.R**
-- **M bug** `632, 749-762, 882-897` — `nemeton_radar()` refait un min-max entre unités en mode famille : une seule unité donne 50 partout, et 90/50/10 devient 100/50/0.
+- **M bug** `632, 749-762, 882-897` — `nemeton_radar()` refait un min-max entre unités en mode famille : une seule unité donne 50 partout, et 90/50/10 devient 100/50/0. **[corrigé 0.212.0]**
 - **m bug** `514-523` — `plot_difference_map()` soustrait par position, sans jointure.
 - **m qualité** `163, 197, 435, 530` — `geom_sf(size =)` est déprécié (ggplot2 3.4).
 - **m qualité** `141` — La palette YlOrRd sur `famille_risque` suggère l'inverse du sens (haut = faible risque).
 
 **R/temporal.R**
-- **M bug** `240-266` — `calculate_change_rate()` soustrait par position ; l'alignement par identifiant est calculé mais pas utilisé.
+- **M bug** `240-266` — `calculate_change_rate()` soustrait par position ; l'alignement par identifiant est calculé mais pas utilisé. **[corrigé 0.212.0]**
 - **m bug** `103, 182-199` — Des `periods` non nommés écrasent les colonnes.
 - **m qualité** `47` — Défaut `id_column = "parcel_id"` alors que les unités portent `nemeton_id`.
 
@@ -127,19 +127,19 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m bug** `165-169` — Avec n = 2, `2:1` itère à rebours ; aucune graine n'est fixée.
 
 **R/analysis-tradeoff.R**
-- **M bug** `228-232` — `size = aes(...)` est passé en paramètre, pas en mapping : le rendu plante.
+- **M bug** `228-232` — `size = aes(...)` est passé en paramètre, pas en mapping : le rendu plante. **[corrigé 0.212.0]**
 
 **R/analysis-correlation.R**
 - **m bug** `336-337` — `get_famille_code()` renvoie NA, donc `%||%` ne retombe jamais et la heatmap affiche « NA ».
 - **m qualité** `343, 354` — `tools::` n'est pas déclaré ; `viridisLite` est appelé sans `requireNamespace`.
 
 **R/utils.R**
-- **M bug** `1271` — `class_map[[mode_class]]` lève « subscript out of bounds » au lieu de renvoyer NA.
+- **M bug** `1271` — `class_map[[mode_class]]` lève « subscript out of bounds » au lieu de renvoyer NA. **[corrigé 0.212.0]**
 - **m qualité** `107` — `parallel` n'est pas déclaré ; `detectCores()` peut valoir NA.
 - **m sécu** `1304-1315` — `get_global_cache_dir()` crée un dossier utilisateur dès l'appel → `tools::R_user_dir()`.
 
 **R/zzz.R**
-- **M qualité** `50-74` — `.onLoad` modifie les options globales de terra (`memfrac`, `memmax`) au chargement.
+- **M qualité** `50-74` — `.onLoad` modifie les options globales de terra (`memfrac`, `memmax`) au chargement. **[décision — vague 6]**
 
 **R/nemeton-package.R, DESCRIPTION**
 - **m qualité** — Page du package obsolète (« B/R planned for v0.3.0 », F1 et F2 inversés, branche `001-mvp`), DESCRIPTION mentionne encore « Includes nemetonApp », `TSP` et `lidR` sont en double dans Suggests, `stats`/`utils`/`graphics`/`tools`/`parallel`/`methods` ne sont pas déclarés.
@@ -155,43 +155,43 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 
 **R/indicators-biodiversity.R**
 - **C bug** `413-481` — B2 : `(i %% 4)` dépend du numéro de ligne, le Shannon vaut toujours 0, le score est calculé sur le lot **[vérifié]**. **[corrigé 0.208.0]**
-- **M bug** `744-753` — `costDist(target = SpatRaster)` lève une erreur, donc la composante coût de B3 vaut toujours 50.
-- **M bug** `852-855` — `.b3_local` exclut la distance 0 : une parcelle en forêt prend la distance au polygone suivant.
-- **M bug** `609-681, 737-740` — Les composantes de B3 valent 50 en cas d'erreur, et en EPSG:4326 la grille fait 25 degrés.
-- **M bug** `211-217` — B1 rapporte le nombre de statuts au maximum du lot.
+- **M bug** `744-753` — `costDist(target = SpatRaster)` lève une erreur, donc la composante coût de B3 vaut toujours 50. **[corrigé 0.212.0]**
+- **M bug** `852-855` — `.b3_local` exclut la distance 0 : une parcelle en forêt prend la distance au polygone suivant. **[corrigé 0.212.0]**
+- **M bug** `609-681, 737-740` — Les composantes de B3 valent 50 en cas d'erreur, et en EPSG:4326 la grille fait 25 degrés. **[corrigé 0.212.0]**
+- **M bug** `211-217` — B1 rapporte le nombre de statuts au maximum du lot. **[corrigé 0.212.0]**
 - **m qualité** `20-26, 92-99, 171` — `source = "wfs"` et `protection_types` ne servent à rien ; code mort.
 
 **R/indicators-risk.R**
 - **C bug** `718-738` — R3 utilise un climat simulé et `set.seed(42)` global **[vérifié]**. **[corrigé 0.208.0]**
-- **M bug** `972` — L'appétence de R4 est lue sur le premier polygone intersecté, pas sur le polygone majoritaire.
-- **M bug** `283-308` — Repli R1 : le proxy NDVI a un poids nul, et il reste un facteur constant de 50.
+- **M bug** `972` — L'appétence de R4 est lue sur le premier polygone intersecté, pas sur le polygone majoritaire. **[corrigé 0.212.0]**
+- **M bug** `283-308` — Repli R1 : le proxy NDVI a un poids nul, et il reste un facteur constant de 50. **[corrigé 0.212.0]**
 - **M qualité** `509-618` — Le roxygen de R3 est rattaché à `.R3_BILJOU_BOUNDS`. **[corrigé 0.211.0]**
 - **m bug** `489-491, 796-799` — TRI et TWI sont normalisés par le max de l'emprise ; un gibier NA est remplacé par 50 ; les messages disent « 50 » alors que la valeur est NA.
 
 **R/indicators-families.R**
 - **M bug** `48-60` — Le cache fichier du vent NASA POWER n'est pas indexé par la position : le premier projet est relu pour tous. **[corrigé 0.209.0]**
-- **M bug** `1713-1722, 1690, 1876` — La nomenclature OSO est incohérente entre L1, L2, A1, RECONFORT et FR.json (L2 calcule la cohésion du bâti).
-- **M bug** `735-853` — W2 additionne quatre sources qui se recouvrent au lieu de faire une union des masques.
-- **M bug** `620-623` — W1 vaut 0 sans couche de cours d'eau, au lieu de NA.
-- **M bug** `366` — `density` est une fraction 0-1 dans C1 et des tiges/ha dans P1.
+- **M bug** `1713-1722, 1690, 1876` — La nomenclature OSO est incohérente entre L1, L2, A1, RECONFORT et FR.json (L2 calcule la cohésion du bâti). **[corrigé 0.212.0 ; map_oso_class 0.212.2]**
+- **M bug** `735-853` — W2 additionne quatre sources qui se recouvrent au lieu de faire une union des masques. **[corrigé 0.212.0]**
+- **M bug** `620-623` — W1 vaut 0 sans couche de cours d'eau, au lieu de NA. **[corrigé 0.212.0]**
+- **M bug** `366` — `density` est une fraction 0-1 dans C1 et des tiges/ha dans P1. **[corrigé 0.212.0]**
 - **m bug** `1230-1278` — F1 : surface NA comptée au dénominateur, classes non remises à l'échelle, min-max relatif au lot.
 - **m qualité** `1690` — `forest_values` de L1 n'est pas utilisé ; l'« auto-detect » de W2 n'existe pas ; les fenêtres TWI de W3 et F2 divergent.
 
 **R/indicators-frost.R**
-- **M bug** `22-29` — Avec une seule unité, `vapply` renvoie un vecteur et `rowMeans` plante (R7).
+- **M bug** `22-29` — Avec une seule unité, `vapply` renvoie un vecteur et `rowMeans` plante (R7). **[corrigé 0.212.0]**
 - **m bug** `100, 112` — `extract` sans `exact` : une petite UGF sur la grille SAFRAN rend NA.
 
 **R/indicators-energy.R**
-- **M bug** `268-279` — E2 additionne un stock (m³/ha) à un flux annuel.
-- **M bug (à confirmer)** `182` — Le facteur `× 0.5` sur une densité déjà sèche donnerait un E1 sous-estimé d'un facteur 2.
+- **M bug** `268-279` — E2 additionne un stock (m³/ha) à un flux annuel. **[corrigé 0.212.0]**
+- **M bug (à confirmer)** `182` — Le facteur `× 0.5` sur une densité déjà sèche donnerait un E1 sous-estimé d'un facteur 2. **[corrigé 0.212.0]**
 - **m qualité** `169-197` — Les résidus restent à 0 (pas NA) quand le volume est NA ; un message est émis par unité.
 
 **R/indicators-deperissement.R**
-- **M bug** `175-180` — `st_intersects` compte toute la surface d'un cluster dans chaque UGF qu'il touche (double comptage).
+- **M bug** `175-180` — `st_intersects` compte toute la surface d'un cluster dans chaque UGF qu'il touche (double comptage). **[corrigé 0.212.0]**
 - **m qualité** `76` — Les poids de confiance du chêne sont appliqués au pin sylvestre.
 
 **R/indicators-social.R**
-- **M bug** `96-101, 195-200` — Les routes et bâtiments hors de l'emprise du MNT sont ignorés, donc S1/S2 valent NA ou sont surestimés.
+- **M bug** `96-101, 195-200` — Les routes et bâtiments hors de l'emprise du MNT sont ignorés, donc S1/S2 valent NA ou sont surestimés. **[corrigé 0.212.0]**
 - **m bug** `339-343` — Le carreau INSEE est retrouvé par sa valeur de population.
 - **m qualité** `214-250` — L'exemple `method = "proxy"` aborte ; le `@return` est faux.
 
@@ -199,11 +199,11 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m qualité** `99, 226, 76` — La doc dit « 50 » alors que le code renvoie NA ; N1 contient un terme constant de +25.
 
 **R/indicators-temporal.R**
-- **M bug** `88-145` — Le TFV de la BD Forêt passe avant un âge mesuré ; un TFV inconnu donne 50.
-- **M bug** `241-281` — T2 est une copie de N2 ou de l'âge, alors que la doc annonce un taux de changement.
+- **M bug** `88-145` — Le TFV de la BD Forêt passe avant un âge mesuré ; un TFV inconnu donne 50. **[corrigé 0.212.0]**
+- **M bug** `241-281` — T2 est une copie de N2 ou de l'âge, alors que la doc annonce un taux de changement. **[corrigé 0.212.0 — doc ; vrai taux de changement = décision]**
 
 **R/indicators-air.R**
-- **M bug** `376-384` — A2 est normalisé par le max du lot (une seule unité donne 0) ; `urban_areas` n'est jamais lu.
+- **M bug** `376-384` — A2 est normalisé par le max du lot (une seule unité donne 0) ; `urban_areas` n'est jamais lu. **[corrigé 0.212.0 ; `urban_areas` = décision]**
 - **m bug** `602-605` — Le cas `n == 0` de A5 ne pose pas `a5_status`.
 
 **R/indicators-productive.R**
@@ -214,7 +214,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m qualité** `73-77, 132` — L'attribut `augmented` est posé même quand le résultat est NA ; `microclimate_run()` est exporté mais aborte toujours.
 
 **Transverse indicateurs**
-- **M qualité** — Contrat de retour hétérogène (vecteur pour C1, C2, W*, F*, L*, T*, `sf` pour les autres), `stop()` et `cli_abort()` mélangés, `lang` jamais utilisé, paramètres numériques non validés.
+- **M qualité** — Contrat de retour hétérogène (vecteur pour C1, C2, W*, F*, L*, T*, `sf` pour les autres), `stop()` et `cli_abort()` mélangés, `lang` jamais utilisé, paramètres numériques non validés. **[en partie 0.213.0 : `cli_abort()` partout, `lang` documenté inutilisé ; contrat de retour = décision]**
 
 ### Production, IFN, LiDAR
 
@@ -227,11 +227,11 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m qualité** `76-77` — Un simple warning jsonlite fait perdre la résolution dynamique des URL.
 
 **R/ifn_espar.R, inst/extdata/ifn_espar_correspondance.csv**
-- **M bug** `l. 64 du CSV` — Le Douglas est codé `PIME`, alors que tout le code utilise `PSME`, et deux tarifs Douglas divergent. `resoudre_espar("PSME")` donne NA.
+- **M bug** `l. 64 du CSV` — Le Douglas est codé `PIME`, alors que tout le code utilise `PSME`, et deux tarifs Douglas divergent. `resoudre_espar("PSME")` donne NA. **[corrigé 0.212.0]**
 
 **R/site_index.R, R/density_selfthinning.R, R/synthetic_inventory.R**
-- **M bug** `site_index.R:76-79` — Trois définitions concurrentes de « résineux » ; PIHA, PILA et LAKA tombent sur la courbe feuillus.
-- **M bug** `synthetic_inventory.R:170`, `density_selfthinning.R:134` — Dg et N_max sont bornés en silence (vieille chênaie plafonnée à 30 cm).
+- **M bug** `site_index.R:76-79` — Trois définitions concurrentes de « résineux » ; PIHA, PILA et LAKA tombent sur la courbe feuillus. **[corrigé 0.212.0]**
+- **M bug** `synthetic_inventory.R:170`, `density_selfthinning.R:134` — Dg et N_max sont bornés en silence (vieille chênaie plafonnée à 30 cm). **[corrigé 0.212.0]**
 - **m bug** `site_index.R:368-374` — Une hauteur hors des courbes est bornée à la classe 1 ou 5, alors que le commentaire annonce NA.
 - **m qualité** `synthetic_inventory.R:160-161` — `if (x) 15 else 15` (code mort).
 
@@ -244,12 +244,12 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m bug** `103-110` — `part_foret` mélange les unités d'un raster en degrés.
 
 **R/houppiers.R, R/houppiers_lsms.R**
-- **M bug** `houppiers.R:285-293`, `houppiers_lsms.R:185` — En LSMS sans CHM, l'AOI n'est pas reprojetée et l'abandon « aoi does not intersect » est faux.
+- **M bug** `houppiers.R:285-293`, `houppiers_lsms.R:185` — En LSMS sans CHM, l'AOI n'est pas reprojetée et l'abandon « aoi does not intersect » est faux. **[corrigé 0.213.0]**
 - **m qualité** `houppiers_lsms.R:219` — `withr` est utilisé alors qu'il n'est qu'en Suggests.
 - **m qualité** `houppiers.R:102-193` — Cinq paramètres ne sont documentés que dans le `.Rd`.
 
 **R/utils-chm.R**
-- **M qualité** `124, 144, 217` — `terra::values(chm)` charge tout le raster jusqu'à 5 fois (OOM sur un CHM à 0,2 m).
+- **M qualité** `124, 144, 217` — `terra::values(chm)` charge tout le raster jusqu'à 5 fois (OOM sur un CHM à 0,2 m). **[corrigé 0.213.0]**
 - **m qualité** `425-429` — Branche `terra::extract` morte et fausse.
 
 **R/lidar_processing.R**
@@ -300,16 +300,16 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m bug** `eobs_click_series.R:144-152` — Un jour NA compte comme 0 mm. **[corrigé 0.209.0]**
 
 **R/eobs_downscale.R**
-- **M bug** `439-445` — Le moteur meteoland agrège par `max`, KED par la moyenne, sous le même libellé.
+- **M bug** `439-445` — Le moteur meteoland agrège par `max`, KED par la moyenne, sous le même libellé. **[corrigé 0.212.0]**
 - **m bug** `285` — Un jour SAFRAN manquant donne 0 mm.
 - **m qualité** `402-405` — `resolution` et `covariates` sont ignorés en mode meteoland.
 - **m qualité** `16-23` — Copie de `.eobs_slope`. **[corrigé 0.209.0]**
 
 **R/soil_water.R**
-- **M bug** `214-221` — Un horizon SoilGrids non chargé est sauté en silence, et la réserve utile est sous-estimée.
+- **M bug** `214-221` — Un horizon SoilGrids non chargé est sauté en silence, et la réserve utile est sous-estimée. **[corrigé 0.212.0]**
 
 **R/data-preprocessing.R**
-- **M bug** `34` — `terra::project` sans `method = "near"` : la couverture du sol est interpolée en classes fractionnaires.
+- **M bug** `34` — `terra::project` sans `method = "near"` : la couverture du sol est interpolée en classes fractionnaires. **[corrigé 0.212.0]**
 - **m bug** `30` — La comparaison des CRS vaut NA sans code EPSG.
 
 **R/microclimate_years.R**
@@ -337,7 +337,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m qualité** `563-655` — `classes = character(0)` produit `IN ()` ; les types de sortie diffèrent entre PG et SQLite.
 
 **R/fordead_pipeline.R**
-- **M qualité** `639-655, 757-766` — Un échec du post-traitement ou de l'insertion donne quand même `status = "success"`.
+- **M qualité** `639-655, 757-766` — Un échec du post-traitement ou de l'insertion donne quand même `status = "success"`. **[corrigé 0.213.0]**
 - **m bug** `82-84, 478` — Fin de fenêtre NA documentée mais refusée ; des `Date` acceptées puis refusées après des heures de téléchargement.
 - **m bug** `726-744` — Le nettoyage `replace` supprime les sorties d'un run concurrent.
 
@@ -348,7 +348,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 
 **R/monitoring.R, R/sentinel2_cache.R**
 - **M bug** `monitoring.R:727-735`, `sentinel2_cache.R:139-145` — Le saut des scènes en cache ne vérifie pas l'emprise (zones `_feu`, `_res`, `_tot`). **[corrigé 0.209.0]**
-- **M bug (à confirmer)** `pixel-map.R:~286-302` — L'offset radiométrique S2 `BOA_ADD_OFFSET = -1000` (baseline ≥ 04.00, depuis 2022) n'est pas géré : risque de faux déclin général du NDVI.
+- **M bug (à confirmer)** `pixel-map.R:~286-302` — L'offset radiométrique S2 `BOA_ADD_OFFSET = -1000` (baseline ≥ 04.00, depuis 2022) n'est pas géré : risque de faux déclin général du NDVI. **[confirmé — décision : correction par source, seuils FAST]**
 - **m sécu** `1112, 1390` — L'URL signée (avec son jeton) part dans les événements et les logs. **[corrigé 0.209.0]**
 - **m bug** `366` — Une erreur DB est confondue avec « zone sans géométrie ».
 - **m qualité** `1446` — Le retour de `file.rename` n'est pas vérifié.
@@ -370,7 +370,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m bug** `373` — La comparaison de CRS vaut NA sans code EPSG.
 
 **R/fordead_stac.R**
-- **M bug (à confirmer)** `300-301` — Deux items de même id par date sur une AOI à cheval sur deux tuiles.
+- **M bug (à confirmer)** `300-301` — Deux items de même id par date sur une AOI à cheval sur deux tuiles. **[corrigé 0.213.0]**
 
 **R/db.R et migrations**
 - **M bug** `pg/0007:18`, `sqlite/0007:13` — `DROP TABLE IF EXISTS alert` sans garde. **[corrigé 0.209.0]**
@@ -400,8 +400,8 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 ### RECONFORT et Python embarqué
 
 **R/reconfort_pipeline.R**
-- **M bug** `537, 570-573` — Aucun garde-fou de saison sur `s2_year` (run d'une année incomplète, `trigger_date` dans le futur).
-- **M bug** `700-711` — Sans masque, une seule tranche est utilisée → risque d'OOM.
+- **M bug** `537, 570-573` — Aucun garde-fou de saison sur `s2_year` (run d'une année incomplète, `trigger_date` dans le futur). **[corrigé 0.213.0]**
+- **M bug** `700-711` — Sans masque, une seule tranche est utilisée → risque d'OOM. **[corrigé 0.212.0]**
 - **M sécu** `579-581, 935, 945` — `zone_id` et `output_dir` ne sont pas contrôlés avant `unlink(recursive = TRUE)`. **[corrigé 0.210.0]**
 - **M bug** `752-756` — Pas de verrou sur le workdir, alors qu'un IOTA² orphelin survit dans son scope systemd. **[corrigé 0.210.0]**
 - **m bug** `263-275` — La remise à zéro dépend d'un `run_meta.json` écrit en best-effort.
@@ -410,7 +410,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 
 **R/reconfort_ingest.R**
 - **M bug** `446-448, 500-505` — Le marqueur `.done` ne dépend pas de la fenêtre AOI. **[corrigé 0.209.0]**
-- **M bug** `313-314` — `conda run` sans `--no-capture-output` : sortie perdue si le scope est tué.
+- **M bug** `313-314` — `conda run` sans `--no-capture-output` : sortie perdue si le scope est tué. **[corrigé 0.213.0]**
 - **M sécu** `217` — pygeodes en `verify=False` (clé GEODES exposée à un MITM, archive non vérifiée), et l'avertissement est masqué. **[corrigé 0.210.0]**
 - **M sécu** `100-109` + `utils/utils.py:6-7` — Le `.cfg` est relu avec `eval()` côté Python ; un chemin contenant `\'` injecte du code. **[corrigé 0.210.0]**
 - **m bug** `314` — Chemin de cfg relatif sous `with_dir`.
@@ -419,15 +419,15 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m bug** `479-505` — Une scène à moitié recadrée reste dans `extracted/`. **[corrigé 0.209.0]**
 
 **inst/python/reconfort/mask_and_compress_rasters.py**
-- **M bug** `64-69` — Le score des pixels très sains est arrondi à 0 = no-data, et `sum_proba == 0` masque des pixels valides.
-- **M bug** `64` — Trois bandes supposées : `v3_pine` (2 classes) plante.
+- **M bug** `64-69` — Le score des pixels très sains est arrondi à 0 = no-data, et `sum_proba == 0` masque des pixels valides. **[corrigé 0.212.0]**
+- **M bug** `64` — Trois bandes supposées : `v3_pine` (2 classes) plante. **[corrigé 0.212.0]**
 
 **inst/python/reconfort/ (traçabilité)**
 - **M qualité** — Fichiers annoncés « verbatim » alors qu'au moins 5 sont modifiés, sans PATCHES ni NOTICE (Apache-2.0 §4b) ; deux scripts se déclarent MIT alors que le paquet est GPL-3. **[corrigé 0.210.0]**
 - **m qualité** `repair_iota2_env.sh` — Les correctifs #9 et #10 ne sont pas sondés côté R.
 
 **R/reconfort_outputs.R**
-- **M bug** `487-489` — Le masque nuages cherche `*_SCL*` (Sen2Cor), absent des produits MUSCATE : le bundle n'est jamais masqué.
+- **M bug** `487-489` — Le masque nuages cherche `*_SCL*` (Sen2Cor), absent des produits MUSCATE : le bundle n'est jamais masqué. **[corrigé 0.212.0]**
 - **m bug** `482-486` — Regroupement par date sans tenir compte de la tuile.
 
 **R/reconfort_crop.R**
@@ -451,7 +451,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m sécu** `440` — `doc_id` non revalidé : écriture hors de `pdf_dir` possible. **[corrigé 0.210.0]**
 - **M bug** `38-39` × `rag.R:390` — Les vocabulaires `doc_type` divergent (guide, law, dataset_doc refusés à l'ingestion). **[corrigé 0.210.0]**
 - **M bug** `585, 589` — `dry_run` télécharge réellement les PDF. **[corrigé 0.209.0]**
-- **M qualité** `429` — `local_path` est relatif à `data-raw` (exclu du build) : 58 sur 60 sources ne sont pas résolues depuis le paquet installé.
+- **M qualité** `429` — `local_path` est relatif à `data-raw` (exclu du build) : 58 sur 60 sources ne sont pas résolues depuis le paquet installé. **[en partie 0.213.0 : chemin introuvable signalé ; emplacement des PDF = décision]**
 - **m bug** `604, 612` — L'idempotence repose sur le titre.
 - **m bug** `441-447` — Un PDF corrompu reste en cache. **[corrigé 0.209.0]**
 - **m qualité** `600-604` — `fresh = TRUE` vide le corpus hors transaction.
@@ -469,7 +469,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 **R/qgis_export.R**
 - **M bug** `357` — `if (NA)` sur un CRS sans code EPSG : l'export plante. **[corrigé 0.210.0]**
 - **M sécu** `363-470` — `project_name` non validé (traversée de chemin, option `zip`). **[corrigé 0.210.0]**
-- **M bug** `409-411` — Les poids d'inclusion et les colonnes métier sont perdus à l'aller-retour QField.
+- **M bug** `409-411` — Les poids d'inclusion et les colonnes métier sont perdus à l'aller-retour QField. **[corrigé 0.212.0]**
 - **m qualité** `364-369, 468-471` — `setwd` global et dépendance au binaire `zip`. **[corrigé 0.210.0]**
 - **m qualité** `483-486` — La dépréciation annoncée « one-shot » avertit à chaque appel.
 
@@ -481,14 +481,14 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m bug** `403` — Repli sur un identifiant non unique.
 
 **R/validation_sampling.R**
-- **M bug** `113, 129-131` — `zone` est validé mais jamais utilisé : des placettes sont tirées hors de la zone.
-- **M bug** `570-593` — La pondération « uniform » par classe est inversée, et le reliquat plafonné n'est pas redistribué.
+- **M bug** `113, 129-131` — `zone` est validé mais jamais utilisé : des placettes sont tirées hors de la zone. **[corrigé 0.212.0]**
+- **M bug** `570-593` — La pondération « uniform » par classe est inversée, et le reliquat plafonné n'est pas redistribué. **[corrigé 0.212.0]**
 - **m qualité** `66, 370, 163, 424` — CRS annoncé faux ; `seed` ignoré ; `set.seed` global.
 - **m qualité** `151-158, 416-419` — Une entrée NA donne une erreur brute.
 
 **R/sampling_plan.R**
-- **M bug** `680-684` — Les poids GRTS sont supprimés (estimation biaisée).
-- **M qualité** `159-166` — Une erreur d'extraction donne NA, ce qui désactive la contrainte de pente en silence.
+- **M bug** `680-684` — Les poids GRTS sont supprimés (estimation biaisée). **[corrigé 0.212.0]**
+- **M qualité** `159-166` — Une erreur d'extraction donne NA, ce qui désactive la contrainte de pente en silence. **[corrigé 0.212.0]**
 - **m bug** `246-255` — Allocation arrondie sans complément (9 placettes au lieu de 10).
 - **m qualité** `476` — `set.seed` global.
 - **m bug** `445-479` — Une zone en EPSG:4326 donne un pas de 50 degrés.
@@ -505,7 +505,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 **data/ et .Rbuildignore**
 - **C qualité** — L'archive de 5,4 Go n'est pas exclue du build **[vérifié]** ; `area_interest.geojson` déclenche un WARNING. **[corrigé 0.211.0]**
 - **M qualité** — `__pycache__/*.pyc` et `.Renviron.example` partent dans le tarball. **[corrigé 0.211.0]**
-- **M bug** — `aba.model` et `coregistration` sont exclus du build alors que les tutoriels 07 et 08 les lisent.
+- **M bug** — `aba.model` et `coregistration` sont exclus du build alors que les tutoriels 07 et 08 les lisent. **[décision — vague 6]**
 - **m qualité** — Un nom de fichier de plus de 100 octets dans `inst/python`.
 
 **man/*.Rd**
@@ -524,12 +524,12 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 
 **.github/workflows**
 - **M qualité** `release.yml:21-27` — La release ne dépend pas du succès du check. **[corrigé 0.211.0]**
-- **M qualité** `r.yml:156-159` — `--no-tests` et `error-on: error` : les WARNING passent sans bruit.
+- **M qualité** `r.yml:156-159` — `--no-tests` et `error-on: error` : les WARNING passent sans bruit. **[corrigé 0.211.0 ; `--no-tests` voulu : job `tests` dédié]**
 - **m sécu** — Actions épinglées par tag, pas par SHA ; `pkgdown.yaml` a `contents: write` sur les PR.
 - **m qualité** `r.yml:33` — `version-consistency` lit le premier numéro de version venu dans NEWS. **[corrigé 0.211.0]**
 
 **tests/testthat/**
-- **M qualité** — La suite écrit dans `~/.local/share/nemeton/cache` et télécharge un CPython (160 Mo) via reticulate/uv.
+- **M qualité** — La suite écrit dans `~/.local/share/nemeton/cache` et télécharge un CPython (160 Mo) via reticulate/uv. **[corrigé 0.213.0]**
 - **m qualité** — `EBImage` n'est pas déclaré ; 29 warnings ; 9 exports sans test (`FORDEAD_VALIDITY_SPECIES`, `RECONFORT_VALIDITY_SPECIES`, `bai_drift_factor`, `charru_bai_drift_table`, `charru_selfthinning_table`, `n_max_selfthinning`, `get_metric_crs`, `get_storage_crs`, `microclimate_run`).
 
 **docs/, vignettes/**
