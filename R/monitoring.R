@@ -37,9 +37,11 @@ NULL
 #'   Opaque project identifier used by callers (`nemetonshiny`) to
 #'   stably bind a project to its monitoring zone. When non-`NULL`,
 #'   stored on `monitoring_zone.project_uuid` and queryable via
-#'   [find_zone_by_project()]. UNIQUE on non-`NULL` values — registering
-#'   a second zone with the same `project_uuid` raises a DB error.
-#'   Available since spec 011 (migration `0003_project_uuid`).
+#'   [find_zone_by_project()]. Since migration `0005` (spec 020) the
+#'   uniqueness is on `(project_uuid, zone_name)`: a project may own several
+#'   zones, but registering the same `zone_name` twice for one
+#'   `project_uuid` raises a DB error. Available since spec 011 (migration
+#'   `0003_project_uuid`).
 #'
 #' @return The `zone_id` (integer) of the registered zone.
 #'
@@ -268,8 +270,8 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'   cache_dir   = cache
 #' )
 #'
-#' # Subsequent runs: skip_cached short-circuits at the DB level,
-#' # cache_dir only kicks in when a genuine re-extraction is needed.
+#' # Subsequent runs: skip_cached (default TRUE) skips every scene whose
+#' # band COGs are already under cache_dir; only new scenes are fetched.
 #' ingest_sentinel2_timeseries(
 #'   con, zone_id, "2026-01-01", "2026-06-30",
 #'   bands     = c("NDVI", "NBR"),
@@ -1495,7 +1497,11 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       )
       sz <- if (file.exists(tmp)) file.info(tmp)$size else NA_integer_
       .s2_cache_log("WRITE ok size=", sz, " bytes")
-      file.rename(tmp, cached_path)
+      # Retour de file.rename() vérifié (audit 1.0) : un échec laissait le
+      # .tmp orphelin et annonçait pourtant la bande comme mise en cache.
+      if (!file.rename(tmp, cached_path)) {
+        stop("cannot rename ", basename(tmp), " to ", basename(cached_path))
+      }
       .s2_cache_log("RENAME ok -> ", cached_path)
       emit_fn(list(current  = "s2:band_fetched",
                    scene_id = scene_id,

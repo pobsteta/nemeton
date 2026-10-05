@@ -1610,6 +1610,47 @@ test_that(".get_s2_band_raster: writeRaster is called with filetype = 'GTiff'", 
   expect_true(file.exists(file.path(cache, scene_id, "B04.tif")))
 })
 
+test_that(".get_s2_band_raster : un renommage .tmp -> .tif en échec est signalé (audit 1.0)", {
+  skip_if_not_installed("terra")
+  cache    <- withr::local_tempdir()
+  scene_id <- "S2_RENAME_TEST"
+  src <- file.path(withr::local_tempdir(), "src.tif")
+  terra::writeRaster(
+    terra::rast(nrows = 50, ncols = 50, xmin = 0, xmax = 500, ymin = 0,
+                ymax = 500, crs = "EPSG:2154", vals = seq_len(2500)),
+    src, overwrite = TRUE)
+  buf <- sf::st_sf(
+    radius_m = 10,
+    geometry = sf::st_sfc(sf::st_buffer(sf::st_point(c(250, 250)), 10),
+                          crs = 2154))
+  scene <- data.frame(scene_id = scene_id, href_B04 = src,
+                      stringsAsFactors = FALSE)
+  # Après l'écriture du .tmp, on rend la cible impossible à créer : le
+  # dossier de scène passe en lecture seule, file.rename() renvoie FALSE.
+  real_writeRaster <- terra::writeRaster
+  testthat::local_mocked_bindings(
+    writeRaster = function(x, filename, ...) {
+      out <- real_writeRaster(x, filename, ...)
+      Sys.chmod(dirname(filename), "0555")
+      out
+    },
+    .package = "terra")
+  withr::defer(Sys.chmod(file.path(cache, scene_id), "0755"))
+  skip_if(identical(Sys.info()[["user"]], "root"), "root ignores permissions")
+
+  events <- list()
+  expect_warning(
+    out <- nemeton:::.get_s2_band_raster(
+      scene, "B04", buf, cache_dir = cache,
+      emit = function(p) events[[length(events) + 1L]] <<- p),
+    "cache write failed")
+  expect_s4_class(out, "SpatRaster")              # la bande reste servie
+  expect_false(file.exists(file.path(cache, scene_id, "B04.tif")))
+  # Pas d'événement « bande mise en cache » mensonger.
+  expect_false(any(vapply(events, function(e)
+    identical(e$current, "s2:band_fetched"), logical(1))))
+})
+
 test_that("une erreur base sur la zone n'est pas prise pour « zone sans géométrie » (audit 1.0)", {
   skip_if_not_installed("terra")
   with_sqlite_monitoring_db(function(con) {
