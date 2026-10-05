@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.155.0** (release du 2026-10-05), relevée le 2026-10-05.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.156.0** (release du 2026-10-05), relevée le 2026-10-05.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -189,6 +189,22 @@ interface), calcul détaché, liens profonds `?project=&tab=` — sans impact c�
 Restent hors app : `r1_fallback_reason` non transporté (optionnel),
 recalcul des projets, calibrages 0.212 à valider.
 
+**Journal** — *2026-10-05* (**app v0.156.0**, `nemetonshiny@b4065d93`,
+PR #219, cycle dev 0.155.0.9000 → 0.155.0.9001) : **audit 1.0 soldé côté
+app**, 113 constats sur 118 corrigés en huit lots. Sécurité (clés
+owner-only, TLS de la base de suivi, ntfy assaini, Keycloak de dev sans secret
+en clair) ; lecture seule respectée partout et recalculée au changement
+d'authentification ; langue par session ; analyse reGénération, appels LLM et
+battement du verrou hors de la boucle Shiny ; suivi sanitaire (étape zones, G3,
+annulations, zone RECONFORT `_tot`) ; caches indexés sur l'emprise ; écritures
+atomiques ; i18n, accessibilité et code mort. Aucun appel cœur nouveau ;
+plancher `Imports: nemeton (>= 0.212.1)` inchangé.
+Restent ouverts : n° 64-66 (composite NDVI S2, indices Gaussen/De Martonne,
+agrégation des UGF pondérée par la surface), demandés au cœur par le brief
+`2026-10-05-logique-metier-a-rapatrier.md` ; isolation des projets entre
+utilisateurs **documentée** (CONTRAT app §2), pas implémentée ; factorisation
+de `mod_monitoring.R` reportée après la 1.0.
+
 **Journal** — *2026-10-05* (**v0.212.1**) : T2 se replie sur T1 **unité par
 unité** (une unité à N2 = NA prend son T1). Trouvé en relisant la PR #218 de
 l'app, qui écartait une N2 toute NA ; son filtre reste inoffensif, rien à
@@ -241,7 +257,17 @@ bout avec `stackstac`). Sur Reconfort, `trend` NDMI passe de 44,7 % à 5,5 %
 de pixels en alerte : l'offset fabriquait l'essentiel des déclins. Seuils FAST
 inchangés. Brief app : recalcul des cartes FAST, relance FORDEAD.
 
-**Prochaine étape** : décisions restantes de Pascal (vague 8), puis 1.0.0. L'app consomme 135
+**Journal** — *2026-10-05* (**v0.216.0**) : les n° 64-66 de l'app livrés
+dans le cœur (brief `logique-metier-a-rapatrier`) :
+`build_ndvi_season_composite()` (composite NDVI de saison, médiane bornée,
+choix des scènes compris), `climate_ombrothermic_indices()` (Gaussen,
+De Martonne) et `aggregate_family_scores()` (pondération par la surface,
+repli signalé sur la moyenne simple). Brief retour app :
+`specs/audit-1.0/brief-nemetonshiny-0.216.0.md`.
+
+**Prochaine étape** : côté app, adopter les trois fonctions (plancher, tests
+d'équivalence) puis la décision **1.0.0** de l'app ; côté cœur, décisions
+restantes de Pascal (vague 8), puis 1.0.0. L'app consomme 135
 des 313 exports et lit 21 symboles internes : ne rien retirer ni changer de
 signature parmi eux sans brief app (`specs/audit-1.0/exports-consommes-app.md`).
 

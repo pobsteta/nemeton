@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.216.0] - 2026-10-05
+
+### Added
+- `build_ndvi_season_composite()`, `climate_ombrothermic_indices()`, `aggregate_family_scores()` (calculs rapatriés de l'app, audit 1.0 n° 64-66).
+
 ## [0.215.0] - 2026-10-05
 
 ### Added
