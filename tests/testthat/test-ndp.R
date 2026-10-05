@@ -141,6 +141,17 @@ test_that("compute_general_index computes correct score", {
   expect_equal(result$score, 50.0)
 })
 
+test_that("compute_general_index score is the plain mean whatever the NDP (documented)", {
+  # NDP uniforme : poids Fibonacci identiques -> moyenne simple ; le NDP ne
+  # change que weight et confidence
+  scores <- c(C = 72, B = 45, W = NA, A = 55)
+  for (k in 0:4) {
+    res <- compute_general_index(scores, ndp = k)
+    expect_equal(res$score, round(mean(c(72, 45, 55)), 1))
+    expect_equal(res$weight, get_ndp_weight(k))
+  }
+})
+
 test_that("compute_general_index handles famille_ prefix", {
   scores <- c(famille_carbone = 40, famille_biodiversite = 60)
   result <- compute_general_index(scores, ndp = 0)

@@ -392,11 +392,18 @@ create_composite_index <- function(data,
   } else if (aggregation == "geometric_mean") {
     # Weighted geometric mean
     composite <- apply(indicator_matrix, 1, function(row) {
+      # Poids alignés sur les indicateurs AVANT de retirer les NA : filtrer
+      # `row` d'abord décalait les poids (et les recyclait)
+      w <- weights
       if (na.rm) {
-        row <- row[!is.na(row)]
-        if (length(row) == 0) {
+        valid <- !is.na(row)
+        if (!any(valid)) {
           return(NA_real_)
         }
+        row <- row[valid]
+        w <- w[valid] / sum(w[valid])
+      } else if (anyNA(row)) {
+        return(NA_real_)
       }
 
       if (any(row < 0, na.rm = TRUE)) {
@@ -405,7 +412,7 @@ create_composite_index <- function(data,
       }
 
       # Weighted geometric mean: exp(sum(w * log(x)))
-      exp(sum(weights[!is.na(row)] * log(row)))
+      exp(sum(w * log(row)))
     })
   } else if (aggregation == "min") {
     # Minimum (limiting factor)

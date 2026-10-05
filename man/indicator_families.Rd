@@ -55,15 +55,16 @@ The function is pure (no I/O, no state), and therefore safe to call from a
 
 \code{indicators} and \code{column_names} are always the same length and are paired
 \strong{by position}: \code{column_names[[i]]} is the column produced for
-\code{indicators[[i]]}. Do \strong{not} derive one from the other by string
-manipulation: \strong{one} family still carries a legacy naming swap, where the
-short code and the column slug disagree.
-\itemize{
-\item \code{F1} is \code{indicateur_f2_erosion} and \code{F2} is \code{indicateur_f1_fertilite}.
-}
-The labels follow the short code \strong{and} the values the paired column
-carries, so \code{labels[["F1"]]} describes erosion -- consistent with the paired
-column, not with the column's own slug.
+\code{indicators[[i]]}. Since 0.182.0 the short code and the column slug agree
+in every family (\code{F1} is \code{indicateur_f1_fertilite}, \code{F2} is
+\code{indicateur_f2_erosion}), and the labels follow both. Still read the pairing
+by position rather than deriving one from the other by string manipulation:
+the slugs are not a naming contract.
+
+Family F carried a legacy swap until 0.182.0 (spec 049): this table paired
+\code{F1} with \code{indicateur_f2_erosion} and \code{F2} with \code{indicateur_f1_fertilite},
+while the alias resolver read the codes the other way. Code written against
+that pairing must be checked.
 
 Family L was in the same state until 0.176.0, for a reason worth
 remembering: a column is named after the function that fills it

@@ -26,8 +26,9 @@ the strings downstream.
 
 Rows follow the canonical family order, and within a family the declaration
 order of the indicators. \code{column_name} is the column paired with \code{code} --
-see the \emph{Column pairing} section of \code{\link{indicator_families}} for the two
-families where the short code and the column slug disagree.
+see the \emph{Column pairing} section of \code{\link{indicator_families}} for the history
+of the F and L families, where the short code and the column slug used to
+disagree.
 
 As in \code{\link{indicator_families}}, both languages are always returned: \code{lang}
 only selects which one is copied into the convenience columns \code{label} and
