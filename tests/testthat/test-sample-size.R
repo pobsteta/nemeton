@@ -11,6 +11,13 @@ test_that("compute_sample_size rejects bad inputs", {
                "in \\(0, 1\\)")
   expect_error(compute_sample_size(cv = 0.3, target_error = 0.1, N = -1),
                "positive")
+  # alpha = NA : message clair, plus « missing value where TRUE/FALSE
+  # needed » (audit 1.0).
+  expect_error(compute_sample_size(cv = 0.3, target_error = 0.1, alpha = NA),
+               "in \\(0, 1\\)")
+  expect_error(compute_sample_size(cv = 0.3, target_error = 0.1,
+                                   alpha = NA_real_),
+               "in \\(0, 1\\)")
 })
 
 
