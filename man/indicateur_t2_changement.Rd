@@ -33,8 +33,11 @@ may duplicate T1.
 \strong{Primary method}: copy of the N2 (forest continuity/antiquity) column if
 present in units, clamped to 0-100.
 
-\strong{Fallback}: T1 stand age (years) capped at 100. Older forests are
-assumed more stable.
+\strong{Fallback}: T1 stand age (years) capped at 100 (\code{t1_values}, then a
+\code{T1} column). Older forests are assumed more stable.
+
+The fallback applies \strong{unit by unit}: a unit whose N2 is \code{NA} takes
+its T1 age when known.
 
 A genuine change-rate indicator (e.g. a Sentinel-2 change detection) is
 not implemented in T2.

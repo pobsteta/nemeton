@@ -1,3 +1,14 @@
+# nemeton 0.212.1 (2026-10-05)
+
+### Fixed
+
+- **T2 (stabilité)** : le repli N2 → T1 se fait désormais **unité par unité**.
+  La colonne N2 était prise entière dès qu'elle existait, NA compris : une unité
+  à N2 = NA restait à T2 = NA même avec un âge T1 connu. Relevé en relisant la
+  PR #218 de `nemetonshiny`, qui écartait une N2 toute NA pour s'en sortir (ce
+  filtre reste inoffensif). Ordre inchangé : N2, puis `t1_values`, puis la
+  colonne `T1`. Les T2 changent seulement là où N2 était NA et T1 connu.
+
 # nemeton 0.212.0 (2026-10-03)
 
 Cinquième vague de l'audit de pré-version 1.0 : **seconde passe sur les

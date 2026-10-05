@@ -365,6 +365,12 @@ jobs:
         shell: Rscript {0}
 
       - name: Upload to Codecov
+        # `fail_ci_if_error: false` ne couvre pas un échec AVANT l'uploader :
+        # le 2026-10-05, la poignée de main TLS vers Codecov était refusée
+        # (« SSL alert number 40 ») et faisait échouer le job, donc le workflow
+        # sur `main`, donc la release (release.yml attend son succès). La
+        # couverture est calculée ci-dessus ; son envoi ne doit rien bloquer.
+        continue-on-error: true
         uses: codecov/codecov-action@v4
         with:
           files: ./cobertura.xml

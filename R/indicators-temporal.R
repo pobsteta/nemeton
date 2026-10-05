@@ -218,8 +218,11 @@ indicateur_t1_anciennete <- function(units,
 #' **Primary method**: copy of the N2 (forest continuity/antiquity) column if
 #' present in units, clamped to 0-100.
 #'
-#' **Fallback**: T1 stand age (years) capped at 100. Older forests are
-#' assumed more stable.
+#' **Fallback**: T1 stand age (years) capped at 100 (\code{t1_values}, then a
+#' \code{T1} column). Older forests are assumed more stable.
+#'
+#' The fallback applies **unit by unit**: a unit whose N2 is \code{NA} takes
+#' its T1 age when known.
 #'
 #' A genuine change-rate indicator (e.g. a Sentinel-2 change detection) is
 #' not implemented in T2.
@@ -244,8 +247,16 @@ indicateur_t2_changement <- function(units,
   # Validate inputs
   validate_sf(units)
 
-  # --- Priority 1: Use N2 (forest continuity/antiquity) as stability proxy ---
-  # N2_anciennete or N2 column from naturalness indicator
+  n <- nrow(units)
+
+  # Sources candidates, par ordre de priorité. Le repli se fait UNITÉ PAR
+  # UNITÉ : une colonne N2 présente mais NA sur une unité ne la condamne plus
+  # à NA quand son T1 est connu (avant 0.212.1, la colonne N2 était prise
+  # entière dès qu'elle existait, NA compris ; l'app devait écarter une N2
+  # toute NA pour retomber sur T1, et le cas mixte restait perdu).
+  sources <- list()
+
+  # --- Priorité 1 : N2 (continuité / ancienneté forestière) ---
   n2_col <- NULL
   for (col in c("N2_anciennete", "N2_anciennet", "N2")) {
     if (col %in% names(units)) {
@@ -253,37 +264,43 @@ indicateur_t2_changement <- function(units,
       break
     }
   }
-
   if (!is.null(n2_col)) {
-    cli::cli_alert_info("T2: Using {n2_col} as stability proxy")
-    t2 <- units[[n2_col]]
-    # Ensure 0-100 range
-    t2 <- pmin(pmax(t2, 0), 100)
-    msg_info("indicateur_t2_changement")
-    return(t2)
+    sources[[n2_col]] <- pmin(pmax(as.numeric(units[[n2_col]]), 0), 100)
   }
 
-  # --- Priority 2: Fallback to T1 age capped at 100 ---
-  # Try t1_values argument first
-  if (!is.null(t1_values) && is.numeric(t1_values) && length(t1_values) == nrow(units)) {
-    cli::cli_alert_info("T2: Estimated from T1 age values")
-    # Age inconnu -> NA : pas de stabilite « moyenne » inventee.
-    t2 <- pmin(100, t1_values)
-    msg_info("indicateur_t2_changement")
-    return(t2)
+  # --- Priorité 2 : âge T1 plafonné à 100, argument puis colonne ---
+  # Âge inconnu -> NA : pas de stabilité « moyenne » inventée.
+  if (!is.null(t1_values) && is.numeric(t1_values) && length(t1_values) == n) {
+    sources[["T1 age values"]] <- pmin(100, t1_values)
   }
-
-  # Try T1 column in units
   if ("T1" %in% names(units)) {
-    cli::cli_alert_info("T2: Estimated from T1 column")
-    t2 <- pmin(100, units$T1)
-    msg_info("indicateur_t2_changement")
-    return(t2)
+    sources[["T1 column"]] <- pmin(100, as.numeric(units$T1))
   }
 
-  # --- Aucune source : NA (plus de 50 par defaut) ---
-  cli::cli_alert_warning("T2: No N2 or T1 data available, returning NA")
-  rep(NA_real_, nrow(units))
+  # --- Aucune source : NA (plus de 50 par défaut) ---
+  if (length(sources) == 0L) {
+    cli::cli_alert_warning("T2: No N2 or T1 data available, returning NA")
+    return(rep(NA_real_, n))
+  }
+
+  t2 <- rep(NA_real_, n)
+  used <- character(0)
+  for (nm in names(sources)) {
+    fill <- is.na(t2) & !is.na(sources[[nm]])
+    if (any(fill)) {
+      t2[fill] <- sources[[nm]][fill]
+      used <- c(used, sprintf("%s (%d)", nm, sum(fill)))
+    }
+  }
+  if (length(used) == 0L) {
+    cli::cli_alert_warning(
+      "T2: {paste(names(sources), collapse = ', ')} present but all NA, returning NA"
+    )
+  } else {
+    cli::cli_alert_info("T2: stability proxy from {paste(used, collapse = ', ')}")
+    msg_info("indicateur_t2_changement")
+  }
+  t2
 }
 
 

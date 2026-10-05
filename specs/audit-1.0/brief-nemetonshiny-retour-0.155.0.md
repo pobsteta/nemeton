@@ -33,9 +33,10 @@ joue que si la colonne N2 est absente, pas unité par unité. Le filtre de l'app
 (« colonne toute NA écartée ») couvre le cas extrême, pas le cas mixte : une
 unité dont N2 est NA garde T2 = NA même quand son T1 est connu.
 
-C'est au cœur de le corriger (repli N2 → T1 par unité). **Proposé, pas encore
-fait** : quand il le sera, il n'y aura rien à changer côté app (le filtre
-restera inoffensif) ; un brief le signalera avec la version.
+**Corrigé dans le cœur v0.212.1** (2026-10-05) : repli N2 → `t1_values` →
+colonne `T1`, unité par unité. Rien à changer côté app : son filtre reste
+inoffensif. Aucun plancher à relever, sauf si l'app veut garantir le cas mixte
+(`nemeton (>= 0.212.1)`).
 
 ## 3. Reste à faire côté app
 
@@ -59,5 +60,5 @@ restera inoffensif) ; un brief le signalera avec la version.
 
 ## 4. Ce qui n'est pas demandé
 
-Pas de nouveau plancher : la 0.212.0 suffit. Pas de changement de code app pour
-le §2.
+Pas de nouveau plancher obligatoire : la 0.212.0 suffit, la 0.212.1 ajoute le
+cas mixte de T2. Pas de changement de code app pour le §2.

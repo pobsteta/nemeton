@@ -178,6 +178,13 @@ supprimer — un `load_project()` sur un projet au sens v2 détruisait ses
 indicateurs (Couchey) ; un projet neuf porte le marqueur de sens courant.
 Plancher `Imports: nemeton (>= 0.212.0)` (borne E1/E2 = 2,64, tests alignés).
 
+**Journal** — *2026-10-05* (**v0.212.1**) : T2 se replie sur T1 **unité par
+unité** (une unité à N2 = NA prend son T1). Trouvé en relisant la PR #218 de
+l'app, qui écartait une N2 toute NA ; son filtre reste inoffensif, rien à
+changer côté app. Brief retour : `specs/audit-1.0/brief-nemetonshiny-retour-0.155.0.md`.
+CI : l'envoi Codecov (TLS refusé depuis le 2026-10-05) ne bloque plus le
+workflow ni la release.
+
 **Prochaine étape** : vague 6 (contrat d'API, reliquat). L'app consomme 135
 des 313 exports et lit 21 symboles internes : ne rien retirer ni changer de
 signature parmi eux sans brief app (`specs/audit-1.0/exports-consommes-app.md`).

@@ -767,3 +767,42 @@ test_that("T2 validates sf input", {
     "must be.*sf"
   )
 })
+
+# --- T2 : repli N2 -> T1 unité par unité (0.212.1) ---------------------------
+# Avant 0.212.1, la colonne N2 était prise entière dès qu'elle existait : une
+# unité à N2 = NA restait à T2 = NA même avec un T1 connu (relevé en relisant
+# la PR #218 de nemetonshiny, qui écartait une N2 toute NA pour s'en sortir).
+
+test_that("T2 falls back to T1 unit by unit when N2 is partly NA", {
+  units <- create_test_units(n_features = 4)
+  units$N2 <- c(80, NA, NA, 30)
+  units$T1 <- c(10, 60, NA, 150)
+  result <- suppressMessages(indicateur_t2_changement(units))
+  expect_equal(result, c(80, 60, NA, 30))
+})
+
+test_that("T2 with an all-NA N2 column falls back to T1", {
+  units <- create_test_units(n_features = 3)
+  units$N2 <- rep(NA_real_, 3)
+  result <- suppressMessages(
+    indicateur_t2_changement(units, t1_values = c(40, 200, NA))
+  )
+  expect_equal(result, c(40, 100, NA))
+})
+
+test_that("T2 prefers t1_values over the T1 column, unit by unit", {
+  units <- create_test_units(n_features = 3)
+  units$T1 <- c(20, 30, 40)
+  result <- suppressMessages(
+    indicateur_t2_changement(units, t1_values = c(70, NA, 90))
+  )
+  expect_equal(result, c(70, 30, 90))
+})
+
+test_that("T2 with sources present but all NA warns and returns NA", {
+  units <- create_test_units(n_features = 2)
+  units$N2 <- c(NA_real_, NA_real_)
+  units$T1 <- c(NA_real_, NA_real_)
+  expect_message(result <- indicateur_t2_changement(units), "all NA")
+  expect_true(all(is.na(result)))
+})
