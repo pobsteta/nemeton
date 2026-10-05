@@ -600,6 +600,20 @@ validate_knowledge_manifest <- function(manifest) {
   )
 }
 
+# doc_id du manifeste lu dans la colonne JSON `metadata` d'un
+# knowledge_document (NA si absent ou illisible).
+.metadata_doc_id <- function(x) {
+  if (is.null(x) || length(x) != 1L || is.na(x)) return(NA_character_)
+  m <- tryCatch(jsonlite::fromJSON(as.character(x), simplifyVector = TRUE),
+                error = function(e) NULL)
+  id <- if (is.list(m)) m$doc_id else NULL
+  if (is.null(id) || length(id) != 1L || is.na(id) || !nzchar(id)) {
+    NA_character_
+  } else {
+    as.character(id)
+  }
+}
+
 .empty_corpus_report <- function() {
   data.frame(
     doc_id = character(0), action = character(0), reason = character(0),
@@ -630,8 +644,10 @@ validate_knowledge_manifest <- function(manifest) {
 #' is `cleared` (or `to_confirm` when `include_to_confirm = TRUE`). `full`
 #' rows ingest their body via [ingest_knowledge_document()]; `abstract_only`
 #' / `link_only` rows ingest a reference-only chunk via
-#' [ingest_knowledge_reference()]. Documents whose `title` is already in the
-#' base are skipped (idempotent re-runs).
+#' [ingest_knowledge_reference()]. Documents whose manifest `doc_id` is
+#' already in the base are skipped (idempotent re-runs); a document ingested
+#' outside the manifest (no `doc_id` in its metadata) is matched on its
+#' `title`.
 #'
 #' @param con A `DBIConnection` ([db_connect()]). May be `NULL` only when
 #'   `dry_run = TRUE`. The RAG schema is enabled if needed.
@@ -640,8 +656,8 @@ validate_knowledge_manifest <- function(manifest) {
 #'   `"openai"`, `"voyage"`.
 #' @param include_to_confirm Logical. Also ingest `to_confirm` rows. Use
 #'   only after personally clearing their licenses. Default `FALSE`.
-#' @param fresh Logical. Delete every existing document first. Default
-#'   `FALSE`.
+#' @param fresh Logical. Delete every existing document first, in a single
+#'   transaction (a failure leaves the corpus untouched). Default `FALSE`.
 #' @param dry_run Logical. Parse and plan only — no DB connection, no
 #'   embedding API calls, no download: a `full` row is planned from the
 #'   existence of its `local_path` or the shape of its PDF `source_url`
@@ -761,10 +777,28 @@ build_knowledge_corpus <- function(con = NULL,
   }
   suppressMessages(enable_rag(con))
   if (isTRUE(fresh)) {
+    # Purge en une transaction : une erreur en cours de route laisse le
+    # corpus intact au lieu d'a moitie vide (audit 1.0).
     existing <- list_knowledge_documents(con)
-    for (id in existing$id) delete_knowledge_document(con, id)
+    DBI::dbWithTransaction(con, {
+      for (id in existing$id) delete_knowledge_document(con, id)
+    })
   }
-  already <- tryCatch(list_knowledge_documents(con)$title, error = function(e) character(0))
+  # Idempotence par doc_id (porte dans metadata$doc_id par
+  # .manifest_row_metadata()) : un titre corrige ne reingere plus le
+  # document, et deux documents homonymes ne se masquent plus. Le titre ne
+  # sert que pour les documents ingeres hors manifeste, sans doc_id.
+  docs <- tryCatch(list_knowledge_documents(con), error = function(e) NULL)
+  already_ids <- character(0)
+  already_titles <- character(0)
+  if (!is.null(docs) && nrow(docs)) {
+    ids <- vapply(docs$metadata, .metadata_doc_id, character(1))
+    already_ids <- ids[!is.na(ids)]
+    already_titles <- docs$title[is.na(ids)]
+  }
+  is_already <- function(r) {
+    r$doc_id %in% already_ids || r$title %in% already_titles
+  }
 
   rows <- lapply(seq_len(n), function(i) {
     r <- man[i, , drop = FALSE]
@@ -773,7 +807,7 @@ build_knowledge_corpus <- function(con = NULL,
       return(emit(i, .corpus_report_row(r$doc_id, "skipped",
         reason = sprintf("not eligible (status=%s)", r$status))))
     }
-    if (r$title %in% already) {
+    if (is_already(r)) {
       return(emit(i, .corpus_report_row(r$doc_id, "skipped", reason = "already ingested")))
     }
     reference <- .is_reference_strategy(r$ingest_strategy)
