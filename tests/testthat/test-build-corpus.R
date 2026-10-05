@@ -183,6 +183,30 @@ test_that("real build reports a refused local_path as an error row", {
   })
 })
 
+test_that("a declared local_path missing under the corpus root is named in the report", {
+  # Le manifeste empaqueté porte des chemins `data-raw/references/...`,
+  # relatifs à la racine du dépôt : depuis le paquet installé, ils ne sont
+  # pas résolus. Le rapport doit le dire, pas un « no ingestible source »
+  # muet qui ne désigne ni le fichier ni la racine.
+  con <- .local_corpus_con()
+  testthat::local_mocked_bindings(
+    .embed_texts = function(texts, ...) stop("must not embed"),
+    .package = "nemeton")
+  root <- withr::local_tempdir()
+  withr::local_options(nemeton.corpus_root = root)
+  man <- .mini_manifest(root)
+  man$local_path[1] <- "data-raw/references/absent.pdf"
+  for (dry in c(TRUE, FALSE)) {
+    rep <- build_knowledge_corpus(if (dry) NULL else con, manifest = man,
+                                  dry_run = dry)
+    reason <- rep$reason[rep$doc_id == "doc_full"]
+    expect_equal(rep$action[rep$doc_id == "doc_full"], "skipped")
+    expect_match(reason, "local_path not found", fixed = TRUE)
+    expect_match(reason, "data-raw/references/absent.pdf", fixed = TRUE)
+    expect_match(reason, "corpus root", fixed = TRUE)
+  }
+})
+
 
 # ---- cache PDF (audit 1.0) -------------------------------------------
 

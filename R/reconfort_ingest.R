@@ -317,9 +317,12 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 # comparing to `0L` keeps working unchanged.
 .reconfort_run_py <- function(conda_bin, env, script, cfg, workdir, quiet = FALSE) {
   unit <- .capped_scope_unit(paste0("py-", basename(script)))
+  # --no-capture-output : la sortie de python est relayée au fil de l'eau.
+  # Sans lui, `conda run` la retient jusqu'à la fin du processus et la perd
+  # si le scope est tué (OOM) : plus aucun journal du run.
   cmd <- .reconfort_cap_memory(
     conda_bin,
-    c("run", "-n", env, "python", basename(script),
+    c("run", "--no-capture-output", "-n", env, "python", basename(script),
       "-config_file", shQuote(cfg)),
     unit = unit
   )
@@ -378,7 +381,10 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
     withr::with_dir(glue, {
       suppressWarnings(system2(
         conda_bin,
-        args = c("run", "-n", env, "python", "download_s2_item.py",
+        # --no-capture-output : sortie relayée au fil de l'eau (cf.
+        # .reconfort_run_py()).
+        args = c("run", "--no-capture-output", "-n", env, "python",
+                 "download_s2_item.py",
                  "-account", shQuote(account),
                  "-item_json", shQuote(item_json),
                  "-outfile", shQuote(outfile)),

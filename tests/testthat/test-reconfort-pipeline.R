@@ -548,3 +548,40 @@ test_that("the workdir lock refuses a live holder and replaces a stale one", {
     "RECONFORT dieback run failed")
   expect_false(file.exists(file.path(wd, ".lock")))
 })
+
+test_that("run_reconfort_dieback guards the s2_year season", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  seen_trigger <- NULL
+  testthat::local_mocked_bindings(
+    .reconfort_today = function() as.Date("2024-07-01"),
+    # Capture la date de déclenchement des alertes, sans clustering réel.
+    .postprocess_reconfort_rasters = function(rasters, species, trigger_date, ...) {
+      seen_trigger <<- trigger_date
+      NULL
+    }
+  )
+
+  # Année future : aucune donnée Sentinel-2, refus net.
+  expect_error(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2025L, tiles = "T31UDP", quiet = TRUE),
+    "future")
+
+  # Saison en cours (fenêtre v3 close le 29 octobre) : avertissement, et des
+  # alertes jamais datées dans le futur (date_to = 2024-12-31 par défaut).
+  # (le mock ne pose aucune scène : la phase persist avertit aussi.)
+  warns <- character(0)
+  res <- withCallingHandlers(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2024L, tiles = "T31UDP", quiet = TRUE),
+    warning = function(w) {
+      warns <<- c(warns, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    })
+  expect_true(any(grepl("incomplete", warns)))
+  expect_equal(res$status, "completed")
+  expect_identical(seen_trigger, as.Date("2024-07-01"))
+})

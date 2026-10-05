@@ -44,7 +44,11 @@ convention as FORDEAD's `cache_dir`).}
 series -- the single temporal control of a run (the app exposes only this,
 as a year picker). Default the current year. The download window, the
 analysis window and the output names all derive from it; see
-\emph{Temporal window} below.}
+\emph{Temporal window} below. A future year is refused; a year whose
+model analysis window has not yet elapsed (see
+\code{\link[=reconfort_latest_complete_year]{reconfort_latest_complete_year()}}) runs with a warning
+(truncated last season). The alert trigger date never lies after the day
+of the run.}
 
 \item{date_from, date_to}{Sentinel-2 \strong{download} window
 (`"YYYY-MM-DD"`). `NULL` (default) derives a two-calendar-year window from
