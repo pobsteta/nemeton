@@ -118,7 +118,11 @@ NULL
 #' @param url Character. Connection URL. Two schemes are
 #'   supported:
 #'   * `postgresql://user:password@host:port/dbname` — opens a
-#'     [RPostgres::Postgres()] connection.
+#'     [RPostgres::Postgres()] connection. Reserved characters in the
+#'     user, password or database name are percent-encoded (`%40` for
+#'     `@`) and decoded before reaching libpq; an optional query string
+#'     (`?sslmode=require&application_name=x`) is passed through as libpq
+#'     parameters (explicit arguments such as `connect_timeout` win).
 #'   * `sqlite:///absolute/path/to/file.sqlite` — opens a
 #'     [RSQLite::SQLite()] connection on the given file in WAL mode
 #'     (the local backend). The file is created if it does not exist. A
@@ -197,8 +201,9 @@ db_connect <- function(url = Sys.getenv("NEMETON_DB_URL"),
       # `connect_timeout` is a libpq connection parameter (seconds): it
       # bounds the wait when the Postgres host is unreachable instead of
       # hanging on the default OS TCP timeout.
-      DBI::dbConnect(
-        RPostgres::Postgres(),
+      # Les paramètres libpq de la query string (sslmode, application_name…)
+      # sont transmis tels quels ; les paramètres explicites priment.
+      args <- list(
         host            = parts$host,
         port            = parts$port,
         dbname          = parts$dbname,
@@ -206,6 +211,8 @@ db_connect <- function(url = Sys.getenv("NEMETON_DB_URL"),
         password        = parts$password,
         connect_timeout = as.integer(connect_timeout)
       )
+      extra <- parts$options[setdiff(names(parts$options), names(args))]
+      do.call(DBI::dbConnect, c(list(RPostgres::Postgres()), args, extra))
     },
     sqlite = {
       path <- .parse_sqlite_url(url)
@@ -359,19 +366,42 @@ db_migrate <- function(con,
 # ---- Internal helpers ------------------------------------------------
 
 .parse_pg_url <- function(url) {
-  m <- regmatches(url, regexec(
+  # Query string (`?sslmode=require&…`) séparée AVANT l'analyse (audit
+  # 1.0) : elle se collait sinon au nom de base.
+  query <- ""
+  qpos <- regexpr("?", url, fixed = TRUE)
+  base <- url
+  if (qpos > 0L) {
+    query <- substring(url, qpos + 1L)
+    base  <- substr(url, 1L, qpos - 1L)
+  }
+  m <- regmatches(base, regexec(
     "^postgres(?:ql)?://([^:@]+)(?::([^@]*))?@([^:/]+)(?::([0-9]+))?/(.+)$",
-    url
+    base
   ))[[1]]
   if (length(m) < 6) {
     cli::cli_abort("Invalid PostgreSQL URL: {.val {(.mask_db_url(url))}}.")
   }
+  # Décodage des %XX (audit 1.0) : un mot de passe contenant `@`, `:` ou `/`
+  # doit être encodé dans l'URL (RFC 3986) et transmis décodé à libpq.
+  dec <- function(x) utils::URLdecode(x)
+  options <- list()
+  if (nzchar(query)) {
+    for (kv in strsplit(query, "&", fixed = TRUE)[[1]]) {
+      if (!nzchar(kv)) next
+      eq <- regexpr("=", kv, fixed = TRUE)
+      key <- if (eq > 0L) substr(kv, 1L, eq - 1L) else kv
+      val <- if (eq > 0L) substring(kv, eq + 1L) else ""
+      options[[dec(key)]] <- dec(val)
+    }
+  }
   list(
-    user     = m[2],
-    password = m[3],
-    host     = m[4],
+    user     = dec(m[2]),
+    password = dec(m[3]),
+    host     = dec(m[4]),
     port     = if (nzchar(m[5])) as.integer(m[5]) else 5432L,
-    dbname   = m[6]
+    dbname   = dec(m[6]),
+    options  = options
   )
 }
 

@@ -24,6 +24,38 @@ test_that(".parse_pg_url accepts the postgres:// scheme", {
   expect_equal(parts$dbname, "mydb")
 })
 
+test_that(".parse_pg_url décode les %XX et sépare la query string (audit 1.0)", {
+  parts <- nemeton:::.parse_pg_url(paste0(
+    "postgresql://u%40org:p%3Aw%40d%2F1@db.host:5433/ma%20base",
+    "?sslmode=require&application_name=nemeton%20app"))
+  expect_equal(parts$user, "u@org")
+  expect_equal(parts$password, "p:w@d/1")
+  expect_equal(parts$host, "db.host")
+  expect_equal(parts$port, 5433L)
+  # La query string ne se colle plus au nom de base.
+  expect_equal(parts$dbname, "ma base")
+  expect_equal(parts$options,
+               list(sslmode = "require", application_name = "nemeton app"))
+  # Sans query string : aucune option.
+  expect_length(nemeton:::.parse_pg_url("postgres://u:p@h/db")$options, 0L)
+})
+
+test_that("db_connect transmet les options de la query string à libpq (audit 1.0)", {
+  skip_if_not_installed("DBI")
+  skip_if_not_installed("RPostgres")
+  seen <- NULL
+  local_mocked_bindings(
+    dbConnect = function(drv, ...) { seen <<- list(...); "fake-con" },
+    .package = "DBI")
+  con <- db_connect(
+    "postgresql://u:p@h:5432/db?sslmode=require&connect_timeout=99&dbname=autre")
+  expect_equal(seen$dbname, "db")
+  expect_equal(seen$sslmode, "require")
+  # Les paramètres explicites priment sur la query string.
+  expect_equal(seen$connect_timeout, 10L)
+  expect_equal(sum(names(seen) == "dbname"), 1L)
+})
+
 test_that(".parse_pg_url rejects malformed URLs", {
   expect_error(nemeton:::.parse_pg_url("not-a-url"),
                "Invalid PostgreSQL URL")
