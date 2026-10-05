@@ -576,3 +576,66 @@ test_that(".build_stac_collection_for_aoi de-duplicates and orders by date", {
     c("fordead_20210101", "fordead_20210201", "fordead_20210301")
   )
 })
+
+
+# ----- AOI à cheval sur deux tuiles MGRS (audit 1.0) -------------------
+
+# Écrit un vrai GeoTIFF par bande : la tuile couvre [x0, x0 + 100] m et
+# porte `val` ; ailleurs 0 (nodata L2A).
+.write_tile_cache <- function(cache_dir, scene_id, bands, x0, val) {
+  d <- file.path(cache_dir, gsub("[^A-Za-z0-9._-]", "_", scene_id))
+  dir.create(d, recursive = TRUE, showWarnings = FALSE)
+  for (b in bands) {
+    r <- terra::rast(nrows = 10, ncols = 10, xmin = x0, xmax = x0 + 100,
+                     ymin = 5000000, ymax = 5000100, crs = "EPSG:32631")
+    terra::values(r) <- val
+    terra::writeRaster(r, file.path(d, paste0(b, ".tif")),
+                       datatype = "INT2U", NAflag = 0, overwrite = TRUE)
+  }
+  invisible(d)
+}
+
+test_that(".build_stac_collection_for_aoi emits one item per date over a multi-tile AOI", {
+  skip_if_no_sf()
+  skip_if_no_reticulate()
+  skip_if_not_installed("terra")
+
+  cache_dir <- withr::local_tempdir()
+  bands <- c("B04", "B8A")
+  # Même acquisition, deux tuiles adjacentes (T31TFM / T31TGM).
+  s_fm <- "S2A_MSIL2A_20210105T103441_R108_T31TFM_20210106T000000"
+  s_gm <- "S2A_MSIL2A_20210105T103441_R108_T31TGM_20210106T000000"
+  .write_tile_cache(cache_dir, s_fm, bands, x0 = 600000, val = 111L)
+  .write_tile_cache(cache_dir, s_gm, bands, x0 = 600100, val = 222L)
+  scenes_df <- data.frame(
+    scene_id = c(s_fm, s_gm),
+    obs_date = as.Date(c("2021-01-05", "2021-01-05")),
+    stringsAsFactors = FALSE
+  )
+
+  ps <- .make_fake_pystac_module()
+  ss <- .make_fake_simplestac_module()
+  sl <- .make_fake_simplestac_local_module()
+  dt <- .make_fake_datetime_module()
+  testthat::local_mocked_bindings(
+    import = function(module, convert = FALSE) {
+      switch(module, pystac = ps$module, simplestac.utils = ss$module,
+             simplestac.local = sl, datetime = dt, stop("?"))
+    },
+    r_to_py = function(x) x, dict = function(...) list(),
+    .package = "reticulate"
+  )
+
+  out <- nemeton:::.build_stac_collection_for_aoi(
+    .make_test_aoi(), scenes_df, cache_dir, bands)
+  ids <- vapply(ps$state$items, function(it) it$id, character(1))
+  expect_equal(out$n, 1L)
+  expect_false(anyDuplicated(ids) > 0L)
+  # L'unique item de la date couvre les deux tuiles.
+  href <- get("B04", envir = ps$state$items[[1L]]$assets)$href
+  m <- terra::rast(href)
+  expect_equal(terra::xmin(m), 600000)
+  expect_equal(terra::xmax(m), 600200)
+  v <- terra::values(m)[, 1]
+  expect_setequal(unique(v), c(111, 222))
+})

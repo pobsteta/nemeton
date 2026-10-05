@@ -132,7 +132,9 @@ before each call. A `fordead:cancelled` progress event is emitted.}
 \value{
 A list with the following fields:
   \describe{
-    \item{status}{`"success"`, `"cancelled"`, or `"error"`.}
+    \item{status}{`"success"`, `"cancelled"`, or `"error"`. A run whose
+      post-processing or alert insertion failed is `"error"` (with a
+      `message`), while keeping the rasters it did persist.}
     \item{message}{Optional human-readable message.}
     \item{phase}{Present only on a `"cancelled"` result — the phase
       (`"ingest"`, `"fit"`, `"predict"`) after which the run stopped.}
