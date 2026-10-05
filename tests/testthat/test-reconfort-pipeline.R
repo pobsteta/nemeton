@@ -20,6 +20,7 @@ mock_pipeline <- function(calls_env, write_score = TRUE, exit = 0L) {
     .reconfort_conda_binary  = function() "/opt/conda/bin/conda",
     .reconfort_probamap_fixed = function(...) TRUE,
     .reconfort_chunk_mask_fixed = function(...) TRUE,
+    .reconfort_env_defects = function(...) character(),
     ensure_reconfort_model   = function(version, cache_dir = NULL, quiet = FALSE) {
       d <- withr::local_tempdir(.local_envir = calls_env$env)
       p <- file.path(d, "model_1_seed_0.txt"); writeLines("model", p); p
@@ -674,4 +675,34 @@ test_that("skip_ingest = TRUE refuse des dossiers extraits absents ou vides", {
                           skip_ingest = TRUE),
     "skip_ingest")
   expect_null(calls$cfg)
+})
+
+test_that("les defauts #9 / #10 de l'env iota2 sont sondes et signales", {
+  skip_on_os("windows")
+  d <- withr::local_tempdir()
+  fake <- file.path(d, "fake_conda.sh")
+  # Faux conda : banner OTB puis l'identifiant d'un defaut restant.
+  writeLines(c("#!/bin/sh", "echo '**** OTB environment setup complete ****'",
+               "echo '#10'"), fake)
+  Sys.chmod(fake, "0755")
+  expect_identical(.reconfort_env_defects(fake, "envx"), "#10")
+  # Sonde en echec (statut non nul) : rien n'est invente.
+  writeLines(c("#!/bin/sh", "echo '#9'", "exit 1"), fake)
+  expect_identical(.reconfort_env_defects(fake, "envx"), character())
+  expect_identical(.reconfort_env_defects(NULL, "envx"), character())
+})
+
+test_that("run_reconfort_dieback avertit quand l'env n'est pas repare (#9/#10)", {
+  skip_if_terra_write_broken()
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  testthat::local_mocked_bindings(.reconfort_env_defects = function(...) c("#9", "#10"))
+
+  warns <- collect_warnings(
+    run_reconfort_dieback(con = con, zone_id = 1L, cache_dir = cache,
+                          s2_year = 2024L, tiles = "T31UDP", quiet = TRUE))
+  expect_true(any(grepl("#9", warns) & grepl("#10", warns) &
+                    grepl("repair", warns)))
 })

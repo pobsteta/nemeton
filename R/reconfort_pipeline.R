@@ -190,6 +190,29 @@
   identical(as.integer(status), 0L)
 }
 
+# Defects #9 (pandas >= 3 : `to_datetime(infer_datetime_format=)` removed) and
+# #10 (`task_launcher.py` not on the env PATH) of `repair_iota2_env.sh`, probed
+# in ONE subprocess. Returns the ids still present ("#9", "#10"); character(0)
+# when the env is repaired OR when the probe itself could not run — a failed
+# probe must never invent a defect (the iota2 import check has already passed).
+# Audit 1.0 : seuls #11 et #12 etaient sondes cote R.
+.reconfort_env_defects <- function(conda_bin, env) {
+  if (is.null(conda_bin) || !nzchar(conda_bin)) return(character())
+  expr <- paste(
+    "import shutil, pandas",
+    "print('#9') if int(pandas.__version__.split('.')[0]) >= 3 else None",
+    "print('#10') if shutil.which('task_launcher.py') is None else None",
+    sep = "; ")
+  out <- tryCatch(
+    suppressWarnings(system2(conda_bin,
+                             args = c("run", "-n", env, "python", "-c", shQuote(expr)),
+                             stdout = TRUE, stderr = FALSE)),
+    error = function(e) character())
+  if (!is.null(attr(out, "status"))) return(character())
+  # Le banner OTB de l'env est filtre : on ne garde que les identifiants.
+  intersect(trimws(out), c("#9", "#10"))
+}
+
 # Date du jour, isolée pour que les tests puissent la fixer (garde-fou de
 # saison de `s2_year`, date de déclenchement des alertes).
 .reconfort_today <- function() Sys.Date()
@@ -821,6 +844,15 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     begin("env")
     env <- .ensure_reconfort_python(require_pygeodes = !skip_ingest, quiet = quiet)
     conda_bin <- .reconfort_conda_binary()
+    # defects #9 / #10: unpatched, IOTA2 crashes at its first steps (label
+    # parsing, dask task launch). Warn up front rather than let it fail later.
+    env_defects <- .reconfort_env_defects(conda_bin, env)
+    if (length(env_defects)) {
+      cli::cli_warn(c(
+        "The RECONFORT env is missing the iota2 repair{?s} {.val {env_defects}} (pandas < 3, task_launcher.py on PATH).",
+        i = "IOTA2 is expected to fail; run {.file repair_iota2_env.sh} on the {.val {env}} env, then re-run."
+      ))
+    }
     # defect #12: unpatched, the probability map is clamped at 255 and the
     # continuous score comes out compressed (~24..58 instead of 1..100). The
     # class map and the alerts are unaffected, so warn rather than abort.
