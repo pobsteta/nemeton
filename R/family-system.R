@@ -437,40 +437,18 @@ create_family_index <- function(data,
   result
 }
 
-#' Detect Indicator Family from Name
-#'
-#' Extracts the family code from an indicator name (e.g., "C1" -> "C").
-#'
-#' @param indicator_name Character. Indicator name.
-#'
-#' @return Character. Family code (C, W, F, L, etc.) or NA if not detected.
-#'
-#' @keywords internal
-detect_indicator_family <- function(indicator_name) {
-  # Match pattern: family letter + digit (e.g., C1, B2)
-  if (grepl("^[A-Z][0-9]", indicator_name)) {
-    return(substr(indicator_name, 1, 1))
-  }
-
-  # Match long-form column names via INDICATOR_FAMILIES config
-  col_map <- get_column_family_map()
-  # Strip _norm suffix for matching
-  base_name <- sub("_norm$", "", indicator_name)
-  if (base_name %in% names(col_map)) {
-    return(col_map[[base_name]])
-  }
-
-  NA_character_
-}
+# detect_indicator_family() vit dans R/utils.R. Une seconde définition, ici,
+# était masquée par celle-là à l'ordre de chargement (code mort, audit 1.0).
 
 #' Get Family Name from Code
 #'
-#' Returns the full family name for a given family code.
+#' Returns the family name for a given family code, read from
+#' `INDICATOR_FAMILIES` (`name_fr` / `name_en`), the single source of truth.
 #'
 #' @param family_code Character. Family code (C, W, F, etc.).
 #' @param lang Character. Language ("en" or "fr"). Default uses current locale.
 #'
-#' @return Character. Full family name.
+#' @return Character. Family name, or the code itself when unknown.
 #'
 #' @usage get_family_name(family_code, lang = NULL)
 #'
@@ -479,42 +457,11 @@ get_family_name <- function(family_code, lang = NULL) {
   if (is.null(lang)) {
     lang <- get_language()
   }
-
-  family_names_en <- c(
-    B = "Biodiversity",
-    W = "Water Regulation",
-    A = "Air Quality & Microclimate",
-    F = "Soil Fertility",
-    C = "Carbon & Vitality",
-    L = "Landscape & Aesthetics",
-    T = "Temporal Dynamics & Trame",
-    R = "Risk Management & Resilience",
-    S = "Social & Recreational",
-    P = "Productive & Economic",
-    E = "Energy & Climate",
-    N = "Naturalness & Wilderness"
-  )
-
-  family_names_fr <- c(
-    B = "B \u2013 Biodiversit\u00e9 / V - Vivant",
-    W = "W \u2013 Water (eau) / I - Infiltr\u00e9e",
-    A = "A \u2013 Air (microclimat) / V \u2013 Vaporeuse",
-    F = "F \u2013 Fertilit\u00e9 / R - Riche",
-    C = "C \u2013 Carbone / E \u2013 \u00c9nerg\u00e9tique",
-    L = "L \u2013 Landscape (paysage) / E \u2013 Esth\u00e9tique",
-    T = "T \u2013 Trame / N - Nervur\u00e9e",
-    R = "R \u2013 R\u00e9silience / F - Flexible",
-    S = "S \u2013 Social / U \u2013 Usages r\u00e9cr\u00e9atifs",
-    P = "P \u2013 Productif / \u00c9 \u2013 \u00c9conomie foresti\u00e8re",
-    E = "E \u2013 \u00c9nergie / C \u2013 Climat",
-    N = "N \u2013 Naturalit\u00e9 / S \u2013 Sauvage"
-  )
-
-  names_list <- if (lang == "fr") family_names_fr else family_names_en
-
-  if (family_code %in% names(names_list)) {
-    return(names_list[[family_code]])
+  # Lecture de INDICATOR_FAMILIES : la table codée en dur divergeait
+  # (« Water Regulation » contre « Water », etc., audit 1.0).
+  fam <- INDICATOR_FAMILIES[[family_code]]
+  if (is.null(fam)) {
+    return(family_code) # Return code if name not found
   }
-
-  family_code # Return code if name not found
+  if (identical(lang, "fr")) fam$name_fr else fam$name_en
 }

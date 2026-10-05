@@ -12,9 +12,10 @@ get_family_name(family_code, lang = NULL)
 \item{lang}{Character. Language ("en" or "fr"). Default uses current locale.}
 }
 \value{
-Character. Full family name.
+Character. Family name, or the code itself when unknown.
 }
 \description{
-Returns the full family name for a given family code.
+Returns the family name for a given family code, read from
+\code{INDICATOR_FAMILIES} (\code{name_fr} / \code{name_en}), the single source of truth.
 }
 \keyword{internal}
