@@ -34,7 +34,7 @@ the \code{density_col} of \code{\link{indicateur_c1_biomasse}}): values
 in (0, 1) are set to NA with a warning.}
 
 \item{method}{Character. Volume calculation method. Only "ifn_tarif" (the IFN
-combined-variable tariff \code{V = a x D^2 x H}) is implemented; "allometric" is
+tariff \code{V = a x DBH^b x H^c}, see Details) is implemented; "allometric" is
 accepted for backward compatibility but has no effect and emits a warning.
 Default "ifn_tarif".}
 
