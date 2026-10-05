@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.212.1] - 2026-10-05
+
+### Fixed
+- T2 : repli N2 → T1 unité par unité (une unité à N2 = NA prend son T1).
+
 ## [0.212.0] - 2026-10-03
 
 ### Fixed
