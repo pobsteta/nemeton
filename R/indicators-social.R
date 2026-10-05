@@ -22,7 +22,8 @@ NULL
 #' @param layers A nemeton_layers object (optional). Used to resolve roads/dem
 #'   when not provided directly.
 #' @param column_name Character. Name for output column. Default "S1".
-#' @param lang Character. Message language ("en" or "fr"). Default "en".
+#' @param lang Character. Currently unused (messages are in English); kept for
+#'   backward compatibility. Default "en".
 #' @param dem_target_res Numeric. Working resolution (metres) the DEM grid is
 #'   aggregated to before roads are rasterised and the distance transform runs.
 #'   The DEM is only a grid template here, and a 0.5-1 m LiDAR HD MNT makes that
@@ -124,7 +125,8 @@ indicateur_s1_routes <- function(units,
 #' @param layers A nemeton_layers object (optional). Used to resolve buildings/dem
 #'   when not provided directly.
 #' @param column_name Character. Name for output column. Default "S2".
-#' @param lang Character. Message language. Default "en".
+#' @param lang Character. Currently unused (messages are in English); kept for
+#'   backward compatibility. Default "en".
 #' @param dem_target_res Numeric. Working resolution (metres) the DEM grid is
 #'   aggregated to before buildings are rasterised and the distance transform
 #'   runs. The DEM is only a grid template here, and a 0.5-1 m LiDAR HD MNT makes
@@ -271,7 +273,8 @@ indicateur_s2_bati <- function(units,
 #' @param method Character. Data source: "insee" (INSEE Carroyage), "local", or "proxy". Default "insee".
 #' @param buffer_radii Numeric vector. Buffer distances (m) for population counts. Default c(5000, 10000, 20000).
 #' @param column_name Character. Name for output column (main indicator). Default "S3".
-#' @param lang Character. Message language. Default "en".
+#' @param lang Character. Currently unused (messages are in English); kept for
+#'   backward compatibility. Default "en".
 #'
 #' @param population_field Character or `NULL`. Name of the population column of
 #'   `population_grid` when it is an `sf`. `NULL` (default) looks for `ind`,

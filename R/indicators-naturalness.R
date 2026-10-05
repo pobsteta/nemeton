@@ -22,7 +22,8 @@ NULL
 #' @param buildings sf object (POLYGON/MULTIPOLYGON). Buildings. NULL = default 500m.
 #' @param layers nemeton_layers object. Used to resolve roads/buildings if not provided directly.
 #' @param column_name Character. Name for output column. Default "N1".
-#' @param lang Character. Message language. Default "en".
+#' @param lang Character. Currently unused (messages are in English); kept for
+#'   backward compatibility. Default "en".
 #'
 #' @return sf object with added column N1 (score 0-100, 100 = very remote)
 #'
@@ -107,7 +108,8 @@ indicateur_n1_distance <- function(units,
 #'   `anciennete` tier column, weight the ancient-forest coverage by tier depth
 #'   (forest present at more epochs counts more). Ignored for single-epoch
 #'   layers. Default `TRUE`.
-#' @param lang Character. Message language. Default "en".
+#' @param lang Character. Currently unused (messages are in English); kept for
+#'   backward compatibility. Default "en".
 #'
 #' @return sf object with added column N2 (score 0-100).
 #'
@@ -227,7 +229,8 @@ indicateur_n2_continuite <- function(units,
 #'
 #' @param units sf object with N1 and N2 columns (optionally L1, B3)
 #' @param column_name Character. Name for output column. Default "N3".
-#' @param lang Character. Message language. Default "en".
+#' @param lang Character. Currently unused (messages are in English); kept for
+#'   backward compatibility. Default "en".
 #'
 #' @return sf object with added column N3 (score 0-100), or `NA` when any of
 #'   the four input columns is missing.

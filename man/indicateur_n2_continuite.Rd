@@ -33,7 +33,8 @@ indicateur_n2_continuite(
 (forest present at more epochs counts more). Ignored for single-epoch layers.
 Default \code{TRUE}.}
 
-\item{lang}{Character. Message language. Default "en".}
+\item{lang}{Character. Currently unused (messages are in English); kept for
+backward compatibility. Default "en".}
 }
 \value{
 sf object with added column N2 (score 0-100).
