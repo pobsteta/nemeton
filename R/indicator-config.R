@@ -564,15 +564,16 @@ get_all_column_names <- function() {
 #' @section Column pairing:
 #' `indicators` and `column_names` are always the same length and are paired
 #' **by position**: `column_names[[i]]` is the column produced for
-#' `indicators[[i]]`. Do **not** derive one from the other by string
-#' manipulation: **one** family still carries a legacy naming swap, where the
-#' short code and the column slug disagree.
-#' \itemize{
-#'   \item `F1` is `indicateur_f2_erosion` and `F2` is `indicateur_f1_fertilite`.
-#' }
-#' The labels follow the short code **and** the values the paired column
-#' carries, so `labels[["F1"]]` describes erosion — consistent with the paired
-#' column, not with the column's own slug.
+#' `indicators[[i]]`. Since 0.182.0 the short code and the column slug agree
+#' in every family (`F1` is `indicateur_f1_fertilite`, `F2` is
+#' `indicateur_f2_erosion`), and the labels follow both. Still read the pairing
+#' by position rather than deriving one from the other by string manipulation:
+#' the slugs are not a naming contract.
+#'
+#' Family F carried a legacy swap until 0.182.0 (spec 049): this table paired
+#' `F1` with `indicateur_f2_erosion` and `F2` with `indicateur_f1_fertilite`,
+#' while the alias resolver read the codes the other way. Code written against
+#' that pairing must be checked.
 #'
 #' Family L was in the same state until 0.176.0, for a reason worth
 #' remembering: a column is named after the function that fills it
@@ -811,8 +812,9 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 #'
 #' Rows follow the canonical family order, and within a family the declaration
 #' order of the indicators. `column_name` is the column paired with `code` —
-#' see the *Column pairing* section of [indicator_families()] for the two
-#' families where the short code and the column slug disagree.
+#' see the *Column pairing* section of [indicator_families()] for the history
+#' of the F and L families, where the short code and the column slug used to
+#' disagree.
 #'
 #' As in [indicator_families()], both languages are always returned: `lang`
 #' only selects which one is copied into the convenience columns `label` and
