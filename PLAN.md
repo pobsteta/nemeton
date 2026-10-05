@@ -7,7 +7,7 @@ CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25).
 chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
-> merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.154.0**
+> merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.155.0**
 > (release du 2026-10-05), relevée le 2026-10-05.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
@@ -46,23 +46,23 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 | 6 | B4/L3 : les valeurs changent de sens et d’échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Interdit accusé réception le 2026-09-23** (brief app `BRIEF-nemeton-plan-md-0.143.17-0.143.28.md`) : aucun écran ne classe, ne compare ni ne moyenne B4/L3 entre projets — l’app n’a pas de vue inter-projets. **Reste ouvert sur un seul point : question B02 en attente côté app** — B02 absente de l’espace k-means, remplacée par `ID` (point 4 du brief), pas encore instruite |
 | 16 | Validation §6 du brief production IFN sur un projet réel | app **v0.152.0** | terrain | Vérifiée seulement sur deux UGF synthétiques en C51 (P2 = 5,37 m³/ha/an, RSE 2,6 % ; E1 `"ifn_ser"` → `recolte_observee`, E1 à 0,6 → `ressource_flux`). Chargement FORMS-T **vérifié en réel** le 2026-10-02 (Dabo : prévision hybride 6,58 contre 7,56 m³/ha/an en SER). Reste la validation métier dans l’app sur un projet recalculé en mode IFN |
-| 18 | T2 sort NA sur tous les projets : l’app ne lui passe ni `T1` ni `N2` (N2 calculé après T2) | cœur **v0.212.0** (T2 = NA sans source) | `nemetonshiny` | Brief 0.212.0 §4 lu ; câblage à faire dans `service_compute.R` (`.units_for_indicator()` : injecter `T1`, calculer N2 avant T2). Prévu au cycle app 0.154.0.9xxx |
-| 19 | `r1_status` (méthode de R1) non traduit ni affiché ; `r1_fallback_reason` non transporté | cœur **v0.212.0** (ajout du 2026-10-04) | `nemetonshiny` | `.r1_status` déjà transporté dans le parquet par `.capture_status_attr()` ; reste i18n FR/EN + explication des `skipped_*` dans `mod_family.R` |
 
-**Cinq écarts (n° 3, n° 6 résiduel, n° 16, n° 18, n° 19), aucun
-n’appelle plus de correctif dans le cœur.** Le n° 13 est refermé le
-2026-10-02 (cinq relances RECONFORT propres, table ci-dessous). Les n°
-15 et 17 sont refermés par l’app v0.152.1 le 2026-10-02 (table
-ci-dessous). Le n° 3 attend une sortie sur un projet réel portant à la
-fois un nuage LiDAR et une desserte corrigée. Le n° 6 a été lu côté app
-— l’interdit tient, faute de vue inter-projets où l’enfreindre — et ne
-reste ouvert que sur la question B02. Les n° 7, 8, 10 et 11 sont
-refermés le 2026-09-23 (relus sur `nemetonshiny@3869ffd8`, table
-ci-dessous). Le n° 12 (FAST, cœur v0.198.0) est refermé le même jour par
-l’app v0.143.31. Le n° 13 (RECONFORT, cœur v0.199.0) est refermé côté
-app par la v0.144.2 et ne reste ouvert que sur la relance des cinq runs
-écrêtés par le défaut iota2 \#12. Le n° 14 (houppiers, cœur v0.199.2)
-est refermé par l’app v0.144.2 (table ci-dessous).
+**Trois écarts (n° 3, n° 6 résiduel, n° 16), aucun n’appelle plus de
+correctif dans le cœur.** Les n° 18 (T2) et 19 (`r1_status`) sont
+refermés par l’app v0.155.0 le 2026-10-05 ; `r1_fallback_reason` reste
+non transporté, à la demande (le rapport ne cite pas le motif exact). Le
+n° 13 est refermé le 2026-10-02 (cinq relances RECONFORT propres, table
+ci-dessous). Les n° 15 et 17 sont refermés par l’app v0.152.1 le
+2026-10-02 (table ci-dessous). Le n° 3 attend une sortie sur un projet
+réel portant à la fois un nuage LiDAR et une desserte corrigée. Le n° 6
+a été lu côté app — l’interdit tient, faute de vue inter-projets où
+l’enfreindre — et ne reste ouvert que sur la question B02. Les n° 7, 8,
+10 et 11 sont refermés le 2026-09-23 (relus sur `nemetonshiny@3869ffd8`,
+table ci-dessous). Le n° 12 (FAST, cœur v0.198.0) est refermé le même
+jour par l’app v0.143.31. Le n° 13 (RECONFORT, cœur v0.199.0) est
+refermé côté app par la v0.144.2 et ne reste ouvert que sur la relance
+des cinq runs écrêtés par le défaut iota2 \#12. Le n° 14 (houppiers,
+cœur v0.199.2) est refermé par l’app v0.144.2 (table ci-dessous).
 
 **Les n° 10 et 11 n’étaient pas dans cette table**, et c’est le constat
 le plus utile de la release. Le n° 10 a été trouvé en vérifiant le n° 8
@@ -200,6 +200,18 @@ générations) au lieu de supprimer — un `load_project()` sur un projet au
 sens v2 détruisait ses indicateurs (Couchey) ; un projet neuf porte le
 marqueur de sens courant. Plancher `Imports: nemeton (>= 0.212.0)`
 (borne E1/E2 = 2,64, tests alignés).
+
+**Journal** — *2026-10-05* (**app v0.155.0**, `nemetonshiny@4d2a425a`,
+PR \#218) : **briefs cœur 0.208 → 0.212 soldés** côté app, et pilotage
+par un assistant. T2 n’est plus NA : N2 calculé avant T2 et transmis
+comme source, T1 en repli (écart n° 18). `r1_status` traduit FR/EN dans
+la fiche, bandeau sur le premier statut traduit (écart n° 19).
+`prune_orphan_zone_caches(project_uuid =)` (0.209), racine du corpus
+transmise au worker d’import et sources RAG rendues sans HTML brut
+(0.210). Serveur MCP `inst/mcp/` (8 outils sur l’API hors interface),
+calcul détaché, liens profonds `?project=&tab=` — sans impact cœur.
+Restent hors app : `r1_fallback_reason` non transporté (optionnel),
+recalcul des projets, calibrages 0.212 à valider.
 
 **Journal** — *2026-10-05* (**v0.212.1**) : T2 se replie sur T1 **unité
 par unité** (une unité à N2 = NA prend son T1). Trouvé en relisant la PR
