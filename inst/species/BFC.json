@@ -16,7 +16,7 @@
       "label": { "fr": "Chênaie", "en": "Oak forest" },
       "species": ["Quercus robur", "Quercus petraea", "Quercus pubescens"],
       "allometric_key": "Quercus",
-      "oso_classes": [17],
+      "oso_classes": [16],
       "color": "#8B6914",
       "sentinel_signature": "deciduous_mesophilic"
     },
@@ -25,7 +25,7 @@
       "label": { "fr": "Hêtraie", "en": "Beech forest" },
       "species": ["Fagus sylvatica"],
       "allometric_key": "Fagus",
-      "oso_classes": [17],
+      "oso_classes": [16],
       "color": "#228B22",
       "sentinel_signature": "deciduous_mesophilic"
     },
@@ -34,7 +34,7 @@
       "label": { "fr": "Châtaigneraie", "en": "Chestnut forest" },
       "species": ["Castanea sativa"],
       "allometric_key": "Quercus",
-      "oso_classes": [17],
+      "oso_classes": [16],
       "color": "#A0522D",
       "sentinel_signature": "deciduous_thermophilic"
     },
@@ -43,7 +43,7 @@
       "label": { "fr": "Feuillus pionniers", "en": "Pioneer broadleaves" },
       "species": ["Betula pendula", "Carpinus betulus", "Fraxinus excelsior", "Acer pseudoplatanus", "Robinia pseudoacacia"],
       "allometric_key": "Generic",
-      "oso_classes": [17],
+      "oso_classes": [16],
       "color": "#90EE90",
       "sentinel_signature": "deciduous_pioneer"
     },
@@ -52,7 +52,7 @@
       "label": { "fr": "Peupleraie", "en": "Poplar plantation" },
       "species": ["Populus nigra", "Populus x canadensis", "Populus tremula", "Populus alba"],
       "allometric_key": "Generic",
-      "oso_classes": [17],
+      "oso_classes": [16],
       "color": "#BDB76B",
       "sentinel_signature": "deciduous_riparian"
     },
@@ -61,7 +61,7 @@
       "label": { "fr": "Pessière-Sapinière", "en": "Spruce-Fir forest" },
       "species": ["Picea abies", "Abies alba"],
       "allometric_key": "Abies",
-      "oso_classes": [18],
+      "oso_classes": [17],
       "color": "#006400",
       "sentinel_signature": "coniferous_montane"
     },
@@ -70,7 +70,7 @@
       "label": { "fr": "Douglasaie", "en": "Douglas fir plantation" },
       "species": ["Pseudotsuga menziesii"],
       "allometric_key": "Abies",
-      "oso_classes": [18],
+      "oso_classes": [17],
       "color": "#2E8B57",
       "sentinel_signature": "coniferous_plantation"
     },
@@ -79,7 +79,7 @@
       "label": { "fr": "Pinède", "en": "Pine forest" },
       "species": ["Pinus sylvestris", "Pinus nigra", "Pinus pinaster"],
       "allometric_key": "Pinus",
-      "oso_classes": [18],
+      "oso_classes": [17],
       "color": "#556B2F",
       "sentinel_signature": "coniferous_xeric"
     },
@@ -88,7 +88,7 @@
       "label": { "fr": "Mélézin", "en": "Larch forest" },
       "species": ["Larix decidua"],
       "allometric_key": "Pinus",
-      "oso_classes": [18],
+      "oso_classes": [17],
       "color": "#9ACD32",
       "sentinel_signature": "coniferous_deciduous"
     },
@@ -97,7 +97,7 @@
       "label": { "fr": "Chêne vert", "en": "Holm oak" },
       "species": ["Quercus ilex"],
       "allometric_key": "Quercus",
-      "oso_classes": [17],
+      "oso_classes": [16],
       "color": "#6B8E23",
       "sentinel_signature": "evergreen_sclerophyll",
       "note": "Rare en BFC, présent en bordure sud"
@@ -107,16 +107,15 @@
       "label": { "fr": "Forêt mixte", "en": "Mixed forest" },
       "species": [],
       "allometric_key": "Generic",
-      "oso_classes": [19],
+      "oso_classes": [16, 17],
       "color": "#3CB371",
       "sentinel_signature": "mixed"
     }
   ],
 
   "oso_mapping": {
-    "17": ["essence_chenaie", "essence_hetraie", "essence_chataigneraie", "essence_feuillus_pionniers", "essence_peupleraie", "essence_chene_vert"],
-    "18": ["essence_pessiere_sapiniere", "essence_douglasaie", "essence_pinede", "essence_melezin"],
-    "19": ["essence_mixte"]
+    "16": ["essence_chenaie", "essence_hetraie", "essence_chataigneraie", "essence_feuillus_pionniers", "essence_peupleraie", "essence_chene_vert", "essence_mixte"],
+    "17": ["essence_pessiere_sapiniere", "essence_douglasaie", "essence_pinede", "essence_melezin", "essence_mixte"]
   },
 
   "bdforet_mapping": {

@@ -10,6 +10,12 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.212.2] - 2026-10-05
+
+### Fixed
+- `map_oso_class()` / `BFC.json` : nomenclature OSO 2018+ (16 feuillus, 17 conifères), aucune essence hors forêt.
+- Tutoriels 02 et 07 : classes OSO et masque forêt alignés.
+
 ## [0.212.1] - 2026-10-05
 
 ### Fixed

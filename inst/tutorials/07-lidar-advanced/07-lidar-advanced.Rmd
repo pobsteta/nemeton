@@ -5531,7 +5531,7 @@ cat(">>> Prédiction réalisée sur", round(surface_ha, 1), "ha\n")
 
 ### 8.6 Nettoyage, export et synthèse
 
-La fonction `clean_raster()` permet d'appliquer des seuils de validité et un masque forêt pour filtrer les valeurs aberrantes et les zones non forestières. Le masque forêt est créé à partir de la carte d'occupation des sols **OSO** (CESBIO) en sélectionnant les classes forestières (17=Feuillus, 18=Conifères, 19=Mixte). La carte nettoyée est ensuite exportée au format GeoTIFF avec les statistiques de synthèse.
+La fonction `clean_raster()` permet d'appliquer des seuils de validité et un masque forêt pour filtrer les valeurs aberrantes et les zones non forestières. Le masque forêt est créé à partir de la carte d'occupation des sols **OSO** (CESBIO) en sélectionnant les classes forestières (16=Feuillus, 17=Conifères ; la nomenclature OSO 2018+ n'a pas de classe mixte). La carte nettoyée est ensuite exportée au format GeoTIFF avec les statistiques de synthèse.
 
 ```{r ex-8-6-setup, message=FALSE, warning=FALSE}
 # Répertoire des données
@@ -5577,7 +5577,8 @@ cat("  - G minimum:", g_min, "m²/ha\n")
 cat("  - G maximum:", g_max, "m²/ha\n\n")
 
 # Créer un masque forêt depuis OSO (CESBIO)
-# Classes forestières OSO : 17=Feuillus, 18=Conifères, 19=Forêt mixte
+# Classes forestières OSO 2018+ : 16=Feuillus, 17=Conifères (pas de classe
+# mixte ; 18 = pelouses, 19 = landes)
 if (file.exists(oso_file)) {
   cat("Chargement du masque OSO...\n")
   oso <- terra::rast(oso_file)
@@ -5588,15 +5589,15 @@ if (file.exists(oso_file)) {
   }
   oso_aligned <- terra::project(oso, prediction_map, method = "near")
 
-  # Créer le masque forêt (classes 17, 18, 19)
-  forest_mask <- (oso_aligned == 17) | (oso_aligned == 18) | (oso_aligned == 19)
+  # Créer le masque forêt (classes 16, 17)
+  forest_mask <- (oso_aligned == 16) | (oso_aligned == 17)
 
   # Statistiques du masque
   n_forest <- sum(terra::values(forest_mask), na.rm = TRUE)
   n_total <- sum(!is.na(terra::values(forest_mask)))
 
   cat("Masque forêt OSO créé:\n")
-  cat("  - Classes: 17 (Feuillus), 18 (Conifères), 19 (Mixte)\n")
+  cat("  - Classes: 16 (Feuillus), 17 (Conifères)\n")
   cat("  - Pixels forêt:", n_forest, "(", round(100 * n_forest / n_total, 1), "%)\n")
   cat("  - Pixels total:", n_total, "\n\n")
 } else {

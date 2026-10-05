@@ -79,24 +79,42 @@ test_that("map_bdforet_essence returns mixte for unknown essence", {
 })
 
 # ---- map_oso_class ----
+# Nomenclature OSO commune (OSO_NOMENCLATURE) : 16 = feuillus, 17 = conifères,
+# 18 = pelouses, pas de classe mixte. Avant 0.212.2, BFC.json lisait l'ancienne
+# (17 feuillus, 18 conifères, 19 mixte).
 
-test_that("map_oso_class maps deciduous (17) correctly", {
-  result <- map_oso_class(17, "BFC")
+test_that("map_oso_class maps broadleaf forest (16)", {
+  result <- map_oso_class(16, "BFC")
   expect_true("essence_chenaie" %in% result)
   expect_true("essence_hetraie" %in% result)
   expect_false("essence_pinede" %in% result)
 })
 
-test_that("map_oso_class maps coniferous (18) correctly", {
-  result <- map_oso_class(18, "BFC")
+test_that("map_oso_class maps coniferous forest (17)", {
+  result <- map_oso_class(17, "BFC")
   expect_true("essence_pessiere_sapiniere" %in% result)
   expect_true("essence_douglasaie" %in% result)
   expect_false("essence_chenaie" %in% result)
 })
 
-test_that("map_oso_class maps mixed (19) correctly", {
-  result <- map_oso_class(19, "BFC")
-  expect_true("essence_mixte" %in% result)
+test_that("map_oso_class lists the mixed class under both forest codes", {
+  expect_true("essence_mixte" %in% map_oso_class(16, "BFC"))
+  expect_true("essence_mixte" %in% map_oso_class(17, "BFC"))
+})
+
+test_that("map_oso_class returns no species for non-forest codes", {
+  expect_identical(map_oso_class(18, "BFC"), character(0))  # pelouses
+  expect_identical(map_oso_class(4, "BFC"), character(0))   # routes
+  expect_identical(map_oso_class(19, "BFC"), character(0))  # landes
+})
+
+test_that("BFC.json OSO codes are the forest codes of OSO_NOMENCLATURE", {
+  cfg <- get_species_config("BFC")
+  foret <- unname(OSO_CLASSES_FORET)
+  expect_setequal(as.integer(names(cfg$oso_mapping)), foret)
+  for (cls in cfg$classes) {
+    expect_true(all(unlist(cls$oso_classes) %in% foret), info = cls$code)
+  }
 })
 
 # ---- get_allometric_key ----
