@@ -30,7 +30,8 @@ timber volume (m³/ha, a stock). Optional; used only with
 
 \item{column_name}{Character. Name for output column. Default "E2".}
 
-\item{lang}{Character. Message language. Default "en".}
+\item{lang}{Character. Currently unused (messages are in English); kept for
+backward compatibility. Default "en".}
 
 \item{taux_recolte_materiau}{Numeric in \verb{[0, 1]}, one value or one per
 unit: share of \code{volume_field} harvested as construction timber each

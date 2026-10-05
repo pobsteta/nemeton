@@ -28,7 +28,8 @@ when not provided directly.}
 
 \item{column_name}{Character. Name for output column. Default "S1".}
 
-\item{lang}{Character. Message language ("en" or "fr"). Default "en".}
+\item{lang}{Character. Currently unused (messages are in English); kept for
+backward compatibility. Default "en".}
 
 \item{dem_target_res}{Numeric. Working resolution (metres) the DEM grid is
 aggregated to before roads are rasterised and the distance transform runs.

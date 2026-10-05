@@ -24,7 +24,8 @@ indicateur_n1_distance(
 
 \item{column_name}{Character. Name for output column. Default "N1".}
 
-\item{lang}{Character. Message language. Default "en".}
+\item{lang}{Character. Currently unused (messages are in English); kept for
+backward compatibility. Default "en".}
 }
 \value{
 sf object with added column N1 (score 0-100, 100 = very remote)

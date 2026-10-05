@@ -31,7 +31,8 @@ indicateur_p3_qualite_bois(
 
 \item{column_name}{Character. Name for output column. Default "P3".}
 
-\item{lang}{Character. Message language. Default "en".}
+\item{lang}{Character. Currently unused (messages are in English); kept for
+backward compatibility. Default "en".}
 
 \item{chm}{Optional `terra::SpatRaster` canopy height model (spec 005).
 Passed to `ensure_inventory_fields()` to auto-fill `dbh` from the

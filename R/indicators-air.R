@@ -88,7 +88,7 @@ indicateur_a1_couverture <- function(units,
   validate_sf(units)
 
   if (buffer_radius <= 0) {
-    stop("buffer_radius must be positive", call. = FALSE)
+    cli::cli_abort("buffer_radius must be positive")
   }
 
   # Create buffers around each parcel
@@ -97,7 +97,7 @@ indicateur_a1_couverture <- function(units,
   # --- FVC mode (Theia s2_biophysical, phase 3a) ----------------
   if (!is.null(fvc)) {
     if (!inherits(fvc, "SpatRaster")) {
-      stop("fvc must be a SpatRaster object", call. = FALSE)
+      cli::cli_abort("fvc must be a SpatRaster object")
     }
     cli::cli_alert_info("A1: tree coverage from FVC (Theia s2_biophysical)")
     fvc_mean <- safe_extract(
@@ -113,7 +113,7 @@ indicateur_a1_couverture <- function(units,
 
   # Legacy mode requires a land-cover raster
   if (!inherits(land_cover, "SpatRaster")) {
-    stop("land_cover must be a SpatRaster object", call. = FALSE)
+    cli::cli_abort("land_cover must be a SpatRaster object")
   }
 
   # Extract land cover classes within each buffer
@@ -292,12 +292,12 @@ indicateur_a2_qualite_air <- function(units,
   # Direct method: ATMO station data
   if (method == "direct") {
     if (is.null(atmo_data) || !inherits(atmo_data, "sf")) {
-      stop("atmo_data must be an sf object for direct method", call. = FALSE)
+      cli::cli_abort("atmo_data must be an sf object for direct method")
     }
 
     # Check required columns
     if (!all(c("NO2", "PM10") %in% names(atmo_data))) {
-      stop("atmo_data must contain columns: NO2, PM10", call. = FALSE)
+      cli::cli_abort("atmo_data must contain columns: NO2, PM10")
     }
 
     # For each parcel, interpolate pollution from nearest stations (simple IDW)
@@ -335,7 +335,7 @@ indicateur_a2_qualite_air <- function(units,
   } else if (method == "proxy") {
     # Proxy method: weighted pollution from roads (tuto 02, exercice 9.2)
     if (is.null(roads)) {
-      stop("roads must be provided for proxy method", call. = FALSE)
+      cli::cli_abort("roads must be provided for proxy method")
     }
 
     # Pollution weights by BD TOPO v3 `nature` field
@@ -401,7 +401,7 @@ indicateur_a2_qualite_air <- function(units,
     units$A2 <- round(pmin(pmax((1 - pollution_norm) * 100, 0), 100), 1)
     units$A2_method <- "proxy"
   } else {
-    stop("method must be 'auto', 'direct', or 'proxy'", call. = FALSE)
+    cli::cli_abort("method must be 'auto', 'direct', or 'proxy'")
   }
 
   msg_info("indicateur_a2_qualite_air")
@@ -596,7 +596,7 @@ indicateur_a5_rafraichissement <- function(units, lst = NULL,
                                            reference   = NULL,
                                            buffer_m    = 500,
                                            delta_scale = 5, ...) {
-  if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
+  if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
   n <- nrow(units)
 
   if (is.null(lst)) {
@@ -607,14 +607,14 @@ indicateur_a5_rafraichissement <- function(units, lst = NULL,
     return(units)
   }
   if (!inherits(lst, "SpatRaster")) {
-    stop("lst must be a terra SpatRaster", call. = FALSE)
+    cli::cli_abort("lst must be a terra SpatRaster")
   }
   if (!is.numeric(delta_scale) || length(delta_scale) != 1L || delta_scale <= 0) {
-    stop("delta_scale must be a positive scalar", call. = FALSE)
+    cli::cli_abort("delta_scale must be a positive scalar")
   }
   if (!requireNamespace("exactextractr", quietly = TRUE) ||
       !requireNamespace("terra", quietly = TRUE)) {
-    stop("packages exactextractr and terra are required for A5", call. = FALSE)
+    cli::cli_abort("packages exactextractr and terra are required for A5")
   }
   if (n == 0L) {
     units$A5 <- numeric(0); units$A5_delta <- numeric(0)

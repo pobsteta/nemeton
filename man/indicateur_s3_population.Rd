@@ -25,7 +25,8 @@ indicateur_s3_population(
 
 \item{column_name}{Character. Name for output column (main indicator). Default "S3".}
 
-\item{lang}{Character. Message language. Default "en".}
+\item{lang}{Character. Currently unused (messages are in English); kept for
+backward compatibility. Default "en".}
 \item{population_field}{Character or \code{NULL}. Name of the population column of
 \code{population_grid} when it is an \code{sf}. \code{NULL} (default) looks for
 \code{ind}, \code{pop} or \code{population} (INSEE Filosofi names it \code{ind}).}

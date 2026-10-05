@@ -33,7 +33,8 @@ indicateur_p2_station(
 
 \item{column_name}{Character. Name for output column. Default "P2".}
 
-\item{lang}{Character. Message language. Default "en".}
+\item{lang}{Character. Currently unused (messages are in English); kept for
+backward compatibility. Default "en".}
 
 \item{chm}{Optional \code{SpatRaster} of canopy heights in
 metres. When supplied, activates CHM mode (spec 005 phase
