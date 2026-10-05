@@ -13,8 +13,7 @@
 # (limits the frozen-canopy bias, spec 027 §12). `moyenne` is forced
 # distinct from `canicule`.
 .select_years <- function(heat_by_year, lidar_year = NULL) {
-  if (!is.numeric(heat_by_year) || is.null(names(heat_by_year)) ||
-      length(heat_by_year) < 2L) {
+  if (!is.numeric(heat_by_year) || is.null(names(heat_by_year))) {
     cli::cli_abort(c(
       "{.arg heat_by_year} must be a named numeric (year -> summer heat), length >= 2.",
       i = "Names are the years; values a summer-heat index (e.g. mean JJA Tmax)."))
@@ -22,6 +21,13 @@
   yrs  <- suppressWarnings(as.integer(names(heat_by_year)))
   keep <- !is.na(yrs) & !is.na(heat_by_year)
   yrs  <- yrs[keep]; heat <- as.numeric(heat_by_year)[keep]
+  # Contrôle refait APRÈS le retrait des NA (audit 1.0) : avec une seule
+  # année exploitable, la même année sortait « moyenne » et « canicule ».
+  if (length(unique(yrs)) < 2L) {
+    cli::cli_abort(c(
+      "{.arg heat_by_year} must be a named numeric (year -> summer heat) with at least 2 usable years (non-NA value, year name).",
+      i = "Need at least 2 distinct years with a value to pick an average and a heatwave summer."))
+  }
   ord  <- order(yrs); yrs <- yrs[ord]; heat <- heat[ord]
 
   canicule <- yrs[which.max(heat)]
