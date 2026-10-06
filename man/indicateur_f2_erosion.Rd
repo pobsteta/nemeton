@@ -46,7 +46,9 @@ accumulation) and slope (erosion risk). Follows the tuto 03 methodology:
 F2 = (twi_norm + slope_norm) / 2
 }
 \details{
-TWI is computed via GRASS (fasterRaster) when available, terra D8 otherwise.
+TWI is computed via GRASS (fasterRaster) when available, terra D8 otherwise,
+referenced to a 2 m grid (\code{TWI - ln(step / 2)}) and normalised on the
+window [2.5, 9] shared with W3 and R3 (spec 056).
 Higher values indicate more fertile soil conditions.
 
 When a Theia \code{theia_soil} texture raster set is supplied via

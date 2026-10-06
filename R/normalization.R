@@ -711,9 +711,11 @@ normalize_indicator <- function(indicator, values, statut = NULL) {
     return(pmin(100, 100 * log10(1 + d) / log10(1 + 1000)))
   }
 
-  # TWI: rescale [2.5, 4.5] -> [0, 100]
+  # TWI (référence 2 m) : fenêtre commune [2,5 ; 9] -> [0, 100], partagée avec
+  # F2 et R3 (.TWI_WINDOW, spec 056). L'ancienne fenêtre [2,5 ; 4,5] saturait
+  # 75 à 100 % des UGF LiDAR et toutes les UGF à 25 m.
   if (indicator == "indicateur_w3_humidite") {
-    return(pmin(100, pmax(0, (values - 2.5) / 2 * 100)))
+    return(.twi_norm(values) * 100)
   }
 
   # NDVI: scale 0-1 -> 0-100

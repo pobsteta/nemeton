@@ -267,6 +267,22 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
   twi - log(step / .TWI_REF_RES)
 }
 
+# Fenêtre commune de normalisation du TWI (référence 2 m), partagée par W3
+# (normalize_indicator), F2 (composante humidité) et R3 (composante topo) —
+# décision Pascal 2026-10-06, spec 056. Bornes = quantiles 5-95 % poolés à poids
+# égal sur les six projets en cache, grille métrique (q5 = 2,56, q95 = 8,99) :
+# aucune UGF ne sature à 2 m. Remplace [2,5 ; 4,5] (W3, 75-100 % des UGF LiDAR
+# à 100), [2,5 ; 10] (F2) et TWI / max(TWI de l'emprise) (R3).
+.TWI_WINDOW <- c(lo = 2.5, hi = 9)
+
+# TWI -> [0, 1] sur la fenêtre commune (vecteur ou SpatRaster).
+.twi_norm <- function(twi) {
+  lo <- .TWI_WINDOW[["lo"]]; hi <- .TWI_WINDOW[["hi"]]
+  x <- (twi - lo) / (hi - lo)
+  if (inherits(x, "SpatRaster")) return(terra::clamp(x, lower = 0, upper = 1))
+  pmin(1, pmax(0, x))
+}
+
 # CRS métrique du TWI : celui des unités s'il est projeté, sinon ETRS89-LAEA
 # (EPSG:3035, ADR-008). Même règle que le chemin fireexposuR de R1.
 .twi_metric_crs <- function(units = NULL) {
@@ -1697,7 +1713,9 @@ extract_fertility_from_gissol <- function(units, layers,
 #' accumulation) and slope (erosion risk). Follows the tuto 03 methodology:
 #' F2 = (twi_norm + slope_norm) / 2
 #'
-#' TWI is computed via GRASS (fasterRaster) when available, terra D8 otherwise.
+#' TWI is computed via GRASS (fasterRaster) when available, terra D8 otherwise,
+#' referenced to a 2 m grid (\code{TWI - ln(step / 2)}) and normalised on the
+#' window [2.5, 9] shared with W3 and R3 (spec 056).
 #' Higher values indicate more fertile soil conditions.
 #'
 #' When a Theia \code{theia_soil} texture raster set is supplied via
@@ -1775,9 +1793,10 @@ indicateur_f2_erosion <- function(units,
   slope_raster <- terra::terrain(dem, v = "slope", unit = "degrees")
   slope_mean <- safe_extract(slope_raster, units_sf, fun = "mean", progress = FALSE)
 
-  # 3. Normalize TWI: [2.5, 10] -> [0, 100] (higher TWI = more fertile)
-  # Window adjusted to match typical TWI values (2.5-10 range covers most landscapes)
-  twi_norm <- pmax(pmin((twi_mean - 2.5) / 7.5 * 100, 100), 0)
+  # 3. Normalize TWI on the common window [2.5, 9] -> [0, 100] (higher TWI =
+  # more fertile). Fenêtre commune W3/F2/R3 sur un TWI ramené à 2 m (spec 056) ;
+  # elle était [2,5 ; 10] pour F2 seul.
+  twi_norm <- .twi_norm(twi_mean) * 100
 
   # 4. Normalize slope: [0°, 45°] -> [100, 0] (flatter = less erodible)
   slope_norm <- pmax(pmin(100 - (slope_mean / 45) * 100, 100), 0)
