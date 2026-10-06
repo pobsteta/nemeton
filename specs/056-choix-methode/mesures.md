@@ -1,3 +1,16 @@
+> **Décisions de Pascal (2026-10-06)** : les cinq recommandations sont
+> retenues, livrées en **1.0.0** avec les trois défauts trouvés en mesurant.
+> 1. R2 : TRI retiré (redondant avec la pente). TWI ramené à 2 m
+>    (`TWI − ln(pas/2)`), fenêtre fixe commune **[2,5 ; 9]** pour W3, F2 et R3.
+> 2. (idem 1 pour W3/F2.)
+> 3. N1 : terme urbain constant +25 retiré, `N1 = (N1 − 25) / 0,75`.
+> 4. P3 : diamètre seul, `p3_status = "diametre_seul"`.
+> 5. Indice de station hors courbe : NA, `p2_status = "hors_courbe"`, avec la
+>    correction du mappage d'essence.
+> Défauts corrigés dans la même release : TWI calculé en degrés sur MNT
+> lon/lat ; TWI dépendant de la résolution ; essence et âge fabriqués par
+> `enrich_parcels_bdforet()`.
+
 # Spec 056 — Choix de méthode ouverts par l'audit 1.0 : mesures
 
 *2026-10-06 — nemeton 0.216.0.9000 — mesures seules, aucun code du paquet modifié.*
