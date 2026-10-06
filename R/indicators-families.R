@@ -340,7 +340,7 @@ get_or_compute_twi <- function(dem, cache_dir = NULL,
 #'   volume to total aboveground dry biomass (branches, bark).
 #'   Default \code{1.30} (IPCC 2006 temperate-forest default).
 #'
-#' @return Numeric vector of carbon stock values (tC/ha)
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{C1}: carbon stock values (tC/ha)
 #'
 #' @export
 #' @examples
@@ -353,6 +353,32 @@ get_or_compute_twi <- function(dem, cache_dir = NULL,
 #' results <- indicateur_c1_biomasse(units)
 #' }
 indicateur_c1_biomasse <- function(units,
+                                     layers = NULL,
+                                     species_col = "species",
+                                     age_col = "age",
+                                     density_col = "density",
+                                     chm = NULL,
+                                     dbh_col = "dbh",
+                                     stems_col = "stems_ha",
+                                     h_dom_percentile = 0.9,
+                                     bef = 1.30) {
+  .indicateur_resultat(units, "C1", .c1_biomasse_valeur(
+    units = units,
+    layers = layers,
+    species_col = species_col,
+    age_col = age_col,
+    density_col = density_col,
+    chm = chm,
+    dbh_col = dbh_col,
+    stems_col = stems_col,
+    h_dom_percentile = h_dom_percentile,
+    bef = bef
+  ))
+}
+
+# Calcul de C1 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `C1` (contrat 1.0, spec 057).
+.c1_biomasse_valeur <- function(units,
                                      layers = NULL,
                                      species_col = "species",
                                      age_col = "age",
@@ -518,8 +544,8 @@ indicateur_c1_biomasse <- function(units,
 #'   per-unit mean FAPAR and ignores \code{ndvi_layer}. The raster
 #'   is expected in the CRS of \code{units}.
 #'
-#' @return Numeric vector of NDVI mean values (0-1 scale), or list with
-#'   mean and trend if trend = TRUE
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{C2}:
+#'   mean NDVI (0-1 scale), or mean FAPAR in FAPAR mode.
 #'
 #' @export
 #' @examples
@@ -536,6 +562,22 @@ indicateur_c1_biomasse <- function(units,
 #' results <- indicateur_c2_ndvi(units, layers, fapar = fapar)
 #' }
 indicateur_c2_ndvi <- function(units,
+                                  layers,
+                                  ndvi_layer = "ndvi",
+                                  trend = FALSE,
+                                  fapar = NULL) {
+  .indicateur_resultat(units, "C2", .c2_ndvi_valeur(
+    units = units,
+    layers = layers,
+    ndvi_layer = ndvi_layer,
+    trend = trend,
+    fapar = fapar
+  ))
+}
+
+# Calcul de C2 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `C2` (contrat 1.0, spec 057).
+.c2_ndvi_valeur <- function(units,
                                   layers,
                                   ndvi_layer = "ndvi",
                                   trend = FALSE,
@@ -612,7 +654,7 @@ indicateur_c2_ndvi <- function(units,
 #' @param proximity_m Numeric. Maximum distance (m) for proximity bonus. Default 500.
 #' @param proximity_ref Numeric. Equivalent density bonus (m/ha) at distance 0. Default 50.
 #'
-#' @return Numeric vector of network density (m/ha). NA for every unit when
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{W1}: network density (m/ha). NA for every unit when
 #'   the watercourse layer is missing (no measurement); a supplied but empty
 #'   layer gives 0.
 #'
@@ -623,6 +665,24 @@ indicateur_c2_ndvi <- function(units,
 #' results <- indicateur_w1_reseau(units, layers, watercourse_layer = "streams")
 #' }
 indicateur_w1_reseau <- function(units,
+                                    layers,
+                                    watercourse_layer = "water_network",
+                                    buffer = 0,
+                                    proximity_m = 500,
+                                    proximity_ref = 50) {
+  .indicateur_resultat(units, "W1", .w1_reseau_valeur(
+    units = units,
+    layers = layers,
+    watercourse_layer = watercourse_layer,
+    buffer = buffer,
+    proximity_m = proximity_m,
+    proximity_ref = proximity_ref
+  ))
+}
+
+# Calcul de W1 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `W1` (contrat 1.0, spec 057).
+.w1_reseau_valeur <- function(units,
                                     layers,
                                     watercourse_layer = "water_network",
                                     buffer = 0,
@@ -738,7 +798,7 @@ indicateur_w1_reseau <- function(units,
 #'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
 #'   resolution.
 #'
-#' @return Numeric vector of wetland coverage (0-100\%)
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{W2}: wetland coverage (0-100\%)
 #'
 #' @export
 #' @examples
@@ -747,6 +807,26 @@ indicateur_w1_reseau <- function(units,
 #' results <- indicateur_w2_zones_humides(units, layers, wetland_values = c(50, 51, 52))
 #' }
 indicateur_w2_zones_humides <- function(units,
+                                     layers,
+                                     wetland_layer = "wetlands",
+                                     wetland_values = NULL,
+                                     water_occurrence = NULL,
+                                     occurrence_threshold = 25,
+                                     dem_target_res = .topo_target_res()) {
+  .indicateur_resultat(units, "W2", .w2_zones_humides_valeur(
+    units = units,
+    layers = layers,
+    wetland_layer = wetland_layer,
+    wetland_values = wetland_values,
+    water_occurrence = water_occurrence,
+    occurrence_threshold = occurrence_threshold,
+    dem_target_res = dem_target_res
+  ))
+}
+
+# Calcul de W2 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `W2` (contrat 1.0, spec 057).
+.w2_zones_humides_valeur <- function(units,
                                      layers,
                                      wetland_layer = "wetlands",
                                      wetland_values = NULL,
@@ -891,7 +971,7 @@ indicateur_w2_zones_humides <- function(units,
 #'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
 #'   resolution.
 #'
-#' @return Numeric vector of TWI mean values
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{W3}: mean TWI
 #'
 #' @export
 #' @examples
@@ -900,6 +980,22 @@ indicateur_w2_zones_humides <- function(units,
 #' results <- indicateur_w3_humidite(units, layers, dem_layer = "dem")
 #' }
 indicateur_w3_humidite <- function(units,
+                                layers,
+                                dem_layer = "dem",
+                                method = c("auto", "grass", "d8"),
+                                dem_target_res = .topo_target_res()) {
+  .indicateur_resultat(units, "W3", .w3_humidite_valeur(
+    units = units,
+    layers = layers,
+    dem_layer = dem_layer,
+    method = method,
+    dem_target_res = dem_target_res
+  ))
+}
+
+# Calcul de W3 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `W3` (contrat 1.0, spec 057).
+.w3_humidite_valeur <- function(units,
                                 layers,
                                 dem_layer = "dem",
                                 method = c("auto", "grass", "d8"),
@@ -1151,7 +1247,7 @@ calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
 #'   score. For fertility classes 1-5, pass \code{c(1, 5)}. Values outside
 #'   the range are set to NA with a warning. Ignored by the other sources.
 #'
-#' @return Numeric vector of fertility scores (0-100 scale, higher = more fertile)
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{F1}: fertility scores (0-100 scale, higher = more fertile)
 #'
 #' @export
 #' @examples
@@ -1170,6 +1266,31 @@ calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
 #'                                    rpf_code_col = "UTSDom")
 #' }
 indicateur_f1_fertilite <- function(units,
+                                     layers = NULL,
+                                     soil_layer = "soil",
+                                     fertility_col = "fertility",
+                                     source = c("layer", "soilgrids", "gissol",
+                                                "theia_soil"),
+                                     country = "FR",
+                                     rpf_code_col = "rpf_code",
+                                     texture = NULL,
+                                     fertility_range = c(0, 100)) {
+  .indicateur_resultat(units, "F1", .f1_fertilite_valeur(
+    units = units,
+    layers = layers,
+    soil_layer = soil_layer,
+    fertility_col = fertility_col,
+    source = source,
+    country = country,
+    rpf_code_col = rpf_code_col,
+    texture = texture,
+    fertility_range = fertility_range
+  ))
+}
+
+# Calcul de F1 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `F1` (contrat 1.0, spec 057).
+.f1_fertilite_valeur <- function(units,
                                      layers = NULL,
                                      soil_layer = "soil",
                                      fertility_col = "fertility",
@@ -1620,7 +1741,7 @@ extract_fertility_from_gissol <- function(units, layers,
 #'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
 #'   resolution.
 #'
-#' @return Numeric vector of erosion-resistance scores (0-100, higher = more
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{F2}: erosion-resistance scores (0-100, higher = more
 #'   resistant, i.e. LOWER erosion risk). Despite the historical variable name
 #'   inside the function, this is not a fertility score: the ingredients are
 #'   topographic (TWI wetness, slope steepness) plus optional soil texture.
@@ -1632,6 +1753,22 @@ extract_fertility_from_gissol <- function(units, layers,
 #' results <- indicateur_f2_erosion(units, layers)
 #' }
 indicateur_f2_erosion <- function(units,
+                                   layers,
+                                   dem_layer = "dem",
+                                   texture = NULL,
+                                   dem_target_res = .topo_target_res()) {
+  .indicateur_resultat(units, "F2", .f2_erosion_valeur(
+    units = units,
+    layers = layers,
+    dem_layer = dem_layer,
+    texture = texture,
+    dem_target_res = dem_target_res
+  ))
+}
+
+# Calcul de F2 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `F2` (contrat 1.0, spec 057).
+.f2_erosion_valeur <- function(units,
                                    layers,
                                    dem_layer = "dem",
                                    texture = NULL,
@@ -1717,7 +1854,7 @@ indicateur_f2_erosion <- function(units,
 #'   outside the nomenclature).
 #' @param buffer Numeric. Buffer distance (meters) for contrast analysis. Default 50m.
 #'
-#' @return Numeric vector of sylvosphere scores (0-100). **Higher = more edge effect
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{L1}: sylvosphere scores (0-100). **Higher = more edge effect
 #' borne by the unit = less favourable**: all three components grow with it
 #' (boundary irregularity, hostile surrounding matrix, wind and sun
 #' exposure). The value is therefore INVERTED by normalize_indicator() so the
@@ -1741,6 +1878,22 @@ indicateur_f2_erosion <- function(units,
 #' )
 #' }
 indicateur_l1_effet_lisiere <- function(units,
+                                              layers = NULL,
+                                              landcover_layer = "landcover",
+                                              forest_values = c(16, 17),
+                                              buffer = 50) {
+  .indicateur_resultat(units, "L1", .l1_effet_lisiere_valeur(
+    units = units,
+    layers = layers,
+    landcover_layer = landcover_layer,
+    forest_values = forest_values,
+    buffer = buffer
+  ))
+}
+
+# Calcul de L1 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `L1` (contrat 1.0, spec 057).
+.l1_effet_lisiere_valeur <- function(units,
                                               layers = NULL,
                                               landcover_layer = "landcover",
                                               forest_values = c(16, 17),
@@ -1907,7 +2060,7 @@ indicateur_l1_effet_lisiere <- function(units,
 #'   of your own raster when it uses another nomenclature.
 #' @param buffer Numeric. Buffer distance in meters around union of parcels.
 #'
-#' @return Numeric vector of fragmentation scores (0-100). **Higher = less fragmented
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{L2}: fragmentation scores (0-100). **Higher = less fragmented
 #' = favourable** (COHESION + AI, or the inverse shape index in the
 #' fallback): already oriented the right way, so normalize_indicator() passes
 #' it through and does NOT invert it -- unlike L1.
@@ -1925,6 +2078,21 @@ indicateur_l1_effet_lisiere <- function(units,
 #' results <- indicateur_l2_morcellement(units, layers, buffer = 1000)
 #' }
 indicateur_l2_morcellement <- function(units, layers = NULL,
+                                     landcover_layer = "landcover",
+                                     forest_values = c(16, 17),
+                                     buffer = 1000) {
+  .indicateur_resultat(units, "L2", .l2_morcellement_valeur(
+    units = units,
+    layers = layers,
+    landcover_layer = landcover_layer,
+    forest_values = forest_values,
+    buffer = buffer
+  ))
+}
+
+# Calcul de L2 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `L2` (contrat 1.0, spec 057).
+.l2_morcellement_valeur <- function(units, layers = NULL,
                                      landcover_layer = "landcover",
                                      forest_values = c(16, 17),
                                      buffer = 1000) {

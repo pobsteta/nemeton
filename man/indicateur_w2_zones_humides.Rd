@@ -47,7 +47,7 @@ topographic working resolution, 2 m --- see
 resolution.}
 }
 \value{
-Numeric vector of wetland coverage (0-100\%)
+The input \code{units} (same class, rows and order) with an added numeric column \code{W2}: wetland coverage (0-100\%)
 }
 \description{
 Calculates percentage of parcel area classified as wetland or riparian zone.

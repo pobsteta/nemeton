@@ -11,12 +11,12 @@ test_that("le nouveau nom rend exactement ce que rendait l'ancien (CA-3)", {
   units <- massif_demo_units[1:3, ]
 
   expect_identical(
-    suppressWarnings(indicateur_l2_fragmentation(units)),
-    indicateur_l1_effet_lisiere(units)
+    suppressWarnings(indicateur_l2_fragmentation(units)$L1),
+    indicateur_l1_effet_lisiere(units)$L1
   )
   expect_identical(
-    suppressWarnings(indicateur_l1_sylvosphere(units)),
-    indicateur_l2_morcellement(units)
+    suppressWarnings(indicateur_l1_sylvosphere(units)$L2),
+    indicateur_l2_morcellement(units)$L2
   )
 })
 
@@ -26,11 +26,11 @@ test_that("les anciens noms avertissent et nomment leur remplacant", {
   units <- massif_demo_units[1:2, ]
 
   expect_warning(
-    indicateur_l2_fragmentation(units),
+    indicateur_l2_fragmentation(units)$L1,
     "indicateur_l1_effet_lisiere"
   )
   expect_warning(
-    indicateur_l1_sylvosphere(units),
+    indicateur_l1_sylvosphere(units)$L2,
     "indicateur_l2_morcellement"
   )
 })
@@ -43,7 +43,7 @@ test_that("l1_effet_lisiere calcule bien la sylvosphere, pas la fragmentation", 
   # Discriminant : la sylvosphere se calcule sur la seule geometrie (indice de
   # forme + exposition), la fragmentation paysagere exige une couche
   # d'occupation du sol. Ce qui passe sans `layers` est donc la sylvosphere.
-  score <- indicateur_l1_effet_lisiere(units)
+  score <- indicateur_l1_effet_lisiere(units)$L1
 
   expect_length(score, 3)
   expect_true(all(!is.na(score)))

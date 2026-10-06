@@ -31,7 +31,7 @@ Used for units with no measured age.}
 Default uses current system year.}
 }
 \value{
-Numeric vector of estimated age in years (one per parcel) -- NOT a 0-100
+The input \code{units} (same class, rows and order) with an added numeric column \code{T1}: estimated age in years -- NOT a 0-100
 score. \strong{Higher = older = more favourable}, so it is not inverted;
 normalize_indicator() rescales it against a ref_max of 200 years, beyond which
 ancientness counts as maximal. Until 0.196.0 it was wrongly declared natively
@@ -73,7 +73,7 @@ layers <- massif_demo_layers()
 
 # Primary method: BD Forêt
 result <- indicateur_t1_anciennete(massif_demo_units, layers = layers)
-summary(result)
+summary(result$T1)
 
 # Direct age field
 units <- massif_demo_units

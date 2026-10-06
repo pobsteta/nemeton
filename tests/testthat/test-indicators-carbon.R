@@ -15,7 +15,7 @@ test_that("indicateur_c1_biomasse calculates biomass with BD Forêt attributes",
   units$density <- c(0.7, 0.8, 0.6, 0.9, 0.5)
 
   # Calculate biomass
-  biomass <- indicateur_c1_biomasse(units)
+  biomass <- indicateur_c1_biomasse(units)$C1
 
   # Test output
   expect_type(biomass, "double")
@@ -39,7 +39,7 @@ test_that("indicateur_c1_biomasse uses Generic model for unknown species", {
   units$density <- c(0.7, 0.7, 0.7)
 
   # Should not error, should use Generic for unknown
-  expect_no_error(biomass <- indicateur_c1_biomasse(units))
+  expect_no_error(biomass <- indicateur_c1_biomasse(units)$C1)
   expect_length(biomass, 3)
   expect_true(all(!is.na(biomass)))
 })
@@ -55,7 +55,7 @@ test_that("indicateur_c1_biomasse returns NA when required columns missing", {
   units_no_species$species <- NULL
   units_no_species$age <- c(80, 60, 40)
   units_no_species$density <- c(0.7, 0.8, 0.6)
-  result <- indicateur_c1_biomasse(units_no_species)
+  result <- indicateur_c1_biomasse(units_no_species)$C1
   expect_true(all(is.na(result)))
 
   # Missing age
@@ -63,7 +63,7 @@ test_that("indicateur_c1_biomasse returns NA when required columns missing", {
   units_no_age$age <- NULL
   units_no_age$species <- c("Quercus", "Fagus", "Pinus")
   units_no_age$density <- c(0.7, 0.8, 0.6)
-  result <- indicateur_c1_biomasse(units_no_age)
+  result <- indicateur_c1_biomasse(units_no_age)$C1
   expect_true(all(is.na(result)))
 
   # Missing density
@@ -71,7 +71,7 @@ test_that("indicateur_c1_biomasse returns NA when required columns missing", {
   units_no_density$density <- NULL
   units_no_density$species <- c("Quercus", "Fagus", "Pinus")
   units_no_density$age <- c(80, 60, 40)
-  result <- indicateur_c1_biomasse(units_no_density)
+  result <- indicateur_c1_biomasse(units_no_density)$C1
   expect_true(all(is.na(result)))
 })
 
@@ -84,7 +84,7 @@ test_that("indicateur_c1_biomasse handles NA values appropriately", {
   units$age <- c(80, 60, NA, 40)
   units$density <- c(0.7, 0.8, 0.6, NA)
 
-  biomass <- indicateur_c1_biomasse(units)
+  biomass <- indicateur_c1_biomasse(units)$C1
 
   # NA inputs should produce NA outputs
   expect_true(is.na(biomass[2])) # NA species
@@ -109,7 +109,7 @@ test_that("indicateur_c1_biomasse respects custom column names", {
     species_col = "tree_species",
     age_col = "stand_age",
     density_col = "stand_density"
-  )
+  )$C1
 
   expect_length(biomass, 3)
   expect_true(all(!is.na(biomass)))
@@ -124,7 +124,7 @@ test_that("indicateur_c1_biomasse produces consistent results", {
   units$age <- c(80, 80) # Same age
   units$density <- c(0.7, 0.7) # Same density
 
-  biomass <- indicateur_c1_biomasse(units)
+  biomass <- indicateur_c1_biomasse(units)$C1
 
   # Same inputs should produce same outputs
   expect_equal(biomass[1], biomass[2])
@@ -140,7 +140,7 @@ test_that("indicateur_c1_biomasse scales with age and density", {
   units_age$age <- c(40, 80, 120) # Increasing age
   units_age$density <- c(0.7, 0.7, 0.7)
 
-  biomass_age <- indicateur_c1_biomasse(units_age)
+  biomass_age <- indicateur_c1_biomasse(units_age)$C1
   expect_true(biomass_age[1] < biomass_age[2]) # More age = more biomass
   expect_true(biomass_age[2] < biomass_age[3])
 
@@ -150,7 +150,7 @@ test_that("indicateur_c1_biomasse scales with age and density", {
   units_density$age <- c(60, 60, 60)
   units_density$density <- c(0.4, 0.7, 1.0) # Increasing density
 
-  biomass_density <- indicateur_c1_biomasse(units_density)
+  biomass_density <- indicateur_c1_biomasse(units_density)$C1
   expect_true(biomass_density[1] < biomass_density[2]) # More density = more biomass
   expect_true(biomass_density[2] < biomass_density[3])
 })
@@ -180,7 +180,7 @@ test_that("indicateur_c2_ndvi extracts mean NDVI from raster", {
     layer_type = "raster"
   )
 
-  ndvi <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi")
+  ndvi <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi")$C2
 
   # Test output
   expect_type(ndvi, "double")
@@ -200,7 +200,7 @@ test_that("indicateur_c2_ndvi errors when NDVI layer missing", {
   units <- massif_demo_units[1:3, ]
 
   expect_error(
-    indicateur_c2_ndvi(units, layers, ndvi_layer = "nonexistent"),
+    indicateur_c2_ndvi(units, layers, ndvi_layer = "nonexistent")$C2,
     "NDVI layer.*not found"
   )
 })
@@ -222,7 +222,7 @@ test_that("indicateur_c2_ndvi handles edge NDVI values", {
 
   layers$rasters$ndvi <- list(object = ndvi_raster, layer_type = "raster")
 
-  ndvi <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi")
+  ndvi <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi")$C2
 
   expect_length(ndvi, 3)
   expect_true(all(ndvi >= 0 & ndvi <= 1))
@@ -246,7 +246,7 @@ test_that("indicateur_c2_ndvi with trend option (future implementation)", {
 
   # For v0.2.0 MVP, trend = TRUE should warn or use single-date only
   expect_warning(
-    ndvi <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi", trend = TRUE),
+    ndvi <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi", trend = TRUE)$C2,
     "trend.*not.*implemented|single.*date"
   )
 })
@@ -274,8 +274,8 @@ test_that("nemeton_compute works with new carbon indicators", {
   # This will be implemented when nemeton_compute() is extended
   # For now, just test that the functions can be called independently
   expect_no_error({
-    c1 <- indicateur_c1_biomasse(units)
-    c2 <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi")
+    c1 <- indicateur_c1_biomasse(units)$C1
+    c2 <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi")$C2
   })
 })
 
@@ -303,7 +303,7 @@ test_that("C1 CHM mode returns positive biomass for 3 species", {
     stems_ha = c(180, 200, 300),
     geometry = sf::st_sfc(polys, crs = 2154)
   )
-  c1 <- indicateur_c1_biomasse(units, chm = chm)
+  c1 <- indicateur_c1_biomasse(units, chm = chm)$C1
   expect_length(c1, 3)
   expect_true(all(!is.na(c1)))
   expect_true(all(c1 > 0))
@@ -325,7 +325,7 @@ test_that("C1 CHM mode propagates NA on missing inputs", {
     stems_ha = c(200, 200),
     geometry = sf::st_sfc(polys, crs = 2154)
   )
-  c1 <- indicateur_c1_biomasse(units, chm = chm)
+  c1 <- indicateur_c1_biomasse(units, chm = chm)$C1
   expect_false(is.na(c1[1]))
   expect_true(is.na(c1[2]))
 })
@@ -368,8 +368,8 @@ test_that("C1 CHM mode and age-based mode are positively correlated", {
   units_age$species <- ifelse(units$species %in% c("QUPE", "FASY"),
                               "Quercus", "Pinus")
 
-  c1_age <- indicateur_c1_biomasse(units_age)
-  c1_chm <- indicateur_c1_biomasse(units, chm = chm)
+  c1_age <- indicateur_c1_biomasse(units_age)$C1
+  c1_chm <- indicateur_c1_biomasse(units, chm = chm)$C1
 
   ok <- !is.na(c1_age) & !is.na(c1_chm)
   rho <- suppressWarnings(
@@ -391,8 +391,8 @@ test_that("C1 CHM mode respects the bef argument", {
     stems_ha = 200,
     geometry = sf::st_sfc(poly, crs = 2154)
   )
-  c_low  <- indicateur_c1_biomasse(units, chm = chm, bef = 1.0)
-  c_high <- indicateur_c1_biomasse(units, chm = chm, bef = 1.5)
+  c_low  <- indicateur_c1_biomasse(units, chm = chm, bef = 1.0)$C1
+  c_high <- indicateur_c1_biomasse(units, chm = chm, bef = 1.5)$C1
   expect_equal(c_high, c_low * 1.5, tolerance = 1e-6)
 })
 
@@ -411,7 +411,7 @@ test_that("C1 CHM mode requires dbh_col and species_col", {
   )
   # CHM mode skipped because dbh_col is missing; falls through
   # to legacy paths. With no inventory data, returns NA.
-  c1 <- suppressMessages(indicateur_c1_biomasse(units, chm = chm))
+  c1 <- suppressMessages(indicateur_c1_biomasse(units, chm = chm)$C1)
   expect_true(is.na(c1))
 })
 

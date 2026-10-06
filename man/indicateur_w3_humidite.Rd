@@ -31,7 +31,7 @@ topographic working resolution, 2 m --- see
 resolution.}
 }
 \value{
-Numeric vector of TWI mean values
+The input \code{units} (same class, rows and order) with an added numeric column \code{W3}: mean TWI
 }
 \description{
 Calculates TWI using fasterRaster/GRASS GIS (preferred) or terra fallback (D8).

@@ -47,7 +47,7 @@ test_that("L1 reads the edge matrix with the OSO 23-class contrast table", {
     terra::values(r) <- code
     lay <- structure(list(rasters = list(landcover = r)),
                      class = "nemeton_layers")
-    suppressMessages(indicateur_l1_effet_lisiere(units, lay))
+    suppressMessages(indicateur_l1_effet_lisiere(units, lay)$L1)
   }
   foret <- l1_with(16L)
   # Bati dense (1) : contraste 90 (avant : code inconnu -> 50)

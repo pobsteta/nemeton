@@ -27,7 +27,7 @@ of your own raster when it uses another nomenclature.}
 \item{buffer}{Numeric. Buffer distance in meters around union of parcels.}
 }
 \value{
-Numeric vector of fragmentation scores (0-100). \strong{Higher = less
+The input \code{units} (same class, rows and order) with an added numeric column \code{L2}: fragmentation scores (0-100). \strong{Higher = less
 fragmented = favourable} (COHESION + AI, or the inverse shape index in the
 fallback): already oriented the right way, so normalize_indicator() passes it
 through and does NOT invert it -- unlike L1.

@@ -16,7 +16,7 @@ test_that("indicateur_t1_anciennete returns numeric vector 0-150 range", {
 
   # Sans BD Forêt ni âge : aucune source ne date l'unité -> NA (plus de 50
   # inventé, audit 1.0)
-  result <- indicateur_t1_anciennete(units, age_field = NULL)
+  result <- indicateur_t1_anciennete(units, age_field = NULL)$T1
 
   expect_type(result, "double")
   expect_length(result, 5)
@@ -29,7 +29,7 @@ test_that("indicateur_t1_anciennete uses direct age field as fallback", {
   units <- massif_demo_units[1:5, ]
   units$age <- c(25, 75, 150, 200, 300)
 
-  result <- indicateur_t1_anciennete(units, age_field = "age")
+  result <- indicateur_t1_anciennete(units, age_field = "age")$T1
 
   expect_type(result, "double")
   expect_length(result, 5)
@@ -48,7 +48,7 @@ test_that("indicateur_t1_anciennete calculates from establishment year", {
     age_field = NULL,
     establishment_year_field = "planted",
     current_year = 2025
-  )
+  )$T1
 
   expect_type(result, "double")
   expect_length(result, 3)
@@ -67,7 +67,7 @@ test_that("indicateur_t1_anciennete with BD Forêt data", {
   )
   sf::st_crs(bdforet) <- sf::st_crs(units)
 
-  result <- indicateur_t1_anciennete(units, bdforet = bdforet)
+  result <- indicateur_t1_anciennete(units, bdforet = bdforet)$T1
 
   expect_type(result, "double")
   expect_length(result, 3)
@@ -91,7 +91,7 @@ test_that("indicateur_t1_anciennete BD Forêt uses area-weighted average", {
   )
   sf::st_crs(bdforet) <- sf::st_crs(units)
 
-  result <- indicateur_t1_anciennete(units, bdforet = bdforet)
+  result <- indicateur_t1_anciennete(units, bdforet = bdforet)$T1
 
   expect_type(result, "double")
   expect_length(result, 1)
@@ -105,7 +105,7 @@ test_that("indicateur_t1_anciennete handles NA values in age field", {
   units <- massif_demo_units[1:4, ]
   units$age <- c(50, NA, 100, NA)
 
-  result <- indicateur_t1_anciennete(units, age_field = "age")
+  result <- indicateur_t1_anciennete(units, age_field = "age")$T1
 
   expect_type(result, "double")
   expect_length(result, 4)
@@ -118,7 +118,7 @@ test_that("indicateur_t1_anciennete handles NA values in age field", {
 test_that("indicateur_t1_anciennete validates inputs", {
   skip_if_not_installed("terra")
   expect_error(
-    indicateur_t1_anciennete(data.frame(x = 1:3)),
+    indicateur_t1_anciennete(data.frame(x = 1:3))$T1,
     "must be.*sf"
   )
 })
@@ -132,7 +132,7 @@ test_that("indicateur_t1_anciennete NDVI fallback with layers", {
 
   # Ni BD Forêt ni âge -> proxy NDVI si la couche existe, NA sinon (plus
   # de 50 par défaut)
-  result <- indicateur_t1_anciennete(units, layers = layers, age_field = NULL)
+  result <- indicateur_t1_anciennete(units, layers = layers, age_field = NULL)$T1
 
   expect_type(result, "double")
   expect_length(result, 3)
@@ -157,7 +157,7 @@ test_that("indicateur_t2_changement returns numeric vector 0-100", {
   units$N2 <- NULL
   units$N2_anciennete <- NULL
   units$T1 <- NULL
-  result <- indicateur_t2_changement(units)
+  result <- indicateur_t2_changement(units)$T2
 
   expect_type(result, "double")
   expect_length(result, 5)
@@ -170,7 +170,7 @@ test_that("indicateur_t2_changement uses N2 column as proxy", {
   units <- massif_demo_units[1:5, ]
   units$N2 <- c(10, 30, 50, 70, 90)
 
-  result <- indicateur_t2_changement(units)
+  result <- indicateur_t2_changement(units)$T2
 
   expect_type(result, "double")
   expect_length(result, 5)
@@ -183,7 +183,7 @@ test_that("indicateur_t2_changement uses N2_anciennete column", {
   units <- massif_demo_units[1:3, ]
   units$N2_anciennete <- c(20, 60, 95)
 
-  result <- indicateur_t2_changement(units)
+  result <- indicateur_t2_changement(units)$T2
 
   expect_equal(result, c(20, 60, 95))
 })
@@ -200,7 +200,7 @@ test_that("indicateur_t2_changement falls back to T1 capped at 100", {
 
   # Pass T1 values directly
   t1 <- c(25, 80, 150, 200)
-  result <- indicateur_t2_changement(units, t1_values = t1)
+  result <- indicateur_t2_changement(units, t1_values = t1)$T2
 
   expect_type(result, "double")
   expect_length(result, 4)
@@ -218,7 +218,7 @@ test_that("indicateur_t2_changement uses T1 column from units", {
   units$N2_norm <- NULL
   units$T1 <- c(40, 120, NA)
 
-  result <- indicateur_t2_changement(units)
+  result <- indicateur_t2_changement(units)$T2
 
   expect_equal(result, c(40, 100, NA))  # âge inconnu -> NA, plus 50
 })
@@ -226,7 +226,7 @@ test_that("indicateur_t2_changement uses T1 column from units", {
 test_that("indicateur_t2_changement validates inputs", {
   skip_if_not_installed("terra")
   expect_error(
-    indicateur_t2_changement(data.frame(x = 1:3)),
+    indicateur_t2_changement(data.frame(x = 1:3))$T2,
     "must be.*sf"
   )
 })
@@ -242,10 +242,10 @@ test_that("T1 and T2 work together", {
 
   # T1 with age field
   units$age <- c(30, 50, 80, 120, 200)
-  t1 <- indicateur_t1_anciennete(units, age_field = "age")
+  t1 <- indicateur_t1_anciennete(units, age_field = "age")$T1
 
   # T2 from T1
-  t2 <- indicateur_t2_changement(units, t1_values = t1)
+  t2 <- indicateur_t2_changement(units, t1_values = t1)$T2
 
   expect_length(t1, 5)
   expect_length(t2, 5)
@@ -358,7 +358,7 @@ test_that("T1 with establishment_year and auto current_year", {
     age_field = NULL,
     establishment_year_field = "planting_year"
     # current_year not provided -> auto from Sys.Date()
-  )
+  )$T1
 
   current_yr <- as.integer(format(Sys.Date(), "%Y"))
   expect_type(result, "double")
@@ -377,7 +377,7 @@ test_that("T1 with explicit current_year for establishment_year", {
     age_field = NULL,
     establishment_year_field = "yr",
     current_year = 2025
-  )
+  )$T1
 
   expect_equal(result, c(175, 75, 15))
 })
@@ -393,7 +393,7 @@ test_that("T1 BD Foret with CODE_TFV field name", {
   )
   sf::st_crs(bdforet) <- sf::st_crs(test_units)
 
-  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet)
+  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet)$T1
 
   expect_type(result, "double")
   expect_length(result, 2)
@@ -413,7 +413,7 @@ test_that("T1 BD Foret with lib_fv field name", {
   )
   sf::st_crs(bdforet) <- sf::st_crs(test_units)
 
-  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet)
+  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet)$T1
 
   expect_type(result, "double")
   expect_length(result, 2)
@@ -429,7 +429,7 @@ test_that("T1 BD Foret with ESSENCE field name", {
   )
   sf::st_crs(bdforet) <- sf::st_crs(test_units)
 
-  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet)
+  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet)$T1
 
   expect_type(result, "double")
   expect_length(result, 1)
@@ -451,7 +451,7 @@ test_that("T1 BD Foret with no recognized TFV field returns NA", {
   # No TFV/CODE_TFV/ESSENCE/etc. fields recognized
   # Falls through to Priority 2 (age_field), but "age" not in units
   # -> NA (plus de 50 par défaut)
-  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet, age_field = NULL)
+  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet, age_field = NULL)$T1
 
   expect_type(result, "double")
   expect_length(result, 2)
@@ -471,7 +471,7 @@ test_that("T1 BD Foret with CRS mismatch triggers transform", {
   # Transform bdforet to 4326
   bdforet_4326 <- sf::st_transform(bdforet_2154, 4326)
 
-  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet_4326)
+  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet_4326)$T1
 
   expect_type(result, "double")
   expect_length(result, 2)
@@ -489,7 +489,7 @@ test_that("T1 BD Foret with empty sf (0 rows) falls through to age field", {
     geometry = sf::st_sfc(crs = 2154)
   )
 
-  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = empty_bdforet, age_field = "age")
+  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = empty_bdforet, age_field = "age")$T1
 
   expect_type(result, "double")
   expect_equal(result, c(80, 120))
@@ -512,7 +512,7 @@ test_that("T1 BD Foret with no intersection returns NA", {
   )
 
   # Aucune intersection -> NA (plus de 50 par défaut)
-  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet, age_field = NULL)
+  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet, age_field = NULL)$T1
 
   expect_type(result, "double")
   expect_length(result, 1)
@@ -530,7 +530,7 @@ test_that("T1 priority chain: age_field takes precedence over establishment_year
     test_units,
     age_field = "age",
     establishment_year_field = "planted"
-  )
+  )$T1
 
   expect_equal(result, c(100, 200))
 })
@@ -543,7 +543,7 @@ test_that("T1 returns NA when no data at all", {
     test_units,
     age_field = NULL,
     establishment_year_field = NULL
-  )
+  )$T1
 
   expect_type(result, "double")
   expect_length(result, 3)
@@ -561,7 +561,7 @@ test_that("T1: a measured age takes precedence over BD Foret TFV", {
   sf::st_crs(bdforet) <- sf::st_crs(test_units)
 
   result <- suppressMessages(
-    nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet)
+    nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet)$T1
   )
   # Avant correction : la BD Forêt écrasait l'âge mesuré (20 partout). Seule
   # l'unité sans âge prend l'estimation TFV.
@@ -583,7 +583,7 @@ test_that("T1: an unrecognised TFV area is left out of the weighted mean", {
                           crs = sf::st_crs(test_units))
   )
   result <- suppressMessages(nemeton::indicateur_t1_anciennete(
-    test_units, bdforet = bdforet, age_field = NULL))
+    test_units, bdforet = bdforet, age_field = NULL)$T1)
   # Avant : (20 + 50) / 2 = 35. Désormais la moitié inconnue est écartée.
   expect_equal(result, 20)
 })
@@ -607,7 +607,7 @@ test_that("T1 resolves bdforet from nemeton_layers", {
     class = "nemeton_layers"
   )
 
-  result <- nemeton::indicateur_t1_anciennete(test_units, layers = mock_layers, age_field = NULL)
+  result <- nemeton::indicateur_t1_anciennete(test_units, layers = mock_layers, age_field = NULL)$T1
 
   expect_type(result, "double")
   expect_length(result, 2)
@@ -622,7 +622,7 @@ test_that("T2 uses N2_anciennet column (truncated name variant)", {
   test_units <- create_test_units(n_features = 3)
   test_units$N2_anciennet <- c(30, 70, 110)
 
-  result <- nemeton::indicateur_t2_changement(test_units)
+  result <- nemeton::indicateur_t2_changement(test_units)$T2
 
   # N2_anciennet found -> used as stability proxy, capped to 0-100
   expect_equal(result, c(30, 70, 100))
@@ -633,7 +633,7 @@ test_that("T2 with N2 column containing values > 100 are capped", {
   test_units <- create_test_units(n_features = 3)
   test_units$N2 <- c(-5, 50, 150)
 
-  result <- nemeton::indicateur_t2_changement(test_units)
+  result <- nemeton::indicateur_t2_changement(test_units)$T2
 
   # capped: pmin(pmax(t2, 0), 100)
   expect_equal(result, c(0, 50, 100))
@@ -645,7 +645,7 @@ test_that("T2 fallback to t1_values keeps unknown ages NA", {
   # No N2 columns
   t1 <- c(30, NA, 120, NA)
 
-  result <- nemeton::indicateur_t2_changement(test_units, t1_values = t1)
+  result <- nemeton::indicateur_t2_changement(test_units, t1_values = t1)$T2
 
   # t1_values utilisés, plafonnés à 100 ; âge inconnu -> NA (plus 50)
   expect_equal(result, c(30, NA, 100, NA))
@@ -656,7 +656,7 @@ test_that("T2 with T1 column in units (not t1_values argument)", {
   test_units <- create_test_units(n_features = 3)
   test_units$T1 <- c(25, NA, 90)
 
-  result <- nemeton::indicateur_t2_changement(test_units)
+  result <- nemeton::indicateur_t2_changement(test_units)$T2
 
   # Colonne T1 utilisée, plafonnée à 100 ; NA conservé
   expect_equal(result, c(25, NA, 90))
@@ -666,7 +666,7 @@ test_that("T2 is NA when no N2 or T1 available", {
   skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 5)
 
-  result <- nemeton::indicateur_t2_changement(test_units)
+  result <- nemeton::indicateur_t2_changement(test_units)$T2
 
   expect_type(result, "double")
   expect_length(result, 5)
@@ -678,7 +678,7 @@ test_that("T2 t1_values wrong length is ignored, falls through", {
   test_units <- create_test_units(n_features = 3)
 
   # t1_values has wrong length (2 instead of 3) -> not used
-  result <- nemeton::indicateur_t2_changement(test_units, t1_values = c(40, 80))
+  result <- nemeton::indicateur_t2_changement(test_units, t1_values = c(40, 80))$T2
 
   # Pas de colonne T1 non plus -> NA
   expect_true(all(is.na(result)))
@@ -689,7 +689,7 @@ test_that("T2 t1_values non-numeric is ignored", {
   test_units <- create_test_units(n_features = 2)
 
   # t1_values is character -> not numeric -> not used
-  result <- nemeton::indicateur_t2_changement(test_units, t1_values = c("a", "b"))
+  result <- nemeton::indicateur_t2_changement(test_units, t1_values = c("a", "b"))$T2
 
   # Aucune source exploitable -> NA
   expect_true(all(is.na(result)))
@@ -701,7 +701,7 @@ test_that("T2 N2_anciennete takes priority over N2", {
   test_units$N2_anciennete <- c(85, 95)
   test_units$N2 <- c(30, 40)
 
-  result <- nemeton::indicateur_t2_changement(test_units)
+  result <- nemeton::indicateur_t2_changement(test_units)$T2
 
   # N2_anciennete found first in the loop -> used
   expect_equal(result, c(85, 95))
@@ -713,7 +713,7 @@ test_that("T2 priority: N2 column over T1 column", {
   test_units$N2 <- c(60, 80)
   test_units$T1 <- c(30, 40)
 
-  result <- nemeton::indicateur_t2_changement(test_units)
+  result <- nemeton::indicateur_t2_changement(test_units)$T2
 
   # N2 found -> used, T1 not reached
   expect_equal(result, c(60, 80))
@@ -724,7 +724,7 @@ test_that("T2 priority: t1_values argument over T1 column", {
   test_units <- create_test_units(n_features = 2)
   test_units$T1 <- c(30, 40)
 
-  result <- nemeton::indicateur_t2_changement(test_units, t1_values = c(70, 90))
+  result <- nemeton::indicateur_t2_changement(test_units, t1_values = c(70, 90))$T2
 
   # No N2 column -> t1_values used (correct length)
   expect_equal(result, c(70, 90))
@@ -745,7 +745,7 @@ test_that("T2 with layers parameter (interface consistency)", {
   )
 
   # layers is accepted but not used in T2
-  result <- nemeton::indicateur_t2_changement(test_units, layers = mock_layers)
+  result <- nemeton::indicateur_t2_changement(test_units, layers = mock_layers)$T2
 
   expect_equal(result, c(45, 75))
 })
@@ -753,17 +753,17 @@ test_that("T2 with layers parameter (interface consistency)", {
 test_that("T2 validates sf input", {
   skip_if_not_installed("terra")
   expect_error(
-    nemeton::indicateur_t2_changement(data.frame(x = 1:3)),
+    nemeton::indicateur_t2_changement(data.frame(x = 1:3))$T2,
     "must be.*sf"
   )
 
   expect_error(
-    nemeton::indicateur_t2_changement("not sf"),
+    nemeton::indicateur_t2_changement("not sf")$T2,
     "must be.*sf"
   )
 
   expect_error(
-    nemeton::indicateur_t2_changement(NULL),
+    nemeton::indicateur_t2_changement(NULL)$T2,
     "must be.*sf"
   )
 })
@@ -777,7 +777,7 @@ test_that("T2 falls back to T1 unit by unit when N2 is partly NA", {
   units <- create_test_units(n_features = 4)
   units$N2 <- c(80, NA, NA, 30)
   units$T1 <- c(10, 60, NA, 150)
-  result <- suppressMessages(indicateur_t2_changement(units))
+  result <- suppressMessages(indicateur_t2_changement(units)$T2)
   expect_equal(result, c(80, 60, NA, 30))
 })
 
@@ -785,7 +785,7 @@ test_that("T2 with an all-NA N2 column falls back to T1", {
   units <- create_test_units(n_features = 3)
   units$N2 <- rep(NA_real_, 3)
   result <- suppressMessages(
-    indicateur_t2_changement(units, t1_values = c(40, 200, NA))
+    indicateur_t2_changement(units, t1_values = c(40, 200, NA))$T2
   )
   expect_equal(result, c(40, 100, NA))
 })
@@ -794,7 +794,7 @@ test_that("T2 prefers t1_values over the T1 column, unit by unit", {
   units <- create_test_units(n_features = 3)
   units$T1 <- c(20, 30, 40)
   result <- suppressMessages(
-    indicateur_t2_changement(units, t1_values = c(70, NA, 90))
+    indicateur_t2_changement(units, t1_values = c(70, NA, 90))$T2
   )
   expect_equal(result, c(70, 30, 90))
 })
@@ -803,6 +803,6 @@ test_that("T2 with sources present but all NA warns and returns NA", {
   units <- create_test_units(n_features = 2)
   units$N2 <- c(NA_real_, NA_real_)
   units$T1 <- c(NA_real_, NA_real_)
-  expect_message(result <- indicateur_t2_changement(units), "all NA")
+  expect_message(result <- indicateur_t2_changement(units)$T2, "all NA")
   expect_true(all(is.na(result)))
 })

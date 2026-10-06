@@ -53,7 +53,7 @@ score. For fertility classes 1-5, pass \code{c(1, 5)}. Values outside
 the range are set to NA with a warning. Ignored by the other sources.}
 }
 \value{
-Numeric vector of fertility scores (0-100 scale, higher = more fertile)
+The input \code{units} (same class, rows and order) with an added numeric column \code{F1}: fertility scores (0-100 scale, higher = more fertile)
 }
 \description{
 Extracts soil fertility from a user-supplied pedological layer, from

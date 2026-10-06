@@ -27,7 +27,7 @@ indicateur_w1_reseau(
 \item{proximity_ref}{Numeric. Equivalent density bonus (m/ha) at distance 0. Default 50.}
 }
 \value{
-Numeric vector of network density (m/ha). NA for every unit when
+The input \code{units} (same class, rows and order) with an added numeric column \code{W1}: network density (m/ha). NA for every unit when
   the watercourse layer is missing (no measurement); a supplied but empty
   layer gives 0.
 }

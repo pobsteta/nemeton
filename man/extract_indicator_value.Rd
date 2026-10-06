@@ -7,8 +7,8 @@
 extract_indicator_value(result, indicator, exclude = character(0))
 }
 \arguments{
-\item{result}{The raw return value of an indicator function (an \code{sf},
-a \code{data.frame}, or a numeric vector).}
+\item{result}{The raw return value of an indicator function (an \code{sf} or
+a \code{data.frame}).}
 
 \item{indicator}{Character. The NMT indicator name (function name),
 e.g. \code{"indicateur_p1_volume"}.}
@@ -22,7 +22,7 @@ A numeric vector of the indicator's per-unit values.
 }
 \description{
 Single source of truth for the Nemeton indicator naming convention:
-most indicator functions return the \code{units} object (an \code{sf} /
+every indicator function returns the \code{units} object (an \code{sf} /
 \code{data.frame}) with the computed value added under a column named by the
 family short code (\code{indicateur_p1_volume} -> \code{"P1"},
 \code{indicateur_r1_feu} -> \code{"R1"}, ...). This helper resolves that column to
@@ -42,7 +42,8 @@ Resolution order for an \code{sf} / \code{data.frame} result:
     (pass the pre-existing input column names so a freshly added value
     column wins over a same-shaped attribute already on the units).
 }
-A result that is already a plain vector is returned unchanged.
+A bare vector is an error: since 1.0.0 (spec 057) no indicator returns
+one.
 }
 \seealso{
 \code{\link{nemeton_compute}}

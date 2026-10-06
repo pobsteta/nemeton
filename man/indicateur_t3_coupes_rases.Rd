@@ -43,7 +43,7 @@ not comparable at the same \code{window_years}. Anchoring on the current year â€
 N years" mean exactly that.}
 }
 \value{
-Numeric vector, one value per unit: recency-weighted percentage of the unit
+The input \code{units} (same class, rows and order) with an added numeric column \code{T3}, one value per unit: recency-weighted percentage of the unit
 footprint under clear-cut within the window (0-100, high = more
 clear-cutting). \code{NA} where \code{sufosat_dates} is \code{NULL} or the
 unit does not overlap the raster.

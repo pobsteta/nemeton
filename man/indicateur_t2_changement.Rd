@@ -17,7 +17,7 @@ kept for interface consistency.}
 as nrow(units)). If NULL and units has no T1 column, T2 is \code{NA}.}
 }
 \value{
-Numeric vector of stability proxy scores (0-100), 100 = very
+The input \code{units} (same class, rows and order) with an added numeric column \code{T2}: stability proxy scores (0-100), 100 = very
 stable (ancient forest). \code{NA} where the source (N2 or T1) is
 unknown -- no default value.
 }
@@ -49,9 +49,10 @@ library(nemeton)
 data(massif_demo_units)
 units <- massif_demo_units[1:10, ]
 
-# Compute T1 first, then T2
+# Compute T1 first, then T2: the T1 column of the result feeds T2
 t1 <- indicateur_t1_anciennete(units, layers = massif_demo_layers())
-t2 <- indicateur_t2_changement(units, t1_values = t1)
+t2 <- indicateur_t2_changement(t1)
+t2$T2
 }
 }
 \seealso{
