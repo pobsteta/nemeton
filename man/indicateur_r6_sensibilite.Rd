@@ -39,6 +39,11 @@ the E-OBS summer series via \code{\link{microclimate_detect_years}}, or set
 manually. This function consumes the \strong{two precomputed \code{micro} sets}
 (one per year), each carrying \code{tmax_understorey} and \code{vpd}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{microclimate_detect_years}}, \code{\link{indicateur_a3_microclimat}}
 }

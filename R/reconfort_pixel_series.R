@@ -76,6 +76,9 @@ NULL
 #'   Returns `NULL` (without error) when no bundle is found or the pixel
 #'   is outside the extent.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [run_reconfort_dieback()], [read_fordead_pixel_series()].
 #' @export
 read_reconfort_pixel_series <- function(con, zone_id, xy, crs = 4326,
@@ -179,6 +182,9 @@ read_reconfort_pixel_series <- function(con, zone_id, xy, crs = 4326,
 #'
 #' @return A single-band `terra::SpatRaster`, or `NULL` when no mask is
 #'   available.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @seealso [read_fordead_dieback_mask()], [run_reconfort_dieback()].
 #' @export

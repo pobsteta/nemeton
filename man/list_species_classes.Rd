@@ -18,6 +18,11 @@ A data.frame with columns: code, label, allometric_key, color.
 Returns a data.frame of the species classes with their codes,
 labels, and allometric keys.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 classes <- list_species_classes("BFC", lang = "fr")
 classes$code   # "essence_chenaie", "essence_hetraie", ...

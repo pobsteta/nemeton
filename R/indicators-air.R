@@ -59,6 +59,9 @@ NULL
 #'   \item 80-100\%: Excellent forest coverage (optimal air quality)
 #' }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family air-indicators
 #' @export
 #'
@@ -217,6 +220,9 @@ A2_POLLUTION_REF <- 100
 #'   P = 100 is a motorway at 10 m. The score is absolute (it does not depend
 #'   on the other units of the call); a unit with no road within 2 km
 #'   scores 100.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @family air-indicators
 #' @export
@@ -461,6 +467,9 @@ indicateur_a2_qualite_air <- function(units,
 #'       \code{eligible}) or \code{NULL} at extent level.
 #'   }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [theia_source_status()], [indicateur_a5_rafraichissement()],
 #'   [r5_applicabilite()]
 #' @export
@@ -590,6 +599,9 @@ a5_applicabilite <- function(units, lst = NULL, buffer_m = 500,
 #'   exists so that a consumer can tell an empty indicator apart from a broken
 #'   one: outside Thermocity coverage `A5 = NA` is the correct answer, not a
 #'   failure.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 indicateur_a5_rafraichissement <- function(units, lst = NULL,

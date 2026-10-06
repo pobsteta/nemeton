@@ -240,6 +240,9 @@
 #'   `source`. Read `nature` before using `estimation`: a synthetic value is a
 #'   model prediction, not a measurement.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [ifn_production_reference()], [estimer_fay_herriot()].
 #' @export
 #' @examples
@@ -298,6 +301,9 @@ ifn_production_ser <- function(ser = NULL, greco = NULL, campagne = NULL,
 #'   `rse`, `niveau_utilise`, `nature` (the natures of the averaged rows,
 #'   collapsed), `campagnes` (collapsed), `n_campagnes`. The MSE of the mean
 #'   assumes independence between campaigns; it is a lower bound.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @seealso [ifn_production_ser()].
 #' @export
@@ -386,6 +392,9 @@ ifn_production_reference <- function(ser = NULL,
 #' @return A one-row data.frame: `ser`, `groupe`, `definition`, `prelevement`
 #'   and `production` (m3/ha/yr), `ratio`, `rse` (percent, delta method under
 #'   independence of the two estimates), `niveau_utilise`, `campagnes`.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @seealso [ifn_production_reference()], [ifn_taux_prelevement()].
 #' @export

@@ -37,6 +37,11 @@ Includes a proximity bonus for parcels near watercourses (within 500m)
 that are not directly crossed, reflecting the hydrological influence of
 nearby streams on water table and microclimate.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 layers <- nemeton_layers(vectors = list(streams = "watercourses.gpkg"))

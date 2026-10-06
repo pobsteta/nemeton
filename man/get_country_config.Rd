@@ -16,6 +16,11 @@ A list with the country's data source configuration.
 \description{
 Loads and caches the JSON configuration for a given country.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 config <- get_country_config("FR")
 config$crs_national  # 2154

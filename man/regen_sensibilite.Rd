@@ -130,6 +130,11 @@ z-score \code{sensibilite} and a signal/noise \code{robustesse} per unit. The
 engine path needs LiDAR HD + ERA5/CDS and is \strong{not runnable in CI} —
 validated on real data.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{indice_priorite_regen}}, \code{\link{microclimate_detect_years}},
 \code{\link{pai_depuis_nuage}}

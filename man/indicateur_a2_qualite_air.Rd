@@ -59,6 +59,11 @@ or proxy method based on distance to pollution sources (roads).
   on the other units of the call); a unit with no road within 2 km
   scores 100.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(nemeton)

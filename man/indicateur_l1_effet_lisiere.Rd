@@ -51,6 +51,11 @@ in 1.0.0 (spec 057). Persisted columns are renamed by
 \code{\link{migrer_colonnes_l}}. See spec 045.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 layers <- nemeton_layers(rasters = list(landcover = "landcover.tif"))

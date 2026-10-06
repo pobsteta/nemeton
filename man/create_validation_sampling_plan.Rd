@@ -135,6 +135,11 @@ that cannot be aligned onto the alert grid raises the distinct
 `validation_weight_raster_mismatch` error instead.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
   mask <- read_fordead_dieback_mask(con, 1L, cache_dir = cd_fordead)

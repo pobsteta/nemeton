@@ -62,6 +62,11 @@ potential and recreational use intensity.
   \item WorldPop or GPW for international applications
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 data(massif_demo_units)

@@ -68,6 +68,9 @@
 #'
 #' @return The new zone id (integer, invisibly).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [build_project_monitoring_zones()] (the strata builder that
 #'   calls this), [find_zones_by_project()], [register_monitoring_zone()].
 #'
@@ -141,6 +144,9 @@ create_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'
 #' @return A `data.frame` with columns `id` (integer) and `name`
 #'   (character), ordered by `name`; zero rows when no zone matches.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @seealso [find_zone_by_project()], [build_project_monitoring_zones()].
 #'
@@ -239,6 +245,9 @@ find_zones_by_project <- function(con, project_uuid) {
 #' @return A named `list` mapping each created stratum (`"tot"`, `"feu"`,
 #'   `"res"`, `"mix"`) to its new zone id. Skipped (empty) strata are
 #'   absent from the list.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @seealso [create_monitoring_zone()], [find_zones_by_project()].
 #'
@@ -365,6 +374,9 @@ build_project_monitoring_zones <- function(con, project_name, project_uuid,
 #' @return A `data.frame` (`path`, `zone_id`, `removed`) of the orphan
 #'   directories found, invisibly. `removed` is `FALSE` on a dry-run or a
 #'   failed unlink. Zero rows when the prune is refused.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @seealso [build_project_monitoring_zones()] (the upsert that strands
 #'   the caches), [find_zones_by_project()].

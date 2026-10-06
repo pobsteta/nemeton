@@ -58,6 +58,11 @@ two-tiered: without \code{lst}, an extent-level answer costing one catalogue
 query; with a raster already at hand (typically the project cache), a
 per-unit answer.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 ap <- a5_applicabilite(units)

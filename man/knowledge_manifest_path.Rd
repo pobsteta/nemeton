@@ -22,6 +22,11 @@ versioned **seed** and is read-only once the package is installed.
 Editing the manifest from an application therefore works on a writable
 **project copy** (spec 009.2 D1).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 [read_knowledge_manifest()], [write_knowledge_manifest()].
 }

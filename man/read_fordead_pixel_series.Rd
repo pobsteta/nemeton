@@ -68,6 +68,11 @@ the signature for forward compatibility, exactly as
 [read_fordead_dieback_mask()]. `NULL` is accepted.
 }
 
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 \dontrun{
   s <- read_fordead_pixel_series(

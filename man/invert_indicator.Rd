@@ -38,6 +38,11 @@ Some indicators have inverse relationships with "goodness":
 
 This function inverts the scale: \code{inverted = scale - original}
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Invert accessibility for wilderness index

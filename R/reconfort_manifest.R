@@ -77,6 +77,9 @@
 #'   When the run produced no displayable output the data.frame has zero
 #'   rows (the columns and their types are still present).
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [run_reconfort_dieback()], [RECONFORT_CLASSES]
 #' @export
 reconfort_layer_manifest <- function(result, include_range = FALSE) {
@@ -375,6 +378,9 @@ reconfort_layer_manifest <- function(result, include_range = FALSE) {
 #'   [reconfort_layer_manifest()] (one row per available display raster).
 #'   Best-effort: a missing cache / zone / run yields a zero-row frame.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [reconfort_layer_manifest()], [read_reconfort_layer()],
 #'   [run_reconfort_dieback()]
 #' @export
@@ -515,6 +521,9 @@ reconfort_cache_manifest <- function(cache_dir, zone_id, run_id = NULL,
 #'
 #' @return A `terra::SpatRaster` (masked to the UGF zone unless
 #'   `apply_zone_mask = FALSE` or no polygon could be resolved).
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @seealso [reconfort_layer_manifest()], [run_reconfort_dieback()],
 #'   [read_fast_alert_raster()], [read_fordead_dieback_mask()]

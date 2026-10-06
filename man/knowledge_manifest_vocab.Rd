@@ -17,6 +17,11 @@ truth: both [validate_knowledge_manifest()] and the manifest integrity
 tests consume it, and a `nemetonshiny` editor can use it to populate the
 drop-downs of the enum columns.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 [validate_knowledge_manifest()], [read_knowledge_manifest()].
 }

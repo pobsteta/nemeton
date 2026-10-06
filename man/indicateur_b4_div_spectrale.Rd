@@ -38,6 +38,11 @@ NDP 0 (Sentinel-2). Strictly backward compatible: with neither
 \code{spectral} nor \code{reflectance}, the column is filled with
 \code{NA} and the \code{sf} is returned unchanged.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{compute_spectral_diversity}}
 }

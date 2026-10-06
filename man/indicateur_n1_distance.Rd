@@ -37,3 +37,7 @@ as a measure of remoteness from human influence. Follows tuto 04 methodology:
 distances from parcel centroids to roads (BD TOPO) and buildings, normalized
 to 0-100 and combined with weights (40% roads, 35% buildings, 25% urban).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

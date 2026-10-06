@@ -59,6 +59,11 @@ Only directories named exactly `zone_<integer>` under the listed
 `subdirs` are considered; everything else (shared `sentinel2/`,
 `lidar_*`, …) is left untouched.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 [build_project_monitoring_zones()] (the upsert that strands
   the caches), [find_zones_by_project()].

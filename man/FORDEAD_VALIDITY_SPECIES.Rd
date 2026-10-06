@@ -9,3 +9,7 @@ FORDEAD_VALIDITY_SPECIES
 \description{
 Two-letter ONF/DSF codes for Norway spruce and silver fir.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

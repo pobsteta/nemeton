@@ -78,6 +78,11 @@ assigned to the wrong side; their share is reported in \code{part_bordure}.
 }
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 ut <- sf::st_read("ut_onf.gpkg")

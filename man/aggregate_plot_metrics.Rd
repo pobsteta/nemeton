@@ -58,3 +58,7 @@ belong to the standing stock. A plot whose trees are all dead gets
 Placettes with no trees receive NA for every aggregate and
 \code{n_trees = 0L}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

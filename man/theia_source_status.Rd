@@ -64,6 +64,11 @@ covers a handful of French metropolises, which is correct and documented; T3
 its STAC fields outside \code{access}, which was a defect. Same symptom,
 opposite causes, no signal either way.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 st <- theia_source_status("theia_lst", aoi)

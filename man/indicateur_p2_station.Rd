@@ -132,6 +132,11 @@ or a mode-aware normalization when mixing units.
   \item mediterranean: Mediterranean (Provence, Languedoc)
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 units$species <- c("FASY", "PIAB", "QUPE")

@@ -55,6 +55,9 @@
 #'   file is missing. The raster is **not** reprojected — leaflet /
 #'   leafem handles that downstream.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #'   cache <- "/home/user/projects/myforest/cache/layers/sentinel2"
@@ -115,6 +118,9 @@ read_s2_band_raster <- function(cache_dir, scene_id, band, harmonize = TRUE) {
 #'   `names(out)` = `as.character(obs_date)` and `terra::time(out)`
 #'   set to the dates of the surviving scenes. `NULL` when no scene
 #'   could be opened.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{
@@ -234,6 +240,9 @@ read_s2_band_stack <- function(cache_dir, scenes_df, band) {
 #' point `(x, y)` may differ from `extract_pixel_timeseries()` at the
 #' same `(x, y)` by a sub-pixel amount when `index = "NBR"`. This is
 #' documented and intentional.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{
@@ -506,6 +515,9 @@ build_index_stack <- function(cache_dir, scenes_df,
 #'   (character) and `value` (numeric, possibly NA), sorted by
 #'   `(obs_date, index)`. `nrow` = `nrow(scenes_df) * length(indices)`.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #'   cache <- "/proj/cache/layers/sentinel2"
@@ -685,6 +697,9 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
 #'   data gaps (window below `min_obs`); for `harmonic` it is continuous at
 #'   every date, `NA` only for an index with too few clear points or under
 #'   ~9 months of span.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @seealso [extract_pixel_timeseries()] (the raw series),
 #'   [extract_pixel_trend()] (the seasonal-composite trend at a pixel).

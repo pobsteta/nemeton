@@ -28,3 +28,7 @@ the \eqn{[0, 30]\;cmol(c)/kg} window, capped at the bounds:
 Thresholds after Baize & Jabiol (1995), \emph{Guide pour la
 description des sols}. NA in, NA out.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

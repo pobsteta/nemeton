@@ -96,6 +96,11 @@ the species component when an NDVI layer is available. A component that
 cannot be computed drops out and its weight is redistributed proportionally;
 with no usable component, R1 is \code{NA}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(nemeton)

@@ -208,6 +208,11 @@ explicit AOI + scenes_df to passing the `DBIConnection` + zone id
 that the pipeline uses to derive both internally.
 }
 
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 \dontrun{
 res <- run_fordead_dieback(

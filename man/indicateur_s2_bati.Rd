@@ -62,6 +62,11 @@ nearest building, using rasterized building data and \code{terra::distance()}.
 
 Returns NA when DEM or buildings are unavailable.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 result <- indicateur_s2_bati(

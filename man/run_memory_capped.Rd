@@ -106,6 +106,11 @@ still runs in a child process — whose memory at least returns to the OS on
 exit — but \strong{uncapped}, with a warning. Without a cgroup, an overshoot is
 once again the whole scope's problem.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 res <- run_memory_capped(

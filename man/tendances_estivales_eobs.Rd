@@ -65,6 +65,11 @@ commercial). Supply \code{tx} / \code{rr} as per-year summer \code{SpatRaster}s
 to compute the trends, or a \code{precomputed} result to only crop + classify.
 With neither, the function fails cleanly.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{indice_priorite_regen}}
 }

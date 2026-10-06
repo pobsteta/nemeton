@@ -25,6 +25,11 @@ plus a \code{stale} flag (\code{TRUE} when the heartbeat is older than \code{ttl
 so the caller can tell \strong{free} (\code{NULL}), \strong{held-fresh} (\code{stale = FALSE})
 and \strong{held-expired} (\code{stale = TRUE}) apart.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{project_lock_acquire}}
 }

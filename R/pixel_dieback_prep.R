@@ -137,6 +137,9 @@
 #'   The input attributes (`species`, `v_model`, `n_classes`, `date_from`,
 #'   `date_to`, `dans_zone_validite`) are carried over onto the list.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [read_reconfort_pixel_series()]
 #' @examples
 #' df <- data.frame(

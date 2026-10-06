@@ -164,6 +164,9 @@
 #'
 #' @return `units` with the water-balance columns `njstress`, `istress`,
 #'   `rew_min`, `deb_stress` (per-unit mean over the retained years).
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [indicateur_r3_secheresse()], [indice_priorite_regen()]
 #' @export
 regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
@@ -760,6 +763,9 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #'   `sensibilite_score` is the bounded 0-100 R6 value (high = favorable, low
 #'   sensitivity) for the family score, sharing the scales of
 #'   [indicateur_r6_sensibilite()] (spec 038).
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [indice_priorite_regen()], [microclimate_detect_years()],
 #'   [pai_depuis_nuage()]
 #' @export
@@ -1077,6 +1083,9 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
 #' @param ... Reserved.
 #'
 #' @return A `terra::SpatRaster` of PAI (layer `pai`).
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [regen_bilan_hydrique()], [regen_sensibilite()]
 #' @export
 pai_depuis_nuage <- function(dossier_las = NULL, grille = NULL, res = 2,
@@ -1203,6 +1212,9 @@ pai_depuis_nuage <- function(dossier_las = NULL, grille = NULL, res = 2,
 #' @return Numeric vector of `lai_max`, length `nrow(units)`. `NA` for a unit
 #'   with no canopy pixel. Pass it straight to `regen_bilan_hydrique(lai_max = )`,
 #'   which converts it to the id-keyed list `biljou_run_grid()` requires.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [pai_depuis_nuage()], [regen_bilan_hydrique()]
 #' @export
 lai_max_depuis_pai <- function(units, pai, probs = 0.9, min_pai = 0.1) {

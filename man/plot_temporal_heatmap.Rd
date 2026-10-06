@@ -32,6 +32,11 @@ A ggplot object
 \description{
 Creates a heatmap showing all indicator values across periods for a specific unit.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Create temporal dataset

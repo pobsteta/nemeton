@@ -45,6 +45,11 @@ species when \code{clamp = TRUE} (default) because the self-thinning
 relationship was calibrated only over that range and extrapolates
 poorly.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 # Common beech, D_g = 30 cm
 n_max_selfthinning(dq = 30, species = "FASY")

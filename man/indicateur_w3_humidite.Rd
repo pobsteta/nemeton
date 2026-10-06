@@ -42,6 +42,11 @@ The GRASS method (via fasterRaster) performs proper hydrological conditioning:
 depression filling, flow direction, flow accumulation, then TWI = ln(SCA / tan(slope)).
 The terra D8 method is a simpler approximation used as fallback.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 layers <- nemeton_layers(rasters = list(dem = "dem_25m.tif"))

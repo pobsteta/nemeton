@@ -77,6 +77,11 @@ R2 = (1 - shelter_coef) * 100.
 Combines aspect-wind alignment, slope, and terrain ruggedness (TRI):
 R2 = wind_exposure * (0.6 * slope_norm + 0.4 * TRI_norm) * 100.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(nemeton)

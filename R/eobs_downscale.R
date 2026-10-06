@@ -188,6 +188,9 @@
 #' @return A list `list(points, series)`: `points` an `sf` of pseudo-stations
 #'   (`id`, `elevation`, geometry in the DEM CRS) restricted to those with a
 #'   non-empty series; `series` the matching named list. `NULL` if none resolve.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [eobs_downscale()], [load_biljou_forcing()]
 #' @export
 build_safran_stations <- function(aoi, buffer_m, years, dem,
@@ -514,6 +517,9 @@ build_safran_stations <- function(aoi, buffer_m, years, dem,
 #' @return A daily `SpatRaster` (one layer per interpolated day, `terra::time()`
 #'   set, DEM CRS), ready to pass as `tmin =` to [indicateur_r7_gel()]; or `NULL`
 #'   when unavailable.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [eobs_downscale()], [indicateur_r7_gel()], [build_safran_stations()]
 #' @export
 meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
@@ -911,6 +917,9 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 #'   buffer and no coarse DEM could be sourced), `eobs_downscale_no_dem` (no DEM
 #'   supplied and none could be sourced), `eobs_downscale_too_few_cells` (DEM fine
 #'   but too few E-OBS cells within the buffer).
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @references E-OBS: Cornes et al. (2018). Regression-kriging: Hengl et al.
 #'   (2007). meteoland: De Cáceres et al. (2018).
 #' @seealso [tendances_estivales_eobs()]
@@ -1134,6 +1143,9 @@ eobs_bivariate_n <- function() .EOBS_BIVARIATE_N
 #'   the zero-trend line on each axis, `NA` if 0 is outside the data range, for
 #'   the white dashed 0/0 lines of the reference figure). `meta$tx` / `meta$rr`
 #'   carry the two component `eobs_downscale()` metas.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [eobs_downscale()], [tendances_estivales_eobs()]
 #' @export
 eobs_downscale_bivariate <- function(tx, rr, dem = NULL, aoi, buffer_m = 25000,

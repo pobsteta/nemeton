@@ -147,6 +147,11 @@ stack (e.g. the Tmin series feeding \code{\link{indicateur_r7_gel}}), use
 \code{\link{meteoland_daily_grid}} instead of a reduced statistic.
 }
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \references{
 E-OBS: Cornes et al. (2018). Regression-kriging: Hengl et al.
 (2007). meteoland: De Cáceres et al. (2018).

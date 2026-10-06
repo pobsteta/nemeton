@@ -50,6 +50,11 @@ When the REML estimate of \code{A} is not positive, it is truncated to 0 with
 a warning: every estimate is then the synthetic prediction, and the caller
 must know it.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 set.seed(1)
 x <- runif(30, 10, 30)

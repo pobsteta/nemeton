@@ -74,3 +74,7 @@ blocking** (`advisory = TRUE` in the result): RECONFORT carries no
 hard geographic lock upstream, so the app warns but never prevents
 the diagnosis.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

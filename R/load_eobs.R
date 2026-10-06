@@ -283,6 +283,9 @@
 #'
 #' @return A per-year summer `SpatRaster` (layers named by year), or `NULL` on
 #'   graceful degradation (with a warning carrying the underlying error message).
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 load_eobs_source <- function(aoi, var = "tx", years = NULL, months = 6:8,
                              source = "cds", reducer = NULL, nc = NULL,

@@ -78,3 +78,7 @@ By default, only the trustworthy classes contribute (G1): FORDEAD
 `3-forte` / `4-sol-nu` (set `include_low_classes = TRUE` to add the
 low classes) and RECONFORT [`RECONFORT_ALERT_CLASSES`].
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

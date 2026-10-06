@@ -91,4 +91,7 @@ Residue volume is converted to dry matter with the species density of
 does. Versions up to 0.211.0 multiplied it by a further 0.5 ("dry matter =
 50 percent of fresh weight"), which halved E1.
 }
+\section{Lifecycle}{
 
+Stable: covered by the 1.0 API contract (spec 057).
+}

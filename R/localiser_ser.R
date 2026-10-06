@@ -68,6 +68,9 @@
 #'   `NA` for a unit outside every SER or when the outlines could not be
 #'   obtained (with a warning).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [ifn_production_reference()].
 #' @export
 #' @examples

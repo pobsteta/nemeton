@@ -66,6 +66,11 @@ The `complexity` parameter is based on benchmarks showing that furrr has
 a setup overhead of ~15-18 seconds. Parallelization is only beneficial when:
 `n * time_per_op * (1 - 1/workers) > overhead`
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Using complexity parameter (recommended)

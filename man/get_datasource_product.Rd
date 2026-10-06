@@ -28,6 +28,11 @@ unit, value range, conversion notes), so a caller can pick the
 right product and apply any documented unit conversion before
 feeding it to an indicator.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 h <- get_datasource_product("forms_t", "height", "FR")
 h$unit          # "cm"

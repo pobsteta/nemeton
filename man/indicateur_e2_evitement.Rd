@@ -47,3 +47,7 @@ quantity: E2 = E1 x 4500 kWh x 0.222 kgCO2/kWh / 1000 = E1 x 0.999. See spec
 Calculates CO2 emission avoidance (tCO2eq/year) through wood energy and
 material substitution using ADEME emission factors.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

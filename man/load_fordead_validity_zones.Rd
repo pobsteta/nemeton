@@ -15,3 +15,7 @@ Reads `inst/extdata/fordead_validity_zones.geojson` (five
 department polygons in EPSG:4326) and caches the result for
 the lifetime of the R session.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

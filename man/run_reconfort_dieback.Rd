@@ -212,3 +212,7 @@ To cover several years, call once per `s2_year` (each run = a 2-year
 window ending end-October of its `s2_year`); the app stacks the resulting
 yearly maps.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

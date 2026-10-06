@@ -68,6 +68,11 @@ contribution to the regional mean, which is a resource figure and far too low
 for this purpose.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 units <- indicateur_p1_volume(units)          # NA en NDP 0

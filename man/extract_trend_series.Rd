@@ -102,6 +102,11 @@ trend map runs per pixel, so the zone trajectory and the map agree by
 construction. Multi-tile AOIs are combined as a valid-pixel-count-weighted
 mean per year.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 \dontrun{
   con <- db_connect(Sys.getenv("NEMETON_DB_URL"))

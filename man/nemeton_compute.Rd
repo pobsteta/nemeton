@@ -58,6 +58,11 @@ The function performs the following steps:
 If an indicator calculation fails, a warning is issued and the indicator column
 is filled with NA, but computation continues for other indicators.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(nemeton)

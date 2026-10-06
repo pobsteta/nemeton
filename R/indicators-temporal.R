@@ -56,6 +56,9 @@ NULL
 #'     recognised TFV
 #' }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family temporal-indicators
 #' @export
 #'
@@ -227,6 +230,9 @@ indicateur_t1_anciennete <- function(units,
 #' A genuine change-rate indicator (e.g. a Sentinel-2 change detection) is
 #' not implemented in T2.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family temporal-indicators
 #' @export
 #'
@@ -358,6 +364,9 @@ indicateur_t2_changement <- function(units,
 #'   the unit footprint under clear-cut within the window (0-100, high = more
 #'   clear-cutting). `NA` where `sufosat_dates` is `NULL` or the unit does not
 #'   overlap the raster.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 indicateur_t3_coupes_rases <- function(units,

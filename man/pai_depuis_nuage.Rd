@@ -82,6 +82,11 @@ DTM). Heavy dependency in \code{Suggests}, guarded by \code{requireNamespace}.
 When \code{precomputed} is a \code{SpatRaster} (or raster file path) it is
 returned as-is, so the pipeline can run on a pre-built PAI without \code{lasR}.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{regen_bilan_hydrique}}, \code{\link{regen_sensibilite}}
 }

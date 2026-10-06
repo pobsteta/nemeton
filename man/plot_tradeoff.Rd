@@ -70,6 +70,11 @@ best possible trade-offs - improving one objective requires sacrificing another.
 - Use \code{label} to identify specific parcels of interest
 - Combine with faceting for multi-scenario comparisons
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Load demo dataset

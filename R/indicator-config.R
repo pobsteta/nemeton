@@ -629,6 +629,9 @@ get_all_column_names <- function() {
 #'     \item{tooltips_fr, tooltips_en}{Same, in each language.}
 #'   }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [indicator_labels()] for a long-format, one-row-per-indicator view.
 #'
 #' @examples
@@ -845,6 +848,9 @@ indicator_families <- function(codes = NULL, lang = c("fr", "en")) {
 #' French without warning — today `indicator_labels(lang = "en")` returns the
 #' French C1 page with `doc_lang == "fr"`. Compare `doc_lang` with the
 #' language you asked for; do not assume they match.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @seealso [indicator_families()]
 #'

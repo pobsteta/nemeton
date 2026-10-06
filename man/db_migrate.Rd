@@ -37,3 +37,7 @@ transaction-level advisory lock, `BEGIN IMMEDIATE` on SQLite) and
 re-checks `schema_migration`, so a migration applied meanwhile by
 another connection is skipped instead of being run twice.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

@@ -16,6 +16,11 @@ Character vector of augmentation flags (possibly empty).
 Convenience accessor for the \code{augmented} slot of an
 \code{ndp_result} object.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 df <- data.frame(x = 1)
 attr(df, "chm_source") <- "opencanopy"

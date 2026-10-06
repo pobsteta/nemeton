@@ -56,6 +56,11 @@ The topographic wetness index is deliberately \strong{not} used here: it measure
 lateral convergence, not storage capacity, and it already feeds
 \code{\link{indicateur_r3_secheresse}} directly (spec 035, decision D1).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \references{
 Poggio L. et al. (2021). SoilGrids 2.0. \emph{SOIL} 7:217-240.
 }

@@ -77,6 +77,11 @@ per-date LAI to one layer. Needs \code{prosail} + real S2 scenes and is
 \strong{not runnable in CI} — the engine is validated on real data (training
 verified; application per the official tutorial).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{regen_bilan_hydrique}}, \code{\link{regen_sensibilite}},
 \code{\link{pai_depuis_nuage}}

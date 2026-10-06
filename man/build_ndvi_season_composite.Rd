@@ -52,6 +52,11 @@ when no scene falls in the season, every scene is used.
 Bands are read through [read_s2_band_raster()], so the L2A radiometric
 offset of scenes processed since 2022-01-25 is removed (spec 055).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 ndvi <- build_ndvi_season_composite("project/cache/layers/sentinel2",

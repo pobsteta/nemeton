@@ -46,6 +46,11 @@ Looks up `<cache_dir>/zone_<zone_id>/reconfort_mask_<run_id>.tif`
 `run_id` is `NULL` the most recent file (lexicographic, hence
 chronological) is returned.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 [read_fordead_dieback_mask()], [run_reconfort_dieback()].
 }

@@ -64,6 +64,9 @@ NULL
 #'
 #' @return A list of field descriptors.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' schema <- get_placette_schema()
 #' vapply(schema, `[[`, character(1), "name")
@@ -112,6 +115,9 @@ get_placette_schema <- function() {
 #'   \code{"fr"}.
 #'
 #' @return A list of field descriptors.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' schema <- get_arbre_schema(region = "BFC", lang = "fr")

@@ -55,6 +55,9 @@
 #'
 #' @return `units` with `volume_col` completed and `source_col` added.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [ifn_volume_reference()], [volume_mobilisable()].
 #' @export
 #' @examples

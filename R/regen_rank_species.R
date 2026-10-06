@@ -235,6 +235,9 @@
 #'   `confidence`, `invasif`. Units with no station data yield a single `rank = NA`
 #'   row (no fabricated recommendation). An empty pool yields a 0-row frame.
 #'   The chosen axis weights are attached as `attr(, "weights")`.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso `regen_rank_to_wide()`, [indice_priorite_regen()],
 #'   [regen_species_choices()], [european_species_tolerances()]
 #' @examples

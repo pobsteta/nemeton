@@ -40,6 +40,11 @@ Pixels below \code{min_pai} are treated as non-canopy (gaps, roads, water) and
 excluded before the percentile, so a unit with a clearing keeps the PAI of its
 stocked part.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{pai_depuis_nuage}}, \code{\link{regen_bilan_hydrique}}
 }

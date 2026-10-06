@@ -21,3 +21,7 @@ Convenience wrapper around [`probe_ign_lidar_tile()`] for the
 with one row per URL and a summary classification, ready to be
 rendered in the app.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

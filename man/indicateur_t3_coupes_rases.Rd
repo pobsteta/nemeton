@@ -70,3 +70,7 @@ The score is coverage-fraction weighted, so equal-area pixels cancel and no
 cell-area computation is needed: it is the share of the unit footprint under
 clear-cut within the recency window, weighted linearly by recency.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

@@ -42,6 +42,11 @@ strictly positive for some unit), the function falls back to the simple
 mean and says so. Within each family, units whose score is `NA` are left
 out and the remaining weights renormalised.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 u <- data.frame(famille_carbone = c(80, 20), surface_m2 = c(450000, 5000))
 aggregate_family_scores(u)                    # ~79.3, the large unit dominates

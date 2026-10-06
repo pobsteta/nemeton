@@ -52,3 +52,7 @@ optionally BD Foret Anciennes (historical forest from ~1850). Follows tuto 04:
 - Recent forest (current cover but not ancient): score = 30 + 30 * taux_boisement
 - No forest: score = 15
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

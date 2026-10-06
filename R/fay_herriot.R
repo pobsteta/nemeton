@@ -48,6 +48,9 @@
 #' warning: every estimate is then the synthetic prediction, and the caller
 #' must know it.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @references
 #' Fay R.E., Herriot R.A. (1979). Estimates of income for small places: an
 #' application of James-Stein procedures to census data. JASA 74:269-277.

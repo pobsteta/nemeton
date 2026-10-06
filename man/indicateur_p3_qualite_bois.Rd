@@ -67,6 +67,11 @@ commercial diameter thresholds, and defect presence.
   \item 0-20: Very low quality (firewood only)
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 units$dbh <- c(45, 28, 35)

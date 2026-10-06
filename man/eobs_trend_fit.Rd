@@ -23,6 +23,11 @@ per-year OLS slope, matching the mapped per-decade slope
 (\code{tendances_estivales_eobs()} / \code{eobs_downscale()}), so the click chart and the
 map colour agree by construction.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 eobs_trend_fit(data.frame(year = 2011:2020, value = 20 + (0:9) * 0.1))
 }

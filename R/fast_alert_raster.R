@@ -145,6 +145,9 @@
 #'   `cached = TRUE` is set when the raster was read from the result
 #'   cache.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [build_index_stack()] (the underlying index stack builder,
 #'   spec 010), [.get_zone_aoi()] (the shared AOI resolver, spec 012),
 #'   [compute_fast_alert_mask()] (the 0-4 quartile discretiser).
@@ -623,6 +626,9 @@ read_fast_alert_rasters <- function(con, zone_id,
 #'     \item{`index`, `months`, `alpha`, `min_slope`}{the parameters used.}
 #'   }
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [read_fast_alert_raster()] (`mode = "trend"`, the per-pixel map),
 #'   [compute_fast_alert_mask()] (the 0-4 discretiser).
 #'
@@ -822,6 +828,9 @@ extract_trend_series <- function(con, zone_id,
 #'   }
 #'   The 0-4 severity class is NOT returned: its quartile breaks are
 #'   zone-wide, so read the class straight from the mask raster at the pixel.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @seealso [read_fast_alert_raster()] (`mode = "trend"`, the raster),
 #'   [extract_trend_series()] (the zone-level trajectory),

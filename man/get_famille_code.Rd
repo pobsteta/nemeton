@@ -18,6 +18,11 @@ Reverse of \code{\link{get_famille_col}}: \code{"famille_biodiversite"} becomes 
 Unknown names give \code{NA} rather than an error, so the function can be mapped
 over the columns of an arbitrary \code{sf} to pick out the family scores.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 get_famille_code("famille_biodiversite")
 get_famille_code(c("famille_eau", "surface_m2"))

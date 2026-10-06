@@ -45,6 +45,11 @@ Resolution order for an \code{sf} / \code{data.frame} result:
 A bare vector is an error: since 1.0.0 (spec 057) no indicator returns
 one.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{nemeton_compute}}
 }

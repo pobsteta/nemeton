@@ -29,3 +29,7 @@ Calculates a composite naturalness index following tuto 04:
 N3 = 0.35 * N1 + 0.35 * N2 + 0.15 * (100 - L1) + 0.15 * B3
 NA when any of N1, N2, L1 or B3 is unavailable.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

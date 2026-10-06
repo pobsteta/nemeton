@@ -56,6 +56,11 @@ The composite index combines multiple normalized indicators into a single score.
 \strong{Weights} are normalized internally to sum to 1. For example:
 \code{weights = c(2, 1, 1)} becomes \code{c(0.5, 0.25, 0.25)}
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Equal weights

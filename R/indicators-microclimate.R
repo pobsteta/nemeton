@@ -125,6 +125,9 @@
 #'   100, 40 °C -> 0 (`.MICRO_BOUNDS$a3`). `normalize_indicator()` therefore
 #'   passes `A3` through unchanged and must **not** invert it a second time
 #'   (spec 048 section 12).
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [indicateur_a4_tamponnement()], [indicateur_w4_vpd()]
 #' @export
 indicateur_a3_microclimat <- function(units, micro = NULL, chm = NULL,
@@ -160,6 +163,9 @@ indicateur_a3_microclimat <- function(units, micro = NULL, chm = NULL,
 #'   way: 0 °C -> 0, 10 °C -> 100 (`.MICRO_BOUNDS$a4`, `decreasing = FALSE`).
 #'   Unlike `A3` and `W4`, nothing is flipped. `normalize_indicator()` passes
 #'   it through (spec 048 section 12).
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [indicateur_a3_microclimat()]
 #' @export
 indicateur_a4_tamponnement <- function(units, micro = NULL, chm = NULL,
@@ -197,6 +203,9 @@ indicateur_a4_tamponnement <- function(units, micro = NULL, chm = NULL,
 #'   (`.MICRO_BOUNDS$w4`). `normalize_indicator()` therefore passes `W4`
 #'   through unchanged and must **not** invert it a second time
 #'   (spec 048 section 12).
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [indicateur_a3_microclimat()]
 #' @export
 indicateur_w4_vpd <- function(units, micro = NULL, chm = NULL,
@@ -235,6 +244,9 @@ indicateur_w4_vpd <- function(units, micro = NULL, chm = NULL,
 #' @return `units` with `R6` (0-100, higher = less sensitive), `R6_dtmax`
 #'   (raw ΔT°max, °C), `R6_dvpd` (raw ΔVPD, kPa), `R6_couverture_pct`, and
 #'   the `"microclimate_model"` augmentation flag (only when at least one value is computed).
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [microclimate_detect_years()], [indicateur_a3_microclimat()]
 #' @export
 indicateur_r6_sensibilite <- function(units, micro_moyenne = NULL,

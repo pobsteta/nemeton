@@ -19,3 +19,7 @@ Field validation taught us that classes 1 and 2 carry too many
 false positives (50 % and 1/3 respectively) to be trusted alone;
 classes 3 and 4 are usable.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

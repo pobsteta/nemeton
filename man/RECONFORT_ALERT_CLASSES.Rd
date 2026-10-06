@@ -11,3 +11,7 @@ The dieback classes that \code{\link{list_alerts}} keeps by default —
 the RECONFORT mirror of FORDEAD's `c("3-forte", "4-sol-nu")`. The
 healthy class `1-sain` is always excluded.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

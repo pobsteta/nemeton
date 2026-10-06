@@ -31,3 +31,7 @@ scale, and resistance is \code{100 * (1 - erodibility)}.
 
 Calibratable heuristic, exported for audit. NA in, NA out.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

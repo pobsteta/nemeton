@@ -100,6 +100,9 @@ NULL
 #'   `cloud_pct`, `href_B04`, `href_B08`, `href_B12`, `source`. Empty
 #'   tibble (0 rows) when no scene matches.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' library(sf)

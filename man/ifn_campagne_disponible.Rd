@@ -23,6 +23,11 @@ This is deliberately dynamic. \code{FrenchNFIfindeR} pins the URL to the
 2005-2023 export in its source, and is therefore one campaign behind as soon as
 the IGN publishes a new one — which it does every autumn.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 ifn_campagne_disponible()

@@ -50,6 +50,9 @@
 #' allowing interpretation of cluster characteristics (e.g., "high production,
 #' low biodiversity" cluster).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' # Load demo dataset

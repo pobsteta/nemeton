@@ -19,6 +19,11 @@ Character. NMT species class code (e.g., "essence_chenaie"),
 Translates a BD Foret V2 essence label into the corresponding
 NMT species class code using the region's bdforet_mapping.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 map_bdforet_essence("Hêtre", region = "BFC")  # "essence_hetraie"
 map_bdforet_essence("Douglas", region = "BFC")  # "essence_douglasaie"

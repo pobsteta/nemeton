@@ -26,3 +26,7 @@ separating "marqué"/"grave" from "faible":
 }
 The exact A–F percentage cut-offs follow the DSF DEPERIS field guide.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

@@ -736,6 +736,9 @@
 #'   completed phase) and `NA` / `NULL` in place of the outputs the
 #'   cancelled phases would have produced. A genuine failure still
 #'   aborts rather than returning a status.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 run_reconfort_dieback <- function(con, zone_id, cache_dir,
                                   s2_year           = as.integer(format(Sys.Date(), "%Y")),

@@ -342,6 +342,9 @@ get_or_compute_twi <- function(dem, cache_dir = NULL,
 #'
 #' @return The input \code{units} (same class, rows and order) with an added numeric column \code{C1}: carbon stock values (tC/ha)
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -547,6 +550,9 @@ indicateur_c1_biomasse <- function(units,
 #' @return The input \code{units} (same class, rows and order) with an added numeric column \code{C2}:
 #'   mean NDVI (0-1 scale), or mean FAPAR in FAPAR mode.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -657,6 +663,9 @@ indicateur_c2_ndvi <- function(units,
 #' @return The input \code{units} (same class, rows and order) with an added numeric column \code{W1}: network density (m/ha). NA for every unit when
 #'   the watercourse layer is missing (no measurement); a supplied but empty
 #'   layer gives 0.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -799,6 +808,9 @@ indicateur_w1_reseau <- function(units,
 #'   resolution.
 #'
 #' @return The input \code{units} (same class, rows and order) with an added numeric column \code{W2}: wetland coverage (0-100\%)
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -972,6 +984,9 @@ indicateur_w2_zones_humides <- function(units,
 #'   resolution.
 #'
 #' @return The input \code{units} (same class, rows and order) with an added numeric column \code{W3}: mean TWI
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -1249,6 +1264,9 @@ calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
 #'
 #' @return The input \code{units} (same class, rows and order) with an added numeric column \code{F1}: fertility scores (0-100 scale, higher = more fertile)
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -1478,6 +1496,9 @@ extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_c
 #'
 #' @param cec_x10 Numeric. Raw SoilGrids CEC value (cmol(c)/kg x 10).
 #' @return Numeric vector on the 0-100 scale (higher = more fertile).
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 cec_to_fertility_score <- function(cec_x10) {
   cec <- cec_x10 / 10
@@ -1529,6 +1550,9 @@ extract_fertility_from_soilgrids <- function(units, country = "FR") {
 #' @param coarse_elements Optional numeric vector of coarse-element
 #'   content in percent (0-100). Default \code{NULL} (no penalty).
 #' @return Numeric vector on the 0-100 scale (higher = more fertile).
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 texture_to_fertility_score <- function(clay, silt, sand,
                                        coarse_elements = NULL) {
@@ -1569,6 +1593,9 @@ texture_to_fertility_score <- function(clay, silt, sand,
 #'   contents (any consistent unit — they are renormalised).
 #' @return Numeric vector on the 0-100 scale (higher = more resistant
 #'   to erosion).
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 texture_to_erosion_resistance <- function(clay, silt, sand) {
   total <- clay + silt + sand
@@ -1637,6 +1664,9 @@ extract_fertility_from_theia_soil <- function(units, texture) {
 #' arbitrary RRP vector data against the same crosswalk directly.
 #'
 #' @return A data.frame with 12 columns and 54 rows.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 read_uts_fertility_table <- function() {
   path <- system.file("extdata", "uts_fertilite_fr.csv",
@@ -1745,6 +1775,9 @@ extract_fertility_from_gissol <- function(units, layers,
 #'   resistant, i.e. LOWER erosion risk). Despite the historical variable name
 #'   inside the function, this is not a fertility score: the ingredients are
 #'   topographic (TWI wetness, slope steepness) plus optional soil texture.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -1867,6 +1900,9 @@ indicateur_f2_erosion <- function(units,
 #' effect. The old name, kept as a deprecated alias since then, was removed
 #' in 1.0.0 (spec 057). Persisted columns are renamed by
 #' [migrer_colonnes_l()]. See spec 045.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -2071,6 +2107,9 @@ indicateur_l1_effet_lisiere <- function(units,
 #' The old name, kept as a deprecated alias since then, was removed in 1.0.0
 #' (spec 057). Persisted columns are renamed by [migrer_colonnes_l()]. See
 #' spec 045.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples

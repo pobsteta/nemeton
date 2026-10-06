@@ -18,6 +18,11 @@ species tuning of \code{\link{indice_priorite_regen}} (spec 027 §10.1). Read fr
 (they order species sensitivity), keyed on \code{\link{list_species_classes}};
 documented, not field-calibrated (spec 027 §9.2).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{indice_priorite_regen}}, \code{\link{list_species_classes}}
 }

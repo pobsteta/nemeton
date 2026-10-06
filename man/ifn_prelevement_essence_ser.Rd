@@ -63,6 +63,11 @@ These figures describe what \strong{has been} removed, not what \strong{should}
 be. Sizing a road network on them assumes management carries on unchanged.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 ifn_prelevement_essence_ser(espar = "62", niveau = "national")

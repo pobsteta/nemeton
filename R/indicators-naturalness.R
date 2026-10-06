@@ -30,6 +30,9 @@ NULL
 #'   urban term has no data layer: its distance is a constant 2000 m, so it
 #'   always adds 25 points and N1 ranges over 25-100.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 indicateur_n1_distance <- function(units,
                                            roads = NULL,
@@ -122,6 +125,9 @@ indicateur_n1_distance <- function(units,
 #'   N2 therefore never spans the bottom of its own scale, and a low N2 is not
 #'   the same statement as a zero. `normalize_indicator()` passes it through
 #'   (spec 048 section 12).
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 indicateur_n2_continuite <- function(units,
@@ -243,6 +249,9 @@ indicateur_n2_continuite <- function(units,
 #'   N3 on the radar convention would invert L1 twice (spec 048 sections 9
 #'   and 12).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 indicateur_n3_naturalite <- function(units,
                                             column_name = "N3") {
@@ -329,6 +338,9 @@ indicateur_n3_naturalite <- function(units,
 #'   sources it also carries `anciennete` (integer epoch-count tier) and
 #'   `epoques` (the contributing epoch labels). May have 0 rows if no forest
 #'   is found.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 build_foret_ancienne_mask <- function(source,

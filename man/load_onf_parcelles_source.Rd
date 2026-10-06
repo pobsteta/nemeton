@@ -71,6 +71,11 @@ a NDP 0 seed to be checked against the management plan, not as an
 authoritative boundary.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{load_foret_ancienne_source}}, \code{\link{get_layer_service}}
 }

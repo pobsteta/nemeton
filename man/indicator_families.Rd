@@ -93,6 +93,11 @@ the Shiny application, which applies viridis for colorblind accessibility.
 Consumers who need an accessible palette should ignore this column.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 fams <- indicator_families()
 fams$code

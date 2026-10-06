@@ -57,6 +57,11 @@ not fetched by this function); an empty \code{protected_areas} gives 0.
 
 **Interpretation**: Higher values indicate better protection status.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(nemeton)

@@ -352,6 +352,9 @@ NULL
 #'     \item{fordead_version}{The Python `fordead` package version.}
 #'   }
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' res <- run_fordead_dieback(

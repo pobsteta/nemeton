@@ -20,6 +20,11 @@ project_lock_release(con, project_id, holder_id)
 Delete the lock on \code{project_id} \strong{only if} \code{holder_id} holds it. Idempotent:
 releasing a lock you do not hold (or that is already gone) is a safe no-op.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{project_lock_acquire}}
 }

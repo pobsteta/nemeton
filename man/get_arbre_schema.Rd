@@ -23,6 +23,11 @@ configuration of \code{region} (see \code{\link{list_species_classes}}),
 so that QField offers a controlled vocabulary consistent with the rest
 of the package.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 schema <- get_arbre_schema(region = "BFC", lang = "fr")
 espece <- Filter(function(f) f$name == "espece", schema)[[1]]

@@ -14,6 +14,11 @@ A data.frame with columns \code{species}, \code{habitat}
 Returns the per-species relative BAI change over 1980-2007 and
 the climatic habitat of each species.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 charru_bai_drift_table()
 

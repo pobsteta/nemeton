@@ -46,6 +46,11 @@ vitality measure on the same \code{[0, 1]} scale as NDVI, so
 downstream normalization is unchanged. When \code{fapar} is
 \code{NULL} the pre-existing NDVI behaviour is preserved.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Single-date NDVI

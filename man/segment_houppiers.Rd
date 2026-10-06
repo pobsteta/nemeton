@@ -128,6 +128,11 @@ the tallest, the one whose apex physically dominates the operator. No
 gap-filling is attempted either — a position inside no crown writes nothing
 rather than guessing the neighbouring tree.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 crowns <- segment_houppiers(

@@ -58,6 +58,11 @@ Theia \code{theia_water} water-occurrence product. Sources are evaluated
 on a regular grid of points inside each unit; points where every source is
 NA are left out, and a unit with no known point is NA.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 layers <- nemeton_layers(rasters = list(landcover = "landcover.tif"))

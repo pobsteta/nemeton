@@ -246,6 +246,9 @@ NULL
 #' cannot be computed drops out and its weight is redistributed proportionally;
 #' with no usable component, R1 is \code{NA}.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family risk-indicators
 #' @export
 #'
@@ -487,6 +490,9 @@ indicateur_r1_feu <- function(units,
 #' **Fallback method** (DEM terrain derivatives):
 #' Combines aspect-wind alignment, slope, and terrain ruggedness (TRI):
 #' R2 = wind_exposure * (0.6 * slope_norm + 0.4 * TRI_norm) * 100.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @family risk-indicators
 #' @export
@@ -759,6 +765,9 @@ indicateur_r2_tempete <- function(units,
 #' R3 is multiplied by \code{1 - sm_relief_strength * relief}.
 #' Moist soil buffers drought stress.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family risk-indicators
 #' @export
 #'
@@ -1008,6 +1017,9 @@ indicateur_r3_secheresse <- function(units,
 #'   \item game_density: From departmental hunting harvest statistics
 #'     (data.gouv.fr, OFB). Auto-fetched via \code{\link{get_game_pressure_raster}}.
 #' }
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @family risk-indicators
 #' @export

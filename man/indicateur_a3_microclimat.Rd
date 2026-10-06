@@ -39,6 +39,11 @@ Mean per-UGF summer (JJA) \strong{maximum temperature under the canopy}, the
 core heat-stress driver for forest regeneration (spec 027, ADR-014).
 Normalised 0-100 \strong{decreasing} (cooler = more favourable = 100).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{indicateur_a4_tamponnement}}, \code{\link{indicateur_w4_vpd}}
 }

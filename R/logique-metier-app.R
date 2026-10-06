@@ -39,6 +39,9 @@
 #'   `"scenes"` (the `scene_id` / `obs_date` used), or `NULL` when no scene is
 #'   usable.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family spectral
 #' @export
 #'
@@ -145,6 +148,9 @@ build_ndvi_season_composite <- function(cache_dir,
 #'   (integer, their count; `NA` when no month matches) and `demartonne`
 #'   (numeric; `NA` when not computable).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family climate
 #' @export
 #'
@@ -214,6 +220,9 @@ climate_ombrothermic_indices <- function(clim_rr, clim_t) {
 #'   family with no scored unit); `numeric(0)` when there is no family column.
 #'   Attribute `"weighting"`: `"surface"` or `"none"`, the weighting actually
 #'   applied.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @family families
 #' @export

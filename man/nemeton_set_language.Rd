@@ -12,6 +12,11 @@ nemeton_set_language(lang = c("fr", "en"))
 \description{
 Set language manually
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Set French

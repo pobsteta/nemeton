@@ -51,6 +51,9 @@ NULL
 #'
 #' Returns NA when DEM or roads are unavailable.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -150,6 +153,9 @@ indicateur_s1_routes <- function(units,
 #' }
 #'
 #' Returns NA when DEM or buildings are unavailable.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -298,6 +304,9 @@ indicateur_s2_bati <- function(units,
 #'     count field `ind`)
 #'   \item WorldPop or GPW for international applications
 #' }
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples

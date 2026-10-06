@@ -334,6 +334,9 @@ col2rgb_str <- function(hex) {
 #'
 #' @return Absolute path to the \code{.qgz} file that was created.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' library(sf)

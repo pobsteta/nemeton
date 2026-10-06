@@ -95,6 +95,9 @@
 #'   the matched layer label as attribute `"nemeton_dem_layer"` /
 #'   `"nemeton_chm_layer"`.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @name resolve_project_layers
 NULL
 

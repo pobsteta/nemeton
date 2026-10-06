@@ -80,6 +80,11 @@ species", and conflating the two either hides a real limit or discards a
 usable signal. RECONFORT has no published validity zone, so
 \code{in_calibration} is \code{NA} on that route.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 \dontrun{
 ap <- r5_applicabilite(units, bdforet = bdforet)

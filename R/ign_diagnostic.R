@@ -171,6 +171,9 @@ probe_ign_lidar_tile <- function(url,
 #' @return A `data.frame` with columns `url`, `status`, `category`,
 #'   `message`, `content_length`.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 probe_ign_lidar_tiles <- function(urls, timeout = 10) {
   if (!length(urls)) {

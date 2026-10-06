@@ -44,6 +44,11 @@ Creates a publication-ready correlation heatmap with:
 This function supports bilingual labels via `nemeton_set_language()`.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Compute correlations

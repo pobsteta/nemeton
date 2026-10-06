@@ -87,6 +87,11 @@ no density input is supplied the axis is omitted (the score renormalises over
 the present axes) and \code{shade_tol} breaks ranking ties instead.
 }
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 \dontrun{
   units <- indice_priorite_regen(units)          # station columns present

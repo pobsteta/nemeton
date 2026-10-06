@@ -63,6 +63,9 @@
 #' @return A `data.frame(year, value)`, one row per layer ordered by year,
 #'   NA-safe (a masked/out-of-extent point yields `NA` values). Attributes:
 #'   `var`, `unit`. `var` is read from the stack's `varnames` when present.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [eobs_monthly_climatology()], [eobs_trend_fit()], [load_eobs_source()]
 #' @examples
 #' \dontrun{
@@ -115,6 +118,9 @@ eobs_summer_series <- function(stack, point) {
 #'
 #' @return A `data.frame(month = 1:12, value)` (all twelve months, `NA` where a
 #'   month has no data). Attributes: `var`, `unit`, `reducer`.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [eobs_summer_series()], [load_eobs_source()]
 #' @examples
 #' \dontrun{
@@ -187,6 +193,9 @@ eobs_monthly_climatology <- function(daily, point, var, years = NULL) {
 #' @return A `list(slope_decade, intercept, r2, p_value, n)`. All `NA` (with
 #'   `n` the count of finite pairs) when fewer than two finite points are
 #'   available.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [eobs_summer_series()]
 #' @examples
 #' eobs_trend_fit(data.frame(year = 2011:2020, value = 20 + (0:9) * 0.1))

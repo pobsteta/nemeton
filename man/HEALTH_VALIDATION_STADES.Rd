@@ -13,3 +13,7 @@ observer selects in the QGIS form (whether on QGIS Desktop or
 on QField). The code is then translated to the
 `alert.validation_status` column by [ingest_health_validation()].
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

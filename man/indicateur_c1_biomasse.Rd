@@ -65,6 +65,11 @@ Calculates aboveground carbon stock (tC/ha) using species-specific
 allometric equations from IGN/IFN literature. Requires BD Forêt v2 data
 (species, age, density) or equivalent attributes.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # With BD Forêt attributes

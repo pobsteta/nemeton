@@ -273,6 +273,9 @@ ensure_reconfort_model <- function(version    = "v3",
 #' @return A single integer year: the current year when its window end
 #'   date (plus `lag_days`) is on or before `today`, otherwise the
 #'   previous year.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [reconfort_year_bounds()], [run_reconfort_dieback()]
 #' @examples
 #' # Oak 2-year model: complete only once 29 Oct of the year has passed.
@@ -310,6 +313,9 @@ reconfort_latest_complete_year <- function(v_model  = "v3",
 #' @inheritParams reconfort_latest_complete_year
 #'
 #' @return A named list of three integers: `min`, `max`, `default`.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [reconfort_latest_complete_year()]
 #' @examples
 #' reconfort_year_bounds("v3", today = as.Date("2026-07-01"))

@@ -59,6 +59,11 @@ the game density raster) is \code{NA} and propagates to R4.
     (data.gouv.fr, OFB). Auto-fetched via \code{\link{get_game_pressure_raster}}.
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(nemeton)

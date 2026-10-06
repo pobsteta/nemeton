@@ -46,6 +46,9 @@
 #' dataset re-read alongside a stale export must not silently overwrite the
 #' current values.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [indicateur_l1_effet_lisiere()], [indicateur_l2_morcellement()]
 #'
 #' @examples

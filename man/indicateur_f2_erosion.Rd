@@ -56,6 +56,11 @@ component — texture-based erosion resistance, see
 F2 = (twi_norm + slope_norm + resistance_norm) / 3. Silt-rich soils
 are more erodible and lower the score.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 layers <- nemeton_layers(rasters = list(dem = "dem.tif"))

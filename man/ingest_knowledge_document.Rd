@@ -55,6 +55,11 @@ provider, and writes the document and its chunks to the knowledge
 base. Runs in a single transaction so a failed embedding rolls back
 cleanly.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 [retrieve_knowledge()], [delete_knowledge_document()].
 }

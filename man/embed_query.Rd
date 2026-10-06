@@ -27,3 +27,7 @@ Thin wrapper over the configured embedding provider. Exported mainly
 for debugging and batch indexing; [retrieve_knowledge()] calls it
 internally.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

@@ -25,6 +25,11 @@ license; a `copyright` document is never full-text ingested; a declared
 Returns the issues as data rather than aborting, so a caller (e.g. a
 `nemetonshiny` editor) can surface them inline.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 [knowledge_manifest_vocab()], [write_knowledge_manifest()].
 }

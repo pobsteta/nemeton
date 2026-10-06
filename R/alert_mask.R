@@ -29,6 +29,9 @@
 #'   get `min(classes)`, all other cells are `NA`. Layer name
 #'   `alert_priority`.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #'   mask <- read_fordead_dieback_mask(con, zone_id = 1L,

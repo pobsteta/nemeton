@@ -35,6 +35,9 @@
 #' If an indicator calculation fails, a warning is issued and the indicator column
 #' is filled with NA, but computation continues for other indicators.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' library(nemeton)
@@ -306,6 +309,9 @@ compute_indicator <- function(indicator, units, layers, ...) {
 #'   the `"<Letter><digit>"` pattern. Default none.
 #'
 #' @return A numeric vector of the indicator's per-unit values.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [nemeton_compute()]
 #' @export
 extract_indicator_value <- function(result, indicator,
@@ -349,6 +355,9 @@ extract_indicator_value <- function(result, indicator,
 #' @param return_type Character. Return "names" (default) or "details" (data.frame with descriptions)
 #'
 #' @return Character vector of indicator names or data.frame with details
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{

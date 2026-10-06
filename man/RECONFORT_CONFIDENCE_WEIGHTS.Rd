@@ -19,3 +19,7 @@ here yet: the values are conservative placeholders and must be
 replaced by the upstream-validated figures before the R5 indicator
 (L4) relies on them quantitatively.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

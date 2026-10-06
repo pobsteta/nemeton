@@ -36,6 +36,11 @@ their quality metrics are produced upstream (\code{biophysnemeton}, ADR-009).
 This function only decides eligibility, so the confidence phi never counts a
 variable retrieved on an insufficient basis (ADR-011).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 biophys_gating(n_obs = c(5, 2, 8), pct_masked = c(0.2, 0.1, 0.6),
                oob_frac = c(0.02, 0.01, 0.03), area_px = c(40, 30, 100))

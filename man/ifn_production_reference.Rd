@@ -49,6 +49,11 @@ estimate are reported, never hidden.
 The value is that of the \strong{domain}, not of the stand: a stand inherits
 the production of its SER.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 ifn_production_reference("C30")

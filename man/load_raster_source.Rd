@@ -55,6 +55,11 @@ Theia datasources \code{forms_t}, \code{theia_soil}, ...) are produced
 or distributed externally: pass the downloaded file via the
 \code{path} argument, or load them from their producing package.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Full-planet SoilGrids CEC (reads only the requested window)

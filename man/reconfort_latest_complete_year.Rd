@@ -32,6 +32,11 @@ returns the latest `s2_year` for which the window end date has already
 passed, so callers (notably the app's year picker) can default to --
 and cap at -- a year that produces a complete run.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 # Oak 2-year model: complete only once 29 Oct of the year has passed.
 reconfort_latest_complete_year("v3", today = as.Date("2026-07-01")) # 2025

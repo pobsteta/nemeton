@@ -35,6 +35,11 @@ Mean per-UGF summer (JJA) \strong{VPD under the canopy} (kPa), the
 atmospheric-dryness driver of seedling water stress (spec 027, ADR-014).
 Normalised 0-100 \strong{decreasing} (moister air = more favourable = 100).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{indicateur_a3_microclimat}}
 }

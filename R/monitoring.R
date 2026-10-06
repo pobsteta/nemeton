@@ -45,6 +45,9 @@ NULL
 #'
 #' @return The `zone_id` (integer) of the registered zone.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 register_monitoring_zone <- function(con, zone_name, zone_polygon,
                                      placettes, radius_m = 15,
@@ -256,6 +259,9 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'   cache (`n_scenes_cached`), plots used for the zone AOI fallback
 #'   (`n_plots`), bands (`bands`), and `status`
 #'   (`"success"` or `"cancelled"`).
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{

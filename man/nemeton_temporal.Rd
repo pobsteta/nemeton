@@ -35,6 +35,11 @@ A nemeton_temporal object (list) with components:
 Combines multiple nemeton_units objects from different time periods into
 a temporal dataset structure for longitudinal analysis.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Load demo data for two periods

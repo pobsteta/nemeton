@@ -96,6 +96,11 @@ Three data sources are supported via \code{source}:
 SoilGrids is global — the \code{"soilgrids"} mode works for any AOI,
 \code{country} only controls where the datasource entry is looked up.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Traditional path: user-supplied soil layer

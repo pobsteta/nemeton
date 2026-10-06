@@ -69,3 +69,7 @@ if (i) it intersects the five validated departments by more than
 units are dominated by spruce + fir at more than
 `threshold_species` of their cumulated area.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

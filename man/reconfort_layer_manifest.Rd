@@ -86,6 +86,11 @@ repair, see \code{inst/python/reconfort/repair_iota2_env.sh}) is reported
 once per session: its continuous score is compressed too, the run must
 be re-run.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{run_reconfort_dieback}}, \code{\link{RECONFORT_CLASSES}}
 }

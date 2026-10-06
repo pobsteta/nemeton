@@ -323,6 +323,9 @@ stac_get_item <- function(stac_api, collection, item_id) {
 #'
 #' @return \code{TRUE} invisibly on success.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' theia_configure_s3()
@@ -597,6 +600,9 @@ resolve_theia_assets <- function(source_key, aoi, asset = NULL,
 #'       message) or \code{NA}. For logs, never for the interface.
 #'   }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso \code{resolve_theia_assets()}, \code{\link{load_theia_source}}
 #'
 #' @examples
@@ -680,6 +686,9 @@ theia_source_status <- function(source_key, aoi, country = "FR",
 #' @inheritParams resolve_theia_assets
 #'
 #' @return A \code{SpatRaster} cropped to \code{aoi}.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{

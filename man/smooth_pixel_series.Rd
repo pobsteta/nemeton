@@ -62,6 +62,11 @@ The window is \strong{temporal} (`window_days`), not a fixed number of
 points, because acquisitions are irregularly spaced; `NA` values are
 ignored.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
   ts  <- extract_pixel_timeseries(cache_dir, scenes, xy = c(6.1, 46.6),

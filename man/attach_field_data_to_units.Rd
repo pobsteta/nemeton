@@ -25,3 +25,7 @@ get NAs (and \code{field_n_trees = 0}).
 This gives indicators a uniform \code{field_*} set of columns to
 read, regardless of whether field data is available or not.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

@@ -133,6 +133,9 @@ h_to_dq_params <- function() {
 #'   range and was clamped (e.g. an old oak stand capped at the 30 cm
 #'   upper bound of QUPE), \code{NA} where no value was computed.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' estimate_dq_from_hdom(H_dom = 25, species = "FASY")
 #' estimate_dq_from_hdom(
@@ -244,6 +247,9 @@ estimate_dq_from_hdom <- function(H_dom, species) {
 #'   \code{min_merchantable_height} get \code{dbh = 0} and
 #'   \code{density = 0}. The attribute \code{chm_suspect} (logical)
 #'   flags a likely degenerate CHM (see \code{suspect_frac}).
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{
@@ -408,6 +414,9 @@ estimate_synthetic_inventory <- function(units, chm, species,
 #'   at least one field was filled from the CHM; the attribute
 #'   \code{hors_domaine} then carries the per-unit clamping flag of
 #'   \code{\link{estimate_synthetic_inventory}}.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @keywords internal
 #' @export

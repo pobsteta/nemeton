@@ -153,6 +153,9 @@ NULL
 #'
 #' @return A `DBIConnection`.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' # Postgres (production)
@@ -248,6 +251,9 @@ db_connect <- function(url = Sys.getenv("NEMETON_DB_URL"),
 #'
 #' @return Invisible `TRUE` if the connection was closed.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 db_disconnect <- function(con) {
   if (!is.null(con) && DBI::dbIsValid(con)) {
@@ -299,6 +305,9 @@ db_disconnect <- function(con) {
 #'
 #' @return A character vector of versions applied during this call
 #'   (empty if everything was up to date).
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 db_migrate <- function(con,

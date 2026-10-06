@@ -42,6 +42,11 @@ its T1 age when known.
 A genuine change-rate indicator (e.g. a Sentinel-2 change detection) is
 not implemented in T2.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(nemeton)

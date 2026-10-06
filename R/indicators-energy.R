@@ -68,6 +68,9 @@ NULL
 #' does. Versions up to 0.211.0 multiplied it by a further 0.5 ("dry matter =
 #' 50 percent of fresh weight"), which halved E1.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 indicateur_e1_bois_energie <- function(units,
                                       volume_field = "volume",
@@ -249,6 +252,9 @@ indicateur_e1_bois_energie <- function(units,
 #' favourable**, not inverted. Same ref_max as E1 (2.64) because it is, to
 #' within 0.1 %, the same quantity: E2 = E1 x 4500 kWh x 0.222 kgCO2/kWh /
 #' 1000 = E1 x 0.999. See spec 048 section 11.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 indicateur_e2_evitement <- function(units,

@@ -58,3 +58,7 @@ of the per-polygon CVs, weighted by the polygon area (intersected
 with \code{aoi} when provided). Polygons mapped to \code{NA}
 (non-forest, coupe rase, lande) are dropped.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

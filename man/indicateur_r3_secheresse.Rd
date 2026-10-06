@@ -121,6 +121,11 @@ against the \eqn{0.3\;m^3/m^3} field-capacity reference, and
 R3 is multiplied by \code{1 - sm_relief_strength * relief}.
 Moist soil buffers drought stress.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(nemeton)

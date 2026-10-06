@@ -64,6 +64,11 @@ BD Forêt TFV, NDVI proxy.
     recognised TFV
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(nemeton)

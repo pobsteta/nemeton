@@ -24,6 +24,11 @@ TimescaleDB deployments may not have installed.
 Idempotent: re-running is a no-op once the migration is recorded in
 `schema_migration`.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 [ingest_knowledge_document()], [retrieve_knowledge()].
 }

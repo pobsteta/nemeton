@@ -60,6 +60,11 @@ the AOI. Two modes:
     readable on a direct-S3 setup.
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # FORMSpoT canopy height for 2023 (signed via the teledetection gateway)

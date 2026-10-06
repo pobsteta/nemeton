@@ -104,6 +104,11 @@ equations — \code{BROADLEAF_GENUS} for non-conifers,
   \item density: Number of stems per hectare
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # With species and biometric data

@@ -45,6 +45,11 @@ The old name, kept as a deprecated alias since then, was removed in 1.0.0
 spec 045.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 results <- indicateur_l2_morcellement(units, layers, buffer = 1000)

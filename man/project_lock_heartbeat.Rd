@@ -22,6 +22,11 @@ Set \code{heartbeat_at = now()} for \code{project_id} \strong{only if} \code{hol
 holds it. A no-op otherwise. The app calls this periodically (every
 ~30–60 s) so the lock survives past \code{ttl_seconds}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{project_lock_acquire}}
 }

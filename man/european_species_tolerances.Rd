@@ -48,6 +48,11 @@ use). The \code{confidence} column (\code{"eleve"}/\code{"moyen"}/\code{"faible"
 grades reliability; \code{invasif} flags INTRO/INVASIVE taxa (listed for
 completeness — \strong{presence is not a recommendation}).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \references{
 European Atlas of Forest Tree Species (San-Miguel-Ayanz et al. 2016); Caudullo,
 Welk & San-Miguel-Ayanz (2017); Niinemets & Valladares (2006); Directive

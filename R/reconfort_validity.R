@@ -26,6 +26,9 @@
 #' Eure-et-Loir (28), Indre (36), Indre-et-Loire (37),
 #' Loir-et-Cher (41), Loiret (45).
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 RECONFORT_VALIDITY_DEPARTMENTS <- c("18", "28", "36", "37", "41", "45")
 
@@ -35,6 +38,9 @@ RECONFORT_VALIDITY_DEPARTMENTS <- c("18", "28", "36", "37", "41", "45")
 #' Short codes for the three RECONFORT-calibrated species: oak (CHE,
 #' \emph{Quercus} spp.), sweet chestnut (CHT, \emph{Castanea sativa})
 #' and Scots pine (PS, \emph{Pinus sylvestris}).
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 RECONFORT_VALIDITY_SPECIES <- c("CHE", "CHT", "PS")
@@ -53,6 +59,9 @@ RECONFORT_VALIDITY_SPECIES <- c("CHE", "CHT", "PS")
 #'
 #' @return An `sf` object with columns `code_dept`, `nom_dept`,
 #'   `source`, `reference` and `geometry` (MULTIPOLYGON, EPSG:4326).
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 load_reconfort_validity_zones <- function() {
   if (is.null(.reconfort_validity_cache$zones)) {
@@ -174,6 +183,9 @@ load_reconfort_validity_zones <- function() {
 #'   * `overall_valid` (logical) — `geo_valid && (species_valid %||% TRUE)`;
 #'   * `advisory` (always `TRUE`) — the check warns, it does not block;
 #'   * `thresholds` (list).
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 check_reconfort_validity <- function(aoi,

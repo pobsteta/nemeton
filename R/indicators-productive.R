@@ -84,6 +84,9 @@ NULL
 #'   \item density: Number of stems per hectare
 #' }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -348,6 +351,9 @@ indicateur_p1_volume <- function(units,
 #'   \item mediterranean: Mediterranean (Provence, Languedoc)
 #' }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -556,6 +562,9 @@ indicateur_p2_station <- function(units,
 #'   \item 20-40: Low quality (pulpwood, biomass)
 #'   \item 0-20: Very low quality (firewood only)
 #' }
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
