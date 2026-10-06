@@ -29,6 +29,11 @@ precipitation and temperature:
 Months are matched by `month`. A month with no finite P or T is never
 counted dry; with no matching month, the result is empty / `NA`.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 rr <- data.frame(month = 1:12,
                  value = c(70, 60, 55, 50, 40, 20, 8, 15, 45, 80, 90, 80))

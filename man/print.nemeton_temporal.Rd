@@ -17,4 +17,9 @@ Invisible x
 \description{
 Print Method for nemeton_temporal Objects
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \keyword{internal}

@@ -41,6 +41,11 @@ GRTS draw), and is `NA` elsewhere. Cells added by the buffer (not
 alert at origin) take `min(classes)` so they are samplable but with
 the lowest priority.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 \dontrun{
   mask <- read_fordead_dieback_mask(con, zone_id = 1L,

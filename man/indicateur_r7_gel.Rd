@@ -54,6 +54,11 @@ A unit's mean number of late-frost days per year (Tmin below
 \code{frost_threshold_c}, on days after \code{budburst_doy} up to \code{window_end_doy}) is
 mapped to 0–100: \code{0} days → \code{100}, \code{max_frost_days} or more → \code{0}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{indicateur_r6_sensibilite}}, \code{\link{eobs_downscale}}
 }

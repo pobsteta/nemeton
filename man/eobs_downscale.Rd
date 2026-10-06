@@ -113,8 +113,8 @@ but too few E-OBS cells within the buffer).
 Turn the coarse E-OBS grid (~0.1°, ~11 km) into a fine continuous
 \code{SpatRaster} over the project's regional context, using the DEM (and terrain
 covariates) as external drift. Built for the "regional context" map of the
-reGénération tab — \strong{not} stand-scale precision, which \code{\link{microclimate_run}}
-already produces from microclimf + HD LiDAR.
+reGénération tab — \strong{not} stand-scale precision, which a microclimf run
+driven by HD LiDAR already produces.
 }
 \details{
 \strong{\code{var = "tx"}} (maximum temperature) rides a physically strong altitudinal
@@ -147,10 +147,15 @@ stack (e.g. the Tmin series feeding \code{\link{indicateur_r7_gel}}), use
 \code{\link{meteoland_daily_grid}} instead of a reduced statistic.
 }
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \references{
 E-OBS: Cornes et al. (2018). Regression-kriging: Hengl et al.
 (2007). meteoland: De Cáceres et al. (2018).
 }
 \seealso{
-\code{\link{tendances_estivales_eobs}}, \code{\link{microclimate_run}}
+\code{\link{tendances_estivales_eobs}}
 }

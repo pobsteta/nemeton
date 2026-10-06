@@ -187,6 +187,9 @@
 #' @return A per-unit named list of `meteo` data frames (or a single
 #'   `data.frame`), or `NULL` on graceful degradation. Units whose SAFRAN
 #'   request failed are left out of the list, with a warning naming their ids.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 load_biljou_forcing <- function(aoi, years, source = c("safran", "era5"),
                                 cache_dir = NULL, raw = NULL, points = NULL,
@@ -315,6 +318,9 @@ load_biljou_forcing <- function(aoi, years, source = c("safran", "era5"),
 #' @return A `biljou_soil` object (uniform mode), a **named list** of
 #'   `biljou_soil` objects keyed by unit id (SoilGrids mode), or `NULL` when
 #'   `biljouR` is unavailable.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [ewm_depuis_soilgrids()], [regen_bilan_hydrique()]
 #' @export
 build_biljou_soil <- function(units = NULL, ewm = 150,

@@ -46,3 +46,7 @@ the UI when the user explicitly opts in to lower-confidence
 alerts, with a banner — the UI is in charge of warning the
 user).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

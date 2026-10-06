@@ -35,6 +35,11 @@ A ggplot object with side-by-side comparison
 \description{
 Compares two sets of indicator values side-by-side.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 plot_comparison_map(

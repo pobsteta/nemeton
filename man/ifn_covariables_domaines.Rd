@@ -41,6 +41,11 @@ The model was fitted with \strong{FORMS-T} canopy height at 10 m. Another
 canopy height model (LiDAR, Open-Canopy) has a different distribution and
 would bias the prediction.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 h <- terra::rast("Height_2023.tif")   # FORMS-T, cm

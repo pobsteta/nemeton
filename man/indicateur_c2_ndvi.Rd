@@ -30,8 +30,8 @@ per-unit mean FAPAR and ignores \code{ndvi_layer}. The raster
 is expected in the CRS of \code{units}.}
 }
 \value{
-Numeric vector of NDVI mean values (0-1 scale), or list with
-  mean and trend if trend = TRUE
+The input \code{units} (same class, rows and order) with an added numeric column \code{C2}:
+  mean NDVI (0-1 scale), or mean FAPAR in FAPAR mode.
 }
 \description{
 Extracts mean NDVI from Sentinel-2 or equivalent satellite imagery.
@@ -46,6 +46,11 @@ vitality measure on the same \code{[0, 1]} scale as NDVI, so
 downstream normalization is unchanged. When \code{fapar} is
 \code{NULL} the pre-existing NDVI behaviour is preserved.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Single-date NDVI

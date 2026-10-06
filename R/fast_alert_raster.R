@@ -50,7 +50,7 @@
 #' downstream if a different output CRS is needed.
 #'
 #' Source data: this function reads from the on-disk COG cache populated
-#' by [ingest_sentinel2_timeseries()] (or [ingest_s2_raw_bands_to_cache()]
+#' by [ingest_sentinel2_timeseries()] (or `ingest_s2_raw_bands_to_cache()`
 #' on the FORDEAD path). The list of scenes to process is enumerated
 #' directly from the cache directory and filtered by
 #' `(date_from, date_to)` (spec 017), so the diagnostic is fully
@@ -144,6 +144,9 @@
 #'   attribute `mode` carries the mode, `index` the spectral index, and
 #'   `cached = TRUE` is set when the raster was read from the result
 #'   cache.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @seealso [build_index_stack()] (the underlying index stack builder,
 #'   spec 010), [.get_zone_aoi()] (the shared AOI resolver, spec 012),
@@ -530,7 +533,8 @@ read_fast_alert_raster <- function(con, zone_id,
 #'   terra::plot(maps$NDMI_trend)
 #' }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 read_fast_alert_rasters <- function(con, zone_id,
                                     date_from, date_to,
                                     indices     = c("NDVI", "NBR", "NDMI", "NDRE"),
@@ -621,6 +625,9 @@ read_fast_alert_rasters <- function(con, zone_id,
 #'       trend map bins into classes 1-4).}
 #'     \item{`index`, `months`, `alpha`, `min_slope`}{the parameters used.}
 #'   }
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @seealso [read_fast_alert_raster()] (`mode = "trend"`, the per-pixel map),
 #'   [compute_fast_alert_mask()] (the 0-4 discretiser).
@@ -821,6 +828,9 @@ extract_trend_series <- function(con, zone_id,
 #'   }
 #'   The 0-4 severity class is NOT returned: its quartile breaks are
 #'   zone-wide, so read the class straight from the mask raster at the pixel.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @seealso [read_fast_alert_raster()] (`mode = "trend"`, the raster),
 #'   [extract_trend_series()] (the zone-level trajectory),

@@ -67,6 +67,11 @@ indices are already absolute 0-100 scores.
 **v0.3.0 Enhancements**: Supports 9-12 family axes and comparison mode for
 multiple units.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Load demo data

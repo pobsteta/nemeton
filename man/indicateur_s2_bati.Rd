@@ -10,7 +10,6 @@ indicateur_s2_bati(
   dem = NULL,
   layers = NULL,
   column_name = "S2",
-  lang = "en",
   dem_target_res = .topo_target_res(),
   max_dist = 2000
 )
@@ -27,9 +26,6 @@ If NULL, resolved from layers.}
 when not provided directly.}
 
 \item{column_name}{Character. Name for output column. Default "S2".}
-
-\item{lang}{Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".}
 
 \item{dem_target_res}{Numeric. Working resolution (metres) the DEM grid is
 aggregated to before buildings are rasterised and the distance transform runs.
@@ -66,6 +62,11 @@ nearest building, using rasterized building data and \code{terra::distance()}.
 
 Returns NA when DEM or buildings are unavailable.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 result <- indicateur_s2_bati(

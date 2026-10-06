@@ -41,6 +41,11 @@ The whole decision runs in one transaction with a row lock (\code{FOR UPDATE}
 on PostgreSQL, `BEGIN IMMEDIATE` on SQLite), so two concurrent acquisitions on a free project yield
 exactly one winner. Expiry is judged against the database clock.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{project_lock_heartbeat}}, \code{\link{project_lock_release}},
 \code{\link{project_lock_status}}

@@ -28,6 +28,11 @@ one published point per species. For FASY the full Korf model
 from Bontemps et al. 2007 is used, so its calibration point
 is the H(100) produced by the Bontemps parameters themselves.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 site_index_reference_points()
 

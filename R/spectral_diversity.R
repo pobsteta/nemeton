@@ -187,6 +187,9 @@
 #'       \code{output_dir} rather than recomputed.}
 #'   }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [indicateur_b4_div_spectrale()], [indicateur_l3_het_spectrale()]
 #' @export
 compute_spectral_diversity <- function(reflectance,
@@ -391,6 +394,9 @@ compute_spectral_diversity <- function(reflectance,
 #'   the fly (e.g. \code{window_size}, \code{mask}, \code{nb_cpu}).
 #'
 #' @return \code{units} with the numeric \code{column_name} column added.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [compute_spectral_diversity()]
 #' @export
 indicateur_b4_div_spectrale <- function(units,
@@ -459,6 +465,9 @@ indicateur_b4_div_spectrale <- function(units,
 #'   centroid). Values below 3 are raised to 3.
 #'
 #' @return \code{units} with the numeric \code{column_name} column added.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [compute_spectral_diversity()]
 #' @export
 indicateur_l3_het_spectrale <- function(units,

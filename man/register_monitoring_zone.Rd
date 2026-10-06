@@ -50,3 +50,7 @@ existing zone, re-registering the same `plot_id` is a no-op
 this function twice with the same `zone_name` creates two
 independent zones.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

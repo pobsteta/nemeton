@@ -169,6 +169,22 @@
 #'     a non-positive value removes the cap
 #' }
 #'
+#' @section Lifecycle:
+#'
+#' Every help page states the status of its function (spec 057):
+#'
+#' \itemize{
+#'   \item \strong{Stable}: indicators, families, NDP, normalisation, data
+#'     loaders, sampling and the API consumed by nemetonshiny. Covered by the
+#'     1.0 API contract: a breaking change needs a major release.
+#'   \item \strong{Experimental}: RAG (knowledge corpus), Sentinel-2
+#'     biophysics, FORDEAD / RECONFORT health monitoring and their field
+#'     validation, regeneration (microclimate, water balance, E-OBS). May
+#'     change in any release, without deprecation.
+#' }
+#'
+#' The reference index of the site groups the pages by status.
+#'
 #' @section Author & Methodology:
 #'
 #' \strong{Package Author:} Pascal Obstétar (\email{pascal.obstetar@@gmail.com})

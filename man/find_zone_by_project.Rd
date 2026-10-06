@@ -33,6 +33,11 @@ name-based lookup: matching by `name` was the legacy convention,
 brittle (duplicates, renames) and we want callers to migrate to the
 UUID binding.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 [register_monitoring_zone()] for the writer side of the
   binding.

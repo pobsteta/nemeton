@@ -34,6 +34,11 @@ Missing scenes (no `<band>.tif` on disk) are skipped silently and
 reported via a **single aggregated warning** — never one warning
 per missing scene. Returns `NULL` if every scene is missing.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
   cache <- "/proj/cache/layers/sentinel2"

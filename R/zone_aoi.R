@@ -7,7 +7,7 @@
 #'
 #' Used as the single source of truth for the AOI of both the FORDEAD
 #' pipeline ([run_fordead_dieback()]) and the FAST surveillance
-#' pipeline ([ingest_sentinel2_timeseries()], [ingest_s2_raw_bands_to_cache()])
+#' pipeline ([ingest_sentinel2_timeseries()], `ingest_s2_raw_bands_to_cache()`)
 #' since spec 012. Sharing this resolver guarantees that both pipelines
 #' read the *same* COG crop, so the on-disk S2 cache is reused across
 #' them (a FORDEAD pre-fetch warms the FAST cache and vice versa).
@@ -177,7 +177,8 @@
 #'
 #' @seealso [read_reconfort_layer()], [read_fast_alert_raster()],
 #'   [read_fordead_dieback_mask()]
-#' @export
+#' @keywords internal
+#' @noRd
 filter_alerts_to_zone <- function(alerts, con = NULL, zone_id = NULL,
                                   apply_zone_mask = TRUE,
                                   mask_polygon = NULL) {

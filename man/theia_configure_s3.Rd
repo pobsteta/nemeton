@@ -33,6 +33,11 @@ variables — the same THEIA API-key pair used by the
 endpoint, region and options are read from the
 \code{services$theia_s3} entry of the country configuration.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 theia_configure_s3()

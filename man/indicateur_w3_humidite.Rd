@@ -31,7 +31,7 @@ topographic working resolution, 2 m --- see
 resolution.}
 }
 \value{
-Numeric vector of TWI mean values, referenced to a 2 m grid.
+The input \code{units} (same class, rows and order) with an added numeric column \code{W3}: mean TWI, referenced to a 2 m grid.
 }
 \description{
 Calculates TWI using fasterRaster/GRASS GIS (preferred) or terra fallback (D8).
@@ -49,6 +49,11 @@ in metres, never in degrees. The TWI is then referenced to a 2 m grid,
 step in metres, because the specific catchment area scales with the step
 (spec 056). Values from different DEM resolutions are thus on one scale.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 layers <- nemeton_layers(rasters = list(dem = "dem_25m.tif"))

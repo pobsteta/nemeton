@@ -65,6 +65,11 @@ exactly the same sequence (same content, chunked with the same
 message names the existing document and its `document_id` is returned
 with `duplicate = TRUE`.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 [retrieve_knowledge()], [delete_knowledge_document()].
 }

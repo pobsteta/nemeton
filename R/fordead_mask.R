@@ -46,6 +46,9 @@
 #'   `NULL` when no mask is available (no `cache_dir` provided, the
 #'   directory doesn't exist, or no file matches).
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [run_fordead_dieback()] for the pipeline that produces
 #'   the underlying anomaly / dieback rasters.
 #'

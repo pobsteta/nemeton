@@ -18,6 +18,11 @@ Character vector of indicator names or data.frame with details
 \description{
 Returns a character vector of available indicator names.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Get all indicator names

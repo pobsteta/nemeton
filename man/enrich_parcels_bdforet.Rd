@@ -38,3 +38,7 @@ The returned `density` column is a canopy-cover fraction (default
 stems-per-hectare figure, so do not feed it to
 \code{indicateur_p1_volume()} as `density_field`.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

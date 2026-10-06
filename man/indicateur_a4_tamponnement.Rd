@@ -36,6 +36,11 @@ canopy. A larger buffer means the canopy shields the regeneration
 microsite from heat (spec 027, ADR-014). Normalised 0-100 \strong{increasing}
 (more buffering = 100).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
-\code{\link{indicateur_a3_microclimat}}, \code{\link{microclimate_run}}
+\code{\link{indicateur_a3_microclimat}}
 }

@@ -4,15 +4,12 @@
 \alias{indicateur_n3_naturalite}
 \title{N3: Composite Naturalness Index}
 \usage{
-indicateur_n3_naturalite(units, column_name = "N3", lang = "en")
+indicateur_n3_naturalite(units, column_name = "N3")
 }
 \arguments{
 \item{units}{sf object with N1 and N2 columns (optionally L1, B3)}
 
 \item{column_name}{Character. Name for output column. Default "N3".}
-
-\item{lang}{Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".}
 }
 \value{
 sf object with added column N3 (score 0-100), or \code{NA} when any of the four
@@ -31,4 +28,8 @@ N3 on the radar convention would invert L1 twice (spec 048 sections 9 and 12).
 Calculates a composite naturalness index following tuto 04:
 N3 = 0.35 * N1 + 0.35 * N2 + 0.15 * (100 - L1) + 0.15 * B3
 NA when any of N1, N2, L1 or B3 is unavailable.
+}
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
 }

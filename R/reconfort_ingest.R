@@ -58,7 +58,8 @@
 #'   (with a warning) when the AOI falls outside the bundled grid —
 #'   RECONFORT is calibrated on Centre-Val de Loire, and the grid
 #'   covers metropolitan France.
-#' @export
+#' @keywords internal
+#' @noRd
 reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
   if (!inherits(aoi, "sf") && !inherits(aoi, "sfc")) {
     cli::cli_abort("{.arg aoi} must be an sf or sfc object.")
@@ -648,7 +649,8 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 #'
 #' @return Invisibly, a list: `tiles`, `s2_root`, and `extracted` (the
 #'   per-tile extraction directories), for the L2b.3 map-production step.
-#' @export
+#' @keywords internal
+#' @noRd
 reconfort_ingest_s2 <- function(aoi = NULL, tiles = NULL,
                                 date_from, date_to,
                                 s2_root,

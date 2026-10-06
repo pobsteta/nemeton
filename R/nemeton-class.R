@@ -28,6 +28,9 @@
 #'   \item description: Optional description
 #' }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' library(sf)
@@ -113,6 +116,9 @@ nemeton_units <- function(x, id_col = NULL, metadata = list(), validate = TRUE) 
 #' @param ... Additional arguments (not used)
 #'
 #' @return Invisible x
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 print.nemeton_units <- function(x, ...) {
   meta <- attr(x, "metadata")
@@ -148,6 +154,9 @@ print.nemeton_units <- function(x, ...) {
 #' @param ... Additional arguments (not used)
 #'
 #' @return Invisible object
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 summary.nemeton_units <- function(object, ...) {
   meta <- attr(object, "metadata")
@@ -184,6 +193,9 @@ summary.nemeton_units <- function(object, ...) {
 #' @details
 #' Layers are not loaded into memory until first use (lazy loading).
 #' This allows creating a catalog of large rasters without memory overhead.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{
@@ -286,6 +298,9 @@ nemeton_layers <- function(rasters = NULL, vectors = NULL, validate = TRUE) {
 #' @param ... Additional arguments (not used)
 #'
 #' @return Invisible x
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 print.nemeton_layers <- function(x, ...) {
   cat("\n\u2500\u2500 nemeton_layers object \u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\n")
@@ -321,6 +336,9 @@ print.nemeton_layers <- function(x, ...) {
 #' @param ... Additional arguments (not used)
 #'
 #' @return Invisible object
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 summary.nemeton_layers <- function(object, ...) {
   cat("\n\u2500\u2500 Nemeton Layers Summary \u2500\u2500\u2500\u2500\u2500\u2500\n\n")

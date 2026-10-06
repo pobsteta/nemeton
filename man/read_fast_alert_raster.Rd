@@ -185,6 +185,11 @@ directly from the cache directory and filtered by
 `(date_from, date_to)` (spec 017), so the diagnostic is fully
 independent of any per-placette table.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 \dontrun{
   con <- db_connect(Sys.getenv("NEMETON_DB_URL"))

@@ -72,6 +72,9 @@ NULL
 #' @return A named list with elements `columns`, `licenses`, `statuses`,
 #'   `strategies`, `langs`, `doc_types`, `profiles`, and `family_regex`.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [validate_knowledge_manifest()], [read_knowledge_manifest()].
 #' @export
 knowledge_manifest_vocab <- function() {
@@ -117,6 +120,9 @@ knowledge_manifest_vocab <- function() {
 #'
 #' @return A character scalar path.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [read_knowledge_manifest()], [write_knowledge_manifest()].
 #' @export
 knowledge_manifest_path <- function(writable = FALSE) {
@@ -156,6 +162,9 @@ knowledge_manifest_path <- function(writable = FALSE) {
 #'
 #' @return The path to the refreshed writable manifest (invisibly).
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [knowledge_manifest_path()], [read_knowledge_manifest()].
 #' @export
 reset_knowledge_manifest <- function(confirm = TRUE) {
@@ -189,6 +198,9 @@ reset_knowledge_manifest <- function(confirm = TRUE) {
 #'   ([knowledge_manifest_path()]).
 #'
 #' @return A data.frame with the manifest columns.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @seealso [validate_knowledge_manifest()], [write_knowledge_manifest()],
 #'   [build_knowledge_corpus()].
@@ -232,6 +244,9 @@ read_knowledge_manifest <- function(path = knowledge_manifest_path()) {
 #'   [validate_knowledge_manifest()] reports any `error` issue.
 #'
 #' @return Invisibly, the path written.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @seealso [read_knowledge_manifest()], [validate_knowledge_manifest()].
 #' @export
@@ -296,6 +311,9 @@ write_knowledge_manifest <- function(manifest,
 #' @return A data.frame with columns `row` (1-based row index, `NA` for
 #'   table-level issues), `doc_id`, `severity` (`"error"` or `"warning"`),
 #'   `field`, and `message`. Zero rows means the manifest is valid.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @seealso [knowledge_manifest_vocab()], [write_knowledge_manifest()].
 #' @export
@@ -711,6 +729,9 @@ validate_knowledge_manifest <- function(manifest) {
 #'   `document_id`, `duration_sec`. A row skipped because its declared
 #'   `local_path` is not found under the corpus root names that path and
 #'   the root in `reason`.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @seealso [read_knowledge_manifest()], [ingest_knowledge_document()],
 #'   [ingest_knowledge_reference()], [list_knowledge_documents()].

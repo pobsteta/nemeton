@@ -72,6 +72,11 @@ to \code{njstress}/\code{istress}/\code{deb_stress}/\code{rew_min}. It needs
 \code{meteo}, a soil (\code{sol}) and per-unit \code{lai_max}; with SAFRAN/LiDAR
 inputs it is \strong{not runnable in CI} — validated on real data.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{indicateur_r3_secheresse}}, \code{\link{indice_priorite_regen}}
 }

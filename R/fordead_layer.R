@@ -49,6 +49,9 @@
 #'   AOI.
 #'
 #' @return A `terra::SpatRaster` (single band) or `NULL`.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 read_fordead_layer <- function(con,
                                zone_id,

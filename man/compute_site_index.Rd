@@ -62,6 +62,11 @@ When \code{species} is not directly tabulated, a genus-level
 fallback is applied (\code{BROADLEAF_GENUS} for non-conifers,
 \code{CONIFER_GENUS} otherwise).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 # Sessile oak: 20 m at 80 years -> site index at 50 years
 compute_site_index(H_dom = 20, age = 80, species = "QUPE")

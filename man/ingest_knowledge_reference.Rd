@@ -49,6 +49,11 @@ chosen mode is recorded under `metadata.ingestion_mode` (the JSON
 `metadata` column — no schema change), so a corpus can be audited for
 which documents are full-text versus reference-only.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 [ingest_knowledge_document()] (full-text ingestion),
   [retrieve_knowledge()], [format_citations()].

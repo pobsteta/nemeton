@@ -12,3 +12,7 @@ chosen value lands in `alert.validation_cause` verbatim — the
 `alert` table does not enforce a CHECK constraint on this
 column (see migration `0001_initial_v1.sql`).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

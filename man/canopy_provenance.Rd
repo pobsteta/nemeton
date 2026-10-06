@@ -28,6 +28,11 @@ re-implementing the flag-to-meaning rule (business logic stays in the core).
 Priority: the Sentinel-2 fallback (\code{lai_ml}) wins — its presence means
 LiDAR HD was absent.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 canopy_provenance(character(0))                  # "lidar_hd"
 canopy_provenance("lai_ml")                      # "prosail_s2"

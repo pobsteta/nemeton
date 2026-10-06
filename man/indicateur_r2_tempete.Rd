@@ -80,6 +80,11 @@ The terrain ruggedness (TRI) term was dropped in 1.0.0 (spec 056): it is
 0.82-0.99 correlated with the slope and, normalised by its maximum over the
 extent, was the only non-comparable term between projects.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(nemeton)

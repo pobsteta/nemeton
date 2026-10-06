@@ -11,13 +11,14 @@
 #' which only needs `c("B04", "B08", "B12")` for NDVI / NBR.
 #'
 #' Used as the canonical `bands` argument to
-#' [ingest_s2_raw_bands_to_cache()] inside [run_fordead_dieback()]'s
+#' `ingest_s2_raw_bands_to_cache()` inside [run_fordead_dieback()]'s
 #' phase-0 ingest. Exported so downstream callers (tests, custom
 #' pipelines) reference one source of truth rather than hardcoding the
 #' list.
 #'
 #' @format Character vector of length 6.
-#' @export
+#' @keywords internal
+#' @noRd
 #' @examples
 #' FORDEAD_BANDS
 FORDEAD_BANDS <- c("B02", "B04", "B05", "B8A", "B11", "B12")
@@ -193,12 +194,12 @@ NULL
 #'
 #' Orchestrates fordead 2.x via \pkg{reticulate}. The pipeline derives
 #' its AOI from `monitoring_zone.zone_wkt`, ensures the Sentinel-2 COG
-#' cache contains every required band ([FORDEAD_BANDS]), assembles a
+#' cache contains every required band (`FORDEAD_BANDS`), assembles a
 #' STAC `ItemCollection` over local hrefs, and runs FORDEAD `fit()` +
 #' `predict()` on top. Six phases :
 #'
 #' \enumerate{
-#'   \item **ingest** ([ingest_s2_raw_bands_to_cache()]) — partial-
+#'   \item **ingest** (`ingest_s2_raw_bands_to_cache()`) — partial-
 #'     coverage-aware download of missing raw bands into `cache_dir`.
 #'     Re-uses bands already cached by [ingest_sentinel2_timeseries()]
 #'     (FAST pipeline) so a zone with FAST already run skips the
@@ -309,7 +310,7 @@ NULL
 #'   key) and, when meaningful, `completed`, `total`, `phase_name`.
 #'   Phases emitted, in order: `"ingest"`, `"stac_assembly"`, `"fit"`,
 #'   `"predict"`, `"postprocess"`, `"persist"`. During `"ingest"` the
-#'   `s2:*` events from [ingest_s2_raw_bands_to_cache()] also pass
+#'   `s2:*` events from `ingest_s2_raw_bands_to_cache()` also pass
 #'   through verbatim (search / scene / band_cached / band_fetched /
 #'   complete). Exceptions raised inside the callback are swallowed
 #'   so a buggy UI never aborts the pipeline. Default `NULL` (silent).
@@ -350,6 +351,9 @@ NULL
 #'     \item{python_env}{The virtualenv that was used.}
 #'     \item{fordead_version}{The Python `fordead` package version.}
 #'   }
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @examples
 #' \dontrun{

@@ -38,6 +38,11 @@ as varieties — the row is left \code{NA} rather than assigned an arbitrary
 variety.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 ifn_espar_correspondance(espar = "09")

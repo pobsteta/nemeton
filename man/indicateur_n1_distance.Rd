@@ -9,8 +9,7 @@ indicateur_n1_distance(
   roads = NULL,
   buildings = NULL,
   layers = NULL,
-  column_name = "N1",
-  lang = "en"
+  column_name = "N1"
 )
 }
 \arguments{
@@ -25,9 +24,6 @@ in \code{layers}) gives N1 = NA.}
 \item{layers}{nemeton_layers object. Used to resolve roads/buildings if not provided directly.}
 
 \item{column_name}{Character. Name for output column. Default "N1".}
-
-\item{lang}{Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".}
 }
 \value{
 sf object with added column N1 (score 0-100, 100 = very remote).
@@ -43,4 +39,8 @@ remoteness from human influence. Follows tuto 04 methodology: distances
 from parcel centroids to roads (BD TOPO) and buildings, normalized to 0-100
 and combined with weights 0.40 (roads) and 0.35 (buildings), rescaled to
 sum to 1: \code{N1 = (0.40 * roads + 0.35 * buildings) / 0.75}.
+}
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
 }

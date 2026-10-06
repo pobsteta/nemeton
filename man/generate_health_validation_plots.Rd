@@ -43,3 +43,7 @@ balance, and falls back to a per-stratum random draw when
 The returned `sf` is shaped to feed `create_qgis_project()`
 through [get_health_validation_schema()].
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

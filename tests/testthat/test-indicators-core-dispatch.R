@@ -65,8 +65,9 @@ test_that("extract_indicator_value resolves the value column by convention", {
     extract_indicator_value(df3, "indicateur_unknown_zz", exclude = "B1"),
     c(9, 9))
 
-  # A plain vector is returned unchanged.
-  expect_equal(extract_indicator_value(c(5, 6), "indicateur_whatever"), c(5, 6))
+  # Contrat 1.0 (spec 057) : un vecteur nu est une erreur.
+  expect_error(extract_indicator_value(c(5, 6), "indicateur_whatever"),
+               "did not return a data frame")
 
   # No recognizable column -> explicit error.
   expect_error(
@@ -81,7 +82,8 @@ test_that("compute_indicator still forwards every arg to a function with ...", {
   assign("indicateur_stub_dots",
          function(units, layers, ...) {
            seen$got <- names(list(...))
-           rep(1, nrow(units))
+           units$indicateur_stub_dots <- rep(1, nrow(units))
+           units
          },
          envir = globalenv())
   on.exit(rm("indicateur_stub_dots", envir = globalenv()), add = TRUE)

@@ -57,6 +57,11 @@ weights are renormalised, instead of entering the mean as a fixed 50.
 Computations run in metres: geographic inputs are projected to
 ETRS89-LAEA (EPSG:3035) and the result is attached to the original units.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 Other biodiversity-indicators:
 \code{\link[=indicateur_b1_protection]{indicateur_b1_protection()}},

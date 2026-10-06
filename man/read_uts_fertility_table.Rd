@@ -25,3 +25,7 @@ The primary consumer is \code{\link{indicateur_f1_fertilite}} in
 (pedologists auditing scores) and for users who want to join
 arbitrary RRP vector data against the same crosswalk directly.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

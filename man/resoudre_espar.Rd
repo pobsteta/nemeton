@@ -25,6 +25,11 @@ Resolution is tried in that order and is \strong{case-insensitive} for the
 non-\code{espar} forms. Unresolved entries come back as \code{NA} — never
 guessed.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 resoudre_espar(c("09", "FASY", "fagus_sylvatica", "Fagus sylvatica"))

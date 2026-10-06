@@ -11,7 +11,6 @@ indicateur_e2_evitement(
   energy_scenario = "vs_natural_gas",
   material_scenario = NULL,
   column_name = "E2",
-  lang = "en",
   taux_recolte_materiau = NULL
 )
 }
@@ -30,9 +29,6 @@ timber volume (m³/ha, a stock). Optional; used only with
 
 \item{column_name}{Character. Name for output column. Default "E2".}
 
-\item{lang}{Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".}
-
 \item{taux_recolte_materiau}{Numeric in \verb{[0, 1]}, one value or one per
 unit: share of \code{volume_field} harvested as construction timber each
 year. Required with \code{material_scenario} + \code{volume_field}, no default on
@@ -50,4 +46,8 @@ quantity: E2 = E1 x 4500 kWh x 0.222 kgCO2/kWh / 1000 = E1 x 0.999. See spec
 \description{
 Calculates CO2 emission avoidance (tCO2eq/year) through wood energy and
 material substitution using ADEME emission factors.
+}
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
 }

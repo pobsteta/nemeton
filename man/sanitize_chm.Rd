@@ -94,6 +94,11 @@ problem between the CHM and the reference layers.
 \code{sanitize_chm()} is idempotent and does not mutate the input
 raster. It returns a new \code{SpatRaster}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Minimal: just apply the plausible range step

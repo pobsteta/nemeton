@@ -74,6 +74,11 @@ consumable by \code{biljou_run_grid()}; or a single \code{data.frame} when a sha
 (no \pkg{biljouR}, no CDS key, network failure, AOI outside coverage) so the caller
 can fall back.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{regen_bilan_hydrique}}, \code{\link{build_biljou_soil}}
 }

@@ -49,6 +49,11 @@ The on-disk IOTA² rasters are not modified: the mask is applied at
 \strong{read time} (spec 016 principle "mask at read, not write"). Reuses
 the spec 016 helpers \code{.apply_zone_mask()} / \code{.get_zone_aoi()}.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{reconfort_layer_manifest}}, \code{\link{run_reconfort_dieback}},
 \code{\link{read_fast_alert_raster}}, \code{\link{read_fordead_dieback_mask}}

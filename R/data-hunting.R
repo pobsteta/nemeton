@@ -163,6 +163,9 @@ HUNTING_DATA_URLS <- .HUNTING_DATA_URLS_DEFAULT
 #' The hunting statistics provide a proxy for local game population density.
 #' Higher harvest numbers generally indicate higher population pressure.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family data-acquisition
 #' @export
 #'
@@ -397,6 +400,9 @@ standardize_hunting_columns <- function(data, species_name) {
 #' Mountain ungulates (chamois, isard, mouflon) have lower weights as they
 #' primarily affect alpine/subalpine forests.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family data-acquisition
 #' @export
 #'
@@ -567,6 +573,9 @@ compute_game_pressure_index <- function(hunting_data = NULL,
 #' 2. Downloads department boundaries if not provided
 #' 3. Rasterizes the pressure values
 #' 4. Returns a raster for use with indicateur_r4_abroutissement(game_density = ...)
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @family data-acquisition
 #' @export

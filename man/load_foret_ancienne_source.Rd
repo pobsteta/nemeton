@@ -44,6 +44,11 @@ Degrades gracefully — returns \code{NULL} on any failure (no network,
 caller can fall back to current-cover N2. A 0-row \pkg{sf} is returned when
 the AOI simply has no ~1850 forest.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{indicateur_n2_continuite}}, \code{\link{build_foret_ancienne_mask}}
 }

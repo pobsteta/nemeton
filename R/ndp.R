@@ -80,6 +80,9 @@ NDP_LEVELS <- list(
 #'
 #' @return A list with elements: ndp, key, name, fibonacci, confidence, sources.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' get_ndp_level(0)
 #' get_ndp_level(4)
@@ -100,6 +103,9 @@ get_ndp_level <- function(ndp) {
 #'
 #' @return Character. French name of the level.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' get_ndp_name(0) # "Decouverte"
 #' get_ndp_name(4) # "Jumeau"
@@ -115,6 +121,9 @@ get_ndp_name <- function(ndp) {
 #' @param ndp Integer. NDP level (0-4).
 #'
 #' @return Integer. Fibonacci weight (1, 1, 2, 3, or 5).
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' get_ndp_weight(0) # 1
@@ -134,6 +143,9 @@ get_ndp_weight <- function(ndp) {
 #' @param ndp Integer. NDP level (0-4).
 #'
 #' @return Numeric. Confidence ratio between 0 and 1.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' get_ndp_confidence(0) # 1/12 ~ 0.083
@@ -155,6 +167,9 @@ get_ndp_confidence <- function(ndp) {
 #' Fibonacci weights and confidence ratios.
 #'
 #' @return A data.frame with columns: ndp, key, name, fibonacci, confidence.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' ndp_table()
@@ -221,6 +236,9 @@ ndp_table <- function() {
 #' Breaking change in nemeton 0.16.0: \code{detect_ndp()} used to return a
 #' plain integer. It now returns an \code{ndp_result} list.
 #' Use \code{result$level} or \code{as.integer(result)} for the numeric level.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' # Default: NDP 0, no ML augmentation
@@ -362,6 +380,9 @@ detect_ndp <- function(data) {
 #'     \item{`"lidar_hd"`}{Native LiDAR HD structure (PAI) — the default when no
 #'       satellite / ML canopy flag is present.}
 #'   }
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [detect_ndp()]
 #' @examples
 #' canopy_provenance(character(0))                  # "lidar_hd"
@@ -412,6 +433,9 @@ new_ndp_result <- function(level, augmented = character(0),
 #' @param x An \code{ndp_result} object from \code{detect_ndp()}.
 #'
 #' @return Character vector of augmentation flags (possibly empty).
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' df <- data.frame(x = 1)
@@ -602,6 +626,9 @@ detect_ndp_from_cache <- function(project_path) {
 #'     \item{n_families}{Integer. Number of families used.}
 #'   }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' scores <- c(C = 72, B = 45, W = 68, A = 55, F = 60,
 #'             L = 40, T = 35, R = 50, S = 65, P = 70,
@@ -675,6 +702,9 @@ compute_general_index <- function(family_scores, ndp = 0L) {
 #'     \item{n_families}{Integer. Number of families used.}
 #'     \item{weights_used}{Named integer vector of Fibonacci weights per family.}
 #'   }
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' scores <- c(C = 72, B = 45, W = 68)

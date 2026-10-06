@@ -30,6 +30,9 @@ NULL
 #' (1-based) is the class corresponding to the integer code `i - 1`
 #' in `state.tif`.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 FORDEAD_CLASSES <- c(
   "0-hors-anomalie",
@@ -52,6 +55,9 @@ FORDEAD_CLASSES <- c(
 #' Field validation taught us that classes 1 and 2 carry too many
 #' false positives (50 % and 1/3 respectively) to be trusted alone;
 #' classes 3 and 4 are usable.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 FORDEAD_CONFIDENCE_WEIGHTS <- c(
@@ -524,6 +530,9 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 #' @return The input enriched with a `disturbance_type` column and a
 #'   logical `method_overlap` column.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 classify_disturbance <- function(alerts_df, window_days = 30L,
                                  radius_m = 100) {
@@ -636,6 +645,9 @@ classify_disturbance <- function(alerts_df, window_days = 30L,
 #' @return An sf POINT layer (CRS WGS84) ready to be drawn on a
 #'   leaflet map. Empty sf when no alert matches. `trigger_date` is a
 #'   `Date` and `validated_at` a UTC `POSIXct` on both backends.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 list_alerts <- function(con, zone_id,

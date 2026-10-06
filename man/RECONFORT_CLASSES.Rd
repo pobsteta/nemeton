@@ -13,3 +13,7 @@ code `i` in the classification raster (code `0` is no-data/masked,
 it has no label). Oak (`CHE`) and chestnut (`CHT`) have 3 classes;
 Scots pine (`PS`) has 2.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

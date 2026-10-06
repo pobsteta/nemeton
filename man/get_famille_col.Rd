@@ -23,6 +23,11 @@ value, database column). Read it here rather than hard-coding the 12
 strings; the whole mapping is also available as the \code{family_column} column
 of \code{\link{indicator_families}}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 get_famille_col("C")
 get_famille_col(c("C", "b", "N"))

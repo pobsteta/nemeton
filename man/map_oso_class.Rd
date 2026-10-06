@@ -30,6 +30,11 @@ Before 0.212.2 the mapping read an obsolete nomenclature
 returned for conifers and conifers for grassland. Any non-forest code
 also returned \code{"essence_mixte"}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 map_oso_class(16, "BFC")  # feuillus possibles
 map_oso_class(17, "BFC")  # coniferes possibles

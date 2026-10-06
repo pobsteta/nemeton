@@ -73,6 +73,11 @@ diversity rasters. This is the shared primitive behind indicators
 \strong{B4} (alpha) and \strong{L3} (beta); compute it once and pass the
 result to both indicator functions to avoid running biodivMapR twice.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{indicateur_b4_div_spectrale}}, \code{\link{indicateur_l3_het_spectrale}}
 }

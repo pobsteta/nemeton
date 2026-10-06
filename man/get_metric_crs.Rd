@@ -16,6 +16,11 @@ Integer. EPSG code for metric calculations.
 Returns the CRS to use for metric calculations (distances, areas).
 Uses the national CRS for precision (Lambert-93 for France, UTM for others).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 get_metric_crs("FR")  # 2154 (Lambert-93)
 

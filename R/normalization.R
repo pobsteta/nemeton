@@ -44,6 +44,9 @@
 #'     - 0 = lowest percentile, 100 = highest
 #' }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' # Normalize all indicators with min-max
@@ -303,6 +306,9 @@ normalize_vector <- function(x, method, reference = x, na.rm = TRUE) {
 #' \strong{Weights} are normalized internally to sum to 1. For example:
 #' \code{weights = c(2, 1, 1)} becomes \code{c(0.5, 0.25, 0.25)}
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' # Equal weights
@@ -490,6 +496,9 @@ create_composite_index <- function(data,
 #'
 #' This function inverts the scale: \code{inverted = scale - original}
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' # Invert accessibility for wilderness index
@@ -629,6 +638,9 @@ invert_indicator <- function(data,
 #'   of the production modes. `NULL` (default) keeps the production scale.
 #'
 #' @return Numeric vector. Normalized values (0-100).
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 normalize_indicator <- function(indicator, values, statut = NULL) {

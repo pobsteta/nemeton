@@ -31,6 +31,11 @@ month with a missing day is \code{NA} for that year); temperature is the monthly
 or a cached netCDF path), so tx/rr need no new acquisition; the Gaussen diagram
 proper wants mean temperature (\code{tg}), which has its own netCDF (spec 036 §5.4).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 \dontrun{
 eobs_monthly_climatology("eobs_tg_daily.nc", c(6.1, 48.7), var = "tg")

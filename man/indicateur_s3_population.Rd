@@ -10,8 +10,7 @@ indicateur_s3_population(
   population_field = NULL,
   method = c("insee", "local", "proxy"),
   buffer_radii = c(5000, 10000, 20000),
-  column_name = "S3",
-  lang = "en"
+  column_name = "S3"
 )
 }
 \arguments{
@@ -28,8 +27,6 @@ no longer exists and raises an error.}
 
 \item{column_name}{Character. Name for output column (main indicator). Default "S3".}
 
-\item{lang}{Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".}
 \item{population_field}{Character or \code{NULL}. Name of the population column of
 \code{population_grid} when it is an \code{sf}. \code{NULL} (default) looks for
 \code{ind}, \code{pop} or \code{population} (INSEE Filosofi names it \code{ind}).}
@@ -65,6 +62,11 @@ potential and recreational use intensity.
   \item WorldPop or GPW for international applications
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 data(massif_demo_units)

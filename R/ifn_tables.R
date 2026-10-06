@@ -150,6 +150,9 @@
 #' Max Bruciamacchie (AgroParisTech Nancy), GPL-2, reused under GPL-3 with
 #' explicit permission. Method after `PPtools::CarteEssenceSer()`.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [ifn_volume_reference()] for the fallback ladder.
 #' @export
 #' @examples
@@ -196,6 +199,9 @@ ifn_volume_essence_ser <- function(espar = NULL, ser = NULL, greco = NULL,
 #'   no level qualified), `n_plac_presence`, `ser`, `greco`. With
 #'   `methode = "fay_herriot"`, two more columns: `nature`
 #'   (`"fay_herriot"` or `"cascade"`) and `rse` (percent, Fay-Herriot rows).
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @seealso [ifn_volume_essence_ser()] for the raw table.
 #' @export
@@ -281,6 +287,9 @@ ifn_volume_reference <- function(espar, ser = NULL, min_plac = 30,
 #'   `prelev_ha_an_maille`, `taux_presence`, `libelle_essence`, `millesime`,
 #'   `source`.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [ifn_taux_prelevement()] for the fallback ladder,
 #'   [ifn_volume_essence_ser()] for standing volume.
 #' @export
@@ -311,6 +320,9 @@ ifn_prelevement_essence_ser <- function(espar = NULL, ser = NULL, greco = NULL,
 #'
 #' @return A data.frame with one row per `espar`: `espar`, `libelle_essence`,
 #'   `taux_m3_ha_an`, `niveau_utilise`, `n_plac_presence`, `ser`, `greco`.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @seealso [ifn_prelevement_essence_ser()], [volume_mobilisable()].
 #' @export

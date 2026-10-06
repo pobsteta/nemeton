@@ -16,6 +16,11 @@ A list with the region's species configuration.
 \description{
 Loads and caches the species classification for a biogeographic region.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 config <- get_species_config("BFC")
 config$n_classes  # 10

@@ -75,6 +75,9 @@
 #' a setup overhead of ~15-18 seconds. Parallelization is only beneficial when:
 #' `n * time_per_op * (1 - 1/workers) > overhead`
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #'
 #' @examples
@@ -223,7 +226,8 @@ smart_map <- function(x,
 #'
 #' @return A list or vector of results.
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 #'
 #' @examples
 #' \dontrun{
@@ -1179,6 +1183,9 @@ lookup_ademe_factor <- function(material_type, scenario = NULL) {
 #' @return A data.frame with columns `species` (four-letter code), `age`
 #'   (always \code{NA}), `density` (one row per parcel). Parcels with no BD
 #'   Forêt coverage get NA values.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 enrich_parcels_bdforet <- function(parcels, bdforet_sf) {
   # Identify the essence column in BD Forêt data
@@ -1311,6 +1318,9 @@ enrich_parcels_bdforet <- function(parcels, bdforet_sf) {
 #'
 #' @return The input \code{units} sf with the species column added
 #'   (or overwritten). Units with no raster coverage get \code{NA}.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 units_add_species_from_raster <- function(units, species_raster, class_map,
                                           species_col = "species") {
@@ -1422,6 +1432,9 @@ map_essence_to_species <- function(essence) {
 #'
 #' @return Character. Path to the global cache directory (which may not
 #'   exist yet).
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 get_global_cache_dir <- function() {
   # Pure fonction de chemin : aucun dossier n'est créé ici (audit 1.0, sécu).
@@ -1450,6 +1463,9 @@ get_global_cache_dir <- function() {
 #'   `FALSE` gives the coarser `"2 h 05 min"` used in push notifications.
 #'
 #' @return A character scalar.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' format_duration(23)                        # "23 s"
@@ -1521,7 +1537,8 @@ format_duration <- function(sec, with_seconds = TRUE) {
 #' scratch_dir()
 #' }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 scratch_dir <- function(subdir = NULL) {
   root <- getOption("nemeton.scratch_dir", NULL)
   if (is.null(root) || !nzchar(as.character(root)[1])) {

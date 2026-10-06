@@ -240,6 +240,9 @@
 #'
 #' @return A single-layer LAI `SpatRaster` (`lai`), or `NULL` on degradation
 #'   (no `prosail`, no scene, engine failure).
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [regen_bilan_hydrique()], [regen_sensibilite()], [pai_depuis_nuage()]
 #' @export
 lai_sentinel2 <- function(aoi = NULL, refl = NULL, start = NULL, end = NULL,
@@ -294,6 +297,9 @@ lai_sentinel2 <- function(aoi = NULL, refl = NULL, start = NULL, end = NULL,
 #'
 #' @return A single-layer `SpatRaster` named after `variable`, or `NULL` on
 #'   degradation (no `prosail`, no scene, engine failure).
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [lai_sentinel2()]
 #' @export
 biophysique_sentinel2 <- function(variable = c("lai", "fapar", "fvc", "ccc"),

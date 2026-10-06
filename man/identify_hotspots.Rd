@@ -44,6 +44,11 @@ The function identifies multi-criteria hotspots by:
 This function supports bilingual messages via `nemeton_set_language()`.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Load demo data with family indices

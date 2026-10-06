@@ -26,3 +26,7 @@ compatibility. It forwards to [import_qgis_gpkg()] and emits a
 one-shot deprecation warning. New code should call
 [import_qgis_gpkg()] directly.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

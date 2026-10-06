@@ -28,6 +28,11 @@ When different indicators come from different data sources,
 each may have a different NDP level. This function uses
 per-indicator Fibonacci weights.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 scores <- c(C = 72, B = 45, W = 68)
 ndps <- c(C = 2, B = 0, W = 1)

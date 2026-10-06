@@ -63,6 +63,11 @@ All geometry is computed in `work_crs` (a projected CRS, for valid
 area-based intersection); [create_monitoring_zone()] stores each zone in
 EPSG:4326. Zones carry no placettes (see [create_monitoring_zone()]).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 [create_monitoring_zone()], [find_zones_by_project()].
 }

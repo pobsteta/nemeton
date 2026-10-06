@@ -37,6 +37,11 @@ Picks the \strong{average} and \strong{heatwave} summers used by
 over the AOI. Auto-detection is the default; the result is meant to
 pre-fill the app's two year selectors, which the user can override.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{indicateur_r6_sensibilite}}, \code{\link{tendances_estivales_eobs}}
 }

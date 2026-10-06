@@ -40,6 +40,11 @@ than it grows (decapitalisation), below 1 that it capitalises.
 the IGN for 2014-2022 (about +10 percent, spec 054 section 3.c). A ratio
 slightly above 1 is therefore not proof of decapitalisation.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 ifn_taux_prelevement_production("C30")

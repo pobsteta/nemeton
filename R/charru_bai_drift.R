@@ -52,6 +52,9 @@ NULL
 #' @return A data.frame with columns \code{species}, \code{habitat}
 #'   and \code{bai_chg}.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' charru_bai_drift_table()
 #'
@@ -82,6 +85,9 @@ charru_bai_drift_table <- function() {
 #'
 #' @return Numeric vector of the same length as \code{species} with
 #'   the relative BAI change (1.0 = no change).
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' bai_drift_factor(c("PIAB", "FASY", "QUPE", "PIHA"))

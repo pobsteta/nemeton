@@ -36,6 +36,11 @@ A nemeton_units sf object with added columns:
 Computes annual change rates (absolute and relative) for indicators
 across temporal periods.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Calculate carbon change rates

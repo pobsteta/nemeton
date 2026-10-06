@@ -35,6 +35,9 @@
 #' If an indicator calculation fails, a warning is issued and the indicator column
 #' is filled with NA, but computation continues for other indicators.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' library(nemeton)
@@ -210,6 +213,14 @@ nemeton_compute <- function(units,
   if (length(m) < 2L) NA_character_ else toupper(m[[2]])
 }
 
+# Contrat 1.0 (spec 057 §1) : tout indicateur rend l'objet `units` d'entrée
+# (même classe, mêmes lignes, même ordre) augmenté de la colonne de valeur
+# nommée par son code court ("C1", "W3", ...). Jamais de vecteur nu.
+.indicateur_resultat <- function(units, code, valeur) {
+  units[[code]] <- as.numeric(valeur)
+  units
+}
+
 #' Dispatch indicator calculation to appropriate function
 #'
 #' Internal function that routes indicator name to corresponding calculation function.
@@ -267,7 +278,7 @@ compute_indicator <- function(indicator, units, layers, ...) {
 #' Extract an indicator's value column from its result
 #'
 #' Single source of truth for the Nemeton indicator naming convention:
-#' most indicator functions return the `units` object (an `sf` /
+#' every indicator function returns the `units` object (an `sf` /
 #' `data.frame`) with the computed value added under a column named by the
 #' family short code (`indicateur_p1_volume` -> `"P1"`,
 #' `indicateur_r1_feu` -> `"R1"`, ...). This helper resolves that column to
@@ -286,10 +297,11 @@ compute_indicator <- function(indicator, units, layers, ...) {
 #'     (pass the pre-existing input column names so a freshly added value
 #'     column wins over a same-shaped attribute already on the units).
 #' }
-#' A result that is already a plain vector is returned unchanged.
+#' A bare vector is an error: since 1.0.0 (spec 057) no indicator returns
+#' one.
 #'
-#' @param result The raw return value of an indicator function (an `sf`,
-#'   a `data.frame`, or a numeric vector).
+#' @param result The raw return value of an indicator function (an `sf` or
+#'   a `data.frame`).
 #' @param indicator Character. The NMT indicator name (function name),
 #'   e.g. `"indicateur_p1_volume"`.
 #' @param exclude Character vector of column names to treat as
@@ -297,6 +309,9 @@ compute_indicator <- function(indicator, units, layers, ...) {
 #'   the `"<Letter><digit>"` pattern. Default none.
 #'
 #' @return A numeric vector of the indicator's per-unit values.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [nemeton_compute()]
 #' @export
 extract_indicator_value <- function(result, indicator,
@@ -325,7 +340,10 @@ extract_indicator_value <- function(result, indicator,
     ))
   }
 
-  result
+  cli::cli_abort(c(
+    "Indicator '{indicator}' did not return a data frame",
+    "x" = "Since 1.0.0 an indicator returns {.arg units} with its value column."
+  ))
 }
 
 #' List available indicators
@@ -337,6 +355,9 @@ extract_indicator_value <- function(result, indicator,
 #' @param return_type Character. Return "names" (default) or "details" (data.frame with descriptions)
 #'
 #' @return Character vector of indicator names or data.frame with details
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{

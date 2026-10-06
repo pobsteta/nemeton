@@ -246,6 +246,9 @@ NULL
 #' cannot be computed drops out and its weight is redistributed proportionally;
 #' with no usable component, R1 is \code{NA}.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family risk-indicators
 #' @export
 #'
@@ -490,6 +493,9 @@ indicateur_r1_feu <- function(units,
 #' The terrain ruggedness (TRI) term was dropped in 1.0.0 (spec 056): it is
 #' 0.82-0.99 correlated with the slope and, normalised by its maximum over the
 #' extent, was the only non-comparable term between projects.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @family risk-indicators
 #' @export
@@ -762,6 +768,9 @@ indicateur_r2_tempete <- function(units,
 #' R3 is multiplied by \code{1 - sm_relief_strength * relief}.
 #' Moist soil buffers drought stress.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family risk-indicators
 #' @export
 #'
@@ -1012,6 +1021,9 @@ indicateur_r3_secheresse <- function(units,
 #'   \item game_density: From departmental hunting harvest statistics
 #'     (data.gouv.fr, OFB). Auto-fetched via \code{\link{get_game_pressure_raster}}.
 #' }
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @family risk-indicators
 #' @export

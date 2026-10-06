@@ -21,6 +21,11 @@ name. Since spec 020 a project may own several zones
 (`<project>_tot/_feu/_res/_mix`), so prefer this over
 [find_zone_by_project()] (which returns only the first id).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 [find_zone_by_project()], [build_project_monitoring_zones()].
 }

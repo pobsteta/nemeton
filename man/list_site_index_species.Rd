@@ -16,6 +16,11 @@ Returns the species codes available in
 genus-level fallbacks automatically used when the input
 species is not directly tabulated.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 list_site_index_species()
 

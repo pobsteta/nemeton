@@ -35,7 +35,7 @@ topographic working resolution, 2 m --- see
 resolution.}
 }
 \value{
-Numeric vector of erosion-resistance scores (0-100, higher = more
+The input \code{units} (same class, rows and order) with an added numeric column \code{F2}: erosion-resistance scores (0-100, higher = more
 resistant, i.e. LOWER erosion risk). Despite the historical variable name
 inside the function, this is not a fertility score: the ingredients are
 topographic (TWI wetness, slope steepness) plus optional soil texture.
@@ -58,6 +58,11 @@ component — texture-based erosion resistance, see
 F2 = (twi_norm + slope_norm + resistance_norm) / 3. Silt-rich soils
 are more erodible and lower the score.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 layers <- nemeton_layers(rasters = list(dem = "dem.tif"))

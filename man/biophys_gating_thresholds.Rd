@@ -29,6 +29,11 @@ within-unit variance versus area.
 }
 }
 
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{biophys_gating}}
 }

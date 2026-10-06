@@ -15,6 +15,11 @@ A list with elements: ndp, key, name, fibonacci, confidence, sources.
 \description{
 Returns the full configuration list for a given NDP level.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 get_ndp_level(0)
 get_ndp_level(4)

@@ -62,6 +62,11 @@ domain (plots without the group count as zero), so that the groups add up to
 conifer stand. Ratios between two attributes of the same group (e.g. harvest /
 production) remain meaningful.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 ifn_production_ser(ser = "C30", attribut = "pv", groupe = "tous")

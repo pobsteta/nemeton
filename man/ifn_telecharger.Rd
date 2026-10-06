@@ -36,6 +36,11 @@ which is exactly where a download step belongs. Here the choice is an argument:
 \code{force = FALSE} reuses, \code{force = TRUE} re-downloads.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 zip <- ifn_telecharger(tempdir())

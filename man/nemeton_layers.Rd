@@ -23,6 +23,11 @@ Creates a catalog of spatial layers (rasters and vectors) with lazy loading.
 Layers are not loaded into memory until first use (lazy loading).
 This allows creating a catalog of large rasters without memory overhead.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 layers <- nemeton_layers(

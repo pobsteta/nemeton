@@ -69,6 +69,11 @@ Transforms indicator values to a common scale for comparison and aggregation.
     - 0 = lowest percentile, 100 = highest
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Normalize all indicators with min-max

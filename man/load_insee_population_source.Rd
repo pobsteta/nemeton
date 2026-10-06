@@ -58,3 +58,7 @@ share is reported back so the caller can say so
 
 Licence Ouverte / Open Licence 2.0 (INSEE). Attribution required.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

@@ -156,6 +156,9 @@
 #'   vector `c(concernees =, total =)`: how many cadastral parcels actually meet
 #'   the forest layer, out of how many were given. It saves the caller an
 #'   `st_intersects()` just to report "N parcels out of M".
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [load_onf_parcelles_source()]
 #' @export
 croiser_parcelles_onf <- function(parcelles_onf, parcelles,

@@ -37,6 +37,9 @@ NULL
 #' @return A \code{data.frame} with columns \code{species, age,
 #'   class_1, ..., class_5}. Heights in metres.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' curves <- read_site_index_curves()
 #' head(curves)
@@ -138,6 +141,9 @@ resolve_species_code <- function(species, available) {
 #'
 #' @return A character vector of species codes.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' list_site_index_species()
 #'
@@ -168,6 +174,9 @@ list_site_index_species <- function() {
 #'
 #' @return A data.frame with columns \code{species, age, h_class_3,
 #'   source}.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' site_index_reference_points()
@@ -248,6 +257,9 @@ site_index_reference_points <- function() {
 #'   the clamp produced identical values, 10.90 or 20.71 m for sessile oak,
 #'   that looked like measurements). \code{\link{indicateur_p2_station}} flags these
 #'   units with \code{p2_status = "hors_courbe"}.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' # Sessile oak: 20 m at 80 years -> site index at 50 years

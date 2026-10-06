@@ -102,6 +102,11 @@ same `(x, y)` by a sub-pixel amount when `index = "NBR"`. This is
 documented and intentional.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
   cache <- "/proj/cache/layers/sentinel2"

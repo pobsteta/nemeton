@@ -55,6 +55,9 @@ B1_NB_STATUTS_MAX <- 4L
 #'
 #' **Interpretation**: Higher values indicate better protection status.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family biodiversity-indicators
 #' @export
 #'
@@ -283,6 +286,9 @@ indicateur_b1_protection <- function(units,
 #' **Interpretation**: Multi-layered, multi-age stands score high (>75).
 #' Monocultures or even-aged stands score low (<25).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family biodiversity-indicators
 #' @export
 #'
@@ -498,6 +504,9 @@ indicateur_b2_structure <- function(units,
 #' weights are renormalised, instead of entering the mean as a fixed 50.
 #' Computations run in metres: geographic inputs are projected to
 #' ETRS89-LAEA (EPSG:3035) and the result is attached to the original units.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @family biodiversity-indicators
 #' @export

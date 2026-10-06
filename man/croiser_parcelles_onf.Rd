@@ -130,6 +130,11 @@ genuinely shared between two UGF stay cut, and the uncovered remainder can
 never take a parcel — dropping forest is not a correction.
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{load_onf_parcelles_source}}
 }

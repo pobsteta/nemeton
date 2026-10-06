@@ -11,7 +11,7 @@ indicateur_a3_microclimat(units, micro = NULL, chm = NULL,
 \item{units}{An \code{sf} of forest management units (UGF).}
 
 \item{micro}{The summer microclimate rasters (named list / multi-layer
-\code{SpatRaster}) from \code{\link{microclimate_run}}; the \code{tmax_understorey}
+\code{SpatRaster}) precomputed by a microclimf run; the \code{tmax_understorey}
 layer (°C) is used. \code{NULL} → \code{A3 = NA}.}
 
 \item{chm}{Optional canopy-height raster (reserved; structure source for
@@ -39,7 +39,11 @@ Mean per-UGF summer (JJA) \strong{maximum temperature under the canopy}, the
 core heat-stress driver for forest regeneration (spec 027, ADR-014).
 Normalised 0-100 \strong{decreasing} (cooler = more favourable = 100).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
-\code{\link{indicateur_a4_tamponnement}}, \code{\link{indicateur_w4_vpd}},
-\code{\link{microclimate_run}}
+\code{\link{indicateur_a4_tamponnement}}, \code{\link{indicateur_w4_vpd}}
 }

@@ -69,6 +69,11 @@ resampling* section there. Net effect: NBR at point `(x, y)` from
 `extract_pixel_timeseries()` may differ from the same point read
 off `build_index_stack()` by a sub-pixel amount.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
   cache <- "/proj/cache/layers/sentinel2"

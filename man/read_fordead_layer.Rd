@@ -62,6 +62,11 @@ Returns `NULL` (never errors) when the cache, the zone, the bundle or
 the layer file is missing — older runs predating a layer simply yield
 `NULL`, so the caller degrades gracefully.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 [read_fordead_dieback_mask()] for the categorical 0-4 mask,
   [read_fordead_pixel_series()] for the per-pixel CRSWIR diagnostic.

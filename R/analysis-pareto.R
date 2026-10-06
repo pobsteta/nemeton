@@ -37,6 +37,9 @@
 #' - Selecting parcels for diverse management objectives
 #' - Benchmarking parcel performance across multiple dimensions
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' # Load demo dataset

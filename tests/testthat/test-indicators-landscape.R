@@ -19,7 +19,7 @@ test_that("indicateur_l1_effet_lisiere returns score 0-100", {
     landcover_layer = "landcover",
     forest_values = c(1, 2, 3),
     buffer = 50
-  )
+  )$L1
 
   # Test output
   expect_type(score, "double")
@@ -34,7 +34,7 @@ test_that("indicateur_l1_effet_lisiere works without layers (fallback)", {
   units <- massif_demo_units[1:3, ]
 
   # No layers: geometry + exposure still work, contrast defaults to 50
-  score <- indicateur_l1_effet_lisiere(units)
+  score <- indicateur_l1_effet_lisiere(units)$L1
 
   expect_type(score, "double")
   expect_length(score, 3)
@@ -49,7 +49,7 @@ test_that("indicateur_l1_effet_lisiere geometry component varies with shape", {
 
   # Scores should vary across parcels with different shapes
 
-  score <- indicateur_l1_effet_lisiere(units)
+  score <- indicateur_l1_effet_lisiere(units)$L1
 
   expect_length(score, 10)
   expect_true(all(score >= 0 & score <= 100))
@@ -67,7 +67,7 @@ test_that("indicateur_l1_effet_lisiere validates inputs", {
 
   # Invalid units
   expect_error(
-    indicateur_l1_effet_lisiere(data.frame(x = 1:3), layers),
+    indicateur_l1_effet_lisiere(data.frame(x = 1:3), layers)$L1,
     "must be.*sf"
   )
 })
@@ -77,7 +77,7 @@ test_that("indicateur_l1_effet_lisiere works for single parcel", {
   data(massif_demo_units)
   units <- massif_demo_units[1, ]
 
-  score <- indicateur_l1_effet_lisiere(units)
+  score <- indicateur_l1_effet_lisiere(units)$L1
 
   expect_length(score, 1)
   expect_true(!is.na(score))
@@ -94,7 +94,7 @@ test_that("indicateur_l2_morcellement returns score 0-100", {
 
   units <- massif_demo_units[1:5, ]
 
-  score <- indicateur_l2_morcellement(units)
+  score <- indicateur_l2_morcellement(units)$L2
 
   # Test output
   expect_type(score, "double")
@@ -109,7 +109,7 @@ test_that("indicateur_l2_morcellement fallback uses shape index", {
   units <- massif_demo_units[1:5, ]
 
   # Without layers, should use shape index fallback
-  score <- indicateur_l2_morcellement(units)
+  score <- indicateur_l2_morcellement(units)$L2
 
   expect_type(score, "double")
   expect_length(score, 5)
@@ -131,7 +131,7 @@ test_that("indicateur_l2_morcellement with layers uses landscapemetrics when ava
     landcover_layer = "landcover",
     forest_values = c(1, 2, 3),
     buffer = 1000
-  )
+  )$L2
 
   expect_type(score, "double")
   expect_length(score, 5)
@@ -143,14 +143,14 @@ test_that("indicateur_l2_morcellement validates inputs", {
   skip_if_not_installed("terra")
   # Invalid units
   expect_error(
-    indicateur_l2_morcellement(data.frame(x = 1:3)),
+    indicateur_l2_morcellement(data.frame(x = 1:3))$L2,
     "must be.*sf"
   )
 
   # Empty units
   data(massif_demo_units)
   expect_error(
-    indicateur_l2_morcellement(massif_demo_units[0, ]),
+    indicateur_l2_morcellement(massif_demo_units[0, ])$L2,
     "empty|no features|nrow.*0"
   )
 })
@@ -161,7 +161,7 @@ test_that("indicateur_l2_morcellement works for single parcel", {
 
   units <- massif_demo_units[1, ]
 
-  score <- indicateur_l2_morcellement(units)
+  score <- indicateur_l2_morcellement(units)$L2
 
   expect_length(score, 1)
   expect_true(!is.na(score))
@@ -186,8 +186,8 @@ test_that("Both landscape indicators work together", {
       layers,
       forest_values = c(1, 2, 3),
       buffer = 50
-    )
-    l2 <- indicateur_l2_morcellement(units)
+    )$L1
+    l2 <- indicateur_l2_morcellement(units)$L2
   })
 
   # Both should return valid 0-100 scores
@@ -213,8 +213,8 @@ test_that("Landscape indicators can be added to units dataframe", {
     layers,
     forest_values = c(1, 2, 3),
     buffer = 50
-  )
-  units$L2_fragmentation <- indicateur_l2_morcellement(units)
+  )$L1
+  units$L2_fragmentation <- indicateur_l2_morcellement(units)$L2
 
   # Check structure
   expect_true("L1_sylvosphere" %in% names(units))
@@ -240,8 +240,8 @@ test_that("Landscape indicators work with full dataset", {
     layers,
     forest_values = c(1, 2, 3),
     buffer = 50
-  )
-  l2 <- indicateur_l2_morcellement(units)
+  )$L1
+  l2 <- indicateur_l2_morcellement(units)$L2
 
   expect_length(l1, nrow(massif_demo_units))
   expect_length(l2, nrow(massif_demo_units))

@@ -56,3 +56,7 @@ only when `pg_available_extensions` lists it (a `NOTICE` is raised
 otherwise) and creates no hypertable. PostGIS is still required.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

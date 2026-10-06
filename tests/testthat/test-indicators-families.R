@@ -252,7 +252,7 @@ test_that("indicateur_c1_biomasse returns expected structure", {
 
   # This will likely return NA without actual data, but should not error
   result <- tryCatch({
-    nemeton:::indicateur_c1_biomasse(units, layers = layers)
+    nemeton:::indicateur_c1_biomasse(units, layers = layers)$C1
   }, error = function(e) {
     rep(NA_real_, nrow(units))
   })
@@ -269,7 +269,7 @@ test_that("indicateur_c2_ndvi returns expected structure", {
   layers <- list()
 
   result <- tryCatch({
-    nemeton:::indicateur_c2_ndvi(units, layers = layers)
+    nemeton:::indicateur_c2_ndvi(units, layers = layers)$C2
   }, error = function(e) {
     rep(NA_real_, nrow(units))
   })
@@ -285,7 +285,7 @@ test_that("indicateur_w1_reseau returns expected structure", {
   layers <- list()
 
   result <- tryCatch({
-    nemeton:::indicateur_w1_reseau(units, layers = layers)
+    nemeton:::indicateur_w1_reseau(units, layers = layers)$W1
   }, error = function(e) {
     rep(NA_real_, nrow(units))
   })
@@ -301,7 +301,7 @@ test_that("indicateur_w2_zones_humides returns expected structure", {
   layers <- list()
 
   result <- tryCatch({
-    nemeton:::indicateur_w2_zones_humides(units, layers = layers)
+    nemeton:::indicateur_w2_zones_humides(units, layers = layers)$W2
   }, error = function(e) {
     rep(NA_real_, nrow(units))
   })
@@ -317,7 +317,7 @@ test_that("indicateur_f1_fertilite returns expected structure", {
   layers <- list()
 
   result <- tryCatch({
-    nemeton:::indicateur_f1_fertilite(units, layers = layers)
+    nemeton:::indicateur_f1_fertilite(units, layers = layers)$F1
   }, error = function(e) {
     rep(NA_real_, nrow(units))
   })
@@ -333,7 +333,7 @@ test_that("indicateur_f2_erosion returns expected structure", {
   layers <- list()
 
   result <- tryCatch({
-    nemeton:::indicateur_f2_erosion(units, layers = layers)
+    nemeton:::indicateur_f2_erosion(units, layers = layers)$F2
   }, error = function(e) {
     rep(NA_real_, nrow(units))
   })
@@ -350,7 +350,7 @@ test_that("indicateur_l1_effet_lisiere returns expected structure", {
   layers <- list()
 
   result <- tryCatch({
-    nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)
+    nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)$L1
   }, error = function(e) {
     rep(NA_real_, nrow(units))
   })
@@ -367,7 +367,7 @@ test_that("indicateur_l2_morcellement returns expected structure", {
   layers <- list()
 
   result <- tryCatch({
-    nemeton:::indicateur_l2_morcellement(units, layers = layers)
+    nemeton:::indicateur_l2_morcellement(units, layers = layers)$L2
   }, error = function(e) {
     rep(NA_real_, nrow(units))
   })
@@ -395,12 +395,6 @@ test_that("indicateur_f2_erosion is an alias function", {
   skip_if_not_installed("terra")
   expect_true(exists("indicateur_f2_erosion", envir = asNamespace("nemeton")))
   expect_type(nemeton:::indicateur_f2_erosion, "closure")
-})
-
-test_that("indicateur_l1_sylvosphere_ratio is an alias function", {
-  skip_if_not_installed("terra")
-  expect_true(exists("indicateur_l1_sylvosphere_ratio", envir = asNamespace("nemeton")))
-  expect_type(nemeton:::indicateur_l1_sylvosphere_ratio, "closure")
 })
 
 # ==============================================================================
@@ -487,7 +481,7 @@ test_that("indicateur_c1_biomasse uses allometric model with inventory data", {
   units$age <- c(80, 60, 40)
   units$density <- c(0.7, 0.8, 0.6)
 
-  result <- nemeton::indicateur_c1_biomasse(units)
+  result <- nemeton::indicateur_c1_biomasse(units)$C1
   expect_length(result, 3)
   expect_true(all(!is.na(result)))
   expect_true(all(result > 0))
@@ -498,7 +492,7 @@ test_that("indicateur_c1_biomasse returns NA without any data source", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   # No species/age/density, no layers
-  result <- nemeton::indicateur_c1_biomasse(units, layers = NULL)
+  result <- nemeton::indicateur_c1_biomasse(units, layers = NULL)$C1
   expect_length(result, 2)
   expect_true(all(is.na(result)))
 })
@@ -506,7 +500,7 @@ test_that("indicateur_c1_biomasse returns NA without any data source", {
 test_that("indicateur_c1_biomasse validates sf input", {
   skip_if_not_installed("terra")
   expect_error(
-    nemeton::indicateur_c1_biomasse(data.frame(x = 1)),
+    nemeton::indicateur_c1_biomasse(data.frame(x = 1))$C1,
     "units must be an sf object"
   )
 })
@@ -520,7 +514,7 @@ test_that("indicateur_l2_morcellement uses shape index fallback", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   # No layers -> uses shape index fallback
-  result <- nemeton:::indicateur_l2_morcellement(units, layers = NULL)
+  result <- nemeton:::indicateur_l2_morcellement(units, layers = NULL)$L2
   expect_length(result, 2)
   expect_true(all(result >= 0 & result <= 100))
 })
@@ -531,7 +525,7 @@ test_that("indicateur_l2_morcellement validates empty units", {
   units <- create_test_units(n_features = 2)
   empty_units <- units[0, ]
   expect_error(
-    nemeton:::indicateur_l2_morcellement(empty_units),
+    nemeton:::indicateur_l2_morcellement(empty_units)$L2,
     "empty"
   )
 })
@@ -580,7 +574,7 @@ test_that("indicateur_c1_biomasse LiDAR MNH path", {
   terra::values(mnh) <- runif(terra::ncell(mnh), 0, 30) # Heights 0-30m
 
   layers <- make_mock_layers(rasters = list(lidar_mnh = mnh))
-  result <- nemeton::indicateur_c1_biomasse(units, layers = layers)
+  result <- nemeton::indicateur_c1_biomasse(units, layers = layers)$C1
   expect_length(result, 3)
   # With valid MNH data, should produce numeric (not all NA)
   expect_true(any(!is.na(result)))
@@ -604,7 +598,7 @@ test_that("indicateur_c1_biomasse NDVI fallback path", {
   terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.1, 0.9)
 
   layers <- make_mock_layers(rasters = list(ndvi = ndvi))
-  result <- nemeton::indicateur_c1_biomasse(units, layers = layers)
+  result <- nemeton::indicateur_c1_biomasse(units, layers = layers)$C1
   expect_length(result, 3)
   expect_true(all(!is.na(result)))
   # NDVI * 150 should be > 0 since NDVI > 0
@@ -642,7 +636,7 @@ test_that("indicateur_c1_biomasse BD Foret path", {
   )
 
   layers <- make_mock_layers(vectors = list(bdforet = bdforet_sf))
-  result <- nemeton::indicateur_c1_biomasse(units, layers = layers)
+  result <- nemeton::indicateur_c1_biomasse(units, layers = layers)$C1
   expect_length(result, 2)
   # BD Foret path may or may not yield non-NA depending on enrich_parcels_bdforet
   expect_type(result, "double")
@@ -682,7 +676,7 @@ test_that("indicateur_l1_effet_lisiere with landcover layer", {
   terra::values(lc) <- vals
 
   layers <- make_mock_layers(rasters = list(landcover = lc))
-  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)$L1
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
   expect_true(all(result >= 0 & result <= 100))
@@ -693,7 +687,7 @@ test_that("indicateur_l1_effet_lisiere without layers uses shape fallback", {
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 3)
-  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = NULL)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = NULL)$L1
   expect_length(result, 3)
   # Without landcover, contrast defaults to 50; should still compute geometry + exposure
   expect_true(all(!is.na(result)))
@@ -703,7 +697,7 @@ test_that("indicateur_l1_effet_lisiere without layers uses shape fallback", {
 test_that("indicateur_l1_effet_lisiere validates sf input", {
   skip_if_not_installed("terra")
   expect_error(
-    nemeton:::indicateur_l1_effet_lisiere(data.frame(x = 1)),
+    nemeton:::indicateur_l1_effet_lisiere(data.frame(x = 1))$L1,
     "sf"
   )
 })
@@ -739,7 +733,7 @@ test_that("indicateur_w2_zones_humides with water_surfaces vector", {
   )
 
   layers <- make_mock_layers(vectors = list(water_surfaces = water_sf))
-  result <- nemeton:::indicateur_w2_zones_humides(units, layers = layers)
+  result <- nemeton:::indicateur_w2_zones_humides(units, layers = layers)$W2
   expect_length(result, 2)
   # At least the first unit overlaps with the pond
   expect_true(any(result > 0))
@@ -749,7 +743,7 @@ test_that("indicateur_w2_zones_humides with water_surfaces vector", {
 test_that("indicateur_w2_zones_humides validates sf input", {
   skip_if_not_installed("terra")
   expect_error(
-    nemeton:::indicateur_w2_zones_humides(data.frame(x = 1), layers = list()),
+    nemeton:::indicateur_w2_zones_humides(data.frame(x = 1), layers = list())$W2,
     "sf"
   )
 })
@@ -759,7 +753,7 @@ test_that("indicateur_w2_zones_humides validates nemeton_layers", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 1)
   expect_error(
-    nemeton:::indicateur_w2_zones_humides(units, layers = list()),
+    nemeton:::indicateur_w2_zones_humides(units, layers = list())$W2,
     "nemeton_layers"
   )
 })
@@ -790,7 +784,7 @@ test_that("indicateur_w1_reseau with mock watercourses", {
   )
 
   layers <- make_mock_layers(vectors = list(water_network = watercourses_sf))
-  result <- nemeton:::indicateur_w1_reseau(units, layers = layers)
+  result <- nemeton:::indicateur_w1_reseau(units, layers = layers)$W1
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
   expect_true(all(result >= 0))
@@ -799,7 +793,7 @@ test_that("indicateur_w1_reseau with mock watercourses", {
 test_that("indicateur_w1_reseau validates sf input", {
   skip_if_not_installed("terra")
   expect_error(
-    nemeton:::indicateur_w1_reseau(data.frame(x = 1), layers = list()),
+    nemeton:::indicateur_w1_reseau(data.frame(x = 1), layers = list())$W1,
     "sf"
   )
 })
@@ -809,7 +803,7 @@ test_that("indicateur_w1_reseau validates nemeton_layers", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 1)
   expect_error(
-    nemeton:::indicateur_w1_reseau(units, layers = list()),
+    nemeton:::indicateur_w1_reseau(units, layers = list())$W1,
     "nemeton_layers"
   )
 })
@@ -838,7 +832,7 @@ test_that("indicateur_f2_erosion computes TWI + slope", {
   terra::values(dem) <- as.vector(vals)
 
   layers <- make_mock_layers(rasters = list(dem = dem))
-  result <- nemeton:::indicateur_f2_erosion(units, layers = layers)
+  result <- nemeton:::indicateur_f2_erosion(units, layers = layers)$F2
   expect_length(result, 3)
   # TWI may yield some NA for edge cells; check that result is numeric
   expect_type(result, "double")
@@ -852,7 +846,7 @@ test_that("indicateur_f2_erosion computes TWI + slope", {
 test_that("indicateur_f2_erosion validates sf input", {
   skip_if_not_installed("terra")
   expect_error(
-    nemeton:::indicateur_f2_erosion(data.frame(x = 1), layers = list()),
+    nemeton:::indicateur_f2_erosion(data.frame(x = 1), layers = list())$F2,
     "sf"
   )
 })
@@ -862,7 +856,7 @@ test_that("indicateur_f2_erosion validates nemeton_layers", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 1)
   expect_error(
-    nemeton:::indicateur_f2_erosion(units, layers = list()),
+    nemeton:::indicateur_f2_erosion(units, layers = list())$F2,
     "nemeton_layers"
   )
 })
@@ -1087,7 +1081,7 @@ test_that("indicateur_l2_morcellement shape index fallback scores", {
 
   units <- create_test_units(n_features = 3)
   # layers = NULL, no landcover -> shape index fallback
-  result <- nemeton:::indicateur_l2_morcellement(units, layers = NULL)
+  result <- nemeton:::indicateur_l2_morcellement(units, layers = NULL)$L2
   expect_length(result, 3)
   # For regular squares, shape index ~ 1.128, so scores ~ 100/1.128 ~ 88.6
   expect_true(all(result > 0 & result <= 100))
@@ -1108,12 +1102,12 @@ test_that("indicateur_l2_morcellement with landcover (no landscapemetrics)", {
 
   if (!requireNamespace("landscapemetrics", quietly = TRUE)) {
     # Without landscapemetrics, should fall back to shape index
-    result <- nemeton:::indicateur_l2_morcellement(units, layers = layers)
+    result <- nemeton:::indicateur_l2_morcellement(units, layers = layers)$L2
     expect_length(result, 2)
     expect_true(all(result > 0 & result <= 100))
   } else {
     # With landscapemetrics, may use COHESION + AI or fallback
-    result <- nemeton:::indicateur_l2_morcellement(units, layers = layers)
+    result <- nemeton:::indicateur_l2_morcellement(units, layers = layers)$L2
     expect_length(result, 2)
     expect_true(all(result >= 0 & result <= 100))
   }
@@ -1145,7 +1139,7 @@ test_that("indicateur_w1_reseau computes proximity bonus for distant parcels", {
   )
 
   layers <- make_mock_layers(vectors = list(water_network = watercourses_sf))
-  result <- nemeton:::indicateur_w1_reseau(units, layers = layers)
+  result <- nemeton:::indicateur_w1_reseau(units, layers = layers)$W1
   expect_length(result, 1)
   # Stream does not cross the unit, but is within 500m -> proximity bonus
   expect_true(result > 0)
@@ -1211,7 +1205,7 @@ test_that("get_nasapower_wind never reads the file cache of another location (au
 test_that("indicateur_c2_ndvi validates sf input", {
   skip_if_not_installed("terra")
   expect_error(
-    nemeton:::indicateur_c2_ndvi(data.frame(x = 1), layers = list()),
+    nemeton:::indicateur_c2_ndvi(data.frame(x = 1), layers = list())$C2,
     "sf"
   )
 })
@@ -1221,7 +1215,7 @@ test_that("indicateur_c2_ndvi validates nemeton_layers", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 1)
   expect_error(
-    nemeton:::indicateur_c2_ndvi(units, layers = list()),
+    nemeton:::indicateur_c2_ndvi(units, layers = list())$C2,
     "nemeton_layers"
   )
 })
@@ -1237,7 +1231,7 @@ test_that("indicateur_c2_ndvi with valid NDVI layer", {
   terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.1, 0.9)
 
   layers <- make_mock_layers(rasters = list(ndvi = ndvi))
-  result <- nemeton:::indicateur_c2_ndvi(units, layers)
+  result <- nemeton:::indicateur_c2_ndvi(units, layers)$C2
   expect_length(result, 3)
   expect_true(all(!is.na(result)))
   expect_true(all(result > 0 & result < 1))
@@ -1255,7 +1249,7 @@ test_that("indicateur_c2_ndvi warns on trend parameter", {
 
   layers <- make_mock_layers(rasters = list(ndvi = ndvi))
   expect_warning(
-    nemeton:::indicateur_c2_ndvi(units, layers, trend = TRUE),
+    nemeton:::indicateur_c2_ndvi(units, layers, trend = TRUE)$C2,
     "not yet implemented"
   )
 })
@@ -1267,7 +1261,7 @@ test_that("indicateur_c2_ndvi warns on trend parameter", {
 test_that("indicateur_w3_humidite validates sf input", {
   skip_if_not_installed("terra")
   expect_error(
-    nemeton:::indicateur_w3_humidite(data.frame(x = 1), layers = list()),
+    nemeton:::indicateur_w3_humidite(data.frame(x = 1), layers = list())$W3,
     "sf"
   )
 })
@@ -1277,7 +1271,7 @@ test_that("indicateur_w3_humidite validates nemeton_layers", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 1)
   expect_error(
-    nemeton:::indicateur_w3_humidite(units, layers = list()),
+    nemeton:::indicateur_w3_humidite(units, layers = list())$W3,
     "nemeton_layers"
   )
 })
@@ -1297,7 +1291,7 @@ test_that("indicateur_w3_humidite computes from DEM", {
   terra::values(dem) <- as.vector(vals)
 
   layers <- make_mock_layers(rasters = list(dem = dem))
-  result <- nemeton:::indicateur_w3_humidite(units, layers)
+  result <- nemeton:::indicateur_w3_humidite(units, layers)$W3
   expect_length(result, 2)
   # TWI extraction may produce NA for edge cells; check type and partial validity
   expect_type(result, "double")
@@ -1318,7 +1312,7 @@ test_that("indicateur_w3_humidite uses d8 method", {
   terra::values(dem) <- as.vector(vals)
 
   layers <- make_mock_layers(rasters = list(dem = dem))
-  result <- nemeton:::indicateur_w3_humidite(units, layers, method = "d8")
+  result <- nemeton:::indicateur_w3_humidite(units, layers, method = "d8")$W3
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
 })
@@ -1330,7 +1324,7 @@ test_that("indicateur_w3_humidite uses d8 method", {
 test_that("indicateur_f1_fertilite validates sf input", {
   skip_if_not_installed("terra")
   expect_error(
-    nemeton:::indicateur_f1_fertilite(data.frame(x = 1), layers = list()),
+    nemeton:::indicateur_f1_fertilite(data.frame(x = 1), layers = list())$F1,
     "sf"
   )
 })
@@ -1340,7 +1334,7 @@ test_that("indicateur_f1_fertilite validates nemeton_layers", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 1)
   expect_error(
-    nemeton:::indicateur_f1_fertilite(units, layers = list()),
+    nemeton:::indicateur_f1_fertilite(units, layers = list())$F1,
     "nemeton_layers"
   )
 })
@@ -1356,7 +1350,7 @@ test_that("indicateur_f1_fertilite with raster soil layer", {
   terra::values(soil_raster) <- sample(1:5, terra::ncell(soil_raster), replace = TRUE)
 
   layers <- make_mock_layers(rasters = list(soil = soil_raster))
-  result <- nemeton:::indicateur_f1_fertilite(units, layers)
+  result <- nemeton:::indicateur_f1_fertilite(units, layers)$F1
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
   expect_true(all(result >= 0 & result <= 100))
@@ -1384,7 +1378,7 @@ test_that("indicateur_f1_fertilite with vector soil layer", {
   )
 
   layers <- make_mock_layers(vectors = list(soil = soil_sf))
-  result <- nemeton:::indicateur_f1_fertilite(units, layers)
+  result <- nemeton:::indicateur_f1_fertilite(units, layers)$F1
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
 })
@@ -1450,19 +1444,6 @@ test_that("indicateur_n3_naturalite delegates to composite", {
   if (!is.null(result)) {
     expect_true(inherits(result, "sf") || is.numeric(result))
   }
-})
-
-# ==============================================================================
-# indicateur_l1_sylvosphere_ratio alias
-# ==============================================================================
-
-test_that("indicateur_l1_sylvosphere_ratio delegates to indicateur_l2_morcellement", {
-  skip_if_not_installed("terra")
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-  result1 <- nemeton:::indicateur_l2_morcellement(units, layers = NULL)
-  result2 <- nemeton:::indicateur_l1_sylvosphere_ratio(units, layers = NULL)
-  expect_equal(result1, result2)
 })
 
 # ==============================================================================
@@ -1555,7 +1536,7 @@ test_that("indicateur_c1_biomasse: Path 1 (inventory) with multiple species", {
   units$age <- c(100, 80, 50, 60)
   units$density <- c(0.9, 0.7, 0.6, 0.8)
 
-  result <- nemeton::indicateur_c1_biomasse(units)
+  result <- nemeton::indicateur_c1_biomasse(units)$C1
   expect_length(result, 4)
   expect_true(all(!is.na(result)))
   expect_true(all(is.numeric(result)))
@@ -1574,7 +1555,7 @@ test_that("indicateur_c1_biomasse: Path 1 with custom column names", {
     species_col = "sp",
     age_col = "stand_age",
     density_col = "canopy_density"
-  )
+  )$C1
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
   expect_true(all(result > 0))
@@ -1588,7 +1569,7 @@ test_that("indicateur_c1_biomasse: Path 4 (NDVI fallback) returns biomass scaled
   terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.3, 0.8)
 
   layers <- create_test_layers(rasters = list(ndvi = ndvi))
-  result <- nemeton::indicateur_c1_biomasse(units, layers = layers)
+  result <- nemeton::indicateur_c1_biomasse(units, layers = layers)$C1
   expect_length(result, 3)
   expect_true(all(!is.na(result)))
   # NDVI * 150 for NDVI in [0.3, 0.8] -> biomass in [45, 120]
@@ -1599,7 +1580,7 @@ test_that("indicateur_c1_biomasse: last resort returns NA when no data", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   layers <- create_test_layers(rasters = list())
-  result <- nemeton::indicateur_c1_biomasse(units, layers = layers)
+  result <- nemeton::indicateur_c1_biomasse(units, layers = layers)$C1
   expect_length(result, 2)
   expect_true(all(is.na(result)))
 })
@@ -1607,7 +1588,7 @@ test_that("indicateur_c1_biomasse: last resort returns NA when no data", {
 test_that("indicateur_c1_biomasse: NULL layers returns NA", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
-  result <- nemeton::indicateur_c1_biomasse(units, layers = NULL)
+  result <- nemeton::indicateur_c1_biomasse(units, layers = NULL)$C1
   expect_length(result, 2)
   expect_true(all(is.na(result)))
 })
@@ -1615,7 +1596,7 @@ test_that("indicateur_c1_biomasse: NULL layers returns NA", {
 test_that("indicateur_c1_biomasse: non-sf input errors", {
   skip_if_not_installed("terra")
   expect_error(
-    nemeton::indicateur_c1_biomasse(data.frame(x = 1)),
+    nemeton::indicateur_c1_biomasse(data.frame(x = 1))$C1,
     "units must be an sf object"
   )
 })
@@ -1623,7 +1604,7 @@ test_that("indicateur_c1_biomasse: non-sf input errors", {
 test_that("indicateur_c1_biomasse: list input errors", {
   skip_if_not_installed("terra")
   expect_error(
-    nemeton::indicateur_c1_biomasse(list(a = 1)),
+    nemeton::indicateur_c1_biomasse(list(a = 1))$C1,
     "units must be an sf object"
   )
 })
@@ -1635,7 +1616,7 @@ test_that("indicateur_c1_biomasse: LiDAR MNH path produces positive values", {
   terra::values(mnh) <- runif(terra::ncell(mnh), 5, 25)
 
   layers <- create_test_layers(rasters = list(lidar_mnh = mnh))
-  result <- nemeton::indicateur_c1_biomasse(units, layers = layers)
+  result <- nemeton::indicateur_c1_biomasse(units, layers = layers)$C1
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
   expect_true(all(result >= 0))
@@ -1652,7 +1633,7 @@ test_that("indicateur_c2_ndvi: valid NDVI raster extraction", {
   terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.2, 0.85)
 
   layers <- create_test_layers(rasters = list(ndvi = ndvi))
-  result <- nemeton:::indicateur_c2_ndvi(units, layers)
+  result <- nemeton:::indicateur_c2_ndvi(units, layers)$C2
   expect_length(result, 3)
   expect_true(all(!is.na(result)))
   expect_true(all(result > 0 & result < 1))
@@ -1666,7 +1647,7 @@ test_that("indicateur_c2_ndvi: trend = TRUE warns not implemented", {
 
   layers <- create_test_layers(rasters = list(ndvi = ndvi))
   expect_warning(
-    result <- nemeton:::indicateur_c2_ndvi(units, layers, trend = TRUE),
+    result <- nemeton:::indicateur_c2_ndvi(units, layers, trend = TRUE)$C2,
     "not yet implemented"
   )
   expect_length(result, 1)
@@ -1677,7 +1658,7 @@ test_that("indicateur_c2_ndvi: non-sf input errors", {
   skip_if_not_installed("terra")
   layers <- create_test_layers(rasters = list(ndvi = create_test_raster()))
   expect_error(
-    nemeton:::indicateur_c2_ndvi(data.frame(x = 1), layers),
+    nemeton:::indicateur_c2_ndvi(data.frame(x = 1), layers)$C2,
     "units must be an sf object"
   )
 })
@@ -1686,7 +1667,7 @@ test_that("indicateur_c2_ndvi: non-nemeton_layers errors", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   expect_error(
-    nemeton:::indicateur_c2_ndvi(units, layers = list(rasters = list())),
+    nemeton:::indicateur_c2_ndvi(units, layers = list(rasters = list()))$C2,
     "nemeton_layers"
   )
 })
@@ -1696,7 +1677,7 @@ test_that("indicateur_c2_ndvi: missing NDVI layer errors", {
   units <- create_test_units(n_features = 1)
   layers <- create_test_layers(rasters = list(dem = create_test_raster()))
   expect_error(
-    nemeton:::indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi"),
+    nemeton:::indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi")$C2,
     "not found"
   )
 })
@@ -1708,7 +1689,7 @@ test_that("indicateur_c2_ndvi: custom ndvi_layer name works", {
   terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.2, 0.7)
 
   layers <- create_test_layers(rasters = list(my_ndvi = ndvi))
-  result <- nemeton:::indicateur_c2_ndvi(units, layers, ndvi_layer = "my_ndvi")
+  result <- nemeton:::indicateur_c2_ndvi(units, layers, ndvi_layer = "my_ndvi")$C2
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
 })
@@ -1734,7 +1715,7 @@ test_that("indicateur_w1_reseau: watercourse crossing parcel yields positive den
   )
 
   layers <- create_test_layers(vectors = list(water_network = watercourses))
-  result <- nemeton:::indicateur_w1_reseau(units, layers)
+  result <- nemeton:::indicateur_w1_reseau(units, layers)$W1
   expect_length(result, 2)
   expect_true(all(result > 0))
 })
@@ -1756,7 +1737,7 @@ test_that("indicateur_w1_reseau: no crossing but within proximity yields bonus",
   )
 
   layers <- create_test_layers(vectors = list(water_network = watercourses))
-  result <- nemeton:::indicateur_w1_reseau(units, layers)
+  result <- nemeton:::indicateur_w1_reseau(units, layers)$W1
   expect_length(result, 1)
   expect_true(result > 0)  # Proximity bonus should kick in
 })
@@ -1778,7 +1759,7 @@ test_that("indicateur_w1_reseau: stream far away (>500m) yields zero proximity",
   )
 
   layers <- create_test_layers(vectors = list(water_network = watercourses))
-  result <- nemeton:::indicateur_w1_reseau(units, layers)
+  result <- nemeton:::indicateur_w1_reseau(units, layers)$W1
   expect_length(result, 1)
   expect_equal(result, 0)
 })
@@ -1787,7 +1768,7 @@ test_that("indicateur_w1_reseau: non-sf input errors", {
   skip_if_not_installed("terra")
   layers <- create_test_layers(vectors = list(water_network = create_test_vector()))
   expect_error(
-    nemeton:::indicateur_w1_reseau(data.frame(x = 1), layers),
+    nemeton:::indicateur_w1_reseau(data.frame(x = 1), layers)$W1,
     "units must be an sf object"
   )
 })
@@ -1796,7 +1777,7 @@ test_that("indicateur_w1_reseau: non-nemeton_layers errors", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   expect_error(
-    nemeton:::indicateur_w1_reseau(units, list()),
+    nemeton:::indicateur_w1_reseau(units, list())$W1,
     "nemeton_layers"
   )
 })
@@ -1806,7 +1787,7 @@ test_that("indicateur_w1_reseau: missing watercourse layer returns NA", {
   units <- create_test_units(n_features = 1)
   layers <- create_test_layers(vectors = list())
   # Couche absente : avertissement et NA (pas de mesure), plus 0.
-  result <- suppressWarnings(nemeton:::indicateur_w1_reseau(units, layers))
+  result <- suppressWarnings(nemeton:::indicateur_w1_reseau(units, layers)$W1)
   expect_length(result, 1)
   expect_true(is.na(result))
 })
@@ -1829,9 +1810,9 @@ test_that("indicateur_w1_reseau: buffer parameter increases capture area", {
 
   layers <- create_test_layers(vectors = list(water_network = watercourses))
   # Without buffer: stream does not cross -> proximity bonus only
-  result_no_buf <- nemeton:::indicateur_w1_reseau(units, layers, buffer = 0)
+  result_no_buf <- nemeton:::indicateur_w1_reseau(units, layers, buffer = 0)$W1
   # With buffer: stream may get captured
-  result_with_buf <- nemeton:::indicateur_w1_reseau(units, layers, buffer = 50)
+  result_with_buf <- nemeton:::indicateur_w1_reseau(units, layers, buffer = 50)$W1
   # With buffer >= 20m, the stream should be captured by intersection
   expect_true(result_with_buf >= result_no_buf)
 })
@@ -1852,7 +1833,7 @@ test_that("indicateur_w2_zones_humides: TWI source (DEM -> TWI -> wetland fracti
   terra::values(dem) <- as.vector(vals)
 
   layers <- create_test_layers(rasters = list(dem = dem))
-  result <- nemeton:::indicateur_w2_zones_humides(units, layers)
+  result <- nemeton:::indicateur_w2_zones_humides(units, layers)$W2
   expect_length(result, 2)
   # With DEM, TWI is computed; some cells may have TWI > 12
   expect_type(result, "double")
@@ -1863,7 +1844,7 @@ test_that("indicateur_w2_zones_humides: no data returns NA", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   layers <- create_test_layers(rasters = list(), vectors = list())
-  result <- nemeton:::indicateur_w2_zones_humides(units, layers)
+  result <- nemeton:::indicateur_w2_zones_humides(units, layers)$W2
   expect_length(result, 2)
   expect_true(all(is.na(result)))
 })
@@ -1872,7 +1853,7 @@ test_that("indicateur_w2_zones_humides: non-sf input errors", {
   skip_if_not_installed("terra")
   layers <- create_test_layers()
   expect_error(
-    nemeton:::indicateur_w2_zones_humides(data.frame(x = 1), layers),
+    nemeton:::indicateur_w2_zones_humides(data.frame(x = 1), layers)$W2,
     "sf"
   )
 })
@@ -1881,7 +1862,7 @@ test_that("indicateur_w2_zones_humides: non-nemeton_layers errors", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   expect_error(
-    nemeton:::indicateur_w2_zones_humides(units, list()),
+    nemeton:::indicateur_w2_zones_humides(units, list())$W2,
     "nemeton_layers"
   )
 })
@@ -1908,7 +1889,7 @@ test_that("indicateur_w2_zones_humides: water_surfaces vector source", {
   )
 
   layers <- create_test_layers(vectors = list(water_surfaces = water_sf))
-  result <- nemeton:::indicateur_w2_zones_humides(units, layers)
+  result <- nemeton:::indicateur_w2_zones_humides(units, layers)$W2
   expect_length(result, 2)
   # First unit should have some coverage from water surface
   expect_true(result[1] > 0)
@@ -1930,7 +1911,7 @@ test_that("indicateur_w3_humidite: with DEM returns TWI mean values", {
   terra::values(dem) <- as.vector(vals)
 
   layers <- create_test_layers(rasters = list(dem = dem))
-  result <- nemeton:::indicateur_w3_humidite(units, layers)
+  result <- nemeton:::indicateur_w3_humidite(units, layers)$W3
   expect_length(result, 2)
   expect_type(result, "double")
 })
@@ -1946,7 +1927,7 @@ test_that("indicateur_w3_humidite: method = 'd8' calls calculate_twi_terra direc
   terra::values(dem) <- as.vector(vals)
 
   layers <- create_test_layers(rasters = list(dem = dem))
-  result <- nemeton:::indicateur_w3_humidite(units, layers, method = "d8")
+  result <- nemeton:::indicateur_w3_humidite(units, layers, method = "d8")$W3
   expect_length(result, 2)
   expect_type(result, "double")
   expect_true(all(!is.na(result)))
@@ -1957,7 +1938,7 @@ test_that("indicateur_w3_humidite: no DEM errors", {
   units <- create_test_units(n_features = 1)
   layers <- create_test_layers(rasters = list())
   expect_error(
-    nemeton:::indicateur_w3_humidite(units, layers),
+    nemeton:::indicateur_w3_humidite(units, layers)$W3,
     "No DEM"
   )
 })
@@ -1966,7 +1947,7 @@ test_that("indicateur_w3_humidite: non-sf input errors", {
   skip_if_not_installed("terra")
   layers <- create_test_layers(rasters = list(dem = create_test_raster()))
   expect_error(
-    nemeton:::indicateur_w3_humidite(data.frame(x = 1), layers),
+    nemeton:::indicateur_w3_humidite(data.frame(x = 1), layers)$W3,
     "sf"
   )
 })
@@ -1975,7 +1956,7 @@ test_that("indicateur_w3_humidite: non-nemeton_layers errors", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   expect_error(
-    nemeton:::indicateur_w3_humidite(units, list()),
+    nemeton:::indicateur_w3_humidite(units, list())$W3,
     "nemeton_layers"
   )
 })
@@ -1991,8 +1972,8 @@ test_that("indicateur_w3_humidite: method = 'auto' produces same structure as 'd
   terra::values(dem) <- as.vector(vals)
 
   layers <- create_test_layers(rasters = list(dem = dem))
-  result_auto <- nemeton:::indicateur_w3_humidite(units, layers, method = "auto")
-  result_d8 <- nemeton:::indicateur_w3_humidite(units, layers, method = "d8")
+  result_auto <- nemeton:::indicateur_w3_humidite(units, layers, method = "auto")$W3
+  result_d8 <- nemeton:::indicateur_w3_humidite(units, layers, method = "d8")$W3
   # Both should return same length
   expect_equal(length(result_auto), length(result_d8))
 })
@@ -2012,7 +1993,7 @@ test_that("indicateur_f2_erosion: with DEM computes TWI+slope composite", {
   terra::values(dem) <- as.vector(vals)
 
   layers <- create_test_layers(rasters = list(dem = dem))
-  result <- nemeton:::indicateur_f2_erosion(units, layers)
+  result <- nemeton:::indicateur_f2_erosion(units, layers)$F2
   expect_length(result, 3)
   expect_type(result, "double")
   # At least some values should be valid scores in [0, 100]
@@ -2027,7 +2008,7 @@ test_that("indicateur_f2_erosion: no DEM errors", {
   units <- create_test_units(n_features = 1)
   layers <- create_test_layers(rasters = list())
   expect_error(
-    nemeton:::indicateur_f2_erosion(units, layers),
+    nemeton:::indicateur_f2_erosion(units, layers)$F2,
     "No DEM"
   )
 })
@@ -2036,7 +2017,7 @@ test_that("indicateur_f2_erosion: non-sf input errors", {
   skip_if_not_installed("terra")
   layers <- create_test_layers(rasters = list(dem = create_test_raster()))
   expect_error(
-    nemeton:::indicateur_f2_erosion(data.frame(x = 1), layers),
+    nemeton:::indicateur_f2_erosion(data.frame(x = 1), layers)$F2,
     "sf"
   )
 })
@@ -2045,7 +2026,7 @@ test_that("indicateur_f2_erosion: non-nemeton_layers errors", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
   expect_error(
-    nemeton:::indicateur_f2_erosion(units, list()),
+    nemeton:::indicateur_f2_erosion(units, list())$F2,
     "nemeton_layers"
   )
 })
@@ -2060,7 +2041,7 @@ test_that("indicateur_f2_erosion: LiDAR MNT preferred over regular DEM", {
   terra::values(lidar_mnt) <- seq(200, 500, length.out = terra::ncell(lidar_mnt))
 
   layers <- create_test_layers(rasters = list(dem = dem, lidar_mnt = lidar_mnt))
-  result <- nemeton:::indicateur_f2_erosion(units, layers)
+  result <- nemeton:::indicateur_f2_erosion(units, layers)$F2
   expect_length(result, 2)
   expect_type(result, "double")
 })
@@ -2073,7 +2054,7 @@ test_that("indicateur_l1_effet_lisiere: geometry component (shape index)", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   # No layers -> only geometry + exposure components
-  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = NULL)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = NULL)$L1
   expect_length(result, 3)
   expect_true(all(!is.na(result)))
   expect_true(all(result >= 0 & result <= 100))
@@ -2084,7 +2065,7 @@ test_that("indicateur_l1_effet_lisiere: no landcover yields neutral contrast", {
   units <- create_test_units(n_features = 2)
   # Empty layers (has class but no landcover raster)
   layers <- create_test_layers(rasters = list())
-  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)$L1
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
   expect_true(all(result >= 0 & result <= 100))
@@ -2099,7 +2080,7 @@ test_that("indicateur_l1_effet_lisiere: with landcover raster computes contrast"
   terra::values(lc) <- vals
 
   layers <- create_test_layers(rasters = list(landcover = lc))
-  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)$L1
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
   expect_true(all(result >= 0 & result <= 100))
@@ -2108,7 +2089,7 @@ test_that("indicateur_l1_effet_lisiere: with landcover raster computes contrast"
 test_that("indicateur_l1_effet_lisiere: non-sf input errors", {
   skip_if_not_installed("terra")
   expect_error(
-    nemeton:::indicateur_l1_effet_lisiere(data.frame(x = 1)),
+    nemeton:::indicateur_l1_effet_lisiere(data.frame(x = 1))$L1,
     "sf"
   )
 })
@@ -2122,7 +2103,7 @@ test_that("indicateur_l1_effet_lisiere: forest_cover fallback for landcover", {
 
   # Use "forest_cover" name instead of "landcover"
   layers <- create_test_layers(rasters = list(forest_cover = lc))
-  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = layers)$L1
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
 })
@@ -2130,7 +2111,7 @@ test_that("indicateur_l1_effet_lisiere: forest_cover fallback for landcover", {
 test_that("indicateur_l1_effet_lisiere: single unit works", {
   skip_if_not_installed("terra")
   units <- create_test_units(n_features = 1)
-  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = NULL)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = NULL)$L1
   expect_length(result, 1)
   expect_true(!is.na(result))
   expect_true(result >= 0 & result <= 100)
@@ -2478,7 +2459,7 @@ test_that("indicateur_c1_biomasse: Path 1 returns values proportional to density
   units$age <- c(80, 80)
   units$density <- c(0.3, 0.9)
 
-  result <- nemeton::indicateur_c1_biomasse(units)
+  result <- nemeton::indicateur_c1_biomasse(units)$C1
   expect_length(result, 2)
   # Higher density should yield higher biomass
   expect_true(result[2] > result[1])
@@ -2501,7 +2482,7 @@ test_that("indicateur_w1_reseau: crossing stream gives full proximity bonus", {
   )
 
   layers <- create_test_layers(vectors = list(water_network = watercourses))
-  result <- nemeton:::indicateur_w1_reseau(units, layers, proximity_ref = 50)
+  result <- nemeton:::indicateur_w1_reseau(units, layers, proximity_ref = 50)$W1
   expect_length(result, 1)
   # Should have both direct density and full proximity bonus (50)
   expect_true(result >= 50)
@@ -2524,7 +2505,7 @@ test_that("indicateur_l1_effet_lisiere: returns scores in [0, 100] for irregular
     geometry = sf::st_sfc(poly, crs = 2154)
   )
 
-  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = NULL)
+  result <- nemeton:::indicateur_l1_effet_lisiere(units, layers = NULL)$L1
   expect_length(result, 1)
   expect_true(!is.na(result))
   expect_true(result >= 0 & result <= 100)
@@ -2541,8 +2522,8 @@ test_that("indicateur_w3_humidite: consistent results between calls with cache",
   terra::values(dem) <- as.vector(vals)
 
   layers <- create_test_layers(rasters = list(dem = dem))
-  result1 <- nemeton:::indicateur_w3_humidite(units, layers, method = "d8")
-  result2 <- nemeton:::indicateur_w3_humidite(units, layers, method = "d8")
+  result1 <- nemeton:::indicateur_w3_humidite(units, layers, method = "d8")$W3
+  result2 <- nemeton:::indicateur_w3_humidite(units, layers, method = "d8")$W3
   expect_equal(result1, result2)
 })
 
@@ -2554,7 +2535,7 @@ test_that("indicateur_f2_erosion: gentle slope produces higher fertility score",
   terra::values(dem) <- seq(200, 210, length.out = terra::ncell(dem))  # very gentle
 
   layers <- create_test_layers(rasters = list(dem = dem))
-  result <- nemeton:::indicateur_f2_erosion(units, layers)
+  result <- nemeton:::indicateur_f2_erosion(units, layers)$F2
   expect_length(result, 1)
   expect_type(result, "double")
 })
@@ -2566,7 +2547,7 @@ test_that("indicateur_c2_ndvi: returns values between 0 and 1 for valid NDVI", {
   terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.2, 0.9)
 
   layers <- create_test_layers(rasters = list(ndvi = ndvi))
-  result <- nemeton:::indicateur_c2_ndvi(units, layers)
+  result <- nemeton:::indicateur_c2_ndvi(units, layers)$C2
   expect_length(result, 5)
   # Some edge units may get NA; check that most are valid
   non_na <- result[!is.na(result)]
@@ -2664,7 +2645,7 @@ test_that("indicateur_f1_fertilite(source='soilgrids') wires the loader", {
     safe_extract = fake_extract
   )
 
-  result <- indicateur_f1_fertilite(units, source = "soilgrids")
+  result <- indicateur_f1_fertilite(units, source = "soilgrids")$F1
 
   expect_equal(captured_key, "soilgrids_cec")
   expect_equal(result, c(0, 50, 100))
@@ -2686,7 +2667,7 @@ test_that("indicateur_f1_fertilite(source='soilgrids') ignores layers arg", {
 
   # No layers supplied at all — must not error
   result <- suppressMessages(
-    indicateur_f1_fertilite(units, source = "soilgrids")
+    indicateur_f1_fertilite(units, source = "soilgrids")$F1
   )
   expect_length(result, 2)
   expect_true(all(result == 40))  # 120/10 = 12 cmol(c)/kg → 40
@@ -2745,7 +2726,7 @@ test_that("source='gissol' returns the UTS score when a unit sits entirely in on
     ))), crs = 2154)
   )
   result <- suppressMessages(
-    indicateur_f1_fertilite(unit_in_pg1, layers, source = "gissol")
+    indicateur_f1_fertilite(unit_in_pg1, layers, source = "gissol")$F1
   )
   expect_equal(result, 90)
 })
@@ -2763,7 +2744,7 @@ test_that("source='gissol' area-weights when a unit straddles two UTS", {
     ))), crs = 2154)
   )
   result <- suppressMessages(
-    indicateur_f1_fertilite(straddling, layers, source = "gissol")
+    indicateur_f1_fertilite(straddling, layers, source = "gissol")$F1
   )
   expect_equal(result, (90 + 35) / 2, tolerance = 1e-6)
 })
@@ -2780,7 +2761,7 @@ test_that("source='gissol' returns NA for units outside any RRP polygon", {
     ))), crs = 2154)
   )
   result <- suppressMessages(
-    indicateur_f1_fertilite(outside, layers, source = "gissol")
+    indicateur_f1_fertilite(outside, layers, source = "gissol")$F1
   )
   expect_true(is.na(result))
 })
@@ -2806,7 +2787,7 @@ test_that("source='gissol' warns and drops unknown AFES codes", {
   )
   expect_warning(
     result <- suppressMessages(
-      indicateur_f1_fertilite(straddling, layers, source = "gissol")
+      indicateur_f1_fertilite(straddling, layers, source = "gissol")$F1
     ),
     "NOT_IN_TABLE|not in UTS"
   )
@@ -2828,7 +2809,7 @@ test_that("source='gissol' honours a custom rpf_code_col", {
   result <- suppressMessages(
     indicateur_f1_fertilite(unit_in_pg1, layers,
                             source = "gissol",
-                            rpf_code_col = "UTSDom")
+                            rpf_code_col = "UTSDom")$F1
   )
   expect_equal(result, 90)
 })
@@ -2846,7 +2827,7 @@ test_that("source='gissol' errors clearly when the column is missing", {
     ))), crs = 2154)
   )
   expect_error(
-    indicateur_f1_fertilite(unit, layers, source = "gissol"),
+    indicateur_f1_fertilite(unit, layers, source = "gissol")$F1,
     "rpf_code.*not found"
   )
 })
@@ -2867,7 +2848,7 @@ test_that("source='gissol' reprojects RRP when CRSes differ", {
     crs = 2154
   )
   result <- suppressMessages(
-    indicateur_f1_fertilite(unit_l93, layers, source = "gissol")
+    indicateur_f1_fertilite(unit_l93, layers, source = "gissol")$F1
   )
   expect_false(is.na(result))
   expect_equal(result, 90, tolerance = 1e-6)
@@ -2887,7 +2868,7 @@ test_that("indicateur_c2_ndvi FAPAR mode returns per-unit mean FAPAR", {
   terra::values(fapar) <- runif(terra::ncell(fapar))
 
   result <- suppressMessages(
-    indicateur_c2_ndvi(units, layers = make_mock_layers(), fapar = fapar)
+    indicateur_c2_ndvi(units, layers = make_mock_layers(), fapar = fapar)$C2
   )
   expect_length(result, 3)
   expect_type(result, "double")
@@ -2899,7 +2880,7 @@ test_that("indicateur_c2_ndvi FAPAR mode rejects a non-raster fapar", {
 
   units <- create_test_units(n_features = 2)
   expect_error(
-    indicateur_c2_ndvi(units, layers = make_mock_layers(), fapar = "not_a_raster"),
+    indicateur_c2_ndvi(units, layers = make_mock_layers(), fapar = "not_a_raster")$C2,
     "fapar must be a terra SpatRaster"
   )
 })
@@ -2955,7 +2936,7 @@ test_that("indicateur_f1_fertilite theia_soil mode returns 0-100 scores", {
   texture <- list(clay = mk(20), silt = mk(40), sand = mk(40))
 
   result <- suppressMessages(
-    indicateur_f1_fertilite(units, source = "theia_soil", texture = texture)
+    indicateur_f1_fertilite(units, source = "theia_soil", texture = texture)$F1
   )
   expect_length(result, 3)
   expect_type(result, "double")
@@ -2971,7 +2952,7 @@ test_that("indicateur_f1_fertilite theia_soil mode requires texture", {
 
   units <- create_test_units(n_features = 2)
   expect_error(
-    indicateur_f1_fertilite(units, source = "theia_soil"),
+    indicateur_f1_fertilite(units, source = "theia_soil")$F1,
     "requires a 'texture'"
   )
 })
@@ -3000,7 +2981,7 @@ test_that("indicateur_f2_erosion accepts a Theia theia_soil texture", {
   texture <- list(clay = mk(20), silt = mk(40), sand = mk(40))
 
   result <- suppressMessages(
-    nemeton:::indicateur_f2_erosion(units, layers = layers, texture = texture)
+    nemeton:::indicateur_f2_erosion(units, layers = layers, texture = texture)$F2
   )
   expect_length(result, 3)
   expect_type(result, "double")
@@ -3026,7 +3007,7 @@ test_that("indicateur_w2_zones_humides adds Theia water-occurrence coverage", {
 
   result <- suppressMessages(
     indicateur_w2_zones_humides(units, layers = make_mock_layers(),
-                                water_occurrence = wo)
+                                water_occurrence = wo)$W2
   )
   expect_length(result, 3)
   expect_type(result, "double")
@@ -3041,7 +3022,7 @@ test_that("indicateur_w2_zones_humides rejects a non-raster water_occurrence", {
   expect_error(
     suppressMessages(
       indicateur_w2_zones_humides(units, layers = make_mock_layers(),
-                                  water_occurrence = "not_a_raster")
+                                  water_occurrence = "not_a_raster")$W2
     ),
     "water_occurrence must be a terra SpatRaster"
   )
@@ -3065,7 +3046,7 @@ test_that("W2 takes the union of overlapping sources instead of summing them", {
   terra::values(wo) <- ifelse(terra::xFromCell(wo, seq_len(terra::ncell(wo))) < 566500, 80, 0)
 
   res <- suppressMessages(
-    indicateur_w2_zones_humides(units, layers = layers, water_occurrence = wo)
+    indicateur_w2_zones_humides(units, layers = layers, water_occurrence = wo)$W2
   )
   # Avant : 50 + 50 = 100 ; union : 50
   expect_equal(res, 50, tolerance = 0.03)
@@ -3073,7 +3054,7 @@ test_that("W2 takes the union of overlapping sources instead of summing them", {
   # Sources disjointes : les couvertures s'ajoutent (ouest + est = 100)
   terra::values(wo) <- ifelse(terra::xFromCell(wo, seq_len(terra::ncell(wo))) < 566500, 0, 80)
   res2 <- suppressMessages(
-    indicateur_w2_zones_humides(units, layers = layers, water_occurrence = wo)
+    indicateur_w2_zones_humides(units, layers = layers, water_occurrence = wo)$W2
   )
   expect_equal(res2, 100, tolerance = 0.03)
 })
@@ -3085,7 +3066,7 @@ test_that("W2 is NA where every source is NA (no fabricated 0)", {
   terra::values(wo) <- NA_real_
   res <- suppressMessages(
     indicateur_w2_zones_humides(units, layers = make_mock_layers(),
-                                water_occurrence = wo)
+                                water_occurrence = wo)$W2
   )
   expect_true(is.na(res))
 })
@@ -3093,7 +3074,7 @@ test_that("W2 is NA where every source is NA (no fabricated 0)", {
 test_that("W1 is NA, not 0, when no watercourse layer is available", {
   units <- create_test_units(n_features = 2)
   expect_warning(
-    res <- suppressMessages(indicateur_w1_reseau(units, layers = make_mock_layers())),
+    res <- suppressMessages(indicateur_w1_reseau(units, layers = make_mock_layers())$W1),
     "Returning\\s+NA"
   )
   expect_equal(res, c(NA_real_, NA_real_))
@@ -3114,12 +3095,12 @@ test_that("F1 vector: polygons without value stay out of the denominator", {
   )
   layers <- make_mock_layers(vectors = list(soil = soil))
   # Avant : 80 * 0.5 + NA ignore = 40
-  expect_equal(suppressMessages(indicateur_f1_fertilite(units, layers)), 80)
+  expect_equal(suppressMessages(indicateur_f1_fertilite(units, layers)$F1), 80)
 
   # Aucune valeur : NA, pas 0
   soil$fertility <- NA_real_
   layers <- make_mock_layers(vectors = list(soil = soil))
-  expect_true(is.na(suppressMessages(indicateur_f1_fertilite(units, layers))))
+  expect_true(is.na(suppressMessages(indicateur_f1_fertilite(units, layers)$F1)))
 })
 
 test_that("F1 layer mode rescales classes with fertility_range", {
@@ -3132,13 +3113,13 @@ test_that("F1 layer mode rescales classes with fertility_range", {
   # Classe 4 sur 1-5 -> 75 (avant : 4, laissee telle quelle)
   expect_equal(
     suppressMessages(indicateur_f1_fertilite(units, layers,
-                                             fertility_range = c(1, 5))),
+                                             fertility_range = c(1, 5))$F1),
     75
   )
   # Hors plage -> NA avec avertissement
   expect_warning(
     res <- suppressMessages(indicateur_f1_fertilite(units, layers,
-                                                    fertility_range = c(0, 3))),
+                                                    fertility_range = c(0, 3))$F1),
     "outside"
   )
   expect_true(is.na(res))
@@ -3152,8 +3133,8 @@ test_that("F1 raster: score is absolute, not min-max over the batch", {
   terra::values(r) <- 60
   layers <- make_mock_layers(rasters = list(soil = r))
   # Avant : valeurs identiques -> 50 « neutre » ; une seule unite -> 50
-  res <- suppressMessages(indicateur_f1_fertilite(units, layers))
+  res <- suppressMessages(indicateur_f1_fertilite(units, layers)$F1)
   expect_equal(res, c(60, 60))
-  res1 <- suppressMessages(indicateur_f1_fertilite(units[1, ], layers))
+  res1 <- suppressMessages(indicateur_f1_fertilite(units[1, ], layers)$F1)
   expect_equal(res1, 60)
 })

@@ -21,8 +21,6 @@ NULL
 #' @param residue_fraction Numeric. Fraction of harvest available as residues. Default 0.3 (30 percent).
 #' @param coppice_area_field Character. Column name for coppice area fraction. Optional.
 #' @param column_name Character. Name for output column. Default "E1".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #' @param chm Optional `terra::SpatRaster` canopy height model (spec 005).
 #'   When supplied and `volume_field` is absent, standing volume is
 #'   auto-estimated by running P1 internally. Default `NULL`.
@@ -70,6 +68,9 @@ NULL
 #' does. Versions up to 0.211.0 multiplied it by a further 0.5 ("dry matter =
 #' 50 percent of fresh weight"), which halved E1.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 indicateur_e1_bois_energie <- function(units,
                                       volume_field = "volume",
@@ -78,7 +79,6 @@ indicateur_e1_bois_energie <- function(units,
                                       residue_fraction = 0.3,
                                       coppice_area_field = NULL,
                                       column_name = "E1",
-                                      lang = "en",
                                       chm = NULL,
                                       production_field = NULL,
                                       taux_mobilisation = NULL,
@@ -137,7 +137,7 @@ indicateur_e1_bois_energie <- function(units,
                                       harvest_rate = 1,
                                       residue_fraction = residue_fraction,
                                       coppice_area_field = coppice_area_field,
-                                      column_name = column_name, lang = lang)
+                                      column_name = column_name)
     res[["..volume_flux.."]] <- NULL
     res$E1_mode <- ifelse(is.na(res[[column_name]]), NA_character_, mode)
     return(res)
@@ -151,8 +151,7 @@ indicateur_e1_bois_energie <- function(units,
   if (!volume_field %in% names(units) && !is.null(chm)) {
     p1 <- tryCatch(
       indicateur_p1_volume(units, species_field = species_field,
-                           chm = chm, column_name = "..p1_tmp..",
-                           lang = lang),
+                           chm = chm, column_name = "..p1_tmp.."),
       error = function(e) {
         cli::cli_warn("E1: synthetic P1 estimation failed: {e$message}")
         NULL
@@ -241,8 +240,6 @@ indicateur_e1_bois_energie <- function(units,
 #' @param energy_scenario Character. Energy substitution scenario: "vs_natural_gas", "vs_fuel_oil". Default "vs_natural_gas".
 #' @param material_scenario Character. Material substitution: "vs_concrete", "vs_steel", NULL. Default NULL (no material substitution).
 #' @param column_name Character. Name for output column. Default "E2".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #' @param taux_recolte_materiau Numeric in `[0, 1]`, one value or one per
 #'   unit: share of `volume_field` harvested as construction timber each
 #'   year. Required with `material_scenario` + `volume_field`, no default on
@@ -256,6 +253,9 @@ indicateur_e1_bois_energie <- function(units,
 #' within 0.1 %, the same quantity: E2 = E1 x 4500 kWh x 0.222 kgCO2/kWh /
 #' 1000 = E1 x 0.999. See spec 048 section 11.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 indicateur_e2_evitement <- function(units,
                                        fuelwood_field = "E1",
@@ -263,7 +263,6 @@ indicateur_e2_evitement <- function(units,
                                        energy_scenario = "vs_natural_gas",
                                        material_scenario = NULL,
                                        column_name = "E2",
-                                       lang = "en",
                                        taux_recolte_materiau = NULL) {
   if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 

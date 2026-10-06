@@ -57,6 +57,9 @@ NULL
 #' @return A data.frame with columns \code{species, model, a, b, c,
 #'   dg_min, dg_max}.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' charru_selfthinning_table()
 #'
@@ -104,6 +107,9 @@ charru_selfthinning_table <- function() {
 #'   is \code{TRUE} where \code{dq} lay outside the species range and was
 #'   clamped (\code{clamp = TRUE} only), \code{NA} where no value was
 #'   computed.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' # Common beech, D_g = 30 cm

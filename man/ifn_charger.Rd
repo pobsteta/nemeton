@@ -57,6 +57,11 @@ derivations belong to the caller, where they can be documented and tested.
 }
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 d <- ifn_charger(c("ARBRE", "PLACETTE"), visite = 1)

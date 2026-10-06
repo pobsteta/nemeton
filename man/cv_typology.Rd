@@ -28,3 +28,7 @@ frame has columns:
   \item \code{notes_fr}: one-line rationale.
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

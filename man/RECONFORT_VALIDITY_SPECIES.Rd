@@ -11,3 +11,7 @@ Short codes for the three RECONFORT-calibrated species: oak (CHE,
 \emph{Quercus} spp.), sweet chestnut (CHT, \emph{Castanea sativa})
 and Scots pine (PS, \emph{Pinus sylvestris}).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

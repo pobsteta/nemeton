@@ -22,3 +22,7 @@ A `data.frame` of `knowledge_document` rows (without chunks),
 \description{
 List the documents in the RAG knowledge base
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

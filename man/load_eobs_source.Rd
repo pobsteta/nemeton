@@ -77,6 +77,11 @@ reduces it to summer-per-year. This is the tested contract.
 as ERA5). Not runnable in CI; validated on real data. Degrades to \code{NULL}.
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{microclimate_detect_years}}, \code{\link{tendances_estivales_eobs}}
 }

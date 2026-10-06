@@ -16,6 +16,11 @@ Numeric. Confidence ratio between 0 and 1.
 Returns the cumulative confidence phi, calculated as the ratio of
 cumulative Fibonacci weight up to this level over the total (12).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 get_ndp_confidence(0) # 1/12 ~ 0.083
 get_ndp_confidence(4) # 1.0

@@ -1172,7 +1172,7 @@ test_that("C1 sets a stems/ha density to NA instead of an absurd biomass", {
   units$age <- c(80, 60)
   units$density <- c(0.7, 400)  # la seconde est en tiges/ha
   expect_warning(
-    res <- suppressMessages(indicateur_c1_biomasse(units)),
+    res <- suppressMessages(indicateur_c1_biomasse(units)$C1),
     "stems/ha"
   )
   expect_true(is.finite(res[1]))

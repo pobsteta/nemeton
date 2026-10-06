@@ -34,6 +34,11 @@ Validation-terrain placettes, if ever needed, are added separately.
 The polygon is reprojected to EPSG:4326 and stored as WKT, consistent
 with [register_monitoring_zone()].
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 [build_project_monitoring_zones()] (the strata builder that
   calls this), [find_zones_by_project()], [register_monitoring_zone()].

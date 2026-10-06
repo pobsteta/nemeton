@@ -27,6 +27,11 @@ Validates the manifest (unless `validate = FALSE`) and writes it back as
 CSV with deterministic, minimal quoting so version-control diffs stay
 readable. Refuses to write a manifest carrying `error`-severity issues.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 [read_knowledge_manifest()], [validate_knowledge_manifest()].
 }

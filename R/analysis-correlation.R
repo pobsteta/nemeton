@@ -31,6 +31,9 @@ NULL
 #' @section Bilingual Support:
 #' This function supports bilingual messages via `nemeton_set_language()`.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' # Load demo data with family indices
@@ -140,6 +143,9 @@ compute_family_correlations <- function(units,
 #'
 #' @section Bilingual Support:
 #' This function supports bilingual messages via `nemeton_set_language()`.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{
@@ -291,6 +297,9 @@ identify_hotspots <- function(units,
 #'
 #' @section Bilingual Support:
 #' This function supports bilingual labels via `nemeton_set_language()`.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{

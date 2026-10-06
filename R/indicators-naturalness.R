@@ -25,8 +25,6 @@ NULL
 #'   in `layers`) gives N1 = NA.
 #' @param layers nemeton_layers object. Used to resolve roads/buildings if not provided directly.
 #' @param column_name Character. Name for output column. Default "N1".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #'
 #' @return sf object with added column N1 (score 0-100, 100 = very remote).
 #'   Each distance is scored `min(100, d / 20)` (2 km or more = 100). Until
@@ -35,13 +33,15 @@ NULL
 #'   (spec 056), so N1 now spans the full 0-100 range. N1 is NA when the roads
 #'   or the buildings layer is missing.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 indicateur_n1_distance <- function(units,
                                            roads = NULL,
                                            buildings = NULL,
                                            layers = NULL,
-                                           column_name = "N1",
-                                           lang = "en") {
+                                           column_name = "N1") {
   if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   result <- units
@@ -113,8 +113,6 @@ indicateur_n1_distance <- function(units,
 #'   `anciennete` tier column, weight the ancient-forest coverage by tier depth
 #'   (forest present at more epochs counts more). Ignored for single-epoch
 #'   layers. Default `TRUE`.
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #'
 #' @return sf object with added column N2 (score 0-100).
 #'
@@ -127,14 +125,16 @@ indicateur_n1_distance <- function(units,
 #'   the same statement as a zero. `normalize_indicator()` passes it through
 #'   (spec 048 section 12).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 indicateur_n2_continuite <- function(units,
                                              bdforet = NULL,
                                              foret_ancienne = NULL,
                                              layers = NULL,
                                              column_name = "N2",
-                                             weight_anciennete = TRUE,
-                                             lang = "en") {
+                                             weight_anciennete = TRUE) {
   if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   result <- units
@@ -234,8 +234,6 @@ indicateur_n2_continuite <- function(units,
 #'
 #' @param units sf object with N1 and N2 columns (optionally L1, B3)
 #' @param column_name Character. Name for output column. Default "N3".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #'
 #' @return sf object with added column N3 (score 0-100), or `NA` when any of
 #'   the four input columns is missing.
@@ -250,10 +248,12 @@ indicateur_n2_continuite <- function(units,
 #'   N3 on the radar convention would invert L1 twice (spec 048 sections 9
 #'   and 12).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 indicateur_n3_naturalite <- function(units,
-                                            column_name = "N3",
-                                            lang = "en") {
+                                            column_name = "N3") {
   if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   result <- units
@@ -337,6 +337,9 @@ indicateur_n3_naturalite <- function(units,
 #'   sources it also carries `anciennete` (integer epoch-count tier) and
 #'   `epoques` (the contributing epoch labels). May have 0 rows if no forest
 #'   is found.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 build_foret_ancienne_mask <- function(source,

@@ -111,6 +111,11 @@ missing falls back to its `source_url` when it points at a `.pdf`
 lists what would be found before any embedding call.
 }
 
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 [read_knowledge_manifest()], [ingest_knowledge_document()],
   [ingest_knowledge_reference()], [list_knowledge_documents()].

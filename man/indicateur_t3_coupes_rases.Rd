@@ -43,7 +43,7 @@ not comparable at the same \code{window_years}. Anchoring on the current year â€
 N years" mean exactly that.}
 }
 \value{
-Numeric vector, one value per unit: recency-weighted percentage of the unit
+The input \code{units} (same class, rows and order) with an added numeric column \code{T3}, one value per unit: recency-weighted percentage of the unit
 footprint under clear-cut within the window (0-100, high = more
 clear-cutting). \code{NA} where \code{sufosat_dates} is \code{NULL} or the
 unit does not overlap the raster.
@@ -69,4 +69,8 @@ STAC 2026-07-02):
 The score is coverage-fraction weighted, so equal-area pixels cancel and no
 cell-area computation is needed: it is the share of the unit footprint under
 clear-cut within the recency window, weighted linearly by recency.
+}
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
 }

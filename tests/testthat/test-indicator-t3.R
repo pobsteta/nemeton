@@ -39,7 +39,7 @@ test_that("T3 = recency-weighted clear-cut share over the unit footprint", {
   # w(2024)=5/5=1 on 10 cells, w(2020)=1/5=0.2 on 10 cells, denom=100 cells.
   # T3 = 100 * (10*1 + 10*0.2) / 100 = 12.
   out <- indicateur_t3_coupes_rases(.t3_unit(), r$dates, r$proba,
-                                    window_years = 5, min_proba = 0.9)
+                                    window_years = 5, min_proba = 0.9)$T3
   expect_length(out, 1L)
   expect_equal(out[[1]], 12, tolerance = 1e-6)
 })
@@ -50,7 +50,7 @@ test_that("T3 min_proba drops low-confidence pixels", {
   # 2020 cells at 80% < 0.9*100 -> excluded; only the 2024 cells (w=1) count.
   r <- .t3_rasters(p_2020 = 80, p_2024 = 95)
   out <- indicateur_t3_coupes_rases(.t3_unit(), r$dates, r$proba,
-                                    min_proba = 0.9)
+                                    min_proba = 0.9)$T3
   expect_equal(out[[1]], 10, tolerance = 1e-6)
 })
 
@@ -60,7 +60,7 @@ test_that("T3 window_years restricts the recency window", {
   # window_years = 2, ref 2024 -> window 2023-2024; 2020 cells excluded.
   r <- .t3_rasters()
   out <- indicateur_t3_coupes_rases(.t3_unit(), r$dates, r$proba,
-                                    window_years = 2, min_proba = 0.9)
+                                    window_years = 2, min_proba = 0.9)$T3
   expect_equal(out[[1]], 10, tolerance = 1e-6)  # only 2024 cells, w=1
 })
 
@@ -69,14 +69,14 @@ test_that("T3 without a proba raster applies no probability filter", {
   skip_if_not_installed("exactextractr")
   r <- .t3_rasters()
   out <- indicateur_t3_coupes_rases(.t3_unit(), r$dates, sufosat_proba = NULL,
-                                    window_years = 5)
+                                    window_years = 5)$T3
   expect_equal(out[[1]], 12, tolerance = 1e-6)  # same as full-proba case
 })
 
 test_that("T3 is source-conditional: NULL dates -> NA per unit", {
   skip_if_not_installed("sf")
   units <- rbind(.t3_unit(), .t3_unit())
-  out <- indicateur_t3_coupes_rases(units, sufosat_dates = NULL)
+  out <- indicateur_t3_coupes_rases(units, sufosat_dates = NULL)$T3
   expect_length(out, 2L)
   expect_true(all(is.na(out)))
 })
@@ -86,7 +86,7 @@ test_that("T3 is NA for a unit that does not overlap the raster", {
   skip_if_not_installed("exactextractr")
   r <- .t3_rasters()
   off <- .t3_unit(xmin = 1000, xmax = 1100, ymin = 1000, ymax = 1100)
-  out <- indicateur_t3_coupes_rases(off, r$dates, r$proba)
+  out <- indicateur_t3_coupes_rases(off, r$dates, r$proba)$T3
   expect_true(is.na(out[[1]]))
 })
 
@@ -94,14 +94,14 @@ test_that("T3 with no clear-cut pixel is 0 over the covered footprint", {
   skip_if_not_installed("terra"); skip_if_not_installed("sf")
   skip_if_not_installed("exactextractr")
   dates <- .t3_grid(); terra::values(dates) <- rep(0, 100)  # all nodata
-  out <- indicateur_t3_coupes_rases(.t3_unit(), dates)
+  out <- indicateur_t3_coupes_rases(.t3_unit(), dates)$T3
   expect_equal(out[[1]], 0, tolerance = 1e-6)
 })
 
 test_that("T3 empty units -> length-0 numeric", {
   skip_if_not_installed("sf")
   empty <- .t3_unit()[0, ]
-  out <- indicateur_t3_coupes_rases(empty, sufosat_dates = NULL)
+  out <- indicateur_t3_coupes_rases(empty, sufosat_dates = NULL)$T3
   expect_length(out, 0L)
 })
 

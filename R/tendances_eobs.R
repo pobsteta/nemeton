@@ -103,6 +103,9 @@
 #' @return An `sf` of E-OBS cell-centre points within the buffered area, with
 #'   `trend_tmax` (°C/decade), `trend_precip` (mm/decade), `classe_tmax`,
 #'   `classe_precip` (1-3) and `classe_bivariee` (1-9).
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [indice_priorite_regen()]
 #' @export
 tendances_estivales_eobs <- function(aoi, tx = NULL, rr = NULL, years = NULL,

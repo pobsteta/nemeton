@@ -15,6 +15,11 @@ Character. French name of the level.
 \description{
 Get NDP level name
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 get_ndp_name(0) # "Decouverte"
 get_ndp_name(4) # "Jumeau"

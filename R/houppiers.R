@@ -188,6 +188,9 @@
 #'   Zero crowns yields a zero-row `sf` with those columns, not `NULL`: the
 #'   caller writes an empty layer rather than a missing one.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' crowns <- segment_houppiers(

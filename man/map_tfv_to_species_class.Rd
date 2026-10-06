@@ -26,6 +26,11 @@ grassland) return \code{NA}. Lets the app pre-fill the reGénération
 target-species selector with the classes actually present on a BD Forêt v2
 coverage.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{bdforet_v2_mapping}}, \code{\link{regen_species_choices}},
 \code{\link{map_bdforet_essence}}

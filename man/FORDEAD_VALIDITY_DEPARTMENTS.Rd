@@ -11,3 +11,7 @@ INSEE codes of the five French departments studied by Bernard &
 Doridant (ONF/DSF) 2024: Vosges (88), Jura (39), Ain (01),
 Savoie (73), Haute-Savoie (74).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

@@ -27,3 +27,7 @@ Numeric vector. Normalized values (0-100).
 Converts raw indicator values to a common 0-100 scale using
 indicator-specific reference maxima and special handling rules.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

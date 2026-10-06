@@ -65,6 +65,9 @@ SOILGRIDS_SCALE <- c(clay = 10, sand = 10, silt = 10, soc = 10,
 #'   percent** (0-100). Default `NULL` (no correction, fine-earth AWC).
 #' @return Numeric vector of available water capacity in m3/m3, clamped to
 #'   `[0, 1]`.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @references
 #' Saxton K.E., Rawls W.J. (2006). Soil Water Characteristic Estimates by
 #' Texture and Organic Matter for Hydrologic Solutions. *Soil Science Society of
@@ -169,6 +172,9 @@ awc_saxton_rawls <- function(clay, sand, om, coarse = NULL) {
 #'   missing intervals (graceful degradation — the caller falls back to a
 #'   uniform `ewm`). Missing organic carbon or coarse fragments only trigger a
 #'   warning (assumed zero).
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @references
 #' Poggio L. et al. (2021). SoilGrids 2.0. *SOIL* 7:217-240.
 #' @seealso [awc_saxton_rawls()], [build_biljou_soil()]

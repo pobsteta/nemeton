@@ -31,3 +31,7 @@ placettes), required fields (NOT NULL), physical ranges (DBH in
 [0, 300], height in [0, 80]), species in the controlled domain, and
 tree-id uniqueness within a plot.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

@@ -34,6 +34,11 @@ The SER outlines come from the INRAE WFS (layer \code{inrae:ser_l93}, IGN
 sylvoecoregions, Lambert 93), restricted to the extent of \code{units}; pass
 \code{ser_layer} to work offline or with a cached copy.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 ugf <- localiser_ser(ugf)

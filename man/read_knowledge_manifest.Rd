@@ -19,6 +19,11 @@ Reads the manifest CSV into a typed (all-character) data.frame with
 pipeline. Performs no semantic validation beyond requiring the 16
 expected columns — use [validate_knowledge_manifest()] for that.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 [validate_knowledge_manifest()], [write_knowledge_manifest()],
   [build_knowledge_corpus()].

@@ -46,6 +46,9 @@
 #'
 #' @return An `sf` of ancient-forest polygons (`foret_ancienne = TRUE`), clipped
 #'   to `aoi`, in `crs`; a 0-row `sf` if none; `NULL` on failure.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [indicateur_n2_continuite()], [build_foret_ancienne_mask()]
 #' @export
 load_foret_ancienne_source <- function(aoi, crs = 2154,

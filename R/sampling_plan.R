@@ -454,6 +454,9 @@ dplyr_case_simple <- function(tfv) {
 #'   records how the draw was performed (\code{"grts"}, \code{"lpm2"}
 #'   or \code{"random"}).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' library(sf)

@@ -27,6 +27,9 @@ NULL
 #' @return A list with \code{placettes} (an sf POINT) and \code{arbres}
 #'   (an sf POINT; an empty data.frame if the layer is absent).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 import_qgis_gpkg <- function(path) {
   if (!file.exists(path)) {
@@ -105,6 +108,9 @@ import_qfield_gpkg <- function(path) {
 #'     \item \code{errors}: data.frame of error-level issues.
 #'     \item \code{warnings}: data.frame of warning-level issues.
 #'   }
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 validate_field_data <- function(placettes, arbres = NULL,
@@ -285,6 +291,9 @@ validate_field_data <- function(placettes, arbres = NULL,
 #'   aggregate columns (prefixed \code{field_} to make them easy to
 #'   keep separate from remote-sensing metrics downstream).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 aggregate_plot_metrics <- function(placettes, arbres = NULL,
                                    plot_radius = 15,
@@ -392,6 +401,9 @@ aggregate_plot_metrics <- function(placettes, arbres = NULL,
 #'
 #' @return \code{data} with the added attributes.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' df <- data.frame(x = 1)
 #' placettes <- data.frame(plot_id = c("P1", "P2"))
@@ -428,6 +440,9 @@ tag_field_data_sources <- function(data, placettes, arbres = NULL) {
 #'   \code{\link{aggregate_plot_metrics}}.
 #'
 #' @return \code{units} enriched with \code{field_*} columns.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 attach_field_data_to_units <- function(units, field_agg) {

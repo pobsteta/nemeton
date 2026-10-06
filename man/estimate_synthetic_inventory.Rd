@@ -81,6 +81,11 @@ a species vector, returns \code{D_g} (cm) and stem density
         \code{stocking} fraction for \eqn{N}.
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 inv <- estimate_synthetic_inventory(

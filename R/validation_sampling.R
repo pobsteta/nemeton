@@ -101,6 +101,9 @@
 #' that cannot be aligned onto the alert grid raises the distinct
 #' `validation_weight_raster_mismatch` error instead.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #'   mask <- read_fordead_dieback_mask(con, 1L, cache_dir = cd_fordead)
@@ -386,6 +389,9 @@ create_validation_sampling_plan <- function(zone,
 #' holds no significant decline (every cell `0` or `NA`), the function raises
 #' a typed `nemeton_empty_alert_mask` error so the app can render a clean
 #' \dQuote{Aucun déclin significatif} message.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @seealso [read_fast_alert_raster()] (`mode = "trend"`),
 #'   [extract_pixel_trend()] (the per-pixel diagnostic behind `alert_value`),

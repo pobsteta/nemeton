@@ -97,6 +97,11 @@ used (SER, GRECO or national) is reported through the
 \code{niveau_prelevement} attribute of the returned object, never silently.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 units <- indicateur_p1_volume(units)

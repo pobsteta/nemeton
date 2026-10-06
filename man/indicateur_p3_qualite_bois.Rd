@@ -12,7 +12,6 @@ indicateur_p3_qualite_bois(
   species_field = "species",
   weights = c(form = 0.4, diameter = 0.4, defects = 0.2),
   column_name = "P3",
-  lang = "en",
   chm = NULL
 )
 }
@@ -30,9 +29,6 @@ indicateur_p3_qualite_bois(
 \item{weights}{Named numeric vector. Component weights: c(form = 0.4, diameter = 0.4, defects = 0.2). Default balanced.}
 
 \item{column_name}{Character. Name for output column. Default "P3".}
-
-\item{lang}{Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".}
 
 \item{chm}{Optional `terra::SpatRaster` canopy height model (spec 005).
 Passed to `ensure_inventory_fields()` to auto-fill `dbh` from the
@@ -82,6 +78,11 @@ commercial diameter thresholds, and defect presence.
   \item 0-20: Very low quality (firewood only)
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 units$dbh <- c(45, 28, 35)

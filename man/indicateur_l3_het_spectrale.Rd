@@ -58,6 +58,11 @@ Before v0.190.0 the axes were simply averaged, which measured a unit's mean
 construction, and clamped to 0 for every unit on the negative side. See
 spec 028 section 10.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{compute_spectral_diversity}}
 }

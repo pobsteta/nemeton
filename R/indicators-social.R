@@ -22,8 +22,6 @@ NULL
 #' @param layers A nemeton_layers object (optional). Used to resolve roads/dem
 #'   when not provided directly.
 #' @param column_name Character. Name for output column. Default "S1".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #' @param dem_target_res Numeric. Working resolution (metres) the DEM grid is
 #'   aggregated to before roads are rasterised and the distance transform runs.
 #'   The DEM is only a grid template here, and a 0.5-1 m LiDAR HD MNT makes that
@@ -53,6 +51,9 @@ NULL
 #'
 #' Returns NA when DEM or roads are unavailable.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -67,7 +68,6 @@ indicateur_s1_routes <- function(units,
                                     dem = NULL,
                                     layers = NULL,
                                     column_name = "S1",
-                                    lang = "en",
                                     dem_target_res = .topo_target_res(),
                                     max_dist = 2000) {
   # Validate inputs
@@ -125,8 +125,6 @@ indicateur_s1_routes <- function(units,
 #' @param layers A nemeton_layers object (optional). Used to resolve buildings/dem
 #'   when not provided directly.
 #' @param column_name Character. Name for output column. Default "S2".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #' @param dem_target_res Numeric. Working resolution (metres) the DEM grid is
 #'   aggregated to before buildings are rasterised and the distance transform
 #'   runs. The DEM is only a grid template here, and a 0.5-1 m LiDAR HD MNT makes
@@ -156,6 +154,9 @@ indicateur_s1_routes <- function(units,
 #'
 #' Returns NA when DEM or buildings are unavailable.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -170,7 +171,6 @@ indicateur_s2_bati <- function(units,
                                            dem = NULL,
                                            layers = NULL,
                                            column_name = "S2",
-                                           lang = "en",
                                            dem_target_res = .topo_target_res(),
                                            max_dist = 2000) {
   # Validate inputs
@@ -277,8 +277,6 @@ indicateur_s2_bati <- function(units,
 #'   longer exists and raises an error.
 #' @param buffer_radii Numeric vector. Buffer distances (m) for population counts. Default c(5000, 10000, 20000).
 #' @param column_name Character. Name for output column (main indicator). Default "S3".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #'
 #' @param population_field Character or `NULL`. Name of the population column of
 #'   `population_grid` when it is an `sf`. `NULL` (default) looks for `ind`,
@@ -307,6 +305,9 @@ indicateur_s2_bati <- function(units,
 #'   \item WorldPop or GPW for international applications
 #' }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -323,8 +324,7 @@ indicateur_s3_population <- function(units,
                                        population_field = NULL,
                                        method = c("insee", "local", "proxy"),
                                        buffer_radii = c(5000, 10000, 20000),
-                                       column_name = "S3",
-                                       lang = "en") {
+                                       column_name = "S3") {
   # Validate inputs
   if (!inherits(units, "sf")) {
     cli::cli_abort("units must be an sf object")

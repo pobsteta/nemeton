@@ -58,13 +58,18 @@ volume to total aboveground dry biomass (branches, bark).
 Default \code{1.30} (IPCC 2006 temperate-forest default).}
 }
 \value{
-Numeric vector of carbon stock values (tC/ha)
+The input \code{units} (same class, rows and order) with an added numeric column \code{C1}: carbon stock values (tC/ha)
 }
 \description{
 Calculates aboveground carbon stock (tC/ha) using species-specific
 allometric equations from IGN/IFN literature. Requires BD Forêt v2 data
 (species, age, density) or equivalent attributes.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # With BD Forêt attributes
