@@ -76,3 +76,59 @@ dans les deux listes : exportés aujourd'hui, l'app passe encore par
 
 Les exports **non** listés ci-dessus (≈ 178) ne sont pas appelés par l'app :
 le cœur peut les trier librement de son point de vue.
+
+## Indicateurs consommés dynamiquement (ajout du 2026-10-06, spec 057)
+
+L'inventaire ci-dessus ne relevait que les appels `nemeton::` et les symboles
+nommés en clair. Les fonctions d'indicateur, elles, sont appelées **par leur
+nom** : `compute_single_indicator()` (`nemetonshiny/R/service_compute.R`) fait
+`exists(indicator, mode = "function")` puis `get()` sur le nom NMT, résolu via
+`import(nemeton)`. Elles sont donc **toutes** consommées, et toutes passent
+par `extract_indicator_value()` (vérifié en lecture seule le 2026-10-06 ; aucun
+appel direct). Les 41 indicateurs exportés de la 1.0.0 :
+
+```
+indicateur_a1_couverture indicateur_a2_qualite_air indicateur_a3_microclimat
+indicateur_a4_tamponnement indicateur_a5_rafraichissement
+indicateur_b1_protection indicateur_b2_structure indicateur_b3_connectivite
+indicateur_b4_div_spectrale indicateur_c1_biomasse indicateur_c2_ndvi
+indicateur_e1_bois_energie indicateur_e2_evitement indicateur_f1_fertilite
+indicateur_f2_erosion indicateur_l1_effet_lisiere indicateur_l2_morcellement
+indicateur_l3_het_spectrale indicateur_n1_distance indicateur_n2_continuite
+indicateur_n3_naturalite indicateur_p1_volume indicateur_p2_station
+indicateur_p3_qualite_bois indicateur_r1_feu indicateur_r2_tempete
+indicateur_r3_secheresse indicateur_r4_abroutissement
+indicateur_r5_deperissement indicateur_r6_sensibilite indicateur_r7_gel
+indicateur_s1_routes indicateur_s2_bati indicateur_s3_population
+indicateur_t1_anciennete indicateur_t2_changement indicateur_t3_coupes_rases
+indicateur_w1_reseau indicateur_w2_zones_humides indicateur_w3_humidite
+indicateur_w4_vpd
+```
+
+Les deux anciens noms de la famille L, `indicateur_l1_sylvosphere` et
+`indicateur_l2_fragmentation` (43 indicateurs exportés jusqu'en 0.216), ne
+figurent plus dans l'app que comme **noms de colonnes** (`service_db.R`,
+`service_project.R`, `inst/sql/*.sql`) : les fonctions sont retirées en 1.0.0
+(spec 057 §3) sans effet sur l'app.
+
+Contrat 1.0 (spec 057 §1) : chacun rend l'objet `units` augmenté de sa colonne
+de valeur nommée par le code court. Conséquence côté app, sans changement de
+code : C2 passe désormais par la branche `sf` de `compute_single_indicator()`,
+donc par `.c2_apply_provenance()` — qui était inatteignable tant que C2 rendait
+un vecteur. Un NDVI venu de l'ortho IRC WMS rend C2 indisponible
+(`c2_status = "wms_irc"`), comme l'app l'avait prévu.
+
+## Fonctions de la 0.216.0 (logique rapatriée de l'app)
+
+Les trois fonctions ajoutées en 0.216.0 sont appelées par l'app (vérifié le
+2026-10-06 sur le clone local, cycle 0.157.0.9000) et rejoignent la liste des
+exports consommés :
+
+```
+aggregate_family_scores      R/service_synthesis.R
+build_ndvi_season_composite  R/service_compute.R
+climate_ombrothermic_indices R/fct_regen_context_plots.R
+```
+
+Total consommé par l'app à la 1.0.0 : 135 + 3 = **138 exports nommés**, plus
+les **41 indicateurs** appelés par leur nom.
