@@ -301,6 +301,19 @@ dans le cœur (brief `logique-metier-a-rapatrier`) :
 (pondération par la surface, repli signalé sur la moyenne simple). Brief
 retour app : `specs/audit-1.0/brief-nemetonshiny-0.216.0.md`.
 
+**Décisions** — *2026-10-06* (Pascal) : - **ADR-016 rejeté** (R1 via
+firexpovulnR) : la spec 047 a montré que la métrique binaire sature
+comme l’actuelle et que la version graduée repose sur des poids non
+sourcés. R1 reste sur `fireexposuR` + pente + climat. - **Calibrages
+0.212 validés tels quels** : B1 = 4 statuts au maximum, sévérité du coût
+B3 = `100 − coût/10`, référence de pollution A2 = 100, contrastes OSO de
+L1, borne E1/E2 = 2,64. La mention « à valider » est levée. - **Contrat
+d’API : complet, avec ruptures** (retours unifiés, `lang` retiré,
+exports inutilisés retirés). Spec et brief app d’abord, puis bump majeur
+à confirmer : cible naturelle, la **1.0.0**. - **Choix de méthode**
+(R2/R3, W3/F2, N1, P3, indice de station) : mesure avant/après sur les
+projets en cache, décision ensuite.
+
 **Prochaine étape** : côté app, adopter les trois fonctions (plancher,
 tests d’équivalence) puis la décision **1.0.0** de l’app ; côté cœur,
 décisions restantes de Pascal (vague 8), puis 1.0.0. L’app consomme 135
