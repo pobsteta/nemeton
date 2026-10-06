@@ -323,7 +323,11 @@ indicateur_p1_volume <- function(units,
 #'     \item CHM mode:    \code{P2} = site index \eqn{H_0} (m) at
 #'           \code{reference_age}, plus \code{p2_status =
 #'           "indice_station_m"} so that normalisation uses a 40 m
-#'           ceiling (\code{\link{normalize_indicator}}).
+#'           ceiling (\code{\link{normalize_indicator}}). A dominant
+#'           height outside the site-index curves at the observed age
+#'           gives \code{P2 = NA} with \code{p2_status = "hors_courbe"}
+#'           (spec 056); \code{p2_status} is \code{NA} when the index is
+#'           not estimable (missing age or species, H_dom < 1.3 m…).
 #'     \item IFN mode:    \code{P2} = IFN volume production of the
 #'           sylvoecoregion (m3/ha/yr), plus \code{P2_rse},
 #'           \code{P2_provenance}, \code{P2_nature}.
@@ -430,7 +434,7 @@ indicateur_p2_station <- function(units,
     }
 
     h_dom <- extract_h_dom(chm, units, percentile = h_dom_percentile)
-    site_index <- compute_site_index(
+    si <- .site_index_core(
       H_dom   = h_dom,
       age     = units[[age_field]],
       species = units[[species_field]],
@@ -438,11 +442,14 @@ indicateur_p2_station <- function(units,
     )
 
     result <- units
-    result[[column_name]] <- site_index
+    result[[column_name]] <- si$value
     # Unite de P2 dans ce mode : des metres, pas des m3/ha/an. La colonne de
     # statut voyage jusqu'a la normalisation (normalize_indicator(statut =),
     # create_family_index()) ; l'app la conserve en `.p2_status` (ecart n. 17).
-    result$p2_status <- ifelse(is.na(site_index), NA_character_, "indice_station_m")
+    # « indice_station_m » : indice estime (normalise sur 40 m) ;
+    # « hors_courbe » : H_dom hors des courbes Duplat a l'age observe, P2 = NA
+    # (spec 056 ; c'etait la classe 1 ou 5 bornee) ; NA : non estimable.
+    result$p2_status <- si$status
 
     cli::cli_alert_success(
       "Calculated {column_name}: site index H0 at {reference_age} years (m) via CHM"

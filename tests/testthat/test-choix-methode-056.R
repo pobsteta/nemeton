@@ -199,9 +199,46 @@ test_that("P3 rescales the weights of the measured components only", {
                  "diametre_seul"))
 })
 
-test_that("P3 status is NA when P3 is NA", {
+test_that("P3 status is NA when P3 is NA (unchanged)", {
   u <- p3_units(species = "FASY", dbh = NA_real_)
   res <- suppressMessages(indicateur_p3_qualite_bois(u))
   expect_true(is.na(res$P3))
   expect_true(is.na(res$p3_status))
 })
+
+# ---------------------------------------------------------------------------
+# 5. Indice de station : hors courbe -> NA, p2_status = "hors_courbe"
+# ---------------------------------------------------------------------------
+
+test_that("P2 (CHM mode): out-of-curve heights give NA with status hors_courbe", {
+  # Trois UGF de sapin à 60 ans : H_dom dans les courbes, au-dessus de la
+  # classe 1, sous la classe 5 ; une quatrième sans âge (non estimable).
+  u <- p3_units(species = rep("ABAL", 4), age = c(60, 60, 60, NA))
+  h <- c(22, 60, 3, 22)
+  tmpl <- terra::rast(terra::ext(terra::vect(u)), resolution = 0.1,
+                      crs = "EPSG:2154")
+  uh <- u; uh$h <- h
+  chm <- terra::rasterize(terra::vect(uh), tmpl, field = "h")
+  p2<- suppressMessages(indicateur_p2_station(u, chm = chm))
+
+  # Avant 1.0.0 : les UGF 2 et 3 recevaient la classe 1 ou 5 du sapin.
+  expect_equal(p2$P2[1], compute_site_index(22, 60, "ABAL"))
+  expect_false(is.na(p2$P2[1]))
+  expect_true(all(is.na(p2$P2[2:4])))
+  expect_identical(p2$p2_status,
+                   c("indice_station_m", "hors_courbe", "hors_courbe", NA))
+
+  # Normalisation : la ligne estimée garde son plafond de 40 m, les lignes
+  # « hors_courbe » restent NA.
+  n <- normalize_indicator("P2", p2$P2, statut = p2$p2_status)
+  expect_equal(n[1], p2$P2[1] / 40 * 100)
+  expect_true(all(is.na(n[2:4])))
+})
+
+test_that("compute_site_index keeps its numeric return type", {
+  out <- compute_site_index(c(22, 60), c(60, 60), "ABAL")
+  expect_type(out, "double")
+  expect_null(attributes(out))
+  expect_true(is.na(out[2]))
+})
+

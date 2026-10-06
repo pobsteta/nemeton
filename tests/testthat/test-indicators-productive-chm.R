@@ -41,9 +41,13 @@
 test_that("indicateur_p2_station in CHM mode returns a site index in metres", {
   skip_if_not_installed("terra")
   chm   <- make_fixture_chm(add_artefacts = FALSE)
+  # 1.0.0 (spec 056) : une H_dom hors des courbes rend NA (plus de bornage à
+  # la classe 1 / 5). Le CHM de fixture culmine à ~32 m, au-dessus de la
+  # classe 1 du chêne à 80 ans (28,6 m) : âges relevés pour rester dans les
+  # courbes (chêne 120 ans : 17,9-34 m ; épicéa 80 ans : 17,3-36,3 m).
   units <- .make_units_over_chm(chm, n = 4,
                                 species = c("QUPE", "QUPE", "PIAB", "PIAB"),
-                                age     = c(80, 80, 40, 40))
+                                age     = c(120, 120, 80, 80))
   res <- indicateur_p2_station(units, chm = chm)
 
   expect_s3_class(res, "sf")
@@ -66,9 +70,13 @@ test_that("CHM mode requires species_field and age_field", {
 test_that("CHM mode propagates NA when age or species is missing", {
   skip_if_not_installed("terra")
   chm   <- make_fixture_chm(add_artefacts = FALSE)
+  # 1.0.0 (spec 056) : une H_dom hors des courbes rend NA (plus de bornage à
+  # la classe 1 / 5). Le CHM de fixture culmine à ~32 m, au-dessus de la
+  # classe 1 du chêne à 80 ans (28,6 m) : âges relevés pour rester dans les
+  # courbes (chêne 120 ans : 17,9-34 m ; épicéa 80 ans : 17,3-36,3 m).
   units <- .make_units_over_chm(chm, n = 2,
                                 species = c("QUPE", NA),
-                                age     = c(80, 80))
+                                age     = c(120, 120))
   res <- indicateur_p2_station(units, chm = chm)
   expect_false(is.na(res$P2[1]))
   expect_true(is.na(res$P2[2]))
@@ -77,9 +85,13 @@ test_that("CHM mode propagates NA when age or species is missing", {
 test_that("CHM mode respects reference_age", {
   skip_if_not_installed("terra")
   chm   <- make_fixture_chm(add_artefacts = FALSE)
+  # 1.0.0 (spec 056) : une H_dom hors des courbes rend NA (plus de bornage à
+  # la classe 1 / 5). Le CHM de fixture culmine à ~32 m, au-dessus de la
+  # classe 1 du chêne à 80 ans (28,6 m) : âges relevés pour rester dans les
+  # courbes (chêne 120 ans : 17,9-34 m ; épicéa 80 ans : 17,3-36,3 m).
   units <- .make_units_over_chm(chm, n = 2,
                                 species = c("QUPE", "QUPE"),
-                                age     = c(80, 80))
+                                age     = c(120, 120))
   at_50  <- indicateur_p2_station(units, chm = chm, reference_age = 50)$P2
   at_100 <- indicateur_p2_station(units, chm = chm, reference_age = 100)$P2
   # At reference age 100 the site index must be larger than at 50
@@ -89,11 +101,13 @@ test_that("CHM mode respects reference_age", {
 
 test_that("CHM mode with a uniformly tall CHM yields a top-class site index", {
   skip_if_not_installed("terra")
-  # All pixels at 30 m -> QUPE at age 80 is near class 1
+  # All pixels at 28 m -> QUPE at age 80 is near class 1 (28.6 m). Was 30 m
+  # before 1.0.0, above class 1 and clamped to it; out of the curves -> NA now
+  # (spec 056).
   r <- terra::rast(nrows = 60, ncols = 60,
                    xmin = 0, xmax = 300, ymin = 0, ymax = 300,
                    crs = "EPSG:2154",
-                   vals = rep(30, 3600))
+                   vals = rep(28, 3600))
   units <- .make_units_over_chm(r, n = 2, species = c("QUPE", "QUPE"),
                                 age = c(80, 80))
   res <- indicateur_p2_station(units, chm = r, reference_age = 50)$P2
@@ -141,8 +155,10 @@ test_that("CHM and legacy modes give positively correlated rankings", {
   cl <- rep("temperate_oceanic", 10)
   ag <- c(80, 80, 80, 80, 50, 50, 50, 40, 40, 60)
 
-  # CHM heights crafted to correlate with the legacy fertility
-  h_vals <- c(14, 20, 22, 28, 20, 26, 14, 35, 28, 12)
+  # CHM heights crafted to correlate with the legacy fertility. 1.0.0 (spec
+  # 056) : 14 -> 16 m (chêne) et 35 -> 32 m (douglas) pour rester dans les
+  # courbes, une H_dom hors courbe rendant désormais NA.
+  h_vals <- c(16, 20, 22, 28, 20, 26, 14, 32, 28, 12)
 
   ext_size <- 300
   cell_size <- 10

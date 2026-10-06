@@ -243,8 +243,11 @@ site_index_reference_points <- function() {
 #'   \code{min_stand_height}, when \code{age} is outside the tabulated
 #'   range, or when the species cannot be resolved. A height above the
 #'   tallest (class 1) or below the shortest (class 5) curve at the observed
-#'   age is **clamped** to that class: the site index returned is then the
-#'   class 1 or class 5 height at \code{reference_age}, not an extrapolation.
+#'   age is **out of the curves** and also gives \code{NA}: the site index is
+#'   not extrapolated, nor clamped to class 1 or 5 any more (1.0.0, spec 056 —
+#'   the clamp produced identical values, 10.90 or 20.71 m for sessile oak,
+#'   that looked like measurements). \code{\link{indicateur_p2_station}} flags these
+#'   units with \code{p2_status = "hors_courbe"}.
 #'
 #' @examples
 #' # Sessile oak: 20 m at 80 years -> site index at 50 years
@@ -266,9 +269,24 @@ compute_site_index <- function(H_dom,
                                species,
                                reference_age = 50,
                                min_stand_height = 1.3) {
+  .site_index_core(H_dom, age, species, reference_age = reference_age,
+                   min_stand_height = min_stand_height)$value
+}
+
+# Cœur de compute_site_index() : rend la valeur ET un statut par élément,
+# « indice_station_m » (estimé), « hors_courbe » (H_dom au-dessus de la
+# classe 1 ou sous la classe 5 à l'âge observé) ou NA (non estimable : donnée
+# manquante, H_dom < min_stand_height, âge hors table, essence inconnue).
+# P2 lit le statut pour expliquer le NA ; compute_site_index() ne rend que la
+# valeur (type de retour inchangé).
+.site_index_core <- function(H_dom,
+                             age,
+                             species,
+                             reference_age = 50,
+                             min_stand_height = 1.3) {
 
   n <- max(length(H_dom), length(age), length(species))
-  if (n == 0) return(numeric(0))
+  if (n == 0) return(list(value = numeric(0), status = character(0)))
 
   H_dom   <- rep_len(H_dom, n)
   age     <- rep_len(age, n)
@@ -288,6 +306,7 @@ compute_site_index <- function(H_dom,
   class_cols <- paste0("class_", 1:5)
 
   out <- numeric(n)
+  status <- rep(NA_character_, n)
 
   for (i in seq_len(n)) {
     h_i <- H_dom[i]
@@ -327,6 +346,16 @@ compute_site_index <- function(H_dom,
       next
     }
 
+    # Hors des courbes à l'âge observé : NA, pas de bornage à la classe 1 ou 5
+    # (spec 056, décision 2026-10-06). Le bornage fabriquait des valeurs
+    # identiques d'apparence mesurée — 20,71 ou 10,90 m pour toute UGF bornée
+    # sur la courbe du chêne sessile.
+    if (h_i > h_at_age[1] || h_i < h_at_age[5]) {
+      out[i] <- NA_real_
+      status[i] <- "hors_courbe"
+      next
+    }
+
     # Heights at observed age are decreasing from class 1 to class 5
     # (best -> worst). Find which two classes bracket h_i.
     frac_class <- .frac_class(h_i, h_at_age)
@@ -352,25 +381,27 @@ compute_site_index <- function(H_dom,
     if (lo < 1L) lo <- 1L
     w  <- frac_class - lo
     out[i] <- (1 - w) * h_at_ref[lo] + w * h_at_ref[hi]
+    status[i] <- "indice_station_m"
   }
 
-  out
+  list(value = out, status = status)
 }
 
 
 # Helper: given an observed H and the 5 heights at a given age
 # (ordered class 1 = tallest to class 5 = shortest), return a
-# fractional class index in [1, 5]. A height outside the tabulated
-# range is CLAMPED to class 1 or 5 (it is not NA); NA only for a
+# fractional class index in [1, 5]. NA for a height outside the
+# tabulated range (since 1.0.0, spec 056 — the caller flags it
+# "hors_courbe"; it used to be clamped to class 1 or 5) and for a
 # degenerate (non-monotone) set of curves.
 #
 # @keywords internal
 .frac_class <- function(h, h_classes) {
-  # h_classes length 5, monotonically decreasing
-  # Clamp to the tabulated range — out-of-range heights map to
-  # the nearest class boundary.
-  if (h >= h_classes[1]) return(1)
-  if (h <= h_classes[5]) return(5)
+  # h_classes length 5, monotonically decreasing. Hors plage : NA (plus de
+  # bornage à la classe 1 ou 5).
+  if (h > h_classes[1] || h < h_classes[5]) return(NA_real_)
+  if (h == h_classes[1]) return(1)
+  if (h == h_classes[5]) return(5)
 
   for (k in 1:4) {
     upper <- h_classes[k]     # tallest between k and k+1

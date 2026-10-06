@@ -68,7 +68,11 @@ sf object with one added column:
     \item CHM mode:    \code{P2} = site index \eqn{H_0} (m) at
           \code{reference_age}, plus \code{p2_status =
           "indice_station_m"} so that normalisation uses a 40 m
-          ceiling (\code{\link{normalize_indicator}}).
+          ceiling (\code{\link{normalize_indicator}}). A dominant
+          height outside the site-index curves at the observed age
+          gives \code{P2 = NA} with \code{p2_status = "hors_courbe"}
+          (spec 056); \code{p2_status} is \code{NA} when the index is
+          not estimable (missing age or species, H_dom < 1.3 m...).
     \item IFN mode:    \code{P2} = IFN volume production of the
           sylvoecoregion (m3/ha/yr), plus \code{P2_rse},
           \code{P2_provenance}, \code{P2_nature}.
