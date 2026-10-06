@@ -7,7 +7,7 @@
 reconfort_year_bounds(v_model = "v3", today = Sys.Date(), lag_days = 0L)
 }
 \arguments{
-\item{v_model}{Model version (see \code{\link{RECONFORT_MODELS}}). Default `"v3"`.}
+\item{v_model}{Model version (see \code{RECONFORT_MODELS}). Default `"v3"`.}
 
 \item{today}{Reference date. Default \code{\link[base]{Sys.Date}}; injectable for
 tests.}

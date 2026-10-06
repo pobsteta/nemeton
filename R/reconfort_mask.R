@@ -16,11 +16,12 @@
 #'
 #' Metadata for the default broadleaf mask used by the RECONFORT
 #' map-production step: file size and MD5 used by
-#' [ensure_reconfort_oso_mask()] to verify a fetch. The mask is the
+#' `ensure_reconfort_oso_mask()` to verify a fetch. The mask is the
 #' OSO 2021 deciduous-tree layer redistributed in the upstream
 #' repository (`fl.mouret/reconfort`, Apache-2.0).
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 RECONFORT_OSO_MASK <- list(
   file       = "mask_oso_deciduous_compress.tif",
   size_bytes = 56497396,
@@ -59,7 +60,7 @@ RECONFORT_OSO_MASK <- list(
 #'
 #' Ensures a local copy of the default OSO 2021 deciduous mask used to
 #' restrict RECONFORT scoring to broadleaf pixels, and returns its
-#' path. Resolution order mirrors [ensure_reconfort_model()]:
+#' path. Resolution order mirrors `ensure_reconfort_model()`:
 #' \enumerate{
 #'   \item if `local_path` is given, that file is used directly
 #'     (verified unless `verify = FALSE`);
@@ -79,12 +80,13 @@ RECONFORT_OSO_MASK <- list(
 #' @param url Optional explicit download URL overriding the registry
 #'   default (from `options(nemeton.reconfort_mask_base_url)`).
 #' @param force Re-download even if a valid cached copy exists.
-#' @param verify Verify size + MD5 against [RECONFORT_OSO_MASK].
+#' @param verify Verify size + MD5 against `RECONFORT_OSO_MASK`.
 #'   Default `TRUE`. Pass `FALSE` when supplying a custom `local_path`.
 #' @param quiet Suppress progress messages. Default `FALSE`.
 #'
 #' @return The path to the local mask file.
-#' @export
+#' @keywords internal
+#' @noRd
 ensure_reconfort_oso_mask <- function(cache_dir  = NULL,
                                       local_path = NULL,
                                       url        = NULL,

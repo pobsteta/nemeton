@@ -95,6 +95,6 @@ the present axes) and \code{shade_tol} breaks ranking ties instead.
 }
 }
 \seealso{
-\code{\link{regen_rank_to_wide}}, \code{\link{indice_priorite_regen}},
+\code{regen_rank_to_wide()}, \code{\link{indice_priorite_regen}},
 \code{\link{regen_species_choices}}, \code{\link{european_species_tolerances}}
 }

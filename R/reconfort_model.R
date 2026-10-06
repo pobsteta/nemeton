@@ -18,7 +18,7 @@
 #' Metadata for the four RECONFORT models versioned in the upstream
 #' repository (`fl.mouret/reconfort`, Apache-2.0). Each entry carries
 #' the calibrated species, number of classes, the file size, the
-#' MD5 checksum used by [ensure_reconfort_model()] to verify a fetch,
+#' MD5 checksum used by `ensure_reconfort_model()` to verify a fetch,
 #' and `edate` — the `"MM-DD"` end of the model-bound analysis window
 #' within `s2_year` (`10-29` for the 2-year models, `05-31` for the
 #' 1.5-year `v3_early_may`). `edate` is what
@@ -32,7 +32,8 @@
 #'   \item{v3_pine}{Scots pine (\emph{Pinus sylvestris}), 2 classes.}
 #' }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 RECONFORT_MODELS <- list(
   v3 = list(
     label      = "Oak (2-year series)",
@@ -101,12 +102,13 @@ RECONFORT_MODELS <- list(
 
 #' Look up a RECONFORT model registry entry
 #'
-#' @param version Model version, one of the names of [RECONFORT_MODELS]
+#' @param version Model version, one of the names of `RECONFORT_MODELS`
 #'   (`"v3"`, `"v3_early_may"`, `"v3_chestnut"`, `"v3_pine"`).
 #'
 #' @return The registry list entry (`label`, `species`, `n_classes`,
 #'   `size_bytes`, `md5`).
-#' @export
+#' @keywords internal
+#' @noRd
 reconfort_model_info <- function(version = "v3") {
   if (!is.character(version) || length(version) != 1L || is.na(version)) {
     cli::cli_abort("{.arg version} must be a single non-NA string.")
@@ -139,7 +141,7 @@ reconfort_model_info <- function(version = "v3") {
 #' lives under `cache_dir` (default
 #' `file.path(get_global_cache_dir(), "reconfort_models")`).
 #'
-#' @param version Model version (see [RECONFORT_MODELS]). Default `"v3"`.
+#' @param version Model version (see `RECONFORT_MODELS`). Default `"v3"`.
 #' @param cache_dir Cache directory. Default a per-user nemeton cache.
 #' @param local_path Optional path to a model file already on disk
 #'   (e.g. `<reconfort_clone>/models/v3/model_1_seed_0.txt`). When set,
@@ -152,7 +154,8 @@ reconfort_model_info <- function(version = "v3") {
 #'
 #' @return The path to the local model file (invisibly usable by the
 #'   L2b pipeline).
-#' @export
+#' @keywords internal
+#' @noRd
 ensure_reconfort_model <- function(version    = "v3",
                                    cache_dir  = NULL,
                                    local_path = NULL,
@@ -252,14 +255,14 @@ ensure_reconfort_model <- function(version    = "v3",
 #'
 #' RECONFORT classifies a pixel's model-bound ~2-year index trajectory;
 #' the analysis window ends at `s2_year<edate>` (`10-29` for the 2-year
-#' models, `05-31` for `v3_early_may` — see [RECONFORT_MODELS]). Running
+#' models, `05-31` for `v3_early_may` — see `RECONFORT_MODELS`). Running
 #' a run for a `s2_year` whose window has not fully elapsed yields a
 #' truncated final season and a degraded classification. This helper
 #' returns the latest `s2_year` for which the window end date has already
 #' passed, so callers (notably the app's year picker) can default to —
 #' and cap at — a year that produces a complete run.
 #'
-#' @param v_model Model version (see [RECONFORT_MODELS]). Default `"v3"`.
+#' @param v_model Model version (see `RECONFORT_MODELS`). Default `"v3"`.
 #' @param today Reference date. Default [Sys.Date()]; injectable for
 #'   tests.
 #' @param lag_days Extra buffer (days) added to the window end date to

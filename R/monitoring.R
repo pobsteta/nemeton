@@ -797,7 +797,8 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 #' #   * Empty: 147   <- leftover from v0.21.4 or active fetch failures
 #' }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   if (is.null(cache_dir) || !nzchar(cache_dir) || !dir.exists(cache_dir)) {
     if (verbose) {

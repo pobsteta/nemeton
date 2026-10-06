@@ -53,7 +53,8 @@
 #' # $ok: FALSE, $status: 404, $category: "not_found"
 #' # → dalle MNT pas encore publiée par IGN
 #' }
-#' @export
+#' @keywords internal
+#' @noRd
 probe_ign_lidar_tile <- function(url,
                                  timeout    = 10,
                                  user_agent = "nemeton/probe (https://github.com/pobsteta/nemeton)") {

@@ -92,7 +92,8 @@ NULL
 #' @examples
 #' h_to_dq_params()
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 h_to_dq_params <- function() {
   .h_to_dq_params
 }

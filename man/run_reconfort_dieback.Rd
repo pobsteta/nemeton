@@ -58,7 +58,7 @@ seasonal \emph{analysis} window (`S2_start`/`S2_end`), so a custom download
 window cannot widen the analysis beyond what the pre-trained model expects.
 See \emph{Temporal window}.}
 
-\item{v_model}{RF model version (see \code{\link{RECONFORT_MODELS}}).
+\item{v_model}{RF model version (see \code{RECONFORT_MODELS}).
 Default `"v3"` (oak, 2-year series).}
 
 \item{binary_mask}{Broadleaf mask control. `NULL` (default) fetches
@@ -110,7 +110,7 @@ directory held by a live process aborts. A pre-existing `output_dir` is never
 deleted, whatever `keep_workdir` says.}
 
 \item{geodes_config}{Path to `pygeodes-config.json` (see
-\code{\link{reconfort_ingest_s2}}). Default resolves the option / user dir.}
+\code{reconfort_ingest_s2()}). Default resolves the option / user dir.}
 
 \item{model_cache_dir, mask_cache_dir}{Override caches for the model /
 mask fetches. Default per-user nemeton caches.}
@@ -162,10 +162,10 @@ aborts rather than returning a status.
 \description{
 Orchestrates a full RECONFORT run for one monitoring zone: validate
 the conda/IOTA2 environment, fetch the Random-Forest model
-(\code{\link{ensure_reconfort_model}}) and the broadleaf mask
-(\code{\link{ensure_reconfort_oso_mask}}), resolve the AOI to
-Sentinel-2 MGRS tile(s) (\code{\link{reconfort_aoi_tiles}}), ingest
-the S2 archives (\code{\link{reconfort_ingest_s2}}), then drive the
+(\code{ensure_reconfort_model()}) and the broadleaf mask
+(\code{ensure_reconfort_oso_mask()}), resolve the AOI to
+Sentinel-2 MGRS tile(s) (\code{reconfort_aoi_tiles()}), ingest
+the S2 archives (\code{reconfort_ingest_s2()}), then drive the
 vendored IOTA2 map-production (sampling + classification + OSO masking
 + continuous score). Produces the classification, probability and
 continuous-score rasters (EPSG:2154) plus a `run_meta.json`.

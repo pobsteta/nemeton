@@ -118,6 +118,6 @@ res <- run_memory_capped(
 
 }
 \seealso{
-\code{\link{run_fordead_dieback}}, \code{\link{run_reticulate_isolated}} (which pins a
-Python env rather than capping memory), \code{\link{scratch_dir}}
+\code{\link{run_fordead_dieback}}, \code{run_reticulate_isolated()} (which pins a
+Python env rather than capping memory), \code{scratch_dir()}
 }

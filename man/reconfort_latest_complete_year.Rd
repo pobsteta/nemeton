@@ -7,7 +7,7 @@
 reconfort_latest_complete_year(v_model = "v3", today = Sys.Date(), lag_days = 0L)
 }
 \arguments{
-\item{v_model}{Model version (see \code{\link{RECONFORT_MODELS}}). Default `"v3"`.}
+\item{v_model}{Model version (see \code{RECONFORT_MODELS}). Default `"v3"`.}
 
 \item{today}{Reference date. Default \code{\link[base]{Sys.Date}}; injectable for
 tests.}
@@ -25,7 +25,7 @@ previous year.
 \description{
 RECONFORT classifies a pixel's model-bound ~2-year index trajectory;
 the analysis window ends at `s2_year<edate>` (`10-29` for the 2-year
-models, `05-31` for `v3_early_may` -- see \code{\link{RECONFORT_MODELS}}).
+models, `05-31` for `v3_early_may` -- see \code{RECONFORT_MODELS}).
 Running a run for a `s2_year` whose window has not fully elapsed yields a
 truncated final season and a degraded classification. This helper
 returns the latest `s2_year` for which the window end date has already

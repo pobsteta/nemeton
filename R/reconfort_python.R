@@ -23,9 +23,10 @@
 #' B04/B05/B06. Documentary — IOTA² ingests the full L2A product; this
 #' constant records the bands the model actually depends on (centre
 #' wavelengths, nm: B04=665, B05=704, B06=741, B8A=865, B11=1610,
-#' B12=2190). Parallel to [FORDEAD_BANDS].
+#' B12=2190). Parallel to `FORDEAD_BANDS`.
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 RECONFORT_BANDS <- c("B04", "B05", "B06", "B8A", "B11", "B12")
 
 

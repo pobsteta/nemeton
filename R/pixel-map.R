@@ -66,7 +66,7 @@
 #'
 #' @seealso [read_s2_band_stack()] for multi-temporal stacks,
 #'   [build_index_stack()] for NDVI / NBR, [extract_pixel_timeseries()]
-#'   for per-pixel time series, [diagnose_s2_cache()] to inspect what's
+#'   for per-pixel time series, `diagnose_s2_cache()` to inspect what's
 #'   on disk, [ingest_sentinel2_timeseries()] for the write path.
 #' @export
 read_s2_band_raster <- function(cache_dir, scene_id, band, harmonize = TRUE) {

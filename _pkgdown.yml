@@ -314,8 +314,6 @@ reference:
       hauteur de son apex, pour pre-remplir la hauteur d'une tige au martelage
     contents:
     - segment_houppiers
-    - lsms_duree_estimee
-    - lsms_budget_pixels
 
   - title: "Variables biophysiques Sentinel-2 (spec 043)"
     desc: >
@@ -429,7 +427,6 @@ reference:
     desc: "Fonctions de traitement parallele"
     contents:
     - smart_map
-    - smart_map_sf
     - get_global_cache_dir
     - get_family_name
 
@@ -457,14 +454,6 @@ reference:
     - RECONFORT_VALIDITY_SPECIES
     - load_reconfort_validity_zones
     - check_reconfort_validity
-    - RECONFORT_MODELS
-    - reconfort_model_info
-    - ensure_reconfort_model
-    - RECONFORT_BANDS
-    - reconfort_aoi_tiles
-    - reconfort_ingest_s2
-    - RECONFORT_OSO_MASK
-    - ensure_reconfort_oso_mask
     - run_reconfort_dieback
     - RECONFORT_CLASSES
     - RECONFORT_ALERT_CLASSES
@@ -515,7 +504,6 @@ reference:
     - project_lock_release
     - project_lock_status
     - delete_knowledge_document
-    - diagnose_s2_cache
     - embed_query
     - enable_rag
     - enrich_parcels_bdforet
@@ -528,7 +516,6 @@ reference:
     - find_zone_by_project
     - find_zones_by_project
     - fordead_alert_mask
-    - FORDEAD_BANDS
     - FORDEAD_CLASSES
     - FORDEAD_CONFIDENCE_WEIGHTS
     - fordead_pipeline
@@ -545,7 +532,6 @@ reference:
     - get_health_validation_schema
     - get_ndp_augmented
     - get_placette_schema
-    - h_to_dq_params
     - HEALTH_VALIDATION_CAUSES
     - HEALTH_VALIDATION_CAUSES_FEUILLUS
     - HEALTH_VALIDATION_STADES
@@ -555,7 +541,6 @@ reference:
     - ingest_health_validation
     - ingest_knowledge_document
     - ingest_knowledge_reference
-    - ingest_s2_raw_bands_to_cache
     - ingest_sentinel2_timeseries
     - knowledge_manifest_path
     - knowledge_manifest_vocab
@@ -572,7 +557,6 @@ reference:
     - load_theia_source
     - monitoring_ingest
     - n_max_selfthinning
-    - probe_ign_lidar_tile
     - probe_ign_lidar_tiles
     - prune_orphan_zone_caches
     - qgis_export
@@ -580,7 +564,6 @@ reference:
     - rag
     - read_fast_alert_mask
     - read_fast_alert_raster
-    - read_fast_alert_rasters
     - read_fordead_dieback_mask
     - read_fordead_layer
     - read_fordead_pixel_series
@@ -591,25 +574,17 @@ reference:
     - register_monitoring_zone
     - reset_knowledge_manifest
     - resolve_project_layers
-    - resolve_theia_assets
     - retrieve_knowledge
     - run_fordead_dieback
     - run_memory_capped
     - sampling_plan
-    - schema_to_df
-    - scratch_dir
-    - sentinel2_stac
     - site_index_reference_points
     - smooth_pixel_series
-    - stac_get_item
-    - stac_search_items
     - stac_search_s2
     - tag_field_data_sources
     - texture_to_erosion_resistance
     - texture_to_fertility_score
     - theia_configure_s3
-    - theia_sign_urls
-    - theia_signed_href
     - theia_source_status
     - theia_stac
     - units_add_species_from_raster
@@ -624,7 +599,6 @@ reference:
     - create_qfield_project
     - ensure_inventory_fields
     - extract_indicator_value
-    - filter_alerts_to_zone
     - import_qfield_gpkg
     - resolve_project_chm
     - resolve_project_dem
@@ -636,7 +610,6 @@ reference:
     - indicateur_w4_vpd
     - indice_priorite_regen
     - regen_rank_species
-    - regen_rank_to_wide
     - regen_species_choices
     - european_species_tolerances
     - map_tfv_to_species_class
@@ -651,7 +624,6 @@ reference:
     - tendances_estivales_eobs
     - eobs_downscale
     - eobs_downscale_bivariate
-    - eobs_bivariate_n
     - eobs_summer_series
     - eobs_monthly_climatology
     - climate_ombrothermic_indices
@@ -666,10 +638,6 @@ reference:
     - reconfort_latest_complete_year
     - reconfort_layer_manifest
     - reconfort_year_bounds
-    - run_reticulate_isolated
-    - stac_search_s2_cdse
-    - stac_search_s2_pc
-    - stac_search_s2_theia_muscate
 
 authors:
   Pascal Obstetar:

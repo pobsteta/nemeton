@@ -178,7 +178,8 @@ get_arbre_schema <- function(region = "BFC", lang = "fr") {
 #' @examples
 #' schema_to_df(get_placette_schema())
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 schema_to_df <- function(schema) {
   visible <- Filter(function(f) !startsWith(f$name, "."), schema)
   data.frame(

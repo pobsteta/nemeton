@@ -223,7 +223,8 @@ smart_map <- function(x,
 #'
 #' @return A list or vector of results.
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 #'
 #' @examples
 #' \dontrun{
@@ -1464,7 +1465,8 @@ format_duration <- function(sec, with_seconds = TRUE) {
 #' scratch_dir()
 #' }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 scratch_dir <- function(subdir = NULL) {
   root <- getOption("nemeton.scratch_dir", NULL)
   if (is.null(root) || !nzchar(as.character(root)[1])) {

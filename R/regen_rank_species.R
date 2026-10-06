@@ -235,7 +235,7 @@
 #'   `confidence`, `invasif`. Units with no station data yield a single `rank = NA`
 #'   row (no fabricated recommendation). An empty pool yields a 0-row frame.
 #'   The chosen axis weights are attached as `attr(, "weights")`.
-#' @seealso [regen_rank_to_wide()], [indice_priorite_regen()],
+#' @seealso `regen_rank_to_wide()`, [indice_priorite_regen()],
 #'   [regen_species_choices()], [european_species_tolerances()]
 #' @examples
 #' \dontrun{
@@ -299,7 +299,8 @@ regen_rank_species <- function(units, species_pool = NULL, top_n = 3,
 #' @return A `data.frame` with `ug_id` and, per rank, `essence_r` (species code),
 #'   `score_r` (suitability), `label_r` (name) and `facteur_r` (limiting factor).
 #' @seealso [regen_rank_species()]
-#' @export
+#' @keywords internal
+#' @noRd
 regen_rank_to_wide <- function(ranked, top_n = 3) {
   if (!is.data.frame(ranked) || !all(c("ug_id", "rank") %in% names(ranked))) {
     cli::cli_abort("{.arg ranked} must be the long data.frame from {.fun regen_rank_species}.")

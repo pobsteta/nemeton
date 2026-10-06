@@ -50,7 +50,7 @@
 #' downstream if a different output CRS is needed.
 #'
 #' Source data: this function reads from the on-disk COG cache populated
-#' by [ingest_sentinel2_timeseries()] (or [ingest_s2_raw_bands_to_cache()]
+#' by [ingest_sentinel2_timeseries()] (or `ingest_s2_raw_bands_to_cache()`
 #' on the FORDEAD path). The list of scenes to process is enumerated
 #' directly from the cache directory and filtered by
 #' `(date_from, date_to)` (spec 017), so the diagnostic is fully
@@ -530,7 +530,8 @@ read_fast_alert_raster <- function(con, zone_id,
 #'   terra::plot(maps$NDMI_trend)
 #' }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 read_fast_alert_rasters <- function(con, zone_id,
                                     date_from, date_to,
                                     indices     = c("NDVI", "NBR", "NDMI", "NDRE"),

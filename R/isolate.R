@@ -213,8 +213,8 @@
 #' )
 #' }
 #'
-#' @seealso [run_fordead_dieback()], [run_reticulate_isolated()] (which pins a
-#'   Python env rather than capping memory), [scratch_dir()]
+#' @seealso [run_fordead_dieback()], `run_reticulate_isolated()` (which pins a
+#'   Python env rather than capping memory), `scratch_dir()`
 #' @export
 run_memory_capped <- function(fun, args = list(), package = "nemeton",
                               db_url = NULL, options = NULL,

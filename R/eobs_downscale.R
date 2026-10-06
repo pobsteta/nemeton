@@ -1025,7 +1025,8 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
 #' @seealso [eobs_downscale_bivariate()]
 #' @examples
 #' eobs_bivariate_n()
-#' @export
+#' @keywords internal
+#' @noRd
 eobs_bivariate_n <- function() .EOBS_BIVARIATE_N
 
 .EOBS_BIVARIATE_COLORS <- c(

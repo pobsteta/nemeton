@@ -33,7 +33,7 @@ time-series collection. Requires the datasource to declare
 \code{access$item_id_template}.}
 
 \item{datetime}{Optional character. STAC datetime filter (see
-\code{\link{stac_search_items}}).}
+\code{stac_search_items()}).}
 
 \item{country}{Character. ISO country code. Default \code{"FR"}.}
 
@@ -52,10 +52,10 @@ the AOI. Two modes:
 \itemize{
   \item \strong{Year targeting} (\code{year} supplied) — the
     asset URL is signed through the teledetection gateway (see
-    \code{\link{theia_signed_href}}) and read via \code{/vsicurl/};
+    \code{theia_signed_href()}) and read via \code{/vsicurl/};
     an asset that cannot be signed aborts.
   \item \strong{Spatial search} — the intersecting assets are
-    resolved and signed by \code{\link{resolve_theia_assets}}, then
+    resolved and signed by \code{resolve_theia_assets()}, then
     mosaicked; unsigned \code{/vsis3/} paths (no keys) are only
     readable on a direct-S3 setup.
 }

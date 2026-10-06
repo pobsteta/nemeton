@@ -50,7 +50,7 @@ A list with:
 }
 \description{
 Answers "can this source be read here, and if not, why" \strong{without}
-downloading anything. Where \code{\link{resolve_theia_assets}} aborts on the
+downloading anything. Where \code{resolve_theia_assets()} aborts on the
 first obstacle, this reports the obstacle as a stable key the caller can
 translate and act on.
 }
@@ -73,5 +73,5 @@ if (!st$available && st$reason == "no_asset_over_aoi") {
 }
 }
 \seealso{
-\code{\link{resolve_theia_assets}}, \code{\link{load_theia_source}}
+\code{resolve_theia_assets()}, \code{\link{load_theia_source}}
 }
