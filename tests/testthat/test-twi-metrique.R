@@ -129,3 +129,51 @@ test_that("the TWI cache key depends on the metric CRS of a lon/lat DEM", {
   expect_false(terra::same.crs(a, b))
   expect_length(list.files(cache, pattern = "^twi_.*\\.tif$"), 2)
 })
+
+# --------------------------------------------------------------------------
+# Constat 2 de la spec 056 : l'aire spécifique vaut A / pas, si bien que pour
+# une même pente TWI(2 m) − TWI(25 m) ≈ ln(25/2). Le TWI est désormais ramené à
+# la référence de 2 m : TWI_2m = TWI_brut − ln(pas / 2), pas en mètres.
+# --------------------------------------------------------------------------
+
+test_that("the same relief gives the same TWI whatever the grid step", {
+  clear_twi_cache()
+  # Même relief (même pente, même réseau D8), deux pas : 10 m et 40 m. Les
+  # altitudes de la grille à 40 m sont multipliées par 4 pour garder la pente.
+  make_relief <- function(res) {
+    m <- make_valley_l93(res = 10, n = 40)
+    r <- terra::rast(nrows = 40, ncols = 40, xmin = 0, xmax = 40 * res,
+                     ymin = 0, ymax = 40 * res, crs = "EPSG:2154")
+    terra::values(r) <- terra::values(m) * res / 10
+    r
+  }
+  t10 <- terra::values(calculate_twi_terra(make_relief(10), target_res = NULL))
+  t40 <- terra::values(calculate_twi_terra(make_relief(40), target_res = NULL))
+  ok <- is.finite(t10) & is.finite(t40) & t10 > 0 & t40 > 0
+  expect_gt(sum(ok), 100)
+  # Avant 1.0.0 : t40 − t10 = ln(4) ≈ 1,39 partout.
+  expect_equal(t40[ok], t10[ok], tolerance = 1e-6)
+})
+
+test_that("a TWI at 2 m is unchanged by the 2 m reference", {
+  clear_twi_cache()
+  dem <- terra::rast(nrows = 40, ncols = 40, xmin = 0, xmax = 80,
+                     ymin = 0, ymax = 80, crs = "EPSG:2154")
+  terra::values(dem) <- terra::values(make_valley_l93(res = 2, n = 40))
+  twi <- calculate_twi_terra(dem, target_res = NULL)
+  # Formule brute, sans recentrage : ln(a / tan(pente)), a = (acc + 1) · pas.
+  slope <- terra::terrain(dem, v = "slope", unit = "radians")
+  slope[slope < 0.001] <- 0.001
+  acc <- terra::flowAccumulation(terra::terrain(dem, v = "flowdir"))
+  brut <- log((acc + 1) * 2 / tan(slope))
+  v <- terra::values(twi); b <- terra::values(brut)
+  ok <- is.finite(v) & is.finite(b) & b > 0
+  expect_equal(v[ok], b[ok], tolerance = 1e-6)
+})
+
+test_that(".twi_ref_2m subtracts ln(step / 2)", {
+  r <- terra::rast(nrows = 2, ncols = 2, xmin = 0, xmax = 50, ymin = 0,
+                   ymax = 50, crs = "EPSG:2154")
+  terra::values(r) <- c(5, 6, 7, 8)
+  expect_equal(terra::values(.twi_ref_2m(r))[, 1], c(5, 6, 7, 8) - log(25 / 2))
+})

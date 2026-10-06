@@ -241,8 +241,31 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
 # la valeur d'un TWI calculé sur le même MNT change : les caches des projets
 # sont alors recalculés au lieu d'être relus (1.0.0 casse les anciens projets
 # sans migration).
-#   v2 (1.0.0, spec 056) : MNT lon/lat reprojeté en métrique avant le calcul.
+#   v2 (1.0.0, spec 056) : MNT lon/lat reprojeté en métrique avant le calcul,
+#                          TWI ramené à la référence de 2 m (.twi_ref_2m).
 .TWI_CACHE_VERSION <- "twi_v2"
+
+# Résolution de référence du TWI (m) : celle du LiDAR HD ramené à la grille de
+# travail du paquet (.NEMETON_TOPO_TARGET_RES).
+.TWI_REF_RES <- 2
+
+# TWI ramené à la référence de 2 m (spec 056, constat 2).
+#
+# L'aire spécifique d'une cellule vaut a = A / pas : à pente égale et à
+# nombre de cellules drainées égal, TWI = ln(a / tan(pente)) croît donc de
+# ln(pas) avec le pas de la grille. Mesuré sur les quatre projets LiDAR,
+# TWI(2 m) − TWI(25 m) vaut −1,7 à −2,9, pour ln(25/2) = 2,53 attendu. Une
+# fenêtre fixe de normalisation (W3, F2, R3 : [2,5 ; 9]) ne compare donc deux
+# projets qu'à pas égal. On recentre :
+#
+#     TWI_2m = TWI_brut − ln(pas / 2)        (pas en mètres)
+#
+# Le recentrage est exact pour la composante de pas (même réseau, même pente) ;
+# il ne corrige pas ce qu'un MNT grossier lisse du relief (talwegs, ruptures).
+# Sans effet à 2 m, −2,53 à 25 m, +1,39 à 0,5 m (MNT natif, target_res = NULL).
+.twi_ref_2m <- function(twi, step = terra::res(twi)[1]) {
+  twi - log(step / .TWI_REF_RES)
+}
 
 # CRS métrique du TWI : celui des unités s'il est projeté, sinon ETRS89-LAEA
 # (EPSG:3035, ADR-008). Même règle que le chemin fireexposuR de R1.
@@ -939,6 +962,13 @@ indicateur_w2_zones_humides <- function(units,
 #' depression filling, flow direction, flow accumulation, then TWI = ln(SCA / tan(slope)).
 #' The terra D8 method is a simpler approximation used as fallback.
 #'
+#' A DEM in geographic coordinates is first projected to a metric CRS (the
+#' units' CRS when projected, else EPSG:3035): the specific catchment area is
+#' in metres, never in degrees. The TWI is then referenced to a 2 m grid,
+#' \code{TWI_2m = TWI - ln(step / 2)} with \code{step} the computation grid
+#' step in metres, because the specific catchment area scales with the step
+#' (spec 056). Values from different DEM resolutions are thus on one scale.
+#'
 #' @param units nemeton_units object
 #' @param layers nemeton_layers object containing DEM raster
 #' @param dem_layer Character. Name of DEM layer in layers object
@@ -952,7 +982,7 @@ indicateur_w2_zones_humides <- function(units,
 #'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
 #'   resolution.
 #'
-#' @return Numeric vector of TWI mean values
+#' @return Numeric vector of TWI mean values, referenced to a 2 m grid.
 #'
 #' @export
 #' @examples
@@ -1061,8 +1091,12 @@ calculate_twi_terra <- function(dem, target_res = .topo_target_res(),
 
   # Set a reasonable range for TWI (typically 0-20 in natural landscapes)
   # Extreme values indicate calculation issues
-  twi[twi < 0] <- 0
   twi[twi > 50] <- NA # Flag suspiciously high values
+
+  # Référence 2 m (cf. .twi_ref_2m), PUIS plancher à 0 : le TWI rendu est
+  # toujours positif, sur la même échelle quel que soit le pas de calcul.
+  twi <- .twi_ref_2m(twi, cell_width)
+  twi[twi < 0] <- 0
 
   twi
 }
@@ -1129,11 +1163,13 @@ calculate_twi_grass <- function(dem, target_res = .topo_target_res(),
     # Convert back to terra raster
     twi_terra <- terra::rast(twi_grass)
 
-    # Sanitize output
+    # Sanitize output, puis référence 2 m (cf. .twi_ref_2m) — r.topidx calcule
+    # lui aussi l'aire spécifique en surface / pas.
     twi_terra[is.infinite(twi_terra)] <- NA
     twi_terra[is.nan(twi_terra)] <- NA
-    twi_terra[twi_terra < 0] <- 0
     twi_terra[twi_terra > 50] <- NA
+    twi_terra <- .twi_ref_2m(twi_terra, terra::res(dem)[1])
+    twi_terra[twi_terra < 0] <- 0
 
     cli::cli_alert_success("W3: GRASS TWI computed successfully")
     twi_terra
