@@ -1026,32 +1026,36 @@ test_that("get_dem_raster returns NULL when no DEM available", {
 # map_essence_to_species
 # ==============================================================================
 
+# 1.0.0 (spec 056, constat 3) : codes essence à 4 lettres reconnus par le
+# reste du paquet, plus des genres latins (« Quercus », « Abies »…) qui
+# retombaient tous sur la courbe et les seuils du chêne.
 test_that("map_essence_to_species maps oak variants", {
   skip_if_not_installed("terra")
-  result <- nemeton:::map_essence_to_species(c("Ch\u00eane sessile", "Chene pubescent"))
-  expect_true(all(result == "Quercus"))
+  result <- nemeton:::map_essence_to_species(c("Ch\u00eane sessile", "Chene pubescent",
+                                               "Ch\u00eanes d\u00e9cidus"))
+  expect_equal(result, c("QUPE", "QUPU", "QUPE"))
 })
 
 test_that("map_essence_to_species maps beech variants", {
   skip_if_not_installed("terra")
   result <- nemeton:::map_essence_to_species(c("H\u00eatre", "Hetre commun"))
-  expect_true(all(result == "Fagus"))
+  expect_true(all(result == "FASY"))
 })
 
 test_that("map_essence_to_species maps pine and fir", {
   skip_if_not_installed("terra")
-  # pine matches on "pin"
   result_pin <- nemeton:::map_essence_to_species("Pin maritime")
-  expect_equal(result_pin, "Pinus")
+  expect_equal(result_pin, "PIPI")
 
   result_sapin <- nemeton:::map_essence_to_species("Sapin blanc")
-  expect_equal(result_sapin, "Abies")
+  expect_equal(result_sapin, "ABAL")
 })
 
-test_that("map_essence_to_species returns Generic for unknown species", {
+test_that("map_essence_to_species returns NA for unknown species", {
   skip_if_not_installed("terra")
+  # Plus de « Generic » : une essence non reconnue n'est pas devinée.
   result <- nemeton:::map_essence_to_species("Arbuste inconnu")
-  expect_equal(result, "Generic")
+  expect_true(is.na(result))
 })
 
 test_that("map_essence_to_species handles NA", {
@@ -1065,11 +1069,12 @@ test_that("map_essence_to_species is vectorized", {
   input <- c("Ch\u00eane", "H\u00eatre", NA, "Douglas", "Autre espece")
   result <- nemeton:::map_essence_to_species(input)
   expect_length(result, 5)
-  expect_equal(result[1], "Quercus")
-  expect_equal(result[2], "Fagus")
+  # Codes à 4 lettres depuis 1.0.0 (spec 056) ; Douglas n'est plus un sapin.
+  expect_equal(result[1], "QUPE")
+  expect_equal(result[2], "FASY")
   expect_true(is.na(result[3]))
-  expect_equal(result[4], "Abies")  # Douglas matches "douglas"
-  expect_equal(result[5], "Generic")
+  expect_equal(result[4], "PSME")
+  expect_true(is.na(result[5]))
 })
 
 # ==============================================================================
@@ -1634,12 +1639,12 @@ test_that("enrich_parcels_bdforet assigns default age and density", {
   )
 
   result <- nemeton:::enrich_parcels_bdforet(parcels, bdforet)
-  # Matching parcels should get default age=60 and density=0.7
+  # Matching parcels get the default density 0.7 but NO age: BD Foret carries
+  # none, and the old constant 60 years was an invented value (spec 056).
   matching <- !is.na(result$species)
-  if (any(matching)) {
-    expect_equal(result$age[matching], 60)
-    expect_equal(result$density[matching], 0.7)
-  }
+  expect_true(any(matching))
+  expect_true(all(is.na(result$age)))
+  expect_equal(result$density[matching], 0.7)
 })
 
 test_that("enrich_parcels_bdforet picks dominant essence by area", {
@@ -1673,8 +1678,9 @@ test_that("enrich_parcels_bdforet picks dominant essence by area", {
 
   result <- nemeton:::enrich_parcels_bdforet(parcels, bdforet)
   expect_equal(nrow(result), 1)
-  # The dominant (largest area) essence should be "Chene" -> "Quercus"
-  expect_equal(result$species[1], "Quercus")
+  # The dominant (largest area) essence should be "Chene sessile" -> "QUPE"
+  # 1.0.0 (spec 056) : codes essence à 4 lettres, plus de genres latins.
+  expect_equal(result$species[1], "QUPE")
 })
 
 test_that("enrich_parcels_bdforet with lib_fv column name", {
@@ -1696,7 +1702,8 @@ test_that("enrich_parcels_bdforet with lib_fv column name", {
   result <- nemeton:::enrich_parcels_bdforet(parcels, bdforet)
   expect_equal(nrow(result), 1)
   expect_true(any(!is.na(result$species)))
-  expect_equal(result$species[1], "Abies")
+  # 1.0.0 (spec 056) : codes essence à 4 lettres, plus de genres latins.
+  expect_equal(result$species[1], "ABAL")
 })
 
 # ==============================================================================
@@ -1705,14 +1712,16 @@ test_that("enrich_parcels_bdforet with lib_fv column name", {
 
 test_that("map_essence_to_species maps epicea", {
   skip_if_not_installed("terra")
+  # 1.0.0 (spec 056) : codes essence à 4 lettres, plus de genres latins.
   result <- nemeton:::map_essence_to_species("Epicea commun")
-  expect_equal(result, "Pinus")
+  expect_equal(result, "PIAB")
 })
 
 test_that("map_essence_to_species handles empty string", {
   skip_if_not_installed("terra")
+  # Un libellé vide n'est plus « Generic » : NA, rien n'est deviné (spec 056).
   result <- nemeton:::map_essence_to_species("")
-  expect_equal(result, "Generic")
+  expect_true(is.na(result))
 })
 
 test_that("map_essence_to_species handles vector with all NAs", {
@@ -1724,23 +1733,25 @@ test_that("map_essence_to_species handles vector with all NAs", {
 
 test_that("map_essence_to_species maps mixed case correctly", {
   skip_if_not_installed("terra")
+  # 1.0.0 (spec 056) : codes essence à 4 lettres, plus de genres latins.
   result <- nemeton:::map_essence_to_species("CHENE SESSILE")
-  expect_equal(result, "Quercus")
+  expect_equal(result, "QUPE")
 })
 
 test_that("map_essence_to_species maps all recognized patterns", {
   skip_if_not_installed("terra")
   # Test all recognized species patterns
+  # 1.0.0 (spec 056) : codes essence à 4 lettres, plus de genres latins.
   essences <- c(
-    "Ch\u00eane sessile",     # chene -> Quercus
-    "H\u00eatre commun",      # hetre -> Fagus
-    "Pin sylvestre",           # pin -> Pinus
-    "Sapin blanc",             # sapin -> Abies
-    "Douglas vert",            # douglas -> Abies
-    "Bouleau verruqueux"       # no match -> Generic
+    "Ch\u00eane sessile",     # chene -> QUPE
+    "H\u00eatre commun",      # hetre -> FASY
+    "Pin sylvestre",           # pin sylvestre -> PISY
+    "Sapin blanc",             # sapin -> ABAL
+    "Douglas vert",            # douglas -> PSME (plus un sapin)
+    "Bouleau verruqueux"       # no match -> NA (plus « Generic »)
   )
   result <- nemeton:::map_essence_to_species(essences)
-  expect_equal(result, c("Quercus", "Fagus", "Pinus", "Abies", "Abies", "Generic"))
+  expect_equal(result, c("QUPE", "FASY", "PISY", "ABAL", "PSME", NA))
 })
 
 # (migrated from test-cov80-batch7.R)
@@ -2410,9 +2421,9 @@ test_that("enrich_parcels_bdforet with uppercase column names", {
 
   result <- nemeton:::enrich_parcels_bdforet(parcels, bdforet)
   expect_equal(nrow(result), 1)
-  # "Pin maritime" should map to "Pinus"
+  # "Pin maritime" should map to "PIPI" (1.0.0, spec 056 ; était "Pinus")
   if (!is.na(result$species[1])) {
-    expect_equal(result$species[1], "Pinus")
+    expect_equal(result$species[1], "PIPI")
   }
 })
 
@@ -2467,26 +2478,30 @@ test_that("enrich_parcels_bdforet returns all-NA when intersection is empty", {
 
 test_that("map_essence_to_species handles unicode chene", {
   skip_if_not_installed("terra")
+  # 1.0.0 (spec 056) : codes essence à 4 lettres, plus de genres latins.
   result <- nemeton:::map_essence_to_species("ch\u00eane p\u00e9doncul\u00e9")
-  expect_equal(result, "Quercus")
+  expect_equal(result, "QURO")
 })
 
 test_that("map_essence_to_species handles unicode hetre", {
   skip_if_not_installed("terra")
+  # 1.0.0 (spec 056) : codes essence à 4 lettres, plus de genres latins.
   result <- nemeton:::map_essence_to_species("h\u00eatre pourpre")
-  expect_equal(result, "Fagus")
+  expect_equal(result, "FASY")
 })
 
 test_that("map_essence_to_species handles epicea pattern", {
   skip_if_not_installed("terra")
+  # 1.0.0 (spec 056) : codes essence à 4 lettres, plus de genres latins.
   result <- nemeton:::map_essence_to_species("epicea commun")
-  expect_equal(result, "Pinus") # epicea matches the pin/epicea pattern
+  expect_equal(result, "PIAB") # épicéa commun, plus un « pin »
 })
 
 test_that("map_essence_to_species handles douglas pattern", {
   skip_if_not_installed("terra")
+  # 1.0.0 (spec 056) : codes essence à 4 lettres, plus de genres latins.
   result <- nemeton:::map_essence_to_species("Douglas vert mature")
-  expect_equal(result, "Abies")
+  expect_equal(result, "PSME")
 })
 
 test_that("map_essence_to_species single NA input", {
@@ -2498,8 +2513,9 @@ test_that("map_essence_to_species single NA input", {
 
 test_that("map_essence_to_species vector of all unknown", {
   skip_if_not_installed("terra")
+  # Une essence non reconnue n'est plus « Generic » : NA (spec 056).
   result <- nemeton:::map_essence_to_species(c("Bambou", "Palmier"))
-  expect_equal(result, c("Generic", "Generic"))
+  expect_equal(result, c(NA_character_, NA_character_))
 })
 
 # ==============================================================================

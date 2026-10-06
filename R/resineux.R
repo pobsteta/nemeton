@@ -25,7 +25,10 @@
   # Cèdres
   "CEAT", "CEDE", "CELI",
   # Autres résineux
-  "JUCO", "TABA", "THPL", "TSHE", "CUSE", "CHLA", "SEGI", "SESE"
+  "JUCO", "TABA", "THPL", "TSHE", "CUSE", "CHLA", "SEGI", "SESE",
+  # Repli de genre « conifère » (courbes de station, tarifs IFN, densités) :
+  # c'est le code que porte une UGF « Conifères » de la BD Forêt (spec 056).
+  "CONIFER_GENUS"
 )
 
 # Seuils de la règle IGN sur les codes espar numériques : 51 (pin maritime)

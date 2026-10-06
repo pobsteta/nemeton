@@ -184,8 +184,11 @@ test_that("BD Forêt fallback: derives species from `bdforet` when units lacks a
     sf::st_point(c(PT_LOIRET[1] - 400, PT_LOIRET[2] + 200)),
     crs = 2154
   )
+  # Libellés réels de la BD Forêt V2. Depuis 1.0.0 (spec 056), un libellé non
+  # reconnu (« CHE ») donne une essence NA et non plus « Generic ».
   bdf <- sf::st_sf(
-    essence = c("CHE", "CHE", "Fagus"),
+    essence = c("Ch\u00eanes d\u00e9cidus", "Ch\u00eanes d\u00e9cidus",
+                "H\u00eatre"),
     geometry = sf::st_buffer(bdf_pts, 200)
   )
 
@@ -202,7 +205,9 @@ test_that("BD Forêt fallback: layers= resolves bdforet via resolve_vector_layer
   pt  <- sf::st_sfc(sf::st_point(PT_LOIRET), crs = 2154)
   u   <- sf::st_sf(id = 1L, geometry = sf::st_buffer(pt, 800))
   bdf_pts <- sf::st_sfc(sf::st_point(c(PT_LOIRET[1], PT_LOIRET[2])), crs = 2154)
-  bdf <- sf::st_sf(essence = "CHE", geometry = sf::st_buffer(bdf_pts, 500))
+  # Libellé BD Forêt réel (spec 056) : « Chênes décidus » -> QUPE.
+  bdf <- sf::st_sf(essence = "Ch\u00eanes d\u00e9cidus",
+                   geometry = sf::st_buffer(bdf_pts, 500))
   layers <- structure(
     list(vectors = list(bdforet = bdf)),
     class = "nemeton_layers"
@@ -213,6 +218,7 @@ test_that("BD Forêt fallback: layers= resolves bdforet via resolve_vector_layer
     "BD For"
   )
   expect_false(is.na(res$species_valid))
+  expect_true(res$species_valid)
 })
 
 test_that("BD Forêt fallback: ignored when units already has a species column", {

@@ -564,7 +564,10 @@ indicateur_c1_biomasse <- function(units,
   if (!is.null(bdforet_sf) && nrow(bdforet_sf) > 0) {
     cli::cli_alert_info("Enriching parcels with BD For\u00eat data for C1")
     enriched <- enrich_parcels_bdforet(units_sf, bdforet_sf)
-    if (any(!is.na(enriched$species))) {
+    # Le modèle allométrique a besoin d'un âge, que la BD Forêt ne porte pas
+    # (age = NA depuis 1.0.0, spec 056 ; c'était 60 ans inventés). Sans âge,
+    # on passe au repli NDVI au lieu de rendre une biomasse fabriquée.
+    if (any(!is.na(enriched$species) & !is.na(enriched$age))) {
       biomass <- calculate_allometric_biomass(
         enriched$species, enriched$age, enriched$density
       )

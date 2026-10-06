@@ -70,6 +70,7 @@ load_fordead_validity_zones <- function() {
   s <- x[m]
   s_low <- tolower(s)
   hit <- grepl("\\bepc\\b", s, ignore.case = TRUE) |
+    toupper(s) == "PIAB" |   # code essence (enrich_parcels_bdforet)
     grepl("epic", s_low, fixed = FALSE) |
     grepl("\u00e9pic", s_low, fixed = FALSE) |
     grepl("picea", s_low, fixed = FALSE)
@@ -97,6 +98,7 @@ load_fordead_validity_zones <- function() {
     grepl("epicea", s_low, fixed = TRUE)
   hit <- (
     grepl("\\bsap\\b", s, ignore.case = TRUE) |
+      toupper(s) == "ABAL" |   # code essence (enrich_parcels_bdforet)
       grepl("sapin", s_low, fixed = TRUE) |
       grepl("abies", s_low, fixed = TRUE)
   ) & !is_douglas & !is_picea
