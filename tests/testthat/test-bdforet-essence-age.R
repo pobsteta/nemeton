@@ -89,7 +89,7 @@ test_that("effect on C1: no allometric biomass from an invented age", {
   gp <- withr::local_tempfile(fileext = ".gpkg")
   sf::st_write(k$bdforet, gp, quiet = TRUE)
   layers <- nemeton_layers(rasters = list(ndvi = f), vectors = list(bdforet = gp))
-  c1 <- suppressMessages(indicateur_c1_biomasse(k$parcels, layers))
+  c1 <- suppressMessages(indicateur_c1_biomasse(k$parcels, layers))$C1
   # Sans âge, le chemin BD Forêt (allométrie âge × densité) est sauté : repli
   # NDVI, 0,8 × 150 = 120 tC/ha. Avant : biomasse allométrique à 60 ans.
   expect_equal(c1, rep(120, length(essences)), tolerance = 1e-6)
@@ -101,7 +101,7 @@ test_that("effect on T1: a missing BD Foret age leaves T1 to the TFV", {
   u <- k$parcels; u$age <- enr$age
   bd <- k$bdforet
   bd$tfv <- "Forêt fermée de conifères purs"
-  t1 <- suppressMessages(indicateur_t1_anciennete(u, bdforet = bd))
+  t1 <- suppressMessages(indicateur_t1_anciennete(u, bdforet = bd))$T1
   # Avant : l'âge inventé (60) passait pour un âge MESURÉ et masquait le TFV.
   expect_equal(t1, rep(80, length(essences)))
 })

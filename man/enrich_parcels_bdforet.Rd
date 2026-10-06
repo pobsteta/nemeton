@@ -13,7 +13,7 @@ enrich_parcels_bdforet(parcels, bdforet_sf)
 }
 \value{
 A data.frame with columns `species` (four-letter code), `age`
-  (always \code{NA}), `density` (one row per parcel). Parcels with no BD
+  and `density` (both always \code{NA}; one row per parcel). Parcels with no BD
   Forêt coverage get NA values.
 }
 \description{
@@ -33,10 +33,10 @@ BD Forêt V2 carries no stand age: `age` is always \code{NA} (no invented
 value; before 1.0.0 it was a constant 60 years, spec 056). Supply a
 measured age (inventory, T1) to compute the site index.
 
-The returned `density` column is a canopy-cover fraction (default
-\code{0.7}), suitable for the C1 allometric formula. It is NOT a
-stems-per-hectare figure, so do not feed it to
-\code{indicateur_p1_volume()} as `density_field`.
+The returned `density` column is always \code{NA}: BD Forêt does not
+measure canopy cover (before 1.0.0 it was a constant 0.7). Supply a
+measured canopy-cover fraction for the C1 allometric formula; it is not a
+stems-per-hectare figure for \code{indicateur_p1_volume()}.
 }
 \section{Lifecycle}{
 

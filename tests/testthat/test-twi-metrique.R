@@ -78,12 +78,12 @@ test_that("W3 and F2 are no longer 0 on a lon/lat DEM", {
   layers <- nemeton_layers(rasters = list(dem = dem_path))
   layers$cache_dir <- cache
 
-  w3 <- suppressMessages(indicateur_w3_humidite(units, layers, method = "d8"))
+  w3 <- suppressMessages(indicateur_w3_humidite(units, layers, method = "d8"))$W3
   expect_gt(w3, 2)
   expect_gt(normalize_indicator("W3", w3), 0)
 
   # F2 = (TWI_norm + pente_norm) / 2 : la composante TWI ne vaut plus 0.
-  f2 <- suppressMessages(indicateur_f2_erosion(units, layers))
+  f2 <- suppressMessages(indicateur_f2_erosion(units, layers))$F2
   slope <- terra::terrain(dem_ll, v = "slope", unit = "degrees")
   slope_norm <- 100 - safe_extract(slope, units, fun = "mean",
                                    progress = FALSE) / 45 * 100

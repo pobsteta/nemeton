@@ -1172,16 +1172,16 @@ lookup_ademe_factor <- function(material_type, scenario = NULL) {
 #' value; before 1.0.0 it was a constant 60 years, spec 056). Supply a
 #' measured age (inventory, T1) to compute the site index.
 #'
-#' The returned `density` column is a canopy-cover fraction (default
-#' \code{0.7}), suitable for the C1 allometric formula. It is NOT a
-#' stems-per-hectare figure, so do not feed it to
-#' \code{indicateur_p1_volume()} as `density_field`.
+#' The returned `density` column is always \code{NA}: BD Forêt does not
+#' measure canopy cover (before 1.0.0 it was a constant 0.7). Supply a
+#' measured canopy-cover fraction for the C1 allometric formula; it is not a
+#' stems-per-hectare figure for \code{indicateur_p1_volume()}.
 #'
 #' @param parcels sf object. Parcel geometries to enrich.
 #' @param bdforet_sf sf object. BD Forêt V2 formation_vegetale layer.
 #'
 #' @return A data.frame with columns `species` (four-letter code), `age`
-#'   (always \code{NA}), `density` (one row per parcel). Parcels with no BD
+#'   and `density` (both always \code{NA}; one row per parcel). Parcels with no BD
 #'   Forêt coverage get NA values.
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
@@ -1280,9 +1280,11 @@ enrich_parcels_bdforet <- function(parcels, bdforet_sf) {
 
   # La BD Foret V2 ne porte aucun age : NA plutot qu'une valeur inventee (un
   # age constant de 60 ans rendait l'indice de station d'apparence mesuree et
-  # passait pour un age mesure dans T1). Densite de couvert par defaut.
+  # passait pour un age mesure dans T1). Meme regle pour la densite de couvert
+  # (0,7 constant avant 1.0.0, decision Pascal 2026-10-06) : la BD Foret ne la
+  # mesure pas.
   dominant$age     <- NA_real_
-  dominant$density <- 0.7
+  dominant$density <- NA_real_
 
   # Merge back to full parcel set
   result$species[match(dominant$..parcel_id.., result$..parcel_id..)] <- dominant$species

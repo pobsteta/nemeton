@@ -1623,7 +1623,7 @@ test_that("enrich_parcels_bdforet with 'essence' column name", {
   expect_true(any(!is.na(result$species)))
 })
 
-test_that("enrich_parcels_bdforet assigns default age and density", {
+test_that("enrich_parcels_bdforet invents neither age nor density", {
   skip_if_not_installed("sf")
   parcels <- create_test_units(crs = 2154, n_features = 1)
 
@@ -1639,12 +1639,12 @@ test_that("enrich_parcels_bdforet assigns default age and density", {
   )
 
   result <- nemeton:::enrich_parcels_bdforet(parcels, bdforet)
-  # Matching parcels get the default density 0.7 but NO age: BD Foret carries
-  # none, and the old constant 60 years was an invented value (spec 056).
+  # Ni âge ni densité : la BD Forêt ne mesure ni l'un ni l'autre. Les anciens
+  # 60 ans et 0,7 constants étaient inventés (spec 056, décision 2026-10-06).
   matching <- !is.na(result$species)
   expect_true(any(matching))
   expect_true(all(is.na(result$age)))
-  expect_equal(result$density[matching], 0.7)
+  expect_true(all(is.na(result$density)))
 })
 
 test_that("enrich_parcels_bdforet picks dominant essence by area", {

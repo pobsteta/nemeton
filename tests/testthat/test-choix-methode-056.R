@@ -103,7 +103,7 @@ test_that("F2 TWI component uses the common window [2.5, 9] (was [2.5, 10])", {
   layers <- nemeton_layers(rasters = list(dem = dem_path))
   units <- square_unit(dem)
   local_mocked_bindings(get_or_compute_twi = mock_twi(5.75))
-  f2 <- suppressMessages(indicateur_f2_erosion(units, layers))
+  f2 <- suppressMessages(indicateur_f2_erosion(units, layers))$F2
   # (TWI_norm 50 + pente 100) / 2. Avant : (43,3 + 100) / 2 = 71,7.
   expect_equal(f2, 75)
 })
