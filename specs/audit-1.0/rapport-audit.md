@@ -534,7 +534,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 
 **docs/, vignettes/**
 - **M qualité** — `docs/` est suivi par git et figé en v0.13.0 (503 fichiers, 19 Mo). **[corrigé 0.211.0]**
-- **m qualité** — HTML et R des vignettes commités ; le guide de l'app (`nemetonapp-guide_fr.Rmd`) n'a plus sa place ici. **[HTML/R retirés avant 0.214.0 ; déplacement du guide app = décision]**
+- **m qualité** — HTML et R des vignettes commités ; le guide de l'app (`nemetonapp-guide_fr.Rmd`) n'a plus sa place ici. **[HTML/R retirés avant 0.214.0 ; guide retiré en 1.0.0, repris par l'app]**
 
 **README.md, CLAUDE.md, cran-comments.md, create-release.sh, LICENSE**
 - **M qualité** — « 31 indicateurs » alors que le code en déclare 41. **[corrigé 0.211.0]**
