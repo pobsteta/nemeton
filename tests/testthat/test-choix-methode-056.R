@@ -124,3 +124,43 @@ test_that("R3 TWI risk uses the fixed window, not the extent maximum", {
   # Le maximum de l'emprise ne compte plus (avant : TWI / max(TWI)).
   expect_equal(r3(5.75, 5.75), r3(5.75, 16), tolerance = 1e-6)
 })
+
+# ---------------------------------------------------------------------------
+# 3. N1 : terme urbain constant +25 retiré, N1 = (0,40·routes + 0,35·bâti) / 0,75
+# ---------------------------------------------------------------------------
+
+test_that("N1 has no constant urban term any more", {
+  # Centroïde à 500 m d'une route et à 1 000 m d'un bâtiment :
+  # routes 25, bâti 50 -> (0,40·25 + 0,35·50) / 0,75 = 36,67.
+  # Avant 1.0.0 : 0,40·25 + 0,35·50 + 25 = 52,5.
+  u <- sf::st_sf(id = 1L, geometry = sf::st_sfc(
+    sf::st_polygon(list(cbind(c(-10, 10, 10, -10, -10),
+                              c(-10, -10, 10, 10, -10)))), crs = 2154))
+  roads <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_linestring(cbind(c(500, 500), c(-5000, 5000))), crs = 2154))
+  blds <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_polygon(list(cbind(c(-1010, -1000, -1000, -1010, -1010),
+                              c(0, 0, 10, 10, 0)))), crs = 2154))
+  n1 <- suppressMessages(indicateur_n1_distance(u, roads = roads, buildings = blds))
+  expect_equal(n1$N1, (0.40 * 25 + 0.35 * 50) / 0.75, tolerance = 1e-6)
+
+  # Bornes : 0 au contact, 100 à 2 km et plus (plus de plancher à 25).
+  roads_contact <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_linestring(cbind(c(0, 0), c(-50, 50))), crs = 2154))
+  blds_contact <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_polygon(list(cbind(c(-1, 1, 1, -1, -1), c(-1, -1, 1, 1, -1)))),
+    crs = 2154))
+  n1_0 <- suppressMessages(indicateur_n1_distance(u, roads = roads_contact,
+                                                  buildings = blds_contact))
+  expect_equal(n1_0$N1, 0)
+})
+
+test_that("N1 stays NA when a layer is missing", {
+  u <- sf::st_sf(id = 1L, geometry = sf::st_sfc(
+    sf::st_polygon(list(cbind(c(0, 10, 10, 0, 0), c(0, 0, 10, 10, 0)))),
+    crs = 2154))
+  roads <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_linestring(cbind(c(500, 500), c(-5000, 5000))), crs = 2154))
+  n1 <- suppressMessages(indicateur_n1_distance(u, roads = roads))
+  expect_true(is.na(n1$N1))
+})
