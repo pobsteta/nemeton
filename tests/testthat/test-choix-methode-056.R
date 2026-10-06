@@ -242,3 +242,10 @@ test_that("compute_site_index keeps its numeric return type", {
   expect_true(is.na(out[2]))
 })
 
+
+test_that("W2 wetland TWI threshold is 9.5 on the 2 m-referenced TWI", {
+  # 12 brut sur un MNT 25 m = 12 - ln(25/2) ≈ 9,5 ramené à 2 m (décision
+  # Pascal 2026-10-06, faute de vérité terrain).
+  expect_equal(.W2_TWI_SEUIL, 9.5)
+  expect_equal(12 - log(25 / 2), .W2_TWI_SEUIL, tolerance = 0.03)
+})

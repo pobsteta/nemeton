@@ -275,6 +275,9 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
 # à 100), [2,5 ; 10] (F2) et TWI / max(TWI de l'emprise) (R3).
 .TWI_WINDOW <- c(lo = 2.5, hi = 9)
 
+# Seuil TWI des zones humides de W2, sur le TWI ramené à 2 m (cf. W2).
+.W2_TWI_SEUIL <- 9.5
+
 # TWI -> [0, 1] sur la fenêtre commune (vecteur ou SpatRaster).
 .twi_norm <- function(twi) {
   lo <- .TWI_WINDOW[["lo"]]; hi <- .TWI_WINDOW[["hi"]]
@@ -878,7 +881,7 @@ indicateur_w1_reseau <- function(units,
 #'
 #' Calculates percentage of parcel area classified as wetland or riparian zone.
 #' The wetland area is the UNION of several optional sources (a pixel counted
-#' by two sources is counted once): BD TOPO water surfaces, a TWI threshold,
+#' by two sources is counted once): BD TOPO water surfaces, a TWI threshold (TWI > 9.5 on the TWI referenced to a 2 m grid),
 #' land-cover codes listed in \code{wetland_values}, and — when supplied — the
 #' Theia \code{theia_water} water-occurrence product. Sources are evaluated
 #' on a regular grid of points inside each unit; points where every source is
@@ -975,17 +978,22 @@ indicateur_w2_zones_humides <- function(units,
   # Masques raster : liste de fonctions (valeur -> humide TRUE/FALSE)
   raster_sources <- list()
 
-  # Source 2: TWI threshold (TWI > 12 = potential wetland zones)
+  # Source 2: seuil TWI (zones humides potentielles). Le TWI est ramené à une
+  # grille de 2 m (`TWI − ln(pas/2)`, spec 056) : l'ancien « TWI brut > 12 »
+  # sur un MNT à 25 m correspond à 12 − ln(25/2) ≈ 9,5. Le seuil 9,5 garde la
+  # détection d'avant sur les MNT 25 m et la rend cohérente sur LiDAR
+  # (décision Pascal 2026-10-06 ; aucune vérité terrain disponible).
   dem <- .dem_working_res(get_dem_raster(layers),
                           target_res = dem_target_res, context = "W2")
   if (!is.null(dem)) {
-    cli::cli_alert_info("W2: Adding TWI-based wetland zones (threshold > 12)")
+    seuil_twi <- .W2_TWI_SEUIL
+    cli::cli_alert_info("W2: Adding TWI-based wetland zones (threshold > {seuil_twi}, 2 m reference)")
     # `twi_target_res` suit la résolution de travail : les deux grilles
     # coïncident, le TWI n'est jamais rééchantillonné vers du plus fin.
     twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir,
                                      twi_target_res = dem_target_res,
                                      crs = .twi_metric_crs(units))
-    raster_sources$twi <- list(r = twi_raster, wet = function(v) v > 12)
+    raster_sources$twi <- list(r = twi_raster, wet = function(v) v > .W2_TWI_SEUIL)
   }
 
   # Source 3: land-cover wetland codes (only when wetland_values is given)
