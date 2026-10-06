@@ -40,8 +40,8 @@ when available, or shape index fallback. Returns a score 0-100.
 
 This indicator used to be called \code{indicateur_l1_sylvosphere()} -- a name that
 announced the L1 sylvosphere while computing the L2 fragmentation metric.
-The old name still works and returns the same values, with a deprecation
-warning. Persisted columns are renamed by \code{\link{migrer_colonnes_l}}. See
+The old name, kept as a deprecated alias since then, was removed in 1.0.0
+(spec 057). Persisted columns are renamed by \code{\link{migrer_colonnes_l}}. See
 spec 045.
 }
 

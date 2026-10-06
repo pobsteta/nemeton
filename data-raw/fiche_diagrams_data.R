@@ -156,7 +156,7 @@ FICHES <- list(
                   "famille Eau se calcule sur W1 a W3 seuls."),
     liaison = "puis",
     entrees = list(
-      list(titre = "microclimate_run() — microclimf", lignes = c("forçage ERA5-Land + CHM ML", "couche vpd, été")),
+      list(titre = "run microclimf (objet micro)", lignes = c("forçage ERA5-Land + CHM ML", "couche vpd, été")),
       list(titre = "Structure LiDAR HD ou drone", lignes = "canopée mieux décrite (NDP 1–2)"),
       list(titre = "Chaîne microclimat non lancée", lignes = "W4 = NA — cas nominal", tirets = TRUE)
     ),
@@ -371,7 +371,7 @@ FICHES <- list(
                   "retourne sur l'echelle decroissante 15-40 degres."),
     liaison = "puis",
     entrees = list(
-      list(titre = "microclimate_run() — microclimf", lignes = c("forçage ERA5-Land",
+      list(titre = "run microclimf (objet micro)", lignes = c("forçage ERA5-Land",
                                                                  "raster tmax_understorey")),
       list(titre = "CHM ML ou MNH LiDAR HD", lignes = "structure de canopée du modèle"),
       list(titre = "Chaîne microclimat non lancée", lignes = "A3 = NA", tirets = TRUE)
@@ -385,7 +385,7 @@ FICHES <- list(
     notes = c(
       "Sortie de modèle, pas mesure : aucun thermomètre n'a été posé sous le couvert.",
       "40 °C est un plafond de convention — au-delà, le score ne distingue plus rien.",
-      "Un seul microclimate_run() alimente A3, A4, W4 et R6 : même année, même forçage."
+      "Un seul run microclimf alimente A3, A4, W4 et R6 : même année, même forçage."
     ),
     legende = paste("Deux étapes seulement, parce que la physique est ailleurs. Ce que A3 ajoute",
                     "à `microclimf`, c'est l'agrégation par unité et l'inversion de sens — frais",
@@ -400,7 +400,7 @@ FICHES <- list(
                   "moitie basse."),
     liaison = "puis",
     entrees = list(
-      list(titre = "microclimate_run() — microclimf", lignes = c("couche de tamponnement",
+      list(titre = "run microclimf (objet micro)", lignes = c("couche de tamponnement",
                                                                  "T_air libre - T_sous couvert")),
       list(titre = "CHM ML ou MNH LiDAR HD", lignes = "surface foliaire du modèle"),
       list(titre = "Chaîne microclimat non lancée", lignes = "A4 = NA", tirets = TRUE)
@@ -544,7 +544,7 @@ FICHES <- list(
     notes = c(
       "Deux composantes sur trois retombent sur 50 sans données : 70 % du score peut être une constante.",
       "La géométrie mesure la forme de l'UGF, pas celle du massif : le découpage cadastral pèse sur le score.",
-      "indicateur_l2_fragmentation() reste l'alias de L1 (spec 045) : les deux anciens noms étaient croisés."
+      "indicateur_l2_fragmentation, ancien nom de L1 (spec 045) : les deux anciens noms étaient croisés."
     ),
     legende = paste("Trois composantes cumulées et deux valeurs par défaut. Avant de lire un L1,",
                     "vérifier quelles couches étaient présentes : le score reste plausible",
@@ -573,7 +573,7 @@ FICHES <- list(
     notes = c(
       "Chemin 1 : une seule valeur de paysage, recopiée sur toutes les unités du projet.",
       "Les deux chemins mesurent des choses différentes et basculent sur la seule présence d'un paquet.",
-      "indicateur_l1_sylvosphere() reste l'alias de L2 (spec 045) : les deux anciens noms étaient croisés."
+      "indicateur_l1_sylvosphere, ancien nom de L2 (spec 045) : les deux anciens noms étaient croisés."
     ),
     legende = paste("Le basculement ne dépend pas du terrain mais de l'installation : avec",
                     "`landscapemetrics`, L2 décrit le massif ; sans lui, il décrit la forme du",
@@ -1238,7 +1238,7 @@ FICHES <- list(
                   "sensibilite ; contrairement a R1-R5, le score n'est pas inverse."),
     liaison = "puis",
     entrees = list(
-      list(titre = "microclimate_run() ×2", lignes = c("année caniculaire",
+      list(titre = "run microclimf ×2", lignes = c("année caniculaire",
                                                        "année moyenne, canopée figée")),
       list(titre = "microclimate_detect_years()", lignes = "années choisies sur la série E-OBS"),
       list(titre = "Chaîne microclimat non lancée", lignes = "R6 = NA", tirets = TRUE)

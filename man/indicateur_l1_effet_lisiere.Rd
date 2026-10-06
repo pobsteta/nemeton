@@ -46,8 +46,8 @@ Composite indicator (0-100) with 3 components:
 
 This indicator used to be called \code{indicateur_l2_fragmentation()} -- a name
 that announced the L2 fragmentation metric while computing the L1 edge
-effect. The old name still works and returns the same values, with a
-deprecation warning. Persisted columns are renamed by
+effect. The old name, kept as a deprecated alias since then, was removed
+in 1.0.0 (spec 057). Persisted columns are renamed by
 \code{\link{migrer_colonnes_l}}. See spec 045.
 }
 

@@ -9,7 +9,7 @@
 # (R6 indicateur_r6_sensibilite comes in L2.)
 #
 # Each `indicateur_*()` consumes a `micro` set of summer-aggregated rasters
-# (produced by microclimate_run(), or supplied precomputed) and returns the
+# (precomputed by a microclimf run and supplied by the caller) and returns the
 # input `units` enriched with a 0-100 score column (short code, detected by
 # create_family_index via the `^[AWR][0-9]` regex), a raw-value column, a
 # couverture_pct column, and the `augmented = "microclimate_model"` flag.
@@ -107,7 +107,7 @@
 #'
 #' @param units An `sf` of forest management units (UGF).
 #' @param micro The summer microclimate rasters (named list / multi-layer
-#'   `SpatRaster`) from [microclimate_run()]; the `tmax_understorey` layer
+#'   `SpatRaster`) precomputed by a microclimf run; the `tmax_understorey` layer
 #'   (°C) is used. `NULL` → `A3 = NA`.
 #' @param chm Optional canopy-height raster (reserved; structure source for
 #'   the augmentation flag).
@@ -125,8 +125,7 @@
 #'   100, 40 °C -> 0 (`.MICRO_BOUNDS$a3`). `normalize_indicator()` therefore
 #'   passes `A3` through unchanged and must **not** invert it a second time
 #'   (spec 048 section 12).
-#' @seealso [indicateur_a4_tamponnement()], [indicateur_w4_vpd()],
-#'   [microclimate_run()]
+#' @seealso [indicateur_a4_tamponnement()], [indicateur_w4_vpd()]
 #' @export
 indicateur_a3_microclimat <- function(units, micro = NULL, chm = NULL,
                                       bounds = .MICRO_BOUNDS$a3, ...) {
@@ -161,7 +160,7 @@ indicateur_a3_microclimat <- function(units, micro = NULL, chm = NULL,
 #'   way: 0 °C -> 0, 10 °C -> 100 (`.MICRO_BOUNDS$a4`, `decreasing = FALSE`).
 #'   Unlike `A3` and `W4`, nothing is flipped. `normalize_indicator()` passes
 #'   it through (spec 048 section 12).
-#' @seealso [indicateur_a3_microclimat()], [microclimate_run()]
+#' @seealso [indicateur_a3_microclimat()]
 #' @export
 indicateur_a4_tamponnement <- function(units, micro = NULL, chm = NULL,
                                        bounds = .MICRO_BOUNDS$a4, ...) {
@@ -198,7 +197,7 @@ indicateur_a4_tamponnement <- function(units, micro = NULL, chm = NULL,
 #'   (`.MICRO_BOUNDS$w4`). `normalize_indicator()` therefore passes `W4`
 #'   through unchanged and must **not** invert it a second time
 #'   (spec 048 section 12).
-#' @seealso [indicateur_a3_microclimat()], [microclimate_run()]
+#' @seealso [indicateur_a3_microclimat()]
 #' @export
 indicateur_w4_vpd <- function(units, micro = NULL, chm = NULL,
                               bounds = .MICRO_BOUNDS$w4, ...) {
@@ -293,7 +292,8 @@ indicateur_r6_sensibilite <- function(units, micro_moyenne = NULL,
 #'   named list of `terra::SpatRaster` — `tmax_understorey`, `tmax_open`,
 #'   `vpd`, `rh` (summer JJA) — the `micro` contract.
 #' @seealso [indicateur_a3_microclimat()]
-#' @export
+#' @keywords internal
+#' @noRd
 microclimate_run <- function(aoi, year, structure = c("lidarhd", "opencanopy"),
                              resolution = 5, cache_dir = NULL, quiet = FALSE) {
   structure <- match.arg(structure)

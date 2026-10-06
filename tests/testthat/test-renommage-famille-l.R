@@ -2,37 +2,15 @@
 #
 # Les deux fonctions portaient chacune le nom de la metrique de l'autre. Elles
 # ont ete renommees ; le calcul, lui, n'a pas bouge d'un centieme. Ces tests
-# verrouillent les trois promesses faites : memes valeurs, anciens noms encore
-# appelables, et donnees deja ecrites migrables sans perte.
+# verrouillaient trois promesses : memes valeurs, anciens noms encore
+# appelables (jusqu'a la 1.0.0, spec 057 §3), et donnees deja ecrites migrables
+# sans perte.
 
-test_that("le nouveau nom rend exactement ce que rendait l'ancien (CA-3)", {
-  skip_if_not_installed("terra")
-  data(massif_demo_units)
-  units <- massif_demo_units[1:3, ]
-
-  expect_identical(
-    suppressWarnings(indicateur_l2_fragmentation(units)$L1),
-    indicateur_l1_effet_lisiere(units)$L1
-  )
-  expect_identical(
-    suppressWarnings(indicateur_l1_sylvosphere(units)$L2),
-    indicateur_l2_morcellement(units)$L2
-  )
-})
-
-test_that("les anciens noms avertissent et nomment leur remplacant", {
-  skip_if_not_installed("terra")
-  data(massif_demo_units)
-  units <- massif_demo_units[1:2, ]
-
-  expect_warning(
-    indicateur_l2_fragmentation(units)$L1,
-    "indicateur_l1_effet_lisiere"
-  )
-  expect_warning(
-    indicateur_l1_sylvosphere(units)$L2,
-    "indicateur_l2_morcellement"
-  )
+test_that("les anciens noms sont retires en 1.0.0 (spec 057 §3)", {
+  ns <- asNamespace("nemeton")
+  expect_false(exists("indicateur_l2_fragmentation", envir = ns, inherits = FALSE))
+  expect_false(exists("indicateur_l1_sylvosphere", envir = ns, inherits = FALSE))
+  expect_false(exists("indicateur_l1_sylvosphere_ratio", envir = ns, inherits = FALSE))
 })
 
 test_that("l1_effet_lisiere calcule bien la sylvosphere, pas la fragmentation", {

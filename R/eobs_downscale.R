@@ -1,7 +1,7 @@
 # eobs_downscale.R — downscaling d'une variable E-OBS (~11 km) en un raster fin
 # par régression-krigeage (KED) avec le MNT en covariable. Spec :
 # brief-nemeton-eobs-downscaling. Cible : le CONTEXTE régional (buffer large),
-# pas la précision parcellaire — celle-ci est produite par microclimate_run()
+# pas la précision parcellaire — celle-ci est produite par un run microclimf
 # (microclimf + LiDAR HD), qu'on ne duplique pas ici.
 # ------------------------------------------------------------------
 # v1 : température maximale `tx` uniquement (signal altitudinal fort, ~-0.6 °C
@@ -813,8 +813,8 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 #' Turn the coarse E-OBS grid (~0.1°, ~11 km) into a fine continuous
 #' `SpatRaster` over the project's regional context, using the DEM (and terrain
 #' covariates) as external drift. Built for the "regional context" map of the
-#' reGénération tab — **not** stand-scale precision, which [microclimate_run()]
-#' already produces from microclimf + HD LiDAR.
+#' reGénération tab — **not** stand-scale precision, which a microclimf run
+#' driven by HD LiDAR already produces.
 #'
 #' **`var = "tx"`** (maximum temperature) rides a physically strong altitudinal
 #' signal (~ -0.6 °C / 100 m). **`var = "rr"`** (precipitation) is also supported,
@@ -913,7 +913,7 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 #'   but too few E-OBS cells within the buffer).
 #' @references E-OBS: Cornes et al. (2018). Regression-kriging: Hengl et al.
 #'   (2007). meteoland: De Cáceres et al. (2018).
-#' @seealso [tendances_estivales_eobs()], [microclimate_run()]
+#' @seealso [tendances_estivales_eobs()]
 #' @export
 eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
                            engine = c("ked", "meteoland"),

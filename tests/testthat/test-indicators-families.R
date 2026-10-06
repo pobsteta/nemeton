@@ -397,12 +397,6 @@ test_that("indicateur_f2_erosion is an alias function", {
   expect_type(nemeton:::indicateur_f2_erosion, "closure")
 })
 
-test_that("indicateur_l1_sylvosphere_ratio is an alias function", {
-  skip_if_not_installed("terra")
-  expect_true(exists("indicateur_l1_sylvosphere_ratio", envir = asNamespace("nemeton")))
-  expect_type(nemeton:::indicateur_l1_sylvosphere_ratio, "closure")
-})
-
 # ==============================================================================
 # extract_fertility Functions Tests
 # ==============================================================================
@@ -1446,19 +1440,6 @@ test_that("indicateur_n3_naturalite delegates to composite", {
   if (!is.null(result)) {
     expect_true(inherits(result, "sf") || is.numeric(result))
   }
-})
-
-# ==============================================================================
-# indicateur_l1_sylvosphere_ratio alias
-# ==============================================================================
-
-test_that("indicateur_l1_sylvosphere_ratio delegates to indicateur_l2_morcellement", {
-  skip_if_not_installed("terra")
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-  result1 <- nemeton:::indicateur_l2_morcellement(units, layers = NULL)$L2
-  result2 <- nemeton:::indicateur_l1_sylvosphere_ratio(units, layers = NULL)$L2
-  expect_equal(result1, result2)
 })
 
 # ==============================================================================

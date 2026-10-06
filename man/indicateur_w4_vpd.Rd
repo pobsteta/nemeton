@@ -36,5 +36,5 @@ atmospheric-dryness driver of seedling water stress (spec 027, ADR-014).
 Normalised 0-100 \strong{decreasing} (moister air = more favourable = 100).
 }
 \seealso{
-\code{\link{indicateur_a3_microclimat}}, \code{\link{microclimate_run}}
+\code{\link{indicateur_a3_microclimat}}
 }

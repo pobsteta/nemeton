@@ -37,5 +37,5 @@ microsite from heat (spec 027, ADR-014). Normalised 0-100 \strong{increasing}
 (more buffering = 100).
 }
 \seealso{
-\code{\link{indicateur_a3_microclimat}}, \code{\link{microclimate_run}}
+\code{\link{indicateur_a3_microclimat}}
 }

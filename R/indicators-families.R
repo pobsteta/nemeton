@@ -1864,8 +1864,8 @@ indicateur_f2_erosion <- function(units,
 #' @section Renamed in 0.176.0:
 #' This indicator used to be called `indicateur_l2_fragmentation()` — a name
 #' that announced the L2 fragmentation metric while computing the L1 edge
-#' effect. The old name still works and returns the same values, with a
-#' deprecation warning. Persisted columns are renamed by
+#' effect. The old name, kept as a deprecated alias since then, was removed
+#' in 1.0.0 (spec 057). Persisted columns are renamed by
 #' [migrer_colonnes_l()]. See spec 045.
 #'
 #' @export
@@ -2068,8 +2068,8 @@ indicateur_l1_effet_lisiere <- function(units,
 #' @section Renamed in 0.176.0:
 #' This indicator used to be called `indicateur_l1_sylvosphere()` — a name that
 #' announced the L1 sylvosphere while computing the L2 fragmentation metric.
-#' The old name still works and returns the same values, with a deprecation
-#' warning. Persisted columns are renamed by [migrer_colonnes_l()]. See
+#' The old name, kept as a deprecated alias since then, was removed in 1.0.0
+#' (spec 057). Persisted columns are renamed by [migrer_colonnes_l()]. See
 #' spec 045.
 #'
 #' @export
@@ -2165,89 +2165,6 @@ indicateur_l2_morcellement <- function(units, layers = NULL,
 
   msg_info("indicateur_l2_morcellement")
   scores
-}
-
-# ==============================================================================
-# DEPRECATED NAMES (spec 045)
-# Les deux noms historiques annoncaient l'inverse de ce qu'ils calculaient. Ils
-# restent appelables et rendent EXACTEMENT les memes valeurs qu'avant : c'est le
-# nom qui change, pas le calcul.
-# ==============================================================================
-
-#' Sylvosphere - Edge Effect (L1), deprecated name
-#'
-#' @description
-#' Deprecated since 0.176.0. The name announced the L2 fragmentation metric
-#' while the function computes the L1 edge effect. Use
-#' [indicateur_l1_effet_lisiere()], which returns the same values.
-#'
-#' @inheritParams indicateur_l1_effet_lisiere
-#'
-#' @return Numeric vector of sylvosphere scores (0-100) — unchanged.
-#'
-#' @seealso [migrer_colonnes_l()] to rename the columns of an already computed
-#'   dataset.
-#'
-#' @export
-indicateur_l2_fragmentation <- function(units,
-                                        layers = NULL,
-                                        landcover_layer = "landcover",
-                                        forest_values = c(16, 17),
-                                        buffer = 50) {
-  .Deprecated("indicateur_l1_effet_lisiere", package = "nemeton")
-  indicateur_l1_effet_lisiere(
-    units,
-    layers = layers,
-    landcover_layer = landcover_layer,
-    forest_values = forest_values,
-    buffer = buffer
-  )
-}
-
-#' Landscape Fragmentation (L2), deprecated name
-#'
-#' @description
-#' Deprecated since 0.176.0. The name announced the L1 sylvosphere while the
-#' function computes the L2 fragmentation metric. Use
-#' [indicateur_l2_morcellement()], which returns the same values.
-#'
-#' @inheritParams indicateur_l2_morcellement
-#'
-#' @return Numeric vector of fragmentation scores (0-100) — unchanged.
-#'
-#' @seealso [migrer_colonnes_l()] to rename the columns of an already computed
-#'   dataset.
-#'
-#' @export
-indicateur_l1_sylvosphere <- function(units, layers = NULL,
-                                      landcover_layer = "landcover",
-                                      forest_values = c(16, 17),
-                                      buffer = 1000) {
-  .Deprecated("indicateur_l2_morcellement", package = "nemeton")
-  indicateur_l2_morcellement(
-    units,
-    layers = layers,
-    landcover_layer = landcover_layer,
-    forest_values = forest_values,
-    buffer = buffer
-  )
-}
-
-# ==============================================================================
-# ALIAS FUNCTIONS
-# Obsolete: previously mapped indicator names for compute_single_indicator
-# (removed in v0.15.0 along with service_compute.R). Legacy A1/E1/E2/F1/F2/N3
-# stubs that shadowed the real implementations in indicators-{air,energy,
-# naturalness}.R have been removed. Only the l1_sylvosphere_ratio delegate
-# remains since it has a unique name.
-# ==============================================================================
-
-
-#' @noRd
-indicateur_l1_sylvosphere_ratio <- function(units, layers = NULL, ...) {
-  # L2 : fragmentation paysagere - delegue a indicateur_l2_morcellement
-  # (l'ancien nom de la cible, indicateur_l1_sylvosphere, est deprecie).
-  indicateur_l2_morcellement(units, layers = layers, ...)
 }
 
 # indicateur_s3_population est defini dans indicators-social.R

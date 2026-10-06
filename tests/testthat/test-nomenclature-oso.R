@@ -11,8 +11,7 @@ test_that("OSO nomenclature has the 23 Theia/CESBIO classes", {
 
 test_that("forest defaults of L1, L2, A1 and RECONFORT use the shared OSO codes", {
   foret <- as.numeric(OSO_CLASSES_FORET)
-  for (f in c("indicateur_l1_effet_lisiere", "indicateur_l2_morcellement",
-              "indicateur_l2_fragmentation", "indicateur_l1_sylvosphere")) {
+  for (f in c("indicateur_l1_effet_lisiere", "indicateur_l2_morcellement")) {
     expect_equal(eval(formals(get(f))$forest_values), foret, info = f)
   }
   expect_equal(eval(formals(indicateur_a1_couverture)$forest_classes), foret)

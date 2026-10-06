@@ -58,7 +58,7 @@ automatiquement sur la série estivale E-OBS via `microclimate_detect_years()`.
 ## 3. Le calcul par niveau NDP
 
 Comme A3, A4 et W4 : `NA` sans chaîne microclimat ; calculé dès qu'un
-`microclimate_run()` a tourné **sur deux années**. Le drapeau
+run `microclimf` est fourni **sur deux années**. Le drapeau
 `microclimate_model` ne relève pas le niveau NDP.
 
 > **R6 exige deux exécutions du moteur**, une par année. C'est le plus coûteux
@@ -105,7 +105,7 @@ indicateur_r6_sensibilite()  ->  colonnes R6, R6_dtmax, R6_dvpd, R6_couverture_p
 <text x="588" y="16">AVAL</text>
 </g>
 <rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
-<text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">microclimate_run() ×2</text>
+<text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">run microclimf ×2</text>
 <text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">année caniculaire</text>
 <text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">année moyenne, canopée figée</text>
 <rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>

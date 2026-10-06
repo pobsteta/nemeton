@@ -216,9 +216,6 @@ reference:
     - indicateur_l1_effet_lisiere
     - indicateur_l2_morcellement
     - indicateur_l3_het_spectrale
-    # Noms retires en 0.176.0 (spec 045), conserves deprecies.
-    - indicateur_l2_fragmentation
-    - indicateur_l1_sylvosphere
 
   - title: "Famille T : Dynamique temporelle"
     desc: "Anciennete des peuplements et changements d'occupation"
@@ -663,7 +660,6 @@ reference:
     - meteoland_daily_grid
     - regeneration_tolerances
     - microclimate_detect_years
-    - microclimate_run
     - prepare_pixel_dieback_series
     - read_reconfort_layer
     - reconfort_cache_manifest
