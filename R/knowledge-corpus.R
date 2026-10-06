@@ -857,6 +857,13 @@ build_knowledge_corpus <- function(con = NULL,
       return(emit(i, .corpus_report_row(r$doc_id, "error", reason = as.character(res))))
     }
     mode <- if (reference) res$ingestion_mode else "full"
+    if (isTRUE(res$duplicate)) {
+      # Contenu identique à un document déjà en base (autre doc_id / titre).
+      return(emit(i, .corpus_report_row(
+        r$doc_id, "skipped",
+        reason = sprintf("duplicate content of document %d", res$document_id),
+        mode = mode, document_id = res$document_id)))
+    }
     emit(i, .corpus_report_row(r$doc_id, "ingested", reason = NA_character_,
                                mode = mode, n_chunks = res$n_chunks,
                                document_id = res$document_id,
