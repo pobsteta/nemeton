@@ -24,8 +24,6 @@ NULL
 #'   in `layers`) gives N1 = NA.
 #' @param layers nemeton_layers object. Used to resolve roads/buildings if not provided directly.
 #' @param column_name Character. Name for output column. Default "N1".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #'
 #' @return sf object with added column N1 (score 0-100, 100 = very remote).
 #'   Each distance is scored `min(100, d / 20)` (2 km or more = 100). The
@@ -37,8 +35,7 @@ indicateur_n1_distance <- function(units,
                                            roads = NULL,
                                            buildings = NULL,
                                            layers = NULL,
-                                           column_name = "N1",
-                                           lang = "en") {
+                                           column_name = "N1") {
   if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   result <- units
@@ -114,8 +111,6 @@ indicateur_n1_distance <- function(units,
 #'   `anciennete` tier column, weight the ancient-forest coverage by tier depth
 #'   (forest present at more epochs counts more). Ignored for single-epoch
 #'   layers. Default `TRUE`.
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #'
 #' @return sf object with added column N2 (score 0-100).
 #'
@@ -134,8 +129,7 @@ indicateur_n2_continuite <- function(units,
                                              foret_ancienne = NULL,
                                              layers = NULL,
                                              column_name = "N2",
-                                             weight_anciennete = TRUE,
-                                             lang = "en") {
+                                             weight_anciennete = TRUE) {
   if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   result <- units
@@ -235,8 +229,6 @@ indicateur_n2_continuite <- function(units,
 #'
 #' @param units sf object with N1 and N2 columns (optionally L1, B3)
 #' @param column_name Character. Name for output column. Default "N3".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #'
 #' @return sf object with added column N3 (score 0-100), or `NA` when any of
 #'   the four input columns is missing.
@@ -253,8 +245,7 @@ indicateur_n2_continuite <- function(units,
 #'
 #' @export
 indicateur_n3_naturalite <- function(units,
-                                            column_name = "N3",
-                                            lang = "en") {
+                                            column_name = "N3") {
   if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   result <- units

@@ -1288,12 +1288,12 @@ test_that("S1 with layers resolving DEM from lidar_mnt when dem key absent", {
   expect_true(result$S1[1] >= 0)
 })
 
-test_that("S1 with lang = 'fr' produces a valid result", {
+test_that("S1 without data produces NA", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 2)
-  result <- nemeton::indicateur_s1_routes(units = test_units, lang = "fr")
+  result <- nemeton::indicateur_s1_routes(units = test_units)
   expect_s3_class(result, "sf")
   expect_true("S1" %in% names(result))
   # Without DEM/roads -> NA
@@ -1399,12 +1399,12 @@ test_that("S2 with layers having lidar_mnt only and buildings", {
   expect_false(is.na(result$S2[1]))
 })
 
-test_that("S2 with lang = 'fr' returns valid result (NA case)", {
+test_that("S2 without data returns NA", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 1)
-  result <- nemeton::indicateur_s2_bati(units = test_units, lang = "fr")
+  result <- nemeton::indicateur_s2_bati(units = test_units)
   expect_s3_class(result, "sf")
   expect_true("S2" %in% names(result))
   expect_true(is.na(result$S2[1]))

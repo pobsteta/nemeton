@@ -11,7 +11,6 @@ indicateur_p2_station(
   climate_field = "climate",
   productivity_table = NULL,
   column_name = "P2",
-  lang = "en",
   chm = NULL,
   age_field = "age",
   reference_age = 50,
@@ -32,9 +31,6 @@ indicateur_p2_station(
 \item{productivity_table}{Data.frame. Custom productivity reference table. If NULL, uses bundled ONF/IFN tables.}
 
 \item{column_name}{Character. Name for output column. Default "P2".}
-
-\item{lang}{Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".}
 
 \item{chm}{Optional \code{SpatRaster} of canopy heights in
 metres. When supplied, activates CHM mode (spec 005 phase

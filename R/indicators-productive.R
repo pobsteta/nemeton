@@ -34,8 +34,6 @@ NULL
 #'   "allometric" is accepted for backward compatibility but has no effect and
 #'   emits a warning. Default "ifn_tarif".
 #' @param column_name Character. Name for output column. Default "P1".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #' @param chm Optional \code{SpatRaster} of canopy heights in
 #'   metres. When supplied, activates CHM mode (spec 005 phase
 #'   3). Heights are taken from the CHM (per-unit 90th
@@ -110,7 +108,6 @@ indicateur_p1_volume <- function(units,
                                         density_field = "density",
                                         method = c("ifn_tarif", "allometric"),
                                         column_name = "P1",
-                                        lang = "en",
                                         chm = NULL,
                                         h_dom_percentile = 0.9,
                                         pct_masked = NULL,
@@ -295,8 +292,6 @@ indicateur_p1_volume <- function(units,
 #' @param climate_field Character. Column name containing climate zone. Default "climate".
 #' @param productivity_table Data.frame. Custom productivity reference table. If NULL, uses bundled ONF/IFN tables.
 #' @param column_name Character. Name for output column. Default "P2".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #' @param chm Optional \code{SpatRaster} of canopy heights in
 #'   metres. When supplied, activates CHM mode (spec 005 phase
 #'   2). Typically the \code{chm_clean} component returned by
@@ -373,7 +368,6 @@ indicateur_p2_station <- function(units,
                                          climate_field = "climate",
                                          productivity_table = NULL,
                                          column_name = "P2",
-                                         lang = "en",
                                          chm = NULL,
                                          age_field = "age",
                                          reference_age = 50,
@@ -531,8 +525,6 @@ indicateur_p2_station <- function(units,
 #' @param species_field Character. Column name containing species codes (for diameter thresholds). Default "species".
 #' @param weights Named numeric vector. Component weights: c(form = 0.4, diameter = 0.4, defects = 0.2). Default balanced.
 #' @param column_name Character. Name for output column. Default "P3".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #' @param chm Optional `terra::SpatRaster` canopy height model (spec 005).
 #'   Passed to `ensure_inventory_fields()` to auto-fill `dbh` from the
 #'   CHM when the diameter field is missing. Default `NULL`.
@@ -587,7 +579,6 @@ indicateur_p3_qualite_bois <- function(units,
                                          species_field = "species",
                                          weights = c(form = 0.4, diameter = 0.4, defects = 0.2),
                                          column_name = "P3",
-                                         lang = "en",
                                          chm = NULL) {
   # Validate inputs
   if (!inherits(units, "sf")) {

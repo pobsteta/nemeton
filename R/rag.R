@@ -804,8 +804,6 @@ ingest_knowledge_reference <- function(con,
 #' @param text Character scalar. The query to embed.
 #' @param provider One of `"mistral"` (default), `"openai"`, `"voyage"`.
 #' @param api_key Character or `NULL`. See [ingest_knowledge_document()].
-#' @param lang Optional ISO 639-1 language hint (reserved for
-#'   provider-specific model selection; currently unused).
 #'
 #' @return A numeric vector. Its length is provider-dependent (Mistral
 #'   1024, OpenAI 1536/3072, Voyage 1024); it is fitted to 3072 dims
@@ -814,8 +812,7 @@ ingest_knowledge_reference <- function(con,
 #' @export
 embed_query <- function(text,
                         provider = c("mistral", "openai", "voyage"),
-                        api_key = NULL,
-                        lang = NULL) {
+                        api_key = NULL) {
   provider <- match.arg(provider)
   if (!is.character(text) || length(text) != 1L || is.na(text) || !nzchar(text)) {
     cli::cli_abort("{.arg text} must be a non-empty character scalar.")

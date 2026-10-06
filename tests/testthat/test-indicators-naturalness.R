@@ -1440,14 +1440,14 @@ test_that("N1 layers argument ignored when not nemeton_layers class", {
   expect_true(is.na(result$N1[1]))
 })
 
-test_that("N1 with lang = 'fr' works correctly", {
+test_that("N1 without layer returns NA", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 2)
   # L'objet est la localisation des messages, pas la valeur : sans couche,
   # N1 vaut NA depuis la v0.187.0.
-  result <- nemeton::indicateur_n1_distance(units = test_units, lang = "fr")
+  result <- nemeton::indicateur_n1_distance(units = test_units)
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
   expect_true(all(is.na(result$N1)))
@@ -1685,12 +1685,12 @@ test_that("N2 with both bdforet and foret_ancienne having multiple features", {
   expect_equal(result$N2[1], 80, tolerance = 2)
 })
 
-test_that("N2 lang = 'fr' works correctly", {
+test_that("N2 without forest data returns NA", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 1)
-  result <- nemeton::indicateur_n2_continuite(units = test_units, lang = "fr")
+  result <- nemeton::indicateur_n2_continuite(units = test_units)
   # No data -> default 50
   # Le « default score 50 » d'avant la v0.187.0 : sans donnee forestiere, la
   # continuite n'est pas mesurable.
@@ -1727,7 +1727,7 @@ test_that("N3 with pre-computed N1, N2, L1, and B3 columns", {
   expect_equal(result$N3[3], 0.35 * 100 + 0.35 * 0 + 0.15 * 50 + 0.15 * 100)
 })
 
-test_that("N3 lang = 'fr' works correctly", {
+test_that("N3 with missing components returns NA", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
@@ -1742,7 +1742,7 @@ test_that("N3 lang = 'fr' works correctly", {
   )
 
   # L'objet est la localisation, pas la valeur : L1 et B3 manquent, donc NA.
-  result <- nemeton::indicateur_n3_naturalite(units = test_units, lang = "fr")
+  result <- nemeton::indicateur_n3_naturalite(units = test_units)
   expect_s3_class(result, "sf")
   expect_true("N3" %in% names(result))
   expect_true(is.na(result$N3[1]))

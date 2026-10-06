@@ -69,3 +69,15 @@ test_that("zéro unité : objet vide avec la colonne de valeur", {
   expect_identical(nrow(res), 0L)
   expect_true("T3" %in% names(res))
 })
+
+test_that("`lang` est retiré des indicateurs et de embed_query() (spec 057 §2)", {
+  for (f in c("indicateur_e1_bois_energie", "indicateur_e2_evitement",
+              "indicateur_n1_distance", "indicateur_n2_continuite",
+              "indicateur_n3_naturalite", "indicateur_p1_volume",
+              "indicateur_p2_station", "indicateur_p3_qualite_bois",
+              "indicateur_s1_routes", "indicateur_s2_bati",
+              "indicateur_s3_population", "embed_query")) {
+    expect_false("lang" %in% names(formals(getExportedValue("nemeton", f))),
+                 info = f)
+  }
+})

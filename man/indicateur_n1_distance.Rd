@@ -9,8 +9,7 @@ indicateur_n1_distance(
   roads = NULL,
   buildings = NULL,
   layers = NULL,
-  column_name = "N1",
-  lang = "en"
+  column_name = "N1"
 )
 }
 \arguments{
@@ -25,9 +24,6 @@ in \code{layers}) gives N1 = NA.}
 \item{layers}{nemeton_layers object. Used to resolve roads/buildings if not provided directly.}
 
 \item{column_name}{Character. Name for output column. Default "N1".}
-
-\item{lang}{Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".}
 }
 \value{
 sf object with added column N1 (score 0-100, 100 = very remote).

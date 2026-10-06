@@ -11,7 +11,6 @@ indicateur_e2_evitement(
   energy_scenario = "vs_natural_gas",
   material_scenario = NULL,
   column_name = "E2",
-  lang = "en",
   taux_recolte_materiau = NULL
 )
 }
@@ -29,9 +28,6 @@ timber volume (m³/ha, a stock). Optional; used only with
 \item{material_scenario}{Character. Material substitution: "vs_concrete", "vs_steel", NULL. Default NULL (no material substitution).}
 
 \item{column_name}{Character. Name for output column. Default "E2".}
-
-\item{lang}{Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".}
 
 \item{taux_recolte_materiau}{Numeric in \verb{[0, 1]}, one value or one per
 unit: share of \code{volume_field} harvested as construction timber each
