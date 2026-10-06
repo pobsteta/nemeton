@@ -237,6 +237,59 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
   .dem_working_res(dem, target_res = target_res)
 }
 
+# Version de la méthode TWI, portée par la clé de cache. À incrémenter dès que
+# la valeur d'un TWI calculé sur le même MNT change : les caches des projets
+# sont alors recalculés au lieu d'être relus (1.0.0 casse les anciens projets
+# sans migration).
+#   v2 (1.0.0, spec 056) : MNT lon/lat reprojeté en métrique avant le calcul.
+.TWI_CACHE_VERSION <- "twi_v2"
+
+# CRS métrique du TWI : celui des unités s'il est projeté, sinon ETRS89-LAEA
+# (EPSG:3035, ADR-008). Même règle que le chemin fireexposuR de R1.
+.twi_metric_crs <- function(units = NULL) {
+  .fire_exp_metric_crs(units)
+}
+
+# Libellé stable d'un CRS (code d'autorité si possible) pour une clé de cache.
+.crs_label <- function(crs) {
+  code <- tryCatch(terra::crs(terra::rast(crs = crs), describe = TRUE)$code,
+                   error = function(e) NA_character_)
+  if (!is.na(code) && nzchar(code)) return(code)
+  substr(rlang::hash(crs), 1, 12)
+}
+
+# MNT ramené dans un CRS métrique avant tout calcul de TWI.
+#
+# Le TWI = ln(a / tan(pente)) prend l'aire spécifique a = A / largeur dans
+# l'unité du raster. Sur un MNT en EPSG:4326 (repli IGN WMS de Couchey et
+# d'Aumur), cette unité est le DEGRÉ (pas ≈ 2,5e-4) : le TWI perdait
+# ln(19 m / 2,5e-4) ≈ 11 unités et finissait écrêté à 0 — W3 = 0 sur les
+# 76 UGF de Couchey, composante TWI de F2 = 0 (spec 056, constat 1). Même
+# correctif que pour R1 (.fire_exp_working_dem) : reprojeter dans `crs`, à la
+# résolution native que choisit terra. Un MNT déjà projeté est rendu tel quel.
+.twi_metric_dem <- function(dem, crs = "EPSG:3035") {
+  if (is.null(dem) || !inherits(dem, "SpatRaster")) return(dem)
+  if (!terra::is.lonlat(dem)) return(dem)
+  if (is.null(crs)) crs <- "EPSG:3035"
+  deg <- terra::res(dem)[1]
+  dem <- terra::project(dem, crs, method = "bilinear")
+  cli::cli_alert_info(
+    "TWI: lon/lat DEM ({signif(deg, 3)} deg) projected to a metric grid ({round(terra::res(dem)[1], 1)}m)"
+  )
+  dem
+}
+
+# Aligne un TWI sur la grille d'un autre raster (pente, exposition…). Le TWI
+# d'un MNT lon/lat sort désormais sur une grille métrique : il faut alors le
+# reprojeter, pas seulement le rééchantillonner.
+.twi_on_grid <- function(twi, template) {
+  if (terra::compareGeom(twi, template, stopOnError = FALSE)) return(twi)
+  if (!terra::same.crs(twi, template)) {
+    return(terra::project(twi, template, method = "bilinear"))
+  }
+  terra::resample(twi, template, method = "bilinear")
+}
+
 # Nom du cache fichier indexé sur l'empreinte du DEM (+ résolution cible). Un nom
 # fixe « twi.tif » réutilisait à tort un TWI calculé depuis un AUTRE DEM (ex. WMS
 # 25 m) même après acquisition du LiDAR HD : le fichier était rechargé quelle que
@@ -246,16 +299,23 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
 }
 
 get_or_compute_twi <- function(dem, cache_dir = NULL,
-                               twi_target_res = .topo_target_res()) {
+                               twi_target_res = .topo_target_res(),
+                               crs = NULL) {
   dem <- .normalize_crs(dem)
+  if (is.null(crs)) crs <- "EPSG:3035"
   # Key = empreinte DEM (dimensions + extent + CRS) + résolution TWI *effective*.
   # Effective et non demandée : sur un BD ALTI 25 m, `twi_target_res` 2 ou 10
   # produisent le même TWI, et deux indicateurs réglés différemment doivent
   # partager l'entrée de cache plutôt que recalculer à l'identique.
-  key <- paste(nrow(dem), ncol(dem),
+  # 1.0.0 (spec 056) : la clé porte la version de la méthode (.TWI_CACHE_VERSION)
+  # — un TWI d'avant le correctif lon/lat ne doit jamais ressortir d'un cache —
+  # et, pour un MNT lon/lat, le CRS métrique dans lequel il est reprojeté.
+  key <- paste(.TWI_CACHE_VERSION,
+               nrow(dem), ncol(dem),
                paste(as.vector(terra::ext(dem)), collapse = ","),
                terra::crs(dem, describe = TRUE)$code,
                signif(.dem_working_res_value(dem, twi_target_res), 6),
+               if (terra::is.lonlat(dem)) .crs_label(crs) else "",
                sep = "|")
 
   # 1. Memory cache (instant)
@@ -283,9 +343,9 @@ get_or_compute_twi <- function(dem, cache_dir = NULL,
 
   # 3. Compute: prefer GRASS, fallback terra D8 (agrégation à twi_target_res)
   if (requireNamespace("fasterRaster", quietly = TRUE)) {
-    twi_raster <- calculate_twi_grass(dem, target_res = twi_target_res)
+    twi_raster <- calculate_twi_grass(dem, target_res = twi_target_res, crs = crs)
   } else {
-    twi_raster <- calculate_twi_terra(dem, target_res = twi_target_res)
+    twi_raster <- calculate_twi_terra(dem, target_res = twi_target_res, crs = crs)
   }
 
   # Save to both caches
@@ -789,7 +849,8 @@ indicateur_w2_zones_humides <- function(units,
     # `twi_target_res` suit la résolution de travail : les deux grilles
     # coïncident, le TWI n'est jamais rééchantillonné vers du plus fin.
     twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir,
-                                     twi_target_res = dem_target_res)
+                                     twi_target_res = dem_target_res,
+                                     crs = .twi_metric_crs(units))
     raster_sources$twi <- list(r = twi_raster, wet = function(v) v > 12)
   }
 
@@ -929,11 +990,14 @@ indicateur_w3_humidite <- function(units,
   # Calculate TWI (cached across W2, W3, F2, R3)
   # `twi_target_res` suit la résolution de travail : le DEM reçu est déjà à la
   # bonne grille, l'agrégation interne au TWI est alors un no-op.
+  twi_crs <- .twi_metric_crs(units)
   if (method == "d8") {
-    twi_raster <- calculate_twi_terra(dem, target_res = dem_target_res)
+    twi_raster <- calculate_twi_terra(dem, target_res = dem_target_res,
+                                      crs = twi_crs)
   } else {
     twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir,
-                                     twi_target_res = dem_target_res)
+                                     twi_target_res = dem_target_res,
+                                     crs = twi_crs)
   }
 
   # Extract mean TWI for each unit
@@ -953,7 +1017,11 @@ indicateur_w3_humidite <- function(units,
 #' Calculate TWI using terra (D8 algorithm)
 #' @keywords internal
 #' @noRd
-calculate_twi_terra <- function(dem, target_res = .topo_target_res()) {
+calculate_twi_terra <- function(dem, target_res = .topo_target_res(),
+                                crs = "EPSG:3035") {
+  # Un MNT lon/lat est d'abord reprojeté en métrique (cf. .twi_metric_dem) :
+  # l'aire spécifique ci-dessous est en mètres, jamais en degrés.
+  dem <- .twi_metric_dem(dem, crs)
   # Agréger à la résolution cible : TWI hydrologiquement stable + calcul allégé
   # (cf. .twi_aggregate_dem). target_res = NULL -> pas d'agrégation (repli déjà agrégé).
   dem <- .twi_aggregate_dem(dem, target_res)
@@ -1005,9 +1073,12 @@ calculate_twi_terra <- function(dem, target_res = .topo_target_res()) {
 #' depression filling, flow direction/accumulation via wetness().
 #' @keywords internal
 #' @noRd
-calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
-  # Agréger une seule fois ici ; les replis terra reçoivent déjà le DEM agrégé
-  # (target_res = NULL) pour éviter une double agrégation.
+calculate_twi_grass <- function(dem, target_res = .topo_target_res(),
+                                crs = "EPSG:3035") {
+  # Reprojeter un MNT lon/lat AVANT d'agréger (l'agrégation est métrique), puis
+  # agréger une seule fois ici ; les replis terra reçoivent déjà le DEM projeté
+  # et agrégé (target_res = NULL) pour éviter une double agrégation.
+  dem <- .twi_metric_dem(dem, crs)
   dem <- .twi_aggregate_dem(dem, target_res)
   if (!requireNamespace("fasterRaster", quietly = TRUE)) {
     cli::cli_abort("fasterRaster package required for GRASS TWI calculation")
@@ -1047,10 +1118,7 @@ calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
     # Initialize GRASS session
     fasterRaster::faster(grassDir = grass_dir)
 
-    # GRASS TWI requires projected CRS (not lon/lat)
-    if (terra::is.lonlat(dem)) {
-      dem <- terra::project(dem, "EPSG:2154")
-    }
+    # GRASS exige un CRS projeté : le MNT l'est déjà (.twi_metric_dem).
 
     # Convert terra raster to GRaster
     elev <- fasterRaster::fast(dem)
@@ -1662,7 +1730,8 @@ indicateur_f2_erosion <- function(units,
   # `twi_target_res` suit la résolution de travail (grilles alignées, cache
   # partagé avec W2/W3/R3).
   twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir,
-                                   twi_target_res = dem_target_res)
+                                   twi_target_res = dem_target_res,
+                                   crs = .twi_metric_crs(units))
 
   twi_mean <- safe_extract(twi_raster, units_sf, fun = "mean", progress = FALSE)
 

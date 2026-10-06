@@ -887,13 +887,13 @@ indicateur_r3_secheresse <- function(units,
   # grossier vers la grille fine — coûteux et sans information ajoutée.
   twi_cache_dir <- if (!is.null(layers)) layers$cache_dir else NULL
   twi_raster <- get_or_compute_twi(dem, cache_dir = twi_cache_dir,
-                                   twi_target_res = dem_target_res)
+                                   twi_target_res = dem_target_res,
+                                   crs = .twi_metric_crs(units))
 
-  # Filet de sécurité : un TWI GRASS ou un cache d'une version antérieure peut
-  # encore arriver sur une autre grille.
-  if (!terra::compareGeom(twi_raster, aspect, stopOnError = FALSE)) {
-    twi_raster <- terra::resample(twi_raster, aspect, method = "bilinear")
-  }
+  # Filet de sécurité : un TWI GRASS peut encore arriver sur une autre grille,
+  # et le TWI d'un MNT lon/lat sort sur une grille MÉTRIQUE (spec 056) : il est
+  # alors reprojeté sur la grille d'`aspect`, pas seulement rééchantillonné.
+  twi_raster <- .twi_on_grid(twi_raster, aspect)
 
   twi_max <- terra::global(twi_raster, "max", na.rm = TRUE)$max
   if (is.na(twi_max) || twi_max == 0) twi_max <- 1

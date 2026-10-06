@@ -98,9 +98,8 @@
   if ("twi" %in% covariates) {
     twi <- tryCatch(get_or_compute_twi(dem), error = function(e) NULL)
     if (!is.null(twi)) {
-      if (!terra::compareGeom(twi, dem, stopOnError = FALSE)) {
-        twi <- terra::resample(twi, dem, method = "bilinear")
-      }
+      # Le TWI d'un MNT lon/lat sort sur une grille métrique (spec 056).
+      twi <- .twi_on_grid(twi, dem)
       names(twi) <- "twi"
       layers$twi <- twi
     } else {

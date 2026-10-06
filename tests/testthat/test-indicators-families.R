@@ -1034,12 +1034,16 @@ test_that("get_or_compute_twi returns from memory cache on second call", {
   expect_s4_class(result1, "SpatRaster")
 
   # Key should now be in memory cache (inclut la résolution TWI *effective* :
-  # sur un DEM plus grossier que la cible, l'agrégation est un no-op)
-  key <- paste(nrow(dem), ncol(dem),
+  # sur un DEM plus grossier que la cible, l'agrégation est un no-op).
+  # 1.0.0 (spec 056) : la clé porte aussi la version de la méthode TWI et,
+  # pour un MNT lon/lat seulement, le CRS de reprojection ("" ici).
+  key <- paste(nemeton:::.TWI_CACHE_VERSION,
+               nrow(dem), ncol(dem),
                paste(as.vector(terra::ext(dem)), collapse = ","),
                terra::crs(dem, describe = TRUE)$code,
                signif(nemeton:::.dem_working_res_value(
                  dem, nemeton:::.topo_target_res()), 6),
+               "",
                sep = "|")
   expect_true(exists(key, envir = twi_cache))
 
@@ -2278,12 +2282,15 @@ test_that("get_or_compute_twi: memory cache hit returns cached", {
     result1 <- nemeton:::get_or_compute_twi(dem, cache_dir = cache_dir)
     expect_s4_class(result1, "SpatRaster")
 
-    # Verify key is in memory cache (inclut la résolution TWI *effective*)
-    key <- paste(nrow(dem), ncol(dem),
+    # Verify key is in memory cache (inclut la résolution TWI *effective*,
+    # la version de la méthode TWI et, MNT projeté, un CRS vide — spec 056)
+    key <- paste(nemeton:::.TWI_CACHE_VERSION,
+                 nrow(dem), ncol(dem),
                  paste(as.vector(terra::ext(dem)), collapse = ","),
                  terra::crs(dem, describe = TRUE)$code,
                  signif(nemeton:::.dem_working_res_value(
                    dem, nemeton:::.topo_target_res()), 6),
+                 "",
                  sep = "|")
     expect_true(exists(key, envir = twi_cache))
 
