@@ -62,9 +62,25 @@ Scores de famille W, N, P, R : baisse mécanique attendue.
 
 ## 4. Nouveaux statuts à traduire (FR/EN)
 
-`p3_status` (`diametre_seul`, `diametre_forme`, `diametre_defauts`, `complet`),
-`p2_status = "hors_courbe"` (en plus de `indice_station_m`). Transportés par
-`.capture_status_attr()` comme les autres `<code>_status`.
+- `p3_status` (`diametre_seul`, `diametre_forme`, `diametre_defauts`,
+  `complet`) ; `p2_status = "hors_courbe"` (en plus de `indice_station_m`).
+- Indicateurs conditionnels sans leur source : `a3/a4/w4/r6_status =
+  "skipped_no_micro"`, `t3_status = "skipped_no_sufosat"`,
+  `b4/l3_status = "skipped_no_spectral"` (puis `"calculated"` ou
+  `"skipped_no_coverage"` quand la source est là).
+
+Tous transportés par `.capture_status_attr()` comme les autres
+`<code>_status`.
+
+## 4 bis. `list_indicators()` (41 indicateurs)
+
+`list_indicators()` rend désormais les 41 indicateurs (colonnes `code`,
+`conditionnel`, `source_conditionnelle` ; `conditionnels = FALSE` pour les 31
+de base). Effet dans l'app : `service_project.R:615`
+(`.add_normalized_indicators`) reconnaît maintenant les 10 conditionnels et
+leur crée une colonne `_norm` ; l'avertissement « Normalisation impossible »
+disparaît pour eux. Aucun autre appel. Commentaire devenu faux, sans effet :
+`service_desserte.R:1315` (« P1 … its `column_name` default »).
 
 ## 5. À nettoyer côté app
 

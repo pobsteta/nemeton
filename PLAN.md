@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.156.0** (release du 2026-10-05), relevée le 2026-10-05.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.157.0** (release du 2026-10-05), relevée le 2026-10-06.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -116,7 +116,7 @@ un raccourci.
 | 5 | Seconde passe sur les calculs : 31 constats majeurs (indicateurs, échantillonnage, climat, RECONFORT) | **v0.212.0** | ✅ livré, brief app émis |
 | 6 | Reliquat des constats majeurs (53 « M » revérifiés : 34 déjà corrigés, 14 corrigés, 5 en décision) | **v0.213.0** | ✅ livré |
 | 7 | Constats mineurs « m » (~111 revérifiés : ~90 corrigés, le reste déjà corrigé, non retenu ou en décision) | **v0.214.0** | ✅ livré |
-| 8 | Décisions ouvertes (offset S2, contrat d'API, migrations SQL…) puis 1.0.0 | 0.215+ | ⬜ décisions Pascal |
+| 8 | Offset S2 (0.215), logique métier de l'app (0.216), décisions de Pascal : contrat d'API, méthode, base neuve, infrastructure | **v1.0.0** | ✅ livré |
 
 **Journal** — *2026-10-02* (**v0.208.0**) : vague 1 livrée, dix correctifs,
 chacun avec un test qui échouait avant. Valeurs changées côté app : volumes
@@ -296,6 +296,18 @@ repli signalé sur la moyenne simple). Brief retour app :
   déplacé dans `nemetonshiny` (brief) ; `ingest_knowledge_document()` sans
   doublon ; contournement microclimf gardé (ticket amont rédigé, non publié) ;
   fixture `massif_demo_units` régénérée à 41 indicateurs.
+
+**Journal** — *2026-10-06* (**v1.0.0**) : **première version stable.**
+Contrat d'API (spec 057), choix de méthode (spec 056), base de suivi neuve,
+infrastructure ; quatre agents en parallèle puis intégration (conflits de
+documentation seulement). Trois défauts trouvés en mesurant les choix de
+méthode : TWI calculé en degrés sur MNT lon/lat (W3 = 0 sur Couchey, Aumur),
+TWI dépendant de la résolution, âge/densité/essence fabriqués par
+`enrich_parcels_bdforet()`. Conséquence assumée : sans âge réel, P2 (CHM) est
+NA. La 1.0.0 casse les projets **et les bases** antérieurs, sans migration.
+Brief app : `specs/057-contrat-api-1.0/brief-nemetonshiny-1.0.0.md`. Reste
+après la 1.0 : vrai taux de changement pour T2, `urban_areas` dans A2,
+épinglage des actions GitHub de premier rang (Dependabot).
 
 **Prochaine étape** : côté app, adopter les trois fonctions (plancher, tests
 d'équivalence) puis la décision **1.0.0** de l'app ; côté cœur, décisions

@@ -10,6 +10,19 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-06
+
+### Changed (BREAKING)
+- Contrat d'API (spec 057) : indicateurs rendant tous `units` + colonne au nom du code ; `lang` et `column_name` retirés ; alias L1/L2 supprimés ; 34 exports internes et `microclimate_run()` dé-exportés ; `list_indicators()` à 41 ; statut stable/experimental.
+- Méthode (spec 056) : TWI en mètres et ramené à 2 m, fenêtre [2,5 ; 9] (W3, F2, R3), seuil W2 9,5 ; R2 sans TRI ; N1 sans +25 ; P3 au diamètre seul ; site index NA hors courbe ; `enrich_parcels_bdforet()` sans âge ni densité inventés.
+- Base de suivi : schéma 1.0.0 en une migration ; bases antérieures refusées. FORDEAD : Python ≥ 3.11, versions figées.
+
+### Fixed
+- TWI calculé en degrés sur MNT lon/lat ; essences BD Forêt non reconnues.
+
+### Removed
+- Guide de l'application (vignette), repris par nemetonshiny.
+
 ## [0.216.0] - 2026-10-05
 
 ### Added
