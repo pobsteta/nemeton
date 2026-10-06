@@ -36,7 +36,7 @@ test_that("enrich_parcels_bdforet repairs an invalid geometry and retries", {
   expect_equal(calls, 2L)                 # errored once, retried once
   expect_equal(nrow(out), 1L)
   expect_false(is.na(out$species[[1]]))   # species recovered, not NA
-  expect_identical(out$species[[1]], "Quercus")
+  expect_identical(out$species[[1]], "QUPE")   # code 4 lettres (spec 056)
 })
 
 test_that("enrich_parcels_bdforet returns NA only when the repair also fails", {
@@ -76,5 +76,5 @@ test_that("enrich_parcels_bdforet leaves the valid-geometry path untouched", {
 
   out <- enrich_parcels_bdforet(parcels, bdforet)
   expect_equal(calls, 1L)                 # single call, no retry
-  expect_identical(out$species[[1]], "Quercus")
+  expect_identical(out$species[[1]], "QUPE")   # code 4 lettres (spec 056)
 })

@@ -1154,10 +1154,19 @@ lookup_ademe_factor <- function(material_type, scenario = NULL) {
 #' Enrich Parcels with BD Forêt V2 Data
 #'
 #' Performs spatial intersection between parcels and BD Forêt V2 polygons
-#' to extract dominant species, then maps IGN essence codes to allometric
-#' model species names. Used upstream of indicator functions that accept
-#' `species`/`age` unit columns (P2 station in CHM mode, C1 biomass in
-#' allometric mode).
+#' to extract the dominant essence (largest area), then maps the BD Forêt
+#' label to the four-letter species code the rest of the package reads
+#' (site-index curves, conifer test, IFN tarifs, wood density): e.g.
+#' \code{"Sapin, épicéa"} -> \code{"ABAL"}, \code{"Chênes décidus"} ->
+#' \code{"QUPE"}, \code{"Pin sylvestre"} -> \code{"PISY"}. Generic labels map
+#' to the genus-level fallbacks \code{"CONIFER_GENUS"} / \code{"BROADLEAF_GENUS"};
+#' a mixed broadleaf/conifer stand (\code{"Mixte"}), \code{"NC"}, \code{"NR"} or
+#' an unknown label give \code{NA}. Used upstream of indicator functions that
+#' accept `species`/`age` unit columns (P2 station in CHM mode, P3, C1).
+#'
+#' BD Forêt V2 carries no stand age: `age` is always \code{NA} (no invented
+#' value; before 1.0.0 it was a constant 60 years, spec 056). Supply a
+#' measured age (inventory, T1) to compute the site index.
 #'
 #' The returned `density` column is a canopy-cover fraction (default
 #' \code{0.7}), suitable for the C1 allometric formula. It is NOT a
@@ -1167,8 +1176,9 @@ lookup_ademe_factor <- function(material_type, scenario = NULL) {
 #' @param parcels sf object. Parcel geometries to enrich.
 #' @param bdforet_sf sf object. BD Forêt V2 formation_vegetale layer.
 #'
-#' @return A data.frame with columns `species`, `age`, `density` (one row
-#'   per parcel). Parcels with no BD Forêt coverage get NA values.
+#' @return A data.frame with columns `species` (four-letter code), `age`
+#'   (always \code{NA}), `density` (one row per parcel). Parcels with no BD
+#'   Forêt coverage get NA values.
 #' @export
 enrich_parcels_bdforet <- function(parcels, bdforet_sf) {
   # Identify the essence column in BD Forêt data
@@ -1254,11 +1264,17 @@ enrich_parcels_bdforet <- function(parcels, bdforet_sf) {
     }
   ))
 
-  # Map IGN essence codes to allometric model names
+  # Libelle BD Foret -> code essence a 4 lettres lu par le reste du paquet.
+  # Avant 1.0.0 : des genres latins (« Abies », « Pinus »…) que ni
+  # resolve_species_code() ni is_conifer() ne reconnaissaient — toutes les UGF
+  # sur la courbe du chene sessile et sous les seuils P3 feuillus (spec 056,
+  # constat 3).
   dominant$species <- map_essence_to_species(dominant$essence_raw)
 
-  # Default age and density for temperate forest
-  dominant$age     <- 60
+  # La BD Foret V2 ne porte aucun age : NA plutot qu'une valeur inventee (un
+  # age constant de 60 ans rendait l'indice de station d'apparence mesuree et
+  # passait pour un age mesure dans T1). Densite de couvert par defaut.
+  dominant$age     <- NA_real_
   dominant$density <- 0.7
 
   # Merge back to full parcel set
@@ -1334,22 +1350,63 @@ units_add_species_from_raster <- function(units, species_raster, class_map,
   units
 }
 
-#' Map IGN BD Forêt Essence Codes to Allometric Species Names
+#' Map BD Forêt V2 essence labels to four-letter species codes
 #'
-#' @param essence Character vector of raw essence labels from BD Forêt V2.
-#' @return Character vector of allometric model species names.
+#' Ordered patterns on the accent-stripped, lower-case label: the first match
+#' wins. The codes are those of the site-index curves, `.est_resineux()`, the
+#' IFN tarifs and the wood-density table. Generic labels map to the
+#' genus-level fallbacks; a mixed broadleaf/conifer stand, NC/NR or an unknown
+#' label give NA (never a guessed species).
+#'
+#' @param essence Character vector of raw essence labels (BD Forêt V2
+#'   `essence` field, or a TFV label).
+#' @return Character vector of species codes, NA when not resolvable.
 #' @keywords internal
 #' @noRd
 map_essence_to_species <- function(essence) {
-  essence_lower <- tolower(essence)
-  species <- rep("Generic", length(essence))
-  species[grepl("ch\u00eane|chene|ch\\u00eane", essence_lower)] <- "Quercus"
-  species[grepl("h\u00eatre|hetre|h\\u00eatre", essence_lower)] <- "Fagus"
-  species[grepl("pin|\\u00e9pic\\u00e9a|epicea", essence_lower)] <- "Pinus"
-  species[grepl("sapin|douglas", essence_lower)]                 <- "Abies"
-  species[is.na(essence)] <- NA_character_
-  species
+  lab <- tolower(trimws(as.character(essence)))
+  lab <- iconv(lab, from = "UTF-8", to = "ASCII//TRANSLIT", sub = "")
+  lab <- gsub("[^a-z ,']", "", lab)
+  out <- rep(NA_character_, length(lab))
+  for (rule in .BDFORET_ESSENCE_RULES) {
+    hit <- is.na(out) & !is.na(lab) & grepl(rule[[1]], lab)
+    out[hit] <- rule[[2]]
+  }
+  # Les mélanges et libellés vides / non classés restent NA : ils ont été
+  # marqués « - » pour bloquer les règles génériques suivantes.
+  out[!is.na(out) & out == "-"] <- NA_character_
+  out
 }
+
+# Règles libellé BD Forêt -> code essence, dans l'ordre (première trouvée).
+# Codes : ceux des courbes de station (inst/extdata/site_index_curves.csv), de
+# .CODES_RESINEUX, des tarifs IFN et de wood_density.csv. « - » = NA voulu,
+# posé avant les règles génériques pour qu'un mélange ne devienne ni feuillu ni
+# résineux.
+.BDFORET_ESSENCE_RULES <- list(
+  list("douglas", "PSME"),
+  list("sapin", "ABAL"),            # « Sapin, épicéa » : sapin pectiné
+  list("epicea", "PIAB"),
+  list("meleze", "LADE"),
+  list("pin maritime", "PIPI"),
+  list("pin sylvestre", "PISY"),
+  list("laricio|pin noir", "PINI"),
+  list("alep", "PIHA"),
+  list("crochet|cembro", "PIUN"),
+  list("pins|autre pin", "CONIFER_GENUS"),
+  list("sempervirent|chene vert|chene liege", "BROADLEAF_GENUS"),
+  list("pedoncul", "QURO"),
+  list("pubescent", "QUPU"),
+  list("chene", "QUPE"),            # chênes décidus : chêne sessile
+  list("hetre", "FASY"),
+  list("chataignier", "CASA"),
+  list("peupl", "POSP"),
+  list("robinier", "BROADLEAF_GENUS"),
+  list("mixte|feuillus.*conif|conif.*feuillus", "-"),
+  list("^(nc|nr)$", "-"),
+  list("conif|resineu", "CONIFER_GENUS"),
+  list("feuillu", "BROADLEAF_GENUS")
+)
 
 
 #' Get global shared cache directory

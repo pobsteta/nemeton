@@ -31,13 +31,16 @@ backward compatibility. Default "en".}
 }
 \value{
 sf object with added column N1 (score 0-100, 100 = very remote).
-Each distance is scored \code{min(100, d / 20)} (2 km or more = 100). The
-urban term has no data layer: its distance is a constant 2000 m, so it
-always adds 25 points and N1 ranges over 25-100.
+Each distance is scored \code{min(100, d / 20)} (2 km or more = 100). Until
+1.0.0 a third "urban" term (weight 0.25) had no data layer: its distance
+was a constant 2000 m, adding 25 points to every unit. It was removed
+(spec 056), so N1 now spans the full 0-100 range. N1 is NA when the roads
+or the buildings layer is missing.
 }
 \description{
-Calculates distance to infrastructure (roads, buildings, urban zones)
-as a measure of remoteness from human influence. Follows tuto 04 methodology:
-distances from parcel centroids to roads (BD TOPO) and buildings, normalized
-to 0-100 and combined with weights (40% roads, 35% buildings, 25% urban).
+Calculates distance to infrastructure (roads, buildings) as a measure of
+remoteness from human influence. Follows tuto 04 methodology: distances
+from parcel centroids to roads (BD TOPO) and buildings, normalized to 0-100
+and combined with weights 0.40 (roads) and 0.35 (buildings), rescaled to
+sum to 1: \code{N1 = (0.40 * roads + 0.35 * buildings) / 0.75}.
 }

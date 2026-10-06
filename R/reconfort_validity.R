@@ -79,6 +79,8 @@ load_reconfort_validity_zones <- function() {
   s <- x[m]
   s_low <- tolower(s)
   hit <- grepl("\\bche\\b", s, ignore.case = TRUE) |
+    toupper(s) %in% c("QUPE", "QURO", "QUPU") |   # codes essence
+
     grepl("chene", s_low, fixed = TRUE) |
     grepl("ch\u00eane", s_low, fixed = TRUE) |
     grepl("quercus", s_low, fixed = TRUE)
@@ -96,6 +98,8 @@ load_reconfort_validity_zones <- function() {
   s <- x[m]
   s_low <- tolower(s)
   hit <- grepl("\\bcht\\b", s, ignore.case = TRUE) |
+    toupper(s) == "CASA" |   # code essence
+
     grepl("chataignier", s_low, fixed = TRUE) |
     grepl("ch\u00e2taignier", s_low, fixed = TRUE) |
     grepl("castanea", s_low, fixed = TRUE)
@@ -115,6 +119,8 @@ load_reconfort_validity_zones <- function() {
   s <- x[m]
   s_low <- tolower(s)
   hit <- grepl("\\bps\\b", s, ignore.case = TRUE) |
+    toupper(s) == "PISY" |   # code essence
+
     grepl("pin sylvestre", s_low, fixed = TRUE) |
     grepl("pinus sylvestris", s_low, fixed = TRUE)
   out[m] <- hit

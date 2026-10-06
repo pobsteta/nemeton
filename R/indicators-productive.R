@@ -323,7 +323,11 @@ indicateur_p1_volume <- function(units,
 #'     \item CHM mode:    \code{P2} = site index \eqn{H_0} (m) at
 #'           \code{reference_age}, plus \code{p2_status =
 #'           "indice_station_m"} so that normalisation uses a 40 m
-#'           ceiling (\code{\link{normalize_indicator}}).
+#'           ceiling (\code{\link{normalize_indicator}}). A dominant
+#'           height outside the site-index curves at the observed age
+#'           gives \code{P2 = NA} with \code{p2_status = "hors_courbe"}
+#'           (spec 056); \code{p2_status} is \code{NA} when the index is
+#'           not estimable (missing age or species, H_dom < 1.3 m…).
 #'     \item IFN mode:    \code{P2} = IFN volume production of the
 #'           sylvoecoregion (m3/ha/yr), plus \code{P2_rse},
 #'           \code{P2_provenance}, \code{P2_nature}.
@@ -430,7 +434,7 @@ indicateur_p2_station <- function(units,
     }
 
     h_dom <- extract_h_dom(chm, units, percentile = h_dom_percentile)
-    site_index <- compute_site_index(
+    si <- .site_index_core(
       H_dom   = h_dom,
       age     = units[[age_field]],
       species = units[[species_field]],
@@ -438,11 +442,14 @@ indicateur_p2_station <- function(units,
     )
 
     result <- units
-    result[[column_name]] <- site_index
+    result[[column_name]] <- si$value
     # Unite de P2 dans ce mode : des metres, pas des m3/ha/an. La colonne de
     # statut voyage jusqu'a la normalisation (normalize_indicator(statut =),
     # create_family_index()) ; l'app la conserve en `.p2_status` (ecart n. 17).
-    result$p2_status <- ifelse(is.na(site_index), NA_character_, "indice_station_m")
+    # « indice_station_m » : indice estime (normalise sur 40 m) ;
+    # « hors_courbe » : H_dom hors des courbes Duplat a l'age observe, P2 = NA
+    # (spec 056 ; c'etait la classe 1 ou 5 bornee) ; NA : non estimable.
+    result$p2_status <- si$status
 
     cli::cli_alert_success(
       "Calculated {column_name}: site index H0 at {reference_age} years (m) via CHM"
@@ -537,13 +544,24 @@ indicateur_p2_station <- function(units,
 #'   Passed to `ensure_inventory_fields()` to auto-fill `dbh` from the
 #'   CHM when the diameter field is missing. Default `NULL`.
 #'
-#' @return sf object with added column: P3 (timber quality score 0-100).
+#' @return sf object with added columns: P3 (timber quality score 0-100) and
+#'   `p3_status`, which tells which components were measured:
+#'   `"diametre_seul"`, `"diametre_forme"`, `"diametre_defauts"` or
+#'   `"complet"` (NA when P3 is NA).
 #'
-#'   **Higher = better timber = favourable.** P3 is a weighted mean of three
+#'   **Higher = better timber = favourable.** P3 is a weighted mean of the
 #'   components that are each already 0-100 and each already oriented that way
 #'   (diameter against commercial thresholds, stem form, a defects penalty),
 #'   so the composite is 0-100 by construction and `normalize_indicator()`
 #'   passes it through (spec 048 section 12).
+#'
+#'   Only MEASURED components enter the mean, their weights rescaled to sum
+#'   to 1. Form and defects are used when the unit carries a non-missing value
+#'   in `form_score_field` / `defects_field` (field data, e.g. QField); there
+#'   is no default score any more. Before 1.0.0 a missing form counted 70 and
+#'   missing defects 85, i.e. 45 constant points out of 100 on every unit
+#'   without field data (spec 056): P3 is now the diameter score alone there
+#'   (`p3_status = "diametre_seul"`).
 #'
 #' @details
 #' **Calculation**:
@@ -611,6 +629,7 @@ indicateur_p3_qualite_bois <- function(units,
 
   result <- units
   p3_values <- numeric(nrow(units))
+  p3_status <- rep(NA_character_, nrow(units))
 
   # Calculate quality for each unit
   for (i in seq_len(nrow(units))) {
@@ -646,32 +665,42 @@ indicateur_p3_qualite_bois <- function(units,
       diameter_score <- 50 * (dbh_cm / pulp_threshold)
     }
 
-    # Component 2: Form score
+    # Composantes 2 et 3 : forme et défauts, SEULEMENT quand une donnée de
+    # terrain les fournit. Avant 1.0.0, une forme absente valait 70 et des
+    # défauts absents 85 : 45 points constants sur 100 pour toute UGF sans
+    # inventaire, soit 58 à 97 % du P3 affiché sur les projets réels (spec 056,
+    # décision 2026-10-06). Les poids des composantes mesurées sont ramenés à 1.
+    form_score <- NA_real_
     if (form_score_field %in% names(units) && !is.na(units[[form_score_field]][i])) {
       form_score <- units[[form_score_field]][i]
-    } else {
-      # Default assumption: average form quality
-      form_score <- 70
     }
-
-    # Component 3: Defects penalty
+    defects_score <- NA_real_
     if (defects_field %in% names(units) && !is.na(units[[defects_field]][i])) {
       has_defects <- units[[defects_field]][i]
       defects_score <- if (has_defects > 0) 50 else 100 # 50% penalty for defects
-    } else {
-      defects_score <- 85 # Assume minor defects
     }
 
-    # Weighted composite
-    p3_values[i] <- weights["form"] * form_score +
-      weights["diameter"] * diameter_score +
-      weights["defects"] * defects_score
+    scores <- c(form = form_score, diameter = diameter_score,
+                defects = defects_score)
+    w <- weights[names(scores)]
+    mesure <- !is.na(scores)
+    p3_values[i] <- sum(w[mesure] * scores[mesure]) / sum(w[mesure])
+    p3_status[i] <- if (mesure[["form"]] && mesure[["defects"]]) {
+      "complet"
+    } else if (mesure[["form"]]) {
+      "diametre_forme"
+    } else if (mesure[["defects"]]) {
+      "diametre_defauts"
+    } else {
+      "diametre_seul"
+    }
 
     msg_info("productive_quality_assessed", p3_values[i], form_score, diameter_score, defects_score)
   }
 
   # Add to result
   result[[column_name]] <- p3_values
+  result$p3_status <- p3_status
 
   cli::cli_alert_success("Calculated {column_name}: Timber quality score (0-100)")
 
