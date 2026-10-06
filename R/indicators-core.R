@@ -5,14 +5,18 @@
 #'
 #' @param units A \code{nemeton_units} or \code{sf} object representing analysis units
 #' @param layers A \code{nemeton_layers} object containing spatial data layers
-#' @param indicators Character vector of indicator names to calculate, or "all" for all available.
-#'   See \code{\link{list_indicators}} for available indicators from the 12-family framework.
+#' @param indicators Character vector of indicator names to calculate, or "all" for all
+#'   41 indicators of \code{\link{list_indicators}} (the source-conditional ones
+#'   included: without their source they come back \code{NA} with their status).
+#'   Use \code{list_indicators(conditionnels = FALSE)} for the 31 base indicators.
 #' @param preprocess Logical. Automatically harmonize CRS and crop layers? Default TRUE.
 #' @param parallel Logical. Use parallel computation? (Not implemented in MVP, will error if TRUE)
 #' @param progress Logical. Show progress bar? Default TRUE.
 #' @param ... Additional arguments passed to indicator functions
 #'
-#' @return An \code{sf} object with original columns plus one column per calculated indicator
+#' @return An \code{sf} object with original columns plus one column per calculated
+#'   indicator, and the indicator's status column (\code{<code>_status}, e.g.
+#'   \code{a3_status = "skipped_no_micro"}) when the indicator writes one.
 #'
 #' @details
 #' The function performs the following steps:
@@ -163,12 +167,20 @@ nemeton_compute <- function(units,
     tryCatch(
       {
         # Dispatch to appropriate indicator function
-        values <- compute_indicator(ind, work, layers, ...)
+        res <- .compute_indicator_result(ind, work, layers, ...)
+        values <- extract_indicator_value(res, ind)
 
         # Add to results
         results[[ind]] <- values
         code <- .indicator_short_code(ind)
         if (!is.na(code) && !code %in% names(units)) work[[code]] <- values
+        # Statut de l'indicateur (`a3_status`, `r7_status`, ...) : un
+        # indicateur conditionnel sans sa source rend NA et dit pourquoi
+        # (`skipped_no_micro`, `skipped_no_sufosat`, ...).
+        st_col <- if (!is.na(code)) paste0(tolower(code), "_status")
+        if (!is.null(st_col) && st_col %in% names(res)) {
+          results[[st_col]] <- as.character(res[[st_col]])
+        }
 
         computed_indicators <- c(computed_indicators, ind)
       },
@@ -234,6 +246,14 @@ nemeton_compute <- function(units,
 #' @keywords internal
 #' @noRd
 compute_indicator <- function(indicator, units, layers, ...) {
+  extract_indicator_value(.compute_indicator_result(indicator, units, layers, ...),
+                          indicator)
+}
+
+# Appelle la fonction d'un indicateur et rend son resultat brut (l'objet
+# `units` augmente de la colonne de valeur et, le cas echeant, de sa colonne
+# de statut `<code>_status`).
+.compute_indicator_result <- function(indicator, units, layers, ...) {
   # Le nom NMT de l'indicateur est aussi le nom de la fonction
   func_name <- indicator
 
@@ -269,9 +289,7 @@ compute_indicator <- function(indicator, units, layers, ...) {
   if (!"..." %in% fmls) {
     call_args <- call_args[names(call_args) %in% fmls]
   }
-  result <- do.call(func, call_args)
-
-  extract_indicator_value(result, indicator)
+  do.call(func, call_args)
 }
 
 
@@ -348,130 +366,133 @@ extract_indicator_value <- function(result, indicator,
 
 #' List available indicators
 #'
-#' Returns a character vector of available indicator names.
+#' Returns the indicators of the 12-family framework: the **41 indicators**
+#' of [indicator_families()], in the same order, including the
+#' source-conditional ones.
 #'
-#' @param category Character. Filter by category: "all", "biophysical", "social", "landscape".
-#'   Default "all".
-#' @param return_type Character. Return "names" (default) or "details" (data.frame with descriptions)
+#' Ten indicators are **conditional**: they need a source that the public
+#' NDP 0 layers do not provide, and return `NA` (with a `<code>_status`
+#' column such as `"skipped_no_micro"`) when it is absent, never an error.
+#' They are B4 and L3 (Sentinel-2 spectral diversity), W4, A3, A4 and R6
+#' (precomputed microclimate), A5 (land-surface temperature), R5 (FORDEAD or
+#' RECONFORT dieback), R7 (daily minimum temperature) and T3 (SUFOSAT
+#' clear-cuts). `conditionnels = FALSE` keeps only the 31 indicators that the
+#' base layers can compute.
 #'
-#' @return Character vector of indicator names or data.frame with details
+#' @param category Character. Filter by category: `"all"` (default),
+#'   `"biophysical"`, `"landscape"`, `"risk"`, `"temporal"`, `"social"`,
+#'   `"productive"`, `"energy"`, `"naturalness"`.
+#' @param return_type Character. Return `"names"` (default) or `"details"`
+#'   (data.frame with descriptions).
+#' @param conditionnels Logical. Include the ten source-conditional
+#'   indicators? Default `TRUE` (all 41).
+#'
+#' @return Character vector of indicator names, or a data.frame with columns
+#'   `name`, `code`, `family`, `category`, `description`, `conditionnel`
+#'   (logical) and `source_conditionnelle` (the missing source that leaves
+#'   the indicator `NA`, `NA` for the base indicators).
 #'
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
+#' Since 1.0.0 the list holds all 41 indicators (31 before) and the details
+#' carry `code`, `conditionnel` and `source_conditionnelle`.
 #'
 #' @examples
-#' \dontrun{
-#' # Get all indicator names
+#' # All 41 indicator names
 #' list_indicators()
 #'
-#' # Get details
-#' list_indicators(return_type = "details")
-#' }
+#' # Only those computable from the base layers
+#' list_indicators(conditionnels = FALSE)
+#'
+#' # Details
+#' head(list_indicators(return_type = "details"))
 #'
 #' @export
-list_indicators <- function(category = "all", return_type = c("names", "details")) {
+list_indicators <- function(category = "all", return_type = c("names", "details"),
+                            conditionnels = TRUE) {
   return_type <- match.arg(return_type)
 
-  # 12-family indicator framework (v0.4.0+)
+  # La liste vient de la table des familles (source unique, 41 indicateurs) ;
+  # seules la categorie, la description et la source conditionnelle sont
+  # propres a cette fonction.
+  lab <- indicator_labels(lang = "en")
+  meta <- .INDICATOR_META[lab$code, , drop = FALSE]
+  if (anyNA(meta$category)) {
+    cli::cli_abort(c(
+      "Indicator metadata missing for {.val {lab$code[is.na(meta$category)]}}.",
+      "i" = "Add it to {.code .INDICATOR_META} (R/indicators-core.R)."
+    ))
+  }
   indicators <- data.frame(
-    name = c(
-      # C - Carbon/Energy (2)
-      "indicateur_c1_biomasse", "indicateur_c2_ndvi",
-      # W - Water (3)
-      "indicateur_w1_reseau", "indicateur_w2_zones_humides", "indicateur_w3_humidite",
-      # F - Soil Fertility (2)
-      "indicateur_f1_fertilite", "indicateur_f2_erosion",
-      # L - Landscape (2)
-      "indicateur_l1_effet_lisiere", "indicateur_l2_morcellement",
-      # B - Biodiversity (3)
-      "indicateur_b1_protection", "indicateur_b2_structure", "indicateur_b3_connectivite",
-      # R - Risk/Resilience (4)
-      "indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse", "indicateur_r4_abroutissement",
-      # T - Temporal (2)
-      "indicateur_t1_anciennete", "indicateur_t2_changement",
-      # A - Air/Microclimate (2)
-      "indicateur_a1_couverture", "indicateur_a2_qualite_air",
-      # S - Social (3)
-      "indicateur_s1_routes", "indicateur_s2_bati", "indicateur_s3_population",
-      # P - Productive (3)
-      "indicateur_p1_volume", "indicateur_p2_station", "indicateur_p3_qualite_bois",
-      # E - Energy (2)
-      "indicateur_e1_bois_energie", "indicateur_e2_evitement",
-      # N - Naturalness (3)
-      "indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite"
-    ),
-    family = c(
-      "C", "C",
-      "W", "W", "W",
-      "F", "F",
-      "L", "L",
-      "B", "B", "B",
-      "R", "R", "R", "R",
-      "T", "T",
-      "A", "A",
-      "S", "S", "S",
-      "P", "P", "P",
-      "E", "E",
-      "N", "N", "N"
-    ),
-    category = c(
-      "biophysical", "biophysical",
-      "biophysical", "biophysical", "biophysical",
-      "biophysical", "biophysical",
-      "landscape", "landscape",
-      "biophysical", "biophysical", "biophysical",
-      "risk", "risk", "risk", "risk",
-      "temporal", "temporal",
-      "biophysical", "biophysical",
-      "social", "social", "social",
-      "productive", "productive", "productive",
-      "energy", "energy",
-      "naturalness", "naturalness", "naturalness"
-    ),
-    description = c(
-      "Carbon stock via biomass allometric models (C1)",
-      "Vegetation vitality via NDVI (C2)",
-      "Water regulation via stream network (W1)",
-      "Water regulation via wetlands (W2)",
-      "Water regulation via Topographic Wetness Index (W3)",
-      "Soil fertility assessment (F1)",
-      "Soil erosion risk (F2)",
-      "Sylvosphere, edge effect (L1)",
-      "Landscape fragmentation (L2)",
-      "Biodiversity protection status (B1)",
-      "Structural diversity (B2)",
-      "Habitat connectivity (B3)",
-      "Fire risk assessment (R1)",
-      "Storm vulnerability (R2)",
-      "Drought risk (R3)",
-      "Browsing pressure (R4)",
-      "Stand age and maturity (T1)",
-      "Temporal change detection (T2)",
-      "Air quality regulation via canopy coverage (A1)",
-      "Air quality improvement potential (A2)",
-      "Trail network accessibility (S1)",
-      "General accessibility (S2)",
-      "Proximity to population centers (S3)",
-      "Timber volume production (P1)",
-      "Site productivity (P2)",
-      "Wood quality (P3)",
-      "Fuelwood energy potential (E1)",
-      "Fossil fuel avoidance via carbon sequestration (E2)",
-      "Distance to natural reference (N1)",
-      "Ecological continuity (N2)",
-      "Composite naturalness index (N3)"
-    ),
+    name = lab$column_name,
+    code = lab$code,
+    family = lab$family,
+    category = meta$category,
+    description = meta$description,
+    conditionnel = !is.na(meta$source),
+    source_conditionnelle = meta$source,
     stringsAsFactors = FALSE
   )
+  rownames(indicators) <- NULL
 
-  # Filter by category
+  if (!isTRUE(conditionnels)) {
+    indicators <- indicators[!indicators$conditionnel, , drop = FALSE]
+  }
   if (category != "all") {
-    indicators <- indicators[indicators$category == category, ]
+    indicators <- indicators[indicators$category == category, , drop = FALSE]
   }
+  rownames(indicators) <- NULL
 
-  if (return_type == "names") {
-    return(indicators$name)
-  } else {
-    return(indicators)
-  }
+  if (return_type == "names") indicators$name else indicators
 }
+
+# Categorie, description et source conditionnelle de chaque indicateur, par
+# code court. `source` = NA pour un indicateur calculable depuis les couches
+# de base ; sinon la source dont l'absence le laisse a NA (avec son statut).
+.INDICATOR_META <- local({
+  m <- matrix(c(
+    "C1", "biophysical", "Carbon stock via biomass allometric models (C1)", NA,
+    "C2", "biophysical", "Vegetation vitality via NDVI (C2)", NA,
+    "B1", "biophysical", "Biodiversity protection status (B1)", NA,
+    "B2", "biophysical", "Structural diversity (B2)", NA,
+    "B3", "biophysical", "Habitat connectivity (B3)", NA,
+    "B4", "biophysical", "Spectral alpha diversity, Sentinel-2 (B4)", "spectral",
+    "W1", "biophysical", "Water regulation via stream network (W1)", NA,
+    "W2", "biophysical", "Water regulation via wetlands (W2)", NA,
+    "W3", "biophysical", "Water regulation via Topographic Wetness Index (W3)", NA,
+    "W4", "biophysical", "Under-canopy summer vapour-pressure deficit (W4)", "microclimate",
+    "A1", "biophysical", "Air quality regulation via canopy coverage (A1)", NA,
+    "A2", "biophysical", "Air quality improvement potential (A2)", NA,
+    "A3", "biophysical", "Under-canopy summer maximum temperature (A3)", "microclimate",
+    "A4", "biophysical", "Canopy thermal buffering (A4)", "microclimate",
+    "A5", "biophysical", "Urban cooling from land-surface temperature (A5)", "lst",
+    "F1", "biophysical", "Soil fertility assessment (F1)", NA,
+    "F2", "biophysical", "Soil erosion risk (F2)", NA,
+    "L1", "landscape", "Sylvosphere, edge effect (L1)", NA,
+    "L2", "landscape", "Landscape fragmentation (L2)", NA,
+    "L3", "landscape", "Spectral beta heterogeneity, Sentinel-2 (L3)", "spectral",
+    "T1", "temporal", "Stand age and maturity (T1)", NA,
+    "T2", "temporal", "Temporal change detection (T2)", NA,
+    "T3", "temporal", "Recent clear-cuts, SUFOSAT (T3)", "sufosat",
+    "R1", "risk", "Fire risk assessment (R1)", NA,
+    "R2", "risk", "Storm vulnerability (R2)", NA,
+    "R3", "risk", "Drought risk (R3)", NA,
+    "R4", "risk", "Browsing pressure (R4)", NA,
+    "R5", "risk", "Forest dieback, FORDEAD or RECONFORT (R5)", "dieback",
+    "R6", "risk", "Microclimate sensitivity to heatwaves (R6)", "microclimate",
+    "R7", "risk", "Late frost risk (R7)", "tmin",
+    "S1", "social", "Trail network accessibility (S1)", NA,
+    "S2", "social", "General accessibility (S2)", NA,
+    "S3", "social", "Proximity to population centers (S3)", NA,
+    "P1", "productive", "Timber volume production (P1)", NA,
+    "P2", "productive", "Site productivity (P2)", NA,
+    "P3", "productive", "Wood quality (P3)", NA,
+    "E1", "energy", "Fuelwood energy potential (E1)", NA,
+    "E2", "energy", "Fossil fuel avoidance via carbon sequestration (E2)", NA,
+    "N1", "naturalness", "Distance to natural reference (N1)", NA,
+    "N2", "naturalness", "Ecological continuity (N2)", NA,
+    "N3", "naturalness", "Composite naturalness index (N3)", NA
+  ), ncol = 4, byrow = TRUE)
+  data.frame(category = m[, 2], description = m[, 3], source = m[, 4],
+             row.names = m[, 1], stringsAsFactors = FALSE)
+})

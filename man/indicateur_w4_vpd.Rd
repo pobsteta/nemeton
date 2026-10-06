@@ -22,7 +22,7 @@ indicateur_w4_vpd(units, micro = NULL, chm = NULL,
 }
 \value{
 \code{units} with \code{W4} (0-100), \code{W4_vpd} (raw kPa),
-\code{W4_couverture_pct}, and the \code{"microclimate_model"} augmentation flag (only when at least one value is computed).
+\code{W4_couverture_pct}, \code{w4_status} (\code{"calculated"}, \code{"skipped_no_micro"} or \code{"skipped_no_coverage"}), and the \code{"microclimate_model"} augmentation flag (only when at least one value is computed).
 
 \strong{Higher = moister air under the canopy = favourable.} The raw quantity
 (VPD, kPa) runs the other way, so \code{.micro_norm(decreasing = TRUE)} flips it

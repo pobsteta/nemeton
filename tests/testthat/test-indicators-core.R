@@ -8,12 +8,14 @@
 # list_indicators() — return_type = "names" (default)
 # ══════════════════════════════════════════════════════════════════
 
-test_that("list_indicators returns all 31 indicator names by default", {
+test_that("list_indicators returns all 41 indicator names by default", {
   skip_if_not_installed("terra")
   indicators <- list_indicators()
 
   expect_type(indicators, "character")
-  expect_length(indicators, 31)
+  expect_length(indicators, 41)
+  # Meme liste et meme ordre que la table des familles (source unique)
+  expect_identical(indicators, indicator_labels()$column_name)
 
   # Spot-check a few from different families
   expect_true("indicateur_c1_biomasse" %in% indicators)
@@ -54,8 +56,10 @@ test_that("list_indicators returns details data.frame when requested", {
   details <- list_indicators(return_type = "details")
 
   expect_s3_class(details, "data.frame")
-  expect_equal(nrow(details), 31)
-  expect_true(all(c("name", "family", "category", "description") %in% names(details)))
+  expect_equal(nrow(details), 41)
+  expect_true(all(c("name", "code", "family", "category", "description",
+                    "conditionnel", "source_conditionnelle") %in% names(details)))
+  expect_type(details$conditionnel, "logical")
   expect_type(details$name, "character")
   expect_type(details$family, "character")
   expect_type(details$category, "character")
@@ -82,6 +86,41 @@ test_that("list_indicators details contain correct family codes", {
   expect_equal(naturalness_row$family, "N")
 })
 
+test_that("list_indicators flags the ten source-conditional indicators", {
+  details <- list_indicators(return_type = "details")
+  cond <- details$code[details$conditionnel]
+  expect_setequal(cond, c("B4", "L3", "W4", "A3", "A4", "A5",
+                          "R5", "R6", "R7", "T3"))
+  expect_true(all(!is.na(details$source_conditionnelle[details$conditionnel])))
+  expect_true(all(is.na(details$source_conditionnelle[!details$conditionnel])))
+
+  base <- list_indicators(conditionnels = FALSE)
+  expect_length(base, 31)
+  expect_identical(base, details$name[!details$conditionnel])
+})
+
+test_that("conditional indicators without their source return NA with a status", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  units <- sf::st_sf(
+    id = 1:2,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(rbind(c(0, 0), c(100, 0), c(100, 100), c(0, 100), c(0, 0)))),
+      sf::st_polygon(list(rbind(c(200, 0), c(300, 0), c(300, 100), c(200, 100), c(200, 0)))),
+      crs = 2154
+    )
+  )
+  details <- list_indicators(return_type = "details")
+  for (i in which(details$conditionnel)) {
+    res <- suppressMessages(get(details$name[i])(units))
+    code <- details$code[i]
+    st <- paste0(tolower(code), "_status")
+    expect_true(all(is.na(res[[code]])), info = code)
+    expect_true(st %in% names(res), info = code)
+    expect_true(all(startsWith(res[[st]], "skipped_no_")), info = code)
+  }
+})
+
 # ══════════════════════════════════════════════════════════════════
 # list_indicators() — category filtering
 # ══════════════════════════════════════════════════════════════════
@@ -106,7 +145,8 @@ test_that("list_indicators filters by category = 'risk'", {
   skip_if_not_installed("terra")
   risk <- list_indicators(category = "risk")
 
-  expect_length(risk, 4)
+  expect_length(risk, 7)
+  expect_length(list_indicators(category = "risk", conditionnels = FALSE), 4)
   expect_true("indicateur_r1_feu" %in% risk)
   expect_true("indicateur_r2_tempete" %in% risk)
   expect_true("indicateur_r3_secheresse" %in% risk)
@@ -129,7 +169,8 @@ test_that("list_indicators filters by category = 'landscape'", {
   skip_if_not_installed("terra")
   landscape <- list_indicators(category = "landscape")
 
-  expect_length(landscape, 2)
+  expect_length(landscape, 3)
+  expect_true("indicateur_l3_het_spectrale" %in% landscape)
   expect_true("indicateur_l1_effet_lisiere" %in% landscape)
   expect_true("indicateur_l2_morcellement" %in% landscape)
   expect_false("indicateur_c1_biomasse" %in% landscape)
@@ -139,7 +180,8 @@ test_that("list_indicators filters by category = 'temporal'", {
   skip_if_not_installed("terra")
   temporal <- list_indicators(category = "temporal")
 
-  expect_length(temporal, 2)
+  expect_length(temporal, 3)
+  expect_true("indicateur_t3_coupes_rases" %in% temporal)
   expect_true("indicateur_t1_anciennete" %in% temporal)
   expect_true("indicateur_t2_changement" %in% temporal)
 })
@@ -186,7 +228,7 @@ test_that("list_indicators details with category filter returns filtered data.fr
   details <- list_indicators(category = "risk", return_type = "details")
 
   expect_s3_class(details, "data.frame")
-  expect_equal(nrow(details), 4)
+  expect_equal(nrow(details), 7)
   expect_true(all(details$category == "risk"))
   expect_true(all(details$family == "R"))
   expect_true(all(c("name", "family", "category", "description") %in% names(details)))
@@ -882,4 +924,21 @@ test_that(".indicator_short_code extrait le code court", {
   expect_identical(nemeton:::.indicator_short_code("indicateur_n1_distance"), "N1")
   expect_identical(nemeton:::.indicator_short_code("indicateur_a5_rafraichissement"), "A5")
   expect_true(is.na(nemeton:::.indicator_short_code("autre")))
+})
+
+test_that("nemeton_compute returns NA plus status for conditional indicators", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, "parcel_id"]
+  layers <- massif_demo_layers()
+  inds <- c("indicateur_a3_microclimat", "indicateur_t3_coupes_rases",
+            "indicateur_r7_gel", "indicateur_b4_div_spectrale")
+  res <- suppressMessages(nemeton_compute(units, layers, indicators = inds,
+                                          progress = FALSE))
+  for (ind in inds) expect_true(all(is.na(res[[ind]])), info = ind)
+  expect_equal(unique(res$a3_status), "skipped_no_micro")
+  expect_equal(unique(res$t3_status), "skipped_no_sufosat")
+  expect_equal(unique(res$r7_status), "skipped_no_tmin")
+  expect_equal(unique(res$b4_status), "skipped_no_spectral")
 })

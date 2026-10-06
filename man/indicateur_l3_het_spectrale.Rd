@@ -33,7 +33,8 @@ below 3 are raised to 3.}
 on the fly (e.g. \code{window_size}, \code{mask}, \code{nb_cpu}).}
 }
 \value{
-\code{units} with the numeric \code{L3} column added.
+\code{units} with the numeric \code{L3} column added, and
+\code{l3_status} (\code{"calculated"}, \code{"skipped_no_spectral"} or \code{"skipped_no_coverage"}).
 }
 \description{
 Per-unit Bray-Curtis beta diversity (spectral-species turnover,

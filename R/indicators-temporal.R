@@ -363,7 +363,7 @@ indicateur_t2_changement <- function(units,
 #' @return The input \code{units} (same class, rows and order) with an added numeric column \code{T3}, one value per unit: recency-weighted percentage of
 #'   the unit footprint under clear-cut within the window (0-100, high = more
 #'   clear-cutting). `NA` where `sufosat_dates` is `NULL` or the unit does not
-#'   overlap the raster.
+#'   overlap the raster. Also adds `t3_status` (`"calculated"`, `"skipped_no_sufosat"` or `"skipped_no_coverage"`).
 #'
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
@@ -375,6 +375,22 @@ indicateur_t3_coupes_rases <- function(units,
                                        window_years   = 5L,
                                        min_proba      = 0.9,
                                        reference_year = NULL) {
+  res <- .t3_calcul(units, sufosat_dates = sufosat_dates,
+                    sufosat_proba = sufosat_proba, window_years = window_years,
+                    min_proba = min_proba, reference_year = reference_year)
+  res$t3_status <- if (is.null(sufosat_dates)) rep("skipped_no_sufosat", nrow(res))
+                   else .statut_conditionnel(res$T3)
+  res
+}
+
+# Corps de T3 (colonne T3 seule) ; indicateur_t3_coupes_rases() y ajoute
+# `t3_status`.
+.t3_calcul <- function(units,
+                       sufosat_dates  = NULL,
+                       sufosat_proba  = NULL,
+                       window_years   = 5L,
+                       min_proba      = 0.9,
+                       reference_year = NULL) {
   validate_sf(units)
   n <- nrow(units)
   if (n == 0L) return(.indicateur_resultat(units, "T3", numeric(0)))

@@ -27,7 +27,8 @@ compute spectral diversity on the fly when \code{spectral} is
 on the fly (e.g. \code{window_size}, \code{mask}, \code{nb_cpu}).}
 }
 \value{
-\code{units} with the numeric \code{B4} column added.
+\code{units} with the numeric \code{B4} column added, and
+\code{b4_status} (\code{"calculated"}, \code{"skipped_no_spectral"} or \code{"skipped_no_coverage"}).
 }
 \description{
 Per-unit Shannon alpha diversity of spectral species (biodivMapR),

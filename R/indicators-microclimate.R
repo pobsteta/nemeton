@@ -84,17 +84,26 @@
 # columns under the family short code `code`, or NA columns when absent.
 .micro_indicator <- function(units, r, code, raw_name, lo, hi, decreasing) {
   validate_sf(units)
+  status <- paste0(tolower(code), "_status")
   if (is.null(r)) {
     units[[code]] <- NA_real_
     units[[raw_name]] <- NA_real_
     units[[paste0(code, "_couverture_pct")]] <- 0
+    units[[status]] <- rep("skipped_no_micro", nrow(units))
     return(units)
   }
   ex <- .micro_extract(units, r)
   units[[raw_name]] <- ex$mean
   units[[code]] <- .micro_norm(ex$mean, lo, hi, decreasing)
   units[[paste0(code, "_couverture_pct")]] <- 100 * ex$cover
+  units[[status]] <- .statut_conditionnel(units[[code]])
   units
+}
+
+# Statut d'un indicateur conditionnel dont la source est fournie :
+# "calculated" ou "skipped_no_coverage" (unite hors de l'emprise de la source).
+.statut_conditionnel <- function(valeurs) {
+  ifelse(is.na(valeurs), "skipped_no_coverage", "calculated")
 }
 
 
@@ -116,7 +125,7 @@
 #' @param ... Unused (signature harmonisation).
 #'
 #' @return `units` with columns `A3` (0-100), `A3_tmax` (raw °C),
-#'   `A3_couverture_pct`, and `attr(., "augmented")` carrying
+#'   `A3_couverture_pct`, `a3_status` (`"calculated"`, `"skipped_no_micro"` or `"skipped_no_coverage"`), and `attr(., "augmented")` carrying
 #'   `"microclimate_model"` (only when at least one value is computed).
 #'
 #'   **Higher = cooler under the canopy = favourable.** The raw quantity
@@ -156,7 +165,7 @@ indicateur_a3_microclimat <- function(units, micro = NULL, chm = NULL,
 #' @param ... Unused.
 #'
 #' @return `units` with `A4` (0-100), `A4_buffer` (raw °C),
-#'   `A4_couverture_pct`, and the `"microclimate_model"` augmentation flag (only when at least one value is computed).
+#'   `A4_couverture_pct`, `a4_status` (`"calculated"`, `"skipped_no_micro"` or `"skipped_no_coverage"`), and the `"microclimate_model"` augmentation flag (only when at least one value is computed).
 #'
 #'   **Higher = more thermal buffering = favourable**, and the raw quantity
 #'   (the open-air minus under-canopy temperature gap, °C) already runs that
@@ -195,7 +204,7 @@ indicateur_a4_tamponnement <- function(units, micro = NULL, chm = NULL,
 #' @param ... Unused.
 #'
 #' @return `units` with `W4` (0-100), `W4_vpd` (raw kPa),
-#'   `W4_couverture_pct`, and the `"microclimate_model"` augmentation flag (only when at least one value is computed).
+#'   `W4_couverture_pct`, `w4_status` (`"calculated"`, `"skipped_no_micro"` or `"skipped_no_coverage"`), and the `"microclimate_model"` augmentation flag (only when at least one value is computed).
 #'
 #'   **Higher = moister air under the canopy = favourable.** The raw quantity
 #'   (VPD, kPa) runs the other way, so `.micro_norm(decreasing = TRUE)` flips
@@ -242,7 +251,8 @@ indicateur_w4_vpd <- function(units, micro = NULL, chm = NULL,
 #' @param ... Unused.
 #'
 #' @return `units` with `R6` (0-100, higher = less sensitive), `R6_dtmax`
-#'   (raw ΔT°max, °C), `R6_dvpd` (raw ΔVPD, kPa), `R6_couverture_pct`, and
+#'   (raw ΔT°max, °C), `R6_dvpd` (raw ΔVPD, kPa), `R6_couverture_pct`,
+#'   `r6_status` (`"calculated"`, `"skipped_no_micro"` or `"skipped_no_coverage"`), and
 #'   the `"microclimate_model"` augmentation flag (only when at least one value is computed).
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
@@ -262,6 +272,7 @@ indicateur_r6_sensibilite <- function(units, micro_moyenne = NULL,
     units$R6_dtmax <- NA_real_
     units$R6_dvpd <- NA_real_
     units$R6_couverture_pct <- 0
+    units$r6_status <- rep("skipped_no_micro", nrow(units))
     return(.micro_augmented(units, micro_canicule, "R6"))
   }
   exT <- .micro_extract(units, tc - tm)   # ΔT°max (canicule − moyenne)
@@ -272,6 +283,7 @@ indicateur_r6_sensibilite <- function(units, micro_moyenne = NULL,
   sV <- pmin(1, pmax(0, exV$mean / bounds[["scale_v"]]))
   units$R6 <- 100 * (1 - (0.5 * sT + 0.5 * sV))
   units$R6_couverture_pct <- 100 * pmin(exT$cover, exV$cover, na.rm = FALSE)
+  units$r6_status <- .statut_conditionnel(units$R6)
   .micro_augmented(units, micro_canicule, "R6")
 }
 

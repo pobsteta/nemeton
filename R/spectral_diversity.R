@@ -392,7 +392,8 @@ compute_spectral_diversity <- function(reflectance,
 #' @param ... Passed to [compute_spectral_diversity()] when computing on
 #'   the fly (e.g. \code{window_size}, \code{mask}, \code{nb_cpu}).
 #'
-#' @return \code{units} with the numeric \code{B4} column added.
+#' @return \code{units} with the numeric \code{B4} column added, and
+#'   \code{b4_status} (\code{"calculated"}, \code{"skipped_no_spectral"} or \code{"skipped_no_coverage"}).
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
 #'
@@ -414,6 +415,8 @@ indicateur_b4_div_spectrale <- function(units,
     .aggregate_diversity(spectral$alpha, units)
   }
   units$B4 <- values
+  units$b4_status <- if (is.null(spectral)) rep("skipped_no_spectral", nrow(units))
+                     else .statut_conditionnel(values)
   .spectral_message(values, "B4",
                     "spectral alpha diversity (Shannon) via biodivMapR")
   units
@@ -461,7 +464,8 @@ indicateur_b4_div_spectrale <- function(units,
 #'   returned (default \code{3L}, the floor for a dispersion around a
 #'   centroid). Values below 3 are raised to 3.
 #'
-#' @return \code{units} with the numeric \code{L3} column added.
+#' @return \code{units} with the numeric \code{L3} column added, and
+#'   \code{l3_status} (\code{"calculated"}, \code{"skipped_no_spectral"} or \code{"skipped_no_coverage"}).
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
 #'
@@ -484,6 +488,8 @@ indicateur_l3_het_spectrale <- function(units,
     .aggregate_beta_dispersion(spectral$beta, units, min_windows = min_windows)
   }
   units$L3 <- values
+  units$l3_status <- if (is.null(spectral)) rep("skipped_no_spectral", nrow(units))
+                     else .statut_conditionnel(values)
   .spectral_message(values, "L3",
                     "spectral beta diversity (Bray-Curtis PCoA dispersion) via biodivMapR")
   units

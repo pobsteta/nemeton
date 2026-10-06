@@ -4,32 +4,59 @@
 \alias{list_indicators}
 \title{List available indicators}
 \usage{
-list_indicators(category = "all", return_type = c("names", "details"))
+list_indicators(
+  category = "all",
+  return_type = c("names", "details"),
+  conditionnels = TRUE
+)
 }
 \arguments{
-\item{category}{Character. Filter by category: "all", "biophysical", "social", "landscape".
-Default "all".}
+\item{category}{Character. Filter by category: \code{"all"} (default),
+\code{"biophysical"}, \code{"landscape"}, \code{"risk"}, \code{"temporal"}, \code{"social"},
+\code{"productive"}, \code{"energy"}, \code{"naturalness"}.}
 
-\item{return_type}{Character. Return "names" (default) or "details" (data.frame with descriptions)}
+\item{return_type}{Character. Return \code{"names"} (default) or \code{"details"}
+(data.frame with descriptions).}
+
+\item{conditionnels}{Logical. Include the ten source-conditional
+indicators? Default \code{TRUE} (all 41).}
 }
 \value{
-Character vector of indicator names or data.frame with details
+Character vector of indicator names, or a data.frame with columns
+\code{name}, \code{code}, \code{family}, \code{category}, \code{description}, \code{conditionnel}
+(logical) and \code{source_conditionnelle} (the missing source that leaves
+the indicator \code{NA}, \code{NA} for the base indicators).
 }
 \description{
-Returns a character vector of available indicator names.
+Returns the indicators of the 12-family framework: the \strong{41 indicators}
+of \code{\link[=indicator_families]{indicator_families()}}, in the same order, including the
+source-conditional ones.
+}
+\details{
+Ten indicators are \strong{conditional}: they need a source that the public
+NDP 0 layers do not provide, and return \code{NA} (with a \verb{<code>_status}
+column such as \code{"skipped_no_micro"}) when it is absent, never an error.
+They are B4 and L3 (Sentinel-2 spectral diversity), W4, A3, A4 and R6
+(precomputed microclimate), A5 (land-surface temperature), R5 (FORDEAD or
+RECONFORT dieback), R7 (daily minimum temperature) and T3 (SUFOSAT
+clear-cuts). \code{conditionnels = FALSE} keeps only the 31 indicators that the
+base layers can compute.
 }
 \section{Lifecycle}{
 
 Stable: covered by the 1.0 API contract (spec 057).
+Since 1.0.0 the list holds all 41 indicators (31 before) and the details
+carry \code{code}, \code{conditionnel} and \code{source_conditionnelle}.
 }
 
 \examples{
-\dontrun{
-# Get all indicator names
+# All 41 indicator names
 list_indicators()
 
-# Get details
-list_indicators(return_type = "details")
-}
+# Only those computable from the base layers
+list_indicators(conditionnels = FALSE)
+
+# Details
+head(list_indicators(return_type = "details"))
 
 }

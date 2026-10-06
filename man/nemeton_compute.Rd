@@ -19,8 +19,10 @@ nemeton_compute(
 
 \item{layers}{A \code{nemeton_layers} object containing spatial data layers}
 
-\item{indicators}{Character vector of indicator names to calculate, or "all" for all available.
-See \code{\link{list_indicators}} for available indicators from the 12-family framework.}
+\item{indicators}{Character vector of indicator names to calculate, or "all" for all
+41 indicators of \code{\link{list_indicators}} (the source-conditional ones
+included: without their source they come back \code{NA} with their status).
+Use \code{list_indicators(conditionnels = FALSE)} for the 31 base indicators.}
 
 \item{preprocess}{Logical. Automatically harmonize CRS and crop layers? Default TRUE.}
 
@@ -31,7 +33,9 @@ See \code{\link{list_indicators}} for available indicators from the 12-family fr
 \item{...}{Additional arguments passed to indicator functions}
 }
 \value{
-An \code{sf} object with original columns plus one column per calculated indicator
+An \code{sf} object with original columns plus one column per calculated
+indicator, and the indicator's status column (\code{<code>_status}, e.g.
+\code{a3_status = "skipped_no_micro"}) when the indicator writes one.
 }
 \description{
 Main function to compute biophysical indicators for forest units from spatial layers.
