@@ -6,8 +6,9 @@
 #' lives in \code{~/.virtualenvs/nemeton-fordead} by default and is
 #' created lazily on first use; subsequent calls are idempotent.
 #'
-#' Python \eqn{\geq} 3.10 is required (FORDEAD 2.x). Pinned dependency
-#' list lives in \code{inst/python/requirements.txt}.
+#' Python \eqn{\geq} 3.11 is required (by the pinned stack). The dependency
+#' list lives in \code{inst/python/requirements.txt}: every package is pinned to
+#' an exact version (the `pip freeze` of the validated venv), no open bound.
 #'
 #' @name fordead_python
 NULL
@@ -61,38 +62,38 @@ NULL
 }
 
 
-#' Probe PATH for a Python ≥ 3.10 interpreter
+#' Probe PATH for a Python ≥ 3.11 interpreter
 #'
 #' Walks a list of conventional Python binary names from newest to
-#' oldest (3.14 → 3.10 → generic `python3` → `python`) and returns
-#' the first one that exists on `PATH` AND reports a version ≥ 3.10.
+#' oldest (3.14 → 3.11 → generic `python3` → `python`) and returns
+#' the first one that exists on `PATH` AND reports a version ≥ 3.11.
 #'
 #' Used as a fallback when [reticulate::py_discover_config()] returns
 #' nothing useful — for instance because the user just removed
 #' `RETICULATE_PYTHON` from their `.Renviron` and reticulate's
 #' internal discovery hasn't kicked in.
 #'
-#' @return Character path (string) to a Python ≥ 3.10 interpreter,
+#' @return Character path (string) to a Python ≥ 3.11 interpreter,
 #'   or `""` if nothing matches.
 #' @keywords internal
 .find_python_on_path <- function() {
   candidates <- c("python3.14", "python3.13", "python3.12",
-                  "python3.11", "python3.10", "python3", "python")
+                  "python3.11", "python3", "python")
   for (cand in candidates) {
     p <- unname(Sys.which(cand))
     if (!nzchar(p) || !file.exists(p)) next
     v <- .probe_python_version(p)
-    if (!is.na(v) && v >= numeric_version("3.10")) return(p)
+    if (!is.na(v) && v >= numeric_version("3.11")) return(p)
   }
   ""
 }
 
 
-#' Assert reticulate is available and Python >= 3.10 is installed
+#' Assert reticulate is available and Python >= 3.11 is installed
 #'
 #' Raises a `cli::cli_abort` with installation hints when reticulate
 #' is missing, when Python cannot be found, or when the discovered
-#' interpreter is older than 3.10.
+#' interpreter is older than 3.11.
 #'
 #' Discovery is two-pronged: first ask reticulate via
 #' [reticulate::py_discover_config()] (which honours `RETICULATE_PYTHON`
@@ -102,7 +103,7 @@ NULL
 #' [.find_python_on_path()] which probes `Sys.which()` directly.
 #'
 #' We don't need reticulate to be initialised against the discovered
-#' interpreter at this point; we only need to know that a 3.10+ Python
+#' interpreter at this point; we only need to know that a 3.11+ Python
 #' is reachable so the FORDEAD venv can be built from it.
 #'
 #' @return Invisibly the resolved Python interpreter path (string).
@@ -132,16 +133,16 @@ NULL
   if (!nzchar(py_path)) {
     cli::cli_abort(c(
       "No Python interpreter found.",
-      i = "FORDEAD requires Python {.val >= 3.10}.",
-      i = "Install Python 3.10+ then rerun, or set {.envvar RETICULATE_PYTHON} to its path."
+      i = "FORDEAD requires Python {.val >= 3.11}.",
+      i = "Install Python 3.11+ then rerun, or set {.envvar RETICULATE_PYTHON} to its path."
     ))
   }
 
   ver <- numeric_version(ver_str, strict = FALSE)
-  if (is.na(ver) || ver < numeric_version("3.10")) {
+  if (is.na(ver) || ver < numeric_version("3.11")) {
     cli::cli_abort(c(
-      "Python {ver_str} found at {.path {py_path}} but {.val >= 3.10} is required.",
-      i = "FORDEAD 2.x dropped support for Python < 3.10."
+      "Python {ver_str} found at {.path {py_path}} but {.val >= 3.11} is required.",
+      i = "The pinned FORDEAD stack (numpy 2.4, scipy 1.17, xarray 2026.4) requires Python >= 3.11."
     ))
   }
   invisible(py_path)
@@ -490,7 +491,12 @@ NULL
   req <- normalizePath(requirements, winslash = "/", mustWork = FALSE)
 
   # Run pip in the venv interpreter ourselves so we keep its output.
-  # `--upgrade` matches reticulate's default for requirements installs.
+  # 1.0.0 : requirements.txt est un `pip freeze` du venv validé — chaque
+  # paquet est épinglé à une version exacte (`==`, ou tag/commit git pour
+  # fordead, simplestac, stac-static), sans borne ouverte. `--upgrade` ne
+  # peut donc plus tirer de version plus récente : il sert seulement à
+  # réaligner un venv existant sur les épingles (y compris les dépendances
+  # git, que pip ne réinstalle pas sinon quand le nom est déjà présent).
   out <- tryCatch(
     suppressWarnings(system2(
       py,

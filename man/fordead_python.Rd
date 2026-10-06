@@ -9,6 +9,7 @@ Manage the isolated Python virtual environment that hosts the
 lives in \code{~/.virtualenvs/nemeton-fordead} by default and is
 created lazily on first use; subsequent calls are idempotent.
 
-Python \eqn{\geq} 3.10 is required (FORDEAD 2.x). Pinned dependency
-list lives in \code{inst/python/requirements.txt}.
+Python \eqn{\geq} 3.11 is required (by the pinned stack). The dependency
+list lives in \code{inst/python/requirements.txt}: every package is pinned to
+an exact version (the `pip freeze` of the validated venv), no open bound.
 }
