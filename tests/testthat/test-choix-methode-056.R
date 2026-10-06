@@ -33,6 +33,10 @@ square_unit <- function(dem, frac = 0.2) {
 # ---------------------------------------------------------------------------
 
 test_that("R2 terrain fallback is wind exposure x normalised slope, no TRI", {
+  # Le repli terrain ne s'exécute que sans microclima (installé en CI via
+  # Remotes : R2 y prend alors la méthode windcoef).
+  skip_if(nzchar(system.file(package = "microclima")),
+          "microclima installed: R2 uses windcoef, not the terrain fallback")
   local_mocked_bindings(get_nasapower_wind = function(...) 270)
   dem <- make_slope_dem()
   units <- square_unit(dem)
