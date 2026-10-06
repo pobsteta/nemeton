@@ -103,7 +103,7 @@ test_that("indicateur_n1_distance validates input", {
   )
 })
 
-test_that("indicateur_n1_distance uses custom column name", {
+test_that("indicateur_n1_distance always writes its code column (no column_name, spec 057)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
@@ -115,10 +115,10 @@ test_that("indicateur_n1_distance uses custom column name", {
     )
   )
 
-  result <- indicateur_n1_distance(test_units, column_name = "remoteness")
-
-  expect_true("remoteness" %in% names(result))
-  expect_false("N1" %in% names(result))
+  expect_error(indicateur_n1_distance(test_units, column_name = "remoteness"),
+               "unused argument")
+  result <- indicateur_n1_distance(test_units)
+  expect_true("N1" %in% names(result))
 })
 
 test_that("indicateur_n1_distance (N1) handles empty roads sf (0 rows)", {
@@ -589,7 +589,7 @@ test_that("indicateur_n2_continuite validates input", {
   )
 })
 
-test_that("indicateur_n2_continuite uses custom column name", {
+test_that("indicateur_n2_continuite always writes its code column (no column_name, spec 057)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
@@ -601,10 +601,10 @@ test_that("indicateur_n2_continuite uses custom column name", {
     )
   )
 
-  result <- indicateur_n2_continuite(test_units, column_name = "forest_cont")
-
-  expect_true("forest_cont" %in% names(result))
-  expect_false("N2" %in% names(result))
+  expect_error(indicateur_n2_continuite(test_units, column_name = "forest_cont"),
+               "unused argument")
+  result <- indicateur_n2_continuite(test_units)
+  expect_true("N2" %in% names(result))
 })
 
 test_that("indicateur_n2_continuite (N2) handles empty bdforet sf (0 rows)", {
@@ -1056,7 +1056,7 @@ test_that("indicateur_n3_naturalite validates input", {
   )
 })
 
-test_that("indicateur_n3_naturalite uses custom column name", {
+test_that("indicateur_n3_naturalite always writes its code column (no column_name, spec 057)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
@@ -1070,10 +1070,10 @@ test_that("indicateur_n3_naturalite uses custom column name", {
     )
   )
 
-  result <- indicateur_n3_naturalite(test_units, column_name = "nat_idx")
-
-  expect_true("nat_idx" %in% names(result))
-  expect_false("N3" %in% names(result))
+  expect_error(indicateur_n3_naturalite(test_units, column_name = "nat_idx"),
+               "unused argument")
+  result <- indicateur_n3_naturalite(test_units)
+  expect_true("N3" %in% names(result))
 })
 
 test_that("indicateur_n3_naturalite (N3) with only N1 (no N2)", {
@@ -1314,15 +1314,6 @@ test_that("indicateur_n1_distance without roads returns default", {
   result <- indicateur_n1_distance(units)
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
-})
-
-test_that("indicateur_n1_distance with custom column_name", {
-  skip_if_not_installed("terra")
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-
-  result <- indicateur_n1_distance(units, column_name = "nat_dist")
-  expect_true("nat_dist" %in% names(result))
 })
 
 test_that("indicateur_n2_continuite returns N2", {

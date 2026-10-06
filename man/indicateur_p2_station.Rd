@@ -10,7 +10,6 @@ indicateur_p2_station(
   fertility_field = "fertility",
   climate_field = "climate",
   productivity_table = NULL,
-  column_name = "P2",
   chm = NULL,
   age_field = "age",
   reference_age = 50,
@@ -30,7 +29,6 @@ indicateur_p2_station(
 
 \item{productivity_table}{Data.frame. Custom productivity reference table. If NULL, uses bundled ONF/IFN tables.}
 
-\item{column_name}{Character. Name for output column. Default "P2".}
 
 \item{chm}{Optional \code{SpatRaster} of canopy heights in
 metres. When supplied, activates CHM mode (spec 005 phase
@@ -100,10 +98,10 @@ Fay-Herriot (\code{\link{ifn_production_reference}}), in
 not of the stand's own site, all species together: the per-group
 figures of the table are diluted over the whole forest area. It adds
 three columns:
-\code{<column_name>_rse} (relative standard error, percent),
-\code{<column_name>_provenance} (\code{"ifn_prod_ser"},
+\code{P2_rse} (relative standard error, percent),
+\code{P2_provenance} (\code{"ifn_prod_ser"},
 \code{"ifn_prod_greco"} or \code{"ifn_prod_national"}) and
-\code{<column_name>_nature} (\code{"fay_herriot"},
+\code{P2_nature} (\code{"fay_herriot"},
 \code{"direct"} or \code{"synthetique"}). It is opt-in: the
 default behaviour is unchanged.
 

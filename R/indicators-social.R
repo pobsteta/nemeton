@@ -21,7 +21,6 @@ NULL
 #'   If NULL, resolved from layers.
 #' @param layers A nemeton_layers object (optional). Used to resolve roads/dem
 #'   when not provided directly.
-#' @param column_name Character. Name for output column. Default "S1".
 #' @param dem_target_res Numeric. Working resolution (metres) the DEM grid is
 #'   aggregated to before roads are rasterised and the distance transform runs.
 #'   The DEM is only a grid template here, and a 0.5-1 m LiDAR HD MNT makes that
@@ -67,7 +66,6 @@ indicateur_s1_routes <- function(units,
                                     roads = NULL,
                                     dem = NULL,
                                     layers = NULL,
-                                    column_name = "S1",
                                     dem_target_res = .topo_target_res(),
                                     max_dist = 2000) {
   # Validate inputs
@@ -100,15 +98,15 @@ indicateur_s1_routes <- function(units,
   # Fallback: no DEM or no roads → NA
   if (is.null(dem) || is.null(roads) || nrow(roads) == 0) {
     cli::cli_alert_warning("S1: DEM or roads unavailable, returning NA")
-    result[[column_name]] <- rep(NA_real_, nrow(units))
+    result$S1 <- rep(NA_real_, nrow(units))
     return(result)
   }
 
   .check_max_dist(max_dist)
-  result[[column_name]] <- .distance_moyenne_entites(units, roads, dem,
+  result$S1 <- .distance_moyenne_entites(units, roads, dem,
                                                      max_dist, "S1")
 
-  cli::cli_alert_success("Calculated {column_name}: Distance to roads (m)")
+  cli::cli_alert_success("Calculated S1: Distance to roads (m)")
 
   return(result)
 }
@@ -124,7 +122,6 @@ indicateur_s1_routes <- function(units,
 #'   If NULL, resolved from layers.
 #' @param layers A nemeton_layers object (optional). Used to resolve buildings/dem
 #'   when not provided directly.
-#' @param column_name Character. Name for output column. Default "S2".
 #' @param dem_target_res Numeric. Working resolution (metres) the DEM grid is
 #'   aggregated to before buildings are rasterised and the distance transform
 #'   runs. The DEM is only a grid template here, and a 0.5-1 m LiDAR HD MNT makes
@@ -170,7 +167,6 @@ indicateur_s2_bati <- function(units,
                                            buildings = NULL,
                                            dem = NULL,
                                            layers = NULL,
-                                           column_name = "S2",
                                            dem_target_res = .topo_target_res(),
                                            max_dist = 2000) {
   # Validate inputs
@@ -202,15 +198,15 @@ indicateur_s2_bati <- function(units,
   # Fallback: no DEM or no buildings → NA
   if (is.null(dem) || is.null(buildings) || nrow(buildings) == 0) {
     cli::cli_alert_warning("S2: DEM or buildings unavailable, returning NA")
-    result[[column_name]] <- rep(NA_real_, nrow(units))
+    result$S2 <- rep(NA_real_, nrow(units))
     return(result)
   }
 
   .check_max_dist(max_dist)
-  result[[column_name]] <- .distance_moyenne_entites(units, buildings, dem,
+  result$S2 <- .distance_moyenne_entites(units, buildings, dem,
                                                      max_dist, "S2")
 
-  cli::cli_alert_success("Calculated {column_name}: Distance to buildings (m)")
+  cli::cli_alert_success("Calculated S2: Distance to buildings (m)")
 
   return(result)
 }
@@ -276,13 +272,11 @@ indicateur_s2_bati <- function(units,
 #'   `population_grid` the same way (the label is informative). `"proxy"` no
 #'   longer exists and raises an error.
 #' @param buffer_radii Numeric vector. Buffer distances (m) for population counts. Default c(5000, 10000, 20000).
-#' @param column_name Character. Name for output column (main indicator). Default "S3".
 #'
 #' @param population_field Character or `NULL`. Name of the population column of
 #'   `population_grid` when it is an `sf`. `NULL` (default) looks for `ind`,
 #'   `pop` or `population` (INSEE Filosofi names it `ind`).
-#' @return sf object with added columns: `S3` (named after `column_name`,
-#'   population density in inhabitants/km2 within the first buffer),
+#' @return sf object with added columns: `S3` (population density in inhabitants/km2 within the first buffer),
 #'   `S3_densite` (same value), and the population counts `S3_5km`,
 #'   `S3_10km`, `S3_20km` within the three buffers of `buffer_radii` (the
 #'   names are kept whatever the radii). Without `population_grid`, `S3` and
@@ -323,8 +317,7 @@ indicateur_s3_population <- function(units,
                                        population_grid = NULL,
                                        population_field = NULL,
                                        method = c("insee", "local", "proxy"),
-                                       buffer_radii = c(5000, 10000, 20000),
-                                       column_name = "S3") {
+                                       buffer_radii = c(5000, 10000, 20000)) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     cli::cli_abort("units must be an sf object")
@@ -363,7 +356,7 @@ indicateur_s3_population <- function(units,
   # CRS de l'ADR-008). Ou tout `sf`/`SpatRaster` portant un comptage.
   if (is.null(population_grid)) {
     cli::cli_alert_info(
-      "{column_name}: no population grid provided, returning NA \\
+      "S3: no population grid provided, returning NA \\
        (no measurement made). Supply INSEE Filosofi carreaux, or any layer \\
        carrying a population count."
     )
@@ -371,7 +364,7 @@ indicateur_s3_population <- function(units,
     result$S3_5km <- na
     result$S3_10km <- na
     result$S3_20km <- na
-    result[[column_name]] <- na
+    result$S3 <- na
     return(result)
   }
 
@@ -447,14 +440,14 @@ indicateur_s3_population <- function(units,
   # qu'un gestionnaire cite dans un document.
   aire_5km_km2 <- as.numeric(sf::st_area(buffer_5km)) / 1e6
   result$S3_densite <- ifelse(aire_5km_km2 > 0, pop_5km / aire_5km_km2, NA_real_)
-  result[[column_name]] <- result$S3_densite
+  result$S3 <- result$S3_densite
 
   msg_info("social_population_calculated",
            as.integer(stats::median(pop_5km, na.rm = TRUE)),
            as.integer(stats::median(pop_10km, na.rm = TRUE)),
            as.integer(stats::median(pop_20km, na.rm = TRUE)))
   cli::cli_alert_success(
-    "Calculated {column_name}: population density in the 5 km ring \
+    "Calculated S3: population density in the 5 km ring \
      (median {round(stats::median(result$S3_densite, na.rm = TRUE))} inhab/km2)"
   )
   result

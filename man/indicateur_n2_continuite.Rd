@@ -9,7 +9,6 @@ indicateur_n2_continuite(
   bdforet = NULL,
   foret_ancienne = NULL,
   layers = NULL,
-  column_name = "N2",
   weight_anciennete = TRUE
 )
 }
@@ -26,7 +25,6 @@ with a NULL \code{foret_ancienne} gives N2 = NA.}
 
 \item{layers}{nemeton_layers object. Used to resolve bdforet if not provided directly.}
 
-\item{column_name}{Character. Name for output column. Default "N2".}
 
 \item{weight_anciennete}{Logical. When \code{foret_ancienne} carries an
 \code{anciennete} tier column, weight the ancient-forest coverage by tier depth

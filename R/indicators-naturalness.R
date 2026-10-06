@@ -24,7 +24,6 @@ NULL
 #' @param buildings sf object (POLYGON/MULTIPOLYGON). Buildings. NULL (and none
 #'   in `layers`) gives N1 = NA.
 #' @param layers nemeton_layers object. Used to resolve roads/buildings if not provided directly.
-#' @param column_name Character. Name for output column. Default "N1".
 #'
 #' @return sf object with added column N1 (score 0-100, 100 = very remote).
 #'   Each distance is scored `min(100, d / 20)` (2 km or more = 100). Until
@@ -40,8 +39,7 @@ NULL
 indicateur_n1_distance <- function(units,
                                            roads = NULL,
                                            buildings = NULL,
-                                           layers = NULL,
-                                           column_name = "N1") {
+                                           layers = NULL) {
   if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   result <- units
@@ -86,9 +84,9 @@ indicateur_n1_distance <- function(units,
   # 2026-10-06) : N1 = (N1_ancien - 25) / 0,75. S'il arrive un jour une couche
   # de zones urbaines, le terme reviendra avec une vraie distance. Une couche
   # routes ou bati manquante laisse N1 a NA (NA propage par la somme).
-  result[[column_name]] <- (0.40 * N1_routes + 0.35 * N1_batiments) / 0.75
+  result$N1 <- (0.40 * N1_routes + 0.35 * N1_batiments) / 0.75
 
-  cli::cli_alert_success("Calculated {column_name}: Infrastructure distance (0-100)")
+  cli::cli_alert_success("Calculated N1: Infrastructure distance (0-100)")
   return(result)
 }
 
@@ -108,7 +106,6 @@ indicateur_n1_distance <- function(units,
 #'   [build_foret_ancienne_mask()] with an `anciennete` column (multi-epoch
 #'   consolidation, e.g. Cassini + état-major). NULL = only use bdforet.
 #' @param layers nemeton_layers object. Used to resolve bdforet if not provided directly.
-#' @param column_name Character. Name for output column. Default "N2".
 #' @param weight_anciennete Logical. When `foret_ancienne` carries an
 #'   `anciennete` tier column, weight the ancient-forest coverage by tier depth
 #'   (forest present at more epochs counts more). Ignored for single-epoch
@@ -133,7 +130,6 @@ indicateur_n2_continuite <- function(units,
                                              bdforet = NULL,
                                              foret_ancienne = NULL,
                                              layers = NULL,
-                                             column_name = "N2",
                                              weight_anciennete = TRUE) {
   if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
@@ -148,8 +144,8 @@ indicateur_n2_continuite <- function(units,
   # no data » disait deja qu'aucune mesure n'avait eu lieu — et rendait quand
   # meme un nombre, qui pesait ensuite dans la famille Naturalite.
   if (is.null(bdforet) && is.null(foret_ancienne)) {
-    result[[column_name]] <- rep(NA_real_, nrow(units))
-    cli::cli_alert_info("{column_name}: no forest data, returning NA (no measurement made)")
+    result$N2 <- rep(NA_real_, nrow(units))
+    cli::cli_alert_info("N2: no forest data, returning NA (no measurement made)")
     return(result)
   }
 
@@ -221,8 +217,8 @@ indicateur_n2_continuite <- function(units,
     }
   }
 
-  result[[column_name]] <- n2_scores
-  cli::cli_alert_success("Calculated {column_name}: Forest continuity (0-100)")
+  result$N2 <- n2_scores
+  cli::cli_alert_success("Calculated N2: Forest continuity (0-100)")
   return(result)
 }
 
@@ -233,7 +229,6 @@ indicateur_n2_continuite <- function(units,
 #' NA when any of N1, N2, L1 or B3 is unavailable.
 #'
 #' @param units sf object with N1 and N2 columns (optionally L1, B3)
-#' @param column_name Character. Name for output column. Default "N3".
 #'
 #' @return sf object with added column N3 (score 0-100), or `NA` when any of
 #'   the four input columns is missing.
@@ -252,8 +247,7 @@ indicateur_n2_continuite <- function(units,
 #' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
-indicateur_n3_naturalite <- function(units,
-                                            column_name = "N3") {
+indicateur_n3_naturalite <- function(units) {
   if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   result <- units
@@ -265,10 +259,10 @@ indicateur_n3_naturalite <- function(units,
   manquantes <- setdiff(c("N1", "N2", "L1", "B3"), names(units))
   if (length(manquantes)) {
     cli::cli_alert_info(
-      "{column_name}: composante{?s} {.field {manquantes}} absente{?s}, \
+      "N3: composante{?s} {.field {manquantes}} absente{?s}, \
        returning NA (no measurement made)"
     )
-    result[[column_name]] <- rep(NA_real_, nrow(units))
+    result$N3 <- rep(NA_real_, nrow(units))
     return(result)
   }
   n1 <- units$N1
@@ -277,9 +271,9 @@ indicateur_n3_naturalite <- function(units,
   connectivite <- units$B3
 
   # Tuto 04: 35% N1 + 35% N2 + 15% anti-fragmentation + 15% connectivity
-  result[[column_name]] <- 0.35 * n1 + 0.35 * n2 + 0.15 * anti_frag + 0.15 * connectivite
+  result$N3 <- 0.35 * n1 + 0.35 * n2 + 0.15 * anti_frag + 0.15 * connectivite
 
-  cli::cli_alert_success("Calculated {column_name}: Composite naturalness (0-100)")
+  cli::cli_alert_success("Calculated N3: Composite naturalness (0-100)")
   return(result)
 }
 

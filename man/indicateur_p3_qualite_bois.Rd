@@ -11,7 +11,6 @@ indicateur_p3_qualite_bois(
   defects_field = "defects",
   species_field = "species",
   weights = c(form = 0.4, diameter = 0.4, defects = 0.2),
-  column_name = "P3",
   chm = NULL
 )
 }
@@ -28,7 +27,6 @@ indicateur_p3_qualite_bois(
 
 \item{weights}{Named numeric vector. Component weights: c(form = 0.4, diameter = 0.4, defects = 0.2). Default balanced.}
 
-\item{column_name}{Character. Name for output column. Default "P3".}
 
 \item{chm}{Optional `terra::SpatRaster` canopy height model (spec 005).
 Passed to `ensure_inventory_fields()` to auto-fill `dbh` from the

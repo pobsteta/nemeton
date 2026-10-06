@@ -296,19 +296,19 @@ test_that("indicateur_e1_bois_energie ignores coppice when field not in data", {
   expect_true(result$E1[1] > 0)
 })
 
-test_that("indicateur_e1_bois_energie uses custom column name", {
+test_that("indicateur_e1_bois_energie always writes E1 (no column_name, spec 057)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(volume = 200))
 
-  result <- indicateur_e1_bois_energie(
-    test_units,
-    volume_field = "volume",
-    column_name = "fuelwood_potential"
+  expect_error(
+    indicateur_e1_bois_energie(test_units, column_name = "fuelwood_potential"),
+    "unused argument"
   )
+  result <- indicateur_e1_bois_energie(test_units, volume_field = "volume")
 
-  expect_true("fuelwood_potential" %in% names(result))
+  expect_true("E1" %in% names(result))
   expect_true("E1_residues" %in% names(result))
   expect_true("E1_coppice" %in% names(result))
 })
@@ -554,19 +554,19 @@ test_that("indicateur_e2_evitement with material_scenario but missing volume_fie
   expect_true(result$E2_energy[1] > 0)
 })
 
-test_that("indicateur_e2_evitement uses custom column name", {
+test_that("indicateur_e2_evitement always writes E2 (no column_name, spec 057)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(E1 = 5.0))
 
-  result <- indicateur_e2_evitement(
-    test_units,
-    fuelwood_field = "E1",
-    column_name = "co2_avoided"
+  expect_error(
+    indicateur_e2_evitement(test_units, column_name = "co2_avoided"),
+    "unused argument"
   )
+  result <- indicateur_e2_evitement(test_units, fuelwood_field = "E1")
 
-  expect_true("co2_avoided" %in% names(result))
+  expect_true("E2" %in% names(result))
   expect_true("E2_energy" %in% names(result))
   expect_true("E2_material" %in% names(result))
 })
@@ -751,15 +751,6 @@ test_that("indicateur_e2_evitement with default fields", {
   result <- indicateur_e2_evitement(units)
   expect_s3_class(result, "sf")
   expect_true("E2" %in% names(result))
-})
-
-test_that("indicateur_e2_evitement with custom column_name", {
-  skip_if_not_installed("terra")
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-
-  result <- indicateur_e2_evitement(units, column_name = "co2_avoided")
-  expect_true("co2_avoided" %in% names(result))
 })
 
 # ==============================================================================

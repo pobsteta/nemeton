@@ -9,7 +9,6 @@ indicateur_s2_bati(
   buildings = NULL,
   dem = NULL,
   layers = NULL,
-  column_name = "S2",
   dem_target_res = .topo_target_res(),
   max_dist = 2000
 )
@@ -25,7 +24,6 @@ If NULL, resolved from layers.}
 \item{layers}{A nemeton_layers object (optional). Used to resolve buildings/dem
 when not provided directly.}
 
-\item{column_name}{Character. Name for output column. Default "S2".}
 
 \item{dem_target_res}{Numeric. Working resolution (metres) the DEM grid is
 aggregated to before buildings are rasterised and the distance transform runs.

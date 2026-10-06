@@ -4,12 +4,11 @@
 \alias{indicateur_n3_naturalite}
 \title{N3: Composite Naturalness Index}
 \usage{
-indicateur_n3_naturalite(units, column_name = "N3")
+indicateur_n3_naturalite(units)
 }
 \arguments{
 \item{units}{sf object with N1 and N2 columns (optionally L1, B3)}
 
-\item{column_name}{Character. Name for output column. Default "N3".}
 }
 \value{
 sf object with added column N3 (score 0-100), or \code{NA} when any of the four

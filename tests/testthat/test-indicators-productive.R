@@ -218,7 +218,7 @@ test_that("indicateur_p1_volume handles unknown species with fallback", {
   expect_false(is.na(result$P1[1]))
 })
 
-test_that("indicateur_p1_volume uses custom column name", {
+test_that("indicateur_p1_volume always writes its code column (no column_name, spec 057)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
@@ -233,12 +233,14 @@ test_that("indicateur_p1_volume uses custom column name", {
     test_units,
     species_field = "species",
     dbh_field = "dbh",
-    density_field = "density",
-    column_name = "volume_m3_ha"
+    density_field = "density"
   )
 
-  expect_true("volume_m3_ha" %in% names(result))
-  expect_false("P1" %in% names(result))
+  expect_true("P1" %in% names(result))
+  expect_error(
+    indicateur_p1_volume(test_units, column_name = "volume_m3_ha"),
+    "unused argument"
+  )
 })
 
 test_that("indicateur_p1_volume works with zero-row sf", {
@@ -512,7 +514,7 @@ test_that("indicateur_p2_station returns NA when no fallback available", {
   expect_true(is.na(result$P2[1]))
 })
 
-test_that("indicateur_p2_station uses custom column name", {
+test_that("indicateur_p2_station always writes its code column (no column_name, spec 057)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
@@ -527,12 +529,14 @@ test_that("indicateur_p2_station uses custom column name", {
     test_units,
     species_field = "species",
     fertility_field = "fertility",
-    climate_field = "climate",
-    column_name = "site_index"
+    climate_field = "climate"
   )
 
-  expect_true("site_index" %in% names(result))
-  expect_false("P2" %in% names(result))
+  expect_true("P2" %in% names(result))
+  expect_error(
+    indicateur_p2_station(test_units, column_name = "site_index"),
+    "unused argument"
+  )
 })
 
 test_that("indicateur_p2_station works with zero-row sf", {
@@ -931,7 +935,7 @@ test_that("indicateur_p3_qualite_bois uses custom weights", {
   expect_false(result2_default$P3[1] == result2_custom$P3[1])
 })
 
-test_that("indicateur_p3_qualite_bois uses custom column name", {
+test_that("indicateur_p3_qualite_bois always writes its code column (no column_name, spec 057)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
@@ -948,12 +952,14 @@ test_that("indicateur_p3_qualite_bois uses custom column name", {
     dbh_field = "dbh",
     form_score_field = "form_score",
     defects_field = "defects",
-    species_field = "species",
-    column_name = "quality_score"
+    species_field = "species"
   )
 
-  expect_true("quality_score" %in% names(result))
-  expect_false("P3" %in% names(result))
+  expect_true("P3" %in% names(result))
+  expect_error(
+    indicateur_p3_qualite_bois(test_units, column_name = "quality_score"),
+    "unused argument"
+  )
 })
 
 test_that("indicateur_p3_qualite_bois works with zero-row sf", {

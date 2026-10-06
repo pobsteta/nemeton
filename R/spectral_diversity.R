@@ -389,11 +389,10 @@ compute_spectral_diversity <- function(reflectance,
 #' @param reflectance Optional reflectance \code{SpatRaster} / path used to
 #'   compute spectral diversity on the fly when \code{spectral} is
 #'   \code{NULL}.
-#' @param column_name Output column name (default \code{"B4"}).
 #' @param ... Passed to [compute_spectral_diversity()] when computing on
 #'   the fly (e.g. \code{window_size}, \code{mask}, \code{nb_cpu}).
 #'
-#' @return \code{units} with the numeric \code{column_name} column added.
+#' @return \code{units} with the numeric \code{B4} column added.
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
 #'
@@ -402,7 +401,6 @@ compute_spectral_diversity <- function(reflectance,
 indicateur_b4_div_spectrale <- function(units,
                                         spectral = NULL,
                                         reflectance = NULL,
-                                        column_name = "B4",
                                         ...) {
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -415,8 +413,8 @@ indicateur_b4_div_spectrale <- function(units,
   } else {
     .aggregate_diversity(spectral$alpha, units)
   }
-  units[[column_name]] <- values
-  .spectral_message(values, column_name,
+  units$B4 <- values
+  .spectral_message(values, "B4",
                     "spectral alpha diversity (Shannon) via biodivMapR")
   units
 }
@@ -458,13 +456,12 @@ indicateur_b4_div_spectrale <- function(units,
 #' spec 028 §10.
 #'
 #' @inheritParams indicateur_b4_div_spectrale
-#' @param column_name Output column name (default \code{"L3"}).
 #' @param min_windows Integer. Minimum number of covered diversity windows
 #'   below which the unit's dispersion is undefined and \code{NA} is
 #'   returned (default \code{3L}, the floor for a dispersion around a
 #'   centroid). Values below 3 are raised to 3.
 #'
-#' @return \code{units} with the numeric \code{column_name} column added.
+#' @return \code{units} with the numeric \code{L3} column added.
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
 #'
@@ -473,7 +470,6 @@ indicateur_b4_div_spectrale <- function(units,
 indicateur_l3_het_spectrale <- function(units,
                                         spectral = NULL,
                                         reflectance = NULL,
-                                        column_name = "L3",
                                         min_windows = 3L,
                                         ...) {
   if (!inherits(units, "sf")) {
@@ -487,8 +483,8 @@ indicateur_l3_het_spectrale <- function(units,
   } else {
     .aggregate_beta_dispersion(spectral$beta, units, min_windows = min_windows)
   }
-  units[[column_name]] <- values
-  .spectral_message(values, column_name,
+  units$L3 <- values
+  .spectral_message(values, "L3",
                     "spectral beta diversity (Bray-Curtis PCoA dispersion) via biodivMapR")
   units
 }
