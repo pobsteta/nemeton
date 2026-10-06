@@ -9,7 +9,7 @@ Optionally calculates NDVI trend over multiple dates (requires temporal rasters)
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -160,8 +160,8 @@ is expected in the CRS of <code>units</code>.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Numeric vector of NDVI mean values (0-1 scale), or list with
-  mean and trend if trend = TRUE</p>
+    <p>The input <code>units</code> (same class, rows and order) with an added numeric column <code>C2</code>:
+  mean NDVI (0-1 scale), or mean FAPAR in FAPAR mode.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -172,6 +172,12 @@ returned instead of NDVI. FAPAR is a physically grounded
 vitality measure on the same <code>[0, 1]</code> scale as NDVI, so
 downstream normalization is unchanged. When <code>fapar</code> is
 <code>NULL</code> the pre-existing NDVI behaviour is preserved.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
 
     <div class="section level2">

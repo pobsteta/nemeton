@@ -32,6 +32,10 @@ An object of class `nemeton_layers`
 Layers are not loaded into memory until first use (lazy loading). This
 allows creating a catalog of large rasters without memory overhead.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

@@ -82,6 +82,10 @@ page, an OWS exception report or unreadable GML is rejected (`NULL`).
 Treat the layer as a NDP 0 seed to be checked against the management
 plan, not as an authoritative boundary.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`load_foret_ancienne_source`](https://pobsteta.github.io/nemeton/reference/load_foret_ancienne_source.md),

@@ -85,6 +85,10 @@ Weights reflect relative impact on forest browsing (not total damage).
 Mountain ungulates (chamois, isard, mouflon) have lower weights as they
 primarily affect alpine/subalpine forests.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 Other data-acquisition:

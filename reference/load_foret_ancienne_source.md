@@ -54,6 +54,10 @@ load_foret_ancienne_source(
 An sf of ancient-forest polygons (`foret_ancienne = TRUE`), clipped to
 `aoi`, in `crs`; a 0-row sf if none; `NULL` on failure.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`indicateur_n2_continuite`](https://pobsteta.github.io/nemeton/reference/indicateur_n2_continuite.md),

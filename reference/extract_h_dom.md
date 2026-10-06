@@ -47,6 +47,10 @@ for the classical definition (mean height of the 100 largest trees per
 hectare) when only a CHM raster is available. Choosing `percentile = 1`
 yields the maximum height, `percentile = 0.5` the median.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

@@ -24,6 +24,10 @@ map_bdforet_essence(essence, region = "BFC")
 Character. NMT species class code (e.g., "essence_chenaie"), or
 "essence_mixte" if no mapping found.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

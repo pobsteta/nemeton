@@ -13,6 +13,10 @@ ndp_table()
 
 A data.frame with columns: ndp, key, name, fibonacci, confidence.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

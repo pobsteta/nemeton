@@ -13,7 +13,6 @@ indicateur_l3_het_spectrale(
   units,
   spectral = NULL,
   reflectance = NULL,
-  column_name = "L3",
   min_windows = 3L,
   ...
 )
@@ -37,10 +36,6 @@ indicateur_l3_het_spectrale(
   Optional reflectance `SpatRaster` / path used to compute spectral
   diversity on the fly when `spectral` is `NULL`.
 
-- column_name:
-
-  Output column name (default `"L3"`).
-
 - min_windows:
 
   Integer. Minimum number of covered diversity windows below which the
@@ -56,7 +51,8 @@ indicateur_l3_het_spectrale(
 
 ## Value
 
-`units` with the numeric `column_name` column added.
+`units` with the numeric `L3` column added, and `l3_status`
+(`"calculated"`, `"skipped_no_spectral"` or `"skipped_no_coverage"`).
 
 ## Details
 
@@ -72,6 +68,10 @@ Before v0.190.0 the axes were simply averaged, which measured a unit's
 mean *position* in ordination space — a quantity centred on zero by
 construction, and clamped to 0 for every unit on the negative side. See
 spec 028 section 10.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## See also
 

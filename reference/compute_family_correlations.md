@@ -44,6 +44,10 @@ Missing values (NA) are handled using pairwise complete observations.
 This function supports bilingual messages via
 \`nemeton_set_language()\`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 \[identify_hotspots()\], \[plot_correlation_matrix()\]

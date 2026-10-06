@@ -68,6 +68,10 @@ plots or more and 2 107 rest on fewer than 5. Filter on it, or use
 [`ifn_volume_reference`](https://pobsteta.github.io/nemeton/reference/ifn_volume_reference.md),
 which does.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## References
 
 Data and aggregation method from the `DataForet` and `PPtools` packages

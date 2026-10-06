@@ -83,6 +83,10 @@ The input data with added normalized columns
 - **Quantile**: `norm = percentile_rank * 100` - Robust to outliers -
   Creates uniform distribution - 0 = lowest percentile, 100 = highest
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`create_composite_index`](https://pobsteta.github.io/nemeton/reference/create_composite_index.md)

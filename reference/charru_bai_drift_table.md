@@ -13,6 +13,10 @@ charru_bai_drift_table()
 
 A data.frame with columns `species`, `habitat` and `bai_chg`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

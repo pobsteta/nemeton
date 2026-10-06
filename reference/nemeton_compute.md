@@ -30,10 +30,12 @@ nemeton_compute(
 
 - indicators:
 
-  Character vector of indicator names to calculate, or "all" for all
-  available. See
+  Character vector of indicator names to calculate, or "all" for all 41
+  indicators of
   [`list_indicators`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
-  for available indicators from the 12-family framework.
+  (the source-conditional ones included: without their source they come
+  back `NA` with their status). Use
+  `list_indicators(conditionnels = FALSE)` for the 31 base indicators.
 
 - preprocess:
 
@@ -55,7 +57,8 @@ nemeton_compute(
 ## Value
 
 An `sf` object with original columns plus one column per calculated
-indicator
+indicator, and the indicator's status column (`<code>_status`, e.g.
+`a3_status = "skipped_no_micro"`) when the indicator writes one.
 
 ## Details
 
@@ -82,6 +85,10 @@ The function performs the following steps:
 If an indicator calculation fails, a warning is issued and the indicator
 column is filled with NA, but computation continues for other
 indicators.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## See also
 

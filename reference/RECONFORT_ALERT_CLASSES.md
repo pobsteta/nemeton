@@ -10,3 +10,7 @@ keeps by default — the RECONFORT mirror of FORDEAD's \`c("3-forte",
 ``` r
 RECONFORT_ALERT_CLASSES
 ```
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

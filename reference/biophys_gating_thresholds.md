@@ -30,6 +30,10 @@ magnitude expected and the calibration method, per the spec:
 - `area_px_min` (default 25): ~1 ha at 20 m (25 px); from the
   within-unit variance versus area.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`biophys_gating`](https://pobsteta.github.io/nemeton/reference/biophys_gating.md)

@@ -104,6 +104,10 @@ layer. Needs `prosail` + real S2 scenes and is **not runnable in CI** —
 the engine is validated on real data (training verified; application per
 the official tutorial).
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`regen_bilan_hydrique`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md),

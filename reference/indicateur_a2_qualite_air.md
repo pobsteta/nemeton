@@ -72,6 +72,10 @@ bounded to 0-100: the reference P = 100 is a motorway at 10 m. The score
 is absolute (it does not depend on the other units of the call); a unit
 with no road within 2 km scores 100.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 Other air-indicators:

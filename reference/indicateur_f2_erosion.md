@@ -50,16 +50,18 @@ indicateur_f2_erosion(
 
 ## Value
 
-Numeric vector of erosion-resistance scores (0-100, higher = more
-resistant, i.e. LOWER erosion risk). Despite the historical variable
-name inside the function, this is not a fertility score: the ingredients
-are topographic (TWI wetness, slope steepness) plus optional soil
-texture.
+The input `units` (same class, rows and order) with an added numeric
+column `F2`: erosion-resistance scores (0-100, higher = more resistant,
+i.e. LOWER erosion risk). Despite the historical variable name inside
+the function, this is not a fertility score: the ingredients are
+topographic (TWI wetness, slope steepness) plus optional soil texture.
 
 ## Details
 
 TWI is computed via GRASS (fasterRaster) when available, terra D8
-otherwise. Higher values indicate more fertile soil conditions.
+otherwise, referenced to a 2 m grid (`TWI - ln(step / 2)`) and
+normalised on the window \[2.5, 9\] shared with W3 and R3 (spec 056).
+Higher values indicate more fertile soil conditions.
 
 When a Theia `theia_soil` texture raster set is supplied via `texture`
 (chantier sources Theia phase 3b), a third component — texture-based
@@ -67,6 +69,10 @@ erosion resistance, see
 [`texture_to_erosion_resistance`](https://pobsteta.github.io/nemeton/reference/texture_to_erosion_resistance.md)
 — is averaged in: F2 = (twi_norm + slope_norm + resistance_norm) / 3.
 Silt-rich soils are more erodible and lower the score.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## Examples
 

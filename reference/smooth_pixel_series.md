@@ -82,6 +82,10 @@ The window is **temporal** (\`window_days\`), not a fixed number of
 points, because acquisitions are irregularly spaced; \`NA\` values are
 ignored.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 \[extract_pixel_timeseries()\] (the raw series),

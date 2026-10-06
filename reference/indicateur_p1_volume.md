@@ -13,8 +13,6 @@ indicateur_p1_volume(
   height_field = "height",
   density_field = "density",
   method = c("ifn_tarif", "allometric"),
-  column_name = "P1",
-  lang = "en",
   chm = NULL,
   h_dom_percentile = 0.9,
   pct_masked = NULL,
@@ -57,15 +55,6 @@ indicateur_p1_volume(
   `V = a x DBH^b x H^c`, see Details) is implemented; "allometric" is
   accepted for backward compatibility but has no effect and emits a
   warning. Default "ifn_tarif".
-
-- column_name:
-
-  Character. Name for output column. Default "P1".
-
-- lang:
-
-  Character. Currently unused (messages are in English); kept for
-  backward compatibility. Default "en".
 
 - chm:
 
@@ -137,6 +126,10 @@ genus-level equations — `BROADLEAF_GENUS` for non-conifers,
 - height: Tree height in meters (can be estimated from DBH if missing)
 
 - density: Number of stems per hectare
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## Examples
 

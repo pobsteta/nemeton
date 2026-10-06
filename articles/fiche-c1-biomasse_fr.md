@@ -374,7 +374,7 @@ et des *objets R*, pas des fichiers :
 | `famille_carbone` | colonne 0–100 | [`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md) |
 | score global + confiance φ | `list(score, ndp, confidence, weight, n_families)` | [`compute_general_index()`](https://pobsteta.github.io/nemeton/reference/compute_general_index.md) |
 | libellés/infobulles FR-EN | `indicator_labels("C1", lang)` | `R/indicator-config.R` |
-| fixture de démo | `data(massif_demo_units)` : `C1` (tC/ha, 20–300) et `C1_norm` | `data-raw/massif_demo.R:441` |
+| fixture de démo | `data(massif_demo_units)` : `C1` (tC/ha, calculé par [`indicateur_c1_biomasse()`](https://pobsteta.github.io/nemeton/reference/indicateur_c1_biomasse.md) sur l’inventaire synthétique) et `C1_norm` | `data-raw/massif_demo.R:480` |
 
 **Sur le disque d’un projet** — arborescence attendue, résolue par
 [`resolve_project_chm()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)

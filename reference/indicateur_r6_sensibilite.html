@@ -25,7 +25,7 @@ manually. This function consumes the two precomputed micro sets
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -177,8 +177,14 @@ year (same layers). <code>NULL</code>/missing layers → <code>R6 = NA</code>.</
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>units</code> with <code>R6</code> (0-100, higher = less sensitive), <code>R6_dtmax</code>
-(raw ΔT°max, °C), <code>R6_dvpd</code> (raw ΔVPD, kPa), <code>R6_couverture_pct</code>, and
+(raw ΔT°max, °C), <code>R6_dvpd</code> (raw ΔVPD, kPa), <code>R6_couverture_pct</code>, <code>r6_status</code> (<code>"calculated"</code>, <code>"skipped_no_micro"</code> or <code>"skipped_no_coverage"</code>), and
 the <code>"microclimate_model"</code> augmentation flag (only when at least one value is computed).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

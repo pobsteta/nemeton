@@ -76,6 +76,10 @@ propagates to R4.
   (data.gouv.fr, OFB). Auto-fetched via
   [`get_game_pressure_raster`](https://pobsteta.github.io/nemeton/reference/get_game_pressure_raster.md).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 Other risk-indicators:

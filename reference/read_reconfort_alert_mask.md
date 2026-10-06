@@ -61,6 +61,10 @@ read_reconfort_alert_mask(
 A single-band \`terra::SpatRaster\`, or \`NULL\` when no mask is
 available.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[read_fordead_dieback_mask()\], \[run_reconfort_dieback()\].

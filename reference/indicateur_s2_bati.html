@@ -9,7 +9,7 @@ nearest building, using rasterized building data and terra::distance()."><meta p
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -124,8 +124,6 @@ nearest building, using rasterized building data and <code><a href="https://rspa
 <span>  buildings <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dem <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  layers <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  column_name <span class="op">=</span> <span class="st">"S2"</span>,</span>
-<span>  lang <span class="op">=</span> <span class="st">"en"</span>,</span>
 <span>  dem_target_res <span class="op">=</span> <span class="fu">.topo_target_res</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  max_dist <span class="op">=</span> <span class="fl">2000</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -152,14 +150,6 @@ If NULL, resolved from layers.</p></dd>
 <dd><p>A nemeton_layers object (optional). Used to resolve buildings/dem
 when not provided directly.</p></dd>
 
-
-<dt id="arg-column-name">column_name<a class="anchor" aria-label="anchor" href="#arg-column-name"></a></dt>
-<dd><p>Character. Name for output column. Default "S2".</p></dd>
-
-
-<dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
-<dd><p>Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".</p></dd>
 
 
 <dt id="arg-dem-target-res">dem_target_res<a class="anchor" aria-label="anchor" href="#arg-dem-target-res"></a></dt>
@@ -194,6 +184,12 @@ with no feature within <code>max_dist</code> gets <code>max_dist</code>, i.e. "a
     <code>max_dist</code></p></li>
 <li><p>Extract mean distance per spatial unit</p></li>
 </ul><p>Returns NA when DEM or buildings are unavailable.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
 
     <div class="section level2">

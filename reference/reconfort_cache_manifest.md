@@ -71,6 +71,10 @@ A `data.frame` with the same columns as
 (one row per available display raster). Best-effort: a missing cache /
 zone / run yields a zero-row frame.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`reconfort_layer_manifest`](https://pobsteta.github.io/nemeton/reference/reconfort_layer_manifest.md),

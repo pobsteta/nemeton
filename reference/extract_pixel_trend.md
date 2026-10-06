@@ -121,6 +121,10 @@ like the raster (in-season median per year, a year with fewer than
 shared Theil-Sen / Mann-Kendall the raster runs per pixel, so
 \`alert_value\` equals the raster's pre-quartile value cell-for-cell.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[read_fast_alert_raster()\] (\`mode = "trend"\`, the raster),

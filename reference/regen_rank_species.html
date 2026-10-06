@@ -47,7 +47,7 @@ the present axes) and shade_tol breaks ranking ties instead.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -260,8 +260,14 @@ row (no fabricated recommendation). An empty pool yields a 0-row frame.
 The chosen axis weights are attached as <code>attr(, "weights")</code>.</p>
     </div>
     <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Experimental: may change in any release, without deprecation (spec 057).</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="regen_rank_to_wide.html">regen_rank_to_wide</a></code>, <code><a href="indice_priorite_regen.html">indice_priorite_regen</a></code>,
+    <div class="dont-index"><p><code>regen_rank_to_wide()</code>, <code><a href="indice_priorite_regen.html">indice_priorite_regen</a></code>,
 <code><a href="regen_species_choices.html">regen_species_choices</a></code>, <code><a href="european_species_tolerances.html">european_species_tolerances</a></code></p></div>
     </div>
 
@@ -270,7 +276,7 @@ The chosen axis weights are attached as <code>attr(, "weights")</code>.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span>  <span class="va">units</span> <span class="op">&lt;-</span> <span class="fu"><a href="indice_priorite_regen.html">indice_priorite_regen</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span>          <span class="co"># station columns present</span></span></span>
 <span class="r-in"><span>  <span class="va">ranked</span> <span class="op">&lt;-</span> <span class="fu">regen_rank_species</span><span class="op">(</span><span class="va">units</span>, top_n <span class="op">=</span> <span class="fl">3</span>, lai_col <span class="op">=</span> <span class="st">"lai_max"</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="regen_rank_to_wide.html">regen_rank_to_wide</a></span><span class="op">(</span><span class="va">ranked</span>, top_n <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu">regen_rank_to_wide</span><span class="op">(</span><span class="va">ranked</span>, top_n <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

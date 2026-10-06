@@ -135,6 +135,10 @@ Mann-Kendall test the trend map runs per pixel, so the zone trajectory
 and the map agree by construction. Multi-tile AOIs are combined as a
 valid-pixel-count-weighted mean per year.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[read_fast_alert_raster()\] (\`mode = "trend"\`, the per-pixel map),

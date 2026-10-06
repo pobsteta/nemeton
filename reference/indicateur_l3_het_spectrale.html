@@ -15,7 +15,7 @@ indicateur_b4_div_spectrale."><meta property="og:image" content="https://pobstet
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -132,7 +132,6 @@ mosaic (spec 028 D1). Backward compatible like
 <span>  <span class="va">units</span>,</span>
 <span>  spectral <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  reflectance <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  column_name <span class="op">=</span> <span class="st">"L3"</span>,</span>
 <span>  min_windows <span class="op">=</span> <span class="fl">3L</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -158,9 +157,6 @@ compute spectral diversity on the fly when <code>spectral</code> is
 <code>NULL</code>.</p></dd>
 
 
-<dt id="arg-column-name">column_name<a class="anchor" aria-label="anchor" href="#arg-column-name"></a></dt>
-<dd><p>Output column name (default <code>"L3"</code>).</p></dd>
-
 
 <dt id="arg-min-windows">min_windows<a class="anchor" aria-label="anchor" href="#arg-min-windows"></a></dt>
 <dd><p>Integer. Minimum number of covered diversity windows
@@ -176,7 +172,8 @@ on the fly (e.g. <code>window_size</code>, <code>mask</code>, <code>nb_cpu</code
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>units</code> with the numeric <code>column_name</code> column added.</p>
+    <p><code>units</code> with the numeric <code>L3</code> column added, and
+<code>l3_status</code> (<code>"calculated"</code>, <code>"skipped_no_spectral"</code> or <code>"skipped_no_coverage"</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -191,6 +188,12 @@ spanning contrasted spectral communities scores high.</p>
 <em>position</em> in ordination space — a quantity centred on zero by
 construction, and clamped to 0 for every unit on the negative side. See
 spec 028 section 10.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

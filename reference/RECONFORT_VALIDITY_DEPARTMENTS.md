@@ -9,3 +9,7 @@ Indre (36), Indre-et-Loire (37), Loir-et-Cher (41), Loiret (45).
 ``` r
 RECONFORT_VALIDITY_DEPARTMENTS
 ```
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

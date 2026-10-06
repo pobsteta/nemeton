@@ -50,6 +50,10 @@ with no scored unit); \`numeric(0)\` when there is no family column.
 Attribute \`"weighting"\`: \`"surface"\` or \`"none"\`, the weighting
 actually applied.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

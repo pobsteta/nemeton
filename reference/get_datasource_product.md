@@ -32,6 +32,10 @@ get_datasource_product(source_key, product, country = "FR")
 
 A list with the sub-product configuration.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

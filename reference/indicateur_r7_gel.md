@@ -72,6 +72,10 @@ A unit's mean number of late-frost days per year (Tmin below
 `window_end_doy`) is mapped to 0–100: `0` days → `100`, `max_frost_days`
 or more → `0`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`indicateur_r6_sensibilite`](https://pobsteta.github.io/nemeton/reference/indicateur_r6_sensibilite.md),

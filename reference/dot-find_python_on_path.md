@@ -1,8 +1,8 @@
-# Probe PATH for a Python ≥ 3.10 interpreter
+# Probe PATH for a Python ≥ 3.11 interpreter
 
 Walks a list of conventional Python binary names from newest to oldest
-(3.14 → 3.10 → generic \`python3\` → \`python\`) and returns the first
-one that exists on \`PATH\` AND reports a version ≥ 3.10.
+(3.14 → 3.11 → generic \`python3\` → \`python\`) and returns the first
+one that exists on \`PATH\` AND reports a version ≥ 3.11.
 
 ## Usage
 
@@ -12,7 +12,7 @@ one that exists on \`PATH\` AND reports a version ≥ 3.10.
 
 ## Value
 
-Character path (string) to a Python ≥ 3.10 interpreter, or \`""\` if
+Character path (string) to a Python ≥ 3.11 interpreter, or \`""\` if
 nothing matches.
 
 ## Details

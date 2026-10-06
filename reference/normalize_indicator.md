@@ -34,3 +34,7 @@ normalize_indicator(indicator, values, statut = NULL)
 ## Value
 
 Numeric vector. Normalized values (0-100).
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

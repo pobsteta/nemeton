@@ -21,3 +21,7 @@ A data.frame with columns `tfv_code`, `label_fr`, `species_class` (NMT
 species class, `NA` for non-forest / no canopy TFV), `context_key`,
 `confidence` (`"clear"` or `"ambiguous"`), `alt_context_key`,
 `notes_fr`.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

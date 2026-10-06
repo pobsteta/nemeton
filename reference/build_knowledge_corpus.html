@@ -17,7 +17,7 @@ drive it asynchronously and render progress."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -229,6 +229,37 @@ directory. Relative paths are resolved against that root. Only
 `http://` / `https://` `source_url`s are downloaded. A row breaking
 these rules, or whose `doc_id` is not a slug (`^[a-z0-9_]+$`), is
 reported with `action = "error"`.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="corpus-root-where-the-pdfs-live-">Corpus root (where the PDFs live)<a class="anchor" aria-label="anchor" href="#corpus-root-where-the-pdfs-live-"></a></h2>
+
+
+<p>The bundled manifest (`knowledge_corpus_v1.csv`) gives each `full`
+document a `local_path` relative to the corpus root, of the form
+`data-raw/references/&lt;file&gt;.pdf` — the layout of the source repository,
+where these PDFs are kept locally (they are git-ignored, never shipped
+with the package). The root is resolved, in order, from:
+1. the R option `nemeton.corpus_root`;
+2. the environment variable `NEMETON_CORPUS_ROOT` (e.g. in `~/.Renviron`);
+3. the working directory (historical behaviour, right when the build is
+   run from a clone of the repository).</p>
+<p>**Installation outside the repository** (installed package, server):
+pick a directory, say `/srv/nemeton/corpus`, set
+`NEMETON_CORPUS_ROOT=/srv/nemeton/corpus` (or
+`options(nemeton.corpus_root = "/srv/nemeton/corpus")`), and place the
+PDFs at `/srv/nemeton/corpus/data-raw/references/&lt;file&gt;.pdf`, i.e. the
+manifest's `local_path` appended to the root. An absolute `local_path`
+is accepted only if it lies under that root. A `full` row whose PDF is
+missing falls back to its `source_url` when it points at a `.pdf`
+(downloaded into `pdf_dir`); otherwise it is skipped, and the report's
+`reason` names the missing path and the root in use. A `dry_run = TRUE`
+lists what would be found before any embedding call.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Experimental: may change in any release, without deprecation (spec 057).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

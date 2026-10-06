@@ -49,6 +49,10 @@ microclimate_detect_years(eobs = NULL, aoi = NULL, years = NULL,
 A list: `year_moyenne`, `year_canicule` (integers) and `index` (named
 numeric, the summer-heat index per candidate year).
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`indicateur_r6_sensibilite`](https://pobsteta.github.io/nemeton/reference/indicateur_r6_sensibilite.md),

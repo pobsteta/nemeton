@@ -53,6 +53,10 @@ Pixels below `min_pai` are treated as non-canopy (gaps, roads, water)
 and excluded before the percentile, so a unit with a clearing keeps the
 PAI of its stocked part.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`pai_depuis_nuage`](https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.md),

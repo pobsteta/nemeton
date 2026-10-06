@@ -24,6 +24,10 @@ get_layer_service(layer_key, country = "FR")
 A list with `url` (service URL) and `layer` or `typename` (layer
 identifier), or NULL.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

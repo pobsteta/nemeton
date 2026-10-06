@@ -11,7 +11,7 @@ topographic-only assessment when SPEI is unavailable."><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -235,7 +235,9 @@ R3_climat = (-SPEI_recent + 2) / 4, clamped to 0-1.
 Falls back to 0.5 without <span class="pkg">SPEI</span>.</p>
 <p>**Topographic component** (weight 0.4):</p><ul><li><p>aspect_risk: south-facing = max risk</p></li>
 <li><p>slope_risk: steep slopes = runoff = dry</p></li>
-<li><p>twi_risk: low TWI = dry</p></li>
+<li><p>twi_risk: low TWI = dry. <code>1 - clamp((TWI - 2.5) / 6.5, 0, 1)</code>,
+on a TWI referenced to a 2 m grid: fixed window [2.5, 9] shared with
+W3 and F2 (spec 056), no longer the maximum of the extent.</p></li>
 </ul><p>topo_risk = 0.4*aspect_risk + 0.3*slope_risk + 0.3*twi_risk</p>
 <p>R3 = (0.6 * climate + 0.4 * topo) * 100</p>
 <p>**Snow attenuation** (Theia <code>theia_snow</code>, optional):
@@ -251,6 +253,12 @@ mean surface soil moisture is rescaled to a 0-1 relief factor
 against the \(0.3\;m^3/m^3\) field-capacity reference, and
 R3 is multiplied by <code>1 - sm_relief_strength * relief</code>.
 Moist soil buffers drought stress.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

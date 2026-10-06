@@ -98,6 +98,10 @@ reporting "wrong species", and conflating the two either hides a real
 limit or discards a usable signal. RECONFORT has no published validity
 zone, so `in_calibration` is `NA` on that route.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`check_fordead_validity`](https://pobsteta.github.io/nemeton/reference/check_fordead_validity.md),

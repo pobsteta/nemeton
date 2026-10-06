@@ -15,7 +15,7 @@ the site index in French forestry."><meta property="og:image" content="https://p
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -172,8 +172,11 @@ clamped to the worst site class.</p></dd>
   <code>min_stand_height</code>, when <code>age</code> is outside the tabulated
   range, or when the species cannot be resolved. A height above the
   tallest (class 1) or below the shortest (class 5) curve at the observed
-  age is <strong>clamped</strong> to that class: the site index returned is then the
-  class 1 or class 5 height at <code>reference_age</code>, not an extrapolation.</p>
+  age is <strong>out of the curves</strong> and also gives <code>NA</code>: the site index is
+  not extrapolated, nor clamped to class 1 or 5 any more (1.0.0, spec 056 —
+  the clamp produced identical values, 10.90 or 20.71 m for sessile oak,
+  that looked like measurements). <code><a href="indicateur_p2_station.html">indicateur_p2_station</a></code> flags these
+  units with <code>p2_status = "hors_courbe"</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -187,6 +190,12 @@ fertility classes tabulated in
 </ol><p>When <code>species</code> is not directly tabulated, a genus-level
 fallback is applied (<code>BROADLEAF_GENUS</code> for non-conifers,
 <code>CONIFER_GENUS</code> otherwise).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
 
     <div class="section level2">

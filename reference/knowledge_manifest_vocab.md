@@ -18,6 +18,10 @@ A named list with elements \`columns\`, \`licenses\`, \`statuses\`,
 \`strategies\`, \`langs\`, \`doc_types\`, \`profiles\`, and
 \`family_regex\`.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[validate_knowledge_manifest()\], \[read_knowledge_manifest()\].

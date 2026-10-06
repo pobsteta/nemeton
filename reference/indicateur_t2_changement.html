@@ -17,7 +17,7 @@ may duplicate T1."><meta property="og:image" content="https://pobsteta.github.io
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -155,7 +155,7 @@ as nrow(units)). If NULL and units has no T1 column, T2 is <code>NA</code>.</p><
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Numeric vector of stability proxy scores (0-100), 100 = very
+    <p>The input <code>units</code> (same class, rows and order) with an added numeric column <code>T2</code>: stability proxy scores (0-100), 100 = very
 stable (ancient forest). <code>NA</code> where the source (N2 or T1) is
 unknown – no default value.</p>
     </div>
@@ -171,6 +171,12 @@ its T1 age when known.</p>
 not implemented in T2.</p>
     </div>
     <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other temporal-indicators:
 <code><a href="indicateur_t1_anciennete.html">indicateur_t1_anciennete()</a></code></p></div>
@@ -184,9 +190,10 @@ not implemented in T2.</p>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">units</span> <span class="op">&lt;-</span> <span class="va">massif_demo_units</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, <span class="op">]</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Compute T1 first, then T2</span></span></span>
+<span class="r-in"><span><span class="co"># Compute T1 first, then T2: the T1 column of the result feeds T2</span></span></span>
 <span class="r-in"><span><span class="va">t1</span> <span class="op">&lt;-</span> <span class="fu"><a href="indicateur_t1_anciennete.html">indicateur_t1_anciennete</a></span><span class="op">(</span><span class="va">units</span>, layers <span class="op">=</span> <span class="fu"><a href="massif_demo_layers.html">massif_demo_layers</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">t2</span> <span class="op">&lt;-</span> <span class="fu">indicateur_t2_changement</span><span class="op">(</span><span class="va">units</span>, t1_values <span class="op">=</span> <span class="va">t1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">t2</span> <span class="op">&lt;-</span> <span class="fu">indicateur_t2_changement</span><span class="op">(</span><span class="va">t1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">t2</span><span class="op">$</span><span class="va">T2</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

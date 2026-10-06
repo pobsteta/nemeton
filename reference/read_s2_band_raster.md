@@ -61,6 +61,10 @@ scenes processed after 2022-01-25 was biased low (summer forest NDVI
 about 0.55 instead of 0.84), which produced a spurious drop in FAST maps
 and pixel series.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 \[read_s2_band_stack()\] for multi-temporal stacks,

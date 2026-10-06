@@ -46,9 +46,14 @@ indicateur_w1_reseau(
 
 ## Value
 
-Numeric vector of network density (m/ha). NA for every unit when the
+The input `units` (same class, rows and order) with an added numeric
+column `W1`: network density (m/ha). NA for every unit when the
 watercourse layer is missing (no measurement); a supplied but empty
 layer gives 0.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## Examples
 

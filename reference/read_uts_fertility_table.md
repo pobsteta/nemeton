@@ -25,3 +25,7 @@ The primary consumer is
 in `"gissol"` mode. The table is exposed for external review
 (pedologists auditing scores) and for users who want to join arbitrary
 RRP vector data against the same crosswalk directly.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

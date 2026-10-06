@@ -59,3 +59,7 @@ register_monitoring_zone(
 ## Value
 
 The \`zone_id\` (integer) of the registered zone.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

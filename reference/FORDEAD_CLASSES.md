@@ -9,3 +9,7 @@ Vector of length 5 ordered from healthy to bare soil. Index \`i\`
 ``` r
 FORDEAD_CLASSES
 ```
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

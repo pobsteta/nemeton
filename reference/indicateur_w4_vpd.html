@@ -11,7 +11,7 @@ Normalised 0-100 decreasing (moister air = more favourable = 100)."><meta proper
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -155,7 +155,7 @@ Normalised 0-100 <strong>decreasing</strong> (moister air = more favourable = 10
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>units</code> with <code>W4</code> (0-100), <code>W4_vpd</code> (raw kPa),
-<code>W4_couverture_pct</code>, and the <code>"microclimate_model"</code> augmentation flag (only when at least one value is computed).</p>
+<code>W4_couverture_pct</code>, <code>w4_status</code> (<code>"calculated"</code>, <code>"skipped_no_micro"</code> or <code>"skipped_no_coverage"</code>), and the <code>"microclimate_model"</code> augmentation flag (only when at least one value is computed).</p>
 <p><strong>Higher = moister air under the canopy = favourable.</strong> The raw quantity
 (VPD, kPa) runs the other way, so <code>.micro_norm(decreasing = TRUE)</code> flips it
 here, at the source: 0.5 kPa -&gt; 100, 4.0 kPa -&gt; 0 (<code>.MICRO_BOUNDS$w4</code>).
@@ -163,8 +163,14 @@ here, at the source: 0.5 kPa -&gt; 100, 4.0 kPa -&gt; 0 (<code>.MICRO_BOUNDS$w4<
 must <strong>not</strong> invert it a second time (spec 048 section 12).</p>
     </div>
     <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="indicateur_a3_microclimat.html">indicateur_a3_microclimat</a></code>, <code><a href="microclimate_run.html">microclimate_run</a></code></p></div>
+    <div class="dont-index"><p><code><a href="indicateur_a3_microclimat.html">indicateur_a3_microclimat</a></code></p></div>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

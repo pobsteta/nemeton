@@ -1,9 +1,10 @@
 # Massif Demo - Example Forest Dataset
 
-Synthetic forest dataset for demonstrating the nemeton package
-functionality: 20 forest parcels covering a 5 km x 5 km area in France
-(Lambert-93), with stand attributes, raw indicator values, their
-normalised versions and the 12 family indices.
+Example forest dataset for demonstrating the nemeton package: 20 forest
+parcels covering a 5 km x 5 km area in France (Lambert-93), with a
+synthetic stand inventory, the 41 indicators computed by the package
+from the demo layers, their normalised versions and the 12 family
+indices.
 
 ## Usage
 
@@ -13,8 +14,8 @@ massif_demo_units
 
 ## Format
 
-An `sf` object with 20 features (POLYGON, EPSG:2154) and 90 columns (89
-fields + geometry):
+An `sf` object with 20 features (POLYGON, EPSG:2154) and 123 columns
+(122 fields + geometry):
 
 - parcel_id:
 
@@ -44,7 +45,7 @@ fields + geometry):
 
 - establishment_year:
 
-  Numeric. Stand establishment year.
+  Numeric. Stand establishment year (2026 - age).
 
 - density:
 
@@ -60,44 +61,59 @@ fields + geometry):
 
 - volume:
 
-  Numeric. Standing volume.
+  Numeric. Standing volume (m3/ha).
 
 - strata:
 
-  Integer. Stratum code.
+  Integer. Number of vegetation layers (1-4).
 
 - fertility:
 
-  Integer. Fertility class.
+  Integer. Fertility class (1 good to 3 poor).
 
 - climate:
 
-  Character. Climate type (e.g. "atlantique", "continental").
+  Character. Climate type ("atlantique", "continental", "montagnard").
 
 - surface_ha:
 
   Numeric. Parcel area (ha).
 
-- C1, C2, B1, B2, B3, W1, W2, W3, A1, A2, F1, F2, L1, L2, T1, T2, R1,
-  R2, R3, R4, S1, S2, S3, P1, P2, P3, E1, E2, N1, N2, N3:
+- couvert:
 
-  Numeric. Raw values of the 31 base indicators available when the
-  fixture was generated; see
+  Numeric. Canopy cover fraction (0-1), used by C1.
+
+- C1, C2, B1, B2, B3, B4, W1, W2, W3, W4, A1, A2, A3, A4, A5, F1, F2,
+  L1, L2, L3, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, S1, S2, S3, P1,
+  P2, P3, E1, E2, N1, N2, N3:
+
+  Numeric. Raw values of the 41 indicators, in the order of
+  [`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md);
+  see
   [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md)
-  for their meaning and
-  [`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md)
-  for their family.
+  for their meaning. `NA` when the demo layers cannot compute the
+  indicator (see Details).
+
+- b4_status, w4_status, a3_status, a4_status, a5_status, l3_status,
+  t3_status, r1_status, r5_status, r6_status, r7_status, p3_status:
+
+  Character. Status written by the indicators that carry one (e.g.
+  `"skipped_no_micro"`, `"fire_exp"`, `"diametre_seul"`).
 
 - C1_norm, ..., N3_norm:
 
-  Numeric. The same 31 indicators normalised to 0-100.
+  Numeric. The 41 indicators normalised to 0-100 by
+  [`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+  (higher = more favourable).
 
 - famille_carbone, famille_biodiversite, famille_eau, famille_air,
   famille_sol, famille_paysage, famille_temporel, famille_risque,
   famille_social, famille_production, famille_energie,
   famille_naturalite:
 
-  Numeric. Family indices (0-100).
+  Numeric. Family indices (0-100) computed by
+  [`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)
+  (mean of the available indicators).
 
 - geometry:
 
@@ -105,13 +121,38 @@ fields + geometry):
 
 ## Source
 
-Synthetic data generated with `data-raw/massif_demo.R`.
+Generated with `data-raw/massif_demo.R` (nemeton 1.0.0).
 
 ## Details
 
-The fixture predates the indicators added since (for instance B4, W4,
-A3-A5, L3, T3, R5-R7): their columns are absent, and the family indices
-are computed from the 31 indicators listed above only.
+**What is simulated.** The parcels and their stand inventory
+(`forest_type` to `surface_ha`, plus `couvert`) are synthetic, drawn
+with `set.seed(42)` (`set.seed(4242)` for `couvert`); so are the demo
+layers of `inst/extdata/`. The inventory plays the part of field data:
+no real stand is described.
+
+**What is computed.** The 41 indicator columns, their `_norm` and the
+family indices are not simulated: `data-raw/massif_demo.R` computes them
+with the package's own functions from
+[`massif_demo_layers`](https://pobsteta.github.io/nemeton/reference/massif_demo_layers.md)
+and the synthetic inventory (as
+[`nemeton_compute()`](https://pobsteta.github.io/nemeton/reference/nemeton_compute.md)
+does), with two derived inputs: a BD Forêt-like forest cover polygonised
+from the demo land cover (classes 1-3), used by B3, N2, R1 and R4; and
+an empty game-density raster for R4, so that the generation needs no
+network (R2 also uses the default 270 degree wind).
+
+**Indicators left NA (19).** The demo layers hold no NDVI (C2), no
+protected areas (B1), no CHM, LiDAR or NDVI for the stand structure
+(B2), no soil layer (F1), no buildings (S2, N1, hence N3), no population
+grid (S3), and no LiDAR canopy height or game density for R4. The ten
+source-conditional indicators also stay NA, with their status: B4 and L3
+(Sentinel-2 spectral diversity), W4, A3, A4 and R6 (microclimate), A5
+(land-surface temperature), R5 (FORDEAD / RECONFORT), R7 (daily minimum
+temperature) and T3 (SUFOSAT). The demo's two-digit IFN species codes
+are not in P2's productivity table, so P2 falls back to the genus mean
+(6.5 m3/ha/yr) on the 11 parcels of fertility class 2 and is NA on the 9
+parcels of class 1 or 3, which have no genus entry.
 
 Associated layers (25 m rasters and vector layers in `inst/extdata/`)
 are loaded with
@@ -121,15 +162,15 @@ are loaded with
 
 - `massif_demo_dem.tif`: digital elevation model (350-700 m)
 
-- `massif_demo_landcover.tif`: land cover (6 classes)
+- `massif_demo_landcover.tif`: land cover (classes 1-3 forest, 4
+  grassland)
 
 - `massif_demo_species_richness.tif`: species richness
 
 - `massif_demo_roads.gpkg`, `massif_demo_water.gpkg`: roads and water
   courses
 
-All values are synthetic (generated with `set.seed(42)`); they are meant
-for examples, tests and vignettes, not for analysis.
+The data are meant for examples, tests and vignettes, not for analysis.
 
 ## See also
 
@@ -141,6 +182,7 @@ for examples, tests and vignettes, not for analysis.
 ## Examples
 
 ``` r
+
 data(massif_demo_units)
 
 # Stand attributes
@@ -157,12 +199,12 @@ summary(sf::st_drop_geometry(massif_demo_units)[, c(
   "famille_carbone", "famille_production", "famille_naturalite"
 )])
 #>  famille_carbone  famille_production famille_naturalite
-#>  Min.   : 1.298   Min.   : 2.456     Min.   :21.69     
-#>  1st Qu.:26.465   1st Qu.:36.885     1st Qu.:38.23     
-#>  Median :55.021   Median :46.303     Median :45.42     
-#>  Mean   :46.573   Mean   :48.397     Mean   :47.99     
-#>  3rd Qu.:64.615   3rd Qu.:68.800     3rd Qu.:60.40     
-#>  Max.   :85.695   Max.   :94.525     Max.   :76.79     
+#>  Min.   : 3.857   Min.   : 25.07     Min.   :59.49     
+#>  1st Qu.:18.217   1st Qu.: 59.36     1st Qu.:60.00     
+#>  Median :30.947   Median : 69.26     Median :60.00     
+#>  Mean   :34.164   Mean   : 69.41     Mean   :59.97     
+#>  3rd Qu.:36.972   3rd Qu.: 81.33     3rd Qu.:60.00     
+#>  Max.   :94.728   Max.   :100.00     Max.   :60.00     
 
 if (FALSE) { # \dontrun{
 # 12-axis family radar for parcel 1

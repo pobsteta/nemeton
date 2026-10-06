@@ -60,6 +60,10 @@ This is a published pedotransfer function, not a calibration of this
 project. It is exported so that a pedologist can audit it. NA in, NA
 out.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## References
 
 Saxton K.E., Rawls W.J. (2006). Soil Water Characteristic Estimates by

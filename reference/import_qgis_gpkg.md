@@ -27,3 +27,7 @@ import_qfield_gpkg(path)
 
 A list with `placettes` (an sf POINT) and `arbres` (an sf POINT; an
 empty data.frame if the layer is absent).
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

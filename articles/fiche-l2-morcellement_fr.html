@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -205,8 +205,8 @@ Obstetar</h4>
 <tr class="odd">
 <td>Ancien nom</td>
 <td>
-<code><a href="../reference/indicateur_l1_sylvosphere.html">indicateur_l1_sylvosphere()</a></code> — alias conservé (spec
-045)</td>
+<code>indicateur_l1_sylvosphere()</code> — alias retiré en 1.0.0
+(spec 057)</td>
 </tr>
 </tbody>
 </table>
@@ -342,10 +342,10 @@ nom de colonne.</strong>
 </li>
 <li>
 <strong>Le nom a changé, et les deux anciens noms étaient
-croisés</strong> (spec 045) : l’alias de L2 est
-<code><a href="../reference/indicateur_l1_sylvosphere.html">indicateur_l1_sylvosphere()</a></code> — celui qui <em>dit</em> L1 —
-et le slug <code>indicateur_l1_sylvosphere</code> reste reconnu par la
-normalisation, en passthrough comme L2. Ne pas le confondre avec
+croisés</strong> (spec 045) : l’ancien nom de L2 est
+<code>indicateur_l1_sylvosphere</code> — celui qui <em>dit</em> L1 ; la
+fonction alias est retirée en 1.0.0 (spec 057), le slug reste reconnu
+par la normalisation, en passthrough comme L2. Ne pas le confondre avec
 <code>indicateur_l2_fragmentation</code>, qui porte les valeurs de
 <strong>L1</strong> et s’inverse depuis la 0.197.0 (spec 048 §9).
 Attention au sens, enfin : « fragmentation » suggère « haut = fragmenté
@@ -385,8 +385,8 @@ de L1 à L3</text><rect x="586" y="242" width="226" height="42" rx="3" fill="non
 1 : une seule valeur de paysage, recopiée sur toutes les unités du
 projet.</text><text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Les
 deux chemins mesurent des choses différentes et basculent sur la seule
-présence d’un paquet.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">indicateur_l1_sylvosphere()
-reste l’alias de L2 (spec 045) : les deux anciens noms étaient
+présence d’un paquet.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">indicateur_l1_sylvosphere,
+ancien nom de L2 (spec 045) : les deux anciens noms étaient
 croisés.</text></svg><figcaption style="font-size:.9em;opacity:.75">
 Le basculement ne dépend pas du terrain mais de l’installation : avec
 <code>landscapemetrics</code>, L2 décrit le massif ; sans lui, il décrit
@@ -411,9 +411,10 @@ la forme du polygone. Deux lectures opposées de la même colonne.
 <td><code>R/indicators-families.R:1865-1960</code></td>
 </tr>
 <tr class="even">
-<td>Alias historique</td>
+<td>Ancien nom</td>
 <td>
-<code><a href="../reference/indicateur_l1_sylvosphere.html">indicateur_l1_sylvosphere()</a></code> — <code>:1992</code>
+<code>indicateur_l1_sylvosphere</code> — slug reconnu par
+<code><a href="../reference/migrer_colonnes_l.html">migrer_colonnes_l()</a></code>
 </td>
 </tr>
 <tr class="odd">

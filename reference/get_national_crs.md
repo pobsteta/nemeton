@@ -18,6 +18,10 @@ get_national_crs(country = "FR")
 
 Integer. EPSG code (e.g., 2154 for France Lambert-93).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

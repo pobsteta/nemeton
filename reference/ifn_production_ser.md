@@ -71,6 +71,10 @@ A data.frame with columns `niveau`, `ser`, `greco`, `campagne`,
 `source`. Read `nature` before using `estimation`: a synthetic value is
 a model prediction, not a measurement.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`ifn_production_reference`](https://pobsteta.github.io/nemeton/reference/ifn_production_reference.md),

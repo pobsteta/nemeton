@@ -36,6 +36,10 @@ Only 8 species are tabulated:
 finer-grained coverage, see
 [`charru_bai_drift_table`](https://pobsteta.github.io/nemeton/reference/charru_bai_drift_table.md).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

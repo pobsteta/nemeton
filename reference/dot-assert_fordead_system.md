@@ -1,8 +1,8 @@
-# Assert reticulate is available and Python \>= 3.10 is installed
+# Assert reticulate is available and Python \>= 3.11 is installed
 
 Raises a \`cli::cli_abort\` with installation hints when reticulate is
 missing, when Python cannot be found, or when the discovered interpreter
-is older than 3.10.
+is older than 3.11.
 
 ## Usage
 
@@ -25,5 +25,5 @@ back to \[.find_python_on_path()\] which probes \`Sys.which()\`
 directly.
 
 We don't need reticulate to be initialised against the discovered
-interpreter at this point; we only need to know that a 3.10+ Python is
+interpreter at this point; we only need to know that a 3.11+ Python is
 reachable so the FORDEAD venv can be built from it.

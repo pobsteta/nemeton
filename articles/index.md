@@ -98,8 +98,6 @@
   (i18n)](https://pobsteta.github.io/nemeton/articles/internationalization.md):
 - [Optimisation
   Multi-Critères](https://pobsteta.github.io/nemeton/articles/multi-criteria-optimization_fr.md):
-- [Guide de l'Application
-  nemetonApp](https://pobsteta.github.io/nemeton/articles/nemetonapp-guide_fr.md):
 - [Indicateurs P1, P2, C1, B2, R2 via un CHM
   Open-Canopy](https://pobsteta.github.io/nemeton/articles/site-index-open-canopy_fr.md):
 - [Analyse temporelle - Suivi

@@ -7,8 +7,8 @@ CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25).
 chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
-> merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.156.0**
-> (release du 2026-10-05), relevée le 2026-10-05.
+> merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.157.0**
+> (release du 2026-10-05), relevée le 2026-10-06.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
 > (cœur métier). Les épaississements portés côté app (`nemetonshiny`)
@@ -25,7 +25,7 @@ chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 | ✅ | E3 | Multi-acteurs — 13 profils experts YAML | n/a (app) |
 | ✅ | E4 | Authentification OAuth2/OIDC | n/a (app) |
 | ✅ | E5 | Intégrations & NDP — Open-Canopy CHM (spec 005) + QField export/ingest + sizing échantillon + flag `height_lidar` | v0.16.0 → v0.19.12 |
-| ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). **Backend monitoring local** (Bug \#2 verrou fichier) : DuckDB → SQLite/WAL → **v0.50.0** ; fix warning → **v0.50.1** ; retrait DuckDB → **v0.51.0** (2026-05-28) ; fix UPSERT SQLite `near "DO"` à l’ingestion S2 → **v0.55.1** ; audit complet UPSERT SQLite (db_migrate no-target + FORDEAD/alerts `INSERT…SELECT`) → **v0.55.2** (2026-06-01). **FAST 100 % pur raster** : retrait de l’insertion `obs_pixel` dans [`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md) (amorçage cache COG seul), `DROP TABLE obs_pixel` (migration 0004), dépréciation `read_obs_pixel()`/`list_fast_alerts_for_zone()`/`detect_alerts()` → **v0.58.0** (2026-06-02) ; **retrait définitif des 3 fonctions + `CREATE TABLE obs_pixel` ôté des migrations 0001** → **v0.60.0** (2026-06-02, Phase B). Côté app : `nemetonshiny@v0.49.0`→`v0.50.0` ; consommateur `obs_pixel` retiré dès `nemetonshiny@v0.52.16`. **Indice NDMI** ajouté au FAST (spec 019, `(B08−B11)/(B08+B11)`, humidité ; défaut NDVI conservé, B11 cachée best-effort) → **v0.64.0** (2026-06-03) ; **UI NDMI livrée côté `nemetonshiny`** ✅ (sélecteur FAST NDMI listé en premier / défaut NDVI conservé, i18n FR/EN `monitoring_fast_ndmi_hint`/`_b11_note`, slider `monitoring_threshold_ndmi`, 3ᵉ courbe NDMI dans la modale pixel, avertissement bande B11 dans les sidebars, NDMI dans le pré-chauffage `index × mode`) — scope spec 019 §5, dépassé depuis par NDRE + mode `trend` (specs 023/025). **Fix régression spec 019** : `.enumerate_cache_scenes()` n’avait pas de branche NDMI → cartes d’alerte NDMI toujours vides malgré B08+B11 en cache ; + nouvel orchestrateur [`read_fast_alert_rasters()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_rasters.md) (les 6 cartes = 3 indices × 2 modes en un appel) → **v0.65.0** (2026-06-03). **Fix cache spec 017 D6** (2026-07-01) : la clé du COG FAST incluait `date_from`/`date_to` *demandés* → recalcul quotidien d’une fenêtre glissante ancrée sur aujourd’hui sans nouvelle scène ; désormais clé sur la **couverture S2 réelle** (`min`/`max` des `obs_date` des scènes retenues) + ancre `rolling` sur la dernière acquisition → **v0.105.0**. **Masques FAST adressés par contenu** (deux masques d’une même seconde s’écrasaient) + **cache disque de [`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md)** (`cache_result`, ~9 s par appel sur 327 scènes) → **v0.198.0** (2026-09-23, brief app, écart n° 12). `\` parasite dans trois messages `format_inline()` de [`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md) → **v0.199.1**. |
+| ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). **Backend monitoring local** (Bug \#2 verrou fichier) : DuckDB → SQLite/WAL → **v0.50.0** ; fix warning → **v0.50.1** ; retrait DuckDB → **v0.51.0** (2026-05-28) ; fix UPSERT SQLite `near "DO"` à l’ingestion S2 → **v0.55.1** ; audit complet UPSERT SQLite (db_migrate no-target + FORDEAD/alerts `INSERT…SELECT`) → **v0.55.2** (2026-06-01). **FAST 100 % pur raster** : retrait de l’insertion `obs_pixel` dans [`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md) (amorçage cache COG seul), `DROP TABLE obs_pixel` (migration 0004), dépréciation `read_obs_pixel()`/`list_fast_alerts_for_zone()`/`detect_alerts()` → **v0.58.0** (2026-06-02) ; **retrait définitif des 3 fonctions + `CREATE TABLE obs_pixel` ôté des migrations 0001** → **v0.60.0** (2026-06-02, Phase B). Côté app : `nemetonshiny@v0.49.0`→`v0.50.0` ; consommateur `obs_pixel` retiré dès `nemetonshiny@v0.52.16`. **Indice NDMI** ajouté au FAST (spec 019, `(B08−B11)/(B08+B11)`, humidité ; défaut NDVI conservé, B11 cachée best-effort) → **v0.64.0** (2026-06-03) ; **UI NDMI livrée côté `nemetonshiny`** ✅ (sélecteur FAST NDMI listé en premier / défaut NDVI conservé, i18n FR/EN `monitoring_fast_ndmi_hint`/`_b11_note`, slider `monitoring_threshold_ndmi`, 3ᵉ courbe NDMI dans la modale pixel, avertissement bande B11 dans les sidebars, NDMI dans le pré-chauffage `index × mode`) — scope spec 019 §5, dépassé depuis par NDRE + mode `trend` (specs 023/025). **Fix régression spec 019** : `.enumerate_cache_scenes()` n’avait pas de branche NDMI → cartes d’alerte NDMI toujours vides malgré B08+B11 en cache ; + nouvel orchestrateur `read_fast_alert_rasters()` (les 6 cartes = 3 indices × 2 modes en un appel) → **v0.65.0** (2026-06-03). **Fix cache spec 017 D6** (2026-07-01) : la clé du COG FAST incluait `date_from`/`date_to` *demandés* → recalcul quotidien d’une fenêtre glissante ancrée sur aujourd’hui sans nouvelle scène ; désormais clé sur la **couverture S2 réelle** (`min`/`max` des `obs_date` des scènes retenues) + ancre `rolling` sur la dernière acquisition → **v0.105.0**. **Masques FAST adressés par contenu** (deux masques d’une même seconde s’écrasaient) + **cache disque de [`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md)** (`cache_result`, ~9 s par appel sur 327 scènes) → **v0.198.0** (2026-09-23, brief app, écart n° 12). `\` parasite dans trois messages `format_inline()` de [`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md) → **v0.199.1**. |
 | ✅ | **Carte pixel** *(hors-skeleton, entre E6 et E7)* | API publique cœur pour exposer le cache S2 pixel-par-pixel (10 m natif) + extraction time-series à un clic. Spec 010. Débloque le sous-onglet *Carte pixel* dans `nemetonshiny` (séparé). | 4 fonctions exportées (`read_s2_band_raster`, `read_s2_band_stack`, `build_index_stack`, `extract_pixel_timeseries`) — release **v0.22.0** (2026-05-15). |
 | ✅ | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d’indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d’essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a → **v0.29.0** ; phase 1b → **v0.30.0** ; phase 2 (loaders) → **v0.31.0** ; phase 3a (`s2_biophysical` → C2/A1) → **v0.32.0** ; phase 3b (`theia_soil` → F1/F2) → **v0.33.0** ; phase 3c (`theia_snow` → R3) → **v0.34.0** ; phase 3d (`theia_water`/`theia_soil_moisture`/`theia_species`) → **v0.35.0** ; FORMSpoT câblé via l’interface CHM → **v0.35.2** ; résolveur STAC Theia → **v0.36.0** ; endpoint corrigé + FORMSpoT vérifié → **v0.37.0** ; auth S3 `/vsis3/` → **v0.38.0** ; ciblage par année → **v0.39.0** ; credentials S3 corrigés → **v0.39.1** ; signature SDK teledetection (`theia_signed_href`) → **v0.40.0** — chaîne validée en réel. Reliquat : MUSCATE, LST, W1. |
 | ✅ | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | **Machinerie** → **v0.52.0** : 7 fonctions exportées (`enable_rag`, `ingest_knowledge_document`, `embed_query`, `retrieve_knowledge`, `list_knowledge_documents`, `delete_knowledge_document`, `format_citations`), schéma opt-in `knowledge_*`, dual-backend pgvector `<=>` (PG) / cosinus R (SQLite). **Corpus** (spec 009.1) : API admin (v0.63.0), curation v0.75.0→v0.76.2 → **déployé en prod : 81 docs, 60 texte intégral, 6 120 chunks, 0 embedding manquant** (dont 4 papiers scannés OCRisés). **Wiring app** : perspectives IA sourcées (`nemetonshiny`). **Clos 2026-06-13.** |
@@ -135,7 +135,7 @@ opposer au prochain fork qui se présentera comme un raccourci.
 | 5 | Seconde passe sur les calculs : 31 constats majeurs (indicateurs, échantillonnage, climat, RECONFORT) | **v0.212.0** | ✅ livré, brief app émis |
 | 6 | Reliquat des constats majeurs (53 « M » revérifiés : 34 déjà corrigés, 14 corrigés, 5 en décision) | **v0.213.0** | ✅ livré |
 | 7 | Constats mineurs « m » (~111 revérifiés : ~90 corrigés, le reste déjà corrigé, non retenu ou en décision) | **v0.214.0** | ✅ livré |
-| 8 | Décisions ouvertes (offset S2, contrat d’API, migrations SQL…) puis 1.0.0 | 0.215+ | ⬜ décisions Pascal |
+| 8 | Offset S2 (0.215), logique métier de l’app (0.216), décisions de Pascal : contrat d’API, méthode, base neuve, infrastructure | **v1.0.0** | ✅ livré |
 
 **Journal** — *2026-10-02* (**v0.208.0**) : vague 1 livrée, dix
 correctifs, chacun avec un test qui échouait avant. Valeurs changées
@@ -313,6 +313,41 @@ exports inutilisés retirés). Spec et brief app d’abord, puis bump majeur
 à confirmer : cible naturelle, la **1.0.0**. - **Choix de méthode**
 (R2/R3, W3/F2, N1, P3, indice de station) : mesure avant/après sur les
 projets en cache, décision ensuite.
+
+**Décisions** — *2026-10-06*, suite (Pascal), toutes pour la **1.0.0**
+: - **Méthode** (spec 056, mesures sur six projets) : R2 sans TRI ; TWI
+ramené à 2 m et fenêtre commune \[2,5 ; 9\] pour W3, F2, R3 ; N1 sans le
+terme +25 ; P3 au diamètre seul (`p3_status`) ; indice de station NA
+hors courbe (`p2_status = "hors_courbe"`). Plus trois défauts trouvés en
+mesurant : TWI en degrés sur MNT lon/lat, TWI dépendant de la
+résolution, essence et âge fabriqués par
+[`enrich_parcels_bdforet()`](https://pobsteta.github.io/nemeton/reference/enrich_parcels_bdforet.md). -
+**Contrat d’API** (spec 057) : 1.0.0 groupée ; liste §4.1 appliquée. -
+**1.0.0 sans migration** : projets **et base de suivi** recréés ; schéma
+neuf (migration initiale unique, TimescaleDB optionnel,
+`validation_status` NOT NULL partout). - **Infrastructure** : cache
+global gardé dans `~/.cache/nemeton` ; pas de CRAN pour la 1.0 (GitHub)
+; versions Python de FORDEAD figées ; `.onLoad` respecte un réglage
+terra de l’utilisateur ; données des tutoriels 07/08 téléchargées à la
+demande ; `NEMETON_CORPUS_ROOT` documenté ; guide de l’app déplacé dans
+`nemetonshiny` (brief) ;
+[`ingest_knowledge_document()`](https://pobsteta.github.io/nemeton/reference/ingest_knowledge_document.md)
+sans doublon ; contournement microclimf gardé (ticket amont rédigé, non
+publié) ; fixture `massif_demo_units` régénérée à 41 indicateurs.
+
+**Journal** — *2026-10-06* (**v1.0.0**) : **première version stable.**
+Contrat d’API (spec 057), choix de méthode (spec 056), base de suivi
+neuve, infrastructure ; quatre agents en parallèle puis intégration
+(conflits de documentation seulement). Trois défauts trouvés en mesurant
+les choix de méthode : TWI calculé en degrés sur MNT lon/lat (W3 = 0 sur
+Couchey, Aumur), TWI dépendant de la résolution, âge/densité/essence
+fabriqués par
+[`enrich_parcels_bdforet()`](https://pobsteta.github.io/nemeton/reference/enrich_parcels_bdforet.md).
+Conséquence assumée : sans âge réel, P2 (CHM) est NA. La 1.0.0 casse les
+projets **et les bases** antérieurs, sans migration. Brief app :
+`specs/057-contrat-api-1.0/brief-nemetonshiny-1.0.0.md`. Reste après la
+1.0 : vrai taux de changement pour T2, `urban_areas` dans A2, épinglage
+des actions GitHub de premier rang (Dependabot).
 
 **Prochaine étape** : côté app, adopter les trois fonctions (plancher,
 tests d’équivalence) puis la décision **1.0.0** de l’app ; côté cœur,
@@ -899,17 +934,14 @@ encore eu lieu.
 date* (download 1 archive → extract → crop AOI → delete) → pic disque
 ~3–5 GB ; **C2** crop **en R** (règle « pas de métier dans le python
 vendoré » ; python ne fait que lister + télécharger une archive) ;
-**C4**
-[`reconfort_ingest_s2()`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md)
-devient **AOI-aware streaming** (nouvel arg `aoi`, rétrocompatible :
-`aoi = NULL` → comportement v0.94.x full-tile) ; **C5** crop AOI par
-date = cache d’idempotence.
+**C4** `reconfort_ingest_s2()` devient **AOI-aware streaming** (nouvel
+arg `aoi`, rétrocompatible : `aoi = NULL` → comportement v0.94.x
+full-tile) ; **C5** crop AOI par date = cache d’idempotence.
 
 **Découpage** : K1 manifeste (`list_s2_items.py` + reader R) · K2
 download par item · K3 `.reconfort_crop_scene_to_aoi` (factorisation
-per-scene) · K4 boucle streaming dans
-[`reconfort_ingest_s2()`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md)
-· K5 câblage `reconfort_pipeline.R` (retrait du `do_crop` séparé) · K6
+per-scene) · K4 boucle streaming dans `reconfort_ingest_s2()` · K5
+câblage `reconfort_pipeline.R` (retrait du `do_crop` séparé) · K6
 tests + release **v0.95.0** (bump mineur : changement de contrat).
 
 **Journal** — *2026-06-27 (impl K1→K6 livrée sur branche)* : - **K1/K2**
@@ -925,16 +957,15 @@ datetime préservés) → **R1 levé** (1 search, pas 140). Readers R
 amont). - **K4** : `.reconfort_ingest_tile_streaming()` — LIST → par
 item (skip si marqueur `ingested/<tile>/<id>.done`)
 DL→[`utils::unzip`](https://rdrr.io/r/utils/unzip.html)→crop AOI→delete
-(zip+scratch).
-[`reconfort_ingest_s2()`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md)
-gagne `aoi`/`target_crs`/`buffer_m` ; `aoi = NULL` → comportement
-v0.94.x intact. Robustesse R3 : download/zip KO logué + skip, abort
-seulement si 0 scène cropée. - **K5** : `reconfort_pipeline.R` PHASE 5
-passe `aoi` à l’ingest, `do_crop` séparé retiré (`extracted_aoi/`
-disparaît, l’ingest écrit le crop dans `extracted/<tile>/`). - **K6** :
-+14 tests ingest (55 ✔ : crop per-scene, streaming
-DL→extract→crop→delete + idempotence, manifeste vide → abort) ; pipeline
-22 ✔ (mock ingest étendu `aoi`) ; python 14 ✔. `.Rd` édités à la main.
+(zip+scratch). `reconfort_ingest_s2()` gagne
+`aoi`/`target_crs`/`buffer_m` ; `aoi = NULL` → comportement v0.94.x
+intact. Robustesse R3 : download/zip KO logué + skip, abort seulement si
+0 scène cropée. - **K5** : `reconfort_pipeline.R` PHASE 5 passe `aoi` à
+l’ingest, `do_crop` séparé retiré (`extracted_aoi/` disparaît, l’ingest
+écrit le crop dans `extracted/<tile>/`). - **K6** : +14 tests ingest (55
+✔ : crop per-scene, streaming DL→extract→crop→delete + idempotence,
+manifeste vide → abort) ; pipeline 22 ✔ (mock ingest étendu `aoi`) ;
+python 14 ✔. `.Rd` édités à la main.
 
 > *2026-06-27 (release v0.95.0)* : \#124 mergé dans main, puis bump
 > stable **v0.95.0** (DESCRIPTION + NEWS + CITATION). Avant le merge :
@@ -3134,12 +3165,10 @@ précédente : le brief demandait d’échanger les libellés, la vérification
 a montré que les libellés étaient justes et que **le nom des deux
 fonctions** était le menteur. Trois options ont été posées (statu quo /
 échange / renommage) ; Pascal a tranché pour **traiter la cause**.
-[`indicateur_l2_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_fragmentation.md)
-devient
+`indicateur_l2_fragmentation()` devient
 **[`indicateur_l1_effet_lisiere()`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_effet_lisiere.md)**
 (sylvosphère : indice de forme, contraste de matrice, exposition) et
-[`indicateur_l1_sylvosphere()`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.md)
-devient
+`indicateur_l1_sylvosphere()` devient
 **[`indicateur_l2_morcellement()`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_morcellement.md)**
 (fragmentation : landscapemetrics COHESION + AI). **Aucune valeur ne
 change** — vérifié par
@@ -3196,24 +3225,23 @@ l’échange aurait retitré les cartes à faux.** Une colonne porte le nom
 de la **fonction qui la remplit** (`compute_indicator()` résout la
 fonction par le nom de l’indicateur, `R/indicators-core.R:199`), et pour
 la famille L le nom de la fonction contredit ce qu’elle calcule :
-[`indicateur_l2_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_fragmentation.md)
-a pour titre roxygen « Sylvosphere - Edge Effect (L1) » et calcule
-indice de forme + contraste de matrice + exposition, tandis
-qu’[`indicateur_l1_sylvosphere()`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.md)
-a pour titre « Landscape Fragmentation (L2) » et appelle
-landscapemetrics (COHESION + AI). La colonne au slug « fragmentation »
-**contient donc de la sylvosphère**. Quatre sources concordent — corps
-des fonctions, titres roxygen, en-tête de `test-indicators-landscape.R`,
-et `R/i18n.R` qui traduit déjà `indicateur_l2_fragmentation` par «
-Sylvosphère - effet lisière ». L’appariement du cœur est juste, le
-libellé décrit bien les valeurs affichées, et l’onglet Paysage n’avait
-rien de faux : ce que le lecteur prend pour « la carte de fragmentation
-» est identifié par le slug, qui ment. C’est la deuxième fois en trois
-jours qu’un brief pose en cause une fonction du cœur qui, vérification
-faite, fait ce qu’il faut (cf. v0.174.0, CA-1) — la lecture du slug
-tient lieu de lecture du corps. **Livré quand même**, parce que le brief
-pointait une vraie zone d’ambiguïté : (1) `R/nemeton-package.R`
-annonçait « `indicateur_l2_fragmentation` - Fragmentation (L1) » et «
+`indicateur_l2_fragmentation()` a pour titre roxygen « Sylvosphere -
+Edge Effect (L1) » et calcule indice de forme + contraste de matrice +
+exposition, tandis qu’`indicateur_l1_sylvosphere()` a pour titre «
+Landscape Fragmentation (L2) » et appelle landscapemetrics (COHESION +
+AI). La colonne au slug « fragmentation » **contient donc de la
+sylvosphère**. Quatre sources concordent — corps des fonctions, titres
+roxygen, en-tête de `test-indicators-landscape.R`, et `R/i18n.R` qui
+traduit déjà `indicateur_l2_fragmentation` par « Sylvosphère - effet
+lisière ». L’appariement du cœur est juste, le libellé décrit bien les
+valeurs affichées, et l’onglet Paysage n’avait rien de faux : ce que le
+lecteur prend pour « la carte de fragmentation » est identifié par le
+slug, qui ment. C’est la deuxième fois en trois jours qu’un brief pose
+en cause une fonction du cœur qui, vérification faite, fait ce qu’il
+faut (cf. v0.174.0, CA-1) — la lecture du slug tient lieu de lecture du
+corps. **Livré quand même**, parce que le brief pointait une vraie zone
+d’ambiguïté : (1) `R/nemeton-package.R` annonçait «
+`indicateur_l2_fragmentation` - Fragmentation (L1) » et «
 `indicateur_l1_sylvosphere` - Edge ratio (L2) », soit **la mauvaise
 grandeur pour les deux**, et le mauvais code court pour les deux F —
 corrigé, `man/nemeton-package.Rd` à la main. (2) La section *Column
@@ -3399,11 +3427,8 @@ inatteignable — trois champs STAC à la mauvaise place**. Symptôme : le
 cache `cache/layers/sufosat/` de **tous** les projets restait vide et
 **T3 (coupes rases) rendait `NA` en silence**, y compris sur Dabo où la
 source est explicitement activée (`metadata$sufosat$enabled = TRUE`).
-**Cause** :
-[`resolve_theia_assets()`](https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.md)
-et
-[`theia_signed_href()`](https://pobsteta.github.io/nemeton/reference/theia_signed_href.md)
-lisent `src$access$stac_collection` ; l’entrée `sufosat` de
+**Cause** : `resolve_theia_assets()` et `theia_signed_href()` lisent
+`src$access$stac_collection` ; l’entrée `sufosat` de
 `inst/datasources/FR.json` déclarait `stac_collection` /
 `stac_collection_status` / `stac_api_service` à la **racine** de
 l’entrée — seule des dix sources Theia à le faire. D’où
@@ -3787,10 +3812,10 @@ FORDEAD (résineux) et FAST. R5 unifié routé par essence.
 | État | Lot | Contenu | Release |
 |----|----|----|----|
 | ✅ | **L1** | Domaine de validité (`reconfort_validity.R`, GeoJSON 6 dép. CVL, tests) — garde-fou G3 advisory | **v0.70.0** (2026-06-11) |
-| ✅ | **L2a** | `reconfort_model.R` : [`ensure_reconfort_model()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_model.md) + registre `RECONFORT_MODELS` + fallback `local_path` (fetch à la demande + checksum MD5 + cache) | **v0.71.0** (2026-06-11) |
+| ✅ | **L2a** | `reconfort_model.R` : `ensure_reconfort_model()` + registre `RECONFORT_MODELS` + fallback `local_path` (fetch à la demande + checksum MD5 + cache) | **v0.71.0** (2026-06-11) |
 | ✅ | **L2b.1** | `reconfort_python.R` (env conda IOTA² locate+validate) + `RECONFORT_BANDS` + glue vendorisée `custom_index.py` + NOTICE | **v0.72.0** (2026-06-11) |
-| ✅ | **L2b.2** | Ingest IOTA²-natif : [`reconfort_aoi_tiles()`](https://pobsteta.github.io/nemeton/reference/reconfort_aoi_tiles.md) (grille MGRS embarquée) + [`reconfort_ingest_s2()`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md) (pygeodes download + unzip) + scripts vendorisés | **v0.73.0** (2026-06-11) |
-| ✅ | **L2b.3** | `reconfort_pipeline.R::run_reconfort_dieback()` : orchestration env→model→masque→tuile→ingest→IOTA² ×2+score, staging par-run, [`ensure_reconfort_oso_mask()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_oso_mask.md) + glue map-production vendorisée | **v0.74.0** (2026-06-12) |
+| ✅ | **L2b.2** | Ingest IOTA²-natif : `reconfort_aoi_tiles()` (grille MGRS embarquée) + `reconfort_ingest_s2()` (pygeodes download + unzip) + scripts vendorisés | **v0.73.0** (2026-06-11) |
+| ✅ | **L2b.3** | `reconfort_pipeline.R::run_reconfort_dieback()` : orchestration env→model→masque→tuile→ingest→IOTA² ×2+score, staging par-run, `ensure_reconfort_oso_mask()` + glue map-production vendorisée | **v0.74.0** (2026-06-12) |
 | ✅ | **L3** | `reconfort_postprocess.R` (rasters → table `alert`, centroïdes, `confidence_class`, `stress_index` = score continu) + migration **`0006`** + [`classify_disturbance()`](https://pobsteta.github.io/nemeton/reference/classify_disturbance.md) 3-voies (`method_overlap`) + phase `postprocess` dans [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md) | **v0.77.0** (2026-06-13) |
 | ✅ | **L4** | R5 unifié routé par essence : `indicateur_r5_deperissement(reconfort_results=)`, RECONFORT (chêne/châtaignier/pin sylvestre) vs FORDEAD (épicéa/sapin), statuts `calculated_reconfort`/`skipped_no_reconfort`/`skipped_no_method`, helpers `.resolve_reconfort_share`/`.r5_prepare_alerts`/`.r5_score` | **v0.78.0** (2026-06-13) |
 | ✅ | **L5** | Persistance features CRswir/CRre (option B : recalcul depuis le S2 ingéré) — `reconfort_outputs.R` (formules, stacks datés, bundle) + phase `persist` dans [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md) + [`read_reconfort_pixel_series()`](https://pobsteta.github.io/nemeton/reference/read_reconfort_pixel_series.md) (lecteur, sans reticulate) | **v0.80.0** (2026-06-13) |
@@ -3919,23 +3944,19 @@ RECONFORT masquent désormais raster **et** vecteur dans leur reader cœur
 - **Décision (AskUserQuestion 2026-06-29)** : clip **au read-time**
   (parité `read_reconfort_layer`) + **étendu aux 3 pipelines**. D3
   révisée.
-- **Cœur — `v0.99.0`** :
-  [`filter_alerts_to_zone()`](https://pobsteta.github.io/nemeton/reference/filter_alerts_to_zone.md)
-  exporté (`R/zone_aoi.R`), **helper unique partagé**
-  RECONFORT/FORDEAD/FAST (le filtre `sf` POINT est identique → vraie
-  parité, pas de duplication). Interne `.filter_alerts_to_zone()` miroir
-  de
+- **Cœur — `v0.99.0`** : `filter_alerts_to_zone()` exporté
+  (`R/zone_aoi.R`), **helper unique partagé** RECONFORT/FORDEAD/FAST (le
+  filtre `sf` POINT est identique → vraie parité, pas de duplication).
+  Interne `.filter_alerts_to_zone()` miroir de
   [`.apply_zone_mask()`](https://pobsteta.github.io/nemeton/reference/dot-apply_zone_mask.md).
   Filtre au read, table `alert` non modifiée ; reprojection CRS ;
   `cli_warn` + passthrough si pas de polygone ; opt-out
   `apply_zone_mask = FALSE`. 8 tests (`test-filter-alerts-to-zone.R`).
 - **App — `v0.93.1` (`nemetonshiny@703bdd66`)** ✅ : `alerts_r` enchaîne
   [`list_alerts()`](https://pobsteta.github.io/nemeton/reference/list_alerts.md)
-  →
-  [`filter_alerts_to_zone()`](https://pobsteta.github.io/nemeton/reference/filter_alerts_to_zone.md)
-  (RECONFORT **et** FORDEAD). Clôt la **parité raster + vecteur des 3
-  pipelines** : plus aucune sémantique spatiale de masquage côté
-  `nemetonshiny`.
+  → `filter_alerts_to_zone()` (RECONFORT **et** FORDEAD). Clôt la
+  **parité raster + vecteur des 3 pipelines** : plus aucune sémantique
+  spatiale de masquage côté `nemetonshiny`.
 
 #### 2026-06-29 — Fix sens de R5 dans la famille R (`normalize_indicator`)
 
@@ -4130,11 +4151,10 @@ Les deux briefs app du volet moteur spec 027 sont désormais clos ;
   Flag dans
   [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md).
   Sources `FR.json` (era5/eobs/lidarhd). Dépendances lourdes en
-  `Suggests`. Scaffold
-  [`microclimate_run()`](https://pobsteta.github.io/nemeton/reference/microclimate_run.md)
-  (contrat `micro` ; orchestration microclimf différée — données
-  requises, non testable CI ; **pas de prototype dans les repos**). 16
-  tests. Non-régression famille/intégration/NDP/air OK.
+  `Suggests`. Scaffold `microclimate_run()` (contrat `micro` ;
+  orchestration microclimf différée — données requises, non testable CI
+  ; **pas de prototype dans les repos**). 16 tests. Non-régression
+  famille/intégration/NDP/air OK.
 - **Reste** : L3 (composite par essence), L4 (onglet `nemetonshiny`), L5
   (doc/vignette). + câblage réel microclimf/lasR (L1b) quand données
   disponibles.
@@ -4323,10 +4343,9 @@ Du moins au plus invasif :
   multi-produits (résolution, unité, plage, notes de conversion — ex. la
   note cm→m de `forms_t`) (v0.31.0).
 - **Résolveur STAC Theia** (v0.36.0, `R/theia_stac.R`) :
-  [`stac_search_items()`](https://pobsteta.github.io/nemeton/reference/stac_search_items.md)
-  (recherche STAC générique),
-  [`resolve_theia_assets()`](https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.md)
-  (résolution des hrefs COG d’une source Theia pour une AOI) et
+  `stac_search_items()` (recherche STAC générique),
+  `resolve_theia_assets()` (résolution des hrefs COG d’une source Theia
+  pour une AOI) et
   [`load_theia_source()`](https://pobsteta.github.io/nemeton/reference/load_theia_source.md)
   (chargement en `SpatRaster`). L’endpoint STAC Theia est lu dans
   `services.theia_stac` de FR.json — son `url` reste `"to confirm"`
@@ -7012,14 +7031,12 @@ déclarait lui-même « feature NDP 1+, donc côté cœur ». Cadrée dans
     d’entrée existe.
 
 **Le vrai manque est l’acquisition, pas la lecture.** `nemeton` n’expose
-que
-[`probe_ign_lidar_tile()`](https://pobsteta.github.io/nemeton/reference/probe_ign_lidar_tile.md)
-— un *diagnostic*, dont la doc dit que c’est `nemetonshiny` qui
-télécharge. `FR.json` ne déclare que les rasters dérivés
-(`lidar_mnh`/`mnt`/`mns`), pas le nuage NUAGE. D’où la décision de
-conception : `desserte_lidar()` prend un **répertoire de tuiles** fourni
-par l’appelant, comme `pai_depuis_nuage(dossier_las=)`. Elle n’acquiert
-rien.
+que `probe_ign_lidar_tile()` — un *diagnostic*, dont la doc dit que
+c’est `nemetonshiny` qui télécharge. `FR.json` ne déclare que les
+rasters dérivés (`lidar_mnh`/`mnt`/`mns`), pas le nuage NUAGE. D’où la
+décision de conception : `desserte_lidar()` prend un **répertoire de
+tuiles** fourni par l’appelant, comme `pai_depuis_nuage(dossier_las=)`.
+Elle n’acquiert rien.
 
 **Le risque du chantier n’est pas technique, il est métrologique.**
 ALSroads est calibré sur des forêts nordiques québécoises et du LiDAR
@@ -7323,10 +7340,8 @@ vue, sans marqueur de schéma → un cache écrit avant le passage 5×5 reste
 3×3 indéfiniment. Fix cache manuel = supprimer le `.tif`, mais il faut
 une invalidation automatique. Le cœur exposait déjà le N d’écriture dans
 la meta (`palette$ncol`) ; manquait l’accès au N **courant** côté app.
-Livré : export
-[`eobs_bivariate_n()`](https://pobsteta.github.io/nemeton/reference/eobs_bivariate_n.md)
-(retourne `.EOBS_BIVARIATE_N`), NAMESPACE + `.Rd` main, test (128 PASS).
-Câblage app cadré :
+Livré : export `eobs_bivariate_n()` (retourne `.EOBS_BIVARIATE_N`),
+NAMESPACE + `.Rd` main, test (128 PASS). Câblage app cadré :
 `specs/034-eobs-source/brief-nemetonshiny-bivariate-cache.md` (§4 :
 invalider quand `meta$palette$ncol != nemeton::eobs_bivariate_n()`).
 
@@ -7394,8 +7409,8 @@ cœur **déterministe** (le narratif IA reste app, phase 2).
 - `regen_rank_species(units, species_pool, top_n, weights, exclude_invasive, region, cover_col, lai_col, extinction_k, id_col, include_atlas)`
   → data.frame long (UGF × rang) :
   `ug_id, rank, species_code, label, type, suitability, limiting_factor, confidence, invasif`.
-- [`regen_rank_to_wide()`](https://pobsteta.github.io/nemeton/reference/regen_rank_to_wide.md)
-  → une ligne/UGF (`essence_r`/`score_r`/`label_r`/`facteur_r`).
+- `regen_rank_to_wide()` → une ligne/UGF
+  (`essence_r`/`score_r`/`label_r`/`facteur_r`).
 
 Adéquation = moyenne pondérée (renormalisée sur axes présents) de 3 axes
 0-100 : **chaleur & sécheresse** (réutilise
@@ -7597,9 +7612,8 @@ dates (zone 9). Extrapolé à un département (~67× l’emprise) :
 
 [`tempdir()`](https://rdrr.io/r/base/tempfile.html) n’est pas un bon
 défaut à cette échelle (petite partition racine, parfois tmpfs = en RAM,
-ce qui annulerait le bénéfice). D’où
-[`scratch_dir()`](https://pobsteta.github.io/nemeton/reference/scratch_dir.md)
-: `options(nemeton.scratch_dir=)` → `NEMETON_SCRATCH_DIR` →
+ce qui annulerait le bénéfice). D’où `scratch_dir()` :
+`options(nemeton.scratch_dir=)` → `NEMETON_SCRATCH_DIR` →
 [`tempdir()`](https://rdrr.io/r/base/tempfile.html).
 [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
 avertit en amont si l’espace libre est manifestement insuffisant, au
@@ -7738,13 +7752,12 @@ Signalé en séance : le diagnostic RECONFORT s’interrompt à l’étape
 `wk_handle.wk_wkb()`), remontant de
 [`nemeton::run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md).
 Cause : la zone du projet porte un anneau dégénéré (sommet dupliqué).
-[`reconfort_aoi_tiles()`](https://pobsteta.github.io/nemeton/reference/reconfort_aoi_tiles.md)
-résout l’emprise contre la grille MGRS **GeoJSON (EPSG:4326)** →
-`st_union`/`st_intersects` sous **s2** → abort. Le chemin indicateurs
-(intersection BD Forêt) réparait déjà ce cas ; la résolution des tuiles
-non. Fix : réparation `st_make_valid()` + réessai dans
-[`reconfort_aoi_tiles()`](https://pobsteta.github.io/nemeton/reference/reconfort_aoi_tiles.md)
-(même idiome), **et** AOI rendue valide une fois à la source dans
+`reconfort_aoi_tiles()` résout l’emprise contre la grille MGRS **GeoJSON
+(EPSG:4326)** → `st_union`/`st_intersects` sous **s2** → abort. Le
+chemin indicateurs (intersection BD Forêt) réparait déjà ce cas ; la
+résolution des tuiles non. Fix : réparation `st_make_valid()` + réessai
+dans `reconfort_aoi_tiles()` (même idiome), **et** AOI rendue valide une
+fois à la source dans
 [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
 (protège masque/clip/vérité terrain en aval). Test de non-régression
 ajouté. Reproduit hors fix : l’anneau dupliqué abortait bien s2 avec
@@ -8828,8 +8841,7 @@ majeure : les COG <MESO@UM> (MUSCATE/FORMS) ne se lisent PAS en
 `/vsis3/` direct — la clé du portail est rejetée (*AccessKeyId does not
 exist*). Le vrai flux (reverse du SDK Python `teledetection`) = **URLs
 pré-signées** via `signing.stac.teledetection.fr` (headers
-`access-key`/`secret-key`, modèle SAS). Nouveau
-[`theia_sign_urls()`](https://pobsteta.github.io/nemeton/reference/theia_sign_urls.md) +
+`access-key`/`secret-key`, modèle SAS). Nouveau `theia_sign_urls()` +
 `.theia_signed_read()`. 3 bugs de chaîne corrigés (sf vs SpatVector ;
 band_names = bandes réelles ; récupération `_lai.tiff`). Reste :
 basculer FORMS (`load_theia_source`) sur le même flux + badge provenance
@@ -9538,12 +9550,11 @@ config → un mauvais ID = correction d’une ligne JSON, **zéro changement
 de code**.
 
 **K2 (`R/sentinel2.R`)** : nouveau backend exporté
-[`stac_search_s2_theia_muscate()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md) +
-helpers internes `.muscate_collection()`,
-`.muscate_reflectance_product()`, `.muscate_band_asset_keys()` (dialecte
-`SRE_B4`/`FRE_B4`/`B4` → clés nemeton `B02/B04/…`, SRE prioritaire,
-D2/D3), `.muscate_asset_href()`, `.muscate_remap_feature()`. Réutilise
-[`stac_search_items()`](https://pobsteta.github.io/nemeton/reference/stac_search_items.md) +
+`stac_search_s2_theia_muscate()` + helpers internes
+`.muscate_collection()`, `.muscate_reflectance_product()`,
+`.muscate_band_asset_keys()` (dialecte `SRE_B4`/`FRE_B4`/`B4` → clés
+nemeton `B02/B04/…`, SRE prioritaire, D2/D3), `.muscate_asset_href()`,
+`.muscate_remap_feature()`. Réutilise `stac_search_items()` +
 `.theia_href_to_gdal()` (→ `/vsis3/`) + `.features_to_tibble()`. Filtre
 nuage au niveau scène (parité cdse/pc ; NA gardé). **Dédup inerte pour
 MUSCATE** (IDs Theia ne matchent pas les regex S2 → clé unique, aucun
@@ -9575,9 +9586,8 @@ sous-jacents), pas `SRE_B4` — le candidat nu du mapping les capte.
 **D3** : FRE servi (pas de variante SRE). **D4** confirmé :
 `scale 1.0 offset 0.0` int16 nodata −10000 → NDVI/NBR invariants (pas de
 biais inter-source ; nodata −10000 à masquer). **D6** : `eo:cloud_cover`
-(identique cdse/pc). Run
-[`stac_search_s2_theia_muscate()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
-end-to-end = **5 scènes réelles** (T31TGN/T31UGP, filtre nuage OK, hrefs
+(identique cdse/pc). Run `stac_search_s2_theia_muscate()` end-to-end =
+**5 scènes réelles** (T31TGN/T31UGP, filtre nuage OK, hrefs
 `/vsis3/s2-theia/…` corrects, bandes requises présentes). +1 test format
 réel → `test-sentinel2-muscate.R` **28 PASS**.
 
@@ -9595,11 +9605,11 @@ c’est un **reliquat** d’avant spec 012/017, quand l’emprise du cache S2
 dérivait de la position des placettes (bbox + buffer `radius_m`).
 FORDEAD est **par pixel**, indépendant des placettes. Demande : «
 supprime la référence à la bbox des placettes ». **Livré** : dans
-[`ingest_s2_raw_bands_to_cache()`](https://pobsteta.github.io/nemeton/reference/ingest_s2_raw_bands_to_cache.md)
-(`R/sentinel2_cache.R`) on retire `.fetch_plots_sf()` **et** le fallback
-`st_bbox(plots)` (zone sans `zone_wkt`). Désormais : AOI = `zone_wkt`
-exclusivement ; zone sans géométrie exploitable → warning « no usable
-zone_wkt » + résultat vide (invite à
+`ingest_s2_raw_bands_to_cache()` (`R/sentinel2_cache.R`) on retire
+`.fetch_plots_sf()` **et** le fallback `st_bbox(plots)` (zone sans
+`zone_wkt`). Désormais : AOI = `zone_wkt` exclusivement ; zone sans
+géométrie exploitable → warning « no usable zone_wkt » + résultat vide
+(invite à
 [`register_monitoring_zone()`](https://pobsteta.github.io/nemeton/reference/register_monitoring_zone.md)),
 pas de reconstruction depuis les placettes. `n_plots` du payload
 `s2:search` = `0` (placette- indépendant). Complète le fix v0.91.1
@@ -9616,8 +9626,7 @@ défini/utilisé ailleurs (FAST), pas de référence pendante.
 Bug remonté en prod (zone 5, log : « pipeline starting … Dropped 48
 duplicates … pipeline failed: Not compatible with requested type:
 \[type=NULL; target=double\] »). **Diagnostic** (via le log) : l’erreur
-tombe juste après le dedup STAC, dans
-[`ingest_s2_raw_bands_to_cache()`](https://pobsteta.github.io/nemeton/reference/ingest_s2_raw_bands_to_cache.md)
+tombe juste après le dedup STAC, dans `ingest_s2_raw_bands_to_cache()`
 (`R/sentinel2_cache.R`), à la ligne
 `buf <- sf::st_buffer(plots_proj, dist = plots_proj$radius_m)`. Sur une
 zone **géométrie-seule** (sans placette, défaut spec 017),
@@ -9703,9 +9712,7 @@ partout : helpers `.trend_fit_cells()` / `.trend_fit_one()` /
 `.fast_raster_trend()` (défaut helper 0 → pas de régression des tests
 internes), publiques
 [`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md)
-/
-[`read_fast_alert_rasters()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_rasters.md)
-/
+/ `read_fast_alert_rasters()` /
 [`extract_pixel_trend()`](https://pobsteta.github.io/nemeton/reference/extract_pixel_trend.md)
 /
 [`extract_trend_series()`](https://pobsteta.github.io/nemeton/reference/extract_trend_series.md)
@@ -9936,14 +9943,12 @@ parallèle par une autre session). Demande de Pascal : « l’ensemble des
 indices doivent être systématiquement calculés en mode FAST
 (NDMI/NDVI/NBR **et** NDRE) ». La v0.84.0 ne couvrait que la
 **pré-chauffe** ; ce cycle ajoute les deux pièces manquantes. **Livré**
-: (1) **wrapper**
-[`read_fast_alert_rasters()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_rasters.md)
-étendu au `trend` — défauts `c("NDVI","NBR","NDMI","NDRE")` ×
-`c("count","rolling","trend")` → **8 cartes**, paires absurdes
-(NDVI_trend, NDRE_count) écartées, params trend
-(`months`/`min_years`/`min_obs_per_year`/`alpha`) exposés ; prédicat
-interne `.fast_alert_combo_ok()` / `.fast_alert_combos()` énumérant les
-paires valides. (2) **red-edge systématique** —
+: (1) **wrapper** `read_fast_alert_rasters()` étendu au `trend` —
+défauts `c("NDVI","NBR","NDMI","NDRE")` × `c("count","rolling","trend")`
+→ **8 cartes**, paires absurdes (NDVI_trend, NDRE_count) écartées,
+params trend (`months`/`min_years`/`min_obs_per_year`/`alpha`) exposés ;
+prédicat interne `.fast_alert_combo_ok()` / `.fast_alert_combos()`
+énumérant les paires valides. (2) **red-edge systématique** —
 [`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md)
 cache B05 + B8A **best-effort sur chaque ingestion** (comme B11, spec
 019 D3), même avec le défaut `bands = c("NDVI","NBR")` → les 4 indices
@@ -10363,13 +10368,11 @@ IOTA²** (sampling + classification ×2 + masque OSO + score continu).
   (`S2_data/<year>/<tile>` en liens symboliques vers les dossiers
   `extracted/` de L2b.2, car IOTA² veut `s2_path/<year>/<tile>/`). cfg
   map-production écrit avec `.reconfort_write_cfg`.
-- **[`ensure_reconfort_oso_mask()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_oso_mask.md) +
-  `RECONFORT_OSO_MASK`** : masque feuillus OSO 2021 (~54 Mo, MD5
-  `ea87e929…`) **téléchargé à la demande** + checksum + cache + fallback
-  `local_path`, calqué sur
-  [`ensure_reconfort_model()`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_model.md)
-  (L2a). `binary_mask` : `NULL`→OSO, chemin→custom, `FALSE`→pas de
-  masque. Le masque est toujours stagé à
+- **`ensure_reconfort_oso_mask()` + `RECONFORT_OSO_MASK`** : masque
+  feuillus OSO 2021 (~54 Mo, MD5 `ea87e929…`) **téléchargé à la
+  demande** + checksum + cache + fallback `local_path`, calqué sur
+  `ensure_reconfort_model()` (L2a). `binary_mask` : `NULL`→OSO,
+  chemin→custom, `FALSE`→pas de masque. Le masque est toujours stagé à
   `masks/mask_oso_deciduous_compress.tif` et `path_to_binary_mask`
   laissé vide → classif **et** proba utilisent le même masque (le script
   amont hardcode ce chemin pour la proba).
@@ -10478,9 +10481,7 @@ Forest, sans IOTA² ni Python). Les 4 modèles Shark/OTB amont
   (aucune dépendance ajoutée). `download.file` (déjà importé) mockable
   en test.
 - `RECONFORT_MODELS` : registre des 4 versions (espèce, classes, taille,
-  MD5).
-  [`reconfort_model_info()`](https://pobsteta.github.io/nemeton/reference/reconfort_model_info.md)
-  : accesseur. URL surchargeable via
+  MD5). `reconfort_model_info()` : accesseur. URL surchargeable via
   `options(nemeton.reconfort_model_base_url)`.
 - MD5/URL **validés par un fetch réel** du modèle pin (5,7 Mo) :
   download + vérif + cache + cache-hit OK. 10 tests mockés
@@ -10818,8 +10819,7 @@ changement cœur `nemeton`.
   `.fast_raster_cache_path()` reçoit threshold/dates/window ; seul
   call-site =
   [`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md)
-  (donc
-  [`read_fast_alert_rasters()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_rasters.md),
+  (donc `read_fast_alert_rasters()`,
   [`compute_fast_alert_mask()`](https://pobsteta.github.io/nemeton/reference/compute_fast_alert_mask.md)
   cache continu et `.prewarm_fast_alerts()` en héritent). Idempotence
   préservée (hash `.fast_raster_hash()` inchangé) ; anciens fichiers
@@ -10860,11 +10860,10 @@ changement cœur `nemeton`.
   (l’ingestion NDMI marchait, la carte ne sortait pas). Le `switch`
   mappe désormais `NDMI -> B08 + B11` et lève une erreur explicite sur
   index inconnu (plus d’échec silencieux). **Feat** : nouvelle fonction
-  exportée
-  **[`read_fast_alert_rasters()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_rasters.md)**
-  — orchestrateur qui construit les **6 cartes** (3 indices
-  NDVI/NBR/NDMI × 2 modes count/rolling) en un appel, retournant une
-  `list` nommée `"<index>_<mode>"` ; chaque carte passe par
+  exportée **`read_fast_alert_rasters()`** — orchestrateur qui construit
+  les **6 cartes** (3 indices NDVI/NBR/NDMI × 2 modes count/rolling) en
+  un appel, retournant une `list` nommée `"<index>_<mode>"` ; chaque
+  carte passe par
   [`read_fast_alert_raster()`](https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.md)
   (même cache COG, même cache résultat content-addressé D6, même
   masque), une carte sans scène reste `NULL` (forme stable),
@@ -12292,9 +12291,8 @@ changement cœur `nemeton`.
   déplacée de `R/fordead_pipeline.R` à un fichier neutre `R/zone_aoi.R`
   (helper interne partagé, signature inchangée). (2)
   [`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md)
-  (FAST) et
-  [`ingest_s2_raw_bands_to_cache()`](https://pobsteta.github.io/nemeton/reference/ingest_s2_raw_bands_to_cache.md)
-  (utilisé par FORDEAD en phase 0) lisent désormais `zone_wkt` via
+  (FAST) et `ingest_s2_raw_bands_to_cache()` (utilisé par FORDEAD en
+  phase 0) lisent désormais `zone_wkt` via
   [`.get_zone_aoi()`](https://pobsteta.github.io/nemeton/reference/dot-get_zone_aoi.md)
   pour la bbox STAC (reprojetée WGS84) ET pour le crop COG passé à
   `.get_s2_band_raster()`. (3) `.extract_scene_obs()` gagne un argument
@@ -12393,8 +12391,7 @@ changement cœur `nemeton`.
   [`as.Date()`](https://rdrr.io/r/base/as.Date.html) dans un `tryCatch`
   : R récent *erreure* sur une chaîne non parsable au lieu de renvoyer
   `NA` avec un warning, ce qui masquait le message actionnable “must
-  parse as a date (ISO yyyy-mm-dd)”. (3)
-  [`diagnose_s2_cache()`](https://pobsteta.github.io/nemeton/reference/diagnose_s2_cache.md)
+  parse as a date (ISO yyyy-mm-dd)”. (3) `diagnose_s2_cache()`
   (`R/monitoring.R`) cleanup orphan : `unlink(recursive = TRUE)` car
   `unlink(recursive = FALSE)` ne supprime jamais un dossier, même vide —
   la branche de cleanup était un no-op silencieux ; la garde « dossier
@@ -12720,10 +12717,9 @@ changement cœur `nemeton`.
   `access$item_id_template` / `asset_template`, renvoie une URL
   `/vsicurl/` prête.
   [`load_theia_source()`](https://pobsteta.github.io/nemeton/reference/load_theia_source.md)
-  en mode `year` passe désormais par
-  [`theia_signed_href()`](https://pobsteta.github.io/nemeton/reference/theia_signed_href.md)
-  (chemin authentifié validé) ; le mode recherche spatiale (`/vsis3/`)
-  est conservé mais réservé aux accès S3 directs institutionnels.
+  en mode `year` passe désormais par `theia_signed_href()` (chemin
+  authentifié validé) ; le mode recherche spatiale (`/vsis3/`) est
+  conservé mais réservé aux accès S3 directs institutionnels.
   `reticulate` déjà en Suggests (FORDEAD) — pas de nouvelle dépendance R
   ; `teledetection`/`pystac_client` sont des paquets Python gérés par
   `py_require()`. NAMESPACE + 2 `man/*.Rd` (1 créé). 3 tests offline de
@@ -12761,8 +12757,7 @@ changement cœur `nemeton`.
   sur l’item 2014. Ajout d’un mode « ciblage par année ». Livré : (1)
   `stac_get_item(stac_api, collection, item_id)` exporté — récupère un
   item STAC unique par id (GET `…/collections/…/items/…`). (2)
-  [`resolve_theia_assets()`](https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.md)
-  et
+  `resolve_theia_assets()` et
   [`load_theia_source()`](https://pobsteta.github.io/nemeton/reference/load_theia_source.md)
   gagnent un argument `year` : quand il est fourni et que la source
   déclare `access$item_id_template`, l’item est récupéré directement par
@@ -12797,17 +12792,16 @@ changement cœur `nemeton`.
   `.Renviron` gitignoré — déjà dans `.gitignore`). (3) helper interne
   `.theia_href_to_gdal()` — normalise toute forme d’href (passerelle
   `download?url=`, `s3://`, `https://<endpoint>/bucket/key`, `/vsi*`)
-  vers `/vsis3/bucket/key` ;
-  [`resolve_theia_assets()`](https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.md)
-  renvoie désormais des chemins `/vsis3/`. (4)
-  `load_raster_source(path=)` accepte les chemins distants
-  (`s3://`→`/vsis3/`, `http(s)://`→`/vsicurl/`, `/vsi*`), plus seulement
-  les fichiers locaux ; helper `.to_gdal_path()`. NAMESPACE + 4
-  `man/*.Rd` (1 créé, 3 mis à jour). Tests : `test-theia-stac.R`
-  (`.theia_href_to_gdal` 4 cas, `theia_configure_s3` 2 cas, résolveur
-  renvoie `/vsis3/`), `test-datasources.R` (`load_raster_source` chemins
-  `s3://` et `https://`). Tests R non exécutés (runtime R absent).
-  **Workflow final** :
+  vers `/vsis3/bucket/key` ; `resolve_theia_assets()` renvoie désormais
+  des chemins `/vsis3/`. (4) `load_raster_source(path=)` accepte les
+  chemins distants (`s3://`→`/vsis3/`, `http(s)://`→`/vsicurl/`,
+  `/vsi*`), plus seulement les fichiers locaux ; helper
+  `.to_gdal_path()`. NAMESPACE + 4 `man/*.Rd` (1 créé, 3 mis à jour).
+  Tests : `test-theia-stac.R` (`.theia_href_to_gdal` 4 cas,
+  `theia_configure_s3` 2 cas, résolveur renvoie `/vsis3/`),
+  `test-datasources.R` (`load_raster_source` chemins `s3://` et
+  `https://`). Tests R non exécutés (runtime R absent). **Workflow
+  final** :
   [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
   une fois, puis
   `load_theia_source("formspot", aoi, asset="height_2023")`. Chaîne
@@ -12853,9 +12847,8 @@ changement cœur `nemeton`.
   `access.stac_collection: "forms-t"` (vérifié) et son `stac_catalog`
   est corrigé vers le bon host —
   `load_theia_source("forms_t", aoi, asset=...)` est donc directement
-  opérationnel. **Bug corrigé** dans
-  [`resolve_theia_assets()`](https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.md)
-  / `.theia_stac_api()` : le garde `"to confirm"` testait l’égalité
+  opérationnel. **Bug corrigé** dans `resolve_theia_assets()` /
+  `.theia_stac_api()` : le garde `"to confirm"` testait l’égalité
   stricte ([`identical()`](https://rdrr.io/r/base/identical.html)) alors
   que les placeholders de FR.json valent
   `"to confirm at the Theia catalogue"` — remplacé par un
@@ -13225,24 +13218,21 @@ changement cœur `nemeton`.
   les 100 scènes retournées étaient les plus récentes (16 mois),
   training 2018-2020 invisible. Le garde-fou v0.25.7 pointait vers les
   dates mais la vraie cause était le cap. **Fix** : refactor de
-  [`stac_search_s2_cdse()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
-  et
-  [`stac_search_s2_pc()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
-  autour d’un nouveau helper
-  `.stac_search_paginate(initial_url, initial_body, max_total)` qui suit
-  l’extension STAC standard `links[rel=next]` (variants POST-with-body
-  et GET-with-token), accumule les features, et stoppe sur (a) absence
-  de next link, (b) page vide défensive, (c) `max_total` atteint, (d)
-  safety cap `.STAC_MAX_PAGES = 100L` (= ~100k features) avec `cli_warn`
-  actionnable. Per-page size fixée à 1000 (max accepté par les deux
-  backends), override via env `NEMETON_STAC_PAGE_SIZE`. Default `limit`
-  bumpé 100 → **10000** au façade et aux deux backends — couvre ~10 ans
-  de revisite mono-tuile, largement de quoi pour la canonique training 2
-  ans + monitoring 18 mois (v0.25.9). Rétrocompat totale : callers
-  existants sans `limit` explicite récupèrent plus de scènes
-  silencieusement (effet recherché), callers avec `limit = N` gardent la
-  même borne sup. Roxygen `@param limit` réécrit. 5 nouveaux tests dans
-  `test-sentinel2.R` via
+  `stac_search_s2_cdse()` et `stac_search_s2_pc()` autour d’un nouveau
+  helper `.stac_search_paginate(initial_url, initial_body, max_total)`
+  qui suit l’extension STAC standard `links[rel=next]` (variants
+  POST-with-body et GET-with-token), accumule les features, et stoppe
+  sur (a) absence de next link, (b) page vide défensive, (c) `max_total`
+  atteint, (d) safety cap `.STAC_MAX_PAGES = 100L` (= ~100k features)
+  avec `cli_warn` actionnable. Per-page size fixée à 1000 (max accepté
+  par les deux backends), override via env `NEMETON_STAC_PAGE_SIZE`.
+  Default `limit` bumpé 100 → **10000** au façade et aux deux backends —
+  couvre ~10 ans de revisite mono-tuile, largement de quoi pour la
+  canonique training 2 ans + monitoring 18 mois (v0.25.9). Rétrocompat
+  totale : callers existants sans `limit` explicite récupèrent plus de
+  scènes silencieusement (effet recherché), callers avec `limit = N`
+  gardent la même borne sup. Roxygen `@param limit` réécrit. 5 nouveaux
+  tests dans `test-sentinel2.R` via
   [`httr2::with_mocked_responses`](https://httr2.r-lib.org/reference/with_mocked_responses.html)
   : single-page, multi-page, max_total truncation, empty-page defensive,
   env var override. 101 PASS (+13). Deux failures préexistantes sur main
@@ -13699,10 +13689,9 @@ changement cœur `nemeton`.
   dérivés** calculés à la volée par plot via `exactextractr`, pas un
   dispatcher de bandes brutes. Plan §10 patché *avant code*
   (paperwork-first, même sur correction in-flight) : ajout d’une
-  nouvelle fonction publique
-  [`ingest_s2_raw_bands_to_cache()`](https://pobsteta.github.io/nemeton/reference/ingest_s2_raw_bands_to_cache.md)
-  plutôt que de généraliser l’existant — séparation FAST = indices
-  dérivés + obs_pixel / FORDEAD = bandes brutes + cache. Découverte 2 :
+  nouvelle fonction publique `ingest_s2_raw_bands_to_cache()` plutôt que
+  de généraliser l’existant — séparation FAST = indices dérivés +
+  obs_pixel / FORDEAD = bandes brutes + cache. Découverte 2 :
   `monitoring_zone` utilise `zone_wkt TEXT + crs_epsg INTEGER`, pas une
   colonne PostGIS `geometry(POLYGON, 2154)` — plan §10.3 corrigé (read
   WKT + transform en 2154 si needed). **Implémentation** : (a)
@@ -14194,15 +14183,14 @@ changement cœur `nemeton`.
 
 - **2026-05-15** — Release **v0.22.1** (patch). Investigation suite à
   symptôme « SAS token expire à mid-run, retry semble local ». Diag :
-  [`stac_search_s2_pc()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
-  (R/sentinel2.R:172-213) signe tous les hrefs avec un token frais **à
-  T=0 et les cuit dans `scenes_df`**. Le helper réactif
-  `.terra_rast_with_pc_retry` (R/monitoring.R:653-770) invalide bien le
-  cache token globalement sur 403, mais ne ré-écrit pas les hrefs cuits
-  dans `scenes_df` — chaque scène au-delà des ~30 min de validité PC SAS
-  retombe sur un 403 individuel avant d’être sauvée par le re-sign
-  local. Sur un run 26 scènes × 3 bandes traversant le seuil 30 min, ça
-  produit ~50 round-trips HTTP gaspillés + autant d’events
+  `stac_search_s2_pc()` (R/sentinel2.R:172-213) signe tous les hrefs
+  avec un token frais **à T=0 et les cuit dans `scenes_df`**. Le helper
+  réactif `.terra_rast_with_pc_retry` (R/monitoring.R:653-770) invalide
+  bien le cache token globalement sur 403, mais ne ré-écrit pas les
+  hrefs cuits dans `scenes_df` — chaque scène au-delà des ~30 min de
+  validité PC SAS retombe sur un 403 individuel avant d’être sauvée par
+  le re-sign local. Sur un run 26 scènes × 3 bandes traversant le seuil
+  30 min, ça produit ~50 round-trips HTTP gaspillés + autant d’events
   `s2:pc_token_refreshed`. Fix proactif : deux nouveaux helpers privés
   dans `R/sentinel2.R`. (1) `.pc_href_expires_at(href)` parse le `se=`
   du SAS, retourne POSIXct UTC ou NA. (2)
@@ -14406,15 +14394,14 @@ changement cœur `nemeton`.
   les 30 min documentés PC) ; (2) helper pur
   `.pc_apply_token(href, token)` qui normalise un éventuel `?` initial
   et choisit `?` vs `&` selon la présence de query params dans l’href
-  ; (3)
-  [`stac_search_s2_pc()`](https://pobsteta.github.io/nemeton/reference/sentinel2_stac.md)
-  appelle le helper batch puis applique le token aux trois colonnes de
-  hrefs en `vapply`. Net : 60-150 appels → 1 appel par session, plus
-  de 429. `.pc_sign_url()` reste dans le code comme fallback documenté
-  mais n’est plus invoqué depuis le search path. Six nouveaux test_that
-  (3 sur `.pc_apply_token` : bare href, normalisation `?` initial, query
-  existante ; 3 sur `.pc_collection_token` : cache hit fresh, cache miss
-  expired qui refetch, échec réseau → NULL avec warning ; mocks via
+  ; (3) `stac_search_s2_pc()` appelle le helper batch puis applique le
+  token aux trois colonnes de hrefs en `vapply`. Net : 60-150 appels → 1
+  appel par session, plus de 429. `.pc_sign_url()` reste dans le code
+  comme fallback documenté mais n’est plus invoqué depuis le search
+  path. Six nouveaux test_that (3 sur `.pc_apply_token` : bare href,
+  normalisation `?` initial, query existante ; 3 sur
+  `.pc_collection_token` : cache hit fresh, cache miss expired qui
+  refetch, échec réseau → NULL avec warning ; mocks via
   `local_mocked_bindings(.package = "httr2")`). Suite globale **6015
   PASS / 0 FAIL**. Cycle dev `0.20.1.9008` → `0.20.1.9009`.
 

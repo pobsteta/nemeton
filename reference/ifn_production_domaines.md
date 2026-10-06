@@ -93,6 +93,10 @@ the `detail` attribute.
   be assigned to the wrong side; their share is reported in
   `part_bordure`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`ifn_covariables_domaines`](https://pobsteta.github.io/nemeton/reference/ifn_covariables_domaines.md),

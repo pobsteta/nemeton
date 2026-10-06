@@ -27,3 +27,7 @@ cv_lookup(context_key, position = c("mid", "low", "high"), table = NULL)
 ## Value
 
 Numeric CV (fraction).
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

@@ -42,20 +42,24 @@ indicateur_l2_morcellement(
 
 ## Value
 
-Numeric vector of fragmentation scores (0-100). **Higher = less
-fragmented = favourable** (COHESION + AI, or the inverse shape index in
-the fallback): already oriented the right way, so normalize_indicator()
+The input `units` (same class, rows and order) with an added numeric
+column `L2`: fragmentation scores (0-100). **Higher = less fragmented =
+favourable** (COHESION + AI, or the inverse shape index in the
+fallback): already oriented the right way, so normalize_indicator()
 passes it through and does NOT invert it – unlike L1.
 
 ## Renamed in 0.176.0
 
-This indicator used to be called
-[`indicateur_l1_sylvosphere()`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.md)
-– a name that announced the L1 sylvosphere while computing the L2
-fragmentation metric. The old name still works and returns the same
-values, with a deprecation warning. Persisted columns are renamed by
+This indicator used to be called `indicateur_l1_sylvosphere()` – a name
+that announced the L1 sylvosphere while computing the L2 fragmentation
+metric. The old name, kept as a deprecated alias since then, was removed
+in 1.0.0 (spec 057). Persisted columns are renamed by
 [`migrer_colonnes_l`](https://pobsteta.github.io/nemeton/reference/migrer_colonnes_l.md).
 See spec 045.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## Examples
 

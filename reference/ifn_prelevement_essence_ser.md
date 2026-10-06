@@ -67,6 +67,10 @@ These figures describe what **has been** removed, not what **should**
 be. Sizing a road network on them assumes management carries on
 unchanged.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`ifn_taux_prelevement`](https://pobsteta.github.io/nemeton/reference/ifn_taux_prelevement.md)

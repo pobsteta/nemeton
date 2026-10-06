@@ -11,3 +11,7 @@ label). Oak (\`CHE\`) and chestnut (\`CHT\`) have 3 classes; Scots pine
 ``` r
 RECONFORT_CLASSES
 ```
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

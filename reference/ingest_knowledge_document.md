@@ -5,6 +5,14 @@ splits it into overlapping chunks, embeds each chunk via the chosen
 provider, and writes the document and its chunks to the knowledge base.
 Runs in a single transaction so a failed embedding rolls back cleanly.
 
+\*\*No duplicates.\*\* Before any embedding call, the chunk fingerprints
+(\`knowledge_chunk.text_hash\`, in \`chunk_index\` order) are compared
+with the documents already in the base. When an existing document has
+exactly the same sequence (same content, chunked with the same
+\`chunk_size\` / \`chunk_overlap\`), nothing is embedded or inserted: a
+message names the existing document and its \`document_id\` is returned
+with \`duplicate = TRUE\`.
+
 ## Usage
 
 ``` r
@@ -63,7 +71,12 @@ ingest_knowledge_document(
 ## Value
 
 Invisibly, a list with \`document_id\`, \`n_chunks\`, \`n_tokens_est\`,
-\`duration_sec\`.
+\`duration_sec\` and \`duplicate\` (\`TRUE\` when the content was
+already ingested: \`document_id\` is then the existing document's id).
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
 
 ## See also
 

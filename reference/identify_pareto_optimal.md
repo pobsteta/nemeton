@@ -59,6 +59,10 @@ balancing production vs conservation) - Identifying trade-off frontiers
 between ecosystem services - Selecting parcels for diverse management
 objectives - Benchmarking parcel performance across multiple dimensions
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

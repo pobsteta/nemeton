@@ -50,3 +50,7 @@ typed NAs.
 
 The returned \`sf\` is shaped to feed \`create_qgis_project()\` through
 \[get_health_validation_schema()\].
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

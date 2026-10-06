@@ -1,11 +1,11 @@
 # Extract an indicator's value column from its result
 
-Single source of truth for the Nemeton indicator naming convention: most
-indicator functions return the `units` object (an `sf` / `data.frame`)
-with the computed value added under a column named by the family short
-code (`indicateur_p1_volume` -\> `"P1"`, `indicateur_r1_feu` -\> `"R1"`,
-...). This helper resolves that column to a plain numeric vector so both
-the core dispatcher
+Single source of truth for the Nemeton indicator naming convention:
+every indicator function returns the `units` object (an `sf` /
+`data.frame`) with the computed value added under a column named by the
+family short code (`indicateur_p1_volume` -\> `"P1"`,
+`indicateur_r1_feu` -\> `"R1"`, ...). This helper resolves that column
+to a plain numeric vector so both the core dispatcher
 ([`nemeton_compute`](https://pobsteta.github.io/nemeton/reference/nemeton_compute.md)
 via `compute_indicator()`) and downstream callers (e.g. the
 `nemetonshiny` compute loop) share **one** convention and can never
@@ -21,8 +21,8 @@ extract_indicator_value(result, indicator, exclude = character(0))
 
 - result:
 
-  The raw return value of an indicator function (an `sf`, a
-  `data.frame`, or a numeric vector).
+  The raw return value of an indicator function (an `sf` or a
+  `data.frame`).
 
 - indicator:
 
@@ -53,7 +53,12 @@ Resolution order for an `sf` / `data.frame` result:
     pre-existing input column names so a freshly added value column wins
     over a same-shaped attribute already on the units).
 
-A result that is already a plain vector is returned unchanged.
+A bare vector is an error: since 1.0.0 (spec 057) no indicator returns
+one.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## See also
 

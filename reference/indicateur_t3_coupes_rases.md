@@ -63,10 +63,12 @@ indicateur_t3_coupes_rases(
 
 ## Value
 
-Numeric vector, one value per unit: recency-weighted percentage of the
-unit footprint under clear-cut within the window (0-100, high = more
+The input `units` (same class, rows and order) with an added numeric
+column `T3`, one value per unit: recency-weighted percentage of the unit
+footprint under clear-cut within the window (0-100, high = more
 clear-cutting). `NA` where `sufosat_dates` is `NULL` or the unit does
-not overlap the raster.
+not overlap the raster. Also adds `t3_status` (`"calculated"`,
+`"skipped_no_sufosat"` or `"skipped_no_coverage"`).
 
 ## Details
 
@@ -84,3 +86,7 @@ The score is coverage-fraction weighted, so equal-area pixels cancel and
 no cell-area computation is needed: it is the share of the unit
 footprint under clear-cut within the recency window, weighted linearly
 by recency.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

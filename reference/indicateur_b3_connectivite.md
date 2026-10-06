@@ -69,6 +69,10 @@ Computations run in metres: geographic inputs are projected to
 ETRS89-LAEA (EPSG:3035) and the result is attached to the original
 units.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 Other biodiversity-indicators:

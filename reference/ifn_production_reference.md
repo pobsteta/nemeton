@@ -62,6 +62,10 @@ A one-row data.frame: `ser`, `attribut`, `groupe`, `valeur`, `mse`,
 collapsed), `campagnes` (collapsed), `n_campagnes`. The MSE of the mean
 assumes independence between campaigns; it is a lower bound.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`ifn_production_ser`](https://pobsteta.github.io/nemeton/reference/ifn_production_ser.md).

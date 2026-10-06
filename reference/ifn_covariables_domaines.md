@@ -57,6 +57,10 @@ ifn_covariables_domaines(domaines, hauteur, altitude, id_col = NULL,
 A data.frame: `id`, `h_mean`, `h_sd`, `alt_mean`, `alt_sd`, `part_foret`
 (share of the domain area covered by forest pixels).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`ifn_production_domaines`](https://pobsteta.github.io/nemeton/reference/ifn_production_domaines.md).

@@ -93,6 +93,10 @@ A list with:
   `TRUE` if the rasters were loaded from a cached `output_dir` rather
   than recomputed.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`indicateur_b4_div_spectrale`](https://pobsteta.github.io/nemeton/reference/indicateur_b4_div_spectrale.md),

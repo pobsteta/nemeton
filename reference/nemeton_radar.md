@@ -87,6 +87,10 @@ indices are already absolute 0-100 scores.
 \*\*v0.3.0 Enhancements\*\*: Supports 9-12 family axes and comparison
 mode for multiple units.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`plot_indicators_map`](https://pobsteta.github.io/nemeton/reference/plot_indicators_map.md),

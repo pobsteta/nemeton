@@ -217,6 +217,34 @@ Control package behavior with options:
 
 - `nemeton_set_language("fr")` - Alternative language setting
 
+**terra memory guard.** When loaded, nemeton lowers terra's `memfrac` to
+0.25 and caps `memmax` at 3 GB, so large rasters spill to disk instead
+of exhausting RAM. Since 1.0.0 the guard is only applied to a setting
+still at terra's default: a `terra::terraOptions(memfrac = , memmax = )`
+made before nemeton is loaded is kept. The explicit levers below always
+win:
+
+- `options(nemeton.terra_memfrac = 0.5)` - memfrac set at load
+
+- `options(nemeton.terra_memmax = 8)` or the environment variable
+  `NEMETON_TERRA_MEMMAX=8` - memmax (GB) set at load; a non-positive
+  value removes the cap
+
+## Lifecycle
+
+Every help page states the status of its function (spec 057):
+
+- **Stable**: indicators, families, NDP, normalisation, data loaders,
+  sampling and the API consumed by nemetonshiny. Covered by the 1.0 API
+  contract: a breaking change needs a major release.
+
+- **Experimental**: RAG (knowledge corpus), Sentinel-2 biophysics,
+  FORDEAD / RECONFORT health monitoring and their field validation,
+  regeneration (microclimate, water balance, E-OBS). May change in any
+  release, without deprecation.
+
+The reference index of the site groups the pages by status.
+
 ## Author & Methodology
 
 **Package Author:** Pascal Obstétar (<pascal.obstetar@gmail.com>)

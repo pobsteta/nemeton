@@ -147,6 +147,10 @@ call — useful for quick previews when only the zone is known.
 The return is ready for
 [`create_qgis_project`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

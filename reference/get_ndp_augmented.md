@@ -19,6 +19,10 @@ get_ndp_augmented(x)
 
 Character vector of augmentation flags (possibly empty).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

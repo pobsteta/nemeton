@@ -43,6 +43,10 @@ A `data.frame` with columns `family` (family code), `family_column`
 `label_fr`, `label_en`, `tooltip`, `tooltip_fr`, `tooltip_en`,
 `doc_url`, `doc_url_fr`, `doc_url_en` and `doc_lang`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Indicator fact sheets (`doc_url`)
 
 Some indicators have a long-form fact sheet published as a pkgdown

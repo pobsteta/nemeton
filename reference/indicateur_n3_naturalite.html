@@ -11,7 +11,7 @@ NA when any of N1, N2, L1 or B3 is unavailable."><meta property="og:image" conte
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -122,7 +122,7 @@ NA when any of N1, N2, L1 or B3 is unavailable.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">indicateur_n3_naturalite</span><span class="op">(</span><span class="va">units</span>, column_name <span class="op">=</span> <span class="st">"N3"</span>, lang <span class="op">=</span> <span class="st">"en"</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">indicateur_n3_naturalite</span><span class="op">(</span><span class="va">units</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -132,14 +132,6 @@ NA when any of N1, N2, L1 or B3 is unavailable.</p>
 <dl><dt id="arg-units">units<a class="anchor" aria-label="anchor" href="#arg-units"></a></dt>
 <dd><p>sf object with N1 and N2 columns (optionally L1, B3)</p></dd>
 
-
-<dt id="arg-column-name">column_name<a class="anchor" aria-label="anchor" href="#arg-column-name"></a></dt>
-<dd><p>Character. Name for output column. Default "N3".</p></dd>
-
-
-<dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
-<dd><p>Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -153,6 +145,12 @@ so the composite is too, and <code><a href="normalize_indicator.html">normalize_
 is deliberate and must stay: <code><a href="create_family_index.html">create_family_index()</a></code> works on a copy and
 does not mutate the source columns, so dropping the <code>100 - L1</code> to "align"
 N3 on the radar convention would invert L1 twice (spec 048 sections 9 and 12).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

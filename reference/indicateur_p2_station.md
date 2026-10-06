@@ -23,8 +23,6 @@ indicateur_p2_station(
   fertility_field = "fertility",
   climate_field = "climate",
   productivity_table = NULL,
-  column_name = "P2",
-  lang = "en",
   chm = NULL,
   age_field = "age",
   reference_age = 50,
@@ -57,15 +55,6 @@ indicateur_p2_station(
 
   Data.frame. Custom productivity reference table. If NULL, uses bundled
   ONF/IFN tables.
-
-- column_name:
-
-  Character. Name for output column. Default "P2".
-
-- lang:
-
-  Character. Currently unused (messages are in English); kept for
-  backward compatibility. Default "en".
 
 - chm:
 
@@ -111,6 +100,10 @@ sf object with one added column:
   `p2_status = "indice_station_m"` so that normalisation uses a 40 m
   ceiling
   ([`normalize_indicator`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)).
+  A dominant height outside the site-index curves at the observed age
+  gives `P2 = NA` with `p2_status = "hors_courbe"` (spec 056);
+  `p2_status` is `NA` when the index is not estimable (missing age or
+  species, H_dom \< 1.3 m...).
 
 - IFN mode: `P2` = IFN volume production of the sylvoecoregion
   (m3/ha/yr), plus `P2_rse`, `P2_provenance`, `P2_nature`.
@@ -124,11 +117,10 @@ unit's sylvoecoregion, estimated by Fay-Herriot
 in \\m^3/ha/yr\\. It is the production of the **domain**, not of the
 stand's own site, all species together: the per-group figures of the
 table are diluted over the whole forest area. It adds three columns:
-`<column_name>_rse` (relative standard error, percent),
-`<column_name>_provenance` (`"ifn_prod_ser"`, `"ifn_prod_greco"` or
-`"ifn_prod_national"`) and `<column_name>_nature` (`"fay_herriot"`,
-`"direct"` or `"synthetique"`). It is opt-in: the default behaviour is
-unchanged.
+`P2_rse` (relative standard error, percent), `P2_provenance`
+(`"ifn_prod_ser"`, `"ifn_prod_greco"` or `"ifn_prod_national"`) and
+`P2_nature` (`"fay_herriot"`, `"direct"` or `"synthetique"`). It is
+opt-in: the default behaviour is unchanged.
 
 The modes answer the same forestry question (how productive is this
 site?) but in different units. Downstream callers should use
@@ -162,6 +154,10 @@ or a mode-aware normalization when mixing units.
 - atlantic: Southwest Atlantic (Landes, Gironde)
 
 - mediterranean: Mediterranean (Provence, Languedoc)
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## Examples
 

@@ -2,8 +2,7 @@
 
 RECONFORT classifies a pixel's model-bound ~2-year index trajectory; the
 analysis window ends at \`s2_year\<edate\>\` (\`10-29\` for the 2-year
-models, \`05-31\` for \`v3_early_may\` – see
-[`RECONFORT_MODELS`](https://pobsteta.github.io/nemeton/reference/RECONFORT_MODELS.md)).
+models, \`05-31\` for \`v3_early_may\` – see `RECONFORT_MODELS`).
 Running a run for a \`s2_year\` whose window has not fully elapsed
 yields a truncated final season and a degraded classification. This
 helper returns the latest \`s2_year\` for which the window end date has
@@ -20,9 +19,7 @@ reconfort_latest_complete_year(v_model = "v3", today = Sys.Date(), lag_days = 0L
 
 - v_model:
 
-  Model version (see
-  [`RECONFORT_MODELS`](https://pobsteta.github.io/nemeton/reference/RECONFORT_MODELS.md)).
-  Default \`"v3"\`.
+  Model version (see `RECONFORT_MODELS`). Default \`"v3"\`.
 
 - today:
 
@@ -41,6 +38,10 @@ reconfort_latest_complete_year(v_model = "v3", today = Sys.Date(), lag_days = 0L
 
 A single integer year: the current year when its window end date (plus
 \`lag_days\`) is on or before \`today\`, otherwise the previous year.
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
 
 ## See also
 

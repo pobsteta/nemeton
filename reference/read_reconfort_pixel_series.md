@@ -64,6 +64,10 @@ Reserved for a future \`reconfort_run\` tracking table — **not**
 consulted in this release (discovery is filesystem-based). \`NULL\` is
 accepted.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[run_reconfort_dieback()\], \[read_fordead_pixel_series()\].

@@ -15,7 +15,7 @@ optionally BD Foret Anciennes (historical forest from ~1850). Follows tuto 04:
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -133,9 +133,7 @@ optionally BD Foret Anciennes (historical forest from ~1850). Follows tuto 04:
 <span>  bdforet <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  foret_ancienne <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  layers <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  column_name <span class="op">=</span> <span class="st">"N2"</span>,</span>
-<span>  weight_anciennete <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  lang <span class="op">=</span> <span class="st">"en"</span></span>
+<span>  weight_anciennete <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -163,20 +161,12 @@ with a NULL <code>foret_ancienne</code> gives N2 = NA.</p></dd>
 <dd><p>nemeton_layers object. Used to resolve bdforet if not provided directly.</p></dd>
 
 
-<dt id="arg-column-name">column_name<a class="anchor" aria-label="anchor" href="#arg-column-name"></a></dt>
-<dd><p>Character. Name for output column. Default "N2".</p></dd>
-
 
 <dt id="arg-weight-anciennete">weight_anciennete<a class="anchor" aria-label="anchor" href="#arg-weight-anciennete"></a></dt>
 <dd><p>Logical. When <code>foret_ancienne</code> carries an
 <code>anciennete</code> tier column, weight the ancient-forest coverage by tier depth
 (forest present at more epochs counts more). Ignored for single-epoch layers.
 Default <code>TRUE</code>.</p></dd>
-
-
-<dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
-<dd><p>Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -189,6 +179,12 @@ wooded -&gt; <code>30 + rate * 30</code> (30-60), else <strong>15</strong>.</p>
 N2 therefore never spans the bottom of its own scale, and a low N2 is not the
 same statement as a zero. <code><a href="normalize_indicator.html">normalize_indicator()</a></code> passes it through
 (spec 048 section 12).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

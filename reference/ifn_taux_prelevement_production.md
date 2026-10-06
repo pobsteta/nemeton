@@ -48,6 +48,10 @@ A one-row data.frame: `ser`, `groupe`, `definition`, `prelevement` and
 `production` (m3/ha/yr), `ratio`, `rse` (percent, delta method under
 independence of the two estimates), `niveau_utilise`, `campagnes`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`ifn_production_reference`](https://pobsteta.github.io/nemeton/reference/ifn_production_reference.md),

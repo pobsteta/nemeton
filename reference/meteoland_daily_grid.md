@@ -93,6 +93,10 @@ set, DEM CRS), ready to pass as `tmin =` to
 [`indicateur_r7_gel`](https://pobsteta.github.io/nemeton/reference/indicateur_r7_gel.md);
 or `NULL` when unavailable.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`eobs_downscale`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md),

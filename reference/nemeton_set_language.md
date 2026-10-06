@@ -14,6 +14,10 @@ nemeton_set_language(lang = c("fr", "en"))
 
   Language code ("fr" or "en")
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

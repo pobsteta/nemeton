@@ -104,6 +104,35 @@ against that root. Only \`http://\` / \`https://\` \`source_url\`s are
 downloaded. A row breaking these rules, or whose \`doc_id\` is not a
 slug (\`^\[a-z0-9\_\]+\$\`), is reported with \`action = "error"\`.
 
+## Corpus root (where the PDFs live)
+
+The bundled manifest (\`knowledge_corpus_v1.csv\`) gives each \`full\`
+document a \`local_path\` relative to the corpus root, of the form
+\`data-raw/references/\<file\>.pdf\` — the layout of the source
+repository, where these PDFs are kept locally (they are git-ignored,
+never shipped with the package). The root is resolved, in order,
+from: 1. the R option \`nemeton.corpus_root\`; 2. the environment
+variable \`NEMETON_CORPUS_ROOT\` (e.g. in \`~/.Renviron\`); 3. the
+working directory (historical behaviour, right when the build is run
+from a clone of the repository).
+
+\*\*Installation outside the repository\*\* (installed package, server):
+pick a directory, say \`/srv/nemeton/corpus\`, set
+\`NEMETON_CORPUS_ROOT=/srv/nemeton/corpus\` (or
+\`options(nemeton.corpus_root = "/srv/nemeton/corpus")\`), and place the
+PDFs at \`/srv/nemeton/corpus/data-raw/references/\<file\>.pdf\`, i.e.
+the manifest's \`local_path\` appended to the root. An absolute
+\`local_path\` is accepted only if it lies under that root. A \`full\`
+row whose PDF is missing falls back to its \`source_url\` when it points
+at a \`.pdf\` (downloaded into \`pdf_dir\`); otherwise it is skipped,
+and the report's \`reason\` names the missing path and the root in use.
+A \`dry_run = TRUE\` lists what would be found before any embedding
+call.
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[read_knowledge_manifest()\], \[ingest_knowledge_document()\],

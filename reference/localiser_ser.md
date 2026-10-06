@@ -45,6 +45,10 @@ localiser_ser(units, ser_layer = NULL, colonne = "ser", timeout = 60L)
 a unit outside every SER or when the outlines could not be obtained
 (with a warning).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`ifn_production_reference`](https://pobsteta.github.io/nemeton/reference/ifn_production_reference.md).

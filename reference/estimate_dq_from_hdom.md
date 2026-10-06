@@ -44,6 +44,10 @@ The output is clamped to the observed \\D_g\\ range of each species
 (Charru 2012 Table 1) to avoid extrapolation artefacts at very small or
 very large \\H\_{dom}\\.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

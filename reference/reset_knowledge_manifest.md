@@ -31,6 +31,10 @@ documents the package no longer ships. Call this to pull the current
 packaged corpus explicitly — typically wired to a "reset to packaged
 corpus" action in the RAG admin tab.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[knowledge_manifest_path()\], \[read_knowledge_manifest()\].

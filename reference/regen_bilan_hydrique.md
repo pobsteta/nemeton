@@ -97,6 +97,10 @@ drought indices to the mean per unit — mapping
 (`sol`) and per-unit `lai_max`; with SAFRAN/LiDAR inputs it is **not
 runnable in CI** — validated on real data.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`indicateur_r3_secheresse`](https://pobsteta.github.io/nemeton/reference/indicateur_r3_secheresse.md),

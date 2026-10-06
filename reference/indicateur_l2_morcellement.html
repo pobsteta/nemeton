@@ -9,7 +9,7 @@ when available, or shape index fallback. Returns a score 0-100."><meta property=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -157,7 +157,7 @@ of your own raster when it uses another nomenclature.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Numeric vector of fragmentation scores (0-100). <strong>Higher = less
+    <p>The input <code>units</code> (same class, rows and order) with an added numeric column <code>L2</code>: fragmentation scores (0-100). <strong>Higher = less
 fragmented = favourable</strong> (COHESION + AI, or the inverse shape index in the
 fallback): already oriented the right way, so normalize_indicator() passes it
 through and does NOT invert it – unlike L1.</p>
@@ -166,11 +166,17 @@ through and does NOT invert it – unlike L1.</p>
     <h2 id="renamed-in-">Renamed in 0.176.0<a class="anchor" aria-label="anchor" href="#renamed-in-"></a></h2>
 
 
-<p>This indicator used to be called <code><a href="indicateur_l1_sylvosphere.html">indicateur_l1_sylvosphere()</a></code> – a name that
+<p>This indicator used to be called <code>indicateur_l1_sylvosphere()</code> – a name that
 announced the L1 sylvosphere while computing the L2 fragmentation metric.
-The old name still works and returns the same values, with a deprecation
-warning. Persisted columns are renamed by <code><a href="migrer_colonnes_l.html">migrer_colonnes_l</a></code>. See
+The old name, kept as a deprecated alias since then, was removed in 1.0.0
+(spec 057). Persisted columns are renamed by <code><a href="migrer_colonnes_l.html">migrer_colonnes_l</a></code>. See
 spec 045.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
 
     <div class="section level2">

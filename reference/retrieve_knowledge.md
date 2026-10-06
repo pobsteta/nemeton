@@ -75,6 +75,10 @@ A \`data.frame\` sorted by descending \`similarity\` with columns
 \`similarity\`. Zero rows (canonical empty frame) when nothing clears
 \`min_similarity\`.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[format_citations()\] to render the result as a citation block.

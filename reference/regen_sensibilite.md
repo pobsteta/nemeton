@@ -173,6 +173,10 @@ and aggregates ΔT°max / ΔVPD, a z-score `sensibilite` and a signal/noise
 `robustesse` per unit. The engine path needs LiDAR HD + ERA5/CDS and is
 **not runnable in CI** — validated on real data.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`indice_priorite_regen`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md),

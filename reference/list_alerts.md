@@ -55,3 +55,7 @@ sf when no alert matches. \`trigger_date\` is a \`Date\` and
 Pass \`classes = NULL\` to disable the class filter (useful for the UI
 when the user explicitly opts in to lower-confidence alerts, with a
 banner — the UI is in charge of warning the user).
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

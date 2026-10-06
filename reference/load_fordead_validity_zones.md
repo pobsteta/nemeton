@@ -14,3 +14,7 @@ load_fordead_validity_zones()
 
 An \`sf\` object with columns \`code_dept\`, \`nom_dept\`, \`source\`,
 \`reference\` and \`geometry\` (MULTIPOLYGON, EPSG:4326).
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

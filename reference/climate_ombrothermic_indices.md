@@ -34,6 +34,10 @@ A list with \`dry_idx\` (integer, the dry months), \`dry_months\`
 (integer, their count; \`NA\` when no month matches) and \`demartonne\`
 (numeric; \`NA\` when not computable).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

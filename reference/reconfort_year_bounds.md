@@ -17,9 +17,7 @@ reconfort_year_bounds(v_model = "v3", today = Sys.Date(), lag_days = 0L)
 
 - v_model:
 
-  Model version (see
-  [`RECONFORT_MODELS`](https://pobsteta.github.io/nemeton/reference/RECONFORT_MODELS.md)).
-  Default \`"v3"\`.
+  Model version (see `RECONFORT_MODELS`). Default \`"v3"\`.
 
 - today:
 
@@ -37,6 +35,10 @@ reconfort_year_bounds(v_model = "v3", today = Sys.Date(), lag_days = 0L)
 ## Value
 
 A named list of three integers: \`min\`, \`max\`, \`default\`.
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
 
 ## See also
 

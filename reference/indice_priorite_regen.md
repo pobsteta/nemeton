@@ -75,6 +75,10 @@ raw summer heat / dryness exceeds the species tolerance
 the priority is pushed up (an intolerant species on a hot, dry microsite
 is more urgent).
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`regeneration_tolerances`](https://pobsteta.github.io/nemeton/reference/regeneration_tolerances.md),

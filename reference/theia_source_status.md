@@ -1,10 +1,9 @@
 # Report whether a THEIA datasource is usable over an AOI
 
 Answers "can this source be read here, and if not, why" **without**
-downloading anything. Where
-[`resolve_theia_assets`](https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.md)
-aborts on the first obstacle, this reports the obstacle as a stable key
-the caller can translate and act on.
+downloading anything. Where `resolve_theia_assets()` aborts on the first
+obstacle, this reports the obstacle as a stable key the caller can
+translate and act on.
 
 ## Usage
 
@@ -80,9 +79,13 @@ documented; T3 (clear-cuts) was empty because the `sufosat` datasource
 entry declared its STAC fields outside `access`, which was a defect.
 Same symptom, opposite causes, no signal either way.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
-[`resolve_theia_assets`](https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.md),
+`resolve_theia_assets()`,
 [`load_theia_source`](https://pobsteta.github.io/nemeton/reference/load_theia_source.md)
 
 ## Examples

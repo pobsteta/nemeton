@@ -113,6 +113,10 @@ found or when \`lasR\` is not installed.
 \`lasR\` is not on CRAN. Install it from r-universe: “\`r
 install.packages("lasR", repos = "https://r-lidar.r-universe.dev") “\`
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

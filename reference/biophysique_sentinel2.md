@@ -58,6 +58,10 @@ is **provisional**: the LAI default `c("B4","B5","B8")` is validated
 042 D3), and their inversion is unvalidated pending the GEODES
 cross-check (lot 3).
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`lai_sentinel2`](https://pobsteta.github.io/nemeton/reference/lai_sentinel2.md);

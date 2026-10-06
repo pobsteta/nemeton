@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,8 +109,13 @@
     </div>
 
     <div class="section level2">
-      <h2 id="gestion-des-donnees">Gestion des donnees<a class="anchor" aria-label="anchor" href="#gestion-des-donnees"></a></h2>
+      <h2 id="api-stable">API stable<a class="anchor" aria-label="anchor" href="#api-stable"></a></h2>
 
+      <div class="section-desc"><p>Couverte par le contrat d’API 1.0 (spec 057 §4.3) : une rupture passe par une version majeure. Indicateurs, familles, NDP, normalisation, chargeurs, echantillonnage et API consommee par nemetonshiny.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+      <h3 id="gestion-des-donnees">Gestion des donnees<a class="anchor" aria-label="anchor" href="#gestion-des-donnees"></a></h3>
       <div class="section-desc"><p>Creer et gerer les unites spatiales et les couches</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -146,8 +151,8 @@
         </dt>
         <dd>Load Massif Demo Spatial Layers</dd>
       </dl></div><div class="section level2">
-      <h2 id="workflow-principal">Workflow principal<a class="anchor" aria-label="anchor" href="#workflow-principal"></a></h2>
 
+      <h3 id="workflow-principal">Workflow principal<a class="anchor" aria-label="anchor" href="#workflow-principal"></a></h3>
       <div class="section-desc"><p>Fonctions principales pour le calcul d’indicateurs</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -168,9 +173,16 @@
 
         </dt>
         <dd>List available indicators</dd>
-      </dl></div><div class="section level2">
-      <h2 id="table-des-familles-d-indicateurs">Table des familles d’indicateurs<a class="anchor" aria-label="anchor" href="#table-des-familles-d-indicateurs"></a></h2>
 
+        <dt>
+
+          <code><a href="extract_indicator_value.html">extract_indicator_value()</a></code>
+
+        </dt>
+        <dd>Extract an indicator's value column from its result</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="table-des-familles-d-indicateurs">Table des familles d’indicateurs<a class="anchor" aria-label="anchor" href="#table-des-familles-d-indicateurs"></a></h3>
       <div class="section-desc"><p>Source canonique des 12 familles et de leurs indicateurs (codes, noms FR/EN, colonnes produites, libelles). A lire depuis l’aval plutot que de redeclarer la liste.</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -206,8 +218,8 @@
         </dt>
         <dd>Family code from family score column name</dd>
       </dl></div><div class="section level2">
-      <h2 id="famille-c-carbone-vitalite">Famille C : Carbone &amp; Vitalite<a class="anchor" aria-label="anchor" href="#famille-c-carbone-vitalite"></a></h2>
 
+      <h3 id="famille-c-carbone-vitalite">Famille C : Carbone &amp; Vitalite<a class="anchor" aria-label="anchor" href="#famille-c-carbone-vitalite"></a></h3>
       <div class="section-desc"><p>Stockage de carbone et vitalite de la vegetation</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -229,8 +241,8 @@
         </dt>
         <dd>NDVI Mean and Trend Analysis (C2)</dd>
       </dl></div><div class="section level2">
-      <h2 id="famille-b-biodiversite">Famille B : Biodiversite<a class="anchor" aria-label="anchor" href="#famille-b-biodiversite"></a></h2>
 
+      <h3 id="famille-b-biodiversite">Famille B : Biodiversite<a class="anchor" aria-label="anchor" href="#famille-b-biodiversite"></a></h3>
       <div class="section-desc"><p>Protection, diversite structurelle et connectivite ecologique</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -266,8 +278,8 @@
         </dt>
         <dd>Indicator B4 — Spectral alpha diversity (family B)</dd>
       </dl></div><div class="section level2">
-      <h2 id="famille-w-regulation-de-l-eau">Famille W : Regulation de l’eau<a class="anchor" aria-label="anchor" href="#famille-w-regulation-de-l-eau"></a></h2>
 
+      <h3 id="famille-w-regulation-de-l-eau">Famille W : Regulation de l’eau<a class="anchor" aria-label="anchor" href="#famille-w-regulation-de-l-eau"></a></h3>
       <div class="section-desc"><p>Regulation hydrologique et zones humides</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -296,8 +308,8 @@
         </dt>
         <dd>Topographic Wetness Index (W3)</dd>
       </dl></div><div class="section level2">
-      <h2 id="famille-a-air-microclimat">Famille A : Air &amp; Microclimat<a class="anchor" aria-label="anchor" href="#famille-a-air-microclimat"></a></h2>
 
+      <h3 id="famille-a-air-microclimat">Famille A : Air &amp; Microclimat<a class="anchor" aria-label="anchor" href="#famille-a-air-microclimat"></a></h3>
       <div class="section-desc"><p>Couverture arboree et qualite de l’air</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -319,8 +331,8 @@
         </dt>
         <dd>Calculate Air Quality Index (A2)</dd>
       </dl></div><div class="section level2">
-      <h2 id="famille-f-fertilite-des-sols">Famille F : Fertilite des sols<a class="anchor" aria-label="anchor" href="#famille-f-fertilite-des-sols"></a></h2>
 
+      <h3 id="famille-f-fertilite-des-sols">Famille F : Fertilite des sols<a class="anchor" aria-label="anchor" href="#famille-f-fertilite-des-sols"></a></h3>
       <div class="section-desc"><p>Qualite du sol et risque d’erosion</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -342,8 +354,8 @@
         </dt>
         <dd>Soil Fertility Index (F2)</dd>
       </dl></div><div class="section level2">
-      <h2 id="famille-l-paysage">Famille L : Paysage<a class="anchor" aria-label="anchor" href="#famille-l-paysage"></a></h2>
 
+      <h3 id="famille-l-paysage">Famille L : Paysage<a class="anchor" aria-label="anchor" href="#famille-l-paysage"></a></h3>
       <div class="section-desc"><p>Structure du paysage et connectivite</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -371,23 +383,9 @@
 
         </dt>
         <dd>Indicator L3 — Spectral beta diversity / landscape heterogeneity (family L)</dd>
-
-        <dt>
-
-          <code><a href="indicateur_l2_fragmentation.html">indicateur_l2_fragmentation()</a></code>
-
-        </dt>
-        <dd>Sylvosphere - Edge Effect (L1), deprecated name</dd>
-
-        <dt>
-
-          <code><a href="indicateur_l1_sylvosphere.html">indicateur_l1_sylvosphere()</a></code>
-
-        </dt>
-        <dd>Landscape Fragmentation (L2), deprecated name</dd>
       </dl></div><div class="section level2">
-      <h2 id="famille-t-dynamique-temporelle">Famille T : Dynamique temporelle<a class="anchor" aria-label="anchor" href="#famille-t-dynamique-temporelle"></a></h2>
 
+      <h3 id="famille-t-dynamique-temporelle">Famille T : Dynamique temporelle<a class="anchor" aria-label="anchor" href="#famille-t-dynamique-temporelle"></a></h3>
       <div class="section-desc"><p>Anciennete des peuplements et changements d’occupation</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -416,8 +414,8 @@
         </dt>
         <dd>Calculate Clear-cut Pressure Index (T3)</dd>
       </dl></div><div class="section level2">
-      <h2 id="famille-r-risques-resilience">Famille R : Risques &amp; Resilience<a class="anchor" aria-label="anchor" href="#famille-r-risques-resilience"></a></h2>
 
+      <h3 id="famille-r-risques-resilience">Famille R : Risques &amp; Resilience<a class="anchor" aria-label="anchor" href="#famille-r-risques-resilience"></a></h3>
       <div class="section-desc"><p>Vulnerabilite aux incendies, tempetes et secheresse</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -455,6 +453,13 @@
 
         <dt>
 
+          <code><a href="indicateur_r5_deperissement.html">indicateur_r5_deperissement()</a></code>
+
+        </dt>
+        <dd>Compute the R5 dieback indicator (unified FORDEAD / RECONFORT)</dd>
+
+        <dt>
+
           <code><a href="compute_game_pressure_index.html">compute_game_pressure_index()</a></code>
 
         </dt>
@@ -474,8 +479,8 @@
         </dt>
         <dd>Get Game Pressure Raster for R4 Indicator</dd>
       </dl></div><div class="section level2">
-      <h2 id="famille-s-social-usages">Famille S : Social &amp; Usages<a class="anchor" aria-label="anchor" href="#famille-s-social-usages"></a></h2>
 
+      <h3 id="famille-s-social-usages">Famille S : Social &amp; Usages<a class="anchor" aria-label="anchor" href="#famille-s-social-usages"></a></h3>
       <div class="section-desc"><p>Distance routes, distance bati et proximite population</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -504,8 +509,8 @@
         </dt>
         <dd>S3: Population Proximity Indicator</dd>
       </dl></div><div class="section level2">
-      <h2 id="famille-p-production-economie">Famille P : Production &amp; Economie<a class="anchor" aria-label="anchor" href="#famille-p-production-economie"></a></h2>
 
+      <h3 id="famille-p-production-economie">Famille P : Production &amp; Economie<a class="anchor" aria-label="anchor" href="#famille-p-production-economie"></a></h3>
       <div class="section-desc"><p>Volume bois, productivite station et qualite bois d’oeuvre</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -541,8 +546,8 @@
         </dt>
         <dd>Mobilisable timber volume for road-network sizing</dd>
       </dl></div><div class="section level2">
-      <h2 id="references-ifn-par-essence-x-sylvoecoregion-spec-">References IFN par essence x sylvoecoregion (spec 040)<a class="anchor" aria-label="anchor" href="#references-ifn-par-essence-x-sylvoecoregion-spec-"></a></h2>
 
+      <h3 id="references-ifn-par-essence-x-sylvoecoregion-spec-">References IFN par essence x sylvoecoregion (spec 040)<a class="anchor" aria-label="anchor" href="#references-ifn-par-essence-x-sylvoecoregion-spec-"></a></h3>
       <div class="section-desc"><p>Volume sur pied et prelevement issus de l’inventaire forestier national, avec cascade de repli SER -&gt; GRECO -&gt; national declarant le niveau atteint</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -599,8 +604,8 @@
         </dt>
         <dd>Fill missing P1 volumes with the IFN regional reference</dd>
       </dl></div><div class="section level2">
-      <h2 id="production-ifn-par-petits-domaines-fay-herriot-">Production IFN par petits domaines (Fay-Herriot)<a class="anchor" aria-label="anchor" href="#production-ifn-par-petits-domaines-fay-herriot-"></a></h2>
 
+      <h3 id="production-ifn-par-petits-domaines-fay-herriot-">Production IFN par petits domaines (Fay-Herriot)<a class="anchor" aria-label="anchor" href="#production-ifn-par-petits-domaines-fay-herriot-"></a></h3>
       <div class="section-desc"><p>Production biologique recalculee depuis les donnees brutes IFN (IR5), par sylvoecoregion et campagne, estimee par Fay-Herriot avec son incertitude (spec 054, ADR-016)</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -657,8 +662,8 @@
         </dt>
         <dd>Attach each unit to its sylvoecoregion (SER)</dd>
       </dl></div><div class="section level2">
-      <h2 id="acces-aux-donnees-brutes-ifn">Acces aux donnees brutes IFN<a class="anchor" aria-label="anchor" href="#acces-aux-donnees-brutes-ifn"></a></h2>
 
+      <h3 id="acces-aux-donnees-brutes-ifn">Acces aux donnees brutes IFN<a class="anchor" aria-label="anchor" href="#acces-aux-donnees-brutes-ifn"></a></h3>
       <div class="section-desc"><p>Telechargement et chargement de l’export annuel de l’IGN (Licence Ouverte Etalab v2.0)</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -687,8 +692,8 @@
         </dt>
         <dd>Load raw French NFI tables</dd>
       </dl></div><div class="section level2">
-      <h2 id="famille-e-energie-climat">Famille E : Energie &amp; Climat<a class="anchor" aria-label="anchor" href="#famille-e-energie-climat"></a></h2>
 
+      <h3 id="famille-e-energie-climat">Famille E : Energie &amp; Climat<a class="anchor" aria-label="anchor" href="#famille-e-energie-climat"></a></h3>
       <div class="section-desc"><p>Potentiel bois-energie et evitement carbone</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -710,8 +715,8 @@
         </dt>
         <dd>E2: Carbon Emission Avoidance Indicator</dd>
       </dl></div><div class="section level2">
-      <h2 id="famille-n-naturalite">Famille N : Naturalite<a class="anchor" aria-label="anchor" href="#famille-n-naturalite"></a></h2>
 
+      <h3 id="famille-n-naturalite">Famille N : Naturalite<a class="anchor" aria-label="anchor" href="#famille-n-naturalite"></a></h3>
       <div class="section-desc"><p>Distance infrastructures, continuite forestiere et indice wilderness</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -740,8 +745,8 @@
         </dt>
         <dd>N3: Composite Naturalness Index</dd>
       </dl></div><div class="section level2">
-      <h2 id="chm-et-indice-de-station-spec-">CHM et indice de station (spec 005)<a class="anchor" aria-label="anchor" href="#chm-et-indice-de-station-spec-"></a></h2>
 
+      <h3 id="chm-et-indice-de-station-spec-">CHM et indice de station (spec 005)<a class="anchor" aria-label="anchor" href="#chm-et-indice-de-station-spec-"></a></h3>
       <div class="section-desc"><p>Nettoyage d’un Canopy Height Model et estimation de l’indice de station H0</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -784,8 +789,8 @@
         </dt>
         <dd>Read the site-index reference curves</dd>
       </dl></div><div class="section level2">
-      <h2 id="houppiers-couche-houppier-de-marculus-">Houppiers (couche <code>houppier</code> de Marculus)<a class="anchor" aria-label="anchor" href="#houppiers-couche-houppier-de-marculus-"></a></h2>
 
+      <h3 id="houppiers-couche-houppier-de-marculus-">Houppiers (couche <code>houppier</code> de Marculus)<a class="anchor" aria-label="anchor" href="#houppiers-couche-houppier-de-marculus-"></a></h3>
       <div class="section-desc"><p>Segmentation des couronnes sur un MNH : une entite par houppier, avec la hauteur de son apex, pour pre-remplir la hauteur d’une tige au martelage</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -799,46 +804,9 @@
 
         </dt>
         <dd>Segment tree crowns on a Canopy Height Model</dd>
-
-        <dt>
-
-          <code><a href="lsms_duree_estimee.html">lsms_duree_estimee()</a></code>
-
-        </dt>
-        <dd>Estimate the LSMS compute time for a pixel count</dd>
-
-        <dt>
-
-          <code><a href="lsms_budget_pixels.html">lsms_budget_pixels()</a></code>
-
-        </dt>
-        <dd>Pixel budget affordable within a compute budget</dd>
       </dl></div><div class="section level2">
-      <h2 id="variables-biophysiques-sentinel-spec-">Variables biophysiques Sentinel-2 (spec 043)<a class="anchor" aria-label="anchor" href="#variables-biophysiques-sentinel-spec-"></a></h2>
 
-      <div class="section-desc"><p>Gouvernance de l’augmentation biophysique (LAI/fAPAR/FCOVER/CCC) dans le systeme NDP ; production amont dans le package biophysnemeton</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="biophys_gating.html">biophys_gating()</a></code>
-
-        </dt>
-        <dd>Gate the Sentinel-2 biophysical augmentation flag, per unit</dd>
-
-        <dt>
-
-          <code><a href="biophys_gating_thresholds.html">biophys_gating_thresholds()</a></code>
-
-        </dt>
-        <dd>Default gating thresholds for the Sentinel-2 biophysical augmentation</dd>
-      </dl></div><div class="section level2">
-      <h2 id="systeme-ndp-niveau-de-precision-">Systeme NDP (Niveau De Precision)<a class="anchor" aria-label="anchor" href="#systeme-ndp-niveau-de-precision-"></a></h2>
-
+      <h3 id="systeme-ndp-niveau-de-precision-">Systeme NDP (Niveau De Precision)<a class="anchor" aria-label="anchor" href="#systeme-ndp-niveau-de-precision-"></a></h3>
       <div class="section-desc"><p>Ponderation Fibonacci et confiance phi</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -909,8 +877,8 @@
         </dt>
         <dd>Canonical canopy-structure provenance from NDP augmented flags</dd>
       </dl></div><div class="section level2">
-      <h2 id="configuration-essences-adr-">Configuration essences (ADR-007)<a class="anchor" aria-label="anchor" href="#configuration-essences-adr-"></a></h2>
 
+      <h3 id="configuration-essences-adr-">Configuration essences (ADR-007)<a class="anchor" aria-label="anchor" href="#configuration-essences-adr-"></a></h3>
       <div class="section-desc"><p>Classification d’essences par region biogeographique</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -960,8 +928,8 @@
         </dt>
         <dd>Get allometric key for a species class</dd>
       </dl></div><div class="section level2">
-      <h2 id="sources-de-donnees-adr-">Sources de donnees (ADR-002)<a class="anchor" aria-label="anchor" href="#sources-de-donnees-adr-"></a></h2>
 
+      <h3 id="sources-de-donnees-adr-">Sources de donnees (ADR-002)<a class="anchor" aria-label="anchor" href="#sources-de-donnees-adr-"></a></h3>
       <div class="section-desc"><p>Abstraction des sources par pays</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -1018,8 +986,8 @@
         </dt>
         <dd>List available countries</dd>
       </dl></div><div class="section level2">
-      <h2 id="analyse-temporelle">Analyse temporelle<a class="anchor" aria-label="anchor" href="#analyse-temporelle"></a></h2>
 
+      <h3 id="analyse-temporelle">Analyse temporelle<a class="anchor" aria-label="anchor" href="#analyse-temporelle"></a></h3>
       <div class="section-desc"><p>Analyse multi-periodes et detection de changements</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -1041,8 +1009,8 @@
         </dt>
         <dd>Calculate Change Rates Between Periods</dd>
       </dl></div><div class="section level2">
-      <h2 id="analyse-inter-familles">Analyse inter-familles<a class="anchor" aria-label="anchor" href="#analyse-inter-familles"></a></h2>
 
+      <h3 id="analyse-inter-familles">Analyse inter-familles<a class="anchor" aria-label="anchor" href="#analyse-inter-familles"></a></h3>
       <div class="section-desc"><p>Correlations et hotspots multi-criteres</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -1071,8 +1039,8 @@
         </dt>
         <dd>Plot Correlation Matrix Heatmap</dd>
       </dl></div><div class="section level2">
-      <h2 id="analyse-multi-criteres-avancee">Analyse multi-criteres avancee<a class="anchor" aria-label="anchor" href="#analyse-multi-criteres-avancee"></a></h2>
 
+      <h3 id="analyse-multi-criteres-avancee">Analyse multi-criteres avancee<a class="anchor" aria-label="anchor" href="#analyse-multi-criteres-avancee"></a></h3>
       <div class="section-desc"><p>Optimisation Pareto, clustering et trade-offs</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -1101,8 +1069,8 @@
         </dt>
         <dd>Plot Trade-off Analysis Between Two Objectives</dd>
       </dl></div><div class="section level2">
-      <h2 id="normalisation-agregation">Normalisation &amp; Agregation<a class="anchor" aria-label="anchor" href="#normalisation-agregation"></a></h2>
 
+      <h3 id="normalisation-agregation">Normalisation &amp; Agregation<a class="anchor" aria-label="anchor" href="#normalisation-agregation"></a></h3>
       <div class="section-desc"><p>Transformer et combiner les indicateurs</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -1159,8 +1127,8 @@
         </dt>
         <dd>Rename legacy landscape (L) columns</dd>
       </dl></div><div class="section level2">
-      <h2 id="visualisation">Visualisation<a class="anchor" aria-label="anchor" href="#visualisation"></a></h2>
 
+      <h3 id="visualisation">Visualisation<a class="anchor" aria-label="anchor" href="#visualisation"></a></h3>
       <div class="section-desc"><p>Cartes et graphiques</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -1210,8 +1178,8 @@
         </dt>
         <dd>Plot Temporal Heatmap</dd>
       </dl></div><div class="section level2">
-      <h2 id="internationalisation">Internationalisation<a class="anchor" aria-label="anchor" href="#internationalisation"></a></h2>
 
+      <h3 id="internationalisation">Internationalisation<a class="anchor" aria-label="anchor" href="#internationalisation"></a></h3>
       <div class="section-desc"><p>Support multi-langues</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -1226,13 +1194,8 @@
         </dt>
         <dd>Set language manually</dd>
       </dl></div><div class="section level2">
-      <h2 id="application-shiny">Application Shiny<a class="anchor" aria-label="anchor" href="#application-shiny"></a></h2>
 
-      <div class="section-desc"><p>L’application interactive est dans le package separe nemetonshiny. Installez-le avec remotes::install_github(“pobsteta/nemetonshiny”) puis lancez nemetonshiny::run_app(language = “fr”).</p></div>
-
-      <dl></dl></div><div class="section level2">
-      <h2 id="methodes-s-">Methodes S3<a class="anchor" aria-label="anchor" href="#methodes-s-"></a></h2>
-
+      <h3 id="methodes-s-">Methodes S3<a class="anchor" aria-label="anchor" href="#methodes-s-"></a></h3>
       <div class="section-desc"><p>Methodes print et summary pour les objets nemeton</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -1282,24 +1245,8 @@
         </dt>
         <dd>Summary Method for nemeton_temporal Objects</dd>
       </dl></div><div class="section level2">
-      <h2 id="documentation-du-package">Documentation du package<a class="anchor" aria-label="anchor" href="#documentation-du-package"></a></h2>
 
-
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="nemeton-package.html">nemeton-package</a></code> <code><a href="nemeton-package.html">nemeton</a></code>
-
-        </dt>
-        <dd>nemeton: Systemic Forest Analysis Using the Nemeton Method</dd>
-      </dl></div><div class="section level2">
-      <h2 id="utilitaires">Utilitaires<a class="anchor" aria-label="anchor" href="#utilitaires"></a></h2>
-
+      <h3 id="utilitaires">Utilitaires<a class="anchor" aria-label="anchor" href="#utilitaires"></a></h3>
       <div class="section-desc"><p>Fonctions de traitement parallele</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -1316,13 +1263,6 @@
 
         <dt>
 
-          <code><a href="smart_map_sf.html">smart_map_sf()</a></code>
-
-        </dt>
-        <dd>Smart Map for Spatial Data with Row Indices</dd>
-
-        <dt>
-
           <code><a href="get_global_cache_dir.html">get_global_cache_dir()</a></code>
 
         </dt>
@@ -1335,9 +1275,9 @@
         </dt>
         <dd>Get Family Name from Code</dd>
       </dl></div><div class="section level2">
-      <h2 id="internal-documentation">Internal documentation<a class="anchor" aria-label="anchor" href="#internal-documentation"></a></h2>
 
-      <div class="section-desc"><p>Package-level and internal documentation pages</p></div>
+      <h3 id="indicateurs-microclimatiques-et-climatiques">Indicateurs microclimatiques et climatiques<a class="anchor" aria-label="anchor" href="#indicateurs-microclimatiques-et-climatiques"></a></h3>
+      <div class="section-desc"><p>A3, A4, W4 et R6 lisent un objet <code>micro</code> precalcule ; A5 et R7 sont conditionnes a leur source (LST, Tmin)</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -1345,6 +1285,1389 @@
 
 
       <dl><dt>
+
+          <code><a href="indicateur_a3_microclimat.html">indicateur_a3_microclimat()</a></code>
+
+        </dt>
+        <dd>A3 — summer under-canopy maximum temperature (regeneration microclimate)</dd>
+
+        <dt>
+
+          <code><a href="indicateur_a4_tamponnement.html">indicateur_a4_tamponnement()</a></code>
+
+        </dt>
+        <dd>A4 — canopy thermal buffering (regeneration microclimate)</dd>
+
+        <dt>
+
+          <code><a href="indicateur_a5_rafraichissement.html">indicateur_a5_rafraichissement()</a></code>
+
+        </dt>
+        <dd>Calculate Urban Cooling Index (A5)</dd>
+
+        <dt>
+
+          <code><a href="indicateur_r6_sensibilite.html">indicateur_r6_sensibilite()</a></code>
+
+        </dt>
+        <dd>R6 — microsite climate sensitivity (heatwave vs average year)</dd>
+
+        <dt>
+
+          <code><a href="indicateur_r7_gel.html">indicateur_r7_gel()</a></code>
+
+        </dt>
+        <dd>Late-frost risk indicator (R7)</dd>
+
+        <dt>
+
+          <code><a href="indicateur_w4_vpd.html">indicateur_w4_vpd()</a></code>
+
+        </dt>
+        <dd>W4 — summer under-canopy vapour-pressure deficit (regeneration)</dd>
+
+        <dt>
+
+          <code><a href="a5_applicabilite.html">a5_applicabilite()</a></code>
+
+        </dt>
+        <dd>Can A5 urban cooling be computed here?</dd>
+
+        <dt>
+
+          <code><a href="climate_ombrothermic_indices.html">climate_ombrothermic_indices()</a></code>
+
+        </dt>
+        <dd>Gaussen-Bagnouls dry months and De Martonne aridity index</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="diversite-spectrale">Diversite spectrale<a class="anchor" aria-label="anchor" href="#diversite-spectrale"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="compute_spectral_diversity.html">compute_spectral_diversity()</a></code>
+
+        </dt>
+        <dd>Compute spectral diversity rasters (alpha &amp; beta) via biodivMapR</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="chargeurs-de-sources">Chargeurs de sources<a class="anchor" aria-label="anchor" href="#chargeurs-de-sources"></a></h3>
+      <div class="section-desc"><p>Acquisition des couches publiques (WMS/WFS, COG, STAC, CDS)</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="load_raster_source.html">load_raster_source()</a></code>
+
+        </dt>
+        <dd>Load a raster datasource as a SpatRaster</dd>
+
+        <dt>
+
+          <code><a href="load_theia_source.html">load_theia_source()</a></code>
+
+        </dt>
+        <dd>Load a THEIA datasource as a SpatRaster</dd>
+
+        <dt>
+
+          <code><a href="load_eobs_source.html">load_eobs_source()</a></code>
+
+        </dt>
+        <dd>Acquire E-OBS per-year summer fields (Tmax / precipitation) for an AOI</dd>
+
+        <dt>
+
+          <code><a href="load_foret_ancienne_source.html">load_foret_ancienne_source()</a></code>
+
+        </dt>
+        <dd>Acquire the IGN historical-forest (~1850 état-major) layer for an AOI</dd>
+
+        <dt>
+
+          <code><a href="load_onf_parcelles_source.html">load_onf_parcelles_source()</a></code>
+
+        </dt>
+        <dd>Acquire the ONF public-forest parcel layer for an AOI</dd>
+
+        <dt>
+
+          <code><a href="load_insee_population_source.html">load_insee_population_source()</a></code>
+
+        </dt>
+        <dd>French population grid (INSEE Filosofi)</dd>
+
+        <dt>
+
+          <code><a href="get_datasource_product.html">get_datasource_product()</a></code>
+
+        </dt>
+        <dd>Get a sub-product of a multi-product datasource</dd>
+
+        <dt>
+
+          <code><a href="stac_search_s2.html">stac_search_s2()</a></code>
+
+        </dt>
+        <dd>Search Sentinel-2 L2A scenes via STAC</dd>
+
+        <dt>
+
+          <code><a href="theia_stac.html">theia_stac</a></code>
+
+        </dt>
+        <dd>THEIA STAC resolver</dd>
+
+        <dt>
+
+          <code><a href="theia_configure_s3.html">theia_configure_s3()</a></code>
+
+        </dt>
+        <dd>Configure GDAL for authenticated THEIA S3 reads</dd>
+
+        <dt>
+
+          <code><a href="theia_source_status.html">theia_source_status()</a></code>
+
+        </dt>
+        <dd>Report whether a THEIA datasource is usable over an AOI</dd>
+
+        <dt>
+
+          <code><a href="probe_ign_lidar_tiles.html">probe_ign_lidar_tiles()</a></code>
+
+        </dt>
+        <dd>Batch-probe a vector of IGN LiDAR HD tile URLs</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="projet-couches-mnt-chm-et-lidar">Projet : couches, MNT, CHM et LiDAR<a class="anchor" aria-label="anchor" href="#projet-couches-mnt-chm-et-lidar"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="resolve_project_layers.html">resolve_project_dem()</a></code> <code><a href="resolve_project_layers.html">resolve_project_chm()</a></code>
+
+        </dt>
+        <dd>Discover the best available DEM / CHM raster in a Nemeton project</dd>
+
+        <dt>
+
+          <code><a href="compute_dtm_chm_from_laz.html">compute_dtm_chm_from_laz()</a></code>
+
+        </dt>
+        <dd>Derive DTM and CHM rasters from IGN LiDAR HD point clouds</dd>
+
+        <dt>
+
+          <code><a href="get_ndp_augmented.html">get_ndp_augmented()</a></code>
+
+        </dt>
+        <dd>Extract augmentation flags from a detect_ndp() result</dd>
+
+        <dt>
+
+          <code><a href="run_memory_capped.html">run_memory_capped()</a></code>
+
+        </dt>
+        <dd>Run a heavy pipeline in a memory-capped child process</dd>
+
+        <dt>
+
+          <code><a href="format_duration.html">format_duration()</a></code>
+
+        </dt>
+        <dd>Format a duration as hours, then minutes, then seconds</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="inventaire-synthetique-et-croissance">Inventaire synthetique et croissance<a class="anchor" aria-label="anchor" href="#inventaire-synthetique-et-croissance"></a></h3>
+      <div class="section-desc"><p>Inventaire derive du CHM, densite maximale, derive de croissance</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="ensure_inventory_fields.html">ensure_inventory_fields()</a></code>
+
+        </dt>
+        <dd>Fill in missing inventory fields from a CHM</dd>
+
+        <dt>
+
+          <code><a href="estimate_synthetic_inventory.html">estimate_synthetic_inventory()</a></code>
+
+        </dt>
+        <dd>Estimate a synthetic stand inventory per unit</dd>
+
+        <dt>
+
+          <code><a href="estimate_dq_from_hdom.html">estimate_dq_from_hdom()</a></code>
+
+        </dt>
+        <dd>Estimate a quadratic mean diameter from dominant height</dd>
+
+        <dt>
+
+          <code><a href="n_max_selfthinning.html">n_max_selfthinning()</a></code>
+
+        </dt>
+        <dd>Maximum stand density under self-thinning (Charru 2012)</dd>
+
+        <dt>
+
+          <code><a href="charru_selfthinning_table.html">charru_selfthinning_table()</a></code>
+
+        </dt>
+        <dd>Charru 2012 self-thinning coefficients table</dd>
+
+        <dt>
+
+          <code><a href="bai_drift_factor.html">bai_drift_factor()</a></code>
+
+        </dt>
+        <dd>Species BAI drift factor (Charru 2017)</dd>
+
+        <dt>
+
+          <code><a href="charru_bai_drift_table.html">charru_bai_drift_table()</a></code>
+
+        </dt>
+        <dd>Charru 2017 BAI drift lookup table</dd>
+
+        <dt>
+
+          <code><a href="site_index_reference_points.html">site_index_reference_points()</a></code>
+
+        </dt>
+        <dd>Published calibration points for the site-index curves</dd>
+
+        <dt>
+
+          <code><a href="enrich_parcels_bdforet.html">enrich_parcels_bdforet()</a></code>
+
+        </dt>
+        <dd>Enrich Parcels with BD Forêt V2 Data</dd>
+
+        <dt>
+
+          <code><a href="bdforet_v2_mapping.html">bdforet_v2_mapping()</a></code>
+
+        </dt>
+        <dd>BD Forêt v2 -&gt; CV context mapping</dd>
+
+        <dt>
+
+          <code><a href="map_tfv_to_species_class.html">map_tfv_to_species_class()</a></code>
+
+        </dt>
+        <dd>Map BD Forêt v2 TFV codes to NMT species classes</dd>
+
+        <dt>
+
+          <code><a href="units_add_species_from_raster.html">units_add_species_from_raster()</a></code>
+
+        </dt>
+        <dd>Add a dominant-species column from a classification raster</dd>
+
+        <dt>
+
+          <code><a href="croiser_parcelles_onf.html">croiser_parcelles_onf()</a></code>
+
+        </dt>
+        <dd>Tenements met by each ONF forest parcel (UGF)</dd>
+
+        <dt>
+
+          <code><a href="build_foret_ancienne_mask.html">build_foret_ancienne_mask()</a></code>
+
+        </dt>
+        <dd>Build an ancient-forest polygon layer for N2 continuity</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="sols">Sols<a class="anchor" aria-label="anchor" href="#sols"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="cec_to_fertility_score.html">cec_to_fertility_score()</a></code>
+
+        </dt>
+        <dd>Map SoilGrids CEC values to a 0-100 fertility score</dd>
+
+        <dt>
+
+          <code><a href="texture_to_fertility_score.html">texture_to_fertility_score()</a></code>
+
+        </dt>
+        <dd>Map soil texture to a 0-100 fertility score</dd>
+
+        <dt>
+
+          <code><a href="texture_to_erosion_resistance.html">texture_to_erosion_resistance()</a></code>
+
+        </dt>
+        <dd>Map soil texture to a 0-100 erosion-resistance score</dd>
+
+        <dt>
+
+          <code><a href="read_uts_fertility_table.html">read_uts_fertility_table()</a></code>
+
+        </dt>
+        <dd>Read the UTS → fertility crosswalk shipped with the package</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="echantillonnage-et-plans-de-placettes">Echantillonnage et plans de placettes<a class="anchor" aria-label="anchor" href="#echantillonnage-et-plans-de-placettes"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="sampling_plan.html">sampling_plan</a></code>
+
+        </dt>
+        <dd>Sampling Plan Generator (GRTS + stratification)</dd>
+
+        <dt>
+
+          <code><a href="create_sampling_plan.html">create_sampling_plan()</a></code>
+
+        </dt>
+        <dd>Generate a forest sampling plan (GRTS with graceful fallback)</dd>
+
+        <dt>
+
+          <code><a href="create_trend_sanitary_plan.html">create_trend_sanitary_plan()</a></code>
+
+        </dt>
+        <dd>Create a SANITARY plot plan on the multi-year <code>trend</code> (spec 025)</dd>
+
+        <dt>
+
+          <code><a href="create_validation_sampling_plan.html">create_validation_sampling_plan()</a></code>
+
+        </dt>
+        <dd>Create a validation sampling plan over an alert raster (spec 014 A3)</dd>
+
+        <dt>
+
+          <code><a href="compute_sample_size.html">compute_sample_size()</a></code>
+
+        </dt>
+        <dd>Sample size for a target relative error and a given CV</dd>
+
+        <dt>
+
+          <code><a href="cv_typology.html">cv_typology()</a></code>
+
+        </dt>
+        <dd>CV typology reference table</dd>
+
+        <dt>
+
+          <code><a href="cv_lookup.html">cv_lookup()</a></code>
+
+        </dt>
+        <dd>Read a CV value from the typology table</dd>
+
+        <dt>
+
+          <code><a href="cv_from_bdforet.html">cv_from_bdforet()</a></code>
+
+        </dt>
+        <dd>Compute an area-weighted CV from a BD Forêt v2 coverage</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="terrain-qgis-qfield-et-donnees-de-placettes">Terrain : QGIS, QField et donnees de placettes<a class="anchor" aria-label="anchor" href="#terrain-qgis-qfield-et-donnees-de-placettes"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="field_schema.html">field_schema</a></code>
+
+        </dt>
+        <dd>Field Data Schema for QField Integration</dd>
+
+        <dt>
+
+          <code><a href="get_placette_schema.html">get_placette_schema()</a></code>
+
+        </dt>
+        <dd>Get the placette layer schema</dd>
+
+        <dt>
+
+          <code><a href="get_arbre_schema.html">get_arbre_schema()</a></code>
+
+        </dt>
+        <dd>Get the arbre layer schema</dd>
+
+        <dt>
+
+          <code><a href="qgis_export.html">qgis_export</a></code>
+
+        </dt>
+        <dd>QGIS Project Export</dd>
+
+        <dt>
+
+          <code><a href="create_qgis_project.html">create_qgis_project()</a></code> <code><a href="create_qgis_project.html">create_qfield_project()</a></code>
+
+        </dt>
+        <dd>Create a QGIS project from a sampling plan</dd>
+
+        <dt>
+
+          <code><a href="qgis_import.html">qgis_import</a></code>
+
+        </dt>
+        <dd>QGIS Project Import and Aggregation</dd>
+
+        <dt>
+
+          <code><a href="import_qgis_gpkg.html">import_qgis_gpkg()</a></code> <code><a href="import_qgis_gpkg.html">import_qfield_gpkg()</a></code>
+
+        </dt>
+        <dd>Read placettes + arbres layers from a field-returned GPKG</dd>
+
+        <dt>
+
+          <code><a href="validate_field_data.html">validate_field_data()</a></code>
+
+        </dt>
+        <dd>Validate field data against placette + arbre schemas</dd>
+
+        <dt>
+
+          <code><a href="tag_field_data_sources.html">tag_field_data_sources()</a></code>
+
+        </dt>
+        <dd>Tag an sf object with field-data NDP attributes</dd>
+
+        <dt>
+
+          <code><a href="attach_field_data_to_units.html">attach_field_data_to_units()</a></code>
+
+        </dt>
+        <dd>Attach per-plot field aggregates to a units sf</dd>
+
+        <dt>
+
+          <code><a href="aggregate_plot_metrics.html">aggregate_plot_metrics()</a></code>
+
+        </dt>
+        <dd>Compute per-plot aggregates from field data</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="series-sentinel-et-zones-de-monitoring">Series Sentinel-2 et zones de monitoring<a class="anchor" aria-label="anchor" href="#series-sentinel-et-zones-de-monitoring"></a></h3>
+      <div class="section-desc"><p>Ingestion des scenes, series par pixel, zones et caches de suivi</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="monitoring_ingest.html">monitoring_ingest</a></code>
+
+        </dt>
+        <dd>Sentinel-2 Time Series Ingestion (E6 monitoring)</dd>
+
+        <dt>
+
+          <code><a href="ingest_sentinel2_timeseries.html">ingest_sentinel2_timeseries()</a></code>
+
+        </dt>
+        <dd>Ingest a Sentinel-2 time series for the plots of a monitoring zone</dd>
+
+        <dt>
+
+          <code><a href="build_ndvi_season_composite.html">build_ndvi_season_composite()</a></code>
+
+        </dt>
+        <dd>Season NDVI composite from cached Sentinel-2 scenes</dd>
+
+        <dt>
+
+          <code><a href="build_index_stack.html">build_index_stack()</a></code>
+
+        </dt>
+        <dd>Build a multi-temporal NDVI or NBR stack from cached Sentinel-2 bands</dd>
+
+        <dt>
+
+          <code><a href="read_s2_band_raster.html">read_s2_band_raster()</a></code>
+
+        </dt>
+        <dd>Read a single cached Sentinel-2 band as a SpatRaster</dd>
+
+        <dt>
+
+          <code><a href="read_s2_band_stack.html">read_s2_band_stack()</a></code>
+
+        </dt>
+        <dd>Read a multi-temporal stack for one Sentinel-2 band</dd>
+
+        <dt>
+
+          <code><a href="extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code>
+
+        </dt>
+        <dd>Extract a per-pixel NDVI / NBR time series at one geographic point</dd>
+
+        <dt>
+
+          <code><a href="smooth_pixel_series.html">smooth_pixel_series()</a></code>
+
+        </dt>
+        <dd>Robustly smooth a per-pixel spectral series (spec 026)</dd>
+
+        <dt>
+
+          <code><a href="create_monitoring_zone.html">create_monitoring_zone()</a></code>
+
+        </dt>
+        <dd>Create a monitoring zone (geometry only, no placettes)</dd>
+
+        <dt>
+
+          <code><a href="register_monitoring_zone.html">register_monitoring_zone()</a></code>
+
+        </dt>
+        <dd>Register a monitoring zone and its plots in the database</dd>
+
+        <dt>
+
+          <code><a href="build_project_monitoring_zones.html">build_project_monitoring_zones()</a></code>
+
+        </dt>
+        <dd>Build a project's monitoring zones from UGF x BD Forêt v2 strata</dd>
+
+        <dt>
+
+          <code><a href="find_zone_by_project.html">find_zone_by_project()</a></code>
+
+        </dt>
+        <dd>Find the monitoring zone bound to a project UUID</dd>
+
+        <dt>
+
+          <code><a href="find_zones_by_project.html">find_zones_by_project()</a></code>
+
+        </dt>
+        <dd>List the monitoring zones bound to a project UUID</dd>
+
+        <dt>
+
+          <code><a href="prune_orphan_zone_caches.html">prune_orphan_zone_caches()</a></code>
+
+        </dt>
+        <dd>Remove cache directories of monitoring zones that no longer exist</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="base-de-donnees-et-verrous-de-projet">Base de donnees et verrous de projet<a class="anchor" aria-label="anchor" href="#base-de-donnees-et-verrous-de-projet"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="db.html">db</a></code>
+
+        </dt>
+        <dd>Database Connection and Migration Helpers (E6 monitoring)</dd>
+
+        <dt>
+
+          <code><a href="db_connect.html">db_connect()</a></code>
+
+        </dt>
+        <dd>Connect to the monitoring database</dd>
+
+        <dt>
+
+          <code><a href="db_disconnect.html">db_disconnect()</a></code>
+
+        </dt>
+        <dd>Disconnect from the monitoring database</dd>
+
+        <dt>
+
+          <code><a href="db_migrate.html">db_migrate()</a></code>
+
+        </dt>
+        <dd>Apply pending SQL migrations</dd>
+
+        <dt>
+
+          <code><a href="project_lock_acquire.html">project_lock_acquire()</a></code>
+
+        </dt>
+        <dd>Acquire the edit lock on a project</dd>
+
+        <dt>
+
+          <code><a href="project_lock_heartbeat.html">project_lock_heartbeat()</a></code>
+
+        </dt>
+        <dd>Refresh the heartbeat on a held project lock</dd>
+
+        <dt>
+
+          <code><a href="project_lock_release.html">project_lock_release()</a></code>
+
+        </dt>
+        <dd>Release a project lock</dd>
+
+        <dt>
+
+          <code><a href="project_lock_status.html">project_lock_status()</a></code>
+
+        </dt>
+        <dd>Inspect the lock state of a project</dd>
+      </dl></div><div class="section level2">
+      <h2 id="api-experimentale">API experimentale<a class="anchor" aria-label="anchor" href="#api-experimentale"></a></h2>
+
+      <div class="section-desc"><p>Peut changer a toute version, sans depreciation (spec 057 §4.3) : RAG, biophysique Sentinel-2, suivi sanitaire FORDEAD / RECONFORT et sa validation terrain, regeneration.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+      <h3 id="corpus-de-connaissances-et-rag">Corpus de connaissances et RAG<a class="anchor" aria-label="anchor" href="#corpus-de-connaissances-et-rag"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="rag.html">rag</a></code>
+
+        </dt>
+        <dd>RAG knowledge base for AI perspectives (E7 / spec 009)</dd>
+
+        <dt>
+
+          <code><a href="enable_rag.html">enable_rag()</a></code>
+
+        </dt>
+        <dd>Enable the RAG knowledge base schema (opt-in migration)</dd>
+
+        <dt>
+
+          <code><a href="embed_query.html">embed_query()</a></code>
+
+        </dt>
+        <dd>Embed a query string into a numeric vector</dd>
+
+        <dt>
+
+          <code><a href="ingest_knowledge_document.html">ingest_knowledge_document()</a></code>
+
+        </dt>
+        <dd>Ingest a document into the RAG knowledge base</dd>
+
+        <dt>
+
+          <code><a href="ingest_knowledge_reference.html">ingest_knowledge_reference()</a></code>
+
+        </dt>
+        <dd>Ingest a reference-only document into the RAG knowledge base</dd>
+
+        <dt>
+
+          <code><a href="retrieve_knowledge.html">retrieve_knowledge()</a></code>
+
+        </dt>
+        <dd>Retrieve the most relevant knowledge chunks for a query</dd>
+
+        <dt>
+
+          <code><a href="list_knowledge_documents.html">list_knowledge_documents()</a></code>
+
+        </dt>
+        <dd>List the documents in the RAG knowledge base</dd>
+
+        <dt>
+
+          <code><a href="delete_knowledge_document.html">delete_knowledge_document()</a></code>
+
+        </dt>
+        <dd>Delete a document and its chunks from the knowledge base</dd>
+
+        <dt>
+
+          <code><a href="format_citations.html">format_citations()</a></code>
+
+        </dt>
+        <dd>Format retrieved chunks as a citation block</dd>
+
+        <dt>
+
+          <code><a href="knowledge-corpus.html">knowledge-corpus</a></code>
+
+        </dt>
+        <dd>Knowledge-corpus manifest and ingestion orchestration (spec 009.2)</dd>
+
+        <dt>
+
+          <code><a href="build_knowledge_corpus.html">build_knowledge_corpus()</a></code>
+
+        </dt>
+        <dd>Build (or grow) the RAG knowledge base from the manifest</dd>
+
+        <dt>
+
+          <code><a href="knowledge_manifest_path.html">knowledge_manifest_path()</a></code>
+
+        </dt>
+        <dd>Resolve the path to the knowledge-corpus manifest</dd>
+
+        <dt>
+
+          <code><a href="knowledge_manifest_vocab.html">knowledge_manifest_vocab()</a></code>
+
+        </dt>
+        <dd>Controlled vocabularies for the knowledge-corpus manifest</dd>
+
+        <dt>
+
+          <code><a href="read_knowledge_manifest.html">read_knowledge_manifest()</a></code>
+
+        </dt>
+        <dd>Read the knowledge-corpus manifest</dd>
+
+        <dt>
+
+          <code><a href="write_knowledge_manifest.html">write_knowledge_manifest()</a></code>
+
+        </dt>
+        <dd>Write the knowledge-corpus manifest</dd>
+
+        <dt>
+
+          <code><a href="reset_knowledge_manifest.html">reset_knowledge_manifest()</a></code>
+
+        </dt>
+        <dd>Reset the writable knowledge manifest to the packaged corpus</dd>
+
+        <dt>
+
+          <code><a href="validate_knowledge_manifest.html">validate_knowledge_manifest()</a></code>
+
+        </dt>
+        <dd>Validate the knowledge-corpus manifest</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="variables-biophysiques-sentinel-spec-">Variables biophysiques Sentinel-2 (spec 043)<a class="anchor" aria-label="anchor" href="#variables-biophysiques-sentinel-spec-"></a></h3>
+      <div class="section-desc"><p>Gouvernance de l’augmentation biophysique (LAI/fAPAR/FCOVER/CCC) dans le systeme NDP ; production amont dans le package biophysnemeton</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="biophys_gating.html">biophys_gating()</a></code>
+
+        </dt>
+        <dd>Gate the Sentinel-2 biophysical augmentation flag, per unit</dd>
+
+        <dt>
+
+          <code><a href="biophys_gating_thresholds.html">biophys_gating_thresholds()</a></code>
+
+        </dt>
+        <dd>Default gating thresholds for the Sentinel-2 biophysical augmentation</dd>
+
+        <dt>
+
+          <code><a href="lai_sentinel2.html">lai_sentinel2()</a></code>
+
+        </dt>
+        <dd>LAI from Sentinel-2 via PROSAIL inversion — NDP-0 canopy fallback (spec 033)</dd>
+
+        <dt>
+
+          <code><a href="biophysique_sentinel2.html">biophysique_sentinel2()</a></code>
+
+        </dt>
+        <dd>Biophysical variable from Sentinel-2 via PROSAIL inversion (spec 042)</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="suivi-sanitaire-resineux-fordead-et-alertes-fast-spec-">Suivi sanitaire resineux — FORDEAD et alertes FAST (spec 008)<a class="anchor" aria-label="anchor" href="#suivi-sanitaire-resineux-fordead-et-alertes-fast-spec-"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="fordead_pipeline.html">fordead_pipeline</a></code>
+
+        </dt>
+        <dd>FORDEAD Dieback Detection Pipeline (E6.c.1, spec 008)</dd>
+
+        <dt>
+
+          <code><a href="run_fordead_dieback.html">run_fordead_dieback()</a></code>
+
+        </dt>
+        <dd>Run the FORDEAD dieback detection pipeline on a monitoring zone</dd>
+
+        <dt>
+
+          <code><a href="fordead_python.html">fordead_python</a></code>
+
+        </dt>
+        <dd>FORDEAD Python Environment Helpers (E6.c.1, spec 008)</dd>
+
+        <dt>
+
+          <code><a href="fordead_postprocess.html">fordead_postprocess</a></code>
+
+        </dt>
+        <dd>FORDEAD Post-Processing: Rasters to Alert Clusters (E6.c.2, spec 008)</dd>
+
+        <dt>
+
+          <code><a href="classify_disturbance.html">classify_disturbance()</a></code>
+
+        </dt>
+        <dd>Tag each alert with the disturbance type it most likely reflects (G2)</dd>
+
+        <dt>
+
+          <code><a href="list_alerts.html">list_alerts()</a></code>
+
+        </dt>
+        <dd>List alerts of a zone with G1 default filtering</dd>
+
+        <dt>
+
+          <code><a href="FORDEAD_CLASSES.html">FORDEAD_CLASSES</a></code>
+
+        </dt>
+        <dd>Canonical ordered FORDEAD anomaly classes</dd>
+
+        <dt>
+
+          <code><a href="FORDEAD_CONFIDENCE_WEIGHTS.html">FORDEAD_CONFIDENCE_WEIGHTS</a></code>
+
+        </dt>
+        <dd>Confidence weights from the ONF/DSF FORDEAD validation report</dd>
+
+        <dt>
+
+          <code><a href="fordead_alert_mask.html">fordead_alert_mask()</a></code>
+
+        </dt>
+        <dd>Extract an alert mask from a categorical 0-4 raster (spec 014 A1)</dd>
+
+        <dt>
+
+          <code><a href="read_fordead_dieback_mask.html">read_fordead_dieback_mask()</a></code>
+
+        </dt>
+        <dd>Read the FORDEAD dieback classified raster for a zone</dd>
+
+        <dt>
+
+          <code><a href="read_fordead_layer.html">read_fordead_layer()</a></code>
+
+        </dt>
+        <dd>Read an auxiliary FORDEAD diagnostic raster (model bundle)</dd>
+
+        <dt>
+
+          <code><a href="fordead_pixel_series.html">fordead_pixel_series</a></code>
+
+        </dt>
+        <dd>FORDEAD pixel CRSWIR diagnostic (spec 008 section 14.4, L2)</dd>
+
+        <dt>
+
+          <code><a href="read_fordead_pixel_series.html">read_fordead_pixel_series()</a></code>
+
+        </dt>
+        <dd>Read the FORDEAD CRSWIR pixel diagnostic series</dd>
+
+        <dt>
+
+          <code><a href="FORDEAD_VALIDITY_DEPARTMENTS.html">FORDEAD_VALIDITY_DEPARTMENTS</a></code>
+
+        </dt>
+        <dd>Department codes covered by the FORDEAD calibration validity zone</dd>
+
+        <dt>
+
+          <code><a href="FORDEAD_VALIDITY_SPECIES.html">FORDEAD_VALIDITY_SPECIES</a></code>
+
+        </dt>
+        <dd>Conifer species considered valid by the FORDEAD calibration</dd>
+
+        <dt>
+
+          <code><a href="load_fordead_validity_zones.html">load_fordead_validity_zones()</a></code>
+
+        </dt>
+        <dd>Load the FORDEAD validity zones layer</dd>
+
+        <dt>
+
+          <code><a href="check_fordead_validity.html">check_fordead_validity()</a></code>
+
+        </dt>
+        <dd>Check whether an AOI lies within the FORDEAD calibration domain</dd>
+
+        <dt>
+
+          <code><a href="r5_applicabilite.html">r5_applicabilite()</a></code>
+
+        </dt>
+        <dd>Can R5 dieback be computed here, and by which method?</dd>
+
+        <dt>
+
+          <code><a href="compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code>
+
+        </dt>
+        <dd>Compute and persist a FAST alert mask on the 0-4 categorical scale</dd>
+
+        <dt>
+
+          <code><a href="read_fast_alert_mask.html">read_fast_alert_mask()</a></code>
+
+        </dt>
+        <dd>Read the most recent FAST alert mask for a monitoring zone</dd>
+
+        <dt>
+
+          <code><a href="read_fast_alert_raster.html">read_fast_alert_raster()</a></code>
+
+        </dt>
+        <dd>FAST alert raster at native S2 pixel resolution (spec 013)</dd>
+
+        <dt>
+
+          <code><a href="extract_pixel_trend.html">extract_pixel_trend()</a></code>
+
+        </dt>
+        <dd>Per-pixel trend diagnostic at a point (composites + Theil-Sen / MK)</dd>
+
+        <dt>
+
+          <code><a href="extract_trend_series.html">extract_trend_series()</a></code>
+
+        </dt>
+        <dd>Zone-level trend trajectory (yearly composite series + Theil-Sen fit)</dd>
+
+        <dt>
+
+          <code><a href="prepare_pixel_dieback_series.html">prepare_pixel_dieback_series()</a></code>
+
+        </dt>
+        <dd>Prepare the derived series for the pixel-dieback plot (CRswir + CRre)</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="suivi-sanitaire-feuillus-reconfort-spec-">Suivi sanitaire feuillus — RECONFORT (spec 021)<a class="anchor" aria-label="anchor" href="#suivi-sanitaire-feuillus-reconfort-spec-"></a></h3>
+      <div class="section-desc"><p>Domaine de validite de la methode RECONFORT (dieback feuillus, Centre-Val de Loire). Garde-fou G3 : avertit, ne bloque pas.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="RECONFORT_VALIDITY_DEPARTMENTS.html">RECONFORT_VALIDITY_DEPARTMENTS</a></code>
+
+        </dt>
+        <dd>Department codes covered by the RECONFORT calibration validity zone</dd>
+
+        <dt>
+
+          <code><a href="RECONFORT_VALIDITY_SPECIES.html">RECONFORT_VALIDITY_SPECIES</a></code>
+
+        </dt>
+        <dd>Tree species considered valid by the RECONFORT calibration</dd>
+
+        <dt>
+
+          <code><a href="load_reconfort_validity_zones.html">load_reconfort_validity_zones()</a></code>
+
+        </dt>
+        <dd>Load the RECONFORT validity zones layer</dd>
+
+        <dt>
+
+          <code><a href="check_reconfort_validity.html">check_reconfort_validity()</a></code>
+
+        </dt>
+        <dd>Check whether an AOI lies within the RECONFORT calibration domain</dd>
+
+        <dt>
+
+          <code><a href="run_reconfort_dieback.html">run_reconfort_dieback()</a></code>
+
+        </dt>
+        <dd>Run the RECONFORT broadleaf-dieback map production end-to-end</dd>
+
+        <dt>
+
+          <code><a href="RECONFORT_CLASSES.html">RECONFORT_CLASSES</a></code>
+
+        </dt>
+        <dd>Canonical RECONFORT classes by target species</dd>
+
+        <dt>
+
+          <code><a href="RECONFORT_ALERT_CLASSES.html">RECONFORT_ALERT_CLASSES</a></code>
+
+        </dt>
+        <dd>Default trustworthy RECONFORT classes for garde-fou G1</dd>
+
+        <dt>
+
+          <code><a href="RECONFORT_CONFIDENCE_WEIGHTS.html">RECONFORT_CONFIDENCE_WEIGHTS</a></code>
+
+        </dt>
+        <dd>Provisional RECONFORT confidence weights (garde-fou G1)</dd>
+
+        <dt>
+
+          <code><a href="read_reconfort_pixel_series.html">read_reconfort_pixel_series()</a></code>
+
+        </dt>
+        <dd>Read the RECONFORT CRswir/CRre pixel diagnostic series</dd>
+
+        <dt>
+
+          <code><a href="read_reconfort_alert_mask.html">read_reconfort_alert_mask()</a></code>
+
+        </dt>
+        <dd>Read the RECONFORT broadleaf-classification raster for a zone</dd>
+
+        <dt>
+
+          <code><a href="read_reconfort_layer.html">read_reconfort_layer()</a></code>
+
+        </dt>
+        <dd>Read a RECONFORT output raster, masked to the UGF zone by default (L7)</dd>
+
+        <dt>
+
+          <code><a href="reconfort_cache_manifest.html">reconfort_cache_manifest()</a></code>
+
+        </dt>
+        <dd>Discover the persisted RECONFORT display layers from the cache (L6)</dd>
+
+        <dt>
+
+          <code><a href="reconfort_layer_manifest.html">reconfort_layer_manifest()</a></code>
+
+        </dt>
+        <dd>RECONFORT layer manifest: describe a run's displayable outputs (L6)</dd>
+
+        <dt>
+
+          <code><a href="reconfort_latest_complete_year.html">reconfort_latest_complete_year()</a></code>
+
+        </dt>
+        <dd>Most recent RECONFORT `s2_year` whose season is already complete</dd>
+
+        <dt>
+
+          <code><a href="reconfort_year_bounds.html">reconfort_year_bounds()</a></code>
+
+        </dt>
+        <dd>Bounds for a RECONFORT `s2_year` picker</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="validation-terrain-du-suivi-sanitaire">Validation terrain du suivi sanitaire<a class="anchor" aria-label="anchor" href="#validation-terrain-du-suivi-sanitaire"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="get_health_validation_schema.html">get_health_validation_schema()</a></code>
+
+        </dt>
+        <dd>QGIS form schema for the health-validation `placette` layer</dd>
+
+        <dt>
+
+          <code><a href="HEALTH_VALIDATION_CAUSES.html">HEALTH_VALIDATION_CAUSES</a></code>
+
+        </dt>
+        <dd>Free-form causes proposed in the QGIS form</dd>
+
+        <dt>
+
+          <code><a href="HEALTH_VALIDATION_CAUSES_FEUILLUS.html">HEALTH_VALIDATION_CAUSES_FEUILLUS</a></code>
+
+        </dt>
+        <dd>Free-form causes proposed in the <strong>broadleaf</strong> validation form</dd>
+
+        <dt>
+
+          <code><a href="HEALTH_VALIDATION_STADES.html">HEALTH_VALIDATION_STADES</a></code>
+
+        </dt>
+        <dd>DSF-aligned dieback stages used by the terrain validation form</dd>
+
+        <dt>
+
+          <code><a href="HEALTH_VALIDATION_STADES_FEUILLUS.html">HEALTH_VALIDATION_STADES_FEUILLUS</a></code>
+
+        </dt>
+        <dd>DSF DEPERIS broadleaf dieback stages (RECONFORT, spec 021 G4)</dd>
+
+        <dt>
+
+          <code><a href="ingest_health_validation.html">ingest_health_validation()</a></code>
+
+        </dt>
+        <dd>Ingest a health-validation GPKG and update `alert` rows</dd>
+
+        <dt>
+
+          <code><a href="generate_health_validation_plots.html">generate_health_validation_plots()</a></code>
+
+        </dt>
+        <dd>Draw a stratified sample of alerts to be validated in the field</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="regeneration-essences-bilan-hydrique-et-microclimat-spec-">Regeneration : essences, bilan hydrique et microclimat (spec 027)<a class="anchor" aria-label="anchor" href="#regeneration-essences-bilan-hydrique-et-microclimat-spec-"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="indice_priorite_regen.html">indice_priorite_regen()</a></code>
+
+        </dt>
+        <dd>Regeneration priority index (spec 027 L3)</dd>
+
+        <dt>
+
+          <code><a href="regen_species_choices.html">regen_species_choices()</a></code>
+
+        </dt>
+        <dd>Species choices for the reGénération target-species selector</dd>
+
+        <dt>
+
+          <code><a href="regeneration_tolerances.html">regeneration_tolerances()</a></code>
+
+        </dt>
+        <dd>Regeneration tolerance table (per species)</dd>
+
+        <dt>
+
+          <code><a href="european_species_tolerances.html">european_species_tolerances()</a></code>
+
+        </dt>
+        <dd>European tree-species regeneration tolerances</dd>
+
+        <dt>
+
+          <code><a href="regen_rank_species.html">regen_rank_species()</a></code>
+
+        </dt>
+        <dd>Rank the top-N regeneration species per management unit</dd>
+
+        <dt>
+
+          <code><a href="regen_sensibilite.html">regen_sensibilite()</a></code>
+
+        </dt>
+        <dd>Microclimate exposure per unit — microclimf engine (spec 027 L1)</dd>
+
+        <dt>
+
+          <code><a href="regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code>
+
+        </dt>
+        <dd>Soil water balance per unit — BILJOU engine (spec 027 L2)</dd>
+
+        <dt>
+
+          <code><a href="build_biljou_soil.html">build_biljou_soil()</a></code>
+
+        </dt>
+        <dd>Build the BILJOU soil object(s) for management units</dd>
+
+        <dt>
+
+          <code><a href="load_biljou_forcing.html">load_biljou_forcing()</a></code>
+
+        </dt>
+        <dd>Acquire the BILJOU daily meteorological forcing for an AOI</dd>
+
+        <dt>
+
+          <code><a href="awc_saxton_rawls.html">awc_saxton_rawls()</a></code>
+
+        </dt>
+        <dd>Available water capacity from soil texture — Saxton &amp; Rawls (2006)</dd>
+
+        <dt>
+
+          <code><a href="ewm_depuis_soilgrids.html">ewm_depuis_soilgrids()</a></code>
+
+        </dt>
+        <dd>Maximum extractable water (<code>ewm</code>) per unit, from SoilGrids</dd>
+
+        <dt>
+
+          <code><a href="pai_depuis_nuage.html">pai_depuis_nuage()</a></code>
+
+        </dt>
+        <dd>Plant Area Index from a LiDAR-HD point cloud (spec 027 L1)</dd>
+
+        <dt>
+
+          <code><a href="lai_max_depuis_pai.html">lai_max_depuis_pai()</a></code>
+
+        </dt>
+        <dd>Per-unit canopy <code>lai_max</code> from a LiDAR PAI raster (spec 035 D5)</dd>
+
+        <dt>
+
+          <code><a href="microclimate_detect_years.html">microclimate_detect_years()</a></code>
+
+        </dt>
+        <dd>Detect the average / heatwave reference years for R6 (spec 027 §6bis)</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="climat-estival-e-obs-et-descente-d-echelle-spec-">Climat estival E-OBS et descente d’echelle (spec 034, 036)<a class="anchor" aria-label="anchor" href="#climat-estival-e-obs-et-descente-d-echelle-spec-"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="tendances_estivales_eobs.html">tendances_estivales_eobs()</a></code>
+
+        </dt>
+        <dd>Summer E-OBS climate trends over the project area (spec 027 §6, branch A)</dd>
+
+        <dt>
+
+          <code><a href="eobs_downscale.html">eobs_downscale()</a></code>
+
+        </dt>
+        <dd>Downscale an E-OBS variable to a fine raster</dd>
+
+        <dt>
+
+          <code><a href="eobs_downscale_bivariate.html">eobs_downscale_bivariate()</a></code>
+
+        </dt>
+        <dd>Downscaled bivariate climate-trend map (T°max × precipitation)</dd>
+
+        <dt>
+
+          <code><a href="eobs_summer_series.html">eobs_summer_series()</a></code>
+
+        </dt>
+        <dd>Summer E-OBS series at a point (year -&gt; value)</dd>
+
+        <dt>
+
+          <code><a href="eobs_monthly_climatology.html">eobs_monthly_climatology()</a></code>
+
+        </dt>
+        <dd>Monthly E-OBS climatology at a point (month -&gt; value)</dd>
+
+        <dt>
+
+          <code><a href="eobs_trend_fit.html">eobs_trend_fit()</a></code>
+
+        </dt>
+        <dd>Linear trend of an E-OBS summer series (per decade)</dd>
+
+        <dt>
+
+          <code><a href="build_safran_stations.html">build_safran_stations()</a></code>
+
+        </dt>
+        <dd>Build the SAFRAN pseudo-station grid for the meteoland engine (spec P4)</dd>
+
+        <dt>
+
+          <code><a href="meteoland_daily_grid.html">meteoland_daily_grid()</a></code>
+
+        </dt>
+        <dd>Downscale a daily meteoland variable to a fine raster stack</dd>
+      </dl></div><div class="section level2">
+      <h2 id="documentation-interne">Documentation interne<a class="anchor" aria-label="anchor" href="#documentation-interne"></a></h2>
+
+      <div class="section-desc"><p>Pages de documentation du package et pages internes</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="nemeton-package.html">nemeton-package</a></code> <code><a href="nemeton-package.html">nemeton</a></code>
+
+        </dt>
+        <dd>nemeton: Systemic Forest Analysis Using the Nemeton Method</dd>
+
+        <dt>
 
           <code><a href="NDP_LEVELS.html">NDP_LEVELS</a></code>
 
@@ -1421,1468 +2744,11 @@
         </dt>
         <dd>Social &amp; Recreational Services Indicators (Family S)</dd>
       </dl></div><div class="section level2">
-      <h2 id="suivi-sanitaire-feuillus-reconfort-spec-">Suivi sanitaire feuillus — RECONFORT (spec 021)<a class="anchor" aria-label="anchor" href="#suivi-sanitaire-feuillus-reconfort-spec-"></a></h2>
+      <h2 id="application-shiny">Application Shiny<a class="anchor" aria-label="anchor" href="#application-shiny"></a></h2>
 
-      <div class="section-desc"><p>Domaine de validite de la methode RECONFORT (dieback feuillus, Centre-Val de Loire). Garde-fou G3 : avertit, ne bloque pas.</p></div>
+      <div class="section-desc"><p>L’application interactive est dans le package separe nemetonshiny. Installez-le avec remotes::install_github(“pobsteta/nemetonshiny”) puis lancez nemetonshiny::run_app(language = “fr”).</p></div>
 
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="RECONFORT_VALIDITY_DEPARTMENTS.html">RECONFORT_VALIDITY_DEPARTMENTS</a></code>
-
-        </dt>
-        <dd>Department codes covered by the RECONFORT calibration validity zone</dd>
-
-        <dt>
-
-          <code><a href="RECONFORT_VALIDITY_SPECIES.html">RECONFORT_VALIDITY_SPECIES</a></code>
-
-        </dt>
-        <dd>Tree species considered valid by the RECONFORT calibration</dd>
-
-        <dt>
-
-          <code><a href="load_reconfort_validity_zones.html">load_reconfort_validity_zones()</a></code>
-
-        </dt>
-        <dd>Load the RECONFORT validity zones layer</dd>
-
-        <dt>
-
-          <code><a href="check_reconfort_validity.html">check_reconfort_validity()</a></code>
-
-        </dt>
-        <dd>Check whether an AOI lies within the RECONFORT calibration domain</dd>
-
-        <dt>
-
-          <code><a href="RECONFORT_MODELS.html">RECONFORT_MODELS</a></code>
-
-        </dt>
-        <dd>RECONFORT Random-Forest model registry</dd>
-
-        <dt>
-
-          <code><a href="reconfort_model_info.html">reconfort_model_info()</a></code>
-
-        </dt>
-        <dd>Look up a RECONFORT model registry entry</dd>
-
-        <dt>
-
-          <code><a href="ensure_reconfort_model.html">ensure_reconfort_model()</a></code>
-
-        </dt>
-        <dd>Fetch (and cache) a RECONFORT Random-Forest model</dd>
-
-        <dt>
-
-          <code><a href="RECONFORT_BANDS.html">RECONFORT_BANDS</a></code>
-
-        </dt>
-        <dd>Sentinel-2 bands used by the RECONFORT indices</dd>
-
-        <dt>
-
-          <code><a href="reconfort_aoi_tiles.html">reconfort_aoi_tiles()</a></code>
-
-        </dt>
-        <dd>Sentinel-2 MGRS tile(s) covering an AOI</dd>
-
-        <dt>
-
-          <code><a href="reconfort_ingest_s2.html">reconfort_ingest_s2()</a></code>
-
-        </dt>
-        <dd>Acquire Sentinel-2 scenes for an AOI into the IOTA² layout</dd>
-
-        <dt>
-
-          <code><a href="RECONFORT_OSO_MASK.html">RECONFORT_OSO_MASK</a></code>
-
-        </dt>
-        <dd>RECONFORT deciduous (OSO 2021) binary mask registry entry</dd>
-
-        <dt>
-
-          <code><a href="ensure_reconfort_oso_mask.html">ensure_reconfort_oso_mask()</a></code>
-
-        </dt>
-        <dd>Fetch (and cache) the RECONFORT deciduous (OSO) binary mask</dd>
-
-        <dt>
-
-          <code><a href="run_reconfort_dieback.html">run_reconfort_dieback()</a></code>
-
-        </dt>
-        <dd>Run the RECONFORT broadleaf-dieback map production end-to-end</dd>
-
-        <dt>
-
-          <code><a href="RECONFORT_CLASSES.html">RECONFORT_CLASSES</a></code>
-
-        </dt>
-        <dd>Canonical RECONFORT classes by target species</dd>
-
-        <dt>
-
-          <code><a href="RECONFORT_ALERT_CLASSES.html">RECONFORT_ALERT_CLASSES</a></code>
-
-        </dt>
-        <dd>Default trustworthy RECONFORT classes for garde-fou G1</dd>
-
-        <dt>
-
-          <code><a href="RECONFORT_CONFIDENCE_WEIGHTS.html">RECONFORT_CONFIDENCE_WEIGHTS</a></code>
-
-        </dt>
-        <dd>Provisional RECONFORT confidence weights (garde-fou G1)</dd>
-
-        <dt>
-
-          <code><a href="read_reconfort_pixel_series.html">read_reconfort_pixel_series()</a></code>
-
-        </dt>
-        <dd>Read the RECONFORT CRswir/CRre pixel diagnostic series</dd>
-
-        <dt>
-
-          <code><a href="read_reconfort_alert_mask.html">read_reconfort_alert_mask()</a></code>
-
-        </dt>
-        <dd>Read the RECONFORT broadleaf-classification raster for a zone</dd>
-      </dl></div><div class="section level2">
-      <h2 id="suivi-sanitaire-monitoring-et-autres-fonctions">Suivi sanitaire, monitoring et autres fonctions<a class="anchor" aria-label="anchor" href="#suivi-sanitaire-monitoring-et-autres-fonctions"></a></h2>
-
-      <div class="section-desc"><p>Pipelines FORDEAD/FAST, zones de monitoring, validation terrain, corpus de connaissances, helpers CHM / echantillonnage et utilitaires.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="aggregate_plot_metrics.html">aggregate_plot_metrics()</a></code>
-
-        </dt>
-        <dd>Compute per-plot aggregates from field data</dd>
-
-        <dt>
-
-          <code><a href="attach_field_data_to_units.html">attach_field_data_to_units()</a></code>
-
-        </dt>
-        <dd>Attach per-plot field aggregates to a units sf</dd>
-
-        <dt>
-
-          <code><a href="bai_drift_factor.html">bai_drift_factor()</a></code>
-
-        </dt>
-        <dd>Species BAI drift factor (Charru 2017)</dd>
-
-        <dt>
-
-          <code><a href="bdforet_v2_mapping.html">bdforet_v2_mapping()</a></code>
-
-        </dt>
-        <dd>BD Forêt v2 -&gt; CV context mapping</dd>
-
-        <dt>
-
-          <code><a href="build_biljou_soil.html">build_biljou_soil()</a></code>
-
-        </dt>
-        <dd>Build the BILJOU soil object(s) for management units</dd>
-
-        <dt>
-
-          <code><a href="build_foret_ancienne_mask.html">build_foret_ancienne_mask()</a></code>
-
-        </dt>
-        <dd>Build an ancient-forest polygon layer for N2 continuity</dd>
-
-        <dt>
-
-          <code><a href="build_index_stack.html">build_index_stack()</a></code>
-
-        </dt>
-        <dd>Build a multi-temporal NDVI or NBR stack from cached Sentinel-2 bands</dd>
-
-        <dt>
-
-          <code><a href="build_ndvi_season_composite.html">build_ndvi_season_composite()</a></code>
-
-        </dt>
-        <dd>Season NDVI composite from cached Sentinel-2 scenes</dd>
-
-        <dt>
-
-          <code><a href="build_knowledge_corpus.html">build_knowledge_corpus()</a></code>
-
-        </dt>
-        <dd>Build (or grow) the RAG knowledge base from the manifest</dd>
-
-        <dt>
-
-          <code><a href="build_project_monitoring_zones.html">build_project_monitoring_zones()</a></code>
-
-        </dt>
-        <dd>Build a project's monitoring zones from UGF x BD Forêt v2 strata</dd>
-
-        <dt>
-
-          <code><a href="cec_to_fertility_score.html">cec_to_fertility_score()</a></code>
-
-        </dt>
-        <dd>Map SoilGrids CEC values to a 0-100 fertility score</dd>
-
-        <dt>
-
-          <code><a href="charru_bai_drift_table.html">charru_bai_drift_table()</a></code>
-
-        </dt>
-        <dd>Charru 2017 BAI drift lookup table</dd>
-
-        <dt>
-
-          <code><a href="charru_selfthinning_table.html">charru_selfthinning_table()</a></code>
-
-        </dt>
-        <dd>Charru 2012 self-thinning coefficients table</dd>
-
-        <dt>
-
-          <code><a href="check_fordead_validity.html">check_fordead_validity()</a></code>
-
-        </dt>
-        <dd>Check whether an AOI lies within the FORDEAD calibration domain</dd>
-
-        <dt>
-
-          <code><a href="r5_applicabilite.html">r5_applicabilite()</a></code>
-
-        </dt>
-        <dd>Can R5 dieback be computed here, and by which method?</dd>
-
-        <dt>
-
-          <code><a href="a5_applicabilite.html">a5_applicabilite()</a></code>
-
-        </dt>
-        <dd>Can A5 urban cooling be computed here?</dd>
-
-        <dt>
-
-          <code><a href="classify_disturbance.html">classify_disturbance()</a></code>
-
-        </dt>
-        <dd>Tag each alert with the disturbance type it most likely reflects (G2)</dd>
-
-        <dt>
-
-          <code><a href="compute_dtm_chm_from_laz.html">compute_dtm_chm_from_laz()</a></code>
-
-        </dt>
-        <dd>Derive DTM and CHM rasters from IGN LiDAR HD point clouds</dd>
-
-        <dt>
-
-          <code><a href="compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code>
-
-        </dt>
-        <dd>Compute and persist a FAST alert mask on the 0-4 categorical scale</dd>
-
-        <dt>
-
-          <code><a href="compute_sample_size.html">compute_sample_size()</a></code>
-
-        </dt>
-        <dd>Sample size for a target relative error and a given CV</dd>
-
-        <dt>
-
-          <code><a href="create_monitoring_zone.html">create_monitoring_zone()</a></code>
-
-        </dt>
-        <dd>Create a monitoring zone (geometry only, no placettes)</dd>
-
-        <dt>
-
-          <code><a href="create_qgis_project.html">create_qgis_project()</a></code> <code><a href="create_qgis_project.html">create_qfield_project()</a></code>
-
-        </dt>
-        <dd>Create a QGIS project from a sampling plan</dd>
-
-        <dt>
-
-          <code><a href="create_sampling_plan.html">create_sampling_plan()</a></code>
-
-        </dt>
-        <dd>Generate a forest sampling plan (GRTS with graceful fallback)</dd>
-
-        <dt>
-
-          <code><a href="create_trend_sanitary_plan.html">create_trend_sanitary_plan()</a></code>
-
-        </dt>
-        <dd>Create a SANITARY plot plan on the multi-year <code>trend</code> (spec 025)</dd>
-
-        <dt>
-
-          <code><a href="create_validation_sampling_plan.html">create_validation_sampling_plan()</a></code>
-
-        </dt>
-        <dd>Create a validation sampling plan over an alert raster (spec 014 A3)</dd>
-
-        <dt>
-
-          <code><a href="croiser_parcelles_onf.html">croiser_parcelles_onf()</a></code>
-
-        </dt>
-        <dd>Tenements met by each ONF forest parcel (UGF)</dd>
-
-        <dt>
-
-          <code><a href="cv_from_bdforet.html">cv_from_bdforet()</a></code>
-
-        </dt>
-        <dd>Compute an area-weighted CV from a BD Forêt v2 coverage</dd>
-
-        <dt>
-
-          <code><a href="cv_lookup.html">cv_lookup()</a></code>
-
-        </dt>
-        <dd>Read a CV value from the typology table</dd>
-
-        <dt>
-
-          <code><a href="cv_typology.html">cv_typology()</a></code>
-
-        </dt>
-        <dd>CV typology reference table</dd>
-
-        <dt>
-
-          <code><a href="db.html">db</a></code>
-
-        </dt>
-        <dd>Database Connection and Migration Helpers (E6 monitoring)</dd>
-
-        <dt>
-
-          <code><a href="db_connect.html">db_connect()</a></code>
-
-        </dt>
-        <dd>Connect to the monitoring database</dd>
-
-        <dt>
-
-          <code><a href="db_disconnect.html">db_disconnect()</a></code>
-
-        </dt>
-        <dd>Disconnect from the monitoring database</dd>
-
-        <dt>
-
-          <code><a href="db_migrate.html">db_migrate()</a></code>
-
-        </dt>
-        <dd>Apply pending SQL migrations</dd>
-
-        <dt>
-
-          <code><a href="project_lock_acquire.html">project_lock_acquire()</a></code>
-
-        </dt>
-        <dd>Acquire the edit lock on a project</dd>
-
-        <dt>
-
-          <code><a href="project_lock_heartbeat.html">project_lock_heartbeat()</a></code>
-
-        </dt>
-        <dd>Refresh the heartbeat on a held project lock</dd>
-
-        <dt>
-
-          <code><a href="project_lock_release.html">project_lock_release()</a></code>
-
-        </dt>
-        <dd>Release a project lock</dd>
-
-        <dt>
-
-          <code><a href="project_lock_status.html">project_lock_status()</a></code>
-
-        </dt>
-        <dd>Inspect the lock state of a project</dd>
-
-        <dt>
-
-          <code><a href="delete_knowledge_document.html">delete_knowledge_document()</a></code>
-
-        </dt>
-        <dd>Delete a document and its chunks from the knowledge base</dd>
-
-        <dt>
-
-          <code><a href="diagnose_s2_cache.html">diagnose_s2_cache()</a></code>
-
-        </dt>
-        <dd>Diagnose an S2 band cache directory</dd>
-
-        <dt>
-
-          <code><a href="embed_query.html">embed_query()</a></code>
-
-        </dt>
-        <dd>Embed a query string into a numeric vector</dd>
-
-        <dt>
-
-          <code><a href="enable_rag.html">enable_rag()</a></code>
-
-        </dt>
-        <dd>Enable the RAG knowledge base schema (opt-in migration)</dd>
-
-        <dt>
-
-          <code><a href="enrich_parcels_bdforet.html">enrich_parcels_bdforet()</a></code>
-
-        </dt>
-        <dd>Enrich Parcels with BD Forêt V2 Data</dd>
-
-        <dt>
-
-          <code><a href="estimate_dq_from_hdom.html">estimate_dq_from_hdom()</a></code>
-
-        </dt>
-        <dd>Estimate a quadratic mean diameter from dominant height</dd>
-
-        <dt>
-
-          <code><a href="estimate_synthetic_inventory.html">estimate_synthetic_inventory()</a></code>
-
-        </dt>
-        <dd>Estimate a synthetic stand inventory per unit</dd>
-
-        <dt>
-
-          <code><a href="extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code>
-
-        </dt>
-        <dd>Extract a per-pixel NDVI / NBR time series at one geographic point</dd>
-
-        <dt>
-
-          <code><a href="extract_pixel_trend.html">extract_pixel_trend()</a></code>
-
-        </dt>
-        <dd>Per-pixel trend diagnostic at a point (composites + Theil-Sen / MK)</dd>
-
-        <dt>
-
-          <code><a href="extract_trend_series.html">extract_trend_series()</a></code>
-
-        </dt>
-        <dd>Zone-level trend trajectory (yearly composite series + Theil-Sen fit)</dd>
-
-        <dt>
-
-          <code><a href="field_schema.html">field_schema</a></code>
-
-        </dt>
-        <dd>Field Data Schema for QField Integration</dd>
-
-        <dt>
-
-          <code><a href="find_zone_by_project.html">find_zone_by_project()</a></code>
-
-        </dt>
-        <dd>Find the monitoring zone bound to a project UUID</dd>
-
-        <dt>
-
-          <code><a href="find_zones_by_project.html">find_zones_by_project()</a></code>
-
-        </dt>
-        <dd>List the monitoring zones bound to a project UUID</dd>
-
-        <dt>
-
-          <code><a href="fordead_alert_mask.html">fordead_alert_mask()</a></code>
-
-        </dt>
-        <dd>Extract an alert mask from a categorical 0-4 raster (spec 014 A1)</dd>
-
-        <dt>
-
-          <code><a href="FORDEAD_BANDS.html">FORDEAD_BANDS</a></code>
-
-        </dt>
-        <dd>Sentinel-2 bands required by FORDEAD 2.x</dd>
-
-        <dt>
-
-          <code><a href="FORDEAD_CLASSES.html">FORDEAD_CLASSES</a></code>
-
-        </dt>
-        <dd>Canonical ordered FORDEAD anomaly classes</dd>
-
-        <dt>
-
-          <code><a href="FORDEAD_CONFIDENCE_WEIGHTS.html">FORDEAD_CONFIDENCE_WEIGHTS</a></code>
-
-        </dt>
-        <dd>Confidence weights from the ONF/DSF FORDEAD validation report</dd>
-
-        <dt>
-
-          <code><a href="fordead_pipeline.html">fordead_pipeline</a></code>
-
-        </dt>
-        <dd>FORDEAD Dieback Detection Pipeline (E6.c.1, spec 008)</dd>
-
-        <dt>
-
-          <code><a href="fordead_pixel_series.html">fordead_pixel_series</a></code>
-
-        </dt>
-        <dd>FORDEAD pixel CRSWIR diagnostic (spec 008 section 14.4, L2)</dd>
-
-        <dt>
-
-          <code><a href="fordead_postprocess.html">fordead_postprocess</a></code>
-
-        </dt>
-        <dd>FORDEAD Post-Processing: Rasters to Alert Clusters (E6.c.2, spec 008)</dd>
-
-        <dt>
-
-          <code><a href="fordead_python.html">fordead_python</a></code>
-
-        </dt>
-        <dd>FORDEAD Python Environment Helpers (E6.c.1, spec 008)</dd>
-
-        <dt>
-
-          <code><a href="FORDEAD_VALIDITY_DEPARTMENTS.html">FORDEAD_VALIDITY_DEPARTMENTS</a></code>
-
-        </dt>
-        <dd>Department codes covered by the FORDEAD calibration validity zone</dd>
-
-        <dt>
-
-          <code><a href="FORDEAD_VALIDITY_SPECIES.html">FORDEAD_VALIDITY_SPECIES</a></code>
-
-        </dt>
-        <dd>Conifer species considered valid by the FORDEAD calibration</dd>
-
-        <dt>
-
-          <code><a href="format_citations.html">format_citations()</a></code>
-
-        </dt>
-        <dd>Format retrieved chunks as a citation block</dd>
-
-        <dt>
-
-          <code><a href="format_duration.html">format_duration()</a></code>
-
-        </dt>
-        <dd>Format a duration as hours, then minutes, then seconds</dd>
-
-        <dt>
-
-          <code><a href="generate_health_validation_plots.html">generate_health_validation_plots()</a></code>
-
-        </dt>
-        <dd>Draw a stratified sample of alerts to be validated in the field</dd>
-
-        <dt>
-
-          <code><a href="get_arbre_schema.html">get_arbre_schema()</a></code>
-
-        </dt>
-        <dd>Get the arbre layer schema</dd>
-
-        <dt>
-
-          <code><a href="get_datasource_product.html">get_datasource_product()</a></code>
-
-        </dt>
-        <dd>Get a sub-product of a multi-product datasource</dd>
-
-        <dt>
-
-          <code><a href="get_health_validation_schema.html">get_health_validation_schema()</a></code>
-
-        </dt>
-        <dd>QGIS form schema for the health-validation `placette` layer</dd>
-
-        <dt>
-
-          <code><a href="get_ndp_augmented.html">get_ndp_augmented()</a></code>
-
-        </dt>
-        <dd>Extract augmentation flags from a detect_ndp() result</dd>
-
-        <dt>
-
-          <code><a href="get_placette_schema.html">get_placette_schema()</a></code>
-
-        </dt>
-        <dd>Get the placette layer schema</dd>
-
-        <dt>
-
-          <code><a href="h_to_dq_params.html">h_to_dq_params()</a></code>
-
-        </dt>
-        <dd>H_dom -&gt; D_g calibration table (IFN / Charru)</dd>
-
-        <dt>
-
-          <code><a href="HEALTH_VALIDATION_CAUSES.html">HEALTH_VALIDATION_CAUSES</a></code>
-
-        </dt>
-        <dd>Free-form causes proposed in the QGIS form</dd>
-
-        <dt>
-
-          <code><a href="HEALTH_VALIDATION_CAUSES_FEUILLUS.html">HEALTH_VALIDATION_CAUSES_FEUILLUS</a></code>
-
-        </dt>
-        <dd>Free-form causes proposed in the <strong>broadleaf</strong> validation form</dd>
-
-        <dt>
-
-          <code><a href="HEALTH_VALIDATION_STADES.html">HEALTH_VALIDATION_STADES</a></code>
-
-        </dt>
-        <dd>DSF-aligned dieback stages used by the terrain validation form</dd>
-
-        <dt>
-
-          <code><a href="HEALTH_VALIDATION_STADES_FEUILLUS.html">HEALTH_VALIDATION_STADES_FEUILLUS</a></code>
-
-        </dt>
-        <dd>DSF DEPERIS broadleaf dieback stages (RECONFORT, spec 021 G4)</dd>
-
-        <dt>
-
-          <code><a href="import_qgis_gpkg.html">import_qgis_gpkg()</a></code> <code><a href="import_qgis_gpkg.html">import_qfield_gpkg()</a></code>
-
-        </dt>
-        <dd>Read placettes + arbres layers from a field-returned GPKG</dd>
-
-        <dt>
-
-          <code><a href="indicateur_r5_deperissement.html">indicateur_r5_deperissement()</a></code>
-
-        </dt>
-        <dd>Compute the R5 dieback indicator (unified FORDEAD / RECONFORT)</dd>
-
-        <dt>
-
-          <code><a href="ingest_health_validation.html">ingest_health_validation()</a></code>
-
-        </dt>
-        <dd>Ingest a health-validation GPKG and update `alert` rows</dd>
-
-        <dt>
-
-          <code><a href="ingest_knowledge_document.html">ingest_knowledge_document()</a></code>
-
-        </dt>
-        <dd>Ingest a document into the RAG knowledge base</dd>
-
-        <dt>
-
-          <code><a href="ingest_knowledge_reference.html">ingest_knowledge_reference()</a></code>
-
-        </dt>
-        <dd>Ingest a reference-only document into the RAG knowledge base</dd>
-
-        <dt>
-
-          <code><a href="ingest_s2_raw_bands_to_cache.html">ingest_s2_raw_bands_to_cache()</a></code>
-
-        </dt>
-        <dd>Populate the Sentinel-2 COG cache with raw bands (no DB writes)</dd>
-
-        <dt>
-
-          <code><a href="ingest_sentinel2_timeseries.html">ingest_sentinel2_timeseries()</a></code>
-
-        </dt>
-        <dd>Ingest a Sentinel-2 time series for the plots of a monitoring zone</dd>
-
-        <dt>
-
-          <code><a href="knowledge_manifest_path.html">knowledge_manifest_path()</a></code>
-
-        </dt>
-        <dd>Resolve the path to the knowledge-corpus manifest</dd>
-
-        <dt>
-
-          <code><a href="knowledge_manifest_vocab.html">knowledge_manifest_vocab()</a></code>
-
-        </dt>
-        <dd>Controlled vocabularies for the knowledge-corpus manifest</dd>
-
-        <dt>
-
-          <code><a href="knowledge-corpus.html">knowledge-corpus</a></code>
-
-        </dt>
-        <dd>Knowledge-corpus manifest and ingestion orchestration (spec 009.2)</dd>
-
-        <dt>
-
-          <code><a href="list_alerts.html">list_alerts()</a></code>
-
-        </dt>
-        <dd>List alerts of a zone with G1 default filtering</dd>
-
-        <dt>
-
-          <code><a href="list_knowledge_documents.html">list_knowledge_documents()</a></code>
-
-        </dt>
-        <dd>List the documents in the RAG knowledge base</dd>
-
-        <dt>
-
-          <code><a href="load_biljou_forcing.html">load_biljou_forcing()</a></code>
-
-        </dt>
-        <dd>Acquire the BILJOU daily meteorological forcing for an AOI</dd>
-
-        <dt>
-
-          <code><a href="load_eobs_source.html">load_eobs_source()</a></code>
-
-        </dt>
-        <dd>Acquire E-OBS per-year summer fields (Tmax / precipitation) for an AOI</dd>
-
-        <dt>
-
-          <code><a href="load_fordead_validity_zones.html">load_fordead_validity_zones()</a></code>
-
-        </dt>
-        <dd>Load the FORDEAD validity zones layer</dd>
-
-        <dt>
-
-          <code><a href="load_foret_ancienne_source.html">load_foret_ancienne_source()</a></code>
-
-        </dt>
-        <dd>Acquire the IGN historical-forest (~1850 état-major) layer for an AOI</dd>
-
-        <dt>
-
-          <code><a href="load_onf_parcelles_source.html">load_onf_parcelles_source()</a></code>
-
-        </dt>
-        <dd>Acquire the ONF public-forest parcel layer for an AOI</dd>
-
-        <dt>
-
-          <code><a href="load_insee_population_source.html">load_insee_population_source()</a></code>
-
-        </dt>
-        <dd>French population grid (INSEE Filosofi)</dd>
-
-        <dt>
-
-          <code><a href="load_raster_source.html">load_raster_source()</a></code>
-
-        </dt>
-        <dd>Load a raster datasource as a SpatRaster</dd>
-
-        <dt>
-
-          <code><a href="load_theia_source.html">load_theia_source()</a></code>
-
-        </dt>
-        <dd>Load a THEIA datasource as a SpatRaster</dd>
-
-        <dt>
-
-          <code><a href="monitoring_ingest.html">monitoring_ingest</a></code>
-
-        </dt>
-        <dd>Sentinel-2 Time Series Ingestion (E6 monitoring)</dd>
-
-        <dt>
-
-          <code><a href="n_max_selfthinning.html">n_max_selfthinning()</a></code>
-
-        </dt>
-        <dd>Maximum stand density under self-thinning (Charru 2012)</dd>
-
-        <dt>
-
-          <code><a href="probe_ign_lidar_tile.html">probe_ign_lidar_tile()</a></code>
-
-        </dt>
-        <dd>Probe an IGN LiDAR HD tile URL to diagnose download failures</dd>
-
-        <dt>
-
-          <code><a href="probe_ign_lidar_tiles.html">probe_ign_lidar_tiles()</a></code>
-
-        </dt>
-        <dd>Batch-probe a vector of IGN LiDAR HD tile URLs</dd>
-
-        <dt>
-
-          <code><a href="prune_orphan_zone_caches.html">prune_orphan_zone_caches()</a></code>
-
-        </dt>
-        <dd>Remove cache directories of monitoring zones that no longer exist</dd>
-
-        <dt>
-
-          <code><a href="qgis_export.html">qgis_export</a></code>
-
-        </dt>
-        <dd>QGIS Project Export</dd>
-
-        <dt>
-
-          <code><a href="qgis_import.html">qgis_import</a></code>
-
-        </dt>
-        <dd>QGIS Project Import and Aggregation</dd>
-
-        <dt>
-
-          <code><a href="rag.html">rag</a></code>
-
-        </dt>
-        <dd>RAG knowledge base for AI perspectives (E7 / spec 009)</dd>
-
-        <dt>
-
-          <code><a href="read_fast_alert_mask.html">read_fast_alert_mask()</a></code>
-
-        </dt>
-        <dd>Read the most recent FAST alert mask for a monitoring zone</dd>
-
-        <dt>
-
-          <code><a href="read_fast_alert_raster.html">read_fast_alert_raster()</a></code>
-
-        </dt>
-        <dd>FAST alert raster at native S2 pixel resolution (spec 013)</dd>
-
-        <dt>
-
-          <code><a href="read_fast_alert_rasters.html">read_fast_alert_rasters()</a></code>
-
-        </dt>
-        <dd>Build the full FAST alert raster set (indices x modes)</dd>
-
-        <dt>
-
-          <code><a href="read_fordead_dieback_mask.html">read_fordead_dieback_mask()</a></code>
-
-        </dt>
-        <dd>Read the FORDEAD dieback classified raster for a zone</dd>
-
-        <dt>
-
-          <code><a href="read_fordead_layer.html">read_fordead_layer()</a></code>
-
-        </dt>
-        <dd>Read an auxiliary FORDEAD diagnostic raster (model bundle)</dd>
-
-        <dt>
-
-          <code><a href="read_fordead_pixel_series.html">read_fordead_pixel_series()</a></code>
-
-        </dt>
-        <dd>Read the FORDEAD CRSWIR pixel diagnostic series</dd>
-
-        <dt>
-
-          <code><a href="read_knowledge_manifest.html">read_knowledge_manifest()</a></code>
-
-        </dt>
-        <dd>Read the knowledge-corpus manifest</dd>
-
-        <dt>
-
-          <code><a href="read_s2_band_raster.html">read_s2_band_raster()</a></code>
-
-        </dt>
-        <dd>Read a single cached Sentinel-2 band as a SpatRaster</dd>
-
-        <dt>
-
-          <code><a href="read_s2_band_stack.html">read_s2_band_stack()</a></code>
-
-        </dt>
-        <dd>Read a multi-temporal stack for one Sentinel-2 band</dd>
-
-        <dt>
-
-          <code><a href="read_uts_fertility_table.html">read_uts_fertility_table()</a></code>
-
-        </dt>
-        <dd>Read the UTS → fertility crosswalk shipped with the package</dd>
-
-        <dt>
-
-          <code><a href="register_monitoring_zone.html">register_monitoring_zone()</a></code>
-
-        </dt>
-        <dd>Register a monitoring zone and its plots in the database</dd>
-
-        <dt>
-
-          <code><a href="reset_knowledge_manifest.html">reset_knowledge_manifest()</a></code>
-
-        </dt>
-        <dd>Reset the writable knowledge manifest to the packaged corpus</dd>
-
-        <dt>
-
-          <code><a href="resolve_project_layers.html">resolve_project_dem()</a></code> <code><a href="resolve_project_layers.html">resolve_project_chm()</a></code>
-
-        </dt>
-        <dd>Discover the best available DEM / CHM raster in a Nemeton project</dd>
-
-        <dt>
-
-          <code><a href="resolve_theia_assets.html">resolve_theia_assets()</a></code>
-
-        </dt>
-        <dd>Resolve the asset paths of a THEIA datasource</dd>
-
-        <dt>
-
-          <code><a href="retrieve_knowledge.html">retrieve_knowledge()</a></code>
-
-        </dt>
-        <dd>Retrieve the most relevant knowledge chunks for a query</dd>
-
-        <dt>
-
-          <code><a href="run_fordead_dieback.html">run_fordead_dieback()</a></code>
-
-        </dt>
-        <dd>Run the FORDEAD dieback detection pipeline on a monitoring zone</dd>
-
-        <dt>
-
-          <code><a href="run_memory_capped.html">run_memory_capped()</a></code>
-
-        </dt>
-        <dd>Run a heavy pipeline in a memory-capped child process</dd>
-
-        <dt>
-
-          <code><a href="sampling_plan.html">sampling_plan</a></code>
-
-        </dt>
-        <dd>Sampling Plan Generator (GRTS + stratification)</dd>
-
-        <dt>
-
-          <code><a href="schema_to_df.html">schema_to_df()</a></code>
-
-        </dt>
-        <dd>Convert a schema to a tidy data.frame</dd>
-
-        <dt>
-
-          <code><a href="scratch_dir.html">scratch_dir()</a></code>
-
-        </dt>
-        <dd>Scratch directory for a run's bulky intermediates</dd>
-
-        <dt>
-
-          <code><a href="sentinel2_stac.html">stac_search_s2_cdse()</a></code> <code><a href="sentinel2_stac.html">stac_search_s2_pc()</a></code> <code><a href="sentinel2_stac.html">stac_search_s2_theia_muscate()</a></code>
-
-        </dt>
-        <dd>Sentinel-2 STAC Search Helpers (E6 monitoring)</dd>
-
-        <dt>
-
-          <code><a href="site_index_reference_points.html">site_index_reference_points()</a></code>
-
-        </dt>
-        <dd>Published calibration points for the site-index curves</dd>
-
-        <dt>
-
-          <code><a href="smooth_pixel_series.html">smooth_pixel_series()</a></code>
-
-        </dt>
-        <dd>Robustly smooth a per-pixel spectral series (spec 026)</dd>
-
-        <dt>
-
-          <code><a href="stac_get_item.html">stac_get_item()</a></code>
-
-        </dt>
-        <dd>Fetch a single STAC item by id</dd>
-
-        <dt>
-
-          <code><a href="stac_search_items.html">stac_search_items()</a></code>
-
-        </dt>
-        <dd>Search a STAC API for items</dd>
-
-        <dt>
-
-          <code><a href="stac_search_s2.html">stac_search_s2()</a></code>
-
-        </dt>
-        <dd>Search Sentinel-2 L2A scenes via STAC</dd>
-
-        <dt>
-
-          <code><a href="tag_field_data_sources.html">tag_field_data_sources()</a></code>
-
-        </dt>
-        <dd>Tag an sf object with field-data NDP attributes</dd>
-
-        <dt>
-
-          <code><a href="texture_to_erosion_resistance.html">texture_to_erosion_resistance()</a></code>
-
-        </dt>
-        <dd>Map soil texture to a 0-100 erosion-resistance score</dd>
-
-        <dt>
-
-          <code><a href="texture_to_fertility_score.html">texture_to_fertility_score()</a></code>
-
-        </dt>
-        <dd>Map soil texture to a 0-100 fertility score</dd>
-
-        <dt>
-
-          <code><a href="theia_configure_s3.html">theia_configure_s3()</a></code>
-
-        </dt>
-        <dd>Configure GDAL for authenticated THEIA S3 reads</dd>
-
-        <dt>
-
-          <code><a href="theia_sign_urls.html">theia_sign_urls()</a></code>
-
-        </dt>
-        <dd>Sign THEIA object URLs via the teledetection signing gateway</dd>
-
-        <dt>
-
-          <code><a href="theia_signed_href.html">theia_signed_href()</a></code>
-
-        </dt>
-        <dd>Resolve a signed THEIA asset URL via the teledetection gateway</dd>
-
-        <dt>
-
-          <code><a href="theia_source_status.html">theia_source_status()</a></code>
-
-        </dt>
-        <dd>Report whether a THEIA datasource is usable over an AOI</dd>
-
-        <dt>
-
-          <code><a href="theia_stac.html">theia_stac</a></code>
-
-        </dt>
-        <dd>THEIA STAC resolver</dd>
-
-        <dt>
-
-          <code><a href="units_add_species_from_raster.html">units_add_species_from_raster()</a></code>
-
-        </dt>
-        <dd>Add a dominant-species column from a classification raster</dd>
-
-        <dt>
-
-          <code><a href="validate_field_data.html">validate_field_data()</a></code>
-
-        </dt>
-        <dd>Validate field data against placette + arbre schemas</dd>
-
-        <dt>
-
-          <code><a href="validate_knowledge_manifest.html">validate_knowledge_manifest()</a></code>
-
-        </dt>
-        <dd>Validate the knowledge-corpus manifest</dd>
-
-        <dt>
-
-          <code><a href="write_knowledge_manifest.html">write_knowledge_manifest()</a></code>
-
-        </dt>
-        <dd>Write the knowledge-corpus manifest</dd>
-      </dl></div><div class="section level2">
-      <h2 id="fonctions-exportees-additionnelles">Fonctions exportees additionnelles<a class="anchor" aria-label="anchor" href="#fonctions-exportees-additionnelles"></a></h2>
-
-      <div class="section-desc"><p>Primitives et indicateurs recents (a recategoriser par famille/theme)</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="compute_spectral_diversity.html">compute_spectral_diversity()</a></code>
-
-        </dt>
-        <dd>Compute spectral diversity rasters (alpha &amp; beta) via biodivMapR</dd>
-
-        <dt>
-
-          <code><a href="create_qgis_project.html">create_qgis_project()</a></code> <code><a href="create_qgis_project.html">create_qfield_project()</a></code>
-
-        </dt>
-        <dd>Create a QGIS project from a sampling plan</dd>
-
-        <dt>
-
-          <code><a href="ensure_inventory_fields.html">ensure_inventory_fields()</a></code>
-
-        </dt>
-        <dd>Fill in missing inventory fields from a CHM</dd>
-
-        <dt>
-
-          <code><a href="extract_indicator_value.html">extract_indicator_value()</a></code>
-
-        </dt>
-        <dd>Extract an indicator's value column from its result</dd>
-
-        <dt>
-
-          <code><a href="filter_alerts_to_zone.html">filter_alerts_to_zone()</a></code>
-
-        </dt>
-        <dd>Restrict an alert layer to the UGF zone, at read time (spec 021 L7)</dd>
-
-        <dt>
-
-          <code><a href="import_qgis_gpkg.html">import_qgis_gpkg()</a></code> <code><a href="import_qgis_gpkg.html">import_qfield_gpkg()</a></code>
-
-        </dt>
-        <dd>Read placettes + arbres layers from a field-returned GPKG</dd>
-
-        <dt>
-
-          <code><a href="resolve_project_layers.html">resolve_project_dem()</a></code> <code><a href="resolve_project_layers.html">resolve_project_chm()</a></code>
-
-        </dt>
-        <dd>Discover the best available DEM / CHM raster in a Nemeton project</dd>
-
-        <dt>
-
-          <code><a href="indicateur_a3_microclimat.html">indicateur_a3_microclimat()</a></code>
-
-        </dt>
-        <dd>A3 — summer under-canopy maximum temperature (regeneration microclimate)</dd>
-
-        <dt>
-
-          <code><a href="indicateur_a4_tamponnement.html">indicateur_a4_tamponnement()</a></code>
-
-        </dt>
-        <dd>A4 — canopy thermal buffering (regeneration microclimate)</dd>
-
-        <dt>
-
-          <code><a href="indicateur_a5_rafraichissement.html">indicateur_a5_rafraichissement()</a></code>
-
-        </dt>
-        <dd>Calculate Urban Cooling Index (A5)</dd>
-
-        <dt>
-
-          <code><a href="indicateur_r6_sensibilite.html">indicateur_r6_sensibilite()</a></code>
-
-        </dt>
-        <dd>R6 — microsite climate sensitivity (heatwave vs average year)</dd>
-
-        <dt>
-
-          <code><a href="indicateur_r7_gel.html">indicateur_r7_gel()</a></code>
-
-        </dt>
-        <dd>Late-frost risk indicator (R7)</dd>
-
-        <dt>
-
-          <code><a href="indicateur_w4_vpd.html">indicateur_w4_vpd()</a></code>
-
-        </dt>
-        <dd>W4 — summer under-canopy vapour-pressure deficit (regeneration)</dd>
-
-        <dt>
-
-          <code><a href="indice_priorite_regen.html">indice_priorite_regen()</a></code>
-
-        </dt>
-        <dd>Regeneration priority index (spec 027 L3)</dd>
-
-        <dt>
-
-          <code><a href="regen_rank_species.html">regen_rank_species()</a></code>
-
-        </dt>
-        <dd>Rank the top-N regeneration species per management unit</dd>
-
-        <dt>
-
-          <code><a href="regen_rank_to_wide.html">regen_rank_to_wide()</a></code>
-
-        </dt>
-        <dd>Pivot a species ranking to one row per unit (wide)</dd>
-
-        <dt>
-
-          <code><a href="regen_species_choices.html">regen_species_choices()</a></code>
-
-        </dt>
-        <dd>Species choices for the reGénération target-species selector</dd>
-
-        <dt>
-
-          <code><a href="european_species_tolerances.html">european_species_tolerances()</a></code>
-
-        </dt>
-        <dd>European tree-species regeneration tolerances</dd>
-
-        <dt>
-
-          <code><a href="map_tfv_to_species_class.html">map_tfv_to_species_class()</a></code>
-
-        </dt>
-        <dd>Map BD Forêt v2 TFV codes to NMT species classes</dd>
-
-        <dt>
-
-          <code><a href="regen_sensibilite.html">regen_sensibilite()</a></code>
-
-        </dt>
-        <dd>Microclimate exposure per unit — microclimf engine (spec 027 L1)</dd>
-
-        <dt>
-
-          <code><a href="regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code>
-
-        </dt>
-        <dd>Soil water balance per unit — BILJOU engine (spec 027 L2)</dd>
-
-        <dt>
-
-          <code><a href="pai_depuis_nuage.html">pai_depuis_nuage()</a></code>
-
-        </dt>
-        <dd>Plant Area Index from a LiDAR-HD point cloud (spec 027 L1)</dd>
-
-        <dt>
-
-          <code><a href="lai_max_depuis_pai.html">lai_max_depuis_pai()</a></code>
-
-        </dt>
-        <dd>Per-unit canopy <code>lai_max</code> from a LiDAR PAI raster (spec 035 D5)</dd>
-
-        <dt>
-
-          <code><a href="awc_saxton_rawls.html">awc_saxton_rawls()</a></code>
-
-        </dt>
-        <dd>Available water capacity from soil texture — Saxton &amp; Rawls (2006)</dd>
-
-        <dt>
-
-          <code><a href="ewm_depuis_soilgrids.html">ewm_depuis_soilgrids()</a></code>
-
-        </dt>
-        <dd>Maximum extractable water (<code>ewm</code>) per unit, from SoilGrids</dd>
-
-        <dt>
-
-          <code><a href="lai_sentinel2.html">lai_sentinel2()</a></code>
-
-        </dt>
-        <dd>LAI from Sentinel-2 via PROSAIL inversion — NDP-0 canopy fallback (spec 033)</dd>
-
-        <dt>
-
-          <code><a href="biophysique_sentinel2.html">biophysique_sentinel2()</a></code>
-
-        </dt>
-        <dd>Biophysical variable from Sentinel-2 via PROSAIL inversion (spec 042)</dd>
-
-        <dt>
-
-          <code><a href="tendances_estivales_eobs.html">tendances_estivales_eobs()</a></code>
-
-        </dt>
-        <dd>Summer E-OBS climate trends over the project area (spec 027 §6, branch A)</dd>
-
-        <dt>
-
-          <code><a href="eobs_downscale.html">eobs_downscale()</a></code>
-
-        </dt>
-        <dd>Downscale an E-OBS variable to a fine raster</dd>
-
-        <dt>
-
-          <code><a href="eobs_downscale_bivariate.html">eobs_downscale_bivariate()</a></code>
-
-        </dt>
-        <dd>Downscaled bivariate climate-trend map (T°max × precipitation)</dd>
-
-        <dt>
-
-          <code><a href="eobs_bivariate_n.html">eobs_bivariate_n()</a></code>
-
-        </dt>
-        <dd>Number of classes per axis of the E-OBS bivariate map</dd>
-
-        <dt>
-
-          <code><a href="eobs_summer_series.html">eobs_summer_series()</a></code>
-
-        </dt>
-        <dd>Summer E-OBS series at a point (year -&gt; value)</dd>
-
-        <dt>
-
-          <code><a href="eobs_monthly_climatology.html">eobs_monthly_climatology()</a></code>
-
-        </dt>
-        <dd>Monthly E-OBS climatology at a point (month -&gt; value)</dd>
-
-        <dt>
-
-          <code><a href="climate_ombrothermic_indices.html">climate_ombrothermic_indices()</a></code>
-
-        </dt>
-        <dd>Gaussen-Bagnouls dry months and De Martonne aridity index</dd>
-
-        <dt>
-
-          <code><a href="eobs_trend_fit.html">eobs_trend_fit()</a></code>
-
-        </dt>
-        <dd>Linear trend of an E-OBS summer series (per decade)</dd>
-
-        <dt>
-
-          <code><a href="build_safran_stations.html">build_safran_stations()</a></code>
-
-        </dt>
-        <dd>Build the SAFRAN pseudo-station grid for the meteoland engine (spec P4)</dd>
-
-        <dt>
-
-          <code><a href="meteoland_daily_grid.html">meteoland_daily_grid()</a></code>
-
-        </dt>
-        <dd>Downscale a daily meteoland variable to a fine raster stack</dd>
-
-        <dt>
-
-          <code><a href="regeneration_tolerances.html">regeneration_tolerances()</a></code>
-
-        </dt>
-        <dd>Regeneration tolerance table (per species)</dd>
-
-        <dt>
-
-          <code><a href="microclimate_detect_years.html">microclimate_detect_years()</a></code>
-
-        </dt>
-        <dd>Detect the average / heatwave reference years for R6 (spec 027 §6bis)</dd>
-
-        <dt>
-
-          <code><a href="microclimate_run.html">microclimate_run()</a></code>
-
-        </dt>
-        <dd>Run the under-canopy microclimate model (scaffold — spec 027 L1)</dd>
-
-        <dt>
-
-          <code><a href="prepare_pixel_dieback_series.html">prepare_pixel_dieback_series()</a></code>
-
-        </dt>
-        <dd>Prepare the derived series for the pixel-dieback plot (CRswir + CRre)</dd>
-
-        <dt>
-
-          <code><a href="read_reconfort_layer.html">read_reconfort_layer()</a></code>
-
-        </dt>
-        <dd>Read a RECONFORT output raster, masked to the UGF zone by default (L7)</dd>
-
-        <dt>
-
-          <code><a href="reconfort_cache_manifest.html">reconfort_cache_manifest()</a></code>
-
-        </dt>
-        <dd>Discover the persisted RECONFORT display layers from the cache (L6)</dd>
-
-        <dt>
-
-          <code><a href="reconfort_latest_complete_year.html">reconfort_latest_complete_year()</a></code>
-
-        </dt>
-        <dd>Most recent RECONFORT `s2_year` whose season is already complete</dd>
-
-        <dt>
-
-          <code><a href="reconfort_layer_manifest.html">reconfort_layer_manifest()</a></code>
-
-        </dt>
-        <dd>RECONFORT layer manifest: describe a run's displayable outputs (L6)</dd>
-
-        <dt>
-
-          <code><a href="reconfort_year_bounds.html">reconfort_year_bounds()</a></code>
-
-        </dt>
-        <dd>Bounds for a RECONFORT `s2_year` picker</dd>
-
-        <dt>
-
-          <code><a href="run_reticulate_isolated.html">run_reticulate_isolated()</a></code>
-
-        </dt>
-        <dd>Run a Python/reticulate task in an isolated subprocess (pinned env)</dd>
-
-        <dt>
-
-          <code><a href="sentinel2_stac.html">stac_search_s2_cdse()</a></code> <code><a href="sentinel2_stac.html">stac_search_s2_pc()</a></code> <code><a href="sentinel2_stac.html">stac_search_s2_theia_muscate()</a></code>
-
-        </dt>
-        <dd>Sentinel-2 STAC Search Helpers (E6 monitoring)</dd>
-      </dl></div>
+      <dl></dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

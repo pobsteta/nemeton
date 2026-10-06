@@ -81,6 +81,10 @@ Returns \`NULL\` (never errors) when the cache, the zone, the bundle or
 the layer file is missing — older runs predating a layer simply yield
 \`NULL\`, so the caller degrades gracefully.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[read_fordead_dieback_mask()\] for the categorical 0-4 mask,

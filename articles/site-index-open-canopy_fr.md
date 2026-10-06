@@ -154,7 +154,7 @@ res[, c("species", "age", "P2")]
 #>   species age       P2                       geometry
 #> 1    QUPE  80 19.69756 POLYGON ((10 10, 100 10, 10...
 #> 2    FASY  70 21.58464 POLYGON ((110 10, 200 10, 2...
-#> 3    PIAB  40 29.07000 POLYGON ((210 10, 290 10, 2...
+#> 3    PIAB  40       NA POLYGON ((210 10, 290 10, 2...
 ```
 
 La colonne `P2` contient désormais l’indice de station $`H_0`$ (en
@@ -294,7 +294,7 @@ units_c1 <- sf::st_sf(
   stems_ha = c(180, 300),
   geometry = sf::st_sfc(polys[[1]], polys[[2]], crs = 2154)
 )
-indicateur_c1_biomasse(units_c1, chm = chm)
+indicateur_c1_biomasse(units_c1, chm = chm)$C1
 #> [1] 140.67656  93.62638
 ```
 

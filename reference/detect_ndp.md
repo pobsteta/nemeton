@@ -74,6 +74,10 @@ Breaking change in nemeton 0.16.0: `detect_ndp()` used to return a plain
 integer. It now returns an `ndp_result` list. Use `result$level` or
 `as.integer(result)` for the numeric level.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

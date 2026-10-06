@@ -80,3 +80,7 @@ The score is a **relative** freshness: the unit's mean LST is compared
 with a local reference (median LST of a surrounding ring, or a supplied
 `reference`). Differences are scale-invariant between kelvin and
 celsius, so either unit works.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

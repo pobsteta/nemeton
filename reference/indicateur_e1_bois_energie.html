@@ -9,7 +9,7 @@ forest harvest residues and coppice biomass."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -126,8 +126,6 @@ forest harvest residues and coppice biomass.</p>
 <span>  harvest_rate <span class="op">=</span> <span class="fl">0.02</span>,</span>
 <span>  residue_fraction <span class="op">=</span> <span class="fl">0.3</span>,</span>
 <span>  coppice_area_field <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  column_name <span class="op">=</span> <span class="st">"E1"</span>,</span>
-<span>  lang <span class="op">=</span> <span class="st">"en"</span>,</span>
 <span>  chm <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  production_field <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  taux_mobilisation <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -162,14 +160,6 @@ forest harvest residues and coppice biomass.</p>
 <dt id="arg-coppice-area-field">coppice_area_field<a class="anchor" aria-label="anchor" href="#arg-coppice-area-field"></a></dt>
 <dd><p>Character. Column name for coppice area fraction. Optional.</p></dd>
 
-
-<dt id="arg-column-name">column_name<a class="anchor" aria-label="anchor" href="#arg-column-name"></a></dt>
-<dd><p>Character. Name for output column. Default "E1".</p></dd>
-
-
-<dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
-<dd><p>Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".</p></dd>
 
 
 <dt id="arg-chm">chm<a class="anchor" aria-label="anchor" href="#arg-chm"></a></dt>
@@ -236,6 +226,12 @@ and writes <code>E1_mode = "recolte_observee"</code> instead of
 (about 12 percent moisture), used as is as a dry-matter density – as C1
 does. Versions up to 0.211.0 multiplied it by a further 0.5 ("dry matter =
 50 percent of fresh weight"), which halved E1.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

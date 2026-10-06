@@ -177,6 +177,10 @@ In \`weighting = "continuous"\` mode the same typed error is raised when
 onto the alert grid raises the distinct
 \`validation_weight_raster_mismatch\` error instead.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 \[fordead_alert_mask()\] (the cell selector),

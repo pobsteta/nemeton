@@ -51,6 +51,10 @@ Trade-offs (services conflict) - \*\*Weak\*\* (white, ~0): Independence
 
 This function supports bilingual labels via \`nemeton_set_language()\`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 \[compute_family_correlations()\], \[identify_hotspots()\]

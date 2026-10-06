@@ -54,6 +54,10 @@ Metadata are stored as an attribute and can include:
 
 - description: Optional description
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

@@ -9,3 +9,7 @@ Haute-Savoie (74).
 ``` r
 FORDEAD_VALIDITY_DEPARTMENTS
 ```
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

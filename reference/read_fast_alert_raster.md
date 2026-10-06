@@ -218,6 +218,10 @@ directly from the cache directory and filtered by \`(date_from,
 date_to)\` (spec 017), so the diagnostic is fully independent of any
 per-placette table.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[build_index_stack()\] (the underlying index stack builder, spec 010),

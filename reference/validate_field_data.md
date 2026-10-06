@@ -39,3 +39,7 @@ A list with:
 - `errors`: data.frame of error-level issues.
 
 - `warnings`: data.frame of warning-level issues.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

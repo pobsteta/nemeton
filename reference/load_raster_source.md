@@ -63,6 +63,10 @@ argument). `"raster_local"` entries with no declared path (such as
 are produced or distributed externally: pass the downloaded file via the
 `path` argument, or load them from their producing package.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

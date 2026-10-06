@@ -101,6 +101,10 @@ A per-unit named list of `meteo` data frames (or a single `data.frame`),
 or `NULL` on graceful degradation. Units whose SAFRAN request failed are
 left out of the list, with a warning naming their ids.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`regen_bilan_hydrique`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md),

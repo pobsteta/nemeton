@@ -74,6 +74,10 @@ that package. Five deliberate differences:
     published data unchanged; derivations belong to the caller, where
     they can be documented and tested.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## References
 
 IGN — Inventaire forestier national français, Données brutes, Campagnes

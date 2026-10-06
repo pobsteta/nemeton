@@ -33,3 +33,7 @@ erodibility is `(silt_f + 0.4 * sand_f) * (1 - 0.6 * clay_f)` on the 0-1
 scale, and resistance is `100 * (1 - erodibility)`.
 
 Calibratable heuristic, exported for audit. NA in, NA out.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

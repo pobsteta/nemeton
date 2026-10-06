@@ -9,7 +9,7 @@ based on species, diameter (DBH), and height data."><meta property="og:image" co
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -126,8 +126,6 @@ based on species, diameter (DBH), and height data.</p>
 <span>  height_field <span class="op">=</span> <span class="st">"height"</span>,</span>
 <span>  density_field <span class="op">=</span> <span class="st">"density"</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ifn_tarif"</span>, <span class="st">"allometric"</span><span class="op">)</span>,</span>
-<span>  column_name <span class="op">=</span> <span class="st">"P1"</span>,</span>
-<span>  lang <span class="op">=</span> <span class="st">"en"</span>,</span>
 <span>  chm <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  h_dom_percentile <span class="op">=</span> <span class="fl">0.9</span>,</span>
 <span>  pct_masked <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -168,14 +166,6 @@ tariff <code>V = a x DBH^b x H^c</code>, see Details) is implemented; "allometri
 accepted for backward compatibility but has no effect and emits a warning.
 Default "ifn_tarif".</p></dd>
 
-
-<dt id="arg-column-name">column_name<a class="anchor" aria-label="anchor" href="#arg-column-name"></a></dt>
-<dd><p>Character. Name for output column. Default "P1".</p></dd>
-
-
-<dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
-<dd><p>Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".</p></dd>
 
 
 <dt id="arg-chm">chm<a class="anchor" aria-label="anchor" href="#arg-chm"></a></dt>
@@ -236,6 +226,12 @@ equations — <code>BROADLEAF_GENUS</code> for non-conifers,
 <li><p>height: Tree height in meters (can be estimated from DBH if missing)</p></li>
 <li><p>density: Number of stems per hectare</p></li>
 </ul></div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>

@@ -42,3 +42,7 @@ fewer nutrients.
 
 This is a calibratable heuristic, not a validated pedotransfer function;
 it is exported so a pedologist can audit and tune it. NA in, NA out.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

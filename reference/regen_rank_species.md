@@ -117,9 +117,13 @@ yield a single `rank = NA` row (no fabricated recommendation). An empty
 pool yields a 0-row frame. The chosen axis weights are attached as
 `attr(, "weights")`.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
-[`regen_rank_to_wide`](https://pobsteta.github.io/nemeton/reference/regen_rank_to_wide.md),
+`regen_rank_to_wide()`,
 [`indice_priorite_regen`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md),
 [`regen_species_choices`](https://pobsteta.github.io/nemeton/reference/regen_species_choices.md),
 [`european_species_tolerances`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md)

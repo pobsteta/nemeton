@@ -34,3 +34,7 @@ cec_to_fertility_score(cec_x10)
 ## Value
 
 Numeric vector on the 0-100 scale (higher = more fertile).
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

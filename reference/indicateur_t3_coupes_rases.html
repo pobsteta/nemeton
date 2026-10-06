@@ -15,7 +15,7 @@ radar value is inverted downstream (see normalization.R)."><meta property="og:im
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -183,10 +183,10 @@ N years" mean exactly that.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Numeric vector, one value per unit: recency-weighted percentage of the unit
+    <p>The input <code>units</code> (same class, rows and order) with an added numeric column <code>T3</code>, one value per unit: recency-weighted percentage of the unit
 footprint under clear-cut within the window (0-100, high = more
 clear-cutting). <code>NA</code> where <code>sufosat_dates</code> is <code>NULL</code> or the
-unit does not overlap the raster.</p>
+unit does not overlap the raster. Also adds <code>t3_status</code> (<code>"calculated"</code>, <code>"skipped_no_sufosat"</code> or <code>"skipped_no_coverage"</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -199,6 +199,12 @@ STAC 2026-07-02):</p><ul><li><p><code>sufosat_dates</code>: clear-cut date per p
 </ul><p>The score is coverage-fraction weighted, so equal-area pixels cancel and no
 cell-area computation is needed: it is the share of the unit footprint under
 clear-cut within the recency window, weighted linearly by recency.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

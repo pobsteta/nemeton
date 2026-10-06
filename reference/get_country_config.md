@@ -19,6 +19,10 @@ get_country_config(country = "FR")
 
 A list with the country's data source configuration.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

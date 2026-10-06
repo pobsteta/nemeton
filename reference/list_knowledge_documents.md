@@ -28,3 +28,7 @@ list_knowledge_documents(con, lang = NULL, doc_type = NULL, family = NULL)
 A \`data.frame\` of \`knowledge_document\` rows (without chunks), sorted
 by descending ingestion time. \`family_codes\` and \`profile_codes\` are
 returned as list-columns of character vectors.
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

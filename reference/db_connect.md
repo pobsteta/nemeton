@@ -62,6 +62,10 @@ a \`future\` ingestion worker can use the same file at once.
 \`busy_timeout\` is set so a momentarily locked write waits instead of
 erroring, and \`foreign_keys\` is enabled.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

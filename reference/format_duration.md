@@ -27,6 +27,10 @@ format_duration(sec, with_seconds = TRUE)
 
 A character scalar.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

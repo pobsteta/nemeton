@@ -78,3 +78,7 @@ codes intersected, possibly empty); \* \`species_valid\` (logical or
 \`NA\`), \`species_resineux_pct\`, \`species_epc_pct\`,
 \`species_sap_pct\` (numeric or \`NA\`); \* \`overall_valid\` (logical)
 — \`geo_valid && (species_valid
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

@@ -76,6 +76,10 @@ follow in a folded `"atlas"` group. Within each group, options are
 ordered by increasing heat tolerance (`tmax_tol_c`). The generic "no
 species" default is added by the app (`species = NULL`).
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`indice_priorite_regen`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md),

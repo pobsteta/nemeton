@@ -31,3 +31,7 @@ format_citations(retrieved_chunks, format = c("markdown", "html"), lang = "fr")
 ## Value
 
 A character scalar. Empty string \`""\` when there are no chunks.
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

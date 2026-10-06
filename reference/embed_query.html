@@ -11,7 +11,7 @@ internally."><meta property="og:image" content="https://pobsteta.github.io/nemet
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -125,8 +125,7 @@ internally.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">embed_query</span><span class="op">(</span></span>
 <span>  <span class="va">text</span>,</span>
 <span>  provider <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mistral"</span>, <span class="st">"openai"</span>, <span class="st">"voyage"</span><span class="op">)</span>,</span>
-<span>  api_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  lang <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  api_key <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -145,17 +144,18 @@ internally.</p>
 <dt id="arg-api-key">api_key<a class="anchor" aria-label="anchor" href="#arg-api-key"></a></dt>
 <dd><p>Character or `NULL`. See [ingest_knowledge_document()].</p></dd>
 
-
-<dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
-<dd><p>Optional ISO 639-1 language hint (reserved for
-provider-specific model selection; currently unused).</p></dd>
-
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A numeric vector. Its length is provider-dependent (Mistral
   1024, OpenAI 1536/3072, Voyage 1024); it is fitted to 3072 dims
   only at storage/compare time.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Experimental: may change in any release, without deprecation (spec 057).</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

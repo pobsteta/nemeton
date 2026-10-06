@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -283,7 +283,7 @@ synthétique.</p>
 <span><span class="co">#&gt;   species age       P2                       geometry</span></span>
 <span><span class="co">#&gt; 1    QUPE  80 19.69756 POLYGON ((10 10, 100 10, 10...</span></span>
 <span><span class="co">#&gt; 2    FASY  70 21.58464 POLYGON ((110 10, 200 10, 2...</span></span>
-<span><span class="co">#&gt; 3    PIAB  40 29.07000 POLYGON ((210 10, 290 10, 2...</span></span></code></pre></div>
+<span><span class="co">#&gt; 3    PIAB  40       NA POLYGON ((210 10, 290 10, 2...</span></span></code></pre></div>
 <p>La colonne <code>P2</code> contient désormais l’indice de station
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>0</mn></msub><annotation encoding="application/x-tex">H_0</annotation></semantics></math>
 (en mètres) à 50 ans, <strong>pas</strong> le volume annuel m³/ha/an du
@@ -412,7 +412,7 @@ combiné à la densité du bois, un facteur d’expansion de biomasse (BEF =
 <span>  stems_ha <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">180</span>, <span class="fl">300</span><span class="op">)</span>,</span>
 <span>  geometry <span class="op">=</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span><span class="va">polys</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, <span class="va">polys</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>, crs <span class="op">=</span> <span class="fl">2154</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/indicateur_c1_biomasse.html">indicateur_c1_biomasse</a></span><span class="op">(</span><span class="va">units_c1</span>, chm <span class="op">=</span> <span class="va">chm</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/indicateur_c1_biomasse.html">indicateur_c1_biomasse</a></span><span class="op">(</span><span class="va">units_c1</span>, chm <span class="op">=</span> <span class="va">chm</span><span class="op">)</span><span class="op">$</span><span class="va">C1</span></span>
 <span><span class="co">#&gt; [1] 140.67656  93.62638</span></span></code></pre></div>
 <p>Si <code>stems_ha</code> est absent mais une colonne
 <code>density</code> (0-1) est présente, elle est convertie en stems/ha

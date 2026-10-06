@@ -569,15 +569,15 @@ zonage <- cluster_parcels(
 profiles_zonage <- attr(zonage, "cluster_profile")
 print(profiles_zonage)
 #>   famille_carbone famille_biodiversite famille_eau famille_naturalite
-#> 1        56.45354             57.97610    66.41595           49.53191
-#> 2        83.88399             55.99635    97.27934           66.46906
+#> 1        56.45354             57.97610    55.21039           49.53191
+#> 2        83.10576             56.22899    91.74138           66.89724
 #> 3        67.47313             71.38550   100.00000           53.65151
-#> 4        80.19323             77.03834    92.10916           67.76883
+#> 4        81.10707             74.77129    84.61497           67.33913
 #>   famille_production famille_energie famille_social famille_air
 #> 1           57.57089       100.00000       99.05773    40.62771
-#> 2           51.88368        99.67225       99.48972    38.94574
+#> 2           54.48226        99.62543       99.56154    39.73875
 #> 3           43.40296        92.97315       98.48458    36.70354
-#> 4           46.20148        99.94170       99.18967    29.42016
+#> 4           44.95069        99.94753       99.16940    29.81762
 
 # Attribuer des noms de zones selon les profils
 zonage <- zonage |>
@@ -594,7 +594,7 @@ zonage <- zonage |>
 table(zonage$zone_name)
 #> 
 #> Conservation intégrale          Gestion mixte     Production durable 
-#>                      2                      9                      8 
+#>                      2                     10                      7 
 #>        Usage récréatif 
 #>                      1
 ```
@@ -634,8 +634,8 @@ zonage |>
 #>   zone_name              n_parcelles C_mean B_mean P_mean S_mean N_mean
 #>   <chr>                        <dbl>  <dbl>  <dbl>  <dbl>  <dbl>  <dbl>
 #> 1 Conservation intégrale           2   56.4   58.0   57.6   99.1   49.5
-#> 2 Gestion mixte                    9   80.2   77.0   46.2   99.2   67.8
-#> 3 Production durable               8   83.9   56     51.9   99.5   66.5
+#> 2 Gestion mixte                   10   81.1   74.8   45.0   99.2   67.3
+#> 3 Production durable               7   83.1   56.2   54.5   99.6   66.9
 #> 4 Usage récréatif                  1   67.5   71.4   43.4   98.5   53.6
 ```
 

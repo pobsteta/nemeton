@@ -84,6 +84,10 @@ resampling\* section there. Net effect: NBR at point \`(x, y)\` from
 \`extract_pixel_timeseries()\` may differ from the same point read off
 \`build_index_stack()\` by a sub-pixel amount.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 \[build_index_stack()\], \[read_s2_band_stack()\].

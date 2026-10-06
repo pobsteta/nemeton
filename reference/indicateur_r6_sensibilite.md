@@ -48,9 +48,14 @@ indicateur_r6_sensibilite(units, micro_moyenne = NULL, micro_canicule = NULL,
 ## Value
 
 `units` with `R6` (0-100, higher = less sensitive), `R6_dtmax` (raw
-ΔT°max, °C), `R6_dvpd` (raw ΔVPD, kPa), `R6_couverture_pct`, and the
-`"microclimate_model"` augmentation flag (only when at least one value
-is computed).
+ΔT°max, °C), `R6_dvpd` (raw ΔVPD, kPa), `R6_couverture_pct`, `r6_status`
+(`"calculated"`, `"skipped_no_micro"` or `"skipped_no_coverage"`), and
+the `"microclimate_model"` augmentation flag (only when at least one
+value is computed).
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## See also
 

@@ -18,3 +18,7 @@ get_global_cache_dir()
 ## Value
 
 Character. Path to the global cache directory (which may not exist yet).
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

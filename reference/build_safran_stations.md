@@ -49,6 +49,10 @@ A list `list(points, series)`: `points` an `sf` of pseudo-stations
 non-empty series and a finite elevation; `series` the matching named
 list. `NULL` if none resolve.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`eobs_downscale`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md),

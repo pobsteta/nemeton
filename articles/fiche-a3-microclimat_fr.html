@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -225,10 +225,12 @@ annexe)</td>
 </h2>
 <pre><code>A3_tmax = moyenne zonale du raster `tmax_understorey` sur l'unite   °C
 A3      = 100 x (40 - Tmax) / (40 - 15)                             ecrete [0, 100]</code></pre>
-<p>Le raster vient du moteur <code>microclimf</code>, orchestré par
-<code><a href="../reference/microclimate_run.html">microclimate_run()</a></code> : forçage climatique ERA5-Land +
-structure de canopée (CHM ML ou LiDAR HD). Néméton ne modélise pas, il
-<strong>extrait et normalise</strong>.</p>
+<p>Le raster vient d’un run du moteur <code>microclimf</code>, fourni
+précalculé à l’indicateur dans l’objet <code>micro</code> : forçage
+climatique ERA5-Land + structure de canopée (CHM ML ou LiDAR HD).
+L’orchestration intégrée au cœur n’est pas encore branchée (spec 027
+L1). Néméton ne modélise pas, il <strong>extrait et
+normalise</strong>.</p>
 <p><strong>Exemples chiffrés</strong> :</p>
 <table class="table">
 <thead><tr class="header">
@@ -283,7 +285,7 @@ structure de canopée (CHM ML ou LiDAR HD). Néméton ne modélise pas, il
 </tr>
 <tr class="even">
 <td>
-<strong>0</strong> + <code><a href="../reference/microclimate_run.html">microclimate_run()</a></code>
+<strong>0</strong> + run <code>microclimf</code>
 </td>
 <td>ERA5-Land + CHM ML</td>
 <td>
@@ -327,9 +329,9 @@ n’est pas une observation.</li>
 convention.</strong> Au-delà, le score est écrêté à 0 : deux unités à 41
 et 46 °C sont indistinguables.</li>
 <li>
-<strong>L’année compte, et n’est pas dans la valeur.</strong>
-<code><a href="../reference/microclimate_run.html">microclimate_run()</a></code> tourne sur une année donnée. Un A3
-d’année moyenne et un A3 d’année caniculaire ne se comparent pas — c’est
+<strong>L’année compte, et n’est pas dans la valeur.</strong> Le run
+<code>microclimf</code> porte sur une année donnée. Un A3 d’année
+moyenne et un A3 d’année caniculaire ne se comparent pas — c’est
 précisément l’écart que <strong>R6</strong> mesure, en croisant les
 deux.</li>
 </ol>
@@ -342,16 +344,16 @@ deux.</li>
       +- normalize_indicator()     -&gt; passthrough clamp
       +- create_family_index("A")  -&gt; famille_air</code></pre>
 <p>Partage l’objet <code>micro</code> avec <strong>A4</strong>,
-<strong>W4</strong> et <strong>R6</strong> : un seul
-<code><a href="../reference/microclimate_run.html">microclimate_run()</a></code> alimente les quatre.</p>
+<strong>W4</strong> et <strong>R6</strong> : un seul run
+<code>microclimf</code> alimente les quatre.</p>
 </div>
 <div class="section level2">
 <h2 id="diagramme-densemble">6. Diagramme d’ensemble<a class="anchor" aria-label="anchor" href="#diagramme-densemble"></a>
 </h2>
 <!-- diagramme:auto:debut -->
 <figure><svg viewbox="0 0 820 360" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de A3 : la temperature maximale estivale sous couvert vient du moteur microclimf force par ERA5-Land et par la structure de canopee ; Nemeton l'extrait par unite puis la retourne sur l'echelle decroissante 15-40 degres."><defs><marker id="fd" viewbox="0 0 10 10" refx="9" refy="5" markerwidth="6" markerheight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path></marker></defs><g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55"><text x="10" y="16">ENTRÉES</text><text x="290" y="16">CALCUL — ÉTAPES
-SUCCESSIVES</text><text x="588" y="16">AVAL</text></g><rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">microclimate_run()
-— microclimf</text><text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">forçage
+SUCCESSIVES</text><text x="588" y="16">AVAL</text></g><rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">run
+microclimf (objet micro)</text><text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">forçage
 ERA5-Land</text><text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">raster
 tmax_understorey</text><rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">CHM
 ML ou MNH LiDAR HD</text><text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">structure
@@ -372,7 +374,7 @@ de modèle, pas mesure : aucun thermomètre n’a été posé sous le
 couvert.</text><text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">40
 °C est un plafond de convention — au-delà, le score ne distingue plus
 rien.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Un
-seul microclimate_run() alimente A3, A4, W4 et R6 : même année, même
+seul run microclimf alimente A3, A4, W4 et R6 : même année, même
 forçage.</text></svg><figcaption style="font-size:.9em;opacity:.75">
 Deux étapes seulement, parce que la physique est ailleurs. Ce que A3
 ajoute à <code>microclimf</code>, c’est l’agrégation par unité et

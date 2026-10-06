@@ -68,6 +68,10 @@ not fetched by this function); an empty `protected_areas` gives 0.
 
 \*\*Interpretation\*\*: Higher values indicate better protection status.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 Other biodiversity-indicators:

@@ -4,7 +4,7 @@ THEIA-specific asset resolver, so that the Theia datasources
 declared in inst/datasources/&amp;lt;country&amp;gt;.json (forms_t,
 s2_biophysical, theia_snow, ...) can be materialised
 from the THEIA STAC API instead of a manual download.
-The plumbing is endpoint-agnostic: stac_search_items
+The plumbing is endpoint-agnostic: stac_search_items()
 works against any STAC API, and the THEIA endpoint is read from the
 services$theia_stac entry of the country configuration (or
 passed explicitly via stac_api)."><meta property="og:description" content="Generic STAC (SpatioTemporal Asset Catalog) item search and a
@@ -12,7 +12,7 @@ THEIA-specific asset resolver, so that the Theia datasources
 declared in inst/datasources/&amp;lt;country&amp;gt;.json (forms_t,
 s2_biophysical, theia_snow, ...) can be materialised
 from the THEIA STAC API instead of a manual download.
-The plumbing is endpoint-agnostic: stac_search_items
+The plumbing is endpoint-agnostic: stac_search_items()
 works against any STAC API, and the THEIA endpoint is read from the
 services$theia_stac entry of the country configuration (or
 passed explicitly via stac_api)."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
@@ -23,7 +23,7 @@ passed explicitly via stac_api)."><meta property="og:image" content="https://pob
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -132,7 +132,7 @@ THEIA-specific asset resolver, so that the Theia datasources
 declared in <code>inst/datasources/&lt;country&gt;.json</code> (<code>forms_t</code>,
 <code>s2_biophysical</code>, <code>theia_snow</code>, ...) can be materialised
 from the THEIA STAC API instead of a manual download.</p>
-<p>The plumbing is endpoint-agnostic: <code><a href="stac_search_items.html">stac_search_items</a></code>
+<p>The plumbing is endpoint-agnostic: <code>stac_search_items()</code>
 works against any STAC API, and the THEIA endpoint is read from the
 <code>services$theia_stac</code> entry of the country configuration (or
 passed explicitly via <code>stac_api</code>).</p>

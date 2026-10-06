@@ -11,7 +11,7 @@ Normalised 0-100 decreasing (cooler = more favourable = 100)."><meta property="o
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -136,7 +136,7 @@ Normalised 0-100 <strong>decreasing</strong> (cooler = more favourable = 100).</
 
 <dt id="arg-micro">micro<a class="anchor" aria-label="anchor" href="#arg-micro"></a></dt>
 <dd><p>The summer microclimate rasters (named list / multi-layer
-<code>SpatRaster</code>) from <code><a href="microclimate_run.html">microclimate_run</a></code>; the <code>tmax_understorey</code>
+<code>SpatRaster</code>) precomputed by a microclimf run; the <code>tmax_understorey</code>
 layer (°C) is used. <code>NULL</code> → <code>A3 = NA</code>.</p></dd>
 
 
@@ -157,7 +157,7 @@ the augmentation flag).</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>units</code> with columns <code>A3</code> (0-100), <code>A3_tmax</code> (raw °C),
-<code>A3_couverture_pct</code>, and <code>attr(., "augmented")</code> carrying
+<code>A3_couverture_pct</code>, <code>a3_status</code> (<code>"calculated"</code>, <code>"skipped_no_micro"</code> or <code>"skipped_no_coverage"</code>), and <code>attr(., "augmented")</code> carrying
 <code>"microclimate_model"</code> (only when at least one value is computed).</p>
 <p><strong>Higher = cooler under the canopy = favourable.</strong> The raw quantity (summer
 maximum temperature, °C) runs the other way, so
@@ -167,9 +167,14 @@ passes <code>A3</code> through unchanged and must <strong>not</strong> invert it
 (spec 048 section 12).</p>
     </div>
     <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="indicateur_a4_tamponnement.html">indicateur_a4_tamponnement</a></code>, <code><a href="indicateur_w4_vpd.html">indicateur_w4_vpd</a></code>,
-<code><a href="microclimate_run.html">microclimate_run</a></code></p></div>
+    <div class="dont-index"><p><code><a href="indicateur_a4_tamponnement.html">indicateur_a4_tamponnement</a></code>, <code><a href="indicateur_w4_vpd.html">indicateur_w4_vpd</a></code></p></div>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

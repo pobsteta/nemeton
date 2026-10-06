@@ -10,8 +10,7 @@ internally.
 embed_query(
   text,
   provider = c("mistral", "openai", "voyage"),
-  api_key = NULL,
-  lang = NULL
+  api_key = NULL
 )
 ```
 
@@ -29,13 +28,12 @@ embed_query(
 
   Character or \`NULL\`. See \[ingest_knowledge_document()\].
 
-- lang:
-
-  Optional ISO 639-1 language hint (reserved for provider-specific model
-  selection; currently unused).
-
 ## Value
 
 A numeric vector. Its length is provider-dependent (Mistral 1024, OpenAI
 1536/3072, Voyage 1024); it is fitted to 3072 dims only at
 storage/compare time.
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

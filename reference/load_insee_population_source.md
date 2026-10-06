@@ -74,3 +74,7 @@ are kept, and the share is reported back so the caller can say so (see
 the `part_imputee` attribute).
 
 Licence Ouverte / Open Licence 2.0 (INSEE). Attribution required.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

@@ -53,6 +53,10 @@ On success, a list `ok = TRUE`, `holder_id`, `holder_label`,
 taken over). On failure, `ok = FALSE` with the current holder's
 `holder_id`, `holder_label`, `heartbeat_at`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`project_lock_heartbeat`](https://pobsteta.github.io/nemeton/reference/project_lock_heartbeat.md),

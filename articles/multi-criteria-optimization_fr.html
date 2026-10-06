@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -701,15 +701,15 @@ profils multi-familles des parcelles.</p>
 <span><span class="va">profiles_zonage</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">zonage</span>, <span class="st">"cluster_profile"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">profiles_zonage</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   famille_carbone famille_biodiversite famille_eau famille_naturalite</span></span>
-<span><span class="co">#&gt; 1        56.45354             57.97610    66.41595           49.53191</span></span>
-<span><span class="co">#&gt; 2        83.88399             55.99635    97.27934           66.46906</span></span>
+<span><span class="co">#&gt; 1        56.45354             57.97610    55.21039           49.53191</span></span>
+<span><span class="co">#&gt; 2        83.10576             56.22899    91.74138           66.89724</span></span>
 <span><span class="co">#&gt; 3        67.47313             71.38550   100.00000           53.65151</span></span>
-<span><span class="co">#&gt; 4        80.19323             77.03834    92.10916           67.76883</span></span>
+<span><span class="co">#&gt; 4        81.10707             74.77129    84.61497           67.33913</span></span>
 <span><span class="co">#&gt;   famille_production famille_energie famille_social famille_air</span></span>
 <span><span class="co">#&gt; 1           57.57089       100.00000       99.05773    40.62771</span></span>
-<span><span class="co">#&gt; 2           51.88368        99.67225       99.48972    38.94574</span></span>
+<span><span class="co">#&gt; 2           54.48226        99.62543       99.56154    39.73875</span></span>
 <span><span class="co">#&gt; 3           43.40296        92.97315       98.48458    36.70354</span></span>
-<span><span class="co">#&gt; 4           46.20148        99.94170       99.18967    29.42016</span></span>
+<span><span class="co">#&gt; 4           44.95069        99.94753       99.16940    29.81762</span></span>
 <span></span>
 <span><span class="co"># Attribuer des noms de zones selon les profils</span></span>
 <span><span class="va">zonage</span> <span class="op">&lt;-</span> <span class="va">zonage</span> <span class="op">|&gt;</span></span>
@@ -726,7 +726,7 @@ profils multi-familles des parcelles.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">zonage</span><span class="op">$</span><span class="va">zone_name</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Conservation intégrale          Gestion mixte     Production durable </span></span>
-<span><span class="co">#&gt;                      2                      9                      8 </span></span>
+<span><span class="co">#&gt;                      2                     10                      7 </span></span>
 <span><span class="co">#&gt;        Usage récréatif </span></span>
 <span><span class="co">#&gt;                      1</span></span></code></pre></div>
 </div>
@@ -763,8 +763,8 @@ profils multi-familles des parcelles.</p>
 <span><span class="co">#&gt;   zone_name              n_parcelles C_mean B_mean P_mean S_mean N_mean</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Conservation intégrale           2   56.4   58.0   57.6   99.1   49.5</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Gestion mixte                    9   80.2   77.0   46.2   99.2   67.8</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Production durable               8   83.9   56     51.9   99.5   66.5</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Gestion mixte                   10   81.1   74.8   45.0   99.2   67.3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Production durable               7   83.1   56.2   54.5   99.6   66.9</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Usage récréatif                  1   67.5   71.4   43.4   98.5   53.6</span></span></code></pre></div>
 </div>
 </div>

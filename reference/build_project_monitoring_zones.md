@@ -81,6 +81,10 @@ area-based intersection); \[create_monitoring_zone()\] stores each zone
 in EPSG:4326. Zones carry no placettes (see
 \[create_monitoring_zone()\]).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 \[create_monitoring_zone()\], \[find_zones_by_project()\].

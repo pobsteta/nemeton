@@ -29,6 +29,10 @@ A `list(slope_decade, intercept, r2, p_value, n)`. All `NA` (with `n`
 the count of finite pairs) when fewer than two finite points are
 available.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`eobs_summer_series`](https://pobsteta.github.io/nemeton/reference/eobs_summer_series.md)

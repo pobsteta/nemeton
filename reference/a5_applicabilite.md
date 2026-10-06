@@ -71,6 +71,10 @@ verdict is two-tiered: without `lst`, an extent-level answer costing one
 catalogue query; with a raster already at hand (typically the project
 cache), a per-unit answer.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`theia_source_status`](https://pobsteta.github.io/nemeton/reference/theia_source_status.md),

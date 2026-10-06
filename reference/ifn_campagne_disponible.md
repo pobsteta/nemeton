@@ -28,6 +28,10 @@ ifn_campagne_disponible(depuis = NULL, back = 5L)
 A list with `campagne` (integer, the last campaign covered), `millesime`
 (e.g. `"2005-2024"`) and `url`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

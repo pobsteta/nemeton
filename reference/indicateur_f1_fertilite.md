@@ -77,7 +77,8 @@ indicateur_f1_fertilite(
 
 ## Value
 
-Numeric vector of fertility scores (0-100 scale, higher = more fertile)
+The input `units` (same class, rows and order) with an added numeric
+column `F1`: fertility scores (0-100 scale, higher = more fertile)
 
 ## Details
 
@@ -115,6 +116,10 @@ Three data sources are supported via `source`:
 
 SoilGrids is global — the `"soilgrids"` mode works for any AOI,
 `country` only controls where the datasource entry is looked up.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## Examples
 

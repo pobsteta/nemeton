@@ -47,6 +47,10 @@ plot_temporal_heatmap(
 
 A ggplot object
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

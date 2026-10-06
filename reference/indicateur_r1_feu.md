@@ -117,6 +117,10 @@ w3\*climate_dryness. Without a species field, an NDVI-based proxy
 available. A component that cannot be computed drops out and its weight
 is redistributed proportionally; with no usable component, R1 is `NA`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 Other risk-indicators:

@@ -48,6 +48,10 @@ A nemeton_temporal object (list) with components:
 
   List with dates, period_labels, alignment info
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

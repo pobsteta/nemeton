@@ -22,3 +22,7 @@ delete_knowledge_document(con, document_id)
 
 Invisibly, the number of chunks deleted (via the \`ON DELETE CASCADE\`
 foreign key).
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

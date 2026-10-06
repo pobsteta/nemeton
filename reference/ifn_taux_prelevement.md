@@ -40,6 +40,10 @@ ifn_taux_prelevement(espar, ser = NULL, min_plac = 30,
 A data.frame with one row per `espar`: `espar`, `libelle_essence`,
 `taux_m3_ha_an`, `niveau_utilise`, `n_plac_presence`, `ser`, `greco`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`ifn_prelevement_essence_ser`](https://pobsteta.github.io/nemeton/reference/ifn_prelevement_essence_ser.md),

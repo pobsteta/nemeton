@@ -21,7 +21,7 @@ and cap at – a year that produces a complete run."><meta property="og:image" c
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -127,7 +127,7 @@ and cap at – a year that produces a complete run."><meta property="og:image" c
     <div class="ref-description section level2">
     <p>RECONFORT classifies a pixel's model-bound ~2-year index trajectory;
 the analysis window ends at `s2_year&lt;edate&gt;` (`10-29` for the 2-year
-models, `05-31` for `v3_early_may` – see <code><a href="RECONFORT_MODELS.html">RECONFORT_MODELS</a></code>).
+models, `05-31` for `v3_early_may` – see <code>RECONFORT_MODELS</code>).
 Running a run for a `s2_year` whose window has not fully elapsed yields a
 truncated final season and a degraded classification. This helper
 returns the latest `s2_year` for which the window end date has already
@@ -145,7 +145,7 @@ and cap at – a year that produces a complete run.</p>
 
 
 <dl><dt id="arg-v-model">v_model<a class="anchor" aria-label="anchor" href="#arg-v-model"></a></dt>
-<dd><p>Model version (see <code><a href="RECONFORT_MODELS.html">RECONFORT_MODELS</a></code>). Default `"v3"`.</p></dd>
+<dd><p>Model version (see <code>RECONFORT_MODELS</code>). Default `"v3"`.</p></dd>
 
 
 <dt id="arg-today">today<a class="anchor" aria-label="anchor" href="#arg-today"></a></dt>
@@ -165,6 +165,12 @@ end date itself). Pass a positive value to be conservative.</p></dd>
     <p>A single integer year: the current year when its window end
 date (plus `lag_days`) is on or before `today`, otherwise the
 previous year.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Experimental: may change in any release, without deprecation (spec 057).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

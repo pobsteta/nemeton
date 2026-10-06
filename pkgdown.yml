@@ -50,11 +50,10 @@ articles:
   indicator-families_fr: indicator-families_fr.html
   internationalization: internationalization.html
   multi-criteria-optimization_fr: multi-criteria-optimization_fr.html
-  nemetonapp-guide_fr: nemetonapp-guide_fr.html
   site-index-open-canopy_fr: site-index-open-canopy_fr.html
   temporal-analysis_fr: temporal-analysis_fr.html
   tutorial-guide: tutorial-guide.html
-last_built: 2026-10-06T07:17Z
+last_built: 2026-10-06T14:29Z
 urls:
   reference: https://pobsteta.github.io/nemeton/reference
   article: https://pobsteta.github.io/nemeton/articles

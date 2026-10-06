@@ -83,3 +83,7 @@ codes intersected, possibly empty); \* \`species_valid\` (logical or
 (numeric or \`NA\`); \* \`overall_valid\` (logical) — \`geo_valid &&
 (species_valid \* \`advisory\` (always \`TRUE\`) — the check warns, it
 does not block; \* \`thresholds\` (list).
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

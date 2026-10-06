@@ -47,7 +47,8 @@ indicateur_w3_humidite(
 
 ## Value
 
-Numeric vector of TWI mean values
+The input `units` (same class, rows and order) with an added numeric
+column `W3`: mean TWI, referenced to a 2 m grid.
 
 ## Details
 
@@ -55,6 +56,17 @@ The GRASS method (via fasterRaster) performs proper hydrological
 conditioning: depression filling, flow direction, flow accumulation,
 then TWI = ln(SCA / tan(slope)). The terra D8 method is a simpler
 approximation used as fallback.
+
+A DEM in geographic coordinates is first projected to a metric CRS (the
+units' CRS when projected, else EPSG:3035): the specific catchment area
+is in metres, never in degrees. The TWI is then referenced to a 2 m
+grid, `TWI_2m = TWI - ln(step / 2)` with `step` the computation grid
+step in metres, because the specific catchment area scales with the step
+(spec 056). Values from different DEM resolutions are thus on one scale.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## Examples
 

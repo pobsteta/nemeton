@@ -30,3 +30,7 @@ attach_field_data_to_units(units, field_agg)
 
 This gives indicators a uniform `field_*` set of columns to read,
 regardless of whether field data is available or not.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

@@ -24,3 +24,7 @@ probe_ign_lidar_tiles(urls, timeout = 10)
 
 A \`data.frame\` with columns \`url\`, \`status\`, \`category\`,
 \`message\`, \`content_length\`.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

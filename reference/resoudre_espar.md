@@ -29,6 +29,10 @@ resoudre_espar(x)
 A character vector of `espar` codes, same length as `x`, `NA` where no
 correspondence exists.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`ifn_espar_correspondance`](https://pobsteta.github.io/nemeton/reference/ifn_espar_correspondance.md)

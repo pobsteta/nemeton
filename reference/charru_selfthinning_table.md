@@ -13,6 +13,10 @@ charru_selfthinning_table()
 
 A data.frame with columns `species, model, a, b, c, dg_min, dg_max`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

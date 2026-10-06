@@ -121,6 +121,10 @@ problem between the CHM and the reference layers.
 `sanitize_chm()` is idempotent and does not mutate the input raster. It
 returns a new `SpatRaster`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

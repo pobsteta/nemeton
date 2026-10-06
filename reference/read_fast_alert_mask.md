@@ -69,6 +69,10 @@ Returns \`NULL\` when the directory or any matching file is absent — the
 same dégradation pattern as \[read_fordead_dieback_mask()\] so the app
 can \`is.null(mask)\` and show an empty state.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[compute_fast_alert_mask()\] (the writer),

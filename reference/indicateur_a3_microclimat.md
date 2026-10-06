@@ -20,9 +20,8 @@ indicateur_a3_microclimat(units, micro = NULL, chm = NULL,
 - micro:
 
   The summer microclimate rasters (named list / multi-layer
-  `SpatRaster`) from
-  [`microclimate_run`](https://pobsteta.github.io/nemeton/reference/microclimate_run.md);
-  the `tmax_understorey` layer (°C) is used. `NULL` → `A3 = NA`.
+  `SpatRaster`) precomputed by a microclimf run; the `tmax_understorey`
+  layer (°C) is used. `NULL` → `A3 = NA`.
 
 - chm:
 
@@ -40,7 +39,8 @@ indicateur_a3_microclimat(units, micro = NULL, chm = NULL,
 ## Value
 
 `units` with columns `A3` (0-100), `A3_tmax` (raw °C),
-`A3_couverture_pct`, and `attr(., "augmented")` carrying
+`A3_couverture_pct`, `a3_status` (`"calculated"`, `"skipped_no_micro"`
+or `"skipped_no_coverage"`), and `attr(., "augmented")` carrying
 `"microclimate_model"` (only when at least one value is computed).
 
 **Higher = cooler under the canopy = favourable.** The raw quantity
@@ -51,8 +51,11 @@ indicateur_a3_microclimat(units, micro = NULL, chm = NULL,
 therefore passes `A3` through unchanged and must **not** invert it a
 second time (spec 048 section 12).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`indicateur_a4_tamponnement`](https://pobsteta.github.io/nemeton/reference/indicateur_a4_tamponnement.md),
-[`indicateur_w4_vpd`](https://pobsteta.github.io/nemeton/reference/indicateur_w4_vpd.md),
-[`microclimate_run`](https://pobsteta.github.io/nemeton/reference/microclimate_run.md)
+[`indicateur_w4_vpd`](https://pobsteta.github.io/nemeton/reference/indicateur_w4_vpd.md)

@@ -9,7 +9,7 @@ material substitution using ADEME emission factors."><meta property="og:image" c
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -125,8 +125,6 @@ material substitution using ADEME emission factors.</p>
 <span>  volume_field <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  energy_scenario <span class="op">=</span> <span class="st">"vs_natural_gas"</span>,</span>
 <span>  material_scenario <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  column_name <span class="op">=</span> <span class="st">"E2"</span>,</span>
-<span>  lang <span class="op">=</span> <span class="st">"en"</span>,</span>
 <span>  taux_recolte_materiau <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -157,14 +155,6 @@ timber volume (m³/ha, a stock). Optional; used only with
 <dd><p>Character. Material substitution: "vs_concrete", "vs_steel", NULL. Default NULL (no material substitution).</p></dd>
 
 
-<dt id="arg-column-name">column_name<a class="anchor" aria-label="anchor" href="#arg-column-name"></a></dt>
-<dd><p>Character. Name for output column. Default "E2".</p></dd>
-
-
-<dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
-<dd><p>Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".</p></dd>
-
 
 <dt id="arg-taux-recolte-materiau">taux_recolte_materiau<a class="anchor" aria-label="anchor" href="#arg-taux-recolte-materiau"></a></dt>
 <dd><p>Numeric in <code>[0, 1]</code>, one value or one per
@@ -182,6 +172,12 @@ E2_material. <strong>Higher = more emissions avoided = favourable</strong>, not
 inverted. Same ref_max as E1 (2.64) because it is, to within 0.1 <!-- %, the same -->
 quantity: E2 = E1 x 4500 kWh x 0.222 kgCO2/kWh / 1000 = E1 x 0.999. See spec
 048 section 11.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -21,3 +21,7 @@ get_allometric_key(species_code, region = "BFC")
 ## Value
 
 Character. Allometric key (e.g., "Quercus", "Fagus", "Pinus").
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

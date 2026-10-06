@@ -57,6 +57,10 @@ followed by the \`abstract\` when one is supplied (\`ingestion_mode =
 change), so a corpus can be audited for which documents are full-text
 versus reference-only.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[ingest_knowledge_document()\] (full-text ingestion),

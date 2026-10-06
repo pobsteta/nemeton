@@ -113,6 +113,10 @@ the click is what the user wants. So \`build_index_stack()\` at point
 \`(x, y)\` by a sub-pixel amount when \`index = "NBR"\`. This is
 documented and intentional.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 \[read_s2_band_stack()\], \[extract_pixel_timeseries()\].

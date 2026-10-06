@@ -35,7 +35,7 @@ Legacy mode — when chm is NULL
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -161,8 +161,6 @@ Legacy mode — when chm is NULL
 <span>  fertility_field <span class="op">=</span> <span class="st">"fertility"</span>,</span>
 <span>  climate_field <span class="op">=</span> <span class="st">"climate"</span>,</span>
 <span>  productivity_table <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  column_name <span class="op">=</span> <span class="st">"P2"</span>,</span>
-<span>  lang <span class="op">=</span> <span class="st">"en"</span>,</span>
 <span>  chm <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  age_field <span class="op">=</span> <span class="st">"age"</span>,</span>
 <span>  reference_age <span class="op">=</span> <span class="fl">50</span>,</span>
@@ -195,14 +193,6 @@ Legacy mode — when chm is NULL
 <dt id="arg-productivity-table">productivity_table<a class="anchor" aria-label="anchor" href="#arg-productivity-table"></a></dt>
 <dd><p>Data.frame. Custom productivity reference table. If NULL, uses bundled ONF/IFN tables.</p></dd>
 
-
-<dt id="arg-column-name">column_name<a class="anchor" aria-label="anchor" href="#arg-column-name"></a></dt>
-<dd><p>Character. Name for output column. Default "P2".</p></dd>
-
-
-<dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
-<dd><p>Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".</p></dd>
 
 
 <dt id="arg-chm">chm<a class="anchor" aria-label="anchor" href="#arg-chm"></a></dt>
@@ -248,7 +238,11 @@ national figure. Default <code>"ser"</code>.</p></dd>
 <li><p>CHM mode:    <code>P2</code> = site index \(H_0\) (m) at
           <code>reference_age</code>, plus <code>p2_status =
           "indice_station_m"</code> so that normalisation uses a 40 m
-          ceiling (<code><a href="normalize_indicator.html">normalize_indicator</a></code>).</p></li>
+          ceiling (<code><a href="normalize_indicator.html">normalize_indicator</a></code>). A dominant
+          height outside the site-index curves at the observed age
+          gives <code>P2 = NA</code> with <code>p2_status = "hors_courbe"</code>
+          (spec 056); <code>p2_status</code> is <code>NA</code> when the index is
+          not estimable (missing age or species, H_dom &lt; 1.3 m...).</p></li>
 <li><p>IFN mode:    <code>P2</code> = IFN volume production of the
           sylvoecoregion (m3/ha/yr), plus <code>P2_rse</code>,
           <code>P2_provenance</code>, <code>P2_nature</code>.</p></li>
@@ -263,10 +257,10 @@ Fay-Herriot (<code><a href="ifn_production_reference.html">ifn_production_refere
 not of the stand's own site, all species together: the per-group
 figures of the table are diluted over the whole forest area. It adds
 three columns:
-<code>&lt;column_name&gt;_rse</code> (relative standard error, percent),
-<code>&lt;column_name&gt;_provenance</code> (<code>"ifn_prod_ser"</code>,
+<code>P2_rse</code> (relative standard error, percent),
+<code>P2_provenance</code> (<code>"ifn_prod_ser"</code>,
 <code>"ifn_prod_greco"</code> or <code>"ifn_prod_national"</code>) and
-<code>&lt;column_name&gt;_nature</code> (<code>"fay_herriot"</code>,
+<code>P2_nature</code> (<code>"fay_herriot"</code>,
 <code>"direct"</code> or <code>"synthetique"</code>). It is opt-in: the
 default behaviour is unchanged.</p>
 <p>The modes answer the same forestry question (how
@@ -286,6 +280,12 @@ or a mode-aware normalization when mixing units.</p>
 <li><p>atlantic: Southwest Atlantic (Landes, Gironde)</p></li>
 <li><p>mediterranean: Mediterranean (Provence, Languedoc)</p></li>
 </ul></div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>

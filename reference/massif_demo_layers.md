@@ -45,6 +45,10 @@ The function loads files from the package installation directory: -
 Rasters: `inst/extdata/massif_demo_*.tif` - Vectors:
 `inst/extdata/massif_demo_*.gpkg`
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`massif_demo_units`](https://pobsteta.github.io/nemeton/reference/massif_demo_units.md),

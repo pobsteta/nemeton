@@ -57,3 +57,7 @@ stays \`"progressive"\` but the flag says "do not double-count".
 
 Computed in pure R: cost is O(n²) on a few thousand alerts max, so we
 deliberately don't push it to SQL.
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

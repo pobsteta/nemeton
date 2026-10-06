@@ -249,6 +249,10 @@ considered (\`n_scenes\`), scenes skipped thanks to the COG cache
 (\`n_plots\`), bands (\`bands\`), and \`status\` (\`"success"\` or
 \`"cancelled"\`).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

@@ -13,9 +13,7 @@ indicateur_n2_continuite(
   bdforet = NULL,
   foret_ancienne = NULL,
   layers = NULL,
-  column_name = "N2",
-  weight_anciennete = TRUE,
-  lang = "en"
+  weight_anciennete = TRUE
 )
 ```
 
@@ -43,21 +41,12 @@ indicateur_n2_continuite(
   nemeton_layers object. Used to resolve bdforet if not provided
   directly.
 
-- column_name:
-
-  Character. Name for output column. Default "N2".
-
 - weight_anciennete:
 
   Logical. When `foret_ancienne` carries an `anciennete` tier column,
   weight the ancient-forest coverage by tier depth (forest present at
   more epochs counts more). Ignored for single-epoch layers. Default
   `TRUE`.
-
-- lang:
-
-  Character. Currently unused (messages are in English); kept for
-  backward compatibility. Default "en".
 
 ## Value
 
@@ -72,3 +61,7 @@ N2 therefore never spans the bottom of its own scale, and a low N2 is
 not the same statement as a zero.
 [`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
 passes it through (spec 048 section 12).
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

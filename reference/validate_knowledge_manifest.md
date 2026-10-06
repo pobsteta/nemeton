@@ -30,6 +30,10 @@ is valid.
 Returns the issues as data rather than aborting, so a caller (e.g. a
 \`nemetonshiny\` editor) can surface them inline.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[knowledge_manifest_vocab()\], \[write_knowledge_manifest()\].

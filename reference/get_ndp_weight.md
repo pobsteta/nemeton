@@ -18,6 +18,10 @@ get_ndp_weight(ndp)
 
 Integer. Fibonacci weight (1, 1, 2, 3, or 5).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

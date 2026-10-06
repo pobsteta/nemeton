@@ -19,6 +19,10 @@ get_species_config(region = "BFC")
 
 A list with the region's species configuration.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

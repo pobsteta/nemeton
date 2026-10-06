@@ -40,6 +40,10 @@ Missing scenes (no \`\<band\>.tif\` on disk) are skipped silently and
 reported via a \*\*single aggregated warning\*\* — never one warning per
 missing scene. Returns \`NULL\` if every scene is missing.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 \[read_s2_band_raster()\], \[build_index_stack()\] for computed NDVI /

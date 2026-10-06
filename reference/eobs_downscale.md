@@ -3,9 +3,8 @@
 Turn the coarse E-OBS grid (~0.1°, ~11 km) into a fine continuous
 `SpatRaster` over the project's regional context, using the DEM (and
 terrain covariates) as external drift. Built for the "regional context"
-map of the reGénération tab — **not** stand-scale precision, which
-[`microclimate_run`](https://pobsteta.github.io/nemeton/reference/microclimate_run.md)
-already produces from microclimf + HD LiDAR.
+map of the reGénération tab — **not** stand-scale precision, which a
+microclimf run driven by HD LiDAR already produces.
 
 ## Usage
 
@@ -195,6 +194,10 @@ for a **regional context** map, not stand-scale precision.
   [`meteoland_daily_grid`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
   instead of a reduced statistic.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## References
 
 E-OBS: Cornes et al. (2018). Regression-kriging: Hengl et al. (2007).
@@ -202,5 +205,4 @@ meteoland: De Cáceres et al. (2018).
 
 ## See also
 
-[`tendances_estivales_eobs`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md),
-[`microclimate_run`](https://pobsteta.github.io/nemeton/reference/microclimate_run.md)
+[`tendances_estivales_eobs`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)

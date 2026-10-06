@@ -35,6 +35,10 @@ write_knowledge_manifest(
 
 Invisibly, the path written.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[read_knowledge_manifest()\], \[validate_knowledge_manifest()\].

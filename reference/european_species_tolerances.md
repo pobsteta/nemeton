@@ -57,6 +57,10 @@ regulation, political agreement 2025-12-08, 17) and `"atlas_jrc"`
 `invasif` flags INTRO/INVASIVE taxa (listed for completeness —
 **presence is not a recommendation**).
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## References
 
 European Atlas of Forest Tree Species (San-Miguel-Ayanz et al. 2016);

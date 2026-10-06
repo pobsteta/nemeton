@@ -23,6 +23,10 @@ get_famille_code(col_name)
 Character vector of single-letter family codes, `NA_character_` where
 the name is not a family score column.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`get_famille_col`](https://pobsteta.github.io/nemeton/reference/get_famille_col.md),

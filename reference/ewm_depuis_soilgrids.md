@@ -72,6 +72,10 @@ measures lateral convergence, not storage capacity, and it already feeds
 [`indicateur_r3_secheresse`](https://pobsteta.github.io/nemeton/reference/indicateur_r3_secheresse.md)
 directly (spec 035, decision D1).
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## References
 
 Poggio L. et al. (2021). SoilGrids 2.0. *SOIL* 7:217-240.

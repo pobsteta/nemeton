@@ -3,11 +3,25 @@
 splits it into overlapping chunks, embeds each chunk via the chosen
 provider, and writes the document and its chunks to the knowledge
 base. Runs in a single transaction so a failed embedding rolls back
-cleanly."><meta property="og:description" content="Extracts text from a PDF / `.txt` / `.md` file (or a raw string),
+cleanly.
+**No duplicates.** Before any embedding call, the chunk fingerprints
+(`knowledge_chunk.text_hash`, in `chunk_index` order) are compared with
+the documents already in the base. When an existing document has
+exactly the same sequence (same content, chunked with the same
+`chunk_size` / `chunk_overlap`), nothing is embedded or inserted: a
+message names the existing document and its `document_id` is returned
+with `duplicate = TRUE`."><meta property="og:description" content="Extracts text from a PDF / `.txt` / `.md` file (or a raw string),
 splits it into overlapping chunks, embeds each chunk via the chosen
 provider, and writes the document and its chunks to the knowledge
 base. Runs in a single transaction so a failed embedding rolls back
-cleanly."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
+cleanly.
+**No duplicates.** Before any embedding call, the chunk fingerprints
+(`knowledge_chunk.text_hash`, in `chunk_index` order) are compared with
+the documents already in the base. When an existing document has
+exactly the same sequence (same content, chunked with the same
+`chunk_size` / `chunk_overlap`), nothing is embedded or inserted: a
+message names the existing document and its `document_id` is returned
+with `duplicate = TRUE`."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -15,7 +29,7 @@ cleanly."><meta property="og:image" content="https://pobsteta.github.io/nemeton/
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -124,6 +138,13 @@ splits it into overlapping chunks, embeds each chunk via the chosen
 provider, and writes the document and its chunks to the knowledge
 base. Runs in a single transaction so a failed embedding rolls back
 cleanly.</p>
+<p>**No duplicates.** Before any embedding call, the chunk fingerprints
+(`knowledge_chunk.text_hash`, in `chunk_index` order) are compared with
+the documents already in the base. When an existing document has
+exactly the same sequence (same content, chunked with the same
+`chunk_size` / `chunk_overlap`), nothing is embedded or inserted: a
+message names the existing document and its `document_id` is returned
+with `duplicate = TRUE`.</p>
     </div>
 
     <div class="section level2">
@@ -187,7 +208,15 @@ variable.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Invisibly, a list with `document_id`, `n_chunks`,
-  `n_tokens_est`, `duration_sec`.</p>
+  `n_tokens_est`, `duration_sec` and `duplicate` (`TRUE` when the
+  content was already ingested: `document_id` is then the existing
+  document's id).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Experimental: may change in any release, without deprecation (spec 057).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

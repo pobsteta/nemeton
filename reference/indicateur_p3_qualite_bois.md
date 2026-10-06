@@ -13,8 +13,6 @@ indicateur_p3_qualite_bois(
   defects_field = "defects",
   species_field = "species",
   weights = c(form = 0.4, diameter = 0.4, defects = 0.2),
-  column_name = "P3",
-  lang = "en",
   chm = NULL
 )
 ```
@@ -50,15 +48,6 @@ indicateur_p3_qualite_bois(
   Named numeric vector. Component weights: c(form = 0.4, diameter = 0.4,
   defects = 0.2). Default balanced.
 
-- column_name:
-
-  Character. Name for output column. Default "P3".
-
-- lang:
-
-  Character. Currently unused (messages are in English); kept for
-  backward compatibility. Default "en".
-
 - chm:
 
   Optional \`terra::SpatRaster\` canopy height model (spec 005). Passed
@@ -67,14 +56,25 @@ indicateur_p3_qualite_bois(
 
 ## Value
 
-sf object with added column: P3 (timber quality score 0-100).
+sf object with added columns: P3 (timber quality score 0-100) and
+`p3_status`, which tells which components were measured:
+`"diametre_seul"`, `"diametre_forme"`, `"diametre_defauts"` or
+`"complet"` (NA when P3 is NA).
 
-**Higher = better timber = favourable.** P3 is a weighted mean of three
+**Higher = better timber = favourable.** P3 is a weighted mean of the
 components that are each already 0-100 and each already oriented that
 way (diameter against commercial thresholds, stem form, a defects
 penalty), so the composite is 0-100 by construction and
 [`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
 passes it through (spec 048 section 12).
+
+Only MEASURED components enter the mean, their weights rescaled to sum
+to 1. Form and defects are used when the unit carries a non-missing
+value in `form_score_field` / `defects_field` (field data, e.g. QField);
+there is no default score any more. Before 1.0.0 a missing form counted
+70 and missing defects 85, i.e. 45 constant points out of 100 on every
+unit without field data (spec 056): P3 is now the diameter score alone
+there (`p3_status = "diametre_seul"`).
 
 ## Details
 
@@ -101,6 +101,10 @@ passes it through (spec 048 section 12).
 - 20-40: Low quality (pulpwood, biomass)
 
 - 0-20: Very low quality (firewood only)
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## Examples
 

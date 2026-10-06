@@ -36,9 +36,10 @@ indicateur_w4_vpd(units, micro = NULL, chm = NULL,
 
 ## Value
 
-`units` with `W4` (0-100), `W4_vpd` (raw kPa), `W4_couverture_pct`, and
-the `"microclimate_model"` augmentation flag (only when at least one
-value is computed).
+`units` with `W4` (0-100), `W4_vpd` (raw kPa), `W4_couverture_pct`,
+`w4_status` (`"calculated"`, `"skipped_no_micro"` or
+`"skipped_no_coverage"`), and the `"microclimate_model"` augmentation
+flag (only when at least one value is computed).
 
 **Higher = moister air under the canopy = favourable.** The raw quantity
 (VPD, kPa) runs the other way, so `.micro_norm(decreasing = TRUE)` flips
@@ -48,7 +49,10 @@ it here, at the source: 0.5 kPa -\> 100, 4.0 kPa -\> 0
 therefore passes `W4` through unchanged and must **not** invert it a
 second time (spec 048 section 12).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
-[`indicateur_a3_microclimat`](https://pobsteta.github.io/nemeton/reference/indicateur_a3_microclimat.md),
-[`microclimate_run`](https://pobsteta.github.io/nemeton/reference/microclimate_run.md)
+[`indicateur_a3_microclimat`](https://pobsteta.github.io/nemeton/reference/indicateur_a3_microclimat.md)

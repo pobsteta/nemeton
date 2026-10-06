@@ -150,6 +150,10 @@ just to report "N parcels out of M".
 `caler_sur_cadastre = TRUE` it can exceed 1, since the UGF then gains
 the sliver of the cadastral parcel it did not cover.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`load_onf_parcelles_source`](https://pobsteta.github.io/nemeton/reference/load_onf_parcelles_source.md)

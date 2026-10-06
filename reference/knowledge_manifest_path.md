@@ -25,6 +25,10 @@ knowledge_manifest_path(writable = FALSE)
 
 A character scalar path.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[read_knowledge_manifest()\], \[write_knowledge_manifest()\].

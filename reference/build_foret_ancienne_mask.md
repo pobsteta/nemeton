@@ -78,3 +78,7 @@ An sf polygon layer with `foret_ancienne = TRUE`, ready to pass to
 sources it also carries `anciennete` (integer epoch-count tier) and
 `epoques` (the contributing epoch labels). May have 0 rows if no forest
 is found.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

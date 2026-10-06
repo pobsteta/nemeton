@@ -18,6 +18,10 @@ get_ndp_level(ndp)
 
 A list with elements: ndp, key, name, fibonacci, confidence, sources.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

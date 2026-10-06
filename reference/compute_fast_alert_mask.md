@@ -155,6 +155,10 @@ Pass a custom \`breaks\` to override (e.g. percentile-based for \`mode =
 "rolling"\` where the value is a continuous deficit magnitude with no
 natural bin sizes).
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[read_fast_alert_mask()\] (the strict reader, mirror of

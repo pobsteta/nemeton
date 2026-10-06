@@ -94,6 +94,10 @@ consulted in this release (discovery is filesystem-based). Kept in the
 signature for forward compatibility, exactly as
 \[read_fordead_dieback_mask()\]. \`NULL\` is accepted.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[run_fordead_dieback()\], \[read_fordead_dieback_mask()\].

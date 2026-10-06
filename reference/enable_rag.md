@@ -28,6 +28,10 @@ call (empty if already enabled).
 Idempotent: re-running is a no-op once the migration is recorded in
 \`schema_migration\`.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[ingest_knowledge_document()\], \[retrieve_knowledge()\].

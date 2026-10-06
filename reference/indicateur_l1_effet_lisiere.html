@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -165,7 +165,7 @@ outside the nomenclature).</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Numeric vector of sylvosphere scores (0-100). <strong>Higher = more edge
+    <p>The input <code>units</code> (same class, rows and order) with an added numeric column <code>L1</code>: sylvosphere scores (0-100). <strong>Higher = more edge
 effect borne by the unit = less favourable</strong>: all three components grow with it
 (boundary irregularity, hostile surrounding matrix, wind and sun exposure).
 The value is therefore INVERTED by normalize_indicator() so the radar
@@ -176,11 +176,17 @@ section 9.</p>
     <h2 id="renamed-in-">Renamed in 0.176.0<a class="anchor" aria-label="anchor" href="#renamed-in-"></a></h2>
 
 
-<p>This indicator used to be called <code><a href="indicateur_l2_fragmentation.html">indicateur_l2_fragmentation()</a></code> – a name
+<p>This indicator used to be called <code>indicateur_l2_fragmentation()</code> – a name
 that announced the L2 fragmentation metric while computing the L1 edge
-effect. The old name still works and returns the same values, with a
-deprecation warning. Persisted columns are renamed by
+effect. The old name, kept as a deprecated alias since then, was removed
+in 1.0.0 (spec 057). Persisted columns are renamed by
 <code><a href="migrer_colonnes_l.html">migrer_colonnes_l</a></code>. See spec 045.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
 
     <div class="section level2">

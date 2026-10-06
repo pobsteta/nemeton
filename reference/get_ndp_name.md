@@ -18,6 +18,10 @@ get_ndp_name(ndp)
 
 Character. French name of the level.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

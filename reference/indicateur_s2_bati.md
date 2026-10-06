@@ -12,8 +12,6 @@ indicateur_s2_bati(
   buildings = NULL,
   dem = NULL,
   layers = NULL,
-  column_name = "S2",
-  lang = "en",
   dem_target_res = .topo_target_res(),
   max_dist = 2000
 )
@@ -38,15 +36,6 @@ indicateur_s2_bati(
 
   A nemeton_layers object (optional). Used to resolve buildings/dem when
   not provided directly.
-
-- column_name:
-
-  Character. Name for output column. Default "S2".
-
-- lang:
-
-  Character. Currently unused (messages are in English); kept for
-  backward compatibility. Default "en".
 
 - dem_target_res:
 
@@ -87,6 +76,10 @@ metres)
 - Extract mean distance per spatial unit
 
 Returns NA when DEM or buildings are unavailable.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## Examples
 

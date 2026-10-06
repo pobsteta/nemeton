@@ -277,6 +277,10 @@ The signature is now \`(con, zone_id, cache_dir, ...)\`. Arguments
 scenes_df to passing the \`DBIConnection\` + zone id that the pipeline
 uses to derive both internally.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## Examples
 
 ``` r

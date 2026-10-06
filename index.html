@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -358,10 +358,24 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <span><span class="fu"><a href="reference/nemeton_radar.html">nemeton_radar</a></span><span class="op">(</span><span class="va">families</span>, mode <span class="op">=</span> <span class="st">"family"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="corpus-rag--emplacement-des-pdf">Corpus RAG : emplacement des PDF<a class="anchor" aria-label="anchor" href="#corpus-rag--emplacement-des-pdf"></a>
+</h2>
+<p>La base de connaissances (RAG, <code><a href="reference/build_knowledge_corpus.html">build_knowledge_corpus()</a></code>) ingère des PDF qui ne sont <strong>pas</strong> livrés avec le paquet (ni suivis par git). Le manifeste <code>inst/extdata/knowledge_corpus_v1.csv</code> les désigne par un <code>local_path</code> relatif à la <strong>racine du corpus</strong>, de la forme <code>data-raw/references/&lt;fichier&gt;.pdf</code>. La racine est lue, dans l’ordre :</p>
+<ol style="list-style-type: decimal">
+<li>option R <code>nemeton.corpus_root</code> ;</li>
+<li>variable d’environnement <code>NEMETON_CORPUS_ROOT</code> ;</li>
+<li>à défaut, le répertoire de travail (cas d’un clone du dépôt).</li>
+</ol>
+<p>Pour une installation hors dépôt (paquet installé, serveur) :</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># ~/.Renviron (ou environnement du service)</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="va">NEMETON_CORPUS_ROOT</span><span class="op">=</span>/srv/nemeton/corpus</span></code></pre></div>
+<p>puis déposer les PDF sous <code>/srv/nemeton/corpus/data-raw/references/</code> (le <code>local_path</code> du manifeste ajouté à la racine). Un chemin qui sortirait de la racine est refusé. Un PDF absent est retéléchargé depuis <code>source_url</code> quand c’est un <code>.pdf</code>, sinon la ligne est sautée et le rapport nomme le chemin et la racine utilisés ; <code>build_knowledge_corpus(dry_run = TRUE)</code> permet de vérifier avant tout appel d’embedding. Détails : <code><a href="reference/build_knowledge_corpus.html">?build_knowledge_corpus</a></code>, section <em>Corpus root</em>.</p>
+</div>
+<div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
 </h2>
 <p>Site pkgdown : <a href="https://pobsteta.github.io/nemeton/">pobsteta.github.io/nemeton</a></p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="op">?</span><span class="va">nemeton_compute</span></span>
 <span><span class="op">?</span><span class="va">create_family_index</span></span>
 <span><span class="op">?</span><span class="va">ndp_table</span></span>

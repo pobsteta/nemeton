@@ -32,3 +32,7 @@ cv_typology(file = NULL)
 ## Value
 
 A data.frame, 8 rows.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

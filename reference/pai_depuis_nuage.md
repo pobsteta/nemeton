@@ -113,6 +113,10 @@ working DTM). Heavy dependency in `Suggests`, guarded by
 path) it is returned as-is, so the pipeline can run on a pre-built PAI
 without `lasR`.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`regen_bilan_hydrique`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md),

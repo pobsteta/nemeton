@@ -29,6 +29,10 @@ project_lock_heartbeat(con, project_id, holder_id)
 `TRUE` if the lock is held by `holder_id` after the call (heartbeat
 refreshed), `FALSE` if `holder_id` does not hold it.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`project_lock_acquire`](https://pobsteta.github.io/nemeton/reference/project_lock_acquire.md)

@@ -107,6 +107,10 @@ A per-year summer `SpatRaster` (layers named by year), or `NULL` on
 graceful degradation (with a warning carrying the underlying error
 message).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`microclimate_detect_years`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md),

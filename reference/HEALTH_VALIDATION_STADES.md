@@ -11,3 +11,7 @@ translated to the \`alert.validation_status\` column by
 ``` r
 HEALTH_VALIDATION_STADES
 ```
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

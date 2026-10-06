@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -216,8 +216,8 @@ défavorable</strong></td>
 <tr class="even">
 <td>Ancien nom</td>
 <td>
-<code><a href="../reference/indicateur_l2_fragmentation.html">indicateur_l2_fragmentation()</a></code> — conservé en alias (spec
-045)</td>
+<code>indicateur_l2_fragmentation()</code> — alias retiré en 1.0.0
+(spec 057)</td>
 </tr>
 </tbody>
 </table>
@@ -400,15 +400,15 @@ massif.</strong> Un découpage cadastral en lanières produit des SI
 élevés sans qu’aucune lisière écologique n’existe : deux parcelles
 voisines au cœur d’un même massif continu peuvent obtenir des scores
 très différents pour une raison purement administrative.</p></li>
-<li><p><strong>Le nom a changé, l’ancien reste accepté.</strong>
-<code><a href="../reference/indicateur_l2_fragmentation.html">indicateur_l2_fragmentation()</a></code> est conservé comme alias
-(spec 045) et le slug <code>indicateur_l2_fragmentation</code> reste
-reconnu par la normalisation — et inversé avec L1 — pour les jeux non
-migrés. Attention au croisement :
-<code>indicateur_l1_sylvosphere</code>, malgré son nom, porte les
-valeurs de <strong>L2</strong>, pas de L1. Les deux noms historiques de
-la famille L « annonçaient l’inverse de ce qu’ils calculaient » — d’où
-le renommage.</p></li>
+<li><p><strong>Le nom a changé.</strong> La fonction
+<code>indicateur_l2_fragmentation()</code>, alias conservé depuis la
+spec 045, est retirée en 1.0.0 (spec 057) ; le slug
+<code>indicateur_l2_fragmentation</code> reste reconnu par la
+normalisation — et inversé avec L1 — pour les jeux non migrés. Attention
+au croisement : <code>indicateur_l1_sylvosphere</code>, malgré son nom,
+porte les valeurs de <strong>L2</strong>, pas de L1. Les deux noms
+historiques de la famille L « annonçaient l’inverse de ce qu’ils
+calculaient » — d’où le renommage.</p></li>
 </ol>
 </div>
 <div class="section level2">
@@ -448,8 +448,8 @@ de L1 à L3</text><rect x="586" y="242" width="226" height="42" rx="3" fill="non
 composantes sur trois retombent sur 50 sans données : 70 % du score peut
 être une constante.</text><text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">La
 géométrie mesure la forme de l’UGF, pas celle du massif : le découpage
-cadastral pèse sur le score.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">indicateur_l2_fragmentation()
-reste l’alias de L1 (spec 045) : les deux anciens noms étaient
+cadastral pèse sur le score.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">indicateur_l2_fragmentation,
+ancien nom de L1 (spec 045) : les deux anciens noms étaient
 croisés.</text></svg><figcaption style="font-size:.9em;opacity:.75">
 Trois composantes cumulées et deux valeurs par défaut. Avant de lire un
 L1, vérifier quelles couches étaient présentes : le score reste
@@ -474,9 +474,10 @@ plausible lorsqu’il n’a été calculé que pour trois dixièmes.
 <td><code>R/indicators-families.R:1682-1860</code></td>
 </tr>
 <tr class="even">
-<td>Alias historique</td>
+<td>Ancien nom</td>
 <td>
-<code><a href="../reference/indicateur_l2_fragmentation.html">indicateur_l2_fragmentation()</a></code> — <code>:1962</code>
+<code>indicateur_l2_fragmentation</code> — slug reconnu par
+<code><a href="../reference/migrer_colonnes_l.html">migrer_colonnes_l()</a></code>
 </td>
 </tr>
 <tr class="odd">

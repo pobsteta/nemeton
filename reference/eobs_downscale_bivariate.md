@@ -101,6 +101,10 @@ the reference figure). `meta$tx` / `meta$rr` carry the two component
 [`eobs_downscale`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
 metas.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`eobs_downscale`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md),

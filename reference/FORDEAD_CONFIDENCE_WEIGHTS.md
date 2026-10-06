@@ -17,3 +17,7 @@ terrain\*. ONF/DSF, mai 2024.
 
 Field validation taught us that classes 1 and 2 carry too many false
 positives (50 classes 3 and 4 are usable.
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

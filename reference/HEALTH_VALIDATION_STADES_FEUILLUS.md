@@ -30,3 +30,7 @@ The exact A–F percentage cut-offs follow the DSF DEPERIS field guide.
 ``` r
 HEALTH_VALIDATION_STADES_FEUILLUS
 ```
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

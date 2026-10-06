@@ -138,6 +138,10 @@ palette used by the Shiny application, which applies viridis for
 colorblind accessibility. Consumers who need an accessible palette
 should ignore this column.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`indicator_labels`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md)

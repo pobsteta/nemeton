@@ -65,6 +65,10 @@ A list with:
 
 - `inputs`: echo of `cv`, `target_error`, `alpha`, `N`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

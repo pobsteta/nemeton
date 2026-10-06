@@ -15,6 +15,10 @@ read_site_index_curves()
 A `data.frame` with columns `species, age, class_1, ..., class_5`.
 Heights in metres.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

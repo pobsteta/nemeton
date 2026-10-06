@@ -47,6 +47,10 @@ biophys_gating(n_obs, pct_masked, oob_frac, area_px,
 A logical vector, one per unit: `TRUE` where **all** conditions hold,
 `FALSE` otherwise (including where any input is `NA`).
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`biophys_gating_thresholds`](https://pobsteta.github.io/nemeton/reference/biophys_gating_thresholds.md)

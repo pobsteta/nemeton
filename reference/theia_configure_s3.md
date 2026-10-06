@@ -37,6 +37,10 @@ THEIA API-key pair used by the `teledetection` SDK (create one at
 and options are read from the `services$theia_s3` entry of the country
 configuration.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

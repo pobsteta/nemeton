@@ -40,3 +40,7 @@ get_health_validation_schema(
 ## Value
 
 A list of field descriptors (see \`R/field_schema.R\`).
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

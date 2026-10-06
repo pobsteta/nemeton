@@ -9,7 +9,7 @@ Orchestrates indicator calculation with automatic preprocessing and error handli
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -143,8 +143,10 @@ Orchestrates indicator calculation with automatic preprocessing and error handli
 
 
 <dt id="arg-indicators">indicators<a class="anchor" aria-label="anchor" href="#arg-indicators"></a></dt>
-<dd><p>Character vector of indicator names to calculate, or "all" for all available.
-See <code><a href="list_indicators.html">list_indicators</a></code> for available indicators from the 12-family framework.</p></dd>
+<dd><p>Character vector of indicator names to calculate, or "all" for all
+41 indicators of <code><a href="list_indicators.html">list_indicators</a></code> (the source-conditional ones
+included: without their source they come back <code>NA</code> with their status).
+Use <code>list_indicators(conditionnels = FALSE)</code> for the 31 base indicators.</p></dd>
 
 
 <dt id="arg-preprocess">preprocess<a class="anchor" aria-label="anchor" href="#arg-preprocess"></a></dt>
@@ -165,7 +167,9 @@ See <code><a href="list_indicators.html">list_indicators</a></code> for availabl
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>An <code>sf</code> object with original columns plus one column per calculated indicator</p>
+    <p>An <code>sf</code> object with original columns plus one column per calculated
+indicator, and the indicator's status column (<code>&lt;code&gt;_status</code>, e.g.
+<code>a3_status = "skipped_no_micro"</code>) when the indicator writes one.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -180,6 +184,12 @@ See <code><a href="list_indicators.html">list_indicators</a></code> for availabl
 <li><p>Returns enriched sf object</p></li>
 </ol><p>If an indicator calculation fails, a warning is issued and the indicator column
 is filled with NA, but computation continues for other indicators.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -43,6 +43,10 @@ any non-interactive context — a `future` worker, a CI job, a scheduled
 build — which is exactly where a download step belongs. Here the choice
 is an argument: `force = FALSE` reuses, `force = TRUE` re-downloads.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

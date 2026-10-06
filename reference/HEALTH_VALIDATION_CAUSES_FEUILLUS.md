@@ -9,3 +9,7 @@ RECONFORT counterpart of
 ``` r
 HEALTH_VALIDATION_CAUSES_FEUILLUS
 ```
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

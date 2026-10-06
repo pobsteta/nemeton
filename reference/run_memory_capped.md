@@ -138,12 +138,15 @@ work still runs in a child process — whose memory at least returns to
 the OS on exit — but **uncapped**, with a warning. Without a cgroup, an
 overshoot is once again the whole scope's problem.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`run_fordead_dieback`](https://pobsteta.github.io/nemeton/reference/run_fordead_dieback.md),
-[`run_reticulate_isolated`](https://pobsteta.github.io/nemeton/reference/run_reticulate_isolated.md)
-(which pins a Python env rather than capping memory),
-[`scratch_dir`](https://pobsteta.github.io/nemeton/reference/scratch_dir.md)
+`run_reticulate_isolated()` (which pins a Python env rather than capping
+memory), `scratch_dir()`
 
 ## Examples
 

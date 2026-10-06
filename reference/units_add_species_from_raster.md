@@ -50,3 +50,7 @@ Units with no raster coverage get `NA`.
 The class-to-species crosswalk is product-specific (it depends on the
 legend of the classification raster), so it must be supplied explicitly
 rather than guessed.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

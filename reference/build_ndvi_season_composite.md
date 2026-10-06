@@ -65,6 +65,10 @@ A single-layer \[terra::SpatRaster\] named \`"ndvi"\`, with attribute
 \`"scenes"\` (the \`scene_id\` / \`obs_date\` used), or \`NULL\` when no
 scene is usable.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

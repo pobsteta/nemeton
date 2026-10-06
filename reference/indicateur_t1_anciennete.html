@@ -15,7 +15,7 @@ previous ones."><meta property="og:image" content="https://pobsteta.github.io/ne
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -172,7 +172,7 @@ Default uses current system year.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Numeric vector of estimated age in years (one per parcel) – NOT a 0-100
+    <p>The input <code>units</code> (same class, rows and order) with an added numeric column <code>T1</code>: estimated age in years – NOT a 0-100
 score. <strong>Higher = older = more favourable</strong>, so it is not inverted;
 normalize_indicator() rescales it against a ref_max of 200 years, beyond which
 ancientness counts as maximal. Until 0.196.0 it was wrongly declared natively
@@ -196,6 +196,12 @@ BD Forêt TFV, NDVI proxy.</p>
     recognised TFV</p></li>
 </ul></div>
     <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other temporal-indicators:
 <code><a href="indicateur_t2_changement.html">indicateur_t2_changement()</a></code></p></div>
@@ -211,7 +217,7 @@ BD Forêt TFV, NDVI proxy.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Primary method: BD Forêt</span></span></span>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">indicateur_t1_anciennete</span><span class="op">(</span><span class="va">massif_demo_units</span>, layers <span class="op">=</span> <span class="va">layers</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">T1</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Direct age field</span></span></span>
 <span class="r-in"><span><span class="va">units</span> <span class="op">&lt;-</span> <span class="va">massif_demo_units</span></span></span>

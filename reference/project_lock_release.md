@@ -28,6 +28,10 @@ project_lock_release(con, project_id, holder_id)
 
 `TRUE` if a lock was released, `FALSE` otherwise.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`project_lock_acquire`](https://pobsteta.github.io/nemeton/reference/project_lock_acquire.md)

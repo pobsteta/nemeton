@@ -122,7 +122,9 @@ is computed with the Hargreaves method. R3_climat = (-SPEI_recent + 2) /
 
 - slope_risk: steep slopes = runoff = dry
 
-- twi_risk: low TWI = dry
+- twi_risk: low TWI = dry. `1 - clamp((TWI - 2.5) / 6.5, 0, 1)`, on a
+  TWI referenced to a 2 m grid: fixed window \[2.5, 9\] shared with W3
+  and F2 (spec 056), no longer the maximum of the extent.
 
 topo_risk = 0.4\*aspect_risk + 0.3\*slope_risk + 0.3\*twi_risk
 
@@ -140,6 +142,10 @@ optional): when `soil_moisture` is supplied, the per-unit mean surface
 soil moisture is rescaled to a 0-1 relief factor against the
 \\0.3\\m^3/m^3\\ field-capacity reference, and R3 is multiplied by
 `1 - sm_relief_strength * relief`. Moist soil buffers drought stress.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## See also
 

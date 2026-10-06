@@ -123,6 +123,10 @@ holds no significant decline (every cell \`0\` or \`NA\`), the function
 raises a typed \`nemeton_empty_alert_mask\` error so the app can render
 a clean “Aucun déclin significatif” message.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 \[read_fast_alert_raster()\] (\`mode = "trend"\`),

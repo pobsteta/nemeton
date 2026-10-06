@@ -35,6 +35,10 @@ coniferous forest and 18 is grassland, so broadleaf species were
 returned for conifers and conifers for grassland. Any non-forest code
 also returned `"essence_mixte"`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

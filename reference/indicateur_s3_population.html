@@ -11,7 +11,7 @@ potential and recreational use intensity."><meta property="og:image" content="ht
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -127,9 +127,7 @@ potential and recreational use intensity.</p>
 <span>  population_grid <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  population_field <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"insee"</span>, <span class="st">"local"</span>, <span class="st">"proxy"</span><span class="op">)</span>,</span>
-<span>  buffer_radii <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5000</span>, <span class="fl">10000</span>, <span class="fl">20000</span><span class="op">)</span>,</span>
-<span>  column_name <span class="op">=</span> <span class="st">"S3"</span>,</span>
-<span>  lang <span class="op">=</span> <span class="st">"en"</span></span>
+<span>  buffer_radii <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5000</span>, <span class="fl">10000</span>, <span class="fl">20000</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -156,13 +154,6 @@ no longer exists and raises an error.</p></dd>
 <dd><p>Numeric vector. Buffer distances (m) for population counts. Default c(5000, 10000, 20000).</p></dd>
 
 
-<dt id="arg-column-name">column_name<a class="anchor" aria-label="anchor" href="#arg-column-name"></a></dt>
-<dd><p>Character. Name for output column (main indicator). Default "S3".</p></dd>
-
-
-<dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
-<dd><p>Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".</p></dd>
 
 <dt id="arg-population-field">population_field<a class="anchor" aria-label="anchor" href="#arg-population-field"></a></dt>
 <dd><p>Character or <code>NULL</code>. Name of the population column of
@@ -172,8 +163,7 @@ backward compatibility. Default "en".</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>sf object with added columns: <code>S3</code> (named after <code>column_name</code>,
-population density in inhabitants/km2 within the first buffer),
+    <p>sf object with added columns: <code>S3</code> (population density in inhabitants/km2 within the first buffer),
 <code>S3_densite</code> (same value), and the population counts <code>S3_5km</code>,
 <code>S3_10km</code>, <code>S3_20km</code> within the three buffers of
 <code>buffer_radii</code> (the names are kept whatever the radii). Without
@@ -191,6 +181,12 @@ population density in inhabitants/km2 within the first buffer),
     count field <code>ind</code>)</p></li>
 <li><p>WorldPop or GPW for international applications</p></li>
 </ul></div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>

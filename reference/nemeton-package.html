@@ -17,7 +17,7 @@ dimensions."><meta property="og:image" content="https://pobsteta.github.io/nemet
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -248,7 +248,31 @@ fragmentation (L2)</p></li>
 <ul><li><p><code>options(nemeton.language = "fr")</code> - Set French language</p></li>
 <li><p><code>options(nemeton.language = "en")</code> - Set English language</p></li>
 <li><p><code>nemeton_set_language("fr")</code> - Alternative language setting</p></li>
+</ul><p><strong>terra memory guard.</strong> When loaded, nemeton lowers terra's
+<code>memfrac</code> to 0.25 and caps <code>memmax</code> at 3 GB, so large rasters
+spill to disk instead of exhausting RAM. Since 1.0.0 the guard is only
+applied to a setting still at terra's default: a
+<code>terra::terraOptions(memfrac = , memmax = )</code> made before nemeton is
+loaded is kept. The explicit levers below always win:</p><ul><li><p><code>options(nemeton.terra_memfrac = 0.5)</code> - memfrac set at load</p></li>
+<li><p><code>options(nemeton.terra_memmax = 8)</code> or the environment
+    variable <code>NEMETON_TERRA_MEMMAX=8</code> - memmax (GB) set at load;
+    a non-positive value removes the cap</p></li>
 </ul></div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+
+<p>Every help page states the status of its function (spec 057):</p>
+<ul><li><p><strong>Stable</strong>: indicators, families, NDP, normalisation, data
+    loaders, sampling and the API consumed by nemetonshiny. Covered by the
+    1.0 API contract: a breaking change needs a major release.</p></li>
+<li><p><strong>Experimental</strong>: RAG (knowledge corpus), Sentinel-2
+    biophysics, FORDEAD / RECONFORT health monitoring and their field
+    validation, regeneration (microclimate, water balance, E-OBS). May
+    change in any release, without deprecation.</p></li>
+</ul><p>The reference index of the site groups the pages by status.</p>
+    </div>
     <div class="section level2">
     <h2 id="author-amp-methodology">Author &amp; Methodology<a class="anchor" aria-label="anchor" href="#author-amp-methodology"></a></h2>
 

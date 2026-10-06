@@ -85,6 +85,10 @@ single score.
 **Weights** are normalized internally to sum to 1. For example:
 `weights = c(2, 1, 1)` becomes `c(0.5, 0.25, 0.25)`
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`normalize_indicators`](https://pobsteta.github.io/nemeton/reference/normalize_indicators.md)

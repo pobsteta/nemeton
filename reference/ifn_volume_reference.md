@@ -57,6 +57,10 @@ no level qualified), `n_plac_presence`, `ser`, `greco`. With
 `methode = "fay_herriot"`, two more columns: `nature` (`"fay_herriot"`
 or `"cascade"`) and `rse` (percent, Fay-Herriot rows).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`ifn_volume_essence_ser`](https://pobsteta.github.io/nemeton/reference/ifn_volume_essence_ser.md)

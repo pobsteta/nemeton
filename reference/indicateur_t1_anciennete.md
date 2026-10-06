@@ -51,13 +51,13 @@ indicateur_t1_anciennete(
 
 ## Value
 
-Numeric vector of estimated age in years (one per parcel) – NOT a 0-100
-score. **Higher = older = more favourable**, so it is not inverted;
-normalize_indicator() rescales it against a ref_max of 200 years, beyond
-which ancientness counts as maximal. Until 0.196.0 it was wrongly
-declared natively 0-100 and merely clamped, so 150 and 250 years both
-came out at 100. See spec 048 section 10. `NA` for a unit no source can
-date (no default age).
+The input `units` (same class, rows and order) with an added numeric
+column `T1`: estimated age in years – NOT a 0-100 score. **Higher =
+older = more favourable**, so it is not inverted; normalize_indicator()
+rescales it against a ref_max of 200 years, beyond which ancientness
+counts as maximal. Until 0.196.0 it was wrongly declared natively 0-100
+and merely clamped, so 150 and 250 years both came out at 100. See spec
+048 section 10. `NA` for a unit no source can date (no default age).
 
 ## Details
 
@@ -77,6 +77,10 @@ year, BD Forêt TFV, NDVI proxy.
 - Area-weighted average across overlapping polygons with a recognised
   TFV
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 Other temporal-indicators:
@@ -93,7 +97,7 @@ layers <- massif_demo_layers()
 
 # Primary method: BD Forêt
 result <- indicateur_t1_anciennete(massif_demo_units, layers = layers)
-summary(result)
+summary(result$T1)
 
 # Direct age field
 units <- massif_demo_units

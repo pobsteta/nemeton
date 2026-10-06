@@ -13,7 +13,6 @@ indicateur_b4_div_spectrale(
   units,
   spectral = NULL,
   reflectance = NULL,
-  column_name = "B4",
   ...
 )
 ```
@@ -36,10 +35,6 @@ indicateur_b4_div_spectrale(
   Optional reflectance `SpatRaster` / path used to compute spectral
   diversity on the fly when `spectral` is `NULL`.
 
-- column_name:
-
-  Output column name (default `"B4"`).
-
 - ...:
 
   Passed to
@@ -48,7 +43,12 @@ indicateur_b4_div_spectrale(
 
 ## Value
 
-`units` with the numeric `column_name` column added.
+`units` with the numeric `B4` column added, and `b4_status`
+(`"calculated"`, `"skipped_no_spectral"` or `"skipped_no_coverage"`).
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## See also
 

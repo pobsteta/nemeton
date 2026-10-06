@@ -94,6 +94,10 @@ score: one category per unit carries no within-unit diversity (since
 \*\*Interpretation\*\*: Multi-layered, multi-age stands score high
 (\>75). Monocultures or even-aged stands score low (\<25).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 Other biodiversity-indicators:

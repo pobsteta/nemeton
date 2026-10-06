@@ -18,3 +18,7 @@ quantitatively.
 ``` r
 RECONFORT_CONFIDENCE_WEIGHTS
 ```
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

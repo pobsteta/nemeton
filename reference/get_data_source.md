@@ -29,6 +29,10 @@ get_data_source(source_key, country = "FR", section = NULL)
 
 A list with the source configuration, or NULL if not found.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

@@ -46,9 +46,13 @@ site index (dominant height at `reference_age`) in metres. `NA` is
 returned when `H_dom` or `age` is missing, when `H_dom` is below
 `min_stand_height`, when `age` is outside the tabulated range, or when
 the species cannot be resolved. A height above the tallest (class 1) or
-below the shortest (class 5) curve at the observed age is **clamped** to
-that class: the site index returned is then the class 1 or class 5
-height at `reference_age`, not an extrapolation.
+below the shortest (class 5) curve at the observed age is **out of the
+curves** and also gives `NA`: the site index is not extrapolated, nor
+clamped to class 1 or 5 any more (1.0.0, spec 056 — the clamp produced
+identical values, 10.90 or 20.71 m for sessile oak, that looked like
+measurements).
+[`indicateur_p2_station`](https://pobsteta.github.io/nemeton/reference/indicateur_p2_station.md)
+flags these units with `p2_status = "hors_courbe"`.
 
 ## Details
 
@@ -63,6 +67,10 @@ classes tabulated in `inst/extdata/site_index_curves.csv`:
 
 When `species` is not directly tabulated, a genus-level fallback is
 applied (`BROADLEAF_GENUS` for non-conifers, `CONIFER_GENUS` otherwise).
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## Examples
 

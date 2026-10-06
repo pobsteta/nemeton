@@ -29,6 +29,10 @@ tag_field_data_sources(data, placettes, arbres = NULL)
 
 `data` with the added attributes.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

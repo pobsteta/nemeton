@@ -90,6 +90,10 @@ A named list, each element a `data.frame`:
 The input attributes (`species`, `v_model`, `n_classes`, `date_from`,
 `date_to`, `dans_zone_validite`) are carried over onto the list.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`read_reconfort_pixel_series`](https://pobsteta.github.io/nemeton/reference/read_reconfort_pixel_series.md)

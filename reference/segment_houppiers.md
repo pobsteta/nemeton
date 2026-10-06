@@ -175,6 +175,10 @@ keeps the tallest, the one whose apex physically dominates the operator.
 No gap-filling is attempted either — a position inside no crown writes
 nothing rather than guessing the neighbouring tree.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`extract_h_dom`](https://pobsteta.github.io/nemeton/reference/extract_h_dom.md)

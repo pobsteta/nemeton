@@ -3,10 +3,10 @@
 the AOI. Two modes:
 Year targeting (year supplied) — the
     asset URL is signed through the teledetection gateway (see
-    theia_signed_href) and read via /vsicurl/;
+    theia_signed_href()) and read via /vsicurl/;
     an asset that cannot be signed aborts.
 Spatial search — the intersecting assets are
-    resolved and signed by resolve_theia_assets, then
+    resolved and signed by resolve_theia_assets(), then
     mosaicked; unsigned /vsis3/ paths (no keys) are only
     readable on a direct-S3 setup.
 
@@ -14,10 +14,10 @@ Spatial search — the intersecting assets are
 the AOI. Two modes:
 Year targeting (year supplied) — the
     asset URL is signed through the teledetection gateway (see
-    theia_signed_href) and read via /vsicurl/;
+    theia_signed_href()) and read via /vsicurl/;
     an asset that cannot be signed aborts.
 Spatial search — the intersecting assets are
-    resolved and signed by resolve_theia_assets, then
+    resolved and signed by resolve_theia_assets(), then
     mosaicked; unsigned /vsis3/ paths (no keys) are only
     readable on a direct-S3 setup.
 
@@ -29,7 +29,7 @@ Spatial search — the intersecting assets are
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -136,10 +136,10 @@ Spatial search — the intersecting assets are
     <p>Loads a Theia datasource for an area of interest and crops it to
 the AOI. Two modes:</p><ul><li><p><strong>Year targeting</strong> (<code>year</code> supplied) — the
     asset URL is signed through the teledetection gateway (see
-    <code><a href="theia_signed_href.html">theia_signed_href</a></code>) and read via <code>/vsicurl/</code>;
+    <code>theia_signed_href()</code>) and read via <code>/vsicurl/</code>;
     an asset that cannot be signed aborts.</p></li>
 <li><p><strong>Spatial search</strong> — the intersecting assets are
-    resolved and signed by <code><a href="resolve_theia_assets.html">resolve_theia_assets</a></code>, then
+    resolved and signed by <code>resolve_theia_assets()</code>, then
     mosaicked; unsigned <code>/vsis3/</code> paths (no keys) are only
     readable on a direct-S3 setup.</p></li>
 </ul></div>
@@ -188,7 +188,7 @@ time-series collection. Requires the datasource to declare
 
 <dt id="arg-datetime">datetime<a class="anchor" aria-label="anchor" href="#arg-datetime"></a></dt>
 <dd><p>Optional character. STAC datetime filter (see
-<code><a href="stac_search_items.html">stac_search_items</a></code>).</p></dd>
+<code>stac_search_items()</code>).</p></dd>
 
 
 <dt id="arg-country">country<a class="anchor" aria-label="anchor" href="#arg-country"></a></dt>
@@ -208,6 +208,12 @@ mode. Default <code>50</code>.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>SpatRaster</code> cropped to <code>aoi</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
 
     <div class="section level2">

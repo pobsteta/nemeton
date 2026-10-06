@@ -46,8 +46,8 @@ indicateur_c2_ndvi(
 
 ## Value
 
-Numeric vector of NDVI mean values (0-1 scale), or list with mean and
-trend if trend = TRUE
+The input `units` (same class, rows and order) with an added numeric
+column `C2`: mean NDVI (0-1 scale), or mean FAPAR in FAPAR mode.
 
 ## Details
 
@@ -57,6 +57,10 @@ Photosynthetically Active Radiation is returned instead of NDVI. FAPAR
 is a physically grounded vitality measure on the same `[0, 1]` scale as
 NDVI, so downstream normalization is unchanged. When `fapar` is `NULL`
 the pre-existing NDVI behaviour is preserved.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## Examples
 

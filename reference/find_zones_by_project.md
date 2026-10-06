@@ -26,6 +26,10 @@ find_zones_by_project(con, project_uuid)
 A \`data.frame\` with columns \`id\` (integer) and \`name\` (character),
 ordered by \`name\`; zero rows when no zone matches.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 \[find_zone_by_project()\], \[build_project_monitoring_zones()\].

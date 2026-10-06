@@ -22,6 +22,10 @@ read_knowledge_manifest(path = knowledge_manifest_path())
 
 A data.frame with the manifest columns.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[validate_knowledge_manifest()\], \[write_knowledge_manifest()\],

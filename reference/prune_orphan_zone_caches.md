@@ -74,6 +74,10 @@ Only directories named exactly \`zone\_\<integer\>\` under the listed
 \`subdirs\` are considered; everything else (shared \`sentinel2/\`,
 \`lidar\_\*\`, …) is left untouched.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 \[build_project_monitoring_zones()\] (the upsert that strands the

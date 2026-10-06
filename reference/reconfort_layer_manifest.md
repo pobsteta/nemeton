@@ -126,6 +126,10 @@ A `data.frame` with one row per available layer and the columns:
 When the run produced no displayable output the data.frame has zero rows
 (the columns and their types are still present).
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`run_reconfort_dieback`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md),

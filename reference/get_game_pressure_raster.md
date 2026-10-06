@@ -40,6 +40,10 @@ This function: 1. Downloads/computes game pressure index by department
 pressure values 4. Returns a raster for use with
 indicateur_r4_abroutissement(game_density = ...)
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 Other data-acquisition:

@@ -49,6 +49,10 @@ Values are clamped to the `[dg_min, dg_max]` range of the species when
 `clamp = TRUE` (default) because the self-thinning relationship was
 calibrated only over that range and extrapolates poorly.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

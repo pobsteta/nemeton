@@ -71,3 +71,7 @@ A list with:
 
 - `unmapped`: TFV codes present in the data but absent from the mapping
   table.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

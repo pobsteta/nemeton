@@ -82,7 +82,12 @@ indicateur_c1_biomasse(
 
 ## Value
 
-Numeric vector of carbon stock values (tC/ha)
+The input `units` (same class, rows and order) with an added numeric
+column `C1`: carbon stock values (tC/ha)
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## Examples
 

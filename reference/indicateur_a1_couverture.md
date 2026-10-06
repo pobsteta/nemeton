@@ -76,6 +76,10 @@ total_buffer_area) × 100
 
 - 80-100%: Excellent forest coverage (optimal air quality)
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 Other air-indicators:

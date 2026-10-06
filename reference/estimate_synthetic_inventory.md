@@ -92,6 +92,10 @@ how many units are concerned. Units below `min_merchantable_height` get
 `dbh = 0` and `density = 0`. The attribute `chm_suspect` (logical) flags
 a likely degenerate CHM (see `suspect_frac`).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

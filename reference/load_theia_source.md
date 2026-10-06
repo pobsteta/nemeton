@@ -4,15 +4,12 @@ Loads a Theia datasource for an area of interest and crops it to the
 AOI. Two modes:
 
 - **Year targeting** (`year` supplied) — the asset URL is signed through
-  the teledetection gateway (see
-  [`theia_signed_href`](https://pobsteta.github.io/nemeton/reference/theia_signed_href.md))
-  and read via `/vsicurl/`; an asset that cannot be signed aborts.
+  the teledetection gateway (see `theia_signed_href()`) and read via
+  `/vsicurl/`; an asset that cannot be signed aborts.
 
 - **Spatial search** — the intersecting assets are resolved and signed
-  by
-  [`resolve_theia_assets`](https://pobsteta.github.io/nemeton/reference/resolve_theia_assets.md),
-  then mosaicked; unsigned `/vsis3/` paths (no keys) are only readable
-  on a direct-S3 setup.
+  by `resolve_theia_assets()`, then mosaicked; unsigned `/vsis3/` paths
+  (no keys) are only readable on a direct-S3 setup.
 
 ## Usage
 
@@ -55,8 +52,7 @@ load_theia_source(
 
 - datetime:
 
-  Optional character. STAC datetime filter (see
-  [`stac_search_items`](https://pobsteta.github.io/nemeton/reference/stac_search_items.md)).
+  Optional character. STAC datetime filter (see `stac_search_items()`).
 
 - country:
 
@@ -75,6 +71,10 @@ load_theia_source(
 ## Value
 
 A `SpatRaster` cropped to `aoi`.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## Examples
 

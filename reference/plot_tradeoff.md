@@ -93,6 +93,10 @@ sacrificing another.
 to identify specific parcels of interest - Combine with faceting for
 multi-scenario comparisons
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

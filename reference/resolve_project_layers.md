@@ -153,6 +153,10 @@ The Open-Canopy entries are named file by file on purpose:
 height models. \`chm_vegetation_0_2m.tif\` is excluded as well: it is a
 masked derivative, not the reference height model.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

@@ -47,6 +47,10 @@ draw), and is \`NA\` elsewhere. Cells added by the buffer (not alert at
 origin) take \`min(classes)\` so they are samplable but with the lowest
 priority.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[create_validation_sampling_plan()\] which consumes the output of this

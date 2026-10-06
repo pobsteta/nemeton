@@ -22,3 +22,7 @@ print(x, ...)
 ## Value
 
 Invisible x
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

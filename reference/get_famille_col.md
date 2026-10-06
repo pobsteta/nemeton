@@ -27,6 +27,10 @@ get_famille_col(code)
 Character vector of NMT family column names (e.g. `"famille_carbone"`),
 same length as `code`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`get_famille_code`](https://pobsteta.github.io/nemeton/reference/get_famille_code.md)

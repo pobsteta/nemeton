@@ -84,6 +84,10 @@ computed on a forest unit of that species. `"maille"` would use the
 species' contribution to the regional mean, which is a resource figure
 and far too low for this purpose.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`ifn_volume_reference`](https://pobsteta.github.io/nemeton/reference/ifn_volume_reference.md),

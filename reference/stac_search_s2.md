@@ -66,6 +66,10 @@ returns the canonical empty tibble — callers (e.g. \`nemetonshiny\`) can
 use that aggregated warning to render one toast instead of stacking one
 per backend.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

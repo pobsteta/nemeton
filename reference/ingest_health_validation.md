@@ -71,3 +71,7 @@ alert within \`snap_distance_m\`, or whose \`alert_id\` is not an alert
 of the zone; \* \`n_skipped\` (int) — plots with no or an unknown
 \`stade_deperissement\`; \* \`details\` — a data.frame with one row per
 processed plot.
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

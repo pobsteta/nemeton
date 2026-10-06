@@ -12,8 +12,6 @@ indicateur_e2_evitement(
   volume_field = NULL,
   energy_scenario = "vs_natural_gas",
   material_scenario = NULL,
-  column_name = "E2",
-  lang = "en",
   taux_recolte_materiau = NULL
 )
 ```
@@ -45,15 +43,6 @@ indicateur_e2_evitement(
   Character. Material substitution: "vs_concrete", "vs_steel", NULL.
   Default NULL (no material substitution).
 
-- column_name:
-
-  Character. Name for output column. Default "E2".
-
-- lang:
-
-  Character. Currently unused (messages are in English); kept for
-  backward compatibility. Default "en".
-
 - taux_recolte_materiau:
 
   Numeric in `[0, 1]`, one value or one per unit: share of
@@ -70,3 +59,7 @@ E2_energy, E2_material. **Higher = more emissions avoided =
 favourable**, not inverted. Same ref_max as E1 (2.64) because it is, to
 within 0.1 quantity: E2 = E1 x 4500 kWh x 0.222 kgCO2/kWh / 1000 = E1 x
 0.999. See spec 048 section 11.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

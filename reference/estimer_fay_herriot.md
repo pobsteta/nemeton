@@ -63,6 +63,10 @@ When the REML estimate of `A` is not positive, it is truncated to 0 with
 a warning: every estimate is then the synthetic prediction, and the
 caller must know it.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## References
 
 Fay R.E., Herriot R.A. (1979). Estimates of income for small places: an

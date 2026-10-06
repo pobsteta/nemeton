@@ -125,6 +125,10 @@ which requires `espar_field` on `units` — the IFN species code. The
 level actually used (SER, GRECO or national) is reported through the
 `niveau_prelevement` attribute of the returned object, never silently.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`indicateur_p1_volume`](https://pobsteta.github.io/nemeton/reference/indicateur_p1_volume.md)

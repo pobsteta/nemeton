@@ -46,6 +46,10 @@ legacy one is dropped, and a warning names both – an already migrated
 dataset re-read alongside a stale export must not silently overwrite the
 current values.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`indicateur_l1_effet_lisiere`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_effet_lisiere.md),

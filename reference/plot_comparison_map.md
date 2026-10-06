@@ -51,6 +51,10 @@ plot_comparison_map(
 
 A ggplot object with side-by-side comparison
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

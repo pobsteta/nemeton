@@ -68,6 +68,10 @@ A
 (masked to the UGF zone unless `apply_zone_mask = FALSE` or no polygon
 could be resolved).
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`reconfort_layer_manifest`](https://pobsteta.github.io/nemeton/reference/reconfort_layer_manifest.md),

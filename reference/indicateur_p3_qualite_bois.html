@@ -9,7 +9,7 @@ commercial diameter thresholds, and defect presence."><meta property="og:image" 
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -126,8 +126,6 @@ commercial diameter thresholds, and defect presence.</p>
 <span>  defects_field <span class="op">=</span> <span class="st">"defects"</span>,</span>
 <span>  species_field <span class="op">=</span> <span class="st">"species"</span>,</span>
 <span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>form <span class="op">=</span> <span class="fl">0.4</span>, diameter <span class="op">=</span> <span class="fl">0.4</span>, defects <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span>,</span>
-<span>  column_name <span class="op">=</span> <span class="st">"P3"</span>,</span>
-<span>  lang <span class="op">=</span> <span class="st">"en"</span>,</span>
 <span>  chm <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -160,14 +158,6 @@ commercial diameter thresholds, and defect presence.</p>
 <dd><p>Named numeric vector. Component weights: c(form = 0.4, diameter = 0.4, defects = 0.2). Default balanced.</p></dd>
 
 
-<dt id="arg-column-name">column_name<a class="anchor" aria-label="anchor" href="#arg-column-name"></a></dt>
-<dd><p>Character. Name for output column. Default "P3".</p></dd>
-
-
-<dt id="arg-lang">lang<a class="anchor" aria-label="anchor" href="#arg-lang"></a></dt>
-<dd><p>Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".</p></dd>
-
 
 <dt id="arg-chm">chm<a class="anchor" aria-label="anchor" href="#arg-chm"></a></dt>
 <dd><p>Optional `terra::SpatRaster` canopy height model (spec 005).
@@ -177,12 +167,22 @@ CHM when the diameter field is missing. Default `NULL`.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>sf object with added column: P3 (timber quality score 0-100).</p>
-<p><strong>Higher = better timber = favourable.</strong> P3 is a weighted mean of three
+    <p>sf object with added columns: P3 (timber quality score 0-100) and
+<code>p3_status</code>, which tells which components were measured:
+<code>"diametre_seul"</code>, <code>"diametre_forme"</code>, <code>"diametre_defauts"</code> or
+<code>"complet"</code> (NA when P3 is NA).</p>
+<p><strong>Higher = better timber = favourable.</strong> P3 is a weighted mean of the
 components that are each already 0-100 and each already oriented that way
 (diameter against commercial thresholds, stem form, a defects penalty), so the
 composite is 0-100 by construction and <code><a href="normalize_indicator.html">normalize_indicator()</a></code> passes it
 through (spec 048 section 12).</p>
+<p>Only MEASURED components enter the mean, their weights rescaled to sum
+to 1. Form and defects are used when the unit carries a non-missing value
+in <code>form_score_field</code> / <code>defects_field</code> (field data, e.g. QField); there
+is no default score any more. Before 1.0.0 a missing form counted 70 and
+missing defects 85, i.e. 45 constant points out of 100 on every unit
+without field data (spec 056): P3 is now the diameter score alone there
+(<code>p3_status = "diametre_seul"</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -198,6 +198,12 @@ through (spec 048 section 12).</p>
 <li><p>20-40: Low quality (pulpwood, biomass)</p></li>
 <li><p>0-20: Very low quality (firewood only)</p></li>
 </ul></div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>

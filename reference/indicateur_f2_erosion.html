@@ -11,7 +11,7 @@ F2 = (twi_norm + slope_norm) / 2"><meta property="og:image" content="https://pob
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -168,14 +168,16 @@ resolution.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Numeric vector of erosion-resistance scores (0-100, higher = more
+    <p>The input <code>units</code> (same class, rows and order) with an added numeric column <code>F2</code>: erosion-resistance scores (0-100, higher = more
 resistant, i.e. LOWER erosion risk). Despite the historical variable name
 inside the function, this is not a fertility score: the ingredients are
 topographic (TWI wetness, slope steepness) plus optional soil texture.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>TWI is computed via GRASS (fasterRaster) when available, terra D8 otherwise.
+    <p>TWI is computed via GRASS (fasterRaster) when available, terra D8 otherwise,
+referenced to a 2 m grid (<code>TWI - ln(step / 2)</code>) and normalised on the
+window [2.5, 9] shared with W3 and R3 (spec 056).
 Higher values indicate more fertile soil conditions.</p>
 <p>When a Theia <code>theia_soil</code> texture raster set is supplied via
 <code>texture</code> (chantier sources Theia phase 3b), a third
@@ -183,6 +185,12 @@ component — texture-based erosion resistance, see
 <code><a href="texture_to_erosion_resistance.html">texture_to_erosion_resistance</a></code> — is averaged in:
 F2 = (twi_norm + slope_norm + resistance_norm) / 3. Silt-rich soils
 are more erodible and lower the score.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
 
     <div class="section level2">

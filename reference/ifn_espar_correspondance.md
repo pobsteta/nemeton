@@ -43,6 +43,10 @@ the IGN reference descends to infraspecific rank (*Picea abies* subsp.
 varieties — the row is left `NA` rather than assigned an arbitrary
 variety.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`resoudre_espar`](https://pobsteta.github.io/nemeton/reference/resoudre_espar.md)

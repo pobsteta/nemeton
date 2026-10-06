@@ -95,6 +95,10 @@ default, since
 [`biljou_soil`](https://pobsteta.github.io/biljouR/reference/biljou_soil.html)
 rejects non-positive reserves.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`ewm_depuis_soilgrids`](https://pobsteta.github.io/nemeton/reference/ewm_depuis_soilgrids.md),

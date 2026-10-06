@@ -81,6 +81,10 @@ famille_carbone, famille_eau).
 
 - min: Minimum value (worst-case, most conservative) - v0.3.0+
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

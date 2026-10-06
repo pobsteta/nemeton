@@ -85,6 +85,10 @@ to find it. It is only read to fetch the zone polygon when
 \`apply_zone_mask = TRUE\` and no \`mask_polygon\` is given; with \`con
 = NULL\` the zone mask is then skipped.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 \[run_fordead_dieback()\] for the pipeline that produces the underlying

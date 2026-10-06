@@ -9,3 +9,7 @@ Short codes for the three RECONFORT-calibrated species: oak (CHE,
 ``` r
 RECONFORT_VALIDITY_SPECIES
 ```
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

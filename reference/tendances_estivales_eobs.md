@@ -86,6 +86,10 @@ commercial). Supply `tx` / `rr` as per-year summer `SpatRaster`s to
 compute the trends, or a `precomputed` result to only crop + classify.
 With neither, the function fails cleanly.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`indice_priorite_regen`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md)

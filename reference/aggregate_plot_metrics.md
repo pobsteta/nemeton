@@ -71,3 +71,7 @@ NA for the other aggregates.
 
 Placettes with no trees receive NA for every aggregate and
 `n_trees = 0L`.
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

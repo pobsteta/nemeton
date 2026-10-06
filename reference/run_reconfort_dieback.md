@@ -2,16 +2,12 @@
 
 Orchestrates a full RECONFORT run for one monitoring zone: validate the
 conda/IOTA2 environment, fetch the Random-Forest model
-([`ensure_reconfort_model`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_model.md))
-and the broadleaf mask
-([`ensure_reconfort_oso_mask`](https://pobsteta.github.io/nemeton/reference/ensure_reconfort_oso_mask.md)),
-resolve the AOI to Sentinel-2 MGRS tile(s)
-([`reconfort_aoi_tiles`](https://pobsteta.github.io/nemeton/reference/reconfort_aoi_tiles.md)),
-ingest the S2 archives
-([`reconfort_ingest_s2`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md)),
-then drive the vendored IOTA2 map-production (sampling +
-classification + OSO masking + continuous score). Produces the
-classification, probability and continuous-score rasters (EPSG:2154)
+(`ensure_reconfort_model()`) and the broadleaf mask
+(`ensure_reconfort_oso_mask()`), resolve the AOI to Sentinel-2 MGRS
+tile(s) (`reconfort_aoi_tiles()`), ingest the S2 archives
+(`reconfort_ingest_s2()`), then drive the vendored IOTA2 map-production
+(sampling + classification + OSO masking + continuous score). Produces
+the classification, probability and continuous-score rasters (EPSG:2154)
 plus a \`run_meta.json\`.
 
 ## Usage
@@ -85,9 +81,8 @@ run_reconfort_dieback(
 
 - v_model:
 
-  RF model version (see
-  [`RECONFORT_MODELS`](https://pobsteta.github.io/nemeton/reference/RECONFORT_MODELS.md)).
-  Default \`"v3"\` (oak, 2-year series).
+  RF model version (see `RECONFORT_MODELS`). Default \`"v3"\` (oak,
+  2-year series).
 
 - binary_mask:
 
@@ -155,8 +150,7 @@ run_reconfort_dieback(
 
 - geodes_config:
 
-  Path to \`pygeodes-config.json\` (see
-  [`reconfort_ingest_s2`](https://pobsteta.github.io/nemeton/reference/reconfort_ingest_s2.md)).
+  Path to \`pygeodes-config.json\` (see `reconfort_ingest_s2()`).
   Default resolves the option / user dir.
 
 - model_cache_dir, mask_cache_dir:
@@ -262,3 +256,7 @@ Because the analysis window is model-bound, a custom
 window the model sees. To cover several years, call once per \`s2_year\`
 (each run = a 2-year window ending end-October of its \`s2_year\`); the
 app stacks the resulting yearly maps.
+
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).

@@ -20,6 +20,10 @@ A `data.frame` with columns `code`, `label`, `tmax_tol_c` (max tolerated
 under-canopy summer T°max, °C) and `vpd_tol_kpa` (max tolerated summer
 VPD, kPa).
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`indice_priorite_regen`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md),

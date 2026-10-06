@@ -12,9 +12,7 @@ indicateur_s3_population(
   population_grid = NULL,
   population_field = NULL,
   method = c("insee", "local", "proxy"),
-  buffer_radii = c(5000, 10000, 20000),
-  column_name = "S3",
-  lang = "en"
+  buffer_radii = c(5000, 10000, 20000)
 )
 ```
 
@@ -40,15 +38,6 @@ indicateur_s3_population(
   Numeric vector. Buffer distances (m) for population counts. Default
   c(5000, 10000, 20000).
 
-- column_name:
-
-  Character. Name for output column (main indicator). Default "S3".
-
-- lang:
-
-  Character. Currently unused (messages are in English); kept for
-  backward compatibility. Default "en".
-
 - population_field:
 
   Character or `NULL`. Name of the population column of
@@ -57,12 +46,12 @@ indicateur_s3_population(
 
 ## Value
 
-sf object with added columns: `S3` (named after `column_name`,
-population density in inhabitants/km2 within the first buffer),
-`S3_densite` (same value), and the population counts `S3_5km`,
-`S3_10km`, `S3_20km` within the three buffers of `buffer_radii` (the
-names are kept whatever the radii). Without `population_grid`, `S3` and
-the counts are NA and `S3_densite` is not added.
+sf object with added columns: `S3` (population density in
+inhabitants/km2 within the first buffer), `S3_densite` (same value), and
+the population counts `S3_5km`, `S3_10km`, `S3_20km` within the three
+buffers of `buffer_radii` (the names are kept whatever the radii).
+Without `population_grid`, `S3` and the counts are NA and `S3_densite`
+is not added.
 
 ## Details
 
@@ -82,6 +71,10 @@ the counts are NA and `S3_densite` is not added.
   field `ind`)
 
 - WorldPop or GPW for international applications
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
 
 ## Examples
 

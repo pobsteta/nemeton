@@ -12,6 +12,10 @@ list_species_regions()
 
 Character vector of region codes.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

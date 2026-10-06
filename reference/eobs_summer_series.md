@@ -34,6 +34,10 @@ A `data.frame(year, value)`, one row per layer ordered by year, NA-safe
 (a masked/out-of-extent point yields `NA` values). Attributes: `var`,
 `unit`. `var` is read from the stack's `varnames` when present.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`eobs_monthly_climatology`](https://pobsteta.github.io/nemeton/reference/eobs_monthly_climatology.md),

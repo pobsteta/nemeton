@@ -23,6 +23,10 @@ list_species_classes(region = "BFC", lang = "fr")
 
 A data.frame with columns: code, label, allometric_key, color.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

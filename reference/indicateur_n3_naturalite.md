@@ -7,7 +7,7 @@ L1 or B3 is unavailable.
 ## Usage
 
 ``` r
-indicateur_n3_naturalite(units, column_name = "N3", lang = "en")
+indicateur_n3_naturalite(units)
 ```
 
 ## Arguments
@@ -15,15 +15,6 @@ indicateur_n3_naturalite(units, column_name = "N3", lang = "en")
 - units:
 
   sf object with N1 and N2 columns (optionally L1, B3)
-
-- column_name:
-
-  Character. Name for output column. Default "N3".
-
-- lang:
-
-  Character. Currently unused (messages are in English); kept for
-  backward compatibility. Default "en".
 
 ## Value
 
@@ -42,3 +33,7 @@ deliberate and must stay:
 works on a copy and does not mutate the source columns, so dropping the
 `100 - L1` to "align" N3 on the radar convention would invert L1 twice
 (spec 048 sections 9 and 12).
+
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).

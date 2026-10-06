@@ -40,6 +40,10 @@ A single character key:
   Native LiDAR HD structure (PAI) — the default when no satellite / ML
   canopy flag is present.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`detect_ndp`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)

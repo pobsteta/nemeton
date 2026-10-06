@@ -44,6 +44,10 @@ eobs_monthly_climatology(daily, point, var, years = NULL)
 A `data.frame(month = 1:12, value)` (all twelve months, `NA` where a
 month has no data). Attributes: `var`, `unit`, `reducer`.
 
+## Lifecycle
+
+Experimental: may change in any release, without deprecation (spec 057).
+
 ## See also
 
 [`eobs_summer_series`](https://pobsteta.github.io/nemeton/reference/eobs_summer_series.md),

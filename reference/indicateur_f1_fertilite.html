@@ -13,7 +13,7 @@ inst/extdata/uts_fertilite_fr.csv."><meta property="og:image" content="https://p
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -197,7 +197,7 @@ the range are set to NA with a warning. Ignored by the other sources.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Numeric vector of fertility scores (0-100 scale, higher = more fertile)</p>
+    <p>The input <code>units</code> (same class, rows and order) with an added numeric column <code>F1</code>: fertility scores (0-100 scale, higher = more fertile)</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -230,6 +230,12 @@ the range are set to NA with a warning. Ignored by the other sources.</p></dd>
     is needed.</p></li>
 </ul><p>SoilGrids is global — the <code>"soilgrids"</code> mode works for any AOI,
 <code>country</code> only controls where the datasource entry is looked up.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
 
     <div class="section level2">

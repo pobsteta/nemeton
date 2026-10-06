@@ -13,6 +13,10 @@ get_storage_crs()
 
 Integer. EPSG code (3035).
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## Examples
 
 ``` r

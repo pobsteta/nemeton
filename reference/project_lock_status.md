@@ -32,6 +32,10 @@ project_lock_status(con, project_id, ttl_seconds = 120L)
 `NULL` if the project is free, otherwise a list `holder_id`,
 `holder_label`, `acquired_at`, `heartbeat_at`, `stale`.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`project_lock_acquire`](https://pobsteta.github.io/nemeton/reference/project_lock_acquire.md)

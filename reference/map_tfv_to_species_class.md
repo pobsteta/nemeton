@@ -33,6 +33,10 @@ map_tfv_to_species_class(tfv_code, mapping = NULL)
 Character vector of species-class codes (same length as `tfv_code`),
 `NA` where the TFV has no forest species class or is unknown.
 
+## Lifecycle
+
+Stable: covered by the 1.0 API contract (spec 057).
+
 ## See also
 
 [`bdforet_v2_mapping`](https://pobsteta.github.io/nemeton/reference/bdforet_v2_mapping.md),

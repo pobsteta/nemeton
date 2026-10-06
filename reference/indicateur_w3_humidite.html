@@ -9,7 +9,7 @@ Higher values indicate areas with greater water accumulation potential."><meta p
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.216.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -161,13 +161,25 @@ resolution.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Numeric vector of TWI mean values</p>
+    <p>The input <code>units</code> (same class, rows and order) with an added numeric column <code>W3</code>: mean TWI, referenced to a 2 m grid.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The GRASS method (via fasterRaster) performs proper hydrological conditioning:
 depression filling, flow direction, flow accumulation, then TWI = ln(SCA / tan(slope)).
 The terra D8 method is a simpler approximation used as fallback.</p>
+<p>A DEM in geographic coordinates is first projected to a metric CRS (the
+units' CRS when projected, else EPSG:3035): the specific catchment area is
+in metres, never in degrees. The TWI is then referenced to a 2 m grid,
+<code>TWI_2m = TWI - ln(step / 2)</code> with <code>step</code> the computation grid
+step in metres, because the specific catchment area scales with the step
+(spec 056). Values from different DEM resolutions are thus on one scale.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
+
+
+<p>Stable: covered by the 1.0 API contract (spec 057).</p>
     </div>
 
     <div class="section level2">
