@@ -156,6 +156,19 @@
 #'   \item \code{nemeton_set_language("fr")} - Alternative language setting
 #' }
 #'
+#' \strong{terra memory guard.} When loaded, nemeton lowers terra's
+#' \code{memfrac} to 0.25 and caps \code{memmax} at 3 GB, so large rasters
+#' spill to disk instead of exhausting RAM. Since 1.0.0 the guard is only
+#' applied to a setting still at terra's default: a
+#' \code{terra::terraOptions(memfrac = , memmax = )} made before nemeton is
+#' loaded is kept. The explicit levers below always win:
+#' \itemize{
+#'   \item \code{options(nemeton.terra_memfrac = 0.5)} - memfrac set at load
+#'   \item \code{options(nemeton.terra_memmax = 8)} or the environment
+#'     variable \code{NEMETON_TERRA_MEMMAX=8} - memmax (GB) set at load;
+#'     a non-positive value removes the cap
+#' }
+#'
 #' @section Author & Methodology:
 #'
 #' \strong{Package Author:} Pascal Obstétar (\email{pascal.obstetar@@gmail.com})
