@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v0.157.0** (release du 2026-10-05), relevée le 2026-10-06.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v1.0.0** (release du 2026-10-06), relevée le 2026-10-06.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -309,11 +309,54 @@ Brief app : `specs/057-contrat-api-1.0/brief-nemetonshiny-1.0.0.md`. Reste
 après la 1.0 : vrai taux de changement pour T2, `urban_areas` dans A2,
 épinglage des actions GitHub de premier rang (Dependabot).
 
-**Prochaine étape** : côté app, adopter les trois fonctions (plancher, tests
-d'équivalence) puis la décision **1.0.0** de l'app ; côté cœur, décisions
-restantes de Pascal (vague 8), puis 1.0.0. L'app consomme 135
-des 313 exports et lit 21 symboles internes : ne rien retirer ni changer de
-signature parmi eux sans brief app (`specs/audit-1.0/exports-consommes-app.md`).
+**Journal** — *2026-10-05* (**app v0.156.1**, `nemetonshiny@a6e0b864`, PR #220) :
+signal « page prête » pour VICTOR (`postMessage` à l'opener, origine
+`NEMETON_VICTOR_ORIGIN`). Corrigé : le serveur entier tombait à la fermeture
+d'un onglet pendant la restauration d'un projet (shiny 1.14 :
+`shiny.destroyed.error` dans un rappel `later`, 31 rappels sécurisés), et un
+patch de test (`helper-fixtures.R`) cassait le mode dev `load_all()`. Sans
+impact cœur.
+
+**Journal** — *2026-10-05* (**app v0.157.0**, `nemetonshiny@a76314e6`, PR #221) :
+briefs cœur 0.213.0 → 0.216.0 adoptés. Plancher `Imports: nemeton (>= 0.216.0)`.
+n° 64 : C2 lit `build_ndvi_season_composite()` (offset S2 retiré, cache app
+versionné `ndvi_s2_v2.tif`, l'ancien est supprimé). n° 65 :
+`climate_ombrothermic_indices()` pour le contexte reGénération. n° 66 :
+`aggregate_family_scores(weights = "surface")` partout (Synthèse, radar,
+tableau, rapport PDF, prompt IA, `projet_etat()`, serveur MCP) : les scores
+de famille et le score global affichés changent. Les cartes FAST de l'app
+passent toutes par les caches cœur clés sur la radiométrie, donc aucune copie
+app à invalider. Restent aux utilisateurs : recalculer les projets et relancer
+FORDEAD. **Les n° 64 à 66 de l'audit app sont clos.**
+
+**Journal** — *2026-10-06* (**app v0.157.1**, `nemetonshiny@284b8f8b`, PR #222) :
+guide de l'application repris dans `nemetonshiny` (brief
+`2026-10-06-nemeton-guide-app-a-reprendre.md`) ; retiré du cœur en 1.0.0.
+
+**Journal** — *2026-10-06* (**app v1.0.0**, `nemetonshiny@c292ea02`, PR #223) :
+**première version stable de l'app**, sur `nemeton` 1.0.0 (plancher
+`>= 1.0.0`). Brief `brief-nemetonshiny-1.0.0.md` appliqué : messages clairs
+pour les bases antérieures (`nemeton_legacy_schema`, base de suivi et base
+plateforme), nouveaux statuts traduits (P3, P2 hors courbe, A3/A4/W4/R6, T3,
+B4/L3), P2 sans âge réel et C1 par le NDVI expliqués dans la fiche, couche
+INPN « zones humides » retirée, guide de l'app repris (v0.157.1). Décision de
+Pascal : **aucune migration des projets 0.x** — marqueur `format_projet`,
+projets antérieurs signalés et refusés, `projet_migrer()` retiré,
+`schema.sql` consolidé (migrations SQL de l'app retirées).
+
+**Chantier « Pré-version 1.0 » clos** (2026-10-06) : cœur **et** app en 1.0.0.
+Après la 1.0, côté cœur : vrai taux de changement pour T2, `urban_areas` dans
+A2, épinglage des actions GitHub de premier rang (Dependabot), fixture de démo
+plus réaliste. Côté app : indicateurs conditionnels (A3, A4, W4, B4, L3,
+R5-R7, T3) absents de la table PostGIS `nemeton.indicators` ; isolation des
+projets entre utilisateurs ; factorisation de `mod_monitoring.R`.
+
+**Prochaine étape** : semver strict depuis la 1.0.0 (une rupture d'API
+**stable** exige un bump majeur ; les pages **experimental** peuvent changer en
+mineur). L'app consomme les exports listés dans
+`specs/audit-1.0/exports-consommes-app.md` (dont les 43 indicateurs, appelés
+par leur nom) : ne rien retirer ni changer de signature parmi eux sans brief
+app.
 
 ---
 
