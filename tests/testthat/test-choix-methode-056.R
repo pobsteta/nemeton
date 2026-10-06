@@ -155,7 +155,7 @@ test_that("N1 has no constant urban term any more", {
   expect_equal(n1_0$N1, 0)
 })
 
-test_that("N1 stays NA when a layer is missing", {
+test_that("N1 stays NA when a layer is missing (unchanged)", {
   u <- sf::st_sf(id = 1L, geometry = sf::st_sfc(
     sf::st_polygon(list(cbind(c(0, 10, 10, 0, 0), c(0, 0, 10, 10, 0)))),
     crs = 2154))
@@ -163,4 +163,45 @@ test_that("N1 stays NA when a layer is missing", {
     sf::st_linestring(cbind(c(500, 500), c(-5000, 5000))), crs = 2154))
   n1 <- suppressMessages(indicateur_n1_distance(u, roads = roads))
   expect_true(is.na(n1$N1))
+})
+
+# ---------------------------------------------------------------------------
+# 4. P3 : diamètre seul sans données terrain, p3_status = "diametre_seul"
+# ---------------------------------------------------------------------------
+
+p3_units <- function(...) {
+  cols <- list(...)
+  n <- length(cols[[1]])
+  geom <- lapply(seq_len(n), function(i) sf::st_polygon(list(cbind(
+    c(0, 1, 1, 0, 0) + 2 * i, c(0, 0, 1, 1, 0)))))
+  sf::st_sf(as.data.frame(cols), geometry = sf::st_sfc(geom, crs = 2154))
+}
+
+test_that("P3 without field data is the diameter score alone", {
+  u <- p3_units(species = c("FASY", "FASY", "ABAL"), dbh = c(45, 30, 0))
+  res <- suppressMessages(indicateur_p3_qualite_bois(u))
+  # Avant 1.0.0 : 0,4·70 + 0,4·diamètre + 0,2·85 = 45 + 0,4·diamètre.
+  expect_equal(res$P3, c(100, 75, 0))
+  expect_equal(res$p3_status, rep("diametre_seul", 3))
+})
+
+test_that("P3 rescales the weights of the measured components only", {
+  u <- p3_units(species = rep("FASY", 4), dbh = rep(30, 4),
+                form_score = c(60, 60, NA, NA), defects = c(1, NA, 0, NA))
+  res <- suppressMessages(indicateur_p3_qualite_bois(u))
+  # diamètre 75 ; forme 60 ; défauts 1 -> 50, 0 -> 100
+  expect_equal(res$P3, c(0.4 * 60 + 0.4 * 75 + 0.2 * 50,
+                         (0.4 * 60 + 0.4 * 75) / 0.8,
+                         (0.4 * 75 + 0.2 * 100) / 0.6,
+                         75))
+  expect_equal(res$p3_status,
+               c("complet", "diametre_forme", "diametre_defauts",
+                 "diametre_seul"))
+})
+
+test_that("P3 status is NA when P3 is NA", {
+  u <- p3_units(species = "FASY", dbh = NA_real_)
+  res <- suppressMessages(indicateur_p3_qualite_bois(u))
+  expect_true(is.na(res$P3))
+  expect_true(is.na(res$p3_status))
 })
