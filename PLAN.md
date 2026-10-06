@@ -278,6 +278,25 @@ repli signalé sur la moyenne simple). Brief retour app :
 - **Choix de méthode** (R2/R3, W3/F2, N1, P3, indice de station) : mesure
   avant/après sur les projets en cache, décision ensuite.
 
+**Décisions** — *2026-10-06*, suite (Pascal), toutes pour la **1.0.0** :
+- **Méthode** (spec 056, mesures sur six projets) : R2 sans TRI ; TWI ramené
+  à 2 m et fenêtre commune [2,5 ; 9] pour W3, F2, R3 ; N1 sans le terme +25 ;
+  P3 au diamètre seul (`p3_status`) ; indice de station NA hors courbe
+  (`p2_status = "hors_courbe"`). Plus trois défauts trouvés en mesurant : TWI
+  en degrés sur MNT lon/lat, TWI dépendant de la résolution, essence et âge
+  fabriqués par `enrich_parcels_bdforet()`.
+- **Contrat d'API** (spec 057) : 1.0.0 groupée ; liste §4.1 appliquée.
+- **1.0.0 sans migration** : projets **et base de suivi** recréés ; schéma
+  neuf (migration initiale unique, TimescaleDB optionnel,
+  `validation_status` NOT NULL partout).
+- **Infrastructure** : cache global gardé dans `~/.cache/nemeton` ; pas de
+  CRAN pour la 1.0 (GitHub) ; versions Python de FORDEAD figées ; `.onLoad`
+  respecte un réglage terra de l'utilisateur ; données des tutoriels 07/08
+  téléchargées à la demande ; `NEMETON_CORPUS_ROOT` documenté ; guide de l'app
+  déplacé dans `nemetonshiny` (brief) ; `ingest_knowledge_document()` sans
+  doublon ; contournement microclimf gardé (ticket amont rédigé, non publié) ;
+  fixture `massif_demo_units` régénérée à 41 indicateurs.
+
 **Prochaine étape** : côté app, adopter les trois fonctions (plancher, tests
 d'équivalence) puis la décision **1.0.0** de l'app ; côté cœur, décisions
 restantes de Pascal (vague 8), puis 1.0.0. L'app consomme 135
