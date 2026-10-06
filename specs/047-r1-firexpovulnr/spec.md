@@ -1,8 +1,8 @@
 # Spec 047 — R1 : `firexpovulnR` comme source de l'exposition au feu ?
 
-> **Statut** : étape préalable **faite** (comparaison à l'aveugle, 2026-10-05) ;
-> **décision à prendre par Pascal** sur l'ADR-016 (« Proposé », 2026-08-20,
-> `briefs/vers-nemetonplateform/ADR-016_R1_incendie_firexpovulnR.md`).
+> **Statut** : **ADR-016 rejeté** par Pascal le 2026-10-06, sur la base de la
+> comparaison ci-dessous (option 1 du §5 : statu quo du cœur). R1 reste
+> `fireexposuR` + pente + climat, méthode tracée dans `r1_status`.
 > Aucun câblage dans le cœur tant que l'ADR n'est pas tranché.
 > **Script** : `specs/047-r1-firexpovulnr/comparaison.R` (lecture seule des
 > caches projet, `firexpovulnR` 0.34.0, cœur 0.212.2).
