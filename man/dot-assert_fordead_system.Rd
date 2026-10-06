@@ -2,7 +2,7 @@
 % Please edit documentation in R/fordead_python.R
 \name{.assert_fordead_system}
 \alias{.assert_fordead_system}
-\title{Assert reticulate is available and Python >= 3.10 is installed}
+\title{Assert reticulate is available and Python >= 3.11 is installed}
 \usage{
 .assert_fordead_system()
 }
@@ -12,7 +12,7 @@ Invisibly the resolved Python interpreter path (string).
 \description{
 Raises a `cli::cli_abort` with installation hints when reticulate
 is missing, when Python cannot be found, or when the discovered
-interpreter is older than 3.10.
+interpreter is older than 3.11.
 }
 \details{
 Discovery is two-pronged: first ask reticulate via
@@ -23,7 +23,7 @@ or when reticulate's config cache is stale — fall back to
 [.find_python_on_path()] which probes `Sys.which()` directly.
 
 We don't need reticulate to be initialised against the discovered
-interpreter at this point; we only need to know that a 3.10+ Python
+interpreter at this point; we only need to know that a 3.11+ Python
 is reachable so the FORDEAD venv can be built from it.
 }
 \keyword{internal}

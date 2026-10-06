@@ -165,7 +165,7 @@ find_zones_by_project <- function(con, project_uuid) {
 # Delete every monitoring zone bound to `project_uuid`, together with the
 # plots and alerts those zones own. PostgreSQL declares ON DELETE CASCADE
 # on the `plot.zone_id` / `alert.plot_id` FKs, but the local SQLite schema
-# deliberately omits it (see sqlite/0001_init.sql header), so under
+# deliberately omits it (see sqlite/0001_initial_v1.sql header), so under
 # `PRAGMA foreign_keys = ON` (set by db_connect()) a bare
 # `DELETE FROM monitoring_zone` trips "FOREIGN KEY constraint failed" as
 # soon as a zone owns child rows — i.e. on the re-build of an

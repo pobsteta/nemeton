@@ -2436,10 +2436,9 @@ library(sf)
 p_radius <- 15      # rayon de la placette (m)
 dbh_min <- 7.5      # seuil DBH (cm), arbres plus petits non inventoriés
 
-# Chemin vers les données (package nemeton, puis lidaRtRee en fallback)
-data_dir <- system.file("extdata", "aba.model", package = "nemeton")
-if (data_dir == "") data_dir <- system.file("extdata", "aba.model", package = "lidaRtRee")
-if (data_dir == "") stop("Données aba.model non trouvées dans nemeton ni lidaRtRee")
+# Données aba.model : absentes du paquet installé, téléchargées à la demande
+# (dépôt GitHub au tag de la version) dans le cache nemeton
+data_dir <- nemeton:::.tutorial_data_dir("aba.model")  # téléchargé une fois dans le cache
 ```
 
 ```{r ex-6-1, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-6-1-setup"}
@@ -2486,8 +2485,7 @@ On renomme les colonnes en anglais pour faciliter leur utilisation, on supprime 
 
 ```{r ex-6-2-setup}
 library(lidaRtRee)
-data_dir <- system.file("extdata", "aba.model", package = "nemeton")
-if (data_dir == "") data_dir <- system.file("extdata", "aba.model", package = "lidaRtRee")
+data_dir <- nemeton:::.tutorial_data_dir("aba.model")  # téléchargé une fois dans le cache
 p_radius <- 15
 dbh_min <- 7.5
 
@@ -2541,8 +2539,7 @@ Cette section importe les coordonnées des centres de placettes.
 ```{r ex-6-3-setup}
 library(lidaRtRee)
 library(sf)
-data_dir <- system.file("extdata", "aba.model", package = "nemeton")
-if (data_dir == "") data_dir <- system.file("extdata", "aba.model", package = "lidaRtRee")
+data_dir <- nemeton:::.tutorial_data_dir("aba.model")  # téléchargé une fois dans le cache
 p_radius <- 15
 pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 ```
@@ -2606,8 +2603,7 @@ Les coordonnées des arbres sont calculées à partir des coordonnées du centre
 ```{r ex-6-4-setup}
 library(lidaRtRee)
 library(sf)
-data_dir <- system.file("extdata", "aba.model", package = "nemeton")
-if (data_dir == "") data_dir <- system.file("extdata", "aba.model", package = "lidaRtRee")
+data_dir <- nemeton:::.tutorial_data_dir("aba.model")  # téléchargé une fois dans le cache
 p_radius <- 15
 dbh_min <- 7.5
 pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
@@ -2910,8 +2906,7 @@ On vérifie que les données d'inventaire sont cohérentes avec le protocole (pl
 ```{r ex-6-7-setup}
 library(lidaRtRee)
 library(lidR)
-data_dir <- system.file("extdata", "aba.model", package = "nemeton")
-if (data_dir == "") data_dir <- system.file("extdata", "aba.model", package = "lidaRtRee")
+data_dir <- nemeton:::.tutorial_data_dir("aba.model")  # téléchargé une fois dans le cache
 p_radius <- 15
 dbh_min <- 7.5
 pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
@@ -2967,8 +2962,7 @@ On explore la relation allométrique entre le diamètre moyen des arbres et la h
 ```{r ex-6-8-setup}
 library(lidaRtRee)
 library(ggplot2)
-data_dir <- system.file("extdata", "aba.model", package = "nemeton")
-if (data_dir == "") data_dir <- system.file("extdata", "aba.model", package = "lidaRtRee")
+data_dir <- nemeton:::.tutorial_data_dir("aba.model")  # téléchargé une fois dans le cache
 pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
@@ -3022,7 +3016,7 @@ llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 # Répertoire des données terrain (arbres et piquets)
-field_dir <- system.file("extdata/aba.model/field", package = "nemeton")
+field_dir <- file.path(nemeton:::.tutorial_data_dir("aba.model"), "field")
 
 # Fonction pour charger les arbres d'une placette avec coordonnées X,Y
 load_trees_xy <- function(plot_id, field_dir) {

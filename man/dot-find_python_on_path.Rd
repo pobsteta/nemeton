@@ -2,18 +2,18 @@
 % Please edit documentation in R/fordead_python.R
 \name{.find_python_on_path}
 \alias{.find_python_on_path}
-\title{Probe PATH for a Python ≥ 3.10 interpreter}
+\title{Probe PATH for a Python ≥ 3.11 interpreter}
 \usage{
 .find_python_on_path()
 }
 \value{
-Character path (string) to a Python ≥ 3.10 interpreter,
+Character path (string) to a Python ≥ 3.11 interpreter,
   or `""` if nothing matches.
 }
 \description{
 Walks a list of conventional Python binary names from newest to
-oldest (3.14 → 3.10 → generic `python3` → `python`) and returns
-the first one that exists on `PATH` AND reports a version ≥ 3.10.
+oldest (3.14 → 3.11 → generic `python3` → `python`) and returns
+the first one that exists on `PATH` AND reports a version ≥ 3.11.
 }
 \details{
 Used as a fallback when [reticulate::py_discover_config()] returns

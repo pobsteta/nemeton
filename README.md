@@ -184,6 +184,33 @@ families <- create_family_index(normalized, method = "mean")
 nemeton_radar(families, mode = "family")
 ```
 
+## Corpus RAG : emplacement des PDF
+
+La base de connaissances (RAG, `build_knowledge_corpus()`) ingère des PDF
+qui ne sont **pas** livrés avec le paquet (ni suivis par git). Le manifeste
+`inst/extdata/knowledge_corpus_v1.csv` les désigne par un `local_path`
+relatif à la **racine du corpus**, de la forme
+`data-raw/references/<fichier>.pdf`. La racine est lue, dans l'ordre :
+
+1. option R `nemeton.corpus_root` ;
+2. variable d'environnement `NEMETON_CORPUS_ROOT` ;
+3. à défaut, le répertoire de travail (cas d'un clone du dépôt).
+
+Pour une installation hors dépôt (paquet installé, serveur) :
+
+```bash
+# ~/.Renviron (ou environnement du service)
+NEMETON_CORPUS_ROOT=/srv/nemeton/corpus
+```
+
+puis déposer les PDF sous `/srv/nemeton/corpus/data-raw/references/`
+(le `local_path` du manifeste ajouté à la racine). Un chemin qui sortirait
+de la racine est refusé. Un PDF absent est retéléchargé depuis
+`source_url` quand c'est un `.pdf`, sinon la ligne est sautée et le rapport
+nomme le chemin et la racine utilisés ; `build_knowledge_corpus(dry_run =
+TRUE)` permet de vérifier avant tout appel d'embedding. Détails :
+`?build_knowledge_corpus`, section *Corpus root*.
+
 ## Documentation
 
 Site pkgdown : [pobsteta.github.io/nemeton](https://pobsteta.github.io/nemeton/)

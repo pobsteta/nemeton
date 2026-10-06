@@ -263,6 +263,9 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 # d'un appel microclimf remonte jusqu'au globalenv : on les y expose (idempotent)
 # le temps du run. Retourne les noms RÉELLEMENT ajoutés, à retirer par l'appelant
 # (on.exit) pour ne pas polluer durablement l'environnement global.
+# Cause amont : données lazy non visibles depuis le namespace quand microclimf
+# n'est pas attaché ; ticket rédigé dans
+# specs/057-contrat-api-1.0/ticket-microclimf.md (à retirer après correctif).
 .rsen_ensure_soildata <- function() {
   genv <- globalenv()
   added <- character(0)

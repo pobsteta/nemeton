@@ -344,10 +344,31 @@ test_that("l'idempotence repose sur doc_id, pas sur le titre (audit 1.0)", {
     expect_equal(nrow(list_knowledge_documents(con)), 1L)
 
     # Autre document portant le meme titre : il est ingere.
-    man3 <- man; man3$doc_id <- "doc_homonyme"
+    md3 <- file.path(getwd(), "homonyme.md")
+    writeLines(c("# Title", "delta epsilon autre texte sur les forets."), md3)
+    man3 <- man; man3$doc_id <- "doc_homonyme"; man3$local_path <- md3
     rep <- build_knowledge_corpus(con, manifest = man3)
     expect_equal(rep$action, "ingested")
     expect_equal(nrow(list_knowledge_documents(con)), 2L)
+  })
+})
+
+test_that("un contenu identique sous un autre doc_id est saute, pas duplique (1.0.0)", {
+  con <- .local_corpus_con()
+  testthat::local_mocked_bindings(
+    .embed_texts = function(texts, ...) .fake_embed_bc(texts),
+    .package = "nemeton")
+  withr::with_tempdir({
+    man <- .mini_manifest(getwd())[1, ]
+    first <- build_knowledge_corpus(con, manifest = man)
+    # Meme fichier, autre doc_id et autre titre.
+    man2 <- man; man2$doc_id <- "doc_copie"; man2$title <- "Copie"
+    rep <- suppressMessages(build_knowledge_corpus(con, manifest = man2))
+    expect_equal(rep$action, "skipped")
+    expect_equal(rep$document_id, first$document_id)
+    expect_equal(rep$reason,
+                 sprintf("duplicate content of document %d", first$document_id))
+    expect_equal(nrow(list_knowledge_documents(con)), 1L)
   })
 })
 

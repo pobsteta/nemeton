@@ -12,15 +12,15 @@ Two backends are supported transparently:
   * **PostgreSQL + TimescaleDB + PostGIS** — production / shared
     deployment. URL form `postgresql://user:pass@host:port/dbname`.
     Uses [RPostgres::Postgres()]. Migrations from
-    `inst/db/migrations/pg/` are applied, including
-    `CREATE EXTENSION` and `create_hypertable()` calls.
+    `inst/db/migrations/pg/` are applied. Since 1.0.0 TimescaleDB is
+    **optional**: the extension is enabled only when the server offers
+    it, and no table depends on it (PostGIS remains required).
   * **SQLite (WAL)** — single-user / local mode for `nemetonshiny`
     users who do not run Postgres. URL form `sqlite:///path/to/file.sqlite`
     (three slashes for an absolute path). Uses [RSQLite::SQLite()] in
     WAL mode (one writer + many concurrent readers across processes).
     Migrations from `inst/db/migrations/sqlite/` are applied — same
-    schema, minus TimescaleDB / PostGIS specifics (no hypertable, no
-    `CREATE EXTENSION`).
+    schema, minus the `CREATE EXTENSION` statements.
 
 Selection is driven entirely by the URL scheme, so callers
 (notably `nemetonshiny::get_monitoring_db_url()`) pick the
