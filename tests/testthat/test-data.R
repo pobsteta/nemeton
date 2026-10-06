@@ -13,23 +13,52 @@ test_that("massif_demo_units has correct structure", {
   expect_equal(sf::st_crs(massif_demo_units)$epsg, 2154)
 })
 
-test_that("massif_demo_units has all 29 indicators present", {
+test_that("massif_demo_units carries the 41 indicators and their _norm", {
   skip_if_not_installed("sf")
 
   data("massif_demo_units", package = "nemeton")
+  codes <- indicator_labels()$code
+  expect_length(codes, 41)
 
-  required_indicators <- c(
-    "C1", "C2", "B1", "B2", "B3", "W1", "W2", "W3", "A1", "A2",
-    "F1", "F2", "L1", "L2", "T1", "T2", "R1", "R2", "R3",
-    "S1", "S2", "S3", "P1", "P2", "P3", "E1", "E2", "N1", "N2", "N3"
-  )
-
-  missing_indicators <- setdiff(required_indicators, names(massif_demo_units))
-  expect_length(missing_indicators, 0)
-
-  for (ind in required_indicators) {
+  expect_length(setdiff(codes, names(massif_demo_units)), 0)
+  expect_length(setdiff(paste0(codes, "_norm"), names(massif_demo_units)), 0)
+  for (ind in codes) {
     expect_type(massif_demo_units[[ind]], "double")
-    expect_true(any(!is.na(massif_demo_units[[ind]])))
+    expect_type(massif_demo_units[[paste0(ind, "_norm")]], "double")
+  }
+
+  # Calcules par le paquet depuis les couches de demo (data-raw/massif_demo.R)
+  calcules <- c("C1", "B3", "W1", "W2", "W3", "A1", "A2", "F2", "L1", "L2",
+                "T1", "T2", "R1", "R2", "R3", "S1", "P1", "P2", "P3",
+                "E1", "E2", "N2")
+  for (ind in calcules) {
+    expect_true(any(!is.na(massif_demo_units[[ind]])), info = ind)
+  }
+  # Sans source dans la demo : colonne presente, toute NA
+  for (ind in setdiff(codes, calcules)) {
+    expect_true(all(is.na(massif_demo_units[[ind]])), info = ind)
+  }
+  # Les conditionnels portent leur statut
+  for (st in c("b4_status", "l3_status", "w4_status", "a3_status", "a4_status",
+               "a5_status", "r5_status", "r6_status", "r7_status", "t3_status")) {
+    expect_true(all(startsWith(massif_demo_units[[st]], "skipped_no_")), info = st)
+  }
+})
+
+test_that("massif_demo_units _norm columns follow normalize_indicator()", {
+  skip_if_not_installed("sf")
+
+  data("massif_demo_units", package = "nemeton")
+  for (ind in indicator_labels()$code) {
+    st_col <- paste0(tolower(ind), "_status")
+    st <- if (st_col %in% names(massif_demo_units)) massif_demo_units[[st_col]]
+    expect_equal(
+      massif_demo_units[[paste0(ind, "_norm")]],
+      as.double(normalize_indicator(ind, massif_demo_units[[ind]], statut = st)),
+      info = ind
+    )
+    v <- massif_demo_units[[paste0(ind, "_norm")]]
+    expect_true(all(v >= 0 & v <= 100, na.rm = TRUE), info = ind)
   }
 })
 
@@ -66,29 +95,16 @@ test_that("massif_demo_units has base attributes", {
   expect_true(all(massif_demo_units$surface_ha > 0, na.rm = TRUE))
 })
 
-test_that("massif_demo_units covers realistic value ranges", {
+test_that("massif_demo_units family indices match create_family_index()", {
   skip_if_not_installed("sf")
 
   data("massif_demo_units", package = "nemeton")
-
-  # Social indicators
-  expect_true(all(massif_demo_units$S1 >= 0 & massif_demo_units$S1 <= 5, na.rm = TRUE))
-  expect_true(all(massif_demo_units$S2 >= 0 & massif_demo_units$S2 <= 100, na.rm = TRUE))
-  expect_true(all(massif_demo_units$S3 >= 0, na.rm = TRUE))
-
-  # Production indicators
-  expect_true(all(massif_demo_units$P1 >= 0 & massif_demo_units$P1 <= 1000, na.rm = TRUE))
-  expect_true(all(massif_demo_units$P2 >= 0 & massif_demo_units$P2 <= 20, na.rm = TRUE))
-  expect_true(all(massif_demo_units$P3 >= 0 & massif_demo_units$P3 <= 100, na.rm = TRUE))
-
-  # Energy indicators
-  expect_true(all(massif_demo_units$E1 >= 0 & massif_demo_units$E1 <= 15, na.rm = TRUE))
-  expect_true(all(massif_demo_units$E2 >= 0 & massif_demo_units$E2 <= 30, na.rm = TRUE))
-
-  # Naturality indicators
-  expect_true(all(massif_demo_units$N1 >= 0 & massif_demo_units$N1 <= 10000, na.rm = TRUE))
-  expect_true(all(massif_demo_units$N2 >= 0, na.rm = TRUE))
-  expect_true(all(massif_demo_units$N3 >= 0 & massif_demo_units$N3 <= 100, na.rm = TRUE))
+  fams <- unname(nemeton:::FAMILLE_NMT_MAP[c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")])
+  brut <- massif_demo_units[, setdiff(names(massif_demo_units), fams)]
+  recalc <- suppressWarnings(create_family_index(brut))
+  for (fam in fams) {
+    expect_equal(massif_demo_units[[fam]], recalc[[fam]], info = fam)
+  }
 })
 
 # ==============================================================================

@@ -370,7 +370,7 @@ Détails qui comptent :
 | `famille_carbone` | colonne 0–100 | `create_family_index()` |
 | score global + confiance φ | `list(score, ndp, confidence, weight, n_families)` | `compute_general_index()` |
 | libellés/infobulles FR-EN | `indicator_labels("C1", lang)` | `R/indicator-config.R` |
-| fixture de démo | `data(massif_demo_units)` : `C1` (tC/ha, 20–300) et `C1_norm` | `data-raw/massif_demo.R:441` |
+| fixture de démo | `data(massif_demo_units)` : `C1` (tC/ha, calculé par `indicateur_c1_biomasse()` sur l’inventaire synthétique) et `C1_norm` | `data-raw/massif_demo.R:480` |
 
 **Sur le disque d'un projet** — arborescence attendue, résolue par
 `resolve_project_chm()` / `resolve_project_dem()` (`R/project_layers.R`) :

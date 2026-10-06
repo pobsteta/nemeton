@@ -121,8 +121,11 @@ test_that("short codes normalize like their long-form name", {
 test_that("massif_demo_units : famille carbone calculée sur les colonnes brutes (0.208.0)", {
   data(massif_demo_units, package = "nemeton")
   out <- suppressWarnings(create_family_index(massif_demo_units, method = "mean"))
-  attendu <- (normalize_indicator("C1", massif_demo_units$C1) +
-              normalize_indicator("C2", massif_demo_units$C2)) / 2
+  # C2 (NDVI) est NA dans la fixture 1.0 (pas de NDVI dans les couches de
+  # demo) : la moyenne ignore les NA (na.rm = TRUE).
+  attendu <- rowMeans(cbind(normalize_indicator("C1", massif_demo_units$C1),
+                            normalize_indicator("C2", massif_demo_units$C2)),
+                      na.rm = TRUE)
   expect_equal(out$famille_carbone, attendu, tolerance = 1e-6)
 })
 
