@@ -53,6 +53,15 @@ Le tutoriel utilise les données incluses dans le package **lidaRtRee** :
 - `quatre_montagnes` : 96 placettes d'inventaire avec coordonnées
 - `tree_inventory_chablais3` : 110 arbres avec positions et diamètres
 
+ainsi que le jeu `coregistration` du dépôt nemeton (placettes, arbres et
+nuages LiDAR du Vercors, ≈ 3,4 Mo). Ce jeu n'est pas livré avec le paquet
+installé (exclu du build) : la première utilisation
+(`nemeton:::.tutorial_data_dir("coregistration")`) le télécharge depuis
+`https://raw.githubusercontent.com/pobsteta/nemeton/v<X.Y.Z>/inst/extdata/coregistration/…`
+(branche `main` pour une version de développement) vers
+`<get_global_cache_dir()>/tutorials/<tag>/coregistration/`, avec contrôle
+taille + MD5. Hors ligne, l'appel s'arrête avec un message explicite.
+
 ## Lancer le tutoriel
 
 ```r

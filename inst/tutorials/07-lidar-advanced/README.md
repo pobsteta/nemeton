@@ -63,6 +63,19 @@ Le tutoriel combine deux sources de données :
 - 96 placettes terrain de 15m de rayon (projet Newfor)
 - 28 placettes couvertes par le LiDAR du T01
 
+**Jeu `aba.model` (dépôt nemeton, téléchargé à la demande)** :
+- nuages LiDAR des placettes et des dalles, inventaire terrain, masques SIG
+  (≈ 97 Mo, 329 fichiers)
+- non livré avec le paquet installé (exclu du build) : la première
+  utilisation (`nemeton:::.tutorial_data_dir("aba.model")`) le télécharge
+  depuis les fichiers bruts du dépôt GitHub au tag de la version installée,
+  `https://raw.githubusercontent.com/pobsteta/nemeton/v<X.Y.Z>/inst/extdata/aba.model/…`
+  (branche `main` pour une version de développement), vers
+  `<get_global_cache_dir()>/tutorials/<tag>/aba.model/`. Chaque fichier est
+  vérifié (taille, MD5) contre `inst/extdata/tutorial_data_manifest.csv`.
+- hors ligne : arrêt explicite ; copier `inst/extdata/aba.model` d'un clone
+  du dépôt dans ce dossier de cache.
+
 ## Lancer le tutoriel
 
 ```r
