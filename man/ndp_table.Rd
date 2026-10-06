@@ -13,6 +13,11 @@ A data.frame with columns: ndp, key, name, fibonacci, confidence.
 Returns a data.frame summarizing the 5 NDP levels with their
 Fibonacci weights and confidence ratios.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 ndp_table()
 

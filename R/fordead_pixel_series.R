@@ -160,6 +160,9 @@ NULL
 #'   pixel is outside the modelled extent, or the FORDEAD Python
 #'   environment is unavailable.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [run_fordead_dieback()], [read_fordead_dieback_mask()].
 #'
 #' @examples

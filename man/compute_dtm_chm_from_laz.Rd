@@ -86,6 +86,11 @@ install.packages("lasR", repos = "https://r-lidar.r-universe.dev")
 ```
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Standalone:

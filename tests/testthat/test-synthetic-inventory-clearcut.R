@@ -43,14 +43,14 @@ test_that("P1 / P3 / E1 return 0 (not NA) on a clear-cut CHM", {
   chm   <- .chm_uniform(0)
   units <- .units_over(chm, n = 3, species = "FASY")
 
-  p1 <- indicateur_p1_volume(units, chm = chm, column_name = "P1")$P1
+  p1 <- indicateur_p1_volume(units, chm = chm)$P1
   expect_false(anyNA(p1))
   expect_true(all(p1 == 0))
 
-  p3 <- indicateur_p3_qualite_bois(units, chm = chm, column_name = "P3")$P3
+  p3 <- indicateur_p3_qualite_bois(units, chm = chm)$P3
   expect_false(anyNA(p3))                 # defined (low), not NA
 
-  e1 <- indicateur_e1_bois_energie(units, chm = chm, column_name = "E1")$E1
+  e1 <- indicateur_e1_bois_energie(units, chm = chm)$E1
   expect_false(anyNA(e1))
   expect_true(all(e1 == 0))
 })
@@ -78,7 +78,7 @@ test_that("regression: a normal tall CHM still yields positive volume", {
   inv   <- estimate_synthetic_inventory(units, chm, species = units$species)
   expect_true(all(inv$dbh > 0))
   expect_true(all(inv$density > 0))
-  p1 <- indicateur_p1_volume(units, chm = chm, column_name = "P1")$P1
+  p1 <- indicateur_p1_volume(units, chm = chm)$P1
   expect_false(anyNA(p1))
   expect_true(all(p1 > 0))
 })

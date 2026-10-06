@@ -22,7 +22,7 @@ indicateur_a4_tamponnement(units, micro = NULL, chm = NULL,
 }
 \value{
 \code{units} with \code{A4} (0-100), \code{A4_buffer} (raw °C),
-\code{A4_couverture_pct}, and the \code{"microclimate_model"} augmentation flag (only when at least one value is computed).
+\code{A4_couverture_pct}, \code{a4_status} (\code{"calculated"}, \code{"skipped_no_micro"} or \code{"skipped_no_coverage"}), and the \code{"microclimate_model"} augmentation flag (only when at least one value is computed).
 
 \strong{Higher = more thermal buffering = favourable}, and the raw quantity (the
 open-air minus under-canopy temperature gap, °C) already runs that way: 0 °C -> 0,
@@ -36,6 +36,11 @@ canopy. A larger buffer means the canopy shields the regeneration
 microsite from heat (spec 027, ADR-014). Normalised 0-100 \strong{increasing}
 (more buffering = 100).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
-\code{\link{indicateur_a3_microclimat}}, \code{\link{microclimate_run}}
+\code{\link{indicateur_a3_microclimat}}
 }

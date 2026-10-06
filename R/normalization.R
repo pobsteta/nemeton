@@ -44,6 +44,9 @@
 #'     - 0 = lowest percentile, 100 = highest
 #' }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' # Normalize all indicators with min-max
@@ -303,6 +306,9 @@ normalize_vector <- function(x, method, reference = x, na.rm = TRUE) {
 #' \strong{Weights} are normalized internally to sum to 1. For example:
 #' \code{weights = c(2, 1, 1)} becomes \code{c(0.5, 0.25, 0.25)}
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' # Equal weights
@@ -490,6 +496,9 @@ create_composite_index <- function(data,
 #'
 #' This function inverts the scale: \code{inverted = scale - original}
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' # Invert accessibility for wilderness index
@@ -630,6 +639,9 @@ invert_indicator <- function(data,
 #'
 #' @return Numeric vector. Normalized values (0-100).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 normalize_indicator <- function(indicator, values, statut = NULL) {
   # Un nom numérique passait dans `switch()` comme un INDEX (3 -> 3e borne,
@@ -711,9 +723,11 @@ normalize_indicator <- function(indicator, values, statut = NULL) {
     return(pmin(100, 100 * log10(1 + d) / log10(1 + 1000)))
   }
 
-  # TWI: rescale [2.5, 4.5] -> [0, 100]
+  # TWI (référence 2 m) : fenêtre commune [2,5 ; 9] -> [0, 100], partagée avec
+  # F2 et R3 (.TWI_WINDOW, spec 056). L'ancienne fenêtre [2,5 ; 4,5] saturait
+  # 75 à 100 % des UGF LiDAR et toutes les UGF à 25 m.
   if (indicator == "indicateur_w3_humidite") {
-    return(pmin(100, pmax(0, (values - 2.5) / 2 * 100)))
+    return(.twi_norm(values) * 100)
   }
 
   # NDVI: scale 0-1 -> 0-100

@@ -40,6 +40,11 @@ URL: https://www.data.gouv.fr/datasets/evolution-des-tableaux-de-chasse-departem
 The hunting statistics provide a proxy for local game population density.
 Higher harvest numbers generally indicate higher population pressure.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Download roe deer statistics

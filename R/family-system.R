@@ -45,6 +45,9 @@ FAMILLE_NMT_MAP <- c(
 #' @return Character vector of NMT family column names (e.g.
 #'   `"famille_carbone"`), same length as `code`.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [get_famille_code()] for the reverse lookup, [indicator_families()].
 #'
 #' @examples
@@ -79,6 +82,9 @@ get_famille_col <- function(code) {
 #'
 #' @return Character vector of single-letter family codes, `NA_character_`
 #'   where the name is not a family score column.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @seealso [get_famille_col()], [indicator_families()].
 #'
@@ -132,6 +138,9 @@ get_famille_code <- function(col_name) {
 #'   \item harmonic: Weighted harmonic mean (1 / sum(w / x); n / sum(1/x) with equal weights)
 #'   \item min: Minimum value (worst-case, most conservative) - v0.3.0+
 #' }
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples

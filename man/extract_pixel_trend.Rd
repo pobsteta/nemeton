@@ -83,6 +83,11 @@ observations dropped) and fitted with the shared Theil-Sen / Mann-Kendall
 the raster runs per pixel, so `alert_value` equals the raster's pre-quartile
 value cell-for-cell.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 \dontrun{
   # `scenes` = the cached scenes for the index (scene_id + obs_date).

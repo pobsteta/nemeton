@@ -53,7 +53,7 @@ score. For fertility classes 1-5, pass \code{c(1, 5)}. Values outside
 the range are set to NA with a warning. Ignored by the other sources.}
 }
 \value{
-Numeric vector of fertility scores (0-100 scale, higher = more fertile)
+The input \code{units} (same class, rows and order) with an added numeric column \code{F1}: fertility scores (0-100 scale, higher = more fertile)
 }
 \description{
 Extracts soil fertility from a user-supplied pedological layer, from
@@ -96,6 +96,11 @@ Three data sources are supported via \code{source}:
 SoilGrids is global — the \code{"soilgrids"} mode works for any AOI,
 \code{country} only controls where the datasource entry is looked up.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Traditional path: user-supplied soil layer

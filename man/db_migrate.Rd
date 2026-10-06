@@ -20,7 +20,7 @@ A character vector of versions applied during this call
 Reads `*.sql` files in `migrations_dir` (sorted lexicographically),
 compares against the `schema_migration` table, and executes the
 files that have not yet been applied. The first run also creates
-`schema_migration` itself (handled by `0001_init.sql`).
+`schema_migration` itself (handled by `0001_initial_v1.sql`).
 }
 \details{
 When `migrations_dir` is left `NULL`, the directory is picked
@@ -36,4 +36,27 @@ serialised: each file's transaction takes a lock first (a PostgreSQL
 transaction-level advisory lock, `BEGIN IMMEDIATE` on SQLite) and
 re-checks `schema_migration`, so a migration applied meanwhile by
 another connection is skipped instead of being run twice.
+}
+\section{Schema 1.0.0 (no upgrade path)}{
+
+nemeton 1.0.0 starts from a fresh schema: the former migrations
+`0001_init` to `0008_project_lock` are merged into a single initial
+migration, `0001_initial_v1`, per backend. A database created by an
+earlier version — one whose `schema_migration` lists any of those
+former versions, or one holding monitoring tables (`monitoring_zone`,
+`plot`, `alert`, `project_lock`) without a `schema_migration` table —
+is **refused** with an error ("Database predates nemeton 1.0.0:
+recreate it", condition class `nemeton_legacy_schema`); it is never
+migrated. Recreate the database (new SQLite file, or an empty
+PostgreSQL database) and re-run the monitoring pipelines. Later
+migrations (`0002_*`, ...) apply on top of `0001_initial_v1` as usual.
+
+On PostgreSQL, TimescaleDB is optional: `0001_initial_v1` enables it
+only when `pg_available_extensions` lists it (a `NOTICE` is raised
+otherwise) and creates no hypertable. PostGIS is still required.
+}
+
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
 }

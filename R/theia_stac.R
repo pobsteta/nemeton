@@ -7,7 +7,7 @@
 #' \code{s2_biophysical}, \code{theia_snow}, ...) can be materialised
 #' from the THEIA STAC API instead of a manual download.
 #'
-#' The plumbing is endpoint-agnostic: \code{\link{stac_search_items}}
+#' The plumbing is endpoint-agnostic: \code{stac_search_items()}
 #' works against any STAC API, and the THEIA endpoint is read from the
 #' \code{services$theia_stac} entry of the country configuration (or
 #' passed explicitly via \code{stac_api}).
@@ -114,7 +114,8 @@ NULL
 #'
 #' @return A named character vector mapping each input URL to its signed
 #'   counterpart (names are the original URLs), in the input order.
-#' @export
+#' @keywords internal
+#' @noRd
 theia_sign_urls <- function(urls, access_key = NULL, secret_key = NULL,
                             endpoint = NULL, country = "FR") {
   urls <- as.character(urls)
@@ -215,7 +216,8 @@ theia_sign_urls <- function(urls, access_key = NULL, secret_key = NULL,
 #' )
 #' }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 stac_search_items <- function(stac_api, collection, bbox,
                               datetime = NULL, limit = 100L) {
   .assert_httr2()
@@ -263,7 +265,8 @@ stac_search_items <- function(stac_api, collection, bbox,
 #'                       "FORMSpoT", "FORMSpoT-2023")
 #' }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 stac_get_item <- function(stac_api, collection, item_id) {
   .assert_httr2()
   if (!nzchar(stac_api %||% "")) {
@@ -319,6 +322,9 @@ stac_get_item <- function(stac_api, collection, item_id) {
 #' @param country Character. ISO country code. Default \code{"FR"}.
 #'
 #' @return \code{TRUE} invisibly on success.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{
@@ -376,12 +382,12 @@ theia_configure_s3 <- function(access_key = NULL, secret_key = NULL,
 #' datasource. THEIA asset objects require an authenticated,
 #' time-limited signed URL minted by the teledetection signing gateway
 #' (a standard AWS SigV4 presign); this is done in pure R via
-#' \code{\link{theia_sign_urls}} (no Python / reticulate needed). The
+#' \code{theia_sign_urls()} (no Python / reticulate needed). The
 #' returned URL is prefixed with \code{/vsicurl/} so that
 #' \code{terra::rast()} reads it directly.
 #'
 #' Requirements: a registered THEIA API key in \env{TLD_ACCESS_KEY} /
-#' \env{TLD_SECRET_KEY} — see \code{\link{theia_sign_urls}} and
+#' \env{TLD_SECRET_KEY} — see \code{theia_sign_urls()} and
 #' \url{https://gate.stac.teledetection.fr}.
 #'
 #' @param source_key Character. Theia datasource key (e.g.
@@ -404,7 +410,8 @@ theia_configure_s3 <- function(access_key = NULL, secret_key = NULL,
 #' chm <- terra::rast(href)
 #' }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 theia_signed_href <- function(source_key, year = NULL, asset = NULL,
                               item_id = NULL, country = "FR",
                               stac_api = NULL) {
@@ -459,7 +466,7 @@ theia_signed_href <- function(source_key, year = NULL, asset = NULL,
 #' Looks up a Theia datasource declared in
 #' \code{inst/datasources/<country>.json} and returns GDAL-readable paths
 #' to the matching assets. Each asset is signed through the teledetection
-#' gateway (\code{\link{theia_sign_urls}}, keys \code{TLD_ACCESS_KEY} /
+#' gateway (\code{theia_sign_urls()}, keys \code{TLD_ACCESS_KEY} /
 #' \code{TLD_SECRET_KEY}) and returned as a \code{/vsicurl/} pre-signed
 #' URL, the only form the MESO store accepts. When signing is unavailable
 #' (no keys, gateway down) the unsigned \code{/vsis3/} paths are returned
@@ -488,7 +495,7 @@ theia_signed_href <- function(source_key, year = NULL, asset = NULL,
 #'   time-series collection. Requires the datasource to declare
 #'   \code{access$item_id_template}.
 #' @param datetime Optional character. STAC datetime filter (see
-#'   \code{\link{stac_search_items}}).
+#'   \code{stac_search_items()}).
 #' @param country Character. ISO country code. Default \code{"FR"}.
 #' @param stac_api Optional character. Overrides the STAC API URL read
 #'   from \code{services$theia_stac}.
@@ -499,7 +506,8 @@ theia_signed_href <- function(source_key, year = NULL, asset = NULL,
 #'   mode): signed \code{/vsicurl/} URLs, or unsigned \code{/vsis3/} paths
 #'   when signing is unavailable.
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 resolve_theia_assets <- function(source_key, aoi, asset = NULL,
                                  year = NULL, datetime = NULL,
                                  country = "FR",
@@ -561,7 +569,7 @@ resolve_theia_assets <- function(source_key, aoi, asset = NULL,
 #' Report whether a THEIA datasource is usable over an AOI
 #'
 #' Answers "can this source be read here, and if not, why" \strong{without}
-#' downloading anything. Where \code{\link{resolve_theia_assets}} aborts on the
+#' downloading anything. Where \code{resolve_theia_assets()} aborts on the
 #' first obstacle, this reports the obstacle as a stable key the caller can
 #' translate and act on.
 #'
@@ -592,7 +600,10 @@ resolve_theia_assets <- function(source_key, aoi, asset = NULL,
 #'       message) or \code{NA}. For logs, never for the interface.
 #'   }
 #'
-#' @seealso \code{\link{resolve_theia_assets}}, \code{\link{load_theia_source}}
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
+#' @seealso \code{resolve_theia_assets()}, \code{\link{load_theia_source}}
 #'
 #' @examples
 #' \dontrun{
@@ -664,10 +675,10 @@ theia_source_status <- function(source_key, aoi, country = "FR",
 #' \itemize{
 #'   \item \strong{Year targeting} (\code{year} supplied) — the
 #'     asset URL is signed through the teledetection gateway (see
-#'     \code{\link{theia_signed_href}}) and read via \code{/vsicurl/};
+#'     \code{theia_signed_href()}) and read via \code{/vsicurl/};
 #'     an asset that cannot be signed aborts.
 #'   \item \strong{Spatial search} — the intersecting assets are
-#'     resolved and signed by \code{\link{resolve_theia_assets}}, then
+#'     resolved and signed by \code{resolve_theia_assets()}, then
 #'     mosaicked; unsigned \code{/vsis3/} paths (no keys) are only
 #'     readable on a direct-S3 setup.
 #' }
@@ -675,6 +686,9 @@ theia_source_status <- function(source_key, aoi, country = "FR",
 #' @inheritParams resolve_theia_assets
 #'
 #' @return A \code{SpatRaster} cropped to \code{aoi}.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{

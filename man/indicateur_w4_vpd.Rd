@@ -22,7 +22,7 @@ indicateur_w4_vpd(units, micro = NULL, chm = NULL,
 }
 \value{
 \code{units} with \code{W4} (0-100), \code{W4_vpd} (raw kPa),
-\code{W4_couverture_pct}, and the \code{"microclimate_model"} augmentation flag (only when at least one value is computed).
+\code{W4_couverture_pct}, \code{w4_status} (\code{"calculated"}, \code{"skipped_no_micro"} or \code{"skipped_no_coverage"}), and the \code{"microclimate_model"} augmentation flag (only when at least one value is computed).
 
 \strong{Higher = moister air under the canopy = favourable.} The raw quantity
 (VPD, kPa) runs the other way, so \code{.micro_norm(decreasing = TRUE)} flips it
@@ -35,6 +35,11 @@ Mean per-UGF summer (JJA) \strong{VPD under the canopy} (kPa), the
 atmospheric-dryness driver of seedling water stress (spec 027, ADR-014).
 Normalised 0-100 \strong{decreasing} (moister air = more favourable = 100).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
-\code{\link{indicateur_a3_microclimat}}, \code{\link{microclimate_run}}
+\code{\link{indicateur_a3_microclimat}}
 }

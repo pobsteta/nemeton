@@ -29,7 +29,7 @@ test_that("biophysique_sentinel2('fapar') alimente directement C2", {
   d <- .biophys_demo()
   fapar <- biophysique_sentinel2("fapar", precomputed = d$refl)
   lay <- structure(list(rasters = list()), class = "nemeton_layers")
-  c2 <- indicateur_c2_ndvi(d$units, lay, fapar = fapar)
+  c2 <- indicateur_c2_ndvi(d$units, lay, fapar = fapar)$C2
   expect_length(c2, nrow(d$units))
   # C2 = moyenne fAPAR par UGF ; fAPAR constant 0.6 -> C2 ~ 0.6.
   expect_equal(mean(c2, na.rm = TRUE), 0.6, tolerance = 0.05)

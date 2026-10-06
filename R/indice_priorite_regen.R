@@ -61,6 +61,9 @@
 #' @return A `data.frame` with columns `code`, `label`, `tmax_tol_c`
 #'   (max tolerated under-canopy summer T°max, °C) and `vpd_tol_kpa`
 #'   (max tolerated summer VPD, kPa).
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [indice_priorite_regen()], [list_species_classes()]
 #' @export
 regeneration_tolerances <- function() {
@@ -142,6 +145,9 @@ regeneration_tolerances <- function() {
 #'   `shade_tol`, `drought_tol`, `confidence`, `invasif`, `present`, `groupe`.
 #'   Level `"class"` columns: `code`, `label`, `tmax_tol_c`, `vpd_tol_kpa`,
 #'   `present`, `groupe`.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [indice_priorite_regen()], [european_species_tolerances()],
 #'   [regeneration_tolerances()], [map_tfv_to_species_class()]
 #' @export
@@ -309,6 +315,9 @@ regen_species_choices <- function(units = NULL, species_col = NULL,
 #'   and `regen_hydrique` (the two 0-100 sub-scores), `parcelle_sensible` and
 #'   `priorite` (logical flags, §7), and `regen_essence` (species used or
 #'   `"generique"`). `couverture_pct`, if present, is preserved.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [regeneration_tolerances()], [indicateur_r6_sensibilite()]
 #' @examples
 #' \dontrun{

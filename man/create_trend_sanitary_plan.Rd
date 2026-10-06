@@ -100,6 +100,11 @@ a typed `nemeton_empty_alert_mask` error so the app can render a clean
 \dQuote{Aucun déclin significatif} message.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
   con <- db_connect(Sys.getenv("NEMETON_DB_URL"))

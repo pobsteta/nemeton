@@ -46,6 +46,11 @@ A ggplot object showing differences
 \description{
 Visualizes the difference between two scenarios.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 plot_difference_map(

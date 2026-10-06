@@ -10,3 +10,7 @@ HEALTH_VALIDATION_CAUSES_FEUILLUS
 RECONFORT counterpart of \code{\link{HEALTH_VALIDATION_CAUSES}} (no
 `scolyte`, which is a conifer pest).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

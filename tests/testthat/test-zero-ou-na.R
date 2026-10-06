@@ -137,6 +137,12 @@ test_that("plus aucun indicateur ne fabrique de valeur sans entree", {
   u <- fixture_units()
   fns <- sort(grep("^indicateur_", getNamespaceExports("nemeton"), value = TRUE))
   skip_if(length(fns) == 0L, "aucun indicateur exporte")
+  # L1 (indice de forme + exposition) et L2 (repli indice de forme) se calculent
+  # sur la GEOMETRIE de l'unite : elle est leur entree, pas une valeur inventee.
+  # Ils echappaient au test tant qu'ils rendaient un vecteur nu (contrat 1.0,
+  # spec 057 §1 : ils rendent maintenant l'sf comme les autres).
+  fns <- setdiff(fns, c("indicateur_l1_effet_lisiere", "indicateur_l2_morcellement",
+                        "indicateur_l1_sylvosphere", "indicateur_l2_fragmentation"))
 
   fabrique <- character(0)
   for (f in fns) {

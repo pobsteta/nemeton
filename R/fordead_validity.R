@@ -18,6 +18,9 @@
 #' Doridant (ONF/DSF) 2024: Vosges (88), Jura (39), Ain (01),
 #' Savoie (73), Haute-Savoie (74).
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 FORDEAD_VALIDITY_DEPARTMENTS <- c("88", "39", "01", "73", "74")
 
@@ -25,6 +28,9 @@ FORDEAD_VALIDITY_DEPARTMENTS <- c("88", "39", "01", "73", "74")
 #' Conifer species considered valid by the FORDEAD calibration
 #'
 #' Two-letter ONF/DSF codes for Norway spruce and silver fir.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 FORDEAD_VALIDITY_SPECIES <- c("EPC", "SAP")
@@ -43,6 +49,9 @@ FORDEAD_VALIDITY_SPECIES <- c("EPC", "SAP")
 #'
 #' @return An `sf` object with columns `code_dept`, `nom_dept`,
 #'   `source`, `reference` and `geometry` (MULTIPOLYGON, EPSG:4326).
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 load_fordead_validity_zones <- function() {
   if (is.null(.fordead_validity_cache$zones)) {
@@ -70,6 +79,7 @@ load_fordead_validity_zones <- function() {
   s <- x[m]
   s_low <- tolower(s)
   hit <- grepl("\\bepc\\b", s, ignore.case = TRUE) |
+    toupper(s) == "PIAB" |   # code essence (enrich_parcels_bdforet)
     grepl("epic", s_low, fixed = FALSE) |
     grepl("\u00e9pic", s_low, fixed = FALSE) |
     grepl("picea", s_low, fixed = FALSE)
@@ -97,6 +107,7 @@ load_fordead_validity_zones <- function() {
     grepl("epicea", s_low, fixed = TRUE)
   hit <- (
     grepl("\\bsap\\b", s, ignore.case = TRUE) |
+      toupper(s) == "ABAL" |   # code essence (enrich_parcels_bdforet)
       grepl("sapin", s_low, fixed = TRUE) |
       grepl("abies", s_low, fixed = TRUE)
   ) & !is_douglas & !is_picea
@@ -173,6 +184,9 @@ load_fordead_validity_zones <- function() {
 #'       \code{share_feuillus}, \code{method}) — the routing is per unit, a
 #'       mixed massif is not an all-or-nothing verdict.
 #'   }
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @seealso [check_fordead_validity()], [indicateur_r5_deperissement()]
 #' @export
@@ -349,6 +363,9 @@ r5_applicabilite <- function(units,
 #'   * `species_valid` (logical or `NA`), `species_resineux_pct`,
 #'     `species_epc_pct`, `species_sap_pct` (numeric or `NA`);
 #'   * `overall_valid` (logical) — `geo_valid && (species_valid %||% TRUE)`.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 check_fordead_validity <- function(aoi,

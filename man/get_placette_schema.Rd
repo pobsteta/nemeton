@@ -15,6 +15,11 @@ layer. Each entry is a list with \code{name}, \code{type},
 \code{widget}, \code{qgis_widget}, \code{label}, \code{domain},
 \code{required}, \code{min}, \code{max}, \code{default}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 schema <- get_placette_schema()
 vapply(schema, `[[`, character(1), "name")

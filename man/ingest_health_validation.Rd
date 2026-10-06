@@ -64,3 +64,7 @@ alert of `zone_id` is counted as unmatched
 (`reason = "alert_id_not_in_zone"`). Rows without `alert_id` keep the
 nearest-alert snapping.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

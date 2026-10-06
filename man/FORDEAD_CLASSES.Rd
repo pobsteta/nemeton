@@ -11,3 +11,7 @@ Vector of length 5 ordered from healthy to bare soil. Index `i`
 (1-based) is the class corresponding to the integer code `i - 1`
 in `state.tif`.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

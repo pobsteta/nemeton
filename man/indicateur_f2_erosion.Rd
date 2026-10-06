@@ -35,7 +35,7 @@ topographic working resolution, 2 m --- see
 resolution.}
 }
 \value{
-Numeric vector of erosion-resistance scores (0-100, higher = more
+The input \code{units} (same class, rows and order) with an added numeric column \code{F2}: erosion-resistance scores (0-100, higher = more
 resistant, i.e. LOWER erosion risk). Despite the historical variable name
 inside the function, this is not a fertility score: the ingredients are
 topographic (TWI wetness, slope steepness) plus optional soil texture.
@@ -46,7 +46,9 @@ accumulation) and slope (erosion risk). Follows the tuto 03 methodology:
 F2 = (twi_norm + slope_norm) / 2
 }
 \details{
-TWI is computed via GRASS (fasterRaster) when available, terra D8 otherwise.
+TWI is computed via GRASS (fasterRaster) when available, terra D8 otherwise,
+referenced to a 2 m grid (\code{TWI - ln(step / 2)}) and normalised on the
+window [2.5, 9] shared with W3 and R3 (spec 056).
 Higher values indicate more fertile soil conditions.
 
 When a Theia \code{theia_soil} texture raster set is supplied via
@@ -56,6 +58,11 @@ component — texture-based erosion resistance, see
 F2 = (twi_norm + slope_norm + resistance_norm) / 3. Silt-rich soils
 are more erodible and lower the score.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 layers <- nemeton_layers(rasters = list(dem = "dem.tif"))

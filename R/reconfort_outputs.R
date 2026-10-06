@@ -226,7 +226,7 @@ NULL
 #' Enumerate ingested Sentinel-2 scenes for RECONFORT (best-effort)
 #'
 #' Walks the ingested S2 root (THEIA/MUSCATE L2A layout produced by
-#' [reconfort_ingest_s2()]) and groups the per-date FRE band files into
+#' `reconfort_ingest_s2()`) and groups the per-date FRE band files into
 #' the scene list consumed by [.build_reconfort_feature_stacks()].
 #'
 #' **Layout assumption — validate on a real run.** Band files are

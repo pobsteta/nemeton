@@ -22,6 +22,9 @@
 #'   zones (spec 020), the oldest one (lowest id) is returned; use
 #'   [find_zones_by_project()] to list them all.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [register_monitoring_zone()] for the writer side of the
 #'   binding.
 #'

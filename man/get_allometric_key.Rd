@@ -17,3 +17,7 @@ Character. Allometric key (e.g., "Quercus", "Fagus", "Pinus").
 \description{
 Get allometric key for a species class
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

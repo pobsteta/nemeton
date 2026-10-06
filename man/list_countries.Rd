@@ -12,6 +12,11 @@ Character vector of ISO country codes.
 \description{
 Returns the country codes for which data source configurations exist.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 list_countries()  # c("EU", "FR")
 

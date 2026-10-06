@@ -203,6 +203,9 @@
 #'
 #' @return Whatever `fun` returned.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' res <- run_memory_capped(
@@ -213,8 +216,8 @@
 #' )
 #' }
 #'
-#' @seealso [run_fordead_dieback()], [run_reticulate_isolated()] (which pins a
-#'   Python env rather than capping memory), [scratch_dir()]
+#' @seealso [run_fordead_dieback()], `run_reticulate_isolated()` (which pins a
+#'   Python env rather than capping memory), `scratch_dir()`
 #' @export
 run_memory_capped <- function(fun, args = list(), package = "nemeton",
                               db_url = NULL, options = NULL,

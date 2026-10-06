@@ -61,6 +61,9 @@ NULL
 #' @return Invisible character vector of migration versions applied during
 #'   this call (empty if already enabled).
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [ingest_knowledge_document()], [retrieve_knowledge()].
 #' @export
 enable_rag <- function(con) {
@@ -603,6 +606,14 @@ enable_rag <- function(con) {
 #' base. Runs in a single transaction so a failed embedding rolls back
 #' cleanly.
 #'
+#' **No duplicates.** Before any embedding call, the chunk fingerprints
+#' (`knowledge_chunk.text_hash`, in `chunk_index` order) are compared with
+#' the documents already in the base. When an existing document has
+#' exactly the same sequence (same content, chunked with the same
+#' `chunk_size` / `chunk_overlap`), nothing is embedded or inserted: a
+#' message names the existing document and its `document_id` is returned
+#' with `duplicate = TRUE`.
+#'
 #' @param con A `DBIConnection`. RAG schema must be enabled
 #'   ([enable_rag()]).
 #' @param source Character. A path to a `.pdf` / `.txt` / `.md` file, or
@@ -628,7 +639,12 @@ enable_rag <- function(con) {
 #'   variable.
 #'
 #' @return Invisibly, a list with `document_id`, `n_chunks`,
-#'   `n_tokens_est`, `duration_sec`.
+#'   `n_tokens_est`, `duration_sec` and `duplicate` (`TRUE` when the
+#'   content was already ingested: `document_id` is then the existing
+#'   document's id).
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @seealso [retrieve_knowledge()], [delete_knowledge_document()].
 #' @export
@@ -658,6 +674,25 @@ ingest_knowledge_document <- function(con,
     cli::cli_abort("No text could be extracted from {.arg source}.")
   }
   texts <- vapply(chunks, function(c) c$text, character(1))
+  hashes <- vapply(texts, rlang::hash, character(1), USE.NAMES = FALSE)
+
+  # Anti-doublon (1.0.0) : contenu identique déjà ingéré -> rien n'est
+  # embarqué ni inséré, l'identifiant existant est rendu. Contrôlé AVANT
+  # l'appel d'embedding (payant).
+  dup <- .rag_find_duplicate(con, hashes)
+  if (!is.na(dup)) {
+    cli::cli_inform(c(
+      "i" = "Identical content already ingested as knowledge document {.val {dup}}; skipped (no new document).",
+      " " = "Title of the skipped source: {.val {meta$title}}."
+    ), class = "nemeton_knowledge_duplicate")
+    return(invisible(list(
+      document_id  = as.integer(dup),
+      n_chunks     = length(chunks),
+      n_tokens_est = sum(vapply(texts, .estimate_tokens, integer(1))),
+      duration_sec = as.numeric(difftime(Sys.time(), t0, units = "secs")),
+      duplicate    = TRUE
+    )))
+  }
 
   emb <- .embed_texts(texts, provider = embed_provider, api_key = api_key)
   if (is.null(dim(emb))) emb <- matrix(emb, nrow = 1L)
@@ -673,7 +708,7 @@ ingest_knowledge_document <- function(con,
     for (k in seq_along(chunks)) {
       ch <- chunks[[k]]
       .rag_insert_chunk(con, did, ch$chunk_index, ch$page, ch$text,
-                        rlang::hash(ch$text), .estimate_tokens(ch$text),
+                        hashes[k], .estimate_tokens(ch$text),
                         emb[k, ])
     }
     did
@@ -683,8 +718,29 @@ ingest_knowledge_document <- function(con,
     document_id  = as.integer(doc_id),
     n_chunks     = length(chunks),
     n_tokens_est = sum(vapply(chunks, function(c) .estimate_tokens(c$text), integer(1))),
-    duration_sec = as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    duration_sec = as.numeric(difftime(Sys.time(), t0, units = "secs")),
+    duplicate    = FALSE
   ))
+}
+
+
+# Document déjà ingéré dont la suite ordonnée des empreintes de chunks
+# (`knowledge_chunk.text_hash`, par `chunk_index`) est identique à
+# `hashes`. Renvoie son id, ou NA. Les candidats sont filtrés sur le
+# premier chunk (index), puis comparés en entier.
+.rag_find_duplicate <- function(con, hashes) {
+  if (!length(hashes)) return(NA_integer_)
+  cand <- .db_get_query(con, paste0(
+    "SELECT DISTINCT document_id FROM knowledge_chunk ",
+    "WHERE chunk_index = 0 AND text_hash = $1 ORDER BY document_id"),
+    params = list(hashes[[1L]]))
+  for (id in as.integer(cand$document_id)) {
+    h <- .db_get_query(con, paste0(
+      "SELECT text_hash FROM knowledge_chunk WHERE document_id = $1 ",
+      "ORDER BY chunk_index"), params = list(id))$text_hash
+    if (identical(as.character(h), as.character(hashes))) return(id)
+  }
+  NA_integer_
 }
 
 
@@ -756,6 +812,9 @@ ingest_knowledge_document <- function(con,
 #'   (`document_id`, `n_chunks = 1`, `n_tokens_est`, `duration_sec`) plus
 #'   `ingestion_mode`.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [ingest_knowledge_document()] (full-text ingestion),
 #'   [retrieve_knowledge()], [format_citations()].
 #' @export
@@ -804,18 +863,18 @@ ingest_knowledge_reference <- function(con,
 #' @param text Character scalar. The query to embed.
 #' @param provider One of `"mistral"` (default), `"openai"`, `"voyage"`.
 #' @param api_key Character or `NULL`. See [ingest_knowledge_document()].
-#' @param lang Optional ISO 639-1 language hint (reserved for
-#'   provider-specific model selection; currently unused).
 #'
 #' @return A numeric vector. Its length is provider-dependent (Mistral
 #'   1024, OpenAI 1536/3072, Voyage 1024); it is fitted to 3072 dims
 #'   only at storage/compare time.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 embed_query <- function(text,
                         provider = c("mistral", "openai", "voyage"),
-                        api_key = NULL,
-                        lang = NULL) {
+                        api_key = NULL) {
   provider <- match.arg(provider)
   if (!is.character(text) || length(text) != 1L || is.na(text) || !nzchar(text)) {
     cli::cli_abort("{.arg text} must be a non-empty character scalar.")
@@ -998,6 +1057,9 @@ embed_query <- function(text,
 #'   `similarity`. Zero rows (canonical empty frame) when nothing clears
 #'   `min_similarity`.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [format_citations()] to render the result as a citation
 #'   block.
 #' @export
@@ -1047,6 +1109,9 @@ retrieve_knowledge <- function(con,
 #'   sorted by descending ingestion time. `family_codes` and
 #'   `profile_codes` are returned as list-columns of character vectors.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 list_knowledge_documents <- function(con, lang = NULL, doc_type = NULL,
                                      family = NULL) {
@@ -1075,6 +1140,9 @@ list_knowledge_documents <- function(con, lang = NULL, doc_type = NULL,
 #'
 #' @return Invisibly, the number of chunks deleted (via the
 #'   `ON DELETE CASCADE` foreign key).
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 delete_knowledge_document <- function(con, document_id) {
@@ -1121,6 +1189,9 @@ delete_knowledge_document <- function(con, document_id) {
 #'
 #' @return A character scalar. Empty string `""` when there are no
 #'   chunks.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 format_citations <- function(retrieved_chunks,

@@ -26,6 +26,9 @@
 #' Eure-et-Loir (28), Indre (36), Indre-et-Loire (37),
 #' Loir-et-Cher (41), Loiret (45).
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 RECONFORT_VALIDITY_DEPARTMENTS <- c("18", "28", "36", "37", "41", "45")
 
@@ -35,6 +38,9 @@ RECONFORT_VALIDITY_DEPARTMENTS <- c("18", "28", "36", "37", "41", "45")
 #' Short codes for the three RECONFORT-calibrated species: oak (CHE,
 #' \emph{Quercus} spp.), sweet chestnut (CHT, \emph{Castanea sativa})
 #' and Scots pine (PS, \emph{Pinus sylvestris}).
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 RECONFORT_VALIDITY_SPECIES <- c("CHE", "CHT", "PS")
@@ -53,6 +59,9 @@ RECONFORT_VALIDITY_SPECIES <- c("CHE", "CHT", "PS")
 #'
 #' @return An `sf` object with columns `code_dept`, `nom_dept`,
 #'   `source`, `reference` and `geometry` (MULTIPOLYGON, EPSG:4326).
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 load_reconfort_validity_zones <- function() {
   if (is.null(.reconfort_validity_cache$zones)) {
@@ -79,6 +88,8 @@ load_reconfort_validity_zones <- function() {
   s <- x[m]
   s_low <- tolower(s)
   hit <- grepl("\\bche\\b", s, ignore.case = TRUE) |
+    toupper(s) %in% c("QUPE", "QURO", "QUPU") |   # codes essence
+
     grepl("chene", s_low, fixed = TRUE) |
     grepl("ch\u00eane", s_low, fixed = TRUE) |
     grepl("quercus", s_low, fixed = TRUE)
@@ -96,6 +107,8 @@ load_reconfort_validity_zones <- function() {
   s <- x[m]
   s_low <- tolower(s)
   hit <- grepl("\\bcht\\b", s, ignore.case = TRUE) |
+    toupper(s) == "CASA" |   # code essence
+
     grepl("chataignier", s_low, fixed = TRUE) |
     grepl("ch\u00e2taignier", s_low, fixed = TRUE) |
     grepl("castanea", s_low, fixed = TRUE)
@@ -115,6 +128,8 @@ load_reconfort_validity_zones <- function() {
   s <- x[m]
   s_low <- tolower(s)
   hit <- grepl("\\bps\\b", s, ignore.case = TRUE) |
+    toupper(s) == "PISY" |   # code essence
+
     grepl("pin sylvestre", s_low, fixed = TRUE) |
     grepl("pinus sylvestris", s_low, fixed = TRUE)
   out[m] <- hit
@@ -174,6 +189,9 @@ load_reconfort_validity_zones <- function() {
 #'   * `overall_valid` (logical) — `geo_valid && (species_valid %||% TRUE)`;
 #'   * `advisory` (always `TRUE`) — the check warns, it does not block;
 #'   * `thresholds` (list).
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 check_reconfort_validity <- function(aoi,

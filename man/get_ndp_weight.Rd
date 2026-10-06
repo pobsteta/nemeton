@@ -15,6 +15,11 @@ Integer. Fibonacci weight (1, 1, 2, 3, or 5).
 \description{
 Get NDP Fibonacci weight
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 get_ndp_weight(0) # 1
 get_ndp_weight(4) # 5

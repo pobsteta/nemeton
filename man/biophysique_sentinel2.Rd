@@ -46,6 +46,11 @@ errors and is deferred (lot 4). Per-variable band selection is
 and their inversion is unvalidated pending the GEODES cross-check (lot 3).
 }
 
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{lai_sentinel2}}; consumers of the biophysical layers:
 \code{\link{indicateur_a1_couverture}} (\code{fvc=}) and

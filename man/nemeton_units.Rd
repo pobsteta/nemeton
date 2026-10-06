@@ -40,6 +40,11 @@ Metadata are stored as an attribute and can include:
   \item description: Optional description
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(sf)

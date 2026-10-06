@@ -39,6 +39,9 @@ NULL
 #'
 #' @return A list with the country's data source configuration.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' config <- get_country_config("FR")
 #' config$crs_national  # 2154
@@ -88,6 +91,9 @@ get_country_config <- function(country = "FR") {
 #'   "layers", "datasets", "services", "communes". Default: auto-detect.
 #'
 #' @return A list with the source configuration, or NULL if not found.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' # Get DEM layer config for France
@@ -145,6 +151,9 @@ get_data_source <- function(source_key, country = "FR", section = NULL) {
 #' @param country Character. ISO country code. Default \code{"FR"}.
 #'
 #' @return A list with the sub-product configuration.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' h <- get_datasource_product("forms_t", "height", "FR")
@@ -211,6 +220,9 @@ get_datasource_product <- function(source_key, product, country = "FR") {
 #'   \code{raster_remote} datasources.
 #'
 #' @return A \code{SpatRaster}.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{
@@ -301,6 +313,9 @@ load_raster_source <- function(source_key, country = "FR",
 #' @return A list with \code{url} (service URL) and \code{layer}
 #'   or \code{typename} (layer identifier), or NULL.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' info <- get_layer_service("dem", "FR")
 #' info$url    # "https://data.geopf.fr/wms-r/wms"
@@ -333,6 +348,9 @@ get_layer_service <- function(layer_key, country = "FR") {
 #'
 #' @return Integer. EPSG code (e.g., 2154 for France Lambert-93).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' get_national_crs("FR")  # 2154
 #'
@@ -349,6 +367,9 @@ get_national_crs <- function(country = "FR") {
 #' EPSG:3035 (ETRS89/LAEA) is the pan-European standard (ADR-008).
 #'
 #' @return Integer. EPSG code (3035).
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' get_storage_crs()  # 3035
@@ -368,6 +389,9 @@ get_storage_crs <- function() {
 #'
 #' @return Integer. EPSG code for metric calculations.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' get_metric_crs("FR")  # 2154 (Lambert-93)
 #'
@@ -382,6 +406,9 @@ get_metric_crs <- function(country = "FR") {
 #' Returns the country codes for which data source configurations exist.
 #'
 #' @return Character vector of ISO country codes.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' list_countries()  # c("EU", "FR")

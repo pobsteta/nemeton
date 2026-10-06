@@ -25,6 +25,9 @@
 #' on QField). The code is then translated to the
 #' `alert.validation_status` column by [ingest_health_validation()].
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 HEALTH_VALIDATION_STADES <- c(
   "sain",
@@ -42,7 +45,10 @@ HEALTH_VALIDATION_STADES <- c(
 #' These are *suggestions* presented to the field observer. The
 #' chosen value lands in `alert.validation_cause` verbatim — the
 #' `alert` table does not enforce a CHECK constraint on this
-#' column (see migration `0002_fordead.sql`).
+#' column (see migration `0001_initial_v1.sql`).
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 HEALTH_VALIDATION_CAUSES <- c(
@@ -79,6 +85,9 @@ HEALTH_VALIDATION_CAUSES <- c(
 #'
 #' The exact A–F percentage cut-offs follow the DSF DEPERIS field guide.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 HEALTH_VALIDATION_STADES_FEUILLUS <- c(
   "sain",
@@ -94,6 +103,9 @@ HEALTH_VALIDATION_STADES_FEUILLUS <- c(
 #'
 #' RECONFORT counterpart of [`HEALTH_VALIDATION_CAUSES`] (no `scolyte`,
 #' which is a conifer pest).
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 HEALTH_VALIDATION_CAUSES_FEUILLUS <- c(
@@ -182,6 +194,9 @@ HEALTH_VALIDATION_CAUSES_FEUILLUS <- c(
 #'   [`HEALTH_VALIDATION_STADES_FEUILLUS`] — spec 021 G4).
 #'
 #' @return A list of field descriptors (see `R/field_schema.R`).
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 get_health_validation_schema <- function(region = "BFC", lang = "fr",
@@ -298,6 +313,9 @@ get_health_validation_schema <- function(region = "BFC", lang = "fr",
 #'   `confidence_class`, `stress_index`, `trigger_date`,
 #'   `sampling_method`, plus the schema's editable columns
 #'   pre-allocated as typed NAs.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 generate_health_validation_plots <- function(alerts_sf,
@@ -445,6 +463,9 @@ generate_health_validation_plots <- function(alerts_sf,
 #'   * `n_skipped` (int) — plots with no or an unknown
 #'     `stade_deperissement`;
 #'   * `details` — a data.frame with one row per processed plot.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 ingest_health_validation <- function(con,

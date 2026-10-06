@@ -8,7 +8,6 @@ indicateur_b4_div_spectrale(
   units,
   spectral = NULL,
   reflectance = NULL,
-  column_name = "B4",
   ...
 )
 }
@@ -23,13 +22,13 @@ with L3). When \code{NULL}, falls back to \code{reflectance}.}
 compute spectral diversity on the fly when \code{spectral} is
 \code{NULL}.}
 
-\item{column_name}{Output column name (default \code{"B4"}).}
 
 \item{...}{Passed to \code{\link{compute_spectral_diversity}} when computing
 on the fly (e.g. \code{window_size}, \code{mask}, \code{nb_cpu}).}
 }
 \value{
-\code{units} with the numeric \code{column_name} column added.
+\code{units} with the numeric \code{B4} column added, and
+\code{b4_status} (\code{"calculated"}, \code{"skipped_no_spectral"} or \code{"skipped_no_coverage"}).
 }
 \description{
 Per-unit Shannon alpha diversity of spectral species (biodivMapR),
@@ -38,6 +37,11 @@ NDP 0 (Sentinel-2). Strictly backward compatible: with neither
 \code{spectral} nor \code{reflectance}, the column is filled with
 \code{NA} and the \code{sf} is returned unchanged.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{compute_spectral_diversity}}
 }

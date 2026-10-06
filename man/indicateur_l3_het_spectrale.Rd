@@ -8,7 +8,6 @@ indicateur_l3_het_spectrale(
   units,
   spectral = NULL,
   reflectance = NULL,
-  column_name = "L3",
   min_windows = 3L,
   ...
 )
@@ -24,7 +23,6 @@ with B4). When \code{NULL}, falls back to \code{reflectance}.}
 compute spectral diversity on the fly when \code{spectral} is
 \code{NULL}.}
 
-\item{column_name}{Output column name (default \code{"L3"}).}
 
 \item{min_windows}{Integer. Minimum number of covered diversity windows
 below which the unit's dispersion is undefined and \code{NA} is returned
@@ -35,7 +33,8 @@ below 3 are raised to 3.}
 on the fly (e.g. \code{window_size}, \code{mask}, \code{nb_cpu}).}
 }
 \value{
-\code{units} with the numeric \code{column_name} column added.
+\code{units} with the numeric \code{L3} column added, and
+\code{l3_status} (\code{"calculated"}, \code{"skipped_no_spectral"} or \code{"skipped_no_coverage"}).
 }
 \description{
 Per-unit Bray-Curtis beta diversity (spectral-species turnover,
@@ -58,6 +57,11 @@ Before v0.190.0 the axes were simply averaged, which measured a unit's mean
 construction, and clamped to 0 for every unit on the negative side. See
 spec 028 section 10.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{compute_spectral_diversity}}
 }

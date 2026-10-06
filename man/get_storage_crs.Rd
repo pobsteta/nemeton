@@ -13,6 +13,11 @@ Integer. EPSG code (3035).
 Returns the EPSG code used for internal data storage.
 EPSG:3035 (ETRS89/LAEA) is the pan-European standard (ADR-008).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 get_storage_crs()  # 3035
 

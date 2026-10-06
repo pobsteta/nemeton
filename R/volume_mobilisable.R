@@ -85,6 +85,9 @@
 #'
 #' @return `units` with the `column_name` column added.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [indicateur_p1_volume()] for the volume itself.
 #' @export
 #' @examples

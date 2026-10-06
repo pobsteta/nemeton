@@ -34,6 +34,11 @@ As in \code{\link{indicator_families}}, both languages are always returned: \cod
 only selects which one is copied into the convenience columns \code{label} and
 \code{tooltip}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 ind <- indicator_labels()
 head(ind)

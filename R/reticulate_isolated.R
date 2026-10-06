@@ -77,7 +77,8 @@
 #'   process boundary.
 #'
 #' @return Whatever `fun` returns.
-#' @export
+#' @keywords internal
+#' @noRd
 run_reticulate_isolated <- function(fun, args = list(), python = NULL,
                                     virtualenv = NULL, condaenv = NULL,
                                     show = TRUE) {

@@ -53,6 +53,9 @@ NULL
 #'       \code{alpha}, \code{N}.
 #'   }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' # Conifer plantation, ±10 % on G/ha, 95 % confidence:
 #' compute_sample_size(cv = 0.30, target_error = 0.10)

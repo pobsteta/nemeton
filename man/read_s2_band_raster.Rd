@@ -54,6 +54,11 @@ NDVI about 0.55 instead of 0.84), which produced a spurious drop in
 FAST maps and pixel series.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
   cache <- "/home/user/projects/myforest/cache/layers/sentinel2"

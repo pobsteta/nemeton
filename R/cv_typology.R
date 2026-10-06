@@ -45,6 +45,9 @@ NULL
 #'   Default reads \code{inst/extdata/cv_typology.csv}.
 #'
 #' @return A data.frame, 8 rows.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 cv_typology <- function(file = NULL) {
   path <- file %||% system.file("extdata", "cv_typology.csv",
@@ -65,6 +68,9 @@ cv_typology <- function(file = NULL) {
 #'   \code{species_class} (NMT species class, \code{NA} for non-forest / no
 #'   canopy TFV), \code{context_key}, \code{confidence} (\code{"clear"} or
 #'   \code{"ambiguous"}), \code{alt_context_key}, \code{notes_fr}.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 bdforet_v2_mapping <- function(file = NULL) {
@@ -94,6 +100,9 @@ bdforet_v2_mapping <- function(file = NULL) {
 #'
 #' @return Character vector of species-class codes (same length as `tfv_code`),
 #'   `NA` where the TFV has no forest species class or is unknown.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [bdforet_v2_mapping()], [regen_species_choices()],
 #'   [map_bdforet_essence()]
 #' @export
@@ -114,6 +123,9 @@ map_tfv_to_species_class <- function(tfv_code, mapping = NULL) {
 #'   \code{\link{cv_typology}}).
 #'
 #' @return Numeric CV (fraction).
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 cv_lookup <- function(context_key,
@@ -168,6 +180,9 @@ cv_lookup <- function(context_key,
 #'     \item \code{unmapped}: TFV codes present in the data but absent
 #'       from the mapping table.
 #'   }
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 cv_from_bdforet <- function(bdforet_sf,

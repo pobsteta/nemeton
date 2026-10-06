@@ -53,6 +53,11 @@ Breaking change in nemeton 0.16.0: \code{detect_ndp()} used to return a
 plain integer. It now returns an \code{ndp_result} list.
 Use \code{result$level} or \code{as.integer(result)} for the numeric level.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 # Default: NDP 0, no ML augmentation
 df <- data.frame(x = 1)

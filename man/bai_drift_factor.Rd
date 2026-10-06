@@ -31,6 +31,11 @@ Only 8 species are tabulated: \code{PIAB, ABAL, PISY, FASY, QURO,
 QUPE, QUPU, PIHA}. For broader or finer-grained coverage, see
 \code{\link{charru_bai_drift_table}}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 bai_drift_factor(c("PIAB", "FASY", "QUPE", "PIHA"))
 bai_drift_factor("ACPS", habitat = "lowland")  # fallback by habitat

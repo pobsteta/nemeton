@@ -57,6 +57,11 @@ optionally filtered by indicator family, actor profile, and language.
 On PostgreSQL the ranking uses pgvector's `<=>` operator; on SQLite
 it is computed in R.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 [format_citations()] to render the result as a citation
   block.

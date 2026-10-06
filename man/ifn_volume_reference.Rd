@@ -46,6 +46,11 @@ This mirrors the fallback already used by \code{\link{indicateur_p1_volume}}
 (species -> genus -> conifer/broadleaf): degrade the resolution rather than
 return a figure resting on three plots.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Beech and silver fir in sylvoecoregion C20.

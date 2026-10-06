@@ -60,6 +60,11 @@ long-gap interpolated spans. No plotting, no Shiny — testable on its
 own, so the app's rendering function stays free of business logic
 (CLAUDE.md rule 3).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 df <- data.frame(
   obs_date   = as.Date("2023-01-01") + seq(0, 700, by = 15),

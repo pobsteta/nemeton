@@ -118,6 +118,11 @@ quick previews when only the zone is known.
 
 The return is ready for \code{\link{create_qgis_project}}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(sf)

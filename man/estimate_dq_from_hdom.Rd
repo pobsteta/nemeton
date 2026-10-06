@@ -43,6 +43,11 @@ clamped to the observed \eqn{D_g} range of each species
 (Charru 2012 Table 1) to avoid extrapolation artefacts at
 very small or very large \eqn{H_{dom}}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 estimate_dq_from_hdom(H_dom = 25, species = "FASY")
 estimate_dq_from_hdom(

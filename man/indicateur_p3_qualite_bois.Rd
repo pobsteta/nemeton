@@ -11,8 +11,6 @@ indicateur_p3_qualite_bois(
   defects_field = "defects",
   species_field = "species",
   weights = c(form = 0.4, diameter = 0.4, defects = 0.2),
-  column_name = "P3",
-  lang = "en",
   chm = NULL
 )
 }
@@ -29,23 +27,30 @@ indicateur_p3_qualite_bois(
 
 \item{weights}{Named numeric vector. Component weights: c(form = 0.4, diameter = 0.4, defects = 0.2). Default balanced.}
 
-\item{column_name}{Character. Name for output column. Default "P3".}
-
-\item{lang}{Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".}
 
 \item{chm}{Optional `terra::SpatRaster` canopy height model (spec 005).
 Passed to `ensure_inventory_fields()` to auto-fill `dbh` from the
 CHM when the diameter field is missing. Default `NULL`.}
 }
 \value{
-sf object with added column: P3 (timber quality score 0-100).
+sf object with added columns: P3 (timber quality score 0-100) and
+\code{p3_status}, which tells which components were measured:
+\code{"diametre_seul"}, \code{"diametre_forme"}, \code{"diametre_defauts"} or
+\code{"complet"} (NA when P3 is NA).
 
-\strong{Higher = better timber = favourable.} P3 is a weighted mean of three
+\strong{Higher = better timber = favourable.} P3 is a weighted mean of the
 components that are each already 0-100 and each already oriented that way
 (diameter against commercial thresholds, stem form, a defects penalty), so the
 composite is 0-100 by construction and \code{normalize_indicator()} passes it
 through (spec 048 section 12).
+
+Only MEASURED components enter the mean, their weights rescaled to sum
+to 1. Form and defects are used when the unit carries a non-missing value
+in \code{form_score_field} / \code{defects_field} (field data, e.g. QField); there
+is no default score any more. Before 1.0.0 a missing form counted 70 and
+missing defects 85, i.e. 45 constant points out of 100 on every unit
+without field data (spec 056): P3 is now the diameter score alone there
+(\code{p3_status = "diametre_seul"}).
 }
 \description{
 Calculates a timber quality score (0-100) based on tree form (straightness),
@@ -71,6 +76,11 @@ commercial diameter thresholds, and defect presence.
   \item 0-20: Very low quality (firewood only)
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 units$dbh <- c(45, 28, 35)

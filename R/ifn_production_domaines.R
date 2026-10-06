@@ -61,6 +61,9 @@
 #' @return A data.frame: `id`, `h_mean`, `h_sd`, `alt_mean`, `alt_sd`,
 #'   `part_foret` (share of the domain area covered by forest pixels).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [ifn_production_domaines()].
 #' @export
 #' @examples
@@ -173,6 +176,9 @@ ifn_covariables_domaines <- function(domaines, hauteur, altitude, id_col = NULL,
 #'   (`A(S)`), `hors_calibrage`, `nature` (`"composite"`, or `"prediction"` for
 #'   a domain without plots), `campagnes`. The per-campaign detail is in the
 #'   `detail` attribute.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @seealso [ifn_covariables_domaines()], [ifn_production_reference()],
 #'   [localiser_ser()].

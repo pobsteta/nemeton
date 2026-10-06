@@ -23,7 +23,7 @@ year (same layers). \code{NULL}/missing layers → \code{R6 = NA}.}
 }
 \value{
 \code{units} with \code{R6} (0-100, higher = less sensitive), \code{R6_dtmax}
-(raw ΔT°max, °C), \code{R6_dvpd} (raw ΔVPD, kPa), \code{R6_couverture_pct}, and
+(raw ΔT°max, °C), \code{R6_dvpd} (raw ΔVPD, kPa), \code{R6_couverture_pct}, \code{r6_status} (\code{"calculated"}, \code{"skipped_no_micro"} or \code{"skipped_no_coverage"}), and
 the \code{"microclimate_model"} augmentation flag (only when at least one value is computed).
 }
 \description{
@@ -39,6 +39,11 @@ the E-OBS summer series via \code{\link{microclimate_detect_years}}, or set
 manually. This function consumes the \strong{two precomputed \code{micro} sets}
 (one per year), each carrying \code{tmax_understorey} and \code{vpd}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \seealso{
 \code{\link{microclimate_detect_years}}, \code{\link{indicateur_a3_microclimat}}
 }

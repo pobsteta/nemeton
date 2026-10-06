@@ -10,7 +10,7 @@ declared in \code{inst/datasources/<country>.json} (\code{forms_t},
 \code{s2_biophysical}, \code{theia_snow}, ...) can be materialised
 from the THEIA STAC API instead of a manual download.
 
-The plumbing is endpoint-agnostic: \code{\link{stac_search_items}}
+The plumbing is endpoint-agnostic: \code{stac_search_items()}
 works against any STAC API, and the THEIA endpoint is read from the
 \code{services$theia_stac} entry of the country configuration (or
 passed explicitly via \code{stac_api}).

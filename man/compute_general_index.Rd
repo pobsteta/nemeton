@@ -33,6 +33,11 @@ mean: the NDP does not change \code{score}, it only sets the returned
 \code{\link{compute_general_index_mixed}} when indicators come from
 different NDP levels: the Fibonacci weights then differ and are applied.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 scores <- c(C = 72, B = 45, W = 68, A = 55, F = 60,
             L = 40, T = 35, R = 50, S = 65, P = 70,

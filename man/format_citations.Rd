@@ -26,3 +26,7 @@ Renders the result of [retrieve_knowledge()] as a numbered Markdown
 (or HTML) "Sources" block, ready to concatenate to an AI perspective.
 The footnote markers (`[^1]`, `[^2]`, ...) match the order of the rows.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

@@ -31,6 +31,11 @@ Returns one harvest rate per requested species, in \strong{m3/ha/year}, walking
 the mesh down until the cell rests on enough plots and reporting the level
 actually used. This is the rate \code{\link{volume_mobilisable}} consumes.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 ifn_taux_prelevement(c("62", "09"), ser = "C20")

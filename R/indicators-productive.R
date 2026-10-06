@@ -33,9 +33,6 @@ NULL
 #'   IFN tariff \code{V = a x DBH^b x H^c}, see Details) is implemented;
 #'   "allometric" is accepted for backward compatibility but has no effect and
 #'   emits a warning. Default "ifn_tarif".
-#' @param column_name Character. Name for output column. Default "P1".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #' @param chm Optional \code{SpatRaster} of canopy heights in
 #'   metres. When supplied, activates CHM mode (spec 005 phase
 #'   3). Heights are taken from the CHM (per-unit 90th
@@ -86,6 +83,9 @@ NULL
 #'   \item density: Number of stems per hectare
 #' }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -109,12 +109,43 @@ indicateur_p1_volume <- function(units,
                                         height_field = "height",
                                         density_field = "density",
                                         method = c("ifn_tarif", "allometric"),
-                                        column_name = "P1",
-                                        lang = "en",
                                         chm = NULL,
                                         h_dom_percentile = 0.9,
                                         pct_masked = NULL,
                                         use_climate_drift = FALSE) {
+  r <- .p1_volume_calcul(
+    units,
+    species_field = species_field,
+    dbh_field = dbh_field,
+    height_field = height_field,
+    density_field = density_field,
+    method = method,
+    chm = chm,
+    h_dom_percentile = h_dom_percentile,
+    pct_masked = pct_masked,
+    use_climate_drift = use_climate_drift
+  )
+  result <- r$units
+  result$P1 <- r$valeurs
+  cli::cli_alert_success("Calculated P1: Standing timber volume (m3/ha)")
+  result
+}
+
+# Coeur du calcul de P1 : rend les unites enrichies (dbh/densite synthetises
+# depuis le CHM le cas echeant) et le vecteur de volumes (m3/ha), sans ecrire
+# de colonne. Sert a indicateur_p1_volume() et a E1, qui a besoin du volume
+# sans colonne temporaire (spec 057 §1 : la colonne de valeur porte le code).
+#' @noRd
+.p1_volume_calcul <- function(units,
+                              species_field = "species",
+                              dbh_field = "dbh",
+                              height_field = "height",
+                              density_field = "density",
+                              method = c("ifn_tarif", "allometric"),
+                              chm = NULL,
+                              h_dom_percentile = 0.9,
+                              pct_masked = NULL,
+                              use_climate_drift = FALSE) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     cli::cli_abort("units must be an sf object")
@@ -237,18 +268,13 @@ indicateur_p1_volume <- function(units,
     drift <- bai_drift_factor(result[[species_field]])
     p1_values <- p1_values * drift
     cli::cli_alert_info(
-      "{column_name}: Charru 2017 climate drift applied \\
+      "P1: Charru 2017 climate drift applied \\
        (range {round(min(drift, na.rm = TRUE), 2)}..\\
        {round(max(drift, na.rm = TRUE), 2)})"
     )
   }
 
-  # Add to result
-  result[[column_name]] <- p1_values
-
-  cli::cli_alert_success("Calculated {column_name}: Standing timber volume (m3/ha)")
-
-  return(result)
+  list(units = result, valeurs = p1_values)
 }
 
 #' P2: Site Productivity Index Indicator
@@ -277,10 +303,10 @@ indicateur_p1_volume <- function(units,
 #' not of the stand's own site, all species together: the per-group
 #' figures of the table are diluted over the whole forest area. It adds
 #' three columns:
-#' \code{<column_name>_rse} (relative standard error, percent),
-#' \code{<column_name>_provenance} (\code{"ifn_prod_ser"},
+#' \code{P2_rse} (relative standard error, percent),
+#' \code{P2_provenance} (\code{"ifn_prod_ser"},
 #' \code{"ifn_prod_greco"} or \code{"ifn_prod_national"}) and
-#' \code{<column_name>_nature} (\code{"fay_herriot"},
+#' \code{P2_nature} (\code{"fay_herriot"},
 #' \code{"direct"} or \code{"synthetique"}). It is opt-in: the
 #' default behaviour is unchanged.
 #'
@@ -294,9 +320,6 @@ indicateur_p1_volume <- function(units,
 #' @param fertility_field Character. Column name containing fertility class (1=high, 2=medium, 3=low). Default "fertility".
 #' @param climate_field Character. Column name containing climate zone. Default "climate".
 #' @param productivity_table Data.frame. Custom productivity reference table. If NULL, uses bundled ONF/IFN tables.
-#' @param column_name Character. Name for output column. Default "P2".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #' @param chm Optional \code{SpatRaster} of canopy heights in
 #'   metres. When supplied, activates CHM mode (spec 005 phase
 #'   2). Typically the \code{chm_clean} component returned by
@@ -323,7 +346,11 @@ indicateur_p1_volume <- function(units,
 #'     \item CHM mode:    \code{P2} = site index \eqn{H_0} (m) at
 #'           \code{reference_age}, plus \code{p2_status =
 #'           "indice_station_m"} so that normalisation uses a 40 m
-#'           ceiling (\code{\link{normalize_indicator}}).
+#'           ceiling (\code{\link{normalize_indicator}}). A dominant
+#'           height outside the site-index curves at the observed age
+#'           gives \code{P2 = NA} with \code{p2_status = "hors_courbe"}
+#'           (spec 056); \code{p2_status} is \code{NA} when the index is
+#'           not estimable (missing age or species, H_dom < 1.3 m…).
 #'     \item IFN mode:    \code{P2} = IFN volume production of the
 #'           sylvoecoregion (m3/ha/yr), plus \code{P2_rse},
 #'           \code{P2_provenance}, \code{P2_nature}.
@@ -353,6 +380,9 @@ indicateur_p1_volume <- function(units,
 #'   \item mediterranean: Mediterranean (Provence, Languedoc)
 #' }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -372,8 +402,6 @@ indicateur_p2_station <- function(units,
                                          fertility_field = "fertility",
                                          climate_field = "climate",
                                          productivity_table = NULL,
-                                         column_name = "P2",
-                                         lang = "en",
                                          chm = NULL,
                                          age_field = "age",
                                          reference_age = 50,
@@ -404,14 +432,14 @@ indicateur_p2_station <- function(units,
     names(refs) <- unique(cle)
     r <- do.call(rbind, refs[cle])
     result <- units
-    result[[column_name]] <- r$valeur
-    result[[paste0(column_name, "_rse")]] <- r$rse
-    result[[paste0(column_name, "_provenance")]] <-
+    result$P2 <- r$valeur
+    result[["P2_rse"]] <- r$rse
+    result[["P2_provenance"]] <-
       ifelse(is.na(r$niveau_utilise), NA_character_,
              paste0("ifn_prod_", r$niveau_utilise))
-    result[[paste0(column_name, "_nature")]] <- r$nature
+    result[["P2_nature"]] <- r$nature
     cli::cli_alert_success(
-      "Calculated {column_name}: IFN volume production of the sylvoecoregion (m3/ha/yr)"
+      "Calculated P2: IFN volume production of the sylvoecoregion (m3/ha/yr)"
     )
     return(result)
   }
@@ -430,7 +458,7 @@ indicateur_p2_station <- function(units,
     }
 
     h_dom <- extract_h_dom(chm, units, percentile = h_dom_percentile)
-    site_index <- compute_site_index(
+    si <- .site_index_core(
       H_dom   = h_dom,
       age     = units[[age_field]],
       species = units[[species_field]],
@@ -438,14 +466,17 @@ indicateur_p2_station <- function(units,
     )
 
     result <- units
-    result[[column_name]] <- site_index
+    result$P2 <- si$value
     # Unite de P2 dans ce mode : des metres, pas des m3/ha/an. La colonne de
     # statut voyage jusqu'a la normalisation (normalize_indicator(statut =),
     # create_family_index()) ; l'app la conserve en `.p2_status` (ecart n. 17).
-    result$p2_status <- ifelse(is.na(site_index), NA_character_, "indice_station_m")
+    # « indice_station_m » : indice estime (normalise sur 40 m) ;
+    # « hors_courbe » : H_dom hors des courbes Duplat a l'age observe, P2 = NA
+    # (spec 056 ; c'etait la classe 1 ou 5 bornee) ; NA : non estimable.
+    result$p2_status <- si$status
 
     cli::cli_alert_success(
-      "Calculated {column_name}: site index H0 at {reference_age} years (m) via CHM"
+      "Calculated P2: site index H0 at {reference_age} years (m) via CHM"
     )
     return(result)
   }
@@ -512,9 +543,9 @@ indicateur_p2_station <- function(units,
   }
 
   # Add to result
-  result[[column_name]] <- p2_values
+  result$P2 <- p2_values
 
-  cli::cli_alert_success("Calculated {column_name}: Site productivity index (m3/ha/yr)")
+  cli::cli_alert_success("Calculated P2: Site productivity index (m3/ha/yr)")
 
   return(result)
 }
@@ -530,20 +561,28 @@ indicateur_p2_station <- function(units,
 #' @param defects_field Character. Column name containing defect indicator (0=none, 1=present). Optional.
 #' @param species_field Character. Column name containing species codes (for diameter thresholds). Default "species".
 #' @param weights Named numeric vector. Component weights: c(form = 0.4, diameter = 0.4, defects = 0.2). Default balanced.
-#' @param column_name Character. Name for output column. Default "P3".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #' @param chm Optional `terra::SpatRaster` canopy height model (spec 005).
 #'   Passed to `ensure_inventory_fields()` to auto-fill `dbh` from the
 #'   CHM when the diameter field is missing. Default `NULL`.
 #'
-#' @return sf object with added column: P3 (timber quality score 0-100).
+#' @return sf object with added columns: P3 (timber quality score 0-100) and
+#'   `p3_status`, which tells which components were measured:
+#'   `"diametre_seul"`, `"diametre_forme"`, `"diametre_defauts"` or
+#'   `"complet"` (NA when P3 is NA).
 #'
-#'   **Higher = better timber = favourable.** P3 is a weighted mean of three
+#'   **Higher = better timber = favourable.** P3 is a weighted mean of the
 #'   components that are each already 0-100 and each already oriented that way
 #'   (diameter against commercial thresholds, stem form, a defects penalty),
 #'   so the composite is 0-100 by construction and `normalize_indicator()`
 #'   passes it through (spec 048 section 12).
+#'
+#'   Only MEASURED components enter the mean, their weights rescaled to sum
+#'   to 1. Form and defects are used when the unit carries a non-missing value
+#'   in `form_score_field` / `defects_field` (field data, e.g. QField); there
+#'   is no default score any more. Before 1.0.0 a missing form counted 70 and
+#'   missing defects 85, i.e. 45 constant points out of 100 on every unit
+#'   without field data (spec 056): P3 is now the diameter score alone there
+#'   (`p3_status = "diametre_seul"`).
 #'
 #' @details
 #' **Calculation**:
@@ -564,6 +603,9 @@ indicateur_p2_station <- function(units,
 #'   \item 20-40: Low quality (pulpwood, biomass)
 #'   \item 0-20: Very low quality (firewood only)
 #' }
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -586,8 +628,6 @@ indicateur_p3_qualite_bois <- function(units,
                                          defects_field = "defects",
                                          species_field = "species",
                                          weights = c(form = 0.4, diameter = 0.4, defects = 0.2),
-                                         column_name = "P3",
-                                         lang = "en",
                                          chm = NULL) {
   # Validate inputs
   if (!inherits(units, "sf")) {
@@ -611,6 +651,7 @@ indicateur_p3_qualite_bois <- function(units,
 
   result <- units
   p3_values <- numeric(nrow(units))
+  p3_status <- rep(NA_character_, nrow(units))
 
   # Calculate quality for each unit
   for (i in seq_len(nrow(units))) {
@@ -646,34 +687,44 @@ indicateur_p3_qualite_bois <- function(units,
       diameter_score <- 50 * (dbh_cm / pulp_threshold)
     }
 
-    # Component 2: Form score
+    # Composantes 2 et 3 : forme et défauts, SEULEMENT quand une donnée de
+    # terrain les fournit. Avant 1.0.0, une forme absente valait 70 et des
+    # défauts absents 85 : 45 points constants sur 100 pour toute UGF sans
+    # inventaire, soit 58 à 97 % du P3 affiché sur les projets réels (spec 056,
+    # décision 2026-10-06). Les poids des composantes mesurées sont ramenés à 1.
+    form_score <- NA_real_
     if (form_score_field %in% names(units) && !is.na(units[[form_score_field]][i])) {
       form_score <- units[[form_score_field]][i]
-    } else {
-      # Default assumption: average form quality
-      form_score <- 70
     }
-
-    # Component 3: Defects penalty
+    defects_score <- NA_real_
     if (defects_field %in% names(units) && !is.na(units[[defects_field]][i])) {
       has_defects <- units[[defects_field]][i]
       defects_score <- if (has_defects > 0) 50 else 100 # 50% penalty for defects
-    } else {
-      defects_score <- 85 # Assume minor defects
     }
 
-    # Weighted composite
-    p3_values[i] <- weights["form"] * form_score +
-      weights["diameter"] * diameter_score +
-      weights["defects"] * defects_score
+    scores <- c(form = form_score, diameter = diameter_score,
+                defects = defects_score)
+    w <- weights[names(scores)]
+    mesure <- !is.na(scores)
+    p3_values[i] <- sum(w[mesure] * scores[mesure]) / sum(w[mesure])
+    p3_status[i] <- if (mesure[["form"]] && mesure[["defects"]]) {
+      "complet"
+    } else if (mesure[["form"]]) {
+      "diametre_forme"
+    } else if (mesure[["defects"]]) {
+      "diametre_defauts"
+    } else {
+      "diametre_seul"
+    }
 
     msg_info("productive_quality_assessed", p3_values[i], form_score, diameter_score, defects_score)
   }
 
   # Add to result
-  result[[column_name]] <- p3_values
+  result$P3 <- p3_values
+  result$p3_status <- p3_status
 
-  cli::cli_alert_success("Calculated {column_name}: Timber quality score (0-100)")
+  cli::cli_alert_success("Calculated P3: Timber quality score (0-100)")
 
   return(result)
 }

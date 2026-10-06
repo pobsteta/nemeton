@@ -71,6 +71,9 @@
 #'   (numeric, 0-100, NA where skipped) and `r5_status`
 #'   (character).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 indicateur_r5_deperissement <- function(units,
                                          fordead_results     = NULL,

@@ -140,9 +140,17 @@ test_that("site index at reference_age equals identity when age == reference_age
 test_that("site index is monotonic in observed H_dom", {
   # At fixed age/species/ref, a taller observed stand must yield
   # a strictly greater site index (better fertility class).
-  heights <- c(10, 15, 20, 25, 30)
+  # 1.0.0 (spec 056) : les hauteurs hors des courbes rendent NA au lieu d'être
+  # bornées ; la monotonie se vérifie donc entre les classes 5 et 1 à 80 ans
+  # (l'ancienne grille 10-30 m sortait des courbes du chêne sessile).
+  sub <- read_site_index_curves()
+  sub <- sub[sub$species == "QUPE", ]
+  h5 <- stats::approx(sub$age, sub$class_5, xout = 80)$y
+  h1 <- stats::approx(sub$age, sub$class_1, xout = 80)$y
+  heights <- seq(h5 + 0.1, h1 - 0.1, length.out = 5)
   out <- compute_site_index(heights, 80, "QUPE")
-  expect_true(all(diff(out) >= 0))
+  expect_false(anyNA(out))
+  expect_true(all(diff(out) > 0))
 })
 
 test_that("site index is consistent between species with similar curves", {
@@ -167,31 +175,27 @@ test_that("age outside tabulated range yields NA", {
   expect_true(is.na(compute_site_index(20, 200, "QUPE")))   # > 150
 })
 
-test_that("H_dom above class 1 is clamped to best class", {
-  # Very tall tree -> class 1 or beyond -> the returned site
-  # index should be at or above class 1 at reference_age
-  curves <- read_site_index_curves()
-  class_1_at_50 <- stats::approx(
-    x = curves[curves$species == "QUPE", "age"],
-    y = curves[curves$species == "QUPE", "class_1"],
-    xout = 50
-  )$y
-  out <- compute_site_index(99, 80, "QUPE")
-  expect_gte(out, class_1_at_50 - 0.5)
+# 1.0.0 (spec 056, décision 2026-10-06) : une H_dom hors des courbes à l'âge
+# observé n'est plus bornée à la classe 1 ou 5 mais rend NA. Le bornage
+# fabriquait des valeurs identiques (20,71 / 10,90 m pour le chêne sessile)
+# d'apparence mesurée.
+test_that("H_dom above class 1 is out of the curves: NA", {
+  expect_true(is.na(compute_site_index(99, 80, "QUPE")))
 })
 
-test_that("H_dom below class 5 (but above breast height) is clamped to worst class", {
+test_that("H_dom below class 5 (but above breast height) is out of the curves: NA", {
+  # 2 m : sous la classe 5 mais au-dessus de min_stand_height (1,3 m).
+  expect_true(is.na(compute_site_index(2, 80, "QUPE")))
+})
+
+test_that("H_dom exactly on class 1 / class 5 stays inside the curves", {
   curves <- read_site_index_curves()
-  class_5_at_50 <- stats::approx(
-    x = curves[curves$species == "QUPE", "age"],
-    y = curves[curves$species == "QUPE", "class_5"],
-    xout = 50
-  )$y
-  # 2 m: below the worst class curve but above min_stand_height (1.3 m),
-  # so it still clamps rather than returning NA (spec 005 §3.5 #3 only
-  # NA-s a bare CHM below breast height).
-  out <- compute_site_index(2, 80, "QUPE")
-  expect_lte(out, class_5_at_50 + 0.5)
+  sub <- curves[curves$species == "QUPE", ]
+  at <- function(cl, a) stats::approx(sub$age, sub[[cl]], xout = a)$y
+  expect_equal(compute_site_index(at("class_1", 80), 80, "QUPE"),
+               at("class_1", 50), tolerance = 1e-6)
+  expect_equal(compute_site_index(at("class_5", 80), 80, "QUPE"),
+               at("class_5", 50), tolerance = 1e-6)
 })
 
 test_that("empty input returns numeric(0)", {

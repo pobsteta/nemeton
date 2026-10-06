@@ -175,6 +175,9 @@
 #'   (`<forêt>-<parcelle>`), `foret_id`, `foret_nom`, `parcelle`, `domaniale`,
 #'   `nom_ugf`, `contenance` (m², computed in the territory's projected CRS) and
 #'   `surface_ha`; a 0-row `sf` if none; `NULL` on failure.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [load_foret_ancienne_source()], [get_layer_service()]
 #' @export
 load_onf_parcelles_source <- function(aoi, crs = 2154,

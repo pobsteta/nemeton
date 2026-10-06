@@ -246,6 +246,9 @@ NULL
 #' cannot be computed drops out and its weight is redistributed proportionally;
 #' with no usable component, R1 is \code{NA}.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family risk-indicators
 #' @export
 #'
@@ -485,8 +488,14 @@ indicateur_r1_feu <- function(units,
 #' R2 = (1 - shelter_coef) * 100.
 #'
 #' **Fallback method** (DEM terrain derivatives):
-#' Combines aspect-wind alignment, slope, and terrain ruggedness (TRI):
-#' R2 = wind_exposure * (0.6 * slope_norm + 0.4 * TRI_norm) * 100.
+#' Combines aspect-wind alignment and slope:
+#' R2 = wind_exposure * slope_norm * 100, slope_norm = clamp(slope / 45, 0, 1).
+#' The terrain ruggedness (TRI) term was dropped in 1.0.0 (spec 056): it is
+#' 0.82-0.99 correlated with the slope and, normalised by its maximum over the
+#' extent, was the only non-comparable term between projects.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @family risk-indicators
 #' @export
@@ -581,11 +590,10 @@ indicateur_r2_tempete <- function(units,
   }
 
   # --- Fallback method: DEM terrain derivatives ---
-  cli::cli_alert_info("R2: Using terrain fallback (aspect + slope + TRI)")
+  cli::cli_alert_info("R2: Using terrain fallback (aspect + slope)")
 
   aspect <- terra::terrain(dem, v = "aspect", unit = "degrees")
   pente <- terra::terrain(dem, v = "slope", unit = "degrees")
-  tri <- terra::terrain(dem, v = "TRI")
 
   # Wind exposure: max when aspect is aligned with wind direction
   diff_angle <- abs(aspect - wind_dir)
@@ -595,13 +603,12 @@ indicateur_r2_tempete <- function(units,
   # Normalize slope: 0-45 degrees -> 0-1
   pente_norm <- terra::clamp(pente / 45, lower = 0, upper = 1)
 
-  # Normalize TRI
-  tri_max <- terra::global(tri, "max", na.rm = TRUE)$max
-  if (is.na(tri_max) || tri_max == 0) tri_max <- 1
-  tri_norm <- terra::clamp(tri / tri_max, lower = 0, upper = 1)
-
-  # Composite: wind exposure modulated by terrain steepness/roughness
-  r2_raster <- expo_vent * (0.6 * pente_norm + 0.4 * tri_norm)
+  # Composite : exposition au vent modulée par la pente seule. Le terme TRI
+  # (0,4, normalisé par le maximum de l'emprise) est retiré en 1.0.0 (spec 056,
+  # décision 2026-10-06) : corrélé à 0,82-0,99 avec la pente, il était le seul
+  # terme non comparable entre projets (un TRI de 1 m valait de 3 à 85 % de sa
+  # composante). La pente reprend son poids au prorata : 0,6 / 0,6 = 1.
+  r2_raster <- expo_vent * pente_norm
 
   r2_mean <- safe_extract(r2_raster,
     as_pure_sf(units), fun = "mean", progress = FALSE)
@@ -738,7 +745,9 @@ indicateur_r2_tempete <- function(units,
 #' \itemize{
 #'   \item aspect_risk: south-facing = max risk
 #'   \item slope_risk: steep slopes = runoff = dry
-#'   \item twi_risk: low TWI = dry
+#'   \item twi_risk: low TWI = dry. \code{1 - clamp((TWI - 2.5) / 6.5, 0, 1)},
+#'     on a TWI referenced to a 2 m grid: fixed window [2.5, 9] shared with
+#'     W3 and F2 (spec 056), no longer the maximum of the extent.
 #' }
 #' topo_risk = 0.4*aspect_risk + 0.3*slope_risk + 0.3*twi_risk
 #'
@@ -758,6 +767,9 @@ indicateur_r2_tempete <- function(units,
 #' against the \eqn{0.3\;m^3/m^3} field-capacity reference, and
 #' R3 is multiplied by \code{1 - sm_relief_strength * relief}.
 #' Moist soil buffers drought stress.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @family risk-indicators
 #' @export
@@ -887,18 +899,19 @@ indicateur_r3_secheresse <- function(units,
   # grossier vers la grille fine — coûteux et sans information ajoutée.
   twi_cache_dir <- if (!is.null(layers)) layers$cache_dir else NULL
   twi_raster <- get_or_compute_twi(dem, cache_dir = twi_cache_dir,
-                                   twi_target_res = dem_target_res)
+                                   twi_target_res = dem_target_res,
+                                   crs = .twi_metric_crs(units))
 
-  # Filet de sécurité : un TWI GRASS ou un cache d'une version antérieure peut
-  # encore arriver sur une autre grille.
-  if (!terra::compareGeom(twi_raster, aspect, stopOnError = FALSE)) {
-    twi_raster <- terra::resample(twi_raster, aspect, method = "bilinear")
-  }
+  # Filet de sécurité : un TWI GRASS peut encore arriver sur une autre grille,
+  # et le TWI d'un MNT lon/lat sort sur une grille MÉTRIQUE (spec 056) : il est
+  # alors reprojeté sur la grille d'`aspect`, pas seulement rééchantillonné.
+  twi_raster <- .twi_on_grid(twi_raster, aspect)
 
-  twi_max <- terra::global(twi_raster, "max", na.rm = TRUE)$max
-  if (is.na(twi_max) || twi_max == 0) twi_max <- 1
-  twi_norm <- terra::clamp(twi_raster / twi_max, lower = 0, upper = 1)
-  twi_risk <- 1 - twi_norm
+  # Fenêtre fixe [2,5 ; 9] commune avec W3 et F2 (spec 056), sur un TWI ramené
+  # à 2 m. Elle remplace TWI / max(TWI de l'emprise) : le maximum, artefact de
+  # l'accumulation D8 en fond de talweg, faisait dépendre R3 de l'emprise et
+  # rendait un même relief incomparable d'un projet à l'autre.
+  twi_risk <- 1 - .twi_norm(twi_raster)
 
   # Composite topographic risk
   topo_risk <- 0.4 * aspect_risk + 0.3 * pente_risk + 0.3 * twi_risk
@@ -1008,6 +1021,9 @@ indicateur_r3_secheresse <- function(units,
 #'   \item game_density: From departmental hunting harvest statistics
 #'     (data.gouv.fr, OFB). Auto-fetched via \code{\link{get_game_pressure_raster}}.
 #' }
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @family risk-indicators
 #' @export

@@ -14,6 +14,11 @@ A data.frame with columns \code{species, model, a, b, c,
 Returns the species-keyed lookup table used by
 \code{\link{n_max_selfthinning}}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 charru_selfthinning_table()
 

@@ -1,3 +1,71 @@
+# nemeton 1.0.0 (2026-10-06)
+
+Première version stable. Elle clôt l'audit de pré-version 1.0 (rapport
+`specs/audit-1.0/rapport-audit.md` : plus aucun constat sans suite) et fixe un
+**contrat d'API**. **Elle casse tous les projets antérieurs, sans migration** :
+projets, caches de projet et bases de suivi sont à recréer (décision de Pascal,
+2026-10-06 ; tous les projets existants étaient les siens).
+
+## Contrat d'API (spec 057)
+
+- **Un seul type de retour** : tout `indicateur_*()` rend l'objet `units`
+  d'entrée augmenté de la colonne de valeur au nom du code (`C1`, `W3`…). C1,
+  C2, F1, F2, L1, L2, T1, T2, T3, W1, W2, W3 rendaient un vecteur.
+  `extract_indicator_value()` refuse un vecteur nu.
+- **Arguments retirés** : `lang` (sans effet) des indicateurs E, N, P, S et de
+  `embed_query()` ; `column_name` de tous les indicateurs (la colonne porte
+  toujours le code).
+- **Fonctions retirées** : `indicateur_l1_sylvosphere()`,
+  `indicateur_l2_fragmentation()` (anciens noms) ; 34 exports de plomberie
+  interne (STAC/Theia bas niveau, étapes RECONFORT, `scratch_dir`,
+  `run_reticulate_isolated`…) et `microclimate_run()` ne sont plus exportés.
+- **`list_indicators()`** rend les **41 indicateurs** (colonnes `code`,
+  `conditionnel`, `source_conditionnelle`) ; `conditionnels = FALSE` rend les
+  31 de base. Un indicateur conditionnel sans sa source rend NA avec un statut
+  (`<code>_status`), jamais une erreur.
+- **Statut documenté** : chaque page d'aide est **stable** ou **experimental**
+  (RAG, biophysique, FORDEAD/RECONFORT, régénération) ; le site regroupe par
+  statut.
+
+## Méthode (spec 056, mesures sur six projets)
+
+- **TWI** : calculé en mètres même sur un MNT en degrés (W3 et la composante
+  TWI de F2 valaient 0 sur les MNT de repli IGN en EPSG:4326) et ramené à une
+  grille de 2 m (`TWI − ln(pas/2)`) pour être comparable entre résolutions.
+  **Fenêtre fixe commune [2,5 ; 9]** pour W3, F2 et R3 (W3 saturait à 100 sur
+  LiDAR). Seuil des zones humides de W2 à 9,5 sur ce TWI.
+- **R2** sans TRI (corrélé à 0,82-0,99 avec la pente) ; **N1** sans le terme
+  urbain constant +25 ; **P3** au seul diamètre sans données terrain
+  (`p3_status`) ; **indice de station** NA hors des courbes
+  (`p2_status = "hors_courbe"`).
+- **`enrich_parcels_bdforet()`** n'invente plus ni âge (60 ans), ni densité
+  (0,7), et rend des codes essence reconnus par la suite (les genres latins
+  envoyaient toutes les UGF sur la courbe du chêne). **Sans âge réel, P2
+  (mode CHM) est NA et C1 retombe sur le NDVI.**
+- **Valeurs qui changent** : W, F, R, N et P baissent en général ; voir la
+  spec 056 pour les mesures avant/après.
+
+## Infrastructure
+
+- **Base de suivi** : schéma neuf en une migration initiale unique par moteur
+  (TimescaleDB optionnel, `validation_status` NOT NULL partout). Une base
+  antérieure est **refusée** (`nemeton_legacy_schema`).
+- **FORDEAD** : environnement Python figé sur le venv validé (Python ≥ 3.11).
+- `.onLoad` ne modifie plus un réglage `memfrac`/`memmax` de terra fait par
+  l'utilisateur.
+- Tutoriels 07 et 08 : données téléchargées à la demande dans le cache.
+- Corpus RAG : `NEMETON_CORPUS_ROOT` documenté ;
+  `ingest_knowledge_document()` ignore un contenu déjà ingéré.
+- Fixture `massif_demo_units` : 41 indicateurs, calculés par le paquet.
+- Guide de l'application retiré (repris par `nemetonshiny`).
+- Distribution GitHub (pas de CRAN pour la 1.0) ; cache global inchangé
+  (`~/.cache/nemeton`).
+
+## Décisions
+
+ADR-016 (R1 via firexpovulnR) **rejeté** (spec 047) ; calibrages de la 0.212
+**validés** (B1, B3, A2, L1, E1/E2).
+
 # nemeton 0.216.0 (2026-10-05)
 
 ### Added — logique métier rapatriée de l'app (audit 1.0 de l'app, n° 64-66)

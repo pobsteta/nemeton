@@ -29,7 +29,7 @@ outside the nomenclature).}
 \item{buffer}{Numeric. Buffer distance (meters) for contrast analysis. Default 50m.}
 }
 \value{
-Numeric vector of sylvosphere scores (0-100). \strong{Higher = more edge
+The input \code{units} (same class, rows and order) with an added numeric column \code{L1}: sylvosphere scores (0-100). \strong{Higher = more edge
 effect borne by the unit = less favourable}: all three components grow with it
 (boundary irregularity, hostile surrounding matrix, wind and sun exposure).
 The value is therefore INVERTED by normalize_indicator() so the radar
@@ -46,9 +46,14 @@ Composite indicator (0-100) with 3 components:
 
 This indicator used to be called \code{indicateur_l2_fragmentation()} -- a name
 that announced the L2 fragmentation metric while computing the L1 edge
-effect. The old name still works and returns the same values, with a
-deprecation warning. Persisted columns are renamed by
+effect. The old name, kept as a deprecated alias since then, was removed
+in 1.0.0 (spec 057). Persisted columns are renamed by
 \code{\link{migrer_colonnes_l}}. See spec 045.
+}
+
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
 }
 
 \examples{

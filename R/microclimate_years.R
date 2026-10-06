@@ -127,6 +127,9 @@
 #'
 #' @return A list: `year_moyenne`, `year_canicule` (integers) and `index`
 #'   (named numeric, the summer-heat index per candidate year).
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [indicateur_r6_sensibilite()], [tendances_estivales_eobs()]
 #' @export
 microclimate_detect_years <- function(eobs = NULL, aoi = NULL, years = NULL,

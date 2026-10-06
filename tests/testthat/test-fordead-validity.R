@@ -183,8 +183,11 @@ test_that("BD Forêt fallback: derives species from `bdforet` when units lacks a
     sf::st_point(c(PT_VOSGES[1] - 400, PT_VOSGES[2] + 200)),
     crs = 2154
   )
+  # Libellés réels de la BD Forêt V2. Depuis 1.0.0 (spec 056), un libellé non
+  # reconnu (« EPC ») donne une essence NA et non plus « Generic ».
   bdf <- sf::st_sf(
-    essence = c("EPC", "EPC", "Quercus"),
+    essence = c("Sapin, \u00e9pic\u00e9a", "Sapin, \u00e9pic\u00e9a",
+                "Ch\u00eanes d\u00e9cidus"),
     geometry = sf::st_buffer(bdf_pts, 200)
   )
 
@@ -207,7 +210,7 @@ test_that("BD Forêt fallback: layers= resolves bdforet via resolve_vector_layer
     crs = 2154
   )
   bdf <- sf::st_sf(
-    essence = "EPC",
+    essence = "Sapin, \u00e9pic\u00e9a",   # libellé BD Forêt réel (spec 056)
     geometry = sf::st_buffer(bdf_pts, 500)
   )
   layers <- structure(
@@ -220,6 +223,8 @@ test_that("BD Forêt fallback: layers= resolves bdforet via resolve_vector_layer
     "BD For"
   )
   expect_false(is.na(res$species_valid))
+  # « Sapin, épicéa » -> ABAL, reconnu comme sapin pectiné.
+  expect_true(res$species_valid)
 })
 
 test_that("BD Forêt fallback: warning still emitted when neither path resolves", {

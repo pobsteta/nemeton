@@ -11,8 +11,6 @@ indicateur_p1_volume(
   height_field = "height",
   density_field = "density",
   method = c("ifn_tarif", "allometric"),
-  column_name = "P1",
-  lang = "en",
   chm = NULL,
   h_dom_percentile = 0.9,
   pct_masked = NULL,
@@ -38,10 +36,6 @@ tariff \code{V = a x DBH^b x H^c}, see Details) is implemented; "allometric" is
 accepted for backward compatibility but has no effect and emits a warning.
 Default "ifn_tarif".}
 
-\item{column_name}{Character. Name for output column. Default "P1".}
-
-\item{lang}{Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".}
 
 \item{chm}{Optional \code{SpatRaster} of canopy heights in
 metres. When supplied, activates CHM mode (spec 005 phase
@@ -108,6 +102,11 @@ equations — \code{BROADLEAF_GENUS} for non-conifers,
   \item density: Number of stems per hectare
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # With species and biometric data

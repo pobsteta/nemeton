@@ -67,3 +67,7 @@ with a local reference (median LST of a surrounding ring, or a supplied
 \code{reference}). Differences are scale-invariant between kelvin and celsius,
 so either unit works.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

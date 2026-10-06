@@ -22,6 +22,11 @@ two-hour run reads `"2 h 05 min 12 s"`, never `"7512 s"`. Machine-facing
 fields (`duration_sec`, `elapsed_sec` in results and `run_meta.json`) stay
 in raw seconds — this is for messages only.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 format_duration(23)                        # "23 s"
 format_duration(819)                       # "13 min 39 s"

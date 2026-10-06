@@ -192,6 +192,11 @@ per-plot observation nor writes to the database — the `obs_pixel`
 table was dropped in v0.58.0. It is purely a cache-priming step,
 independent of the validation sampling plan (placettes).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Typical wiring from nemetonshiny's monitoring worker.

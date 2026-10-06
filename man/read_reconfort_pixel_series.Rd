@@ -52,6 +52,11 @@ consulted in this release (discovery is filesystem-based). `NULL` is
 accepted.
 }
 
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 [run_reconfort_dieback()], [read_fordead_pixel_series()].
 }

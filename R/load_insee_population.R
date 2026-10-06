@@ -76,6 +76,9 @@
 #'   fallback** (spec 050, and the rule of v0.187.0).
 #'   Carries a `part_imputee` attribute: share of cells that are imputed.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 load_insee_population_source <- function(aoi,
                                          buffer_m = 21000,

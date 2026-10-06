@@ -49,6 +49,11 @@ When \code{coarse} is supplied, the fine-earth AWC is scaled to bulk soil by
 This is a published pedotransfer function, not a calibration of this project.
 It is exported so that a pedologist can audit it. NA in, NA out.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 # Limon (loam) : AWC ~ 0.14 m3/m3
 awc_saxton_rawls(clay = 0.20, sand = 0.40, om = 2.5)

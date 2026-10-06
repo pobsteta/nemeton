@@ -17,7 +17,7 @@ test_that("indicateur_w1_reseau calculates stream density within parcels", {
   units <- massif_demo_units[1:5, ]
 
   # Use "indicateur_w3_humidite" layer (actual name in massif_demo, not "watercourses")
-  density <- indicateur_w1_reseau(units, layers, watercourse_layer = "water")
+  density <- indicateur_w1_reseau(units, layers, watercourse_layer = "water")$W1
 
   # Test output
   expect_type(density, "double")
@@ -38,10 +38,10 @@ test_that("indicateur_w1_reseau with buffer expands search area", {
   units <- massif_demo_units[1:3, ]
 
   # No buffer
-  density_0 <- indicateur_w1_reseau(units, layers, watercourse_layer = "water", buffer = 0)
+  density_0 <- indicateur_w1_reseau(units, layers, watercourse_layer = "water", buffer = 0)$W1
 
   # 100m buffer
-  density_100 <- indicateur_w1_reseau(units, layers, watercourse_layer = "water", buffer = 100)
+  density_100 <- indicateur_w1_reseau(units, layers, watercourse_layer = "water", buffer = 100)$W1
 
   # Buffer should generally increase or maintain density (catches nearby streams)
   expect_true(all(density_100 >= density_0))
@@ -55,7 +55,7 @@ test_that("indicateur_w1_reseau handles parcels with no watercourses", {
   # Use parcels that might not intersect watercourses
   units <- massif_demo_units[15:20, ]
 
-  density <- indicateur_w1_reseau(units, layers, watercourse_layer = "water")
+  density <- indicateur_w1_reseau(units, layers, watercourse_layer = "water")$W1
 
   expect_length(density, 6)
   expect_true(all(density >= 0)) # Should be 0 for parcels without streams
@@ -71,7 +71,7 @@ test_that("indicateur_w1_reseau returns NA when watercourse layer missing", {
 
   # Couche introuvable : avertissement et NA (pas de mesure), plus 0.
   result <- suppressWarnings(
-    indicateur_w1_reseau(units, layers, watercourse_layer = "nonexistent")
+    indicateur_w1_reseau(units, layers, watercourse_layer = "nonexistent")$W1
   )
   expect_length(result, 3)
   expect_true(all(is.na(result)))
@@ -84,13 +84,13 @@ test_that("indicateur_w1_reseau validates inputs", {
 
   # Invalid units
   expect_error(
-    indicateur_w1_reseau(data.frame(x = 1:3), layers, watercourse_layer = "water"),
+    indicateur_w1_reseau(data.frame(x = 1:3), layers, watercourse_layer = "water")$W1,
     "must be.*sf"
   )
 
   # Invalid layers
   expect_error(
-    indicateur_w1_reseau(massif_demo_units, list(), watercourse_layer = "water"),
+    indicateur_w1_reseau(massif_demo_units, list(), watercourse_layer = "water")$W1,
     "must be.*nemeton_layers"
   )
 })
@@ -112,7 +112,7 @@ test_that("indicateur_w2_zones_humides calculates wetland percentage from landco
     layers,
     wetland_layer = "landcover",
     wetland_values = 4
-  )
+  )$W2
 
   # Test output
   expect_type(coverage, "double")
@@ -137,7 +137,7 @@ test_that("indicateur_w2_zones_humides handles multiple wetland codes", {
     layers,
     wetland_layer = "landcover",
     wetland_values = c(3, 4) # Two landcover classes as wetlands
-  )
+  )$W2
 
   expect_length(coverage, 3)
   expect_true(all(coverage >= 0 & coverage <= 100))
@@ -156,7 +156,7 @@ test_that("indicateur_w2_zones_humides returns 0 when no wetlands present", {
     layers,
     wetland_layer = "landcover",
     wetland_values = 99
-  )
+  )$W2
 
   # Should be 0% for all parcels
   expect_true(all(coverage == 0))
@@ -170,7 +170,7 @@ test_that("indicateur_w2_zones_humides handles nonexistent wetland layer gracefu
   units <- massif_demo_units[1:3, ]
 
   # Non-existent layer -> falls back to TWI from DEM or returns NA
-  coverage <- indicateur_w2_zones_humides(units, layers, wetland_layer = "nonexistent")
+  coverage <- indicateur_w2_zones_humides(units, layers, wetland_layer = "nonexistent")$W2
   expect_type(coverage, "double")
   expect_length(coverage, 3)
 })
@@ -183,7 +183,7 @@ test_that("indicateur_w2_zones_humides with NULL wetland_values uses TWI or vect
   units <- massif_demo_units[1:3, ]
 
   # NULL wetland_values with landcover layer -> falls back to TWI or returns NA
-  coverage <- indicateur_w2_zones_humides(units, layers, wetland_layer = "landcover", wetland_values = NULL)
+  coverage <- indicateur_w2_zones_humides(units, layers, wetland_layer = "landcover", wetland_values = NULL)$W2
   expect_type(coverage, "double")
   expect_length(coverage, 3)
 })
@@ -195,13 +195,13 @@ test_that("indicateur_w2_zones_humides validates inputs", {
 
   # Invalid units
   expect_error(
-    indicateur_w2_zones_humides(data.frame(x = 1:3), layers, wetland_values = 4),
+    indicateur_w2_zones_humides(data.frame(x = 1:3), layers, wetland_values = 4)$W2,
     "must be.*sf"
   )
 
   # Invalid layers
   expect_error(
-    indicateur_w2_zones_humides(massif_demo_units, list(), wetland_values = 4),
+    indicateur_w2_zones_humides(massif_demo_units, list(), wetland_values = 4)$W2,
     "must be.*nemeton_layers"
   )
 })
@@ -218,7 +218,7 @@ test_that("indicateur_w3_humidite calculates TWI from DEM", {
   units <- massif_demo_units[1:5, ]
 
   # Default method (auto - will use terra D8 if whitebox not available)
-  twi <- indicateur_w3_humidite(units, layers, dem_layer = "dem")
+  twi <- indicateur_w3_humidite(units, layers, dem_layer = "dem")$W3
 
   # Test output
   expect_type(twi, "double")
@@ -241,7 +241,7 @@ test_that("indicateur_w3_humidite with explicit d8 method", {
   units <- massif_demo_units[1:3, ]
 
   # Force D8 method (terra fallback)
-  twi_d8 <- indicateur_w3_humidite(units, layers, dem_layer = "dem", method = "d8")
+  twi_d8 <- indicateur_w3_humidite(units, layers, dem_layer = "dem", method = "d8")$W3
 
   expect_length(twi_d8, 3)
   # Allow some NA for edge parcels
@@ -260,7 +260,7 @@ test_that("indicateur_w3_humidite shows higher values in depressions", {
 
   units <- massif_demo_units[1:10, ]
 
-  twi <- indicateur_w3_humidite(units, layers, dem_layer = "dem")
+  twi <- indicateur_w3_humidite(units, layers, dem_layer = "dem")$W3
 
   # Filter valid values
   valid_twi <- twi[!is.na(twi)]
@@ -282,7 +282,7 @@ test_that("indicateur_w3_humidite still works with nonexistent dem_layer (falls 
 
   # The function first tries get_dem_raster() which checks lidar_mnt then dem
   # Since demo layers have dem, it will still work
-  twi <- indicateur_w3_humidite(units, layers, dem_layer = "nonexistent")
+  twi <- indicateur_w3_humidite(units, layers, dem_layer = "nonexistent")$W3
   expect_type(twi, "double")
   expect_length(twi, 3)
 })
@@ -296,7 +296,7 @@ test_that("indicateur_w3_humidite validates method parameter", {
 
   # Invalid method (match.arg error in French or English)
   expect_error(
-    indicateur_w3_humidite(units, layers, dem_layer = "dem", method = "invalid"),
+    indicateur_w3_humidite(units, layers, dem_layer = "dem", method = "invalid")$W3,
     "should be one of|must be|doit être"
   )
 })
@@ -308,13 +308,13 @@ test_that("indicateur_w3_humidite validates inputs", {
 
   # Invalid units
   expect_error(
-    indicateur_w3_humidite(data.frame(x = 1:3), layers, dem_layer = "dem"),
+    indicateur_w3_humidite(data.frame(x = 1:3), layers, dem_layer = "dem")$W3,
     "must be.*sf"
   )
 
   # Invalid layers
   expect_error(
-    indicateur_w3_humidite(massif_demo_units, list(), dem_layer = "dem"),
+    indicateur_w3_humidite(massif_demo_units, list(), dem_layer = "dem")$W3,
     "must be.*nemeton_layers"
   )
 })
@@ -332,9 +332,9 @@ test_that("All three water indicators work together", {
 
   # Calculate all three indicators
   expect_no_error({
-    w1 <- indicateur_w1_reseau(units, layers, watercourse_layer = "water")
-    w2 <- indicateur_w2_zones_humides(units, layers, wetland_layer = "landcover", wetland_values = 4)
-    w3 <- indicateur_w3_humidite(units, layers, dem_layer = "dem")
+    w1 <- indicateur_w1_reseau(units, layers, watercourse_layer = "water")$W1
+    w2 <- indicateur_w2_zones_humides(units, layers, wetland_layer = "landcover", wetland_values = 4)$W2
+    w3 <- indicateur_w3_humidite(units, layers, dem_layer = "dem")$W3
   })
 
   # All should return valid numeric vectors
@@ -357,9 +357,9 @@ test_that("Water indicators can be added to units dataframe", {
   units <- massif_demo_units[1:3, ]
 
   # Add all water indicators as columns
-  units$W1_network <- indicateur_w1_reseau(units, layers, watercourse_layer = "water")
-  units$W2_wetlands <- indicateur_w2_zones_humides(units, layers, wetland_layer = "landcover", wetland_values = 4)
-  units$W3_twi <- indicateur_w3_humidite(units, layers, dem_layer = "dem")
+  units$W1_network <- indicateur_w1_reseau(units, layers, watercourse_layer = "water")$W1
+  units$W2_wetlands <- indicateur_w2_zones_humides(units, layers, wetland_layer = "landcover", wetland_values = 4)$W2
+  units$W3_twi <- indicateur_w3_humidite(units, layers, dem_layer = "dem")$W3
 
   # Check structure
   expect_true("W1_network" %in% names(units))

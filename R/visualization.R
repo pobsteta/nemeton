@@ -42,6 +42,9 @@
 #' The function uses \code{geom_sf()} for spatial rendering and applies
 #' perceptually uniform color scales by default (viridis).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' # Single indicator map
@@ -402,6 +405,9 @@ reshape_for_facet <- function(data, indicators) {
 #'
 #' @return A ggplot object with side-by-side comparison
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' plot_comparison_map(
@@ -497,6 +503,9 @@ plot_comparison_map <- function(data1,
 #' @param ... Additional arguments
 #'
 #' @return A ggplot object showing differences
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{
@@ -653,6 +662,9 @@ plot_difference_map <- function(data1,
 #'
 #' **v0.3.0 Enhancements**: Supports 9-12 family axes and comparison mode for
 #' multiple units.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{
@@ -1129,6 +1141,9 @@ nemeton_radar <- function(data,
 #'
 #' @return A ggplot object
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -1280,6 +1295,9 @@ plot_temporal_trend <- function(temporal,
 #' @param title Character. Plot title. Default auto-generated.
 #'
 #' @return A ggplot object
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples

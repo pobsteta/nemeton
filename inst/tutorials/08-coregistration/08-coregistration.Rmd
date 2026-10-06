@@ -28,8 +28,9 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 if (!dir.exists(data_dir)) dir.create(data_dir, recursive = TRUE)
 
-# Répertoire des données de coregistration (package nemeton)
-coreg_data_dir <- system.file("extdata", "coregistration", package = "nemeton")
+# Données de coregistration : absentes du paquet installé, téléchargées à la
+# demande (dépôt GitHub au tag de la version) dans le cache nemeton
+coreg_data_dir <- nemeton:::.tutorial_data_dir("coregistration")  # téléchargé une fois dans le cache
 
 # Charger les données de coregistration
 load(file.path(coreg_data_dir, "plotsCoregistration.rda"))  # -> p (placettes)
@@ -226,7 +227,7 @@ params <- list(
 
 ### 2.2 Chargement des données terrain
 
-Les données proviennent du package **nemeton** (répertoire `inst/extdata/coregistration/`) :
+Les données proviennent du dépôt **nemeton** (`inst/extdata/coregistration/`). Elles ne sont pas livrées avec le paquet installé : `nemeton:::.tutorial_data_dir("coregistration")` les télécharge une fois (≈ 3,4 Mo, connexion requise) depuis les fichiers bruts du dépôt GitHub au tag de la version installée, dans le cache nemeton :
 
 - `plots` : 10 placettes d'inventaire (Vercors, France)
 - `trees` : 54 arbres avec positions (x, y) et diamètres (d)
@@ -310,7 +311,7 @@ library(terra)
 params <- list(h_max = 50, radius = 14.105, res = 0.5, buffer = 5, step = 0.5)
 
 # Charger les données
-coreg_data_dir <- system.file("extdata", "coregistration", package = "nemeton")
+coreg_data_dir <- nemeton:::.tutorial_data_dir("coregistration")  # téléchargé une fois dans le cache
 load(file.path(coreg_data_dir, "plotsCoregistration.rda"))
 load(file.path(coreg_data_dir, "lasCoregistration.rda"))
 plots <- p
@@ -481,7 +482,7 @@ library(lasR)
 params <- list(h_max = 50, radius = 14.105, res = 0.5, buffer = 5, step = 0.5)
 
 # Charger les données
-coreg_data_dir <- system.file("extdata", "coregistration", package = "nemeton")
+coreg_data_dir <- nemeton:::.tutorial_data_dir("coregistration")  # téléchargé une fois dans le cache
 load(file.path(coreg_data_dir, "plotsCoregistration.rda"))
 load(file.path(coreg_data_dir, "treesCoregistration.rda"))
 load(file.path(coreg_data_dir, "lasCoregistration.rda"))
@@ -633,7 +634,7 @@ library(lidaRtRee)
 params <- list(h_max = 50, radius = 14.105, res = 0.5, buffer = 5, step = 0.5)
 
 # Charger les données
-coreg_data_dir <- system.file("extdata", "coregistration", package = "nemeton")
+coreg_data_dir <- nemeton:::.tutorial_data_dir("coregistration")  # téléchargé une fois dans le cache
 load(file.path(coreg_data_dir, "plotsCoregistration.rda"))
 load(file.path(coreg_data_dir, "treesCoregistration.rda"))
 load(file.path(coreg_data_dir, "lasCoregistration.rda"))
@@ -696,7 +697,7 @@ library(lidaRtRee)
 
 params <- list(h_max = 50, radius = 14.105, res = 0.5, buffer = 5, step = 0.5)
 
-coreg_data_dir <- system.file("extdata", "coregistration", package = "nemeton")
+coreg_data_dir <- nemeton:::.tutorial_data_dir("coregistration")  # téléchargé une fois dans le cache
 load(file.path(coreg_data_dir, "plotsCoregistration.rda"))
 load(file.path(coreg_data_dir, "treesCoregistration.rda"))
 load(file.path(coreg_data_dir, "lasCoregistration.rda"))
@@ -948,7 +949,7 @@ cache_file <- file.path(data_dir, "coregistration_results.rds")
 
 params <- list(h_max = 50, radius = 14.105, res = 0.5, buffer = 5, step = 0.5)
 
-coreg_data_dir <- system.file("extdata", "coregistration", package = "nemeton")
+coreg_data_dir <- nemeton:::.tutorial_data_dir("coregistration")  # téléchargé une fois dans le cache
 load(file.path(coreg_data_dir, "plotsCoregistration.rda"))
 load(file.path(coreg_data_dir, "treesCoregistration.rda"))
 load(file.path(coreg_data_dir, "lasCoregistration.rda"))

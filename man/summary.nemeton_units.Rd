@@ -17,3 +17,7 @@ Invisible object
 \description{
 Summary method for nemeton_units
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

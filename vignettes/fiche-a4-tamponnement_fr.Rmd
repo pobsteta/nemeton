@@ -57,7 +57,7 @@ peuplement de fond de vallon peut être frais (A3 élevé) sans tamponner beauco
 ## 3. Le calcul par niveau NDP
 
 Identique à A3 : `NA` sans chaîne microclimat ; calculé dès qu'un
-`microclimate_run()` a tourné ; structure de canopée mieux décrite aux NDP 1
+run `microclimf` est fourni (objet `micro`) ; structure de canopée mieux décrite aux NDP 1
 et 2. Le drapeau `microclimate_model` ne relève pas le niveau.
 
 > **A4 est celui des quatre indicateurs microclimatiques qui dépend le plus de
@@ -100,7 +100,7 @@ indicateur_a4_tamponnement()  ->  colonnes A4 et A4_delta (°C)
 <text x="588" y="16">AVAL</text>
 </g>
 <rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
-<text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">microclimate_run() — microclimf</text>
+<text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">run microclimf (objet micro)</text>
 <text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">couche de tamponnement</text>
 <text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">T_air libre - T_sous couvert</text>
 <rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>

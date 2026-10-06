@@ -9,15 +9,15 @@
 #'   * **PostgreSQL + TimescaleDB + PostGIS** — production / shared
 #'     deployment. URL form `postgresql://user:pass@host:port/dbname`.
 #'     Uses [RPostgres::Postgres()]. Migrations from
-#'     `inst/db/migrations/pg/` are applied, including
-#'     `CREATE EXTENSION` and `create_hypertable()` calls.
+#'     `inst/db/migrations/pg/` are applied. Since 1.0.0 TimescaleDB is
+#'     **optional**: the extension is enabled only when the server offers
+#'     it, and no table depends on it (PostGIS remains required).
 #'   * **SQLite (WAL)** — single-user / local mode for `nemetonshiny`
 #'     users who do not run Postgres. URL form `sqlite:///path/to/file.sqlite`
 #'     (three slashes for an absolute path). Uses [RSQLite::SQLite()] in
 #'     WAL mode (one writer + many concurrent readers across processes).
 #'     Migrations from `inst/db/migrations/sqlite/` are applied — same
-#'     schema, minus TimescaleDB / PostGIS specifics (no hypertable, no
-#'     `CREATE EXTENSION`).
+#'     schema, minus the `CREATE EXTENSION` statements.
 #'
 #' Selection is driven entirely by the URL scheme, so callers
 #' (notably `nemetonshiny::get_monitoring_db_url()`) pick the
@@ -153,6 +153,9 @@ NULL
 #'
 #' @return A `DBIConnection`.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' \dontrun{
 #' # Postgres (production)
@@ -248,6 +251,9 @@ db_connect <- function(url = Sys.getenv("NEMETON_DB_URL"),
 #'
 #' @return Invisible `TRUE` if the connection was closed.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 db_disconnect <- function(con) {
   if (!is.null(con) && DBI::dbIsValid(con)) {
@@ -277,7 +283,7 @@ db_disconnect <- function(con) {
 #' Reads `*.sql` files in `migrations_dir` (sorted lexicographically),
 #' compares against the `schema_migration` table, and executes the
 #' files that have not yet been applied. The first run also creates
-#' `schema_migration` itself (handled by `0001_init.sql`).
+#' `schema_migration` itself (handled by `0001_initial_v1.sql`).
 #'
 #' When `migrations_dir` is left `NULL`, the directory is picked
 #' automatically based on the connection's driver — `pg/` for
@@ -293,12 +299,32 @@ db_disconnect <- function(con) {
 #' re-checks `schema_migration`, so a migration applied meanwhile by
 #' another connection is skipped instead of being run twice.
 #'
+#' @section Schema 1.0.0 (no upgrade path):
+#' nemeton 1.0.0 starts from a fresh schema: the former migrations
+#' `0001_init` to `0008_project_lock` are merged into a single initial
+#' migration, `0001_initial_v1`, per backend. A database created by an
+#' earlier version — one whose `schema_migration` lists any of those
+#' former versions, or one holding monitoring tables (`monitoring_zone`,
+#' `plot`, `alert`, `project_lock`) without a `schema_migration` table —
+#' is **refused** with an error ("Database predates nemeton 1.0.0:
+#' recreate it", condition class `nemeton_legacy_schema`); it is never
+#' migrated. Recreate the database (new SQLite file, or an empty
+#' PostgreSQL database) and re-run the monitoring pipelines. Later
+#' migrations (`0002_*`, ...) apply on top of `0001_initial_v1` as usual.
+#'
+#' On PostgreSQL, TimescaleDB is optional: `0001_initial_v1` enables it
+#' only when `pg_available_extensions` lists it (a `NOTICE` is raised
+#' otherwise) and creates no hypertable. PostGIS is still required.
+#'
 #' @param con A `DBIConnection` returned by [db_connect()].
 #' @param migrations_dir Character or `NULL`. Path to the migrations
 #'   directory. Defaults to the bundled `inst/db/migrations/<driver>/`.
 #'
 #' @return A character vector of versions applied during this call
 #'   (empty if everything was up to date).
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 db_migrate <- function(con,
@@ -318,6 +344,9 @@ db_migrate <- function(con,
     return(character(0))
   }
 
+  # 1.0.0 : une base d'un schéma antérieur est refusée, jamais migrée.
+  .assert_schema_v1(con)
+
   applied <- .applied_migrations(con)
   to_apply <- files[!(.migration_version(files) %in% applied)]
   if (!length(to_apply)) {
@@ -335,13 +364,12 @@ db_migrate <- function(con,
     sql <- paste(readLines(f, warn = FALSE), collapse = "\n")
     # Verrou + revérification (audit 1.0) : deux processus (session Shiny et
     # worker) lançant db_migrate() en même temps appliquaient tous deux la
-    # même migration (« duplicate column », voire 0007 rejouée). Sous le
-    # verrou, une migration appliquée entre-temps est sautée.
+    # même migration (« duplicate column »). Sous le verrou, une migration
+    # appliquée entre-temps est sautée.
     applied_now <- .with_migration_lock(con, is_pg, {
       if (.migration_is_applied(con, version)) {
         FALSE
       } else {
-        .migration_preflight(con, version)
         if (is_pg) {
           # Without immediate = TRUE, RPostgres prepares the statement and
           # PostgreSQL rejects it with "cannot insert multiple commands into
@@ -553,26 +581,41 @@ db_migrate <- function(con,
   tools::file_path_sans_ext(basename(path))
 }
 
-# Contrôles préalables à une migration destructive, joués AVANT d'ouvrir
-# sa transaction. 0007 fait `DROP TABLE IF EXISTS alert` (D-B3) en
-# supposant la table vide (contrat Phase A) : si elle contient des lignes
-# (alertes à valider, validations terrain), on refuse plutôt que de les
-# détruire. Sous PG la migration porte en plus son propre garde-fou
-# (bloc DO … RAISE EXCEPTION) ; SQLite n'a pas de DO, d'où ce contrôle
-# côté R, appliqué aux deux moteurs. Une base déjà migrée n'est pas
-# concernée : 0007 n'est jamais rejouée.
-.migration_preflight <- function(con, version) {
-  if (identical(version, "0007_alert_pixel_geometry") &&
-      DBI::dbExistsTable(con, "alert")) {
-    n <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM alert")$n[1L]
-    n <- as.numeric(n)
-    if (!is.na(n) && n > 0) {
-      cli::cli_abort(c(
-        "Refusing to apply migration {.val {version}}: table {.code alert} holds {n} row{?s}.",
-        "x" = "This migration drops and recreates {.code alert}; its rows would be lost.",
-        "i" = "Back up and empty {.code alert} (e.g. {.code DELETE FROM alert}) before migrating."
-      ))
+# ---- Garde-fou schéma 1.0.0 ------------------------------------------
+
+# Versions des migrations d'avant la 1.0.0, fusionnées dans
+# `0001_initial_v1`. Leur présence dans `schema_migration` signe une base
+# créée par une version antérieure : la 1.0.0 repart de zéro, sans chemin
+# de migration (décision 2026-10-06).
+.LEGACY_MIGRATIONS <- c(
+  "0001_init", "0002_fordead", "0003_project_uuid", "0004_drop_obs_pixel",
+  "0005_multi_zone_per_project", "0006_reconfort",
+  "0007_alert_pixel_geometry", "0008_project_lock"
+)
+
+# Tables du schéma de suivi : présentes sans `schema_migration`, elles
+# trahissent une base antérieure au suivi des versions (ou bricolée).
+.MONITORING_TABLES <- c("monitoring_zone", "plot", "alert", "project_lock")
+
+# Refuse une base antérieure à 1.0.0, avec un message actionnable.
+.assert_schema_v1 <- function(con) {
+  legacy <- character(0)
+  if (DBI::dbExistsTable(con, "schema_migration")) {
+    legacy <- intersect(.applied_migrations(con), .LEGACY_MIGRATIONS)
+  } else {
+    present <- .MONITORING_TABLES[vapply(
+      .MONITORING_TABLES, function(t) DBI::dbExistsTable(con, t), logical(1))]
+    if (length(present)) {
+      legacy <- paste0("table ", present, " without schema_migration")
     }
+  }
+  if (length(legacy)) {
+    cli::cli_abort(c(
+      "Database predates nemeton 1.0.0: recreate it.",
+      "x" = "Pre-1.0.0 schema detected: {.val {legacy}}.",
+      "i" = "nemeton 1.0.0 starts from a fresh schema and does not migrate older databases.",
+      "i" = "Point {.envvar NEMETON_DB_URL} at a new SQLite file or an empty PostgreSQL database, then re-run the monitoring pipelines."
+    ), class = "nemeton_legacy_schema")
   }
   invisible(TRUE)
 }

@@ -84,6 +84,9 @@
 #'   `NULL` if [read_fast_alert_raster()] returned `NULL` (no scene
 #'   in the window or empty cache).
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [read_fast_alert_mask()] (the strict reader, mirror of
 #'   [read_fordead_dieback_mask()]), [read_fast_alert_raster()] (the
 #'   continuous live compute), [fordead_alert_mask()] (the cell
@@ -321,6 +324,9 @@ compute_fast_alert_mask <- function(con, zone_id,
 #'   instead of the polygon stored for the zone in the database.
 #' @return A `terra::SpatRaster` (single layer, categorical 0-4) or
 #'   `NULL`.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @seealso [compute_fast_alert_mask()] (the writer),
 #'   [read_fordead_dieback_mask()] (the FORDEAD mirror),

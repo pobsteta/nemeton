@@ -67,6 +67,9 @@
 #' @return `units` with `R7` (0–100, high = low frost risk, `NA` when skipped),
 #'   `r7_gel_days` (mean late-frost days/year), and `r7_status`
 #'   (`"calculated"` / `"skipped_no_tmin"`).
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [indicateur_r6_sensibilite()], [eobs_downscale()]
 #' @export
 indicateur_r7_gel <- function(units, tmin = NULL, budburst_doy = 100,

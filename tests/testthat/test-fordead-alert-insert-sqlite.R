@@ -135,7 +135,7 @@ test_that("db_migrate records versions on SQLite via INSERT OR IGNORE", {
   with_sqlite_monitoring_db(function(con) {
     versions <- DBI::dbGetQuery(
       con, "SELECT version FROM schema_migration ORDER BY version")$version
-    expect_true("0001_init" %in% versions)
+    expect_true("0001_initial_v1" %in% versions)
     # Re-running applies nothing new and does not raise.
     expect_no_error(out <- db_migrate(con))
     expect_length(out, 0L)

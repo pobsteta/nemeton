@@ -7,7 +7,7 @@
 reconfort_year_bounds(v_model = "v3", today = Sys.Date(), lag_days = 0L)
 }
 \arguments{
-\item{v_model}{Model version (see \code{\link{RECONFORT_MODELS}}). Default `"v3"`.}
+\item{v_model}{Model version (see \code{RECONFORT_MODELS}). Default `"v3"`.}
 
 \item{today}{Reference date. Default \code{\link[base]{Sys.Date}}; injectable for
 tests.}
@@ -27,6 +27,11 @@ dense-coverage year (2016); `max` and `default` are both
 \code{\link{reconfort_latest_complete_year}} so the current, still-incomplete
 year is neither the default nor selectable through the bounds.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 reconfort_year_bounds("v3", today = as.Date("2026-07-01"))
 # $min 2016  $max 2025  $default 2025

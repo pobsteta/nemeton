@@ -34,3 +34,7 @@ edited offline by the field crew, then re-ingested by
 the existing `create_qgis_project()` machinery (in
 `R/qgis_export.R`) renders the `.qgz` form without changes.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

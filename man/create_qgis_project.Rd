@@ -76,6 +76,11 @@ backwards compatibility. It forwards to [create_qgis_project()]
 and emits a deprecation warning once per session. New code should call
 [create_qgis_project()] directly.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(sf)

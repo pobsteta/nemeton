@@ -56,6 +56,11 @@ score_water). Automatically detects indicator families from column name prefixes
   \item min: Minimum value (worst-case, most conservative) - v0.3.0+
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Setup multi-family indicators

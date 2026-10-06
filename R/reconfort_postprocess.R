@@ -33,6 +33,9 @@ NULL
 #' it has no label). Oak (`CHE`) and chestnut (`CHT`) have 3 classes;
 #' Scots pine (`PS`) has 2.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 RECONFORT_CLASSES <- list(
   CHE = c("1-sain", "2-deperissant", "3-tres-deperissant"),
@@ -57,6 +60,9 @@ RECONFORT_CLASSES <- list(
 #' them quantitatively. They are not used for the L3 alert geometry,
 #' only for downstream weighting.
 #'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 RECONFORT_CONFIDENCE_WEIGHTS <- list(
   CHE = c("1-sain" = 0.00, "2-deperissant" = 0.50, "3-tres-deperissant" = 0.80),
@@ -70,6 +76,9 @@ RECONFORT_CONFIDENCE_WEIGHTS <- list(
 #' The dieback classes that [list_alerts()] keeps by default — the
 #' RECONFORT mirror of FORDEAD's `c("3-forte", "4-sol-nu")`. The
 #' healthy class `1-sain` is always excluded.
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @export
 RECONFORT_ALERT_CLASSES <- c("2-deperissant", "3-tres-deperissant")

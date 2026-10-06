@@ -15,3 +15,7 @@ Invisible `TRUE` if the connection was closed.
 \description{
 Disconnect from the monitoring database
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

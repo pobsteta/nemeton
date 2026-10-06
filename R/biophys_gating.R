@@ -34,6 +34,9 @@
 #' }
 #'
 #' @return A named list of the four thresholds.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @seealso [biophys_gating()]
 #' @export
 biophys_gating_thresholds <- function() {
@@ -69,6 +72,9 @@ biophys_gating_thresholds <- function() {
 #'
 #' @return A logical vector, one per unit: `TRUE` where **all** conditions hold,
 #'   `FALSE` otherwise (including where any input is `NA`).
+#'
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
 #'
 #' @seealso [biophys_gating_thresholds()]
 #' @export

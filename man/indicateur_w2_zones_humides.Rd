@@ -47,17 +47,22 @@ topographic working resolution, 2 m --- see
 resolution.}
 }
 \value{
-Numeric vector of wetland coverage (0-100\%)
+The input \code{units} (same class, rows and order) with an added numeric column \code{W2}: wetland coverage (0-100\%)
 }
 \description{
 Calculates percentage of parcel area classified as wetland or riparian zone.
 The wetland area is the UNION of several optional sources (a pixel counted
-by two sources is counted once): BD TOPO water surfaces, a TWI threshold,
+by two sources is counted once): BD TOPO water surfaces, a TWI threshold (TWI > 9.5 on the TWI referenced to a 2 m grid),
 land-cover codes listed in \code{wetland_values}, and — when supplied — the
 Theia \code{theia_water} water-occurrence product. Sources are evaluated
 on a regular grid of points inside each unit; points where every source is
 NA are left out, and a unit with no known point is NA.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 layers <- nemeton_layers(rasters = list(landcover = "landcover.tif"))

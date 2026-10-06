@@ -26,7 +26,7 @@ test_that("indicateur_f1_fertilite extracts fertility from raster", {
     layers,
     soil_layer = "landcover",
     fertility_col = "value"
-  )
+  )$F1
 
   # Test output
   expect_type(fertility, "double")
@@ -55,7 +55,7 @@ test_that("indicateur_f1_fertilite with custom fertility mapping", {
     layers,
     soil_layer = "landcover",
     fertility_col = "value"
-  )
+  )$F1
 
   expect_length(fertility, 3)
   expect_true(all(fertility >= 0 & fertility <= 100))
@@ -69,7 +69,7 @@ test_that("indicateur_f1_fertilite errors when soil layer missing", {
   units <- massif_demo_units[1:3, ]
 
   expect_error(
-    indicateur_f1_fertilite(units, layers, soil_layer = "nonexistent"),
+    indicateur_f1_fertilite(units, layers, soil_layer = "nonexistent")$F1,
     "not found"
   )
 })
@@ -81,13 +81,13 @@ test_that("indicateur_f1_fertilite validates inputs", {
 
   # Invalid units
   expect_error(
-    indicateur_f1_fertilite(data.frame(x = 1:3), layers),
+    indicateur_f1_fertilite(data.frame(x = 1:3), layers)$F1,
     "must be.*sf"
   )
 
   # Invalid layers
   expect_error(
-    indicateur_f1_fertilite(massif_demo_units, list()),
+    indicateur_f1_fertilite(massif_demo_units, list())$F1,
     "must be.*nemeton_layers"
   )
 })
@@ -104,7 +104,7 @@ test_that("indicateur_f2_erosion calculates fertility from TWI and slope", {
   units <- massif_demo_units[1:5, ]
 
   # Calculate soil fertility (F2 = (twi_norm + slope_norm) / 2)
-  fertility <- indicateur_f2_erosion(units, layers, dem_layer = "dem")
+  fertility <- indicateur_f2_erosion(units, layers, dem_layer = "dem")$F2
 
   # Test output
   expect_type(fertility, "double")
@@ -129,7 +129,7 @@ test_that("indicateur_f2_erosion produces higher values on flat wet areas", {
 
   units <- massif_demo_units[1:10, ]
 
-  fertility <- indicateur_f2_erosion(units, layers)
+  fertility <- indicateur_f2_erosion(units, layers)$F2
 
   # Check that calculation produces valid results (allow some NA for edge cases)
   valid_fertility <- fertility[!is.na(fertility)]
@@ -150,7 +150,7 @@ test_that("indicateur_f2_erosion still works with nonexistent dem_layer (falls b
 
   # The function first tries get_dem_raster() which checks lidar_mnt then dem
   # If the demo layers have dem, it will still work
-  fertility <- indicateur_f2_erosion(units, layers, dem_layer = "nonexistent")
+  fertility <- indicateur_f2_erosion(units, layers, dem_layer = "nonexistent")$F2
   expect_type(fertility, "double")
   expect_length(fertility, 3)
 })
@@ -162,13 +162,13 @@ test_that("indicateur_f2_erosion validates inputs", {
 
   # Invalid units
   expect_error(
-    indicateur_f2_erosion(data.frame(x = 1:3), layers),
+    indicateur_f2_erosion(data.frame(x = 1:3), layers)$F2,
     "must be.*sf"
   )
 
   # Invalid layers
   expect_error(
-    indicateur_f2_erosion(massif_demo_units, list()),
+    indicateur_f2_erosion(massif_demo_units, list())$F2,
     "must be.*nemeton_layers"
   )
 })
@@ -186,8 +186,8 @@ test_that("Both soil indicators work together", {
 
   # Calculate both indicators
   expect_no_error({
-    f1 <- indicateur_f1_fertilite(units, layers, soil_layer = "landcover")
-    f2 <- indicateur_f2_erosion(units, layers)
+    f1 <- indicateur_f1_fertilite(units, layers, soil_layer = "landcover")$F1
+    f2 <- indicateur_f2_erosion(units, layers)$F2
   })
 
   # Both should return valid numeric vectors
@@ -213,7 +213,7 @@ test_that("indicateur_f2_erosion computes RUSLE erosion risk (F1)", {
 
   units <- massif_demo_units[1:5, ]
 
-  erosion <- indicateur_f2_erosion(units, layers)
+  erosion <- indicateur_f2_erosion(units, layers)$F2
 
   expect_type(erosion, "double")
   expect_length(erosion, 5)

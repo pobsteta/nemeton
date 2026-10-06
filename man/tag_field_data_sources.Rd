@@ -22,6 +22,11 @@ Sets the attributes \code{field_plots_count} and
 the NDP to 2 (with plots only) or 3 (with >= 10 trees/plot on
 average) along the alternative field-data path.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 df <- data.frame(x = 1)
 placettes <- data.frame(plot_id = c("P1", "P2"))

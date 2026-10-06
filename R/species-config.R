@@ -25,6 +25,9 @@ NULL
 #'
 #' @return A list with the region's species configuration.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' config <- get_species_config("BFC")
 #' config$n_classes  # 10
@@ -60,6 +63,9 @@ get_species_config <- function(region = "BFC") {
 #'
 #' @return Character vector of region codes.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' list_species_regions()  # c("BFC", "EU")
 #'
@@ -81,6 +87,9 @@ list_species_regions <- function() {
 #' @param lang Character. Language for labels. Default "fr".
 #'
 #' @return A data.frame with columns: code, label, allometric_key, color.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' classes <- list_species_classes("BFC", lang = "fr")
@@ -113,6 +122,9 @@ list_species_classes <- function(region = "BFC", lang = "fr") {
 #'
 #' @return Character. NMT species class code (e.g., "essence_chenaie"),
 #'   or "essence_mixte" if no mapping found.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' map_bdforet_essence("Hêtre", region = "BFC")  # "essence_hetraie"
@@ -163,6 +175,9 @@ map_bdforet_essence <- function(essence, region = "BFC") {
 #'   returned for conifers and conifers for grassland. Any non-forest code
 #'   also returned \code{"essence_mixte"}.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @examples
 #' map_oso_class(16, "BFC")  # feuillus possibles
 #' map_oso_class(17, "BFC")  # coniferes possibles
@@ -188,6 +203,9 @@ map_oso_class <- function(oso_class, region = "BFC") {
 #' @param region Character. Region code. Default "BFC".
 #'
 #' @return Character. Allometric key (e.g., "Quercus", "Fagus", "Pinus").
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 get_allometric_key <- function(species_code, region = "BFC") {

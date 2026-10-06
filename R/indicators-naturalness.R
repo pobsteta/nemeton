@@ -12,10 +12,11 @@ NULL
 
 #' N1: Infrastructure Distance Indicator
 #'
-#' Calculates distance to infrastructure (roads, buildings, urban zones)
-#' as a measure of remoteness from human influence. Follows tuto 04 methodology:
-#' distances from parcel centroids to roads (BD TOPO) and buildings, normalized
-#' to 0-100 and combined with weights (40% roads, 35% buildings, 25% urban).
+#' Calculates distance to infrastructure (roads, buildings) as a measure of
+#' remoteness from human influence. Follows tuto 04 methodology: distances
+#' from parcel centroids to roads (BD TOPO) and buildings, normalized to 0-100
+#' and combined with weights 0.40 (roads) and 0.35 (buildings), rescaled to
+#' sum to 1: \code{N1 = (0.40 * roads + 0.35 * buildings) / 0.75}.
 #'
 #' @param units sf object (POLYGON) of spatial units to assess
 #' @param roads sf object (LINESTRING/MULTILINESTRING). Road network (BD TOPO).
@@ -23,22 +24,22 @@ NULL
 #' @param buildings sf object (POLYGON/MULTIPOLYGON). Buildings. NULL (and none
 #'   in `layers`) gives N1 = NA.
 #' @param layers nemeton_layers object. Used to resolve roads/buildings if not provided directly.
-#' @param column_name Character. Name for output column. Default "N1".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #'
 #' @return sf object with added column N1 (score 0-100, 100 = very remote).
-#'   Each distance is scored `min(100, d / 20)` (2 km or more = 100). The
-#'   urban term has no data layer: its distance is a constant 2000 m, so it
-#'   always adds 25 points and N1 ranges over 25-100.
+#'   Each distance is scored `min(100, d / 20)` (2 km or more = 100). Until
+#'   1.0.0 a third "urban" term (weight 0.25) had no data layer: its distance
+#'   was a constant 2000 m, adding 25 points to every unit. It was removed
+#'   (spec 056), so N1 now spans the full 0-100 range. N1 is NA when the roads
+#'   or the buildings layer is missing.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 indicateur_n1_distance <- function(units,
                                            roads = NULL,
                                            buildings = NULL,
-                                           layers = NULL,
-                                           column_name = "N1",
-                                           lang = "en") {
+                                           layers = NULL) {
   if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   result <- units
@@ -72,24 +73,20 @@ indicateur_n1_distance <- function(units,
     dist_batiments <- rep(NA_real_, nrow(units))
   }
 
-  # Distance aux zones urbaines : CONSTANTE de la formule tuto 04, pas une
-  # donnee. Aucune couche « zones urbaines » n'existe dans le projet, et ce
-  # terme vaut donc toujours pmin(100, 2000/20) = 100, soit un +25 fixe sur
-  # N1. Contrairement aux distances routes/bati ci-dessus — qui sont, elles,
-  # des mesures et valent NA quand leur couche manque — celle-ci ne pretend
-  # rien mesurer. A ne pas confondre en lisant le composite : N1 a DEUX
-  # sources de donnees, pas trois.
-  dist_urbain <- rep(2000, nrow(units))
-
   # Normalize: 0m = score 0, 2000m+ = score 100
   N1_routes <- pmin(100, dist_routes / 20)
   N1_batiments <- pmin(100, dist_batiments / 20)
-  N1_urbain <- pmin(100, dist_urbain / 20)
 
-  # Composite: 40% routes, 35% buildings, 25% urban (tuto 04)
-  result[[column_name]] <- 0.40 * N1_routes + 0.35 * N1_batiments + 0.25 * N1_urbain
+  # Composite routes 0,40 + bati 0,35, repondere a 1 (/ 0,75). Le terme
+  # « zones urbaines » (0,25) de la formule tuto 04 n'etait adosse a aucune
+  # couche : une distance CONSTANTE de 2000 m, soit +25 points fixes sur toutes
+  # les UGF (N1 jamais sous 25). Retire en 1.0.0 (spec 056, decision
+  # 2026-10-06) : N1 = (N1_ancien - 25) / 0,75. S'il arrive un jour une couche
+  # de zones urbaines, le terme reviendra avec une vraie distance. Une couche
+  # routes ou bati manquante laisse N1 a NA (NA propage par la somme).
+  result$N1 <- (0.40 * N1_routes + 0.35 * N1_batiments) / 0.75
 
-  cli::cli_alert_success("Calculated {column_name}: Infrastructure distance (0-100)")
+  cli::cli_alert_success("Calculated N1: Infrastructure distance (0-100)")
   return(result)
 }
 
@@ -109,13 +106,10 @@ indicateur_n1_distance <- function(units,
 #'   [build_foret_ancienne_mask()] with an `anciennete` column (multi-epoch
 #'   consolidation, e.g. Cassini + état-major). NULL = only use bdforet.
 #' @param layers nemeton_layers object. Used to resolve bdforet if not provided directly.
-#' @param column_name Character. Name for output column. Default "N2".
 #' @param weight_anciennete Logical. When `foret_ancienne` carries an
 #'   `anciennete` tier column, weight the ancient-forest coverage by tier depth
 #'   (forest present at more epochs counts more). Ignored for single-epoch
 #'   layers. Default `TRUE`.
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #'
 #' @return sf object with added column N2 (score 0-100).
 #'
@@ -128,14 +122,15 @@ indicateur_n1_distance <- function(units,
 #'   the same statement as a zero. `normalize_indicator()` passes it through
 #'   (spec 048 section 12).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 indicateur_n2_continuite <- function(units,
                                              bdforet = NULL,
                                              foret_ancienne = NULL,
                                              layers = NULL,
-                                             column_name = "N2",
-                                             weight_anciennete = TRUE,
-                                             lang = "en") {
+                                             weight_anciennete = TRUE) {
   if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   result <- units
@@ -149,8 +144,8 @@ indicateur_n2_continuite <- function(units,
   # no data » disait deja qu'aucune mesure n'avait eu lieu — et rendait quand
   # meme un nombre, qui pesait ensuite dans la famille Naturalite.
   if (is.null(bdforet) && is.null(foret_ancienne)) {
-    result[[column_name]] <- rep(NA_real_, nrow(units))
-    cli::cli_alert_info("{column_name}: no forest data, returning NA (no measurement made)")
+    result$N2 <- rep(NA_real_, nrow(units))
+    cli::cli_alert_info("N2: no forest data, returning NA (no measurement made)")
     return(result)
   }
 
@@ -222,8 +217,8 @@ indicateur_n2_continuite <- function(units,
     }
   }
 
-  result[[column_name]] <- n2_scores
-  cli::cli_alert_success("Calculated {column_name}: Forest continuity (0-100)")
+  result$N2 <- n2_scores
+  cli::cli_alert_success("Calculated N2: Forest continuity (0-100)")
   return(result)
 }
 
@@ -234,9 +229,6 @@ indicateur_n2_continuite <- function(units,
 #' NA when any of N1, N2, L1 or B3 is unavailable.
 #'
 #' @param units sf object with N1 and N2 columns (optionally L1, B3)
-#' @param column_name Character. Name for output column. Default "N3".
-#' @param lang Character. Currently unused (messages are in English); kept for
-#'   backward compatibility. Default "en".
 #'
 #' @return sf object with added column N3 (score 0-100), or `NA` when any of
 #'   the four input columns is missing.
@@ -251,10 +243,11 @@ indicateur_n2_continuite <- function(units,
 #'   N3 on the radar convention would invert L1 twice (spec 048 sections 9
 #'   and 12).
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
-indicateur_n3_naturalite <- function(units,
-                                            column_name = "N3",
-                                            lang = "en") {
+indicateur_n3_naturalite <- function(units) {
   if (!inherits(units, "sf")) cli::cli_abort("units must be an sf object")
 
   result <- units
@@ -266,10 +259,10 @@ indicateur_n3_naturalite <- function(units,
   manquantes <- setdiff(c("N1", "N2", "L1", "B3"), names(units))
   if (length(manquantes)) {
     cli::cli_alert_info(
-      "{column_name}: composante{?s} {.field {manquantes}} absente{?s}, \
+      "N3: composante{?s} {.field {manquantes}} absente{?s}, \
        returning NA (no measurement made)"
     )
-    result[[column_name]] <- rep(NA_real_, nrow(units))
+    result$N3 <- rep(NA_real_, nrow(units))
     return(result)
   }
   n1 <- units$N1
@@ -278,9 +271,9 @@ indicateur_n3_naturalite <- function(units,
   connectivite <- units$B3
 
   # Tuto 04: 35% N1 + 35% N2 + 15% anti-fragmentation + 15% connectivity
-  result[[column_name]] <- 0.35 * n1 + 0.35 * n2 + 0.15 * anti_frag + 0.15 * connectivite
+  result$N3 <- 0.35 * n1 + 0.35 * n2 + 0.15 * anti_frag + 0.15 * connectivite
 
-  cli::cli_alert_success("Calculated {column_name}: Composite naturalness (0-100)")
+  cli::cli_alert_success("Calculated N3: Composite naturalness (0-100)")
   return(result)
 }
 
@@ -338,6 +331,9 @@ indicateur_n3_naturalite <- function(units,
 #'   sources it also carries `anciennete` (integer epoch-count tier) and
 #'   `epoques` (the contributing epoch labels). May have 0 rows if no forest
 #'   is found.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 build_foret_ancienne_mask <- function(source,

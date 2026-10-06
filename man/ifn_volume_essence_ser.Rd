@@ -60,6 +60,11 @@ or more and 2 107 rest on fewer than 5. Filter on it, or use
 \code{\link{ifn_volume_reference}}, which does.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Beech across all sylvoecoregions, best-sampled first.

@@ -65,3 +65,7 @@ the caller. Note that the Theia \code{corona-4b} collection is NOT a usable
 source over France — it covers only the Middle East (spec 031); the French
 sources are Cassini / état-major scans or IGN forêt-ancienne layers.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

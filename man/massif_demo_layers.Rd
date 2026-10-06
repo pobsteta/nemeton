@@ -43,6 +43,11 @@ The function loads files from the package installation directory:
 - Vectors: \code{inst/extdata/massif_demo_*.gpkg}
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 # Load demo parcels and layers
 data(massif_demo_units)

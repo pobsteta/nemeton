@@ -42,6 +42,11 @@ the 100 largest trees per hectare) when only a CHM raster is
 available. Choosing \code{percentile = 1} yields the maximum
 height, \code{percentile = 0.5} the median.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 chm_clean <- sanitize_chm(chm, forest_mask = bd_foret)$chm_clean

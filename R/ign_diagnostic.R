@@ -53,7 +53,8 @@
 #' # $ok: FALSE, $status: 404, $category: "not_found"
 #' # → dalle MNT pas encore publiée par IGN
 #' }
-#' @export
+#' @keywords internal
+#' @noRd
 probe_ign_lidar_tile <- function(url,
                                  timeout    = 10,
                                  user_agent = "nemeton/probe (https://github.com/pobsteta/nemeton)") {
@@ -169,6 +170,9 @@ probe_ign_lidar_tile <- function(url,
 #'
 #' @return A `data.frame` with columns `url`, `status`, `category`,
 #'   `message`, `content_length`.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 probe_ign_lidar_tiles <- function(urls, timeout = 10) {

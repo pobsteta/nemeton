@@ -126,6 +126,9 @@
 #'   `acquired_at`, `heartbeat_at`, `stolen` (TRUE when an expired lock was
 #'   taken over). On failure, `ok = FALSE` with the current holder's
 #'   `holder_id`, `holder_label`, `heartbeat_at`.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [project_lock_heartbeat()], [project_lock_release()],
 #'   [project_lock_status()]
 #' @export
@@ -217,6 +220,9 @@ project_lock_acquire <- function(con, project_id, holder_id,
 #'
 #' @return `TRUE` if the lock is held by `holder_id` after the call (heartbeat
 #'   refreshed), `FALSE` if `holder_id` does not hold it.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [project_lock_acquire()]
 #' @export
 project_lock_heartbeat <- function(con, project_id, holder_id) {
@@ -241,6 +247,9 @@ project_lock_heartbeat <- function(con, project_id, holder_id) {
 #' @param holder_id The holder releasing its lock.
 #'
 #' @return `TRUE` if a lock was released, `FALSE` otherwise.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [project_lock_acquire()]
 #' @export
 project_lock_release <- function(con, project_id, holder_id) {
@@ -269,6 +278,9 @@ project_lock_release <- function(con, project_id, holder_id) {
 #'
 #' @return `NULL` if the project is free, otherwise a list `holder_id`,
 #'   `holder_label`, `acquired_at`, `heartbeat_at`, `stale`.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [project_lock_acquire()]
 #' @export
 project_lock_status <- function(con, project_id, ttl_seconds = 120L) {

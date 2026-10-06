@@ -74,9 +74,17 @@ climatology (\pkg{nasapower}), defaulting to 270 degrees (west) for France.
 R2 = (1 - shelter_coef) * 100.
 
 **Fallback method** (DEM terrain derivatives):
-Combines aspect-wind alignment, slope, and terrain ruggedness (TRI):
-R2 = wind_exposure * (0.6 * slope_norm + 0.4 * TRI_norm) * 100.
+Combines aspect-wind alignment and slope:
+R2 = wind_exposure * slope_norm * 100, slope_norm = clamp(slope / 45, 0, 1).
+The terrain ruggedness (TRI) term was dropped in 1.0.0 (spec 056): it is
+0.82-0.99 correlated with the slope and, normalised by its maximum over the
+extent, was the only non-comparable term between projects.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(nemeton)

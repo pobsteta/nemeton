@@ -71,6 +71,11 @@ find it. It is only read to fetch the zone polygon when
 `con = NULL` the zone mask is then skipped.
 }
 
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 \dontrun{
   r <- read_fordead_dieback_mask(

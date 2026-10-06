@@ -31,6 +31,9 @@
 #' @return A data.frame with `espar`, `lib_espar`, `espece_sci`, `code_p1`,
 #'   `code_tolerances`, `millesime`, `source`.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [resoudre_espar()] to convert a vector of codes.
 #' @export
 #' @examples
@@ -65,6 +68,9 @@ ifn_espar_correspondance <- function(espar = NULL, code_p1 = NULL) {
 #'
 #' @return A character vector of `espar` codes, same length as `x`, `NA` where
 #'   no correspondence exists.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @seealso [ifn_espar_correspondance()] for the table itself.
 #' @export

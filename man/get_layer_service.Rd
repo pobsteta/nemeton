@@ -19,6 +19,11 @@ A list with \code{url} (service URL) and \code{layer}
 Resolves the full service URL for a given layer by looking up
 the service reference in the layer configuration.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 info <- get_layer_service("dem", "FR")
 info$url    # "https://data.geopf.fr/wms-r/wms"

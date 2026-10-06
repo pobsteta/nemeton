@@ -57,6 +57,11 @@ Atlas species follow in a folded \code{"atlas"} group. Within each group,
 options are ordered by increasing heat tolerance (\code{tmax_tol_c}). The
 generic "no species" default is added by the app (\code{species = NULL}).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{indice_priorite_regen}}, \code{\link{european_species_tolerances}},
 \code{\link{regeneration_tolerances}}, \code{\link{map_tfv_to_species_class}}

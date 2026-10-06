@@ -29,6 +29,31 @@ test_that(".fordead_requirements_path resolves the shipped requirements", {
 })
 
 
+test_that("requirements.txt épingle chaque dépendance FORDEAD (1.0.0, aucune borne ouverte)", {
+  txt <- readLines(nemeton:::.fordead_requirements_path(), warn = FALSE)
+  reqs <- trimws(sub("#.*$", "", txt))
+  reqs <- reqs[nzchar(reqs)]
+  # Chaque ligne : version exacte `==X`, ou URL git à une référence fixée.
+  pinned <- grepl("^[A-Za-z0-9_.\\-]+==[0-9][^,;<>=!~ ]*$", reqs) |
+    grepl("^[A-Za-z0-9_.\\-]+ @ git\\+https://\\S+@\\S+$", reqs)
+  expect_true(all(pinned), info = paste(reqs[!pinned], collapse = ", "))
+  expect_false(any(grepl(">=|<=|~=|!=|>|<", reqs)))
+  # Les paquets exigés sont présents (avec leurs versions validées).
+  pkg <- tolower(sub("^([A-Za-z0-9_.\\-]+).*$", "\\1", reqs))
+  for (p in c("fordead", "simplestac", "stackstac", "xarray", "rioxarray",
+              "numpy", "dask", "pandas", "rasterio", "scipy", "pystac",
+              "stac-static")) {
+    expect_true(p %in% pkg, info = p)
+  }
+  expect_true("numpy==2.4.6" %in% reqs)
+  expect_true("xarray==2026.4.0" %in% reqs)
+  # fordead reste lisible par .fordead_version_pinned() (forme tag).
+  expect_identical(
+    nemeton:::.fordead_version_pinned(nemeton:::.fordead_requirements_path()),
+    "2.1.1")
+})
+
+
 test_that(".assert_fordead_system aborts when reticulate is missing", {
   skip_if_no_reticulate()
   # Capture the original `requireNamespace` *before* mocking, so the
@@ -65,18 +90,18 @@ test_that(".assert_fordead_system aborts when no Python is found", {
 })
 
 
-test_that(".assert_fordead_system aborts when Python < 3.10", {
+test_that(".assert_fordead_system aborts when Python < 3.11", {
   skip_if_no_reticulate()
   testthat::local_mocked_bindings(
     py_discover_config = function() list(python = "/usr/bin/python3", version = "3.9"),
     .package = "reticulate"
   )
   expect_error(nemeton:::.assert_fordead_system(),
-               ">= 3.10|3.10")
+               ">= 3.11|3.11")
 })
 
 
-test_that(".assert_fordead_system passes for Python >= 3.10", {
+test_that(".assert_fordead_system passes for Python >= 3.11", {
   skip_if_no_reticulate()
   testthat::local_mocked_bindings(
     py_discover_config = function() list(python = "/usr/bin/python3", version = "3.11"),
@@ -323,13 +348,13 @@ test_that(".probe_python_version returns NA on unreachable binary", {
 })
 
 
-test_that(".find_python_on_path returns a 3.10+ binary when available", {
+test_that(".find_python_on_path returns a 3.11+ binary when available", {
   skip_if_no_reticulate()
   p <- nemeton:::.find_python_on_path()
-  if (!nzchar(p)) skip("no Python ≥ 3.10 on PATH in the test runner")
+  if (!nzchar(p)) skip("no Python ≥ 3.11 on PATH in the test runner")
   expect_true(file.exists(p))
   v <- nemeton:::.probe_python_version(p)
-  expect_true(!is.na(v) && v >= numeric_version("3.10"))
+  expect_true(!is.na(v) && v >= numeric_version("3.11"))
 })
 
 

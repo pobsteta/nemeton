@@ -15,6 +15,11 @@ Integer. EPSG code (e.g., 2154 for France Lambert-93).
 \description{
 Returns the EPSG code of the national coordinate reference system.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 get_national_crs("FR")  # 2154
 

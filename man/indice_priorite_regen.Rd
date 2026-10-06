@@ -58,6 +58,11 @@ summer heat / dryness exceeds the species tolerance
 (\code{\link{regeneration_tolerances}}), the priority is pushed up (an
 intolerant species on a hot, dry microsite is more urgent).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 \dontrun{
   units <- regen_sensibilite(units, ...)      # microclimf -> sensibilite_score, d_tmax, d_vpd

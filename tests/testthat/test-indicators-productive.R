@@ -218,7 +218,7 @@ test_that("indicateur_p1_volume handles unknown species with fallback", {
   expect_false(is.na(result$P1[1]))
 })
 
-test_that("indicateur_p1_volume uses custom column name", {
+test_that("indicateur_p1_volume always writes its code column (no column_name, spec 057)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
@@ -233,12 +233,14 @@ test_that("indicateur_p1_volume uses custom column name", {
     test_units,
     species_field = "species",
     dbh_field = "dbh",
-    density_field = "density",
-    column_name = "volume_m3_ha"
+    density_field = "density"
   )
 
-  expect_true("volume_m3_ha" %in% names(result))
-  expect_false("P1" %in% names(result))
+  expect_true("P1" %in% names(result))
+  expect_error(
+    indicateur_p1_volume(test_units, column_name = "volume_m3_ha"),
+    "unused argument"
+  )
 })
 
 test_that("indicateur_p1_volume works with zero-row sf", {
@@ -512,7 +514,7 @@ test_that("indicateur_p2_station returns NA when no fallback available", {
   expect_true(is.na(result$P2[1]))
 })
 
-test_that("indicateur_p2_station uses custom column name", {
+test_that("indicateur_p2_station always writes its code column (no column_name, spec 057)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
@@ -527,12 +529,14 @@ test_that("indicateur_p2_station uses custom column name", {
     test_units,
     species_field = "species",
     fertility_field = "fertility",
-    climate_field = "climate",
-    column_name = "site_index"
+    climate_field = "climate"
   )
 
-  expect_true("site_index" %in% names(result))
-  expect_false("P2" %in% names(result))
+  expect_true("P2" %in% names(result))
+  expect_error(
+    indicateur_p2_station(test_units, column_name = "site_index"),
+    "unused argument"
+  )
 })
 
 test_that("indicateur_p2_station works with zero-row sf", {
@@ -714,15 +718,15 @@ test_that("indicateur_p3_qualite_bois applies conifer thresholds for pine specie
     species_field = "species"
   )
 
+  # 1.0.0 (spec 056, décision 2026-10-06) : plus de forme 70 / défauts 85 par
+  # défaut ; sans donnée terrain, P3 = score de diamètre seul.
   # PIAB dbh=30 >= conifer sawlog threshold 30 => diameter_score = 100
-  # Expected P3 with default form=70, default defects=85, weights=(0.4, 0.4, 0.2)
-  # P3[1] = 0.4*70 + 0.4*100 + 0.2*85 = 28 + 40 + 17 = 85
-  expect_equal(result$P3[1], 85)
+  expect_equal(result$P3[1], 100)
 
   # PISY dbh=15 == conifer pulp threshold 15 => at threshold
   # diameter_score = 50 + 50 * (15-15)/(30-15) = 50
-  # P3[2] = 0.4*70 + 0.4*50 + 0.2*85 = 28 + 20 + 17 = 65
-  expect_equal(result$P3[2], 65)
+  expect_equal(result$P3[2], 50)
+  expect_equal(result$p3_status, rep("diametre_seul", 3))
 })
 
 test_that("indicateur_p3_qualite_bois applies broadleaf thresholds for non-conifer species", {
@@ -741,20 +745,18 @@ test_that("indicateur_p3_qualite_bois applies broadleaf thresholds for non-conif
     species_field = "species"
   )
 
+  # 1.0.0 (spec 056, décision 2026-10-06) : plus de forme 70 / défauts 85 par
+  # défaut ; sans donnée terrain, P3 = score de diamètre seul.
   # FASY dbh=40 >= broadleaf sawlog threshold 40 => diameter_score = 100
-  # default form=70, default defects=85
-  # P3[1] = 0.4*70 + 0.4*100 + 0.2*85 = 85
-  expect_equal(result$P3[1], 85)
+  expect_equal(result$P3[1], 100)
 
   # QUPE dbh=30: between broadleaf pulp=20 and sawlog=40
   # diameter_score = 50 + 50 * (30-20)/(40-20) = 50 + 25 = 75
-  # P3[2] = 0.4*70 + 0.4*75 + 0.2*85 = 28 + 30 + 17 = 75
   expect_equal(result$P3[2], 75)
 
   # CASA dbh=10: below broadleaf pulp=20
   # diameter_score = 50 * (10/20) = 25
-  # P3[3] = 0.4*70 + 0.4*25 + 0.2*85 = 28 + 10 + 17 = 55
-  expect_equal(result$P3[3], 55)
+  expect_equal(result$P3[3], 25)
 })
 
 test_that("indicateur_p3_qualite_bois handles all three diameter score ranges", {
@@ -789,6 +791,8 @@ test_that("indicateur_p3_qualite_bois handles all three diameter score ranges", 
   # Unit 3: dbh=5 < 20 => diameter_score = 50*(5/20) = 12.5
   # P3 = 0.4*80 + 0.4*12.5 + 0.2*100 = 32+5+20 = 57
   expect_equal(result$P3[3], 57)
+  # Forme et défauts mesurés : poids complets.
+  expect_equal(result$p3_status, rep("complet", 3))
 })
 
 test_that("indicateur_p3_qualite_bois uses provided form_score and handles NA", {
@@ -814,8 +818,10 @@ test_that("indicateur_p3_qualite_bois uses provided form_score and handles NA", 
   # All have dbh=40 => diameter_score=100, defects=0 => defects_score=100
   # Unit 1: form=90 => P3 = 0.4*90 + 0.4*100 + 0.2*100 = 36+40+20 = 96
   expect_equal(result$P3[1], 96)
-  # Unit 2: form_score NA => defaults to 70 => P3 = 0.4*70+0.4*100+0.2*100 = 28+40+20 = 88
-  expect_equal(result$P3[2], 88)
+  # Unit 2: form_score NA => form left out (no default 70 since 1.0.0, spec
+  # 056), weights rescaled: (0.4*100 + 0.2*100) / 0.6 = 100
+  expect_equal(result$P3[2], 100)
+  expect_equal(result$p3_status[2], "diametre_defauts")
   # Unit 3: form=50 => P3 = 0.4*50+0.4*100+0.2*100 = 20+40+20 = 80
   expect_equal(result$P3[3], 80)
 })
@@ -845,8 +851,10 @@ test_that("indicateur_p3_qualite_bois handles defects field values and NA", {
   expect_equal(result$P3[1], 92)
   # Unit 2: defects=1 => defects_score=50 => P3 = 0.4*80+0.4*100+0.2*50 = 82
   expect_equal(result$P3[2], 82)
-  # Unit 3: defects=NA => defaults to 85 => P3 = 0.4*80+0.4*100+0.2*85 = 89
-  expect_equal(result$P3[3], 89)
+  # Unit 3: defects=NA => defects left out (no default 85 since 1.0.0, spec
+  # 056), weights rescaled: (0.4*80 + 0.4*100) / 0.8 = 90
+  expect_equal(result$P3[3], 90)
+  expect_equal(result$p3_status[3], "diametre_forme")
 })
 
 test_that("indicateur_p3_qualite_bois handles missing optional fields entirely", {
@@ -927,7 +935,7 @@ test_that("indicateur_p3_qualite_bois uses custom weights", {
   expect_false(result2_default$P3[1] == result2_custom$P3[1])
 })
 
-test_that("indicateur_p3_qualite_bois uses custom column name", {
+test_that("indicateur_p3_qualite_bois always writes its code column (no column_name, spec 057)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
@@ -944,12 +952,14 @@ test_that("indicateur_p3_qualite_bois uses custom column name", {
     dbh_field = "dbh",
     form_score_field = "form_score",
     defects_field = "defects",
-    species_field = "species",
-    column_name = "quality_score"
+    species_field = "species"
   )
 
-  expect_true("quality_score" %in% names(result))
-  expect_false("P3" %in% names(result))
+  expect_true("P3" %in% names(result))
+  expect_error(
+    indicateur_p3_qualite_bois(test_units, column_name = "quality_score"),
+    "unused argument"
+  )
 })
 
 test_that("indicateur_p3_qualite_bois works with zero-row sf", {
@@ -1168,7 +1178,7 @@ test_that("C1 sets a stems/ha density to NA instead of an absurd biomass", {
   units$age <- c(80, 60)
   units$density <- c(0.7, 400)  # la seconde est en tiges/ha
   expect_warning(
-    res <- suppressMessages(indicateur_c1_biomasse(units)),
+    res <- suppressMessages(indicateur_c1_biomasse(units)$C1),
     "stems/ha"
   )
   expect_true(is.finite(res[1]))

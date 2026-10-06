@@ -64,4 +64,9 @@ attribute \code{inventory_source = "synthetic_ml"} when
 substitution actually occurred. Designed to be called at the top
 of any indicator function that depends on \eqn{D_g} and \eqn{N}.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \keyword{internal}

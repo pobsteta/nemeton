@@ -11,8 +11,6 @@ indicateur_e1_bois_energie(
   harvest_rate = 0.02,
   residue_fraction = 0.3,
   coppice_area_field = NULL,
-  column_name = "E1",
-  lang = "en",
   chm = NULL,
   production_field = NULL,
   taux_mobilisation = NULL,
@@ -32,10 +30,6 @@ indicateur_e1_bois_energie(
 
 \item{coppice_area_field}{Character. Column name for coppice area fraction. Optional.}
 
-\item{column_name}{Character. Name for output column. Default "E1".}
-
-\item{lang}{Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".}
 
 \item{chm}{Optional `terra::SpatRaster` canopy height model (spec 005).
 When supplied and `volume_field` is absent, standing volume is
@@ -95,4 +89,7 @@ Residue volume is converted to dry matter with the species density of
 does. Versions up to 0.211.0 multiplied it by a further 0.5 ("dry matter =
 50 percent of fresh weight"), which halved E1.
 }
+\section{Lifecycle}{
 
+Stable: covered by the 1.0 API contract (spec 057).
+}

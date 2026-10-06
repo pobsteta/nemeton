@@ -74,6 +74,11 @@ one category per unit carries no within-unit diversity (since 0.208.0).
 **Interpretation**: Multi-layered, multi-age stands score high (>75).
 Monocultures or even-aged stands score low (<25).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(nemeton)

@@ -9,7 +9,7 @@
 # (R6 indicateur_r6_sensibilite comes in L2.)
 #
 # Each `indicateur_*()` consumes a `micro` set of summer-aggregated rasters
-# (produced by microclimate_run(), or supplied precomputed) and returns the
+# (precomputed by a microclimf run and supplied by the caller) and returns the
 # input `units` enriched with a 0-100 score column (short code, detected by
 # create_family_index via the `^[AWR][0-9]` regex), a raw-value column, a
 # couverture_pct column, and the `augmented = "microclimate_model"` flag.
@@ -84,17 +84,26 @@
 # columns under the family short code `code`, or NA columns when absent.
 .micro_indicator <- function(units, r, code, raw_name, lo, hi, decreasing) {
   validate_sf(units)
+  status <- paste0(tolower(code), "_status")
   if (is.null(r)) {
     units[[code]] <- NA_real_
     units[[raw_name]] <- NA_real_
     units[[paste0(code, "_couverture_pct")]] <- 0
+    units[[status]] <- rep("skipped_no_micro", nrow(units))
     return(units)
   }
   ex <- .micro_extract(units, r)
   units[[raw_name]] <- ex$mean
   units[[code]] <- .micro_norm(ex$mean, lo, hi, decreasing)
   units[[paste0(code, "_couverture_pct")]] <- 100 * ex$cover
+  units[[status]] <- .statut_conditionnel(units[[code]])
   units
+}
+
+# Statut d'un indicateur conditionnel dont la source est fournie :
+# "calculated" ou "skipped_no_coverage" (unite hors de l'emprise de la source).
+.statut_conditionnel <- function(valeurs) {
+  ifelse(is.na(valeurs), "skipped_no_coverage", "calculated")
 }
 
 
@@ -107,7 +116,7 @@
 #'
 #' @param units An `sf` of forest management units (UGF).
 #' @param micro The summer microclimate rasters (named list / multi-layer
-#'   `SpatRaster`) from [microclimate_run()]; the `tmax_understorey` layer
+#'   `SpatRaster`) precomputed by a microclimf run; the `tmax_understorey` layer
 #'   (°C) is used. `NULL` → `A3 = NA`.
 #' @param chm Optional canopy-height raster (reserved; structure source for
 #'   the augmentation flag).
@@ -116,7 +125,7 @@
 #' @param ... Unused (signature harmonisation).
 #'
 #' @return `units` with columns `A3` (0-100), `A3_tmax` (raw °C),
-#'   `A3_couverture_pct`, and `attr(., "augmented")` carrying
+#'   `A3_couverture_pct`, `a3_status` (`"calculated"`, `"skipped_no_micro"` or `"skipped_no_coverage"`), and `attr(., "augmented")` carrying
 #'   `"microclimate_model"` (only when at least one value is computed).
 #'
 #'   **Higher = cooler under the canopy = favourable.** The raw quantity
@@ -125,8 +134,10 @@
 #'   100, 40 °C -> 0 (`.MICRO_BOUNDS$a3`). `normalize_indicator()` therefore
 #'   passes `A3` through unchanged and must **not** invert it a second time
 #'   (spec 048 section 12).
-#' @seealso [indicateur_a4_tamponnement()], [indicateur_w4_vpd()],
-#'   [microclimate_run()]
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
+#' @seealso [indicateur_a4_tamponnement()], [indicateur_w4_vpd()]
 #' @export
 indicateur_a3_microclimat <- function(units, micro = NULL, chm = NULL,
                                       bounds = .MICRO_BOUNDS$a3, ...) {
@@ -154,14 +165,17 @@ indicateur_a3_microclimat <- function(units, micro = NULL, chm = NULL,
 #' @param ... Unused.
 #'
 #' @return `units` with `A4` (0-100), `A4_buffer` (raw °C),
-#'   `A4_couverture_pct`, and the `"microclimate_model"` augmentation flag (only when at least one value is computed).
+#'   `A4_couverture_pct`, `a4_status` (`"calculated"`, `"skipped_no_micro"` or `"skipped_no_coverage"`), and the `"microclimate_model"` augmentation flag (only when at least one value is computed).
 #'
 #'   **Higher = more thermal buffering = favourable**, and the raw quantity
 #'   (the open-air minus under-canopy temperature gap, °C) already runs that
 #'   way: 0 °C -> 0, 10 °C -> 100 (`.MICRO_BOUNDS$a4`, `decreasing = FALSE`).
 #'   Unlike `A3` and `W4`, nothing is flipped. `normalize_indicator()` passes
 #'   it through (spec 048 section 12).
-#' @seealso [indicateur_a3_microclimat()], [microclimate_run()]
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
+#' @seealso [indicateur_a3_microclimat()]
 #' @export
 indicateur_a4_tamponnement <- function(units, micro = NULL, chm = NULL,
                                        bounds = .MICRO_BOUNDS$a4, ...) {
@@ -190,7 +204,7 @@ indicateur_a4_tamponnement <- function(units, micro = NULL, chm = NULL,
 #' @param ... Unused.
 #'
 #' @return `units` with `W4` (0-100), `W4_vpd` (raw kPa),
-#'   `W4_couverture_pct`, and the `"microclimate_model"` augmentation flag (only when at least one value is computed).
+#'   `W4_couverture_pct`, `w4_status` (`"calculated"`, `"skipped_no_micro"` or `"skipped_no_coverage"`), and the `"microclimate_model"` augmentation flag (only when at least one value is computed).
 #'
 #'   **Higher = moister air under the canopy = favourable.** The raw quantity
 #'   (VPD, kPa) runs the other way, so `.micro_norm(decreasing = TRUE)` flips
@@ -198,7 +212,10 @@ indicateur_a4_tamponnement <- function(units, micro = NULL, chm = NULL,
 #'   (`.MICRO_BOUNDS$w4`). `normalize_indicator()` therefore passes `W4`
 #'   through unchanged and must **not** invert it a second time
 #'   (spec 048 section 12).
-#' @seealso [indicateur_a3_microclimat()], [microclimate_run()]
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
+#' @seealso [indicateur_a3_microclimat()]
 #' @export
 indicateur_w4_vpd <- function(units, micro = NULL, chm = NULL,
                               bounds = .MICRO_BOUNDS$w4, ...) {
@@ -234,8 +251,12 @@ indicateur_w4_vpd <- function(units, micro = NULL, chm = NULL,
 #' @param ... Unused.
 #'
 #' @return `units` with `R6` (0-100, higher = less sensitive), `R6_dtmax`
-#'   (raw ΔT°max, °C), `R6_dvpd` (raw ΔVPD, kPa), `R6_couverture_pct`, and
+#'   (raw ΔT°max, °C), `R6_dvpd` (raw ΔVPD, kPa), `R6_couverture_pct`,
+#'   `r6_status` (`"calculated"`, `"skipped_no_micro"` or `"skipped_no_coverage"`), and
 #'   the `"microclimate_model"` augmentation flag (only when at least one value is computed).
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso [microclimate_detect_years()], [indicateur_a3_microclimat()]
 #' @export
 indicateur_r6_sensibilite <- function(units, micro_moyenne = NULL,
@@ -251,6 +272,7 @@ indicateur_r6_sensibilite <- function(units, micro_moyenne = NULL,
     units$R6_dtmax <- NA_real_
     units$R6_dvpd <- NA_real_
     units$R6_couverture_pct <- 0
+    units$r6_status <- rep("skipped_no_micro", nrow(units))
     return(.micro_augmented(units, micro_canicule, "R6"))
   }
   exT <- .micro_extract(units, tc - tm)   # ΔT°max (canicule − moyenne)
@@ -261,6 +283,7 @@ indicateur_r6_sensibilite <- function(units, micro_moyenne = NULL,
   sV <- pmin(1, pmax(0, exV$mean / bounds[["scale_v"]]))
   units$R6 <- 100 * (1 - (0.5 * sT + 0.5 * sV))
   units$R6_couverture_pct <- 100 * pmin(exT$cover, exV$cover, na.rm = FALSE)
+  units$r6_status <- .statut_conditionnel(units$R6)
   .micro_augmented(units, micro_canicule, "R6")
 }
 
@@ -293,7 +316,8 @@ indicateur_r6_sensibilite <- function(units, micro_moyenne = NULL,
 #'   named list of `terra::SpatRaster` — `tmax_understorey`, `tmax_open`,
 #'   `vpd`, `rh` (summer JJA) — the `micro` contract.
 #' @seealso [indicateur_a3_microclimat()]
-#' @export
+#' @keywords internal
+#' @noRd
 microclimate_run <- function(aoi, year, structure = c("lidarhd", "opencanopy"),
                              resolution = 5, cache_dir = NULL, quiet = FALSE) {
   structure <- match.arg(structure)

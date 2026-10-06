@@ -18,3 +18,7 @@ Invisibly, the number of chunks deleted (via the
 \description{
 Delete a document and its chunks from the knowledge base
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}

@@ -17,3 +17,7 @@ Invisible x
 \description{
 Print method for nemeton_layers
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

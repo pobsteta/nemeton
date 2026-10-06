@@ -33,6 +33,9 @@
 #' - Rasters: \code{inst/extdata/massif_demo_*.tif}
 #' - Vectors: \code{inst/extdata/massif_demo_*.gpkg}
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @seealso \code{\link{massif_demo_units}}, \code{\link{nemeton_layers}},
 #'   \code{\link{nemeton_compute}}
 #'

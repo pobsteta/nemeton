@@ -30,6 +30,11 @@ This function:
 3. Rasterizes the pressure values
 4. Returns a raster for use with indicateur_r4_abroutissement(game_density = ...)
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(nemeton)

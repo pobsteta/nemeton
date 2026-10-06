@@ -70,6 +70,11 @@ coolest/driest, 5 = warmest/wettest. Defaults: T°max \code{c(0, 0.4, 0.8, 1.2)}
 dominates (hot rows red/magenta), cool & dry = yellow, cool & wet = violet.
 Reliability is \code{"low"} (bounded by the noisy precipitation downscaling).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{eobs_downscale}}, \code{\link{tendances_estivales_eobs}}
 }

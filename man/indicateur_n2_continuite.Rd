@@ -9,9 +9,7 @@ indicateur_n2_continuite(
   bdforet = NULL,
   foret_ancienne = NULL,
   layers = NULL,
-  column_name = "N2",
-  weight_anciennete = TRUE,
-  lang = "en"
+  weight_anciennete = TRUE
 )
 }
 \arguments{
@@ -27,15 +25,11 @@ with a NULL \code{foret_ancienne} gives N2 = NA.}
 
 \item{layers}{nemeton_layers object. Used to resolve bdforet if not provided directly.}
 
-\item{column_name}{Character. Name for output column. Default "N2".}
 
 \item{weight_anciennete}{Logical. When \code{foret_ancienne} carries an
 \code{anciennete} tier column, weight the ancient-forest coverage by tier depth
 (forest present at more epochs counts more). Ignored for single-epoch layers.
 Default \code{TRUE}.}
-
-\item{lang}{Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".}
 }
 \value{
 sf object with added column N2 (score 0-100).
@@ -55,4 +49,8 @@ optionally BD Foret Anciennes (historical forest from ~1850). Follows tuto 04:
 - Ancient forest (>0% on 1850 map): score = 60 + 40 * taux_anciennete
 - Recent forest (current cover but not ancient): score = 30 + 30 * taux_boisement
 - No forest: score = 15
+}
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
 }

@@ -136,10 +136,10 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 **R/utils.R**
 - **M bug** `1271` — `class_map[[mode_class]]` lève « subscript out of bounds » au lieu de renvoyer NA. **[corrigé 0.212.0]**
 - **m qualité** `107` — `parallel` n'est pas déclaré ; `detectCores()` peut valoir NA. **[corrigé 0.214.0]**
-- **m sécu** `1304-1315` — `get_global_cache_dir()` crée un dossier utilisateur dès l'appel → `tools::R_user_dir()`. **[corrigé 0.214.0 ; passage à `tools::R_user_dir()` = décision]**
+- **m sécu** `1304-1315` — `get_global_cache_dir()` crée un dossier utilisateur dès l'appel → `tools::R_user_dir()`. **[corrigé 0.214.0 ; cache gardé dans `~/.cache/nemeton` (décision 2026-10-06)]**
 
 **R/zzz.R**
-- **M qualité** `50-74` — `.onLoad` modifie les options globales de terra (`memfrac`, `memmax`) au chargement. **[décision — vague 6]**
+- **M qualité** `50-74` — `.onLoad` modifie les options globales de terra (`memfrac`, `memmax`) au chargement. **[corrigé 1.0.0 : `.onLoad` respecte un réglage terra de l'utilisateur]**
 
 **R/nemeton-package.R, DESCRIPTION**
 - **m qualité** — Page du package obsolète (« B/R planned for v0.3.0 », F1 et F2 inversés, branche `001-mvp`), DESCRIPTION mentionne encore « Includes nemetonApp », `TSP` et `lidR` sont en double dans Suggests, `stats`/`utils`/`graphics`/`tools`/`parallel`/`methods` ne sont pas déclarés. **[corrigé 0.214.0]**
@@ -151,7 +151,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 
 **R/indicators-core.R**
 - **M bug** `153` — `compute_indicator(ind, units, layers)` reçoit les unités d'origine et range les résultats sous des noms longs. N3 et E2 valent toujours NA, T2 vaut 50, A1 échoue ; B1, B3, S3 et P1-P3 n'acceptent pas `layers`. **[corrigé 0.208.0]**
-- **m qualité** `160-164` — L'erreur d'un indicateur n'affiche pas `e$message` ; `list_indicators()` omet 8 indicateurs. **[corrigé avant 0.214.0 ; `list_indicators()` incomplet = décision]**
+- **m qualité** `160-164` — L'erreur d'un indicateur n'affiche pas `e$message` ; `list_indicators()` omet 8 indicateurs. **[corrigé avant 0.214.0 ; `list_indicators()` rend les 41 en 1.0.0]**
 
 **R/indicators-biodiversity.R**
 - **C bug** `413-481` — B2 : `(i %% 4)` dépend du numéro de ligne, le Shannon vaut toujours 0, le score est calculé sur le lot **[vérifié]**. **[corrigé 0.208.0]**
@@ -166,7 +166,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **M bug** `972` — L'appétence de R4 est lue sur le premier polygone intersecté, pas sur le polygone majoritaire. **[corrigé 0.212.0]**
 - **M bug** `283-308` — Repli R1 : le proxy NDVI a un poids nul, et il reste un facteur constant de 50. **[corrigé 0.212.0]**
 - **M qualité** `509-618` — Le roxygen de R3 est rattaché à `.R3_BILJOU_BOUNDS`. **[corrigé 0.211.0]**
-- **m bug** `489-491, 796-799` — TRI et TWI sont normalisés par le max de l'emprise ; un gibier NA est remplacé par 50 ; les messages disent « 50 » alors que la valeur est NA. **[corrigé 0.212.0 ; bornes TRI/TWI = décision]**
+- **m bug** `489-491, 796-799` — TRI et TWI sont normalisés par le max de l'emprise ; un gibier NA est remplacé par 50 ; les messages disent « 50 » alors que la valeur est NA. **[corrigé 1.0.0 : R2 sans TRI, TWI à fenêtre fixe (spec 056)]**
 
 **R/indicators-families.R**
 - **M bug** `48-60` — Le cache fichier du vent NASA POWER n'est pas indexé par la position : le premier projet est relu pour tous. **[corrigé 0.209.0]**
@@ -175,7 +175,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **M bug** `620-623` — W1 vaut 0 sans couche de cours d'eau, au lieu de NA. **[corrigé 0.212.0]**
 - **M bug** `366` — `density` est une fraction 0-1 dans C1 et des tiges/ha dans P1. **[corrigé 0.212.0]**
 - **m bug** `1230-1278` — F1 : surface NA comptée au dénominateur, classes non remises à l'échelle, min-max relatif au lot. **[corrigé avant 0.214.0]**
-- **m qualité** `1690` — `forest_values` de L1 n'est pas utilisé ; l'« auto-detect » de W2 n'existe pas ; les fenêtres TWI de W3 et F2 divergent. **[corrigé 0.212.0 ; fenêtres TWI W3/F2 = décision]**
+- **m qualité** `1690` — `forest_values` de L1 n'est pas utilisé ; l'« auto-detect » de W2 n'existe pas ; les fenêtres TWI de W3 et F2 divergent. **[corrigé 1.0.0 : fenêtre TWI commune [2,5 ; 9] (spec 056)]**
 
 **R/indicators-frost.R**
 - **M bug** `22-29` — Avec une seule unité, `vapply` renvoie un vecteur et `rowMeans` plante (R7). **[corrigé 0.212.0]**
@@ -196,7 +196,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m qualité** `214-250` — L'exemple `method = "proxy"` aborte ; le `@return` est faux. **[corrigé 0.214.0]**
 
 **R/indicators-naturalness.R**
-- **m qualité** `99, 226, 76` — La doc dit « 50 » alors que le code renvoie NA ; N1 contient un terme constant de +25. **[doc corrigée 0.214.0 ; terme +25 de N1 = décision]**
+- **m qualité** `99, 226, 76` — La doc dit « 50 » alors que le code renvoie NA ; N1 contient un terme constant de +25. **[corrigé 1.0.0 : terme +25 de N1 retiré (spec 056)]**
 
 **R/indicators-temporal.R**
 - **M bug** `88-145` — Le TFV de la BD Forêt passe avant un âge mesuré ; un TFV inconnu donne 50. **[corrigé 0.212.0]**
@@ -207,14 +207,14 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m bug** `602-605` — Le cas `n == 0` de A5 ne pose pas `a5_status`. **[corrigé avant 0.214.0]**
 
 **R/indicators-productive.R**
-- **m bug** `620` — Le test conifère de P3 (`^P[IML]`) rate ABAL, PSME, LADE et CEAT ; les défauts forme = 70 et défauts = 85 fabriquent 40 % du score. **[corrigé 0.212.0 ; scores par défaut de P3 = décision]**
+- **m bug** `620` — Le test conifère de P3 (`^P[IML]`) rate ABAL, PSME, LADE et CEAT ; les défauts forme = 70 et défauts = 85 fabriquent 40 % du score. **[corrigé 1.0.0 : P3 au diamètre seul, `p3_status` (spec 056)]**
 - **m qualité** `29-58` — Deux formules différentes dans le roxygen de P1. **[corrigé 0.214.0]**
 
 **R/indicators-microclimate.R**
-- **m qualité** `73-77, 132` — L'attribut `augmented` est posé même quand le résultat est NA ; `microclimate_run()` est exporté mais aborte toujours. **[corrigé 0.214.0 ; dé-export de `microclimate_run()` = décision]**
+- **m qualité** `73-77, 132` — L'attribut `augmented` est posé même quand le résultat est NA ; `microclimate_run()` est exporté mais aborte toujours. **[corrigé 0.214.0 ; `microclimate_run()` dé-exportée en 1.0.0]**
 
 **Transverse indicateurs**
-- **M qualité** — Contrat de retour hétérogène (vecteur pour C1, C2, W*, F*, L*, T*, `sf` pour les autres), `stop()` et `cli_abort()` mélangés, `lang` jamais utilisé, paramètres numériques non validés. **[en partie 0.213.0 : `cli_abort()` partout, `lang` documenté inutilisé ; contrat de retour = décision]**
+- **M qualité** — Contrat de retour hétérogène (vecteur pour C1, C2, W*, F*, L*, T*, `sf` pour les autres), `stop()` et `cli_abort()` mélangés, `lang` jamais utilisé, paramètres numériques non validés. **[corrigé 1.0.0 : contrat d'API (spec 057), retours `sf`, `lang` et `column_name` retirés]**
 
 ### Production, IFN, LiDAR
 
@@ -232,7 +232,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 **R/site_index.R, R/density_selfthinning.R, R/synthetic_inventory.R**
 - **M bug** `site_index.R:76-79` — Trois définitions concurrentes de « résineux » ; PIHA, PILA et LAKA tombent sur la courbe feuillus. **[corrigé 0.212.0]**
 - **M bug** `synthetic_inventory.R:170`, `density_selfthinning.R:134` — Dg et N_max sont bornés en silence (vieille chênaie plafonnée à 30 cm). **[corrigé 0.212.0]**
-- **m bug** `site_index.R:368-374` — Une hauteur hors des courbes est bornée à la classe 1 ou 5, alors que le commentaire annonce NA. **[doc corrigée 0.214.0 ; NA hors courbe = décision]**
+- **m bug** `site_index.R:368-374` — Une hauteur hors des courbes est bornée à la classe 1 ou 5, alors que le commentaire annonce NA. **[corrigé 1.0.0 : NA hors courbe, `p2_status = "hors_courbe"` (spec 056)]**
 - **m qualité** `synthetic_inventory.R:160-161` — `if (x) 15 else 15` (code mort). **[corrigé avant 0.214.0]**
 
 **R/ifn_source.R**
@@ -280,7 +280,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **M bug** `324-328, 430` — Le cache ERA5 n'est pas indexé par lon/lat. **[corrigé 0.209.0]**
 - **M bug** `187, 1074-1102` — Un `lai_max` NA par unité n'est pas remplacé par la valeur par défaut. **[corrigé 0.209.0]**
 - **m bug** `416, 430` — Un `.nc` tronqué est réutilisé comme cache. **[corrigé 0.209.0]**
-- **m qualité** `242-254, 777-781` — Écriture dans `globalenv()` (refusé par CRAN). **[décision — contournement microclimf]**
+- **m qualité** `242-254, 777-781` — Écriture dans `globalenv()` (refusé par CRAN). **[conservé 1.0.0 : contournement documenté, ticket amont rédigé (non publié)]**
 - **m qualité** `994-995` — Les rasters temporaires ne sont pas supprimés. **[corrigé 0.214.0]**
 - **m qualité** `643-848` — `regen_sensibilite()` fait environ 200 lignes. **[non retenu — stylistique]**
 
@@ -320,7 +320,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m qualité** `15-28` — URL en dur alors que FR.json les déclare (idem SAFRAN EDR et E-OBS). **[corrigé 0.214.0]**
 
 **R/data.R / R/data-massif_demo.R**
-- **m qualité** — `massif_demo_units` est documenté deux fois, avec des colonnes qui n'existent pas ; la fixture n'a que 31 indicateurs sur 41. **[doc corrigée 0.214.0 ; fixture à 41 indicateurs = décision]**
+- **m qualité** — `massif_demo_units` est documenté deux fois, avec des colonnes qui n'existent pas ; la fixture n'a que 31 indicateurs sur 41. **[corrigé 1.0.0 : fixture régénérée à 41 indicateurs par le paquet]**
 
 **R/regen_rank_species.R**
 - **m qualité** `221-249` — `include_atlas` n'est documenté que dans le `.Rd`. **[corrigé 0.214.0]**
@@ -377,8 +377,8 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m sécu** `db.R:58-61, 357` — Les messages d'erreur affichent l'URL de base avec le mot de passe. **[corrigé 0.209.0]**
 - **m bug** `db.R:351-366` — Pas de décodage URL ; une query string se colle au `dbname`. **[corrigé 0.214.0]**
 - **m bug** `db.R:282-345` — Pas de verrou autour de `db_migrate`. **[corrigé 0.214.0]**
-- **m qualité** `pg/0001:10` — TimescaleDB est obligatoire mais plus utilisé. **[décision — migration SQL]**
-- **m qualité** `sqlite/0007:27` — `validation_status` est nullable sous SQLite et NOT NULL sous PG. **[décision — migration SQL]**
+- **m qualité** `pg/0001:10` — TimescaleDB est obligatoire mais plus utilisé. **[corrigé 1.0.0 : schéma neuf, TimescaleDB optionnel]**
+- **m qualité** `sqlite/0007:27` — `validation_status` est nullable sous SQLite et NOT NULL sous PG. **[corrigé 1.0.0 : schéma neuf, `validation_status` NOT NULL]**
 
 **R/project_lock.R**
 - **m bug** `122-184` — `BEGIN` différé sous SQLite : `SQLITE_BUSY` au lieu de `ok = FALSE`. **[corrigé 0.214.0]**
@@ -392,7 +392,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m qualité** `fordead_mask.R:13-30` — La doc dit le masque « à venir » alors qu'il est persisté. **[corrigé 0.214.0]**
 
 **R/sentinel2.R, R/fordead_python.R**
-- **m qualité** `fordead_python.R:497` — `pip install --upgrade` avec des bornes ouvertes : environnement non reproductible. **[décision — figer les versions Python FORDEAD]**
+- **m qualité** `fordead_python.R:497` — `pip install --upgrade` avec des bornes ouvertes : environnement non reproductible. **[corrigé 1.0.0 : versions Python figées]**
 
 **R/pixel_dieback_prep.R**
 - **m bug** `212` — Les trous d'interpolation sont calculés sur toutes les dates, y compris masquées. **[corrigé 0.214.0]**
@@ -451,7 +451,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m sécu** `440` — `doc_id` non revalidé : écriture hors de `pdf_dir` possible. **[corrigé 0.210.0]**
 - **M bug** `38-39` × `rag.R:390` — Les vocabulaires `doc_type` divergent (guide, law, dataset_doc refusés à l'ingestion). **[corrigé 0.210.0]**
 - **M bug** `585, 589` — `dry_run` télécharge réellement les PDF. **[corrigé 0.209.0]**
-- **M qualité** `429` — `local_path` est relatif à `data-raw` (exclu du build) : 58 sur 60 sources ne sont pas résolues depuis le paquet installé. **[en partie 0.213.0 : chemin introuvable signalé ; emplacement des PDF = décision]**
+- **M qualité** `429` — `local_path` est relatif à `data-raw` (exclu du build) : 58 sur 60 sources ne sont pas résolues depuis le paquet installé. **[corrigé 1.0.0 : `NEMETON_CORPUS_ROOT` documenté]**
 - **m bug** `604, 612` — L'idempotence repose sur le titre. **[corrigé 0.214.0]**
 - **m bug** `441-447` — Un PDF corrompu reste en cache. **[corrigé 0.209.0]**
 - **m qualité** `600-604` — `fresh = TRUE` vide le corpus hors transaction. **[corrigé 0.214.0]**
@@ -463,7 +463,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **m qualité** `888-895` — Pas d'argument `api_key` dans `retrieve_knowledge()`. **[corrigé 0.210.0]**
 - **m qualité** `872, 906` — Bornes de `min_similarity` différentes entre doc et code ; `lang` jamais utilisé. **[corrigé 0.214.0]**
 - **m bug** `296-327` — Échappement incomplet des tableaux texte. **[corrigé 0.214.0]**
-- **m qualité** `475-505` — Une ré-ingestion duplique les chunks. **[décision — politique de dédoublonnage de `ingest_knowledge_document()`]**
+- **m qualité** `475-505` — Une ré-ingestion duplique les chunks. **[corrigé 1.0.0 : contenu identique ignoré]**
 - **m bug** `99-119` — UTF-8 invalide → `nchar()` lève une erreur. **[corrigé 0.214.0]**
 
 **R/qgis_export.R**
@@ -505,7 +505,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 **data/ et .Rbuildignore**
 - **C qualité** — L'archive de 5,4 Go n'est pas exclue du build **[vérifié]** ; `area_interest.geojson` déclenche un WARNING. **[corrigé 0.211.0]**
 - **M qualité** — `__pycache__/*.pyc` et `.Renviron.example` partent dans le tarball. **[corrigé 0.211.0]**
-- **M bug** — `aba.model` et `coregistration` sont exclus du build alors que les tutoriels 07 et 08 les lisent. **[décision — vague 6]**
+- **M bug** — `aba.model` et `coregistration` sont exclus du build alors que les tutoriels 07 et 08 les lisent. **[corrigé 1.0.0 : données téléchargées à la demande]**
 - **m qualité** — Un nom de fichier de plus de 100 octets dans `inst/python`. **[corrigé avant 0.214.0]**
 
 **man/*.Rd**
@@ -517,7 +517,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 - **M bug** — `methods` et `prosail` ne sont pas déclarés (WARNING). **[corrigé 0.211.0]**
 - **M qualité** — Description obsolète (« Includes nemetonApp »). **[corrigé 0.211.0]**
 - **m qualité** — Doublons dans Suggests ; `ggrepel`, `signal`, `tidyr` et `cluster` pourraient passer en Suggests ; `stats::ave` non importé. **[corrigé 0.211.0]**
-- **m qualité** — Faisabilité CRAN : `Remotes`, 6 Suggests hors dépôt, tarball de 10,5 Mo. **[décision — stratégie CRAN]**
+- **m qualité** — Faisabilité CRAN : `Remotes`, 6 Suggests hors dépôt, tarball de 10,5 Mo. **[décidé 2026-10-06 : pas de CRAN pour la 1.0, distribution GitHub]**
 
 **R/ (portabilité)**
 - **M qualité** — Caractères non ASCII dans le code de 18 fichiers (WARNING). **[corrigé 0.211.0]**
@@ -534,7 +534,7 @@ trouvée), l'hygiène des secrets dans git, et l'isolation mémoire par cgroup.
 
 **docs/, vignettes/**
 - **M qualité** — `docs/` est suivi par git et figé en v0.13.0 (503 fichiers, 19 Mo). **[corrigé 0.211.0]**
-- **m qualité** — HTML et R des vignettes commités ; le guide de l'app (`nemetonapp-guide_fr.Rmd`) n'a plus sa place ici. **[HTML/R retirés avant 0.214.0 ; déplacement du guide app = décision]**
+- **m qualité** — HTML et R des vignettes commités ; le guide de l'app (`nemetonapp-guide_fr.Rmd`) n'a plus sa place ici. **[HTML/R retirés avant 0.214.0 ; guide retiré en 1.0.0, repris par l'app]**
 
 **README.md, CLAUDE.md, cran-comments.md, create-release.sh, LICENSE**
 - **M qualité** — « 31 indicateurs » alors que le code en déclare 41. **[corrigé 0.211.0]**

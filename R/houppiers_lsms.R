@@ -64,7 +64,8 @@
 #'   square).
 #'
 #' @return Estimated wall-clock seconds.
-#' @export
+#' @keywords internal
+#' @noRd
 lsms_duree_estimee <- function(n_pixels, spatialr = .LSMS_DEFAUTS$spatialr) {
   if (!is.numeric(n_pixels) || length(n_pixels) != 1L || !is.finite(n_pixels) ||
       n_pixels < 0) {
@@ -81,14 +82,15 @@ lsms_duree_estimee <- function(n_pixels, spatialr = .LSMS_DEFAUTS$spatialr) {
 
 #' Pixel budget affordable within a compute budget
 #'
-#' The inverse of [lsms_duree_estimee()]. Reported to the caller when a job is
+#' The inverse of `lsms_duree_estimee()`. Reported to the caller when a job is
 #' refused, because the useful answer is not "too big" but "how much fits".
 #'
 #' @param budget_s Compute budget, in seconds.
 #' @param spatialr Spatial radius passed to LSMS.
 #'
 #' @return Number of pixels affordable within `budget_s`.
-#' @export
+#' @keywords internal
+#' @noRd
 lsms_budget_pixels <- function(budget_s, spatialr = .LSMS_DEFAUTS$spatialr) {
   if (!is.numeric(budget_s) || length(budget_s) != 1L || !is.finite(budget_s) ||
       budget_s <= 0) {

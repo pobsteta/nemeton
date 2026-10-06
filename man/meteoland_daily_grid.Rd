@@ -65,6 +65,11 @@ meteoland lives in Suggests and is \strong{absent from CI} — like microclimf, 
 path is validated on real data. Any failure (package absent, GéoSAS down, too
 few stations) returns \code{NULL}, never an error, so callers degrade gracefully.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{eobs_downscale}}, \code{\link{indicateur_r7_gel}}, \code{\link{build_safran_stations}}
 }

@@ -30,7 +30,7 @@ NULL
 #' @param current_year Integer. Current year for age calculation from establishment year.
 #'   Default uses current system year.
 #'
-#' @return Numeric vector of estimated age in years (one per parcel) -- NOT a
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{T1}: estimated age in years -- NOT a
 #' 0-100 score. **Higher = older = more favourable**, so it is not
 #' inverted; normalize_indicator() rescales it against a ref_max of 200
 #' years, beyond which ancientness counts as maximal. Until 0.196.0 it was
@@ -56,6 +56,9 @@ NULL
 #'     recognised TFV
 #' }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family temporal-indicators
 #' @export
 #'
@@ -68,7 +71,7 @@ NULL
 #'
 #' # Primary method: BD Forêt
 #' result <- indicateur_t1_anciennete(massif_demo_units, layers = layers)
-#' summary(result)
+#' summary(result$T1)
 #'
 #' # Direct age field
 #' units <- massif_demo_units
@@ -166,7 +169,7 @@ indicateur_t1_anciennete <- function(units,
   } else {
     msg_info("indicateur_t1_anciennete")
   }
-  age_values
+  .indicateur_resultat(units, "T1", age_values)
 }
 
 
@@ -210,7 +213,7 @@ indicateur_t1_anciennete <- function(units,
 #' @param t1_values Numeric vector. Pre-computed T1 age values (same length
 #'   as nrow(units)). If NULL and units has no T1 column, T2 is \code{NA}.
 #'
-#' @return Numeric vector of stability proxy scores (0-100), 100 = very
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{T2}: stability proxy scores (0-100), 100 = very
 #'   stable (ancient forest). \code{NA} where the source (N2 or T1) is
 #'   unknown -- no default value.
 #'
@@ -227,6 +230,9 @@ indicateur_t1_anciennete <- function(units,
 #' A genuine change-rate indicator (e.g. a Sentinel-2 change detection) is
 #' not implemented in T2.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @family temporal-indicators
 #' @export
 #'
@@ -237,9 +243,10 @@ indicateur_t1_anciennete <- function(units,
 #' data(massif_demo_units)
 #' units <- massif_demo_units[1:10, ]
 #'
-#' # Compute T1 first, then T2
+#' # Compute T1 first, then T2: the T1 column of the result feeds T2
 #' t1 <- indicateur_t1_anciennete(units, layers = massif_demo_layers())
-#' t2 <- indicateur_t2_changement(units, t1_values = t1)
+#' t2 <- indicateur_t2_changement(t1)
+#' t2$T2
 #' }
 indicateur_t2_changement <- function(units,
                                       layers = NULL,
@@ -280,7 +287,7 @@ indicateur_t2_changement <- function(units,
   # --- Aucune source : NA (plus de 50 par défaut) ---
   if (length(sources) == 0L) {
     cli::cli_alert_warning("T2: No N2 or T1 data available, returning NA")
-    return(rep(NA_real_, n))
+    return(.indicateur_resultat(units, "T2", rep(NA_real_, n)))
   }
 
   t2 <- rep(NA_real_, n)
@@ -300,7 +307,7 @@ indicateur_t2_changement <- function(units,
     cli::cli_alert_info("T2: stability proxy from {paste(used, collapse = ', ')}")
     msg_info("indicateur_t2_changement")
   }
-  t2
+  .indicateur_resultat(units, "T2", t2)
 }
 
 
@@ -353,10 +360,13 @@ indicateur_t2_changement <- function(units,
 #'   `reference_year = as.integer(format(Sys.Date(), "%Y"))` — makes
 #'   "the last N years" mean exactly that.
 #'
-#' @return Numeric vector, one value per unit: recency-weighted percentage of
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{T3}, one value per unit: recency-weighted percentage of
 #'   the unit footprint under clear-cut within the window (0-100, high = more
 #'   clear-cutting). `NA` where `sufosat_dates` is `NULL` or the unit does not
-#'   overlap the raster.
+#'   overlap the raster. Also adds `t3_status` (`"calculated"`, `"skipped_no_sufosat"` or `"skipped_no_coverage"`).
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 indicateur_t3_coupes_rases <- function(units,
@@ -365,14 +375,30 @@ indicateur_t3_coupes_rases <- function(units,
                                        window_years   = 5L,
                                        min_proba      = 0.9,
                                        reference_year = NULL) {
+  res <- .t3_calcul(units, sufosat_dates = sufosat_dates,
+                    sufosat_proba = sufosat_proba, window_years = window_years,
+                    min_proba = min_proba, reference_year = reference_year)
+  res$t3_status <- if (is.null(sufosat_dates)) rep("skipped_no_sufosat", nrow(res))
+                   else .statut_conditionnel(res$T3)
+  res
+}
+
+# Corps de T3 (colonne T3 seule) ; indicateur_t3_coupes_rases() y ajoute
+# `t3_status`.
+.t3_calcul <- function(units,
+                       sufosat_dates  = NULL,
+                       sufosat_proba  = NULL,
+                       window_years   = 5L,
+                       min_proba      = 0.9,
+                       reference_year = NULL) {
   validate_sf(units)
   n <- nrow(units)
-  if (n == 0L) return(numeric(0))
+  if (n == 0L) return(.indicateur_resultat(units, "T3", numeric(0)))
 
   # Source-conditional: no dates raster -> indicator not applicable.
   if (is.null(sufosat_dates)) {
     cli::cli_alert_info("T3: no SUFOSAT dates raster supplied - returning NA (indicator skipped).")
-    return(rep(NA_real_, n))
+    return(.indicateur_resultat(units, "T3", rep(NA_real_, n)))
   }
   if (!inherits(sufosat_dates, "SpatRaster")) {
     cli::cli_abort("{.arg sufosat_dates} must be a terra SpatRaster.")
@@ -433,16 +459,16 @@ indicateur_t3_coupes_rases <- function(units,
   # No clear-cut anywhere: pressure is 0 for units overlapping the raster,
   # NA for units that fall entirely outside it.
   if (is.na(reference_year)) {
-    return(vapply(ex, function(df) {
+    return(.indicateur_resultat(units, "T3", vapply(ex, function(df) {
       cov <- df$coverage_fraction
       if (!length(cov) || sum(cov, na.rm = TRUE) == 0) NA_real_ else 0
-    }, numeric(1)))
+    }, numeric(1))))
   }
 
   window_start <- as.integer(reference_year) - as.integer(window_years) + 1L
   thr <- min_proba * 100
 
-  vapply(ex, function(df) {
+  t3 <- vapply(ex, function(df) {
     cov   <- df$coverage_fraction
     denom <- sum(cov, na.rm = TRUE)
     if (!length(cov) || denom == 0) return(NA_real_)  # unit off-raster
@@ -467,4 +493,5 @@ indicateur_t3_coupes_rases <- function(units,
     num <- sum(cov[ok][in_win] * w)
     100 * num / denom
   }, numeric(1))
+  .indicateur_resultat(units, "T3", t3)
 }

@@ -39,6 +39,9 @@ get_language <- function() {
 #' Set language manually
 #'
 #' @param lang Language code ("fr" or "en")
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{

@@ -26,6 +26,11 @@ live in \code{\link{load_eobs_source}}; this only extracts the per-year stack at
 so the app can pass an already-loaded stack and answer every click without
 re-reducing the daily netCDF.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \examples{
 \dontrun{
 stk <- load_eobs_source(aoi, var = "tx", nc = "eobs_tx.nc", source = "nc")

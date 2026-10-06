@@ -7,8 +7,7 @@
 embed_query(
   text,
   provider = c("mistral", "openai", "voyage"),
-  api_key = NULL,
-  lang = NULL
+  api_key = NULL
 )
 }
 \arguments{
@@ -17,9 +16,6 @@ embed_query(
 \item{provider}{One of `"mistral"` (default), `"openai"`, `"voyage"`.}
 
 \item{api_key}{Character or `NULL`. See [ingest_knowledge_document()].}
-
-\item{lang}{Optional ISO 639-1 language hint (reserved for
-provider-specific model selection; currently unused).}
 }
 \value{
 A numeric vector. Its length is provider-dependent (Mistral
@@ -30,4 +26,8 @@ A numeric vector. Its length is provider-dependent (Mistral
 Thin wrapper over the configured embedding provider. Exported mainly
 for debugging and batch indexing; [retrieve_knowledge()] calls it
 internally.
+}
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
 }

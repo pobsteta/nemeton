@@ -12,19 +12,33 @@ enrich_parcels_bdforet(parcels, bdforet_sf)
 \item{bdforet_sf}{sf object. BD Forêt V2 formation_vegetale layer.}
 }
 \value{
-A data.frame with columns `species`, `age`, `density` (one row
-  per parcel). Parcels with no BD Forêt coverage get NA values.
+A data.frame with columns `species` (four-letter code), `age`
+  and `density` (both always \code{NA}; one row per parcel). Parcels with no BD
+  Forêt coverage get NA values.
 }
 \description{
 Performs spatial intersection between parcels and BD Forêt V2 polygons
-to extract dominant species, then maps IGN essence codes to allometric
-model species names. Used upstream of indicator functions that accept
-`species`/`age` unit columns (P2 station in CHM mode, C1 biomass in
-allometric mode).
+to extract the dominant essence (largest area), then maps the BD Forêt
+label to the four-letter species code the rest of the package reads
+(site-index curves, conifer test, IFN tarifs, wood density): e.g.
+\code{"Sapin, épicéa"} -> \code{"ABAL"}, \code{"Chênes décidus"} ->
+\code{"QUPE"}, \code{"Pin sylvestre"} -> \code{"PISY"}. Generic labels map
+to the genus-level fallbacks \code{"CONIFER_GENUS"} / \code{"BROADLEAF_GENUS"};
+a mixed broadleaf/conifer stand (\code{"Mixte"}), \code{"NC"}, \code{"NR"} or
+an unknown label give \code{NA}. Used upstream of indicator functions that
+accept `species`/`age` unit columns (P2 station in CHM mode, P3, C1).
 }
 \details{
-The returned `density` column is a canopy-cover fraction (default
-\code{0.7}), suitable for the C1 allometric formula. It is NOT a
-stems-per-hectare figure, so do not feed it to
-\code{indicateur_p1_volume()} as `density_field`.
+BD Forêt V2 carries no stand age: `age` is always \code{NA} (no invented
+value; before 1.0.0 it was a constant 60 years, spec 056). Supply a
+measured age (inventory, T1) to compute the site index.
+
+The returned `density` column is always \code{NA}: BD Forêt does not
+measure canopy cover (before 1.0.0 it was a constant 0.7). Supply a
+measured canopy-cover fraction for the C1 allometric formula; it is not a
+stems-per-hectare figure for \code{indicateur_p1_volume()}.
+}
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
 }

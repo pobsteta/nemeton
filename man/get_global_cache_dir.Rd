@@ -20,3 +20,7 @@ The environment variable \code{NEMETON_CACHE_DIR}, when set, takes precedence
 The function only computes the path: it never creates the directory.
 Callers create the sub-directory they need when they first write to it.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}

@@ -100,7 +100,9 @@ Falls back to 0.5 without \pkg{SPEI}.
 \itemize{
   \item aspect_risk: south-facing = max risk
   \item slope_risk: steep slopes = runoff = dry
-  \item twi_risk: low TWI = dry
+  \item twi_risk: low TWI = dry. \code{1 - clamp((TWI - 2.5) / 6.5, 0, 1)},
+on a TWI referenced to a 2 m grid: fixed window [2.5, 9] shared with
+W3 and F2 (spec 056), no longer the maximum of the extent.
 }
 topo_risk = 0.4*aspect_risk + 0.3*slope_risk + 0.3*twi_risk
 
@@ -121,6 +123,11 @@ against the \eqn{0.3\;m^3/m^3} field-capacity reference, and
 R3 is multiplied by \code{1 - sm_relief_strength * relief}.
 Moist soil buffers drought stress.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 library(nemeton)

@@ -21,6 +21,11 @@ A list with the source configuration, or NULL if not found.
 \description{
 Returns the URL or configuration for a specific data source in a country.
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 # Get DEM layer config for France
 dem <- get_data_source("dem", "FR")

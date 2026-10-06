@@ -9,9 +9,7 @@ indicateur_s3_population(
   population_grid = NULL,
   population_field = NULL,
   method = c("insee", "local", "proxy"),
-  buffer_radii = c(5000, 10000, 20000),
-  column_name = "S3",
-  lang = "en"
+  buffer_radii = c(5000, 10000, 20000)
 )
 }
 \arguments{
@@ -26,17 +24,13 @@ no longer exists and raises an error.}
 
 \item{buffer_radii}{Numeric vector. Buffer distances (m) for population counts. Default c(5000, 10000, 20000).}
 
-\item{column_name}{Character. Name for output column (main indicator). Default "S3".}
 
-\item{lang}{Character. Currently unused (messages are in English); kept for
-backward compatibility. Default "en".}
 \item{population_field}{Character or \code{NULL}. Name of the population column of
 \code{population_grid} when it is an \code{sf}. \code{NULL} (default) looks for
 \code{ind}, \code{pop} or \code{population} (INSEE Filosofi names it \code{ind}).}
 }
 \value{
-sf object with added columns: \code{S3} (named after \code{column_name},
-population density in inhabitants/km2 within the first buffer),
+sf object with added columns: \code{S3} (population density in inhabitants/km2 within the first buffer),
 \code{S3_densite} (same value), and the population counts \code{S3_5km},
 \code{S3_10km}, \code{S3_20km} within the three buffers of
 \code{buffer_radii} (the names are kept whatever the radii). Without
@@ -65,6 +59,11 @@ potential and recreational use intensity.
   \item WorldPop or GPW for international applications
 }
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 data(massif_demo_units)

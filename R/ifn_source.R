@@ -47,6 +47,9 @@
 #' @return A list with `campagne` (integer, the last campaign covered),
 #'   `millesime` (e.g. `"2005-2024"`) and `url`.
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -90,6 +93,9 @@ ifn_campagne_disponible <- function(depuis = NULL, back = 5L) {
 #'
 #' @return The path to the cached `.zip`, invisibly, with attributes
 #'   `campagne` and `millesime`.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -187,6 +193,9 @@ ifn_telecharger <- function(dest_dir, campagne = NULL, force = FALSE) {
 #'
 #' @return A named list of data.frames, one per requested table, carrying a
 #'   `millesime` attribute.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @references
 #' IGN — Inventaire forestier national français, Données brutes, Campagnes

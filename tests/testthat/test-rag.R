@@ -379,7 +379,8 @@ test_that("retrieve_knowledge warns on a mixed-provider corpus", {
   con <- local_rag_con()
   ingest_fake(con, "scolyte epicea",
     metadata = list(title = "M", lang = "fr", doc_type = "note"), provider = "mistral")
-  ingest_fake(con, "scolyte epicea",
+  # Contenu distinct : un contenu identique serait ignoré (anti-doublon).
+  ingest_fake(con, "scolyte epicea sapin",
     metadata = list(title = "O", lang = "fr", doc_type = "note"), provider = "openai")
   testthat::local_mocked_bindings(
     .embed_texts = function(texts, ...) fake_embed(texts), .package = "nemeton")
@@ -581,4 +582,63 @@ test_that("un texte en UTF-8 invalide est decoupe sans erreur", {
   segs <- nemeton:::.source_to_segments(f)
   expect_true(validUTF8(segs[[1]]$text))
   expect_identical(segs[[1]]$text, "chêne pédonculé")
+})
+
+
+# ---- Anti-doublon (1.0.0) ----------------------------------------------
+
+test_that("ingest_knowledge_document ignore un contenu déjà ingéré et rend l'id existant", {
+  con <- local_rag_con()
+  meta <- list(title = "Scolytes", lang = "fr", doc_type = "note")
+  words <- paste(paste0("scolyte", seq_len(1500)), collapse = " ")
+
+  first <- ingest_fake(con, words, metadata = meta)
+  expect_false(first$duplicate)
+  expect_gt(first$n_chunks, 1L)  # plusieurs chunks : comparaison complète
+
+  # Même contenu (autre titre) : aucun embedding, aucune insertion.
+  testthat::local_mocked_bindings(
+    .embed_texts = function(texts, ...) stop("must not embed a duplicate"),
+    .package = "nemeton")
+  expect_message(
+    again <- ingest_knowledge_document(
+      con, words, metadata = list(title = "Copie", lang = "fr", doc_type = "note")),
+    "already ingested", class = "nemeton_knowledge_duplicate")
+  expect_true(again$duplicate)
+  expect_identical(again$document_id, first$document_id)
+  expect_equal(nrow(list_knowledge_documents(con)), 1L)
+  expect_equal(
+    DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM knowledge_chunk")$n,
+    first$n_chunks)
+})
+
+test_that("anti-doublon : un contenu qui ne diffère que par la fin est ingéré", {
+  con <- local_rag_con()
+  meta <- list(title = "A", lang = "fr", doc_type = "note")
+  base <- paste(paste0("mot", seq_len(1500)), collapse = " ")
+  a <- ingest_fake(con, base, metadata = meta)
+  expect_gt(a$n_chunks, 1L)
+  # Même premier chunk, suite différente : pas un doublon.
+  b <- ingest_fake(con, paste(base, "fin differente"), metadata = meta)
+  expect_false(b$duplicate)
+  expect_false(identical(a$document_id, b$document_id))
+  # Préfixe strict (moins de chunks) : pas un doublon non plus.
+  c <- ingest_fake(con, paste(paste0("mot", seq_len(30)), collapse = " "),
+                   metadata = meta)
+  expect_false(c$duplicate)
+  expect_equal(nrow(list_knowledge_documents(con)), 3L)
+})
+
+test_that("ingest_knowledge_reference : une même référence n'est pas dupliquée", {
+  con <- local_rag_con()
+  testthat::local_mocked_bindings(
+    .embed_texts = function(texts, ...) fake_embed(texts), .package = "nemeton")
+  meta <- list(title = "Guide des scolytes", lang = "fr", doc_type = "guide",
+               author = "ONF", pub_date = "2020-01-01")
+  r1 <- ingest_knowledge_reference(con, metadata = meta, abstract = "Résumé.")
+  r2 <- suppressMessages(
+    ingest_knowledge_reference(con, metadata = meta, abstract = "Résumé."))
+  expect_true(r2$duplicate)
+  expect_identical(r2$document_id, r1$document_id)
+  expect_equal(nrow(list_knowledge_documents(con)), 1L)
 })

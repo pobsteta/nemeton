@@ -36,6 +36,11 @@ GéoSAS OGC API-EDR already used for BILJOU). SAFRAN is a gridded reanalysis,
 not a station network, but that is exactly what meteoland needs as reference
 — see the P4 brief. The data source is thus already wired; no new one.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{eobs_downscale}}, \code{\link{load_biljou_forcing}}
 }

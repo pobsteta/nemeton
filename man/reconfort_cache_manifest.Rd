@@ -53,6 +53,11 @@ so the caller reuses the same machinery (\code{\link{read_reconfort_layer}},
 raster cache, toggles, opacity). Alerts are not included (they are read
 from the \code{alert} table independently).
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{reconfort_layer_manifest}}, \code{\link{read_reconfort_layer}},
 \code{\link{run_reconfort_dieback}}

@@ -12,6 +12,11 @@ Character vector of region codes.
 \description{
 List available species regions
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 list_species_regions()  # c("BFC", "EU")
 

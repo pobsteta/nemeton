@@ -150,7 +150,7 @@ test_that("indicateur_s1_routes validates input types", {
   )
 })
 
-test_that("indicateur_s1_routes uses custom column name", {
+test_that("indicateur_s1_routes always writes its code column (no column_name, spec 057)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
@@ -162,13 +162,12 @@ test_that("indicateur_s1_routes uses custom column name", {
     )
   )
 
-  result <- indicateur_s1_routes(
-    units = test_units,
-    column_name = "road_distance"
+  expect_error(
+    indicateur_s1_routes(units = test_units, column_name = "road_distance"),
+    "unused argument"
   )
-
-  expect_true("road_distance" %in% names(result))
-  expect_false("S1" %in% names(result))
+  result <- indicateur_s1_routes(units = test_units)
+  expect_true("S1" %in% names(result))
 })
 
 test_that("indicateur_s1_routes resolves roads and DEM from layers", {
@@ -515,7 +514,7 @@ test_that("indicateur_s2_bati validates input", {
   )
 })
 
-test_that("indicateur_s2_bati uses custom column name", {
+test_that("indicateur_s2_bati always writes its code column (no column_name, spec 057)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
@@ -527,13 +526,12 @@ test_that("indicateur_s2_bati uses custom column name", {
     )
   )
 
-  result <- indicateur_s2_bati(
-    units = test_units,
-    column_name = "building_distance"
+  expect_error(
+    indicateur_s2_bati(units = test_units, column_name = "building_distance"),
+    "unused argument"
   )
-
-  expect_true("building_distance" %in% names(result))
-  expect_false("S2" %in% names(result))
+  result <- indicateur_s2_bati(units = test_units)
+  expect_true("S2" %in% names(result))
 })
 
 test_that("indicateur_s2_bati resolves buildings and DEM from layers", {
@@ -765,7 +763,7 @@ test_that("indicateur_s3_population uses buffer_radii parameter", {
   expect_true("S3" %in% names(result))
 })
 
-test_that("indicateur_s3_population uses custom column name", {
+test_that("indicateur_s3_population always writes its code column (no column_name, spec 057)", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
@@ -777,12 +775,12 @@ test_that("indicateur_s3_population uses custom column name", {
     )
   )
 
-  result <- indicateur_s3_population(
-    test_units,
-    column_name = "pop_score"
+  expect_error(
+    indicateur_s3_population(test_units, column_name = "pop_score"),
+    "unused argument"
   )
-
-  expect_true("pop_score" %in% names(result))
+  result <- indicateur_s3_population(test_units)
+  expect_true("S3" %in% names(result))
 })
 
 test_that("indicateur_s3_population S3 equals S3_5km (primary = first buffer)", {
@@ -1288,12 +1286,12 @@ test_that("S1 with layers resolving DEM from lidar_mnt when dem key absent", {
   expect_true(result$S1[1] >= 0)
 })
 
-test_that("S1 with lang = 'fr' produces a valid result", {
+test_that("S1 without data produces NA", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 2)
-  result <- nemeton::indicateur_s1_routes(units = test_units, lang = "fr")
+  result <- nemeton::indicateur_s1_routes(units = test_units)
   expect_s3_class(result, "sf")
   expect_true("S1" %in% names(result))
   # Without DEM/roads -> NA
@@ -1399,12 +1397,12 @@ test_that("S2 with layers having lidar_mnt only and buildings", {
   expect_false(is.na(result$S2[1]))
 })
 
-test_that("S2 with lang = 'fr' returns valid result (NA case)", {
+test_that("S2 without data returns NA", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 1)
-  result <- nemeton::indicateur_s2_bati(units = test_units, lang = "fr")
+  result <- nemeton::indicateur_s2_bati(units = test_units)
   expect_s3_class(result, "sf")
   expect_true("S2" %in% names(result))
   expect_true(is.na(result$S2[1]))
@@ -1530,19 +1528,15 @@ test_that("S3 with single feature returns scalar S3", {
   expect_true(is.na(result$S3))
 })
 
-test_that("S3 with custom column_name uses that name for primary indicator", {
+test_that("S3 primary indicator equals S3_5km", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 2)
-  result <- nemeton::indicateur_s3_population(
-    test_units,
-    column_name = "pop_pressure"
-  )
+  result <- nemeton::indicateur_s3_population(test_units)
 
-  expect_true("pop_pressure" %in% names(result))
-  # pop_pressure should equal S3_5km
-  expect_equal(result$pop_pressure, result$S3_5km)
+  expect_true("S3" %in% names(result))
+  expect_equal(result$S3, result$S3_5km)
 })
 
 test_that("S3 msg_info is called with correct median values", {

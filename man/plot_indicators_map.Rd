@@ -79,6 +79,11 @@ Creates thematic choropleth maps using ggplot2. Supports:
 The function uses \code{geom_sf()} for spatial rendering and applies
 perceptually uniform color scales by default (viridis).
 }
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 # Single indicator map

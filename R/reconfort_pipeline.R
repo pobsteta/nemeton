@@ -578,10 +578,10 @@
 #'
 #' Orchestrates a full RECONFORT run for one monitoring zone: validate
 #' the conda/IOTA2 environment, fetch the Random-Forest model
-#' ([ensure_reconfort_model()]) and the broadleaf mask
-#' ([ensure_reconfort_oso_mask()]), resolve the AOI to Sentinel-2 MGRS
-#' tile(s) ([reconfort_aoi_tiles()]), ingest the S2 archives
-#' ([reconfort_ingest_s2()]), then drive the vendored IOTA2
+#' (`ensure_reconfort_model()`) and the broadleaf mask
+#' (`ensure_reconfort_oso_mask()`), resolve the AOI to Sentinel-2 MGRS
+#' tile(s) (`reconfort_aoi_tiles()`), ingest the S2 archives
+#' (`reconfort_ingest_s2()`), then drive the vendored IOTA2
 #' map-production (sampling + classification + OSO masking + continuous
 #' score). Produces the classification, probability and continuous-score
 #' rasters (EPSG:2154) plus a `run_meta.json`.
@@ -619,7 +619,7 @@
 #'   (`S2_start`/`S2_end`), so a custom download window cannot widen the
 #'   analysis beyond what the pre-trained model expects. See
 #'   *Temporal window*.
-#' @param v_model RF model version (see [RECONFORT_MODELS]). Default
+#' @param v_model RF model version (see `RECONFORT_MODELS`). Default
 #'   `"v3"` (oak, 2-year series).
 #' @param binary_mask Broadleaf mask control. `NULL` (default) fetches
 #'   and uses the OSO 2021 deciduous mask; a path uses a custom mask;
@@ -664,7 +664,7 @@
 #'   run on a directory held by a live process aborts. A pre-existing
 #'   `output_dir` is never deleted, whatever `keep_workdir` says.
 #' @param geodes_config Path to `pygeodes-config.json` (see
-#'   [reconfort_ingest_s2()]). Default resolves the option / user dir.
+#'   `reconfort_ingest_s2()`). Default resolves the option / user dir.
 #' @param model_cache_dir,mask_cache_dir Override caches for the model /
 #'   mask fetches. Default per-user nemeton caches.
 #' @param tiles Explicit MGRS tile code(s); resolved from the zone AOI
@@ -736,6 +736,9 @@
 #'   completed phase) and `NA` / `NULL` in place of the outputs the
 #'   cancelled phases would have produced. A genuine failure still
 #'   aborts rather than returning a status.
+#' @section Lifecycle:
+#' Experimental: may change in any release, without deprecation (spec 057).
+#'
 #' @export
 run_reconfort_dieback <- function(con, zone_id, cache_dir,
                                   s2_year           = as.integer(format(Sys.Date(), "%Y")),

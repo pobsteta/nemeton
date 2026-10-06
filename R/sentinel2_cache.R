@@ -47,7 +47,7 @@
 #'
 #' @seealso [ingest_sentinel2_timeseries()] for the FAST pipeline that
 #'   builds NDVI / NBR indices and writes them to `obs_pixel`.
-#' @seealso [FORDEAD_BANDS] for the canonical list of FORDEAD bands.
+#' @seealso `FORDEAD_BANDS` for the canonical list of FORDEAD bands.
 #'
 #' @examples
 #' \dontrun{
@@ -62,7 +62,8 @@
 #' nrow(res$scenes_df)   # number of scenes available
 #' }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
                                          start, end, cache_dir,
                                          max_cloud = 20,

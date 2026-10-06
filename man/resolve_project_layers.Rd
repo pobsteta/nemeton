@@ -127,6 +127,11 @@ height models. `chm_vegetation_0_2m.tif` is excluded as well: it is
 a masked derivative, not the reference height model.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 \dontrun{
 dem <- resolve_project_dem("C:/.../projects/20260416_112240_gomv",

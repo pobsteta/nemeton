@@ -38,8 +38,9 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ## 2. Le calcul
 
 W4 n'est pas calculé par Néméton : il **extrait** une couche produite par le
-moteur microclimatique (`microclimf`, orchestré par `microclimate_run()`), puis
-la normalise.
+moteur microclimatique (`microclimf`), fournie précalculée dans l'objet
+`micro`, puis la normalise. L'orchestration intégrée au cœur n'est pas encore
+branchée (spec 027 L1).
 
 ```
 W4_vpd = moyenne zonale du raster `vpd` sur l'unite      kPa
@@ -65,7 +66,7 @@ d'un modèle**, pas à un capteur.
 | NDP | Ce qui existe | W4 |
 |---|---|---|
 | **0** sans microclimat | rien | **`NA`** — l'indicateur n'est pas calculé |
-| **0** + `microclimate_run()` | forçage ERA5-Land + CHM ML | **calculé**, drapeau `microclimate_model` |
+| **0** + run `microclimf` | forçage ERA5-Land + CHM ML | **calculé**, drapeau `microclimate_model` |
 | **1** | + structure LiDAR HD en entrée du modèle | même grandeur, canopée mieux décrite |
 | **2** | + structure drone | idem, résolution supérieure |
 | **3–4** | + capteurs in situ | validation du modèle, pas remplacement |
@@ -101,7 +102,7 @@ indicateur_w4_vpd()  ->  colonnes W4 (0-100) et W4_vpd (kPa)
 ```
 
 W4 partage son objet `micro` avec **A3** (T°max sous couvert), **A4**
-(tamponnement) et **R6** (sensibilité) : un seul `microclimate_run()` alimente
+(tamponnement) et **R6** (sensibilité) : un seul run `microclimf` alimente
 les quatre.
 
 ## 6. Diagramme d'ensemble
@@ -120,7 +121,7 @@ les quatre.
 <text x="588" y="16">AVAL</text>
 </g>
 <rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
-<text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">microclimate_run() — microclimf</text>
+<text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">run microclimf (objet micro)</text>
 <text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">forçage ERA5-Land + CHM ML</text>
 <text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">couche vpd, été</text>
 <rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
@@ -178,5 +179,5 @@ Un indicateur d'extraction, pas de calcul. Toute la physique est en amont, dans 
 |---|---|
 | Fonction W4 | `R/indicators-microclimate.R:179` |
 | Bornes | `.MICRO_BOUNDS` — `R/indicators-microclimate.R:21-26` |
-| Orchestration | `microclimate_run()`, `microclimate_detect_years()` |
+| Orchestration | run `microclimf` externe (objet `micro`) ; années : `microclimate_detect_years()` |
 | Spécification | `specs/027-regeneration-microclimat/`, ADR-014 |

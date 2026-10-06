@@ -69,6 +69,11 @@ Falls back to the uniform soil, with a warning, when SoilGrids cannot be
 reached. Units whose \code{ewm} is \code{NA} or non-positive get the \code{ewm} default,
 since \code{\link[biljouR]{biljou_soil}} rejects non-positive reserves.
 }
+\section{Lifecycle}{
+
+Experimental: may change in any release, without deprecation (spec 057).
+}
+
 \seealso{
 \code{\link{ewm_depuis_soilgrids}}, \code{\link{regen_bilan_hydrique}}
 }

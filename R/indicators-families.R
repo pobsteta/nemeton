@@ -237,6 +237,101 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
   .dem_working_res(dem, target_res = target_res)
 }
 
+# Version de la méthode TWI, portée par la clé de cache. À incrémenter dès que
+# la valeur d'un TWI calculé sur le même MNT change : les caches des projets
+# sont alors recalculés au lieu d'être relus (1.0.0 casse les anciens projets
+# sans migration).
+#   v2 (1.0.0, spec 056) : MNT lon/lat reprojeté en métrique avant le calcul,
+#                          TWI ramené à la référence de 2 m (.twi_ref_2m).
+.TWI_CACHE_VERSION <- "twi_v2"
+
+# Résolution de référence du TWI (m) : celle du LiDAR HD ramené à la grille de
+# travail du paquet (.NEMETON_TOPO_TARGET_RES).
+.TWI_REF_RES <- 2
+
+# TWI ramené à la référence de 2 m (spec 056, constat 2).
+#
+# L'aire spécifique d'une cellule vaut a = A / pas : à pente égale et à
+# nombre de cellules drainées égal, TWI = ln(a / tan(pente)) croît donc de
+# ln(pas) avec le pas de la grille. Mesuré sur les quatre projets LiDAR,
+# TWI(2 m) − TWI(25 m) vaut −1,7 à −2,9, pour ln(25/2) = 2,53 attendu. Une
+# fenêtre fixe de normalisation (W3, F2, R3 : [2,5 ; 9]) ne compare donc deux
+# projets qu'à pas égal. On recentre :
+#
+#     TWI_2m = TWI_brut − ln(pas / 2)        (pas en mètres)
+#
+# Le recentrage est exact pour la composante de pas (même réseau, même pente) ;
+# il ne corrige pas ce qu'un MNT grossier lisse du relief (talwegs, ruptures).
+# Sans effet à 2 m, −2,53 à 25 m, +1,39 à 0,5 m (MNT natif, target_res = NULL).
+.twi_ref_2m <- function(twi, step = terra::res(twi)[1]) {
+  twi - log(step / .TWI_REF_RES)
+}
+
+# Fenêtre commune de normalisation du TWI (référence 2 m), partagée par W3
+# (normalize_indicator), F2 (composante humidité) et R3 (composante topo) —
+# décision Pascal 2026-10-06, spec 056. Bornes = quantiles 5-95 % poolés à poids
+# égal sur les six projets en cache, grille métrique (q5 = 2,56, q95 = 8,99) :
+# aucune UGF ne sature à 2 m. Remplace [2,5 ; 4,5] (W3, 75-100 % des UGF LiDAR
+# à 100), [2,5 ; 10] (F2) et TWI / max(TWI de l'emprise) (R3).
+.TWI_WINDOW <- c(lo = 2.5, hi = 9)
+
+# Seuil TWI des zones humides de W2, sur le TWI ramené à 2 m (cf. W2).
+.W2_TWI_SEUIL <- 9.5
+
+# TWI -> [0, 1] sur la fenêtre commune (vecteur ou SpatRaster).
+.twi_norm <- function(twi) {
+  lo <- .TWI_WINDOW[["lo"]]; hi <- .TWI_WINDOW[["hi"]]
+  x <- (twi - lo) / (hi - lo)
+  if (inherits(x, "SpatRaster")) return(terra::clamp(x, lower = 0, upper = 1))
+  pmin(1, pmax(0, x))
+}
+
+# CRS métrique du TWI : celui des unités s'il est projeté, sinon ETRS89-LAEA
+# (EPSG:3035, ADR-008). Même règle que le chemin fireexposuR de R1.
+.twi_metric_crs <- function(units = NULL) {
+  .fire_exp_metric_crs(units)
+}
+
+# Libellé stable d'un CRS (code d'autorité si possible) pour une clé de cache.
+.crs_label <- function(crs) {
+  code <- tryCatch(terra::crs(terra::rast(crs = crs), describe = TRUE)$code,
+                   error = function(e) NA_character_)
+  if (!is.na(code) && nzchar(code)) return(code)
+  substr(rlang::hash(crs), 1, 12)
+}
+
+# MNT ramené dans un CRS métrique avant tout calcul de TWI.
+#
+# Le TWI = ln(a / tan(pente)) prend l'aire spécifique a = A / largeur dans
+# l'unité du raster. Sur un MNT en EPSG:4326 (repli IGN WMS de Couchey et
+# d'Aumur), cette unité est le DEGRÉ (pas ≈ 2,5e-4) : le TWI perdait
+# ln(19 m / 2,5e-4) ≈ 11 unités et finissait écrêté à 0 — W3 = 0 sur les
+# 76 UGF de Couchey, composante TWI de F2 = 0 (spec 056, constat 1). Même
+# correctif que pour R1 (.fire_exp_working_dem) : reprojeter dans `crs`, à la
+# résolution native que choisit terra. Un MNT déjà projeté est rendu tel quel.
+.twi_metric_dem <- function(dem, crs = "EPSG:3035") {
+  if (is.null(dem) || !inherits(dem, "SpatRaster")) return(dem)
+  if (!terra::is.lonlat(dem)) return(dem)
+  if (is.null(crs)) crs <- "EPSG:3035"
+  deg <- terra::res(dem)[1]
+  dem <- terra::project(dem, crs, method = "bilinear")
+  cli::cli_alert_info(
+    "TWI: lon/lat DEM ({signif(deg, 3)} deg) projected to a metric grid ({round(terra::res(dem)[1], 1)}m)"
+  )
+  dem
+}
+
+# Aligne un TWI sur la grille d'un autre raster (pente, exposition…). Le TWI
+# d'un MNT lon/lat sort désormais sur une grille métrique : il faut alors le
+# reprojeter, pas seulement le rééchantillonner.
+.twi_on_grid <- function(twi, template) {
+  if (terra::compareGeom(twi, template, stopOnError = FALSE)) return(twi)
+  if (!terra::same.crs(twi, template)) {
+    return(terra::project(twi, template, method = "bilinear"))
+  }
+  terra::resample(twi, template, method = "bilinear")
+}
+
 # Nom du cache fichier indexé sur l'empreinte du DEM (+ résolution cible). Un nom
 # fixe « twi.tif » réutilisait à tort un TWI calculé depuis un AUTRE DEM (ex. WMS
 # 25 m) même après acquisition du LiDAR HD : le fichier était rechargé quelle que
@@ -246,16 +341,23 @@ get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
 }
 
 get_or_compute_twi <- function(dem, cache_dir = NULL,
-                               twi_target_res = .topo_target_res()) {
+                               twi_target_res = .topo_target_res(),
+                               crs = NULL) {
   dem <- .normalize_crs(dem)
+  if (is.null(crs)) crs <- "EPSG:3035"
   # Key = empreinte DEM (dimensions + extent + CRS) + résolution TWI *effective*.
   # Effective et non demandée : sur un BD ALTI 25 m, `twi_target_res` 2 ou 10
   # produisent le même TWI, et deux indicateurs réglés différemment doivent
   # partager l'entrée de cache plutôt que recalculer à l'identique.
-  key <- paste(nrow(dem), ncol(dem),
+  # 1.0.0 (spec 056) : la clé porte la version de la méthode (.TWI_CACHE_VERSION)
+  # — un TWI d'avant le correctif lon/lat ne doit jamais ressortir d'un cache —
+  # et, pour un MNT lon/lat, le CRS métrique dans lequel il est reprojeté.
+  key <- paste(.TWI_CACHE_VERSION,
+               nrow(dem), ncol(dem),
                paste(as.vector(terra::ext(dem)), collapse = ","),
                terra::crs(dem, describe = TRUE)$code,
                signif(.dem_working_res_value(dem, twi_target_res), 6),
+               if (terra::is.lonlat(dem)) .crs_label(crs) else "",
                sep = "|")
 
   # 1. Memory cache (instant)
@@ -283,9 +385,9 @@ get_or_compute_twi <- function(dem, cache_dir = NULL,
 
   # 3. Compute: prefer GRASS, fallback terra D8 (agrégation à twi_target_res)
   if (requireNamespace("fasterRaster", quietly = TRUE)) {
-    twi_raster <- calculate_twi_grass(dem, target_res = twi_target_res)
+    twi_raster <- calculate_twi_grass(dem, target_res = twi_target_res, crs = crs)
   } else {
-    twi_raster <- calculate_twi_terra(dem, target_res = twi_target_res)
+    twi_raster <- calculate_twi_terra(dem, target_res = twi_target_res, crs = crs)
   }
 
   # Save to both caches
@@ -340,7 +442,10 @@ get_or_compute_twi <- function(dem, cache_dir = NULL,
 #'   volume to total aboveground dry biomass (branches, bark).
 #'   Default \code{1.30} (IPCC 2006 temperate-forest default).
 #'
-#' @return Numeric vector of carbon stock values (tC/ha)
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{C1}: carbon stock values (tC/ha)
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -353,6 +458,32 @@ get_or_compute_twi <- function(dem, cache_dir = NULL,
 #' results <- indicateur_c1_biomasse(units)
 #' }
 indicateur_c1_biomasse <- function(units,
+                                     layers = NULL,
+                                     species_col = "species",
+                                     age_col = "age",
+                                     density_col = "density",
+                                     chm = NULL,
+                                     dbh_col = "dbh",
+                                     stems_col = "stems_ha",
+                                     h_dom_percentile = 0.9,
+                                     bef = 1.30) {
+  .indicateur_resultat(units, "C1", .c1_biomasse_valeur(
+    units = units,
+    layers = layers,
+    species_col = species_col,
+    age_col = age_col,
+    density_col = density_col,
+    chm = chm,
+    dbh_col = dbh_col,
+    stems_col = stems_col,
+    h_dom_percentile = h_dom_percentile,
+    bef = bef
+  ))
+}
+
+# Calcul de C1 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `C1` (contrat 1.0, spec 057).
+.c1_biomasse_valeur <- function(units,
                                      layers = NULL,
                                      species_col = "species",
                                      age_col = "age",
@@ -465,7 +596,10 @@ indicateur_c1_biomasse <- function(units,
   if (!is.null(bdforet_sf) && nrow(bdforet_sf) > 0) {
     cli::cli_alert_info("Enriching parcels with BD For\u00eat data for C1")
     enriched <- enrich_parcels_bdforet(units_sf, bdforet_sf)
-    if (any(!is.na(enriched$species))) {
+    # Le modèle allométrique a besoin d'un âge, que la BD Forêt ne porte pas
+    # (age = NA depuis 1.0.0, spec 056 ; c'était 60 ans inventés). Sans âge,
+    # on passe au repli NDVI au lieu de rendre une biomasse fabriquée.
+    if (any(!is.na(enriched$species) & !is.na(enriched$age))) {
       biomass <- calculate_allometric_biomass(
         enriched$species, enriched$age, enriched$density
       )
@@ -518,8 +652,11 @@ indicateur_c1_biomasse <- function(units,
 #'   per-unit mean FAPAR and ignores \code{ndvi_layer}. The raster
 #'   is expected in the CRS of \code{units}.
 #'
-#' @return Numeric vector of NDVI mean values (0-1 scale), or list with
-#'   mean and trend if trend = TRUE
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{C2}:
+#'   mean NDVI (0-1 scale), or mean FAPAR in FAPAR mode.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -536,6 +673,22 @@ indicateur_c1_biomasse <- function(units,
 #' results <- indicateur_c2_ndvi(units, layers, fapar = fapar)
 #' }
 indicateur_c2_ndvi <- function(units,
+                                  layers,
+                                  ndvi_layer = "ndvi",
+                                  trend = FALSE,
+                                  fapar = NULL) {
+  .indicateur_resultat(units, "C2", .c2_ndvi_valeur(
+    units = units,
+    layers = layers,
+    ndvi_layer = ndvi_layer,
+    trend = trend,
+    fapar = fapar
+  ))
+}
+
+# Calcul de C2 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `C2` (contrat 1.0, spec 057).
+.c2_ndvi_valeur <- function(units,
                                   layers,
                                   ndvi_layer = "ndvi",
                                   trend = FALSE,
@@ -612,9 +765,12 @@ indicateur_c2_ndvi <- function(units,
 #' @param proximity_m Numeric. Maximum distance (m) for proximity bonus. Default 500.
 #' @param proximity_ref Numeric. Equivalent density bonus (m/ha) at distance 0. Default 50.
 #'
-#' @return Numeric vector of network density (m/ha). NA for every unit when
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{W1}: network density (m/ha). NA for every unit when
 #'   the watercourse layer is missing (no measurement); a supplied but empty
 #'   layer gives 0.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -623,6 +779,24 @@ indicateur_c2_ndvi <- function(units,
 #' results <- indicateur_w1_reseau(units, layers, watercourse_layer = "streams")
 #' }
 indicateur_w1_reseau <- function(units,
+                                    layers,
+                                    watercourse_layer = "water_network",
+                                    buffer = 0,
+                                    proximity_m = 500,
+                                    proximity_ref = 50) {
+  .indicateur_resultat(units, "W1", .w1_reseau_valeur(
+    units = units,
+    layers = layers,
+    watercourse_layer = watercourse_layer,
+    buffer = buffer,
+    proximity_m = proximity_m,
+    proximity_ref = proximity_ref
+  ))
+}
+
+# Calcul de W1 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `W1` (contrat 1.0, spec 057).
+.w1_reseau_valeur <- function(units,
                                     layers,
                                     watercourse_layer = "water_network",
                                     buffer = 0,
@@ -707,7 +881,7 @@ indicateur_w1_reseau <- function(units,
 #'
 #' Calculates percentage of parcel area classified as wetland or riparian zone.
 #' The wetland area is the UNION of several optional sources (a pixel counted
-#' by two sources is counted once): BD TOPO water surfaces, a TWI threshold,
+#' by two sources is counted once): BD TOPO water surfaces, a TWI threshold (TWI > 9.5 on the TWI referenced to a 2 m grid),
 #' land-cover codes listed in \code{wetland_values}, and — when supplied — the
 #' Theia \code{theia_water} water-occurrence product. Sources are evaluated
 #' on a regular grid of points inside each unit; points where every source is
@@ -738,7 +912,10 @@ indicateur_w1_reseau <- function(units,
 #'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
 #'   resolution.
 #'
-#' @return Numeric vector of wetland coverage (0-100\%)
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{W2}: wetland coverage (0-100\%)
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -747,6 +924,26 @@ indicateur_w1_reseau <- function(units,
 #' results <- indicateur_w2_zones_humides(units, layers, wetland_values = c(50, 51, 52))
 #' }
 indicateur_w2_zones_humides <- function(units,
+                                     layers,
+                                     wetland_layer = "wetlands",
+                                     wetland_values = NULL,
+                                     water_occurrence = NULL,
+                                     occurrence_threshold = 25,
+                                     dem_target_res = .topo_target_res()) {
+  .indicateur_resultat(units, "W2", .w2_zones_humides_valeur(
+    units = units,
+    layers = layers,
+    wetland_layer = wetland_layer,
+    wetland_values = wetland_values,
+    water_occurrence = water_occurrence,
+    occurrence_threshold = occurrence_threshold,
+    dem_target_res = dem_target_res
+  ))
+}
+
+# Calcul de W2 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `W2` (contrat 1.0, spec 057).
+.w2_zones_humides_valeur <- function(units,
                                      layers,
                                      wetland_layer = "wetlands",
                                      wetland_values = NULL,
@@ -781,16 +978,22 @@ indicateur_w2_zones_humides <- function(units,
   # Masques raster : liste de fonctions (valeur -> humide TRUE/FALSE)
   raster_sources <- list()
 
-  # Source 2: TWI threshold (TWI > 12 = potential wetland zones)
+  # Source 2: seuil TWI (zones humides potentielles). Le TWI est ramené à une
+  # grille de 2 m (`TWI − ln(pas/2)`, spec 056) : l'ancien « TWI brut > 12 »
+  # sur un MNT à 25 m correspond à 12 − ln(25/2) ≈ 9,5. Le seuil 9,5 garde la
+  # détection d'avant sur les MNT 25 m et la rend cohérente sur LiDAR
+  # (décision Pascal 2026-10-06 ; aucune vérité terrain disponible).
   dem <- .dem_working_res(get_dem_raster(layers),
                           target_res = dem_target_res, context = "W2")
   if (!is.null(dem)) {
-    cli::cli_alert_info("W2: Adding TWI-based wetland zones (threshold > 12)")
+    seuil_twi <- .W2_TWI_SEUIL
+    cli::cli_alert_info("W2: Adding TWI-based wetland zones (threshold > {seuil_twi}, 2 m reference)")
     # `twi_target_res` suit la résolution de travail : les deux grilles
     # coïncident, le TWI n'est jamais rééchantillonné vers du plus fin.
     twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir,
-                                     twi_target_res = dem_target_res)
-    raster_sources$twi <- list(r = twi_raster, wet = function(v) v > 12)
+                                     twi_target_res = dem_target_res,
+                                     crs = .twi_metric_crs(units))
+    raster_sources$twi <- list(r = twi_raster, wet = function(v) v > .W2_TWI_SEUIL)
   }
 
   # Source 3: land-cover wetland codes (only when wetland_values is given)
@@ -878,6 +1081,13 @@ indicateur_w2_zones_humides <- function(units,
 #' depression filling, flow direction, flow accumulation, then TWI = ln(SCA / tan(slope)).
 #' The terra D8 method is a simpler approximation used as fallback.
 #'
+#' A DEM in geographic coordinates is first projected to a metric CRS (the
+#' units' CRS when projected, else EPSG:3035): the specific catchment area is
+#' in metres, never in degrees. The TWI is then referenced to a 2 m grid,
+#' \code{TWI_2m = TWI - ln(step / 2)} with \code{step} the computation grid
+#' step in metres, because the specific catchment area scales with the step
+#' (spec 056). Values from different DEM resolutions are thus on one scale.
+#'
 #' @param units nemeton_units object
 #' @param layers nemeton_layers object containing DEM raster
 #' @param dem_layer Character. Name of DEM layer in layers object
@@ -891,7 +1101,10 @@ indicateur_w2_zones_humides <- function(units,
 #'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
 #'   resolution.
 #'
-#' @return Numeric vector of TWI mean values
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{W3}: mean TWI, referenced to a 2 m grid.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -900,6 +1113,22 @@ indicateur_w2_zones_humides <- function(units,
 #' results <- indicateur_w3_humidite(units, layers, dem_layer = "dem")
 #' }
 indicateur_w3_humidite <- function(units,
+                                layers,
+                                dem_layer = "dem",
+                                method = c("auto", "grass", "d8"),
+                                dem_target_res = .topo_target_res()) {
+  .indicateur_resultat(units, "W3", .w3_humidite_valeur(
+    units = units,
+    layers = layers,
+    dem_layer = dem_layer,
+    method = method,
+    dem_target_res = dem_target_res
+  ))
+}
+
+# Calcul de W3 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `W3` (contrat 1.0, spec 057).
+.w3_humidite_valeur <- function(units,
                                 layers,
                                 dem_layer = "dem",
                                 method = c("auto", "grass", "d8"),
@@ -929,11 +1158,14 @@ indicateur_w3_humidite <- function(units,
   # Calculate TWI (cached across W2, W3, F2, R3)
   # `twi_target_res` suit la résolution de travail : le DEM reçu est déjà à la
   # bonne grille, l'agrégation interne au TWI est alors un no-op.
+  twi_crs <- .twi_metric_crs(units)
   if (method == "d8") {
-    twi_raster <- calculate_twi_terra(dem, target_res = dem_target_res)
+    twi_raster <- calculate_twi_terra(dem, target_res = dem_target_res,
+                                      crs = twi_crs)
   } else {
     twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir,
-                                     twi_target_res = dem_target_res)
+                                     twi_target_res = dem_target_res,
+                                     crs = twi_crs)
   }
 
   # Extract mean TWI for each unit
@@ -953,7 +1185,11 @@ indicateur_w3_humidite <- function(units,
 #' Calculate TWI using terra (D8 algorithm)
 #' @keywords internal
 #' @noRd
-calculate_twi_terra <- function(dem, target_res = .topo_target_res()) {
+calculate_twi_terra <- function(dem, target_res = .topo_target_res(),
+                                crs = "EPSG:3035") {
+  # Un MNT lon/lat est d'abord reprojeté en métrique (cf. .twi_metric_dem) :
+  # l'aire spécifique ci-dessous est en mètres, jamais en degrés.
+  dem <- .twi_metric_dem(dem, crs)
   # Agréger à la résolution cible : TWI hydrologiquement stable + calcul allégé
   # (cf. .twi_aggregate_dem). target_res = NULL -> pas d'agrégation (repli déjà agrégé).
   dem <- .twi_aggregate_dem(dem, target_res)
@@ -993,8 +1229,12 @@ calculate_twi_terra <- function(dem, target_res = .topo_target_res()) {
 
   # Set a reasonable range for TWI (typically 0-20 in natural landscapes)
   # Extreme values indicate calculation issues
-  twi[twi < 0] <- 0
   twi[twi > 50] <- NA # Flag suspiciously high values
+
+  # Référence 2 m (cf. .twi_ref_2m), PUIS plancher à 0 : le TWI rendu est
+  # toujours positif, sur la même échelle quel que soit le pas de calcul.
+  twi <- .twi_ref_2m(twi, cell_width)
+  twi[twi < 0] <- 0
 
   twi
 }
@@ -1005,9 +1245,12 @@ calculate_twi_terra <- function(dem, target_res = .topo_target_res()) {
 #' depression filling, flow direction/accumulation via wetness().
 #' @keywords internal
 #' @noRd
-calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
-  # Agréger une seule fois ici ; les replis terra reçoivent déjà le DEM agrégé
-  # (target_res = NULL) pour éviter une double agrégation.
+calculate_twi_grass <- function(dem, target_res = .topo_target_res(),
+                                crs = "EPSG:3035") {
+  # Reprojeter un MNT lon/lat AVANT d'agréger (l'agrégation est métrique), puis
+  # agréger une seule fois ici ; les replis terra reçoivent déjà le DEM projeté
+  # et agrégé (target_res = NULL) pour éviter une double agrégation.
+  dem <- .twi_metric_dem(dem, crs)
   dem <- .twi_aggregate_dem(dem, target_res)
   if (!requireNamespace("fasterRaster", quietly = TRUE)) {
     cli::cli_abort("fasterRaster package required for GRASS TWI calculation")
@@ -1047,10 +1290,7 @@ calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
     # Initialize GRASS session
     fasterRaster::faster(grassDir = grass_dir)
 
-    # GRASS TWI requires projected CRS (not lon/lat)
-    if (terra::is.lonlat(dem)) {
-      dem <- terra::project(dem, "EPSG:2154")
-    }
+    # GRASS exige un CRS projeté : le MNT l'est déjà (.twi_metric_dem).
 
     # Convert terra raster to GRaster
     elev <- fasterRaster::fast(dem)
@@ -1061,11 +1301,13 @@ calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
     # Convert back to terra raster
     twi_terra <- terra::rast(twi_grass)
 
-    # Sanitize output
+    # Sanitize output, puis référence 2 m (cf. .twi_ref_2m) — r.topidx calcule
+    # lui aussi l'aire spécifique en surface / pas.
     twi_terra[is.infinite(twi_terra)] <- NA
     twi_terra[is.nan(twi_terra)] <- NA
-    twi_terra[twi_terra < 0] <- 0
     twi_terra[twi_terra > 50] <- NA
+    twi_terra <- .twi_ref_2m(twi_terra, terra::res(dem)[1])
+    twi_terra[twi_terra < 0] <- 0
 
     cli::cli_alert_success("W3: GRASS TWI computed successfully")
     twi_terra
@@ -1151,7 +1393,10 @@ calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
 #'   score. For fertility classes 1-5, pass \code{c(1, 5)}. Values outside
 #'   the range are set to NA with a warning. Ignored by the other sources.
 #'
-#' @return Numeric vector of fertility scores (0-100 scale, higher = more fertile)
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{F1}: fertility scores (0-100 scale, higher = more fertile)
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -1170,6 +1415,31 @@ calculate_twi_grass <- function(dem, target_res = .topo_target_res()) {
 #'                                    rpf_code_col = "UTSDom")
 #' }
 indicateur_f1_fertilite <- function(units,
+                                     layers = NULL,
+                                     soil_layer = "soil",
+                                     fertility_col = "fertility",
+                                     source = c("layer", "soilgrids", "gissol",
+                                                "theia_soil"),
+                                     country = "FR",
+                                     rpf_code_col = "rpf_code",
+                                     texture = NULL,
+                                     fertility_range = c(0, 100)) {
+  .indicateur_resultat(units, "F1", .f1_fertilite_valeur(
+    units = units,
+    layers = layers,
+    soil_layer = soil_layer,
+    fertility_col = fertility_col,
+    source = source,
+    country = country,
+    rpf_code_col = rpf_code_col,
+    texture = texture,
+    fertility_range = fertility_range
+  ))
+}
+
+# Calcul de F1 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `F1` (contrat 1.0, spec 057).
+.f1_fertilite_valeur <- function(units,
                                      layers = NULL,
                                      soil_layer = "soil",
                                      fertility_col = "fertility",
@@ -1357,6 +1627,9 @@ extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_c
 #'
 #' @param cec_x10 Numeric. Raw SoilGrids CEC value (cmol(c)/kg x 10).
 #' @return Numeric vector on the 0-100 scale (higher = more fertile).
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 cec_to_fertility_score <- function(cec_x10) {
   cec <- cec_x10 / 10
@@ -1408,6 +1681,9 @@ extract_fertility_from_soilgrids <- function(units, country = "FR") {
 #' @param coarse_elements Optional numeric vector of coarse-element
 #'   content in percent (0-100). Default \code{NULL} (no penalty).
 #' @return Numeric vector on the 0-100 scale (higher = more fertile).
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 texture_to_fertility_score <- function(clay, silt, sand,
                                        coarse_elements = NULL) {
@@ -1448,6 +1724,9 @@ texture_to_fertility_score <- function(clay, silt, sand,
 #'   contents (any consistent unit — they are renormalised).
 #' @return Numeric vector on the 0-100 scale (higher = more resistant
 #'   to erosion).
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 texture_to_erosion_resistance <- function(clay, silt, sand) {
   total <- clay + silt + sand
@@ -1516,6 +1795,9 @@ extract_fertility_from_theia_soil <- function(units, texture) {
 #' arbitrary RRP vector data against the same crosswalk directly.
 #'
 #' @return A data.frame with 12 columns and 54 rows.
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 read_uts_fertility_table <- function() {
   path <- system.file("extdata", "uts_fertilite_fr.csv",
@@ -1593,7 +1875,9 @@ extract_fertility_from_gissol <- function(units, layers,
 #' accumulation) and slope (erosion risk). Follows the tuto 03 methodology:
 #' F2 = (twi_norm + slope_norm) / 2
 #'
-#' TWI is computed via GRASS (fasterRaster) when available, terra D8 otherwise.
+#' TWI is computed via GRASS (fasterRaster) when available, terra D8 otherwise,
+#' referenced to a 2 m grid (\code{TWI - ln(step / 2)}) and normalised on the
+#' window [2.5, 9] shared with W3 and R3 (spec 056).
 #' Higher values indicate more fertile soil conditions.
 #'
 #' When a Theia \code{theia_soil} texture raster set is supplied via
@@ -1620,10 +1904,13 @@ extract_fertility_from_gissol <- function(units, layers,
 #'   \code{options("nemeton.topo_target_res")}; \code{NULL} keeps the native
 #'   resolution.
 #'
-#' @return Numeric vector of erosion-resistance scores (0-100, higher = more
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{F2}: erosion-resistance scores (0-100, higher = more
 #'   resistant, i.e. LOWER erosion risk). Despite the historical variable name
 #'   inside the function, this is not a fertility score: the ingredients are
 #'   topographic (TWI wetness, slope steepness) plus optional soil texture.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -1632,6 +1919,22 @@ extract_fertility_from_gissol <- function(units, layers,
 #' results <- indicateur_f2_erosion(units, layers)
 #' }
 indicateur_f2_erosion <- function(units,
+                                   layers,
+                                   dem_layer = "dem",
+                                   texture = NULL,
+                                   dem_target_res = .topo_target_res()) {
+  .indicateur_resultat(units, "F2", .f2_erosion_valeur(
+    units = units,
+    layers = layers,
+    dem_layer = dem_layer,
+    texture = texture,
+    dem_target_res = dem_target_res
+  ))
+}
+
+# Calcul de F2 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `F2` (contrat 1.0, spec 057).
+.f2_erosion_valeur <- function(units,
                                    layers,
                                    dem_layer = "dem",
                                    texture = NULL,
@@ -1662,7 +1965,8 @@ indicateur_f2_erosion <- function(units,
   # `twi_target_res` suit la résolution de travail (grilles alignées, cache
   # partagé avec W2/W3/R3).
   twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir,
-                                   twi_target_res = dem_target_res)
+                                   twi_target_res = dem_target_res,
+                                   crs = .twi_metric_crs(units))
 
   twi_mean <- safe_extract(twi_raster, units_sf, fun = "mean", progress = FALSE)
 
@@ -1670,9 +1974,10 @@ indicateur_f2_erosion <- function(units,
   slope_raster <- terra::terrain(dem, v = "slope", unit = "degrees")
   slope_mean <- safe_extract(slope_raster, units_sf, fun = "mean", progress = FALSE)
 
-  # 3. Normalize TWI: [2.5, 10] -> [0, 100] (higher TWI = more fertile)
-  # Window adjusted to match typical TWI values (2.5-10 range covers most landscapes)
-  twi_norm <- pmax(pmin((twi_mean - 2.5) / 7.5 * 100, 100), 0)
+  # 3. Normalize TWI on the common window [2.5, 9] -> [0, 100] (higher TWI =
+  # more fertile). Fenêtre commune W3/F2/R3 sur un TWI ramené à 2 m (spec 056) ;
+  # elle était [2,5 ; 10] pour F2 seul.
+  twi_norm <- .twi_norm(twi_mean) * 100
 
   # 4. Normalize slope: [0°, 45°] -> [100, 0] (flatter = less erodible)
   slope_norm <- pmax(pmin(100 - (slope_mean / 45) * 100, 100), 0)
@@ -1717,7 +2022,7 @@ indicateur_f2_erosion <- function(units,
 #'   outside the nomenclature).
 #' @param buffer Numeric. Buffer distance (meters) for contrast analysis. Default 50m.
 #'
-#' @return Numeric vector of sylvosphere scores (0-100). **Higher = more edge effect
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{L1}: sylvosphere scores (0-100). **Higher = more edge effect
 #' borne by the unit = less favourable**: all three components grow with it
 #' (boundary irregularity, hostile surrounding matrix, wind and sun
 #' exposure). The value is therefore INVERTED by normalize_indicator() so the
@@ -1727,9 +2032,12 @@ indicateur_f2_erosion <- function(units,
 #' @section Renamed in 0.176.0:
 #' This indicator used to be called `indicateur_l2_fragmentation()` — a name
 #' that announced the L2 fragmentation metric while computing the L1 edge
-#' effect. The old name still works and returns the same values, with a
-#' deprecation warning. Persisted columns are renamed by
+#' effect. The old name, kept as a deprecated alias since then, was removed
+#' in 1.0.0 (spec 057). Persisted columns are renamed by
 #' [migrer_colonnes_l()]. See spec 045.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -1741,6 +2049,22 @@ indicateur_f2_erosion <- function(units,
 #' )
 #' }
 indicateur_l1_effet_lisiere <- function(units,
+                                              layers = NULL,
+                                              landcover_layer = "landcover",
+                                              forest_values = c(16, 17),
+                                              buffer = 50) {
+  .indicateur_resultat(units, "L1", .l1_effet_lisiere_valeur(
+    units = units,
+    layers = layers,
+    landcover_layer = landcover_layer,
+    forest_values = forest_values,
+    buffer = buffer
+  ))
+}
+
+# Calcul de L1 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `L1` (contrat 1.0, spec 057).
+.l1_effet_lisiere_valeur <- function(units,
                                               layers = NULL,
                                               landcover_layer = "landcover",
                                               forest_values = c(16, 17),
@@ -1907,7 +2231,7 @@ indicateur_l1_effet_lisiere <- function(units,
 #'   of your own raster when it uses another nomenclature.
 #' @param buffer Numeric. Buffer distance in meters around union of parcels.
 #'
-#' @return Numeric vector of fragmentation scores (0-100). **Higher = less fragmented
+#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{L2}: fragmentation scores (0-100). **Higher = less fragmented
 #' = favourable** (COHESION + AI, or the inverse shape index in the
 #' fallback): already oriented the right way, so normalize_indicator() passes
 #' it through and does NOT invert it -- unlike L1.
@@ -1915,9 +2239,12 @@ indicateur_l1_effet_lisiere <- function(units,
 #' @section Renamed in 0.176.0:
 #' This indicator used to be called `indicateur_l1_sylvosphere()` — a name that
 #' announced the L1 sylvosphere while computing the L2 fragmentation metric.
-#' The old name still works and returns the same values, with a deprecation
-#' warning. Persisted columns are renamed by [migrer_colonnes_l()]. See
+#' The old name, kept as a deprecated alias since then, was removed in 1.0.0
+#' (spec 057). Persisted columns are renamed by [migrer_colonnes_l()]. See
 #' spec 045.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -1925,6 +2252,21 @@ indicateur_l1_effet_lisiere <- function(units,
 #' results <- indicateur_l2_morcellement(units, layers, buffer = 1000)
 #' }
 indicateur_l2_morcellement <- function(units, layers = NULL,
+                                     landcover_layer = "landcover",
+                                     forest_values = c(16, 17),
+                                     buffer = 1000) {
+  .indicateur_resultat(units, "L2", .l2_morcellement_valeur(
+    units = units,
+    layers = layers,
+    landcover_layer = landcover_layer,
+    forest_values = forest_values,
+    buffer = buffer
+  ))
+}
+
+# Calcul de L2 : rend le vecteur des valeurs, une par unite ; l'enveloppe
+# exportee ci-dessus le range dans la colonne `L2` (contrat 1.0, spec 057).
+.l2_morcellement_valeur <- function(units, layers = NULL,
                                      landcover_layer = "landcover",
                                      forest_values = c(16, 17),
                                      buffer = 1000) {
@@ -1997,89 +2339,6 @@ indicateur_l2_morcellement <- function(units, layers = NULL,
 
   msg_info("indicateur_l2_morcellement")
   scores
-}
-
-# ==============================================================================
-# DEPRECATED NAMES (spec 045)
-# Les deux noms historiques annoncaient l'inverse de ce qu'ils calculaient. Ils
-# restent appelables et rendent EXACTEMENT les memes valeurs qu'avant : c'est le
-# nom qui change, pas le calcul.
-# ==============================================================================
-
-#' Sylvosphere - Edge Effect (L1), deprecated name
-#'
-#' @description
-#' Deprecated since 0.176.0. The name announced the L2 fragmentation metric
-#' while the function computes the L1 edge effect. Use
-#' [indicateur_l1_effet_lisiere()], which returns the same values.
-#'
-#' @inheritParams indicateur_l1_effet_lisiere
-#'
-#' @return Numeric vector of sylvosphere scores (0-100) — unchanged.
-#'
-#' @seealso [migrer_colonnes_l()] to rename the columns of an already computed
-#'   dataset.
-#'
-#' @export
-indicateur_l2_fragmentation <- function(units,
-                                        layers = NULL,
-                                        landcover_layer = "landcover",
-                                        forest_values = c(16, 17),
-                                        buffer = 50) {
-  .Deprecated("indicateur_l1_effet_lisiere", package = "nemeton")
-  indicateur_l1_effet_lisiere(
-    units,
-    layers = layers,
-    landcover_layer = landcover_layer,
-    forest_values = forest_values,
-    buffer = buffer
-  )
-}
-
-#' Landscape Fragmentation (L2), deprecated name
-#'
-#' @description
-#' Deprecated since 0.176.0. The name announced the L1 sylvosphere while the
-#' function computes the L2 fragmentation metric. Use
-#' [indicateur_l2_morcellement()], which returns the same values.
-#'
-#' @inheritParams indicateur_l2_morcellement
-#'
-#' @return Numeric vector of fragmentation scores (0-100) — unchanged.
-#'
-#' @seealso [migrer_colonnes_l()] to rename the columns of an already computed
-#'   dataset.
-#'
-#' @export
-indicateur_l1_sylvosphere <- function(units, layers = NULL,
-                                      landcover_layer = "landcover",
-                                      forest_values = c(16, 17),
-                                      buffer = 1000) {
-  .Deprecated("indicateur_l2_morcellement", package = "nemeton")
-  indicateur_l2_morcellement(
-    units,
-    layers = layers,
-    landcover_layer = landcover_layer,
-    forest_values = forest_values,
-    buffer = buffer
-  )
-}
-
-# ==============================================================================
-# ALIAS FUNCTIONS
-# Obsolete: previously mapped indicator names for compute_single_indicator
-# (removed in v0.15.0 along with service_compute.R). Legacy A1/E1/E2/F1/F2/N3
-# stubs that shadowed the real implementations in indicators-{air,energy,
-# naturalness}.R have been removed. Only the l1_sylvosphere_ratio delegate
-# remains since it has a unique name.
-# ==============================================================================
-
-
-#' @noRd
-indicateur_l1_sylvosphere_ratio <- function(units, layers = NULL, ...) {
-  # L2 : fragmentation paysagere - delegue a indicateur_l2_morcellement
-  # (l'ancien nom de la cible, indicateur_l1_sylvosphere, est deprecie).
-  indicateur_l2_morcellement(units, layers = layers, ...)
 }
 
 # indicateur_s3_population est defini dans indicators-social.R

@@ -42,6 +42,11 @@ dataset re-read alongside a stale export must not silently overwrite the
 current values.
 }
 
+\section{Lifecycle}{
+
+Stable: covered by the 1.0 API contract (spec 057).
+}
+
 \examples{
 old <- data.frame(
   id = 1:2,

@@ -16,6 +16,8 @@
 #' `terra::rast(href)` reads work without further authentication.
 #'
 #' @name sentinel2_stac
+#' @keywords internal
+#' @noRd
 NULL
 
 
@@ -97,6 +99,9 @@ NULL
 #' @return A tibble with columns `scene_id`, `obs_date`,
 #'   `cloud_pct`, `href_B04`, `href_B08`, `href_B12`, `source`. Empty
 #'   tibble (0 rows) when no scene matches.
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @examples
 #' \dontrun{
@@ -245,7 +250,8 @@ stac_search_s2 <- function(zone,
 #' @param start,end Character or Date. Search window bounds, `"YYYY-MM-DD"`.
 #' @param max_cloud Numeric. Maximum scene cloud cover (percent). Default 20.
 #' @param limit Integer. Maximum number of scenes to return. Default `10000L`.
-#' @export
+#' @keywords internal
+#' @noRd
 stac_search_s2_cdse <- function(bbox, start, end, max_cloud = 20, limit = 10000L) {
   .assert_httr2()
   body <- list(
@@ -268,7 +274,8 @@ stac_search_s2_cdse <- function(bbox, start, end, max_cloud = 20, limit = 10000L
 
 
 #' @rdname sentinel2_stac
-#' @export
+#' @keywords internal
+#' @noRd
 stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 10000L) {
   .assert_httr2()
   body <- list(
@@ -308,7 +315,8 @@ stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 10000L) 
 
 
 #' @rdname sentinel2_stac
-#' @export
+#' @keywords internal
+#' @noRd
 stac_search_s2_theia_muscate <- function(bbox, start, end,
                                          max_cloud = 20, limit = 10000L,
                                          country = "FR") {

@@ -31,6 +31,9 @@ NULL
 #'     \item{metadata}{List with dates, period_labels, alignment info}
 #'   }
 #'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -180,6 +183,9 @@ nemeton_temporal <- function(periods,
 #'     \item{<indicator>_rate_abs}{Absolute change per year (e.g., tC/ha/year)}
 #'     \item{<indicator>_rate_rel}{Relative change per year (\%/year)}
 #'   }
+#'
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
 #'
 #' @export
 #' @examples
@@ -352,6 +358,9 @@ calculate_change_rate <- function(temporal,
 #' @param ... Additional arguments (unused)
 #'
 #' @return Invisible x
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @keywords internal
 print.nemeton_temporal <- function(x, ...) {
@@ -401,6 +410,9 @@ print.nemeton_temporal <- function(x, ...) {
 #' @param ... Additional arguments (unused)
 #'
 #' @return Invisible object
+#' @section Lifecycle:
+#' Stable: covered by the 1.0 API contract (spec 057).
+#'
 #' @export
 #' @keywords internal
 summary.nemeton_temporal <- function(object, ...) {
